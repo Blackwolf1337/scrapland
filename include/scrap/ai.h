@@ -52,10 +52,26 @@ struct cAIVehicleGroup {
 	const cAIVehicleGroupVtbl *vftable;
 };
 
+/* the first slots of every AI (cAIVehicle, cAIChar); variadic methods are __cdecl with self on the stack */
+typedef struct cAIVtbl {
+	void *vf00_05[6];
+	void (*Debugf)(void *self, const char *fmt, ...);	/* 0x18 text of the AI debug view */
+} cAIVtbl;
+SD_OFFSET(cAIVtbl, Debugf, 0x18);
+
+static inline void AI_Debugf(void *ai, const char *text) {
+	(*(const cAIVtbl **)ai)->Debugf(ai, text);
+}
+
 typedef struct cAICharVtbl {
-	void *vf00_1e[31];
+	cAIVtbl base;
+	void *vf07_1a[20];
+	/* SAI_CHAR_ state; the arguments depend on the state (see SAIPy.c) */
+	byte (*SetState)(cAIChar *self, int state, ...);	/* 0x6c */
+	void *vf1c_1e[3];
 	int(__thiscall *GetState)(cAIChar *self);	/* 0x7c */
 } cAICharVtbl;
+SD_OFFSET(cAICharVtbl, SetState, 0x6c);
 SD_OFFSET(cAICharVtbl, GetState, 0x7c);
 
 struct cAIChar {
@@ -129,26 +145,11 @@ void __thiscall cAIVehicle_SetInertia(cAIVehicle *ai, int on);
 int __thiscall cVehicleEntity_GetOwnerSlot(cEntity *e);
 int __thiscall cWalkCharEntity_GetOwnerSlot(cEntity *e);
 
-/* state handlers of SAI.SetStateVehicle / SetStateChar (static functions of SAIPy.cpp, still the originals) */
-PyObject *SetStateVehicle0(PyObject *self, PyObject *args);
-PyObject *SetStateVehicle1(PyObject *self, PyObject *args);
-PyObject *SetStateVehicle2(PyObject *self, PyObject *args);
-PyObject *SetStateVehicle3(PyObject *self, PyObject *args);
-PyObject *SetStateVehicle4(PyObject *self, PyObject *args);
-PyObject *SetStateVehicle5(PyObject *self, PyObject *args);
-PyObject *SetStateVehicle6(PyObject *self, PyObject *args);
-PyObject *SetStateVehicle7(PyObject *self, PyObject *args);
-PyObject *SetStateVehicle8(PyObject *self, PyObject *args);
-PyObject *SetStateVehicle9(PyObject *self, PyObject *args);
-PyObject *SetStateChar0(PyObject *self, PyObject *args);
-PyObject *SetStateChar1(PyObject *self, PyObject *args);
-PyObject *SetStateChar2(PyObject *self, PyObject *args);
-PyObject *SetStateChar3(PyObject *self, PyObject *args);
-PyObject *SetStateChar4(PyObject *self, PyObject *args);
-PyObject *SetStateChar5(PyObject *self, PyObject *args);
-PyObject *SetStateChar6(PyObject *self, PyObject *args);
-PyObject *SetStateChar7(PyObject *self, PyObject *args);
-PyObject *SetStateChar8(PyObject *self, PyObject *args);
-PyObject *SetStateChar9(PyObject *self, PyObject *args);
+/* the state of the vehicle AI, arguments by state (see SAIPy.c); 0 if it was not taken (rva 0x8dfb0) */
+byte cAIVehicle_SetState(cAIVehicle *ai, int state, ...);
+
+/* default values of SAI.SetStateVehicle CHASE (state 7) */
+#define g_AIChaseDefault1 GAME_DATA(float, 0x444948)
+#define g_AIChaseDefault2 GAME_DATA(float, 0x444828)
 
 #endif

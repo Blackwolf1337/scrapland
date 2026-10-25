@@ -1,11 +1,12 @@
 /*
  * Python module SAI (method table SAI_methods, rva 0x42a488): AI setup and control of vehicles and characters.
- * Original source: PyInterface/SAIPy.cpp. The state handlers behind SetStateVehicle/SetStateChar are static
- * functions of the same file and still the originals (imports).
+ * Original source: PyInterface/SAIPy.cpp, with the state handlers behind SetStateVehicle/SetStateChar (static
+ * functions there).
  */
 #include <string.h>
 
 #include "scrap/ai.h"
+#include "scrap/console.h"
 #include "scrap/global.h"
 
 static PyObject *ReturnNone(void) {
@@ -141,6 +142,402 @@ PyObject *SAI_BuildGraph2D(PyObject *self, PyObject *args) {
 	vec3_t pos = { x, y, z };
 	CNodesWorld2D_Load(g_NodesWorld2D, arg, "", &pos);
 	return ReturnNone();
+}
+
+/*
+ * State handlers of SetStateVehicle/SetStateChar. Each parses (state, entity[, target], ...), checks the
+ * entities, writes "CAMBIO de ESTADO desde PYTHON" into the AI debug view and sets the state; 1 if the AI took
+ * it, else the error report below and None. The original passes the entity name uninitialized to the report when
+ * parsing failed before it; it is NULL here.
+ */
+enum {
+	SSERR_PARAMS = 1,
+	SSERR_TARGET_NULL = 3,
+	SSERR_TARGET_INACTIVE = 4,
+	SSERR_STATE = 5,
+	SSERR_NO_AI = 6,
+	SSERR_ENTITY_NULL = 8,
+	SSERR_ENTITY_TYPE = 9,
+};
+
+/* the report in the console (Spanish texts of the original), returns None */
+PyObject *SetState_Error(const char *entity, const char *state, int err, const char *target) {
+	static const char *const texts[] = {
+		[1] = "PARAMETROS INCORRECTOS\n",
+		[2] = "CAMBIO DE ESTADO EN TODAS LAS ENTIDADES\n",
+		[5] = "ERROR CAMBIO DE ESTADO\n",
+		[6] = "ENTIDAD SIN IA\n",
+		[7] = "ENTIDAD INACTIVA\n",
+		[8] = "ENTIDAD NULL\n",
+		[9] = "ASIGNACION A ENTIDAD CON TIPO INCORRECTO\n",
+	};
+
+	Con_Bluef("\nERROR: SetState(%s) - Entidad: %s\n", state, entity);
+	if (err == SSERR_TARGET_NULL) {
+		Con_Bluef("OBJETIVO: %s - NULL\n", target);
+	} else if (err == SSERR_TARGET_INACTIVE) {
+		Con_Bluef("OBJETIVO: %s - INACTIVO\n", target);
+	} else if (err >= 1 && err <= 9 && texts[err]) {
+		Con_Bluef("%s", texts[err]);
+	}
+	Con_Bluef("\n**************************************************************************************************"
+		"\n\n");
+	return ReturnNone();
+}
+
+static int CheckAIEntity(cEntity *e, const char *type) {
+	if (!e) {
+		return SSERR_ENTITY_NULL;
+	}
+	if (!Entity_IsType(e, type)) {
+		return SSERR_ENTITY_TYPE;
+	}
+	if (e->flag_4c && !e->vftable->GetAI(e)) {
+		return SSERR_NO_AI;
+	}
+	return 0;
+}
+
+int SetState_CheckChar(cEntity *e) {
+	return CheckAIEntity(e, TYEN_WALKCHAR);
+}
+
+int SetState_CheckVehicle(cEntity *e) {
+	return CheckAIEntity(e, TYEN_CAR);
+}
+
+int SetState_CheckTarget(cEntity *e) {
+	if (!e) {
+		return SSERR_TARGET_NULL;
+	}
+	return e->flag_4c ? 0 : SSERR_TARGET_INACTIVE;
+}
+
+/* the AI of the entity after the check, NULL with *err set */
+static void *StateAI(const char *name, int (*check)(cEntity *), int *err) {
+	cEntity *e = World_FindEntity(name);
+	*err = check(e);
+	if (*err) {
+		return NULL;
+	}
+	void *ai = e->vftable->GetAI(e);
+	AI_Debugf(ai, "CAMBIO de ESTADO desde PYTHON");
+	return ai;
+}
+
+static PyObject *StateResult(byte ok, const char *name, const char *state) {
+	if (ok) {
+		return Py_BuildValue("i", 1);
+	}
+	return SetState_Error(name, state, SSERR_STATE, NULL);
+}
+
+/* state(int), entity: vehicle states without arguments */
+static PyObject *VehicleStateSimple(PyObject *args, const char *state) {
+	int st, err = SSERR_PARAMS;
+	char *name = NULL;
+
+	if (PyArg_ParseTuple(args, "is", &st, &name)) {
+		cAIVehicle *ai = StateAI(name, SetState_CheckVehicle, &err);
+		if (ai) {
+			return StateResult(cAIVehicle_SetState(ai, st), name, state);
+		}
+	}
+	return SetState_Error(name, state, err, NULL);
+}
+
+/* state(int), entity, target: the target is checked first */
+static cEntity *StateTarget(const char *name, const char *target, const char *state, PyObject **error) {
+	cEntity *t = World_FindEntity(target);
+	int err = SetState_CheckTarget(t);
+	if (err) {
+		*error = SetState_Error(name, state, err, target);
+		return NULL;
+	}
+	return t;
+}
+
+/* SAI_VEHICLE_FREEZE: (state, vehicle) */
+PyObject *SetStateVehicle0(PyObject *self, PyObject *args) {
+	(void)self;
+	return VehicleStateSimple(args, "FREEZE");
+}
+
+/* SAI_VEHICLE_GO_TO: (state, vehicle, x, y, z, f[, flag, f, f, f, flag]); flags count as on only when 1 */
+PyObject *SetStateVehicle1(PyObject *self, PyObject *args) {
+	int st, err = SSERR_PARAMS, i5 = 0, i9 = 0;
+	char *name = NULL;
+	vec3_t pos;
+	float f4, f6 = 1.0f, f7 = 20.0f, f8 = 20.0f;
+
+	(void)self;
+	if (PyArg_ParseTuple(args, "isffff|ifffi", &st, &name, &pos.x, &pos.y, &pos.z, &f4, &i5, &f6, &f7, &f8, &i9)) {
+		cAIVehicle *ai = StateAI(name, SetState_CheckVehicle, &err);
+		if (ai) {
+			return StateResult(cAIVehicle_SetState(ai, st, pos, (double)f4, i5 == 1, (double)f6, (double)f7,
+				(double)f8, i9 == 1), name, "GO_TO");
+		}
+	}
+	return SetState_Error(name, "GO_TO", err, NULL);
+}
+
+/* (state, vehicle, target) */
+static PyObject *VehicleStateTarget(PyObject *args, const char *state) {
+	int st, err = SSERR_PARAMS;
+	char *name = NULL, *target;
+
+	if (PyArg_ParseTuple(args, "iss", &st, &name, &target)) {
+		PyObject *error;
+		cEntity *t = StateTarget(name, target, state, &error);
+		if (!t) {
+			return error;
+		}
+		cAIVehicle *ai = StateAI(name, SetState_CheckVehicle, &err);
+		if (ai) {
+			return StateResult(cAIVehicle_SetState(ai, st, t), name, state);
+		}
+	}
+	return SetState_Error(name, state, err, NULL);
+}
+
+/* SAI_VEHICLE_FIGHTING: (state, vehicle, target) */
+PyObject *SetStateVehicle2(PyObject *self, PyObject *args) {
+	(void)self;
+	return VehicleStateTarget(args, "FIGHTING");
+}
+
+/* SAI_VEHICLE_IN_ROUTE: (state, vehicle[, flag, f, f]) */
+PyObject *SetStateVehicle3(PyObject *self, PyObject *args) {
+	int st, err = SSERR_PARAMS, flag = 1;
+	char *name = NULL;
+	float a = 5.0f, b = 2.0f;
+
+	(void)self;
+	if (PyArg_ParseTuple(args, "is|iff", &st, &name, &flag, &a, &b)) {
+		cAIVehicle *ai = StateAI(name, SetState_CheckVehicle, &err);
+		if (ai) {
+			return StateResult(cAIVehicle_SetState(ai, st, flag == 1, (double)a, (double)b), name, "IN_ROUTE");
+		}
+	}
+	return SetState_Error(name, "IN_ROUTE", err, NULL);
+}
+
+/* SAI_VEHICLE_TRAFFIC: (state, vehicle) */
+PyObject *SetStateVehicle4(PyObject *self, PyObject *args) {
+	(void)self;
+	return VehicleStateSimple(args, "TRAFFIC");
+}
+
+/* SAI_VEHICLE_GET_AWAY_STOP: (state, vehicle, target, f); every error but the target one reports PARAMETROS */
+PyObject *SetStateVehicle5(PyObject *self, PyObject *args) {
+	int st, err;
+	char *name = NULL, *target;
+	float f;
+
+	(void)self;
+	if (PyArg_ParseTuple(args, "issf", &st, &name, &target, &f)) {
+		PyObject *error;
+		cEntity *t = StateTarget(name, target, "GET_AWAY_STOP", &error);
+		if (!t) {
+			return error;
+		}
+		cAIVehicle *ai = StateAI(name, SetState_CheckVehicle, &err);
+		if (ai && cAIVehicle_SetState(ai, st, t, (double)f)) {
+			return Py_BuildValue("i", 1);
+		}
+	}
+	return SetState_Error(name, "GET_AWAY_STOP", SSERR_PARAMS, NULL);
+}
+
+/* SAI_VEHICLE_RACE: (state, vehicle, x, y, z, f[, flag, flag]) */
+PyObject *SetStateVehicle6(PyObject *self, PyObject *args) {
+	int st, err = SSERR_PARAMS, i1 = 1, i2 = 0;
+	char *name = NULL;
+	vec3_t pos;
+	float f;
+
+	(void)self;
+	if (PyArg_ParseTuple(args, "isffff|ii", &st, &name, &pos.x, &pos.y, &pos.z, &f, &i1, &i2)) {
+		cAIVehicle *ai = StateAI(name, SetState_CheckVehicle, &err);
+		if (ai) {
+			return StateResult(cAIVehicle_SetState(ai, st, pos, (double)f, i1 == 1, i2 == 1), name, "RACE");
+		}
+	}
+	return SetState_Error(name, "RACE", err, NULL);
+}
+
+/* SAI_VEHICLE_CHASE: (state, vehicle, target[, f, f]), defaults from the engine */
+PyObject *SetStateVehicle7(PyObject *self, PyObject *args) {
+	int st, err = SSERR_PARAMS;
+	char *name = NULL, *target;
+	float a = g_AIChaseDefault1, b = g_AIChaseDefault2;
+
+	(void)self;
+	if (PyArg_ParseTuple(args, "iss|ff", &st, &name, &target, &a, &b)) {
+		PyObject *error;
+		cEntity *t = StateTarget(name, target, "CHASE", &error);
+		if (!t) {
+			return error;
+		}
+		cAIVehicle *ai = StateAI(name, SetState_CheckVehicle, &err);
+		if (ai) {
+			return StateResult(cAIVehicle_SetState(ai, st, t, (double)a, (double)b), name, "CHASE");
+		}
+	}
+	return SetState_Error(name, "CHASE", err, NULL);
+}
+
+/* SAI_VEHICLE_FIGHTING_FREEZE: (state, vehicle, target) */
+PyObject *SetStateVehicle8(PyObject *self, PyObject *args) {
+	(void)self;
+	return VehicleStateTarget(args, "FIGHTING_FREEZE");
+}
+
+/* SAI_VEHICLE_TRAFFIC_INDOOR: (state, vehicle) */
+PyObject *SetStateVehicle9(PyObject *self, PyObject *args) {
+	(void)self;
+	return VehicleStateSimple(args, "TRAFFIC_INDOOR");
+}
+
+/* SAI_CHAR_STATIC: (state, char) */
+PyObject *SetStateChar0(PyObject *self, PyObject *args) {
+	int st, err = SSERR_PARAMS;
+	char *name = NULL;
+
+	(void)self;
+	if (PyArg_ParseTuple(args, "is", &st, &name)) {
+		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
+		if (ai) {
+			return StateResult(ai->vftable->SetState(ai, st), name, "STATIC_CHAR");
+		}
+	}
+	return SetState_Error(name, "STATIC_CHAR", err, NULL);
+}
+
+/* SAI_CHAR_IN_ROUTE: (state, char, f[, flag]) */
+PyObject *SetStateChar1(PyObject *self, PyObject *args) {
+	int st, err = SSERR_PARAMS, flag = 1;
+	char *name = NULL;
+	float f;
+
+	(void)self;
+	if (PyArg_ParseTuple(args, "isf|i", &st, &name, &f, &flag)) {
+		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
+		if (ai) {
+			return StateResult(ai->vftable->SetState(ai, st, (double)f, flag == 1), name, "IN_ROUTE_CHAR");
+		}
+	}
+	return SetState_Error(name, "IN_ROUTE_CHAR", err, NULL);
+}
+
+/* (state, char, target, f) */
+static PyObject *CharStateTargetF(PyObject *args, const char *state) {
+	int st, err = SSERR_PARAMS;
+	char *name = NULL, *target;
+	float f;
+
+	if (PyArg_ParseTuple(args, "issf", &st, &name, &target, &f)) {
+		PyObject *error;
+		cEntity *t = StateTarget(name, target, state, &error);
+		if (!t) {
+			return error;
+		}
+		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
+		if (ai) {
+			return StateResult(ai->vftable->SetState(ai, st, t, (double)f), name, state);
+		}
+	}
+	return SetState_Error(name, state, err, NULL);
+}
+
+/* (state, char, target, flag) */
+static PyObject *CharStateTargetI(PyObject *args, const char *state) {
+	int st, err = SSERR_PARAMS, flag;
+	char *name = NULL, *target;
+
+	if (PyArg_ParseTuple(args, "issi", &st, &name, &target, &flag)) {
+		PyObject *error;
+		cEntity *t = StateTarget(name, target, state, &error);
+		if (!t) {
+			return error;
+		}
+		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
+		if (ai) {
+			return StateResult(ai->vftable->SetState(ai, st, t, flag == 1), name, state);
+		}
+	}
+	return SetState_Error(name, state, err, NULL);
+}
+
+/* SAI_CHAR_CHASE_WITH_ACTION: (state, char, target, f) */
+PyObject *SetStateChar2(PyObject *self, PyObject *args) {
+	(void)self;
+	return CharStateTargetF(args, "CHASE_WITH_ACTION_CHAR");
+}
+
+/* SAI_CHAR_CHASE_WITHOUT_ACTION: (state, char, target, f) */
+PyObject *SetStateChar3(PyObject *self, PyObject *args) {
+	(void)self;
+	return CharStateTargetF(args, "CHASE_WITHOUT_ACTION_CHAR");
+}
+
+/* SAI_CHAR_GO_TO: (state, char, x, y, z, x, y, z, f, f) */
+PyObject *SetStateChar4(PyObject *self, PyObject *args) {
+	int st, err = SSERR_PARAMS;
+	char *name = NULL;
+	vec3_t a, b;
+	float f1, f2;
+
+	(void)self;
+	if (PyArg_ParseTuple(args, "isffffffff", &st, &name, &a.x, &a.y, &a.z, &b.x, &b.y, &b.z, &f1, &f2)) {
+		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
+		if (ai) {
+			return StateResult(ai->vftable->SetState(ai, st, a, b, (double)f1, (double)f2), name, "GO_TO_CHAR");
+		}
+	}
+	return SetState_Error(name, "GO_TO_CHAR", err, NULL);
+}
+
+/* SAI_CHAR_GET_AWAY: (state, char, target, f) */
+PyObject *SetStateChar5(PyObject *self, PyObject *args) {
+	(void)self;
+	return CharStateTargetF(args, "GET_AWAY_CHAR");
+}
+
+/* SAI_CHAR_PATROL_ZONE: (state, char, x, y, z, f, f[, flag]) */
+PyObject *SetStateChar6(PyObject *self, PyObject *args) {
+	int st, err = SSERR_PARAMS, flag = 1;
+	char *name = NULL;
+	vec3_t pos;
+	float f1, f2;
+
+	(void)self;
+	if (PyArg_ParseTuple(args, "isfffff|i", &st, &name, &pos.x, &pos.y, &pos.z, &f1, &f2, &flag)) {
+		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
+		if (ai) {
+			return StateResult(ai->vftable->SetState(ai, st, pos, (double)f1, (double)f2, flag == 1), name,
+				"PATROL_ZONE_CHAR");
+		}
+	}
+	return SetState_Error(name, "PATROL_ZONE_CHAR", err, NULL);
+}
+
+/* SAI_CHAR_CHASE_WITH_ACTION_BACK: (state, char, target, f) */
+PyObject *SetStateChar7(PyObject *self, PyObject *args) {
+	(void)self;
+	return CharStateTargetF(args, "CHASE_WITH_ACTION_BACK_CHAR");
+}
+
+/* SAI_CHAR_ORIENT_DINAMIC_OBJECTIVE: (state, char, target, flag) */
+PyObject *SetStateChar8(PyObject *self, PyObject *args) {
+	(void)self;
+	return CharStateTargetI(args, "ORIENT_DINAMIC_OBJECTIVE_CHAR");
+}
+
+/* SAI_CHAR_ORIENT_DINAMIC_OBJECTIVE_WITH_ACTION: (state, char, target, flag) */
+PyObject *SetStateChar9(PyObject *self, PyObject *args) {
+	(void)self;
+	return CharStateTargetI(args, "ORIENT_DINAMIC_OBJECTIVE_WITH_ACTION_CHAR");
 }
 
 /*

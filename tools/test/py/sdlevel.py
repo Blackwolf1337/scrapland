@@ -390,4 +390,33 @@ check('Scrap.AddItem(Ammo) bad', lambda: Scrap.AddItem('Ammo', 'x'))
 check('Scrap.AddItem(Life, SDLife, 5)', lambda: Scrap.AddItem('Life', 'SDLife', 5))
 check('Scrap.AddItem(Ammo, SDAmmo, Part, 5)', lambda: Scrap.AddItem('Ammo', 'SDAmmo', 'Part', 5))
 check('Scrap.AddItem(Ammo, SDAmmo2, Ener, 7)', lambda: Scrap.AddItem('Ammo', 'SDAmmo2', 'Ener', 7))
+# SAI.SetStateVehicle/SetStateChar handlers: no entity of FZ has an AI, so only the error paths (report in the
+# log): bad arguments, missing or wrong entity, missing target, target Player0/Parked (the target check comes
+# first). Last the entities themselves: an active one without AI reports ENTIDAD SIN IA.
+def sdvargs(n, t):
+	return {0: (n,), 1: (n, 1, 2, 3, 4), 2: (n, t), 3: (n,), 4: (n,), 5: (n, t, 1.5), 6: (n, 1, 2, 3, 4),
+		7: (n, t), 8: (n, t), 9: (n,)}
+def sdcargs(n, t):
+	return {0: (n,), 1: (n, 1.5), 2: (n, t, 1.5), 3: (n, t, 1.5), 4: (n, 1, 2, 3, 4, 5, 6, 7, 8), 5: (n, t, 1.5),
+		6: (n, 1, 2, 3, 4, 5), 7: (n, t, 1.5), 8: (n, t, 1), 9: (n, t, 1)}
+# bad arguments only after the entity name: the original reports an uninitialized name otherwise (and hangs)
+sdvbad = {1: ('SDNo', 'x', 2, 3, 4), 2: ('SDNo', 5), 3: ('SDNo', 'x'), 5: ('SDNo', 'SDNo', 'x'),
+	6: ('SDNo', 'x', 2, 3, 4), 7: ('SDNo', 5), 8: ('SDNo', 5)}
+sdcbad = {1: ('SDNo', 'x'), 2: ('SDNo', 'SDNo', 'x'), 3: ('SDNo', 'SDNo', 'x'), 4: ('SDNo', 'x', 2, 3, 4, 5, 6, 7, 8),
+	5: ('SDNo', 'SDNo', 'x'), 6: ('SDNo', 'x', 2, 3, 4, 5), 7: ('SDNo', 'SDNo', 'x'), 8: ('SDNo', 'SDNo', 'x'),
+	9: ('SDNo', 'SDNo', 'x')}
+for st in range(10):
+	if sdvbad.has_key(st):
+		check('SAI.SetStateVehicle(%d) bad' % st, lambda st=st: apply(SAI.SetStateVehicle, (st,) + sdvbad[st]))
+	if sdcbad.has_key(st):
+		check('SAI.SetStateChar(%d) bad' % st, lambda st=st: apply(SAI.SetStateChar, (st,) + sdcbad[st]))
+	for n, t in (('SDNo', 'SDNo'), ('SDNo', 'Player0'), ('SDNo', 'Parked'), ('Player0', 'SDNo'),
+			('Player0', 'Parked'), ('', '')):
+		check('SAI.SetStateVehicle(%d, %s, %s)' % (st, n, t), lambda st=st, a=sdvargs(n, t)[st]:
+			apply(SAI.SetStateVehicle, (st,) + a))
+	for n, t in (('SDNo', 'SDNo'), ('SDNo', 'Player0'), ('Parked', 'SDNo'), ('Parked', 'Player0')):
+		check('SAI.SetStateChar(%d, %s, %s)' % (st, n, t), lambda st=st, a=sdcargs(n, t)[st]:
+			apply(SAI.SetStateChar, (st,) + a))
+check('SAI.SetStateVehicle(0, Parked)', lambda: SAI.SetStateVehicle(0, 'Parked'))
+check('SAI.SetStateChar(0, Player0)', lambda: SAI.SetStateChar(0, 'Player0'))
 finish()

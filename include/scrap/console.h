@@ -18,6 +18,8 @@ void Con_Errorf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 void Con_Warnf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 /* printf into the console lines, while the debug level is not 0 (rva 0xbbef0) */
 void Con_Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+/* like Con_Printf in color 0xff (rva 0xbc0b0) */
+void Con_Bluef(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 /* printf in the debug color, only shown above debug level 2 (rva 0xbc710) */
 void Con_Debugf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 

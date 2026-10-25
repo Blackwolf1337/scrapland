@@ -1773,7 +1773,7 @@ rva	size	source	callconv	name	signature
 0008de50	261	DEFAULT	unknown	FUN_0048de50	
 0008df60	15	USER_DEFINED	__thiscall	cAIVehicle::SetInertia	void __thiscall(int on)
 0008df70	58	USER_DEFINED	__thiscall	cAIVehicle::SetRotStatic	void __thiscall(float a, float b)
-0008dfb0	90	DEFAULT	unknown	FUN_0048dfb0	
+0008dfb0	90	USER_DEFINED	__cdecl	cAIVehicle_SetState	byte __cdecl(void * ai, int state, ...)
 0008e010	635	DEFAULT	unknown	FUN_0048e010	
 0008e2d0	1882	DEFAULT	unknown	FUN_0048e2d0	
 0008ea60	3175	DEFAULT	unknown	FUN_0048ea60	
@@ -2193,7 +2193,7 @@ rva	size	source	callconv	name	signature
 000bbe90	96	DEFAULT	unknown	FUN_004bbe90	
 000bbef0	377	USER_DEFINED	__cdecl	Con_Printf	void __cdecl(char * fmt, ...)
 000bc070	51	DEFAULT	unknown	FUN_004bc070	
-000bc0b0	392	DEFAULT	unknown	FUN_004bc0b0	
+000bc0b0	392	USER_DEFINED	__cdecl	Con_Bluef	void __cdecl(char * fmt, ...)
 000bc240	408	DEFAULT	unknown	FUN_004bc240	
 000bc3e0	408	DEFAULT	unknown	FUN_004bc3e0	
 000bc580	392	USER_DEFINED	__cdecl	Con_Errorf	void __cdecl(char * fmt, ...)
@@ -5042,30 +5042,30 @@ rva	size	source	callconv	name	signature
 00195e40	149	ANALYSIS	__cdecl	SAI_SetInertia	PyObject * __cdecl(PyObject * self, PyObject * args)
 00195ee0	6	ANALYSIS	__cdecl	SAI_GetOD	PyObject * __cdecl(PyObject * self, PyObject * args)
 00195ef0	103	DEFAULT	unknown	FUN_00595ef0	
-00195f60	75	DEFAULT	unknown	FUN_00595f60	
-00195fb0	32	DEFAULT	unknown	FUN_00595fb0	
-00195fd0	75	DEFAULT	unknown	FUN_00595fd0	
-00196020	155	DEFAULT	unknown	FUN_00596020	
-001960e0	404	USER_DEFINED	unknown	SetStateVehicle7	undefined(void)
-00196280	372	USER_DEFINED	unknown	SetStateChar7	undefined(void)
-00196400	377	USER_DEFINED	unknown	SetStateChar2	undefined(void)
-00196580	374	USER_DEFINED	unknown	SetStateChar3	undefined(void)
-00196700	344	USER_DEFINED	unknown	SetStateVehicle2	undefined(void)
-00196860	334	USER_DEFINED	unknown	SetStateVehicle8	undefined(void)
-001969b0	293	USER_DEFINED	unknown	SetStateVehicle0	undefined(void)
-00196ae0	371	USER_DEFINED	unknown	SetStateChar5	undefined(void)
-00196c60	424	USER_DEFINED	unknown	SetStateVehicle5	undefined(void)
-00196e10	402	USER_DEFINED	unknown	SetStateChar4	undefined(void)
-00196fb0	462	USER_DEFINED	unknown	SetStateVehicle1	undefined(void)
-00197180	356	USER_DEFINED	unknown	SetStateVehicle3	undefined(void)
-001972f0	338	USER_DEFINED	unknown	SetStateChar1	undefined(void)
-00197450	379	USER_DEFINED	unknown	SetStateChar8	undefined(void)
-001975d0	382	USER_DEFINED	unknown	SetStateChar9	undefined(void)
-00197750	379	USER_DEFINED	unknown	SetStateChar6	undefined(void)
-001978d0	379	USER_DEFINED	unknown	SetStateVehicle6	undefined(void)
-00197a50	288	USER_DEFINED	unknown	SetStateChar0	undefined(void)
-00197b70	283	USER_DEFINED	unknown	SetStateVehicle4	undefined(void)
-00197c90	306	USER_DEFINED	unknown	SetStateVehicle9	undefined(void)
+00195f60	75	USER_DEFINED	__cdecl	SetState_CheckChar	int __cdecl(void * e)
+00195fb0	32	USER_DEFINED	__cdecl	SetState_CheckTarget	int __cdecl(void * e)
+00195fd0	75	USER_DEFINED	__cdecl	SetState_CheckVehicle	int __cdecl(void * e)
+00196020	155	USER_DEFINED	__cdecl	SetState_Error	PyObject * __cdecl(char * entity, char * state, int err, char * target)
+001960e0	404	USER_DEFINED	__cdecl	SetStateVehicle7	PyObject * __cdecl(PyObject * self, PyObject * args)
+00196280	372	USER_DEFINED	__cdecl	SetStateChar7	PyObject * __cdecl(PyObject * self, PyObject * args)
+00196400	377	USER_DEFINED	__cdecl	SetStateChar2	PyObject * __cdecl(PyObject * self, PyObject * args)
+00196580	374	USER_DEFINED	__cdecl	SetStateChar3	PyObject * __cdecl(PyObject * self, PyObject * args)
+00196700	344	USER_DEFINED	__cdecl	SetStateVehicle2	PyObject * __cdecl(PyObject * self, PyObject * args)
+00196860	334	USER_DEFINED	__cdecl	SetStateVehicle8	PyObject * __cdecl(PyObject * self, PyObject * args)
+001969b0	293	USER_DEFINED	__cdecl	SetStateVehicle0	PyObject * __cdecl(PyObject * self, PyObject * args)
+00196ae0	371	USER_DEFINED	__cdecl	SetStateChar5	PyObject * __cdecl(PyObject * self, PyObject * args)
+00196c60	424	USER_DEFINED	__cdecl	SetStateVehicle5	PyObject * __cdecl(PyObject * self, PyObject * args)
+00196e10	402	USER_DEFINED	__cdecl	SetStateChar4	PyObject * __cdecl(PyObject * self, PyObject * args)
+00196fb0	462	USER_DEFINED	__cdecl	SetStateVehicle1	PyObject * __cdecl(PyObject * self, PyObject * args)
+00197180	356	USER_DEFINED	__cdecl	SetStateVehicle3	PyObject * __cdecl(PyObject * self, PyObject * args)
+001972f0	338	USER_DEFINED	__cdecl	SetStateChar1	PyObject * __cdecl(PyObject * self, PyObject * args)
+00197450	379	USER_DEFINED	__cdecl	SetStateChar8	PyObject * __cdecl(PyObject * self, PyObject * args)
+001975d0	382	USER_DEFINED	__cdecl	SetStateChar9	PyObject * __cdecl(PyObject * self, PyObject * args)
+00197750	379	USER_DEFINED	__cdecl	SetStateChar6	PyObject * __cdecl(PyObject * self, PyObject * args)
+001978d0	379	USER_DEFINED	__cdecl	SetStateVehicle6	PyObject * __cdecl(PyObject * self, PyObject * args)
+00197a50	288	USER_DEFINED	__cdecl	SetStateChar0	PyObject * __cdecl(PyObject * self, PyObject * args)
+00197b70	283	USER_DEFINED	__cdecl	SetStateVehicle4	PyObject * __cdecl(PyObject * self, PyObject * args)
+00197c90	306	USER_DEFINED	__cdecl	SetStateVehicle9	PyObject * __cdecl(PyObject * self, PyObject * args)
 00197dd0	28	USER_DEFINED	__cdecl	initSAI	void __cdecl(void)
 00197df0	95	ANALYSIS	__cdecl	Scrap_CreateEntityList	PyObject * __cdecl(PyObject * self, PyObject * args)
 00197e50	75	ANALYSIS	__cdecl	Scrap_SetCam	PyObject * __cdecl(PyObject * self, PyObject * args)

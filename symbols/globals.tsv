@@ -10994,6 +10994,8 @@ rva	source	name	datatype
 00444084	USER_DEFINED	g_pAuxActClass	/undefined4
 00444088	USER_DEFINED	g_pAuxAction	/undefined4
 004445b8	USER_DEFINED	g_CharGroup	/undefined4
+00444828	USER_DEFINED	g_AIChaseDefault2	/float
+00444948	USER_DEFINED	g_AIChaseDefault1	/float
 00444b84	USER_DEFINED	g_VehicleGroup	/undefined4
 00444c78	USER_DEFINED	g_AStar	/undefined4
 00444c7c	USER_DEFINED	g_AStar2D	/undefined4
