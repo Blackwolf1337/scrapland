@@ -45,6 +45,10 @@ void *Mem_Realloc(void *p, uint32_t size);	/* rva 0x133690 */
 
 /* Global/StrUtils.cpp: copy with CHECK(dst && src && bytes_dst>0), always terminated (rva 0x1365c0) */
 char *Str_Copy(char *dst, const char *src, int size);
+/* UTF-8 to the font encoding, in a static buffer of 1 KB (src/game/Global/StrUtils.c) */
+char *Str_FromUTF8(const char *s);
+/* directory, base name and extension of a path, NULL for a part not wanted */
+void Path_Split(const char *path, char *name, char *dir, char *ext);
 /* snprintf that logs "String size error" when it cuts (rva 0x136610) */
 int Str_Printf(char *dst, int size, const char *fmt, ...);
 

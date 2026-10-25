@@ -530,7 +530,7 @@ PyObject *Scrap_GetTime(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	return Py_BuildValue("d", (double)Timer_GetTime(g_pWorld->timer));
+	return Py_BuildValue("d", (double)Timer_GetTime(&g_pWorld->timer));
 }
 
 /* GetTimeSpeed() */
@@ -539,7 +539,7 @@ PyObject *Scrap_GetTimeSpeed(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	return Py_BuildValue("d", (double)g_pWorld->timeSpeed);
+	return Py_BuildValue("d", (double)g_pWorld->timer.speed);
 }
 
 /* GetVideoCurrentMode() : Get Video Current Mode Index. No argument check. */
@@ -905,7 +905,7 @@ PyObject *Scrap_SetTime(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "d", &t)) {
 		return NULL;
 	}
-	Timer_SetTime(g_pWorld->timer, (float)t);
+	Timer_SetTime(&g_pWorld->timer, (float)t);
 	return Py_BuildValue("");
 }
 
@@ -917,7 +917,7 @@ PyObject *Scrap_SetTimeSpeed(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "d", &speed)) {
 		return NULL;
 	}
-	Timer_SetSpeed(g_pWorld->timer, (float)speed);
+	Timer_SetSpeed(&g_pWorld->timer, (float)speed);
 	return Py_BuildValue("");
 }
 

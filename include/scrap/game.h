@@ -10,6 +10,7 @@
 
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
+#include "scrap/timer.h"
 
 #define GAME_TIMESTAMP 0x61b304cc	/* PE link time of Scrap.exe 1.6.1 (2021-12-10 07:42:04 UTC) */
 #define GAME_SIZEOFIMAGE 0x55e000
@@ -84,9 +85,7 @@ typedef struct cWorld {
 	byte pad_0054[0x0254 - 0x0054];
 	vec3_t camPos[9];		/* 0x0254 camera positions (Scrap.GetNearestParked) */
 	byte pad_02c0[0x02c8 - 0x02c0];
-	byte timer[0x02dc - 0x02c8];	/* 0x02c8 world time (Scrap.GetTime) */
-	float timeSpeed;		/* 0x02dc Scrap.GetTimeSpeed */
-	byte pad_02e0[0x02f0 - 0x02e0];
+	cTimer timer;			/* 0x02c8 world time (Scrap.GetTime, GetTimeSpeed) */
 	byte floor[0x1bb4 - 0x02f0];	/* 0x02f0 Scrap.GetFloor */
 	byte elements[0x1bb8 - 0x1bb4]; /* 0x1bb4 map elements (Scrap.CreateElements, CallElements) */
 	TABLE(cWeapInfo) weapons;	/* 0x1bb8 SWeap.InitWeap, GetNWeap */
@@ -112,7 +111,6 @@ SD_OFFSET(cWorld, scheduler, 0x0034);
 SD_OFFSET(cWorld, curCam, 0x0050);
 SD_OFFSET(cWorld, camPos, 0x0254);
 SD_OFFSET(cWorld, timer, 0x02c8);
-SD_OFFSET(cWorld, timeSpeed, 0x02dc);
 SD_OFFSET(cWorld, floor, 0x02f0);
 SD_OFFSET(cWorld, elements, 0x1bb4);
 SD_OFFSET(cWorld, alarm, 0x1c68);

@@ -3592,33 +3592,33 @@ rva	size	source	callconv	name	signature
 001361b0	36	DEFAULT	unknown	FUN_005361b0	
 001361e0	43	DEFAULT	unknown	FUN_005361e0	
 00136210	16	DEFAULT	unknown	FUN_00536210	
-00136220	33	DEFAULT	unknown	FUN_00536220	
-00136250	20	DEFAULT	unknown	FUN_00536250	
-00136270	107	DEFAULT	unknown	FUN_00536270	
-001362e0	312	DEFAULT	unknown	FUN_005362e0	
+00136220	33	USER_DEFINED	__thiscall	Countdown_Tick	int __thiscall(float dt)
+00136250	20	USER_DEFINED	__fastcall	cStaticBuffer::cStaticBuffer	void * __fastcall(void * self)
+00136270	107	USER_DEFINED	__fastcall	cStaticBuffer::~cStaticBuffer	void __fastcall(void * self)
+001362e0	312	USER_DEFINED	__cdecl	Str_FromUTF8	char * __cdecl(char * s)
 00136420	149	USER_DEFINED	__cdecl	Path_Split	void __cdecl(char * path, char * name, char * dir, char * ext)
 001364c0	211	DEFAULT	unknown	FUN_005364c0	
-001365a0	26	DEFAULT	unknown	FUN_005365a0	
+001365a0	26	USER_DEFINED	__cdecl	Str_PrintfQuiet	int __cdecl(char * dst, int size, char * fmt, ...)
 001365c0	75	USER_DEFINED	__cdecl	Str_Copy	char * __cdecl(char * dst, char * src, int size)
 00136610	26	USER_DEFINED	__cdecl	Str_Printf	int __cdecl(char * dst, int size, char * fmt, ...)
-00136630	84	DEFAULT	unknown	FUN_00536630	
+00136630	84	USER_DEFINED	__cdecl	Str_TrimBlanks	void __cdecl(char * s)
 00136690	109	USER_DEFINED	__cdecl	Str_VPrintf	int __cdecl(char * dst, int size, char * fmt, void * ap)
-00136700	126	DEFAULT	unknown	FUN_00536700	
-00136780	69	DEFAULT	unknown	FUN_00536780	
-001367d0	174	DEFAULT	unknown	FUN_005367d0	
-00136890	4	DEFAULT	unknown	FUN_00536890	
-001368a0	4	DEFAULT	unknown	FUN_005368a0	
-001368b0	41	DEFAULT	unknown	FUN_005368b0	
-001368e0	4	USER_DEFINED	unknown	Timer::GetTime	undefined(void)
-001368f0	4	DEFAULT	unknown	FUN_005368f0	
-00136900	179	DEFAULT	unknown	FUN_00536900	
-001369c0	22	DEFAULT	unknown	FUN_005369c0	
-001369e0	17	DEFAULT	unknown	FUN_005369e0	
-00136a00	71	DEFAULT	unknown	FUN_00536a00	
-00136a50	22	USER_DEFINED	unknown	Timer::SetSpeed	undefined(void)
-00136a70	17	USER_DEFINED	unknown	Timer::SetTime	undefined(void)
-00136aa0	105	DEFAULT	unknown	FUN_00536aa0	
-00136b20	48	USER_DEFINED	unknown	Version_Get	undefined(void)
+00136700	126	USER_DEFINED	__cdecl	Str_VPrintfWarn	int __cdecl(char * dst, int size, char * fmt, void * ap)
+00136780	69	USER_DEFINED	__fastcall	cTimer::cTimer	void * __fastcall(void * self)
+001367d0	174	USER_DEFINED	__thiscall	cTimer::Update	void __thiscall(float t)
+00136890	4	USER_DEFINED	__fastcall	cTimer::GetSpeedTo	float __fastcall(void * self)
+001368a0	4	USER_DEFINED	__fastcall	cTimer::GetBlendTime	float __fastcall(void * self)
+001368b0	41	USER_DEFINED	__fastcall	cTimer::GetSpeed	float __fastcall(void * self)
+001368e0	4	USER_DEFINED	__thiscall	Timer::GetTime	float __thiscall(void)
+001368f0	4	USER_DEFINED	__fastcall	cTimer::GetDelta	float __fastcall(void * self)
+00136900	179	USER_DEFINED	__thiscall	cTimer::Advance	void __thiscall(float dt)
+001369c0	22	USER_DEFINED	__thiscall	cTimer::SetBlend	void __thiscall(float time)
+001369e0	17	USER_DEFINED	__thiscall	cTimer::SetSpeedTo	void __thiscall(float speed)
+00136a00	71	USER_DEFINED	__thiscall	cTimer::SetSpeedChecked	void __thiscall(float speed)
+00136a50	22	USER_DEFINED	__thiscall	Timer::SetSpeed	void __thiscall(float speed)
+00136a70	17	USER_DEFINED	__thiscall	Timer::SetTime	void __thiscall(float t)
+00136aa0	105	USER_DEFINED	__thiscall	cTimer::Blend	void __thiscall(float dt)
+00136b20	48	USER_DEFINED	__cdecl	Version_Get	char * __cdecl(void)
 00136b60	88	DEFAULT	unknown	FUN_00536b60	
 00136bc0	121	DEFAULT	unknown	FUN_00536bc0	
 00136c40	97	DEFAULT	unknown	FUN_00536c40	
@@ -11158,7 +11158,7 @@ rva	size	source	callconv	name	signature
 0033b82d	119	ANALYSIS	unknown	FID_conflict:___stdio_common_vfprintf	undefined(void)
 0033b8a4	39	ANALYSIS	unknown	___stdio_common_vsnprintf_s	undefined(void)
 0033b8cb	39	ANALYSIS	unknown	___stdio_common_vsnwprintf_s	undefined(void)
-0033b8f2	36	ANALYSIS	unknown	___stdio_common_vsprintf	undefined(void)
+0033b8f2	36	USER_DEFINED	__cdecl	___stdio_common_vsprintf	int __cdecl(ulonglong options, char * buf, uint count, char * fmt, void * locale, void * ap)
 0033b916	36	ANALYSIS	unknown	___stdio_common_vsprintf_p	undefined(void)
 0033b93a	36	ANALYSIS	unknown	___stdio_common_vsprintf_s	undefined(void)
 0033b95e	36	ANALYSIS	unknown	___stdio_common_vswprintf	undefined(void)

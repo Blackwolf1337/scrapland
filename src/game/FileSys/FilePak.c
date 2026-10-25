@@ -32,8 +32,6 @@ void Path_MakeDirs(const char *path);			/* the directories of path */
 void Dir_Walk(const char *dir, const char *ext, void (*cb)(const char *path));
 /* 1 if name matches one of the sep separated patterns of list */
 byte StrList_Match(const char *list, const char *name, const char *sep);
-/* parts of a path: base name without extension, directory, extension (NULL: not wanted) */
-void Path_Split(const char *path, char *name, char *dir, char *ext);
 void Loading_Step(int percent);				/* -1: one step of the loading bar */
 void Console_Execute(const char *cmd);			/* a line of the engine console */
 

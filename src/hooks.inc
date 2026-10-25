@@ -47,6 +47,39 @@ SD_HOOK(cString_ICmpStr, 0x134220, 56)
 SD_HOOK(operator_new_array, 0x313642, 9)
 SD_HOOK(operator_delete_array, 0x31364b, 5)
 
+/* src/game/Global/StrUtils.c */
+SD_HOOK(Str_FromUTF8, 0x1362e0, 312)
+SD_HOOK(Path_Split, 0x136420, 149)
+SD_HOOK(Str_PrintfQuiet, 0x1365a0, 26)
+SD_HOOK(Str_Copy, 0x1365c0, 75)
+SD_HOOK(Str_Printf, 0x136610, 26)
+SD_HOOK(Str_TrimBlanks, 0x136630, 84)
+SD_HOOK(Str_VPrintf, 0x136690, 109)
+SD_HOOK(Str_VPrintfWarn, 0x136700, 126)
+SD_HOOK(Version_Get, 0x136b20, 48)
+
+/* src/game/Global/Timer.c (the 4 byte getters are followed by int3 padding up to the next function) */
+SD_HOOK(Countdown_Tick, 0x136220, 33)
+SD_HOOK(cTimer_ctor, 0x136780, 69)
+SD_HOOK(cTimer_Update, 0x1367d0, 174)
+SD_HOOK(cTimer_GetSpeedTo, 0x136890, 16)
+SD_HOOK(cTimer_GetBlendTime, 0x1368a0, 16)
+SD_HOOK(cTimer_GetSpeed, 0x1368b0, 41)
+SD_HOOK(Timer_GetTime, 0x1368e0, 16)
+SD_HOOK(cTimer_GetDelta, 0x1368f0, 16)
+SD_HOOK(cTimer_Advance, 0x136900, 179)
+SD_HOOK(cTimer_SetBlend, 0x1369c0, 22)
+SD_HOOK(cTimer_SetSpeedTo, 0x1369e0, 17)
+SD_HOOK(cTimer_SetSpeedChecked, 0x136a00, 71)
+SD_HOOK(Timer_SetSpeed, 0x136a50, 22)
+SD_HOOK(Timer_SetTime, 0x136a70, 17)
+SD_HOOK(cTimer_Blend, 0x136aa0, 105)
+
+/* src/game/Global/StaticBuffer.c */
+SD_HOOK(cStaticBuffer_ctor, 0x136250, 20)
+SD_HOOK(cStaticBuffer_dtor, 0x136270, 107)
+SD_HOOK(cStaticBuffer_Get, 0x18c050, 109)
+
 /* src/game/FileSys/AbstractFile.c */
 SD_HOOK(cAbstractFile_dtor, 0x12cf40, 71)
 SD_HOOK(cAbstractFile_Destroy, 0x12cf90, 103)

@@ -24,7 +24,6 @@ void __thiscall Scheduler_Delete(void *scheduler, const char *name);
 void __thiscall Elements_Call(void *elements, const char *name);
 void __thiscall Elements_Create(void *elements);
 int __thiscall Floor_Get(void *floor, float y);
-float __thiscall Timer_GetTime(void *timer);
 int __thiscall Alarm_GetValue(void *alarm);
 byte __thiscall Alarm_IsLocked(void *alarm);
 
@@ -163,8 +162,6 @@ void __thiscall Alarm_Set(void *alarm, float level);
 void __thiscall Alarm_SetChar(void *alarm, const char *name);
 void __thiscall Alarm_SetGrow(void *alarm, int grow);
 void __thiscall Alarm_SetLock(void *alarm, int lock);
-void __thiscall Timer_SetTime(void *timer, float t);
-void __thiscall Timer_SetSpeed(void *timer, float speed);
 
 /* steam_api: SteamInternal_ContextInit through the import table of the exe, context data at rva 0x428a30 */
 typedef void *(__cdecl *SteamContextInit_t)(void *ctx);

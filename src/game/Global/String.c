@@ -11,7 +11,7 @@
 void operator_delete_array(void *p);
 char *crt_strncat(char *dst, const char *src, size_t n);
 int crt_stricmp(const char *a, const char *b);
-int Str_VPrintf(char *dst, int size, const char *fmt, va_list ap);	/* rva 0x136690 */
+int Str_VPrintf(char *dst, int size, const char *fmt, va_list ap);
 
 void *operator_new_array(uint32_t size) {
 	return operator_new(size);

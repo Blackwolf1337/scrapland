@@ -10996,6 +10996,7 @@ rva	source	name	datatype
 00444080	USER_DEFINED	g_pActClassList	/undefined4
 00444084	USER_DEFINED	g_pAuxActClass	/undefined4
 00444088	USER_DEFINED	g_pAuxAction	/undefined4
+00444210	USER_DEFINED	g_PrintfOptions	
 004445b8	USER_DEFINED	g_CharGroup	/undefined4
 00444828	USER_DEFINED	g_AIChaseDefault2	/float
 00444948	USER_DEFINED	g_AIChaseDefault1	/float
@@ -11028,6 +11029,8 @@ rva	source	name	datatype
 0044b640	USER_DEFINED	g_MemStatsContext	/undefined4
 0044b648	USER_DEFINED	g_StrTmp	/undefined1
 0044bbf0	USER_DEFINED	g_PyStaticBuffer	/undefined4
+0044bc08	USER_DEFINED	g_Utf8Buf	/undefined1
+0044c008	USER_DEFINED	g_VersionBuf	
 0044c128	USER_DEFINED	g_ActionSets	/undefined4
 0044c130	USER_DEFINED	g_PlayerInput	/undefined4
 0044c400	USER_DEFINED	g_VirtualKeyboard	/undefined4
