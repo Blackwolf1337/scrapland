@@ -7,6 +7,7 @@
 
 #include "scrap/game.h"
 #include "scrap/mathlib.h"
+#include "scrap/nto1links.h"
 
 /* entity type names for IsType (the TYEN_ macros of the original) */
 #define TYEN_WALKCHAR "WalkChar"
@@ -28,7 +29,12 @@ typedef struct cEntityVtbl {
 	void(__thiscall *AimWeapon)(cEntity *self, float ax, float ay, float *dist, vec3_t *out, cEntity **target,
 		int flags);							/* 0x38 vf14 */
 	void(__thiscall *SetEmbeddedFX)(cEntity *self, const char *fxType);	/* 0x3c vf15 */
-	void *vf16_21[6];
+	/* script variables of the entity by name (cPyEntity attributes): set 0 reads into the pointers, 1 writes */
+	byte(__thiscall *VarI)(cEntity *self, const char *name, int *i, int set);			/* 0x40 vf16 */
+	byte(__thiscall *VarF)(cEntity *self, const char *name, double *d, int set);			/* 0x44 vf17 */
+	byte(__thiscall *VarS)(cEntity *self, const char *name, char **s, int set);			/* 0x48 vf18 */
+	byte(__thiscall *VarV)(cEntity *self, const char *name, double *x, double *y, double *z, int set); /* 0x4c */
+	void *vf20_21[2];
 	void *(__thiscall *GetAI)(cEntity *self);				/* 0x58 vf22 */
 } cEntityVtbl;
 SD_SIZE(cEntityVtbl, 23 * 4);
@@ -46,6 +52,10 @@ SD_OFFSET(cEntityVtbl, SetModel, 0x30);
 SD_OFFSET(cEntityVtbl, GetTargetAngle, 0x34);
 SD_OFFSET(cEntityVtbl, AimWeapon, 0x38);
 SD_OFFSET(cEntityVtbl, SetEmbeddedFX, 0x3c);
+SD_OFFSET(cEntityVtbl, VarI, 0x40);
+SD_OFFSET(cEntityVtbl, VarF, 0x44);
+SD_OFFSET(cEntityVtbl, VarS, 0x48);
+SD_OFFSET(cEntityVtbl, VarV, 0x4c);
 SD_OFFSET(cEntityVtbl, GetAI, 0x58);
 
 struct cEntity {
@@ -53,15 +63,18 @@ struct cEntity {
 	char *name;			/* 0x04 */
 	byte pad_08[0x4c - 0x08];
 	byte flag_4c;			/* 0x4c checked by the SAI functions before they touch the AI */
-	byte pad_4d[3];
+	byte pad_4d[0x64 - 0x4d];
+	Nto1Node links;			/* 0x64 head of the script handles (cPyEntity), target the entity */
 };
 SD_OFFSET(cEntity, name, 0x4);
 SD_OFFSET(cEntity, flag_4c, 0x4c);
+SD_OFFSET(cEntity, links, 0x64);
+SD_SIZE(cEntity, 0x74);
 
 /* a vehicle ("Car"); only the fields used so far */
 typedef struct cVehicleEntity {
 	cEntity base;
-	byte pad_50[0x238 - 0x50];
+	byte pad_74[0x238 - 0x74];
 	int life;			/* 0x238 > 0 while the ship is alive (SLogic.GetNearestShip) */
 } cVehicleEntity;
 SD_OFFSET(cVehicleEntity, life, 0x238);
@@ -83,6 +96,9 @@ SD_OFFSET(cEntityList, head, 0x30);
 cEntityList *__thiscall cWorld_GetList(cWorld *world, const char *name);
 /* first entity of the list or NULL, rva 0x1a7bc0 */
 cEntity *__thiscall cEntityList_GetFirst(cEntityList *list);
+
+/* links node to the entity (rva 0xc9a20); it leaves any ring it was in first */
+void __thiscall cEntity_AddLink(cEntity *self, Nto1Node *node);
 
 /* removes the entity; 0 if it cannot (rva 0xef0c0) */
 byte __thiscall cEntity_Del(cEntity *self);

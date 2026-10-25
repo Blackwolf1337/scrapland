@@ -94,9 +94,6 @@ SD_SIZE(cAIVehicleParams3, 0x1c);
 #define g_CharGroup GAME_DATA(cAICharGroup *, 0x4445b8)
 #define g_TrafficState GAME_DATA(int, 0x444d0c)	/* 3 after SAI.AnalizeTraffic */
 
-/* the engine's operator new (rva 0x1334d0) */
-void *operator_new(uint32_t size);
-
 /* constructors (thiscall on the memory from operator_new) */
 CNodesWorld *__thiscall CNodesWorld_ctor(void *mem);
 CNodesWorld2D *__thiscall CNodesWorld2D_ctor(void *mem);

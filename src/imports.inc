@@ -12,6 +12,11 @@ SD_IMPORT(Con_Print, 0x0bca50)		/* include/scrap/console.h */
 SD_IMPORT(Con_Errorf, 0x0bc580)
 SD_IMPORT(Con_Debugf, 0x0bc710)
 
+SD_IMPORT(operator_new, 0x1334d0)		/* include/scrap/global.h */
+SD_IMPORT(operator_delete_sized, 0x313634)
+SD_IMPORT(Str_Copy, 0x1365c0)
+SD_IMPORT(Str_Printf, 0x136610)
+
 SD_IMPORT(HashTable_Hash, 0x065370)	/* Global/HashTable.h, the instance in Actions/ */
 SD_IMPORT(HashTable_Find, 0x0652e0)
 
@@ -49,7 +54,6 @@ SD_IMPORT(cActClass_Var, 0x060770)
 SD_IMPORT(cAction_Var, 0x064280)
 
 /* engine: AI/ (include/scrap/ai.h) */
-SD_IMPORT(operator_new, 0x1334d0)
 SD_IMPORT(CNodesWorld_ctor, 0x0a21b0)
 SD_IMPORT(CNodesWorld2D_ctor, 0x0ad950)
 SD_IMPORT(CNodesTrafficInDoor_ctor, 0x0a08a0)
@@ -98,6 +102,7 @@ SD_IMPORT(SetStateChar9, 0x1975d0)
 
 /* MSVC 2015 static CRT (cdecl) */
 SD_IMPORT(crt_rand, 0x323c2f)
+SD_IMPORT(crt_fprintf, 0x0bd230)
 
 /* engine: Net/ (include/scrap/net.h) */
 SD_IMPORT(Net_IsServer, 0x18b280)
@@ -171,7 +176,6 @@ SD_IMPORT(Alarm_IsLocked, 0x13fb60)
 SD_IMPORT(cWorld_NewEntityList, 0x209a00)
 SD_IMPORT(cWorld_GetCamName, 0x209220)
 SD_IMPORT(cWorld_GetFirstEntity, 0x2092a0)
-SD_IMPORT(PyEntity_New, 0x193100)
 SD_IMPORT(GVar_Find, 0x131f00)
 SD_IMPORT(Achievement_Unlock, 0x137470)
 SD_IMPORT(Steam_SetAchievement, 0x1a66a0)
@@ -314,3 +318,9 @@ SD_IMPORT(PyTuple_GetItem, 0x2dec30)	/* tupleobject.c */
 SD_IMPORT(PyInt_AsLong, 0x2de3a0)	/* intobject.c */
 SD_IMPORT(PyList_GetItem, 0x2dcf80)	/* listobject.c */
 SD_IMPORT(PyString_AsString, 0x2dadd0)	/* stringobject.c */
+SD_IMPORT(PyArg_Parse, 0x2f0530)	/* getargs.c */
+SD_IMPORT(Py_FindMethod, 0x2f29d0)	/* methodobject.c */
+SD_IMPORT(_PyObject_New, 0x2ebc00)	/* object.c */
+SD_IMPORT(PyPool_Malloc, 0x1935f0)	/* the engine's allocator of the interpreter, include/scrap/python.h */
+SD_IMPORT(PyPool_Realloc, 0x193620)
+SD_IMPORT(PyPool_Free, 0x1935c0)

@@ -171,6 +171,13 @@ SD_HOOK(SFX_MoneyTransfer, 0x19b630, 332)
 SD_HOOK(SFX_EmbeddedSet, 0x19b780, 144)
 
 /* src/game/PyInterface/PyEntity.c */
+SD_HOOK(PyEntity_New, 0x193100, 166)
+SD_HOOK(PyEntity_Dealloc, 0x192ff0, 135)
+SD_HOOK(PyEntity_Print, 0x193080, 121)
+SD_HOOK(PyEntity_GetAttr, 0x192d00, 347)
+SD_HOOK(PyEntity_SetAttr, 0x192e60, 391)
+SD_HOOK(Nto1Head_UnlinkAll, 0x0d40f0, 115)
+SD_HOOK(cEntity_AddLink, 0x0c9a20, 97)
 SD_HOOK(cPyEntity_Del, 0x1931b0, 87)
 SD_HOOK(cPyEntity_SetModel, 0x193210, 141)
 SD_HOOK(cPyEntity_SetFX, 0x1932a0, 91)

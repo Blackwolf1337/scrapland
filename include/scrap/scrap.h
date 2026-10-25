@@ -7,6 +7,7 @@
 
 #include "scrap/entity.h"
 #include "scrap/mathlib.h"
+#include "scrap/pyentity.h"
 #include "scrap/python.h"
 
 #include "scrap/scorer.h"
@@ -34,8 +35,6 @@ byte __thiscall Alarm_IsLocked(void *alarm);
 void *__thiscall cWorld_NewEntityList(cWorld *world, const char *name);
 const char *__thiscall cWorld_GetCamName(cWorld *world, int i);
 cEntity *__thiscall cWorld_GetFirstEntity(cWorld *world);
-/* the Python handle (cPyEntity) of the entity with that name */
-PyObject *PyEntity_New(const char *name);
 
 /* engine global variables (gvars, Scrap.Get/Set/Def/Des) */
 enum { GVAR_STRING = 1, GVAR_INT = 2, GVAR_FLOAT = 4, GVAR_FUNCTION = 5, GVAR_SCRIPT_FUNCTION = 6 };

@@ -1,6 +1,7 @@
 /*
- * The Python type cPyEntity (type object rva 0x428e18): a script handle of an entity. The handle points to a
- * reference object whose entity pointer becomes NULL when the entity is gone.
+ * The Python type cPyEntity (type object rva 0x428e18): a script handle of an entity. The handle owns a link
+ * (Global/Nto1Links.h) in the ring of the entity, its target becomes NULL when the entity is gone. The link keeps
+ * the name the handle was made with.
  */
 #ifndef SCRAP_PYENTITY_H
 #define SCRAP_PYENTITY_H
@@ -9,10 +10,11 @@
 #include "scrap/python.h"
 
 typedef struct cEntityRef {
-	byte pad_0[0x8];
-	cEntity *entity;		/* 0x8 */
+	Nto1Node link;			/* 0x0 target the cEntity, data the cEntityRef */
+	char name[0x80];		/* 0x10 */
 } cEntityRef;
-SD_OFFSET(cEntityRef, entity, 0x8);
+SD_OFFSET(cEntityRef, name, 0x10);
+SD_SIZE(cEntityRef, 0x90);
 
 typedef struct cPyEntity {
 	PyObject_HEAD
@@ -21,7 +23,13 @@ typedef struct cPyEntity {
 SD_OFFSET(cPyEntity, ref, 0x8);
 
 static inline cEntity *PyEntity_Get(PyObject *self) {
-	return ((cPyEntity *)self)->ref->entity;
+	return ((cPyEntity *)self)->ref->link.target;
 }
+
+#define cPyEntity_Type GAME_DATA(PyTypeObject, 0x428e18)
+#define cPyEntity_methods (&GAME_DATA(PyMethodDef, 0x428e88))
+
+/* the handle of the entity with that name, NULL without one (no Python error set) */
+PyObject *PyEntity_New(const char *name);
 
 #endif

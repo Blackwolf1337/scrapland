@@ -76,6 +76,31 @@ check('first.Del() again', lambda f=f: f.Del())
 check('first.IsType(WithLife) after Del', lambda f=f: f.IsType('WithLife'))
 check('first.GetTgAng after Del', lambda f=f: f.GetTgAng(0, 0, 10))
 check('first.DrawWeap after Del', lambda f=f: f.DrawWeap(0, 0, 10))
+# cPyEntity attributes (tp_getattr/tp_setattr): script variables of int, float, vector and string type, then the
+# methods. Several handles of one entity share its link ring; they go again right away.
+for v in ('Name', 'Life', 'MaxLife', 'MinLife', 'Pos', 'Vel', 'Mass', 'Energy', 'Invulnerable', 'TimeSpeed',
+	'WeapList', 'Bogus', '__methods__'):
+	check('Player0.%s' % v, lambda v=v, p=p: getattr(p, v))
+check('Player0.IsType method', lambda p=p: callable(p.IsType))
+check('Player0 handles', lambda: len(map(lambda i: Scrap.UsrEntity(0), range(20))))
+check('Player0.Name after handles', lambda p=p: p.Name)
+check('Player0.Life = Life', lambda p=p: setattr(p, 'Life', p.Life))
+check('Player0.Mass = 2.5', lambda p=p: setattr(p, 'Mass', 2.5))
+check('Player0.Mass set', lambda p=p: p.Mass)
+check('Player0.Pos = Pos', lambda p=p: setattr(p, 'Pos', p.Pos))
+check('Player0.Pos set', lambda p=p: p.Pos)
+check('Player0.Life = x', lambda p=p: setattr(p, 'Life', 'x'))
+check('Player0.Life = []', lambda p=p: setattr(p, 'Life', []))
+check('Player0.Bogus = 1', lambda p=p: setattr(p, 'Bogus', 1))
+check('Player0.Bogus = (1, 2, 3)', lambda p=p: setattr(p, 'Bogus', (1, 2, 3)))
+check('Player0.Bogus = x', lambda p=p: setattr(p, 'Bogus', 'x'))
+check('Player0.Bogus = None', lambda p=p: setattr(p, 'Bogus', None))
+check('first.Name after Del', lambda f=f: f.Name)
+# tp_print through the print statement into the output file
+sys.stdout = out
+print p
+print f
+sys.stdout = sys.__stdout__
 # SLogic in the level
 pp = Scrap.UsrEntity(0).Pos
 check('SLogic.IsEnemyActive()', lambda: SLogic.IsEnemyActive())

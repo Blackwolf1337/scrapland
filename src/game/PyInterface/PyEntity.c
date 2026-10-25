@@ -3,6 +3,7 @@
  * is not known (no CHECK in these functions); the type lives in PyInterface/. Angles are degrees in the script
  * API and radians for the engine (deg * pi / 180 in double, then float).
  */
+#include "scrap/console.h"
 #include "scrap/pyentity.h"
 
 static inline float Deg2RadF(double deg) {
@@ -109,4 +110,159 @@ PyObject *cPyEntity_IsType(PyObject *self, PyObject *args) {
 		return Py_None;
 	}
 	return Py_BuildValue("i", Entity_IsType(e, type) ? 1 : 0);
+}
+
+/* type functions of cPyEntity (type object rva 0x428e18, tp_basicsize 0xc) */
+
+PyObject *PyEntity_New(const char *name) {
+	cEntity *e = World_FindEntity(name);
+	if (!e) {
+		return NULL;
+	}
+	cPyEntity *self = (cPyEntity *)_PyObject_New(&cPyEntity_Type);
+	if (!self) {
+		return NULL;
+	}
+	cEntityRef *ref = operator_new(sizeof(*ref));
+	Nto1Node_Init(&ref->link);
+	self->ref = ref;
+	ref->link.data = ref;
+	cEntity_AddLink(e, &ref->link);
+	Str_Copy(ref->name, name, sizeof(ref->name));
+	return (PyObject *)self;
+}
+
+/* tp_dealloc */
+void PyEntity_Dealloc(PyObject *self) {
+	cEntityRef *ref = ((cPyEntity *)self)->ref;
+	if (ref) {
+		Nto1Node_Done(&ref->link);
+		operator_delete_sized(ref, sizeof(*ref));
+	}
+	PyPool_Free(self);
+}
+
+/* tp_print: the text goes to fprintf as the format, like in the original */
+int PyEntity_Print(PyObject *self, FILE *fp, int flags) {
+	static char buf[0x100];
+	const char *name = ((cPyEntity *)self)->ref->name;
+
+	(void)flags;
+	if (World_FindEntity(name)) {
+		Str_Printf(buf, sizeof(buf), "Entity: %s", name);
+	} else {
+		Str_Printf(buf, sizeof(buf), " : The Entity called '%s' is invalid.", name);
+	}
+	crt_fprintf(fp, buf);
+	return 0;
+}
+
+/* tp_getattr: script variable of the entity (int, float, vector, string), else a method */
+PyObject *PyEntity_GetAttr(PyObject *self, char *name) {
+	cEntityRef *ref = ((cPyEntity *)self)->ref;
+	cEntity *e = ref->link.target;
+	int i;
+	double d, x, y, z;
+	char *s;
+
+	if (!e) {
+		Con_Errorf("'%s'->%s : Entity invalid.\n", ref->name, name);
+		return NULL;
+	}
+	if (e->vftable->VarI(e, name, &i, 0)) {
+		return Py_BuildValue("i", i);
+	}
+	if (e->vftable->VarF(e, name, &d, 0)) {
+		return Py_BuildValue("d", d);
+	}
+	if (e->vftable->VarV(e, name, &x, &y, &z, 0)) {
+		return Py_BuildValue("ddd", x, y, z);
+	}
+	if (e->vftable->VarS(e, name, &s, 0)) {
+		if (s) {
+			return Py_BuildValue("s", s);
+		}
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	PyObject *method = Py_FindMethod(cPyEntity_methods, self, name);
+	if (!method) {
+		Con_Errorf("'%s'->%s : Member invalid.\n", ref->name, name);
+	}
+	return method;
+}
+
+/*
+ * tp_setattr: the value is tried as int, float, vector and string, each type that parses goes to the matching
+ * variable until one takes it
+ */
+int PyEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
+	cEntityRef *ref = ((cPyEntity *)self)->ref;
+	cEntity *e = ref->link.target;
+	int parsed = 0;
+	int i;
+	double d, x, y, z;
+	char *s;
+
+	if (!e) {
+		Con_Errorf("'%s'->%s : Entity invalid.\n", ref->name, name);
+		return -1;
+	}
+	if (PyArg_Parse(v, "i", &i)) {
+		parsed = 1;
+		if (e->vftable->VarI(e, name, &i, 1)) {
+			return 0;
+		}
+	} else {
+		PyErr_Clear();
+	}
+	if (PyArg_Parse(v, "d", &d)) {
+		parsed = 1;
+		if (e->vftable->VarF(e, name, &d, 1)) {
+			return 0;
+		}
+	} else {
+		PyErr_Clear();
+	}
+	if (PyArg_ParseTuple(v, "ddd", &x, &y, &z)) {
+		parsed = 1;
+		if (e->vftable->VarV(e, name, &x, &y, &z, 1)) {
+			return 0;
+		}
+	} else {
+		PyErr_Clear();
+	}
+	if (PyArg_Parse(v, "s", &s)) {
+		if (e->vftable->VarS(e, name, &s, 1)) {
+			return 0;
+		}
+	} else {
+		PyErr_Clear();
+		if (!parsed) {
+			Con_Errorf("'%s'->%s : Invalid type.\n", ref->name, name);
+			return -1;
+		}
+	}
+	Con_Errorf("'%s'->%s : Member invalid.\n", ref->name, name);
+	return -1;
+}
+
+/* Global/Nto1Links.h instances */
+
+void __fastcall Nto1Head_UnlinkAll(Nto1Node *head) {
+	CHECK(head->data == NULL);
+	for (Nto1Node *node = head->next; node != head; node = head->next) {
+		CHECK(node->data);
+		Nto1Node_Unlink(node);
+	}
+}
+
+void __thiscall cEntity_AddLink(cEntity *self, Nto1Node *node) {
+	CHECK(node->data);
+	Nto1Node_Unlink(node);
+	node->target = self->links.target;
+	node->next = self->links.next;
+	node->prev = &self->links;
+	self->links.next->prev = node;
+	self->links.next = node;
 }
