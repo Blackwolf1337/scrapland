@@ -6,6 +6,7 @@
 #define SCRAP_SCRAP_H
 
 #include "scrap/entity.h"
+#include "scrap/mathlib.h"
 #include "scrap/python.h"
 
 #include "scrap/scorer.h"
@@ -36,11 +37,31 @@ cEntity *__thiscall cWorld_GetFirstEntity(cWorld *world);
 /* the Python handle (cPyEntity) of the entity with that name */
 PyObject *PyEntity_New(const char *name);
 
-/* engine global variables (gvars): description at +8 */
+/* engine global variables (gvars, Scrap.Get/Set/Def/Des) */
+enum { GVAR_STRING = 1, GVAR_INT = 2, GVAR_FLOAT = 4, GVAR_FUNCTION = 5, GVAR_SCRIPT_FUNCTION = 6 };
+
 typedef struct cGVar {
 	byte pad_0[0x8];
-	char *description;		/* 0x8 */
+	char *description;		/* 0x08 */
+	byte flags;			/* 0x0c bit 0: scripts may not write it */
+	byte type;			/* 0x0d GVAR_ */
+	byte pad_e[2];
+	union {				/* 0x10 current value */
+		char *s;		/* GVAR_STRING: first member of a string object, cString_Set writes it */
+		int i;
+		float f;
+	} value;
+	union {				/* 0x14 default value */
+		char *s;
+		int i;
+		float f;
+	} def;
 } cGVar;
+SD_OFFSET(cGVar, def, 0x14);
+/* GVAR_SCRIPT_FUNCTION keeps a cPy_Function at +0x10 instead of value/def */
+#define GVar_Function(v) ((cPy_Function *)&(v)->value)
+SD_OFFSET(cGVar, type, 0x0d);
+SD_OFFSET(cGVar, value, 0x10);
 cGVar *GVar_Find(const char *name);
 
 void Achievement_Unlock(int n);
@@ -60,6 +81,17 @@ const char *Lang_GetStr(const char *name);
 const char *Lang_GetLanguage(void);
 
 int Pack_Extract(const char *name);
+/* a file pack reader on the stack (0x1c bytes) */
+typedef struct cFilePack {
+	byte data[0x1c];
+} cFilePack;
+void __thiscall cFilePack_ctor(cFilePack *pack);
+void __thiscall cFilePack_dtor(cFilePack *pack);
+int __thiscall cFilePack_Exists(cFilePack *pack, const char *name);
+/* the path of the game into buf (rva 0x20d100) */
+void App_GetPath(char *buf, int size);
+cEntity *__thiscall cWorld_CreateEntity(cWorld *world, const char *className, float x, float y, float z,
+	const char *name);
 /* printf into a string object (rva 0x134080) */
 void cString_Printf(void *str, const char *fmt, ...);
 void Pack_PreloadLibrary(const char *a, const char *b);

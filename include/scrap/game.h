@@ -116,6 +116,7 @@ typedef struct CWinAppVtbl {
 	void(__thiscall *Exit)(CWinApp *self);				/* 0x24 */
 	void *vf0a_11[8];
 	const char *(__thiscall *DebugInput)(CWinApp *self, const char *text);	/* 0x48 */
+	void(__thiscall *RunApp)(CWinApp *self, const char *exe, const char *cmdLine, int arg);	/* 0x4c */
 } CWinAppVtbl;
 SD_OFFSET(CWinAppVtbl, Exit, 0x24);
 SD_OFFSET(CWinAppVtbl, DebugInput, 0x48);

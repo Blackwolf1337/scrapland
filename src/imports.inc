@@ -222,6 +222,11 @@ SD_IMPORT(Alarm_SetGrow, 0x13fd50)
 SD_IMPORT(Alarm_SetLock, 0x13fe50)
 SD_IMPORT(Timer_SetTime, 0x136a70)
 SD_IMPORT(Timer_SetSpeed, 0x136a50)
+SD_IMPORT(cFilePack_ctor, 0x12e510)
+SD_IMPORT(cFilePack_dtor, 0x12e5d0)
+SD_IMPORT(cFilePack_Exists, 0x12fb30)
+SD_IMPORT(App_GetPath, 0x20d100)
+SD_IMPORT(cWorld_CreateEntity, 0x208360)
 
 /* engine: Input/ */
 SD_IMPORT(ActionSet_IsNamed, 0x133a30)

@@ -365,4 +365,26 @@ check('Scrap.SetAlarm bad', lambda: Scrap.SetAlarm('x'))
 check('Scrap.Round bad', lambda: Scrap.Round('x'))
 check('Scrap.MusicPlayer bad', lambda: Scrap.MusicPlayer(1))
 check('Scrap.UsrEntity bad', lambda: Scrap.UsrEntity('x'))
+
+# Scrap batch 4 in the menu (CreateEntity and RunApp not here)
+for v in ('FullScreen', 'VideoWidth', 'VideoGammaRGB', 'R_LastDevice', 'PythonExecute', 'ClientDelRes', 'Pad1', 'SDNoVar'):
+	check('Scrap.Get(%s)' % v, lambda v=v: Scrap.Get(v))
+	check('Scrap.Def(%s)' % v, lambda v=v: Scrap.Def(v))
+for name, value in (('VideoGammaRGB', 1.25), ('VideoWidth', 1024.7), ('R_LastDevice', 'SDDevice'), ('FullScreen', 'x'),
+		('R_LastDevice', 3), ('SDNoVar', 1), ('SDNoVar', 'x')):
+	check('Scrap.Set(%s, %s)' % (name, repr(value)), lambda n=name, v=value: Scrap.Set(n, v))
+	check('Scrap.Get(%s) after Set' % name, lambda n=name: Scrap.Get(n))
+for a, b in ((1.0, 1.0), (2.5, 2.5), (-3.0, -3.0), (0.0, 0.0)):
+	check('Scrap.Rand(%s, %s)' % (a, b), lambda a=a, b=b: Scrap.Rand(a, b))
+check('Scrap.Rand(0, 10) type', lambda: type(Scrap.Rand(0.0, 10.0)).__name__)
+for f in ('Scrap.cfg', 'Bin/Scrap.exe', 'Levels/FZ/Map/FZ.ini', 'Scripts/Init.py', 'SDNoFile.txt', ''):
+	check('Scrap.FileExist(%s)' % f, lambda f=f: Scrap.FileExist(f))
+check('Scrap.GetEntity(SDNoEntity)', lambda: Scrap.GetEntity('SDNoEntity'))
+check('Scrap.GetEntity()', lambda: Scrap.GetEntity(''))
+check('Scrap.IsApp(-1)', lambda: Scrap.IsApp(-1))
+check('Scrap.IsApp(897610)', lambda: Scrap.IsApp(897610))
+check('Scrap.Set bad', lambda: Scrap.Set('x'))
+check('Scrap.Rand bad', lambda: Scrap.Rand(1))
+check('Scrap.CreateEntity bad', lambda: Scrap.CreateEntity('a', 1, 2, 3))
+check('Scrap.RunApp bad', lambda: Scrap.RunApp('a'))
 finish()

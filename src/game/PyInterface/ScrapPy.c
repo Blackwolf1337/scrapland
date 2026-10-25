@@ -1014,3 +1014,211 @@ PyObject *Scrap_VideoPlayer(PyObject *self, PyObject *args) {
 	Video_Play(name, cmd, 0.0f);
 	return ReturnNone();
 }
+
+/* --- batch 4: engine variables, entities, files, random numbers, Steam apps --- */
+
+/* Get(name) / Def(name) : current or default value of an engine variable in its type */
+static PyObject *GVarValue(PyObject *args, int def, int checkLine) {
+	char *name;
+
+	if (!PyArg_ParseTuple(args, "s", &name)) {
+		return NULL;
+	}
+	cGVar *v = GVar_Find(name);
+	if (!v) {
+		Con_Errorf("ERROR: '%s' global variable not defined\n", name);
+		return NULL;
+	}
+	switch (v->type) {
+	case GVAR_STRING:
+		return Py_BuildValue("s", def ? v->def.s : v->value.s);
+	case GVAR_INT:
+		return Py_BuildValue("i", def ? v->def.i : v->value.i);
+	case GVAR_FLOAT:
+		return Py_BuildValue("d", (double)(def ? v->def.f : v->value.f));
+	case GVAR_FUNCTION:
+		return Py_BuildValue("s", "<function>");
+	case GVAR_SCRIPT_FUNCTION:
+		return Py_BuildValue("s", "<Script function>");
+	}
+	/* CHECK(0) at line checkLine of the original */
+	(void)checkLine;
+	CHECK(0);
+	return NULL;
+}
+
+PyObject *Scrap_Get(PyObject *self, PyObject *args) {
+	(void)self;
+	return GVarValue(args, 0, 0x11d);
+}
+
+PyObject *Scrap_Def(PyObject *self, PyObject *args) {
+	(void)self;
+	return GVarValue(args, 1, 0x13f);
+}
+
+/*
+ * Set(name, value) : string ("ss") for string and script function variables, number ("sd") for int and float
+ * ones. A read only variable gives 0 and a message; a wrong type or an unknown name NULL without exception.
+ */
+PyObject *Scrap_Set(PyObject *self, PyObject *args) {
+	char *name, *s;
+	double d;
+	cGVar *v;
+
+	(void)self;
+	if (PyArg_ParseTuple(args, "ss", &name, &s)) {
+		if (!(v = GVar_Find(name))) {
+			goto notdefined;
+		}
+		if (v->type == GVAR_STRING) {
+			if (v->flags & 1) {
+				goto readonly;
+			}
+			cString_Set(&v->value, s);
+			return Py_BuildValue("i", 1);
+		}
+		if (v->type != GVAR_SCRIPT_FUNCTION) {
+			Con_Errorf("ERROR: '%s' global variable must be string\n", name);
+			return NULL;
+		}
+		if (v->flags & 1) {
+			goto readonly;
+		}
+		cPy_Function_SetFunc(GVar_Function(v), s);
+		return Py_BuildValue("i", 1);
+	}
+	PyErr_Clear();
+	if (!PyArg_ParseTuple(args, "sd", &name, &d)) {
+		return NULL;
+	}
+	if (!(v = GVar_Find(name))) {
+		goto notdefined;
+	}
+	if (v->type == GVAR_INT) {
+		if (v->flags & 1) {
+			goto readonly;
+		}
+		v->value.i = (int)d;
+		return Py_BuildValue("i", 1);
+	}
+	if (v->type != GVAR_FLOAT) {
+		Con_Errorf("ERROR: '%s' global variable must be integer or float\n", name);
+		return NULL;
+	}
+	if (v->flags & 1) {
+		goto readonly;
+	}
+	v->value.f = (float)d;
+	return Py_BuildValue("i", 1);
+
+readonly:
+	Con_Errorf("ERROR: '%s' write only\n", name);
+	return Py_BuildValue("i", 0);
+notdefined:
+	Con_Errorf("ERROR: '%s' global variable not defined\n", name);
+	return NULL;
+}
+
+/* Rand(a, b) : random number between a and b (CRT rand); a result equal to a bound becomes the middle */
+PyObject *Scrap_Rand(PyObject *self, PyObject *args) {
+	double da, db;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "dd", &da, &db)) {
+		return NULL;
+	}
+	float a = (float)da, b = (float)db;
+	int r = crt_rand();
+	double v = (double)(float)((double)(r & 0x7fff) * (1.0 / 32767.0) * (double)(b - a) + (double)a);
+	if (v == db || v == da) {
+		v = (da + db) * 0.5;
+	}
+	return Py_BuildValue("d", v);
+}
+
+/* FileExist(name) : looks in the packs and on disk */
+PyObject *Scrap_FileExist(PyObject *self, PyObject *args) {
+	char *name;
+	cFilePack pack;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s", &name)) {
+		return NULL;
+	}
+	cFilePack_ctor(&pack);
+	PyObject *r = Py_BuildValue("i", cFilePack_Exists(&pack, name));
+	cFilePack_dtor(&pack);
+	return r;
+}
+
+/* GetEntity(name) : the entity handle, None if there is no such entity */
+PyObject *Scrap_GetEntity(PyObject *self, PyObject *args) {
+	char *name;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s", &name)) {
+		return NULL;
+	}
+	if (World_FindEntity(name)) {
+		return PyEntity_New(name);
+	}
+	return ReturnNone();
+}
+
+/* CreateEntity(className, x, y, z, name) : the handle of the new entity, None if it was not made */
+PyObject *Scrap_CreateEntity(PyObject *self, PyObject *args) {
+	char *className, *name;
+	double x, y, z;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "sddds", &className, &x, &y, &z, &name)) {
+		return NULL;
+	}
+	cEntity *e = cWorld_CreateEntity(g_pWorld, className, (float)x, (float)y, (float)z, name);
+	if (!e) {
+		return ReturnNone();
+	}
+	return PyEntity_New(e->name);
+}
+
+/* IsApp(appid) : 1 if the Steam app is owned and installed (always 1 without Steam); NULL for appid < 0 */
+PyObject *Scrap_IsApp(PyObject *self, PyObject *args) {
+	int appId;
+	int r = 1;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &appId) || appId < 0) {
+		return NULL;
+	}
+	if (g_IsSteam) {
+		typedef byte(__thiscall * appfunc_t)(void *, int);
+		/* ISteamApps (context + 0x18): BIsSubscribedApp (vtable 0x18), BIsAppInstalled (vtable 0x4c) */
+		void **apps = ((void ***)g_SteamInternal_ContextInit(g_SteamFriendsContext))[6];
+		if (!((appfunc_t)(*(void ***)apps)[0x18 / 4])(apps, appId)) {
+			r = 0;
+		}
+		else {
+			apps = ((void ***)g_SteamInternal_ContextInit(g_SteamFriendsContext))[6];
+			r = ((appfunc_t)(*(void ***)apps)[0x4c / 4])(apps, appId) ? 1 : 0;
+		}
+	}
+	return Py_BuildValue("i", r);
+}
+
+/* RunApp(exe, cmdLine) : starts a program; "" for the game itself */
+PyObject *Scrap_RunApp(PyObject *self, PyObject *args) {
+	char *exe, *cmdLine;
+	char path[128];
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "ss", &exe, &cmdLine)) {
+		return NULL;
+	}
+	if (!*exe) {
+		App_GetPath(path, sizeof(path));
+		exe = path;
+	}
+	g_pApp->vftable->RunApp(g_pApp, exe, cmdLine, 0);
+	return ReturnNone();
+}

@@ -132,9 +132,6 @@ void __thiscall cAIVehicle_SetInertia(cAIVehicle *ai, int on);
 int __thiscall cVehicleEntity_GetOwnerSlot(cEntity *e);
 int __thiscall cWalkCharEntity_GetOwnerSlot(cEntity *e);
 
-/* the CRT rand of the exe, same random sequence as the original */
-int crt_rand(void);
-
 /* state handlers of SAI.SetStateVehicle / SetStateChar (static functions of SAIPy.cpp, still the originals) */
 PyObject *SetStateVehicle0(PyObject *self, PyObject *args);
 PyObject *SetStateVehicle1(PyObject *self, PyObject *args);

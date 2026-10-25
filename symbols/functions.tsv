@@ -3418,11 +3418,11 @@ rva	size	source	callconv	name	signature
 0012e400	105	DEFAULT	unknown	FUN_0052e400	
 0012e470	105	DEFAULT	unknown	FUN_0052e470	
 0012e4e0	47	DEFAULT	unknown	FUN_0052e4e0	
-0012e510	40	DEFAULT	unknown	FUN_0052e510	
+0012e510	40	USER_DEFINED	__thiscall	cFilePack::cFilePack	undefined __thiscall(void)
 0012e540	54	DEFAULT	unknown	FUN_0052e540	
 0012e580	54	DEFAULT	unknown	FUN_0052e580	
 0012e5c0	11	DEFAULT	unknown	FUN_0052e5c0	
-0012e5d0	11	DEFAULT	unknown	FUN_0052e5d0	
+0012e5d0	11	USER_DEFINED	__thiscall	cFilePack::~cFilePack	undefined __thiscall(void)
 0012e5e0	118	DEFAULT	unknown	FUN_0052e5e0	
 0012e660	118	DEFAULT	unknown	FUN_0052e660	
 0012e6e0	41	ANALYSIS	__thiscall	cFilePack::vf08	undefined __thiscall(void)
@@ -3442,7 +3442,7 @@ rva	size	source	callconv	name	signature
 0012f940	71	ANALYSIS	__thiscall	cFilePack::vf02	undefined __thiscall(void)
 0012f990	177	DEFAULT	unknown	FUN_0052f990	
 0012fa50	218	DEFAULT	unknown	FUN_0052fa50	
-0012fb30	152	ANALYSIS	__thiscall	cFilePack::vf01	undefined __thiscall(void)
+0012fb30	152	USER_DEFINED	__thiscall	cFilePack::Exists	int __thiscall(char * name)
 0012fbd0	1003	USER_DEFINED	unknown	Pack_Extract	undefined(void)
 0012ffc0	59	DEFAULT	unknown	FUN_0052ffc0	
 00130000	229	DEFAULT	unknown	FUN_00530000	
@@ -6228,7 +6228,7 @@ rva	size	source	callconv	name	signature
 00208000	261	DEFAULT	unknown	FUN_00608000	
 00208110	261	DEFAULT	unknown	FUN_00608110	
 00208220	261	DEFAULT	unknown	FUN_00608220	
-00208360	1185	DEFAULT	unknown	FUN_00608360	
+00208360	1185	USER_DEFINED	__thiscall	cWorld::CreateEntity	void * __thiscall(char * className, float x, float y, float z, char * name)
 00208810	210	DEFAULT	unknown	FUN_00608810	
 002088f0	210	DEFAULT	unknown	FUN_006088f0	
 002089d0	210	DEFAULT	unknown	FUN_006089d0	
@@ -6315,7 +6315,7 @@ rva	size	source	callconv	name	signature
 0020cfd0	16	ANALYSIS	__thiscall	CWinApp::vf09	undefined __thiscall(void)
 0020cfe0	12	ANALYSIS	__thiscall	CWinApp::vf13	undefined __thiscall(void)
 0020d030	197	DEFAULT	unknown	FUN_0060d030	
-0020d100	21	DEFAULT	unknown	FUN_0060d100	
+0020d100	21	USER_DEFINED	__cdecl	App_GetPath	void __cdecl(char * buf, int size)
 0020d120	116	DEFAULT	unknown	FUN_0060d120	
 0020d1a0	9	DEFAULT	unknown	FUN_0060d1a0	
 0020d1b0	218	ANALYSIS	__thiscall	CWinApp::vf14	undefined __thiscall(void)
