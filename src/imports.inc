@@ -15,8 +15,22 @@ SD_IMPORT(Con_Debugf, 0x0bc710)
 SD_IMPORT(HashTable_Hash, 0x065370)	/* Global/HashTable.h, the instance in Actions/ */
 SD_IMPORT(HashTable_Find, 0x0652e0)
 
-/* engine: Entities/ */
+/* engine: Entities/ and the entity lists of World/ */
 SD_IMPORT(cEntity_Del, 0x0ef0c0)
+SD_IMPORT(cWorld_GetList, 0x209240)
+SD_IMPORT(cEntityList_GetFirst, 0x1a7bc0)
+
+/* engine: Logic/ and AI/ (include/scrap/logic.h) */
+SD_IMPORT(Logic_GetLocalLogic, 0x141ac0)
+SD_IMPORT(Logic_SetOnFloor, 0x151fd0)
+SD_IMPORT(Logic_Flash, 0x0c9180)
+SD_IMPORT(Taunts_UpdateEndTime, 0x151fb0)
+SD_IMPORT(ShipRegen_Set, 0x1564c0)
+SD_IMPORT(AICtrl_SendSentinelToWatch, 0x14f5f0)
+SD_IMPORT(AICtrl_GearAttack, 0x14f140)
+SD_IMPORT(Domination_AddZone, 0x144bf0)
+SD_IMPORT(Domination_SetZoneState, 0x144db0)
+SD_IMPORT(Domination_SetBatonState, 0x144d50)
 
 /* engine: World/FX/ and effects of Entities/ */
 SD_IMPORT(FX_ShipExplosion, 0x1f4d50)
@@ -65,3 +79,6 @@ SD_IMPORT(PyErr_Clear, 0x2efd30)	/* errors.c */
 SD_IMPORT(PyTuple_New, 0x2decb0)	/* tupleobject.c */
 SD_IMPORT(PyTuple_SetItem, 0x2ded50)	/* tupleobject.c */
 SD_IMPORT(PyFloat_FromDouble, 0x2dfd70)	/* floatobject.c */
+SD_IMPORT(PyList_Size, 0x2dd2b0)	/* listobject.c */
+SD_IMPORT(PyList_GetItem, 0x2dcf80)	/* listobject.c */
+SD_IMPORT(PyString_AsString, 0x2dadd0)	/* stringobject.c */

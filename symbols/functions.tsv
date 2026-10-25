@@ -2316,7 +2316,7 @@ rva	size	source	callconv	name	signature
 000c7450	1804	DEFAULT	unknown	FUN_004c7450	
 000c7b60	5573	DEFAULT	unknown	FUN_004c7b60	
 000c9130	70	DEFAULT	unknown	FUN_004c9130	
-000c9180	130	DEFAULT	unknown	FUN_004c9180	
+000c9180	130	USER_DEFINED	__cdecl	Logic_Flash	int __cdecl(float * pos, float radius, int arg)
 000c9210	211	DEFAULT	unknown	FUN_004c9210	
 000c92f0	609	DEFAULT	unknown	FUN_004c92f0	
 000c9560	490	DEFAULT	unknown	FUN_004c9560	
@@ -2773,7 +2773,7 @@ rva	size	source	callconv	name	signature
 000ef2d0	4	ANALYSIS	__thiscall	cEntity::vf22	undefined __thiscall(void)
 000ef2e0	13	DEFAULT	unknown	FUN_004ef2e0	
 000ef310	20	DEFAULT	unknown	FUN_004ef310	
-000ef330	25	ANALYSIS	__thiscall	cEntity::vf06	undefined __thiscall(void)
+000ef330	25	USER_DEFINED	__thiscall	cEntity::GetPos	undefined __thiscall(void)
 000ef350	16	USER_DEFINED	__thiscall	cEntity::GetTargetAngle	undefined __thiscall(void)
 000ef360	6	ANALYSIS	__thiscall	cEntity::vf04	undefined __thiscall(void)
 000ef370	1	ANALYSIS	__thiscall	cEntity::vf02	undefined __thiscall(void)
@@ -3840,7 +3840,7 @@ rva	size	source	callconv	name	signature
 001419a0	119	DEFAULT	unknown	FUN_005419a0	
 00141a20	136	ANALYSIS	__thiscall	cBaseLocalLogic::vf04	undefined __thiscall(void)
 00141ab0	5	ANALYSIS	__thiscall	cLocalLogic::vf04	undefined __thiscall(void)
-00141ac0	107	DEFAULT	unknown	FUN_00541ac0	
+00141ac0	107	USER_DEFINED	__cdecl	Logic_GetLocalLogic	void * __cdecl(void * entity)
 00141b30	6	ANALYSIS	__thiscall	cBaseLocalLogic::vf01	undefined __thiscall(void)
 00141b40	6	ANALYSIS	__thiscall	cLocalLogic::vf01	undefined __thiscall(void)
 00141b50	79	ANALYSIS	__thiscall	cBaseLocalLogic::vf08	undefined __thiscall(void)
@@ -3943,10 +3943,10 @@ rva	size	source	callconv	name	signature
 00144ad0	3	ANALYSIS	__thiscall	cDesktopLocalLogic::vf30	undefined __thiscall(void)
 00144af0	118	DEFAULT	unknown	FUN_00544af0	
 00144b70	118	DEFAULT	unknown	FUN_00544b70	
-00144bf0	78	DEFAULT	unknown	FUN_00544bf0	
+00144bf0	78	USER_DEFINED	__cdecl	Domination_AddZone	void __cdecl(void * zone)
 00144c40	262	DEFAULT	unknown	FUN_00544c40	
-00144d50	90	DEFAULT	unknown	FUN_00544d50	
-00144db0	88	DEFAULT	unknown	FUN_00544db0	
+00144d50	90	USER_DEFINED	__cdecl	Domination_SetBatonState	void __cdecl(float * pos, int state)
+00144db0	88	USER_DEFINED	__cdecl	Domination_SetZoneState	void __cdecl(int zone, int state)
 00144e10	193	DEFAULT	unknown	FUN_00544e10	
 00144ee0	100	DEFAULT	unknown	FUN_00544ee0	
 00144f50	49	DEFAULT	unknown	FUN_00544f50	
@@ -4165,14 +4165,14 @@ rva	size	source	callconv	name	signature
 0014eb50	308	DEFAULT	unknown	FUN_0054eb50	
 0014ec90	471	DEFAULT	unknown	FUN_0054ec90	
 0014ee70	706	DEFAULT	unknown	FUN_0054ee70	
-0014f140	376	DEFAULT	unknown	FUN_0054f140	
+0014f140	376	USER_DEFINED	__thiscall	AICtrl::GearAttack	void __thiscall(void * target, int arg)
 0014f2c0	123	DEFAULT	unknown	FUN_0054f2c0	
 0014f340	73	DEFAULT	unknown	FUN_0054f340	
 0014f390	16	DEFAULT	unknown	FUN_0054f390	
 0014f3a0	449	DEFAULT	unknown	FUN_0054f3a0	
 0014f570	58	DEFAULT	unknown	FUN_0054f570	
 0014f5b0	58	DEFAULT	unknown	FUN_0054f5b0	
-0014f5f0	112	DEFAULT	unknown	FUN_0054f5f0	
+0014f5f0	112	USER_DEFINED	__thiscall	AICtrl::SendSentinelToWatch	void __thiscall(float * pos)
 0014f660	472	DEFAULT	unknown	FUN_0054f660	
 0014f840	280	DEFAULT	unknown	FUN_0054f840	
 0014f960	401	DEFAULT	unknown	FUN_0054f960	
@@ -4209,8 +4209,8 @@ rva	size	source	callconv	name	signature
 00151ce0	32	DEFAULT	unknown	FUN_00551ce0	
 00151d00	177	DEFAULT	unknown	FUN_00551d00	
 00151dc0	485	DEFAULT	unknown	FUN_00551dc0	
-00151fb0	31	DEFAULT	unknown	FUN_00551fb0	
-00151fd0	75	DEFAULT	unknown	FUN_00551fd0	
+00151fb0	31	USER_DEFINED	__thiscall	Taunts::UpdateEndTime	void __thiscall(void)
+00151fd0	75	USER_DEFINED	__cdecl	Logic_SetOnFloor	byte __cdecl(void * entity)
 00152020	315	DEFAULT	unknown	FUN_00552020	
 00152160	198	DEFAULT	unknown	FUN_00552160	
 00152230	185	DEFAULT	unknown	FUN_00552230	
@@ -4309,7 +4309,7 @@ rva	size	source	callconv	name	signature
 00156200	38	DEFAULT	unknown	FUN_00556200	
 00156230	22	DEFAULT	unknown	FUN_00556230	
 00156250	621	DEFAULT	unknown	FUN_00556250	
-001564c0	205	DEFAULT	unknown	FUN_005564c0	
+001564c0	205	USER_DEFINED	__thiscall	ShipRegen::Set	void __thiscall(void * ship, float speed, float endSpeed)
 00156590	409	DEFAULT	unknown	FUN_00556590	
 00156730	144	DEFAULT	unknown	FUN_00556730	
 001567e0	54	ANALYSIS	__thiscall	cRustyLocalLogic::vf00	undefined __thiscall(void)
@@ -5516,7 +5516,7 @@ rva	size	source	callconv	name	signature
 001a7a00	193	DEFAULT	unknown	FUN_005a7a00	
 001a7ad0	5	DEFAULT	unknown	thunk_FUN_00614460	
 001a7ae0	209	DEFAULT	unknown	FUN_005a7ae0	
-001a7bc0	20	DEFAULT	unknown	FUN_005a7bc0	
+001a7bc0	20	USER_DEFINED	__thiscall	cEntityList::GetFirst	void * __thiscall(void)
 001a7be0	385	DEFAULT	unknown	FUN_005a7be0	
 001a7d70	408	DEFAULT	unknown	FUN_005a7d70	
 001a7f20	172	DEFAULT	unknown	FUN_005a7f20	
@@ -6241,7 +6241,7 @@ rva	size	source	callconv	name	signature
 00209100	143	DEFAULT	unknown	FUN_00609100	
 00209190	143	DEFAULT	unknown	FUN_00609190	
 00209220	26	DEFAULT	unknown	FUN_00609220	
-00209240	48	DEFAULT	unknown	FUN_00609240	
+00209240	48	USER_DEFINED	__thiscall	cWorld::GetList	void * __thiscall(char * name)
 002092a0	20	DEFAULT	unknown	FUN_006092a0	
 002092c0	141	DEFAULT	unknown	FUN_006092c0	
 00209350	343	DEFAULT	unknown	FUN_00609350	
@@ -8842,7 +8842,7 @@ rva	size	source	callconv	name	signature
 002dad10	49	DEFAULT	unknown	FUN_006dad10	
 002dad70	25	DEFAULT	unknown	FUN_006dad70	
 002dad90	49	DEFAULT	unknown	FUN_006dad90	
-002dadd0	29	DEFAULT	unknown	FUN_006dadd0	
+002dadd0	29	USER_DEFINED	__cdecl	PyString_AsString	char * __cdecl(PyObject * op)
 002dadf0	97	DEFAULT	unknown	FUN_006dadf0	
 002dae60	43	DEFAULT	unknown	FUN_006dae60	
 002dae90	211	DEFAULT	unknown	FUN_006dae90	
@@ -8882,14 +8882,14 @@ rva	size	source	callconv	name	signature
 002dcec0	29	DEFAULT	unknown	FUN_006dcec0	
 002dcee0	42	DEFAULT	unknown	FUN_006dcee0	
 002dcf10	110	DEFAULT	unknown	FUN_006dcf10	
-002dcf80	90	DEFAULT	unknown	FUN_006dcf80	
+002dcf80	90	USER_DEFINED	__cdecl	PyList_GetItem	PyObject * __cdecl(PyObject * list, int i)
 002dcfe0	33	DEFAULT	unknown	FUN_006dcfe0	
 002dd010	34	DEFAULT	unknown	FUN_006dd010	
 002dd040	283	DEFAULT	unknown	FUN_006dd040	
 002dd160	115	DEFAULT	unknown	FUN_006dd160	
 002dd1e0	148	DEFAULT	unknown	FUN_006dd1e0	
 002dd280	34	DEFAULT	unknown	FUN_006dd280	
-002dd2b0	30	DEFAULT	unknown	FUN_006dd2b0	
+002dd2b0	30	USER_DEFINED	__cdecl	PyList_Size	int __cdecl(PyObject * list)
 002dd2d0	109	DEFAULT	unknown	FUN_006dd2d0	
 002dd340	358	DEFAULT	unknown	FUN_006dd340	
 002dd4b0	214	DEFAULT	unknown	FUN_006dd4b0	

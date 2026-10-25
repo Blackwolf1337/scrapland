@@ -13,6 +13,10 @@
 static_assert(sizeof(PyObject) == 8, "PyObject: ob_refcnt, ob_type");
 static_assert(sizeof(PyTypeObject) == 0x6c, "PyTypeObject of 1.5.2 without COUNT_ALLOCS");
 
+/* type objects of the exe, for PyList_Check, PyString_Check, ... */
+#define PyList_Type GAME_DATA(PyTypeObject, 0x432ff0)
+#define PyString_Type GAME_DATA(PyTypeObject, 0x432b90)
+
 #undef Py_None
 #define Py_None (&GAME_DATA(PyObject, 0x435f3c))	/* _Py_NoneStruct */
 

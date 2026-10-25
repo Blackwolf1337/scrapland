@@ -38,5 +38,7 @@ target_include_directories(dinput8 PRIVATE
 # Scrap.exe does its float math with SSE2 (MSVC /arch:SSE2): same here, x87 80 bit intermediates would change
 # the last bits of results
 target_compile_options(dinput8 PRIVATE -Wall -Wextra -O2 -g -fno-omit-frame-pointer -fno-strict-aliasing
-	-msse2 -mfpmath=sse -ffp-contract=off)
+	-msse2 -mfpmath=sse -ffp-contract=off
+	# sources are UTF-8, the game's strings Windows-1252 (Spanish messages of the original)
+	-finput-charset=UTF-8 -fexec-charset=CP1252)
 target_link_options(dinput8 PRIVATE -static-libgcc -Wl,--enable-stdcall-fixup)

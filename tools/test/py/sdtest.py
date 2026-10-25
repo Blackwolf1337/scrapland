@@ -4,7 +4,7 @@
 # and splits at spaces, so difftest.sh spells the file name with chr().
 OUT = 'sdtest.out'
 execfile('sdlib.py')
-import Scrap, SWeap, SVec, SAct, SFX
+import Scrap, SWeap, SVec, SAct, SFX, SLogic
 
 check('Scrap.GetMoney()', lambda: Scrap.GetMoney())
 check('Scrap.GetMoney(1)', lambda: Scrap.GetMoney(1))
@@ -127,4 +127,19 @@ check('SFX.CharacterConversion bad', lambda: SFX.CharacterConversion('a', 2, 1.0
 check('SFX.BishopSellLife bad', lambda: SFX.BishopSellLife('a'))
 check('SFX.MoneyTransfer bad', lambda: SFX.MoneyTransfer('a', 'b', 'c'))
 check('SFX.EmbeddedSet bad', lambda: SFX.EmbeddedSet(None, 'x'))
+# SLogic: argument errors only, the real calls are in sdlevel.py
+check('SLogic.SetCharState bad', lambda: SLogic.SetCharState('a', 'b', 'c'))
+check('SLogic.SendSentinelToWatch bad', lambda: SLogic.SendSentinelToWatch((1, 2)))
+check('SLogic.GearAttack bad', lambda: SLogic.GearAttack(5))
+check('SLogic.IsEnemyActive bad', lambda: SLogic.IsEnemyActive(1))
+check('SLogic.GetNearestShip bad', lambda: SLogic.GetNearestShip((1, 2, 3), 4))
+check('SLogic.SetOnFloor bad', lambda: SLogic.SetOnFloor())
+check('SLogic.Flash bad', lambda: SLogic.Flash((1, 2, 3)))
+check('SLogic.SetShipToRegenerate bad', lambda: SLogic.SetShipToRegenerate('a', 1))
+check('SLogic.SetDominationZones bad', lambda: SLogic.SetDominationZones())
+check('SLogic.ChangeZoneState bad', lambda: SLogic.ChangeZoneState(1))
+check('SLogic.ChangeBatonState bad', lambda: SLogic.ChangeBatonState((1, 2, 3), 'x'))
+check('SLogic.SetCharState(Nobody)', lambda: SLogic.SetCharState('Nobody', 0, ''))
+check('SLogic.SetShipToRegenerate(Nobody)', lambda: SLogic.SetShipToRegenerate('Nobody', 1, 2))
+check('SLogic.UpdateTauntEndTime(5)', lambda: SLogic.UpdateTauntEndTime(5))
 finish()

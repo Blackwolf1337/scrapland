@@ -63,12 +63,19 @@ typedef struct cWorld {
 	TABLE(cAmmoInfo) ammo;		/* 0x1bc4 SWeap.InitAmmo, GetNAmmo */
 	byte pad_1bcc[0x2090 - 0x1bcc];
 	int money;			/* 0x2090 Scrap.GetMoney */
+	/* embedded objects of unknown size, only their addresses are used so far */
+	byte taunts[0x2144 - 0x2094];	/* 0x2094 SLogic.UpdateTauntEndTime */
+	byte shipRegen[0x21c8 - 0x2144]; /* 0x2144 SLogic.SetShipToRegenerate */
+	byte aiCtrl[4];			/* 0x21c8 sentinels and gears (SLogic) */
 } cWorld;
 SD_OFFSET(cWorld, entities, 0x0004);
 SD_OFFSET(cWorld, weapons, 0x1bb8);
 SD_OFFSET(cWorld, firstWeapon, 0x1bc0);
 SD_OFFSET(cWorld, ammo, 0x1bc4);
 SD_OFFSET(cWorld, money, 0x2090);
+SD_OFFSET(cWorld, taunts, 0x2094);
+SD_OFFSET(cWorld, shipRegen, 0x2144);
+SD_OFFSET(cWorld, aiCtrl, 0x21c8);
 
 /* World/: thiscall methods; Table<T>::Init per element type */
 void __thiscall WeapTable_Init(void *table, int num);

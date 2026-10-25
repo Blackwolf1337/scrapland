@@ -3,7 +3,7 @@
 # (a WalkChar with life). Python 1.5.2 syntax.
 OUT = 'sdlevel.out'
 execfile('sdlib.py')
-import Scrap, SWeap, SVec, SAct, SFX
+import Scrap, SWeap, SVec, SAct, SFX, SLogic
 
 check('Scrap.GetLevelPath()', lambda: Scrap.GetLevelPath())
 check('Scrap.GetMoney()', lambda: Scrap.GetMoney())
@@ -76,4 +76,21 @@ check('first.Del() again', lambda f=f: f.Del())
 check('first.IsType(WithLife) after Del', lambda f=f: f.IsType('WithLife'))
 check('first.GetTgAng after Del', lambda f=f: f.GetTgAng(0, 0, 10))
 check('first.DrawWeap after Del', lambda f=f: f.DrawWeap(0, 0, 10))
+# SLogic in the level
+pp = Scrap.UsrEntity(0).Pos
+check('SLogic.IsEnemyActive()', lambda: SLogic.IsEnemyActive())
+check('SLogic.GetNearestShip(player)', lambda p=pp: SLogic.GetNearestShip(p))
+check('SLogic.GetNearestShip(player, Parked)', lambda p=pp: SLogic.GetNearestShip(p, 'Parked'))
+check('SLogic.GetNearestShip(0,0,0)', lambda: SLogic.GetNearestShip((0, 0, 0)))
+check('SLogic.SetOnFloor(Player0)', lambda: SLogic.SetOnFloor('Player0'))
+check('SLogic.Flash(player, 100)', lambda p=pp: SLogic.Flash(p, 100))
+check('SLogic.SetCharState(Nobody)', lambda: SLogic.SetCharState('Nobody', 0, ''))
+check('SLogic.SetShipToRegenerate(Parked)', lambda: SLogic.SetShipToRegenerate('Parked', 1.0, 2.0))
+check('SLogic.SetShipToRegenerate(Player0)', lambda: SLogic.SetShipToRegenerate('Player0', 1.0, 2.0))
+check('SLogic.SendSentinelToWatch(player)', lambda p=pp: SLogic.SendSentinelToWatch(p))
+check('SLogic.GearAttack(Player0)', lambda: SLogic.GearAttack('Player0'))
+check('SLogic.UpdateTauntEndTime()', lambda: SLogic.UpdateTauntEndTime())
+check('SLogic.ChangeZoneState(0, 1)', lambda: SLogic.ChangeZoneState(0, 1))
+check('SLogic.ChangeBatonState(player, 1)', lambda p=pp: SLogic.ChangeBatonState(p, 1))
+check('SLogic.SetDominationZones([Player0])', lambda: SLogic.SetDominationZones(['Player0']))
 finish()
