@@ -59,13 +59,12 @@ Scrap_GetMoney=0   ; one hook off, the original runs
 
 ## Implemented so far
 
-| Function | rva | File |
-|----------|-----|------|
-| `Scrap_GetLevelPath` | 0x197fc0 | `src/py/scrap.c` |
-| `Scrap_GetMoney` | 0x199ea0 | `src/py/scrap.c` |
-| `SWeap_GetNWeap` | 0x19f230 | `src/py/sweap.c` |
+496 hooks in total (`tools/progress.py` prints the counts). The list is `src/hooks.inc`, the files are under `src/game/<original folder>/`.
 
-Imports: `PyArg_ParseTuple` (0x2f0560), `Py_BuildValue` (0x2f1b90).
+- Script API: all 290 functions of the 11 Python modules (Scrap, SAct, SAI, SFX, SInput, SLogic, SNet, SScorer, SSound, SVec, SWeap) and the 6 cPyEntity methods.
+- The rest of `PyInterface/`: the cPyEntity and cPyMenuEntity Python types (getattr, setattr, print, dealloc), cPy_Function (`Functions.cpp`, callbacks by name, "Module.func" or "!NativeName"), the module init functions, the Python block pools (`pymempool.cpp`), `PythonInit.cpp` (interpreter start and end, PreloadLibrary) and the 20 SAI SetState handlers.
+- `FileSys/`: AbstractFile, File, FileMem, FileBlock, FilePak (see `docs/packed.md`).
+- `Global/`: the Nto1Links instances used by cPyEntity.
 
 ## Workflow for one function
 
