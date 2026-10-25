@@ -4,7 +4,7 @@
 # and splits at spaces, so difftest.sh spells the file name with chr().
 OUT = 'sdtest.out'
 execfile('sdlib.py')
-import Scrap, SWeap, SVec, SAct, SFX, SLogic, SSound, SInput, SAI, SNet
+import Scrap, SWeap, SVec, SAct, SFX, SLogic, SSound, SInput, SAI, SNet, SScorer
 
 check('Scrap.GetMoney()', lambda: Scrap.GetMoney())
 check('Scrap.GetMoney(1)', lambda: Scrap.GetMoney(1))
@@ -254,4 +254,48 @@ check('SNet.InitClient bad', lambda: SNet.InitClient(1, 1))
 check('SNet.InitBrowser bad', lambda: SNet.InitBrowser('x'))
 check('SNet.SendChatString bad', lambda: SNet.SendChatString('x', 0))
 check('SNet.GetPing bad', lambda: SNet.GetPing())
+
+# SScorer in the menu (the scorer of player 0 is the menu)
+for i in (0, 1, 3, 4, -1):
+	check('SScorer.GetDefault(%d)' % i, lambda i=i: SScorer.GetDefault(i))
+	check('SScorer.GetActual(%d)' % i, lambda i=i: SScorer.GetActual(i))
+	check('SScorer.GetMenuAccept(%d)' % i, lambda i=i: SScorer.GetMenuAccept(i))
+cur = SScorer.GetActual(0)
+if cur:
+	check('SScorer.GetItem(0, actual)', lambda c=cur: SScorer.GetItem(0, c) is not None)
+	for v in ('Text', 'X', 'Y', 'Visible', 'Alpha', 'Font', 'Missing'):
+		check('SScorer.Get(0, actual, %s)' % v, lambda c=cur, v=v: SScorer.Get(0, c, v))
+check('SScorer.GetItem(0, NoItem)', lambda: SScorer.GetItem(0, 'NoItem'))
+check('SScorer.New(0, SDItem, Text)', lambda: SScorer.New(0, 'SDItem', 'Text') is not None)
+check('SScorer.Add(0, SDItem2, Text)', lambda: SScorer.Add(0, 'SDItem2', 'Text'))
+check('SScorer.Add(5, x, Text)', lambda: SScorer.Add(5, 'x', 'Text'))
+check('SScorer.New(0, SDBad, NoType)', lambda: SScorer.New(0, 'SDBad', 'NoType'))
+for name, value in (('Text', 'Hello'), ('X', 0.25), ('Y', 3), ('Missing', 1), ('Missing', 'x')):
+	check('SScorer.Set(0, SDItem, %s, %s)' % (name, repr(value)), lambda n=name, v=value: SScorer.Set(0, 'SDItem', n, v))
+for v in ('Text', 'X', 'Y', 'Missing'):
+	check('SScorer.Get(0, SDItem, %s)' % v, lambda v=v: SScorer.Get(0, 'SDItem', v))
+check('SScorer.Set(0, NoItem, Text, x)', lambda: SScorer.Set(0, 'NoItem', 'Text', 'x'))
+check('SScorer.Set(4, SDItem, X, 1)', lambda: SScorer.Set(4, 'SDItem', 'X', 1))
+check('SScorer.SetCursor(0, SDItem)', lambda: SScorer.SetCursor(0, 'SDItem'))
+check('SScorer.SetCursor(4, SDItem)', lambda: SScorer.SetCursor(4, 'SDItem'))
+check('SScorer.SetDefault(0, SDItem)', lambda: SScorer.SetDefault(0, 'SDItem'))
+check('SScorer.GetDefault(0) set', lambda: SScorer.GetDefault(0))
+check('SScorer.Hide(0)', lambda: SScorer.Hide(0))
+check('SScorer.Show(0)', lambda: SScorer.Show(0))
+check('SScorer.Show(7)', lambda: SScorer.Show(7))
+check('SScorer.SetOnCancel(4, x)', lambda: SScorer.SetOnCancel(4, 'x'))
+check('SScorer.SetOnNext(4, x)', lambda: SScorer.SetOnNext(4, 'x'))
+check('SScorer.SetMPFunc(4, x)', lambda: SScorer.SetMPFunc(4, 'x'))
+check('SScorer.SetMarkerSprite(4, x)', lambda: SScorer.SetMarkerSprite(4, 'x'))
+check('SScorer.GetTextArea(Horatio, Hello)', lambda: SScorer.GetTextArea('Horatio', 'Hello world'))
+check('SScorer.GetTextArea(Horatio, empty)', lambda: SScorer.GetTextArea('Horatio', ''))
+check('SScorer.Fade(5, ...)', lambda: SScorer.Fade(5, (0, 0, 0, 0), (255, 255, 255, 255), 1.0))
+check('SScorer.SetCinema(5, 1, 1)', lambda: SScorer.SetCinema(5, 1, 1.0))
+check('SScorer.Clear(6)', lambda: SScorer.Clear(6))
+check('SScorer.AddModel(6, ...)', lambda: SScorer.AddModel(6, 'a', 'b', '', 1, 1.0))
+check('SScorer.Set bad', lambda: SScorer.Set(0, 'a', 'b'))
+check('SScorer.Fade bad', lambda: SScorer.Fade(0, (1, 2, 3), (1, 2, 3, 4), 1.0))
+check('SScorer.AddChatMsg bad', lambda: SScorer.AddChatMsg('x', 1, 2))
+check('SScorer.Get2DPos bad', lambda: SScorer.Get2DPos((1, 2)))
+check('SScorer.SetSpeechText bad', lambda: SScorer.SetSpeechText('x', 1.0))
 finish()

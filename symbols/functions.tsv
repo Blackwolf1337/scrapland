@@ -3543,7 +3543,7 @@ rva	size	source	callconv	name	signature
 00133ee0	135	DEFAULT	unknown	FUN_00533ee0	
 00133f70	143	DEFAULT	unknown	FUN_00533f70	
 00134000	55	DEFAULT	unknown	FUN_00534000	
-00134040	59	DEFAULT	unknown	FUN_00534040	
+00134040	59	USER_DEFINED	unknown	cString::Set	undefined(void)
 00134080	139	DEFAULT	unknown	FUN_00534080	
 00134130	81	DEFAULT	unknown	FUN_00534130	
 00134190	79	DEFAULT	unknown	FUN_00534190	
@@ -4471,8 +4471,8 @@ rva	size	source	callconv	name	signature
 0015fd90	874	ANALYSIS	__thiscall	cHintScorer::vf00	undefined __thiscall(void)
 00160100	438	ANALYSIS	__thiscall	cLabelScorer::vf00	undefined __thiscall(void)
 001602d0	174	ANALYSIS	__thiscall	cMsgScorer::vf00	undefined __thiscall(void)
-00160380	39	DEFAULT	unknown	FUN_00560380	
-001603b0	78	DEFAULT	unknown	FUN_005603b0	
+00160380	39	USER_DEFINED	unknown	Scorer_SetLabelText	undefined(void)
+001603b0	78	USER_DEFINED	unknown	Scorer_SetMsgText	undefined(void)
 00160400	197	DEFAULT	unknown	FUN_00560400	
 001604e0	44	ANALYSIS	__thiscall	cBarScorer::vf03	undefined __thiscall(void)
 00160510	1764	ANALYSIS	__thiscall	cBarScorer::vf02	undefined __thiscall(void)
@@ -4504,7 +4504,7 @@ rva	size	source	callconv	name	signature
 00164b40	196	DEFAULT	unknown	FUN_00564b40	
 00164c20	47	DEFAULT	unknown	FUN_00564c20	
 00164c50	76	ANALYSIS	__thiscall	cChatScorer::vf03	undefined __thiscall(void)
-00164ca0	75	DEFAULT	unknown	FUN_00564ca0	
+00164ca0	75	USER_DEFINED	unknown	Scorer_AddChatMsg	undefined(void)
 00164cf0	103	ANALYSIS	__thiscall	cChatScorer::vf02	undefined __thiscall(void)
 00164d60	304	ANALYSIS	__thiscall	cChatScorer::vf00	undefined __thiscall(void)
 00164e90	3	DEFAULT	unknown	FUN_00564e90	
@@ -4546,7 +4546,7 @@ rva	size	source	callconv	name	signature
 0016a3d0	3457	ANALYSIS	__thiscall	cMonitorScorer::vf02	undefined __thiscall(void)
 0016b160	368	ANALYSIS	__thiscall	cMonitorScorer::vf00	undefined __thiscall(void)
 0016b2d0	241	ANALYSIS	__thiscall	cMonitorScorer::vf05	undefined __thiscall(void)
-0016b3d0	52	DEFAULT	unknown	FUN_0056b3d0	
+0016b3d0	52	USER_DEFINED	unknown	Scorer_SetHeadMonitor	undefined(void)
 0016b410	201	ANALYSIS	__thiscall	cMonitorScorer::vf04	undefined __thiscall(void)
 0016b4e0	89	DEFAULT	unknown	FUN_0056b4e0	
 0016b540	146	DEFAULT	unknown	FUN_0056b540	
@@ -4581,18 +4581,18 @@ rva	size	source	callconv	name	signature
 0016fa00	104	DEFAULT	unknown	FUN_0056fa00	
 0016fa70	161	ANALYSIS	__thiscall	cScorer::vf00	undefined __thiscall(void)
 0016fb20	38	ANALYSIS	__thiscall	cScorerItem::vf03	undefined __thiscall(void)
-0016fb50	709	DEFAULT	unknown	FUN_0056fb50	
-0016fe20	111	DEFAULT	unknown	FUN_0056fe20	
+0016fb50	709	USER_DEFINED	unknown	cScorer::AddModel	undefined(void)
+0016fe20	111	USER_DEFINED	unknown	cScorer::Clear	undefined(void)
 0016fe90	243	DEFAULT	unknown	FUN_0056fe90	
 0016ff90	2611	DEFAULT	unknown	FUN_0056ff90	
 001709f0	212	DEFAULT	unknown	FUN_005709f0	
 00170ad0	262	DEFAULT	unknown	FUN_00570ad0	
 00170be0	193	DEFAULT	unknown	FUN_00570be0	
-00170cb0	171	DEFAULT	unknown	FUN_00570cb0	
+00170cb0	171	USER_DEFINED	unknown	ScorerFade::Start	undefined(void)
 00170d60	86	DEFAULT	unknown	FUN_00570d60	
-00170dc0	89	DEFAULT	unknown	FUN_00570dc0	
+00170dc0	89	USER_DEFINED	unknown	cScorer::FindItem	undefined(void)
 00170e30	87	DEFAULT	unknown	FUN_00570e30	
-00170ea0	33	DEFAULT	unknown	FUN_00570ea0	
+00170ea0	33	USER_DEFINED	unknown	Scorer_Get	undefined(void)
 00170ed0	289	DEFAULT	unknown	FUN_00570ed0	
 00171000	6	DEFAULT	unknown	FUN_00571000	
 00171010	210	DEFAULT	unknown	FUN_00571010	
@@ -4601,9 +4601,9 @@ rva	size	source	callconv	name	signature
 00171460	42	DEFAULT	unknown	FUN_00571460	
 00171490	235	DEFAULT	unknown	FUN_00571490	
 00171580	1346	ANALYSIS	__thiscall	cScorerItem::vf02	undefined __thiscall(void)
-00171ad0	2237	DEFAULT	unknown	FUN_00571ad0	
+00171ad0	2237	USER_DEFINED	unknown	cScorer::AddItem	undefined(void)
 00172390	354	DEFAULT	unknown	FUN_00572390	
-00172500	43	DEFAULT	unknown	FUN_00572500	
+00172500	43	USER_DEFINED	unknown	Scorer_PreloadTexture	undefined(void)
 00172530	81	DEFAULT	unknown	FUN_00572530	
 00172590	277	DEFAULT	unknown	FUN_00572590	
 001726b0	235	DEFAULT	unknown	FUN_005726b0	
@@ -4614,14 +4614,14 @@ rva	size	source	callconv	name	signature
 00173450	1958	DEFAULT	unknown	FUN_00573450	
 00173c20	479	DEFAULT	unknown	FUN_00573c20	
 00173e00	490	DEFAULT	unknown	FUN_00573e00	
-00173ff0	162	DEFAULT	unknown	FUN_00573ff0	
-001740a0	77	DEFAULT	unknown	FUN_005740a0	
-001740f0	178	DEFAULT	unknown	FUN_005740f0	
+00173ff0	162	USER_DEFINED	unknown	ScorerCinema::Set	undefined(void)
+001740a0	77	USER_DEFINED	unknown	cScorer::SetDefault	undefined(void)
+001740f0	178	USER_DEFINED	unknown	cScorer::SetMarkerSprite	undefined(void)
 001741b0	182	DEFAULT	unknown	FUN_005741b0	
 00174270	69	DEFAULT	unknown	FUN_00574270	
 001742c0	44	DEFAULT	unknown	FUN_005742c0	
 001742f0	1746	DEFAULT	unknown	FUN_005742f0	
-001749d0	436	DEFAULT	unknown	FUN_005749d0	
+001749d0	436	USER_DEFINED	unknown	Scorer_SetConsole	undefined(void)
 00174b90	408	DEFAULT	unknown	FUN_00574b90	
 00174d30	658	DEFAULT	unknown	FUN_00574d30	
 00174fd0	171	DEFAULT	unknown	FUN_00574fd0	
@@ -4711,10 +4711,10 @@ rva	size	source	callconv	name	signature
 00180c20	56	ANALYSIS	__thiscall	cTalkScorer::vf00	undefined __thiscall(void)
 00180c60	789	ANALYSIS	__thiscall	cTalkScorer::vf04	undefined __thiscall(void)
 00180f80	933	ANALYSIS	__thiscall	cTalkScorer::vf05	undefined __thiscall(void)
-00181330	18	DEFAULT	unknown	FUN_00581330	
-00181350	43	DEFAULT	unknown	FUN_00581350	
+00181330	18	USER_DEFINED	unknown	Scorer_CancelSpeech	undefined(void)
+00181350	43	USER_DEFINED	unknown	Scorer_SetSpeechCallback	undefined(void)
 00181380	150	DEFAULT	unknown	FUN_00581380	
-00181420	142	DEFAULT	unknown	FUN_00581420	
+00181420	142	USER_DEFINED	unknown	Scorer_SetSpeechText	undefined(void)
 001814b0	21	DEFAULT	unknown	FUN_005814b0	
 001814d0	168	DEFAULT	unknown	FUN_005814d0	
 00181580	47	DEFAULT	unknown	FUN_00581580	
@@ -4963,7 +4963,7 @@ rva	size	source	callconv	name	signature
 001927e0	216	DEFAULT	unknown	FUN_005927e0	
 001928c0	90	DEFAULT	unknown	FUN_005928c0	
 00192920	134	DEFAULT	unknown	FUN_00592920	
-001929b0	443	DEFAULT	unknown	FUN_005929b0	
+001929b0	443	USER_DEFINED	unknown	cPy_Function::SetFunc	undefined(void)
 00192b70	190	DEFAULT	unknown	FUN_00592b70	
 00192c30	51	DEFAULT	unknown	FUN_00592c30	
 00192c70	119	DEFAULT	unknown	FUN_00592c70	
@@ -5003,7 +5003,7 @@ rva	size	source	callconv	name	signature
 00194120	238	DEFAULT	unknown	FUN_00594120	
 00194210	27	DEFAULT	unknown	FUN_00594210	
 00194230	99	DEFAULT	unknown	FUN_00594230	
-001942a0	125	DEFAULT	unknown	FUN_005942a0	
+001942a0	125	USER_DEFINED	unknown	ScorerItem_PyNew	undefined(void)
 00194320	10	DEFAULT	unknown	FUN_00594320	
 00194330	31	DEFAULT	unknown	FUN_00594330	
 00194350	371	DEFAULT	unknown	FUN_00594350	
@@ -6506,7 +6506,7 @@ rva	size	source	callconv	name	signature
 00216c50	88	DEFAULT	unknown	FUN_00616c50	
 00216cb0	88	DEFAULT	unknown	FUN_00616cb0	
 00216d10	66	DEFAULT	unknown	FUN_00616d10	
-00216d60	446	DEFAULT	unknown	FUN_00616d60	
+00216d60	446	USER_DEFINED	unknown	Engine_WorldToScreen	undefined(void)
 00216f20	430	DEFAULT	unknown	FUN_00616f20	
 002170d0	269	DEFAULT	unknown	FUN_006170d0	
 00217280	121	DEFAULT	__thiscall	FUN_00617280	
@@ -6556,7 +6556,7 @@ rva	size	source	callconv	name	signature
 00219e50	39	DEFAULT	unknown	FUN_00619e50	
 00219e80	7	DEFAULT	unknown	FUN_00619e80	
 00219e90	149	DEFAULT	unknown	FUN_00619e90	
-00219f30	52	DEFAULT	unknown	FUN_00619f30	
+00219f30	52	USER_DEFINED	unknown	Font_TextSize	undefined(void)
 00219f70	53	DEFAULT	unknown	FUN_00619f70	
 00219fb0	922	DEFAULT	unknown	FUN_00619fb0	
 0021a350	114	DEFAULT	unknown	FUN_0061a350	
@@ -6577,7 +6577,7 @@ rva	size	source	callconv	name	signature
 0021aa00	382	DEFAULT	unknown	FUN_0061aa00	
 0021ab80	137	DEFAULT	unknown	FUN_0061ab80	
 0021ac10	279	DEFAULT	unknown	FUN_0061ac10	
-0021ad30	193	DEFAULT	unknown	FUN_0061ad30	
+0021ad30	193	USER_DEFINED	unknown	Font_Get	undefined(void)
 0021ae00	948	DEFAULT	unknown	FUN_0061ae00	
 0021b1c0	24	DEFAULT	unknown	FUN_0061b1c0	
 0021b1e0	1	DEFAULT	unknown	FUN_0061b1e0	

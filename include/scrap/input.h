@@ -9,9 +9,17 @@
 
 #define MAX_LOCAL_PLAYERS 4
 
+/* an input action of an action set; value[player] is its current state (SScorer.GetMenuAccept) */
+typedef struct cInputAction {
+	byte pad_00[0x18];
+	float value[MAX_LOCAL_PLAYERS];	/* 0x18 */
+	byte pad_28[0x7c - 0x28];
+} cInputAction;
+SD_SIZE(cInputAction, 0x7c);
+
 typedef struct cActionSet {
 	char *name;			/* 0x0 */
-	byte pad_4[0x8];
+	TABLE(cInputAction) actions;	/* 0x4 */
 } cActionSet;
 SD_SIZE(cActionSet, 0xc);
 
