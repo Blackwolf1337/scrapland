@@ -5,6 +5,7 @@
 #ifndef SCRAP_SCRAP_H
 #define SCRAP_SCRAP_H
 
+#include "scrap/cstring.h"
 #include "scrap/entity.h"
 #include "scrap/filepak.h"
 #include "scrap/mathlib.h"
@@ -15,7 +16,7 @@
 
 /* the function of Scrap.SetCallFunc with its parameters (AddParamX) for Scrap.Execute (rva 0x466a04) */
 #define g_CallFunc ((cPy_Function *)Game_Ptr(0x466a04))
-#define g_PackName ((void *)Game_Ptr(0x44ab6c))	/* string object, the open pack */
+#define g_PackName ((cString *)Game_Ptr(0x44ab6c))	/* string object, the open pack */
 #define g_IsSteam GAME_DATA(byte, 0x467b9c)
 
 void __thiscall Scheduler_Add(void *scheduler, float time, PyObject *func, PyObject *params, const char *name);
@@ -120,8 +121,6 @@ void __thiscall cWorld_DeleteDebrisSys(cWorld *world, const char *name);
 void __thiscall cDebrisSys_Init(cDebrisSys *sys, int n, int e);
 cDebris *__thiscall cDebrisSys_NewElement(cDebrisSys *sys);
 void __thiscall cDebrisSys_Drop(cDebrisSys *sys, cDebris *debris);
-void __thiscall cString_ctor(void *str);
-void __thiscall cString_dtor(void *str);
 
 /* entity list by name for the collision tests */
 void *EntityLists_Get(const char *name);
@@ -138,7 +137,6 @@ void Object3D_Preload(const char *name, const vec3_t *scale);
 cEntity *__thiscall cWorld_CreateEntity(cWorld *world, const char *className, float x, float y, float z,
 	const char *name);
 /* printf into a string object (rva 0x134080) */
-void cString_Printf(void *str, const char *fmt, ...);
 /* imports the compiled module file of the open pack as name (src/game/PyInterface/PythonInit.c) */
 void Pack_PreloadLibrary(const char *name, const char *file);
 void Anm_Preload(const char *a, const char *b);

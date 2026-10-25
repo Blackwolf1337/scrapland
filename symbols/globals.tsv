@@ -11026,6 +11026,7 @@ rva	source	name	datatype
 0044b604	USER_DEFINED	g_HashItemRefs	/undefined4
 0044b628	USER_DEFINED	g_MemStats	/undefined4
 0044b640	USER_DEFINED	g_MemStatsContext	/undefined4
+0044b648	USER_DEFINED	g_StrTmp	/undefined1
 0044bbf0	USER_DEFINED	g_PyStaticBuffer	/undefined4
 0044c128	USER_DEFINED	g_ActionSets	/undefined4
 0044c130	USER_DEFINED	g_PlayerInput	/undefined4

@@ -5,6 +5,7 @@
 #ifndef SCRAP_INPUT_H
 #define SCRAP_INPUT_H
 
+#include "scrap/cstring.h"
 #include "scrap/game.h"
 
 #define MAX_LOCAL_PLAYERS 4
@@ -49,7 +50,10 @@ SD_OFFSET(cVirtualKeyboard, a, 0x100);
 #define g_VirtualKeyboard GAME_DATA(cVirtualKeyboard, 0x44c400)
 #define g_Pads ((cPad *)Game_Ptr(0x44c510))		/* [MAX_LOCAL_PLAYERS] */
 
-byte ActionSet_IsNamed(cActionSet *set, const char *name);
+/* rva 0x133a30 is cString_EqStr on the name */
+static inline byte ActionSet_IsNamed(cActionSet *set, const char *name) {
+	return cString_EqStr(&set->name, name);
+}
 void Input_SelectActionSet(int index);
 uint32_t Input_GetActionSet(void);
 int Input_AssignEntry(const char *a, const char *b, int c, const char *d, const char *e);

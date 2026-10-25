@@ -5,6 +5,7 @@
 #ifndef SCRAP_SCORER_H
 #define SCRAP_SCORER_H
 
+#include "scrap/cstring.h"
 #include "scrap/game.h"
 #include "scrap/mathlib.h"
 #include "scrap/pyfunction.h"
@@ -70,7 +71,6 @@ SD_SIZE(cPyMenuEntity, 0x10);
 /* the handle of a scorer item, NULL (no Python error) if there is no such item */
 PyObject *ScorerItem_PyNew(int player, const char *name);
 
-void __thiscall cString_Set(void *str, const char *text);
 
 void Scorer_AddChatMsg(const char *text, uint32_t rgb);
 void Scorer_SetConsole(int on);

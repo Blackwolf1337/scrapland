@@ -1078,7 +1078,7 @@ PyObject *Scrap_Set(PyObject *self, PyObject *args) {
 			if (v->flags & 1) {
 				goto readonly;
 			}
-			cString_Set(&v->value, s);
+			cString_Set(&v->value.s, s);
 			return Py_BuildValue("i", 1);
 		}
 		if (v->type != GVAR_SCRIPT_FUNCTION) {

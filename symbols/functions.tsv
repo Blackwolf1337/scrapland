@@ -3522,33 +3522,33 @@ rva	size	source	callconv	name	signature
 00133670	23	USER_DEFINED	__cdecl	Mem_Size	uint __cdecl(void * p)
 00133690	233	USER_DEFINED	__cdecl	Mem_Realloc	void * __cdecl(void * p, uint size)
 00133780	153	USER_DEFINED	__cdecl	Mem_Count	void __cdecl(int freed, int size)
-00133820	57	DEFAULT	unknown	FUN_00533820	
-00133860	118	DEFAULT	unknown	FUN_00533860	
-001338e0	76	DEFAULT	unknown	FUN_005338e0	
+00133820	57	USER_DEFINED	__thiscall	cString::cString	void * __thiscall(int n)
+00133860	118	USER_DEFINED	__thiscall	cString::cString	void * __thiscall(char * a, int alen, char * b, int blen)
+001338e0	76	USER_DEFINED	__thiscall	cString::cString	void * __thiscall(void * src)
 00133930	76	USER_DEFINED	__thiscall	cString::cString	void * __thiscall(char * s)
-00133980	9	USER_DEFINED	__thiscall	cString::cString	void __thiscall(void)
+00133980	9	USER_DEFINED	__thiscall	cString::cString	void * __thiscall(void)
 00133990	74	USER_DEFINED	__thiscall	cString::~cString	void __thiscall(void)
-001339e0	73	DEFAULT	unknown	FUN_005339e0	
-00133a30	71	USER_DEFINED	__cdecl	ActionSet_IsNamed	byte __cdecl(void * set, char * name)
-00133a80	71	DEFAULT	unknown	FUN_00533a80	
-00133ad0	99	DEFAULT	unknown	FUN_00533ad0	
-00133b40	99	DEFAULT	unknown	FUN_00533b40	
-00133bb0	99	DEFAULT	unknown	FUN_00533bb0	
-00133c20	66	DEFAULT	unknown	FUN_00533c20	
-00133c70	34	DEFAULT	unknown	FUN_00533c70	
-00133ca0	64	DEFAULT	unknown	FUN_00533ca0	
-00133ce0	340	DEFAULT	unknown	FUN_00533ce0	
-00133e40	86	DEFAULT	unknown	FUN_00533e40	
-00133ea0	51	DEFAULT	unknown	FUN_00533ea0	
-00133ee0	135	DEFAULT	unknown	FUN_00533ee0	
-00133f70	143	DEFAULT	unknown	FUN_00533f70	
+001339e0	73	USER_DEFINED	__cdecl	cString_Eq	byte __cdecl(void * a, void * b)
+00133a30	71	USER_DEFINED	__cdecl	cString_EqStr	byte __cdecl(void * a, char * b)
+00133a80	71	USER_DEFINED	__cdecl	cString_StrEq	byte __cdecl(char * a, void * b)
+00133ad0	99	USER_DEFINED	__cdecl	cString_Add	void * __cdecl(void * out, void * a, void * b)
+00133b40	99	USER_DEFINED	__cdecl	cString_AddStr	void * __cdecl(void * out, void * a, char * b)
+00133bb0	99	USER_DEFINED	__cdecl	cString_StrAdd	void * __cdecl(void * out, char * a, void * b)
+00133c20	66	USER_DEFINED	__thiscall	cString::AppendC	void * __thiscall(void * s)
+00133c70	34	USER_DEFINED	__thiscall	cString::AppendChar	void * __thiscall(char c)
+00133ca0	64	USER_DEFINED	__thiscall	cString::AppendStr	void * __thiscall(char * s)
+00133ce0	340	USER_DEFINED	__thiscall	cString::Append	void __thiscall(char * s, int n)
+00133e40	86	USER_DEFINED	__thiscall	cString::SetN	void __thiscall(char * s, int n)
+00133ea0	51	USER_DEFINED	__thiscall	cString::Find	char * __thiscall(char * sub, int * pos)
+00133ee0	135	USER_DEFINED	__thiscall	cString::Left	void * __thiscall(void * out, int n)
+00133f70	143	USER_DEFINED	__thiscall	cString::Right	void * __thiscall(void * out, int n)
 00134000	55	USER_DEFINED	__thiscall	cString::Assign	void __thiscall(void * src)
-00134040	59	USER_DEFINED	unknown	cString::Set	undefined(void)
-00134080	139	USER_DEFINED	unknown	cString::Printf	undefined(void)
-00134130	81	DEFAULT	unknown	FUN_00534130	
-00134190	79	DEFAULT	unknown	FUN_00534190	
-001341e0	58	DEFAULT	unknown	FUN_005341e0	
-00134220	56	DEFAULT	unknown	FUN_00534220	
+00134040	59	USER_DEFINED	__thiscall	cString::Set	void __thiscall(char * s)
+00134080	139	USER_DEFINED	__cdecl	cString_Printf	void __cdecl(void * self, char * fmt, ...)
+00134130	81	USER_DEFINED	__thiscall	cString::Cmp	int __thiscall(void * other)
+00134190	79	USER_DEFINED	__thiscall	cString::CmpStr	int __thiscall(char * other)
+001341e0	58	USER_DEFINED	__thiscall	cString::ICmp	int __thiscall(void * other)
+00134220	56	USER_DEFINED	__thiscall	cString::ICmpStr	int __thiscall(char * other)
 00134260	15	ANALYSIS	__thiscall	CCallbackImpl<8>::vf00	undefined __thiscall(void)
 00134270	6	ANALYSIS	__thiscall	CCallbackImpl<8>::vf02	undefined __thiscall(void)
 00134280	14	ANALYSIS	__thiscall	CCallback<cGetAuthSessionTicketResponseExt,GetAuthSessionTicketResponse_t,0>::vf01	undefined __thiscall(void)
@@ -3602,7 +3602,7 @@ rva	size	source	callconv	name	signature
 001365c0	75	USER_DEFINED	__cdecl	Str_Copy	char * __cdecl(char * dst, char * src, int size)
 00136610	26	USER_DEFINED	__cdecl	Str_Printf	int __cdecl(char * dst, int size, char * fmt, ...)
 00136630	84	DEFAULT	unknown	FUN_00536630	
-00136690	109	DEFAULT	unknown	FUN_00536690	
+00136690	109	USER_DEFINED	__cdecl	Str_VPrintf	int __cdecl(char * dst, int size, char * fmt, void * ap)
 00136700	126	DEFAULT	unknown	FUN_00536700	
 00136780	69	DEFAULT	unknown	FUN_00536780	
 001367d0	174	DEFAULT	unknown	FUN_005367d0	
@@ -9861,7 +9861,7 @@ rva	size	source	callconv	name	signature
 00313610	36	ANALYSIS	unknown	Py_GetBuildInfo	undefined(void)
 00313634	14	USER_DEFINED	__cdecl	operator_delete_sized	void __cdecl(void * p, uint size)
 00313642	9	USER_DEFINED	__cdecl	operator_new_array	void * __cdecl(uint size)
-0031364b	5	DEFAULT	__cdecl	operator_delete	
+0031364b	5	USER_DEFINED	__cdecl	operator_delete_array	void __cdecl(void * p)
 00313650	17	ANALYSIS	__fastcall	__security_check_cookie	undefined __fastcall(void)
 00313668	35	ANALYSIS	__thiscall	type_info::vf00	undefined __thiscall(void)
 0031368b	20	DEFAULT	unknown	FUN_0071368b	

@@ -20,14 +20,10 @@ int crt_setvbuf(void *f, char *buf, int mode, size_t size);
 int crt_access(const char *name, int mode);
 int crt_stat32(const char *name, void *st);
 [[noreturn]] void crt_exit(int code);
-void *operator_new_array(uint32_t size);
-void operator_delete(void *p);
 /* MessageBoxA through the import table of the exe */
 typedef int(__stdcall *messagebox_t)(void *hwnd, const char *text, const char *caption, unsigned type);
 #define exe_MessageBoxA GAME_DATA(messagebox_t, 0x3a142c)
 
-void *__thiscall cString_ctorStr(void *str, const char *s);
-void __thiscall cString_Assign(void *dst, const void *src);
 cStringNode *__thiscall cStringList_NewNode(cStringList *list);
 
 void Str_Trim(char *s);					/* drops CR/LF and trailing blanks */
@@ -394,7 +390,7 @@ void __fastcall PackEntries_Clear(cPackEntryList *list) {
 	}
 }
 
-void __thiscall PackNames_Add(cStringList *list, const void *str) {
+void __thiscall PackNames_Add(cStringList *list, const cString *str) {
 	list->iter = NULL;
 	cStringNode *node = cStringList_NewNode(list);
 	cString_Assign(&node->str, str);
