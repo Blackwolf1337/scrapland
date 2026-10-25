@@ -10632,6 +10632,7 @@ rva	source	name	datatype
 00428d58	ANALYSIS	_PyImport_Inittab	/pointer
 00428e18	ANALYSIS	cPyEntity_Type	/object.h/PyTypeObject
 00428e88	ANALYSIS	cPyEntity_methods	/methodobject.h/PyMethodDef[7]
+00428ef8	USER_DEFINED	g_PyPoolValues	
 00429288	ANALYSIS	SAct_methods	/methodobject.h/PyMethodDef[10]
 0042a488	ANALYSIS	SAI_methods	/methodobject.h/PyMethodDef[23]
 0042c610	ANALYSIS	Scrap_methods	/methodobject.h/PyMethodDef[115]
@@ -11002,10 +11003,18 @@ rva	source	name	datatype
 00444d34	USER_DEFINED	g_NodesWorld	/undefined4
 00444dc8	USER_DEFINED	g_NodesWorld2D	/undefined4
 0044ab6c	USER_DEFINED	g_PackName	/undefined4
+0044b640	USER_DEFINED	g_MemStatsContext	/undefined4
 0044c128	USER_DEFINED	g_ActionSets	/undefined4
 0044c130	USER_DEFINED	g_PlayerInput	/undefined4
 0044c400	USER_DEFINED	g_VirtualKeyboard	/undefined4
 0044c510	USER_DEFINED	g_Pads	/undefined4
+00466798	USER_DEFINED	g_NativeFuncs	/undefined4
+004667b0	USER_DEFINED	g_PyFunctions	/undefined4
+004667b4	USER_DEFINED	g_FreeParamFiles	/undefined4
+004668b8	USER_DEFINED	g_PyMemStats	/undefined4
+004668d0	USER_DEFINED	g_PyPool	/undefined4
+004668e4	USER_DEFINED	g_MemPools	/undefined4
+00466a00	USER_DEFINED	g_PythonReady	/undefined1
 00466a04	USER_DEFINED	g_CallFunc	
 00466bb4	USER_DEFINED	g_pSound	/undefined4
 00467450	USER_DEFINED	g_pWorld	/undefined4

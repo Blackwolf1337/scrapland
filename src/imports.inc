@@ -17,6 +17,7 @@ SD_IMPORT(operator_new, 0x1334d0)		/* include/scrap/global.h */
 SD_IMPORT(operator_delete_sized, 0x313634)
 SD_IMPORT(Mem_Alloc, 0x1335a0)
 SD_IMPORT(Mem_Free, 0x133550)
+SD_IMPORT(Mem_Realloc, 0x133690)
 SD_IMPORT(Str_Copy, 0x1365c0)
 SD_IMPORT(Str_Printf, 0x136610)
 
@@ -319,9 +320,6 @@ SD_IMPORT(PyString_AsString, 0x2dadd0)	/* stringobject.c */
 SD_IMPORT(PyArg_Parse, 0x2f0530)	/* getargs.c */
 SD_IMPORT(Py_FindMethod, 0x2f29d0)	/* methodobject.c */
 SD_IMPORT(_PyObject_New, 0x2ebc00)	/* object.c */
-SD_IMPORT(PyPool_Malloc, 0x1935f0)	/* the engine's allocator of the interpreter, include/scrap/python.h */
-SD_IMPORT(PyPool_Realloc, 0x193620)
-SD_IMPORT(PyPool_Free, 0x1935c0)
 SD_IMPORT(PyList_AsTuple, 0x2dcf10)	/* listobject.c */
 SD_IMPORT(PyList_Append, 0x2dcee0)	/* listobject.c */
 SD_IMPORT(PyInt_FromLong, 0x2de630)	/* intobject.c */

@@ -391,6 +391,9 @@ check('Scrap.Execute() builtin', lambda: Scrap.Execute())
 for f in ('SDNoDot', 'SDNoModule.f', '__main__.SDNoFunc', '__main__.sdnotcallable', '!SDNoNative', '!AAA', '!zzz',
 		'!PrintMemBlockData', '!TakeLife', '', '.x', 'x.', '__main__.sdcall'):
 	check('Scrap.SetCallFunc(%s)' % f, lambda f=f: Scrap.SetCallFunc(f))
+# usage of the Python block pools into the log (the native function prints every pool)
+check('Scrap.SetCallFunc(!PrintMemBlockData) run', lambda: Scrap.SetCallFunc('!PrintMemBlockData'))
+check('Scrap.Execute() PrintMemBlockData', lambda: Scrap.Execute())
 check('Scrap.SetCallFunc() clear', lambda: Scrap.SetCallFunc(''))
 check('Scrap.Execute() cleared', lambda: Scrap.Execute())
 check('sdcall count after', lambda: len(sdcalls))

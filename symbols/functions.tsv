@@ -3520,7 +3520,7 @@ rva	size	source	callconv	name	signature
 001335a0	171	USER_DEFINED	__cdecl	Mem_Alloc	void * __cdecl(uint size)
 00133650	27	DEFAULT	unknown	FUN_00533650	
 00133670	23	DEFAULT	unknown	FUN_00533670	
-00133690	233	DEFAULT	unknown	FUN_00533690	
+00133690	233	USER_DEFINED	__cdecl	Mem_Realloc	void * __cdecl(void * p, uint size)
 00133780	153	DEFAULT	unknown	FUN_00533780	
 00133820	57	DEFAULT	unknown	FUN_00533820	
 00133860	118	DEFAULT	unknown	FUN_00533860	
@@ -4983,22 +4983,22 @@ rva	size	source	callconv	name	signature
 001935c0	36	USER_DEFINED	__cdecl	PyPool_Free	void __cdecl(void * p)
 001935f0	36	USER_DEFINED	__cdecl	PyPool_Malloc	void * __cdecl(uint size)
 00193620	39	USER_DEFINED	__cdecl	PyPool_Realloc	void * __cdecl(void * p, uint size)
-00193650	296	DEFAULT	unknown	FUN_00593650	
-00193780	60	DEFAULT	unknown	FUN_00593780	
-001937c0	119	DEFAULT	unknown	FUN_005937c0	
-00193850	198	DEFAULT	unknown	FUN_00593850	
-00193920	41	DEFAULT	unknown	FUN_00593920	
-00193950	188	DEFAULT	unknown	FUN_00593950	
-00193a10	41	DEFAULT	unknown	FUN_00593a10	
-00193a40	43	DEFAULT	unknown	FUN_00593a40	
-00193a70	126	DEFAULT	unknown	FUN_00593a70	
-00193af0	134	DEFAULT	unknown	FUN_00593af0	
-00193b80	188	DEFAULT	unknown	FUN_00593b80	
-00193c40	77	DEFAULT	unknown	FUN_00593c40	
-00193c90	129	DEFAULT	unknown	FUN_00593c90	
-00193d20	239	DEFAULT	unknown	FUN_00593d20	
-00193e20	194	DEFAULT	unknown	FUN_00593e20	
-00193ef0	162	DEFAULT	unknown	FUN_00593ef0	
+00193650	296	USER_DEFINED	__thiscall	cMemPool::cMemPool	void * __thiscall(char * name, uint * values)
+00193780	60	USER_DEFINED	__thiscall	cMemBlocks::cMemBlocks	void * __thiscall(uint blockSize, uint numBlocks)
+001937c0	119	USER_DEFINED	__fastcall	cMemPool::~cMemPool	void __fastcall(void * self)
+00193850	198	USER_DEFINED	__fastcall	cMemBlocks::Alloc	void * __fastcall(void * self)
+00193920	41	USER_DEFINED	__cdecl	PyPool_Delete	void __cdecl(void)
+00193950	188	USER_DEFINED	__thiscall	cMemBlocks::Free	void __thiscall(void * p)
+00193a10	41	USER_DEFINED	__thiscall	cMemBlocks::SetMemory	void __thiscall(uint * status, byte * data)
+00193a40	43	USER_DEFINED	__thiscall	cMemBlocks::Owns	byte __thiscall(void * p)
+00193a70	126	USER_DEFINED	__cdecl	PyPool_FreeImpl	void __cdecl(void * p)
+00193af0	134	USER_DEFINED	__thiscall	cMemPool::Free	void __thiscall(void * p)
+00193b80	188	USER_DEFINED	__cdecl	PyPool_MallocImpl	void * __cdecl(uint size)
+00193c40	77	USER_DEFINED	__thiscall	cMemPool::Alloc	void * __thiscall(uint size)
+00193c90	129	USER_DEFINED	__cdecl	PyPool_ReallocImpl	void * __cdecl(void * p, uint size)
+00193d20	239	USER_DEFINED	__thiscall	cMemPool::Realloc	void * __thiscall(void * p, uint size)
+00193e20	194	USER_DEFINED	__cdecl	MemPools_PrintAll	void __cdecl(void)
+00193ef0	162	USER_DEFINED	__fastcall	cMemPool::Print	void __fastcall(void * self)
 00193fa0	378	USER_DEFINED	__cdecl	PyMenuEntity_SetAttr	int __cdecl(PyObject * self, char * name, PyObject * v)
 00194120	238	USER_DEFINED	__cdecl	PyMenuEntity_GetAttr	PyObject * __cdecl(PyObject * self, char * name)
 00194210	27	USER_DEFINED	__cdecl	PyMenuEntity_Dealloc	void __cdecl(PyObject * self)
