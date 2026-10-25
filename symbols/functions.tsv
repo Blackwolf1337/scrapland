@@ -1175,7 +1175,7 @@ rva	size	source	callconv	name	signature
 0005fdb0	38	ANALYSIS	__thiscall	cActClass::vf00	undefined __thiscall(void)
 0005fde0	38	ANALYSIS	__stdcall	`vector_constructor_iterator'	void __stdcall(void * param_1, uint param_2, uint param_3, _func_void_ptr_void_ptr * param_4)
 0005fe10	118	DEFAULT	unknown	FUN_0045fe10	
-0005fe90	274	DEFAULT	unknown	FUN_0045fe90	
+0005fe90	274	USER_DEFINED	__thiscall	cActClass::CreateAction	void * __thiscall(char * name)
 0005ffb0	231	DEFAULT	unknown	FUN_0045ffb0	
 000600a0	228	DEFAULT	unknown	FUN_004600a0	
 00060190	261	DEFAULT	unknown	FUN_00460190	
@@ -1185,10 +1185,10 @@ rva	size	source	callconv	name	signature
 00060460	49	DEFAULT	unknown	FUN_00460460	
 000604a0	143	DEFAULT	unknown	FUN_004604a0	
 00060530	85	DEFAULT	unknown	FUN_00460530	
-00060590	45	DEFAULT	unknown	FUN_00460590	
+00060590	45	USER_DEFINED	__thiscall	cActClass::GetAction	void * __thiscall(char * name)
 000605f0	139	DEFAULT	unknown	FUN_004605f0	
 00060680	227	DEFAULT	unknown	FUN_00460680	
-00060770	3136	DEFAULT	unknown	FUN_00460770	
+00060770	3136	USER_DEFINED	__thiscall	cActClass::Var	int __thiscall(char * name, int set, char * * s, double * d, int * i)
 000613b0	641	DEFAULT	unknown	FUN_004613b0	
 00061640	156	DEFAULT	unknown	FUN_00461640	
 000616e0	472	DEFAULT	unknown	FUN_004616e0	
@@ -1204,15 +1204,15 @@ rva	size	source	callconv	name	signature
 00061cf0	118	DEFAULT	unknown	FUN_00461cf0	
 00061d70	231	DEFAULT	unknown	FUN_00461d70	
 00061e60	261	DEFAULT	unknown	FUN_00461e60	
-00061f70	232	DEFAULT	unknown	FUN_00461f70	
+00061f70	232	USER_DEFINED	__thiscall	cActClassList::Create	void * __thiscall(char * name)
 00062060	210	DEFAULT	unknown	FUN_00462060	
 00062140	61	DEFAULT	unknown	FUN_00462140	
 00062180	49	DEFAULT	unknown	FUN_00462180	
 000621c0	143	DEFAULT	unknown	FUN_004621c0	
-00062250	45	DEFAULT	unknown	FUN_00462250	
+00062250	45	USER_DEFINED	__thiscall	cActClassList::Get	void * __thiscall(char * name)
 000622b0	227	DEFAULT	unknown	FUN_004622b0	
 000623a0	147	DEFAULT	unknown	FUN_004623a0	
-00062440	75	DEFAULT	unknown	FUN_00462440	
+00062440	75	USER_DEFINED	__thiscall	cActClassList::Del	byte __thiscall(char * name)
 00062490	182	DEFAULT	unknown	FUN_00462490	
 00062570	344	DEFAULT	unknown	FUN_00462570	
 00062700	119	DEFAULT	unknown	FUN_00462700	
@@ -1248,7 +1248,7 @@ rva	size	source	callconv	name	signature
 000640e0	35	ANALYSIS	__thiscall	cActionMove::vf00	undefined __thiscall(void)
 00064110	300	DEFAULT	unknown	FUN_00464110	
 00064240	63	DEFAULT	unknown	FUN_00464240	
-00064280	1936	DEFAULT	unknown	FUN_00464280	
+00064280	1936	USER_DEFINED	__thiscall	cAction::Var	int __thiscall(char * name, int set, char * * s, double * d, int * i)
 00064a10	261	DEFAULT	unknown	FUN_00464a10	
 00064b20	196	DEFAULT	unknown	FUN_00464b20	
 00064bf0	501	DEFAULT	unknown	FUN_00464bf0	
@@ -2196,10 +2196,10 @@ rva	size	source	callconv	name	signature
 000bc0b0	392	DEFAULT	unknown	FUN_004bc0b0	
 000bc240	408	DEFAULT	unknown	FUN_004bc240	
 000bc3e0	408	DEFAULT	unknown	FUN_004bc3e0	
-000bc580	392	DEFAULT	unknown	FUN_004bc580	
-000bc710	408	DEFAULT	unknown	FUN_004bc710	
+000bc580	392	USER_DEFINED	__cdecl	Con_Errorf	void __cdecl(char * fmt, ...)
+000bc710	408	USER_DEFINED	__cdecl	Con_Debugf	void __cdecl(char * fmt, ...)
 000bc8b0	408	DEFAULT	unknown	FUN_004bc8b0	
-000bca50	416	DEFAULT	unknown	FUN_004bca50	
+000bca50	416	USER_DEFINED	__cdecl	Con_Print	void __cdecl(int color, char * text, int flag)
 000bcbf0	440	DEFAULT	unknown	FUN_004bcbf0	
 000bcdb0	516	USER_DEFINED	__cdecl	CheckFailed	void __cdecl(char * expr, char * file, char * date, int line)
 000bcfc0	55	DEFAULT	unknown	FUN_004bcfc0	

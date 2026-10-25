@@ -3,7 +3,7 @@
 # root directory through -PythonExecute:execfile(...); the engine's command line drops quotes and splits at spaces,
 # so difftest.sh spells the file name with chr().
 import sys
-import Scrap, SWeap, SVec
+import Scrap, SWeap, SVec, SAct
 
 out = open('sdtest.out', 'w')
 
@@ -104,5 +104,41 @@ check('SWeap.NetExec(Unknown, x)', lambda: SWeap.NetExec('Unknown', 'x'))
 check('SWeap.NetExec bad', lambda: SWeap.NetExec(1))
 check('SWeap.GetFWeap bad', lambda: SWeap.GetFWeap('a', 'b'))
 check('SWeap.SetSWeap bad', lambda: SWeap.SetSWeap(0, 'Name'))
+# SAct: own test class (setting ModelFilePath loads the model: the original hangs on a missing file); GetClass of a missing class sets the current class to NULL, so nothing points to the
+# class after DelClass. CreateClass/GetClass return None on bad arguments with the Python error left set:
+# SVec.GetRotAng with a tuple clears it (PyErr_Clear between its two parse attempts).
+check('SAct.GetCls(x) start', lambda: SAct.GetCls('x'))
+check('SAct.CreateClass(SDTestClass)', lambda: SAct.CreateClass('SDTestClass'))
+for name, value in (('Speed', 2.5), ('Model', 'x'), ('SoundDispX', 2.5), ('FlySpeed', -3.75), ('CanFly', 1),
+		('CanJump', 2.9), ('DefAction', 'Walk'), ('Name', ''), ('Node1_2x', 0.5)):
+	check('SAct.SetCls(%s, %s)' % (name, repr(value)), lambda n=name, v=value: SAct.SetCls(n, v))
+for name in ('Speed', 'SoundDispX', 'sounddispx', 'FlySpeed', 'CanFly', 'CanJump', 'ModelFilePath', 'DefAction',
+		'Name', 'WRadius', 'Missing'):
+	check('SAct.GetCls(%s)' % name, lambda n=name: SAct.GetCls(n))
+check('SAct.SetCls bad', lambda: SAct.SetCls('Speed', (1, 2)))
+check('SAct.GetAct(x) no action', lambda: SAct.GetAct('x'))
+check('SAct.SetAct(x, 1) no action', lambda: SAct.SetAct('x', 1))
+check('SAct.CreateAction(Walk)', lambda: SAct.CreateAction('Walk'))
+for name, value in (('Anim', 'walk01'), ('AnmName', 'walk01'), ('AnmFPS', 29.97), ('isLoop', 1), ('MaxSpeed', 0.125),
+		('UseDisp', 3.7)):
+	check('SAct.SetAct(%s, %s)' % (name, repr(value)), lambda n=name, v=value: SAct.SetAct(n, v))
+for name in ('Anim', 'AnmName', 'AnmFPS', 'isLoop', 'MaxSpeed', 'UseDisp', 'RotSpeed', 'Missing'):
+	check('SAct.GetAct(%s)' % name, lambda n=name: SAct.GetAct(n))
+check('SAct.SetAct bad', lambda: SAct.SetAct('Anim', [1]))
+check('SAct.GetAction(Missing)', lambda: SAct.GetAction('Missing'))
+check('SAct.GetAction(Walk)', lambda: SAct.GetAction('Walk'))
+check('SAct.GetAct(AnmName) again', lambda: SAct.GetAct('AnmName'))
+check('SAct.GetClass(SDTestClass)', lambda: SAct.GetClass('SDTestClass'))
+check('SAct.GetClass(NoSuchClass)', lambda: SAct.GetClass('NoSuchClass'))
+check('SAct.GetCls(Speed) no class', lambda: SAct.GetCls('Speed'))
+check('SAct.SetCls(Speed, 1) no class', lambda: SAct.SetCls('Speed', 1))
+check('SAct.CreateAction(x) no class', lambda: SAct.CreateAction('x'))
+check('SAct.GetAction(x) no class', lambda: SAct.GetAction('x'))
+check('SAct.DelClass(SDTestClass)', lambda: SAct.DelClass('SDTestClass'))
+check('SAct.DelClass(SDTestClass) again', lambda: SAct.DelClass('SDTestClass'))
+check('SAct.GetClass(SDTestClass) deleted', lambda: SAct.GetClass('SDTestClass'))
+check('SAct.CreateClass bad', lambda: SAct.CreateClass(1))
+check('clear error', lambda: SVec.GetRotAng((0.0, 0.0, 1.0)))
+check('SAct.DelClass bad', lambda: SAct.DelClass(None))
 out.write('done\n')
 out.close()

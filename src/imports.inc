@@ -8,6 +8,19 @@
 /* engine: Global/ */
 SD_IMPORT(CheckFailed, 0x0bcdb0)	/* CHECK macro, include/scrap/global.h */
 
+SD_IMPORT(Con_Print, 0x0bca50)		/* include/scrap/console.h */
+SD_IMPORT(Con_Errorf, 0x0bc580)
+SD_IMPORT(Con_Debugf, 0x0bc710)
+
+/* engine: Actions/ */
+SD_IMPORT(cActClassList_Create, 0x061f70)
+SD_IMPORT(cActClassList_Get, 0x062250)
+SD_IMPORT(cActClassList_Del, 0x062440)
+SD_IMPORT(cActClass_CreateAction, 0x05fe90)
+SD_IMPORT(cActClass_GetAction, 0x060590)
+SD_IMPORT(cActClass_Var, 0x060770)
+SD_IMPORT(cAction_Var, 0x064280)
+
 /* engine: Math/ */
 SD_IMPORT(Vec3_Rotate, 0x15e3b0)
 SD_IMPORT(Vec3_GetRotAng, 0x15df10)

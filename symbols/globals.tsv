@@ -10989,6 +10989,9 @@ rva	source	name	datatype
 00444014	IMPORTED	pDNameNode::RTTI_Type_Descriptor	/TypeDescriptor
 00444030	IMPORTED	DNameStatusNode::RTTI_Type_Descriptor	/TypeDescriptor
 00444050	IMPORTED	pairNode::RTTI_Type_Descriptor	/TypeDescriptor
+00444080	USER_DEFINED	g_pActClassList	/undefined4
+00444084	USER_DEFINED	g_pAuxActClass	/undefined4
+00444088	USER_DEFINED	g_pAuxAction	/undefined4
 00467450	USER_DEFINED	g_pWorld	/undefined4
 00467ba0	USER_DEFINED	g_pApp	/undefined4
 004e8dec	IMPORTED	_tls_index	/undefined4
