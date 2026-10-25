@@ -57,7 +57,17 @@ int __thiscall cScorer_AddModel(cScorer *scorer, const char *name, const char *m
 	float radius, float c, byte flag);
 void __thiscall ScorerFade_Start(void *fade, uint32_t from, uint32_t to, float time);
 void __thiscall ScorerCinema_Set(void *cinema, byte on, float time);
-/* the Python object of a scorer item */
+/* cPyMenuEntity (type object rva 0x428f78): Python handle of a scorer item by player and item name */
+typedef struct cPyMenuEntity {
+	PyObject_HEAD
+	int player;			/* 0x8 */
+	char *name;			/* 0xc Mem_Alloc copy */
+} cPyMenuEntity;
+SD_SIZE(cPyMenuEntity, 0x10);
+
+#define cPyMenuEntity_Type GAME_DATA(PyTypeObject, 0x428f78)
+
+/* the handle of a scorer item, NULL (no Python error) if there is no such item */
 PyObject *ScorerItem_PyNew(int player, const char *name);
 
 void __thiscall cString_Set(void *str, const char *text);

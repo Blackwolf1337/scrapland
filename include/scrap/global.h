@@ -22,6 +22,7 @@ void *operator_new(uint32_t size);
 void operator_delete_sized(void *p, uint32_t size);
 /* the engine's malloc with the same statistics (rva 0x1335a0) */
 void *Mem_Alloc(uint32_t size);
+void Mem_Free(void *p);	/* rva 0x133550 */
 /* __report_rangecheckfailure of the exe's CRT (rva 0x313d15), ends the process */
 [[noreturn]] void crt_report_rangecheckfailure(void);
 

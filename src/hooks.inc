@@ -198,6 +198,13 @@ SD_HOOK(cPy_NativeFunc_Insert, 0x192c70, 119)
 SD_HOOK(cPy_Function_IsValid, 0x192cf0, 13)
 SD_HOOK(Py_IsReady, 0x194780, 6)
 
+/* src/game/PyInterface/PyMenuEntity.c */
+SD_HOOK(ScorerItem_PyNew, 0x1942a0, 125)
+SD_HOOK(PyMenuEntity_Dealloc, 0x194210, 27)
+SD_HOOK(PyMenuEntity_Print, 0x194230, 99)
+SD_HOOK(PyMenuEntity_GetAttr, 0x194120, 238)
+SD_HOOK(PyMenuEntity_SetAttr, 0x193fa0, 378)
+
 /* src/game/PyInterface/PyEntity.c */
 SD_HOOK(PyEntity_New, 0x193100, 166)
 SD_HOOK(PyEntity_Dealloc, 0x192ff0, 135)

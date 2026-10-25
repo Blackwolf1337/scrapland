@@ -270,6 +270,19 @@ check('SScorer.New(0, SDItem, Text)', lambda: SScorer.New(0, 'SDItem', 'Text') i
 check('SScorer.Add(0, SDItem2, Text)', lambda: SScorer.Add(0, 'SDItem2', 'Text'))
 check('SScorer.Add(5, x, Text)', lambda: SScorer.Add(5, 'x', 'Text'))
 check('SScorer.New(0, SDBad, NoType)', lambda: SScorer.New(0, 'SDBad', 'NoType'))
+# cPyMenuEntity attributes (tp_getattr/tp_setattr) and tp_print. Not here: a value of another type than the
+# variable (the original passes the other values uninitialized).
+mi = SScorer.GetItem(0, 'SDItem')
+for v in ('Text', 'X', 'Y', 'Visible', 'Alpha', 'Font', 'Missing'):
+	check('SDItem.%s' % v, lambda v=v, mi=mi: getattr(mi, v))
+for name, value in (('Text', 'Hi'), ('X', 0.5), ('Y', 7), ('Missing', 1), ('Missing', 2.5), ('Missing', 'x'),
+		('X', []), ('Text', None)):
+	check('SDItem.%s = %s' % (name, repr(value)), lambda n=name, v=value, mi=mi: setattr(mi, n, v))
+for v in ('Text', 'X', 'Y'):
+	check('SDItem.%s set' % v, lambda v=v, mi=mi: getattr(mi, v))
+sys.stdout = out
+print mi
+sys.stdout = sys.__stdout__
 for name, value in (('Text', 'Hello'), ('X', 0.25), ('Y', 3), ('Missing', 1), ('Missing', 'x')):
 	check('SScorer.Set(0, SDItem, %s, %s)' % (name, repr(value)), lambda n=name, v=value: SScorer.Set(0, 'SDItem', n, v))
 for v in ('Text', 'X', 'Y', 'Missing'):

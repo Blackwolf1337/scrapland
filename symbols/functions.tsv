@@ -3516,7 +3516,7 @@ rva	size	source	callconv	name	signature
 001334d0	9	USER_DEFINED	__cdecl	operator_new	void * __cdecl(uint size)
 001334e0	68	USER_DEFINED	__cdecl	operator_delete	void __cdecl(void * p)
 00133530	27	DEFAULT	unknown	FUN_00533530	
-00133550	70	DEFAULT	unknown	FUN_00533550	
+00133550	70	USER_DEFINED	__cdecl	Mem_Free	void __cdecl(void * p)
 001335a0	171	USER_DEFINED	__cdecl	Mem_Alloc	void * __cdecl(uint size)
 00133650	27	DEFAULT	unknown	FUN_00533650	
 00133670	23	DEFAULT	unknown	FUN_00533670	
@@ -4999,11 +4999,11 @@ rva	size	source	callconv	name	signature
 00193d20	239	DEFAULT	unknown	FUN_00593d20	
 00193e20	194	DEFAULT	unknown	FUN_00593e20	
 00193ef0	162	DEFAULT	unknown	FUN_00593ef0	
-00193fa0	378	DEFAULT	unknown	FUN_00593fa0	
-00194120	238	DEFAULT	unknown	FUN_00594120	
-00194210	27	DEFAULT	unknown	FUN_00594210	
-00194230	99	DEFAULT	unknown	FUN_00594230	
-001942a0	125	USER_DEFINED	unknown	ScorerItem_PyNew	undefined(void)
+00193fa0	378	USER_DEFINED	__cdecl	PyMenuEntity_SetAttr	int __cdecl(PyObject * self, char * name, PyObject * v)
+00194120	238	USER_DEFINED	__cdecl	PyMenuEntity_GetAttr	PyObject * __cdecl(PyObject * self, char * name)
+00194210	27	USER_DEFINED	__cdecl	PyMenuEntity_Dealloc	void __cdecl(PyObject * self)
+00194230	99	USER_DEFINED	__cdecl	PyMenuEntity_Print	int __cdecl(PyObject * self, FILE * fp, int flags)
+001942a0	125	USER_DEFINED	__cdecl	ScorerItem_PyNew	PyObject * __cdecl(int player, char * name)
 00194320	10	DEFAULT	unknown	FUN_00594320	
 00194330	31	DEFAULT	unknown	FUN_00594330	
 00194350	371	DEFAULT	unknown	FUN_00594350	
