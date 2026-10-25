@@ -27,6 +27,7 @@ def check(name, fn):
 	except:
 		r = 'exception %s: %s' % (sys.exc_type, sys.exc_value)
 	out.write('%s = %s\n' % (name, r))
+	out.flush() # a crash in the game must not lose the lines before it
 
 check('Scrap.GetMoney()', lambda: Scrap.GetMoney())
 check('Scrap.GetMoney(1)', lambda: Scrap.GetMoney(1))
@@ -58,5 +59,50 @@ check('SVec.Add bad', lambda: SVec.Add((1, 2), (3, 4, 5)))
 check('SVec.Mod bad', lambda: SVec.Mod('abc'))
 check('SVec.GetRotAng bad', lambda: SVec.GetRotAng(1, 2))
 check('SVec.Prod bad', lambda: SVec.Prod((1, 2, 3)))
+# SWeap: in the menu both tables are empty; Init may run only once (CHECK(!p) in Table.h), so only then.
+# An index out of range stops the original on int3, so none of those here.
+check('SWeap.GetNWeap()', lambda: SWeap.GetNWeap())
+check('SWeap.GetNAmmo()', lambda: SWeap.GetNAmmo())
+check('SWeap.GetFirstiWeap()', lambda: SWeap.GetFirstiWeap())
+check('SWeap.InitWeap(0)', lambda: SWeap.InitWeap(0))
+check('SWeap.InitWeap(-5)', lambda: SWeap.InitWeap(-5))
+if SWeap.GetNWeap() == 0:
+	check('SWeap.InitWeap(3)', lambda: SWeap.InitWeap(3))
+if SWeap.GetNAmmo() == 0:
+	check('SWeap.InitAmmo(2)', lambda: SWeap.InitAmmo(2))
+check('SWeap.GetNWeap() after', lambda: SWeap.GetNWeap())
+check('SWeap.GetNAmmo() after', lambda: SWeap.GetNAmmo())
+wfloat = ('MinAmmo', 'iPrev', 'iNext', 'iAmmo', 'Upgrd00', 'Upgrd05', 'upgrd07', 'Upgrd', 'Upgrd1x', 'Bogus')
+wstr = ('Name', 'OnPress', 'OnRelease', 'OnFire', 'OnHit', 'OnStart', 'OnEnd', 'SetFx', 'Bogus')
+for i in range(SWeap.GetNWeap()):
+	for v in wfloat:
+		check('SWeap.GetFWeap(%d, %s)' % (i, v), lambda i=i, v=v: SWeap.GetFWeap(i, v))
+	for v in wstr:
+		check('SWeap.GetSWeap(%d, %s)' % (i, v), lambda i=i, v=v: SWeap.GetSWeap(i, v))
+for v in ('MinAmmo', 'iPrev', 'iNext', 'iAmmo', 'Bogus'):
+	check('SWeap.SetFWeap(1, %s, 2.5)' % v, lambda v=v: SWeap.SetFWeap(1, v, 2.5))
+	check('SWeap.GetFWeap(1, %s) set' % v, lambda v=v: SWeap.GetFWeap(1, v))
+for v in wstr:
+	check('SWeap.SetSWeap(2, %s)' % v, lambda v=v: SWeap.SetSWeap(2, v, 'val_' + v))
+	check('SWeap.GetSWeap(2, %s) set' % v, lambda v=v: SWeap.GetSWeap(2, v))
+for i in range(SWeap.GetNAmmo()):
+	for v in ('Max', 'Charger', 'max', 'Bogus'):
+		check('SWeap.GetFAmmo(%d, %s)' % (i, v), lambda i=i, v=v: SWeap.GetFAmmo(i, v))
+	for v in ('Name', 'OnPress', 'OnRelease', 'OnFire', 'OnHit', 'OnStart', 'Bogus'):
+		check('SWeap.GetSAmmo(%d, %s)' % (i, v), lambda i=i, v=v: SWeap.GetSAmmo(i, v))
+check('SWeap.SetFAmmo(0, Max, 99.75)', lambda: SWeap.SetFAmmo(0, 'Max', 99.75))
+check('SWeap.SetFAmmo(0, Bogus, 1)', lambda: SWeap.SetFAmmo(0, 'Bogus', 1))
+check('SWeap.GetFAmmo(0, Max) set', lambda: SWeap.GetFAmmo(0, 'Max'))
+check('SWeap.SetSAmmo(1, Name)', lambda: SWeap.SetSAmmo(1, 'Name', 'Bullets'))
+check('SWeap.GetSAmmo(1, Name) set', lambda: SWeap.GetSAmmo(1, 'Name'))
+check('SWeap.SetSAmmo(1, Bogus)', lambda: SWeap.SetSAmmo(1, 'Bogus', 'x'))
+check('SWeap.SetSAmmo(5, Name)', lambda: SWeap.SetSAmmo(5, 'Name', 'x'))
+# SWeap.FillPriority() crashes the original too with tables made here but not filled by the weapon scripts
+check('SWeap.GetFirstiWeap() after', lambda: SWeap.GetFirstiWeap())
+check('SWeap.NetExec(Unknown)', lambda: SWeap.NetExec('Unknown'))
+check('SWeap.NetExec(Unknown, x)', lambda: SWeap.NetExec('Unknown', 'x'))
+check('SWeap.NetExec bad', lambda: SWeap.NetExec(1))
+check('SWeap.GetFWeap bad', lambda: SWeap.GetFWeap('a', 'b'))
+check('SWeap.SetSWeap bad', lambda: SWeap.SetSWeap(0, 'Name'))
 out.write('done\n')
 out.close()

@@ -24,16 +24,62 @@ static inline void *Game_Ptr(uint32_t rva) {
 
 int Game_Init(void);
 
+/* weapon and ammo descriptors of the world tables; methods get/set fields by name ("MinAmmo", "OnFire", ...) */
+typedef struct cWeapInfo {
+	byte data[0xb0];
+} cWeapInfo;
+SD_SIZE(cWeapInfo, 0xb0);
+
+typedef struct cAmmoInfo {
+	byte data[0x5c];
+} cAmmoInfo;
+SD_SIZE(cAmmoInfo, 0x5c);
+
+/* Global/Table.h: fixed size array made once with Init (new T[count]) */
+#define TABLE(type) \
+	struct { \
+		int count; \
+		type *items; \
+	}
+
+/* the inlined index check of Table<T>::operator[]: the original stops on int3, then goes on with the bad slot */
+#define TABLE_AT(tab, i) \
+	({ \
+		typeof((tab).items) items_ = (tab).items; \
+		uint32_t i_ = (uint32_t)(i); \
+		if (!items_ || i_ >= (uint32_t)(tab).count) { \
+			__asm__ volatile("int3"); \
+		} \
+		items_ + i_; \
+	})
+
 /* the world: created by cWorld's constructor (rva 0x206db0), owns the game state of the running level */
 typedef struct cWorld {
 	void *vftable;			/* 0x0000 cWorld::vftable */
 	byte pad_0004[0x1bb8 - 0x0004];
-	int numWeapons;			/* 0x1bb8 SWeap.GetNWeap */
-	byte pad_1bbc[0x2090 - 0x1bbc];
+	TABLE(cWeapInfo) weapons;	/* 0x1bb8 SWeap.InitWeap, GetNWeap */
+	int firstWeapon;		/* 0x1bc0 SWeap.GetFirstiWeap */
+	TABLE(cAmmoInfo) ammo;		/* 0x1bc4 SWeap.InitAmmo, GetNAmmo */
+	byte pad_1bcc[0x2090 - 0x1bcc];
 	int money;			/* 0x2090 Scrap.GetMoney */
 } cWorld;
-SD_OFFSET(cWorld, numWeapons, 0x1bb8);
+SD_OFFSET(cWorld, weapons, 0x1bb8);
+SD_OFFSET(cWorld, firstWeapon, 0x1bc0);
+SD_OFFSET(cWorld, ammo, 0x1bc4);
 SD_OFFSET(cWorld, money, 0x2090);
+
+/* World/: thiscall methods; Table<T>::Init per element type */
+void __thiscall WeapTable_Init(void *table, int num);
+void __thiscall AmmoTable_Init(void *table, int num);
+void __thiscall cWorld_FillWeapPriority(cWorld *world);
+int __thiscall cWeapInfo_GetF(cWeapInfo *weap, const char *var, float *value);
+int __thiscall cWeapInfo_GetS(cWeapInfo *weap, const char *var, char **value);
+int __thiscall cWeapInfo_SetF(cWeapInfo *weap, const char *var, float value);
+int __thiscall cWeapInfo_SetS(cWeapInfo *weap, const char *var, const char *value);
+int __thiscall cAmmoInfo_GetF(cAmmoInfo *ammo, const char *var, float *value);
+int __thiscall cAmmoInfo_GetS(cAmmoInfo *ammo, const char *var, char **value);
+int __thiscall cAmmoInfo_SetF(cAmmoInfo *ammo, const char *var, float value);
+int __thiscall cAmmoInfo_SetS(cAmmoInfo *ammo, const char *var, const char *value);
 
 /* the application: allocated (0x90 bytes) and run by the WinMain message loop at rva 0x20d8c0 */
 typedef struct CWinApp {

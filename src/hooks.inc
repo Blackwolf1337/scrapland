@@ -11,6 +11,20 @@ SD_HOOK(Scrap_GetMoney, 0x199ea0, 53)
 
 /* src/game/PyInterface/SWeapPy.c */
 SD_HOOK(SWeap_GetNWeap, 0x19f230, 53)
+SD_HOOK(SWeap_GetNAmmo, 0x19f270, 53)
+SD_HOOK(SWeap_InitWeap, 0x19f2b0, 93)
+SD_HOOK(SWeap_InitAmmo, 0x19f310, 73)
+SD_HOOK(SWeap_GetFAmmo, 0x19f360, 141)
+SD_HOOK(SWeap_GetSAmmo, 0x19f3f0, 128)
+SD_HOOK(SWeap_SetFAmmo, 0x19f470, 142)
+SD_HOOK(SWeap_SetSAmmo, 0x19f500, 122)
+SD_HOOK(SWeap_GetFWeap, 0x19f580, 144)
+SD_HOOK(SWeap_GetSWeap, 0x19f610, 131)
+SD_HOOK(SWeap_SetFWeap, 0x19f6a0, 145)
+SD_HOOK(SWeap_SetSWeap, 0x19f740, 133)
+SD_HOOK(SWeap_FillPriority, 0x19f7d0, 51)
+SD_HOOK(SWeap_GetFirstiWeap, 0x19f810, 53)
+SD_HOOK(SWeap_NetExec, 0x19f850, 487)
 
 /* src/game/PyInterface/SVecPy.c */
 SD_HOOK(SVec_Add, 0x19e810, 123)

@@ -3255,7 +3255,7 @@ rva	size	source	callconv	name	signature
 00120f40	68	DEFAULT	unknown	FUN_00520f40	
 00120fa0	290	DEFAULT	unknown	FUN_00520fa0	
 001210d0	274	DEFAULT	unknown	FUN_005210d0	
-001211f0	245	DEFAULT	unknown	FUN_005211f0	
+001211f0	245	USER_DEFINED	unknown	Inferno_NetCreate	undefined(void)
 001212f0	1210	DEFAULT	unknown	FUN_005212f0	
 001217b0	802	DEFAULT	unknown	FUN_005217b0	
 00121ae0	110	DEFAULT	unknown	FUN_00521ae0	
@@ -3270,7 +3270,7 @@ rva	size	source	callconv	name	signature
 00122780	68	DEFAULT	unknown	FUN_00522780	
 001227d0	277	DEFAULT	unknown	FUN_005227d0	
 001228f0	68	DEFAULT	unknown	FUN_005228f0	
-00122940	1067	DEFAULT	unknown	FUN_00522940	
+00122940	1067	USER_DEFINED	unknown	Inferno_NetSetUp	undefined(void)
 00122d70	1071	DEFAULT	unknown	FUN_00522d70	
 001231a0	248	DEFAULT	unknown	FUN_005231a0	
 001232a0	32	DEFAULT	unknown	FUN_005232a0	
@@ -3296,7 +3296,7 @@ rva	size	source	callconv	name	signature
 00125f50	68	DEFAULT	unknown	FUN_00525f50	
 00125fa0	274	DEFAULT	unknown	FUN_00525fa0	
 001260c0	274	DEFAULT	unknown	FUN_005260c0	
-001261e0	261	DEFAULT	unknown	FUN_005261e0	
+001261e0	261	USER_DEFINED	unknown	Swarm_NetCreate	undefined(void)
 001262f0	1210	DEFAULT	unknown	FUN_005262f0	
 001267b0	750	DEFAULT	unknown	FUN_005267b0	
 00126aa0	124	DEFAULT	unknown	FUN_00526aa0	
@@ -3310,7 +3310,7 @@ rva	size	source	callconv	name	signature
 00127430	145	DEFAULT	unknown	FUN_00527430	
 001274d0	1102	DEFAULT	unknown	FUN_005274d0	
 00127920	68	DEFAULT	unknown	FUN_00527920	
-00127970	1263	DEFAULT	unknown	FUN_00527970	
+00127970	1263	USER_DEFINED	unknown	Swarm_NetSetUp	undefined(void)
 00127e60	472	DEFAULT	unknown	FUN_00527e60	
 00128040	674	DEFAULT	unknown	FUN_00528040	
 001282f0	743	DEFAULT	unknown	FUN_005282f0	
@@ -5332,8 +5332,8 @@ rva	size	source	callconv	name	signature
 0019fa70	67	DEFAULT	unknown	FUN_0059fa70	
 0019fac0	186	DEFAULT	unknown	FUN_0059fac0	
 0019fb80	219	DEFAULT	unknown	FUN_0059fb80	
-0019fc60	223	DEFAULT	unknown	FUN_0059fc60	
-0019fd40	226	DEFAULT	unknown	FUN_0059fd40	
+0019fc60	223	USER_DEFINED	__thiscall	Table<cAmmoInfo>::Init	void __thiscall(int num)
+0019fd40	226	USER_DEFINED	__thiscall	Table<cWeapInfo>::Init	void __thiscall(int num)
 0019fe30	28	ANALYSIS	unknown	initSWeap	undefined(void)
 0019fe50	108	DEFAULT	unknown	FUN_0059fe50	
 0019fec0	205	DEFAULT	unknown	FUN_0059fec0	
@@ -6197,14 +6197,14 @@ rva	size	source	callconv	name	signature
 00206330	41	DEFAULT	unknown	FUN_00606330	
 00206360	129	DEFAULT	unknown	FUN_00606360	
 002063f0	201	DEFAULT	unknown	FUN_006063f0	
-002064c0	89	DEFAULT	unknown	FUN_006064c0	
-00206520	337	DEFAULT	unknown	FUN_00606520	
-00206680	206	DEFAULT	unknown	FUN_00606680	
-00206750	320	DEFAULT	unknown	FUN_00606750	
-00206890	93	DEFAULT	unknown	FUN_00606890	
-002068f0	293	DEFAULT	unknown	FUN_006068f0	
-00206a20	217	DEFAULT	unknown	FUN_00606a20	
-00206b00	337	DEFAULT	unknown	FUN_00606b00	
+002064c0	89	USER_DEFINED	__thiscall	cAmmoInfo::GetF	int __thiscall(char * var, float * value)
+00206520	337	USER_DEFINED	__thiscall	cWeapInfo::GetF	int __thiscall(char * var, float * value)
+00206680	206	USER_DEFINED	__thiscall	cAmmoInfo::GetS	int __thiscall(char * var, char * * value)
+00206750	320	USER_DEFINED	__thiscall	cWeapInfo::GetS	int __thiscall(char * var, char * * value)
+00206890	93	USER_DEFINED	__thiscall	cAmmoInfo::SetF	int __thiscall(char * var, float value)
+002068f0	293	USER_DEFINED	__thiscall	cWeapInfo::SetF	int __thiscall(char * var, float value)
+00206a20	217	USER_DEFINED	__thiscall	cAmmoInfo::SetS	int __thiscall(char * var, char * value)
+00206b00	337	USER_DEFINED	__thiscall	cWeapInfo::SetS	int __thiscall(char * var, char * value)
 00206c60	108	DEFAULT	unknown	FUN_00606c60	
 00206cd0	108	DEFAULT	unknown	FUN_00606cd0	
 00206d40	108	DEFAULT	unknown	FUN_00606d40	
@@ -6235,7 +6235,7 @@ rva	size	source	callconv	name	signature
 00208ab0	220	DEFAULT	unknown	FUN_00608ab0	
 00208b90	136	DEFAULT	unknown	FUN_00608b90	
 00208c20	302	DEFAULT	unknown	FUN_00608c20	
-00208d60	792	DEFAULT	unknown	FUN_00608d60	
+00208d60	792	USER_DEFINED	__thiscall	cWorld::FillWeapPriority	void __thiscall(void)
 00209080	49	DEFAULT	unknown	FUN_00609080	
 002090c0	49	DEFAULT	unknown	FUN_006090c0	
 00209100	143	DEFAULT	unknown	FUN_00609100	

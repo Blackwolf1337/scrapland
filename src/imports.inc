@@ -13,6 +13,25 @@ SD_IMPORT(Vec3_Rotate, 0x15e3b0)
 SD_IMPORT(Vec3_GetRotAng, 0x15df10)
 SD_IMPORT(NormAng, 0x15e2e0)
 
+/* engine: World/ (weapon and ammo tables of cWorld) */
+SD_IMPORT(WeapTable_Init, 0x19fd40)
+SD_IMPORT(AmmoTable_Init, 0x19fc60)
+SD_IMPORT(cWorld_FillWeapPriority, 0x208d60)
+SD_IMPORT(cWeapInfo_GetF, 0x206520)
+SD_IMPORT(cWeapInfo_GetS, 0x206750)
+SD_IMPORT(cWeapInfo_SetF, 0x2068f0)
+SD_IMPORT(cWeapInfo_SetS, 0x206b00)
+SD_IMPORT(cAmmoInfo_GetF, 0x2064c0)
+SD_IMPORT(cAmmoInfo_GetS, 0x206680)
+SD_IMPORT(cAmmoInfo_SetF, 0x206890)
+SD_IMPORT(cAmmoInfo_SetS, 0x206a20)
+
+/* engine: Entities/Vehicle/Weaps/ (network creation of missiles) */
+SD_IMPORT(Swarm_NetCreate, 0x1261e0)
+SD_IMPORT(Swarm_NetSetUp, 0x127970)
+SD_IMPORT(Inferno_NetCreate, 0x1211f0)
+SD_IMPORT(Inferno_NetSetUp, 0x122940)
+
 /* Python 1.5.2 */
 SD_IMPORT(PyArg_ParseTuple, 0x2f0560)	/* getargs.c */
 SD_IMPORT(Py_BuildValue, 0x2f1b90)	/* modsupport.c */
