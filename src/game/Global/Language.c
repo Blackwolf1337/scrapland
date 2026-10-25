@@ -6,14 +6,12 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/hashtable.h"
 #include "scrap/scrap.h"
 
 int crt_stricmp(const char *a, const char *b);
 int crt_strncmp(const char *a, const char *b, size_t n);
 
-HashTable *__thiscall HashTable_ctor(HashTable *self, int numSlots, byte caseSensitive);
-uint32_t __thiscall HashTable_Slot(HashTable *self, const char *key);
-void HashItem_Free(void *p);
 
 typedef struct cLangText {
 	char *text;			/* 0x0 */
@@ -33,13 +31,9 @@ SD_SIZE(cLangItem, 0x10);
 #define g_LangBuffer GAME_DATA(char *, 0x44b620)
 #define g_IdLang GAME_DATA(char *, 0x44b624)		/* the language loaded */
 
-static int KeyEq(HashTable *t, const char *a, const char *b) {
-	return t->caseSensitive ? strcmp(a, b) == 0 : crt_stricmp(a, b) == 0;
-}
-
 cLangItem *__thiscall LangTable_Find(HashTable *self, const char *key, uint32_t slot) {
 	for (cLangItem *it = (cLangItem *)self->slots[slot]; it; it = it->next) {
-		if (KeyEq(self, it->key, key)) {
+		if (HashTable_KeyEq(self, it->key, key)) {
 			return it;
 		}
 	}
@@ -48,12 +42,7 @@ cLangItem *__thiscall LangTable_Find(HashTable *self, const char *key, uint32_t 
 
 cLangItem *__thiscall LangTable_Insert(HashTable *self, const char *key, uint32_t slot, const cLangText *value) {
 	CHECK(!self->locked);
-	if (!g_HashItemPool) {
-		cMemPool *mem = operator_new(sizeof(*mem));
-		g_HashItemPool = mem ? cMemPool_ctor(mem, "HashItem", g_HashItemValues) : NULL;
-	}
-	g_HashItemRefs++;
-	cLangItem *it = cMemPool_Alloc(g_HashItemPool, sizeof(*it));
+	cLangItem *it = HashItem_Alloc(sizeof(*it));
 	if (it) {
 		it->value = *value;
 		it->next = NULL;
@@ -92,7 +81,7 @@ cLangItem *__thiscall LangTable_Unlink(HashTable *self, const char *key, uint32_
 	cLangItem **link = (cLangItem **)&self->slots[slot];
 	CHECK(!self->locked);
 	for (; *link; link = &(*link)->next) {
-		if (KeyEq(self, (*link)->key, key)) {
+		if (HashTable_KeyEq(self, (*link)->key, key)) {
 			cLangItem *it = *link;
 			*link = it->next;
 			it->next = NULL;

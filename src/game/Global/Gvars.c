@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/hashtable.h"
 #include "scrap/scrap.h"
 
 int crt_strnicmp(const char *a, const char *b, size_t n);
@@ -19,93 +20,8 @@ double crt_atof(const char *s);
 void Str_TrimBlanks(char *s);
 void App_GetConfigDir(char *buf, int size);	/* the directory of Scrap.cfg with its separator (rva 0x20d570) */
 
-/* the HashTable.h parts shared with the other instances (src/game/FileSys/FilePak.c) */
-HashTable *__thiscall HashTable_ctor(HashTable *self, int numSlots, byte caseSensitive);
-uint32_t __thiscall HashTable_Slot(HashTable *self, const char *key);
-void HashItem_Free(void *p);
-
-/* the instance of this file: value a cGVar *, the key the name of the variable (not copied) */
-typedef struct cGVarItem {
-	cGVar *value;			/* 0x0 */
-	const char *key;		/* 0x4 */
-	struct cGVarItem *next;		/* 0x8 */
-} cGVarItem;
-SD_SIZE(cGVarItem, 0xc);
-
 #define GVAR_READONLY 0x1
 #define GVAR_SAVE 0x2		/* set from the config file or changed: written by Config_Save */
-
-/* the same code as the cNameItem instance */
-cGVarItem *__thiscall GVarTable_Find(HashTable *self, const char *key, uint32_t slot) {
-	for (cGVarItem *it = (cGVarItem *)self->slots[slot]; it; it = it->next) {
-		if (self->caseSensitive ? strcmp(it->key, key) == 0 : crt_stricmp(it->key, key) == 0) {
-			return it;
-		}
-	}
-	return NULL;
-}
-
-cGVarItem *__thiscall GVarTable_Insert(HashTable *self, const char *key, uint32_t slot, cGVar *const *value) {
-	CHECK(!self->locked);
-	if (!g_HashItemPool) {
-		cMemPool *mem = operator_new(sizeof(*mem));
-		g_HashItemPool = mem ? cMemPool_ctor(mem, "HashItem", g_HashItemValues) : NULL;
-	}
-	g_HashItemRefs++;
-	cGVarItem *it = cMemPool_Alloc(g_HashItemPool, sizeof(*it));
-	if (it) {
-		it->value = *value;
-		it->next = NULL;
-		it->key = NULL;
-	}
-	it->next = (cGVarItem *)self->slots[slot];
-	it->key = key;
-	self->slots[slot] = (HashNode *)it;
-	return it;
-}
-
-byte __thiscall GVarTable_Add(HashTable *self, const char *key, cGVar *const *value, byte warn) {
-	CHECK(!self->locked);
-	uint32_t slot = HashTable_Slot(self, key);
-	if (GVarTable_Find(self, key, slot)) {
-		if (warn) {
-			Con_Warnf("CHashTable3: Symbol already defined: '%s'\n", key);
-		}
-		return 0;
-	}
-	GVarTable_Insert(self, key, slot, value);
-	return 1;
-}
-
-byte __thiscall GVarTable_Get(HashTable *self, const char *key, cGVar **out) {
-	cGVarItem *it = GVarTable_Find(self, key, HashTable_Slot(self, key));
-	if (!it) {
-		return 0;
-	}
-	*out = it->value;
-	return 1;
-}
-
-void __fastcall GVarTable_Clear(HashTable *self) {
-	CHECK(!self->locked);
-	if (!self->slots) {
-		return;
-	}
-	for (int i = 0; i < (int)self->numSlots; i++) {
-		while (self->slots[i]) {
-			cGVarItem *it = (cGVarItem *)self->slots[i];
-			self->slots[i] = (HashNode *)it->next;
-			HashItem_Free(it);
-		}
-	}
-	operator_delete_array(self->slots);
-	self->numSlots = 0;
-	self->slots = NULL;
-}
-
-void __fastcall GVarTable_dtor(HashTable *self) {
-	GVarTable_Clear(self);
-}
 
 /* the base constructor: puts the variable in front of g_GVars; the derived class sets the type */
 cGVar *__thiscall cGVar_ctor(cGVar *self, const char *name, byte flags, const char *description) {
@@ -145,8 +61,8 @@ void GVars_Init(void) {
 	for (cGVar *v = g_GVars; v; v = v->next) {
 		CHECK(!g_GVarTable->locked);
 		uint32_t slot = HashTable_Slot(g_GVarTable, v->name);
-		if (!GVarTable_Find(g_GVarTable, v->name, slot)) {
-			GVarTable_Insert(g_GVarTable, v->name, slot, &v);
+		if (!PtrTable_Find(g_GVarTable, v->name, slot)) {
+			PtrTable_Insert(g_GVarTable, v->name, slot, (void *const *)&v);
 		} else {
 			Con_Warnf("CHashTable3: Symbol already defined: '%s'\n", v->name);
 			Con_SysErrorf("InitGVars: variable already defined: %s", v->name);
@@ -164,7 +80,7 @@ void GVars_Done(void) {
 		}
 		t = g_GVarTable;
 	}
-	GVarTable_Clear(t);
+	PtrTable_Clear(t);
 	operator_delete_sized(t, sizeof(*t));
 	g_GVarTable = NULL;
 }
@@ -172,8 +88,7 @@ void GVars_Done(void) {
 /* by the hash table, or along the list before GVars_Init */
 cGVar *GVar_Find(const char *name) {
 	if (g_GVarTable) {
-		cGVarItem *it = GVarTable_Find(g_GVarTable, name, HashTable_Slot(g_GVarTable, name));
-		return it ? it->value : NULL;
+		return PtrTable_Value(g_GVarTable, name);
 	}
 	g_GVarTable = NULL;
 	for (cGVar *v = g_GVars; v; v = v->next) {

@@ -6,6 +6,7 @@
 
 #include "scrap/console.h"
 #include "scrap/filepak.h"
+#include "scrap/hashtable.h"
 #include "scrap/pymempool.h"
 #include "scrap/scrap.h"
 
@@ -115,67 +116,7 @@ void __thiscall cFile2_SkipTo(cFile2 *self, int pos, const char *name) {
 	}
 }
 
-/* Global/HashTable.h: the parts both instances share */
-
-HashTable *__thiscall HashTable_ctor(HashTable *self, int numSlots, byte caseSensitive) {
-	CHECK(numSlots > 0);
-	self->numSlots = numSlots;
-	/* operator new[] of the exe, which gets -1 on an overflow of the size */
-	uint64_t bytes = (uint64_t)(uint32_t)numSlots * 4;
-	self->slots = operator_new_array(bytes >> 32 ? 0xffffffffu : (uint32_t)bytes);
-	memset(self->slots, 0, numSlots * 4);
-	self->caseSensitive = caseSensitive;
-	self->locked = 0;
-	return self;
-}
-
-/* the slot of key: a 4 bit shift hash folded to 28 bits, case-insensitive unless caseSensitive */
-uint32_t __thiscall HashTable_Slot(HashTable *self, const char *key) {
-	uint32_t h = 0;
-
-	CHECK(key);
-	CHECK(self->numSlots);
-	for (const byte *p = (const byte *)key; *p; p++) {
-		byte c = *p;
-		if (!self->caseSensitive && (byte)(c - 'A') < 26) {
-			c += 0x20;
-		}
-		h = h * 16 + c;
-		if (h & 0xf0000000) {
-			h = (h ^ ((h >> 24) & 0xf0)) & 0x0fffffff;
-		}
-	}
-	return h % self->numSlots;
-}
-
-static void *HashItem_Alloc(uint32_t size) {
-	if (!g_HashItemPool) {
-		cMemPool *mem = operator_new(sizeof(*mem));
-		g_HashItemPool = mem ? cMemPool_ctor(mem, "HashItem", g_HashItemValues) : NULL;
-	}
-	g_HashItemRefs++;
-	return cMemPool_Alloc(g_HashItemPool, size);
-}
-
-/* the pool goes when its last item does */
-void HashItem_Free(void *p) {
-	g_HashItemRefs--;
-	cMemPool_Free(g_HashItemPool, p);
-	cMemPool *pool = g_HashItemPool;
-	if (g_HashItemRefs < 1) {
-		if (pool) {
-			cMemPool_dtor(pool);
-			operator_delete_sized(pool, sizeof(*pool));
-		}
-		g_HashItemPool = NULL;
-	}
-}
-
-static int HashTable_KeyEq(HashTable *self, const char *a, const char *b) {
-	return self->caseSensitive ? strcmp(a, b) == 0 : crt_stricmp(a, b) == 0;
-}
-
-/* the instance of cNameItem (value int) */
+/* the instance of cNameItem (value int), the HashTable.h parts in src/game/Global/HashTable.c */
 
 cNameItem *__thiscall NameTable_Find(HashTable *self, const char *key, uint32_t slot) {
 	for (cNameItem *it = (cNameItem *)self->slots[slot]; it; it = it->next) {

@@ -105,9 +105,6 @@ typedef DLIST(cStringNode) cStringList;
 #define g_PackDirLen GAME_DATA(int, 0x44b5e4)		/* characters to skip of the walked names */
 #define g_PackBuildMode GAME_DATA(int, 0x44b5e8)
 #define g_PackFound GAME_DATA(cPackLocation, 0x44b5ec)	/* result of PackIndex_Find */
-#define g_HashItemPool GAME_DATA(cMemPool *, 0x44b600)
-#define g_HashItemRefs GAME_DATA(int, 0x44b604)
-#define g_HashItemValues (&GAME_DATA(uint32_t, 0x4289a0))
 #define g_PackNameStr GAME_DATA(char *, 0x44ab6c)	/* chars of g_PackName, the prefix of the open pack */
 #define g_PackBuildAsk GAME_DATA(int, 0x44ab84)	/* ask before quitting after Pack_Build */
 
