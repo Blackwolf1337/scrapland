@@ -1,33 +1,10 @@
-# Calls engine script functions and writes the results to sdtest.out (Python 1.5.2 syntax). tools/test/difftest.sh
-# runs it with the C functions and with the originals and compares the two outputs. The game reads it from its
-# root directory through -PythonExecute:execfile(...); the engine's command line drops quotes and splits at spaces,
-# so difftest.sh spells the file name with chr().
-import sys
+# Menu checks: calls engine script functions and writes the results to sdtest.out (Python 1.5.2 syntax).
+# tools/test/difftest.sh runs it with the C functions and with the originals and compares the outputs. The game
+# reads it from its root directory through -PythonExecute:execfile(...); the engine's command line drops quotes
+# and splits at spaces, so difftest.sh spells the file name with chr().
+OUT = 'sdtest.out'
+execfile('sdlib.py')
 import Scrap, SWeap, SVec, SAct, SFX
-
-out = open('sdtest.out', 'w')
-
-# floats with 17 digits: repr() of Python 1.5.2 shows only 12, which hides differences in the last bits.
-# Python 1.5.2 has no string methods, hence no join.
-def fmt(v):
-	if type(v) == type(0.0):
-		return '%.17g' % v
-	if type(v) == type(()):
-		r = ''
-		for x in v:
-			if r:
-				r = r + ', '
-			r = r + fmt(x)
-		return '(' + r + ')'
-	return repr(v)
-
-def check(name, fn):
-	try:
-		r = fmt(fn())
-	except:
-		r = 'exception %s: %s' % (sys.exc_type, sys.exc_value)
-	out.write('%s = %s\n' % (name, r))
-	out.flush() # a crash in the game must not lose the lines before it
 
 check('Scrap.GetMoney()', lambda: Scrap.GetMoney())
 check('Scrap.GetMoney(1)', lambda: Scrap.GetMoney(1))
@@ -150,5 +127,4 @@ check('SFX.CharacterConversion bad', lambda: SFX.CharacterConversion('a', 2, 1.0
 check('SFX.BishopSellLife bad', lambda: SFX.BishopSellLife('a'))
 check('SFX.MoneyTransfer bad', lambda: SFX.MoneyTransfer('a', 'b', 'c'))
 check('SFX.EmbeddedSet bad', lambda: SFX.EmbeddedSet(None, 'x'))
-out.write('done\n')
-out.close()
+finish()
