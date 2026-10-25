@@ -18,7 +18,7 @@ mkdir -p "$dir"
 cd "$root" || exit 1
 "$ghidra/support/analyzeHeadless" "$dir" "$name" -import game/Bin/Scrap.exe -processor x86:LE:32:default \
 	-cspec windows -analysisTimeoutPerFile 7200 -scriptPath tools/ghidra \
-	-postScript ImportHeaders.java third_party/python-1.5.2/Include/Python.h -Itools/ghidra/include \
+	-postScript ImportHeaders.java third_party/python-1.5.2/Include/Python.h -Itools/ghidra/include -Ithird_party/python-1.5.2/config \
 	-Ithird_party/python-1.5.2/Include \
 	-postScript NamePyBindings.java \
 	-postScript NameVtables.java \

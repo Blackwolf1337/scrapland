@@ -19,13 +19,16 @@ The work is done incrementally with a hook DLL, the re3 method: a proxy `dinput8
 
 | Path | Content |
 |------|---------|
-| `docs/` | `binary.md`, triage report of Scrap.exe; `ghidra.md`, Ghidra database and symbols |
+| `docs/` | `binary.md`, triage report of Scrap.exe; `ghidra.md`, Ghidra database and symbols; `hookdll.md`, hook DLL and decompilation workflow |
 | `symbols/` | `functions.tsv`, `globals.tsv`, `comments.tsv`, `srcstrings.tsv`, `rtti_classes.txt` (see `docs/ghidra.md`) |
 | `tools/ghidra/` | `rebuild.sh`, `headless.sh`, export/import and naming scripts (Java), `include/` (parse stand-ins) |
-| `third_party/python-1.5.2/` | Python 1.5.2 headers and license |
+| `third_party/python-1.5.2/` | Python 1.5.2 headers, `COPYRIGHT` |
 | `tools/srcstrings.py` | source string table of the static libraries |
 | `tools/git/pre-commit` | size check hook |
-| `tools/test/` | `prefix.sh`, `wine.sh`, `headless.sh` |
+| `tools/test/` | `prefix.sh`, `wine.sh`, `headless.sh`, `install.sh` (copies the DLL to `game/Bin`), `difftest.sh` (C functions against the originals) |
+| `include/scrap/` | engine structs and Python headers of the hook DLL |
+| `src/` | hook DLL: `loader/`, `core/`, `py/`, `imports.inc`, `hooks.inc` |
+| `CMakeLists.txt`, `cmake/` | build of the hook DLL, mingw-w64 i686 toolchain file |
 
 ## Setup
 
@@ -36,6 +39,15 @@ tools/test/wine.sh Scrap.exe -fullscreen:0    # hidden (gamescope headless) and 
 ```
 
 `wine.sh` runs for `HEADLESS_TIMEOUT` seconds (default 300). Set `WINE_LOG=file` to keep the output.
+
+## Build
+
+```
+cmake -B build -DCMAKE_TOOLCHAIN_FILE=cmake/mingw-i686.cmake && cmake --build build
+tools/test/difftest.sh                        # installs the DLL, compares C functions with the originals
+```
+
+Details in `docs/hookdll.md`.
 
 ## Prior work
 

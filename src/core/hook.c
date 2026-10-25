@@ -1,0 +1,65 @@
+/*
+ * Installs the hooks of src/hooks.inc: a 5 byte "jmp rel32" at the start of each original function. The C version
+ * replaces the original completely, there is no trampoline back into it.
+ */
+#include <string.h>
+#include <windows.h>
+
+#include "scrap/game.h"
+
+/* only the addresses are needed here, the real prototypes live in the implementing files */
+#define SD_HOOK(name, rva, size) extern void name(void);
+#include "hooks.inc"
+#undef SD_HOOK
+
+typedef struct {
+	const char *name;
+	uint32_t rva;
+	uint32_t size;
+	void *func;
+} hook_t;
+
+static const hook_t hooks[] = {
+#define SD_HOOK(name, rva, size) { #name, (rva), (size), (void *)name },
+#include "hooks.inc"
+#undef SD_HOOK
+};
+
+int Hook_Enabled(const char *name);
+
+static int Hook_Write(byte *at, const void *target) {
+	DWORD old;
+
+	if (!VirtualProtect(at, 5, PAGE_EXECUTE_READWRITE, &old)) {
+		return 0;
+	}
+	at[0] = 0xe9;
+	int32_t rel = (int32_t)((uintptr_t)target - ((uintptr_t)at + 5));
+	memcpy(at + 1, &rel, sizeof(rel));
+	VirtualProtect(at, 5, old, &old);
+	FlushInstructionCache(GetCurrentProcess(), at, 5);
+	return 1;
+}
+
+void Hook_InstallAll(void) {
+	int installed = 0, off = 0;
+
+	for (size_t i = 0; i < sizeof(hooks) / sizeof(hooks[0]); i++) {
+		const hook_t *h = &hooks[i];
+		if (h->size < 5) {
+			Com_Printf("hook %s: function is only %u bytes, not hooked\n", h->name, (unsigned)h->size);
+			continue;
+		}
+		if (!Hook_Enabled(h->name)) {
+			off++;
+			continue;
+		}
+		if (!Hook_Write(Game_Ptr(h->rva), h->func)) {
+			Com_Printf("hook %s: VirtualProtect failed (%lu)\n", h->name, GetLastError());
+			continue;
+		}
+		installed++;
+	}
+	Com_Printf("%d of %d hooks installed, %d switched off in scrapdecomp.ini\n", installed,
+		(int)(sizeof(hooks) / sizeof(hooks[0])), off);
+}

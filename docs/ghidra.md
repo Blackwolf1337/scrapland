@@ -126,4 +126,4 @@ Its notes (`notes/src/Classes.md`, `World.md`, `Variables.md`, `Python_Modules.m
 
 - Name engine functions from log and assert strings (e.g. `"cPy_Function::SetFunc: ..."`).
 - Struct layouts for the RTTI classes.
-- Phase 3: hook DLL.
+- Phase 3 continues in docs/hookdll.md.

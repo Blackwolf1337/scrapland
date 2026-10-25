@@ -113,17 +113,16 @@ public class ImportSymbols extends GhidraScript {
 			}
 			try {
 				setName(a, f.getSymbol(), unesc(r[4]), src);
-				String cc = unesc(r[3]);
-				if (!cc.isEmpty() && !cc.equals(f.getCallingConventionName())) {
-					f.setCallingConvention(cc);
-				}
-				String sig = unesc(r[5]);
+				// the C parser does not know every convention keyword: it comes from its own column instead
+				String sig = unesc(r[5]).replaceAll("\\b__(cdecl|stdcall|fastcall|thiscall|vectorcall)\\b", "")
+					.replaceAll(" +\\(", "(").trim();
 				if (!sig.isEmpty() && (src == SourceType.USER_DEFINED || src == SourceType.IMPORTED)) {
 					int p = sig.indexOf('(');
 					FunctionDefinitionDataType def = CParserUtils.parseSignature((DataTypeManagerService) null,
 						currentProgram, sig.substring(0, p) + " _f" + sig.substring(p), false);
 					if (def != null && new ApplyFunctionSignatureCmd(a, def, src, true, false, null,
 						FunctionRenameOption.NO_CHANGE).applyTo(currentProgram)) {
+						f = getFunctionAt(a);
 						nsig++;
 					}
 					else {
@@ -134,6 +133,16 @@ public class ImportSymbols extends GhidraScript {
 			}
 			catch (Exception e) {
 				printerr("ImportSymbols: " + r[0] + " " + r[4] + ": " + e.getMessage());
+				fail++;
+			}
+			try {
+				String cc = unesc(r[3]);
+				if (!cc.isEmpty() && !cc.equals(f.getCallingConventionName())) {
+					f.setCallingConvention(cc);
+				}
+			}
+			catch (Exception e) {
+				printerr("ImportSymbols: " + r[0] + " calling convention " + r[3] + ": " + e.getMessage());
 				fail++;
 			}
 		}
@@ -160,8 +169,10 @@ public class ImportSymbols extends GhidraScript {
 						dt = null; // the analysis already made the same data
 					}
 					if (dt != null) {
-						DataUtilities.createData(currentProgram, a, dt, -1,
-							DataUtilities.ClearDataMode.CLEAR_ALL_UNDEFINED_CONFLICT_DATA);
+						// a type given by hand wins over data the analysis guessed there
+						DataUtilities.createData(currentProgram, a, dt, -1, src == SourceType.USER_DEFINED
+							? DataUtilities.ClearDataMode.CLEAR_ALL_CONFLICT_DATA
+							: DataUtilities.ClearDataMode.CLEAR_ALL_UNDEFINED_CONFLICT_DATA);
 					}
 				}
 				nglob++;

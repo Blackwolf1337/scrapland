@@ -6208,7 +6208,7 @@ rva	size	source	callconv	name	signature
 00206c60	108	DEFAULT	unknown	FUN_00606c60	
 00206cd0	108	DEFAULT	unknown	FUN_00606cd0	
 00206d40	108	DEFAULT	unknown	FUN_00606d40	
-00206db0	1007	DEFAULT	unknown	FUN_00606db0	
+00206db0	1007	USER_DEFINED	__thiscall	cWorld::cWorld	undefined __thiscall(void)
 002071a0	54	DEFAULT	unknown	FUN_006071a0	
 002071e0	54	DEFAULT	unknown	FUN_006071e0	
 00207220	54	DEFAULT	unknown	FUN_00607220	
@@ -6299,7 +6299,7 @@ rva	size	source	callconv	name	signature
 0020c460	894	DEFAULT	unknown	FUN_0060c460	
 0020c7e0	29	ANALYSIS	__thiscall	CApp::vf10	undefined __thiscall(void)
 0020c800	3	ANALYSIS	__thiscall	CApp::vf20	undefined __thiscall(void)
-0020c810	221	DEFAULT	unknown	FUN_0060c810	
+0020c810	221	USER_DEFINED	__thiscall	CWinApp::CWinApp	undefined __thiscall(void)
 0020c8f0	28	DEFAULT	unknown	FUN_0060c8f0	
 0020c910	5	DEFAULT	unknown	thunk_FUN_0060d860	
 0020c920	57	ANALYSIS	__thiscall	CWinApp::vf03	undefined __thiscall(void)
@@ -9324,7 +9324,7 @@ rva	size	source	callconv	name	signature
 002f0470	119	DEFAULT	unknown	FUN_006f0470	
 002f04f0	50	DEFAULT	unknown	FUN_006f04f0	
 002f0530	34	DEFAULT	unknown	FUN_006f0530	
-002f0560	34	DEFAULT	unknown	FUN_006f0560	
+002f0560	34	USER_DEFINED	__cdecl	PyArg_ParseTuple	int __cdecl(PyObject * args, char * format, ...)
 002f0590	38	DEFAULT	unknown	FUN_006f0590	
 002f05c0	31	DEFAULT	unknown	FUN_006f05c0	
 002f05e0	163	ANALYSIS	unknown	convertsimple	undefined(void)
@@ -9336,7 +9336,7 @@ rva	size	source	callconv	name	signature
 002f1560	1374	ANALYSIS	unknown	vgetargskeywords	undefined(void)
 002f1ac0	68	DEFAULT	unknown	FUN_006f1ac0	
 002f1b10	128	DEFAULT	unknown	FUN_006f1b10	
-002f1b90	20	DEFAULT	unknown	FUN_006f1b90	
+002f1b90	20	USER_DEFINED	__cdecl	Py_BuildValue	PyObject * __cdecl(char * format, ...)
 002f1bb0	308	ANALYSIS	unknown	Py_InitModule4	undefined(void)
 002f1cf0	102	DEFAULT	unknown	FUN_006f1cf0	
 002f1d60	107	ANALYSIS	unknown	countformat	undefined(void)

@@ -10659,6 +10659,7 @@ rva	source	name	datatype
 00435b88	ANALYSIS	strop_methods	/methodobject.h/PyMethodDef[22]
 00435e28	ANALYSIS	locale_methods	/methodobject.h/PyMethodDef[5]
 00435e78	ANALYSIS	marshal_methods	/methodobject.h/PyMethodDef[5]
+00435f3c	USER_DEFINED	_Py_NoneStruct	/object.h/PyObject
 004360a8	ANALYSIS	file_methods	/methodobject.h/PyMethodDef[14]
 004361d8	ANALYSIS	file_Type	/object.h/PyTypeObject
 004366b8	ANALYSIS	sys_methods	/methodobject.h/PyMethodDef[7]
@@ -10988,6 +10989,8 @@ rva	source	name	datatype
 00444014	IMPORTED	pDNameNode::RTTI_Type_Descriptor	/TypeDescriptor
 00444030	IMPORTED	DNameStatusNode::RTTI_Type_Descriptor	/TypeDescriptor
 00444050	IMPORTED	pairNode::RTTI_Type_Descriptor	/TypeDescriptor
+00467450	USER_DEFINED	g_pWorld	/undefined4
+00467ba0	USER_DEFINED	g_pApp	/undefined4
 004e8dec	IMPORTED	_tls_index	/undefined4
 004f3510	IMPORTED	Rsrc_Icon_1_c0a	/PNG-Image
 004f38d0	IMPORTED	Rsrc_Icon_2_c0a	/PNG-Image
