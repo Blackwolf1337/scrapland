@@ -5346,23 +5346,23 @@ rva	size	source	callconv	name	signature
 001a0790	231	DEFAULT	unknown	FUN_005a0790	
 001a0880	261	DEFAULT	unknown	FUN_005a0880	
 001a0990	246	DEFAULT	unknown	FUN_005a0990	
-001a0a90	283	DEFAULT	unknown	FUN_005a0a90	
+001a0a90	283	USER_DEFINED	__cdecl	SndPS_Create	void * __cdecl(char * name)
 001a0bb0	211	DEFAULT	unknown	FUN_005a0bb0	
 001a0c90	248	DEFAULT	unknown	FUN_005a0c90	
 001a0d90	210	DEFAULT	unknown	FUN_005a0d90	
 001a0e70	49	DEFAULT	unknown	FUN_005a0e70	
 001a0eb0	143	DEFAULT	unknown	FUN_005a0eb0	
-001a0f70	42	DEFAULT	unknown	FUN_005a0f70	
+001a0f70	42	USER_DEFINED	__cdecl	SndPS_Get	void * __cdecl(char * name)
 001a0fa0	227	DEFAULT	unknown	FUN_005a0fa0	
 001a1090	1478	DEFAULT	unknown	FUN_005a1090	
-001a1660	896	DEFAULT	unknown	FUN_005a1660	
+001a1660	896	USER_DEFINED	__thiscall	cSoundPS::Var	int __thiscall(char * name, int set, char * * s, double * d, int * i)
 001a19e0	590	DEFAULT	unknown	FUN_005a19e0	
 001a1c30	38	DEFAULT	unknown	FUN_005a1c30	
 001a1c60	20	DEFAULT	unknown	FUN_005a1c60	
 001a1c80	49	DEFAULT	unknown	FUN_005a1c80	
 001a1cc0	223	DEFAULT	unknown	FUN_005a1cc0	
 001a1da0	182	DEFAULT	unknown	FUN_005a1da0	
-001a1e60	49	DEFAULT	unknown	FUN_005a1e60	
+001a1e60	49	USER_DEFINED	__cdecl	SndPS_Use	byte __cdecl(byte use)
 001a1ea0	37	DEFAULT	unknown	FUN_005a1ea0	
 001a1ed0	29	DEFAULT	unknown	FUN_005a1ed0	
 001a1ef0	135	DEFAULT	unknown	FUN_005a1ef0	
@@ -5401,29 +5401,29 @@ rva	size	source	callconv	name	signature
 001a3140	10	ANALYSIS	__thiscall	CSoundSys::vf02	undefined __thiscall(void)
 001a3150	84	DEFAULT	unknown	FUN_005a3150	
 001a31b0	4	DEFAULT	unknown	FUN_005a31b0	
-001a31c0	21	ANALYSIS	__thiscall	CSoundSys::vf35	undefined __thiscall(void)
+001a31c0	21	USER_DEFINED	__thiscall	CSoundSys::VoiceRemain	undefined __thiscall(void)
 001a31e0	24	ANALYSIS	__thiscall	CSoundSys::vf39	undefined __thiscall(void)
 001a3200	5	ANALYSIS	__thiscall	CSoundSys::vf01	undefined __thiscall(void)
 001a3210	32	DEFAULT	unknown	FUN_005a3210	
-001a3230	48	DEFAULT	unknown	FUN_005a3230	
+001a3230	48	USER_DEFINED	__thiscall	cSoundDesc::Init	void __thiscall(void)
 001a3260	63	DEFAULT	unknown	FUN_005a3260	
 001a32a0	8	ANALYSIS	__thiscall	CSoundSys::vf22	undefined __thiscall(void)
 001a32b0	1971	ANALYSIS	__thiscall	CSoundSys::vf24	undefined __thiscall(void)
-001a3a70	24	ANALYSIS	__thiscall	CSoundSys::vf32	undefined __thiscall(void)
+001a3a70	24	USER_DEFINED	__thiscall	CSoundSys::OpenVoice	undefined __thiscall(void)
 001a3a90	257	ANALYSIS	__thiscall	CSoundSys::vf30	undefined __thiscall(void)
 001a3ba0	1	ANALYSIS	__thiscall	CSoundSys::vf26	undefined __thiscall(void)
 001a3bb0	92	DEFAULT	unknown	FUN_005a3bb0	
 001a3c10	108	DEFAULT	unknown	FUN_005a3c10	
 001a3c80	23	DEFAULT	unknown	FUN_005a3c80	
-001a3ca0	18	ANALYSIS	__thiscall	CSoundSys::vf33	undefined __thiscall(void)
+001a3ca0	18	USER_DEFINED	__thiscall	CSoundSys::PlayVoice	undefined __thiscall(void)
 001a3cc0	3	ANALYSIS	__thiscall	CSoundSys::vf31	undefined __thiscall(void)
 001a3cd0	1	ANALYSIS	__thiscall	CSoundSys::vf03	undefined __thiscall(void)
 001a3ce0	387	ANALYSIS	__thiscall	CSoundSys::vf23	undefined __thiscall(void)
 001a3e70	40	DEFAULT	unknown	FUN_005a3e70	
-001a3ea0	31	ANALYSIS	__thiscall	CSoundSys::vf25	undefined __thiscall(void)
-001a3ec0	33	ANALYSIS	__thiscall	CSoundSys::vf29	undefined __thiscall(void)
+001a3ea0	31	USER_DEFINED	__thiscall	CSoundSys::SetMusic	undefined __thiscall(void)
+001a3ec0	33	USER_DEFINED	__thiscall	CSoundSys::SetMusicVolume	undefined __thiscall(void)
 001a3ef0	69	DEFAULT	unknown	FUN_005a3ef0	
-001a3f40	96	DEFAULT	unknown	FUN_005a3f40	
+001a3f40	96	USER_DEFINED	__thiscall	cSoundDesc::SetPos	void __thiscall(float * pos)
 001a3fa0	302	DEFAULT	unknown	FUN_005a3fa0	
 001a40d0	108	ANALYSIS	__thiscall	CSoundSys::vf19	undefined __thiscall(void)
 001a4140	104	ANALYSIS	__thiscall	CSoundSys::vf20	undefined __thiscall(void)
@@ -5431,18 +5431,18 @@ rva	size	source	callconv	name	signature
 001a4220	104	ANALYSIS	__thiscall	CSoundSys::vf21	undefined __thiscall(void)
 001a4290	104	ANALYSIS	__thiscall	CSoundSys::vf17	undefined __thiscall(void)
 001a4300	29	ANALYSIS	__thiscall	CSoundSys::vf37	undefined __thiscall(void)
-001a4320	21	ANALYSIS	__thiscall	CSoundSys::vf38	undefined __thiscall(void)
-001a4340	29	ANALYSIS	__thiscall	CSoundSys::vf36	undefined __thiscall(void)
+001a4320	21	USER_DEFINED	__thiscall	CSoundSys::SetVoiceString	undefined __thiscall(void)
+001a4340	29	USER_DEFINED	__thiscall	CSoundSys::SetVoiceVolume	undefined __thiscall(void)
 001a4360	1	DEFAULT	unknown	FUN_005a4360	
 001a4370	24	ANALYSIS	__thiscall	CSoundSys::vf27	undefined __thiscall(void)
 001a4390	69	DEFAULT	unknown	FUN_005a4390	
-001a43e0	18	ANALYSIS	__thiscall	CSoundSys::vf34	undefined __thiscall(void)
+001a43e0	18	USER_DEFINED	__thiscall	CSoundSys::StopVoice	undefined __thiscall(void)
 001a4400	192	DEFAULT	unknown	FUN_005a4400	
 001a44c0	108	DEFAULT	unknown	FUN_005a44c0	
 001a4530	81	DEFAULT	unknown	FUN_005a4530	
 001a4590	23	DEFAULT	unknown	FUN_005a4590	
 001a45b0	18	ANALYSIS	__thiscall	CSoundSys::vf40	undefined __thiscall(void)
-001a45d0	100	DEFAULT	unknown	FUN_005a45d0	
+001a45d0	100	USER_DEFINED	__cdecl	Snd_Volume	int __cdecl(float volume)
 001a4640	105	DEFAULT	unknown	FUN_005a4640	
 001a46b0	169	DEFAULT	unknown	FUN_005a46b0	
 001a4760	54	DEFAULT	unknown	FUN_005a4760	
@@ -10120,7 +10120,7 @@ rva	size	source	callconv	name	signature
 003194de	13	DEFAULT	unknown	FUN_007194de	
 003194eb	16	DEFAULT	unknown	FUN_007194eb	
 003194fb	31	DEFAULT	unknown	FUN_007194fb	
-0031951a	26	ANALYSIS	__thiscall	CAStarSup::vf03	undefined __thiscall(void)
+0031951a	26	USER_DEFINED	__thiscall	CSoundSys::Play	undefined __thiscall(void)
 00319535	37	ANALYSIS	__cdecl	__set_purecall_handler	_purecall_handler __cdecl(_purecall_handler _Handler)
 00319560	611	DEFAULT	unknown	FUN_00719560	
 003197d0	1330	DEFAULT	unknown	FUN_007197d0	

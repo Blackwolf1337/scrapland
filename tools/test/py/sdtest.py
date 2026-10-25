@@ -4,7 +4,7 @@
 # and splits at spaces, so difftest.sh spells the file name with chr().
 OUT = 'sdtest.out'
 execfile('sdlib.py')
-import Scrap, SWeap, SVec, SAct, SFX, SLogic
+import Scrap, SWeap, SVec, SAct, SFX, SLogic, SSound
 
 check('Scrap.GetMoney()', lambda: Scrap.GetMoney())
 check('Scrap.GetMoney(1)', lambda: Scrap.GetMoney(1))
@@ -142,4 +142,40 @@ check('SLogic.ChangeBatonState bad', lambda: SLogic.ChangeBatonState((1, 2, 3), 
 check('SLogic.SetCharState(Nobody)', lambda: SLogic.SetCharState('Nobody', 0, ''))
 check('SLogic.SetShipToRegenerate(Nobody)', lambda: SLogic.SetShipToRegenerate('Nobody', 1, 2))
 check('SLogic.UpdateTauntEndTime(5)', lambda: SLogic.UpdateTauntEndTime(5))
+# SSound: the test runs without an audio device (Wine audio switched off), the calls still go through the
+# engine's sound code. OpenVoice and SetMusic load files, not here.
+psvars = ('Sound', 'Loop', 'MaxInterval', 'MinInterval', 'AttenEnd', 'AttenIni', 'Doppler', 'Volume', 'Pitch', 'X',
+	'Y', 'Z', 'Missing')
+check('SSound.GetPS(SDTestPS, Volume) before', lambda: SSound.GetPS('SDTestPS', 'Volume'))
+check('SSound.CreatePS(SDTestPS)', lambda: SSound.CreatePS('SDTestPS'))
+for name, value in (('Sound', 'Explosion'), ('Loop', 1), ('MaxInterval', 2.5), ('Volume', 0.75), ('Pitch', 1.25),
+		('X', -3.5), ('Missing', 1), ('Missing', 'x')):
+	check('SSound.SetPS(SDTestPS, %s, %s)' % (name, repr(value)), lambda n=name, v=value: SSound.SetPS('SDTestPS', n, v))
+for v in psvars:
+	check('SSound.GetPS(SDTestPS, %s)' % v, lambda v=v: SSound.GetPS('SDTestPS', v))
+check('SSound.SetPS(NoPS, Volume, 1)', lambda: SSound.SetPS('NoPS', 'Volume', 1))
+check('SSound.SetPS(NoPS, Sound, x)', lambda: SSound.SetPS('NoPS', 'Sound', 'x'))
+check('SSound.GetPS(NoPS, Volume)', lambda: SSound.GetPS('NoPS', 'Volume'))
+check('SSound.UsePS(1)', lambda: SSound.UsePS(1))
+check('SSound.UsePS(0)', lambda: SSound.UsePS(0))
+# voice numbers are not range checked: VoiceRemain(99, ...) crashes the original
+for args in ((0, 7.5), (3, -1.0)):
+	check('SSound.VoiceRemain%s' % (args,), lambda a=args: apply(SSound.VoiceRemain, a))
+check('SSound.SetVoiceVolume(0, 0.5)', lambda: SSound.SetVoiceVolume(0, 0.5))
+check('SSound.SetVoiceString(0, hello)', lambda: SSound.SetVoiceString(0, 'hello'))
+check('SSound.StopVoice(0)', lambda: SSound.StopVoice(0))
+check('SSound.SetMusicVolume(0.3)', lambda: SSound.SetMusicVolume(0.3))
+check('SSound.Play(SDNoSound)', lambda: SSound.Play('SDNoSound'))
+check('SSound.Play(SDNoSound, 0.5, -0.25)', lambda: SSound.Play('SDNoSound', 0.5, -0.25))
+check('SSound.PlaySound(0,0,0, SDNoSound, 1)', lambda: SSound.PlaySound((0, 0, 0), 'SDNoSound', 1.0))
+check('SSound.PlaySound full', lambda: SSound.PlaySound((1, 2, 3), 'SDNoSound', 0.5, 0.25, 0.75, 2.0))
+check('SSound.StopAllSounds()', lambda: SSound.StopAllSounds())
+check('SSound.Play bad', lambda: SSound.Play())
+check('SSound.PlaySound bad', lambda: SSound.PlaySound((0, 0), 'x', 1.0))
+check('SSound.SetPS bad', lambda: SSound.SetPS('a', 'b'))
+check('SSound.GetPS bad', lambda: SSound.GetPS(1, 'b'))
+check('SSound.VoiceRemain bad', lambda: SSound.VoiceRemain('x', 1.0))
+check('SSound.OpenVoice bad', lambda: SSound.OpenVoice('x'))
+check('SSound.PlayVoice bad', lambda: SSound.PlayVoice('x'))
+check('SSound.SetMusic bad', lambda: SSound.SetMusic(1))
 finish()

@@ -48,6 +48,15 @@ SD_IMPORT(cActClass_GetAction, 0x060590)
 SD_IMPORT(cActClass_Var, 0x060770)
 SD_IMPORT(cAction_Var, 0x064280)
 
+/* engine: Sound/ */
+SD_IMPORT(Snd_Volume, 0x1a45d0)
+SD_IMPORT(cSoundDesc_Init, 0x1a3230)
+SD_IMPORT(cSoundDesc_SetPos, 0x1a3f40)
+SD_IMPORT(SndPS_Get, 0x1a0f70)
+SD_IMPORT(SndPS_Create, 0x1a0a90)
+SD_IMPORT(SndPS_Use, 0x1a1e60)
+SD_IMPORT(cSoundPS_Var, 0x1a1660)
+
 /* engine: Math/ */
 SD_IMPORT(Vec3_Rotate, 0x15e3b0)
 SD_IMPORT(Vec3_GetRotAng, 0x15df10)
