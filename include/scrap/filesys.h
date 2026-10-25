@@ -67,6 +67,28 @@ int __thiscall cAbstractFile_WriteString(cAbstractFile *self, const char *s);
 
 cFileMem *__thiscall cFileMem_ctor(cFileMem *self, void *buffer, int maxSize, byte ownsBuffer);
 
+/*
+ * FileSys/FileBlock.cpp: a file of nested blocks, each a 4 character id, the size of its data (int) and the data.
+ * Reading goes through a cFilePack when only reading, else through a cFile.
+ */
+typedef struct cFileBlockNode {
+	uint32_t id;			/* 0x0 the characters of the id, first in the low byte */
+	int pos;			/* 0x4 offset of the size field while writing */
+	struct cFileBlockNode *prev;	/* 0x8 */
+} cFileBlockNode;
+SD_SIZE(cFileBlockNode, 0xc);
+
+typedef struct cFileBlock {
+	cAbstractFile *f;		/* 0x0 */
+	cFileBlockNode *block;		/* 0x4 the open block */
+} cFileBlock;
+SD_SIZE(cFileBlock, 0x8);
+
+/* Open flags: bit 0 write (with bit 1 still a cFilePack), 0x10 only if the file exists */
+#define FILEBLOCK_WRITE 0x1
+#define FILEBLOCK_READ 0x2
+#define FILEBLOCK_MUST_EXIST 0x10
+
 /* fopen relative to the game directory, "El path debe ser relativo" for drive paths (rva 0x21bc10) */
 void *File_OpenRel(const char *name, const char *mode);
 /* 0 if the file is there (rva 0x21bb60) */

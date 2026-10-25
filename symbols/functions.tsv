@@ -3376,27 +3376,27 @@ rva	size	source	callconv	name	signature
 0012d4d0	69	USER_DEFINED	__thiscall	cFile::Seek	int __thiscall(int pos)
 0012d520	88	USER_DEFINED	__thiscall	cFile::Size	int __thiscall(void)
 0012d580	97	USER_DEFINED	__thiscall	cFile::Write	int __thiscall(void * src, int size)
-0012d5f0	39	DEFAULT	unknown	FUN_0052d5f0	
-0012d620	16	DEFAULT	unknown	FUN_0052d620	
-0012d630	79	DEFAULT	unknown	FUN_0052d630	
-0012d680	245	DEFAULT	unknown	FUN_0052d680	
-0012d790	79	DEFAULT	unknown	FUN_0052d790	
-0012d7e0	24	DEFAULT	unknown	FUN_0052d7e0	
-0012d800	178	DEFAULT	unknown	FUN_0052d800	
-0012d8c0	185	DEFAULT	unknown	FUN_0052d8c0	
-0012d980	50	DEFAULT	unknown	FUN_0052d980	
-0012d9c0	127	DEFAULT	unknown	FUN_0052d9c0	
-0012da40	147	DEFAULT	unknown	FUN_0052da40	
-0012dae0	20	DEFAULT	unknown	FUN_0052dae0	
-0012db00	17	DEFAULT	unknown	FUN_0052db00	
-0012db20	61	DEFAULT	unknown	FUN_0052db20	
-0012db60	168	DEFAULT	unknown	FUN_0052db60	
-0012dc10	223	DEFAULT	unknown	FUN_0052dc10	
-0012dcf0	147	DEFAULT	unknown	FUN_0052dcf0	
-0012dd90	219	DEFAULT	unknown	FUN_0052dd90	
-0012de70	18	DEFAULT	unknown	FUN_0052de70	
-0012de90	284	DEFAULT	unknown	FUN_0052de90	
-0012dfb0	150	DEFAULT	unknown	FUN_0052dfb0	
+0012d5f0	39	USER_DEFINED	__thiscall	cFileBlock::cFileBlock	void * __thiscall(char * filename, uint mode)
+0012d620	16	USER_DEFINED	__fastcall	cFileBlock::cFileBlock	void * __fastcall(void * self)
+0012d630	79	USER_DEFINED	__fastcall	cFileBlock::~cFileBlock	void __fastcall(void * self)
+0012d680	245	USER_DEFINED	__thiscall	cFileBlock::CreateFile	void __thiscall(uint mode, byte flags)
+0012d790	79	USER_DEFINED	__fastcall	cFileBlock::Close	int __fastcall(void * self)
+0012d7e0	24	USER_DEFINED	__fastcall	cFileBlock::DeleteFile	void __fastcall(void * self)
+0012d800	178	USER_DEFINED	__thiscall	cFileBlock::Open	int __thiscall(char * filename, uint mode, uint flags)
+0012d8c0	185	USER_DEFINED	__thiscall	cFileBlock::PopBlock	void __thiscall(char * id)
+0012d980	50	USER_DEFINED	__thiscall	cFileBlock::Error	int __thiscall(char * msg)
+0012d9c0	127	USER_DEFINED	__thiscall	cFileBlock::PushBlock	void __thiscall(char * id, int pos)
+0012da40	147	USER_DEFINED	__thiscall	cFileBlock::Read	int __thiscall(void * mem, int size)
+0012dae0	20	USER_DEFINED	__thiscall	cFileBlock::CloseBlockRead	int __thiscall(char * id)
+0012db00	17	USER_DEFINED	__thiscall	cFileBlock::Read4	int __thiscall(void * dst)
+0012db20	61	USER_DEFINED	__fastcall	cFileBlock::ReadInt	int __fastcall(void * self)
+0012db60	168	USER_DEFINED	__thiscall	cFileBlock::OpenBlockRead	int __thiscall(char * id)
+0012dc10	223	USER_DEFINED	__thiscall	cFileBlock::ReadString	int __thiscall(char * str, uint nbytes)
+0012dcf0	147	USER_DEFINED	__thiscall	cFileBlock::Write	int __thiscall(void * mem, int size)
+0012dd90	219	USER_DEFINED	__thiscall	cFileBlock::CloseBlockWrite	int __thiscall(char * id)
+0012de70	18	USER_DEFINED	__thiscall	cFileBlock::WriteInt	int __thiscall(int v)
+0012de90	284	USER_DEFINED	__thiscall	cFileBlock::OpenBlockWrite	int __thiscall(char * id)
+0012dfb0	150	USER_DEFINED	__thiscall	cFileBlock::WriteString	int __thiscall(char * str)
 0012e050	67	USER_DEFINED	__thiscall	cFileMem::cFileMem	void * __thiscall(void * buffer, int maxSize, byte ownsBuffer)
 0012e0a0	88	USER_DEFINED	__fastcall	cFileMem::~cFileMem	void __fastcall(void * self)
 0012e100	116	USER_DEFINED	__thiscall	cFileMem::Destroy	void * __thiscall(int flags)
