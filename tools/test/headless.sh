@@ -26,6 +26,8 @@ setsid timeout -k 5 "$timeout_s" env -u DISPLAY -u WAYLAND_DISPLAY \
 session=$!
 rc=$(timeout $((timeout_s + 15)) cat "$d/done")
 kill -- "-$session" 2> /dev/null
+# a hung game (threads of a Wine process waiting forever) ignores SIGTERM and keeps gamescopereaper alive
+pkill -KILL -s "$session" 2> /dev/null
 wait "$session" 2> /dev/null
 rm -rf "$d"
 exit "${rc:-124}"

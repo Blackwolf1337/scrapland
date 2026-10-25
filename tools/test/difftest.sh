@@ -54,7 +54,10 @@ run() {
 
 rc=0
 for s in "${scenarios[@]}"; do
-	if ! run "$s" 1 c || ! run "$s" 0 orig; then
+	# both runs even if one stops: the last lines show whether the original stops at the same check
+	run "$s" 1 c; c=$?
+	run "$s" 0 orig; o=$?
+	if [ $c -ne 0 ] || [ $o -ne 0 ]; then
 		rc=1
 		continue
 	fi

@@ -319,4 +319,50 @@ check('Scrap.GetFarestParked()', lambda: Scrap.GetFarestParked())
 check('Scrap.GetNearestParked(0, (0,0,0))', lambda: Scrap.GetNearestParked(0, (0, 0, 0)))
 check('Scrap.AddParkingZone(1, player, SDPark)', lambda p=pp: Scrap.AddParkingZone(1, p, 'SDPark'))
 check('Scrap.GetNearestParked(1, player)', lambda p=pp: Scrap.GetNearestParked(1, p))
+# Scrap batch 6 in the level: collision tests, sphere calls, dummy search, debris, items
+sdcalls = []
+def SDSphereCB(*args):
+	sdcalls.append(args)
+for a, b in ((pp, (pp[0], pp[1] - 5000.0, pp[2])), (pp, (pp[0] + 3000.0, pp[1], pp[2])), ((0, 0, 0), (0, 1, 0))):
+	for l in ('Traffic', 'Enemies'):
+		check('Scrap.TestLine(%s, %s, %s)' % (a, b, l), lambda a=a, b=b, l=l: Scrap.TestLine(a, b, l))
+for r in (10.0, 500.0, 5000.0):
+	for l in ('Traffic', 'Enemies'):
+		check('Scrap.TestSphere(player, %s, %s)' % (r, l), lambda r=r, l=l: Scrap.TestSphere(pp[0], pp[1], pp[2], r, l))
+		check('Scrap.TestSphere(player, %s, %s, Player0)' % (r, l),
+			lambda r=r, l=l: Scrap.TestSphere(pp[0], pp[1], pp[2], r, l, 'Player0'))
+check('Scrap.TestSphere(player, 500, Traffic, SDNoEntity)',
+	lambda: Scrap.TestSphere(pp[0], pp[1], pp[2], 500.0, 'Traffic', 'SDNoEntity'))
+for r in (1.0, 5000.0):
+	check('Scrap.SphereCall(player, %s, Traffic)' % r, lambda r=r: Scrap.SphereCall(pp[0], pp[1], pp[2], r, 'Traffic', 'SDSphereCB'))
+	check('Scrap.SphereCall((player), %s, Traffic, 0)' % r, lambda r=r: Scrap.SphereCall(pp, r, 'Traffic', 'SDSphereCB', 0))
+check('SphereCall callbacks', lambda: len(sdcalls))
+check('Scrap.TestLine bad', lambda: Scrap.TestLine((1, 2, 3), 'x'))
+check('Scrap.TestSphere bad', lambda: Scrap.TestSphere(1, 2, 3))
+check('Scrap.SphereCall bad', lambda: Scrap.SphereCall(1, 2, 3, 4))
+check('Scrap.NextDummySearch bad', lambda: Scrap.NextDummySearch(1))
+for d in ('', 'Park', 'SDNoDummy'):
+	check('Scrap.StartDummySearch(%s)' % d, lambda d=d: Scrap.StartDummySearch(d))
+	for i in range(4):
+		check('Scrap.NextDummySearch() %s %d' % (d, i), lambda: Scrap.NextDummySearch())
+for n, v in ((0, (1.5, 2.5, 3.5)), (1, (90.0, 45.0, 10.0)), (2, (0.1, 0.2, 0.3)), (3, (360.0, -180.0, 1.0)), (4, (1, 2, 3)), (-1, (1, 2, 3))):
+	check('Scrap.SetDebrisValue(%d, %s)' % (n, v), lambda n=n, v=v: Scrap.SetDebrisValue(n, v[0], v[1], v[2]))
+check('Scrap.SetDebrisValue bad', lambda: Scrap.SetDebrisValue(1, 2))
+check('Scrap.SetDebrisSys bad', lambda: Scrap.SetDebrisSys(1))
+check('Scrap.DropDebris bad', lambda: Scrap.DropDebris('x'))
+check('Scrap.SetDebrisSys(SDDebris, 0)', lambda: Scrap.SetDebrisSys('SDDebris', 0))
+# the name is a model file: a missing one ("File not found") never returns, in the original too. Bang.M3D of the
+# scripts is not in the archives (only commented out there), FiredDebris is (models/gfx/fireddebris.sm3)
+sddebris = 'Models/GFX/FiredDebris.M3D'
+check('Scrap.SetDebrisSys(FiredDebris, 2, ...)', lambda: Scrap.SetDebrisSys(sddebris, 2, 10000.0, 1.0, 0.7, 9800.0, 1))
+check('Scrap.SetDebrisSys(FiredDebris)', lambda: Scrap.SetDebrisSys(sddebris))
+check('Scrap.DropDebris(FiredDebris, 1)', lambda: Scrap.DropDebris(sddebris, 1.0))
+check('Scrap.DropDebris(FiredDebris, 10)', lambda: Scrap.DropDebris(sddebris, 10.0))
+check('Scrap.SetDebrisSys(FiredDebris, -1)', lambda: Scrap.SetDebrisSys(sddebris, -1))
+check('Scrap.AddItem(Other)', lambda: Scrap.AddItem('Other', 1))
+check('Scrap.AddItem(Life) bad', lambda: Scrap.AddItem('Life', 1))
+check('Scrap.AddItem(Ammo) bad', lambda: Scrap.AddItem('Ammo', 'x'))
+check('Scrap.AddItem(Life, SDLife, 5)', lambda: Scrap.AddItem('Life', 'SDLife', 5))
+check('Scrap.AddItem(Ammo, SDAmmo, Part, 5)', lambda: Scrap.AddItem('Ammo', 'SDAmmo', 'Part', 5))
+check('Scrap.AddItem(Ammo, SDAmmo2, Ener, 7)', lambda: Scrap.AddItem('Ammo', 'SDAmmo2', 'Ener', 7))
 finish()

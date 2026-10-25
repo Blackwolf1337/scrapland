@@ -3,6 +3,7 @@
  * Original file: PyInterface\\ScrapPy.cpp
  */
 #include <math.h>
+#include <string.h>
 
 #include "scrap/console.h"
 #include "scrap/global.h"
@@ -1380,4 +1381,211 @@ PyObject *Scrap_GetNearestParked(PyObject *self, PyObject *args) {
 PyObject *Scrap_GetFarestParked(PyObject *self, PyObject *args) {
 	(void)self;
 	return FindParked(args, 1);
+}
+
+/* --- batch 6: collision tests, debris, items, dummy search --- */
+
+/*
+ * TestLine((x1,y1,z1), (x2,y2,z2), listName) : ((x, y, z) hit, name) against the level and the entities of the
+ * list; "" for a level hit only, None for no hit.
+ */
+PyObject *Scrap_TestLine(PyObject *self, PyObject *args) {
+	double x1, y1, z1, x2, y2, z2;
+	char *listName;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "(ddd)(ddd)s", &x1, &y1, &z1, &x2, &y2, &z2, &listName)) {
+		return NULL;
+	}
+	cEntity *target = NULL;
+	vec3_t from = { (float)x1, (float)y1, (float)z1 };
+	vec3_t to = { (float)x2, (float)y2, (float)z2 };
+	vec3_t hit = to;
+	byte levelHit = Engine_TestLine(&from, &to, &hit, 0);
+	to = hit;
+	cWorld_TestLineEntities(g_pWorld, 0, EntityLists_Get(listName), &from, &to, &hit, &target, 1);
+	if (!target && !levelHit) {
+		return ReturnNone();
+	}
+	return Py_BuildValue("(ddd)s", (double)hit.x, (double)hit.y, (double)hit.z, target ? target->name : "");
+}
+
+/* TestSphere(x, y, z, radius, listName[, exclude]) : name of the entity hit, "" for the level, None for none */
+PyObject *Scrap_TestSphere(PyObject *self, PyObject *args) {
+	double x, y, z, r;
+	char *listName, *excludeName = "";
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "dddds|s", &x, &y, &z, &r, &listName, &excludeName)) {
+		return NULL;
+	}
+	cEntity *target = NULL;
+	vec3_t c = { (float)x, (float)y, (float)z };
+	byte levelHit = Engine_TestSphere(&c, &c, (float)r, 0, 0);
+	cEntity *exclude = NULL;
+	if (*excludeName) {
+		HashNode *node = HashTable_Find(&g_pWorld->entities, excludeName, HashTable_Hash(&g_pWorld->entities,
+			excludeName));
+		if (node) {
+			exclude = node->value;
+		}
+	}
+	cWorld_TestSphereEntities(g_pWorld, exclude, EntityLists_Get(listName), &c, (float)r, &target, 1, 0);
+	if (target) {
+		return Py_BuildValue("s", target->name);
+	}
+	if (levelHit) {
+		return Py_BuildValue("s", "");
+	}
+	return ReturnNone();
+}
+
+/* SphereCall(x, y, z, radius, listName, func[, flag]) or ((x,y,z), radius, ...) : func for the entities inside */
+PyObject *Scrap_SphereCall(PyObject *self, PyObject *args) {
+	double x, y, z, r;
+	char *listName, *func;
+	int flag = 1;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "ddddss|i", &x, &y, &z, &r, &listName, &func, &flag)) {
+		PyErr_Clear();
+		if (!PyArg_ParseTuple(args, "(ddd)dss|i", &x, &y, &z, &r, &listName, &func, &flag)) {
+			return NULL;
+		}
+	}
+	vec3_t c = { (float)x, (float)y, (float)z };
+	return Py_BuildValue("i", cWorld_SphereCall(g_pWorld, EntityLists_Get(listName), &c, (float)r, func,
+		flag != 0) != 0);
+}
+
+/* NextDummySearch() : (name, (x, y, z), (angx, angy) degrees, flag) of the next dummy, None at the end */
+PyObject *Scrap_NextDummySearch(PyObject *self, PyObject *args) {
+	char name[0x40];
+	vec3_t pos;
+	float ang[2];
+	byte flag;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	if (!DummySearch_Next(name, sizeof(name), &pos, ang, &flag)) {
+		return ReturnNone();
+	}
+	return Py_BuildValue("s(ddd)(dd)i", name, (double)pos.x, (double)pos.y, (double)pos.z,
+		(double)ang[0] * DEG_PER_PI / M_PI_D, (double)ang[1] * DEG_PER_PI / M_PI_D, flag != 0);
+}
+
+/* SetDebrisSys(name[, n, radius, b, c, d, flag, e]) : n <= 0 deletes the system */
+PyObject *Scrap_SetDebrisSys(PyObject *self, PyObject *args) {
+	char *name;
+	int n = 4, flag = 0, e = 0;
+	double radius = 10000.0, b = 1.0, c = 1.0, d = (double)g_DebrisDefault;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s|iddddii", &name, &n, &radius, &b, &c, &d, &flag, &e)) {
+		return NULL;
+	}
+	if (n <= 0) {
+		cWorld_DeleteDebrisSys(g_pWorld, name);
+		return ReturnNone();
+	}
+	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, name);
+	sys->b = (float)b;
+	sys->d = (float)d;
+	float rf = (float)radius;
+	sys->radiusSq = rf * rf;
+	sys->c = (float)c;
+	sys->flag = flag != 0;
+	cDebrisSys_Init(sys, n, e);
+	return ReturnNone();
+}
+
+/* DropDebris(name, speed) : a debris element with the values of SetDebrisValue */
+PyObject *Scrap_DropDebris(PyObject *self, PyObject *args) {
+	char *name;
+	double speed;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "sd", &name, &speed)) {
+		return NULL;
+	}
+	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, name);
+	cDebris *deb = cDebrisSys_NewElement(sys);
+	for (int i = 0; i < 4; i++) {
+		deb->drop[i] = g_DebrisDrop[i];
+	}
+	deb->speed = (float)speed;
+	cDebrisSys_Drop(sys, deb);
+	return ReturnNone();
+}
+
+/* SetDebrisValue(n, x, y, z) : 0 position, 1 angles (degrees), 2 velocity, 3 angle speed (degrees) */
+PyObject *Scrap_SetDebrisValue(PyObject *self, PyObject *args) {
+	int n;
+	double x, y, z;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "iddd", &n, &x, &y, &z)) {
+		return NULL;
+	}
+	switch (n) {
+	case 0:
+	case 2:
+		g_DebrisDrop[n] = (vec3_t){ (float)x, (float)y, (float)z };
+		break;
+	case 1:
+	case 3:
+		g_DebrisDrop[n] = (vec3_t){ (float)(x * M_PI_D / DEG_PER_PI), (float)(y * M_PI_D / DEG_PER_PI),
+			(float)(z * M_PI_D / DEG_PER_PI) };
+		break;
+	default:
+		Con_Warnf("WARNING SetDebrisValue: %d not found\n", n);
+		break;
+	}
+	return ReturnNone();
+}
+
+/*
+ * AddItem("Life", name, value) / AddItem("Ammo", name, kind, value) : kind "Part", "Miss" or "Ener" (0, 1, 2).
+ * As compiled: another kind passes the string pointer of the first argument as kind, and another item type does
+ * nothing (no argument check at all).
+ */
+PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
+	char *type = PyString_AsString(PyTuple_GetItem(args, 0));
+	char *name, *kindName;
+	cItemDesc item;
+
+	(void)self;
+	if (!strcmp(type, "Life")) {
+		cString_ctor(&item.name);
+		if (!PyArg_ParseTuple(args, "ssi", &type, &name, &item.value)) {
+			cString_dtor(&item.name);
+			return NULL;
+		}
+		cString_Set(&item.name, name);
+		g_pWorld->items.vftable->AddLife(&g_pWorld->items, &item);
+		cString_dtor(&item.name);
+	}
+	else if (!strcmp(type, "Ammo")) {
+		cString_ctor(&item.name);
+		if (!PyArg_ParseTuple(args, "sssi", &type, &name, &kindName, &item.value)) {
+			cString_dtor(&item.name);
+			return NULL;
+		}
+		cString_Set(&item.name, name);
+		int kind = (int)(intptr_t)type;
+		if (!strcmp(kindName, "Part")) {
+			kind = 0;
+		}
+		else if (!strcmp(kindName, "Miss")) {
+			kind = 1;
+		}
+		else if (!strcmp(kindName, "Ener")) {
+			kind = 2;
+		}
+		g_pWorld->items.vftable->AddAmmo(&g_pWorld->items, kind, &item);
+		cString_dtor(&item.name);
+	}
+	return ReturnNone();
 }

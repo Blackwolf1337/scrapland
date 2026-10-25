@@ -98,6 +98,47 @@ const char *__thiscall Parking_Find(void *parking, int flag, const vec3_t *pos, 
 /* like cActClass_Var on an entity list: returns 1 string, 2 double, 3 int, 0 */
 int __thiscall cEntityList_Var(void *list, const char *name, int set, char **s, double *d, int *i);
 int Video_GetModes(int i, char *buf);
+
+/* debris systems (named) and the values SetDebrisValue sets for the next DropDebris */
+typedef struct cDebrisSys {
+	byte pad_00[0x14];
+	float radiusSq;			/* 0x14 */
+	float b;			/* 0x18 */
+	float c;			/* 0x1c */
+	float d;			/* 0x20 */
+	byte flag;			/* 0x24 */
+} cDebrisSys;
+SD_OFFSET(cDebrisSys, flag, 0x24);
+
+typedef struct cDebris {
+	byte pad_00[0x1c];
+	vec3_t drop[4];			/* 0x1c copy of g_DebrisDrop */
+	float speed;			/* 0x4c */
+} cDebris;
+SD_OFFSET(cDebris, speed, 0x4c);
+
+#define g_DebrisDrop ((vec3_t *)Game_Ptr(0x467408))	/* [4]: position, angles (rad), velocity, angle speed (rad) */
+#define g_DebrisDefault GAME_DATA(float, 0x4674f4)
+
+cDebrisSys *__thiscall cWorld_GetDebrisSys(cWorld *world, const char *name);
+void __thiscall cWorld_DeleteDebrisSys(cWorld *world, const char *name);
+void __thiscall cDebrisSys_Init(cDebrisSys *sys, int n, int e);
+cDebris *__thiscall cDebrisSys_NewElement(cDebrisSys *sys);
+void __thiscall cDebrisSys_Drop(cDebrisSys *sys, cDebris *debris);
+void __thiscall cString_ctor(void *str);
+void __thiscall cString_dtor(void *str);
+
+/* entity list by name for the collision tests */
+void *EntityLists_Get(const char *name);
+byte Engine_TestLine(const vec3_t *from, const vec3_t *to, vec3_t *hit, int arg);
+byte Engine_TestSphere(const vec3_t *center, const vec3_t *center2, float radius, int a, int b);
+void __thiscall cWorld_TestLineEntities(cWorld *world, int arg, void *list, const vec3_t *from, const vec3_t *to,
+	vec3_t *hit, cEntity **target, int flag);
+void __thiscall cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, void *list, const vec3_t *center,
+	float radius, cEntity **target, int a, int b);
+byte __thiscall cWorld_SphereCall(cWorld *world, void *list, const vec3_t *center, float radius, const char *func,
+	int flag);
+byte DummySearch_Next(char *buf, int size, vec3_t *pos, float *ang, byte *flag);
 void Object3D_Preload(const char *name, const vec3_t *scale);
 cEntity *__thiscall cWorld_CreateEntity(cWorld *world, const char *className, float x, float y, float z,
 	const char *name);

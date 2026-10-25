@@ -3526,8 +3526,8 @@ rva	size	source	callconv	name	signature
 00133860	118	DEFAULT	unknown	FUN_00533860	
 001338e0	76	DEFAULT	unknown	FUN_005338e0	
 00133930	76	DEFAULT	unknown	FUN_00533930	
-00133980	9	DEFAULT	unknown	FUN_00533980	
-00133990	74	DEFAULT	unknown	FUN_00533990	
+00133980	9	USER_DEFINED	__thiscall	cString::cString	void __thiscall(void)
+00133990	74	USER_DEFINED	__thiscall	cString::~cString	void __thiscall(void)
 001339e0	73	DEFAULT	unknown	FUN_005339e0	
 00133a30	71	USER_DEFINED	__cdecl	ActionSet_IsNamed	byte __cdecl(void * set, char * name)
 00133a80	71	DEFAULT	unknown	FUN_00533a80	
@@ -5503,7 +5503,7 @@ rva	size	source	callconv	name	signature
 001a6c10	519	DEFAULT	unknown	FUN_005a6c10	
 001a6e20	626	DEFAULT	unknown	FUN_005a6e20	
 001a70a0	196	DEFAULT	unknown	FUN_005a70a0	
-001a7170	92	DEFAULT	unknown	FUN_005a7170	
+001a7170	92	USER_DEFINED	__cdecl	EntityLists_Get	void * __cdecl(char * name)
 001a7220	355	DEFAULT	unknown	FUN_005a7220	
 001a73d0	119	DEFAULT	unknown	FUN_005a73d0	
 001a7480	212	DEFAULT	unknown	FUN_005a7480	
@@ -5513,7 +5513,7 @@ rva	size	source	callconv	name	signature
 001a7770	83	DEFAULT	unknown	FUN_005a7770	
 001a77d0	378	DEFAULT	unknown	FUN_005a77d0	
 001a7950	161	DEFAULT	unknown	FUN_005a7950	
-001a7a00	193	DEFAULT	unknown	FUN_005a7a00	
+001a7a00	193	USER_DEFINED	__cdecl	DummySearch_Next	byte __cdecl(char * buf, int size, float * pos, float * ang, byte * flag)
 001a7ad0	5	USER_DEFINED	unknown	DummySearch_Start	undefined(void)
 001a7ae0	209	DEFAULT	unknown	FUN_005a7ae0	
 001a7bc0	20	USER_DEFINED	__thiscall	cEntityList::GetFirst	void * __thiscall(void)
@@ -6160,12 +6160,12 @@ rva	size	source	callconv	name	signature
 00204940	7	DEFAULT	unknown	FUN_00604940	
 00204950	24	DEFAULT	unknown	FUN_00604950	
 00204970	208	DEFAULT	unknown	FUN_00604970	
-00204a40	229	DEFAULT	unknown	FUN_00604a40	
+00204a40	229	USER_DEFINED	__thiscall	cDebrisSys::Drop	void __thiscall(void * debris)
 00204b30	69	DEFAULT	unknown	FUN_00604b30	
 00204b80	65	DEFAULT	unknown	FUN_00604b80	
-00204bd0	367	DEFAULT	unknown	FUN_00604bd0	
+00204bd0	367	USER_DEFINED	__thiscall	cDebrisSys::NewElement	void * __thiscall(void)
 00204d40	12	DEFAULT	unknown	FUN_00604d40	
-00204d50	128	DEFAULT	unknown	FUN_00604d50	
+00204d50	128	USER_DEFINED	__thiscall	cDebrisSys::Init	void __thiscall(int n, int e)
 00204dd0	16	DEFAULT	unknown	FUN_00604dd0	
 00204de0	183	DEFAULT	unknown	FUN_00604de0	
 00204ea0	664	DEFAULT	unknown	FUN_00604ea0	
@@ -6234,7 +6234,7 @@ rva	size	source	callconv	name	signature
 002089d0	210	DEFAULT	unknown	FUN_006089d0	
 00208ab0	220	DEFAULT	unknown	FUN_00608ab0	
 00208b90	136	DEFAULT	unknown	FUN_00608b90	
-00208c20	302	DEFAULT	unknown	FUN_00608c20	
+00208c20	302	USER_DEFINED	__thiscall	cWorld::DeleteDebrisSys	void __thiscall(char * name)
 00208d60	792	USER_DEFINED	__thiscall	cWorld::FillWeapPriority	void __thiscall(void)
 00209080	49	DEFAULT	unknown	FUN_00609080	
 002090c0	49	DEFAULT	unknown	FUN_006090c0	
@@ -6247,21 +6247,21 @@ rva	size	source	callconv	name	signature
 00209350	343	USER_DEFINED	__thiscall	cWorld::GetMinCamDistSq	float __thiscall(float * pos)
 002094b0	90	DEFAULT	unknown	FUN_006094b0	
 00209510	125	DEFAULT	unknown	FUN_00609510	
-00209590	262	DEFAULT	unknown	FUN_00609590	
+00209590	262	USER_DEFINED	__thiscall	cWorld::GetDebrisSys	void * __thiscall(char * name)
 002096a0	227	DEFAULT	unknown	FUN_006096a0	
 00209790	227	DEFAULT	unknown	FUN_00609790	
 00209880	11	DEFAULT	unknown	FUN_00609880	
 00209890	35	DEFAULT	unknown	FUN_00609890	
 002098c0	35	DEFAULT	unknown	FUN_006098c0	
-002098f0	263	DEFAULT	unknown	FUN_006098f0	
+002098f0	263	USER_DEFINED	__thiscall	cWorld::TestLineEntities	void __thiscall(int arg, void * list, float * from, float * to, float * hit, void * * target, int flag)
 00209a00	209	USER_DEFINED	unknown	cWorld::NewEntityList	undefined(void)
 00209ae0	69	DEFAULT	unknown	FUN_00609ae0	
 00209b30	342	USER_DEFINED	unknown	cWorld::SetCam	undefined(void)
 00209c90	374	DEFAULT	unknown	FUN_00609c90	
 00209e10	824	DEFAULT	unknown	FUN_00609e10	
 0020a150	312	DEFAULT	unknown	FUN_0060a150	
-0020a290	129	DEFAULT	unknown	FUN_0060a290	
-0020a320	314	DEFAULT	unknown	FUN_0060a320	
+0020a290	129	USER_DEFINED	__thiscall	cWorld::SphereCall	byte __thiscall(void * list, float * center, float radius, char * func, int flag)
+0020a320	314	USER_DEFINED	__thiscall	cWorld::TestSphereEntities	void __thiscall(void * exclude, void * list, float * center, float radius, void * * target, int a, int b)
 0020a460	182	DEFAULT	unknown	FUN_0060a460	
 0020a520	182	DEFAULT	unknown	FUN_0060a520	
 0020a5e0	182	DEFAULT	unknown	FUN_0060a5e0	
@@ -6445,12 +6445,12 @@ rva	size	source	callconv	name	signature
 002128c0	667	DEFAULT	unknown	FUN_006128c0	
 00212b60	1147	DEFAULT	unknown	FUN_00612b60	
 00212fe0	360	DEFAULT	unknown	FUN_00612fe0	
-00213150	652	DEFAULT	unknown	FUN_00613150	
+00213150	652	USER_DEFINED	__cdecl	Engine_TestLine	byte __cdecl(float * from, float * to, float * hit, int arg)
 002133e0	208	DEFAULT	unknown	FUN_006133e0	
 002134b0	327	DEFAULT	unknown	FUN_006134b0	
 00213600	894	DEFAULT	unknown	FUN_00613600	
 00213980	990	DEFAULT	unknown	FUN_00613980	
-00213d60	1173	DEFAULT	unknown	FUN_00613d60	
+00213d60	1173	USER_DEFINED	__cdecl	Engine_TestSphere	byte __cdecl(float * center, float * center2, float radius, int a, int b)
 00214200	194	DEFAULT	unknown	FUN_00614200	
 002142d0	164	DEFAULT	unknown	FUN_006142d0	
 00214380	94	DEFAULT	unknown	FUN_00614380	

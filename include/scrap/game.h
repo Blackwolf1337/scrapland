@@ -54,6 +54,26 @@ SD_SIZE(cAmmoInfo, 0x5c);
 		items_ + i_; \
 	})
 
+/* an item description for the item list (Scrap.AddItem): a string object and a value */
+typedef struct cItemDesc {
+	char *name;			/* 0x0 string object (cString_ctor/dtor, cString_Set) */
+	int value;			/* 0x4 */
+} cItemDesc;
+
+/* the item list embedded in cWorld at 0x20e0, only seen through its vtable */
+typedef struct cItemList cItemList;
+typedef struct cItemListVtbl {
+	void *vf00;
+	void(__thiscall *AddLife)(cItemList *self, cItemDesc *item);			/* 0x04 */
+	void *vf02_03[2];
+	void(__thiscall *AddAmmo)(cItemList *self, int kind, cItemDesc *item);		/* 0x10 */
+} cItemListVtbl;
+SD_OFFSET(cItemListVtbl, AddAmmo, 0x10);
+
+struct cItemList {
+	const cItemListVtbl *vftable;
+};
+
 /* the world: created by cWorld's constructor (rva 0x206db0), owns the game state of the running level */
 typedef struct cWorld {
 	void *vftable;			/* 0x0000 cWorld::vftable */
@@ -81,7 +101,9 @@ typedef struct cWorld {
 	int money;			/* 0x2090 Scrap.GetMoney */
 	/* embedded objects of unknown size, only their addresses are used so far */
 	byte taunts[0x20ac - 0x2094];	/* 0x2094 SLogic.UpdateTauntEndTime */
-	byte parking[0x2144 - 0x20ac];	/* 0x20ac parking zones (Scrap.AddParkingZone, GetNearestParked) */
+	byte parking[0x20e0 - 0x20ac];	/* 0x20ac parking zones (Scrap.AddParkingZone, GetNearestParked) */
+	cItemList items;		/* 0x20e0 Scrap.AddItem */
+	byte pad_20e4[0x2144 - 0x20e4];
 	byte shipRegen[0x21c8 - 0x2144]; /* 0x2144 SLogic.SetShipToRegenerate */
 	byte aiCtrl[4];			/* 0x21c8 sentinels and gears (SLogic) */
 } cWorld;
@@ -102,6 +124,7 @@ SD_OFFSET(cWorld, ammo, 0x1bc4);
 SD_OFFSET(cWorld, money, 0x2090);
 SD_OFFSET(cWorld, taunts, 0x2094);
 SD_OFFSET(cWorld, parking, 0x20ac);
+SD_OFFSET(cWorld, items, 0x20e0);
 SD_OFFSET(cWorld, grid, 0x1bcc);
 SD_OFFSET(cWorld, shipRegen, 0x2144);
 SD_OFFSET(cWorld, aiCtrl, 0x21c8);
