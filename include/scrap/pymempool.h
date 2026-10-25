@@ -33,11 +33,7 @@ SD_SIZE(cMemPool, 0x14);
 #define g_PyPool GAME_DATA(cMemPool *, 0x4668d0)
 #define g_MemPools GAME_DATA(cMemPool *, 0x4668e4)
 #define g_PyPoolValues (&GAME_DATA(uint32_t, 0x428ef8))	/* MEMPOOL_CLASSES block counts */
-/* statistics block that Mem_Alloc/Mem_Free also count into while set */
-#define g_MemStatsContext GAME_DATA(void *, 0x44b640)
-#define g_PyMemStats ((void *)Game_Ptr(0x4668b8))
-
-void *Mem_Realloc(void *p, uint32_t size);	/* rva 0x133690 */
+#define g_PyMemStats ((cMemStats *)Game_Ptr(0x4668b8))	/* the context of the interpreter's allocations */
 
 cMemPool *__thiscall cMemPool_ctor(cMemPool *self, const char *name, const uint32_t *values);
 void __fastcall cMemPool_dtor(cMemPool *self);

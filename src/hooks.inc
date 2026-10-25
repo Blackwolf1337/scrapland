@@ -5,6 +5,17 @@
  *   Scrap_GetMoney=0
  */
 
+/* src/game/Global/Mem.c */
+SD_HOOK(operator_new, 0x1334d0, 9)
+SD_HOOK(operator_delete, 0x1334e0, 68)
+SD_HOOK(Mem_OutOfMemory, 0x133530, 27)
+SD_HOOK(Mem_Free, 0x133550, 70)
+SD_HOOK(Mem_Alloc, 0x1335a0, 171)
+SD_HOOK(Mem_Calloc, 0x133650, 27)
+SD_HOOK(Mem_Size, 0x133670, 23)
+SD_HOOK(Mem_Realloc, 0x133690, 233)
+SD_HOOK(Mem_Count, 0x133780, 153)
+
 /* src/game/FileSys/AbstractFile.c */
 SD_HOOK(cAbstractFile_dtor, 0x12cf40, 71)
 SD_HOOK(cAbstractFile_Destroy, 0x12cf90, 103)

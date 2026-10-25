@@ -16,13 +16,8 @@ SD_IMPORT(Con_Bluef, 0x0bc0b0)
 SD_IMPORT(Con_Verbosef, 0x0bc240)
 SD_IMPORT(Con_SysErrorf, 0x0bbba0)
 
-SD_IMPORT(operator_new, 0x1334d0)		/* include/scrap/global.h */
 SD_IMPORT(operator_delete_sized, 0x313634)
-SD_IMPORT(operator_delete, 0x1334e0)
 SD_IMPORT(operator_new_array, 0x313642)
-SD_IMPORT(Mem_Alloc, 0x1335a0)
-SD_IMPORT(Mem_Free, 0x133550)
-SD_IMPORT(Mem_Realloc, 0x133690)
 SD_IMPORT(Str_Copy, 0x1365c0)
 SD_IMPORT(Str_Printf, 0x136610)
 
@@ -92,6 +87,10 @@ SD_IMPORT(cWalkCharEntity_GetOwnerSlot, 0x0d38b0)
 
 /* MSVC 2015 static CRT (cdecl) */
 SD_IMPORT(crt_rand, 0x323c2f)
+SD_IMPORT(crt_malloc, 0x34c977)
+SD_IMPORT(crt_free, 0x34c972)
+SD_IMPORT(crt_realloc, 0x34c9e8)
+SD_IMPORT(crt_msize, 0x34c9b5)
 SD_IMPORT(crt_fprintf, 0x0bd230)
 SD_IMPORT(crt_report_rangecheckfailure, 0x313d15)
 SD_IMPORT(crt_fopen, 0x344c5e)

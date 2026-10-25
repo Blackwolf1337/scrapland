@@ -3515,13 +3515,13 @@ rva	size	source	callconv	name	signature
 00133410	182	DEFAULT	unknown	FUN_00533410	
 001334d0	9	USER_DEFINED	__cdecl	operator_new	void * __cdecl(uint size)
 001334e0	68	USER_DEFINED	__cdecl	operator_delete	void __cdecl(void * p)
-00133530	27	DEFAULT	unknown	FUN_00533530	
+00133530	27	USER_DEFINED	__cdecl	Mem_OutOfMemory	void __cdecl(uint size)
 00133550	70	USER_DEFINED	__cdecl	Mem_Free	void __cdecl(void * p)
 001335a0	171	USER_DEFINED	__cdecl	Mem_Alloc	void * __cdecl(uint size)
-00133650	27	DEFAULT	unknown	FUN_00533650	
-00133670	23	DEFAULT	unknown	FUN_00533670	
+00133650	27	USER_DEFINED	__cdecl	Mem_Calloc	void * __cdecl(uint size)
+00133670	23	USER_DEFINED	__cdecl	Mem_Size	uint __cdecl(void * p)
 00133690	233	USER_DEFINED	__cdecl	Mem_Realloc	void * __cdecl(void * p, uint size)
-00133780	153	DEFAULT	unknown	FUN_00533780	
+00133780	153	USER_DEFINED	__cdecl	Mem_Count	void __cdecl(int freed, int size)
 00133820	57	DEFAULT	unknown	FUN_00533820	
 00133860	118	DEFAULT	unknown	FUN_00533860	
 001338e0	76	DEFAULT	unknown	FUN_005338e0	
@@ -11778,11 +11778,11 @@ rva	size	source	callconv	name	signature
 0034c938	36	DEFAULT	unknown	FUN_0074c938	
 0034c95c	11	DEFAULT	unknown	FUN_0074c95c	
 0034c967	11	DEFAULT	unknown	FUN_0074c967	
-0034c972	5	DEFAULT	__cdecl	FID_conflict:_free	
-0034c977	11	DEFAULT	unknown	FUN_0074c977	
+0034c972	5	USER_DEFINED	__cdecl	_free	void __cdecl(void * p)
+0034c977	11	USER_DEFINED	__cdecl	_malloc	void * __cdecl(uint size)
 0034c982	51	DEFAULT	unknown	FUN_0074c982	
-0034c9b5	51	DEFAULT	unknown	FUN_0074c9b5	
-0034c9e8	11	DEFAULT	unknown	FUN_0074c9e8	
+0034c9b5	51	USER_DEFINED	__cdecl	_msize	uint __cdecl(void * p)
+0034c9e8	11	USER_DEFINED	__cdecl	_realloc	void * __cdecl(void * p, uint size)
 0034c9f3	16	DEFAULT	unknown	FUN_0074c9f3	
 0034ca03	16	DEFAULT	unknown	FUN_0074ca03	
 0034ca24	380	ANALYSIS	__cdecl	_strlwr_s_l_stat	int __cdecl(char * param_1, uint param_2, __crt_locale_pointers * param_3)
@@ -12367,7 +12367,7 @@ rva	size	source	callconv	name	signature
 0035ab61	27	ANALYSIS	__cdecl	__lseeki64_nolock	longlong __cdecl(int _FileHandle, longlong _Offset, int _Origin)
 0035ab7c	15	DEFAULT	unknown	FUN_0075ab7c	
 0035ab91	116	ANALYSIS	unknown	___acrt_get_msvcrt_heap_handle	undefined(void)
-0035ac05	58	ANALYSIS	__cdecl	FID_conflict:_free	void __cdecl(void * _Memory)
+0035ac05	58	ANALYSIS	__cdecl	FID_conflict:_free	void __cdecl(void * p)
 0035ac3f	78	ANALYSIS	unknown	__malloc_base	undefined(void)
 0035ac8d	90	ANALYSIS	__cdecl	common_tcscpy_s<char>	int __cdecl(char * param_1, uint param_2, char * param_3)
 0035ace7	90	ANALYSIS	__cdecl	_strcpy_s	errno_t __cdecl(char * _Dst, rsize_t _SizeInBytes, char * _Src)

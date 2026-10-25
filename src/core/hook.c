@@ -5,7 +5,13 @@
 #include <string.h>
 #include <windows.h>
 
-#include "scrap/game.h"
+/*
+ * Only shared.h: the engine headers declare the hooked functions with their real prototypes, which would clash with
+ * the plain declarations below. Fastcall and stdcall names get their decoration through --enable-stdcall-fixup.
+ */
+#include "scrap/shared.h"
+
+extern uintptr_t game_base;
 
 /* only the addresses are needed here, the real prototypes live in the implementing files */
 #define SD_HOOK(name, rva, size) extern void name(void);
@@ -54,7 +60,7 @@ void Hook_InstallAll(void) {
 			off++;
 			continue;
 		}
-		if (!Hook_Write(Game_Ptr(h->rva), h->func)) {
+		if (!Hook_Write((byte *)(game_base + h->rva), h->func)) {
 			Com_Printf("hook %s: VirtualProtect failed (%lu)\n", h->name, GetLastError());
 			continue;
 		}

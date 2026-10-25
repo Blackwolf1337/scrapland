@@ -17,12 +17,27 @@ void CheckFailed(const char *expr, const char *file, const char *date, int line)
 		} \
 	} while (0)
 
+/* memory statistics: of the whole game (g_MemStats) and of the context set in g_MemStatsContext */
+typedef struct cMemStats {
+	int bytes;			/* 0x00 */
+	int peakBytes;			/* 0x04 */
+	int blocks;			/* 0x08 */
+	int peakBlocks;			/* 0x0c */
+	int allocs;			/* 0x10 */
+	int frees;			/* 0x14 */
+} cMemStats;
+SD_SIZE(cMemStats, 0x18);
+
+#define g_MemStats (&GAME_DATA(cMemStats, 0x44b628))
+#define g_MemStatsContext GAME_DATA(cMemStats *, 0x44b640)
+
 /* the engine's operator new and sized delete (rva 0x1334d0, 0x313634; the plain delete is 0x1334e0), with its memory statistics */
 void *operator_new(uint32_t size);
 void operator_delete_sized(void *p, uint32_t size);
 /* the engine's malloc with the same statistics (rva 0x1335a0) */
 void *Mem_Alloc(uint32_t size);
 void Mem_Free(void *p);	/* rva 0x133550 */
+void *Mem_Realloc(void *p, uint32_t size);	/* rva 0x133690 */
 /* __report_rangecheckfailure of the exe's CRT (rva 0x313d15), ends the process */
 [[noreturn]] void crt_report_rangecheckfailure(void);
 
