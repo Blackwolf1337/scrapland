@@ -8,6 +8,9 @@
 root=$(cd "$(dirname "$0")/../.." && pwd)
 ghidra=${GHIDRA_DIR:-/opt/ghidra}
 export JAVA_HOME=${GHIDRA_JAVA:-$(find /usr/lib/jvm -maxdepth 1 -name 'java-*-openjdk' | sort -V | tail -1)}
+# a project made under another user name (another machine) opens only as its owner
+owner=$(sed -n 's/.*NAME="OWNER".*VALUE="\([^"]*\)".*/\1/p' "$root/ghidra/Scrapland.rep/project.prp" 2> /dev/null)
+[ -n "$owner" ] && export _JAVA_OPTIONS="${_JAVA_OPTIONS:+$_JAVA_OPTIONS }-Duser.name=$owner"
 script=$1
 shift
 cd "$root" || exit 1
