@@ -1,0 +1,2141 @@
+\tdfas,\n	printgrammar	Python-1.5.2/Parser/printgrammar.c
+\t{%d, "%s", %d, %d, states_%d,\n	printdfas	Python-1.5.2/Parser/printgrammar.c
+\t{%d, "%s"},\n	printlabels	Python-1.5.2/Parser/printgrammar.c
+\t{%d, %d},\n	printarcs	Python-1.5.2/Parser/printgrammar.c
+\t{%d, 0},\n	printlabels	Python-1.5.2/Parser/printgrammar.c
+\t{%d, arcs_%d_%d},\n	printstates	Python-1.5.2/Parser/printgrammar.c
+\t{%d, labels},\n	printgrammar	Python-1.5.2/Parser/printgrammar.c
+\n         	read_row_callback	libpng-1.0.5/pngtest.c
+\n Pass %d: 	read_row_callback	libpng-1.0.5/pngtest.c
+\n libpng version 1.0.5 - October 15, 1999\n\n   Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.\n\n   Copyright (c) 1996, 1997 Andreas Dilger\n\n   Copyright (c) 1998, 1999 Glenn Randers-Pehrson\n	png_get_copyright	libpng-1.0.5/png.c
+\n#endif /* JPEG_CJPEG_DJPEG */\n	main	jpeg-6a/ckconfig.c
+\n#endif /* JPEG_INTERNALS */\n	main	jpeg-6a/ckconfig.c
+\n#ifdef JPEG_CJPEG_DJPEG\n\n	main	jpeg-6a/ckconfig.c
+\n#ifdef JPEG_INTERNALS\n\n	main	jpeg-6a/ckconfig.c
+\nAllocating row buffer \n	test_one_file	libpng-1.0.5/pngtest.c
+\nFiles %s and %s are different\n	test_one_file	libpng-1.0.5/pngtest.c
+\nI have written the jconfig.h file for you.\n\n	main	jpeg-6a/ckconfig.c
+\nUsage:  %s [-display xdpy] [-gamma exp] [-bgcolor bg | -bgpat pat]\n        %*s [-timing] file.png\n\n    xdpy\tname of the target X display (e.g., ``hostname:0'')\n    exp \ttransfer-function exponent (``gamma'') of the display\n\t\t  system in floating-point format (e.g., ``%.1f''); equal\n\t\t  to the product of the lookup-table exponent (varies)\n\t\t  and the CRT exponent (usually 2.2); must be positive\n    bg  \tdesired background color in 7-character hex RGB format\n\t\t  (e.g., ``#ff7f00'' for orange:  same as HTML colors);\n\t\t  used with transparent images; overrides -bgpat\n    pat \tdesired background pattern number (1-%d); used with\n\t\t  transparent images; overrides -bgcolor\n    -timing\tenables delay for every block read, to simulate modem\n\t\t  download of image (~36 Kbps)\n\nPress Q, Esc or mouse button 1 after image is displayed to quit.\n\n	main	libpng-1.0.5/contrib/gregbook/rpng2-x.c
+\nUsage:  %s [-display xdpy] [-gamma exp] [-bgcolor bg] file.png\n    xdpy\tname of the target X display (e.g., ``hostname:0'')\n    exp \ttransfer-function exponent (``gamma'') of the display\n\t\t  system in floating-point format (e.g., ``%.1f''); equal\n\t\t  to the product of the lookup-table exponent (varies)\n\t\t  and the CRT exponent (usually 2.2); must be positive\n    bg  \tdesired background color in 7-character hex RGB format\n\t\t  (e.g., ``#ff7f00'' for orange:  same as HTML colors);\n\t\t  used with transparent images\n\nPress Q, Esc or mouse button 1 after image is displayed to quit.\n\n	main	libpng-1.0.5/contrib/gregbook/rpng-x.c
+\nUsage:  %s [-gamma exp] [-bgcolor bg | -bgpat pat] [-timing] file.png\n\n    exp \ttransfer-function exponent (``gamma'') of the display\n\t\t  system in floating-point format (e.g., ``%.1f''); equal\n\t\t  to the product of the lookup-table exponent (varies)\n\t\t  and the CRT exponent (usually 2.2); must be positive\n    bg  \tdesired background color in 7-character hex RGB format\n\t\t  (e.g., ``#ff7f00'' for orange:  same as HTML colors);\n\t\t  used with transparent images; overrides -bgpat\n    pat \tdesired background pattern number (1-%d); used with\n\t\t  transparent images; overrides -bgcolor\n    -timing\tenables delay for every block read, to simulate modem\n\t\t  download of image (~36 Kbps)\n\nPress Q, Esc or mouse button 1 after image is displayed to quit.\n\n	WinMain	libpng-1.0.5/contrib/gregbook/rpng2-win.c
+\nUsage:  %s [-gamma exp] [-bgcolor bg] [-text] [-time] [-interlace] pnmfile\nor: ... | %s [-gamma exp] [-bgcolor bg] [-text] [-time] [-interlace] | ...\n    exp \ttransfer-function exponent (``gamma'') of the image in\n\t\t  floating-point format (e.g., ``%.5f''); if image looks\n\t\t  correct on given display system, image gamma is equal to\n\t\t  inverse of display-system exponent, i.e., 1 / (LUT * CRT)\n\t\t  (where LUT = lookup-table exponent and CRT = CRT exponent;\n\t\t  first varies, second is usually 2.2, all are positive)\n    bg  \tdesired background color for alpha-channel images, in\n\t\t  7-character hex RGB format (e.g., ``#ff7f00'' for orange:\n\t\t  same as HTML colors)\n    -text\tprompt interactively for text info (tEXt chunks)\n    -time\tinclude a tIME chunk (last modification time)\n    -interlace\twrite interlaced PNG image\n\npnmfile or stdin must be a binary PGM (`P5'), PPM (`P6') or (extremely\nunofficial and unsupported!) PAM (`P8') file.  Currently it is required\nto have maxval == 255 (i.e., no scaling).  If pnmfile is specified, it\nis converted to the corresponding PNG file with the same base name but a\n``.png'' extension; files read from stdin are converted and sent to stdout.\nThe conversion is progressive (low memory usage) unless interlacing is\nrequested; in that case the whole image will be buffered in memory and\nwritten in one call.\n\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+\nUsage:  %s [-gamma exp] [-bgcolor bg] file.png\n    exp \ttransfer-function exponent (``gamma'') of the display\n\t\t  system in floating-point format (e.g., ``%.1f''); equal\n\t\t  to the product of the lookup-table exponent (varies)\n\t\t  and the CRT exponent (usually 2.2); must be positive\n    bg  \tdesired background color in 7-character hex RGB format\n\t\t  (e.g., ``#ff7f00'' for orange:  same as HTML colors);\n\t\t  used with transparent images\n\nPress Q, Esc or mouse button 1 after image is displayed to quit.\n\n	WinMain	libpng-1.0.5/contrib/gregbook/rpng-win.c
+\nWriting info struct\n	test_one_file	libpng-1.0.5/pngtest.c
+\nYou'll need to change jconfig.h to include the system include file\n	main	jpeg-6a/ckconfig.c
+\nbit length overflow\n	gen_bitlen	zlib-1.1.3/trees.c
+\nbl code %2d 	send_all_trees	zlib-1.1.3/trees.c
+\nbl counts: 	send_all_trees	zlib-1.1.3/trees.c
+\nbl tree: sent %ld	send_all_trees	zlib-1.1.3/trees.c
+\ncomprlen %lu(%lu) 	_tr_flush_block	zlib-1.1.3/trees.c
+\ndist data: dyn %ld, stat %ld	_tr_flush_block	zlib-1.1.3/trees.c
+\ndist tree: sent %ld	send_all_trees	zlib-1.1.3/trees.c
+\ndyn trees: dyn %ld, stat %ld	build_bl_tree	zlib-1.1.3/trees.c
+\ngen_codes: max_code %d 	gen_codes	zlib-1.1.3/trees.c
+\nlast_lit %u, in %ld, out ~%ld(%ld%%) 	_tr_flush_block	zlib-1.1.3/trees.c
+\nlit data: dyn %ld, stat %ld	_tr_flush_block	zlib-1.1.3/trees.c
+\nlit tree: sent %ld	send_all_trees	zlib-1.1.3/trees.c
+\nn %3d %c l %2d c %4x (%x) 	gen_codes	zlib-1.1.3/trees.c
+\nnode %d(%d), sons %d(%d) %d(%d)	build_tree	zlib-1.1.3/trees.c
+\nopt %lu(%lu) stat %lu(%lu) stored %lu lit %u 	_tr_flush_block	zlib-1.1.3/trees.c
+                	end_progress_monitor	jpeg-6a/cdjpeg.c
+ %3d%% 	progress_monitor	jpeg-6a/cdjpeg.c
+Pass %d/%d: %3d%% 	progress_monitor	jpeg-6a/cdjpeg.c
+        encoding %.3f ,	main	libpng-1.0.5/pngtest.c
+     day      time     size                       file\n ---------- -------- --------- -------------------------------------\n	tar	zlib-1.1.3/contrib/untgz/untgz.c
+    [%d] 	main	libpng-1.0.5/contrib/gregbook/wpng.c
+   Was %s written with the same chunk size (8k),	test_one_file	libpng-1.0.5/pngtest.c
+   part of the implementation of the compression library and is	main	zlib-1.1.3/maketree.c
+   subject to change. Applications should only use zlib.h.	main	zlib-1.1.3/maketree.c
+   with zlib   version %s\n	main	libpng-1.0.5/pngtest.c
+  (continuing anyway)\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+  -arithmetic    Use arithmetic coding\n	usage	jpeg-6a/cjpeg.c
+  -baseline      Force baseline output\n	usage	jpeg-6a/cjpeg.c
+  -bmp           Select BMP output format (Windows style)%s\n	usage	jpeg-6a/djpeg.c
+  -cfile name      Read comment from named file\n	usage	jpeg-6a/wrjpgcom.c
+  -colors N      Reduce image to no more than N colors\n	usage	jpeg-6a/djpeg.c
+  -comment "text"  Insert comment with given text\n	usage	jpeg-6a/wrjpgcom.c
+  -dct fast      Use fast integer DCT (less accurate)%s\n	usage	jpeg-6a/cjpeg.c
+  -dct float     Use floating-point DCT method%s\n	usage	jpeg-6a/cjpeg.c
+  -dct int       Use integer DCT method%s\n	usage	jpeg-6a/cjpeg.c
+  -dither fs     Use F-S dithering (default)\n	usage	jpeg-6a/djpeg.c
+  -dither none   Don't use dithering in quantization\n	usage	jpeg-6a/djpeg.c
+  -dither ordered  Use ordered dither (medium speed, quality)\n	usage	jpeg-6a/djpeg.c
+  -fast          Fast, low-quality processing\n	usage	jpeg-6a/djpeg.c
+  -gif           Select GIF output format%s\n	usage	jpeg-6a/djpeg.c
+  -grayscale     Create monochrome JPEG file\n	usage	jpeg-6a/cjpeg.c
+  -grayscale     Force grayscale output\n	usage	jpeg-6a/djpeg.c
+  -map FILE      Map to colors used in named image file\n	usage	jpeg-6a/djpeg.c
+  -maxmemory N   Maximum memory to use (in kbytes)\n	usage	jpeg-6a/cjpeg.c
+  -nosmooth      Don't use high-quality upsampling\n	usage	jpeg-6a/djpeg.c
+  -onepass       Use 1-pass quantization (fast, low quality)\n	usage	jpeg-6a/djpeg.c
+  -optimize      Optimize Huffman table (smaller file, but slow compression)\n	usage	jpeg-6a/cjpeg.c
+  -os2           Select BMP output format (OS/2 style)%s\n	usage	jpeg-6a/djpeg.c
+  -outfile name  Specify name for output file\n	usage	jpeg-6a/cjpeg.c
+  -pnm           Select PBMPLUS (PPM/PGM) output format%s\n	usage	jpeg-6a/djpeg.c
+  -progressive   Create progressive JPEG file\n	usage	jpeg-6a/cjpeg.c
+  -qslots N[,...]    Set component quantization tables\n	usage	jpeg-6a/cjpeg.c
+  -qtables file  Use quantization tables given in file\n	usage	jpeg-6a/cjpeg.c
+  -quality N     Compression quality (0..100; 5-95 is useful range)\n	usage	jpeg-6a/cjpeg.c
+  -replace         Delete any existing comments\n	usage	jpeg-6a/wrjpgcom.c
+  -restart N     Set restart interval in rows, or in blocks with B\n	usage	jpeg-6a/cjpeg.c
+  -rle           Select Utah RLE output format%s\n	usage	jpeg-6a/djpeg.c
+  -sample HxV[,...]  Set component sampling factors\n	usage	jpeg-6a/cjpeg.c
+  -scale M/N     Scale output image by fraction M/N, eg, 1/8\n	usage	jpeg-6a/djpeg.c
+  -scans file    Create multi-scan JPEG per script file\n	usage	jpeg-6a/cjpeg.c
+  -smooth N      Smooth dithered input (N=1..100 is strength)\n	usage	jpeg-6a/cjpeg.c
+  -targa         Input file is Targa format (usually not needed)\n	usage	jpeg-6a/cjpeg.c
+  -targa         Select Targa output format%s\n	usage	jpeg-6a/djpeg.c
+  -verbose    Also display dimensions of JPEG image\n	usage	jpeg-6a/rdjpgcom.c
+  -verbose  or  -debug   Emit debug output\n	usage	jpeg-6a/cjpeg.c
+  ACCEPT.\n	PyParser_AddToken	Python-1.5.2/Parser/parser.c
+  Arc to state %d, label %s\n	printssdfa	Python-1.5.2/Parser/pgen.c
+  Author: 	main	libpng-1.0.5/contrib/gregbook/wpng.c
+  Copyright: 	main	libpng-1.0.5/contrib/gregbook/wpng.c
+  Description (up to 9 lines):\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+  Direct pop.\n	PyParser_AddToken	Python-1.5.2/Parser/parser.c
+  E-mail: 	main	libpng-1.0.5/contrib/gregbook/wpng.c
+  File "	PyErr_PrintEx	Python-1.5.2/Python/pythonrun.c
+  Large chunk used %ld\n	print_mem_stats	jpeg-6a/jmemmgr.c
+  Small chunk used %ld free %ld\n	print_mem_stats	jpeg-6a/jmemmgr.c
+  Title: 	main	libpng-1.0.5/contrib/gregbook/wpng.c
+  URL: 	main	libpng-1.0.5/contrib/gregbook/wpng.c
+  png.c version: %s\n\n	main	libpng-1.0.5/pngtest.c
+  png.h version: %s\n	main	libpng-1.0.5/pngtest.c
+  reads/writes one PNG file (without -m) or multiple files (-m)\n	main	libpng-1.0.5/pngtest.c
+  with -m %s is used as a temporary file\n	main	libpng-1.0.5/pngtest.c
+ %d bytes at %x\n	main	libpng-1.0.5/pngtest.c
+ %s     <---> %s\n	tar	zlib-1.1.3/contrib/untgz/untgz.c
+ %s     <dir> %s\n	tar	zlib-1.1.3/contrib/untgz/untgz.c
+ %s %9d %s\n	tar	zlib-1.1.3/contrib/untgz/untgz.c
+ '%c' 	_tr_flush_block	zlib-1.1.3/trees.c
+ (decoding %.3f,\n	main	libpng-1.0.5/pngtest.c
+ (default)	usage	jpeg-6a/cjpeg.c
+ (finish)	printssdfa	Python-1.5.2/Parser/pgen.c
+ (last)	inflate_blocks	zlib-1.1.3/infblock.c
+ (line %d)	com_error	Python-1.5.2/Python/compile.c
+ * Generated automatically by the maketree.c program	main	zlib-1.1.3/maketree.c
+ ------  ------   ----  -----   ----    ----   ------     ----\n	do_list	zlib-1.1.3/contrib/minizip/miniunz.c
+ CPU time used = %.3f seconds	main	libpng-1.0.5/pngtest.c
+ Current memory allocation: %d bytes\n	main	libpng-1.0.5/pngtest.c
+ DFA '%s', state %d:	PyParser_AddToken	Python-1.5.2/Parser/parser.c
+ Error.\n	PyParser_AddToken	Python-1.5.2/Parser/parser.c
+ Error: bottom of stack.\n	PyParser_AddToken	Python-1.5.2/Parser/parser.c
+ FAIL\n	main	libpng-1.0.5/pngtest.c
+ Filter %d was used %lu times\n	main	libpng-1.0.5/pngtest.c
+ Length  Method   Size  Ratio   Date    Time   CRC-32     Name\n	do_list	zlib-1.1.3/contrib/minizip/miniunz.c
+ Maximum memory allocation: %d bytes\n	main	libpng-1.0.5/pngtest.c
+ MemError: push\n	PyParser_AddToken	Python-1.5.2/Parser/parser.c
+ MemError: shift.\n	PyParser_AddToken	Python-1.5.2/Parser/parser.c
+ NOTE: Zlib compiled for max 64k, libpng not\n	main	libpng-1.0.5/pngtest.c
+ NOTE: libpng compiled for max 64k, zlib not\n	main	libpng-1.0.5/pngtest.c
+ PASS\n	main	libpng-1.0.5/pngtest.c
+ PASS (%lu zero samples)\n	main	libpng-1.0.5/pngtest.c
+ Pop ...\n	PyParser_AddToken	Python-1.5.2/Parser/parser.c
+ Push ...\n	PyParser_AddToken	Python-1.5.2/Parser/parser.c
+ Shift.\n	PyParser_AddToken	Python-1.5.2/Parser/parser.c
+ Subset %d	printssdfa	Python-1.5.2/Parser/pgen.c
+ extracting: %s\n	do_extract_currentfile	zlib-1.1.3/contrib/minizip/miniunz.c
+ filtering\n   heuristic (libpng default), compression	test_one_file	libpng-1.0.5/pngtest.c
+ ignored\n	instance_dealloc	Python-1.5.2/Objects/classobject.c
+ l %2d v %4x 	send_bits	zlib-1.1.3/trees.c
+ level (zlib default)\n   and zlib version (%s)?\n\n	test_one_file	libpng-1.0.5/pngtest.c
+ other %.3f seconds)\n\n	main	libpng-1.0.5/pngtest.c
+ package	PyImport_ImportFrozenModule	Python-1.5.2/Python/import.c
+ start %u, match %u, length %d\n	check_match	zlib-1.1.3/deflate.c
+ tIME = %s\n	main	libpng-1.0.5/pngtest.c
+ vi:set tabsize=%d:	PyTokenizer_Get	Python-1.5.2/Parser/tokenizer.c
+ warning:  character code %u is %sdiscouraged by the PNG\n    specification [first occurrence was at character position #%d]\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+ warning:  file gammas are usually less than 1.0\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+ {{{%u,%u}},%u}	maketree	zlib-1.1.3/maketree.c
+", line 	PyErr_PrintEx	Python-1.5.2/Python/pythonrun.c
+#   <float at %lx, refcnt=%d, val=%s>\n	PyFloat_Fini	Python-1.5.2/Objects/floatobject.c
+#   <int at %lx, refcnt=%d, val=%ld>\n	PyInt_Fini	Python-1.5.2/Objects/intobject.c
+#   clear[1] %s\n	_PyModule_Clear	Python-1.5.2/Objects/moduleobject.c
+#   clear[2] %s\n	_PyModule_Clear	Python-1.5.2/Objects/moduleobject.c
+# %s has bad magic\n	check_compiled_module	Python-1.5.2/Python/import.c
+# %s has bad mtime\n	check_compiled_module	Python-1.5.2/Python/import.c
+# %s matches %s\n	check_compiled_module	Python-1.5.2/Python/import.c
+# can't create %s\n	write_compiled_module	Python-1.5.2/Python/import.c
+# can't write %s\n	write_compiled_module	Python-1.5.2/Python/import.c
+# cleanup __builtin__\n	PyImport_Cleanup	Python-1.5.2/Python/import.c
+# cleanup __main__\n	PyImport_Cleanup	Python-1.5.2/Python/import.c
+# cleanup floats	PyFloat_Fini	Python-1.5.2/Objects/floatobject.c
+# cleanup ints	PyInt_Fini	Python-1.5.2/Objects/intobject.c
+# cleanup sys\n	PyImport_Cleanup	Python-1.5.2/Python/import.c
+# cleanup[1] %s\n	PyImport_Cleanup	Python-1.5.2/Python/import.c
+# cleanup[2] %s\n	PyImport_Cleanup	Python-1.5.2/Python/import.c
+# clear __builtin__._\n	PyImport_Cleanup	Python-1.5.2/Python/import.c
+# clear sys.%s\n	PyImport_Cleanup	Python-1.5.2/Python/import.c
+# restore sys.%s\n	PyImport_Cleanup	Python-1.5.2/Python/import.c
+# trying %s\n	find_module	Python-1.5.2/Python/import.c
+# wrote %s\n	write_compiled_module	Python-1.5.2/Python/import.c
+#%d, %.20s, %.9s	Py_GetBuildInfo	Python-1.5.2/Modules/getbuildinfo.c
+#define %s %d\n	printnonterminals	Python-1.5.2/Parser/printgrammar.c
+#define BMP_SUPPORTED\t\t/* BMP image file format */\n	main	jpeg-6a/ckconfig.c
+#define CHAR_IS_UNSIGNED\n	main	jpeg-6a/ckconfig.c
+#define GIF_SUPPORTED\t\t/* GIF image file format */\n	main	jpeg-6a/ckconfig.c
+#define HAVE_PROTOTYPES\n	main	jpeg-6a/ckconfig.c
+#define HAVE_STDDEF_H\n	main	jpeg-6a/ckconfig.c
+#define HAVE_STDLIB_H\n	main	jpeg-6a/ckconfig.c
+#define HAVE_UNSIGNED_CHAR\n	main	jpeg-6a/ckconfig.c
+#define HAVE_UNSIGNED_SHORT\n	main	jpeg-6a/ckconfig.c
+#define INCOMPLETE_TYPES_BROKEN\n	main	jpeg-6a/ckconfig.c
+#define NEED_BSD_STRINGS\n	main	jpeg-6a/ckconfig.c
+#define NEED_SHORT_EXTERNAL_NAMES\n	main	jpeg-6a/ckconfig.c
+#define NEED_SYS_TYPES_H\n	main	jpeg-6a/ckconfig.c
+#define PPM_SUPPORTED\t\t/* PBMPLUS PPM/PGM image file format */\n	main	jpeg-6a/ckconfig.c
+#define RIGHT_SHIFT_IS_UNSIGNED\n	main	jpeg-6a/ckconfig.c
+#define TARGA_SUPPORTED\t\t/* Targa image file format */\n\n	main	jpeg-6a/ckconfig.c
+#define const\n	main	jpeg-6a/ckconfig.c
+#define void char\n	main	jpeg-6a/ckconfig.c
+#include "grammar.h"\n	printgrammar	Python-1.5.2/Parser/printgrammar.c
+#include "pgenheaders.h"\n	printgrammar	Python-1.5.2/Parser/printgrammar.c
+#line 1 "%s"\n	main	jpeg-6a/ansi2knr.c
+#undef CHAR_IS_UNSIGNED\n	main	jpeg-6a/ckconfig.c
+#undef DONT_USE_B_MODE\n	main	jpeg-6a/ckconfig.c
+#undef HAVE_PROTOTYPES\n	main	jpeg-6a/ckconfig.c
+#undef HAVE_STDDEF_H\n	main	jpeg-6a/ckconfig.c
+#undef HAVE_STDLIB_H\n	main	jpeg-6a/ckconfig.c
+#undef HAVE_UNSIGNED_CHAR\n	main	jpeg-6a/ckconfig.c
+#undef HAVE_UNSIGNED_SHORT\n	main	jpeg-6a/ckconfig.c
+#undef INCOMPLETE_TYPES_BROKEN\n	main	jpeg-6a/ckconfig.c
+#undef NEED_BSD_STRINGS\n	main	jpeg-6a/ckconfig.c
+#undef NEED_FAR_POINTERS\n	main	jpeg-6a/ckconfig.c
+#undef NEED_SHORT_EXTERNAL_NAMES\n	main	jpeg-6a/ckconfig.c
+#undef NEED_SIGNAL_CATCHER\t/* Define this if you use jmemname.c */\n	main	jpeg-6a/ckconfig.c
+#undef NEED_SYS_TYPES_H\n	main	jpeg-6a/ckconfig.c
+#undef RIGHT_SHIFT_IS_UNSIGNED\n	main	jpeg-6a/ckconfig.c
+#undef RLE_SUPPORTED\t\t/* Utah RLE image file format */\n	main	jpeg-6a/ckconfig.c
+#undef TWO_FILE_COMMANDLINE\t/* You may need this on non-Unix systems */\n	main	jpeg-6a/ckconfig.c
+%%%s.%d%c	formatfloat	Python-1.5.2/Objects/stringobject.c
+%%%s.%dl%c	formatint	Python-1.5.2/Objects/stringobject.c
+%.*s: %.200s	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+%.10s (%.40s) %.40s	Py_GetVersion	Python-1.5.2/Python/getversion.c
+%.12gj	complex_buf_repr	Python-1.5.2/Objects/complexobject.c
+%.255s: %.200s	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+%.32s(%.32s)	PyGrammar_LabelRepr	Python-1.5.2/Parser/grammar1.c
+%.50s, %.50s	convertsimple	Python-1.5.2/Python/getargs.c
+%2d/%02d/%4d %02d:%02d:%02d	strtime	zlib-1.1.3/contrib/untgz/untgz.c
+%7lu  %6s %7lu %3lu%%  %2.2lu-%2.2lu-%2.2lu  %2.2lu:%2.2lu  %8.8lx   %s\n	do_list	zlib-1.1.3/contrib/minizip/miniunz.c
+%c%2d%c	dumpstate	Python-1.5.2/Parser/pgen.c
+%c%c%c%c%c%c%c%c%c%c	gz_open	zlib-1.1.3/gzio.c
+%d %s %d %02d:%02d:%02d +0000	png_convert_to_rfc1123	libpng-1.0.5/png.c
+%d arguments, %d	converttuple	Python-1.5.2/Python/getargs.c
+%d arguments, %s	converttuple	Python-1.5.2/Python/getargs.c
+%d%c%d%c	set_sample_factors	jpeg-6a/rdswitch.c
+%d-sequence, %d-sequence	converttuple	Python-1.5.2/Python/getargs.c
+%d-sequence, %s	converttuple	Python-1.5.2/Python/getargs.c
+%d: %d\n	eval_code2	Python-1.5.2/Python/ceval.c
+%d: %d, %d\n	eval_code2	Python-1.5.2/Python/ceval.c
+%ld %ld	main	libpng-1.0.5/contrib/gregbook/wpng.c
+%s %s\n	tar	zlib-1.1.3/contrib/untgz/untgz.c
+%s -> %s: libpng read error\n	test_one_file	libpng-1.0.5/pngtest.c
+%s -> %s: libpng write error\n	test_one_file	libpng-1.0.5/pngtest.c
+%s : error writing %s skipping...\n	tar	zlib-1.1.3/contrib/untgz/untgz.c
+%s [ny] 	_Py_AskYesNo	Python-1.5.2/Python/pythonrun.c
+%s alloc'd: %d, freed: %d, max in use: %d\n	dump_counts	Python-1.5.2/Objects/object.c
+%s argument has non-string str()	PyString_Format	Python-1.5.2/Objects/stringobject.c
+%s is an invalid keyword argument for this function	vgetargskeywords	Python-1.5.2/Python/getargs.c
+%s module %.200s not properly initialized	load_module	Python-1.5.2/Python/import.c
+%s nor %s defined for these operands	PyInstance_DoBinOp	Python-1.5.2/Objects/classobject.c
+%s opened\n	main	zlib-1.1.3/contrib/minizip/miniunz.c
+%s requires at least one argument	vgetargs1	Python-1.5.2/Python/getargs.c
+%s requires no arguments	vgetargs1	Python-1.5.2/Python/getargs.c
+%s: %.200s	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+%s: %s\n	error	zlib-1.1.3/contrib/untgz/untgz.c
+%s: Couldn't gzopen %s\n	main	zlib-1.1.3/contrib/untgz/untgz.c
+%s: can't open file '%s'\n	Py_Main	Python-1.5.2/Modules/main.c
+%s: can't open stdin\n	main	jpeg-6a/rdjpgcom.c
+%s: can't open stdout\n	main	jpeg-6a/wrjpgcom.c
+%s: couldn't create directory %s\n	makedir	zlib-1.1.3/contrib/untgz/untgz.c
+%s: inconsistent tab/space usage\n	indenterror	Python-1.5.2/Parser/tokenizer.c
+%s: libpng warning: %s\n	png_default_warning	libpng-1.0.5/pngtest.c
+%s: must name one input and one output file\n	main	jpeg-6a/cjpeg.c
+%s: only one input file\n	main	jpeg-6a/cjpeg.c
+%s: sorry, arithmetic coding not supported\n	parse_switches	jpeg-6a/cjpeg.c
+%s: sorry, entropy optimization was not compiled\n	parse_switches	jpeg-6a/cjpeg.c
+%s: sorry, multi-scan output was not compiled\n	parse_switches	jpeg-6a/cjpeg.c
+%s: sorry, progressive output was not compiled\n	parse_switches	jpeg-6a/cjpeg.c
+'%.50s' object has no attribute '%.400s'	PyObject_GetAttrString	Python-1.5.2/Objects/object.c
+'break' outside loop	com_node	Python-1.5.2/Python/compile.c
+'continue' not properly in loop	com_continue_stmt	Python-1.5.2/Python/compile.c
+'finally' pops bad exception	eval_code2	Python-1.5.2/Python/ceval.c
+'import exceptions' failed; 	init_class_exc	Python-1.5.2/Python/bltinmodule.c
+'import site' failed; traceback:\n	initsite	Python-1.5.2/Python/pythonrun.c
+'import site' failed; use -v for traceback\n	initsite	Python-1.5.2/Python/pythonrun.c
+'in' or 'not in' needs sequence right argument	PySequence_Contains	Python-1.5.2/Objects/abstract.c
+'return' outside function	com_return_stmt	Python-1.5.2/Python/compile.c
+(%.*s)	tok_dump	Python-1.5.2/Parser/tokenizer.c
+(%.12g%+.12gj)	complex_buf_repr	Python-1.5.2/Objects/complexobject.c
+(O(ziiz))	parse_syntax_error	Python-1.5.2/Python/pythonrun.c
+(OOOO)	eval_code2	Python-1.5.2/Python/ceval.c
+(siii)	get_counts	Python-1.5.2/Objects/object.c
+(unspecified)	convertsimple1	Python-1.5.2/Python/getargs.c
+(width = %ld, rowbytes = %ld, wimage_rowbytes = %d)\n	rpng_win_display_image	libpng-1.0.5/contrib/gregbook/rpng-win.c
+(width = %ld, rowbytes = %ld, ximage_rowbytes = %d)\n	rpng_x_display_image	libpng-1.0.5/contrib/gregbook/rpng-x.c
+(xrange(%ld, %ld, %ld) * %d)	range_repr	Python-1.5.2/Objects/rangeobject.c
+(ziiz)	err_input	Python-1.5.2/Python/pythonrun.c
+* wants int	PyString_Format	Python-1.5.2/Objects/stringobject.c
+, item %d	seterror	Python-1.5.2/Python/getargs.c
+--- %s:%d \n	eval_code2	Python-1.5.2/Python/ceval.c
+--varargs	main	jpeg-6a/ansi2knr.c
+-> %2d  %s	dumpstate	Python-1.5.2/Parser/pgen.c
+-display	main	libpng-1.0.5/contrib/gregbook/rpng-x.c
+-interlaced	main	libpng-1.0.5/contrib/gregbook/wpng.c
+./%-.255s	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+.\\%-.13s	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+.\\%-.255s	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+.lib section in a.out corrupted	initerrno	Python-1.5.2/Modules/errnomodule.c
+/* #define PROGRESS_REPORT */\t/* optional */\n	main	jpeg-6a/ckconfig.c
+/* #define const */\n	main	jpeg-6a/ckconfig.c
+/* #define void char */\n	main	jpeg-6a/ckconfig.c
+/* WARNING: this file should *not* be used by applications. It is	main	zlib-1.1.3/maketree.c
+/* header created automatically with -DGEN_TREES_H */\n\n	gen_trees_header	zlib-1.1.3/trees.c
+/* inffixed.h -- table for decoding fixed codes	main	zlib-1.1.3/maketree.c
+/* jconfig.h --- generated by ckconfig.c */\n	main	jpeg-6a/ckconfig.c
+/* see jconfig.doc for explanations */\n\n	main	jpeg-6a/ckconfig.c
+0.0 to a negative or complex power	complex_pow	Python-1.5.2/Objects/complexobject.c
+0.0 to a negative power	float_pow	Python-1.5.2/Objects/floatobject.c
+2nd argument to reduce() must be a sequence object	builtin_reduce	Python-1.5.2/Python/bltinmodule.c
+:  can't open X display [%s]\n	main	libpng-1.0.5/contrib/gregbook/rpng-x.c
+:  can't open input file [%s]\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  can't open output file [%s]\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  error on final libpng call\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  expected %lu bytes, got %lu bytes\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  expected %lu bytes, got %lu bytes (row %ld)\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  input file [%s] is not a binary PGM, PPM or PAM file\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  input filename is too long [%d chars]\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  insufficient memory for image data\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  insufficient memory for row data\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  internal logic error (unexpected PNM type)\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  libpng initialization problem (longjmp)\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  libpng problem (longjmp) while writing image data\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  libpng problem (longjmp) while writing row %ld\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  must give input filename or provide image data via stdin\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  only positive width/height, maxval == 255 allowed \n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  output file exists [%s]\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  unable to allocate memory for text\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  unable to reopen stdin in binary mode\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  unable to reopen stdout in binary mode\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+:  unknown writepng_init() error\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+: %d unfreed float%s in %d out of %d block%s\n	PyFloat_Fini	Python-1.5.2/Objects/floatobject.c
+: %d unfreed int%s in %d out of %d block%s\n	PyInt_Fini	Python-1.5.2/Objects/intobject.c
+: expected %s found	seterror	Python-1.5.2/Python/getargs.c
+<%.50s.%.50s instance at %lx>	instance_repr	Python-1.5.2/Objects/classobject.c
+<%.80s object at %lx>	PyObject_Repr	Python-1.5.2/Objects/object.c
+<%s buffer for %lx, ptr %lx, size %d at %lx>	buffer_repr	Python-1.5.2/Objects/bufferobject.c
+<%s buffer ptr %lx, size %d at %lx>	buffer_repr	Python-1.5.2/Objects/bufferobject.c
+<%s file '%.256s', mode '%.10s' at %lx>	file_repr	Python-1.5.2/Objects/fileobject.c
+<%s object at %lx>	PyObject_Print	Python-1.5.2/Objects/object.c
+<?.%.100s instance at %lx>	instance_repr	Python-1.5.2/Objects/classobject.c
+<anonymous function at %lx>	func_repr	Python-1.5.2/Objects/funcobject.c
+<built-in function %.80s>	meth_repr	Python-1.5.2/Objects/methodobject.c
+<built-in method %.80s of %.80s object at %lx>	meth_repr	Python-1.5.2/Objects/methodobject.c
+<class %.50s.%.50s at %lx>	class_repr	Python-1.5.2/Objects/classobject.c
+<class ?.%.100s at %lx>	class_repr	Python-1.5.2/Objects/classobject.c
+<code object %.100s at %lx, file "%.300s", line %d>	code_repr	Python-1.5.2/Python/compile.c
+<dummy key>	PyDict_New	Python-1.5.2/Objects/dictobject.c
+<fd:%d>	gzdopen	zlib-1.1.3/gzio.c
+<frozen>	PyImport_ImportFrozenModule	Python-1.5.2/Python/import.c
+<function %.100s at %lx>	func_repr	Python-1.5.2/Objects/funcobject.c
+<lambda>	compile_lambdef	Python-1.5.2/Python/compile.c
+<long text>	read_png	libpng-1.0.5/example.c
+<method %.60s.%.60s of %.60s instance at %lx>	instancemethod_repr	Python-1.5.2/Objects/classobject.c
+<module '%.80s' (built-in)>	module_repr	Python-1.5.2/Objects/moduleobject.c
+<module '%.80s' from '%.255s'>	module_repr	Python-1.5.2/Objects/moduleobject.c
+<refcnt %u at %lx>	PyObject_Print	Python-1.5.2/Objects/object.c
+<stderr>	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+<stdout>	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+<type '%.80s'>	type_repr	Python-1.5.2/Objects/typeobject.c
+<unbound method %.100s.%.100s>	instancemethod_repr	Python-1.5.2/Objects/classobject.c
+<unknown>	PyErr_PrintEx	Python-1.5.2/Python/pythonrun.c
+Accessing a corrupted shared library	initerrno	Python-1.5.2/Modules/errnomodule.c
+Adding FIRST sets ...\n	addfirstsets	Python-1.5.2/Parser/firstsets.c
+Adding parser accelerators ...\n	PyGrammar_AddAccelerators	Python-1.5.2/Parser/acceler.c
+Address already in use	initerrno	Python-1.5.2/Modules/errnomodule.c
+Address family not supported by protocol	initerrno	Python-1.5.2/Modules/errnomodule.c
+Advertise error	initerrno	Python-1.5.2/Modules/errnomodule.c
+Allocating and reading pCAL chunk data (%d bytes)\n	png_handle_pCAL	libpng-1.0.5/pngrutil.c
+Allocating pCAL parameters array\n	png_handle_pCAL	libpng-1.0.5/pngrutil.c
+Allocating read and write structures\n	test_one_file	libpng-1.0.5/pngtest.c
+Allocating read_info, write_info and end_info structures\n	test_one_file	libpng-1.0.5/pngtest.c
+Application must supply a known background gamma	png_set_background	libpng-1.0.5/pngrtran.c
+Arg list too long	initerrno	Python-1.5.2/Modules/errnomodule.c
+Argument expected for the -%c option\n	getopt	Python-1.5.2/Python/getopt.c
+ArithmeticError	initerrors	Python-1.5.2/Python/bltinmodule.c
+AssertionError	com_assert_stmt	Python-1.5.2/Python/compile.c
+Attempted to set both read_data_fn and write_data_fn in	png_set_write_fn	libpng-1.0.5/pngwio.c
+Attempting to link in too many shared libraries	initerrno	Python-1.5.2/Modules/errnomodule.c
+Bad adaptive filter type	png_read_filter_row	libpng-1.0.5/pngvcrd.c
+Bad address	initerrno	Python-1.5.2/Modules/errnomodule.c
+Bad code object in .pyc file	run_pyc_file	Python-1.5.2/Python/pythonrun.c
+Bad file number	initerrno	Python-1.5.2/Modules/errnomodule.c
+Bad font file format	initerrno	Python-1.5.2/Modules/errnomodule.c
+Bad grammar.\n	getgrammar	Python-1.5.2/Parser/pgenmain.c
+Bad hexadecimal number	re_compile_pattern	Python-1.5.2/Modules/regexpr.c
+Bad magic number in %.200s	load_compiled_module	Python-1.5.2/Python/import.c
+Bad magic number in .pyc file	run_pyc_file	Python-1.5.2/Python/pythonrun.c
+Bad match register number	re_compile_pattern	Python-1.5.2/Modules/regexpr.c
+Badly placed parenthesis	re_compile_pattern	Python-1.5.2/Modules/regexpr.c
+Badly placed special character	re_compile_pattern	Python-1.5.2/Modules/regexpr.c
+Baseline	process_SOFn	jpeg-6a/rdjpgcom.c
+BeOS: Failed to load %.200s	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+Block device required	initerrno	Python-1.5.2/Modules/errnomodule.c
+Bogus SOF marker length	process_SOFn	jpeg-6a/rdjpgcom.c
+Broken pipe	initerrno	Python-1.5.2/Modules/errnomodule.c
+Built-in exception class not found: %s.  Library mismatch?\n	init_class_exc	Python-1.5.2/Python/bltinmodule.c
+CHAR_MAX	init_locale	Python-1.5.2/Modules/_localemodule.c
+C_BUILTIN	initimp	Python-1.5.2/Python/import.c
+C_EXTENSION	initimp	Python-1.5.2/Python/import.c
+Calculate FIRST set for '%s'\n	calcfirstset	Python-1.5.2/Parser/firstsets.c
+Call to NULL read function	png_read_data	libpng-1.0.5/pngrio.c
+Call to NULL write function	png_write_data	libpng-1.0.5/pngwio.c
+Can not access a needed shared library	initerrno	Python-1.5.2/Modules/errnomodule.c
+Can't add Average filter after starting	png_set_filter	libpng-1.0.5/pngwrite.c
+Can't add Paeth filter after starting	png_set_filter	libpng-1.0.5/pngwrite.c
+Can't add Up filter after starting	png_set_filter	libpng-1.0.5/pngwrite.c
+Can't create object file image	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+Can't discard critical data on CRC error.	png_set_crc_action	libpng-1.0.5/pngrtran.c
+Can't find file for module %.100s\n(filename %.300s)	check_case	Python-1.5.2/Python/import.c
+Can't initialize module locale	init_locale	Python-1.5.2/Modules/_localemodule.c
+Can't malloc dynamic PYTHONPATH.\n	calculate_path	Python-1.5.2/PC/getpathp.c
+Can't open scan definition file %s\n	read_scan_script	jpeg-6a/rdswitch.c
+Can't open table file %s\n	read_quant_tables	jpeg-6a/rdswitch.c
+Can't open trees.h	gen_trees_header	zlib-1.1.3/trees.c
+Can't read object file (no access)	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+Can't translate NAME label '%s'\n	translabel	Python-1.5.2/Parser/grammar.c
+Can't translate STRING label %s\n	translabel	Python-1.5.2/Parser/grammar.c
+Can't translate label '%s'\n	translabel	Python-1.5.2/Parser/grammar.c
+Can't write tRNS with an alpha channel	png_write_tRNS	libpng-1.0.5/pngwutil.c
+Cannot Allocate > 64K	png_malloc_default	libpng-1.0.5/pngmem.c
+Cannot assign requested address	initerrno	Python-1.5.2/Modules/errnomodule.c
+Cannot create string-based exceptions	newstdexception	Python-1.5.2/Python/bltinmodule.c
+Cannot do RGB_TO_GRAY without EXPAND_SUPPORTED.	png_set_rgb_to_gray	libpng-1.0.5/pngrtran.c
+Cannot exec a shared library directly	initerrno	Python-1.5.2/Modules/errnomodule.c
+Cannot initialize standard class exceptions; 	init_class_exc	Python-1.5.2/Python/bltinmodule.c
+Cannot insert exception into __builtin__: %s\n	init_class_exc	Python-1.5.2/Python/bltinmodule.c
+Cannot open %s or %s.zip\n	main	zlib-1.1.3/contrib/minizip/miniunz.c
+Cannot open file	PyFile_FromString	Python-1.5.2/Objects/fileobject.c
+Cannot open input file %s\n	main	jpeg-6a/ansi2knr.c
+Cannot open output file %s\n	main	jpeg-6a/ansi2knr.c
+Cannot pre-allocate MemoryError instance\n	init_class_exc	Python-1.5.2/Python/bltinmodule.c
+Cannot re-init internal module %.200s	init_builtin	Python-1.5.2/Python/import.c
+Cannot read interlaced image -- interlace handler disabled.	png_read_image	libpng-1.0.5/pngread.c
+Cannot reopen stdin\n	read_stdin	jpeg-6a/cdjpeg.c
+Cannot reopen stdout\n	write_stdout	jpeg-6a/cdjpeg.c
+Cannot send after transport endpoint shutdown	initerrno	Python-1.5.2/Modules/errnomodule.c
+Cannot use string as modifiable buffer	string_buffer_getwritebuf	Python-1.5.2/Objects/stringobject.c
+Case mismatch for module name %.100s\n(filename %.300s)	check_case	Python-1.5.2/Python/import.c
+Channel number out of range	initerrno	Python-1.5.2/Modules/errnomodule.c
+Checking for multiple internal spaces in '%s'\n	png_check_keyword	libpng-1.0.5/pngwutil.c
+Checking pCAL equation type and number of parameters\n	png_handle_pCAL	libpng-1.0.5/pngrutil.c
+Comment text may not exceed %u bytes\n	main	jpeg-6a/wrjpgcom.c
+Comment, length %ld:\n	COM_handler	jpeg-6a/djpeg.c
+Communication error on send	initerrno	Python-1.5.2/Modules/errnomodule.c
+Compiling (meta-) parse tree into NFA grammar\n	metacompile	Python-1.5.2/Parser/pgen.c
+Computing background image...	rpng2_win_create_window	libpng-1.0.5/contrib/gregbook/rpng2-win.c
+Configuration check for Independent JPEG Group's software done.\n	main	jpeg-6a/ckconfig.c
+Connection refused	initerrno	Python-1.5.2/Modules/errnomodule.c
+Connection reset by peer	initerrno	Python-1.5.2/Modules/errnomodule.c
+Connection timed out	initerrno	Python-1.5.2/Modules/errnomodule.c
+Copyright	writepng_init	libpng-1.0.5/contrib/gregbook/writepng.c
+Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam	Py_GetCopyright	Python-1.5.2/Python/getcopyright.c
+Could not find file %s\n	test_one_file	libpng-1.0.5/pngtest.c
+Could not find input file %s\n	test_one_file	libpng-1.0.5/pngtest.c
+Could not initialize built-in string exceptions	initerrors	Python-1.5.2/Python/bltinmodule.c
+Could not open output file %s\n	test_one_file	libpng-1.0.5/pngtest.c
+Couldn't create	tar	zlib-1.1.3/contrib/untgz/untgz.c
+Cross-device link	initerrno	Python-1.5.2/Modules/errnomodule.c
+DLL load failed with error code %d	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+DLL load failed, rc = %d, problem '%s': %s	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+DLL load failed: 	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+Decompression error	png_read_row	libpng-1.0.5/pngread.c
+Defl:F	do_list	zlib-1.1.3/contrib/minizip/miniunz.c
+Defl:N	do_list	zlib-1.1.3/contrib/minizip/miniunz.c
+Defl:X	do_list	zlib-1.1.3/contrib/minizip/miniunz.c
+Destination address required	initerrno	Python-1.5.2/Modules/errnomodule.c
+Destroying data structs\n	test_one_file	libpng-1.0.5/pngtest.c
+Device not a stream	initerrno	Python-1.5.2/Modules/errnomodule.c
+Device or resource busy	initerrno	Python-1.5.2/Modules/errnomodule.c
+Differential lossless	process_SOFn	jpeg-6a/rdjpgcom.c
+Differential lossless, arithmetic coding	process_SOFn	jpeg-6a/rdjpgcom.c
+Differential progressive	process_SOFn	jpeg-6a/rdjpgcom.c
+Differential progressive, arithmetic coding	process_SOFn	jpeg-6a/rdjpgcom.c
+Differential sequential	process_SOFn	jpeg-6a/rdjpgcom.c
+Differential sequential, arithmetic coding	process_SOFn	jpeg-6a/rdjpgcom.c
+Directory not empty	initerrno	Python-1.5.2/Modules/errnomodule.c
+Don't know how to import %.200s (type code %d)	load_module	Python-1.5.2/Python/import.c
+Dump of NFA for '%s' ...\n	maketables	Python-1.5.2/Parser/pgen.c
+Duplicate PLTE chunk	png_handle_PLTE	libpng-1.0.5/pngrutil.c
+Duplicate bKGD chunk	png_handle_bKGD	libpng-1.0.5/pngrutil.c
+Duplicate cHRM chunk	png_handle_cHRM	libpng-1.0.5/pngrutil.c
+Duplicate free of memory\n	png_debug_free	libpng-1.0.5/pngtest.c
+Duplicate gAMA chunk	png_handle_gAMA	libpng-1.0.5/pngrutil.c
+Duplicate hIST chunk	png_handle_hIST	libpng-1.0.5/pngrutil.c
+Duplicate oFFs chunk	png_handle_oFFs	libpng-1.0.5/pngrutil.c
+Duplicate pCAL chunk	png_handle_pCAL	libpng-1.0.5/pngrutil.c
+Duplicate pHYS chunk	png_handle_pHYs	libpng-1.0.5/pngrutil.c
+Duplicate sBIT chunk	png_handle_sBIT	libpng-1.0.5/pngrutil.c
+Duplicate sRGB chunk	png_handle_sRGB	libpng-1.0.5/pngrutil.c
+Duplicate tIME chunk	png_handle_tIME	libpng-1.0.5/pngrutil.c
+Duplicate tRNS chunk	png_handle_tRNS	libpng-1.0.5/pngrutil.c
+E-mail	writepng_init	libpng-1.0.5/contrib/gregbook/writepng.c
+EACCES	initerrno	Python-1.5.2/Modules/errnomodule.c
+EADDRINUSE	initerrno	Python-1.5.2/Modules/errnomodule.c
+EADDRNOTAVAIL	initerrno	Python-1.5.2/Modules/errnomodule.c
+EAFNOSUPPORT	initerrno	Python-1.5.2/Modules/errnomodule.c
+EAGAIN	initerrno	Python-1.5.2/Modules/errnomodule.c
+EALREADY	initerrno	Python-1.5.2/Modules/errnomodule.c
+EBADFD	initerrno	Python-1.5.2/Modules/errnomodule.c
+EBADMSG	initerrno	Python-1.5.2/Modules/errnomodule.c
+EBADRQC	initerrno	Python-1.5.2/Modules/errnomodule.c
+EBADSLT	initerrno	Python-1.5.2/Modules/errnomodule.c
+EBFONT	initerrno	Python-1.5.2/Modules/errnomodule.c
+ECHILD	initerrno	Python-1.5.2/Modules/errnomodule.c
+ECHRNG	initerrno	Python-1.5.2/Modules/errnomodule.c
+ECONNABORTED	initerrno	Python-1.5.2/Modules/errnomodule.c
+ECONNREFUSED	initerrno	Python-1.5.2/Modules/errnomodule.c
+ECONNRESET	initerrno	Python-1.5.2/Modules/errnomodule.c
+EDEADLK	initerrno	Python-1.5.2/Modules/errnomodule.c
+EDEADLOCK	initerrno	Python-1.5.2/Modules/errnomodule.c
+EDESTADDRREQ	initerrno	Python-1.5.2/Modules/errnomodule.c
+EDOTDOT	initerrno	Python-1.5.2/Modules/errnomodule.c
+EDQUOT	initerrno	Python-1.5.2/Modules/errnomodule.c
+EEXIST	initerrno	Python-1.5.2/Modules/errnomodule.c
+EFAULT	initerrno	Python-1.5.2/Modules/errnomodule.c
+EHOSTDOWN	initerrno	Python-1.5.2/Modules/errnomodule.c
+EHOSTUNREACH	initerrno	Python-1.5.2/Modules/errnomodule.c
+EILSEQ	initerrno	Python-1.5.2/Modules/errnomodule.c
+EINPROGRESS	initerrno	Python-1.5.2/Modules/errnomodule.c
+EINVAL	initerrno	Python-1.5.2/Modules/errnomodule.c
+EISCONN	initerrno	Python-1.5.2/Modules/errnomodule.c
+EISDIR	initerrno	Python-1.5.2/Modules/errnomodule.c
+EISNAM	initerrno	Python-1.5.2/Modules/errnomodule.c
+EL2HLT	initerrno	Python-1.5.2/Modules/errnomodule.c
+EL2NSYNC	initerrno	Python-1.5.2/Modules/errnomodule.c
+EL3HLT	initerrno	Python-1.5.2/Modules/errnomodule.c
+EL3RST	initerrno	Python-1.5.2/Modules/errnomodule.c
+ELIBACC	initerrno	Python-1.5.2/Modules/errnomodule.c
+ELIBBAD	initerrno	Python-1.5.2/Modules/errnomodule.c
+ELIBEXEC	initerrno	Python-1.5.2/Modules/errnomodule.c
+ELIBMAX	initerrno	Python-1.5.2/Modules/errnomodule.c
+ELIBSCN	initerrno	Python-1.5.2/Modules/errnomodule.c
+ELNRNG	initerrno	Python-1.5.2/Modules/errnomodule.c
+EMFILE	initerrno	Python-1.5.2/Modules/errnomodule.c
+EMLINK	initerrno	Python-1.5.2/Modules/errnomodule.c
+EMSGSIZE	initerrno	Python-1.5.2/Modules/errnomodule.c
+EMULTIHOP	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENAMETOOLONG	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENAVAIL	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENETDOWN	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENETRESET	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENETUNREACH	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENFILE	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOANO	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOBUFS	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOCSI	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENODATA	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENODEV	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOENT	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOEXEC	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOLCK	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOLINK	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOMEM	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOMSG	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENONET	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOPKG	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOPROTOOPT	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOSPC	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOSTR	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOSYS	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOTBLK	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOTCONN	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOTDIR	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOTEMPTY	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOTNAM	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOTSOCK	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOTTY	initerrno	Python-1.5.2/Modules/errnomodule.c
+ENOTUNIQ	initerrno	Python-1.5.2/Modules/errnomodule.c
+EOF read where object expected	r_object	Python-1.5.2/Python/marshal.c
+EOPNOTSUPP	initerrno	Python-1.5.2/Modules/errnomodule.c
+EOVERFLOW	initerrno	Python-1.5.2/Modules/errnomodule.c
+EPFNOSUPPORT	initerrno	Python-1.5.2/Modules/errnomodule.c
+EPROTO	initerrno	Python-1.5.2/Modules/errnomodule.c
+EPROTONOSUPPORT	initerrno	Python-1.5.2/Modules/errnomodule.c
+EPROTOTYPE	initerrno	Python-1.5.2/Modules/errnomodule.c
+ERANGE	initerrno	Python-1.5.2/Modules/errnomodule.c
+EREMCHG	initerrno	Python-1.5.2/Modules/errnomodule.c
+EREMOTE	initerrno	Python-1.5.2/Modules/errnomodule.c
+EREMOTEIO	initerrno	Python-1.5.2/Modules/errnomodule.c
+ERESTART	initerrno	Python-1.5.2/Modules/errnomodule.c
+ESHUTDOWN	initerrno	Python-1.5.2/Modules/errnomodule.c
+ESOCKTNOSUPPORT	initerrno	Python-1.5.2/Modules/errnomodule.c
+ESPIPE	initerrno	Python-1.5.2/Modules/errnomodule.c
+ESRMNT	initerrno	Python-1.5.2/Modules/errnomodule.c
+ESTALE	initerrno	Python-1.5.2/Modules/errnomodule.c
+ESTRPIPE	initerrno	Python-1.5.2/Modules/errnomodule.c
+ETIMEDOUT	initerrno	Python-1.5.2/Modules/errnomodule.c
+ETOOMANYREFS	initerrno	Python-1.5.2/Modules/errnomodule.c
+ETXTBSY	initerrno	Python-1.5.2/Modules/errnomodule.c
+EUCLEAN	initerrno	Python-1.5.2/Modules/errnomodule.c
+EUNATCH	initerrno	Python-1.5.2/Modules/errnomodule.c
+EUSERS	initerrno	Python-1.5.2/Modules/errnomodule.c
+EWOULDBLOCK	initerrno	Python-1.5.2/Modules/errnomodule.c
+EXFULL	initerrno	Python-1.5.2/Modules/errnomodule.c
+Empty keyword in tEXt chunk	png_write_tEXt	libpng-1.0.5/pngwutil.c
+Empty keyword in zTXt chunk	png_write_zTXt	libpng-1.0.5/pngwutil.c
+Empty module name	load_next	Python-1.5.2/Python/import.c
+Encoding image data...\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+Enter text info (no more than 72 characters per line);\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+EnvironmentError	initerrors	Python-1.5.2/Python/bltinmodule.c
+Error EDEADLOCK	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSABASEERR	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSADESCRIPTIO	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSAEDISCON	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSAEPROCLIM	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSAGETASYNCBUFLE	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSAGETASYNCERRO	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSAGETSELECTERRO	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSAGETSELECTEVEN	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSAHOS	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSAMAKEASYNCREPL	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSAMAKESELECTREPL	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSAN	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSANOTINITIALISED	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSASY	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSASYSNOTREADY	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSATR	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error WSAVERNOTSUPPORTED	initerrno	Python-1.5.2/Modules/errnomodule.c
+Error decoding zTXt chunk	png_handle_zTXt	libpng-1.0.5/pngrutil.c
+Error in sys.exitfunc:\n	call_sys_exitfunc	Python-1.5.2/Python/pythonrun.c
+Error: nonterminal '%s' may produce empty.\n	makedfa	Python-1.5.2/Parser/pgen.c
+Exception	initerrors	Python-1.5.2/Python/bltinmodule.c
+Exception 	instance_dealloc	Python-1.5.2/Objects/classobject.c
+Exchange full	initerrno	Python-1.5.2/Modules/errnomodule.c
+Exec format error	initerrno	Python-1.5.2/Modules/errnomodule.c
+Expected SOI marker first	scan_JPEG_header	jpeg-6a/rdjpgcom.c
+Extended sequential	process_SOFn	jpeg-6a/rdjpgcom.c
+Extended sequential, arithmetic coding	process_SOFn	jpeg-6a/rdjpgcom.c
+Extracting	tar	zlib-1.1.3/contrib/untgz/untgz.c
+FIRST set for '%s': {	calcfirstset	Python-1.5.2/Parser/firstsets.c
+Failed to load %.200s	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+Failed to write jconfig.h\n	main	jpeg-6a/ckconfig.c
+Failure linking new module	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+Farmalloc didn't return normalized pointer	png_malloc_default	libpng-1.0.5/pngmem.c
+Fatal Python error: 	Py_FatalError	Python-1.5.2/Python/pythonrun.c
+Fatal Python error: %s\n	Py_FatalError	Python-1.5.2/Python/pythonrun.c
+File contains \\r characters (incorrect line endings?)\n	PyTokenizer_Get	Python-1.5.2/Parser/tokenizer.c
+File descriptor in bad state	initerrno	Python-1.5.2/Modules/errnomodule.c
+File exists	initerrno	Python-1.5.2/Modules/errnomodule.c
+File name too long	initerrno	Python-1.5.2/Modules/errnomodule.c
+File table overflow	initerrno	Python-1.5.2/Modules/errnomodule.c
+File too large	initerrno	Python-1.5.2/Modules/errnomodule.c
+Files %s and %s are of a different size\n	test_one_file	libpng-1.0.5/pngtest.c
+Finding end of pCAL purpose string\n	png_handle_pCAL	libpng-1.0.5/pngrutil.c
+Freeing pool %d, total space = %ld\n	print_mem_stats	jpeg-6a/jmemmgr.c
+Function not implemented	initerrno	Python-1.5.2/Modules/errnomodule.c
+Handling %d tEXt/zTXt chunks\n	test_one_file	libpng-1.0.5/pngtest.c
+Hmm, it seems 'char' is not eight bits wide on your machine.\n	is_char_signed	jpeg-6a/ckconfig.c
+Host is down	initerrno	Python-1.5.2/Modules/errnomodule.c
+I/O error	initerrno	Python-1.5.2/Modules/errnomodule.c
+I/O operation on closed file	err_closed	Python-1.5.2/Objects/fileobject.c
+Identifier removed	initerrno	Python-1.5.2/Modules/errnomodule.c
+If you do not give either -comment or -cfile on the command line,\n	usage	jpeg-6a/wrjpgcom.c
+Ignoring bad adaptive filter type	png_read_filter_row	libpng-1.0.5/pngrutil.c
+Illegal byte sequence	initerrno	Python-1.5.2/Modules/errnomodule.c
+Illegal seek	initerrno	Python-1.5.2/Modules/errnomodule.c
+Illegal token\n	classify	Python-1.5.2/Parser/parser.c
+Image width = %lu, height = %lu\n	test_one_file	libpng-1.0.5/pngtest.c
+Inappropriate file type for dynamic loading	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+Incorrect IEND chunk length	png_handle_IEND	libpng-1.0.5/pngrutil.c
+Incorrect bKGD chunk index value	png_handle_bKGD	libpng-1.0.5/pngrutil.c
+Incorrect bKGD chunk length	png_handle_bKGD	libpng-1.0.5/pngrutil.c
+Incorrect cHRM chunk length	png_handle_cHRM	libpng-1.0.5/pngrutil.c
+Incorrect gAMA chunk length	png_handle_gAMA	libpng-1.0.5/pngrutil.c
+Incorrect hIST chunk length	png_handle_hIST	libpng-1.0.5/pngrutil.c
+Incorrect oFFs chunk length	png_handle_oFFs	libpng-1.0.5/pngrutil.c
+Incorrect pHYs chunk length	png_handle_pHYs	libpng-1.0.5/pngrutil.c
+Incorrect sBIT chunk length	png_handle_sBIT	libpng-1.0.5/pngrutil.c
+Incorrect sRGB chunk length	png_handle_sRGB	libpng-1.0.5/pngrutil.c
+Incorrect tIME chunk length	png_handle_tIME	libpng-1.0.5/pngrutil.c
+Incorrect tRNS chunk length	png_handle_tRNS	libpng-1.0.5/pngrutil.c
+Independent JPEG Group's CJPEG, version %s\n%s\n	parse_switches	jpeg-6a/cjpeg.c
+Independent JPEG Group's DJPEG, version %s\n%s\n	parse_switches	jpeg-6a/djpeg.c
+Independent JPEG Group's JPEGTRAN, version %s\n%s\n	parse_switches	jpeg-6a/jpegtran.c
+Initializing input and output streams\n	test_one_file	libpng-1.0.5/pngtest.c
+Input file name: 	askfile	Python-1.5.2/Parser/pgenmain.c
+Insufficient memory	main	jpeg-6a/wrjpgcom.c
+Interrupted system call	initerrno	Python-1.5.2/Modules/errnomodule.c
+Interrupted system call should be restarted	initerrno	Python-1.5.2/Modules/errnomodule.c
+Invalid IHDR chunk	png_handle_IHDR	libpng-1.0.5/pngrutil.c
+Invalid PLTE after IDAT	png_handle_PLTE	libpng-1.0.5/pngrutil.c
+Invalid argument	initerrno	Python-1.5.2/Modules/errnomodule.c
+Invalid attempt to read row data	png_read_row	libpng-1.0.5/pngread.c
+Invalid bKGD after IDAT	png_handle_bKGD	libpng-1.0.5/pngrutil.c
+Invalid background palette index	png_write_bKGD	libpng-1.0.5/pngwutil.c
+Invalid bit depth for RGB image	png_write_IHDR	libpng-1.0.5/pngwutil.c
+Invalid bit depth for RGBA image	png_write_IHDR	libpng-1.0.5/pngwutil.c
+Invalid bit depth for grayscale image	png_write_IHDR	libpng-1.0.5/pngwutil.c
+Invalid bit depth for grayscale+alpha image	png_write_IHDR	libpng-1.0.5/pngwutil.c
+Invalid bit depth for paletted image	png_write_IHDR	libpng-1.0.5/pngwutil.c
+Invalid bit depth in IHDR	png_handle_IHDR	libpng-1.0.5/pngrutil.c
+Invalid cHRM after IDAT	png_handle_cHRM	libpng-1.0.5/pngrutil.c
+Invalid cHRM blue point	png_handle_cHRM	libpng-1.0.5/pngrutil.c
+Invalid cHRM blue point specified	png_write_cHRM	libpng-1.0.5/pngwutil.c
+Invalid cHRM green point	png_handle_cHRM	libpng-1.0.5/pngrutil.c
+Invalid cHRM green point specified	png_write_cHRM	libpng-1.0.5/pngwutil.c
+Invalid cHRM red point	png_handle_cHRM	libpng-1.0.5/pngrutil.c
+Invalid cHRM red point specified	png_write_cHRM	libpng-1.0.5/pngwutil.c
+Invalid cHRM white point	png_handle_cHRM	libpng-1.0.5/pngrutil.c
+Invalid cHRM white point specified	png_write_cHRM	libpng-1.0.5/pngwutil.c
+Invalid color type in IHDR	png_handle_IHDR	libpng-1.0.5/pngrutil.c
+Invalid color type/bit depth combination in IHDR	png_handle_IHDR	libpng-1.0.5/pngrutil.c
+Invalid compression type specified	png_write_IHDR	libpng-1.0.5/pngwutil.c
+Invalid exchange	initerrno	Python-1.5.2/Modules/errnomodule.c
+Invalid filter type specified	png_write_IHDR	libpng-1.0.5/pngwutil.c
+Invalid gAMA after IDAT	png_handle_gAMA	libpng-1.0.5/pngrutil.c
+Invalid hIST after IDAT	png_handle_hIST	libpng-1.0.5/pngrutil.c
+Invalid image color type specified	png_write_IHDR	libpng-1.0.5/pngwutil.c
+Invalid image size in IHDR	png_handle_IHDR	libpng-1.0.5/pngrutil.c
+Invalid interlace type specified	png_write_IHDR	libpng-1.0.5/pngwutil.c
+Invalid number of colors in palette	png_write_PLTE	libpng-1.0.5/pngwutil.c
+Invalid number of histogram entries specified	png_write_hIST	libpng-1.0.5/pngwutil.c
+Invalid number of transparent colors specified	png_write_tRNS	libpng-1.0.5/pngwutil.c
+Invalid oFFs after IDAT	png_handle_oFFs	libpng-1.0.5/pngrutil.c
+Invalid pCAL after IDAT	png_handle_pCAL	libpng-1.0.5/pngrutil.c
+Invalid pCAL data	png_handle_pCAL	libpng-1.0.5/pngrutil.c
+Invalid pCAL parameters for equation type	png_handle_pCAL	libpng-1.0.5/pngrutil.c
+Invalid pHYS after IDAT	png_handle_pHYs	libpng-1.0.5/pngrutil.c
+Invalid palette chunk	png_handle_PLTE	libpng-1.0.5/pngrutil.c
+Invalid request code	initerrno	Python-1.5.2/Modules/errnomodule.c
+Invalid request descriptor	initerrno	Python-1.5.2/Modules/errnomodule.c
+Invalid sBIT after IDAT	png_handle_sBIT	libpng-1.0.5/pngrutil.c
+Invalid sBIT depth specified	png_write_sBIT	libpng-1.0.5/pngwutil.c
+Invalid sRGB after IDAT	png_handle_sRGB	libpng-1.0.5/pngrutil.c
+Invalid sRGB rendering intent specified	png_write_sRGB	libpng-1.0.5/pngwutil.c
+Invalid scan entry format in file %s\n	read_scan_script	jpeg-6a/rdswitch.c
+Invalid slot	initerrno	Python-1.5.2/Modules/errnomodule.c
+Invalid tRNS after IDAT	png_handle_tRNS	libpng-1.0.5/pngrutil.c
+Invalid table data in file %s\n	read_quant_tables	jpeg-6a/rdswitch.c
+Invalid time specified for tIME chunk	png_write_tIME	libpng-1.0.5/pngwutil.c
+Is a directory	initerrno	Python-1.5.2/Modules/errnomodule.c
+Is a named type file	initerrno	Python-1.5.2/Modules/errnomodule.c
+It can be multiple lines, up to %u characters total.\n	usage	jpeg-6a/wrjpgcom.c
+It's a keyword\n	classify	Python-1.5.2/Parser/parser.c
+It's a token we know\n	classify	Python-1.5.2/Parser/parser.c
+It's an error to set both read_data_fn and write_data_fn in the 	png_set_read_fn	libpng-1.0.5/pngrio.c
+Item in ``from list'' not a string	ensure_fromlist	Python-1.5.2/Python/import.c
+JPEG image is %uw * %uh, %d color components, %d bits per sample\n	process_SOFn	jpeg-6a/rdjpgcom.c
+JPEG process: %s\n	process_SOFn	jpeg-6a/rdjpgcom.c
+JPEG quantization tables are numbered 0..%d\n	set_quant_slots	jpeg-6a/rdswitch.c
+JPEG sampling factors must be 1..4\n	set_sample_factors	jpeg-6a/rdswitch.c
+JPEGMEM	jinit_memory_mgr	jpeg-6a/jmemmgr.c
+JPG%03d.TMP	select_file_name	jpeg-6a/jmemdos.c
+Keyword to be checked is '%s'\n	png_check_keyword	libpng-1.0.5/pngwutil.c
+LC_ALL	init_locale	Python-1.5.2/Modules/_localemodule.c
+LC_COLLATE	init_locale	Python-1.5.2/Modules/_localemodule.c
+LC_CTYPE	init_locale	Python-1.5.2/Modules/_localemodule.c
+LC_MESSAGES	init_locale	Python-1.5.2/Modules/_localemodule.c
+LC_MONETARY	init_locale	Python-1.5.2/Modules/_localemodule.c
+LC_NUMERIC	init_locale	Python-1.5.2/Modules/_localemodule.c
+LC_TIME	init_locale	Python-1.5.2/Modules/_localemodule.c
+Label %d/'%s' not found\n	findlabel	Python-1.5.2/Parser/grammar.c
+Label %s is a keyword\n	translabel	Python-1.5.2/Parser/grammar.c
+Label %s is non-terminal %d.\n	translabel	Python-1.5.2/Parser/grammar.c
+Label %s is terminal %d.\n	translabel	Python-1.5.2/Parser/grammar.c
+Left-recursion below '%s'\n	calcfirstset	Python-1.5.2/Parser/firstsets.c
+Left-recursion for '%s'\n	calcfirstset	Python-1.5.2/Parser/firstsets.c
+Leonardo DaVinci	read_png	libpng-1.0.5/example.c
+Level 2 halted	initerrno	Python-1.5.2/Modules/errnomodule.c
+Level 2 not synchronized	initerrno	Python-1.5.2/Modules/errnomodule.c
+Level 3 halted	initerrno	Python-1.5.2/Modules/errnomodule.c
+Level 3 reset	initerrno	Python-1.5.2/Modules/errnomodule.c
+Link has been severed	initerrno	Python-1.5.2/Modules/errnomodule.c
+Link number out of range	initerrno	Python-1.5.2/Modules/errnomodule.c
+Listing:\n	printtree	Python-1.5.2/Parser/parser.c
+Loaded module %.200s not found in sys.modules	PyImport_ExecCodeModuleEx	Python-1.5.2/Python/import.c
+Loaded module does not contain symbol %s	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+LookupError	initerrors	Python-1.5.2/Python/bltinmodule.c
+Lossless	process_SOFn	jpeg-6a/rdjpgcom.c
+Lossless, arithmetic coding	process_SOFn	jpeg-6a/rdjpgcom.c
+MEMORY ERROR: %d bytes lost\n	main	libpng-1.0.5/pngtest.c
+MEMORY ERROR: %d bytes still allocated\n	main	libpng-1.0.5/pngtest.c
+Machine is not on the network	initerrno	Python-1.5.2/Modules/errnomodule.c
+Making DFA for '%s' ...\n	maketables	Python-1.5.2/Parser/pgen.c
+Math argument out of domain of func	initerrno	Python-1.5.2/Modules/errnomodule.c
+Math result not representable	initerrno	Python-1.5.2/Modules/errnomodule.c
+Maximum recursion depth exceeded	eval_code2	Python-1.5.2/Python/ceval.c
+Message too long	initerrno	Python-1.5.2/Modules/errnomodule.c
+MiniUnz 0.15, demo of zLib + Unz package written by Gilles Vollant\n	do_banner	zlib-1.1.3/contrib/minizip/miniunz.c
+MiniZip 0.15, demo of zLib + Zip package written by Gilles Vollant\n	do_banner	zlib-1.1.3/contrib/minizip/minizip.c
+Missing IHDR before IDAT	png_read_info	libpng-1.0.5/pngread.c
+Missing IHDR before PLTE	png_handle_PLTE	libpng-1.0.5/pngrutil.c
+Missing IHDR before bKGD	png_handle_bKGD	libpng-1.0.5/pngrutil.c
+Missing IHDR before gAMA	png_handle_gAMA	libpng-1.0.5/pngrutil.c
+Missing IHDR before hIST	png_handle_hIST	libpng-1.0.5/pngrutil.c
+Missing IHDR before oFFs	png_handle_oFFs	libpng-1.0.5/pngrutil.c
+Missing IHDR before pCAL	png_handle_pCAL	libpng-1.0.5/pngrutil.c
+Missing IHDR before pHYS	png_handle_pHYs	libpng-1.0.5/pngrutil.c
+Missing IHDR before sRGB	png_handle_sRGB	libpng-1.0.5/pngrutil.c
+Missing IHDR before tEXt	png_handle_tEXt	libpng-1.0.5/pngrutil.c
+Missing IHDR before tRNS	png_handle_tRNS	libpng-1.0.5/pngrutil.c
+Missing IHDR before zTXt	png_handle_zTXt	libpng-1.0.5/pngrutil.c
+Missing PLTE before IDAT	png_read_info	libpng-1.0.5/pngread.c
+Missing PLTE before bKGD	png_handle_bKGD	libpng-1.0.5/pngrutil.c
+Missing PLTE before cHRM	png_handle_cHRM	libpng-1.0.5/pngrutil.c
+Missing PLTE before hIST	png_handle_hIST	libpng-1.0.5/pngrutil.c
+Missing PLTE before tRNS	png_handle_tRNS	libpng-1.0.5/pngrutil.c
+Missing ending quote mark	main	jpeg-6a/wrjpgcom.c
+Mona Lisa	read_png	libpng-1.0.5/example.c
+Multihop attempted	initerrno	Python-1.5.2/Modules/errnomodule.c
+NFA '%s' has %d states; start %d, finish %d\n	dumpnfa	Python-1.5.2/Parser/pgen.c
+NULL object passed to Py_BuildValue	do_mkvalue	Python-1.5.2/Python/modsupport.c
+NULL pointer to png_debug_free.\n	png_debug_free	libpng-1.0.5/pngtest.c
+NULL result without error in call_object	PyEval_CallObjectWithKeywords	Python-1.5.2/Python/ceval.c
+NULL row buffer	png_do_read_transformations	libpng-1.0.5/pngrtran.c
+NULL row buffer for row %ld, pass %d	png_do_read_transformations	libpng-1.0.5/pngrtran.c
+Name not unique on network	initerrno	Python-1.5.2/Modules/errnomodule.c
+Network dropped connection because of reset	initerrno	Python-1.5.2/Modules/errnomodule.c
+Network is down	initerrno	Python-1.5.2/Modules/errnomodule.c
+Network is unreachable	initerrno	Python-1.5.2/Modules/errnomodule.c
+No CSI structure available	initerrno	Python-1.5.2/Modules/errnomodule.c
+No IDATs written into file	png_write_end	libpng-1.0.5/pngwrite.c
+No XENIX semaphores available	initerrno	Python-1.5.2/Modules/errnomodule.c
+No anode	initerrno	Python-1.5.2/Modules/errnomodule.c
+No buffer space available	initerrno	Python-1.5.2/Modules/errnomodule.c
+No child processes	initerrno	Python-1.5.2/Modules/errnomodule.c
+No data available	initerrno	Python-1.5.2/Modules/errnomodule.c
+No file\n	askfile	Python-1.5.2/Parser/pgenmain.c
+No image in file	png_handle_IEND	libpng-1.0.5/pngrutil.c
+No memory to allocate row buffer\n	test_one_file	libpng-1.0.5/pngtest.c
+No message of desired type	initerrno	Python-1.5.2/Modules/errnomodule.c
+No record locks available	initerrno	Python-1.5.2/Modules/errnomodule.c
+No route to host	initerrno	Python-1.5.2/Modules/errnomodule.c
+No space left on device	initerrno	Python-1.5.2/Modules/errnomodule.c
+No such device	initerrno	Python-1.5.2/Modules/errnomodule.c
+No such device or address	initerrno	Python-1.5.2/Modules/errnomodule.c
+No such file or directory	initerrno	Python-1.5.2/Modules/errnomodule.c
+No such frozen object named %.200s	get_frozen_object	Python-1.5.2/Python/import.c
+No such process	initerrno	Python-1.5.2/Modules/errnomodule.c
+Non-code object in %.200s	read_compiled_module	Python-1.5.2/Python/import.c
+None or string	convertsimple1	Python-1.5.2/Python/getargs.c
+None or string without null bytes	convertsimple1	Python-1.5.2/Python/getargs.c
+Not a JPEG file	first_marker	jpeg-6a/rdjpgcom.c
+Not a XENIX named type file	initerrno	Python-1.5.2/Modules/errnomodule.c
+Not a data message	initerrno	Python-1.5.2/Modules/errnomodule.c
+Not a directory	initerrno	Python-1.5.2/Modules/errnomodule.c
+Not a typewriter	initerrno	Python-1.5.2/Modules/errnomodule.c
+Not enough compressed data	png_push_read_IDAT	libpng-1.0.5/pngpread.c
+Notice that you must put quotes around the comment text\n	usage	jpeg-6a/wrjpgcom.c
+O!O!|SO!	new_function	Python-1.5.2/Modules/newmodule.c
+O:callable	builtin_callable	Python-1.5.2/Python/bltinmodule.c
+O:float	builtin_float	Python-1.5.2/Python/bltinmodule.c
+O:hash	builtin_hash	Python-1.5.2/Python/bltinmodule.c
+O:list	builtin_list	Python-1.5.2/Python/bltinmodule.c
+O:long	builtin_long	Python-1.5.2/Python/bltinmodule.c
+O:min/max	min_max	Python-1.5.2/Python/bltinmodule.c
+O:reload	builtin_reload	Python-1.5.2/Python/bltinmodule.c
+O:repr	builtin_repr	Python-1.5.2/Python/bltinmodule.c
+O:tuple	builtin_tuple	Python-1.5.2/Python/bltinmodule.c
+O:type	builtin_type	Python-1.5.2/Python/bltinmodule.c
+OO:cmp	builtin_cmp	Python-1.5.2/Python/bltinmodule.c
+OO:coerce	builtin_coerce	Python-1.5.2/Python/bltinmodule.c
+OO:divmod	builtin_divmod	Python-1.5.2/Python/bltinmodule.c
+OO:filter	builtin_filter	Python-1.5.2/Python/bltinmodule.c
+OO|O:pow	builtin_pow	Python-1.5.2/Python/bltinmodule.c
+OO|O:reduce	builtin_reduce	Python-1.5.2/Python/bltinmodule.c
+OS:delattr	builtin_delattr	Python-1.5.2/Python/bltinmodule.c
+OS:hasattr	builtin_hasattr	Python-1.5.2/Python/bltinmodule.c
+OSO:setattr	builtin_setattr	Python-1.5.2/Python/bltinmodule.c
+OS|O:getattr	builtin_getattr	Python-1.5.2/Python/bltinmodule.c
+Object is remote	initerrno	Python-1.5.2/Modules/errnomodule.c
+Only compression method 8 is supported by PNG	png_set_compression_method	libpng-1.0.5/pngwrite.c
+Only compression windows <= 32k supported by PNG	png_set_compression_window_bits	libpng-1.0.5/pngwrite.c
+Only compression windows >= 256 supported by PNG	png_set_compression_window_bits	libpng-1.0.5/pngwrite.c
+Opening files for comparison\n	test_one_file	libpng-1.0.5/pngtest.c
+Operation already in progress	initerrno	Python-1.5.2/Modules/errnomodule.c
+Operation not permitted	initerrno	Python-1.5.2/Modules/errnomodule.c
+Operation not supported on transport endpoint	initerrno	Python-1.5.2/Modules/errnomodule.c
+Operation now in progress	initerrno	Python-1.5.2/Modules/errnomodule.c
+Operation would block	initerrno	Python-1.5.2/Modules/errnomodule.c
+Optimization error	re_compile_pattern	Python-1.5.2/Modules/regexpr.c
+Os(ssi)	call_find_module	Python-1.5.2/Python/import.c
+Out Of Memory.	png_malloc_default	libpng-1.0.5/pngmem.c
+Out Of memory.	png_malloc_default	libpng-1.0.5/pngmem.c
+Out of Memory	png_malloc_default	libpng-1.0.5/pngmem.c
+Out of Memory.	png_malloc_default	libpng-1.0.5/pngmem.c
+Out of memory.	png_malloc_default	libpng-1.0.5/pngmem.c
+Out of place IHDR	png_handle_IHDR	libpng-1.0.5/pngrutil.c
+Out of place gAMA chunk	png_handle_gAMA	libpng-1.0.5/pngrutil.c
+Out of place sBIT chunk	png_handle_sBIT	libpng-1.0.5/pngrutil.c
+Out of place sRGB chunk	png_handle_sRGB	libpng-1.0.5/pngrutil.c
+Out of place tEXt	png_push_handle_tEXt	libpng-1.0.5/pngpread.c
+Out of place tIME chunk	png_handle_tIME	libpng-1.0.5/pngrutil.c
+Out of place zTXt	png_push_handle_zTXt	libpng-1.0.5/pngpread.c
+Out of streams resources	initerrno	Python-1.5.2/Modules/errnomodule.c
+Overflow in png_memcpy_check.	png_memcpy_check	libpng-1.0.5/pngmem.c
+Overflow in png_memset_check.	png_memset_check	libpng-1.0.5/pngmem.c
+O|O!O!:eval	builtin_eval	Python-1.5.2/Python/bltinmodule.c
+O|O:complex	builtin_complex	Python-1.5.2/Python/bltinmodule.c
+O|OO:apply	builtin_apply	Python-1.5.2/Python/bltinmodule.c
+O|OO:slice	builtin_slice	Python-1.5.2/Python/bltinmodule.c
+O|ii:buffer	builtin_buffer	Python-1.5.2/Python/bltinmodule.c
+P5\n%ld %ld\n%d\n	start_output_ppm	jpeg-6a/wrppm.c
+P6\n%ld %ld\n%d\n	start_output_ppm	jpeg-6a/wrppm.c
+PKG_DIRECTORY	initimp	Python-1.5.2/Python/import.c
+PNG_READ_BGR_SUPPORTED is not defined.	png_read_row	libpng-1.0.5/pngread.c
+PNG_READ_FILLER_SUPPORTED is not defined.	png_read_row	libpng-1.0.5/pngread.c
+PNG_READ_INVERT_SUPPORTED is not defined.	png_read_row	libpng-1.0.5/pngread.c
+PNG_READ_PACKSWAP_SUPPORTED is not defined.	png_read_row	libpng-1.0.5/pngread.c
+PNG_READ_PACK_SUPPORTED is not defined.	png_read_row	libpng-1.0.5/pngread.c
+PNG_READ_SHIFT_SUPPORTED is not defined.	png_read_row	libpng-1.0.5/pngread.c
+PNG_READ_SWAP_SUPPORTED is not defined.	png_read_row	libpng-1.0.5/pngread.c
+PNG_WRITE_BGR_SUPPORTED is not defined.	png_write_row	libpng-1.0.5/pngwrite.c
+PNG_WRITE_FILLER_SUPPORTED is not defined.	png_write_row	libpng-1.0.5/pngwrite.c
+PNG_WRITE_INVERT_SUPPORTED is not defined.	png_write_row	libpng-1.0.5/pngwrite.c
+PNG_WRITE_PACKSWAP_SUPPORTED is not defined.	png_write_row	libpng-1.0.5/pngwrite.c
+PNG_WRITE_PACK_SUPPORTED is not defined.	png_write_row	libpng-1.0.5/pngwrite.c
+PNG_WRITE_SHIFT_SUPPORTED is not defined.	png_write_row	libpng-1.0.5/pngwrite.c
+PNG_WRITE_SWAP_SUPPORTED is not defined.	png_write_row	libpng-1.0.5/pngwrite.c
+PYTHONCASEOK	check_case	Python-1.5.2/Python/import.c
+PYTHONDEBUG	Py_Initialize	Python-1.5.2/Python/pythonrun.c
+PYTHONHOME	Py_GetPythonHome	Python-1.5.2/Python/pythonrun.c
+PYTHONOPTIMIZE	Py_Initialize	Python-1.5.2/Python/pythonrun.c
+PYTHONPATH	calculate_path	Python-1.5.2/PC/getpathp.c
+PYTHONSTARTUP	Py_Main	Python-1.5.2/Modules/main.c
+PYTHONVERBOSE	Py_Initialize	Python-1.5.2/Python/pythonrun.c
+PY_CODERESOURCE	initimp	Python-1.5.2/Python/import.c
+PY_COMPILED	initimp	Python-1.5.2/Python/import.c
+PY_FROZEN	initimp	Python-1.5.2/Python/import.c
+PY_RESOURCE	initimp	Python-1.5.2/Python/import.c
+PY_SOURCE	initimp	Python-1.5.2/Python/import.c
+Package not installed	initerrno	Python-1.5.2/Modules/errnomodule.c
+Parse tree:\n	printtree	Python-1.5.2/Parser/parser.c
+Parsing error %d, line %d.\n	getgrammar	Python-1.5.2/Parser/pgenmain.c
+Permission denied	initerrno	Python-1.5.2/Modules/errnomodule.c
+Pointer %x not found\n	png_debug_free	libpng-1.0.5/pngtest.c
+Print left references?	Py_Finalize	Python-1.5.2/Python/pythonrun.c
+Progressive	process_SOFn	jpeg-6a/rdjpgcom.c
+Progressive, arithmetic coding	process_SOFn	jpeg-6a/rdjpgcom.c
+Protocol driver not attached	initerrno	Python-1.5.2/Modules/errnomodule.c
+Protocol error	initerrno	Python-1.5.2/Modules/errnomodule.c
+Protocol family not supported	initerrno	Python-1.5.2/Modules/errnomodule.c
+Protocol not available	initerrno	Python-1.5.2/Modules/errnomodule.c
+Protocol not supported	initerrno	Python-1.5.2/Modules/errnomodule.c
+Protocol wrong type for socket	initerrno	Python-1.5.2/Modules/errnomodule.c
+Purported %s module %.200s not found	load_module	Python-1.5.2/Python/import.c
+PyCObject_AsVoidPtr called with null pointer	PyCObject_AsVoidPtr	Python-1.5.2/Objects/cobject.c
+PyCObject_AsVoidPtr with non-C-object	PyCObject_AsVoidPtr	Python-1.5.2/Objects/cobject.c
+PyCObject_FromVoidPtrAndDesc called with null description	PyCObject_FromVoidPtrAndDesc	Python-1.5.2/Objects/cobject.c
+PyCObject_GetDesc called with null pointer	PyCObject_GetDesc	Python-1.5.2/Objects/cobject.c
+PyCObject_GetDesc with non-C-object	PyCObject_GetDesc	Python-1.5.2/Objects/cobject.c
+PyClass_New: base must be a class	PyClass_New	Python-1.5.2/Objects/classobject.c
+PyClass_New: bases must be a tuple	PyClass_New	Python-1.5.2/Objects/classobject.c
+PyClass_New: dict must be a dictionary	PyClass_New	Python-1.5.2/Objects/classobject.c
+PyClass_New: name must be a string	PyClass_New	Python-1.5.2/Objects/classobject.c
+PyErr_NewException: name must be module.class	PyErr_NewException	Python-1.5.2/Python/errors.c
+PyEval_AcquireThread: NULL new thread state	PyEval_AcquireThread	Python-1.5.2/Python/ceval.c
+PyEval_AcquireThread: non-NULL old thread state	PyEval_AcquireThread	Python-1.5.2/Python/ceval.c
+PyEval_ReleaseThread: NULL thread state	PyEval_ReleaseThread	Python-1.5.2/Python/ceval.c
+PyEval_ReleaseThread: wrong thread state	PyEval_ReleaseThread	Python-1.5.2/Python/ceval.c
+PyEval_RestoreThread: NULL tstate	PyEval_RestoreThread	Python-1.5.2/Python/ceval.c
+PyEval_SaveThread: NULL tstate	PyEval_SaveThread	Python-1.5.2/Python/ceval.c
+PyImport_GetModuleDict: no module dictionary!	PyImport_GetModuleDict	Python-1.5.2/Python/import.c
+PyInterpreterState_Delete: invalid interp	PyInterpreterState_Delete	Python-1.5.2/Python/pystate.c
+PyInterpreterState_Delete: remaining threads	PyInterpreterState_Delete	Python-1.5.2/Python/pystate.c
+PyString_InternInPlace: strings only please!	PyString_InternInPlace	Python-1.5.2/Objects/stringobject.c
+PySys_WriteStdout/err: buffer overrun	mywrite	Python-1.5.2/Python/sysmodule.c
+PyThreadState_Clear: warning: thread still has a frame\n	PyThreadState_Clear	Python-1.5.2/Python/pystate.c
+PyThreadState_Delete: NULL interp	PyThreadState_Delete	Python-1.5.2/Python/pystate.c
+PyThreadState_Delete: NULL tstate	PyThreadState_Delete	Python-1.5.2/Python/pystate.c
+PyThreadState_Delete: invalid tstate	PyThreadState_Delete	Python-1.5.2/Python/pystate.c
+PyThreadState_Delete: tstate is still current	PyThreadState_Delete	Python-1.5.2/Python/pystate.c
+PyThreadState_Get: no current thread	PyThreadState_Get	Python-1.5.2/Python/pystate.c
+PyThreadState_GetDict: no current thread	PyThreadState_GetDict	Python-1.5.2/Python/pystate.c
+PyThread_init_thread called\n	_P0	Python-1.5.2/Python/thread.c
+Py_EndInterpreter: not the last thread	Py_EndInterpreter	Python-1.5.2/Python/pythonrun.c
+Py_EndInterpreter: thread is not current	Py_EndInterpreter	Python-1.5.2/Python/pythonrun.c
+Py_EndInterpreter: thread still has a frame	Py_EndInterpreter	Python-1.5.2/Python/pythonrun.c
+Py_Initialize: can't initialize __builtin__	Py_Initialize	Python-1.5.2/Python/pythonrun.c
+Py_Initialize: can't initialize sys	Py_Initialize	Python-1.5.2/Python/pythonrun.c
+Py_Initialize: can't make first interpreter	Py_Initialize	Python-1.5.2/Python/pythonrun.c
+Py_Initialize: can't make first thread	Py_Initialize	Python-1.5.2/Python/pythonrun.c
+Py_Initialize: can't make modules dictionary	Py_Initialize	Python-1.5.2/Python/pythonrun.c
+Py_NewInterpreter: call Py_Initialize first	Py_NewInterpreter	Python-1.5.2/Python/pythonrun.c
+Python %s\n%s\n	Py_FrozenMain	Python-1.5.2/Python/frozenmain.c
+Python %s on %s\n%s\n	Py_Main	Python-1.5.2/Modules/main.c
+Quota exceeded	initerrno	Python-1.5.2/Modules/errnomodule.c
+RFS specific error	initerrno	Python-1.5.2/Modules/errnomodule.c
+RLD index out of range or bad relocation type:	aix_loaderror	Python-1.5.2/Python/importdl.c
+Re-calculating FIRST set for '%s' ???\n	calcfirstset	Python-1.5.2/Parser/firstsets.c
+Read Error	png_default_read_data	libpng-1.0.5/pngrio.c
+Read-only file system	initerrno	Python-1.5.2/Modules/errnomodule.c
+Reading %s chunk, length=%d.\n	png_read_info	libpng-1.0.5/pngread.c
+Reading %s chunk.\n	png_read_end	libpng-1.0.5/pngread.c
+Reading and writing end_info data\n	test_one_file	libpng-1.0.5/pngtest.c
+Reading info struct\n	test_one_file	libpng-1.0.5/pngtest.c
+Reading pCAL X0, X1, type, nparams, and units\n	png_handle_pCAL	libpng-1.0.5/pngrutil.c
+Reading pCAL parameter %d\n	png_handle_pCAL	libpng-1.0.5/pngrutil.c
+Regex VM jump out of bounds (Cdummy_failure_jump code)	re_match	Python-1.5.2/Modules/regexpr.c
+Regex VM jump out of bounds (Cdummy_failure_jump failuredest)	re_match	Python-1.5.2/Modules/regexpr.c
+Regex VM jump out of bounds (Cfailure_jump)	re_match	Python-1.5.2/Modules/regexpr.c
+Regex VM jump out of bounds (Cjump)	re_match	Python-1.5.2/Modules/regexpr.c
+Regex VM jump out of bounds (Crepeat1)	re_match	Python-1.5.2/Modules/regexpr.c
+Regex VM jump out of bounds (failure_jump opt)	re_optimize_star_jump	Python-1.5.2/Modules/regexpr.c
+Regular expression ends prematurely	re_compile_pattern	Python-1.5.2/Modules/regexpr.c
+Regular expression too complex	re_compile_pattern	Python-1.5.2/Modules/regexpr.c
+Remaining objects:\n	_Py_PrintReferences	Python-1.5.2/Objects/object.c
+Remote I/O error	initerrno	Python-1.5.2/Modules/errnomodule.c
+Remote address changed	initerrno	Python-1.5.2/Modules/errnomodule.c
+Rename state %d to %d.\n	renamestates	Python-1.5.2/Parser/pgen.c
+Resource deadlock would occur	initerrno	Python-1.5.2/Modules/errnomodule.c
+Right shift isn't acting as I expect it to.\n	is_shifting_signed	jpeg-6a/ckconfig.c
+Rowbytes overflow in png_read_start_row	png_read_start_row	libpng-1.0.5/pngrutil.c
+SEARCH_ERROR	initimp	Python-1.5.2/Python/import.c
+SIGABRT	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGALRM	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGBUS	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGCHLD	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGCLD	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGCONT	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGEMT	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGFPE	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGHUP	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGILL	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGINT	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGIOT	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGKILL	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGPIPE	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGPOLL	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGPROF	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGPWR	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGQUIT	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGSEGV	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGSTOP	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGSYS	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGTERM	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGTRAP	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGTSTP	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGTTIN	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGTTOU	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGURG	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGUSR1	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGUSR2	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGVTALRM	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGWINCH	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGXCPU	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIGXFSZ	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIG_DFL	initsignal	Python-1.5.2/Modules/signalmodule.c
+SIG_IGN	initsignal	Python-1.5.2/Modules/signalmodule.c
+SOS without prior SOFn	scan_JPEG_header	jpeg-6a/wrjpgcom.c
+Setting jmpbuf for read struct\n	test_one_file	libpng-1.0.5/pngtest.c
+Setting jmpbuf for write struct\n	test_one_file	libpng-1.0.5/pngtest.c
+Socket operation on non-socket	initerrno	Python-1.5.2/Modules/errnomodule.c
+Socket type not supported	initerrno	Python-1.5.2/Modules/errnomodule.c
+Software caused connection abort	initerrno	Python-1.5.2/Modules/errnomodule.c
+Software\\Python\\PythonCore\\%s\\Modules\\%s%s	PyWin_FindRegisteredModule	Python-1.5.2/PC/import_nt.c
+Srmount error	initerrno	Python-1.5.2/Modules/errnomodule.c
+St#|t#	strop_translate	Python-1.5.2/Modules/stropmodule.c
+Stale NFS file handle	initerrno	Python-1.5.2/Modules/errnomodule.c
+StandardError	initerrors	Python-1.5.2/Python/bltinmodule.c
+Stored	do_list	zlib-1.1.3/contrib/minizip/miniunz.c
+Streams pipe error	initerrno	Python-1.5.2/Modules/errnomodule.c
+Structure needs cleaning	initerrno	Python-1.5.2/Modules/errnomodule.c
+Subset DFA %s\n	printssdfa	Python-1.5.2/Parser/pgen.c
+Switches (names may be abbreviated):\n	usage	jpeg-6a/cjpeg.c
+Switches for advanced users:\n	usage	jpeg-6a/cjpeg.c
+Switches for wizards:\n	usage	jpeg-6a/cjpeg.c
+System error:	aix_loaderror	Python-1.5.2/Python/importdl.c
+THREADDEBUG	_P0	Python-1.5.2/Python/thread.c
+Testing %s:	main	libpng-1.0.5/pngtest.c
+Testing libpng version %s\n	main	libpng-1.0.5/pngtest.c
+Text file busy	initerrno	Python-1.5.2/Modules/errnomodule.c
+The file %s exist. Overwrite ? [y]es, [n]o : 	main	zlib-1.1.3/contrib/minizip/minizip.c
+The file %s exist. Overwrite ? [y]es, [n]o, [A]ll: 	do_extract_currentfile	zlib-1.1.3/contrib/minizip/miniunz.c
+This image requires a row greater than 64KB	png_read_start_row	libpng-1.0.5/pngrutil.c
+Timer expired	initerrno	Python-1.5.2/Modules/errnomodule.c
+Token %s/'%s' ... 	PyParser_AddToken	Python-1.5.2/Parser/parser.c
+Tokens:\n	printtree	Python-1.5.2/Parser/parser.c
+Too many bytes for PNG signature.	png_set_sig_bytes	libpng-1.0.5/png.c
+Too many components in one scan in file %s\n	read_scan_script	jpeg-6a/rdswitch.c
+Too many links	initerrno	Python-1.5.2/Modules/errnomodule.c
+Too many open files	initerrno	Python-1.5.2/Modules/errnomodule.c
+Too many references: cannot splice	initerrno	Python-1.5.2/Modules/errnomodule.c
+Too many scans defined in file %s\n	read_scan_script	jpeg-6a/rdswitch.c
+Too many symbolic links encountered	initerrno	Python-1.5.2/Modules/errnomodule.c
+Too many tables in file %s\n	read_quant_tables	jpeg-6a/rdswitch.c
+Too many users	initerrno	Python-1.5.2/Modules/errnomodule.c
+Traceback (innermost last):\n	PyTraceBack_Print	Python-1.5.2/Python/traceback.c
+Transferring info struct\n	test_one_file	libpng-1.0.5/pngtest.c
+Translating label %s ...\n	translabel	Python-1.5.2/Parser/grammar.c
+Translating labels ...\n	translatelabels	Python-1.5.2/Parser/grammar.c
+Transport endpoint is already connected	initerrno	Python-1.5.2/Modules/errnomodule.c
+Transport endpoint is not connected	initerrno	Python-1.5.2/Modules/errnomodule.c
+Truncating incorrect tRNS chunk length	png_handle_PLTE	libpng-1.0.5/pngrutil.c
+Try again	initerrno	Python-1.5.2/Modules/errnomodule.c
+UNKNOWN (ERROR!)	png_default_warning	libpng-1.0.5/pngtest.c
+UNREF invalid object	_Py_ForgetReference	Python-1.5.2/Objects/object.c
+UNREF negative refcnt	_Py_ForgetReference	Python-1.5.2/Objects/object.c
+UNREF unknown object	_Py_ForgetReference	Python-1.5.2/Objects/object.c
+Unable to allocate break table!\n	convert1	jpeg-6a/ansi2knr.c
+Unkn. 	do_list	zlib-1.1.3/contrib/minizip/miniunz.c
+Unknown	process_SOFn	jpeg-6a/rdjpgcom.c
+Unknown OP label %s\n	translabel	Python-1.5.2/Parser/grammar.c
+Unknown compression method in IHDR	png_handle_IHDR	libpng-1.0.5/pngrutil.c
+Unknown custom filter method	png_set_filter	libpng-1.0.5/pngwrite.c
+Unknown errno %d	strerror	Python-1.5.2/Python/strerror.c
+Unknown error loading %.200s	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+Unknown filter heuristic method	png_set_filter_heuristics	libpng-1.0.5/pngwrite.c
+Unknown filter method in IHDR	png_handle_IHDR	libpng-1.0.5/pngrutil.c
+Unknown interlace method in IHDR	png_handle_IHDR	libpng-1.0.5/pngrutil.c
+Unknown option!	main	zlib-1.1.3/contrib/untgz/untgz.c
+Unknown option: -%c\n	getopt	Python-1.5.2/Python/getopt.c
+Unknown row filter for method 0	png_set_filter	libpng-1.0.5/pngwrite.c
+Unknown sRGB intent	png_handle_sRGB	libpng-1.0.5/pngrutil.c
+Unrecognized switch: %s\n	main	jpeg-6a/ansi2knr.c
+Unrecognized unit type for oFFs chunk	png_write_oFFs	libpng-1.0.5/pngwutil.c
+Unrecognized unit type for pHYs chunk	png_write_pHYs	libpng-1.0.5/pngwutil.c
+Usage : miniunz [-exvlo] file.zip [file_to_extract]\n\n	do_help	zlib-1.1.3/contrib/minizip/miniunz.c
+Usage : minizip [-o] file.zip [files_to_add]\n\n	do_help	zlib-1.1.3/contrib/minizip/minizip.c
+Usage: %s [switches] 	usage	jpeg-6a/wrjpgcom.c
+Usage: %s [switches] [inputfile]\n	usage	jpeg-6a/rdjpgcom.c
+Usage: ansi2knr input_file [output_file]\n	main	jpeg-6a/ansi2knr.c
+Using default static $PYTHONPATH.\n	calculate_path	Python-1.5.2/PC/getpathp.c
+Using environment $PYTHONPATH.\n	calculate_path	Python-1.5.2/PC/getpathp.c
+Valid palette required for paletted images\n	png_write_info	libpng-1.0.5/pngwrite.c
+Value too large for defined data type	initerrno	Python-1.5.2/Modules/errnomodule.c
+WARNING: freeing NULL pointer\n	png_debug_free	libpng-1.0.5/pngtest.c
+WSABASEERR	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSADESCRIPTIO	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEACCES	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEADDRINUSE	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEADDRNOTAVAIL	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEAFNOSUPPORT	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEALREADY	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEBADF	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAECONNABORTED	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAECONNREFUSED	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAECONNRESET	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEDESTADDRREQ	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEDISCON	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEDQUOT	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEFAULT	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEHOSTDOWN	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEHOSTUNREACH	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEINPROGRESS	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEINTR	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEINVAL	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEISCONN	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAELOOP	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEMFILE	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEMSGSIZE	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAENAMETOOLONG	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAENETDOWN	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAENETRESET	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAENETUNREACH	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAENOBUFS	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAENOPROTOOPT	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAENOTCONN	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAENOTEMPTY	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAENOTSOCK	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEOPNOTSUPP	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEPFNOSUPPORT	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEPROCLIM	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEPROTONOSUPPORT	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEPROTOTYPE	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEREMOTE	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAESHUTDOWN	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAESOCKTNOSUPPORT	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAESTALE	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAETIMEDOUT	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAETOOMANYREFS	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEUSERS	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAEWOULDBLOCK	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAGETASYNCBUFLE	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAGETASYNCERRO	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAGETSELECTERRO	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAGETSELECTEVEN	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAHOS	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAMAKEASYNCREPL	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAMAKESELECTREPL	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSANOTINITIALISED	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSASYSNOTREADY	initerrno	Python-1.5.2/Modules/errnomodule.c
+WSAVERNOTSUPPORTED	initerrno	Python-1.5.2/Modules/errnomodule.c
+Warning!  Falling back to string-based exceptions\n	_PyBuiltin_Init_2	Python-1.5.2/Python/bltinmodule.c
+Warning: garbage data found in JPEG file\n	next_marker	jpeg-6a/rdjpgcom.c
+Warning: un-marshal 64-bit int in 32-bit mode\n	r_long64	Python-1.5.2/Python/marshal.c
+Warning: versions are different between png.h and png.c\n	main	libpng-1.0.5/pngtest.c
+Width too large for libpng to process image data.	png_get_IHDR	libpng-1.0.5/pngget.c
+Width too large to process image data; rowbytes will overflow.	png_set_IHDR	libpng-1.0.5/pngset.c
+Write Error	png_default_write_data	libpng-1.0.5/pngtest.c
+Writing %s chunk (%d bytes)\n	png_write_chunk_start	libpng-1.0.5/pngwutil.c
+Writing graminit.c ...\n	main	Python-1.5.2/Parser/pgenmain.c
+Writing graminit.h ...\n	main	Python-1.5.2/Parser/pgenmain.c
+Writing header text chunk %d, type %d\n	png_write_info	libpng-1.0.5/pngwrite.c
+Writing row data\n	test_one_file	libpng-1.0.5/pngtest.c
+Writing row data for pass %d\n	test_one_file	libpng-1.0.5/pngtest.c
+Writing trailer text chunk %d, type %d\n	png_write_end	libpng-1.0.5/pngwrite.c
+Wrong CPU type in object file	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+XXX ambiguity!\n	fixstate	Python-1.5.2/Parser/acceler.c
+XXX block stack overflow	PyFrame_BlockSetup	Python-1.5.2/Objects/frameobject.c
+XXX block stack underflow	PyFrame_BlockPop	Python-1.5.2/Objects/frameobject.c
+XXX inc_count sanity check	inc_count	Python-1.5.2/Objects/object.c
+XXX lineno: %d, opcode: %d\n	eval_code2	Python-1.5.2/Python/ceval.c
+XXX rd_object called with exception set\n	PyMarshal_ReadObjectFromFile	Python-1.5.2/Python/marshal.c
+XXX rds_object called with exception set\n	PyMarshal_ReadObjectFromString	Python-1.5.2/Python/marshal.c
+XXX too high nonterminal number!\n	fixstate	Python-1.5.2/Parser/acceler.c
+XXX too many states!\n	fixstate	Python-1.5.2/Parser/acceler.c
+XXX undetected error\n	eval_code2	Python-1.5.2/Python/ceval.c
+XXX undetected error (why=%d)\n	eval_code2	Python-1.5.2/Python/ceval.c
+You can add to or replace any existing comment(s).\n	usage	jpeg-6a/wrjpgcom.c
+You must specify an input JPEG file name when supplying\n	usage	jpeg-6a/wrjpgcom.c
+You should use makefile.ansi as the starting point for your Makefile.\n	main	jpeg-6a/ckconfig.c
+You should use makefile.unix as the starting point for your Makefile.\n	main	jpeg-6a/ckconfig.c
+Zero length tRNS chunk	png_handle_tRNS	libpng-1.0.5/pngrutil.c
+Zero length zTXt chunk	png_handle_zTXt	libpng-1.0.5/pngrutil.c
+[inputfile]\n	usage	jpeg-6a/cjpeg.c
+\\Debug	PyWin_FindRegisteredModule	Python-1.5.2/PC/import_nt.c
+\\Modules\\	PyWin_FindRegisteredModule	Python-1.5.2/PC/import_nt.c
+\\PythonPath	getpythonregpath	Python-1.5.2/PC/getpathp.c
+\\[%d,%d]	check_match	zlib-1.1.3/deflate.c
+_PyImport_FixupExtension: module %.200s not loaded	_PyImport_FixupExtension	Python-1.5.2/Python/import.c
+__add__	PyNumber_Add	Python-1.5.2/Objects/abstract.c
+__all__	ensure_fromlist	Python-1.5.2/Python/import.c
+__and__	PyNumber_And	Python-1.5.2/Objects/abstract.c
+__bases__ items must be classes	set_bases	Python-1.5.2/Objects/classobject.c
+__bases__ must be a tuple object	set_bases	Python-1.5.2/Objects/classobject.c
+__class__ must be set to a class	instance_setattr	Python-1.5.2/Objects/classobject.c
+__class__ not accessible in restricted mode	instance_setattr	Python-1.5.2/Objects/classobject.c
+__complex__	builtin_complex	Python-1.5.2/Python/bltinmodule.c
+__del__	instance_dealloc	Python-1.5.2/Objects/classobject.c
+__delslice__	instance_ass_slice	Python-1.5.2/Objects/classobject.c
+__dict__ must be a dictionary object	set_dict	Python-1.5.2/Objects/classobject.c
+__dict__ must be set to a dictionary	instance_setattr	Python-1.5.2/Objects/classobject.c
+__dict__ not accessible in restricted mode	instance_setattr	Python-1.5.2/Objects/classobject.c
+__div__	PyNumber_Divide	Python-1.5.2/Objects/abstract.c
+__divmod__	PyNumber_Divmod	Python-1.5.2/Objects/abstract.c
+__getslice__	instance_slice	Python-1.5.2/Objects/classobject.c
+__hash__	instance_hash	Python-1.5.2/Objects/classobject.c
+__hash__() should return an int	instance_hash	Python-1.5.2/Objects/classobject.c
+__import__ not found	eval_code2	Python-1.5.2/Python/ceval.c
+__init__() should return None	PyInstance_New	Python-1.5.2/Objects/classobject.c
+__init__.py	find_init_module	Python-1.5.2/Python/import.c
+__len__() should return >= 0	instance_length	Python-1.5.2/Objects/classobject.c
+__len__() should return an int	instance_length	Python-1.5.2/Objects/classobject.c
+__lltrace__	eval_code2	Python-1.5.2/Python/ceval.c
+__lshift__	PyNumber_Lshift	Python-1.5.2/Objects/abstract.c
+__main__ not frozen	Py_FrozenMain	Python-1.5.2/Python/frozenmain.c
+__mod__	PyNumber_Remainder	Python-1.5.2/Objects/abstract.c
+__mul__	PyNumber_Multiply	Python-1.5.2/Objects/abstract.c
+__name__ must be a string object	set_name	Python-1.5.2/Objects/classobject.c
+__name__ must not contain null bytes	set_name	Python-1.5.2/Objects/classobject.c
+__nonzero__	UNARY	Python-1.5.2/Objects/classobject.c
+__nonzero__ should return >= 0	UNARY	Python-1.5.2/Objects/classobject.c
+__nonzero__ should return an int	UNARY	Python-1.5.2/Objects/classobject.c
+__or__	PyNumber_Or	Python-1.5.2/Objects/abstract.c
+__radd__	PyNumber_Add	Python-1.5.2/Objects/abstract.c
+__rand__	PyNumber_And	Python-1.5.2/Objects/abstract.c
+__rdiv__	PyNumber_Divide	Python-1.5.2/Objects/abstract.c
+__rdivmod__	PyNumber_Divmod	Python-1.5.2/Objects/abstract.c
+__repr__	instance_repr	Python-1.5.2/Objects/classobject.c
+__rlshift__	PyNumber_Lshift	Python-1.5.2/Objects/abstract.c
+__rmod__	PyNumber_Remainder	Python-1.5.2/Objects/abstract.c
+__rmul__	PyNumber_Multiply	Python-1.5.2/Objects/abstract.c
+__ror__	PyNumber_Or	Python-1.5.2/Objects/abstract.c
+__rpow__	do_pow	Python-1.5.2/Objects/abstract.c
+__rrshift__	PyNumber_Rshift	Python-1.5.2/Objects/abstract.c
+__rshift__	PyNumber_Rshift	Python-1.5.2/Objects/abstract.c
+__rsub__	PyNumber_Subtract	Python-1.5.2/Objects/abstract.c
+__rxor__	PyNumber_Xor	Python-1.5.2/Objects/abstract.c
+__self__	meth_getattr	Python-1.5.2/Objects/methodobject.c
+__setslice__	instance_ass_slice	Python-1.5.2/Objects/classobject.c
+__stderr__	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+__stdin__	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+__stdout__	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+__str__	PyObject_Str	Python-1.5.2/Objects/object.c
+__sub__	PyNumber_Subtract	Python-1.5.2/Objects/abstract.c
+__xor__	PyNumber_Xor	Python-1.5.2/Objects/abstract.c
+_locale	init_locale	Python-1.5.2/Modules/_localemodule.c
+_tr_tally: bad match	_tr_flush_block	zlib-1.1.3/trees.c
+a __bases__ item causes an inheritance cycle	set_bases	Python-1.5.2/Objects/classobject.c
+a list cannot be modified while it is being sorted	immutable_list_op	Python-1.5.2/Objects/listobject.c
+about to call rpng2_win_cleanup()\n	WinMain	libpng-1.0.5/contrib/gregbook/rpng2-win.c
+about to call rpng2_x_cleanup()\n	main	libpng-1.0.5/contrib/gregbook/rpng2-x.c
+after inflateSync(): hel%s\n	test_sync	zlib-1.1.3/example.c
+after minimizing	makedfa	Python-1.5.2/Parser/pgen.c
+allocated %d entries for info_ptr->text\n	png_set_text	libpng-1.0.5/pngset.c
+allocating parameter %d for info (%d bytes)\n	png_set_pCAL	libpng-1.0.5/pngset.c
+allocating purpose for info (%d bytes)\n	png_set_pCAL	libpng-1.0.5/pngset.c
+allocating units for info (%d bytes)\n	png_set_pCAL	libpng-1.0.5/pngset.c
+apply() 2nd argument must be a sequence	builtin_apply	Python-1.5.2/Python/bltinmodule.c
+apply() 3rd argument must be dictionary	builtin_apply	Python-1.5.2/Python/bltinmodule.c
+argument %d	seterror	Python-1.5.2/Python/getargs.c
+argument %d to map() must be a sequence object	builtin_map	Python-1.5.2/Python/bltinmodule.c
+argument 2 to filter() must be a sequence type	builtin_filter	Python-1.5.2/Python/bltinmodule.c
+argument list must be a tuple	PyEval_CallObjectWithKeywords	Python-1.5.2/Python/ceval.c
+arguments must be classes	builtin_issubclass	Python-1.5.2/Python/bltinmodule.c
+arithmetic	parse_switches	jpeg-6a/cjpeg.c
+atof() literal too large: %.200s	strop_atof	Python-1.5.2/Modules/stropmodule.c
+atoi() literal too large: %.200s	strop_atoi	Python-1.5.2/Modules/stropmodule.c
+attribute-less object (assign or del)	PyObject_SetAttrString	Python-1.5.2/Objects/object.c
+b;%c requires int or char	formatchar	Python-1.5.2/Objects/stringobject.c
+bad RAISE_VARARGS oparg	eval_code2	Python-1.5.2/Python/ceval.c
+bad argument to internal function	PyErr_BadInternalCall	Python-1.5.2/Python/errors.c
+bad block pop	block_pop	Python-1.5.2/Python/compile.c
+bad compressed size	_tr_flush_block	zlib-1.1.3/trees.c
+bad d_code	_tr_flush_block	zlib-1.1.3/trees.c
+bad format char passed to Py_BuildValue	do_mkvalue	Python-1.5.2/Python/modsupport.c
+bad format string: %.200s	vgetargs1	Python-1.5.2/Python/getargs.c
+bad gzgets after gzseek\n	test_gzio	zlib-1.1.3/example.c
+bad gzread: %s\n	test_gzio	zlib-1.1.3/example.c
+bad inflate\n	test_inflate	zlib-1.1.3/example.c
+bad inflate with dict\n	test_dict_inflate	zlib-1.1.3/example.c
+bad large inflate: %ld\n	test_large_inflate	zlib-1.1.3/example.c
+bad marshal data	r_object	Python-1.5.2/Python/marshal.c
+bad operand type for abs()	PyNumber_Absolute	Python-1.5.2/Objects/abstract.c
+bad operand type for unary +	PyNumber_Positive	Python-1.5.2/Objects/abstract.c
+bad operand type for unary -	PyNumber_Negative	Python-1.5.2/Objects/abstract.c
+bad operand type for unary ~	PyNumber_Invert	Python-1.5.2/Objects/abstract.c
+bad operand type(s) for %	PyNumber_Remainder	Python-1.5.2/Objects/abstract.c
+bad operand type(s) for &	PyNumber_And	Python-1.5.2/Objects/abstract.c
+bad operand type(s) for *	PyNumber_Multiply	Python-1.5.2/Objects/abstract.c
+bad operand type(s) for +	PyNumber_Add	Python-1.5.2/Objects/abstract.c
+bad operand type(s) for -	PyNumber_Subtract	Python-1.5.2/Objects/abstract.c
+bad operand type(s) for /	PyNumber_Divide	Python-1.5.2/Objects/abstract.c
+bad operand type(s) for <<	PyNumber_Lshift	Python-1.5.2/Objects/abstract.c
+bad operand type(s) for >>	PyNumber_Rshift	Python-1.5.2/Objects/abstract.c
+bad operand type(s) for ^	PyNumber_Xor	Python-1.5.2/Objects/abstract.c
+bad operand type(s) for divmod()	PyNumber_Divmod	Python-1.5.2/Objects/abstract.c
+bad operand type(s) for |	PyNumber_Or	Python-1.5.2/Objects/abstract.c
+bad uncompress\n	test_compress	zlib-1.1.3/example.c
+bad/closed file object	get_file	Python-1.5.2/Python/import.c
+base is not a class object	build_class	Python-1.5.2/Python/ceval.c
+baseline	parse_switches	jpeg-6a/cjpeg.c
+before minimizing	makedfa	Python-1.5.2/Parser/pgen.c
+beginning rpng2_win_display_row()\n	rpng2_win_display_row	libpng-1.0.5/contrib/gregbook/rpng2-win.c
+beginning rpng2_win_finish_display()\n	rpng2_win_finish_display	libpng-1.0.5/contrib/gregbook/rpng2-win.c
+beginning rpng2_win_init()\n	rpng2_win_init	libpng-1.0.5/contrib/gregbook/rpng2-win.c
+beginning rpng2_x_create_window()\n	rpng2_x_create_window	libpng-1.0.5/contrib/gregbook/rpng2-x.c
+beginning rpng2_x_display_row()\n	rpng2_x_display_row	libpng-1.0.5/contrib/gregbook/rpng2-x.c
+beginning rpng2_x_finish_display()\n	rpng2_x_finish_display	libpng-1.0.5/contrib/gregbook/rpng2-x.c
+beginning rpng2_x_init()\n	rpng2_x_init	libpng-1.0.5/contrib/gregbook/rpng2-x.c
+bit_depth = %d\n	png_handle_IHDR	libpng-1.0.5/pngrutil.c
+block gone	deflate_stored	zlib-1.1.3/deflate.c
+buffer assignment index out of range	buffer_ass_item	Python-1.5.2/Objects/bufferobject.c
+buffer index out of range	buffer_item	Python-1.5.2/Objects/bufferobject.c
+build_class with non-dictionary	build_class	Python-1.5.2/Python/ceval.c
+build_class with non-tuple bases	build_class	Python-1.5.2/Python/ceval.c
+build_class witn non-string name	build_class	Python-1.5.2/Python/ceval.c
+builtin	load_module	Python-1.5.2/Python/import.c
+builtin_module_names	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+bytecode object must be a single-segment read-only buffer	new_code	Python-1.5.2/Modules/newmodule.c
+c:diOStuvxX	Py_Main	Python-1.5.2/Modules/main.c
+c;%c requires int or char	formatchar	Python-1.5.2/Objects/stringobject.c
+call of non-callable attribute	PyObject_CallMethod	Python-1.5.2/Objects/abstract.c
+calling final XPutImage()\n	rpng_x_display_image	libpng-1.0.5/contrib/gregbook/rpng-x.c
+calling final image-flush routine\n	rpng_win_display_image	libpng-1.0.5/contrib/gregbook/rpng-win.c
+calling rpng_win_display_image()\n	WinMain	libpng-1.0.5/contrib/gregbook/rpng-win.c
+calling rpng_x_display_image()\n	main	libpng-1.0.5/contrib/gregbook/rpng-x.c
+can't add __builtins__ to __main__	initmain	Python-1.5.2/Python/pythonrun.c
+can't assign sys.argv	PySys_SetArgv	Python-1.5.2/Python/sysmodule.c
+can't assign sys.path	PySys_SetPath	Python-1.5.2/Python/sysmodule.c
+can't assign to ()	com_assign	Python-1.5.2/Python/compile.c
+can't assign to []	com_assign	Python-1.5.2/Python/compile.c
+can't assign to function call	com_assign_trailer	Python-1.5.2/Python/compile.c
+can't assign to lambda	com_assign	Python-1.5.2/Python/compile.c
+can't assign to literal	com_assign	Python-1.5.2/Python/compile.c
+can't assign to operator	com_assign	Python-1.5.2/Python/compile.c
+can't convert complex to float; use e.g. abs(z)	complex_float	Python-1.5.2/Objects/complexobject.c
+can't convert complex to int; use e.g. int(abs(z))	complex_int	Python-1.5.2/Objects/complexobject.c
+can't convert complex to long; use e.g. long(abs(z))	complex_long	Python-1.5.2/Objects/complexobject.c
+can't create __main__ module	initmain	Python-1.5.2/Python/pythonrun.c
+can't create sys.path	PySys_SetPath	Python-1.5.2/Python/sysmodule.c
+can't delete file attributes	file_setattr	Python-1.5.2/Objects/fileobject.c
+can't delete numeric/char attribute	PyMember_Set	Python-1.5.2/Python/structmember.c
+can't find symbol in library:	aix_loaderror	Python-1.5.2/Python/importdl.c
+can't gzdopen stdin	main	zlib-1.1.3/minigzip.c
+can't gzdopen stdout	main	zlib-1.1.3/minigzip.c
+can't initialize errno module	initerrno	Python-1.5.2/Modules/errnomodule.c
+can't initialize math module	initmath	Python-1.5.2/Modules/mathmodule.c
+can't initialize module strop	initstrop	Python-1.5.2/Modules/stropmodule.c
+can't load init function for dynamic module: Bad index for %.180s	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+can't load init function for dynamic module: Invalid image ID for %.180s	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+can't load init function for dynamic module: Unknown error looking up %.180s	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+can't load library:	aix_loaderror	Python-1.5.2/Python/importdl.c
+can't multiply sequence with non-int	PyNumber_Multiply	Python-1.5.2/Objects/abstract.c
+cannot concatenate xrange objects	range_concat	Python-1.5.2/Objects/rangeobject.c
+cannot import name %.230s	import_from	Python-1.5.2/Python/ceval.c
+cannot slice a replicated xrange	range_slice	Python-1.5.2/Objects/rangeobject.c
+casefold	initregex	Python-1.5.2/Modules/regexmodule.c
+ceval: orphan tstate	eval_code2	Python-1.5.2/Python/ceval.c
+ceval: tstate mix-up	eval_code2	Python-1.5.2/Python/ceval.c
+channels = %d\n	png_handle_IHDR	libpng-1.0.5/pngrutil.c
+chr() arg not in range(256)	builtin_chr	Python-1.5.2/Python/bltinmodule.c
+class.__dict__ not accessible in restricted mode	class_getattr	Python-1.5.2/Objects/classobject.c
+classes are read-only in restricted mode	class_setattr	Python-1.5.2/Objects/classobject.c
+code %d bits %d->%d\n	gen_bitlen	zlib-1.1.3/trees.c
+color_map_length=%d	finish_output_rle	jpeg-6a/wrrle.c
+colors	parse_switches	jpeg-6a/djpeg.c
+colours	parse_switches	jpeg-6a/djpeg.c
+com_addbyte: byte out of range	com_addbyte	Python-1.5.2/Python/compile.c
+com_and_expr: operator not &	com_and_expr	Python-1.5.2/Python/compile.c
+com_apply_trailer: unknown trailer type	com_apply_trailer	Python-1.5.2/Python/compile.c
+com_arith_expr: operator not + or -	com_arith_expr	Python-1.5.2/Python/compile.c
+com_assign: bad node	com_assign	Python-1.5.2/Python/compile.c
+com_atom: unexpected node type	com_atom	Python-1.5.2/Python/compile.c
+com_comparison: unknown comparison op	com_comparison	Python-1.5.2/Python/compile.c
+com_expr: expr operator not |	com_expr	Python-1.5.2/Python/compile.c
+com_node: unexpected node type	com_node	Python-1.5.2/Python/compile.c
+com_shift_expr: operator not << or >>	com_shift_expr	Python-1.5.2/Python/compile.c
+com_term: operator not *, / or %	com_term	Python-1.5.2/Python/compile.c
+com_xor_expr: operator not ^	com_xor_expr	Python-1.5.2/Python/compile.c
+comment	main	jpeg-6a/wrjpgcom.c
+comment text from standard input.\n	usage	jpeg-6a/wrjpgcom.c
+comparison function should return int	docompare	Python-1.5.2/Objects/listobject.c
+compile() mode must be 'exec' or 'eval' or 'single'	builtin_compile	Python-1.5.2/Python/bltinmodule.c
+compile_node: unexpected node type	compile_node	Python-1.5.2/Python/compile.c
+complex division	complex_div	Python-1.5.2/Objects/complexobject.c
+complex divmod()	complex_divmod	Python-1.5.2/Objects/complexobject.c
+complex modulo	complex_pow	Python-1.5.2/Objects/complexobject.c
+complex remainder	complex_remainder	Python-1.5.2/Objects/complexobject.c
+complex() argument can't be converted to complex	builtin_complex	Python-1.5.2/Python/bltinmodule.c
+complex<D>	convertsimple1	Python-1.5.2/Python/getargs.c
+complex_abs	complex_abs	Python-1.5.2/Objects/complexobject.c
+complex_add	complex_add	Python-1.5.2/Objects/complexobject.c
+complex_div	complex_div	Python-1.5.2/Objects/complexobject.c
+complex_mul	complex_mul	Python-1.5.2/Objects/complexobject.c
+complex_pow	complex_pow	Python-1.5.2/Objects/complexobject.c
+complex_sub	complex_sub	Python-1.5.2/Objects/complexobject.c
+compress	test_compress	zlib-1.1.3/example.c
+const uch _dist_code[DIST_CODE_LEN] = {\n	gen_trees_header	zlib-1.1.3/trees.c
+const uch _length_code[MAX_MATCH-MIN_MATCH+1]= {\n	gen_trees_header	zlib-1.1.3/trees.c
+copyright	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+couldn't create directory %s\n	makedir	zlib-1.1.3/contrib/minizip/miniunz.c
+creating %s\n	main	zlib-1.1.3/contrib/minizip/minizip.c
+creating directory: %s\n	do_extract_currentfile	zlib-1.1.3/contrib/minizip/miniunz.c
+d;float argument required	formatfloat	Python-1.5.2/Objects/stringobject.c
+decimal_point	PyLocale_localeconv	Python-1.5.2/Modules/_localemodule.c
+default	main	libpng-1.0.5/contrib/gregbook/rpng-x.c
+default 'except:' must be last	com_try_except	Python-1.5.2/Python/compile.c
+default_int_handler	initsignal	Python-1.5.2/Modules/signalmodule.c
+deflate not greedy\n	test_large_deflate	zlib-1.1.3/example.c
+deflateSetDictionary	test_dict_deflate	zlib-1.1.3/example.c
+delete non-existing class attribute	class_setattr	Python-1.5.2/Objects/classobject.c
+delete non-existing instance attribute	instance_setattr1	Python-1.5.2/Objects/classobject.c
+delete non-existing module attribute	module_setattr	Python-1.5.2/Objects/moduleobject.c
+delete non-existing xx attribute	xx_setattr	Python-1.5.2/Objects/xxobject.c
+dither	parse_switches	jpeg-6a/djpeg.c
+divide	float_div	Python-1.5.2/Objects/floatobject.c
+divmod	float_divmod	Python-1.5.2/Objects/floatobject.c
+dllhandle	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+dlopen("%s", %d);\n	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+done with rpng_win_display_image()\n	WinMain	libpng-1.0.5/contrib/gregbook/rpng-win.c
+done with rpng_x_display_image()\n	main	libpng-1.0.5/contrib/gregbook/rpng-x.c
+dos-8x3	find_module	Python-1.5.2/Python/import.c
+dotted_name too long	com_addopname	Python-1.5.2/Python/compile.c
+double	test1	jpeg-6a/ansi2knr.c
+duplicate keyword argument	com_argument	Python-1.5.2/Python/compile.c
+dynamic module does not define init function (%.200s)	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+dynamic module not initialized properly	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+dynamically linked modules not supported	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+d|i:round	builtin_round	Python-1.5.2/Python/bltinmodule.c
+embedded '\\0' in exec string	exec_statement	Python-1.5.2/Python/ceval.c
+embedded '\\0' in string arg	builtin_eval	Python-1.5.2/Python/bltinmodule.c
+empty distance tree with lengths	inflate_trees_dynamic	zlib-1.1.3/inftrees.c
+empty pattern string	strop_replace	Python-1.5.2/Modules/stropmodule.c
+empty separator	strop_splitfields	Python-1.5.2/Modules/stropmodule.c
+empty string for atof()	strop_atof	Python-1.5.2/Modules/stropmodule.c
+empty string for atol()	strop_atol	Python-1.5.2/Modules/stropmodule.c
+empty string for complex()	complex_from_string	Python-1.5.2/Python/bltinmodule.c
+empty string for float()	float_from_string	Python-1.5.2/Objects/abstract.c
+error %d with zipfile in unzCloseCurrentFile\n	do_extract_currentfile	zlib-1.1.3/contrib/minizip/miniunz.c
+error %d with zipfile in unzOpenCurrentFile\n	do_extract_currentfile	zlib-1.1.3/contrib/minizip/miniunz.c
+error %d with zipfile in unzReadCurrentFile\n	do_extract_currentfile	zlib-1.1.3/contrib/minizip/miniunz.c
+error in closing %s\n	main	zlib-1.1.3/contrib/minizip/minizip.c
+error in closing %s in the zipfile\n	main	zlib-1.1.3/contrib/minizip/minizip.c
+error in opening %s for reading\n	main	zlib-1.1.3/contrib/minizip/minizip.c
+error in opening %s in zipfile\n	main	zlib-1.1.3/contrib/minizip/minizip.c
+error in reading %s\n	main	zlib-1.1.3/contrib/minizip/minizip.c
+error in writing %s in the zipfile\n	main	zlib-1.1.3/contrib/minizip/minizip.c
+error in writing extracted file\n	do_extract_currentfile	zlib-1.1.3/contrib/minizip/miniunz.c
+error return without exception set	eval_code2	Python-1.5.2/Python/ceval.c
+error=%d\n	err_input	Python-1.5.2/Python/pythonrun.c
+errorcode	initerrno	Python-1.5.2/Modules/errnomodule.c
+eval() argument 1 must be string or code object	builtin_eval	Python-1.5.2/Python/bltinmodule.c
+eval_code2: NULL globals	eval_code2	Python-1.5.2/Python/ceval.c
+exception	call_exc_trace	Python-1.5.2/Python/ceval.c
+exceptions must be strings, classes, or instances	do_raise	Python-1.5.2/Python/ceval.c
+excess ')' in getargs format	vgetargs1	Python-1.5.2/Python/getargs.c
+excessive indent\n	PyTokenizer_Get	Python-1.5.2/Parser/tokenizer.c
+exec 1st arg must be string, code or file object	exec_statement	Python-1.5.2/Python/ceval.c
+exec 2nd/3rd args must be dict or None	exec_statement	Python-1.5.2/Python/ceval.c
+exec_prefix	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+executable	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+exitfunc	call_sys_exitfunc	Python-1.5.2/Python/pythonrun.c
+extern	test1	jpeg-6a/ansi2knr.c
+f_locals	frame_getattr	Python-1.5.2/Objects/frameobject.c
+failed fclose	gz_uncompress	zlib-1.1.3/minigzip.c
+failed fwrite	gz_uncompress	zlib-1.1.3/minigzip.c
+fast int allocs: pos: %d, neg: %d\n	dump_counts	Python-1.5.2/Objects/object.c
+fast tuple allocs: %d, empty: %d\n	dump_counts	Python-1.5.2/Objects/object.c
+file %s not found in the zipfile\n	do_extract_onefile	zlib-1.1.3/contrib/minizip/miniunz.c
+file not an archive or does not contain requested member:	aix_loaderror	Python-1.5.2/Python/importdl.c
+file object required for import (type code %d)	load_module	Python-1.5.2/Python/import.c
+filename	parse_syntax_error	Python-1.5.2/Python/pythonrun.c
+filter = %d\n	png_write_filtered_row	libpng-1.0.5/pngwutil.c
+first argument must be a sequence	strop_joinfields	Python-1.5.2/Modules/stropmodule.c
+first argument must be callable	new_instancemethod	Python-1.5.2/Modules/newmodule.c
+first argument must be sequence of strings	strop_joinfields	Python-1.5.2/Modules/stropmodule.c
+float division	float_div	Python-1.5.2/Objects/floatobject.c
+float divmod()	float_divmod	Python-1.5.2/Objects/floatobject.c
+float modulo	float_rem	Python-1.5.2/Objects/floatobject.c
+float too large to convert	float_int	Python-1.5.2/Objects/floatobject.c
+float() literal too large: %.200s	float_from_string	Python-1.5.2/Objects/abstract.c
+float() out of range: %.150s	complex_from_string	Python-1.5.2/Python/bltinmodule.c
+float<d>	convertsimple1	Python-1.5.2/Python/getargs.c
+float<f>	convertsimple1	Python-1.5.2/Python/getargs.c
+float_from_string	float_from_string	Python-1.5.2/Objects/abstract.c
+format requires a mapping	PyString_Format	Python-1.5.2/Objects/stringobject.c
+from module %.200s 	aix_loaderror	Python-1.5.2/Python/importdl.c
+frozen	load_module	Python-1.5.2/Python/import.c
+frozen object %.200s is not a code object	PyImport_ImportFrozenModule	Python-1.5.2/Python/import.c
+full frozen module name too long	find_module	Python-1.5.2/Python/import.c
+func_code	func_setattr	Python-1.5.2/Objects/funcobject.c
+func_code must be set to a code object	func_setattr	Python-1.5.2/Objects/funcobject.c
+func_defaults	func_setattr	Python-1.5.2/Objects/funcobject.c
+func_defaults must be set to a tuple object	func_setattr	Python-1.5.2/Objects/funcobject.c
+function attributes not accessible in restricted mode	func_getattr	Python-1.5.2/Objects/funcobject.c
+function attributes not settable in restricted mode	func_setattr	Python-1.5.2/Objects/funcobject.c
+gamma=%f\n	png_handle_sRGB	libpng-1.0.5/pngrutil.c
+get_image_symbol( %s )\n	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+get_image_symbol( %s ) failed	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+givenpat	regobj_getattr	Python-1.5.2/Modules/regexmodule.c
+graminit.c	main	Python-1.5.2/Parser/pgenmain.c
+graminit.h	main	Python-1.5.2/Parser/pgenmain.c
+grammar _PyParser_Grammar = {\n	printgrammar	Python-1.5.2/Parser/printgrammar.c
+grammar.c:findlabel()	findlabel	Python-1.5.2/Parser/grammar.c
+grayscale	parse_switches	jpeg-6a/cjpeg.c
+greyscale	parse_switches	jpeg-6a/cjpeg.c
+group() group name doesn't exist	group_from_index	Python-1.5.2/Modules/regexmodule.c
+group() index out of range	group_from_index	Python-1.5.2/Modules/regexmodule.c
+group() only valid after successful match/search	group_from_index	Python-1.5.2/Modules/regexmodule.c
+groupindex	regobj_getattr	Python-1.5.2/Modules/regexmodule.c
+grouping	PyLocale_localeconv	Python-1.5.2/Modules/_localemodule.c
+gx=%f, gy=%f, bx=%f, by=%f\n	png_handle_cHRM	libpng-1.0.5/pngrutil.c
+gzgetc error\n	test_gzio	zlib-1.1.3/example.c
+gzgets err after gzseek: %s\n	test_gzio	zlib-1.1.3/example.c
+gzgets() after gzseek: %s\n	test_gzio	zlib-1.1.3/example.c
+gzopen error\n	test_gzio	zlib-1.1.3/example.c
+gzprintf err: %s\n	test_gzio	zlib-1.1.3/example.c
+gzputs err: %s\n	test_gzio	zlib-1.1.3/example.c
+gzread err: %s\n	test_gzio	zlib-1.1.3/example.c
+gzread(): %s\n	test_gzio	zlib-1.1.3/example.c
+gzread: incomplete block read	tar	zlib-1.1.3/contrib/untgz/untgz.c
+gzseek error, pos=%ld, gztell=%ld\n	test_gzio	zlib-1.1.3/example.c
+height = %d,\n	png_read_start_row	libpng-1.0.5/pngrutil.c
+hex() argument can't be converted to hex	builtin_hex	Python-1.5.2/Python/bltinmodule.c
+hexversion	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+igamma = %lu\n	png_handle_gAMA	libpng-1.0.5/pngrutil.c
+ignoring out of range rgb_to_gray coefficients	png_set_rgb_to_gray	libpng-1.0.5/pngrtran.c
+iiiiOO!O!O!SSiS	new_code	Python-1.5.2/Modules/newmodule.c
+illegal argument type for built-in operation	PyErr_BadArgument	Python-1.5.2/Python/errors.c
+import %s # builtin\n	init_builtin	Python-1.5.2/Python/import.c
+import %s # directory %s\n	load_package	Python-1.5.2/Python/import.c
+import %s # dynamically loaded from %s\n	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+import %s # from %s\n	load_source_module	Python-1.5.2/Python/import.c
+import %s # frozen%s\n	PyImport_ImportFrozenModule	Python-1.5.2/Python/import.c
+import %s # previously loaded (%s)\n	_PyImport_FindExtension	Python-1.5.2/Python/import.c
+import-from requires module object	import_from	Python-1.5.2/Python/ceval.c
+in math_1	Py_FPROTO	Python-1.5.2/Modules/mathmodule.c
+in math_2	Py_FPROTO	Python-1.5.2/Modules/mathmodule.c
+in png_build_gamma_table\n	png_build_gamma_table	libpng-1.0.5/pngrtran.c
+in png_check_chunk_name\n	png_check_chunk_name	libpng-1.0.5/pngrutil.c
+in png_check_keyword\n	png_check_keyword	libpng-1.0.5/pngwutil.c
+in png_combine_row\n	png_combine_row	libpng-1.0.5/pngrutil.c
+in png_combine_row_asm\n	png_combine_row	libpng-1.0.5/pngvcrd.c
+in png_convert_from_struct_tm\n	png_convert_from_struct_tm	libpng-1.0.5/pngwrite.c
+in png_convert_from_time_t\n	png_convert_from_time_t	libpng-1.0.5/pngwrite.c
+in png_correct_palette\n	png_correct_palette	libpng-1.0.5/pngrtran.c
+in png_create_info_struct\n	png_create_info_struct	libpng-1.0.5/png.c
+in png_create_read_struct\n	png_create_read_struct_2	libpng-1.0.5/pngread.c
+in png_create_write_struct\n	png_create_write_struct_2	libpng-1.0.5/pngwrite.c
+in png_destroy_info_struct\n	png_destroy_info_struct	libpng-1.0.5/png.c
+in png_destroy_read_struct\n	png_destroy_read_struct	libpng-1.0.5/pngread.c
+in png_destroy_write_struct\n	png_destroy_write_struct	libpng-1.0.5/pngwrite.c
+in png_do_background\n	png_do_background	libpng-1.0.5/pngrtran.c
+in png_do_bgr\n	png_do_bgr	libpng-1.0.5/pngtrans.c
+in png_do_build_grayscale_palette\n	png_build_grayscale_palette	libpng-1.0.5/pngrtran.c
+in png_do_chop\n	png_do_chop	libpng-1.0.5/pngrtran.c
+in png_do_dither\n	png_do_dither	libpng-1.0.5/pngrtran.c
+in png_do_expand\n	png_do_expand	libpng-1.0.5/pngrtran.c
+in png_do_expand_palette\n	png_do_expand_palette	libpng-1.0.5/pngrtran.c
+in png_do_gamma\n	png_do_gamma	libpng-1.0.5/pngrtran.c
+in png_do_gray_to_rgb\n	png_do_gray_to_rgb	libpng-1.0.5/pngrtran.c
+in png_do_invert\n	png_do_invert	libpng-1.0.5/pngtrans.c
+in png_do_pack\n	png_do_pack	libpng-1.0.5/pngwtran.c
+in png_do_packswap\n	png_do_packswap	libpng-1.0.5/pngtrans.c
+in png_do_read_filler\n	png_do_read_filler	libpng-1.0.5/pngrtran.c
+in png_do_read_interlace\n	png_do_read_interlace	libpng-1.0.5/pngrutil.c
+in png_do_read_invert_alpha\n	png_do_read_invert_alpha	libpng-1.0.5/pngrtran.c
+in png_do_read_swap_alpha\n	png_do_read_swap_alpha	libpng-1.0.5/pngrtran.c
+in png_do_read_transformations\n	png_do_read_transformations	libpng-1.0.5/pngrtran.c
+in png_do_rgb_to_gray\n	png_do_rgb_to_gray	libpng-1.0.5/pngrtran.c
+in png_do_shift\n	png_do_shift	libpng-1.0.5/pngwtran.c
+in png_do_strip_filler\n	png_do_strip_filler	libpng-1.0.5/pngtrans.c
+in png_do_swap\n	png_do_swap	libpng-1.0.5/pngtrans.c
+in png_do_unpack\n	png_do_unpack	libpng-1.0.5/pngrtran.c
+in png_do_unshift\n	png_do_unshift	libpng-1.0.5/pngrtran.c
+in png_do_write_interlace\n	png_do_write_interlace	libpng-1.0.5/pngwutil.c
+in png_do_write_invert_alpha\n	png_do_write_invert_alpha	libpng-1.0.5/pngwtran.c
+in png_do_write_swap_alpha\n	png_do_write_swap_alpha	libpng-1.0.5/pngwtran.c
+in png_do_write_transformations\n	png_do_write_transformations	libpng-1.0.5/pngwtran.c
+in png_handle_IEND\n	png_handle_IEND	libpng-1.0.5/pngrutil.c
+in png_handle_IHDR\n	png_handle_IHDR	libpng-1.0.5/pngrutil.c
+in png_handle_PLTE\n	png_handle_PLTE	libpng-1.0.5/pngrutil.c
+in png_handle_bKGD\n	png_handle_bKGD	libpng-1.0.5/pngrutil.c
+in png_handle_cHRM\n	png_handle_cHRM	libpng-1.0.5/pngrutil.c
+in png_handle_gAMA\n	png_handle_gAMA	libpng-1.0.5/pngrutil.c
+in png_handle_hIST\n	png_handle_hIST	libpng-1.0.5/pngrutil.c
+in png_handle_oFFs\n	png_handle_oFFs	libpng-1.0.5/pngrutil.c
+in png_handle_pCAL\n	png_handle_pCAL	libpng-1.0.5/pngrutil.c
+in png_handle_pHYs\n	png_handle_pHYs	libpng-1.0.5/pngrutil.c
+in png_handle_sBIT\n	png_handle_sBIT	libpng-1.0.5/pngrutil.c
+in png_handle_sRGB\n	png_handle_sRGB	libpng-1.0.5/pngrutil.c
+in png_handle_tEXt\n	png_handle_tEXt	libpng-1.0.5/pngrutil.c
+in png_handle_tIME\n	png_handle_tIME	libpng-1.0.5/pngrutil.c
+in png_handle_tRNS\n	png_handle_tRNS	libpng-1.0.5/pngrutil.c
+in png_handle_unknown\n	png_handle_unknown	libpng-1.0.5/pngrutil.c
+in png_handle_zTXt\n	png_handle_zTXt	libpng-1.0.5/pngrutil.c
+in png_info_destroy\n	png_info_destroy	libpng-1.0.5/png.c
+in png_info_init\n	png_info_init	libpng-1.0.5/png.c
+in png_init_io\n	png_init_io	libpng-1.0.5/png.c
+in png_init_read_transformations\n	png_init_read_transformations	libpng-1.0.5/pngrtran.c
+in png_permit_empty_plte\n	png_permit_empty_plte	libpng-1.0.5/pngset.c
+in png_read_destroy\n	png_read_destroy	libpng-1.0.5/pngread.c
+in png_read_end\n	png_read_end	libpng-1.0.5/pngread.c
+in png_read_filter_row\n	png_read_filter_row	libpng-1.0.5/pngrutil.c
+in png_read_finish_row\n	png_read_finish_row	libpng-1.0.5/pngrutil.c
+in png_read_image\n	png_read_image	libpng-1.0.5/pngread.c
+in png_read_info\n	png_read_info	libpng-1.0.5/pngread.c
+in png_read_init\n	png_read_init	libpng-1.0.5/pngread.c
+in png_read_row (row %d, pass %d)\n	png_read_row	libpng-1.0.5/pngread.c
+in png_read_rows\n	png_read_rows	libpng-1.0.5/pngread.c
+in png_read_start_row\n	png_read_start_row	libpng-1.0.5/pngrutil.c
+in png_read_transform_info\n	png_read_transform_info	libpng-1.0.5/pngrtran.c
+in png_read_update_info\n	png_read_update_info	libpng-1.0.5/pngread.c
+in png_set_background\n	png_set_background	libpng-1.0.5/pngrtran.c
+in png_set_bgr\n	png_set_bgr	libpng-1.0.5/pngtrans.c
+in png_set_compression_level\n	png_set_compression_level	libpng-1.0.5/pngwrite.c
+in png_set_compression_mem_level\n	png_set_compression_mem_level	libpng-1.0.5/pngwrite.c
+in png_set_compression_method\n	png_set_compression_method	libpng-1.0.5/pngwrite.c
+in png_set_compression_strategy\n	png_set_compression_strategy	libpng-1.0.5/pngwrite.c
+in png_set_crc_action\n	png_set_crc_action	libpng-1.0.5/pngrtran.c
+in png_set_dither\n	png_set_dither	libpng-1.0.5/pngrtran.c
+in png_set_filler\n	png_set_filler	libpng-1.0.5/pngtrans.c
+in png_set_filter\n	png_set_filter	libpng-1.0.5/pngwrite.c
+in png_set_filter_heuristics\n	png_set_filter_heuristics	libpng-1.0.5/pngwrite.c
+in png_set_flush\n	png_set_flush	libpng-1.0.5/pngwrite.c
+in png_set_gamma\n	png_set_gamma	libpng-1.0.5/pngrtran.c
+in png_set_gray_to_rgb\n	png_set_gray_to_rgb	libpng-1.0.5/pngrtran.c
+in png_set_interlace handling\n	png_set_interlace_handling	libpng-1.0.5/pngtrans.c
+in png_set_invert_alpha\n	png_set_invert_alpha	libpng-1.0.5/pngtrans.c
+in png_set_invert_mono\n	png_set_invert_mono	libpng-1.0.5/pngtrans.c
+in png_set_packing\n	png_set_packing	libpng-1.0.5/pngtrans.c
+in png_set_packswap\n	png_set_packswap	libpng-1.0.5/pngtrans.c
+in png_set_read_user_transform_fn\n	png_set_read_user_transform_fn	libpng-1.0.5/pngrtran.c
+in png_set_rgb_to_gray\n	png_set_rgb_to_gray	libpng-1.0.5/pngrtran.c
+in png_set_shift\n	png_set_shift	libpng-1.0.5/pngtrans.c
+in png_set_sig_bytes\n	png_set_sig_bytes	libpng-1.0.5/png.c
+in png_set_strip_16\n	png_set_strip_16	libpng-1.0.5/pngrtran.c
+in png_set_strip_alpha\n	png_set_strip_alpha	libpng-1.0.5/pngrtran.c
+in png_set_swap\n	png_set_swap	libpng-1.0.5/pngtrans.c
+in png_set_swap_alpha\n	png_set_swap_alpha	libpng-1.0.5/pngtrans.c
+in png_set_user_transform_info\n	png_set_user_transform_info	libpng-1.0.5/pngtrans.c
+in png_set_write_user_transform_fn\n	png_set_write_user_transform_fn	libpng-1.0.5/pngwrite.c
+in png_start_read_image\n	png_start_read_image	libpng-1.0.5/pngread.c
+in png_write_IDAT\n	png_write_IDAT	libpng-1.0.5/pngwutil.c
+in png_write_IEND\n	png_write_IEND	libpng-1.0.5/pngwutil.c
+in png_write_IHDR\n	png_write_IHDR	libpng-1.0.5/pngwutil.c
+in png_write_PLTE\n	png_write_PLTE	libpng-1.0.5/pngwutil.c
+in png_write_bKGD\n	png_write_bKGD	libpng-1.0.5/pngwutil.c
+in png_write_cHRM\n	png_write_cHRM	libpng-1.0.5/pngwutil.c
+in png_write_destroy\n	png_write_destroy	libpng-1.0.5/pngwrite.c
+in png_write_end\n	png_write_end	libpng-1.0.5/pngwrite.c
+in png_write_filtered_row\n	png_write_filtered_row	libpng-1.0.5/pngwutil.c
+in png_write_find_filter\n	png_write_find_filter	libpng-1.0.5/pngwutil.c
+in png_write_finish_row\n	png_write_finish_row	libpng-1.0.5/pngwutil.c
+in png_write_flush\n	png_write_flush	libpng-1.0.5/pngwrite.c
+in png_write_gAMA\n	png_write_gAMA	libpng-1.0.5/pngwutil.c
+in png_write_hIST\n	png_write_hIST	libpng-1.0.5/pngwutil.c
+in png_write_image\n	png_write_image	libpng-1.0.5/pngwrite.c
+in png_write_info\n	png_write_info	libpng-1.0.5/pngwrite.c
+in png_write_init\n	png_write_init	libpng-1.0.5/pngwrite.c
+in png_write_oFFs\n	png_write_oFFs	libpng-1.0.5/pngwutil.c
+in png_write_pCAL (%d parameters)\n	png_write_pCAL	libpng-1.0.5/pngwutil.c
+in png_write_pHYs\n	png_write_pHYs	libpng-1.0.5/pngwutil.c
+in png_write_row (row %ld, pass %d)\n	png_write_row	libpng-1.0.5/pngwrite.c
+in png_write_rows\n	png_write_rows	libpng-1.0.5/pngwrite.c
+in png_write_sBIT\n	png_write_sBIT	libpng-1.0.5/pngwutil.c
+in png_write_sRGB\n	png_write_sRGB	libpng-1.0.5/pngwutil.c
+in png_write_start_row\n	png_write_start_row	libpng-1.0.5/pngwutil.c
+in png_write_tEXt\n	png_write_tEXt	libpng-1.0.5/pngwutil.c
+in png_write_tIME\n	png_write_tIME	libpng-1.0.5/pngwutil.c
+in png_write_tRNS\n	png_write_tRNS	libpng-1.0.5/pngwutil.c
+in png_write_zTXt\n	png_write_zTXt	libpng-1.0.5/pngwutil.c
+incompatible zlib version\n	main	zlib-1.1.3/example.c
+incomplete distance tree	inflate_trees_dynamic	zlib-1.1.3/inftrees.c
+incomplete dynamic bit lengths tree	inflate_trees_bits	zlib-1.1.3/inftrees.c
+incomplete format	PyString_Format	Python-1.5.2/Objects/stringobject.c
+incomplete format key	PyString_Format	Python-1.5.2/Objects/stringobject.c
+incomplete literal/length tree	inflate_trees_dynamic	zlib-1.1.3/inftrees.c
+inconsistent bit counts	gen_codes	zlib-1.1.3/trees.c
+inconsistent dedent\n	PyTokenizer_Get	Python-1.5.2/Parser/tokenizer.c
+inconsistent use of tabs and spaces in indentation	err_input	Python-1.5.2/Python/pythonrun.c
+incorrect data check	inflate	zlib-1.1.3/inflate.c
+incorrect header check	inflate	zlib-1.1.3/inflate.c
+inflate should report DATA_ERROR\n	test_sync	zlib-1.1.3/example.c
+inflate with dict	test_dict_inflate	zlib-1.1.3/example.c
+inflate with dictionary: %s\n	test_dict_inflate	zlib-1.1.3/example.c
+inflate(): %s\n	test_inflate	zlib-1.1.3/example.c
+inflate:         * distance %u\n	inflate_fast	zlib-1.1.3/inffast.c
+inflate:         * end of block\n	inflate_fast	zlib-1.1.3/inffast.c
+inflate:         * length %u\n	inflate_fast	zlib-1.1.3/inffast.c
+inflate:         * literal '%c'\n	inflate_fast	zlib-1.1.3/inffast.c
+inflate:         * literal 0x%02x\n	inflate_fast	zlib-1.1.3/inffast.c
+inflate:         distance %u\n	inflate_codes	zlib-1.1.3/infcodes.c
+inflate:         end of block\n	inflate_codes	zlib-1.1.3/infcodes.c
+inflate:         length %u\n	inflate_codes	zlib-1.1.3/infcodes.c
+inflate:         literal '%c'\n	inflate_codes	zlib-1.1.3/infcodes.c
+inflate:         literal 0x%02x\n	inflate_codes	zlib-1.1.3/infcodes.c
+inflate:       bits tree ok\n	inflate_blocks	zlib-1.1.3/infblock.c
+inflate:       codes end, %lu total out\n	inflate_blocks	zlib-1.1.3/infblock.c
+inflate:       codes free\n	inflate_codes_free	zlib-1.1.3/infcodes.c
+inflate:       codes new\n	inflate_codes_new	zlib-1.1.3/infcodes.c
+inflate:       stored end, %lu total out\n	inflate_blocks	zlib-1.1.3/infblock.c
+inflate:       stored length %u\n	inflate_blocks	zlib-1.1.3/infblock.c
+inflate:       table sizes ok\n	inflate_blocks	zlib-1.1.3/infblock.c
+inflate:       trees ok\n	inflate_blocks	zlib-1.1.3/infblock.c
+inflate:     dynamic codes block%s\n	inflate_blocks	zlib-1.1.3/infblock.c
+inflate:     fixed codes block%s\n	inflate_blocks	zlib-1.1.3/infblock.c
+inflate:     stored block%s\n	inflate_blocks	zlib-1.1.3/infblock.c
+inflate:   blocks allocated\n	inflate_blocks_new	zlib-1.1.3/infblock.c
+inflate:   blocks freed\n	inflate_blocks_free	zlib-1.1.3/infblock.c
+inflate:   blocks reset\n	inflate_blocks_reset	zlib-1.1.3/infblock.c
+inflate: allocated\n	inflateInit2_	zlib-1.1.3/inflate.c
+inflate: end\n	inflateEnd	zlib-1.1.3/inflate.c
+inflate: reset\n	inflateReset	zlib-1.1.3/inflate.c
+inflate: zlib check ok\n	inflate	zlib-1.1.3/inflate.c
+inflate: zlib header ok\n	inflate	zlib-1.1.3/inflate.c
+inflateSync	test_sync	zlib-1.1.3/example.c
+inflate_codes grabbed too many bytes	inflate_codes	zlib-1.1.3/infcodes.c
+inflate_trees_fixed error %d\n	main	zlib-1.1.3/maketree.c
+inputfile outputfile\n	usage	jpeg-6a/cjpeg.c
+instance exception may not have a separate value	do_raise	Python-1.5.2/Python/ceval.c
+instance-method attributes not accessible in restricted mode	instancemethod_getattr	Python-1.5.2/Objects/classobject.c
+instance.__dict__ not accessible in restricted mode	instance_getattr1	Python-1.5.2/Objects/classobject.c
+int() literal too large: %.200s	int_from_string	Python-1.5.2/Objects/abstract.c
+integer division or modulo	i_divmod	Python-1.5.2/Objects/intobject.c
+integer literal too large	parsenumber	Python-1.5.2/Python/compile.c
+integer multiplication	int_mul	Python-1.5.2/Objects/intobject.c
+integer negation	int_neg	Python-1.5.2/Objects/intobject.c
+integer pow()	int_pow	Python-1.5.2/Objects/intobject.c
+integer to the negative power	int_pow	Python-1.5.2/Objects/intobject.c
+integer<b>	convertsimple1	Python-1.5.2/Python/getargs.c
+integer<h>	convertsimple1	Python-1.5.2/Python/getargs.c
+integer<i>	convertsimple1	Python-1.5.2/Python/getargs.c
+integer<l>	convertsimple1	Python-1.5.2/Python/getargs.c
+invalid base for atoi()	strop_atoi	Python-1.5.2/Modules/stropmodule.c
+invalid base for atol()	strop_atol	Python-1.5.2/Modules/stropmodule.c
+invalid base for long literal	PyLong_FromString	Python-1.5.2/Objects/longobject.c
+invalid bit length repeat	inflate_blocks	zlib-1.1.3/infblock.c
+invalid block type	inflate_blocks	zlib-1.1.3/infblock.c
+invalid character in keyword	png_check_keyword	libpng-1.0.5/pngwutil.c
+invalid chunk type	png_check_chunk_name	libpng-1.0.5/pngrutil.c
+invalid file open mode %.200s	imp_load_module	Python-1.5.2/Python/import.c
+invalid keyword character 0x%02X	png_check_keyword	libpng-1.0.5/pngwutil.c
+invalid length	send_bits	zlib-1.1.3/trees.c
+invalid literal for atof(): %.200s	strop_atof	Python-1.5.2/Modules/stropmodule.c
+invalid literal for atoi(): %.200s	strop_atoi	Python-1.5.2/Modules/stropmodule.c
+invalid literal for atol(): %.200s	strop_atol	Python-1.5.2/Modules/stropmodule.c
+invalid literal for float(): %.200s	float_from_string	Python-1.5.2/Objects/abstract.c
+invalid literal for int(): %.200s	int_from_string	Python-1.5.2/Objects/abstract.c
+invalid literal for long(): %.200s	long_from_string	Python-1.5.2/Objects/abstract.c
+invalid match	check_match	zlib-1.1.3/deflate.c
+invalid stored block lengths	inflate_blocks	zlib-1.1.3/infblock.c
+invalid syntax	err_input	Python-1.5.2/Python/pythonrun.c
+invalid token	err_input	Python-1.5.2/Python/pythonrun.c
+invalid use of 't' format character	convertsimple1	Python-1.5.2/Python/getargs.c
+invalid window size	inflate	zlib-1.1.3/inflate.c
+irowbytes = %d,\n	png_read_start_row	libpng-1.0.5/pngrutil.c
+iwidth = %d,\n	png_read_start_row	libpng-1.0.5/pngrutil.c
+jconfig.h	main	jpeg-6a/ckconfig.c
+jpegtran	main	jpeg-6a/jpegtran.c
+keyword can't be an expression	com_argument	Python-1.5.2/Python/compile.c
+keyword length must be 1 - 79 characters	png_check_keyword	libpng-1.0.5/pngwutil.c
+keyword list must be a dictionary	PyEval_CallObjectWithKeywords	Python-1.5.2/Python/ceval.c
+keyword parameter %s redefined	vgetargskeywords	Python-1.5.2/Python/getargs.c
+keyword parameter redefined	eval_code2	Python-1.5.2/Python/ceval.c
+l;int argument required	formatint	Python-1.5.2/Objects/stringobject.c
+l;range() requires 1-3 int arguments	builtin_range	Python-1.5.2/Python/bltinmodule.c
+l;xrange() requires 1-3 int arguments	builtin_xrange	Python-1.5.2/Python/bltinmodule.c
+large inflate	test_large_inflate	zlib-1.1.3/example.c
+large_inflate(): OK\n	test_large_inflate	zlib-1.1.3/example.c
+last_traceback	PyErr_PrintEx	Python-1.5.2/Python/pythonrun.c
+last_type	PyErr_PrintEx	Python-1.5.2/Python/pythonrun.c
+last_value	PyErr_PrintEx	Python-1.5.2/Python/pythonrun.c
+leading spaces removed from keyword	png_check_keyword	libpng-1.0.5/pngwutil.c
+len=%8d, 	png_read_filter_row	libpng-1.0.5/pngvcrd.c
+letters	fixup_ulcase	Python-1.5.2/Modules/_localemodule.c
+libpng FAILS test\n	main	libpng-1.0.5/pngtest.c
+libpng error: %s\n	png_default_error	libpng-1.0.5/pngerror.c
+libpng passes test\n	main	libpng-1.0.5/pngtest.c
+libpng warning: %s\n	png_default_warning	libpng-1.0.5/pngerror.c
+lineno	parse_syntax_error	Python-1.5.2/Python/pythonrun.c
+list() argument must be a sequence	PySequence_List	Python-1.5.2/Objects/abstract.c
+list.extend() argument must be a list	listextend	Python-1.5.2/Objects/listobject.c
+list.index(x): x not in list	listindex	Python-1.5.2/Objects/listobject.c
+list.remove(x): x not in list	listremove	Python-1.5.2/Objects/listobject.c
+ll|l;range() requires 1-3 int arguments	builtin_range	Python-1.5.2/Python/bltinmodule.c
+ll|l;xrange() requires 1-3 int arguments	builtin_xrange	Python-1.5.2/Python/bltinmodule.c
+load_add_on( %s )\n	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+load_add_on( %s ) failed	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+load_module arg#2 should be a file or None	imp_load_module	Python-1.5.2/Python/import.c
+local const ct_data static_dtree[D_CODES] = {\n	gen_trees_header	zlib-1.1.3/trees.c
+local const ct_data static_ltree[L_CODES+2] = {\n	gen_trees_header	zlib-1.1.3/trees.c
+local const int base_dist[D_CODES] = {\n	gen_trees_header	zlib-1.1.3/trees.c
+local const int base_length[LENGTH_CODES] = {\n	gen_trees_header	zlib-1.1.3/trees.c
+local inflate_huft fixed_td[] = {	main	zlib-1.1.3/maketree.c
+local inflate_huft fixed_tl[] = {	main	zlib-1.1.3/maketree.c
+local uInt fixed_bd = %d;\n	main	zlib-1.1.3/maketree.c
+local uInt fixed_bl = %d;\n	main	zlib-1.1.3/maketree.c
+locale query failed	PyLocale_setlocale	Python-1.5.2/Modules/_localemodule.c
+locale setting not supported	PyLocale_setlocale	Python-1.5.2/Modules/_localemodule.c
+locale.Error	init_locale	Python-1.5.2/Modules/_localemodule.c
+long division or modulo	long_divrem	Python-1.5.2/Objects/longobject.c
+long integer to the negative power	long_pow	Python-1.5.2/Objects/longobject.c
+long<L>	convertsimple1	Python-1.5.2/Python/getargs.c
+long_float	long_float	Python-1.5.2/Objects/longobject.c
+loop over non-sequence	loop_subscript	Python-1.5.2/Python/ceval.c
+lost buf	_tr_flush_block	zlib-1.1.3/trees.c
+lost sys.stderr\n	PyErr_PrintEx	Python-1.5.2/Python/pythonrun.c
+lost sys.stdin	builtin_raw_input	Python-1.5.2/Python/bltinmodule.c
+maketrans arguments must have same length	strop_maketrans	Python-1.5.2/Modules/stropmodule.c
+maketree: cannot initialize sub-tables!\n	maketree	zlib-1.1.3/maketree.c
+malformed string for complex()	complex_from_string	Python-1.5.2/Python/bltinmodule.c
+map() requires at least two args	builtin_map	Python-1.5.2/Python/bltinmodule.c
+marshal	PyMarshal_Init	Python-1.5.2/Python/marshal.c
+marshal.dump() 2nd arg must be file	marshal_dump	Python-1.5.2/Python/marshal.c
+marshal.load() arg must be file	marshal_load	Python-1.5.2/Python/marshal.c
+match offset out of range	regobj_match	Python-1.5.2/Modules/regexmodule.c
+math domain error	math_error	Python-1.5.2/Modules/mathmodule.c
+math range error	math_error	Python-1.5.2/Modules/mathmodule.c
+maxint	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+maxmemory	parse_switches	jpeg-6a/cjpeg.c
+method.__self__ not accessible in restricted mode	meth_getattr	Python-1.5.2/Objects/methodobject.c
+min() or max() of empty sequence	min_max	Python-1.5.2/Python/bltinmodule.c
+min() or max() of non-sequence	min_max	Python-1.5.2/Python/bltinmodule.c
+missing ')' in getargs format	vgetargs1	Python-1.5.2/Python/getargs.c
+mixed up var name/index	com_newlocal_o	Python-1.5.2/Python/compile.c
+module	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+module filename missing	PyModule_GetFilename	Python-1.5.2/Objects/moduleobject.c
+modulo	float_rem	Python-1.5.2/Objects/floatobject.c
+mon_grouping	PyLocale_localeconv	Python-1.5.2/Modules/_localemodule.c
+more < 2	fill_window	zlib-1.1.3/deflate.c
+more info at http://wwww.winimage/zLibDll/unzip.htm\n\n	do_banner	zlib-1.1.3/contrib/minizip/miniunz.c
+more than 255 arguments	com_call_function	Python-1.5.2/Python/compile.c
+multiply	float_mul	Python-1.5.2/Objects/floatobject.c
+name is local and global	com_global_stmt	Python-1.5.2/Python/compile.c
+nameless module	PyModule_GetName	Python-1.5.2/Objects/moduleobject.c
+nb_float should return float object	PyFloat_AsDouble	Python-1.5.2/Objects/floatobject.c
+nb_int should return int object	PyInt_AsLong	Python-1.5.2/Objects/intobject.c
+need dictionary	inflate	zlib-1.1.3/inflate.c
+negative number to a float power	float_pow	Python-1.5.2/Objects/floatobject.c
+no __call__ method defined	call_builtin	Python-1.5.2/Python/ceval.c
+no arguments expected	eval_code2	Python-1.5.2/Python/ceval.c
+no digits in long int constant	PyLong_FromString	Python-1.5.2/Objects/longobject.c
+no flush?	deflate_slow	zlib-1.1.3/deflate.c
+no locals	eval_code2	Python-1.5.2/Python/ceval.c
+no locals!?	builtin_vars	Python-1.5.2/Python/bltinmodule.c
+no mem for bitset	newbitset	Python-1.5.2/Parser/bitset.c
+no mem for new grammar	newgrammar	Python-1.5.2/Parser/grammar.c
+no mem for new nfa	newnfa	Python-1.5.2/Parser/pgen.c
+no mem for new nfa grammar	newnfagrammar	Python-1.5.2/Parser/pgen.c
+no mem for new parser\n	parsetok	Python-1.5.2/Parser/parsetok.c
+no mem for new sym in calcfirstset	calcfirstset	Python-1.5.2/Parser/firstsets.c
+no mem for next token\n	parsetok	Python-1.5.2/Parser/parsetok.c
+no mem for sys.argv	PySys_SetArgv	Python-1.5.2/Python/sysmodule.c
+no mem for sys.path insertion	PySys_SetArgv	Python-1.5.2/Python/sysmodule.c
+no mem for xx_state in makedfa	makedfa	Python-1.5.2/Parser/pgen.c
+no mem to add parser accelerators\n	fixstate	Python-1.5.2/Parser/acceler.c
+no mem to resize arc list in addarc	addarc	Python-1.5.2/Parser/grammar.c
+no mem to resize dfa in adddfa	adddfa	Python-1.5.2/Parser/grammar.c
+no mem to resize labellist in addlabel	addlabel	Python-1.5.2/Parser/grammar.c
+no mem to resize state in addstate	addstate	Python-1.5.2/Parser/grammar.c
+no mem to resize sym in calcfirstset	calcfirstset	Python-1.5.2/Parser/firstsets.c
+non-default argument follows default argument	com_argdefs	Python-1.5.2/Python/compile.c
+non-dictionary object received when keyword dictionary expected	vgetargskeywords	Python-1.5.2/Python/getargs.c
+non-keyword arg after keyword arg	com_argument	Python-1.5.2/Python/compile.c
+non-tuple default args	PyFunction_SetDefaults	Python-1.5.2/Objects/funcobject.c
+nosmooth	parse_switches	jpeg-6a/djpeg.c
+not a valid, executable xcoff file:	aix_loaderror	Python-1.5.2/Python/importdl.c
+not all arguments converted	PyString_Format	Python-1.5.2/Objects/stringobject.c
+not enough arguments	regobj_group	Python-1.5.2/Modules/regexmodule.c
+not enough arguments for format string	getnextarg	Python-1.5.2/Objects/stringobject.c
+not enough arguments; expected %d, got %d	eval_code2	Python-1.5.2/Python/ceval.c
+not enough codes	send_all_trees	zlib-1.1.3/trees.c
+not enough memory to copy -c argument	Py_Main	Python-1.5.2/Modules/main.c
+null argument to internal routine	null_error	Python-1.5.2/Objects/abstract.c
+null byte in argument for complex()	complex_from_string	Python-1.5.2/Python/bltinmodule.c
+null byte in argument for float()	float_from_string	Python-1.5.2/Objects/abstract.c
+null byte in argument for int()	int_from_string	Python-1.5.2/Objects/abstract.c
+null byte in argument for long()	long_from_string	Python-1.5.2/Objects/abstract.c
+null file for PyFile_WriteString	PyFile_WriteString	Python-1.5.2/Objects/fileobject.c
+null strings: %d, 1-strings: %d\n	dump_counts	Python-1.5.2/Objects/object.c
+num_hist = %d, num_palette = %d\n	png_write_hIST	libpng-1.0.5/pngwutil.c
+num_rows = %d\n	png_read_start_row	libpng-1.0.5/pngrutil.c
+number coercion failed	PyNumber_Coerce	Python-1.5.2/Objects/object.c
+number of items in format string and keyword list do not match	vgetargskeywords	Python-1.5.2/Python/getargs.c
+object can't be concatenated	PySequence_Concat	Python-1.5.2/Objects/abstract.c
+object can't be converted to float	PyNumber_Float	Python-1.5.2/Objects/abstract.c
+object can't be converted to int	PyNumber_Int	Python-1.5.2/Objects/abstract.c
+object can't be converted to long	PyNumber_Long	Python-1.5.2/Objects/abstract.c
+object can't be repeated	PySequence_Repeat	Python-1.5.2/Objects/abstract.c
+object does not support item assignment	PyObject_SetItem	Python-1.5.2/Objects/abstract.c
+object does not support item deletion	PyObject_DelItem	Python-1.5.2/Objects/abstract.c
+object doesn't support item assignment	PySequence_SetItem	Python-1.5.2/Objects/abstract.c
+object doesn't support item deletion	PySequence_DelItem	Python-1.5.2/Objects/abstract.c
+object doesn't support slice assignment	PySequence_SetSlice	Python-1.5.2/Objects/abstract.c
+object doesn't support slice deletion	PySequence_DelSlice	Python-1.5.2/Objects/abstract.c
+object has read-only attributes	PyObject_SetAttrString	Python-1.5.2/Objects/object.c
+object.readline() returned non-string	PyFile_GetLine	Python-1.5.2/Objects/fileobject.c
+oct() argument can't be converted to oct	builtin_oct	Python-1.5.2/Python/bltinmodule.c
+offset	parse_syntax_error	Python-1.5.2/Python/pythonrun.c
+offset must be zero or positive	_PyBuffer_FromObject	Python-1.5.2/Objects/bufferobject.c
+old style getargs format uses new features	vgetargs1	Python-1.5.2/Python/getargs.c
+onepass	parse_switches	jpeg-6a/djpeg.c
+optimise	parse_switches	jpeg-6a/cjpeg.c
+optimize	parse_switches	jpeg-6a/cjpeg.c
+ordered	parse_switches	jpeg-6a/djpeg.c
+out of memory\n	main	zlib-1.1.3/example.c
+outfile	parse_switches	jpeg-6a/cjpeg.c
+outrageous left shift count	long_lshift	Python-1.5.2/Objects/longobject.c
+oversubscribed distance tree	inflate_trees_dynamic	zlib-1.1.3/inftrees.c
+oversubscribed dynamic bit lengths tree	inflate_trees_bits	zlib-1.1.3/inftrees.c
+oversubscribed literal/length tree	inflate_trees_dynamic	zlib-1.1.3/inftrees.c
+pCAL parameter %d length = %d\n	png_write_pCAL	libpng-1.0.5/pngwutil.c
+pCAL purpose length = %d\n	png_write_pCAL	libpng-1.0.5/pngwutil.c
+pCAL total length = %d\n	png_write_pCAL	libpng-1.0.5/pngwutil.c
+pCAL units length = %d\n	png_write_pCAL	libpng-1.0.5/pngwutil.c
+pd=%2d, b=%d, 	png_read_filter_row	libpng-1.0.5/pngvcrd.c
+pendingBuf overflow	_tr_flush_block	zlib-1.1.3/trees.c
+pgen: FATAL ERROR: %s\n	Py_FatalError	Python-1.5.2/Parser/pgenmain.c
+platform	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+png_do_dither returned rowbytes=0	png_do_read_transformations	libpng-1.0.5/pngrtran.c
+png_do_rgb_to_gray found nongray pixel	png_do_read_transformations	libpng-1.0.5/pngrtran.c
+png_get_aspect_ratio	png_get_pixel_aspect_ratio	libpng-1.0.5/pngget.c
+png_get_pixels_per_meter	png_get_pixels_per_meter	libpng-1.0.5/pngget.c
+png_get_x_pixels_per_meter	png_get_x_pixels_per_meter	libpng-1.0.5/pngget.c
+png_get_y_pixels_per_meter	png_get_y_pixels_per_meter	libpng-1.0.5/pngget.c
+pop from empty list	listpop	Python-1.5.2/Objects/listobject.c
+pop index out of range	listpop	Python-1.5.2/Objects/listobject.c
+pow(int, int, int) not yet supported	int_pow	Python-1.5.2/Objects/intobject.c
+pow(x, y) not defined for these operands	do_pow	Python-1.5.2/Objects/abstract.c
+pow(x, y) requires numeric arguments	do_pow	Python-1.5.2/Objects/abstract.c
+pow(x, y, z) not defined for these operands	PyNumber_Power	Python-1.5.2/Objects/abstract.c
+pow(x, y, z) requires numeric arguments	PyNumber_Power	Python-1.5.2/Objects/abstract.c
+pow(x, y, z) with z==0	int_pow	Python-1.5.2/Objects/intobject.c
+prec too big	PyString_Format	Python-1.5.2/Objects/stringobject.c
+prefix	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+progressive	parse_switches	jpeg-6a/cjpeg.c
+push: no mem in addchild\n	push	Python-1.5.2/Parser/parser.c
+python: Can't reopen .pyc file\n	PyRun_SimpleFile	Python-1.5.2/Python/pythonrun.c
+python: to interrupt a truly hanging Python program, interrupt once more.\n	intcatcher	Python-1.5.2/Parser/intrcheck.c
+qslots	parse_switches	jpeg-6a/cjpeg.c
+qtables	parse_switches	jpeg-6a/cjpeg.c
+quality	parse_switches	jpeg-6a/cjpeg.c
+quantise	parse_switches	jpeg-6a/djpeg.c
+quantize	parse_switches	jpeg-6a/djpeg.c
+raise 3rd arg must be traceback or None	do_raise	Python-1.5.2/Python/ceval.c
+range() has too many items	builtin_range	Python-1.5.2/Python/bltinmodule.c
+rdjpgcom	main	jpeg-6a/rdjpgcom.c
+rdjpgcom displays any textual comments in a JPEG file.\n	usage	jpeg-6a/rdjpgcom.c
+read Error	png_default_read_data	libpng-1.0.5/pngrio.c
+read-only	buffer_repr	Python-1.5.2/Objects/bufferobject.c
+read-only buffer	convertsimple1	Python-1.5.2/Python/getargs.c
+read-only character buffer	convertsimple1	Python-1.5.2/Python/getargs.c
+read-only special attribute	module_setattr	Python-1.5.2/Objects/moduleobject.c
+read-write	buffer_repr	Python-1.5.2/Objects/bufferobject.c
+read-write buffer	convertsimple1	Python-1.5.2/Python/getargs.c
+reading %d bytes\n	png_read_data	libpng-1.0.5/pngrio.c
+readonly attribute	PyMember_Set	Python-1.5.2/Python/structmember.c
+readpng2 error:  main struct not recoverable in info_callback.\n	readpng2_info_callback	libpng-1.0.5/contrib/gregbook/readpng2.c
+readpng2 libpng error: %s\n	readpng2_error_handler	libpng-1.0.5/contrib/gregbook/readpng2.c
+readpng2 severe error:  jmpbuf not recoverable; terminating.\n	readpng2_error_handler	libpng-1.0.5/contrib/gregbook/readpng2.c
+readpng_get_image:  rowbytes = %ld, height = %ld\n	readpng_get_image	libpng-1.0.5/contrib/gregbook/readpng.c
+realpat	regobj_getattr	Python-1.5.2/Modules/regexmodule.c
+reduce of empty sequence with no initial value	builtin_reduce	Python-1.5.2/Python/bltinmodule.c
+regex.error	initregex	Python-1.5.2/Modules/regexmodule.c
+register	test1	jpeg-6a/ansi2knr.c
+reload() argument must be module	PyImport_ReloadModule	Python-1.5.2/Python/import.c
+reload(): module %.200s not in sys.modules	PyImport_ReloadModule	Python-1.5.2/Python/import.c
+reload(): parent %.200s not in sys.modules	PyImport_ReloadModule	Python-1.5.2/Python/import.c
+replace	main	jpeg-6a/wrjpgcom.c
+repr not string	PyObject_Print	Python-1.5.2/Objects/object.c
+restart	parse_switches	jpeg-6a/cjpeg.c
+right operand length must match slice length	buffer_ass_slice	Python-1.5.2/Objects/bufferobject.c
+right operand must be a single byte	buffer_ass_item	Python-1.5.2/Objects/bufferobject.c
+row = %d, filter = %d\n	png_read_filter_row	libpng-1.0.5/pngrutil.c
+row=%5d, %s, 	png_read_filter_row	libpng-1.0.5/pngvcrd.c
+row_info->bit_depth = %d\n	png_write_row	libpng-1.0.5/pngwrite.c
+row_info->channels = %d\n	png_write_row	libpng-1.0.5/pngwrite.c
+row_info->color_type = %d\n	png_write_row	libpng-1.0.5/pngwrite.c
+row_info->pixel_depth = %d\n	png_write_row	libpng-1.0.5/pngwrite.c
+row_info->rowbytes = %d\n	png_write_row	libpng-1.0.5/pngwrite.c
+row_info->width = %d\n	png_write_row	libpng-1.0.5/pngwrite.c
+rowbytes = %d\n	png_handle_IHDR	libpng-1.0.5/pngrutil.c
+rowbytes = %d,\n	png_read_start_row	libpng-1.0.5/pngrutil.c
+s;embedded '\\0' in input line	builtin_input	Python-1.5.2/Python/bltinmodule.c
+sOs(ssi)	imp_load_module	Python-1.5.2/Python/import.c
+sRGB_gAMA_and_cHRM	png_set_sRGB_gAMA_and_cHRM	libpng-1.0.5/pngset.c
+s_pop: parser stack underflow -- FATAL	s_pop	Python-1.5.2/Parser/parser.c
+s_push: parser stack overflow\n	s_push	Python-1.5.2/Parser/parser.c
+same structure.  Resetting write_data_fn to NULL.	png_set_read_fn	libpng-1.0.5/pngrio.c
+sample	parse_switches	jpeg-6a/cjpeg.c
+save_size overflowed in pngpread	png_push_read_IDAT	libpng-1.0.5/pngpread.c
+search offset out of range	regobj_search	Python-1.5.2/Modules/regexmodule.c
+second argument must be a class	builtin_isinstance	Python-1.5.2/Python/bltinmodule.c
+second argument must be instance or None	new_instancemethod	Python-1.5.2/Modules/newmodule.c
+segment lost in conversion	png_far_to_near	libpng-1.0.5/pngwio.c
+sequence.index(x): x not in list	PySequence_Index	Python-1.5.2/Objects/abstract.c
+shift: no mem in addchild\n	shift	Python-1.5.2/Parser/parser.c
+shl_findsym %s\n	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+shl_load %s\n	_PyImport_LoadDynamicModule	Python-1.5.2/Python/importdl.c
+signal handler must be signal.SIG_IGN, signal.SIG_DFL, or a callable object	signal_signal	Python-1.5.2/Modules/signalmodule.c
+signal only works in main thread	signal_signal	Python-1.5.2/Modules/signalmodule.c
+signed	test1	jpeg-6a/ansi2knr.c
+single	builtin_compile	Python-1.5.2/Python/bltinmodule.c
+single-segment read-only buffer	convertsimple1	Python-1.5.2/Python/getargs.c
+single-segment read-write buffer	convertsimple1	Python-1.5.2/Python/getargs.c
+size must be zero or positive	_PyBuffer_FromMemory	Python-1.5.2/Objects/bufferobject.c
+size_t if that's what you used.  Just add it to the end.\n	main	jpeg-6a/ckconfig.c
+sizeof	test1	jpeg-6a/ansi2knr.c
+slice index must be int	slice_index	Python-1.5.2/Python/ceval.c
+slice(	slice_repr	Python-1.5.2/Objects/sliceobject.c
+slide too late	deflate_stored	zlib-1.1.3/deflate.c
+smooth	parse_switches	jpeg-6a/cjpeg.c
+softspace	PyFile_SoftSpace	Python-1.5.2/Objects/fileobject.c
+sss:compile	builtin_compile	Python-1.5.2/Python/bltinmodule.c
+static	test1	jpeg-6a/ansi2knr.c
+static arc arcs_%d_%d[%d] = {\n	printarcs	Python-1.5.2/Parser/printgrammar.c
+static dfa dfas[%d] = {\n	printdfas	Python-1.5.2/Parser/printgrammar.c
+static label labels[%d] = {\n	printlabels	Python-1.5.2/Parser/printgrammar.c
+static state states_%d[%d] = {\n	printstates	Python-1.5.2/Parser/printgrammar.c
+storing X0, X1, type, and nparams in info\n	png_set_pCAL	libpng-1.0.5/pngset.c
+string index out of range	string_item	Python-1.5.2/Objects/stringobject.c
+string member test needs char left operand	PySequence_Contains	Python-1.5.2/Objects/abstract.c
+string without null bytes	convertsimple1	Python-1.5.2/Python/getargs.c
+strongly 	main	libpng-1.0.5/contrib/gregbook/wpng.c
+strop_atof	strop_atof	Python-1.5.2/Modules/stropmodule.c
+strtod	complex_from_string	Python-1.5.2/Python/bltinmodule.c
+subtract	float_sub	Python-1.5.2/Objects/floatobject.c
+switch	test1	jpeg-6a/ansi2knr.c
+symbol table mismatch:	aix_loaderror	Python-1.5.2/Python/importdl.c
+sys.path must be a list of directory names	find_module	Python-1.5.2/Python/import.c
+sys.path.insert(0) failed	PySys_SetArgv	Python-1.5.2/Python/sysmodule.c
+s|O!O!:execfile	builtin_execfile	Python-1.5.2/Python/bltinmodule.c
+s|OOO:__import__	builtin___import__	Python-1.5.2/Python/bltinmodule.c
+s|si:open	builtin_open	Python-1.5.2/Python/bltinmodule.c
+t#t#t#|i	strop_replace	Python-1.5.2/Modules/stropmodule.c
+t#|z#i	strop_splitfields	Python-1.5.2/Modules/stropmodule.c
+tRNS chunk not allowed with alpha channel	png_handle_tRNS	libpng-1.0.5/pngrutil.c
+tabsize must be at least 1	strop_expandtabs	Python-1.5.2/Modules/stropmodule.c
+text alignment in file is wrong.	aix_loaderror	Python-1.5.2/Python/importdl.c
+that you found type size_t in, or add a direct definition of type\n	main	jpeg-6a/ckconfig.c
+the same structure.  Resetting read_data_fn to NULL.	png_set_write_fn	libpng-1.0.5/pngwio.c
+then the comment text is read from standard input.\n	usage	jpeg-6a/wrjpgcom.c
+this constructor takes no arguments	PyInstance_New	Python-1.5.2/Objects/classobject.c
+this function takes no keyword arguments	call_builtin	Python-1.5.2/Python/ceval.c
+thousands_sep	PyLocale_localeconv	Python-1.5.2/Modules/_localemodule.c
+to skip a field, hit the <Enter> key.\n	main	libpng-1.0.5/contrib/gregbook/wpng.c
+tok_backup: begin of buffer	tok_backup	Python-1.5.2/Parser/tokenizer.c
+tolist	range_getattr	Python-1.5.2/Objects/rangeobject.c
+too many arguments; expected %d, got %d	eval_code2	Python-1.5.2/Python/ceval.c
+too many codes	send_all_trees	zlib-1.1.3/trees.c
+too many errors, rest skipped.	aix_loaderror	Python-1.5.2/Python/importdl.c
+too many length or distance symbols	inflate_blocks	zlib-1.1.3/infblock.c
+too many statically nested blocks	block_push	Python-1.5.2/Python/compile.c
+tr_static_init: 256+dist != 512	tr_static_init	zlib-1.1.3/trees.c
+tr_static_init: dist != 256	tr_static_init	zlib-1.1.3/trees.c
+tr_static_init: length != 256	tr_static_init	zlib-1.1.3/trees.c
+traceback:\n	init_class_exc	Python-1.5.2/Python/bltinmodule.c
+tracebacklimit	PyTraceBack_Print	Python-1.5.2/Python/traceback.c
+trailing spaces removed from keyword	png_check_keyword	libpng-1.0.5/pngwutil.c
+transferred text chunk %d\n	png_set_text	libpng-1.0.5/pngset.c
+translate	regobj_getattr	Python-1.5.2/Modules/regexmodule.c
+translation table must be 256 bytes	newregexobject	Python-1.5.2/Modules/regexmodule.c
+translation table must be 256 characters long	strop_translate	Python-1.5.2/Modules/stropmodule.c
+trees.h	gen_trees_header	zlib-1.1.3/trees.c
+tuple assignment index out of range	PyTuple_SetItem	Python-1.5.2/Objects/tupleobject.c
+tuple found in format when using keyword arguments	vgetargskeywords	Python-1.5.2/Python/getargs.c
+tuple() argument must be a sequence	PySequence_Tuple	Python-1.5.2/Objects/abstract.c
+typedef	test1	jpeg-6a/ansi2knr.c
+uncompress	test_compress	zlib-1.1.3/example.c
+uncompress(): %s\n	test_compress	zlib-1.1.3/example.c
+unexpected EOF while parsing	err_input	Python-1.5.2/Python/pythonrun.c
+unexpected dictionary	test_dict_inflate	zlib-1.1.3/example.c
+unexpected keyword argument: %.400s	eval_code2	Python-1.5.2/Python/ceval.c
+unhashable instance	instance_hash	Python-1.5.2/Objects/classobject.c
+unindexable object	PySequence_GetItem	Python-1.5.2/Objects/abstract.c
+unknown compression method	inflate	zlib-1.1.3/inflate.c
+unknown opcode	eval_code2	Python-1.5.2/Python/ceval.c
+unknown parsing error	err_input	Python-1.5.2/Python/pythonrun.c
+unknown trailer type	com_assign_trailer	Python-1.5.2/Python/compile.c
+unlock_import: not holding the import lock	unlock_import	Python-1.5.2/Python/import.c
+unmatched paren in format	countformat	Python-1.5.2/Python/modsupport.c
+unpack list of wrong size	eval_code2	Python-1.5.2/Python/ceval.c
+unpack non-sequence	eval_code2	Python-1.5.2/Python/ceval.c
+unpack sequence of wrong size	unpack_sequence	Python-1.5.2/Python/ceval.c
+unpack tuple of wrong size	eval_code2	Python-1.5.2/Python/ceval.c
+unsigned	test1	jpeg-6a/ansi2knr.c
+unsliceable object	PySequence_GetSlice	Python-1.5.2/Objects/abstract.c
+unsubscriptable object	PyObject_GetItem	Python-1.5.2/Objects/abstract.c
+unsupported format character '%c' (0x%x)	PyString_Format	Python-1.5.2/Objects/stringobject.c
+untgz v 0.1\n an sample application of zlib 1.0.4\n\nUsage : untgz TGZfile            to extract all files\n        untgz TGZfile fname ...  to extract selected files\n        untgz -l TGZfile         to list archive contents\n        untgz -h                 to display this help\n\n	help	zlib-1.1.3/contrib/untgz/untgz.c
+update	_PyImport_FindExtension	Python-1.5.2/Python/import.c
+usage: %s [infile.png] [outfile.png]\n\t%s -m {infile.png}\n	main	libpng-1.0.5/pngtest.c
+usage: %s [switches] 	usage	jpeg-6a/cjpeg.c
+usage: %s grammar\n	main	Python-1.5.2/Parser/pgenmain.c
+use -v for traceback\n	init_class_exc	Python-1.5.2/Python/bltinmodule.c
+va_alist	convert1	jpeg-6a/ansi2knr.c
+va_dcl	convert1	jpeg-6a/ansi2knr.c
+vars() argument must have __dict__ attribute	builtin_vars	Python-1.5.2/Python/bltinmodule.c
+version	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+volatile	test1	jpeg-6a/ansi2knr.c
+warning: different zlib version\n	main	zlib-1.1.3/example.c
+when you use -comment.\n	usage	jpeg-6a/wrjpgcom.c
+whitespace	initstrop	Python-1.5.2/Modules/stropmodule.c
+width = %d,\n	png_read_start_row	libpng-1.0.5/pngrutil.c
+width too big	PyString_Format	Python-1.5.2/Objects/stringobject.c
+winver	_PySys_Init	Python-1.5.2/Python/sysmodule.c
+writelines() requires list of strings	file_writelines	Python-1.5.2/Objects/fileobject.c
+writeobject with NULL file	PyFile_WriteObject	Python-1.5.2/Objects/fileobject.c
+writepng libpng error: %s\n	writepng_error_handler	libpng-1.0.5/contrib/gregbook/writepng.c
+writepng severe error:  jmpbuf not recoverable; terminating.\n	writepng_error_handler	libpng-1.0.5/contrib/gregbook/writepng.c
+wrjpgcom	main	jpeg-6a/wrjpgcom.c
+wrjpgcom inserts a textual comment in a JPEG file.\n	usage	jpeg-6a/wrjpgcom.c
+wx=%f, wy=%f, rx=%f, ry=%f\n	png_handle_cHRM	libpng-1.0.5/pngrutil.c
+xrange object index out of range	range_item	Python-1.5.2/Objects/rangeobject.c
+xrange() has more than sys.maxint items	builtin_xrange	Python-1.5.2/Python/bltinmodule.c
+zcfree: ptr not found	zcfree	zlib-1.1.3/zutil.c
+zero length keyword	png_check_keyword	libpng-1.0.5/pngwutil.c
+zero step for range()	builtin_range	Python-1.5.2/Python/bltinmodule.c
+zero step for xrange()	builtin_xrange	Python-1.5.2/Python/bltinmodule.c
+zlib memory	png_read_init	libpng-1.0.5/pngread.c
+zlib memory error	png_create_read_struct_2	libpng-1.0.5/pngread.c
+zlib version	png_read_init	libpng-1.0.5/pngread.c
+zlib version error	png_create_read_struct_2	libpng-1.0.5/pngread.c
+{{%2u},{%2u}}%s	gen_trees_header	zlib-1.1.3/trees.c
+{{%3u},{%3u}}%s	gen_trees_header	zlib-1.1.3/trees.c
+|O:[raw_]input	builtin_raw_input	Python-1.5.2/Python/bltinmodule.c
+|O:dir	builtin_dir	Python-1.5.2/Python/bltinmodule.c
+|O:vars	builtin_vars	Python-1.5.2/Python/bltinmodule.c
