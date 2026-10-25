@@ -85,6 +85,10 @@ public class ImportSymbols extends GhidraScript {
 		}
 		else if (!sym.getName(true).equals(full) || sym.getSource() != src) {
 			sym.setNameAndNamespace(name, ns, src);
+			// an unchanged name keeps its old source in setNameAndNamespace
+			if (sym.getSource() != src) {
+				sym.setSource(src);
+			}
 		}
 	}
 
