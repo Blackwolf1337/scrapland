@@ -46,7 +46,6 @@ void *crt_gmtime32(const int32_t *t);
 size_t crt_strftime(char *buf, size_t size, const char *fmt, const void *tm);
 [[noreturn]] void crt_exit_now(int code);
 int Str_VPrintf(char *dst, int size, const char *fmt, va_list ap);
-int Str_PrintfQuiet(char *dst, int size, const char *fmt, ...);
 void *File_OpenRel(const char *name, const char *mode);
 void App_GetPath(char *buf, int size);
 const char *Version_Get(void);

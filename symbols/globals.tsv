@@ -10631,6 +10631,7 @@ rva	source	name	datatype
 00415138	IMPORTED	pairNode::RTTI_Base_Class_Descriptor_at_(0,-1,0,64)	/RTTIBaseClassDescriptor
 00428994	USER_DEFINED	g_PackIndex	/undefined4
 004289a0	USER_DEFINED	g_HashItemValues	
+00428a20	USER_DEFINED	g_LangTable	/undefined4
 00428d58	ANALYSIS	_PyImport_Inittab	/pointer
 00428e18	ANALYSIS	cPyEntity_Type	/object.h/PyTypeObject
 00428e88	ANALYSIS	cPyEntity_methods	/methodobject.h/PyMethodDef[7]
@@ -11037,6 +11038,10 @@ rva	source	name	datatype
 0044b5fc	USER_DEFINED	g_GVarTable	/undefined4
 0044b600	USER_DEFINED	g_HashItemPool	/undefined4
 0044b604	USER_DEFINED	g_HashItemRefs	/undefined4
+0044b618	USER_DEFINED	g_LangName	/undefined4
+0044b61c	USER_DEFINED	g_LangDefault	/undefined4
+0044b620	USER_DEFINED	g_LangBuffer	/undefined4
+0044b624	USER_DEFINED	g_IdLang	/undefined4
 0044b628	USER_DEFINED	g_MemStats	/undefined4
 0044b640	USER_DEFINED	g_MemStatsContext	/undefined4
 0044b648	USER_DEFINED	g_StrTmp	/undefined1

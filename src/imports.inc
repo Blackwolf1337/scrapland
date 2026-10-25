@@ -95,6 +95,7 @@ SD_IMPORT(crt_fwrite, 0x344fa9)
 SD_IMPORT(crt_fseek, 0x347c87)
 SD_IMPORT(crt_ftell, 0x3482af)
 SD_IMPORT(crt_stricmp, 0x3585b4)
+SD_IMPORT(crt_strncmp, 0x321f90)
 SD_IMPORT(crt_atoi, 0x323bb1)
 SD_IMPORT(crt_atof, 0x329d91)
 SD_IMPORT(crt_strncat, 0x34ccc0)
@@ -183,9 +184,6 @@ SD_IMPORT(SaveVars_Delete, 0x134ef0)
 SD_IMPORT(SaveVar_Get, 0x1356a0)
 SD_IMPORT(SaveVar_Inc, 0x1357c0)
 SD_IMPORT(SaveGames_GetList, 0x1352f0)
-SD_IMPORT(Lang_GetEntries, 0x132d30)
-SD_IMPORT(Lang_GetStr, 0x132f20)
-SD_IMPORT(Lang_GetLanguage, 0x132f60)
 SD_IMPORT(Font_Build, 0x21ab80)
 SD_IMPORT(Loading_Init, 0x20b260)
 SD_IMPORT(Loading_End, 0x20ade0)
@@ -203,7 +201,6 @@ SD_IMPORT(Music_Play, 0x216ae0)
 SD_IMPORT(Model_Info, 0x217e20)
 SD_IMPORT(DummySearch_Start, 0x1a7ad0)
 SD_IMPORT(MissionArrows_Switch, 0x0f82a0)
-SD_IMPORT(Lang_Set, 0x133260)
 SD_IMPORT(CWinApp_LoadLevel, 0x20b8a0)
 SD_IMPORT(cWorld_SetCam, 0x209b30)
 SD_IMPORT(cWorld_GetUsrEntity, 0x0c1430)
@@ -305,6 +302,7 @@ SD_IMPORT(Py_FindMethod, 0x2f29d0)	/* methodobject.c */
 SD_IMPORT(_PyObject_New, 0x2ebc00)	/* object.c */
 SD_IMPORT(PyList_AsTuple, 0x2dcf10)	/* listobject.c */
 SD_IMPORT(PyList_Append, 0x2dcee0)	/* listobject.c */
+SD_IMPORT(PyList_SetItem, 0x2dd1e0)	/* listobject.c */
 SD_IMPORT(PyInt_FromLong, 0x2de630)	/* intobject.c */
 SD_IMPORT(PyString_FromString, 0x2dbb80)	/* stringobject.c */
 SD_IMPORT(PyEval_CallObject, 0x2ee850)	/* ceval.c */

@@ -3496,23 +3496,23 @@ rva	size	source	callconv	name	signature
 00132410	400	USER_DEFINED	__cdecl	Config_Save	void __cdecl(void)
 001325c0	48	USER_DEFINED	__thiscall	cGVar::SetFlag	byte __thiscall(byte bit, byte on)
 001325f0	273	USER_DEFINED	__cdecl	GVars_Show	void __cdecl(char * filter)
-00132720	108	DEFAULT	unknown	FUN_00532720	
-00132790	54	DEFAULT	unknown	FUN_00532790	
-001327d0	118	DEFAULT	unknown	FUN_005327d0	
-00132850	237	DEFAULT	unknown	FUN_00532850	
-00132940	261	DEFAULT	unknown	FUN_00532940	
-00132a50	143	DEFAULT	unknown	FUN_00532a50	
-00132ae0	210	DEFAULT	unknown	FUN_00532ae0	
-00132bc0	57	DEFAULT	unknown	FUN_00532bc0	
-00132c00	143	DEFAULT	unknown	FUN_00532c00	
-00132cc0	109	DEFAULT	unknown	FUN_00532cc0	
-00132d30	481	USER_DEFINED	unknown	Lang_GetEntries	undefined(void)
-00132f20	49	USER_DEFINED	unknown	Lang_GetStr	undefined(void)
-00132f60	6	USER_DEFINED	unknown	Lang_GetLanguage	undefined(void)
-00132f70	227	DEFAULT	unknown	FUN_00532f70	
-00133060	504	DEFAULT	unknown	FUN_00533060	
-00133260	427	USER_DEFINED	unknown	Lang_Set	undefined(void)
-00133410	182	DEFAULT	unknown	FUN_00533410	
+00132720	108	USER_DEFINED	__thiscall	HashTable<cLangText>::HashTable	void * __thiscall(int numSlots, byte caseSensitive)
+00132790	54	USER_DEFINED	__fastcall	HashTable<cLangText>::~HashTable	void __fastcall(void * self)
+001327d0	118	USER_DEFINED	__thiscall	HashTable<cLangText>::Add	byte __thiscall(char * key, void * value, byte warn)
+00132850	237	USER_DEFINED	__thiscall	HashTable<cLangText>::Insert	void * __thiscall(char * key, uint slot, void * value)
+00132940	261	USER_DEFINED	__fastcall	HashTable<cLangText>::Clear	void __fastcall(void * self)
+00132a50	143	USER_DEFINED	__cdecl	Lang_Free	void __cdecl(void)
+00132ae0	210	USER_DEFINED	__thiscall	HashTable<cLangText>::Delete	byte __thiscall(char * key)
+00132bc0	57	USER_DEFINED	__thiscall	HashTable<cLangText>::Get	byte __thiscall(char * key, void * out)
+00132c00	143	USER_DEFINED	__thiscall	HashTable<cLangText>::Find	void * __thiscall(char * key, uint slot)
+00132cc0	109	USER_DEFINED	__cdecl	Lang_FindId	char * __cdecl(char * text)
+00132d30	481	USER_DEFINED	__cdecl	Lang_GetEntries	PyObject * __cdecl(char * name, int n)
+00132f20	49	USER_DEFINED	__cdecl	Lang_GetStr	char * __cdecl(char * id)
+00132f60	6	USER_DEFINED	__cdecl	Lang_GetLanguage	char * __cdecl(void)
+00132f70	227	USER_DEFINED	__thiscall	HashTable<cLangText>::Slot	uint __thiscall(char * key)
+00133060	504	USER_DEFINED	__cdecl	Lang_Load	void __cdecl(char * lang, void * f)
+00133260	427	USER_DEFINED	__cdecl	Lang_Set	byte __cdecl(char * lang, byte force)
+00133410	182	USER_DEFINED	__thiscall	HashTable<cLangText>::Unlink	void * __thiscall(char * key, uint slot)
 001334d0	9	USER_DEFINED	__cdecl	operator_new	void * __cdecl(uint size)
 001334e0	68	USER_DEFINED	__cdecl	operator_delete	void __cdecl(void * p)
 00133530	27	USER_DEFINED	__cdecl	Mem_OutOfMemory	void __cdecl(uint size)
@@ -10337,7 +10337,7 @@ rva	size	source	callconv	name	signature
 00321415	31	ANALYSIS	__stdcall	__NLG_Notify	void __stdcall(ulong param_1)
 00321434	3	DEFAULT	unknown	FUN_00721434	
 00321440	2887	DEFAULT	unknown	FUN_00721440	
-00321f90	115	ANALYSIS	__cdecl	_strncmp	int __cdecl(char * _Str1, char * _Str2, size_t _MaxCount)
+00321f90	115	USER_DEFINED	__cdecl	_strncmp	int __cdecl(char * a, char * b, uint n)
 0032201a	10	DEFAULT	unknown	FUN_0072201a	
 00322032	12	DEFAULT	unknown	FUN_00722032	
 0032203e	51	ANALYSIS	__cdecl	__crt_strtox::is_overflow_condition<unsigned_long>	bool __cdecl(uint param_1, ulong param_2)

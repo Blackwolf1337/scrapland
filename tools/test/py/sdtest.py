@@ -321,6 +321,12 @@ for k in ('SDNoString', 'Menu_NewGame', ''):
 	check('Scrap.GetLangStr(%s)' % k, lambda k=k: Scrap.GetLangStr(k))
 check('Scrap.GetLangEntries(SDNo)', lambda: Scrap.GetLangEntries('SDNo'))
 check('Scrap.GetLangEntries(SDNo, 1)', lambda: Scrap.GetLangEntries('SDNo', 1))
+# real ids of Language/English.txt: the walk in file order while the id keeps its prefix (id minus 4 characters)
+for k in ('Mission_Decontamination_RemoteMessage1', 'Mission_Decontamination_SystemMessage1',
+		'Mission_Decontamination_GateKeeper_InitMsg1', 'Mission_Decontamination_Hint1'):
+	for n in (1, 2, 3):
+		check('Scrap.GetLangEntries(%s, %d)' % (k, n), lambda k=k, n=n: Scrap.GetLangEntries(k, n))
+	check('Scrap.GetLangStr(%s)' % k, lambda k=k: Scrap.GetLangStr(k))
 for v in ('FullScreen', 'VideoWidth', 'SDNoVar'):
 	check('Scrap.Des(%s)' % v, lambda v=v: Scrap.Des(v))
 check('Scrap.CreateSaveVar(SDVar, abc)', lambda: Scrap.CreateSaveVar('SDVar', 'abc'))

@@ -170,7 +170,7 @@ void Model_Info(const char *name, int arg);
 void GVars_Show(const char *filter);
 void DummySearch_Start(const char *name, int flag);
 void MissionArrows_Switch(const char *a, const char *b);
-byte Lang_Set(const char *lang, int flag);
+byte Lang_Set(const char *lang, byte force);
 const char *Version_Get(void);
 void __thiscall CWinApp_LoadLevel(CWinApp *app, const char *level);
 int __thiscall cWorld_SetCam(cWorld *world, int i, const char *name);

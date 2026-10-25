@@ -52,6 +52,8 @@ char *Str_FromUTF8(const char *s);
 void Path_Split(const char *path, char *name, char *dir, char *ext);
 /* snprintf that logs "String size error" when it cuts (rva 0x136610) */
 int Str_Printf(char *dst, int size, const char *fmt, ...);
+/* the same without the log line (rva 0x1365a0) */
+int Str_PrintfQuiet(char *dst, int size, const char *fmt, ...);
 
 /* fprintf of the exe's CRT, for FILE pointers the exe hands out (rva 0xbd230) */
 int crt_fprintf(void *file, const char *fmt, ...);
