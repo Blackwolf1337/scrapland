@@ -3529,7 +3529,7 @@ rva	size	source	callconv	name	signature
 00133980	9	DEFAULT	unknown	FUN_00533980	
 00133990	74	DEFAULT	unknown	FUN_00533990	
 001339e0	73	DEFAULT	unknown	FUN_005339e0	
-00133a30	71	DEFAULT	unknown	FUN_00533a30	
+00133a30	71	USER_DEFINED	__cdecl	ActionSet_IsNamed	byte __cdecl(void * set, char * name)
 00133a80	71	DEFAULT	unknown	FUN_00533a80	
 00133ad0	99	DEFAULT	unknown	FUN_00533ad0	
 00133b40	99	DEFAULT	unknown	FUN_00533b40	
@@ -3679,8 +3679,8 @@ rva	size	source	callconv	name	signature
 001396b0	188	DEFAULT	unknown	FUN_005396b0	
 00139810	196	DEFAULT	unknown	FUN_00539810	
 00139900	1	DEFAULT	unknown	FUN_00539900	
-00139910	6	DEFAULT	unknown	FUN_00539910	
-00139920	48	DEFAULT	unknown	FUN_00539920	
+00139910	6	USER_DEFINED	__cdecl	Input_GetActionSet	uint __cdecl(void)
+00139920	48	USER_DEFINED	__thiscall	cPlayerInput::GetCursorChar	char __thiscall(void)
 00139950	223	DEFAULT	unknown	FUN_00539950	
 00139a30	223	DEFAULT	unknown	FUN_00539a30	
 00139b10	34	DEFAULT	unknown	FUN_00539b10	
@@ -3703,41 +3703,41 @@ rva	size	source	callconv	name	signature
 0013a470	57	DEFAULT	unknown	FUN_0053a470	
 0013a4b0	59	DEFAULT	unknown	FUN_0053a4b0	
 0013a510	69	DEFAULT	unknown	FUN_0053a510	
-0013a560	200	DEFAULT	unknown	FUN_0053a560	
+0013a560	200	USER_DEFINED	__cdecl	Input_SelectActionSet	void __cdecl(int index)
 0013a690	132	DEFAULT	unknown	FUN_0053a690	
-0013a720	219	DEFAULT	unknown	FUN_0053a720	
-0013a800	25	DEFAULT	unknown	FUN_0053a800	
-0013a820	120	DEFAULT	unknown	FUN_0053a820	
-0013a8a0	130	DEFAULT	unknown	FUN_0053a8a0	
+0013a720	219	USER_DEFINED	__thiscall	cVirtualKeyboard::Set	byte __thiscall(char * text)
+0013a800	25	USER_DEFINED	__thiscall	cPlayerInput::SetInputFunc	void __thiscall(char * func)
+0013a820	120	USER_DEFINED	__thiscall	cPad::Rumble	void __thiscall(float a, float b, float c)
+0013a8a0	130	USER_DEFINED	__thiscall	cPlayerInput::SetString	void __thiscall(char * text)
 0013a930	49	DEFAULT	unknown	FUN_0053a930	
 0013a970	86	DEFAULT	unknown	FUN_0053a970	
 0013a9d0	30	DEFAULT	unknown	FUN_0053a9d0	
 0013a9f0	54	DEFAULT	unknown	FUN_0053a9f0	
 0013aa30	93	DEFAULT	unknown	FUN_0053aa30	
 0013aa90	121	ANALYSIS	__thiscall	cAbstractIDevice::vf00	undefined __thiscall(void)
-0013ab10	31	DEFAULT	unknown	FUN_0053ab10	
+0013ab10	31	USER_DEFINED	__cdecl	Input_AbortListenToDefine	void __cdecl(void)
 0013ab30	114	ANALYSIS	__thiscall	cAbstractIDevice::vf08	undefined __thiscall(void)
-0013abb0	507	DEFAULT	unknown	FUN_0053abb0	
-0013adc0	283	DEFAULT	unknown	FUN_0053adc0	
+0013abb0	507	USER_DEFINED	__cdecl	Input_AssignEntry	int __cdecl(char * a, char * b, int c, char * d, char * e)
+0013adc0	283	USER_DEFINED	__cdecl	Input_Bind	int __cdecl(int player, char * a, char * b, char * c)
 0013aef0	132	DEFAULT	unknown	FUN_0053aef0	
 0013af80	134	DEFAULT	unknown	FUN_0053af80	
 0013b010	264	DEFAULT	unknown	FUN_0053b010	
-0013b120	226	DEFAULT	unknown	FUN_0053b120	
+0013b120	226	USER_DEFINED	__cdecl	Input_ClearDefinedList	int __cdecl(int player, char * a, char * b, int flag)
 0013b210	137	DEFAULT	unknown	FUN_0053b210	
 0013b2a0	370	DEFAULT	unknown	FUN_0053b2a0	
-0013b420	223	DEFAULT	unknown	FUN_0053b420	
+0013b420	223	USER_DEFINED	__cdecl	Input_GetDefinedEntry	char * __cdecl(int player, char * a, char * b, char * c, int flag)
 0013b510	366	DEFAULT	unknown	FUN_0053b510	
-0013b680	234	DEFAULT	unknown	FUN_0053b680	
+0013b680	234	USER_DEFINED	__cdecl	Input_GetDefinedList	int __cdecl(int player, char * a, char * b, char * buf, int size, int flag)
 0013b780	116	DEFAULT	unknown	FUN_0053b780	
-0013b800	505	DEFAULT	unknown	FUN_0053b800	
+0013b800	505	USER_DEFINED	__cdecl	Input_GetEntry	int __cdecl(char * a, char * b, char * c, int * index, char * * name)
 0013ba10	42	DEFAULT	unknown	FUN_0053ba10	
-0013ba40	326	DEFAULT	unknown	FUN_0053ba40	
+0013ba40	326	USER_DEFINED	__cdecl	Input_ListenToDefine	int __cdecl(int player, char * a, char * b, char * c)
 0013bba0	242	DEFAULT	unknown	FUN_0053bba0	
 0013bca0	617	ANALYSIS	__thiscall	cFuncGvarDevices::vf01	undefined __thiscall(void)
 0013bf20	126	DEFAULT	unknown	FUN_0053bf20	
 0013bfc0	67	DEFAULT	unknown	FUN_0053bfc0	
 0013c010	37	DEFAULT	unknown	FUN_0053c010	
-0013c040	71	DEFAULT	unknown	FUN_0053c040	
+0013c040	71	USER_DEFINED	__cdecl	Input_ResetToDefault	void __cdecl(void)
 0013c090	477	ANALYSIS	__thiscall	cFuncGvarDevices::vf00	undefined __thiscall(void)
 0013c280	107	DEFAULT	unknown	FUN_0053c280	
 0013c2f0	636	DEFAULT	unknown	FUN_0053c2f0	

@@ -4,7 +4,7 @@
 # and splits at spaces, so difftest.sh spells the file name with chr().
 OUT = 'sdtest.out'
 execfile('sdlib.py')
-import Scrap, SWeap, SVec, SAct, SFX, SLogic, SSound
+import Scrap, SWeap, SVec, SAct, SFX, SLogic, SSound, SInput
 
 check('Scrap.GetMoney()', lambda: Scrap.GetMoney())
 check('Scrap.GetMoney(1)', lambda: Scrap.GetMoney(1))
@@ -178,4 +178,38 @@ check('SSound.VoiceRemain bad', lambda: SSound.VoiceRemain('x', 1.0))
 check('SSound.OpenVoice bad', lambda: SSound.OpenVoice('x'))
 check('SSound.PlayVoice bad', lambda: SSound.PlayVoice('x'))
 check('SSound.SetMusic bad', lambda: SSound.SetMusic(1))
+# SInput: player numbers are checked unsigned (4 and -1 are both out). CheckPadButton(4, ..) fails a CHECK.
+aset = SInput.GetActionSet()
+check('SInput.GetActionSet()', lambda: SInput.GetActionSet())
+check('SInput.SetActionSet(current)', lambda a=aset: SInput.SetActionSet(a))
+check('SInput.SetActionSet(NoSet)', lambda: SInput.SetActionSet('NoSet'))
+for i in (0, 1, 3, 4, -1):
+	check('SInput.GetString(%d)' % i, lambda i=i: SInput.GetString(i))
+	check('SInput.GetCursorChar(%d)' % i, lambda i=i: SInput.GetCursorChar(i))
+	check('SInput.SetString(%d)' % i, lambda i=i: SInput.SetString(i, 'text%d' % i))
+	check('SInput.GetString(%d) set' % i, lambda i=i: SInput.GetString(i))
+	check('SInput.SetInputFunc(%d)' % i, lambda i=i: SInput.SetInputFunc(i, ''))
+	check('SInput.Rumble(%d)' % i, lambda i=i: SInput.Rumble(i, 0.0, 0.0, 0.0))
+check('SInput.GetVirtualKeyboard()', lambda: SInput.GetVirtualKeyboard())
+check('SInput.SetVirtualKeyboard(hello)', lambda: SInput.SetVirtualKeyboard('hello'))
+check('SInput.GetVirtualKeyboard() set', lambda: SInput.GetVirtualKeyboard())
+for a in (aset, 'NoSet'):
+	for b, c in (('Fire', 'Key'), ('NoAction', 'NoDev')):
+		check('SInput.GetEntry(%s, %s, %s)' % (a, b, c), lambda a=a, b=b, c=c: SInput.GetEntry(a, b, c))
+		check('SInput.GetDefinedEntry(0, %s, %s, %s)' % (a, b, c), lambda a=a, b=b, c=c: SInput.GetDefinedEntry(0, a, b, c))
+		check('SInput.GetDefinedEntry(0, %s, %s, %s, 1)' % (a, b, c), lambda a=a, b=b, c=c: SInput.GetDefinedEntry(0, a, b, c, 1))
+	check('SInput.GetDefinedList(0, %s, Fire)' % a, lambda a=a: SInput.GetDefinedList(0, a, 'Fire'))
+	check('SInput.GetDefinedList(1, %s, Fire, 1)' % a, lambda a=a: SInput.GetDefinedList(1, a, 'Fire', 1))
+check('SInput.ListenToDefine(0, ...)', lambda a=aset: SInput.ListenToDefine(0, a, 'Fire', 'Key'))
+check('SInput.AbortListenToDefine()', lambda: SInput.AbortListenToDefine())
+check('SInput.ResetToSplit()', lambda: SInput.ResetToSplit())
+check('SInput.CheckPadButton(0, 1)', lambda: SInput.CheckPadButton(0, 1))
+check('SInput.CheckPadButton(3, 99)', lambda: SInput.CheckPadButton(3, 99))
+check('SInput.SetActionSet bad', lambda: SInput.SetActionSet(1))
+check('SInput.GetEntry bad', lambda: SInput.GetEntry('a', 'b'))
+check('SInput.AssingEntry bad', lambda: SInput.AssingEntry('a', 'b', 'c', 'd', 'e'))
+check('SInput.GetDefinedList bad', lambda: SInput.GetDefinedList('a', 'b', 'c'))
+check('SInput.Rumble bad', lambda: SInput.Rumble(0, 1, 2))
+check('SInput.Bind bad', lambda: SInput.Bind(0, 'a', 'b'))
+check('SInput.SetVirtualKeyboard bad', lambda: SInput.SetVirtualKeyboard(None))
 finish()

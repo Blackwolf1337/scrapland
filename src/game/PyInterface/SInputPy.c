@@ -1,0 +1,269 @@
+/*
+ * Python module SInput (method table SInput_methods, rva 0x42d790): action sets, key definitions, text input
+ * and pads of the local players. Original source: PyInterface/SInputPy.cpp. Player numbers are checked unsigned
+ * (0..3); out of range they give 1 or 0 depending on the function, as the original.
+ */
+#include "scrap/global.h"
+#include "scrap/input.h"
+#include "scrap/python.h"
+
+/* SetActionSet(name) : selects the action set of that name; looks at the first four entries */
+PyObject *SInput_SetActionSet(PyObject *self, PyObject *args) {
+	char *name;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s", &name)) {
+		return NULL;
+	}
+	for (int i = 0; i < 4; i++) {
+		if (ActionSet_IsNamed(TABLE_AT(g_ActionSets, i), name)) {
+			Input_SelectActionSet(i);
+			return Py_BuildValue("i", 1);
+		}
+	}
+	return Py_BuildValue("i", 0);
+}
+
+/* GetActionSet() : name of the current action set */
+PyObject *SInput_GetActionSet(PyObject *self, PyObject *args) {
+	(void)self;
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	return Py_BuildValue("s", TABLE_AT(g_ActionSets, Input_GetActionSet())->name);
+}
+
+/* AssingEntry(...) (sic) */
+PyObject *SInput_AssingEntry(PyObject *self, PyObject *args) {
+	char *a, *b, *d, *e;
+	int c;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "ssiss", &a, &b, &c, &d, &e)) {
+		return NULL;
+	}
+	return Py_BuildValue("i", Input_AssignEntry(a, b, c, d, e));
+}
+
+/* GetEntry(a, b, c) : (index, name); index -1 and "" when nothing was found */
+PyObject *SInput_GetEntry(PyObject *self, PyObject *args) {
+	char *a, *b, *c;
+	int index = -1;
+	char *name = "";
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "sss", &a, &b, &c)) {
+		return NULL;
+	}
+	int r = Input_GetEntry(a, b, c, &index, &name);
+	if (r) {
+		index = r - 1;
+	}
+	return Py_BuildValue("is", index, name);
+}
+
+/* ListenToDefine(player, a, b, c) : waits for the next key to define it */
+PyObject *SInput_ListenToDefine(PyObject *self, PyObject *args) {
+	int player;
+	char *a, *b, *c;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "isss", &player, &a, &b, &c)) {
+		return NULL;
+	}
+	return Py_BuildValue("i", Input_ListenToDefine(player, a, b, c));
+}
+
+/* AbortListenToDefine() */
+PyObject *SInput_AbortListenToDefine(PyObject *self, PyObject *args) {
+	(void)self;
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	Input_AbortListenToDefine();
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+/* GetDefinedEntry(player, a, b, c[, flag]) */
+PyObject *SInput_GetDefinedEntry(PyObject *self, PyObject *args) {
+	int player, flag = 0;
+	char *a, *b, *c;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "isss|i", &player, &a, &b, &c, &flag)) {
+		return NULL;
+	}
+	return Py_BuildValue("s", Input_GetDefinedEntry(player, a, b, c, flag != 0));
+}
+
+/* GetDefinedList(player, a, b[, flag]) : the list as a string, or the error number */
+PyObject *SInput_GetDefinedList(PyObject *self, PyObject *args) {
+	int player, flag = 0;
+	char *a, *b;
+	char buf[0x800];
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "iss|i", &player, &a, &b, &flag)) {
+		return NULL;
+	}
+	int r = Input_GetDefinedList(player, a, b, buf, sizeof(buf), flag != 0);
+	if (r) {
+		return Py_BuildValue("i", r);
+	}
+	return Py_BuildValue("s", buf);
+}
+
+/* ClearDefinedList(player, a, b[, flag]) */
+PyObject *SInput_ClearDefinedList(PyObject *self, PyObject *args) {
+	int player, flag = 0;
+	char *a, *b;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "iss|i", &player, &a, &b, &flag)) {
+		return NULL;
+	}
+	return Py_BuildValue("i", Input_ClearDefinedList(player, a, b, flag != 0));
+}
+
+/* ResetToDefault() */
+PyObject *SInput_ResetToDefault(PyObject *self, PyObject *args) {
+	(void)self;
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	Input_ResetToDefault();
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+/* SetString(player, text) : 0 if set, 1 for a bad player */
+PyObject *SInput_SetString(PyObject *self, PyObject *args) {
+	uint32_t player;
+	char *text;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "is", &player, &text)) {
+		return NULL;
+	}
+	if (player >= MAX_LOCAL_PLAYERS) {
+		return Py_BuildValue("i", 1);
+	}
+	cPlayerInput_SetString(&g_PlayerInput[player], text);
+	return Py_BuildValue("i", 0);
+}
+
+/* GetString(player) : the text input of the player, 1 for a bad player */
+PyObject *SInput_GetString(PyObject *self, PyObject *args) {
+	uint32_t player;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &player)) {
+		return NULL;
+	}
+	if (player >= MAX_LOCAL_PLAYERS) {
+		return Py_BuildValue("i", 1);
+	}
+	return Py_BuildValue("s", g_PlayerInput[player].text);
+}
+
+/* GetCursorChar(player) : (x, y, char) of the text cursor, 1 for a bad player */
+PyObject *SInput_GetCursorChar(PyObject *self, PyObject *args) {
+	uint32_t player;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &player)) {
+		return NULL;
+	}
+	if (player >= MAX_LOCAL_PLAYERS) {
+		return Py_BuildValue("i", 1);
+	}
+	char c[2] = { cPlayerInput_GetCursorChar(&g_PlayerInput[player]), 0 };
+	return Py_BuildValue("ffs", (double)g_PlayerInput[player].cursorX, (double)g_PlayerInput[player].cursorY, c);
+}
+
+/* GetVirtualKeyboard() : (a, b, text) */
+PyObject *SInput_GetVirtualKeyboard(PyObject *self, PyObject *args) {
+	(void)self;
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	return Py_BuildValue("iis", g_VirtualKeyboard.a, g_VirtualKeyboard.b, g_VirtualKeyboard.text);
+}
+
+/* SetVirtualKeyboard(text) */
+PyObject *SInput_SetVirtualKeyboard(PyObject *self, PyObject *args) {
+	char *text;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s", &text)) {
+		return NULL;
+	}
+	return Py_BuildValue("i", cVirtualKeyboard_Set(&g_VirtualKeyboard, text));
+}
+
+/* SetInputFunc(player, func) : 0 if set, 1 for a bad player */
+PyObject *SInput_SetInputFunc(PyObject *self, PyObject *args) {
+	uint32_t player;
+	char *func;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "is", &player, &func)) {
+		return NULL;
+	}
+	if (player >= MAX_LOCAL_PLAYERS) {
+		return Py_BuildValue("i", 1);
+	}
+	cPlayerInput_SetInputFunc(&g_PlayerInput[player], func);
+	return Py_BuildValue("i", 0);
+}
+
+/* Bind(player, a, b, c) */
+PyObject *SInput_Bind(PyObject *self, PyObject *args) {
+	int player;
+	char *a, *b, *c;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "isss", &player, &a, &b, &c)) {
+		return NULL;
+	}
+	return Py_BuildValue("i", Input_Bind(player, a, b, c));
+}
+
+/* Rumble(pad, a, b, c) : 1 if done, 0 for a bad pad */
+PyObject *SInput_Rumble(PyObject *self, PyObject *args) {
+	uint32_t pad;
+	float a, b, c;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "ifff", &pad, &a, &b, &c)) {
+		return NULL;
+	}
+	if (pad >= MAX_LOCAL_PLAYERS) {
+		return Py_BuildValue("i", 0);
+	}
+	cPad_Rumble(&g_Pads[pad], a, b, c);
+	return Py_BuildValue("i", 1);
+}
+
+/* ResetToSplit() : does nothing on PC */
+PyObject *SInput_ResetToSplit(PyObject *self, PyObject *args) {
+	(void)self;
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+/* CheckPadButton(pad, button) : always 0 on PC, the pad number is checked */
+PyObject *SInput_CheckPadButton(PyObject *self, PyObject *args) {
+	int pad = 0, button = 0;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "ii", &pad, &button)) {
+		return NULL;
+	}
+	CHECK(pad >= 0 && pad < 4);
+	return Py_BuildValue("i", 0);
+}

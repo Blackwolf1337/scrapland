@@ -10992,6 +10992,10 @@ rva	source	name	datatype
 00444080	USER_DEFINED	g_pActClassList	/undefined4
 00444084	USER_DEFINED	g_pAuxActClass	/undefined4
 00444088	USER_DEFINED	g_pAuxAction	/undefined4
+0044c128	USER_DEFINED	g_ActionSets	/undefined4
+0044c130	USER_DEFINED	g_PlayerInput	/undefined4
+0044c400	USER_DEFINED	g_VirtualKeyboard	/undefined4
+0044c510	USER_DEFINED	g_Pads	/undefined4
 00466bb4	USER_DEFINED	g_pSound	/undefined4
 00467450	USER_DEFINED	g_pWorld	/undefined4
 00467ba0	USER_DEFINED	g_pApp	/undefined4
