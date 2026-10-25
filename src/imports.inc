@@ -15,6 +15,9 @@ SD_IMPORT(Con_Debugf, 0x0bc710)
 SD_IMPORT(HashTable_Hash, 0x065370)	/* Global/HashTable.h, the instance in Actions/ */
 SD_IMPORT(HashTable_Find, 0x0652e0)
 
+/* engine: Entities/ */
+SD_IMPORT(cEntity_Del, 0x0ef0c0)
+
 /* engine: World/FX/ and effects of Entities/ */
 SD_IMPORT(FX_ShipExplosion, 0x1f4d50)
 SD_IMPORT(FX_CharacterConversor, 0x1b2b00)

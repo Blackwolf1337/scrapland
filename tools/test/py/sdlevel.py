@@ -54,4 +54,26 @@ check('SFX.CharacterConversion(Player0, Player0)', lambda: SFX.CharacterConversi
 check('SFX.CharacterConversor(Player0, Player0)', lambda: SFX.CharacterConversor('Player0', 'Player0', 1))
 check('Scrap.GetMoney() after', lambda: Scrap.GetMoney())
 check('player life', lambda: Scrap.UsrEntity(0).Life)
+# cPyEntity methods on the player and on the first entity of the world. Del only marks the entity, it stays
+# until later, so the handle still works after it. SetModel/SetFX not here: loading a missing model hangs the
+# original.
+p = Scrap.UsrEntity(0)
+for t in ('WalkChar', 'WithLife', 'walkchar', 'Car', ''):
+	check('Player0.IsType(%s)' % t, lambda t=t, p=p: p.IsType(t))
+# only directions without the hovering vehicle "Parked" as target: its position depends on the time since the
+# level started, so those results differ from run to run even with the same code
+for args in ((90, 45, 1), (0, 180, 100000)):
+	check('Player0.GetTgAng%s' % (args,), lambda a=args, p=p: apply(p.GetTgAng, a))
+for args in ((0, 0, 1000), (10, -20, 5000), (90, 45, 1)):
+	check('Player0.DrawWeap%s' % (args,), lambda a=args, p=p: apply(p.DrawWeap, a))
+check('Player0.IsType bad', lambda p=p: p.IsType(1))
+check('Player0.GetTgAng bad', lambda p=p: p.GetTgAng(1, 2))
+f = Scrap.GetFirst()
+check('first.Name', lambda f=f: f.Name)
+check('first.IsType(WithLife)', lambda f=f: f.IsType('WithLife'))
+check('first.Del()', lambda f=f: f.Del())
+check('first.Del() again', lambda f=f: f.Del())
+check('first.IsType(WithLife) after Del', lambda f=f: f.IsType('WithLife'))
+check('first.GetTgAng after Del', lambda f=f: f.GetTgAng(0, 0, 10))
+check('first.DrawWeap after Del', lambda f=f: f.DrawWeap(0, 0, 10))
 finish()

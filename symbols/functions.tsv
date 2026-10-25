@@ -2767,14 +2767,14 @@ rva	size	source	callconv	name	signature
 000eef50	231	DEFAULT	unknown	FUN_004eef50	
 000ef040	18	DEFAULT	unknown	FUN_004ef040	
 000ef060	88	DEFAULT	unknown	FUN_004ef060	
-000ef0c0	79	DEFAULT	unknown	FUN_004ef0c0	
-000ef110	318	ANALYSIS	__thiscall	cEntity::vf14	undefined __thiscall(void)
+000ef0c0	79	USER_DEFINED	__thiscall	cEntity::Del	byte __thiscall(void)
+000ef110	318	USER_DEFINED	__thiscall	cEntity::AimWeapon	undefined __thiscall(void)
 000ef250	124	ANALYSIS	__thiscall	cEntity::vf17	undefined __thiscall(void)
 000ef2d0	4	ANALYSIS	__thiscall	cEntity::vf22	undefined __thiscall(void)
 000ef2e0	13	DEFAULT	unknown	FUN_004ef2e0	
 000ef310	20	DEFAULT	unknown	FUN_004ef310	
 000ef330	25	ANALYSIS	__thiscall	cEntity::vf06	undefined __thiscall(void)
-000ef350	16	ANALYSIS	__thiscall	cEntity::vf13	undefined __thiscall(void)
+000ef350	16	USER_DEFINED	__thiscall	cEntity::GetTargetAngle	undefined __thiscall(void)
 000ef360	6	ANALYSIS	__thiscall	cEntity::vf04	undefined __thiscall(void)
 000ef370	1	ANALYSIS	__thiscall	cEntity::vf02	undefined __thiscall(void)
 000ef380	591	ANALYSIS	__thiscall	cEntity::vf16	undefined __thiscall(void)
@@ -2787,7 +2787,7 @@ rva	size	source	callconv	name	signature
 000ef870	115	DEFAULT	unknown	FUN_004ef870	
 000ef910	38	ANALYSIS	__thiscall	cEntity::vf08	undefined __thiscall(void)
 000ef940	22	USER_DEFINED	__thiscall	cEntity::SetEmbeddedFX	void __thiscall(char * fxType)
-000ef960	22	ANALYSIS	__thiscall	cEntity::vf12	undefined __thiscall(void)
+000ef960	22	USER_DEFINED	__thiscall	cEntity::SetModel	undefined __thiscall(void)
 000ef980	27	ANALYSIS	__thiscall	cEntity::vf07	undefined __thiscall(void)
 000ef9a0	1	ANALYSIS	__thiscall	cEntity::vf00	undefined __thiscall(void)
 000ef9b0	657	ANALYSIS	__thiscall	cEntity::vf18	undefined __thiscall(void)

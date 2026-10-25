@@ -58,3 +58,11 @@ SD_HOOK(SFX_CharacterConversion, 0x19b3c0, 327)
 SD_HOOK(SFX_BishopSellLife, 0x19b510, 280)
 SD_HOOK(SFX_MoneyTransfer, 0x19b630, 332)
 SD_HOOK(SFX_EmbeddedSet, 0x19b780, 144)
+
+/* src/game/PyInterface/PyEntity.c */
+SD_HOOK(cPyEntity_Del, 0x1931b0, 87)
+SD_HOOK(cPyEntity_SetModel, 0x193210, 141)
+SD_HOOK(cPyEntity_SetFX, 0x1932a0, 91)
+SD_HOOK(cPyEntity_GetTgAng, 0x193300, 270)
+SD_HOOK(cPyEntity_DrawWeap, 0x193410, 268)
+SD_HOOK(cPyEntity_IsType, 0x193520, 119)
