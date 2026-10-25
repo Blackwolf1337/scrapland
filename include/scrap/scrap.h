@@ -81,6 +81,26 @@ typedef struct cFilePack {
 void __thiscall cFilePack_ctor(cFilePack *pack);
 void __thiscall cFilePack_dtor(cFilePack *pack);
 int __thiscall cFilePack_Exists(cFilePack *pack, const char *name);
+/* the cFile methods of cFilePack, called directly (rva 0x1307f0, 0x1313a0, 0x1312b0, 0x12f940) */
+int __thiscall cFilePack_Open(cFilePack *pack, const char *name, int mode);
+int __thiscall cFilePack_Size(cFilePack *pack);
+int __thiscall cFilePack_Read(cFilePack *pack, void *dst, int size);
+int __thiscall cFilePack_Close(cFilePack *pack);
+#define FILE_MODE_READ 1
+
+/* the list of files read from packs, when the engine records one: off unless the log file is open */
+byte PackLog_Closed(void);			/* rva 0x1313f0 */
+byte PackLog_Add(const char *name);		/* rva 0x12edb0, adds pack name and file */
+
+/* Global/StaticBuffer.h: a buffer that grows and is locked while in use */
+typedef struct cStaticBuffer {
+	void *data;			/* 0x0 */
+	uint32_t size;			/* 0x4 */
+	byte lock;			/* 0x8 */
+} cStaticBuffer;
+SD_OFFSET(cStaticBuffer, lock, 0x8);
+/* at least size bytes, locks the buffer (rva 0x18c050) */
+void *__thiscall cStaticBuffer_Get(cStaticBuffer *self, uint32_t size);
 /* the path of the game into buf (rva 0x20d100) */
 void App_GetPath(char *buf, int size);
 float __thiscall cWorld_GetMinCamDistSq(cWorld *world, const vec3_t *pos);
@@ -137,7 +157,8 @@ cEntity *__thiscall cWorld_CreateEntity(cWorld *world, const char *className, fl
 	const char *name);
 /* printf into a string object (rva 0x134080) */
 void cString_Printf(void *str, const char *fmt, ...);
-void Pack_PreloadLibrary(const char *a, const char *b);
+/* imports the compiled module file of the open pack as name (src/game/PyInterface/PythonInit.c) */
+void Pack_PreloadLibrary(const char *name, const char *file);
 void Anm_Preload(const char *a, const char *b);
 void DVF_Process(const char *name, int arg);
 void Python_CompileAll(void);

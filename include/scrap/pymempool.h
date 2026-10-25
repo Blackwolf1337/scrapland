@@ -39,4 +39,7 @@ SD_SIZE(cMemPool, 0x14);
 
 void *Mem_Realloc(void *p, uint32_t size);	/* rva 0x133690 */
 
+/* deletes the "Python" pool at the end (after Py_Finalize) */
+void PyPool_Delete(void);
+
 #endif

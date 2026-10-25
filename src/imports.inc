@@ -13,6 +13,7 @@ SD_IMPORT(Con_Errorf, 0x0bc580)
 SD_IMPORT(Con_Debugf, 0x0bc710)
 SD_IMPORT(Con_Printf, 0x0bbef0)
 SD_IMPORT(Con_Bluef, 0x0bc0b0)
+SD_IMPORT(Con_Verbosef, 0x0bc240)
 
 SD_IMPORT(operator_new, 0x1334d0)		/* include/scrap/global.h */
 SD_IMPORT(operator_delete_sized, 0x313634)
@@ -179,7 +180,6 @@ SD_IMPORT(Video_GetCurrentMode, 0x215cb0)
 SD_IMPORT(Models_List, 0x217f30)
 SD_IMPORT(Con_Warnf, 0x0bc8b0)
 SD_IMPORT(cString_Printf, 0x134080)
-SD_IMPORT(Pack_PreloadLibrary, 0x1944d0)
 SD_IMPORT(Anm_Preload, 0x2051a0)
 SD_IMPORT(DVF_Process, 0x2175d0)
 SD_IMPORT(Python_CompileAll, 0x131280)
@@ -209,6 +209,13 @@ SD_IMPORT(Timer_SetSpeed, 0x136a50)
 SD_IMPORT(cFilePack_ctor, 0x12e510)
 SD_IMPORT(cFilePack_dtor, 0x12e5d0)
 SD_IMPORT(cFilePack_Exists, 0x12fb30)
+SD_IMPORT(cFilePack_Open, 0x1307f0)
+SD_IMPORT(cFilePack_Size, 0x1313a0)
+SD_IMPORT(cFilePack_Read, 0x1312b0)
+SD_IMPORT(cFilePack_Close, 0x12f940)
+SD_IMPORT(PackLog_Closed, 0x1313f0)
+SD_IMPORT(PackLog_Add, 0x12edb0)
+SD_IMPORT(cStaticBuffer_Get, 0x18c050)
 SD_IMPORT(App_GetPath, 0x20d100)
 SD_IMPORT(cWorld_CreateEntity, 0x208360)
 SD_IMPORT(cWorld_GetMinCamDistSq, 0x209350)
@@ -312,6 +319,16 @@ SD_IMPORT(PyImport_AddModule, 0x2e1ba0)	/* import.c */
 SD_IMPORT(PyModule_GetDict, 0x2e1240)	/* moduleobject.c */
 SD_IMPORT(PyDict_GetItemString, 0x2e0930)	/* dictobject.c */
 SD_IMPORT(PyCallable_Check, 0x2eb1f0)	/* object.c */
+SD_IMPORT(Py_Initialize, 0x2ecde0)	/* pythonrun.c */
+SD_IMPORT(Py_Finalize, 0x2ecd20)	/* pythonrun.c */
+SD_IMPORT(PyRun_ScrapString, 0x2ec790)	/* pythonrun.c, changed by the engine */
+SD_IMPORT(Py_FiniObjects, 0x2ebce0)
+SD_IMPORT(PyImport_ImportModule, 0x2e25d0)	/* import.c */
+SD_IMPORT(PyImport_GetModuleDict, 0x2e2300)	/* import.c */
+SD_IMPORT(PyImport_ExecCodeModuleEx, 0x2e2100)	/* import.c */
+SD_IMPORT(PyMarshal_ReadObjectFromString, 0x2e9c30)	/* marshal.c */
+SD_IMPORT(PySys_GetObject, 0x2f4390)	/* sysmodule.c */
+SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 
 /* engine: FileSys/ (include/scrap/filesys.h) */
 SD_IMPORT(cFileMem_ctor, 0x12e050)

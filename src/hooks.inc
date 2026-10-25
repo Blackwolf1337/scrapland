@@ -198,6 +198,12 @@ SD_HOOK(cPy_NativeFunc_Insert, 0x192c70, 119)
 SD_HOOK(cPy_Function_IsValid, 0x192cf0, 13)
 SD_HOOK(Py_IsReady, 0x194780, 6)
 
+/* src/game/PyInterface/PythonInit.c */
+SD_HOOK(Python_Init, 0x194350, 371)
+SD_HOOK(Python_Close, 0x194330, 31)
+SD_HOOK(Python_Shutdown, 0x194320, 10)
+SD_HOOK(Pack_PreloadLibrary, 0x1944d0, 678)
+
 /* src/game/PyInterface/pymempool.c */
 SD_HOOK(PyPool_Free, 0x1935c0, 36)
 SD_HOOK(PyPool_Malloc, 0x1935f0, 36)

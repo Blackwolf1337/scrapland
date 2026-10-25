@@ -10664,6 +10664,7 @@ rva	source	name	datatype
 004360a8	ANALYSIS	file_methods	/methodobject.h/PyMethodDef[14]
 004361d8	ANALYSIS	file_Type	/object.h/PyTypeObject
 004366b8	ANALYSIS	sys_methods	/methodobject.h/PyMethodDef[7]
+00437150	USER_DEFINED	PyCode_Type	
 00438ae8	ANALYSIS	builtin_methods	/methodobject.h/PyMethodDef[53]
 0043a2c0	ANALYSIS	complex_methods	/methodobject.h/PyMethodDef[2]
 0043a340	ANALYSIS	complex_Type	/object.h/PyTypeObject
@@ -11006,6 +11007,7 @@ rva	source	name	datatype
 00444dc8	USER_DEFINED	g_NodesWorld2D	/undefined4
 0044ab6c	USER_DEFINED	g_PackName	/undefined4
 0044b640	USER_DEFINED	g_MemStatsContext	/undefined4
+0044bbf0	USER_DEFINED	g_PyStaticBuffer	/undefined4
 0044c128	USER_DEFINED	g_ActionSets	/undefined4
 0044c130	USER_DEFINED	g_PlayerInput	/undefined4
 0044c400	USER_DEFINED	g_VirtualKeyboard	/undefined4
@@ -11016,13 +11018,17 @@ rva	source	name	datatype
 004668b8	USER_DEFINED	g_PyMemStats	/undefined4
 004668d0	USER_DEFINED	g_PyPool	/undefined4
 004668e4	USER_DEFINED	g_MemPools	/undefined4
+004669f8	USER_DEFINED	g_PythonExecute	/undefined4
 00466a00	USER_DEFINED	g_PythonReady	/undefined1
 00466a04	USER_DEFINED	g_CallFunc	
 00466bb4	USER_DEFINED	g_pSound	/undefined4
 00467450	USER_DEFINED	g_pWorld	/undefined4
 004677e8	USER_DEFINED	g_IsMapOutDoor	/undefined4
+00467b34	USER_DEFINED	g_IsViewer	/undefined4
 00467b9c	USER_DEFINED	g_IsSteam	/undefined1
 00467ba0	USER_DEFINED	g_pApp	/undefined4
+004e79cc	USER_DEFINED	g_PyPackImport	/undefined4
+004e7af8	USER_DEFINED	Py_VerboseFlag	/undefined4
 004e8dec	IMPORTED	_tls_index	/undefined4
 004f3510	IMPORTED	Rsrc_Icon_1_c0a	/PNG-Image
 004f38d0	IMPORTED	Rsrc_Icon_2_c0a	/PNG-Image
