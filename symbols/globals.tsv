@@ -11008,6 +11008,16 @@ rva	source	name	datatype
 00444d2c	USER_DEFINED	g_NodesTrafficInDoor	/undefined4
 00444d34	USER_DEFINED	g_NodesWorld	/undefined4
 00444dc8	USER_DEFINED	g_NodesWorld2D	/undefined4
+00444e60	USER_DEFINED	g_LogFile	/undefined4
+00444e64	USER_DEFINED	g_LogAIFile	/undefined4
+00444e68	USER_DEFINED	g_ConLines	/undefined1
+00445a44	USER_DEFINED	g_ConLine	/undefined4
+00445a48	USER_DEFINED	g_ConCol	/undefined4
+00445a5c	USER_DEFINED	g_LogName	/undefined4
+00445a74	USER_DEFINED	g_DebugLevel	/undefined4
+00445a7c	USER_DEFINED	g_LastError	
+00445a80	USER_DEFINED	g_ConBuf	
+00445e90	USER_DEFINED	g_LogFlush	/undefined4
 0044ab40	USER_DEFINED	g_NameTable	/undefined4
 0044ab44	USER_DEFINED	g_PackNames	/undefined4
 0044ab6c	USER_DEFINED	g_PackName	/undefined4

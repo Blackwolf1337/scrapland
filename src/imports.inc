@@ -6,15 +6,7 @@
  */
 
 /* engine: Global/ */
-SD_IMPORT(CheckFailed, 0x0bcdb0)	/* CHECK macro, include/scrap/global.h */
 
-SD_IMPORT(Con_Print, 0x0bca50)		/* include/scrap/console.h */
-SD_IMPORT(Con_Errorf, 0x0bc580)
-SD_IMPORT(Con_Debugf, 0x0bc710)
-SD_IMPORT(Con_Printf, 0x0bbef0)
-SD_IMPORT(Con_Bluef, 0x0bc0b0)
-SD_IMPORT(Con_Verbosef, 0x0bc240)
-SD_IMPORT(Con_SysErrorf, 0x0bbba0)
 
 SD_IMPORT(operator_delete_sized, 0x313634)
 
@@ -89,6 +81,12 @@ SD_IMPORT(crt_free, 0x34c972)
 SD_IMPORT(crt_realloc, 0x34c9e8)
 SD_IMPORT(crt_msize, 0x34c9b5)
 SD_IMPORT(crt_fprintf, 0x0bd230)
+SD_IMPORT(crt_fflush, 0x3463cc)
+SD_IMPORT(crt_time32, 0x345d95)
+SD_IMPORT(crt_gmtime32, 0x346bb1)
+SD_IMPORT(crt_strftime, 0x346fbf)
+SD_IMPORT(crt_exit_now, 0x346155)
+SD_IMPORT(ConsoleWin_Add, 0x20d550)
 SD_IMPORT(crt_report_rangecheckfailure, 0x313d15)
 SD_IMPORT(crt_fopen, 0x344c5e)
 SD_IMPORT(crt_fclose, 0x34490b)
@@ -192,7 +190,6 @@ SD_IMPORT(Loading_Init, 0x20b260)
 SD_IMPORT(Loading_End, 0x20ade0)
 SD_IMPORT(Video_GetCurrentMode, 0x215cb0)
 SD_IMPORT(Models_List, 0x217f30)
-SD_IMPORT(Con_Warnf, 0x0bc8b0)
 SD_IMPORT(Anm_Preload, 0x2051a0)
 SD_IMPORT(DVF_Process, 0x2175d0)
 SD_IMPORT(Config_Save, 0x132410)

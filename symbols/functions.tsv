@@ -2187,24 +2187,24 @@ rva	size	source	callconv	name	signature
 000bb5d0	104	DEFAULT	unknown	FUN_004bb5d0	
 000bb640	1070	ANALYSIS	__thiscall	CNodesWorldSup::vf28	undefined __thiscall(void)
 000bba70	251	ANALYSIS	__thiscall	CNodesWorldSup::vf39	undefined __thiscall(void)
-000bbb70	46	DEFAULT	unknown	FUN_004bbb70	
+000bbb70	46	USER_DEFINED	__cdecl	DebugLog_CloseAll	void __cdecl(void)
 000bbba0	465	USER_DEFINED	__cdecl	Con_SysErrorf	void __cdecl(char * fmt, ...)
-000bbd80	259	DEFAULT	unknown	FUN_004bbd80	
-000bbe90	96	DEFAULT	unknown	FUN_004bbe90	
+000bbd80	259	USER_DEFINED	__cdecl	Con_Fatal	void __cdecl(char * msg)
+000bbe90	96	USER_DEFINED	__cdecl	DebugLog_Init	void __cdecl(void)
 000bbef0	377	USER_DEFINED	__cdecl	Con_Printf	void __cdecl(char * fmt, ...)
-000bc070	51	DEFAULT	unknown	FUN_004bc070	
+000bc070	51	USER_DEFINED	__cdecl	DebugLog_AIPrintf	void __cdecl(char * fmt, ...)
 000bc0b0	392	USER_DEFINED	__cdecl	Con_Bluef	void __cdecl(char * fmt, ...)
 000bc240	408	USER_DEFINED	__cdecl	Con_Verbosef	void __cdecl(char * fmt, ...)
-000bc3e0	408	DEFAULT	unknown	FUN_004bc3e0	
+000bc3e0	408	USER_DEFINED	__cdecl	Con_Redf	void __cdecl(char * fmt, ...)
 000bc580	392	USER_DEFINED	__cdecl	Con_Errorf	void __cdecl(char * fmt, ...)
 000bc710	408	USER_DEFINED	__cdecl	Con_Debugf	void __cdecl(char * fmt, ...)
 000bc8b0	408	USER_DEFINED	unknown	Con_Warnf	undefined(void)
 000bca50	416	USER_DEFINED	__cdecl	Con_Print	void __cdecl(int color, char * text, int flag)
-000bcbf0	440	DEFAULT	unknown	FUN_004bcbf0	
+000bcbf0	440	USER_DEFINED	__cdecl	Con_ColorPrintf	void __cdecl(uint color, char * fmt, ...)
 000bcdb0	516	USER_DEFINED	__cdecl	CheckFailed	void __cdecl(char * expr, char * file, char * date, int line)
-000bcfc0	55	DEFAULT	unknown	FUN_004bcfc0	
-000bd000	312	DEFAULT	unknown	FUN_004bd000	
-000bd180	165	DEFAULT	unknown	FUN_004bd180	
+000bcfc0	55	USER_DEFINED	__cdecl	DebugLog_Close	void __cdecl(FILE * f)
+000bd000	312	USER_DEFINED	__cdecl	DebugLog_Write	void __cdecl(char * text, uint color, FILE * f)
+000bd180	165	USER_DEFINED	__cdecl	DebugLog_Open	void __cdecl(char * name, FILE * * f)
 000bd230	35	ANALYSIS	__cdecl	_fprintf	int __cdecl(FILE * _File, char * _Format, ...)
 000bd260	200	DEFAULT	unknown	FUN_004bd260	
 000bd330	164	DEFAULT	unknown	FUN_004bd330	
@@ -6322,7 +6322,7 @@ rva	size	source	callconv	name	signature
 0020d290	9	DEFAULT	unknown	FUN_0060d290	
 0020d2a0	615	ANALYSIS	__thiscall	CWinApp::vf04	undefined __thiscall(void)
 0020d510	64	ANALYSIS	__thiscall	CWinApp::vf05	undefined __thiscall(void)
-0020d550	28	DEFAULT	unknown	FUN_0060d550	
+0020d550	28	USER_DEFINED	__cdecl	ConsoleWin_Add	void __cdecl(char * text, uint color)
 0020d570	268	DEFAULT	unknown	FUN_0060d570	
 0020d680	94	ANALYSIS	__thiscall	CWinApp::vf12	undefined __thiscall(void)
 0020d6e0	216	ANALYSIS	__thiscall	CWinApp::vf19	undefined __thiscall(void)
@@ -11522,7 +11522,7 @@ rva	size	source	callconv	name	signature
 00346112	22	ANALYSIS	unknown	__Exit	undefined(void)
 00346128	15	DEFAULT	unknown	FUN_00746128	
 00346146	15	ANALYSIS	__cdecl	__cexit	void __cdecl(void)
-00346155	22	ANALYSIS	unknown	__exit	undefined(void)
+00346155	22	USER_DEFINED	__cdecl	__exit	void __cdecl(int code)
 00346171	56	ANALYSIS	unknown	__register_thread_local_exe_atexit_callback	undefined(void)
 003461a9	22	ANALYSIS	__cdecl	_exit	void __cdecl(int _Code)
 003461bf	22	ANALYSIS	__cdecl	quick_exit	undefined __cdecl(void)
