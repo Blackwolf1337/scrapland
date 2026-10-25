@@ -93,7 +93,8 @@ int __thiscall cAmmoInfo_SetS(cAmmoInfo *ammo, const char *var, const char *valu
 /* the application: allocated (0x90 bytes) and run by the WinMain message loop at rva 0x20d8c0 */
 typedef struct CWinApp {
 	void *vftable;			/* 0x00 CWinApp::vftable */
-	byte pad_04[0x34 - 0x04];
+	byte pad_04[0x30 - 0x04];
+	uint32_t flags;			/* 0x30 bit 2: dedicated server (SNet.IsDedicated) */
 	char *levelPath;		/* 0x34 Scrap.GetLevelPath */
 	byte pad_38[0x90 - 0x38];
 } CWinApp;

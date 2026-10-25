@@ -3,7 +3,7 @@
 # (a WalkChar with life). Python 1.5.2 syntax.
 OUT = 'sdlevel.out'
 execfile('sdlib.py')
-import Scrap, SWeap, SVec, SAct, SFX, SLogic, SAI
+import Scrap, SWeap, SVec, SAct, SFX, SLogic, SAI, SNet
 
 check('Scrap.GetLevelPath()', lambda: Scrap.GetLevelPath())
 check('Scrap.GetMoney()', lambda: Scrap.GetMoney())
@@ -123,4 +123,14 @@ check('SAI.SetInertia(Parked)', lambda: SAI.SetInertia('Parked', 0))
 check('SAI.InitVehicleRace()', lambda: SAI.InitVehicleRace())
 # SAI.AnalizeTraffic() on the running level does not return in the original either
 check('SAI.GetOD()', lambda: SAI.GetOD())
+# SNet in the level (FZ runs as a local game); nothing that changes the level or sends over the network
+for f in ('IsServer', 'IsClient', 'IsDedicated', 'IsMaster', 'GetServerData', 'GetClientData', 'GetMyClientShip',
+		'GetBotName', 'GetObjName'):
+	check('SNet.%s()' % f, lambda f=getattr(SNet, f): f())
+check('SNet.GetPing(Player0)', lambda: SNet.GetPing('Player0'))
+check('SNet.GetPing(Nobody)', lambda: SNet.GetPing('Nobody'))
+check('SNet.Kick(Nobody)', lambda: SNet.Kick('Nobody'))
+check('SNet.SendChatString(0, hi)', lambda: SNet.SendChatString(0, 'hi'))
+check('SNet.SendCtrlString(x)', lambda: SNet.SendCtrlString('x'))
+check('SNet.SendUsrString(0, x)', lambda: SNet.SendUsrString(0, 'x'))
 finish()

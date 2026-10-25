@@ -4797,28 +4797,28 @@ rva	size	source	callconv	name	signature
 0018a610	398	DEFAULT	unknown	FUN_0058a610	
 0018a7c0	138	DEFAULT	unknown	FUN_0058a7c0	
 0018a850	150	DEFAULT	unknown	FUN_0058a850	
-0018a8f0	189	DEFAULT	unknown	FUN_0058a8f0	
+0018a8f0	189	USER_DEFINED	unknown	Net_CloseClient	undefined(void)
 0018a9b0	145	DEFAULT	unknown	FUN_0058a9b0	
 0018aa50	318	DEFAULT	unknown	FUN_0058aa50	
 0018ab90	10	DEFAULT	unknown	FUN_0058ab90	
-0018aba0	34	DEFAULT	unknown	FUN_0058aba0	
+0018aba0	34	USER_DEFINED	unknown	Net_CloseClientMsg	undefined(void)
 0018abd0	107	DEFAULT	unknown	FUN_0058abd0	
-0018ac40	6	DEFAULT	unknown	FUN_0058ac40	
-0018ac50	7	DEFAULT	unknown	FUN_0058ac50	
-0018ac60	6	DEFAULT	unknown	FUN_0058ac60	
-0018ac70	460	DEFAULT	unknown	FUN_0058ac70	
-0018ae40	12	DEFAULT	unknown	FUN_0058ae40	
+0018ac40	6	USER_DEFINED	unknown	Net_GetClientName	undefined(void)
+0018ac50	7	USER_DEFINED	unknown	Net_GetClientPort	undefined(void)
+0018ac60	6	USER_DEFINED	unknown	Net_GetClient	undefined(void)
+0018ac70	460	USER_DEFINED	unknown	Net_InitClient	undefined(void)
+0018ae40	12	USER_DEFINED	unknown	Net_IsClient	undefined(void)
 0018ae50	50	DEFAULT	unknown	FUN_0058ae50	
 0018ae90	121	DEFAULT	unknown	FUN_0058ae90	
-0018af10	192	DEFAULT	unknown	FUN_0058af10	
+0018af10	192	USER_DEFINED	unknown	Net_CloseServer	undefined(void)
 0018afd0	107	DEFAULT	unknown	FUN_0058afd0	
-0018b040	6	DEFAULT	unknown	FUN_0058b040	
-0018b050	6	DEFAULT	unknown	FUN_0058b050	
-0018b060	7	DEFAULT	unknown	FUN_0058b060	
-0018b070	515	DEFAULT	unknown	FUN_0058b070	
-0018b280	13	DEFAULT	unknown	FUN_0058b280	
-0018b290	54	DEFAULT	unknown	FUN_0058b290	
-0018b2d0	85	DEFAULT	unknown	FUN_0058b2d0	
+0018b040	6	USER_DEFINED	unknown	Net_GetServerName	undefined(void)
+0018b050	6	USER_DEFINED	unknown	Net_GetServerMap	undefined(void)
+0018b060	7	USER_DEFINED	unknown	Net_GetServerPort	undefined(void)
+0018b070	515	USER_DEFINED	unknown	Net_InitServer	undefined(void)
+0018b280	13	USER_DEFINED	unknown	Net_IsServer	undefined(void)
+0018b290	54	USER_DEFINED	unknown	Net_Kick	undefined(void)
+0018b2d0	85	USER_DEFINED	unknown	Net_ServerChangeLevel	undefined(void)
 0018b330	638	DEFAULT	unknown	FUN_0058b330	
 0018b5b0	413	DEFAULT	unknown	FUN_0058b5b0	
 0018b750	42	DEFAULT	unknown	FUN_0058b750	
@@ -4866,22 +4866,22 @@ rva	size	source	callconv	name	signature
 0018e2c0	151	DEFAULT	unknown	FUN_0058e2c0	
 0018e360	487	DEFAULT	unknown	FUN_0058e360	
 0018e550	538	DEFAULT	unknown	FUN_0058e550	
-0018e780	411	DEFAULT	unknown	FUN_0058e780	
+0018e780	411	USER_DEFINED	unknown	Net_AddResource	undefined(void)
 0018e920	54	DEFAULT	unknown	FUN_0058e920	
-0018e960	99	DEFAULT	unknown	FUN_0058e960	
+0018e960	99	USER_DEFINED	unknown	Net_GetBotName	undefined(void)
 0018e9d0	61	DEFAULT	unknown	FUN_0058e9d0	
-0018ea10	99	DEFAULT	unknown	FUN_0058ea10	
+0018ea10	99	USER_DEFINED	unknown	Net_GetObjName	undefined(void)
 0018ea80	33	DEFAULT	unknown	FUN_0058ea80	
-0018eab0	162	DEFAULT	unknown	FUN_0058eab0	
+0018eab0	162	USER_DEFINED	unknown	Net_GetPing	undefined(void)
 0018eb60	122	DEFAULT	unknown	FUN_0058eb60	
 0018ebe0	286	DEFAULT	unknown	FUN_0058ebe0	
 0018ed00	524	DEFAULT	unknown	FUN_0058ed00	
 0018ef10	652	DEFAULT	unknown	FUN_0058ef10	
 0018f1a0	100	DEFAULT	unknown	FUN_0058f1a0	
-0018f210	21	DEFAULT	unknown	FUN_0058f210	
-0018f230	243	DEFAULT	unknown	FUN_0058f230	
+0018f210	21	USER_DEFINED	unknown	Net_SendChatString	undefined(void)
+0018f230	243	USER_DEFINED	unknown	Net_SendCtrlString	undefined(void)
 0018f330	406	DEFAULT	unknown	FUN_0058f330	
-0018f4d0	21	DEFAULT	unknown	FUN_0058f4d0	
+0018f4d0	21	USER_DEFINED	unknown	Net_SendUsrString	undefined(void)
 0018f4f0	30	DEFAULT	unknown	FUN_0058f4f0	
 0018f510	238	DEFAULT	unknown	FUN_0058f510	
 0018f600	231	DEFAULT	unknown	FUN_0058f600	
@@ -4889,8 +4889,8 @@ rva	size	source	callconv	name	signature
 0018f7f0	73	DEFAULT	unknown	FUN_0058f7f0	
 0018f840	67	DEFAULT	unknown	FUN_0058f840	
 0018f890	74	DEFAULT	unknown	FUN_0058f890	
-0018f8e0	29	DEFAULT	unknown	FUN_0058f8e0	
-0018f900	72	DEFAULT	unknown	FUN_0058f900	
+0018f8e0	29	USER_DEFINED	unknown	Net_DoneBrowser	undefined(void)
+0018f900	72	USER_DEFINED	unknown	Net_InitBrowser	undefined(void)
 0018f950	75	DEFAULT	unknown	FUN_0058f950	
 0018f9a0	240	DEFAULT	unknown	FUN_0058f9a0	
 0018fa90	2036	DEFAULT	unknown	FUN_0058fa90	
@@ -4911,7 +4911,7 @@ rva	size	source	callconv	name	signature
 00190750	80	DEFAULT	unknown	FUN_00590750	
 001907a0	29	DEFAULT	unknown	FUN_005907a0	
 001907c0	98	DEFAULT	unknown	FUN_005907c0	
-00190830	129	DEFAULT	unknown	FUN_00590830	
+00190830	129	USER_DEFINED	unknown	Net_ModifyUsrData	undefined(void)
 001908c0	636	DEFAULT	unknown	FUN_005908c0	
 00190b40	206	DEFAULT	unknown	FUN_00590b40	
 00190c10	112	DEFAULT	unknown	FUN_00590c10	
@@ -4932,18 +4932,18 @@ rva	size	source	callconv	name	signature
 00191430	162	DEFAULT	unknown	FUN_00591430	
 001914e0	198	DEFAULT	unknown	FUN_005914e0	
 001915c0	50	DEFAULT	unknown	FUN_005915c0	
-00191600	162	DEFAULT	unknown	FUN_00591600	
+00191600	162	USER_DEFINED	unknown	Net_PingInetSvrs	undefined(void)
 001916b0	719	DEFAULT	unknown	FUN_005916b0	
 00191980	80	DEFAULT	unknown	FUN_00591980	
 001919d0	246	DEFAULT	unknown	FUN_005919d0	
 00191ad0	25	DEFAULT	unknown	FUN_00591ad0	
 00191af0	79	DEFAULT	unknown	FUN_00591af0	
 00191b40	54	DEFAULT	unknown	FUN_00591b40	
-00191b80	143	DEFAULT	unknown	FUN_00591b80	
+00191b80	143	USER_DEFINED	unknown	Net_SendMasterString	undefined(void)
 00191c10	32	DEFAULT	unknown	FUN_00591c10	
 00191c30	139	DEFAULT	unknown	FUN_00591c30	
 00191cc0	58	DEFAULT	unknown	FUN_00591cc0	
-00191d00	6	DEFAULT	unknown	FUN_00591d00	
+00191d00	6	USER_DEFINED	unknown	Net_IsMaster	undefined(void)
 00191d10	435	DEFAULT	unknown	FUN_00591d10	
 00191ed0	27	DEFAULT	unknown	FUN_00591ed0	
 00191ef0	599	DEFAULT	unknown	FUN_00591ef0	

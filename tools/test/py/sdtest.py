@@ -4,7 +4,7 @@
 # and splits at spaces, so difftest.sh spells the file name with chr().
 OUT = 'sdtest.out'
 execfile('sdlib.py')
-import Scrap, SWeap, SVec, SAct, SFX, SLogic, SSound, SInput, SAI
+import Scrap, SWeap, SVec, SAct, SFX, SLogic, SSound, SInput, SAI, SNet
 
 check('Scrap.GetMoney()', lambda: Scrap.GetMoney())
 check('Scrap.GetMoney(1)', lambda: Scrap.GetMoney(1))
@@ -231,4 +231,27 @@ check('SAI.SetStateVehicle()', lambda: SAI.SetStateVehicle())
 check('clear error', lambda: SVec.GetRotAng((0.0, 0.0, 1.0)))
 check('SAI.SetStateVehicle(10)', lambda: SAI.SetStateVehicle(10))
 check('SAI.GetOD()', lambda: SAI.GetOD())
+# SNet in the menu (no server, no client). Nothing that sends over the network: no InitServer, InitClient,
+# InitBrowser, PingInetSvrs, SendMasterString.
+for f in ('IsServer', 'IsClient', 'IsDedicated', 'IsMaster', 'GetServerData', 'GetClientData', 'GetMyClientShip',
+		'GetBotName', 'GetObjName'):
+	check('SNet.%s()' % f, lambda f=getattr(SNet, f): f())
+check('SNet.GetPing(Player0)', lambda: SNet.GetPing('Player0'))
+check('SNet.GetPing(Nobody)', lambda: SNet.GetPing('Nobody'))
+check('SNet.Kick(Nobody)', lambda: SNet.Kick('Nobody'))
+check('SNet.SendChatString(0, hi)', lambda: SNet.SendChatString(0, 'hi'))
+check('SNet.SendCtrlString(x)', lambda: SNet.SendCtrlString('x'))
+check('SNet.SendUsrString(0, x)', lambda: SNet.SendUsrString(0, 'x'))
+check('SNet.ModifyUsrData(1)', lambda: SNet.ModifyUsrData(1))
+check('SNet.ServerChangeLevel(x)', lambda: SNet.ServerChangeLevel('x'))
+check('SNet.AddResource(x)', lambda: SNet.AddResource('x'))
+check('SNet.CloseServer(bye)', lambda: SNet.CloseServer('bye'))
+check('SNet.CloseClient()', lambda: SNet.CloseClient())
+check('SNet.CloseClient(bye)', lambda: SNet.CloseClient('bye'))
+check('SNet.DoneBrowser()', lambda: SNet.DoneBrowser())
+check('SNet.InitServer bad', lambda: SNet.InitServer('a', 1))
+check('SNet.InitClient bad', lambda: SNet.InitClient(1, 1))
+check('SNet.InitBrowser bad', lambda: SNet.InitBrowser('x'))
+check('SNet.SendChatString bad', lambda: SNet.SendChatString('x', 0))
+check('SNet.GetPing bad', lambda: SNet.GetPing())
 finish()
