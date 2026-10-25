@@ -3,7 +3,7 @@
 # (a WalkChar with life). Python 1.5.2 syntax.
 OUT = 'sdlevel.out'
 execfile('sdlib.py')
-import Scrap, SWeap, SVec, SAct, SFX, SLogic
+import Scrap, SWeap, SVec, SAct, SFX, SLogic, SAI
 
 check('Scrap.GetLevelPath()', lambda: Scrap.GetLevelPath())
 check('Scrap.GetMoney()', lambda: Scrap.GetMoney())
@@ -93,4 +93,34 @@ check('SLogic.UpdateTauntEndTime()', lambda: SLogic.UpdateTauntEndTime())
 check('SLogic.ChangeZoneState(0, 1)', lambda: SLogic.ChangeZoneState(0, 1))
 check('SLogic.ChangeBatonState(player, 1)', lambda p=pp: SLogic.ChangeBatonState(p, 1))
 check('SLogic.SetDominationZones([Player0])', lambda: SLogic.SetDominationZones(['Player0']))
+# SAI in the outdoor level FZ (IsMapOutDoor 1: no character group and no 2D graph, so no GetReposCharPos and no
+# BuildGraph2D). IniAI/AnalizeMap/BuildGraph rebuild the graphs, not here. GetRandomVisibilityPoint uses the CRT
+# rand, whose sequence differs between runs, so only the form of its result is compared.
+def shape(v):
+	if type(v) == type(()):
+		r = ()
+		for x in v:
+			r = r + (type(x).__name__,)
+		return r
+	return type(v).__name__
+check('SAI.GetRandomVisibilityPoint() shape', lambda: shape(SAI.GetRandomVisibilityPoint()))
+check('SAI.GetStateVehicle(Player0)', lambda: SAI.GetStateVehicle('Player0'))
+check('SAI.GetStateChar(Player0)', lambda: SAI.GetStateChar('Player0'))
+check('SAI.GetStateVehicle(Parked)', lambda: SAI.GetStateVehicle('Parked'))
+check('SAI.GetNearestItemLife(Player0)', lambda: SAI.GetNearestItemLife('Player0'))
+check('SAI.GetNearestItemLife(Parked)', lambda: SAI.GetNearestItemLife('Parked'))
+check('SAI.GetNextRacePoint(player)', lambda p=pp: SAI.GetNextRacePoint(p, 100, 1000))
+check('SAI.SetStateVehicle(99)', lambda: SAI.SetStateVehicle(99))
+check('SAI.SetStateChar(-1)', lambda: SAI.SetStateChar(-1))
+check('SAI.EnableAIChar(Player0)', lambda: SAI.EnableAIChar('Player0', 1, 0))
+check('SAI.EnableAIVehicle(Player0)', lambda: SAI.EnableAIVehicle('Player0', 1, 1.0, 1, 1, 1, 1, 1, 1.0, 1, 1, 1.0, 1.0))
+check('SAI.EnableAIVehicle(Nobody)', lambda: SAI.EnableAIVehicle('Nobody', 0, 1.0, 1, 1, 1, 1, 1, 1.0, 1, 1, 1.0, 1.0))
+check('SAI.AddVehicleRace(Player0)', lambda: SAI.AddVehicleRace('Player0'))
+check('SAI.SetRotStaticObj(Player0)', lambda: SAI.SetRotStaticObj('Player0', 1.0, 2.0))
+check('SAI.SetInertia(Player0)', lambda: SAI.SetInertia('Player0', 1))
+check('SAI.SetRotStaticObj(Parked)', lambda: SAI.SetRotStaticObj('Parked', 1.0, 2.0))
+check('SAI.SetInertia(Parked)', lambda: SAI.SetInertia('Parked', 0))
+check('SAI.InitVehicleRace()', lambda: SAI.InitVehicleRace())
+# SAI.AnalizeTraffic() on the running level does not return in the original either
+check('SAI.GetOD()', lambda: SAI.GetOD())
 finish()

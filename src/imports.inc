@@ -48,6 +48,57 @@ SD_IMPORT(cActClass_GetAction, 0x060590)
 SD_IMPORT(cActClass_Var, 0x060770)
 SD_IMPORT(cAction_Var, 0x064280)
 
+/* engine: AI/ (include/scrap/ai.h) */
+SD_IMPORT(operator_new, 0x1334d0)
+SD_IMPORT(CNodesWorld_ctor, 0x0a21b0)
+SD_IMPORT(CNodesWorld2D_ctor, 0x0ad950)
+SD_IMPORT(CNodesTrafficInDoor_ctor, 0x0a08a0)
+SD_IMPORT(CNodesTraffic_ctor, 0x09b970)
+SD_IMPORT(CAStar_ctor, 0x099330)
+SD_IMPORT(CAStar2D_ctor, 0x09a2f0)
+SD_IMPORT(cAIVehicleGroup_ctor, 0x096bf0)
+SD_IMPORT(cAICharGroup_ctor, 0x080790)
+SD_IMPORT(CNodesWorld_Load, 0x0ab650)
+SD_IMPORT(CNodesWorld_Analize, 0x0a2da0)
+SD_IMPORT(CNodesWorld_AnalizeGraph, 0x0a2840)
+SD_IMPORT(CNodesWorld_GetRacePoint, 0x0a87c0)
+SD_IMPORT(CNodesWorld2D_Load, 0x0b6200)
+SD_IMPORT(CNodesWorld2D_AnalizeGraph, 0x0adc20)
+SD_IMPORT(cAICharGroup_GetReposPos, 0x080d20)
+SD_IMPORT(cAIVehicle_GetState, 0x08b740)
+SD_IMPORT(cAIVehicle_Setup, 0x08c040)
+SD_IMPORT(cAIVehicle_GetParams1, 0x08bc20)
+SD_IMPORT(cAIVehicle_GetParams2, 0x08bc40)
+SD_IMPORT(cAIVehicle_GetParams3, 0x08bc60)
+SD_IMPORT(cAIVehicle_GetNearestItemLife, 0x08a7d0)
+SD_IMPORT(cAIVehicle_SetRotStatic, 0x08df70)
+SD_IMPORT(cAIVehicle_SetInertia, 0x08df60)
+SD_IMPORT(cVehicleEntity_GetOwnerSlot, 0x1085b0)
+SD_IMPORT(cWalkCharEntity_GetOwnerSlot, 0x0d38b0)
+SD_IMPORT(SetStateVehicle0, 0x1969b0)
+SD_IMPORT(SetStateVehicle1, 0x196fb0)
+SD_IMPORT(SetStateVehicle2, 0x196700)
+SD_IMPORT(SetStateVehicle3, 0x197180)
+SD_IMPORT(SetStateVehicle4, 0x197b70)
+SD_IMPORT(SetStateVehicle5, 0x196c60)
+SD_IMPORT(SetStateVehicle6, 0x1978d0)
+SD_IMPORT(SetStateVehicle7, 0x1960e0)
+SD_IMPORT(SetStateVehicle8, 0x196860)
+SD_IMPORT(SetStateVehicle9, 0x197c90)
+SD_IMPORT(SetStateChar0, 0x197a50)
+SD_IMPORT(SetStateChar1, 0x1972f0)
+SD_IMPORT(SetStateChar2, 0x196400)
+SD_IMPORT(SetStateChar3, 0x196580)
+SD_IMPORT(SetStateChar4, 0x196e10)
+SD_IMPORT(SetStateChar5, 0x196ae0)
+SD_IMPORT(SetStateChar6, 0x197750)
+SD_IMPORT(SetStateChar7, 0x196280)
+SD_IMPORT(SetStateChar8, 0x197450)
+SD_IMPORT(SetStateChar9, 0x1975d0)
+
+/* MSVC 2015 static CRT (cdecl) */
+SD_IMPORT(crt_rand, 0x323c2f)
+
 /* engine: Input/ */
 SD_IMPORT(ActionSet_IsNamed, 0x133a30)
 SD_IMPORT(Input_SelectActionSet, 0x13a560)
@@ -108,5 +159,7 @@ SD_IMPORT(PyTuple_New, 0x2decb0)	/* tupleobject.c */
 SD_IMPORT(PyTuple_SetItem, 0x2ded50)	/* tupleobject.c */
 SD_IMPORT(PyFloat_FromDouble, 0x2dfd70)	/* floatobject.c */
 SD_IMPORT(PyList_Size, 0x2dd2b0)	/* listobject.c */
+SD_IMPORT(PyTuple_GetItem, 0x2dec30)	/* tupleobject.c */
+SD_IMPORT(PyInt_AsLong, 0x2de3a0)	/* intobject.c */
 SD_IMPORT(PyList_GetItem, 0x2dcf80)	/* listobject.c */
 SD_IMPORT(PyString_AsString, 0x2dadd0)	/* stringobject.c */

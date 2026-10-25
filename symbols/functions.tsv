@@ -1545,7 +1545,7 @@ rva	size	source	callconv	name	signature
 0007f250	2805	ANALYSIS	__thiscall	cAICharControl3D::vf30	undefined __thiscall(void)
 0007fd50	2582	ANALYSIS	__thiscall	cAICharControl3D::vf31	undefined __thiscall(void)
 00080770	32	DEFAULT	unknown	FUN_00480770	
-00080790	98	DEFAULT	unknown	FUN_00480790	
+00080790	98	USER_DEFINED	__thiscall	cAICharGroup::cAICharGroup	undefined __thiscall(void)
 00080800	16	DEFAULT	unknown	FUN_00480800	
 00080810	57	DEFAULT	unknown	FUN_00480810	
 00080850	111	DEFAULT	unknown	FUN_00480850	
@@ -1556,7 +1556,7 @@ rva	size	source	callconv	name	signature
 00080bb0	134	DEFAULT	unknown	FUN_00480bb0	
 00080c40	74	DEFAULT	unknown	FUN_00480c40	
 00080c90	123	DEFAULT	unknown	FUN_00480c90	
-00080d20	448	DEFAULT	unknown	FUN_00480d20	
+00080d20	448	USER_DEFINED	__thiscall	cAICharGroup::GetReposPos	byte __thiscall(float * pos, char * name, float * out, void * target)
 00080ee0	1469	DEFAULT	unknown	FUN_00480ee0	
 000814b0	1402	DEFAULT	unknown	FUN_004814b0	
 00081a30	115	DEFAULT	unknown	FUN_00481a30	
@@ -1720,24 +1720,24 @@ rva	size	source	callconv	name	signature
 0008a250	330	DEFAULT	unknown	FUN_0048a250	
 0008a3a0	713	DEFAULT	unknown	FUN_0048a3a0	
 0008a670	325	DEFAULT	unknown	FUN_0048a670	
-0008a7d0	100	DEFAULT	unknown	FUN_0048a7d0	
+0008a7d0	100	USER_DEFINED	__thiscall	cAIVehicle::GetNearestItemLife	void * __thiscall(void)
 0008a840	4	DEFAULT	unknown	FUN_0048a840	
 0008a850	691	DEFAULT	unknown	FUN_0048a850	
 0008ab20	1457	DEFAULT	unknown	FUN_0048ab20	
 0008b0e0	53	DEFAULT	unknown	FUN_0048b0e0	
 0008b120	1545	DEFAULT	unknown	FUN_0048b120	
-0008b740	39	DEFAULT	unknown	FUN_0048b740	
+0008b740	39	USER_DEFINED	__thiscall	cAIVehicle::GetState	int __thiscall(void)
 0008b780	28	DEFAULT	unknown	FUN_0048b780	
 0008b7a0	7	DEFAULT	unknown	FUN_0048b7a0	
 0008b7b0	409	DEFAULT	unknown	FUN_0048b7b0	
 0008b980	21	DEFAULT	unknown	FUN_0048b980	
 0008b9a0	533	DEFAULT	unknown	FUN_0048b9a0	
 0008bc00	21	DEFAULT	unknown	FUN_0048bc00	
-0008bc20	7	DEFAULT	unknown	FUN_0048bc20	
+0008bc20	7	USER_DEFINED	__thiscall	cAIVehicle::GetParams1	undefined __thiscall(void)
 0008bc30	7	DEFAULT	unknown	FUN_0048bc30	
-0008bc40	11	DEFAULT	unknown	FUN_0048bc40	
+0008bc40	11	USER_DEFINED	__thiscall	cAIVehicle::GetParams2	undefined __thiscall(void)
 0008bc50	11	DEFAULT	unknown	FUN_0048bc50	
-0008bc60	11	DEFAULT	unknown	FUN_0048bc60	
+0008bc60	11	USER_DEFINED	__thiscall	cAIVehicle::GetParams3	undefined __thiscall(void)
 0008bc70	11	DEFAULT	unknown	FUN_0048bc70	
 0008bc80	155	ANALYSIS	__thiscall	cAIVehicle::vf07	undefined __thiscall(void)
 0008bd20	86	DEFAULT	unknown	FUN_0048bd20	
@@ -1747,7 +1747,7 @@ rva	size	source	callconv	name	signature
 0008bf00	11	DEFAULT	unknown	FUN_0048bf00	
 0008bf10	235	DEFAULT	unknown	FUN_0048bf10	
 0008c000	57	DEFAULT	unknown	FUN_0048c000	
-0008c040	39	DEFAULT	unknown	FUN_0048c040	
+0008c040	39	USER_DEFINED	__thiscall	cAIVehicle::Setup	void __thiscall(void * p1, void * p2, void * p3)
 0008c070	912	DEFAULT	unknown	FUN_0048c070	
 0008c400	464	DEFAULT	unknown	FUN_0048c400	
 0008c5d0	596	DEFAULT	unknown	FUN_0048c5d0	
@@ -1771,8 +1771,8 @@ rva	size	source	callconv	name	signature
 0008dd20	231	DEFAULT	unknown	FUN_0048dd20	
 0008de10	59	DEFAULT	unknown	FUN_0048de10	
 0008de50	261	DEFAULT	unknown	FUN_0048de50	
-0008df60	15	DEFAULT	unknown	FUN_0048df60	
-0008df70	58	DEFAULT	unknown	FUN_0048df70	
+0008df60	15	USER_DEFINED	__thiscall	cAIVehicle::SetInertia	void __thiscall(int on)
+0008df70	58	USER_DEFINED	__thiscall	cAIVehicle::SetRotStatic	void __thiscall(float a, float b)
 0008dfb0	90	DEFAULT	unknown	FUN_0048dfb0	
 0008e010	635	DEFAULT	unknown	FUN_0048e010	
 0008e2d0	1882	DEFAULT	unknown	FUN_0048e2d0	
@@ -1843,7 +1843,7 @@ rva	size	source	callconv	name	signature
 000969c0	199	DEFAULT	unknown	FUN_004969c0	
 00096a90	181	DEFAULT	unknown	FUN_00496a90	
 00096b70	103	DEFAULT	unknown	FUN_00496b70	
-00096bf0	152	DEFAULT	unknown	FUN_00496bf0	
+00096bf0	152	USER_DEFINED	__thiscall	cAIVehicleGroup::cAIVehicleGroup	undefined __thiscall(void)
 00096ca0	44	ANALYSIS	__thiscall	cAIVehicleGroup::vf00	undefined __thiscall(void)
 00096cd0	53	DEFAULT	unknown	FUN_00496cd0	
 00096d10	243	DEFAULT	unknown	FUN_00496d10	
@@ -1883,7 +1883,7 @@ rva	size	source	callconv	name	signature
 00099090	455	DEFAULT	unknown	FUN_00499090	
 00099280	39	DEFAULT	unknown	FUN_00499280	
 000992b0	118	DEFAULT	unknown	FUN_004992b0	
-00099330	290	DEFAULT	unknown	FUN_00499330	
+00099330	290	USER_DEFINED	__thiscall	CAStar::CAStar	undefined __thiscall(void)
 00099460	66	DEFAULT	unknown	FUN_00499460	
 000994b0	101	DEFAULT	unknown	FUN_004994b0	
 00099520	98	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf00	undefined __thiscall(void)
@@ -1918,7 +1918,7 @@ rva	size	source	callconv	name	signature
 0009a100	35	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf09	undefined __thiscall(void)
 0009a130	191	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf10	undefined __thiscall(void)
 0009a1f0	255	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf11	undefined __thiscall(void)
-0009a2f0	304	DEFAULT	unknown	FUN_0049a2f0	
+0009a2f0	304	USER_DEFINED	__thiscall	CAStar2D::CAStar2D	undefined __thiscall(void)
 0009a420	101	DEFAULT	unknown	FUN_0049a420	
 0009a490	129	ANALYSIS	__thiscall	CAStar2D::vf00	undefined __thiscall(void)
 0009a520	64	ANALYSIS	__thiscall	CAStar2D::vf03	undefined __thiscall(void)
@@ -1953,7 +1953,7 @@ rva	size	source	callconv	name	signature
 0009b760	52	ANALYSIS	__thiscall	CAStarSup::vf14	undefined __thiscall(void)
 0009b7a0	123	ANALYSIS	__thiscall	CAStarSup::vf18	undefined __thiscall(void)
 0009b820	329	DEFAULT	unknown	FUN_0049b820	
-0009b970	187	DEFAULT	unknown	FUN_0049b970	
+0009b970	187	USER_DEFINED	__thiscall	CNodesTraffic::CNodesTraffic	undefined __thiscall(void)
 0009ba30	60	DEFAULT	unknown	FUN_0049ba30	
 0009ba70	277	DEFAULT	unknown	FUN_0049ba70	
 0009bb90	92	ANALYSIS	__thiscall	cGridElements<InfoTrafficNode>::vf00	undefined __thiscall(void)
@@ -1994,7 +1994,7 @@ rva	size	source	callconv	name	signature
 000a0620	20	ANALYSIS	__thiscall	CNodesTraffic::vf01	undefined __thiscall(void)
 000a0640	80	ANALYSIS	__thiscall	cGridElements<InfoTrafficNode>::vf08	undefined __thiscall(void)
 000a0690	527	ANALYSIS	__thiscall	CNodesTraffic::vf18	undefined __thiscall(void)
-000a08a0	310	DEFAULT	unknown	FUN_004a08a0	
+000a08a0	310	USER_DEFINED	__thiscall	CNodesTrafficInDoor::CNodesTrafficInDoor	undefined __thiscall(void)
 000a09e0	522	DEFAULT	unknown	FUN_004a09e0	
 000a0bf0	38	ANALYSIS	__thiscall	CNodesTrafficInDoor::vf00	undefined __thiscall(void)
 000a0c30	362	DEFAULT	unknown	FUN_004a0c30	
@@ -2010,7 +2010,7 @@ rva	size	source	callconv	name	signature
 000a1dc0	1	ANALYSIS	__thiscall	CNodesTrafficInDoor::vf18	undefined __thiscall(void)
 000a1dd0	166	DEFAULT	unknown	FUN_004a1dd0	
 000a1e80	801	DEFAULT	unknown	FUN_004a1e80	
-000a21b0	229	DEFAULT	unknown	FUN_004a21b0	
+000a21b0	229	USER_DEFINED	__thiscall	CNodesWorld::CNodesWorld	undefined __thiscall(void)
 000a22a0	51	DEFAULT	unknown	FUN_004a22a0	
 000a22e0	51	DEFAULT	unknown	FUN_004a22e0	
 000a2320	51	DEFAULT	unknown	FUN_004a2320	
@@ -2024,8 +2024,8 @@ rva	size	source	callconv	name	signature
 000a2690	153	DEFAULT	unknown	FUN_004a2690	
 000a2730	117	DEFAULT	unknown	FUN_004a2730	
 000a27b0	142	DEFAULT	unknown	FUN_004a27b0	
-000a2840	1362	DEFAULT	unknown	FUN_004a2840	
-000a2da0	219	DEFAULT	unknown	FUN_004a2da0	
+000a2840	1362	USER_DEFINED	__thiscall	CNodesWorld::AnalizeGraph	void __thiscall(void)
+000a2da0	219	USER_DEFINED	__thiscall	CNodesWorld::Analize	void __thiscall(float * size)
 000a2e80	1068	DEFAULT	unknown	FUN_004a2e80	
 000a32b0	49	DEFAULT	unknown	FUN_004a32b0	
 000a32f0	3184	DEFAULT	unknown	FUN_004a32f0	
@@ -2047,7 +2047,7 @@ rva	size	source	callconv	name	signature
 000a7e80	999	DEFAULT	unknown	FUN_004a7e80	
 000a8270	695	DEFAULT	unknown	FUN_004a8270	
 000a8530	654	DEFAULT	unknown	FUN_004a8530	
-000a87c0	210	DEFAULT	unknown	FUN_004a87c0	
+000a87c0	210	USER_DEFINED	__thiscall	CNodesWorld::GetRacePoint	byte __thiscall(float * out, float * initial, float minDist, float maxDist, int arg)
 000a88a0	405	DEFAULT	unknown	FUN_004a88a0	
 000a8a40	404	DEFAULT	unknown	FUN_004a8a40	
 000a8be0	1287	DEFAULT	unknown	FUN_004a8be0	
@@ -2060,7 +2060,7 @@ rva	size	source	callconv	name	signature
 000aa5d0	638	DEFAULT	unknown	FUN_004aa5d0	
 000aa850	134	DEFAULT	unknown	FUN_004aa850	
 000aa8e0	3432	DEFAULT	unknown	FUN_004aa8e0	
-000ab650	2090	DEFAULT	unknown	FUN_004ab650	
+000ab650	2090	USER_DEFINED	__thiscall	CNodesWorld::Load	void __thiscall(int arg, char * name, float * pos)
 000abe80	568	DEFAULT	unknown	FUN_004abe80	
 000ac0c0	93	DEFAULT	unknown	FUN_004ac0c0	
 000ac120	214	DEFAULT	unknown	FUN_004ac120	
@@ -2077,13 +2077,13 @@ rva	size	source	callconv	name	signature
 000ad180	592	ANALYSIS	__thiscall	CNodesWorld::vf15	undefined __thiscall(void)
 000ad3d0	1356	DEFAULT	unknown	FUN_004ad3d0	
 000ad920	42	DEFAULT	unknown	FUN_004ad920	
-000ad950	123	DEFAULT	unknown	FUN_004ad950	
+000ad950	123	USER_DEFINED	__thiscall	CNodesWorld2D::CNodesWorld2D	undefined __thiscall(void)
 000ad9d0	95	DEFAULT	unknown	FUN_004ad9d0	
 000ada30	54	DEFAULT	unknown	FUN_004ada30	
 000ada70	126	ANALYSIS	__thiscall	CNodesWorld2D::vf00	undefined __thiscall(void)
 000adaf0	179	DEFAULT	unknown	FUN_004adaf0	
 000adbb0	101	DEFAULT	unknown	FUN_004adbb0	
-000adc20	1382	DEFAULT	unknown	FUN_004adc20	
+000adc20	1382	USER_DEFINED	__thiscall	CNodesWorld2D::AnalizeGraph	void __thiscall(void)
 000ae190	3794	DEFAULT	unknown	FUN_004ae190	
 000af070	632	DEFAULT	unknown	FUN_004af070	
 000af2f0	4553	DEFAULT	unknown	FUN_004af2f0	
@@ -2112,7 +2112,7 @@ rva	size	source	callconv	name	signature
 000b49e0	3235	DEFAULT	unknown	FUN_004b49e0	
 000b5690	433	DEFAULT	unknown	FUN_004b5690	
 000b5860	2457	DEFAULT	unknown	FUN_004b5860	
-000b6200	1546	DEFAULT	unknown	FUN_004b6200	
+000b6200	1546	USER_DEFINED	__thiscall	CNodesWorld2D::Load	void __thiscall(int arg, char * name, float * pos)
 000b6840	87	DEFAULT	unknown	FUN_004b6840	
 000b68a0	864	DEFAULT	unknown	FUN_004b68a0	
 000b6c00	144	ANALYSIS	__thiscall	CNodesWorld2D::vf03	undefined __thiscall(void)
@@ -2395,7 +2395,7 @@ rva	size	source	callconv	name	signature
 000d37f0	74	DEFAULT	unknown	FUN_004d37f0	
 000d3840	93	ANALYSIS	__thiscall	cWalkCharEntity::vf39	undefined __thiscall(void)
 000d38a0	6	ANALYSIS	__thiscall	cWalkCharEntity::vf04	undefined __thiscall(void)
-000d38b0	7	DEFAULT	unknown	FUN_004d38b0	
+000d38b0	7	USER_DEFINED	__thiscall	cWalkCharEntity::GetOwnerSlot	int __thiscall(void)
 000d38c0	27	ANALYSIS	__thiscall	cWalkCharEntity::vf40	undefined __thiscall(void)
 000d38e0	21	DEFAULT	unknown	FUN_004d38e0	
 000d3900	1463	ANALYSIS	__thiscall	cWalkCharEntity::vf16	undefined __thiscall(void)
@@ -3079,7 +3079,7 @@ rva	size	source	callconv	name	signature
 001083e0	170	ANALYSIS	__thiscall	cVehicleEntity::vf64	undefined __thiscall(void)
 00108490	259	ANALYSIS	__thiscall	cVehicleEntity::vf39	undefined __thiscall(void)
 001085a0	6	ANALYSIS	__thiscall	cVehicleEntity::vf04	undefined __thiscall(void)
-001085b0	7	DEFAULT	unknown	FUN_005085b0	
+001085b0	7	USER_DEFINED	__thiscall	cVehicleEntity::GetOwnerSlot	int __thiscall(void)
 001085c0	7	ANALYSIS	__thiscall	cVehicleEntity::vf40	undefined __thiscall(void)
 001085d0	15	ANALYSIS	__thiscall	cVehicleEntity::vf02	undefined __thiscall(void)
 001085e0	150	DEFAULT	unknown	FUN_005085e0	
@@ -3513,7 +3513,7 @@ rva	size	source	callconv	name	signature
 00133060	504	DEFAULT	unknown	FUN_00533060	
 00133260	427	DEFAULT	unknown	FUN_00533260	
 00133410	182	DEFAULT	unknown	FUN_00533410	
-001334d0	9	DEFAULT	unknown	FUN_005334d0	
+001334d0	9	USER_DEFINED	__cdecl	operator_new	void * __cdecl(uint size)
 001334e0	68	DEFAULT	unknown	FUN_005334e0	
 00133530	27	DEFAULT	unknown	FUN_00533530	
 00133550	70	DEFAULT	unknown	FUN_00533550	
@@ -5046,26 +5046,26 @@ rva	size	source	callconv	name	signature
 00195fb0	32	DEFAULT	unknown	FUN_00595fb0	
 00195fd0	75	DEFAULT	unknown	FUN_00595fd0	
 00196020	155	DEFAULT	unknown	FUN_00596020	
-001960e0	404	DEFAULT	unknown	FUN_005960e0	
-00196280	372	DEFAULT	unknown	FUN_00596280	
-00196400	377	DEFAULT	unknown	FUN_00596400	
-00196580	374	DEFAULT	unknown	FUN_00596580	
-00196700	344	DEFAULT	unknown	FUN_00596700	
-00196860	334	DEFAULT	unknown	FUN_00596860	
-001969b0	293	DEFAULT	unknown	FUN_005969b0	
-00196ae0	371	DEFAULT	unknown	FUN_00596ae0	
-00196c60	424	DEFAULT	unknown	FUN_00596c60	
-00196e10	402	DEFAULT	unknown	FUN_00596e10	
-00196fb0	462	DEFAULT	unknown	FUN_00596fb0	
-00197180	356	DEFAULT	unknown	FUN_00597180	
-001972f0	338	DEFAULT	unknown	FUN_005972f0	
-00197450	379	DEFAULT	unknown	FUN_00597450	
-001975d0	382	DEFAULT	unknown	FUN_005975d0	
-00197750	379	DEFAULT	unknown	FUN_00597750	
-001978d0	379	DEFAULT	unknown	FUN_005978d0	
-00197a50	288	DEFAULT	unknown	FUN_00597a50	
-00197b70	283	DEFAULT	unknown	FUN_00597b70	
-00197c90	306	DEFAULT	unknown	FUN_00597c90	
+001960e0	404	USER_DEFINED	unknown	SetStateVehicle7	undefined(void)
+00196280	372	USER_DEFINED	unknown	SetStateChar7	undefined(void)
+00196400	377	USER_DEFINED	unknown	SetStateChar2	undefined(void)
+00196580	374	USER_DEFINED	unknown	SetStateChar3	undefined(void)
+00196700	344	USER_DEFINED	unknown	SetStateVehicle2	undefined(void)
+00196860	334	USER_DEFINED	unknown	SetStateVehicle8	undefined(void)
+001969b0	293	USER_DEFINED	unknown	SetStateVehicle0	undefined(void)
+00196ae0	371	USER_DEFINED	unknown	SetStateChar5	undefined(void)
+00196c60	424	USER_DEFINED	unknown	SetStateVehicle5	undefined(void)
+00196e10	402	USER_DEFINED	unknown	SetStateChar4	undefined(void)
+00196fb0	462	USER_DEFINED	unknown	SetStateVehicle1	undefined(void)
+00197180	356	USER_DEFINED	unknown	SetStateVehicle3	undefined(void)
+001972f0	338	USER_DEFINED	unknown	SetStateChar1	undefined(void)
+00197450	379	USER_DEFINED	unknown	SetStateChar8	undefined(void)
+001975d0	382	USER_DEFINED	unknown	SetStateChar9	undefined(void)
+00197750	379	USER_DEFINED	unknown	SetStateChar6	undefined(void)
+001978d0	379	USER_DEFINED	unknown	SetStateVehicle6	undefined(void)
+00197a50	288	USER_DEFINED	unknown	SetStateChar0	undefined(void)
+00197b70	283	USER_DEFINED	unknown	SetStateVehicle4	undefined(void)
+00197c90	306	USER_DEFINED	unknown	SetStateVehicle9	undefined(void)
 00197dd0	28	ANALYSIS	unknown	initSAI	undefined(void)
 00197df0	95	ANALYSIS	__cdecl	Scrap_CreateEntityList	PyObject * __cdecl(PyObject * self, PyObject * args)
 00197e50	75	ANALYSIS	__cdecl	Scrap_SetCam	PyObject * __cdecl(PyObject * self, PyObject * args)
@@ -8940,7 +8940,7 @@ rva	size	source	callconv	name	signature
 002deac0	149	DEFAULT	unknown	FUN_006deac0	
 002deb60	111	DEFAULT	unknown	FUN_006deb60	
 002debd0	94	DEFAULT	unknown	FUN_006debd0	
-002dec30	65	DEFAULT	unknown	FUN_006dec30	
+002dec30	65	USER_DEFINED	__cdecl	PyTuple_GetItem	PyObject * __cdecl(PyObject * op, int i)
 002dec80	37	DEFAULT	unknown	FUN_006dec80	
 002decb0	149	USER_DEFINED	__cdecl	PyTuple_New	PyObject * __cdecl(int size)
 002ded50	153	ANALYSIS	__cdecl	PyTuple_SetItem	int __cdecl(PyObject * op, int i, PyObject * newitem)
@@ -10386,7 +10386,7 @@ rva	size	source	callconv	name	signature
 00323bb1	42	ANALYSIS	__cdecl	_atoi	int __cdecl(char * _Str)
 00323bdb	42	ANALYSIS	__cdecl	_atol	long __cdecl(char * _Str)
 00323c05	42	ANALYSIS	__cdecl	FID_conflict:_atoll	longlong __cdecl(char * _String)
-00323c2f	33	DEFAULT	unknown	FUN_00723c2f	
+00323c2f	33	USER_DEFINED	__cdecl	rand	int __cdecl(void)
 00323c50	18	DEFAULT	unknown	FUN_00723c50	
 00323c62	16	DEFAULT	unknown	FUN_00723c62	
 00323c72	47	ANALYSIS	__cdecl	__crt_strtox::assemble_floating_point_ind<double>	void __cdecl(double * param_1)

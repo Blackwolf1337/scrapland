@@ -28,7 +28,8 @@ typedef struct cEntityVtbl {
 	void(__thiscall *AimWeapon)(cEntity *self, float ax, float ay, float *dist, vec3_t *out, cEntity **target,
 		int flags);							/* 0x38 vf14 */
 	void(__thiscall *SetEmbeddedFX)(cEntity *self, const char *fxType);	/* 0x3c vf15 */
-	void *vf16_22[7];
+	void *vf16_21[6];
+	void *(__thiscall *GetAI)(cEntity *self);				/* 0x58 vf22 */
 } cEntityVtbl;
 SD_SIZE(cEntityVtbl, 23 * 4);
 
@@ -45,17 +46,22 @@ SD_OFFSET(cEntityVtbl, SetModel, 0x30);
 SD_OFFSET(cEntityVtbl, GetTargetAngle, 0x34);
 SD_OFFSET(cEntityVtbl, AimWeapon, 0x38);
 SD_OFFSET(cEntityVtbl, SetEmbeddedFX, 0x3c);
+SD_OFFSET(cEntityVtbl, GetAI, 0x58);
 
 struct cEntity {
-	const cEntityVtbl *vftable;	/* 0x0 */
-	char *name;			/* 0x4 */
+	const cEntityVtbl *vftable;	/* 0x00 */
+	char *name;			/* 0x04 */
+	byte pad_08[0x4c - 0x08];
+	byte flag_4c;			/* 0x4c checked by the SAI functions before they touch the AI */
+	byte pad_4d[3];
 };
 SD_OFFSET(cEntity, name, 0x4);
+SD_OFFSET(cEntity, flag_4c, 0x4c);
 
 /* a vehicle ("Car"); only the fields used so far */
 typedef struct cVehicleEntity {
 	cEntity base;
-	byte pad_8[0x238 - 0x8];
+	byte pad_50[0x238 - 0x50];
 	int life;			/* 0x238 > 0 while the ship is alive (SLogic.GetNearestShip) */
 } cVehicleEntity;
 SD_OFFSET(cVehicleEntity, life, 0x238);
@@ -80,6 +86,21 @@ cEntity *__thiscall cEntityList_GetFirst(cEntityList *list);
 
 /* removes the entity; 0 if it cannot (rva 0xef0c0) */
 byte __thiscall cEntity_Del(cEntity *self);
+
+/* vehicles ("Car") and characters ("WalkChar") continue the vtable of cWithLifeEntity */
+typedef struct cVehicleEntityVtbl {
+	cWithLifeEntityVtbl base;
+	void *vf54_57[4];
+	void(__thiscall *EnableAI)(cEntity *self, byte enable, void *p1, void *p2, void *p3);	/* 0xe8 vf58 */
+} cVehicleEntityVtbl;
+SD_OFFSET(cVehicleEntityVtbl, EnableAI, 0xe8);
+
+typedef struct cWalkCharEntityVtbl {
+	cWithLifeEntityVtbl base;
+	void *vf54_55[2];
+	void(__thiscall *EnableAI)(cEntity *self, byte enable, int *arg);	/* 0xe0 vf56 */
+} cWalkCharEntityVtbl;
+SD_OFFSET(cWalkCharEntityVtbl, EnableAI, 0xe0);
 
 static inline const cWithLifeEntityVtbl *WithLife_Vtbl(cEntity *e) {
 	return (const cWithLifeEntityVtbl *)e->vftable;

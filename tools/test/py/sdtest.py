@@ -4,7 +4,7 @@
 # and splits at spaces, so difftest.sh spells the file name with chr().
 OUT = 'sdtest.out'
 execfile('sdlib.py')
-import Scrap, SWeap, SVec, SAct, SFX, SLogic, SSound, SInput
+import Scrap, SWeap, SVec, SAct, SFX, SLogic, SSound, SInput, SAI
 
 check('Scrap.GetMoney()', lambda: Scrap.GetMoney())
 check('Scrap.GetMoney(1)', lambda: Scrap.GetMoney(1))
@@ -212,4 +212,23 @@ check('SInput.GetDefinedList bad', lambda: SInput.GetDefinedList('a', 'b', 'c'))
 check('SInput.Rumble bad', lambda: SInput.Rumble(0, 1, 2))
 check('SInput.Bind bad', lambda: SInput.Bind(0, 'a', 'b'))
 check('SInput.SetVirtualKeyboard bad', lambda: SInput.SetVirtualKeyboard(None))
+# SAI: argument errors only (no AI objects in the menu)
+check('SAI.IniAI bad', lambda: SAI.IniAI(1, 'x'))
+check('SAI.BuildGraph bad', lambda: SAI.BuildGraph('x', 1, 2, 3))
+check('SAI.AnalizeMap bad', lambda: SAI.AnalizeMap('x'))
+check('SAI.AnalizeTraffic bad', lambda: SAI.AnalizeTraffic(1))
+check('SAI.GetStateVehicle bad', lambda: SAI.GetStateVehicle(1))
+check('SAI.GetStateChar(Nobody)', lambda: SAI.GetStateChar('Nobody'))
+check('SAI.EnableAIVehicle bad', lambda: SAI.EnableAIVehicle('x', 1))
+check('SAI.EnableAIChar bad', lambda: SAI.EnableAIChar('x'))
+check('SAI.GetNextRacePoint bad', lambda: SAI.GetNextRacePoint((1, 2), 1, 2))
+check('SAI.GetNearestItemLife bad', lambda: SAI.GetNearestItemLife(None))
+check('SAI.GetReposCharPos bad', lambda: SAI.GetReposCharPos((1, 2, 3)))
+check('SAI.AddVehicleRace(Nobody)', lambda: SAI.AddVehicleRace('Nobody'))
+check('SAI.SetRotStaticObj bad', lambda: SAI.SetRotStaticObj('x', 1))
+check('SAI.SetInertia(Nobody)', lambda: SAI.SetInertia('Nobody', 1))
+check('SAI.SetStateVehicle()', lambda: SAI.SetStateVehicle())
+check('clear error', lambda: SVec.GetRotAng((0.0, 0.0, 1.0)))
+check('SAI.SetStateVehicle(10)', lambda: SAI.SetStateVehicle(10))
+check('SAI.GetOD()', lambda: SAI.GetOD())
 finish()
