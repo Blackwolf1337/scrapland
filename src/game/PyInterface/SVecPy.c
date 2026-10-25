@@ -1,5 +1,5 @@
 /*
- * Python module SVec (method table SVec_methods): 3D vector math for the game scripts. Original source:
+ * Python module SVec (method table SVec_methods, rva 0x42fc80): 3D vector math for the game scripts. Original source:
  * PyInterface/SVecPy.cpp.
  *
  * Vectors come in as tuples. Functions parsing "d" compute in double, functions parsing "f" in float (SSE single
@@ -195,3 +195,5 @@ PyObject *SVec_NormAng(PyObject *self, PyObject *args) {
 	}
 	return Py_BuildValue("d", Rad2Deg((double)NormAng((float)Deg2Rad(ang))));
 }
+
+SD_PY_MODULE(SVec, 0x42fc80)

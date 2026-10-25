@@ -7,12 +7,8 @@
 
 #include "scrap/game.h"
 #include "scrap/mathlib.h"
+#include "scrap/pyfunction.h"
 #include "scrap/python.h"
-
-/* a Python callback by name (cPy_Function, 0x14 bytes) */
-typedef struct cPy_Function {
-	byte data[0x14];
-} cPy_Function;
 
 typedef struct cScorerItem cScorerItem;
 typedef struct cScorerItemVtbl {
@@ -64,7 +60,6 @@ void __thiscall ScorerCinema_Set(void *cinema, byte on, float time);
 /* the Python object of a scorer item */
 PyObject *ScorerItem_PyNew(int player, const char *name);
 
-void __thiscall cPy_Function_SetFunc(cPy_Function *f, const char *name);
 void __thiscall cString_Set(void *str, const char *text);
 
 void Scorer_AddChatMsg(const char *text, uint32_t rgb);

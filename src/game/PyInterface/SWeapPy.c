@@ -233,3 +233,5 @@ PyObject *SWeap_NetExec(PyObject *self, PyObject *args) {
 	}
 	return ReturnNone();
 }
+
+SD_PY_MODULE(SWeap, 0x430128)

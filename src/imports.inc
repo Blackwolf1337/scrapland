@@ -11,9 +11,11 @@ SD_IMPORT(CheckFailed, 0x0bcdb0)	/* CHECK macro, include/scrap/global.h */
 SD_IMPORT(Con_Print, 0x0bca50)		/* include/scrap/console.h */
 SD_IMPORT(Con_Errorf, 0x0bc580)
 SD_IMPORT(Con_Debugf, 0x0bc710)
+SD_IMPORT(Con_Printf, 0x0bbef0)
 
 SD_IMPORT(operator_new, 0x1334d0)		/* include/scrap/global.h */
 SD_IMPORT(operator_delete_sized, 0x313634)
+SD_IMPORT(Mem_Alloc, 0x1335a0)
 SD_IMPORT(Str_Copy, 0x1365c0)
 SD_IMPORT(Str_Printf, 0x136610)
 
@@ -103,6 +105,7 @@ SD_IMPORT(SetStateChar9, 0x1975d0)
 /* MSVC 2015 static CRT (cdecl) */
 SD_IMPORT(crt_rand, 0x323c2f)
 SD_IMPORT(crt_fprintf, 0x0bd230)
+SD_IMPORT(crt_report_rangecheckfailure, 0x313d15)
 
 /* engine: Net/ (include/scrap/net.h) */
 SD_IMPORT(Net_IsServer, 0x18b280)
@@ -145,7 +148,6 @@ SD_IMPORT(cScorer_AddModel, 0x16fb50)
 SD_IMPORT(ScorerFade_Start, 0x170cb0)
 SD_IMPORT(ScorerCinema_Set, 0x173ff0)
 SD_IMPORT(ScorerItem_PyNew, 0x1942a0)
-SD_IMPORT(cPy_Function_SetFunc, 0x1929b0)
 SD_IMPORT(cString_Set, 0x134040)
 SD_IMPORT(Scorer_AddChatMsg, 0x164ca0)
 SD_IMPORT(Scorer_SetConsole, 0x1749d0)
@@ -161,10 +163,6 @@ SD_IMPORT(Font_Get, 0x21ad30)
 SD_IMPORT(Font_TextSize, 0x219f30)
 
 /* engine: functions behind the Scrap module (include/scrap/scrap.h) */
-SD_IMPORT(cPy_Function_AddParamF, 0x192390)
-SD_IMPORT(cPy_Function_AddParamI, 0x192300)
-SD_IMPORT(cPy_Function_AddParamS, 0x192430)
-SD_IMPORT(cPy_Function_Execute, 0x192650)
 SD_IMPORT(Scheduler_Add, 0x205900)
 SD_IMPORT(Scheduler_Delete, 0x205a90)
 SD_IMPORT(Elements_Call, 0x202ea0)
@@ -197,7 +195,6 @@ SD_IMPORT(Loading_End, 0x20ade0)
 SD_IMPORT(Video_GetCurrentMode, 0x215cb0)
 SD_IMPORT(Models_List, 0x217f30)
 SD_IMPORT(Con_Warnf, 0x0bc8b0)
-SD_IMPORT(cPy_Function_IsValid, 0x192cf0)
 SD_IMPORT(cString_Printf, 0x134080)
 SD_IMPORT(Pack_PreloadLibrary, 0x1944d0)
 SD_IMPORT(Anm_Preload, 0x2051a0)
@@ -308,6 +305,7 @@ SD_IMPORT(Inferno_NetSetUp, 0x122940)
 /* Python 1.5.2 */
 SD_IMPORT(PyArg_ParseTuple, 0x2f0560)	/* getargs.c */
 SD_IMPORT(Py_BuildValue, 0x2f1b90)	/* modsupport.c */
+SD_IMPORT(Py_InitModule4, 0x2f1bb0)	/* modsupport.c */
 SD_IMPORT(PyErr_Clear, 0x2efd30)	/* errors.c */
 SD_IMPORT(PyTuple_New, 0x2decb0)	/* tupleobject.c */
 SD_IMPORT(PyTuple_SetItem, 0x2ded50)	/* tupleobject.c */
@@ -324,3 +322,17 @@ SD_IMPORT(_PyObject_New, 0x2ebc00)	/* object.c */
 SD_IMPORT(PyPool_Malloc, 0x1935f0)	/* the engine's allocator of the interpreter, include/scrap/python.h */
 SD_IMPORT(PyPool_Realloc, 0x193620)
 SD_IMPORT(PyPool_Free, 0x1935c0)
+SD_IMPORT(PyList_AsTuple, 0x2dcf10)	/* listobject.c */
+SD_IMPORT(PyList_Append, 0x2dcee0)	/* listobject.c */
+SD_IMPORT(PyInt_FromLong, 0x2de630)	/* intobject.c */
+SD_IMPORT(PyString_FromString, 0x2dbb80)	/* stringobject.c */
+SD_IMPORT(PyEval_CallObject, 0x2ee850)	/* ceval.c */
+SD_IMPORT(PyErr_Print, 0x2ebd00)	/* pythonrun.c */
+SD_IMPORT(PyImport_AddModule, 0x2e1ba0)	/* import.c */
+SD_IMPORT(PyModule_GetDict, 0x2e1240)	/* moduleobject.c */
+SD_IMPORT(PyDict_GetItemString, 0x2e0930)	/* dictobject.c */
+SD_IMPORT(PyCallable_Check, 0x2eb1f0)	/* object.c */
+
+/* engine: FileSys/ (include/scrap/filesys.h) */
+SD_IMPORT(cFileMem_ctor, 0x12e050)
+SD_IMPORT(cFile_WriteString, 0x12d250)

@@ -6,6 +6,7 @@
  */
 
 /* src/game/PyInterface/ScrapPy.c */
+SD_HOOK(initScrap, 0x19b180, 28)
 SD_HOOK(Scrap_GetLevelPath, 0x197fc0, 50)
 SD_HOOK(Scrap_GetMoney, 0x199ea0, 53)
 SD_HOOK(Scrap_Achievement, 0x19aa70, 87)
@@ -121,6 +122,7 @@ SD_HOOK(Scrap_TestLine, 0x198bd0, 368)
 SD_HOOK(Scrap_TestSphere, 0x198d40, 319)
 
 /* src/game/PyInterface/SWeapPy.c */
+SD_HOOK(initSWeap, 0x19fe30, 28)
 SD_HOOK(SWeap_GetNWeap, 0x19f230, 53)
 SD_HOOK(SWeap_GetNAmmo, 0x19f270, 53)
 SD_HOOK(SWeap_InitWeap, 0x19f2b0, 93)
@@ -138,6 +140,7 @@ SD_HOOK(SWeap_GetFirstiWeap, 0x19f810, 53)
 SD_HOOK(SWeap_NetExec, 0x19f850, 487)
 
 /* src/game/PyInterface/SVecPy.c */
+SD_HOOK(initSVec, 0x19f210, 28)
 SD_HOOK(SVec_Add, 0x19e810, 123)
 SD_HOOK(SVec_Sub, 0x19e890, 123)
 SD_HOOK(SVec_Mod, 0x19e910, 118)
@@ -152,6 +155,7 @@ SD_HOOK(SVec_GetRotAng, 0x19f0b0, 220)
 SD_HOOK(SVec_NormAng, 0x19f190, 119)
 
 /* src/game/PyInterface/SActPy.c */
+SD_HOOK(initSAct, 0x194d00, 28)
 SD_HOOK(SAct_CreateClass, 0x194790, 139)
 SD_HOOK(SAct_DelClass, 0x194820, 73)
 SD_HOOK(SAct_GetClass, 0x194870, 139)
@@ -163,12 +167,36 @@ SD_HOOK(SAct_SetAct, 0x194b80, 171)
 SD_HOOK(SAct_GetAct, 0x194c30, 198)
 
 /* src/game/PyInterface/SFXPy.c */
+SD_HOOK(initSFX, 0x19b810, 28)
 SD_HOOK(SFX_ShipExplosion, 0x19b1a0, 191)
 SD_HOOK(SFX_CharacterConversor, 0x19b260, 337)
 SD_HOOK(SFX_CharacterConversion, 0x19b3c0, 327)
 SD_HOOK(SFX_BishopSellLife, 0x19b510, 280)
 SD_HOOK(SFX_MoneyTransfer, 0x19b630, 332)
 SD_HOOK(SFX_EmbeddedSet, 0x19b780, 144)
+
+/* src/game/PyInterface/Functions.c */
+SD_HOOK(cPy_Function_ctor, 0x192170, 61)
+SD_HOOK(cPy_Function_dtor, 0x192200, 252)
+SD_HOOK(cPy_NativeFunc_ctor, 0x1921b0, 67)
+SD_HOOK(cPy_Function_AddParamI, 0x192300, 131)
+SD_HOOK(cPy_Function_AddParamF, 0x192390, 152)
+SD_HOOK(cPy_Function_AddParamS, 0x192430, 137)
+SD_HOOK(ParamFile_Get, 0x1924c0, 160)
+SD_HOOK(cPy_Function_Clear, 0x192590, 80)
+SD_HOOK(cPy_Function_ClearPython, 0x1925e0, 62)
+SD_HOOK(cPy_Function_ReleasePyParams, 0x192620, 45)
+SD_HOOK(cPy_Function_Execute, 0x192650, 325)
+SD_HOOK(cPy_Function_PyParams, 0x1927a0, 62)
+SD_HOOK(cPy_Function_ClearAll, 0x1927e0, 216)
+SD_HOOK(cPy_Function_ReleaseParams, 0x1928c0, 90)
+SD_HOOK(cPy_Function_SetNative, 0x192920, 134)
+SD_HOOK(cPy_Function_SetFunc, 0x1929b0, 443)
+SD_HOOK(cPy_Function_SetPython, 0x192b70, 190)
+SD_HOOK(cPy_Function_NativeParams, 0x192c30, 51)
+SD_HOOK(cPy_NativeFunc_Insert, 0x192c70, 119)
+SD_HOOK(cPy_Function_IsValid, 0x192cf0, 13)
+SD_HOOK(Py_IsReady, 0x194780, 6)
 
 /* src/game/PyInterface/PyEntity.c */
 SD_HOOK(PyEntity_New, 0x193100, 166)
@@ -186,6 +214,7 @@ SD_HOOK(cPyEntity_DrawWeap, 0x193410, 268)
 SD_HOOK(cPyEntity_IsType, 0x193520, 119)
 
 /* src/game/PyInterface/SLogic.c */
+SD_HOOK(initSLogic, 0x19c8d0, 28)
 SD_HOOK(SLogic_SetCharState, 0x19c0c0, 265)
 SD_HOOK(SLogic_SendSentinelToWatch, 0x19c1d0, 80)
 SD_HOOK(SLogic_GearAttack, 0x19c220, 116)
@@ -200,6 +229,7 @@ SD_HOOK(SLogic_ChangeBatonState, 0x19c860, 78)
 SD_HOOK(SLogic_UpdateTauntEndTime, 0x19c8b0, 29)
 
 /* src/game/PyInterface/SSoundPy.c */
+SD_HOOK(initSSound, 0x19e7f0, 28)
 SD_HOOK(SSound_SetVoiceVolume, 0x19e060, 87)
 SD_HOOK(SSound_SetVoiceString, 0x19e0c0, 75)
 SD_HOOK(SSound_DeleteAllSounds, 0x19e110, 51)
@@ -219,6 +249,7 @@ SD_HOOK(SSound_StopVoice, 0x19e730, 66)
 SD_HOOK(SSound_VoiceRemain, 0x19e780, 107)
 
 /* src/game/PyInterface/SInputPy.c */
+SD_HOOK(initSInput, 0x19c0a0, 28)
 SD_HOOK(SInput_SetActionSet, 0x19b830, 135)
 SD_HOOK(SInput_GetActionSet, 0x19b8c0, 75)
 SD_HOOK(SInput_AssingEntry, 0x19b920, 90)
@@ -241,6 +272,7 @@ SD_HOOK(SInput_ResetToSplit, 0x19bff0, 40)
 SD_HOOK(SInput_CheckPadButton, 0x19c020, 113)
 
 /* src/game/PyInterface/SAIPy.c */
+SD_HOOK(initSAI, 0x197dd0, 28)
 SD_HOOK(SAI_IniAI, 0x194d20, 870)
 SD_HOOK(SAI_BuildGraph, 0x195090, 116)
 SD_HOOK(SAI_AnalizeMap, 0x195110, 235)
@@ -265,6 +297,7 @@ SD_HOOK(SAI_SetInertia, 0x195e40, 149)
 SD_HOOK(SAI_GetOD, 0x195ee0, 6)
 
 /* src/game/PyInterface/SNetPy.c */
+SD_HOOK(initSNet, 0x19d0f0, 28)
 SD_HOOK(SNet_ModifyUsrData, 0x19c8f0, 76)
 SD_HOOK(SNet_ServerChangeLevel, 0x19c940, 91)
 SD_HOOK(SNet_AddResource, 0x19c9a0, 84)
@@ -292,6 +325,7 @@ SD_HOOK(SNet_PingInetSvrs, 0x19d080, 48)
 SD_HOOK(SNet_GetPing, 0x19d0b0, 60)
 
 /* src/game/PyInterface/SScorerPy.c */
+SD_HOOK(initSScorer, 0x19e040, 28)
 SD_HOOK(SScorer_AddChatMsg, 0x19d110, 90)
 SD_HOOK(SScorer_SetConsole, 0x19d170, 68)
 SD_HOOK(SScorer_SetSpeechText, 0x19d1c0, 102)

@@ -1589,3 +1589,5 @@ PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
 	}
 	return ReturnNone();
 }
+
+SD_PY_MODULE(Scrap, 0x42c610)

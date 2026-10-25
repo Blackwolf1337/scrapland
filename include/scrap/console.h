@@ -14,6 +14,10 @@
 void Con_Print(int color, const char *text, int flag);
 /* printf in the error color (rva 0xbc580) */
 void Con_Errorf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+/* printf in the warning color (rva 0xbc8b0) */
+void Con_Warnf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+/* printf into the console lines, while the debug level is not 0 (rva 0xbbef0) */
+void Con_Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 /* printf in the debug color, only shown above debug level 2 (rva 0xbc710) */
 void Con_Debugf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 

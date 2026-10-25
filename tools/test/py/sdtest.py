@@ -353,6 +353,34 @@ check('Scrap.GetSaveVar(SDSet)', lambda: Scrap.GetSaveVar('SDSet'))
 check('Scrap.SetTimeSpeed(1.0)', lambda: Scrap.SetTimeSpeed(1.0))
 check('Scrap.GetTimeSpeed() set', lambda: Scrap.GetTimeSpeed())
 check('Scrap.SetCallFunc(SDNoFunc)', lambda: Scrap.SetCallFunc('SDNoFunc'))
+# the call builder (cPy_Function): Python functions of __main__, the registry of C functions by "!name"
+sdcalls = []
+def sdcall(*args):
+	sdcalls.append(args)
+	return 7
+def sdraise(*args):
+	raise ValueError, 'sdraise'
+sdnotcallable = 1
+check('Scrap.SetCallFunc(__main__.sdcall)', lambda: Scrap.SetCallFunc('__main__.sdcall'))
+check('Scrap.AddParami(1) call', lambda: Scrap.AddParami(1))
+check('Scrap.AddParamf(2.5) call', lambda: Scrap.AddParamf(2.5))
+check('Scrap.AddParams(x) call', lambda: Scrap.AddParams('x'))
+check('Scrap.AddParamf(0.1) call', lambda: Scrap.AddParamf(0.1))
+check('Scrap.Execute()', lambda: Scrap.Execute())
+check('sdcall args', lambda: sdcalls[-1])
+check('Scrap.Execute() again', lambda: Scrap.Execute())
+check('sdcall args again', lambda: sdcalls[-1])
+check('sdcall count', lambda: len(sdcalls))
+check('Scrap.SetCallFunc(__main__.sdraise)', lambda: Scrap.SetCallFunc('__main__.sdraise'))
+check('Scrap.Execute() raise', lambda: Scrap.Execute())
+check('Scrap.SetCallFunc(Scrap.GetTimeSpeed)', lambda: Scrap.SetCallFunc('Scrap.GetTimeSpeed'))
+check('Scrap.Execute() builtin', lambda: Scrap.Execute())
+for f in ('SDNoDot', 'SDNoModule.f', '__main__.SDNoFunc', '__main__.sdnotcallable', '!SDNoNative', '!AAA', '!zzz',
+		'!PrintMemBlockData', '!TakeLife', '', '.x', 'x.', '__main__.sdcall'):
+	check('Scrap.SetCallFunc(%s)' % f, lambda f=f: Scrap.SetCallFunc(f))
+check('Scrap.SetCallFunc() clear', lambda: Scrap.SetCallFunc(''))
+check('Scrap.Execute() cleared', lambda: Scrap.Execute())
+check('sdcall count after', lambda: len(sdcalls))
 check('Scrap.Print(x)', lambda: Scrap.Print('sdtest print\n'))
 check('Scrap.Verbose(x)', lambda: Scrap.Verbose('sdtest verbose\n'))
 check('Scrap.ShowGVars(SDNo)', lambda: Scrap.ShowGVars('SDNo'))

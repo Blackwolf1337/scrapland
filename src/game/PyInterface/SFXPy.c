@@ -115,3 +115,5 @@ PyObject *SFX_EmbeddedSet(PyObject *self, PyObject *args) {
 	vEntity->vftable->SetEmbeddedFX(vEntity, fxType);
 	return ReturnNone();
 }
+
+SD_PY_MODULE(SFX, 0x42d060)

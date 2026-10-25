@@ -538,3 +538,5 @@ PyObject *SScorer_PreloadTexture(PyObject *self, PyObject *args) {
 	Scorer_PreloadTexture(name, flag > 0);
 	return ReturnNone();
 }
+
+SD_PY_MODULE(SScorer, 0x42ec68)

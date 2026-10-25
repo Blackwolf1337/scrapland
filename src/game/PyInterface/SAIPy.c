@@ -395,3 +395,5 @@ PyObject *SAI_GetOD(PyObject *self, PyObject *args) {
 	(void)args;
 	return GAME_DATA(PyObject *, 0x46797c);
 }
+
+SD_PY_MODULE(SAI, 0x42a488)

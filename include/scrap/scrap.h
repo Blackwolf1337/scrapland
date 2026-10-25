@@ -17,12 +17,6 @@
 #define g_PackName ((void *)Game_Ptr(0x44ab6c))	/* string object, the open pack */
 #define g_IsSteam GAME_DATA(byte, 0x467b9c)
 
-void __thiscall cPy_Function_AddParamF(cPy_Function *f, float v);
-void __thiscall cPy_Function_AddParamI(cPy_Function *f, int v);
-void __thiscall cPy_Function_AddParamS(cPy_Function *f, const char *v);
-void __thiscall cPy_Function_Execute(cPy_Function *f, int arg);
-byte __thiscall cPy_Function_IsValid(cPy_Function *f);
-
 void __thiscall Scheduler_Add(void *scheduler, float time, PyObject *func, PyObject *params, const char *name);
 void __thiscall Scheduler_Delete(void *scheduler, const char *name);
 void __thiscall Elements_Call(void *elements, const char *name);
@@ -180,8 +174,5 @@ void Loading_Init(void);
 void Loading_End(void);
 int Video_GetCurrentMode(void);
 void Models_List(void);
-
-/* console printf of warnings (rva 0xbc8b0) */
-void Con_Warnf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 #endif

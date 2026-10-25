@@ -221,3 +221,5 @@ PyObject *SLogic_UpdateTauntEndTime(PyObject *self, PyObject *args) {
 	Taunts_UpdateEndTime(g_pWorld->taunts);
 	return ReturnNone();
 }
+
+SD_PY_MODULE(SLogic, 0x42dd20)

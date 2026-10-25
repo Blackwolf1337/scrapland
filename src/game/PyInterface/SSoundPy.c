@@ -258,3 +258,5 @@ PyObject *SSound_VoiceRemain(PyObject *self, PyObject *args) {
 	}
 	return Py_BuildValue("d", result);
 }
+
+SD_PY_MODULE(SSound, 0x42f558)

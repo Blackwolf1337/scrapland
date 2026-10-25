@@ -2191,7 +2191,7 @@ rva	size	source	callconv	name	signature
 000bbba0	465	DEFAULT	unknown	FUN_004bbba0	
 000bbd80	259	DEFAULT	unknown	FUN_004bbd80	
 000bbe90	96	DEFAULT	unknown	FUN_004bbe90	
-000bbef0	377	DEFAULT	unknown	FUN_004bbef0	
+000bbef0	377	USER_DEFINED	__cdecl	Con_Printf	void __cdecl(char * fmt, ...)
 000bc070	51	DEFAULT	unknown	FUN_004bc070	
 000bc0b0	392	DEFAULT	unknown	FUN_004bc0b0	
 000bc240	408	DEFAULT	unknown	FUN_004bc240	
@@ -3365,7 +3365,7 @@ rva	size	source	callconv	name	signature
 0012d0c0	130	DEFAULT	unknown	FUN_0052d0c0	
 0012d150	129	DEFAULT	unknown	FUN_0052d150	
 0012d1e0	106	DEFAULT	unknown	FUN_0052d1e0	
-0012d250	64	DEFAULT	unknown	FUN_0052d250	
+0012d250	64	USER_DEFINED	__thiscall	cFile::WriteString	int __thiscall(char * s)
 0012d290	33	DEFAULT	unknown	FUN_0052d290	
 0012d2c0	59	ANALYSIS	__thiscall	cFile::vf08	undefined __thiscall(void)
 0012d300	76	ANALYSIS	__thiscall	cFile::vf02	undefined __thiscall(void)
@@ -3397,7 +3397,7 @@ rva	size	source	callconv	name	signature
 0012de70	18	DEFAULT	unknown	FUN_0052de70	
 0012de90	284	DEFAULT	unknown	FUN_0052de90	
 0012dfb0	150	DEFAULT	unknown	FUN_0052dfb0	
-0012e050	67	DEFAULT	unknown	FUN_0052e050	
+0012e050	67	USER_DEFINED	__thiscall	cFileMem::cFileMem	void * __thiscall(void * buffer, int maxSize, byte ownsBuffer)
 0012e0a0	88	DEFAULT	unknown	FUN_0052e0a0	
 0012e100	116	ANALYSIS	__thiscall	cFileMem::vf08	undefined __thiscall(void)
 0012e180	13	ANALYSIS	__thiscall	cFileMem::vf02	undefined __thiscall(void)
@@ -3517,7 +3517,7 @@ rva	size	source	callconv	name	signature
 001334e0	68	USER_DEFINED	__cdecl	operator_delete	void __cdecl(void * p)
 00133530	27	DEFAULT	unknown	FUN_00533530	
 00133550	70	DEFAULT	unknown	FUN_00533550	
-001335a0	171	DEFAULT	unknown	FUN_005335a0	
+001335a0	171	USER_DEFINED	__cdecl	Mem_Alloc	void * __cdecl(uint size)
 00133650	27	DEFAULT	unknown	FUN_00533650	
 00133670	23	DEFAULT	unknown	FUN_00533670	
 00133690	233	DEFAULT	unknown	FUN_00533690	
@@ -4948,26 +4948,26 @@ rva	size	source	callconv	name	signature
 00191ed0	27	DEFAULT	unknown	FUN_00591ed0	
 00191ef0	599	DEFAULT	unknown	FUN_00591ef0	
 00192150	21	DEFAULT	unknown	FUN_00592150	
-00192170	61	DEFAULT	unknown	FUN_00592170	
-001921b0	67	DEFAULT	unknown	FUN_005921b0	
-00192200	252	DEFAULT	unknown	FUN_00592200	
-00192300	131	USER_DEFINED	unknown	cPy_Function::AddParamI	undefined(void)
-00192390	152	USER_DEFINED	unknown	cPy_Function::AddParamF	undefined(void)
-00192430	137	USER_DEFINED	unknown	cPy_Function::AddParamS	undefined(void)
-001924c0	160	DEFAULT	unknown	FUN_005924c0	
-00192590	80	DEFAULT	unknown	FUN_00592590	
-001925e0	62	DEFAULT	unknown	FUN_005925e0	
-00192620	45	DEFAULT	unknown	FUN_00592620	
-00192650	325	USER_DEFINED	unknown	cPy_Function::Execute	undefined(void)
-001927a0	62	DEFAULT	unknown	FUN_005927a0	
-001927e0	216	DEFAULT	unknown	FUN_005927e0	
-001928c0	90	DEFAULT	unknown	FUN_005928c0	
-00192920	134	DEFAULT	unknown	FUN_00592920	
-001929b0	443	USER_DEFINED	unknown	cPy_Function::SetFunc	undefined(void)
-00192b70	190	DEFAULT	unknown	FUN_00592b70	
-00192c30	51	DEFAULT	unknown	FUN_00592c30	
-00192c70	119	DEFAULT	unknown	FUN_00592c70	
-00192cf0	13	USER_DEFINED	unknown	cPy_Function::IsValid	undefined(void)
+00192170	61	USER_DEFINED	__thiscall	cPy_Function::cPy_Function	void * __thiscall(void)
+001921b0	67	USER_DEFINED	__thiscall	cPy_NativeFunc::cPy_NativeFunc	void * __thiscall(char * name, void * func)
+00192200	252	USER_DEFINED	__thiscall	cPy_Function::~cPy_Function	void __thiscall(void)
+00192300	131	USER_DEFINED	__thiscall	cPy_Function::AddParamI	void __thiscall(int v)
+00192390	152	USER_DEFINED	__thiscall	cPy_Function::AddParamF	void __thiscall(float v)
+00192430	137	USER_DEFINED	__thiscall	cPy_Function::AddParamS	void __thiscall(char * v)
+001924c0	160	USER_DEFINED	__cdecl	ParamFile_Get	void * __cdecl(void)
+00192590	80	USER_DEFINED	__thiscall	cPy_Function::Clear	void __thiscall(void)
+001925e0	62	USER_DEFINED	__thiscall	cPy_Function::ClearPython	void __thiscall(void)
+00192620	45	USER_DEFINED	__thiscall	cPy_Function::ReleasePyParams	void __thiscall(void)
+00192650	325	USER_DEFINED	__thiscall	cPy_Function::Execute	int __thiscall(byte clear)
+001927a0	62	USER_DEFINED	__thiscall	cPy_Function::PyParams	void __thiscall(void)
+001927e0	216	USER_DEFINED	__cdecl	cPy_Function::ClearAll	void __cdecl(void)
+001928c0	90	USER_DEFINED	__thiscall	cPy_Function::ReleaseParams	void __thiscall(void)
+00192920	134	USER_DEFINED	__thiscall	cPy_Function::SetNative	byte __thiscall(void * func)
+001929b0	443	USER_DEFINED	__thiscall	cPy_Function::SetFunc	byte __thiscall(char * name)
+00192b70	190	USER_DEFINED	__thiscall	cPy_Function::SetPython	byte __thiscall(char * module, char * func)
+00192c30	51	USER_DEFINED	__thiscall	cPy_Function::NativeParams	byte __thiscall(void)
+00192c70	119	USER_DEFINED	__thiscall	cPy_NativeFunc::Insert	void __thiscall(void * node)
+00192cf0	13	USER_DEFINED	__thiscall	cPy_Function::IsValid	byte __thiscall(void)
 00192d00	347	USER_DEFINED	__cdecl	PyEntity_GetAttr	PyObject * __cdecl(PyObject * self, char * name)
 00192e60	391	USER_DEFINED	__cdecl	PyEntity_SetAttr	int __cdecl(PyObject * self, char * name, PyObject * v)
 00192ff0	135	USER_DEFINED	__cdecl	PyEntity_Dealloc	void __cdecl(PyObject * self)
@@ -5008,7 +5008,7 @@ rva	size	source	callconv	name	signature
 00194330	31	DEFAULT	unknown	FUN_00594330	
 00194350	371	DEFAULT	unknown	FUN_00594350	
 001944d0	678	USER_DEFINED	unknown	Pack_PreloadLibrary	undefined(void)
-00194780	6	DEFAULT	unknown	FUN_00594780	
+00194780	6	USER_DEFINED	__cdecl	Py_IsReady	byte __cdecl(void)
 00194790	139	ANALYSIS	__cdecl	SAct_CreateClass	PyObject * __cdecl(PyObject * self, PyObject * args)
 00194820	73	ANALYSIS	__cdecl	SAct_DelClass	PyObject * __cdecl(PyObject * self, PyObject * args)
 00194870	139	ANALYSIS	__cdecl	SAct_GetClass	PyObject * __cdecl(PyObject * self, PyObject * args)
@@ -5018,7 +5018,7 @@ rva	size	source	callconv	name	signature
 00194b00	127	ANALYSIS	__cdecl	SAct_GetAction	PyObject * __cdecl(PyObject * self, PyObject * args)
 00194b80	171	ANALYSIS	__cdecl	SAct_SetAct	PyObject * __cdecl(PyObject * self, PyObject * args)
 00194c30	198	ANALYSIS	__cdecl	SAct_GetAct	PyObject * __cdecl(PyObject * self, PyObject * args)
-00194d00	28	ANALYSIS	unknown	initSAct	undefined(void)
+00194d00	28	ANALYSIS	__cdecl	initSAct	void __cdecl(void)
 00194d20	870	ANALYSIS	__cdecl	SAI_IniAI	PyObject * __cdecl(PyObject * self, PyObject * args)
 00195090	116	ANALYSIS	__cdecl	SAI_BuildGraph	PyObject * __cdecl(PyObject * self, PyObject * args)
 00195110	235	ANALYSIS	__cdecl	SAI_AnalizeMap	PyObject * __cdecl(PyObject * self, PyObject * args)
@@ -5066,7 +5066,7 @@ rva	size	source	callconv	name	signature
 00197a50	288	USER_DEFINED	unknown	SetStateChar0	undefined(void)
 00197b70	283	USER_DEFINED	unknown	SetStateVehicle4	undefined(void)
 00197c90	306	USER_DEFINED	unknown	SetStateVehicle9	undefined(void)
-00197dd0	28	ANALYSIS	unknown	initSAI	undefined(void)
+00197dd0	28	ANALYSIS	__cdecl	initSAI	void __cdecl(void)
 00197df0	95	ANALYSIS	__cdecl	Scrap_CreateEntityList	PyObject * __cdecl(PyObject * self, PyObject * args)
 00197e50	75	ANALYSIS	__cdecl	Scrap_SetCam	PyObject * __cdecl(PyObject * self, PyObject * args)
 00197ea0	66	ANALYSIS	__cdecl	Scrap_GetCam	PyObject * __cdecl(PyObject * self, PyObject * args)
@@ -5180,14 +5180,14 @@ rva	size	source	callconv	name	signature
 0019af80	150	ANALYSIS	__cdecl	Scrap_CreateEntity	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019b020	122	ANALYSIS	__cdecl	Scrap_EntityListSet	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019b0a0	219	ANALYSIS	__cdecl	Scrap_EntityListGet	PyObject * __cdecl(PyObject * self, PyObject * args)
-0019b180	28	ANALYSIS	unknown	initScrap	undefined(void)
+0019b180	28	ANALYSIS	__cdecl	initScrap	void __cdecl(void)
 0019b1a0	191	ANALYSIS	__cdecl	SFX_ShipExplosion	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019b260	337	ANALYSIS	__cdecl	SFX_CharacterConversor	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019b3c0	327	ANALYSIS	__cdecl	SFX_CharacterConversion	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019b510	280	ANALYSIS	__cdecl	SFX_BishopSellLife	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019b630	332	ANALYSIS	__cdecl	SFX_MoneyTransfer	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019b780	144	ANALYSIS	__cdecl	SFX_EmbeddedSet	PyObject * __cdecl(PyObject * self, PyObject * args)
-0019b810	28	ANALYSIS	unknown	initSFX	undefined(void)
+0019b810	28	ANALYSIS	__cdecl	initSFX	void __cdecl(void)
 0019b830	135	ANALYSIS	__cdecl	SInput_SetActionSet	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019b8c0	75	ANALYSIS	__cdecl	SInput_GetActionSet	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019b920	90	ANALYSIS	__cdecl	SInput_AssingEntry	PyObject * __cdecl(PyObject * self, PyObject * args)
@@ -5208,7 +5208,7 @@ rva	size	source	callconv	name	signature
 0019bf50	143	ANALYSIS	__cdecl	SInput_Rumble	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019bff0	40	ANALYSIS	__cdecl	SInput_ResetToSplit	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019c020	113	ANALYSIS	__cdecl	SInput_CheckPadButton	PyObject * __cdecl(PyObject * self, PyObject * args)
-0019c0a0	28	ANALYSIS	unknown	initSInput	undefined(void)
+0019c0a0	28	ANALYSIS	__cdecl	initSInput	void __cdecl(void)
 0019c0c0	265	ANALYSIS	__cdecl	SLogic_SetCharState	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019c1d0	80	ANALYSIS	__cdecl	SLogic_SendSentinelToWatch	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019c220	116	ANALYSIS	__cdecl	SLogic_GearAttack	PyObject * __cdecl(PyObject * self, PyObject * args)
@@ -5221,7 +5221,7 @@ rva	size	source	callconv	name	signature
 0019c810	69	ANALYSIS	__cdecl	SLogic_ChangeZoneState	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019c860	78	ANALYSIS	__cdecl	SLogic_ChangeBatonState	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019c8b0	29	ANALYSIS	__cdecl	SLogic_UpdateTauntEndTime	PyObject * __cdecl(PyObject * self, PyObject * args)
-0019c8d0	28	ANALYSIS	unknown	initSLogic	undefined(void)
+0019c8d0	28	ANALYSIS	__cdecl	initSLogic	void __cdecl(void)
 0019c8f0	76	ANALYSIS	__cdecl	SNet_ModifyUsrData	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019c940	91	ANALYSIS	__cdecl	SNet_ServerChangeLevel	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019c9a0	84	ANALYSIS	__cdecl	SNet_AddResource	PyObject * __cdecl(PyObject * self, PyObject * args)
@@ -5247,7 +5247,7 @@ rva	size	source	callconv	name	signature
 0019d050	48	ANALYSIS	__cdecl	SNet_IsMaster	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019d080	48	ANALYSIS	__cdecl	SNet_PingInetSvrs	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019d0b0	60	ANALYSIS	__cdecl	SNet_GetPing	PyObject * __cdecl(PyObject * self, PyObject * args)
-0019d0f0	28	ANALYSIS	unknown	initSNet	undefined(void)
+0019d0f0	28	ANALYSIS	__cdecl	initSNet	void __cdecl(void)
 0019d110	90	ANALYSIS	__cdecl	SScorer_AddChatMsg	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019d170	68	ANALYSIS	__cdecl	SScorer_SetConsole	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019d1c0	102	ANALYSIS	__cdecl	SScorer_SetSpeechText	PyObject * __cdecl(PyObject * self, PyObject * args)
@@ -5281,7 +5281,7 @@ rva	size	source	callconv	name	signature
 0019dea0	215	ANALYSIS	__cdecl	SScorer_AddModel	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019df80	84	ANALYSIS	__cdecl	SScorer_SetMPFunc	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019dfe0	84	ANALYSIS	__cdecl	SScorer_PreloadTexture	PyObject * __cdecl(PyObject * self, PyObject * args)
-0019e040	28	ANALYSIS	unknown	initSScorer	undefined(void)
+0019e040	28	ANALYSIS	__cdecl	initSScorer	void __cdecl(void)
 0019e060	87	ANALYSIS	__cdecl	SSound_SetVoiceVolume	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019e0c0	75	ANALYSIS	__cdecl	SSound_SetVoiceString	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019e110	51	ANALYSIS	__cdecl	SSound_DeleteAllSounds	PyObject * __cdecl(PyObject * self, PyObject * args)
@@ -5299,7 +5299,7 @@ rva	size	source	callconv	name	signature
 0019e6c0	99	ANALYSIS	__cdecl	SSound_PlayVoice	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019e730	66	ANALYSIS	__cdecl	SSound_StopVoice	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019e780	107	ANALYSIS	__cdecl	SSound_VoiceRemain	PyObject * __cdecl(PyObject * self, PyObject * args)
-0019e7f0	28	ANALYSIS	unknown	initSSound	undefined(void)
+0019e7f0	28	ANALYSIS	__cdecl	initSSound	void __cdecl(void)
 0019e810	123	ANALYSIS	__cdecl	SVec_Add	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019e890	123	ANALYSIS	__cdecl	SVec_Sub	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019e910	118	ANALYSIS	__cdecl	SVec_Mod	PyObject * __cdecl(PyObject * self, PyObject * args)
@@ -5312,7 +5312,7 @@ rva	size	source	callconv	name	signature
 0019ee70	568	ANALYSIS	__cdecl	SVec_GetAngle	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019f0b0	220	ANALYSIS	__cdecl	SVec_GetRotAng	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019f190	119	ANALYSIS	__cdecl	SVec_NormAng	PyObject * __cdecl(PyObject * self, PyObject * args)
-0019f210	28	ANALYSIS	unknown	initSVec	undefined(void)
+0019f210	28	ANALYSIS	__cdecl	initSVec	void __cdecl(void)
 0019f230	53	ANALYSIS	__cdecl	SWeap_GetNWeap	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019f270	53	ANALYSIS	__cdecl	SWeap_GetNAmmo	PyObject * __cdecl(PyObject * self, PyObject * args)
 0019f2b0	93	ANALYSIS	__cdecl	SWeap_InitWeap	PyObject * __cdecl(PyObject * self, PyObject * args)
@@ -5334,7 +5334,7 @@ rva	size	source	callconv	name	signature
 0019fb80	219	DEFAULT	unknown	FUN_0059fb80	
 0019fc60	223	USER_DEFINED	__thiscall	Table<cAmmoInfo>::Init	void __thiscall(int num)
 0019fd40	226	USER_DEFINED	__thiscall	Table<cWeapInfo>::Init	void __thiscall(int num)
-0019fe30	28	ANALYSIS	unknown	initSWeap	undefined(void)
+0019fe30	28	ANALYSIS	__cdecl	initSWeap	void __cdecl(void)
 0019fe50	108	DEFAULT	unknown	FUN_0059fe50	
 0019fec0	205	DEFAULT	unknown	FUN_0059fec0	
 0019ff90	54	DEFAULT	unknown	FUN_0059ff90	
@@ -8847,7 +8847,7 @@ rva	size	source	callconv	name	signature
 002dae60	43	DEFAULT	unknown	FUN_006dae60	
 002dae90	211	DEFAULT	unknown	FUN_006dae90	
 002daf70	2927	ANALYSIS	unknown	PyString_Format	undefined(void)
-002dbb80	186	DEFAULT	unknown	FUN_006dbb80	
+002dbb80	186	USER_DEFINED	__cdecl	PyString_FromString	PyObject * __cdecl(char * str)
 002dbc40	187	DEFAULT	unknown	FUN_006dbc40	
 002dbd00	45	DEFAULT	unknown	FUN_006dbd00	
 002dbd30	148	ANALYSIS	unknown	PyString_InternInPlace	undefined(void)
@@ -8880,8 +8880,8 @@ rva	size	source	callconv	name	signature
 002dcb70	97	DEFAULT	unknown	FUN_006dcb70	
 002dcbe0	724	DEFAULT	unknown	FUN_006dcbe0	
 002dcec0	29	DEFAULT	unknown	FUN_006dcec0	
-002dcee0	42	DEFAULT	unknown	FUN_006dcee0	
-002dcf10	110	DEFAULT	unknown	FUN_006dcf10	
+002dcee0	42	USER_DEFINED	__cdecl	PyList_Append	int __cdecl(PyObject * op, PyObject * newitem)
+002dcf10	110	USER_DEFINED	__cdecl	PyList_AsTuple	PyObject * __cdecl(PyObject * v)
 002dcf80	90	USER_DEFINED	__cdecl	PyList_GetItem	PyObject * __cdecl(PyObject * list, int i)
 002dcfe0	33	DEFAULT	unknown	FUN_006dcfe0	
 002dd010	34	DEFAULT	unknown	FUN_006dd010	
@@ -8925,7 +8925,7 @@ rva	size	source	callconv	name	signature
 002de340	88	DEFAULT	unknown	FUN_006de340	
 002de3a0	118	ANALYSIS	unknown	PyInt_AsLong	undefined(void)
 002de420	513	ANALYSIS	unknown	PyInt_Fini	undefined(void)
-002de630	111	DEFAULT	unknown	FUN_006de630	
+002de630	111	USER_DEFINED	__cdecl	PyInt_FromLong	PyObject * __cdecl(long ival)
 002de6a0	6	DEFAULT	unknown	FUN_006de6a0	
 002de6b0	75	DEFAULT	unknown	FUN_006de6b0	
 002de700	89	DEFAULT	unknown	FUN_006de700	
@@ -8994,7 +8994,7 @@ rva	size	source	callconv	name	signature
 002e07d0	174	DEFAULT	unknown	FUN_006e07d0	
 002e0880	65	DEFAULT	unknown	FUN_006e0880	
 002e08d0	91	DEFAULT	unknown	FUN_006e08d0	
-002e0930	62	DEFAULT	unknown	FUN_006e0930	
+002e0930	62	USER_DEFINED	__cdecl	PyDict_GetItemString	PyObject * __cdecl(PyObject * v, char * key)
 002e0970	41	DEFAULT	unknown	FUN_006e0970	
 002e09a0	41	DEFAULT	unknown	FUN_006e09a0	
 002e09d0	87	ANALYSIS	unknown	PyDict_New	undefined(void)
@@ -9011,7 +9011,7 @@ rva	size	source	callconv	name	signature
 002e1000	273	DEFAULT	unknown	FUN_006e1000	
 002e1120	122	DEFAULT	unknown	FUN_006e1120	
 002e11a0	156	ANALYSIS	unknown	module_setattr	undefined(void)
-002e1240	29	DEFAULT	unknown	FUN_006e1240	
+002e1240	29	USER_DEFINED	__cdecl	PyModule_GetDict	PyObject * __cdecl(PyObject * m)
 002e1260	85	ANALYSIS	unknown	PyModule_GetFilename	undefined(void)
 002e12c0	85	ANALYSIS	unknown	PyModule_GetName	undefined(void)
 002e1320	167	DEFAULT	unknown	FUN_006e1320	
@@ -9031,7 +9031,7 @@ rva	size	source	callconv	name	signature
 002e1b10	56	ANALYSIS	__cdecl	imp_load_package	PyObject * __cdecl(PyObject * self, PyObject * args)
 002e1b50	47	ANALYSIS	__cdecl	imp_new_module	PyObject * __cdecl(PyObject * self, PyObject * args)
 002e1b80	29	DEFAULT	unknown	FUN_006e1b80	
-002e1ba0	137	DEFAULT	unknown	FUN_006e1ba0	
+002e1ba0	137	USER_DEFINED	__cdecl	PyImport_AddModule	PyObject * __cdecl(char * name)
 002e1c30	41	DEFAULT	unknown	FUN_006e1c30	
 002e1c60	1138	ANALYSIS	unknown	PyImport_Cleanup	undefined(void)
 002e20e0	21	DEFAULT	unknown	FUN_006e20e0	
@@ -9189,7 +9189,7 @@ rva	size	source	callconv	name	signature
 002ea8c0	1995	DEFAULT	unknown	FUN_006ea8c0	
 002eb090	117	DEFAULT	unknown	FUN_006eb090	
 002eb110	201	DEFAULT	unknown	FUN_006eb110	
-002eb1f0	107	DEFAULT	unknown	FUN_006eb1f0	
+002eb1f0	107	USER_DEFINED	__cdecl	PyCallable_Check	int __cdecl(PyObject * x)
 002eb270	9	DEFAULT	unknown	FUN_006eb270	
 002eb280	9	DEFAULT	unknown	FUN_006eb280	
 002eb290	45	ANALYSIS	unknown	PyNumber_Coerce	undefined(void)
@@ -9216,7 +9216,7 @@ rva	size	source	callconv	name	signature
 002ebc30	57	DEFAULT	unknown	FUN_006ebc30	
 002ebc70	97	DEFAULT	unknown	FUN_006ebc70	
 002ebce0	30	DEFAULT	unknown	FUN_006ebce0	
-002ebd00	9	DEFAULT	unknown	FUN_006ebd00	
+002ebd00	9	USER_DEFINED	__cdecl	PyErr_Print	void __cdecl(void)
 002ebd10	1391	ANALYSIS	unknown	PyErr_PrintEx	undefined(void)
 002ec280	62	DEFAULT	unknown	FUN_006ec280	
 002ec2c0	55	DEFAULT	unknown	FUN_006ec2c0	
@@ -9277,7 +9277,7 @@ rva	size	source	callconv	name	signature
 002ee5b0	200	ANALYSIS	unknown	PyNumber_Xor	undefined(void)
 002ee680	170	DEFAULT	unknown	FUN_006ee680	
 002ee730	282	DEFAULT	unknown	FUN_006ee730	
-002ee850	78	DEFAULT	unknown	FUN_006ee850	
+002ee850	78	USER_DEFINED	__cdecl	PyEval_CallObject	PyObject * __cdecl(PyObject * func, PyObject * arg)
 002ee8a0	88	DEFAULT	unknown	FUN_006ee8a0	
 002ee900	165	DEFAULT	unknown	FUN_006ee900	
 002ee9b0	160	DEFAULT	unknown	FUN_006ee9b0	
@@ -9337,7 +9337,7 @@ rva	size	source	callconv	name	signature
 002f1ac0	68	DEFAULT	unknown	FUN_006f1ac0	
 002f1b10	128	DEFAULT	unknown	FUN_006f1b10	
 002f1b90	20	USER_DEFINED	__cdecl	Py_BuildValue	PyObject * __cdecl(char * format, ...)
-002f1bb0	308	ANALYSIS	unknown	Py_InitModule4	undefined(void)
+002f1bb0	308	ANALYSIS	__cdecl	Py_InitModule4	PyObject * __cdecl(char * name, PyMethodDef * methods, char * doc, PyObject * passthrough, int module_api_version)
 002f1cf0	102	DEFAULT	unknown	FUN_006f1cf0	
 002f1d60	107	ANALYSIS	unknown	countformat	undefined(void)
 002f1e60	289	DEFAULT	unknown	FUN_006f1e60	
@@ -9890,7 +9890,7 @@ rva	size	source	callconv	name	signature
 00313be4	14	DEFAULT	unknown	FUN_00713be4	
 00313bf2	40	ANALYSIS	unknown	___raise_securityfailure	undefined(void)
 00313c1a	251	ANALYSIS	__cdecl	___report_gsfailure	void __cdecl(void)
-00313d15	12	ANALYSIS	unknown	___report_rangecheckfailure	undefined(void)
+00313d15	12	USER_DEFINED	__cdecl	__report_rangecheckfailure	void __cdecl(void)
 00313d21	208	ANALYSIS	unknown	___report_securityfailure	undefined(void)
 00313df1	278	ANALYSIS	unknown	___report_securityfailureEx	undefined(void)
 00313f07	191	DEFAULT	unknown	FUN_00713f07	

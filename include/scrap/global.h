@@ -20,6 +20,10 @@ void CheckFailed(const char *expr, const char *file, const char *date, int line)
 /* the engine's operator new and sized delete (rva 0x1334d0, 0x313634; the plain delete is 0x1334e0), with its memory statistics */
 void *operator_new(uint32_t size);
 void operator_delete_sized(void *p, uint32_t size);
+/* the engine's malloc with the same statistics (rva 0x1335a0) */
+void *Mem_Alloc(uint32_t size);
+/* __report_rangecheckfailure of the exe's CRT (rva 0x313d15), ends the process */
+[[noreturn]] void crt_report_rangecheckfailure(void);
 
 /* Global/StrUtils.cpp: copy with CHECK(dst && src && bytes_dst>0), always terminated (rva 0x1365c0) */
 char *Str_Copy(char *dst, const char *src, int size);
