@@ -56,7 +56,7 @@ PyObject *Scrap_AddParamf(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "d", &v)) {
 		return NULL;
 	}
-	CallFunc_AddParamF(g_CallFunc, (float)v);
+	cPy_Function_AddParamF(g_CallFunc, (float)v);
 	return ReturnNone();
 }
 
@@ -68,7 +68,7 @@ PyObject *Scrap_AddParami(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "i", &v)) {
 		return NULL;
 	}
-	CallFunc_AddParamI(g_CallFunc, v);
+	cPy_Function_AddParamI(g_CallFunc, v);
 	return ReturnNone();
 }
 
@@ -80,7 +80,7 @@ PyObject *Scrap_AddParams(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s", &v)) {
 		return NULL;
 	}
-	CallFunc_AddParamS(g_CallFunc, v);
+	cPy_Function_AddParamS(g_CallFunc, v);
 	return ReturnNone();
 }
 
@@ -297,7 +297,7 @@ PyObject *Scrap_Execute(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	CallFunc_Execute(g_CallFunc, 0);
+	cPy_Function_Execute(g_CallFunc, 0);
 	return ReturnNone();
 }
 
@@ -599,5 +599,418 @@ PyObject *Scrap_ListModels(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Models_List();
+	return ReturnNone();
+}
+
+/* --- batch 3: the small functions of the module (L to Z) --- */
+
+/* LoadGameVars(name) */
+PyObject *Scrap_LoadGameVars(PyObject *self, PyObject *args) {
+	char *name;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s", &name)) {
+		return NULL;
+	}
+	return Py_BuildValue("i", SaveGame_Load(name) != 0);
+}
+
+/* LoadLevel(level) */
+PyObject *Scrap_LoadLevel(PyObject *self, PyObject *args) {
+	char *level;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s", &level)) {
+		return NULL;
+	}
+	CWinApp_LoadLevel(g_pApp, level);
+	return Py_BuildValue("i", 1);
+}
+
+/* ModelInfo(name[, arg]) : arg default 1 */
+PyObject *Scrap_ModelInfo(PyObject *self, PyObject *args) {
+	char *name;
+	int arg = 1;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s|i", &name, &arg)) {
+		return NULL;
+	}
+	Model_Info(name, arg);
+	return ReturnNone();
+}
+
+/* MusicPlayer(name[, cmd[, volume]]) : cmd default "play", volume default 0 */
+PyObject *Scrap_MusicPlayer(PyObject *self, PyObject *args) {
+	char *name, *cmd = "play";
+	double volume = 0.0;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s|sd", &name, &cmd, &volume)) {
+		return NULL;
+	}
+	Music_Play(name, cmd, (float)volume);
+	return ReturnNone();
+}
+
+/* OpenPack(path) : the pack name becomes "path/" */
+PyObject *Scrap_OpenPack(PyObject *self, PyObject *args) {
+	char *path;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s", &path)) {
+		return NULL;
+	}
+	cString_Printf(g_PackName, "%s/", path);
+	return ReturnNone();
+}
+
+/* OpenStore(appid) : Steam overlay store page; NULL for appid < 0, nothing without Steam */
+PyObject *Scrap_OpenStore(PyObject *self, PyObject *args) {
+	int appId;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &appId) || appId < 0) {
+		return NULL;
+	}
+	if (g_IsSteam) {
+		/* ISteamFriends::ActivateGameOverlayToStore (vtable 0x7c) of the context the exe keeps */
+		void **ctx = g_SteamInternal_ContextInit(g_SteamFriendsContext);
+		void **friends = ctx[2];
+		typedef void(__thiscall * store_t)(void *, int, int);
+		((store_t)(*(void ***)friends)[0x7c / 4])(friends, appId, 0);
+	}
+	return ReturnNone();
+}
+
+/* PreloadAnm(a, b) */
+PyObject *Scrap_PreloadAnm(PyObject *self, PyObject *args) {
+	char *a, *b;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "ss", &a, &b)) {
+		return NULL;
+	}
+	Anm_Preload(a, b);
+	return ReturnNone();
+}
+
+/* PreloadLibrary(a, b) */
+PyObject *Scrap_PreloadLibrary(PyObject *self, PyObject *args) {
+	char *a, *b;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "ss", &a, &b)) {
+		return NULL;
+	}
+	Pack_PreloadLibrary(a, b);
+	return ReturnNone();
+}
+
+/* Print(text) */
+PyObject *Scrap_Print(PyObject *self, PyObject *args) {
+	char *text;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s", &text)) {
+		return NULL;
+	}
+	Con_Print(0, text, 0);
+	return ReturnNone();
+}
+
+/* ProcessDVF(name, arg) */
+PyObject *Scrap_ProcessDVF(PyObject *self, PyObject *args) {
+	char *name;
+	int arg;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "si", &name, &arg)) {
+		return NULL;
+	}
+	DVF_Process(name, arg);
+	return ReturnNone();
+}
+
+/* PythonCompileAll() */
+PyObject *Scrap_PythonCompileAll(PyObject *self, PyObject *args) {
+	(void)self;
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	Python_CompileAll();
+	return ReturnNone();
+}
+
+/* Round(v) : the larger of (int)v and (int)(v + 0.5), both truncated */
+PyObject *Scrap_Round(PyObject *self, PyObject *args) {
+	double v;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "d", &v)) {
+		return NULL;
+	}
+	int a = (int)v, b = (int)(v + 0.5);
+	return Py_BuildValue("i", b > a ? b : a);
+}
+
+/* SaveConfig() */
+PyObject *Scrap_SaveConfig(PyObject *self, PyObject *args) {
+	(void)self;
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	Config_Save();
+	return Py_BuildValue("i", 1);
+}
+
+/* SaveGameVars(name[, title]) : title default "Scrapland SaveGame" */
+PyObject *Scrap_SaveGameVars(PyObject *self, PyObject *args) {
+	char *name, *title = "Scrapland SaveGame";
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s|s", &name, &title)) {
+		return NULL;
+	}
+	return Py_BuildValue("i", SaveGame_Save(name, title) != 0);
+}
+
+/* ScreenShot(name) */
+PyObject *Scrap_ScreenShot(PyObject *self, PyObject *args) {
+	char *name;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s", &name)) {
+		return NULL;
+	}
+	Screenshot_Take(name);
+	return ReturnNone();
+}
+
+/* SetAlarm(level) */
+PyObject *Scrap_SetAlarm(PyObject *self, PyObject *args) {
+	float level;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "f", &level)) {
+		return NULL;
+	}
+	Alarm_Set(g_pWorld->alarm, level);
+	return ReturnNone();
+}
+
+/* SetAlarmChar(name) */
+PyObject *Scrap_SetAlarmChar(PyObject *self, PyObject *args) {
+	char *name;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s", &name)) {
+		return NULL;
+	}
+	Alarm_SetChar(g_pWorld->alarm, name);
+	return ReturnNone();
+}
+
+/* SetAlarmGrow(grow) */
+PyObject *Scrap_SetAlarmGrow(PyObject *self, PyObject *args) {
+	int grow;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &grow)) {
+		return NULL;
+	}
+	Alarm_SetGrow(g_pWorld->alarm, grow);
+	return ReturnNone();
+}
+
+/* SetCallFunc(func) : 1 if the function is valid */
+PyObject *Scrap_SetCallFunc(PyObject *self, PyObject *args) {
+	char *func;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s", &func)) {
+		return NULL;
+	}
+	cPy_Function_SetFunc(g_CallFunc, func);
+	return Py_BuildValue("i", cPy_Function_IsValid(g_CallFunc) ? 1 : 0);
+}
+
+/* SetCam(i, name) */
+PyObject *Scrap_SetCam(PyObject *self, PyObject *args) {
+	int i;
+	char *name;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "is", &i, &name)) {
+		return NULL;
+	}
+	return Py_BuildValue("i", cWorld_SetCam(g_pWorld, i, name));
+}
+
+/* SetLanguage(lang[, flag]) */
+PyObject *Scrap_SetLanguage(PyObject *self, PyObject *args) {
+	char *lang;
+	int flag = 0;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s|i", &lang, &flag)) {
+		return NULL;
+	}
+	return Py_BuildValue("i", Lang_Set(lang, flag != 0) != 0);
+}
+
+/* SetLockAlarm(lock) */
+PyObject *Scrap_SetLockAlarm(PyObject *self, PyObject *args) {
+	int lock;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &lock)) {
+		return NULL;
+	}
+	Alarm_SetLock(g_pWorld->alarm, lock != 0);
+	return ReturnNone();
+}
+
+/* SetMoney(money) */
+PyObject *Scrap_SetMoney(PyObject *self, PyObject *args) {
+	int money;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &money)) {
+		return NULL;
+	}
+	g_pWorld->money = money;
+	return ReturnNone();
+}
+
+/* SetSaveVar(name, value) */
+PyObject *Scrap_SetSaveVar(PyObject *self, PyObject *args) {
+	char *name, *value;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "ss", &name, &value)) {
+		return NULL;
+	}
+	return Py_BuildValue("i", SaveVar_Set(name, value) != 0);
+}
+
+/* SetTime(t) : returns Py_BuildValue("") (None) like the original */
+PyObject *Scrap_SetTime(PyObject *self, PyObject *args) {
+	double t;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "d", &t)) {
+		return NULL;
+	}
+	Timer_SetTime(g_pWorld->timer, (float)t);
+	return Py_BuildValue("");
+}
+
+/* SetTimeSpeed(speed) */
+PyObject *Scrap_SetTimeSpeed(PyObject *self, PyObject *args) {
+	double speed;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "d", &speed)) {
+		return NULL;
+	}
+	Timer_SetSpeed(g_pWorld->timer, (float)speed);
+	return Py_BuildValue("");
+}
+
+/* SetVideoCurrentMode(mode) */
+PyObject *Scrap_SetVideoCurrentMode(PyObject *self, PyObject *args) {
+	int mode;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &mode)) {
+		return NULL;
+	}
+	Video_SetCurrentMode(mode);
+	return ReturnNone();
+}
+
+/* ShowGVars([filter]) */
+PyObject *Scrap_ShowGVars(PyObject *self, PyObject *args) {
+	char *filter = NULL;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "|s", &filter)) {
+		return NULL;
+	}
+	GVars_Show(filter);
+	return ReturnNone();
+}
+
+/* StartDummySearch(name[, flag]) : flag default 1 */
+PyObject *Scrap_StartDummySearch(PyObject *self, PyObject *args) {
+	char *name;
+	int flag = 1;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s|i", &name, &flag)) {
+		return NULL;
+	}
+	DummySearch_Start(name, flag != 0);
+	return ReturnNone();
+}
+
+/* SwitchMissionArrows(a, b) */
+PyObject *Scrap_SwitchMissionArrows(PyObject *self, PyObject *args) {
+	char *a, *b;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "ss", &a, &b)) {
+		return NULL;
+	}
+	MissionArrows_Switch(a, b);
+	return ReturnNone();
+}
+
+/* UsrEntity(player) : the entity of a local player; NULL without exception for a player above 3 */
+PyObject *Scrap_UsrEntity(PyObject *self, PyObject *args) {
+	uint32_t player;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &player) || player > 3) {
+		return NULL;
+	}
+	cEntity *e = cWorld_GetUsrEntity(g_pWorld, (int)player);
+	if (!e) {
+		return ReturnNone();
+	}
+	return PyEntity_New(e->name);
+}
+
+/* Ver() Obtiene la version del juego. */
+PyObject *Scrap_Ver(PyObject *self, PyObject *args) {
+	(void)self;
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	return Py_BuildValue("s", Version_Get());
+}
+
+/* Verbose(text) : debug color */
+PyObject *Scrap_Verbose(PyObject *self, PyObject *args) {
+	char *text;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s", &text)) {
+		return NULL;
+	}
+	Con_Print(CON_COLOR_DEBUG, text, 0);
+	return ReturnNone();
+}
+
+/* VideoPlayer(name[, cmd]) : cmd default "play" */
+PyObject *Scrap_VideoPlayer(PyObject *self, PyObject *args) {
+	char *name, *cmd = "play";
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s|s", &name, &cmd)) {
+		return NULL;
+	}
+	Video_Play(name, cmd, 0.0f);
 	return ReturnNone();
 }

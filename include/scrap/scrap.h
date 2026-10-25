@@ -8,15 +8,18 @@
 #include "scrap/entity.h"
 #include "scrap/python.h"
 
-/* the global call builder of Scrap.SetCallFunc, AddParamX and Execute (rva 0x466a04) */
-#define g_CallFunc ((void *)Game_Ptr(0x466a04))
+#include "scrap/scorer.h"
+
+/* the function of Scrap.SetCallFunc with its parameters (AddParamX) for Scrap.Execute (rva 0x466a04) */
+#define g_CallFunc ((cPy_Function *)Game_Ptr(0x466a04))
 #define g_PackName ((void *)Game_Ptr(0x44ab6c))	/* string object, the open pack */
 #define g_IsSteam GAME_DATA(byte, 0x467b9c)
 
-void __thiscall CallFunc_AddParamF(void *call, float v);
-void __thiscall CallFunc_AddParamI(void *call, int v);
-void __thiscall CallFunc_AddParamS(void *call, const char *v);
-void __thiscall CallFunc_Execute(void *call, int arg);
+void __thiscall cPy_Function_AddParamF(cPy_Function *f, float v);
+void __thiscall cPy_Function_AddParamI(cPy_Function *f, int v);
+void __thiscall cPy_Function_AddParamS(cPy_Function *f, const char *v);
+void __thiscall cPy_Function_Execute(cPy_Function *f, int arg);
+byte __thiscall cPy_Function_IsValid(cPy_Function *f);
 
 void __thiscall Scheduler_Add(void *scheduler, float time, PyObject *func, PyObject *params, const char *name);
 void __thiscall Scheduler_Delete(void *scheduler, const char *name);
@@ -57,6 +60,40 @@ const char *Lang_GetStr(const char *name);
 const char *Lang_GetLanguage(void);
 
 int Pack_Extract(const char *name);
+/* printf into a string object (rva 0x134080) */
+void cString_Printf(void *str, const char *fmt, ...);
+void Pack_PreloadLibrary(const char *a, const char *b);
+void Anm_Preload(const char *a, const char *b);
+void DVF_Process(const char *name, int arg);
+void Python_CompileAll(void);
+void Config_Save(void);
+byte SaveGame_Save(const char *name, const char *title);
+byte SaveGame_Load(const char *name);
+byte SaveVar_Set(const char *name, const char *value);
+void Screenshot_Take(const char *name);
+void Video_SetCurrentMode(int mode);
+void Video_Play(const char *name, const char *cmd, float arg);
+void Music_Play(const char *name, const char *cmd, float volume);
+void Model_Info(const char *name, int arg);
+void GVars_Show(const char *filter);
+void DummySearch_Start(const char *name, int flag);
+void MissionArrows_Switch(const char *a, const char *b);
+byte Lang_Set(const char *lang, int flag);
+const char *Version_Get(void);
+void __thiscall CWinApp_LoadLevel(CWinApp *app, const char *level);
+int __thiscall cWorld_SetCam(cWorld *world, int i, const char *name);
+cEntity *__thiscall cWorld_GetUsrEntity(cWorld *world, int player);
+void __thiscall Alarm_Set(void *alarm, float level);
+void __thiscall Alarm_SetChar(void *alarm, const char *name);
+void __thiscall Alarm_SetGrow(void *alarm, int grow);
+void __thiscall Alarm_SetLock(void *alarm, int lock);
+void __thiscall Timer_SetTime(void *timer, float t);
+void __thiscall Timer_SetSpeed(void *timer, float speed);
+
+/* steam_api: SteamInternal_ContextInit through the import table of the exe, context data at rva 0x428a30 */
+typedef void *(__cdecl *SteamContextInit_t)(void *ctx);
+#define g_SteamInternal_ContextInit GAME_DATA(SteamContextInit_t, 0x3a15a4)
+#define g_SteamFriendsContext ((void *)Game_Ptr(0x428a30))
 void Font_Build(const char *name, int size);
 void Loading_Init(void);
 void Loading_End(void);

@@ -336,4 +336,33 @@ check('Scrap.AddScheduledFunc bad', lambda: Scrap.AddScheduledFunc(1.0, 2))
 check('Scrap.GetCam bad', lambda: Scrap.GetCam('x'))
 check('Scrap.IncSaveVar bad', lambda: Scrap.IncSaveVar(1))
 check('Scrap.GetTime()', lambda: Scrap.GetTime())
+
+# Scrap, small functions (batch 3) in the menu. Not here: anything that loads or writes files or changes the
+# level (LoadLevel, SaveGameVars, SaveConfig, ScreenShot, PythonCompileAll, players, Preload*, ProcessDVF,
+# ModelInfo, OpenPack, SetVideoCurrentMode).
+for v in (0.0, 0.49, 0.5, 0.51, 1.5, 2.5, -0.5, -0.49, -1.5, -2.7, 1e9, -1e9, 123.456):
+	check('Scrap.Round(%s)' % v, lambda v=v: Scrap.Round(v))
+check('Scrap.Ver()', lambda: Scrap.Ver())
+check('Scrap.SetMoney(1234)', lambda: Scrap.SetMoney(1234))
+check('Scrap.GetMoney() set', lambda: Scrap.GetMoney())
+check('Scrap.SetSaveVar(SDSet, x)', lambda: Scrap.SetSaveVar('SDSet', 'x'))
+check('Scrap.CreateSaveVar(SDSet, a)', lambda: Scrap.CreateSaveVar('SDSet', 'a'))
+check('Scrap.SetSaveVar(SDSet, b)', lambda: Scrap.SetSaveVar('SDSet', 'b'))
+check('Scrap.GetSaveVar(SDSet)', lambda: Scrap.GetSaveVar('SDSet'))
+# Scrap.LoadGameVars loads a save file: not in the test (a missing one does not return)
+check('Scrap.SetTimeSpeed(1.0)', lambda: Scrap.SetTimeSpeed(1.0))
+check('Scrap.GetTimeSpeed() set', lambda: Scrap.GetTimeSpeed())
+check('Scrap.SetCallFunc(SDNoFunc)', lambda: Scrap.SetCallFunc('SDNoFunc'))
+check('Scrap.Print(x)', lambda: Scrap.Print('sdtest print\n'))
+check('Scrap.Verbose(x)', lambda: Scrap.Verbose('sdtest verbose\n'))
+check('Scrap.ShowGVars(SDNo)', lambda: Scrap.ShowGVars('SDNo'))
+for i in (0, 1, 3, 4, -1):
+	check('Scrap.UsrEntity(%d)' % i, lambda i=i: (lambda e: e and e.Name)(Scrap.UsrEntity(i)))
+check('Scrap.OpenStore(-1)', lambda: Scrap.OpenStore(-1))
+check('Scrap.OpenStore(1)', lambda: Scrap.OpenStore(1))
+check('Scrap.SetLanguage(current)', lambda: Scrap.SetLanguage(Scrap.GetLanguage()))
+check('Scrap.SetAlarm bad', lambda: Scrap.SetAlarm('x'))
+check('Scrap.Round bad', lambda: Scrap.Round('x'))
+check('Scrap.MusicPlayer bad', lambda: Scrap.MusicPlayer(1))
+check('Scrap.UsrEntity bad', lambda: Scrap.UsrEntity('x'))
 finish()

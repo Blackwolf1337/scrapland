@@ -2269,7 +2269,7 @@ rva	size	source	callconv	name	signature
 000c10d0	646	DEFAULT	unknown	FUN_004c10d0	
 000c1360	97	DEFAULT	unknown	FUN_004c1360	
 000c13d0	91	DEFAULT	unknown	FUN_004c13d0	
-000c1430	79	DEFAULT	unknown	FUN_004c1430	
+000c1430	79	USER_DEFINED	unknown	cWorld::GetUsrEntity	undefined(void)
 000c1480	392	DEFAULT	unknown	FUN_004c1480	
 000c1610	366	DEFAULT	unknown	FUN_004c1610	
 000c1780	254	DEFAULT	unknown	FUN_004c1780	
@@ -2914,7 +2914,7 @@ rva	size	source	callconv	name	signature
 000f7a40	798	DEFAULT	unknown	FUN_004f7a40	
 000f7d60	1255	DEFAULT	unknown	FUN_004f7d60	
 000f8270	45	DEFAULT	unknown	FUN_004f8270	
-000f82a0	133	DEFAULT	unknown	FUN_004f82a0	
+000f82a0	133	USER_DEFINED	unknown	MissionArrows_Switch	undefined(void)
 000f8330	104	DEFAULT	unknown	FUN_004f8330	
 000f83a0	171	DEFAULT	unknown	FUN_004f83a0	
 000f8450	246	DEFAULT	unknown	FUN_004f8450	
@@ -3466,7 +3466,7 @@ rva	size	source	callconv	name	signature
 00131100	108	DEFAULT	unknown	FUN_00531100	
 00131170	116	DEFAULT	unknown	FUN_00531170	
 001311f0	136	DEFAULT	unknown	FUN_005311f0	
-00131280	34	DEFAULT	unknown	FUN_00531280	
+00131280	34	USER_DEFINED	unknown	Python_CompileAll	undefined(void)
 001312b0	109	ANALYSIS	__thiscall	cFilePack::vf03	undefined __thiscall(void)
 00131340	89	ANALYSIS	__thiscall	cFilePack::vf05	undefined __thiscall(void)
 001313a0	14	ANALYSIS	__thiscall	cFilePack::vf07	undefined __thiscall(void)
@@ -3493,9 +3493,9 @@ rva	size	source	callconv	name	signature
 00131f70	227	DEFAULT	unknown	FUN_00531f70	
 00132060	332	DEFAULT	unknown	FUN_00532060	
 001321b0	586	DEFAULT	unknown	FUN_005321b0	
-00132410	400	DEFAULT	unknown	FUN_00532410	
+00132410	400	USER_DEFINED	unknown	Config_Save	undefined(void)
 001325c0	48	DEFAULT	unknown	FUN_005325c0	
-001325f0	273	DEFAULT	unknown	FUN_005325f0	
+001325f0	273	USER_DEFINED	unknown	GVars_Show	undefined(void)
 00132720	108	DEFAULT	unknown	FUN_00532720	
 00132790	54	DEFAULT	unknown	FUN_00532790	
 001327d0	118	DEFAULT	unknown	FUN_005327d0	
@@ -3511,7 +3511,7 @@ rva	size	source	callconv	name	signature
 00132f60	6	USER_DEFINED	unknown	Lang_GetLanguage	undefined(void)
 00132f70	227	DEFAULT	unknown	FUN_00532f70	
 00133060	504	DEFAULT	unknown	FUN_00533060	
-00133260	427	DEFAULT	unknown	FUN_00533260	
+00133260	427	USER_DEFINED	unknown	Lang_Set	undefined(void)
 00133410	182	DEFAULT	unknown	FUN_00533410	
 001334d0	9	USER_DEFINED	__cdecl	operator_new	void * __cdecl(uint size)
 001334e0	68	DEFAULT	unknown	FUN_005334e0	
@@ -3544,7 +3544,7 @@ rva	size	source	callconv	name	signature
 00133f70	143	DEFAULT	unknown	FUN_00533f70	
 00134000	55	DEFAULT	unknown	FUN_00534000	
 00134040	59	USER_DEFINED	unknown	cString::Set	undefined(void)
-00134080	139	DEFAULT	unknown	FUN_00534080	
+00134080	139	USER_DEFINED	unknown	cString::Printf	undefined(void)
 00134130	81	DEFAULT	unknown	FUN_00534130	
 00134190	79	DEFAULT	unknown	FUN_00534190	
 001341e0	58	DEFAULT	unknown	FUN_005341e0	
@@ -3579,10 +3579,10 @@ rva	size	source	callconv	name	signature
 001357c0	672	USER_DEFINED	unknown	SaveVar_Inc	undefined(void)
 00135a60	22	DEFAULT	unknown	FUN_00535a60	
 00135a80	387	DEFAULT	unknown	FUN_00535a80	
-00135c10	244	DEFAULT	unknown	FUN_00535c10	
+00135c10	244	USER_DEFINED	unknown	SaveGame_Load	undefined(void)
 00135d10	196	DEFAULT	unknown	FUN_00535d10	
-00135de0	254	DEFAULT	unknown	FUN_00535de0	
-00135ee0	64	DEFAULT	unknown	FUN_00535ee0	
+00135de0	254	USER_DEFINED	unknown	SaveGame_Save	undefined(void)
+00135ee0	64	USER_DEFINED	unknown	SaveVar_Set	undefined(void)
 00135f20	182	DEFAULT	unknown	FUN_00535f20	
 00135fe0	157	DEFAULT	unknown	FUN_00535fe0	
 00136080	107	DEFAULT	unknown	FUN_00536080	
@@ -3615,10 +3615,10 @@ rva	size	source	callconv	name	signature
 001369c0	22	DEFAULT	unknown	FUN_005369c0	
 001369e0	17	DEFAULT	unknown	FUN_005369e0	
 00136a00	71	DEFAULT	unknown	FUN_00536a00	
-00136a50	22	DEFAULT	unknown	FUN_00536a50	
-00136a70	17	DEFAULT	unknown	FUN_00536a70	
+00136a50	22	USER_DEFINED	unknown	Timer::SetSpeed	undefined(void)
+00136a70	17	USER_DEFINED	unknown	Timer::SetTime	undefined(void)
 00136aa0	105	DEFAULT	unknown	FUN_00536aa0	
-00136b20	48	DEFAULT	unknown	FUN_00536b20	
+00136b20	48	USER_DEFINED	unknown	Version_Get	undefined(void)
 00136b60	88	DEFAULT	unknown	FUN_00536b60	
 00136bc0	121	DEFAULT	unknown	FUN_00536bc0	
 00136c40	97	DEFAULT	unknown	FUN_00536c40	
@@ -3804,10 +3804,10 @@ rva	size	source	callconv	name	signature
 0013fb90	89	DEFAULT	unknown	FUN_0053fb90	
 0013fbf0	286	DEFAULT	unknown	FUN_0053fbf0	
 0013fd10	49	DEFAULT	unknown	FUN_0053fd10	
-0013fd50	256	DEFAULT	unknown	FUN_0053fd50	
-0013fe50	16	DEFAULT	unknown	FUN_0053fe50	
-0013fe60	182	DEFAULT	unknown	FUN_0053fe60	
-0013ff20	80	DEFAULT	unknown	FUN_0053ff20	
+0013fd50	256	USER_DEFINED	unknown	Alarm::SetGrow	undefined(void)
+0013fe50	16	USER_DEFINED	unknown	Alarm::SetLock	undefined(void)
+0013fe60	182	USER_DEFINED	unknown	Alarm::Set	undefined(void)
+0013ff20	80	USER_DEFINED	unknown	Alarm::SetChar	undefined(void)
 0013ff70	606	DEFAULT	unknown	FUN_0053ff70	
 001401d0	39	DEFAULT	unknown	FUN_005401d0	
 00140210	41	ANALYSIS	__thiscall	cBankDirectorLocalLogic::vf00	undefined __thiscall(void)
@@ -4951,14 +4951,14 @@ rva	size	source	callconv	name	signature
 00192170	61	DEFAULT	unknown	FUN_00592170	
 001921b0	67	DEFAULT	unknown	FUN_005921b0	
 00192200	252	DEFAULT	unknown	FUN_00592200	
-00192300	131	USER_DEFINED	unknown	CallFunc::AddParamI	undefined(void)
-00192390	152	USER_DEFINED	unknown	CallFunc::AddParamF	undefined(void)
-00192430	137	USER_DEFINED	unknown	CallFunc::AddParamS	undefined(void)
+00192300	131	USER_DEFINED	unknown	cPy_Function::AddParamI	undefined(void)
+00192390	152	USER_DEFINED	unknown	cPy_Function::AddParamF	undefined(void)
+00192430	137	USER_DEFINED	unknown	cPy_Function::AddParamS	undefined(void)
 001924c0	160	DEFAULT	unknown	FUN_005924c0	
 00192590	80	DEFAULT	unknown	FUN_00592590	
 001925e0	62	DEFAULT	unknown	FUN_005925e0	
 00192620	45	DEFAULT	unknown	FUN_00592620	
-00192650	325	USER_DEFINED	unknown	CallFunc::Execute	undefined(void)
+00192650	325	USER_DEFINED	unknown	cPy_Function::Execute	undefined(void)
 001927a0	62	DEFAULT	unknown	FUN_005927a0	
 001927e0	216	DEFAULT	unknown	FUN_005927e0	
 001928c0	90	DEFAULT	unknown	FUN_005928c0	
@@ -4967,7 +4967,7 @@ rva	size	source	callconv	name	signature
 00192b70	190	DEFAULT	unknown	FUN_00592b70	
 00192c30	51	DEFAULT	unknown	FUN_00592c30	
 00192c70	119	DEFAULT	unknown	FUN_00592c70	
-00192cf0	13	DEFAULT	unknown	FUN_00592cf0	
+00192cf0	13	USER_DEFINED	unknown	cPy_Function::IsValid	undefined(void)
 00192d00	347	DEFAULT	unknown	FUN_00592d00	
 00192e60	391	DEFAULT	unknown	FUN_00592e60	
 00192ff0	135	DEFAULT	unknown	FUN_00592ff0	
@@ -5007,7 +5007,7 @@ rva	size	source	callconv	name	signature
 00194320	10	DEFAULT	unknown	FUN_00594320	
 00194330	31	DEFAULT	unknown	FUN_00594330	
 00194350	371	DEFAULT	unknown	FUN_00594350	
-001944d0	678	DEFAULT	unknown	FUN_005944d0	
+001944d0	678	USER_DEFINED	unknown	Pack_PreloadLibrary	undefined(void)
 00194780	6	DEFAULT	unknown	FUN_00594780	
 00194790	139	ANALYSIS	__cdecl	SAct_CreateClass	PyObject * __cdecl(PyObject * self, PyObject * args)
 00194820	73	ANALYSIS	__cdecl	SAct_DelClass	PyObject * __cdecl(PyObject * self, PyObject * args)
@@ -5514,7 +5514,7 @@ rva	size	source	callconv	name	signature
 001a77d0	378	DEFAULT	unknown	FUN_005a77d0	
 001a7950	161	DEFAULT	unknown	FUN_005a7950	
 001a7a00	193	DEFAULT	unknown	FUN_005a7a00	
-001a7ad0	5	DEFAULT	unknown	thunk_FUN_00614460	
+001a7ad0	5	USER_DEFINED	unknown	DummySearch_Start	undefined(void)
 001a7ae0	209	DEFAULT	unknown	FUN_005a7ae0	
 001a7bc0	20	USER_DEFINED	__thiscall	cEntityList::GetFirst	void * __thiscall(void)
 001a7be0	385	DEFAULT	unknown	FUN_005a7be0	
@@ -6170,7 +6170,7 @@ rva	size	source	callconv	name	signature
 00204de0	183	DEFAULT	unknown	FUN_00604de0	
 00204ea0	664	DEFAULT	unknown	FUN_00604ea0	
 00205140	91	DEFAULT	unknown	FUN_00605140	
-002051a0	99	DEFAULT	unknown	FUN_006051a0	
+002051a0	99	USER_DEFINED	unknown	Anm_Preload	undefined(void)
 00205210	387	DEFAULT	unknown	FUN_00605210	
 002053a0	33	DEFAULT	unknown	FUN_006053a0	
 002053d0	86	DEFAULT	unknown	FUN_006053d0	
@@ -6256,7 +6256,7 @@ rva	size	source	callconv	name	signature
 002098f0	263	DEFAULT	unknown	FUN_006098f0	
 00209a00	209	USER_DEFINED	unknown	cWorld::NewEntityList	undefined(void)
 00209ae0	69	DEFAULT	unknown	FUN_00609ae0	
-00209b30	342	DEFAULT	unknown	FUN_00609b30	
+00209b30	342	USER_DEFINED	unknown	cWorld::SetCam	undefined(void)
 00209c90	374	DEFAULT	unknown	FUN_00609c90	
 00209e10	824	DEFAULT	unknown	FUN_00609e10	
 0020a150	312	DEFAULT	unknown	FUN_0060a150	
@@ -6288,7 +6288,7 @@ rva	size	source	callconv	name	signature
 0020b350	419	ANALYSIS	__thiscall	CApp::vf07	undefined __thiscall(void)
 0020b500	510	DEFAULT	unknown	FUN_0060b500	
 0020b700	405	ANALYSIS	__thiscall	CApp::vf05	undefined __thiscall(void)
-0020b8a0	46	DEFAULT	unknown	FUN_0060b8a0	
+0020b8a0	46	USER_DEFINED	unknown	CWinApp::LoadLevel	undefined(void)
 0020b8d0	620	ANALYSIS	__thiscall	CApp::vf12	undefined __thiscall(void)
 0020bb40	541	DEFAULT	unknown	FUN_0060bb40	
 0020bd90	1366	DEFAULT	unknown	FUN_0060bd90	
@@ -6501,7 +6501,7 @@ rva	size	source	callconv	name	signature
 00216840	282	DEFAULT	unknown	FUN_00616840	
 00216960	360	DEFAULT	unknown	FUN_00616960	
 00216ad0	8	DEFAULT	unknown	FUN_00616ad0	
-00216ae0	272	DEFAULT	unknown	FUN_00616ae0	
+00216ae0	272	USER_DEFINED	unknown	Music_Play	undefined(void)
 00216bf0	88	DEFAULT	unknown	FUN_00616bf0	
 00216c50	88	DEFAULT	unknown	FUN_00616c50	
 00216cb0	88	DEFAULT	unknown	FUN_00616cb0	
@@ -6511,7 +6511,7 @@ rva	size	source	callconv	name	signature
 002170d0	269	DEFAULT	unknown	FUN_006170d0	
 00217280	121	DEFAULT	__thiscall	FUN_00617280	
 00217300	716	DEFAULT	unknown	FUN_00617300	
-002175d0	133	DEFAULT	unknown	FUN_006175d0	
+002175d0	133	USER_DEFINED	unknown	DVF_Process	undefined(void)
 00217660	23	DEFAULT	unknown	FUN_00617660	
 00217680	5	DEFAULT	unknown	thunk_FUN_0064bac0	
 00217690	177	DEFAULT	unknown	FUN_00617690	
@@ -6519,7 +6519,7 @@ rva	size	source	callconv	name	signature
 002177b0	11	DEFAULT	unknown	FUN_006177b0	
 002177c0	13	DEFAULT	unknown	FUN_006177c0	
 002177d0	222	DEFAULT	unknown	FUN_006177d0	
-002178b0	48	DEFAULT	unknown	FUN_006178b0	
+002178b0	48	USER_DEFINED	unknown	Screenshot_Take	undefined(void)
 002178e0	308	DEFAULT	unknown	FUN_006178e0	
 00217a20	181	DEFAULT	unknown	FUN_00617a20	
 00217ae0	31	DEFAULT	unknown	FUN_00617ae0	
@@ -6528,14 +6528,14 @@ rva	size	source	callconv	name	signature
 00217b90	21	DEFAULT	unknown	FUN_00617b90	
 00217bd0	9	DEFAULT	unknown	FUN_00617bd0	
 00217be0	116	DEFAULT	unknown	FUN_00617be0	
-00217c60	338	DEFAULT	unknown	FUN_00617c60	
+00217c60	338	USER_DEFINED	unknown	Video_SetCurrentMode	undefined(void)
 00217dd0	75	DEFAULT	unknown	FUN_00617dd0	
-00217e20	271	DEFAULT	unknown	FUN_00617e20	
+00217e20	271	USER_DEFINED	unknown	Model_Info	undefined(void)
 00217f30	12	USER_DEFINED	unknown	Models_List	undefined(void)
 00217f40	47	DEFAULT	unknown	FUN_00617f40	
 00217f70	94	DEFAULT	unknown	FUN_00617f70	
 00217fd0	49	DEFAULT	unknown	FUN_00617fd0	
-00218010	103	DEFAULT	unknown	FUN_00618010	
+00218010	103	USER_DEFINED	unknown	Video_Play	undefined(void)
 00218080	1582	DEFAULT	unknown	FUN_00618080	
 00218700	58	DEFAULT	unknown	FUN_00618700	
 00218740	125	DEFAULT	unknown	FUN_00618740	
