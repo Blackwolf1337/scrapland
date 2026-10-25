@@ -157,6 +157,11 @@ int PyEntity_Print(PyObject *self, FILE *fp, int flags) {
 	return 0;
 }
 
+/* a method of cPyEntity by name */
+PyObject *PyEntity_FindMethod(PyObject *self, char *name) {
+	return Py_FindMethod(cPyEntity_methods, self, name);
+}
+
 /* tp_getattr: script variable of the entity (int, float, vector, string), else a method */
 PyObject *PyEntity_GetAttr(PyObject *self, char *name) {
 	cEntityRef *ref = ((cPyEntity *)self)->ref;
@@ -185,7 +190,7 @@ PyObject *PyEntity_GetAttr(PyObject *self, char *name) {
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	PyObject *method = Py_FindMethod(cPyEntity_methods, self, name);
+	PyObject *method = PyEntity_FindMethod(self, name);
 	if (!method) {
 		Con_Errorf("'%s'->%s : Member invalid.\n", ref->name, name);
 	}

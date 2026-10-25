@@ -4979,7 +4979,7 @@ rva	size	source	callconv	name	signature
 00193300	270	ANALYSIS	__cdecl	cPyEntity_GetTgAng	PyObject * __cdecl(PyObject * self, PyObject * args)
 00193410	268	ANALYSIS	__cdecl	cPyEntity_DrawWeap	PyObject * __cdecl(PyObject * self, PyObject * args)
 00193520	119	ANALYSIS	__cdecl	cPyEntity_IsType	PyObject * __cdecl(PyObject * self, PyObject * args)
-001935a0	24	DEFAULT	unknown	FUN_005935a0	
+001935a0	24	USER_DEFINED	__cdecl	PyEntity_FindMethod	PyObject * __cdecl(PyObject * self, char * name)
 001935c0	36	USER_DEFINED	__cdecl	PyPool_Free	void __cdecl(void * p)
 001935f0	36	USER_DEFINED	__cdecl	PyPool_Malloc	void * __cdecl(uint size)
 00193620	39	USER_DEFINED	__cdecl	PyPool_Realloc	void * __cdecl(void * p, uint size)
