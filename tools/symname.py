@@ -27,6 +27,9 @@ def main():
     want = {}
     for g in groups:
         rva = g[0].lower().removeprefix('0x').zfill(8)
+        if rva in want:
+            # shared stubs (identical code folding) sit in many vtables: one function, one name
+            sys.exit(f'{rva} given twice ({want[rva][0]}, {g[1]}): one function can only have one name')
         want[rva] = (g + ['', ''])[1:4]
 
     lines = open(TSV, encoding='utf-8').read().split('\n')
@@ -34,11 +37,11 @@ def main():
         f = line.split('\t')
         if f[0] in want:
             name, cc, sig = want.pop(f[0])
+            print(f'{f[0]} {name}' + (f'  (was {f[4]})' if f[2] != 'DEFAULT' and f[4] != name else ''))
             f[2], f[4] = 'USER_DEFINED', name
             f[3] = cc or f[3]
             f[5] = sig or f[5]
             lines[i] = '\t'.join(f)
-            print(f'{f[0]} {name}')
     open(TSV, 'w', encoding='utf-8').write('\n'.join(lines))
     for rva in want:
         print(f'{rva}: no function there in functions.tsv', file=sys.stderr)

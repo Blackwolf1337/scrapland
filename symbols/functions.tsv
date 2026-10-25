@@ -10120,7 +10120,7 @@ rva	size	source	callconv	name	signature
 003194de	13	DEFAULT	unknown	FUN_007194de	
 003194eb	16	DEFAULT	unknown	FUN_007194eb	
 003194fb	31	DEFAULT	unknown	FUN_007194fb	
-0031951a	26	USER_DEFINED	__thiscall	CSoundSys::Play	undefined __thiscall(void)
+0031951a	26	ANALYSIS	__thiscall	CAStarSup::vf03	undefined __thiscall(void)
 00319535	37	ANALYSIS	__cdecl	__set_purecall_handler	_purecall_handler __cdecl(_purecall_handler _Handler)
 00319560	611	DEFAULT	unknown	FUN_00719560	
 003197d0	1330	DEFAULT	unknown	FUN_007197d0	
