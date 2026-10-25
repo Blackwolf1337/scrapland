@@ -2,6 +2,8 @@
  * Python module Scrap (method table Scrap_methods, rva 0x42c610): engine functions for the game scripts.
  * Original file: PyInterface\\ScrapPy.cpp
  */
+#include <math.h>
+
 #include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/python.h"
@@ -1221,4 +1223,161 @@ PyObject *Scrap_RunApp(PyObject *self, PyObject *args) {
 	}
 	g_pApp->vftable->RunApp(g_pApp, exe, cmdLine, 0);
 	return ReturnNone();
+}
+
+/* --- batch 5: entity lists, cameras, parking zones, video modes, grid --- */
+
+/* EntityListGet(listName, var) : value in its type; NULL without exception for a missing list or a bad type */
+PyObject *Scrap_EntityListGet(PyObject *self, PyObject *args) {
+	char *listName, *var, *s;
+	double d;
+	int i;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "ss", &listName, &var)) {
+		return NULL;
+	}
+	void *list = cWorld_GetList(g_pWorld, listName);
+	if (!list) {
+		Con_Errorf("ERROR: EntityListGet '%s','%s' List Not Found.\n", listName, var);
+		return NULL;
+	}
+	switch (cEntityList_Var(list, var, 0, &s, &d, &i)) {
+	case 1:
+		return Py_BuildValue("s", s);
+	case 2:
+		return Py_BuildValue("d", d);
+	case 3:
+		return Py_BuildValue("i", i);
+	}
+	Con_Errorf("ERROR: EntityListGet '%s','%s' Typecast error.\n", listName, var);
+	return NULL;
+}
+
+/* EntityListSet(listName, var, value) */
+PyObject *Scrap_EntityListSet(PyObject *self, PyObject *args) {
+	char *listName, *var, *value;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "sss", &listName, &var, &value)) {
+		return NULL;
+	}
+	void *list = cWorld_GetList(g_pWorld, listName);
+	if (!list) {
+		Con_Errorf("ERROR: EntityListSet '%s','%s','%s' list not found.\n", listName, var, value);
+		return NULL;
+	}
+	return Py_BuildValue("i", cEntityList_Var(list, var, 1, &value, NULL, NULL));
+}
+
+/* GetMinCamDist(x, y, z) : sqrt in double of the squared distance, then float */
+PyObject *Scrap_GetMinCamDist(PyObject *self, PyObject *args) {
+	vec3_t pos;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "fff", &pos.x, &pos.y, &pos.z)) {
+		return NULL;
+	}
+	double d = (double)cWorld_GetMinCamDistSq(g_pWorld, &pos);
+	return Py_BuildValue("d", (double)(float)sqrt(d));
+}
+
+/* GetVideoModes(i) : the number of modes for i < 0, else the name of mode i */
+PyObject *Scrap_GetVideoModes(PyObject *self, PyObject *args) {
+	int i = 0;
+	char buf[256];
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i", &i)) {
+		return NULL;
+	}
+	int n = Video_GetModes(i, buf);
+	if (i < 0) {
+		return Py_BuildValue("i", n);
+	}
+	return Py_BuildValue("s", buf);
+}
+
+/* SetGrid(x, y, z) */
+PyObject *Scrap_SetGrid(PyObject *self, PyObject *args) {
+	double x, y, z;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "ddd", &x, &y, &z)) {
+		return NULL;
+	}
+	vec3_t size = { (float)x, (float)y, (float)z };
+	Grid_Set(g_pWorld->grid, &size);
+	return Py_BuildValue("i", 1);
+}
+
+/* SetSaveProfile(a, b) : not on PC */
+PyObject *Scrap_SetSaveProfile(PyObject *self, PyObject *args) {
+	char *a, *b;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "ss", &a, &b)) {
+		return NULL;
+	}
+	Con_Print(CON_COLOR_ERROR, "ERROR : ", 0);
+	Con_Print(CON_COLOR_ERROR, a, 0);
+	Con_Print(CON_COLOR_ERROR, " , ", 0);
+	Con_Print(CON_COLOR_ERROR, b, 0);
+	Con_Print(CON_COLOR_ERROR, " : Player Profile system not supported on PC\n", 0);
+	return Py_BuildValue("i", 1);
+}
+
+/* Preload3DObject(name[, sx, sy, sz]) : scale default 1 */
+PyObject *Scrap_Preload3DObject(PyObject *self, PyObject *args) {
+	char *name;
+	double sx = 1.0, sy = 1.0, sz = 1.0;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "s|ddd", &name, &sx, &sy, &sz)) {
+		return NULL;
+	}
+	vec3_t scale = { (float)sx, (float)sy, (float)sz };
+	Object3D_Preload(name, &scale);
+	return ReturnNone();
+}
+
+/* AddParkingZone(flag, (x,y,z), name) */
+PyObject *Scrap_AddParkingZone(PyObject *self, PyObject *args) {
+	int flag;
+	float x, y, z;
+	char *name;
+
+	(void)self;
+	if (!PyArg_ParseTuple(args, "i(fff)s", &flag, &x, &y, &z, &name)) {
+		return NULL;
+	}
+	vec3_t pos = { x, y, z };
+	Parking_AddZone(g_pWorld->parking, flag != 0, &pos, name);
+	return ReturnNone();
+}
+
+/* GetNearestParked / GetFarestParked([flag[, (x,y,z)]]) : (name, (x, y, z)); default position: current camera */
+static PyObject *FindParked(PyObject *args, int farest) {
+	vec3_t pos = g_pWorld->camPos[g_pWorld->curCam];
+	int flag = 1;
+
+	if (!PyArg_ParseTuple(args, "|i(fff)", &flag, &pos.x, &pos.y, &pos.z)) {
+		return NULL;
+	}
+	vec3_t out = pos;
+	const char *name = Parking_Find(g_pWorld->parking, flag != 0, &pos, &out, farest);
+	if (!name) {
+		return Py_BuildValue("s(fff)", "", 0.0, 0.0, 0.0);
+	}
+	return Py_BuildValue("s(fff)", name, (double)out.x, (double)out.y, (double)out.z);
+}
+
+PyObject *Scrap_GetNearestParked(PyObject *self, PyObject *args) {
+	(void)self;
+	return FindParked(args, 0);
+}
+
+PyObject *Scrap_GetFarestParked(PyObject *self, PyObject *args) {
+	(void)self;
+	return FindParked(args, 1);
 }

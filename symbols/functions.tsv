@@ -4289,11 +4289,11 @@ rva	size	source	callconv	name	signature
 00155650	38	DEFAULT	unknown	FUN_00555650	
 00155680	8	DEFAULT	unknown	FUN_00555680	
 00155690	108	DEFAULT	unknown	FUN_00555690	
-00155700	145	DEFAULT	unknown	FUN_00555700	
+00155700	145	USER_DEFINED	__thiscall	Parking::AddZone	void __thiscall(int flag, float * pos, char * name)
 001557a0	870	DEFAULT	unknown	FUN_005557a0	
 00155b10	155	DEFAULT	unknown	FUN_00555b10	
 00155bb0	63	DEFAULT	unknown	FUN_00555bb0	
-00155bf0	510	DEFAULT	unknown	FUN_00555bf0	
+00155bf0	510	USER_DEFINED	__thiscall	Parking::Find	char * __thiscall(int flag, float * pos, float * out, int farest)
 00155df0	147	DEFAULT	unknown	FUN_00555df0	
 00155e90	19	DEFAULT	unknown	FUN_00555e90	
 00155eb0	19	DEFAULT	unknown	FUN_00555eb0	
@@ -5509,7 +5509,7 @@ rva	size	source	callconv	name	signature
 001a7480	212	DEFAULT	unknown	FUN_005a7480	
 001a7560	82	DEFAULT	unknown	FUN_005a7560	
 001a75c0	323	DEFAULT	unknown	FUN_005a75c0	
-001a7710	81	DEFAULT	unknown	FUN_005a7710	
+001a7710	81	USER_DEFINED	__thiscall	Grid::Set	void __thiscall(float * size)
 001a7770	83	DEFAULT	unknown	FUN_005a7770	
 001a77d0	378	DEFAULT	unknown	FUN_005a77d0	
 001a7950	161	DEFAULT	unknown	FUN_005a7950	
@@ -5518,7 +5518,7 @@ rva	size	source	callconv	name	signature
 001a7ae0	209	DEFAULT	unknown	FUN_005a7ae0	
 001a7bc0	20	USER_DEFINED	__thiscall	cEntityList::GetFirst	void * __thiscall(void)
 001a7be0	385	DEFAULT	unknown	FUN_005a7be0	
-001a7d70	408	DEFAULT	unknown	FUN_005a7d70	
+001a7d70	408	USER_DEFINED	__thiscall	cEntityList::Var	int __thiscall(char * name, int set, char * * s, double * d, int * i)
 001a7f20	172	DEFAULT	unknown	FUN_005a7f20	
 001a7fd0	173	DEFAULT	unknown	FUN_005a7fd0	
 001a8080	160	DEFAULT	unknown	FUN_005a8080	
@@ -6169,7 +6169,7 @@ rva	size	source	callconv	name	signature
 00204dd0	16	DEFAULT	unknown	FUN_00604dd0	
 00204de0	183	DEFAULT	unknown	FUN_00604de0	
 00204ea0	664	DEFAULT	unknown	FUN_00604ea0	
-00205140	91	DEFAULT	unknown	FUN_00605140	
+00205140	91	USER_DEFINED	__cdecl	Object3D_Preload	void __cdecl(char * name, float * scale)
 002051a0	99	USER_DEFINED	unknown	Anm_Preload	undefined(void)
 00205210	387	DEFAULT	unknown	FUN_00605210	
 002053a0	33	DEFAULT	unknown	FUN_006053a0	
@@ -6244,7 +6244,7 @@ rva	size	source	callconv	name	signature
 00209240	48	USER_DEFINED	__thiscall	cWorld::GetList	void * __thiscall(char * name)
 002092a0	20	USER_DEFINED	unknown	cWorld::GetFirstEntity	undefined(void)
 002092c0	141	DEFAULT	unknown	FUN_006092c0	
-00209350	343	DEFAULT	unknown	FUN_00609350	
+00209350	343	USER_DEFINED	__thiscall	cWorld::GetMinCamDistSq	float __thiscall(float * pos)
 002094b0	90	DEFAULT	unknown	FUN_006094b0	
 00209510	125	DEFAULT	unknown	FUN_00609510	
 00209590	262	DEFAULT	unknown	FUN_00609590	
@@ -6490,7 +6490,7 @@ rva	size	source	callconv	name	signature
 00215c50	39	DEFAULT	unknown	FUN_00615c50	
 00215c90	20	DEFAULT	unknown	FUN_00615c90	
 00215cb0	109	USER_DEFINED	unknown	Video_GetCurrentMode	undefined(void)
-00215d20	287	DEFAULT	unknown	FUN_00615d20	
+00215d20	287	USER_DEFINED	__cdecl	Video_GetModes	int __cdecl(int i, char * buf)
 00215e60	6	DEFAULT	unknown	FUN_00615e60	
 00215e70	947	DEFAULT	unknown	FUN_00615e70	
 00216230	585	DEFAULT	unknown	FUN_00616230	

@@ -387,4 +387,17 @@ check('Scrap.Set bad', lambda: Scrap.Set('x'))
 check('Scrap.Rand bad', lambda: Scrap.Rand(1))
 check('Scrap.CreateEntity bad', lambda: Scrap.CreateEntity('a', 1, 2, 3))
 check('Scrap.RunApp bad', lambda: Scrap.RunApp('a'))
+
+# Scrap batch 5 in the menu
+# mode numbers are not range checked: GetVideoModes(50) crashes the original (32 modes here)
+for i in (-1, 0, 1, 2, 31):
+	check('Scrap.GetVideoModes(%d)' % i, lambda i=i: Scrap.GetVideoModes(i))
+check('Scrap.SetSaveProfile(a, b)', lambda: Scrap.SetSaveProfile('a', 'b'))
+check('Scrap.EntityListGet(SDNoList, x)', lambda: Scrap.EntityListGet('SDNoList', 'x'))
+check('Scrap.EntityListSet(SDNoList, x, y)', lambda: Scrap.EntityListSet('SDNoList', 'x', 'y'))
+check('Scrap.EntityListGet bad', lambda: Scrap.EntityListGet('a'))
+check('Scrap.AddParkingZone bad', lambda: Scrap.AddParkingZone(1, (1, 2), 'x'))
+check('Scrap.GetNearestParked bad', lambda: Scrap.GetNearestParked('x'))
+check('Scrap.SetGrid bad', lambda: Scrap.SetGrid(1, 2))
+check('Scrap.Preload3DObject bad', lambda: Scrap.Preload3DObject())
 finish()

@@ -90,6 +90,15 @@ void __thiscall cFilePack_dtor(cFilePack *pack);
 int __thiscall cFilePack_Exists(cFilePack *pack, const char *name);
 /* the path of the game into buf (rva 0x20d100) */
 void App_GetPath(char *buf, int size);
+float __thiscall cWorld_GetMinCamDistSq(cWorld *world, const vec3_t *pos);
+void __thiscall Grid_Set(void *grid, const vec3_t *size);
+void __thiscall Parking_AddZone(void *parking, int flag, const vec3_t *pos, const char *name);
+/* nearest (farest != 0: farest) parked vehicle from pos; its position into out */
+const char *__thiscall Parking_Find(void *parking, int flag, const vec3_t *pos, vec3_t *out, int farest);
+/* like cActClass_Var on an entity list: returns 1 string, 2 double, 3 int, 0 */
+int __thiscall cEntityList_Var(void *list, const char *name, int set, char **s, double *d, int *i);
+int Video_GetModes(int i, char *buf);
+void Object3D_Preload(const char *name, const vec3_t *scale);
 cEntity *__thiscall cWorld_CreateEntity(cWorld *world, const char *className, float x, float y, float z,
 	const char *name);
 /* printf into a string object (rva 0x134080) */

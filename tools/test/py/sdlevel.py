@@ -296,4 +296,27 @@ check('Scrap.Rand bad', lambda: Scrap.Rand(1))
 check('Scrap.CreateEntity bad', lambda: Scrap.CreateEntity('a', 1, 2, 3))
 check('Scrap.RunApp bad', lambda: Scrap.RunApp('a'))
 check('Scrap.GetEntity(Player0).Name', lambda: Scrap.GetEntity('Player0').Name)
+# Scrap batch 5 in the level: entity lists, camera distance, parking zones
+# mode numbers are not range checked: GetVideoModes(50) crashes the original (32 modes here)
+for i in (-1, 0, 1, 2, 31):
+	check('Scrap.GetVideoModes(%d)' % i, lambda i=i: Scrap.GetVideoModes(i))
+check('Scrap.SetSaveProfile(a, b)', lambda: Scrap.SetSaveProfile('a', 'b'))
+check('Scrap.EntityListGet(SDNoList, x)', lambda: Scrap.EntityListGet('SDNoList', 'x'))
+check('Scrap.EntityListSet(SDNoList, x, y)', lambda: Scrap.EntityListSet('SDNoList', 'x', 'y'))
+check('Scrap.EntityListGet bad', lambda: Scrap.EntityListGet('a'))
+check('Scrap.AddParkingZone bad', lambda: Scrap.AddParkingZone(1, (1, 2), 'x'))
+check('Scrap.GetNearestParked bad', lambda: Scrap.GetNearestParked('x'))
+check('Scrap.SetGrid bad', lambda: Scrap.SetGrid(1, 2))
+check('Scrap.Preload3DObject bad', lambda: Scrap.Preload3DObject())
+for l in ('Traffic', 'Enemies', 'SDList'):
+	for v in ('Num', 'Count', 'Name', 'Missing'):
+		check('Scrap.EntityListGet(%s, %s)' % (l, v), lambda l=l, v=v: Scrap.EntityListGet(l, v))
+check('Scrap.EntityListSet(SDList, Name, x)', lambda: Scrap.EntityListSet('SDList', 'Name', 'x'))
+for p in ((0, 0, 0), (1000, 2000, 3000), (-16762.8, 14713.5, 25705.8)):
+	check('Scrap.GetMinCamDist%s' % (p,), lambda p=p: Scrap.GetMinCamDist(p[0], p[1], p[2]))
+check('Scrap.GetNearestParked()', lambda: Scrap.GetNearestParked())
+check('Scrap.GetFarestParked()', lambda: Scrap.GetFarestParked())
+check('Scrap.GetNearestParked(0, (0,0,0))', lambda: Scrap.GetNearestParked(0, (0, 0, 0)))
+check('Scrap.AddParkingZone(1, player, SDPark)', lambda p=pp: Scrap.AddParkingZone(1, p, 'SDPark'))
+check('Scrap.GetNearestParked(1, player)', lambda p=pp: Scrap.GetNearestParked(1, p))
 finish()

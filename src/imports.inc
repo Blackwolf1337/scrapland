@@ -227,6 +227,13 @@ SD_IMPORT(cFilePack_dtor, 0x12e5d0)
 SD_IMPORT(cFilePack_Exists, 0x12fb30)
 SD_IMPORT(App_GetPath, 0x20d100)
 SD_IMPORT(cWorld_CreateEntity, 0x208360)
+SD_IMPORT(cWorld_GetMinCamDistSq, 0x209350)
+SD_IMPORT(Grid_Set, 0x1a7710)
+SD_IMPORT(Parking_AddZone, 0x155700)
+SD_IMPORT(Parking_Find, 0x155bf0)
+SD_IMPORT(cEntityList_Var, 0x1a7d70)
+SD_IMPORT(Video_GetModes, 0x215d20)
+SD_IMPORT(Object3D_Preload, 0x205140)
 
 /* engine: Input/ */
 SD_IMPORT(ActionSet_IsNamed, 0x133a30)

@@ -9,6 +9,7 @@
 #define SCRAP_GAME_H
 
 #include "scrap/global.h"
+#include "scrap/mathlib.h"
 
 #define GAME_TIMESTAMP 0x61b304cc	/* PE link time of Scrap.exe 1.6.1 (2021-12-10 07:42:04 UTC) */
 #define GAME_SIZEOFIMAGE 0x55e000
@@ -58,7 +59,11 @@ typedef struct cWorld {
 	void *vftable;			/* 0x0000 cWorld::vftable */
 	HashTable entities;		/* 0x0004 every entity by name (cEntity *) */
 	byte pad_0010[0x0034 - 0x0010];
-	byte scheduler[0x02c8 - 0x0034]; /* 0x0034 scheduled Python functions (Scrap.AddScheduledFunc) */
+	byte scheduler[0x0050 - 0x0034]; /* 0x0034 scheduled Python functions (Scrap.AddScheduledFunc) */
+	int curCam;			/* 0x0050 index into camPos */
+	byte pad_0054[0x0254 - 0x0054];
+	vec3_t camPos[9];		/* 0x0254 camera positions (Scrap.GetNearestParked) */
+	byte pad_02c0[0x02c8 - 0x02c0];
 	byte timer[0x02dc - 0x02c8];	/* 0x02c8 world time (Scrap.GetTime) */
 	float timeSpeed;		/* 0x02dc Scrap.GetTimeSpeed */
 	byte pad_02e0[0x02f0 - 0x02e0];
@@ -67,7 +72,7 @@ typedef struct cWorld {
 	TABLE(cWeapInfo) weapons;	/* 0x1bb8 SWeap.InitWeap, GetNWeap */
 	int firstWeapon;		/* 0x1bc0 SWeap.GetFirstiWeap */
 	TABLE(cAmmoInfo) ammo;		/* 0x1bc4 SWeap.InitAmmo, GetNAmmo */
-	byte pad_1bcc[0x1c68 - 0x1bcc];
+	byte grid[0x1c68 - 0x1bcc];	/* 0x1bcc Scrap.SetGrid */
 	byte alarm[0x1c6c - 0x1c68];	/* 0x1c68 alarm object (Scrap.GetAlarm, GetLockAlarm) */
 	float alarmLevel;		/* 0x1c6c */
 	byte alarmOn;			/* 0x1c70 */
@@ -75,12 +80,15 @@ typedef struct cWorld {
 	char alarmChars2[0x2090 - 0x1e71]; /* 0x1e71 */
 	int money;			/* 0x2090 Scrap.GetMoney */
 	/* embedded objects of unknown size, only their addresses are used so far */
-	byte taunts[0x2144 - 0x2094];	/* 0x2094 SLogic.UpdateTauntEndTime */
+	byte taunts[0x20ac - 0x2094];	/* 0x2094 SLogic.UpdateTauntEndTime */
+	byte parking[0x2144 - 0x20ac];	/* 0x20ac parking zones (Scrap.AddParkingZone, GetNearestParked) */
 	byte shipRegen[0x21c8 - 0x2144]; /* 0x2144 SLogic.SetShipToRegenerate */
 	byte aiCtrl[4];			/* 0x21c8 sentinels and gears (SLogic) */
 } cWorld;
 SD_OFFSET(cWorld, entities, 0x0004);
 SD_OFFSET(cWorld, scheduler, 0x0034);
+SD_OFFSET(cWorld, curCam, 0x0050);
+SD_OFFSET(cWorld, camPos, 0x0254);
 SD_OFFSET(cWorld, timer, 0x02c8);
 SD_OFFSET(cWorld, timeSpeed, 0x02dc);
 SD_OFFSET(cWorld, floor, 0x02f0);
@@ -93,6 +101,8 @@ SD_OFFSET(cWorld, firstWeapon, 0x1bc0);
 SD_OFFSET(cWorld, ammo, 0x1bc4);
 SD_OFFSET(cWorld, money, 0x2090);
 SD_OFFSET(cWorld, taunts, 0x2094);
+SD_OFFSET(cWorld, parking, 0x20ac);
+SD_OFFSET(cWorld, grid, 0x1bcc);
 SD_OFFSET(cWorld, shipRegen, 0x2144);
 SD_OFFSET(cWorld, aiCtrl, 0x21c8);
 
