@@ -1,0 +1,13 @@
+# Game data, installer and local environments (never commit)
+/game/
+/prefix/
+/ref/
+/build/
+*.bin
+setup_*.exe
+*.packed
+
+# Ghidra project databases (symbols are exported to text in symbols/)
+/ghidra/*.rep/
+/ghidra/*.gpr
+/ghidra/*.lock*

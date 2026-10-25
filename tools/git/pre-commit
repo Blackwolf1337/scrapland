@@ -1,0 +1,12 @@
+#!/bin/sh
+# Reject staged files over 5 MB (game data must never land in git).
+limit=5242880
+fail=0
+git diff --cached --name-only --diff-filter=AM -z | while IFS= read -r -d '' f; do
+	size=$(git cat-file -s ":$f" 2>/dev/null || echo 0)
+	if [ "$size" -gt "$limit" ]; then
+		echo "pre-commit: $f is $size bytes (limit $limit)" >&2
+		exit 1
+	fi
+done || fail=1
+exit $fail
