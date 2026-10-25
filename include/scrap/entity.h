@@ -28,16 +28,23 @@ typedef struct cEntityVtbl {
 	void(__thiscall *AimWeapon)(cEntity *self, float ax, float ay, float *dist, vec3_t *out, cEntity **target,
 		int flags);							/* 0x38 vf14 */
 	void(__thiscall *SetEmbeddedFX)(cEntity *self, const char *fxType);	/* 0x3c vf15 */
-	void *vf16_52[37];
-	void *(__thiscall *GetActCtrl)(cEntity *self);				/* 0xd4 vf53 */
+	void *vf16_22[7];
 } cEntityVtbl;
+SD_SIZE(cEntityVtbl, 23 * 4);
+
+/* entities with life (characters derive from it): cWithLifeEntity::vftable continues the one of cEntity */
+typedef struct cWithLifeEntityVtbl {
+	cEntityVtbl base;
+	void *vf23_52[30];
+	void *(__thiscall *GetActCtrl)(cEntity *self);				/* 0xd4 vf53 */
+} cWithLifeEntityVtbl;
+SD_OFFSET(cWithLifeEntityVtbl, GetActCtrl, 0xd4);
 SD_OFFSET(cEntityVtbl, IsType, 0x14);
 SD_OFFSET(cEntityVtbl, GetPos, 0x18);
 SD_OFFSET(cEntityVtbl, SetModel, 0x30);
 SD_OFFSET(cEntityVtbl, GetTargetAngle, 0x34);
 SD_OFFSET(cEntityVtbl, AimWeapon, 0x38);
 SD_OFFSET(cEntityVtbl, SetEmbeddedFX, 0x3c);
-SD_OFFSET(cEntityVtbl, GetActCtrl, 0xd4);
 
 struct cEntity {
 	const cEntityVtbl *vftable;	/* 0x0 */
@@ -73,6 +80,10 @@ cEntity *__thiscall cEntityList_GetFirst(cEntityList *list);
 
 /* removes the entity; 0 if it cannot (rva 0xef0c0) */
 byte __thiscall cEntity_Del(cEntity *self);
+
+static inline const cWithLifeEntityVtbl *WithLife_Vtbl(cEntity *e) {
+	return (const cWithLifeEntityVtbl *)e->vftable;
+}
 
 static inline int Entity_IsType(cEntity *e, const char *type) {
 	return e->vftable->IsType(e, type) != 0;

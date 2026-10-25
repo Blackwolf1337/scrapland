@@ -33,7 +33,7 @@ PyObject *SLogic_SetCharState(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	cEntity *target = World_FindEntity(targetName);
-	void *actCtrl = e->vftable->GetActCtrl(e);
+	void *actCtrl = WithLife_Vtbl(e)->GetActCtrl(e);
 	CHECK(actCtrl);
 	cLocalLogic *logic = Logic_GetLocalLogic(e);
 	if (!logic) {

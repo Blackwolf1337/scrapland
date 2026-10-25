@@ -2388,7 +2388,7 @@ rva	size	source	callconv	name	signature
 000d2b00	1393	ANALYSIS	__thiscall	cWalkCharEntity::vf17	undefined __thiscall(void)
 000d3080	643	ANALYSIS	__thiscall	cWalkCharEntity::vf60	undefined __thiscall(void)
 000d3310	1045	ANALYSIS	__thiscall	cWalkCharEntity::vf64	undefined __thiscall(void)
-000d3730	7	ANALYSIS	__thiscall	cWithLifeEntity::vf53	undefined __thiscall(void)
+000d3730	7	USER_DEFINED	__thiscall	cWithLifeEntity::GetActCtrl	void * __thiscall(void)
 000d3740	47	DEFAULT	unknown	FUN_004d3740	
 000d3770	31	ANALYSIS	__thiscall	cWalkCharEntity::vf27	undefined __thiscall(void)
 000d3790	92	ANALYSIS	__thiscall	cWalkCharEntity::vf28	undefined __thiscall(void)
