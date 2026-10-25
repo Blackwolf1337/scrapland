@@ -2198,7 +2198,7 @@ rva	size	source	callconv	name	signature
 000bc3e0	408	DEFAULT	unknown	FUN_004bc3e0	
 000bc580	392	USER_DEFINED	__cdecl	Con_Errorf	void __cdecl(char * fmt, ...)
 000bc710	408	USER_DEFINED	__cdecl	Con_Debugf	void __cdecl(char * fmt, ...)
-000bc8b0	408	DEFAULT	unknown	FUN_004bc8b0	
+000bc8b0	408	USER_DEFINED	unknown	Con_Warnf	undefined(void)
 000bca50	416	USER_DEFINED	__cdecl	Con_Print	void __cdecl(int color, char * text, int flag)
 000bcbf0	440	DEFAULT	unknown	FUN_004bcbf0	
 000bcdb0	516	USER_DEFINED	__cdecl	CheckFailed	void __cdecl(char * expr, char * file, char * date, int line)
@@ -3443,7 +3443,7 @@ rva	size	source	callconv	name	signature
 0012f990	177	DEFAULT	unknown	FUN_0052f990	
 0012fa50	218	DEFAULT	unknown	FUN_0052fa50	
 0012fb30	152	ANALYSIS	__thiscall	cFilePack::vf01	undefined __thiscall(void)
-0012fbd0	1003	DEFAULT	unknown	FUN_0052fbd0	
+0012fbd0	1003	USER_DEFINED	unknown	Pack_Extract	undefined(void)
 0012ffc0	59	DEFAULT	unknown	FUN_0052ffc0	
 00130000	229	DEFAULT	unknown	FUN_00530000	
 001300f0	143	DEFAULT	unknown	FUN_005300f0	
@@ -3489,7 +3489,7 @@ rva	size	source	callconv	name	signature
 00131db0	49	DEFAULT	unknown	FUN_00531db0	
 00131df0	95	DEFAULT	unknown	FUN_00531df0	
 00131e50	143	DEFAULT	unknown	FUN_00531e50	
-00131f00	98	DEFAULT	unknown	FUN_00531f00	
+00131f00	98	USER_DEFINED	unknown	GVar_Find	undefined(void)
 00131f70	227	DEFAULT	unknown	FUN_00531f70	
 00132060	332	DEFAULT	unknown	FUN_00532060	
 001321b0	586	DEFAULT	unknown	FUN_005321b0	
@@ -3506,9 +3506,9 @@ rva	size	source	callconv	name	signature
 00132bc0	57	DEFAULT	unknown	FUN_00532bc0	
 00132c00	143	DEFAULT	unknown	FUN_00532c00	
 00132cc0	109	DEFAULT	unknown	FUN_00532cc0	
-00132d30	481	DEFAULT	unknown	FUN_00532d30	
-00132f20	49	DEFAULT	unknown	FUN_00532f20	
-00132f60	6	DEFAULT	unknown	FUN_00532f60	
+00132d30	481	USER_DEFINED	unknown	Lang_GetEntries	undefined(void)
+00132f20	49	USER_DEFINED	unknown	Lang_GetStr	undefined(void)
+00132f60	6	USER_DEFINED	unknown	Lang_GetLanguage	undefined(void)
 00132f70	227	DEFAULT	unknown	FUN_00532f70	
 00133060	504	DEFAULT	unknown	FUN_00533060	
 00133260	427	DEFAULT	unknown	FUN_00533260	
@@ -3555,8 +3555,8 @@ rva	size	source	callconv	name	signature
 00134290	154	DEFAULT	unknown	FUN_00534290	
 00134330	569	DEFAULT	unknown	FUN_00534330	
 00134570	103	DEFAULT	unknown	FUN_00534570	
-001345e0	305	DEFAULT	unknown	FUN_005345e0	
-00134720	119	DEFAULT	unknown	FUN_00534720	
+001345e0	305	USER_DEFINED	unknown	Steam_GetTicket	undefined(void)
+00134720	119	USER_DEFINED	unknown	Steam_GetID	undefined(void)
 001347a0	31	DEFAULT	unknown	FUN_005347a0	
 001347c0	32	DEFAULT	unknown	FUN_005347c0	
 001347e0	108	DEFAULT	unknown	FUN_005347e0	
@@ -3566,17 +3566,17 @@ rva	size	source	callconv	name	signature
 001349b0	231	DEFAULT	unknown	FUN_005349b0	
 00134aa0	516	DEFAULT	unknown	FUN_00534aa0	
 00134cf0	261	DEFAULT	unknown	FUN_00534cf0	
-00134e00	238	DEFAULT	unknown	FUN_00534e00	
-00134ef0	129	DEFAULT	unknown	FUN_00534ef0	
+00134e00	238	USER_DEFINED	unknown	SaveVar_Create	undefined(void)
+00134ef0	129	USER_DEFINED	unknown	SaveVars_Delete	undefined(void)
 00134f90	210	DEFAULT	unknown	FUN_00534f90	
 00135070	49	DEFAULT	unknown	FUN_00535070	
 001350b0	143	DEFAULT	unknown	FUN_005350b0	
 00135140	104	DEFAULT	unknown	FUN_00535140	
 001351b0	305	DEFAULT	unknown	FUN_005351b0	
-001352f0	936	DEFAULT	unknown	FUN_005352f0	
-001356a0	45	DEFAULT	unknown	FUN_005356a0	
+001352f0	936	USER_DEFINED	unknown	SaveGames_GetList	undefined(void)
+001356a0	45	USER_DEFINED	unknown	SaveVar_Get	undefined(void)
 001356d0	227	DEFAULT	unknown	FUN_005356d0	
-001357c0	672	DEFAULT	unknown	FUN_005357c0	
+001357c0	672	USER_DEFINED	unknown	SaveVar_Inc	undefined(void)
 00135a60	22	DEFAULT	unknown	FUN_00535a60	
 00135a80	387	DEFAULT	unknown	FUN_00535a80	
 00135c10	244	DEFAULT	unknown	FUN_00535c10	
@@ -3609,7 +3609,7 @@ rva	size	source	callconv	name	signature
 00136890	4	DEFAULT	unknown	FUN_00536890	
 001368a0	4	DEFAULT	unknown	FUN_005368a0	
 001368b0	41	DEFAULT	unknown	FUN_005368b0	
-001368e0	4	DEFAULT	unknown	FUN_005368e0	
+001368e0	4	USER_DEFINED	unknown	Timer::GetTime	undefined(void)
 001368f0	4	DEFAULT	unknown	FUN_005368f0	
 00136900	179	DEFAULT	unknown	FUN_00536900	
 001369c0	22	DEFAULT	unknown	FUN_005369c0	
@@ -3637,7 +3637,7 @@ rva	size	source	callconv	name	signature
 001370e0	36	ANALYSIS	__thiscall	std::_Facet_base::`scalar_deleting_destructor'	void * __thiscall(uint param_1)
 00137110	36	ANALYSIS	__thiscall	std::_Facet_base::`scalar_deleting_destructor'	void * __thiscall(uint param_1)
 00137140	18	DEFAULT	unknown	FUN_00537140	
-00137160	234	DEFAULT	unknown	FUN_00537160	
+00137160	234	USER_DEFINED	unknown	Gog_GetID	undefined(void)
 00137250	206	DEFAULT	unknown	FUN_00537250	
 0013731e	44	ANALYSIS	unknown	Catch@0053731e	undefined(void)
 00137350	129	DEFAULT	unknown	FUN_00537350	
@@ -3645,7 +3645,7 @@ rva	size	source	callconv	name	signature
 001373f0	1	ANALYSIS	__thiscall	gog::GoGScrap::AuthListener::vf03	undefined __thiscall(void)
 00137400	41	ANALYSIS	__thiscall	gog::GoGScrap::AuthListener::vf01	undefined __thiscall(void)
 00137430	1	DEFAULT	unknown	FUN_00537430	
-00137470	254	DEFAULT	unknown	FUN_00537470	
+00137470	254	USER_DEFINED	unknown	Achievement_Unlock	undefined(void)
 00137570	6	DEFAULT	__cdecl	GALAXY.DLL::galaxy::api::ProcessData	
 00137580	103	DEFAULT	unknown	FUN_00537580	
 001375f0	190	DEFAULT	unknown	FUN_005375f0	
@@ -3799,8 +3799,8 @@ rva	size	source	callconv	name	signature
 0013fa80	119	DEFAULT	unknown	FUN_0053fa80	
 0013fb00	5	ANALYSIS	__thiscall	cPcPad::vf07	undefined __thiscall(void)
 0013fb10	27	DEFAULT	unknown	FUN_0053fb10	
-0013fb30	35	DEFAULT	unknown	FUN_0053fb30	
-0013fb60	35	DEFAULT	unknown	FUN_0053fb60	
+0013fb30	35	USER_DEFINED	unknown	Alarm::GetValue	undefined(void)
+0013fb60	35	USER_DEFINED	unknown	Alarm::IsLocked	undefined(void)
 0013fb90	89	DEFAULT	unknown	FUN_0053fb90	
 0013fbf0	286	DEFAULT	unknown	FUN_0053fbf0	
 0013fd10	49	DEFAULT	unknown	FUN_0053fd10	
@@ -4951,14 +4951,14 @@ rva	size	source	callconv	name	signature
 00192170	61	DEFAULT	unknown	FUN_00592170	
 001921b0	67	DEFAULT	unknown	FUN_005921b0	
 00192200	252	DEFAULT	unknown	FUN_00592200	
-00192300	131	DEFAULT	unknown	FUN_00592300	
-00192390	152	DEFAULT	unknown	FUN_00592390	
-00192430	137	DEFAULT	unknown	FUN_00592430	
+00192300	131	USER_DEFINED	unknown	CallFunc::AddParamI	undefined(void)
+00192390	152	USER_DEFINED	unknown	CallFunc::AddParamF	undefined(void)
+00192430	137	USER_DEFINED	unknown	CallFunc::AddParamS	undefined(void)
 001924c0	160	DEFAULT	unknown	FUN_005924c0	
 00192590	80	DEFAULT	unknown	FUN_00592590	
 001925e0	62	DEFAULT	unknown	FUN_005925e0	
 00192620	45	DEFAULT	unknown	FUN_00592620	
-00192650	325	DEFAULT	unknown	FUN_00592650	
+00192650	325	USER_DEFINED	unknown	CallFunc::Execute	undefined(void)
 001927a0	62	DEFAULT	unknown	FUN_005927a0	
 001927e0	216	DEFAULT	unknown	FUN_005927e0	
 001928c0	90	DEFAULT	unknown	FUN_005928c0	
@@ -4972,7 +4972,7 @@ rva	size	source	callconv	name	signature
 00192e60	391	DEFAULT	unknown	FUN_00592e60	
 00192ff0	135	DEFAULT	unknown	FUN_00592ff0	
 00193080	121	DEFAULT	unknown	FUN_00593080	
-00193100	166	DEFAULT	unknown	FUN_00593100	
+00193100	166	USER_DEFINED	unknown	PyEntity_New	undefined(void)
 001931b0	87	ANALYSIS	__cdecl	cPyEntity_Del	PyObject * __cdecl(PyObject * self, PyObject * args)
 00193210	141	ANALYSIS	__cdecl	cPyEntity_SetModel	PyObject * __cdecl(PyObject * self, PyObject * args)
 001932a0	91	ANALYSIS	__cdecl	cPyEntity_SetFX	PyObject * __cdecl(PyObject * self, PyObject * args)
@@ -5491,7 +5491,7 @@ rva	size	source	callconv	name	signature
 001a65f0	3	DEFAULT	unknown	FUN_005a65f0	
 001a6600	16	DEFAULT	unknown	FUN_005a6600	
 001a6620	3	DEFAULT	unknown	FUN_005a6620	
-001a66a0	3	DEFAULT	unknown	FUN_005a66a0	
+001a66a0	3	USER_DEFINED	unknown	Steam_SetAchievement	undefined(void)
 001a66e0	1	DEFAULT	unknown	FUN_005a66e0	
 001a6720	276	DEFAULT	unknown	FUN_005a6720	
 001a6840	124	DEFAULT	unknown	FUN_005a6840	
@@ -6141,8 +6141,8 @@ rva	size	source	callconv	name	signature
 00202e20	26	DEFAULT	unknown	FUN_00602e20	
 00202e40	32	DEFAULT	unknown	FUN_00602e40	
 00202e60	52	ANALYSIS	__thiscall	cMapElement::vf00	undefined __thiscall(void)
-00202ea0	338	DEFAULT	unknown	FUN_00602ea0	
-00203000	779	DEFAULT	unknown	FUN_00603000	
+00202ea0	338	USER_DEFINED	unknown	Elements::Call	undefined(void)
+00203000	779	USER_DEFINED	unknown	Elements::Create	undefined(void)
 00203310	3	ANALYSIS	__thiscall	cMapElement::vf01	undefined __thiscall(void)
 00203320	283	DEFAULT	unknown	FUN_00603320	
 00203440	223	DEFAULT	unknown	FUN_00603440	
@@ -6151,7 +6151,7 @@ rva	size	source	callconv	name	signature
 00203580	1104	DEFAULT	unknown	FUN_00603580	
 00203a00	1	DEFAULT	unknown	FUN_00603a00	
 00203a10	219	DEFAULT	unknown	FUN_00603a10	
-00203af0	58	DEFAULT	unknown	FUN_00603af0	
+00203af0	58	USER_DEFINED	unknown	Floor::Get	undefined(void)
 00203b30	119	DEFAULT	unknown	FUN_00603b30	
 00203bb0	117	DEFAULT	unknown	FUN_00603bb0	
 00203c30	30	DEFAULT	unknown	FUN_00603c30	
@@ -6182,9 +6182,9 @@ rva	size	source	callconv	name	signature
 00205770	150	ANALYSIS	__thiscall	cScheduledFuncStack::vf00	undefined __thiscall(void)
 00205810	103	DEFAULT	unknown	FUN_00605810	
 00205880	117	DEFAULT	unknown	FUN_00605880	
-00205900	205	DEFAULT	unknown	FUN_00605900	
+00205900	205	USER_DEFINED	unknown	Scheduler::Add	undefined(void)
 002059d0	178	DEFAULT	unknown	FUN_006059d0	
-00205a90	272	DEFAULT	unknown	FUN_00605a90	
+00205a90	272	USER_DEFINED	unknown	Scheduler::Delete	undefined(void)
 00205ba0	134	DEFAULT	unknown	FUN_00605ba0	
 00205c30	69	DEFAULT	unknown	FUN_00605c30	
 00205c80	286	DEFAULT	unknown	FUN_00605c80	
@@ -6240,9 +6240,9 @@ rva	size	source	callconv	name	signature
 002090c0	49	DEFAULT	unknown	FUN_006090c0	
 00209100	143	DEFAULT	unknown	FUN_00609100	
 00209190	143	DEFAULT	unknown	FUN_00609190	
-00209220	26	DEFAULT	unknown	FUN_00609220	
+00209220	26	USER_DEFINED	unknown	cWorld::GetCamName	undefined(void)
 00209240	48	USER_DEFINED	__thiscall	cWorld::GetList	void * __thiscall(char * name)
-002092a0	20	DEFAULT	unknown	FUN_006092a0	
+002092a0	20	USER_DEFINED	unknown	cWorld::GetFirstEntity	undefined(void)
 002092c0	141	DEFAULT	unknown	FUN_006092c0	
 00209350	343	DEFAULT	unknown	FUN_00609350	
 002094b0	90	DEFAULT	unknown	FUN_006094b0	
@@ -6254,7 +6254,7 @@ rva	size	source	callconv	name	signature
 00209890	35	DEFAULT	unknown	FUN_00609890	
 002098c0	35	DEFAULT	unknown	FUN_006098c0	
 002098f0	263	DEFAULT	unknown	FUN_006098f0	
-00209a00	209	DEFAULT	unknown	FUN_00609a00	
+00209a00	209	USER_DEFINED	unknown	cWorld::NewEntityList	undefined(void)
 00209ae0	69	DEFAULT	unknown	FUN_00609ae0	
 00209b30	342	DEFAULT	unknown	FUN_00609b30	
 00209c90	374	DEFAULT	unknown	FUN_00609c90	
@@ -6275,7 +6275,7 @@ rva	size	source	callconv	name	signature
 0020ace0	1	ANALYSIS	__thiscall	CApp::vf08	undefined __thiscall(void)
 0020acf0	5	ANALYSIS	__thiscall	CApp::vf11	undefined __thiscall(void)
 0020ad00	214	ANALYSIS	__thiscall	CApp::vf06	undefined __thiscall(void)
-0020ade0	69	DEFAULT	unknown	FUN_0060ade0	
+0020ade0	69	USER_DEFINED	unknown	Loading_End	undefined(void)
 0020ae30	1	ANALYSIS	__thiscall	CApp::vf09	undefined __thiscall(void)
 0020ae40	8	ANALYSIS	__thiscall	CApp::vf13	undefined __thiscall(void)
 0020ae50	4	ANALYSIS	__thiscall	CApp::vf15	undefined __thiscall(void)
@@ -6283,7 +6283,7 @@ rva	size	source	callconv	name	signature
 0020aea0	49	DEFAULT	unknown	FUN_0060aea0	
 0020aee0	722	ANALYSIS	__thiscall	CApp::vf04	undefined __thiscall(void)
 0020b1c0	157	ANALYSIS	__thiscall	CApp::vf01	undefined __thiscall(void)
-0020b260	45	DEFAULT	unknown	FUN_0060b260	
+0020b260	45	USER_DEFINED	unknown	Loading_Init	undefined(void)
 0020b290	180	DEFAULT	unknown	FUN_0060b290	
 0020b350	419	ANALYSIS	__thiscall	CApp::vf07	undefined __thiscall(void)
 0020b500	510	DEFAULT	unknown	FUN_0060b500	
@@ -6489,7 +6489,7 @@ rva	size	source	callconv	name	signature
 00215c00	6	DEFAULT	unknown	FUN_00615c00	
 00215c50	39	DEFAULT	unknown	FUN_00615c50	
 00215c90	20	DEFAULT	unknown	FUN_00615c90	
-00215cb0	109	DEFAULT	unknown	FUN_00615cb0	
+00215cb0	109	USER_DEFINED	unknown	Video_GetCurrentMode	undefined(void)
 00215d20	287	DEFAULT	unknown	FUN_00615d20	
 00215e60	6	DEFAULT	unknown	FUN_00615e60	
 00215e70	947	DEFAULT	unknown	FUN_00615e70	
@@ -6531,7 +6531,7 @@ rva	size	source	callconv	name	signature
 00217c60	338	DEFAULT	unknown	FUN_00617c60	
 00217dd0	75	DEFAULT	unknown	FUN_00617dd0	
 00217e20	271	DEFAULT	unknown	FUN_00617e20	
-00217f30	12	DEFAULT	unknown	FUN_00617f30	
+00217f30	12	USER_DEFINED	unknown	Models_List	undefined(void)
 00217f40	47	DEFAULT	unknown	FUN_00617f40	
 00217f70	94	DEFAULT	unknown	FUN_00617f70	
 00217fd0	49	DEFAULT	unknown	FUN_00617fd0	
@@ -6575,7 +6575,7 @@ rva	size	source	callconv	name	signature
 0021a880	229	DEFAULT	unknown	FUN_0061a880	
 0021a970	135	DEFAULT	unknown	FUN_0061a970	
 0021aa00	382	DEFAULT	unknown	FUN_0061aa00	
-0021ab80	137	DEFAULT	unknown	FUN_0061ab80	
+0021ab80	137	USER_DEFINED	unknown	Font_Build	undefined(void)
 0021ac10	279	DEFAULT	unknown	FUN_0061ac10	
 0021ad30	193	USER_DEFINED	unknown	Font_Get	undefined(void)
 0021ae00	948	DEFAULT	unknown	FUN_0061ae00	
@@ -8885,7 +8885,7 @@ rva	size	source	callconv	name	signature
 002dcf80	90	USER_DEFINED	__cdecl	PyList_GetItem	PyObject * __cdecl(PyObject * list, int i)
 002dcfe0	33	DEFAULT	unknown	FUN_006dcfe0	
 002dd010	34	DEFAULT	unknown	FUN_006dd010	
-002dd040	283	DEFAULT	unknown	FUN_006dd040	
+002dd040	283	USER_DEFINED	unknown	PyList_New	undefined(void)
 002dd160	115	DEFAULT	unknown	FUN_006dd160	
 002dd1e0	148	DEFAULT	unknown	FUN_006dd1e0	
 002dd280	34	DEFAULT	unknown	FUN_006dd280	

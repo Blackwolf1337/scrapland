@@ -11001,13 +11001,16 @@ rva	source	name	datatype
 00444d2c	USER_DEFINED	g_NodesTrafficInDoor	/undefined4
 00444d34	USER_DEFINED	g_NodesWorld	/undefined4
 00444dc8	USER_DEFINED	g_NodesWorld2D	/undefined4
+0044ab6c	USER_DEFINED	g_PackName	/undefined4
 0044c128	USER_DEFINED	g_ActionSets	/undefined4
 0044c130	USER_DEFINED	g_PlayerInput	/undefined4
 0044c400	USER_DEFINED	g_VirtualKeyboard	/undefined4
 0044c510	USER_DEFINED	g_Pads	/undefined4
+00466a04	USER_DEFINED	g_CallFunc	
 00466bb4	USER_DEFINED	g_pSound	/undefined4
 00467450	USER_DEFINED	g_pWorld	/undefined4
 004677e8	USER_DEFINED	g_IsMapOutDoor	/undefined4
+00467b9c	USER_DEFINED	g_IsSteam	/undefined1
 00467ba0	USER_DEFINED	g_pApp	/undefined4
 004e8dec	IMPORTED	_tls_index	/undefined4
 004f3510	IMPORTED	Rsrc_Icon_1_c0a	/PNG-Image

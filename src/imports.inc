@@ -155,6 +155,45 @@ SD_IMPORT(Engine_WorldToScreen, 0x216d60)
 SD_IMPORT(Font_Get, 0x21ad30)
 SD_IMPORT(Font_TextSize, 0x219f30)
 
+/* engine: functions behind the Scrap module (include/scrap/scrap.h) */
+SD_IMPORT(CallFunc_AddParamF, 0x192390)
+SD_IMPORT(CallFunc_AddParamI, 0x192300)
+SD_IMPORT(CallFunc_AddParamS, 0x192430)
+SD_IMPORT(CallFunc_Execute, 0x192650)
+SD_IMPORT(Scheduler_Add, 0x205900)
+SD_IMPORT(Scheduler_Delete, 0x205a90)
+SD_IMPORT(Elements_Call, 0x202ea0)
+SD_IMPORT(Elements_Create, 0x203000)
+SD_IMPORT(Floor_Get, 0x203af0)
+SD_IMPORT(Timer_GetTime, 0x1368e0)
+SD_IMPORT(Alarm_GetValue, 0x13fb30)
+SD_IMPORT(Alarm_IsLocked, 0x13fb60)
+SD_IMPORT(cWorld_NewEntityList, 0x209a00)
+SD_IMPORT(cWorld_GetCamName, 0x209220)
+SD_IMPORT(cWorld_GetFirstEntity, 0x2092a0)
+SD_IMPORT(PyEntity_New, 0x193100)
+SD_IMPORT(GVar_Find, 0x131f00)
+SD_IMPORT(Achievement_Unlock, 0x137470)
+SD_IMPORT(Steam_SetAchievement, 0x1a66a0)
+SD_IMPORT(Steam_GetID, 0x134720)
+SD_IMPORT(Steam_GetTicket, 0x1345e0)
+SD_IMPORT(Gog_GetID, 0x137160)
+SD_IMPORT(SaveVar_Create, 0x134e00)
+SD_IMPORT(SaveVars_Delete, 0x134ef0)
+SD_IMPORT(SaveVar_Get, 0x1356a0)
+SD_IMPORT(SaveVar_Inc, 0x1357c0)
+SD_IMPORT(SaveGames_GetList, 0x1352f0)
+SD_IMPORT(Lang_GetEntries, 0x132d30)
+SD_IMPORT(Lang_GetStr, 0x132f20)
+SD_IMPORT(Lang_GetLanguage, 0x132f60)
+SD_IMPORT(Pack_Extract, 0x12fbd0)
+SD_IMPORT(Font_Build, 0x21ab80)
+SD_IMPORT(Loading_Init, 0x20b260)
+SD_IMPORT(Loading_End, 0x20ade0)
+SD_IMPORT(Video_GetCurrentMode, 0x215cb0)
+SD_IMPORT(Models_List, 0x217f30)
+SD_IMPORT(Con_Warnf, 0x0bc8b0)
+
 /* engine: Input/ */
 SD_IMPORT(ActionSet_IsNamed, 0x133a30)
 SD_IMPORT(Input_SelectActionSet, 0x13a560)
@@ -215,6 +254,7 @@ SD_IMPORT(PyTuple_New, 0x2decb0)	/* tupleobject.c */
 SD_IMPORT(PyTuple_SetItem, 0x2ded50)	/* tupleobject.c */
 SD_IMPORT(PyFloat_FromDouble, 0x2dfd70)	/* floatobject.c */
 SD_IMPORT(PyList_Size, 0x2dd2b0)	/* listobject.c */
+SD_IMPORT(PyList_New, 0x2dd040)	/* listobject.c */
 SD_IMPORT(PyTuple_GetItem, 0x2dec30)	/* tupleobject.c */
 SD_IMPORT(PyInt_AsLong, 0x2de3a0)	/* intobject.c */
 SD_IMPORT(PyList_GetItem, 0x2dcf80)	/* listobject.c */

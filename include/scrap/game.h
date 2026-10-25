@@ -57,11 +57,22 @@ SD_SIZE(cAmmoInfo, 0x5c);
 typedef struct cWorld {
 	void *vftable;			/* 0x0000 cWorld::vftable */
 	HashTable entities;		/* 0x0004 every entity by name (cEntity *) */
-	byte pad_0010[0x1bb8 - 0x0010];
+	byte pad_0010[0x0034 - 0x0010];
+	byte scheduler[0x02c8 - 0x0034]; /* 0x0034 scheduled Python functions (Scrap.AddScheduledFunc) */
+	byte timer[0x02dc - 0x02c8];	/* 0x02c8 world time (Scrap.GetTime) */
+	float timeSpeed;		/* 0x02dc Scrap.GetTimeSpeed */
+	byte pad_02e0[0x02f0 - 0x02e0];
+	byte floor[0x1bb4 - 0x02f0];	/* 0x02f0 Scrap.GetFloor */
+	byte elements[0x1bb8 - 0x1bb4]; /* 0x1bb4 map elements (Scrap.CreateElements, CallElements) */
 	TABLE(cWeapInfo) weapons;	/* 0x1bb8 SWeap.InitWeap, GetNWeap */
 	int firstWeapon;		/* 0x1bc0 SWeap.GetFirstiWeap */
 	TABLE(cAmmoInfo) ammo;		/* 0x1bc4 SWeap.InitAmmo, GetNAmmo */
-	byte pad_1bcc[0x2090 - 0x1bcc];
+	byte pad_1bcc[0x1c68 - 0x1bcc];
+	byte alarm[0x1c6c - 0x1c68];	/* 0x1c68 alarm object (Scrap.GetAlarm, GetLockAlarm) */
+	float alarmLevel;		/* 0x1c6c */
+	byte alarmOn;			/* 0x1c70 */
+	char alarmChars[0x1e71 - 0x1c71]; /* 0x1c71 Scrap.GetAlarmChars */
+	char alarmChars2[0x2090 - 0x1e71]; /* 0x1e71 */
 	int money;			/* 0x2090 Scrap.GetMoney */
 	/* embedded objects of unknown size, only their addresses are used so far */
 	byte taunts[0x2144 - 0x2094];	/* 0x2094 SLogic.UpdateTauntEndTime */
@@ -69,6 +80,14 @@ typedef struct cWorld {
 	byte aiCtrl[4];			/* 0x21c8 sentinels and gears (SLogic) */
 } cWorld;
 SD_OFFSET(cWorld, entities, 0x0004);
+SD_OFFSET(cWorld, scheduler, 0x0034);
+SD_OFFSET(cWorld, timer, 0x02c8);
+SD_OFFSET(cWorld, timeSpeed, 0x02dc);
+SD_OFFSET(cWorld, floor, 0x02f0);
+SD_OFFSET(cWorld, elements, 0x1bb4);
+SD_OFFSET(cWorld, alarm, 0x1c68);
+SD_OFFSET(cWorld, alarmChars, 0x1c71);
+SD_OFFSET(cWorld, alarmChars2, 0x1e71);
 SD_OFFSET(cWorld, weapons, 0x1bb8);
 SD_OFFSET(cWorld, firstWeapon, 0x1bc0);
 SD_OFFSET(cWorld, ammo, 0x1bc4);
@@ -91,13 +110,24 @@ int __thiscall cAmmoInfo_SetF(cAmmoInfo *ammo, const char *var, float value);
 int __thiscall cAmmoInfo_SetS(cAmmoInfo *ammo, const char *var, const char *value);
 
 /* the application: allocated (0x90 bytes) and run by the WinMain message loop at rva 0x20d8c0 */
-typedef struct CWinApp {
-	void *vftable;			/* 0x00 CWinApp::vftable */
+typedef struct CWinApp CWinApp;
+typedef struct CWinAppVtbl {
+	void *vf00_08[9];
+	void(__thiscall *Exit)(CWinApp *self);				/* 0x24 */
+	void *vf0a_11[8];
+	const char *(__thiscall *DebugInput)(CWinApp *self, const char *text);	/* 0x48 */
+} CWinAppVtbl;
+SD_OFFSET(CWinAppVtbl, Exit, 0x24);
+SD_OFFSET(CWinAppVtbl, DebugInput, 0x48);
+
+struct CWinApp {
+	const CWinAppVtbl *vftable;	/* 0x00 CWinApp::vftable */
 	byte pad_04[0x30 - 0x04];
 	uint32_t flags;			/* 0x30 bit 2: dedicated server (SNet.IsDedicated) */
 	char *levelPath;		/* 0x34 Scrap.GetLevelPath */
-	byte pad_38[0x90 - 0x38];
-} CWinApp;
+	char *newLevelPath;		/* 0x38 Scrap.GetNewLevelPath */
+	byte pad_3c[0x90 - 0x3c];
+};
 SD_OFFSET(CWinApp, levelPath, 0x34);
 SD_SIZE(CWinApp, 0x90);
 
