@@ -1258,8 +1258,8 @@ rva	size	source	callconv	name	signature
 000650c0	225	DEFAULT	unknown	FUN_004650c0	
 000651b0	237	DEFAULT	unknown	FUN_004651b0	
 000652a0	49	DEFAULT	unknown	FUN_004652a0	
-000652e0	143	DEFAULT	unknown	FUN_004652e0	
-00065370	227	DEFAULT	unknown	FUN_00465370	
+000652e0	143	USER_DEFINED	__thiscall	HashTable::Find	void * __thiscall(char * key, uint slot)
+00065370	227	USER_DEFINED	__thiscall	HashTable::Hash	uint __thiscall(char * key)
 00065460	548	DEFAULT	unknown	FUN_00465460	
 00065690	484	DEFAULT	unknown	FUN_00465690	
 00065880	420	DEFAULT	unknown	FUN_00465880	
@@ -2297,7 +2297,7 @@ rva	size	source	callconv	name	signature
 000c3890	2906	DEFAULT	unknown	FUN_004c3890	
 000c43f0	387	DEFAULT	unknown	FUN_004c43f0	
 000c4580	197	DEFAULT	unknown	FUN_004c4580	
-000c4650	249	DEFAULT	unknown	FUN_004c4650	
+000c4650	249	USER_DEFINED	unknown	FX_BishopSellLife	undefined(void)
 000c4750	577	DEFAULT	unknown	FUN_004c4750	
 000c49a0	1736	DEFAULT	unknown	FUN_004c49a0	
 000c5070	2801	DEFAULT	unknown	FUN_004c5070	
@@ -2778,7 +2778,7 @@ rva	size	source	callconv	name	signature
 000ef360	6	ANALYSIS	__thiscall	cEntity::vf04	undefined __thiscall(void)
 000ef370	1	ANALYSIS	__thiscall	cEntity::vf02	undefined __thiscall(void)
 000ef380	591	ANALYSIS	__thiscall	cEntity::vf16	undefined __thiscall(void)
-000ef5d0	73	ANALYSIS	__thiscall	cEntity::vf05	undefined __thiscall(void)
+000ef5d0	73	USER_DEFINED	__thiscall	cEntity::IsType	byte __thiscall(char * type)
 000ef620	182	DEFAULT	unknown	FUN_004ef620	
 000ef6e0	125	DEFAULT	unknown	FUN_004ef6e0	
 000ef760	3	ANALYSIS	__thiscall	cEntity::vf01	undefined __thiscall(void)
@@ -2786,7 +2786,7 @@ rva	size	source	callconv	name	signature
 000ef7f0	115	DEFAULT	unknown	FUN_004ef7f0	
 000ef870	115	DEFAULT	unknown	FUN_004ef870	
 000ef910	38	ANALYSIS	__thiscall	cEntity::vf08	undefined __thiscall(void)
-000ef940	22	ANALYSIS	__thiscall	cEntity::vf15	undefined __thiscall(void)
+000ef940	22	USER_DEFINED	__thiscall	cEntity::SetEmbeddedFX	void __thiscall(char * fxType)
 000ef960	22	ANALYSIS	__thiscall	cEntity::vf12	undefined __thiscall(void)
 000ef980	27	ANALYSIS	__thiscall	cEntity::vf07	undefined __thiscall(void)
 000ef9a0	1	ANALYSIS	__thiscall	cEntity::vf00	undefined __thiscall(void)
@@ -5551,11 +5551,11 @@ rva	size	source	callconv	name	signature
 001b1d40	319	DEFAULT	unknown	FUN_005b1d40	
 001b1e80	1089	DEFAULT	unknown	FUN_005b1e80	
 001b22d0	1614	DEFAULT	unknown	FUN_005b22d0	
-001b2920	471	DEFAULT	unknown	FUN_005b2920	
-001b2b00	266	DEFAULT	unknown	FUN_005b2b00	
+001b2920	471	USER_DEFINED	unknown	FX_CharacterConversion	undefined(void)
+001b2b00	266	USER_DEFINED	unknown	FX_CharacterConversor	undefined(void)
 001b2c10	1464	DEFAULT	unknown	FUN_005b2c10	
 001b31d0	657	DEFAULT	unknown	FUN_005b31d0	
-001b3470	89	DEFAULT	unknown	FUN_005b3470	
+001b3470	89	USER_DEFINED	unknown	FX_MoneyTransfer	undefined(void)
 001b34d0	533	ANALYSIS	__thiscall	cObjElementFXCharacterConversion::vf03	undefined __thiscall(void)
 001b36f0	205	ANALYSIS	__thiscall	cObjElementFXCharacterConversor::vf03	undefined __thiscall(void)
 001b37c0	332	ANALYSIS	__thiscall	cObjElementFXCharacterDeath::vf03	undefined __thiscall(void)
@@ -6038,7 +6038,7 @@ rva	size	source	callconv	name	signature
 001f3140	2078	ANALYSIS	__thiscall	cObjElementFXVehicleSpawn::vf01	undefined __thiscall(void)
 001f3960	3922	ANALYSIS	__thiscall	cObjElementFXVehicleSputnik::vf01	undefined __thiscall(void)
 001f48c0	1147	DEFAULT	unknown	FUN_005f48c0	
-001f4d50	13631	DEFAULT	unknown	FUN_005f4d50	
+001f4d50	13631	USER_DEFINED	unknown	FX_ShipExplosion	undefined(void)
 001f8290	145	ANALYSIS	__thiscall	cObjElementFXFiredDebris::vf03	undefined __thiscall(void)
 001f8330	87	ANALYSIS	__thiscall	cObjElementFXFiredEntity::vf03	undefined __thiscall(void)
 001f8390	145	ANALYSIS	__thiscall	cObjElementFXSmokeDebris::vf03	undefined __thiscall(void)

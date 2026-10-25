@@ -8,7 +8,7 @@
 #ifndef SCRAP_GAME_H
 #define SCRAP_GAME_H
 
-#include "scrap/shared.h"
+#include "scrap/global.h"
 
 #define GAME_TIMESTAMP 0x61b304cc	/* PE link time of Scrap.exe 1.6.1 (2021-12-10 07:42:04 UTC) */
 #define GAME_SIZEOFIMAGE 0x55e000
@@ -56,13 +56,15 @@ SD_SIZE(cAmmoInfo, 0x5c);
 /* the world: created by cWorld's constructor (rva 0x206db0), owns the game state of the running level */
 typedef struct cWorld {
 	void *vftable;			/* 0x0000 cWorld::vftable */
-	byte pad_0004[0x1bb8 - 0x0004];
+	HashTable entities;		/* 0x0004 every entity by name (cEntity *) */
+	byte pad_0010[0x1bb8 - 0x0010];
 	TABLE(cWeapInfo) weapons;	/* 0x1bb8 SWeap.InitWeap, GetNWeap */
 	int firstWeapon;		/* 0x1bc0 SWeap.GetFirstiWeap */
 	TABLE(cAmmoInfo) ammo;		/* 0x1bc4 SWeap.InitAmmo, GetNAmmo */
 	byte pad_1bcc[0x2090 - 0x1bcc];
 	int money;			/* 0x2090 Scrap.GetMoney */
 } cWorld;
+SD_OFFSET(cWorld, entities, 0x0004);
 SD_OFFSET(cWorld, weapons, 0x1bb8);
 SD_OFFSET(cWorld, firstWeapon, 0x1bc0);
 SD_OFFSET(cWorld, ammo, 0x1bc4);

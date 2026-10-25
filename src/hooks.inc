@@ -50,3 +50,11 @@ SD_HOOK(SAct_CreateAction, 0x194a80, 127)
 SD_HOOK(SAct_GetAction, 0x194b00, 127)
 SD_HOOK(SAct_SetAct, 0x194b80, 171)
 SD_HOOK(SAct_GetAct, 0x194c30, 198)
+
+/* src/game/PyInterface/SFXPy.c */
+SD_HOOK(SFX_ShipExplosion, 0x19b1a0, 191)
+SD_HOOK(SFX_CharacterConversor, 0x19b260, 337)
+SD_HOOK(SFX_CharacterConversion, 0x19b3c0, 327)
+SD_HOOK(SFX_BishopSellLife, 0x19b510, 280)
+SD_HOOK(SFX_MoneyTransfer, 0x19b630, 332)
+SD_HOOK(SFX_EmbeddedSet, 0x19b780, 144)

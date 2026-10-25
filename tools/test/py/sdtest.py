@@ -3,7 +3,7 @@
 # root directory through -PythonExecute:execfile(...); the engine's command line drops quotes and splits at spaces,
 # so difftest.sh spells the file name with chr().
 import sys
-import Scrap, SWeap, SVec, SAct
+import Scrap, SWeap, SVec, SAct, SFX
 
 out = open('sdtest.out', 'w')
 
@@ -140,5 +140,15 @@ check('SAct.GetClass(SDTestClass) deleted', lambda: SAct.GetClass('SDTestClass')
 check('SAct.CreateClass bad', lambda: SAct.CreateClass(1))
 check('clear error', lambda: SVec.GetRotAng((0.0, 0.0, 1.0)))
 check('SAct.DelClass bad', lambda: SAct.DelClass(None))
+# SFX: functions that take entity names need a level (a missing entity fails a CHECK and ends the game), so
+# only ShipExplosion and argument errors here (nflames -1 fails a CHECK inside the original effect code)
+for args in (((0, 0, 0), (0, 0, 0), 1.0, 1.0, 0, 0), ((10.5, -3, 200), (1, 2, 3), 2.5, 0.25, 4, 1)):
+	check('SFX.ShipExplosion%s' % (args,), lambda a=args: apply(SFX.ShipExplosion, a))
+check('SFX.ShipExplosion bad', lambda: SFX.ShipExplosion((0, 0, 0), (0, 0, 0), 1.0, 1.0, 0))
+check('SFX.CharacterConversor bad', lambda: SFX.CharacterConversor('a', 'b'))
+check('SFX.CharacterConversion bad', lambda: SFX.CharacterConversion('a', 2, 1.0))
+check('SFX.BishopSellLife bad', lambda: SFX.BishopSellLife('a'))
+check('SFX.MoneyTransfer bad', lambda: SFX.MoneyTransfer('a', 'b', 'c'))
+check('SFX.EmbeddedSet bad', lambda: SFX.EmbeddedSet(None, 'x'))
 out.write('done\n')
 out.close()
