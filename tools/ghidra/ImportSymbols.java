@@ -113,6 +113,10 @@ public class ImportSymbols extends GhidraScript {
 			}
 			try {
 				setName(a, f.getSymbol(), unesc(r[4]), src);
+				String cc = unesc(r[3]);
+				if (!cc.isEmpty() && !cc.equals(f.getCallingConventionName())) {
+					f.setCallingConvention(cc);
+				}
 				String sig = unesc(r[5]);
 				if (!sig.isEmpty() && (src == SourceType.USER_DEFINED || src == SourceType.IMPORTED)) {
 					int p = sig.indexOf('(');
@@ -149,8 +153,12 @@ public class ImportSymbols extends GhidraScript {
 					setName(a, null, full, src);
 				}
 				String type = unesc(r[3]);
-				if (!type.isEmpty() && src == SourceType.USER_DEFINED) {
+				if (!type.isEmpty()) {
 					DataType dt = currentProgram.getDataTypeManager().getDataType(type);
+					ghidra.program.model.listing.Data have = getDataAt(a);
+					if (have != null && have.getDataType().getPathName().equals(type)) {
+						dt = null; // the analysis already made the same data
+					}
 					if (dt != null) {
 						DataUtilities.createData(currentProgram, a, dt, -1,
 							DataUtilities.ClearDataMode.CLEAR_ALL_UNDEFINED_CONFLICT_DATA);

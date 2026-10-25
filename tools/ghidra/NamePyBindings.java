@@ -3,23 +3,31 @@
 //   { char *ml_name; PyCFunction ml_meth; int ml_flags; char *ml_doc; }, ended by an entry with ml_name 0.
 // The module name comes from the Py_InitModule4(name, methods, doc, self, 1007) call that pushes the table. Each
 // function becomes <module>_<method> (CPython style, "__builtin__" gives "builtin"), its doc string the plate
-// comment, the table <module>_methods typed as PyMethodDef[n]. Names a user gave are kept.
+// comment, the table <module>_methods typed as PyMethodDef[n]. Names a user gave are kept. When the Python headers
+// are imported (ImportHeaders.java), their PyMethodDef and PyTypeObject are used and the functions get the
+// PyCFunction signature.
 // @category Scrapland
 
 import java.util.ArrayList;
 import java.util.List;
 
+import ghidra.app.cmd.function.ApplyFunctionSignatureCmd;
+import ghidra.app.cmd.function.FunctionRenameOption;
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.data.ArrayDataType;
 import ghidra.program.model.data.CategoryPath;
+import ghidra.program.model.data.CharDataType;
 import ghidra.program.model.data.DataType;
 import ghidra.program.model.data.DataTypeConflictHandler;
 import ghidra.program.model.data.DataUtilities;
+import ghidra.program.model.data.FunctionDefinitionDataType;
+import ghidra.program.model.data.ParameterDefinition;
+import ghidra.program.model.data.ParameterDefinitionImpl;
 import ghidra.program.model.data.IntegerDataType;
 import ghidra.program.model.data.PointerDataType;
 import ghidra.program.model.data.StructureDataType;
-import ghidra.program.model.data.TerminatedStringDataType;
+import ghidra.program.model.data.VoidDataType;
 import ghidra.program.model.listing.CommentType;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.Instruction;
@@ -48,7 +56,8 @@ public class NamePyBindings extends GhidraScript {
 		if (name == null || meth == null || !text.contains(meth) || flags < 0 || flags > 3) {
 			return false;
 		}
-		if (mem.getInt(e.add(12)) != 0 && cstr(doc, 4096, false) == null) {
+		// the doc pointer only has to point into the image: SAI has an entry whose doc points to binary data
+		if (mem.getInt(e.add(12)) != 0 && doc == null) {
 			return false;
 		}
 		return cstr(name, 64, true) != null;
@@ -124,6 +133,17 @@ public class NamePyBindings extends GhidraScript {
 					if (getSymbolAt(type) == null || getSymbolAt(type).getSource() == SourceType.DEFAULT) {
 						createLabel(type, name + "_Type", true, SourceType.ANALYSIS);
 					}
+					DataType t = headerType("PyTypeObject");
+					if (t != null) {
+						try {
+							// tp_name and tp_basicsize matched, so data the analysis guessed here gives way
+							DataUtilities.createData(currentProgram, type, t, -1,
+								DataUtilities.ClearDataMode.CLEAR_ALL_CONFLICT_DATA);
+						}
+						catch (Exception ex) {
+							printerr("NamePyBindings: PyTypeObject at " + type + ": " + ex.getMessage());
+						}
+					}
 					return name;
 				}
 			}
@@ -175,13 +195,55 @@ public class NamePyBindings extends GhidraScript {
 		return n;
 	}
 
+	// a type parsed from the Python headers (ImportHeaders.java), or null
+	DataType headerType(String name) {
+		List<DataType> found = new ArrayList<>();
+		currentProgram.getDataTypeManager().findDataTypes(name, found);
+		for (DataType t : found) {
+			if (t.getCategoryPath().getPath().endsWith(".h")) { // ImportHeaders files types by header name
+				return t;
+			}
+		}
+		return null;
+	}
+
+	// PyCFunction: PyObject *f(PyObject *self, PyObject *args), with METH_KEYWORDS also PyObject *kw
+	void applyCFunction(Function f, boolean keywords) {
+		DataType obj = headerType("PyObject");
+		if (obj == null) {
+			return;
+		}
+		DataType p = new PointerDataType(obj);
+		FunctionDefinitionDataType def = new FunctionDefinitionDataType("PyCFunction");
+		def.setReturnType(p);
+		List<ParameterDefinition> params = new ArrayList<>();
+		params.add(new ParameterDefinitionImpl("self", p, null));
+		params.add(new ParameterDefinitionImpl("args", p, null));
+		if (keywords) {
+			params.add(new ParameterDefinitionImpl("kw", p, null));
+		}
+		def.setArguments(params.toArray(new ParameterDefinition[0]));
+		try {
+			def.setCallingConvention("__cdecl");
+		}
+		catch (Exception e) {
+			// keep the default convention
+		}
+		new ApplyFunctionSignatureCmd(f.getEntryPoint(), def, SourceType.ANALYSIS, true, false, null,
+			FunctionRenameOption.NO_CHANGE).applyTo(currentProgram);
+	}
+
 	DataType methodDefType() {
+		DataType h = headerType("PyMethodDef");
+		if (h != null) {
+			return h;
+		}
 		CategoryPath cat = new CategoryPath("/Scrap/Python");
 		StructureDataType s = new StructureDataType(cat, "PyMethodDef", 0);
-		s.add(new PointerDataType(TerminatedStringDataType.dataType), 4, "ml_name", null);
-		s.add(PointerDataType.dataType, 4, "ml_meth", "PyCFunction");
+		s.add(new PointerDataType(CharDataType.dataType), 4, "ml_name", null);
+		s.add(new PointerDataType(VoidDataType.dataType), 4, "ml_meth", "PyCFunction");
 		s.add(IntegerDataType.dataType, 4, "ml_flags", "METH_VARARGS 1, METH_KEYWORDS 2");
-		s.add(new PointerDataType(TerminatedStringDataType.dataType), 4, "ml_doc", null);
+		s.add(new PointerDataType(CharDataType.dataType), 4, "ml_doc", null);
 		return currentProgram.getDataTypeManager().addDataType(s, DataTypeConflictHandler.REPLACE_HANDLER);
 	}
 
@@ -260,6 +322,7 @@ public class NamePyBindings extends GhidraScript {
 						continue;
 					}
 					if (rename(f.getSymbol(), prefix + "_" + name, SourceType.ANALYSIS)) {
+						applyCFunction(f, (mem.getInt(e.add(8)) & 2) != 0);
 						nfuncs++;
 					}
 					String doc = cstr(ptr(e.add(12)), 4096, false);

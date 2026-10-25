@@ -11,3 +11,6 @@ setup_*.exe
 /ghidra/*.rep/
 /ghidra/*.gpr
 /ghidra/*.lock*
+
+# Python bytecode caches
+__pycache__/

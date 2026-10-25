@@ -10630,42 +10630,43 @@ rva	source	name	datatype
 0041512c	IMPORTED	pairNode::RTTI_Base_Class_Array	/RTTIBaseClassDescriptor *[2]
 00415138	IMPORTED	pairNode::RTTI_Base_Class_Descriptor_at_(0,-1,0,64)	/RTTIBaseClassDescriptor
 00428d58	ANALYSIS	_PyImport_Inittab	/pointer
-00428e18	ANALYSIS	cPyEntity_Type	
-00428e88	ANALYSIS	cPyEntity_methods	/Scrap/Python/PyMethodDef[7]
-00429288	ANALYSIS	SAct_methods	/Scrap/Python/PyMethodDef[10]
-0042c610	ANALYSIS	Scrap_methods	/Scrap/Python/PyMethodDef[115]
-0042d060	ANALYSIS	SFX_methods	/Scrap/Python/PyMethodDef[7]
-0042d790	ANALYSIS	SInput_methods	/Scrap/Python/PyMethodDef[21]
-0042dd20	ANALYSIS	SLogic_methods	/Scrap/Python/PyMethodDef[13]
-0042e610	ANALYSIS	SNet_methods	/Scrap/Python/PyMethodDef[26]
-0042ec68	ANALYSIS	SScorer_methods	/Scrap/Python/PyMethodDef[34]
-0042f558	ANALYSIS	SSound_methods	/Scrap/Python/PyMethodDef[18]
-0042fc80	ANALYSIS	SVec_methods	/Scrap/Python/PyMethodDef[13]
-00430128	ANALYSIS	SWeap_methods	/Scrap/Python/PyMethodDef[16]
-00432c00	ANALYSIS	list_immutable_during_sort_Type	
-00432e90	ANALYSIS	list_methods	/Scrap/Python/PyMethodDef[10]
-00432f50	ANALYSIS	list_immutable_during_sort_methods	/Scrap/Python/PyMethodDef[8]
-00432ff0	ANALYSIS	list_Type	
-00433308	ANALYSIS	dictionary_methods	/Scrap/Python/PyMethodDef[9]
-00433398	ANALYSIS	dictionary_Type	
-00433908	ANALYSIS	imp_methods	/Scrap/Python/PyMethodDef[15]
-00434070	ANALYSIS	math_methods	/Scrap/Python/PyMethodDef[24]
-00434428	ANALYSIS	new_methods	/Scrap/Python/PyMethodDef[7]
-00434518	ANALYSIS	regexobj_methods	/Scrap/Python/PyMethodDef[4]
-00434578	ANALYSIS	regex_Type	
-004345e8	ANALYSIS	regex_methods	/Scrap/Python/PyMethodDef[7]
-00434978	ANALYSIS	signal_methods	/Scrap/Python/PyMethodDef[4]
-00435b88	ANALYSIS	strop_methods	/Scrap/Python/PyMethodDef[22]
-00435e28	ANALYSIS	locale_methods	/Scrap/Python/PyMethodDef[5]
-00435e78	ANALYSIS	marshal_methods	/Scrap/Python/PyMethodDef[5]
-004360a8	ANALYSIS	file_methods	/Scrap/Python/PyMethodDef[14]
-004361d8	ANALYSIS	file_Type	
-004366b8	ANALYSIS	sys_methods	/Scrap/Python/PyMethodDef[7]
-00438ae8	ANALYSIS	builtin_methods	/Scrap/Python/PyMethodDef[53]
-0043a2c0	ANALYSIS	complex_methods	/Scrap/Python/PyMethodDef[2]
-0043a340	ANALYSIS	complex_Type	
-0043cde8	ANALYSIS	xrange_Type	
-0043ce54	ANALYSIS	xrange_methods	/Scrap/Python/PyMethodDef[2]
+00428e18	ANALYSIS	cPyEntity_Type	/object.h/PyTypeObject
+00428e88	ANALYSIS	cPyEntity_methods	/methodobject.h/PyMethodDef[7]
+00429288	ANALYSIS	SAct_methods	/methodobject.h/PyMethodDef[10]
+0042a488	ANALYSIS	SAI_methods	/methodobject.h/PyMethodDef[23]
+0042c610	ANALYSIS	Scrap_methods	/methodobject.h/PyMethodDef[115]
+0042d060	ANALYSIS	SFX_methods	/methodobject.h/PyMethodDef[7]
+0042d790	ANALYSIS	SInput_methods	/methodobject.h/PyMethodDef[21]
+0042dd20	ANALYSIS	SLogic_methods	/methodobject.h/PyMethodDef[13]
+0042e610	ANALYSIS	SNet_methods	/methodobject.h/PyMethodDef[26]
+0042ec68	ANALYSIS	SScorer_methods	/methodobject.h/PyMethodDef[34]
+0042f558	ANALYSIS	SSound_methods	/methodobject.h/PyMethodDef[18]
+0042fc80	ANALYSIS	SVec_methods	/methodobject.h/PyMethodDef[13]
+00430128	ANALYSIS	SWeap_methods	/methodobject.h/PyMethodDef[16]
+00432c00	ANALYSIS	list_immutable_during_sort_Type	/object.h/PyTypeObject
+00432e90	ANALYSIS	list_methods	/methodobject.h/PyMethodDef[10]
+00432f50	ANALYSIS	list_immutable_during_sort_methods	/methodobject.h/PyMethodDef[8]
+00432ff0	ANALYSIS	list_Type	/object.h/PyTypeObject
+00433308	ANALYSIS	dictionary_methods	/methodobject.h/PyMethodDef[9]
+00433398	ANALYSIS	dictionary_Type	/object.h/PyTypeObject
+00433908	ANALYSIS	imp_methods	/methodobject.h/PyMethodDef[15]
+00434070	ANALYSIS	math_methods	/methodobject.h/PyMethodDef[24]
+00434428	ANALYSIS	new_methods	/methodobject.h/PyMethodDef[7]
+00434518	ANALYSIS	regexobj_methods	/methodobject.h/PyMethodDef[4]
+00434578	ANALYSIS	regex_Type	/object.h/PyTypeObject
+004345e8	ANALYSIS	regex_methods	/methodobject.h/PyMethodDef[7]
+00434978	ANALYSIS	signal_methods	/methodobject.h/PyMethodDef[4]
+00435b88	ANALYSIS	strop_methods	/methodobject.h/PyMethodDef[22]
+00435e28	ANALYSIS	locale_methods	/methodobject.h/PyMethodDef[5]
+00435e78	ANALYSIS	marshal_methods	/methodobject.h/PyMethodDef[5]
+004360a8	ANALYSIS	file_methods	/methodobject.h/PyMethodDef[14]
+004361d8	ANALYSIS	file_Type	/object.h/PyTypeObject
+004366b8	ANALYSIS	sys_methods	/methodobject.h/PyMethodDef[7]
+00438ae8	ANALYSIS	builtin_methods	/methodobject.h/PyMethodDef[53]
+0043a2c0	ANALYSIS	complex_methods	/methodobject.h/PyMethodDef[2]
+0043a340	ANALYSIS	complex_Type	/object.h/PyTypeObject
+0043cde8	ANALYSIS	xrange_Type	/object.h/PyTypeObject
+0043ce54	ANALYSIS	xrange_methods	/methodobject.h/PyMethodDef[2]
 004415b0	IMPORTED	cActClass::RTTI_Type_Descriptor	/TypeDescriptor
 004415c8	IMPORTED	cActClassList::RTTI_Type_Descriptor	/TypeDescriptor
 004415e4	IMPORTED	cActCtrl::RTTI_Type_Descriptor	/TypeDescriptor

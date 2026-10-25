@@ -19,8 +19,11 @@ The work is done incrementally with a hook DLL, the re3 method: a proxy `dinput8
 
 | Path | Content |
 |------|---------|
-| `docs/` | `binary.md`, triage report of Scrap.exe |
-| `symbols/` | `rtti_classes.txt`, 321 MSVC RTTI type names from Scrap.exe |
+| `docs/` | `binary.md`, triage report of Scrap.exe; `ghidra.md`, Ghidra database and symbols |
+| `symbols/` | `functions.tsv`, `globals.tsv`, `comments.tsv`, `srcstrings.tsv`, `rtti_classes.txt` (see `docs/ghidra.md`) |
+| `tools/ghidra/` | `rebuild.sh`, `headless.sh`, export/import and naming scripts (Java), `include/` (parse stand-ins) |
+| `third_party/python-1.5.2/` | Python 1.5.2 headers and license |
+| `tools/srcstrings.py` | source string table of the static libraries |
 | `tools/git/pre-commit` | size check hook |
 | `tools/test/` | `prefix.sh`, `wine.sh`, `headless.sh` |
 
