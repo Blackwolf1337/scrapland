@@ -3584,15 +3584,15 @@ rva	size	source	callconv	name	signature
 00135de0	254	USER_DEFINED	__cdecl	SaveGame_Save	byte __cdecl(char * name, char * desc)
 00135ee0	64	USER_DEFINED	__cdecl	SaveVar_Set	byte __cdecl(char * name, char * value)
 00135f20	182	USER_DEFINED	__thiscall	HashTable<cSaveVar>::Unlink	void * __thiscall(char * key, uint slot)
-00135fe0	157	DEFAULT	unknown	FUN_00535fe0	
-00136080	107	DEFAULT	unknown	FUN_00536080	
-001360f0	112	ANALYSIS	__thiscall	cRndSlotController::vf00	undefined __thiscall(void)
-00136160	22	ANALYSIS	__thiscall	cSlotController::vf00	undefined __thiscall(void)
-00136180	36	DEFAULT	unknown	FUN_00536180	
-001361b0	36	DEFAULT	unknown	FUN_005361b0	
-001361e0	43	DEFAULT	unknown	FUN_005361e0	
-00136210	16	DEFAULT	unknown	FUN_00536210	
-00136220	33	USER_DEFINED	__thiscall	Countdown_Tick	int __thiscall(float dt)
+00135fe0	157	USER_DEFINED	__thiscall	cRndSlotController::cRndSlotController	void * __thiscall(float minDiff, float maxDiff)
+00136080	107	USER_DEFINED	__thiscall	cSlotController::cSlotController	void * __thiscall(float interval)
+001360f0	112	USER_DEFINED	__thiscall	cRndSlotController::Next	void __thiscall(void)
+00136160	22	USER_DEFINED	__thiscall	cSlotController::Next	void __thiscall(void)
+00136180	36	USER_DEFINED	__fastcall	cSlotController::Restart	void __fastcall(void * self)
+001361b0	36	USER_DEFINED	__thiscall	cSlotController::Fire	byte __thiscall(float * out)
+001361e0	43	USER_DEFINED	__thiscall	cSlotController::FireReset	byte __thiscall(float * out)
+00136210	16	USER_DEFINED	__thiscall	cSlotController::CopyTime	void __thiscall(void * other)
+00136220	33	USER_DEFINED	__thiscall	cSlotController::Tick	int __thiscall(float dt)
 00136250	20	USER_DEFINED	__fastcall	cStaticBuffer::cStaticBuffer	void * __fastcall(void * self)
 00136270	107	USER_DEFINED	__fastcall	cStaticBuffer::~cStaticBuffer	void __fastcall(void * self)
 001362e0	312	USER_DEFINED	__cdecl	Str_FromUTF8	char * __cdecl(char * s)

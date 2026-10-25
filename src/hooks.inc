@@ -145,7 +145,6 @@ SD_HOOK(Str_VPrintfWarn, 0x136700, 126)
 SD_HOOK(Version_Get, 0x136b20, 48)
 
 /* src/game/Global/Timer.c (the 4 byte getters are followed by int3 padding up to the next function) */
-SD_HOOK(Countdown_Tick, 0x136220, 33)
 SD_HOOK(cTimer_ctor, 0x136780, 69)
 SD_HOOK(cTimer_Update, 0x1367d0, 174)
 SD_HOOK(cTimer_GetSpeedTo, 0x136890, 16)
@@ -160,6 +159,17 @@ SD_HOOK(cTimer_SetSpeedChecked, 0x136a00, 71)
 SD_HOOK(Timer_SetSpeed, 0x136a50, 22)
 SD_HOOK(Timer_SetTime, 0x136a70, 17)
 SD_HOOK(cTimer_Blend, 0x136aa0, 105)
+
+/* src/game/Global/SlotController.c */
+SD_HOOK(cRndSlotController_ctor, 0x135fe0, 157)
+SD_HOOK(cSlotController_ctor, 0x136080, 107)
+SD_HOOK(cRndSlotController_Next, 0x1360f0, 112)
+SD_HOOK(cSlotController_Next, 0x136160, 22)
+SD_HOOK(cSlotController_Restart, 0x136180, 36)
+SD_HOOK(cSlotController_Fire, 0x1361b0, 36)
+SD_HOOK(cSlotController_FireReset, 0x1361e0, 43)
+SD_HOOK(cSlotController_CopyTime, 0x136210, 16)
+SD_HOOK(cSlotController_Tick, 0x136220, 33)
 
 /* src/game/Global/StaticBuffer.c */
 SD_HOOK(cStaticBuffer_ctor, 0x136250, 20)

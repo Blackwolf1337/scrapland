@@ -113,9 +113,3 @@ void __thiscall Timer_SetSpeed(cTimer *self, float speed) {
 void __thiscall Timer_SetTime(cTimer *self, float t) {
 	self->gameTime = t;
 }
-
-/* a countdown at +4 of its owner: 1 when it ran out */
-int __thiscall Countdown_Tick(float *self, float dt) {
-	self[1] -= dt;
-	return self[1] <= 0.0f;
-}
