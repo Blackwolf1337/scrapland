@@ -34,8 +34,13 @@ cEntity *__thiscall cWorld_GetFirstEntity(cWorld *world);
 /* engine global variables (gvars, Scrap.Get/Set/Def/Des) */
 enum { GVAR_STRING = 1, GVAR_INT = 2, GVAR_FLOAT = 4, GVAR_FUNCTION = 5, GVAR_SCRIPT_FUNCTION = 6 };
 
+/*
+ * an engine variable (Global/Gvars.cpp). The pointers in g_GVars point 4 bytes into the object: a GVAR_FUNCTION
+ * variable has a vtable before it (cGVarListVtbl) that saves and loads its lines of the config file.
+ */
 typedef struct cGVar {
-	byte pad_0[0x8];
+	struct cGVar *next;		/* 0x00 g_GVars */
+	char *name;			/* 0x04 */
 	char *description;		/* 0x08 */
 	byte flags;			/* 0x0c bit 0: scripts may not write it */
 	byte type;			/* 0x0d GVAR_ */
@@ -57,6 +62,16 @@ SD_OFFSET(cGVar, def, 0x14);
 SD_OFFSET(cGVar, type, 0x0d);
 SD_OFFSET(cGVar, value, 0x10);
 cGVar *GVar_Find(const char *name);
+
+typedef struct cGVarListVtbl {
+	void(__thiscall *Save)(void *self, void *f);	/* 0x0 */
+	void(__thiscall *Load)(void *self, void *f);	/* 0x4 */
+} cGVarListVtbl;
+#define GVar_ListObj(v) ((void *)((byte *)(v) - 4))
+#define GVar_ListVtbl(v) (*(const cGVarListVtbl **)GVar_ListObj(v))
+
+#define g_GVars GAME_DATA(cGVar *, 0x44b5f8)		/* every variable, newest first */
+#define g_GVarTable GAME_DATA(HashTable *, 0x44b5fc)	/* by name after GVars_Init */
 
 void Achievement_Unlock(int n);
 void Steam_SetAchievement(int n, int on);
@@ -142,6 +157,8 @@ void Anm_Preload(const char *a, const char *b);
 void DVF_Process(const char *name, int arg);
 void Python_CompileAll(void);
 void Config_Save(void);
+/* reads the config file name (in the config directory) */
+void Config_Load(const char *name);
 byte SaveGame_Save(const char *name, const char *title);
 byte SaveGame_Load(const char *name);
 byte SaveVar_Set(const char *name, const char *value);

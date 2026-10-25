@@ -36,6 +36,7 @@ void *operator_new(uint32_t size);
 void operator_delete_sized(void *p, uint32_t size);
 void *operator_new_array(uint32_t size);
 void operator_delete(void *p);
+void operator_delete_array(void *p);
 /* the engine's malloc with the same statistics (rva 0x1335a0) */
 void *Mem_Alloc(uint32_t size);
 void Mem_Free(void *p);	/* rva 0x133550 */

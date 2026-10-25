@@ -11033,6 +11033,8 @@ rva	source	name	datatype
 0044b5e4	USER_DEFINED	g_PackDirLen	
 0044b5e8	USER_DEFINED	g_PackBuildMode	/undefined4
 0044b5ec	USER_DEFINED	g_PackFound	
+0044b5f8	USER_DEFINED	g_GVars	/undefined4
+0044b5fc	USER_DEFINED	g_GVarTable	/undefined4
 0044b600	USER_DEFINED	g_HashItemPool	/undefined4
 0044b604	USER_DEFINED	g_HashItemRefs	/undefined4
 0044b628	USER_DEFINED	g_MemStats	/undefined4

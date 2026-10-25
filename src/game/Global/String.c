@@ -8,7 +8,6 @@
 #include "scrap/cstring.h"
 #include "scrap/game.h"
 
-void operator_delete_array(void *p);
 char *crt_strncat(char *dst, const char *src, size_t n);
 int crt_stricmp(const char *a, const char *b);
 int Str_VPrintf(char *dst, int size, const char *fmt, va_list ap);

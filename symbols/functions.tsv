@@ -3478,24 +3478,24 @@ rva	size	source	callconv	name	signature
 001316d0	212	DEFAULT	unknown	FUN_005316d0	
 001317b0	304	USER_DEFINED	__cdecl	StrList_Match	byte __cdecl(char * list, char * name, char * sep)
 001318e0	128	DEFAULT	unknown	FUN_005318e0	
-00131960	108	DEFAULT	unknown	FUN_00531960	
-001319d0	44	DEFAULT	unknown	FUN_005319d0	
-00131a00	54	DEFAULT	unknown	FUN_00531a00	
-00131a40	118	DEFAULT	unknown	FUN_00531a40	
-00131ac0	231	DEFAULT	unknown	FUN_00531ac0	
-00131bb0	87	DEFAULT	unknown	FUN_00531bb0	
-00131c10	261	DEFAULT	unknown	FUN_00531c10	
-00131d20	134	DEFAULT	unknown	FUN_00531d20	
-00131db0	49	DEFAULT	unknown	FUN_00531db0	
-00131df0	95	DEFAULT	unknown	FUN_00531df0	
-00131e50	143	DEFAULT	unknown	FUN_00531e50	
-00131f00	98	USER_DEFINED	unknown	GVar_Find	undefined(void)
-00131f70	227	DEFAULT	unknown	FUN_00531f70	
-00132060	332	DEFAULT	unknown	FUN_00532060	
-001321b0	586	DEFAULT	unknown	FUN_005321b0	
-00132410	400	USER_DEFINED	unknown	Config_Save	undefined(void)
-001325c0	48	DEFAULT	unknown	FUN_005325c0	
-001325f0	273	USER_DEFINED	unknown	GVars_Show	undefined(void)
+00131960	108	USER_DEFINED	__thiscall	HashTable<cGVar>::HashTable	void * __thiscall(int numSlots, byte caseSensitive)
+001319d0	44	USER_DEFINED	__thiscall	cGVar::cGVar	void * __thiscall(char * name, byte flags, char * description)
+00131a00	54	USER_DEFINED	__fastcall	HashTable<cGVar>::~HashTable	void __fastcall(void * self)
+00131a40	118	USER_DEFINED	__thiscall	HashTable<cGVar>::Add	byte __thiscall(char * key, void * value, byte warn)
+00131ac0	231	USER_DEFINED	__thiscall	HashTable<cGVar>::Insert	void * __thiscall(char * key, uint slot, void * value)
+00131bb0	87	USER_DEFINED	__cdecl	Cfg_ParseLine	byte __cdecl(char * line, char * * value)
+00131c10	261	USER_DEFINED	__fastcall	HashTable<cGVar>::Clear	void __fastcall(void * self)
+00131d20	134	USER_DEFINED	__cdecl	GVars_Done	void __cdecl(void)
+00131db0	49	USER_DEFINED	__thiscall	HashTable<cGVar>::Get	byte __thiscall(char * key, void * out)
+00131df0	95	USER_DEFINED	__cdecl	GVar_Complete	char * __cdecl(char * prefix)
+00131e50	143	USER_DEFINED	__thiscall	HashTable<cGVar>::Find	void * __thiscall(char * key, uint slot)
+00131f00	98	USER_DEFINED	__cdecl	GVar_Find	void * __cdecl(char * name)
+00131f70	227	USER_DEFINED	__thiscall	HashTable<cGVar>::Slot	uint __thiscall(char * key)
+00132060	332	USER_DEFINED	__cdecl	GVars_Init	void __cdecl(void)
+001321b0	586	USER_DEFINED	__cdecl	Config_Load	void __cdecl(char * name)
+00132410	400	USER_DEFINED	__cdecl	Config_Save	void __cdecl(void)
+001325c0	48	USER_DEFINED	__thiscall	cGVar::SetFlag	byte __thiscall(byte bit, byte on)
+001325f0	273	USER_DEFINED	__cdecl	GVars_Show	void __cdecl(char * filter)
 00132720	108	DEFAULT	unknown	FUN_00532720	
 00132790	54	DEFAULT	unknown	FUN_00532790	
 001327d0	118	DEFAULT	unknown	FUN_005327d0	
@@ -6323,7 +6323,7 @@ rva	size	source	callconv	name	signature
 0020d2a0	615	ANALYSIS	__thiscall	CWinApp::vf04	undefined __thiscall(void)
 0020d510	64	ANALYSIS	__thiscall	CWinApp::vf05	undefined __thiscall(void)
 0020d550	28	USER_DEFINED	__cdecl	ConsoleWin_Add	void __cdecl(char * text, uint color)
-0020d570	268	DEFAULT	unknown	FUN_0060d570	
+0020d570	268	USER_DEFINED	__cdecl	App_GetConfigDir	void __cdecl(char * buf, int size)
 0020d680	94	ANALYSIS	__thiscall	CWinApp::vf12	undefined __thiscall(void)
 0020d6e0	216	ANALYSIS	__thiscall	CWinApp::vf19	undefined __thiscall(void)
 0020d7c0	114	DEFAULT	unknown	FUN_0060d7c0	
