@@ -209,14 +209,14 @@ byte __thiscall cPy_Function_SetFunc(cPy_Function *self, const char *name) {
 	return cPy_Function_SetPython(self, module, dot + 1);
 }
 
-byte __thiscall cPy_Function_IsValid(cPy_Function *self) {
+int __thiscall cPy_Function_IsValid(cPy_Function *self) {
 	return (self->flags & (PYF_PYTHON | PYF_NATIVE)) != 0;
 }
 
 void __thiscall cPy_Function_AddParamI(cPy_Function *self, int v) {
 	if (self->flags & PYF_NATIVE) {
 		cPy_Function_NativeParams(self);
-		cFile *f = self->params;
+		cAbstractFile *f = self->params;
 		f->vftable->Write(f, &v, sizeof(v));
 	} else if (self->flags & PYF_PYTHON) {
 		cPy_Function_PyParams(self);
@@ -229,7 +229,7 @@ void __thiscall cPy_Function_AddParamI(cPy_Function *self, int v) {
 void __thiscall cPy_Function_AddParamF(cPy_Function *self, float v) {
 	if (self->flags & PYF_NATIVE) {
 		cPy_Function_NativeParams(self);
-		cFile *f = self->params;
+		cAbstractFile *f = self->params;
 		f->vftable->Write(f, &v, sizeof(v));
 	} else if (self->flags & PYF_PYTHON) {
 		cPy_Function_PyParams(self);
@@ -248,7 +248,7 @@ void __thiscall cPy_Function_AddParamS(cPy_Function *self, const char *v) {
 	}
 	if (self->flags & PYF_NATIVE) {
 		cPy_Function_NativeParams(self);
-		cFile_WriteString(self->params, v);
+		cAbstractFile_WriteString(self->params, v);
 	} else {
 		cPy_Function_PyParams(self);
 		PyObject *o = PyString_FromString((char *)v);
@@ -292,7 +292,7 @@ int __thiscall cPy_Function_Execute(cPy_Function *self, byte clear) {
 		}
 	} else if (self->flags & PYF_NATIVE) {
 		cPy_Function_NativeParams(self);
-		cFile *f = self->params;
+		cAbstractFile *f = self->params;
 		f->vftable->Seek(f, 0);
 		nativefunc_t func = (nativefunc_t)self->func;
 		if (clear) {

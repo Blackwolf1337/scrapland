@@ -14,6 +14,7 @@ SD_IMPORT(Con_Debugf, 0x0bc710)
 SD_IMPORT(Con_Printf, 0x0bbef0)
 SD_IMPORT(Con_Bluef, 0x0bc0b0)
 SD_IMPORT(Con_Verbosef, 0x0bc240)
+SD_IMPORT(Con_SysErrorf, 0x0bbba0)
 
 SD_IMPORT(operator_new, 0x1334d0)		/* include/scrap/global.h */
 SD_IMPORT(operator_delete_sized, 0x313634)
@@ -91,6 +92,12 @@ SD_IMPORT(cWalkCharEntity_GetOwnerSlot, 0x0d38b0)
 SD_IMPORT(crt_rand, 0x323c2f)
 SD_IMPORT(crt_fprintf, 0x0bd230)
 SD_IMPORT(crt_report_rangecheckfailure, 0x313d15)
+SD_IMPORT(crt_fopen, 0x344c5e)
+SD_IMPORT(crt_fclose, 0x34490b)
+SD_IMPORT(crt_fread, 0x347845)
+SD_IMPORT(crt_fwrite, 0x344fa9)
+SD_IMPORT(crt_fseek, 0x347c87)
+SD_IMPORT(crt_ftell, 0x3482af)
 
 /* engine: Net/ (include/scrap/net.h) */
 SD_IMPORT(Net_IsServer, 0x18b280)
@@ -331,5 +338,5 @@ SD_IMPORT(PySys_GetObject, 0x2f4390)	/* sysmodule.c */
 SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 
 /* engine: FileSys/ (include/scrap/filesys.h) */
-SD_IMPORT(cFileMem_ctor, 0x12e050)
-SD_IMPORT(cFile_WriteString, 0x12d250)
+SD_IMPORT(File_OpenRel, 0x21bc10)
+SD_IMPORT(File_Access, 0x21bb60)

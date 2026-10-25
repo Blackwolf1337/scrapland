@@ -1,35 +1,49 @@
 /*
- * Files of the engine (original source: FileSys/). cFile is the base class with a vtable, cFileMem a file in a
- * memory buffer (FileSys/FileMem.cpp).
+ * Files of the engine (original source: FileSys/). cAbstractFile is the base class (name and mode), cFile a file
+ * on disk (FILE of the exe's CRT), cFileMem a file in a memory buffer. All share the vtable layout of
+ * cAbstractFile.
  */
 #ifndef SCRAP_FILESYS_H
 #define SCRAP_FILESYS_H
 
-#include "scrap/shared.h"
+#include "scrap/game.h"
 
-typedef struct cFile cFile;
+/* mode bits of Open; the low 3 bits select the access (cFile: 1 "rb", 2 and 6 "wb", 3 "r+b", 7 "w+b") */
+#define FILE_MODE_READ 0x1
+#define FILE_MODE_WRITE 0x2
+#define FILE_MODE_CREATE 0x4		/* cFileMem: starts empty */
+#define FILE_MODE_ABSOLUTE 0x8		/* cFile: plain fopen instead of File_OpenRel */
 
-typedef struct cFileVtbl {
-	byte(__thiscall *Open)(cFile *self, const char *name, uint32_t mode);	/* 0x00 */
-	void *vf01;
-	byte(__thiscall *Close)(cFile *self);				/* 0x08 */
-	int(__thiscall *Read)(cFile *self, void *dst, int size);		/* 0x0c */
-	int(__thiscall *Write)(cFile *self, const void *src, int size);	/* 0x10 */
-	int(__thiscall *Seek)(cFile *self, int pos);			/* 0x14 */
-	int(__thiscall *Tell)(cFile *self);				/* 0x18 */
-	int(__thiscall *Size)(cFile *self);				/* 0x1c */
-	cFile *(__thiscall *Destroy)(cFile *self, int flags);		/* 0x20 deleting destructor, flags 1 frees */
-} cFileVtbl;
-SD_OFFSET(cFileVtbl, Destroy, 0x20);
+typedef struct cAbstractFile cAbstractFile;
 
-struct cFile {
-	const cFileVtbl *vftable;	/* 0x00 */
-	byte pad_04[0x4];
-	uint32_t mode;			/* 0x08 */
+typedef struct cAbstractFileVtbl {
+	int(__thiscall *Open)(cAbstractFile *self, const char *name, uint32_t mode);	/* 0x00 */
+	int(__thiscall *Exists)(cAbstractFile *self, const char *name);		/* 0x04 */
+	int(__thiscall *Close)(cAbstractFile *self);					/* 0x08 */
+	int(__thiscall *Read)(cAbstractFile *self, void *dst, int size);		/* 0x0c */
+	int(__thiscall *Write)(cAbstractFile *self, const void *src, int size);	/* 0x10 */
+	int(__thiscall *Seek)(cAbstractFile *self, int pos);				/* 0x14 -1 if not possible */
+	int(__thiscall *Tell)(cAbstractFile *self);					/* 0x18 */
+	int(__thiscall *Size)(cAbstractFile *self);					/* 0x1c */
+	cAbstractFile *(__thiscall *Destroy)(cAbstractFile *self, int flags);	/* 0x20 flags 1 frees */
+} cAbstractFileVtbl;
+SD_OFFSET(cAbstractFileVtbl, Destroy, 0x20);
+
+struct cAbstractFile {
+	const cAbstractFileVtbl *vftable;	/* 0x00 */
+	char *name;			/* 0x04 Mem_Alloc copy while open */
+	uint32_t mode;			/* 0x08 FILE_MODE_ */
 };
+SD_SIZE(cAbstractFile, 0xc);
+
+typedef struct cFile {
+	cAbstractFile base;
+	void *f;			/* 0x0c FILE of the exe's CRT */
+} cFile;
+SD_SIZE(cFile, 0x10);
 
 typedef struct cFileMem {
-	cFile base;
+	cAbstractFile base;
 	byte *buffer;			/* 0x0c */
 	byte *pos;			/* 0x10 */
 	int size;			/* 0x14 */
@@ -41,9 +55,29 @@ SD_OFFSET(cFileMem, buffer, 0xc);
 SD_OFFSET(cFileMem, ownsBuffer, 0x1c);
 SD_SIZE(cFileMem, 0x20);
 
-/* constructor on memory of operator_new (rva 0x12e050) */
-cFileMem *__thiscall cFileMem_ctor(void *mem, void *buffer, int maxSize, byte ownsBuffer);
-/* writes the length (int) and the characters without the terminator (rva 0x12d250) */
-int __thiscall cFile_WriteString(cFile *self, const char *s);
+#define cAbstractFile_vftable ((const cAbstractFileVtbl *)Game_Ptr(0x3ba488))
+#define cFile_vftable ((const cAbstractFileVtbl *)Game_Ptr(0x3ba51c))
+#define cFileMem_vftable ((const cAbstractFileVtbl *)Game_Ptr(0x3ba6d8))
+
+void __fastcall cAbstractFile_dtor(cAbstractFile *self);
+int __thiscall cAbstractFile_Open(cAbstractFile *self, const char *name, uint32_t mode);
+int __thiscall cAbstractFile_Close(cAbstractFile *self);
+/* the length (int) and the characters without the terminator */
+int __thiscall cAbstractFile_WriteString(cAbstractFile *self, const char *s);
+
+cFileMem *__thiscall cFileMem_ctor(cFileMem *self, void *buffer, int maxSize, byte ownsBuffer);
+
+/* fopen relative to the game directory, "El path debe ser relativo" for drive paths (rva 0x21bc10) */
+void *File_OpenRel(const char *name, const char *mode);
+/* 0 if the file is there (rva 0x21bb60) */
+int File_Access(const char *name, int mode);
+
+/* the exe's CRT for its FILE objects */
+void *crt_fopen(const char *name, const char *mode);
+int crt_fclose(void *f);
+size_t crt_fread(void *dst, size_t size, size_t count, void *f);
+size_t crt_fwrite(const void *src, size_t size, size_t count, void *f);
+int crt_fseek(void *f, long off, int origin);
+long crt_ftell(void *f);
 
 #endif

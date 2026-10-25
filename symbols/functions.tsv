@@ -2188,7 +2188,7 @@ rva	size	source	callconv	name	signature
 000bb640	1070	ANALYSIS	__thiscall	CNodesWorldSup::vf28	undefined __thiscall(void)
 000bba70	251	ANALYSIS	__thiscall	CNodesWorldSup::vf39	undefined __thiscall(void)
 000bbb70	46	DEFAULT	unknown	FUN_004bbb70	
-000bbba0	465	DEFAULT	unknown	FUN_004bbba0	
+000bbba0	465	USER_DEFINED	__cdecl	Con_SysErrorf	void __cdecl(char * fmt, ...)
 000bbd80	259	DEFAULT	unknown	FUN_004bbd80	
 000bbe90	96	DEFAULT	unknown	FUN_004bbe90	
 000bbef0	377	USER_DEFINED	__cdecl	Con_Printf	void __cdecl(char * fmt, ...)
@@ -3358,24 +3358,24 @@ rva	size	source	callconv	name	signature
 0012c960	1043	ANALYSIS	__thiscall	cWithLifeEntity::vf18	undefined __thiscall(void)
 0012cd80	419	ANALYSIS	__thiscall	cWithLifeEntity::vf19	undefined __thiscall(void)
 0012cf30	3	ANALYSIS	__thiscall	cWithLifeEntity::vf55	undefined __thiscall(void)
-0012cf40	71	DEFAULT	unknown	FUN_0052cf40	
-0012cf90	103	ANALYSIS	__thiscall	cAbstractFile::vf08	undefined __thiscall(void)
-0012d000	37	ANALYSIS	__thiscall	cAbstractFile::vf02	undefined __thiscall(void)
-0012d030	135	ANALYSIS	__thiscall	cAbstractFile::vf00	undefined __thiscall(void)
-0012d0c0	130	DEFAULT	unknown	FUN_0052d0c0	
-0012d150	129	DEFAULT	unknown	FUN_0052d150	
-0012d1e0	106	DEFAULT	unknown	FUN_0052d1e0	
-0012d250	64	USER_DEFINED	__thiscall	cFile::WriteString	int __thiscall(char * s)
-0012d290	33	DEFAULT	unknown	FUN_0052d290	
-0012d2c0	59	ANALYSIS	__thiscall	cFile::vf08	undefined __thiscall(void)
-0012d300	76	ANALYSIS	__thiscall	cFile::vf02	undefined __thiscall(void)
-0012d350	25	ANALYSIS	__thiscall	cFile::vf01	undefined __thiscall(void)
-0012d370	47	ANALYSIS	__thiscall	cFile::vf06	undefined __thiscall(void)
-0012d3a0	150	ANALYSIS	__thiscall	cFile::vf00	undefined __thiscall(void)
-0012d460	97	ANALYSIS	__thiscall	cFile::vf03	undefined __thiscall(void)
-0012d4d0	69	ANALYSIS	__thiscall	cFile::vf05	undefined __thiscall(void)
-0012d520	88	ANALYSIS	__thiscall	cFile::vf07	undefined __thiscall(void)
-0012d580	97	ANALYSIS	__thiscall	cFile::vf04	undefined __thiscall(void)
+0012cf40	71	USER_DEFINED	__fastcall	cAbstractFile::~cAbstractFile	void __fastcall(void * self)
+0012cf90	103	USER_DEFINED	__thiscall	cAbstractFile::Destroy	void * __thiscall(int flags)
+0012d000	37	USER_DEFINED	__thiscall	cAbstractFile::Close	int __thiscall(void)
+0012d030	135	USER_DEFINED	__thiscall	cAbstractFile::Open	int __thiscall(char * name, uint mode)
+0012d0c0	130	USER_DEFINED	__thiscall	cAbstractFile::ReadString8	int __thiscall(char * buf, byte size)
+0012d150	129	USER_DEFINED	__thiscall	cAbstractFile::ReadString	int __thiscall(char * buf, int size)
+0012d1e0	106	USER_DEFINED	__thiscall	cAbstractFile::WriteString8	int __thiscall(char * s)
+0012d250	64	USER_DEFINED	__thiscall	cAbstractFile::WriteString	int __thiscall(char * s)
+0012d290	33	USER_DEFINED	__fastcall	cFile::~cFile	void __fastcall(void * self)
+0012d2c0	59	USER_DEFINED	__thiscall	cFile::Destroy	void * __thiscall(int flags)
+0012d300	76	USER_DEFINED	__thiscall	cFile::Close	int __thiscall(void)
+0012d350	25	USER_DEFINED	__thiscall	cFile::Exists	int __thiscall(char * name)
+0012d370	47	USER_DEFINED	__thiscall	cFile::Tell	int __thiscall(void)
+0012d3a0	150	USER_DEFINED	__thiscall	cFile::Open	int __thiscall(char * name, uint mode)
+0012d460	97	USER_DEFINED	__thiscall	cFile::Read	int __thiscall(void * dst, int size)
+0012d4d0	69	USER_DEFINED	__thiscall	cFile::Seek	int __thiscall(int pos)
+0012d520	88	USER_DEFINED	__thiscall	cFile::Size	int __thiscall(void)
+0012d580	97	USER_DEFINED	__thiscall	cFile::Write	int __thiscall(void * src, int size)
 0012d5f0	39	DEFAULT	unknown	FUN_0052d5f0	
 0012d620	16	DEFAULT	unknown	FUN_0052d620	
 0012d630	79	DEFAULT	unknown	FUN_0052d630	
@@ -3398,17 +3398,17 @@ rva	size	source	callconv	name	signature
 0012de90	284	DEFAULT	unknown	FUN_0052de90	
 0012dfb0	150	DEFAULT	unknown	FUN_0052dfb0	
 0012e050	67	USER_DEFINED	__thiscall	cFileMem::cFileMem	void * __thiscall(void * buffer, int maxSize, byte ownsBuffer)
-0012e0a0	88	DEFAULT	unknown	FUN_0052e0a0	
-0012e100	116	ANALYSIS	__thiscall	cFileMem::vf08	undefined __thiscall(void)
-0012e180	13	ANALYSIS	__thiscall	cFileMem::vf02	undefined __thiscall(void)
-0012e190	8	ANALYSIS	__thiscall	cFileMem::vf01	undefined __thiscall(void)
-0012e1a0	7	ANALYSIS	__thiscall	cFileMem::vf06	undefined __thiscall(void)
-0012e1b0	52	ANALYSIS	__thiscall	cFileMem::vf00	undefined __thiscall(void)
-0012e1f0	74	ANALYSIS	__thiscall	cFileMem::vf03	undefined __thiscall(void)
-0012e240	38	DEFAULT	unknown	FUN_0052e240	
-0012e270	34	ANALYSIS	__thiscall	cFileMem::vf05	undefined __thiscall(void)
-0012e2a0	4	ANALYSIS	__thiscall	cFileMem::vf07	undefined __thiscall(void)
-0012e2b0	84	ANALYSIS	__thiscall	cFileMem::vf04	undefined __thiscall(void)
+0012e0a0	88	USER_DEFINED	__fastcall	cFileMem::~cFileMem	void __fastcall(void * self)
+0012e100	116	USER_DEFINED	__thiscall	cFileMem::Destroy	void * __thiscall(int flags)
+0012e180	13	USER_DEFINED	__thiscall	cFileMem::Close	int __thiscall(void)
+0012e190	8	USER_DEFINED	__thiscall	cFileMem::Exists	int __thiscall(char * name)
+0012e1a0	7	USER_DEFINED	__thiscall	cFileMem::Tell	int __thiscall(void)
+0012e1b0	52	USER_DEFINED	__thiscall	cFileMem::Open	int __thiscall(char * name, uint mode)
+0012e1f0	74	USER_DEFINED	__thiscall	cFileMem::Read	int __thiscall(void * dst, int size)
+0012e240	38	USER_DEFINED	__thiscall	cFileMem::SetBuffer	void __thiscall(void * buffer, int maxSize, byte ownsBuffer, int size)
+0012e270	34	USER_DEFINED	__thiscall	cFileMem::Seek	int __thiscall(int pos)
+0012e2a0	4	USER_DEFINED	__thiscall	cFileMem::Size	int __thiscall(void)
+0012e2b0	84	USER_DEFINED	__thiscall	cFileMem::Write	int __thiscall(void * src, int size)
 0012e310	16	ANALYSIS	__thiscall	cFile2::vf00	undefined __thiscall(void)
 0012e320	25	ANALYSIS	__thiscall	cFile2::vf03	undefined __thiscall(void)
 0012e340	25	ANALYSIS	__thiscall	cFile2::vf04	undefined __thiscall(void)
@@ -6605,9 +6605,9 @@ rva	size	source	callconv	name	signature
 0021ba90	61	DEFAULT	unknown	FUN_0061ba90	
 0021bae0	23	DEFAULT	unknown	FUN_0061bae0	
 0021bb00	90	DEFAULT	unknown	FUN_0061bb00	
-0021bb60	23	DEFAULT	unknown	FUN_0061bb60	
+0021bb60	23	USER_DEFINED	__cdecl	File_Access	int __cdecl(char * name, int mode)
 0021bb80	143	DEFAULT	unknown	FUN_0061bb80	
-0021bc10	384	DEFAULT	unknown	FUN_0061bc10	
+0021bc10	384	USER_DEFINED	__cdecl	File_OpenRel	void * __cdecl(char * name, char * mode)
 0021bd90	21	DEFAULT	unknown	FUN_0061bd90	
 0021bdd0	397	DEFAULT	unknown	FUN_0061bdd0	
 0021bf60	21	DEFAULT	unknown	FUN_0061bf60	
@@ -11595,7 +11595,7 @@ rva	size	source	callconv	name	signature
 0034828e	11	DEFAULT	unknown	FUN_0074828e	
 00348299	11	DEFAULT	unknown	FUN_00748299	
 003482a4	11	DEFAULT	unknown	FUN_007482a4	
-003482af	11	DEFAULT	unknown	FUN_007482af	
+003482af	11	USER_DEFINED	__cdecl	_ftell	long __cdecl(FILE * f)
 003482d2	43	ANALYSIS	__cdecl	_feof	int __cdecl(FILE * _File)
 003482fd	43	ANALYSIS	__cdecl	_ferror	int __cdecl(FILE * _File)
 00348328	184	ANALYSIS	__cdecl	common_fgets<char>	char * __cdecl(char * param_1, int param_2, __crt_stdio_stream param_3)

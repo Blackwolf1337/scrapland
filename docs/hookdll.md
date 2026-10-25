@@ -30,6 +30,8 @@ Global data of the exe: `GAME_DATA(type, rva)` in `include/scrap/game.h` (`g_pWo
 
 `src/hooks.inc` lists `SD_HOOK(name, rva, size)`. At startup each original gets a 5 byte `jmp rel32` to the C function (size must be at least 5). There is no trampoline, the C version replaces the original completely. A function is either imported or implemented, never both: the linker reports a duplicate symbol if a name is in both lists.
 
+The return type must match what the original leaves in eax. MSVC often returns a bool as a full int (`mov eax,1`, `neg/sbb/inc`) and its callers test eax; a C function declared `byte` sets only al, so the upper bits are whatever was there (cFile::Exists broke the pack loading this way). Declare `int` unless the original only sets al. A function shorter than 5 bytes can be hooked when int3 padding follows it: give the size up to the next function.
+
 ## scrapdecomp.ini
 
 Optional, next to Scrap.exe in `game/Bin`.

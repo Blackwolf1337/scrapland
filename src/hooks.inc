@@ -5,6 +5,42 @@
  *   Scrap_GetMoney=0
  */
 
+/* src/game/FileSys/AbstractFile.c */
+SD_HOOK(cAbstractFile_dtor, 0x12cf40, 71)
+SD_HOOK(cAbstractFile_Destroy, 0x12cf90, 103)
+SD_HOOK(cAbstractFile_Close, 0x12d000, 37)
+SD_HOOK(cAbstractFile_Open, 0x12d030, 135)
+SD_HOOK(cAbstractFile_ReadString8, 0x12d0c0, 130)
+SD_HOOK(cAbstractFile_ReadString, 0x12d150, 129)
+SD_HOOK(cAbstractFile_WriteString8, 0x12d1e0, 106)
+SD_HOOK(cAbstractFile_WriteString, 0x12d250, 64)
+
+/* src/game/FileSys/File.c */
+SD_HOOK(cFile_dtor, 0x12d290, 33)
+SD_HOOK(cFile_Destroy, 0x12d2c0, 59)
+SD_HOOK(cFile_Close, 0x12d300, 76)
+SD_HOOK(cFile_Exists, 0x12d350, 25)
+SD_HOOK(cFile_Tell, 0x12d370, 47)
+SD_HOOK(cFile_Open, 0x12d3a0, 150)
+SD_HOOK(cFile_Read, 0x12d460, 97)
+SD_HOOK(cFile_Seek, 0x12d4d0, 69)
+SD_HOOK(cFile_Size, 0x12d520, 88)
+SD_HOOK(cFile_Write, 0x12d580, 97)
+
+/* src/game/FileSys/FileMem.c */
+SD_HOOK(cFileMem_ctor, 0x12e050, 67)
+SD_HOOK(cFileMem_dtor, 0x12e0a0, 88)
+SD_HOOK(cFileMem_Destroy, 0x12e100, 116)
+SD_HOOK(cFileMem_Close, 0x12e180, 13)
+SD_HOOK(cFileMem_Exists, 0x12e190, 8)
+SD_HOOK(cFileMem_Tell, 0x12e1a0, 7)
+SD_HOOK(cFileMem_Open, 0x12e1b0, 52)
+SD_HOOK(cFileMem_Read, 0x12e1f0, 74)
+SD_HOOK(cFileMem_SetBuffer, 0x12e240, 38)
+SD_HOOK(cFileMem_Seek, 0x12e270, 34)
+SD_HOOK(cFileMem_Size, 0x12e2a0, 16)	/* 4 bytes, then int3 padding up to 0x12e2b0 */
+SD_HOOK(cFileMem_Write, 0x12e2b0, 84)
+
 /* src/game/PyInterface/ScrapPy.c */
 SD_HOOK(initScrap, 0x19b180, 28)
 SD_HOOK(Scrap_GetLevelPath, 0x197fc0, 50)

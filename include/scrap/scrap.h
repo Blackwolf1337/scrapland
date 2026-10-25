@@ -86,7 +86,6 @@ int __thiscall cFilePack_Open(cFilePack *pack, const char *name, int mode);
 int __thiscall cFilePack_Size(cFilePack *pack);
 int __thiscall cFilePack_Read(cFilePack *pack, void *dst, int size);
 int __thiscall cFilePack_Close(cFilePack *pack);
-#define FILE_MODE_READ 1
 
 /* the list of files read from packs, when the engine records one: off unless the log file is open */
 byte PackLog_Closed(void);			/* rva 0x1313f0 */

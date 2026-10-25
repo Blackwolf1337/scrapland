@@ -13,7 +13,7 @@
 #define PYF_NATIVE 0x2
 #define PYF_BLOCKED 0x4			/* while Execute runs */
 
-typedef void (*nativefunc_t)(cFile *params);
+typedef void (*nativefunc_t)(cAbstractFile *params);
 
 typedef struct cPy_Function {
 	struct cPy_Function *next;	/* 0x00 */
@@ -45,7 +45,7 @@ cPy_Function *__thiscall cPy_Function_ctor(cPy_Function *self);
 void __thiscall cPy_Function_dtor(cPy_Function *self);
 /* 1 if set; also 1 for an empty name (the function is cleared then) and while Python is not running */
 byte __thiscall cPy_Function_SetFunc(cPy_Function *self, const char *name);
-byte __thiscall cPy_Function_IsValid(cPy_Function *self);
+int __thiscall cPy_Function_IsValid(cPy_Function *self);
 void __thiscall cPy_Function_AddParamI(cPy_Function *self, int v);
 void __thiscall cPy_Function_AddParamF(cPy_Function *self, float v);
 void __thiscall cPy_Function_AddParamS(cPy_Function *self, const char *v);
