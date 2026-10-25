@@ -10632,6 +10632,7 @@ rva	source	name	datatype
 00428994	USER_DEFINED	g_PackIndex	/undefined4
 004289a0	USER_DEFINED	g_HashItemValues	
 00428a20	USER_DEFINED	g_LangTable	/undefined4
+00428aac	USER_DEFINED	g_SaveVarTable	
 00428d58	ANALYSIS	_PyImport_Inittab	/pointer
 00428e18	ANALYSIS	cPyEntity_Type	/object.h/PyTypeObject
 00428e88	ANALYSIS	cPyEntity_methods	/methodobject.h/PyMethodDef[7]
@@ -11045,6 +11046,11 @@ rva	source	name	datatype
 0044b628	USER_DEFINED	g_MemStats	/undefined4
 0044b640	USER_DEFINED	g_MemStatsContext	/undefined4
 0044b648	USER_DEFINED	g_StrTmp	/undefined1
+0044bb88	USER_DEFINED	g_SaveVars	/undefined4
+0044bb9c	USER_DEFINED	g_OnAllCrazyDeals	
+0044bbc0	USER_DEFINED	g_SaveDesc	
+0044bbd8	USER_DEFINED	g_OnCrazyDeal	
+0044bbec	USER_DEFINED	g_SaveVarCount	/undefined4
 0044bbf0	USER_DEFINED	g_PyStaticBuffer	/undefined4
 0044bc08	USER_DEFINED	g_Utf8Buf	/undefined1
 0044c008	USER_DEFINED	g_VersionBuf	
@@ -11052,6 +11058,7 @@ rva	source	name	datatype
 0044c130	USER_DEFINED	g_PlayerInput	/undefined4
 0044c400	USER_DEFINED	g_VirtualKeyboard	/undefined4
 0044c510	USER_DEFINED	g_Pads	/undefined4
+0045fe48	USER_DEFINED	g_AllDealsDone	/undefined4
 00466798	USER_DEFINED	g_NativeFuncs	/undefined4
 004667b0	USER_DEFINED	g_PyFunctions	/undefined4
 004667b4	USER_DEFINED	g_FreeParamFiles	/undefined4

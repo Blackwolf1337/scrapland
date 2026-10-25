@@ -3559,31 +3559,31 @@ rva	size	source	callconv	name	signature
 00134720	119	USER_DEFINED	unknown	Steam_GetID	undefined(void)
 001347a0	31	DEFAULT	unknown	FUN_005347a0	
 001347c0	32	DEFAULT	unknown	FUN_005347c0	
-001347e0	108	DEFAULT	unknown	FUN_005347e0	
-00134850	128	DEFAULT	unknown	FUN_00534850	
-001348d0	54	DEFAULT	unknown	FUN_005348d0	
-00134930	118	DEFAULT	unknown	FUN_00534930	
-001349b0	231	DEFAULT	unknown	FUN_005349b0	
-00134aa0	516	DEFAULT	unknown	FUN_00534aa0	
-00134cf0	261	DEFAULT	unknown	FUN_00534cf0	
-00134e00	238	USER_DEFINED	unknown	SaveVar_Create	undefined(void)
-00134ef0	129	USER_DEFINED	unknown	SaveVars_Delete	undefined(void)
-00134f90	210	DEFAULT	unknown	FUN_00534f90	
-00135070	49	DEFAULT	unknown	FUN_00535070	
-001350b0	143	DEFAULT	unknown	FUN_005350b0	
-00135140	104	DEFAULT	unknown	FUN_00535140	
-001351b0	305	DEFAULT	unknown	FUN_005351b0	
-001352f0	936	USER_DEFINED	unknown	SaveGames_GetList	undefined(void)
-001356a0	45	USER_DEFINED	unknown	SaveVar_Get	undefined(void)
-001356d0	227	DEFAULT	unknown	FUN_005356d0	
-001357c0	672	USER_DEFINED	unknown	SaveVar_Inc	undefined(void)
-00135a60	22	DEFAULT	unknown	FUN_00535a60	
-00135a80	387	DEFAULT	unknown	FUN_00535a80	
-00135c10	244	USER_DEFINED	unknown	SaveGame_Load	undefined(void)
-00135d10	196	DEFAULT	unknown	FUN_00535d10	
-00135de0	254	USER_DEFINED	unknown	SaveGame_Save	undefined(void)
-00135ee0	64	USER_DEFINED	unknown	SaveVar_Set	undefined(void)
-00135f20	182	DEFAULT	unknown	FUN_00535f20	
+001347e0	108	USER_DEFINED	__thiscall	HashTable<cSaveVar>::HashTable	void * __thiscall(int numSlots, byte caseSensitive)
+00134850	128	USER_DEFINED	__thiscall	cSaveVar::cSaveVar	void * __thiscall(char * name, char * value)
+001348d0	54	USER_DEFINED	__fastcall	HashTable<cSaveVar>::~HashTable	void __fastcall(void * self)
+00134930	118	USER_DEFINED	__thiscall	HashTable<cSaveVar>::Add	byte __thiscall(char * key, void * value, byte warn)
+001349b0	231	USER_DEFINED	__thiscall	HashTable<cSaveVar>::Insert	void * __thiscall(char * key, uint slot, void * value)
+00134aa0	516	USER_DEFINED	__cdecl	CrazyDeals_Count	int __cdecl(void)
+00134cf0	261	USER_DEFINED	__fastcall	HashTable<cSaveVar>::Clear	void __fastcall(void * self)
+00134e00	238	USER_DEFINED	__cdecl	SaveVar_Create	byte __cdecl(char * name, char * value)
+00134ef0	129	USER_DEFINED	__cdecl	SaveVars_Delete	void __cdecl(char * prefix)
+00134f90	210	USER_DEFINED	__thiscall	HashTable<cSaveVar>::Delete	byte __thiscall(char * key)
+00135070	49	USER_DEFINED	__thiscall	HashTable<cSaveVar>::Get	byte __thiscall(char * key, void * out)
+001350b0	143	USER_DEFINED	__thiscall	HashTable<cSaveVar>::Find	void * __thiscall(char * key, uint slot)
+00135140	104	USER_DEFINED	__cdecl	SaveGame_Checksum	int __cdecl(byte * buf, uint len)
+001351b0	305	USER_DEFINED	__cdecl	SaveGame_ReadDesc	byte __cdecl(char * path, char * desc)
+001352f0	936	USER_DEFINED	__cdecl	SaveGames_GetList	PyObject * __cdecl(char * path)
+001356a0	45	USER_DEFINED	__cdecl	SaveVar_Get	char * __cdecl(char * name)
+001356d0	227	USER_DEFINED	__thiscall	HashTable<cSaveVar>::Slot	uint __thiscall(char * key)
+001357c0	672	USER_DEFINED	__cdecl	SaveVar_Inc	int __cdecl(char * name, int n)
+00135a60	22	USER_DEFINED	__cdecl	SaveGame_CmpTime	int __cdecl(void * a, void * b)
+00135a80	387	USER_DEFINED	__cdecl	SaveGame_ReadVars	int __cdecl(void * f)
+00135c10	244	USER_DEFINED	__cdecl	SaveGame_Load	byte __cdecl(char * name)
+00135d10	196	USER_DEFINED	__cdecl	SaveGame_WriteVars	byte __cdecl(void * f, char * desc)
+00135de0	254	USER_DEFINED	__cdecl	SaveGame_Save	byte __cdecl(char * name, char * desc)
+00135ee0	64	USER_DEFINED	__cdecl	SaveVar_Set	byte __cdecl(char * name, char * value)
+00135f20	182	USER_DEFINED	__thiscall	HashTable<cSaveVar>::Unlink	void * __thiscall(char * key, uint slot)
 00135fe0	157	DEFAULT	unknown	FUN_00535fe0	
 00136080	107	DEFAULT	unknown	FUN_00536080	
 001360f0	112	ANALYSIS	__thiscall	cRndSlotController::vf00	undefined __thiscall(void)
