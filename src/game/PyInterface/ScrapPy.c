@@ -1,5 +1,6 @@
 /*
  * Python module Scrap (method table Scrap_methods, rva 0x42c610): engine functions for the game scripts.
+ * Original file: PyInterface\\ScrapPy.cpp
  */
 #include "scrap/python.h"
 

@@ -21,10 +21,12 @@ add_library(dinput8 SHARED
 	src/core/game.c
 	src/core/hook.c
 	src/core/imports.c
+	src/core/libm.c
 	src/core/log.c
-	src/py/scrap.c
-	src/py/sweap.c
 )
+# the decompiled game code, in the folder layout of the original sources (paths from the asserts in Scrap.exe)
+file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS src/game/*.c)
+target_sources(dinput8 PRIVATE ${GAME_SOURCES})
 set_target_properties(dinput8 PROPERTIES PREFIX "" OUTPUT_NAME dinput8)
 target_include_directories(dinput8 PRIVATE
 	include
@@ -32,5 +34,8 @@ target_include_directories(dinput8 PRIVATE
 	third_party/python-1.5.2/config
 	third_party/python-1.5.2/Include
 )
-target_compile_options(dinput8 PRIVATE -Wall -Wextra -O2 -g -fno-omit-frame-pointer -fno-strict-aliasing)
+# Scrap.exe does its float math with SSE2 (MSVC /arch:SSE2): same here, x87 80 bit intermediates would change
+# the last bits of results
+target_compile_options(dinput8 PRIVATE -Wall -Wextra -O2 -g -fno-omit-frame-pointer -fno-strict-aliasing
+	-msse2 -mfpmath=sse -ffp-contract=off)
 target_link_options(dinput8 PRIVATE -static-libgcc -Wl,--enable-stdcall-fixup)

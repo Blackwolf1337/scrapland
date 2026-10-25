@@ -1,5 +1,6 @@
 /*
  * Python module SWeap (method table SWeap_methods, rva 0x430128): weapons.
+ * Original file name unknown (no assert in it), named like the other PyInterface modules.
  */
 #include "scrap/python.h"
 

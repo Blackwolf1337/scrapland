@@ -47,7 +47,8 @@ rm -f "$ini" "$game/sdtest.py" "$game/sdtest.out"
 [ $rc -eq 0 ] || exit 1
 grep 'hooks installed' "$out/scrapdecomp-c.log"
 if diff -u "$out/sdtest-orig.out" "$out/sdtest-c.out"; then
-	echo "difftest: $(($(wc -l < "$out/sdtest-c.out") - 1)) checks, C functions match the originals"
+	echo "difftest: $(($(wc -l < "$out/sdtest-c.out") - 1)) checks, C functions match the originals" \
+		"($(grep -c ' = exception ' "$out/sdtest-c.out") of them raise an exception in both)"
 else
 	echo "difftest: outputs differ" >&2
 	exit 1

@@ -2201,7 +2201,7 @@ rva	size	source	callconv	name	signature
 000bc8b0	408	DEFAULT	unknown	FUN_004bc8b0	
 000bca50	416	DEFAULT	unknown	FUN_004bca50	
 000bcbf0	440	DEFAULT	unknown	FUN_004bcbf0	
-000bcdb0	516	DEFAULT	unknown	FUN_004bcdb0	
+000bcdb0	516	USER_DEFINED	__cdecl	CheckFailed	void __cdecl(char * expr, char * file, char * date, int line)
 000bcfc0	55	DEFAULT	unknown	FUN_004bcfc0	
 000bd000	312	DEFAULT	unknown	FUN_004bd000	
 000bd180	165	DEFAULT	unknown	FUN_004bd180	
@@ -4437,13 +4437,13 @@ rva	size	source	callconv	name	signature
 0015db50	159	DEFAULT	unknown	FUN_0055db50	
 0015dbf0	336	DEFAULT	unknown	FUN_0055dbf0	
 0015dd40	461	DEFAULT	unknown	FUN_0055dd40	
-0015df10	147	DEFAULT	unknown	FUN_0055df10	
+0015df10	147	USER_DEFINED	__cdecl	Vec3_GetRotAng	float * __cdecl(float * out, float * dir)
 0015dfb0	170	DEFAULT	unknown	FUN_0055dfb0	
 0015e060	294	DEFAULT	unknown	FUN_0055e060	
 0015e190	324	DEFAULT	unknown	FUN_0055e190	
-0015e2e0	111	DEFAULT	unknown	FUN_0055e2e0	
+0015e2e0	111	USER_DEFINED	__cdecl	NormAng	float __cdecl(float ang)
 0015e350	95	DEFAULT	unknown	FUN_0055e350	
-0015e3b0	277	DEFAULT	unknown	FUN_0055e3b0	
+0015e3b0	277	USER_DEFINED	__cdecl	Vec3_Rotate	void __cdecl(float * out, float * in, float * rot)
 0015e4d0	178	DEFAULT	unknown	FUN_0055e4d0	
 0015e590	192	DEFAULT	unknown	FUN_0055e590	
 0015e650	153	DEFAULT	unknown	FUN_0055e650	
@@ -8942,8 +8942,8 @@ rva	size	source	callconv	name	signature
 002debd0	94	DEFAULT	unknown	FUN_006debd0	
 002dec30	65	DEFAULT	unknown	FUN_006dec30	
 002dec80	37	DEFAULT	unknown	FUN_006dec80	
-002decb0	149	DEFAULT	unknown	FUN_006decb0	
-002ded50	153	ANALYSIS	unknown	PyTuple_SetItem	undefined(void)
+002decb0	149	USER_DEFINED	__cdecl	PyTuple_New	PyObject * __cdecl(int size)
+002ded50	153	ANALYSIS	__cdecl	PyTuple_SetItem	int __cdecl(PyObject * op, int i, PyObject * newitem)
 002dedf0	30	DEFAULT	unknown	FUN_006dedf0	
 002dee10	398	DEFAULT	unknown	FUN_006dee10	
 002defa0	22	DEFAULT	unknown	FUN_006defa0	
@@ -8969,7 +8969,7 @@ rva	size	source	callconv	name	signature
 002dfa30	141	ANALYSIS	unknown	PyFloat_AsDouble	undefined(void)
 002dfac0	92	DEFAULT	unknown	FUN_006dfac0	
 002dfb20	592	ANALYSIS	unknown	PyFloat_Fini	undefined(void)
-002dfd70	62	DEFAULT	unknown	FUN_006dfd70	
+002dfd70	62	USER_DEFINED	__cdecl	PyFloat_FromDouble	PyObject * __cdecl(double fval)
 002dfdb0	75	DEFAULT	unknown	FUN_006dfdb0	
 002dfe00	72	DEFAULT	unknown	FUN_006dfe00	
 002dfe50	46	DEFAULT	unknown	FUN_006dfe50	
@@ -9308,7 +9308,7 @@ rva	size	source	callconv	name	signature
 002efc70	62	ANALYSIS	unknown	type_repr	undefined(void)
 002efcb0	56	ANALYSIS	unknown	PyErr_BadArgument	undefined(void)
 002efcf0	54	ANALYSIS	unknown	PyErr_BadInternalCall	undefined(void)
-002efd30	103	DEFAULT	unknown	FUN_006efd30	
+002efd30	103	USER_DEFINED	__cdecl	PyErr_Clear	void __cdecl(void)
 002efda0	24	DEFAULT	unknown	FUN_006efda0	
 002efdc0	59	DEFAULT	unknown	FUN_006efdc0	
 002efe00	121	DEFAULT	unknown	FUN_006efe00	
@@ -10482,7 +10482,7 @@ rva	size	source	callconv	name	signature
 00329da4	129	ANALYSIS	__cdecl	_memcpy_s	errno_t __cdecl(void * _Dst, rsize_t _DstSize, void * _Src, rsize_t _MaxCount)
 00329e30	254	ANALYSIS	unknown	__libm_sse2_sqrt_precise	undefined(void)
 00329f3a	10	DEFAULT	unknown	FUN_00729f3a	
-00329f50	1311	DEFAULT	unknown	FUN_00729f50	
+00329f50	1311	USER_DEFINED	unknown	__libm_sse2_acos	undefined(void)
 0032a470	35	ANALYSIS	unknown	FID_conflict:format_validation_base<wchar_t,__crt_stdio_output::stream_output_adapter<wchar_t>_><__crt_stdio_output::stream_output_adapter<wchar_t>_const&,unsigned___int64_const&,wchar_t_const*_const&,__crt_locale_pointers*_const&,char*_const&>	undefined(void)
 0032a493	72	ANALYSIS	unknown	FID_conflict:positional_parameter_base<char,__crt_stdio_output::stream_output_adapter<char>_><__crt_stdio_output::stream_output_adapter<char>_const&,unsigned___int64_const&,char_const*_const&,__crt_locale_pointers*_const&,char*_const&>	undefined(void)
 0032a4db	53	ANALYSIS	unknown	FID_conflict:standard_base<wchar_t,__crt_stdio_output::string_output_adapter<wchar_t>_><__crt_stdio_output::string_output_adapter<wchar_t>_const&,unsigned___int64_const&,wchar_t_const*_const&,__crt_locale_pointers*_const&,char*_const&>	undefined(void)
