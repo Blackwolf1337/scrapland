@@ -44,7 +44,7 @@ typedef struct HashNode {
 typedef struct HashTable {
 	uint32_t numSlots;		/* 0x0 */
 	HashNode **slots;		/* 0x4 */
-	byte pad_8;
+	byte locked;			/* 0x8 no changes while set */
 	byte caseSensitive;		/* 0x9 */
 	byte pad_a[2];
 } HashTable;

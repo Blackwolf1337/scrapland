@@ -10629,6 +10629,8 @@ rva	source	name	datatype
 0041511c	IMPORTED	pairNode::RTTI_Class_Hierarchy_Descriptor	/RTTIClassHierarchyDescriptor
 0041512c	IMPORTED	pairNode::RTTI_Base_Class_Array	/RTTIBaseClassDescriptor *[2]
 00415138	IMPORTED	pairNode::RTTI_Base_Class_Descriptor_at_(0,-1,0,64)	/RTTIBaseClassDescriptor
+00428994	USER_DEFINED	g_PackIndex	/undefined4
+004289a0	USER_DEFINED	g_HashItemValues	
 00428d58	ANALYSIS	_PyImport_Inittab	/pointer
 00428e18	ANALYSIS	cPyEntity_Type	/object.h/PyTypeObject
 00428e88	ANALYSIS	cPyEntity_methods	/methodobject.h/PyMethodDef[7]
@@ -11005,7 +11007,23 @@ rva	source	name	datatype
 00444d2c	USER_DEFINED	g_NodesTrafficInDoor	/undefined4
 00444d34	USER_DEFINED	g_NodesWorld	/undefined4
 00444dc8	USER_DEFINED	g_NodesWorld2D	/undefined4
+0044ab40	USER_DEFINED	g_NameTable	/undefined4
+0044ab44	USER_DEFINED	g_PackNames	/undefined4
 0044ab6c	USER_DEFINED	g_PackName	/undefined4
+0044ab84	USER_DEFINED	g_PackBuildAsk	/undefined4
+0044ab8c	USER_DEFINED	g_PackEntries	/undefined4
+0044aba4	USER_DEFINED	g_NumPackFiles	/undefined4
+0044aba8	USER_DEFINED	g_PackFiles	/undefined4
+0044b5b8	USER_DEFINED	g_PackExclude	/undefined4
+0044b5d0	USER_DEFINED	g_PackInclude	/undefined4
+0044b5d8	USER_DEFINED	g_PackLocked	/undefined4
+0044b5dc	USER_DEFINED	g_LstFile	/undefined4
+0044b5e0	USER_DEFINED	g_PackNumEntries	/undefined4
+0044b5e4	USER_DEFINED	g_PackDirLen	
+0044b5e8	USER_DEFINED	g_PackBuildMode	/undefined4
+0044b5ec	USER_DEFINED	g_PackFound	
+0044b600	USER_DEFINED	g_HashItemPool	/undefined4
+0044b604	USER_DEFINED	g_HashItemRefs	/undefined4
 0044b640	USER_DEFINED	g_MemStatsContext	/undefined4
 0044bbf0	USER_DEFINED	g_PyStaticBuffer	/undefined4
 0044c128	USER_DEFINED	g_ActionSets	/undefined4

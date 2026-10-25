@@ -6,6 +6,7 @@
 #define SCRAP_SCRAP_H
 
 #include "scrap/entity.h"
+#include "scrap/filepak.h"
 #include "scrap/mathlib.h"
 #include "scrap/pyentity.h"
 #include "scrap/python.h"
@@ -72,24 +73,6 @@ PyObject *SaveGames_GetList(const char *path);
 PyObject *Lang_GetEntries(const char *name, int n);
 const char *Lang_GetStr(const char *name);
 const char *Lang_GetLanguage(void);
-
-int Pack_Extract(const char *name);
-/* a file pack reader on the stack (0x1c bytes) */
-typedef struct cFilePack {
-	byte data[0x1c];
-} cFilePack;
-void __thiscall cFilePack_ctor(cFilePack *pack);
-void __thiscall cFilePack_dtor(cFilePack *pack);
-int __thiscall cFilePack_Exists(cFilePack *pack, const char *name);
-/* the cFile methods of cFilePack, called directly (rva 0x1307f0, 0x1313a0, 0x1312b0, 0x12f940) */
-int __thiscall cFilePack_Open(cFilePack *pack, const char *name, int mode);
-int __thiscall cFilePack_Size(cFilePack *pack);
-int __thiscall cFilePack_Read(cFilePack *pack, void *dst, int size);
-int __thiscall cFilePack_Close(cFilePack *pack);
-
-/* the list of files read from packs, when the engine records one: off unless the log file is open */
-byte PackLog_Closed(void);			/* rva 0x1313f0 */
-byte PackLog_Add(const char *name);		/* rva 0x12edb0, adds pack name and file */
 
 /* Global/StaticBuffer.h: a buffer that grows and is locked while in use */
 typedef struct cStaticBuffer {

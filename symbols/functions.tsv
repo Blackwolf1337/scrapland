@@ -1186,7 +1186,7 @@ rva	size	source	callconv	name	signature
 000604a0	143	DEFAULT	unknown	FUN_004604a0	
 00060530	85	DEFAULT	unknown	FUN_00460530	
 00060590	45	USER_DEFINED	__thiscall	cActClass::GetAction	void * __thiscall(char * name)
-000605f0	139	DEFAULT	unknown	FUN_004605f0	
+000605f0	139	USER_DEFINED	__thiscall	DList<cString>::NewNode	void * __thiscall(void)
 00060680	227	DEFAULT	unknown	FUN_00460680	
 00060770	3136	USER_DEFINED	__thiscall	cActClass::Var	int __thiscall(char * name, int set, char * * s, double * d, int * i)
 000613b0	641	DEFAULT	unknown	FUN_004613b0	
@@ -3409,74 +3409,74 @@ rva	size	source	callconv	name	signature
 0012e270	34	USER_DEFINED	__thiscall	cFileMem::Seek	int __thiscall(int pos)
 0012e2a0	4	USER_DEFINED	__thiscall	cFileMem::Size	int __thiscall(void)
 0012e2b0	84	USER_DEFINED	__thiscall	cFileMem::Write	int __thiscall(void * src, int size)
-0012e310	16	ANALYSIS	__thiscall	cFile2::vf00	undefined __thiscall(void)
-0012e320	25	ANALYSIS	__thiscall	cFile2::vf03	undefined __thiscall(void)
-0012e340	25	ANALYSIS	__thiscall	cFile2::vf04	undefined __thiscall(void)
-0012e360	58	ANALYSIS	__thiscall	cFile2::vf05	undefined __thiscall(void)
-0012e3a0	46	ANALYSIS	__thiscall	cFile2::vf06	undefined __thiscall(void)
-0012e3d0	41	ANALYSIS	__thiscall	cFile2::vf08	undefined __thiscall(void)
-0012e400	105	DEFAULT	unknown	FUN_0052e400	
-0012e470	105	DEFAULT	unknown	FUN_0052e470	
-0012e4e0	47	DEFAULT	unknown	FUN_0052e4e0	
-0012e510	40	USER_DEFINED	__thiscall	cFilePack::cFilePack	undefined __thiscall(void)
-0012e540	54	DEFAULT	unknown	FUN_0052e540	
-0012e580	54	DEFAULT	unknown	FUN_0052e580	
-0012e5c0	11	DEFAULT	unknown	FUN_0052e5c0	
-0012e5d0	11	USER_DEFINED	__thiscall	cFilePack::~cFilePack	undefined __thiscall(void)
-0012e5e0	118	DEFAULT	unknown	FUN_0052e5e0	
-0012e660	118	DEFAULT	unknown	FUN_0052e660	
-0012e6e0	41	ANALYSIS	__thiscall	cFilePack::vf08	undefined __thiscall(void)
-0012e710	118	DEFAULT	unknown	FUN_0052e710	
-0012e790	118	DEFAULT	unknown	FUN_0052e790	
-0012e810	115	DEFAULT	unknown	FUN_0052e810	
-0012e890	87	DEFAULT	unknown	FUN_0052e890	
-0012e8f0	262	DEFAULT	unknown	FUN_0052e8f0	
-0012ea00	272	DEFAULT	unknown	FUN_0052ea00	
-0012eb10	666	DEFAULT	unknown	FUN_0052eb10	
-0012edb0	68	USER_DEFINED	__cdecl	PackLog_Add	byte __cdecl(char * name)
-0012ee00	38	DEFAULT	unknown	FUN_0052ee00	
-0012ee30	2108	DEFAULT	unknown	FUN_0052ee30	
-0012f670	273	DEFAULT	unknown	FUN_0052f670	
-0012f790	273	DEFAULT	unknown	FUN_0052f790	
-0012f8b0	140	DEFAULT	unknown	FUN_0052f8b0	
+0012e310	16	USER_DEFINED	__thiscall	cFile2::Open	int __thiscall(char * name, uint mode)
+0012e320	25	USER_DEFINED	__thiscall	cFile2::Read	int __thiscall(void * dst, int size)
+0012e340	25	USER_DEFINED	__thiscall	cFile2::Write	int __thiscall(void * src, int size)
+0012e360	58	USER_DEFINED	__thiscall	cFile2::Seek	int __thiscall(int pos)
+0012e3a0	46	USER_DEFINED	__thiscall	cFile2::Tell	int __thiscall(void)
+0012e3d0	41	USER_DEFINED	__thiscall	cFile2::Destroy	void * __thiscall(int flags)
+0012e400	105	USER_DEFINED	__thiscall	HashTable<cNameItem>::HashTable	void * __thiscall(int numSlots, byte caseSensitive)
+0012e470	105	USER_DEFINED	__thiscall	HashTable<cPackLocation>::HashTable	void * __thiscall(int numSlots, byte caseSensitive)
+0012e4e0	47	USER_DEFINED	__fastcall	cFile2::cFile2	void * __fastcall(void * self)
+0012e510	40	USER_DEFINED	__thiscall	cFilePack::cFilePack	void * __thiscall(void)
+0012e540	54	USER_DEFINED	__fastcall	HashTable<cNameItem>::~HashTable	void __fastcall(void * self)
+0012e580	54	USER_DEFINED	__fastcall	HashTable<cPackLocation>::~HashTable	void __fastcall(void * self)
+0012e5c0	11	USER_DEFINED	__fastcall	cFile2::~cFile2	void __fastcall(void * self)
+0012e5d0	11	USER_DEFINED	__thiscall	cFilePack::~cFilePack	void __thiscall(void)
+0012e5e0	118	USER_DEFINED	__cdecl	HashItem_Free	void __cdecl(void * p)
+0012e660	118	USER_DEFINED	__cdecl	HashItem_Free	void __cdecl(void * p)
+0012e6e0	41	USER_DEFINED	__thiscall	cFilePack::Destroy	void * __thiscall(int flags)
+0012e710	118	USER_DEFINED	__thiscall	HashTable<cNameItem>::Add	byte __thiscall(char * key, int * value, byte warn)
+0012e790	118	USER_DEFINED	__thiscall	HashTable<cPackLocation>::Add	byte __thiscall(char * key, void * loc, byte warn)
+0012e810	115	USER_DEFINED	__thiscall	PackEntries_Add	void __thiscall(void * e)
+0012e890	87	USER_DEFINED	__thiscall	PackNames_Add	void __thiscall(void * str)
+0012e8f0	262	USER_DEFINED	__thiscall	HashTable<cNameItem>::Insert	void * __thiscall(char * key, uint slot, int * value)
+0012ea00	272	USER_DEFINED	__thiscall	HashTable<cPackLocation>::Insert	void * __thiscall(char * key, uint slot, void * loc)
+0012eb10	666	USER_DEFINED	__cdecl	Pack_BuildAddFile	void __cdecl(char * path)
+0012edb0	68	USER_DEFINED	__cdecl	PackLog_Add	int __cdecl(char * name)
+0012ee00	38	USER_DEFINED	__cdecl	Pack_NormalizeName	void __cdecl(char * name)
+0012ee30	2108	USER_DEFINED	__cdecl	Pack_Build	void __cdecl(char * dir, char * outName, int mode)
+0012f670	273	USER_DEFINED	__fastcall	HashTable<cNameItem>::Clear	void __fastcall(void * self)
+0012f790	273	USER_DEFINED	__fastcall	HashTable<cPackLocation>::Clear	void __fastcall(void * self)
+0012f8b0	140	USER_DEFINED	__fastcall	PackEntries_Clear	void __fastcall(void * list)
 0012f940	71	USER_DEFINED	__thiscall	cFilePack::Close	int __thiscall(void)
-0012f990	177	DEFAULT	unknown	FUN_0052f990	
-0012fa50	218	DEFAULT	unknown	FUN_0052fa50	
+0012f990	177	USER_DEFINED	__cdecl	Pack_CloseAll	void __cdecl(void)
+0012fa50	218	USER_DEFINED	__cdecl	Pack_AddFileName	void __cdecl(char * path)
 0012fb30	152	USER_DEFINED	__thiscall	cFilePack::Exists	int __thiscall(char * name)
-0012fbd0	1003	USER_DEFINED	unknown	Pack_Extract	undefined(void)
-0012ffc0	59	DEFAULT	unknown	FUN_0052ffc0	
-00130000	229	DEFAULT	unknown	FUN_00530000	
-001300f0	143	DEFAULT	unknown	FUN_005300f0	
-00130180	143	DEFAULT	unknown	FUN_00530180	
-00130240	100	DEFAULT	unknown	FUN_00530240	
-001302b0	27	ANALYSIS	__thiscall	cFilePack::vf06	undefined __thiscall(void)
-001302d0	227	DEFAULT	unknown	FUN_005302d0	
-001303c0	227	DEFAULT	unknown	FUN_005303c0	
-001304b0	21	DEFAULT	unknown	FUN_005304b0	
-001304d0	87	DEFAULT	unknown	FUN_005304d0	
-00130530	260	DEFAULT	unknown	FUN_00530530	
-00130640	178	DEFAULT	unknown	FUN_00530640	
-00130700	116	DEFAULT	unknown	FUN_00530700	
-00130780	97	DEFAULT	unknown	FUN_00530780	
-001307f0	516	USER_DEFINED	__thiscall	cFilePack::Open	int __thiscall(char * name, int mode)
-00130a00	1414	DEFAULT	unknown	FUN_00530a00	
-00130f90	158	DEFAULT	unknown	FUN_00530f90	
-00131030	145	DEFAULT	unknown	FUN_00531030	
-001310d0	33	DEFAULT	unknown	FUN_005310d0	
-00131100	108	DEFAULT	unknown	FUN_00531100	
-00131170	116	DEFAULT	unknown	FUN_00531170	
-001311f0	136	DEFAULT	unknown	FUN_005311f0	
-00131280	34	USER_DEFINED	unknown	Python_CompileAll	undefined(void)
+0012fbd0	1003	USER_DEFINED	__cdecl	Pack_Extract	int __cdecl(char * dir)
+0012ffc0	59	USER_DEFINED	__thiscall	HashTable<cPackLocation>::Get	byte __thiscall(char * key, void * out)
+00130000	229	USER_DEFINED	__cdecl	Pack_CheckDuplicates	void __cdecl(char * ext)
+001300f0	143	USER_DEFINED	__thiscall	HashTable<cNameItem>::Find	void * __thiscall(char * key, uint slot)
+00130180	143	USER_DEFINED	__thiscall	HashTable<cPackLocation>::Find	void * __thiscall(char * key, uint slot)
+00130240	100	USER_DEFINED	__cdecl	Pack_GetFileInfo	byte __cdecl(char * name, char * packName, int * offset, int * size)
+001302b0	27	USER_DEFINED	__thiscall	cFilePack::Tell	int __thiscall(void)
+001302d0	227	USER_DEFINED	__thiscall	HashTable<cNameItem>::Slot	uint __thiscall(char * key)
+001303c0	227	USER_DEFINED	__thiscall	HashTable<cPackLocation>::Slot	uint __thiscall(char * key)
+001304b0	21	USER_DEFINED	__cdecl	Pack_FileExists	byte __cdecl(char * name)
+001304d0	87	USER_DEFINED	__cdecl	PackNames_Find	void * __cdecl(char * name)
+00130530	260	USER_DEFINED	__cdecl	PackEntry_Find	void * __cdecl(char * name)
+00130640	178	USER_DEFINED	__cdecl	PackIndex_Find	void * __cdecl(char * name)
+00130700	116	USER_DEFINED	__cdecl	Pack_IsIncluded	byte __cdecl(char * name)
+00130780	97	USER_DEFINED	__thiscall	HashTable<cPackLocation>::Set	int __thiscall(char * key, void * loc)
+001307f0	516	USER_DEFINED	__thiscall	cFilePack::Open	int __thiscall(char * name, uint mode)
+00130a00	1414	USER_DEFINED	__cdecl	Pack_Open	byte __cdecl(char * name, char * dir, uint bufSize)
+00130f90	158	USER_DEFINED	__cdecl	Pack_OpenFound	void __cdecl(char * file)
+00131030	145	USER_DEFINED	__cdecl	Pack_OpenDir	void __cdecl(char * dir)
+001310d0	33	USER_DEFINED	__cdecl	Pack_FullName	void __cdecl(char * buf, int size, char * name)
+00131100	108	USER_DEFINED	__thiscall	cFile2::SkipTo	void __thiscall(int pos, char * name)
+00131170	116	USER_DEFINED	__cdecl	Pack_BuildFromList	void __cdecl(char * list)
+001311f0	136	USER_DEFINED	__cdecl	Python_CompileFile	void __cdecl(char * path)
+00131280	34	USER_DEFINED	__cdecl	Python_CompileAll	void __cdecl(void)
 001312b0	109	USER_DEFINED	__thiscall	cFilePack::Read	int __thiscall(void * dst, int size)
-00131340	89	ANALYSIS	__thiscall	cFilePack::vf05	undefined __thiscall(void)
+00131340	89	USER_DEFINED	__thiscall	cFilePack::Seek	int __thiscall(int pos)
 001313a0	14	USER_DEFINED	__thiscall	cFilePack::Size	int __thiscall(void)
-001313b0	58	ANALYSIS	__thiscall	cFilePack::vf04	undefined __thiscall(void)
-001313f0	12	USER_DEFINED	__cdecl	PackLog_Closed	byte __cdecl(void)
-00131400	84	DEFAULT	unknown	FUN_00531400	
-00131480	162	DEFAULT	unknown	FUN_00531480	
-00131530	411	DEFAULT	unknown	FUN_00531530	
+001313b0	58	USER_DEFINED	__thiscall	cFilePack::Write	int __thiscall(void * src, int size)
+001313f0	12	USER_DEFINED	__cdecl	PackLog_Closed	int __cdecl(void)
+00131400	84	USER_DEFINED	__cdecl	Str_Trim	void __cdecl(char * s)
+00131480	162	USER_DEFINED	__cdecl	Path_MakeDirs	void __cdecl(char * path)
+00131530	411	USER_DEFINED	__cdecl	Dir_Walk	void __cdecl(char * dir, char * ext, void * cb)
 001316d0	212	DEFAULT	unknown	FUN_005316d0	
-001317b0	304	DEFAULT	unknown	FUN_005317b0	
+001317b0	304	USER_DEFINED	__cdecl	StrList_Match	byte __cdecl(char * list, char * name, char * sep)
 001318e0	128	DEFAULT	unknown	FUN_005318e0	
 00131960	108	DEFAULT	unknown	FUN_00531960	
 001319d0	44	DEFAULT	unknown	FUN_005319d0	
@@ -3525,7 +3525,7 @@ rva	size	source	callconv	name	signature
 00133820	57	DEFAULT	unknown	FUN_00533820	
 00133860	118	DEFAULT	unknown	FUN_00533860	
 001338e0	76	DEFAULT	unknown	FUN_005338e0	
-00133930	76	DEFAULT	unknown	FUN_00533930	
+00133930	76	USER_DEFINED	__thiscall	cString::cString	void * __thiscall(char * s)
 00133980	9	USER_DEFINED	__thiscall	cString::cString	void __thiscall(void)
 00133990	74	USER_DEFINED	__thiscall	cString::~cString	void __thiscall(void)
 001339e0	73	DEFAULT	unknown	FUN_005339e0	
@@ -3542,7 +3542,7 @@ rva	size	source	callconv	name	signature
 00133ea0	51	DEFAULT	unknown	FUN_00533ea0	
 00133ee0	135	DEFAULT	unknown	FUN_00533ee0	
 00133f70	143	DEFAULT	unknown	FUN_00533f70	
-00134000	55	DEFAULT	unknown	FUN_00534000	
+00134000	55	USER_DEFINED	__thiscall	cString::Assign	void __thiscall(void * src)
 00134040	59	USER_DEFINED	unknown	cString::Set	undefined(void)
 00134080	139	USER_DEFINED	unknown	cString::Printf	undefined(void)
 00134130	81	DEFAULT	unknown	FUN_00534130	
@@ -3596,7 +3596,7 @@ rva	size	source	callconv	name	signature
 00136250	20	DEFAULT	unknown	FUN_00536250	
 00136270	107	DEFAULT	unknown	FUN_00536270	
 001362e0	312	DEFAULT	unknown	FUN_005362e0	
-00136420	149	DEFAULT	unknown	FUN_00536420	
+00136420	149	USER_DEFINED	__cdecl	Path_Split	void __cdecl(char * path, char * name, char * dir, char * ext)
 001364c0	211	DEFAULT	unknown	FUN_005364c0	
 001365a0	26	DEFAULT	unknown	FUN_005365a0	
 001365c0	75	USER_DEFINED	__cdecl	Str_Copy	char * __cdecl(char * dst, char * src, int size)
@@ -6271,7 +6271,7 @@ rva	size	source	callconv	name	signature
 0020a890	35	ANALYSIS	__thiscall	CApp::vf03	undefined __thiscall(void)
 0020a8c0	1	ANALYSIS	__thiscall	CApp::vf02	undefined __thiscall(void)
 0020a8d0	537	ANALYSIS	__thiscall	CApp::vf00	undefined __thiscall(void)
-0020aaf0	447	DEFAULT	unknown	FUN_0060aaf0	
+0020aaf0	447	USER_DEFINED	__cdecl	Console_Execute	void __cdecl(char * cmd)
 0020ace0	1	ANALYSIS	__thiscall	CApp::vf08	undefined __thiscall(void)
 0020acf0	5	ANALYSIS	__thiscall	CApp::vf11	undefined __thiscall(void)
 0020ad00	214	ANALYSIS	__thiscall	CApp::vf06	undefined __thiscall(void)
@@ -6482,7 +6482,7 @@ rva	size	source	callconv	name	signature
 00215280	201	DEFAULT	unknown	FUN_00615280	
 00215349	919	DEFAULT	unknown	FUN_00615349	
 002156e0	89	DEFAULT	unknown	FUN_006156e0	
-002157a0	520	DEFAULT	unknown	FUN_006157a0	
+002157a0	520	USER_DEFINED	__cdecl	Loading_Step	void __cdecl(int percent)
 002159b0	82	DEFAULT	unknown	FUN_006159b0	
 00215a10	20	DEFAULT	unknown	FUN_00615a10	
 00215a30	146	DEFAULT	unknown	FUN_00615a30	
@@ -9860,7 +9860,7 @@ rva	size	source	callconv	name	signature
 00313600	6	DEFAULT	unknown	FUN_00713600	
 00313610	36	ANALYSIS	unknown	Py_GetBuildInfo	undefined(void)
 00313634	14	USER_DEFINED	__cdecl	operator_delete_sized	void __cdecl(void * p, uint size)
-00313642	9	DEFAULT	unknown	FUN_00713642	
+00313642	9	USER_DEFINED	__cdecl	operator_new_array	void * __cdecl(uint size)
 0031364b	5	DEFAULT	__cdecl	operator_delete	
 00313650	17	ANALYSIS	__fastcall	__security_check_cookie	undefined __fastcall(void)
 00313668	35	ANALYSIS	__thiscall	type_info::vf00	undefined __thiscall(void)
@@ -11602,7 +11602,7 @@ rva	size	source	callconv	name	signature
 003483e3	10	DEFAULT	unknown	FUN_007483e3	
 003483ed	183	ANALYSIS	__cdecl	common_fgets<wchar_t>	wchar_t * __cdecl(wchar_t * param_1, int param_2, __crt_stdio_stream param_3)
 003484a7	10	DEFAULT	unknown	FUN_007484a7	
-003484b1	11	DEFAULT	unknown	FUN_007484b1	
+003484b1	11	USER_DEFINED	__cdecl	_fgets	char * __cdecl(char * buf, int size, FILE * f)
 003484bc	11	DEFAULT	unknown	FUN_007484bc	
 003484c7	66	ANALYSIS	__thiscall	__crt_seh_guarded_call<int>::operator()<<lambda_d92cfe8357b99225085016881b624cb0>,<lambda_b721fa326cdb32351d23dfa67958c160>&,<lambda_42d75b0848218ec137fa420c8ba9fdf9>_>	int __thiscall(<lambda_d92cfe8357b99225085016881b624cb0> * param_1, <lambda_b721fa326cdb32351d23dfa67958c160> * param_2, <lambda_42d75b0848218ec137fa420c8ba9fdf9> * param_3)
 0034850c	12	DEFAULT	unknown	FUN_0074850c	

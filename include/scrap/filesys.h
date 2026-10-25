@@ -62,8 +62,20 @@ SD_SIZE(cFileMem, 0x20);
 void __fastcall cAbstractFile_dtor(cAbstractFile *self);
 int __thiscall cAbstractFile_Open(cAbstractFile *self, const char *name, uint32_t mode);
 int __thiscall cAbstractFile_Close(cAbstractFile *self);
+/* a string with an int length into buf of size bytes */
+int __thiscall cAbstractFile_ReadString(cAbstractFile *self, char *buf, int size);
 /* the length (int) and the characters without the terminator */
 int __thiscall cAbstractFile_WriteString(cAbstractFile *self, const char *s);
+
+void __fastcall cFile_dtor(cFile *self);
+int __thiscall cFile_Open(cFile *self, const char *name, uint32_t mode);
+int __thiscall cFile_Exists(cFile *self, const char *name);
+int __thiscall cFile_Close(cFile *self);
+int __thiscall cFile_Read(cFile *self, void *dst, int size);
+int __thiscall cFile_Write(cFile *self, const void *src, int size);
+int __thiscall cFile_Seek(cFile *self, int pos);
+int __thiscall cFile_Tell(cFile *self);
+int __thiscall cFile_Size(cFile *self);
 
 cFileMem *__thiscall cFileMem_ctor(cFileMem *self, void *buffer, int maxSize, byte ownsBuffer);
 

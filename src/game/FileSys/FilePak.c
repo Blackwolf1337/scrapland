@@ -1,0 +1,1129 @@
+/*
+ * The .packed archives (include/scrap/filepak.h). Original source: FileSys/FilePak.cpp, with its instances of
+ * Global/HashTable.h and Global/DList.h.
+ */
+#include <string.h>
+
+#include "scrap/console.h"
+#include "scrap/filepak.h"
+#include "scrap/pymempool.h"
+#include "scrap/scrap.h"
+
+/* the exe's CRT and the engine helpers this file uses */
+int crt_stricmp(const char *a, const char *b);
+int crt_strnicmp(const char *a, const char *b, size_t n);
+char *crt_strlwr(char *s);
+int crt_fputs(const char *s, void *f);
+int crt_feof(void *f);
+char *crt_fgets(char *buf, int size, void *f);
+int crt_setvbuf(void *f, char *buf, int mode, size_t size);
+int crt_access(const char *name, int mode);
+int crt_stat32(const char *name, void *st);
+[[noreturn]] void crt_exit(int code);
+void *operator_new_array(uint32_t size);
+void operator_delete(void *p);
+/* MessageBoxA through the import table of the exe */
+typedef int(__stdcall *messagebox_t)(void *hwnd, const char *text, const char *caption, unsigned type);
+#define exe_MessageBoxA GAME_DATA(messagebox_t, 0x3a142c)
+
+void *__thiscall cString_ctorStr(void *str, const char *s);
+void __thiscall cString_Assign(void *dst, const void *src);
+cStringNode *__thiscall cStringList_NewNode(cStringList *list);
+
+void Str_Trim(char *s);					/* drops CR/LF and trailing blanks */
+void Path_MakeDirs(const char *path);			/* the directories of path */
+/* calls cb with every file below dir (dir ends with '/') whose name ends in "." ext, all files for "" */
+void Dir_Walk(const char *dir, const char *ext, void (*cb)(const char *path));
+/* 1 if name matches one of the sep separated patterns of list */
+byte StrList_Match(const char *list, const char *name, const char *sep);
+/* parts of a path: base name without extension, directory, extension (NULL: not wanted) */
+void Path_Split(const char *path, char *name, char *dir, char *ext);
+void Loading_Step(int percent);				/* -1: one step of the loading bar */
+void Console_Execute(const char *cmd);			/* a line of the engine console */
+
+enum { CRT_SEEK_SET = 0 };
+
+/* lower case with '/' as separator, the form of the names in the index */
+static void PackName_Normalize(char *s) {
+	crt_strlwr(s);
+	for (; *s; s++) {
+		if (*s == '\\') {
+			*s = '/';
+		}
+	}
+}
+
+/* cFile2: a pack file on disk with its position */
+
+cFile2 *__fastcall cFile2_ctor(cFile2 *self) {
+	self->file.base.name = NULL;
+	self->file.base.mode = 0;
+	self->file.f = NULL;
+	self->file.base.vftable = cFile2_vftable;
+	self->curPos = 0;
+	return self;
+}
+
+void __fastcall cFile2_dtor(cFile2 *self) {
+	self->file.base.vftable = cFile2_vftable;
+	cFile_dtor(&self->file);
+}
+
+cFile2 *__thiscall cFile2_Destroy(cFile2 *self, int flags) {
+	self->file.base.vftable = cFile2_vftable;
+	cFile_dtor(&self->file);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(*self));
+	}
+	return self;
+}
+
+int __thiscall cFile2_Open(cFile2 *self, const char *name, uint32_t mode) {
+	self->curPos = 0;
+	return cFile_Open(&self->file, name, mode);
+}
+
+int __thiscall cFile2_Read(cFile2 *self, void *dst, int size) {
+	int n = cFile_Read(&self->file, dst, size);
+	self->curPos += n;
+	return n;
+}
+
+int __thiscall cFile2_Write(cFile2 *self, const void *src, int size) {
+	int n = cFile_Write(&self->file, src, size);
+	self->curPos += n;
+	return n;
+}
+
+int __thiscall cFile2_Seek(cFile2 *self, int pos) {
+	self->curPos = cFile_Seek(&self->file, pos);
+	CHECK(self->curPos != -1);
+	return self->curPos;
+}
+
+int __thiscall cFile2_Tell(cFile2 *self) {
+	CHECK(self->curPos == cFile_Tell(&self->file));
+	return self->curPos;
+}
+
+/* reads up to pos when it is close (32 bytes), else seeks */
+void __thiscall cFile2_SkipTo(cFile2 *self, int pos, const char *name) {
+	byte skip[0x20];
+	uint32_t d = (uint32_t)(pos - self->curPos);
+
+	if (d > sizeof(skip)) {
+		Con_Verbosef("PackFile seek: %s: %d\n", name, d);
+		self->file.base.vftable->Seek(&self->file.base, pos);
+		return;
+	}
+	if (d) {
+		self->file.base.vftable->Read(&self->file.base, skip, d);
+	}
+}
+
+/* Global/HashTable.h: the parts both instances share */
+
+HashTable *__thiscall HashTable_ctor(HashTable *self, int numSlots, byte caseSensitive) {
+	CHECK(numSlots > 0);
+	self->numSlots = numSlots;
+	/* operator new[] of the exe, which gets -1 on an overflow of the size */
+	uint64_t bytes = (uint64_t)(uint32_t)numSlots * 4;
+	self->slots = operator_new_array(bytes >> 32 ? 0xffffffffu : (uint32_t)bytes);
+	memset(self->slots, 0, numSlots * 4);
+	self->caseSensitive = caseSensitive;
+	self->locked = 0;
+	return self;
+}
+
+/* the slot of key: a 4 bit shift hash folded to 28 bits, case-insensitive unless caseSensitive */
+uint32_t __thiscall HashTable_Slot(HashTable *self, const char *key) {
+	uint32_t h = 0;
+
+	CHECK(key);
+	CHECK(self->numSlots);
+	for (const byte *p = (const byte *)key; *p; p++) {
+		byte c = *p;
+		if (!self->caseSensitive && (byte)(c - 'A') < 26) {
+			c += 0x20;
+		}
+		h = h * 16 + c;
+		if (h & 0xf0000000) {
+			h = (h ^ ((h >> 24) & 0xf0)) & 0x0fffffff;
+		}
+	}
+	return h % self->numSlots;
+}
+
+static void *HashItem_Alloc(uint32_t size) {
+	if (!g_HashItemPool) {
+		cMemPool *mem = operator_new(sizeof(*mem));
+		g_HashItemPool = mem ? cMemPool_ctor(mem, "HashItem", g_HashItemValues) : NULL;
+	}
+	g_HashItemRefs++;
+	return cMemPool_Alloc(g_HashItemPool, size);
+}
+
+/* the pool goes when its last item does */
+void HashItem_Free(void *p) {
+	g_HashItemRefs--;
+	cMemPool_Free(g_HashItemPool, p);
+	cMemPool *pool = g_HashItemPool;
+	if (g_HashItemRefs < 1) {
+		if (pool) {
+			cMemPool_dtor(pool);
+			operator_delete_sized(pool, sizeof(*pool));
+		}
+		g_HashItemPool = NULL;
+	}
+}
+
+static int HashTable_KeyEq(HashTable *self, const char *a, const char *b) {
+	return self->caseSensitive ? strcmp(a, b) == 0 : crt_stricmp(a, b) == 0;
+}
+
+/* the instance of cNameItem (value int) */
+
+cNameItem *__thiscall NameTable_Find(HashTable *self, const char *key, uint32_t slot) {
+	for (cNameItem *it = (cNameItem *)self->slots[slot]; it; it = it->next) {
+		if (HashTable_KeyEq(self, it->key, key)) {
+			return it;
+		}
+	}
+	return NULL;
+}
+
+cNameItem *__thiscall NameTable_Insert(HashTable *self, const char *key, uint32_t slot, const int *value) {
+	CHECK(!self->locked);
+	cNameItem *it = HashItem_Alloc(sizeof(*it));
+	if (it) {
+		cString_ctor(&it->key);
+		it->value = *value;
+		it->next = NULL;
+	}
+	it->next = (cNameItem *)self->slots[slot];
+	cString_Set(&it->key, key);
+	self->slots[slot] = (HashNode *)it;
+	return it;
+}
+
+byte __thiscall NameTable_Add(HashTable *self, const char *key, const int *value, byte warn) {
+	CHECK(!self->locked);
+	uint32_t slot = HashTable_Slot(self, key);
+	if (NameTable_Find(self, key, slot)) {
+		if (warn) {
+			Con_Warnf("CHashTable: Symbol already defined: '%s'\n", key);
+		}
+		return 0;
+	}
+	NameTable_Insert(self, key, slot, value);
+	return 1;
+}
+
+void __fastcall NameTable_Clear(HashTable *self) {
+	CHECK(!self->locked);
+	if (!self->slots) {
+		return;
+	}
+	for (int i = 0; i < (int)self->numSlots; i++) {
+		while (self->slots[i]) {
+			cNameItem *it = (cNameItem *)self->slots[i];
+			self->slots[i] = (HashNode *)it->next;
+			cString_dtor(&it->key);
+			HashItem_Free(it);
+		}
+	}
+	operator_delete(self->slots);
+	self->numSlots = 0;
+	self->slots = NULL;
+}
+
+void __fastcall NameTable_dtor(HashTable *self) {
+	NameTable_Clear(self);
+}
+
+/* the instance of cPackIndexItem (value cPackLocation), g_PackIndex */
+
+cPackIndexItem *__thiscall PackIndex_FindItem(HashTable *self, const char *key, uint32_t slot) {
+	for (cPackIndexItem *it = (cPackIndexItem *)self->slots[slot]; it; it = it->next) {
+		if (HashTable_KeyEq(self, it->key, key)) {
+			return it;
+		}
+	}
+	return NULL;
+}
+
+cPackIndexItem *__thiscall PackIndex_Insert(HashTable *self, const char *key, uint32_t slot,
+	const cPackLocation *loc) {
+	CHECK(!self->locked);
+	cPackIndexItem *it = HashItem_Alloc(sizeof(*it));
+	if (it) {
+		cString_ctor(&it->key);
+		it->loc.offset = loc->offset;
+		it->loc.size = loc->size;
+		it->loc.pack = loc->pack;
+		it->next = NULL;
+	}
+	it->next = (cPackIndexItem *)self->slots[slot];
+	cString_Set(&it->key, key);
+	self->slots[slot] = (HashNode *)it;
+	return it;
+}
+
+byte __thiscall PackIndex_Add(HashTable *self, const char *key, const cPackLocation *loc, byte warn) {
+	CHECK(!self->locked);
+	uint32_t slot = HashTable_Slot(self, key);
+	if (PackIndex_FindItem(self, key, slot)) {
+		if (warn) {
+			Con_Warnf("CHashTable: Symbol already defined: '%s'\n", key);
+		}
+		return 0;
+	}
+	PackIndex_Insert(self, key, slot, loc);
+	return 1;
+}
+
+byte __thiscall PackIndex_Get(HashTable *self, const char *key, cPackLocation *out) {
+	cPackIndexItem *it = PackIndex_FindItem(self, key, HashTable_Slot(self, key));
+	if (!it) {
+		return 0;
+	}
+	out->offset = it->loc.offset;
+	out->size = it->loc.size;
+	out->pack = it->loc.pack;
+	return 1;
+}
+
+int __thiscall PackIndex_Set(HashTable *self, const char *key, const cPackLocation *loc) {
+	CHECK(!self->locked);
+	cPackIndexItem *it = PackIndex_FindItem(self, key, HashTable_Slot(self, key));
+	if (!it) {
+		return 0;
+	}
+	it->loc.offset = loc->offset;
+	it->loc.size = loc->size;
+	it->loc.pack = loc->pack;
+	return 1;
+}
+
+void __fastcall PackIndex_Clear(HashTable *self) {
+	CHECK(!self->locked);
+	if (!self->slots) {
+		return;
+	}
+	for (int i = 0; i < (int)self->numSlots; i++) {
+		while (self->slots[i]) {
+			cPackIndexItem *it = (cPackIndexItem *)self->slots[i];
+			self->slots[i] = (HashNode *)it->next;
+			cString_dtor(&it->key);
+			HashItem_Free(it);
+		}
+	}
+	operator_delete(self->slots);
+	self->numSlots = 0;
+	self->slots = NULL;
+}
+
+void __fastcall PackIndex_dtor(HashTable *self) {
+	PackIndex_Clear(self);
+}
+
+/* the location of a file in the packs (in g_PackFound, valid until the next call), NULL if not there */
+cPackLocation *PackIndex_Find(const char *name) {
+	char key[0x104];
+
+	Str_Copy(key, name, sizeof(key));
+	PackName_Normalize(key);
+	cPackIndexItem *it = PackIndex_FindItem(g_PackIndex, key, HashTable_Slot(g_PackIndex, key));
+	if (!it) {
+		return NULL;
+	}
+	g_PackFound.offset = it->loc.offset;
+	g_PackFound.size = it->loc.size;
+	g_PackFound.pack = it->loc.pack;
+	return &g_PackFound;
+}
+
+byte Pack_FileExists(const char *name) {
+	return PackIndex_Find(name) != NULL;
+}
+
+/* Global/DList.h instances: new nodes go in front of head, the callers step head on to append */
+
+void __thiscall PackEntries_Add(cPackEntryList *list, const cPackEntry *e) {
+	cPackEntryNode *node = list->freeNodes;
+	list->iter = NULL;
+	if (!node) {
+		node = operator_new(sizeof(*node));
+	} else {
+		list->numFree--;
+		list->freeNodes = node->next;
+	}
+	node->e = *e;
+	if (!list->head) {
+		node->next = node;
+		node->prev = node;
+	} else {
+		node->prev = list->head->prev;
+		node->next = list->head;
+		list->head->prev->next = node;
+		list->head->prev = node;
+	}
+	list->count++;
+	list->head = node;
+}
+
+void __fastcall PackEntries_Clear(cPackEntryList *list) {
+	while (list->head) {
+		cPackEntryNode *p = list->head;
+		list->iter = NULL;
+		if (p == p->next) {
+			list->head = NULL;
+		} else {
+			list->head = p->next;
+			p->prev->next = p->next;
+			p->next->prev = p->prev;
+		}
+		if (list->numFree < list->maxFree) {
+			p->next = list->freeNodes;
+			list->numFree++;
+			list->freeNodes = p;
+		} else {
+			operator_delete_sized(p, sizeof(*p));
+		}
+		list->count--;
+	}
+}
+
+void __thiscall PackNames_Add(cStringList *list, const void *str) {
+	list->iter = NULL;
+	cStringNode *node = cStringList_NewNode(list);
+	cString_Assign(&node->str, str);
+	if (!list->head) {
+		node->next = node;
+		node->prev = node;
+	} else {
+		node->prev = list->head->prev;
+		node->next = list->head;
+		list->head->prev->next = node;
+		list->head->prev = node;
+	}
+	list->count++;
+	list->head = node;
+}
+
+/* the cString of the pack being recorded with that name */
+char **PackNames_Find(const char *name) {
+	cStringList *list = g_PackNames;
+	list->iter = list->head;
+	if (!list->head) {
+		return NULL;
+	}
+	for (;;) {
+		char **str = &list->iter->str;
+		if (crt_stricmp(*str, name) == 0) {
+			return str;
+		}
+		list->iter = list->iter->next;
+		if (list->iter == list->head) {
+			return NULL;
+		}
+	}
+}
+
+/* the entry of the build list with that name; the iterator of the list stays on it */
+cPackEntry *PackEntry_Find(const char *name) {
+	char key[0x104];
+	cPackEntryList *list = g_PackEntries;
+
+	list->iter = list->head;
+	cPackEntry *pf = list->head ? &list->head->e : NULL;
+	Str_Copy(key, name, sizeof(key));
+	PackName_Normalize(key);
+	for (uint32_t i = 0; i < g_PackNumEntries; i++) {
+		if (strcmp(pf->name, key) == 0) {
+			return pf;
+		}
+		list->iter = list->iter->next;
+		pf = list->iter == list->head ? NULL : &list->iter->e;
+	}
+	CHECK(pf == NULL);
+	return pf;
+}
+
+/* the iterator of the build list on to the next entry, NULL at the end */
+static cPackEntry *PackEntries_Next(cPackEntryList *list) {
+	list->iter = list->iter->next;
+	return list->iter == list->head ? NULL : &list->iter->e;
+}
+
+/* the build list in front of the walk: appends behind the last entry */
+static void PackEntries_Append(const cPackEntry *e) {
+	PackEntries_Add(g_PackEntries, e);
+	if (g_PackEntries->head) {
+		g_PackEntries->head = g_PackEntries->head->next;
+	}
+	g_PackNumEntries++;
+}
+
+/* the exclusion and inclusion lists of the build */
+byte Pack_IsIncluded(const char *name) {
+	if (g_PackExclude && *g_PackExclude && StrList_Match(g_PackExclude, name, ";")) {
+		Con_Debugf("Excluded  :'%s'  <file in exclusion list>\n", name);
+		return 0;
+	}
+	if (g_PackInclude && *g_PackInclude && !StrList_Match(g_PackInclude, name, ";")) {
+		Con_Debugf("Excluded  :'%s'  <file not in inclusion list>\n", name);
+		return 0;
+	}
+	return 1;
+}
+
+/* cFilePack */
+
+cFilePack *__thiscall cFilePack_ctor(cFilePack *self) {
+	self->file.base.name = NULL;
+	self->file.base.mode = 0;
+	self->file.f = NULL;
+	self->file.base.vftable = cFilePack_vftable;
+	return self;
+}
+
+void __thiscall cFilePack_dtor(cFilePack *self) {
+	self->file.base.vftable = cFilePack_vftable;
+	cFile_dtor(&self->file);
+}
+
+cFilePack *__thiscall cFilePack_Destroy(cFilePack *self, int flags) {
+	self->file.base.vftable = cFilePack_vftable;
+	cFile_dtor(&self->file);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(*self));
+	}
+	return self;
+}
+
+/*
+ * name is relative to the open pack (g_PackName). A name in the index is read from its pack, else from disk; while
+ * a file list is recorded every file is read from disk and listed. Always 1.
+ */
+int __thiscall cFilePack_Open(cFilePack *self, const char *name, uint32_t mode) {
+	char path[0x104];
+
+	CHECK(mode == FILE_MODE_READ || g_LstFile);
+	CHECK(g_NumPackFiles > 0 || g_LstFile);
+	CHECK(g_PackLocked == 0);
+	g_PackLocked = 1;
+	Loading_Step(-1);
+	Str_Printf(path, sizeof(path), "%s%s", g_PackNameStr, name);
+	CHECK(strstr(name, "../") == NULL);
+	CHECK(strstr(name, "..\\") == NULL);
+	self->start = 0;
+	self->size = 0;
+	self->pack = -1;
+	if (!g_LstFile) {
+		cPackLocation *loc = PackIndex_Find(path);
+		if (loc) {
+			cFile2_SkipTo(&g_PackFiles[loc->pack], loc->offset, path);
+			self->start = loc->offset;
+			self->pack = loc->pack;
+			self->size = loc->size;
+			return cAbstractFile_Open(&self->file.base, path, mode);
+		}
+		Con_Warnf("WARNING at cFilePack::Open : File not in pak!\n  Trying with '%s'.\n", path);
+	} else {
+		crt_fputs(g_PackNameStr, g_LstFile);
+		crt_fputs(name, g_LstFile);
+		crt_fputs("\n", g_LstFile);
+	}
+	return cFile_Open(&self->file, path, mode);
+}
+
+/* only one cFilePack is open at a time (g_PackLocked) */
+int __thiscall cFilePack_Close(cFilePack *self) {
+	CHECK(g_PackLocked != 0);
+	g_PackLocked = 0;
+	if (!self->start) {
+		return cFile_Close(&self->file);
+	}
+	return 1;
+}
+
+int __thiscall cFilePack_Exists(cFilePack *self, const char *name) {
+	char path[0x104];
+
+	if (!g_LstFile) {
+		if (PackIndex_Find(name)) {
+			return 1;
+		}
+		Str_Printf(path, sizeof(path), "%s%s", g_PackNameStr, name);
+		Con_Warnf("WARNING at cFilePack::Exist : File not in pak!\n  Trying with '%s'.\n", path);
+		name = path;
+	}
+	return cFile_Exists(&self->file, name);
+}
+
+int __thiscall cFilePack_Read(cFilePack *self, void *dst, int size) {
+	if (!self->start) {
+		return cFile_Read(&self->file, dst, size);
+	}
+	int pos = self->file.base.vftable->Tell(&self->file.base);
+	CHECK(pos >= 0 && pos + size <= self->size);
+	cFile2 *pf = &g_PackFiles[self->pack];
+	int n = cFile_Read(&pf->file, dst, size);
+	pf->curPos += n;
+	return n;
+}
+
+int __thiscall cFilePack_Write(cFilePack *self, const void *src, int size) {
+	CHECK(self->start == 0);
+	return cFile_Write(&self->file, src, size);
+}
+
+int __thiscall cFilePack_Seek(cFilePack *self, int pos) {
+	if (!self->start) {
+		return cFile_Seek(&self->file, pos);
+	}
+	cFile2 *pf = &g_PackFiles[self->pack];
+	pf->curPos = cFile_Seek(&pf->file, self->start + pos);
+	CHECK(pf->curPos != -1);
+	return pf->curPos;
+}
+
+int __thiscall cFilePack_Tell(cFilePack *self) {
+	if (!self->start) {
+		return cFile_Tell(&self->file);
+	}
+	return g_PackFiles[self->pack].curPos - self->start;
+}
+
+int __thiscall cFilePack_Size(cFilePack *self) {
+	if (!self->start) {
+		return cFile_Size(&self->file);
+	}
+	return self->size;
+}
+
+/* the packs */
+
+int PackLog_Closed(void) {
+	return g_LstFile == NULL;
+}
+
+/* adds the open pack and name to the file list being recorded; 0 if none is */
+int PackLog_Add(const char *name) {
+	if (!g_LstFile) {
+		return 0;
+	}
+	crt_fputs(g_PackNameStr, g_LstFile);
+	crt_fputs(name, g_LstFile);
+	crt_fputs("\n", g_LstFile);
+	return 1;
+}
+
+/* pack name, offset and size of a file in the packs; 0 if not there or while a list is recorded */
+byte Pack_GetFileInfo(const char *name, char *packName, int *offset, int *size) {
+	if (g_LstFile) {
+		return 0;
+	}
+	cPackLocation *loc = PackIndex_Find(name);
+	if (!loc) {
+		return 0;
+	}
+	if (packName) {
+		Str_Printf(packName, 0x40, "%s", g_PackFiles[loc->pack].file.base.name);
+	}
+	if (offset) {
+		*offset = loc->offset;
+	}
+	if (size) {
+		*size = loc->size;
+	}
+	return 1;
+}
+
+void Pack_FullName(char *buf, int size, const char *name) {
+	Str_Printf(buf, size, "%s%s", g_PackNameStr, name);
+}
+
+/*
+ * mounts name.packed and adds its files to the index (later packs win); 1 if it did. Without the pack and without other packs
+ * a file list is recorded instead: dir/filelist.2Bpack (name\filelist.2Bpack without dir), appended when the pack
+ * is already being recorded.
+ */
+byte Pack_Open(const char *name, const char *dir, size_t bufSize) {
+	char path[0x104];
+	char fname[0x104];
+
+	if (g_NumPackFiles >= PACK_MAX_FILES) {
+		Con_SysErrorf("Too many packs opened.");
+	}
+	CHECK(g_PackFiles[g_NumPackFiles].file.base.name == NULL);
+	if (g_NumPackFiles < 1) {
+		g_PackEntries->iter = g_PackEntries->head;
+		CHECK(g_NumPackFiles > 0 || g_PackEntries->head == NULL);
+		if (g_NumPackFiles < 1) {
+			for (int i = 0; i < (int)g_PackIndex->numSlots; i++) {
+				if (g_PackIndex->slots[i]) {
+					CHECK(g_NumPackFiles > 0 || g_PackIndex->slots[i] == NULL);
+					break;
+				}
+			}
+		}
+	}
+	CHECK(g_LstFile == NULL);
+	CHECK(g_PackLocked == 0);
+	Str_Printf(path, sizeof(path), "%s.%s", name, PACK_EXT);
+	cFile2 *pf = &g_PackFiles[g_NumPackFiles];
+	if (!cFile_Exists(&pf->file, path)) {
+		if (g_NumPackFiles >= 1) {
+			Con_Verbosef("Pack: %s not found\n", path);
+			return 0;
+		}
+		g_PackNumEntries = 0;
+		if (dir) {
+			Str_Printf(path, sizeof(path), "%s%s", dir, PACK_LIST);
+		} else {
+			Str_Printf(path, sizeof(path), "%s\\%s", name, PACK_LIST);
+		}
+		if (!PackNames_Find(name)) {
+			Con_Verbosef("Pack not found: creating  '%s'\n", path);
+			g_LstFile = File_OpenRel(path, "wt");
+			char *str;
+			cString_ctorStr(&str, name);
+			PackNames_Add(g_PackNames, &str);
+			cString_dtor(&str);
+		} else {
+			Con_Verbosef("Pack not found: appending '%s'\n", path);
+			g_LstFile = File_OpenRel(path, "a+t");
+		}
+		if (!g_LstFile) {
+			Con_Print(0xff, "#######################\n####", 0);
+			Con_Print(0x8f008f, " W A R N I N G ", 0);
+			Con_Print(0xff, "####\n#######################\n", 0);
+			Con_Print(0x8f008f, "Can not create or append '", 0);
+			Con_Print(0xff, path, 0);
+			Con_Print(0x8f008f, "'\n", 0);
+			g_LstFile = File_OpenRel(path, "rt");
+			CHECK(g_LstFile);
+		}
+		return 0;
+	}
+	pf->curPos = 0;
+	cFile_Open(&pf->file, path, FILE_MODE_READ);
+	if (bufSize) {
+		crt_setvbuf(pf->file.f, NULL, 0, bufSize);
+	}
+	int magic, version;
+	uint32_t count;
+	pf->file.base.vftable->Read(&pf->file.base, &magic, 4);
+	pf->file.base.vftable->Read(&pf->file.base, &version, 4);
+	if (magic != PACK_MAGIC) {
+		Con_SysErrorf("Wrong format in file \"%s\"", path);
+	}
+	if (version != PACK_VERSION) {
+		Con_SysErrorf("Wrong version in file \"%s\"", path);
+	}
+	pf->file.base.vftable->Read(&pf->file.base, &count, 4);
+	g_PackNumEntries += count;
+	Con_Printf("Pack: %s\n", path);
+	for (uint32_t i = 0; i < count; i++) {
+		cAbstractFile *f = &g_PackFiles[g_NumPackFiles].file.base;
+		int size, offset;
+		cAbstractFile_ReadString(f, fname, sizeof(fname));
+		f->vftable->Read(f, &size, 4);
+		f->vftable->Read(f, &offset, 4);
+		cPackLocation loc = { offset, size, (byte)g_NumPackFiles, { 0 } };
+		/* the index takes the name as it is in the pack; a later pack replaces the location */
+		CHECK(!g_PackIndex->locked);
+		uint32_t slot = HashTable_Slot(g_PackIndex, fname);
+		if (!PackIndex_FindItem(g_PackIndex, fname, slot)) {
+			PackIndex_Insert(g_PackIndex, fname, slot, &loc);
+		} else {
+			PackIndex_Set(g_PackIndex, fname, &loc);
+		}
+	}
+	g_NumPackFiles++;
+	return 1;
+}
+
+/* closes every pack, or the file list being recorded */
+void Pack_CloseAll(void) {
+	CHECK(g_PackLocked == 0);
+	if (g_NumPackFiles) {
+		PackEntries_Clear(g_PackEntries);
+		PackIndex_Clear(g_PackIndex);
+		for (int i = 0; i < g_NumPackFiles; i++) {
+			cFile_Close(&g_PackFiles[i].file);
+		}
+		g_NumPackFiles = 0;
+		return;
+	}
+	CHECK(g_LstFile);
+	crt_fclose(g_LstFile);
+	g_LstFile = NULL;
+}
+
+/* a .packed file found by Pack_OpenDir */
+void Pack_OpenFound(const char *file) {
+	char name[0x104];
+
+	Str_Printf(name, sizeof(name), "%s", file);
+	char *ext = strrchr(name, '.');
+	CHECK(ext && !crt_stricmp(ext + 1, PACK_EXT));
+	*ext = 0;
+	Pack_Open(name, NULL, 0x4000);
+}
+
+/* mounts every .packed below dir */
+void Pack_OpenDir(const char *dir) {
+	char path[0x104];
+
+	int len = (int)strlen(dir);
+	if (len - 1 < 0) {
+		return;
+	}
+	byte sep = dir[len - 1] == '\\' || dir[len - 1] == '/';
+	Str_Printf(path, sizeof(path), "%s%s", dir, sep ? "" : "/");
+	Dir_Walk(path, PACK_EXT, Pack_OpenFound);
+}
+
+/*
+ * ExtractPack(dir): extracts dir + "Data".packed into dir; the packs mounted before are closed, and the pack too at
+ * the end. The names come from the build list (from its last entry backwards), not from the index; Pack_Open does
+ * not fill that list, so this only works after a build in the same run.
+ */
+int Pack_Extract(const char *dir) {
+	char pack[0x104];
+	char out[0x104];
+	int errors = 0;
+	cPackEntryList *list = g_PackEntries;
+
+	Str_Printf(pack, sizeof(pack), "%s%s", dir, "Data");
+	Pack_CloseAll();
+	Pack_Open(pack, NULL, 0x400000);
+	if (g_LstFile) {
+		/* the "%'" of the original text goes to the exe's printf as it is */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat"
+		Con_SysErrorf("ERROR ExtractPack('%s%'): Pack does not exist", pack);
+#pragma GCC diagnostic pop
+	}
+	Path_MakeDirs(dir);
+	cPackEntry *name = NULL;
+	if (list->head) {
+		list->iter = list->head->prev;
+		if (list->iter) {
+			name = &list->iter->e;
+		}
+	}
+	for (uint32_t i = 0; i < g_PackNumEntries; i++) {
+		cFilePack f;
+
+		Str_Printf(out, sizeof(out), "%s%s", dir, name->name);
+		Path_MakeDirs(out);
+		Con_Printf("%s.%s:(%s) -> %s\n", pack, PACK_EXT, name->name, out);
+		f.file.base.name = NULL;
+		f.file.base.mode = 0;
+		f.file.f = NULL;
+		f.file.base.vftable = cFilePack_vftable;
+		cFilePack_Open(&f, name->name, FILE_MODE_READ);
+		int size = f.start ? f.size : cFile_Size(&f.file);
+		void *buf = Mem_Alloc(size);
+		if (!f.start) {
+			cFile_Read(&f.file, buf, size);
+		} else {
+			int pos = f.file.base.vftable->Tell(&f.file.base);
+			CHECK(pos >= 0 && pos + size <= f.size);
+			cFile2 *pf = &g_PackFiles[f.pack];
+			pf->curPos += cFile_Read(&pf->file, buf, size);
+		}
+		void *fo = File_OpenRel(out, "wb");
+		if (fo) {
+			int n = f.start ? f.size : cFile_Size(&f.file);
+			CHECK((int)crt_fwrite(buf, 1, n, fo) == (f.start ? f.size : cFile_Size(&f.file)));
+			CHECK(crt_fclose(fo) == 0);
+		} else {
+			Con_Bluef("ERROR: File could not be created: '%s'\n", out);
+			errors++;
+		}
+		Mem_Free(buf);
+		CHECK(g_PackLocked != 0);
+		g_PackLocked = 0;
+		if (!f.start) {
+			cFile_Close(&f.file);
+		}
+		list->iter = list->iter->prev;
+		name = list->iter == list->head->prev ? NULL : &list->iter->e;
+		f.file.base.vftable = cFilePack_vftable;
+		cFile_dtor(&f.file);
+	}
+	CHECK(name == NULL);
+	Pack_CloseAll();
+	Con_SysErrorf("INFO: PackFile extraction finished\nTotal: %d\nErrors: %d", g_PackNumEntries, errors);
+	return 1;
+}
+
+/* building a pack: the files of filelist.2Bpack, then by mode files found below the directory */
+
+void Pack_NormalizeName(char *name) {
+	PackName_Normalize(name);
+}
+
+/*
+ * a file of the walk for Pack_Build. Mode 2 adds everything (2D/ also as .dds), 3 Python files, 2D/Loading/,
+ * Sounds/Stream/ and Music/, 4 Sounds/Voices/; other modes everything but .dds. Saves, models, ini, scc, html and
+ * packs are never added.
+ */
+void Pack_BuildAddFile(const char *path) {
+	/* a whole cPackEntry: PackEntries_Add copies offset and size too, uninitialized like in the original */
+	char name[sizeof(cPackEntry)];
+	int special = 0;
+
+	Str_Copy(name, path + g_PackDirLen, sizeof(name));
+	PackName_Normalize(name);
+	char *ext = strrchr(name, '.');
+	if (g_PackBuildMode == 2) {
+		if (!crt_strnicmp(name, "2D/", 3)) {
+			special = 1;
+		}
+	} else if (g_PackBuildMode == 3) {
+		special = ext && !crt_stricmp(ext, ".PY");
+		if (!crt_strnicmp(name, "2D/Loading/", 11)) {
+			special = 1;
+		}
+		if (!crt_strnicmp(name, "Sounds/Stream/", 14)) {
+			special = 1;
+		}
+		if (!crt_strnicmp(name, "Music/", 6)) {
+			special = 1;
+		} else if (!special) {
+			return;
+		}
+	} else if (g_PackBuildMode == 4) {
+		if (crt_strnicmp(name, "Sounds/Voices/", 14)) {
+			return;
+		}
+		special = 1;
+	}
+	if (ext) {
+		if (!special && !crt_stricmp(ext, ".DDS")) {
+			Con_Verbosef("Skipping2 :'%s'\n", name);
+			return;
+		}
+		static const char *const skip[] = { ".SAV", ".M3D", ".INI", ".SCC", ".HTML", ".2BPACK", ".PACKED" };
+		for (size_t i = 0; i < sizeof(skip) / sizeof(skip[0]); i++) {
+			if (!crt_stricmp(ext, skip[i])) {
+				Con_Verbosef("Skipping  :'%s'\n", name);
+				return;
+			}
+		}
+	}
+	if (!PackEntry_Find(name) && Pack_IsIncluded(name)) {
+		Con_Warnf("Added     :'%s'\n", name);
+		PackEntries_Append((const cPackEntry *)name);
+	}
+}
+
+/* names, sizes and offsets of the build list; the entry after the last (NULL if the count is right) */
+static cPackEntry *Pack_WriteEntries(cAbstractFile *out) {
+	uint32_t v;
+	cPackEntryList *list = g_PackEntries;
+
+	list->iter = list->head;
+	cPackEntry *pf = list->head ? &list->head->e : NULL;
+	for (uint32_t i = 0; i < g_PackNumEntries; i++) {
+		cAbstractFile_WriteString(out, pf->name);
+		v = pf->size;
+		out->vftable->Write(out, &v, 4);
+		v = pf->offset;
+		out->vftable->Write(out, &v, 4);
+		pf = PackEntries_Next(list);
+	}
+	return pf;
+}
+
+/*
+ * makes outName.packed (dir.packed without outName) from dir/filelist.2Bpack and, with mode 2 or more, the files
+ * of Pack_BuildAddFile. Ends the game when done, after asking if g_PackBuildAsk.
+ */
+void Pack_Build(const char *dir, const char *outName, int mode) {
+	char line[sizeof(cPackEntry)];
+	char msg[0x400];
+	char base[0x104];
+	char path[0x104];
+	int onList = 0, added = 0, notFound = 0;
+	cPackEntryList *list = g_PackEntries;
+	cFile2 *out = &g_PackFiles[0];
+	uint32_t v;
+
+	CHECK(out->file.base.name == NULL);
+	list->iter = list->head;
+	CHECK(list->head == NULL);
+	CHECK(g_LstFile == NULL);
+	if (!outName) {
+		outName = dir;
+	}
+	Str_Printf(path, sizeof(path), "%s/%s", dir, PACK_LIST);
+	g_LstFile = crt_fopen(path, "rt");
+	CHECK(g_LstFile);
+	g_PackNumEntries = 0;
+	Con_Printf("Reading '%s'\n", path);
+	while (!crt_feof(g_LstFile)) {
+		if (!crt_fgets(line, 0x104, g_LstFile)) {
+			continue;
+		}
+		Str_Trim(line);
+		PackName_Normalize(line);
+		if (!line[0] || PackEntry_Find(line)) {
+			continue;
+		}
+		Str_Printf(path, sizeof(path), "%s/%s", dir, line);
+		if (crt_access(path, 0) == 0) {
+			if (Pack_IsIncluded(line)) {
+				onList++;
+				Con_Verbosef("On list   :'%s'\n", line);
+				PackEntries_Append((const cPackEntry *)line);
+			}
+		} else {
+			notFound++;
+			Con_Warnf("Not found :'%s'\n", line);
+		}
+	}
+	crt_fclose(g_LstFile);
+	uint32_t listed = g_PackNumEntries;
+	g_LstFile = NULL;
+	if (mode >= 2) {
+		Str_Printf(base, sizeof(base), "%s/", dir);
+		g_PackBuildMode = mode;
+		g_PackDirLen = (int)strlen(base);
+		Dir_Walk(base, "", Pack_BuildAddFile);
+		added = g_PackNumEntries - listed;
+	}
+	Con_Verbosef("total files: %d\non list: %d  added: %d  not found: %d\n", g_PackNumEntries, onList, added,
+		notFound);
+	Str_Printf(path, sizeof(path), "%s.%s", outName, PACK_EXT);
+	out->curPos = 0;
+	cFile_Open(&out->file, path, FILE_MODE_WRITE | FILE_MODE_CREATE);
+	cFile in = { { cFile_vftable, NULL, 0 }, NULL };
+	Con_Printf("Saving '%s'", path);
+	v = PACK_MAGIC;
+	out->file.base.vftable->Write(&out->file.base, &v, 4);
+	v = PACK_VERSION;
+	out->file.base.vftable->Write(&out->file.base, &v, 4);
+	v = g_PackNumEntries;
+	out->file.base.vftable->Write(&out->file.base, &v, 4);
+	/* the entries twice: first for the room, after the data with the offsets */
+	if (Pack_WriteEntries(&out->file.base)) {
+		CHECK(0);
+	}
+	list->iter = list->head;
+	cPackEntry *pf = list->head ? &list->head->e : NULL;
+	Con_Print(0, "\n", 0);
+	uint32_t pct = 100;
+	for (uint32_t i = 0; i < g_PackNumEntries; i++) {
+		Str_Printf(path, sizeof(path), "%s/%s", dir, pf->name);
+		cFile_Open(&in, path, FILE_MODE_READ);
+		pf->size = cFile_Size(&in);
+		CHECK(out->curPos == cFile_Tell(&out->file));
+		pf->offset = out->curPos;
+		void *buf = Mem_Alloc(pf->size);
+		cFile_Read(&in, buf, pf->size);
+		out->curPos += cFile_Write(&out->file, buf, pf->size);
+		Mem_Free(buf);
+		cFile_Close(&in);
+		pf = PackEntries_Next(list);
+		if (g_PackNumEntries > 20 && (i + 1) % (g_PackNumEntries / 10) == g_PackNumEntries % 10) {
+			Con_Verbosef("%d%%\n", pct / g_PackNumEntries);
+		}
+		pct += 100;
+	}
+	out->curPos = cFile_Seek(&out->file, 8);
+	CHECK(out->curPos != -1);
+	v = g_PackNumEntries;
+	out->file.base.vftable->Write(&out->file.base, &v, 4);
+	Pack_WriteEntries(&out->file.base);
+	Con_Print(0, " Ok!\n", 0);
+	PackEntries_Clear(list);
+	cFile_Close(&out->file);
+	g_LstFile = NULL;
+	Str_Printf(msg, sizeof(msg), "BuildPackFile finished\n\npath: %s.%s\n\ntotal files: %d\n\non list: %d  added: %d  "
+		"not found: %d\n\nExit now?", outName, PACK_EXT, g_PackNumEntries, onList, added, notFound);
+	if (!g_PackBuildAsk) {
+		crt_exit(-1);
+	}
+	/* MB_YESNO | MB_ICONQUESTION | MB_TASKMODAL through the exe's import of MessageBoxA */
+	if (exe_MessageBoxA(NULL, msg, "Message", 0x2024) == 6) {
+		crt_exit(-1);
+	}
+	cFile_dtor(&in);
+}
+
+/* the directory of a file list (.../filelist.2Bpack) as a pack, mode 2 */
+void Pack_BuildFromList(const char *list) {
+	char dir[0x100];
+
+	size_t n = strlen(list) - (sizeof(PACK_LIST) - 1) - 1;
+	/* the original copies first and checks after */
+	if (n >= sizeof(dir)) {
+		crt_report_rangecheckfailure();
+	}
+	memcpy(dir, list, n);
+	dir[n] = 0;
+	Pack_Build(dir, NULL, 2);
+}
+
+/* the duplicate check of Pack_CheckDuplicates: base names without extension */
+void Pack_AddFileName(const char *path) {
+	char name[0x100];
+	int value = 0;
+	HashTable *t = g_NameTable;
+
+	Path_Split(path + g_PackDirLen, name, NULL, NULL);
+	crt_strlwr(name);
+	CHECK(!t->locked);
+	uint32_t slot = HashTable_Slot(t, name);
+	if (!NameTable_Find(t, name, slot)) {
+		NameTable_Insert(t, name, slot, &value);
+	} else {
+		Con_Warnf("Duplicated file name: '%s'\n", path + g_PackDirLen);
+	}
+}
+
+/* warns about files below the game directory with the same base name (extension ext) */
+void Pack_CheckDuplicates(const char *ext) {
+	HashTable *t = operator_new(sizeof(*t));
+	if (t) {
+		t->numSlots = 0x1c9;
+		t->slots = operator_new_array(0x1c9 * 4);
+		memset(t->slots, 0, 0x1c9 * 4);
+		t->locked = 0;
+		t->caseSensitive = 1;
+	}
+	g_PackDirLen = 2;
+	g_NameTable = t;
+	Dir_Walk("./", ext, Pack_AddFileName);
+	t = g_NameTable;
+	if (t) {
+		NameTable_Clear(t);
+		operator_delete_sized(t, sizeof(*t));
+		g_NameTable = NULL;
+	}
+}
+
+/* compiles one Python file with its time stamp through PyCompile.py */
+void Python_CompileFile(const char *path) {
+	byte st[0x24];		/* struct _stat32, st_mtime at 0x1c */
+	char cmd[0x100];
+
+	path += g_PackDirLen;
+	CHECK(!crt_stat32(path, st));
+	int mtime;
+	memcpy(&mtime, st + 0x1c, sizeof(mtime));
+	Str_Printf(cmd, sizeof(cmd), "import PyCompile; PyCompile.compile('%s',%d)", path, mtime);
+	Console_Execute(cmd);
+}
+
+void Python_CompileAll(void) {
+	g_PackDirLen = 2;
+	Dir_Walk("./", "py", Python_CompileFile);
+}
