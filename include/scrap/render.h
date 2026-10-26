@@ -48,16 +48,29 @@ struct CListaVert;
 #define g_MipmapsOn GAME_DATA(byte, 0x4ad6f2)
 #define MOTOR_MAXANISOTROPY(m) (*(uint32_t *)((m) + 0x2a448))
 /* the address modes of the stages as Render_SetMapa last set them */
-#define g_StageAddrU ((byte *)Game_Ptr(0x4addb4))
-#define g_StageAddrV ((byte *)Game_Ptr(0x4addbc))
+#define g_StageMip ((byte *)Game_Ptr(0x4addb4))	/* the b8 (mipmaps) of the map */
+#define g_StageTile ((byte *)Game_Ptr(0x4addbc))	/* the bc of the map: bit 0 wraps u, bit 1 v */
+/* the texture of each stage and the frame it was set in */
+#define g_StageTex ((void **)Game_Ptr(0x4ae594))
+#define g_StageTexFrame ((int *)Game_Ptr(0x4ae5b4))
+#define g_TexChanges GAME_DATA(int, 0x4a8f08)
+#define g_VBIBTriLimit GAME_DATA(uint32_t, 0x4ad820)	/* R_VBIBTriLimit */
+/* the projection split into g_Tiles x g_Tiles parts (screenshots larger than the screen), one per frame */
+#define g_Tiles GAME_DATA(int, 0x432414)
+#define g_TileState GAME_DATA(int, 0x4ae5d4)
+#define g_TileX GAME_DATA(int, 0x4ae5d8)
+#define g_TileY GAME_DATA(int, 0x4ae5dc)
+#define g_TileOn GAME_DATA(byte, 0x4a8efb)
+/* the D3DTOP of the lightmap stage */
+#define g_LightmapOp GAME_DATA(uint32_t, 0x432408)
 /* Render_SetMaterial: the last material, pass, frame and context (it is skipped for the same ones), the shader mode */
 #define g_MatPass GAME_DATA(int, 0x4ae588)
 #define g_MatFrame GAME_DATA(int, 0x4ae58c)
-#define g_MatCtx GAME_DATA(void *, 0x4ae584)
+#define g_MatCtx GAME_DATA(CMaterial *, 0x4ae584)
 #define g_ShaderActual GAME_DATA(uint32_t, 0x4ae590)
 #define g_MatChanges GAME_DATA(int, 0x4a8f0c)
-/* the context of the draw (a name at 0x4), its shader modes have 0x100 */
-#define g_RenderCtx GAME_DATA(void *, 0x4addc4)
+/* RenderLightmapMat, the lightmap material of the draw (counted); with one the shader modes have 0x100 */
+#define g_LightmapMat GAME_DATA(CMaterial *, 0x4addc4)
 #define g_UsarShaders GAME_DATA(byte, 0x43240d)
 #define g_MaterialLog GAME_DATA(int, 0x4adbe8)		/* R_MaterialLog */
 #define g_DecalZBias GAME_DATA(uint32_t, 0x4add88)	/* R_DecalZBias */
@@ -79,7 +92,7 @@ struct CListaVert;
 #define g_MatForzado GAME_DATA(const CMaterial *, 0x4ad754)
 /* the other overrides of ModelFX.cpp, cleared with it */
 #define g_MatFX1 GAME_DATA(CMaterial *, 0x4ad74c)	/* in place of every material */
-#define g_MatFX2 GAME_DATA(void *, 0x4ad750)
+#define g_MatFX2 GAME_DATA(CMaterial *, 0x4ad750)	/* in place of the lightmap material */
 #define g_MatFX3 GAME_DATA(const CMaterial *, 0x4ad758)	/* its colors for the D3D material */
 /* bUsarHWEnvMap: the environment maps through the texture transform of the device (materials with two texture sets
  * get VERT_TEX1 instead of VERT_TEX2) */
@@ -196,6 +209,24 @@ void Render_ResetState(void);
 /* the device states and texture of a material for pass 0 (the material) or 1 (its second texture set added); NULL
  * with pass -1 forgets the last material; HRESULT */
 int Render_SetMaterial(void *mat, int pass);
+/* the projection of the tile of this frame (state 2), the next tile after one was drawn; 0 without tiles */
+byte Render_ProjTile(const matrix_t *proj);
+int Render_SetProj(const matrix_t *m);
+/* D3DCULL_CCW is none with R_CullMode */
+void Render_SetCull(uint32_t mode);
+/* the lightmap material (counted) and its modulation (2 2x, 4 4x) */
+void Render_SetLightmapMat(CMaterial *mat, int mode);
+/* the texture of mapa (NULL none) on stage: its frame, mipmaps, wrap and anisotropy */
+struct CMapa;
+int Render_SetMapa(uint32_t stage, struct CMapa *mapa);
+/* ntri triangles from startTri of ib over numVerts vertices of vb in format frmt from baseVert */
+int Render_DrawVBIBFmt(void *vb, void *ib, int frmt, uint32_t numVerts, uint32_t ntri, uint32_t baseVert,
+	uint32_t startTri);
+struct CMallaD3D;
+int Render_DrawMallaD3D(const struct CMallaD3D *m);
+int Render_DrawVBIB(void *vb, void *ib, const struct CListaVert *v, uint32_t ntri);
+/* the view matrix, its inverse as the billboard matrix and the eye */
+int Render_SetView(const matrix_t *m);
 int Render_GetWorld(matrix_t *out);
 /* the alpha constant of the pixel shaders in reg: 1 1 1 0, 0 for transparent materials (not MAT_1000) and with a
  * forced material */
@@ -239,9 +270,6 @@ int Render_HasStencil(void);
 int Render_CreateVB(void **vb, struct CListaVert *vert, int flags);
 int Render_CreateIB(void **ib, const void *tris, uint32_t nTri, int flags);
 
-/* rva 0x24c910: the texture of mapa (NULL none) on stage */
-struct CMapa;
-void Render_SetMapa(uint32_t stage, const struct CMapa *mapa);
 
 /* other modules (src/imports.inc) */
 void RenderLock_ReleaseD3D(void);		/* rva 0x2a4860 (RenderLock.cpp) */

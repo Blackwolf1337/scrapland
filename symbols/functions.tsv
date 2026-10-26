@@ -7016,7 +7016,7 @@ rva	size	source	callconv	name	signature
 002391f0	22	USER_DEFINED	__cdecl	Matrix_MulD3D	void * __cdecl(void * out, void * a, void * b)
 00239210	185	DEFAULT	unknown	FUN_00639210	
 002392d0	652	USER_DEFINED	__cdecl	Matrix_ToEuler	void * __cdecl(void * out, void * m)
-00239560	696	DEFAULT	unknown	FUN_00639560	
+00239560	696	USER_DEFINED	unknown	Matrix_Invert	
 00239820	63	DEFAULT	unknown	FUN_00639820	
 00239860	19	DEFAULT	unknown	FUN_00639860	
 00239880	2169	DEFAULT	unknown	FUN_00639880	
@@ -7252,19 +7252,19 @@ rva	size	source	callconv	name	signature
 0024bc40	732	DEFAULT	unknown	FUN_0064bc40	
 0024bf30	1422	USER_DEFINED	__cdecl	Render_SetMaterial	int __cdecl(void * mat, int pass)
 0024c4d0	6	USER_DEFINED	__cdecl	Render_GetProj	void * __cdecl(void)
-0024c4e0	444	DEFAULT	unknown	FUN_0064c4e0	
-0024c6a0	86	DEFAULT	unknown	FUN_0064c6a0	
-0024c700	45	DEFAULT	unknown	FUN_0064c700	
+0024c4e0	444	USER_DEFINED	__cdecl	Render_ProjTile	byte __cdecl(void * proj)
+0024c6a0	86	USER_DEFINED	__cdecl	Render_SetProj	int __cdecl(void * m)
+0024c700	45	USER_DEFINED	__cdecl	Render_SetCull	void __cdecl(uint mode)
 0024c730	333	USER_DEFINED	__cdecl	Render_ResetState	void __cdecl(void)
-0024c880	130	DEFAULT	unknown	FUN_0064c880	
-0024c910	426	USER_DEFINED	unknown	Render_SetMapa	
-0024cac0	141	DEFAULT	unknown	FUN_0064cac0	
-0024cb50	479	DEFAULT	unknown	FUN_0064cb50	
-0024cd30	113	DEFAULT	unknown	FUN_0064cd30	
+0024c880	130	USER_DEFINED	__cdecl	Render_SetLightmapMat	void __cdecl(void * mat, int mode)
+0024c910	426	USER_DEFINED	__cdecl	Render_SetMapa	int __cdecl(uint stage, void * mapa)
+0024cac0	141	USER_DEFINED	__cdecl	Render_DrawVBIBFmt	int __cdecl(void * vb, void * ib, int frmt, uint numVerts, uint ntri, uint baseVert, uint startTri)
+0024cb50	479	USER_DEFINED	__cdecl	Render_DrawMallaD3D	int __cdecl(void * m)
+0024cd30	113	USER_DEFINED	__cdecl	Render_DrawVBIB	int __cdecl(void * vb, void * ib, void * v, uint ntri)
 0024cdb0	6	USER_DEFINED	__cdecl	Render_GetView	void * __cdecl(void)
 0024cdc0	6	USER_DEFINED	__cdecl	Render_GetBillboard	void * __cdecl(void)
 0024cdd0	6	USER_DEFINED	__cdecl	Render_GetEyePos	void * __cdecl(void)
-0024cde0	221	DEFAULT	unknown	FUN_0064cde0	
+0024cde0	221	USER_DEFINED	__cdecl	Render_SetView	int __cdecl(void * m)
 0024cec0	25	USER_DEFINED	__cdecl	E3D_FlushBatch	void __cdecl(void)
 0024cf00	467	USER_DEFINED	unknown	Render_ToScreen	
 0024d0e0	437	DEFAULT	unknown	FUN_0064d0e0	
@@ -7434,7 +7434,7 @@ rva	size	source	callconv	name	signature
 00257fb0	1	DEFAULT	unknown	FUN_00657fb0	
 00257fc0	33	DEFAULT	unknown	FUN_00657fc0	
 00258000	75	DEFAULT	unknown	FUN_00658000	
-00258060	31	DEFAULT	unknown	FUN_00658060	
+00258060	31	USER_DEFINED	unknown	CAnimMat_GetFrame	
 00258090	25	DEFAULT	unknown	FUN_00658090	
 002580b0	24	DEFAULT	unknown	FUN_006580b0	
 00258110	37	DEFAULT	unknown	FUN_00658110	

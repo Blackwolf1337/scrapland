@@ -77,9 +77,9 @@ void __fastcall CMallaD3D_Init(CMallaD3D *self) {
 	self->pVertVB = NULL;
 	self->pVertIB = NULL;
 	self->vbFrmt = 0;
-	self->i9c = 0;
-	self->ia0 = 0;
-	self->ia4 = 0;
+	self->BaseIndex = 0;
+	self->StartIndex = 0;
+	self->StripList = 0;
 	self->nodo = NULL;
 	self->mat = NULL;
 	self->b50 = 0;
@@ -699,9 +699,9 @@ int __fastcall CMallaD3D_CreateVB(CMallaD3D *self) {
 	CHECK(!self->pVertVB);
 	CHECK(!self->pVertIB);
 	self->vbFrmt = self->vert.frmt;
-	self->i9c = 0;
-	self->ia0 = 0;
-	self->ia4 = 0;
+	self->BaseIndex = 0;
+	self->StartIndex = 0;
+	self->StripList = 0;
 	CHECK(Render_CreateVB(&self->pVertVB, &self->vert, 0) == 0);
 	CHECK(Render_CreateIB(&self->pVertIB, self->pTri, self->nTri, 0) == 0);
 	if (self->pSkin) {

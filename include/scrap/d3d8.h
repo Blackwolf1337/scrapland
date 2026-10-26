@@ -32,6 +32,7 @@ typedef uint32_t(__stdcall *d3dRelease_t)(void *obj);
 #define D3DDEV_SETTEXTURE 0xf4
 #define D3DDEV_GETTEXTURESTAGESTATE 0xf8
 #define D3DDEV_SETTEXTURESTAGESTATE 0xfc
+#define D3DDEV_DRAWPRIMITIVE 0x118
 #define D3DDEV_DRAWINDEXEDPRIMITIVE 0x11c
 #define D3DDEV_DRAWPRIMITIVEUP 0x120
 #define D3DDEV_DRAWINDEXEDPRIMITIVEUP 0x124
@@ -59,6 +60,7 @@ typedef int(__stdcall *d3dSetTextureStageState_t)(void *dev, uint32_t stage, uin
 typedef int(__stdcall *d3dSetPixelShader_t)(void *dev, uint32_t handle);
 typedef int(__stdcall *d3dClear_t)(void *dev, uint32_t count, const void *rects, uint32_t flags, uint32_t color, float z,
 	uint32_t stencil);
+typedef int(__stdcall *d3dDrawPrimitive_t)(void *dev, int type, uint32_t start, uint32_t count);
 typedef int(__stdcall *d3dDrawIndexedPrimitive_t)(void *dev, int type, uint32_t minIndex, uint32_t numVertices,
 	uint32_t startIndex, uint32_t primCount);
 typedef int(__stdcall *d3dDrawPrimitiveUP_t)(void *dev, int type, uint32_t count, const void *data, uint32_t stride);
@@ -127,6 +129,7 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DTOP_SELECTARG1 2
 #define D3DTOP_SELECTARG2 3
 #define D3DTOP_MODULATE 4
+#define D3DTOP_MODULATE2X 5
 #define D3DTOP_MODULATE4X 6
 #define D3DUSAGE_WRITEONLY 8
 #define D3DPOOL_DEFAULT 0

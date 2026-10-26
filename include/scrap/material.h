@@ -143,6 +143,8 @@ CAnimMat *__thiscall CAnimMat_ctor(CAnimMat *self);
 CAnimMat *__thiscall CAnimMat_ctorCopy(CAnimMat *self, const CAnimMat *src);
 void __thiscall CAnimMat_dtor(CAnimMat *self);
 void __thiscall CAnimMat_Start(CAnimMat *self);
+/* rva 0x258060: the frame of now (updated once each frame) */
+int __fastcall CAnimMat_GetFrame(CAnimMat *self);
 void __thiscall Cad_Set(char **self, const char *s);
 /* rva 0x2a18a0 and 0x2a1920: the string as a CArchIO string (empty is NULL) */
 void __thiscall Cad_Read(char **self, CArchIO *f);

@@ -222,3 +222,82 @@ for a, v in rdsm:
 	SDTest.Poke(a, v)
 for i in range(5):
 	SDTest.Poke(rmat + 0x30 + 4 * i - 0x400000, rdsaved38[i])
+
+# the tiles of the projection, the projection, the cull, the lightmap material, the maps on the stages, the buffer
+# draws and the view (projection, view and the tile state put back after)
+def rdints(a, n):
+	r = []
+	for i in range(n):
+		r.append(SDTest.Peek(a + 4 * i, 'i'))
+	return r
+def rdfloats(a, n):
+	r = []
+	for v in rdints(a, n):
+		r.append(v)
+	return r
+rdproj = rdints(0x4ae3f8, 16)
+rdview = rdints(0x4ae4b8, 16)
+rdtiles = (SDTest.Peek(0x432414, 'i'), SDTest.Peek(0x4ae5d4, 'i'), SDTest.Peek(0x4ae5d8, 'i'), SDTest.Peek(0x4ae5dc, 'i'),
+	SDTest.Peek(0x4a8efb, 'i'))
+pm = (1.5, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.001, 1.0, 0.0, 0.0, -0.1, 0.0)
+SDTest.Poke(0x432414, 2)
+for step in range(7):
+	on = (0, 1, 0, 0, 1, 0, 0)[step]
+	SDTest.Poke(0x4a8efb, (rdtiles[4] & ~0xff) | on)
+	check('Render_ProjTile' + fmt((step,)), lambda: (rdlog(lambda: SDTest.Call(0x24c4e0, 'bF', pm)), SDTest.Peek(0x4ae5d4, 'i'),
+		SDTest.Peek(0x4ae5d8, 'i'), SDTest.Peek(0x4ae5dc, 'i'), SDTest.Peek(0x4a8efb, 'i') & 0xff, rdints(0x4ae3f8, 16)))
+for a, v in ((0x432414, rdtiles[0]), (0x4ae5d4, rdtiles[1]), (0x4ae5d8, rdtiles[2]), (0x4ae5dc, rdtiles[3]),
+	(0x4a8efb, rdtiles[4])):
+	SDTest.Poke(a, v)
+check('Render_SetProj', lambda: (rdlog(lambda: SDTest.Call(0x24c6a0, 'iF', pm)), rdints(0x4ae3f8, 16)))
+rdcull = SDTest.Peek(0x4ad910, 'i')
+for cm in (0, 1):
+	SDTest.Poke(0x4ad910, cm)
+	for mode in (1, 2, 3):
+		check('Render_SetCull' + fmt((cm, mode)), lambda mode=mode: rdlog(lambda mode=mode: SDTest.Call(0x24c700, 'vi', mode)))
+SDTest.Poke(0x4ad910, rdcull)
+for mode in (0, 2, 4):
+	check('Render_SetLightmapMat' + fmt((mode,)), lambda mode=mode: (SDTest.Call(0x24c880, 'vii', rmat, mode),
+		SDTest.Peek(0x432408, 'i'), rdi(rmat + 8), SDTest.Call(0x24c880, 'vii', 0, 0), rdi(rmat + 8)))
+mp = rdi(rmat + 0x9c)
+rdmp = (rdi(mp + 8), rdi(mp + 0xc))
+for b8, bc, lm in ((0, 0, 0), (1, 3, 0), (1, 1, 1), (0, 2, 0), (1, 0, 2)):
+	SDTest.Poke(mp + 8 - 0x400000, (rdmp[0] & ~0xff00ff) | b8 | lm << 8)
+	SDTest.Poke(mp + 0xc - 0x400000, (rdmp[1] & ~0xff) | bc)
+	for stage in (0, 3):
+		check('Render_SetMapa' + fmt((b8, bc, lm, stage)), lambda stage=stage: rdlog(lambda stage=stage:
+			SDTest.Call(0x24c910, 'iii', stage, mp)))
+SDTest.Poke(mp + 8 - 0x400000, rdmp[0])
+SDTest.Poke(mp + 0xc - 0x400000, rdmp[1])
+check('Render_SetMapa none', lambda: (rdlog(lambda: SDTest.Call(0x24c910, 'iii', 1, 0)), rdlog(lambda: SDTest.Call(0x24c910,
+	'iii', 1, 0))))
+check('Render_DrawVBIBFmt', lambda: rdlog(lambda: SDTest.Call(0x24cac0, 'iiiiiiii', rdi(vb), rdi(ib), 2, 50, 10, 3, 4)))
+lv = SDTest.Call(0x1334d0, 'ii', 0x14)[0]
+SDTest.Poke(lv - 0x400000, 0)
+SDTest.Poke(lv + 4 - 0x400000, 40)
+SDTest.Poke(lv + 0xc - 0x400000, 2)
+check('Render_DrawVBIB', lambda: rdlog(lambda: SDTest.Call(0x24cd30, 'iiiii', rdi(vb), rdi(ib), lv, 12)))
+md = SDTest.Call(0x1334d0, 'ii', 0x100)[0]
+SDTest.Call(0x3197d0, 'iiFi', md, (0.0,) * 64, 0x100)
+for ntri, strip, base, start, lim in ((20, 0, 2, 5, -1), (20, 0, 0, 0, 7), (0, 10, 0, 0, -1)):
+	SDTest.Poke(md + 0xc - 0x400000, ntri)
+	SDTest.Poke(md + 0x18 - 0x400000, 33)
+	SDTest.Poke(md + 0x9c - 0x400000, base)
+	SDTest.Poke(md + 0xa0 - 0x400000, start)
+	SDTest.Poke(md + 0xa4 - 0x400000, strip)
+	SDTest.Poke(md + 0xa8 - 0x400000, 2)
+	SDTest.Poke(md + 0xac - 0x400000, rdi(vb))
+	SDTest.Poke(md + 0xb0 - 0x400000, (strip == 0) * rdi(ib))
+	rdlim = SDTest.Peek(0x4ad820, 'i')
+	SDTest.Poke(0x4ad820, lim)
+	check('Render_DrawMallaD3D' + fmt((ntri, strip, base, start, lim)), lambda: rdlog(lambda: SDTest.Call(0x24cb50, 'ii', md)))
+	SDTest.Poke(0x4ad820, rdlim)
+vm = (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 5.0, -3.0, 2.0, 1.0)
+check('Render_SetView', lambda: (rdlog(lambda: SDTest.Call(0x24cde0, 'iF', vm)), rdints(0x4ae4f8, 16), rdints(0x4adda8, 3)))
+def rdfl(v):
+	r = SDTest.Call(0x1334d0, 'ii', 64)[0]
+	for i in range(16):
+		SDTest.Poke(r + 4 * i - 0x400000, v[i])
+	return r
+SDTest.Call(0x24c6a0, 'ii', rdfl(rdproj))
+SDTest.Call(0x24cde0, 'ii', rdfl(rdview))

@@ -96,6 +96,7 @@ void Matrix_PostScale(matrix_t *m, const vec3_t *s);		/* rva 0x239210 */
 void Matrix_PostRotate(matrix_t *m, const vec3_t *rot);		/* rva 0x23a100, yaw y pitch x roll z */
 matrix_t *Matrix_RotationZ(matrix_t *out, float ang);		/* rva 0x23a2b0, D3DXMatrixRotationZ */
 vec3_t *Vec3_ToAngles(vec3_t *out, const vec3_t *dir);		/* rva 0x239150, x pitch, y yaw, z 0 */
+int Matrix_Invert(matrix_t *out, const matrix_t *m);		/* rva 0x239560 (matriz.h), 0 S_OK */
 vec3_t *Matrix_TransformDir(vec3_t *out, const vec3_t *v, const matrix_t *m);
 const matrix_t *Matrix_TransformParts(float *x, float *y, float *z, float *w, const vec3_t *v, const matrix_t *m);	/* m */
 

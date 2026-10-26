@@ -7,6 +7,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/grafico2d.h"
 #include "scrap/listavert.h"
+#include "scrap/mallad3d.h"
 #include "scrap/material.h"
 #include "scrap/nodo3d.h"
 #include "scrap/varios.h"
@@ -677,8 +678,8 @@ void Render_ResetState(void) {
 		Render_TSS(i, D3DTSS_MIPMAPLODBIAS, F2U(g_MipmapBias + g_MipmapBias2));
 		Render_TSS(i, D3DTSS_ADDRESSU, D3DTADDRESS_WRAP);
 		Render_TSS(i, D3DTSS_ADDRESSV, D3DTADDRESS_WRAP);
-		g_StageAddrU[i] = 1;
-		g_StageAddrV[i] = 3;
+		g_StageMip[i] = 1;
+		g_StageTile[i] = 3;
 	}
 }
 
@@ -692,7 +693,7 @@ static void Mat_Shader(const CMaterial *mat, byte frameChanged, byte *alphaTest,
 	*blend = b[5];
 	*alpha = b[6];
 	uint32_t mode = (uint32_t)id->id;
-	if (g_RenderCtx) {
+	if (g_LightmapMat) {
 		mode += 0x100;
 	}
 	if (g_ShaderActual == mode && !frameChanged) {
@@ -775,14 +776,14 @@ int Render_SetMaterial(void *m, int pass) {
 	if (!dev) {
 		return E_FAIL;
 	}
-	if (g_MatActual != mat || g_MatPass != pass || g_MatFrame != g_FrameCount || g_RenderCtx != g_MatCtx) {
+	if (g_MatActual != mat || g_MatPass != pass || g_MatFrame != g_FrameCount || g_LightmapMat != g_MatCtx) {
 		byte frameChanged = g_MatFrame != g_FrameCount;
 		g_MatActual = mat;
 		g_MatPass = pass;
 		g_MatFrame = g_FrameCount;
-		g_MatCtx = g_RenderCtx;
+		g_MatCtx = g_LightmapMat;
 		if (g_MaterialLog) {
-			const char *ctx = g_RenderCtx ? *(const char **)((byte *)g_RenderCtx + 4) : Game_Ptr(0x3a3228);
+			const char *ctx = g_LightmapMat ? *(const char **)((byte *)g_LightmapMat + 4) : Game_Ptr(0x3a3228);
 			E3D_LogWhite(g_FileLog, "MatLog: %d %d %d [%s] [%s]", g_FrameCount, g_MatChanges,
 				CMaterial_GetId((CMaterial *)mat, NULL), mat->Nombre, ctx);
 		}
@@ -818,7 +819,7 @@ int Render_SetMaterial(void *m, int pass) {
 		return 0;
 	}
 	/* R_UseDefTexture: the white texture (1: only without one) */
-	const CMapa *mapa = mat->mapa[0];
+	CMapa *mapa = mat->mapa[0];
 	switch (g_UseDefTexture) {
 	case 1:
 		if (!mapa) {
@@ -842,5 +843,199 @@ int Render_SetMaterial(void *m, int pass) {
 		break;
 	}
 	Render_SetMapa(0, mapa);
+	return 0;
+}
+
+byte Render_ProjTile(const matrix_t *proj) {
+	byte on = g_TileOn;
+	if (g_TileState < 2) {
+		if (!g_TileState && !on) {
+			return 0;
+		}
+		g_TileState = 1;
+		if (on) {
+			return 0;
+		}
+		g_TileOn = on = 1;
+	}
+	int n = g_Tiles;
+	g_TileState = 2;
+	if (!on) {
+		if (++g_TileX == n) {
+			g_TileX = 0;
+			if (++g_TileY == n) {
+				g_TileY = 0;
+				g_TileState = 0;
+				return 0;
+			}
+		}
+		g_TileOn = 1;
+	}
+	float fn = (float)n;
+	float x0 = (float)g_TileX / fn - 0.5f;
+	float x1 = (float)(g_TileX + 1) / fn - 0.5f;
+	float y0 = -((float)g_TileY / fn - 0.5f);
+	float y1 = -((float)(g_TileY + 1) / fn - 0.5f);
+	matrix_t m = *proj;
+	m.m[0] = proj->m[0] / (x1 - x0);
+	m.m[5] = proj->m[5] / (y0 - y1);
+	m.m[8] = (x1 + x0) / (x0 - x1);
+	m.m[9] = (y1 + y0) / (y1 - y0);
+	g_MatProj = m;
+	CHECK(g_pd3dDevice);
+	void *dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &g_MatProj);
+	return 1;
+}
+
+int Render_SetProj(const matrix_t *m) {
+	g_MatProj = *m;
+	if (!g_pd3dDevice) {
+		return E_FAIL;
+	}
+	void *dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &g_MatProj);
+	return 0;
+}
+
+void Render_SetCull(uint32_t mode) {
+	if (g_CullMode && mode == D3DCULL_CCW) {
+		mode = D3DCULL_NONE;
+	}
+	Render_State(D3DRS_CULLMODE, mode);
+}
+
+void Render_SetLightmapMat(CMaterial *mat, int mode) {
+	if (mat && g_MatFX2) {
+		mat = g_MatFX2;
+	}
+	CHECK(!g_LightmapMat || !mat);
+	if (mat) {
+		mat->Refs++;
+	}
+	if (g_LightmapMat) {
+		g_LightmapMat->Refs--;
+	}
+	g_LightmapOp = D3DTOP_MODULATE;
+	g_LightmapMat = mat;
+	if (mode == 2) {
+		g_LightmapOp = D3DTOP_MODULATE2X;
+	} else if (mode == 4) {
+		g_LightmapOp = D3DTOP_MODULATE4X;
+	}
+}
+
+typedef void(__thiscall *fxTexUpdate_t)(void *fx, CMapa *mapa);
+typedef void *(__thiscall *fxTexGet_t)(void *fx);
+
+int Render_SetMapa(uint32_t stage, CMapa *mapa) {
+	CHECK(g_pd3dDevice);
+	CHECK(stage < 8);
+	void *tex = NULL;
+	if (mapa) {
+		if (mapa->AnimMat) {
+			uint32_t f = (uint32_t)CAnimMat_GetFrame(mapa->AnimMat);
+			mapa->cur = f < (uint32_t)mapa->frames ? &mapa->TextAni[f] : &mapa->est;
+		}
+		if (mapa->FXTextura) {
+			void *fx = mapa->FXTextura;
+			((fxTexUpdate_t)(*(void ***)fx)[1])(fx, mapa);
+			fx = mapa->FXTextura;
+			tex = ((fxTexGet_t)(*(void ***)fx)[2])(fx);
+		}
+		if (mapa->b8 != g_StageMip[stage]) {
+			g_StageMip[stage] = mapa->b8;
+			Render_TSS(stage, D3DTSS_MIPFILTER, mapa->b8 && g_MipmapsOn ? g_FiltroMip : 0);
+		}
+		if (mapa->bc != g_StageTile[stage]) {
+			g_StageTile[stage] = mapa->bc;
+			Render_TSS(stage, D3DTSS_ADDRESSU, (~((uint32_t)mapa->bc * 2) & 2) | 1);
+			Render_TSS(stage, D3DTSS_ADDRESSV, (~(uint32_t)mapa->bc & 2) | 1);
+		}
+		Render_TSS(stage, D3DTSS_MAXANISOTROPY, mapa->lightmap ? 1 : g_Anisotropia);
+		if (!tex) {
+			tex = CMapa_GetTexture(mapa, 1);
+		}
+	}
+	if (g_StageTex[stage] != tex || g_StageTexFrame[stage] != g_FrameCount) {
+		g_StageTexFrame[stage] = g_FrameCount;
+		g_StageTex[stage] = tex;
+		Render_SetTexture(stage, tex);
+		if (tex) {
+			g_TexChanges++;
+		}
+	}
+	return 0;
+}
+
+/* the vertex format, the stream and the indices of a draw */
+static void Render_Stream(void *dev, void *vb, uint32_t fvf, int size, void *ib, uint32_t baseVert) {
+	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, fvf);
+	D3D_METHOD(dev, d3dSetStreamSource_t, D3DDEV_SETSTREAMSOURCE)(dev, 0, vb, (uint32_t)size);
+	if (ib) {
+		D3D_METHOD(dev, d3dSetIndices_t, D3DDEV_SETINDICES)(dev, ib, baseVert);
+	}
+}
+
+int Render_DrawVBIBFmt(void *vb, void *ib, int frmt, uint32_t numVerts, uint32_t ntri, uint32_t baseVert,
+	uint32_t startTri) {
+	void *dev = g_pd3dDevice;
+	if (!dev) {
+		return E_FAIL;
+	}
+	Render_Stream(dev, vb, ListaVert_FormatFVF(frmt), ListaVert_FormatSize(frmt), ib, baseVert);
+	D3D_METHOD(dev, d3dDrawIndexedPrimitive_t, D3DDEV_DRAWINDEXEDPRIMITIVE)(dev, D3DPT_TRIANGLELIST, 0, numVerts,
+		startTri * 3, ntri);
+	return 0;
+}
+
+int Render_DrawMallaD3D(const CMallaD3D *m) {
+	void *dev = g_pd3dDevice;
+	if (!dev) {
+		return E_FAIL;
+	}
+	if (m->StripList) {
+		CHECK(m->StripList > 2);
+		CHECK(m->pVertVB && !m->pVertIB);
+		CHECK(!m->BaseIndex && !m->StartIndex);
+		Render_Stream(dev, m->pVertVB, ListaVert_FormatFVF(m->vbFrmt), ListaVert_FormatSize(m->vbFrmt), NULL, 0);
+		D3D_METHOD(dev, d3dDrawPrimitive_t, D3DDEV_DRAWPRIMITIVE)(dev, D3DPT_TRIANGLESTRIP, 0,
+			(uint32_t)m->StripList - 2);
+		return 0;
+	}
+	CHECK(m->pVertVB && m->pVertIB);
+	uint32_t ntri = m->nTri;
+	if (g_VBIBTriLimit < ntri) {
+		ntri = g_VBIBTriLimit;
+	}
+	Render_Stream(dev, m->pVertVB, ListaVert_FormatFVF(m->vbFrmt), ListaVert_FormatSize(m->vbFrmt), m->pVertIB,
+		(uint32_t)m->BaseIndex);
+	D3D_METHOD(dev, d3dDrawIndexedPrimitive_t, D3DDEV_DRAWINDEXEDPRIMITIVE)(dev, D3DPT_TRIANGLELIST, 0,
+		(uint32_t)m->vert.nVert, (uint32_t)m->StartIndex * 3, ntri);
+	return 0;
+}
+
+int Render_DrawVBIB(void *vb, void *ib, const CListaVert *v, uint32_t ntri) {
+	void *dev = g_MotorDev;
+	if (!dev) {
+		return E_FAIL;
+	}
+	Render_Stream(dev, vb, CListaVert_FVF((CListaVert *)v), CListaVert_Size((CListaVert *)v), ib, 0);
+	D3D_METHOD(dev, d3dDrawIndexedPrimitive_t, D3DDEV_DRAWINDEXEDPRIMITIVE)(dev, D3DPT_TRIANGLELIST, 0,
+		(uint32_t)v->nVert, 0, ntri);
+	return 0;
+}
+
+int Render_SetView(const matrix_t *m) {
+	matrix_t inv;
+	g_MatView = *m;
+	CHECK(Matrix_Invert(&inv, &g_MatView) == 0);
+	g_MatBillboard = inv;
+	g_EyePos = (vec3_t){ inv.m[12], inv.m[13], inv.m[14] };
+	if (!g_pd3dDevice) {
+		return E_FAIL;
+	}
+	void *dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_VIEW, &g_MatView);
 	return 0;
 }

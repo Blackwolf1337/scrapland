@@ -416,7 +416,8 @@ SD_IMPORT(Font_PrintfXY, 0x299ce0)
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
 SD_IMPORT(Render_ClipRect, 0x24e220)
-SD_IMPORT(Render_SetMapa, 0x24c910)
+SD_IMPORT(CAnimMat_GetFrame, 0x258060)
+SD_IMPORT(Matrix_Invert, 0x239560)
 SD_IMPORT(RenderLock_ReleaseD3D, 0x2a4860)
 SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
 SD_IMPORT(RenderEVA_ReleaseD3D, 0x2b4550)

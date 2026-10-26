@@ -77,9 +77,9 @@ typedef struct CMallaD3D {
 	byte *pSkin;			/* 0x94 16 bytes a vertex */
 	byte skinRef;			/* 0x98 pSkin belongs to the first mesh of the list (or of the node) */
 	byte pad_99[3];
-	int i9c;			/* 0x9c */
-	int ia0;			/* 0xa0 */
-	int ia4;			/* 0xa4 */
+	int BaseIndex;			/* 0x9c */
+	int StartIndex;			/* 0xa0 the first triangle in pVertIB */
+	int StripList;			/* 0xa4 the vertices of a strip without indices, 0 */
 	int vbFrmt;			/* 0xa8 the vertex format of pVertVB */
 	void *pVertVB;			/* 0xac IDirect3DVertexBuffer8 */
 	void *pVertIB;			/* 0xb0 IDirect3DIndexBuffer8 */
