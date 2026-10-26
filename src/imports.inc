@@ -354,3 +354,12 @@ SD_IMPORT(Console_Execute, 0x20aaf0)
 SD_IMPORT(CListaVert_GetPos, 0x212570)
 SD_IMPORT(Render_SetWorld, 0x24bc00)
 SD_IMPORT(Render_SetMaterial, 0x24bf30)
+
+/* engine3d: called from Engine/luz.cpp (include/scrap/luz.h) */
+SD_IMPORT(E3D_FlushBatch, 0x24cec0)
+SD_IMPORT(E3D_SetShadowLight, 0x2682d0)
+SD_IMPORT(Prof_Count, 0x273040)
+SD_IMPORT(CNodo_LightColor, 0x23ee50)
+SD_IMPORT(Sector_IsVisible, 0x26c3d0)
+SD_IMPORT(Sph_IsVisible, 0x24d2e0)
+SD_IMPORT(CSuelo_Trace, 0x26e490)
