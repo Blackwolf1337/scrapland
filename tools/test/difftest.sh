@@ -3,9 +3,10 @@
 # hooks of the DLL ([general] hooks=1) and with the original functions (hooks=0), and compares the outputs.
 # Hidden and muted through wine.sh. Exit code 0 when every run finished and the outputs match.
 #
-# Scenarios: sdtest.py in the main menu, sdlevel.py in the multiplayer level FZ (-imap:Levels/FZ).
+# Scenarios: sdtest.py in the main menu, sdcall.py there too (pure functions called by RVA through the module
+# SDTest of src/core/testmod.c), sdlevel.py in the multiplayer level FZ (-imap:Levels/FZ).
 #
-# usage: tools/test/difftest.sh [scenario ...]   (sdtest, sdlevel; default all; builds nothing: run cmake first)
+# usage: tools/test/difftest.sh [scenario ...]   (sdtest, sdcall, sdlevel; default all; builds nothing: run cmake first)
 #        DIFFTEST_TIMEOUT  seconds per run, default 90
 root=$(cd "$(dirname "$0")/../.." && pwd)
 game=$root/game
@@ -15,9 +16,9 @@ mkdir -p "$out"
 fifo=$(mktemp -u)
 mkfifo "$fifo" && exec 3<> "$fifo" && rm -f "$fifo"
 
-declare -A extra=([sdtest]="" [sdlevel]="-imap:Levels/FZ")
+declare -A extra=([sdtest]="" [sdcall]="" [sdlevel]="-imap:Levels/FZ")
 scenarios=("$@")
-[ ${#scenarios[@]} -gt 0 ] || scenarios=(sdtest sdlevel)
+[ ${#scenarios[@]} -gt 0 ] || scenarios=(sdtest sdcall sdlevel)
 
 "$root/tools/test/install.sh" || exit 1
 cp "$root"/tools/test/py/*.py "$game/" || exit 1
@@ -27,7 +28,7 @@ run() {
 	local name=$1 result=$game/$1.out tag=$1-$3
 	local arg
 	arg="-PythonExecute:execfile($(python3 -I -c "print('+'.join('chr(%d)' % ord(c) for c in '$name.py'))"))"
-	printf '[general]\nhooks=%s\n' "$2" > "$ini"
+	printf '[general]\nhooks=%s\ntestmod=1\n' "$2" > "$ini"
 	rm -f "$result"
 	# shellcheck disable=SC2086 # extra arguments of the scenario, word split on purpose
 	HEADLESS_TIMEOUT=${DIFFTEST_TIMEOUT:-90} WINEDLLOVERRIDES="dinput8=n,b" WINE_LOG="$out/wine-$tag.log" \

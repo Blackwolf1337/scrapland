@@ -16,6 +16,7 @@ int Imports_Resolve(uintptr_t base);
 void Hook_InstallAll(void);
 void Log_Open(const char *dir);
 int Hook_Enabled(const char *name);
+void TestMod_Register(void);
 
 int Hook_Enabled(const char *name) {
 	return GetPrivateProfileIntA("hooks", name, 1, ini_path) != 0;
@@ -45,12 +46,21 @@ int Game_Init(void) {
 			nt->FileHeader.TimeDateStamp, nt->OptionalHeader.SizeOfImage);
 		return 0;
 	}
-	if (!GetPrivateProfileIntA("general", "hooks", 1, ini_path)) {
+	int hooks = GetPrivateProfileIntA("general", "hooks", 1, ini_path);
+	int testmod = GetPrivateProfileIntA("general", "testmod", 0, ini_path);
+	if (!hooks) {
 		Com_Printf("hooks switched off in scrapdecomp.ini\n");
-		return 0;
+		if (!testmod) {
+			return 0;
+		}
 	}
 	game_base = (uintptr_t)exe;
 	Com_Printf("Scrap.exe 1.6.1 at %08x, %d imports\n", (unsigned)game_base, Imports_Resolve(game_base));
-	Hook_InstallAll();
-	return 1;
+	if (testmod) {
+		TestMod_Register();
+	}
+	if (hooks) {
+		Hook_InstallAll();
+	}
+	return hooks;
 }

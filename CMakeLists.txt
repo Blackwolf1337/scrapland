@@ -24,6 +24,7 @@ add_library(dinput8 SHARED
 	src/core/imports.c
 	src/core/libm.c
 	src/core/log.c
+	src/core/testmod.c
 )
 # the decompiled game code, in the folder layout of the original sources (paths from the asserts in Scrap.exe)
 file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS src/game/*.c)
