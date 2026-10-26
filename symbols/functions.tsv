@@ -7270,8 +7270,8 @@ rva	size	source	callconv	name	signature
 0024d0e0	437	DEFAULT	unknown	FUN_0064d0e0	
 0024d2c0	24	DEFAULT	unknown	FUN_0064d2c0	
 0024d2e0	152	USER_DEFINED	__cdecl	Sph_IsVisible	byte __cdecl(float *center, float radius, int arg)
-0024d380	222	DEFAULT	unknown	FUN_0064d380	
-0024d460	267	DEFAULT	unknown	FUN_0064d460	
+0024d380	222	USER_DEFINED	__cdecl	Render_CreateIB	int __cdecl(void * ib, void * tris, uint nTri, int flags)
+0024d460	267	USER_DEFINED	__cdecl	Render_CreateVB	int __cdecl(void * vb, void * vert, int flags)
 0024d570	44	DEFAULT	unknown	FUN_0064d570	
 0024d5a0	153	DEFAULT	unknown	FUN_0064d5a0	
 0024d640	3028	DEFAULT	unknown	FUN_0064d640	
@@ -7963,7 +7963,7 @@ rva	size	source	callconv	name	signature
 00286c80	47	DEFAULT	unknown	FUN_00686c80	
 00286cb0	104	DEFAULT	unknown	FUN_00686cb0	
 00286d20	652	DEFAULT	unknown	FUN_00686d20	
-00286fb0	414	DEFAULT	unknown	FUN_00686fb0	
+00286fb0	414	USER_DEFINED	__cdecl	Plane_Calc	byte __cdecl(float * plane, float * v1, float * v2, float * v3)
 00287150	916	DEFAULT	unknown	FUN_00687150	
 002874f0	522	DEFAULT	unknown	FUN_006874f0	
 00287700	559	DEFAULT	unknown	FUN_00687700	
@@ -8378,49 +8378,50 @@ rva	size	source	callconv	name	signature
 002af4e0	124	USER_DEFINED	__cdecl	Array_Read10_2	void __cdecl(void *f, void **p, uint *n)
 002af560	120	USER_DEFINED	__cdecl	Array_Read6	void __cdecl(void *f, void **p, uint *n)
 002af5e0	127	USER_DEFINED	__cdecl	Array_ReadC	void __cdecl(void *f, void **p, uint *n)
-002af660	52	DEFAULT	unknown	FUN_006af660	
-002af6a0	56	DEFAULT	unknown	FUN_006af6a0	
-002af6e0	56	DEFAULT	unknown	FUN_006af6e0	
-002af720	52	DEFAULT	unknown	FUN_006af720	
-002af760	52	DEFAULT	unknown	FUN_006af760	
-002af7a0	54	DEFAULT	unknown	FUN_006af7a0	
-002af7e0	55	DEFAULT	unknown	FUN_006af7e0	
-002af820	362	USER_DEFINED	__thiscall	CMallaD3D_ctorMallaTri	void * __thiscall(void * malla, void * arg, void * nodo)
-002af990	195	DEFAULT	unknown	FUN_006af990	
-002afa70	367	DEFAULT	unknown	FUN_006afa70	
-002afbe0	38	ANALYSIS	__thiscall	CMallaD3D::vf00	undefined __thiscall(void)
-002afc70	148	DEFAULT	unknown	FUN_006afc70	
-002afd10	96	DEFAULT	unknown	FUN_006afd10	
-002afd70	47	DEFAULT	unknown	FUN_006afd70	
-002afda0	77	DEFAULT	unknown	FUN_006afda0	
-002afdf0	78	DEFAULT	unknown	FUN_006afdf0	
-002afe40	96	DEFAULT	unknown	FUN_006afe40	
-002afea0	130	ANALYSIS	__thiscall	CMallaD3D::vf04	undefined __thiscall(void)
-002aff30	46	USER_DEFINED	__thiscall	CMallaD3D_GetBox	void __thiscall(void * out, byte recalc)
-002aff60	29	ANALYSIS	__thiscall	CMallaD3D::vf03	undefined __thiscall(void)
-002aff80	851	ANALYSIS	__thiscall	CMallaD3D::vf06	undefined __thiscall(void)
-002b02e0	80	DEFAULT	unknown	FUN_006b02e0	
-002b0330	19	ANALYSIS	__thiscall	CMallaD3D::vf02	undefined __thiscall(void)
-002b0350	753	ANALYSIS	__thiscall	CMallaD3D::vf05	undefined __thiscall(void)
-002b0650	206	ANALYSIS	__thiscall	CMallaD3D::vf01	undefined __thiscall(void)
-002b0720	103	DEFAULT	unknown	FUN_006b0720	
-002b0790	450	DEFAULT	unknown	FUN_006b0790	
-002b0960	187	DEFAULT	unknown	FUN_006b0960	
-002b0a20	134	DEFAULT	unknown	FUN_006b0a20	
-002b0ab0	170	DEFAULT	unknown	FUN_006b0ab0	
-002b0b60	238	DEFAULT	unknown	FUN_006b0b60	
-002b0c50	43	DEFAULT	unknown	FUN_006b0c50	
-002b0c80	3422	DEFAULT	unknown	FUN_006b0c80	
-002b19e0	492	DEFAULT	unknown	FUN_006b19e0	
-002b1bd0	87	DEFAULT	unknown	FUN_006b1bd0	
-002b1c30	283	DEFAULT	unknown	FUN_006b1c30	
-002b1d50	281	DEFAULT	unknown	FUN_006b1d50	
-002b1e70	115	DEFAULT	unknown	FUN_006b1e70	
-002b1ef0	316	DEFAULT	unknown	FUN_006b1ef0	
-002b2030	121	DEFAULT	unknown	FUN_006b2030	
-002b20b0	44	DEFAULT	unknown	FUN_006b20b0	
-002b20e0	75	DEFAULT	unknown	FUN_006b20e0	
-002b2130	543	DEFAULT	unknown	FUN_006b2130	
+002af660	52	USER_DEFINED	__cdecl	Array_Write2	void __cdecl(void * f, void * p, uint n)
+002af6a0	56	USER_DEFINED	__cdecl	Array_Write4	void __cdecl(void * f, void * p, uint n)
+002af6e0	56	USER_DEFINED	__cdecl	Array_Write8	void __cdecl(void * f, void * p, uint n)
+002af720	52	USER_DEFINED	__cdecl	Array_Write10	void __cdecl(void * f, void * p, uint n)
+002af760	52	USER_DEFINED	__cdecl	Array_Write10	void __cdecl(void * f, void * p, uint n)
+002af7a0	54	USER_DEFINED	__cdecl	Array_Write6	void __cdecl(void * f, void * p, uint n)
+002af7e0	55	USER_DEFINED	__cdecl	Array_WriteC	void __cdecl(void * f, void * p, uint n)
+002af820	362	USER_DEFINED	__thiscall	CMallaD3D_ctorMalla	void * __thiscall(void * malla, uint flags, void * nodo)
+002af990	195	USER_DEFINED	__fastcall	CMallaD3D_ctor	void * __fastcall(void * self)
+002afa70	367	USER_DEFINED	__fastcall	CMallaD3D_dtor	void __fastcall(void * self)
+002afbe0	38	USER_DEFINED	__thiscall	CMallaD3D_Delete	void * __thiscall(byte flags)
+002afc10	83	USER_DEFINED	__cdecl	MallaD3D_NewObj	int __cdecl(void)
+002afc70	148	USER_DEFINED	__cdecl	MallaD3DObj_SetTri	void __cdecl(void * obj, int i, void * t)
+002afd10	96	USER_DEFINED	__cdecl	MallaD3DObj_SetVert	void __cdecl(void * obj, int i, void * v)
+002afd70	47	USER_DEFINED	__cdecl	MallaD3DObj_SetMat	void __cdecl(void * obj, void * mat)
+002afda0	77	USER_DEFINED	__cdecl	MallaD3DObj_AllocTri	void __cdecl(void * obj, int n)
+002afdf0	78	USER_DEFINED	__cdecl	MallaD3DObj_AllocVert	void __cdecl(void * obj, int n)
+002afe40	96	USER_DEFINED	__cdecl	MallaD3DObj_Free	void __cdecl(void * obj)
+002afea0	130	USER_DEFINED	__thiscall	CMallaD3D_Invalidate	void __thiscall(void * dev)
+002aff30	46	USER_DEFINED	__thiscall	CMallaD3D_GetBox	void __thiscall(float * out, byte recalc)
+002aff60	29	USER_DEFINED	__thiscall	CMallaD3D_Restore	int __thiscall(void * dev)
+002aff80	851	USER_DEFINED	__thiscall	CMallaD3D_Read	byte __thiscall(void * f, void * ctx)
+002b02e0	80	USER_DEFINED	__fastcall	CMallaD3D_CheckList	void __fastcall(void * self)
+002b0330	19	USER_DEFINED	__thiscall	CMallaD3D_Draw	int __thiscall(void * dev, void * ctx)
+002b0350	753	USER_DEFINED	__thiscall	CMallaD3D_Write	byte __thiscall(void * f, void * ctx)
+002b0650	206	USER_DEFINED	__thiscall	CMallaD3D_SetRender	void __thiscall(void * nodoR)
+002b0720	103	USER_DEFINED	__cdecl	MallaD3D_CompareVert	int __cdecl(void * a, void * b)
+002b0790	450	USER_DEFINED	__thiscall	CMallaD3D_TriNormal	float * __thiscall(float * out, uint i)
+002b0960	187	USER_DEFINED	__thiscall	CMallaD3D_CalcBox	void __thiscall(float * out, byte first)
+002b0a20	134	USER_DEFINED	__fastcall	CMallaD3D_CalcCenter	void __fastcall(void * self)
+002b0ab0	170	USER_DEFINED	__cdecl	MallaD3D_CompareGrupo	int __cdecl(void * a, void * b)
+002b0b60	238	USER_DEFINED	__cdecl	MallaD3D_CompareTri	int __cdecl(void * a, void * b)
+002b0c50	43	USER_DEFINED	__cdecl	MallaD3D_CompareVertIdx	int __cdecl(void * a, void * b)
+002b0c80	3422	USER_DEFINED	__thiscall	CMallaD3D_Build	void __thiscall(void * malla, uint flags)
+002b19e0	492	USER_DEFINED	__fastcall	CMallaD3D_CreateVB	int __fastcall(void * self)
+002b1bd0	87	USER_DEFINED	__thiscall	CMallaD3D_SetNodo	void __thiscall(void * nodo)
+002b1c30	283	USER_DEFINED	__cdecl	MallaD3D_TriPlane	void __cdecl(void * t, float * center, float * plane)
+002b1d50	281	USER_DEFINED	__fastcall	CMallaD3D_Init	void __fastcall(void * self)
+002b1e70	115	USER_DEFINED	__thiscall	CMallaD3D_AllocTri	void __thiscall(int n)
+002b1ef0	316	USER_DEFINED	__cdecl	MallaD3D_FillTri	void __cdecl(void * t, void * m, uint i, byte keep)
+002b2030	121	USER_DEFINED	__thiscall	CMallaD3D_SetTri	void __thiscall(uint i, ushort a, ushort b, ushort c)
+002b20b0	44	USER_DEFINED	__cdecl	MallaD3D_GrupoFits	int __cdecl(void * g, void * t)
+002b20e0	75	USER_DEFINED	__fastcall	CMallaD3D_Check	int __fastcall(void * self)
+002b2130	543	USER_DEFINED	__cdecl	MallaD3DObj_Weld	int __cdecl(void * obj)
 002b2350	136	DEFAULT	unknown	FUN_006b2350	
 002b23e0	606	DEFAULT	unknown	FUN_006b23e0	
 002b2640	100	DEFAULT	unknown	FUN_006b2640	
@@ -8450,7 +8451,7 @@ rva	size	source	callconv	name	signature
 002b55d0	1978	DEFAULT	unknown	FUN_006b55d0	
 002b5d90	2445	DEFAULT	unknown	FUN_006b5d90	
 002b6720	117	DEFAULT	unknown	FUN_006b6720	
-002b67a0	844	DEFAULT	unknown	FUN_006b67a0	
+002b67a0	844	USER_DEFINED	__cdecl	MallaD3D_Render	int __cdecl(void * mesh, void * ctx)
 002b6af0	322	DEFAULT	unknown	FUN_006b6af0	
 002b6c40	59	DEFAULT	unknown	FUN_006b6c40	
 002b6c80	60	DEFAULT	unknown	FUN_006b6c80	
@@ -8796,7 +8797,7 @@ rva	size	source	callconv	name	signature
 002d50d0	148	USER_DEFINED	__cdecl	LDin_Insert	void * __cdecl(void *din, uint i)
 002d5170	340	USER_DEFINED	__cdecl	LDin_Move	void __cdecl(void *din, int orig, int dest)
 002d52d0	113	USER_DEFINED	__cdecl	LDin_Clear	void __cdecl(void *din)
-002d5350	1353	DEFAULT	unknown	FUN_006d5350	
+002d5350	1353	USER_DEFINED	__thiscall	CMallaD3D_CalcSegmentos	void __thiscall(byte all)
 002d58a0	236	USER_DEFINED	__cdecl	Lee_String	void __cdecl(char *dest, int size)
 002d59d0	88	USER_DEFINED	__cdecl	Lee_Pop	void __cdecl(void)
 002d5a30	232	USER_DEFINED	__cdecl	Lee_Expect	void __cdecl(char *tok)

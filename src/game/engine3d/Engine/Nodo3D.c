@@ -486,20 +486,20 @@ uint32_t __fastcall CNodo3D_Clase(CNodo3D *self) {
 	return self->obj3D ? self->obj3D->clase : 0;
 }
 
-byte __thiscall CNodo3D_BuildD3D(CNodo3D *self, void *arg) {
+byte __thiscall CNodo3D_BuildD3D(CNodo3D *self, uint32_t flags) {
 	void *p, *obj;
 	uint32_t clase = CNodo3D_Clase(self);
 
 	if (clase == CLASE_OBJ3D_MALLATRI) {
 		p = operator_new(MALLAD3D_SIZE);
-		obj = p ? CMallaD3D_ctorMallaTri(p, self->obj3D, arg, self) : NULL;
+		obj = p ? CMallaD3D_ctorMalla(p, (CMallaTri *)self->obj3D, flags, self) : NULL;
 		CHECK((void *)self->obj3D == obj);
 		return 1;
 	}
 	if (clase != CLASE_OBJ3D_SUELO) {
 		return 0;
 	}
-	CSuelo_BuildD3D(Obj3D_Cast(self->obj3D, CLASE_OBJ3D_SUELO), arg);
+	CSuelo_BuildD3D(Obj3D_Cast(self->obj3D, CLASE_OBJ3D_SUELO), flags);
 	return 1;
 }
 
@@ -647,10 +647,10 @@ byte __thiscall CNodo_LightColor(CNodo3D *self, vec3_t *color, float *mult) {
 	return CAnimNodo_GetColor(track, color, mult, c->frame, c->t) ? 1 : 0;
 }
 
-int __thiscall CNodo3D_TrackData(CNodo3D *self, uint32_t ch) {
+CEVA *__thiscall CNodo3D_TrackData(CNodo3D *self, uint32_t ch) {
 	byte *track = CNodo3D_Track(self, ch);
 
-	return track ? *(int *)(track + 0x20) : 0;
+	return track ? ((CAnimNodo *)track)->EVA : NULL;
 }
 
 byte __thiscall CNodo3D_AnimFloat(CNodo3D *self, float *out) {

@@ -204,7 +204,7 @@ for i in range(len(mdgs)):
 for i in range(len(mdgs)):
 	for j in range(len(mdgs)):
 		if i != j:
-			check('MallaD3D_CompareGrupo' + fmt((i, j)), lambda i=i, j=j: SDTest.Call(0x2b0ab0, 'iii', gb + 16 * i, gb + 16 * j)[0])
+			check('MallaD3D_CompareGrupo' + fmt((i, j)), lambda i=i, j=j: cmp(SDTest.Call(0x2b0ab0, 'iii', gb + 16 * i, gb + 16 * j)[0], 0))
 
 # triangles of a CMallaTri: 6 vertices, 4 texture vertices, 6 triangles, materials 0, 1 (two sided), 2 (two texture
 # sets), 3 and 4; triangles 3 and 4 with the same normals so their vertices weld

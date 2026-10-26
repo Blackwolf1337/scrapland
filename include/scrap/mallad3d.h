@@ -217,12 +217,6 @@ int MallaD3D_CompareVertIdx(const void *a, const void *b);
 int MallaD3D_CompareGrupo(const void *a, const void *b);
 int MallaD3D_CompareTri(const void *a, const void *b);
 
-/* the CNodo3D (Engine/Nodo3D.cpp): the object released and set, the data of an animation channel (NULL for none)
- * and its entry (RenderCtx.h) */
-void __fastcall CNodo_FreeObj3D(CNodo3D *self);
-void __thiscall CNodo_SetObj3D(CNodo3D *self, void *obj);
-void *__thiscall CNodo_ChannelData(CNodo3D *self, uint32_t channel);
-void *__thiscall CNodo_Channel(CNodo3D *self, uint32_t channel);
 /* Engine/render.cpp: the vertex buffer of a vertex list and the index buffer of triangles (HRESULT) */
 int Render_CreateVB(void **vb, CListaVert *vert, int flags);
 int Render_CreateIB(void **ib, const void *tris, uint32_t nTri, int flags);

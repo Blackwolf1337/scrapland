@@ -161,7 +161,7 @@ CNodo3D *__thiscall CNodo3D_FindPrev(CNodo3D *self, const char *name);
 CNodo3D *__thiscall CNodo3D_FindWild(CNodo3D *self, const char *pattern, byte incl);
 uint32_t __fastcall CNodo3D_Clase(CNodo3D *self);
 /* the device mesh of a CMallaTri, the nodes of a CSuelo; 0 for other classes */
-byte __thiscall CNodo3D_BuildD3D(CNodo3D *self, void *arg);
+byte __thiscall CNodo3D_BuildD3D(CNodo3D *self, uint32_t flags);
 /* out of the list of the scene */
 void __fastcall CNodo3D_Unlink(CNodo3D *self);
 void __fastcall CNodo3D_FreeObj3D(CNodo3D *self);
@@ -182,7 +182,7 @@ void *__thiscall CNodo3D_Track2(CNodo3D *self, uint32_t ch);
 /* the color of the node's animated light (color times *mult) from channel 0; 0 without one */
 byte __thiscall CNodo_LightColor(CNodo3D *self, vec3_t *color, float *mult);
 /* the member at 0x20 of the track of channel ch */
-int __thiscall CNodo3D_TrackData(CNodo3D *self, uint32_t ch);
+CEVA *__thiscall CNodo3D_TrackData(CNodo3D *self, uint32_t ch);
 /* an animated float (the camera's fov) from channel 0 */
 byte __thiscall CNodo3D_AnimFloat(CNodo3D *self, float *out);
 /* position and rotation from the first channel (3 down to 0) that has the node */
@@ -198,10 +198,7 @@ quat_t *__thiscall CRotacion_GetQuat(CRotacion *self, quat_t *out);
 matrix_t *Matrix_LoadIdentity(matrix_t *m);	/* rva 0x214710 */
 matrix_t *Matrix_MulD3D(matrix_t *out, const matrix_t *a, const matrix_t *b);	/* rva 0x2391f0, out = a * b */
 void __thiscall CRotacion_SetEuler(CRotacion *self, const vec3_t *ang);	/* rva 0x212510 */
-void __thiscall CMallaD3D_GetBox(void *self, box_t *out, byte recalc);	/* rva 0x2aff30 */
-/* rva 0x2af820, the device mesh of a CMallaTri for the node; it puts itself into nodo->obj3D */
-void *__thiscall CMallaD3D_ctorMallaTri(void *self, void *malla, void *arg, CNodo3D *nodo);
-void __thiscall CSuelo_BuildD3D(void *self, void *arg);	/* rva 0x25fb00, CNodo3D_BuildD3D on its nodes */
+void __thiscall CSuelo_BuildD3D(void *self, uint32_t flags);	/* rva 0x25fb00, CNodo3D_BuildD3D on its nodes */
 byte __thiscall CSistPart_GetBox(void *self, box_t *out);	/* rva 0x27a790 */
 void *CSistPart_Cast(IObjeto3D *obj);	/* rva 0x23f310, CHECK of the class */
 int Render_SetWorldMatrix(const matrix_t *m, byte defer);	/* rva 0x24bac0, the world transform of the device; 0 */

@@ -15,10 +15,6 @@
 #define g_Motor GAME_DATA(byte *, 0x4b1c04)
 #define MOTOR_DEV(m) (*(void **)((m) + 0x2a3d8))
 
-/* the members of CNodo3D read here that the partial struct of luz.h does not have: its object and the matrix the
- * center of a skinned mesh goes through */
-#define NODO_OBJ3D(n) (*(void **)((byte *)(n) + 0x3c))
-#define NODO_MATRIX(n) ((const matrix_t *)((byte *)(n) + 0x9c))
 #define NODO_NOPOS 0xa8			/* flags of nodes whose meshes keep no positions */
 #define NODO_NO_RENDER 0x80
 
@@ -129,8 +125,8 @@ CMallaD3D *__thiscall CMallaD3D_ctorMalla(CMallaD3D *self, CMallaTri *malla, uin
 	}
 	CMallaD3D_Build(self, malla, flags);
 	if (nodo) {
-		CNodo_FreeObj3D(nodo);
-		CNodo_SetObj3D(nodo, self);
+		CNodo3D_FreeObj3D(nodo);
+		CNodo3D_SetObj3D(nodo, (IObjeto3D *)self);
 		CMallaD3D_SetNodo(self, nodo);
 	}
 	CMallaD3D_CalcBox(self, NULL, 1);
@@ -275,7 +271,7 @@ byte __thiscall CMallaD3D_Read(CMallaD3D *self, CArchIO *f, MallaD3D_FileCtx *ct
 		Array_Read10(f, (void **)&self->pSkin, &self->nSkin);
 	} else {
 		/* the skin of the first mesh of the node */
-		CMallaD3D *first = NODO_OBJ3D(self->nodo);
+		CMallaD3D *first = (CMallaD3D *)self->nodo->obj3D;
 		if (first->clase != CLASE_OBJ3D_MALLAD3D) {
 			CHECK(!"devNULL");
 			first = NULL;
@@ -371,11 +367,11 @@ byte __thiscall CMallaD3D_Write(CMallaD3D *self, CArchIO *f, MallaD3D_FileCtx *c
 void __thiscall CMallaD3D_SetRender(CMallaD3D *self, void *nodoR) {
 	MallaD3D_NodoR *r = nodoR;
 	int canal = 3;
-	void *eva = CNodo_ChannelData(self->nodo, 3);
+	void *eva = CNodo3D_TrackData(self->nodo, 3);
 
 	if (!eva) {
 		canal = 2;
-		eva = CNodo_ChannelData(self->nodo, 2);
+		eva = CNodo3D_TrackData(self->nodo, 2);
 	}
 	if (!r) {
 		CHECK(!eva || r);
@@ -385,7 +381,7 @@ void __thiscall CMallaD3D_SetRender(CMallaD3D *self, void *nodoR) {
 	if (!eva) {
 		return;
 	}
-	MallaD3D_Canal *c = CNodo_Channel(self->nodo, canal);
+	MallaD3D_Canal *c = (MallaD3D_Canal *)CNodo3D_Channel(self->nodo, canal);
 	r->canal = canal;
 	r->s9a = (int16_t)c->i4;
 	if (!c->anim[0xc] && !c->anim[0xd]) {
@@ -438,7 +434,7 @@ void __fastcall CMallaD3D_CalcCenter(CMallaD3D *self) {
 	self->center.y = (self->ext.max.y + self->ext.min.y) * 0.5f;
 	self->center.z = (self->ext.max.z + self->ext.min.z) * 0.5f;
 	if (self->pSkin) {
-		Vec3_TransformH(&self->center, &self->center, NODO_MATRIX(self->nodo));
+		Vec3_TransformH(&self->center, &self->center, &self->nodo->mObj);
 	}
 }
 
