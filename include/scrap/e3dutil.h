@@ -12,6 +12,8 @@
 
 /* the D3D device of the engine3d (render.cpp), NULL without one */
 #define g_pd3dDevice GAME_DATA(void *, 0x4ad6f4)
+/* the frames drawn by the engine3d */
+#define g_FrameCount GAME_DATA(int, 0x4a8ec8)
 
 #define MAX_RUTA 0x104
 

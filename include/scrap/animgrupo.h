@@ -14,6 +14,7 @@
 
 #include "scrap/animacion.h"
 #include "scrap/archio.h"
+#include "scrap/controlanim.h"
 #include "scrap/escena.h"
 #include "scrap/luz.h"
 #include "scrap/mathlib.h"
@@ -26,34 +27,7 @@
 
 
 
-/* an entry of the sorted event list of a group (constructor rva 0x2bb8e0) */
-typedef struct CAnimEvent {
-	int id;				/* 0x00 */
-	int arg;			/* 0x04 */
-	struct CAnimEvent *sig;		/* 0x08 */
-	float t;			/* 0x0c the frame */
-	uint32_t flags;			/* 0x10 1: in a list */
-} CAnimEvent;
-SD_SIZE(CAnimEvent, 0x14);
 
-/* the play state of a group (constructor rva 0x250e50, empty destructor 0x250f10) */
-typedef struct CAnimCtrl {
-	float vel;			/* 0x00 */
-	byte pad_4[8];
-	float speed;			/* 0x0c CAnimGrupo + 0x14 */
-	byte pad_10[4];
-	vec3_t move;			/* 0x14 the root motion of the last update */
-	vec3_t ofs;			/* 0x20 the root offset */
-	byte pad_2c[4];
-	CAnimNodo *nodo;		/* 0x30 */
-	int primero;			/* 0x34 */
-	int frames;			/* 0x38 */
-	CAnimEvent **eventos;		/* 0x3c */
-	byte pad_40[0x10];
-	float frame;			/* 0x50 CAnimGrupo + 0x58 */
-	int state;			/* 0x54 ANIM_* */
-	byte pad_58[0x2c];
-} CAnimCtrl;
 SD_OFFSET(CAnimCtrl, speed, 0x0c);
 SD_OFFSET(CAnimCtrl, ofs, 0x20);
 SD_OFFSET(CAnimCtrl, nodo, 0x30);
@@ -94,13 +68,11 @@ SD_SIZE(CAnimGrupo, 0x98);
 typedef struct CAnimGrupos {
 	CAnimGrupo *g[MAX_ANIMGRUPOS];
 } CAnimGrupos;
+SD_SIZE(CAnimGrupos, 0xb0);
 
 /* of other modules, called in the exe */
 /* Engine/Nodo3D.cpp: the node named name from self on (self itself with incl), by sig */
 /* Engine/escena.cpp: the node with that iObjeto */
-CAnimCtrl *__thiscall CAnimCtrl_ctor(CAnimCtrl *self);
-void __thiscall CAnimCtrl_dtor(CAnimCtrl *self);
-void __thiscall CAnimCtrl_SetFrames(CAnimCtrl *self, int primero, int frames);
 CAnimEvent *__thiscall CAnimEvent_ctor(CAnimEvent *self, float t, int id, int arg);
 /* the rest of the chain deleted */
 void __thiscall CAnimEvent_dtor(CAnimEvent *self);
@@ -108,6 +80,8 @@ void __thiscall CAnimEvent_dtor(CAnimEvent *self);
 CAnimEvent *__thiscall AnimEventos_Add(CAnimEvent **list, CAnimEvent *ev);
 
 /* the groups destroyed and their slots cleared */
+CAnimGrupos *__fastcall CAnimGrupos_ctor(CAnimGrupos *self);
+CAnimGrupo *__fastcall CAnimGrupo_ctor(CAnimGrupo *self);
 void __fastcall CAnimGrupos_Clear(CAnimGrupos *self);
 void __fastcall CAnimGrupo_dtor(CAnimGrupo *self);
 /* the events of the list deleted */

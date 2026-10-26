@@ -1617,6 +1617,21 @@ SD_HOOK(CEscena_RemoveNodo, 0x250d30, 140)
 SD_HOOK(Tabla_Resize4, 0x250dc0, 141)
 SD_HOOK(Box_Merge, 0x2b8870, 144)
 
+/* src/game/engine3d/Engine/ControlAnim.c */
+SD_HOOK(CAnimCtrl_ctor, 0x250e50, 182)
+SD_HOOK(CAnimCtrl_Play, 0x250f20, 8)
+SD_HOOK(CAnimCtrl_SetCallback, 0x250f30, 25)
+SD_HOOK(CAnimCtrl_Reset, 0x250f50, 96)
+SD_HOOK(CAnimCtrl_SetFrames, 0x250fb0, 19)
+SD_HOOK(AnimCtrl_StateName, 0x250fd0, 75)
+SD_HOOK(CAnimCtrl_Start, 0x251030, 183)
+SD_HOOK(CAnimCtrl_GetPosRot, 0x2510f0, 164)
+SD_HOOK(CAnimCtrl_Stop, 0x2511a0, 8)
+SD_HOOK(CAnimCtrl_Pause, 0x2511b0, 8)
+SD_HOOK(CAnimCtrl_Fade, 0x2511c0, 56)
+SD_HOOK(CAnimCtrl_Events, 0x251200, 760)
+SD_HOOK(CAnimCtrl_Update, 0x251530, 885)
+
 /* module agent: Engine/SistPart (hooks below this line) */
 
 /* module agent: Engine/RenderTarget (hooks below this line) */
@@ -1935,6 +1950,8 @@ SD_HOOK(CAnimNodo_OptimizeEVA, 0x2af070, 93)
 SD_HOOK(CAnimacion_SwapNodos, 0x2af0d0, 523)
 
 /* module agent: Engine/AnimGrupo (hooks below this line) */
+SD_HOOK(CAnimGrupos_ctor, 0x2518b0, 18)
+SD_HOOK(CAnimGrupo_ctor, 0x2518d0, 111)
 SD_HOOK(CAnimGrupos_Clear, 0x251940, 52)
 SD_HOOK(CAnimGrupo_dtor, 0x251980, 269)
 SD_HOOK(AnimEventos_Free, 0x251a90, 37)

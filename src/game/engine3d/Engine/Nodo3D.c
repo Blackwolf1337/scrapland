@@ -22,7 +22,6 @@
 #define SISTPART_VISIBLE 0x140
 
 #define g_Nodo3DCount GAME_DATA(int, 0x4ad548)	/* R_Nodo3D_Count */
-#define g_FrameCount GAME_DATA(int, 0x4a8ec8)
 #define g_RenderOff GAME_DATA(byte, 0x4a8ef8)
 #define g_NodesRendered GAME_DATA(int, 0x4a8f10)
 #define g_NodesUpdated GAME_DATA(int, 0x4a8f14)

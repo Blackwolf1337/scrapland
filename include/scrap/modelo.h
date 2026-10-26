@@ -30,10 +30,6 @@ enum {
 
 /* classes of the scene objects (IObjeto3D clase) */
 #define CLASE_OBJ3D_MALLA 0xa1000001
-#define NODO_NO_TABNODOR (1u << 22)	/* no render node of its own */
-
-/* CAnimCtrl.state */
-enum { ANIM_REPR = 0, ANIM_PAUSA = 1, ANIM_FUND_PAUSA = 2, ANIM_FIN = 3 };
 
 /* an animation slot: the animation and the one it blends out of (a NodoAnimPair for the render context) */
 typedef struct CAnimSlot {
@@ -278,13 +274,6 @@ void __thiscall RenderCtx_Init(NodoAnimCtx *self, CModelo *m, const vec3_t *scal
 void __thiscall RenderCtx_SetCanal(NodoAnimChannel *self, CAnimSlot *slot);	/* rva 0x23fb10 */
 const vec3_t *Render_GetEyePos(void);					/* rva 0x24cdd0, the camera position */
 /* the play state of an animation group */
-void __thiscall CAnimCtrl_Play(CAnimCtrl *self);			/* rva 0x250f20 */
-void __thiscall CAnimCtrl_Start(CAnimCtrl *self);			/* rva 0x251030 */
-void __thiscall CAnimCtrl_Stop(CAnimCtrl *self);			/* rva 0x2511a0 */
-void __thiscall CAnimCtrl_Pause(CAnimCtrl *self);			/* rva 0x2511b0 */
-void __thiscall CAnimCtrl_Fade(CAnimCtrl *self, float t);		/* rva 0x2511c0 */
-void __thiscall CAnimCtrl_Update(CAnimCtrl *self, vec3_t *rot, float t);	/* rva 0x251530 */
-CAnimGrupos *__fastcall CAnimGrupos_ctor(CAnimGrupos *self);		/* rva 0x2518b0 */
 void __fastcall CModelo_Render(CModelo *self);				/* rva 0x253610 */
 void __thiscall Sector_Locate(int *self, const vec3_t *pos, const char *name);	/* rva 0x26c3f0 */
 void __thiscall Font_SetColor(void *font, uint32_t color);		/* rva 0x299980 */

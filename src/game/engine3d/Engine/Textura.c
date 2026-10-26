@@ -28,7 +28,6 @@
 #define P_WAIT 0
 
 /* the frame counter of the engine */
-#define g_E3DFrame GAME_DATA(int, 0x4a8ec8)
 /* entries alive (engine variable R_Tex_Count) */
 #define g_TexCount GAME_DATA(int, 0x4b2700)
 /* statistics: device textures made from raw files, raw files with a device texture, entries used in the frame and
@@ -236,7 +235,7 @@ static void Textura_Free(CTextura *t) {
 CTextura *Textura_FindPurge(void) {
 	CTextura *best = NULL;
 	int n = 0;
-	int frame = g_E3DFrame;
+	int frame = g_FrameCount;
 
 	for (CTextura *t = g_TexList; t; t = t->sig) {
 		if (!t->PngData || !t->tex) {
@@ -408,16 +407,16 @@ int Textura_Remove(const char *name, const char *opac) {
 
 void *Textura_Load(CTextura *t, void *dev) {
 	if (t->PngData) {
-		if (g_TexPurgeFrame != g_E3DFrame) {
+		if (g_TexPurgeFrame != g_FrameCount) {
 			CTextura *old;
-			g_TexPurgeFrame = g_E3DFrame;
+			g_TexPurgeFrame = g_FrameCount;
 			old = Textura_FindPurge();
 			if (old) {
 				Tex_ReleaseD3D(old);
 			}
 		}
 		CHECK(t->PngData);
-		if (t->frame != g_E3DFrame) {
+		if (t->frame != g_FrameCount) {
 			g_TexUsed++;
 			g_TexUsedPixels += t->alto * t->ancho;
 		}
@@ -426,7 +425,7 @@ void *Textura_Load(CTextura *t, void *dev) {
 			CTextura_CreateD3D(t, dev);
 			g_TexCreated++;
 		}
-		t->frame = g_E3DFrame;
+		t->frame = g_FrameCount;
 	}
 	return t->tex;
 }
@@ -736,7 +735,7 @@ int __thiscall CTextura_CreateD3D(CTextura *self, void *dev) {
 			Tex_LogCreated(self, "Texture (D3DX):  %-8s  %4d %4d  [cached] '%s'", "Format  (D3DX):  %-8s", fmt,
 				desc.Format);
 		}
-		self->frame = g_E3DFrame;
+		self->frame = g_FrameCount;
 	} else {
 		bpp = Tex_BPP(self);
 		fmt = Tex_Format(bpp, self->alpha != 0, bpp <= 8, self->bump, self->compressed, 1);

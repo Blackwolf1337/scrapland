@@ -18,7 +18,6 @@
 #define NODO_BORRAR (1u << 3)		/* joined into another node: deleted by CEscena_DeleteEmpty */
 #define NODO_COLLIDE (1u << 7)		/* cleared on the node that receives a join */
 #define NODO_HUESO (1u << 20)		/* a bone, never deleted */
-#define NODO_NO_TABNODOR (1u << 22)	/* the render nodes of a model end at the first of these */
 #define NODO_OCULTO (1u << 25)		/* skipped by CEscena_PrecalcIlum with visible */
 
 /* the messages of CEscena_Msg */

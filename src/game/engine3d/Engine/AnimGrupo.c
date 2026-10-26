@@ -55,6 +55,20 @@ void __fastcall CAnimGrupo_dtor(CAnimGrupo *self) {
 	}
 }
 
+CAnimGrupos *__fastcall CAnimGrupos_ctor(CAnimGrupos *self) {
+	memset(self, 0, sizeof(*self));
+	return self;
+}
+
+CAnimGrupo *__fastcall CAnimGrupo_ctor(CAnimGrupo *self) {
+	self->name = NULL;
+	self->eventos = NULL;
+	CAnimCtrl_ctor(&self->ctrl);
+	self->Anim = NULL;
+	self->morph = NULL;
+	return self;
+}
+
 void __fastcall CAnimGrupos_Clear(CAnimGrupos *self) {
 	for (int i = 0; i < MAX_ANIMGRUPOS; i++) {
 		CAnimGrupo *g = self->g[i];

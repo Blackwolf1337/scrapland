@@ -7315,25 +7315,25 @@ rva	size	source	callconv	name	signature
 00250be0	334	USER_DEFINED	__thiscall	CEscena_PrecalcIlum	void __thiscall(byte noLuces, byte visible)
 00250d30	140	USER_DEFINED	__thiscall	CEscena_RemoveNodo	void __thiscall(void * nodo)
 00250dc0	141	USER_DEFINED	__thiscall	Tabla_Resize4	void __thiscall(int n)
-00250e50	182	USER_DEFINED	__thiscall	CAnimCtrl_ctor	void * __thiscall(void)
+00250e50	182	USER_DEFINED	__fastcall	CAnimCtrl_ctor	void * __fastcall(void * self)
 00250f10	1	USER_DEFINED	__thiscall	CAnimCtrl_dtor	void __thiscall(void)
-00250f20	8	DEFAULT	unknown	FUN_00650f20	
-00250f30	25	DEFAULT	unknown	FUN_00650f30	
-00250f50	96	DEFAULT	unknown	FUN_00650f50	
+00250f20	8	USER_DEFINED	__fastcall	CAnimCtrl_Play	void __fastcall(void * self)
+00250f30	25	USER_DEFINED	__thiscall	CAnimCtrl_SetCallback	void __thiscall(int fn, int a, int b)
+00250f50	96	USER_DEFINED	__thiscall	CAnimCtrl_Reset	int __thiscall(float frame)
 00250fb0	19	USER_DEFINED	__thiscall	CAnimCtrl_SetFrames	void __thiscall(int primero, int frames)
-00250fd0	75	DEFAULT	unknown	FUN_00650fd0	
-00251030	183	DEFAULT	unknown	FUN_00651030	
-002510f0	164	DEFAULT	unknown	FUN_006510f0	
-002511a0	8	DEFAULT	unknown	FUN_006511a0	
-002511b0	8	DEFAULT	unknown	FUN_006511b0	
-002511c0	56	DEFAULT	unknown	FUN_006511c0	
-00251200	760	DEFAULT	unknown	FUN_00651200	
-00251530	885	DEFAULT	unknown	FUN_00651530	
-002518b0	18	DEFAULT	unknown	FUN_006518b0	
-002518d0	111	DEFAULT	unknown	FUN_006518d0	
+00250fd0	75	USER_DEFINED	__cdecl	AnimCtrl_StateName	char * __cdecl(int state)
+00251030	183	USER_DEFINED	__fastcall	CAnimCtrl_Start	void __fastcall(void * self)
+002510f0	164	USER_DEFINED	__thiscall	CAnimCtrl_GetPosRot	byte __thiscall(float frame, void * pos, void * rot)
+002511a0	8	USER_DEFINED	__fastcall	CAnimCtrl_Stop	void __fastcall(void * self)
+002511b0	8	USER_DEFINED	__fastcall	CAnimCtrl_Pause	void __fastcall(void * self)
+002511c0	56	USER_DEFINED	__thiscall	CAnimCtrl_Fade	void __thiscall(float t)
+00251200	760	USER_DEFINED	__thiscall	CAnimCtrl_Events	byte __thiscall(float * f1, float * f2, float * fin)
+00251530	885	USER_DEFINED	__thiscall	CAnimCtrl_Update	byte __thiscall(void * rot, float t)
+002518b0	18	USER_DEFINED	__fastcall	CAnimGrupos_ctor	void * __fastcall(void * self)
+002518d0	111	USER_DEFINED	__fastcall	CAnimGrupo_ctor	void * __fastcall(void * self)
 00251940	52	USER_DEFINED	__fastcall	CAnimGrupos_Clear	void __fastcall(void * self)
 00251980	269	USER_DEFINED	__fastcall	CAnimGrupo_dtor	void __fastcall(void * self)
-00251a90	37	USER_DEFINED	__fastcall	AnimEventos_Free	void __fastcall(void * list)
+00251a90	37	USER_DEFINED	__fastcall	AnimEventos_Free	void __fastcall(void ** list)
 00251ac0	99	USER_DEFINED	__cdecl	MorphData_Find	int __cdecl(void * md, char * tag)
 00251b30	461	USER_DEFINED	__cdecl	MorphData_Read	byte __cdecl(void * ini, char * sect, int i, void * d, int targets)
 00251d00	103	USER_DEFINED	__thiscall	CAnimGrupos_Add	int __thiscall(void * g)
