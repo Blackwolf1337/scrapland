@@ -7244,7 +7244,7 @@ rva	size	source	callconv	name	signature
 0024b880	212	DEFAULT	unknown	FUN_0064b880	
 0024b960	211	DEFAULT	unknown	FUN_0064b960	
 0024ba40	125	DEFAULT	unknown	FUN_0064ba40	
-0024bac0	108	USER_DEFINED	__cdecl	R_SetWorld	int __cdecl(void * m, byte defer)
+0024bac0	108	USER_DEFINED	__cdecl	Render_SetWorldMatrix	int __cdecl(void * m, byte noDevice)
 0024bb30	51	DEFAULT	unknown	FUN_0064bb30	
 0024bbb0	11	DEFAULT	unknown	FUN_0064bbb0	
 0024bbc0	57	DEFAULT	unknown	FUN_0064bbc0	
@@ -7263,7 +7263,7 @@ rva	size	source	callconv	name	signature
 0024cd30	113	DEFAULT	unknown	FUN_0064cd30	
 0024cdb0	6	DEFAULT	unknown	FUN_0064cdb0	
 0024cdc0	6	DEFAULT	unknown	FUN_0064cdc0	
-0024cdd0	6	DEFAULT	unknown	FUN_0064cdd0	
+0024cdd0	6	USER_DEFINED	__cdecl	Render_GetEyePos	void * __cdecl(void)
 0024cde0	221	DEFAULT	unknown	FUN_0064cde0	
 0024cec0	25	USER_DEFINED	__cdecl	E3D_FlushBatch	void __cdecl(void)
 0024cf00	467	DEFAULT	unknown	FUN_0064cf00	
@@ -8113,48 +8113,48 @@ rva	size	source	callconv	name	signature
 0029d950	112	DEFAULT	unknown	FUN_0069d950	
 0029d9c0	257	DEFAULT	unknown	FUN_0069d9c0	
 0029dad0	204	DEFAULT	unknown	FUN_0069dad0	
-0029dba0	197	DEFAULT	unknown	FUN_0069dba0	
-0029dc80	138	DEFAULT	unknown	FUN_0069dc80	
-0029dd10	333	DEFAULT	unknown	FUN_0069dd10	
-0029de60	71	DEFAULT	unknown	FUN_0069de60	
-0029deb0	313	DEFAULT	unknown	FUN_0069deb0	
-0029dff0	30	DEFAULT	unknown	FUN_0069dff0	
-0029e010	25	DEFAULT	unknown	FUN_0069e010	
-0029e030	50	DEFAULT	unknown	FUN_0069e030	
-0029e070	46	DEFAULT	unknown	FUN_0069e070	
-0029e0a0	46	DEFAULT	unknown	FUN_0069e0a0	
-0029e0d0	174	DEFAULT	unknown	FUN_0069e0d0	
-0029e180	138	DEFAULT	unknown	FUN_0069e180	
-0029e220	2836	DEFAULT	unknown	FUN_0069e220	
-0029ed50	3374	DEFAULT	unknown	FUN_0069ed50	
-0029fa90	1662	DEFAULT	unknown	FUN_0069fa90	
-002a0110	876	DEFAULT	unknown	FUN_006a0110	
-002a0480	13	DEFAULT	unknown	FUN_006a0480	
-002a0490	13	DEFAULT	unknown	FUN_006a0490	
-002a04a0	13	DEFAULT	unknown	FUN_006a04a0	
-002a04b0	211	DEFAULT	unknown	FUN_006a04b0	
-002a0590	19	DEFAULT	unknown	FUN_006a0590	
-002a05b0	29	DEFAULT	unknown	FUN_006a05b0	
-002a05d0	13	DEFAULT	unknown	FUN_006a05d0	
-002a05e0	52	DEFAULT	unknown	FUN_006a05e0	
-002a0620	13	DEFAULT	unknown	FUN_006a0620	
-002a0630	17	DEFAULT	unknown	FUN_006a0630	
-002a0650	27	DEFAULT	unknown	FUN_006a0650	
-002a0670	125	DEFAULT	unknown	FUN_006a0670	
-002a06f0	19	DEFAULT	unknown	FUN_006a06f0	
-002a0710	13	DEFAULT	unknown	FUN_006a0710	
-002a0720	19	DEFAULT	unknown	FUN_006a0720	
-002a0740	22	DEFAULT	unknown	FUN_006a0740	
-002a0760	162	DEFAULT	unknown	FUN_006a0760	
-002a0810	145	DEFAULT	unknown	FUN_006a0810	
-002a08b0	2096	DEFAULT	unknown	FUN_006a08b0	
-002a10e0	54	DEFAULT	unknown	FUN_006a10e0	
-002a1120	1312	DEFAULT	unknown	FUN_006a1120	
-002a1640	132	DEFAULT	unknown	FUN_006a1640	
-002a16d0	80	DEFAULT	unknown	FUN_006a16d0	
-002a1720	97	DEFAULT	unknown	FUN_006a1720	
-002a1790	142	DEFAULT	unknown	FUN_006a1790	
-002a1820	114	DEFAULT	unknown	FUN_006a1820	
+0029dba0	197	USER_DEFINED	__fastcall	CTrail_ctor	void * __fastcall(void * self)
+0029dc80	138	USER_DEFINED	__fastcall	CTrail_dtor	void __fastcall(void * self)
+0029dd10	333	USER_DEFINED	__cdecl	Trails_UpdateRender	void __cdecl(void * t)
+0029de60	71	USER_DEFINED	__fastcall	CTrail_Clear	void __fastcall(void * self)
+0029deb0	313	USER_DEFINED	__thiscall	CTrail_Copy	void __thiscall(void * from)
+0029dff0	30	USER_DEFINED	__fastcall	CTrail_Shrink	void __fastcall(void * self)
+0029e010	25	USER_DEFINED	__thiscall	CTrail_SetActive	void __thiscall(byte on)
+0029e030	50	USER_DEFINED	__fastcall	CTrail_Reset	void __fastcall(void * self)
+0029e070	46	USER_DEFINED	__thiscall	CTrail_AddPos	void __thiscall(float x, float y, float z)
+0029e0a0	46	USER_DEFINED	__thiscall	CTrail_AddPosColor	void __thiscall(float x, float y, float z, uint color)
+0029e0d0	174	USER_DEFINED	__thiscall	CTrail_Add	void __thiscall(float x, float y, float z, float width, uint color)
+0029e180	138	USER_DEFINED	__thiscall	CTrail_Build	int __thiscall(void * pVertex, void * pIndex)
+0029e220	2836	USER_DEFINED	__thiscall	CTrail_BuildRibbon	int __thiscall(void * pVertex, void * pIndex)
+0029ed50	3374	USER_DEFINED	__thiscall	CTrail_BuildCross	int __thiscall(void * pVertex, void * pIndex)
+0029fa90	1662	USER_DEFINED	__thiscall	CTrail_BuildQuads	int __thiscall(void * pVertex, void * pIndex)
+002a0110	876	USER_DEFINED	__thiscall	CTrail_BuildFan	int __thiscall(void * pVertex, void * pIndex)
+002a0480	13	USER_DEFINED	__thiscall	CTrail_SetTransp	void __thiscall(byte transp)
+002a0490	13	USER_DEFINED	__thiscall	CTrail_SetColor	void __thiscall(uint color)
+002a04a0	13	USER_DEFINED	__thiscall	CTrail_SetSmooth	void __thiscall(byte on)
+002a04b0	211	USER_DEFINED	__thiscall	CTrail_SetMaxTrails	void __thiscall(byte segments)
+002a0590	19	USER_DEFINED	__thiscall	CTrail_SetUV	void __thiscall(float u0, float v0)
+002a05b0	29	USER_DEFINED	__thiscall	CTrail_SetOrient	void __thiscall(float x, float y, float z, byte mode)
+002a05d0	13	USER_DEFINED	__thiscall	CTrail_SetType	void __thiscall(byte type)
+002a05e0	52	USER_DEFINED	__thiscall	CTrail_SetSegments	void __thiscall(byte segments)
+002a0620	13	USER_DEFINED	__thiscall	CTrail_SetPremul	void __thiscall(byte on)
+002a0630	17	USER_DEFINED	__thiscall	CTrail_SetWidth	void __thiscall(float width)
+002a0650	27	USER_DEFINED	__thiscall	CTrail_SetScale	void __thiscall(float head, float tail)
+002a0670	125	USER_DEFINED	__thiscall	CTrail_SetTexture	void __thiscall(int texture)
+002a06f0	19	USER_DEFINED	__thiscall	CTrail_SetUVScale	void __thiscall(float du, float dv)
+002a0710	13	USER_DEFINED	__thiscall	CTrail_SetFade	void __thiscall(byte on)
+002a0720	19	USER_DEFINED	__thiscall	CTrail_SetULen	void __thiscall(float uLen, float f50)
+002a0740	22	USER_DEFINED	__cdecl	Trail_SetRender	void __cdecl(void * t, byte on)
+002a0760	162	USER_DEFINED	__cdecl	Trails_ResetAll	int __cdecl(void)
+002a0810	145	USER_DEFINED	__cdecl	Trails_Release	int __cdecl(void)
+002a08b0	2096	USER_DEFINED	__cdecl	Trails_Init	int __cdecl(void)
+002a10e0	54	USER_DEFINED	__cdecl	Trails_InitLists	int __cdecl(void)
+002a1120	1312	USER_DEFINED	__cdecl	Trails_Render	void __cdecl(int texture)
+002a1640	132	USER_DEFINED	__thiscall	CTrail_SetLast	void __thiscall(float * pos, float * width, uint * color)
+002a16d0	80	USER_DEFINED	__thiscall	CTrail_SetLastPos	void __thiscall(float x, float y, float z)
+002a1720	97	USER_DEFINED	__thiscall	CTrail_SetLastPosColor	void __thiscall(float x, float y, float z, uint color)
+002a1790	142	USER_DEFINED	__thiscall	CTrail_SetPoint	void __thiscall(int i, float * pos, float * width, uint * color)
+002a1820	114	USER_DEFINED	__thiscall	CTrail_Move	void __thiscall(float dx, float dy, float dz)
 002a18a0	117	DEFAULT	unknown	FUN_006a18a0	
 002a1920	17	DEFAULT	unknown	FUN_006a1920	
 002a1940	46	DEFAULT	unknown	FUN_006a1940	

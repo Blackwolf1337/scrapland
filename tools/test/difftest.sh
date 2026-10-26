@@ -20,6 +20,7 @@ declare -A extra=([sdtest]="" [sdcall]="" [sdlevel]="-imap:Levels/FZ")
 scenarios=("$@")
 [ ${#scenarios[@]} -gt 0 ] || scenarios=(sdtest sdcall sdlevel)
 
+python3 "$root/tools/test/sigcheck.py" "$root"/tools/test/py/*.py || exit 1
 "$root/tools/test/install.sh" || exit 1
 cp "$root"/tools/test/py/*.py "$game/" || exit 1
 

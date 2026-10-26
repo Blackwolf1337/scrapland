@@ -49,8 +49,8 @@ trbuf = (SDTest.Peek(0x4d6e6c, 'i'), SDTest.Peek(0x4d6e70, 'i'), SDTest.Peek(0x4
 
 T = trz(0x54)
 T2 = trz(0x54)
-check('CTrail_ctor', lambda: (SDTest.Call(0x29dba0, 'ti', T)[0] == T, trstate(T, 0)))
-check('CTrail_ctor 2', lambda: (SDTest.Call(0x29dba0, 'ti', T2)[0] == T2, trstate(T2, 0)))
+check('CTrail_ctor', lambda: (SDTest.Call(0x29dba0, 'tii', T)[0] == T, trstate(T, 0)))
+check('CTrail_ctor 2', lambda: (SDTest.Call(0x29dba0, 'tii', T2)[0] == T2, trstate(T2, 0)))
 trstep('CTrail_SetMaxTrails', T, 0, 0x2a04b0, 'tvii', 8)
 trstep('CTrail_SetMaxTrails same', T, 0, 0x2a04b0, 'tvii', 8)
 trstep('CTrail_SetMaxTrails 2', T2, 0, 0x2a04b0, 'tvii', 8)

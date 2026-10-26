@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/nodo3d.h"
 #include "scrap/material.h"
 #include "scrap/trails.h"
 
@@ -21,7 +22,6 @@ vec3_t *__stdcall D3DX_Vec3Transform(vec3_t *out, const vec3_t *v, const matrix_
 matrix_t *__stdcall D3DX_MatrixRotationYPR(matrix_t *out, float yaw, float pitch, float roll);
 /* Engine/render.cpp: the camera position of the frame; the world matrix (with noDevice only remembered) */
 const vec3_t *Render_GetEyePos(void);
-void Render_SetWorldMatrix(const matrix_t *m, byte noDevice);
 int Render_SetMaterial(void *mat, int pass);
 
 /* IDirect3DDevice8, IDirect3DVertexBuffer8 and IDirect3DIndexBuffer8 methods by vtable offset (stdcall, the object

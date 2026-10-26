@@ -204,7 +204,7 @@ void *__thiscall CMallaD3D_ctorMallaTri(void *self, void *malla, void *arg, CNod
 void __thiscall CSuelo_BuildD3D(void *self, void *arg);	/* rva 0x25fb00, CNodo3D_BuildD3D on its nodes */
 byte __thiscall CSistPart_GetBox(void *self, box_t *out);	/* rva 0x27a790 */
 void *CSistPart_Cast(IObjeto3D *obj);	/* rva 0x23f310, CHECK of the class */
-int R_SetWorld(const matrix_t *m, byte defer);	/* rva 0x24bac0, the world transform of the device; 0 */
+int Render_SetWorldMatrix(const matrix_t *m, byte defer);	/* rva 0x24bac0, the world transform of the device; 0 */
 byte __thiscall CNodo3D_DebugDraw(CNodo3D *self, CNodoR *r);	/* rva 0x23d9d0, R_ShowLocalBox; 0: not drawn */
 void __thiscall CNodoR_UpdateNodo(CNodoR *self);	/* rva 0x23f5d0 */
 int __thiscall CNodoR_ApplyFX(CNodoR *self, matrix_t *m);	/* rva 0x23f540 */

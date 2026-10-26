@@ -292,7 +292,7 @@ void __thiscall CNodo3D_Render(CNodo3D *self, void *arg, CNodoR *r) {
 			return;
 		}
 	}
-	R_SetWorld(&self->m, 1);
+	Render_SetWorldMatrix(&self->m, 1);
 	o = CNodo3D_GetObj3D(self, r);
 	if (o) {
 		((objRender_t)o->vftable[2])(o, arg, r);

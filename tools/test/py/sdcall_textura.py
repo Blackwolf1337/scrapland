@@ -33,11 +33,11 @@ for n in ('a.alpha.tga', 'A.ALPHA.TGA', '.alpha.tga', 'alpha.tga', 'x.alpha', 'd
 cb = tz(12)
 check('CBmp_ctor', lambda cb=cb: (SDTest.Call(0x27cfe0, 'tiiii', cb, 3, 2)[0] == cb, SDTest.Peek(cb, '@i'),
 	SDTest.Peek(cb + 4, '@i'), SDTest.Peek(cb + 8, '@i') != 0))
-check('CBmp_Delete 0', lambda cb=cb: (SDTest.Call(0x27d2f0, 'tii', cb, 0)[0] == cb, tpeek(cb, 3)))
+check('CBmp_Delete 0', lambda cb=cb: (SDTest.Call(0x27d2f0, 'tiii', cb, 0)[0] == cb, tpeek(cb, 3)))
 SDTest.Call(0x133550, 'vi', cb)
 cb = SDTest.Call(0x1334d0, 'ii', 12)[0]
 SDTest.Call(0x27cfe0, 'tiiii', cb, 5, 1)
-check('CBmp_Delete 1', lambda cb=cb: SDTest.Call(0x27d2f0, 'tii', cb, 1)[0] == cb)
+check('CBmp_Delete 1', lambda cb=cb: SDTest.Call(0x27d2f0, 'tiii', cb, 1)[0] == cb)
 
 # the conversions; the pixels include the limits of the bump and DUDV ranges
 edge = (0x00000000, 0x00004040, 0x00004141, 0x0000b7b7, 0x0000b8b8, 0xffffff, 0x12345678, -1, 0x00008080, 0x00007f80,
