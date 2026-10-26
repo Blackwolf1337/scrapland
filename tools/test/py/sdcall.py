@@ -1363,4 +1363,12 @@ check('AStarTable_Clear', lambda: (SDTest.Call(0x099890, 'tvi', tbl), tpeek(SDTe
 check('AStarTable_Add after', lambda: SDTest.Call(0x099620, 'tbiiFi', tbl, 5, (1, 2, 3), 0)[0:1])
 check('AStarTable_dtor', lambda: (SDTest.Call(0x09ac50, 'tvi', tbl), tpeek(tbl, 3)))
 SDTest.Call(0x133550, 'vi', tbl)
+# the tests of single modules (tools/test/py/sdcall_*.py); a missing one is skipped
+for part in ('sdcall_listavert.py', 'sdcall_mallatri.py', 'sdcall_material.py', 'sdcall_luz.py'):
+	try:
+		f = open(part)
+	except IOError:
+		continue
+	f.close()
+	execfile(part)
 finish()

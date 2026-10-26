@@ -2,19 +2,20 @@
 # Static checks of the hooks against Scrap.exe, for mistakes the differential tests may not reach:
 #   ret     the stack bytes the C definition pops (calling convention, arguments) against the ret of the original
 #   calls   functions of src/hooks.inc and src/imports.inc the original calls but the C body never names
+#   size    hooks of functions shorter than the 5 byte jmp
 #   eax     hooks the C version declares void although callers in the exe read eax after the call (the original
 #           left a pointer there that they use)
 # The C side comes from the preprocessed sources (build/compile_commands.json, cmake must have run), the original
 # from objdump -d of game/Bin/Scrap.exe. Output only for findings; "calls" has false positives (tables of
 # function pointers, calls the C version leaves out on purpose).
 #
-# usage: tools/hookcheck.py [ret|calls ...]   (default both)
+calls ...]   (default both)|calls ...]   (default both)
 import collections, glob, json, os, re, shlex, subprocess, sys
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 work = os.path.join(root, 'build', 'hookcheck')
 os.makedirs(work, exist_ok=True)
-checks = sys.argv[1:] or ['ret', 'calls', 'eax']
+checks = sys.argv[1:] or ['ret', 'calls', 'eax', 'size']
 
 hooks = re.findall(r'^SD_HOOK\((\w+), (0x[0-9a-f]+), (\d+)\)', open(os.path.join(root, 'src/hooks.inc')).read(), re.M)
 imports = dict((int(a, 16), n) for n, a in
@@ -125,6 +126,9 @@ def fullbody(name, seen):
 	return b
 
 for n, a, sz in hooks:
+	# the hook writes a 5 byte jmp; hook.c skips shorter functions at runtime
+	if 'size' in checks and int(sz) < 5:
+		print('size  %-28s %s: only %s bytes, can not be hooked' % (n, a, sz))
 	if n not in protos:
 		continue
 	ins = list(instructions(int(a, 16), int(sz)))
