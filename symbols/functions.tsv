@@ -1882,42 +1882,42 @@ rva	size	source	callconv	name	signature
 00098f70	277	DEFAULT	unknown	FUN_00498f70	
 00099090	455	DEFAULT	unknown	FUN_00499090	
 00099280	39	DEFAULT	unknown	FUN_00499280	
-000992b0	118	DEFAULT	unknown	FUN_004992b0	
+000992b0	118	USER_DEFINED	__thiscall	cBinaryHeap_ctor	void * __thiscall(int capacity, void *less, void *equals, void *setIndex)
 00099330	290	USER_DEFINED	__thiscall	CAStar::CAStar	undefined __thiscall(void)
-00099460	66	DEFAULT	unknown	FUN_00499460	
+00099460	66	USER_DEFINED	__fastcall	cBinaryHeap_dtor	void __fastcall(void *self)
 000994b0	101	DEFAULT	unknown	FUN_004994b0	
-00099520	98	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf00	undefined __thiscall(void)
+00099520	98	USER_DEFINED	__thiscall	cBinaryHeap_Delete	void * __thiscall(byte flags)
 00099590	129	ANALYSIS	__thiscall	CAStar::vf00	undefined __thiscall(void)
-00099620	124	DEFAULT	unknown	FUN_00499620	
-000996a0	76	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf02	undefined __thiscall(void)
-000996f0	234	DEFAULT	unknown	FUN_004996f0	
+00099620	124	USER_DEFINED	__thiscall	AStarTable_Add	byte __thiscall(int key, void *v, byte warn)
+000996a0	76	USER_DEFINED	__thiscall	cBinaryHeap_Push	byte __thiscall(void **item)
+000996f0	234	USER_DEFINED	__thiscall	AStarTable_Insert	void * __thiscall(int key, uint slot, void *v)
 000997e0	44	ANALYSIS	__thiscall	CAStar::vf03	undefined __thiscall(void)
-00099810	8	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf01	undefined __thiscall(void)
+00099810	8	USER_DEFINED	__thiscall	cBinaryHeap_Clear	void __thiscall(void)
 00099820	20	DEFAULT	unknown	FUN_00499820	
-00099840	65	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf04	undefined __thiscall(void)
-00099890	251	DEFAULT	unknown	FUN_00499890	
-00099990	37	DEFAULT	unknown	FUN_00499990	
-000999c0	65	DEFAULT	unknown	FUN_004999c0	
-00099a10	29	DEFAULT	unknown	FUN_00499a10	
-00099a30	38	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf05	undefined __thiscall(void)
-00099a60	32	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf03	undefined __thiscall(void)
-00099a80	81	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf06	undefined __thiscall(void)
+00099840	65	USER_DEFINED	__thiscall	cBinaryHeap_Pop	byte __thiscall(void)
+00099890	251	USER_DEFINED	__fastcall	AStarTable_Clear	void __fastcall(void *self)
+00099990	37	USER_DEFINED	__thiscall	AStarTable_Find	void * __thiscall(int key, uint slot)
+000999c0	65	USER_DEFINED	__thiscall	AStarTable_Get	byte __thiscall(int key, void **out)
+00099a10	29	USER_DEFINED	__cdecl	AStar_ElemSetIndex	void __cdecl(void **elem, int index)
+00099a30	38	USER_DEFINED	__thiscall	cBinaryHeap_Get	byte __thiscall(void ***out, int i)
+00099a60	32	USER_DEFINED	__thiscall	cBinaryHeap_Top	byte __thiscall(void ***out)
+00099a80	81	USER_DEFINED	__thiscall	cBinaryHeap_Find	byte __thiscall(void *item, int *index, void ***out)
 00099ae0	41	ANALYSIS	__thiscall	CAStar::vf04	undefined __thiscall(void)
 00099b10	12	ANALYSIS	__thiscall	CAStar::vf13	undefined __thiscall(void)
-00099b20	4	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf08	undefined __thiscall(void)
+00099b20	4	USER_DEFINED	__thiscall	cBinaryHeap_Count	int __thiscall(void)
 00099b30	127	DEFAULT	unknown	FUN_00499b30	
 00099bb0	63	ANALYSIS	__thiscall	CAStar::vf05	undefined __thiscall(void)
 00099bf0	63	DEFAULT	unknown	FUN_00499bf0	
 00099c30	543	ANALYSIS	__thiscall	CAStar::vf06	undefined __thiscall(void)
 00099e50	12	ANALYSIS	__thiscall	CAStar::vf07	undefined __thiscall(void)
-00099e60	108	DEFAULT	unknown	FUN_00499e60	
-00099ed0	89	DEFAULT	unknown	FUN_00499ed0	
-00099f30	109	DEFAULT	unknown	FUN_00499f30	
+00099e60	108	USER_DEFINED	__cdecl	AStar_AddInfo	void __cdecl(int key, void *v)
+00099ed0	89	USER_DEFINED	__cdecl	AStar_GetInfo	byte __cdecl(int key, void **out)
+00099f30	109	USER_DEFINED	__thiscall	AStarTable_Slot	uint __thiscall(uint key)
 00099fa0	261	DEFAULT	unknown	FUN_00499fa0	
-0009a0b0	80	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf07	undefined __thiscall(void)
-0009a100	35	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf09	undefined __thiscall(void)
-0009a130	191	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf10	undefined __thiscall(void)
-0009a1f0	255	ANALYSIS	__thiscall	cBinaryHeap<ElemAStar*>::vf11	undefined __thiscall(void)
+0009a0b0	80	USER_DEFINED	__thiscall	cBinaryHeap_Set	byte __thiscall(void **item, int i)
+0009a100	35	USER_DEFINED	__thiscall	cBinaryHeap_Fix	void __thiscall(int i)
+0009a130	191	USER_DEFINED	__thiscall	cBinaryHeap_SiftUp	byte __thiscall(int i)
+0009a1f0	255	USER_DEFINED	__thiscall	cBinaryHeap_SiftDown	byte __thiscall(int i)
 0009a2f0	304	USER_DEFINED	__thiscall	CAStar2D::CAStar2D	undefined __thiscall(void)
 0009a420	101	DEFAULT	unknown	FUN_0049a420	
 0009a490	129	ANALYSIS	__thiscall	CAStar2D::vf00	undefined __thiscall(void)
@@ -1934,7 +1934,7 @@ rva	size	source	callconv	name	signature
 0009a9d0	261	DEFAULT	unknown	FUN_0049a9d0	
 0009aae0	102	DEFAULT	unknown	FUN_0049aae0	
 0009ab50	254	DEFAULT	unknown	FUN_0049ab50	
-0009ac50	82	DEFAULT	unknown	FUN_0049ac50	
+0009ac50	82	USER_DEFINED	__fastcall	AStarTable_dtor	void __fastcall(void *self)
 0009acb0	110	DEFAULT	unknown	FUN_0049acb0	
 0009ad20	135	ANALYSIS	__thiscall	CAStarSup::vf00	undefined __thiscall(void)
 0009adb0	147	ANALYSIS	__thiscall	CAStarSup::vf09	undefined __thiscall(void)
@@ -1944,8 +1944,8 @@ rva	size	source	callconv	name	signature
 0009af10	234	ANALYSIS	__thiscall	CAStarSup::vf01	undefined __thiscall(void)
 0009b000	91	ANALYSIS	__thiscall	CAStarSup::vf11	undefined __thiscall(void)
 0009b060	89	ANALYSIS	__thiscall	CAStarSup::vf10	undefined __thiscall(void)
-0009b0c0	22	DEFAULT	unknown	FUN_0049b0c0	
-0009b0e0	29	DEFAULT	unknown	FUN_0049b0e0	
+0009b0c0	22	USER_DEFINED	__cdecl	AStar_ElemEq	byte __cdecl(void **a, void *b)
+0009b0e0	29	USER_DEFINED	__cdecl	AStar_ElemLess	byte __cdecl(void **a, void **b)
 0009b100	4	ANALYSIS	__thiscall	CAStarSup::vf02	undefined __thiscall(void)
 0009b110	1407	ANALYSIS	__thiscall	CAStarSup::vf08	undefined __thiscall(void)
 0009b690	128	ANALYSIS	__thiscall	CAStarSup::vf12	undefined __thiscall(void)

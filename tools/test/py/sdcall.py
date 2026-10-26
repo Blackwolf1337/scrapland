@@ -1275,4 +1275,92 @@ SDTest.Call(0x133550, 'vi', cam)
 SDTest.Call(0x133550, 'vi', cam2)
 SDTest.Call(0x133550, 'vi', nod)
 SDTest.Call(0x133550, 'vi', nod2)
+
+# AI/AStar.c: the binary heap with the A* callbacks over fake ElemAStar records, and the int key hash table
+NEL = 12
+els = []
+refs = SDTest.Call(0x133650, 'ii', NEL * 8)[0]
+for i in range(NEL):
+	e = SDTest.Call(0x133650, 'ii', 0x14)[0]
+	SDTest.Poke(e - 0x400000, 100 + i)
+	if i % 3:
+		SDTest.Poke(e + 0x10 - 0x400000, refs + 8 * i)
+	els.append(e)
+def setf(i, f):
+	SDTest.Call(0x3197d0, 'iiFi', els[i] + 8, (f,), 4)
+fs = (5.0, 3.0, 8.0, 1.0, 9.0, 3.0, 7.0, 2.0, 6.0, 4.0, 0.5, 10.0)
+for i in range(NEL):
+	setf(i, fs[i])
+heap = SDTest.Call(0x133650, 'ii', 0x1c)[0]
+def eli(addr):
+	for i in range(NEL):
+		if els[i] == addr:
+			return i
+	return addr == 0 and -1 or -2
+def heapget():
+	n, a = SDTest.Peek(heap + 8, '@i'), SDTest.Peek(heap + 4, '@i')
+	order = []
+	for i in range(1, n + 1):
+		order.append(eli(SDTest.Peek(a + 4 * i, '@i')))
+	return n, SDTest.Peek(heap + 12, '@i'), order, tpeek(refs, NEL * 2)
+def slotel(slot):
+	if not slot:
+		return None
+	return eli(SDTest.Peek(slot, '@i'))
+def hstep(name, rva, sig, *args):
+	hstepn(name + fmt(args), rva, sig, args)
+def hstepn(name, rva, sig, args):
+	check(name, lambda rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig, heap) + args)[0], heapget()))
+check('cBinaryHeap_ctor', lambda: (SDTest.Call(0x0992b0, 'tiiiiii', heap, 8, 0x49b0e0, 0x49b0c0, 0x499a10)[0] == heap, heapget()))
+for i in range(10):
+	check('cBinaryHeap_Push' + fmt((i,)), lambda i=i: (SDTest.Call(0x0996a0, 'tbip', heap, els[i])[0], heapget()))
+check('cBinaryHeap_Top', lambda: (lambda r: (r[0], slotel(r[1])))(SDTest.Call(0x099a60, 'tbip', heap, 0)))
+for i in (0, 1, 4, 8, 9):
+	check('cBinaryHeap_Get' + fmt((i,)), lambda i=i: (lambda r: (r[0], slotel(r[1])))(SDTest.Call(0x099a30, 'tbipi', heap, 0, i)))
+def hfind(i):
+	r = SDTest.Call(0x099a80, 'tbippp', heap, els[i], 0, 0)
+	return r[0], r[2], slotel(r[3])
+for i in (3, 7, 11):
+	check('cBinaryHeap_Find' + fmt((i,)), lambda i=i: hfind(i))
+setf(11, 0.25)
+hstepn('cBinaryHeap_Set 11 5', 0x09a0b0, 'tbipi', (els[11], 5))
+setf(2, 20.0)
+hstepn('cBinaryHeap_Set 2 1', 0x09a0b0, 'tbipi', (els[2], 1))
+hstepn('cBinaryHeap_Set 2 0', 0x09a0b0, 'tbipi', (els[2], 0))
+hstep('cBinaryHeap_Count', 0x099b20, 'tii')
+setf(6, -1.0)
+hstep('cBinaryHeap_Fix', 0x09a100, 'tvii', 7)
+for i in range(10):
+	hstep('cBinaryHeap_Pop', 0x099840, 'tbi')
+hstep('cBinaryHeap_SiftUp', 0x09a130, 'tbii', 1)
+hstep('cBinaryHeap_SiftDown', 0x09a1f0, 'tbii', 1)
+hstep('cBinaryHeap_Clear', 0x099810, 'tvi')
+check('cBinaryHeap_Delete', lambda: SDTest.Call(0x099520, 'tiii', heap, 0)[0] == heap)
+SDTest.Call(0x133550, 'vi', heap)
+for e in els:
+	SDTest.Call(0x133550, 'vi', e)
+SDTest.Call(0x133550, 'vi', refs)
+tbl = SDTest.Call(0x133650, 'ii', 12)[0]
+SDTest.Poke(tbl - 0x400000, 7)
+SDTest.Poke(tbl + 4 - 0x400000, SDTest.Call(0x133650, 'ii', 28)[0])
+def tstep(name, rva, sig, *args):
+	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: apply(SDTest.Call, (rva, sig, tbl) + args)[0])
+for k in (0, 1, 15, 16, 255, 256, 0x7fffffff, -1, 12345, 0x1000, 3):
+	tstep('AStarTable_Slot', 0x099f30, 'tiii', k)
+	check('AStarTable_Add' + fmt((k,)), lambda k=k: SDTest.Call(0x099620, 'tbiiFi', tbl, k, (k % 1000, 1, 7), 0)[0:1])
+check('AStarTable_Add again', lambda: SDTest.Call(0x099620, 'tbiiFi', tbl, 15, (1, 2, 3), 1)[0:1])
+check('AStarTable_Add again quiet', lambda: SDTest.Call(0x099620, 'tbiiFi', tbl, 256, (1, 2, 3), 0)[0:1])
+def tget(k):
+	r = SDTest.Call(0x0999c0, 'tbiip', tbl, k, 0)
+	if not r[0]:
+		return r[0]
+	return r[0], tpeek(r[1], 4)
+for k in (0, 15, 256, -1, 9, 3, 77):
+	check('AStarTable_Get' + fmt((k,)), lambda k=k: tget(k))
+	check('AStarTable_Find' + fmt((k,)), lambda k=k: SDTest.Call(0x099990, 'tiiii', tbl, k, SDTest.Call(0x099f30, 'tiii', tbl, k)[0])[0] != 0)
+check('AStarTable_Insert', lambda: tpeek(SDTest.Call(0x0996f0, 'tiiiiF', tbl, 99, 2, (4, 5, 6))[0], 4))
+check('AStarTable_Clear', lambda: (SDTest.Call(0x099890, 'tvi', tbl), tpeek(SDTest.Peek(tbl + 4, '@i'), 7)))
+check('AStarTable_Add after', lambda: SDTest.Call(0x099620, 'tbiiFi', tbl, 5, (1, 2, 3), 0)[0:1])
+check('AStarTable_dtor', lambda: (SDTest.Call(0x09ac50, 'tvi', tbl), tpeek(tbl, 3)))
+SDTest.Call(0x133550, 'vi', tbl)
 finish()
