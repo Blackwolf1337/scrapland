@@ -101,6 +101,20 @@ SD_SIZE(cFileBlock, 0x8);
 #define FILEBLOCK_READ 0x2
 #define FILEBLOCK_MUST_EXIST 0x10
 
+cFileBlock *__fastcall cFileBlock_ctor(cFileBlock *self);
+void __fastcall cFileBlock_dtor(cFileBlock *self);
+/* 0 if FILEBLOCK_MUST_EXIST and the file is not there */
+int __thiscall cFileBlock_Open(cFileBlock *self, const char *filename, uint32_t mode, uint32_t flags);
+int __fastcall cFileBlock_Close(cFileBlock *self);
+int __thiscall cFileBlock_Read(cFileBlock *self, void *mem, int size);
+int __thiscall cFileBlock_Write(cFileBlock *self, const void *mem, int size);
+int __fastcall cFileBlock_ReadInt(cFileBlock *self);
+int __thiscall cFileBlock_WriteInt(cFileBlock *self, int v);
+int __thiscall cFileBlock_OpenBlockRead(cFileBlock *self, const char *id);
+int __thiscall cFileBlock_CloseBlockRead(cFileBlock *self, const char *id);
+int __thiscall cFileBlock_OpenBlockWrite(cFileBlock *self, const char *id);
+int __thiscall cFileBlock_CloseBlockWrite(cFileBlock *self, const char *id);
+
 /* Engine/ArchIO.cpp (src/game/engine3d/Engine/ArchIO.c): fopen relative to the game directory, a drive in the path is
  * fatal */
 void *File_OpenRel(const char *name, const char *mode);

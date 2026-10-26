@@ -8,6 +8,7 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
+#include "scrap/textura.h"
 #include "scrap/mundo.h"
 #include "scrap/sistpart.h"
 #include "scrap/varios.h"

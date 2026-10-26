@@ -25,14 +25,24 @@
 #define TEXF_NODDS 0x80
 #define TEXF_DDS 0x100			/* SaveDDS may write a DDS version */
 
-/* the table of the sprites of a texture (rva 0x29cf80.., not decompiled) */
+/* Engine/MultiSprite.cpp (src/game/engine3d/Engine/MultiSprite.c): the sprites of a texture, rectangles in pixels
+ * numbered by the alpha of the &N.index.bmp beside it (sprite 0: the whole texture), kept in a .mst file */
+typedef struct MSprite {
+	uint16_t x, y;			/* 0x0 */
+	uint16_t cx, cy;		/* 0x4 */
+} MSprite;
+SD_SIZE(MSprite, 0x8);
+
 typedef struct CMultiSprite {
-	int i0;				/* 0x0 */
-	int i4;				/* 0x4 */
-	void *tabla;			/* 0x8 set once built */
-	void *datos;			/* 0xc */
+	int ancho;			/* 0x0 of the texture */
+	int alto;			/* 0x4 */
+	int n;				/* 0x8 the sprites (CTabla) */
+	MSprite *p;			/* 0xc */
 } CMultiSprite;
 SD_SIZE(CMultiSprite, 0x10);
+
+#define MST_VER 100
+#define g_BuildMST GAME_DATA(int, 0x4d6e00)	/* BuildMST: load the .mst files */
 
 typedef struct CTextura {
 	int Refs;			/* 0x000 */
@@ -71,9 +81,18 @@ SD_OFFSET(CTextura, multi, 0x248);
 
 #define g_TexList GAME_DATA(CTextura *, 0x4b2610)
 
-CMultiSprite *__thiscall CMultiSprite_ctor(CMultiSprite *self);
-void __thiscall CMultiSprite_dtor(CMultiSprite *self);
+CMultiSprite *__fastcall CMultiSprite_ctor(CMultiSprite *self);
+void __fastcall CMultiSprite_dtor(CMultiSprite *self);
+/* the table from the .mst of the texture name (when not older), else built and saved; 0 if it could not be saved */
 byte __thiscall CMultiSprite_Build(CMultiSprite *self, const char *name);
+/* the table from the &U&D&N.index.bmp of the texture name */
+byte __thiscall CMultiSprite_BuildTable(CMultiSprite *self, const char *name);
+/* the size of sprite i in pixels, the texture's for 0 or without sprites (then 0) */
+byte __thiscall CMultiSprite_GetSize(const CMultiSprite *self, uint32_t i, uint32_t *cx, uint32_t *cy);
+/* the texture coordinates of sprite i, 0..1 for 0 or without sprites (then 0) */
+byte __thiscall CMultiSprite_GetUV(const CMultiSprite *self, uint32_t i, float *texMin, float *texMax);
+byte __thiscall CMultiSprite_Load(CMultiSprite *self, const char *name);
+byte __thiscall CMultiSprite_Save(const CMultiSprite *self, const char *name);
 
 CTextura *__thiscall CTextura_ctor(CTextura *self, const char *name, const char *opac, int kind, uint32_t flags);
 void __fastcall CTextura_dtor(CTextura *self);

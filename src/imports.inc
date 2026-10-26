@@ -385,7 +385,6 @@ SD_IMPORT(NodeFX_New, 0x2b2cc0)
 
 /* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
 SD_IMPORT(CObjBase3D_SetNodo, 0x2cad70)
-SD_IMPORT(CMultiSprite_GetUV, 0x29d800)
 SD_IMPORT(CSuelo_TraceSeg, 0x26f120)
 SD_IMPORT(Debug_Text3D, 0x299d50)
 SD_IMPORT(SistPart_Draw, 0x2b7150)
@@ -511,9 +510,6 @@ SD_IMPORT(CEVA_ctor, 0x2d33e0)
 SD_IMPORT(CAnimCtrl_dtor, 0x250f10)
 
 /* module agent: Engine/Textura (imports below this line) */
-SD_IMPORT(CMultiSprite_ctor, 0x29cf80)
-SD_IMPORT(CMultiSprite_dtor, 0x29cfb0)
-SD_IMPORT(CMultiSprite_Build, 0x29cfe0)
 SD_IMPORT(crt_mbsrchr, 0x3508c4)
 SD_IMPORT(crt_spawnlp, 0x34f2e0)
 SD_IMPORT_STDCALL(D3DX_CheckTextureRequirements, 28, 0x0037ea)

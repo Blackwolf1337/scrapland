@@ -430,7 +430,7 @@ CMultiSprite *Textura_GetMultiSprite(CTextura *t, const char *name) {
 	if (!t) {
 		return NULL;
 	}
-	if (t->multi.tabla) {
+	if (t->multi.n) {
 		return &t->multi;
 	}
 	if (name) {
