@@ -7,6 +7,8 @@
 #ifndef SCRAP_RENDER_H
 #define SCRAP_RENDER_H
 
+#include "scrap/cstring.h"
+#include "scrap/d3d8.h"
 #include "scrap/mathlib.h"
 
 struct CMaterial;
@@ -81,11 +83,13 @@ struct CListaVert;
 #define g_AlphaFog GAME_DATA(int, 0x4ada80)		/* R_AlphaFog 0, 1 (only add blending), 2 */
 #define g_UseDefMaterial GAME_DATA(int, 0x4ad8e0)	/* R_UseDefMaterial 0, 1, 2 */
 #define g_UseDefTexture GAME_DATA(int, 0x4ad868)	/* R_UseDefTexture 0..4 */
-/* the default materials RenderIniD3D makes (white first) */
+/* the default materials RenderIniD3D makes, in this order: white, checkerboard, grey, invisible, bump noise, ground */
 #define g_MatBlanco GAME_DATA(CMaterial *, 0x4ad6d8)
-#define g_MatDef2 GAME_DATA(CMaterial *, 0x4ad6dc)
-#define g_MatDef3 GAME_DATA(CMaterial *, 0x4ad6e0)
-#define g_MatDef4 GAME_DATA(CMaterial *, 0x4ad6e4)
+#define g_MatAjedrez GAME_DATA(CMaterial *, 0x4ad6dc)
+#define g_MatGris GAME_DATA(CMaterial *, 0x4ad6e0)
+#define g_MatInvis GAME_DATA(CMaterial *, 0x4ad6e4)
+#define g_MatBump GAME_DATA(CMaterial *, 0x4ad6e8)
+#define g_MatSuelo GAME_DATA(CMaterial *, 0x4ad6ec)
 /* the matrices of the frame: projection, view, the camera turn of the sprites, the world of the last draw; the eye */
 #define g_MatProj (*(matrix_t *)Game_Ptr(0x4ae3f8))
 #define g_MatView (*(matrix_t *)Game_Ptr(0x4ae4b8))
@@ -107,6 +111,8 @@ struct CListaVert;
 #define g_EnvMapOffset GAME_DATA(float, 0x4adac8)	/* R_EnvMapOffset */
 #define g_EnvMapScale GAME_DATA(float, 0x4adb40)	/* R_EnvMapScale */
 #define g_EnvMapViewDep GAME_DATA(int, 0x4adb58)	/* R_EnvMapViewDep 0, 1, 2 */
+#define g_EnvBump GAME_DATA(int, 0x4ad838)		/* R_EnvBump */
+#define g_EnvMap GAME_DATA(int, 0x4adda0)		/* R_EnvMap */
 /* the render functions of the shader modes (two tables, the second for the modes with 0x100) */
 #define MAX_SHADER_TAB 32
 typedef void (*shaderRender_t)(void *a, void *b);
@@ -139,7 +145,19 @@ SD_SIZE(ShaderTab, 0x18);
 #define g_VersionStr ((char *)Game_Ptr(0x4ae540))	/* 0x40 */
 #define MOTOR_ZFORMAT(m) (*(uint32_t *)((m) + 0x2a4d0))
 #define g_MatActual GAME_DATA(const CMaterial *, 0x4ae580)	/* the last one Render_SetMaterial set */
-#define g_Caps ((void *)Game_Ptr(0x4ae1f8))	/* D3DCAPS8 of the device */
+/* the D3DADAPTER_IDENTIFIER8 of the device, its texts "driver [description]  version" and the ids, and the device
+ * of the last log of them */
+#define g_Adapter (*(D3DAdapterId *)Game_Ptr(0x4addc8))
+#define g_DriverStr ((char *)Game_Ptr(0x4ae1f8))	/* 0x100 */
+#define g_DeviceStr ((char *)Game_Ptr(0x4ae2f8))	/* 0x100 */
+#define g_DriverName ((cString *)Game_Ptr(0x4ad8c8))
+#define g_DeviceLogged GAME_DATA(int, 0x4ae538)
+/* the identity scaled by 1/2048 */
+#define g_MatBias (*(matrix_t *)Game_Ptr(0x4ae438))
+#define g_TexNoPow2 GAME_DATA(byte, 0x4ad738)	/* D3DPTEXTURECAPS_NONPOW2CONDITIONAL */
+#define g_TexPow2 GAME_DATA(byte, 0x4ad739)	/* D3DPTEXTURECAPS_POW2 */
+#define g_TexRepeat GAME_DATA(byte, 0x4ad6f3)	/* D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE */
+#define g_UsarShaders2 GAME_DATA(byte, 0x43240c)
 #define g_RenderI1F4 GAME_DATA(int, 0x4ae1f4)
 
 /* a dynamic index buffer of triangles (16 bit indices) */
@@ -201,7 +219,10 @@ void Render_FinD3D(void);
 void Render_EndView(void);
 /* the batches drawn, the materials of ModelFX cleared */
 void Render_ClearForced(void);
-const void *Render_GetCaps(void);
+const char *Render_GetDriver(void);
+/* the start of the D3D device: caps, the log of the device, base stage states, the pixel shaders from their
+ * files, the device objects of the modules, the default materials */
+void Render_IniD3D(void);
 /* the start of a frame: the device of the application, the whole viewport, the base states */
 void Render_BeginFrame(void);
 /* the triangles of idx over the vertices of v (counted with stats) */
@@ -311,6 +332,11 @@ void Stencil_Malla(struct CListaVert *v, const void *tris, uint32_t nTri, struct
 void __thiscall CListaVert_EnvMapUV(struct CListaVert *self, const matrix_t *world, const matrix_t *view,
 	struct CMapa *mapa, byte set);
 void RenderLock_ReleaseD3D(void);		/* rva 0x2a4860 (RenderLock.cpp) */
+void RenderLock_InitD3D(void);			/* rva 0x2a48f0 */
+void ListaVert_InitD3D(void);			/* rva 0x2404f0, empty */
+int RenderEVA_InitD3D(void);			/* rva 0x2b4320, EVA_crear_VB */
+void RenderTarget_InitD3D(void);		/* rva 0x220d20 */
+void ModelFX_InitD3D(void);			/* rva 0x2b8570 */
 void ListaVert_ReleaseD3D(void);		/* rva 0x2404e0 (ListaVert.cpp), empty */
 void RenderEVA_ReleaseD3D(void);		/* rva 0x2b4550 (RenderEVA.cpp) */
 void RenderTarget_ReleaseD3D(void);		/* rva 0x220c60 (RenderTarget.cpp) */

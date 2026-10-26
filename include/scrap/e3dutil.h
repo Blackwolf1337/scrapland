@@ -17,6 +17,13 @@
 #define MOTOR_HWND(m) (*(void **)((m) + 0x2a3cc))
 #define MOTOR_DEV(m) (*(void **)((m) + 0x2a3d8))
 #define MOTOR_RASTERCAPS(m) (*(uint32_t *)((m) + 0x2a400))
+#define MOTOR_CAPS(m) ((const uint32_t *)((m) + 0x2a3dc))	/* D3DCAPS8, 0x35 words */
+#define MOTOR_ADAPTER(m) (*(int *)((m) + 0x2a380))
+#define MOTOR_ADAPTERS(m) ((m) + 4)			/* 0x438c each, the identifier first */
+#define MOTOR_MODE(m) ((const uint32_t *)((m) + 0x2a4b0))	/* 8 words: format, ..., w, h */
+#define MOTOR_ZBUF(m) ((const uint32_t *)((m) + 0x2a4d0))
+#define MOTOR_DEVID(m) (*(int *)((m) + 0x2a5a8))
+#define MOTOR_DEVNAME(m) ((const char *)((m) + 0x2a524))
 #define g_MotorDev MOTOR_DEV(g_Motor)
 /* the frames drawn by the engine3d */
 #define g_FrameCount GAME_DATA(int, 0x4a8ec8)

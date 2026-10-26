@@ -39,6 +39,7 @@ typedef uint32_t(__stdcall *d3dRelease_t)(void *obj);
 #define D3DDEV_SETVERTEXSHADER 0x130	/* an FVF for the fixed pipeline */
 #define D3DDEV_SETSTREAMSOURCE 0x14c
 #define D3DDEV_SETINDICES 0x154
+#define D3DDEV_CREATEPIXELSHADER 0x15c
 #define D3DDEV_SETPIXELSHADER 0x160
 #define D3DDEV_DELETEPIXELSHADER 0x168
 #define D3DDEV_SETPIXELSHADERCONSTANT 0x16c
@@ -58,6 +59,7 @@ typedef int(__stdcall *d3dDrawIndexedPrimitiveUP_t)(void *dev, int type, uint32_
 typedef int(__stdcall *d3dSetRenderState_t)(void *dev, uint32_t state, uint32_t value);
 typedef int(__stdcall *d3dSetTextureStageState_t)(void *dev, uint32_t stage, uint32_t type, uint32_t value);
 typedef int(__stdcall *d3dSetPixelShader_t)(void *dev, uint32_t handle);
+typedef int(__stdcall *d3dCreatePixelShader_t)(void *dev, const void *code, uint32_t *handle);
 typedef int(__stdcall *d3dClear_t)(void *dev, uint32_t count, const void *rects, uint32_t flags, uint32_t color, float z,
 	uint32_t stencil);
 typedef int(__stdcall *d3dDrawPrimitive_t)(void *dev, int type, uint32_t start, uint32_t count);
@@ -108,6 +110,8 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DTSS_COLORARG1 2
 #define D3DTSS_COLORARG2 3
 #define D3DTSS_ALPHAOP 4
+#define D3DTSS_ALPHAARG1 5
+#define D3DTSS_ALPHAARG2 6
 #define D3DTSS_BUMPENVMAT00 7
 #define D3DTSS_BUMPENVMAT01 8
 #define D3DTSS_BUMPENVMAT10 9
@@ -127,7 +131,9 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DTTFF_DISABLE 0
 #define D3DTTFF_COUNT2 2
 #define D3DTA_DIFFUSE 0
+#define D3DTA_CURRENT 1
 #define D3DTA_TEXTURE 2
+#define D3DTOP_DISABLE 1
 #define D3DTOP_SELECTARG1 2
 #define D3DTOP_SELECTARG2 3
 #define D3DTOP_MODULATE 4
@@ -147,11 +153,49 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DLOCK_NOOVERWRITE 0x1000
 #define D3DLOCK_DISCARD 0x2000
 
+/* D3DCAPS8 as words */
+enum {
+	D3DCAPS_TEXTURECAPS = 0x3c / 4,
+	D3DCAPS_MAXTEXTUREWIDTH = 0x58 / 4,
+	D3DCAPS_MAXTEXTUREHEIGHT = 0x5c / 4,
+	D3DCAPS_MAXANISOTROPY = 0x6c / 4,
+	D3DCAPS_MAXTEXTUREBLENDSTAGES = 0x94 / 4,
+	D3DCAPS_MAXSIMULTANEOUSTEXTURES = 0x98 / 4,
+	D3DCAPS_MAXACTIVELIGHTS = 0xa0 / 4,
+	D3DCAPS_MAXSTREAMS = 0xbc / 4,
+	D3DCAPS_VERTEXSHADERVERSION = 0xc4 / 4,
+	D3DCAPS_PIXELSHADERVERSION = 0xcc / 4,
+	D3DCAPS_WORDS = 0x35,
+};
+#define D3DPTEXTURECAPS_POW2 0x2
+#define D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE 0x40
+#define D3DPTEXTURECAPS_NONPOW2CONDITIONAL 0x100
+#define D3DPTEXTURECAPS_MIPMAP 0x4000
+#define D3DPS_VERSION(major, minor) (0xffff0000u | (major) << 8 | (minor))
+
+/* D3DADAPTER_IDENTIFIER8 */
+typedef struct D3DAdapterId {
+	char Driver[0x200];		/* 0x000 */
+	char Description[0x200];	/* 0x200 */
+	uint16_t DriverVersion[4];	/* 0x400 build, sub version, version, product */
+	uint32_t VendorId;		/* 0x408 */
+	uint32_t DeviceId;		/* 0x40c */
+	uint32_t SubSysId;		/* 0x410 */
+	uint32_t Revision;		/* 0x414 */
+	byte DeviceIdentifier[16];	/* 0x418 */
+	uint32_t WHQLLevel;		/* 0x428 */
+} D3DAdapterId;
+SD_SIZE(D3DAdapterId, 0x42c);
+
 /* the D3DX math of the exe through its dispatcher stubs (stdcall) */
 vec3_t *__stdcall D3DX_Vec3Normalize(vec3_t *out, const vec3_t *v);
 vec3_t *__stdcall D3DX_Vec3Transform(vec3_t *out, const vec3_t *v, const matrix_t *m);
 matrix_t *__stdcall D3DX_MatrixRotationYPR(matrix_t *out, float yaw, float pitch, float roll);
 /* NULL when m has no inverse */
 matrix_t *__stdcall D3DX_MatrixInverse(matrix_t *out, float *det, const matrix_t *m);
-
+/* ID3DXBuffer objects for the code and the errors */
+int __stdcall D3DX_AssembleShader(const void *src, uint32_t len, uint32_t flags, void **constants, void **code,
+	void **errors);
+#define D3DXBUF_GETPOINTER 0xc
+typedef void *(__stdcall *d3dxGetPointer_t)(void *buf);
 #endif

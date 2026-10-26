@@ -413,6 +413,11 @@ SD_IMPORT(CSuelo_FreeNodos, 0x261530)
 SD_IMPORT(Font_PrintfXY, 0x299ce0)
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
+SD_IMPORT(RenderLock_InitD3D, 0x2a48f0)
+SD_IMPORT(ListaVert_InitD3D, 0x2404f0)
+SD_IMPORT(RenderEVA_InitD3D, 0x2b4320)
+SD_IMPORT(RenderTarget_InitD3D, 0x220d20)
+SD_IMPORT(ModelFX_InitD3D, 0x2b8570)
 SD_IMPORT(RenderEVA_DrawSkin, 0x2b5d90)
 SD_IMPORT(RenderEVA_DrawSkinNodo, 0x2b4660)
 SD_IMPORT(Stencil_Malla, 0x267530)
@@ -471,6 +476,7 @@ SD_IMPORT_STDCALL(D3DX_Vec3Normalize, 8, 0x006d3b)
 SD_IMPORT_STDCALL(D3DX_Vec3Transform, 12, 0x007086)
 SD_IMPORT_STDCALL(D3DX_MatrixRotationYPR, 16, 0x008701)
 SD_IMPORT_STDCALL(D3DX_MatrixInverse, 12, 0x007cea)
+SD_IMPORT_STDCALL(D3DX_AssembleShader, 24, 0x00b2c2)
 
 /* module agent: Engine/Modelo (imports below this line) */
 SD_IMPORT(World_TimeScale, 0x20aea0)

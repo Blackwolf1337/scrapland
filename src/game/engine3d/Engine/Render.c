@@ -12,7 +12,9 @@
 #include "scrap/mallad3d.h"
 #include "scrap/modelo.h"
 #include "scrap/material.h"
+#include "scrap/niebla.h"
 #include "scrap/nodo3d.h"
+#include "scrap/textura.h"
 #include "scrap/utild3d.h"
 #include "scrap/varios.h"
 
@@ -569,8 +571,163 @@ void Render_ClearForced(void) {
 	g_MatActual = NULL;
 }
 
-const void *Render_GetCaps(void) {
-	return g_Caps;
+const char *Render_GetDriver(void) {
+	return g_DriverStr;
+}
+
+static void Render_LogVersion(const char *fmt, uint32_t ver) {
+	char *buf = (char *)Game_Ptr(0x4ae540);
+	Bprintf(buf, 0x40, "%d.%d", ver >> 8 & 0xff, ver & 0xff);
+	E3D_LogPrint(g_FileLog, fmt, buf);
+}
+
+static void Render_LogDevice(const uint32_t *caps, const uint32_t *mode, const uint32_t *zbuf) {
+	E3D_LogPrint(g_FileLog, "%s", MOTOR_DEVNAME(g_Motor));
+	E3D_LogPrint(g_FileLog, "Driver: %s  WHQL: %d", g_DriverStr, g_Adapter.WHQLLevel);
+	E3D_LogPrint(g_FileLog, "%s", g_DeviceStr);
+	E3D_LogPrint(g_FileLog, "Mode: %dx%d %s", mode[6], mode[7], D3DFmt_Name((int)mode[0]));
+	E3D_LogPrint(g_FileLog, "ZBuf: %dx%d %s", zbuf[6], zbuf[7], D3DFmt_Name((int)zbuf[0]));
+	E3D_LogPrint(g_FileLog, "MaxTexture: %dx%d", caps[D3DCAPS_MAXTEXTUREWIDTH], caps[D3DCAPS_MAXTEXTUREHEIGHT]);
+	E3D_LogPrint(g_FileLog, "MaxAnisotropy: %d", caps[D3DCAPS_MAXANISOTROPY]);
+	E3D_LogPrint(g_FileLog, "MaxTextureBlendStages: %d", caps[D3DCAPS_MAXTEXTUREBLENDSTAGES]);
+	E3D_LogPrint(g_FileLog, "MaxSimultaneousTextures: %d", caps[D3DCAPS_MAXSIMULTANEOUSTEXTURES]);
+	E3D_LogPrint(g_FileLog, "MaxActiveLights: %d", caps[D3DCAPS_MAXACTIVELIGHTS]);
+	E3D_LogPrint(g_FileLog, "MaxStreams: %d", caps[D3DCAPS_MAXSTREAMS]);
+	Render_LogVersion("VertexShaderVersion: %s", caps[D3DCAPS_VERTEXSHADERVERSION]);
+	Render_LogVersion("PixelShaderVersion: %s", caps[D3DCAPS_PIXELSHADERVERSION]);
+}
+
+static void Render_LoadPS(int i) {
+	const char *name = g_PSNames[i];
+	void *data, *code = NULL, *errors = NULL;
+	uint32_t size;
+
+	ArchIO_ReadAll(name, &data, &size);
+	int hr = D3DX_AssembleShader(data, size, 0, NULL, &code, &errors);
+	if (errors || hr < 0) {
+		const char *msg = errors ? D3D_METHOD(errors, d3dxGetPointer_t, D3DXBUF_GETPOINTER)(errors)
+					 : "Could not open file";
+		Err_Printf(0, "Pixel Shader Errors (%s):\n%s", name, msg);
+	} else {
+		void *dev = g_pd3dDevice;
+		const void *p = D3D_METHOD(code, d3dxGetPointer_t, D3DXBUF_GETPOINTER)(code);
+		if (D3D_METHOD(dev, d3dCreatePixelShader_t, D3DDEV_CREATEPIXELSHADER)(dev, p, &g_PSHandles[i]) < 0) {
+			g_PSHandles[i] = 0;
+			E3D_LogVerbose(g_FileLog, "WARN: CreatePixelShader failed: %s", name);
+		}
+	}
+	Ptr_Delete(&data);
+	if (code) {
+		COM_RELEASE(code);
+	}
+	if (errors) {
+		COM_RELEASE(errors);
+	}
+}
+
+void Render_IniD3D(void) {
+	static const struct {
+		const char *name, *file;
+	} defMats[6] = {
+		{ "Material_RGB_White", "bmp/rgb_white.tga" },
+		{ "Material_RGB_CheckBrd", "bmp/rgb_chkbrd.tga" },
+		{ "Material_RGB_Grey", "bmp/rgb_grey.tga" },
+		{ "Material_RGB_Invis", NULL },
+		{ "Material_RGB_BumpNoise", "bmp/rgb_noise.bump.tga" },
+		{ "Material_RGB_Ground", "bmp/rgb_ground.tga" },
+	};
+	uint32_t caps[D3DCAPS_WORDS], mode[8], zbuf[8];
+
+	E3D_DebugPrintf("\n> RenderIniD3D()");
+	if (!g_Motor || !g_MotorDev) {
+		CheckFailed("g_pD3DApp && g_pD3DApp->m_pd3dDevice", __FILE__, __TIMESTAMP__, __LINE__);
+	}
+	byte *motor = g_Motor;
+	void *dev = MOTOR_DEV(motor);
+	g_pd3dDevice = dev;
+	memcpy(caps, MOTOR_CAPS(motor), sizeof(caps));
+	((CMaterial *)g_MatLinea)->params.b39 = 0;
+	((CMaterial *)g_MatDefault)->params.b39 = 0;
+	memcpy(&g_Adapter, MOTOR_ADAPTERS(motor) + MOTOR_ADAPTER(motor) * 0x438c, sizeof(g_Adapter));
+	const uint16_t *ver = g_Adapter.DriverVersion;
+	Bprintf(g_DriverStr, 0x100, "%s [%s]  %d.%02d.%02d.%04d", g_Adapter.Description, g_Adapter.Driver, ver[3],
+		ver[2], ver[1], ver[0]);
+	Bprintf(g_DeviceStr, 0x100, "VendorId: %04X   DeviceId: %04X   SubSysId: %04X   Revision: %d",
+		g_Adapter.VendorId, g_Adapter.DeviceId, g_Adapter.SubSysId, g_Adapter.Revision);
+	memcpy(mode, MOTOR_MODE(motor), sizeof(mode));
+	memcpy(zbuf, MOTOR_ZBUF(motor), sizeof(zbuf));
+	if (g_DeviceLogged != MOTOR_DEVID(motor)) {
+		g_DeviceLogged = MOTOR_DEVID(motor);
+		Render_LogDevice(caps, mode, zbuf);
+	}
+	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, g_ViewportFull);
+	g_UsarShaders2 = 0;
+	g_UsarShaders = 1;
+	Matrix_LoadIdentity((matrix_t *)g_MatIdentity);
+	Matrix_LoadIdentity(&g_MatBias);
+	g_MatBias.m[0] = 1.0f / 2048;
+	g_MatBias.m[5] = 1.0f / 2048;
+	g_MatBias.m[10] = 1.0f / 2048;
+	uint32_t tc = caps[D3DCAPS_TEXTURECAPS];
+	g_MipmapsOn = (tc & D3DPTEXTURECAPS_MIPMAP) != 0;
+	g_TexRepeat = (tc & D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE) != 0;
+	g_TexNoPow2 = (tc & D3DPTEXTURECAPS_NONPOW2CONDITIONAL) != 0;
+	g_TexPow2 = (tc & D3DPTEXTURECAPS_POW2) != 0;
+	RenderGamma_Begin();
+	Render_TSS(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+	Render_TSS(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+	Render_TSS(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+	Render_TSS(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+	Render_TSS(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+	Render_TSS(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+	for (uint32_t i = 1; i < 8; i++) {
+		Render_TSS(i, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+		Render_TSS(i, D3DTSS_COLORARG2, D3DTA_CURRENT);
+		Render_TSS(i, D3DTSS_COLOROP, D3DTOP_DISABLE);
+		Render_TSS(i, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+		Render_TSS(i, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
+		Render_TSS(i, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+	}
+	if (caps[D3DCAPS_PIXELSHADERVERSION] < D3DPS_VERSION(1, 1)) {
+		E3D_LogBlue(g_FileLog, "The graphics device does not support Pixel Shader 1.1");
+		g_PSOn = 0;
+		g_EnvBump = 0;
+		g_EnvMap = 0;
+		g_FogEnable = 0;
+	}
+	for (int i = 0; g_PSNames[i]; i++) {
+		g_PSHandles[i] = 0;
+		if (g_PSOn) {
+			Render_LoadPS(i);
+		}
+	}
+	RenderLock_InitD3D();
+	ListaVert_InitD3D();
+	if (RenderEVA_InitD3D() != 0) {
+		CheckFailed("EVA_crear_VB() == S_OK", __FILE__, __TIMESTAMP__, __LINE__);
+	}
+	RenderTarget_InitD3D();
+	ModelFX_InitD3D();
+	for (int i = 0; i < 6; i++) {
+		CMaterial m;
+		CMaterial_ctor(&m);
+		Cad_Set(&m.Nombre, defMats[i].name);
+		if (defMats[i].file) {
+			CMaterial_SetMap(&m, 0, defMats[i].file);
+		} else {
+			m.params.i40 = 1;
+		}
+		m.params.b39 = 0;
+		(&g_MatBlanco)[i] = Mat_New(&m, 1);
+		CMaterial_dtor(&m);
+	}
+	cString_Set(g_DriverName, g_DriverStr);
+	if (g_FrameCount) {
+		g_FrameCount++;
+	}
+	g_D3DOn = 1;
+	E3D_LogPrint(g_FileLog, "Render device initialized");
+	E3D_DebugPrintf("\n< RenderIniD3D()");
 }
 
 void Render_BeginFrame(void) {
@@ -761,7 +918,7 @@ int Render_SetMaterial(void *m, int pass) {
 	}
 	const CMaterial *mat = g_MatFX1 ? g_MatFX1 : m;
 	if (g_UseDefMaterial && !(mat->params.atrib & 0x840)) {
-		mat = g_UseDefMaterial == 1 ? g_MatBlanco : g_MatDef4;
+		mat = g_UseDefMaterial == 1 ? g_MatBlanco : g_MatInvis;
 	}
 	void *dev = g_MotorDev;
 	if (!dev) {
@@ -824,12 +981,12 @@ int Render_SetMaterial(void *m, int pass) {
 		break;
 	case 3:
 		if (!(mat->params.atrib & 0x40)) {
-			mapa = g_MatDef2->mapa[0];
+			mapa = g_MatAjedrez->mapa[0];
 		}
 		break;
 	case 4:
 		if (!(mat->params.atrib & 0x40)) {
-			mapa = g_MatDef3->mapa[0];
+			mapa = g_MatGris->mapa[0];
 		}
 		break;
 	}

@@ -159,7 +159,26 @@ check('Render_SetWorldD3D', lambda: (rdlog(lambda: SDTest.Call(0x24bb30, 'iF', w
 check('Render_GetWorld', lambda: (SDTest.Call(0x24bbc0, 'iF', (0.0,) * 16), SDTest.Call(0x24bbc0, 'ii', 0)))
 for i in range(16):
 	SDTest.Poke(0x4ae478 + 4 * i, rdworld[i])
-check('Render_GetCaps', lambda: SDTest.Call(0x24af80, 'i')[0] == 0x4ae1f8 + 0x400000)
+check('Render_GetDriver', lambda: SDTest.Call(0x24af80, 'i')[0] == 0x4ae1f8 + 0x400000)
+# the state RenderIniD3D left: the device texts and the logged device, the 1/2048 matrix, the texture caps, the
+# shaders made, the default materials
+check('RenderIniD3D texts', lambda: (SDTest.Peek(0x4ae1f8, 's'), SDTest.Peek(0x4ae2f8, 's'), SDTest.Peek(0x4ad8c8, 'p'),
+	SDTest.Peek(0x4ae540, 's'), SDTest.Peek(0x4ae538, 'i')))
+def rdinistate():
+	r = []
+	for i in range(16):
+		r.append(SDTest.Peek(0x4ae438 + 4 * i, 'i'))
+	for a in (0x4ad6f2, 0x4ad6f3, 0x4ad738, 0x4ad739, 0x43240c, 0x43240d, 0x4ad6f1):
+		r.append(SDTest.Peek(a, 'b'))
+	for a in (0x4ada50, 0x4ad838, 0x4adda0, 0x4b1cb8):
+		r.append(SDTest.Peek(a, 'i'))
+	for i in range(30):
+		r.append(SDTest.Peek(0x4ad760 + 4 * i, 'i') != 0)
+	for i in range(6):
+		m = SDTest.Peek(0x4ad6d8 + 4 * i, 'i')
+		r.append(m and (SDTest.Peek(m + 4, '@p'), SDTest.Peek(m + 0x39, '@b'), SDTest.Peek(m + 0x40, '@i')))
+	return r
+check('RenderIniD3D state', rdinistate)
 rect2 = SDTest.Call(0x1334d0, 'ii', 16)[0]
 for i, v in ((0, -5), (1, 300), (2, 50), (3, 700)):
 	SDTest.Poke(rect2 + 4 * i - 0x400000, v)
