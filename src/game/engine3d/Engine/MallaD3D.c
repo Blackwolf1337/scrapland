@@ -4,12 +4,12 @@
  */
 #include <string.h>
 
+#include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/mallatri.h"
 #include "scrap/varios.h"
 
 #define IOBJETO3D_VFTABLE 0x3d79dc
-#define E_FAIL ((int)0x80004005)
 
 /* the engine (g_pD3DApp) and its device */
 

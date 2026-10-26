@@ -7,6 +7,8 @@
 
 #include "scrap/game.h"
 
+#define E_FAIL ((int)0x80004005)
+
 #define D3D_METHOD(obj, type, off) ((type)(*(void ***)(obj))[(off) / 4])
 
 /* IUnknown */
@@ -21,18 +23,23 @@ typedef uint32_t(__stdcall *d3dRelease_t)(void *obj);
 #define D3DDEV_CLEAR 0x90
 #define D3DDEV_SETTRANSFORM 0x94
 #define D3DDEV_GETTRANSFORM 0x98
+#define D3DDEV_SETVIEWPORT 0xa0
 #define D3DDEV_GETVIEWPORT 0xa4
 #define D3DDEV_SETMATERIAL 0xa8
 #define D3DDEV_SETLIGHT 0xb0
 #define D3DDEV_LIGHTENABLE 0xb8
 #define D3DDEV_SETRENDERSTATE 0xc8
+#define D3DDEV_SETTEXTURE 0xf4
+#define D3DDEV_GETTEXTURESTAGESTATE 0xf8
 #define D3DDEV_SETTEXTURESTAGESTATE 0xfc
 #define D3DDEV_DRAWINDEXEDPRIMITIVE 0x11c
 #define D3DDEV_DRAWPRIMITIVEUP 0x120
+#define D3DDEV_DRAWINDEXEDPRIMITIVEUP 0x124
 #define D3DDEV_SETVERTEXSHADER 0x130	/* an FVF for the fixed pipeline */
 #define D3DDEV_SETSTREAMSOURCE 0x14c
 #define D3DDEV_SETINDICES 0x154
 #define D3DDEV_SETPIXELSHADER 0x160
+#define D3DDEV_DELETEPIXELSHADER 0x168
 #define D3DDEV_SETPIXELSHADERCONSTANT 0x16c
 typedef int(__stdcall *d3dCreateVB_t)(void *dev, uint32_t len, uint32_t usage, uint32_t fvf, int pool, void **vb);
 typedef int(__stdcall *d3dCreateIB_t)(void *dev, uint32_t len, uint32_t usage, int fmt, int pool, void **ib);
@@ -41,6 +48,12 @@ typedef int(__stdcall *d3dGetTransform_t)(void *dev, uint32_t state, void *m);
 typedef int(__stdcall *d3dSetMaterial_t)(void *dev, const void *mat);
 typedef int(__stdcall *d3dSetPixelShaderConstant_t)(void *dev, uint32_t reg, const void *data, uint32_t count);
 typedef int(__stdcall *d3dGetViewport_t)(void *dev, uint32_t *vp);
+typedef int(__stdcall *d3dSetViewport_t)(void *dev, const uint32_t *vp);
+typedef int(__stdcall *d3dSetTexture_t)(void *dev, uint32_t stage, void *tex);
+typedef int(__stdcall *d3dGetTextureStageState_t)(void *dev, uint32_t stage, uint32_t type, uint32_t *value);
+typedef int(__stdcall *d3dDeletePixelShader_t)(void *dev, uint32_t handle);
+typedef int(__stdcall *d3dDrawIndexedPrimitiveUP_t)(void *dev, int type, uint32_t minIndex, uint32_t numVertices,
+	uint32_t primCount, const void *idx, int idxFmt, const void *data, uint32_t stride);
 typedef int(__stdcall *d3dSetRenderState_t)(void *dev, uint32_t state, uint32_t value);
 typedef int(__stdcall *d3dSetTextureStageState_t)(void *dev, uint32_t stage, uint32_t type, uint32_t value);
 typedef int(__stdcall *d3dSetPixelShader_t)(void *dev, uint32_t handle);
@@ -66,8 +79,10 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DTS_VIEW 2
 #define D3DTS_PROJECTION 3
 #define D3DTS_TEXTURE0 16
+#define D3DTS_WORLD 256
 #define D3DRS_ZENABLE 7
 #define D3DRS_CULLMODE 22
+#define D3DRS_FOGENABLE 28
 #define D3DRS_AMBIENT 139
 #define D3DCULL_NONE 1
 #define D3DCULL_CCW 3
@@ -81,6 +96,9 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DTSS_BUMPENVMAT10 9
 #define D3DTSS_BUMPENVMAT11 10
 #define D3DTSS_TEXCOORDINDEX 11
+#define D3DTSS_ADDRESSU 13
+#define D3DTSS_ADDRESSV 14
+#define D3DTADDRESS_CLAMP 3
 #define D3DTSS_TEXTURETRANSFORMFLAGS 24
 #define D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR 0x30000
 #define D3DTTFF_DISABLE 0

@@ -140,3 +140,34 @@ SDTest.Poke(0x4ad754, 0)
 SDTest.Poke(0x431be8, rdmod)
 check('Render_Get', lambda: (SDTest.Call(0x24c4d0, 'i')[0], SDTest.Call(0x24cdb0, 'i')[0], SDTest.Call(0x24cdc0, 'i')[0],
 	SDTest.Call(0x24cdd0, 'i')[0]))
+
+# the world matrix: given to the device or only remembered, read back
+wm = (1.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 4.0, 5.0, 6.0, 1.0)
+rdworld = []
+for i in range(16):
+	rdworld.append(SDTest.Peek(0x4ae478 + 4 * i, 'i'))
+def rdw():
+	r = [SDTest.Peek(0x432410, 'i')]
+	for i in range(16):
+		r.append(SDTest.Peek(0x4ae478 + 4 * i, 'i'))
+	return r
+check('Render_SetWorldMatrix defer', lambda: (rdlog(lambda: SDTest.Call(0x24bac0, 'iFi', wm, 1)), rdw()))
+check('Render_SetWorld', lambda: (rdlog(lambda: SDTest.Call(0x24bc00, 'i')), rdw(), rdlog(lambda: SDTest.Call(0x24bc00, 'i'))))
+check('Render_WorldDirty', lambda: (SDTest.Call(0x24bbb0, 'v'), rdw()))
+check('Render_SetWorldMatrix', lambda: (rdlog(lambda: SDTest.Call(0x24bac0, 'iFi', wm[4:] + wm[:4], 0)), rdw()))
+check('Render_SetWorldD3D', lambda: (rdlog(lambda: SDTest.Call(0x24bb30, 'iF', wm)), rdw()))
+check('Render_GetWorld', lambda: (SDTest.Call(0x24bbc0, 'iF', (0.0,) * 16), SDTest.Call(0x24bbc0, 'ii', 0)))
+for i in range(16):
+	SDTest.Poke(0x4ae478 + 4 * i, rdworld[i])
+check('Render_GetCaps', lambda: SDTest.Call(0x24af80, 'i')[0] == 0x4ae1f8 + 0x400000)
+rect2 = SDTest.Call(0x1334d0, 'ii', 16)[0]
+for i, v in ((0, -5), (1, 300), (2, 50), (3, 700)):
+	SDTest.Poke(rect2 + 4 * i - 0x400000, v)
+for r, c1, c2 in ((rect, 0xff0000, 0xff), (rect2, 0x808080, 0x10203040)):
+	check('Render_DrawTexRect' + fmt((r != 0, c1, c2)), lambda r=r, c1=c1, c2=c2: rdlog(lambda r=r, c1=c1, c2=c2:
+		SDTest.Call(0x24aa10, 'viiii', r, c1, c2, 0)))
+check('Render_ClearForced', lambda: (SDTest.Call(0x24af30, 'v'), SDTest.Peek(0x4ad754, 'i'), SDTest.Peek(0x4ae580, 'i')))
+# a frame begun and its view ended again (the viewport is 0 between frames)
+check('Render_BeginFrame', lambda: (rdlog(lambda: SDTest.Call(0x24b880, 'v')), SDTest.Peek(0x4ad7e8, 'i') != 0,
+	SDTest.Peek(0x4add70, 'i')))
+check('Render_EndView', lambda: (rdlog(lambda: SDTest.Call(0x24aee0, 'v')), SDTest.Peek(0x4ad7e8, 'i')))

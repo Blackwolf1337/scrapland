@@ -5,7 +5,6 @@
 #include "scrap/e3dutil.h"
 #include "scrap/grafico2d.h"
 
-#define D3DFVF_2D 0x1c4		/* XYZRHW | DIFFUSE | SPECULAR | TEX1 */
 /* the corner of the texture of each corner of the rectangle (u0 v0, u1 v0, u0 v1, u1 v1) by rot */
 #define g_Grafico2DRot ((const int(*)[4])Game_Ptr(0x4325b0))
 

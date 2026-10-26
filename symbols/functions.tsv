@@ -6718,7 +6718,7 @@ rva	size	source	callconv	name	signature
 00220a60	212	DEFAULT	unknown	FUN_00620a60	
 00220b40	129	DEFAULT	unknown	FUN_00620b40	
 00220bd0	141	DEFAULT	unknown	FUN_00620bd0	
-00220c60	190	DEFAULT	unknown	FUN_00620c60	
+00220c60	190	USER_DEFINED	unknown	RenderTarget_ReleaseD3D	
 00220d20	68	DEFAULT	unknown	FUN_00620d20	
 00220d70	259	DEFAULT	unknown	FUN_00620d70	
 00220e80	259	DEFAULT	unknown	FUN_00620e80	
@@ -7116,7 +7116,7 @@ rva	size	source	callconv	name	signature
 002400b0	475	USER_DEFINED	__thiscall	CListaVert_Read	void __thiscall(void * f)
 00240290	255	USER_DEFINED	__thiscall	CListaVert_Write	void __thiscall(void * f)
 00240390	326	USER_DEFINED	__cdecl	VertCache_Optimize	byte __cdecl(ushort *tris, int nTri)
-002404e0	1	DEFAULT	unknown	FUN_006404e0	
+002404e0	1	USER_DEFINED	unknown	ListaVert_ReleaseD3D	
 002404f0	1	DEFAULT	unknown	FUN_006404f0	
 00240500	1348	USER_DEFINED	__thiscall	CListaVert_Pack	void __thiscall(int frmt, float posScale, float texScale)
 00240a50	1980	USER_DEFINED	__thiscall	CListaVert_ToXBox	void __thiscall(float posScale, float texScale, byte tex2)
@@ -7235,19 +7235,19 @@ rva	size	source	callconv	name	signature
 0024a5f0	372	USER_DEFINED	__cdecl	Tex_StageTransform	void __cdecl(void * unused, uint flags, uint stage, float su, float sv, float scale, float rot)
 0024a770	284	USER_DEFINED	__cdecl	Mat_StageBumpMat	void __cdecl(void * mat, uint flags, uint stage, float k, float s, float rot)
 0024a890	373	USER_DEFINED	__cdecl	Render_D3DMaterial	void __cdecl(void * mat, float * colors)
-0024aa10	991	DEFAULT	unknown	FUN_0064aa10	
-0024adf0	233	DEFAULT	unknown	FUN_0064adf0	
-0024aee0	77	DEFAULT	unknown	FUN_0064aee0	
-0024af30	75	DEFAULT	unknown	FUN_0064af30	
-0024af80	6	DEFAULT	unknown	FUN_0064af80	
+0024aa10	991	USER_DEFINED	__cdecl	Render_DrawTexRect	void __cdecl(int * rect, uint cLeft, uint cRight, void * tex)
+0024adf0	233	USER_DEFINED	__cdecl	Render_FinD3D	void __cdecl(void)
+0024aee0	77	USER_DEFINED	__cdecl	Render_EndView	void __cdecl(void)
+0024af30	75	USER_DEFINED	__cdecl	Render_ClearForced	void __cdecl(void)
+0024af80	6	USER_DEFINED	__cdecl	Render_GetCaps	void * __cdecl(void)
 0024af90	2286	DEFAULT	unknown	FUN_0064af90	
-0024b880	212	DEFAULT	unknown	FUN_0064b880	
+0024b880	212	USER_DEFINED	__cdecl	Render_BeginFrame	void __cdecl(void)
 0024b960	211	USER_DEFINED	unknown	Render_Line	
-0024ba40	125	DEFAULT	unknown	FUN_0064ba40	
-0024bac0	108	USER_DEFINED	__cdecl	Render_SetWorldMatrix	int __cdecl(void * m, byte noDevice)
-0024bb30	51	DEFAULT	unknown	FUN_0064bb30	
-0024bbb0	11	DEFAULT	unknown	FUN_0064bbb0	
-0024bbc0	57	DEFAULT	unknown	FUN_0064bbc0	
+0024ba40	125	USER_DEFINED	__cdecl	Render_DrawListaIdx	int __cdecl(void * v, ushort * idx, int ntri, byte stats)
+0024bac0	108	USER_DEFINED	__cdecl	Render_SetWorldMatrix	int __cdecl(void * m, byte defer)
+0024bb30	51	USER_DEFINED	__cdecl	Render_SetWorldD3D	int __cdecl(void * m)
+0024bbb0	11	USER_DEFINED	__cdecl	Render_WorldDirty	void __cdecl(void)
+0024bbc0	57	USER_DEFINED	__cdecl	Render_GetWorld	int __cdecl(void * out)
 0024bc00	57	USER_DEFINED	__cdecl	Render_SetWorld	int __cdecl(void)
 0024bc40	732	DEFAULT	unknown	FUN_0064bc40	
 0024bf30	1422	USER_DEFINED	__cdecl	Render_SetMaterial	int __cdecl(void *mat, int pass)
@@ -7255,7 +7255,7 @@ rva	size	source	callconv	name	signature
 0024c4e0	444	DEFAULT	unknown	FUN_0064c4e0	
 0024c6a0	86	DEFAULT	unknown	FUN_0064c6a0	
 0024c700	45	DEFAULT	unknown	FUN_0064c700	
-0024c730	333	DEFAULT	unknown	FUN_0064c730	
+0024c730	333	USER_DEFINED	unknown	Render_ResetState	
 0024c880	130	DEFAULT	unknown	FUN_0064c880	
 0024c910	426	DEFAULT	unknown	FUN_0064c910	
 0024cac0	141	DEFAULT	unknown	FUN_0064cac0	
@@ -8232,7 +8232,7 @@ rva	size	source	callconv	name	signature
 002a45e0	461	USER_DEFINED	__cdecl	Quat_Slerp2	float * __cdecl(float *out, float *a, float *b, float t)
 002a47b0	116	USER_DEFINED	__cdecl	Quat_FromAxisAngle2	float * __cdecl(float *out, float *axis, float ang)
 002a4830	44	DEFAULT	unknown	FUN_006a4830	
-002a4860	131	DEFAULT	unknown	FUN_006a4860	
+002a4860	131	USER_DEFINED	unknown	RenderLock_ReleaseD3D	
 002a48f0	236	DEFAULT	unknown	FUN_006a48f0	
 002a49e0	36	DEFAULT	unknown	FUN_006a49e0	
 002a4a10	153	DEFAULT	unknown	FUN_006a4a10	
@@ -8280,14 +8280,14 @@ rva	size	source	callconv	name	signature
 002a74e0	17	DEFAULT	unknown	FUN_006a74e0	
 002a7500	13	DEFAULT	unknown	FUN_006a7500	
 002a7510	13	DEFAULT	unknown	FUN_006a7510	
-002a7520	1118	DEFAULT	unknown	FUN_006a7520	
-002a7980	95	DEFAULT	unknown	FUN_006a7980	
+002a7520	1118	USER_DEFINED	unknown	RenderGamma_Begin	
+002a7980	95	USER_DEFINED	unknown	RenderGamma_ReleaseD3D	
 002a79e0	16	DEFAULT	unknown	FUN_006a79e0	
 002a79f0	1	DEFAULT	unknown	FUN_006a79f0	
 002a7a00	128	DEFAULT	unknown	FUN_006a7a00	
 002a7a80	87	DEFAULT	unknown	FUN_006a7a80	
 002a7ae0	485	DEFAULT	unknown	FUN_006a7ae0	
-002a7cd0	88	DEFAULT	unknown	FUN_006a7cd0	
+002a7cd0	88	USER_DEFINED	unknown	RenderGamma_LogShaderMask	
 002a7d30	26	DEFAULT	unknown	FUN_006a7d30	
 002a7d50	341	DEFAULT	unknown	FUN_006a7d50	
 002a7eb0	254	DEFAULT	unknown	FUN_006a7eb0	
@@ -8445,7 +8445,7 @@ rva	size	source	callconv	name	signature
 002b4320	178	DEFAULT	unknown	FUN_006b4320	
 002b43e0	231	DEFAULT	unknown	FUN_006b43e0	
 002b44e0	85	DEFAULT	unknown	FUN_006b44e0	
-002b4550	34	DEFAULT	unknown	FUN_006b4550	
+002b4550	34	USER_DEFINED	unknown	RenderEVA_ReleaseD3D	
 002b4580	209	DEFAULT	unknown	FUN_006b4580	
 002b4660	1507	DEFAULT	unknown	FUN_006b4660	
 002b4c50	2430	DEFAULT	unknown	FUN_006b4c50	

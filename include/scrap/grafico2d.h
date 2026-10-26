@@ -44,6 +44,7 @@ typedef struct CGrafico2D {
 SD_SIZE(CGrafico2D, 0x44);
 
 /* a pretransformed vertex (D3DFVF_XYZRHW | DIFFUSE | SPECULAR | TEX1) */
+#define D3DFVF_2D 0x1c4
 typedef struct Vert2D {
 	float x, y, z, rhw;		/* 0x00 */
 	uint32_t color;			/* 0x10 */

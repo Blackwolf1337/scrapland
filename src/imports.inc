@@ -352,7 +352,6 @@ SD_IMPORT(Console_Execute, 0x20aaf0)
 
 /* engine3d: Engine/ListaVert.cpp and Engine/render.cpp (include/scrap/listavert.h, mallatri.h) */
 SD_IMPORT(CListaVert_GetPos, 0x212570)
-SD_IMPORT(Render_SetWorld, 0x24bc00)
 SD_IMPORT(Render_SetMaterial, 0x24bf30)
 
 /* engine3d: called from Engine/luz.cpp (include/scrap/luz.h) */
@@ -418,6 +417,14 @@ SD_IMPORT(Font_PrintfXY, 0x299ce0)
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
 SD_IMPORT(Render_ClipRect, 0x24e220)
+SD_IMPORT(Render_ResetState, 0x24c730)
+SD_IMPORT(RenderLock_ReleaseD3D, 0x2a4860)
+SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
+SD_IMPORT(RenderEVA_ReleaseD3D, 0x2b4550)
+SD_IMPORT(RenderTarget_ReleaseD3D, 0x220c60)
+SD_IMPORT(RenderGamma_ReleaseD3D, 0x2a7980)
+SD_IMPORT(RenderGamma_Begin, 0x2a7520)
+SD_IMPORT(RenderGamma_LogShaderMask, 0x2a7cd0)
 SD_IMPORT(Vec3_ToAngles, 0x239150)
 SD_IMPORT(Matrix_RotationZ, 0x23a2b0)
 SD_IMPORT(Render_HasStencil, 0x24e6f0)
@@ -461,7 +468,6 @@ SD_IMPORT(crt_ceil, 0x345010)
 SD_IMPORT(BoxTri, 0x271d60)
 SD_IMPORT(Tabla_ResizeC, 0x261830)
 SD_IMPORT(Tabla_Resize1C, 0x261780)
-SD_IMPORT(Render_SetWorldMatrix, 0x24bac0)
 SD_IMPORT(Batch_AddMalla, 0x2c81d0)
 SD_IMPORT(Batch_Flush, 0x2c83c0)
 SD_IMPORT(CSuelo_DrawDebug, 0x25a260)

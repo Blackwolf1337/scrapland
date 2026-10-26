@@ -11,6 +11,7 @@
 
 struct CMaterial;
 typedef struct CMaterial CMaterial;
+struct CListaVert;
 
 /* the D3D device of the engine3d, NULL without one */
 #define g_pd3dDevice GAME_DATA(void *, 0x4ad6f4)
@@ -30,7 +31,7 @@ typedef struct CMaterial CMaterial;
 /* the viewport: its size, and all of it (x, y, w, h, minZ, maxZ) */
 #define g_ViewportW GAME_DATA(int, 0x4ad7e8)
 #define g_ViewportH GAME_DATA(int, 0x4ad7ec)
-#define g_Viewport ((const uint32_t *)Game_Ptr(0x4ad7e0))
+#define g_Viewport ((uint32_t *)Game_Ptr(0x4ad7e0))
 /* the planes of the view frustum (normal, d; outside where the distance is positive) */
 #define MAX_PLANOS_FRUSTUM 6
 #define g_Frustum ((const plane_t *)Game_Ptr(0x4adbf0))
@@ -42,6 +43,10 @@ typedef struct CMaterial CMaterial;
 #define g_EyePos (*(vec3_t *)Game_Ptr(0x4adda8))
 /* the material of a ModelFX in place of the ones of the meshes, NULL */
 #define g_MatForzado GAME_DATA(const CMaterial *, 0x4ad754)
+/* the other overrides of ModelFX.cpp, cleared with it */
+#define g_MatFX1 GAME_DATA(void *, 0x4ad74c)
+#define g_MatFX2 GAME_DATA(void *, 0x4ad750)
+#define g_MatFX3 GAME_DATA(void *, 0x4ad758)
 /* bUsarHWEnvMap: the environment maps through the texture transform of the device (materials with two texture sets
  * get VERT_TEX1 instead of VERT_TEX2) */
 #define g_UsarHWEnvMap GAME_DATA(int, 0x431bdc)
@@ -65,8 +70,22 @@ SD_SIZE(ShaderTab, 0x18);
 /* the pixel shaders: on (the device has them), their handles, the ones switched off (a bit each from 0x200000) */
 #define MAX_PS 9
 #define g_PSOn GAME_DATA(int, 0x4ada50)
-#define g_PS ((const uint32_t *)Game_Ptr(0x4ad7b4))
+#define g_PS (g_PSHandles + 21)
 #define g_PSOff GAME_DATA(uint32_t, 0x4ada98)
+/* all pixel shaders made from their files (the names end with NULL) */
+#define g_PSNames ((const char *const *)Game_Ptr(0x431d88))
+#define g_PSHandles ((uint32_t *)Game_Ptr(0x4ad760))
+#define g_PShaderCount GAME_DATA(int, 0x4add70)	/* R_PShaderCount, the changes of the frame */
+#define g_CullMode GAME_DATA(int, 0x4ad910)	/* R_CullMode, 1 two-sided */
+/* the world matrix was given to the device */
+#define g_WorldSet GAME_DATA(int, 0x432410)
+/* the whole viewport (g_Viewport is the one of the current view) */
+#define g_ViewportFull ((uint32_t *)Game_Ptr(0x4ad7f8))
+#define g_D3DOn GAME_DATA(byte, 0x4ad6f1)
+#define g_MatDefault ((void *)Game_Ptr(0x4adc98))
+#define g_MatActual GAME_DATA(void *, 0x4ae580)	/* the last one Render_SetMaterial set */
+#define g_Caps ((void *)Game_Ptr(0x4ae1f8))	/* D3DCAPS8 of the device */
+#define g_RenderI1F4 GAME_DATA(int, 0x4ae1f4)
 
 /* a dynamic index buffer of triangles (16 bit indices) */
 typedef struct CRenderIB {
@@ -118,6 +137,27 @@ void __thiscall CRenderVB_Create(CRenderVB *self, uint32_t numvert, int size, ui
  * stencil of a device that has one; whether the device cleared */
 byte Render_Clear(const int *rect, uint32_t flags, uint32_t color, float z, uint32_t stencil);
 void Render_GetViewportSize(int *ancho, int *alto);
+/* a textured rectangle of the viewport, its left side in cLeft, its right side in cRight */
+void Render_DrawTexRect(const int *rect, uint32_t cLeft, uint32_t cRight, void *tex);
+/* the end of the D3D device: textures and pixel shaders off, the shaders deleted, the device objects of the modules
+ * released */
+void Render_FinD3D(void);
+/* the end of a view: the batches drawn, the default material, the whole viewport */
+void Render_EndView(void);
+/* the batches drawn, the materials of ModelFX cleared */
+void Render_ClearForced(void);
+const void *Render_GetCaps(void);
+/* the start of a frame: the device of the application, the whole viewport, the base states */
+void Render_BeginFrame(void);
+/* the triangles of idx over the vertices of v (counted with stats) */
+int Render_DrawListaIdx(const struct CListaVert *v, const uint16_t *idx, int ntri, byte stats);
+int Render_SetWorldD3D(const matrix_t *m);
+void Render_WorldDirty(void);
+/* the world transform of the device (with defer only remembered); 0 */
+int Render_SetWorldMatrix(const matrix_t *m, byte defer);
+/* the world matrix given to the device once (HRESULT) */
+int Render_SetWorld(void);
+int Render_GetWorld(matrix_t *out);
 /* the alpha constant of the pixel shaders in reg: 1 1 1 0, 0 for transparent materials (not MAT_1000) and with a
  * forced material */
 void Render_PSConstAlpha(const CMaterial *mat, uint32_t reg);
@@ -145,10 +185,6 @@ const matrix_t *Render_GetBillboard(void);
 const vec3_t *Render_GetEyePos(void);
 
 /* still the exe's */
-/* rva 0x24bac0: the world transform of the device (with defer only remembered); 0 */
-int Render_SetWorldMatrix(const matrix_t *m, byte defer);
-/* rva 0x24bc00: the world matrix set once (HRESULT) */
-int Render_SetWorld(void);
 /* rva 0x24bf30: the material for a pass, -1 with no material */
 int Render_SetMaterial(void *mat, int pass);
 /* rva 0x24b960: a line in the current world matrix; an error without a device */
@@ -163,11 +199,20 @@ void Render_ClipRect(int *out, const uint32_t *vp, const int *rect);
 /* rva 0x24e6f0: the depth buffer has a stencil */
 int Render_HasStencil(void);
 /* rva 0x24d460, 0x24d380: the vertex buffer of a vertex list and the index buffer of triangles (HRESULT) */
-struct CListaVert;
 int Render_CreateVB(void **vb, struct CListaVert *vert, int flags);
 int Render_CreateIB(void **ib, const void *tris, uint32_t nTri, int flags);
 
+/* rva 0x24c730: the base render and texture stage states */
+void Render_ResetState(void);
+
 /* other modules (src/imports.inc) */
+void RenderLock_ReleaseD3D(void);		/* rva 0x2a4860 (RenderLock.cpp) */
+void ListaVert_ReleaseD3D(void);		/* rva 0x2404e0 (ListaVert.cpp), empty */
+void RenderEVA_ReleaseD3D(void);		/* rva 0x2b4550 (RenderEVA.cpp) */
+void RenderTarget_ReleaseD3D(void);		/* rva 0x220c60 (RenderTarget.cpp) */
+void RenderGamma_ReleaseD3D(void);		/* rva 0x2a7980 (RenderGamma.cpp) */
+void RenderGamma_Begin(void);			/* rva 0x2a7520 */
+void RenderGamma_LogShaderMask(void);		/* rva 0x2a7cd0, "ShaderModeMask" */
 void RenderMallaD3D_Flush(void);		/* rva 0x2b6af0 (RenderMallaD3D.cpp) */
 void RenderMallaD3D_Flush2(void);		/* rva 0x2b6e60 */
 void RenderObjBase3D_Flush(void);		/* rva 0x2b7260 (RenderObjBase3D.cpp) */

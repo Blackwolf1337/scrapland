@@ -5,8 +5,11 @@
 
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
+#include "scrap/grafico2d.h"
+#include "scrap/listavert.h"
 #include "scrap/material.h"
 #include "scrap/nodo3d.h"
+#include "scrap/varios.h"
 
 /* the off bit of pixel shader i in g_PSOff */
 #define PS_OFF(i) (0x200000u << (i))
@@ -464,4 +467,192 @@ const matrix_t *Render_GetBillboard(void) {
 
 const vec3_t *Render_GetEyePos(void) {
 	return &g_EyePos;
+}
+
+static void Render_SetTexture(uint32_t stage, void *tex) {
+	void *dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetTexture_t, D3DDEV_SETTEXTURE)(dev, stage, tex);
+}
+
+static void Render_State(uint32_t state, uint32_t value) {
+	void *dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
+}
+
+void Render_DrawTexRect(const int *rect, uint32_t cLeft, uint32_t cRight, void *tex) {
+	if (g_RenderOff) {
+		return;
+	}
+	void *saved = g_pd3dDevice;
+	g_pd3dDevice = g_MotorDev;
+	Render_ResetState();
+	Render_SetTexture(0, tex);
+	Render_TSS(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+	Render_TSS(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+	uint32_t op;
+	void *dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dGetTextureStageState_t, D3DDEV_GETTEXTURESTAGESTATE)(dev, 0, D3DTSS_COLOROP, &op);
+	Render_TSS(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+	Render_TSS(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+	Render_TSS(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+	uint32_t vp[6];
+	dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, vp);
+	int r[4];
+	Render_ClipRect(r, vp, rect);
+	float x0 = (float)r[0] - 0.5f, y0 = (float)r[1] - 0.5f, x1 = (float)r[2] - 0.5f, y1 = (float)r[3] - 0.5f;
+	const Vert2D v[4] = {
+		{ x0, y0, 0.0f, 1.0f, cLeft, 0, 0.0f, 0.0f },
+		{ x1, y0, 0.0f, 1.0f, cRight, 0, 1.0f, 0.0f },
+		{ x0, y1, 0.0f, 1.0f, cLeft, 0, 0.0f, 1.0f },
+		{ x1, y1, 0.0f, 1.0f, cRight, 0, 1.0f, 1.0f },
+	};
+	dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_2D);
+	dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(Vert2D));
+	Render_TSS(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+	Render_TSS(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+	Render_TSS(0, D3DTSS_COLOROP, op);
+	Render_ResetState();
+	Render_SetTexture(0, NULL);
+	g_pd3dDevice = saved;
+}
+
+void Render_FinD3D(void) {
+	E3D_DebugPrintf("\n> RenderFinD3D()");
+	g_D3DOn = 0;
+	CHECK(!g_ViewportW);
+	void *dev = g_MotorDev;
+	if (dev) {
+		for (uint32_t i = 0; i < 8; i++) {
+			D3D_METHOD(dev, d3dSetTexture_t, D3DDEV_SETTEXTURE)(dev, i, NULL);
+		}
+		D3D_METHOD(dev, d3dSetPixelShader_t, D3DDEV_SETPIXELSHADER)(dev, 0);
+	}
+	for (int i = 0; g_PSNames[i]; i++) {
+		if (g_PSHandles[i]) {
+			if (dev) {
+				D3D_METHOD(dev, d3dDeletePixelShader_t, D3DDEV_DELETEPIXELSHADER)(dev, g_PSHandles[i]);
+			}
+			g_PSHandles[i] = 0;
+		}
+	}
+	RenderLock_ReleaseD3D();
+	ListaVert_ReleaseD3D();
+	RenderEVA_ReleaseD3D();
+	RenderTarget_ReleaseD3D();
+	if (dev) {
+		RenderGamma_ReleaseD3D();
+	}
+	g_pd3dDevice = NULL;
+	E3D_DebugPrintf("\n< RenderFinD3D()");
+}
+
+/* the batches waiting for the view are drawn */
+static void Render_FlushBatches(void) {
+	if (g_ViewportW) {
+		RenderMallaD3D_Flush();
+		RenderMallaD3D_Flush2();
+		RenderObjBase3D_Flush();
+	}
+}
+
+void Render_EndView(void) {
+	Render_FlushBatches();
+	Render_SetMaterial(g_MatDefault, 0);
+	void *dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, g_ViewportFull);
+	for (int i = 0; i < 5; i++) {
+		g_Viewport[i] = 0;
+	}
+}
+
+void Render_ClearForced(void) {
+	Render_FlushBatches();
+	g_MatFX1 = NULL;
+	g_MatFX2 = NULL;
+	g_MatForzado = NULL;
+	g_MatFX3 = NULL;
+	g_MatActual = NULL;
+}
+
+const void *Render_GetCaps(void) {
+	return g_Caps;
+}
+
+void Render_BeginFrame(void) {
+	g_pd3dDevice = g_MotorDev;
+	CHECK(g_pd3dDevice);
+	g_RenderI1F4 = 0;
+	RenderGamma_Begin();
+	memcpy(g_Viewport, g_ViewportFull, 6 * sizeof(uint32_t));
+	void *dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, g_Viewport);
+	Render_ResetState();
+	Render_State(D3DRS_AMBIENT, g_AmbientD3D);
+	Render_State(D3DRS_FOGENABLE, 0);
+	Render_State(D3DRS_CULLMODE, g_CullMode ? D3DCULL_NONE : D3DCULL_CCW);
+	g_PShaderCount = 0;
+	RenderGamma_LogShaderMask();
+}
+
+int Render_DrawListaIdx(const CListaVert *v, const uint16_t *idx, int ntri, byte stats) {
+	void *dev = g_MotorDev;
+	if (!dev) {
+		return E_FAIL;
+	}
+	if (stats) {
+		g_RenderTris += ntri;
+		g_RenderVerts += v->nVert;
+	}
+	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, CListaVert_FVF((CListaVert *)v));
+	return D3D_METHOD(dev, d3dDrawIndexedPrimitiveUP_t, D3DDEV_DRAWINDEXEDPRIMITIVEUP)(dev, D3DPT_TRIANGLELIST, 0,
+		(uint32_t)v->nVert, (uint32_t)ntri, idx, D3DFMT_INDEX16, v->pVert, (uint32_t)CListaVert_Size((CListaVert *)v));
+}
+
+static int Render_WorldToDevice(const matrix_t *m) {
+	void *dev = g_pd3dDevice;
+	return D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_WORLD, m);
+}
+
+int Render_SetWorldMatrix(const matrix_t *m, byte defer) {
+	g_WorldSet = 0;
+	g_MatWorld = *m;
+	if (!defer && g_pd3dDevice) {
+		Render_WorldToDevice(&g_MatWorld);
+		g_WorldSet = 1;
+	}
+	return 0;
+}
+
+int Render_SetWorldD3D(const matrix_t *m) {
+	g_WorldSet = 0;
+	if (!g_pd3dDevice) {
+		return E_FAIL;
+	}
+	Render_WorldToDevice(m);
+	return 0;
+}
+
+void Render_WorldDirty(void) {
+	g_WorldSet = 0;
+}
+
+int Render_GetWorld(matrix_t *out) {
+	if (out) {
+		*out = g_MatWorld;
+	}
+	return 0;
+}
+
+int Render_SetWorld(void) {
+	if (!g_WorldSet) {
+		if (!g_pd3dDevice) {
+			return E_FAIL;
+		}
+		Render_WorldToDevice(&g_MatWorld);
+		g_WorldSet = 1;
+	}
+	return 0;
 }

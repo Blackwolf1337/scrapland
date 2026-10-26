@@ -9,7 +9,6 @@
 #include "scrap/material.h"
 #include "scrap/trails.h"
 
-#define TRAILS_E_FAIL ((int)0x80004005)
 #define TRAILS_FVF 0x1c2
 #define TRAILS_PI4 0.78539819f		/* 0x3f490fdb */
 
@@ -197,7 +196,7 @@ int __thiscall CTrail_Build(CTrail *self, TrailVertex **pVertex, uint16_t **pInd
 	case TRAIL_QUADS:
 		return CTrail_BuildQuads(self, pVertex, pIndex);
 	default:
-		return TRAILS_E_FAIL;
+		return E_FAIL;
 	}
 }
 
@@ -719,12 +718,12 @@ int Trails_Init(void) {
 	void *dev = g_MotorDev;
 	if (D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, MAX_TRAILS_VB * sizeof(TrailVertex),
 		D3DUSAGE_WRITEONLY_DYNAMIC, TRAILS_FVF, 0, &g_TrailsVB) < 0) {
-		return TRAILS_E_FAIL;
+		return E_FAIL;
 	}
 	dev = g_MotorDev;
 	if (D3D_METHOD(dev, d3dCreateIB_t, D3DDEV_CREATEIB)(dev, MAX_TRAILS_IB * sizeof(uint16_t),
 		D3DUSAGE_WRITEONLY_DYNAMIC, D3DFMT_INDEX16, 0, &g_TrailsIB) < 0) {
-		return TRAILS_E_FAIL;
+		return E_FAIL;
 	}
 	CMaterial mat;
 	CMaterial_ctor(&mat);
