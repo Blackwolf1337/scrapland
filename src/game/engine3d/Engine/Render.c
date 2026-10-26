@@ -24,6 +24,11 @@ static void Render_TSS(uint32_t stage, uint32_t type, uint32_t value) {
 	D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, stage, type, value);
 }
 
+static void Render_State(uint32_t state, uint32_t value) {
+	void *dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
+}
+
 /* pixel shader i of g_PSNames when the device has it and it is not switched off in g_PSOff, else 0 */
 static uint32_t Render_PSHandle(int i) {
 	if (!g_PSOn || !g_PSHandles[i] || g_PSOff & 1u << i) {
@@ -723,14 +728,18 @@ static void Render_SetTexTransform(uint32_t stage, const matrix_t *m) {
 	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_TEXTURE0 + stage, m);
 }
 
+static void Render_PSConst(uint32_t reg, const float *c) {
+	void *dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, reg, c, 1);
+}
+
 void Render_PSConstAlpha(const CMaterial *mat, uint32_t reg) {
 	static const float uno[4] = { 1.0f, 1.0f, 1.0f, 0.0f };
 	float c[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	if ((!mat->params.transp || mat->params.atrib & MAT_1000) && !g_MatForzado) {
 		memcpy(c, uno, sizeof(c));
 	}
-	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, reg, c, 1);
+	Render_PSConst(reg, c);
 }
 
 void Mat_StageEnvBump(CMaterial *mat, uint32_t flags, uint32_t stageEnv, uint32_t stageBump) {
@@ -801,10 +810,13 @@ void Render_Shader(uint32_t modo, void *a, void *b) {
 	sh->fnRender(a, b);
 }
 
-/* a random value in -r..r as rand() of the exe gives it */
+/* a random value in lo..hi as rand() of the exe gives it */
+static float Rand_Between(float lo, float hi) {
+	return (float)((double)(crt_rand() & 0x7fff) * (1.0 / 32767.0) * (double)(hi - lo) + (double)lo);
+}
+
 static float Rand_Range(float r) {
-	float nr = -r;
-	return (float)((double)(crt_rand() & 0x7fff) * (1.0 / 32767.0) * (double)(r - nr) + (double)nr);
+	return Rand_Between(-r, r);
 }
 
 void Tex_StageJitter(void *unused, uint32_t flags, uint32_t stage, float ju, float jv, float scale) {
@@ -885,6 +897,261 @@ void Mat_StageBumpMat(CMaterial *mat, uint32_t flags, uint32_t stage, float k, f
 	Render_TSS(stage, D3DTSS_BUMPENVMAT11, F2U(c * s));
 }
 
+/* the shader modes with constants that move */
+static void Shader_PSConstDiffuse(const CMaterial *mat) {
+	float c[4];
+	for (int i = 0; i < 4; i++) {
+		c[i] = (float)mat->params.diffuse[i] * (1.0f / 255.0f);
+	}
+	Render_PSConst(0, c);
+}
+
+/* the end of the pixel shader of the modes with stages 1 and 2 */
+static void Shader_End12(void) {
+	Render_SetPS(0);
+	Render_TSS(1, D3DTSS_TEXCOORDINDEX, 1);
+	Render_TSS(2, D3DTSS_TEXCOORDINDEX, 2);
+	Render_SetMapa(1, NULL);
+	Render_SetMapa(2, NULL);
+}
+
+/* the cloud color: diffuse by R_CloudR, G, B and R_CloudA, all times emissive blue by R_CloudEmi */
+static void Clouds_Color(const CMaterial *mat, float *c) {
+	const byte *d = mat->params.diffuse;
+	float e = (float)mat->params.emissive[2] * (1.0f / 255.0f) * g_CloudEmi;
+	c[0] = (float)d[0] * (1.0f / 255.0f) * g_CloudR * e;
+	c[1] = (float)d[1] * (1.0f / 255.0f) * g_CloudG * e;
+	c[2] = (float)d[2] * (1.0f / 255.0f) * g_CloudB * e;
+	c[3] = g_CloudA * e;
+}
+
+/* map 0 scrolled twice over itself (the second time as the glow map with the pixel shader), the fixed stages at
+ * twice the speed and with the texture factor for the color */
+void Shader_Clouds(CMaterial *mat, uint32_t flags) {
+	uint32_t h = Render_PSHandle(PS_CLOUDS);
+	float c[4];
+	if (!h) {
+		Tex_StageTransform(mat, flags, 0, g_CloudVel1x * 2.0f, g_CloudVel1y * 2.0f, g_CloudScale1, 0.0f);
+		if (flags & 1) {
+			Clouds_Color(mat, c);
+			c[3] *= 0.5f;
+			Render_State(D3DRS_TEXTUREFACTOR, Color_FromFloat(c));
+			Stage_Color(0, D3DTA_TEXTURE, D3DTA_TFACTOR, D3DTOP_MODULATE2X);
+			Stage_Alpha(0, D3DTA_TEXTURE, D3DTA_DIFFUSE, D3DTOP_SELECTARG1);
+			Stage_Color(1, D3DTA_TEXTURE, D3DTA_CURRENT, D3DTOP_SELECTARG2);
+			Stage_Alpha(1, D3DTA_TEXTURE, D3DTA_TFACTOR, D3DTOP_MODULATE);
+			Render_TSS(1, D3DTSS_TEXCOORDINDEX, 0);
+		}
+		if (flags & 5) {
+			Render_SetMapa(1, mat->mapa[MAPA_DIFFUSE]);
+		}
+		if (flags & 2) {
+			Render_State(D3DRS_TEXTUREFACTOR, 0xffffffff);
+			Stage_End();
+			Stage_Alpha(0, D3DTA_TEXTURE, D3DTA_DIFFUSE, D3DTOP_SELECTARG1);
+			Stage_Off(1);
+			Render_TSS(1, D3DTSS_TEXCOORDINDEX, 1);
+			Render_SetMapa(1, NULL);
+		}
+		return;
+	}
+	Tex_StageTransform(mat, flags, 0, g_CloudVel1x, g_CloudVel1y, g_CloudScale1, 0.0f);
+	Tex_StageTransform(mat, flags, 1, g_CloudVel2x, g_CloudVel2y, g_CloudScale2, 0.0f);
+	if (flags & 1) {
+		Render_SetPS(h);
+		Render_TSS(1, D3DTSS_TEXCOORDINDEX, 0);
+		Render_TSS(2, D3DTSS_TEXCOORDINDEX, 0);
+	}
+	if (flags & 5) {
+		Clouds_Color(mat, c);
+		Render_PSConst(0, c);
+		Render_SetMapa(1, mat->mapa[MAPA_DIFFUSE]);
+		Render_SetMapa(2, mat->mapa[MAPA_GLOW]);
+	}
+	if (flags & 2) {
+		Shader_End12();
+	}
+}
+
+/* the glow and bump maps jittered, a flicker of 0.92..1 */
+void Shader_Hologram(CMaterial *mat, uint32_t flags) {
+	uint32_t h = Render_PSHandle(PS_HOLOGRAM);
+	if (!h) {
+		Render_PSFixed(mat, (byte)flags);
+		return;
+	}
+	Tex_StageJitter(mat, flags, 0, 0.0f, 0.0001f, 1.0f);
+	Tex_StageTransform(mat, flags, 1, 0.0f, 0.05f, 1.0f, 0.0f);
+	Tex_StageJitter(mat, flags, 2, 0.5f, 0.5f, 2.0f);
+	if (flags & 1) {
+		Render_SetPS(h);
+		Render_TSS(1, D3DTSS_TEXCOORDINDEX, 0);
+		Render_TSS(2, D3DTSS_TEXCOORDINDEX, 0);
+	}
+	if (flags & 5) {
+		float f = Rand_Between(0.92f, 1.0f);
+		const float c[4] = { f, f, f, f };
+		Render_PSConst(0, c);
+		Render_SetMapa(1, mat->mapa[MAPA_GLOW]);
+		Render_SetMapa(2, mat->mapa[MAPA_BUMP]);
+	}
+	if (flags & 2) {
+		Shader_End12();
+	}
+}
+
+/* the glow flickers (R_GlowFlickMod..1 squared, two slow waves of the time), moved by the bump noise map; Glowmap
+ * without the pixel shader */
+void Shader_GlowFlickLightmap(CMaterial *mat, uint32_t flags) {
+	uint32_t h = Render_PSHandle(PS_GLOWFLICK_LM);
+	if (!h) {
+		Shader_GlowmapLightmap(mat, flags);
+		return;
+	}
+	Tex_StageTransform(mat, flags, 1, 0.01f, 0.1f, g_GlowFlickTile, g_GlowFlickRot);
+	Mat_StageBumpMat(mat, flags, 3, 0.0f, g_GlowFlickBump, (float)(double)g_TimeMs * g_GlowFlickBRot);
+	if (flags & 1) {
+		Render_SetPS(h);
+		Render_TSS(1, D3DTSS_TEXCOORDINDEX, 0);
+		Render_TSS(2, D3DTSS_TEXCOORDINDEX, 1);
+		Render_TSS(3, D3DTSS_TEXCOORDINDEX, 0);
+	}
+	if (flags & 5) {
+		float f = Rand_Between(g_GlowFlickMod, 1.0f);
+		double t = (double)g_TimeMs;
+		float a = (float)(Game_Cos(t * 0.0089) * 0.02 + 0.98);
+		float b = (float)(Game_Cos(t * 0.0052) * 0.03 + 0.97);
+		float v = a * b * (f * f);
+		const float c[4] = { v, v, v, v };
+		Render_PSConst(0, c);
+		Render_SetMapa(1, g_MatBump->mapa[MAPA_DIFFUSE]);
+		LIGHTMAP(2);
+		Render_SetMapa(3, mat->mapa[MAPA_GLOW]);
+	}
+	if (flags & 2) {
+		Render_SetPS(0);
+		Render_TSS(1, D3DTSS_TEXCOORDINDEX, 1);
+		Render_TSS(2, D3DTSS_TEXCOORDINDEX, 2);
+		Render_TSS(3, D3DTSS_TEXCOORDINDEX, 3);
+		Render_SetMapa(1, NULL);
+		Render_SetMapa(2, NULL);
+		Render_SetMapa(3, NULL);
+	}
+}
+
+/* Electric and Fire: map 0 and two layers of the glow and bump maps scrolled, the bump turned; the diffuse color as
+ * the constant */
+static void Shader_Burn(CMaterial *mat, uint32_t flags, uint32_t h, float bumpScale) {
+	Mat_StageBumpMat(mat, flags, 1, 0.0f, bumpScale, 0.0f);
+	if (flags & 1) {
+		Render_SetPS(h);
+		Render_TSS(1, D3DTSS_TEXCOORDINDEX, 0);
+		Render_TSS(2, D3DTSS_TEXCOORDINDEX, 0);
+	}
+	if (flags & 5) {
+		Render_SetMapa(1, mat->mapa[MAPA_GLOW]);
+		Render_SetMapa(2, mat->mapa[MAPA_BUMP]);
+		Shader_PSConstDiffuse(mat);
+	}
+	if (flags & 2) {
+		Shader_End12();
+	}
+}
+
+/* while the world runs, the third layer jumps at random half of the frames */
+void Shader_Electric(CMaterial *mat, uint32_t flags) {
+	uint32_t h = Render_PSHandle(PS_ELECTRIC);
+	if (!h) {
+		Render_PSFixed(mat, (byte)flags);
+		return;
+	}
+	Tex_StageTransform(mat, flags, 0, -0.1f, 0.26f, 1.2f, 0.0f);
+	Tex_StageTransform(mat, flags, 1, 0.08f, -0.06f, 5.4f, 0.0f);
+	if (World_TimeScale() > 0.0f && crt_rand() & 1) {
+		float scale = (float)(crt_rand() % 10) / 500.0f + 4.0f;
+		Tex_StageTransform(mat, flags, 2, 0.65f, -0.38f, scale, 0.0f);
+	} else {
+		Tex_StageTransform(mat, flags, 2, -0.98f, 0.55f, 4.0f, 0.0f);
+	}
+	Shader_Burn(mat, flags, h, 0.8f);
+}
+
+void Shader_Fire(CMaterial *mat, uint32_t flags) {
+	uint32_t h = Render_PSHandle(PS_FIRE);
+	if (!h) {
+		Render_PSFixed(mat, (byte)flags);
+		return;
+	}
+	Tex_StageTransform(mat, flags, 0, -0.5f, 0.8f, 4.0f, 0.0f);
+	Tex_StageTransform(mat, flags, 1, 0.02f, -0.03f, 6.0f, 0.0f);
+	float scale = (float)(crt_rand() % 10) / 100.0f + 4.0f;
+	Tex_StageTransform(mat, flags, 2, 0.65f, -0.38f, scale, 0.0f);
+	Shader_Burn(mat, flags, h, 0.4f);
+}
+
+/* map 0 scrolled both ways by its own scroll under the reflection of the bump map; the material must be
+ * transparent. Without the pixel shader only map 0 */
+void Shader_Waves(CMaterial *mat, uint32_t flags) {
+	uint32_t h = Render_PSHandle(PS_WAVES);
+	if (!h) {
+		if (flags & 1) {
+			Stage_End();
+			Stage_Alpha(0, D3DTA_TEXTURE, D3DTA_DIFFUSE, D3DTOP_SELECTARG1);
+		}
+		if (flags & 2) {
+			Stage_End();
+			Stage_Alpha(0, D3DTA_TEXTURE, D3DTA_DIFFUSE, D3DTOP_SELECTARG1);
+		}
+		return;
+	}
+	Mat_StageEnvBump(mat, flags, 2, 2);
+	if (flags & 1) {
+		Render_SetPS(h);
+		Render_TSS(1, D3DTSS_TEXCOORDINDEX, 0);
+		Render_TSS(3, D3DTSS_TEXCOORDINDEX, 0);
+	}
+	if (flags & 5) {
+		if (!mat->params.transp) {
+			CheckFailed("mat->params.dif_alpha", __FILE__, __TIMESTAMP__, __LINE__);
+		}
+		const CMapa *m = mat->mapa[MAPA_DIFFUSE];
+		Tex_StageTransform(mat, flags, 0, m->f10[0], m->f10[1], m->f18[0], m->v20[2]);
+		Tex_StageTransform(mat, flags, 1, -m->f10[0], -m->f10[1], m->f18[0], m->v20[2]);
+		Render_SetMapa(1, mat->mapa[MAPA_BUMP]);
+		Render_SetMapa(2, mat->mapa[MAPA_ENTORNO]);
+		Render_SetMapa(3, mat->mapa[MAPA_DIFFUSE]);
+	}
+	if (flags & 2) {
+		Tex_StageTransform(mat, flags, 0, 0.0f, 0.0f, 1.0f, 0.0f);
+		Tex_StageTransform(mat, flags, 1, 0.0f, 0.0f, 1.0f, 0.0f);
+		Render_SetPS(0);
+		Render_TSS(1, D3DTSS_TEXCOORDINDEX, 1);
+		Render_TSS(3, D3DTSS_TEXCOORDINDEX, 3);
+		Render_SetMapa(1, NULL);
+		Render_SetMapa(2, NULL);
+		Render_SetMapa(3, NULL);
+	}
+}
+
+/* map 0 jittered, the diffuse color as the constant */
+void Shader_Noise(CMaterial *mat, uint32_t flags) {
+	uint32_t h = Render_PSHandle(PS_NOISE);
+	if (!h) {
+		Render_PSFixed(mat, (byte)flags);
+		return;
+	}
+	Tex_StageJitter(mat, flags, 0, 2.0f, 2.0f, 14.0f);
+	if (flags & 1) {
+		Render_SetPS(h);
+	}
+	if (flags & 5) {
+		Shader_PSConstDiffuse(mat);
+	}
+	if (flags & 2) {
+		Render_SetPS(0);
+	}
+}
+
 void Render_D3DMaterial(const CMaterial *mat, const float *colors) {
 	float m[17];
 	const float *p = colors;
@@ -923,11 +1190,6 @@ const vec3_t *Render_GetEyePos(void) {
 static void Render_SetTexture(uint32_t stage, void *tex) {
 	void *dev = g_pd3dDevice;
 	D3D_METHOD(dev, d3dSetTexture_t, D3DDEV_SETTEXTURE)(dev, stage, tex);
-}
-
-static void Render_State(uint32_t state, uint32_t value) {
-	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
 }
 
 void Render_DrawTexRect(const box_t *rect, uint32_t cLeft, uint32_t cRight, void *tex) {

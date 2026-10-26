@@ -453,6 +453,20 @@ for tab in (0x431e08, 0x432108):
 					for flags in (1, 4, 5, 2):
 						check('Shader' + fmt((tab, i, off == -1, blend, mod, flags)), lambda fn=fn - 0x400000,
 							mat=mat, flags=flags: rdshader(fn, mat, flags))
+# the modes that move with the time and rand at other times, one past 2^31 ms, with the pixel shaders and colors
+SDTest.Poke(0x4ada98, rdsh[0])
+rdcol = (rdi(rmat + 0x14), rdi(rmat + 0x1c))
+SDTest.Poke(rmat + 0x14 - 0x400000, 0x40ffc080)
+SDTest.Poke(rmat + 0x1c - 0x400000, 0x00a00000)
+for t in (0, 987654321, -16):
+	SDTest.Poke(0x4a8ef0, t)
+	for tab, i in ((0x431e08, 7), (0x431e08, 8), (0x431e08, 10), (0x431e08, 11), (0x431e08, 13), (0x431e08, 15),
+		(0x432108, 9)):
+		fn = SDTest.Peek(tab + 0x18 * i + 0x14, 'i') - 0x400000
+		for flags in (1, 5):
+			check('Shader time' + fmt((t, tab, i, flags)), lambda fn=fn, flags=flags: rdshader(fn, rmat, flags))
+SDTest.Poke(rmat + 0x14 - 0x400000, rdcol[0])
+SDTest.Poke(rmat + 0x1c - 0x400000, rdcol[1])
 for a, v in ((0x4ada98, rdsh[0]), (0x4ad9d8, rdsh[1]), (0x431be8, rdsh[2]), (0x4addc4, rdsh[3]), (0x4a8ef0, rdsh[4]),
 	(rmat + 0x38 - 0x400000, rdsh[5])):
 	SDTest.Poke(a, v)

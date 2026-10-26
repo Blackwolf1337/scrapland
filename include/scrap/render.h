@@ -114,6 +114,23 @@ struct CListaVert;
 #define g_EnvBump GAME_DATA(int, 0x4ad838)		/* R_EnvBump */
 #define g_EnvMap GAME_DATA(int, 0x4adda0)		/* R_EnvMap */
 #define g_EnvBlend GAME_DATA(int, 0x4ad9d8)		/* R_EnvBlend */
+/* the engine variables of the Clouds and GlowFlick shader modes (R_CloudR and so on) */
+#define g_CloudR GAME_DATA(float, 0x4adb10)
+#define g_CloudG GAME_DATA(float, 0x4ad9f0)
+#define g_CloudB GAME_DATA(float, 0x4ad850)
+#define g_CloudA GAME_DATA(float, 0x4adb88)
+#define g_CloudEmi GAME_DATA(float, 0x4ad8b0)
+#define g_CloudVel1x GAME_DATA(float, 0x4adaf8)
+#define g_CloudVel1y GAME_DATA(float, 0x4adae0)
+#define g_CloudScale1 GAME_DATA(float, 0x4ad880)
+#define g_CloudVel2x GAME_DATA(float, 0x4ada38)
+#define g_CloudVel2y GAME_DATA(float, 0x4adb28)
+#define g_CloudScale2 GAME_DATA(float, 0x4adc78)
+#define g_GlowFlickTile GAME_DATA(float, 0x4adb70)
+#define g_GlowFlickRot GAME_DATA(float, 0x4adc90)
+#define g_GlowFlickBump GAME_DATA(float, 0x4ada20)
+#define g_GlowFlickBRot GAME_DATA(float, 0x4adc60)
+#define g_GlowFlickMod GAME_DATA(float, 0x4ad898)
 /* the render functions of the shader modes (two tables, the second for the modes with 0x100) */
 #define MAX_SHADER_TAB 32
 typedef void (*shaderRender_t)(void *a, void *b);
@@ -236,6 +253,13 @@ void Shader_GlowmapMaskEnvBump(CMaterial *mat, uint32_t flags);
 void Shader_Glass(CMaterial *mat, uint32_t flags);
 void Shader_Scroll(CMaterial *mat, uint32_t flags);
 void Shader_ScrollLightmap(CMaterial *mat, uint32_t flags);
+void Shader_Clouds(CMaterial *mat, uint32_t flags);
+void Shader_Hologram(CMaterial *mat, uint32_t flags);
+void Shader_GlowFlickLightmap(CMaterial *mat, uint32_t flags);
+void Shader_Electric(CMaterial *mat, uint32_t flags);
+void Shader_Fire(CMaterial *mat, uint32_t flags);
+void Shader_Waves(CMaterial *mat, uint32_t flags);
+void Shader_Noise(CMaterial *mat, uint32_t flags);
 /* the segment ab against the frustum: 0 seen, 1..6 both ends outside that plane, 10 not seen */
 int Frustum_TestSeg(const vec3_t *a, const vec3_t *b);
 /* the first plane (1..6) p is outside of, the planes in skip not tried; 0 inside */

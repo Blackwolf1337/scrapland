@@ -95,6 +95,7 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DRS_ALPHAFUNC 25
 #define D3DRS_ALPHABLENDENABLE 27
 #define D3DRS_ZBIAS 47
+#define D3DRS_TEXTUREFACTOR 60
 #define D3DRS_LIGHTING 137
 #define D3DRS_INDEXEDVERTEXBLENDENABLE 151
 #define D3DRS_COLORWRITEENABLE 168
@@ -133,6 +134,7 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DTA_DIFFUSE 0
 #define D3DTA_CURRENT 1
 #define D3DTA_TEXTURE 2
+#define D3DTA_TFACTOR 3
 #define D3DTOP_DISABLE 1
 #define D3DTOP_SELECTARG1 2
 #define D3DTOP_SELECTARG2 3
