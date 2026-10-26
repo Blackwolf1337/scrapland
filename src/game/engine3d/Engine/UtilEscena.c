@@ -389,7 +389,7 @@ void Modelos_Render(void) {
 	if (!g_ModelosOn) {
 		return;
 	}
-	vec3_t cam = *Cam_GetPos();
+	vec3_t cam = *Render_GetEyePos();
 	int n = g_NumModelosRender;
 	for (int i = 0; i < n; i++) {
 		CListaModelo *lm = Modelos_Render_Get(i);

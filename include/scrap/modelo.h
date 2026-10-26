@@ -276,7 +276,7 @@ void __thiscall CNodoR_SetNodo(CNodoR *self, CNodo3D *nodo);		/* rva 0x23f890 */
 /* rva 0x23fac0, the matrix identity, the channels cleared; the model and its render nodes at 0xa0 and 0xa4 */
 void __thiscall RenderCtx_Init(NodoAnimCtx *self, CModelo *m, const vec3_t *scale);
 void __thiscall RenderCtx_SetCanal(NodoAnimChannel *self, CAnimSlot *slot);	/* rva 0x23fb10 */
-vec3_t *Cam_GetPos(void);						/* rva 0x24cdd0 */
+const vec3_t *Render_GetEyePos(void);					/* rva 0x24cdd0, the camera position */
 void __thiscall CEscena_Msg(CEscena *self, int msg, int a, int b, int c, int d);	/* rva 0x24eb00 */
 void __thiscall CEscena_ReleaseD3D(CEscena *self, void *dev);		/* rva 0x24ec50 */
 void __thiscall CEscena_InitD3D(CEscena *self, void *dev);		/* rva 0x24ec80 */

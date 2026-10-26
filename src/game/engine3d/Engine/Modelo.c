@@ -282,16 +282,16 @@ matrix_t *__thiscall CModelo_GetNodeMatrix(CModelo *self, matrix_t *m, uint32_t 
 			float f = a->ctrl.frame;
 			int frame = (int)f;
 			float frac = f - (float)frame;
-			CAnimNodo *track = CAnimacion_NodoObjeto(a->Anim->AnimM3D, nodo->indice);
+			CAnimNodo *track = CAnimacion_GetNodoTabla(a->Anim->AnimM3D, nodo->indice);
 
 			if (track) {
-				CAnimNodo_GetPosRot(track, &pos, &q.x, frame, frac);
+				CAnimNodo_GetPosRot(track, &pos, &q, frame, frac);
 			}
 			if (visible && track) {
-				AnimTrack_Alpha(track, visible, frame, frac);
+				CAnimNodo_GetVisible(track, visible, frame, frac);
 			}
 			if (fov && track) {
-				AnimTrack_Float(track, fov, frame, frac);
+				CAnimNodo_GetFOV(track, fov, frame, frac);
 			}
 		}
 	}
@@ -324,7 +324,7 @@ void __thiscall CModelo_SetLod(CModelo *self, uint32_t i, CModelo *model) {
 byte __thiscall CModelo_SetMorphSubset(CModelo *self, uint32_t slot, const char *tag) {
 	CAnimGrupo *a = Modelo_Slot(self, slot)->anim;
 
-	CHECK(a && a->morph && a->Anim->AnimM3D->morph);
+	CHECK(a && a->morph && a->Anim->AnimM3D->flag);
 	E3D_LogWhite(g_FileLog, "SetMorphSubset: [%s] [%s]", a->name, tag);
 	uint32_t i = (uint32_t)MorphData_Find(a->morph, tag);
 	if (i >= MAX_MORPHDATA) {
@@ -464,7 +464,7 @@ void __thiscall CModelo_UpdateAnims(CModelo *self, float dt, int iAnim) {
 			s->blend = 0.0f;
 		}
 		a = s->anim;
-		if (a && !s->prev && a->Anim->AnimM3D->morph) {
+		if (a && !s->prev && a->Anim->AnimM3D->flag) {
 			byte subset = s->subset;
 			s->prev = a;
 			s->blend = 1.0f;
