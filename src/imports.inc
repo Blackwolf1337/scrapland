@@ -391,6 +391,11 @@ SD_IMPORT(Vec3_Differ, 0x067380)
 /* module agent: Engine/Suelo (imports below this line) */
 
 /* module agent: Engine/Trails (imports below this line) */
+SD_IMPORT_STDCALL(D3DX_Vec3Normalize, 8, 0x006d3b)
+SD_IMPORT_STDCALL(D3DX_Vec3Transform, 12, 0x007086)
+SD_IMPORT_STDCALL(D3DX_MatrixRotationYPR, 16, 0x008701)
+SD_IMPORT(Render_GetEyePos, 0x24cdd0)
+SD_IMPORT(Render_SetWorldMatrix, 0x24bac0)
 
 /* module agent: Engine/Modelo (imports below this line) */
 
