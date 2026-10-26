@@ -8,21 +8,13 @@
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
 #include "scrap/material.h"
+#include "scrap/textura.h"
 #include "scrap/win32.h"
 
 #define TEXTEST_CTOR 0x233990
 #define TEXTEST_DTOR 0x233c70
 #define ANIMMAT_SIZE 0x2c
 
-/* the texture manager of the engine (CTextura, rva 0x27d750..) */
-void *Textura_Add(const char *name, const char *alpha, int kind, int flags);
-void *Textura_Find(const char *name, const char *alpha);	/* referenced */
-int Textura_Release(void *hint);	/* the references left */
-void Textura_Delete(void *hint);
-void *Textura_GetD3D(void *hint, void *dev);
-void *Textura_Load(void *hint, void *dev);
-int Textura_GetInfo(void *hint, int *info);	/* 0: info[0] width, [1] height, [3] alpha */
-void *Textura_GetMultiSprite(void *hint, const char *name);
 /* the effect object of a map (Engine/FXTextura) */
 void *FXTextura_Create(int kind, CMapa *mapa);
 /* the id of a material for the renderer */

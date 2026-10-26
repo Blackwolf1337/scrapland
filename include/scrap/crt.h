@@ -89,5 +89,7 @@ int crt_stdio_common_vfprintf(uint64_t options, void *f, const char *fmt, void *
 size_t crt_strcspn(const char *s, const char *set);
 int crt_fpclass(double x);
 double crt_floor(double x);
+char *crt_mbsrchr(const char *s, unsigned int c);
+int crt_spawnlp(int mode, const char *cmd, const char *arg0, ...);
 
 #endif
