@@ -27,6 +27,9 @@
 #define g_DiffuseMod4x GAME_DATA(int, 0x431be8)
 /* the identity matrix of render.cpp */
 #define g_MatIdentity ((const matrix_t *)Game_Ptr(0x4ad6f8))
+/* the triangles and vertices drawn in the frame (render.cpp statistics) */
+#define g_RenderTris GAME_DATA(int, 0x4a8f00)
+#define g_RenderVerts GAME_DATA(int, 0x4a8f04)
 /* the render pass of render.cpp */
 #define g_RenderPass GAME_DATA(int, 0x4afdb8)
 /* the D3DRS_ZENABLE value of the frame and whether the fog is on (render.cpp) */

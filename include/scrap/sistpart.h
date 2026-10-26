@@ -165,16 +165,6 @@ SD_OFFSET(CSistPart, Particles, 0x11c);
 #define g_SistPartLifeScale GAME_DATA(float, 0x4b25d0)
 #define g_SistPartBirthAdd GAME_DATA(int, 0x4b25b8)
 
-/* grafico2d.cpp: the screen size and its inverses */
-#define g_Pantalla2DW GAME_DATA(int, 0x432598)
-#define g_Pantalla2DH GAME_DATA(int, 0x43259c)
-#define g_Pantalla2DInvW GAME_DATA(double, 0x4325a0)
-#define g_Pantalla2DInvH GAME_DATA(double, 0x4325a8)
-void Grafico2D_SetPantalla(int w, int h);
-void Grafico2D_GetPantalla(int *w, int *h);
-/* the primitives of nVert vertices (4: triangle list, 5: strip, 6: fan) */
-uint32_t Grafico2D_NumPrims(int tipo, uint32_t nVert);
-
 CParticula *__fastcall CParticulaActive_ctor(CParticula *self);
 CParticula *__fastcall CParticulaStatic_ctor(CParticula *self);
 void __fastcall CParticulaActive_dtor(CParticula *self);

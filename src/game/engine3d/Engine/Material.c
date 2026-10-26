@@ -307,6 +307,43 @@ CMaterial *Mat_New(const CMaterial *orig, byte share) {
 	return m;
 }
 
+CMaterial *Mat_AddCopy(const CMaterial *orig) {
+	CMaterial *m = operator_new(sizeof(CMaterial));
+	m = m ? CMaterial_ctor(m) : NULL;
+	CMaterial_Assign(m, orig);
+	CListaMat_Add(g_ListaMat, m);
+	return m;
+}
+
+void AnimMat_Free(CAnimMat **slot) {
+	if (*slot) {
+		CAnimMat *a = *slot;
+		CAnimMat_dtor(a);
+		operator_delete_sized(a, sizeof(CAnimMat));
+		*slot = NULL;
+	}
+}
+
+void AnimMat_FromMapa(CAnimMat **slot, const CMapa *mapa) {
+	if (mapa && mapa->AnimMat) {
+		void *p = operator_new(sizeof(CAnimMat));
+		*slot = p ? CAnimMat_ctorCopy(p, mapa->AnimMat) : NULL;
+		CAnimMat_Start(*slot);
+	}
+}
+
+void Render_SetMaterialAnim(CMaterial *m, CAnimMat *anim) {
+	if (!anim) {
+		Render_SetMaterial(m, 0);
+		return;
+	}
+	CMapa *mapa = m->mapa[0];
+	void *old = mapa->AnimMat;
+	mapa->AnimMat = anim;
+	Render_SetMaterial(m, 0);
+	mapa->AnimMat = old;
+}
+
 int __thiscall CMaterial_GetId(CMaterial *self, CMatId **out) {
 	CMatId_Check(&self->id, self);
 	if (out) {

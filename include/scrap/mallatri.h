@@ -47,9 +47,8 @@ SD_SIZE(CMallaTri, 0x4c);
 vec3_t *__thiscall CListaVert_GetNormal(CListaVert *self, vec3_t *out, uint32_t i);
 uv_t *__thiscall CListaVert_GetUV(CListaVert *self, uv_t *out, uint32_t i);
 
-/* Engine/render.cpp: the world matrix set once (HRESULT), the material for a pass (-1 with no material) */
+/* Engine/render.cpp: the world matrix set once (HRESULT) */
 int Render_SetWorld(void);
-int Render_SetMaterial(void *mat, int pass);
 
 CTriMalla *__fastcall CTriMalla_ctor(CTriMalla *self);
 

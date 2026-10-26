@@ -7278,8 +7278,8 @@ rva	size	source	callconv	name	signature
 0024e220	363	DEFAULT	unknown	FUN_0064e220	
 0024e390	24	DEFAULT	unknown	FUN_0064e390	
 0024e3b0	530	DEFAULT	unknown	FUN_0064e3b0	
-0024e620	43	DEFAULT	unknown	FUN_0064e620	
-0024e650	43	DEFAULT	unknown	FUN_0064e650	
+0024e620	43	USER_DEFINED	unknown	Render_GetViewportH	
+0024e650	43	USER_DEFINED	unknown	Render_GetViewportW	
 0024e6f0	47	DEFAULT	unknown	FUN_0064e6f0	
 0024e750	116	USER_DEFINED	__cdecl	Render_GetViewportSize	void __cdecl(int * ancho, int * alto)
 0024e7d0	230	USER_DEFINED	__fastcall	CEscena_ctor	void * __fastcall(void * self)
@@ -7777,15 +7777,15 @@ rva	size	source	callconv	name	signature
 00278950	107	USER_DEFINED	__cdecl	Texto_PrintfRel	void __cdecl(int dx, int dy, char * fmt, int arg)
 002789c0	105	USER_DEFINED	__cdecl	Texto_Printf	void __cdecl(int x, int y, char * fmt, int arg)
 00278a30	75	USER_DEFINED	__cdecl	Texto_Mensaje	void __cdecl(uint ms, char * fmt, int arg)
-00278a80	73	DEFAULT	unknown	FUN_00678a80	
-00278ad0	12	DEFAULT	unknown	FUN_00678ad0	
-00278ae0	111	DEFAULT	unknown	FUN_00678ae0	
-00278b50	16	DEFAULT	unknown	FUN_00678b50	
-00278b60	2579	DEFAULT	unknown	FUN_00678b60	
+00278a80	73	USER_DEFINED	__thiscall	CGrafico2D_ctorTex	void * __thiscall(char * tex, char * opac, uint flags)
+00278ad0	12	USER_DEFINED	__fastcall	CGrafico2D_ctor	void * __fastcall(void * self)
+00278ae0	111	USER_DEFINED	__fastcall	CGrafico2D_dtor	void __fastcall(void * self)
+00278b50	16	USER_DEFINED	__fastcall	CGrafico2D_Render	void __fastcall(void * self)
+00278b60	2579	USER_DEFINED	__thiscall	CGrafico2D_Draw	void __thiscall(float * pos, float * uv, uint * colors, uint nVert, int tipo)
 00279580	73	USER_DEFINED	__cdecl	Grafico2D_SetPantalla	void __cdecl(int w, int h)
-002795d0	27	DEFAULT	unknown	FUN_006795d0	
-002795f0	564	DEFAULT	unknown	FUN_006795f0	
-00279830	199	DEFAULT	unknown	FUN_00679830	
+002795d0	27	USER_DEFINED	__thiscall	CGrafico2D_SetTexture	void __thiscall(char * tex, char * opac, uint flags)
+002795f0	564	USER_DEFINED	__thiscall	CGrafico2D_CreateMat	void __thiscall(char * tex, char * opac, int src, int dst, byte alpha, uint flags)
+00279830	199	USER_DEFINED	__fastcall	CGrafico2D_Init	void __fastcall(void * self)
 00279900	221	USER_DEFINED	__cdecl	Grafico2D_NumPrims	uint __cdecl(int tipo, uint nVert)
 002799e0	33	USER_DEFINED	__cdecl	Grafico2D_GetPantalla	void __cdecl(int * w, int * h)
 00279a10	18	USER_DEFINED	__fastcall	CParticulaActive_ctor	void * __fastcall(void * self)

@@ -19,8 +19,6 @@
 vec3_t *__stdcall D3DX_Vec3Normalize(vec3_t *out, const vec3_t *v);
 vec3_t *__stdcall D3DX_Vec3Transform(vec3_t *out, const vec3_t *v, const matrix_t *m);
 matrix_t *__stdcall D3DX_MatrixRotationYPR(matrix_t *out, float yaw, float pitch, float roll);
-/* Engine/render.cpp: the camera position of the frame; the world matrix (with noDevice only remembered) */
-int Render_SetMaterial(void *mat, int pass);
 
 CTrail *__fastcall CTrail_ctor(CTrail *self) {
 	self->u0 = 0.0f;

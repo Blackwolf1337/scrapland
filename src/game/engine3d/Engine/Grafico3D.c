@@ -9,8 +9,6 @@
 #include "scrap/mallatri.h"
 #include "scrap/sistpart.h"
 
-#define g_RenderTris GAME_DATA(int, 0x4a8f00)
-#define g_RenderVerts GAME_DATA(int, 0x4a8f04)
 #define D3DFVF_SPRITE 0x1c2		/* XYZ | DIFFUSE | SPECULAR | TEX1 */
 
 /* the members both constructors clear */
@@ -40,20 +38,11 @@ CGrafico3D *__fastcall CGrafico3D_ctor(CGrafico3D *self) {
 	return self;
 }
 
-static void Grafico3D_FreeAnim(CGrafico3D *self) {
-	if (self->AnimMat) {
-		CAnimMat *a = self->AnimMat;
-		CAnimMat_dtor(a);
-		operator_delete_sized(a, sizeof(CAnimMat));
-		self->AnimMat = NULL;
-	}
-}
-
 void __fastcall CGrafico3D_dtor(CGrafico3D *self) {
 	self->vftable = Game_Ptr(CGRAFICO3D_VFTABLE);
 	ObjRef_Drop(&self->nodo);
 	self->nodo = NULL;
-	Grafico3D_FreeAnim(self);
+	AnimMat_Free(&self->AnimMat);
 	self->vftable = Game_Ptr(IOBJETO3D_VFTABLE);
 }
 
@@ -87,15 +76,7 @@ void __fastcall CGrafico3D_Draw(CGrafico3D *self) {
 	void *dev = g_MotorDev;
 	CHECK(dev);
 	CHECK(self->Mat);
-	if (!self->AnimMat) {
-		Render_SetMaterial(self->Mat, 0);
-	} else {
-		CMapa *mapa = self->Mat->mapa[0];
-		void *old = mapa->AnimMat;
-		mapa->AnimMat = self->AnimMat;
-		Render_SetMaterial(self->Mat, 0);
-		mapa->AnimMat = old;
-	}
+	Render_SetMaterialAnim(self->Mat, self->AnimMat);
 	matrix_t m = *Render_GetBillboard();
 	m.m[12] = self->pos.x;
 	m.m[13] = self->pos.y;
@@ -186,19 +167,11 @@ void __thiscall CGrafico3D_CreateMat(CGrafico3D *self, const char *tex, const ch
 	}
 	self->Mat = CListaMat_Find(g_ListaMat, &m);
 	if (!self->Mat) {
-		void *p = operator_new(sizeof(CMaterial));
-		self->Mat = p ? CMaterial_ctor(p) : NULL;
-		CMaterial_Assign(self->Mat, &m);
-		CListaMat_Add(g_ListaMat, self->Mat);
+		self->Mat = Mat_AddCopy(&m);
 	}
 	CMaterial_Prepare(self->Mat, g_MotorDev);
-	Grafico3D_FreeAnim(self);
-	CMapa *mapa = self->Mat->mapa[0];
-	if (mapa && mapa->AnimMat) {
-		void *p = operator_new(sizeof(CAnimMat));
-		self->AnimMat = p ? CAnimMat_ctorCopy(p, mapa->AnimMat) : NULL;
-		CAnimMat_Start(self->AnimMat);
-	}
+	AnimMat_Free(&self->AnimMat);
+	AnimMat_FromMapa(&self->AnimMat, self->Mat->mapa[0]);
 	CMaterial_dtor(&m);
 }
 

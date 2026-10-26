@@ -21,39 +21,6 @@ typedef struct SistPartHit {
 	byte *mesh;
 } SistPartHit;
 
-void Grafico2D_SetPantalla(int w, int h) {
-	g_Pantalla2DW = w;
-	g_Pantalla2DH = h;
-	g_Pantalla2DInvW = 1.0 / (double)w;
-	g_Pantalla2DInvH = 1.0 / (double)h;
-}
-
-uint32_t Grafico2D_NumPrims(int tipo, uint32_t nVert) {
-	CHECK(nVert > 0);
-	if (tipo == 4) {
-		CHECK((nVert % 3) == 0);
-		return nVert / 3;
-	}
-	if (tipo == 5) {
-		CHECK(nVert > 2);
-	} else if (tipo == 6) {
-		CHECK(nVert > 2);
-	} else {
-		CHECK(0);
-		return 0;
-	}
-	return nVert - 2;
-}
-
-void Grafico2D_GetPantalla(int *w, int *h) {
-	if (w) {
-		*w = g_Pantalla2DW;
-	}
-	if (h) {
-		*h = g_Pantalla2DH;
-	}
-}
-
 typedef int(__thiscall *partType_t)(CParticula *self);
 typedef void(__thiscall *partUpdate_t)(CParticula *self, CSistPart *sp, float dt, void *multiSpr);
 #define PARTICULA_TYPE(p) (((partType_t)(p)->vftable[PARTICULA_VF_TYPE])(p))

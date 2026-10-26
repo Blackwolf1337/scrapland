@@ -5,7 +5,7 @@
 
 #include "scrap/e3dutil.h"
 #include "scrap/global.h"
-#include "scrap/sistpart.h"
+#include "scrap/grafico2d.h"
 #include "scrap/texto.h"
 #include "scrap/win32.h"
 

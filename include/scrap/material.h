@@ -201,6 +201,15 @@ int Vec2_Differ(const float *a, const float *b);
 void Mat_ConvertBlend(uint32_t *mode, byte toFile, byte legacy);
 /* a copy of orig in g_ListaMat, prepared; with share an equal material of the list instead */
 CMaterial *Mat_New(const CMaterial *orig, byte share);
+/* a copy of orig added to g_ListaMat, not prepared */
+CMaterial *Mat_AddCopy(const CMaterial *orig);
+/* the own animation of a sprite: freed; a running copy of the one of mapa (if mapa has one) */
+void AnimMat_Free(CAnimMat **slot);
+void AnimMat_FromMapa(CAnimMat **slot, const CMapa *mapa);
+/* Render_SetMaterial of pass 0 with anim (if set) in place of the animation of the first map */
+void Render_SetMaterialAnim(CMaterial *m, CAnimMat *anim);
+/* rva 0x24bf30 (render.cpp): the material for a pass, -1 with no material */
+int Render_SetMaterial(void *mat, int pass);
 byte Mat_CompareNames(const CMaterial *a, const CMaterial *b);
 const char *Mat_Str(const CMaterial *m);
 /* sort order for drawing */

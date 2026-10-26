@@ -1643,9 +1643,6 @@ SD_HOOK(CAnimCtrl_Events, 0x251200, 760)
 SD_HOOK(CAnimCtrl_Update, 0x251530, 885)
 
 /* src/game/engine3d/Engine/SistPart.c (Engine/SistPart.cpp, Engine/grafico2d.cpp) */
-SD_HOOK(Grafico2D_SetPantalla, 0x279580, 73)
-SD_HOOK(Grafico2D_NumPrims, 0x279900, 221)
-SD_HOOK(Grafico2D_GetPantalla, 0x2799e0, 33)
 SD_HOOK(CParticulaActive_ctor, 0x279a10, 18)
 SD_HOOK(CParticulaStatic_ctor, 0x279a30, 18)
 SD_HOOK(CSistPart_ctorCopy, 0x279a50, 331)
@@ -1705,6 +1702,19 @@ SD_HOOK(Debug_DrawLine, 0x278220, 24)
 SD_HOOK(Debug_DrawTriM, 0x278240, 60)
 SD_HOOK(Debug_DrawTri, 0x278280, 62)
 SD_HOOK(Obj3D_ClaseName, 0x2782c0, 156)
+
+/* src/game/engine3d/Engine/Grafico2D.c (Engine/grafico2d.cpp, the screen sprites) */
+SD_HOOK(CGrafico2D_ctorTex, 0x278a80, 73)
+SD_HOOK(CGrafico2D_ctor, 0x278ad0, 12)
+SD_HOOK(CGrafico2D_dtor, 0x278ae0, 111)
+SD_HOOK(CGrafico2D_Render, 0x278b50, 16)
+SD_HOOK(CGrafico2D_Draw, 0x278b60, 2579)
+SD_HOOK(Grafico2D_SetPantalla, 0x279580, 73)
+SD_HOOK(CGrafico2D_SetTexture, 0x2795d0, 27)
+SD_HOOK(CGrafico2D_CreateMat, 0x2795f0, 564)
+SD_HOOK(CGrafico2D_Init, 0x279830, 199)
+SD_HOOK(Grafico2D_NumPrims, 0x279900, 221)
+SD_HOOK(Grafico2D_GetPantalla, 0x2799e0, 33)
 
 /* src/game/engine3d/Engine/Niebla.c (Engine/niebla.cpp, the fog) */
 SD_HOOK(CNiebla_ctor, 0x278360, 48)

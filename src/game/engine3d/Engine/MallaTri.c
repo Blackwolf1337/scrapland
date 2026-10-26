@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/d3d8.h"
+#include "scrap/e3dutil.h"
 #include "scrap/mallatri.h"
 
 #define CMALLATRI_VFTABLE 0x3dbcf0
@@ -16,8 +17,6 @@
 /* draw the meshes through their D3D mesh */
 #define g_MallaD3DOn GAME_DATA(byte, 0x431bad)
 /* statistics of the frame */
-#define g_TrisDrawn GAME_DATA(int, 0x4a8f00)
-#define g_VertsDrawn GAME_DATA(int, 0x4a8f04)
 
 typedef void(__thiscall *mallaD3DDelete_t)(CMallaD3D *self, int flags);
 typedef void(__thiscall *mallaD3DDraw_t)(CMallaD3D *self, void *dev, int arg);
@@ -529,8 +528,8 @@ void __thiscall CMallaTri_Draw(CMallaTri *self, void *dev, int unused) {
 		D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, MALLATRI_FVF);
 		D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLELIST, 1, v, sizeof(CVertMalla));
 	}
-	g_TrisDrawn += self->nTri;
-	g_VertsDrawn += self->nTri * 3;
+	g_RenderTris += self->nTri;
+	g_RenderVerts += self->nTri * 3;
 }
 
 /* ListaVert.h */

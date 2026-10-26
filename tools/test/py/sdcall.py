@@ -1367,7 +1367,7 @@ SDTest.Call(0x133550, 'vi', tbl)
 for part in ('sdcall_listavert.py', 'sdcall_mallatri.py', 'sdcall_material.py', 'sdcall_luz.py', 'sdcall_nodo3d.py',
 		'sdcall_animacion.py', 'sdcall_animgrupo.py', 'sdcall_textura.py', 'sdcall_mallad3d.py', 'sdcall_suelo.py',
 		'sdcall_trails.py', 'sdcall_modelo.py', 'sdcall_escena.py', 'sdcall_sistpart.py', 'sdcall_rendertarget.py',
-		'sdcall_controlanim.py', 'sdcall_portal.py', 'sdcall_grafico3d.py', 'sdcall_utild3d.py', 'sdcall_texto.py'):
+		'sdcall_controlanim.py', 'sdcall_portal.py', 'sdcall_grafico3d.py', 'sdcall_utild3d.py', 'sdcall_texto.py', 'sdcall_grafico2d.py'):
 	try:
 		f = open(part)
 	except IOError:
