@@ -6438,7 +6438,7 @@ rva	size	source	callconv	name	signature
 00212080	1035	DEFAULT	unknown	FUN_00612080	
 00212490	58	DEFAULT	unknown	FUN_00612490	
 002124d0	56	DEFAULT	unknown	FUN_006124d0	
-00212510	84	DEFAULT	unknown	FUN_00612510	
+00212510	84	USER_DEFINED	__thiscall	CRotacion_SetEuler	void __thiscall(void * ang)
 00212570	469	USER_DEFINED	__thiscall	CListaVert_GetPos	float * __thiscall(float *out, uint i)
 00212770	57	DEFAULT	unknown	FUN_00612770	
 002127b0	271	DEFAULT	unknown	FUN_006127b0	
@@ -6465,7 +6465,7 @@ rva	size	source	callconv	name	signature
 00214640	78	DEFAULT	unknown	FUN_00614640	
 00214690	78	DEFAULT	unknown	FUN_00614690	
 002146e0	35	DEFAULT	unknown	FUN_006146e0	
-00214710	119	DEFAULT	unknown	FUN_00614710	
+00214710	119	USER_DEFINED	__cdecl	Matrix_LoadIdentity	void * __cdecl(void * m)
 00214790	85	DEFAULT	unknown	FUN_00614790	
 002147f0	247	DEFAULT	unknown	FUN_006147f0	
 002148f0	252	DEFAULT	unknown	FUN_006148f0	
@@ -7013,9 +7013,9 @@ rva	size	source	callconv	name	signature
 00238bc0	277	USER_DEFINED	__cdecl	Vec3_Rotate2	float * __cdecl(float *out, float *in, float *rot)
 00238ce0	1125	DEFAULT	unknown	FUN_00638ce0	
 00239150	147	DEFAULT	unknown	FUN_00639150	
-002391f0	22	DEFAULT	unknown	FUN_006391f0	
+002391f0	22	USER_DEFINED	__cdecl	Matrix_MulD3D	void * __cdecl(void * out, void * a, void * b)
 00239210	185	DEFAULT	unknown	FUN_00639210	
-002392d0	652	DEFAULT	unknown	FUN_006392d0	
+002392d0	652	USER_DEFINED	__cdecl	Matrix_ToEuler	void * __cdecl(void * out, void * m)
 00239560	696	DEFAULT	unknown	FUN_00639560	
 00239820	63	DEFAULT	unknown	FUN_00639820	
 00239860	19	DEFAULT	unknown	FUN_00639860	
@@ -7064,48 +7064,48 @@ rva	size	source	callconv	name	signature
 0023ce30	6	USER_DEFINED	__cdecl	Luz_NumTotal	int __cdecl(void)
 0023ce40	184	USER_DEFINED	__thiscall	CLuz_UpdateD3D	void __thiscall(byte hide)
 0023cf00	59	USER_DEFINED	__fastcall	Box_Zero	void * __fastcall(void *self)
-0023cf40	293	DEFAULT	unknown	FUN_0063cf40	
-0023d070	169	DEFAULT	unknown	FUN_0063d070	
-0023d120	38	DEFAULT	unknown	FUN_0063d120	
-0023d150	79	DEFAULT	unknown	FUN_0063d150	
-0023d1a0	803	DEFAULT	unknown	FUN_0063d1a0	
-0023d4d0	803	DEFAULT	unknown	FUN_0063d4d0	
-0023d800	451	DEFAULT	unknown	FUN_0063d800	
-0023d9d0	1548	DEFAULT	unknown	FUN_0063d9d0	
-0023dfe0	1428	DEFAULT	unknown	FUN_0063dfe0	
-0023e590	149	DEFAULT	unknown	FUN_0063e590	
-0023e630	149	DEFAULT	unknown	FUN_0063e630	
-0023e6d0	101	USER_DEFINED	__thiscall	CNodo3D_FindByName	void * __thiscall(char * name, byte incl)
-0023e740	101	DEFAULT	unknown	FUN_0063e740	
-0023e7b0	71	DEFAULT	unknown	FUN_0063e7b0	
-0023e800	14	DEFAULT	unknown	FUN_0063e800	
-0023e810	255	DEFAULT	unknown	FUN_0063e810	
-0023e910	249	DEFAULT	unknown	FUN_0063e910	
-0023ea10	31	DEFAULT	unknown	FUN_0063ea10	
-0023ea30	48	DEFAULT	unknown	FUN_0063ea30	
-0023ea60	91	DEFAULT	unknown	FUN_0063ea60	
-0023eac0	87	DEFAULT	unknown	FUN_0063eac0	
-0023eb20	94	DEFAULT	unknown	FUN_0063eb20	
-0023eb80	48	DEFAULT	unknown	FUN_0063eb80	
-0023ebb0	108	DEFAULT	unknown	FUN_0063ebb0	
-0023ec20	174	DEFAULT	unknown	FUN_0063ec20	
-0023ecd0	152	DEFAULT	unknown	FUN_0063ecd0	
-0023ed70	103	DEFAULT	unknown	FUN_0063ed70	
-0023ede0	104	DEFAULT	unknown	FUN_0063ede0	
-0023ee50	96	USER_DEFINED	__thiscall	CNodo_LightColor	byte __thiscall(float *color, float *mult)
-0023eeb0	110	DEFAULT	unknown	FUN_0063eeb0	
-0023ef20	93	DEFAULT	unknown	FUN_0063ef20	
-0023ef80	198	DEFAULT	unknown	FUN_0063ef80	
-0023f050	93	DEFAULT	unknown	FUN_0063f050	
-0023f0b0	27	DEFAULT	unknown	FUN_0063f0b0	
-0023f0d0	78	DEFAULT	unknown	FUN_0063f0d0	
-0023f120	482	DEFAULT	unknown	FUN_0063f120	
-0023f310	46	DEFAULT	unknown	FUN_0063f310	
+0023cf40	293	USER_DEFINED	__fastcall	CNodo3D_ctor	void * __fastcall(void * self)
+0023d070	169	USER_DEFINED	__fastcall	CNodo3D_dtor	void __fastcall(void * self)
+0023d120	38	USER_DEFINED	__thiscall	CNodo3D_Delete	void * __thiscall(byte flags)
+0023d150	79	USER_DEFINED	__thiscall	CNodo3D_GetObj3D	void * __thiscall(void * r)
+0023d1a0	803	USER_DEFINED	__thiscall	CNodo3D_GetBBox	byte __thiscall(void * m, void * bbox, byte recalc)
+0023d4d0	803	USER_DEFINED	__thiscall	CNodo3D_AnimChannel	byte __thiscall(void * c, void * pos, void * rot)
+0023d800	451	USER_DEFINED	__thiscall	CNodo3D_Render	void __thiscall(void * arg, void * r)
+0023d9d0	1548	USER_DEFINED	__thiscall	CNodo3D_DebugDraw	byte __thiscall(void * r)
+0023dfe0	1428	USER_DEFINED	__thiscall	CNodo3D_Update	void __thiscall(void * r)
+0023e590	149	USER_DEFINED	__thiscall	CNodo3D_FindCamara	void * __thiscall(char * name)
+0023e630	149	USER_DEFINED	__thiscall	CNodo3D_FindLuz	void * __thiscall(char * name)
+0023e6d0	101	USER_DEFINED	__thiscall	CNodo3D_Find	void * __thiscall(char * name, byte incl)
+0023e740	101	USER_DEFINED	__thiscall	CNodo3D_FindPrev	void * __thiscall(char * name)
+0023e7b0	71	USER_DEFINED	__thiscall	CNodo3D_FindWild	void * __thiscall(char * pattern, byte incl)
+0023e800	14	USER_DEFINED	__fastcall	CNodo3D_Clase	uint __fastcall(void * self)
+0023e810	255	USER_DEFINED	__thiscall	CNodo3D_BuildD3D	byte __thiscall(void * arg)
+0023e910	249	USER_DEFINED	__fastcall	CNodo3D_Unlink	void __fastcall(void * self)
+0023ea10	31	USER_DEFINED	__fastcall	CNodo3D_FreeObj3D	void __fastcall(void * self)
+0023ea30	48	USER_DEFINED	__thiscall	CNodo3D_SetAnt	void __thiscall(void * n)
+0023ea60	91	USER_DEFINED	__thiscall	CNodo3D_SetObj3D	void __thiscall(void * obj)
+0023eac0	87	USER_DEFINED	__thiscall	CNodo3D_SetPadre	void __thiscall(void * n)
+0023eb20	94	USER_DEFINED	__thiscall	CNodo3D_SetPadreName	void __thiscall(char * name)
+0023eb80	48	USER_DEFINED	__thiscall	CNodo3D_SetSig	void __thiscall(void * n)
+0023ebb0	108	USER_DEFINED	__fastcall	CNodo3D_Free	void __fastcall(void * self)
+0023ec20	174	USER_DEFINED	__cdecl	Rot_Combine	void * __cdecl(void * out, void * a, void * q, void * b)
+0023ecd0	152	USER_DEFINED	__cdecl	Rot_Combine2	void * __cdecl(void * out, void * a, void * b)
+0023ed70	103	USER_DEFINED	__thiscall	CNodo3D_Track	void * __thiscall(uint ch)
+0023ede0	104	USER_DEFINED	__thiscall	CNodo3D_Track2	void * __thiscall(uint ch)
+0023ee50	96	USER_DEFINED	__thiscall	CNodo_LightColor	byte __thiscall(void * color, void * mult)
+0023eeb0	110	USER_DEFINED	__thiscall	CNodo3D_TrackData	int __thiscall(uint ch)
+0023ef20	93	USER_DEFINED	__thiscall	CNodo3D_AnimFloat	byte __thiscall(void * out)
+0023ef80	198	USER_DEFINED	__thiscall	CNodo3D_SampleAnim	byte __thiscall(void * pos, void * rot)
+0023f050	93	USER_DEFINED	__thiscall	CNodo3D_AnimAlpha	byte __thiscall(void * out)
+0023f0b0	27	USER_DEFINED	__thiscall	CSuelo_GetBox	void * __thiscall(void * out)
+0023f0d0	78	USER_DEFINED	__thiscall	CNodo3D_Channel	void * __thiscall(uint ch)
+0023f120	482	USER_DEFINED	__thiscall	CRotacion_GetQuat	void * __thiscall(void * out)
+0023f310	46	USER_DEFINED	__cdecl	CSistPart_Cast	void * __cdecl(void * obj)
 0023f340	144	DEFAULT	unknown	FUN_0063f340	
 0023f3d0	116	DEFAULT	unknown	FUN_0063f3d0	
 0023f450	233	DEFAULT	unknown	FUN_0063f450	
-0023f540	134	DEFAULT	unknown	FUN_0063f540	
-0023f5d0	535	DEFAULT	unknown	FUN_0063f5d0	
+0023f540	134	USER_DEFINED	__thiscall	CNodoR_ApplyFX	int __thiscall(void * m)
+0023f5d0	535	USER_DEFINED	__thiscall	CNodoR_UpdateNodo	void __thiscall(void)
 0023f7f0	157	DEFAULT	unknown	FUN_0063f7f0	
 0023f890	557	DEFAULT	unknown	FUN_0063f890	
 0023fac0	79	DEFAULT	unknown	FUN_0063fac0	
@@ -7244,7 +7244,7 @@ rva	size	source	callconv	name	signature
 0024b880	212	DEFAULT	unknown	FUN_0064b880	
 0024b960	211	DEFAULT	unknown	FUN_0064b960	
 0024ba40	125	DEFAULT	unknown	FUN_0064ba40	
-0024bac0	108	DEFAULT	unknown	FUN_0064bac0	
+0024bac0	108	USER_DEFINED	__cdecl	R_SetWorld	int __cdecl(void * m, byte defer)
 0024bb30	51	DEFAULT	unknown	FUN_0064bb30	
 0024bbb0	11	DEFAULT	unknown	FUN_0064bbb0	
 0024bbc0	57	DEFAULT	unknown	FUN_0064bbc0	
@@ -7501,7 +7501,7 @@ rva	size	source	callconv	name	signature
 0025e4a0	1669	DEFAULT	unknown	FUN_0065e4a0	
 0025eb30	1383	DEFAULT	unknown	FUN_0065eb30	
 0025f0a0	2653	DEFAULT	unknown	FUN_0065f0a0	
-0025fb00	85	DEFAULT	unknown	FUN_0065fb00	
+0025fb00	85	USER_DEFINED	__thiscall	CSuelo_BuildD3D	void __thiscall(void * arg)
 0025fb60	3249	DEFAULT	unknown	FUN_0065fb60	
 00260820	637	DEFAULT	unknown	FUN_00660820	
 00260aa0	722	DEFAULT	unknown	FUN_00660aa0	
@@ -7808,7 +7808,7 @@ rva	size	source	callconv	name	signature
 0027a6e0	3	ANALYSIS	__thiscall	CSistPart::vf04	undefined __thiscall(void)
 0027a6f0	83	DEFAULT	unknown	FUN_0067a6f0	
 0027a750	62	DEFAULT	unknown	FUN_0067a750	
-0027a790	491	DEFAULT	unknown	FUN_0067a790	
+0027a790	491	USER_DEFINED	__thiscall	CSistPart_GetBox	byte __thiscall(void * out)
 0027a980	6	ANALYSIS	__thiscall	CParticulaActive::vf00	undefined __thiscall(void)
 0027a990	6	ANALYSIS	__thiscall	CParticulaStatic::vf00	undefined __thiscall(void)
 0027a9a0	3	ANALYSIS	__thiscall	CObjBase3D::vf03	undefined __thiscall(void)
@@ -8357,18 +8357,18 @@ rva	size	source	callconv	name	signature
 002adfd0	386	DEFAULT	unknown	FUN_006adfd0	
 002ae160	180	DEFAULT	unknown	FUN_006ae160	
 002ae220	89	DEFAULT	unknown	FUN_006ae220	
-002ae280	50	DEFAULT	unknown	FUN_006ae280	
+002ae280	50	USER_DEFINED	__thiscall	AnimSet_GetTrack	void * __thiscall(int indice)
 002ae2c0	666	DEFAULT	unknown	FUN_006ae2c0	
 002ae560	338	DEFAULT	unknown	FUN_006ae560	
 002ae6c0	145	DEFAULT	unknown	FUN_006ae6c0	
 002ae760	69	DEFAULT	unknown	FUN_006ae760	
 002ae7b0	22	DEFAULT	unknown	FUN_006ae7b0	
-002ae7d0	462	DEFAULT	unknown	FUN_006ae7d0	
-002ae9a0	343	DEFAULT	unknown	FUN_006ae9a0	
+002ae7d0	462	USER_DEFINED	__thiscall	AnimTrack_Color	byte __thiscall(void * color, void * mult, int frame, float t)
+002ae9a0	343	USER_DEFINED	__thiscall	AnimTrack_Float	byte __thiscall(void * out, int frame, float t)
 002aeb00	90	DEFAULT	unknown	FUN_006aeb00	
 002aeb60	194	DEFAULT	unknown	FUN_006aeb60	
-002aec30	778	DEFAULT	unknown	FUN_006aec30	
-002aef40	297	DEFAULT	unknown	FUN_006aef40	
+002aec30	778	USER_DEFINED	__thiscall	AnimTrack_Sample	byte __thiscall(void * pos, void * rot, int frame, float t)
+002aef40	297	USER_DEFINED	__thiscall	AnimTrack_Alpha	byte __thiscall(void * out, int frame, float t)
 002af070	93	DEFAULT	unknown	FUN_006af070	
 002af0d0	523	DEFAULT	unknown	FUN_006af0d0	
 002af2e0	117	USER_DEFINED	__cdecl	Array_Read2	void __cdecl(void *f, void **p, uint *n)
@@ -8385,7 +8385,7 @@ rva	size	source	callconv	name	signature
 002af760	52	DEFAULT	unknown	FUN_006af760	
 002af7a0	54	DEFAULT	unknown	FUN_006af7a0	
 002af7e0	55	DEFAULT	unknown	FUN_006af7e0	
-002af820	362	DEFAULT	unknown	FUN_006af820	
+002af820	362	USER_DEFINED	__thiscall	CMallaD3D_ctorMallaTri	void * __thiscall(void * malla, void * arg, void * nodo)
 002af990	195	DEFAULT	unknown	FUN_006af990	
 002afa70	367	DEFAULT	unknown	FUN_006afa70	
 002afbe0	38	ANALYSIS	__thiscall	CMallaD3D::vf00	undefined __thiscall(void)
@@ -8396,7 +8396,7 @@ rva	size	source	callconv	name	signature
 002afdf0	78	DEFAULT	unknown	FUN_006afdf0	
 002afe40	96	DEFAULT	unknown	FUN_006afe40	
 002afea0	130	ANALYSIS	__thiscall	CMallaD3D::vf04	undefined __thiscall(void)
-002aff30	46	DEFAULT	unknown	FUN_006aff30	
+002aff30	46	USER_DEFINED	__thiscall	CMallaD3D_GetBox	void __thiscall(void * out, byte recalc)
 002aff60	29	ANALYSIS	__thiscall	CMallaD3D::vf03	undefined __thiscall(void)
 002aff80	851	ANALYSIS	__thiscall	CMallaD3D::vf06	undefined __thiscall(void)
 002b02e0	80	DEFAULT	unknown	FUN_006b02e0	

@@ -41,19 +41,6 @@ typedef struct CAnimacion {
 SD_OFFSET(CAnimacion, objetos, 0x18);
 SD_OFFSET(CAnimacion, nAnimNodo, 0x24);
 
-typedef struct CEscena {
-	void **vftable;			/* 0x00 [0] the deleting destructor */
-	int pad_4;
-	int Refs;			/* 0x08 */
-	CNodo3D *Nodo3D;		/* 0x0c the first node */
-	byte pad_10[0x2c];
-	CAnimacion *AnimM3D;		/* 0x3c */
-	const char *nodo;		/* 0x40 the name of the node whose animation node a group starts at */
-	byte pad_44[8];
-	CArchINI *ini;			/* 0x4c */
-} CEscena;
-SD_OFFSET(CEscena, AnimM3D, 0x3c);
-SD_OFFSET(CEscena, ini, 0x4c);
 
 /* an entry of the sorted event list of a group (constructor rva 0x2bb8e0) */
 typedef struct CAnimEvent {
@@ -109,7 +96,6 @@ typedef struct CAnimGrupos {
 
 /* of other modules, called in the exe */
 /* Engine/Nodo3D.cpp: the node named name from self on (self itself with incl), by sig */
-CNodo3D *__thiscall CNodo3D_FindByName(CNodo3D *self, const char *name, int incl);
 /* Engine/escena.cpp: the node with that iObjeto */
 CNodo3D *__thiscall CEscena_NodoObjeto(CEscena *self, int iObjeto);
 CAnimCtrl *__thiscall CAnimCtrl_ctor(CAnimCtrl *self);

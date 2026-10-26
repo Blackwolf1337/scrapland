@@ -157,8 +157,8 @@ byte AnimGrupo_AlignNode(CEscena *escena, CEscena *anim, const char *nodo) {
 	CHECK(escena->Nodo3D);
 	CHECK(anim->AnimM3D);
 	CHECK(anim->Nodo3D);
-	CNodo3D *nodo1 = CNodo3D_FindByName(escena->Nodo3D, nodo, 1);
-	CNodo3D *nodo2 = CNodo3D_FindByName(anim->Nodo3D, nodo, 1);
+	CNodo3D *nodo1 = CNodo3D_Find(escena->Nodo3D, nodo, 1);
+	CNodo3D *nodo2 = CNodo3D_Find(anim->Nodo3D, nodo, 1);
 	if (!nodo2) {
 		for (int i = 0; i < anim->AnimM3D->nAnimNodo; i++) {
 			CHECK(CAnimNodo_GetFlags(CAnimacion_GetNodo(anim->AnimM3D, i)) == ANIM_VERT);
@@ -170,7 +170,7 @@ byte AnimGrupo_AlignNode(CEscena *escena, CEscena *anim, const char *nodo) {
 	if (!nodo1 || !anim->AnimM3D) {
 		return 0;
 	}
-	CAnimNodo *an = CAnimacion_GetNodo(anim->AnimM3D, nodo2->iObjeto);
+	CAnimNodo *an = CAnimacion_GetNodo(anim->AnimM3D, nodo2->indice);
 	if (!an) {
 		return 0;
 	}
@@ -227,9 +227,9 @@ CAnimGrupo *AnimGrupo_New(CEscena *escena, CEscena *anim, const char *nombre) {
 	}
 	Cad_Set(&g->name, nombre);
 	g->ctrl.vel = g->Anim->AnimM3D->vel;
-	CNodo3D *n = CNodo3D_FindByName(escena->Nodo3D, escena->nodo, 1);
+	CNodo3D *n = CNodo3D_Find(escena->Nodo3D, escena->nodo, 1);
 	if (n) {
-		g->ctrl.nodo = CAnimacion_NodoObjeto(g->Anim->AnimM3D, n->iObjeto);
+		g->ctrl.nodo = CAnimacion_NodoObjeto(g->Anim->AnimM3D, n->indice);
 	}
 	CAnimCtrl_SetFrames(&g->ctrl, g->Anim->AnimM3D->primero, g->Anim->AnimM3D->frames);
 	g->ctrl.eventos = &g->eventos;
@@ -270,8 +270,8 @@ void AnimGrupo_MapNodes(CEscena *escena, CEscena *anim) {
 	int max = -1;
 	for (CNodo3D *n = escena->Nodo3D; n; n = n->sig) {
 		CHECK(n->escena == escena);
-		if (n->iObjeto > max) {
-			max = n->iObjeto;
+		if (n->indice > max) {
+			max = n->indice;
 		}
 	}
 	Tabla_Alloc1(&anim->AnimM3D->objetos, max + 1);
@@ -279,38 +279,38 @@ void AnimGrupo_MapNodes(CEscena *escena, CEscena *anim) {
 	CHECK(t->p);
 	memset(t->p, 0, t->n);
 	for (CNodo3D *n = escena->Nodo3D; n; n = n->sig) {
-		CNodo3D *nodo2 = CNodo3D_FindByName(anim->Nodo3D, n->name, 1);
+		CNodo3D *nodo2 = CNodo3D_Find(anim->Nodo3D, n->name, 1);
 		byte ok = 0;
 		while (nodo2) {
 			/* the same name: the one under a parent of the same name, else the last one */
-			if ((n->Padre == NULL) == (nodo2->Padre == NULL)) {
-				if (!nodo2->Padre || !strcmp(n->Padre->name, nodo2->Padre->name)) {
+			if ((n->padre == NULL) == (nodo2->padre == NULL)) {
+				if (!nodo2->padre || !strcmp(n->padre->name, nodo2->padre->name)) {
 					ok = 1;
 					break;
 				}
-				if (!CNodo3D_FindByName(nodo2, n->name, 0)) {
+				if (!CNodo3D_Find(nodo2, n->name, 0)) {
 					Con_Warnf("Parent mismatch [Node: %s] [Anim: %s]\n", n->name, anim->AnimM3D->name);
 					ok = 1;
 					break;
 				}
 			}
-			nodo2 = CNodo3D_FindByName(nodo2, n->name, 0);
+			nodo2 = CNodo3D_Find(nodo2, n->name, 0);
 		}
 		CHECK(!ok == !nodo2);
-		if (n->iObjeto != -1 && nodo2) {
-			CHECK((uint32_t)nodo2->iObjeto <= 254);
+		if (n->indice != -1 && nodo2) {
+			CHECK((uint32_t)nodo2->indice <= 254);
 		}
-		if (n->iObjeto < 0) {
+		if (n->indice < 0) {
 			continue;
 		}
 		uint32_t dato = 0;
 		if (ok) {
-			dato = nodo2->iObjeto + 1;
+			dato = nodo2->indice + 1;
 			CHECK(dato <= 255);
 		}
 		t = &anim->AnimM3D->objetos;
-		CHECK(t->p && (uint32_t)n->iObjeto < (uint32_t)t->n);
-		((byte *)t->p)[n->iObjeto] = (byte)dato;
+		CHECK(t->p && (uint32_t)n->indice < (uint32_t)t->n);
+		((byte *)t->p)[n->indice] = (byte)dato;
 	}
 }
 
@@ -330,10 +330,10 @@ void AnimGrupo_Compact(CEscena *anim) {
 			CNodo3D *nodo3d_i = CEscena_NodoObjeto(anim, i);
 			CNodo3D *nodo3d_j = CEscena_NodoObjeto(anim, j);
 			if (nodo3d_i) {
-				nodo3d_i->iObjeto = j;
+				nodo3d_i->indice = j;
 			}
 			CHECK(nodo3d_j);
-			nodo3d_j->iObjeto = i;
+			nodo3d_j->indice = i;
 			break;
 		}
 	}

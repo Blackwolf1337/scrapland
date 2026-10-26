@@ -9,6 +9,7 @@
 
 #include "scrap/archio.h"
 #include "scrap/mathlib.h"
+#include "scrap/nodo3d.h"
 
 #define CLASE_OBJ3D_LUZ 0xa3000008
 #define MAX_LUCES 1024
@@ -40,30 +41,6 @@ typedef struct D3DLight {
 	float Phi;			/* 0x64 */
 } D3DLight;
 SD_SIZE(D3DLight, 0x68);
-
-/* the members of a scene node the lights and the animation groups read; reference counted like CNodoRef
- * (include/scrap/camara.h) */
-typedef struct CNodo3D {
-	void **vftable;			/* 0x00 [0] the deleting destructor */
-	const char *name;		/* 0x04 */
-	int Refs;			/* 0x08 */
-	struct CNodo3D *sig;		/* 0x0c the next node of the scene */
-	struct CNodo3D *ant;		/* 0x10 */
-	struct CNodo3D *Padre;		/* 0x14 */
-	uint32_t flags;			/* 0x18 NODO_SOMBRA: lights of this node cast shadows */
-	vec3_t pos;			/* 0x1c */
-	byte pad_28[0x14];
-	void *obj3D;			/* 0x3c */
-	struct CEscena *escena;		/* 0x40 */
-	int iObjeto;			/* 0x44 the index of its node in the animation, -1 none */
-	byte pad_48[0x14];
-	matrix_t m;			/* 0x5c the position in m[12..14] */
-} CNodo3D;
-SD_OFFSET(CNodo3D, flags, 0x18);
-SD_OFFSET(CNodo3D, pos, 0x1c);
-SD_OFFSET(CNodo3D, iObjeto, 0x44);
-SD_OFFSET(CNodo3D, m, 0x5c);
-#define NODO_SOMBRA (1u << 26)
 
 typedef struct CLuz {
 	void *vftable;			/* 0x00 */
@@ -98,12 +75,6 @@ SD_OFFSET(CLuz, d3d, 0x4c);
 SD_OFFSET(CLuz, indD3D, 0xb4);
 SD_OFFSET(CLuz, nodo, 0xc4);
 SD_SIZE(CLuz, 0xcc);
-
-typedef struct IObjeto3D {
-	void *vftable;			/* 0x0 */
-	uint32_t clase;			/* 0x4 */
-} IObjeto3D;
-SD_SIZE(IObjeto3D, 8);
 
 CLuz *__fastcall CLuz_ctor(CLuz *self);
 void __fastcall CLuz_dtor(CLuz *self);
@@ -154,8 +125,6 @@ void E3D_FlushBatch(void);	/* rva 0x24cec0, the pending primitives of the render
 /* rva 0x2682d0, the light of the shadows (NULL: none); the second argument is 0 here */
 void E3D_SetShadowLight(CLuz *l, int arg);
 int Prof_Count(int section, int n);	/* rva 0x273040, a profiler counter, the new value */
-/* rva 0x23ee50, the color of the node's animated light (color times *mult); 0 without one */
-byte __thiscall CNodo_LightColor(CNodo3D *self, vec3_t *color, float *mult);
 byte Sector_IsVisible(int sector);	/* rva 0x26c3d0 */
 byte Sph_IsVisible(const vec3_t *center, float radius, int arg);	/* rva 0x24d2e0, the view frustum */
 /* rva 0x26e490, gMundo->obtSuelo(): 1 if the segment from-to hits the ground */
