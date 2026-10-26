@@ -6767,33 +6767,33 @@ rva	size	source	callconv	name	signature
 0022afc0	78	DEFAULT	unknown	FUN_0062afc0	
 0022b010	136	DEFAULT	unknown	FUN_0062b010	
 0022b0a0	869	DEFAULT	unknown	FUN_0062b0a0	
-0022b410	46	DEFAULT	unknown	FUN_0062b410	
-0022b450	304	DEFAULT	unknown	FUN_0062b450	
-0022b590	168	DEFAULT	unknown	FUN_0062b590	
+0022b410	46	USER_DEFINED	cdecl	Ruta_GetDrive	void Ruta_GetDrive(int *drive)
+0022b450	304	USER_DEFINED	cdecl	Ruta_MakeDir	int Ruta_MakeDir(char *ruta)
+0022b590	168	USER_DEFINED	cdecl	Wild_MatchSet	char * Wild_MatchSet(char *pattern, char *s)
 0022b640	152	USER_DEFINED	cdecl	Wild_Match	int Wild_Match(char *pattern, char *name)
-0022b6e0	287	DEFAULT	unknown	FUN_0062b6e0	
-0022b800	507	DEFAULT	unknown	FUN_0062b800	
-0022ba00	340	DEFAULT	unknown	FUN_0062ba00	
-0022bb60	168	DEFAULT	unknown	FUN_0062bb60	
-0022bc10	1301	DEFAULT	unknown	FUN_0062bc10	
-0022c170	25	DEFAULT	unknown	FUN_0062c170	
-0022c190	366	DEFAULT	unknown	FUN_0062c190	
-0022c300	307	DEFAULT	unknown	FUN_0062c300	
-0022c440	197	DEFAULT	unknown	FUN_0062c440	
-0022c510	643	DEFAULT	unknown	FUN_0062c510	
-0022c7c0	751	DEFAULT	unknown	FUN_0062c7c0	
-0022cab0	212	DEFAULT	unknown	FUN_0062cab0	
-0022cb90	112	DEFAULT	unknown	FUN_0062cb90	
-0022cc00	98	DEFAULT	unknown	FUN_0062cc00	
-0022cc70	169	DEFAULT	unknown	FUN_0062cc70	
-0022cd20	197	DEFAULT	unknown	FUN_0062cd20	
-0022cdf0	84	DEFAULT	unknown	FUN_0062cdf0	
-0022ce50	179	DEFAULT	unknown	FUN_0062ce50	
-0022cf10	51	DEFAULT	unknown	FUN_0062cf10	
+0022b6e0	287	USER_DEFINED	cdecl	Ruta_Make	char * Ruta_Make(char *ruta, char *drive, char *dir, char *name, char *ext)
+0022b800	507	USER_DEFINED	cdecl	Ruta_Format	char * Ruta_Format(char *dest, char *orig, char *frmt)
+0022ba00	340	USER_DEFINED	cdecl	Ruta_IsDir	char * Ruta_IsDir(char *ruta)
+0022bb60	168	USER_DEFINED	cdecl	Ruta_MakePath	int Ruta_MakePath(char *ruta)
+0022bc10	1301	USER_DEFINED	cdecl	Ruta_Split	void Ruta_Split(char *ruta, char *drive, char *dir, char *name, char *ext)
+0022c170	25	USER_DEFINED	cdecl	Ruta_IsSep	int Ruta_IsSep(char c)
+0022c190	366	USER_DEFINED	cdecl	Ruta_Merge	char * Ruta_Merge(char *dest, char *ruta1, char *ruta2)
+0022c300	307	USER_DEFINED	cdecl	Ruta_Match	int Ruta_Match(char *pattern, char *ruta)
+0022c440	197	USER_DEFINED	cdecl	Ruta_MatchPath	int Ruta_MatchPath(char *pattern, char *ruta, int subdirs)
+0022c510	643	USER_DEFINED	cdecl	Ruta_Rename	void Ruta_Rename(char *dest, char *src, char *pattern)
+0022c7c0	751	USER_DEFINED	cdecl	Ruta_Full	char * Ruta_Full(char *dest, char *rel, int size, char *base)
+0022cab0	212	USER_DEFINED	cdecl	Ruta_Part	char * Ruta_Part(char *dest, char *orig, uint mask)
+0022cb90	112	USER_DEFINED	cdecl	Ruta_PartN	char * Ruta_PartN(char *dest, int size, char *orig, uint mask)
+0022cc00	98	USER_DEFINED	cdecl	Ruta_FileName	char * Ruta_FileName(char *ruta)
+0022cc70	169	USER_DEFINED	cdecl	Ruta_FirstDir	char * Ruta_FirstDir(char *dest, char *ruta)
+0022cd20	197	USER_DEFINED	cdecl	Ruta_LastDir	char * Ruta_LastDir(char *dest, char *ruta)
+0022cdf0	84	USER_DEFINED	cdecl	Ruta_DriveNum	int Ruta_DriveNum(char *ruta)
+0022ce50	179	USER_DEFINED	cdecl	Ruta_GetCwd	int Ruta_GetCwd(int drive, char *dest, int size)
+0022cf10	51	USER_DEFINED	cdecl	Cad_InsertChar	void Cad_InsertChar(char *s, char c, int pos, int len)
 0022cf50	75	USER_DEFINED	cdecl	Cad_Copy	char * Cad_Copy(char *dst, char *src, int size)
-0022cfa0	81	DEFAULT	unknown	FUN_0062cfa0	
-0022d000	129	DEFAULT	unknown	FUN_0062d000	
-0022d090	45	DEFAULT	unknown	FUN_0062d090	
+0022cfa0	81	USER_DEFINED	cdecl	Cad_Dup	char * Cad_Dup(char *s)
+0022d000	129	USER_DEFINED	cdecl	Cad_Thousands	int Cad_Thousands(char *s)
+0022d090	45	USER_DEFINED	cdecl	Cad_FromInt	char * Cad_FromInt(char *buf, int n)
 0022d0c0	36	DEFAULT	unknown	FUN_0062d0c0	
 0022d0f0	37	DEFAULT	unknown	FUN_0062d0f0	
 0022d120	35	DEFAULT	unknown	FUN_0062d120	
@@ -7003,8 +7003,8 @@ rva	size	source	callconv	name	signature
 002388b0	81	DEFAULT	unknown	FUN_006388b0	
 00238910	6	DEFAULT	unknown	FUN_00638910	
 00238920	125	DEFAULT	unknown	FUN_00638920	
-002389a0	26	DEFAULT	unknown	FUN_006389a0	
-002389c0	125	DEFAULT	unknown	FUN_006389c0	
+002389a0	26	USER_DEFINED	cdecl	Bprintf	int Bprintf(char *buf, int size, char *fmt, ...)
+002389c0	125	USER_DEFINED	cdecl	VBprintf	int VBprintf(char *buf, int size, char *fmt, void *ap)
 00238a40	56	DEFAULT	unknown	FUN_00638a40	
 00238a80	136	DEFAULT	unknown	FUN_00638a80	
 00238b10	105	DEFAULT	unknown	FUN_00638b10	
@@ -7838,7 +7838,7 @@ rva	size	source	callconv	name	signature
 0027ce10	51	DEFAULT	unknown	FUN_0067ce10	
 0027ce50	24	DEFAULT	unknown	FUN_0067ce50	
 0027ce70	37	DEFAULT	unknown	FUN_0067ce70	
-0027cea0	25	DEFAULT	unknown	FUN_0067cea0	
+0027cea0	25	USER_DEFINED	cdecl	Err_Printf	void Err_Printf(int fatal, char *fmt, ...)
 0027cec0	26	DEFAULT	unknown	FUN_0067cec0	
 0027cee0	254	DEFAULT	unknown	FUN_0067cee0	
 0027cfe0	62	DEFAULT	unknown	FUN_0067cfe0	

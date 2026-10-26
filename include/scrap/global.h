@@ -4,6 +4,8 @@
 #ifndef SCRAP_GLOBAL_H
 #define SCRAP_GLOBAL_H
 
+#include <stdarg.h>
+
 #include "scrap/shared.h"
 
 /* "FATAL ERROR: Check failed!" report of the engine (rva 0xbcdb0), logs expression, file, date and line */
@@ -54,11 +56,7 @@ void Path_Split(const char *path, char *name, char *dir, char *ext);
 int Str_Printf(char *dst, int size, const char *fmt, ...);
 /* the same without the log line (rva 0x1365a0) */
 int Str_PrintfQuiet(char *dst, int size, const char *fmt, ...);
-
-/* engine3d Util/Cadenas.cpp: Str_Copy with CHECK(dest && orig && dest_nby>0) (rva 0x22cf50) */
-char *Cad_Copy(char *dst, const char *src, int size);
-/* engine3d Util/Comodin.cpp: wildcard match with '*', '?' and "[...]", case-sensitive (rva 0x22b640) */
-int Wild_Match(const char *pattern, const char *name);
+int Str_VPrintf(char *dst, int size, const char *fmt, va_list ap);	/* rva 0x136690 */
 
 /* fprintf of the exe's CRT, for FILE pointers the exe hands out (rva 0xbd230) */
 int crt_fprintf(void *file, const char *fmt, ...);

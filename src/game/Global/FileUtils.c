@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/e3dutil.h"
 #include "scrap/filesys.h"
 
 /* _finddata32_t of the exe's CRT */

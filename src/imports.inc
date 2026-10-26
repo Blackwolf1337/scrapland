@@ -115,6 +115,18 @@ SD_IMPORT(crt_memicmp, 0x3587b9)
 SD_IMPORT(crt_chdir, 0x34c95c)
 SD_IMPORT(crt_splitpath, 0x34b1b2)
 SD_IMPORT(crt_strtok_s, 0x34a6b1)
+SD_IMPORT(crt_errno, 0x34ef39)
+SD_IMPORT(crt_getdrive, 0x34fde0)
+SD_IMPORT(crt_chdrive, 0x34fd60)
+SD_IMPORT(crt_getcwd, 0x354661)
+SD_IMPORT(crt_mkdir, 0x34f392)
+SD_IMPORT(crt_isalpha, 0x34f784)
+SD_IMPORT(crt_isdigit, 0x34f817)
+SD_IMPORT(crt_toupper, 0x34fd03)
+SD_IMPORT(crt_tolower, 0x34fcd3)
+SD_IMPORT(crt_strupr, 0x34cf71)
+SD_IMPORT(crt_sscanf, 0x081ac0)
+SD_IMPORT(crt_sprintf, 0x06cb50)
 
 /* engine: Net/ (include/scrap/net.h) */
 SD_IMPORT(Net_IsServer, 0x18b280)
@@ -328,6 +340,5 @@ SD_IMPORT(File_MkDirRel, 0x21bb80)
 SD_IMPORT(Loading_Step, 0x2157a0)
 SD_IMPORT(Console_Execute, 0x20aaf0)
 
-/* engine3d: Util/ (include/scrap/global.h) */
-SD_IMPORT(Cad_Copy, 0x22cf50)
-SD_IMPORT(Wild_Match, 0x22b640)
+/* engine3d: Util/ (include/scrap/e3dutil.h) */
+SD_IMPORT(Err_Printf, 0x27cea0)
