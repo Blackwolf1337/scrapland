@@ -46,5 +46,12 @@ void Array_Read6(CArchIO *f, void **p, uint32_t *n);
 void Array_Read8(CArchIO *f, void **p, uint32_t *n);
 void Array_ReadC(CArchIO *f, void **p, uint32_t *n);
 void Array_Read10(CArchIO *f, void **p, uint32_t *n);
+/* the count (0 without p), sizeof(T) and the elements, instanced in MallaD3D.cpp */
+void Array_Write2(CArchIO *f, const void *p, uint32_t n);
+void Array_Write4(CArchIO *f, const void *p, uint32_t n);
+void Array_Write6(CArchIO *f, const void *p, uint32_t n);
+void Array_Write8(CArchIO *f, const void *p, uint32_t n);
+void Array_WriteC(CArchIO *f, const void *p, uint32_t n);
+void Array_Write10(CArchIO *f, const void *p, uint32_t n);
 
 #endif

@@ -385,6 +385,15 @@ SD_IMPORT(Vec3_Differ, 0x067380)
 
 
 /* module agent: Engine/MallaD3D (imports below this line) */
+SD_IMPORT(CNodo_FreeObj3D, 0x23ea10)
+SD_IMPORT(CNodo_SetObj3D, 0x23ea60)
+SD_IMPORT(CNodo_ChannelData, 0x23eeb0)
+SD_IMPORT(CNodo_Channel, 0x23f0d0)
+SD_IMPORT(Render_CreateIB, 0x24d380)
+SD_IMPORT(Render_CreateVB, 0x24d460)
+SD_IMPORT(Plane_Calc, 0x286fb0)
+SD_IMPORT(MallaD3D_Render, 0x2b67a0)
+SD_IMPORT(CMallaD3D_CalcSegmentos, 0x2d5350)
 
 /* module agent: Engine/Suelo (imports below this line) */
 

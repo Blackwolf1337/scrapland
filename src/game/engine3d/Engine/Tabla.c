@@ -93,3 +93,23 @@ ARRAY_READ(6)
 ARRAY_READ(8)
 ARRAY_READ(C)
 ARRAY_READ(10)
+
+static void Array_Write(CArchIO *f, const void *p, uint32_t n, int size) {
+	if (!p) {
+		n = 0;
+	}
+	CArchIO_WriteInt(f, n);
+	CArchIO_WriteInt(f, size);
+	CArchIO_Write(f, p, n * size);
+}
+
+#define ARRAY_WRITE(sz) \
+	void Array_Write##sz(CArchIO *f, const void *p, uint32_t n) { \
+		Array_Write(f, p, n, 0x##sz); \
+	}
+ARRAY_WRITE(2)
+ARRAY_WRITE(4)
+ARRAY_WRITE(6)
+ARRAY_WRITE(8)
+ARRAY_WRITE(C)
+ARRAY_WRITE(10)

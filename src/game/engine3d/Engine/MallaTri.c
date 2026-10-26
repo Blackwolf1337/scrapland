@@ -473,8 +473,7 @@ void __thiscall CMallaTri_GetBox(CMallaTri *self, box_t *out, byte recalc) {
 	*out = self->box;
 }
 
-/* normalized through 1.0 / length in double; a zero length leaves it */
-static void Malla_Normalize(vec3_t *n) {
+void Malla_Normalize(vec3_t *n) {
 	float x = n->x, y = n->y, z = n->z;
 	float len = (float)__builtin_sqrt((double)(x * x + y * y + z * z));
 	if ((double)len == 0.0) {

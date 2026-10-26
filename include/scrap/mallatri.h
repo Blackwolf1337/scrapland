@@ -9,15 +9,11 @@
 
 #include "scrap/game.h"
 #include "scrap/listavert.h"
+#include "scrap/mallad3d.h"
 
 #define CLASE_OBJ3D_MALLATRI 0xa1000001
 /* flexible vertex format of CVertMalla: D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1 */
 #define MALLATRI_FVF 0x112
-
-typedef struct {
-	float u, v;
-} uv_t;
-SD_SIZE(uv_t, 8);
 
 /* one triangle: indices into pVert and pTVert, the normal at each corner */
 typedef struct CTriMalla {
@@ -28,31 +24,6 @@ typedef struct CTriMalla {
 	uint32_t flags;			/* 0x40 */
 } CTriMalla;
 SD_SIZE(CTriMalla, 0x44);
-
-/* a corner of a triangle as the D3D device draws it */
-typedef struct CVertMalla {
-	vec3_t pos;			/* 0x00 */
-	vec3_t n;			/* 0x0c */
-	uv_t uv;			/* 0x18 */
-} CVertMalla;
-SD_SIZE(CVertMalla, 0x20);
-
-/* the part of the D3D meshes (engine3d/engine/MallaD3D.h) used here: a list of meshes, triangles of 16 bit indices
- * into the vertex list */
-typedef struct CMallaD3D {
-	void **vftable;			/* 0x00 [0] deleting destructor, [2] draw(device, 0) */
-	int pad_4;
-	struct CMallaD3D *next;		/* 0x08 */
-	uint32_t nTri;			/* 0x0c */
-	uint16_t (*pTri)[3];		/* 0x10 */
-	CListaVert vert;		/* 0x14 */
-	byte pad_28[0x20];
-	uint32_t *triFlags;		/* 0x48 NULL for none */
-	void *mat;			/* 0x4c */
-} CMallaD3D;
-SD_OFFSET(CMallaD3D, vert, 0x14);
-SD_OFFSET(CMallaD3D, triFlags, 0x48);
-SD_OFFSET(CMallaD3D, mat, 0x4c);
 
 typedef struct CMallaTri {
 	void *vftable;			/* 0x00 */
@@ -133,6 +104,9 @@ void __fastcall CMallaTri_CreateTVert(CMallaTri *self);
 void __thiscall CMallaTri_AddD3D(CMallaTri *self, CMallaD3D *src, byte all);
 /* the triangles of orig with ((flags & mask) == 0) != want added, all its vertices and the skins */
 void __thiscall CMallaTri_Add(CMallaTri *self, const CMallaTri *orig, uint32_t mask, byte want);
+
+/* n made unit length through 1.0 / length in double; a zero length leaves it */
+void Malla_Normalize(vec3_t *n);
 
 /* box recomputed from the vertices, then merged into out (copied if first) */
 void __thiscall CMallaTri_CalcBox(CMallaTri *self, box_t *out, byte first);
