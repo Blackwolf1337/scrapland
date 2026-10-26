@@ -3,13 +3,16 @@
  */
 #include <string.h>
 
+#include "scrap/camara.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
+#include "scrap/escena.h"
 #include "scrap/grafico2d.h"
 #include "scrap/listavert.h"
 #include "scrap/mallad3d.h"
 #include "scrap/material.h"
 #include "scrap/nodo3d.h"
+#include "scrap/utild3d.h"
 #include "scrap/varios.h"
 
 /* the off bit of pixel shader i in g_PSOff */
@@ -229,17 +232,13 @@ void __thiscall CRenderVB_Create(CRenderVB *self, uint32_t numvert, int size, ui
 	}
 }
 
-byte Render_Clear(const int *rect, uint32_t flags, uint32_t color, float z, uint32_t stencil) {
-	if (g_ViewportW) {
-		RenderMallaD3D_Flush();
-		RenderMallaD3D_Flush2();
-		RenderObjBase3D_Flush();
-	}
+byte Render_Clear(const box_t *rect, uint32_t flags, uint32_t color, float z, uint32_t stencil) {
+	E3D_FlushBatch();
 	CHECK((flags & D3DCLEAR_STENCIL) == 0);
 	if (g_RenderOff) {
 		return 1;
 	}
-	if (flags & D3DCLEAR_ZBUFFER && Render_HasStencil()) {
+	if (flags & D3DCLEAR_ZBUFFER && Render_StencilBits()) {
 		flags |= D3DCLEAR_STENCIL;
 	}
 	int r[4];
@@ -480,7 +479,7 @@ static void Render_State(uint32_t state, uint32_t value) {
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
 }
 
-void Render_DrawTexRect(const int *rect, uint32_t cLeft, uint32_t cRight, void *tex) {
+void Render_DrawTexRect(const box_t *rect, uint32_t cLeft, uint32_t cRight, void *tex) {
 	if (g_RenderOff) {
 		return;
 	}
@@ -550,17 +549,8 @@ void Render_FinD3D(void) {
 	E3D_DebugPrintf("\n< RenderFinD3D()");
 }
 
-/* the batches waiting for the view are drawn */
-static void Render_FlushBatches(void) {
-	if (g_ViewportW) {
-		RenderMallaD3D_Flush();
-		RenderMallaD3D_Flush2();
-		RenderObjBase3D_Flush();
-	}
-}
-
 void Render_EndView(void) {
-	Render_FlushBatches();
+	E3D_FlushBatch();
 	Render_SetMaterial(g_MatDefault, 0);
 	void *dev = g_pd3dDevice;
 	D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, g_ViewportFull);
@@ -570,7 +560,7 @@ void Render_EndView(void) {
 }
 
 void Render_ClearForced(void) {
-	Render_FlushBatches();
+	E3D_FlushBatch();
 	g_MatFX1 = NULL;
 	g_MatFX2 = NULL;
 	g_MatForzado = NULL;
@@ -846,6 +836,16 @@ int Render_SetMaterial(void *m, int pass) {
 	return 0;
 }
 
+/* the part x0..x1, y0..y1 (-0.5..0.5, y up) of the view through proj */
+static void Proj_Sub(matrix_t *out, const matrix_t *proj, float x0, float x1, float y0, float y1) {
+	matrix_t m = *proj;
+	m.m[0] = proj->m[0] / (x1 - x0);
+	m.m[5] = proj->m[5] / (y0 - y1);
+	m.m[8] = (x1 + x0) / (x0 - x1);
+	m.m[9] = (y1 + y0) / (y1 - y0);
+	*out = m;
+}
+
 byte Render_ProjTile(const matrix_t *proj) {
 	byte on = g_TileOn;
 	if (g_TileState < 2) {
@@ -876,12 +876,7 @@ byte Render_ProjTile(const matrix_t *proj) {
 	float x1 = (float)(g_TileX + 1) / fn - 0.5f;
 	float y0 = -((float)g_TileY / fn - 0.5f);
 	float y1 = -((float)(g_TileY + 1) / fn - 0.5f);
-	matrix_t m = *proj;
-	m.m[0] = proj->m[0] / (x1 - x0);
-	m.m[5] = proj->m[5] / (y0 - y1);
-	m.m[8] = (x1 + x0) / (x0 - x1);
-	m.m[9] = (y1 + y0) / (y1 - y0);
-	g_MatProj = m;
+	Proj_Sub(&g_MatProj, proj, x0, x1, y0, y1);
 	CHECK(g_pd3dDevice);
 	void *dev = g_pd3dDevice;
 	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &g_MatProj);
@@ -1037,5 +1032,216 @@ int Render_SetView(const matrix_t *m) {
 	}
 	void *dev = g_pd3dDevice;
 	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_VIEW, &g_MatView);
+	return 0;
+}
+
+void E3D_FlushBatch(void) {
+	if (g_ViewportW) {
+		RenderMallaD3D_Flush();
+		RenderMallaD3D_Flush2();
+		RenderObjBase3D_Flush();
+	}
+}
+
+byte Box_IsVisible(const matrix_t *m, const box_t *box, const char *name, float scale) {
+	box_t wb;
+	Box_Transform(&wb, box, m);
+	vec3_t c = { (wb.min.x + wb.max.x) * 0.5f, (wb.max.y + wb.min.y) * 0.5f, (wb.max.z + wb.min.z) * 0.5f };
+	float dx = wb.max.x - wb.min.x, dy = wb.max.y - wb.min.y, dz = wb.max.z - wb.min.z;
+	float r = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) * 0.5f * scale;
+	if (!(r > 0.0f)) {
+		vec3_t pos = { m->m[12], m->m[13], m->m[14] };
+		/* the center x where the radius is meant, as the original */
+		E3D_LogBlue(g_FileLog, "ERROR: Invalid radius: %f  Model: %s  Pos: %s", (double)c.x, name, Vec3_Str(&pos, 0, 6));
+		CHECK(r > 0.0f);
+	}
+	int out;
+	Frustum_TestSpheres(&c, &r, 1, &out);
+	if (out) {
+		return 0;
+	}
+	if (g_ShowSphereVis) {
+		Debug_DrawBoxM(m, &box->min, &box->max, 0xffffff);
+		Debug_DrawBox(&wb.min, &wb.max, 0xffff00);
+		Debug_DrawSphere(&c, r, 0xff00, 10, -1);
+	}
+	return 1;
+}
+
+byte Frustum_SegVisible(const vec3_t *a, const vec3_t *b) {
+	return Frustum_TestSeg(a, b) == 0;
+}
+
+byte Sph_IsVisible(const vec3_t *center, float radius, int arg) {
+	(void)arg;
+	vec3_t c = *center;
+	CHECK(!(radius <= 0.0f));
+	int out;
+	Frustum_TestSpheres(&c, &radius, 1, &out);
+	if (out) {
+		return 0;
+	}
+	if (g_ShowSphereVis > 1) {
+		Debug_DrawSphere(&c, radius, 0xff, 10, -1);
+	}
+	return 1;
+}
+
+/* n bytes of src into a new buffer (a vertex or index buffer, the same methods) */
+static int Buf_Fill(void *buf, const void *src, uint32_t lockSize, uint32_t n) {
+	void *p;
+	if (D3D_METHOD(buf, d3dLock_t, D3DBUF_LOCK)(buf, 0, lockSize, &p, 0) < 0) {
+		return E_FAIL;
+	}
+	memcpy(p, src, n);
+	D3D_METHOD(buf, d3dUnlock_t, D3DBUF_UNLOCK)(buf);
+	return 0;
+}
+
+int Render_CreateIB(void **ib, const void *tris, int nTri, byte dynamic) {
+	CHECK(ib);
+	CHECK(tris);
+	CHECK(nTri > 0);
+	uint32_t n = (uint32_t)nTri * 6;
+	void *dev = g_MotorDev;
+	if (D3D_METHOD(dev, d3dCreateIB_t, D3DDEV_CREATEIB)(dev, n, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16,
+		dynamic ? D3DPOOL_SYSTEMMEM : D3DPOOL_DEFAULT, ib) < 0) {
+		return E_FAIL;
+	}
+	return Buf_Fill(*ib, tris, n, n);
+}
+
+int Render_CreateVB(void **vb, CListaVert *vert, byte dynamic) {
+	CHECK(vb);
+	CHECK(vert);
+	CHECK(vert->nVert > 0);
+	int n = vert->nVert;
+	void *dev = g_MotorDev;
+	uint32_t fvf = CListaVert_FVF(vert);
+	if (D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, (uint32_t)(CListaVert_Size(vert) * n), D3DUSAGE_WRITEONLY,
+		fvf, dynamic ? D3DPOOL_SYSTEMMEM : D3DPOOL_DEFAULT, vb) < 0) {
+		return E_FAIL;
+	}
+	return Buf_Fill(*vb, vert->pVert, 0, (uint32_t)(CListaVert_Size(vert) * vert->nVert));
+}
+
+const char *Render_VersionStr(uint32_t v) {
+	Bprintf(g_VersionStr, 0x40, "%d.%d", v >> 8 & 0xff, v & 0xff);
+	return g_VersionStr;
+}
+
+void Render_SetCamara(CCamara *cam) {
+	matrix_t m;
+	Render_SetView(CCamara_GetView(cam, &m));
+	g_MatProj = *CCamara_GetProj(cam, &m);
+	void *dev = g_pd3dDevice;
+	if (dev) {
+		D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &g_MatProj);
+	}
+	Frustum_Calc(&g_MatView, &g_MatProj);
+}
+
+byte Render_ClipRect(int *out, const uint32_t *vp, const box_t *rect) {
+	CHECK(out);
+	int w = (int)vp[2], h = (int)vp[3];
+	float fw = (float)(double)vp[2], fx = (float)(double)vp[0];
+	float fh = (float)(double)vp[3], fy = (float)(double)vp[1];
+	int x0 = (int)((double)(fw * rect->min.x + fx) + 0.5);
+	int y0 = (int)((double)(rect->min.y * fh + fy) + 0.5);
+	int x1 = (int)((double)(rect->max.x * fw + fx) + 0.5);
+	int y1 = (int)((double)(rect->max.y * fh + fy) + 0.5);
+	x0 = x0 > 0 ? (x0 >= w ? w : x0) : 0;
+	y0 = y0 > 0 ? (y0 >= h ? h : y0) : 0;
+	x1 = x1 > 0 ? (x1 >= w ? w : x1) : 0;
+	y1 = y1 > 0 ? (y1 >= h ? h : y1) : 0;
+	if (x1 > x0 && y1 > y0) {
+		out[0] = x0;
+		out[1] = y0;
+		out[2] = x1;
+		out[3] = y1;
+		return 1;
+	}
+	out[2] = x0;
+	out[0] = x0;
+	out[1] = y0;
+	out[3] = y0;
+	return 0;
+}
+
+void Render_NoIndexedBlend(void *dev) {
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_INDEXEDVERTEXBLENDENABLE, 0);
+}
+
+byte Render_SetViewRect(const box_t *rect, byte proj) {
+	E3D_FlushBatch();
+	void *dev = g_pd3dDevice;
+	if (!rect) {
+		matrix_t m = g_MatProj;
+		D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &m);
+		dev = g_pd3dDevice;
+		D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, g_Viewport);
+		return 1;
+	}
+	uint32_t vp[6];
+	memcpy(vp, g_Viewport, sizeof(vp));
+	int w = (int)vp[2], h = (int)vp[3];
+	int r[4];
+	Render_ClipRect(r, vp, rect);
+	vp[2] = (uint32_t)(r[2] - r[0]);
+	vp[3] = (uint32_t)(r[3] - r[1]);
+	vp[0] = (uint32_t)r[0];
+	vp[1] = (uint32_t)r[1];
+	dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, vp);
+	if (proj) {
+		float fw = (float)w, fh = (float)h;
+		matrix_t m;
+		Proj_Sub(&m, &g_MatProj, (float)r[0] / fw - 0.5f, (float)r[2] / fw - 0.5f, -((float)r[1] / fh - 0.5f),
+			-((float)r[3] / fh - 0.5f));
+		dev = g_pd3dDevice;
+		D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &m);
+	}
+	return 1;
+}
+
+int Render_GetViewportH(void) {
+	CHECK(g_ViewportH);
+	return g_ViewportH;
+}
+
+int Render_GetViewportW(void) {
+	CHECK(g_ViewportW);
+	return g_ViewportW;
+}
+
+int Render_StencilBits(void) {
+	switch (MOTOR_ZFORMAT(g_Motor)) {
+	case D3DFMT_D15S1:
+		return 1;
+	case D3DFMT_D24S8:
+		return 8;
+	case D3DFMT_D24X4S4:
+		return 4;
+	default:
+		return 0;
+	}
+}
+
+int Render_Line(const vec3_t *a, const vec3_t *b, uint32_t color) {
+	if (!g_MotorDev) {
+		return E_FAIL;
+	}
+	if (g_DiffuseMod4x) {
+		color = (color >> 2 & 0x3f3f3f) | (color & 0xff000000);
+	}
+	const struct {
+		vec3_t p;
+		uint32_t color;
+	} v[2] = { { *a, color }, { *b, color } };
+	Render_SetMaterial(g_MatLinea, 0);
+	void *dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_XYZ | D3DFVF_DIFFUSE);
+	dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_LINELIST, 1, v, sizeof(v[0]));
 	return 0;
 }

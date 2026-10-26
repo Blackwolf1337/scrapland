@@ -7225,7 +7225,7 @@ rva	size	source	callconv	name	signature
 00249c70	29	USER_DEFINED	__thiscall	CRenderVB_Get	void * __thiscall(int * used)
 00249c90	156	USER_DEFINED	__thiscall	CRenderIB_Create	void __thiscall(uint numtri)
 00249d30	166	USER_DEFINED	__thiscall	CRenderVB_Create	void __thiscall(uint numvert, int size, uint fvf)
-00249de0	234	USER_DEFINED	__cdecl	Render_Clear	byte __cdecl(int * rect, uint flags, uint color, float z, uint stencil)
+00249de0	234	USER_DEFINED	__cdecl	Render_Clear	byte __cdecl(void * rect, uint flags, uint color, float z, uint stencil)
 00249ed0	98	USER_DEFINED	__cdecl	Render_PSConstAlpha	void __cdecl(void * mat, uint reg)
 00249f40	265	USER_DEFINED	__cdecl	Mat_StageEnvBump	void __cdecl(void * mat, uint flags, uint stageEnv, uint stageBump)
 0024a050	649	USER_DEFINED	__cdecl	Mat_StageEnvMap	void __cdecl(void * mat, uint flags, uint stage, float bias)
@@ -7235,14 +7235,14 @@ rva	size	source	callconv	name	signature
 0024a5f0	372	USER_DEFINED	__cdecl	Tex_StageTransform	void __cdecl(void * unused, uint flags, uint stage, float su, float sv, float scale, float rot)
 0024a770	284	USER_DEFINED	__cdecl	Mat_StageBumpMat	void __cdecl(void * mat, uint flags, uint stage, float k, float s, float rot)
 0024a890	373	USER_DEFINED	__cdecl	Render_D3DMaterial	void __cdecl(void * mat, float * colors)
-0024aa10	991	USER_DEFINED	__cdecl	Render_DrawTexRect	void __cdecl(int * rect, uint cLeft, uint cRight, void * tex)
+0024aa10	991	USER_DEFINED	__cdecl	Render_DrawTexRect	void __cdecl(void * rect, uint cLeft, uint cRight, void * tex)
 0024adf0	233	USER_DEFINED	__cdecl	Render_FinD3D	void __cdecl(void)
 0024aee0	77	USER_DEFINED	__cdecl	Render_EndView	void __cdecl(void)
 0024af30	75	USER_DEFINED	__cdecl	Render_ClearForced	void __cdecl(void)
 0024af80	6	USER_DEFINED	__cdecl	Render_GetCaps	void * __cdecl(void)
 0024af90	2286	DEFAULT	unknown	FUN_0064af90	
 0024b880	212	USER_DEFINED	__cdecl	Render_BeginFrame	void __cdecl(void)
-0024b960	211	USER_DEFINED	unknown	Render_Line	
+0024b960	211	USER_DEFINED	__cdecl	Render_Line	int __cdecl(void * a, void * b, uint color)
 0024ba40	125	USER_DEFINED	__cdecl	Render_DrawListaIdx	int __cdecl(void * v, ushort * idx, int ntri, byte stats)
 0024bac0	108	USER_DEFINED	__cdecl	Render_SetWorldMatrix	int __cdecl(void * m, byte defer)
 0024bb30	51	USER_DEFINED	__cdecl	Render_SetWorldD3D	int __cdecl(void * m)
@@ -7267,20 +7267,20 @@ rva	size	source	callconv	name	signature
 0024cde0	221	USER_DEFINED	__cdecl	Render_SetView	int __cdecl(void * m)
 0024cec0	25	USER_DEFINED	__cdecl	E3D_FlushBatch	void __cdecl(void)
 0024cf00	467	USER_DEFINED	unknown	Render_ToScreen	
-0024d0e0	437	DEFAULT	unknown	FUN_0064d0e0	
-0024d2c0	24	DEFAULT	unknown	FUN_0064d2c0	
-0024d2e0	152	USER_DEFINED	__cdecl	Sph_IsVisible	byte __cdecl(float *center, float radius, int arg)
-0024d380	222	USER_DEFINED	__cdecl	Render_CreateIB	int __cdecl(void * ib, void * tris, uint nTri, int flags)
-0024d460	267	USER_DEFINED	__cdecl	Render_CreateVB	int __cdecl(void * vb, void * vert, int flags)
-0024d570	44	DEFAULT	unknown	FUN_0064d570	
-0024d5a0	153	DEFAULT	unknown	FUN_0064d5a0	
-0024d640	3028	DEFAULT	unknown	FUN_0064d640	
-0024e220	363	USER_DEFINED	unknown	Render_ClipRect	
-0024e390	24	DEFAULT	unknown	FUN_0064e390	
-0024e3b0	530	DEFAULT	unknown	FUN_0064e3b0	
-0024e620	43	USER_DEFINED	unknown	Render_GetViewportH	
-0024e650	43	USER_DEFINED	unknown	Render_GetViewportW	
-0024e6f0	47	USER_DEFINED	unknown	Render_HasStencil	
+0024d0e0	437	USER_DEFINED	__cdecl	Box_IsVisible	byte __cdecl(void * m, void * box, char * name, float scale)
+0024d2c0	24	USER_DEFINED	__cdecl	Frustum_SegVisible	byte __cdecl(void * a, void * b)
+0024d2e0	152	USER_DEFINED	__cdecl	Sph_IsVisible	byte __cdecl(void * center, float radius, int arg)
+0024d380	222	USER_DEFINED	__cdecl	Render_CreateIB	int __cdecl(void ** ib, void * tris, int nTri, byte dynamic)
+0024d460	267	USER_DEFINED	__cdecl	Render_CreateVB	int __cdecl(void ** vb, void * vert, byte dynamic)
+0024d570	44	USER_DEFINED	__cdecl	Render_VersionStr	char * __cdecl(uint v)
+0024d5a0	153	USER_DEFINED	__cdecl	Render_SetCamara	void __cdecl(void * cam)
+0024d640	3028	USER_DEFINED	unknown	Frustum_Calc	
+0024e220	363	USER_DEFINED	__cdecl	Render_ClipRect	byte __cdecl(int * out, uint * vp, void * rect)
+0024e390	24	USER_DEFINED	__cdecl	Render_NoIndexedBlend	void __cdecl(void * dev)
+0024e3b0	530	USER_DEFINED	__cdecl	Render_SetViewRect	byte __cdecl(void * rect, byte proj)
+0024e620	43	USER_DEFINED	__cdecl	Render_GetViewportH	int __cdecl(void)
+0024e650	43	USER_DEFINED	__cdecl	Render_GetViewportW	int __cdecl(void)
+0024e6f0	47	USER_DEFINED	__cdecl	Render_StencilBits	int __cdecl(void)
 0024e750	116	USER_DEFINED	__cdecl	Render_GetViewportSize	void __cdecl(int * ancho, int * alto)
 0024e7d0	230	USER_DEFINED	__fastcall	CEscena_ctor	void * __fastcall(void * self)
 0024e8c0	528	USER_DEFINED	__fastcall	CEscena_dtor	void __fastcall(void * self)

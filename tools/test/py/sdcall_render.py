@@ -230,10 +230,10 @@ def rdints(a, n):
 	for i in range(n):
 		r.append(SDTest.Peek(a + 4 * i, 'i'))
 	return r
-def rdfloats(a, n):
+def rdheap(a, n):
 	r = []
-	for v in rdints(a, n):
-		r.append(v)
+	for i in range(n):
+		r.append(rdi(a + 4 * i))
 	return r
 rdproj = rdints(0x4ae3f8, 16)
 rdview = rdints(0x4ae4b8, 16)
@@ -299,5 +299,65 @@ def rdfl(v):
 	for i in range(16):
 		SDTest.Poke(r + 4 * i - 0x400000, v[i])
 	return r
+SDTest.Call(0x24c6a0, 'ii', rdfl(rdproj))
+SDTest.Call(0x24cde0, 'ii', rdfl(rdview))
+
+# chunk F: the visibility tests on the planes of the frustum tests, the rectangles, the buffers made from data, the
+# camera, the version string; frustum, view, projection and viewport put back after
+rdplanes = rdints(0x4adbf0, 24)
+SDTest.Call(0x3197d0, 'iiFi', 0x4adbf0 + 0x400000, (-1.0, 0.0, 0.0, -10.0, 1.0, 0.0, 0.0, -10.0, 0.0, -1.0, 0.0, -10.0,
+	0.0, 1.0, 0.0, -10.0, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 1.0, -100.0), 96)
+mid = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 50.0, 1.0)
+far = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 300.0, 50.0, 1.0)
+for m in (mid, far):
+	for box in ((-1.0, -1.0, -1.0, 1.0, 1.0, 1.0), (-200.0, -2.0, -2.0, 200.0, 2.0, 2.0)):
+		for scale in (1.0, 0.5):
+			check('Box_IsVisible' + fmt((m[13], box[0], scale)), lambda m=m, box=box, scale=scale: SDTest.Call(0x24d0e0, 'bFFsf',
+				m, box, 'sd', scale)[0])
+for c, r in (((0.0, 0.0, 50.0), 1.0), ((0.0, 30.0, 50.0), 5.0), ((0.0, 30.0, 50.0), 25.0)):
+	check('Sph_IsVisible' + fmt((c, r)), lambda c=c, r=r: SDTest.Call(0x24d2e0, 'bFfi', c, r, 0)[0])
+check('Frustum_SegVisible', lambda: (SDTest.Call(0x24d2c0, 'bFF', (0.0, 0.0, 50.0), (0.0, 30.0, 50.0))[0],
+	SDTest.Call(0x24d2c0, 'bFF', (20.0, 0.0, 50.0), (30.0, 0.0, 50.0))[0]))
+for i in range(24):
+	SDTest.Poke(0x4adbf0 + 4 * i, rdplanes[i])
+vp = SDTest.Call(0x1334d0, 'ii', 24)[0]
+for i, v in ((0, 10), (1, 20), (2, 640), (3, 480), (4, 0), (5, 0x3f800000)):
+	SDTest.Poke(vp + 4 * i - 0x400000, v)
+for box in ((0.0, 0.0, 0.0, 1.0, 1.0, 0.0), (0.25, 0.1, 0.0, 0.5, 0.75, 0.0), (-0.5, 0.5, 0.0, 2.0, 0.4, 0.0),
+	(0.7, 0.7, 0.0, 0.2, 0.9, 0.0), (0.33333, 0.66666, 0.0, 0.4999, 0.9999, 0.0)):
+	check('Render_ClipRect' + fmt(box), lambda box=box: SDTest.Call(0x24e220, 'biiF', SDTest.Call(0x1334d0, 'ii', 16)[0], vp,
+		box)[0:1])
+	out16 = SDTest.Call(0x1334d0, 'ii', 16)[0]
+	check('Render_ClipRect out' + fmt(box), lambda box=box, out16=out16: (SDTest.Call(0x24e220, 'biiF', out16, vp, box),
+		rdheap(out16, 4)))
+rdvp2 = rdints(0x4ad7e0, 6)
+SDTest.Call(0x3197d0, 'iiii', 0x4ad7e0 + 0x400000, vp, 24)
+for box, proj in (((0.25, 0.1, 0.0, 0.5, 0.75, 0.0), 1), ((0.0, 0.0, 0.0, 1.0, 1.0, 0.0), 0)):
+	check('Render_SetViewRect' + fmt((box, proj)), lambda box=box, proj=proj: rdlog(lambda box=box, proj=proj:
+		SDTest.Call(0x24e3b0, 'bFi', box, proj)))
+check('Render_SetViewRect none', lambda: rdlog(lambda: SDTest.Call(0x24e3b0, 'bii', 0, 0)))
+check('Render_GetViewport', lambda: (SDTest.Call(0x24e650, 'i')[0], SDTest.Call(0x24e620, 'i')[0]))
+for i in range(6):
+	SDTest.Poke(0x4ad7e0 + 4 * i, rdvp2[i])
+check('Render_StencilBits', lambda: SDTest.Call(0x24e6f0, 'i')[0])
+for v in (0x0101, 0x0800, 0xffff, 0x12345):
+	check('Render_VersionStr' + fmt((v,)), lambda v=v: SDTest.Call(0x24d570, 'si', v)[0])
+check('Render_NoIndexedBlend', lambda: rdlog(lambda: SDTest.Call(0x24e390, 'vi', SDTest.Peek(0x4ad6f4, 'i'))))
+tris = SDTest.Call(0x1334d0, 'ii', 36)[0]
+for i in range(9):
+	SDTest.Poke(tris + 4 * i - 0x400000, i * 0x10001)
+cell = SDTest.Call(0x1334d0, 'ii', 4)[0]
+for dyn in (0, 1):
+	check('Render_CreateIB' + fmt((dyn,)), lambda dyn=dyn: (rdlog(lambda dyn=dyn: SDTest.Call(0x24d380, 'iiiii', cell, tris, 6,
+		dyn)), rdi(cell) != 0))
+	SDTest.Poke(lv - 0x400000, data)
+	SDTest.Poke(lv + 4 - 0x400000, 6)
+	check('Render_CreateVB' + fmt((dyn,)), lambda dyn=dyn: (rdlog(lambda dyn=dyn: SDTest.Call(0x24d460, 'iiii', cell, lv, dyn)),
+		rdi(cell) != 0))
+cam = SDTest.Call(0x29c110, 'tii', SDTest.Call(0x1334d0, 'ii', 0x78)[0])[0]
+check('Render_SetCamara', lambda: (rdlog(lambda: SDTest.Call(0x24d5a0, 'vi', cam)), rdints(0x4ae3f8, 16), rdints(0x4ae4b8, 16),
+	rdints(0x4adbf0, 24)))
+for i in range(24):
+	SDTest.Poke(0x4adbf0 + 4 * i, rdplanes[i])
 SDTest.Call(0x24c6a0, 'ii', rdfl(rdproj))
 SDTest.Call(0x24cde0, 'ii', rdfl(rdview))

@@ -76,6 +76,7 @@ typedef int(__stdcall *d3dUnlock_t)(void *buf);
 typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define COM_ADDREF(obj) D3D_METHOD(obj, d3dAddRef_t, 0x4)(obj)
 
+#define D3DPT_LINELIST 2
 #define D3DPT_TRIANGLELIST 4
 #define D3DPT_TRIANGLESTRIP 5
 #define D3DTS_VIEW 2
@@ -93,6 +94,7 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DRS_ALPHABLENDENABLE 27
 #define D3DRS_ZBIAS 47
 #define D3DRS_LIGHTING 137
+#define D3DRS_INDEXEDVERTEXBLENDENABLE 151
 #define D3DRS_COLORWRITEENABLE 168
 #define D3DCMP_GREATEREQUAL 7
 #define D3DRS_CULLMODE 22
@@ -133,9 +135,15 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DTOP_MODULATE4X 6
 #define D3DUSAGE_WRITEONLY 8
 #define D3DPOOL_DEFAULT 0
+#define D3DPOOL_SYSTEMMEM 2
 #define D3DPOOL_MANAGED 1
 #define D3DUSAGE_WRITEONLY_DYNAMIC 0x208
 #define D3DFMT_INDEX16 101
+#define D3DFMT_D15S1 73
+#define D3DFMT_D24S8 75
+#define D3DFMT_D24X4S4 79
+#define D3DFVF_XYZ 0x2
+#define D3DFVF_DIFFUSE 0x40
 #define D3DLOCK_NOOVERWRITE 0x1000
 #define D3DLOCK_DISCARD 0x2000
 

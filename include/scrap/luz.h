@@ -120,11 +120,9 @@ void __thiscall CLuz_UpdateD3D(CLuz *self, byte hide);
 box_t *__fastcall Box_Zero(box_t *self);
 
 /* other modules, called from luz.cpp (src/imports.inc) */
-void E3D_FlushBatch(void);	/* rva 0x24cec0, the pending primitives of the renderer */
 /* rva 0x2682d0, the light of the shadows (NULL: none); the second argument is 0 here */
 void E3D_SetShadowLight(CLuz *l, int arg);
 int Prof_Count(int section, int n);	/* rva 0x273040, a profiler counter, the new value */
-byte Sph_IsVisible(const vec3_t *center, float radius, int arg);	/* rva 0x24d2e0, the view frustum */
 /* rva 0x26e490, gMundo->obtSuelo(): 1 if the segment from-to hits the ground */
 byte __thiscall CSuelo_Trace(void *self, const vec3_t *from, const vec3_t *to, void *a, float b, void *c);
 

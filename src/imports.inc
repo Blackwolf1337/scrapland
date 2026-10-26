@@ -354,10 +354,8 @@ SD_IMPORT(Console_Execute, 0x20aaf0)
 SD_IMPORT(CListaVert_GetPos, 0x212570)
 
 /* engine3d: called from Engine/luz.cpp (include/scrap/luz.h) */
-SD_IMPORT(E3D_FlushBatch, 0x24cec0)
 SD_IMPORT(E3D_SetShadowLight, 0x2682d0)
 SD_IMPORT(Prof_Count, 0x273040)
-SD_IMPORT(Sph_IsVisible, 0x24d2e0)
 SD_IMPORT(CSuelo_Trace, 0x26e490)
 /* engine3d: Engine/Material.c (include/scrap/material.h), the parts of the classes outside Material.cpp and the
  * texture manager */
@@ -415,7 +413,7 @@ SD_IMPORT(CSuelo_FreeNodos, 0x261530)
 SD_IMPORT(Font_PrintfXY, 0x299ce0)
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
-SD_IMPORT(Render_ClipRect, 0x24e220)
+SD_IMPORT(Frustum_Calc, 0x24d640)
 SD_IMPORT(CAnimMat_GetFrame, 0x258060)
 SD_IMPORT(Matrix_Invert, 0x239560)
 SD_IMPORT(RenderLock_ReleaseD3D, 0x2a4860)
@@ -427,21 +425,17 @@ SD_IMPORT(RenderGamma_Begin, 0x2a7520)
 SD_IMPORT(RenderGamma_LogShaderMask, 0x2a7cd0)
 SD_IMPORT(Vec3_ToAngles, 0x239150)
 SD_IMPORT(Matrix_RotationZ, 0x23a2b0)
-SD_IMPORT(Render_HasStencil, 0x24e6f0)
 SD_IMPORT(RenderMallaD3D_Flush, 0x2b6af0)
 SD_IMPORT(RenderMallaD3D_Flush2, 0x2b6e60)
 SD_IMPORT(RenderObjBase3D_Flush, 0x2b7260)
 
 /* src/game/engine3d/Engine/Grafico2D.c (called from Engine/grafico2d.cpp, include/scrap/grafico2d.h) */
-SD_IMPORT(Render_GetViewportW, 0x24e650)
-SD_IMPORT(Render_GetViewportH, 0x24e620)
 
 /* src/game/engine3d/Engine/Texto.c (called from Engine/texto.cpp, include/scrap/texto.h) */
 SD_IMPORT(Render_ToScreen, 0x24cf00)
 SD_IMPORT(Eng_Printf, 0x2170d0)
 
 /* src/game/engine3d/Engine/UtilD3D.c (called from Engine/util_d3d.cpp, include/scrap/utild3d.h) */
-SD_IMPORT(Render_Line, 0x24b960)
 
 /* src/game/engine3d/Engine/Grafico3D.c (called from Engine/grafico3d.cpp, include/scrap/grafico3d.h) */
 SD_IMPORT(CAnimMat_ctorCopy, 0x257f10)
@@ -455,8 +449,6 @@ SD_IMPORT(Debug_Line, 0x27cb80)
 
 
 /* module agent: Engine/MallaD3D (imports below this line) */
-SD_IMPORT(Render_CreateIB, 0x24d380)
-SD_IMPORT(Render_CreateVB, 0x24d460)
 SD_IMPORT(Plane_Calc, 0x286fb0)
 SD_IMPORT(MallaD3D_Render, 0x2b67a0)
 SD_IMPORT(CMallaD3D_CalcSegmentos, 0x2d5350)

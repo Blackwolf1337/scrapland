@@ -130,6 +130,10 @@ SD_SIZE(ShaderTab, 0x18);
 #define g_ViewportFull ((uint32_t *)Game_Ptr(0x4ad7f8))
 #define g_D3DOn GAME_DATA(byte, 0x4ad6f1)
 #define g_MatDefault ((void *)Game_Ptr(0x4adc98))
+#define g_MatLinea ((void *)Game_Ptr(0x4ad918))	/* the material of the debug lines */
+#define g_ShowSphereVis GAME_DATA(int, 0x4adbd0)	/* R_ShowSphereVis 0, 1, 2 */
+#define g_VersionStr ((char *)Game_Ptr(0x4ae540))	/* 0x40 */
+#define MOTOR_ZFORMAT(m) (*(uint32_t *)((m) + 0x2a4d0))
 #define g_MatActual GAME_DATA(const CMaterial *, 0x4ae580)	/* the last one Render_SetMaterial set */
 #define g_Caps ((void *)Game_Ptr(0x4ae1f8))	/* D3DCAPS8 of the device */
 #define g_RenderI1F4 GAME_DATA(int, 0x4ae1f4)
@@ -182,10 +186,10 @@ void __thiscall CRenderIB_Create(CRenderIB *self, uint32_t numtri);
 void __thiscall CRenderVB_Create(CRenderVB *self, uint32_t numvert, int size, uint32_t fvf);
 /* the batches drawn first; rect (x0, y0, x1, y1 in the viewport) NULL for all; D3DCLEAR_ZBUFFER also clears the
  * stencil of a device that has one; whether the device cleared */
-byte Render_Clear(const int *rect, uint32_t flags, uint32_t color, float z, uint32_t stencil);
+byte Render_Clear(const box_t *rect, uint32_t flags, uint32_t color, float z, uint32_t stencil);
 void Render_GetViewportSize(int *ancho, int *alto);
 /* a textured rectangle of the viewport, its left side in cLeft, its right side in cRight */
-void Render_DrawTexRect(const int *rect, uint32_t cLeft, uint32_t cRight, void *tex);
+void Render_DrawTexRect(const box_t *rect, uint32_t cLeft, uint32_t cRight, void *tex);
 /* the end of the D3D device: textures and pixel shaders off, the shaders deleted, the device objects of the modules
  * released */
 void Render_FinD3D(void);
@@ -254,22 +258,40 @@ const matrix_t *Render_GetView(void);
 const matrix_t *Render_GetBillboard(void);
 const vec3_t *Render_GetEyePos(void);
 
-/* still the exe's */
-/* rva 0x24b960: a line in the current world matrix; an error without a device */
+/* a line in the current world matrix (the line material); an error without a device */
 int Render_Line(const vec3_t *a, const vec3_t *b, uint32_t color);
-/* rva 0x24cf00: the screen position (pixels) of a world position; 0, -1 when it is not on the screen */
-int Render_ToScreen(const vec3_t *pos, float *xy);
-/* rva 0x24e650, 0x24e620: the viewport size, CHECK that it is set */
+/* the viewport size, CHECK that it is set */
 int Render_GetViewportW(void);
 int Render_GetViewportH(void);
-/* rva 0x24e220: rect of the viewport vp as a D3DRECT of the device */
-void Render_ClipRect(int *out, const uint32_t *vp, const int *rect);
-/* rva 0x24e6f0: the depth buffer has a stencil */
-int Render_HasStencil(void);
-/* rva 0x24d460, 0x24d380: the vertex buffer of a vertex list and the index buffer of triangles (HRESULT) */
-int Render_CreateVB(void **vb, struct CListaVert *vert, int flags);
-int Render_CreateIB(void **ib, const void *tris, uint32_t nTri, int flags);
+/* the pixels of rect (0..1 of the viewport vp) as a D3DRECT, clamped; 0 (a point) when nothing is left */
+byte Render_ClipRect(int *out, const uint32_t *vp, const box_t *rect);
+/* the stencil bits of the depth buffer */
+int Render_StencilBits(void);
+/* the vertex buffer of a vertex list and the index buffer of triangles, in system memory with dynamic (HRESULT) */
+int Render_CreateVB(void **vb, struct CListaVert *vert, byte dynamic);
+int Render_CreateIB(void **ib, const void *tris, int nTri, byte dynamic);
+/* the batches waiting for the view drawn */
+void E3D_FlushBatch(void);
+/* the box in the space of m is in the view frustum (as the sphere around it, scale times its radius); with
+ * R_ShowSphereVis drawn */
+byte Box_IsVisible(const matrix_t *m, const box_t *box, const char *name, float scale);
+byte Frustum_SegVisible(const vec3_t *a, const vec3_t *b);
+/* arg is not used */
+byte Sph_IsVisible(const vec3_t *center, float radius, int arg);
+/* "major.minor" of a version word, a static buffer */
+const char *Render_VersionStr(uint32_t v);
+/* the view and projection of the camera, the frustum of them */
+struct CCamara;
+void Render_SetCamara(struct CCamara *cam);
+void Render_NoIndexedBlend(void *dev);
+/* the viewport narrowed to rect and the projection to it (with proj); NULL the whole view again; 1 */
+byte Render_SetViewRect(const box_t *rect, byte proj);
 
+/* still the exe's */
+/* rva 0x24cf00: the screen position (pixels) of a world position; 0, -1 when it is not on the screen */
+int Render_ToScreen(const vec3_t *pos, float *xy);
+/* rva 0x24d640: the planes of the frustum of view and proj */
+void Frustum_Calc(const matrix_t *view, const matrix_t *proj);
 
 /* other modules (src/imports.inc) */
 void RenderLock_ReleaseD3D(void);		/* rva 0x2a4860 (RenderLock.cpp) */
