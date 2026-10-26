@@ -18,8 +18,10 @@ void Con_Errorf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 void Con_Warnf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 /* printf into the console lines, while the debug level is not 0 (rva 0xbbef0) */
 void Con_Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
-/* like Con_Printf in color 0xff, keeps GetLastError for the log (rva 0xbbba0) */
-void Con_SysErrorf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+/* the "Scrap Fatal Error" message box, then the end of the process (rva 0xbbd80) */
+void Con_Fatal(const char *msg);
+/* like Con_Printf in color 0xff, keeps GetLastError for the log, then Con_Fatal ends the game (rva 0xbbba0) */
+void Con_FatalErrorf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 /* like Con_Printf in color 0x707000, only above debug level 1 (rva 0xbc240) */
 void Con_Verbosef(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 /* like Con_Printf in color 0xff (rva 0xbc0b0) */

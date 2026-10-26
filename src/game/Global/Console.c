@@ -10,6 +10,7 @@
 
 #include "scrap/console.h"
 #include "scrap/game.h"
+#include "scrap/win32.h"
 
 #define CON_LINES 23
 #define CON_LINE_LEN 0x80
@@ -49,8 +50,6 @@ void *File_OpenRel(const char *name, const char *mode);
 void App_GetPath(char *buf, int size);
 const char *Version_Get(void);
 void ConsoleWin_Add(const char *text, uint32_t color);	/* the on-screen console, rva 0x20d550 */
-typedef int(__stdcall *messagebox_t)(void *hwnd, const char *text, const char *caption, unsigned type);
-#define exe_MessageBoxA GAME_DATA(messagebox_t, 0x3a142c)
 
 /* one text into a log: HTML escaped, CR dropped, at most 511 characters */
 void DebugLog_Write(const char *text, uint32_t color, void *f) {
@@ -206,7 +205,7 @@ void DebugLog_AIPrintf(const char *fmt, ...) {
 }
 
 /* in blue, keeps GetLastError for the log */
-void Con_SysErrorf(const char *fmt, ...) {
+void Con_FatalErrorf(const char *fmt, ...) {
 	char buf[0x400];
 	va_list ap;
 
@@ -217,6 +216,7 @@ void Con_SysErrorf(const char *fmt, ...) {
 	if (LEVEL) {
 		Con_Output(buf, CON_COLOR_BLUE);
 	}
+	Con_Fatal(buf);
 }
 
 void DebugLog_Close(void *f) {

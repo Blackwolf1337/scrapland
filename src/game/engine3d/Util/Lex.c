@@ -18,8 +18,6 @@ int crt_isdigit(int c);
 int crt_isxdigit(int c);
 int crt_tolower(int c);
 [[noreturn]] void crt_exit(int code);
-/* the text of an error code of Util/Errores.cpp (rva 0x27cdd0) */
-const char *Err_Str(int code);
 
 /* the inlined read of the next character */
 static int Lex_Getc(void) {

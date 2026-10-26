@@ -47,7 +47,7 @@ void Mem_Count(int freed, int size) {
 }
 
 void Mem_OutOfMemory(uint32_t size) {
-	Con_SysErrorf("Not enough memory (queried: %d, used: %d)", size, g_MemStats->bytes);
+	Con_FatalErrorf("Not enough memory (queried: %d, used: %d)", size, g_MemStats->bytes);
 }
 
 /* NULL and "Not enough memory" in the log if the heap has no room */

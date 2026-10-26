@@ -36,7 +36,7 @@ static int Str_Format(char *dst, int size, const char *fmt, va_list ap, int warn
 		dst[size - 1] = 0;
 		n = (int)strlen(dst);
 		if (warn) {
-			Con_SysErrorf("String size error: vcbprintf(): '%s'\n", dst);
+			Con_FatalErrorf("String size error: vcbprintf(): '%s'\n", dst);
 		}
 	}
 	return n;

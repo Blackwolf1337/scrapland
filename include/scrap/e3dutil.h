@@ -58,7 +58,47 @@ char *Cad_FromInt(char *buf, int n);	/* with separators, a static buffer for NUL
 int Bprintf(char *buf, int size, const char *fmt, ...);
 int VBprintf(char *buf, int size, const char *fmt, va_list ap);
 
-/* Util/Errores.cpp: an engine error; fatal through Con_SysErrorf, else a message box (rva 0x27cea0) */
+/* Util/Errores.cpp: error codes 0..199 with texts (50 and up for Err_Register); a report goes to the log when
+ * fatal, else into a message box */
+void Dbg_FrameRect(int x, int y, int w, int h, uint32_t color);	/* color 0xRRGGBB, on the engine window */
+void Dbg_FillRect(int x, int y, int w, int h, uint32_t color);
+const char *Err_Unregister(int code);
+const char *Err_Str(int code);
+int Err_Register(const char *text);	/* the new code or -1 */
+void Err_Code(int code, int fatal);
+[[noreturn]] void Err_Exit(const char *text);	/* to stderr, then exit(-1) */
 void Err_Printf(int fatal, const char *fmt, ...);
+void Err_Report(int code, int fatal, const char *fmt, ...);
+void Err_VReport(int code, int fatal, const char *fmt, va_list ap);
+
+/* Util/Listadin.cpp: a growing array of elemSize byte elements, allocated in blocks of blockSize elements */
+#define LISTADIN_ID 0x6e69444c	/* "LDin" */
+
+typedef struct cListaDin {
+	uint32_t id;			/* 0x00 LISTADIN_ID */
+	byte *mem;			/* 0x04 Mem_Alloc */
+	uint32_t total;			/* 0x08 elements allocated */
+	uint32_t used;			/* 0x0c */
+	uint32_t elemSize;		/* 0x10 */
+	uint16_t blockSize;		/* 0x14 */
+	byte changed;			/* 0x16 set by every change */
+	byte pad_17;
+} cListaDin;
+SD_SIZE(cListaDin, 0x18);
+
+void LDin_Free(cListaDin *din);
+cListaDin *LDin_New(uint16_t elemSize);	/* blocks of 256 */
+cListaDin *LDin_NewBlock(uint16_t elemSize, uint16_t blockSize);
+void *LDin_Get(cListaDin *din, uint32_t i);
+uint32_t LDin_Count(cListaDin *din);
+void *LDin_Last(cListaDin *din);
+void *LDin_AddOne(cListaDin *din);
+void *LDin_Add(cListaDin *din, int num);	/* the first new element */
+void LDin_Copy(cListaDin *din, uint32_t orig, uint32_t dest, int num);	/* memmove of elements */
+void LDin_Delete(cListaDin *din, uint32_t i);
+void LDin_RemoveLast(cListaDin *din);
+void *LDin_Insert(cListaDin *din, uint32_t i);	/* a new element at i */
+void LDin_Move(cListaDin *din, int orig, int dest);	/* an element to another place, -1 the last */
+void LDin_Clear(cListaDin *din);
 
 #endif

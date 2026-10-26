@@ -182,4 +182,77 @@ call('Lex_Close', 0x2cd780, 'vi', 1)
 check('Lex out', SDTest.Out)
 call('Lex_Error', 0x2cd830, 'viss', 2, 'info %s', 'no file')
 check('Lex out', SDTest.Out)
+
+# engine3d Util/Errores.c: no reports, they end the game (Con_FatalErrorf) or open a message box
+for c in (0, 1, 2, 3, 49, 50, 199, 200, -1, -2):
+	call('Err_Str', 0x27cdd0, 'si', c)
+errtext = 'sdtest error'
+code = SDTest.Call(0x27ce10, 'is', errtext)[0]
+check('Err_Register', lambda: code)
+call('Err_Str new', 0x27cdd0, 'si', code)
+call('Err_Unregister', 0x27cda0, 'si', code)
+call('Err_Unregister again', 0x27cda0, 'si', code)
+call('Err_Unregister 10', 0x27cda0, 'si', 10)
+call('Err_Unregister 200', 0x27cda0, 'si', 200)
+call('Dbg_FrameRect', 0x27cc30, 'viiiii', 1, 2, 30, 40, 0x123456)
+call('Dbg_FillRect', 0x27ccf0, 'viiiii', 1, 2, 30, 40, 0x654321)
+
+# engine3d Util/Listadin.c: elements of 8 bytes written with Cad_Copy; addresses differ between the runs, so only
+# offsets and contents are compared
+def ldin(d, contents=1):
+	n = SDTest.Peek(d + 12, '@i')
+	r = [SDTest.Peek(d + 8, '@i'), n, SDTest.Peek(d + 16, '@i'), SDTest.Peek(d + 20, '@i') & 0xffff,
+		SDTest.Peek(d + 22, '@b'), SDTest.Peek(d + 4, '@i') != 0]
+	for i in range(n * contents):
+		r.append(SDTest.Peek(SDTest.Call(0x2d4bc0, 'iii', d, i)[0], '@s'))
+	return tuple(r)
+# new elements are not initialized: their contents are written before the next look
+def lstep(name, rva, sig, d, *args):
+	def f(rva=rva, sig=sig, d=d, args=args):
+		r = apply(SDTest.Call, (rva, sig, d) + args)[0]
+		if sig[0] == 'i' and r and rva in (0x2d4cb0, 0x2d4d50, 0x2d4d70, 0x2d50d0):
+			r = r - SDTest.Peek(d + 4, '@i')
+		return (r, ldin(d, rva not in (0x2d4d50, 0x2d4d70, 0x2d50d0)))
+	check(name + fmt(args), f)
+def put(d, i, text):
+	SDTest.Call(0x22cf50, 'sisi', SDTest.Call(0x2d4bc0, 'iii', d, i)[0], text, 8)
+
+d = SDTest.Call(0x2d4b60, 'iii', 8, 2)[0]
+check('LDin_NewBlock', lambda: ldin(d))
+lstep('LDin_Count', 0x2d4c60, 'ii', d)
+lstep('LDin_Add', 0x2d4d70, 'iii', d, 3)
+for i in range(3):
+	put(d, i, 'e%d' % i)
+lstep('LDin_AddOne', 0x2d4d50, 'ii', d)
+put(d, 3, 'e3')
+lstep('LDin_Last', 0x2d4cb0, 'ii', d)
+lstep('LDin_Insert', 0x2d50d0, 'iii', d, 1)
+put(d, 1, 'ins')
+lstep('LDin_Insert', 0x2d50d0, 'iii', d, 0)
+put(d, 0, 'first')
+check('LDin', lambda: ldin(d))
+lstep('LDin_Move', 0x2d5170, 'viii', d, 0, 3)
+lstep('LDin_Move', 0x2d5170, 'viii', d, 4, 1)
+lstep('LDin_Move', 0x2d5170, 'viii', d, -1, 0)
+lstep('LDin_Move', 0x2d5170, 'viii', d, 2, -1)
+lstep('LDin_Move', 0x2d5170, 'viii', d, 2, 2)
+lstep('LDin_Copy', 0x2d4e50, 'viiii', d, 0, 3, 2)
+lstep('LDin_Copy', 0x2d4e50, 'viiii', d, 3, 1, 2)
+lstep('LDin_Copy', 0x2d4e50, 'viiii', d, 2, 2, 1)
+lstep('LDin_Delete', 0x2d4f50, 'vii', d, 1)
+lstep('LDin_Delete', 0x2d4f50, 'vii', d, 3)
+lstep('LDin_RemoveLast', 0x2d5000, 'vi', d)
+lstep('LDin_RemoveLast', 0x2d5000, 'vi', d)
+lstep('LDin_RemoveLast', 0x2d5000, 'vi', d)
+lstep('LDin_RemoveLast', 0x2d5000, 'vi', d)
+lstep('LDin_Add', 0x2d4d70, 'iii', d, 5)
+lstep('LDin_Clear', 0x2d52d0, 'vi', d)
+lstep('LDin_Add', 0x2d4d70, 'iii', d, 1)
+check('LDin_Free', lambda: SDTest.Call(0x2d4b00, 'vi', d))
+d = SDTest.Call(0x2d4b20, 'ii', 4)[0]
+check('LDin_New', lambda: ldin(d))
+lstep('LDin_Add', 0x2d4d70, 'iii', d, 300)
+check('LDin_Count', lambda: SDTest.Call(0x2d4c60, 'ii', d))
+lstep('LDin_Clear', 0x2d52d0, 'vi', d)
+check('LDin_Free', lambda: SDTest.Call(0x2d4b00, 'vi', d))
 finish()

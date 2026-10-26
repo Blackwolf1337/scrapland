@@ -56,7 +56,7 @@ int __thiscall cFile_Open(cFile *self, const char *name, uint32_t mode) {
 		self->f = File_OpenRel(self->base.name, m);
 	}
 	if (!self->f) {
-		Con_SysErrorf("\nFile could not be opened: '%s'\n", self->base.name);
+		Con_FatalErrorf("\nFile could not be opened: '%s'\n", self->base.name);
 	}
 	return 1;
 }

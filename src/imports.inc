@@ -131,6 +131,7 @@ SD_IMPORT(crt_fgetc, 0x350c9f)
 SD_IMPORT(crt_ungetc, 0x350d9e)
 SD_IMPORT(crt_isalnum, 0x34f755)
 SD_IMPORT(crt_isxdigit, 0x34f956)
+SD_IMPORT(crt_iob_func, 0x3507fa)
 
 /* engine: Net/ (include/scrap/net.h) */
 SD_IMPORT(Net_IsServer, 0x18b280)
@@ -344,6 +345,3 @@ SD_IMPORT(File_MkDirRel, 0x21bb80)
 SD_IMPORT(Loading_Step, 0x2157a0)
 SD_IMPORT(Console_Execute, 0x20aaf0)
 
-/* engine3d: Util/ (include/scrap/e3dutil.h) */
-SD_IMPORT(Err_Printf, 0x27cea0)
-SD_IMPORT(Err_Str, 0x27cdd0)

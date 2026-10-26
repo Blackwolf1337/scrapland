@@ -24,7 +24,7 @@ static const char *FileName(cFileBlock *self) {
 
 /* "File access error" with the name of the file; always 0 */
 int __thiscall cFileBlock_Error(cFileBlock *self, const char *msg) {
-	Con_SysErrorf("File access error: CFileBlock: '%s' %s\n", FileName(self), msg ? msg : "");
+	Con_FatalErrorf("File access error: CFileBlock: '%s' %s\n", FileName(self), msg ? msg : "");
 	return 0;
 }
 

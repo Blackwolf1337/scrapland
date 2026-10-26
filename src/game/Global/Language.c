@@ -311,7 +311,7 @@ byte Lang_Set(const char *lang, byte force) {
 		Str_PrintfQuiet(path, sizeof(path), "Language/%s.txt", name);
 	}
 	if (!cFile_Exists(&f, path)) {
-		Con_SysErrorf("Language file not found: %s\n\nReinstalling Scrapland should solve this problem.\n",
+		Con_FatalErrorf("Language file not found: %s\n\nReinstalling Scrapland should solve this problem.\n",
 			*g_LangName);
 	}
 	cFile_Open(&f, path, FILE_MODE_READ);

@@ -65,7 +65,7 @@ void GVars_Init(void) {
 			PtrTable_Insert(g_GVarTable, v->name, slot, (void *const *)&v);
 		} else {
 			Con_Warnf("CHashTable3: Symbol already defined: '%s'\n", v->name);
-			Con_SysErrorf("InitGVars: variable already defined: %s", v->name);
+			Con_FatalErrorf("InitGVars: variable already defined: %s", v->name);
 		}
 	}
 }

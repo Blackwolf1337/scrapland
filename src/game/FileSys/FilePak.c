@@ -9,6 +9,7 @@
 #include "scrap/hashtable.h"
 #include "scrap/pymempool.h"
 #include "scrap/scrap.h"
+#include "scrap/win32.h"
 
 /* the exe's CRT and the engine helpers this file uses */
 int crt_stricmp(const char *a, const char *b);
@@ -21,9 +22,6 @@ int crt_setvbuf(void *f, char *buf, int mode, size_t size);
 int crt_access(const char *name, int mode);
 int crt_stat32(const char *name, void *st);
 [[noreturn]] void crt_exit(int code);
-/* MessageBoxA through the import table of the exe */
-typedef int(__stdcall *messagebox_t)(void *hwnd, const char *text, const char *caption, unsigned type);
-#define exe_MessageBoxA GAME_DATA(messagebox_t, 0x3a142c)
 
 cStringNode *__thiscall cStringList_NewNode(cStringList *list);
 
@@ -445,7 +443,7 @@ byte Pack_Open(const char *name, const char *dir, size_t bufSize) {
 	char fname[0x104];
 
 	if (g_NumPackFiles >= PACK_MAX_FILES) {
-		Con_SysErrorf("Too many packs opened.");
+		Con_FatalErrorf("Too many packs opened.");
 	}
 	CHECK(g_PackFiles[g_NumPackFiles].file.base.name == NULL);
 	if (g_NumPackFiles < 1) {
@@ -508,10 +506,10 @@ byte Pack_Open(const char *name, const char *dir, size_t bufSize) {
 	pf->file.base.vftable->Read(&pf->file.base, &magic, 4);
 	pf->file.base.vftable->Read(&pf->file.base, &version, 4);
 	if (magic != PACK_MAGIC) {
-		Con_SysErrorf("Wrong format in file \"%s\"", path);
+		Con_FatalErrorf("Wrong format in file \"%s\"", path);
 	}
 	if (version != PACK_VERSION) {
-		Con_SysErrorf("Wrong version in file \"%s\"", path);
+		Con_FatalErrorf("Wrong version in file \"%s\"", path);
 	}
 	pf->file.base.vftable->Read(&pf->file.base, &count, 4);
 	g_PackNumEntries += count;
@@ -595,7 +593,7 @@ int Pack_Extract(const char *dir) {
 		/* the "%'" of the original text goes to the exe's printf as it is */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat"
-		Con_SysErrorf("ERROR ExtractPack('%s%'): Pack does not exist", pack);
+		Con_FatalErrorf("ERROR ExtractPack('%s%'): Pack does not exist", pack);
 #pragma GCC diagnostic pop
 	}
 	Path_MakeDirs(dir);
@@ -649,7 +647,7 @@ int Pack_Extract(const char *dir) {
 	}
 	CHECK(name == NULL);
 	Pack_CloseAll();
-	Con_SysErrorf("INFO: PackFile extraction finished\nTotal: %d\nErrors: %d", g_PackNumEntries, errors);
+	Con_FatalErrorf("INFO: PackFile extraction finished\nTotal: %d\nErrors: %d", g_PackNumEntries, errors);
 	return 1;
 }
 

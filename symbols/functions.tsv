@@ -2188,7 +2188,7 @@ rva	size	source	callconv	name	signature
 000bb640	1070	ANALYSIS	__thiscall	CNodesWorldSup::vf28	undefined __thiscall(void)
 000bba70	251	ANALYSIS	__thiscall	CNodesWorldSup::vf39	undefined __thiscall(void)
 000bbb70	46	USER_DEFINED	__cdecl	DebugLog_CloseAll	void __cdecl(void)
-000bbba0	465	USER_DEFINED	__cdecl	Con_SysErrorf	void __cdecl(char * fmt, ...)
+000bbba0	465	USER_DEFINED	cdecl	Con_FatalErrorf	void Con_FatalErrorf(char *fmt, ...)
 000bbd80	259	USER_DEFINED	__cdecl	Con_Fatal	void __cdecl(char * msg)
 000bbe90	96	USER_DEFINED	__cdecl	DebugLog_Init	void __cdecl(void)
 000bbef0	377	USER_DEFINED	__cdecl	Con_Printf	void __cdecl(char * fmt, ...)
@@ -7831,16 +7831,16 @@ rva	size	source	callconv	name	signature
 0027c8b0	3	ANALYSIS	__thiscall	CObjBase3D::vf01	undefined __thiscall(void)
 0027c8c0	691	ANALYSIS	__thiscall	CSistPart::vf01	undefined __thiscall(void)
 0027cb80	165	DEFAULT	unknown	FUN_0067cb80	
-0027cc30	171	DEFAULT	unknown	FUN_0067cc30	
-0027ccf0	171	DEFAULT	unknown	FUN_0067ccf0	
-0027cda0	40	DEFAULT	unknown	FUN_0067cda0	
+0027cc30	171	USER_DEFINED	cdecl	Dbg_FrameRect	void Dbg_FrameRect(int x, int y, int w, int h, uint color)
+0027ccf0	171	USER_DEFINED	cdecl	Dbg_FillRect	void Dbg_FillRect(int x, int y, int w, int h, uint color)
+0027cda0	40	USER_DEFINED	cdecl	Err_Unregister	char * Err_Unregister(int code)
 0027cdd0	51	USER_DEFINED	cdecl	Err_Str	char * Err_Str(int code)
-0027ce10	51	DEFAULT	unknown	FUN_0067ce10	
-0027ce50	24	DEFAULT	unknown	FUN_0067ce50	
-0027ce70	37	DEFAULT	unknown	FUN_0067ce70	
+0027ce10	51	USER_DEFINED	cdecl	Err_Register	int Err_Register(char *text)
+0027ce50	24	USER_DEFINED	cdecl	Err_Code	void Err_Code(int code, int fatal)
+0027ce70	37	USER_DEFINED	cdecl	Err_Exit	void Err_Exit(char *text)
 0027cea0	25	USER_DEFINED	cdecl	Err_Printf	void Err_Printf(int fatal, char *fmt, ...)
-0027cec0	26	DEFAULT	unknown	FUN_0067cec0	
-0027cee0	254	DEFAULT	unknown	FUN_0067cee0	
+0027cec0	26	USER_DEFINED	cdecl	Err_Report	void Err_Report(int code, int fatal, char *fmt, ...)
+0027cee0	254	USER_DEFINED	cdecl	Err_VReport	void Err_VReport(int code, int fatal, char *fmt, void *ap)
 0027cfe0	62	DEFAULT	unknown	FUN_0067cfe0	
 0027d020	436	DEFAULT	unknown	FUN_0067d020	
 0027d1e0	257	DEFAULT	unknown	FUN_0067d1e0	
@@ -8775,20 +8775,20 @@ rva	size	source	callconv	name	signature
 002d4770	151	DEFAULT	unknown	FUN_006d4770	
 002d4810	406	DEFAULT	unknown	FUN_006d4810	
 002d49b0	332	DEFAULT	unknown	FUN_006d49b0	
-002d4b00	31	DEFAULT	unknown	FUN_006d4b00	
-002d4b20	56	DEFAULT	unknown	FUN_006d4b20	
-002d4b60	95	DEFAULT	unknown	FUN_006d4b60	
-002d4bc0	147	DEFAULT	unknown	FUN_006d4bc0	
-002d4c60	75	DEFAULT	unknown	FUN_006d4c60	
-002d4cb0	145	DEFAULT	unknown	FUN_006d4cb0	
-002d4d50	18	DEFAULT	unknown	FUN_006d4d50	
-002d4d70	220	DEFAULT	unknown	FUN_006d4d70	
-002d4e50	247	DEFAULT	unknown	FUN_006d4e50	
-002d4f50	161	DEFAULT	unknown	FUN_006d4f50	
-002d5000	197	DEFAULT	unknown	FUN_006d5000	
-002d50d0	148	DEFAULT	unknown	FUN_006d50d0	
-002d5170	340	DEFAULT	unknown	FUN_006d5170	
-002d52d0	113	DEFAULT	unknown	FUN_006d52d0	
+002d4b00	31	USER_DEFINED	cdecl	LDin_Free	void LDin_Free(void *din)
+002d4b20	56	USER_DEFINED	cdecl	LDin_New	void * LDin_New(ushort elemSize)
+002d4b60	95	USER_DEFINED	cdecl	LDin_NewBlock	void * LDin_NewBlock(ushort elemSize, ushort blockSize)
+002d4bc0	147	USER_DEFINED	cdecl	LDin_Get	void * LDin_Get(void *din, uint i)
+002d4c60	75	USER_DEFINED	cdecl	LDin_Count	uint LDin_Count(void *din)
+002d4cb0	145	USER_DEFINED	cdecl	LDin_Last	void * LDin_Last(void *din)
+002d4d50	18	USER_DEFINED	cdecl	LDin_AddOne	void * LDin_AddOne(void *din)
+002d4d70	220	USER_DEFINED	cdecl	LDin_Add	void * LDin_Add(void *din, int num)
+002d4e50	247	USER_DEFINED	cdecl	LDin_Copy	void LDin_Copy(void *din, uint orig, uint dest, int num)
+002d4f50	161	USER_DEFINED	cdecl	LDin_Delete	void LDin_Delete(void *din, uint i)
+002d5000	197	USER_DEFINED	cdecl	LDin_RemoveLast	void LDin_RemoveLast(void *din)
+002d50d0	148	USER_DEFINED	cdecl	LDin_Insert	void * LDin_Insert(void *din, uint i)
+002d5170	340	USER_DEFINED	cdecl	LDin_Move	void LDin_Move(void *din, int orig, int dest)
+002d52d0	113	USER_DEFINED	cdecl	LDin_Clear	void LDin_Clear(void *din)
 002d5350	1353	DEFAULT	unknown	FUN_006d5350	
 002d58a0	236	DEFAULT	unknown	FUN_006d58a0	
 002d59d0	88	DEFAULT	unknown	FUN_006d59d0	

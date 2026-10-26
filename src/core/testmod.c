@@ -11,7 +11,8 @@
  * up to MAX_ARGS arguments of 4 bytes.
  *
  * SDTest.Peek(rva, kind) reads a global of the exe: i int, b byte, d double, s the characters at rva, p the string a
- * pointer at rva points to (None for NULL). SDTest.Poke(rva, value) writes an int.
+ * pointer at rva points to (None for NULL); with '@' before the kind rva is an address (from a returned pointer).
+ * SDTest.Poke(rva, value) writes an int.
  * SDTest.OutFunc() is the address of a cdecl void(const char *) that collects text, SDTest.Out() returns and clears
  * that text (for the output callbacks of the engine).
  */
@@ -167,6 +168,10 @@ static PyObject *SDTest_Peek(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	const void *p = Game_Ptr((uint32_t)rva);
+	if (kind[0] == '@') {
+		p = (const void *)(uintptr_t)(uint32_t)rva;
+		kind++;
+	}
 	switch (kind[0]) {
 	case 'i':
 		return PyInt_FromLong(*(const int32_t *)p);
