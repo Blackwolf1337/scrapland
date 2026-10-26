@@ -284,7 +284,6 @@ NodoAnimChannel *__thiscall CNodo3D_Channel(CNodo3D *self, uint32_t ch);
 quat_t *__thiscall CRotacion_GetQuat(CRotacion *self, quat_t *out);
 
 /* other modules, called from Nodo3D.cpp (src/imports.inc) */
-matrix_t *Matrix_MulD3D(matrix_t *out, const matrix_t *a, const matrix_t *b);	/* rva 0x2391f0, out = a * b */
 void __thiscall CRotacion_SetEuler(CRotacion *self, const vec3_t *ang);	/* rva 0x212510 */
 void *CSistPart_Cast(IObjeto3D *obj);	/* rva 0x23f310, CHECK of the class */
 byte __thiscall CNodo3D_DebugDraw(CNodo3D *self, CNodoR *r);	/* rva 0x23d9d0, R_ShowLocalBox; 0: not drawn */

@@ -432,7 +432,6 @@ SD_IMPORT(RenderObjBase3D_Flush, 0x2b7260)
 /* src/game/engine3d/Engine/Grafico2D.c (called from Engine/grafico2d.cpp, include/scrap/grafico2d.h) */
 
 /* src/game/engine3d/Engine/Texto.c (called from Engine/texto.cpp, include/scrap/texto.h) */
-SD_IMPORT(Render_ToScreen, 0x24cf00)
 SD_IMPORT(Eng_Printf, 0x2170d0)
 
 /* src/game/engine3d/Engine/UtilD3D.c (called from Engine/util_d3d.cpp, include/scrap/utild3d.h) */

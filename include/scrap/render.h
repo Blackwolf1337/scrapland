@@ -286,10 +286,10 @@ void Render_SetCamara(struct CCamara *cam);
 void Render_NoIndexedBlend(void *dev);
 /* the viewport narrowed to rect and the projection to it (with proj); NULL the whole view again; 1 */
 byte Render_SetViewRect(const box_t *rect, byte proj);
+/* the screen position (pixels) of a world position; 0, -1 when it is not on the screen */
+int Render_ToScreen(const vec3_t *pos, float *xy);
 
 /* still the exe's */
-/* rva 0x24cf00: the screen position (pixels) of a world position; 0, -1 when it is not on the screen */
-int Render_ToScreen(const vec3_t *pos, float *xy);
 /* rva 0x24d640: the planes of the frustum of view and proj */
 void Frustum_Calc(const matrix_t *view, const matrix_t *proj);
 

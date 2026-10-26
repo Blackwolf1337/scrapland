@@ -1245,3 +1245,22 @@ int Render_Line(const vec3_t *a, const vec3_t *b, uint32_t color) {
 	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_LINELIST, 1, v, sizeof(v[0]));
 	return 0;
 }
+
+int Render_ToScreen(const vec3_t *pos, float *xy) {
+	CHECK(g_pd3dDevice);
+	CHECK(xy);
+	matrix_t vp, m;
+	m = *Matrix_MulD3D(&vp, &g_MatView, &g_MatProj);
+	vec3_t p;
+	if (Vec3_TransformH(&p, pos, &m)) {
+		return -1;
+	}
+	if (0.02 > (double)p.z || p.z > 1.0f || __builtin_fabs((double)p.x) > 1.0 || __builtin_fabs((double)p.y) > 1.0) {
+		return -1;
+	}
+	float w = (float)(double)g_Viewport[2], x = (float)(double)g_Viewport[0];
+	xy[0] = (w * p.x + x) * 0.5f + w * 0.5f;
+	float h = (float)(double)g_Viewport[3], y = (float)(double)g_Viewport[1];
+	xy[1] = h * 0.5f - (h * p.y + y) * 0.5f;
+	return 0;
+}

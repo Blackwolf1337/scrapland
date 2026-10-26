@@ -361,3 +361,15 @@ for i in range(24):
 	SDTest.Poke(0x4adbf0 + 4 * i, rdplanes[i])
 SDTest.Call(0x24c6a0, 'ii', rdfl(rdproj))
 SDTest.Call(0x24cde0, 'ii', rdfl(rdview))
+
+# Render_ToScreen with a view and projection set here and the test viewport
+SDTest.Call(0x24cde0, 'iF', (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0))
+SDTest.Call(0x24c6a0, 'iF', (1.0, 0.0, 0.0, 0.0, 0.0, 1.3333, 0.0, 0.0, 0.0, 0.0, 1.001, 1.0, 0.0, 0.0, -1.001, 0.0))
+SDTest.Call(0x3197d0, 'iiii', 0x4ad7e0 + 0x400000, vp, 24)
+for p in ((0.0, 0.0, 10.0), (3.0, -2.0, 10.0), (20.0, 0.0, 10.0), (0.0, 0.0, 0.5), (0.0, 0.0, -10.0), (-9.99, 7.4, 10.0),
+	(0.0, 0.0, 2000.0)):
+	check('Render_ToScreen' + fmt(p), lambda p=p: SDTest.Call(0x24cf00, 'iFF', p, (-1.0, -1.0)))
+for i in range(6):
+	SDTest.Poke(0x4ad7e0 + 4 * i, rdvp2[i])
+SDTest.Call(0x24c6a0, 'ii', rdfl(rdproj))
+SDTest.Call(0x24cde0, 'ii', rdfl(rdview))

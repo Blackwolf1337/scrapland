@@ -7266,7 +7266,7 @@ rva	size	source	callconv	name	signature
 0024cdd0	6	USER_DEFINED	__cdecl	Render_GetEyePos	void * __cdecl(void)
 0024cde0	221	USER_DEFINED	__cdecl	Render_SetView	int __cdecl(void * m)
 0024cec0	25	USER_DEFINED	__cdecl	E3D_FlushBatch	void __cdecl(void)
-0024cf00	467	USER_DEFINED	unknown	Render_ToScreen	
+0024cf00	467	USER_DEFINED	__cdecl	Render_ToScreen	int __cdecl(void * pos, float * xy)
 0024d0e0	437	USER_DEFINED	__cdecl	Box_IsVisible	byte __cdecl(void * m, void * box, char * name, float scale)
 0024d2c0	24	USER_DEFINED	__cdecl	Frustum_SegVisible	byte __cdecl(void * a, void * b)
 0024d2e0	152	USER_DEFINED	__cdecl	Sph_IsVisible	byte __cdecl(void * center, float radius, int arg)
