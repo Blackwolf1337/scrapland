@@ -1197,4 +1197,33 @@ evastep('CEVA_Optimize static', 0x2d4810, 'tvi')
 evastep('CEVA_Alloc', 0x2d4570, 'tvii', 4)
 evastep('CEVA_dtor', 0x2d3400, 'tvi')
 SDTest.Call(0x133550, 'vi', eva)
+
+# engine3d Engine/Varios.c: logs, file and string helpers
+for p in ('a.txt', 'dir/x/../y.txt', './a/./b', 'a/../../b', '../x', 'a\\b\\..\\c', 'C:\\abs\\p', '\\root', '/root', 'a..b/c', 'x/.../y',
+		'..', '.', 'a/.', 'a/..', 'a//b', 'levels/menu/./map/../map/map3d.ini', 'a/b/c/../../d', 'x:', 'x:y/../z', '.hidden', 'a/.b'):
+	for n in (-1, 8, 300):
+		call('Ruta_Normalize', 0x238540, 'vbsi', '', p, n)
+	call('Ruta_Copy', 0x2388b0, 'sbsi', '', p, -1)
+for t in ('', '  ', 'word', '  two words', '"quoted text" rest', ' "unclosed', '\t""', '"a"'):
+	call('Cad_Unquote', 0x238920, 'sbs', '', t)
+call('Cad_Unquote NULL', 0x238920, 'sbz', '', None)
+for x in (1.0, 2.0, 0.25, 3.0, 100.0, 1e-6, 12345.678, 0.5, 7.0):
+	fcall('RSqrt_Estimate', 0x238a40, 'ff', x)
+	fcall('RSqrt', 0x238a80, 'ff', x)
+for pat, n in (('*.ini', 'MAP3D.INI'), ('a?c', 'ABC'), ('*', 'X'), ('x*', 'Y')):
+	call('Wild_MatchLower', 0x238850, 'iss', pat, n)
+for n in ('levels/menu/map/map3d.ini', 'sdnone.txt', 'Bin/Scrap.exe', 'sdcall.py', ''):
+	call('File_Exists', 0x2384e0, 'bs', n)
+	check('File_Time' + fmt((n,)), lambda n=n: SDTest.Call(0x238500, 'is', n)[0] != 0)
+	call('File_TimeChanged', 0x238440, 'bisi', 0, n, 5)
+check('File_TimeDiff', lambda: SDTest.Call(0x238770, 'issi', 'sdcall.py', 'sdcall.py', -7))
+call('File_TimeDiff missing', 0x238770, 'issi', 'sdnone.txt', 'sdcall.py', -7)
+writefile('sdbk.txt', 'backup')
+call('File_Backup', 0x2387d0, 'isi', 'sdbk.txt', 0)
+check('File_Backup file', lambda: (readback('sdbk.txt'), readback('sdbk.txt.bak')))
+for f in (0x238070, 0x237d80, 0x238260, 0x238380, 0x237be0, 0x237b00, 0x238180, 0x237ca0):
+	call('E3D_Log', f, 'viss', 0x4ab914 + 0x400000, 'sdlog %s', 'x')
+for m in (1, 2, 4, 8, 0x10, 0x20, 0x40, 0x80, 0xff, 0):
+	check('cLog_Write' + fmt((m,)), lambda m=m: SDTest.Call(0x237e40, 'tviis', 0x4ab914 + 0x400000, m, 'sdlog write'))
+call('E3D_DebugPrintf', 0x237f60, 'vs', 'sdlog debug')
 finish()

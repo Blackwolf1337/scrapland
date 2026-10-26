@@ -26,6 +26,8 @@ void Con_FatalErrorf(const char *fmt, ...) __attribute__((format(printf, 1, 2)))
 void Con_Verbosef(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 /* like Con_Printf in color 0xff (rva 0xbc0b0) */
 void Con_Bluef(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+/* printf in color 0xRRGGBB (rva 0xbcbf0) */
+void Con_ColorPrintf(uint32_t color, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 /* printf in the debug color, only shown above debug level 2 (rva 0xbc710) */
 void Con_Debugf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 

@@ -6974,39 +6974,39 @@ rva	size	source	callconv	name	signature
 002373a0	46	DEFAULT	unknown	FUN_006373a0	
 002373d0	790	DEFAULT	unknown	FUN_006373d0	
 002376f0	53	DEFAULT	unknown	FUN_006376f0	
-00237730	209	DEFAULT	unknown	FUN_00637730	
-00237810	26	DEFAULT	unknown	FUN_00637810	
-00237830	185	DEFAULT	unknown	FUN_00637830	
+00237730	209	USER_DEFINED	__fastcall	cLog_Open	void __fastcall(void *self)
+00237810	26	USER_DEFINED	__fastcall	cLog_Close	void __fastcall(void *self)
+00237830	185	USER_DEFINED	__cdecl	DbgStd_Printf	void __cdecl(char *fmt, ...)
 002378f0	92	DEFAULT	unknown	FUN_006378f0	
-00237950	343	DEFAULT	unknown	FUN_00637950	
+00237950	343	USER_DEFINED	__cdecl	DbgWin_Printf	void __cdecl(char *fmt, ...)
 00237ab0	77	DEFAULT	unknown	FUN_00637ab0	
-00237b00	210	DEFAULT	unknown	FUN_00637b00	
-00237be0	188	DEFAULT	unknown	FUN_00637be0	
+00237b00	210	USER_DEFINED	__cdecl	E3D_LogWhite	void __cdecl(void *log, char *fmt, ...)
+00237be0	188	USER_DEFINED	__cdecl	E3D_LogBlue	void __cdecl(void *log, char *fmt, ...)
 00237ca0	210	USER_DEFINED	__cdecl	E3D_Log	void __cdecl(void *log, char *fmt, ...)
-00237d80	188	DEFAULT	unknown	FUN_00637d80	
-00237e40	275	DEFAULT	unknown	FUN_00637e40	
-00237f60	132	DEFAULT	unknown	FUN_00637f60	
+00237d80	188	USER_DEFINED	__cdecl	E3D_LogDebug	void __cdecl(void *log, char *fmt, ...)
+00237e40	275	USER_DEFINED	__thiscall	cLog_Write	void __thiscall(uint mask, char *text)
+00237f60	132	USER_DEFINED	__cdecl	E3D_DebugPrintf	void __cdecl(char *fmt, ...)
 00237ff0	127	DEFAULT	unknown	FUN_00637ff0	
-00238070	188	DEFAULT	unknown	FUN_00638070	
+00238070	188	USER_DEFINED	__cdecl	E3D_LogPrint	void __cdecl(void *log, char *fmt, ...)
 00238130	67	DEFAULT	unknown	FUN_00638130	
-00238180	210	DEFAULT	unknown	FUN_00638180	
-00238260	188	DEFAULT	unknown	FUN_00638260	
+00238180	210	USER_DEFINED	__cdecl	E3D_LogInfo	void __cdecl(void *log, char *fmt, ...)
+00238260	188	USER_DEFINED	__cdecl	E3D_LogDebug2	void __cdecl(void *log, char *fmt, ...)
 00238320	88	DEFAULT	unknown	FUN_00638320	
-00238380	188	DEFAULT	unknown	FUN_00638380	
-00238440	145	DEFAULT	unknown	FUN_00638440	
-002384e0	23	DEFAULT	unknown	FUN_006384e0	
-00238500	56	DEFAULT	unknown	FUN_00638500	
-00238540	549	DEFAULT	unknown	FUN_00638540	
-00238770	96	DEFAULT	unknown	FUN_00638770	
-002387d0	116	DEFAULT	unknown	FUN_006387d0	
-00238850	87	DEFAULT	unknown	FUN_00638850	
-002388b0	81	DEFAULT	unknown	FUN_006388b0	
+00238380	188	USER_DEFINED	__cdecl	E3D_LogVerbose	void __cdecl(void *log, char *fmt, ...)
+00238440	145	USER_DEFINED	__cdecl	File_TimeChanged	byte __cdecl(int saved, char *name, int tol)
+002384e0	23	USER_DEFINED	__cdecl	File_Exists	byte __cdecl(char *name)
+00238500	56	USER_DEFINED	__cdecl	File_Time	int __cdecl(char *name)
+00238540	549	USER_DEFINED	__cdecl	Ruta_Normalize	void __cdecl(char *dest, char *path, int size)
+00238770	96	USER_DEFINED	__cdecl	File_TimeDiff	int __cdecl(char *a, char *b, int def)
+002387d0	116	USER_DEFINED	__cdecl	File_Backup	int __cdecl(char *name, byte inDir)
+00238850	87	USER_DEFINED	__cdecl	Wild_MatchLower	int __cdecl(char *pat, char *name)
+002388b0	81	USER_DEFINED	__cdecl	Ruta_Copy	char * __cdecl(char *dest, char *src, int size)
 00238910	6	DEFAULT	unknown	FUN_00638910	
-00238920	125	DEFAULT	unknown	FUN_00638920	
+00238920	125	USER_DEFINED	__cdecl	Cad_Unquote	char * __cdecl(char *dest, char *src)
 002389a0	26	USER_DEFINED	__cdecl	Bprintf	int __cdecl(char *buf, int size, char *fmt, ...)
 002389c0	125	USER_DEFINED	__cdecl	VBprintf	int __cdecl(char *buf, int size, char *fmt, void *ap)
-00238a40	56	DEFAULT	unknown	FUN_00638a40	
-00238a80	136	DEFAULT	unknown	FUN_00638a80	
+00238a40	56	USER_DEFINED	__cdecl	RSqrt_Estimate	float __cdecl(float x)
+00238a80	136	USER_DEFINED	__cdecl	RSqrt	float __cdecl(float x)
 00238b10	105	DEFAULT	unknown	FUN_00638b10	
 00238b80	57	DEFAULT	unknown	FUN_00638b80	
 00238bc0	277	DEFAULT	unknown	FUN_00638bc0	

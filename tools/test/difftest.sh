@@ -26,7 +26,7 @@ cp "$root"/tools/test/py/*.py "$game/" || exit 1
 # the files the scripts write
 rm_written() {
 	shopt -s nocaseglob
-	rm -f "$game"/sd*.txt "$game"/sd*.txf "$game"/sd*.bmp "$game"/sd*.tga "$game"/sd*.tex
+	rm -f "$game"/sd*.txt "$game"/sd*.txf "$game"/sd*.bmp "$game"/sd*.tga "$game"/sd*.tex "$game"/sd*.bak
 	shopt -u nocaseglob
 }
 

@@ -8,6 +8,7 @@
 #define SCRAP_ARCHIO_H
 
 #include "scrap/filepak.h"
+#include "scrap/varios.h"
 
 typedef struct cArchBlq {
 	uint32_t id;			/* 0x0 IdToDword */
@@ -25,13 +26,6 @@ typedef struct CArchIO {
 } CArchIO;
 SD_SIZE(CArchIO, 0x10);
 
-/* the log of the file accesses ("FILE OPEN: ...") */
-#define g_FileLog ((void *)Game_Ptr(0x4ab914))
-void E3D_Log(void *log, const char *fmt, ...);	/* rva 0x237ca0 */
-/* the same in other colors and log levels (rva 0x237be0, 0x237d80, 0x238180) */
-void E3D_LogBlue(void *log, const char *fmt, ...);
-void E3D_LogDebug(void *log, const char *fmt, ...);
-void E3D_LogInfo(void *log, const char *fmt, ...);
 
 CArchIO *__thiscall CArchIO_ctor(CArchIO *self, const char *name, const char *mode);
 void __thiscall CArchIO_dtor(CArchIO *self);
