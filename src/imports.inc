@@ -399,6 +399,7 @@ SD_IMPORT(SistPart_Draw2, 0x2b55d0)
 SD_IMPORT(CSuelo_RayoVert, 0x2ca360)
 SD_IMPORT(Render_GetProj, 0x24c4d0)
 SD_IMPORT(Render_GetView, 0x24cdb0)
+SD_IMPORT(Portales_DebugDraw, 0x26d0d0)
 
 /* src/game/engine3d/Engine/Grafico3D.c (called from Engine/grafico3d.cpp, include/scrap/grafico3d.h) */
 SD_IMPORT(Render_GetBillboard, 0x24cdc0)
@@ -406,6 +407,7 @@ SD_IMPORT(CAnimMat_ctorCopy, 0x257f10)
 
 /* src/game/engine3d/Engine/Portal.c (called from Engine/portal.cpp, include/scrap/portal.h) */
 SD_IMPORT(CPortal_DrawDebug, 0x2ba2b0)
+SD_IMPORT(CPortal_ClipRect, 0x2ba930)
 SD_IMPORT(Debug_Line, 0x27cb80)
 
 /* module agent: Engine/RenderTarget (imports below this line) */

@@ -45,6 +45,25 @@ typedef struct SectorVis {
 #define g_PortalesOn GAME_DATA(int, 0x4e1e00)	/* 0: everything is seen */
 #define g_DebugFont2 GAME_DATA(void *, 0x4d6dc8)
 #define g_PortalTest GAME_DATA(int, 0x4b1178)	/* the screen rectangle test; 2: drawn */
+#define g_PortalFront GAME_DATA(int, 0x4b0110)	/* portals the camera is in front of beyond the near distance are skipped */
+#define g_PortalExterior GAME_DATA(int, 0x4b1190)	/* exterior sectors do not look into interior ones */
+#define g_PortalNear GAME_DATA(float, 0x4b0140)	/* the near distance of the portals, times zNear / 256 * 128 */
+#define g_PortalUnion GAME_DATA(int, 0x4b00dc)	/* the rectangle of all seen sectors with b139 is kept */
+
+/* the sectors seen this frame (zonas a pintar) and their screen rectangles */
+#define MAX_ZONAS_PINTAR 0x80
+typedef struct ZonaPintar {
+	int zona;			/* 0x00 */
+	box_t rect;			/* 0x04 */
+	int veces;			/* 0x1c how many portals it was seen through */
+} ZonaPintar;
+SD_SIZE(ZonaPintar, 0x20);
+#define g_ZonasPintar ((ZonaPintar *)Game_Ptr(0x4b0168))
+#define g_NumZonasPintar GAME_DATA(int, 0x4afed0)
+/* the union of the rectangles of the seen sectors with b139 */
+#define g_PintarI148 GAME_DATA(int, 0x4b0148)
+#define g_PintarRect (*(box_t *)Game_Ptr(0x4b014c))
+#define g_PintarNum GAME_DATA(int, 0x4b0164)
 
 
 CZona *__fastcall CZona_ctor(CZona *self);
@@ -63,6 +82,12 @@ byte __thiscall SectorVis_Sphere(SectorVis *self, const vec3_t *pos, const vec3_
 /* the sector reached from sector by the segment from a to b through the portals; front: only through portals
  * whose front side a is not on */
 int Sector_Recorrer(int sector, const vec3_t *a, const vec3_t *b, byte front);
+/* sector seen through rect, and the sectors behind its portals through their part of it */
+void Zona_Pintar(uint32_t zona, const box_t *rect);
+/* the sectors seen from sector (the one of the camera) this frame */
+void Portales_Cull(uint32_t sector);
+/* rva 0x26d0d0, the debug drawing of the seen sectors */
+void Portales_DebugDraw(void);
 /* the sector under pos into *sector; whether it is seen (always without portals); name is not used */
 byte Sector_FindPos(const vec3_t *pos, int *sector, const char *name);
 const char *Sector_GetName(int sector);
@@ -94,8 +119,5 @@ typedef struct SueloRayo {
 	int sector;			/* 0x1c out, -1 none */
 } SueloRayo;
 byte __thiscall CSuelo_RayoVert(void *suelo, float x, float z, SueloRayo *res);
-/* rva 0x24c4d0 and 0x24cdb0 (render.cpp): the projection and the view matrix */
-const matrix_t *Render_GetProj(void);
-const matrix_t *Render_GetView(void);
 
 #endif

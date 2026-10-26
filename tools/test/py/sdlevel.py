@@ -424,6 +424,24 @@ check('SAI.SetStateChar(0, Player0)', lambda: SAI.SetStateChar(0, 'Player0'))
 import SDTest
 nz = SDTest.Peek(0x4b00d8, 'i')
 check('sectors', lambda: (nz, SDTest.Peek(0x4e1e00, 'i')))
+# what the portal culling of the last frame saw (Zona_Pintar): the sectors, how often, their screen rectangles
+def sdpintar():
+	r = []
+	for i in range(SDTest.Peek(0x4afed0, 'i')):
+		e = 0x4b0168 + 0x20 * i
+		v = []
+		for k in range(8):
+			v.append(SDTest.Peek(e + 4 * k, 'i'))
+		r.append(v)
+	return r
+check('Zona_Pintar', sdpintar)
+# a cull from each of the first sectors, on a frame number of its own (the real render of this frame checks that the
+# sectors were not seen yet)
+frame = SDTest.Peek(0x4a8ec8, 'i')
+for sec in range(min(nz, 6)):
+	SDTest.Poke(0x4a8ec8, frame + 1000 + sec)
+	check('Portales_Cull' + fmt((sec,)), lambda sec=sec: (SDTest.Call(0x26d350, 'vi', sec), sdpintar()))
+SDTest.Poke(0x4a8ec8, frame)
 for i in range(min(nz, 12)):
 	check('Sector_GetName' + fmt((i,)), lambda i=i: SDTest.Call(0x26c340, 'si', i)[0])
 	check('Sector_IsOutside' + fmt((i,)), lambda i=i: SDTest.Call(0x26c390, 'bi', i)[0])

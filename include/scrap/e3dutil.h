@@ -21,6 +21,13 @@
 /* video var DiffuseMod4x: colors divided by 4 */
 #define g_DiffuseMod4x GAME_DATA(int, 0x431be8)
 
+/* the getters of render.cpp (rva 0x24c4d0, 0x24cdb0, 0x24cdc0, 0x24cdd0): the projection and the view matrix, the
+ * camera turn of the sprites and the camera position */
+const matrix_t *Render_GetProj(void);
+const matrix_t *Render_GetView(void);
+const matrix_t *Render_GetBillboard(void);
+const vec3_t *Render_GetEyePos(void);
+
 #define MAX_RUTA 0x104
 
 /* Ruta_Part masks */

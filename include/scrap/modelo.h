@@ -270,7 +270,6 @@ void __thiscall CNodoR_SetNodo(CNodoR *self, CNodo3D *nodo);		/* rva 0x23f890 */
 /* rva 0x23fac0, the matrix identity, the channels cleared; the model and its render nodes at 0xa0 and 0xa4 */
 void __thiscall RenderCtx_Init(NodoAnimCtx *self, CModelo *m, const vec3_t *scale);
 void __thiscall RenderCtx_SetCanal(NodoAnimChannel *self, CAnimSlot *slot);	/* rva 0x23fb10 */
-const vec3_t *Render_GetEyePos(void);					/* rva 0x24cdd0, the camera position */
 /* the play state of an animation group */
 void __fastcall CModelo_Render(CModelo *self);				/* rva 0x253610 */
 void __thiscall Font_SetColor(void *font, uint32_t color);		/* rva 0x299980 */

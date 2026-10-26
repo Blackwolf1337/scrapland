@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/camara.h"
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
 #include "scrap/portal.h"
@@ -12,6 +13,7 @@
 
 #define g_Mundo GAME_DATA(byte *, 0x4afde8)	/* gMundo of mundo.h */
 #define MUNDO_SUELO 0xb0			/* gMundo->obtSuelo() */
+#define MUNDO_CAMARA 0xa4			/* the camera of the world */
 #define PORTAL_ASPECT 1.33f			/* the screen height of a sphere */
 #define PORTAL_EPS 8.0e-6f			/* the step out of a portal, times the distance to the origin */
 
@@ -374,4 +376,127 @@ int Sector_Recorrer(int sector, const vec3_t *a, const vec3_t *b, byte front) {
 		return Sector_Recorrer(dest->id, &h, b, front);
 	}
 	return sector;
+}
+
+/* the minimum and maximum the way minss and maxss pick (a when it is smaller or bigger, else b) */
+static float Portal_Min(float a, float b) {
+	return a < b ? a : b;
+}
+
+static float Portal_Max(float a, float b) {
+	return a > b ? a : b;
+}
+
+void Zona_Pintar(uint32_t zona, const box_t *rect) {
+	CHECK(zona < (uint32_t)g_NumZonas);
+	CHECK(g_Zonas[zona]);
+	CHECK(g_Zonas[zona]->bloq == 0);
+	g_Zonas[zona]->bloq = 1;
+	int i;
+	for (i = 0; i < g_NumZonasPintar; i++) {
+		if ((uint32_t)g_ZonasPintar[i].zona == zona) {
+			break;
+		}
+	}
+	if (i < g_NumZonasPintar) {
+		ZonaPintar *e = &g_ZonasPintar[i];
+		CHECK(g_Zonas[zona]->Frame3D == g_FrameCount);
+		e->rect.min.x = Portal_Min(e->rect.min.x, rect->min.x);
+		e->rect.min.z = Portal_Min(e->rect.min.z, rect->min.z);
+		e->rect.min.y = Portal_Min(e->rect.min.y, rect->min.y);
+		e->rect.max.z = Portal_Max(e->rect.max.z, rect->max.z);
+		e->rect.max.x = Portal_Max(e->rect.max.x, rect->max.x);
+		e->rect.max.y = Portal_Max(e->rect.max.y, rect->max.y);
+		e->veces++;
+		g_Zonas[zona]->rect = e->rect;
+	} else {
+		CHECK(g_NumZonasPintar < MAX_ZONAS_PINTAR);
+		CHECK(g_Zonas[zona]->Frame3D != g_FrameCount);
+		g_Zonas[zona]->Frame3D = g_FrameCount;
+		g_Zonas[zona]->rect = *rect;
+		ZonaPintar *e = &g_ZonasPintar[g_NumZonasPintar++];
+		e->zona = (int)zona;
+		e->rect = *rect;
+		e->veces = 1;
+		if (g_ShowPortals) {
+			CZona *z = g_Zonas[zona];
+			uint32_t color = z->exterior ? 0x80 : 0x800000;
+			for (int k = 0; k < g_Zonas[zona]->numPortales; k++) {
+				CPortal_DrawDebug(Obj3D_Cast(g_Zonas[zona]->portales[k]->obj3D, CLASE_OBJ3D_PORTAL), color);
+			}
+		}
+	}
+	for (int k = 0; k < g_Zonas[zona]->numPortales; k++) {
+		CPortal *po = Obj3D_Cast(g_Zonas[zona]->portales[k]->obj3D, CLASE_OBJ3D_PORTAL);
+		CZona *dest = g_Zonas[zona]->zonas[k];
+		CHECK(dest);
+		if (g_Zonas[zona]->exterior && !dest->exterior && g_PortalExterior) {
+			continue;
+		}
+		if (dest->bloq) {
+			continue;
+		}
+		box_t r = { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
+		CHECK(g_Mundo);
+		CCamara *cam = *(CCamara **)(g_Mundo + MUNDO_CAMARA);
+		float cerca = (float)((double)(cam->zNear * (1.0f / 256.0f)) * 128.0 * (double)g_PortalNear);
+		if (g_PortalFront) {
+			float sign = po->zonas[0] == g_Zonas[zona]->nodo ? -1.0f : 1.0f;
+			if (CPortal_PlaneDist(po, Render_GetEyePos()) * sign > cerca) {
+				continue;
+			}
+		}
+		float dist = CPortal_Dist(po, Render_GetEyePos());
+		if (cerca > dist) {
+			r = *rect;
+		} else {
+			if (!CPortal_ClipRect(po, &r)) {
+				continue;
+			}
+			r.min.x = Portal_Max(r.min.x, rect->min.x);
+			r.min.y = Portal_Max(r.min.y, rect->min.y);
+			r.min.z = Portal_Max(r.min.z, rect->min.z);
+			r.max.y = Portal_Min(r.max.y, rect->max.y);
+			r.max.z = Portal_Min(r.max.z, rect->max.z);
+			r.max.x = Portal_Min(r.max.x, rect->max.x);
+		}
+		if (!(0.0f >= r.max.x - r.min.x) && !(0.0f >= r.max.y - r.min.y)) {
+			Zona_Pintar((uint32_t)dest->id, &r);
+			if (g_ShowPortals) {
+				CPortal_DrawDebug(po, 0x8000);
+			}
+		}
+	}
+	g_Zonas[zona]->bloq = 0;
+}
+
+void Portales_Cull(uint32_t sector) {
+	if (!g_NumZonas) {
+		return;
+	}
+	CHECK(sector < (uint32_t)g_NumZonas);
+	box_t all = { { -1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f } };
+	g_NumZonasPintar = 0;
+	Zona_Pintar(sector, &all);
+	if (g_PortalUnion) {
+		g_PintarNum = 0;
+		g_PintarI148 = -1;
+		g_PintarRect = (box_t){ { 1.0f, 1.0f, 1.0f }, { -1.0f, -1.0f, 0.0f } };
+		int n = 0;
+		for (int i = 0; i < g_NumZonasPintar; i++) {
+			ZonaPintar *e = &g_ZonasPintar[i];
+			if (!g_Zonas[e->zona]->b139) {
+				continue;
+			}
+			box_t *u = &g_PintarRect;
+			g_PintarNum = ++n;
+			u->min.x = Portal_Min(u->min.x, e->rect.min.x);
+			u->min.y = Portal_Min(u->min.y, e->rect.min.y);
+			u->min.z = Portal_Min(u->min.z, e->rect.min.z);
+			u->max.y = Portal_Max(u->max.y, e->rect.max.y);
+			u->max.z = Portal_Max(u->max.z, e->rect.max.z);
+			u->max.x = Portal_Max(u->max.x, e->rect.max.x);
+		}
+	}
+	Portales_DebugDraw();
 }

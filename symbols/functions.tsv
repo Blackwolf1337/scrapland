@@ -7669,7 +7669,7 @@ rva	size	source	callconv	name	signature
 0026c3b0	22	USER_DEFINED	__cdecl	Sector_Get139	byte __cdecl(int sector)
 0026c3d0	30	USER_DEFINED	__cdecl	Sector_IsVisible	byte __cdecl(int sector)
 0026c3f0	169	USER_DEFINED	__thiscall	SectorVis_Update	byte __thiscall(void * pos, char * name)
-0026c4a0	1417	DEFAULT	unknown	FUN_0066c4a0	
+0026c4a0	1417	USER_DEFINED	__cdecl	Zona_Pintar	void __cdecl(uint zona, void * rect)
 0026ca30	99	USER_DEFINED	__cdecl	Zona_FindNodo	void * __cdecl(void * nodo, byte main)
 0026caa0	123	USER_DEFINED	__cdecl	Sector_OfNode	int __cdecl(void * nodo)
 0026cb20	116	USER_DEFINED	__cdecl	Sector_Find	int __cdecl(char * name)
@@ -7678,7 +7678,7 @@ rva	size	source	callconv	name	signature
 0026d0a0	6	USER_DEFINED	__cdecl	Sector_Num	int __cdecl(void)
 0026d0b0	29	USER_DEFINED	__cdecl	Sector_OfZonaNodo	int __cdecl(void * nodo)
 0026d0d0	636	DEFAULT	unknown	FUN_0066d0d0	
-0026d350	450	DEFAULT	unknown	FUN_0066d350	
+0026d350	450	USER_DEFINED	__cdecl	Portales_Cull	void __cdecl(uint sector)
 0026d520	127	USER_DEFINED	__cdecl	Sectores_Free	void __cdecl(void)
 0026d5a0	1497	DEFAULT	unknown	FUN_0066d5a0	
 0026db80	1016	DEFAULT	unknown	FUN_0066db80	

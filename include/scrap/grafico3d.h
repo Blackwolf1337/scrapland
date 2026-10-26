@@ -49,7 +49,4 @@ void __thiscall CGrafico3D_SetTexture(CGrafico3D *self, const char *tex, const c
 void __thiscall CGrafico3D_CreateMat(CGrafico3D *self, const char *tex, const char *opac, int src, int dst, byte alpha);
 void __fastcall CGrafico3D_Init(CGrafico3D *self);
 
-/* rva 0x24cdc0 (render.cpp): the camera turn of the sprites */
-const matrix_t *Render_GetBillboard(void);
-
 #endif
