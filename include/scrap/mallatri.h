@@ -8,6 +8,7 @@
 #define SCRAP_MALLATRI_H
 
 #include "scrap/game.h"
+#include "scrap/listavert.h"
 
 #define CLASE_OBJ3D_MALLATRI 0xa1000001
 /* flexible vertex format of CVertMalla: D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1 */
@@ -36,25 +37,6 @@ typedef struct CVertMalla {
 } CVertMalla;
 SD_SIZE(CVertMalla, 0x20);
 
-/* the part of CListaVert (Engine/ListaVert.cpp, engine3d/engine/ListaVert.h) used here */
-typedef struct CListaVert {
-	byte *pVert;			/* 0x0 */
-	int nVert;			/* 0x4 */
-	uint32_t totVert;		/* 0x8 */
-	int frmt;			/* 0xc VERT_* */
-} CListaVert;
-SD_SIZE(CListaVert, 0x10);
-
-enum {
-	VERT_TEX1 = 1,			/* 0x20 bytes: pos, normal, uv */
-	VERT_TEX2 = 2,			/* 0x28 */
-	VERT_LTEX1 = 3,			/* 0x1c */
-	VERT_TEX1_B1 = 4,		/* 0x24 */
-	VERT_LTEX3 = 6,			/* 0x34 */
-	VERT_LTEX1N = 7,		/* 0x24 */
-	VERT_LTEX2 = 10			/* 0x20 */
-};
-
 /* the part of the D3D meshes (engine3d/engine/MallaD3D.h) used here: a list of meshes, triangles of 16 bit indices
  * into the vertex list */
 typedef struct CMallaD3D {
@@ -64,7 +46,7 @@ typedef struct CMallaD3D {
 	uint32_t nTri;			/* 0x0c */
 	uint16_t (*pTri)[3];		/* 0x10 */
 	CListaVert vert;		/* 0x14 */
-	byte pad_24[0x24];
+	byte pad_28[0x20];
 	uint32_t *triFlags;		/* 0x48 NULL for none */
 	void *mat;			/* 0x4c */
 } CMallaD3D;
@@ -90,16 +72,6 @@ typedef struct CMallaTri {
 } CMallaTri;
 SD_SIZE(CMallaTri, 0x4c);
 
-/* the vertex accessors of CListaVert (Engine/ListaVert.cpp), one a format, with CHECKs of the index and format */
-byte *__thiscall CListaVert_Tex1(CListaVert *self, uint32_t i);
-byte *__thiscall CListaVert_Tex2(CListaVert *self, uint32_t i);
-byte *__thiscall CListaVert_LTex1(CListaVert *self, uint32_t i);
-byte *__thiscall CListaVert_Tex1B1(CListaVert *self, uint32_t i);
-byte *__thiscall CListaVert_LTex3(CListaVert *self, uint32_t i);
-byte *__thiscall CListaVert_LTex1N(CListaVert *self, uint32_t i);
-byte *__thiscall CListaVert_LTex2(CListaVert *self, uint32_t i);
-/* the position of vertex i of any format (ListaVert.h, rva 0x212570) */
-vec3_t *__thiscall CListaVert_GetPos(CListaVert *self, vec3_t *out, uint32_t i);
 /* ListaVert.h, instanced in MallaTri.cpp: the normal and the texture coordinates of vertex i; a format without them
  * is a failed CHECK and zeros */
 vec3_t *__thiscall CListaVert_GetNormal(CListaVert *self, vec3_t *out, uint32_t i);
