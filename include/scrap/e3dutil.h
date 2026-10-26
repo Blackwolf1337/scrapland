@@ -101,4 +101,84 @@ void *LDin_Insert(cListaDin *din, uint32_t i);	/* a new element at i */
 void LDin_Move(cListaDin *din, int orig, int dest);	/* an element to another place, -1 the last */
 void LDin_Clear(cListaDin *din);
 
+/*
+ * Util/Arch_dat.cpp: a data file as a list of text lines, ini style: "[section]", "key = value ; comment",
+ * ";comment". Line 0 is a head without text, the lines of the file are 1..count-1. The last line found is cached
+ * for the next lookup.
+ */
+#define ARCHDATOS_ID 0x74614441	/* "ADat" */
+
+enum {
+	LINEA_UNKNOWN = 0,		/* not looked at yet (Arch_Classify) */
+	LINEA_HEAD = 1,
+	LINEA_SECTION = 2,
+	LINEA_KEY = 3,
+	LINEA_COMMENT = 4,
+	LINEA_EMPTY = 5,
+};
+
+typedef struct cLineaDat {
+	struct cLineaDat *prev;		/* 0x0 */
+	struct cLineaDat *next;		/* 0x4 */
+	int type;			/* 0x8 LINEA_ */
+	char *text;			/* 0xc Cad_Dup */
+} cLineaDat;
+SD_SIZE(cLineaDat, 0x10);
+
+typedef struct cArchDatos {
+	uint32_t id;			/* 0x00 ARCHDATOS_ID */
+	int count;			/* 0x04 lines with the head */
+	cLineaDat *head;		/* 0x08 */
+	cLineaDat *cur;			/* 0x0c the line last found */
+	int curIdx;			/* 0x10 its index, -1 for none */
+	int caseSensitive;		/* 0x14 names of sections and keys */
+} cArchDatos;
+SD_SIZE(cArchDatos, 0x18);
+
+void Arch_AddSection(cArchDatos *dat, const char *name, int idx);	/* "[name]" after line idx */
+void Arch_AddLine(cArchDatos *dat, const char *text, int idx);
+void Arch_InsertAt(cArchDatos *dat, const char *text, int idx);	/* after line idx, clamped */
+int Arch_StrnCmp(cArchDatos *dat, const char *a, const char *b, size_t n);
+int Arch_SectionEnd(cArchDatos *dat, int idx);	/* the last key line of the section at idx */
+int Arch_FindSection(cArchDatos *dat, const char *name, int from);	/* its line or 0 */
+/* the line of key in the section from line from on, 0 if not there; value without blanks and comment */
+int Arch_FindKey(cArchDatos *dat, const char *key, int from, char *value, int size);
+void Arch_SectionName(char *dest, const char *header, int size);
+void Arch_Classify(cArchDatos *dat, int idx);
+void Arch_Delete(cArchDatos *dat, int idx);
+void Arch_Error(int code, int fatal, cArchDatos *dat, int idx);	/* Err_Report with the line */
+int Arch_Write(cArchDatos *dat, void *f);	/* FILE of the exe's CRT; 0 or -1 */
+void Arch_Free(cArchDatos *dat);
+cArchDatos *Arch_New(void);
+int Arch_Load(cArchDatos *dat, const char *name, int idx);	/* the lines of a file after line idx; 0 or -1 */
+const char *Arch_Value(cArchDatos *dat, int idx, int *len);	/* the value of a key line */
+void Arch_SetValue(cArchDatos *dat, const char *value, int idx);	/* keeps the column of the comment */
+int Arch_Count(cArchDatos *dat);
+void Arch_Dump(cArchDatos *dat, int from, int to);	/* to stdout */
+cLineaDat *Arch_Line(cArchDatos *dat, int idx);
+int Arch_LineType(cArchDatos *dat, int idx);
+void Arch_Printf(const char *fmt, ...);	/* stdout of the exe's CRT */
+
+/* Util/Dat_simp.cpp: typed values of a cArchDatos; the getters give 0 or -1 */
+void Dat_SetBool(cArchDatos *dat, const char *sect, const char *key, int v);	/* "SI" / "NO" */
+void Dat_SetInt(cArchDatos *dat, const char *sect, const char *key, int v);
+void Dat_SetStr(cArchDatos *dat, const char *sect, const char *key, const char *value);
+int Dat_GetBool(cArchDatos *dat, const char *sect, const char *key, int *out);
+int Dat_GetDouble(cArchDatos *dat, const char *sect, const char *key, double *out);
+int Dat_GetFloat(cArchDatos *dat, const char *sect, const char *key, float *out);
+int Dat_GetLong(cArchDatos *dat, const char *sect, const char *key, int *out);	/* two copies in the exe */
+int Dat_GetText(cArchDatos *dat, const char *sect, const char *key, char *dest, int size);
+void Dat_GetList(cArchDatos *dat, const char *sect, const char *key, cArchDatos *dest);	/* every value of key */
+int Dat_GetWord(cArchDatos *dat, const char *sect, const char *key, uint16_t *out);
+int Dat_GetStr(cArchDatos *dat, const char *sect, const char *key, char *dest, int size);
+
+/* Util/Proc_dat.cpp: sscanf of the engine with its own conversions ("&l", "&f", "&.*t", "&(tipo_si_no)l"); the
+ * number of values read (rva 0x265260) */
+int Proc_Scan(const char *s, const char *fmt, ...);
+
+/* Engine/ArchIO.cpp: files through the packs ("rb" only); gets keeps the '\n' (rva 0x21bdd0, 0x21b8e0, 0x21b850) */
+void *ArchIO_Open(const char *name, const char *mode);
+char *ArchIO_Gets(char *buf, int size, void *f);
+int ArchIO_Close(void *f);
+
 #endif

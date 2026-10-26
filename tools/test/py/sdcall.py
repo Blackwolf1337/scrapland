@@ -255,4 +255,94 @@ lstep('LDin_Add', 0x2d4d70, 'iii', d, 300)
 check('LDin_Count', lambda: SDTest.Call(0x2d4c60, 'ii', d))
 lstep('LDin_Clear', 0x2d52d0, 'vi', d)
 check('LDin_Free', lambda: SDTest.Call(0x2d4b00, 'vi', d))
+
+# engine3d Util/Arch_dat.c and Dat_simp.c: lines added one by one (Arch_Load only reads files in the packs)
+inilines = ('; head comment', '[Main]', 'Name = Scrap  ; the name', '  Count=12', 'flag = SI', 'Float = 1.5', 'Big = 1e3',
+	'Word = 65000', 'Item = one', 'Item = two words  ', 'Empty =', 'Semi = ;only comment', 'NoEq', '', '[ Other ]  ',
+	'name = other\t;tab', '[]', 'Item = three')
+def arch(dat):
+	r = []
+	for i in range(SDTest.Call(0x2a2b80, 'ii', dat)[0] + 1):
+		lin = SDTest.Call(0x2a2d70, 'iii', dat, i)[0]
+		r.append((SDTest.Call(0x2a2e50, 'iii', dat, i)[0], SDTest.Peek(lin + 12, '@p')))
+	return tuple(r)
+# the first argument (the cArchDatos address) is not part of the name
+def dcall(name, rva, sig, *args):
+	check(name + fmt(args[1:]), lambda rva=rva, sig=sig, args=args: apply(SDTest.Call, (rva, sig) + args))
+def astep(name, rva, sig, *args):
+	check(name + fmt(args[1:]), lambda rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig) + args), arch(args[0])))
+
+dat = SDTest.Call(0x2a2700, 'i')[0]
+check('Arch_New', lambda: arch(dat))
+for i in range(len(inilines)):
+	SDTest.Call(0x2a1b80, 'visi', dat, inilines[i], i)
+check('Arch_AddLine', lambda: arch(dat))
+for n in ('Main', 'main', 'Other', 'other', ' Other', 'Oth', '', 'None'):
+	for f in (0, 1, 3, 16):
+		dcall('Arch_FindSection', 0x2a1df0, 'iisi', dat, n, f)
+for k in ('Name', 'name', 'Count', 'Item', 'Empty', 'Semi', 'NoEq', 'Nam', 'Missing'):
+	for f in (0, 2, 9, 10):
+		dcall('Arch_FindKey', 0x2a2010, 'iisibi', dat, k, f, '', 260)
+		dcall('Arch_FindKey NULL', 0x2a2010, 'iisizi', dat, k, f, None, 0)
+	dcall('Arch_FindKey short', 0x2a2010, 'iisibi', dat, k, 2, '', 4)
+for i in range(-1, 21):
+	dcall('Arch_SectionEnd', 0x2a1d10, 'iii', dat, i)
+	def val(i=i):
+		r = SDTest.Call(0x2a28d0, 'iiip', dat, i, -5)
+		return r[0] and (SDTest.Peek(r[0], '@s'), r[1]) or r
+	check('Arch_Value(%d)' % i, val)
+	check('Arch_Value NULL(%d)' % i, lambda i=i: SDTest.Call(0x2a28d0, 'iiiz', dat, i, None)[0] != 0)
+for h in ('[abc]', '  [ a b ]  x', '[x]', '[\tlong name\t]'):
+	call('Arch_SectionName', 0x2a2260, 'vbsi', '', h, 260)
+	call('Arch_SectionName short', 0x2a2260, 'vbsi', '', h, 3)
+dcall('Arch_StrnCmp', 0x2a1ce0, 'iissi', dat, 'ABc', 'abd', 2)
+astep('Arch_SetValue', 0x2a2a00, 'visi', dat, 'Scrapland', 3)
+astep('Arch_SetValue long', 0x2a2a00, 'visi', dat, 'a much longer value than before', 3)
+astep('Arch_SetValue', 0x2a2a00, 'visi', dat, 'x', 4)
+astep('Arch_SetValue none', 0x2a2a00, 'visi', dat, 'x', 2)
+astep('Arch_AddSection', 0x2a1ac0, 'visi', dat, 'New', 99)
+astep('Arch_AddLine', 0x2a1b80, 'visi', dat, 'k = v', -3)
+astep('Arch_Delete', 0x2a2460, 'vii', dat, 1)
+astep('Arch_Delete 0', 0x2a2460, 'vii', dat, 0)
+astep('Arch_Delete big', 0x2a2460, 'vii', dat, 999)
+astep('Dat_SetStr', 0x2a2f90, 'visss', dat, 'Main', 'Name', 'Changed')
+astep('Dat_SetStr same', 0x2a2f90, 'visss', dat, 'Main', 'Name', 'Changed')
+astep('Dat_SetStr new key', 0x2a2f90, 'visss', dat, 'Other', 'Added', 'yes')
+astep('Dat_SetStr new section', 0x2a2f90, 'visss', dat, 'Fresh', 'k', 'v')
+astep('Dat_SetBool', 0x2a2f00, 'vissi', dat, 'Fresh', 'b', 1)
+astep('Dat_SetBool', 0x2a2f00, 'vissi', dat, 'Fresh', 'b', 0)
+astep('Dat_SetInt', 0x2a2f40, 'vissi', dat, 'Fresh', 'n', -1234567)
+# Proc_Scan of the original stops the game on a value of another type: only fitting keys and missing ones
+miss = (('None', 'x'), ('Main', 'x'))
+for sect, key in (('Main', 'flag'), ('Fresh', 'b')) + miss:
+	dcall('Dat_GetBool', 0x2a30c0, 'iissp', dat, sect, key, 7)
+# Count is 'x' since the Arch_SetValue checks
+for sect, key in (('Main', 'Word'), ('Fresh', 'n')) + miss:
+	dcall('Dat_GetLong', 0x2a3270, 'iissp', dat, sect, key, 7)
+	dcall('Dat_GetInt', 0x2a3300, 'iissp', dat, sect, key, 7)
+for sect, key in (('Main', 'Float'), ('Main', 'Big'), ('Main', 'Word')) + miss:
+	dcall('Dat_GetFloat', 0x2a31e0, 'iissp', dat, sect, key, 7)
+	dcall('Dat_GetDouble', 0x2a3150, 'iissD', dat, sect, key, 7.5)
+for sect, key in (('Main', 'Word'),) + miss:
+	dcall('Dat_GetWord', 0x2a3550, 'iissp', dat, sect, key, 7)
+for sect, key in (('Main', 'flag'), ('Main', 'Count'), ('Main', 'Name'), ('Main', 'Item'), ('Main', 'Empty'), ('Main', 'Semi'),
+		('Other', 'name'), ('Fresh', 'n')) + miss:
+	dcall('Dat_GetText', 0x2a3390, 'iissbi', dat, sect, key, '', 8)
+	dcall('Dat_GetStr', 0x2a35e0, 'iissbi', dat, sect, key, '', 260)
+lst = SDTest.Call(0x2a2700, 'i')[0]
+SDTest.Call(0x2a3430, 'vissi', dat, 'Main', 'Item', lst)
+check('Dat_GetList', lambda: arch(lst))
+SDTest.Call(0x2a2660, 'vi', lst)
+SDTest.Call(0x2a2bd0, 'viii', dat, 0, 5)
+f = SDTest.Call(0x344c5e, 'iss', 'sdini.out.txt', 'w')[0]
+check('Arch_Write', lambda: SDTest.Call(0x2a2590, 'iii', dat, f))
+SDTest.Call(0x34490b, 'ii', f)
+check('Arch_Write file', lambda: open('sdini.out.txt').read())
+SDTest.Call(0x2a2660, 'vi', dat)
+dat = SDTest.Call(0x2a2700, 'i')[0]
+astep('Arch_Load', 0x2a2780, 'iisi', dat, 'm3d.ini', 0)
+dcall('Arch_Load missing', 0x2a2780, 'iisi', dat, 'sdnofile.txt', 0)
+dcall('Dat_GetBool', 0x2a30c0, 'iissp', dat, 'video', 'Sharpen', 7)
+dcall('Dat_GetLong', 0x2a3270, 'iissp', dat, 'suelo', 'suelo_caras_cuadr', 7)
+SDTest.Call(0x2a2660, 'vi', dat)
 finish()

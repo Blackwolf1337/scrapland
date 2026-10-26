@@ -6594,9 +6594,9 @@ rva	size	source	callconv	name	signature
 0021b710	65	DEFAULT	unknown	FUN_0061b710	
 0021b760	159	DEFAULT	unknown	FUN_0061b760	
 0021b800	65	DEFAULT	unknown	FUN_0061b800	
-0021b850	48	DEFAULT	unknown	FUN_0061b850	
+0021b850	48	USER_DEFINED	cdecl	ArchIO_Close	int ArchIO_Close(void *f)
 0021b8a0	56	DEFAULT	unknown	FUN_0061b8a0	
-0021b8e0	172	DEFAULT	unknown	FUN_0061b8e0	
+0021b8e0	172	USER_DEFINED	cdecl	ArchIO_Gets	char * ArchIO_Gets(char *buf, int size, void *f)
 0021b990	51	DEFAULT	unknown	FUN_0061b990	
 0021b9d0	61	DEFAULT	unknown	FUN_0061b9d0	
 0021ba10	91	DEFAULT	unknown	FUN_0061ba10	
@@ -6609,7 +6609,7 @@ rva	size	source	callconv	name	signature
 0021bb80	143	USER_DEFINED	cdecl	File_MkDirRel	void File_MkDirRel(char *dir)
 0021bc10	384	USER_DEFINED	__cdecl	File_OpenRel	void * __cdecl(char * name, char * mode)
 0021bd90	21	DEFAULT	unknown	FUN_0061bd90	
-0021bdd0	397	DEFAULT	unknown	FUN_0061bdd0	
+0021bdd0	397	USER_DEFINED	cdecl	ArchIO_Open	void * ArchIO_Open(char *name, char *mode)
 0021bf60	21	DEFAULT	unknown	FUN_0061bf60	
 0021bf80	110	DEFAULT	unknown	FUN_0061bf80	
 0021bff0	102	DEFAULT	unknown	FUN_0061bff0	
@@ -7596,7 +7596,7 @@ rva	size	source	callconv	name	signature
 00264c00	148	DEFAULT	unknown	FUN_00664c00	
 00264ca0	1152	DEFAULT	unknown	FUN_00664ca0	
 002651b0	167	DEFAULT	unknown	FUN_006651b0	
-00265260	324	DEFAULT	unknown	FUN_00665260	
+00265260	324	USER_DEFINED	cdecl	Proc_Scan	int Proc_Scan(char *s, char *fmt, ...)
 002653f0	104	DEFAULT	unknown	FUN_006653f0	
 00265460	99	DEFAULT	unknown	FUN_00665460	
 00265510	3229	DEFAULT	unknown	FUN_00665510	
@@ -8154,40 +8154,40 @@ rva	size	source	callconv	name	signature
 002a1970	136	DEFAULT	unknown	FUN_006a1970	
 002a1a00	86	DEFAULT	unknown	FUN_006a1a00	
 002a1a60	86	DEFAULT	unknown	FUN_006a1a60	
-002a1ac0	183	DEFAULT	unknown	FUN_006a1ac0	
-002a1b80	87	DEFAULT	unknown	FUN_006a1b80	
-002a1be0	244	DEFAULT	unknown	FUN_006a1be0	
-002a1ce0	41	DEFAULT	unknown	FUN_006a1ce0	
-002a1d10	211	DEFAULT	unknown	FUN_006a1d10	
-002a1df0	533	DEFAULT	unknown	FUN_006a1df0	
-002a2010	591	DEFAULT	unknown	FUN_006a2010	
-002a2260	294	DEFAULT	unknown	FUN_006a2260	
-002a2390	202	DEFAULT	unknown	FUN_006a2390	
-002a2460	231	DEFAULT	unknown	FUN_006a2460	
-002a2550	52	DEFAULT	unknown	FUN_006a2550	
-002a2590	208	DEFAULT	unknown	FUN_006a2590	
-002a2660	149	DEFAULT	unknown	FUN_006a2660	
-002a2700	115	DEFAULT	unknown	FUN_006a2700	
-002a2780	325	DEFAULT	unknown	FUN_006a2780	
-002a28d0	293	DEFAULT	unknown	FUN_006a28d0	
-002a2a00	373	DEFAULT	unknown	FUN_006a2a00	
-002a2b80	76	DEFAULT	unknown	FUN_006a2b80	
-002a2bd0	404	DEFAULT	unknown	FUN_006a2bd0	
-002a2d70	210	DEFAULT	unknown	FUN_006a2d70	
-002a2e50	118	DEFAULT	unknown	FUN_006a2e50	
-002a2ed0	46	DEFAULT	unknown	FUN_006a2ed0	
-002a2f00	60	DEFAULT	unknown	FUN_006a2f00	
-002a2f40	79	DEFAULT	unknown	FUN_006a2f40	
-002a2f90	295	DEFAULT	unknown	FUN_006a2f90	
-002a30c0	141	DEFAULT	unknown	FUN_006a30c0	
-002a3150	141	DEFAULT	unknown	FUN_006a3150	
-002a31e0	141	DEFAULT	unknown	FUN_006a31e0	
-002a3270	141	DEFAULT	unknown	FUN_006a3270	
-002a3300	141	DEFAULT	unknown	FUN_006a3300	
-002a3390	146	DEFAULT	unknown	FUN_006a3390	
-002a3430	273	DEFAULT	unknown	FUN_006a3430	
-002a3550	141	DEFAULT	unknown	FUN_006a3550	
-002a35e0	96	DEFAULT	unknown	FUN_006a35e0	
+002a1ac0	183	USER_DEFINED	cdecl	Arch_AddSection	void Arch_AddSection(void *dat, char *name, int idx)
+002a1b80	87	USER_DEFINED	cdecl	Arch_AddLine	void Arch_AddLine(void *dat, char *text, int idx)
+002a1be0	244	USER_DEFINED	cdecl	Arch_InsertAt	void Arch_InsertAt(void *dat, char *text, int idx)
+002a1ce0	41	USER_DEFINED	cdecl	Arch_StrnCmp	int Arch_StrnCmp(void *dat, char *a, char *b, uint n)
+002a1d10	211	USER_DEFINED	cdecl	Arch_SectionEnd	int Arch_SectionEnd(void *dat, int idx)
+002a1df0	533	USER_DEFINED	cdecl	Arch_FindSection	int Arch_FindSection(void *dat, char *name, int from)
+002a2010	591	USER_DEFINED	cdecl	Arch_FindKey	int Arch_FindKey(void *dat, char *key, int from, char *value, int size)
+002a2260	294	USER_DEFINED	cdecl	Arch_SectionName	void Arch_SectionName(char *dest, char *header, int size)
+002a2390	202	USER_DEFINED	cdecl	Arch_Classify	void Arch_Classify(void *dat, int idx)
+002a2460	231	USER_DEFINED	cdecl	Arch_Delete	void Arch_Delete(void *dat, int idx)
+002a2550	52	USER_DEFINED	cdecl	Arch_Error	void Arch_Error(int code, int fatal, void *dat, int idx)
+002a2590	208	USER_DEFINED	cdecl	Arch_Write	int Arch_Write(void *dat, void *f)
+002a2660	149	USER_DEFINED	cdecl	Arch_Free	void Arch_Free(void *dat)
+002a2700	115	USER_DEFINED	cdecl	Arch_New	void * Arch_New(void)
+002a2780	325	USER_DEFINED	cdecl	Arch_Load	int Arch_Load(void *dat, char *name, int idx)
+002a28d0	293	USER_DEFINED	cdecl	Arch_Value	char * Arch_Value(void *dat, int idx, int *len)
+002a2a00	373	USER_DEFINED	cdecl	Arch_SetValue	void Arch_SetValue(void *dat, char *value, int idx)
+002a2b80	76	USER_DEFINED	cdecl	Arch_Count	int Arch_Count(void *dat)
+002a2bd0	404	USER_DEFINED	cdecl	Arch_Dump	void Arch_Dump(void *dat, int from, int to)
+002a2d70	210	USER_DEFINED	cdecl	Arch_Line	void * Arch_Line(void *dat, int idx)
+002a2e50	118	USER_DEFINED	cdecl	Arch_LineType	int Arch_LineType(void *dat, int idx)
+002a2ed0	46	USER_DEFINED	cdecl	Arch_Printf	void Arch_Printf(char *fmt, ...)
+002a2f00	60	USER_DEFINED	cdecl	Dat_SetBool	void Dat_SetBool(void *dat, char *sect, char *key, int v)
+002a2f40	79	USER_DEFINED	cdecl	Dat_SetInt	void Dat_SetInt(void *dat, char *sect, char *key, int v)
+002a2f90	295	USER_DEFINED	cdecl	Dat_SetStr	void Dat_SetStr(void *dat, char *sect, char *key, char *value)
+002a30c0	141	USER_DEFINED	cdecl	Dat_GetBool	int Dat_GetBool(void *dat, char *sect, char *key, int *out)
+002a3150	141	USER_DEFINED	cdecl	Dat_GetDouble	int Dat_GetDouble(void *dat, char *sect, char *key, double *out)
+002a31e0	141	USER_DEFINED	cdecl	Dat_GetFloat	int Dat_GetFloat(void *dat, char *sect, char *key, float *out)
+002a3270	141	USER_DEFINED	cdecl	Dat_GetLong	int Dat_GetLong(void *dat, char *sect, char *key, int *out)
+002a3300	141	USER_DEFINED	cdecl	Dat_GetInt	int Dat_GetInt(void *dat, char *sect, char *key, int *out)
+002a3390	146	USER_DEFINED	cdecl	Dat_GetText	int Dat_GetText(void *dat, char *sect, char *key, char *dest, int size)
+002a3430	273	USER_DEFINED	cdecl	Dat_GetList	void Dat_GetList(void *dat, char *sect, char *key, void *dest)
+002a3550	141	USER_DEFINED	cdecl	Dat_GetWord	int Dat_GetWord(void *dat, char *sect, char *key, ushort *out)
+002a35e0	96	USER_DEFINED	cdecl	Dat_GetStr	int Dat_GetStr(void *dat, char *sect, char *key, char *dest, int size)
 002a3640	13	DEFAULT	unknown	FUN_006a3640	
 002a3660	80	DEFAULT	unknown	FUN_006a3660	
 002a36b0	21	DEFAULT	unknown	FUN_006a36b0	
