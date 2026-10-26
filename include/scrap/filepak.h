@@ -42,7 +42,7 @@ typedef struct cPackLocation {
 
 /* Global/HashTable.h with a cString key, items from the "HashItem" pool; two instances in this file */
 typedef struct cPackIndexItem {
-	cPackLocation loc;		/* 0x00 */
+	cPackLocation value;		/* 0x00 */
 	char *key;			/* 0x0c cString */
 	struct cPackIndexItem *next;	/* 0x10 */
 } cPackIndexItem;

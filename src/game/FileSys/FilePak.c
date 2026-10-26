@@ -118,149 +118,10 @@ void __thiscall cFile2_SkipTo(cFile2 *self, int pos, const char *name) {
 
 /* the instance of cNameItem (value int), the HashTable.h parts in src/game/Global/HashTable.c */
 
-cNameItem *__thiscall NameTable_Find(HashTable *self, const char *key, uint32_t slot) {
-	for (cNameItem *it = (cNameItem *)self->slots[slot]; it; it = it->next) {
-		if (HashTable_KeyEq(self, it->key, key)) {
-			return it;
-		}
-	}
-	return NULL;
-}
-
-cNameItem *__thiscall NameTable_Insert(HashTable *self, const char *key, uint32_t slot, const int *value) {
-	CHECK(!self->locked);
-	cNameItem *it = HashItem_Alloc(sizeof(*it));
-	if (it) {
-		cString_ctor(&it->key);
-		it->value = *value;
-		it->next = NULL;
-	}
-	it->next = (cNameItem *)self->slots[slot];
-	cString_Set(&it->key, key);
-	self->slots[slot] = (HashNode *)it;
-	return it;
-}
-
-byte __thiscall NameTable_Add(HashTable *self, const char *key, const int *value, byte warn) {
-	CHECK(!self->locked);
-	uint32_t slot = HashTable_Slot(self, key);
-	if (NameTable_Find(self, key, slot)) {
-		if (warn) {
-			Con_Warnf("CHashTable: Symbol already defined: '%s'\n", key);
-		}
-		return 0;
-	}
-	NameTable_Insert(self, key, slot, value);
-	return 1;
-}
-
-void __fastcall NameTable_Clear(HashTable *self) {
-	CHECK(!self->locked);
-	if (!self->slots) {
-		return;
-	}
-	for (int i = 0; i < (int)self->numSlots; i++) {
-		while (self->slots[i]) {
-			cNameItem *it = (cNameItem *)self->slots[i];
-			self->slots[i] = (HashNode *)it->next;
-			cString_dtor(&it->key);
-			HashItem_Free(it);
-		}
-	}
-	operator_delete(self->slots);
-	self->numSlots = 0;
-	self->slots = NULL;
-}
-
-void __fastcall NameTable_dtor(HashTable *self) {
-	NameTable_Clear(self);
-}
+HASHTABLE_STR(NameTable, cNameItem)
 
 /* the instance of cPackIndexItem (value cPackLocation), g_PackIndex */
-
-cPackIndexItem *__thiscall PackIndex_FindItem(HashTable *self, const char *key, uint32_t slot) {
-	for (cPackIndexItem *it = (cPackIndexItem *)self->slots[slot]; it; it = it->next) {
-		if (HashTable_KeyEq(self, it->key, key)) {
-			return it;
-		}
-	}
-	return NULL;
-}
-
-cPackIndexItem *__thiscall PackIndex_Insert(HashTable *self, const char *key, uint32_t slot,
-	const cPackLocation *loc) {
-	CHECK(!self->locked);
-	cPackIndexItem *it = HashItem_Alloc(sizeof(*it));
-	if (it) {
-		cString_ctor(&it->key);
-		it->loc.offset = loc->offset;
-		it->loc.size = loc->size;
-		it->loc.pack = loc->pack;
-		it->next = NULL;
-	}
-	it->next = (cPackIndexItem *)self->slots[slot];
-	cString_Set(&it->key, key);
-	self->slots[slot] = (HashNode *)it;
-	return it;
-}
-
-byte __thiscall PackIndex_Add(HashTable *self, const char *key, const cPackLocation *loc, byte warn) {
-	CHECK(!self->locked);
-	uint32_t slot = HashTable_Slot(self, key);
-	if (PackIndex_FindItem(self, key, slot)) {
-		if (warn) {
-			Con_Warnf("CHashTable: Symbol already defined: '%s'\n", key);
-		}
-		return 0;
-	}
-	PackIndex_Insert(self, key, slot, loc);
-	return 1;
-}
-
-byte __thiscall PackIndex_Get(HashTable *self, const char *key, cPackLocation *out) {
-	cPackIndexItem *it = PackIndex_FindItem(self, key, HashTable_Slot(self, key));
-	if (!it) {
-		return 0;
-	}
-	out->offset = it->loc.offset;
-	out->size = it->loc.size;
-	out->pack = it->loc.pack;
-	return 1;
-}
-
-int __thiscall PackIndex_Set(HashTable *self, const char *key, const cPackLocation *loc) {
-	CHECK(!self->locked);
-	cPackIndexItem *it = PackIndex_FindItem(self, key, HashTable_Slot(self, key));
-	if (!it) {
-		return 0;
-	}
-	it->loc.offset = loc->offset;
-	it->loc.size = loc->size;
-	it->loc.pack = loc->pack;
-	return 1;
-}
-
-void __fastcall PackIndex_Clear(HashTable *self) {
-	CHECK(!self->locked);
-	if (!self->slots) {
-		return;
-	}
-	for (int i = 0; i < (int)self->numSlots; i++) {
-		while (self->slots[i]) {
-			cPackIndexItem *it = (cPackIndexItem *)self->slots[i];
-			self->slots[i] = (HashNode *)it->next;
-			cString_dtor(&it->key);
-			HashItem_Free(it);
-		}
-	}
-	operator_delete(self->slots);
-	self->numSlots = 0;
-	self->slots = NULL;
-}
-
-void __fastcall PackIndex_dtor(HashTable *self) {
-	PackIndex_Clear(self);
-}
+HASHTABLE_STR(PackIndexTable, cPackIndexItem)
 
 /* the location of a file in the packs (in g_PackFound, valid until the next call), NULL if not there */
 cPackLocation *PackIndex_Find(const char *name) {
@@ -268,13 +129,13 @@ cPackLocation *PackIndex_Find(const char *name) {
 
 	Str_Copy(key, name, sizeof(key));
 	PackName_Normalize(key);
-	cPackIndexItem *it = PackIndex_FindItem(g_PackIndex, key, HashTable_Slot(g_PackIndex, key));
+	cPackIndexItem *it = PackIndexTable_Find(g_PackIndex, key, HashTable_Slot(g_PackIndex, key));
 	if (!it) {
 		return NULL;
 	}
-	g_PackFound.offset = it->loc.offset;
-	g_PackFound.size = it->loc.size;
-	g_PackFound.pack = it->loc.pack;
+	g_PackFound.offset = it->value.offset;
+	g_PackFound.size = it->value.size;
+	g_PackFound.pack = it->value.pack;
 	return &g_PackFound;
 }
 
@@ -671,10 +532,10 @@ byte Pack_Open(const char *name, const char *dir, size_t bufSize) {
 		/* the index takes the name as it is in the pack; a later pack replaces the location */
 		CHECK(!g_PackIndex->locked);
 		uint32_t slot = HashTable_Slot(g_PackIndex, fname);
-		if (!PackIndex_FindItem(g_PackIndex, fname, slot)) {
-			PackIndex_Insert(g_PackIndex, fname, slot, &loc);
+		if (!PackIndexTable_Find(g_PackIndex, fname, slot)) {
+			PackIndexTable_Insert(g_PackIndex, fname, slot, &loc);
 		} else {
-			PackIndex_Set(g_PackIndex, fname, &loc);
+			PackIndexTable_Set(g_PackIndex, fname, &loc);
 		}
 	}
 	g_NumPackFiles++;
@@ -686,7 +547,7 @@ void Pack_CloseAll(void) {
 	CHECK(g_PackLocked == 0);
 	if (g_NumPackFiles) {
 		PackEntries_Clear(g_PackEntries);
-		PackIndex_Clear(g_PackIndex);
+		PackIndexTable_Clear(g_PackIndex);
 		for (int i = 0; i < g_NumPackFiles; i++) {
 			cFile_Close(&g_PackFiles[i].file);
 		}

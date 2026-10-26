@@ -40,4 +40,110 @@ void __fastcall PtrTable_Clear(HashTable *self);
 /* the value of key, NULL if it is not there */
 void *PtrTable_Value(HashTable *self, const char *key);
 
+/*
+ * The older HashTable.h, with the key copied into a cString. HASHTABLE_STR(P, ITEM) defines P_Find, P_Insert,
+ * P_Add, P_Get, P_Lookup, P_Set, P_Unlink, P_Delete, P_Clear and P_dtor for an ITEM { value; char *key; next; };
+ * the instances only differ in the value.
+ */
+#define HASHTABLE_STR(P, ITEM) \
+	ITEM *__thiscall P##_Find(HashTable *self, const char *key, uint32_t slot) { \
+		for (ITEM *it = (ITEM *)self->slots[slot]; it; it = it->next) { \
+			if (HashTable_KeyEq(self, it->key, key)) { \
+				return it; \
+			} \
+		} \
+		return NULL; \
+	} \
+	ITEM *__thiscall P##_Insert(HashTable *self, const char *key, uint32_t slot, const typeof(((ITEM *)0)->value) *v) { \
+		CHECK(!self->locked); \
+		ITEM *it = HashItem_Alloc(sizeof(*it)); \
+		if (it) { \
+			cString_ctor(&it->key); \
+			it->value = *v; \
+			it->next = NULL; \
+		} \
+		it->next = (ITEM *)self->slots[slot]; \
+		cString_Set(&it->key, key); \
+		self->slots[slot] = (HashNode *)it; \
+		return it; \
+	} \
+	byte __thiscall P##_Add(HashTable *self, const char *key, const typeof(((ITEM *)0)->value) *v, byte warn) { \
+		CHECK(!self->locked); \
+		uint32_t slot = HashTable_Slot(self, key); \
+		if (P##_Find(self, key, slot)) { \
+			if (warn) { \
+				Con_Warnf("CHashTable: Symbol already defined: '%s'\n", key); \
+			} \
+			return 0; \
+		} \
+		P##_Insert(self, key, slot, v); \
+		return 1; \
+	} \
+	byte __thiscall P##_Get(HashTable *self, const char *key, typeof(((ITEM *)0)->value) *out) { \
+		ITEM *it = P##_Find(self, key, HashTable_Slot(self, key)); \
+		if (!it) { \
+			return 0; \
+		} \
+		*out = it->value; \
+		return 1; \
+	} \
+	void __thiscall P##_Lookup(HashTable *self, const char *key, typeof(((ITEM *)0)->value) *out) { \
+		ITEM *it = P##_Find(self, key, HashTable_Slot(self, key)); \
+		if (it) { \
+			*out = it->value; \
+		} \
+	} \
+	byte __thiscall P##_Set(HashTable *self, const char *key, const typeof(((ITEM *)0)->value) *v) { \
+		CHECK(!self->locked); \
+		ITEM *it = P##_Find(self, key, HashTable_Slot(self, key)); \
+		if (!it) { \
+			return 0; \
+		} \
+		it->value = *v; \
+		return 1; \
+	} \
+	ITEM *__thiscall P##_Unlink(HashTable *self, const char *key, uint32_t slot) { \
+		ITEM **link = (ITEM **)&self->slots[slot]; \
+		CHECK(!self->locked); \
+		for (; *link; link = &(*link)->next) { \
+			if (HashTable_KeyEq(self, (*link)->key, key)) { \
+				ITEM *it = *link; \
+				*link = it->next; \
+				it->next = NULL; \
+				return it; \
+			} \
+		} \
+		return NULL; \
+	} \
+	byte __thiscall P##_Delete(HashTable *self, const char *key) { \
+		CHECK(!self->locked); \
+		ITEM *it = P##_Unlink(self, key, HashTable_Slot(self, key)); \
+		if (!it) { \
+			return 0; \
+		} \
+		cString_dtor(&it->key); \
+		HashItem_Free(it); \
+		return 1; \
+	} \
+	void __fastcall P##_Clear(HashTable *self) { \
+		CHECK(!self->locked); \
+		if (!self->slots) { \
+			return; \
+		} \
+		for (int i = 0; i < (int)self->numSlots; i++) { \
+			while (self->slots[i]) { \
+				ITEM *it = (ITEM *)self->slots[i]; \
+				self->slots[i] = (HashNode *)it->next; \
+				cString_dtor(&it->key); \
+				HashItem_Free(it); \
+			} \
+		} \
+		operator_delete(self->slots); \
+		self->numSlots = 0; \
+		self->slots = NULL; \
+	} \
+	void __fastcall P##_dtor(HashTable *self) { \
+		P##_Clear(self); \
+	}
+
 #endif
