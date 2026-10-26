@@ -129,6 +129,19 @@ void __thiscall CMapa_dtor(CMapa *self);
 CMaterial *__thiscall CMaterial_ctor(CMaterial *self);
 void __thiscall CMaterial_dtor(CMaterial *self);
 /* free the old string, a Mem_Alloc copy of s (NULL stays NULL) */
+/* the animation of an animated texture (rva 0x257f70.., not decompiled yet), 0x2c bytes */
+typedef struct CAnimMat {
+	float fps;			/* 0x0 */
+	int frames;			/* 0x4 */
+	int ciclo;			/* 0x8 */
+	byte rest[0x20];
+} CAnimMat;
+SD_SIZE(CAnimMat, 0x2c);
+CAnimMat *__thiscall CAnimMat_ctor(CAnimMat *self);
+/* rva 0x257f10, a copy of src */
+CAnimMat *__thiscall CAnimMat_ctorCopy(CAnimMat *self, const CAnimMat *src);
+void __thiscall CAnimMat_dtor(CAnimMat *self);
+void __thiscall CAnimMat_Start(CAnimMat *self);
 void __thiscall Cad_Set(char **self, const char *s);
 /* rva 0x2a18a0 and 0x2a1920: the string as a CArchIO string (empty is NULL) */
 void __thiscall Cad_Read(char **self, CArchIO *f);

@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/e3dutil.h"
 #include "scrap/nodo3d.h"
 #include "scrap/material.h"
 #include "scrap/trails.h"
@@ -11,8 +12,6 @@
 #define TRAILS_FVF 0x1c2
 #define TRAILS_PI4 0.78539819f		/* 0x3f490fdb */
 
-#define g_MotorDev (*(void **)(GAME_DATA(byte *, 0x4b1c04) + 0x2a3d8))	/* IDirect3DDevice8 */
-#define g_DiffuseMod4x GAME_DATA(int, 0x431be8)	/* video var DiffuseMod4x: colors divided by 4 */
 #define g_MatIdentity ((const matrix_t *)Game_Ptr(0x4ad6f8))
 #define g_TrailsDrawn GAME_DATA(int, 0x4a8f1c)	/* statistics of the frame */
 

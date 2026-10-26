@@ -8479,22 +8479,22 @@ rva	size	source	callconv	name	signature
 002b8e00	115	DEFAULT	unknown	FUN_006b8e00	
 002b8e80	1329	DEFAULT	unknown	FUN_006b8e80	
 002b93c0	231	DEFAULT	unknown	FUN_006b93c0	
-002b94b0	240	DEFAULT	unknown	FUN_006b94b0	
-002b95a0	134	DEFAULT	unknown	FUN_006b95a0	
+002b94b0	240	USER_DEFINED	__thiscall	CGrafico3D_ctorTex	void * __thiscall(char * tex, void * pos, float * size)
+002b95a0	134	USER_DEFINED	__fastcall	CGrafico3D_ctor	void * __fastcall(void * self)
 002b9630	3	DEFAULT	unknown	FUN_006b9630	
-002b9640	94	DEFAULT	unknown	FUN_006b9640	
-002b96a0	35	ANALYSIS	__thiscall	CGrafico3D::vf00	undefined __thiscall(void)
+002b9640	94	USER_DEFINED	__fastcall	CGrafico3D_dtor	void __fastcall(void * self)
+002b96a0	35	USER_DEFINED	__thiscall	CGrafico3D_Delete	void * __thiscall(byte flags)
 002b96d0	3	ANALYSIS	__thiscall	CGrafico3D::vf04	undefined __thiscall(void)
 002b96e0	3	ANALYSIS	__thiscall	CGrafico3D::vf03	undefined __thiscall(void)
-002b96f0	337	ANALYSIS	__thiscall	CGrafico3D::vf06	undefined __thiscall(void)
-002b9850	967	DEFAULT	unknown	FUN_006b9850	
-002b9c20	240	ANALYSIS	__thiscall	CGrafico3D::vf02	undefined __thiscall(void)
-002b9d10	293	ANALYSIS	__thiscall	CGrafico3D::vf05	undefined __thiscall(void)
+002b96f0	337	USER_DEFINED	__thiscall	CGrafico3D_Read	byte __thiscall(void * f, void * ctx)
+002b9850	967	USER_DEFINED	__fastcall	CGrafico3D_Draw	void __fastcall(void * self)
+002b9c20	240	USER_DEFINED	__thiscall	CGrafico3D_Render	void __thiscall(void * dev, void * r)
+002b9d10	293	USER_DEFINED	__thiscall	CGrafico3D_Write	byte __thiscall(void * f, void * ctx)
 002b9e40	3	ANALYSIS	__thiscall	CGrafico3D::vf01	undefined __thiscall(void)
-002b9e50	62	DEFAULT	unknown	FUN_006b9e50	
-002b9e90	47	DEFAULT	unknown	FUN_006b9e90	
-002b9ec0	439	DEFAULT	unknown	FUN_006b9ec0	
-002ba080	88	DEFAULT	unknown	FUN_006ba080	
+002b9e50	62	USER_DEFINED	__thiscall	CGrafico3D_SetNodo	void __thiscall(void * nodo)
+002b9e90	47	USER_DEFINED	__thiscall	CGrafico3D_SetTexture	void __thiscall(char * tex, char * opac)
+002b9ec0	439	USER_DEFINED	__thiscall	CGrafico3D_CreateMat	void __thiscall(char * tex, char * opac, int src, int dst, byte alpha)
+002ba080	88	USER_DEFINED	__fastcall	CGrafico3D_Init	void __fastcall(void * self)
 002ba0e0	79	USER_DEFINED	__fastcall	CPortal_ctor	void * __fastcall(void * self)
 002ba130	173	USER_DEFINED	__fastcall	CPortal_dtor	void __fastcall(void * self)
 002ba1e0	35	USER_DEFINED	__thiscall	CPortal_Delete	void * __thiscall(byte flags)

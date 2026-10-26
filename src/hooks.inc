@@ -1701,6 +1701,20 @@ SD_HOOK(Sector_Num, 0x26d0a0, 6)
 SD_HOOK(Sector_OfZonaNodo, 0x26d0b0, 29)
 SD_HOOK(Sectores_Free, 0x26d520, 127)
 
+/* src/game/engine3d/Engine/Grafico3D.c (Engine/grafico3d.cpp) */
+SD_HOOK(CGrafico3D_ctorTex, 0x2b94b0, 240)
+SD_HOOK(CGrafico3D_ctor, 0x2b95a0, 134)
+SD_HOOK(CGrafico3D_dtor, 0x2b9640, 94)
+SD_HOOK(CGrafico3D_Delete, 0x2b96a0, 35)
+SD_HOOK(CGrafico3D_Read, 0x2b96f0, 337)
+SD_HOOK(CGrafico3D_Draw, 0x2b9850, 967)
+SD_HOOK(CGrafico3D_Render, 0x2b9c20, 240)
+SD_HOOK(CGrafico3D_Write, 0x2b9d10, 293)
+SD_HOOK(CGrafico3D_SetNodo, 0x2b9e50, 62)
+SD_HOOK(CGrafico3D_SetTexture, 0x2b9e90, 47)
+SD_HOOK(CGrafico3D_CreateMat, 0x2b9ec0, 439)
+SD_HOOK(CGrafico3D_Init, 0x2ba080, 88)
+
 /* src/game/engine3d/Engine/Portal.c (Engine/portal.cpp) */
 SD_HOOK(CPortal_ctor, 0x2ba0e0, 79)
 SD_HOOK(CPortal_dtor, 0x2ba130, 173)

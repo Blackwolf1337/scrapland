@@ -129,9 +129,6 @@ typedef struct CListaModelo {
 } CListaModelo;
 SD_SIZE(CListaModelo, 0x1c);
 
-#ifndef g_MotorDev
-#define g_MotorDev (*(void **)(GAME_DATA(byte *, 0x4b1c04) + 0x2a3d8))	/* the device of the engine */
-#endif
 
 typedef void(__thiscall *escenaDelete_t)(CEscena *self, int flags);
 typedef void(__thiscall *modeloDelete_t)(CModelo *self, int flags);

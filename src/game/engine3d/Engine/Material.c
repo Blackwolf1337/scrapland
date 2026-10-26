@@ -13,7 +13,6 @@
 
 #define TEXTEST_CTOR 0x233990
 #define TEXTEST_DTOR 0x233c70
-#define ANIMMAT_SIZE 0x2c
 
 /* the effect object of a map (Engine/FXTextura) */
 void *FXTextura_Create(int kind, CMapa *mapa);
@@ -21,18 +20,6 @@ void *FXTextura_Create(int kind, CMapa *mapa);
 byte __thiscall CMatId_Check(CMatId *self, CMaterial *mat);
 void __thiscall CMatId_Register(CMatId *self, CMaterial *mat);
 int Vec3_Differ(const float *a, const float *b);
-
-typedef struct CAnimMat {
-	float fps;			/* 0x0 */
-	int frames;			/* 0x4 */
-	int ciclo;			/* 0x8 */
-	byte rest[0x20];
-} CAnimMat;
-SD_SIZE(CAnimMat, ANIMMAT_SIZE);
-
-CAnimMat *__thiscall CAnimMat_ctor(CAnimMat *self);
-void __thiscall CAnimMat_dtor(CAnimMat *self);
-void __thiscall CAnimMat_Start(CAnimMat *self);
 
 typedef void *(__thiscall *deleteObj_t)(void *self, int flags);
 
@@ -49,7 +36,6 @@ typedef void *(__thiscall *deleteObj_t)(void *self, int flags);
 #define g_ExtensTexturas ((char (*)[MAX_RUTA])Game_Ptr(0x4aadc0))
 #define g_MatStr ((char *)Game_Ptr(0x4ab7e8))
 #define g_LightmapsHigh GAME_DATA(int, 0x4afdb0)
-#define g_MotorDev (*(void **)(GAME_DATA(byte *, 0x4b1c04) + 0x2a3d8))
 #define g_AnimFpsDefault GAME_DATA(float, 0x431d20)
 #define g_BlendLegacy ((const uint32_t *)Game_Ptr(0x431d30))
 #define g_BlendTable ((const uint32_t *)Game_Ptr(0x431d34))
@@ -767,7 +753,7 @@ void __thiscall CMapa_LoadTexture(CMapa *self, void *dev, CMapa *alpha, int kind
 			CArchINI_ReadFloat(&ini, "anim", "fps", &fps);
 			CArchINI_ReadInt(&ini, "anim", "ciclo", &ciclo);
 		}
-		CAnimMat *am = operator_new(ANIMMAT_SIZE);
+		CAnimMat *am = operator_new(sizeof(CAnimMat));
 		am = am ? CAnimMat_ctor(am) : NULL;
 		self->AnimMat = am;
 		am->fps = fps;
@@ -1018,7 +1004,7 @@ void __fastcall CMapa_Release(CMapa *self) {
 	}
 	if (self->AnimMat) {
 		CAnimMat_dtor(self->AnimMat);
-		operator_delete_sized(self->AnimMat, ANIMMAT_SIZE);
+		operator_delete_sized(self->AnimMat, sizeof(CAnimMat));
 		self->AnimMat = NULL;
 	}
 	if (self->FXTextura) {

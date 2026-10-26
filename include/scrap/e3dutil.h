@@ -12,10 +12,14 @@
 
 /* the D3D device of the engine3d (render.cpp), NULL without one */
 #define g_pd3dDevice GAME_DATA(void *, 0x4ad6f4)
+/* the device of the D3D application (g_pD3DApp->m_pd3dDevice), NULL before it is made */
+#define g_MotorDev (*(void **)(GAME_DATA(byte *, 0x4b1c04) + 0x2a3d8))
 /* the frames drawn by the engine3d */
 #define g_FrameCount GAME_DATA(int, 0x4a8ec8)
 /* the time of the engine in ms */
 #define g_TimeMs GAME_DATA(uint32_t, 0x4a8ef0)
+/* video var DiffuseMod4x: colors divided by 4 */
+#define g_DiffuseMod4x GAME_DATA(int, 0x431be8)
 
 #define MAX_RUTA 0x104
 

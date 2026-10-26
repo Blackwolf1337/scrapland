@@ -8,6 +8,7 @@
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
 #include "scrap/escena.h"
+#include "scrap/grafico3d.h"
 #include "scrap/luz.h"
 #include "scrap/mallad3d.h"
 #include "scrap/mallatri.h"
@@ -187,9 +188,9 @@ static IObjeto3D *Escena_NewObj(CNodo3D *nodo, uint32_t clase, byte *set) {
 	case CLASE_OBJ3D_LUZ:
 		p = operator_new(sizeof(CLuz));
 		return p ? (IObjeto3D *)CLuz_ctor(p) : NULL;
-	case CLASE_OBJ3D_A6000040:
-		p = operator_new(0x3c);
-		return p ? Obj3D_A6000040_ctor(p) : NULL;
+	case CLASE_OBJ3D_GRAFICO3D:
+		p = operator_new(sizeof(CGrafico3D));
+		return p ? (IObjeto3D *)CGrafico3D_ctor(p) : NULL;
 	case CLASE_OBJ3D_PORTAL:
 		p = operator_new(sizeof(CPortal));
 		return p ? (IObjeto3D *)CPortal_ctor(p) : NULL;
@@ -654,11 +655,11 @@ void __thiscall CEscena_SetEscala(CEscena *self, const vec3_t *s) {
 			l->f30 = l->f30 * k;
 			l->rango = l->rango * k;
 		}
-		if (CNodo3D_Clase(n) == CLASE_OBJ3D_A6000040) {
-			float *o = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_A6000040);
+		if (CNodo3D_Clase(n) == CLASE_OBJ3D_GRAFICO3D) {
+			CGrafico3D *g = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_GRAFICO3D);
 			float k = (s->y + s->x + s->z) * 0.33333334f;
-			o[5] = o[5] * k;
-			o[6] = o[6] * k;
+			g->ancho = g->ancho * k;
+			g->alto = g->alto * k;
 		}
 	}
 	if (self->AnimM3D) {
