@@ -84,3 +84,5 @@ for name in (models[2], models[0]):
 	check('Escena_Flares/Sprites' + fmt((name,)), lambda e=e: (SDTest.Call(0x2c2330, 'vi', e), SDTest.Call(0x2c24b0,
 		'vi', e), m3scene(e)))
 	check('Escena_Limpiar' + fmt((name,)), lambda e=e: (SDTest.Call(0x2c2870, 'vis', e, 'sd'), m3scene(e)))
+
+# The M3D reader itself is not tested: the packs hold no .M3D files, only the .CM3 and .SM3 caches.

@@ -3,6 +3,10 @@
  * include/scrap/leedatos.h, "Label: value" lines) or binary with the same order of values; a binary file may hold the
  * labels too, as strings. Binary ints are variable length: 6 bits and a sign bit in the first byte, 7 more bits in
  * each following byte while bit 7 is set.
+ *
+ * The game data has no M3D files, only their binary caches (.CM3, .SM3, read through CEscena_Read), so the reader of
+ * the M3D files themselves (Escena_Load, rva 0x2c2d60, and the parts it calls) is still the exe's: it only runs in
+ * the tools.
  */
 #ifndef SCRAP_LEEM3D_H
 #define SCRAP_LEEM3D_H
