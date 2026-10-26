@@ -4,9 +4,11 @@
 usage: symname.py <rva> <name> [<calling convention> [<signature>]] ...   (groups of up to 4, separated by --)
   symname.py 0015e2e0 NormAng __cdecl 'float __cdecl(float ang)' -- 002efd30 PyErr_Clear __cdecl 'void __cdecl(void)'
 The signature has the form of ExportSymbols.java: "rettype __cc(type name, ...)" without the function name.
-An empty calling convention or signature keeps the old one.
+An empty calling convention or signature keeps the old one. A function Ghidra does not know gets a new row when
+src/hooks.inc has its size.
 """
 import os
+import re
 import sys
 
 TSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'symbols', 'functions.tsv')
@@ -42,9 +44,24 @@ def main():
             f[3] = cc or f[3]
             f[5] = sig or f[5]
             lines[i] = '\t'.join(f)
+    # functions Ghidra did not find: new rows (ImportSymbols creates them), the size from src/hooks.inc
+    hooks = os.path.join(os.path.dirname(TSV), '..', 'src', 'hooks.inc')
+    sizes = dict((m.group(1).zfill(8), m.group(2)) for m in
+        re.finditer(r'^SD_HOOK\(\w+, 0x([0-9a-f]+), (\d+)\)', open(hooks).read(), re.M))
+    missing = []
+    for rva, (name, cc, sig) in list(want.items()):
+        if rva not in sizes:
+            continue
+        want.pop(rva)
+        print(f'{rva} {name}  (new function)')
+        lines.append('\t'.join([rva, sizes[rva], 'USER_DEFINED', cc or 'unknown', name, sig]))
+        missing.append(rva)
+    if missing:
+        head, rows = lines[0], sorted(l for l in lines[1:] if l)
+        lines = [head] + rows + ['']
     open(TSV, 'w', encoding='utf-8').write('\n'.join(lines))
     for rva in want:
-        print(f'{rva}: no function there in functions.tsv', file=sys.stderr)
+        print(f'{rva}: no function there in functions.tsv and not in src/hooks.inc', file=sys.stderr)
     sys.exit(1 if want else 0)
 
 
