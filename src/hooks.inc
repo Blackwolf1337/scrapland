@@ -1582,6 +1582,15 @@ SD_HOOK(Lee_Bytes, 0x2d5e70, 182)
 SD_HOOK(Lee_Byte, 0x2d5f30, 108)
 SD_HOOK(Lee_Int, 0x2d5fa0, 102)
 
+/* module agent: Engine/MallaD3D (hooks below this line) */
+
+/* module agent: Engine/Suelo (hooks below this line) */
+
+/* module agent: Engine/Trails (hooks below this line) */
+
+/* module agent: Engine/Modelo (hooks below this line) */
+
+
 /* module agent: Engine/Nodo3D (hooks below this line) */
 
 /* module agent: Engine/Animacion (hooks below this line) */
