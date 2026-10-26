@@ -656,3 +656,191 @@ int Render_SetWorld(void) {
 	}
 	return 0;
 }
+
+void Render_ResetState(void) {
+	uint32_t filtro = g_TexFilter == 2 ? 3 : (uint32_t)(g_TexFilter != 0) + 1;
+	g_FiltroMin = filtro;
+	g_FiltroMag = filtro;
+	g_FiltroMip = 2 - (uint32_t)(g_MipFilter != 1);
+	uint32_t aniso = g_Anisotropy;
+	if (MOTOR_MAXANISOTROPY(g_Motor) < aniso) {
+		aniso = MOTOR_MAXANISOTROPY(g_Motor);
+	}
+	g_Anisotropia = aniso;
+	for (uint32_t i = 0; i < 8; i++) {
+		Render_SetTexture(i, NULL);
+		Render_TSS(i, D3DTSS_TEXCOORDINDEX, i);
+		Render_TSS(i, D3DTSS_MINFILTER, g_FiltroMin);
+		Render_TSS(i, D3DTSS_MAGFILTER, g_FiltroMag);
+		Render_TSS(i, D3DTSS_MIPFILTER, g_MipmapsOn ? g_FiltroMip : 0);
+		Render_TSS(i, D3DTSS_MAXANISOTROPY, g_Anisotropia);
+		Render_TSS(i, D3DTSS_MIPMAPLODBIAS, F2U(g_MipmapBias + g_MipmapBias2));
+		Render_TSS(i, D3DTSS_ADDRESSU, D3DTADDRESS_WRAP);
+		Render_TSS(i, D3DTSS_ADDRESSV, D3DTADDRESS_WRAP);
+		g_StageAddrU[i] = 1;
+		g_StageAddrV[i] = 3;
+	}
+}
+
+/* the shader mode of the material through its id (pass 0 only); the alpha test, the blending and its value from
+ * the bytes 4, 5, 6 of the id */
+static void Mat_Shader(const CMaterial *mat, byte frameChanged, byte *alphaTest, byte *blend, byte *alpha) {
+	CMatId *id;
+	CMaterial_GetId((CMaterial *)mat, &id);
+	const byte *b = (const byte *)id;
+	*alphaTest = b[4];
+	*blend = b[5];
+	*alpha = b[6];
+	uint32_t mode = (uint32_t)id->id;
+	if (g_RenderCtx) {
+		mode += 0x100;
+	}
+	if (g_ShaderActual == mode && !frameChanged) {
+		Render_Shader(mode, (void *)mat, (void *)4);
+	} else {
+		g_PShaderCount++;
+		Render_Shader(g_ShaderActual, NULL, (void *)2);
+		Render_Shader(mode, (void *)mat, (void *)1);
+		g_ShaderActual = mode;
+	}
+}
+
+/* the blending of pass 0 */
+static void Mat_Blend(void *dev, const CMaterial *mat, byte shAlphaTest, byte shBlend, byte shAlpha) {
+	byte alpha = shAlphaTest ? shAlpha : 0;
+	byte blend = shBlend ? mat->params.transp : 0;
+	int src = mat->params.srcBlend, dst = mat->params.dstBlend;
+	byte at = mat->params.atrib >> 5 & 1;
+	byte alphaTest = at ? 1 : alpha;
+	byte blending = at ? 0 : blend;
+	if (g_MatForzado) {
+		src = g_MatForzado->params.srcBlend;
+		if (!blending) {
+			dst = g_MatForzado->params.dstBlend;
+		}
+		alphaTest = 0;
+		blending = 1;
+	}
+	if (alphaTest && !(src == 2 && dst == 2)) {
+		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHATESTENABLE, 1);
+		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHAREF, at ? 0x80 : 1);
+		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHAFUNC, D3DCMP_GREATEREQUAL);
+	} else {
+		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHATESTENABLE, 0);
+	}
+	if (mat->params.atrib & 0x400) {
+		alphaTest = 0;
+	}
+	if (!alphaTest && !blending) {
+		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHABLENDENABLE, 0);
+		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FOGENABLE,
+			mat->params.w3e & 0xff ? (uint32_t)g_FogActive : 0);
+		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_COLORWRITEENABLE, 0xf);
+		if (g_PSOn) {
+			D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, 0, D3DTSS_ALPHAOP,
+				D3DTOP_SELECTARG2);
+		}
+		return;
+	}
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHABLENDENABLE, at ^ 1);
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_SRCBLEND, (uint32_t)src);
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_DESTBLEND, (uint32_t)dst);
+	D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, 0, D3DTSS_ALPHAOP,
+		!blending ? D3DTOP_SELECTARG1 : alphaTest ? D3DTOP_MODULATE : D3DTOP_SELECTARG2);
+	byte fog = mat->params.w3e & 0xff && g_FogActive && g_AlphaFog && (g_AlphaFog != 1 || (src == 5 && dst == 6));
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FOGENABLE, fog);
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_COLORWRITEENABLE,
+		src == 2 && dst == 2 ? 0xf : 7);
+}
+
+/* pass 1: the second texture set added */
+static void Mat_Pass1(void *dev) {
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHATESTENABLE, 0);
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHABLENDENABLE, 1);
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_SRCBLEND, 2);
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_DESTBLEND, 2);
+}
+
+int Render_SetMaterial(void *m, int pass) {
+	if (!m) {
+		CHECK(pass == -1);
+		g_MatActual = NULL;
+		return 0;
+	}
+	const CMaterial *mat = g_MatFX1 ? g_MatFX1 : m;
+	if (g_UseDefMaterial && !(mat->params.atrib & 0x840)) {
+		mat = g_UseDefMaterial == 1 ? g_MatBlanco : g_MatDef4;
+	}
+	void *dev = g_MotorDev;
+	if (!dev) {
+		return E_FAIL;
+	}
+	if (g_MatActual != mat || g_MatPass != pass || g_MatFrame != g_FrameCount || g_RenderCtx != g_MatCtx) {
+		byte frameChanged = g_MatFrame != g_FrameCount;
+		g_MatActual = mat;
+		g_MatPass = pass;
+		g_MatFrame = g_FrameCount;
+		g_MatCtx = g_RenderCtx;
+		if (g_MaterialLog) {
+			const char *ctx = g_RenderCtx ? *(const char **)((byte *)g_RenderCtx + 4) : Game_Ptr(0x3a3228);
+			E3D_LogWhite(g_FileLog, "MatLog: %d %d %d [%s] [%s]", g_FrameCount, g_MatChanges,
+				CMaterial_GetId((CMaterial *)mat, NULL), mat->Nombre, ctx);
+		}
+		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZWRITEENABLE, mat->params.w3e >> 8);
+		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZFUNC, (uint32_t)mat->params.i40);
+		Render_State(D3DRS_ZBIAS, mat->params.atrib & 0x800 ? g_DecalZBias : 0);
+		uint32_t light = 0;
+		if (mat->params.b39) {
+			Render_D3DMaterial(mat, g_MatFX3 ? g_MatFX3->colors : mat->colors);
+			light = 1;
+		}
+		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_LIGHTING, light);
+		byte shAlphaTest = 1, shBlend = 1, shAlpha = 0;
+		if (g_UsarShaders) {
+			CHECK(!pass);
+			Mat_Shader(mat, frameChanged, &shAlphaTest, &shBlend, &shAlpha);
+		} else if (mat->params.b3b && pass == 1) {
+			D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, 0, D3DTSS_TEXCOORDINDEX, 1);
+		} else {
+			D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, 0, D3DTSS_TEXCOORDINDEX, 0);
+		}
+		if (!pass) {
+			Mat_Blend(dev, mat, shAlphaTest, shBlend, shAlpha);
+		} else if (pass == 1) {
+			Mat_Pass1(dev);
+		}
+		g_MatChanges++;
+	}
+	if (pass) {
+		if (pass == 1) {
+			Render_SetMapa(0, mat->mapa[2]);
+		}
+		return 0;
+	}
+	/* R_UseDefTexture: the white texture (1: only without one) */
+	const CMapa *mapa = mat->mapa[0];
+	switch (g_UseDefTexture) {
+	case 1:
+		if (!mapa) {
+			mapa = g_MatBlanco->mapa[0];
+		}
+		break;
+	case 2:
+		if (!(mat->params.atrib & 0x40)) {
+			mapa = g_MatBlanco->mapa[0];
+		}
+		break;
+	case 3:
+		if (!(mat->params.atrib & 0x40)) {
+			mapa = g_MatDef2->mapa[0];
+		}
+		break;
+	case 4:
+		if (!(mat->params.atrib & 0x40)) {
+			mapa = g_MatDef3->mapa[0];
+		}
+		break;
+	}
+	Render_SetMapa(0, mapa);
+	return 0;
+}

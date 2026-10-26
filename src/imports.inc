@@ -352,7 +352,6 @@ SD_IMPORT(Console_Execute, 0x20aaf0)
 
 /* engine3d: Engine/ListaVert.cpp and Engine/render.cpp (include/scrap/listavert.h, mallatri.h) */
 SD_IMPORT(CListaVert_GetPos, 0x212570)
-SD_IMPORT(Render_SetMaterial, 0x24bf30)
 
 /* engine3d: called from Engine/luz.cpp (include/scrap/luz.h) */
 SD_IMPORT(E3D_FlushBatch, 0x24cec0)
@@ -417,7 +416,7 @@ SD_IMPORT(Font_PrintfXY, 0x299ce0)
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
 SD_IMPORT(Render_ClipRect, 0x24e220)
-SD_IMPORT(Render_ResetState, 0x24c730)
+SD_IMPORT(Render_SetMapa, 0x24c910)
 SD_IMPORT(RenderLock_ReleaseD3D, 0x2a4860)
 SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
 SD_IMPORT(RenderEVA_ReleaseD3D, 0x2b4550)

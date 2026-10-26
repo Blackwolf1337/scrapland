@@ -171,3 +171,54 @@ check('Render_ClearForced', lambda: (SDTest.Call(0x24af30, 'v'), SDTest.Peek(0x4
 check('Render_BeginFrame', lambda: (rdlog(lambda: SDTest.Call(0x24b880, 'v')), SDTest.Peek(0x4ad7e8, 'i') != 0,
 	SDTest.Peek(0x4add70, 'i')))
 check('Render_EndView', lambda: (rdlog(lambda: SDTest.Call(0x24aee0, 'v')), SDTest.Peek(0x4ad7e8, 'i')))
+
+# Render_SetMaterial with the material of the stage tests: blending, alpha test, lighting, the second texture set,
+# a forced material and the default material and texture modes (the last material forgotten before each)
+check('Render_ResetState', lambda: rdlog(lambda: SDTest.Call(0x24c730, 'v')))
+rdsm = []
+for a in (0x43240d, 0x4ad8e0, 0x4ad868, 0x4ad754, 0x4ad74c, 0x4ada80):
+	rdsm.append((a, SDTest.Peek(a, 'i')))
+def rdset(pass_):
+	SDTest.Call(0x24bf30, 'iii', 0, -1)
+	return rdlog(lambda pass_=pass_: SDTest.Call(0x24bf30, 'iii', rmat, pass_))
+rdsaved38 = (rdi(rmat + 0x30), rdi(rmat + 0x34), rdi(rmat + 0x38), rdi(rmat + 0x3c), rdi(rmat + 0x40))
+# without the pixel shader modes (the mode of this material fails a CHECK with a texture)
+SDTest.Poke(0x43240d, SDTest.Peek(0x43240d, 'i') & ~0xff)
+for src, dst in ((5, 6), (2, 2), (2, 1)):
+	for b38 in (0, 0x0100, 0x010000, 0x01000000, 0x01010100):
+		for atrib in (0, 0x20, 0x400, 0x800, 0x40, 0x1000020):
+			SDTest.Poke(rmat + 0x30 - 0x400000, src)
+			SDTest.Poke(rmat + 0x34 - 0x400000, dst)
+			SDTest.Poke(rmat + 0x38 - 0x400000, b38)
+			SDTest.Poke(rmat + 0x3c - 0x400000, atrib)
+			for pass_ in (0, 1):
+				check('Render_SetMaterial' + fmt((src, dst, b38, atrib, pass_)), lambda pass_=pass_: rdset(pass_))
+for fog in (0, 1, 2):
+	SDTest.Poke(0x4ada80, fog)
+	check('Render_SetMaterial fog' + fmt((fog,)), lambda: (rdset(0), rdset(1)))
+SDTest.Poke(0x4ad754, rmat)
+check('Render_SetMaterial forced', lambda: rdset(0))
+SDTest.Poke(0x4ad754, 0)
+for usedef in (1, 2):
+	SDTest.Poke(0x4ad8e0, usedef)
+	check('Render_SetMaterial default material' + fmt((usedef,)), lambda: rdset(0))
+SDTest.Poke(0x4ad8e0, 0)
+for tex in (1, 2, 3, 4):
+	SDTest.Poke(0x4ad868, tex)
+	check('Render_SetMaterial default texture' + fmt((tex,)), lambda: rdset(0))
+check('Render_SetMaterial same', lambda: (rdset(0), rdlog(lambda: SDTest.Call(0x24bf30, 'iii', rmat, 0))))
+check('Render_SetMaterial none', lambda: (SDTest.Call(0x24bf30, 'iii', 0, -1), SDTest.Peek(0x4ae580, 'i')))
+for a, v in rdsm:
+	SDTest.Poke(a, v)
+# the pixel shader modes with a material without textures (the shader of its mode is switched as it changes)
+rmat2 = SDTest.Call(0x233830, 'tii', SDTest.Call(0x1334d0, 'ii', 0xb0)[0])[0]
+SDTest.Poke(0x43240d, SDTest.Peek(0x43240d, 'i') | 1)
+for transp in (0, 1):
+	SDTest.Poke(rmat2 + 0x38 - 0x400000, transp << 16)
+	check('Render_SetMaterial shaders' + fmt((transp,)), lambda: (rdlog(lambda: SDTest.Call(0x24bf30, 'iii', 0, -1)),
+		rdlog(lambda: SDTest.Call(0x24bf30, 'iii', rmat2, 0)), rdlog(lambda: SDTest.Call(0x24bf30, 'iii', rmat2, 0)),
+		SDTest.Peek(0x4ae590, 'i')))
+for a, v in rdsm:
+	SDTest.Poke(a, v)
+for i in range(5):
+	SDTest.Poke(rmat + 0x30 + 4 * i - 0x400000, rdsaved38[i])

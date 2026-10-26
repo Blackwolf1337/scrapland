@@ -7250,14 +7250,14 @@ rva	size	source	callconv	name	signature
 0024bbc0	57	USER_DEFINED	__cdecl	Render_GetWorld	int __cdecl(void * out)
 0024bc00	57	USER_DEFINED	__cdecl	Render_SetWorld	int __cdecl(void)
 0024bc40	732	DEFAULT	unknown	FUN_0064bc40	
-0024bf30	1422	USER_DEFINED	__cdecl	Render_SetMaterial	int __cdecl(void *mat, int pass)
+0024bf30	1422	USER_DEFINED	__cdecl	Render_SetMaterial	int __cdecl(void * mat, int pass)
 0024c4d0	6	USER_DEFINED	__cdecl	Render_GetProj	void * __cdecl(void)
 0024c4e0	444	DEFAULT	unknown	FUN_0064c4e0	
 0024c6a0	86	DEFAULT	unknown	FUN_0064c6a0	
 0024c700	45	DEFAULT	unknown	FUN_0064c700	
-0024c730	333	USER_DEFINED	unknown	Render_ResetState	
+0024c730	333	USER_DEFINED	__cdecl	Render_ResetState	void __cdecl(void)
 0024c880	130	DEFAULT	unknown	FUN_0064c880	
-0024c910	426	DEFAULT	unknown	FUN_0064c910	
+0024c910	426	USER_DEFINED	unknown	Render_SetMapa	
 0024cac0	141	DEFAULT	unknown	FUN_0064cac0	
 0024cb50	479	DEFAULT	unknown	FUN_0064cb50	
 0024cd30	113	DEFAULT	unknown	FUN_0064cd30	

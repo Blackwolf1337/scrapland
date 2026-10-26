@@ -35,6 +35,40 @@ struct CListaVert;
 /* the planes of the view frustum (normal, d; outside where the distance is positive) */
 #define MAX_PLANOS_FRUSTUM 6
 #define g_Frustum ((const plane_t *)Game_Ptr(0x4adbf0))
+/* the texture filters of the stages (Render_ResetState from the variables below): min, mag, mip, anisotropy */
+#define g_FiltroMin GAME_DATA(uint32_t, 0x431d7c)
+#define g_FiltroMag GAME_DATA(uint32_t, 0x431d80)
+#define g_FiltroMip GAME_DATA(uint32_t, 0x431d70)
+#define g_Anisotropia GAME_DATA(uint32_t, 0x431d78)
+#define g_TexFilter GAME_DATA(int, 0x4add58)		/* R_TexFilter 0 point, 1 linear, 2 anisotropic */
+#define g_MipFilter GAME_DATA(int, 0x4ad8f8)		/* R_MipFilter 0 point, 1 linear */
+#define g_Anisotropy GAME_DATA(uint32_t, 0x4adba0)	/* R_Anisotropy */
+#define g_MipmapBias GAME_DATA(float, 0x4ada68)		/* R_MipmapBias */
+#define g_MipmapBias2 GAME_DATA(float, 0x4ad73c)
+#define g_MipmapsOn GAME_DATA(byte, 0x4ad6f2)
+#define MOTOR_MAXANISOTROPY(m) (*(uint32_t *)((m) + 0x2a448))
+/* the address modes of the stages as Render_SetMapa last set them */
+#define g_StageAddrU ((byte *)Game_Ptr(0x4addb4))
+#define g_StageAddrV ((byte *)Game_Ptr(0x4addbc))
+/* Render_SetMaterial: the last material, pass, frame and context (it is skipped for the same ones), the shader mode */
+#define g_MatPass GAME_DATA(int, 0x4ae588)
+#define g_MatFrame GAME_DATA(int, 0x4ae58c)
+#define g_MatCtx GAME_DATA(void *, 0x4ae584)
+#define g_ShaderActual GAME_DATA(uint32_t, 0x4ae590)
+#define g_MatChanges GAME_DATA(int, 0x4a8f0c)
+/* the context of the draw (a name at 0x4), its shader modes have 0x100 */
+#define g_RenderCtx GAME_DATA(void *, 0x4addc4)
+#define g_UsarShaders GAME_DATA(byte, 0x43240d)
+#define g_MaterialLog GAME_DATA(int, 0x4adbe8)		/* R_MaterialLog */
+#define g_DecalZBias GAME_DATA(uint32_t, 0x4add88)	/* R_DecalZBias */
+#define g_AlphaFog GAME_DATA(int, 0x4ada80)		/* R_AlphaFog 0, 1 (only add blending), 2 */
+#define g_UseDefMaterial GAME_DATA(int, 0x4ad8e0)	/* R_UseDefMaterial 0, 1, 2 */
+#define g_UseDefTexture GAME_DATA(int, 0x4ad868)	/* R_UseDefTexture 0..4 */
+/* the default materials RenderIniD3D makes (white first) */
+#define g_MatBlanco GAME_DATA(CMaterial *, 0x4ad6d8)
+#define g_MatDef2 GAME_DATA(CMaterial *, 0x4ad6dc)
+#define g_MatDef3 GAME_DATA(CMaterial *, 0x4ad6e0)
+#define g_MatDef4 GAME_DATA(CMaterial *, 0x4ad6e4)
 /* the matrices of the frame: projection, view, the camera turn of the sprites, the world of the last draw; the eye */
 #define g_MatProj (*(matrix_t *)Game_Ptr(0x4ae3f8))
 #define g_MatView (*(matrix_t *)Game_Ptr(0x4ae4b8))
@@ -44,9 +78,9 @@ struct CListaVert;
 /* the material of a ModelFX in place of the ones of the meshes, NULL */
 #define g_MatForzado GAME_DATA(const CMaterial *, 0x4ad754)
 /* the other overrides of ModelFX.cpp, cleared with it */
-#define g_MatFX1 GAME_DATA(void *, 0x4ad74c)
+#define g_MatFX1 GAME_DATA(CMaterial *, 0x4ad74c)	/* in place of every material */
 #define g_MatFX2 GAME_DATA(void *, 0x4ad750)
-#define g_MatFX3 GAME_DATA(void *, 0x4ad758)
+#define g_MatFX3 GAME_DATA(const CMaterial *, 0x4ad758)	/* its colors for the D3D material */
 /* bUsarHWEnvMap: the environment maps through the texture transform of the device (materials with two texture sets
  * get VERT_TEX1 instead of VERT_TEX2) */
 #define g_UsarHWEnvMap GAME_DATA(int, 0x431bdc)
@@ -83,7 +117,7 @@ SD_SIZE(ShaderTab, 0x18);
 #define g_ViewportFull ((uint32_t *)Game_Ptr(0x4ad7f8))
 #define g_D3DOn GAME_DATA(byte, 0x4ad6f1)
 #define g_MatDefault ((void *)Game_Ptr(0x4adc98))
-#define g_MatActual GAME_DATA(void *, 0x4ae580)	/* the last one Render_SetMaterial set */
+#define g_MatActual GAME_DATA(const CMaterial *, 0x4ae580)	/* the last one Render_SetMaterial set */
 #define g_Caps ((void *)Game_Ptr(0x4ae1f8))	/* D3DCAPS8 of the device */
 #define g_RenderI1F4 GAME_DATA(int, 0x4ae1f4)
 
@@ -157,6 +191,11 @@ void Render_WorldDirty(void);
 int Render_SetWorldMatrix(const matrix_t *m, byte defer);
 /* the world matrix given to the device once (HRESULT) */
 int Render_SetWorld(void);
+/* the base texture stage states and the filters of the variables */
+void Render_ResetState(void);
+/* the device states and texture of a material for pass 0 (the material) or 1 (its second texture set added); NULL
+ * with pass -1 forgets the last material; HRESULT */
+int Render_SetMaterial(void *mat, int pass);
 int Render_GetWorld(matrix_t *out);
 /* the alpha constant of the pixel shaders in reg: 1 1 1 0, 0 for transparent materials (not MAT_1000) and with a
  * forced material */
@@ -185,8 +224,6 @@ const matrix_t *Render_GetBillboard(void);
 const vec3_t *Render_GetEyePos(void);
 
 /* still the exe's */
-/* rva 0x24bf30: the material for a pass, -1 with no material */
-int Render_SetMaterial(void *mat, int pass);
 /* rva 0x24b960: a line in the current world matrix; an error without a device */
 int Render_Line(const vec3_t *a, const vec3_t *b, uint32_t color);
 /* rva 0x24cf00: the screen position (pixels) of a world position; 0, -1 when it is not on the screen */
@@ -202,8 +239,9 @@ int Render_HasStencil(void);
 int Render_CreateVB(void **vb, struct CListaVert *vert, int flags);
 int Render_CreateIB(void **ib, const void *tris, uint32_t nTri, int flags);
 
-/* rva 0x24c730: the base render and texture stage states */
-void Render_ResetState(void);
+/* rva 0x24c910: the texture of mapa (NULL none) on stage */
+struct CMapa;
+void Render_SetMapa(uint32_t stage, const struct CMapa *mapa);
 
 /* other modules (src/imports.inc) */
 void RenderLock_ReleaseD3D(void);		/* rva 0x2a4860 (RenderLock.cpp) */
