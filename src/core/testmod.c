@@ -6,8 +6,9 @@
  * SDTest.Call(rva, sig, args...): sig is the return type and then one character per argument.
  *   return: v nothing, i int, b byte (al), s char * (None for NULL), f float (st0)
  *   args:   i int, f float, s string, z string or None, b string copied into a buffer of BUF_SIZE bytes (rest 0)
- *           that comes back, p int and D double that are passed by pointer and come back
- * The result is a tuple: the return value, then the b, p and D arguments in their order. cdecl functions with up to
+ *           that comes back, p int and D double that are passed by pointer and come back, F a tuple of numbers
+ *           passed as an array of floats (up to MAX_FLOATS) that comes back as a tuple
+ * The result is a tuple: the return value, then the b, p, D and F arguments in their order. cdecl functions with up to
  * MAX_ARGS arguments of 4 bytes; "t" before sig calls a thiscall method, the first argument is this (up to
  * MAX_THIS_ARGS more, no float return).
  *
@@ -24,8 +25,9 @@
 
 #define MAX_ARGS 16
 #define MAX_THIS_ARGS 6
-#define MAX_OUT 4
+#define MAX_OUT 8
 #define BUF_SIZE 1024
+#define MAX_FLOATS 64
 
 #define PyImport_Inittab GAME_DATA(struct _inittab *, 0x4334f0)
 
@@ -79,6 +81,8 @@ static PyObject *SDTest_Result(char kind, uint32_t r) {
 static char bufs[MAX_OUT][BUF_SIZE];
 static int ints[MAX_OUT];
 static double doubles[MAX_OUT];
+static float floats[MAX_OUT][MAX_FLOATS];
+static int nFloats[MAX_OUT];
 static char out[0x4000];
 static size_t outLen;
 
@@ -151,6 +155,22 @@ static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 			a[i] = (uint32_t)(uintptr_t)&doubles[nOut];
 			outKind[nOut++] = 'D';
 			break;
+		case 'F': {
+			int len = (int)PyTuple_GET_SIZE(o);
+			if (nOut == MAX_OUT || len > MAX_FLOATS) {
+				return NULL;
+			}
+			memset(floats[nOut], 0, sizeof(floats[nOut]));
+			for (int k = 0; k < len; k++) {
+				if (!PyArg_Parse(PyTuple_GetItem(o, k), "f", &floats[nOut][k])) {
+					return NULL;
+				}
+			}
+			nFloats[nOut] = len;
+			a[i] = (uint32_t)(uintptr_t)floats[nOut];
+			outKind[nOut++] = 'F';
+			break;
+		}
 		default:
 			return NULL;
 		}
@@ -183,6 +203,12 @@ static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 			break;
 		case 'D':
 			o = PyFloat_FromDouble(doubles[i]);
+			break;
+		case 'F':
+			o = PyTuple_New(nFloats[i]);
+			for (int k = 0; k < nFloats[i]; k++) {
+				PyTuple_SetItem(o, k, PyFloat_FromDouble(floats[i][k]));
+			}
 			break;
 		default:
 			o = PyInt_FromLong(ints[i]);

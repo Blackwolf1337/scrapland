@@ -4398,21 +4398,21 @@ rva	size	source	callconv	name	signature
 0015b3c0	303	DEFAULT	unknown	FUN_0055b3c0	
 0015b4f0	81	DEFAULT	unknown	FUN_0055b4f0	
 0015b550	182	USER_DEFINED	__thiscall	HashTable<cNameItem>::Unlink	void * __thiscall(char * key, uint slot)
-0015b610	229	DEFAULT	unknown	FUN_0055b610	
-0015b720	151	DEFAULT	unknown	FUN_0055b720	
-0015b7c0	52	DEFAULT	unknown	FUN_0055b7c0	
-0015b800	138	DEFAULT	unknown	FUN_0055b800	
-0015b890	329	DEFAULT	unknown	FUN_0055b890	
-0015b9e0	466	DEFAULT	unknown	FUN_0055b9e0	
-0015bbc0	37	DEFAULT	unknown	FUN_0055bbc0	
-0015bbf0	109	DEFAULT	unknown	FUN_0055bbf0	
-0015bc60	768	DEFAULT	unknown	FUN_0055bc60	
-0015bf60	583	DEFAULT	unknown	FUN_0055bf60	
-0015c1b0	442	DEFAULT	unknown	FUN_0055c1b0	
-0015c370	171	DEFAULT	unknown	FUN_0055c370	
-0015c420	61	DEFAULT	unknown	FUN_0055c420	
-0015c460	419	DEFAULT	unknown	FUN_0055c460	
-0015c610	106	DEFAULT	unknown	FUN_0055c610	
+0015b610	229	USER_DEFINED	__thiscall	Box_GetCorner	float * __thiscall(float *out, int i)
+0015b720	151	USER_DEFINED	__cdecl	Box_Merge	void __cdecl(float *box, float *other, byte first)
+0015b7c0	52	USER_DEFINED	__cdecl	Float_Approach	void __cdecl(float *v, float target, float step)
+0015b800	138	USER_DEFINED	__cdecl	Vec3_Approach	void __cdecl(float *v, float *target, float step)
+0015b890	329	USER_DEFINED	__cdecl	Vec3_Bounce	void __cdecl(float *n, float m1, float m2, float *v1, float *v2)
+0015b9e0	466	USER_DEFINED	__cdecl	Tri_HasPoint	byte __cdecl(float *q, float *t0, float *t1, float *t2)
+0015bbc0	37	USER_DEFINED	__cdecl	Float_IsValid	byte __cdecl(float f)
+0015bbf0	109	USER_DEFINED	__cdecl	Vec3_IsValid	byte __cdecl(float *v)
+0015bc60	768	USER_DEFINED	__cdecl	Dist_PointSegment	float __cdecl(float *a, float *b, float *p, float *out)
+0015bf60	583	USER_DEFINED	__cdecl	Dist2_PointSegment	float __cdecl(float *a, float *b, float *p, float *out)
+0015c1b0	442	USER_DEFINED	__thiscall	Plane_SafeSet	byte __thiscall(float *v1, float *v2, float *v3)
+0015c370	171	USER_DEFINED	__cdecl	Quad_Solve	byte __cdecl(float a, float b, float c, float *t1, float *t2)
+0015c420	61	USER_DEFINED	__cdecl	Dist_PointTriangle	float __cdecl(float *p, float *v1, float *v2, float *v3, float *out)
+0015c460	419	USER_DEFINED	__cdecl	Dist2_PointTriangle	float10 __cdecl(float *p, float *v1, float *v2, float *v3, float *out)
+0015c610	106	USER_DEFINED	__cdecl	Vec3_Reflect	void __cdecl(float *n, float *v, float *out)
 0015c680	106	DEFAULT	unknown	FUN_0055c680	
 0015c6f0	168	DEFAULT	unknown	FUN_0055c6f0	
 0015c7a0	144	DEFAULT	unknown	FUN_0055c7a0	
@@ -11861,7 +11861,7 @@ rva	size	source	callconv	name	signature
 0034e703	42	ANALYSIS	__cdecl	__copysign	double __cdecl(double _Number, double _Sign)
 0034e72d	30	ANALYSIS	unknown	__copysignf	undefined(void)
 0034e74b	26	DEFAULT	unknown	FUN_0074e74b	
-0034e765	164	ANALYSIS	__cdecl	__fpclass	int __cdecl(double _X)
+0034e765	164	USER_DEFINED	__cdecl	crt_fpclass	int __cdecl(double x)
 0034e809	54	ANALYSIS	__cdecl	__isnan	int __cdecl(double _X)
 0034e83f	209	DEFAULT	unknown	FUN_0074e83f	
 0034e910	31	ANALYSIS	unknown	__nextafter	undefined(void)

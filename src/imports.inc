@@ -134,6 +134,7 @@ SD_IMPORT(crt_isxdigit, 0x34f956)
 SD_IMPORT(crt_iob_func, 0x3507fa)
 SD_IMPORT(crt_stdio_common_vfprintf, 0x33b5da)
 SD_IMPORT(crt_strcspn, 0x3506a0)
+SD_IMPORT(crt_fpclass, 0x34e765)
 
 /* engine: Net/ (include/scrap/net.h) */
 SD_IMPORT(Net_IsServer, 0x18b280)
