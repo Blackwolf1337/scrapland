@@ -12,8 +12,6 @@
 /* the 15 colors of the strips (rva 0x432a34) */
 #define g_StripColors ((const uint32_t *)Game_Ptr(0x432a34))
 #define STRIP_COLORS 15
-/* the qsort compare of VertCache_Optimize: the cost of a triangle for the cache (rva 0x243a00, not in this file) */
-#define VCACHE_COMPARE 0x243a00
 #define TRI_USED 0x8000
 #define TRI_FREE 0xffff
 
@@ -1170,6 +1168,23 @@ void VertCache_Add(int v) {
 	CHECK(count < 65536);
 }
 
+/* the cost of a vertex for the cache: its age in it, else 1000000 plus its number */
+static uint32_t VertCache_Cost(int v) {
+	int slot = VertCache_Find(v);
+	return slot >= 0 ? (uint32_t)g_VCacheAge[slot] : 1000000u + (uint32_t)v;
+}
+
+int VertCache_Compare(const void *a, const void *b) {
+	const uint16_t *ta = a, *tb = b;
+	uint32_t ca = 0, cb = 0;
+
+	for (int k = 0; k < 3; k++) {
+		ca += VertCache_Cost(ta[k]);
+		cb += VertCache_Cost(tb[k]);
+	}
+	return (int)(ca - cb);
+}
+
 void VertCache_Reset(void) {
 	memset(g_VCacheVert, -1, VCACHE_SIZE * sizeof(int));
 	memset(g_VCacheAge, -1, VCACHE_SIZE * sizeof(int));
@@ -1188,7 +1203,7 @@ byte VertCache_Optimize(uint16_t *tris, int nTri) {
 	int hits = g_VCacheHits, misses = g_VCacheMisses;
 	VertCache_Reset();
 	for (int i = 0; i < nTri; i++, tris += 3) {
-		crt_qsort(tris, nTri - i, 6, (int (*)(const void *, const void *))Game_Ptr(VCACHE_COMPARE));
+		crt_qsort(tris, nTri - i, 6, VertCache_Compare);
 		VertCache_Add(tris[0]);
 		VertCache_Add(tris[1]);
 		VertCache_Add(tris[2]);

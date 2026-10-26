@@ -1567,6 +1567,7 @@ SD_HOOK(VertCache_Add, 0x2438c0, 135)
 SD_HOOK(VertCache_Reset, 0x243950, 62)
 SD_HOOK(VertCache_Oldest, 0x243990, 51)
 SD_HOOK(VertCache_Find, 0x2439d0, 36)
+SD_HOOK(VertCache_Compare, 0x243a00, 162)
 
 /* src/game/engine3d/Engine/LeeDatos.c */
 SD_HOOK(Lee_String, 0x2d58a0, 236)

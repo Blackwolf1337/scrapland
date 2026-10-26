@@ -231,6 +231,15 @@ for tris in (grid, apart, fan):
 		return r, SDTest.Peek(0x4ad6c8, 'i'), SDTest.Peek(0x4ad6cc, 'i'), SDTest.Peek(0x4ad6d0, 'i')
 	check('VertCache_Optimize' + fmt((tris,)), lambda t=t, n=n: (SDTest.Call(0x240390, 'bii', t, n)[0], triget(t, n), vcache()))
 	SDTest.Call(0x133550, 'vi', t)
+# the cache compare of triangles with vertices in the cache, out of it and both, the cache filled by hand
+SDTest.Call(0x243950, 'v')
+for v in (2, 9, 30000, 3):
+	SDTest.Call(0x2438c0, 'vi', v)
+t = trinew((1, 2, 3,  7, 8, 9,  3, 2, 9,  30000, 5, 32767,  2, 9, 3))
+for i in range(5):
+	for j in range(5):
+		check('VertCache_Compare' + fmt((i, j)), lambda t=t, i=i, j=j: SDTest.Call(0x243a00, 'iii', t + 6 * i, t + 6 * j)[0])
+SDTest.Call(0x133550, 'vi', t)
 t = trinew((1, 2, 3,  7, 8, 9))
 for k in (-4, -1, 0, 1, 2, 3, 5):
 	tristep('Tri_Rotate', t, 2, 0x243670, 'vii', k)

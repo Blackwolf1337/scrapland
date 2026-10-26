@@ -169,5 +169,7 @@ void VertCache_Add(int v);
 /* an empty entry or the oldest */
 int VertCache_Oldest(void);
 int VertCache_Find(int v);
+/* the qsort compare of VertCache_Optimize: the triangles with their vertices in the cache first */
+int VertCache_Compare(const void *a, const void *b);
 
 #endif
