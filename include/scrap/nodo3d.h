@@ -67,22 +67,28 @@ typedef struct NodoAnimCtx {
 } NodoAnimCtx;
 SD_OFFSET(NodoAnimCtx, m, 0x60);
 
-/* the members of a scene (Engine/escena.cpp) read by the nodes and the animation groups */
+/* the members of a scene (Engine/escena.cpp) read by the nodes, the animation groups and the models */
 typedef struct CEscena {
 	void **vftable;			/* 0x00 [0] the deleting destructor */
-	int pad_4;
+	char *name;			/* 0x04 */
 	int Refs;			/* 0x08 */
 	struct CNodo3D *Nodo3D;		/* 0x0c the first node */
 	NodoAnimCtx *anim;		/* 0x10 */
-	byte pad_14[0x28];
+	byte pad_14[0x10];
+	box_t box;			/* 0x24 */
 	struct CAnimacion *AnimM3D;	/* 0x3c */
 	const char *nodo;		/* 0x40 the name of the node whose animation node a group starts at */
-	byte pad_44[8];
+	char *mainLOD;			/* 0x44 the scene name of the main LOD */
+	float umbralUnirVert;		/* 0x48 the weld threshold of the vertices */
 	CArchINI *ini;			/* 0x4c */
+	byte pad_50[0x10];
+	byte readFromSM3;		/* 0x60 */
 } CEscena;
 SD_OFFSET(CEscena, anim, 0x10);
+SD_OFFSET(CEscena, box, 0x24);
 SD_OFFSET(CEscena, AnimM3D, 0x3c);
 SD_OFFSET(CEscena, ini, 0x4c);
+SD_OFFSET(CEscena, readFromSM3, 0x60);
 
 /* how a render node orients its node (CNodoR look) */
 typedef struct NodoLook {
@@ -92,20 +98,27 @@ typedef struct NodoLook {
 } NodoLook;
 SD_OFFSET(NodoLook, r2, 0x28);
 
-/* the render instance of a node (Engine/NodoR.cpp) */
+/* the render instance of a node (Engine/NodoR.cpp, 0xa8 bytes) */
 typedef struct CNodoR {
-	byte pad_0[8];
-	byte *owner;			/* 0x08 look 2 turns to the negated angles at 0x14 */
+	byte pad_0[4];
+	byte flags;			/* 0x04 2: a render node of a model */
+	byte pad_5[3];
+	byte *owner;			/* 0x08 the CModelo; look 2 turns to the negated angles at 0x14 */
 	NodoLook *look;			/* 0x0c */
 	matrix_t m;			/* 0x10 world */
 	matrix_t mObj;			/* 0x50 mObj of the node times m */
 	int frame;			/* 0x90 g_FrameCount of the last update */
 	byte pad_94[8];
 	IObjeto3D *obj3D;		/* 0x9c instead of the node's, the same class */
+	IObjeto3D *obj3D2;		/* 0xa0 owned */
+	struct CNodo3D *nodo;		/* 0xa4 a reference */
 } CNodoR;
+SD_OFFSET(CNodoR, flags, 0x04);
 SD_OFFSET(CNodoR, m, 0x10);
 SD_OFFSET(CNodoR, frame, 0x90);
 SD_OFFSET(CNodoR, obj3D, 0x9c);
+SD_OFFSET(CNodoR, nodo, 0xa4);
+SD_SIZE(CNodoR, 0xa8);
 
 typedef struct CNodo3D {
 	void **vftable;			/* 0x00 [0] the deleting destructor */
