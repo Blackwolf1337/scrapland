@@ -16,6 +16,6 @@ shift
 cd "$root" || exit 1
 "$ghidra/support/analyzeHeadless" ghidra Scrapland -process Scrap.exe -noanalysis \
 	-scriptPath tools/ghidra -postScript "$script" "$@" 2>&1 |
-	grep -E '^(INFO|WARN|ERROR) .*(\(GhidraScript\)|Script|REPORT)|^[A-Za-z]+Symbols:|Exception|error:' |
+	grep -E '^(INFO|WARN|ERROR) .*(\(GhidraScript\)|Script|REPORT)|^(WARN|ERROR) [A-Za-z]+\.java>|^[A-Za-z]+Symbols:|Exception|error:' |
 	grep -v 'Ghidra Script Analyzer'
 exit "${PIPESTATUS[0]}"

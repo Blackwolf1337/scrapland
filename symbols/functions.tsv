@@ -7113,8 +7113,8 @@ rva	size	source	callconv	name	signature
 0023fbd0	37	USER_DEFINED	__fastcall	CListaVert_ctor	void * __fastcall(void *self)
 0023fc00	95	USER_DEFINED	__fastcall	CListaVert_dtor	void __fastcall(void *self)
 0023fc60	1100	USER_DEFINED	__cdecl	ListaVert_Strip	byte __cdecl(void *out, void *in, ushort *tris, int nTri)
-002400b0	475	USER_DEFINED	__thiscall	CListaVert_Read	void __thiscall(CArchIO *f)
-00240290	255	USER_DEFINED	__thiscall	CListaVert_Write	void __thiscall(CArchIO *f)
+002400b0	475	USER_DEFINED	__thiscall	CListaVert_Read	void __thiscall(void * f)
+00240290	255	USER_DEFINED	__thiscall	CListaVert_Write	void __thiscall(void * f)
 00240390	326	USER_DEFINED	__cdecl	VertCache_Optimize	byte __cdecl(ushort *tris, int nTri)
 002404e0	1	DEFAULT	unknown	FUN_006404e0	
 002404f0	1	DEFAULT	unknown	FUN_006404f0	
