@@ -109,6 +109,12 @@ SD_IMPORT(crt_setvbuf, 0x348665)
 SD_IMPORT(crt_access, 0x350971)
 SD_IMPORT(crt_stat32, 0x34a426)
 SD_IMPORT(crt_exit, 0x3461a9)
+SD_IMPORT(crt_findfirst32, 0x34c422)
+SD_IMPORT(crt_findnext32, 0x34c44e)
+SD_IMPORT(crt_memicmp, 0x3587b9)
+SD_IMPORT(crt_chdir, 0x34c95c)
+SD_IMPORT(crt_splitpath, 0x34b1b2)
+SD_IMPORT(crt_strtok_s, 0x34a6b1)
 
 /* engine: Net/ (include/scrap/net.h) */
 SD_IMPORT(Net_IsServer, 0x18b280)
@@ -318,9 +324,10 @@ SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 SD_IMPORT(File_OpenRel, 0x21bc10)
 SD_IMPORT(File_Access, 0x21bb60)
 SD_IMPORT(cStringList_NewNode, 0x0605f0)
-SD_IMPORT(Str_Trim, 0x131400)
-SD_IMPORT(Path_MakeDirs, 0x131480)
-SD_IMPORT(Dir_Walk, 0x131530)
-SD_IMPORT(StrList_Match, 0x1317b0)
+SD_IMPORT(File_MkDirRel, 0x21bb80)
 SD_IMPORT(Loading_Step, 0x2157a0)
 SD_IMPORT(Console_Execute, 0x20aaf0)
+
+/* engine3d: Util/ (include/scrap/global.h) */
+SD_IMPORT(Cad_Copy, 0x22cf50)
+SD_IMPORT(Wild_Match, 0x22b640)

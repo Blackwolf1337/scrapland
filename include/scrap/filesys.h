@@ -106,6 +106,20 @@ void *File_OpenRel(const char *name, const char *mode);
 /* 0 if the file is there (rva 0x21bb60) */
 int File_Access(const char *name, int mode);
 
+/* mkdir relative to the game directory, logs "FILE MKDIR" (rva 0x21bb80) */
+void File_MkDirRel(const char *dir);
+
+/* src/game/Global/FileUtils.c */
+void Str_Trim(char *s);					/* drops CR/LF, leading and trailing blanks */
+void Path_MakeDirs(const char *path);			/* the directories of path */
+/* calls cb with every file below dir (dir ends with '/') whose name ends in "." ext, all files for "" */
+void Dir_Walk(const char *dir, const char *ext, void (*cb)(const char *path));
+/* chdir to the directory of path and then sub */
+byte Dir_Change(const char *path, const char *sub);
+byte Str_MatchNoCase(const char *pattern, const char *name);
+/* 1 if name matches one of the sep separated patterns of list */
+byte StrList_Match(const char *list, const char *name, const char *sep);
+
 /* the exe's CRT for its FILE objects */
 void *crt_fopen(const char *name, const char *mode);
 int crt_fclose(void *f);

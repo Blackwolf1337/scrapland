@@ -3472,12 +3472,12 @@ rva	size	source	callconv	name	signature
 001313a0	14	USER_DEFINED	__thiscall	cFilePack::Size	int __thiscall(void)
 001313b0	58	USER_DEFINED	__thiscall	cFilePack::Write	int __thiscall(void * src, int size)
 001313f0	12	USER_DEFINED	__cdecl	PackLog_Closed	int __cdecl(void)
-00131400	84	USER_DEFINED	__cdecl	Str_Trim	void __cdecl(char * s)
-00131480	162	USER_DEFINED	__cdecl	Path_MakeDirs	void __cdecl(char * path)
-00131530	411	USER_DEFINED	__cdecl	Dir_Walk	void __cdecl(char * dir, char * ext, void * cb)
-001316d0	212	DEFAULT	unknown	FUN_005316d0	
-001317b0	304	USER_DEFINED	__cdecl	StrList_Match	byte __cdecl(char * list, char * name, char * sep)
-001318e0	128	DEFAULT	unknown	FUN_005318e0	
+00131400	84	USER_DEFINED	cdecl	Str_Trim	void Str_Trim(char *s)
+00131480	162	USER_DEFINED	cdecl	Path_MakeDirs	void Path_MakeDirs(char *path)
+00131530	411	USER_DEFINED	cdecl	Dir_Walk	void Dir_Walk(char *dir, char *ext, void *cb)
+001316d0	212	USER_DEFINED	cdecl	Dir_Change	byte Dir_Change(char *path, char *sub)
+001317b0	304	USER_DEFINED	cdecl	StrList_Match	byte StrList_Match(char *list, char *name, char *sep)
+001318e0	128	USER_DEFINED	cdecl	Str_MatchNoCase	byte Str_MatchNoCase(char *pattern, char *name)
 00131960	108	USER_DEFINED	__thiscall	HashTable<cPtrItem>::HashTable	void * __thiscall(int numSlots, byte caseSensitive)
 001319d0	44	USER_DEFINED	__thiscall	cGVar::cGVar	void * __thiscall(char * name, byte flags, char * description)
 00131a00	54	USER_DEFINED	__fastcall	HashTable<cPtrItem>::~HashTable	void __fastcall(void * self)
@@ -3597,7 +3597,7 @@ rva	size	source	callconv	name	signature
 00136270	107	USER_DEFINED	__fastcall	cStaticBuffer::~cStaticBuffer	void __fastcall(void * self)
 001362e0	312	USER_DEFINED	__cdecl	Str_FromUTF8	char * __cdecl(char * s)
 00136420	149	USER_DEFINED	__cdecl	Path_Split	void __cdecl(char * path, char * name, char * dir, char * ext)
-001364c0	211	DEFAULT	unknown	FUN_005364c0	
+001364c0	211	USER_DEFINED	cdecl	Str_WrapText	int Str_WrapText(char *text, char **lines, float maxWidth, int maxLines, char *fontName)
 001365a0	26	USER_DEFINED	__cdecl	Str_PrintfQuiet	int __cdecl(char * dst, int size, char * fmt, ...)
 001365c0	75	USER_DEFINED	__cdecl	Str_Copy	char * __cdecl(char * dst, char * src, int size)
 00136610	26	USER_DEFINED	__cdecl	Str_Printf	int __cdecl(char * dst, int size, char * fmt, ...)
@@ -6606,7 +6606,7 @@ rva	size	source	callconv	name	signature
 0021bae0	23	DEFAULT	unknown	FUN_0061bae0	
 0021bb00	90	DEFAULT	unknown	FUN_0061bb00	
 0021bb60	23	USER_DEFINED	__cdecl	File_Access	int __cdecl(char * name, int mode)
-0021bb80	143	DEFAULT	unknown	FUN_0061bb80	
+0021bb80	143	USER_DEFINED	cdecl	File_MkDirRel	void File_MkDirRel(char *dir)
 0021bc10	384	USER_DEFINED	__cdecl	File_OpenRel	void * __cdecl(char * name, char * mode)
 0021bd90	21	DEFAULT	unknown	FUN_0061bd90	
 0021bdd0	397	DEFAULT	unknown	FUN_0061bdd0	
@@ -6770,7 +6770,7 @@ rva	size	source	callconv	name	signature
 0022b410	46	DEFAULT	unknown	FUN_0062b410	
 0022b450	304	DEFAULT	unknown	FUN_0062b450	
 0022b590	168	DEFAULT	unknown	FUN_0062b590	
-0022b640	152	DEFAULT	unknown	FUN_0062b640	
+0022b640	152	USER_DEFINED	cdecl	Wild_Match	int Wild_Match(char *pattern, char *name)
 0022b6e0	287	DEFAULT	unknown	FUN_0062b6e0	
 0022b800	507	DEFAULT	unknown	FUN_0062b800	
 0022ba00	340	DEFAULT	unknown	FUN_0062ba00	
@@ -6790,7 +6790,7 @@ rva	size	source	callconv	name	signature
 0022cdf0	84	DEFAULT	unknown	FUN_0062cdf0	
 0022ce50	179	DEFAULT	unknown	FUN_0062ce50	
 0022cf10	51	DEFAULT	unknown	FUN_0062cf10	
-0022cf50	75	DEFAULT	unknown	FUN_0062cf50	
+0022cf50	75	USER_DEFINED	cdecl	Cad_Copy	char * Cad_Copy(char *dst, char *src, int size)
 0022cfa0	81	DEFAULT	unknown	FUN_0062cfa0	
 0022d000	129	DEFAULT	unknown	FUN_0062d000	
 0022d090	45	DEFAULT	unknown	FUN_0062d090	

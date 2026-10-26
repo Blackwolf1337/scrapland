@@ -27,12 +27,6 @@ typedef int(__stdcall *messagebox_t)(void *hwnd, const char *text, const char *c
 
 cStringNode *__thiscall cStringList_NewNode(cStringList *list);
 
-void Str_Trim(char *s);					/* drops CR/LF and trailing blanks */
-void Path_MakeDirs(const char *path);			/* the directories of path */
-/* calls cb with every file below dir (dir ends with '/') whose name ends in "." ext, all files for "" */
-void Dir_Walk(const char *dir, const char *ext, void (*cb)(const char *path));
-/* 1 if name matches one of the sep separated patterns of list */
-byte StrList_Match(const char *list, const char *name, const char *sep);
 void Loading_Step(int percent);				/* -1: one step of the loading bar */
 void Console_Execute(const char *cmd);			/* a line of the engine console */
 

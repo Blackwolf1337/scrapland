@@ -255,6 +255,7 @@ SD_HOOK(PtrTable_Unlink, 0x135f20, 182)
 /* src/game/Global/StrUtils.c */
 SD_HOOK(Str_FromUTF8, 0x1362e0, 312)
 SD_HOOK(Path_Split, 0x136420, 149)
+SD_HOOK(Str_WrapText, 0x1364c0, 211)
 SD_HOOK(Str_PrintfQuiet, 0x1365a0, 26)
 SD_HOOK(Str_Copy, 0x1365c0, 75)
 SD_HOOK(Str_Printf, 0x136610, 26)
@@ -403,6 +404,14 @@ SD_HOOK(cFilePack_Seek, 0x131340, 89)
 SD_HOOK(cFilePack_Size, 0x1313a0, 14)
 SD_HOOK(cFilePack_Write, 0x1313b0, 58)
 SD_HOOK(PackLog_Closed, 0x1313f0, 12)
+
+/* src/game/Global/FileUtils.c */
+SD_HOOK(Str_Trim, 0x131400, 84)
+SD_HOOK(Path_MakeDirs, 0x131480, 162)
+SD_HOOK(Dir_Walk, 0x131530, 411)
+SD_HOOK(Dir_Change, 0x1316d0, 212)
+SD_HOOK(StrList_Match, 0x1317b0, 304)
+SD_HOOK(Str_MatchNoCase, 0x1318e0, 128)
 
 /* src/game/FileSys/FileMem.c */
 SD_HOOK(cFileMem_ctor, 0x12e050, 67)

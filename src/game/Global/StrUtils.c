@@ -7,6 +7,7 @@
 
 #include "scrap/console.h"
 #include "scrap/game.h"
+#include "scrap/scorer.h"
 
 char *crt_strncat(char *dst, const char *src, size_t n);
 /* __stdio_common_vsprintf of the UCRT in the exe and its __local_stdio_printf_options value */
@@ -93,6 +94,37 @@ void Path_Split(const char *path, char *name, char *dir, char *ext) {
 	if (ext) {
 		memcpy(ext, end, strlen(end) + 1);
 	}
+}
+
+/*
+ * breaks text into at most maxLines lines no wider than maxWidth in the font, at blanks it overwrites with 0;
+ * lines gets the start of each line, returns the number of lines
+ */
+int Str_WrapText(char *text, char **lines, float maxWidth, int maxLines, const char *fontName) {
+	void *font = Font_Get(fontName);
+	int n = 1;
+	float size[2];
+
+	lines[0] = text;
+	char *sp = strchr(text, ' ');
+	if (!sp) {
+		return n;
+	}
+	while (n < maxLines && *sp) {
+		char *next = strchr(sp + 1, ' ');
+		if (!next) {
+			next = sp + strlen(sp);
+		}
+		Font_TextSize(font, NULL, size, 0.0f, 0.0f, "%.*s", (int)(next - *lines), *lines);
+		if (size[0] > maxWidth) {
+			*sp = '\0';
+			n++;
+			lines[1] = sp + 1;
+			lines++;
+		}
+		sp = next;
+	}
+	return n;
 }
 
 /* drops the blanks and control characters at both ends; a text starting with a byte from 0x80 is cleared too */
