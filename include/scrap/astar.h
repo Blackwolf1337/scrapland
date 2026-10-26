@@ -59,6 +59,7 @@ byte __thiscall cBinaryHeap_Pop(cBinaryHeap *self);
 byte __thiscall cBinaryHeap_Get(cBinaryHeap *self, void ***out, int i);
 byte __thiscall cBinaryHeap_Find(cBinaryHeap *self, const void *item, int *index, void ***out);
 byte __thiscall cBinaryHeap_Set(cBinaryHeap *self, void *const *item, int i);
+/* 4 bytes in the exe, too short for the hook jump: only for the C callers */
 int __thiscall cBinaryHeap_Count(cBinaryHeap *self);
 void __thiscall cBinaryHeap_Fix(cBinaryHeap *self, int i);
 /* 1 if the element moved */

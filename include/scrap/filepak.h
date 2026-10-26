@@ -8,6 +8,7 @@
 #ifndef SCRAP_FILEPAK_H
 #define SCRAP_FILEPAK_H
 
+#include "scrap/dlist.h"
 #include "scrap/filesys.h"
 #include "scrap/pymempool.h"
 
@@ -63,16 +64,6 @@ typedef struct cPackEntry {
 } cPackEntry;
 SD_SIZE(cPackEntry, 0x10c);
 
-/* Global/DList.h: a ring with its first node, an iterator and a free list of nodes */
-#define DLIST(node) \
-	struct { \
-		node *head; \
-		node *iter; \
-		int count; \
-		node *freeNodes; \
-		int numFree; \
-		int maxFree; \
-	}
 
 typedef struct cPackEntryNode {
 	struct cPackEntryNode *next;	/* 0x0 */

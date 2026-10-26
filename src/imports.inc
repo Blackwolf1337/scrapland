@@ -200,8 +200,6 @@ SD_IMPORT(Font_Get, 0x21ad30)
 SD_IMPORT(Font_TextSize, 0x219f30)
 
 /* engine: functions behind the Scrap module (include/scrap/scrap.h) */
-SD_IMPORT(Scheduler_Add, 0x205900)
-SD_IMPORT(Scheduler_Delete, 0x205a90)
 SD_IMPORT(Elements_Call, 0x202ea0)
 SD_IMPORT(Elements_Create, 0x203000)
 SD_IMPORT(Floor_Get, 0x203af0)

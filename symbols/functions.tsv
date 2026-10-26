@@ -6179,18 +6179,18 @@ rva	size	source	callconv	name	signature
 00205490	438	DEFAULT	unknown	FUN_00605490	
 00205680	105	DEFAULT	unknown	FUN_00605680	
 002056f0	113	DEFAULT	unknown	FUN_006056f0	
-00205770	150	ANALYSIS	__thiscall	cScheduledFuncStack::vf00	undefined __thiscall(void)
-00205810	103	DEFAULT	unknown	FUN_00605810	
-00205880	117	DEFAULT	unknown	FUN_00605880	
-00205900	205	USER_DEFINED	unknown	Scheduler::Add	undefined(void)
-002059d0	178	DEFAULT	unknown	FUN_006059d0	
-00205a90	272	USER_DEFINED	unknown	Scheduler::Delete	undefined(void)
-00205ba0	134	DEFAULT	unknown	FUN_00605ba0	
-00205c30	69	DEFAULT	unknown	FUN_00605c30	
-00205c80	286	DEFAULT	unknown	FUN_00605c80	
-00205db0	110	DEFAULT	unknown	FUN_00605db0	
-00205e20	131	DEFAULT	unknown	FUN_00605e20	
-00205eb0	182	DEFAULT	unknown	FUN_00605eb0	
+00205770	150	USER_DEFINED	__thiscall	cScheduledFuncStack_Delete	void * __thiscall(byte flags)
+00205810	103	USER_DEFINED	__thiscall	SchedList_Add	void __thiscall(void **f)
+00205880	117	USER_DEFINED	__thiscall	SchedList_Insert	void __thiscall(void **f)
+00205900	205	USER_DEFINED	__thiscall	Scheduler_Add	void __thiscall(float time, void *func, void *params, char *name)
+002059d0	178	USER_DEFINED	__fastcall	Scheduler_Clear	void __fastcall(void *self)
+00205a90	272	USER_DEFINED	__thiscall	Scheduler_Delete	void __thiscall(char *name)
+00205ba0	134	USER_DEFINED	__fastcall	SchedList_Clear	void __fastcall(void *list)
+00205c30	69	USER_DEFINED	__fastcall	cScheduledFunc_Call	void __fastcall(void *self)
+00205c80	286	USER_DEFINED	__thiscall	Scheduler_Run	void __thiscall(float now)
+00205db0	110	USER_DEFINED	__fastcall	SchedList_RemoveIter	void __fastcall(void *list)
+00205e20	131	USER_DEFINED	__fastcall	SchedList_RemoveHead	void __fastcall(void *list)
+00205eb0	182	USER_DEFINED	__thiscall	cScheduledFunc_Set	void __thiscall(float time, void *func, void *params, char *name)
 00205f70	164	DEFAULT	unknown	FUN_00605f70	
 00206020	749	DEFAULT	unknown	FUN_00606020	
 00206310	29	DEFAULT	unknown	FUN_00606310	

@@ -126,65 +126,20 @@ byte Pack_FileExists(const char *name) {
 /* Global/DList.h instances: new nodes go in front of head, the callers step head on to append */
 
 void __thiscall PackEntries_Add(cPackEntryList *list, const cPackEntry *e) {
-	cPackEntryNode *node = list->freeNodes;
-	list->iter = NULL;
-	if (!node) {
-		node = operator_new(sizeof(*node));
-	} else {
-		list->numFree--;
-		list->freeNodes = node->next;
-	}
+	cPackEntryNode *node = DList_NewNode(list, sizeof(*node));
 	node->e = *e;
-	if (!list->head) {
-		node->next = node;
-		node->prev = node;
-	} else {
-		node->prev = list->head->prev;
-		node->next = list->head;
-		list->head->prev->next = node;
-		list->head->prev = node;
-	}
-	list->count++;
-	list->head = node;
+	DList_LinkFirst(list, node);
 }
 
 void __fastcall PackEntries_Clear(cPackEntryList *list) {
-	while (list->head) {
-		cPackEntryNode *p = list->head;
-		list->iter = NULL;
-		if (p == p->next) {
-			list->head = NULL;
-		} else {
-			list->head = p->next;
-			p->prev->next = p->next;
-			p->next->prev = p->prev;
-		}
-		if (list->numFree < list->maxFree) {
-			p->next = list->freeNodes;
-			list->numFree++;
-			list->freeNodes = p;
-		} else {
-			operator_delete_sized(p, sizeof(*p));
-		}
-		list->count--;
-	}
+	DList_Clear(list, sizeof(cPackEntryNode));
 }
 
 void __thiscall PackNames_Add(cStringList *list, const cString *str) {
 	list->iter = NULL;
 	cStringNode *node = cStringList_NewNode(list);
 	cString_Assign(&node->str, str);
-	if (!list->head) {
-		node->next = node;
-		node->prev = node;
-	} else {
-		node->prev = list->head->prev;
-		node->next = list->head;
-		list->head->prev->next = node;
-		list->head->prev = node;
-	}
-	list->count++;
-	list->head = node;
+	DList_LinkFirst(list, node);
 }
 
 /* the cString of the pack being recorded with that name */

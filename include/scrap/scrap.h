@@ -12,6 +12,7 @@
 #include "scrap/pyentity.h"
 #include "scrap/python.h"
 
+#include "scrap/scheduler.h"
 #include "scrap/scorer.h"
 
 /* the function of Scrap.SetCallFunc with its parameters (AddParamX) for Scrap.Execute (rva 0x466a04) */
@@ -19,8 +20,6 @@
 #define g_PackName ((cString *)Game_Ptr(0x44ab6c))	/* string object, the open pack */
 #define g_IsSteam GAME_DATA(byte, 0x467b9c)
 
-void __thiscall Scheduler_Add(void *scheduler, float time, PyObject *func, PyObject *params, const char *name);
-void __thiscall Scheduler_Delete(void *scheduler, const char *name);
 void __thiscall Elements_Call(void *elements, const char *name);
 void __thiscall Elements_Create(void *elements);
 int __thiscall Floor_Get(void *floor, float y);

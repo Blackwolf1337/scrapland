@@ -97,7 +97,7 @@ PyObject *Scrap_AddScheduledFunc(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "dOO|s", &time, &func, &params, &name)) {
 		return NULL;
 	}
-	Scheduler_Add(g_pWorld->scheduler, (float)time, func, params, name);
+	Scheduler_Add((cScheduledFuncStack *)g_pWorld->scheduler, (float)time, func, params, name);
 	return ReturnNone();
 }
 
@@ -242,7 +242,7 @@ PyObject *Scrap_DeleteScheduledFuncs(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s", &name)) {
 		return NULL;
 	}
-	Scheduler_Delete(g_pWorld->scheduler, name);
+	Scheduler_Delete((cScheduledFuncStack *)g_pWorld->scheduler, name);
 	return ReturnNone();
 }
 
