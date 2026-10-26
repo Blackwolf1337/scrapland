@@ -7308,7 +7308,7 @@ rva	size	source	callconv	name	signature
 00250600	586	DEFAULT	unknown	FUN_00650600	
 00250850	457	DEFAULT	unknown	FUN_00650850	
 00250a20	296	DEFAULT	unknown	FUN_00650a20	
-00250b50	112	DEFAULT	unknown	FUN_00650b50	
+00250b50	112	USER_DEFINED	__thiscall	Tabla_Alloc4	void __thiscall(int num)
 00250bc0	30	DEFAULT	unknown	FUN_00650bc0	
 00250be0	334	DEFAULT	unknown	FUN_00650be0	
 00250d30	140	DEFAULT	unknown	FUN_00650d30	
@@ -7388,9 +7388,9 @@ rva	size	source	callconv	name	signature
 00255d60	272	DEFAULT	unknown	FUN_00655d60	
 00255e70	109	DEFAULT	unknown	FUN_00655e70	
 00255ee0	86	DEFAULT	unknown	FUN_00655ee0	
-00255f40	173	DEFAULT	unknown	FUN_00655f40	
-00255ff0	223	DEFAULT	unknown	FUN_00655ff0	
-002560d0	226	DEFAULT	unknown	FUN_006560d0	
+00255f40	173	USER_DEFINED	__thiscall	Tabla_Alloc10Z	void __thiscall(int num)
+00255ff0	223	USER_DEFINED	__thiscall	Tabla_New8	void __thiscall(int num)
+002560d0	226	USER_DEFINED	__thiscall	Tabla_NewA8	void __thiscall(int num)
 002561c0	548	DEFAULT	unknown	FUN_006561c0	
 002563f0	36	DEFAULT	unknown	FUN_006563f0	
 00256420	88	DEFAULT	unknown	FUN_00656420	
@@ -7438,9 +7438,9 @@ rva	size	source	callconv	name	signature
 00258110	37	DEFAULT	unknown	FUN_00658110	
 00258160	56	DEFAULT	unknown	FUN_00658160	
 002581a0	228	DEFAULT	unknown	FUN_006581a0	
-00258290	121	DEFAULT	unknown	FUN_00658290	
-00258310	131	DEFAULT	unknown	FUN_00658310	
-002583a0	125	DEFAULT	unknown	FUN_006583a0	
+00258290	121	USER_DEFINED	__cdecl	Tabla_Read2	void __cdecl(void *f, void *t)
+00258310	131	USER_DEFINED	__cdecl	Tabla_Read1C	void __cdecl(void *f, void *t)
+002583a0	125	USER_DEFINED	__cdecl	Tabla_ReadC	void __cdecl(void *f, void *t)
 00258420	48	DEFAULT	unknown	FUN_00658420	
 00258450	58	DEFAULT	unknown	FUN_00658450	
 00258490	52	DEFAULT	unknown	FUN_00658490	
@@ -7505,12 +7505,12 @@ rva	size	source	callconv	name	signature
 00260aa0	722	DEFAULT	unknown	FUN_00660aa0	
 00260d80	558	DEFAULT	unknown	FUN_00660d80	
 00260fc0	461	DEFAULT	unknown	FUN_00660fc0	
-00261190	112	DEFAULT	unknown	FUN_00661190	
-00261200	115	DEFAULT	unknown	FUN_00661200	
-00261280	115	DEFAULT	unknown	FUN_00661280	
-00261300	223	DEFAULT	unknown	FUN_00661300	
-002613e0	226	DEFAULT	unknown	FUN_006613e0	
-002614d0	94	DEFAULT	unknown	FUN_006614d0	
+00261190	112	USER_DEFINED	__thiscall	Tabla_Alloc2	void __thiscall(int num)
+00261200	115	USER_DEFINED	__thiscall	Tabla_Alloc1C	void __thiscall(int num)
+00261280	115	USER_DEFINED	__thiscall	Tabla_AllocC	void __thiscall(int num)
+00261300	223	USER_DEFINED	__thiscall	Tabla_New24	void __thiscall(int num)
+002613e0	226	USER_DEFINED	__thiscall	Tabla_NewFC	void __thiscall(int num)
+002614d0	94	USER_DEFINED	__thiscall	Tabla_Alloc1	void __thiscall(int num)
 00261530	66	DEFAULT	unknown	FUN_00661530	
 00261580	161	DEFAULT	unknown	FUN_00661580	
 00261630	187	DEFAULT	unknown	FUN_00661630	
@@ -7645,7 +7645,7 @@ rva	size	source	callconv	name	signature
 0026b300	327	DEFAULT	unknown	FUN_0066b300	
 0026b450	46	DEFAULT	unknown	FUN_0066b450	
 0026b480	1062	DEFAULT	unknown	FUN_0066b480	
-0026b8b0	115	DEFAULT	unknown	FUN_0066b8b0	
+0026b8b0	115	USER_DEFINED	__thiscall	Tabla_Alloc14	void __thiscall(int num)
 0026b930	162	DEFAULT	unknown	FUN_0066b930	
 0026b9e0	170	DEFAULT	unknown	FUN_0066b9e0	
 0026ba90	60	DEFAULT	unknown	FUN_0066ba90	
@@ -7992,10 +7992,10 @@ rva	size	source	callconv	name	signature
 0028ef50	142	DEFAULT	unknown	FUN_0068ef50	
 0028efe0	1831	DEFAULT	unknown	FUN_0068efe0	
 0028f710	1441	DEFAULT	unknown	FUN_0068f710	
-0028fcc0	112	DEFAULT	unknown	FUN_0068fcc0	
-0028fd30	115	DEFAULT	unknown	FUN_0068fd30	
-0028fdb0	226	DEFAULT	unknown	FUN_0068fdb0	
-0028fea0	115	DEFAULT	unknown	FUN_0068fea0	
+0028fcc0	112	USER_DEFINED	__thiscall	Tabla_Alloc14_2	void __thiscall(int num)
+0028fd30	115	USER_DEFINED	__thiscall	Tabla_Alloc18	void __thiscall(int num)
+0028fdb0	226	USER_DEFINED	__thiscall	Tabla_NewB4	void __thiscall(int num)
+0028fea0	115	USER_DEFINED	__thiscall	Tabla_Alloc2C	void __thiscall(int num)
 0028ff20	101	DEFAULT	unknown	FUN_0068ff20	
 0028ff90	101	DEFAULT	unknown	FUN_0068ff90	
 00290000	101	DEFAULT	unknown	FUN_00690000	
@@ -8068,7 +8068,7 @@ rva	size	source	callconv	name	signature
 0029a530	4569	DEFAULT	unknown	FUN_0069a530	
 0029b710	307	DEFAULT	unknown	FUN_0069b710	
 0029b850	224	DEFAULT	unknown	FUN_0069b850	
-0029b930	115	DEFAULT	unknown	FUN_0069b930	
+0029b930	115	USER_DEFINED	__thiscall	Tabla_Alloc10	void __thiscall(int num)
 0029b9d0	54	DEFAULT	unknown	FUN_0069b9d0	
 0029ba10	98	DEFAULT	unknown	FUN_0069ba10	
 0029ba80	82	DEFAULT	unknown	FUN_0069ba80	
@@ -8364,13 +8364,13 @@ rva	size	source	callconv	name	signature
 002aef40	297	DEFAULT	unknown	FUN_006aef40	
 002af070	93	DEFAULT	unknown	FUN_006af070	
 002af0d0	523	DEFAULT	unknown	FUN_006af0d0	
-002af2e0	117	DEFAULT	unknown	FUN_006af2e0	
-002af360	118	DEFAULT	unknown	FUN_006af360	
-002af3e0	118	DEFAULT	unknown	FUN_006af3e0	
-002af460	118	DEFAULT	unknown	FUN_006af460	
-002af4e0	124	DEFAULT	unknown	FUN_006af4e0	
-002af560	120	DEFAULT	unknown	FUN_006af560	
-002af5e0	127	DEFAULT	unknown	FUN_006af5e0	
+002af2e0	117	USER_DEFINED	__cdecl	Array_Read2	void __cdecl(void *f, void **p, uint *n)
+002af360	118	USER_DEFINED	__cdecl	Array_Read4	void __cdecl(void *f, void **p, uint *n)
+002af3e0	118	USER_DEFINED	__cdecl	Array_Read8	void __cdecl(void *f, void **p, uint *n)
+002af460	118	USER_DEFINED	__cdecl	Array_Read10	void __cdecl(void *f, void **p, uint *n)
+002af4e0	124	USER_DEFINED	__cdecl	Array_Read10_2	void __cdecl(void *f, void **p, uint *n)
+002af560	120	USER_DEFINED	__cdecl	Array_Read6	void __cdecl(void *f, void **p, uint *n)
+002af5e0	127	USER_DEFINED	__cdecl	Array_ReadC	void __cdecl(void *f, void **p, uint *n)
 002af660	52	DEFAULT	unknown	FUN_006af660	
 002af6a0	56	DEFAULT	unknown	FUN_006af6a0	
 002af6e0	56	DEFAULT	unknown	FUN_006af6e0	
@@ -8573,10 +8573,10 @@ rva	size	source	callconv	name	signature
 002c2930	101	DEFAULT	unknown	FUN_006c2930	
 002c29a0	201	DEFAULT	unknown	FUN_006c29a0	
 002c2a70	154	DEFAULT	unknown	FUN_006c2a70	
-002c2b10	112	DEFAULT	unknown	FUN_006c2b10	
-002c2b80	112	DEFAULT	unknown	FUN_006c2b80	
-002c2bf0	112	DEFAULT	unknown	FUN_006c2bf0	
-002c2c60	223	DEFAULT	unknown	FUN_006c2c60	
+002c2b10	112	USER_DEFINED	__thiscall	Tabla_Alloc4_2	void __thiscall(int num)
+002c2b80	112	USER_DEFINED	__thiscall	Tabla_Alloc4_3	void __thiscall(int num)
+002c2bf0	112	USER_DEFINED	__thiscall	Tabla_Alloc8	void __thiscall(int num)
+002c2c60	223	USER_DEFINED	__thiscall	Tabla_New1C	void __thiscall(int num)
 002c2d60	11315	DEFAULT	unknown	FUN_006c2d60	
 002c59d0	667	DEFAULT	unknown	FUN_006c59d0	
 002c5c70	828	DEFAULT	unknown	FUN_006c5c70	
@@ -8730,7 +8730,7 @@ rva	size	source	callconv	name	signature
 002d1f00	62	DEFAULT	unknown	FUN_006d1f00	
 002d1f40	43	DEFAULT	unknown	FUN_006d1f40	
 002d1f70	136	DEFAULT	unknown	FUN_006d1f70	
-002d2000	115	DEFAULT	unknown	FUN_006d2000	
+002d2000	115	USER_DEFINED	__thiscall	Tabla_Alloc38	void __thiscall(int num)
 002d2080	1276	DEFAULT	unknown	FUN_006d2080	
 002d2580	168	DEFAULT	unknown	FUN_006d2580	
 002d2630	224	DEFAULT	unknown	FUN_006d2630	
@@ -9880,7 +9880,7 @@ rva	size	source	callconv	name	signature
 00313a2b	49	ANALYSIS	__cdecl	at_quick_exit	undefined __cdecl(void)
 00313a5c	21	ANALYSIS	__cdecl	_atexit	int __cdecl(_func_4879 * param_1)
 00313a71	5	DEFAULT	__stdcall	`eh_vector_constructor_iterator'	
-00313a76	79	ANALYSIS	__stdcall	`eh_vector_constructor_iterator'	void __stdcall(void * param_1, uint param_2, uint param_3, _func_void_void_ptr * param_4, _func_void_void_ptr * param_5)
+00313a76	79	USER_DEFINED	__stdcall	`eh_vector_constructor_iterator'	void __stdcall(void *p, uint size, uint count, void *ctor, void *dtor)
 00313acb	20	DEFAULT	unknown	FUN_00713acb	
 00313adf	5	DEFAULT	__stdcall	`eh_vector_destructor_iterator'	
 00313ae4	94	ANALYSIS	__stdcall	`eh_vector_destructor_iterator'	void __stdcall(void * param_1, uint param_2, uint param_3, _func_void_void_ptr * param_4)

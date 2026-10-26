@@ -40,6 +40,8 @@ void operator_delete_sized(void *p, uint32_t size);
 void *operator_new_array(uint32_t size);
 void operator_delete(void *p);
 void operator_delete_array(void *p);
+/* the CRT loop of new[] for objects: ctor (thiscall) on each, dtor on the done ones if one throws (rva 0x313a76) */
+void __stdcall crt_eh_vector_ctor(void *p, uint32_t size, uint32_t count, void *ctor, void *dtor);
 /* new[] of count items as the compiler makes it: a size that overflows is -1, which the allocator refuses */
 static inline void *New_Array(uint32_t count, uint32_t size) {
 	uint64_t bytes = (uint64_t)count * size;

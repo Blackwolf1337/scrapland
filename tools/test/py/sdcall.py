@@ -984,4 +984,85 @@ check('M3D_Label bin cad', lambda: SDTest.Peek(0x4e1fc0, 's'))
 mstep('M3D_ReadIndex bin', 0x2be9f0, 'vi', -38)
 SDTest.Call(0x2d5d50, 'i')
 SDTest.Poke(0x4e1fa4, m3dsaved)
+
+# engine3d Engine/Tabla.c: the array template instances; the readers on .sm3 files of the packs at offsets where a
+# count and an element size follow
+def tpeek(addr, n):
+	v = []
+	for i in range(n):
+		v.append(SDTest.Peek(addr + 4 * i, '@i'))
+	return v
+def tnew(rva, num, words):
+	t = SDTest.Call(0x133650, 'ii', 8)[0]
+	SDTest.Call(rva, 'tvii', t, num)
+	n, p = SDTest.Peek(t, '@i'), SDTest.Peek(t + 4, '@i')
+	r = (n, p != 0)
+	if words and p:
+		r = r + (tpeek(p, words),)
+	SDTest.Call(0x133550, 'vi', t)
+	return r
+for rva, sz in ((0x250b50, 4), (0x261190, 2), (0x261200, 0x1c), (0x261280, 0xc), (0x2614d0, 1), (0x26b8b0, 0x14),
+		(0x28fcc0, 0x14), (0x28fd30, 0x18), (0x28fea0, 0x2c), (0x29b930, 0x10), (0x2c2b10, 4), (0x2c2b80, 4),
+		(0x2c2bf0, 8), (0x2d2000, 0x38)):
+	for num in (1, 7):
+		check('Tabla_Alloc' + fmt((rva, sz, num)), lambda rva=rva, num=num: tnew(rva, num, 0))
+# the last 2 bytes of each element stay as new[] left them
+def tzero(num):
+	r = tnew(0x255f40, num, num * 4)
+	v = r[2]
+	for i in range(3, len(v), 4):
+		v[i] = v[i] & 0xffff
+	return r
+for num in (1, 5):
+	check('Tabla_Alloc10Z' + fmt((num,)), lambda num=num: tzero(num))
+# objects: the count before them and the first word of each (the constructors leave other fields as they are)
+def tobjs(rva, num, sz):
+	t = SDTest.Call(0x133650, 'ii', 8)[0]
+	SDTest.Call(rva, 'tvii', t, num)
+	n, p = SDTest.Peek(t, '@i'), SDTest.Peek(t + 4, '@i')
+	first = []
+	for i in range(num):
+		first.append(SDTest.Peek(p + i * sz, '@i'))
+	SDTest.Call(0x133550, 'vi', t)
+	return n, SDTest.Peek(p - 4, '@i'), first
+for rva, sz in ((0x255ff0, 8), (0x2560d0, 0xa8), (0x261300, 0x24), (0x2613e0, 0xfc), (0x28fdb0, 0xb4), (0x2c2c60, 0x1c)):
+	check('Tabla_New' + fmt((rva, sz)), lambda rva=rva, sz=sz: tobjs(rva, 3, sz))
+tio = SDTest.Call(0x1335a0, 'ii', 16)[0]
+def topen(name, skip):
+	SDTest.Call(0x21b1f0, 'tiiss', tio, name, 'rb')
+	while skip > 0:
+		k = min(skip, 1000)
+		SDTest.Call(0x21c060, 'tiibi', tio, '', k)
+		skip = skip - k
+def tclose():
+	SDTest.Call(0x21b490, 'tii', tio)
+	SDTest.Call(0x21b290, 'tvi', tio)
+sm3 = 'levels/bank/map/directordiscovered/directordiscovered.sm3'
+def aread(rva, name, off, sz):
+	topen(name, off)
+	r = SDTest.Call(rva, 'vipp', tio, 0, 0)
+	p, n = r[1], r[2]
+	data = None
+	if p:
+		data = tpeek(p, (n * sz + 3) / 4)
+	tclose()
+	return n, p != 0, data
+for rva, sz, off in ((0x2af2e0, 2, 3564), (0x2af360, 4, 4242), (0x2af3e0, 8, 5852), (0x2af460, 0x10, 1824),
+		(0x2af4e0, 0x10, 1824), (0x2af560, 6, 5174), (0x2af5e0, 0xc, 7209)):
+	check('Array_Read' + fmt((rva, sz)), lambda rva=rva, sz=sz, off=off: aread(rva, sm3, off, sz))
+def tread(rva, name, off, sz):
+	topen(name, off)
+	t = SDTest.Call(0x133650, 'ii', 8)[0]
+	SDTest.Call(rva, 'vii', tio, t)
+	n, p = SDTest.Peek(t, '@i'), SDTest.Peek(t + 4, '@i')
+	data = None
+	if p:
+		data = tpeek(p, (n * sz + 3) / 4)
+	SDTest.Call(0x133550, 'vi', t)
+	tclose()
+	return n, p != 0, data
+check('Tabla_Read2', lambda: tread(0x258290, sm3, 3564, 2))
+check('Tabla_ReadC', lambda: tread(0x2583a0, sm3, 7209, 0xc))
+check('Tabla_Read1C', lambda: tread(0x258310, 'levels/fake/map/fake1/fake1.sm3', 3616, 0x1c))
+SDTest.Call(0x133550, 'vi', tio)
 finish()
