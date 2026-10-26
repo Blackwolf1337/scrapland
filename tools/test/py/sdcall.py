@@ -673,21 +673,21 @@ SDTest.Call(0x133550, 'vi', lbuf)
 leestep('Lee_Close', 0x2d5d50, 'i')
 
 # engine3d Engine/BmpFlt.c on images in heap memory (pixels set with the exe's memcpy), TXF files written here
-def bnew(w, h):
+def bnew(w, h, create=0x2cf500):
 	b = SDTest.Call(0x133650, 'ii', 12)[0]
-	SDTest.Call(0x2cf500, 'tviii', b, w, h)
+	SDTest.Call(create, 'tviii', b, w, h)
 	return b
 def bset(b, vals):
 	img = SDTest.Peek(b + 8, '@i')
 	for i in range(0, len(vals), 64):
 		part = tuple(vals[i:i + 64])
 		SDTest.Call(0x3197d0, 'iiFi', img + 4 * i, part, 4 * len(part))
-def bget(b):
+def bget(b, ch=4):
 	w, h, img = SDTest.Peek(b, '@i'), SDTest.Peek(b + 4, '@i'), SDTest.Peek(b + 8, '@i')
 	if not img:
 		return w, h, None
 	px = []
-	for i in range(w * h * 4):
+	for i in range(w * h * ch):
 		px.append(SDTest.Peek(img + 4 * i, '@i'))
 	return w, h, px
 def bfree(b):
@@ -697,8 +697,10 @@ def bfree(b):
 	SDTest.Call(0x133550, 'vi', b)
 def bstep(name, b, rva, sig, *args):
 	bcheck(name + fmt(args), b, rva, sig, args)
-def bcheck(name, b, rva, sig, args):
-	check(name, lambda b=b, rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig, b) + args), bget(b)))
+def bcheck(name, b, rva, sig, args, ch=4):
+	check(name, lambda b=b, rva=rva, sig=sig, args=args, ch=ch: (apply(SDTest.Call, (rva, sig, b) + args), bget(b, ch)))
+def bstep2(name, b, rva, sig, *args):
+	bcheck(name + fmt(args), b, rva, sig, args, 3)
 def bvals(n, lo=0.0, hi=4.0):
 	v = []
 	for i in range(n):
@@ -716,10 +718,10 @@ for r in ((0, 0, 0, 0, 3, 2, 256, 0), (1, 1, 0, 0, 9, 9, 128, 128), (4, 3, 1, 1,
 for d in ((2, 2, 15), (3, 3, 15), (7, 5, 15), (5, 4, 5), (1, 1, 8), (4, 1, 3)):
 	bd = bnew(d[0], d[1])
 	bset(bd, bvals(d[0] * d[1] * 4))
-	bcheck('CBmpFlt_Resample' + fmt(d), bd, 0x2cf7b0, 'tvii', (ba, d[2]))
+	bcheck('CBmpFlt_Resample' + fmt(d), bd, 0x2cf7b0, 'tviii', (ba, d[2]))
 	bfree(bd)
 bd = SDTest.Call(0x133650, 'ii', 12)[0]
-bcheck('CBmpFlt_Resample new', bd, 0x2cf7b0, 'tvii', (bb, 15))
+bcheck('CBmpFlt_Resample new', bd, 0x2cf7b0, 'tviii', (bb, 15))
 bfree(bd)
 bc = bnew(4, 2)
 bstep('CBmpFlt_Fill', bc, 0x2cf170, 'tviF', (0.5, -2.0, 1e30, 0.0))
@@ -742,6 +744,43 @@ bstep('CBmpFlt_Load missing', bl, 0x2cf560, 'tiisizi', 'sdnone.txf', 0, None, 0)
 bstep('CBmpFlt_Load bad', bl, 0x2cf560, 'tiisizi', 'sdbad.txf', 0, None, 0)
 writefile('sdshort.txf', 'TXF')
 check('TXF_Load short', lambda bl=bl: (SDTest.Call(0x2ceea0, 'isiizi', 'sdshort.txf', bl, 0, None, 0), bget(bl)))
+bfree(bl)
+bfree(ba)
+bfree(bb)
+
+# the RGB class of Engine/BmpFlt2.cpp
+ba = bnew(5, 4, 0x2d0350)
+bb = bnew(3, 2, 0x2d0350)
+bset(ba, bvals(60))
+bset(bb, bvals(18, -1.0, 2.0))
+check('CBmpFlt2_Create', lambda: bget(ba, 3))
+check('CBmpFlt2_Pixel', lambda: SDTest.Call(0x2906b0, 'tiiii', ba, 3, 2)[0] - SDTest.Peek(ba + 8, '@i'))
+for r in ((0, 0, 0, 0, 3, 2, 256, 0), (1, 1, 0, 0, 9, 9, 128, 128), (4, 3, 1, 1, 5, 5, 7, 300), (6, 0, 0, 0, 2, 2, 256, 256)):
+	bcheck('CBmpFlt2_Blend' + fmt(r), ba, 0x2d0450, 'tviiiiiiiiii', (r[0], r[1], bb) + r[2:], 3)
+bd = SDTest.Call(0x133650, 'ii', 12)[0]
+bcheck('CBmpFlt2_Resample new', bd, 0x2d05f0, 'tviii', (bb, 15), 3)
+bfree(bd)
+bc = bnew(4, 2, 0x2d0350)
+bstep2('CBmpFlt2_Fill', bc, 0x2cff80, 'tviF', (0.5, -2.0, 1e30))
+for k in (1.0, 2.0, -0.5, 0.0):
+	bstep2('CBmpFlt2_Scale', bc, 0x2cffe0, 'tvif', k)
+for e in ((1.0, 1.0), (2.5, 1.0), (0.5, 3.0), (-1.0, 2.0), (100.0, 0.01), (1.0, 0.0)):
+	bset(bc, (0.0, 0.25, 1.0, -0.5, 3.0, 10.0, 1e-8, 700.0, -30.0, 2.0, 0.1, 0.9) * 2)
+	bstep2('CBmpFlt2_Exposure', bc, 0x2d0130, 'tviff', e[0], e[1])
+for e in ((1.0, 1.0), (2.2, 1.0), (0.5, 3.0), (-1.0, 2.0), (3.0, 0.0), (0.0, 1.0)):
+	bset(bc, (0.0, 0.25, 1.0, -0.5, 3.0, 10.0, 1e-8, 700.0, -30.0, 2.0, 0.1, 0.9) * 2)
+	bstep2('CBmpFlt2_Gamma', bc, 0x2d0230, 'tviff', e[0], e[1])
+bfree(bc)
+bstep2('CBmpFlt2_Save', ba, 0x2d00b0, 'tiisizi', 'sdbmp3.txf', 0, None, 0)
+bstep2('CBmpFlt2_Save exists', ba, 0x2d00b0, 'tiisizi', 'sdbmp3.txf', 0, None, 0)
+bstep2('CBmpFlt2_Save extra', bb, 0x2d00b0, 'tiisisi', 'sdbmp4.txf', 1, 'XYZW', 4)
+bstep2('CBmpFlt2_Save ext', ba, 0x2d00b0, 'tiisizi', 'sdbmp.txt', 1, None, 0)
+bl = SDTest.Call(0x133650, 'ii', 12)[0]
+bstep2('CBmpFlt2_Load', bl, 0x2d03b0, 'tiisizi', 'sdbmp3.txf', 0, None, 0)
+bstep2('CBmpFlt2_Load extra', bl, 0x2d03b0, 'tiisibi', 'sdbmp4.txf', 0, '', 4)
+bstep2('CBmpFlt2_Load version 1', bl, 0x2d03b0, 'tiisizi', 'sdbmp.txf', 0, None, 0)
+bstep2('CBmpFlt2_Load ext', bl, 0x2d03b0, 'tiisizi', 'sdbmp.dat', 0, None, 0)
+check('TXF2_Load short', lambda bl=bl: (SDTest.Call(0x2cfca0, 'isiizi', 'sdshort.txf', bl, 0, None, 0), bget(bl, 3)))
 bfree(bl)
 bfree(ba)
 bfree(bb)

@@ -10,6 +10,8 @@
 #define LIBM_SSE2_ACOS 0x329f50
 #define LIBM_SSE2_COS 0x346fe0
 #define LIBM_SSE2_SIN 0x3471a0
+#define LIBM_SSE2_EXP 0x34e950
+#define LIBM_SSE2_POW 0x321440
 #define CI_ATAN2 0x329f3a
 #define LIBM_VEC_EXP2 0x314a00
 
@@ -37,6 +39,26 @@ double Game_Cos(double x) {
 
 double Game_Sin(double x) {
 	return Libm_Sse2(LIBM_SSE2_SIN, x);
+}
+
+double Game_Exp(double x) {
+	return Libm_Sse2(LIBM_SSE2_EXP, x);
+}
+
+/* the exponent in xmm1 */
+double Game_Pow(double x, double y) {
+	double r;
+	void *fn = Game_Ptr(LIBM_SSE2_POW);
+
+	__asm__ volatile(
+		"movsd %[x], %%xmm0\n\t"
+		"movsd %[y], %%xmm1\n\t"
+		"call *%[fn]\n\t"
+		"movsd %%xmm0, %[r]\n\t"
+		: [r] "=m"(r)
+		: [x] "m"(x), [y] "m"(y), [fn] "r"(fn)
+		: "eax", "ecx", "edx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", "memory", "cc");
+	return r;
 }
 
 /* y is loaded first, x on top of it, as the exe's callers do */

@@ -1,6 +1,7 @@
 /*
- * Float RGBA images of the engine3d and their TXF files, original source Engine/BmpFlt.cpp (include/scrap/bmpflt.h).
- * The files go through the C runtime of the exe, not the packs.
+ * Float images of the engine3d and their TXF files, original sources Engine/BmpFlt.cpp (RGBA) and Engine/BmpFlt2.cpp
+ * (RGB), include/scrap/bmpflt.h. The two classes are the same code for another number of channels. The files go
+ * through the C runtime of the exe, not the packs.
  */
 #include <string.h>
 
@@ -14,23 +15,37 @@
 /* errno for a bad TXF header */
 #define g_TXFBadFormat GAME_DATA(int, 0x3de07c)
 
-#define BMPFLT_PIXEL (4 * sizeof(float))
+#define RGBA 4
+#define RGB 3
 
-float *__thiscall CBmpFlt_Pixel(const CBmpFlt *self, uint32_t x, uint32_t y) {
-	CHECK(self->img);
-	CHECK(x < (uint32_t)self->ancho);
-	CHECK(y < (uint32_t)self->alto);
-	return self->img + (self->ancho * y + x) * 4;
+typedef struct {
+	uint32_t cab;			/* rva of the header */
+	int version;
+	int ch;
+} txfKind_t;
+
+static float *BmpFlt_Pixel(const CBmpFlt *b, uint32_t x, uint32_t y, int ch) {
+	CHECK(b->img);
+	CHECK(x < (uint32_t)b->ancho);
+	CHECK(y < (uint32_t)b->alto);
+	return b->img + (b->ancho * y + x) * ch;
 }
 
 /* the original frees the pixels with the sized delete of one pixel */
-static void CBmpFlt_Free(CBmpFlt *self) {
-	self->ancho = 0;
-	self->alto = 0;
-	if (self->img) {
-		operator_delete_sized(self->img, BMPFLT_PIXEL);
-		self->img = NULL;
+static void BmpFlt_Free(CBmpFlt *b, int ch) {
+	b->ancho = 0;
+	b->alto = 0;
+	if (b->img) {
+		operator_delete_sized(b->img, ch * sizeof(float));
+		b->img = NULL;
 	}
+}
+
+static void BmpFlt_Create(CBmpFlt *b, int ancho, int alto, int ch) {
+	BmpFlt_Free(b, ch);
+	b->ancho = ancho;
+	b->alto = alto;
+	b->img = New_Array(ancho * alto, ch * sizeof(float));
 }
 
 static int TXF_IsTxf(const char *name) {
@@ -39,10 +54,9 @@ static int TXF_IsTxf(const char *name) {
 	return !crt_stricmp(name + (len - 4 > 0 ? len - 4 : 0), ".txf");
 }
 
-int TXF_Load(const char *name, CBmpFlt *dest, int flags, void *extra, int nbytes) {
-	TXF_cab *cab = g_TXFCab;
+static int TXF_LoadKind(const txfKind_t *k, const char *name, CBmpFlt *dest, void *extra, int nbytes) {
+	TXF_cab *cab = Game_Ptr(k->cab);
 
-	(void)flags;
 	CHECK(name && dest);
 	void *f = crt_fsopen(name, "rb", CRT_SH_DENYWR);
 	if (!f) {
@@ -51,12 +65,12 @@ int TXF_Load(const char *name, CBmpFlt *dest, int flags, void *extra, int nbytes
 	if (crt_fread(cab, sizeof(*cab), 1, f) != 1) {
 		goto fail;
 	}
-	if (cab->magic != TXF_MAGIC || cab->version != TXF_VERSION || cab->ancho <= 0 || cab->alto <= 0) {
+	if (cab->magic != TXF_MAGIC || cab->version != k->version || cab->ancho <= 0 || cab->alto <= 0) {
 		*crt_errno() = g_TXFBadFormat;
 		goto fail;
 	}
-	CBmpFlt_Create(dest, cab->ancho, cab->alto);
-	if (crt_fread(dest->img, cab->alto * cab->ancho * BMPFLT_PIXEL, 1, f) != 1) {
+	BmpFlt_Create(dest, cab->ancho, cab->alto, k->ch);
+	if (crt_fread(dest->img, cab->alto * cab->ancho * k->ch * sizeof(float), 1, f) != 1) {
 		goto fail;
 	}
 	if (extra && cab->extra && nbytes) {
@@ -74,8 +88,9 @@ fail:
 	return -1;
 }
 
-int TXF_Save(const char *name, const CBmpFlt *orig, byte flags, const void *extra, int nbytes) {
-	TXF_cab *cab = g_TXFCab;
+static int TXF_SaveKind(const txfKind_t *k, const char *name, const CBmpFlt *orig, byte flags, const void *extra,
+	int nbytes) {
+	TXF_cab *cab = Game_Ptr(k->cab);
 
 	CHECK(name && orig && orig->img);
 	if (!(flags & TXF_OVERWRITE)) {
@@ -92,12 +107,12 @@ int TXF_Save(const char *name, const CBmpFlt *orig, byte flags, const void *extr
 	}
 	cab->magic = TXF_MAGIC;
 	memset(cab->pad, 0, sizeof(cab->pad));
-	cab->version = TXF_VERSION;
+	cab->version = k->version;
 	cab->ancho = orig->ancho;
 	cab->alto = orig->alto;
 	cab->extra = extra ? nbytes : 0;
 	if (crt_fwrite(cab, sizeof(*cab), 1, f) != 1 ||
-		crt_fwrite(orig->img, cab->alto * cab->ancho * BMPFLT_PIXEL, 1, f) != 1) {
+		crt_fwrite(orig->img, cab->alto * cab->ancho * k->ch * sizeof(float), 1, f) != 1) {
 		goto fail;
 	}
 	if (cab->extra && crt_fwrite(extra, cab->extra, 1, f) != 1) {
@@ -113,56 +128,34 @@ log:
 	return -1;
 }
 
-void __thiscall CBmpFlt_Fill(CBmpFlt *self, const float *color) {
-	CHECK(self->img);
-	float *p = self->img;
-	for (int n = self->alto * self->ancho; n > 0; n--) {
-		memcpy(p, color, BMPFLT_PIXEL);
-		p += 4;
+static int BmpFlt_Load(const txfKind_t *k, CBmpFlt *b, const char *name, void *extra, int nbytes) {
+	CHECK(name);
+	BmpFlt_Free(b, k->ch);
+	if (!TXF_IsTxf(name)) {
+		return -1;
 	}
+	return TXF_LoadKind(k, name, b, extra, nbytes);
 }
 
-int __thiscall CBmpFlt_Save(CBmpFlt *self, const char *name, byte flags, const void *extra, int nbytes) {
+static int BmpFlt_Save(const txfKind_t *k, CBmpFlt *b, const char *name, byte flags, const void *extra, int nbytes) {
 	CHECK(name);
 	if (!TXF_IsTxf(name)) {
 		return -1;
 	}
-	return TXF_Save(name, self, flags, extra, nbytes);
+	return TXF_SaveKind(k, name, b, flags, extra, nbytes);
 }
 
-void __thiscall CBmpFlt_Exposure(CBmpFlt *self, float a, float b) {
-	CHECK(self->img);
-	float *p = self->img;
-	for (int n = self->alto * self->ancho; n > 0; n--) {
-		for (int i = 0; i < 4; i += 2) {
-			double in[2] = { -(a * p[i] / b), -(a * p[i + 1] / b) };
-			double out[2];
-			Game_ExpPd(in, out);
-			p[i] = (1.0f - (float)out[0]) * b;
-			p[i + 1] = (1.0f - (float)out[1]) * b;
-		}
-		p += 4;
+static void BmpFlt_Fill(CBmpFlt *b, const float *color, int ch) {
+	CHECK(b->img);
+	float *p = b->img;
+	for (int n = b->alto * b->ancho; n > 0; n--) {
+		memcpy(p, color, ch * sizeof(float));
+		p += ch;
 	}
 }
 
-void __thiscall CBmpFlt_Create(CBmpFlt *self, int ancho, int alto) {
-	CBmpFlt_Free(self);
-	self->ancho = ancho;
-	self->alto = alto;
-	self->img = New_Array(ancho * alto, BMPFLT_PIXEL);
-}
-
-int __thiscall CBmpFlt_Load(CBmpFlt *self, const char *name, int flags, void *extra, int nbytes) {
-	CHECK(name);
-	CBmpFlt_Free(self);
-	if (!TXF_IsTxf(name)) {
-		return -1;
-	}
-	return TXF_Load(name, self, flags, extra, nbytes);
-}
-
-void __thiscall CBmpFlt_Blend(CBmpFlt *self, int x, int y, const CBmpFlt *orig, int ox, int oy, int w, int h, int a,
-	int b) {
+static void BmpFlt_Blend(CBmpFlt *self, int x, int y, const CBmpFlt *orig, int ox, int oy, int w, int h, int a,
+	int b, int ch) {
 	CHECK(orig);
 	CHECK(orig->img);
 	CHECK(self->img);
@@ -184,12 +177,81 @@ void __thiscall CBmpFlt_Blend(CBmpFlt *self, int x, int y, const CBmpFlt *orig, 
 	float fa = (float)a * (1.0f / 256);
 	float fb = (float)b * (1.0f / 256);
 	for (int row = 0; row < h; row++) {
-		const float *s = CBmpFlt_Pixel(orig, ox, oy + row);
-		float *d = CBmpFlt_Pixel(self, x, y + row);
-		for (int i = 0; i < w * 4; i++) {
+		const float *s = BmpFlt_Pixel(orig, ox, oy + row, ch);
+		float *d = BmpFlt_Pixel(self, x, y + row, ch);
+		for (int i = 0; i < w * ch; i++) {
 			d[i] = s[i] * fa + d[i] * fb;
 		}
 	}
+}
+
+/* the start of Resample: a missing image gets the size of orig, the same size with all channels is a copy */
+static int BmpFlt_ResampleCopy(CBmpFlt *self, const CBmpFlt *orig, uint32_t mask, int ch) {
+	CHECK(orig);
+	CHECK(orig->img);
+	CHECK(mask);
+	if (!self->img) {
+		BmpFlt_Create(self, orig->ancho, orig->alto, ch);
+		CHECK(self->img);
+	}
+	if (self->ancho == orig->ancho && self->alto == orig->alto && mask == 0xf) {
+		memcpy(self->img, orig->img, self->alto * self->ancho * ch * sizeof(float));
+		return 1;
+	}
+	return 0;
+}
+
+static const txfKind_t txfRgba = { TXF_CAB, 1, RGBA };
+static const txfKind_t txfRgb = { TXF2_CAB, 2, RGB };
+
+float *__thiscall CBmpFlt_Pixel(const CBmpFlt *self, uint32_t x, uint32_t y) {
+	return BmpFlt_Pixel(self, x, y, RGBA);
+}
+
+int TXF_Load(const char *name, CBmpFlt *dest, int flags, void *extra, int nbytes) {
+	(void)flags;
+	return TXF_LoadKind(&txfRgba, name, dest, extra, nbytes);
+}
+
+int TXF_Save(const char *name, const CBmpFlt *orig, byte flags, const void *extra, int nbytes) {
+	return TXF_SaveKind(&txfRgba, name, orig, flags, extra, nbytes);
+}
+
+void __thiscall CBmpFlt_Fill(CBmpFlt *self, const float *color) {
+	BmpFlt_Fill(self, color, RGBA);
+}
+
+int __thiscall CBmpFlt_Save(CBmpFlt *self, const char *name, byte flags, const void *extra, int nbytes) {
+	return BmpFlt_Save(&txfRgba, self, name, flags, extra, nbytes);
+}
+
+void __thiscall CBmpFlt_Exposure(CBmpFlt *self, float a, float b) {
+	CHECK(self->img);
+	float *p = self->img;
+	for (int n = self->alto * self->ancho; n > 0; n--) {
+		for (int i = 0; i < RGBA; i += 2) {
+			double in[2] = { -(a * p[i] / b), -(a * p[i + 1] / b) };
+			double out[2];
+			Game_ExpPd(in, out);
+			p[i] = (1.0f - (float)out[0]) * b;
+			p[i + 1] = (1.0f - (float)out[1]) * b;
+		}
+		p += RGBA;
+	}
+}
+
+void __thiscall CBmpFlt_Create(CBmpFlt *self, int ancho, int alto) {
+	BmpFlt_Create(self, ancho, alto, RGBA);
+}
+
+int __thiscall CBmpFlt_Load(CBmpFlt *self, const char *name, int flags, void *extra, int nbytes) {
+	(void)flags;
+	return BmpFlt_Load(&txfRgba, self, name, extra, nbytes);
+}
+
+void __thiscall CBmpFlt_Blend(CBmpFlt *self, int x, int y, const CBmpFlt *orig, int ox, int oy, int w, int h, int a,
+	int b) {
+	BmpFlt_Blend(self, x, y, orig, ox, oy, w, h, a, b, RGBA);
 }
 
 /* the first source row or column of destination i */
@@ -198,15 +260,7 @@ static int BmpFlt_BoxStart(int i, float scale) {
 }
 
 void __thiscall CBmpFlt_Resample(CBmpFlt *self, const CBmpFlt *orig, uint32_t mask) {
-	CHECK(orig);
-	CHECK(orig->img);
-	CHECK(mask);
-	if (!self->img) {
-		CBmpFlt_Create(self, orig->ancho, orig->alto);
-		CHECK(self->img);
-	}
-	if (self->ancho == orig->ancho && self->alto == orig->alto && mask == 0xf) {
-		memcpy(self->img, orig->img, self->alto * self->ancho * BMPFLT_PIXEL);
+	if (BmpFlt_ResampleCopy(self, orig, mask, RGBA)) {
 		return;
 	}
 	float sx = (float)orig->ancho / (float)self->ancho;
@@ -223,7 +277,7 @@ void __thiscall CBmpFlt_Resample(CBmpFlt *self, const CBmpFlt *orig, uint32_t ma
 			if (x1 == x0) {
 				x1++;
 			}
-			float sum[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+			float sum[RGBA] = { 0.0f, 0.0f, 0.0f, 0.0f };
 			int n = 0;
 			for (int ix = x0; ix < x1; ix++) {
 				if (y0 < y1) {
@@ -231,21 +285,107 @@ void __thiscall CBmpFlt_Resample(CBmpFlt *self, const CBmpFlt *orig, uint32_t ma
 				}
 				for (int iy = y0; iy < y1; iy++) {
 					const float *p = CBmpFlt_Pixel(orig, ix, iy);
-					for (int c = 0; c < 4; c++) {
+					for (int c = 0; c < RGBA; c++) {
 						sum[c] = p[c] + sum[c];
 					}
 				}
 			}
 			CHECK(n);
-			float c[4];
+			float c[RGBA];
 			memcpy(c, CBmpFlt_Pixel(self, x, y), sizeof(c));
 			float fn = (float)(double)(uint32_t)n;
-			for (int i = 0; i < 4; i++) {
+			for (int i = 0; i < RGBA; i++) {
 				if (mask & 1u << i) {
 					c[i] = sum[i] / fn;
 				}
 			}
 			memcpy(CBmpFlt_Pixel(self, x, y), c, sizeof(c));
 		}
+	}
+}
+
+float *__thiscall CBmpFlt2_Pixel(const CBmpFlt2 *self, uint32_t x, uint32_t y) {
+	return BmpFlt_Pixel(self, x, y, RGB);
+}
+
+int TXF2_Load(const char *name, CBmpFlt2 *dest, int flags, void *extra, int nbytes) {
+	(void)flags;
+	return TXF_LoadKind(&txfRgb, name, dest, extra, nbytes);
+}
+
+int TXF2_Save(const char *name, const CBmpFlt2 *orig, byte flags, const void *extra, int nbytes) {
+	return TXF_SaveKind(&txfRgb, name, orig, flags, extra, nbytes);
+}
+
+void __thiscall CBmpFlt2_Fill(CBmpFlt2 *self, const float *color) {
+	BmpFlt_Fill(self, color, RGB);
+}
+
+void __thiscall CBmpFlt2_Scale(CBmpFlt2 *self, float k) {
+	CHECK(self->img);
+	if (k == 1.0f) {
+		return;
+	}
+	float *p = self->img;
+	for (int n = self->alto * self->ancho; n > 0; n--) {
+		for (int i = 0; i < RGB; i++) {
+			p[i] = p[i] * k;
+		}
+		p += RGB;
+	}
+}
+
+int __thiscall CBmpFlt2_Save(CBmpFlt2 *self, const char *name, byte flags, const void *extra, int nbytes) {
+	return BmpFlt_Save(&txfRgb, self, name, flags, extra, nbytes);
+}
+
+void __thiscall CBmpFlt2_Exposure(CBmpFlt2 *self, float a, float b) {
+	CHECK(self->img);
+	float *p = self->img;
+	for (int n = self->alto * self->ancho; n > 0; n--) {
+		for (int i = 0; i < RGB; i++) {
+			p[i] = (1.0f - (float)Game_Exp((double)-(p[i] * a / b))) * b;
+		}
+		p += RGB;
+	}
+}
+
+void __thiscall CBmpFlt2_Gamma(CBmpFlt2 *self, float g, float b) {
+	CHECK(self->img);
+	if (g == 1.0f) {
+		return;
+	}
+	float inv = 1.0f / g;
+	float *p = self->img;
+	for (int n = self->alto * self->ancho; n > 0; n--) {
+		for (int i = 0; i < RGB; i++) {
+			if (0.0f > p[i]) {
+				p[i] = 0.0f;
+			}
+		}
+		for (int i = 0; i < RGB; i++) {
+			p[i] = (float)Game_Pow((double)(p[i] / b), (double)inv) * b;
+		}
+		p += RGB;
+	}
+}
+
+void __thiscall CBmpFlt2_Create(CBmpFlt2 *self, int ancho, int alto) {
+	BmpFlt_Create(self, ancho, alto, RGB);
+}
+
+int __thiscall CBmpFlt2_Load(CBmpFlt2 *self, const char *name, int flags, void *extra, int nbytes) {
+	(void)flags;
+	return BmpFlt_Load(&txfRgb, self, name, extra, nbytes);
+}
+
+void __thiscall CBmpFlt2_Blend(CBmpFlt2 *self, int x, int y, const CBmpFlt2 *orig, int ox, int oy, int w, int h,
+	int a, int b) {
+	BmpFlt_Blend(self, x, y, orig, ox, oy, w, h, a, b, RGB);
+}
+
+void __thiscall CBmpFlt2_Resample(CBmpFlt2 *self, const CBmpFlt2 *orig, uint32_t mask) {
+	if (!BmpFlt_ResampleCopy(self, orig, mask, RGB)) {
+		CHECK(0);
 	}
 }
