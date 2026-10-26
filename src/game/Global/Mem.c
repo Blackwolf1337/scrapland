@@ -7,11 +7,6 @@
 #include "scrap/console.h"
 #include "scrap/game.h"
 
-void *crt_malloc(size_t size);
-void crt_free(void *p);
-void *crt_realloc(void *p, size_t size);
-size_t crt_msize(void *p);
-
 static void MemStats_Alloc(cMemStats *st, int size) {
 	st->blocks++;
 	st->bytes += size;

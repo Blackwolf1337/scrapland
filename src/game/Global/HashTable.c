@@ -7,8 +7,6 @@
 #include "scrap/console.h"
 #include "scrap/hashtable.h"
 
-int crt_stricmp(const char *a, const char *b);
-
 HashTable *__thiscall HashTable_ctor(HashTable *self, int numSlots, byte caseSensitive) {
 	CHECK(numSlots > 0);
 	self->numSlots = numSlots;

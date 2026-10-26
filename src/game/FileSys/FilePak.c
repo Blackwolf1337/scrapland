@@ -11,18 +11,6 @@
 #include "scrap/scrap.h"
 #include "scrap/win32.h"
 
-/* the exe's CRT and the engine helpers this file uses */
-int crt_stricmp(const char *a, const char *b);
-int crt_strnicmp(const char *a, const char *b, size_t n);
-char *crt_strlwr(char *s);
-int crt_fputs(const char *s, void *f);
-int crt_feof(void *f);
-char *crt_fgets(char *buf, int size, void *f);
-int crt_setvbuf(void *f, char *buf, int mode, size_t size);
-int crt_access(const char *name, int mode);
-int crt_stat32(const char *name, void *st);
-[[noreturn]] void crt_exit(int code);
-
 cStringNode *__thiscall cStringList_NewNode(cStringList *list);
 
 void Loading_Step(int percent);				/* -1: one step of the loading bar */

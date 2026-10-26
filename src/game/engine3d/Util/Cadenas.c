@@ -5,10 +5,6 @@
 
 #include "scrap/e3dutil.h"
 
-char *crt_strncat(char *dst, const char *src, size_t n);
-int crt_isdigit(int c);
-int crt_sprintf(char *buf, const char *fmt, ...);
-
 #define g_ThousandsSep GAME_DATA(char, 0x431b88)
 #define g_IntBuf ((char *)Game_Ptr(0x4a8eb4))	/* the result of Cad_FromInt(NULL, n) */
 

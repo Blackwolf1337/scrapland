@@ -9,9 +9,7 @@
 #include "scrap/game.h"
 #include "scrap/scorer.h"
 
-char *crt_strncat(char *dst, const char *src, size_t n);
-/* __stdio_common_vsprintf of the UCRT in the exe and its __local_stdio_printf_options value */
-int crt_stdio_common_vsprintf(uint64_t options, char *buf, size_t count, const char *fmt, void *locale, va_list ap);
+/* __local_stdio_printf_options of the UCRT in the exe */
 #define g_PrintfOptions GAME_DATA(uint64_t, 0x444210)
 /* _CRT_INTERNAL_PRINTF_LEGACY_VSPRINTF_NULL_TERMINATION */
 #define PRINTF_LEGACY_NULL_TERMINATION 1

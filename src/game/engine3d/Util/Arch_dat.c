@@ -6,12 +6,6 @@
 #include "scrap/archio.h"
 #include "scrap/e3dutil.h"
 
-char *crt_strncat(char *dst, const char *src, size_t n);
-int crt_strncmp(const char *a, const char *b, size_t n);
-int crt_strnicmp(const char *a, const char *b, size_t n);
-int *crt_errno(void);
-void *crt_iob_func(unsigned index);
-int crt_stdio_common_vfprintf(uint64_t options, void *f, const char *fmt, void *locale, va_list ap);
 #define g_PrintfOptions GAME_DATA(uint64_t, 0x444210)
 
 #define g_ArchErr GAME_DATA(int, 0x432a04)	/* the code of "Faltan datos", -1 until the first Arch_New */

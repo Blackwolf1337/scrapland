@@ -6,18 +6,6 @@
 
 #include "scrap/e3dutil.h"
 
-int *crt_errno(void);
-int crt_getdrive(void);
-int crt_chdrive(int drive);
-char *crt_getcwd(char *buf, int size);
-int crt_chdir(const char *dir);
-int crt_mkdir(const char *dir);
-int crt_isalpha(int c);
-int crt_toupper(int c);
-int crt_tolower(int c);
-char *crt_strupr(char *s);
-int crt_sscanf(const char *s, const char *fmt, ...);
-
 enum { CRT_ENOENT = 2, CRT_ENOMEM = 12, CRT_EACCES = 13 };
 /* added to 2 for the errno of a path that does not exist */
 #define g_RutaErrBase GAME_DATA(int, 0x3de07c)

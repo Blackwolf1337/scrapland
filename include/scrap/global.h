@@ -6,6 +6,7 @@
 
 #include <stdarg.h>
 
+#include "scrap/crt.h"
 #include "scrap/shared.h"
 
 /* "FATAL ERROR: Check failed!" report of the engine (rva 0xbcdb0), logs expression, file, date and line */
@@ -43,8 +44,6 @@ void operator_delete_array(void *p);
 void *Mem_Alloc(uint32_t size);
 void Mem_Free(void *p);	/* rva 0x133550 */
 void *Mem_Realloc(void *p, uint32_t size);	/* rva 0x133690 */
-/* __report_rangecheckfailure of the exe's CRT (rva 0x313d15), ends the process */
-[[noreturn]] void crt_report_rangecheckfailure(void);
 
 /* Global/StrUtils.cpp: copy with CHECK(dst && src && bytes_dst>0), always terminated (rva 0x1365c0) */
 char *Str_Copy(char *dst, const char *src, int size);
@@ -57,9 +56,6 @@ int Str_Printf(char *dst, int size, const char *fmt, ...);
 /* the same without the log line (rva 0x1365a0) */
 int Str_PrintfQuiet(char *dst, int size, const char *fmt, ...);
 int Str_VPrintf(char *dst, int size, const char *fmt, va_list ap);	/* rva 0x136690 */
-
-/* fprintf of the exe's CRT, for FILE pointers the exe hands out (rva 0xbd230) */
-int crt_fprintf(void *file, const char *fmt, ...);
 
 /* Global/HashTable.h: chained hash of string keys, case-insensitive unless caseSensitive */
 typedef struct HashNode {

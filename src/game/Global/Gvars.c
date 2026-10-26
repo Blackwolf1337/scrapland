@@ -8,15 +8,6 @@
 #include "scrap/hashtable.h"
 #include "scrap/scrap.h"
 
-int crt_strnicmp(const char *a, const char *b, size_t n);
-int crt_stricmp(const char *a, const char *b);
-int crt_fprintf(void *f, const char *fmt, ...);
-int crt_fputs(const char *s, void *f);
-int crt_fclose(void *f);
-int crt_feof(void *f);
-char *crt_fgets(char *buf, int size, void *f);
-int crt_atoi(const char *s);
-double crt_atof(const char *s);
 void Str_TrimBlanks(char *s);
 void App_GetConfigDir(char *buf, int size);	/* the directory of Scrap.cfg with its separator (rva 0x20d570) */
 

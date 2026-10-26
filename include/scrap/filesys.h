@@ -121,12 +121,4 @@ byte Str_MatchNoCase(const char *pattern, const char *name);
 /* 1 if name matches one of the sep separated patterns of list */
 byte StrList_Match(const char *list, const char *name, const char *sep);
 
-/* the exe's CRT for its FILE objects */
-void *crt_fopen(const char *name, const char *mode);
-int crt_fclose(void *f);
-size_t crt_fread(void *dst, size_t size, size_t count, void *f);
-size_t crt_fwrite(const void *src, size_t size, size_t count, void *f);
-int crt_fseek(void *f, long off, int origin);
-long crt_ftell(void *f);
-
 #endif

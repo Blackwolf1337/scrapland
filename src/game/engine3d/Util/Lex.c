@@ -7,18 +7,6 @@
 #include "scrap/e3dutil.h"
 #include "scrap/lex.h"
 
-int crt_fgetc(void *f);
-int crt_ungetc(int c, void *f);
-void *crt_fopen(const char *name, const char *mode);
-int crt_fclose(void *f);
-int *crt_errno(void);
-int crt_isalpha(int c);
-int crt_isalnum(int c);
-int crt_isdigit(int c);
-int crt_isxdigit(int c);
-int crt_tolower(int c);
-[[noreturn]] void crt_exit(int code);
-
 /* the inlined read of the next character */
 static int Lex_Getc(void) {
 	CHECK(g_Lex);

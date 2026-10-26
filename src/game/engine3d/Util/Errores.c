@@ -6,9 +6,6 @@
 #include "scrap/e3dutil.h"
 #include "scrap/win32.h"
 
-void *crt_iob_func(unsigned index);
-[[noreturn]] void crt_exit(int code);
-
 #define ERR_COUNT 200
 #define ERR_FIRST_FREE 50
 #define ERR_CUSTOM -2	/* Err_Printf: no text of its own (g_ErrCustom) */

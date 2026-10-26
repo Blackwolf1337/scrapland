@@ -7,27 +7,6 @@
 #include "scrap/e3dutil.h"
 #include "scrap/filesys.h"
 
-/* _finddata32_t of the exe's CRT */
-typedef struct crt_finddata32 {
-	uint32_t attrib;		/* 0x00 */
-	int32_t timeCreate;		/* 0x04 */
-	int32_t timeAccess;		/* 0x08 */
-	int32_t timeWrite;		/* 0x0c */
-	uint32_t size;			/* 0x10 */
-	char name[260];			/* 0x14 */
-} crt_finddata32;
-SD_SIZE(crt_finddata32, 0x118);
-
-enum { CRT_A_HIDDEN = 0x2, CRT_A_SYSTEM = 0x4, CRT_A_SUBDIR = 0x10 };
-
-intptr_t crt_findfirst32(const char *spec, crt_finddata32 *fd);
-int crt_findnext32(intptr_t h, crt_finddata32 *fd);
-int crt_memicmp(const void *a, const void *b, size_t n);
-int crt_chdir(const char *dir);
-void crt_splitpath(const char *path, char *drive, char *dir, char *name, char *ext);
-char *crt_strtok_s(char *s, const char *sep, char **ctx);
-char *crt_strlwr(char *s);
-
 /* drops CR and LF everywhere, blanks at the start and the end */
 void Str_Trim(char *s) {
 	int len = 0;

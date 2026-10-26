@@ -8,9 +8,6 @@
 #include "scrap/cstring.h"
 #include "scrap/game.h"
 
-char *crt_strncat(char *dst, const char *src, size_t n);
-int crt_stricmp(const char *a, const char *b);
-
 void *operator_new_array(uint32_t size) {
 	return operator_new(size);
 }

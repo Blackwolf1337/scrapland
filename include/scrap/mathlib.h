@@ -23,7 +23,5 @@ float NormAng(float ang);
 
 /* acos of the exe's runtime, so results match the original to the last bit (src/core/libm.c) */
 double Game_Acos(double x);
-/* the CRT rand of the exe (rva 0x323c2f), same random sequence as the original */
-int crt_rand(void);
 
 #endif

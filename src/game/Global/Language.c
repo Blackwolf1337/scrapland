@@ -9,10 +9,6 @@
 #include "scrap/hashtable.h"
 #include "scrap/scrap.h"
 
-int crt_stricmp(const char *a, const char *b);
-int crt_strncmp(const char *a, const char *b, size_t n);
-
-
 typedef struct cLangText {
 	char *text;			/* 0x0 */
 	char *nextId;			/* 0x4 the id of the next line, NULL after the last */

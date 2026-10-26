@@ -6,8 +6,6 @@
 
 #include "scrap/lex.h"
 
-int crt_sscanf(const char *s, const char *fmt, ...);
-
 int CmdLex_Expect(int type) {
 	const char *name;
 

@@ -9,13 +9,6 @@
 #include "scrap/hashtable.h"
 #include "scrap/scrap.h"
 
-int crt_strncmp(const char *a, const char *b, size_t n);
-int crt_atoi(const char *s);
-int crt_stat32(const char *name, void *st);
-int32_t crt_time32(int32_t *t);
-void *crt_gmtime32(const int32_t *t);
-char *crt_asctime(const void *tm);
-void crt_qsort(void *base, size_t n, size_t size, int (*cmp)(const void *, const void *));
 void App_GetConfigDir(char *buf, int size);
 
 typedef struct cSaveVar {

@@ -11,16 +11,6 @@
 
 #include "scrap/e3dutil.h"
 
-char *crt_strncat(char *dst, const char *src, size_t n);
-int crt_strnicmp(const char *a, const char *b, size_t n);
-size_t crt_strcspn(const char *s, const char *set);
-int crt_sscanf(const char *s, const char *fmt, ...);
-int crt_sprintf(char *buf, const char *fmt, ...);
-int crt_isalpha(int c);
-int crt_isalnum(int c);
-int crt_isdigit(int c);
-int crt_toupper(int c);
-
 /* converts the identifier name of a type into the text of its number */
 typedef int (*proctype_t)(char *dest, const char *name, const void *data, int size);
 

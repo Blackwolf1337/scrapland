@@ -8,11 +8,6 @@
 #include "scrap/e3dutil.h"
 #include "scrap/scrap.h"
 
-int *crt_errno(void);
-int crt_mkdir(const char *dir);
-int crt_access(const char *name, int mode);
-int crt_stat32(const char *name, void *st);
-
 enum { CRT_ENOENT = 2 };
 
 /* the engine works with paths relative to the game directory, a drive is fatal (Z: is Wine's root) */
