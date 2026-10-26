@@ -7344,91 +7344,91 @@ rva	size	source	callconv	name	signature
 002525b0	763	USER_DEFINED	__cdecl	AnimGrupo_MapNodes	void __cdecl(void * escena, void * anim)
 002528b0	239	USER_DEFINED	__cdecl	AnimGrupo_Compact	void __cdecl(void * anim)
 002529b0	150	USER_DEFINED	__fastcall	CAnimGrupos_Count	int __fastcall(void * self)
-00252a80	585	DEFAULT	unknown	FUN_00652a80	
-00252cd0	34	DEFAULT	unknown	FUN_00652cd0	
-00252d00	120	DEFAULT	unknown	FUN_00652d00	
-00252d80	79	DEFAULT	unknown	FUN_00652d80	
-00252dd0	298	DEFAULT	unknown	FUN_00652dd0	
-00252f00	187	DEFAULT	unknown	FUN_00652f00	
-00252fc0	161	DEFAULT	unknown	FUN_00652fc0	
-00253070	38	ANALYSIS	__thiscall	CModelo::vf00	undefined __thiscall(void)
-002530a0	12	DEFAULT	unknown	FUN_006530a0	
-002530b0	12	DEFAULT	unknown	FUN_006530b0	
-002530c0	68	DEFAULT	unknown	FUN_006530c0	
-00253110	69	DEFAULT	unknown	FUN_00653110	
-00253160	34	DEFAULT	unknown	FUN_00653160	
-00253190	68	DEFAULT	unknown	FUN_00653190	
-002531e0	490	DEFAULT	unknown	FUN_006531e0	
-002533d0	97	DEFAULT	unknown	FUN_006533d0	
-00253440	457	DEFAULT	unknown	FUN_00653440	
+00252a80	585	USER_DEFINED	__fastcall	CModelo_ctor	void * __fastcall(void * self)
+00252cd0	34	USER_DEFINED	__fastcall	Tabla_Free	void __fastcall(void * t)
+00252d00	120	USER_DEFINED	__fastcall	Tabla_DeleteLods	void __fastcall(void * t)
+00252d80	79	USER_DEFINED	__fastcall	CLod_dtor	void __fastcall(void * self)
+00252dd0	298	USER_DEFINED	__fastcall	CModelo_dtor	void __fastcall(void * self)
+00252f00	187	USER_DEFINED	__thiscall	CLod_DeleteVec	void * __thiscall(uint flags)
+00252fc0	161	USER_DEFINED	__thiscall	CNodoR_DeleteVec	void * __thiscall(uint flags)
+00253070	38	USER_DEFINED	__thiscall	CModelo_Delete	void * __thiscall(byte flags)
+002530a0	12	USER_DEFINED	__fastcall	CModelo_Disable	void __fastcall(void * self)
+002530b0	12	USER_DEFINED	__fastcall	CModelo_Enable	void __fastcall(void * self)
+002530c0	68	USER_DEFINED	__thiscall	CModelo_ReleaseD3D	void __thiscall(void * dev, byte escena)
+00253110	69	USER_DEFINED	__thiscall	CModelo_GetSlot	void * __thiscall(uint i)
+00253160	34	USER_DEFINED	__cdecl	CAnim_GetSpeed	double __cdecl(void * a)
+00253190	68	USER_DEFINED	__thiscall	CModelo_InitD3D	void __thiscall(void * dev, byte escena)
+002531e0	490	USER_DEFINED	__thiscall	CModelo_SetupRender	void __thiscall(void * ctx)
+002533d0	97	USER_DEFINED	__thiscall	CModelo_GetNodoR	void * __thiscall(void * nodo)
+00253440	457	USER_DEFINED	__thiscall	CModelo_GetNodeMatrix	void * __thiscall(void * m, uint inodo, byte anim, uint slot, byte * visible, float * fov)
 00253610	3241	DEFAULT	unknown	FUN_00653610	
 002542c0	985	DEFAULT	unknown	FUN_006542c0	
-002546a0	15	DEFAULT	unknown	FUN_006546a0	
-002546b0	413	DEFAULT	unknown	FUN_006546b0	
-00254850	239	DEFAULT	unknown	FUN_00654850	
+002546a0	15	USER_DEFINED	__thiscall	CModelo_SetNumLods	void __thiscall(int n)
+002546b0	413	USER_DEFINED	__thiscall	CModelo_SetLod	void __thiscall(uint i, void * model)
+00254850	239	USER_DEFINED	__thiscall	CModelo_SetMorphSubset	byte __thiscall(uint slot, char * tag)
 00254940	643	DEFAULT	unknown	FUN_00654940	
-00254bd0	29	DEFAULT	unknown	FUN_00654bd0	
-00254bf0	88	DEFAULT	unknown	FUN_00654bf0	
-00254c50	286	DEFAULT	unknown	FUN_00654c50	
-00254d70	81	DEFAULT	unknown	FUN_00654d70	
-00254dd0	85	DEFAULT	unknown	FUN_00654dd0	
-00254e30	81	DEFAULT	unknown	FUN_00654e30	
-00254e90	81	DEFAULT	unknown	FUN_00654e90	
-00254ef0	92	DEFAULT	unknown	FUN_00654ef0	
-00254f50	111	DEFAULT	unknown	FUN_00654f50	
-00254fc0	654	DEFAULT	unknown	FUN_00654fc0	
-00255250	25	DEFAULT	unknown	FUN_00655250	
-00255270	40	DEFAULT	unknown	FUN_00655270	
-002552a0	598	DEFAULT	unknown	FUN_006552a0	
-00255500	40	DEFAULT	unknown	FUN_00655500	
-00255530	240	DEFAULT	unknown	FUN_00655530	
-00255620	134	DEFAULT	unknown	FUN_00655620	
-002556b0	305	DEFAULT	unknown	FUN_006556b0	
-002557f0	246	DEFAULT	unknown	FUN_006557f0	
-002558f0	1040	DEFAULT	unknown	FUN_006558f0	
-00255d30	34	DEFAULT	unknown	FUN_00655d30	
-00255d60	272	DEFAULT	unknown	FUN_00655d60	
-00255e70	109	DEFAULT	unknown	FUN_00655e70	
-00255ee0	86	DEFAULT	unknown	FUN_00655ee0	
+00254bd0	29	USER_DEFINED	__fastcall	CModelo_GetSector	int __fastcall(void * self)
+00254bf0	88	USER_DEFINED	__thiscall	CModelo_AddAnim	void * __thiscall(void * anim, char * nombre)
+00254c50	286	USER_DEFINED	__thiscall	CModelo_AddAnimEvents	byte __thiscall(char * name, float start, float end)
+00254d70	81	USER_DEFINED	__thiscall	CModelo_AnimPlay	void __thiscall(uint slot)
+00254dd0	85	USER_DEFINED	__thiscall	CModelo_AnimState	int __thiscall(uint slot)
+00254e30	81	USER_DEFINED	__thiscall	CModelo_AnimStop	void __thiscall(uint slot)
+00254e90	81	USER_DEFINED	__thiscall	CModelo_AnimPause	void __thiscall(uint slot)
+00254ef0	92	USER_DEFINED	__thiscall	CModelo_AnimFade	void __thiscall(float t, uint slot)
+00254f50	111	USER_DEFINED	__thiscall	CModelo_MoveForward	void __thiscall(float d)
+00254fc0	654	USER_DEFINED	__thiscall	CModelo_UpdateAnims	void __thiscall(float dt, int iAnim)
+00255250	25	USER_DEFINED	__thiscall	CModelo_FindClase	void * __thiscall(void * from, uint clase)
+00255270	40	USER_DEFINED	__thiscall	CModelo_FindNodo	void * __thiscall(char * name)
+002552a0	598	USER_DEFINED	__thiscall	CModelo_FindNodoR	void * __thiscall(char * name, uint * idx, byte wild, byte nocase)
+00255500	40	USER_DEFINED	__thiscall	CModelo_FindNodoWild	void * __thiscall(char * pat)
+00255530	240	USER_DEFINED	__thiscall	CModelo_AnimOffset	void __thiscall(void * ctx)
+00255620	134	USER_DEFINED	__thiscall	CModelo_GetMatrix	void __thiscall(void * m)
+002556b0	305	USER_DEFINED	__thiscall	CModelo_SetAnim	void __thiscall(int idx, uint slot)
+002557f0	246	USER_DEFINED	__thiscall	CModelo_SetAnimName	void __thiscall(char * name, uint slot)
+002558f0	1040	USER_DEFINED	__thiscall	CModelo_SetEscena	void __thiscall(void * esc)
+00255d30	34	USER_DEFINED	__thiscall	CModelo_SetCallback	void __thiscall(int fn, void * arg, void * arg2)
+00255d60	272	USER_DEFINED	__thiscall	CModelo_SetPivot	void __thiscall(void * v, byte rel, byte update)
+00255e70	109	USER_DEFINED	__thiscall	CModelo_SetPivotNodo	byte __thiscall(char * name)
+00255ee0	86	USER_DEFINED	__thiscall	CModelo_SetSlotAnim	void __thiscall(uint slot, void * a)
 00255f40	173	USER_DEFINED	__thiscall	Tabla_Alloc10Z	void __thiscall(int num)
 00255ff0	223	USER_DEFINED	__thiscall	Tabla_New8	void __thiscall(int num)
 002560d0	226	USER_DEFINED	__thiscall	Tabla_NewA8	void __thiscall(int num)
-002561c0	548	DEFAULT	unknown	FUN_006561c0	
-002563f0	36	DEFAULT	unknown	FUN_006563f0	
-00256420	88	DEFAULT	unknown	FUN_00656420	
-00256480	15	DEFAULT	unknown	FUN_00656480	
-00256490	38	DEFAULT	unknown	FUN_00656490	
-002564c0	33	DEFAULT	unknown	FUN_006564c0	
-002564f0	69	DEFAULT	unknown	FUN_006564f0	
-00256540	100	DEFAULT	unknown	FUN_00656540	
-002565b0	66	DEFAULT	unknown	FUN_006565b0	
-00256600	209	DEFAULT	unknown	FUN_00656600	
-002566e0	210	DEFAULT	unknown	FUN_006566e0	
-002567c0	211	DEFAULT	unknown	FUN_006567c0	
-002568a0	327	DEFAULT	unknown	FUN_006568a0	
-002569f0	344	DEFAULT	unknown	FUN_006569f0	
-00256b50	255	DEFAULT	unknown	FUN_00656b50	
-00256c50	41	DEFAULT	unknown	FUN_00656c50	
-00256c80	169	DEFAULT	unknown	FUN_00656c80	
-00256d30	304	DEFAULT	unknown	FUN_00656d30	
-00256e60	155	DEFAULT	unknown	FUN_00656e60	
-00256f00	140	DEFAULT	unknown	FUN_00656f00	
-00256f90	686	DEFAULT	unknown	FUN_00656f90	
-00257240	58	DEFAULT	unknown	FUN_00657240	
-00257280	42	DEFAULT	unknown	FUN_00657280	
-002572b0	898	DEFAULT	unknown	FUN_006572b0	
-00257640	262	DEFAULT	unknown	FUN_00657640	
-00257750	200	DEFAULT	unknown	FUN_00657750	
-00257820	124	DEFAULT	unknown	FUN_00657820	
-002578a0	69	DEFAULT	unknown	FUN_006578a0	
-002578f0	182	DEFAULT	unknown	FUN_006578f0	
-002579b0	705	DEFAULT	unknown	FUN_006579b0	
-00257c80	33	DEFAULT	unknown	FUN_00657c80	
-00257cb0	344	DEFAULT	unknown	FUN_00657cb0	
-00257e10	70	DEFAULT	unknown	FUN_00657e10	
-00257e60	60	DEFAULT	unknown	FUN_00657e60	
-00257ea0	63	DEFAULT	unknown	FUN_00657ea0	
-00257ee0	36	DEFAULT	unknown	FUN_00657ee0	
+002561c0	548	USER_DEFINED	__thiscall	CModelo_BuildNodosR	void __thiscall(int unused)
+002563f0	36	USER_DEFINED	__cdecl	Modelo_Check	void __cdecl(void * m)
+00256420	88	USER_DEFINED	__thiscall	CModelo_GetSlotAnimM3D	void * __thiscall(uint slot)
+00256480	15	USER_DEFINED	__thiscall	CModelo_GetAnim	void * __thiscall(int i)
+00256490	38	USER_DEFINED	__thiscall	CModelo_FindAnim	int __thiscall(char * name)
+002564c0	33	USER_DEFINED	__thiscall	CModelo_GetAnimName	char * __thiscall(int i)
+002564f0	69	USER_DEFINED	__thiscall	CModelo_GetSlotAnim	void * __thiscall(uint slot)
+00256540	100	USER_DEFINED	__thiscall	CModelo_GetSlotFrame	float __thiscall(uint slot)
+002565b0	66	USER_DEFINED	__fastcall	CLuz_TipoNombre	char * __fastcall(void * l)
+00256600	209	USER_DEFINED	__thiscall	CListaEscena_ctor	void * __thiscall(void * esc, char * name, char * name2, void * escala, uint flags, void ** lista)
+002566e0	210	USER_DEFINED	__thiscall	CListaModelo_ctor	void * __thiscall(void * m, char * name, char * name2, uint flags, void ** lista)
+002567c0	211	USER_DEFINED	__fastcall	CListaModelo_dtor	void __fastcall(void * self)
+002568a0	327	USER_DEFINED	__cdecl	Modelo_UpdateRender	void __cdecl(void * m)
+002569f0	344	USER_DEFINED	__cdecl	Escena_Release	byte __cdecl(void * esc, byte force)
+00256b50	255	USER_DEFINED	__cdecl	Modelo_Destroy	void __cdecl(void ** pm, byte force)
+00256c50	41	USER_DEFINED	__cdecl	Modelo_SetEnable	void __cdecl(void * m, byte on)
+00256c80	169	USER_DEFINED	__cdecl	Modelos_UpdateAnims	void __cdecl(float dt)
+00256d30	304	USER_DEFINED	__cdecl	UtilEscena_FreeAll	void __cdecl(void)
+00256e60	155	USER_DEFINED	__cdecl	UtilEscena_ReleaseD3D	void __cdecl(void)
+00256f00	140	USER_DEFINED	__cdecl	UtilEscena_InitD3D	void __cdecl(void)
+00256f90	686	USER_DEFINED	__cdecl	UtilEscena_Dump	void __cdecl(int fn)
+00257240	58	USER_DEFINED	__cdecl	Escenas_Msg	void __cdecl(int msg, int a, int b, int c, int d)
+00257280	42	USER_DEFINED	__cdecl	Escena_Next	void * __cdecl(void * esc)
+002572b0	898	USER_DEFINED	__cdecl	Modelos_Render	void __cdecl(void)
+00257640	262	USER_DEFINED	__thiscall	CListaEscena_Find	void * __thiscall(char * name, char * name2, void * escala, uint flags, uint mask)
+00257750	200	USER_DEFINED	__thiscall	CListaModelo_Find	void * __thiscall(char * name, char * name2, uint flags, uint mask)
+00257820	124	USER_DEFINED	__cdecl	Modelo_FindName	void * __cdecl(char * name)
+002578a0	69	USER_DEFINED	__cdecl	Cad_EqualNoCase	int __cdecl(char * a, char * b)
+002578f0	182	USER_DEFINED	__cdecl	Crear_Animacion	void __cdecl(void * m, char * name, uint flags)
+002579b0	705	USER_DEFINED	__cdecl	Crear_Escena	void * __cdecl(byte * shared, char * name, char * name2, void * escala, float umbral, uint flags)
+00257c80	33	USER_DEFINED	__cdecl	Crear_Modelo3	void * __cdecl(char * name, char * name2, void * escala, uint flags)
+00257cb0	344	USER_DEFINED	__cdecl	Crear_Modelo	void * __cdecl(char * name, char * name2, void * escala, float umbral, uint flags)
+00257e10	70	USER_DEFINED	__cdecl	Crear_ModeloLOD	void * __cdecl(char * name, char * name2, void * escala, void * main, uint flags)
+00257e60	60	USER_DEFINED	__cdecl	Crear_Modelo2	void * __cdecl(char * name, char * name2, uint flags)
+00257ea0	63	USER_DEFINED	__cdecl	Crear_Modelo4	void * __cdecl(char * name, char * name2, float umbral, uint flags)
+00257ee0	36	USER_DEFINED	__cdecl	ListaModelo_CompareKey	int __cdecl(void * a, void * b)
 00257f10	85	DEFAULT	unknown	FUN_00657f10	
 00257f70	58	DEFAULT	unknown	FUN_00657f70	
 00257fb0	1	DEFAULT	unknown	FUN_00657fb0	

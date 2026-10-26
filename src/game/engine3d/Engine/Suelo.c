@@ -139,13 +139,6 @@ void __fastcall Tabla_FreeObjs(CTabla *t) {
 	}
 }
 
-void __fastcall Tabla_Free(CTabla *t) {
-	if (t->p) {
-		operator_delete_array(t->p);
-		t->p = NULL;
-		t->n = 0;
-	}
-}
 
 /* engine3d/engine/suelo.h */
 

@@ -121,7 +121,6 @@ void Tabla_Write1C(CArchIO *f, CTabla *t);
 void Tabla_WriteC(CArchIO *f, CTabla *t);
 /* elements with a vector deleting destructor (vftable[0]) or plain new[]; the table empty after */
 void __fastcall Tabla_FreeObjs(CTabla *t);
-void __fastcall Tabla_Free(CTabla *t);
 
 /* the vector deleting destructor of CNodo3D (0xfc bytes) as the floor nodes use it */
 void *__thiscall CNodo3D_VecDelete(void *self, uint32_t flags);

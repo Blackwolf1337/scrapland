@@ -113,3 +113,11 @@ ARRAY_WRITE(6)
 ARRAY_WRITE(8)
 ARRAY_WRITE(C)
 ARRAY_WRITE(10)
+
+void __fastcall Tabla_Free(CTabla *t) {
+	if (t->p) {
+		operator_delete_array(t->p);
+		t->p = NULL;
+		t->n = 0;
+	}
+}

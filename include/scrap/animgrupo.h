@@ -38,14 +38,25 @@ SD_SIZE(CAnimEvent, 0x14);
 /* the play state of a group (constructor rva 0x250e50, empty destructor 0x250f10) */
 typedef struct CAnimCtrl {
 	float vel;			/* 0x00 */
-	byte pad_4[0x2c];
+	byte pad_4[8];
+	float speed;			/* 0x0c CAnimGrupo + 0x14 */
+	byte pad_10[4];
+	vec3_t move;			/* 0x14 the root motion of the last update */
+	vec3_t ofs;			/* 0x20 the root offset */
+	byte pad_2c[4];
 	CAnimNodo *nodo;		/* 0x30 */
 	int primero;			/* 0x34 */
 	int frames;			/* 0x38 */
 	CAnimEvent **eventos;		/* 0x3c */
-	byte pad_40[0x44];
+	byte pad_40[0x10];
+	float frame;			/* 0x50 CAnimGrupo + 0x58 */
+	int state;			/* 0x54 ANIM_* */
+	byte pad_58[0x2c];
 } CAnimCtrl;
+SD_OFFSET(CAnimCtrl, speed, 0x0c);
+SD_OFFSET(CAnimCtrl, ofs, 0x20);
 SD_OFFSET(CAnimCtrl, nodo, 0x30);
+SD_OFFSET(CAnimCtrl, frame, 0x50);
 SD_OFFSET(CAnimCtrl, eventos, 0x3c);
 SD_SIZE(CAnimCtrl, 0x84);
 
@@ -65,7 +76,13 @@ typedef struct CAnimGrupo {
 	CAnimEvent *eventos;		/* 0x04 */
 	CAnimCtrl ctrl;			/* 0x08 */
 	MorphData *morph;		/* 0x8c new[] of MAX_MORPHDATA */
-	uint16_t morphAct;		/* 0x90 */
+	union {
+		uint16_t morphAct;	/* 0x90 */
+		struct {
+			byte iMorph;	/* 0x90 the step played */
+			byte morphCount; /* 0x91 its repetitions left */
+		};
+	};
 	uint16_t pad_92;
 	CEscena *Anim;			/* 0x94 a reference */
 } CAnimGrupo;
