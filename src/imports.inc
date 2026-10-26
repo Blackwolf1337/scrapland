@@ -402,10 +402,6 @@ SD_IMPORT(Render_GetView, 0x24cdb0)
 SD_IMPORT(Portales_DebugDraw, 0x26d0d0)
 
 /* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/mundo.h) */
-SD_IMPORT(CNiebla_ctor, 0x278360)
-SD_IMPORT(CNiebla_dtor, 0x278390)
-SD_IMPORT(CNiebla_InitD3D, 0x2783a0)
-SD_IMPORT(CNiebla_Apply, 0x278420)
 SD_IMPORT(Color_ToD3D, 0x214f70)
 SD_IMPORT(Render_Clear, 0x249de0)
 SD_IMPORT(Bsp_Free, 0x290520)

@@ -12,8 +12,13 @@
 
 /* the D3D device of the engine3d (render.cpp), NULL without one */
 #define g_pd3dDevice GAME_DATA(void *, 0x4ad6f4)
-/* the device of the D3D application (g_pD3DApp->m_pd3dDevice), NULL before it is made */
-#define g_MotorDev (*(void **)(GAME_DATA(byte *, 0x4b1c04) + 0x2a3d8))
+/* g_pD3DApp, the D3D application of the engine3d (CD3DApplication of the D3D framework): its window, its device
+ * (NULL before it is made) and the RasterCaps of the device */
+#define g_Motor GAME_DATA(byte *, 0x4b1c04)
+#define MOTOR_HWND(m) (*(void **)((m) + 0x2a3cc))
+#define MOTOR_DEV(m) (*(void **)((m) + 0x2a3d8))
+#define MOTOR_RASTERCAPS(m) (*(uint32_t *)((m) + 0x2a400))
+#define g_MotorDev MOTOR_DEV(g_Motor)
 /* the frames drawn by the engine3d */
 #define g_FrameCount GAME_DATA(int, 0x4a8ec8)
 /* the time of the engine in ms */

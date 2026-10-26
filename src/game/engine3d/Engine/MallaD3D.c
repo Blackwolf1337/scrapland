@@ -12,8 +12,6 @@
 #define E_FAIL ((int)0x80004005)
 
 /* the engine (g_pD3DApp) and its device */
-#define g_Motor GAME_DATA(byte *, 0x4b1c04)
-#define MOTOR_DEV(m) (*(void **)((m) + 0x2a3d8))
 
 #define NODO_NOPOS 0xa8			/* flags of nodes whose meshes keep no positions */
 #define NODO_NO_RENDER 0x80

@@ -6845,7 +6845,7 @@ rva	size	source	callconv	name	signature
 00230440	1060	DEFAULT	unknown	FUN_00630440	
 00230870	5	ANALYSIS	__thiscall	CEntradaNula::vf03	undefined __thiscall(void)
 00230880	3	ANALYSIS	__thiscall	CEntradaNula::vf04	undefined __thiscall(void)
-00230890	40	DEFAULT	unknown	FUN_00630890	
+00230890	40	USER_DEFINED	__cdecl	Mundo_Get	void * __cdecl(void)
 002308c0	2223	DEFAULT	unknown	FUN_006308c0	
 00231170	3	ANALYSIS	__thiscall	CEntradaNula::vf02	undefined __thiscall(void)
 00231180	43	DEFAULT	unknown	FUN_00631180	
@@ -7763,12 +7763,12 @@ rva	size	source	callconv	name	signature
 00278240	60	USER_DEFINED	__cdecl	Debug_DrawTriM	void __cdecl(void * m, void * a, void * b, void * c, uint color)
 00278280	62	USER_DEFINED	__cdecl	Debug_DrawTri	void __cdecl(void * a, void * b, void * c, uint color)
 002782c0	156	USER_DEFINED	__cdecl	Obj3D_ClaseName	char * __cdecl(uint clase)
-00278360	48	USER_DEFINED	unknown	CNiebla_ctor	
-00278390	1	USER_DEFINED	unknown	CNiebla_dtor	
-002783a0	113	USER_DEFINED	unknown	CNiebla_InitD3D	
-00278420	600	USER_DEFINED	unknown	CNiebla_Apply	
-00278680	26	DEFAULT	unknown	FUN_00678680	
-002786a0	27	DEFAULT	unknown	FUN_006786a0	
+00278360	48	USER_DEFINED	__fastcall	CNiebla_ctor	void * __fastcall(void * self)
+00278390	1	USER_DEFINED	__fastcall	CNiebla_dtor	void __fastcall(void * self)
+002783a0	113	USER_DEFINED	__fastcall	CNiebla_InitD3D	void __fastcall(void * self)
+00278420	600	USER_DEFINED	__fastcall	CNiebla_Apply	void __fastcall(void * self)
+00278680	26	USER_DEFINED	__thiscall	CNiebla_SetColor	void __thiscall(uint rgba, float intens)
+002786a0	27	USER_DEFINED	__thiscall	CNiebla_SetRango	void __thiscall(float inicio, float fin)
 002786c0	101	DEFAULT	unknown	FUN_006786c0	
 00278730	232	DEFAULT	unknown	FUN_00678730	
 00278820	86	DEFAULT	unknown	FUN_00678820	

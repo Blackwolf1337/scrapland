@@ -40,10 +40,10 @@ CEscena *__fastcall CEscena_ctor(CEscena *self) {
 	self->mainLOD = NULL;
 	self->mats.p = NULL;
 	self->mats.n = 0;
-	self->ambiente = 0xb0b0b;
-	self->f18 = 1.0f;
-	self->f1c = 0.0f;
-	self->f20 = 1.0f;
+	self->ambiente.rgba = 0xb0b0b;
+	self->ambiente.intens = 1.0f;
+	self->niebla.rgba = 0;
+	self->niebla.intens = 1.0f;
 	self->Nodo3D = NULL;
 	self->anim = NULL;
 	self->AnimM3D = NULL;
@@ -213,8 +213,8 @@ void __thiscall CEscena_Read(CEscena *self, CArchIO *f, byte bAnim) {
 	Cad_Read(&self->mainLOD, f);
 	Cad_Read(&self->nodo, f);
 	ArchINI_Read(f, &self->ini);
-	CArchIO_Read(f, &self->ambiente, 8);
-	CArchIO_Read(f, &self->f1c, 8);
+	CArchIO_Read(f, &self->ambiente, sizeof(self->ambiente));
+	CArchIO_Read(f, &self->niebla, sizeof(self->niebla));
 	CArchIO_Read(f, &self->box, sizeof(box_t));
 	CArchIO_Read(f, &self->umbralUnirVert, 4);
 	ArchINI_Read(f, &self->userProp);
@@ -294,8 +294,8 @@ void __thiscall CEscena_Write(CEscena *self, CArchIO *f, byte bAnim) {
 	Cad_Write(&self->mainLOD, f);
 	Cad_Write(&self->nodo, f);
 	ArchINI_Write(f, self->ini);
-	CArchIO_Write(f, &self->ambiente, 8);
-	CArchIO_Write(f, &self->f1c, 8);
+	CArchIO_Write(f, &self->ambiente, sizeof(self->ambiente));
+	CArchIO_Write(f, &self->niebla, sizeof(self->niebla));
 	CArchIO_Write(f, &self->box, sizeof(box_t));
 	CArchIO_Write(f, &self->umbralUnirVert, 4);
 	ArchINI_Write(f, self->userProp);

@@ -1706,6 +1706,13 @@ SD_HOOK(Debug_DrawTriM, 0x278240, 60)
 SD_HOOK(Debug_DrawTri, 0x278280, 62)
 SD_HOOK(Obj3D_ClaseName, 0x2782c0, 156)
 
+/* src/game/engine3d/Engine/Niebla.c (Engine/niebla.cpp, the fog) */
+SD_HOOK(CNiebla_ctor, 0x278360, 48)
+SD_HOOK(CNiebla_InitD3D, 0x2783a0, 113)
+SD_HOOK(CNiebla_Apply, 0x278420, 600)
+SD_HOOK(CNiebla_SetColor, 0x278680, 26)
+SD_HOOK(CNiebla_SetRango, 0x2786a0, 27)
+
 /* src/game/engine3d/Engine/Mundo.c (Engine/mundo.cpp, the world and the debug points) */
 SD_HOOK(CMundo_ctor, 0x269210, 270)
 SD_HOOK(MundoDummy_ctorNodo, 0x269320, 342)

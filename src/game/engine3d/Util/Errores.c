@@ -15,9 +15,6 @@
 #define g_ErrCustom ((const char *)Game_Ptr(0x4b25e4))
 #define g_ErrLastCode GAME_DATA(int, 0x4b25dc)
 #define g_ErrLastFatal GAME_DATA(int, 0x4b25e0)
-/* the main object of the engine3d, its window handle at 0x2a3cc */
-#define g_Motor GAME_DATA(byte *, 0x4b1c04)
-#define MOTOR_HWND(m) (*(void **)((m) + 0x2a3cc))
 
 /* color 0xRRGGBB, the GDI wants 0xBBGGRR */
 static void Dbg_Rect(int x, int y, int w, int h, uint32_t color, rectbrush_t draw) {

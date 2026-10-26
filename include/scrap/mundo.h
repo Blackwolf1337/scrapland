@@ -11,23 +11,8 @@
 
 #include "scrap/camara.h"
 #include "scrap/modelo.h"
+#include "scrap/niebla.h"
 #include "scrap/suelo.h"
-
-/* niebla.cpp: the fog of the world */
-typedef struct CNiebla {
-	byte activa;			/* 0x00 */
-	byte pad_1[3];
-	float f4;			/* 0x04 0.5 */
-	float f8;			/* 0x08 1 */
-	float fc;			/* 0x0c 0.5 */
-	int i10;			/* 0x10 */
-	int i14;			/* 0x14 not set by the constructor */
-	int i18;			/* 0x18 not set by the constructor */
-	byte b1c;			/* 0x1c */
-	byte caps[3];			/* 0x1d the fog capabilities of the device, CNiebla_InitD3D */
-	int modo;			/* 0x20 3 */
-} CNiebla;
-SD_SIZE(CNiebla, 0x24);
 
 typedef struct MundoDummy {
 	struct MundoDummy *next;	/* 0x00 */
@@ -59,6 +44,12 @@ SD_OFFSET(CMundo, dummies, 0xc4);
 SD_SIZE(CMundo, 0xc8);
 
 #define g_Mundo GAME_DATA(CMundo *, 0x4afde8)
+
+/* the inline accessor of mundo.h */
+static inline CMundo *Mundo_Get(void) {
+	CHECK(g_Mundo);
+	return g_Mundo;
+}
 
 /* the engine variables of the world (Gvars) */
 #define g_RenderWorld GAME_DATA(int, 0x4afdfc)
@@ -130,12 +121,6 @@ void Debug_PuntosClear(void);
 int Debug_PuntosDraw(void);
 
 /* other modules (src/imports.inc) */
-CNiebla *__fastcall CNiebla_ctor(CNiebla *self);	/* rva 0x278360 */
-void __fastcall CNiebla_dtor(CNiebla *self);		/* rva 0x278390 */
-void __fastcall CNiebla_InitD3D(CNiebla *self);		/* rva 0x2783a0 */
-void __fastcall CNiebla_Apply(CNiebla *self);		/* rva 0x278420 */
-/* rva 0x214f70: the D3D color of a color (r, g, b, a bytes) and its intensity (a float after it) */
-uint32_t Color_ToD3D(const void *c);
 /* rva 0x249de0 (render.cpp), rect NULL for all */
 byte Render_Clear(const void *rect, uint32_t flags, uint32_t color, float z, uint32_t stencil);
 /* bsp.cpp, the shadow maps (rva 0x290520, 0x286c80, 0x286cb0, 0x291000, 0x296cd0) */

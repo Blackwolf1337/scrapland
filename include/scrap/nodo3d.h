@@ -132,16 +132,21 @@ typedef struct NodoAnimCtx {
 SD_OFFSET(NodoAnimCtx, m, 0x60);
 
 /* a scene (Engine/escena.cpp): a list of nodes with their materials, an animation and the user properties */
+/* a color (r in the low byte, then g, b, a) and the intensity it is multiplied with (Color_ToD3D) */
+typedef struct ColorIntens {
+	uint32_t rgba;			/* 0x0 */
+	float intens;			/* 0x4 */
+} ColorIntens;
+SD_SIZE(ColorIntens, 8);
+
 typedef struct CEscena {
 	void **vftable;			/* 0x00 [0] the deleting destructor */
 	char *name;			/* 0x04 */
 	int Refs;			/* 0x08 */
 	struct CNodo3D *Nodo3D;		/* 0x0c the first node */
 	NodoAnimCtx *anim;		/* 0x10 the render context during CEscena_Render and CEscena_Update */
-	uint32_t ambiente;		/* 0x14 0x0b0b0b */
-	float f18;			/* 0x18 1 */
-	float f1c;			/* 0x1c */
-	float f20;			/* 0x20 1 */
+	ColorIntens ambiente;		/* 0x14 0x0b0b0b, 1 */
+	ColorIntens niebla;		/* 0x1c the fog color, 0, 1 */
 	box_t box;			/* 0x24 CEscena_UpdateBox */
 	struct CAnimacion *AnimM3D;	/* 0x3c */
 	char *nodo;			/* 0x40 the name of the node whose animation node a group starts at */

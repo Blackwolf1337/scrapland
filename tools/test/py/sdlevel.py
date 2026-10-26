@@ -538,4 +538,44 @@ for i in range(5):
 SDTest.Call(0x26b450, 'v')
 SDTest.Poke(0x432584, sdmax)
 SDTest.Poke(0x4a8efa, sdon)
+
+# the fog of the world (Engine/Niebla.c) through the D3D log: CNiebla_Apply with its flags and the fog variables
+# changed, all put back after
+def nblog(fn):
+	SDTest.Out()
+	SDTest.D3DLog(1)
+	r = fn()
+	SDTest.D3DLog(0)
+	return (r[0], SDTest.Out(), SDTest.Peek(0x4ad744, 'i'))
+nbsaved = mwints(mundo, 9)
+nbvars = (0x4b1cb8, 0x4b1ce8, 0x4b1cd0, 0x4b1ca0)
+nbvarsaved = []
+for a in nbvars:
+	nbvarsaved.append(SDTest.Peek(a, 'i'))
+check('CNiebla', lambda: nbsaved)
+check('CNiebla_Apply', lambda: nblog(lambda: SDTest.Call(0x278420, 'tvi', mundo)))
+# activa, tabla, capsW, capsTabla, fuente, modo; then R_FogEnable, R_FogColor, R_FogAbsDist, R_FogDensity
+for flags in ((1, 0, 0, 0, 0, 3), (1, 1, 0, 1, 0, 3), (1, 1, 1, 1, 1, 1), (1, 1, 0, 1, 1, 2), (0, 1, 0, 1, 1, 3),
+	(1, 0, 1, 0, 1, 3)):
+	for fv in ((1, -1, 0, 0), (1, 0x204080, 0, 0), (1, -1, 1, 0), (1, -1, 0, 1061158912), (0, -1, 0, 0)):
+		SDTest.Poke(mundo - 0x400000, (nbsaved[0] & ~0xff) | flags[0])
+		SDTest.Poke(mundo + 0x10 - 0x400000, flags[4])
+		SDTest.Poke(mundo + 0x1c - 0x400000, flags[1] | flags[2] << 8 | flags[3] << 16 | (nbsaved[7] & 0xff000000))
+		SDTest.Poke(mundo + 0x20 - 0x400000, flags[5])
+		for i in range(4):
+			SDTest.Poke(nbvars[i], fv[i])
+		check('CNiebla_Apply' + fmt((flags, fv)), lambda: (nblog(lambda: SDTest.Call(0x278420, 'tvi', mundo)),
+			mwints(mundo, 9)))
+		for i in range(9):
+			SDTest.Poke(mundo + 4 * i - 0x400000, nbsaved[i])
+for i in range(4):
+	SDTest.Poke(nbvars[i], nbvarsaved[i])
+nb = SDTest.Call(0x1334d0, 'ii', 0x24)[0]
+# 0x14 and 0x18 (the own color) are not set by the constructor
+def nbset(nb):
+	return mwints(nb, 5) + mwints(nb + 0x1c, 2)
+check('CNiebla_ctor', lambda: (SDTest.Call(0x278360, 'tii', nb)[0] == nb, nbset(nb)))
+check('CNiebla_InitD3D', lambda: (SDTest.Call(0x2783a0, 'tvi', nb), nbset(nb)))
+check('CNiebla_SetColor', lambda: (SDTest.Call(0x278680, 'tviif', nb, 0x11223344, 0.75), mwints(nb, 9)))
+check('CNiebla_SetRango', lambda: (SDTest.Call(0x2786a0, 'tviff', nb, 0.25, 0.9), mwints(nb, 9)))
 finish()
