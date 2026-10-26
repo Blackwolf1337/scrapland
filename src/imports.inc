@@ -470,9 +470,6 @@ SD_IMPORT(CEVA_ctor, 0x2d33e0)
 
 /* module agent: Engine/AnimGrupo (imports below this line) */
 SD_IMPORT(CAnimCtrl_dtor, 0x250f10)
-SD_IMPORT(CAnimEvent_ctor, 0x2bb8e0)
-SD_IMPORT(CAnimEvent_dtor, 0x2bb980)
-SD_IMPORT(AnimEventos_Add, 0x2bba70)
 
 /* module agent: Engine/Textura (imports below this line) */
 SD_IMPORT(CMultiSprite_ctor, 0x29cf80)

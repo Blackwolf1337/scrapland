@@ -8511,12 +8511,12 @@ rva	size	source	callconv	name	signature
 002bb510	399	USER_DEFINED	__cdecl	Portal_DrawRect	void __cdecl(int * vp, float * rect, uint color)
 002bb6a0	69	USER_DEFINED	__thiscall	CPortal_SetZona	void __thiscall(uint i, void * zona)
 002bb6f0	437	USER_DEFINED	__thiscall	CPortal_UpdateCache	void __thiscall(void * m)
-002bb8b0	45	DEFAULT	unknown	FUN_006bb8b0	
+002bb8b0	45	USER_DEFINED	__thiscall	CAnimEvent_ctor2	void * __thiscall(float t, int id)
 002bb8e0	44	USER_DEFINED	__thiscall	CAnimEvent_ctor	void * __thiscall(float t, int id, int arg)
-002bb910	56	DEFAULT	unknown	FUN_006bb910	
-002bb980	39	USER_DEFINED	__thiscall	CAnimEvent_dtor	void __thiscall(void)
-002bb9b0	51	DEFAULT	unknown	FUN_006bb9b0	
-002bb9f0	123	DEFAULT	unknown	FUN_006bb9f0	
+002bb910	56	USER_DEFINED	__thiscall	CAnimEvent_ctorAdd	void * __thiscall(float t, int id, int arg, void ** list)
+002bb980	39	USER_DEFINED	__fastcall	CAnimEvent_dtor	void __fastcall(void * self)
+002bb9b0	51	USER_DEFINED	__thiscall	CAnimEvent_Delete	void * __thiscall(byte flags)
+002bb9f0	123	USER_DEFINED	__thiscall	CAnimEvent_Insert	void __thiscall(void ** list)
 002bba70	19	USER_DEFINED	__thiscall	AnimEventos_Add	void * __thiscall(void * ev)
 002bba90	30	DEFAULT	unknown	FUN_006bba90	
 002bbac0	199	DEFAULT	unknown	FUN_006bbac0	

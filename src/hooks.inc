@@ -1617,6 +1617,15 @@ SD_HOOK(CEscena_RemoveNodo, 0x250d30, 140)
 SD_HOOK(Tabla_Resize4, 0x250dc0, 141)
 SD_HOOK(Box_Merge, 0x2b8870, 144)
 
+/* src/game/engine3d/Engine/EventoAnim.c */
+SD_HOOK(CAnimEvent_ctor2, 0x2bb8b0, 45)
+SD_HOOK(CAnimEvent_ctor, 0x2bb8e0, 44)
+SD_HOOK(CAnimEvent_ctorAdd, 0x2bb910, 56)
+SD_HOOK(CAnimEvent_dtor, 0x2bb980, 39)
+SD_HOOK(CAnimEvent_Delete, 0x2bb9b0, 51)
+SD_HOOK(CAnimEvent_Insert, 0x2bb9f0, 123)
+SD_HOOK(AnimEventos_Add, 0x2bba70, 19)
+
 /* src/game/engine3d/Engine/ControlAnim.c */
 SD_HOOK(CAnimCtrl_ctor, 0x250e50, 182)
 SD_HOOK(CAnimCtrl_Play, 0x250f20, 8)

@@ -73,11 +73,6 @@ SD_SIZE(CAnimGrupos, 0xb0);
 /* of other modules, called in the exe */
 /* Engine/Nodo3D.cpp: the node named name from self on (self itself with incl), by sig */
 /* Engine/escena.cpp: the node with that iObjeto */
-CAnimEvent *__thiscall CAnimEvent_ctor(CAnimEvent *self, float t, int id, int arg);
-/* the rest of the chain deleted */
-void __thiscall CAnimEvent_dtor(CAnimEvent *self);
-/* ev into the list sorted by t, then id */
-CAnimEvent *__thiscall AnimEventos_Add(CAnimEvent **list, CAnimEvent *ev);
 
 /* the groups destroyed and their slots cleared */
 CAnimGrupos *__fastcall CAnimGrupos_ctor(CAnimGrupos *self);
