@@ -1596,5 +1596,18 @@ SD_HOOK(Lee_Int, 0x2d5fa0, 102)
 /* module agent: Engine/Animacion (hooks below this line) */
 
 /* module agent: Engine/AnimGrupo (hooks below this line) */
+SD_HOOK(CAnimGrupos_Clear, 0x251940, 52)
+SD_HOOK(CAnimGrupo_dtor, 0x251980, 269)
+SD_HOOK(AnimEventos_Free, 0x251a90, 37)
+SD_HOOK(MorphData_Find, 0x251ac0, 99)
+SD_HOOK(MorphData_Read, 0x251b30, 461)
+SD_HOOK(CAnimGrupos_Add, 0x251d00, 103)
+SD_HOOK(CAnimGrupos_Get, 0x251d70, 24)
+SD_HOOK(CAnimGrupos_Find, 0x251d90, 88)
+SD_HOOK(AnimGrupo_AlignNode, 0x251df0, 517)
+SD_HOOK(AnimGrupo_New, 0x252000, 1448)
+SD_HOOK(AnimGrupo_MapNodes, 0x2525b0, 763)
+SD_HOOK(AnimGrupo_Compact, 0x2528b0, 239)
+SD_HOOK(CAnimGrupos_Count, 0x2529b0, 150)
 
 /* module agent: Engine/Textura (hooks below this line) */

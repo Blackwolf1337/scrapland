@@ -400,5 +400,20 @@ SD_IMPORT(Vec3_Differ, 0x067380)
 /* module agent: Engine/Animacion (imports below this line) */
 
 /* module agent: Engine/AnimGrupo (imports below this line) */
+SD_IMPORT(CNodo3D_FindByName, 0x23e6d0)
+SD_IMPORT(CEscena_NodoObjeto, 0x24fca0)
+SD_IMPORT(CAnimCtrl_ctor, 0x250e50)
+SD_IMPORT(CAnimCtrl_dtor, 0x250f10)
+SD_IMPORT(CAnimCtrl_SetFrames, 0x250fb0)
+SD_IMPORT(CAnimEvent_ctor, 0x2bb8e0)
+SD_IMPORT(CAnimEvent_dtor, 0x2bb980)
+SD_IMPORT(AnimEventos_Add, 0x2bba70)
+SD_IMPORT(CAnimacion_NodoObjeto, 0x2ae280)
+SD_IMPORT(CAnimacion_GetNodo, 0x2ae760)
+SD_IMPORT(CAnimacion_SwapNodos, 0x2af0d0)
+SD_IMPORT(CAnimacion_Trim, 0x2adc00)
+SD_IMPORT(CAnimNodo_GetFlags, 0x2aeb00)
+SD_IMPORT(CAnimNodo_GetPosRot, 0x2aec30)
+SD_IMPORT(CAnimNodo_Translate, 0x2ade90)
 
 /* module agent: Engine/Textura (imports below this line) */

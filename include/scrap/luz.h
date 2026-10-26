@@ -41,17 +41,27 @@ typedef struct D3DLight {
 } D3DLight;
 SD_SIZE(D3DLight, 0x68);
 
-/* the members of a scene node a light reads; reference counted like CNodoRef (include/scrap/camara.h) */
+/* the members of a scene node the lights and the animation groups read; reference counted like CNodoRef
+ * (include/scrap/camara.h) */
 typedef struct CNodo3D {
 	void **vftable;			/* 0x00 [0] the deleting destructor */
 	const char *name;		/* 0x04 */
 	int Refs;			/* 0x08 */
-	byte pad_c[0xc];
+	struct CNodo3D *sig;		/* 0x0c the next node of the scene */
+	struct CNodo3D *ant;		/* 0x10 */
+	struct CNodo3D *Padre;		/* 0x14 */
 	uint32_t flags;			/* 0x18 NODO_SOMBRA: lights of this node cast shadows */
-	byte pad_1c[0x40];
+	vec3_t pos;			/* 0x1c */
+	byte pad_28[0x14];
+	void *obj3D;			/* 0x3c */
+	struct CEscena *escena;		/* 0x40 */
+	int iObjeto;			/* 0x44 the index of its node in the animation, -1 none */
+	byte pad_48[0x14];
 	matrix_t m;			/* 0x5c the position in m[12..14] */
 } CNodo3D;
 SD_OFFSET(CNodo3D, flags, 0x18);
+SD_OFFSET(CNodo3D, pos, 0x1c);
+SD_OFFSET(CNodo3D, iObjeto, 0x44);
 SD_OFFSET(CNodo3D, m, 0x5c);
 #define NODO_SOMBRA (1u << 26)
 
