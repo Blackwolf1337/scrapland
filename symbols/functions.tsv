@@ -8222,7 +8222,7 @@ rva	size	source	callconv	name	signature
 002a4250	191	DEFAULT	unknown	FUN_006a4250	
 002a4310	712	DEFAULT	unknown	FUN_006a4310	
 002a45e0	461	DEFAULT	unknown	FUN_006a45e0	
-002a47b0	116	DEFAULT	unknown	FUN_006a47b0	
+002a47b0	116	USER_DEFINED	__cdecl	Quat_FromAxisAngle2	float * __cdecl(float *out, float *axis, float ang)
 002a4830	44	DEFAULT	unknown	FUN_006a4830	
 002a4860	131	DEFAULT	unknown	FUN_006a4860	
 002a48f0	236	DEFAULT	unknown	FUN_006a48f0	
@@ -8527,24 +8527,24 @@ rva	size	source	callconv	name	signature
 002bc2a0	184	DEFAULT	unknown	FUN_006bc2a0	
 002bc360	593	DEFAULT	unknown	FUN_006bc360	
 002bc5c0	641	DEFAULT	unknown	FUN_006bc5c0	
-002bc850	204	DEFAULT	unknown	FUN_006bc850	
+002bc850	204	USER_DEFINED	__cdecl	M3D_Label	void __cdecl(char *name)
 002bc920	259	DEFAULT	unknown	FUN_006bc920	
 002bca30	36	DEFAULT	unknown	FUN_006bca30	
-002bca60	325	DEFAULT	unknown	FUN_006bca60	
-002bcbb0	445	DEFAULT	unknown	FUN_006bcbb0	
+002bca60	325	USER_DEFINED	__cdecl	M3D_ReadTransform	void __cdecl(char *name, void *mt)
+002bcbb0	445	USER_DEFINED	__cdecl	M3D_ReadQuat	void __cdecl(char *tok, float *q, byte swapYZ)
 002bcd70	18	DEFAULT	unknown	FUN_006bcd70	
-002bcd90	166	DEFAULT	unknown	FUN_006bcd90	
+002bcd90	166	USER_DEFINED	__cdecl	M3D_ReadVec2	void __cdecl(char *tok, float *v)
 002bce40	25	DEFAULT	unknown	FUN_006bce40	
 002bce60	21	DEFAULT	unknown	FUN_006bce60	
-002bce80	293	DEFAULT	unknown	FUN_006bce80	
-002bcfb0	176	DEFAULT	unknown	FUN_006bcfb0	
+002bce80	293	USER_DEFINED	__cdecl	M3D_ReadVec3	void __cdecl(char *tok, float *v, byte swapYZ)
+002bcfb0	176	USER_DEFINED	__cdecl	M3D_ReadBool	byte __cdecl(char *tok)
 002bd060	24	DEFAULT	unknown	FUN_006bd060	
-002bd080	196	DEFAULT	unknown	FUN_006bd080	
+002bd080	196	USER_DEFINED	__cdecl	M3D_ReadString	char * __cdecl(char *tok, char *dest, int size, byte quoted)
 002bd150	736	DEFAULT	unknown	FUN_006bd150	
-002bd430	117	DEFAULT	unknown	FUN_006bd430	
+002bd430	117	USER_DEFINED	__cdecl	M3D_ReadFloat	float __cdecl(char *tok)
 002bd4b0	5425	DEFAULT	unknown	FUN_006bd4b0	
-002be9f0	116	DEFAULT	unknown	FUN_006be9f0	
-002bea70	170	DEFAULT	unknown	FUN_006bea70	
+002be9f0	116	USER_DEFINED	__cdecl	M3D_ReadIndex	void __cdecl(int expected)
+002bea70	170	USER_DEFINED	__cdecl	M3D_ReadInt	int __cdecl(char *tok)
 002beb20	1687	DEFAULT	unknown	FUN_006beb20	
 002bf1c0	2703	DEFAULT	unknown	FUN_006bf1c0	
 002bfc50	2672	DEFAULT	unknown	FUN_006bfc50	

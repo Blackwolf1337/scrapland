@@ -1080,6 +1080,7 @@ SD_HOOK(Matrix_TransformParts, 0x15d910, 222)
 /* src/game/Math/Quat.c */
 SD_HOOK(Quat_Mul, 0x15d9f0, 218)
 SD_HOOK(Quat_FromAxisAngle, 0x15dad0, 116)
+SD_HOOK(Quat_FromAxisAngle, 0x2a47b0, 116)
 SD_HOOK(Quat_ToAxisAngle, 0x15db50, 159)
 SD_HOOK(Quat_ToMatrix, 0x15dbf0, 336)
 SD_HOOK(Quat_Slerp, 0x15dd40, 461)
@@ -1194,6 +1195,18 @@ SD_HOOK(CTablaHash_FreeList, 0x2d0ab0, 69)
 SD_HOOK(CTablaHash_List, 0x2d0b00, 106)
 SD_HOOK(CTablaHash_GetList, 0x2d0b70, 174)
 SD_HOOK(CTablaHash_Slot, 0x2d0c20, 109)
+
+/* src/game/engine3d/Engine/LeeM3D.c */
+SD_HOOK(M3D_Label, 0x2bc850, 204)
+SD_HOOK(M3D_ReadTransform, 0x2bca60, 325)
+SD_HOOK(M3D_ReadQuat, 0x2bcbb0, 445)
+SD_HOOK(M3D_ReadVec2, 0x2bcd90, 166)
+SD_HOOK(M3D_ReadVec3, 0x2bce80, 293)
+SD_HOOK(M3D_ReadBool, 0x2bcfb0, 176)
+SD_HOOK(M3D_ReadString, 0x2bd080, 196)
+SD_HOOK(M3D_ReadFloat, 0x2bd430, 117)
+SD_HOOK(M3D_ReadIndex, 0x2be9f0, 116)
+SD_HOOK(M3D_ReadInt, 0x2bea70, 170)
 
 /* src/game/engine3d/Engine/LeeDatos.c */
 SD_HOOK(Lee_String, 0x2d58a0, 236)
