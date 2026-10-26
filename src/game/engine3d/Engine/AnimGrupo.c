@@ -160,10 +160,10 @@ byte AnimGrupo_AlignNode(CEscena *escena, CEscena *anim, const char *nodo) {
 	CNodo3D *nodo1 = CNodo3D_Find(escena->Nodo3D, nodo, 1);
 	CNodo3D *nodo2 = CNodo3D_Find(anim->Nodo3D, nodo, 1);
 	if (!nodo2) {
-		for (int i = 0; i < anim->AnimM3D->nAnimNodo; i++) {
+		for (int i = 0; i < anim->AnimM3D->num_objetos; i++) {
 			CHECK(CAnimNodo_GetFlags(CAnimacion_GetNodo(anim->AnimM3D, i)) == ANIM_VERT);
 		}
-		anim->AnimM3D->morph = 1;
+		anim->AnimM3D->flag = 1;
 		return 1;
 	}
 	CHECK(nodo1 && nodo2 && anim && anim->AnimM3D);
@@ -175,10 +175,9 @@ byte AnimGrupo_AlignNode(CEscena *escena, CEscena *anim, const char *nodo) {
 		return 0;
 	}
 	vec3_t pos;
-	float rot[4];
+	quat_t rot;
 	vec3_t d;
-	/* the first frame of the node, a word at 0x0 */
-	if (CAnimNodo_GetPosRot(an, &pos, rot, *(const uint16_t *)an, 0.0f)) {
+	if (CAnimNodo_GetPosRot(an, &pos, &rot, an->primer_frame, 0.0f)) {
 		d.x = nodo1->pos.x - pos.x;
 		d.y = nodo1->pos.y - pos.y;
 		d.z = nodo1->pos.z - pos.z;
@@ -226,12 +225,12 @@ CAnimGrupo *AnimGrupo_New(CEscena *escena, CEscena *anim, const char *nombre) {
 		nombre = g->Anim->AnimM3D->name;
 	}
 	Cad_Set(&g->name, nombre);
-	g->ctrl.vel = g->Anim->AnimM3D->vel;
+	g->ctrl.vel = g->Anim->AnimM3D->fps;
 	CNodo3D *n = CNodo3D_Find(escena->Nodo3D, escena->nodo, 1);
 	if (n) {
-		g->ctrl.nodo = CAnimacion_NodoObjeto(g->Anim->AnimM3D, n->indice);
+		g->ctrl.nodo = CAnimacion_GetNodoTabla(g->Anim->AnimM3D, n->indice);
 	}
-	CAnimCtrl_SetFrames(&g->ctrl, g->Anim->AnimM3D->primero, g->Anim->AnimM3D->frames);
+	CAnimCtrl_SetFrames(&g->ctrl, g->Anim->AnimM3D->primer_frame, g->Anim->AnimM3D->num_frames);
 	g->ctrl.eventos = &g->eventos;
 	int last = (int)((uint32_t)g->ctrl.primero - 1 + (uint32_t)g->ctrl.frames);
 	CAnimEvent *ev = operator_new(sizeof(*ev));
@@ -239,7 +238,7 @@ CAnimGrupo *AnimGrupo_New(CEscena *escena, CEscena *anim, const char *nombre) {
 		ev = CAnimEvent_ctor(ev, (float)last, ANIMEVENT_FIN, 0);
 	}
 	AnimEventos_Add(&g->eventos, ev);
-	if (!anim->AnimM3D->morph) {
+	if (!anim->AnimM3D->flag) {
 		return g;
 	}
 	int targets = g->ctrl.frames;
@@ -274,8 +273,8 @@ void AnimGrupo_MapNodes(CEscena *escena, CEscena *anim) {
 			max = n->indice;
 		}
 	}
-	Tabla_Alloc1(&anim->AnimM3D->objetos, max + 1);
-	CTabla *t = &anim->AnimM3D->objetos;
+	Tabla_Alloc1(&anim->AnimM3D->tabla, max + 1);
+	CTabla *t = &anim->AnimM3D->tabla;
 	CHECK(t->p);
 	memset(t->p, 0, t->n);
 	for (CNodo3D *n = escena->Nodo3D; n; n = n->sig) {
@@ -308,7 +307,7 @@ void AnimGrupo_MapNodes(CEscena *escena, CEscena *anim) {
 			dato = nodo2->indice + 1;
 			CHECK(dato <= 255);
 		}
-		t = &anim->AnimM3D->objetos;
+		t = &anim->AnimM3D->tabla;
 		CHECK(t->p && (uint32_t)n->indice < (uint32_t)t->n);
 		((byte *)t->p)[n->indice] = (byte)dato;
 	}
@@ -318,11 +317,11 @@ void AnimGrupo_Compact(CEscena *anim) {
 	for (CNodo3D *n = anim->Nodo3D; n; n = n->sig) {
 		CHECK(n->obj3D == NULL);
 	}
-	for (int i = 0; i < anim->AnimM3D->nAnimNodo; i++) {
+	for (int i = 0; i < anim->AnimM3D->num_objetos; i++) {
 		if (CAnimNodo_GetFlags(CAnimacion_GetNodo(anim->AnimM3D, i))) {
 			continue;
 		}
-		for (int j = i; j < anim->AnimM3D->nAnimNodo; j++) {
+		for (int j = i; j < anim->AnimM3D->num_objetos; j++) {
 			if (!CAnimNodo_GetFlags(CAnimacion_GetNodo(anim->AnimM3D, j))) {
 				continue;
 			}

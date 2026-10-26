@@ -12,8 +12,11 @@ def awf(addr, vals):
 		k = min(64, len(vals) - i)
 		SDTest.Call(0x3197d0, 'iiFi', addr + 4 * i, tuple(vals[i:i + k]), 4 * k)
 		i = i + k
+# the bytes of s one by one (a 'b' argument can not hold NUL bytes)
 def awb(addr, s):
-	SDTest.Call(0x3197d0, 'iibi', addr, s, len(s))
+	for i in range(len(s)):
+		v = SDTest.Peek(addr + i, '@i')
+		SDTest.Poke(addr + i - 0x400000, (v & ~0xff) | ord(s[i]))
 def awi(addr, v):
 	SDTest.Poke(addr - 0x400000, v)
 def ari(addr):
@@ -205,8 +208,11 @@ for d in (-32768, 32767, 0x1234, -2):
 	check('AnimStream_AddShort' + fmt((d,)), lambda d=d: (SDTest.Call(0x2ad020, 'tvii', ast, d)[0], sget()))
 for s, k in ((0, 1), (0x7fff, 65535), (5, 3), (-3, 0x12345)):
 	check('AnimStream_AddHeader' + fmt((s, k)), lambda s=s, k=k: (SDTest.Call(0x2acf20, 'tviii', ast, s, k)[0], sget()))
+abuf = anew(16)
 for s in ('abcdef', '\000\377x', 'z'):
-	check('AnimStream_AddBytes' + fmt((s,)), lambda s=s: (SDTest.Call(0x2acea0, 'tvibi', ast, s, len(s))[0], sget()))
+	awb(abuf, s)
+	check('AnimStream_AddBytes' + fmt((s,)), lambda s=s: (SDTest.Call(0x2acea0, 'tviii', ast, abuf, len(s))[0], sget()))
+afree(abuf)
 afree(ari(ast))
 afree(ast)
 

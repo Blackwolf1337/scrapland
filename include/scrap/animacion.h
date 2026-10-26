@@ -47,11 +47,12 @@ typedef struct CAnimBlock {
 SD_SIZE(CAnimBlock, 0xc);
 
 typedef struct CAnimacion {
-	byte pad_0[8];
+	const char *name;		/* 0x00 */
+	int pad_4;
 	float fps;			/* 0x08 */
 	int primer_frame;		/* 0x0c */
 	int num_frames;			/* 0x10 */
-	byte flag;			/* 0x14 read and written, not used here */
+	byte flag;			/* 0x14 all nodes are ANIM_VERT (morph), read by AnimGrupo.c */
 	byte pad_15[3];
 	CTabla tabla;			/* 0x18 n bytes: node number + 1 of each object */
 	CAnimNodo *AnimNodo;		/* 0x20 new[] of num_objetos */
@@ -146,6 +147,6 @@ void __fastcall CAnimNodo_Optimize(CAnimNodo *self);
 /* the code of the exe this module calls */
 CEVA *__thiscall CEVA_ctor(CEVA *self);
 /* the euler angles of a rotation matrix (rva 0x2392d0, not in C) */
-void Matrix_ToEuler(vec3_t *out, const matrix_t *m);
+vec3_t *Matrix_ToEuler(vec3_t *out, const matrix_t *m);
 
 #endif

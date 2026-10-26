@@ -8330,7 +8330,7 @@ rva	size	source	callconv	name	signature
 002ab830	34	DEFAULT	unknown	FUN_006ab830	
 002ab860	59	DEFAULT	unknown	FUN_006ab860	
 002ab8a0	79	DEFAULT	unknown	FUN_006ab8a0	
-002ab8f0	66	DEFAULT	unknown	FUN_006ab8f0	
+002ab8f0	66	USER_DEFINED	__thiscall	CAnimNodo_dtor	void __thiscall(void)
 002ab940	326	DEFAULT	unknown	FUN_006ab940	
 002aba90	179	DEFAULT	unknown	FUN_006aba90	
 002abb50	111	DEFAULT	unknown	FUN_006abb50	

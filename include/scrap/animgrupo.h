@@ -12,6 +12,7 @@
 #ifndef SCRAP_ANIMGRUPO_H
 #define SCRAP_ANIMGRUPO_H
 
+#include "scrap/animacion.h"
 #include "scrap/archio.h"
 #include "scrap/luz.h"
 #include "scrap/mathlib.h"
@@ -22,24 +23,6 @@
 #define ANIM_VERT 0x1000		/* CAnimNodo_GetFlags: vertex animation */
 #define ANIMEVENT_FIN 0xd		/* the event a group puts at its last frame */
 
-/* 0x24 bytes, the first frame as a word at 0x0 */
-typedef struct CAnimNodo CAnimNodo;
-
-typedef struct CAnimacion {
-	const char *name;		/* 0x00 */
-	int pad_4;
-	float vel;			/* 0x08 copied to CAnimCtrl.vel */
-	int primero;			/* 0x0c the first frame */
-	int frames;			/* 0x10 */
-	byte morph;			/* 0x14 all nodes are ANIM_VERT */
-	byte pad_15[3];
-	CTabla objetos;			/* 0x18 bytes: iObjeto of a scene node to animation node + 1, 0 none */
-	CAnimNodo *AnimNodo;		/* 0x20 */
-	int nAnimNodo;			/* 0x24 */
-	void *MemBlock;			/* 0x28 AnimBlock.MemBlock */
-} CAnimacion;
-SD_OFFSET(CAnimacion, objetos, 0x18);
-SD_OFFSET(CAnimacion, nAnimNodo, 0x24);
 
 
 /* an entry of the sorted event list of a group (constructor rva 0x2bb8e0) */
@@ -106,16 +89,6 @@ CAnimEvent *__thiscall CAnimEvent_ctor(CAnimEvent *self, float t, int id, int ar
 void __thiscall CAnimEvent_dtor(CAnimEvent *self);
 /* ev into the list sorted by t, then id */
 CAnimEvent *__thiscall AnimEventos_Add(CAnimEvent **list, CAnimEvent *ev);
-/* Engine/animacion.cpp */
-CAnimNodo *__thiscall CAnimacion_GetNodo(CAnimacion *self, uint32_t i);	/* obtAnimNodo */
-CAnimNodo *__thiscall CAnimacion_NodoObjeto(CAnimacion *self, uint32_t iObjeto);	/* through objetos */
-void __thiscall CAnimacion_SwapNodos(CAnimacion *self, uint32_t i, uint32_t j);
-/* the empty nodes at the end removed */
-void __thiscall CAnimacion_Trim(CAnimacion *self);
-uint32_t __thiscall CAnimNodo_GetFlags(CAnimNodo *self);	/* obtFlags */
-byte __thiscall CAnimNodo_GetPosRot(CAnimNodo *self, vec3_t *pos, float *rot, int frame, float subframe);
-/* d added to the positions */
-int __thiscall CAnimNodo_Translate(CAnimNodo *self, const vec3_t *d);
 
 /* the groups destroyed and their slots cleared */
 void __fastcall CAnimGrupos_Clear(CAnimGrupos *self);

@@ -398,11 +398,6 @@ SD_IMPORT(Matrix_LoadIdentity, 0x214710)
 SD_IMPORT(Matrix_MulD3D, 0x2391f0)
 SD_IMPORT(Matrix_ToEuler, 0x2392d0)
 SD_IMPORT(CRotacion_SetEuler, 0x212510)
-SD_IMPORT(AnimSet_GetTrack, 0x2ae280)
-SD_IMPORT(AnimTrack_Sample, 0x2aec30)
-SD_IMPORT(AnimTrack_Color, 0x2ae7d0)
-SD_IMPORT(AnimTrack_Float, 0x2ae9a0)
-SD_IMPORT(AnimTrack_Alpha, 0x2aef40)
 SD_IMPORT(CMallaD3D_GetBox, 0x2aff30)
 SD_IMPORT(CMallaD3D_ctorMallaTri, 0x2af820)
 SD_IMPORT(CSuelo_BuildD3D, 0x25fb00)
@@ -415,7 +410,6 @@ SD_IMPORT(CNodoR_ApplyFX, 0x23f540)
 
 /* module agent: Engine/Animacion (imports below this line) */
 SD_IMPORT(CEVA_ctor, 0x2d33e0)
-SD_IMPORT(Matrix_ToEuler, 0x2392d0)
 
 /* module agent: Engine/AnimGrupo (imports below this line) */
 SD_IMPORT(CEscena_NodoObjeto, 0x24fca0)
@@ -425,13 +419,6 @@ SD_IMPORT(CAnimCtrl_SetFrames, 0x250fb0)
 SD_IMPORT(CAnimEvent_ctor, 0x2bb8e0)
 SD_IMPORT(CAnimEvent_dtor, 0x2bb980)
 SD_IMPORT(AnimEventos_Add, 0x2bba70)
-SD_IMPORT(CAnimacion_NodoObjeto, 0x2ae280)
-SD_IMPORT(CAnimacion_GetNodo, 0x2ae760)
-SD_IMPORT(CAnimacion_SwapNodos, 0x2af0d0)
-SD_IMPORT(CAnimacion_Trim, 0x2adc00)
-SD_IMPORT(CAnimNodo_GetFlags, 0x2aeb00)
-SD_IMPORT(CAnimNodo_GetPosRot, 0x2aec30)
-SD_IMPORT(CAnimNodo_Translate, 0x2ade90)
 
 /* module agent: Engine/Textura (imports below this line) */
 SD_IMPORT(CMultiSprite_ctor, 0x29cf80)

@@ -202,16 +202,16 @@ byte __thiscall CNodo3D_AnimChannel(CNodo3D *self, NodoAnimChannel *c, vec3_t *p
 	quat_t q2, a, b, t, conj;
 	float w, iw;
 
-	track = AnimSet_GetTrack(Anim_Set(c->anim->anim[0]), self->indice);
-	if (!track || !AnimTrack_Sample(track, pos, rot, c->frame, c->t)) {
+	track = CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[0]), self->indice);
+	if (!track || !CAnimNodo_GetPosRot(track, pos, rot, c->frame, c->t)) {
 		return 0;
 	}
 	w = c->blend;
 	if (!c->anim->anim[1] || !(w > 0.0f)) {
 		return 1;
 	}
-	track = AnimSet_GetTrack(Anim_Set(c->anim->anim[1]), self->indice);
-	if (!track || !AnimTrack_Sample(track, &p2, &q2, c->frame2, c->t2)) {
+	track = CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[1]), self->indice);
+	if (!track || !CAnimNodo_GetPosRot(track, &p2, &q2, c->frame2, c->t2)) {
 		return 1;
 	}
 	iw = 1.0f - w;
@@ -625,7 +625,7 @@ void *__thiscall CNodo3D_Track(CNodo3D *self, uint32_t ch) {
 	if (!c || !c->anim || !c->anim->anim[0]) {
 		return NULL;
 	}
-	return AnimSet_GetTrack(Anim_Set(c->anim->anim[0]), self->indice);
+	return CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[0]), self->indice);
 }
 
 void *__thiscall CNodo3D_Track2(CNodo3D *self, uint32_t ch) {
@@ -634,17 +634,17 @@ void *__thiscall CNodo3D_Track2(CNodo3D *self, uint32_t ch) {
 	if (!c || !c->anim || !c->anim->anim[1]) {
 		return NULL;
 	}
-	return AnimSet_GetTrack(Anim_Set(c->anim->anim[1]), self->indice);
+	return CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[1]), self->indice);
 }
 
 byte __thiscall CNodo_LightColor(CNodo3D *self, vec3_t *color, float *mult) {
 	NodoAnimChannel *c = CNodo3D_Channel0(self);
 	void *track;
 
-	if (!c || !(track = AnimSet_GetTrack(Anim_Set(c->anim->anim[0]), self->indice))) {
+	if (!c || !(track = CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[0]), self->indice))) {
 		return 0;
 	}
-	return AnimTrack_Color(track, color, mult, c->frame, c->t) ? 1 : 0;
+	return CAnimNodo_GetColor(track, color, mult, c->frame, c->t) ? 1 : 0;
 }
 
 int __thiscall CNodo3D_TrackData(CNodo3D *self, uint32_t ch) {
@@ -657,10 +657,10 @@ byte __thiscall CNodo3D_AnimFloat(CNodo3D *self, float *out) {
 	NodoAnimChannel *c = CNodo3D_Channel0(self);
 	void *track;
 
-	if (!c || !(track = AnimSet_GetTrack(Anim_Set(c->anim->anim[0]), self->indice))) {
+	if (!c || !(track = CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[0]), self->indice))) {
 		return 0;
 	}
-	return AnimTrack_Float(track, out, c->frame, c->t) ? 1 : 0;
+	return CAnimNodo_GetFOV(track, out, c->frame, c->t) ? 1 : 0;
 }
 
 byte __thiscall CNodo3D_SampleAnim(CNodo3D *self, vec3_t *pos, quat_t *rot) {
@@ -686,10 +686,10 @@ byte __thiscall CNodo3D_AnimAlpha(CNodo3D *self, byte *out) {
 	NodoAnimChannel *c = CNodo3D_Channel0(self);
 	void *track;
 
-	if (!c || !(track = AnimSet_GetTrack(Anim_Set(c->anim->anim[0]), self->indice))) {
+	if (!c || !(track = CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[0]), self->indice))) {
 		return 0;
 	}
-	return AnimTrack_Alpha(track, out, c->frame, c->t) ? 1 : 0;
+	return CAnimNodo_GetVisible(track, out, c->frame, c->t) ? 1 : 0;
 }
 
 box_t *__thiscall CSuelo_GetBox(void *self, box_t *out) {

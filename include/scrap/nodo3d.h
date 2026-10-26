@@ -8,6 +8,7 @@
 #ifndef SCRAP_NODO3D_H
 #define SCRAP_NODO3D_H
 
+#include "scrap/animacion.h"
 #include "scrap/archio.h"
 #include "scrap/mathlib.h"
 
@@ -46,7 +47,7 @@ SD_SIZE(CRotacion, 0x24);
 
 /* one animation channel of a scene: one animation or the blend of two (weight blend of the second) */
 typedef struct NodoAnimPair {
-	void *anim[2];			/* each: +0x94 an object whose +0x3c is the track set (AnimSet_GetTrack) */
+	void *anim[2];			/* each: +0x94 an object whose +0x3c is the track set (CAnimacion_GetNodoTabla) */
 } NodoAnimPair;
 
 typedef struct NodoAnimChannel {
@@ -196,13 +197,7 @@ quat_t *__thiscall CRotacion_GetQuat(CRotacion *self, quat_t *out);
 /* other modules, called from Nodo3D.cpp (src/imports.inc) */
 matrix_t *Matrix_LoadIdentity(matrix_t *m);	/* rva 0x214710 */
 matrix_t *Matrix_MulD3D(matrix_t *out, const matrix_t *a, const matrix_t *b);	/* rva 0x2391f0, out = a * b */
-vec3_t *Matrix_ToEuler(vec3_t *out, const matrix_t *m);	/* rva 0x2392d0 */
 void __thiscall CRotacion_SetEuler(CRotacion *self, const vec3_t *ang);	/* rva 0x212510 */
-void *__thiscall AnimSet_GetTrack(void *set, int indice);	/* rva 0x2ae280 */
-byte __thiscall AnimTrack_Sample(void *track, vec3_t *pos, quat_t *rot, int frame, float t);	/* rva 0x2aec30 */
-byte __thiscall AnimTrack_Color(void *track, vec3_t *color, float *mult, int frame, float t);	/* rva 0x2ae7d0 */
-byte __thiscall AnimTrack_Float(void *track, float *out, int frame, float t);	/* rva 0x2ae9a0 */
-byte __thiscall AnimTrack_Alpha(void *track, byte *out, int frame, float t);	/* rva 0x2aef40 */
 void __thiscall CMallaD3D_GetBox(void *self, box_t *out, byte recalc);	/* rva 0x2aff30 */
 /* rva 0x2af820, the device mesh of a CMallaTri for the node; it puts itself into nodo->obj3D */
 void *__thiscall CMallaD3D_ctorMallaTri(void *self, void *malla, void *arg, CNodo3D *nodo);
