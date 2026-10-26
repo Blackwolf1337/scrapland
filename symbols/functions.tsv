@@ -6912,63 +6912,64 @@ rva	size	source	callconv	name	signature
 00233a30	178	DEFAULT	unknown	FUN_00633a30	
 00233af0	239	DEFAULT	unknown	FUN_00633af0	
 00233be0	61	DEFAULT	unknown	FUN_00633be0	
-00233c20	79	DEFAULT	unknown	FUN_00633c20	
-00233c70	100	DEFAULT	unknown	FUN_00633c70	
-00233ce0	118	DEFAULT	unknown	FUN_00633ce0	
-00233d60	378	DEFAULT	unknown	FUN_00633d60	
-00233ee0	47	DEFAULT	unknown	FUN_00633ee0	
-00233f10	63	DEFAULT	unknown	FUN_00633f10	
-00233f50	62	DEFAULT	unknown	FUN_00633f50	
-00233f90	204	DEFAULT	unknown	FUN_00633f90	
-00234060	38	ANALYSIS	__thiscall	CMaterial::vf00	undefined __thiscall(void)
-00234090	183	DEFAULT	unknown	FUN_00634090	
-00234150	95	DEFAULT	unknown	FUN_00634150	
-002341b0	103	DEFAULT	unknown	FUN_006341b0	
-00234220	298	DEFAULT	unknown	FUN_00634220	
-00234350	436	DEFAULT	unknown	FUN_00634350	
-00234510	81	DEFAULT	unknown	FUN_00634510	
-00234570	112	DEFAULT	unknown	FUN_00634570	
-002345e0	163	DEFAULT	unknown	FUN_006345e0	
-00234690	34	DEFAULT	unknown	FUN_00634690	
-002346c0	286	DEFAULT	unknown	FUN_006346c0	
-002347e0	286	DEFAULT	unknown	FUN_006347e0	
-00234900	496	DEFAULT	unknown	FUN_00634900	
-00234af0	195	DEFAULT	unknown	FUN_00634af0	
-00234bc0	90	DEFAULT	unknown	FUN_00634bc0	
-00234c20	52	DEFAULT	unknown	FUN_00634c20	
-00234c80	163	DEFAULT	unknown	FUN_00634c80	
-00234d30	471	DEFAULT	unknown	FUN_00634d30	
-00234f10	137	DEFAULT	unknown	FUN_00634f10	
-00234fa0	71	DEFAULT	unknown	FUN_00634fa0	
-00234ff0	71	DEFAULT	unknown	FUN_00634ff0	
-00235040	544	DEFAULT	unknown	FUN_00635040	
-00235260	321	DEFAULT	unknown	FUN_00635260	
-002353b0	196	DEFAULT	unknown	FUN_006353b0	
-00235480	1029	DEFAULT	unknown	FUN_00635480	
-00235890	1326	DEFAULT	unknown	FUN_00635890	
-00235dc0	164	DEFAULT	unknown	FUN_00635dc0	
-00235e70	85	DEFAULT	unknown	FUN_00635e70	
-00235ed0	234	DEFAULT	unknown	FUN_00635ed0	
-00235fc0	101	DEFAULT	unknown	FUN_00635fc0	
-00236030	148	DEFAULT	unknown	FUN_00636030	
-002360d0	203	DEFAULT	unknown	FUN_006360d0	
-002361a0	203	DEFAULT	unknown	FUN_006361a0	
-00236270	415	DEFAULT	unknown	FUN_00636270	
-00236410	938	DEFAULT	unknown	FUN_00636410	
-002367c0	239	DEFAULT	unknown	FUN_006367c0	
-002368b0	297	DEFAULT	unknown	FUN_006368b0	
-002369e0	110	DEFAULT	unknown	FUN_006369e0	
-00236a50	117	DEFAULT	unknown	FUN_00636a50	
-00236ad0	341	DEFAULT	unknown	FUN_00636ad0	
-00236c30	108	DEFAULT	unknown	FUN_00636c30	
+00233c20	79	USER_DEFINED	__fastcall	CObjRef_dtor	void __fastcall(void * self)
+00233c70	100	USER_DEFINED	__fastcall	CTextEst_dtor	void __fastcall(void * self)
+00233ce0	118	USER_DEFINED	__thiscall	CMapa_Assign	void __thiscall(void *orig)
+00233d60	378	USER_DEFINED	__thiscall	CMaterial_Assign	void __thiscall(void *orig)
+00233ee0	47	USER_DEFINED	__cdecl	Color_Equal	byte __cdecl(byte *a, byte *b)
+00233f10	63	USER_DEFINED	__thiscall	MatParams_Equal	byte __thiscall(uint *other)
+00233f50	62	USER_DEFINED	__cdecl	Vec2_Differ	int __cdecl(float *a, float *b)
+00233f90	204	USER_DEFINED	__thiscall	CTextEst_Delete	void * __thiscall(byte flags)
+00234060	38	USER_DEFINED	__thiscall	CMaterial_Delete	void * __thiscall(byte flags)
+00234090	183	USER_DEFINED	__cdecl	Mat_ConvertBlend	void __cdecl(uint *mode, byte toFile, byte legacy)
+00234150	95	USER_DEFINED	__fastcall	CMapa_BuildMultiSprite	byte __fastcall(void * self)
+002341b0	103	USER_DEFINED	__thiscall	CMaterial_GetMultiSprite	void * __thiscall(uint idmapa)
+00234220	298	USER_DEFINED	__thiscall	CMapa_Read	int __thiscall(void *f)
+00234350	436	USER_DEFINED	__thiscall	CMaterial_Read	int __thiscall(void *f)
+00234510	81	USER_DEFINED	__cdecl	DDS_Hide	void __cdecl(char *name, uint attr)
+00234570	112	USER_DEFINED	__cdecl	DDS_Unhide	void __cdecl(char *name, uint attr)
+002345e0	163	USER_DEFINED	__cdecl	Mat_New	void * __cdecl(void *orig, byte share)
+00234690	34	USER_DEFINED	__thiscall	CMaterial_GetId	int __thiscall(void **out)
+002346c0	286	USER_DEFINED	__thiscall	CMaterial_GetShaderName	char * __thiscall(char *str, uint nbytes)
+002347e0	286	USER_DEFINED	__thiscall	CMapa_Write	int __thiscall(void *f)
+00234900	496	USER_DEFINED	__thiscall	CMaterial_Write	int __thiscall(void *f)
+00234af0	195	USER_DEFINED	__cdecl	Mat_CompareNames	byte __cdecl(void *a, void *b)
+00234bc0	90	USER_DEFINED	__cdecl	Mat_Str	char * __cdecl(void *m)
+00234c20	52	USER_DEFINED	__fastcall	CTextEst_dtor	void __fastcall(void * self)
+00234c60	28	USER_DEFINED	__fastcall	CMaterial_Id	int __fastcall(void * self)
+00234c80	163	USER_DEFINED	__thiscall	CListaMat_Add	void __thiscall(void *mat)
+00234d30	471	USER_DEFINED	__cdecl	Tex_AddExtension	void __cdecl(char *ext)
+00234f10	137	USER_DEFINED	__cdecl	Tex_AddPath	void __cdecl(char *ruta)
+00234fa0	71	USER_DEFINED	__cdecl	Tex_ClearExtensions	void __cdecl(void)
+00234ff0	71	USER_DEFINED	__cdecl	Tex_ClearPaths	void __cdecl(void)
+00235040	544	USER_DEFINED	__thiscall	CListaMat_Find	void * __thiscall(void *mat)
+00235260	321	USER_DEFINED	__cdecl	Tex_FindDDS	int __cdecl(char *name, char *out, int alpha)
+002353b0	196	USER_DEFINED	__cdecl	Tex_FindInPaths	int __cdecl(char *name, char *out)
+00235480	1029	USER_DEFINED	__thiscall	CMapa_ResolvePath	char * __thiscall(byte load, void *alpha)
+00235890	1326	USER_DEFINED	__thiscall	CMapa_LoadTexture	void __thiscall(void *dev, void *alpha, int kind)
+00235dc0	164	USER_DEFINED	__thiscall	CMaterial_Prepare	void __thiscall(void *dev)
+00235e70	85	USER_DEFINED	__thiscall	CListaMat_Prepare	void __thiscall(void *dev)
+00235ed0	234	USER_DEFINED	__cdecl	CMapa_Equal	byte __cdecl(void *a, void *b)
+00235fc0	101	USER_DEFINED	__thiscall	CListaMat_Count	int __thiscall(byte sub)
+00236030	148	USER_DEFINED	__thiscall	CMaterial_SetMap	void * __thiscall(uint idmapa, char *name)
+002360d0	203	USER_DEFINED	__thiscall	CMaterial_SetMapCopy	void * __thiscall(uint idmapa, void *orig)
+002361a0	203	USER_DEFINED	__thiscall	CListaMat_Extract	void * __thiscall(void *mat, byte sub)
+00236270	415	USER_DEFINED	__cdecl	Mat_Compare	int __cdecl(void *a, void *b)
+00236410	938	USER_DEFINED	__thiscall	CMaterial_CalcColors	void __thiscall(float *out)
+002367c0	239	USER_DEFINED	__fastcall	CMapa_Release	void __fastcall(void * self)
+002368b0	297	USER_DEFINED	__fastcall	CMaterial_Release	void __fastcall(void * self)
+002369e0	110	USER_DEFINED	__fastcall	CListaMat_Release	void __fastcall(void * self)
+00236a50	117	USER_DEFINED	__fastcall	CListaMat_DeleteAll	void __fastcall(void * self)
+00236ad0	341	USER_DEFINED	__fastcall	CMaterial_MapToColor	void __fastcall(void * self)
+00236c30	108	USER_DEFINED	__thiscall	CMapa_GetSize	byte __thiscall(int *w, int *h)
 00236ca0	124	USER_DEFINED	__thiscall	CBmp_Pixel	uint * __thiscall(uint x, uint y)
 00236d20	4	DEFAULT	unknown	FUN_00636d20	
-00236d30	59	DEFAULT	unknown	FUN_00636d30	
-00236d70	68	DEFAULT	unknown	FUN_00636d70	
-00236dc0	166	DEFAULT	unknown	FUN_00636dc0	
-00236e70	133	DEFAULT	unknown	FUN_00636e70	
-00236f00	126	DEFAULT	unknown	FUN_00636f00	
-00236f80	147	DEFAULT	unknown	FUN_00636f80	
+00236d30	59	USER_DEFINED	__thiscall	CMapa_GetTexture	void * __thiscall(byte load)
+00236d70	68	USER_DEFINED	__thiscall	CMaterial_GetMapName	char * __thiscall(uint idmapa)
+00236dc0	166	USER_DEFINED	__thiscall	CMaterial_GetMapSize	byte __thiscall(uint idmapa, int *w, int *h)
+00236e70	133	USER_DEFINED	__thiscall	CMapa_FramePath	char * __thiscall(int frame, char *buf, int size)
+00236f00	126	USER_DEFINED	__thiscall	CListaMat_Delete	void __thiscall(void *mat)
+00236f80	147	USER_DEFINED	__cdecl	Tex_TryFormat	byte __cdecl(char *frmt, char *name, char *out, int alpha)
 00237020	128	DEFAULT	unknown	FUN_00637020	
 002370a0	742	DEFAULT	unknown	FUN_006370a0	
 002373a0	46	DEFAULT	unknown	FUN_006373a0	

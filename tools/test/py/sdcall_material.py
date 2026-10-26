@@ -133,7 +133,7 @@ check('CMaterial_SetMap', lambda: (SDTest.Call(0x236030, 'tiiiz', m1, 0, 'sdnone
 check('CMaterial_SetMap NULL', lambda: (SDTest.Call(0x236030, 'tiiiz', m1, 1, None)[0], mmaps(m1)))
 check('CMaterial_SetMap 3', lambda: SDTest.Call(0x236030, 'tiiiz', m1, 3, 'sdnone/c.tga')[0] != 0)
 for i in range(5):
-	ocall('CMaterial_GetMapName', 0x236d70, 'stii', m1, i)
+	ocall('CMaterial_GetMapName', 0x236d70, 'tsii', m1, i)
 check('Mat_Str map', lambda: SDTest.Call(0x234bc0, 'si', m1)[0])
 map0 = SDTest.Peek(m1 + 0x9c, '@i')
 for i in range(8, 15):
