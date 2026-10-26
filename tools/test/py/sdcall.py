@@ -1065,4 +1065,89 @@ check('Tabla_Read2', lambda: tread(0x258290, sm3, 3564, 2))
 check('Tabla_ReadC', lambda: tread(0x2583a0, sm3, 7209, 0xc))
 check('Tabla_Read1C', lambda: tread(0x258310, 'levels/fake/map/fake1/fake1.sm3', 3616, 0x1c))
 SDTest.Call(0x133550, 'vi', tio)
+
+# engine3d Engine/AnimVert.c on vertices and sets in heap memory
+def avnew(frames):
+	av = SDTest.Call(0x133650, 'ii', 16)[0]
+	SDTest.Call(0x2d44a0, 'tvii', av, len(frames) / 3)
+	SDTest.Call(0x3197d0, 'iiFi', SDTest.Peek(av + 4, '@i'), tuple(frames), 4 * len(frames))
+	return av
+def avget(av):
+	n, tr, tr2 = SDTest.Peek(av, '@i'), SDTest.Peek(av + 4, '@i'), SDTest.Peek(av + 12, '@i')
+	r = [n, SDTest.Peek(av + 8, '@i')]
+	if tr:
+		r.append(tpeek(tr, n * 3))
+	else:
+		r.append(None)
+	if tr2:
+		b = []
+		for i in range(n * 3):
+			b.append(SDTest.Peek(tr2 + i, '@b'))
+		r.append(b)
+	else:
+		r.append(None)
+	return r
+def avstep(name, av, rva, sig, *args):
+	check(name + fmt(args), lambda av=av, rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig, av) + args), avget(av)))
+fr = (0.0, 1.0, 2.0,  0.5, 1.5, -2.0,  3.0, -1.0, 2.25,  -4.0, 1.0, 2.0)
+av = avnew(fr)
+check('CAnimVert_AllocTr', lambda: avget(av))
+check('CAnimVert_Frame', lambda: SDTest.Call(0x2d38b0, 'tiii', av, 2)[0] - SDTest.Peek(av + 4, '@i'))
+for f, t in ((0, 0.0), (0, 0.5), (1, 0.25), (2, 0.999), (3, 0.5), (4, 0.0)):
+	avstep('CAnimVert_GetPos', av, 0x2d3930, 'tviifF', f, t, (10.0, 20.0, 30.0))
+avstep('CAnimVert_Scale', av, 0x2d4380, 'tvifff', 2.0, -1.0, 0.5)
+avstep('CAnimVert_Optimize', av, 0x2d49b0, 'tvi')
+for f, t in ((0, 0.0), (0, 0.5), (1, 0.25), (2, 0.75), (3, 0.5), (5, 0.0)):
+	avstep('CAnimVert_GetPos 2', av, 0x2d3930, 'tviifF', f, t, (10.0, 20.0, 30.0))
+for a, b, t in ((0, 1, 0.5), (1, 3, 0.25), (2, 2, 0.7), (3, 0, 1.0)):
+	avstep('CAnimVert_AddPos', av, 0x2d3bb0, 'tviiifF', a, b, t, (1.0, 2.0, 3.0))
+avstep('CAnimVert_Scale 2', av, 0x2d4380, 'tvifff', 3.0, 3.0, 3.0)
+avstep('CAnimVert_FreeTr2', av, 0x2d3fd0, 'tvi')
+check('CAnimVert_Delete', lambda: SDTest.Call(0x2d3510, 'tiii', av, 1)[0] == av)
+for frames in ((1.0, 2.0, 3.0), (1.0, 2.0, 3.0, 1.00001, 2.0, 3.0), (1.0, 2.0, 3.0, 1.0, 2.0, 3.0002), (0.0, 0.0, 0.0, 1e6, -1e6, 5.0, 1e-3, 0.0, -2.0)):
+	av = avnew(frames)
+	avstep('CAnimVert_Optimize' + fmt((frames,)), av, 0x2d49b0, 'tvi')
+	SDTest.Call(0x2d3510, 'tiii', av, 1)
+av = avnew(fr)
+avstep('CAnimVert_Compress', av, 0x2d40c0, 'tvi')
+avstep('CAnimVert_dtor', av, 0x2d3440, 'tvi')
+SDTest.Call(0x133550, 'vi', av)
+eva = SDTest.Call(0x133650, 'ii', 8)[0]
+def evaget():
+	n, a = SDTest.Peek(eva, '@i'), SDTest.Peek(eva + 4, '@i')
+	r = [n, a != 0]
+	if a:
+		r.append(SDTest.Peek(a - 4, '@i'))
+		for i in range(n):
+			r.append(avget(a + 16 * i))
+	return r
+def evastep(name, rva, sig, *args):
+	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig, eva) + args), evaget()))
+evastep('CEVA_Alloc', 0x2d4570, 'tvii', 3)
+check('CEVA_Get', lambda: SDTest.Call(0x2d3d50, 'tiii', eva, 2)[0] - SDTest.Peek(eva + 4, '@i'))
+evastep('CEVA_MemSize', 0x2d4670, 'tii')
+evastep('CEVA_NumAnimated', 0x2d4770, 'tii')
+a = SDTest.Peek(eva + 4, '@i')
+SDTest.Call(0x2d44a0, 'tvii', a, 2)
+SDTest.Call(0x3197d0, 'iiFi', SDTest.Peek(a + 4, '@i'), (1.0, 2.0, 3.0, 1.0, 2.0, 3.0), 24)
+SDTest.Call(0x2d44a0, 'tvii', a + 16, 1)
+SDTest.Call(0x3197d0, 'iiFi', SDTest.Peek(a + 20, '@i'), (5.0, 6.0, 7.0), 12)
+SDTest.Call(0x2d44a0, 'tvii', a + 32, 3)
+SDTest.Call(0x3197d0, 'iiFi', SDTest.Peek(a + 36, '@i'), (1.0, 2.0, 3.0, 2.0, 2.0, 3.0, 0.0, -1.0, 3.5), 36)
+evastep('CEVA_MemSize', 0x2d4670, 'tii')
+evastep('CEVA_NumAnimated', 0x2d4770, 'tii')
+evastep('CEVA_Scale', 0x2d35b0, 'tvifff', 2.0, 2.0, 2.0)
+evastep('CEVA_Optimize', 0x2d4810, 'tvi')
+evastep('CEVA_MemSize', 0x2d4670, 'tii')
+evastep('CEVA_NumAnimated', 0x2d4770, 'tii')
+evastep('CEVA_Free', 0x2d4020, 'tvi')
+evastep('CEVA_Alloc', 0x2d4570, 'tvii', 2)
+a = SDTest.Peek(eva + 4, '@i')
+for i in range(2):
+	SDTest.Call(0x2d44a0, 'tvii', a + 16 * i, 2)
+	SDTest.Call(0x3197d0, 'iiFi', SDTest.Peek(a + 16 * i + 4, '@i'), (1.0, 2.0, 3.0, 1.0, 2.0, 3.0), 24)
+evastep('CEVA_Optimize static', 0x2d4810, 'tvi')
+evastep('CEVA_Alloc', 0x2d4570, 'tvii', 4)
+evastep('CEVA_dtor', 0x2d3400, 'tvi')
+SDTest.Call(0x133550, 'vi', eva)
 finish()

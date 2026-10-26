@@ -8751,30 +8751,30 @@ rva	size	source	callconv	name	signature
 002d31b0	77	DEFAULT	unknown	FUN_006d31b0	
 002d3200	468	DEFAULT	unknown	FUN_006d3200	
 002d33e0	10	DEFAULT	unknown	FUN_006d33e0	
-002d3400	54	DEFAULT	unknown	FUN_006d3400	
-002d3440	195	DEFAULT	unknown	FUN_006d3440	
-002d3510	154	DEFAULT	unknown	FUN_006d3510	
-002d35b0	142	DEFAULT	unknown	FUN_006d35b0	
-002d3640	216	DEFAULT	unknown	FUN_006d3640	
-002d3720	386	DEFAULT	unknown	FUN_006d3720	
-002d38b0	115	DEFAULT	unknown	FUN_006d38b0	
-002d3930	633	DEFAULT	unknown	FUN_006d3930	
-002d3bb0	414	DEFAULT	unknown	FUN_006d3bb0	
-002d3d50	90	DEFAULT	unknown	FUN_006d3d50	
-002d3db0	156	DEFAULT	unknown	FUN_006d3db0	
-002d3e50	295	DEFAULT	unknown	FUN_006d3e50	
-002d3f80	76	DEFAULT	unknown	FUN_006d3f80	
-002d3fd0	76	DEFAULT	unknown	FUN_006d3fd0	
-002d4020	158	DEFAULT	unknown	FUN_006d4020	
-002d40c0	699	DEFAULT	unknown	FUN_006d40c0	
-002d4380	280	DEFAULT	unknown	FUN_006d4380	
-002d44a0	111	DEFAULT	unknown	FUN_006d44a0	
-002d4510	96	DEFAULT	unknown	FUN_006d4510	
-002d4570	241	DEFAULT	unknown	FUN_006d4570	
-002d4670	195	DEFAULT	unknown	FUN_006d4670	
-002d4770	151	DEFAULT	unknown	FUN_006d4770	
-002d4810	406	DEFAULT	unknown	FUN_006d4810	
-002d49b0	332	DEFAULT	unknown	FUN_006d49b0	
+002d3400	54	USER_DEFINED	__fastcall	CEVA_Free	void __fastcall(void *self)
+002d3440	195	USER_DEFINED	__fastcall	CAnimVert_dtor	void __fastcall(void *self)
+002d3510	154	USER_DEFINED	__thiscall	CAnimVert_Delete	void * __thiscall(uint flags)
+002d35b0	142	USER_DEFINED	__thiscall	CEVA_Scale	void __thiscall(float x, float y, float z)
+002d3640	216	USER_DEFINED	__cdecl	AnimVert_Read	void __cdecl(void *f, void **pAV)
+002d3720	386	USER_DEFINED	__cdecl	EVA_Read	void __cdecl(void *f, int flag, void **pEVA)
+002d38b0	115	USER_DEFINED	__thiscall	CAnimVert_Frame	float * __thiscall(uint frame)
+002d3930	633	USER_DEFINED	__thiscall	CAnimVert_GetPos	void __thiscall(uint frame, float subframe, float *pos)
+002d3bb0	414	USER_DEFINED	__thiscall	CAnimVert_AddPos	void __thiscall(uint frame1, uint frame2, float t, float *pos)
+002d3d50	90	USER_DEFINED	__thiscall	CEVA_Get	void * __thiscall(uint i)
+002d3db0	156	USER_DEFINED	__cdecl	AnimVert_Write	void __cdecl(void *f, void *av)
+002d3e50	295	USER_DEFINED	__cdecl	EVA_Write	void __cdecl(void *f, int flag, void *eva)
+002d3f80	76	USER_DEFINED	__fastcall	CAnimVert_FreeTr	void __fastcall(void *self)
+002d3fd0	76	USER_DEFINED	__fastcall	CAnimVert_FreeTr2	void __fastcall(void *self)
+002d4020	158	USER_DEFINED	__fastcall	CEVA_Free2	void __fastcall(void *self)
+002d40c0	699	USER_DEFINED	__fastcall	CAnimVert_Compress	void __fastcall(void *self)
+002d4380	280	USER_DEFINED	__thiscall	CAnimVert_Scale	void __thiscall(float x, float y, float z)
+002d44a0	111	USER_DEFINED	__thiscall	CAnimVert_AllocTr	void __thiscall(int frames)
+002d4510	96	USER_DEFINED	__fastcall	CAnimVert_AllocTr2	void __fastcall(void *self)
+002d4570	241	USER_DEFINED	__thiscall	CEVA_Alloc	void __thiscall(int verts)
+002d4670	195	USER_DEFINED	__fastcall	CEVA_MemSize	int __fastcall(void *self)
+002d4770	151	USER_DEFINED	__fastcall	CEVA_NumAnimated	int __fastcall(void *self)
+002d4810	406	USER_DEFINED	__fastcall	CEVA_Optimize	void __fastcall(void *self)
+002d49b0	332	USER_DEFINED	__fastcall	CAnimVert_Optimize	void __fastcall(void *self)
 002d4b00	31	USER_DEFINED	__cdecl	LDin_Free	void __cdecl(void *din)
 002d4b20	56	USER_DEFINED	__cdecl	LDin_New	void * __cdecl(ushort elemSize)
 002d4b60	95	USER_DEFINED	__cdecl	LDin_NewBlock	void * __cdecl(ushort elemSize, ushort blockSize)
@@ -9883,7 +9883,7 @@ rva	size	source	callconv	name	signature
 00313a76	79	USER_DEFINED	__stdcall	`eh_vector_constructor_iterator'	void __stdcall(void *p, uint size, uint count, void *ctor, void *dtor)
 00313acb	20	DEFAULT	unknown	FUN_00713acb	
 00313adf	5	DEFAULT	__stdcall	`eh_vector_destructor_iterator'	
-00313ae4	94	ANALYSIS	__stdcall	`eh_vector_destructor_iterator'	void __stdcall(void * param_1, uint param_2, uint param_3, _func_void_void_ptr * param_4)
+00313ae4	94	USER_DEFINED	__stdcall	`eh_vector_destructor_iterator'	void __stdcall(void *p, uint size, uint count, void *dtor)
 00313b4e	16	DEFAULT	unknown	FUN_00713b4e	
 00313b5e	25	DEFAULT	unknown	FUN_00713b5e	
 00313b77	65	ANALYSIS	__stdcall	__ArrayUnwind	void __stdcall(void * param_1, uint param_2, uint param_3, _func_void_void_ptr * param_4)

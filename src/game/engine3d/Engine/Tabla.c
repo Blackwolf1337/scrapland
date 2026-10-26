@@ -12,20 +12,10 @@ static void Tabla_New(CTabla *t, int num, uint32_t size) {
 	CHECK(t->p);
 }
 
-/* new T[num]: the count in the 4 bytes before the objects */
 static void Tabla_NewObjs(CTabla *t, int num, uint32_t size, uint32_t ctor, uint32_t dtor) {
 	CHECK(!t->p && num > 0);
 	t->n = num;
-	uint64_t bytes = (uint64_t)(uint32_t)num * size;
-	uint32_t b = bytes >> 32 ? 0xffffffffu : (uint32_t)bytes;
-	uint32_t *mem = operator_new_array(b > 0xfffffffbu ? 0xffffffffu : b + 4);
-	void *p = NULL;
-	if (mem) {
-		*mem = num;
-		p = mem + 1;
-		crt_eh_vector_ctor(p, size, num, Game_Ptr(ctor), Game_Ptr(dtor));
-	}
-	t->p = p;
+	t->p = New_Objects(num, size, ctor, dtor);
 	CHECK(t->p);
 }
 

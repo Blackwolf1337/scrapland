@@ -97,3 +97,23 @@ void *Mem_Realloc(void *p, uint32_t size) {
 	Mem_Count(0, (int)crt_msize(np));
 	return np;
 }
+
+void *New_Objects(uint32_t count, uint32_t size, uint32_t ctor, uint32_t dtor) {
+	uint64_t bytes = (uint64_t)count * size;
+	uint32_t b = bytes >> 32 ? 0xffffffffu : (uint32_t)bytes;
+	uint32_t *mem = operator_new_array(b > 0xfffffffbu ? 0xffffffffu : b + 4);
+
+	if (!mem) {
+		return NULL;
+	}
+	*mem = count;
+	crt_eh_vector_ctor(mem + 1, size, count, Game_Ptr(ctor), Game_Ptr(dtor));
+	return mem + 1;
+}
+
+void Delete_Objects(void *p, uint32_t size, uint32_t dtor) {
+	uint32_t *mem = (uint32_t *)p - 1;
+
+	crt_eh_vector_dtor(p, size, *mem, Game_Ptr(dtor));
+	operator_delete_array(mem);
+}
