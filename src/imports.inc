@@ -350,3 +350,6 @@ SD_IMPORT(cStringList_NewNode, 0x0605f0)
 SD_IMPORT(Loading_Step, 0x2157a0)
 SD_IMPORT(Console_Execute, 0x20aaf0)
 
+
+/* engine: engine3d (include/scrap/listavert.h) */
+SD_IMPORT(CListaVert_GetPos, 0x212570)

@@ -1,0 +1,1199 @@
+/*
+ * Vertex lists of the engine3d, original source Engine/ListaVert.cpp (include/scrap/listavert.h).
+ */
+#include <string.h>
+
+#include "scrap/console.h"
+#include "scrap/listavert.h"
+
+#define LISTAVERT_ID "LFVF"
+#define LISTAVERT_VER 1
+#define FLT_MAX_F 3.4028234663852886e+38f	/* rva 0x3a3a38 */
+/* the 15 colors of the strips (rva 0x432a34) */
+#define g_StripColors ((const uint32_t *)Game_Ptr(0x432a34))
+#define STRIP_COLORS 15
+/* the qsort compare of VertCache_Optimize: the cost of a triangle for the cache (rva 0x243a00, not in this file) */
+#define VCACHE_COMPARE 0x243a00
+#define TRI_USED 0x8000
+#define TRI_FREE 0xffff
+
+CListaVert *__fastcall CListaVert_ctor(CListaVert *self) {
+	self->pVert = NULL;
+	self->totVert = 0;
+	self->frmt = 0;
+	self->nVert = 0;
+	self->esc = 0.0f;
+	return self;
+}
+
+void __fastcall CListaVert_Free(CListaVert *self) {
+	if (self->pVert) {
+		Mem_Free(self->pVert);
+		self->pVert = NULL;
+	}
+	self->frmt = 0;
+	self->totVert = 0;
+	self->nVert = 0;
+}
+
+void __thiscall CListaVert_SetFormat(CListaVert *self, int frmt) {
+	CHECK(frmt >= VERT_NULO && frmt < VERT_TOTAL);
+	if (self->pVert) {
+		Mem_Free(self->pVert);
+		self->pVert = NULL;
+	}
+	self->frmt = frmt;
+	self->totVert = 0;
+	self->nVert = 0;
+}
+
+void __thiscall CListaVert_Alloc(CListaVert *self, int n, byte realloc) {
+	CHECK(n > 0);
+	CHECK(realloc || !self->pVert);
+	self->nVert = n;
+	if (self->pVert) {
+		n = (n >> 2) + n;
+	}
+	self->totVert = n;
+	self->pVert = Mem_Realloc(self->pVert, self->totVert * ListaVert_FormatSize(self->frmt));
+}
+
+void __thiscall CListaVert_Swap(CListaVert *self, CListaVert *other) {
+	CListaVert t = *other;
+
+	other->pVert = self->pVert;
+	other->nVert = self->nVert;
+	other->totVert = self->totVert;
+	other->frmt = self->frmt;
+	self->nVert = t.nVert;
+	self->totVert = t.totVert;
+	self->pVert = t.pVert;
+	self->frmt = t.frmt;
+}
+
+void __thiscall CListaVert_Read(CListaVert *self, CArchIO *f) {
+	CHECK(CArchIO_BeginBlock(f, LISTAVERT_ID) == 0);
+	CHECK(CArchIO_ReadInt(f) == LISTAVERT_VER);
+	CListaVert_SetFormat(self, CArchIO_ReadInt(f));
+	if (self->frmt) {
+		uint32_t fvf = ListaVert_FormatFVF(self->frmt);
+		CHECK((uint32_t)CArchIO_ReadInt(f) == fvf);
+		int size = ListaVert_FormatSize(self->frmt);
+		CHECK(CArchIO_ReadInt(f) == size);
+		CListaVert_Alloc(self, CArchIO_ReadInt(f), 0);
+		CArchIO_Read(f, self->pVert, self->nVert * ListaVert_FormatSize(self->frmt));
+	}
+	CArchIO_Error(f, LISTAVERT_ID);
+	CHECK(!f->error);
+}
+
+void __thiscall CListaVert_Write(CListaVert *self, CArchIO *f) {
+	CArchIO_BeginBlockWrite(f, LISTAVERT_ID);
+	CArchIO_WriteInt(f, LISTAVERT_VER);
+	if (self->nVert) {
+		CHECK(self->pVert);
+		CHECK(self->frmt != VERT_NULO);
+		CArchIO_WriteInt(f, self->frmt);
+		CArchIO_WriteInt(f, ListaVert_FormatFVF(self->frmt));
+		CArchIO_WriteInt(f, ListaVert_FormatSize(self->frmt));
+		CArchIO_WriteInt(f, self->nVert);
+		CArchIO_Write(f, self->pVert, self->nVert * ListaVert_FormatSize(self->frmt));
+	} else {
+		CArchIO_WriteInt(f, 0);
+	}
+	CArchIO_EndBlockWrite(f, LISTAVERT_ID);
+	CHECK(!f->error);
+}
+
+uint32_t ListaVert_FormatFVF(int frmt) {
+	switch (frmt) {
+	case VERT_TEX1:
+		return 0x112;
+	case VERT_TEX2:
+		return 0x212;
+	case VERT_LTEX1:
+		return 0x1c2;
+	case VERT_TEX1_B1:
+		return 0x116;
+	case VERT_LTEX2N:
+		return 0x252;
+	case VERT_LTEX3:
+		return 0x352;
+	case VERT_LTEX1N:
+		return 0x152;
+	case VERT_TLTEX1:
+		return 0x1c4;
+	case VERT_LTEX2:
+		return 0x242;
+	/* the XBOX formats name their vertex shader */
+	case VERT_TEX1_XBOX:
+		CHECK(g_hVShader_Tex1_XBox);
+		return g_hVShader_Tex1_XBox;
+	case VERT_TEX1C_XBOX:
+		CHECK(g_hVShader_Tex1C_XBox);
+		return g_hVShader_Tex1C_XBox;
+	case VERT_LTEX1_XBOX:
+		CHECK(g_hVShader_LTex1_XBox);
+		return g_hVShader_LTex1_XBox;
+	case VERT_LTEX1N_XBOX:
+		CHECK(g_hVShader_LTex1N_XBox);
+		return g_hVShader_LTex1N_XBox;
+	case VERT_LTEX2_XBOX:
+		CHECK(g_hVShader_LTex2_XBox);
+		return g_hVShader_LTex2_XBox;
+	case VERT_LTEX2N_XBOX:
+		CHECK(g_hVShader_LTex2N_XBox);
+		return g_hVShader_LTex2N_XBox;
+	}
+	CHECK(0);
+	return 0;
+}
+
+int ListaVert_FormatSize(int frmt) {
+	switch (frmt) {
+	case VERT_TEX1:
+	case VERT_TLTEX1:
+	case VERT_LTEX2:
+		return 0x20;
+	case VERT_TEX2:
+		return 0x28;
+	case VERT_LTEX1:
+	case VERT_TEX1C_XBOX:
+		return 0x1c;
+	case VERT_TEX1_B1:
+	case VERT_LTEX1N:
+		return 0x24;
+	case VERT_LTEX2N:
+		return 0x2c;
+	case VERT_LTEX3:
+		return 0x34;
+	case VERT_POS_XBOX:
+		return 4;
+	case VERT_TEX1_XBOX:
+		return 0x18;
+	case VERT_LTEX1_XBOX:
+		return 0x12;
+	case VERT_LTEX1N_XBOX:
+	case VERT_LTEX2_XBOX:
+		return 0x16;
+	case VERT_LTEX2N_XBOX:
+		return 0x1a;
+	}
+	CHECK(0);
+	return 0;
+}
+
+const char *ListaVert_FormatName(int frmt) {
+	switch (frmt) {
+	case VERT_TEX1:
+		return "TEX1";
+	case VERT_TEX2:
+		return "TEX2";
+	case VERT_LTEX1:
+		return "LTEX1";
+	case VERT_TEX1_B1:
+		return "TEX1B1";
+	case VERT_LTEX2N:
+		return "LTEX2N";
+	case VERT_LTEX3:
+		return "LTEX3";
+	case VERT_LTEX1N:
+		return "LTEX1N";
+	case VERT_TLTEX1:
+		return "TLTEX1";
+	case VERT_LTEX2:
+		return "LTEX2";
+	}
+	CHECK(0);
+	return NULL;
+}
+
+uint32_t __fastcall CListaVert_FVF(CListaVert *self) {
+	return ListaVert_FormatFVF(self->frmt);
+}
+
+int __fastcall CListaVert_Size(CListaVert *self) {
+	return ListaVert_FormatSize(self->frmt);
+}
+
+const char *__fastcall CListaVert_FormatName(CListaVert *self) {
+	return ListaVert_FormatName(self->frmt);
+}
+
+/* cdq, xor, sub: INT_MIN stays negative */
+static int ListaVert_Abs(int v) {
+	uint32_t s = (uint32_t)(v >> 31);
+	return (int)(((uint32_t)v ^ s) - s);
+}
+
+uint32_t ListaVert_PackNormal(const vec3_t *n) {
+	int sx = (int)((double)n->x * 1023.0);
+	int sy = (int)((double)n->y * 1023.0);
+	int sz = (int)((double)n->z * 511.0);
+
+	CHECK(ListaVert_Abs(sx) < 1024);
+	CHECK(ListaVert_Abs(sy) < 1024);
+	CHECK(ListaVert_Abs(sz) < 512);
+	return ((((uint32_t)sy & 0x7ff) | (uint32_t)sz << 11) << 11) | ((uint32_t)sx & 0x7ff);
+}
+
+vec3_t *ListaVert_UnpackNormal(vec3_t *out, uint32_t packed) {
+	out->x = (float)((int32_t)(packed << 21) >> 21) / 1023.0f;
+	out->y = (float)((int32_t)(packed << 10) >> 21) / 1023.0f;
+	out->z = (float)((int32_t)packed >> 22) / 511.0f;
+	return out;
+}
+
+/* the field getters of one vertex */
+void *__thiscall VertTex1_Field(byte *v, int f) {
+	switch (f) {
+	case LVERT_POS:
+		return v;
+	case LVERT_NORMAL:
+		return v + 0xc;
+	case LVERT_TEX2D_SET1:
+		return v + 0x18;
+	}
+	return NULL;
+}
+
+void *__thiscall VertTex2_Field(byte *v, int f) {
+	switch (f) {
+	case LVERT_POS:
+		return v;
+	case LVERT_NORMAL:
+		return v + 0xc;
+	case LVERT_TEX2D_SET1:
+		return v + 0x18;
+	case LVERT_TEX2D_SET1 + 1:
+		return v + 0x20;
+	}
+	return NULL;
+}
+
+void *__thiscall VertLTex1_Field(byte *v, int f) {
+	switch (f) {
+	case LVERT_POS:
+		return v;
+	case LVERT_DIFFUSE:
+		return v + 0xc;
+	case LVERT_SPECULAR:
+		return v + 0x10;
+	case LVERT_TEX2D_SET1:
+		return v + 0x14;
+	}
+	return NULL;
+}
+
+void *__thiscall VertLTex2N_Field(byte *v, int f) {
+	switch (f) {
+	case LVERT_POS:
+		return v;
+	case LVERT_NORMAL:
+		return v + 0xc;
+	case LVERT_DIFFUSE:
+		return v + 0x18;
+	case LVERT_TEX2D_SET1:
+		return v + 0x1c;
+	case LVERT_TEX2D_SET1 + 1:
+		return v + 0x24;
+	}
+	return NULL;
+}
+
+void *__thiscall VertLTex3_Field(byte *v, int f) {
+	switch (f) {
+	case LVERT_POS:
+		return v;
+	case LVERT_NORMAL:
+		return v + 0xc;
+	case LVERT_DIFFUSE:
+		return v + 0x18;
+	case LVERT_TEX2D_SET1:
+		return v + 0x1c;
+	case LVERT_TEX2D_SET1 + 1:
+		return v + 0x24;
+	case LVERT_TEX2D_SET1 + 2:
+		return v + 0x2c;
+	}
+	return NULL;
+}
+
+void *__thiscall VertLTex1N_Field(byte *v, int f) {
+	switch (f) {
+	case LVERT_POS:
+		return v;
+	case LVERT_NORMAL:
+		return v + 0xc;
+	case LVERT_DIFFUSE:
+		return v + 0x18;
+	case LVERT_TEX2D_SET1:
+		return v + 0x1c;
+	}
+	return NULL;
+}
+
+/* no LVERT_POS: the transformed position has 4 floats */
+void *__thiscall VertTLTex1_Field(byte *v, int f) {
+	switch (f) {
+	case LVERT_DIFFUSE:
+		return v + 0x10;
+	case LVERT_SPECULAR:
+		return v + 0x14;
+	case LVERT_TEX2D_SET1:
+		return v + 0x18;
+	}
+	return NULL;
+}
+
+void *__thiscall VertLTex2_Field(byte *v, int f) {
+	switch (f) {
+	case LVERT_POS:
+		return v;
+	case LVERT_DIFFUSE:
+		return v + 0xc;
+	case LVERT_TEX2D_SET1:
+		return v + 0x10;
+	case LVERT_TEX2D_SET1 + 1:
+		return v + 0x18;
+	}
+	return NULL;
+}
+
+void *__thiscall VertTex1XBox_Field(byte *v, int f) {
+	switch (f) {
+	case LVERT_POS:
+		return v;
+	case LVERT_TEX2D_SET1:
+		return v + 0x10;
+	case LVERT_NORMAL_PACKED:
+		return v + 0xc;
+	}
+	return NULL;
+}
+
+void *__thiscall VertTex1CXBox_Field(byte *v, int f) {
+	switch (f) {
+	case LVERT_POS:
+		return v;
+	case LVERT_DIFFUSE:
+		return v + 0x10;
+	case LVERT_TEX2D_SET1:
+		return v + 0x14;
+	case LVERT_NORMAL_PACKED:
+		return v + 0xc;
+	}
+	return NULL;
+}
+
+void *__thiscall VertLTex1XBox_Field(byte *v, int f) {
+	switch (f) {
+	case LVERT_DIFFUSE:
+		return v + 6;
+	case LVERT_TEX2D_SET1:
+		return v + 10;
+	case LVERT_POS_SHORT:
+		return v;
+	}
+	return NULL;
+}
+
+void *__thiscall VertLTex1NXBox_Field(byte *v, int f) {
+	switch (f) {
+	case LVERT_DIFFUSE:
+		return v + 10;
+	case LVERT_TEX2D_SET1:
+		return v + 0xe;
+	case LVERT_POS_SHORT:
+		return v;
+	case LVERT_NORMAL_PACKED:
+		return v + 6;
+	}
+	return NULL;
+}
+
+void *__thiscall VertLTex2XBox_Field(byte *v, int f) {
+	switch (f) {
+	case LVERT_DIFFUSE:
+		return v + 6;
+	case LVERT_TEX2D_SET1:
+		return v + 10;
+	case LVERT_POS_SHORT:
+		return v;
+	case LVERT_TEX_SHORT2:
+		return v + 0x12;
+	}
+	return NULL;
+}
+
+void *__thiscall VertLTex2NXBox_Field(byte *v, int f) {
+	switch (f) {
+	case LVERT_DIFFUSE:
+		return v + 10;
+	case LVERT_TEX2D_SET1:
+		return v + 0xe;
+	case LVERT_POS_SHORT:
+		return v;
+	case LVERT_NORMAL_PACKED:
+		return v + 6;
+	case LVERT_TEX_SHORT2:
+		return v + 0x16;
+	}
+	return NULL;
+}
+
+/* vertex i of a list that must be in frmt */
+static byte *ListaVert_Vert(CListaVert *self, uint32_t i, int frmt, int size) {
+	CHECK(self->pVert && i < (uint32_t)self->totVert);
+	CHECK(self->frmt == frmt);
+	return self->pVert + i * size;
+}
+
+byte *__thiscall CListaVert_Tex1(CListaVert *self, uint32_t i) {
+	return ListaVert_Vert(self, i, VERT_TEX1, 0x20);
+}
+
+byte *__thiscall CListaVert_Tex2(CListaVert *self, uint32_t i) {
+	return ListaVert_Vert(self, i, VERT_TEX2, 0x28);
+}
+
+byte *__thiscall CListaVert_LTex1(CListaVert *self, uint32_t i) {
+	return ListaVert_Vert(self, i, VERT_LTEX1, 0x1c);
+}
+
+byte *__thiscall CListaVert_Tex1B1(CListaVert *self, uint32_t i) {
+	return ListaVert_Vert(self, i, VERT_TEX1_B1, 0x24);
+}
+
+byte *__thiscall CListaVert_LTex2N(CListaVert *self, uint32_t i) {
+	return ListaVert_Vert(self, i, VERT_LTEX2N, 0x2c);
+}
+
+byte *__thiscall CListaVert_LTex3(CListaVert *self, uint32_t i) {
+	return ListaVert_Vert(self, i, VERT_LTEX3, 0x34);
+}
+
+byte *__thiscall CListaVert_LTex1N(CListaVert *self, uint32_t i) {
+	return ListaVert_Vert(self, i, VERT_LTEX1N, 0x24);
+}
+
+byte *__thiscall CListaVert_TLTex1(CListaVert *self, uint32_t i) {
+	return ListaVert_Vert(self, i, VERT_TLTEX1, 0x20);
+}
+
+byte *__thiscall CListaVert_LTex2(CListaVert *self, uint32_t i) {
+	return ListaVert_Vert(self, i, VERT_LTEX2, 0x20);
+}
+
+void __thiscall CListaVert_SetTex1(CListaVert *self, uint32_t i, const void *v) {
+	memcpy(ListaVert_Vert(self, i, VERT_TEX1, 0x20), v, 0x20);
+}
+
+void __thiscall CListaVert_SetTex2(CListaVert *self, uint32_t i, const void *v) {
+	memcpy(ListaVert_Vert(self, i, VERT_TEX2, 0x28), v, 0x28);
+}
+
+void __thiscall CListaVert_SetLTex1(CListaVert *self, uint32_t i, const void *v) {
+	memcpy(ListaVert_Vert(self, i, VERT_LTEX1, 0x1c), v, 0x1c);
+}
+
+void __thiscall CListaVert_SetTex1B1(CListaVert *self, uint32_t i, const void *v) {
+	memcpy(ListaVert_Vert(self, i, VERT_TEX1_B1, 0x24), v, 0x24);
+}
+
+void *__thiscall CListaVert_GetTex1(CListaVert *self, void *out, uint32_t i) {
+	switch (self->frmt) {
+	case VERT_TEX1:
+		memcpy(out, CListaVert_Tex1(self, i), 0x20);
+		return out;
+	case VERT_TEX2:
+		memcpy(out, CListaVert_Tex2(self, i), 0x20);
+		return out;
+	case VERT_TEX1_B1: {
+		/* without the weight at 0xc */
+		const byte *v = CListaVert_Tex1B1(self, i);
+		memcpy(out, v, 0xc);
+		memcpy((byte *)out + 0xc, v + 0x10, 0x14);
+		return out;
+	}
+	}
+	CHECK(0);
+	CHECK(0);
+	return out;
+}
+
+void *__thiscall CListaVert_GetField(CListaVert *self, int f, uint32_t i) {
+	switch (self->frmt) {
+	case VERT_TEX1:
+		return VertTex1_Field(CListaVert_Tex1(self, i), f);
+	case VERT_TEX2:
+		return VertTex2_Field(CListaVert_Tex2(self, i), f);
+	case VERT_LTEX1:
+		return VertLTex1_Field(CListaVert_LTex1(self, i), f);
+	case VERT_LTEX2N:
+		return VertLTex2N_Field(CListaVert_LTex2N(self, i), f);
+	case VERT_LTEX3:
+		return VertLTex3_Field(CListaVert_LTex3(self, i), f);
+	case VERT_LTEX1N:
+		return VertLTex1N_Field(CListaVert_LTex1N(self, i), f);
+	case VERT_TLTEX1:
+		return VertTLTex1_Field(CListaVert_TLTex1(self, i), f);
+	case VERT_LTEX2:
+		return VertLTex2_Field(CListaVert_LTex2(self, i), f);
+	}
+	CHECK(self->pVert && i < (uint32_t)self->totVert);
+	switch (self->frmt) {
+	case VERT_POS_XBOX:
+		return NULL;
+	case VERT_TEX1_XBOX:
+		return VertTex1XBox_Field(self->pVert + i * 0x18, f);
+	case VERT_TEX1C_XBOX:
+		return VertTex1CXBox_Field(self->pVert + i * 0x1c, f);
+	case VERT_LTEX1_XBOX:
+		return VertLTex1XBox_Field(self->pVert + i * 0x12, f);
+	case VERT_LTEX1N_XBOX:
+		return VertLTex1NXBox_Field(self->pVert + i * 0x16, f);
+	case VERT_LTEX2_XBOX:
+		return VertLTex2XBox_Field(self->pVert + i * 0x16, f);
+	case VERT_LTEX2N_XBOX:
+		return VertLTex2NXBox_Field(self->pVert + i * 0x1a, f);
+	}
+	CHECK(0);
+	return NULL;
+}
+
+void __thiscall CListaVert_SetColor(CListaVert *self, uint32_t and, uint32_t or) {
+	uint32_t *c = CListaVert_GetField(self, LVERT_DIFFUSE, 0);
+	int size = ListaVert_FormatSize(self->frmt);
+
+	CHECK(c);
+	for (int i = 0; i < self->nVert; i++) {
+		*c = (*c & and) | or;
+		c = (uint32_t *)((byte *)c + size);
+	}
+}
+
+/* minss and maxss: the second operand when unordered */
+static inline float ListaVert_Min(float a, float b) {
+	return a < b ? a : b;
+}
+
+static inline float ListaVert_Max(float a, float b) {
+	return a > b ? a : b;
+}
+
+static void ListaVert_BoxInit(box_t *b) {
+	b->min.x = FLT_MAX_F;
+	b->min.y = FLT_MAX_F;
+	b->min.z = FLT_MAX_F;
+	b->max.x = -FLT_MAX_F;
+	b->max.y = -FLT_MAX_F;
+	b->max.z = -FLT_MAX_F;
+}
+
+static void ListaVert_BoxAdd(box_t *b, float x, float y, float z) {
+	b->min.x = ListaVert_Min(b->min.x, x);
+	b->min.y = ListaVert_Min(b->min.y, y);
+	b->min.z = ListaVert_Min(b->min.z, z);
+	b->max.x = ListaVert_Max(b->max.x, x);
+	b->max.y = ListaVert_Max(b->max.y, y);
+	b->max.z = ListaVert_Max(b->max.z, z);
+}
+
+static float ListaVert_BoxLow(const box_t *b) {
+	return ListaVert_Min(b->min.z, ListaVert_Min(b->min.y, b->min.x));
+}
+
+static float ListaVert_BoxHigh(const box_t *b) {
+	return ListaVert_Max(b->max.z, ListaVert_Max(b->max.y, b->max.x));
+}
+
+void __thiscall CListaVert_GetExtents(CListaVert *self, box_t *ext, byte reset) {
+	CHECK(self->pVert);
+	CHECK(ext);
+	if (reset) {
+		ListaVert_BoxInit(ext);
+	}
+	for (int i = 0; i < self->nVert; i++) {
+		vec3_t p;
+		CListaVert_GetPos(self, &p, i);
+		ListaVert_BoxAdd(ext, p.x, p.y, p.z);
+	}
+}
+
+void __thiscall CListaVert_Transform(CListaVert *self, const matrix_t *m, byte normalize) {
+	byte *v = NULL;
+	int nOff = 0;
+
+	CHECK(self->pVert);
+	switch (self->frmt) {
+	case VERT_TEX1:
+	case VERT_TEX2:
+		v = self->pVert;
+		nOff = 0xc;
+		break;
+	case VERT_TEX1_B1:
+		v = self->pVert;
+		nOff = 0x10;
+		break;
+	default:
+		CHECK(0);
+		break;
+	}
+	int size = ListaVert_FormatSize(self->frmt);
+	for (int i = 0; i < self->nVert; i++, v += size) {
+		vec3_t *p = (vec3_t *)v;
+		vec3_t *n = (vec3_t *)(v + nOff);
+		Vec3_TransformH(p, p, m);
+		Vec3_TransformDir0(n, n, m);
+		if (!normalize) {
+			continue;
+		}
+		float x = n->x, y = n->y, z = n->z;
+		float len = (float)__builtin_sqrt((double)(x * x + y * y + z * z));
+		if ((double)len != 0.0) {
+			float k = (float)(1.0 / (double)len);
+			x = x * k;
+			y = y * k;
+			z = z * k;
+		}
+		n->x = x;
+		n->y = y;
+		n->z = z;
+	}
+}
+
+/* cvttss2si to a short, saturated */
+static int16_t ListaVert_Short(float f) {
+	int i = (int)f;
+
+	if (i <= -0x8000) {
+		return -0x8000;
+	}
+	if (i >= 0x7fff) {
+		return 0x7fff;
+	}
+	return (int16_t)i;
+}
+
+/* a list of n vertices in frmt to fill, kept apart from self until the end */
+static void ListaVert_NewTmp(CListaVert *tmp, int frmt, int n) {
+	tmp->pVert = NULL;
+	tmp->esc = 0.0f;
+	tmp->nVert = 0;
+	tmp->totVert = 0;
+	tmp->frmt = frmt;
+	CHECK(n > 0);
+	tmp->nVert = n;
+	tmp->totVert = n;
+	tmp->pVert = Mem_Realloc(NULL, ListaVert_FormatSize(frmt) * n);
+}
+
+/* the vertices of tmp into self, the old ones freed */
+static void ListaVert_TakeTmp(CListaVert *self, CListaVert *tmp, int n, int frmt) {
+	byte *old = self->pVert;
+
+	self->pVert = tmp->pVert;
+	self->nVert = n;
+	self->totVert = n;
+	self->frmt = frmt;
+	if (old) {
+		Mem_Free(old);
+	}
+}
+
+static void ListaVert_WarnPos(const box_t *pos, float posScale) {
+	if ((double)posScale * -32768.0 > (double)ListaVert_BoxLow(pos) ||
+		ListaVert_BoxHigh(pos) > posScale * 32768.0f) {
+		Con_Warnf("Vertex out of range x%.1f\n", (double)posScale);
+	}
+}
+
+static void ListaVert_WarnTex(const box_t *tex, float texScale, const char *fmt) {
+	if (-32768.0f / texScale > ListaVert_BoxLow(tex) || ListaVert_BoxHigh(tex) > 32768.0f / texScale) {
+		Con_Warnf(fmt, (double)(32768.0f / texScale));
+	}
+}
+
+void __thiscall CListaVert_Pack(CListaVert *self, int frmt, float posScale, float texScale) {
+	CListaVert tmp;
+	box_t pos, tex;
+
+	CHECK(frmt >= VERT_NULO && frmt < VERT_TOTAL);
+	int n = self->nVert;
+	ListaVert_NewTmp(&tmp, frmt, n);
+	ListaVert_BoxInit(&pos);
+	ListaVert_BoxInit(&tex);
+	for (int i = 0; i < self->nVert; i++) {
+		vec3_t nrm = { 0.0f, 0.0f, 0.0f };
+		float uv[2] = { 0.0f, 0.0f };
+		uint32_t color = 0;
+
+		vec3_t p = *(const vec3_t *)CListaVert_GetField(self, LVERT_POS, i);
+		const vec3_t *pn = CListaVert_GetField(self, LVERT_NORMAL, i);
+		if (pn) {
+			nrm = *pn;
+		}
+		const uint32_t *pc = CListaVert_GetField(self, LVERT_DIFFUSE, i);
+		if (pc) {
+			color = *pc;
+		}
+		const float *pt = CListaVert_GetField(self, LVERT_TEX2D_SET1, i);
+		if (pt) {
+			memcpy(uv, pt, sizeof(uv));
+		}
+		ListaVert_BoxAdd(&pos, p.x, p.y, p.z);
+		ListaVert_BoxAdd(&tex, uv[0], uv[1], 0.0f);
+
+		if (frmt == VERT_POS_XBOX) {
+			vec3_t s;
+			s.x = p.x / self->esc;
+			s.y = p.y / self->esc;
+			s.z = p.z / self->esc;
+			((uint32_t *)tmp.pVert)[i] = ListaVert_PackNormal(&s);
+		} else {
+			*(vec3_t *)CListaVert_GetField(&tmp, LVERT_POS, i) = p;
+		}
+		uint32_t *dn = CListaVert_GetField(&tmp, LVERT_NORMAL_PACKED, i);
+		if (dn) {
+			*dn = ListaVert_PackNormal(&nrm);
+		}
+		uint32_t *dc = CListaVert_GetField(&tmp, LVERT_DIFFUSE, i);
+		if (dc) {
+			*dc = color;
+		}
+		int16_t *ds = CListaVert_GetField(&tmp, LVERT_TEX_SHORT, i);
+		if (ds) {
+			ds[0] = ListaVert_Short(uv[0] * texScale);
+			ds[1] = ListaVert_Short(uv[1] * texScale);
+		}
+		float *dt = CListaVert_GetField(&tmp, LVERT_TEX2D_SET1, i);
+		if (dt) {
+			memcpy(dt, uv, sizeof(uv));
+		}
+	}
+	ListaVert_WarnPos(&pos, posScale);
+	ListaVert_WarnTex(&tex, texScale, "Texcoord out of range %.1f\n");
+	ListaVert_TakeTmp(self, &tmp, n, frmt);
+}
+
+void __thiscall CListaVert_PackTex1(CListaVert *self, float posScale, float texScale) {
+	int frmt = VERT_NULO;
+
+	if (self->frmt == VERT_TEX1) {
+		frmt = VERT_TEX1_XBOX;
+	} else if (self->frmt == VERT_LTEX1N) {
+		frmt = VERT_TEX1C_XBOX;
+	}
+	CListaVert_Pack(self, frmt, posScale, texScale);
+}
+
+void __thiscall CListaVert_ToXBox(CListaVert *self, float posScale, float texScale, byte tex2) {
+	CListaVert tmp;
+	box_t pos, tex, tex1;
+
+	byte hasNormal = CListaVert_GetField(self, LVERT_NORMAL, 0) != NULL;
+	byte hasTex1 = CListaVert_GetField(self, LVERT_TEX2D_SET1 + 1, 0) != NULL;
+	int frmt = hasNormal + VERT_LTEX1_XBOX;
+	if (hasTex1 && tex2) {
+		frmt = hasNormal + VERT_LTEX2_XBOX;
+	}
+	int n = self->nVert;
+	ListaVert_NewTmp(&tmp, frmt, n);
+	ListaVert_BoxInit(&pos);
+	ListaVert_BoxInit(&tex);
+	ListaVert_BoxInit(&tex1);
+	for (int i = 0; i < self->nVert; i++) {
+		vec3_t nrm = { 0.0f, 0.0f, 0.0f };
+		float uv[2] = { 0.0f, 0.0f };
+		float uv1[2] = { 0.0f, 0.0f };
+		uint32_t color = 0;
+
+		vec3_t p = *(const vec3_t *)CListaVert_GetField(self, LVERT_POS, i);
+		const vec3_t *pn = CListaVert_GetField(self, LVERT_NORMAL, i);
+		if (pn) {
+			nrm = *pn;
+		}
+		const uint32_t *pc = CListaVert_GetField(self, LVERT_DIFFUSE, i);
+		if (pc) {
+			color = *pc;
+		}
+		const float *pt = CListaVert_GetField(self, LVERT_TEX2D_SET1, i);
+		if (pt) {
+			memcpy(uv, pt, sizeof(uv));
+		}
+		const float *pt1 = CListaVert_GetField(self, LVERT_TEX2D_SET1 + 1, i);
+		if (pt1) {
+			memcpy(uv1, pt1, sizeof(uv1));
+		}
+		ListaVert_BoxAdd(&pos, p.x, p.y, p.z);
+		ListaVert_BoxAdd(&tex, uv[0], uv[1], 0.0f);
+		ListaVert_BoxAdd(&tex1, uv1[0], uv1[1], 0.0f);
+
+		int16_t *dp = CListaVert_GetField(&tmp, LVERT_POS_SHORT, i);
+		dp[0] = ListaVert_Short(p.x / posScale);
+		dp[1] = ListaVert_Short(p.y / posScale);
+		dp[2] = ListaVert_Short(p.z / posScale);
+		uint32_t *dn = CListaVert_GetField(&tmp, LVERT_NORMAL_PACKED, i);
+		if (dn) {
+			*dn = ListaVert_PackNormal(&nrm);
+		}
+		uint32_t *dc = CListaVert_GetField(&tmp, LVERT_DIFFUSE, i);
+		if (dc) {
+			*dc = color;
+		}
+		int16_t *ds = CListaVert_GetField(&tmp, LVERT_TEX_SHORT, i);
+		if (ds) {
+			ds[0] = ListaVert_Short(uv[0] * texScale);
+			ds[1] = ListaVert_Short(uv[1] * texScale);
+		}
+		float *dt = CListaVert_GetField(&tmp, LVERT_TEX2D_SET1, i);
+		if (dt) {
+			memcpy(dt, uv, sizeof(uv));
+		}
+		int16_t *ds1 = CListaVert_GetField(&tmp, LVERT_TEX_SHORT2, i);
+		if (ds1) {
+			ds1[0] = ListaVert_Short(uv1[0] * 32767.0f);
+			ds1[1] = ListaVert_Short(uv1[1] * 32767.0f);
+		}
+		float *dt1 = CListaVert_GetField(&tmp, LVERT_TEX2D_SET1 + 1, i);
+		if (dt1) {
+			memcpy(dt1, uv1, sizeof(uv1));
+		}
+	}
+	ListaVert_WarnPos(&pos, posScale);
+	ListaVert_WarnTex(&tex, texScale, "Texcoord_1 out of range %.1f\n");
+	if (-1.0f > ListaVert_BoxLow(&tex1) || ListaVert_BoxHigh(&tex1) > 1.0f) {
+		Con_Warnf("Texcoord_2 out of range -1..1\n");
+	}
+	ListaVert_TakeTmp(self, &tmp, n, frmt);
+}
+
+void __thiscall CListaVert_FromXBox(CListaVert *self, float posScale, float texScale) {
+	byte *out = Mem_Alloc(self->nVert * 0x24);
+	const byte *src = self->pVert;
+
+	CHECK(self->frmt == VERT_LTEX1N_XBOX);
+	for (int i = 0; i < self->nVert; i++, src += 0x16) {
+		float *d = (float *)(out + i * 0x24);
+		int16_t s[3];
+		uint32_t nrm;
+		float uv[2];
+
+		memcpy(s, src, sizeof(s));
+		memcpy(&nrm, src + 6, sizeof(nrm));
+		memcpy(uv, src + 0xe, sizeof(uv));
+		d[0] = (float)s[0] * posScale;
+		d[1] = (float)s[1] * posScale;
+		d[2] = (float)s[2] * posScale;
+		memcpy(&d[6], src + 10, 4);
+		d[7] = uv[0] / texScale;
+		d[8] = uv[1] / texScale;
+		ListaVert_UnpackNormal((vec3_t *)&d[3], nrm);
+	}
+	Mem_Free(self->pVert);
+	self->pVert = out;
+	self->totVert = self->nVert;
+	self->frmt = VERT_LTEX1N;
+}
+
+/* the triangle strips: a triangle is in use while bit 15 of its corners is set, taken when all are 0xffff */
+void Tri_Mark(uint16_t *tri) {
+	CHECK(((tri[0] | tri[1] | tri[2]) & TRI_USED) == 0);
+	tri[0] |= TRI_USED;
+	tri[1] |= TRI_USED;
+	tri[2] |= TRI_USED;
+}
+
+void Tri_Unmark(uint16_t *tri) {
+	CHECK(((tri[0] & tri[1] & tri[2]) & TRI_USED) != 0);
+	tri[0] &= ~TRI_USED;
+	tri[1] &= ~TRI_USED;
+	tri[2] &= ~TRI_USED;
+}
+
+void Tri_Rotate(uint16_t *tri, int n) {
+	n %= 3;
+	if (n <= 0) {
+		return;
+	}
+	uint16_t a = tri[1], b = tri[2];
+	do {
+		uint16_t c = tri[0];
+		tri[0] = a;
+		a = b;
+		b = c;
+	} while (--n > 0);
+	tri[1] = a;
+	tri[2] = b;
+}
+
+static void Tri_Take(uint16_t *tri) {
+	tri[0] = TRI_FREE;
+	tri[1] = TRI_FREE;
+	tri[2] = TRI_FREE;
+}
+
+int Strip_Next(const uint16_t *tris, int nTri, uint32_t a, uint32_t b, int depth, int *side) {
+	uint16_t e0 = (uint16_t)(a & 0x7fff);
+	uint16_t e1 = (uint16_t)(b & 0x7fff);
+
+	/* odd triangles of a strip run the other way round */
+	if (depth & 1) {
+		uint16_t t = e0;
+		e0 = e1;
+		e1 = t;
+	}
+	for (int t = 0; t < nTri; t++, tris += 3) {
+		if (tris[0] >= TRI_USED || tris[0] == TRI_FREE) {
+			continue;
+		}
+		if (tris[0] == e0 && tris[1] == e1) {
+			*side = 2;
+			return t;
+		}
+		if (tris[1] == e0 && tris[2] == e1) {
+			*side = 0;
+			return t;
+		}
+		if (tris[2] == e0 && tris[0] == e1) {
+			*side = 1;
+			return t;
+		}
+	}
+	return -1;
+}
+
+int Strip_Length(int t, uint16_t *tris, int nTri, int depth, uint32_t a, uint32_t b) {
+	uint16_t *tri = &tris[t * 3];
+	int side;
+	int len = 1;
+
+	Tri_Mark(tri);
+	int ts = Strip_Next(tris, nTri, a, b, depth + 1, &side);
+	CHECK(ts != t);
+	if (ts >= 0) {
+		len = Strip_Length(ts, tris, nTri, depth + 1, b, tris[ts * 3 + side]) + 1;
+	}
+	Tri_Unmark(tri);
+	return len;
+}
+
+int Strip_FindFirst(uint16_t *tris, int nTri, int depth) {
+	int best = 0, bestTri = 0, bestEdge = 0;
+
+	for (int t = 0; t < nTri; t++) {
+		const uint16_t *tri = &tris[t * 3];
+		if (tri[0] == TRI_FREE) {
+			continue;
+		}
+		int l0 = Strip_Length(t, tris, nTri, depth, tri[1], tri[2]);
+		int l1 = Strip_Length(t, tris, nTri, depth, tri[2], tri[0]);
+		int l2 = Strip_Length(t, tris, nTri, depth, tri[0], tri[1]);
+		if (l0 > best) {
+			best = l0;
+			bestTri = t;
+			bestEdge = 0;
+		}
+		if (l1 > best) {
+			best = l1;
+			bestTri = t;
+			bestEdge = 1;
+		}
+		if (l2 > best) {
+			best = l2;
+			bestTri = t;
+			bestEdge = 2;
+		}
+	}
+	if (best) {
+		Tri_Rotate(&tris[bestTri * 3], bestEdge);
+		return bestTri;
+	}
+	for (int t = 0; t < nTri; t++) {
+		CHECK(tris[t * 3] == TRI_FREE);
+	}
+	return -1;
+}
+
+int Strip_FindNew(uint16_t *tris, int nTri, int depth) {
+	for (int t = 0; t < nTri; t++) {
+		uint16_t *tri = &tris[t * 3];
+		int side;
+		if (tri[0] == TRI_FREE) {
+			continue;
+		}
+		Tri_Mark(tri);
+		int ta = Strip_Next(tris, nTri, tri[1], tri[2], depth + 1, &side);
+		CHECK(ta != t);
+		if (ta >= 0) {
+			Tri_Unmark(tri);
+			return t;
+		}
+		int tb = Strip_Next(tris, nTri, tri[2], tri[0], depth + 1, &side);
+		CHECK(tb != t);
+		if (tb >= 0) {
+			Tri_Rotate(tri, 1);
+			Tri_Unmark(tri);
+			return t;
+		}
+		int tc = Strip_Next(tris, nTri, tri[0], tri[1], depth + 1, &side);
+		CHECK(tc != t);
+		if (tc >= 0) {
+			Tri_Rotate(tri, 2);
+			Tri_Unmark(tri);
+			return t;
+		}
+		Tri_Unmark(tri);
+	}
+	for (int t = 0; t < nTri; t++) {
+		if (tris[t * 3] != TRI_FREE) {
+			return t;
+		}
+	}
+	return -1;
+}
+
+byte ListaVert_Strip(CListaVert *out, const CListaVert *in, const uint16_t *tris, int nTri) {
+	CHECK(nTri > 0);
+	CHECK(in->nVert >= 3);
+	CHECK(in->nVert <= 0x7fff);
+	uint16_t *sTri = New_Array(nTri, 6);
+	memcpy(sTri, tris, nTri * 6);
+	uint16_t *strip = New_Array(nTri * 8, 2);
+
+	int t = Strip_FindFirst(sTri, nTri, 0);
+	strip[0] = sTri[t * 3];
+	strip[1] = sTri[t * 3 + 1];
+	strip[2] = sTri[t * 3 + 2];
+	Tri_Take(&sTri[t * 3]);
+	int n = 3;
+	for (int k = nTri - 1; k > 0; k--) {
+		int side;
+		uint16_t v;
+		t = Strip_Next(sTri, nTri, strip[n - 2], strip[n - 1], n, &side);
+		if (t < 0) {
+			/* a new strip, joined by degenerate triangles */
+			t = Strip_FindFirst(sTri, nTri, n);
+			CHECK(t >= 0);
+			const uint16_t *tri = &sTri[t * 3];
+			strip[n] = strip[n - 1];
+			strip[n + 1] = tri[0];
+			strip[n + 2] = tri[0];
+			n += 3;
+			if (n & 1) {
+				strip[n++] = tri[1];
+				v = tri[2];
+			} else {
+				strip[n++] = tri[2];
+				v = tri[1];
+			}
+		} else {
+			v = sTri[t * 3 + side];
+		}
+		strip[n++] = v;
+		Tri_Take(&sTri[t * 3]);
+	}
+	CHECK(n < nTri * 8);
+	CHECK(Strip_FindNew(sTri, nTri, 0) < 0);
+
+	CListaVert_SetFormat(out, in->frmt);
+	CListaVert_Alloc(out, n, 0);
+	int size = ListaVert_FormatSize(out->frmt);
+	byte *dst = out->pVert;
+	for (int i = 0; i < n; i++, dst += size) {
+		CHECK(strip[i] < in->nVert);
+		memcpy(dst, in->pVert + strip[i] * size, size);
+	}
+	/* the color changes at each degenerate triangle */
+	int color = 0;
+	for (int i = 0; i < n; i++) {
+		if (i + 1 < n && strip[i] == strip[i + 1]) {
+			continue;
+		}
+		if (i > 0 && strip[i] == strip[i - 1]) {
+			color++;
+		}
+		uint32_t *c = CListaVert_GetField(out, LVERT_DIFFUSE, i);
+		if (c) {
+			*c = g_StripColors[color % STRIP_COLORS];
+		}
+	}
+	if (sTri) {
+		operator_delete_sized(sTri, 6);
+	}
+	if (strip) {
+		operator_delete_sized(strip, 2);
+	}
+	E3D_LogDebug(g_FileLog, "Strips Verts: %d -> %d", in->nVert, out->nVert);
+	return 1;
+}
+
+int VertCache_Find(int v) {
+	for (int i = 0; i < VCACHE_SIZE; i++) {
+		if (g_VCacheVert[i] == v) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+int VertCache_Oldest(void) {
+	int best = 1000000, slot = 0;
+
+	for (int i = 0; i < VCACHE_SIZE; i++) {
+		if (g_VCacheVert[i] < 0) {
+			return i;
+		}
+		if (g_VCacheAge[i] < best) {
+			best = g_VCacheAge[i];
+			slot = i;
+		}
+	}
+	return slot;
+}
+
+void VertCache_Add(int v) {
+	int slot = VertCache_Find(v);
+
+	if (slot < 0) {
+		g_VCacheMisses++;
+		slot = VertCache_Oldest();
+	} else {
+		g_VCacheHits++;
+	}
+	int count = g_VCacheCount;
+	g_VCacheAge[slot] = count;
+	count++;
+	g_VCacheVert[slot] = v;
+	g_VCacheCount = count;
+	CHECK(count < 65536);
+}
+
+void VertCache_Reset(void) {
+	memset(g_VCacheVert, -1, VCACHE_SIZE * sizeof(int));
+	memset(g_VCacheAge, -1, VCACHE_SIZE * sizeof(int));
+	g_VCacheCount = 0;
+	g_VCacheHits = 0;
+	g_VCacheMisses = 0;
+}
+
+byte VertCache_Optimize(uint16_t *tris, int nTri) {
+	VertCache_Reset();
+	for (int i = 0; i < nTri; i++) {
+		VertCache_Add(tris[i * 3]);
+		VertCache_Add(tris[i * 3 + 1]);
+		VertCache_Add(tris[i * 3 + 2]);
+	}
+	int hits = g_VCacheHits, misses = g_VCacheMisses;
+	VertCache_Reset();
+	for (int i = 0; i < nTri; i++, tris += 3) {
+		crt_qsort(tris, nTri - i, 6, (int (*)(const void *, const void *))Game_Ptr(VCACHE_COMPARE));
+		VertCache_Add(tris[0]);
+		VertCache_Add(tris[1]);
+		VertCache_Add(tris[2]);
+	}
+	E3D_LogDebug(g_FileLog, " prev. hit: %d  miss: %d", hits, misses);
+	E3D_LogDebug(g_FileLog, " opt.  hit: %d  miss: %d", g_VCacheHits, g_VCacheMisses);
+	return 1;
+}
