@@ -14,11 +14,6 @@
 
 #define g_TrailsDrawn GAME_DATA(int, 0x4a8f1c)	/* statistics of the frame */
 
-/* the D3DX math of the exe through its dispatcher stubs (stdcall) */
-vec3_t *__stdcall D3DX_Vec3Normalize(vec3_t *out, const vec3_t *v);
-vec3_t *__stdcall D3DX_Vec3Transform(vec3_t *out, const vec3_t *v, const matrix_t *m);
-matrix_t *__stdcall D3DX_MatrixRotationYPR(matrix_t *out, float yaw, float pitch, float roll);
-
 CTrail *__fastcall CTrail_ctor(CTrail *self) {
 	self->u0 = 0.0f;
 	self->v0 = 0.0f;

@@ -1264,3 +1264,41 @@ int Render_ToScreen(const vec3_t *pos, float *xy) {
 	xy[1] = h * 0.5f - (h * p.y + y) * 0.5f;
 	return 0;
 }
+
+/* the plane through a, b, c: normal (b - a) x (c - a), normalized unless it is 0 */
+static void Plane_From3(plane_t *out, const vec3_t *a, const vec3_t *b, const vec3_t *c) {
+	vec3_t u = { b->x - a->x, b->y - a->y, b->z - a->z };
+	vec3_t v = { c->x - a->x, c->y - a->y, c->z - a->z };
+	vec3_t n = { u.y * v.z - u.z * v.y, u.z * v.x - u.x * v.z, u.x * v.y - u.y * v.x };
+	float len = (float)__builtin_sqrt((double)(n.y * n.y + n.x * n.x + n.z * n.z));
+	if ((double)len != 0.0) {
+		float k = (float)(1.0 / (double)len);
+		n = (vec3_t){ n.x * k, n.y * k, n.z * k };
+	}
+	out->n = n;
+	out->d = -(n.y * a->y + n.x * a->x + n.z * a->z);
+}
+
+void Frustum_Calc(const matrix_t *view, const matrix_t *proj) {
+	/* the corners of the clip space: near (z 0) then far, each from top left on */
+	vec3_t c[8] = {
+		{ -1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 0.0f }, { 1.0f, -1.0f, 0.0f }, { -1.0f, -1.0f, 0.0f },
+		{ -1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { -1.0f, -1.0f, 1.0f },
+	};
+	static const byte planos[MAX_PLANOS_FRUSTUM][3] = {
+		{ 4, 6, 5 }, { 0, 1, 2 }, { 0, 3, 4 }, { 1, 5, 2 }, { 0, 4, 1 }, { 2, 6, 3 },
+	};
+	matrix_t tmp, m, inv;
+	m = *Matrix_MulD3D(&tmp, view, proj);
+	if (!D3DX_MatrixInverse(&inv, NULL, &m)) {
+		E3D_LogDebug(g_FileLog, "  ERROR: UpdateVisibilityPlanes(): Could not calculate the inverse matrix");
+		return;
+	}
+	for (int i = 0; i < 8; i++) {
+		Vec3_TransformH(&c[i], &c[i], &inv);
+	}
+	plane_t *fr = (plane_t *)g_Frustum;
+	for (int i = 0; i < MAX_PLANOS_FRUSTUM; i++) {
+		Plane_From3(&fr[i], &c[planos[i][0]], &c[planos[i][1]], &c[planos[i][2]]);
+	}
+}

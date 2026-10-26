@@ -288,10 +288,11 @@ void Render_NoIndexedBlend(void *dev);
 byte Render_SetViewRect(const box_t *rect, byte proj);
 /* the screen position (pixels) of a world position; 0, -1 when it is not on the screen */
 int Render_ToScreen(const vec3_t *pos, float *xy);
+/* the planes of the frustum of view and proj (UpdateVisibilityPlanes) */
+void Frustum_Calc(const matrix_t *view, const matrix_t *proj);
 
 /* still the exe's */
-/* rva 0x24d640: the planes of the frustum of view and proj */
-void Frustum_Calc(const matrix_t *view, const matrix_t *proj);
+
 
 /* other modules (src/imports.inc) */
 void RenderLock_ReleaseD3D(void);		/* rva 0x2a4860 (RenderLock.cpp) */

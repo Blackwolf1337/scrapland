@@ -7274,7 +7274,7 @@ rva	size	source	callconv	name	signature
 0024d460	267	USER_DEFINED	__cdecl	Render_CreateVB	int __cdecl(void ** vb, void * vert, byte dynamic)
 0024d570	44	USER_DEFINED	__cdecl	Render_VersionStr	char * __cdecl(uint v)
 0024d5a0	153	USER_DEFINED	__cdecl	Render_SetCamara	void __cdecl(void * cam)
-0024d640	3028	USER_DEFINED	unknown	Frustum_Calc	
+0024d640	3028	USER_DEFINED	__cdecl	Frustum_Calc	void __cdecl(void * view, void * proj)
 0024e220	363	USER_DEFINED	__cdecl	Render_ClipRect	byte __cdecl(int * out, uint * vp, void * rect)
 0024e390	24	USER_DEFINED	__cdecl	Render_NoIndexedBlend	void __cdecl(void * dev)
 0024e3b0	530	USER_DEFINED	__cdecl	Render_SetViewRect	byte __cdecl(void * rect, byte proj)

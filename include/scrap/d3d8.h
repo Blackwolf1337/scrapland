@@ -5,7 +5,7 @@
 #ifndef SCRAP_D3D8_H
 #define SCRAP_D3D8_H
 
-#include "scrap/game.h"
+#include "scrap/mathlib.h"
 
 #define E_FAIL ((int)0x80004005)
 
@@ -146,5 +146,12 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DFVF_DIFFUSE 0x40
 #define D3DLOCK_NOOVERWRITE 0x1000
 #define D3DLOCK_DISCARD 0x2000
+
+/* the D3DX math of the exe through its dispatcher stubs (stdcall) */
+vec3_t *__stdcall D3DX_Vec3Normalize(vec3_t *out, const vec3_t *v);
+vec3_t *__stdcall D3DX_Vec3Transform(vec3_t *out, const vec3_t *v, const matrix_t *m);
+matrix_t *__stdcall D3DX_MatrixRotationYPR(matrix_t *out, float yaw, float pitch, float roll);
+/* NULL when m has no inverse */
+matrix_t *__stdcall D3DX_MatrixInverse(matrix_t *out, float *det, const matrix_t *m);
 
 #endif

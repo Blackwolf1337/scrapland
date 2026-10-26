@@ -413,7 +413,6 @@ SD_IMPORT(CSuelo_FreeNodos, 0x261530)
 SD_IMPORT(Font_PrintfXY, 0x299ce0)
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
-SD_IMPORT(Frustum_Calc, 0x24d640)
 SD_IMPORT(CAnimMat_GetFrame, 0x258060)
 SD_IMPORT(Matrix_Invert, 0x239560)
 SD_IMPORT(RenderLock_ReleaseD3D, 0x2a4860)
@@ -467,6 +466,7 @@ SD_IMPORT(CSuelo_DrawDebug, 0x25a260)
 SD_IMPORT_STDCALL(D3DX_Vec3Normalize, 8, 0x006d3b)
 SD_IMPORT_STDCALL(D3DX_Vec3Transform, 12, 0x007086)
 SD_IMPORT_STDCALL(D3DX_MatrixRotationYPR, 16, 0x008701)
+SD_IMPORT_STDCALL(D3DX_MatrixInverse, 12, 0x007cea)
 
 /* module agent: Engine/Modelo (imports below this line) */
 SD_IMPORT(World_TimeScale, 0x20aea0)

@@ -373,3 +373,11 @@ for i in range(6):
 	SDTest.Poke(0x4ad7e0 + 4 * i, rdvp2[i])
 SDTest.Call(0x24c6a0, 'ii', rdfl(rdproj))
 SDTest.Call(0x24cde0, 'ii', rdfl(rdview))
+
+# Frustum_Calc from views and projections given here (one without an inverse); the planes put back after
+idm = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0)
+for v, p in ((idm, pm), (vm, pm), ((0.8, 0.0, -0.6, 0.0, 0.0, 1.0, 0.0, 0.0, 0.6, 0.0, 0.8, 0.0, 10.0, -5.0, 30.0, 1.0),
+	(1.2, 0.0, 0.0, 0.0, 0.0, 1.6, 0.0, 0.0, 0.0, 0.0, 1.0001, 1.0, 0.0, 0.0, -0.50005, 0.0)), (idm, (0.0,) * 16)):
+	check('Frustum_Calc' + fmt((v[12], p[0])), lambda v=v, p=p: (SDTest.Call(0x24d640, 'vFF', v, p), rdints(0x4adbf0, 24)))
+for i in range(24):
+	SDTest.Poke(0x4adbf0 + 4 * i, rdplanes[i])
