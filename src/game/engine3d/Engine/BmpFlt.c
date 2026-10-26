@@ -25,33 +25,15 @@ typedef struct {
 } txfKind_t;
 
 static float *BmpFlt_Pixel(const CBmpFlt *b, uint32_t x, uint32_t y, int ch) {
-	CHECK(b->img);
-	CHECK(x < (uint32_t)b->ancho);
-	CHECK(y < (uint32_t)b->alto);
-	return b->img + (b->ancho * y + x) * ch;
+	return Img_Pixel(b, x, y, ch * sizeof(float));
 }
 
-/* the original frees the pixels with the sized delete of one pixel */
 static void BmpFlt_Free(CBmpFlt *b, int ch) {
-	b->ancho = 0;
-	b->alto = 0;
-	if (b->img) {
-		operator_delete_sized(b->img, ch * sizeof(float));
-		b->img = NULL;
-	}
+	Img_Free(b, ch * sizeof(float));
 }
 
 static void BmpFlt_Create(CBmpFlt *b, int ancho, int alto, int ch) {
-	BmpFlt_Free(b, ch);
-	b->ancho = ancho;
-	b->alto = alto;
-	b->img = New_Array(ancho * alto, ch * sizeof(float));
-}
-
-static int TXF_IsTxf(const char *name) {
-	int len = strlen(name);
-
-	return !crt_stricmp(name + (len - 4 > 0 ? len - 4 : 0), ".txf");
+	Img_Create(b, ancho, alto, ch * sizeof(float));
 }
 
 static int TXF_LoadKind(const txfKind_t *k, const char *name, CBmpFlt *dest, void *extra, int nbytes) {
@@ -131,7 +113,7 @@ log:
 static int BmpFlt_Load(const txfKind_t *k, CBmpFlt *b, const char *name, void *extra, int nbytes) {
 	CHECK(name);
 	BmpFlt_Free(b, k->ch);
-	if (!TXF_IsTxf(name)) {
+	if (!Img_IsExt(name, ".txf")) {
 		return -1;
 	}
 	return TXF_LoadKind(k, name, b, extra, nbytes);
@@ -139,7 +121,7 @@ static int BmpFlt_Load(const txfKind_t *k, CBmpFlt *b, const char *name, void *e
 
 static int BmpFlt_Save(const txfKind_t *k, CBmpFlt *b, const char *name, byte flags, const void *extra, int nbytes) {
 	CHECK(name);
-	if (!TXF_IsTxf(name)) {
+	if (!Img_IsExt(name, ".txf")) {
 		return -1;
 	}
 	return TXF_SaveKind(k, name, b, flags, extra, nbytes);
@@ -159,19 +141,7 @@ static void BmpFlt_Blend(CBmpFlt *self, int x, int y, const CBmpFlt *orig, int o
 	CHECK(orig);
 	CHECK(orig->img);
 	CHECK(self->img);
-	if (orig->ancho - ox <= w) {
-		w = orig->ancho - ox;
-	}
-	if (orig->alto - oy <= h) {
-		h = orig->alto - oy;
-	}
-	if (self->ancho - x <= w) {
-		w = self->ancho - x;
-	}
-	if (self->alto - y <= h) {
-		h = self->alto - y;
-	}
-	if (w <= 0 || h <= 0) {
+	if (!Img_Clip(self, x, y, orig, ox, oy, &w, &h)) {
 		return;
 	}
 	float fa = (float)a * (1.0f / 256);
@@ -183,22 +153,6 @@ static void BmpFlt_Blend(CBmpFlt *self, int x, int y, const CBmpFlt *orig, int o
 			d[i] = s[i] * fa + d[i] * fb;
 		}
 	}
-}
-
-/* the start of Resample: a missing image gets the size of orig, the same size with all channels is a copy */
-static int BmpFlt_ResampleCopy(CBmpFlt *self, const CBmpFlt *orig, uint32_t mask, int ch) {
-	CHECK(orig);
-	CHECK(orig->img);
-	CHECK(mask);
-	if (!self->img) {
-		BmpFlt_Create(self, orig->ancho, orig->alto, ch);
-		CHECK(self->img);
-	}
-	if (self->ancho == orig->ancho && self->alto == orig->alto && mask == 0xf) {
-		memcpy(self->img, orig->img, self->alto * self->ancho * ch * sizeof(float));
-		return 1;
-	}
-	return 0;
 }
 
 static const txfKind_t txfRgba = { TXF_CAB, 1, RGBA };
@@ -254,26 +208,21 @@ void __thiscall CBmpFlt_Blend(CBmpFlt *self, int x, int y, const CBmpFlt *orig, 
 	BmpFlt_Blend(self, x, y, orig, ox, oy, w, h, a, b, RGBA);
 }
 
-/* the first source row or column of destination i */
-static int BmpFlt_BoxStart(int i, float scale) {
-	return (int)((double)((float)i * scale) + 1e-4);
-}
-
 void __thiscall CBmpFlt_Resample(CBmpFlt *self, const CBmpFlt *orig, uint32_t mask) {
-	if (BmpFlt_ResampleCopy(self, orig, mask, RGBA)) {
+	if (Img_ResampleCopy(self, orig, mask, RGBA * sizeof(float))) {
 		return;
 	}
 	float sx = (float)orig->ancho / (float)self->ancho;
 	float sy = (float)orig->alto / (float)self->alto;
 	for (int y = 0; y < self->alto; y++) {
-		int y0 = BmpFlt_BoxStart(y, sy);
-		int y1 = BmpFlt_BoxStart(y + 1, sy);
+		int y0 = Img_BoxStart(y, sy);
+		int y1 = Img_BoxStart(y + 1, sy);
 		if (y1 == y0) {
 			y1++;
 		}
 		for (int x = 0; x < self->ancho; x++) {
-			int x0 = BmpFlt_BoxStart(x, sx);
-			int x1 = BmpFlt_BoxStart(x + 1, sx);
+			int x0 = Img_BoxStart(x, sx);
+			int x1 = Img_BoxStart(x + 1, sx);
 			if (x1 == x0) {
 				x1++;
 			}
@@ -385,7 +334,7 @@ void __thiscall CBmpFlt2_Blend(CBmpFlt2 *self, int x, int y, const CBmpFlt2 *ori
 }
 
 void __thiscall CBmpFlt2_Resample(CBmpFlt2 *self, const CBmpFlt2 *orig, uint32_t mask) {
-	if (!BmpFlt_ResampleCopy(self, orig, mask, RGB)) {
+	if (!Img_ResampleCopy(self, orig, mask, RGB * sizeof(float))) {
 		CHECK(0);
 	}
 }

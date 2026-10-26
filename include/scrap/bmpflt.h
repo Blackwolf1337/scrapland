@@ -6,15 +6,11 @@
 #ifndef SCRAP_BMPFLT_H
 #define SCRAP_BMPFLT_H
 
-#include "scrap/game.h"
+#include "scrap/bmp.h"
 
-typedef struct CBmpFlt {
-	int ancho;			/* 0x0 */
-	int alto;			/* 0x4 */
-	float *img;			/* 0x8 4 floats a pixel (3 in a CBmpFlt2), rows */
-} CBmpFlt;
-SD_SIZE(CBmpFlt, 0xc);
-typedef CBmpFlt CBmpFlt2;
+/* img: 4 floats a pixel, 3 in a CBmpFlt2 */
+typedef CImagen CBmpFlt;
+typedef CImagen CBmpFlt2;
 
 #define TXF_MAGIC 0x1a465854	/* "TXF\x1a" */
 

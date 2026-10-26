@@ -6961,7 +6961,7 @@ rva	size	source	callconv	name	signature
 00236a50	117	DEFAULT	unknown	FUN_00636a50	
 00236ad0	341	DEFAULT	unknown	FUN_00636ad0	
 00236c30	108	DEFAULT	unknown	FUN_00636c30	
-00236ca0	124	DEFAULT	unknown	FUN_00636ca0	
+00236ca0	124	USER_DEFINED	__thiscall	CBmp_Pixel	uint * __thiscall(uint x, uint y)
 00236d20	4	DEFAULT	unknown	FUN_00636d20	
 00236d30	59	DEFAULT	unknown	FUN_00636d30	
 00236d70	68	DEFAULT	unknown	FUN_00636d70	
@@ -8297,27 +8297,27 @@ rva	size	source	callconv	name	signature
 002a8370	13	ANALYSIS	__thiscall	CFXNewsPanel::vf01	undefined __thiscall(void)
 002a8380	700	ANALYSIS	__thiscall	CFXTexLava::vf01	undefined __thiscall(void)
 002a8640	243	ANALYSIS	__thiscall	CFXTexScroll::vf01	undefined __thiscall(void)
-002a8740	230	DEFAULT	unknown	FUN_006a8740	
-002a8830	908	DEFAULT	unknown	FUN_006a8830	
-002a8bc0	72	DEFAULT	unknown	FUN_006a8bc0	
-002a8c10	448	DEFAULT	unknown	FUN_006a8c10	
-002a8dd0	846	DEFAULT	unknown	FUN_006a8dd0	
+002a8740	230	USER_DEFINED	__cdecl	Color_Lerp	uint __cdecl(uint a, uint b, float t)
+002a8830	908	USER_DEFINED	__fastcall	CBmp_Blur	void __fastcall(void *self)
+002a8bc0	72	USER_DEFINED	__thiscall	CBmp_Fill	void __thiscall(uint color)
+002a8c10	448	USER_DEFINED	__thiscall	CBmp_Copy	void __thiscall(int x, int y, void *orig, int ox, int oy, int w, int h, uint mask)
+002a8dd0	846	USER_DEFINED	__thiscall	CBmp_Effect	void __thiscall(int kind)
 002a9120	523	DEFAULT	unknown	FUN_006a9120	
 002a9330	287	DEFAULT	unknown	FUN_006a9330	
 002a9450	745	DEFAULT	unknown	FUN_006a9450	
 002a9740	160	DEFAULT	unknown	FUN_006a9740	
-002a97e0	508	DEFAULT	unknown	FUN_006a97e0	
-002a99e0	470	DEFAULT	unknown	FUN_006a99e0	
-002a9bc0	91	DEFAULT	unknown	FUN_006a9bc0	
+002a97e0	508	USER_DEFINED	__thiscall	CBmp_Exposure	void __thiscall(float a, float b)
+002a99e0	470	USER_DEFINED	__thiscall	CBmp_Gamma	void __thiscall(float g, float b)
+002a9bc0	91	USER_DEFINED	__thiscall	CBmp_Create	void __thiscall(int ancho, int alto)
 002a9c20	928	DEFAULT	unknown	FUN_006a9c20	
 002a9fc0	240	DEFAULT	unknown	FUN_006a9fc0	
 002aa0b0	746	DEFAULT	unknown	FUN_006aa0b0	
 002aa3a0	198	DEFAULT	unknown	FUN_006aa3a0	
-002aa470	586	DEFAULT	unknown	FUN_006aa470	
-002aa6c0	593	DEFAULT	unknown	FUN_006aa6c0	
-002aa920	607	DEFAULT	unknown	FUN_006aa920	
-002aab80	1124	DEFAULT	unknown	FUN_006aab80	
-002aaff0	1603	DEFAULT	unknown	FUN_006aaff0	
+002aa470	586	USER_DEFINED	__thiscall	CBmp_MixChannels	void __thiscall(uint in, uint out)
+002aa6c0	593	USER_DEFINED	__thiscall	CBmp_Blend	void __thiscall(int x, int y, void *orig, int ox, int oy, int w, int h, int a, int b)
+002aa920	607	USER_DEFINED	__thiscall	CBmp_Sample	uint * __thiscall(uint *out, float u, float v)
+002aab80	1124	USER_DEFINED	__fastcall	CBmp_Sharpen	void __fastcall(void *self)
+002aaff0	1603	USER_DEFINED	__thiscall	CBmp_Resample	void __thiscall(void *orig, uint mask)
 002ab640	81	DEFAULT	unknown	FUN_006ab640	
 002ab6f0	275	DEFAULT	unknown	FUN_006ab6f0	
 002ab830	34	DEFAULT	unknown	FUN_006ab830	
@@ -10387,7 +10387,7 @@ rva	size	source	callconv	name	signature
 00323bdb	42	ANALYSIS	__cdecl	_atol	long __cdecl(char * _Str)
 00323c05	42	ANALYSIS	__cdecl	FID_conflict:_atoll	longlong __cdecl(char * _String)
 00323c2f	33	USER_DEFINED	__cdecl	rand	int __cdecl(void)
-00323c50	18	DEFAULT	unknown	FUN_00723c50	
+00323c50	18	USER_DEFINED	__cdecl	srand	void __cdecl(uint seed)
 00323c62	16	DEFAULT	unknown	FUN_00723c62	
 00323c72	47	ANALYSIS	__cdecl	__crt_strtox::assemble_floating_point_ind<double>	void __cdecl(double * param_1)
 00323ca1	29	DEFAULT	unknown	FUN_00723ca1	

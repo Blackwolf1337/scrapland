@@ -784,4 +784,75 @@ check('TXF2_Load short', lambda bl=bl: (SDTest.Call(0x2cfca0, 'isiizi', 'sdshort
 bfree(bl)
 bfree(ba)
 bfree(bb)
+
+# engine3d Engine/Bmp.c: RGBA byte images, pixels poked as ints (Poke takes an rva, the exe is at 0x400000)
+def cpix():
+	v = []
+	for i in range(4):
+		v.append(int(rnd(0.0, 256.0)))
+	a = v[3]
+	if a >= 128:
+		a = a - 256
+	return v[0] + (v[1] << 8) + (v[2] << 16) + (a << 24)
+def cset(b, vals):
+	img = SDTest.Peek(b + 8, '@i')
+	for i in range(len(vals)):
+		SDTest.Poke(img + 4 * i - 0x400000, vals[i])
+def cvals(n):
+	v = []
+	for i in range(n):
+		v.append(cpix())
+	return v
+def cstep(name, b, rva, sig, *args):
+	bcheck(name + fmt(args), b, rva, sig, args, 1)
+ca = bnew(6, 5, 0x2a9bc0)
+cb = bnew(3, 4, 0x2a9bc0)
+va = cvals(30)
+cset(ca, va)
+cset(cb, cvals(12))
+check('CBmp_Create', lambda: bget(ca, 1))
+check('CBmp_Pixel', lambda: SDTest.Call(0x236ca0, 'tiiii', ca, 5, 4)[0] - SDTest.Peek(ca + 8, '@i'))
+for t in (0.0, 0.5, 1.0, 0.25, -0.5, 2.0, 0.999, 0.0039):
+	call('Color_Lerp', 0x2a8740, 'iiif', 0x10ff8040, -0x7f00ff01, t)
+for r in ((0, 0, 0, 0, 3, 4, 15), (1, 1, 0, 0, 9, 9, 5), (4, 3, 1, 1, 5, 5, 8), (2, 0, 2, 1, 1, 1, 6), (0, 0, 0, 0, 0, 2, 15), (7, 0, 0, 0, 2, 2, 15)):
+	bcheck('CBmp_Copy' + fmt(r), ca, 0x2a8c10, 'tviiiiiiiii', (r[0], r[1], cb) + r[2:], 1)
+for r in ((0, 0, 0, 0, 3, 2, 256, 0), (1, 1, 0, 0, 9, 9, 128, 128), (2, 1, 1, 0, 2, 3, -300, 600), (0, 0, 0, 0, 3, 4, 0x200000, -0x200000), (4, 3, 1, 1, 5, 5, 7, 300)):
+	bcheck('CBmp_Blend' + fmt(r), ca, 0x2aa6c0, 'tviiiiiiiiii', (r[0], r[1], cb) + r[2:], 1)
+# the game seeds rand with the time: srand of the exe
+SDTest.Call(0x323c50, 'vi', 12345)
+for k in (0, 1, 2, 3, 4):
+	cset(ca, va)
+	cstep('CBmp_Effect', ca, 0x2a8dd0, 'tvii', k)
+for e in ((1.0, 255.0), (2.5, 255.0), (0.5, 100.0), (-1.0, 255.0), (0.01, 255.0)):
+	cset(ca, va)
+	cstep('CBmp_Exposure', ca, 0x2a97e0, 'tviff', e[0], e[1])
+for e in ((1.0, 255.0), (2.2, 255.0), (0.45, 255.0), (-1.0, 128.0), (3.0, 0.0)):
+	cset(ca, va)
+	cstep('CBmp_Gamma', ca, 0x2a99e0, 'tviff', e[0], e[1])
+for m in ((7, 7), (1, 8), (15, 1), (8, 6), (2, 15)):
+	cset(ca, va)
+	cstep('CBmp_MixChannels', ca, 0x2aa470, 'tviii', m[0], m[1])
+cset(ca, va)
+for u in (0.0, 0.1, 0.5, 0.77, 1.0):
+	for v in (0.0, 0.33, 0.9, 1.0):
+		check('CBmp_Sample' + fmt((u, v)), lambda u=u, v=v: SDTest.Call(0x2aa920, 'tiipff', ca, 0, u, v)[1])
+cstep('CBmp_Sharpen', ca, 0x2aab80, 'tvi')
+cset(ca, va)
+cstep('CBmp_Blur', ca, 0x2a8830, 'tvi')
+cset(ca, va)
+cstep('CBmp_Fill', ca, 0x2a8bc0, 'tvii', 0x11223344)
+cset(ca, va)
+cc = bnew(6, 4, 0x2a9bc0)
+cset(cc, cvals(24))
+for d in ((3, 2, 15), (3, 2, 5), (6, 4, 15), (6, 4, 9), (4, 3, 15), (7, 6, 15), (2, 2, 10), (1, 1, 15)):
+	bd = bnew(d[0], d[1], 0x2a9bc0)
+	cset(bd, cvals(d[0] * d[1]))
+	bcheck('CBmp_Resample' + fmt(d), bd, 0x2aaff0, 'tviii', (cc, d[2]), 1)
+	bfree(bd)
+bd = SDTest.Call(0x133650, 'ii', 12)[0]
+bcheck('CBmp_Resample new', bd, 0x2aaff0, 'tviii', (ca, 15), 1)
+bfree(bd)
+bfree(cc)
+bfree(ca)
+bfree(cb)
 finish()

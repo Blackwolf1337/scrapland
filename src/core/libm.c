@@ -78,6 +78,14 @@ double Game_Atan2(double y, double x) {
 	return r;
 }
 
+/* fld and fistp: a double to integer in the rounding mode of the x87, the inline conversion of MSVC */
+int64_t X87_Fistp(double x) {
+	int64_t r;
+
+	__asm__("fistpll %0" : "=m"(r) : "t"(x) : "st");
+	return r;
+}
+
 /* x87 fsincos of a float, both results rounded to float: the inline code of the original */
 void X87_SinCos(float a, float *s, float *c) {
 	long double sl, cl;
