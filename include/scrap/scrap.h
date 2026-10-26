@@ -183,7 +183,6 @@ void __thiscall Alarm_SetLock(void *alarm, int lock);
 typedef void *(__cdecl *SteamContextInit_t)(void *ctx);
 #define g_SteamInternal_ContextInit GAME_DATA(SteamContextInit_t, 0x3a15a4)
 #define g_SteamFriendsContext ((void *)Game_Ptr(0x428a30))
-void Font_Build(const char *name, int size);
 void Loading_Init(void);
 void Loading_End(void);
 int Video_GetCurrentMode(void);

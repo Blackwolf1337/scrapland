@@ -9,6 +9,7 @@
 #include "scrap/game.h"
 #include "scrap/mathlib.h"
 #include "scrap/pyfunction.h"
+#include "scrap/scrapfont.h"
 #include "scrap/python.h"
 
 typedef struct cScorerItem cScorerItem;
@@ -81,10 +82,7 @@ void Scorer_SetHeadMonitor(const char *a, const char *b, int c);
 void Scorer_SetMsgText(const char *text, float time, const char *font);
 void Scorer_SetLabelText(const char *text, float time);
 void Scorer_PreloadTexture(const char *name, int flag);
-/* screen position of a world point; returns into out[2], last argument 0 here */
-void Engine_WorldToScreen(const vec3_t *pos, float *out, int arg);
-void *Font_Get(const char *name);
-/* size of a printf text in the font: *size = width, height; x, y 0 here */
-void Font_TextSize(void *font, float *rect, float *size, float x, float y, const char *fmt, ...);
+/* screen position of a world point into out[2], 0 off the screen; last argument 0 here */
+byte Engine_WorldToScreen(const vec3_t *pos, float *out, int arg);
 
 #endif
