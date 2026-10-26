@@ -7,6 +7,7 @@
 
 #include "scrap/archio.h"
 #include "scrap/console.h"
+#include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/textura.h"
 
@@ -20,7 +21,6 @@
 #define FMT_P8 0x29
 #define FMT_DXT1 0x31545844
 #define FMT_DXT5 0x35545844
-#define D3DPOOL_MANAGED 1
 #define D3DX_FILTER_DITHER_DIFFUSION 0x80000
 #define D3DX_FILTER_POINT 2
 #define D3DX_FILTER_TRIANGLE 4
@@ -83,9 +83,7 @@ typedef struct {
 	void *pBits;			/* 0x4 */
 } d3dLockedRect_t;
 
-/* COM methods by vtable offset (stdcall, the object first) */
-#define D3D_METHOD(obj, type, off) ((type)(*(void ***)(obj))[(off) / 4])
-typedef uint32_t(__stdcall *comRelease_t)(void *self);
+/* the texture and surface methods */
 typedef int(__stdcall *texGetDevice_t)(void *tex, void **dev);
 typedef uint32_t(__stdcall *texSetLOD_t)(void *tex, uint32_t lod);
 typedef uint32_t(__stdcall *texGetLevelCount_t)(void *tex);
@@ -97,8 +95,6 @@ typedef int(__stdcall *devCreateImageSurface_t)(void *dev, uint32_t w, uint32_t 
 typedef int(__stdcall *surfGetDesc_t)(void *surf, d3dSurfaceDesc_t *desc);
 typedef int(__stdcall *surfLockRect_t)(void *surf, d3dLockedRect_t *r, const void *rect, uint32_t flags);
 typedef int(__stdcall *surfUnlockRect_t)(void *surf);
-
-#define COM_RELEASE(obj) D3D_METHOD(obj, comRelease_t, 0x8)(obj)
 
 /* D3DX 8, linked into the exe */
 int __stdcall D3DX_CheckTextureRequirements(void *dev, uint32_t *w, uint32_t *h, uint32_t *levels, uint32_t usage,
@@ -276,7 +272,7 @@ int __thiscall CTextura_UploadLevel(CTextura *self, CBmp *src, int level) {
 	if (hr < 0) {
 		goto out;
 	}
-	hr = D3D_METHOD(dev, devCreateImageSurface_t, 0x6c)(dev, desc.Width, desc.Height, FMT_A8R8G8B8, &surf);
+	hr = D3D_METHOD(dev, devCreateImageSurface_t, D3DDEV_CREATEIMAGESURFACE)(dev, desc.Width, desc.Height, FMT_A8R8G8B8, &surf);
 	if (hr < 0) {
 		goto out;
 	}
@@ -700,7 +696,7 @@ int __thiscall CTextura_CreateD3D(CTextura *self, void *dev) {
 		if (w != (uint32_t)self->ancho || h != (uint32_t)self->alto) {
 			E3D_LogVerbose(g_FileLog, "Invalid texture size: %d x %d", self->ancho, self->alto);
 		}
-		hr = D3D_METHOD(dev, devCreateTexture_t, 0x50)(dev, w, h, !self->mipmap, 0, fmt, D3DPOOL_MANAGED, &self->tex);
+		hr = D3D_METHOD(dev, devCreateTexture_t, D3DDEV_CREATETEXTURE)(dev, w, h, !self->mipmap, 0, fmt, D3DPOOL_MANAGED, &self->tex);
 		if (!hr) {
 			hr = CTextura_UploadLevel(self, self->bitmap, 0);
 		}

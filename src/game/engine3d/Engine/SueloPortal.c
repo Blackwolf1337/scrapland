@@ -5,6 +5,7 @@
 
 #include "scrap/camara.h"
 #include "scrap/console.h"
+#include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/portal.h"
 #include "scrap/sistpart.h"
@@ -17,8 +18,6 @@
 #define PORTAL_ASPECT 1.33f			/* the screen height of a sphere */
 #define PORTAL_EPS 8.0e-6f			/* the step out of a portal, times the distance to the origin */
 
-typedef long(__stdcall *d3dGetViewport_t)(void *dev, uint32_t *vp);
-#define D3D_METHOD_VP(dev) ((d3dGetViewport_t)((*(void ***)(dev))[0xa4 / 4]))
 
 CZona *__fastcall CZona_ctor(CZona *self) {
 	self->rect = (box_t){ { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
@@ -306,7 +305,7 @@ byte __thiscall SectorVis_Sphere(SectorVis *self, const vec3_t *pos, const vec3_
 	if (g_PortalTest > 1) {
 		uint32_t view[6];
 		void *dev = g_pd3dDevice;
-		D3D_METHOD_VP(dev)(dev, view);
+		D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, view);
 		int x0 = Portal_Pixel(r.min.x + 1.0f, view[2], view[0]);
 		int y0 = Portal_Pixel(1.0f - r.min.y, view[3], view[1]) - 1;
 		int y1 = Portal_Pixel(1.0f - r.max.y, view[3], view[1]);

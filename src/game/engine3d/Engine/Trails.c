@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/nodo3d.h"
 #include "scrap/material.h"
@@ -21,38 +22,6 @@ vec3_t *__stdcall D3DX_Vec3Transform(vec3_t *out, const vec3_t *v, const matrix_
 matrix_t *__stdcall D3DX_MatrixRotationYPR(matrix_t *out, float yaw, float pitch, float roll);
 /* Engine/render.cpp: the camera position of the frame; the world matrix (with noDevice only remembered) */
 int Render_SetMaterial(void *mat, int pass);
-
-/* IDirect3DDevice8, IDirect3DVertexBuffer8 and IDirect3DIndexBuffer8 methods by vtable offset (stdcall, the object
- * first) */
-#define D3D_METHOD(obj, type, off) ((type)(*(void ***)(obj))[(off) / 4])
-typedef uint32_t(__stdcall *d3dRelease_t)(void *obj);
-typedef int(__stdcall *d3dCreateVB_t)(void *dev, uint32_t len, uint32_t usage, uint32_t fvf, int pool, void **vb);
-typedef int(__stdcall *d3dCreateIB_t)(void *dev, uint32_t len, uint32_t usage, int fmt, int pool, void **ib);
-typedef int(__stdcall *d3dSetRenderState_t)(void *dev, uint32_t state, uint32_t value);
-typedef int(__stdcall *d3dSetVertexShader_t)(void *dev, uint32_t fvf);
-typedef int(__stdcall *d3dSetStreamSource_t)(void *dev, uint32_t stream, void *vb, uint32_t stride);
-typedef int(__stdcall *d3dSetIndices_t)(void *dev, void *ib, uint32_t baseVertex);
-typedef int(__stdcall *d3dDrawIndexedPrimitive_t)(void *dev, int type, uint32_t minIndex, uint32_t numVertices,
-	uint32_t startIndex, uint32_t primCount);
-typedef int(__stdcall *d3dLock_t)(void *buf, uint32_t off, uint32_t size, void *data, uint32_t flags);
-typedef int(__stdcall *d3dUnlock_t)(void *buf);
-#define D3DDEV_CREATEVB 0x5c
-#define D3DDEV_CREATEIB 0x60
-#define D3DDEV_DRAWINDEXEDPRIMITIVE 0x11c
-#define D3DDEV_SETRENDERSTATE 0xc8
-#define D3DDEV_SETVERTEXSHADER 0x130
-#define D3DDEV_SETSTREAMSOURCE 0x14c
-#define D3DDEV_SETINDICES 0x154
-#define D3DBUF_LOCK 0x2c
-#define D3DBUF_UNLOCK 0x30
-#define D3DRS_CULLMODE 22
-#define D3DCULL_NONE 1
-#define D3DCULL_CCW 3
-#define D3DPT_TRIANGLELIST 4
-#define D3DUSAGE_WRITEONLY_DYNAMIC 0x208
-#define D3DFMT_INDEX16 101
-#define D3DLOCK_NOOVERWRITE 0x1000
-#define D3DLOCK_DISCARD 0x2000
 
 CTrail *__fastcall CTrail_ctor(CTrail *self) {
 	self->u0 = 0.0f;
@@ -714,11 +683,11 @@ int Trails_Release(void) {
 		CHECK(g_TrailsVB);
 	}
 	if (g_TrailsVB) {
-		D3D_METHOD(g_TrailsVB, d3dRelease_t, 8)(g_TrailsVB);
+		COM_RELEASE(g_TrailsVB);
 		g_TrailsVB = NULL;
 	}
 	if (g_TrailsIB) {
-		D3D_METHOD(g_TrailsIB, d3dRelease_t, 8)(g_TrailsIB);
+		COM_RELEASE(g_TrailsIB);
 		g_TrailsIB = NULL;
 	}
 	return 0;

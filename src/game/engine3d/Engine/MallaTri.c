@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/d3d8.h"
 #include "scrap/mallatri.h"
 
 #define CMALLATRI_VFTABLE 0x3dbcf0
@@ -18,12 +19,6 @@
 #define g_TrisDrawn GAME_DATA(int, 0x4a8f00)
 #define g_VertsDrawn GAME_DATA(int, 0x4a8f04)
 
-/* IDirect3DDevice8: SetVertexShader with an FVF, DrawPrimitiveUP */
-#define D3DDEV8_SETVERTEXSHADER (0x130 / 4)
-#define D3DDEV8_DRAWPRIMITIVEUP (0x120 / 4)
-#define D3DPT_TRIANGLELIST 4
-typedef int(__stdcall *d3dSetVertexShader_t)(void *dev, uint32_t fvf);
-typedef int(__stdcall *d3dDrawPrimitiveUP_t)(void *dev, int type, uint32_t count, const void *data, uint32_t stride);
 typedef void(__thiscall *mallaD3DDelete_t)(CMallaD3D *self, int flags);
 typedef void(__thiscall *mallaD3DDraw_t)(CMallaD3D *self, void *dev, int arg);
 
@@ -531,10 +526,8 @@ void __thiscall CMallaTri_Draw(CMallaTri *self, void *dev, int unused) {
 				v[k].uv.v = 0.0f;
 			}
 		}
-		void **vt = *(void ***)dev;
-		((d3dSetVertexShader_t)vt[D3DDEV8_SETVERTEXSHADER])(dev, MALLATRI_FVF);
-		vt = *(void ***)dev;
-		((d3dDrawPrimitiveUP_t)vt[D3DDEV8_DRAWPRIMITIVEUP])(dev, D3DPT_TRIANGLELIST, 1, v, sizeof(CVertMalla));
+		D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, MALLATRI_FVF);
+		D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLELIST, 1, v, sizeof(CVertMalla));
 	}
 	g_TrisDrawn += self->nTri;
 	g_VertsDrawn += self->nTri * 3;

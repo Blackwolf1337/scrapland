@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/grafico3d.h"
 #include "scrap/mallatri.h"
@@ -12,11 +13,6 @@
 #define g_RenderTris GAME_DATA(int, 0x4a8f00)
 #define g_RenderVerts GAME_DATA(int, 0x4a8f04)
 #define D3DFVF_SPRITE 0x1c2		/* XYZ | DIFFUSE | SPECULAR | TEX1 */
-#define D3DPT_TRIANGLESTRIP 5
-
-typedef long(__stdcall *d3dSetFVF_t)(void *dev, uint32_t fvf);
-typedef long(__stdcall *d3dDrawPrimitiveUP_t)(void *dev, int type, uint32_t count, const void *data, uint32_t stride);
-#define D3D_METHOD(dev, slot, type) ((type)((*(void ***)(dev))[(slot) / 4]))
 
 /* the members both constructors clear */
 static void Grafico3D_Clear(CGrafico3D *self) {
@@ -116,8 +112,8 @@ void __fastcall CGrafico3D_Draw(CGrafico3D *self) {
 		{ { -hw, -hh, 0.0f }, color, 0, 0.0f, 1.0f },
 		{ { hw, -hh, 0.0f }, color, 0, 1.0f, 1.0f },
 	};
-	D3D_METHOD(dev, 0x130, d3dSetFVF_t)(dev, D3DFVF_SPRITE);
-	D3D_METHOD(dev, 0x120, d3dDrawPrimitiveUP_t)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
+	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_SPRITE);
+	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
 	g_RenderTris += 2;
 	g_RenderVerts += 4;
 }

@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/luz.h"
 #include "scrap/sueloportal.h"
@@ -14,7 +15,6 @@
 /* "no limit" for the range of the device light and the start of the nearest search, a float constant of the exe */
 #define LUZ_RANGO_INF GAME_DATA(const float, 0x3d7be0)
 #define PROF_LUCES 0x1d		/* the profiler section of Luz_Select */
-#define D3DRS_AMBIENT 139
 
 #define g_Luces ((CLuz **)Game_Ptr(0x4ac438))	/* MAX_LUCES, the active lights */
 #define g_nLuces GAME_DATA(int, 0x4ac434)
@@ -50,25 +50,22 @@
 #define g_LightSort GAME_DATA(int, 0x4ac408)
 #define g_LightMultName GAME_DATA(const char *, 0x4ac420)
 
-/* IDirect3DDevice8 methods by vtable offset (stdcall, the device first) */
 typedef int(__stdcall *d3dSetLight_t)(void *dev, uint32_t idx, const D3DLight *l);
 typedef int(__stdcall *d3dLightEnable_t)(void *dev, uint32_t idx, int enable);
-typedef int(__stdcall *d3dSetRenderState_t)(void *dev, uint32_t state, uint32_t value);
-#define D3D_METHOD(dev, type, off) ((type)(*(void ***)(dev))[(off) / 4])
 
 static void D3D_SetLight(uint32_t idx, const D3DLight *l) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetLight_t, 0xb0)(dev, idx, l);
+	D3D_METHOD(dev, d3dSetLight_t, D3DDEV_SETLIGHT)(dev, idx, l);
 }
 
 static void D3D_LightEnable(uint32_t idx, int enable) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dLightEnable_t, 0xb8)(dev, idx, enable);
+	D3D_METHOD(dev, d3dLightEnable_t, D3DDEV_LIGHTENABLE)(dev, idx, enable);
 }
 
 static void D3D_SetRenderState(uint32_t state, uint32_t value) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetRenderState_t, 0xc8)(dev, state, value);
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
 }
 
 typedef void(__thiscall *nodoDelete_t)(CNodo3D *self, int flags);
