@@ -89,6 +89,13 @@ SD_SIZE(CUnifont, 0x10);
 #define g_FontsDir GAME_DATA(const char *, 0x431b50)	/* "2d/fonts-drm/" */
 #define g_FntComic14 GAME_DATA(CFuente3 *, 0x4d6dc8)
 #define g_FntTerm8 GAME_DATA(CFuente3 *, 0x4d6dcc)
+/* the materials of the outline of CFuente3_PrintContorno (the font and the unicode font), made again after each start
+ * of the device (g_MotorInits) or for another texture */
+#define g_FntMatContorno GAME_DATA(CMaterial *, 0x4d6dd0)
+#define g_FntMatContornoInit GAME_DATA(int, 0x4d6dd4)
+#define g_FntMatContornoUni GAME_DATA(CMaterial *, 0x4d6dd8)
+#define g_FntMatContornoUniInit GAME_DATA(int, 0x4d6ddc)
+#define g_MotorInits GAME_DATA(int, 0x4a8f74)	/* the starts of the device objects of the engine */
 
 CFuenteGrid *__thiscall CFuenteGrid_ctor(CFuenteGrid *self, const char *tex, const char *opac, byte pri, byte ult,
 	int celdaAncho, int celdaAlto, float espacio);
@@ -116,6 +123,7 @@ void __thiscall CFuente3_PrintColor(CFuente3 *self, float x, float y, uint32_t c
 /* flags: the alignment, FNT_ONDA, FNT_CONTORNO */
 void __thiscall CFuente3_PrintAlign(CFuente3 *self, float x, float y, uint32_t flags, uint32_t color, const char *s);
 void __thiscall CFuente3_PrintOnda(CFuente3 *self, float x, float y, uint32_t color, float onda, const char *s);
+/* a black outline (a pixel to each corner), the text, then a glow fading out to 3 pixels in its color */
 void __thiscall CFuente3_PrintContorno(CFuente3 *self, float x, float y, uint32_t color, const char *s);
 void Font_PrintfXY(CFuente3 *font, float x, float y, const char *fmt, ...);
 /* flags FNT_PRINT_* */

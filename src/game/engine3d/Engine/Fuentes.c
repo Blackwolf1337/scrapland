@@ -483,6 +483,192 @@ void __thiscall CFuente3_PrintOnda(CFuente3 *self, float x, float y, uint32_t co
 	grf->color = 0xffffff;
 }
 
+/* the outline material of the texture of src: cached in *mat until the device starts again or the texture changes */
+static CMaterial *Fnt_MatContorno(CMaterial *src, CMaterial **mat, int *init, const char *name) {
+	if (g_MotorInits == *init && *mat) {
+		const char *a = CMaterial_GetMapName(src, 0) ? CMaterial_GetMapName(src, 0) : "";
+		const char *b = CMaterial_GetMapName(*mat, 0) ? CMaterial_GetMapName(*mat, 0) : "";
+		if (!strcmp(b, a)) {
+			return *mat;
+		}
+	}
+	*init = g_MotorInits;
+	CMaterial m;
+	CMaterial_ctor(&m);
+	Cad_Set(&m.Nombre, name);
+	CMaterial_SetMap(&m, 0, CMaterial_GetMapName(src, 0));
+	m.params.srcBlend = 5;
+	m.params.dstBlend = 6;
+	m.params.b39 = 0;
+	m.params.transp = 1;
+	m.params.i40 = 8;
+	m.params.atrib = 0x40;
+	m.params.w3e = 0;
+	*mat = Mat_New(&m, 1);
+	CMaterial_dtor(&m);
+	return *mat;
+}
+
+static byte Unifont_Activa(void) {
+	return g_Unifont.grf && g_Unifont.sprites;
+}
+
+static void Fnt_SetBlend(CMaterial *mat, CMaterial *uni, int dst) {
+	mat->params.srcBlend = 5;
+	mat->params.dstBlend = dst;
+	if (Unifont_Activa()) {
+		uni->params.srcBlend = 5;
+		uni->params.dstBlend = dst;
+	}
+}
+
+/* the unicode character at c: its sprite on the unicode sprite, its size; 0 if c is not one */
+static byte CFuente3_UniGlifo(const CFuente3 *self, const char *c, float *w, float *h) {
+	uint16_t u;
+	if (!CUnifont_Parse(&g_Unifont, c, &u)) {
+		return 0;
+	}
+	*h = CFuente3_UniAlto(self);
+	*w = CUnifont_Ancho(&g_Unifont, u, *h) * self->uniEscala[0];
+	CUnifont_SetSprite(&g_Unifont, u, *w, *h);
+	return 1;
+}
+
+static void CFuente3_UniDibujar(const CFuente3 *self, float x, float y) {
+	CGrafico2D *ug = g_Unifont.grf;
+	ug->x = self->uniOffset[0] + x;
+	ug->y = self->uniOffset[1] + y;
+	CGrafico2D_Render(ug);
+}
+
+static void CFuente3_GlifoDibujar(CFuente3 *self, float x, float y) {
+	self->grf->x = x;
+	self->grf->y = y;
+	CGrafico2D_Render(self->grf);
+}
+
+/* the sprite at x, y moved d to each corner */
+static void Fnt_Esquinas(CFuente3 *self, byte uni, float x, float y, float d) {
+	static const signed char esq[4][2] = { { -1, -1 }, { -1, 1 }, { 1, -1 }, { 1, 1 } };
+	for (int i = 0; i < 4; i++) {
+		float px = esq[i][0] < 0 ? x - d : d + x;
+		float py = esq[i][1] < 0 ? y - d : d + y;
+		if (uni) {
+			CFuente3_UniDibujar(self, px, py);
+		} else {
+			CFuente3_GlifoDibujar(self, px, py);
+		}
+	}
+}
+
+/* the glow: the corners at 0.5 to 3 pixels, the alpha of color in 7 steps less 16 per pixel */
+static void Fnt_Brillo(CFuente3 *self, byte uni, float x, float y, uint32_t color) {
+	uint32_t *c = uni ? &g_Unifont.grf->color : &self->grf->color;
+	float d = 0.5f;
+	do {
+		int a = (int)(color / 0x7000000) - (int)(d * 16.0f);
+		if (a <= 0) {
+			break;
+		}
+		*c = (uint32_t)(a + 6) << 24 | (color & 0xffffff);
+		Fnt_Esquinas(self, uni, x, y, d);
+		d += 0.4f;
+	} while (3.0f >= d);
+}
+
+void __thiscall CFuente3_PrintContorno(CFuente3 *self, float x, float y, uint32_t color, const char *s) {
+	if (!s) {
+		return;
+	}
+	CMaterial *grfMat = self->grf->Mat;
+	CHECK(grfMat);
+	CMaterial *mat = Fnt_MatContorno(grfMat, &g_FntMatContorno, &g_FntMatContornoInit, "Font_FX_Outline");
+	CMaterial *uniMat = g_FntMatContornoUni;
+	if (Unifont_Activa()) {
+		uniMat = Fnt_MatContorno(g_Unifont.grf->Mat, &g_FntMatContornoUni, &g_FntMatContornoUniInit,
+			"Font_FX_Outline_Unifont");
+	}
+	/* the outline */
+	Render_ClearForced();
+	g_MatFX1 = mat;
+	Fnt_SetBlend(mat, uniMat, 6);
+	self->grf->color = 0xdc000000;
+	float px = x;
+	for (const char *c = s; *c; c++) {
+		byte ch = (byte)*c;
+		float w, h;
+		if (ch >= self->pri && ch <= self->ult) {
+			g_MatFX1 = mat;
+			const FntGlifo *g = CFuente3_Glifo(self, (uint32_t)(ch - self->pri));
+			CFuente3_SetGlifo(self, g, self->grf->x, self->grf->y);
+			Fnt_Esquinas(self, 0, px, y, 1.0f);
+			px = CFuente3_GlifoAncho(self, g) + px;
+		} else if (Unifont_Activa()) {
+			g_MatFX1 = uniMat;
+			if (CFuente3_UniGlifo(self, c, &w, &h)) {
+				c += 4;
+				g_Unifont.grf->color = self->grf->color;
+				Fnt_Esquinas(self, 1, px, y, 1.0f);
+				px = w + 1.0f + px;
+			}
+		}
+	}
+	/* the text */
+	Render_ClearForced();
+	self->grf->color = color;
+	px = x;
+	for (const char *c = s; *c; c++) {
+		byte ch = (byte)*c;
+		float w, h;
+		if (ch >= self->pri && ch <= self->ult) {
+			const FntGlifo *g = CFuente3_Glifo(self, (uint32_t)(ch - self->pri));
+			CFuente3_SetGlifo(self, g, px, y);
+			CGrafico2D_Render(self->grf);
+			px = CFuente3_GlifoAncho(self, g) + px;
+		} else if (Unifont_Activa()) {
+			uint16_t u;
+			if (CUnifont_Parse(&g_Unifont, c, &u)) {
+				h = CFuente3_UniAlto(self);
+				w = CUnifont_Ancho(&g_Unifont, u, h) * self->uniEscala[0];
+				c += 4;
+				CGrafico2D *ug = g_Unifont.grf;
+				ug->x = self->uniOffset[0] + px;
+				ug->y = self->uniOffset[1] + y;
+				ug->color = self->grf->color;
+				CUnifont_SetSprite(&g_Unifont, u, w, h);
+				CGrafico2D_Render(ug);
+				px = w + 1.0f + px;
+			}
+		}
+	}
+	/* the glow, added */
+	Render_ClearForced();
+	g_MatFX1 = mat;
+	Fnt_SetBlend(mat, uniMat, 2);
+	px = x;
+	for (const char *c = s; *c; c++) {
+		byte ch = (byte)*c;
+		float w, h;
+		if (ch >= self->pri && ch <= self->ult) {
+			g_MatFX1 = mat;
+			const FntGlifo *g = CFuente3_Glifo(self, (uint32_t)(ch - self->pri));
+			CFuente3_SetGlifo(self, g, self->grf->x, self->grf->y);
+			Fnt_Brillo(self, 0, px, y, color);
+			px = CFuente3_GlifoAncho(self, g) + px;
+		} else if (Unifont_Activa()) {
+			g_MatFX1 = uniMat;
+			if (CFuente3_UniGlifo(self, c, &w, &h)) {
+				c += 4;
+				Fnt_Brillo(self, 1, px, y, color);
+				px = w + 1.0f + px;
+			}
+		}
+	}
+	Render_ClearForced();
+	Fnt_SetBlend(mat, uniMat, 6);
+	self->grf->color = 0xffffff;
+}
+
 void Font_PrintfXY(CFuente3 *font, float x, float y, const char *fmt, ...) {
 	char buf[1024];
 	va_list ap;
