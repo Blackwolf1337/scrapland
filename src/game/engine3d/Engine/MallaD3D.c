@@ -609,7 +609,7 @@ void __thiscall CMallaD3D_Build(CMallaD3D *self, CMallaTri *malla, uint32_t flag
 		if (!cur->mat || !cur->mat->params.b3b) {
 			CListaVert_SetFormat(&cur->vert, (self->b50 || self->b51) ? VERT_TEX1_B1 : VERT_TEX1);
 		} else {
-			CListaVert_SetFormat(&cur->vert, g_MallaD3DTex1 ? VERT_TEX1 : VERT_TEX2);
+			CListaVert_SetFormat(&cur->vert, g_UsarHWEnvMap ? VERT_TEX1 : VERT_TEX2);
 			self->b50 = 0;
 			self->b51 = 0;
 		}

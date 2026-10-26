@@ -94,7 +94,7 @@ void D3DLog_Record(uint32_t slot, const uint32_t *a) {
 		Log_Printf("SetTransform(%u,", a[0]);
 		Log_Words((const void *)(uintptr_t)a[1], 16);
 		break;
-	case 36:
+	case D3DDEV_CLEAR / 4:
 		Log_Printf("Clear(%u, %x, %x, %x, %u,", a[0], a[2], a[3], a[4], a[5]);
 		if (a[1]) {
 			Log_Words((const void *)(uintptr_t)a[1], 4 * a[0]);
@@ -103,10 +103,6 @@ void D3DLog_Record(uint32_t slot, const uint32_t *a) {
 	case 40:
 		Log_Printf("SetViewport(");
 		Log_Words((const void *)(uintptr_t)a[0], 6);
-		break;
-	case 42:
-		Log_Printf("SetMaterial(");
-		Log_Words((const void *)(uintptr_t)a[0], 17);
 		break;
 	case D3DDEV_SETLIGHT / 4:
 		Log_Printf("SetLight(%u,", a[0]);
@@ -121,7 +117,7 @@ void D3DLog_Record(uint32_t slot, const uint32_t *a) {
 	case 61:
 		Log_Printf("SetTexture(%u, %d", a[0], a[1] != 0);
 		break;
-	case 63:
+	case D3DDEV_SETTEXTURESTAGESTATE / 4:
 		Log_Printf("SetTextureStageState(%u, %u, %x", a[0], a[1], a[2]);
 		break;
 	case 70:
@@ -142,6 +138,17 @@ void D3DLog_Record(uint32_t slot, const uint32_t *a) {
 		Log_Words((const byte *)(uintptr_t)a[6] + a[1] * a[7], a[2] * a[7] / 4);
 		break;
 	}
+	case D3DDEV_SETPIXELSHADER / 4:
+		Log_Printf("SetPixelShader(%x", a[0]);
+		break;
+	case D3DDEV_SETPIXELSHADERCONSTANT / 4:
+		Log_Printf("SetPixelShaderConstant(%u,", a[0]);
+		Log_Words((const void *)(uintptr_t)a[1], 4 * a[2]);
+		break;
+	case D3DDEV_SETMATERIAL / 4:
+		Log_Printf("SetMaterial(");
+		Log_Words((const void *)(uintptr_t)a[0], 17);
+		break;
 	case D3DDEV_SETVERTEXSHADER / 4:
 		Log_Printf("SetVertexShader(%x", a[0]);
 		break;

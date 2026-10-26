@@ -260,8 +260,6 @@ int ListaModelo_CompareKey(const void *a, const void *b);	/* qsort, larger sortK
 
 /* other modules (src/imports.inc) */
 float World_TimeScale(void);						/* rva 0x20aea0 */
-void Matrix_PostScale(matrix_t *m, const vec3_t *s);			/* rva 0x239210 */
-void Matrix_PostRotate(matrix_t *m, const vec3_t *rot);			/* rva 0x23a100, yaw y pitch x roll z */
 void __fastcall CNodoR_dtor(CNodoR *self);				/* rva 0x23f450 */
 #define CNODOR_DTOR 0x23f450
 void __thiscall CNodoR_SetNodo(CNodoR *self, CNodo3D *nodo);		/* rva 0x23f890 */

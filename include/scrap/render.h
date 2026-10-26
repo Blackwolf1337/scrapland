@@ -9,6 +9,9 @@
 
 #include "scrap/mathlib.h"
 
+struct CMaterial;
+typedef struct CMaterial CMaterial;
+
 /* the D3D device of the engine3d, NULL without one */
 #define g_pd3dDevice GAME_DATA(void *, 0x4ad6f4)
 /* the identity matrix */
@@ -31,6 +34,34 @@
 /* the planes of the view frustum (normal, d; outside where the distance is positive) */
 #define MAX_PLANOS_FRUSTUM 6
 #define g_Frustum ((const plane_t *)Game_Ptr(0x4adbf0))
+/* the matrices of the frame: projection, view, the camera turn of the sprites, the world of the last draw; the eye */
+#define g_MatProj (*(matrix_t *)Game_Ptr(0x4ae3f8))
+#define g_MatView (*(matrix_t *)Game_Ptr(0x4ae4b8))
+#define g_MatBillboard (*(matrix_t *)Game_Ptr(0x4ae4f8))
+#define g_MatWorld (*(matrix_t *)Game_Ptr(0x4ae478))
+#define g_EyePos (*(vec3_t *)Game_Ptr(0x4adda8))
+/* the material of a ModelFX in place of the ones of the meshes, NULL */
+#define g_MatForzado GAME_DATA(const CMaterial *, 0x4ad754)
+/* bUsarHWEnvMap: the environment maps through the texture transform of the device (materials with two texture sets
+ * get VERT_TEX1 instead of VERT_TEX2) */
+#define g_UsarHWEnvMap GAME_DATA(int, 0x431bdc)
+/* the engine variables of the environment and bump maps (Gvars) */
+#define g_EnvBumpBias GAME_DATA(int, 0x4adbb8)		/* R_EnvBumpBias, DXT1 bump textures */
+#define g_EnvBumpScale GAME_DATA(float, 0x4ada08)	/* R_EnvBumpScale */
+#define g_EnvMapOffset GAME_DATA(float, 0x4adac8)	/* R_EnvMapOffset */
+#define g_EnvMapScale GAME_DATA(float, 0x4adb40)	/* R_EnvMapScale */
+#define g_EnvMapViewDep GAME_DATA(int, 0x4adb58)	/* R_EnvMapViewDep 0, 1, 2 */
+/* the render functions of the shader modes (two tables, the second for the modes with 0x100) */
+#define MAX_SHADER_TAB 32
+typedef void (*shaderRender_t)(void *a, void *b);
+typedef struct ShaderTab {
+	uint32_t Index;			/* 0x00 its own index */
+	int i4[4];			/* 0x04 */
+	shaderRender_t fnRender;	/* 0x14 */
+} ShaderTab;
+SD_SIZE(ShaderTab, 0x18);
+#define g_ShaderTab ((const ShaderTab *)Game_Ptr(0x431e08))
+#define g_ShaderTab2 ((const ShaderTab *)Game_Ptr(0x432108))
 /* the pixel shaders: on (the device has them), their handles, the ones switched off (a bit each from 0x200000) */
 #define MAX_PS 9
 #define g_PSOn GAME_DATA(int, 0x4ada50)
@@ -87,12 +118,33 @@ void __thiscall CRenderVB_Create(CRenderVB *self, uint32_t numvert, int size, ui
  * stencil of a device that has one; whether the device cleared */
 byte Render_Clear(const int *rect, uint32_t flags, uint32_t color, float z, uint32_t stencil);
 void Render_GetViewportSize(int *ancho, int *alto);
+/* the alpha constant of the pixel shaders in reg: 1 1 1 0, 0 for transparent materials (not MAT_1000) and with a
+ * forced material */
+void Render_PSConstAlpha(const CMaterial *mat, uint32_t reg);
+/* the texture stages of the reflection map (mapa 2) and the bump map before it (mapa 3, its scale and turn) */
+void Mat_StageEnvBump(CMaterial *mat, uint32_t flags, uint32_t stageEnv, uint32_t stageBump);
+/* the camera space reflection coordinates of mapa 2 scaled by R_EnvMapScale (R_EnvMapViewDep) */
+void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias);
+/* the render function of shader mode modo */
+void Render_Shader(uint32_t modo, void *a, void *b);
+/* texture coordinates of stage moved by a random part of +-ju, +-jv and scaled */
+void Tex_StageJitter(void *unused, uint32_t flags, uint32_t stage, float ju, float jv, float scale);
+/* the scroll (f10) and turn (v20[2] * k) of map idmapa */
+void Mat_StageScroll(CMaterial *mat, uint32_t idmapa, uint32_t flags, uint32_t stage, float k);
+/* texture coordinates of stage scrolled by su, sv per second, scaled and turned by rot per second */
+void Tex_StageTransform(void *unused, uint32_t flags, uint32_t stage, float su, float sv, float scale, float rot);
+/* the bump env matrix of stage: scale s (plus the f2c of mapa 3 times k) turned by rot */
+void Mat_StageBumpMat(CMaterial *mat, uint32_t flags, uint32_t stage, float k, float s, float rot);
+/* the D3DMATERIAL8 of colors (diffuse, ambient, specular, emissive, power): with DiffuseMod4x the colors but the
+ * specular a fourth, with a forced material its alpha */
+void Render_D3DMaterial(const CMaterial *mat, const float *colors);
+
+const matrix_t *Render_GetProj(void);
+const matrix_t *Render_GetView(void);
+const matrix_t *Render_GetBillboard(void);
+const vec3_t *Render_GetEyePos(void);
 
 /* still the exe's */
-const matrix_t *Render_GetProj(void);		/* rva 0x24c4d0 */
-const matrix_t *Render_GetView(void);		/* rva 0x24cdb0 */
-const matrix_t *Render_GetBillboard(void);	/* rva 0x24cdc0, the camera turn of the sprites */
-const vec3_t *Render_GetEyePos(void);		/* rva 0x24cdd0 */
 /* rva 0x24bac0: the world transform of the device (with defer only remembered); 0 */
 int Render_SetWorldMatrix(const matrix_t *m, byte defer);
 /* rva 0x24bc00: the world matrix set once (HRESULT) */

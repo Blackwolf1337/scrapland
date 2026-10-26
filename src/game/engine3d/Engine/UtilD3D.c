@@ -5,8 +5,6 @@
 #include "scrap/nodo3d.h"
 #include "scrap/utild3d.h"
 
-#define M_2PI_D 6.283185307179586	/* rva 0x3b45c8 */
-
 static int Color_Clamp(int v) {
 	if (v <= 0) {
 		return 0;

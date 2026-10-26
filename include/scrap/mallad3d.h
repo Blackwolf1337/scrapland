@@ -154,8 +154,6 @@ SD_SIZE(MallaD3DGrupo, 0x10);
 #define g_WeldVert GAME_DATA(MallaD3DVert *, 0x4de92c)
 /* the triangles of a group, 0x800 */
 #define g_MaxTriGrupo GAME_DATA(int, 0x432a70)
-/* materials with two texture sets get VERT_TEX1 instead of VERT_TEX2 (1) */
-#define g_MallaD3DTex1 GAME_DATA(int, 0x431bdc)
 
 /* the deleting destructor */
 CMallaD3D *__thiscall CMallaD3D_Delete(CMallaD3D *self, byte flags);

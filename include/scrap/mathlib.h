@@ -9,6 +9,7 @@
 #define M_PI_D 3.141592653589793	/* the double constants the engine uses (rva 0x3a3700, 0x3a3718) */
 #define M_2PI_D 6.283185307179586	/* rva 0x3b45c8 */
 #define M_2PI_F 6.2831855f		/* rva 0x3a3a34 */
+#define M_1_PI_D 0.3183098861837907	/* rva 0x3d9ae0 */
 #define DEG_PER_PI 180.0
 
 typedef struct {
@@ -89,6 +90,12 @@ void __thiscall Matrix_RotZ(matrix_t *self, float ang);
 void __thiscall Matrix_RotAxis(matrix_t *self, const vec3_t *axis, float ang);
 const vec3_t *__thiscall Matrix_Translate(matrix_t *self, const vec3_t *v);	/* returns v */
 byte Matrix_TransformProject(vec3_t *out, const vec3_t *v, const matrix_t *m);
+/* the math of the engine3d still in the exe */
+matrix_t *Matrix_LoadIdentity(matrix_t *m);			/* rva 0x214710 */
+void Matrix_PostScale(matrix_t *m, const vec3_t *s);		/* rva 0x239210 */
+void Matrix_PostRotate(matrix_t *m, const vec3_t *rot);		/* rva 0x23a100, yaw y pitch x roll z */
+matrix_t *Matrix_RotationZ(matrix_t *out, float ang);		/* rva 0x23a2b0, D3DXMatrixRotationZ */
+vec3_t *Vec3_ToAngles(vec3_t *out, const vec3_t *dir);		/* rva 0x239150, x pitch, y yaw, z 0 */
 vec3_t *Matrix_TransformDir(vec3_t *out, const vec3_t *v, const matrix_t *m);
 const matrix_t *Matrix_TransformParts(float *x, float *y, float *z, float *w, const vec3_t *v, const matrix_t *m);	/* m */
 

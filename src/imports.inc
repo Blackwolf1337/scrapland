@@ -397,8 +397,6 @@ SD_IMPORT(SistPart_Draw2, 0x2b55d0)
 
 /* src/game/engine3d/Engine/SueloPortal.c (called from Engine/SueloPortal.cpp, include/scrap/sueloportal.h) */
 SD_IMPORT(CSuelo_RayoVert, 0x2ca360)
-SD_IMPORT(Render_GetProj, 0x24c4d0)
-SD_IMPORT(Render_GetView, 0x24cdb0)
 SD_IMPORT(Portales_DebugDraw, 0x26d0d0)
 
 /* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/mundo.h) */
@@ -420,6 +418,8 @@ SD_IMPORT(Font_PrintfXY, 0x299ce0)
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
 SD_IMPORT(Render_ClipRect, 0x24e220)
+SD_IMPORT(Vec3_ToAngles, 0x239150)
+SD_IMPORT(Matrix_RotationZ, 0x23a2b0)
 SD_IMPORT(Render_HasStencil, 0x24e6f0)
 SD_IMPORT(RenderMallaD3D_Flush, 0x2b6af0)
 SD_IMPORT(RenderMallaD3D_Flush2, 0x2b6e60)
@@ -437,7 +437,6 @@ SD_IMPORT(Eng_Printf, 0x2170d0)
 SD_IMPORT(Render_Line, 0x24b960)
 
 /* src/game/engine3d/Engine/Grafico3D.c (called from Engine/grafico3d.cpp, include/scrap/grafico3d.h) */
-SD_IMPORT(Render_GetBillboard, 0x24cdc0)
 SD_IMPORT(CAnimMat_ctorCopy, 0x257f10)
 
 /* src/game/engine3d/Engine/Portal.c (called from Engine/portal.cpp, include/scrap/portal.h) */
@@ -471,7 +470,6 @@ SD_IMPORT(CSuelo_DrawDebug, 0x25a260)
 SD_IMPORT_STDCALL(D3DX_Vec3Normalize, 8, 0x006d3b)
 SD_IMPORT_STDCALL(D3DX_Vec3Transform, 12, 0x007086)
 SD_IMPORT_STDCALL(D3DX_MatrixRotationYPR, 16, 0x008701)
-SD_IMPORT(Render_GetEyePos, 0x24cdd0)
 
 /* module agent: Engine/Modelo (imports below this line) */
 SD_IMPORT(World_TimeScale, 0x20aea0)

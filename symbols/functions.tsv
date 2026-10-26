@@ -7012,7 +7012,7 @@ rva	size	source	callconv	name	signature
 00238b80	57	DEFAULT	unknown	FUN_00638b80	
 00238bc0	277	USER_DEFINED	__cdecl	Vec3_Rotate2	float * __cdecl(float *out, float *in, float *rot)
 00238ce0	1125	DEFAULT	unknown	FUN_00638ce0	
-00239150	147	DEFAULT	unknown	FUN_00639150	
+00239150	147	USER_DEFINED	unknown	Vec3_ToAngles	
 002391f0	22	USER_DEFINED	__cdecl	Matrix_MulD3D	void * __cdecl(void * out, void * a, void * b)
 00239210	185	DEFAULT	unknown	FUN_00639210	
 002392d0	652	USER_DEFINED	__cdecl	Matrix_ToEuler	void * __cdecl(void * out, void * m)
@@ -7024,7 +7024,7 @@ rva	size	source	callconv	name	signature
 0023a190	212	DEFAULT	unknown	FUN_0063a190	
 0023a270	24	DEFAULT	unknown	FUN_0063a270	
 0023a290	24	DEFAULT	unknown	FUN_0063a290	
-0023a2b0	24	DEFAULT	unknown	FUN_0063a2b0	
+0023a2b0	24	USER_DEFINED	unknown	Matrix_RotationZ	
 0023a2d0	498	DEFAULT	unknown	FUN_0063a2d0	
 0023a4d0	55	USER_DEFINED	__cdecl	Matrix_AddPos	void __cdecl(float *m, float *v)
 0023a510	211	USER_DEFINED	__cdecl	Vec3_TransformH	int __cdecl(float *out, float *v, float *m)
@@ -7226,15 +7226,15 @@ rva	size	source	callconv	name	signature
 00249c90	156	USER_DEFINED	__thiscall	CRenderIB_Create	void __thiscall(uint numtri)
 00249d30	166	USER_DEFINED	__thiscall	CRenderVB_Create	void __thiscall(uint numvert, int size, uint fvf)
 00249de0	234	USER_DEFINED	__cdecl	Render_Clear	byte __cdecl(int * rect, uint flags, uint color, float z, uint stencil)
-00249ed0	98	DEFAULT	unknown	FUN_00649ed0	
-00249f40	265	DEFAULT	unknown	FUN_00649f40	
-0024a050	649	DEFAULT	unknown	FUN_0064a050	
-0024a2e0	161	DEFAULT	unknown	FUN_0064a2e0	
-0024a390	301	DEFAULT	unknown	FUN_0064a390	
-0024a4c0	300	DEFAULT	unknown	FUN_0064a4c0	
-0024a5f0	372	DEFAULT	unknown	FUN_0064a5f0	
-0024a770	284	DEFAULT	unknown	FUN_0064a770	
-0024a890	373	DEFAULT	unknown	FUN_0064a890	
+00249ed0	98	USER_DEFINED	__cdecl	Render_PSConstAlpha	void __cdecl(void * mat, uint reg)
+00249f40	265	USER_DEFINED	__cdecl	Mat_StageEnvBump	void __cdecl(void * mat, uint flags, uint stageEnv, uint stageBump)
+0024a050	649	USER_DEFINED	__cdecl	Mat_StageEnvMap	void __cdecl(void * mat, uint flags, uint stage, float bias)
+0024a2e0	161	USER_DEFINED	__cdecl	Render_Shader	void __cdecl(uint modo, void * a, void * b)
+0024a390	301	USER_DEFINED	__cdecl	Tex_StageJitter	void __cdecl(void * unused, uint flags, uint stage, float ju, float jv, float scale)
+0024a4c0	300	USER_DEFINED	__cdecl	Mat_StageScroll	void __cdecl(void * mat, uint idmapa, uint flags, uint stage, float k)
+0024a5f0	372	USER_DEFINED	__cdecl	Tex_StageTransform	void __cdecl(void * unused, uint flags, uint stage, float su, float sv, float scale, float rot)
+0024a770	284	USER_DEFINED	__cdecl	Mat_StageBumpMat	void __cdecl(void * mat, uint flags, uint stage, float k, float s, float rot)
+0024a890	373	USER_DEFINED	__cdecl	Render_D3DMaterial	void __cdecl(void * mat, float * colors)
 0024aa10	991	DEFAULT	unknown	FUN_0064aa10	
 0024adf0	233	DEFAULT	unknown	FUN_0064adf0	
 0024aee0	77	DEFAULT	unknown	FUN_0064aee0	
@@ -7251,7 +7251,7 @@ rva	size	source	callconv	name	signature
 0024bc00	57	USER_DEFINED	__cdecl	Render_SetWorld	int __cdecl(void)
 0024bc40	732	DEFAULT	unknown	FUN_0064bc40	
 0024bf30	1422	USER_DEFINED	__cdecl	Render_SetMaterial	int __cdecl(void *mat, int pass)
-0024c4d0	6	DEFAULT	unknown	FUN_0064c4d0	
+0024c4d0	6	USER_DEFINED	__cdecl	Render_GetProj	void * __cdecl(void)
 0024c4e0	444	DEFAULT	unknown	FUN_0064c4e0	
 0024c6a0	86	DEFAULT	unknown	FUN_0064c6a0	
 0024c700	45	DEFAULT	unknown	FUN_0064c700	
@@ -7261,8 +7261,8 @@ rva	size	source	callconv	name	signature
 0024cac0	141	DEFAULT	unknown	FUN_0064cac0	
 0024cb50	479	DEFAULT	unknown	FUN_0064cb50	
 0024cd30	113	DEFAULT	unknown	FUN_0064cd30	
-0024cdb0	6	DEFAULT	unknown	FUN_0064cdb0	
-0024cdc0	6	DEFAULT	unknown	FUN_0064cdc0	
+0024cdb0	6	USER_DEFINED	__cdecl	Render_GetView	void * __cdecl(void)
+0024cdc0	6	USER_DEFINED	__cdecl	Render_GetBillboard	void * __cdecl(void)
 0024cdd0	6	USER_DEFINED	__cdecl	Render_GetEyePos	void * __cdecl(void)
 0024cde0	221	DEFAULT	unknown	FUN_0064cde0	
 0024cec0	25	USER_DEFINED	__cdecl	E3D_FlushBatch	void __cdecl(void)
