@@ -378,7 +378,6 @@ SD_IMPORT(CAnimMat_Start, 0x258110)
 SD_IMPORT(Vec3_Differ, 0x067380)
 
 /* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/escena.h) */
-SD_IMPORT(Vec3_Rotate2, 0x238bc0)
 SD_IMPORT(Box_Transform, 0x239880)
 SD_IMPORT(Cad_Read, 0x2a18a0)
 SD_IMPORT(Cad_Write, 0x2a1920)
@@ -391,7 +390,15 @@ SD_IMPORT(NodeFX_New, 0x2b2cc0)
 SD_IMPORT(Obj3D_A6000040_ctor, 0x2b95a0)
 SD_IMPORT(Obj3D_A7000100_ctor, 0x2ba0e0)
 
-/* module agent: Engine/SistPart (imports below this line) */
+/* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
+SD_IMPORT(CObjBase3D_SetNodo, 0x2cad70)
+SD_IMPORT(CMultiSprite_GetUV, 0x29d800)
+SD_IMPORT(CSuelo_TraceSeg, 0x26f120)
+SD_IMPORT(SectorVis_Sphere, 0x26bff0)
+SD_IMPORT(SectorVis_Draw, 0x26bc30)
+SD_IMPORT(Debug_Text3D, 0x299d50)
+SD_IMPORT(SistPart_Draw, 0x2b7150)
+SD_IMPORT(SistPart_Draw2, 0x2b55d0)
 
 /* module agent: Engine/RenderTarget (imports below this line) */
 
@@ -449,7 +456,6 @@ SD_IMPORT(Matrix_LoadIdentity, 0x214710)
 SD_IMPORT(Matrix_MulD3D, 0x2391f0)
 SD_IMPORT(Matrix_ToEuler, 0x2392d0)
 SD_IMPORT(CRotacion_SetEuler, 0x212510)
-SD_IMPORT(CSistPart_GetBox, 0x27a790)
 SD_IMPORT(CSistPart_Cast, 0x23f310)
 SD_IMPORT(CNodo3D_DebugDraw, 0x23d9d0)
 SD_IMPORT(CNodoR_UpdateNodo, 0x23f5d0)

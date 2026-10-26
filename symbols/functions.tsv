@@ -7781,62 +7781,62 @@ rva	size	source	callconv	name	signature
 00278ae0	111	DEFAULT	unknown	FUN_00678ae0	
 00278b50	16	DEFAULT	unknown	FUN_00678b50	
 00278b60	2579	DEFAULT	unknown	FUN_00678b60	
-00279580	73	DEFAULT	unknown	FUN_00679580	
+00279580	73	USER_DEFINED	__cdecl	Grafico2D_SetPantalla	void __cdecl(int w, int h)
 002795d0	27	DEFAULT	unknown	FUN_006795d0	
 002795f0	564	DEFAULT	unknown	FUN_006795f0	
 00279830	199	DEFAULT	unknown	FUN_00679830	
-00279900	221	DEFAULT	unknown	FUN_00679900	
-002799e0	33	DEFAULT	unknown	FUN_006799e0	
-00279a10	18	DEFAULT	unknown	FUN_00679a10	
-00279a30	18	DEFAULT	unknown	FUN_00679a30	
-00279a50	331	DEFAULT	unknown	FUN_00679a50	
-00279ba0	280	DEFAULT	unknown	FUN_00679ba0	
-00279cc0	182	DEFAULT	unknown	FUN_00679cc0	
-00279d80	72	DEFAULT	unknown	FUN_00679d80	
-00279dd0	11	DEFAULT	unknown	FUN_00679dd0	
-00279de0	7	DEFAULT	unknown	FUN_00679de0	
-00279e00	271	DEFAULT	unknown	FUN_00679e00	
-00279f10	520	DEFAULT	unknown	FUN_00679f10	
-0027a120	100	ANALYSIS	__thiscall	CObjBase3D::vf00	undefined __thiscall(void)
-0027a190	38	ANALYSIS	__thiscall	CSistPart::vf00	undefined __thiscall(void)
-0027a1c0	407	DEFAULT	unknown	FUN_0067a1c0	
-0027a360	257	DEFAULT	unknown	FUN_0067a360	
-0027a470	498	DEFAULT	unknown	FUN_0067a470	
-0027a670	16	DEFAULT	unknown	FUN_0067a670	
-0027a680	71	DEFAULT	unknown	FUN_0067a680	
+00279900	221	USER_DEFINED	__cdecl	Grafico2D_NumPrims	uint __cdecl(int tipo, uint nVert)
+002799e0	33	USER_DEFINED	__cdecl	Grafico2D_GetPantalla	void __cdecl(int * w, int * h)
+00279a10	18	USER_DEFINED	__fastcall	CParticulaActive_ctor	void * __fastcall(void * self)
+00279a30	18	USER_DEFINED	__fastcall	CParticulaStatic_ctor	void * __fastcall(void * self)
+00279a50	331	USER_DEFINED	__thiscall	CSistPart_ctorCopy	void * __thiscall(void * orig)
+00279ba0	280	USER_DEFINED	__thiscall	CSistPart_ctorParams	void * __thiscall(void * nodo, char * type, float escala, float alpha, void * posList, void * ini)
+00279cc0	182	USER_DEFINED	__fastcall	CSistPart_ctor	void * __fastcall(void * self)
+00279d80	72	USER_DEFINED	__fastcall	CObjBase3D_dtor	void __fastcall(void * self)
+00279dd0	11	USER_DEFINED	__fastcall	SistPartParams_dtor	void __fastcall(void * self)
+00279de0	7	USER_DEFINED	__fastcall	CParticulaActive_dtor	void __fastcall(void * self)
+00279e00	271	USER_DEFINED	__fastcall	CSistPart_dtor	void __fastcall(void * self)
+00279f10	520	USER_DEFINED	__thiscall	SistPartParams_Assign	void * __thiscall(void * src)
+0027a120	100	USER_DEFINED	__thiscall	CObjBase3D_Delete	void * __thiscall(byte flags)
+0027a190	38	USER_DEFINED	__thiscall	CSistPart_Delete	void * __thiscall(byte flags)
+0027a1c0	407	USER_DEFINED	__thiscall	CSistPart_Init	void __thiscall(void * nodo, char * type, void * params, void * ini)
+0027a360	257	USER_DEFINED	__thiscall	CSistPart_GetFree	void * __thiscall(byte force)
+0027a470	498	USER_DEFINED	__cdecl	SistPart_FromNode	void * __cdecl(void * nodo, void * ini)
+0027a670	16	USER_DEFINED	__thiscall	CSistPart_SetColorRamp	void __thiscall(uint * ramp)
+0027a680	71	USER_DEFINED	__thiscall	CSistPart_SetEmitPos	void __thiscall(void * pos, byte n)
 0027a6d0	3	ANALYSIS	__thiscall	CObjBase3D::vf04	undefined __thiscall(void)
 0027a6e0	3	ANALYSIS	__thiscall	CSistPart::vf04	undefined __thiscall(void)
-0027a6f0	83	DEFAULT	unknown	FUN_0067a6f0	
-0027a750	62	DEFAULT	unknown	FUN_0067a750	
-0027a790	491	USER_DEFINED	__thiscall	CSistPart_GetBox	byte __thiscall(void * out)
-0027a980	6	ANALYSIS	__thiscall	CParticulaActive::vf00	undefined __thiscall(void)
-0027a990	6	ANALYSIS	__thiscall	CParticulaStatic::vf00	undefined __thiscall(void)
+0027a6f0	83	USER_DEFINED	__thiscall	CSistPart_GetEscala2	void __thiscall(float * out)
+0027a750	62	USER_DEFINED	__thiscall	CSistPart_GetEscala	void __thiscall(void * out)
+0027a790	491	USER_DEFINED	__thiscall	CSistPart_GetBox	byte __thiscall(void * box)
+0027a980	6	USER_DEFINED	__fastcall	CParticulaActive_Type	int __fastcall(void * self)
+0027a990	6	USER_DEFINED	__fastcall	CParticulaStatic_Type	int __fastcall(void * self)
 0027a9a0	3	ANALYSIS	__thiscall	CObjBase3D::vf03	undefined __thiscall(void)
 0027a9b0	3	ANALYSIS	__thiscall	CSistPart::vf03	undefined __thiscall(void)
-0027a9c0	291	ANALYSIS	__thiscall	CParticulaActive::vf01	undefined __thiscall(void)
-0027aaf0	118	ANALYSIS	__thiscall	CParticulaStatic::vf01	undefined __thiscall(void)
-0027ab70	1842	DEFAULT	unknown	FUN_0067ab70	
-0027b2b0	1325	DEFAULT	unknown	FUN_0067b2b0	
-0027b7e0	125	DEFAULT	unknown	FUN_0067b7e0	
-0027b860	31	DEFAULT	unknown	FUN_0067b860	
-0027b880	29	DEFAULT	unknown	FUN_0067b880	
-0027b8a0	34	DEFAULT	unknown	FUN_0067b8a0	
-0027b8d0	235	DEFAULT	unknown	FUN_0067b8d0	
-0027b9c0	65	ANALYSIS	__thiscall	CSistPart::vf06	undefined __thiscall(void)
-0027ba10	459	DEFAULT	unknown	FUN_0067ba10	
-0027bbe0	81	DEFAULT	unknown	FUN_0067bbe0	
-0027bc40	575	DEFAULT	unknown	FUN_0067bc40	
-0027be80	316	DEFAULT	unknown	FUN_0067be80	
-0027bfc0	34	DEFAULT	unknown	FUN_0067bfc0	
+0027a9c0	291	USER_DEFINED	__fastcall	CParticulaActive_Init	void __fastcall(void * self)
+0027aaf0	118	USER_DEFINED	__fastcall	CParticulaStatic_Init	void __fastcall(void * self)
+0027ab70	1842	USER_DEFINED	__thiscall	CSistPart_ReadParams	void __thiscall(void * ini)
+0027b2b0	1325	USER_DEFINED	__thiscall	CSistPart_GenParticle	void __thiscall(void * p)
+0027b7e0	125	USER_DEFINED	__thiscall	CSistPart_PlaceParticle	void __thiscall(void * p, void * m)
+0027b860	31	USER_DEFINED	__thiscall	CSistPart_EmitN	void __thiscall(int n, byte force)
+0027b880	29	USER_DEFINED	__thiscall	CSistPart_EmitM	void __thiscall(int n, byte force, void * m)
+0027b8a0	34	USER_DEFINED	__thiscall	CSistPart_EmitDt	void __thiscall(int n, byte force, float dt)
+0027b8d0	235	USER_DEFINED	__thiscall	CSistPart_Emit	void __thiscall(int n, byte force, float dt, void * m)
+0027b9c0	65	USER_DEFINED	__thiscall	CSistPart_Read	byte __thiscall(void * f, void * ctx)
+0027ba10	459	USER_DEFINED	__fastcall	CSistPart_CreateMat	void __fastcall(void * self)
+0027bbe0	81	USER_DEFINED	__thiscall	CSistPart_SetActive	void __thiscall(void * p, byte active)
+0027bc40	575	USER_DEFINED	__fastcall	CSistPart_CreateParticles	void __fastcall(void * self)
+0027be80	316	USER_DEFINED	__cdecl	SistPart_RandVec	void * __cdecl(void * out, void * a, void * b)
+0027bfc0	34	USER_DEFINED	__cdecl	SistPart_LoadIni	void __cdecl(char * name, char * dir)
 0027bff0	3	ANALYSIS	__thiscall	CObjBase3D::vf02	undefined __thiscall(void)
-0027c000	529	ANALYSIS	__thiscall	CSistPart::vf02	undefined __thiscall(void)
-0027c220	46	DEFAULT	unknown	FUN_0067c220	
-0027c250	107	ANALYSIS	__thiscall	CSistPart::vf05	undefined __thiscall(void)
-0027c2c0	20	DEFAULT	unknown	FUN_0067c2c0	
-0027c2e0	1465	ANALYSIS	__thiscall	CParticulaActive::vf02	undefined __thiscall(void)
+0027c000	529	USER_DEFINED	__thiscall	CSistPart_Render	void __thiscall(void * dev, void * r)
+0027c220	46	USER_DEFINED	__thiscall	CSistPart_Render2	void __thiscall(void * dev)
+0027c250	107	USER_DEFINED	__thiscall	CSistPart_Write	byte __thiscall(void * f, void * ctx)
+0027c2c0	20	USER_DEFINED	__thiscall	CSistPart_SetAlpha	void __thiscall(float alpha)
+0027c2e0	1465	USER_DEFINED	__thiscall	CParticulaActive_Update	void __thiscall(void * sp, float dt, void * multiSpr)
 0027c8a0	3	ANALYSIS	__thiscall	CParticulaStatic::vf02	undefined __thiscall(void)
 0027c8b0	3	ANALYSIS	__thiscall	CObjBase3D::vf01	undefined __thiscall(void)
-0027c8c0	691	ANALYSIS	__thiscall	CSistPart::vf01	undefined __thiscall(void)
+0027c8c0	691	USER_DEFINED	__thiscall	CSistPart_Update	void __thiscall(void * r)
 0027cb80	165	DEFAULT	unknown	FUN_0067cb80	
 0027cc30	171	USER_DEFINED	__cdecl	Dbg_FrameRect	void __cdecl(int x, int y, int w, int h, uint color)
 0027ccf0	171	USER_DEFINED	__cdecl	Dbg_FillRect	void __cdecl(int x, int y, int w, int h, uint color)

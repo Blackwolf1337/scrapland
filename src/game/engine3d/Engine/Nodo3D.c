@@ -12,6 +12,7 @@
 #include "scrap/mallatri.h"
 #include "scrap/material.h"
 #include "scrap/nodo3d.h"
+#include "scrap/sistpart.h"
 #include "scrap/suelo.h"
 #include "scrap/varios.h"
 
@@ -171,7 +172,7 @@ byte __thiscall CNodo3D_GetBBox(CNodo3D *self, matrix_t *m, box_t *bbox, byte re
 		break;
 	case CLASE_OBJ3D_SISTPART:
 		CHECK(o->clase == CLASE_OBJ3D_SISTPART);
-		if (!CSistPart_GetBox(o, bbox)) {
+		if (!CSistPart_GetBox((CSistPart *)o, bbox)) {
 			return 0;
 		}
 		break;

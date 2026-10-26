@@ -14,6 +14,8 @@
 #define g_pd3dDevice GAME_DATA(void *, 0x4ad6f4)
 /* the frames drawn by the engine3d */
 #define g_FrameCount GAME_DATA(int, 0x4a8ec8)
+/* the time of the engine in ms */
+#define g_TimeMs GAME_DATA(uint32_t, 0x4a8ef0)
 
 #define MAX_RUTA 0x104
 

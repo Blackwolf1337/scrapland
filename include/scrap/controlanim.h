@@ -6,6 +6,7 @@
 #define SCRAP_CONTROLANIM_H
 
 #include "scrap/animacion.h"
+#include "scrap/e3dutil.h"
 
 /* CAnimCtrl.state */
 enum { ANIM_REPR = 0, ANIM_PAUSA = 1, ANIM_FUND_PAUSA = 2, ANIM_FIN = 3 };
@@ -71,9 +72,6 @@ SD_SIZE(CAnimCtrl, 0x84);
 SD_OFFSET(CAnimCtrl, frame, 0x50);
 SD_OFFSET(CAnimCtrl, evento, 0x80);
 
-/* the time of the engine in ms */
-#define g_TimeMs GAME_DATA(uint32_t, 0x4a8ef0)
-
 CAnimCtrl *__fastcall CAnimCtrl_ctor(CAnimCtrl *self);
 /* rva 0x250f10, empty (1 byte, not hooked) */
 void __thiscall CAnimCtrl_dtor(CAnimCtrl *self);
@@ -96,7 +94,5 @@ byte __thiscall CAnimCtrl_Events(CAnimCtrl *self, float *f1, float *f2, float *f
 /* t seconds on (t < 0: the time since the last update, at most 0.1), the root motion rotated by rot; 0 when stopped */
 byte __thiscall CAnimCtrl_Update(CAnimCtrl *self, const vec3_t *rot, float t);
 
-/* rva 0x238bc0 */
-vec3_t *Vec3_Rotate2(vec3_t *out, const vec3_t *v, const vec3_t *rot);
 
 #endif

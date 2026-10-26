@@ -276,8 +276,8 @@ byte __thiscall CAnimCtrl_Update(CAnimCtrl *self, const vec3_t *rot, float t) {
 	self->frame = fin;
 	if (rot && (rot->x != 0.0f || rot->y != 0.0f || rot->z != 0.0f)) {
 		vec3_t tmp;
-		self->move = *Vec3_Rotate2(&tmp, &self->move, rot);
-		self->ofs = *Vec3_Rotate2(&tmp, &self->ofs, rot);
+		self->move = *Vec3_Rotate(&tmp, &self->move, rot);
+		self->ofs = *Vec3_Rotate(&tmp, &self->ofs, rot);
 	}
 	return 1;
 }
