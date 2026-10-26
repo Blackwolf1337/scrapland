@@ -14,8 +14,7 @@
 #define g_HashItemValues (&GAME_DATA(uint32_t, 0x4289a0))
 
 HashTable *__thiscall HashTable_ctor(HashTable *self, int numSlots, byte caseSensitive);
-/* the slot of key: a 4 bit shift hash folded to 28 bits, case-insensitive unless caseSensitive */
-uint32_t __thiscall HashTable_Slot(HashTable *self, const char *key);
+/* the slot of key: a 4 bit shift hash folded to 28 bits, case-insensitive unless caseSensitive (global.h) */
 /* equal keys in the case mode of the table */
 int HashTable_KeyEq(HashTable *self, const char *a, const char *b);
 /* an item from the pool, which is made on first use */

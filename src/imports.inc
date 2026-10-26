@@ -10,8 +10,6 @@
 
 SD_IMPORT(operator_delete_sized, 0x313634)
 
-SD_IMPORT(HashTable_Hash, 0x065370)	/* Global/HashTable.h, the instance in Actions/ */
-SD_IMPORT(HashTable_Find, 0x0652e0)
 
 /* engine: Entities/ and the entity lists of World/ */
 SD_IMPORT(cEntity_Del, 0x0ef0c0)

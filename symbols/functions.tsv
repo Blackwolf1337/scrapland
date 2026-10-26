@@ -1166,28 +1166,28 @@ rva	size	source	callconv	name	signature
 0005e360	152	DEFAULT	unknown	FUN_0045e360	
 0005e400	152	DEFAULT	unknown	FUN_0045e400	
 0005f640	152	DEFAULT	unknown	FUN_0045f640	
-0005f7f0	108	DEFAULT	unknown	FUN_0045f7f0	
+0005f7f0	108	USER_DEFINED	__thiscall	HashTable<cPtrItem>::HashTable	void * __thiscall(int numSlots, byte caseSensitive)
 0005f860	29	DEFAULT	unknown	FUN_0045f860	
 0005f890	744	DEFAULT	unknown	FUN_0045f890	
-0005fbe0	54	DEFAULT	unknown	FUN_0045fbe0	
+0005fbe0	54	USER_DEFINED	__fastcall	HashTable<cPtrItem>::~HashTable	void __fastcall(void * self)
 0005fc20	16	DEFAULT	unknown	FUN_0045fc20	
 0005fc30	380	DEFAULT	unknown	FUN_0045fc30	
 0005fdb0	38	ANALYSIS	__thiscall	cActClass::vf00	undefined __thiscall(void)
 0005fde0	38	ANALYSIS	__stdcall	`vector_constructor_iterator'	void __stdcall(void * param_1, uint param_2, uint param_3, _func_void_ptr_void_ptr * param_4)
-0005fe10	118	DEFAULT	unknown	FUN_0045fe10	
+0005fe10	118	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Add	byte __thiscall(char * key, void * value, byte warn)
 0005fe90	274	USER_DEFINED	__thiscall	cActClass::CreateAction	void * __thiscall(char * name)
-0005ffb0	231	DEFAULT	unknown	FUN_0045ffb0	
+0005ffb0	231	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Insert	void * __thiscall(char * key, uint slot, void * value)
 000600a0	228	DEFAULT	unknown	FUN_004600a0	
-00060190	261	DEFAULT	unknown	FUN_00460190	
+00060190	261	USER_DEFINED	__fastcall	HashTable<cPtrItem>::Clear	void __fastcall(void * self)
 000602a0	155	DEFAULT	unknown	FUN_004602a0	
-00060340	210	DEFAULT	unknown	FUN_00460340	
+00060340	210	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Delete	byte __thiscall(char * key)
 00060420	63	DEFAULT	unknown	FUN_00460420	
-00060460	49	DEFAULT	unknown	FUN_00460460	
-000604a0	143	DEFAULT	unknown	FUN_004604a0	
+00060460	49	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Get	byte __thiscall(char * key, void * out)
+000604a0	143	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Find	void * __thiscall(char * key, uint slot)
 00060530	85	DEFAULT	unknown	FUN_00460530	
 00060590	45	USER_DEFINED	__thiscall	cActClass::GetAction	void * __thiscall(char * name)
 000605f0	139	USER_DEFINED	__thiscall	DList<cString>::NewNode	void * __thiscall(void)
-00060680	227	DEFAULT	unknown	FUN_00460680	
+00060680	227	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Slot	uint __thiscall(char * key)
 00060770	3136	USER_DEFINED	__thiscall	cActClass::Var	int __thiscall(char * name, int set, char * * s, double * d, int * i)
 000613b0	641	DEFAULT	unknown	FUN_004613b0	
 00061640	156	DEFAULT	unknown	FUN_00461640	
@@ -1195,25 +1195,25 @@ rva	size	source	callconv	name	signature
 000618c0	60	DEFAULT	unknown	FUN_004618c0	
 00061900	117	DEFAULT	unknown	FUN_00461900	
 00061980	120	DEFAULT	unknown	FUN_00461980	
-00061a00	182	DEFAULT	unknown	FUN_00461a00	
-00061ae0	108	DEFAULT	unknown	FUN_00461ae0	
+00061a00	182	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Unlink	void * __thiscall(char * key, uint slot)
+00061ae0	108	USER_DEFINED	__thiscall	HashTable<cPtrItem>::HashTable	void * __thiscall(int numSlots, byte caseSensitive)
 00061b50	82	DEFAULT	unknown	FUN_00461b50	
-00061bb0	54	DEFAULT	unknown	FUN_00461bb0	
+00061bb0	54	USER_DEFINED	__fastcall	HashTable<cPtrItem>::~HashTable	void __fastcall(void * self)
 00061bf0	203	DEFAULT	unknown	FUN_00461bf0	
 00061cc0	35	ANALYSIS	__thiscall	cActClassList::vf00	undefined __thiscall(void)
-00061cf0	118	DEFAULT	unknown	FUN_00461cf0	
-00061d70	231	DEFAULT	unknown	FUN_00461d70	
-00061e60	261	DEFAULT	unknown	FUN_00461e60	
+00061cf0	118	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Add	byte __thiscall(char * key, void * value, byte warn)
+00061d70	231	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Insert	void * __thiscall(char * key, uint slot, void * value)
+00061e60	261	USER_DEFINED	__fastcall	HashTable<cPtrItem>::Clear	void __fastcall(void * self)
 00061f70	232	USER_DEFINED	__thiscall	cActClassList::Create	void * __thiscall(char * name)
-00062060	210	DEFAULT	unknown	FUN_00462060	
+00062060	210	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Delete	byte __thiscall(char * key)
 00062140	61	DEFAULT	unknown	FUN_00462140	
-00062180	49	DEFAULT	unknown	FUN_00462180	
-000621c0	143	DEFAULT	unknown	FUN_004621c0	
+00062180	49	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Get	byte __thiscall(char * key, void * out)
+000621c0	143	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Find	void * __thiscall(char * key, uint slot)
 00062250	45	USER_DEFINED	__thiscall	cActClassList::Get	void * __thiscall(char * name)
-000622b0	227	DEFAULT	unknown	FUN_004622b0	
+000622b0	227	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Slot	uint __thiscall(char * key)
 000623a0	147	DEFAULT	unknown	FUN_004623a0	
 00062440	75	USER_DEFINED	__thiscall	cActClassList::Del	byte __thiscall(char * name)
-00062490	182	DEFAULT	unknown	FUN_00462490	
+00062490	182	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Unlink	void * __thiscall(char * key, uint slot)
 00062570	344	DEFAULT	unknown	FUN_00462570	
 00062700	119	DEFAULT	unknown	FUN_00462700	
 00062780	147	ANALYSIS	__thiscall	cActCtrl::vf00	undefined __thiscall(void)
@@ -1257,9 +1257,9 @@ rva	size	source	callconv	name	signature
 00064fd0	230	DEFAULT	unknown	FUN_00464fd0	
 000650c0	225	DEFAULT	unknown	FUN_004650c0	
 000651b0	237	DEFAULT	unknown	FUN_004651b0	
-000652a0	49	DEFAULT	unknown	FUN_004652a0	
-000652e0	143	USER_DEFINED	__thiscall	HashTable::Find	void * __thiscall(char * key, uint slot)
-00065370	227	USER_DEFINED	__thiscall	HashTable::Hash	uint __thiscall(char * key)
+000652a0	49	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Get	byte __thiscall(char * key, void * out)
+000652e0	143	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Find	void * __thiscall(char * key, uint slot)
+00065370	227	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Slot	uint __thiscall(char * key)
 00065460	548	DEFAULT	unknown	FUN_00465460	
 00065690	484	DEFAULT	unknown	FUN_00465690	
 00065880	420	DEFAULT	unknown	FUN_00465880	
@@ -2763,8 +2763,8 @@ rva	size	source	callconv	name	signature
 000eecc0	309	DEFAULT	unknown	FUN_004eecc0	
 000eee00	35	ANALYSIS	__thiscall	cEntity::vf03	undefined __thiscall(void)
 000eee30	146	DEFAULT	unknown	FUN_004eee30	
-000eeed0	118	DEFAULT	unknown	FUN_004eeed0	
-000eef50	231	DEFAULT	unknown	FUN_004eef50	
+000eeed0	118	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Add	byte __thiscall(char * key, void * value, byte warn)
+000eef50	231	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Insert	void * __thiscall(char * key, uint slot, void * value)
 000ef040	18	DEFAULT	unknown	FUN_004ef040	
 000ef060	88	DEFAULT	unknown	FUN_004ef060	
 000ef0c0	79	USER_DEFINED	__thiscall	cEntity::Del	byte __thiscall(void)
@@ -3949,8 +3949,8 @@ rva	size	source	callconv	name	signature
 00144db0	88	USER_DEFINED	__cdecl	Domination_SetZoneState	void __cdecl(int zone, int state)
 00144e10	193	DEFAULT	unknown	FUN_00544e10	
 00144ee0	100	DEFAULT	unknown	FUN_00544ee0	
-00144f50	49	DEFAULT	unknown	FUN_00544f50	
-00144f90	143	DEFAULT	unknown	FUN_00544f90	
+00144f50	49	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Get	byte __thiscall(char * key, void * out)
+00144f90	143	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Find	void * __thiscall(char * key, uint slot)
 00145020	362	DEFAULT	unknown	FUN_00545020	
 00145190	227	DEFAULT	unknown	FUN_00545190	
 00145280	1194	DEFAULT	unknown	FUN_00545280	
@@ -4275,7 +4275,7 @@ rva	size	source	callconv	name	signature
 00154940	30	DEFAULT	unknown	FUN_00554940	
 00154960	12	ANALYSIS	__thiscall	cNurseLocalLogic::vf24	undefined __thiscall(void)
 00154970	345	ANALYSIS	__thiscall	cNurseLocalLogic::vf19	undefined __thiscall(void)
-00154ae0	49	DEFAULT	unknown	FUN_00554ae0	
+00154ae0	49	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Get	byte __thiscall(char * key, void * out)
 00154b20	200	DEFAULT	unknown	FUN_00554b20	
 00154bf0	589	DEFAULT	unknown	FUN_00554bf0	
 00154e40	445	DEFAULT	unknown	FUN_00554e40	
@@ -4385,8 +4385,8 @@ rva	size	source	callconv	name	signature
 00159c10	159	DEFAULT	unknown	FUN_00559c10	
 00159cb0	100	DEFAULT	unknown	FUN_00559cb0	
 00159d20	3364	DEFAULT	unknown	FUN_00559d20	
-0015aa50	49	DEFAULT	unknown	FUN_0055aa50	
-0015aa90	143	DEFAULT	unknown	FUN_0055aa90	
+0015aa50	49	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Get	byte __thiscall(char * key, void * out)
+0015aa90	143	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Find	void * __thiscall(char * key, uint slot)
 0015ab20	272	DEFAULT	unknown	FUN_0055ab20	
 0015ac40	227	DEFAULT	unknown	FUN_0055ac40	
 0015ad30	197	DEFAULT	unknown	FUN_0055ad30	
@@ -5335,25 +5335,25 @@ rva	size	source	callconv	name	signature
 0019fc60	223	USER_DEFINED	__thiscall	Table<cAmmoInfo>::Init	void __thiscall(int num)
 0019fd40	226	USER_DEFINED	__thiscall	Table<cWeapInfo>::Init	void __thiscall(int num)
 0019fe30	28	USER_DEFINED	__cdecl	initSWeap	void __cdecl(void)
-0019fe50	108	DEFAULT	unknown	FUN_0059fe50	
+0019fe50	108	USER_DEFINED	__thiscall	HashTable<cPtrItem>::HashTable	void * __thiscall(int numSlots, byte caseSensitive)
 0019fec0	205	DEFAULT	unknown	FUN_0059fec0	
-0019ff90	54	DEFAULT	unknown	FUN_0059ff90	
+0019ff90	54	USER_DEFINED	__fastcall	HashTable<cPtrItem>::~HashTable	void __fastcall(void * self)
 0019ffd0	20	DEFAULT	unknown	FUN_0059ffd0	
 0019fff0	226	DEFAULT	unknown	FUN_0059fff0	
 001a00e0	574	DEFAULT	unknown	FUN_005a00e0	
 001a0320	1005	DEFAULT	unknown	FUN_005a0320	
-001a0710	118	DEFAULT	unknown	FUN_005a0710	
-001a0790	231	DEFAULT	unknown	FUN_005a0790	
-001a0880	261	DEFAULT	unknown	FUN_005a0880	
+001a0710	118	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Add	byte __thiscall(char * key, void * value, byte warn)
+001a0790	231	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Insert	void * __thiscall(char * key, uint slot, void * value)
+001a0880	261	USER_DEFINED	__fastcall	HashTable<cPtrItem>::Clear	void __fastcall(void * self)
 001a0990	246	DEFAULT	unknown	FUN_005a0990	
 001a0a90	283	USER_DEFINED	__cdecl	SndPS_Create	void * __cdecl(char * name)
 001a0bb0	211	DEFAULT	unknown	FUN_005a0bb0	
 001a0c90	248	DEFAULT	unknown	FUN_005a0c90	
-001a0d90	210	DEFAULT	unknown	FUN_005a0d90	
-001a0e70	49	DEFAULT	unknown	FUN_005a0e70	
-001a0eb0	143	DEFAULT	unknown	FUN_005a0eb0	
+001a0d90	210	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Delete	byte __thiscall(char * key)
+001a0e70	49	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Get	byte __thiscall(char * key, void * out)
+001a0eb0	143	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Find	void * __thiscall(char * key, uint slot)
 001a0f70	42	USER_DEFINED	__cdecl	SndPS_Get	void * __cdecl(char * name)
-001a0fa0	227	DEFAULT	unknown	FUN_005a0fa0	
+001a0fa0	227	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Slot	uint __thiscall(char * key)
 001a1090	1478	DEFAULT	unknown	FUN_005a1090	
 001a1660	896	USER_DEFINED	__thiscall	cSoundPS::Var	int __thiscall(char * name, int set, char * * s, double * d, int * i)
 001a19e0	590	DEFAULT	unknown	FUN_005a19e0	
@@ -5361,7 +5361,7 @@ rva	size	source	callconv	name	signature
 001a1c60	20	DEFAULT	unknown	FUN_005a1c60	
 001a1c80	49	DEFAULT	unknown	FUN_005a1c80	
 001a1cc0	223	DEFAULT	unknown	FUN_005a1cc0	
-001a1da0	182	DEFAULT	unknown	FUN_005a1da0	
+001a1da0	182	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Unlink	void * __thiscall(char * key, uint slot)
 001a1e60	49	USER_DEFINED	__cdecl	SndPS_Use	byte __cdecl(byte use)
 001a1ea0	37	DEFAULT	unknown	FUN_005a1ea0	
 001a1ed0	29	DEFAULT	unknown	FUN_005a1ed0	
@@ -6205,41 +6205,41 @@ rva	size	source	callconv	name	signature
 002068f0	293	USER_DEFINED	__thiscall	cWeapInfo::SetF	int __thiscall(char * var, float value)
 00206a20	217	USER_DEFINED	__thiscall	cAmmoInfo::SetS	int __thiscall(char * var, char * value)
 00206b00	337	USER_DEFINED	__thiscall	cWeapInfo::SetS	int __thiscall(char * var, char * value)
-00206c60	108	DEFAULT	unknown	FUN_00606c60	
-00206cd0	108	DEFAULT	unknown	FUN_00606cd0	
-00206d40	108	DEFAULT	unknown	FUN_00606d40	
+00206c60	108	USER_DEFINED	__thiscall	HashTable<cPtrItem>::HashTable	void * __thiscall(int numSlots, byte caseSensitive)
+00206cd0	108	USER_DEFINED	__thiscall	HashTable<cPtrItem>::HashTable	void * __thiscall(int numSlots, byte caseSensitive)
+00206d40	108	USER_DEFINED	__thiscall	HashTable<cPtrItem>::HashTable	void * __thiscall(int numSlots, byte caseSensitive)
 00206db0	1007	USER_DEFINED	__thiscall	cWorld::cWorld	undefined __thiscall(void)
-002071a0	54	DEFAULT	unknown	FUN_006071a0	
-002071e0	54	DEFAULT	unknown	FUN_006071e0	
-00207220	54	DEFAULT	unknown	FUN_00607220	
+002071a0	54	USER_DEFINED	__fastcall	HashTable<cPtrItem>::~HashTable	void __fastcall(void * self)
+002071e0	54	USER_DEFINED	__fastcall	HashTable<cPtrItem>::~HashTable	void __fastcall(void * self)
+00207220	54	USER_DEFINED	__fastcall	HashTable<cPtrItem>::~HashTable	void __fastcall(void * self)
 00207260	117	DEFAULT	unknown	FUN_00607260	
 002072e0	123	DEFAULT	unknown	FUN_006072e0	
 00207360	423	DEFAULT	unknown	FUN_00607360	
 00207510	38	ANALYSIS	__thiscall	cWorld::vf00	undefined __thiscall(void)
-00207540	118	DEFAULT	unknown	FUN_00607540	
-002075c0	118	DEFAULT	unknown	FUN_006075c0	
-00207640	231	DEFAULT	unknown	FUN_00607640	
-00207730	231	DEFAULT	unknown	FUN_00607730	
+00207540	118	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Add	byte __thiscall(char * key, void * value, byte warn)
+002075c0	118	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Add	byte __thiscall(char * key, void * value, byte warn)
+00207640	231	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Insert	void * __thiscall(char * key, uint slot, void * value)
+00207730	231	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Insert	void * __thiscall(char * key, uint slot, void * value)
 00207820	78	DEFAULT	unknown	FUN_00607820	
 00207870	392	DEFAULT	unknown	FUN_00607870	
 00207a00	129	DEFAULT	unknown	FUN_00607a00	
 00207a90	247	DEFAULT	unknown	FUN_00607a90	
 00207b90	1125	DEFAULT	unknown	FUN_00607b90	
-00208000	261	DEFAULT	unknown	FUN_00608000	
-00208110	261	DEFAULT	unknown	FUN_00608110	
-00208220	261	DEFAULT	unknown	FUN_00608220	
+00208000	261	USER_DEFINED	__fastcall	HashTable<cPtrItem>::Clear	void __fastcall(void * self)
+00208110	261	USER_DEFINED	__fastcall	HashTable<cPtrItem>::Clear	void __fastcall(void * self)
+00208220	261	USER_DEFINED	__fastcall	HashTable<cPtrItem>::Clear	void __fastcall(void * self)
 00208360	1185	USER_DEFINED	__thiscall	cWorld::CreateEntity	void * __thiscall(char * className, float x, float y, float z, char * name)
-00208810	210	DEFAULT	unknown	FUN_00608810	
-002088f0	210	DEFAULT	unknown	FUN_006088f0	
-002089d0	210	DEFAULT	unknown	FUN_006089d0	
+00208810	210	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Delete	byte __thiscall(char * key)
+002088f0	210	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Delete	byte __thiscall(char * key)
+002089d0	210	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Delete	byte __thiscall(char * key)
 00208ab0	220	DEFAULT	unknown	FUN_00608ab0	
 00208b90	136	DEFAULT	unknown	FUN_00608b90	
 00208c20	302	USER_DEFINED	__thiscall	cWorld::DeleteDebrisSys	void __thiscall(char * name)
 00208d60	792	USER_DEFINED	__thiscall	cWorld::FillWeapPriority	void __thiscall(void)
-00209080	49	DEFAULT	unknown	FUN_00609080	
-002090c0	49	DEFAULT	unknown	FUN_006090c0	
-00209100	143	DEFAULT	unknown	FUN_00609100	
-00209190	143	DEFAULT	unknown	FUN_00609190	
+00209080	49	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Get	byte __thiscall(char * key, void * out)
+002090c0	49	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Get	byte __thiscall(char * key, void * out)
+00209100	143	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Find	void * __thiscall(char * key, uint slot)
+00209190	143	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Find	void * __thiscall(char * key, uint slot)
 00209220	26	USER_DEFINED	unknown	cWorld::GetCamName	undefined(void)
 00209240	48	USER_DEFINED	__thiscall	cWorld::GetList	void * __thiscall(char * name)
 002092a0	20	USER_DEFINED	unknown	cWorld::GetFirstEntity	undefined(void)
@@ -6248,8 +6248,8 @@ rva	size	source	callconv	name	signature
 002094b0	90	DEFAULT	unknown	FUN_006094b0	
 00209510	125	DEFAULT	unknown	FUN_00609510	
 00209590	262	USER_DEFINED	__thiscall	cWorld::GetDebrisSys	void * __thiscall(char * name)
-002096a0	227	DEFAULT	unknown	FUN_006096a0	
-00209790	227	DEFAULT	unknown	FUN_00609790	
+002096a0	227	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Slot	uint __thiscall(char * key)
+00209790	227	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Slot	uint __thiscall(char * key)
 00209880	11	DEFAULT	unknown	FUN_00609880	
 00209890	35	DEFAULT	unknown	FUN_00609890	
 002098c0	35	DEFAULT	unknown	FUN_006098c0	
@@ -6262,9 +6262,9 @@ rva	size	source	callconv	name	signature
 0020a150	312	DEFAULT	unknown	FUN_0060a150	
 0020a290	129	USER_DEFINED	__thiscall	cWorld::SphereCall	byte __thiscall(void * list, float * center, float radius, char * func, int flag)
 0020a320	314	USER_DEFINED	__thiscall	cWorld::TestSphereEntities	void __thiscall(void * exclude, void * list, float * center, float radius, void * * target, int a, int b)
-0020a460	182	DEFAULT	unknown	FUN_0060a460	
-0020a520	182	DEFAULT	unknown	FUN_0060a520	
-0020a5e0	182	DEFAULT	unknown	FUN_0060a5e0	
+0020a460	182	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Unlink	void * __thiscall(char * key, uint slot)
+0020a520	182	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Unlink	void * __thiscall(char * key, uint slot)
+0020a5e0	182	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Unlink	void * __thiscall(char * key, uint slot)
 0020a6a0	49	DEFAULT	unknown	FUN_0060a6a0	
 0020a6e0	284	DEFAULT	unknown	FUN_0060a6e0	
 0020a800	138	DEFAULT	unknown	FUN_0060a800	

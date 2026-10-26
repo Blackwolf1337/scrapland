@@ -14,7 +14,10 @@ MODULES = ('Scrap', 'SAct', 'SAI', 'SFX', 'SInput', 'SLogic', 'SNet', 'SScorer',
 
 
 def main():
-    hooks = set(re.findall(r'^SD_HOOK\((\w+),', open(os.path.join(ROOT, 'src', 'hooks.inc')).read(), re.M))
+    text = open(os.path.join(ROOT, 'src', 'hooks.inc')).read()
+    hooks = set(re.findall(r'^SD_HOOK\((\w+),', text, re.M))
+    # one C function can replace several identical template instances: count addresses
+    rvas = set(re.findall(r'^SD_HOOK\(\w+, (0x[0-9a-f]+),', text, re.M))
     total = collections.Counter()
     done = collections.Counter()
     nfunc = 0
@@ -30,7 +33,7 @@ def main():
     for mod in MODULES:
         print(f'{mod:10} {done[mod]:4} / {total[mod]:4}')
     print(f'{"script API":10} {sum(done.values()):4} / {sum(total.values()):4}')
-    print(f'{"all":10} {len(hooks):4} / {nfunc} functions in the exe (CRT and libraries included)')
+    print(f'{"all":10} {len(rvas):4} / {nfunc} functions in the exe (CRT and libraries included)')
 
 
 if __name__ == '__main__':

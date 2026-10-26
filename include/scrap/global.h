@@ -74,7 +74,10 @@ typedef struct HashTable {
 } HashTable;
 SD_OFFSET(HashTable, caseSensitive, 0x9);
 
-uint32_t __thiscall HashTable_Hash(HashTable *table, const char *key);
-HashNode *__thiscall HashTable_Find(HashTable *table, const char *key, uint32_t slot);
+/* the instance functions with a pointer value (src/game/Global/HashTable.c, include/scrap/hashtable.h) */
+uint32_t __thiscall HashTable_Slot(HashTable *self, const char *key);
+struct cPtrItem *__thiscall PtrTable_Find(HashTable *self, const char *key, uint32_t slot);
+#define HashTable_Hash(t, key) HashTable_Slot((t), (key))
+#define HashTable_Find(t, key, slot) ((HashNode *)PtrTable_Find((t), (key), (slot)))
 
 #endif
