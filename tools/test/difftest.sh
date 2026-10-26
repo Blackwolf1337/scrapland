@@ -71,5 +71,5 @@ for s in "${scenarios[@]}"; do
 	fi
 done
 grep -h 'hooks installed' "$out"/scrapdecomp-*-c.log | sort -u
-rm -f "$ini" "$game"/sd*.py "$game"/sd*.out
+rm -f "$ini" "$game"/sd*.py "$game"/sd*.out "$game"/sd*.txt
 exit $rc

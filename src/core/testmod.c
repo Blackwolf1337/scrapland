@@ -6,9 +6,14 @@
  * SDTest.Call(rva, sig, args...): sig is the return type and then one character per argument.
  *   return: v nothing, i int, b byte (al), s char * (None for NULL), f float (st0)
  *   args:   i int, f float, s string, z string or None, b string copied into a buffer of BUF_SIZE bytes (rest 0)
- *           that comes back, p int that is passed by pointer and comes back
- * The result is a tuple: the return value, then the b and p arguments in their order. Only cdecl functions with
+ *           that comes back, p int and D double that are passed by pointer and come back
+ * The result is a tuple: the return value, then the b, p and D arguments in their order. Only cdecl functions with
  * up to MAX_ARGS arguments of 4 bytes.
+ *
+ * SDTest.Peek(rva, kind) reads a global of the exe: i int, b byte, d double, s the characters at rva, p the string a
+ * pointer at rva points to (None for NULL). SDTest.Poke(rva, value) writes an int.
+ * SDTest.OutFunc() is the address of a cdecl void(const char *) that collects text, SDTest.Out() returns and clears
+ * that text (for the output callbacks of the engine).
  */
 #include <stdio.h>
 #include <string.h>
@@ -28,6 +33,9 @@ typedef float (*call_float_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, 
 
 static char bufs[MAX_OUT][BUF_SIZE];
 static int ints[MAX_OUT];
+static double doubles[MAX_OUT];
+static char out[0x4000];
+static size_t outLen;
 
 static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 	(void)self;
@@ -89,6 +97,13 @@ static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 			a[i] = (uint32_t)(uintptr_t)&ints[nOut];
 			outKind[nOut++] = 'p';
 			break;
+		case 'D':
+			if (nOut == MAX_OUT || !PyArg_Parse(o, "d", &doubles[nOut])) {
+				return NULL;
+			}
+			a[i] = (uint32_t)(uintptr_t)&doubles[nOut];
+			outKind[nOut++] = 'D';
+			break;
 		default:
 			return NULL;
 		}
@@ -126,13 +141,96 @@ static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 	PyObject *t = PyTuple_New(1 + nOut);
 	PyTuple_SetItem(t, 0, ret);
 	for (int i = 0; i < nOut; i++) {
-		PyTuple_SetItem(t, 1 + i, outKind[i] == 'b' ? PyString_FromString(bufs[i]) : PyInt_FromLong(ints[i]));
+		PyObject *o;
+		switch (outKind[i]) {
+		case 'b':
+			o = PyString_FromString(bufs[i]);
+			break;
+		case 'D':
+			o = PyFloat_FromDouble(doubles[i]);
+			break;
+		default:
+			o = PyInt_FromLong(ints[i]);
+			break;
+		}
+		PyTuple_SetItem(t, 1 + i, o);
 	}
 	return t;
 }
 
+static PyObject *SDTest_Peek(PyObject *self, PyObject *args) {
+	(void)self;
+	int rva;
+	const char *kind;
+
+	if (!PyArg_ParseTuple(args, "is", &rva, &kind)) {
+		return NULL;
+	}
+	const void *p = Game_Ptr((uint32_t)rva);
+	switch (kind[0]) {
+	case 'i':
+		return PyInt_FromLong(*(const int32_t *)p);
+	case 'b':
+		return PyInt_FromLong(*(const byte *)p);
+	case 'd':
+		return PyFloat_FromDouble(*(const double *)p);
+	case 's':
+		return PyString_FromString(p);
+	case 'p':
+		if (*(const char *const *)p) {
+			return PyString_FromString(*(const char *const *)p);
+		}
+		break;
+	default:
+		return NULL;
+	}
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyObject *SDTest_Poke(PyObject *self, PyObject *args) {
+	(void)self;
+	int rva, v;
+
+	if (!PyArg_ParseTuple(args, "ii", &rva, &v)) {
+		return NULL;
+	}
+	*(int32_t *)Game_Ptr((uint32_t)rva) = v;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static void SDTest_Collect(const char *s) {
+	size_t n = strlen(s);
+	if (n > sizeof(out) - 1 - outLen) {
+		n = sizeof(out) - 1 - outLen;
+	}
+	memcpy(out + outLen, s, n);
+	outLen += n;
+	out[outLen] = '\0';
+}
+
+static PyObject *SDTest_OutFunc(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	return PyInt_FromLong((long)(uintptr_t)SDTest_Collect);
+}
+
+static PyObject *SDTest_Out(PyObject *self, PyObject *args) {
+	(void)self;
+	(void)args;
+	PyObject *r = PyString_FromString(out);
+	outLen = 0;
+	out[0] = '\0';
+	return r;
+}
+
 static PyMethodDef sdtest_methods[] = {
 	{ "Call", SDTest_Call, 1, NULL },
+	{ "Peek", SDTest_Peek, 1, NULL },
+	{ "Poke", SDTest_Poke, 1, NULL },
+	{ "OutFunc", SDTest_OutFunc, 1, NULL },
+	{ "Out", SDTest_Out, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 

@@ -92,4 +92,94 @@ for n in (0, 1, -1, 999, 1000, -1000, 123456789, -2147483647 - 1):
 call('Cad_Dup', 0x22cfa0, 'ss', 'dup')
 for n in (1, 2, 4, 20):
 	call('Bprintf', 0x2389a0, 'ibiss', '', n, '%s-%s', 'ab')
+
+# engine3d Util/Lex.c and Engine/cmd_lex.c on files written here (difftest.sh deletes them), the output through
+# SDTest's callback
+def writefile(name, data):
+	f = open(name, 'wb')
+	f.write(data)
+	f.close()
+
+writefile('sdlex.txt', 'ident _x a#b high\351z 12 0 0x1F 0x 077 08 1.5 .5 1e10 1.e-3 1e+ 2E5x\n'
+	'"str" "esc\\n\\t\\x41\\101\\x\\9\\q\\"" "unterminated\n'
+	'; { } ( ) , = -3 +4.5 \'c\' x #y\n'
+	'/* comment /* nested */ still\n*/ after\n'
+	'// line comment\n'
+	'#inc "sdlex2.txt"\n'
+	'#bogus directive\n'
+	' #notfirst\n'
+	'#inc bad\n'
+	'x\r\ny\rz\n\rw\n'
+	'end\n')
+writefile('sdlex2.txt', 'inc1 2\n#inc "sdnofile.txt"\nlast\n')
+writefile('sdlex3.txt', 'a /* open comment\n\n')
+writefile('sdcmd.txt', 'Load "file" 12 -7 +3 0x10 010 09 1.5 -2.5 3 name ; \n'
+	'block { a { b } c } after\n'
+	'x , y ) z\n')
+
+call('Lex_SetOut', 0x2cda80, 'vi', SDTest.OutFunc())
+call('Lex_SetDir', 0x2cda90, 'vs', 'sdlex.txt')
+call('Lex_Print', 0x2cd0c0, 'vss', '[%s]', 'x')
+check('Lex out', SDTest.Out)
+
+def lexfile(name, escapes):
+	call('Lex_Open', 0x2cd5f0, 'isi', name, escapes)
+	check('Lex out', SDTest.Out)
+	for i in range(200):
+		t = SDTest.Call(0x2cdac0, 'i')[0]
+		check('Lex_Next %s %d' % (name, i), lambda t=t: (t, SDTest.Peek(0x4e6e28, 's'), SDTest.Peek(0x432a80, 'i'),
+			SDTest.Peek(0x4e6e24, 'i'), SDTest.Peek(0x4e7228, 'i'), SDTest.Out()))
+		if t == -1:
+			break
+	call('Lex_Close', 0x2cd780, 'vi', 2)
+	check('Lex out', SDTest.Out)
+
+lexfile('sdlex.txt', 1)
+lexfile('sdlex.txt', 0)
+lexfile('sdlex3.txt', 1)
+call('Lex_Open missing', 0x2cd5f0, 'isi', 'sdnofile.txt', 0)
+check('Lex out', SDTest.Out)
+
+def cl():
+	return (SDTest.Peek(0x4e733c, 'i'), SDTest.Peek(0x4e7338, 'p'), SDTest.Peek(0x4e7340, 'i'), SDTest.Out())
+def step(name, rva, sig, *args):
+	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig) + args), cl()))
+
+call('Lex_Open', 0x2cd5f0, 'isi', 'sdcmd.txt', 1)
+SDTest.Poke(0x4e733c, 0)
+step('CmdLex_Next', 0x2ce270, 'v')
+step('CmdLex_Expect', 0x2cdce0, 'ii', 0)
+step('CmdLex_Expect', 0x2cdce0, 'ii', 1)
+step('CmdLex_Next', 0x2ce270, 'v')
+step('CmdLex_Expect', 0x2cdce0, 'ii', 3)
+step('CmdLex_Expect', 0x2cdce0, 'ii', 2)
+step('CmdLex_Next', 0x2ce270, 'v')
+for i in range(6):
+	step('CmdLex_GetInt', 0x2cddf0, 'ip', 99)
+for i in range(3):
+	step('CmdLex_GetDouble', 0x2cdeb0, 'iD', 9.5)
+check('CmdLex double', lambda: SDTest.Peek(0x4e7340, 'd'))
+step('CmdLex_GetInt ident', 0x2cddf0, 'ip', 99)
+step('CmdLex_GetDouble ident', 0x2cdeb0, 'iD', 9.5)
+step('CmdLex_Next', 0x2ce270, 'v')
+step('CmdLex_IsChar', 0x2cdd70, 'ii', ord(';'))
+step('CmdLex_IsChar', 0x2cdd70, 'ii', ord(','))
+step('CmdLex_GetInt char', 0x2cddf0, 'ip', 99)
+step('CmdLex_NeedChar', 0x2cdda0, 'ii', ord(';'))
+step('CmdLex_Next', 0x2ce270, 'v')
+step('CmdLex_SkipBlock', 0x2cdf80, 'vi', 0)
+step('CmdLex_SkipToAny', 0x2ce120, 'vs', ',)')
+step('CmdLex_NeedChar', 0x2cdda0, 'ii', ord(')'))
+step('CmdLex_SkipTo', 0x2cdfe0, 'vi', ord(')'))
+step('CmdLex_GetDouble ident', 0x2cdeb0, 'iD', 9.5)
+step('CmdLex_SkipBlock -1', 0x2cdf80, 'vi', -1)
+step('CmdLex_SkipTo end', 0x2cdfe0, 'vi', ord('#'))
+step('CmdLex_GetInt end', 0x2cddf0, 'ip', 99)
+step('CmdLex_GetDouble end', 0x2cdeb0, 'iD', 9.5)
+step('CmdLex_NeedChar end', 0x2cdda0, 'ii', ord(';'))
+step('CmdLex_SkipToAny end', 0x2ce120, 'vs', '{')
+call('Lex_Close', 0x2cd780, 'vi', 1)
+check('Lex out', SDTest.Out)
+call('Lex_Error', 0x2cd830, 'viss', 2, 'info %s', 'no file')
+check('Lex out', SDTest.Out)
 finish()
