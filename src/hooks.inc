@@ -1099,6 +1099,7 @@ SD_HOOK(Vec3_NormAng, 0x15e190, 324)
 SD_HOOK(NormAng, 0x15e2e0, 111)
 SD_HOOK(Vec2_Rotate, 0x15e350, 95)
 SD_HOOK(Vec3_Rotate, 0x15e3b0, 277)
+SD_HOOK(Vec3_Rotate, 0x238bc0, 277)
 SD_HOOK(Vec3_RotateXY, 0x15e4d0, 178)
 
 /* src/game/engine3d/Engine/ArchINI.c */
@@ -1297,6 +1298,25 @@ SD_HOOK(CEVA_MemSize, 0x2d4670, 195)
 SD_HOOK(CEVA_NumAnimated, 0x2d4770, 151)
 SD_HOOK(CEVA_Optimize, 0x2d4810, 406)
 SD_HOOK(CAnimVert_Optimize, 0x2d49b0, 332)
+
+/* src/game/engine3d/Engine/Camara.c */
+SD_HOOK(CCamara_ctorCopy, 0x29bf50, 446)
+SD_HOOK(CCamara_ctor, 0x29c110, 242)
+SD_HOOK(CCamara_dtor, 0x29c210, 227)
+SD_HOOK(CCamara_Delete, 0x29c300, 35)
+SD_HOOK(CCamara_LookAt, 0x29c330, 665)
+SD_HOOK(CCamara_GetProj, 0x29c5d0, 18)
+SD_HOOK(CCamara_GetView, 0x29c5f0, 18)
+SD_HOOK(CCamara_Clear, 0x29c610, 103)
+SD_HOOK(CCamara_Read, 0x29c6a0, 315)
+SD_HOOK(CCamara_ViewMatrix, 0x29c7e0, 371)
+SD_HOOK(CCamara_Write, 0x29c970, 267)
+SD_HOOK(CCamara_ProjMatrix, 0x29ca80, 284)
+SD_HOOK(CCamara_Move, 0x29cc10, 73)
+SD_HOOK(CCamara_Strafe, 0x29cc60, 195)
+SD_HOOK(CCamara_SetNodo, 0x29cd30, 100)
+SD_HOOK(CCamara_SetNodoObjetivo, 0x29cda0, 100)
+SD_HOOK(CCamara_UpdateVectors, 0x29ce10, 173)
 
 /* src/game/engine3d/Engine/Calculo3d.c */
 SD_HOOK(Matrix_AddPos, 0x23a4d0, 55)

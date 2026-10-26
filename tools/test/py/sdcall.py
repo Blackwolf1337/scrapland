@@ -1226,4 +1226,53 @@ for f in (0x238070, 0x237d80, 0x238260, 0x238380, 0x237be0, 0x237b00, 0x238180, 
 for m in (1, 2, 4, 8, 0x10, 0x20, 0x40, 0x80, 0xff, 0):
 	check('cLog_Write' + fmt((m,)), lambda m=m: SDTest.Call(0x237e40, 'tviis', 0x4ab914 + 0x400000, m, 'sdlog write'))
 call('E3D_DebugPrintf', 0x237f60, 'vs', 'sdlog debug')
+
+# engine3d Engine/Camara.c on cameras in heap memory; nodes are fake (only Refs), kept above 1
+def camget(c):
+	return tpeek(c, 30)
+def camstep(name, c, rva, sig, *args):
+	check(name + fmt(args), lambda c=c, rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig, c) + args), camget(c)))
+cam = SDTest.Call(0x133650, 'ii', 0x78)[0]
+cam2 = SDTest.Call(0x133650, 'ii', 0x78)[0]
+nod = SDTest.Call(0x133650, 'ii', 16)[0]
+nod2 = SDTest.Call(0x133650, 'ii', 16)[0]
+SDTest.Poke(nod + 8 - 0x400000, 5)
+SDTest.Poke(nod2 + 8 - 0x400000, 7)
+check('CCamara_ctor', lambda: (SDTest.Call(0x29c110, 'tii', cam)[0] == cam, camget(cam)))
+for i in range(12):
+	SDTest.Call(0x3197d0, 'iiFi', cam + 8, vec() + vec() + vec(), 36)
+	SDTest.Call(0x3197d0, 'iiFi', cam + 0x2c, (rnd(0.1, 2.0), rnd(5.0, 500.0), 0.0, 1000.0, rnd(0.1, 2.5), rnd(0.5, 2.0), rnd(0.5, 2.0)), 28)
+	if i % 3 == 2:
+		SDTest.Poke(cam + 0x48 - 0x400000, 0)
+	else:
+		SDTest.Poke(cam + 0x48 - 0x400000, 0x463)
+	camstep('CCamara_ViewMatrix', cam, 0x29c7e0, 'tviF', (0.0,) * 16)
+	camstep('CCamara_GetView', cam, 0x29c5f0, 'tiiF', (0.0,) * 16)
+	camstep('CCamara_ProjMatrix', cam, 0x29ca80, 'tbiF', (0.0,) * 16)
+	camstep('CCamara_GetProj', cam, 0x29c5d0, 'tiiF', (0.0,) * 16)
+	camstep('CCamara_Move', cam, 0x29cc10, 'tvif', rnd())
+	camstep('CCamara_Strafe', cam, 0x29cc60, 'tviff', rnd(), rnd())
+	camstep('CCamara_UpdateVectors', cam, 0x29ce10, 'tvi')
+	camstep('CCamara_LookAt', cam, 0x29c330, 'tviFFF', (0.0,) * 16, vec(), vec())
+camstep('CCamara_LookAt zero', cam, 0x29c330, 'tviFFF', (0.0,) * 16, (0.0, 0.0, 0.0), (0.0, 1.0, 0.0))
+camstep('CCamara_LookAt parallel', cam, 0x29c330, 'tviFFF', (0.0,) * 16, (0.0, 2.0, 0.0), (0.0, 1.0, 0.0))
+SDTest.Call(0x3197d0, 'iiFi', cam + 0x2c, (5.0, 5.001, 0.0, 1000.0, 1.0, 1.0, 1.0), 28)
+camstep('CCamara_ProjMatrix flat', cam, 0x29ca80, 'tbiF', (0.0,) * 16)
+SDTest.Call(0x3197d0, 'iiFi', cam + 0x2c, (1.0, 100.0, 0.0, 1000.0, 0.001, 1.0, 1.0), 28)
+camstep('CCamara_ProjMatrix narrow', cam, 0x29ca80, 'tbiF', (0.0,) * 16)
+def refs():
+	return SDTest.Peek(nod + 8, '@i'), SDTest.Peek(nod2 + 8, '@i')
+check('CCamara_SetNodo', lambda: (SDTest.Call(0x29cd30, 'tvii', cam, nod), refs(), SDTest.Peek(cam + 0x70, '@i') == nod))
+check('CCamara_SetNodo 2', lambda: (SDTest.Call(0x29cd30, 'tvii', cam, nod2), refs(), SDTest.Peek(cam + 0x70, '@i') == nod2))
+check('CCamara_SetNodoObjetivo', lambda: (SDTest.Call(0x29cda0, 'tvii', cam, nod), refs()))
+check('CCamara_ctorCopy', lambda: (SDTest.Call(0x29bf50, 'tiii', cam2, cam)[0] == cam2, refs(), camget(cam2)[2:19] == camget(cam)[2:19]))
+check('CCamara_dtor', lambda: (SDTest.Call(0x29c210, 'tvi', cam2), refs(), camget(cam2)))
+check('CCamara_Clear', lambda: (SDTest.Call(0x29c610, 'tvi', cam), refs(), camget(cam)))
+SDTest.Call(0x29cd30, 'tvii', cam, nod)
+check('CCamara_Delete', lambda: (SDTest.Call(0x29c300, 'tiii', cam, 0)[0] == cam, refs(), camget(cam)))
+check('CCamara_SetNodo NULL', lambda: (SDTest.Call(0x29cd30, 'tvii', cam, 0), refs()))
+SDTest.Call(0x133550, 'vi', cam)
+SDTest.Call(0x133550, 'vi', cam2)
+SDTest.Call(0x133550, 'vi', nod)
+SDTest.Call(0x133550, 'vi', nod2)
 finish()

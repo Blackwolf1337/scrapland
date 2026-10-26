@@ -7009,7 +7009,7 @@ rva	size	source	callconv	name	signature
 00238a80	136	USER_DEFINED	__cdecl	RSqrt	float __cdecl(float x)
 00238b10	105	DEFAULT	unknown	FUN_00638b10	
 00238b80	57	DEFAULT	unknown	FUN_00638b80	
-00238bc0	277	DEFAULT	unknown	FUN_00638bc0	
+00238bc0	277	USER_DEFINED	__cdecl	Vec3_Rotate2	float * __cdecl(float *out, float *in, float *rot)
 00238ce0	1125	DEFAULT	unknown	FUN_00638ce0	
 00239150	147	DEFAULT	unknown	FUN_00639150	
 002391f0	22	DEFAULT	unknown	FUN_006391f0	
@@ -8075,27 +8075,27 @@ rva	size	source	callconv	name	signature
 0029bae0	599	DEFAULT	unknown	FUN_0069bae0	
 0029bd40	187	DEFAULT	unknown	FUN_0069bd40	
 0029be00	316	DEFAULT	unknown	FUN_0069be00	
-0029bf50	446	DEFAULT	unknown	FUN_0069bf50	
-0029c110	242	DEFAULT	unknown	FUN_0069c110	
-0029c210	227	DEFAULT	unknown	FUN_0069c210	
+0029bf50	446	USER_DEFINED	__thiscall	CCamara_ctorCopy	void * __thiscall(void *other)
+0029c110	242	USER_DEFINED	__fastcall	CCamara_ctor	void * __fastcall(void *self)
+0029c210	227	USER_DEFINED	__fastcall	CCamara_dtor	void __fastcall(void *self)
 0029c300	35	ANALYSIS	__thiscall	CCamara::vf00	undefined __thiscall(void)
-0029c330	665	DEFAULT	unknown	FUN_0069c330	
-0029c5d0	18	DEFAULT	unknown	FUN_0069c5d0	
-0029c5f0	18	DEFAULT	unknown	FUN_0069c5f0	
-0029c610	103	DEFAULT	unknown	FUN_0069c610	
+0029c330	665	USER_DEFINED	__thiscall	CCamara_LookAt	void __thiscall(float *m, float *dir, float *up)
+0029c5d0	18	USER_DEFINED	__thiscall	CCamara_GetProj	float * __thiscall(float *m)
+0029c5f0	18	USER_DEFINED	__thiscall	CCamara_GetView	float * __thiscall(float *m)
+0029c610	103	USER_DEFINED	__fastcall	CCamara_Clear	void __fastcall(void *self)
 0029c680	3	ANALYSIS	__thiscall	CCamara::vf04	undefined __thiscall(void)
 0029c690	3	ANALYSIS	__thiscall	CCamara::vf03	undefined __thiscall(void)
 0029c6a0	315	ANALYSIS	__thiscall	CCamara::vf06	undefined __thiscall(void)
-0029c7e0	371	DEFAULT	unknown	FUN_0069c7e0	
+0029c7e0	371	USER_DEFINED	__thiscall	CCamara_ViewMatrix	void __thiscall(float *m)
 0029c960	3	ANALYSIS	__thiscall	CCamara::vf02	undefined __thiscall(void)
 0029c970	267	ANALYSIS	__thiscall	CCamara::vf05	undefined __thiscall(void)
-0029ca80	284	DEFAULT	unknown	FUN_0069ca80	
+0029ca80	284	USER_DEFINED	__thiscall	CCamara_ProjMatrix	byte __thiscall(float *m)
 0029cba0	108	ANALYSIS	__thiscall	CCamara::vf01	undefined __thiscall(void)
-0029cc10	73	DEFAULT	unknown	FUN_0069cc10	
-0029cc60	195	DEFAULT	unknown	FUN_0069cc60	
-0029cd30	100	DEFAULT	unknown	FUN_0069cd30	
-0029cda0	100	DEFAULT	unknown	FUN_0069cda0	
-0029ce10	173	DEFAULT	unknown	FUN_0069ce10	
+0029cc10	73	USER_DEFINED	__thiscall	CCamara_Move	void __thiscall(float d)
+0029cc60	195	USER_DEFINED	__thiscall	CCamara_Strafe	void __thiscall(float side, float rise)
+0029cd30	100	USER_DEFINED	__thiscall	CCamara_SetNodo	void __thiscall(void *nodo)
+0029cda0	100	USER_DEFINED	__thiscall	CCamara_SetNodoObjetivo	void __thiscall(void *nodo)
+0029ce10	173	USER_DEFINED	__fastcall	CCamara_UpdateVectors	void __fastcall(void *self)
 0029cec0	183	DEFAULT	unknown	FUN_0069cec0	
 0029cf80	40	DEFAULT	unknown	FUN_0069cf80	
 0029cfb0	35	DEFAULT	unknown	FUN_0069cfb0	
