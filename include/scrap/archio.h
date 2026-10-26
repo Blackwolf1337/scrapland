@@ -48,7 +48,7 @@ int __thiscall CArchIO_EndBlockWrite(CArchIO *self, const char *id);
 int __thiscall CArchIO_WriteInt(CArchIO *self, int32_t v);	/* two copies in the exe (int, float) */
 int __thiscall CArchIO_BeginBlockWrite(CArchIO *self, const char *id);
 int ArchIO_Close(void *f);	/* 0 or -1 */
-char ArchIO_Getc(void *f);
+int ArchIO_Getc(void *f);	/* 0..255 */
 char *ArchIO_Gets(char *buf, int size, void *f);	/* keeps the '\n' */
 int __thiscall CArchIO_Unsupported(CArchIO *self);
 int ArchIO_Read(void *buf, int size, int count, void *f);	/* count */

@@ -188,12 +188,12 @@ int ArchIO_Close(void *f) {
 	return closed ? 0 : -1;
 }
 
-char ArchIO_Getc(void *f) {
+int ArchIO_Getc(void *f) {
 	cAbstractFile *file = f;
 	char ch;
 
 	CHECK(file->vftable->Read(file, &ch, 1) == 1);
-	return ch;
+	return (byte)ch;
 }
 
 char *ArchIO_Gets(char *buf, int size, void *f) {

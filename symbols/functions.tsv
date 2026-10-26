@@ -6595,7 +6595,7 @@ rva	size	source	callconv	name	signature
 0021b760	159	USER_DEFINED	__thiscall	CArchIO_BeginBlockWrite	int __thiscall(char *id)
 0021b800	65	USER_DEFINED	__thiscall	CArchIO_WriteFloat	int __thiscall(float v)
 0021b850	48	USER_DEFINED	__cdecl	ArchIO_Close	int __cdecl(void *f)
-0021b8a0	56	USER_DEFINED	__cdecl	ArchIO_Getc	char __cdecl(void *f)
+0021b8a0	56	USER_DEFINED	__cdecl	ArchIO_Getc	int __cdecl(void *f)
 0021b8e0	172	USER_DEFINED	__cdecl	ArchIO_Gets	char * __cdecl(char *buf, int size, void *f)
 0021b990	51	USER_DEFINED	__thiscall	CArchIO_Unsupported	int __thiscall(void)
 0021b9d0	61	USER_DEFINED	__cdecl	ArchIO_Read	int __cdecl(void *buf, int size, int count, void *f)
@@ -8790,19 +8790,19 @@ rva	size	source	callconv	name	signature
 002d5170	340	USER_DEFINED	__cdecl	LDin_Move	void __cdecl(void *din, int orig, int dest)
 002d52d0	113	USER_DEFINED	__cdecl	LDin_Clear	void __cdecl(void *din)
 002d5350	1353	DEFAULT	unknown	FUN_006d5350	
-002d58a0	236	DEFAULT	unknown	FUN_006d58a0	
-002d59d0	88	DEFAULT	unknown	FUN_006d59d0	
-002d5a30	232	DEFAULT	unknown	FUN_006d5a30	
-002d5b20	247	DEFAULT	unknown	FUN_006d5b20	
-002d5c20	202	DEFAULT	unknown	FUN_006d5c20	
-002d5cf0	46	DEFAULT	unknown	FUN_006d5cf0	
-002d5d20	35	DEFAULT	unknown	FUN_006d5d20	
-002d5d50	79	DEFAULT	unknown	FUN_006d5d50	
-002d5da0	90	DEFAULT	unknown	FUN_006d5da0	
-002d5e00	102	DEFAULT	unknown	FUN_006d5e00	
-002d5e70	182	DEFAULT	unknown	FUN_006d5e70	
-002d5f30	108	DEFAULT	unknown	FUN_006d5f30	
-002d5fa0	102	DEFAULT	unknown	FUN_006d5fa0	
+002d58a0	236	USER_DEFINED	__cdecl	Lee_String	void __cdecl(char *dest, int size)
+002d59d0	88	USER_DEFINED	__cdecl	Lee_Pop	void __cdecl(void)
+002d5a30	232	USER_DEFINED	__cdecl	Lee_Expect	void __cdecl(char *tok)
+002d5b20	247	USER_DEFINED	__cdecl	Lee_NextLine	int __cdecl(void)
+002d5c20	202	USER_DEFINED	__cdecl	Lee_Open	void __cdecl(char *dir, char *name, int binary)
+002d5cf0	46	USER_DEFINED	__cdecl	Lee_Text	void __cdecl(char *tok, char *dest, int size)
+002d5d20	35	USER_DEFINED	__cdecl	Lee_QText	void __cdecl(char *tok, char *dest, int size)
+002d5d50	79	USER_DEFINED	__cdecl	Lee_Close	int __cdecl(void)
+002d5da0	90	USER_DEFINED	__cdecl	Lee_Error	void __cdecl(char *fmt, ...)
+002d5e00	102	USER_DEFINED	__cdecl	Lee_Float	void __cdecl(char *tok, float *dest)
+002d5e70	182	USER_DEFINED	__cdecl	Lee_Bytes	void __cdecl(void *dest, int n)
+002d5f30	108	USER_DEFINED	__cdecl	Lee_Byte	int __cdecl(void)
+002d5fa0	102	USER_DEFINED	__cdecl	Lee_Int	void __cdecl(char *tok, int *dest)
 002d6010	27	DEFAULT	unknown	FUN_006d6010	
 002d6030	47	DEFAULT	unknown	FUN_006d6030	
 002d6060	64	DEFAULT	unknown	FUN_006d6060	

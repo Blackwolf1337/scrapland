@@ -55,6 +55,7 @@ static inline uint32_t Hash_Step(uint32_t h, byte c) {
 }
 /* the engine's malloc with the same statistics (rva 0x1335a0) */
 void *Mem_Alloc(uint32_t size);
+void *Mem_Calloc(uint32_t size);	/* rva 0x133650 */
 void *Mem_Free(void *p);	/* NULL (rva 0x133550) */
 void *Mem_Realloc(void *p, uint32_t size);	/* rva 0x133690 */
 

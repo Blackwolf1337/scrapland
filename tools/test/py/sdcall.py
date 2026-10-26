@@ -405,7 +405,7 @@ check('ArchIO_Size', lambda: SDTest.Call(0x21ba70, 'ii', f))
 for i in range(4):
 	check('ArchIO_Gets', lambda: (SDTest.Call(0x21b8e0, 'sbii', '', 260, f), SDTest.Call(0x21ba80, 'ii', f)))
 check('ArchIO_Gets short', lambda: SDTest.Call(0x21b8e0, 'sbii', '', 4, f))
-check('ArchIO_Getc', lambda: SDTest.Call(0x21b8a0, 'bi', f))
+check('ArchIO_Getc', lambda: SDTest.Call(0x21b8a0, 'ii', f))
 check('ArchIO_Read', lambda: SDTest.Call(0x21b9d0, 'ibiii', '', 3, 4, f))
 check('ArchIO_Tell', lambda: SDTest.Call(0x21ba80, 'ii', f))
 check('ArchIO_Close', lambda: SDTest.Call(0x21b850, 'ii', f))
@@ -632,4 +632,43 @@ def tlist():
 check('CTablaHash_GetList', tlist)
 SDTest.Call(0x2d0750, 'tvi', th)
 SDTest.Call(0x133550, 'vi', th)
+
+# engine3d Engine/LeeDatos.c on an ini of the packs (only pack files open, one at a time), Lee_String on a buffer
+# put in g_LeeCad
+def lee():
+	return SDTest.Peek(0x4e73b8, 'p'), SDTest.Peek(0x4e73bc, 'i') != 0
+def leestep(name, rva, sig, *args):
+	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig) + args), lee()))
+call('Lee_Error NULL', 0x2d5da0, 'vz', None)
+leestep('Lee_Open', 0x2d5c20, 'vzsi', 'levels/menu/', 'map/map3d.ini', 1)
+leestep('Lee_Expect', 0x2d5a30, 'vs', '[suelo]')
+leestep('Lee_Text', 0x2d5cf0, 'vzbi', 'model_ambient', '', 40)
+leestep('Lee_Text short', 0x2d5cf0, 'vzbi', None, '', 5)
+leestep('Lee_NextLine', 0x2d5b20, 'i')
+leestep('Lee_Text', 0x2d5cf0, 'vzbi', 'TexturePath =', '', 40)
+leestep('Lee_Expect', 0x2d5a30, 'vs', '[mapa_sombras]')
+for t in ('escala =', 'resolucion =', 'gamma ='):
+	leestep('Lee_Float', 0x2d5e00, 'vsF', t, (0.0,))
+leestep('Lee_Text', 0x2d5cf0, 'vzbi', 'sombras_suaves =', '', 40)
+leestep('Lee_Int', 0x2d5fa0, 'vsp', 'text_tam_x =', -1)
+leestep('Lee_Int', 0x2d5fa0, 'vsp', 'text_tam_y =', -1)
+leestep('Lee_Bytes', 0x2d5e70, 'vbi', '', 7)
+leestep('Lee_Bytes 0', 0x2d5e70, 'vbi', '', 0)
+for i in range(3):
+	leestep('Lee_Byte', 0x2d5f30, 'i')
+for i in range(16):
+	leestep('Lee_NextLine', 0x2d5b20, 'i')
+lbuf = SDTest.Call(0x1335a0, 'ii', 64)[0]
+saved = SDTest.Peek(0x4e73b8, 'i')
+for t in ('"abc" x', ' \t"" y', '"a b c d e f"', '\t"tab\there"'):
+	for n in (1, 4, 40):
+		SDTest.Call(0x1365c0, 'sisi', lbuf, t, 64)
+		SDTest.Poke(0x4e73b8, lbuf)
+		check('Lee_String' + fmt((t, n)), lambda n=n, lbuf=lbuf: (SDTest.Call(0x2d58a0, 'vbi', '', n), SDTest.Peek(0x4e73b8, 'i') - lbuf))
+SDTest.Call(0x1365c0, 'sisi', lbuf, ' "q" rest', 64)
+SDTest.Poke(0x4e73b8, lbuf)
+check('Lee_QText', lambda lbuf=lbuf: (SDTest.Call(0x2d5d20, 'vzbi', None, '', 40), SDTest.Peek(0x4e73b8, 'i') - lbuf))
+SDTest.Poke(0x4e73b8, saved)
+SDTest.Call(0x133550, 'vi', lbuf)
+leestep('Lee_Close', 0x2d5d50, 'i')
 finish()
