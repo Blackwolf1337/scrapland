@@ -410,7 +410,6 @@ SD_IMPORT(Portales_SetView, 0x26db80)
 SD_IMPORT(CSuelo_FreeNodos, 0x261530)
 
 /* src/game/engine3d/Engine/Fuentes.c (Engine/fuentes.cpp, include/scrap/fuentes.h) */
-SD_IMPORT(CFuente3_ctor, 0x2984f0)
 SD_IMPORT(CFuente3_PrintContorno, 0x29a530)
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
 SD_IMPORT(RenderLock_InitD3D, 0x2a48f0)

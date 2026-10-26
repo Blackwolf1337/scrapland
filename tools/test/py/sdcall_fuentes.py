@@ -125,3 +125,11 @@ for y in (0, 1):
 		check('Bmp_FilaBorde' + fmt((y, c)), lambda bm=bm, y=y, c=c: SDTest.Call(0x299870, 'iiii', bm, y, c)[0])
 SDTest.Poke(0x4ad7e8, rdvp[0])
 SDTest.Poke(0x4ad7ec, rdvp[1])
+
+# the two debug fonts made again from their .MST files and freed
+for tex, opac, flags in (('bmp/fnt/Comic14.tga', 'bmp/fnt/A_Comic14.tga', 0), ('bmp/fnt/Term8.alpha.tga', None, 8)):
+	nf = SDTest.Call(0x1334d0, 'ii', 0x48)[0]
+	check('CFuente3_ctor' + fmt((tex, flags)), lambda nf=nf, tex=tex, opac=opac, flags=flags: (SDTest.Call(0x2984f0,
+		'tiisziifiif', nf, tex, opac, 0x20, 0xff, 0.0, 0, flags, 1.0)[0] == nf, fnget(nf)))
+	SDTest.Call(0x2994c0, 'tvi', nf)
+	check('CFuente3_dtor' + fmt((tex,)), lambda nf=nf: (fni(nf + 0x30), fni(nf + 0x34), fni(nf + 0x38)))

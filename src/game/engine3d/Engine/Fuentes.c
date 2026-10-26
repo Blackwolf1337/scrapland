@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
 #include "scrap/filepak.h"
@@ -72,6 +73,209 @@ void __fastcall CDigitos_dtor(CDigitos *self) {
 	}
 }
 
+static const FntGlifo *CFuente3_Glifo(const CFuente3 *self, uint32_t i) {
+	TABLA_CHECK(self->glifos.p, i, self->glifos.n);
+	return (const FntGlifo *)self->glifos.p + i;
+}
+
+static void CFuente3_SetGlifoRect(CFuente3 *self, byte letra, float u0, float v0, float u1, float v1) {
+	FntGlifo *g = (FntGlifo *)CFuente3_Glifo(self, (uint32_t)(letra - self->pri));
+	g->u0 = u0;
+	g->v0 = v0;
+	g->u1 = u1;
+	g->v1 = v1;
+}
+
+static byte Pixel_EsBorde(const CBmp *b, int x, int y, uint32_t borde) {
+	return ((*(const uint32_t *)Img_Pixel(b, (uint32_t)x, (uint32_t)y, 4) ^ borde) & 0xffffff) == 0;
+}
+
+/* the glyphs between the border color (the pixel 0, 0): rows of glyphs between border rows, in each row the glyphs
+ * between border pixels; the last letter found */
+static byte CFuente3_Escanear(CFuente3 *self, const CBmp *bmp, byte ult) {
+	byte letra = self->pri;
+	int w = self->bmpAncho, h = self->bmpAlto;
+	uint32_t borde = *CBmp_Pixel(bmp, 0, 0);
+
+	for (int y = 0; y < h;) {
+		CHECK(Bmp_FilaBorde(bmp, y, borde) == w);
+		while (y < h && Bmp_FilaBorde(bmp, y, borde) == w) {
+			y++;
+		}
+		int ytop = y;
+		if (ytop >= h) {
+			break;
+		}
+		do {
+			if (Bmp_FilaBorde(bmp, y, borde) == w) {
+				break;
+			}
+			y++;
+		} while (y < h);
+		int ybot = y;
+		if (ybot >= h) {
+			break;
+		}
+		for (int x = 0; x < w; x++) {
+			if (Pixel_EsBorde(bmp, x, ytop, borde)) {
+				continue;
+			}
+			int x1 = x;
+			while (x < w && !Pixel_EsBorde(bmp, x, ytop, borde)) {
+				x++;
+			}
+			CFuente3_SetGlifoRect(self, letra, (float)x1 / (float)w, (float)ytop / (float)h, (float)x / (float)w,
+				(float)ybot / (float)h);
+			if (letra == ult) {
+				return letra;
+			}
+			letra++;
+		}
+		if (letra == ult) {
+			break;
+		}
+	}
+	return letra;
+}
+
+/* the glyphs packed into a square alpha texture of the size ancho (256 below 4), written as &u&d&n.Alpha.TGA */
+static void CFuente3_CrearAlpha(CFuente3 *self, CBmp *bmp, char *tmp, byte ult, float ancho) {
+	int tam = (int)(4.0f > ancho ? 256.0f : ancho);
+	CBmp alfa = { tam, tam, operator_new_array((uint32_t)tam * (uint32_t)tam * 4) };
+
+	CBmp_Fill(&alfa, 0xf5f5f5);
+	for (int y = 0; y < self->bmpAlto; y++) {
+		uint32_t *fila = Img_Pixel(bmp, 0, (uint32_t)y, 4);
+		for (int x = 0; x < self->bmpAncho; x++) {
+			fila[x] = (uint32_t)((const byte *)&fila[x])[1] << 24 | 0xffffff;
+		}
+	}
+	int px = 1, py = 1;
+	for (byte c = self->pri; c <= ult; c++) {
+		const FntGlifo *g = CFuente3_Glifo(self, (uint32_t)(c - self->pri));
+		int x1 = (int)((double)((float)bmp->ancho * g->u0) + 0.5);
+		int y1 = (int)((double)((float)bmp->alto * g->v0) + 0.5);
+		int x2 = (int)((double)((float)bmp->ancho * g->u1) + 0.5);
+		int y2 = (int)((double)((float)bmp->alto * g->v1) + 0.5);
+		CHECK(x1 < x2);
+		CHECK(y1 < y2);
+		int cw = x2 - x1;
+		if (px + cw > alfa.ancho) {
+			px = 1;
+			py = py + 1 + (y2 - y1);
+			if ((y2 - y1) + py > alfa.alto) {
+				Err_Printf(1, "'%s' no cabe en %dx%d (letra: %d)", tmp, alfa.ancho, alfa.alto, c);
+			}
+		}
+		CBmp_Copy(&alfa, px, py, bmp, x1, y1, cw, y2 - y1, 0xf);
+		px = px + 1 + cw;
+		if (c == 0xff) {
+			break;
+		}
+	}
+	Ruta_Format(tmp, tmp, "&u&d&n.Alpha.TGA");
+	if (CBmp_Save(&alfa, tmp, 2)) {
+		CheckFailed("!bmp2.escr_archivo( tmp, BITMAP_SAVEALPHA )", __FILE__, __TIMESTAMP__, __LINE__);
+	}
+	Err_Printf(0, "creado: %s", tmp);
+	alfa.ancho = 0;
+	alfa.alto = 0;
+	if (alfa.img) {
+		operator_delete_sized(alfa.img, 4);
+	}
+}
+
+/* the sprite table of the glyphs (sprite i + 1 is glyph pri + i) */
+static void CFuente3_TablaMST(const CFuente3 *self, CMultiSprite *ms, byte ult) {
+	ms->ancho = self->bmpAncho;
+	ms->alto = self->bmpAlto;
+	Tabla_Alloc8((CTabla *)&ms->n, ult - self->pri + 2);
+	for (int i = 1; i <= ult - self->pri + 1; i++) {
+		const FntGlifo *g = CFuente3_Glifo(self, (uint32_t)(i - 1));
+		float du = g->u1 - g->u0, dv = g->v1 - g->v0;
+		MSprite *s = &ms->p[i];
+		s->x = (uint16_t)(int)((float)ms->ancho * g->u0);
+		s->y = (uint16_t)(int)((float)ms->alto * g->v0);
+		s->cx = (uint16_t)(int)((float)ms->ancho * du);
+		s->cy = (uint16_t)(int)((float)ms->alto * dv);
+	}
+}
+
+CFuente3 *__thiscall CFuente3_ctor(CFuente3 *self, const char *tex, const char *opac, byte pri, byte ult, float ancho,
+	byte generar, uint32_t flags, float unused) {
+	char tmp[260], mst[260];
+	CMultiSprite ms;
+
+	(void)unused;
+	self->glifos.p = NULL;
+	self->glifos.n = 0;
+	if (generar) {
+		self->grf = NULL;
+	} else {
+		CGrafico2D *g = operator_new(sizeof(CGrafico2D));
+		self->grf = g ? CGrafico2D_ctorTex(g, tex, opac, flags | GRAF2D_PANTALLA | GRAF2D_TAM_PANTALLA) : NULL;
+	}
+	self->y = 0.0f;
+	self->x = 0.0f;
+	self->onda = 1.0f;
+	self->color = 0xffffff;
+	self->flags = 0;
+	self->i18 = 0;
+	self->redondear = 0;
+	self->mono = 0;
+	CHECK(pri <= ult);
+	self->ult = ult;
+	self->pri = pri;
+	self->ancho = ancho;
+	Tabla_Alloc10(&self->glifos, ult - pri + 1);
+	Ruta_Copy(tmp, tex, sizeof(tmp));
+	Ruta_Format(mst, tmp, "&u&d&n.MST");
+	CMultiSprite_ctor(&ms);
+	if (File_TimeDiff(mst, tex, 0) < 0) {
+		E3D_LogBlue(g_FileLog, "WARN: [%s] is older than [%s]", mst, tex);
+	} else if (CMultiSprite_Load(&ms, mst)) {
+		CHECK(ult - pri + 2 == ms.n);
+		self->bmpAncho = ms.ancho;
+		self->bmpAlto = ms.alto;
+		for (int i = 0; i <= ult - pri; i++) {
+			float t0[2], t1[2];
+			CMultiSprite_GetUV(&ms, (uint32_t)(i + 1), t0, t1);
+			CFuente3_SetGlifoRect(self, (byte)(pri + i), t0[0], t0[1], t1[0], t1[1]);
+		}
+		CMultiSprite_dtor(&ms);
+		return self;
+	}
+	CBmp bmp = { 0, 0, NULL };
+	if (CBmp_Load(&bmp, tmp, 0)) {
+		Err_Report(*crt_errno(), 1, "\n'%s'", tmp);
+	}
+	self->bmpAncho = bmp.ancho;
+	self->bmpAlto = bmp.alto;
+	byte letra = CFuente3_Escanear(self, &bmp, ult);
+	if (!generar) {
+		CHECK(letra == ult);
+	} else {
+		if (letra || ult) {
+			if (!letra) {
+				CheckFailed("letra!=0 || ult==0", __FILE__, __TIMESTAMP__, __LINE__);
+			}
+			if (ult != letra) {
+				ult = (byte)(letra - 1);
+			}
+		}
+		CFuente3_CrearAlpha(self, &bmp, tmp, ult, ancho);
+	}
+	CFuente3_TablaMST(self, &ms, ult);
+	if (CMultiSprite_Save(&ms, mst)) {
+		Con_Verbosef("CFuente3: SaveMultiSpriteTable: '%s'\n", mst);
+	} else {
+		Con_Bluef("CFuente3: SaveMultiSpriteTable: Could not write to file: '%s'\n", mst);
+	}
+	Img_Free(&bmp, 4);
+	CMultiSprite_dtor(&ms);
+	return self;
+}
+
 void __fastcall CFuente3_dtor(CFuente3 *self) {
 	if (self->grf) {
 		CGrafico2D_dtor(self->grf);
@@ -79,11 +283,6 @@ void __fastcall CFuente3_dtor(CFuente3 *self) {
 		self->grf = NULL;
 	}
 	Tabla_Free(&self->glifos);
-}
-
-static const FntGlifo *CFuente3_Glifo(const CFuente3 *self, uint32_t i) {
-	TABLA_CHECK(self->glifos.p, i, self->glifos.n);
-	return (const FntGlifo *)self->glifos.p + i;
 }
 
 float __thiscall CFuente3_GlifoAncho(const CFuente3 *self, const FntGlifo *g) {

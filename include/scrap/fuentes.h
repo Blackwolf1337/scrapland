@@ -96,9 +96,10 @@ void __thiscall CFuenteGrid_Print(CFuenteGrid *self, float x, float y, const cha
 CDigitos *__fastcall CDigitos_ctor(CDigitos *self);
 void __fastcall CDigitos_dtor(CDigitos *self);
 
-/* the font of tex (opac its opacity map), glyphs pri..ult; sinGrafico: no sprite of its own; unused not read */
+/* the font of tex (opac its opacity map), glyphs pri..ult. generar: no sprite of its own, the glyphs packed into a
+ * new alpha texture instead; unused not read */
 CFuente3 *__thiscall CFuente3_ctor(CFuente3 *self, const char *tex, const char *opac, byte pri, byte ult, float ancho,
-	byte sinGrafico, uint32_t flags, float unused);
+	byte generar, uint32_t flags, float unused);
 void __fastcall CFuente3_dtor(CFuente3 *self);
 /* the size of s (dim) and the position of its top left corner for the corner at x, y (pos, by align) */
 void __thiscall CFuente3_Medir(const CFuente3 *self, float x, float y, uint16_t align, const char *s, float *pos,
