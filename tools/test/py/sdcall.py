@@ -536,6 +536,26 @@ fcall('Matrix_Perspective flat', 0x15d350, 'bFffff', ident, 1.0, 1.0, 5.0, 5.001
 fcall('Matrix_Perspective narrow', 0x15d350, 'bFffff', ident, 0.0, 1.0, 1.0, 10.0)
 fcall('Matrix_TransformProject w0', 0x15d790, 'bFFF', zero3, (1.0, 2.0, 3.0), (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0))
 fcall('Quat_ToAxisAngle identity', 0x15db50, 'vFFF', zero3, (0.0,), (0.0, 0.0, 0.0, 1.0))
+# the engine3d copies and the more of Engine/cuaternio.cpp; unit quaternions from Quat_FromEuler
+def uquat():
+	a = vec()
+	return SDTest.Call(0x2a4040, 'vFfff', (0.0, 0.0, 0.0, 0.0), a[0], a[1], a[2])[1]
+for i in range(30):
+	a, ang = mat(), vec()
+	fcall('Quat_FromEuler', 0x2a4040, 'vFfff', (0.0, 0.0, 0.0, 0.0), ang[0], ang[1], ang[2])
+	q1, q2 = uquat(), uquat()
+	fcall('Quat_ToAxisAngle 2', 0x2a4160, 'vFFF', zero3, (0.0,), q1)
+	fcall('Quat_Slerp 2', 0x2a45e0, 'vFFFf', (0.0, 0.0, 0.0, 0.0), q1, q2, rnd(0.0, 1.0))
+	fcall('Quat_DotAbs', 0x2a4250, 'fFF', q1, q2)
+	fcall('Quat_DotAbs same', 0x2a4250, 'fFF', q1, q1)
+	fcall('Quat_ToMatrixD3D', 0x2a4200, 'vFF', a, q1)
+	fcall('Quat_SlerpFlip', 0x2a4310, 'bFFFf', (0.0, 0.0, 0.0, 0.0), q1, q2, rnd(0.0, 1.0))
+	fcall('Quat_SlerpFlip near', 0x2a4310, 'bFFFf', (0.0, 0.0, 0.0, 0.0), q1, q1, rnd(0.0, 1.0))
+	fcall('Quat_SlerpFlip any', 0x2a4310, 'bFFFf', (0.0, 0.0, 0.0, 0.0), quat(), quat(), rnd(0.0, 1.0))
+for q1, q2 in (((0.0, 0.0, 0.9, 0.1), (0.0, 0.0, -0.9, 0.1)), ((0.7, 0.0, 0.0, -0.7), (0.0, 0.7, 0.0, 0.7)),
+		((0.0, 0.0, 0.0, 1.0), (0.0, 0.0, 0.0, -1.0)), ((0.0, 0.99, 0.0, -0.14), (0.0, -0.98, 0.0, -0.2))):
+	for t in (0.0, 0.3, 1.0):
+		fcall('Quat_SlerpFlip s', 0x2a4310, 'bFFFf', (0.0, 0.0, 0.0, 0.0), q1, q2, t)
 
 # engine3d Engine/ArchINI.c on two ini files of the packs
 ini = SDTest.Call(0x1335a0, 'ii', 4)[0]

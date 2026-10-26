@@ -1,7 +1,13 @@
 /*
- * Quaternions (x, y, z, w) of the engine, next to Math/Matrix.cpp in the exe (include/scrap/mathlib.h).
+ * Quaternions (x, y, z, w) of the engine, next to Math/Matrix.cpp in the exe (include/scrap/mathlib.h). The engine3d
+ * has its own copies in Engine/cuaternio.cpp, some identical (the same C function), and a few more.
  */
 #include "scrap/game.h"
+
+/* the D3DX math of the exe: a pointer set to the implementation for the CPU on the first call (index 1 of the
+ * dispatcher at rva 0x17f06), taken to be D3DXMatrixRotationQuaternion */
+typedef matrix_t *(__stdcall *d3dxQuatMatrix_t)(matrix_t *out, const quat_t *q);
+#define g_D3DXQuatMatrix GAME_DATA(d3dxQuatMatrix_t, 0x43daa0)
 
 quat_t *Quat_Mul(quat_t *out, const quat_t *a, const quat_t *b) {
 	out->x = a->x * b->w + b->z * a->y - b->y * a->z + b->x * a->w;
@@ -74,19 +80,11 @@ matrix_t *Quat_ToMatrix(matrix_t *out, const quat_t *q) {
 }
 
 /* spherical interpolation from a (t = 0) to b (t = 1) on the shorter way, in double */
-quat_t *Quat_Slerp(quat_t *out, const quat_t *a, const quat_t *b, float t) {
-	quat_t c = *b;
-	double d = (double)(c.y * a->y + c.x * a->x + c.z * a->z + c.w * a->w);
+/* a * k0 + c * k1 with the weights of the angle acos(d), linear when far (1 - d) is at most 0.001 */
+static void Quat_Interp(quat_t *out, const quat_t *a, const quat_t *c, double d, double far, float t) {
 	double k0, k1;
 
-	if (0.0 > d) {
-		d = -d;
-		c.x = -b->x;
-		c.y = -b->y;
-		c.z = -b->z;
-		c.w = -b->w;
-	}
-	if (1.0 - d > 0.001) {
+	if (far > 0.001) {
 		double om = Game_Acos(d);
 		double so = Game_Sin(om);
 		k0 = Game_Sin((1.0 - (double)t) * om) / so;
@@ -95,9 +93,89 @@ quat_t *Quat_Slerp(quat_t *out, const quat_t *a, const quat_t *b, float t) {
 		k0 = 1.0 - (double)t;
 		k1 = (double)t;
 	}
-	out->x = (float)((double)a->x * k0 + (double)c.x * k1);
-	out->y = (float)((double)c.y * k1 + (double)a->y * k0);
-	out->z = (float)((double)a->z * k0 + (double)c.z * k1);
-	out->w = (float)((double)a->w * k0 + (double)c.w * k1);
+	out->x = (float)((double)a->x * k0 + (double)c->x * k1);
+	out->y = (float)((double)c->y * k1 + (double)a->y * k0);
+	out->z = (float)((double)a->z * k0 + (double)c->z * k1);
+	out->w = (float)((double)a->w * k0 + (double)c->w * k1);
+}
+
+static void Quat_Neg(quat_t *q) {
+	q->x = -q->x;
+	q->y = -q->y;
+	q->z = -q->z;
+	q->w = -q->w;
+}
+
+/* the dot product of a and b, and b turned to the side of a */
+static double Quat_Side(const quat_t *a, quat_t *b) {
+	double d = (double)(b->y * a->y + b->x * a->x + b->z * a->z + b->w * a->w);
+
+	if (0.0 > d) {
+		d = -d;
+		Quat_Neg(b);
+	}
+	return d;
+}
+
+quat_t *Quat_Slerp(quat_t *out, const quat_t *a, const quat_t *b, float t) {
+	quat_t c = *b;
+	double d = Quat_Side(a, &c);
+
+	Quat_Interp(out, a, &c, d, 1.0 - d, t);
 	return out;
+}
+
+/* the rotation angle of w in degrees */
+static double Quat_Degrees(float w) {
+	return Game_Acos(__builtin_fabs((double)w)) * 180.0 / M_PI_D;
+}
+
+byte Quat_SlerpFlip(quat_t *out, const quat_t *a, const quat_t *b, float t) {
+	quat_t c = *b;
+	double d = Quat_Side(a, &c);
+	byte flipped = 0;
+
+	if (0.0f > a->w * c.w) {
+		double da = Quat_Degrees(a->w);
+		double dc = Quat_Degrees(c.w);
+		if ((float)(dc + dc) + (float)(da + da) > 180.0f) {
+			double dd = Game_Acos(d) * 180.0 / M_PI_D;
+			if ((float)(dd + dd) > 80.0f) {
+				Quat_Neg(&c);
+				d = -d;
+				flipped = 1;
+			}
+		}
+	}
+	Quat_Interp(out, a, &c, d, 1.0 - __builtin_fabs(d), t);
+	return flipped;
+}
+
+quat_t *Quat_FromEuler(quat_t *out, float x, float y, float z) {
+	float sx, cx, sy, cy, sz, cz;
+
+	X87_SinCos(x * 0.5f, &sx, &cx);
+	X87_SinCos(y * 0.5f, &sy, &cy);
+	X87_SinCos(z * 0.5f, &sz, &cz);
+	float a = sz * cx, b = cz * sx, c = cz * cx, e = sz * sx;
+	out->x = b * cy - a * sy;
+	out->z = a * cy + b * sy;
+	out->y = c * sy + e * cy;
+	out->w = c * cy - e * sy;
+	return out;
+}
+
+/* |a . b| up to 1 */
+float Quat_DotAbs(const quat_t *a, const quat_t *b) {
+	float d = (float)__builtin_fabs((double)(a->y * b->y + a->x * b->x + a->z * b->z + a->w * b->w));
+
+	CHECK((double)d <= 1.00001);
+	return 1.0f > d ? d : 1.0f;
+}
+
+/* the matrix of the inverse rotation */
+matrix_t *Quat_ToMatrixD3D(matrix_t *out, const quat_t *q) {
+	quat_t c = { q->x, q->y, q->z, -q->w };
+
+	return g_D3DXQuatMatrix(out, &c);
 }

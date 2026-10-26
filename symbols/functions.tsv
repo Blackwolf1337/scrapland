@@ -8216,12 +8216,12 @@ rva	size	source	callconv	name	signature
 002a3f90	47	ANALYSIS	__thiscall	CEntradaWindows::vf04	undefined __thiscall(void)
 002a3fc0	109	ANALYSIS	__thiscall	CEntradaDInput::vf02	undefined __thiscall(void)
 002a4030	3	ANALYSIS	__thiscall	CEntradaWindows::vf02	undefined __thiscall(void)
-002a4040	281	DEFAULT	unknown	FUN_006a4040	
-002a4160	159	DEFAULT	unknown	FUN_006a4160	
-002a4200	71	DEFAULT	unknown	FUN_006a4200	
-002a4250	191	DEFAULT	unknown	FUN_006a4250	
-002a4310	712	DEFAULT	unknown	FUN_006a4310	
-002a45e0	461	DEFAULT	unknown	FUN_006a45e0	
+002a4040	281	USER_DEFINED	__cdecl	Quat_FromEuler	float * __cdecl(float *out, float x, float y, float z)
+002a4160	159	USER_DEFINED	__cdecl	Quat_ToAxisAngle2	float * __cdecl(float *axis, float *ang, float *q)
+002a4200	71	USER_DEFINED	__cdecl	Quat_ToMatrixD3D	float * __cdecl(float *out, float *q)
+002a4250	191	USER_DEFINED	__cdecl	Quat_DotAbs	float __cdecl(float *a, float *b)
+002a4310	712	USER_DEFINED	__cdecl	Quat_SlerpFlip	byte __cdecl(float *out, float *a, float *b, float t)
+002a45e0	461	USER_DEFINED	__cdecl	Quat_Slerp2	float * __cdecl(float *out, float *a, float *b, float t)
 002a47b0	116	USER_DEFINED	__cdecl	Quat_FromAxisAngle2	float * __cdecl(float *out, float *axis, float ang)
 002a4830	44	DEFAULT	unknown	FUN_006a4830	
 002a4860	131	DEFAULT	unknown	FUN_006a4860	

@@ -98,6 +98,11 @@ quat_t *Quat_FromAxisAngle(quat_t *out, const vec3_t *axis, float ang);
 float *Quat_ToAxisAngle(vec3_t *axis, float *ang, const quat_t *q);	/* returns ang */
 matrix_t *Quat_ToMatrix(matrix_t *out, const quat_t *q);
 quat_t *Quat_Slerp(quat_t *out, const quat_t *a, const quat_t *b, float t);
+/* Quat_Slerp that goes the other way round for large rotations (then 1) */
+byte Quat_SlerpFlip(quat_t *out, const quat_t *a, const quat_t *b, float t);
+quat_t *Quat_FromEuler(quat_t *out, float x, float y, float z);	/* radians */
+float Quat_DotAbs(const quat_t *a, const quat_t *b);
+matrix_t *Quat_ToMatrixD3D(matrix_t *out, const quat_t *q);
 
 /* acos, cos, sin and atan2 of the exe's runtime, so results match the original to the last bit (src/core/libm.c) */
 double Game_Acos(double x);
