@@ -190,7 +190,7 @@ byte __thiscall CSuelo_CollideSphere(CSuelo *self, const vec3_t *a, const vec3_t
 /* the same with the nearest contact; without outputs the first contact ends it */
 byte __thiscall CSuelo_SphereContact(CSuelo *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out,
 	vec3_t *hit, vec3_t *n);
-/* a sphere of radius r moving from a to b: the contact nearest to a (out and hit the same point) */
+/* a sphere of radius r moving from a to b: the contact nearest to a (out and hit the same point); without outputs the first contact ends it */
 byte __thiscall CSuelo_SweepSphere(CSuelo *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out,
 	vec3_t *hit, vec3_t *n);
 /* the triangles of tm added to mesh (a mesh added at run time: outID and outIni get its MeshID and first triangle),
@@ -207,6 +207,10 @@ void __thiscall CSuelo_BuildSectorMesh(CSuelo *self, CCollideMesh *mesh, int mod
 /* the grid and the meshes of all sectors from the floor nodes; empty cells get CollideMesh1 */
 void __fastcall CSuelo_CreateQuadCollision(CSuelo *self);
 
+/* the floor of a scene (CEscena): from its .amc file when the scene was loaded with one, else the triangles of its
+ * meshes into a grid of floor nodes (one CMallaTri each) and the collision data from the .amc file or built and
+ * saved */
+void __thiscall CSuelo_Build(CSuelo *self, void *esc);
 /* the floor nodes to vertex buffer meshes */
 void __thiscall CSuelo_NodosToD3D(CSuelo *self, int fvf);
 /* the vertex buffer meshes of the floor nodes */
@@ -223,7 +227,7 @@ float Suelo_DistPointSeg(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3
 float Suelo_Dist2PointSeg(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3_t *out);
 /* the parameter t at which the segment a b comes within r of the plane; 0 if it stays farther away on one side */
 byte Suelo_SegPlane(const vec3_t *a, const vec3_t *b, float r, const plane_t *pl, float *t);
-/* the first t in [0, 1] at which the segment p q comes within r of the edge a b (or its end b); 0 for none */
+/* the first t in [0, 1] at which the segment p q comes within r of the edge a b (or of its end a); 0 for none */
 byte Suelo_SegEdge(const vec3_t *a, const vec3_t *b, const vec3_t *p, const vec3_t *q, float r, float *t);
 /* the point of the triangle nearest to the sphere center c, if it is within r */
 byte Suelo_SphereTri(const vec3_t *c, float r, const CCollideTri *tri, const CCollideMesh *mesh, vec3_t *res);

@@ -407,6 +407,11 @@ SD_IMPORT(Imp_Batch_AddMalla, 0x2c81d0)
 SD_IMPORT(Imp_Batch_Flush, 0x2c83c0)
 SD_IMPORT(Imp_Debug_DrawBox, 0x2772b0)
 SD_IMPORT(Imp_CSuelo_DrawDebug, 0x25a260)
+SD_IMPORT(Imp_CNodo3D_Clase, 0x23e800)
+SD_IMPORT(Imp_CNodo3D_SetObj, 0x23ea60)
+SD_IMPORT(Imp_CNodo3D_FreeObj, 0x23ea10)
+SD_IMPORT(Imp_CEscena_UpdateNodes, 0x24f9e0)
+SD_IMPORT(Imp_Sector_OfNode, 0x26caa0)
 
 /* module agent: Engine/Trails (imports below this line) */
 

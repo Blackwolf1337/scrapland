@@ -7,6 +7,7 @@
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
 #include "scrap/mallatri.h"
+#include "scrap/material.h"
 #include "scrap/suelo.h"
 
 #define CSUELO_VFTABLE 0x3db13c
@@ -59,6 +60,13 @@ void Imp_Batch_AddMalla(void *malla, void *dev);
 void Imp_Batch_Flush(void *dev);
 void Imp_Debug_DrawBox(const vec3_t *mn, const vec3_t *mx, uint32_t color);
 void __fastcall Imp_CSuelo_DrawDebug(CSuelo *self);
+/* Nodo3D.cpp and Escena.cpp: the class of the object of a node (0 without), its object set or deleted, the update of
+ * all nodes of a scene; the sector of a node (SueloPortal.cpp) */
+uint32_t __fastcall Imp_CNodo3D_Clase(void *node);
+void __thiscall Imp_CNodo3D_SetObj(void *node, void *obj);
+void __fastcall Imp_CNodo3D_FreeObj(void *node);
+void __fastcall Imp_CEscena_UpdateNodes(void *esc);
+int Imp_Sector_OfNode(void *node);
 /* engine3d/engine/MallaD3D.h: a vertex buffer mesh of the triangles of m */
 CMallaD3D *__thiscall Imp_CMallaD3D_ctorTri(CMallaD3D *self, CMallaTri *m, int fvf, int flags);
 
@@ -1022,9 +1030,6 @@ static int Suelo_MarkTri(CCollideTri *tri) {
 	return 1;
 }
 
-/* the sphere of radius r at b against the floor: the contact that is most a floor (normal nearest to the vertical
- * among the nearest ones); out the position pushed out along it (a when it is a wall), hit the contact, n the
- * direction from it to b */
 byte __thiscall CSuelo_CollideSphere(CSuelo *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out, vec3_t *hit,
 	vec3_t *n) {
 	vec3_t A = *a, C = *b, P, best;
@@ -1090,7 +1095,6 @@ byte __thiscall CSuelo_CollideSphere(CSuelo *self, const vec3_t *a, const vec3_t
 	return 1;
 }
 
-/* the sphere of radius r at b against the floor: the nearest contact. Without outputs the first contact ends it */
 byte __thiscall CSuelo_SphereContact(CSuelo *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out,
 	vec3_t *hit, vec3_t *n) {
 	vec3_t C = *b, P, best;
@@ -1150,8 +1154,6 @@ byte __thiscall CSuelo_SphereContact(CSuelo *self, const vec3_t *a, const vec3_t
 	return 1;
 }
 
-/* a sphere of radius r moving from a to b: the first contact (nearest to a). Without outputs the first contact
- * ends it; out and hit are the same point */
 byte __thiscall CSuelo_SweepSphere(CSuelo *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out, vec3_t *hit,
 	vec3_t *n) {
 	vec3_t A = *a, B = *b, P, best;
@@ -1788,4 +1790,212 @@ void Suelo_DrawDebug(void) {
 	if (suelo) {
 		Imp_CSuelo_DrawDebug(suelo);
 	}
+}
+
+/* building the floor of a scene */
+
+/* the members of the scene (CEscena) and of its nodes read here */
+#define ESCENA_NAME 0x4	/* char * */
+#define ESCENA_NODO 0xc	/* the first node */
+#define ESCENA_INI 0x4c	/* CArchINI * */
+#define ESCENA_FROM_AMC 0x60	/* byte: loaded from the .sm3 and the .amc */
+#define NODO_NAME 0x4
+#define NODO_NEXT 0xc
+#define NODO_FLAGS 0x18
+#define NODO_MATRIX 0x5c
+#define NODO_FLAG_NOCOLLIDE (1u << 7)	/* its triangles collide only without colision_opt */
+#define NODO_FLAG_NOCOLLIDE2 (1u << 13)
+#define NODO_FLAG_HIDDEN (1u << 25)
+#define NODO_FLAG_EMPTY (1u << 1)
+#define NODO_FLAG_SUELO (1u << 3)	/* taken into the floor */
+/* the material bits that make a triangle not collide or mark it (material.h) */
+#define MAT_FLAGS 0x3c
+#define MAT_B38 0x38
+#define MAT_B3A 0x3a
+#define MAT_B3B 0x3b
+#define MAT_A0 0xa0
+/* the triangles per floor node */
+#define g_SueloTrisPerNode GAME_DATA(int, 0x431bc0)
+
+#define Suelo_Field(p, off, type) (*(type *)((byte *)(p) + (off)))
+
+/* the mesh of a scene node: its own collision mesh at 0x30 when it has one */
+static CMallaTri *Suelo_NodoMalla(void *node) {
+	CMallaTri *m = Suelo_ObjMalla(Suelo_Field(node, NODO_OBJ, void *));
+	if (m->d3d) {
+		m = (CMallaTri *)m->d3d;
+	}
+	return m;
+}
+
+static void Suelo_LogMemory(int mem, uint32_t t0) {
+	uint32_t t1 = Suelo_TimeGetTime();
+	Con_Verbosef("Map collision memory: %d Kb  [Quads: %d]  [%.2f sec.]\n", (g_MemStats->bytes - mem) / 1024,
+		g_CollisionQuadCount, (double)(t1 - t0) / 1000.0);
+}
+
+static void Box_Add(box_t *b, const vec3_t *v) {
+	b->min.x = b->min.x < v->x ? b->min.x : v->x;
+	b->min.y = b->min.y < v->y ? b->min.y : v->y;
+	b->min.z = b->min.z < v->z ? b->min.z : v->z;
+	b->max.x = b->max.x > v->x ? b->max.x : v->x;
+	b->max.y = b->max.y > v->y ? b->max.y : v->y;
+	b->max.z = b->max.z > v->z ? b->max.z : v->z;
+}
+
+static void Box_Empty(box_t *b) {
+	b->min.x = b->min.y = b->min.z = SUELO_FLT_MAX;
+	b->max.x = b->max.y = b->max.z = -SUELO_FLT_MAX;
+}
+
+static void Box_Widen(box_t *b, float e) {
+	b->min.x = b->min.x - e;
+	b->min.y = b->min.y - e;
+	b->min.z = b->min.z - e;
+	b->max.x = b->max.x + e;
+	b->max.y = e + b->max.y;
+	b->max.z = e + b->max.z;
+}
+
+/* the collision flags of a triangle of node with the material mat */
+static uint32_t Suelo_TriFlags(uint32_t nodeFlags, const void *mat, byte opt) {
+	uint32_t fl = 0;
+	if (opt && !(nodeFlags & NODO_FLAG_NOCOLLIDE)) {
+		fl = 1;
+	}
+	if (nodeFlags & NODO_FLAG_NOCOLLIDE) {
+		fl |= 2;
+	}
+	if (nodeFlags & NODO_FLAG_NOCOLLIDE2) {
+		fl |= 1;
+	}
+	uint16_t mf = Suelo_Field(mat, MAT_FLAGS, uint16_t);
+	if (mf & 1) {
+		fl |= 1;
+	}
+	if (Suelo_Field(mat, MAT_B38, byte)) {
+		fl |= 0x10;
+	}
+	if (Suelo_Field(mat, MAT_B3A, byte) || (Suelo_Field(mat, MAT_A0, void *) && !Suelo_Field(mat, MAT_B3B, byte))) {
+		fl |= 0x20;
+	}
+	if (mf & 2) {
+		fl |= 0x40;
+	}
+	return fl;
+}
+
+void __thiscall CSuelo_Build(CSuelo *self, void *esc) {
+	const char *name = Suelo_Field(esc, ESCENA_NAME, const char *);
+	char nodeName[128];
+
+	if (Suelo_Field(esc, ESCENA_FROM_AMC, byte)) {
+		int mem = g_MemStats->bytes;
+		uint32_t t0 = Suelo_TimeGetTime();
+		if (CSuelo_LoadCollision(self, name)) {
+			CheckFailed("!LoadCollision( Escena->Nombre )", __FILE__, __TIMESTAMP__, __LINE__);
+		}
+		Suelo_LogMemory(mem, t0);
+		Con_Verbosef("Level loaded from SM3+AMC\n");
+		return;
+	}
+	CHECK(Suelo_Field(esc, ESCENA_NODO, void *));
+	Imp_CEscena_UpdateNodes(esc);
+	/* the box of all meshes and the grid of floor nodes over it */
+	Box_Empty(&self->Extens);
+	int nTri = 0;
+	for (void *n = Suelo_Field(esc, ESCENA_NODO, void *); n; n = Suelo_Field(n, NODO_NEXT, void *)) {
+		if (Imp_CNodo3D_Clase(n) != CLASE_OBJ3D_MALLATRI || (Suelo_Field(n, NODO_FLAGS, uint32_t) & NODO_FLAG_HIDDEN)) {
+			continue;
+		}
+		CMallaTri *m = Suelo_NodoMalla(n);
+		CMallaTri_Transform(m, (const matrix_t *)((byte *)n + NODO_MATRIX));
+		CMallaTri_CalcBox(m, &self->Extens, 0);
+		nTri += m->nTri;
+	}
+	box_t *ext = &self->Extens;
+	CHECK(ext->max.x >= ext->min.x && ext->max.y >= ext->min.y && ext->max.z >= ext->min.z);
+	Box_Widen(ext, g_CollisionEpsilon * 10.0f);
+	self->Dim.x = ext->max.x - ext->min.x;
+	self->Dim.y = ext->max.y - ext->min.y;
+	self->Dim.z = ext->max.z - ext->min.z;
+	CHECK(2000000.0 > __builtin_fabs((double)self->Dim.x));
+	CHECK(2000000.0 > __builtin_fabs((double)self->Dim.y));
+	CHECK(2000000.0 > __builtin_fabs((double)self->Dim.z));
+	double k = 1.0 / __builtin_sqrt((double)(((self->Dim.z * self->Dim.x) / (float)nTri) * (float)g_SueloTrisPerNode));
+	int nx = (int)Imp_crt_ceil((double)self->Dim.x * k);
+	self->nx = nx;
+	int nz = (int)Imp_crt_ceil((double)self->Dim.z * k);
+	self->nz = nz;
+	Tabla_NewFC((CTabla *)&self->nNodos, nz * nx);
+	for (int i = 0; i < self->nNodos; i++) {
+		Bprintf(nodeName, sizeof(nodeName), "suelo_%d", i);
+		TABLA_CHECK(self->nodos, i, self->nNodos);
+		Cad_Set((char **)(self->nodos + i * NODO_SIZE + NODO_NAME), nodeName);
+		CMallaTri *m = operator_new(sizeof(CMallaTri));
+		m = m ? CMallaTri_ctor(m) : NULL;
+		TABLA_CHECK(self->nodos, i, self->nNodos);
+		Imp_CNodo3D_SetObj(self->nodos + i * NODO_SIZE, m);
+	}
+	/* the triangles into the floor node of the cell of their center */
+	self->CollideTri = 0;
+	Box_Empty(&self->CollideExt);
+	CArchINI *ini = Suelo_Field(esc, ESCENA_INI, CArchINI *);
+	byte opt = ini && CArchINI_GetBool(ini, "suelo", "colision_opt", 0) ? 1 : 0;
+	for (void *n = Suelo_Field(esc, ESCENA_NODO, void *); n; n = Suelo_Field(n, NODO_NEXT, void *)) {
+		int sector = Imp_Sector_OfNode(n);
+		byte outside = Imp_Sector_IsOutside(sector);
+		uint32_t *nodeFlags = &Suelo_Field(n, NODO_FLAGS, uint32_t);
+		if (Imp_CNodo3D_Clase(n) != CLASE_OBJ3D_MALLATRI) {
+			if (*nodeFlags & NODO_FLAG_EMPTY) {
+				CHECK(Imp_CNodo3D_Clase(n) == 0);
+				*nodeFlags |= NODO_FLAG_SUELO;
+			}
+			continue;
+		}
+		if (*nodeFlags & NODO_FLAG_HIDDEN) {
+			continue;
+		}
+		CMallaTri *m = Suelo_NodoMalla(n);
+		for (int t = 0; t < m->nTri; t++) {
+			CVertMalla v[3];
+			memset(v, 0, sizeof(v));
+			CMallaTri_GetTriVert(m, &v[0], t, 0);
+			CMallaTri_GetTriVert(m, &v[1], t, 1);
+			CMallaTri_GetTriVert(m, &v[2], t, 2);
+			void *mat = m->pTri[t].mat;
+			uint32_t cx = (uint32_t)(int)((((v[0].pos.x + v[1].pos.x + v[2].pos.x) / 3.0f - ext->min.x) /
+				self->Dim.x) * (float)self->nx);
+			uint32_t cz = (uint32_t)(int)((((v[0].pos.z + v[1].pos.z + v[2].pos.z) / 3.0f - ext->min.z) /
+				self->Dim.z) * (float)self->nz);
+			if (cx >= (uint32_t)self->nx || cz >= (uint32_t)self->nz) {
+				continue;
+			}
+			CMallaTri *dst = Suelo_ObjMalla(Suelo_Obj(self, self->nx * cz + cx));
+			uint32_t sec = sector + 1;
+			uint32_t flags = Suelo_TriFlags(*nodeFlags, mat, opt);
+			CHECK(flags <= 0xffff);
+			CHECK(sec <= 0xffff);
+			if (!(flags & TRI_ALT_NO_COLISIONES) && !outside) {
+				self->CollideTri++;
+				Box_Add(&self->CollideExt, &v[0].pos);
+				Box_Add(&self->CollideExt, &v[1].pos);
+				Box_Add(&self->CollideExt, &v[2].pos);
+			}
+			CMallaTri_AddTriVerts(dst, &v[0], &v[1], &v[2], mat, 1, sec << 16 | flags);
+		}
+		Imp_CNodo3D_FreeObj(n);
+		*nodeFlags |= NODO_FLAG_SUELO;
+	}
+	CHECK(self->CollideTri);
+	box_t *ce = &self->CollideExt;
+	CHECK(ce->max.x >= ce->min.x && ce->max.y >= ce->min.y && ce->max.z >= ce->min.z);
+	Box_Widen(ce, g_CollisionEpsilon * 10.0f);
+	int mem = g_MemStats->bytes;
+	uint32_t t0 = Suelo_TimeGetTime();
+	if (CSuelo_LoadCollision(self, name)) {
+		CSuelo_CreateQuadCollision(self);
+		CSuelo_SaveCollision(self, name);
+	}
+	Suelo_LogMemory(mem, t0);
 }

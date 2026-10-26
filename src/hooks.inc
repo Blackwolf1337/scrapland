@@ -1645,6 +1645,7 @@ SD_HOOK(CSuelo_NodosToD3D, 0x25fb00, 85)
 SD_HOOK(CSuelo_Draw, 0x25c800, 205)
 SD_HOOK(Suelo_DrawBox, 0x25bbe0, 114)
 SD_HOOK(Suelo_DrawDebug, 0x25d340, 54)
+SD_HOOK(CSuelo_Build, 0x25fb60, 3249)
 
 /* module agent: Engine/Trails (hooks below this line) */
 
