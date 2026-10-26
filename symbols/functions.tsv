@@ -8103,7 +8103,7 @@ rva	size	source	callconv	name	signature
 0029cd30	100	USER_DEFINED	__thiscall	CCamara_SetNodo	void __thiscall(void *nodo)
 0029cda0	100	USER_DEFINED	__thiscall	CCamara_SetNodoObjetivo	void __thiscall(void *nodo)
 0029ce10	173	USER_DEFINED	__fastcall	CCamara_UpdateVectors	void __fastcall(void *self)
-0029cec0	183	DEFAULT	unknown	FUN_0069cec0	
+0029cec0	183	USER_DEFINED	__fastcall	CCamara_LookAtRot	void __fastcall(CCamara * self)
 0029cf80	40	USER_DEFINED	__thiscall	CMultiSprite_ctor	void * __thiscall(void)
 0029cfb0	35	USER_DEFINED	__thiscall	CMultiSprite_dtor	void __thiscall(void)
 0029cfe0	278	USER_DEFINED	__thiscall	CMultiSprite_Build	byte __thiscall(char * name)

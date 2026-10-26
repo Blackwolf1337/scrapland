@@ -53,6 +53,8 @@ int __thiscall CCamara_Read(CCamara *self, CArchIO *f, void *ctx);
 int __thiscall CCamara_Write(CCamara *self, CArchIO *f, void *ctx);
 /* dir and up from the angles, viewPos from pos */
 void __fastcall CCamara_UpdateVectors(CCamara *self);
+/* the angles that look from pos at target */
+void __fastcall CCamara_LookAtRot(CCamara *self);
 /* the rotation looking along dir with up (made orthogonal) */
 void __thiscall CCamara_LookAt(CCamara *self, matrix_t *m, const vec3_t *dir, const vec3_t *up);
 void __thiscall CCamara_ViewMatrix(CCamara *self, matrix_t *m);

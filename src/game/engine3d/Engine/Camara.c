@@ -171,14 +171,18 @@ void __thiscall CCamara_LookAt(CCamara *self, matrix_t *m, const vec3_t *dir, co
 	a[10] = n.z;
 }
 
+void __fastcall CCamara_LookAtRot(CCamara *self) {
+	float dy = self->target.y - self->pos.y;
+	float dx = self->target.x - self->pos.x;
+	float dz = self->target.z - self->pos.z;
+	self->rot.z = 0.0f;
+	self->rot.y = (float)Game_Atan2((double)dx, (double)dz);
+	self->rot.x = (float)Game_Atan2((double)-dy, __builtin_sqrt((double)(dz * dz + dx * dx)));
+}
+
 void __thiscall CCamara_ViewMatrix(CCamara *self, matrix_t *m) {
 	if (self->mode == CAMARA_LOOKAT) {
-		float dy = self->target.y - self->pos.y;
-		float dx = self->target.x - self->pos.x;
-		float dz = self->target.z - self->pos.z;
-		self->rot.z = 0.0f;
-		self->rot.y = (float)Game_Atan2((double)dx, (double)dz);
-		self->rot.x = (float)Game_Atan2((double)-dy, __builtin_sqrt((double)(dz * dz + dx * dx)));
+		CCamara_LookAtRot(self);
 	}
 	CCamara_UpdateVectors(self);
 	CCamara_LookAt(self, m, &self->dir, &self->up);

@@ -1431,6 +1431,7 @@ SD_HOOK(CCamara_Strafe, 0x29cc60, 195)
 SD_HOOK(CCamara_SetNodo, 0x29cd30, 100)
 SD_HOOK(CCamara_SetNodoObjetivo, 0x29cda0, 100)
 SD_HOOK(CCamara_UpdateVectors, 0x29ce10, 173)
+SD_HOOK(CCamara_LookAtRot, 0x29cec0, 183)
 
 /* src/game/engine3d/Engine/Material.c */
 SD_HOOK(CObjRef_dtor, 0x233c20, 79)
