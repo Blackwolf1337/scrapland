@@ -23,14 +23,22 @@ scenarios=("$@")
 "$root/tools/test/install.sh" || exit 1
 cp "$root"/tools/test/py/*.py "$game/" || exit 1
 
+# the files the scripts write
+rm_written() {
+	shopt -s nocaseglob
+	rm -f "$game"/sd*.txt "$game"/sd*.txf "$game"/sd*.bmp "$game"/sd*.tga "$game"/sd*.tex
+	shopt -u nocaseglob
+}
+
 # run <scenario> <hooks 1|0> <tag>
 run() {
 	local name=$1 result=$game/$1.out tag=$1-$3
 	local arg
 	arg="-PythonExecute:execfile($(python3 -I -c "print('+'.join('chr(%d)' % ord(c) for c in '$name.py'))"))"
 	printf '[general]\nhooks=%s\ntestmod=1\n' "$2" > "$ini"
-	# files the scripts write, so the second run does not find those of the first
-	rm -f "$result" "$game"/sd*.txt "$game"/sd*.txf
+	# so the second run does not find the files of the first
+	rm -f "$result"
+	rm_written
 	# shellcheck disable=SC2086 # extra arguments of the scenario, word split on purpose
 	HEADLESS_TIMEOUT=${DIFFTEST_TIMEOUT:-90} WINEDLLOVERRIDES="dinput8=n,b" WINE_LOG="$out/wine-$tag.log" \
 		"$root/tools/test/wine.sh" Scrap.exe -fullscreen:0 ${extra[$name]} "$arg" &
@@ -72,5 +80,6 @@ for s in "${scenarios[@]}"; do
 	fi
 done
 grep -h 'hooks installed' "$out"/scrapdecomp-*-c.log | sort -u
-rm -f "$ini" "$game"/sd*.py "$game"/sd*.out "$game"/sd*.txt "$game"/sd*.txf
+rm -f "$ini" "$game"/sd*.py "$game"/sd*.out
+rm_written
 exit $rc

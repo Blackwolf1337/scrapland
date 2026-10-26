@@ -4,9 +4,72 @@
  */
 #include <string.h>
 
+#include "scrap/archio.h"
 #include "scrap/bmp.h"
+#include "scrap/e3dutil.h"
+#include "scrap/filesys.h"
 
 #define BMP_PIXEL 4
+#define CRT_EEXIST 17
+/* errno for a bad file (also TXF) */
+#define g_ImgBadFormat GAME_DATA(int, 0x3de07c)
+
+typedef struct __attribute__((packed)) {
+	uint16_t type;			/* 0x0 "BM" */
+	uint32_t size;			/* 0x2 */
+	uint32_t reserved;		/* 0x6 */
+	uint32_t offBits;		/* 0xa */
+} bmpFileCab_t;
+SD_SIZE(bmpFileCab_t, 0xe);
+
+typedef struct {
+	uint32_t size;			/* 0x00 */
+	int32_t ancho;			/* 0x04 */
+	int32_t alto;			/* 0x08 bottom up */
+	uint16_t planes;		/* 0x0c */
+	uint16_t bits;			/* 0x0e */
+	uint32_t compression;		/* 0x10 */
+	uint32_t sizeImage;		/* 0x14 */
+	int32_t xPels;			/* 0x18 */
+	int32_t yPels;			/* 0x1c */
+	uint32_t clrUsed;		/* 0x20 */
+	uint32_t clrImportant;		/* 0x24 */
+} bmpInfoCab_t;
+SD_SIZE(bmpInfoCab_t, 0x28);
+
+typedef struct {
+	uint32_t magic;			/* 0x00 "TEX\x1a" */
+	int32_t version;		/* 0x04 1 */
+	int32_t ancho;			/* 0x08 */
+	int32_t alto;			/* 0x0c */
+	uint32_t pad[4];		/* 0x10 */
+} texCab_t;
+SD_SIZE(texCab_t, 0x20);
+
+typedef struct __attribute__((packed)) {
+	byte idLength;			/* 0x00 */
+	byte cmapType;			/* 0x01 */
+	byte type;			/* 0x02 2 true color, 10 RLE */
+	byte cmap[5];			/* 0x03 */
+	uint16_t x, y;			/* 0x08 */
+	uint16_t ancho, alto;		/* 0x0c */
+	byte bits;			/* 0x10 */
+	byte desc;			/* 0x11 0x20 top down */
+} tgaCab_t;
+SD_SIZE(tgaCab_t, 0x12);
+
+#define TEX_MAGIC 0x1a584554
+#define BMP_TYPE 0x4d42
+#define TGA_TYPE_RGB 2
+#define TGA_TYPE_RLE 10
+#define TGA_TOP_DOWN 0x20
+#define TGA_RUN 0x80		/* packet header: a run, else raw pixels */
+#define TGA_PACKET_MAX 128
+
+#define g_BmpFileCab (&GAME_DATA(bmpFileCab_t, 0x4dbf08))
+#define g_BmpInfoCab (&GAME_DATA(bmpInfoCab_t, 0x4dbf18))
+#define g_TexCab (&GAME_DATA(texCab_t, 0x4dbf40))
+#define g_TgaCab (&GAME_DATA(tgaCab_t, 0x4dbf60))
 
 void *Img_Pixel(const CImagen *b, uint32_t x, uint32_t y, int bytes) {
 	CHECK(b->img);
@@ -390,4 +453,338 @@ void __thiscall CBmp_Resample(CBmp *self, const CBmp *orig, uint32_t mask) {
 			memcpy(CBmp_Pixel(self, x, y), c, 4);
 		}
 	}
+}
+
+/* without IMG_OVERWRITE an existing file is EEXIST */
+static int Img_SaveRefused(const char *name, uint32_t flags) {
+	if (flags & IMG_OVERWRITE) {
+		return 0;
+	}
+	void *f = File_OpenRel(name, "rb");
+	if (!f) {
+		return 0;
+	}
+	crt_fclose(f);
+	*crt_errno() = CRT_EEXIST;
+	return 1;
+}
+
+int BMP_Save(const char *name, const CBmp *orig, uint32_t flags) {
+	bmpFileCab_t *fc = g_BmpFileCab;
+	bmpInfoCab_t *ic = g_BmpInfoCab;
+
+	CHECK(name && orig && orig->img);
+	if (Img_SaveRefused(name, flags)) {
+		return -1;
+	}
+	void *f = File_OpenRel(name, "wb");
+	if (!f) {
+		return -1;
+	}
+	fc->type = BMP_TYPE;
+	uint32_t size = (orig->ancho + 1) * 3 & ~3u;
+	fc->offBits = sizeof(*fc) + sizeof(*ic);
+	fc->size = orig->alto * size + sizeof(*fc) + sizeof(*ic);
+	fc->reserved = 0;
+	if (crt_fwrite(fc, sizeof(*fc), 1, f) != 1) {
+		goto fail;
+	}
+	memset(ic, 0, sizeof(*ic));
+	ic->size = sizeof(*ic);
+	ic->ancho = orig->ancho;
+	ic->alto = orig->alto;
+	ic->planes = 1;
+	ic->bits = 24;
+	if (crt_fwrite(ic, sizeof(*ic), 1, f) != 1) {
+		goto fail;
+	}
+	/* the padding of the rows is what new[] left there */
+	byte *buf = operator_new_array(size);
+	for (int y = 0; y < ic->alto; y++) {
+		const byte *s = (const byte *)CBmp_Pixel(orig, 0, ic->alto - y - 1);
+		for (int x = 0; x < ic->ancho; x++) {
+			buf[x * 3 + 2] = s[x * 4];
+			buf[x * 3 + 1] = s[x * 4 + 1];
+			buf[x * 3] = s[x * 4 + 2];
+		}
+		if (crt_fwrite(buf, size, 1, f) != 1) {
+			goto fail;
+		}
+	}
+	operator_delete_sized(buf, 1);
+	crt_fclose(f);
+	return 0;
+fail:
+	crt_fclose(f);
+	E3D_LogBlue(g_FileLog, "escr_BMP_24(): Error de escritura: '%s'", name);
+	return -1;
+}
+
+int TEX_Save(const char *name, const CBmp *orig, uint32_t flags) {
+	texCab_t *c = g_TexCab;
+
+	CHECK(name && orig && orig->img);
+	if (Img_SaveRefused(name, flags)) {
+		return -1;
+	}
+	void *f = File_OpenRel(name, "wb");
+	if (!f) {
+		return -1;
+	}
+	memset(c->pad, 0, sizeof(c->pad));
+	c->magic = TEX_MAGIC;
+	c->version = 1;
+	c->ancho = orig->ancho;
+	c->alto = orig->alto;
+	if (crt_fwrite(c, sizeof(*c), 1, f) == 1 && crt_fwrite(orig->img, c->alto * c->ancho * BMP_PIXEL, 1, f) == 1) {
+		crt_fclose(f);
+		return 0;
+	}
+	crt_fclose(f);
+	E3D_LogBlue(g_FileLog, "escr_TEX(): Error de escritura: '%s'", name);
+	return -1;
+}
+
+static void Tga_PutPixel(const byte *p, int alpha, void *f) {
+	crt_fputc(p[2], f);
+	crt_fputc(p[1], f);
+	crt_fputc(p[0], f);
+	if (alpha) {
+		crt_fputc(p[3], f);
+	}
+}
+
+/* packets of up to 128 pixels: a run of equal pixels from 3 on (2 when the next two are equal as well), else raw
+ * pixels up to the next 3 equal ones */
+static void Tga_PutRow(const uint32_t *row, int w, uint32_t mask, int alpha, void *f) {
+	int x = 0;
+
+	while (x < w) {
+		int start = x;
+		int n = 0;
+		do {
+			n++;
+			x++;
+		} while (n != TGA_PACKET_MAX && x < w && (row[x - 1] & mask) == (row[x] & mask));
+		if (n > 2 || (n == 2 && x < w - 1 && (row[x] & mask) == (row[x + 1] & mask))) {
+			crt_fputc((n - 1) | TGA_RUN, f);
+			Tga_PutPixel((const byte *)&row[start], alpha, f);
+			continue;
+		}
+		start = x - n;
+		while (x < w) {
+			if (x < w - 2 && (row[x] & mask) == (row[x + 1] & mask) && (row[x] & mask) == (row[x + 2] & mask)) {
+				break;
+			}
+			n++;
+			x++;
+			if (n == TGA_PACKET_MAX) {
+				break;
+			}
+		}
+		if (n) {
+			crt_fputc(n - 1, f);
+			for (int i = 0; i < n; i++) {
+				Tga_PutPixel((const byte *)&row[start + i], alpha, f);
+			}
+		}
+	}
+}
+
+int TGA_Save(const char *name, const CBmp *orig, uint32_t flags) {
+	tgaCab_t *c = g_TgaCab;
+
+	CHECK(name && orig && orig->img);
+	if (Img_SaveRefused(name, flags)) {
+		return -1;
+	}
+	void *f = File_OpenRel(name, "wb");
+	if (!f) {
+		return -1;
+	}
+	int alpha = (flags & IMG_ALPHA) != 0;
+	memset(c, 0, sizeof(*c));
+	c->type = TGA_TYPE_RLE;
+	c->ancho = orig->ancho;
+	c->alto = orig->alto;
+	c->desc = TGA_TOP_DOWN;
+	c->bits = alpha ? 32 : 24;
+	if (crt_fwrite(c, sizeof(*c), 1, f) != 1) {
+		crt_fclose(f);
+		E3D_LogBlue(g_FileLog, "escr_TGA(): Error de escritura: '%s'", name);
+		return -1;
+	}
+	for (int y = 0; y < orig->alto; y++) {
+		Tga_PutRow(CBmp_Pixel(orig, 0, y), orig->ancho, alpha ? 0xffffffff : 0xffffff, alpha, f);
+	}
+	crt_fclose(f);
+	return 0;
+}
+
+int __thiscall CBmp_Save(CBmp *self, const char *name, uint32_t flags) {
+	CHECK(name);
+	if (Img_IsExt(name, ".tex")) {
+		return TEX_Save(name, self, flags);
+	}
+	if (Img_IsExt(name, ".tga")) {
+		return TGA_Save(name, self, flags);
+	}
+	return BMP_Save(name, self, flags);
+}
+
+/* a file of the packs that is not what it should be */
+static int Img_LoadFailed(void *f, const char *fmt, const char *name) {
+	ArchIO_Close(f);
+	*crt_errno() = g_ImgBadFormat;
+	E3D_LogBlue(g_FileLog, fmt, name);
+	return -1;
+}
+
+int BMP_Load(const char *name, CBmp *dest, uint32_t flags) {
+	static const char bad[] = "leer_BMP_24(): Formato no v\xe1lido: '%s'";
+	bmpFileCab_t *fc = g_BmpFileCab;
+	bmpInfoCab_t *ic = g_BmpInfoCab;
+	byte pal[256 * 4];
+
+	CHECK(name && dest);
+	void *f = ArchIO_Open(name, "rb");
+	if (!f) {
+		return -1;
+	}
+	if (ArchIO_Read(fc, sizeof(*fc), 1, f) != 1 || ArchIO_Read(ic, sizeof(*ic), 1, f) != 1 || fc->type != BMP_TYPE ||
+		ic->size != sizeof(*ic) || ic->planes != 1 || (ic->bits != 32 && ic->bits != 24 && ic->bits != 8) ||
+		ic->compression || ic->ancho <= 0 || ic->alto <= 0) {
+		return Img_LoadFailed(f, bad, name);
+	}
+	if (ic->bits == 8) {
+		if (!ic->clrUsed) {
+			ic->clrUsed = 256;
+		} else if (ic->clrUsed > 256) {
+			return Img_LoadFailed(f, bad, name);
+		}
+		if (ArchIO_Read(pal, ic->clrUsed * 4, 1, f) != 1) {
+			return Img_LoadFailed(f, bad, name);
+		}
+	}
+	CHECK(fc->offBits == (uint32_t)ArchIO_Tell(f));
+	CBmp_Create(dest, ic->ancho, ic->alto);
+	uint32_t size = (((ic->bits + 7) >> 3) * ic->ancho + 3) & ~3u;
+	byte *buf = operator_new_array(size);
+	for (int y = 0; y < ic->alto; y++) {
+		if (ArchIO_Read(buf, size, 1, f) != 1) {
+			return Img_LoadFailed(f, bad, name);
+		}
+		byte *d = (byte *)CBmp_Pixel(dest, 0, ic->alto - y - 1);
+		for (int x = 0; x < ic->ancho; x++, d += 4) {
+			if (ic->bits == 8) {
+				const byte *c = pal + buf[x] * 4;
+				d[0] = c[2];
+				d[1] = c[1];
+				d[2] = c[0];
+				d[3] = flags & IMG_INDEX_ALPHA ? buf[x] : c[3];
+			} else if (ic->bits == 24) {
+				d[0] = buf[x * 3 + 2];
+				d[1] = buf[x * 3 + 1];
+				d[2] = buf[x * 3];
+				d[3] = 0;
+			} else {
+				d[0] = buf[x * 4 + 2];
+				d[1] = buf[x * 4 + 1];
+				d[2] = buf[x * 4];
+				d[3] = buf[x * 4 + 3];
+			}
+		}
+	}
+	operator_delete_array(buf);
+	ArchIO_Close(f);
+	return 0;
+}
+
+int TEX_Load(const char *name, CBmp *dest, uint32_t flags) {
+	texCab_t *c = g_TexCab;
+
+	(void)flags;
+	CHECK(name && dest);
+	void *f = ArchIO_Open(name, "rb");
+	if (!f) {
+		return -1;
+	}
+	if (ArchIO_Read(c, sizeof(*c), 1, f) == 1 && c->magic == TEX_MAGIC && c->version == 1 && c->ancho > 0 &&
+		c->alto > 0) {
+		CBmp_Create(dest, c->ancho, c->alto);
+		if (ArchIO_Read(dest->img, c->alto * c->ancho * BMP_PIXEL, 1, f) == 1) {
+			ArchIO_Close(f);
+			return 0;
+		}
+	}
+	return Img_LoadFailed(f, "leer_TEX(): Formato no v\xe1lido: '%s'", name);
+}
+
+/* r g b from b g r and the alpha of 32 bit files */
+static void Tga_GetPixel(byte *d, int alpha, void *f) {
+	d[2] = ArchIO_Getc(f);
+	d[1] = ArchIO_Getc(f);
+	d[0] = ArchIO_Getc(f);
+	d[3] = alpha ? ArchIO_Getc(f) : 0;
+}
+
+int TGA_Load(const char *name, CBmp *dest, uint32_t flags) {
+	tgaCab_t *c = g_TgaCab;
+
+	(void)flags;
+	CHECK(name && dest);
+	void *f = ArchIO_Open(name, "rb");
+	if (!f) {
+		return -1;
+	}
+	if (ArchIO_Read(c, sizeof(*c), 1, f) != 1 || c->cmapType || (c->type != TGA_TYPE_RLE && c->type != TGA_TYPE_RGB) ||
+		(c->bits != 24 && c->bits != 32)) {
+		return Img_LoadFailed(f, "leer_TGA(): Formato no v\xe1lido: '%s'", name);
+	}
+	CHECK(!c->idLength);
+	CBmp_Create(dest, c->ancho, c->alto);
+	for (int y = 0; y < dest->alto; y++) {
+		byte *row = (byte *)CBmp_Pixel(dest, 0, y);
+		if (!(c->desc & TGA_TOP_DOWN)) {
+			row = (byte *)CBmp_Pixel(dest, 0, dest->alto - y - 1);
+		}
+		int x = 0;
+		while (x < dest->ancho) {
+			if (c->type == TGA_TYPE_RLE) {
+				int h = ArchIO_Getc(f);
+				int n = (h & 0x7f) + 1;
+				if (h & TGA_RUN) {
+					byte p[4];
+					Tga_GetPixel(p, c->bits == 32, f);
+					for (; n > 0; n--, x++) {
+						memcpy(row + x * 4, p, 4);
+					}
+				} else {
+					for (; n > 0; n--, x++) {
+						Tga_GetPixel(row + x * 4, c->bits == 32, f);
+					}
+				}
+			} else {
+				Tga_GetPixel(row + x * 4, c->bits == 32, f);
+				x++;
+			}
+			if (x > dest->ancho) {
+				CHECK(x <= dest->ancho);
+			}
+		}
+	}
+	ArchIO_Close(f);
+	return 0;
+}
+
+int __thiscall CBmp_Load(CBmp *self, const char *name, uint32_t flags) {
+	CHECK(name);
+	Img_Free(self, BMP_PIXEL);
+	if (Img_IsExt(name, ".tex")) {
+		return TEX_Load(name, self, flags);
+	}
+	if (Img_IsExt(name, ".tga")) {
+		return TGA_Load(name, self, flags);
+	}
+	return BMP_Load(name, self, flags);
 }

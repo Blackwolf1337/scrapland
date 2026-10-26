@@ -39,6 +39,7 @@ void *crt_fsopen(const char *name, const char *mode, int share);
 int crt_fclose(void *f);
 size_t crt_fread(void *dst, size_t size, size_t count, void *f);
 size_t crt_fwrite(const void *src, size_t size, size_t count, void *f);
+int crt_fputc(int c, void *f);
 int crt_fseek(void *f, long off, int origin);
 long crt_ftell(void *f);
 int crt_stricmp(const char *a, const char *b);

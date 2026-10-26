@@ -58,4 +58,20 @@ void __fastcall CBmp_Blur(CBmp *self);
 /* orig scaled to the size of self: a copy, halved by 2x2 averages, or by averaging boxes; only the channels in mask */
 void __thiscall CBmp_Resample(CBmp *self, const CBmp *orig, uint32_t mask);
 
+/* the image files: 0, -1 with errno and, for a bad file, a line in the file log. Loading reads through the packs,
+ * saving writes a file below the game directory. BMP: 8 (palette), 24 or 32 bits, saved with 24; TEX: the pixels as
+ * they are; TGA: 24 or 32 bits, RLE or not, saved RLE */
+#define IMG_OVERWRITE 1		/* save: replace an existing file */
+#define IMG_ALPHA 2		/* TGA save: 32 bits */
+#define IMG_INDEX_ALPHA 0x100	/* BMP load: the palette index as alpha */
+int BMP_Load(const char *name, CBmp *dest, uint32_t flags);
+int TEX_Load(const char *name, CBmp *dest, uint32_t flags);
+int TGA_Load(const char *name, CBmp *dest, uint32_t flags);
+int BMP_Save(const char *name, const CBmp *orig, uint32_t flags);
+int TEX_Save(const char *name, const CBmp *orig, uint32_t flags);
+int TGA_Save(const char *name, const CBmp *orig, uint32_t flags);
+/* by the extension: .tex, .tga, else BMP */
+int __thiscall CBmp_Load(CBmp *self, const char *name, uint32_t flags);
+int __thiscall CBmp_Save(CBmp *self, const char *name, uint32_t flags);
+
 #endif

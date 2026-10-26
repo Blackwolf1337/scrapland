@@ -855,4 +855,47 @@ bfree(bd)
 bfree(cc)
 bfree(ca)
 bfree(cb)
+
+# the image files of Engine/Bmp.c: loaded from the packs, saved below the game directory and read back
+def csum(b):
+	w, h, img = SDTest.Peek(b, '@i'), SDTest.Peek(b + 4, '@i'), SDTest.Peek(b + 8, '@i')
+	if not img:
+		return w, h, None
+	s = 0L
+	for i in range(w * h):
+		s = (s * 31 + SDTest.Peek(img + 4 * i, '@i')) % 1000000007
+	return w, h, s
+def readback(name):
+	try:
+		f = open(name, 'rb')
+	except IOError:
+		return None
+	d = f.read()
+	f.close()
+	return d
+cl = SDTest.Call(0x133650, 'ii', 12)[0]
+for n, fl in (('models/elements/templeyakuzzi/aceite-r.bmp', 0), ('models/elements/templeyakuzzi/aceite-r.bmp', 0x100),
+		('levels/abindoor/2d/map0.tga', 0), ('2d/white.tga', 0), ('2d/loading/00icon.alpha.tga', 0),
+		('levels/menu/map/map3d.0001.lmap1.tga', 0), ('sdnone.bmp', 0), ('sdnone.tex', 0), ('sdnone.TGA', 0)):
+	check('CBmp_Load' + fmt((n, fl)), lambda n=n, fl=fl: (SDTest.Call(0x2aa3a0, 'tiisi', cl, n, fl)[0], csum(cl)))
+check('CBmp_Load map0', lambda: (SDTest.Call(0x2aa3a0, 'tiisi', cl, 'levels/abindoor/2d/map0.tga', 0)[0], bget(cl, 1)))
+for rva, n in ((0x2a9c20, 'BMP_Load'), (0x2a9fc0, 'TEX_Load'), (0x2aa0b0, 'TGA_Load')):
+	check(n + ' bad', lambda rva=rva: (SDTest.Call(rva, 'isii', 'levels/menu/map/map3d.ini', cl, 0)[0], csum(cl)))
+bfree(cl)
+cs = bnew(8, 3, 0x2a9bc0)
+A, B, C, D = 0x11223344, 0x11223355, -0x66778899, 0x01020304
+cset(cs, (A, A, A, A, B, C, C, D,  A, B, A, B, C, C, B, B,  D, D, C, C, C, A, A, 0x22223355))
+for n, fl in (('sdimg.bmp', 0), ('sdimg.bmp', 0), ('sdimg2.BMP', 1), ('sdimg.tex', 0), ('sdimg.tex', 0), ('sdimg.tga', 0),
+		('sdimg.tga', 1), ('sdimga.tga', 3), ('sdimgx.txt', 0)):
+	check('CBmp_Save' + fmt((n, fl)), lambda n=n, fl=fl: (SDTest.Call(0x2a9740, 'tiisi', cs, n, fl)[0], readback(n)))
+cr = bnew(130, 2, 0x2a9bc0)
+v = []
+for i in range(130):
+	v.append(i / 3)
+for i in range(130):
+	v.append(5)
+cset(cr, v)
+check('TGA_Save long', lambda: (SDTest.Call(0x2a9450, 'isii', 'sdlong.tga', cr, 1)[0], readback('sdlong.tga')))
+bfree(cr)
+bfree(cs)
 finish()

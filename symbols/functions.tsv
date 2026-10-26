@@ -8302,17 +8302,17 @@ rva	size	source	callconv	name	signature
 002a8bc0	72	USER_DEFINED	__thiscall	CBmp_Fill	void __thiscall(uint color)
 002a8c10	448	USER_DEFINED	__thiscall	CBmp_Copy	void __thiscall(int x, int y, void *orig, int ox, int oy, int w, int h, uint mask)
 002a8dd0	846	USER_DEFINED	__thiscall	CBmp_Effect	void __thiscall(int kind)
-002a9120	523	DEFAULT	unknown	FUN_006a9120	
-002a9330	287	DEFAULT	unknown	FUN_006a9330	
-002a9450	745	DEFAULT	unknown	FUN_006a9450	
-002a9740	160	DEFAULT	unknown	FUN_006a9740	
+002a9120	523	USER_DEFINED	__cdecl	BMP_Save	int __cdecl(char *name, void *orig, uint flags)
+002a9330	287	USER_DEFINED	__cdecl	TEX_Save	int __cdecl(char *name, void *orig, uint flags)
+002a9450	745	USER_DEFINED	__cdecl	TGA_Save	int __cdecl(char *name, void *orig, uint flags)
+002a9740	160	USER_DEFINED	__thiscall	CBmp_Save	int __thiscall(char *name, uint flags)
 002a97e0	508	USER_DEFINED	__thiscall	CBmp_Exposure	void __thiscall(float a, float b)
 002a99e0	470	USER_DEFINED	__thiscall	CBmp_Gamma	void __thiscall(float g, float b)
 002a9bc0	91	USER_DEFINED	__thiscall	CBmp_Create	void __thiscall(int ancho, int alto)
-002a9c20	928	DEFAULT	unknown	FUN_006a9c20	
-002a9fc0	240	DEFAULT	unknown	FUN_006a9fc0	
-002aa0b0	746	DEFAULT	unknown	FUN_006aa0b0	
-002aa3a0	198	DEFAULT	unknown	FUN_006aa3a0	
+002a9c20	928	USER_DEFINED	__cdecl	BMP_Load	int __cdecl(char *name, void *dest, uint flags)
+002a9fc0	240	USER_DEFINED	__cdecl	TEX_Load	int __cdecl(char *name, void *dest, uint flags)
+002aa0b0	746	USER_DEFINED	__cdecl	TGA_Load	int __cdecl(char *name, void *dest, uint flags)
+002aa3a0	198	USER_DEFINED	__thiscall	CBmp_Load	int __thiscall(char *name, uint flags)
 002aa470	586	USER_DEFINED	__thiscall	CBmp_MixChannels	void __thiscall(uint in, uint out)
 002aa6c0	593	USER_DEFINED	__thiscall	CBmp_Blend	void __thiscall(int x, int y, void *orig, int ox, int oy, int w, int h, int a, int b)
 002aa920	607	USER_DEFINED	__thiscall	CBmp_Sample	uint * __thiscall(uint *out, float u, float v)
