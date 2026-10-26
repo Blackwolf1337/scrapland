@@ -49,24 +49,26 @@ void Box_Merge(box_t *box, const box_t *other, byte first) {
 }
 
 /* *v at most step nearer to target */
-void Float_Approach(float *v, float target, float step) {
+float *Float_Approach(float *v, float target, float step) {
 	float down = *v - step;
 	if (down > target) {
 		*v = down;
-		return;
+		return v;
 	}
 	float up = *v + step;
 	*v = up < target ? up : target;
+	return v;
 }
 
-void Vec3_Approach(vec3_t *v, const vec3_t *target, float step) {
+vec3_t *Vec3_Approach(vec3_t *v, const vec3_t *target, float step) {
 	Float_Approach(&v->x, target->x, step);
 	Float_Approach(&v->y, target->y, step);
 	Float_Approach(&v->z, target->z, step);
+	return v;
 }
 
 /* the velocities of two masses after an elastic hit along the normal n */
-void Vec3_Bounce(const vec3_t *n, float m1, float m2, vec3_t *v1, vec3_t *v2) {
+vec3_t *Vec3_Bounce(const vec3_t *n, float m1, float m2, vec3_t *v1, vec3_t *v2) {
 	float nx = n->x, ny = n->y, nz = n->z;
 	float v1x = v1->x, v1y = v1->y, v1z = v1->z;
 	float u1 = v1x * nx + v1y * ny + v1z * nz;
@@ -81,6 +83,7 @@ void Vec3_Bounce(const vec3_t *n, float m1, float m2, vec3_t *v1, vec3_t *v2) {
 	v2->x = v2->x + n->x * d2;
 	v2->y = v2->y + d2 * n->y;
 	v2->z = v2->z + n->z * d2;
+	return v1;
 }
 
 /* q inside the prism of the triangle t0 t1 t2 (on the inner side of its edges) */
@@ -273,11 +276,108 @@ long double Dist2_PointTriangle(const vec3_t *p, const vec3_t *v1, const vec3_t 
 }
 
 /* v mirrored at the normal n */
-void Vec3_Reflect(const vec3_t *n, const vec3_t *v, vec3_t *out) {
+vec3_t *Vec3_Reflect(const vec3_t *n, const vec3_t *v, vec3_t *out) {
 	float nx = n->x, ny = n->y, nz = n->z;
 	float dot = v->x * nx + v->y * ny + v->z * nz;
 	dot = dot + dot;
 	out->x = nx * dot - v->x;
 	out->y = ny * dot - v->y;
 	out->z = nz * dot - v->z;
+	return out;
+}
+
+/* angles in radians: x around the x axis, y around y, z around z */
+
+/* the angles (x, y, z = 0) that turn the z axis into dir */
+vec3_t *Vec3_GetRotAng(vec3_t *out, const vec3_t *dir) {
+	out->z = 0.0f;
+	out->y = (float)Game_Atan2((double)dir->x, (double)dir->z);
+	out->x = (float)Game_Atan2((double)-dir->y, __builtin_sqrt((double)(dir->z * dir->z + dir->x * dir->x)));
+	return out;
+}
+
+/* Vec3_Rotate with the cosines and sines of the angles given */
+vec3_t *Vec3_RotateSC(vec3_t *out, const vec3_t *in, const vec3_t *c, const vec3_t *s) {
+	float a = c->y * in->x + s->y * in->z;
+	float b = c->y * in->z - s->y * in->x;
+	float d = c->x * in->y - s->x * b;
+
+	out->z = s->x * in->y + c->x * b;
+	out->x = c->z * a - s->z * d;
+	out->y = s->z * a + c->z * d;
+	return out;
+}
+
+/* the inverse of Vec3_Rotate: by -rot, y first */
+vec3_t *Vec3_RotateInv(vec3_t *out, const vec3_t *in, const vec3_t *rot) {
+	float s0, c0, s1, c1, s2, c2;
+
+	X87_SinCos(-rot->x, &s0, &c0);
+	X87_SinCos(-rot->y, &s1, &c1);
+	X87_SinCos(-rot->z, &s2, &c2);
+	float t1 = c1 * in->z - s1 * in->x;
+	float t2 = s1 * in->z + c1 * in->x;
+	float t3 = c0 * in->y - s0 * t1;
+	out->z = c0 * t1 + s0 * in->y;
+	out->x = c2 * t2 - s2 * t3;
+	out->y = c2 * t3 + s2 * t2;
+	return out;
+}
+
+vec3_t *Vec3_NormAng(vec3_t *out, const vec3_t *in) {
+	float z = NormAng(in->z);
+	float y = NormAng(in->y);
+	float x = NormAng(in->x);
+
+	out->y = y;
+	out->x = x;
+	out->z = z;
+	return out;
+}
+
+/* ang folded into (-pi, pi] */
+float NormAng(float ang) {
+	ang = ang - (float)(crt_floor((double)ang / M_2PI_D) * M_2PI_D);
+	if ((double)ang > M_PI_D) {
+		ang = ang - M_2PI_F;
+	}
+	return ang;
+}
+
+float *Vec2_Rotate(float *out, const float *in, float ang) {
+	float s, c;
+
+	X87_SinCos(ang, &s, &c);
+	out[0] = in[0] * c - in[1] * s;
+	out[1] = in[1] * c + in[0] * s;
+	return out;
+}
+
+/* around z, then x, then y */
+vec3_t *Vec3_Rotate(vec3_t *out, const vec3_t *in, const vec3_t *rot) {
+	float s0, c0, s1, c1, s2, c2;
+
+	X87_SinCos(rot->x, &s0, &c0);
+	X87_SinCos(rot->y, &s1, &c1);
+	X87_SinCos(rot->z, &s2, &c2);
+	float a = c2 * in->y + s2 * in->x;
+	float b = c2 * in->x - s2 * in->y;
+	float d = c0 * in->z + s0 * a;
+	out->y = c0 * a - s0 * in->z;
+	out->x = c1 * b + s1 * d;
+	out->z = c1 * d - s1 * b;
+	return out;
+}
+
+/* around x by ax, then around y by ay */
+vec3_t *Vec3_RotateXY(vec3_t *out, const vec3_t *in, float ax, float ay) {
+	float s0, c0, s1, c1;
+
+	X87_SinCos(ax, &s0, &c0);
+	X87_SinCos(ay, &s1, &c1);
+	float a = c0 * in->z + s0 * in->y;
+	out->y = c0 * in->y - s0 * in->z;
+	out->z = c1 * a - s1 * in->x;
+	out->x = s1 * a + c1 * in->x;
+	return out;
 }

@@ -135,6 +135,7 @@ SD_IMPORT(crt_iob_func, 0x3507fa)
 SD_IMPORT(crt_stdio_common_vfprintf, 0x33b5da)
 SD_IMPORT(crt_strcspn, 0x3506a0)
 SD_IMPORT(crt_fpclass, 0x34e765)
+SD_IMPORT(crt_floor, 0x345130)
 
 /* engine: Net/ (include/scrap/net.h) */
 SD_IMPORT(Net_IsServer, 0x18b280)
@@ -278,9 +279,6 @@ SD_IMPORT(SndPS_Use, 0x1a1e60)
 SD_IMPORT(cSoundPS_Var, 0x1a1660)
 
 /* engine: Math/ */
-SD_IMPORT(Vec3_Rotate, 0x15e3b0)
-SD_IMPORT(Vec3_GetRotAng, 0x15df10)
-SD_IMPORT(NormAng, 0x15e2e0)
 
 /* engine: World/ (weapon and ammo tables of cWorld) */
 SD_IMPORT(WeapTable_Init, 0x19fd40)

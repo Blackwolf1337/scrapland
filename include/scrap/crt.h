@@ -83,5 +83,6 @@ void *crt_iob_func(unsigned index);
 int crt_stdio_common_vfprintf(uint64_t options, void *f, const char *fmt, void *locale, va_list ap);
 size_t crt_strcspn(const char *s, const char *set);
 int crt_fpclass(double x);
+double crt_floor(double x);
 
 #endif

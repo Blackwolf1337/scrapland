@@ -54,3 +54,12 @@ double Game_Atan2(double y, double x) {
 		"memory", "cc");
 	return r;
 }
+
+/* x87 fsincos of a float, both results rounded to float: the inline code of the original */
+void X87_SinCos(float a, float *s, float *c) {
+	long double sl, cl;
+
+	__asm__("fsincos" : "=t"(cl), "=u"(sl) : "0"((long double)a));
+	*c = (float)cl;
+	*s = (float)sl;
+}
