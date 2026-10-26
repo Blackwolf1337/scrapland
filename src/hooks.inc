@@ -1701,6 +1701,21 @@ SD_HOOK(Sector_Num, 0x26d0a0, 6)
 SD_HOOK(Sector_OfZonaNodo, 0x26d0b0, 29)
 SD_HOOK(Sectores_Free, 0x26d520, 127)
 
+/* src/game/engine3d/Engine/Portal.c (Engine/portal.cpp) */
+SD_HOOK(CPortal_ctor, 0x2ba0e0, 79)
+SD_HOOK(CPortal_dtor, 0x2ba130, 173)
+SD_HOOK(CPortal_Delete, 0x2ba1e0, 35)
+SD_HOOK(CPortal_LinkZonas, 0x2ba210, 151)
+SD_HOOK(CPortal_Read, 0x2ba410, 143)
+SD_HOOK(CPortal_PlaneDist, 0x2ba4a0, 76)
+SD_HOOK(CPortal_Dist, 0x2ba4f0, 414)
+SD_HOOK(CPortal_Render, 0x2ba690, 94)
+SD_HOOK(CPortal_Write, 0x2ba6f0, 162)
+SD_HOOK(CPortal_SegCross, 0x2ba7b0, 376)
+SD_HOOK(Portal_DrawRect, 0x2bb510, 399)
+SD_HOOK(CPortal_SetZona, 0x2bb6a0, 69)
+SD_HOOK(CPortal_UpdateCache, 0x2bb6f0, 437)
+
 /* module agent: Engine/RenderTarget (hooks below this line) */
 
 

@@ -11,6 +11,7 @@
 #include "scrap/luz.h"
 #include "scrap/mallad3d.h"
 #include "scrap/mallatri.h"
+#include "scrap/portal.h"
 #include "scrap/material.h"
 #include "scrap/modelo.h"
 #include "scrap/suelo.h"
@@ -189,9 +190,9 @@ static IObjeto3D *Escena_NewObj(CNodo3D *nodo, uint32_t clase, byte *set) {
 	case CLASE_OBJ3D_A6000040:
 		p = operator_new(0x3c);
 		return p ? Obj3D_A6000040_ctor(p) : NULL;
-	case CLASE_OBJ3D_A7000100:
-		p = operator_new(0x68);
-		return p ? Obj3D_A7000100_ctor(p) : NULL;
+	case CLASE_OBJ3D_PORTAL:
+		p = operator_new(sizeof(CPortal));
+		return p ? (IObjeto3D *)CPortal_ctor(p) : NULL;
 	case CLASE_OBJ3D_SISTPART:
 		CHECK(CArchINI_FindSection(nodo->ini, "Particles", 1));
 		break;

@@ -1,0 +1,56 @@
+/*
+ * Engine/portal.cpp of the engine3d: CPortal (CLASE_OBJ3D_A7000100), a rectangle of ancho by alto in the xz plane of
+ * its node that joins two sectors (the nodes with i48 == idZona). Its corners and plane in the world are cached.
+ */
+#ifndef SCRAP_PORTAL_H
+#define SCRAP_PORTAL_H
+
+#include "scrap/mallad3d.h"
+
+#define CPORTAL_VFTABLE 0x3e46c0
+#define CLASE_OBJ3D_PORTAL 0xa7000100
+#define g_ShowPortals GAME_DATA(int, 0x4e1de8)	/* gvRenderShowPortals */
+
+typedef struct CPortal {
+	void **vftable;			/* 0x00 OBJ3D_VF_* */
+	uint32_t clase;			/* 0x04 CLASE_OBJ3D_PORTAL */
+	CNodo3D *nodo;			/* 0x08 CObjBase3D_SetNodo */
+	float ancho;			/* 0x0c */
+	float alto;			/* 0x10 */
+	CNodo3D *zonas[2];		/* 0x14 the sector nodes, counted */
+	int idZona[2];			/* 0x1c */
+	byte calculado;			/* 0x24 the cache below is valid */
+	byte pad_25[3];
+	vec3_t cache_vert[4];		/* 0x28 */
+	plane_t cache_plano;		/* 0x58 */
+} CPortal;
+SD_SIZE(CPortal, 0x68);
+SD_OFFSET(CPortal, cache_plano, 0x58);
+
+CPortal *__fastcall CPortal_ctor(CPortal *self);
+void __fastcall CPortal_dtor(CPortal *self);
+CPortal *__thiscall CPortal_Delete(CPortal *self, byte flags);
+/* the sector nodes from the scene of the node, when none is set yet */
+void __fastcall CPortal_LinkZonas(CPortal *self);
+byte __thiscall CPortal_Read(CPortal *self, CArchIO *f, MallaD3D_FileCtx *ctx);
+byte __thiscall CPortal_Write(CPortal *self, CArchIO *f, MallaD3D_FileCtx *ctx);
+void __thiscall CPortal_Render(CPortal *self, void *dev, CNodoR *r);
+/* the signed distance of p to the plane */
+float __thiscall CPortal_PlaneDist(CPortal *self, const vec3_t *p);
+/* the distance of p to the rectangle */
+float __thiscall CPortal_Dist(CPortal *self, const vec3_t *p);
+/* the segment from a to b goes through the rectangle; the point into out */
+byte __thiscall CPortal_SegCross(CPortal *self, const vec3_t *a, const vec3_t *b, vec3_t *out);
+void __thiscall CPortal_SetZona(CPortal *self, uint32_t i, CNodo3D *zona);
+/* m: the matrix of the node, passed but not used */
+void __thiscall CPortal_UpdateCache(CPortal *self, const matrix_t *m);
+/* a screen rectangle (-1..1) drawn in the viewport vp (x, y, w, h) for the debug output */
+void Portal_DrawRect(const int *vp, const float *rect, uint32_t color);
+
+/* other modules (src/imports.inc) */
+/* rva 0x2ba2b0, the debug drawing of the rectangle */
+void __thiscall CPortal_DrawDebug(CPortal *self, uint32_t color);
+/* rva 0x27cb80, a GDI line on the window for the debug output */
+void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width);
+
+#endif

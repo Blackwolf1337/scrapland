@@ -71,6 +71,19 @@ static inline void ObjRef_Release(void *slot) {
 	}
 }
 
+/* the same without the CHECK */
+static inline void ObjRef_Drop(void *slot) {
+	ObjRef **dst = slot;
+	if (*dst) {
+		(*dst)->Refs--;
+		ObjRef *o = *dst;
+		if (!o->Refs && o) {
+			((objDelete_t)o->vftable[0])(o, 1);
+		}
+		*dst = NULL;
+	}
+}
+
 /* o as a class: CHECK on another class and NULL (objeto3d.h) */
 static inline void *Obj3D_Cast(IObjeto3D *o, uint32_t clase) {
 	CHECK(o->clase == clase);

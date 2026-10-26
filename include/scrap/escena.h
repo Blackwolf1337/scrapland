@@ -10,7 +10,6 @@
 
 #define CESCENA_VFTABLE 0x3d9b24
 #define CLASE_OBJ3D_A6000040 0xa6000040	/* scaled by CEscena_SetEscala at 0x14 and 0x18 */
-#define CLASE_OBJ3D_A7000100 0xa7000100
 
 /* node flags read here */
 #define NODO_JOIN1 (1u << 0)		/* CEscena_Join with sel */
@@ -92,8 +91,7 @@ void __fastcall CAnimacion_dtor(CAnimacion *self);
 byte __thiscall CMallaD3D_CalcPesos(void *malla, CNodo3D *nodo);
 void __thiscall CMallaD3D_CalcIlum(void *malla, CNodo3D *nodo, CEscena *esc);
 void __thiscall CSuelo_CalcIlum(void *suelo, CNodo3D *nodo, CEscena *esc);
-/* rva 0x2b95a0 and 0x2ba0e0, the objects of the classes 0xa6000040 (0x3c bytes) and 0xa7000100 (0x68) */
+/* rva 0x2b95a0, the object of the class 0xa6000040 (0x3c bytes, CGrafico3D) */
 IObjeto3D *__fastcall Obj3D_A6000040_ctor(void *self);
-IObjeto3D *__fastcall Obj3D_A7000100_ctor(void *self);
 
 #endif

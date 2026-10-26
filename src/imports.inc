@@ -387,7 +387,6 @@ SD_IMPORT(CMallaD3D_CalcIlum, 0x2b8e80)
 SD_IMPORT(CSuelo_CalcIlum, 0x261630)
 SD_IMPORT(NodeFX_New, 0x2b2cc0)
 SD_IMPORT(Obj3D_A6000040_ctor, 0x2b95a0)
-SD_IMPORT(Obj3D_A7000100_ctor, 0x2ba0e0)
 
 /* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
 SD_IMPORT(CObjBase3D_SetNodo, 0x2cad70)
@@ -401,6 +400,10 @@ SD_IMPORT(SistPart_Draw2, 0x2b55d0)
 /* src/game/engine3d/Engine/SueloPortal.c (called from Engine/SueloPortal.cpp, include/scrap/sueloportal.h) */
 SD_IMPORT(CSuelo_RayoVert, 0x2ca360)
 SD_IMPORT(Sector_Recorrer, 0x26cba0)
+
+/* src/game/engine3d/Engine/Portal.c (called from Engine/portal.cpp, include/scrap/portal.h) */
+SD_IMPORT(CPortal_DrawDebug, 0x2ba2b0)
+SD_IMPORT(Debug_Line, 0x27cb80)
 
 /* module agent: Engine/RenderTarget (imports below this line) */
 

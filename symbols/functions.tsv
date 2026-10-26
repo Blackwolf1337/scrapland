@@ -8495,22 +8495,22 @@ rva	size	source	callconv	name	signature
 002b9e90	47	DEFAULT	unknown	FUN_006b9e90	
 002b9ec0	439	DEFAULT	unknown	FUN_006b9ec0	
 002ba080	88	DEFAULT	unknown	FUN_006ba080	
-002ba0e0	79	DEFAULT	unknown	FUN_006ba0e0	
-002ba130	173	DEFAULT	unknown	FUN_006ba130	
-002ba1e0	35	ANALYSIS	__thiscall	CPortal::vf00	undefined __thiscall(void)
-002ba210	151	DEFAULT	unknown	FUN_006ba210	
+002ba0e0	79	USER_DEFINED	__fastcall	CPortal_ctor	void * __fastcall(void * self)
+002ba130	173	USER_DEFINED	__fastcall	CPortal_dtor	void __fastcall(void * self)
+002ba1e0	35	USER_DEFINED	__thiscall	CPortal_Delete	void * __thiscall(byte flags)
+002ba210	151	USER_DEFINED	__fastcall	CPortal_LinkZonas	void __fastcall(void * self)
 002ba2b0	346	DEFAULT	unknown	FUN_006ba2b0	
-002ba410	143	ANALYSIS	__thiscall	CPortal::vf06	undefined __thiscall(void)
-002ba4a0	76	DEFAULT	unknown	FUN_006ba4a0	
-002ba4f0	414	DEFAULT	unknown	FUN_006ba4f0	
-002ba690	94	ANALYSIS	__thiscall	CPortal::vf02	undefined __thiscall(void)
-002ba6f0	162	ANALYSIS	__thiscall	CPortal::vf05	undefined __thiscall(void)
+002ba410	143	USER_DEFINED	__thiscall	CPortal_Read	byte __thiscall(void * f, void * ctx)
+002ba4a0	76	USER_DEFINED	__thiscall	CPortal_PlaneDist	float __thiscall(void * p)
+002ba4f0	414	USER_DEFINED	__thiscall	CPortal_Dist	float __thiscall(void * p)
+002ba690	94	USER_DEFINED	__thiscall	CPortal_Render	void __thiscall(void * dev, void * r)
+002ba6f0	162	USER_DEFINED	__thiscall	CPortal_Write	byte __thiscall(void * f, void * ctx)
 002ba7a0	3	ANALYSIS	__thiscall	CPortal::vf01	undefined __thiscall(void)
-002ba7b0	376	DEFAULT	unknown	FUN_006ba7b0	
+002ba7b0	376	USER_DEFINED	__thiscall	CPortal_SegCross	byte __thiscall(void * a, void * b, void * out)
 002ba930	3029	DEFAULT	unknown	FUN_006ba930	
-002bb510	399	DEFAULT	unknown	FUN_006bb510	
-002bb6a0	69	DEFAULT	unknown	FUN_006bb6a0	
-002bb6f0	437	DEFAULT	unknown	FUN_006bb6f0	
+002bb510	399	USER_DEFINED	__cdecl	Portal_DrawRect	void __cdecl(int * vp, float * rect, uint color)
+002bb6a0	69	USER_DEFINED	__thiscall	CPortal_SetZona	void __thiscall(uint i, void * zona)
+002bb6f0	437	USER_DEFINED	__thiscall	CPortal_UpdateCache	void __thiscall(void * m)
 002bb8b0	45	DEFAULT	unknown	FUN_006bb8b0	
 002bb8e0	44	USER_DEFINED	__thiscall	CAnimEvent_ctor	void * __thiscall(float t, int id, int arg)
 002bb910	56	DEFAULT	unknown	FUN_006bb910	
