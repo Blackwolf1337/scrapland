@@ -592,4 +592,44 @@ check('CArchINI_ctor', lambda: SDTest.Call(0x261980, 'tii', ini)[0] == ini)
 istep('CArchINI_Count', 0x261bc0, 'tii')
 SDTest.Call(0x261990, 'tvi', ini)
 SDTest.Call(0x133550, 'vi', ini)
+
+# engine3d Engine/TablaHash.c
+th = SDTest.Call(0x1335a0, 'ii', 12)[0]
+def tstep(name, rva, sig, *args):
+	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: apply(SDTest.Call, (rva, sig, th) + args))
+def tnode(n):
+	if not n:
+		return None
+	return SDTest.Peek(n + 4, '@p'), SDTest.Peek(n + 8, '@i')
+check('CTablaHash_ctor', lambda: SDTest.Call(0x2d06e0, 'tiii', th, 7)[0] == th)
+keys = ('a', 'b', 'abc', 'ABC', '', 'Init.py', 'x' * 40, 'a\xedb', 'h', 'o', 'v')
+for i in range(len(keys)):
+	tstep('CTablaHash_Slot', 0x2d0c20, 'tiis', keys[i])
+	tstep('CTablaHash_Add', 0x2d0850, 'tiisii', keys[i], 100 + i, 0)
+tstep('CTablaHash_Add again', 0x2d0850, 'tiisii', 'abc', 5, 0)
+for k in (0, -1, 0x1234, 7):
+	tstep('CTablaHash_AddInt', 0x2d0800, 'tiiiii', k, k * 3, 0)
+tstep('CTablaHash_AddInt again', 0x2d0800, 'tiiiii', 0x1234, 1, 0)
+for k in keys + ('c', 'Abc', '00001234', 'x' * 39):
+	tstep('CTablaHash_Get', 0x2d09c0, 'tiisp', k, -9)
+	tstep('CTablaHash_Get NULL', 0x2d09c0, 'tiisi', k, 0)
+	check('CTablaHash_Find' + fmt((k,)), lambda k=k: tnode(SDTest.Call(0x2d0a00, 'tiisi', th, k, SDTest.Call(0x2d0c20, 'tiis', th, k)[0])[0]))
+for k in (0, -1, 0x1234, 7, 8):
+	tstep('CTablaHash_GetInt', 0x2d0940, 'tiiip', k, -9)
+check('CTablaHash_Insert', lambda: tnode(SDTest.Call(0x2d08d0, 'tiisii', th, 'abc', 2, 55)[0]))
+tstep('CTablaHash_List count', 0x2d0b00, 'tiiii', 0, 0)
+def tlist():
+	r = SDTest.Call(0x2d0b70, 'tiipp', th, 0, -1)
+	arr, n = r[1], r[2]
+	nodes = []
+	for i in range(n):
+		nodes.append(tnode(SDTest.Peek(arr + 4 * i, '@i')))
+	small = SDTest.Call(0x2d0b00, 'tiiii', th, arr, 3)[0]
+	full = SDTest.Call(0x2d0b00, 'tiiii', th, arr, n)[0]
+	lock = SDTest.Peek(th + 8, '@i')
+	freed = SDTest.Call(0x2d0ab0, 'tiip', th, arr)
+	return r[0], n, nodes, small, full, lock, freed, SDTest.Peek(th + 8, '@i')
+check('CTablaHash_GetList', tlist)
+SDTest.Call(0x2d0750, 'tvi', th)
+SDTest.Call(0x133550, 'vi', th)
 finish()

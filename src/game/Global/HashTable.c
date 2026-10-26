@@ -10,9 +10,7 @@
 HashTable *__thiscall HashTable_ctor(HashTable *self, int numSlots, byte caseSensitive) {
 	CHECK(numSlots > 0);
 	self->numSlots = numSlots;
-	/* operator new[] of the exe, which gets -1 on an overflow of the size */
-	uint64_t bytes = (uint64_t)(uint32_t)numSlots * 4;
-	self->slots = operator_new_array(bytes >> 32 ? 0xffffffffu : (uint32_t)bytes);
+	self->slots = New_Array(numSlots, 4);
 	memset(self->slots, 0, numSlots * 4);
 	self->caseSensitive = caseSensitive;
 	self->locked = 0;
@@ -29,10 +27,7 @@ uint32_t __thiscall HashTable_Slot(HashTable *self, const char *key) {
 		if (!self->caseSensitive && (byte)(c - 'A') < 26) {
 			c += 0x20;
 		}
-		h = h * 16 + c;
-		if (h & 0xf0000000) {
-			h = (h ^ ((h >> 24) & 0xf0)) & 0x0fffffff;
-		}
+		h = Hash_Step(h, c);
 	}
 	return h % self->numSlots;
 }

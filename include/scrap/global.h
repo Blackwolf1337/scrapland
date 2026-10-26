@@ -40,6 +40,19 @@ void operator_delete_sized(void *p, uint32_t size);
 void *operator_new_array(uint32_t size);
 void operator_delete(void *p);
 void operator_delete_array(void *p);
+/* new[] of count items as the compiler makes it: a size that overflows is -1, which the allocator refuses */
+static inline void *New_Array(uint32_t count, uint32_t size) {
+	uint64_t bytes = (uint64_t)count * size;
+	return operator_new_array(bytes >> 32 ? 0xffffffffu : (uint32_t)bytes);
+}
+/* one character of the string hash of the engine: 4 bit shift, folded to 28 bits */
+static inline uint32_t Hash_Step(uint32_t h, byte c) {
+	h = h * 16 + c;
+	if (h & 0xf0000000) {
+		h = (h ^ ((h >> 24) & 0xf0)) & 0x0fffffff;
+	}
+	return h;
+}
 /* the engine's malloc with the same statistics (rva 0x1335a0) */
 void *Mem_Alloc(uint32_t size);
 void *Mem_Free(void *p);	/* NULL (rva 0x133550) */

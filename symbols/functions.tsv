@@ -8704,18 +8704,18 @@ rva	size	source	callconv	name	signature
 002d03b0	158	DEFAULT	unknown	FUN_006d03b0	
 002d0450	402	DEFAULT	unknown	FUN_006d0450	
 002d05f0	231	DEFAULT	unknown	FUN_006d05f0	
-002d06e0	102	DEFAULT	unknown	FUN_006d06e0	
-002d0750	171	DEFAULT	unknown	FUN_006d0750	
-002d0800	73	DEFAULT	unknown	FUN_006d0800	
-002d0850	118	DEFAULT	unknown	FUN_006d0850	
-002d08d0	104	DEFAULT	unknown	FUN_006d08d0	
-002d0940	120	DEFAULT	unknown	FUN_006d0940	
-002d09c0	55	DEFAULT	unknown	FUN_006d09c0	
-002d0a00	95	DEFAULT	unknown	FUN_006d0a00	
-002d0ab0	69	DEFAULT	unknown	FUN_006d0ab0	
-002d0b00	106	DEFAULT	unknown	FUN_006d0b00	
-002d0b70	174	DEFAULT	unknown	FUN_006d0b70	
-002d0c20	109	DEFAULT	unknown	FUN_006d0c20	
+002d06e0	102	USER_DEFINED	__thiscall	CTablaHash_ctor	void * __thiscall(int num)
+002d0750	171	USER_DEFINED	__fastcall	CTablaHash_dtor	void __fastcall(void *self)
+002d0800	73	USER_DEFINED	__thiscall	CTablaHash_AddInt	int __thiscall(int key, void *value, int warn)
+002d0850	118	USER_DEFINED	__thiscall	CTablaHash_Add	int __thiscall(char *key, void *value, int warn)
+002d08d0	104	USER_DEFINED	__thiscall	CTablaHash_Insert	void * __thiscall(char *key, uint slot, void *value)
+002d0940	120	USER_DEFINED	__thiscall	CTablaHash_GetInt	int __thiscall(int key, void **out)
+002d09c0	55	USER_DEFINED	__thiscall	CTablaHash_Get	int __thiscall(char *key, void **out)
+002d0a00	95	USER_DEFINED	__thiscall	CTablaHash_Find	void * __thiscall(char *key, uint slot)
+002d0ab0	69	USER_DEFINED	__thiscall	CTablaHash_FreeList	int __thiscall(void **elems)
+002d0b00	106	USER_DEFINED	__thiscall	CTablaHash_List	int __thiscall(void **out, int max)
+002d0b70	174	USER_DEFINED	__thiscall	CTablaHash_GetList	int __thiscall(void **elems, int *num)
+002d0c20	109	USER_DEFINED	__thiscall	CTablaHash_Slot	uint __thiscall(char *key)
 002d1250	41	DEFAULT	unknown	FUN_006d1250	
 002d1290	37	DEFAULT	unknown	FUN_006d1290	
 002d12c0	101	DEFAULT	unknown	FUN_006d12c0	
