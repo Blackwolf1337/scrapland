@@ -1690,6 +1690,22 @@ SD_HOOK(CSistPart_SetAlpha, 0x27c2c0, 20)
 SD_HOOK(CParticulaActive_Update, 0x27c2e0, 1465)
 SD_HOOK(CSistPart_Update, 0x27c8c0, 691)
 
+/* src/game/engine3d/Engine/UtilD3D.c (Engine/util_d3d.cpp, debug lines and the class names) */
+SD_HOOK(Color_FromFloat, 0x276e90, 249)
+SD_HOOK(Debug_DrawBoxM, 0x276f90, 796)
+SD_HOOK(Debug_DrawBox, 0x2772b0, 798)
+SD_HOOK(Debug_DrawConeM, 0x2775d0, 631)
+SD_HOOK(Debug_DrawAxes, 0x277850, 328)
+SD_HOOK(Debug_DrawPointM, 0x2779a0, 321)
+SD_HOOK(Debug_DrawPoint, 0x277af0, 323)
+SD_HOOK(Debug_DrawSphereM, 0x277c40, 1420)
+SD_HOOK(Debug_DrawSphere, 0x2781d0, 41)
+SD_HOOK(Debug_DrawLineM, 0x278200, 32)
+SD_HOOK(Debug_DrawLine, 0x278220, 24)
+SD_HOOK(Debug_DrawTriM, 0x278240, 60)
+SD_HOOK(Debug_DrawTri, 0x278280, 62)
+SD_HOOK(Obj3D_ClaseName, 0x2782c0, 156)
+
 /* src/game/engine3d/Engine/Mundo.c (Engine/mundo.cpp, the world and the debug points) */
 SD_HOOK(CMundo_ctor, 0x269210, 270)
 SD_HOOK(MundoDummy_ctorNodo, 0x269320, 342)

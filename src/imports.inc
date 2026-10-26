@@ -422,10 +422,9 @@ SD_IMPORT(Sectores_Crear, 0x26d5a0)
 SD_IMPORT(Portales_SetView, 0x26db80)
 SD_IMPORT(CSuelo_FreeNodos, 0x261530)
 SD_IMPORT(Font_PrintfXY, 0x299ce0)
-SD_IMPORT(Debug_DrawBoxM, 0x276f90)
-SD_IMPORT(Debug_DrawAxes, 0x277850)
-SD_IMPORT(Debug_DrawPoint, 0x277af0)
-SD_IMPORT(Debug_DrawLine, 0x278220)
+
+/* src/game/engine3d/Engine/UtilD3D.c (called from Engine/util_d3d.cpp, include/scrap/utild3d.h) */
+SD_IMPORT(Render_Line, 0x24b960)
 
 /* src/game/engine3d/Engine/Grafico3D.c (called from Engine/grafico3d.cpp, include/scrap/grafico3d.h) */
 SD_IMPORT(Render_GetBillboard, 0x24cdc0)
@@ -456,7 +455,6 @@ SD_IMPORT(Tabla_Resize1C, 0x261780)
 SD_IMPORT(Render_SetWorldMatrix, 0x24bac0)
 SD_IMPORT(Batch_AddMalla, 0x2c81d0)
 SD_IMPORT(Batch_Flush, 0x2c83c0)
-SD_IMPORT(Debug_DrawBox, 0x2772b0)
 SD_IMPORT(CSuelo_DrawDebug, 0x25a260)
 
 /* module agent: Engine/Trails (imports below this line) */

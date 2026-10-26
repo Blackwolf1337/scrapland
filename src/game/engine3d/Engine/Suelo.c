@@ -5,14 +5,14 @@
 #include <string.h>
 
 #include "scrap/console.h"
-#include "scrap/debug3d.h"
 #include "scrap/e3dutil.h"
-#include "scrap/mundo.h"
-#include "scrap/win32.h"
 #include "scrap/mallatri.h"
 #include "scrap/material.h"
+#include "scrap/mundo.h"
 #include "scrap/suelo.h"
 #include "scrap/sueloportal.h"
+#include "scrap/utild3d.h"
+#include "scrap/win32.h"
 
 #define CSUELO_VFTABLE 0x3db13c
 #define IOBJETO3D_VFTABLE 0x3d79dc
@@ -21,7 +21,6 @@
 #define CCOLLIDEQUAD_DTOR 0x258ce0
 #define CNODO3D_DTOR 0x23d070
 #define SUELO_FLT_MAX 3.4028234663852886e+38f
-#define g_MatrixIdentity ((const matrix_t *)Game_Ptr(0x4ad6f8))
 
 /* the statistics of the queries, cleared with the query number */
 #define g_CollisionStats ((uint32_t *)Game_Ptr(0x4af888))	/* 6 */
@@ -1731,7 +1730,7 @@ void __thiscall CSuelo_NodosToD3D(CSuelo *self, int fvf) {
 
 void __thiscall CSuelo_Draw(CSuelo *self, void *dev, int unused) {
 	(void)unused;
-	Render_SetWorldMatrix(g_MatrixIdentity, 0);
+	Render_SetWorldMatrix(g_MatIdentity, 0);
 	for (int i = 0; i < self->nNodos; i++) {
 		if (!Suelo_Obj(self, i)) {
 			continue;

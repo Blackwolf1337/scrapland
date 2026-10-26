@@ -12,7 +12,6 @@
 #include "scrap/sistpart.h"
 #include "scrap/varios.h"
 
-#define g_MatIdentity ((const matrix_t *)Game_Ptr(0x4ad6f8))
 #define SISTPART_DEFAULT_COLOR 0xffffff
 
 /* the triangle a segment hit (CSuelo_TraceSeg): its index into the index list of the mesh */

@@ -5,10 +5,10 @@
 
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
-#include "scrap/debug3d.h"
 #include "scrap/e3dutil.h"
 #include "scrap/mundo.h"
 #include "scrap/sistpart.h"
+#include "scrap/utild3d.h"
 #include "scrap/varios.h"
 
 #define DEG2RAD_F 0.0174532924f		/* rva 0x3dcc2c */

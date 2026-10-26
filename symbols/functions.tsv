@@ -7242,7 +7242,7 @@ rva	size	source	callconv	name	signature
 0024af80	6	DEFAULT	unknown	FUN_0064af80	
 0024af90	2286	DEFAULT	unknown	FUN_0064af90	
 0024b880	212	DEFAULT	unknown	FUN_0064b880	
-0024b960	211	DEFAULT	unknown	FUN_0064b960	
+0024b960	211	USER_DEFINED	unknown	Render_Line	
 0024ba40	125	DEFAULT	unknown	FUN_0064ba40	
 0024bac0	108	USER_DEFINED	__cdecl	Render_SetWorldMatrix	int __cdecl(void * m, byte noDevice)
 0024bb30	51	DEFAULT	unknown	FUN_0064bb30	
@@ -7749,20 +7749,20 @@ rva	size	source	callconv	name	signature
 00276cb0	67	DEFAULT	unknown	FUN_00676cb0	
 00276d00	320	DEFAULT	unknown	FUN_00676d00	
 00276e40	72	DEFAULT	unknown	FUN_00676e40	
-00276e90	249	DEFAULT	unknown	FUN_00676e90	
-00276f90	796	USER_DEFINED	unknown	Debug_DrawBoxM	
-002772b0	798	DEFAULT	unknown	FUN_006772b0	
-002775d0	631	DEFAULT	unknown	FUN_006775d0	
-00277850	328	USER_DEFINED	unknown	Debug_DrawAxes	
-002779a0	321	DEFAULT	unknown	FUN_006779a0	
-00277af0	323	USER_DEFINED	unknown	Debug_DrawPoint	
-00277c40	1420	DEFAULT	unknown	FUN_00677c40	
-002781d0	41	DEFAULT	unknown	FUN_006781d0	
-00278200	32	DEFAULT	unknown	FUN_00678200	
-00278220	24	USER_DEFINED	unknown	Debug_DrawLine	
-00278240	60	DEFAULT	unknown	FUN_00678240	
-00278280	62	DEFAULT	unknown	FUN_00678280	
-002782c0	156	DEFAULT	unknown	FUN_006782c0	
+00276e90	249	USER_DEFINED	__cdecl	Color_FromFloat	uint __cdecl(float * c)
+00276f90	796	USER_DEFINED	__cdecl	Debug_DrawBoxM	void __cdecl(void * m, void * mn, void * mx, uint color)
+002772b0	798	USER_DEFINED	__cdecl	Debug_DrawBox	void __cdecl(void * mn, void * mx, uint color)
+002775d0	631	USER_DEFINED	__cdecl	Debug_DrawConeM	void __cdecl(void * m, float len, float ang)
+00277850	328	USER_DEFINED	__cdecl	Debug_DrawAxes	void __cdecl(void * m, void * pos, float size)
+002779a0	321	USER_DEFINED	__cdecl	Debug_DrawPointM	void __cdecl(void * m, void * pos, float size, uint color)
+00277af0	323	USER_DEFINED	__cdecl	Debug_DrawPoint	void __cdecl(void * pos, float size, uint color)
+00277c40	1420	USER_DEFINED	__cdecl	Debug_DrawSphereM	void __cdecl(void * m, void * c, float r, uint color, int divV, int divH)
+002781d0	41	USER_DEFINED	__cdecl	Debug_DrawSphere	void __cdecl(void * c, float r, uint color, int divV, int divH)
+00278200	32	USER_DEFINED	__cdecl	Debug_DrawLineM	void __cdecl(void * m, void * a, void * b, uint color)
+00278220	24	USER_DEFINED	__cdecl	Debug_DrawLine	void __cdecl(void * a, void * b, uint color)
+00278240	60	USER_DEFINED	__cdecl	Debug_DrawTriM	void __cdecl(void * m, void * a, void * b, void * c, uint color)
+00278280	62	USER_DEFINED	__cdecl	Debug_DrawTri	void __cdecl(void * a, void * b, void * c, uint color)
+002782c0	156	USER_DEFINED	__cdecl	Obj3D_ClaseName	char * __cdecl(uint clase)
 00278360	48	USER_DEFINED	unknown	CNiebla_ctor	
 00278390	1	USER_DEFINED	unknown	CNiebla_dtor	
 002783a0	113	USER_DEFINED	unknown	CNiebla_InitD3D	

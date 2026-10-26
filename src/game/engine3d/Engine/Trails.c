@@ -13,7 +13,6 @@
 #define TRAILS_FVF 0x1c2
 #define TRAILS_PI4 0.78539819f		/* 0x3f490fdb */
 
-#define g_MatIdentity ((const matrix_t *)Game_Ptr(0x4ad6f8))
 #define g_TrailsDrawn GAME_DATA(int, 0x4a8f1c)	/* statistics of the frame */
 
 /* the D3DX math of the exe through its dispatcher stubs (stdcall) */

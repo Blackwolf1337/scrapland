@@ -15,6 +15,8 @@
 #define LIBM_SSE2_POW 0x321440
 #define CI_ATAN2 0x329f3a
 #define LIBM_VEC_EXP2 0x314a00
+#define LIBM_VEC_COS2 0x314930
+#define LIBM_VEC_SIN2 0x314940
 
 static double Libm_Sse2(uint32_t rva, double x) {
 	double r;
@@ -100,9 +102,9 @@ void X87_SinCos(float a, float *s, float *c) {
 	*s = (float)sl;
 }
 
-/* the packed double exp the compiler calls for vectorised loops, argument and result in xmm0 */
-void Game_ExpPd(const double in[2], double out[2]) {
-	void *fn = Game_Ptr(LIBM_VEC_EXP2);
+/* the packed double functions the compiler calls for vectorised loops, argument and result in xmm0 */
+static void Libm_Pd(uint32_t rva, const double in[2], double out[2]) {
+	void *fn = Game_Ptr(rva);
 
 	__asm__ volatile(
 		"movupd %[in], %%xmm0\n\t"
@@ -111,4 +113,16 @@ void Game_ExpPd(const double in[2], double out[2]) {
 		: [out] "=m"(*(double(*)[2])out)
 		: [in] "m"(*(const double(*)[2])in), [fn] "r"(fn)
 		: "eax", "ecx", "edx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", "memory", "cc");
+}
+
+void Game_ExpPd(const double in[2], double out[2]) {
+	Libm_Pd(LIBM_VEC_EXP2, in, out);
+}
+
+void Game_SinPd(const double in[2], double out[2]) {
+	Libm_Pd(LIBM_VEC_SIN2, in, out);
+}
+
+void Game_CosPd(const double in[2], double out[2]) {
+	Libm_Pd(LIBM_VEC_COS2, in, out);
 }
