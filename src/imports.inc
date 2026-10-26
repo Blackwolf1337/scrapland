@@ -359,7 +359,6 @@ SD_IMPORT(Render_SetMaterial, 0x24bf30)
 SD_IMPORT(E3D_FlushBatch, 0x24cec0)
 SD_IMPORT(E3D_SetShadowLight, 0x2682d0)
 SD_IMPORT(Prof_Count, 0x273040)
-SD_IMPORT(Sector_IsVisible, 0x26c3d0)
 SD_IMPORT(Sph_IsVisible, 0x24d2e0)
 SD_IMPORT(CSuelo_Trace, 0x26e490)
 /* engine3d: Engine/Material.c (include/scrap/material.h), the parts of the classes outside Material.cpp and the
@@ -395,10 +394,13 @@ SD_IMPORT(CObjBase3D_SetNodo, 0x2cad70)
 SD_IMPORT(CMultiSprite_GetUV, 0x29d800)
 SD_IMPORT(CSuelo_TraceSeg, 0x26f120)
 SD_IMPORT(SectorVis_Sphere, 0x26bff0)
-SD_IMPORT(SectorVis_Draw, 0x26bc30)
 SD_IMPORT(Debug_Text3D, 0x299d50)
 SD_IMPORT(SistPart_Draw, 0x2b7150)
 SD_IMPORT(SistPart_Draw2, 0x2b55d0)
+
+/* src/game/engine3d/Engine/SueloPortal.c (called from Engine/SueloPortal.cpp, include/scrap/sueloportal.h) */
+SD_IMPORT(CSuelo_RayoVert, 0x2ca360)
+SD_IMPORT(Sector_Recorrer, 0x26cba0)
 
 /* module agent: Engine/RenderTarget (imports below this line) */
 
@@ -411,10 +413,6 @@ SD_IMPORT(MallaD3D_Render, 0x2b67a0)
 SD_IMPORT(CMallaD3D_CalcSegmentos, 0x2d5350)
 
 /* module agent: Engine/Suelo (imports below this line) */
-SD_IMPORT(Sector_Last, 0x26d0a0)
-SD_IMPORT(Sector_IsOutside, 0x26c390)
-SD_IMPORT(Sector_GetName, 0x26c340)
-SD_IMPORT(Sector_Find, 0x26cb20)
 SD_IMPORT(CCollideMesh_dtor, 0x20eb70)
 SD_IMPORT(Vec3_Normalize, 0x261580)
 SD_IMPORT(crt_ceil, 0x345010)
@@ -426,7 +424,6 @@ SD_IMPORT(Batch_AddMalla, 0x2c81d0)
 SD_IMPORT(Batch_Flush, 0x2c83c0)
 SD_IMPORT(Debug_DrawBox, 0x2772b0)
 SD_IMPORT(CSuelo_DrawDebug, 0x25a260)
-SD_IMPORT(Sector_OfNode, 0x26caa0)
 
 /* module agent: Engine/Trails (imports below this line) */
 SD_IMPORT_STDCALL(D3DX_Vec3Normalize, 8, 0x006d3b)
@@ -444,7 +441,6 @@ SD_IMPORT(RenderCtx_Init, 0x23fac0)
 SD_IMPORT(RenderCtx_SetCanal, 0x23fb10)
 SD_IMPORT(CEscena_Shared, 0x24ecb0)
 SD_IMPORT(CModelo_Render, 0x253610)
-SD_IMPORT(Sector_Locate, 0x26c3f0)
 SD_IMPORT(Font_SetColor, 0x299980)
 SD_IMPORT(Font_Printf, 0x29b850)
 SD_IMPORT(SM3_Load, 0x2bc5c0)

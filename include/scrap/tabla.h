@@ -60,5 +60,6 @@ void Array_Write10(CArchIO *f, const void *p, uint32_t n);
 void __fastcall Tabla_Free(CTabla *t);
 /* n pointers, the old ones kept as far as they fit; n < 1 frees */
 void __thiscall Tabla_Resize4(CTabla *t, int n);
+void __thiscall Tabla_Resize14(CTabla *t, int n);
 
 #endif

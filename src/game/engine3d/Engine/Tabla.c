@@ -122,7 +122,8 @@ void __fastcall Tabla_Free(CTabla *t) {
 	}
 }
 
-void __thiscall Tabla_Resize4(CTabla *t, int n) {
+/* the resize of tabla.h: n elements of size, the old ones kept as far as they fit, n < 1 frees */
+static void Tabla_Resize(CTabla *t, int n, uint32_t size, void(__thiscall *alloc)(CTabla *, int)) {
 	if (n < 1) {
 		if (t->p) {
 			operator_delete_array(t->p);
@@ -136,12 +137,19 @@ void __thiscall Tabla_Resize4(CTabla *t, int n) {
 	}
 	void *old = t->p;
 	if (!old) {
-		Tabla_Alloc4(t, n);
+		alloc(t, n);
 		return;
 	}
-	t->p = New_Array((uint32_t)n, 4);
-	memcpy(t->p, old, (uint32_t)(t->n < n ? t->n : n) * 4);
+	t->p = New_Array((uint32_t)n, size);
+	memcpy(t->p, old, (uint32_t)(t->n < n ? t->n : n) * size);
 	operator_delete_array(old);
 	t->n = n;
 }
 
+void __thiscall Tabla_Resize4(CTabla *t, int n) {
+	Tabla_Resize(t, n, 4, Tabla_Alloc4);
+}
+
+void __thiscall Tabla_Resize14(CTabla *t, int n) {
+	Tabla_Resize(t, n, 0x14, Tabla_Alloc14);
+}

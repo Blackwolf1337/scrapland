@@ -50,6 +50,27 @@ typedef void(__thiscall *objDev_t)(IObjeto3D *self, void *dev);
 typedef byte(__thiscall *objFile_t)(IObjeto3D *self, CArchIO *f, void *ctx);
 #define OBJ3D_CALL(o, slot, type, ...) ((type)(o)->vftable[slot])((o), ##__VA_ARGS__)
 
+/* a counted reference (objref.h): the deleting destructor first, the count at 0x8 */
+typedef struct ObjRef {
+	void **vftable;			/* 0x0 */
+	int i4;
+	int Refs;			/* 0x8 */
+} ObjRef;
+
+/* *slot released (objref.h): counted down, deleted when nobody holds it any more */
+static inline void ObjRef_Release(void *slot) {
+	ObjRef **dst = slot;
+	CHECK(!*dst || (*dst)->Refs > 0);
+	if (*dst) {
+		(*dst)->Refs--;
+		ObjRef *o = *dst;
+		if (!o->Refs && o) {
+			((objDelete_t)o->vftable[0])(o, 1);
+		}
+		*dst = NULL;
+	}
+}
+
 /* o as a class: CHECK on another class and NULL (objeto3d.h) */
 static inline void *Obj3D_Cast(IObjeto3D *o, uint32_t clase) {
 	CHECK(o->clase == clase);

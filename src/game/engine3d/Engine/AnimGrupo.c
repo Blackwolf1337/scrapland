@@ -11,7 +11,6 @@
 #define MORPH_INTERP 25
 #define MORPH_PARAM7 100
 
-typedef void(__thiscall *escenaDelete_t)(CEscena *self, int flags);
 
 static uint16_t Morph_Tag(const MorphData *d) {
 	uint16_t t;
@@ -34,15 +33,7 @@ void __fastcall AnimEventos_Free(CAnimEvent **list) {
 
 void __fastcall CAnimGrupo_dtor(CAnimGrupo *self) {
 	CHECK(self->Anim);
-	CHECK(self->Anim->Refs > 0);
-	if (self->Anim) {
-		self->Anim->Refs--;
-		CEscena *a = self->Anim;
-		if (!a->Refs && a) {
-			((escenaDelete_t)a->vftable[0])(a, 1);
-		}
-		self->Anim = NULL;
-	}
+	ObjRef_Release(&self->Anim);
 	if (self->morph) {
 		/* new[] of MAX_MORPHDATA, deleted with the size of one */
 		operator_delete_sized(self->morph, sizeof(MorphData));

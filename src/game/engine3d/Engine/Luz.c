@@ -6,6 +6,7 @@
 
 #include "scrap/e3dutil.h"
 #include "scrap/luz.h"
+#include "scrap/sueloportal.h"
 
 #define CLUZ_VFTABLE 0x3d79fc
 #define IOBJETO3D_VFTABLE 0x3d79dc

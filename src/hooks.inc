@@ -1680,6 +1680,27 @@ SD_HOOK(CSistPart_SetAlpha, 0x27c2c0, 20)
 SD_HOOK(CParticulaActive_Update, 0x27c2e0, 1465)
 SD_HOOK(CSistPart_Update, 0x27c8c0, 691)
 
+/* src/game/engine3d/Engine/SueloPortal.c (Engine/SueloPortal.cpp, the sectors and their lookups) */
+SD_HOOK(Tabla_Resize14, 0x26b930, 162)
+SD_HOOK(CZona_ctor, 0x26b9e0, 170)
+SD_HOOK(CZona_dtor, 0x26bad0, 334)
+SD_HOOK(SectorVis_Draw, 0x26bc30, 175)
+SD_HOOK(SectorVis_Check, 0x26bce0, 127)
+SD_HOOK(Sector_FindPos, 0x26bef0, 248)
+SD_HOOK(Sector_GetName, 0x26c340, 35)
+SD_HOOK(Sector_IsExterior, 0x26c370, 22)
+SD_HOOK(Sector_IsOutside, 0x26c390, 32)
+SD_HOOK(Sector_Get139, 0x26c3b0, 22)
+SD_HOOK(Sector_IsVisible, 0x26c3d0, 30)
+SD_HOOK(SectorVis_Update, 0x26c3f0, 169)
+SD_HOOK(Zona_FindNodo, 0x26ca30, 99)
+SD_HOOK(Sector_OfNode, 0x26caa0, 123)
+SD_HOOK(Sector_Find, 0x26cb20, 116)
+SD_HOOK(Sector_Get, 0x26d040, 91)
+SD_HOOK(Sector_Num, 0x26d0a0, 6)
+SD_HOOK(Sector_OfZonaNodo, 0x26d0b0, 29)
+SD_HOOK(Sectores_Free, 0x26d520, 127)
+
 /* module agent: Engine/RenderTarget (hooks below this line) */
 
 

@@ -10,6 +10,7 @@
 #include "scrap/cstring.h"
 #include "scrap/escena.h"
 #include "scrap/mallad3d.h"
+#include "scrap/sueloportal.h"
 #include "scrap/material.h"
 
 #define CSISTPART_VFTABLE 0x3ddc6c
@@ -135,7 +136,7 @@ typedef struct CSistPart {
 	CMaterial *mat;			/* 0x114 */
 	void *MultiSpr;			/* 0x118 CMultiSprite of the texture with SISTPART_MULTISPRITE */
 	CParticula **Particles;		/* 0x11c new[] of params.nParticulas */
-	byte vis[0x14];			/* 0x120 the sector visibility of the debug output */
+	SectorVis vis;			/* 0x120 the sector visibility of the debug output */
 	uint32_t lastTime;		/* 0x134 g_TimeMs of the last update */
 	uint32_t birthTime;		/* 0x138 of the last particle born */
 	int lastFrame;			/* 0x13c g_FrameCount of the last update */
@@ -241,8 +242,7 @@ void __thiscall CMultiSprite_GetUV(void *self, int i, float *uv0, float *uv1);
 /* rva 0x26f120 (suelo.cpp): the segment from a to b against the floor of the world */
 byte __thiscall CSuelo_TraceSeg(void *suelo, const vec3_t *a, const vec3_t *b, vec3_t *hit, void *tri, int flags);
 /* rva 0x26bff0 and 0x26bc30 (SueloPortal.cpp): the visibility of a sphere for the debug output */
-byte __thiscall SectorVis_Sphere(void *vis, const vec3_t *pos, const vec3_t *center, float radius, const char *name);
-void __thiscall SectorVis_Draw(void *vis, const vec3_t *pos, byte visible, int a, const char *name);
+byte __thiscall SectorVis_Sphere(SectorVis *vis, const vec3_t *pos, const vec3_t *center, float radius, const char *name);
 /* rva 0x299d50, a debug text at pos */
 void Debug_Text3D(void *font, float x, float y, const vec3_t *pos, uint32_t color, const char *fmt, ...);
 /* rva 0x2b7150 and 0x2b55d0 (the particle renderer) */

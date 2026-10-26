@@ -154,7 +154,7 @@ static void SistPart_Clear(CSistPart *self) {
 	self->nodo = NULL;
 	self->vftable = Game_Ptr(CSISTPART_VFTABLE);
 	cString_ctor(&self->params.texture);
-	memset(self->vis, 0, sizeof(self->vis));
+	memset(&self->vis, 0, sizeof(self->vis));
 }
 
 CSistPart *__thiscall CSistPart_ctorCopy(CSistPart *self, const CSistPart *orig) {
@@ -822,10 +822,10 @@ void __thiscall CSistPart_Render(CSistPart *self, void *dev, CNodoR *r) {
 		float dx = w.max.x - w.min.x, dy = w.max.y - w.min.y, dz = w.max.z - w.min.z;
 		vec3_t center = { (w.max.x + w.min.x) * 0.5f, (w.min.y + w.max.y) * 0.5f, (w.min.z + w.max.z) * 0.5f };
 		float radius = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) * 0.5f;
-		byte vis = SectorVis_Sphere(self->vis, &pos, &center, radius, self->nodo->name);
+		byte vis = SectorVis_Sphere(&self->vis, &pos, &center, radius, self->nodo->name);
 		self->inView = vis;
 		if (g_SistPartDebug > 1) {
-			SectorVis_Draw(self->vis, &pos, vis, 0, self->nodo->name);
+			SectorVis_Draw(&self->vis, &pos, vis, 0, self->nodo->name);
 		}
 		if (g_SistPartDebug > 2) {
 			Debug_Text3D(g_DebugFont, 4.0f, -12.0f, &pos, 0x8000, Game_Ptr(0x3bae88), self->type);

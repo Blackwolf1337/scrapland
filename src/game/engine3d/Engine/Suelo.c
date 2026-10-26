@@ -10,6 +10,7 @@
 #include "scrap/mallatri.h"
 #include "scrap/material.h"
 #include "scrap/suelo.h"
+#include "scrap/sueloportal.h"
 
 #define CSUELO_VFTABLE 0x3db13c
 #define IOBJETO3D_VFTABLE 0x3d79dc
@@ -36,11 +37,6 @@
 
 typedef void(__thiscall *objCall_t)(void *self, void *arg);
 
-/* the sectors of the world (engine3d/engine/mundo.h, SueloPortal.cpp) */
-int Sector_Last(void);
-byte Sector_IsOutside(int sector);
-const char *Sector_GetName(int sector);
-int Sector_Find(const char *name);
 void __fastcall CCollideMesh_dtor(CCollideMesh *self);
 vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);
 double crt_ceil(double x);
@@ -56,7 +52,6 @@ void Debug_DrawBox(const vec3_t *mn, const vec3_t *mx, uint32_t color);
 void __fastcall CSuelo_DrawDebug(CSuelo *self);
 /* Escena.cpp: the update of all nodes of a scene; the sector of a node (SueloPortal.cpp) */
 void __fastcall CEscena_UpdateNodes(void *esc);
-int Sector_OfNode(void *node);
 
 static void *Suelo_Obj(const CSuelo *self, uint32_t i) {
 	TABLA_CHECK(self->nodos, i, self->nNodos);
@@ -542,7 +537,7 @@ int __thiscall CSuelo_LoadCollision(CSuelo *self, const char *name) {
 		CArchIO_Read(f, &alt->dim, sizeof(alt->dim));
 		CCollideMesh_Read(&alt->CollideMesh1, f);
 		CCollideMesh_Read(&alt->CollideMesh2, f);
-		int sectors = Sector_Last() + 1;
+		int sectors = Sector_Num() + 1;
 		CHECK(CArchIO_ReadInt(f) == sectors);
 		for (int i = 0; i < sectors; i++) {
 			CHECK(i < MAX_COLLIDE_SECTORS);
@@ -595,7 +590,7 @@ int __thiscall CSuelo_SaveCollision(CSuelo *self, const char *name) {
 		CArchIO_Write(f, &alt->dim, sizeof(alt->dim));
 		CCollideMesh_Write(&alt->CollideMesh1, f);
 		CCollideMesh_Write(&alt->CollideMesh2, f);
-		int sectors = Sector_Last() + 1;
+		int sectors = Sector_Num() + 1;
 		CArchIO_WriteInt(f, sectors);
 		for (int i = 0; i < sectors; i++) {
 			CHECK(i < MAX_COLLIDE_SECTORS);
@@ -1703,7 +1698,7 @@ void __fastcall CSuelo_CreateQuadCollision(CSuelo *self) {
 
 	Con_Verbosef("CreateQuadCollision: Building AMC\n");
 	CAlturas_QuadInit(alt, 0, &self->CollideExt, self->CollideTri);
-	int sectors = Sector_Last() + 1;
+	int sectors = Sector_Num() + 1;
 	for (int i = 0; i < sectors; i++) {
 		CHECK(i < MAX_COLLIDE_SECTORS);
 		CSuelo_BuildSectorMesh(self, &alt->_CollideMesh1[i], 1, i);

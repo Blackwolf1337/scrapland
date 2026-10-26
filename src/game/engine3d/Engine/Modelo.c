@@ -95,11 +95,11 @@ CModelo *__fastcall CModelo_ctor(CModelo *self) {
 	self->lods.p = NULL;
 	self->lods.n = 0;
 	CAnimGrupos_ctor(&self->anims);
-	self->sector[0] = 0;
-	self->sector[1] = 0;
-	self->sector[4] = 0;
-	self->sector[3] = 0;
-	self->sector[2] = 0;
+	self->sector.flags = 0;
+	self->sector.sector = 0;
+	self->sector.pos.z = 0.0f;
+	self->sector.pos.y = 0.0f;
+	self->sector.pos.x = 0.0f;
 	Cad_Set(&self->name, "Modelo");
 	self->escena = NULL;
 	self->mainLOD = NULL;
@@ -327,8 +327,8 @@ byte __thiscall CModelo_SetMorphSubset(CModelo *self, uint32_t slot, const char 
 }
 
 int __fastcall CModelo_GetSector(CModelo *self) {
-	Sector_Locate(self->sector, &self->pos, self->name);
-	return self->sector[1];
+	SectorVis_Update(&self->sector, &self->pos, self->name);
+	return self->sector.sector;
 }
 
 CAnimGrupo *__thiscall CModelo_AddAnim(CModelo *self, CEscena *anim, const char *nombre) {

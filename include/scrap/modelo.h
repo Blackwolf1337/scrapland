@@ -13,6 +13,7 @@
 #include "scrap/luz.h"
 #include "scrap/mathlib.h"
 #include "scrap/nodo3d.h"
+#include "scrap/sueloportal.h"
 #include "scrap/tabla.h"
 
 #define CMODELO_VFTABLE 0x3da6a0
@@ -92,7 +93,7 @@ typedef struct CModelo {
 	CEscena *escena;		/* 0x124 */
 	struct CModelo *mainLOD;	/* 0x128 the model this one is a LOD of */
 	CAnimGrupos anims;		/* 0x12c */
-	int sector[5];			/* 0x1dc the sector lookup of the position, the sector at 0x1e0 */
+	SectorVis sector;		/* 0x1dc the sector lookup of the position */
 } CModelo;
 SD_OFFSET(CModelo, local, 0x5c);
 SD_OFFSET(CModelo, showBox, 0x9c);
@@ -275,7 +276,6 @@ void __thiscall RenderCtx_SetCanal(NodoAnimChannel *self, CAnimSlot *slot);	/* r
 const vec3_t *Render_GetEyePos(void);					/* rva 0x24cdd0, the camera position */
 /* the play state of an animation group */
 void __fastcall CModelo_Render(CModelo *self);				/* rva 0x253610 */
-void __thiscall Sector_Locate(int *self, const vec3_t *pos, const char *name);	/* rva 0x26c3f0 */
 void __thiscall Font_SetColor(void *font, uint32_t color);		/* rva 0x299980 */
 void Font_Printf(void *font, float x, float y, int arg, const char *fmt, ...);	/* rva 0x29b850 */
 CEscena *SM3_Load(const char *name);					/* rva 0x2bc5c0 */

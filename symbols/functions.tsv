@@ -7653,33 +7653,33 @@ rva	size	source	callconv	name	signature
 0026b450	46	DEFAULT	unknown	FUN_0066b450	
 0026b480	1062	DEFAULT	unknown	FUN_0066b480	
 0026b8b0	115	USER_DEFINED	__thiscall	Tabla_Alloc14	void __thiscall(int num)
-0026b930	162	DEFAULT	unknown	FUN_0066b930	
-0026b9e0	170	DEFAULT	unknown	FUN_0066b9e0	
+0026b930	162	USER_DEFINED	__thiscall	Tabla_Resize14	void __thiscall(int n)
+0026b9e0	170	USER_DEFINED	__fastcall	CZona_ctor	void * __fastcall(void * self)
 0026ba90	60	DEFAULT	unknown	FUN_0066ba90	
-0026bad0	334	DEFAULT	unknown	FUN_0066bad0	
+0026bad0	334	USER_DEFINED	__fastcall	CZona_dtor	void __fastcall(void * self)
 0026bc20	1	DEFAULT	unknown	FUN_0066bc20	
-0026bc30	175	DEFAULT	unknown	FUN_0066bc30	
-0026bce0	127	DEFAULT	unknown	FUN_0066bce0	
+0026bc30	175	USER_DEFINED	__thiscall	SectorVis_Draw	void __thiscall(void * pos, byte visible, byte cached, char * name)
+0026bce0	127	USER_DEFINED	__thiscall	SectorVis_Check	byte __thiscall(void * pos, char * name)
 0026bd60	396	DEFAULT	unknown	FUN_0066bd60	
-0026bef0	248	DEFAULT	unknown	FUN_0066bef0	
+0026bef0	248	USER_DEFINED	__cdecl	Sector_FindPos	byte __cdecl(void * pos, int * sector, char * name)
 0026bff0	840	DEFAULT	unknown	FUN_0066bff0	
-0026c340	35	DEFAULT	unknown	FUN_0066c340	
-0026c370	22	DEFAULT	unknown	FUN_0066c370	
-0026c390	32	DEFAULT	unknown	FUN_0066c390	
-0026c3b0	22	DEFAULT	unknown	FUN_0066c3b0	
+0026c340	35	USER_DEFINED	__cdecl	Sector_GetName	char * __cdecl(int sector)
+0026c370	22	USER_DEFINED	__cdecl	Sector_IsExterior	byte __cdecl(int sector)
+0026c390	32	USER_DEFINED	__cdecl	Sector_IsOutside	byte __cdecl(int sector)
+0026c3b0	22	USER_DEFINED	__cdecl	Sector_Get139	byte __cdecl(int sector)
 0026c3d0	30	USER_DEFINED	__cdecl	Sector_IsVisible	byte __cdecl(int sector)
-0026c3f0	169	DEFAULT	unknown	FUN_0066c3f0	
+0026c3f0	169	USER_DEFINED	__thiscall	SectorVis_Update	byte __thiscall(void * pos, char * name)
 0026c4a0	1417	DEFAULT	unknown	FUN_0066c4a0	
-0026ca30	99	DEFAULT	unknown	FUN_0066ca30	
-0026caa0	123	DEFAULT	unknown	FUN_0066caa0	
-0026cb20	116	DEFAULT	unknown	FUN_0066cb20	
+0026ca30	99	USER_DEFINED	__cdecl	Zona_FindNodo	void * __cdecl(void * nodo, byte main)
+0026caa0	123	USER_DEFINED	__cdecl	Sector_OfNode	int __cdecl(void * nodo)
+0026cb20	116	USER_DEFINED	__cdecl	Sector_Find	int __cdecl(char * name)
 0026cba0	1170	DEFAULT	unknown	FUN_0066cba0	
-0026d040	91	DEFAULT	unknown	FUN_0066d040	
-0026d0a0	6	DEFAULT	unknown	FUN_0066d0a0	
-0026d0b0	29	DEFAULT	unknown	FUN_0066d0b0	
+0026d040	91	USER_DEFINED	__cdecl	Sector_Get	void * __cdecl(uint sector)
+0026d0a0	6	USER_DEFINED	__cdecl	Sector_Num	int __cdecl(void)
+0026d0b0	29	USER_DEFINED	__cdecl	Sector_OfZonaNodo	int __cdecl(void * nodo)
 0026d0d0	636	DEFAULT	unknown	FUN_0066d0d0	
 0026d350	450	DEFAULT	unknown	FUN_0066d350	
-0026d520	127	DEFAULT	unknown	FUN_0066d520	
+0026d520	127	USER_DEFINED	__cdecl	Sectores_Free	void __cdecl(void)
 0026d5a0	1497	DEFAULT	unknown	FUN_0066d5a0	
 0026db80	1016	DEFAULT	unknown	FUN_0066db80	
 0026df80	1281	DEFAULT	unknown	FUN_0066df80	

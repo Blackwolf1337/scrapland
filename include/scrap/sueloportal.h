@@ -1,0 +1,91 @@
+/*
+ * Engine/SueloPortal.cpp of the engine3d: the sectors (zonas) of a floor, joined by portals, and which of them are
+ * seen in a frame. A sector is the node it was made from, its portals (objects of class CLASE_OBJ3D_A7000100) and
+ * the sector behind each portal. Here: the sectors, their lookups and the cached sector of an object (SectorVis);
+ * the portal culling itself (rva 0x26c4a0, 0x26cba0, 0x26d350) is still the exe's.
+ */
+#ifndef SCRAP_SUELOPORTAL_H
+#define SCRAP_SUELOPORTAL_H
+
+#include "scrap/nodo3d.h"
+
+#define MAX_PORTALES 32
+
+typedef struct CZona {
+	int id;				/* 0x000 its index in g_Zonas */
+	int bloq;			/* 0x004 set while the culling is in it */
+	int Frame3D;			/* 0x008 g_FrameCount of the last frame it was seen */
+	box_t rect;			/* 0x00c the screen rectangle it is seen through */
+	CNodo3D *nodo;			/* 0x024 the node of the sector, counted */
+	CNodo3D *nodos[2];		/* 0x028 counted */
+	int numNodos;			/* 0x030 */
+	CNodo3D *portales[MAX_PORTALES];	/* 0x034 the portal nodes, counted (their object is the portal) */
+	struct CZona *zonas[MAX_PORTALES];	/* 0x0b4 the sector behind each portal */
+	int numPortales;		/* 0x134 */
+	byte exterior;			/* 0x138 */
+	byte b139;			/* 0x139 counted into the rectangle of all seen sectors */
+	byte b13a;			/* 0x13a */
+	byte pad_13b;
+} CZona;
+SD_SIZE(CZona, 0x13c);
+SD_OFFSET(CZona, numPortales, 0x134);
+
+/* the cached sector of a position (the vis member of objects that ask for their visibility) */
+typedef struct SectorVis {
+	uint32_t flags;			/* 0x0 SECTORVIS_* */
+	int sector;			/* 0x4 -1 none, -2 not looked up */
+	vec3_t pos;			/* 0x8 */
+} SectorVis;
+#define SECTORVIS_VALID 1
+#define SECTORVIS_CACHED 2		/* pos was the same as the last time */
+
+#define g_Zonas ((CZona **)Game_Ptr(0x4afed8))
+#define g_NumZonas GAME_DATA(int, 0x4b00d8)
+#define g_SectorCache GAME_DATA(int, 0x4b0128)	/* the cached sector is used when the position is the same */
+#define g_PortalesOn GAME_DATA(int, 0x4e1e00)	/* 0: everything is seen */
+#define g_DebugFont2 GAME_DATA(void *, 0x4d6dc8)
+
+
+CZona *__fastcall CZona_ctor(CZona *self);
+void __fastcall CZona_dtor(CZona *self);
+/* the sector of the cache drawn at pos for the debug output */
+void __thiscall SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible, byte cached, const char *name);
+/* whether the cached sector is seen; a new position only clears SECTORVIS_CACHED */
+byte __thiscall SectorVis_Check(SectorVis *self, const vec3_t *pos, const char *name);
+/* the sector of pos (looked up again for a new position) is seen */
+byte __thiscall SectorVis_Update(SectorVis *self, const vec3_t *pos, const char *name);
+/* the sector under pos into *sector; whether it is seen (always without portals); name is not used */
+byte Sector_FindPos(const vec3_t *pos, int *sector, const char *name);
+const char *Sector_GetName(int sector);
+byte Sector_IsExterior(int sector);
+/* -1 is not */
+byte Sector_IsOutside(int sector);
+byte Sector_Get139(int sector);
+byte Sector_IsVisible(int sector);
+/* the sector with nodo among its nodes (main: as its node) */
+CZona *Zona_FindNodo(CNodo3D *nodo, byte main);
+/* the sector named like nodo or one of its parents, -1 */
+int Sector_OfNode(CNodo3D *nodo);
+int Sector_Find(const char *name);
+CZona *Sector_Get(uint32_t sector);
+int Sector_Num(void);
+/* the sector with nodo among its nodes, -1 */
+int Sector_OfZonaNodo(CNodo3D *nodo);
+void Sectores_Free(void);
+
+/* other modules (src/imports.inc) */
+/* rva 0x2ca360: the vertical ray of the floor at x, z; res: SueloRayo */
+typedef struct SueloRayo {
+	uint32_t flags;			/* 0x00 in: 0x202 */
+	int i4;
+	float y;			/* 0x08 in: the height it starts at */
+	byte pad_c[8];
+	float hitY;			/* 0x14 out */
+	int i18;
+	int sector;			/* 0x1c out, -1 none */
+} SueloRayo;
+byte __thiscall CSuelo_RayoVert(void *suelo, float x, float z, SueloRayo *res);
+/* rva 0x26cba0: the sector reached from sector going from a to b through the portals */
+int Sector_Recorrer(int sector, const vec3_t *a, const vec3_t *b, byte arg);
+
+#endif
