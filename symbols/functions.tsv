@@ -1461,7 +1461,7 @@ rva	size	source	callconv	name	signature
 00072290	70	ANALYSIS	__thiscall	cAICharControl::vf63	undefined __thiscall(void)
 000722e0	83	ANALYSIS	__thiscall	cAICharControl::vf86	undefined __thiscall(void)
 00072340	176	DEFAULT	unknown	FUN_00472340	
-000723f0	115	DEFAULT	unknown	FUN_004723f0	
+000723f0	115	USER_DEFINED	__fastcall	Nto1Head::UnlinkAll	void __fastcall(void * head)
 00072470	61	ANALYSIS	__thiscall	cAICharControl::vf19	undefined __thiscall(void)
 000724b0	543	ANALYSIS	__thiscall	cAICharControl::vf73	undefined __thiscall(void)
 000726d0	339	ANALYSIS	__thiscall	cAICharControl::vf95	undefined __thiscall(void)
@@ -1559,7 +1559,7 @@ rva	size	source	callconv	name	signature
 00080d20	448	USER_DEFINED	__thiscall	cAICharGroup::GetReposPos	byte __thiscall(float * pos, char * name, float * out, void * target)
 00080ee0	1469	DEFAULT	unknown	FUN_00480ee0	
 000814b0	1402	DEFAULT	unknown	FUN_004814b0	
-00081a30	115	DEFAULT	unknown	FUN_00481a30	
+00081a30	115	USER_DEFINED	__fastcall	Nto1Head::UnlinkAll	void __fastcall(void * head)
 00081ab0	6	DEFAULT	unknown	FUN_00481ab0	
 00081ac0	37	DEFAULT	unknown	FUN_00481ac0	
 00081af0	39	DEFAULT	unknown	FUN_00481af0	
@@ -2782,9 +2782,9 @@ rva	size	source	callconv	name	signature
 000ef620	182	DEFAULT	unknown	FUN_004ef620	
 000ef6e0	125	DEFAULT	unknown	FUN_004ef6e0	
 000ef760	3	ANALYSIS	__thiscall	cEntity::vf01	undefined __thiscall(void)
-000ef770	115	DEFAULT	unknown	FUN_004ef770	
-000ef7f0	115	DEFAULT	unknown	FUN_004ef7f0	
-000ef870	115	DEFAULT	unknown	FUN_004ef870	
+000ef770	115	USER_DEFINED	__fastcall	Nto1Head::UnlinkAll	void __fastcall(void * head)
+000ef7f0	115	USER_DEFINED	__fastcall	Nto1Head::UnlinkAll	void __fastcall(void * head)
+000ef870	115	USER_DEFINED	__fastcall	Nto1Head::UnlinkAll	void __fastcall(void * head)
 000ef910	38	ANALYSIS	__thiscall	cEntity::vf08	undefined __thiscall(void)
 000ef940	22	USER_DEFINED	__thiscall	cEntity::SetEmbeddedFX	void __thiscall(char * fxType)
 000ef960	22	USER_DEFINED	__thiscall	cEntity::SetModel	undefined __thiscall(void)
@@ -2921,7 +2921,7 @@ rva	size	source	callconv	name	signature
 000f8550	240	DEFAULT	unknown	FUN_004f8550	
 000f8640	388	DEFAULT	unknown	FUN_004f8640	
 000f87d0	807	DEFAULT	unknown	FUN_004f87d0	
-000f8b00	115	DEFAULT	unknown	FUN_004f8b00	
+000f8b00	115	USER_DEFINED	__fastcall	Nto1Head::UnlinkAll	void __fastcall(void * head)
 000f8b80	59	DEFAULT	unknown	FUN_004f8b80	
 000f8bc0	220	DEFAULT	unknown	FUN_004f8bc0	
 000f8ca0	190	DEFAULT	unknown	FUN_004f8ca0	

@@ -653,6 +653,12 @@ SD_HOOK(PyEntity_GetAttr, 0x192d00, 347)
 SD_HOOK(PyEntity_FindMethod, 0x1935a0, 24)
 SD_HOOK(PyEntity_SetAttr, 0x192e60, 391)
 SD_HOOK(Nto1Head_UnlinkAll, 0x0d40f0, 115)
+SD_HOOK(Nto1Head_UnlinkAll, 0x0723f0, 115)	/* the same code in another class */
+SD_HOOK(Nto1Head_UnlinkAll, 0x081a30, 115)	/* the same code in another class */
+SD_HOOK(Nto1Head_UnlinkAll, 0x0ef770, 115)	/* the same code in another class */
+SD_HOOK(Nto1Head_UnlinkAll, 0x0ef7f0, 115)	/* the same code in another class */
+SD_HOOK(Nto1Head_UnlinkAll, 0x0ef870, 115)	/* the same code in another class */
+SD_HOOK(Nto1Head_UnlinkAll, 0x0f8b00, 115)	/* the same code in another class */
 SD_HOOK(cEntity_AddLink, 0x0c9a20, 97)
 SD_HOOK(cPyEntity_Del, 0x1931b0, 87)
 SD_HOOK(cPyEntity_SetModel, 0x193210, 141)
