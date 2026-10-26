@@ -27,6 +27,8 @@
 #define g_CM3UseScenes GAME_DATA(int, 0x4e1f20)		/* CM3_UseScenes 0, 1, 2 */
 #define g_SM3CheckTime GAME_DATA(int, 0x4e1f38)		/* SM3_CheckTime */
 #define g_SM3UseScenes GAME_DATA(int, 0x4e1f98)		/* SM3_UseScenes 0, 1, 2 */
+#define g_CM3DeleteM3D GAME_DATA(int, 0x4e1ed8)		/* CM3_DeleteM3D */
+#define g_M3DOk GAME_DATA(byte, 0x432a7c)
 
 /* a transform of the scene nodes ("MT:" blocks) */
 typedef struct m3dTransform_t {
@@ -60,6 +62,12 @@ void M3D_ReadIndex(int expected);
 CEscena *CM3_Load(const char *name);
 /* the scene of the .SM3 of name, NULL without a valid one or with SM3_UseScenes not 1 */
 CEscena *SM3_Load(const char *name);
+/* the .CM3 of the animation scene esc of name and the .SM3 of the model scene esc (with SM3_UseScenes); a
+ * failed write is reported, not fatal. CM3_DeleteM3D deletes the M3D after */
+void CM3_Save(const char *name, CEscena *esc);
+void SM3_Save(const char *name, CEscena *esc);
+/* ok: g_M3DOk set; else the first failure after it reported */
+void M3D_SetOk(byte ok);
 /* rva 0x2c2650: the particle systems of model_particles.ini for the scene */
 void Escena_Particles(CEscena *esc);
 

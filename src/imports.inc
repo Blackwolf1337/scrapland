@@ -482,7 +482,6 @@ SD_IMPORT(RenderCtx_Init, 0x23fac0)
 SD_IMPORT(RenderCtx_SetCanal, 0x23fb10)
 SD_IMPORT(CEscena_Shared, 0x24ecb0)
 SD_IMPORT(CModelo_Render, 0x253610)
-SD_IMPORT(Escena_PostLoad, 0x2c0e40)
 SD_IMPORT(Escena_Load, 0x2c2d60)
 SD_IMPORT(Escena_Particles, 0x2c2650)
 

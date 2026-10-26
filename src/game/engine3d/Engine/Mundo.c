@@ -7,6 +7,7 @@
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/fuentes.h"
+#include "scrap/leem3d.h"
 #include "scrap/mundo.h"
 #include "scrap/sistpart.h"
 #include "scrap/utild3d.h"
@@ -521,7 +522,7 @@ void __thiscall CMundo_LoadCieloEscala(CMundo *self, const char *name, const vec
 		CModelo_SetAnim(self->Cielo, 0, 0);
 	}
 	if (!self->EscCielo->fromAmc) {
-		Escena_PostLoad(name, self->EscCielo);
+		SM3_Save(name, self->EscCielo);
 	}
 }
 
@@ -642,7 +643,7 @@ void __thiscall CMundo_LoadSueloEscala(CMundo *self, const char *name, const vec
 	Bsp_Crear();
 	BspQ3_Crear();
 	if (!self->EscSuelo->fromAmc) {
-		Escena_PostLoad(name, self->EscSuelo);
+		SM3_Save(name, self->EscSuelo);
 	}
 	Mundo_LucesMult(self);
 }

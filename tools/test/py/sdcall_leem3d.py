@@ -34,3 +34,6 @@ for base, anim in ((models[0], 'models/elements/antenaa/anm/loop.m3d'), (models[
 	SDTest.Call(0x3197d0, 'iisi', 0x4e23c0 + 0x400000, anim, len(anim) + 1)
 	check('CM3_Load' + fmt((anim,)), lambda anim=anim: m3scene(SDTest.Call(0x2bc360, 'is', anim)[0]))
 	SDTest.Poke(0x4e1ec0, 0)
+# CM3_Save and SM3_Save are not tested: an open for writing is a fatal CHECK in the test setup
+for ok in (0, 1, 0, 0):
+	check('M3D_SetOk' + fmt((ok,)), lambda ok=ok: (SDTest.Call(0x2c0c40, 'vi', ok), SDTest.Peek(0x432a7c, 'i') & 0xff))

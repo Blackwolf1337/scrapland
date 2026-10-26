@@ -556,7 +556,7 @@ made:
 		CEscena_Msg(esc, 1, 0, 0, 0, 0);
 		CEscena_Msg(esc, 2, 0, 0, 0, 0);
 		if (flags & ESCENA_F20) {
-			Escena_PostLoad(name, esc);
+			SM3_Save(name, esc);
 		}
 	}
 	if (*shared || !g_MotorDev) {

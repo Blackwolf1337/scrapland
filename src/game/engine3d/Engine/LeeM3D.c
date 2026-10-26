@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/crt.h"
 #include "scrap/e3dutil.h"
 #include "scrap/escena.h"
 #include "scrap/leedatos.h"
@@ -260,4 +261,68 @@ CEscena *SM3_Load(const char *name) {
 		Escena_Particles(esc);
 	}
 	return esc;
+}
+
+/* the cache path of esc written: the header, then the scene */
+static void M3D_CacheWrite(const char *path, CEscena *esc, const char *id, const char *name, const char *other,
+	byte bAnim) {
+	E3D_LogVerbose(g_FileLog, id[0] == 'C' ? "Save_CM3: %s" : "Save_SM3: %s", path);
+	CArchIO *f = operator_new(sizeof(CArchIO));
+	f = f ? CArchIO_ctor(f, path, "wb") : NULL;
+	if (!f->error) {
+		CArchIO_BeginBlockWrite(f, id);
+		CArchIO_WriteInt(f, M3D_CACHE_VER);
+		CArchIO_WriteInt(f, File_Time(name));
+		CArchIO_WriteInt(f, File_Time(other));
+		CEscena_Write(esc, f, bAnim);
+		CArchIO_EndBlockWrite(f, id);
+		if (!f->error) {
+			CArchIO_dtor(f);
+			operator_delete_sized(f, sizeof(CArchIO));
+			if (bAnim && g_CM3DeleteM3D) {
+				Con_Verbosef("INFO: Delete M3D: %s\n", name);
+				if (crt_remove(name)) {
+					CheckFailed("!unlink( NameM3D )", __FILE__, __TIMESTAMP__, __LINE__);
+				}
+			}
+			return;
+		}
+	}
+	Err_Report(f->err, 0, "\n'%s'", path);
+	CArchIO_dtor(f);
+	operator_delete_sized(f, sizeof(CArchIO));
+}
+
+void CM3_Save(const char *name, CEscena *esc) {
+	char path[260];
+
+	CHECK(g_EscenaAnimPadre);
+	Ruta_Format(path, name, "&U&D&N.CM3");
+	M3D_CacheWrite(path, esc, "CM3", name, g_EscenaAnimPadre->name, 1);
+}
+
+void SM3_Save(const char *name, CEscena *esc) {
+	char path[260], ini[260];
+
+	CHECK(!g_EscenaAnimPadre);
+	if (esc->fromAmc) {
+		CheckFailed("!Escena->ReadFromSM3", __FILE__, __TIMESTAMP__, __LINE__);
+	}
+	if (!g_SM3UseScenes) {
+		return;
+	}
+	Ruta_Format(path, name, "&U&D&N.SM3");
+	Ruta_Format(ini, name, "&U&D&N.INI");
+	M3D_CacheWrite(path, esc, "SM3", name, ini, 0);
+}
+
+void M3D_SetOk(byte ok) {
+	if (ok) {
+		g_M3DOk = 1;
+		return;
+	}
+	if (g_M3DOk) {
+		g_M3DOk = 0;
+		E3D_LogVerbose(g_FileLog, "ERROR: lee_M3D(): '%s'", g_M3DName);
+	}
 }
