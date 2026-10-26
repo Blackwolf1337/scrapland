@@ -414,6 +414,8 @@ SD_IMPORT(CNodoR_UpdateNodo, 0x23f5d0)
 SD_IMPORT(CNodoR_ApplyFX, 0x23f540)
 
 /* module agent: Engine/Animacion (imports below this line) */
+SD_IMPORT(CEVA_ctor, 0x2d33e0)
+SD_IMPORT(Matrix_ToEuler, 0x2392d0)
 
 /* module agent: Engine/AnimGrupo (imports below this line) */
 SD_IMPORT(CEscena_NodoObjeto, 0x24fca0)
