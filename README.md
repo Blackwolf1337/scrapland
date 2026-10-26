@@ -25,7 +25,8 @@ The work is done incrementally with a hook DLL, the re3 method: a proxy `dinput8
 | `third_party/python-1.5.2/` | Python 1.5.2 headers, `COPYRIGHT` |
 | `tools/srcstrings.py` | source string table of the static libraries |
 | `tools/git/pre-commit` | size check hook |
-| `tools/test/` | `prefix.sh`, `wine.sh`, `headless.sh`, `install.sh` (copies the DLL to `game/Bin`), `difftest.sh` (C functions against the originals) |
+| `tools/test/` | `prefix.sh`, `wine.sh`, `headless.sh`, `install.sh` (copies the DLL to `game/Bin`), `difftest.sh` (C functions against the originals, scenarios sdtest, sdcall, sdlevel) |
+| `tools/hookcheck.py` | static checks of the hooks against Scrap.exe (ret, calls, eax) |
 | `include/scrap/` | engine structs and Python headers of the hook DLL |
 | `src/` | hook DLL: `loader/`, `core/`, `py/`, `imports.inc`, `hooks.inc` |
 | `CMakeLists.txt`, `cmake/` | build of the hook DLL, mingw-w64 i686 toolchain file |
