@@ -9,7 +9,7 @@
 # from objdump -d of game/Bin/Scrap.exe. Output only for findings; "calls" has false positives (tables of
 # function pointers, calls the C version leaves out on purpose).
 #
-calls ...]   (default both)|calls ...]   (default both)
+# usage: tools/hookcheck.py [ret|calls|eax|size ...]   (default all)
 import collections, glob, json, os, re, shlex, subprocess, sys
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
