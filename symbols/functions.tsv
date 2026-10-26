@@ -11861,7 +11861,7 @@ rva	size	source	callconv	name	signature
 0034e703	42	ANALYSIS	__cdecl	__copysign	double __cdecl(double _Number, double _Sign)
 0034e72d	30	ANALYSIS	unknown	__copysignf	undefined(void)
 0034e74b	26	DEFAULT	unknown	FUN_0074e74b	
-0034e765	164	USER_DEFINED	__cdecl	crt_fpclass	int __cdecl(double x)
+0034e765	164	ANALYSIS	__cdecl	__fpclass	int __cdecl(double _X)
 0034e809	54	ANALYSIS	__cdecl	__isnan	int __cdecl(double _X)
 0034e83f	209	DEFAULT	unknown	FUN_0074e83f	
 0034e910	31	ANALYSIS	unknown	__nextafter	undefined(void)
