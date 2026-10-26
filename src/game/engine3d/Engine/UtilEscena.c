@@ -6,6 +6,7 @@
 
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
+#include "scrap/fuentes.h"
 #include "scrap/material.h"
 #include "scrap/modelo.h"
 #include "scrap/varios.h"
@@ -426,12 +427,12 @@ void Modelos_Render(void) {
 		if (!vis && g_SortShow < 2) {
 			continue;
 		}
-		Font_SetColor(g_DebugFont, vis & 1 ? 0xffffff : vis ? 0xffff00 : 0xff);
-		Font_Printf(g_DebugFont, SORT_TEXT_X, (float)y + SORT_TEXT_Y, 2, "%s %.2f", m->name, (double)lm->sortKey);
+		Font_SetColor(g_FntTerm8, vis & 1 ? 0xffffff : vis ? 0xffff00 : 0xff);
+		Font_Printf(g_FntTerm8, SORT_TEXT_X, (float)y + SORT_TEXT_Y, 2, "%s %.2f", m->name, (double)lm->sortKey);
 		if (m->sortZBias != 0.0f || m->sortZMult != 1.0f) {
-			Font_SetColor(g_DebugFont, SORT_TEXT_COLOR);
-			float *f = g_DebugFont;
-			Font_Printf(f, f[0], f[1], 2, " %.2f %.2f", (double)m->sortZBias, (double)m->sortZMult);
+			Font_SetColor(g_FntTerm8, SORT_TEXT_COLOR);
+			CFuente3 *f = g_FntTerm8;
+			Font_Printf(f, f->x, f->y, FNT_PRINT_COLOR, " %.2f %.2f", (double)m->sortZBias, (double)m->sortZMult);
 		}
 		n = g_NumModelosRender;
 		y += 6;

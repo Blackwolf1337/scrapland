@@ -6,6 +6,7 @@
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
+#include "scrap/fuentes.h"
 #include "scrap/mundo.h"
 #include "scrap/sistpart.h"
 #include "scrap/utild3d.h"
@@ -418,10 +419,10 @@ void __fastcall CMundo_DrawDummies(CMundo *self) {
 		vec3_t mn = { -50.0f, -50.0f, -50.0f };
 		vec3_t mx = { 50.0f, 50.0f, 50.0f };
 		Debug_DrawBoxM(&m, &mn, &mx, 0xffff00);
-		Debug_Text3D(g_DebugFont, 0.0f, 0.0f, &d->pos, d->ini ? 0xffff : 0xffffff, Game_Ptr(0x3bae88), d->name);
+		Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &d->pos, d->ini ? 0xffff : 0xffffff, Game_Ptr(0x3bae88), d->name);
 		shown++;
 	}
-	Font_PrintfXY(g_DebugFont2, 10.0f, 260.0f, "world dummies: %d / %d", shown, total);
+	Font_PrintfXY(g_FntComic14, 10.0f, 260.0f, "world dummies: %d / %d", shown, total);
 }
 
 void __thiscall CMundo_SetCieloPos(CMundo *self, float pct) {
@@ -717,8 +718,8 @@ int Debug_PuntosDraw(void) {
 	if (!g_PuntosOn) {
 		return 0;
 	}
-	Font_SetColor(g_DebugFont2, 0xff);
-	Font_Printf(g_DebugFont2, 10.0f, 100.0f, 2, "puntos: %d", g_NumPuntos);
+	Font_SetColor(g_FntComic14, 0xff);
+	Font_Printf(g_FntComic14, 10.0f, 100.0f, 2, "puntos: %d", g_NumPuntos);
 	for (int i = 0; i < g_NumPuntos; i++) {
 		const DebugPunto *p = Punto(i);
 		if (-1.0f > p->tipo) {

@@ -268,9 +268,6 @@ void __thiscall RenderCtx_Init(NodoAnimCtx *self, CModelo *m, const vec3_t *scal
 void __thiscall RenderCtx_SetCanal(NodoAnimChannel *self, CAnimSlot *slot);	/* rva 0x23fb10 */
 /* the play state of an animation group */
 void __fastcall CModelo_Render(CModelo *self);				/* rva 0x253610 */
-void __thiscall Font_SetColor(void *font, uint32_t color);		/* rva 0x299980 */
-void Font_Printf(void *font, float x, float y, int arg, const char *fmt, ...);	/* rva 0x29b850 */
-void Font_PrintfXY(void *font, float x, float y, const char *fmt, ...);		/* rva 0x299ce0 */
 CEscena *SM3_Load(const char *name);					/* rva 0x2bc5c0 */
 void Escena_PostLoad(const char *name, CEscena *esc);			/* rva 0x2c0e40 */
 CEscena *Escena_Load(const char *name, int arg, const char *name2);	/* rva 0x2c2d60 */

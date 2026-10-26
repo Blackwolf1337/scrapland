@@ -8,6 +8,7 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
+#include "scrap/fuentes.h"
 #include "scrap/textura.h"
 #include "scrap/mundo.h"
 #include "scrap/sistpart.h"
@@ -793,7 +794,7 @@ void __thiscall CSistPart_Render(CSistPart *self, void *dev, CNodoR *r) {
 			SectorVis_Draw(&self->vis, &pos, vis, 0, self->nodo->name);
 		}
 		if (g_SistPartDebug > 2) {
-			Debug_Text3D(g_DebugFont, 4.0f, -12.0f, &pos, 0x8000, Game_Ptr(0x3bae88), self->type);
+			Debug_Text3D(g_FntTerm8, 4.0f, -12.0f, &pos, 0x8000, Game_Ptr(0x3bae88), self->type);
 		}
 	}
 	if (self->inView) {

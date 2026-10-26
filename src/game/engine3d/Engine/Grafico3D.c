@@ -5,6 +5,7 @@
 
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
+#include "scrap/fuentes.h"
 #include "scrap/grafico3d.h"
 #include "scrap/mallatri.h"
 #include "scrap/sistpart.h"
@@ -111,7 +112,7 @@ void __thiscall CGrafico3D_Render(CGrafico3D *self, void *dev, CNodoR *r) {
 			SectorVis_Draw(&self->vis, &self->pos, vis, 0, self->nodo->name);
 		}
 		if (g_ShowSprites > 2) {
-			Debug_Text3D(g_DebugFont, 4.0f, -12.0f, &self->pos, 0x8000, Game_Ptr(0x3bae88), self->nodo->name);
+			Debug_Text3D(g_FntTerm8, 4.0f, -12.0f, &self->pos, 0x8000, Game_Ptr(0x3bae88), self->nodo->name);
 		}
 		if (!vis) {
 			return;

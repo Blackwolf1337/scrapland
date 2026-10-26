@@ -31,9 +31,6 @@
 #define g_TimeMs GAME_DATA(uint32_t, 0x4a8ef0)
 /* video var DiffuseMod4x: colors divided by 4 */
 #define g_DiffuseMod4x GAME_DATA(int, 0x431be8)
-/* the debug fonts (their cursor x, y first) */
-#define g_DebugFont GAME_DATA(void *, 0x4d6dcc)
-#define g_DebugFont2 GAME_DATA(void *, 0x4d6dc8)
 
 #define MAX_RUTA 0x104
 

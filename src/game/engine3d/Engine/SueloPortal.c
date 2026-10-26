@@ -7,6 +7,7 @@
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
+#include "scrap/fuentes.h"
 #include "scrap/mundo.h"
 #include "scrap/portal.h"
 #include "scrap/sistpart.h"
@@ -59,7 +60,7 @@ void __thiscall SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible,
 
 	(void)name;
 	if (!(self->flags & SECTORVIS_VALID)) {
-		Debug_Text3D(g_DebugFont2, 0.0f, 0.0f, pos, 0x808080, Game_Ptr(0x3dd0ec));	/* "[-]" */
+		Debug_Text3D(g_FntComic14, 0.0f, 0.0f, pos, 0x808080, Game_Ptr(0x3dd0ec));	/* "[-]" */
 		return;
 	}
 	uint32_t color;
@@ -77,7 +78,7 @@ void __thiscall SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible,
 	}
 	color = visible ? on : off;
 draw:
-	Debug_Text3D(g_DebugFont2, 0.0f, 0.0f, pos, color, Game_Ptr(0x3dd0f0), self->sector,	/* "%d%s" */
+	Debug_Text3D(g_FntComic14, 0.0f, 0.0f, pos, color, Game_Ptr(0x3dd0f0), self->sector,	/* "%d%s" */
 		(self->flags & SECTORVIS_CACHED) ? Game_Ptr(0x3a3228) : Game_Ptr(0x3ca94c));	/* "", "*" */
 }
 

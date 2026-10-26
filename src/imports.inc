@@ -386,7 +386,6 @@ SD_IMPORT(NodeFX_New, 0x2b2cc0)
 /* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
 SD_IMPORT(CObjBase3D_SetNodo, 0x2cad70)
 SD_IMPORT(CSuelo_TraceSeg, 0x26f120)
-SD_IMPORT(Debug_Text3D, 0x299d50)
 SD_IMPORT(SistPart_Draw, 0x2b7150)
 SD_IMPORT(SistPart_Draw2, 0x2b55d0)
 
@@ -409,8 +408,10 @@ SD_IMPORT(BspQ3_Render, 0x2c9d90)
 SD_IMPORT(Sectores_Crear, 0x26d5a0)
 SD_IMPORT(Portales_SetView, 0x26db80)
 SD_IMPORT(CSuelo_FreeNodos, 0x261530)
-SD_IMPORT(Font_PrintfXY, 0x299ce0)
 
+/* src/game/engine3d/Engine/Fuentes.c (Engine/fuentes.cpp, include/scrap/fuentes.h) */
+SD_IMPORT(CFuente3_ctor, 0x2984f0)
+SD_IMPORT(CFuente3_PrintContorno, 0x29a530)
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
 SD_IMPORT(RenderLock_InitD3D, 0x2a48f0)
 SD_IMPORT(ListaVert_InitD3D, 0x2404f0)
@@ -487,8 +488,6 @@ SD_IMPORT(RenderCtx_Init, 0x23fac0)
 SD_IMPORT(RenderCtx_SetCanal, 0x23fb10)
 SD_IMPORT(CEscena_Shared, 0x24ecb0)
 SD_IMPORT(CModelo_Render, 0x253610)
-SD_IMPORT(Font_SetColor, 0x299980)
-SD_IMPORT(Font_Printf, 0x29b850)
 SD_IMPORT(SM3_Load, 0x2bc5c0)
 SD_IMPORT(Escena_PostLoad, 0x2c0e40)
 SD_IMPORT(Escena_Load, 0x2c2d60)
