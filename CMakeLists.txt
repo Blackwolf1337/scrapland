@@ -19,6 +19,7 @@ endif()
 add_library(dinput8 SHARED
 	src/loader/dinput8.c
 	src/loader/dinput8.def
+	src/core/d3dlog.c
 	src/core/game.c
 	src/core/hook.c
 	src/core/imports.c

@@ -17,6 +17,8 @@
  * SDTest.Poke(rva, value) writes an int.
  * SDTest.OutFunc() is the address of a cdecl void(const char *) that collects text, SDTest.Out() returns and clears
  * that text (for the output callbacks of the engine).
+ * SDTest.D3DLog(on) puts a proxy in place of the D3D device that writes its calls into that text (src/core/d3dlog.c),
+ * SDTest.D3DLog(0) the device back.
  */
 #include <stdio.h>
 #include <string.h>
@@ -105,7 +107,7 @@ static int ints[MAX_OUT];
 static double doubles[MAX_OUT];
 static float floats[MAX_OUT][MAX_FLOATS];
 static int nFloats[MAX_OUT];
-static char out[0x4000];
+static char out[0x40000];
 static size_t outLen;
 
 static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
@@ -314,12 +316,27 @@ static PyObject *SDTest_Out(PyObject *self, PyObject *args) {
 	return r;
 }
 
+void D3DLog_Set(void (*out)(const char *s));
+
+static PyObject *SDTest_D3DLog(PyObject *self, PyObject *args) {
+	(void)self;
+	int on;
+
+	if (!PyArg_ParseTuple(args, "i", &on)) {
+		return NULL;
+	}
+	D3DLog_Set(on ? SDTest_Collect : NULL);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static PyMethodDef sdtest_methods[] = {
 	{ "Call", SDTest_Call, 1, NULL },
 	{ "Peek", SDTest_Peek, 1, NULL },
 	{ "Poke", SDTest_Poke, 1, NULL },
 	{ "OutFunc", SDTest_OutFunc, 1, NULL },
 	{ "Out", SDTest_Out, 1, NULL },
+	{ "D3DLog", SDTest_D3DLog, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
