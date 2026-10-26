@@ -1,7 +1,7 @@
 /*
  * Materials of the engine3d (original sources Engine/Material.cpp, engine3d/engine/Material.h): CMaterial with its
  * parameters and up to MAPA_TOTAL texture maps (CMapa), kept in lists (CListaMat) that can nest (a material may own
- * a list of sub materials). The textures themselves belong to the texture manager of the engine (CTextura, not
+ * a list of sub materials). The textures themselves belong to the texture manager of the engine (CTextura,
  * decompiled), the maps hold references to them.
  */
 #ifndef SCRAP_MATERIAL_H

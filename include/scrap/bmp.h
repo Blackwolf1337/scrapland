@@ -37,6 +37,9 @@ uint32_t Color_Lerp(uint32_t a, uint32_t b, float t);
 
 uint32_t *__thiscall CBmp_Pixel(const CBmp *self, uint32_t x, uint32_t y);
 void __thiscall CBmp_Create(CBmp *self, int ancho, int alto);
+/* the constructor with a size (new pixels) and the deleting destructor, copies in Engine/Textura.cpp */
+CBmp *__thiscall CBmp_ctor(CBmp *self, int ancho, int alto);
+CBmp *__thiscall CBmp_Delete(CBmp *self, byte flags);
 void __thiscall CBmp_Fill(CBmp *self, uint32_t color);
 /* orig at (ox, oy) size w x h into (x, y), only the channels in mask (1 r, 2 g, 4 b, 8 a) */
 void __thiscall CBmp_Copy(CBmp *self, int x, int y, const CBmp *orig, int ox, int oy, int w, int h, uint32_t mask);
