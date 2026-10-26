@@ -419,6 +419,10 @@ SD_IMPORT(Portales_SetView, 0x26db80)
 SD_IMPORT(CSuelo_FreeNodos, 0x261530)
 SD_IMPORT(Font_PrintfXY, 0x299ce0)
 
+/* src/game/engine3d/Engine/Texto.c (called from Engine/texto.cpp, include/scrap/texto.h) */
+SD_IMPORT(Render_ToScreen, 0x24cf00)
+SD_IMPORT(Eng_Printf, 0x2170d0)
+
 /* src/game/engine3d/Engine/UtilD3D.c (called from Engine/util_d3d.cpp, include/scrap/utild3d.h) */
 SD_IMPORT(Render_Line, 0x24b960)
 

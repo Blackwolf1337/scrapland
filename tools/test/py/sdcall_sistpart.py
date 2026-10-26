@@ -33,7 +33,7 @@ def spparts(sp, active):
 	return r
 # the system: the parameters (without the texture string), the state
 def spget(sp):
-	return (spints(sp + 0xc, 0x33), spb(sp + 0xd4), spb(sp + 0xd5), spb(sp + 0xd6), spb(sp + 0xdc), spb(sp + 0xdd), spints(sp + 0xe0, 3),
+	return (spints(sp + 0xc, 0x32), spb(sp + 0xd4), spb(sp + 0xd5), spb(sp + 0xd6), spb(sp + 0xdc), spb(sp + 0xdd), spints(sp + 0xe0, 3),
 		spb(sp + 0xec), spints(sp + 0xf0, 3), spi(sp + 0xfc) != 0, spb(sp + 0x10c), spb(sp + 0x10d),
 		SDTest.Peek(sp + 0x110, '@p'), spi(sp + 0x118) != 0, spb(sp + 0x140), spb(sp + 0x141), spb(sp + 0x142),
 		spb(sp + 0x14c), spb(sp + 0x14d))

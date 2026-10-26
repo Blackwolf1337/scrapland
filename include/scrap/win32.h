@@ -27,6 +27,13 @@ typedef int(__stdcall *rectbrush_t)(void *dc, const exe_rect *rect, void *brush)
 #define exe_FrameRect GAME_DATA(rectbrush_t, 0x3a139c)
 #define exe_CreateSolidBrush GAME_DATA(createsolidbrush_t, 0x3a107c)
 #define exe_DeleteObject GAME_DATA(deleteobject_t, 0x3a1080)
+typedef uint32_t(__stdcall *settextcolor_t)(void *dc, uint32_t color);
+typedef int(__stdcall *setbkmode_t)(void *dc, int mode);
+typedef int(__stdcall *exttextout_t)(void *dc, int x, int y, unsigned options, const exe_rect *rect, const char *s,
+	unsigned n, const int *dx);
+#define exe_SetTextColor GAME_DATA(settextcolor_t, 0x3a1070)
+#define exe_SetBkMode GAME_DATA(setbkmode_t, 0x3a106c)
+#define exe_ExtTextOutA GAME_DATA(exttextout_t, 0x3a1094)
 
 /* kernel32 */
 typedef uint32_t(__stdcall *getfileattributes_t)(const char *name);
@@ -34,6 +41,8 @@ typedef int(__stdcall *setfileattributes_t)(const char *name, uint32_t attr);
 
 #define exe_GetFileAttributesA GAME_DATA(getfileattributes_t, 0x3a1284)
 #define exe_SetFileAttributesA GAME_DATA(setfileattributes_t, 0x3a1288)
+typedef int(__stdcall *lstrlen_t)(const char *s);
+#define exe_lstrlenA GAME_DATA(lstrlen_t, 0x3a12b8)
 
 /* winmm */
 typedef uint32_t(__stdcall *timegettime_t)(void);

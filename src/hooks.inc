@@ -1713,6 +1713,16 @@ SD_HOOK(CNiebla_Apply, 0x278420, 600)
 SD_HOOK(CNiebla_SetColor, 0x278680, 26)
 SD_HOOK(CNiebla_SetRango, 0x2786a0, 27)
 
+/* src/game/engine3d/Engine/Texto.c (Engine/texto.cpp, debug text and the message stack) */
+SD_HOOK(Texto_Draw, 0x2786c0, 101)
+SD_HOOK(Texto_DrawPila, 0x278730, 232)
+SD_HOOK(Texto_Push, 0x278820, 86)
+SD_HOOK(Texto_Pop, 0x278880, 63)
+SD_HOOK(Texto_Printf3D, 0x2788c0, 130)
+SD_HOOK(Texto_PrintfRel, 0x278950, 107)
+SD_HOOK(Texto_Printf, 0x2789c0, 105)
+SD_HOOK(Texto_Mensaje, 0x278a30, 75)
+
 /* src/game/engine3d/Engine/Mundo.c (Engine/mundo.cpp, the world and the debug points) */
 SD_HOOK(CMundo_ctor, 0x269210, 270)
 SD_HOOK(MundoDummy_ctorNodo, 0x269320, 342)

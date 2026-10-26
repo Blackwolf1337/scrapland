@@ -6508,7 +6508,7 @@ rva	size	source	callconv	name	signature
 00216d10	66	DEFAULT	unknown	FUN_00616d10	
 00216d60	446	USER_DEFINED	unknown	Engine_WorldToScreen	undefined(void)
 00216f20	430	DEFAULT	unknown	FUN_00616f20	
-002170d0	269	DEFAULT	unknown	FUN_006170d0	
+002170d0	269	USER_DEFINED	unknown	Eng_Printf	
 00217280	121	DEFAULT	__thiscall	FUN_00617280	
 00217300	716	DEFAULT	unknown	FUN_00617300	
 002175d0	133	USER_DEFINED	unknown	DVF_Process	undefined(void)
@@ -7266,7 +7266,7 @@ rva	size	source	callconv	name	signature
 0024cdd0	6	USER_DEFINED	__cdecl	Render_GetEyePos	void * __cdecl(void)
 0024cde0	221	DEFAULT	unknown	FUN_0064cde0	
 0024cec0	25	USER_DEFINED	__cdecl	E3D_FlushBatch	void __cdecl(void)
-0024cf00	467	DEFAULT	unknown	FUN_0064cf00	
+0024cf00	467	USER_DEFINED	unknown	Render_ToScreen	
 0024d0e0	437	DEFAULT	unknown	FUN_0064d0e0	
 0024d2c0	24	DEFAULT	unknown	FUN_0064d2c0	
 0024d2e0	152	USER_DEFINED	__cdecl	Sph_IsVisible	byte __cdecl(float *center, float radius, int arg)
@@ -7769,14 +7769,14 @@ rva	size	source	callconv	name	signature
 00278420	600	USER_DEFINED	__fastcall	CNiebla_Apply	void __fastcall(void * self)
 00278680	26	USER_DEFINED	__thiscall	CNiebla_SetColor	void __thiscall(uint rgba, float intens)
 002786a0	27	USER_DEFINED	__thiscall	CNiebla_SetRango	void __thiscall(float inicio, float fin)
-002786c0	101	DEFAULT	unknown	FUN_006786c0	
-00278730	232	DEFAULT	unknown	FUN_00678730	
-00278820	86	DEFAULT	unknown	FUN_00678820	
-00278880	63	DEFAULT	unknown	FUN_00678880	
-002788c0	130	DEFAULT	unknown	FUN_006788c0	
-00278950	107	DEFAULT	unknown	FUN_00678950	
-002789c0	105	DEFAULT	unknown	FUN_006789c0	
-00278a30	75	DEFAULT	unknown	FUN_00678a30	
+002786c0	101	USER_DEFINED	__cdecl	Texto_Draw	void __cdecl(int x, int y, char * s)
+00278730	232	USER_DEFINED	__cdecl	Texto_DrawPila	void __cdecl(void)
+00278820	86	USER_DEFINED	__cdecl	Texto_Push	void * __cdecl(void)
+00278880	63	USER_DEFINED	__cdecl	Texto_Pop	void __cdecl(void)
+002788c0	130	USER_DEFINED	__cdecl	Texto_Printf3D	void __cdecl(void * pos, char * fmt, int arg)
+00278950	107	USER_DEFINED	__cdecl	Texto_PrintfRel	void __cdecl(int dx, int dy, char * fmt, int arg)
+002789c0	105	USER_DEFINED	__cdecl	Texto_Printf	void __cdecl(int x, int y, char * fmt, int arg)
+00278a30	75	USER_DEFINED	__cdecl	Texto_Mensaje	void __cdecl(uint ms, char * fmt, int arg)
 00278a80	73	DEFAULT	unknown	FUN_00678a80	
 00278ad0	12	DEFAULT	unknown	FUN_00678ad0	
 00278ae0	111	DEFAULT	unknown	FUN_00678ae0	
