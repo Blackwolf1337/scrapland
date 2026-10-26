@@ -1387,6 +1387,8 @@ SD_HOOK(CTablaHash_GetList, 0x2d0b70, 174)
 SD_HOOK(CTablaHash_Slot, 0x2d0c20, 109)
 
 /* src/game/engine3d/Engine/LeeM3D.c */
+SD_HOOK(CM3_Load, 0x2bc360, 593)
+SD_HOOK(SM3_Load, 0x2bc5c0, 641)
 SD_HOOK(M3D_Label, 0x2bc850, 204)
 SD_HOOK(M3D_ReadTransform, 0x2bca60, 325)
 SD_HOOK(M3D_ReadQuat, 0x2bcbb0, 445)

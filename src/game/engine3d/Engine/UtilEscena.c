@@ -6,13 +6,12 @@
 
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
+#include "scrap/leem3d.h"
 #include "scrap/fuentes.h"
 #include "scrap/material.h"
 #include "scrap/modelo.h"
 #include "scrap/varios.h"
 
-#define g_EscenaAnimPadre GAME_DATA(CEscena *, 0x4e1ec0)	/* while crear_animacion makes its scene */
-#define g_EscenaLODPadre GAME_DATA(CEscena *, 0x4e1ec4)	/* while a LOD model is made */
 #define g_SortModels GAME_DATA(int, 0x4ae790)	/* R_SortModels */
 #define g_SortShow GAME_DATA(int, 0x4ae7a8)	/* R_SortShow */
 #define g_SortInvert GAME_DATA(int, 0x4ae7c0)	/* R_SortInvert */

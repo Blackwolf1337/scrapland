@@ -3,9 +3,13 @@
  */
 #include <string.h>
 
+#include "scrap/console.h"
 #include "scrap/e3dutil.h"
+#include "scrap/escena.h"
 #include "scrap/leedatos.h"
 #include "scrap/leem3d.h"
+#include "scrap/material.h"
+#include "scrap/varios.h"
 
 /* a binary string: its length, then the characters */
 static void M3D_ReadBinString(char *dest, int size) {
@@ -174,4 +178,86 @@ void M3D_ReadIndex(int expected) {
 		CHECK(*g_LeeCad == ':');
 		g_LeeCad++;
 	}
+}
+
+/* the cache path of name opened and its header checked: the open file positioned after it, NULL when there is none
+ * or it is out of date while the M3D can make it again */
+static CArchIO *M3D_CacheOpen(const char *path, const char *name, const char *id, int checkTime, const char *other) {
+	CArchIO *f = operator_new(sizeof(CArchIO));
+	f = f ? CArchIO_ctor(f, path, "rb") : NULL;
+	if (f->error) {
+		CArchIO_dtor(f);
+		operator_delete_sized(f, sizeof(CArchIO));
+		return NULL;
+	}
+	E3D_LogDebug(g_FileLog, id[0] == 'C' ? "CM3: %s" : "SM3: %s", path);
+	if (CArchIO_BeginBlock(f, id)) {
+		CheckFailed(id[0] == 'C' ? "f->leer_ini_bloque( \"CM3\" ) == 0" : "f->leer_ini_bloque( \"SM3\" ) == 0",
+			__FILE__, __TIMESTAMP__, __LINE__);
+	}
+	int ver = CArchIO_ReadInt(f);
+	int timeM3D = CArchIO_ReadInt(f);
+	int timeOther = CArchIO_ReadInt(f);
+	if ((checkTime && (File_TimeChanged(timeM3D, name, 2) || File_TimeChanged(timeOther, other, 2))) ||
+		ver != M3D_CACHE_VER) {
+		if (File_Exists(name)) {
+			CArchIO_Finish(f);
+			CArchIO_dtor(f);
+			operator_delete_sized(f, sizeof(CArchIO));
+			return NULL;
+		}
+		Con_Warnf("WARN: Could not rebuild: %s\n", path);
+	}
+	return f;
+}
+
+/* the scene read from the open cache, the file closed */
+static CEscena *M3D_CacheRead(CArchIO *f, const char *escName, const char *id, byte bAnim, byte fromSM3) {
+	CEscena *esc = operator_new(sizeof(CEscena));
+	esc = esc ? CEscena_ctor(esc) : NULL;
+	Cad_Set(&esc->name, escName);
+	if (fromSM3) {
+		esc->fromAmc = 1;
+	}
+	CEscena_Read(esc, f, bAnim);
+	CArchIO_Error(f, id);
+	CHECK(!f->error);
+	CArchIO_dtor(f);
+	operator_delete_sized(f, sizeof(CArchIO));
+	return esc;
+}
+
+CEscena *CM3_Load(const char *name) {
+	char path[260];
+
+	CHECK(g_EscenaAnimPadre);
+	Ruta_Format(path, name, "&U&D&N.CM3");
+	if (!File_Exists(path)) {
+		return NULL;
+	}
+	CArchIO *f = M3D_CacheOpen(path, name, "CM3", g_CM3CheckTime, g_EscenaAnimPadre->name);
+	return f ? M3D_CacheRead(f, g_M3DName, "CM3", 1, 0) : NULL;
+}
+
+CEscena *SM3_Load(const char *name) {
+	char path[260], ini[260];
+
+	CHECK(!g_EscenaAnimPadre);
+	if (g_SM3UseScenes != 1) {
+		return NULL;
+	}
+	Ruta_Format(path, name, "&U&D&N.SM3");
+	Ruta_Format(ini, name, "&U&D&N.INI");
+	if (!File_Exists(path)) {
+		return NULL;
+	}
+	CArchIO *f = M3D_CacheOpen(path, name, "SM3", g_SM3CheckTime, ini);
+	if (!f) {
+		return NULL;
+	}
+	CEscena *esc = M3D_CacheRead(f, name, "SM3", 0, 1);
+	if (!g_EscenaLODPadre) {
+		Escena_Particles(esc);
+	}
+	return esc;
 }

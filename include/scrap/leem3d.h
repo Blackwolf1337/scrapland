@@ -9,6 +9,7 @@
 
 #include "scrap/game.h"
 #include "scrap/mathlib.h"
+#include "scrap/nodo3d.h"
 
 #define M3D_CAD 0x400
 
@@ -16,6 +17,16 @@
 #define g_M3DLabels GAME_DATA(byte, 0x4e1fa5)	/* text: lines start with the label; binary: labels stored */
 #define g_M3DCad ((char *)Game_Ptr(0x4e1fc0))	/* M3D_CAD bytes, strings without a destination */
 #define g_M3DName ((char *)Game_Ptr(0x4e23c0))	/* the file being read, for messages */
+/* the scene of the model while an animation of it (lee_M3D_Estatica) or a LOD model of it is read */
+#define g_EscenaAnimPadre GAME_DATA(CEscena *, 0x4e1ec0)
+#define g_EscenaLODPadre GAME_DATA(CEscena *, 0x4e1ec4)
+/* the binary caches of the M3D files: .CM3 of the animations, .SM3 of the models, with the version and the
+ * times of the M3D and the model (CM3) or the .INI (SM3) */
+#define M3D_CACHE_VER 0x6515f8
+#define g_CM3CheckTime GAME_DATA(int, 0x4e1f68)		/* CM3_CheckTime */
+#define g_CM3UseScenes GAME_DATA(int, 0x4e1f20)		/* CM3_UseScenes 0, 1, 2 */
+#define g_SM3CheckTime GAME_DATA(int, 0x4e1f38)		/* SM3_CheckTime */
+#define g_SM3UseScenes GAME_DATA(int, 0x4e1f98)		/* SM3_UseScenes 0, 1, 2 */
 
 /* a transform of the scene nodes ("MT:" blocks) */
 typedef struct m3dTransform_t {
@@ -45,5 +56,11 @@ void M3D_ReadQuat(const char *tok, quat_t *q, byte swapYZ);
 void M3D_ReadTransform(const char *name, m3dTransform_t *mt);
 /* an index line "n:", fatal if it is not expected */
 void M3D_ReadIndex(int expected);
+/* the animation scene of the .CM3 of name for g_EscenaAnimPadre, NULL without a valid one */
+CEscena *CM3_Load(const char *name);
+/* the scene of the .SM3 of name, NULL without a valid one or with SM3_UseScenes not 1 */
+CEscena *SM3_Load(const char *name);
+/* rva 0x2c2650: the particle systems of model_particles.ini for the scene */
+void Escena_Particles(CEscena *esc);
 
 #endif
