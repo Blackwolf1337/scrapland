@@ -7109,75 +7109,76 @@ rva	size	source	callconv	name	signature
 0023f890	557	DEFAULT	unknown	FUN_0063f890	
 0023fac0	79	DEFAULT	unknown	FUN_0063fac0	
 0023fb10	179	DEFAULT	unknown	FUN_0063fb10	
-0023fbd0	37	DEFAULT	unknown	FUN_0063fbd0	
-0023fc00	95	DEFAULT	unknown	FUN_0063fc00	
-0023fc60	1100	DEFAULT	unknown	FUN_0063fc60	
-002400b0	475	DEFAULT	unknown	FUN_006400b0	
-00240290	255	DEFAULT	unknown	FUN_00640290	
-00240390	326	DEFAULT	unknown	FUN_00640390	
+0023fbd0	37	USER_DEFINED	__fastcall	CListaVert_ctor	void * __fastcall(void *self)
+0023fc00	95	USER_DEFINED	__fastcall	CListaVert_dtor	void __fastcall(void *self)
+0023fc60	1100	USER_DEFINED	__cdecl	ListaVert_Strip	byte __cdecl(void *out, void *in, ushort *tris, int nTri)
+002400b0	475	USER_DEFINED	__thiscall	CListaVert_Read	void __thiscall(CArchIO *f)
+00240290	255	USER_DEFINED	__thiscall	CListaVert_Write	void __thiscall(CArchIO *f)
+00240390	326	USER_DEFINED	__cdecl	VertCache_Optimize	byte __cdecl(ushort *tris, int nTri)
 002404e0	1	DEFAULT	unknown	FUN_006404e0	
 002404f0	1	DEFAULT	unknown	FUN_006404f0	
-00240500	1348	DEFAULT	unknown	FUN_00640500	
-00240a50	1980	DEFAULT	unknown	FUN_00640a50	
-00241210	65	DEFAULT	unknown	FUN_00641210	
-00241260	351	DEFAULT	unknown	FUN_00641260	
-002413c0	398	DEFAULT	unknown	FUN_006413c0	
-002415a0	128	DEFAULT	unknown	FUN_006415a0	
-00241670	114	DEFAULT	unknown	FUN_00641670	
-00241710	223	DEFAULT	unknown	FUN_00641710	
-002417f0	89	DEFAULT	unknown	FUN_006417f0	
-00241850	106	DEFAULT	unknown	FUN_00641850	
+00240500	1348	USER_DEFINED	__thiscall	CListaVert_Pack	void __thiscall(int frmt, float posScale, float texScale)
+00240a50	1980	USER_DEFINED	__thiscall	CListaVert_ToXBox	void __thiscall(float posScale, float texScale, byte tex2)
+00241210	65	USER_DEFINED	__thiscall	CListaVert_PackTex1	void __thiscall(float posScale, float texScale)
+00241260	351	USER_DEFINED	__thiscall	CListaVert_FromXBox	void __thiscall(float posScale, float texScale)
+002413c0	398	USER_DEFINED	__cdecl	ListaVert_FormatFVF	uint __cdecl(int frmt)
+002415a0	128	USER_DEFINED	__cdecl	ListaVert_FormatSize	int __cdecl(int frmt)
+00241670	114	USER_DEFINED	__cdecl	ListaVert_FormatName	char * __cdecl(int frmt)
+00241710	223	USER_DEFINED	__cdecl	ListaVert_PackNormal	uint __cdecl(float *n)
+002417f0	89	USER_DEFINED	__cdecl	ListaVert_UnpackNormal	float * __cdecl(float *out, uint packed)
+00241850	106	USER_DEFINED	__thiscall	CListaVert_SetColor	void __thiscall(uint and, uint or)
 002418c0	1346	DEFAULT	unknown	FUN_006418c0	
-00241e10	272	DEFAULT	unknown	FUN_00641e10	
+00241e10	272	USER_DEFINED	__thiscall	CListaVert_GetExtents	void __thiscall(float *ext, byte reset)
 00241f20	751	DEFAULT	unknown	FUN_00641f20	
-00242210	127	DEFAULT	unknown	FUN_00642210	
-00242290	110	DEFAULT	unknown	FUN_00642290	
-00242300	119	DEFAULT	unknown	FUN_00642300	
-00242380	123	DEFAULT	unknown	FUN_00642380	
-00242400	88	DEFAULT	unknown	FUN_00642400	
-00242460	12	DEFAULT	unknown	FUN_00642460	
-00242470	126	DEFAULT	unknown	FUN_00642470	
-002424f0	80	DEFAULT	unknown	FUN_006424f0	
-00242540	47	DEFAULT	unknown	FUN_00642540	
-00242570	439	DEFAULT	unknown	FUN_00642570	
-00242770	51	DEFAULT	unknown	FUN_00642770	
-002427c0	51	DEFAULT	unknown	FUN_006427c0	
-00242810	61	DEFAULT	unknown	FUN_00642810	
-00242870	47	DEFAULT	unknown	FUN_00642870	
-002428a0	51	DEFAULT	unknown	FUN_006428a0	
-002428f0	58	DEFAULT	unknown	FUN_006428f0	
-00242950	68	DEFAULT	unknown	FUN_00642950	
-002429c0	61	DEFAULT	unknown	FUN_006429c0	
-00242a30	65	DEFAULT	unknown	FUN_00642a30	
-00242aa0	48	DEFAULT	unknown	FUN_00642aa0	
-00242ad0	47	DEFAULT	unknown	FUN_00642ad0	
-00242b00	58	DEFAULT	unknown	FUN_00642b00	
-00242b60	46	DEFAULT	unknown	FUN_00642b60	
-00242b90	51	DEFAULT	unknown	FUN_00642b90	
-00242be0	12	DEFAULT	unknown	FUN_00642be0	
-00242bf0	298	DEFAULT	unknown	FUN_00642bf0	
-00242d20	102	DEFAULT	unknown	FUN_00642d20	
-00242d90	96	DEFAULT	unknown	FUN_00642d90	
-00242df0	95	DEFAULT	unknown	FUN_00642df0	
-00242e50	93	DEFAULT	unknown	FUN_00642e50	
-00242eb0	93	DEFAULT	unknown	FUN_00642eb0	
-00242f10	95	DEFAULT	unknown	FUN_00642f10	
-00242f70	95	DEFAULT	unknown	FUN_00642f70	
-00242fd0	96	DEFAULT	unknown	FUN_00642fd0	
-00243030	96	DEFAULT	unknown	FUN_00643030	
+00242210	127	USER_DEFINED	__thiscall	CListaVert_SetLTex1	void __thiscall(uint i, void *v)
+00242290	110	USER_DEFINED	__thiscall	CListaVert_SetTex1	void __thiscall(uint i, void *v)
+00242300	119	USER_DEFINED	__thiscall	CListaVert_SetTex1B1	void __thiscall(uint i, void *v)
+00242380	123	USER_DEFINED	__thiscall	CListaVert_SetTex2	void __thiscall(uint i, void *v)
+00242400	88	USER_DEFINED	__thiscall	CListaVert_SetFormat	void __thiscall(int frmt)
+00242460	12	USER_DEFINED	__fastcall	CListaVert_FormatName	char * __fastcall(void *self)
+00242470	126	USER_DEFINED	__thiscall	CListaVert_Alloc	void __thiscall(int n, byte realloc)
+002424f0	80	USER_DEFINED	__thiscall	CListaVert_Swap	void __thiscall(void *other)
+00242540	47	USER_DEFINED	__fastcall	CListaVert_Free	void __fastcall(void *self)
+00242570	439	USER_DEFINED	__thiscall	CListaVert_GetField	void * __thiscall(int f, uint i)
+00242770	51	USER_DEFINED	__thiscall	VertLTex1_Field	void * __thiscall(int f)
+002427c0	51	USER_DEFINED	__thiscall	VertLTex1N_Field	void * __thiscall(int f)
+00242810	61	USER_DEFINED	__thiscall	VertLTex1NXBox_Field	void * __thiscall(int f)
+00242870	47	USER_DEFINED	__thiscall	VertLTex1XBox_Field	void * __thiscall(int f)
+002428a0	51	USER_DEFINED	__thiscall	VertLTex2_Field	void * __thiscall(int f)
+002428f0	58	USER_DEFINED	__thiscall	VertLTex2N_Field	void * __thiscall(int f)
+00242950	68	USER_DEFINED	__thiscall	VertLTex2NXBox_Field	void * __thiscall(int f)
+002429c0	61	USER_DEFINED	__thiscall	VertLTex2XBox_Field	void * __thiscall(int f)
+00242a30	65	USER_DEFINED	__thiscall	VertLTex3_Field	void * __thiscall(int f)
+00242aa0	48	USER_DEFINED	__thiscall	VertTLTex1_Field	void * __thiscall(int f)
+00242ad0	47	USER_DEFINED	__thiscall	VertTex1_Field	void * __thiscall(int f)
+00242b00	58	USER_DEFINED	__thiscall	VertTex1CXBox_Field	void * __thiscall(int f)
+00242b60	46	USER_DEFINED	__thiscall	VertTex1XBox_Field	void * __thiscall(int f)
+00242b90	51	USER_DEFINED	__thiscall	VertTex2_Field	void * __thiscall(int f)
+00242be0	12	USER_DEFINED	__fastcall	CListaVert_FVF	uint __fastcall(void *self)
+00242bf0	298	USER_DEFINED	__thiscall	CListaVert_GetTex1	void * __thiscall(void *out, uint i)
+00242d20	102	USER_DEFINED	__thiscall	CListaVert_LTex1	byte * __thiscall(uint i)
+00242d90	96	USER_DEFINED	__thiscall	CListaVert_LTex1N	byte * __thiscall(uint i)
+00242df0	95	USER_DEFINED	__thiscall	CListaVert_LTex2	byte * __thiscall(uint i)
+00242e50	93	USER_DEFINED	__thiscall	CListaVert_LTex2N	byte * __thiscall(uint i)
+00242eb0	93	USER_DEFINED	__thiscall	CListaVert_LTex3	byte * __thiscall(uint i)
+00242f10	95	USER_DEFINED	__thiscall	CListaVert_TLTex1	byte * __thiscall(uint i)
+00242f70	95	USER_DEFINED	__thiscall	CListaVert_Tex1	byte * __thiscall(uint i)
+00242fd0	96	USER_DEFINED	__thiscall	CListaVert_Tex1B1	byte * __thiscall(uint i)
+00243030	96	USER_DEFINED	__thiscall	CListaVert_Tex2	byte * __thiscall(uint i)
 00243090	5	DEFAULT	unknown	FUN_00643090	
-002430a0	376	DEFAULT	unknown	FUN_006430a0	
-00243220	254	DEFAULT	unknown	FUN_00643220	
-00243320	573	DEFAULT	unknown	FUN_00643320	
-00243560	177	DEFAULT	unknown	FUN_00643560	
-00243620	67	DEFAULT	unknown	FUN_00643620	
-00243670	76	DEFAULT	unknown	FUN_00643670	
-002436c0	67	DEFAULT	unknown	FUN_006436c0	
-00243710	12	DEFAULT	unknown	FUN_00643710	
-00243720	406	DEFAULT	unknown	FUN_00643720	
-002438c0	135	DEFAULT	unknown	FUN_006438c0	
-00243990	51	DEFAULT	unknown	FUN_00643990	
-002439d0	36	DEFAULT	unknown	FUN_006439d0	
+002430a0	376	USER_DEFINED	__cdecl	Strip_FindFirst	int __cdecl(ushort *tris, int nTri, int depth)
+00243220	254	USER_DEFINED	__cdecl	Strip_Length	int __cdecl(int t, ushort *tris, int nTri, int depth, uint a, uint b)
+00243320	573	USER_DEFINED	__cdecl	Strip_FindNew	int __cdecl(ushort *tris, int nTri, int depth)
+00243560	177	USER_DEFINED	__cdecl	Strip_Next	int __cdecl(ushort *tris, int nTri, uint a, uint b, int depth, int *side)
+00243620	67	USER_DEFINED	__cdecl	Tri_Mark	void __cdecl(ushort *tri)
+00243670	76	USER_DEFINED	__cdecl	Tri_Rotate	void __cdecl(ushort *tri, int n)
+002436c0	67	USER_DEFINED	__cdecl	Tri_Unmark	void __cdecl(ushort *tri)
+00243710	12	USER_DEFINED	__fastcall	CListaVert_Size	int __fastcall(void *self)
+00243720	406	USER_DEFINED	__thiscall	CListaVert_Transform	void __thiscall(float *m, byte normalize)
+002438c0	135	USER_DEFINED	__cdecl	VertCache_Add	void __cdecl(int v)
+00243950	62	USER_DEFINED	__cdecl	VertCache_Reset	void __cdecl(void)
+00243990	51	USER_DEFINED	__cdecl	VertCache_Oldest	int __cdecl(void)
+002439d0	36	USER_DEFINED	__cdecl	VertCache_Find	int __cdecl(int v)
 00243a00	162	DEFAULT	unknown	FUN_00643a00	
 00243ab0	158	DEFAULT	unknown	FUN_00643ab0	
 00243b50	575	DEFAULT	unknown	FUN_00643b50	

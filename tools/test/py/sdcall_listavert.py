@@ -22,7 +22,7 @@ def lvnew(frmt, n):
 		SDTest.Call(0x242470, 'tviii', lv, n, 0)
 	return lv
 def lvcolor():
-	return int(rnd(0, 32767)) * 65536 + int(rnd(0, 65535))
+	return int(rnd(0.0, 32767.0)) * 65536 + int(rnd(0.0, 65535.0))
 # random vertices of a source format
 def lvfill(lv, frmt, n):
 	p = SDTest.Peek(lv, '@i')
@@ -54,6 +54,11 @@ def lvget(lv):
 def lvfree(lv):
 	SDTest.Call(0x242540, 'tvi', lv)
 	SDTest.Call(0x133550, 'vi', lv)
+# a pointer into the vertices as its offset (a NULL is not printed as a heap address)
+def lvoff(r, p):
+	if r == 0:
+		return None
+	return r - p
 def lvstep(name, lv, rva, sig, *args):
 	check(name + fmt(args), lambda lv=lv, rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig, lv) + args)[0], lvget(lv)))
 
@@ -96,12 +101,12 @@ for frmt in (1, 2, 3, 4, 5, 7, 10):
 		for i in (0, 3):
 			# TEX1_B1 has no fields (the getter fails)
 			if frmt != 4:
-				check('CListaVert_GetField' + fmt((frmt, f, i)), lambda lv=lv, f=f, i=i, p=p: SDTest.Call(0x242570, 'tiiii', lv, f, i)[0] - p)
+				check('CListaVert_GetField' + fmt((frmt, f, i)), lambda lv=lv, f=f, i=i, p=p: lvoff(SDTest.Call(0x242570, 'tiiii', lv, f, i)[0], p))
 for frmt, rva in ((1, 0x242f70), (2, 0x243030), (3, 0x242d20), (4, 0x242fd0), (5, 0x242e50), (7, 0x242d90), (10, 0x242df0)):
 	lv = lvs[frmt]
 	p = SDTest.Peek(lv, '@i')
 	for i in (0, 1, 3):
-		check('CListaVert_Vert' + fmt((frmt, i)), lambda lv=lv, rva=rva, i=i, p=p: SDTest.Call(rva, 'tiii', lv, i)[0] - p)
+		check('CListaVert_Vert' + fmt((frmt, i)), lambda lv=lv, rva=rva, i=i, p=p: lvoff(SDTest.Call(rva, 'tiii', lv, i)[0], p))
 for frmt in (1, 2, 4):
 	for i in (0, 2):
 		check('CListaVert_GetTex1' + fmt((frmt, i)), lambda frmt=frmt, i=i: SDTest.Call(0x242bf0, 'tviFi', lvs[frmt], (0.0,) * 8, i)[1])
@@ -213,9 +218,9 @@ for tris in (grid, apart, fan):
 		check('Strip_Length' + fmt((k,)), lambda t=t, n=n, k=k, a=a, b=b: (SDTest.Call(0x243220, 'iiiiiii', k, t, n, 0, a, b)[0], triget(t, n)))
 	in_ = lvnew(3, 9)
 	lvfill(in_, 3, 9)
-	out = lvnew(0, 0)
-	check('ListaVert_Strip' + fmt((tris,)), lambda out=out, in_=in_, t=t, n=n: (SDTest.Call(0x23fc60, 'biiii', out, in_, t, n)[0], lvget(out), triget(t, n)))
-	lvfree(out)
+	lvout = lvnew(0, 0)
+	check('ListaVert_Strip' + fmt((tris,)), lambda lvout=lvout, in_=in_, t=t, n=n: (SDTest.Call(0x23fc60, 'biiii', lvout, in_, t, n)[0], lvget(lvout), triget(t, n)))
+	lvfree(lvout)
 	lvfree(in_)
 	SDTest.Call(0x133550, 'vi', t)
 	t = trinew(tris)
