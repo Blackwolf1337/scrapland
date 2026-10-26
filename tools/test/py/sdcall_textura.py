@@ -126,7 +126,7 @@ for t in tents:
 tinfo = tz(20)
 for t in tents:
 	check('Textura_GetInfo', lambda t=t: (SDTest.Call(0x27db00, 'iii', t, tinfo)[0], tpeek(tinfo, 5)))
-call('Textura_GetInfo NULL', 0x27db00, 'iii', 0, tinfo)
+check('Textura_GetInfo NULL', lambda: SDTest.Call(0x27db00, 'iii', 0, tinfo)[0])
 check('Textura_GetInfo no info', lambda: SDTest.Call(0x27db00, 'iii', t0, 0)[0])
 
 # fake device textures
@@ -220,10 +220,10 @@ cset(tdb, texpix(16))
 tdds = tnewe('sdnodir/sdx.bmp', None, 0, 0)
 for fl in (0, 0x100, 0x140, 0x180, 0x1100):
 	tpoke(tdds + 0x220, fl)
-	tecall('CTextura_SaveDDS', 0x27e7a0, 'tiiiii', tdds, tdb, 0, 0)
-	tecall('CTextura_SaveDDS keep', 0x27e7a0, 'tiiiii', tdds, tdb, 1, 1)
+	check('CTextura_SaveDDS' + fmt((twho(tdds), 0, 0)), lambda tdds=tdds, tdb=tdb: SDTest.Call(0x27e7a0, 'tiiiii', tdds, tdb, 0, 0)[0])
+	check('CTextura_SaveDDS keep' + fmt((twho(tdds), 1, 1)), lambda tdds=tdds, tdb=tdb: SDTest.Call(0x27e7a0, 'tiiiii', tdds, tdb, 1, 1)[0])
 tpoke(tdds + 0x23d, 1)
-tecall('CTextura_SaveDDS bump', 0x27e7a0, 'tiiiii', tdds, tdb, 0, 0)
+check('CTextura_SaveDDS bump' + fmt((twho(tdds), 0, 0)), lambda tdds=tdds, tdb=tdb: SDTest.Call(0x27e7a0, 'tiiiii', tdds, tdb, 0, 0)[0])
 
 # Textura_Add and the file kinds of CTextura_LoadFile (without load nothing is read); BMP files written by CBmp_Save
 tsrc = bnew(4, 2, 0x2a9bc0)

@@ -7848,41 +7848,41 @@ rva	size	source	callconv	name	signature
 0027cea0	25	USER_DEFINED	__cdecl	Err_Printf	void __cdecl(int fatal, char *fmt, ...)
 0027cec0	26	USER_DEFINED	__cdecl	Err_Report	void __cdecl(int code, int fatal, char *fmt, ...)
 0027cee0	254	USER_DEFINED	__cdecl	Err_VReport	void __cdecl(int code, int fatal, char *fmt, void *ap)
-0027cfe0	62	DEFAULT	unknown	FUN_0067cfe0	
-0027d020	436	DEFAULT	unknown	FUN_0067d020	
-0027d1e0	257	DEFAULT	unknown	FUN_0067d1e0	
-0027d2f0	68	DEFAULT	unknown	FUN_0067d2f0	
-0027d340	182	DEFAULT	unknown	FUN_0067d340	
-0027d400	780	DEFAULT	unknown	FUN_0067d400	
-0027d710	57	DEFAULT	unknown	FUN_0067d710	
-0027d750	238	DEFAULT	unknown	FUN_0067d750	
-0027d840	57	DEFAULT	unknown	FUN_0067d840	
-0027d880	46	DEFAULT	unknown	FUN_0067d880	
-0027d8b0	57	DEFAULT	unknown	FUN_0067d8b0	
-0027d8f0	50	DEFAULT	unknown	FUN_0067d8f0	
-0027d930	235	DEFAULT	unknown	FUN_0067d930	
-0027da20	106	DEFAULT	unknown	FUN_0067da20	
-0027da90	33	DEFAULT	unknown	FUN_0067da90	
-0027dac0	64	DEFAULT	unknown	FUN_0067dac0	
-0027db00	73	DEFAULT	unknown	FUN_0067db00	
-0027db50	63	DEFAULT	unknown	FUN_0067db50	
-0027db90	53	DEFAULT	unknown	FUN_0067db90	
-0027dbd0	56	DEFAULT	unknown	FUN_0067dbd0	
-0027dc10	71	DEFAULT	unknown	FUN_0067dc10	
-0027dc60	53	DEFAULT	unknown	FUN_0067dc60	
-0027dca0	128	DEFAULT	unknown	FUN_0067dca0	
-0027dd20	25	DEFAULT	unknown	FUN_0067dd20	
-0027dd50	1133	DEFAULT	unknown	FUN_0067dd50	
-0027e1c0	1504	DEFAULT	unknown	FUN_0067e1c0	
-0027e7a0	1671	DEFAULT	unknown	FUN_0067e7a0	
-0027ee30	165	DEFAULT	unknown	FUN_0067ee30	
-0027eee0	32	DEFAULT	unknown	FUN_0067eee0	
-0027ef00	108	DEFAULT	unknown	FUN_0067ef00	
-0027ef70	368	DEFAULT	unknown	FUN_0067ef70	
-0027f0e0	523	DEFAULT	unknown	FUN_0067f0e0	
-0027f2f0	682	DEFAULT	unknown	FUN_0067f2f0	
-0027f5a0	328	DEFAULT	unknown	FUN_0067f5a0	
-0027f6f0	398	DEFAULT	unknown	FUN_0067f6f0	
+0027cfe0	62	USER_DEFINED	__thiscall	CBmp_ctor	void * __thiscall(int ancho, int alto)
+0027d020	436	USER_DEFINED	__thiscall	CTextura_ctor	void * __thiscall(char * name, char * opac, int kind, uint flags)
+0027d1e0	257	USER_DEFINED	__fastcall	CTextura_dtor	void __fastcall(void * self)
+0027d2f0	68	USER_DEFINED	__thiscall	CBmp_Delete	void * __thiscall(byte flags)
+0027d340	182	USER_DEFINED	__cdecl	Textura_FindPurge	void * __cdecl(void)
+0027d400	780	USER_DEFINED	__thiscall	CTextura_UploadLevel	int __thiscall(void * src, int level)
+0027d710	57	USER_DEFINED	__cdecl	Textura_AddRef	int __cdecl(void * t)
+0027d750	238	USER_DEFINED	__cdecl	Textura_Add	int __cdecl(char * name, char * opac, int kind, uint flags)
+0027d840	57	USER_DEFINED	__cdecl	Textura_Release	int __cdecl(void * t)
+0027d880	46	USER_DEFINED	__cdecl	Textura_DeleteAll	int __cdecl(void)
+0027d8b0	57	USER_DEFINED	__cdecl	Textura_Delete	void __cdecl(void * t)
+0027d8f0	50	USER_DEFINED	__cdecl	Textura_Remove	int __cdecl(char * name, char * opac)
+0027d930	235	USER_DEFINED	__cdecl	Textura_Load	void * __cdecl(void * t, void * dev)
+0027da20	106	USER_DEFINED	__cdecl	Textura_GetMultiSprite	void * __cdecl(void * t, char * name)
+0027da90	33	USER_DEFINED	__cdecl	Textura_GetD3DByName	void * __cdecl(char * name, char * opac)
+0027dac0	64	USER_DEFINED	__cdecl	Textura_Find	void * __cdecl(char * name, char * opac)
+0027db00	73	USER_DEFINED	__cdecl	Textura_GetInfo	int __cdecl(void * t, int * info)
+0027db50	63	USER_DEFINED	__cdecl	Textura_ReleaseD3D	int __cdecl(char * name, char * opac)
+0027db90	53	USER_DEFINED	__cdecl	Textura_ReleaseAllD3D	int __cdecl(void)
+0027dbd0	56	USER_DEFINED	__cdecl	Textura_Recreate	int __cdecl(char * name, char * opac, void * dev)
+0027dc10	71	USER_DEFINED	__cdecl	Textura_RecreateAll	int __cdecl(void * dev)
+0027dc60	53	USER_DEFINED	__cdecl	Textura_GetD3D	void * __cdecl(void * t, void * dev)
+0027dca0	128	USER_DEFINED	__cdecl	Textura_Lookup	void * __cdecl(char * name, char * opac)
+0027dd20	25	USER_DEFINED	__cdecl	Tex_IsPower2	byte __cdecl(int n)
+0027dd50	1133	USER_DEFINED	__thiscall	CTextura_LoadFile	int __thiscall(byte load)
+0027e1c0	1504	USER_DEFINED	__thiscall	CTextura_CreateD3D	int __thiscall(void * dev)
+0027e7a0	1671	USER_DEFINED	__thiscall	CTextura_SaveDDS	int __thiscall(void * orig, int level, byte keepExt)
+0027ee30	165	USER_DEFINED	__cdecl	Tex_Format	int __cdecl(int bpp, byte alpha, byte palette, byte bump, byte compressed, byte unused)
+0027eee0	32	USER_DEFINED	__cdecl	Ruta_ToBackslash	void __cdecl(char * ruta)
+0027ef00	108	USER_DEFINED	__cdecl	Ruta_HasSubExt	byte __cdecl(char * name, char * ext)
+0027ef70	368	USER_DEFINED	__cdecl	Bmp_ToBump	void __cdecl(void * bmp)
+0027f0e0	523	USER_DEFINED	__cdecl	Bmp_ToDudv	void __cdecl(void * bmp)
+0027f2f0	682	USER_DEFINED	__cdecl	Bmp_ToRamp	void __cdecl(void * bmp)
+0027f5a0	328	USER_DEFINED	__cdecl	Surface_FromBmp	int __cdecl(void * surf, void * bmp)
+0027f6f0	398	USER_DEFINED	__cdecl	D3DFmt_Name	char * __cdecl(int fmt)
 0027f980	43	DEFAULT	unknown	FUN_0067f980	
 0027f9b0	53	DEFAULT	unknown	FUN_0067f9b0	
 0027f9f0	40	DEFAULT	unknown	FUN_0067f9f0	
@@ -8104,9 +8104,9 @@ rva	size	source	callconv	name	signature
 0029cda0	100	USER_DEFINED	__thiscall	CCamara_SetNodoObjetivo	void __thiscall(void *nodo)
 0029ce10	173	USER_DEFINED	__fastcall	CCamara_UpdateVectors	void __fastcall(void *self)
 0029cec0	183	DEFAULT	unknown	FUN_0069cec0	
-0029cf80	40	DEFAULT	unknown	FUN_0069cf80	
-0029cfb0	35	DEFAULT	unknown	FUN_0069cfb0	
-0029cfe0	278	DEFAULT	unknown	FUN_0069cfe0	
+0029cf80	40	USER_DEFINED	__thiscall	CMultiSprite_ctor	void * __thiscall(void)
+0029cfb0	35	USER_DEFINED	__thiscall	CMultiSprite_dtor	void __thiscall(void)
+0029cfe0	278	USER_DEFINED	__thiscall	CMultiSprite_Build	byte __thiscall(char * name)
 0029d100	1637	DEFAULT	unknown	FUN_0069d100	
 0029d770	115	DEFAULT	unknown	FUN_0069d770	
 0029d800	334	DEFAULT	unknown	FUN_0069d800	
