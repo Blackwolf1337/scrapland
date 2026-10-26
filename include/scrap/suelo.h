@@ -11,6 +11,7 @@
 
 #include "scrap/archio.h"
 #include "scrap/mathlib.h"
+#include "scrap/nodo3d.h"
 #include "scrap/tabla.h"
 
 #define CLASE_OBJ3D_SUELO 0xa4000010
@@ -94,7 +95,7 @@ typedef struct CSuelo {
 	int nx;				/* 0x20 grid of the floor nodes */
 	int nz;				/* 0x24 */
 	int nNodos;			/* 0x28 CTabla of CNodo3D (0xfc bytes each) */
-	byte *nodos;			/* 0x2c */
+	CNodo3D *nodos;			/* 0x2c */
 	box_t Extens;			/* 0x30 */
 	vec3_t Dim;			/* 0x48 */
 	box_t CollideExt;		/* 0x54 */
@@ -210,7 +211,7 @@ void __fastcall CSuelo_CreateQuadCollision(CSuelo *self);
 /* the floor of a scene (CEscena): from its .amc file when the scene was loaded with one, else the triangles of its
  * meshes into a grid of floor nodes (one CMallaTri each) and the collision data from the .amc file or built and
  * saved */
-void __thiscall CSuelo_Build(CSuelo *self, void *esc);
+void __thiscall CSuelo_Build(CSuelo *self, CEscena *esc);
 /* the floor nodes to vertex buffer meshes */
 void __thiscall CSuelo_NodosToD3D(CSuelo *self, int fvf);
 /* the vertex buffer meshes of the floor nodes */

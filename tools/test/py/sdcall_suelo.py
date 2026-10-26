@@ -9,6 +9,10 @@ def sunew(n):
 	return SDTest.Call(0x133650, 'ii', n)[0]
 def sunewop(n):
 	return SDTest.Call(0x1334d0, 'ii', n)[0]
+# operator new memory cleared, for the members a constructor leaves alone (n a multiple of 4)
+def suzero(addr, n):
+	for i in range(0, n, 4):
+		SDTest.Poke(addr + i - 0x400000, 0)
 def suwf(addr, floats):
 	i = 0
 	while i < len(floats):
@@ -139,7 +143,7 @@ def sumesh(verts, tris):
 	suwi(m + 0x2c, len(tris))
 	suwi(m + 0x30, tp)
 	for i in range(len(tris)):
-		pl = SDTest.Call(0x2594c0, 'tvFi', m, (0.0, 0.0, 0.0, 0.0), i)[1]
+		pl = SDTest.Call(0x2594c0, 'tviFi', m, (0.0, 0.0, 0.0, 0.0), i)[1]
 		check('CCollideMesh_TriPlane' + fmt((i,)), lambda pl=pl: pl)
 		suwf(tp + 0x1c * i + 4, pl)
 	return m
@@ -177,7 +181,7 @@ check('CCollideMesh mesh', lambda: sumget(sum1))
 tbuf = sunew(0x1c)
 vbuf = sunew(36)
 for i in range(len(sutris)):
-	check('CCollideMesh_TriWithPlane' + fmt((i,)), lambda i=i: (SDTest.Call(0x258f50, 'tvii', sum1, tbuf, i), suwords(tbuf, 1), surf(tbuf + 4, 4), sushorts(tbuf + 0x14, 4)))
+	check('CCollideMesh_TriWithPlane' + fmt((i,)), lambda i=i: (SDTest.Call(0x258f50, 'tviii', sum1, tbuf, i), suwords(tbuf, 1), surf(tbuf + 4, 4), sushorts(tbuf + 0x14, 4)))
 	check('CCollideMesh_GetTri' + fmt((i,)), lambda i=i: (SDTest.Call(0x25ae70, 'tviiiiii', sum1, i, tbuf, vbuf, vbuf + 12, vbuf + 24), suwords(tbuf, 1), sushorts(tbuf + 0x14, 4), surf(vbuf, 9)))
 	check('CCollideMesh_GetTri NULL' + fmt((i,)), lambda i=i: (SDTest.Call(0x25ae70, 'tviiiiii', sum1, i, 0, 0, vbuf + 12, 0), surf(vbuf, 9)))
 # spheres and sweeps against each triangle
@@ -249,6 +253,7 @@ a = sunew(0x34b4)
 check('CAlturas_ctor', lambda a=a: (SDTest.Call(0x2584d0, 'tii', a)[0] == a, sualt(a), suwords(a + 4, 13), suwords(a + 0x3404, 13), suwords(a + 0x3438, 13), suwords(a + 0x1a04 + 0x34 * 127, 13)))
 check('CAlturas_dtor', lambda a=a: (SDTest.Call(0x2589f0, 'tvi', a), sualt(a), suglobals()))
 s = sunewop(0x3524)
+suzero(s, 0x3524)
 check('CSuelo_ctor del', lambda s=s: (SDTest.Call(0x258760, 'tii', s)[0] == s, suwords(s + 4, 0x1b), suglobals()))
 check('CSuelo_Delete', lambda s=s: (SDTest.Call(0x258ee0, 'tiii', s, 1)[0] == s, suglobals()))
 
@@ -288,7 +293,7 @@ mesh1 = sucmesh(sualt0, 0)
 mesh2 = sucmesh(sualt0, 1)
 mesh3 = sucmesh(sualt0, 2)
 mlist = (mesh1, mesh2, mesh3)
-check('CSuelo_AddMesh', lambda: (SDTest.Call(0x259690, 'tviiii', su, mesh1, tm1, 0, 0), sumget(mesh1), suglobals()))
+check('CSuelo_AddMesh', lambda: (SDTest.Call(0x259690, 'tviiiii', su, mesh1, tm1, 0, 0), sumget(mesh1), suglobals()))
 check('CSuelo quads', lambda: suquads(sualt0, mlist))
 # a mesh added at run time: MeshID 1
 mv = []
@@ -301,10 +306,10 @@ for i in range(8):
 	mv.append(sunear(a, 3.0))
 	mt.append((n, n + 1, n + 2, 0x40 * i))
 tm2 = sumalla(mv, mt)
-check('CSuelo_AddMesh id', lambda: (SDTest.Call(0x259690, 'tviipp', su, mesh2, tm2, 0, 0), sumget(mesh2), suri(sualt0), suglobals()))
+check('CSuelo_AddMesh id', lambda: (SDTest.Call(0x259690, 'tviiipp', su, mesh2, tm2, 0, 0), sumget(mesh2), suri(sualt0), suglobals()))
 check('CSuelo quads 2', lambda: suquads(sualt0, mlist))
-check('CSuelo_SetMeshCollide off', lambda: (SDTest.Call(0x259d30, 'tviiii', su, mesh2, 0, 1, 0), suwords(mesh2, 2), suglobals()))
-check('CSuelo_SetMeshCollide on', lambda: (SDTest.Call(0x259d30, 'tviiii', su, mesh2, 1, 1, 0), suwords(mesh2, 2), suglobals()))
+check('CSuelo_SetMeshCollide off', lambda: (SDTest.Call(0x259d30, 'tviiiii', su, mesh2, 0, 1, 0), suwords(mesh2, 2), suglobals()))
+check('CSuelo_SetMeshCollide on', lambda: (SDTest.Call(0x259d30, 'tviiiii', su, mesh2, 1, 1, 0), suwords(mesh2, 2), suglobals()))
 check('CSuelo_BuildSectorMesh 1', lambda: (SDTest.Call(0x25b070, 'tviiii', su, mesh3, 1, 0), sumget(mesh3)))
 check('CSuelo_BuildSectorMesh 2', lambda: (SDTest.Call(0x25b070, 'tviiii', su, mesh3, 2, 0), sumget(mesh3)))
 check('CSuelo_CalcGaps', lambda: (SDTest.Call(0x25aff0, 'tvi', su), suquads(sualt0, mlist)))
@@ -323,15 +328,15 @@ suout = (9.0, 9.0, 9.0)
 for k in range(150):
 	a, b = supath()
 	r = rnd(0.1, 2.5)
-	check('CSuelo_CollideSphere' + fmt((k,)), lambda a=a, b=b, r=r: (SDTest.Call(0x25dd10, 'tbFFfFFF', su, a, b, r, suout, suout, suout), suglobals()))
-	check('CSuelo_CollideSphere NULL' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call(0x25dd10, 'tbFFfiii', su, a, b, r, 0, 0, 0))
-	check('CSuelo_SphereContact' + fmt((k,)), lambda a=a, b=b, r=r: (SDTest.Call(0x25e4a0, 'tbFFfFFF', su, a, b, r, suout, suout, suout), suglobals()))
-	check('CSuelo_SphereContact NULL' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call(0x25e4a0, 'tbFFfiii', su, a, b, r, 0, 0, 0))
-	check('CSuelo_SphereContact n' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call(0x25e4a0, 'tbFFfiiF', su, a, b, r, 0, 0, suout))
-	check('CSuelo_SweepSphere' + fmt((k,)), lambda a=a, b=b, r=r: (SDTest.Call(0x25eb30, 'tbFFfFFF', su, a, b, r, suout, suout, suout), suglobals()))
-	check('CSuelo_SweepSphere NULL' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call(0x25eb30, 'tbFFfiii', su, a, b, r, 0, 0, 0))
+	check('CSuelo_CollideSphere' + fmt((k,)), lambda a=a, b=b, r=r: (SDTest.Call(0x25dd10, 'tbiFFfFFF', su, a, b, r, suout, suout, suout), suglobals()))
+	check('CSuelo_CollideSphere NULL' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call(0x25dd10, 'tbiFFfiii', su, a, b, r, 0, 0, 0))
+	check('CSuelo_SphereContact' + fmt((k,)), lambda a=a, b=b, r=r: (SDTest.Call(0x25e4a0, 'tbiFFfFFF', su, a, b, r, suout, suout, suout), suglobals()))
+	check('CSuelo_SphereContact NULL' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call(0x25e4a0, 'tbiFFfiii', su, a, b, r, 0, 0, 0))
+	check('CSuelo_SphereContact n' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call(0x25e4a0, 'tbiFFfiiF', su, a, b, r, 0, 0, suout))
+	check('CSuelo_SweepSphere' + fmt((k,)), lambda a=a, b=b, r=r: (SDTest.Call(0x25eb30, 'tbiFFfFFF', su, a, b, r, suout, suout, suout), suglobals()))
+	check('CSuelo_SweepSphere NULL' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call(0x25eb30, 'tbiFFfiii', su, a, b, r, 0, 0, 0))
 	b2 = sunear(a, 12.0)
-	check('CSuelo_SweepSphere long' + fmt((k,)), lambda a=a, b=b2, r=r: SDTest.Call(0x25eb30, 'tbFFfFiF', su, a, b, r, suout, 0, suout))
+	check('CSuelo_SweepSphere long' + fmt((k,)), lambda a=a, b=b2, r=r: SDTest.Call(0x25eb30, 'tbiFFfFiF', su, a, b, r, suout, 0, suout))
 # the tested and hit marks and query numbers
 check('CSuelo after queries 1', lambda: sumget(mesh1))
 check('CSuelo after queries 2', lambda: sumget(mesh2))
@@ -348,6 +353,7 @@ for i in range(suri(sualt0 + 0x3490)):
 	check('CCollideQuad_CalcExtens' + fmt((i,)), lambda q=q: (SDTest.Call(0x25d390, 'tvii', sualt0, q), suquad(q, mlist)))
 	check('CCollideQuad_CalcGap' + fmt((i,)), lambda q=q: (SDTest.Call(0x25cf40, 'tvi', q), suquad(q, mlist)))
 qq = sunewop(0x24)
+suzero(qq, 0x24)
 check('CCollideQuad_ctor', lambda: (SDTest.Call(0x258720, 'tii', qq)[0] == qq, suwords(qq, 9), suglobals()))
 check('CCollideQuad_Find new', lambda: (SDTest.Call(0x25c460, 'tiiiii', sualt0, qq, 0, mesh1)[0] == qq, suquad(qq, mlist), suwords(mesh1, 1)))
 check('CCollideQuad_Find same', lambda: (SDTest.Call(0x25c460, 'tiiiii', sualt0, qq, 0, mesh1)[0] == qq, suquad(qq, mlist)))

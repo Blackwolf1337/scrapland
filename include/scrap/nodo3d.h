@@ -70,7 +70,7 @@ SD_OFFSET(NodoAnimCtx, m, 0x60);
 /* the members of a scene (Engine/escena.cpp) read by the nodes and the animation groups */
 typedef struct CEscena {
 	void **vftable;			/* 0x00 [0] the deleting destructor */
-	int pad_4;
+	const char *name;		/* 0x04 */
 	int Refs;			/* 0x08 */
 	struct CNodo3D *Nodo3D;		/* 0x0c the first node */
 	NodoAnimCtx *anim;		/* 0x10 */
@@ -79,7 +79,10 @@ typedef struct CEscena {
 	const char *nodo;		/* 0x40 the name of the node whose animation node a group starts at */
 	byte pad_44[8];
 	CArchINI *ini;			/* 0x4c */
+	byte pad_50[0x10];
+	byte fromAmc;			/* 0x60 loaded from the .sm3 and the .amc */
 } CEscena;
+SD_OFFSET(CEscena, fromAmc, 0x60);
 SD_OFFSET(CEscena, anim, 0x10);
 SD_OFFSET(CEscena, AnimM3D, 0x3c);
 SD_OFFSET(CEscena, ini, 0x4c);
@@ -198,7 +201,6 @@ quat_t *__thiscall CRotacion_GetQuat(CRotacion *self, quat_t *out);
 matrix_t *Matrix_LoadIdentity(matrix_t *m);	/* rva 0x214710 */
 matrix_t *Matrix_MulD3D(matrix_t *out, const matrix_t *a, const matrix_t *b);	/* rva 0x2391f0, out = a * b */
 void __thiscall CRotacion_SetEuler(CRotacion *self, const vec3_t *ang);	/* rva 0x212510 */
-void __thiscall CSuelo_BuildD3D(void *self, uint32_t flags);	/* rva 0x25fb00, CNodo3D_BuildD3D on its nodes */
 byte __thiscall CSistPart_GetBox(void *self, box_t *out);	/* rva 0x27a790 */
 void *CSistPart_Cast(IObjeto3D *obj);	/* rva 0x23f310, CHECK of the class */
 int Render_SetWorldMatrix(const matrix_t *m, byte defer);	/* rva 0x24bac0, the world transform of the device; 0 */

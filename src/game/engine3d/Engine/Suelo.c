@@ -16,8 +16,6 @@
 #define CCOLLIDEMESH_DTOR 0x20eb70
 #define CCOLLIDEQUAD_DTOR 0x258ce0
 #define CNODO3D_DTOR 0x23d070
-#define NODO_SIZE 0xfc
-#define NODO_OBJ 0x3c		/* CNodo3D: the object of the node */
 #define SUELO_FLT_MAX 3.4028234663852886e+38f
 #define CLASE_OBJ3D_MALLAD3D 0xa1000002
 #define g_Mundo GAME_DATA(byte *, 0x4afde8)	/* gMundo of mundo.h */
@@ -40,39 +38,30 @@ typedef void *(__thiscall *objDelete_t)(void *self, int flags);
 typedef void(__thiscall *objCall_t)(void *self, void *arg);
 
 /* the sectors of the world (engine3d/engine/mundo.h, SueloPortal.cpp) */
-int Imp_Sector_Last(void);
-byte Imp_Sector_IsOutside(int sector);
-const char *Imp_Sector_GetName(int sector);
-int Imp_Sector_Find(const char *name);
-void __fastcall Imp_CCollideMesh_dtor(CCollideMesh *self);
-vec3_t *Imp_Vec3_Normalize(vec3_t *out, const vec3_t *in);
-double Imp_crt_ceil(double x);
+int Sector_Last(void);
+byte Sector_IsOutside(int sector);
+const char *Sector_GetName(int sector);
+int Sector_Find(const char *name);
+void __fastcall CCollideMesh_dtor(CCollideMesh *self);
+vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);
+double crt_ceil(double x);
 /* the triangle (its verts in v) touches the box */
-byte Imp_BoxTri(const vec3_t *bmin, const vec3_t *bmax, const CCollideTri *tri, const vec3_t *v);
+byte BoxTri(const vec3_t *bmin, const vec3_t *bmax, const CCollideTri *tri, const vec3_t *v);
 /* the CTabla resize of tabla.h for vec3_t and CCollideTri */
-void __thiscall Imp_Tabla_ResizeC(CTabla *t, int n);
-void __thiscall Imp_Tabla_Resize1C(CTabla *t, int n);
-/* engine3d/engine/objeto3d.h (Nodo3D.cpp): the object of a node converted to a vertex buffer mesh */
-byte __thiscall Imp_CNodo3D_ToD3D(void *node, int fvf);
-/* the drawing of render.cpp: the world matrix, the batches of vertex buffer meshes, a debug box */
-void Imp_Render_SetWorldMatrix(const matrix_t *m, byte flag);
-void Imp_Batch_AddMalla(void *malla, void *dev);
-void Imp_Batch_Flush(void *dev);
-void Imp_Debug_DrawBox(const vec3_t *mn, const vec3_t *mx, uint32_t color);
-void __fastcall Imp_CSuelo_DrawDebug(CSuelo *self);
-/* Nodo3D.cpp and Escena.cpp: the class of the object of a node (0 without), its object set or deleted, the update of
- * all nodes of a scene; the sector of a node (SueloPortal.cpp) */
-uint32_t __fastcall Imp_CNodo3D_Clase(void *node);
-void __thiscall Imp_CNodo3D_SetObj(void *node, void *obj);
-void __fastcall Imp_CNodo3D_FreeObj(void *node);
-void __fastcall Imp_CEscena_UpdateNodes(void *esc);
-int Imp_Sector_OfNode(void *node);
-/* engine3d/engine/MallaD3D.h: a vertex buffer mesh of the triangles of m */
-CMallaD3D *__thiscall Imp_CMallaD3D_ctorTri(CMallaD3D *self, CMallaTri *m, int fvf, int flags);
+void __thiscall Tabla_ResizeC(CTabla *t, int n);
+void __thiscall Tabla_Resize1C(CTabla *t, int n);
+/* the drawing of render.cpp: the batches of vertex buffer meshes, a debug box */
+void Batch_AddMalla(void *malla, void *dev);
+void Batch_Flush(void *dev);
+void Debug_DrawBox(const vec3_t *mn, const vec3_t *mx, uint32_t color);
+void __fastcall CSuelo_DrawDebug(CSuelo *self);
+/* Escena.cpp: the update of all nodes of a scene; the sector of a node (SueloPortal.cpp) */
+void __fastcall CEscena_UpdateNodes(void *esc);
+int Sector_OfNode(void *node);
 
 static void *Suelo_Obj(const CSuelo *self, uint32_t i) {
 	TABLA_CHECK(self->nodos, i, self->nNodos);
-	return *(void **)(self->nodos + i * NODO_SIZE + NODO_OBJ);
+	return self->nodos[i].obj3D;
 }
 
 static CCollideQuad *Alturas_Cuad(CAlturas *alt, uint32_t i) {
@@ -222,20 +211,18 @@ CCollideQuad *__thiscall CCollideQuad_Delete(CCollideQuad *self, uint32_t flags)
 }
 
 /* the vector deleting destructor of the floor nodes (CNodo3D, 0xfc bytes) */
-void __fastcall Imp_CNodo3D_dtor(void *self);
-
 void *__thiscall CNodo3D_VecDelete(void *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, NODO_SIZE, *mem, Game_Ptr(CNODO3D_DTOR));
+		crt_eh_vector_dtor(self, sizeof(CNodo3D), *mem, Game_Ptr(CNODO3D_DTOR));
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
 		return mem;
 	}
-	Imp_CNodo3D_dtor(self);
+	CNodo3D_dtor(self);
 	if (flags & 1) {
-		operator_delete_sized(self, NODO_SIZE);
+		operator_delete_sized(self, sizeof(CNodo3D));
 	}
 	return self;
 }
@@ -285,8 +272,8 @@ void __fastcall CAlturas_dtor(CAlturas *self) {
 	}
 	CHECK(g_CollisionQuadCount == 0);
 	Alturas_FreeCuads(self);
-	Imp_CCollideMesh_dtor(&self->CollideMesh2);
-	Imp_CCollideMesh_dtor(&self->CollideMesh1);
+	CCollideMesh_dtor(&self->CollideMesh2);
+	CCollideMesh_dtor(&self->CollideMesh1);
 	crt_eh_vector_dtor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, Game_Ptr(CCOLLIDEMESH_DTOR));
 	crt_eh_vector_dtor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, Game_Ptr(CCOLLIDEMESH_DTOR));
 }
@@ -408,7 +395,7 @@ void __thiscall CCollideMesh_Read(CCollideMesh *self, CArchIO *f) {
 	CHECK(CArchIO_ReadInt(f) == 2);
 	CHECK(CArchIO_ReadInt(f) == sizeof(CCollideMesh));
 	CArchIO_ReadString(f, name, sizeof(name));
-	int zona = Imp_Sector_Find(name);
+	int zona = Sector_Find(name);
 	CArchIO_Read(f, &self->flags, 2);
 	CArchIO_Read(f, &self->sector, 2);
 	CArchIO_Read(f, &self->MeshID, 2);
@@ -430,7 +417,7 @@ void __thiscall CCollideMesh_Write(CCollideMesh *self, CArchIO *f) {
 	CArchIO_BeginBlockWrite(f, "CMSH");
 	CArchIO_WriteInt(f, 2);
 	CArchIO_WriteInt(f, sizeof(CCollideMesh));
-	CArchIO_WriteString(f, Imp_Sector_GetName(self->sector - 1));
+	CArchIO_WriteString(f, Sector_GetName(self->sector - 1));
 	CArchIO_Write(f, &self->flags, 2);
 	CArchIO_Write(f, &self->sector, 2);
 	CArchIO_Write(f, &self->MeshID, 2);
@@ -563,7 +550,7 @@ int __thiscall CSuelo_LoadCollision(CSuelo *self, const char *name) {
 		CArchIO_Read(f, &alt->dim, sizeof(alt->dim));
 		CCollideMesh_Read(&alt->CollideMesh1, f);
 		CCollideMesh_Read(&alt->CollideMesh2, f);
-		int sectors = Imp_Sector_Last() + 1;
+		int sectors = Sector_Last() + 1;
 		CHECK(CArchIO_ReadInt(f) == sectors);
 		for (int i = 0; i < sectors; i++) {
 			CHECK(i < MAX_COLLIDE_SECTORS);
@@ -616,7 +603,7 @@ int __thiscall CSuelo_SaveCollision(CSuelo *self, const char *name) {
 		CArchIO_Write(f, &alt->dim, sizeof(alt->dim));
 		CCollideMesh_Write(&alt->CollideMesh1, f);
 		CCollideMesh_Write(&alt->CollideMesh2, f);
-		int sectors = Imp_Sector_Last() + 1;
+		int sectors = Sector_Last() + 1;
 		CArchIO_WriteInt(f, sectors);
 		for (int i = 0; i < sectors; i++) {
 			CHECK(i < MAX_COLLIDE_SECTORS);
@@ -750,7 +737,7 @@ float Suelo_DistPointSeg(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3
 
 	float pd = -(p->y * u.y + p->x * u.x + p->z * u.z);
 	float t = -(ay * u.y + ax * u.x + az * u.z + pd);
-	if (!(0.0f < t)) {
+	if (0.0f >= t) {
 		if (out) {
 			*out = *a;
 		}
@@ -781,7 +768,7 @@ float Suelo_Dist2PointSeg(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec
 	}
 	float pd = -(p->x * dx + p->y * dy + p->z * dz);
 	float t = -(a->y * dy + a->x * dx + a->z * dz + pd);
-	if (!(0.0f < t)) {
+	if (0.0f >= t) {
 		if (out) {
 			*out = *a;
 		}
@@ -978,7 +965,7 @@ byte Suelo_SweepTri(const vec3_t *a, const vec3_t *b, float r, const CCollideTri
 	}
 	vec3_t p = Vec3_Lerp(a, b, tm);
 	vec3_t back = { a->x - b->x, a->y - b->y, a->z - b->z }, n;
-	Imp_Vec3_Normalize(&n, &back);
+	Vec3_Normalize(&n, &back);
 	res->x = n.x * g_CollisionEpsilon + p.x;
 	res->y = n.y * g_CollisionEpsilon + p.y;
 	res->z = n.z * g_CollisionEpsilon + p.z;
@@ -1410,9 +1397,9 @@ void __thiscall CAlturas_QuadInit(CAlturas *self, int unused, const box_t *box, 
 	self->dim.z = self->ext.max.z - self->ext.min.z;
 	double size = __builtin_sqrt((double)(((self->dim.x * self->dim.z) / (float)numTri) * balance));
 	double k = 1.0 / size;
-	int nx = (int)Imp_crt_ceil((double)self->dim.x * k);
+	int nx = (int)crt_ceil((double)self->dim.x * k);
 	self->nx = nx;
-	int nz = (int)Imp_crt_ceil((double)self->dim.z * k);
+	int nz = (int)crt_ceil((double)self->dim.z * k);
 	self->nz = nz;
 	self->sizeX = self->dim.x / (float)nx;
 	self->sizeZ = self->dim.z / (float)nz;
@@ -1477,7 +1464,7 @@ void __thiscall CAlturas_QuadAddMesh(CAlturas *self, CCollideMesh *mesh, int ini
 					((float)z * self->sizeZ + self->ext.min.z) - e };
 				vec3_t bmax = { (float)(x + 1) * self->sizeX + self->ext.min.x + e, self->ext.max.y + e,
 					(float)(z + 1) * self->sizeZ + self->ext.min.z + e };
-				if (!Imp_BoxTri(&bmin, &bmax, &tri, mesh->pVert)) {
+				if (!BoxTri(&bmin, &bmax, &tri, mesh->pVert)) {
 					discarded++;
 					continue;
 				}
@@ -1547,8 +1534,8 @@ void __thiscall CSuelo_AddMesh(CSuelo *self, CCollideMesh *mesh, CMallaTri *tm, 
 	}
 	int nv = mesh->nVert, nt = mesh->nTri;
 	CHECK(mesh->pTri == NULL);
-	Imp_Tabla_ResizeC((CTabla *)&mesh->nVert, tm->nVert + nv);
-	Imp_Tabla_Resize1C((CTabla *)&mesh->nTri, tm->nTri + nt);
+	Tabla_ResizeC((CTabla *)&mesh->nVert, tm->nVert + nv);
+	Tabla_Resize1C((CTabla *)&mesh->nTri, tm->nTri + nt);
 	for (int i = 0; i < tm->nVert; i++) {
 		vec3_t v;
 		mesh->pVert[nv + i] = *CMallaTri_GetVert(tm, &v, i);
@@ -1670,7 +1657,7 @@ void __thiscall CSuelo_BuildSectorMesh(CSuelo *self, CCollideMesh *mesh, int mod
 		mesh->flags |= TRI_ALT_NO_COLISIONES;
 	}
 	mesh->sector = (uint16_t)sector;
-	mesh->outSector = Imp_Sector_IsOutside(sector - 1);
+	mesh->outSector = Sector_IsOutside(sector - 1);
 	for (int i = 0; i < self->nNodos; i++) {
 		CMallaTri *obj = Suelo_ObjMalla(Suelo_Obj(self, i));
 		for (int t = 0; t < obj->nTri; t++) {
@@ -1709,7 +1696,7 @@ void __thiscall CSuelo_BuildSectorMesh(CSuelo *self, CCollideMesh *mesh, int mod
 			memset(tri->tv, 0, sizeof(tri->tv));
 		}
 		CMallaD3D *d3d = operator_new(200);
-		d3d = d3d ? Imp_CMallaD3D_ctorTri(d3d, m, 0x21, 0) : NULL;
+		d3d = d3d ? CMallaD3D_ctorMalla(d3d, m, 0x21, 0) : NULL;
 		CMallaTri_Clear(m);
 		CMallaTri_AddD3D(m, d3d, 1);
 		CSuelo_AddMesh(self, mesh, m, NULL, NULL);
@@ -1726,7 +1713,7 @@ void __fastcall CSuelo_CreateQuadCollision(CSuelo *self) {
 
 	Con_Verbosef("CreateQuadCollision: Building AMC\n");
 	CAlturas_QuadInit(alt, 0, &self->CollideExt, self->CollideTri);
-	int sectors = Imp_Sector_Last() + 1;
+	int sectors = Sector_Last() + 1;
 	for (int i = 0; i < sectors; i++) {
 		CHECK(i < MAX_COLLIDE_SECTORS);
 		CSuelo_BuildSectorMesh(self, &alt->_CollideMesh1[i], 1, i);
@@ -1757,13 +1744,13 @@ void __fastcall CSuelo_CreateQuadCollision(CSuelo *self) {
 void __thiscall CSuelo_NodosToD3D(CSuelo *self, int fvf) {
 	for (int i = 0; i < self->nNodos; i++) {
 		TABLA_CHECK(self->nodos, i, self->nNodos);
-		Imp_CNodo3D_ToD3D(self->nodos + i * NODO_SIZE, fvf);
+		CNodo3D_BuildD3D(&self->nodos[i], fvf);
 	}
 }
 
 void __thiscall CSuelo_Draw(CSuelo *self, void *dev, int unused) {
 	(void)unused;
-	Imp_Render_SetWorldMatrix(g_MatrixIdentity, 0);
+	Render_SetWorldMatrix(g_MatrixIdentity, 0);
 	for (int i = 0; i < self->nNodos; i++) {
 		if (!Suelo_Obj(self, i)) {
 			continue;
@@ -1773,36 +1760,28 @@ void __thiscall CSuelo_Draw(CSuelo *self, void *dev, int unused) {
 			CheckFailed("devNULL", "objeto3D.h", __TIMESTAMP__, __LINE__);
 			obj = NULL;
 		}
-		Imp_Batch_AddMalla(obj, dev);
+		Batch_AddMalla(obj, dev);
 	}
-	Imp_Batch_Flush(dev);
+	Batch_Flush(dev);
 }
 
 void Suelo_DrawBox(const vec3_t *c, float r, uint32_t color) {
 	vec3_t mn = { c->x - r, c->y - r, c->z - r };
 	vec3_t mx = { c->x + r, c->y + r, c->z + r };
-	Imp_Debug_DrawBox(&mn, &mx, color);
+	Debug_DrawBox(&mn, &mx, color);
 }
 
 void Suelo_DrawDebug(void) {
 	CHECK(g_Mundo);
 	CSuelo *suelo = *(CSuelo **)(g_Mundo + MUNDO_SUELO);
 	if (suelo) {
-		Imp_CSuelo_DrawDebug(suelo);
+		CSuelo_DrawDebug(suelo);
 	}
 }
 
 /* building the floor of a scene */
 
-/* the members of the scene (CEscena) and of its nodes read here */
-#define ESCENA_NAME 0x4	/* char * */
-#define ESCENA_NODO 0xc	/* the first node */
-#define ESCENA_INI 0x4c	/* CArchINI * */
-#define ESCENA_FROM_AMC 0x60	/* byte: loaded from the .sm3 and the .amc */
-#define NODO_NAME 0x4
-#define NODO_NEXT 0xc
-#define NODO_FLAGS 0x18
-#define NODO_MATRIX 0x5c
+/* the node flags read here */
 #define NODO_FLAG_NOCOLLIDE (1u << 7)	/* its triangles collide only without colision_opt */
 #define NODO_FLAG_NOCOLLIDE2 (1u << 13)
 #define NODO_FLAG_HIDDEN (1u << 25)
@@ -1820,8 +1799,8 @@ void Suelo_DrawDebug(void) {
 #define Suelo_Field(p, off, type) (*(type *)((byte *)(p) + (off)))
 
 /* the mesh of a scene node: its own collision mesh at 0x30 when it has one */
-static CMallaTri *Suelo_NodoMalla(void *node) {
-	CMallaTri *m = Suelo_ObjMalla(Suelo_Field(node, NODO_OBJ, void *));
+static CMallaTri *Suelo_NodoMalla(CNodo3D *node) {
+	CMallaTri *m = Suelo_ObjMalla(node->obj3D);
 	if (m->d3d) {
 		m = (CMallaTri *)m->d3d;
 	}
@@ -1885,11 +1864,11 @@ static uint32_t Suelo_TriFlags(uint32_t nodeFlags, const void *mat, byte opt) {
 	return fl;
 }
 
-void __thiscall CSuelo_Build(CSuelo *self, void *esc) {
-	const char *name = Suelo_Field(esc, ESCENA_NAME, const char *);
+void __thiscall CSuelo_Build(CSuelo *self, CEscena *esc) {
+	const char *name = esc->name;
 	char nodeName[128];
 
-	if (Suelo_Field(esc, ESCENA_FROM_AMC, byte)) {
+	if (esc->fromAmc) {
 		int mem = g_MemStats->bytes;
 		uint32_t t0 = Suelo_TimeGetTime();
 		if (CSuelo_LoadCollision(self, name)) {
@@ -1899,17 +1878,17 @@ void __thiscall CSuelo_Build(CSuelo *self, void *esc) {
 		Con_Verbosef("Level loaded from SM3+AMC\n");
 		return;
 	}
-	CHECK(Suelo_Field(esc, ESCENA_NODO, void *));
-	Imp_CEscena_UpdateNodes(esc);
+	CHECK(esc->Nodo3D);
+	CEscena_UpdateNodes(esc);
 	/* the box of all meshes and the grid of floor nodes over it */
 	Box_Empty(&self->Extens);
 	int nTri = 0;
-	for (void *n = Suelo_Field(esc, ESCENA_NODO, void *); n; n = Suelo_Field(n, NODO_NEXT, void *)) {
-		if (Imp_CNodo3D_Clase(n) != CLASE_OBJ3D_MALLATRI || (Suelo_Field(n, NODO_FLAGS, uint32_t) & NODO_FLAG_HIDDEN)) {
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		if (CNodo3D_Clase(n) != CLASE_OBJ3D_MALLATRI || (n->flags & NODO_FLAG_HIDDEN)) {
 			continue;
 		}
 		CMallaTri *m = Suelo_NodoMalla(n);
-		CMallaTri_Transform(m, (const matrix_t *)((byte *)n + NODO_MATRIX));
+		CMallaTri_Transform(m, &n->m);
 		CMallaTri_CalcBox(m, &self->Extens, 0);
 		nTri += m->nTri;
 	}
@@ -1923,32 +1902,32 @@ void __thiscall CSuelo_Build(CSuelo *self, void *esc) {
 	CHECK(2000000.0 > __builtin_fabs((double)self->Dim.y));
 	CHECK(2000000.0 > __builtin_fabs((double)self->Dim.z));
 	double k = 1.0 / __builtin_sqrt((double)(((self->Dim.z * self->Dim.x) / (float)nTri) * (float)g_SueloTrisPerNode));
-	int nx = (int)Imp_crt_ceil((double)self->Dim.x * k);
+	int nx = (int)crt_ceil((double)self->Dim.x * k);
 	self->nx = nx;
-	int nz = (int)Imp_crt_ceil((double)self->Dim.z * k);
+	int nz = (int)crt_ceil((double)self->Dim.z * k);
 	self->nz = nz;
 	Tabla_NewFC((CTabla *)&self->nNodos, nz * nx);
 	for (int i = 0; i < self->nNodos; i++) {
 		Bprintf(nodeName, sizeof(nodeName), "suelo_%d", i);
 		TABLA_CHECK(self->nodos, i, self->nNodos);
-		Cad_Set((char **)(self->nodos + i * NODO_SIZE + NODO_NAME), nodeName);
+		Cad_Set(&self->nodos[i].name, nodeName);
 		CMallaTri *m = operator_new(sizeof(CMallaTri));
 		m = m ? CMallaTri_ctor(m) : NULL;
 		TABLA_CHECK(self->nodos, i, self->nNodos);
-		Imp_CNodo3D_SetObj(self->nodos + i * NODO_SIZE, m);
+		CNodo3D_SetObj3D(&self->nodos[i], (IObjeto3D *)m);
 	}
 	/* the triangles into the floor node of the cell of their center */
 	self->CollideTri = 0;
 	Box_Empty(&self->CollideExt);
-	CArchINI *ini = Suelo_Field(esc, ESCENA_INI, CArchINI *);
+	CArchINI *ini = esc->ini;
 	byte opt = ini && CArchINI_GetBool(ini, "suelo", "colision_opt", 0) ? 1 : 0;
-	for (void *n = Suelo_Field(esc, ESCENA_NODO, void *); n; n = Suelo_Field(n, NODO_NEXT, void *)) {
-		int sector = Imp_Sector_OfNode(n);
-		byte outside = Imp_Sector_IsOutside(sector);
-		uint32_t *nodeFlags = &Suelo_Field(n, NODO_FLAGS, uint32_t);
-		if (Imp_CNodo3D_Clase(n) != CLASE_OBJ3D_MALLATRI) {
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		int sector = Sector_OfNode(n);
+		byte outside = Sector_IsOutside(sector);
+		uint32_t *nodeFlags = &n->flags;
+		if (CNodo3D_Clase(n) != CLASE_OBJ3D_MALLATRI) {
 			if (*nodeFlags & NODO_FLAG_EMPTY) {
-				CHECK(Imp_CNodo3D_Clase(n) == 0);
+				CHECK(CNodo3D_Clase(n) == 0);
 				*nodeFlags |= NODO_FLAG_SUELO;
 			}
 			continue;
@@ -1984,7 +1963,7 @@ void __thiscall CSuelo_Build(CSuelo *self, void *esc) {
 			}
 			CMallaTri_AddTriVerts(dst, &v[0], &v[1], &v[2], mat, 1, sec << 16 | flags);
 		}
-		Imp_CNodo3D_FreeObj(n);
+		CNodo3D_FreeObj3D(n);
 		*nodeFlags |= NODO_FLAG_SUELO;
 	}
 	CHECK(self->CollideTri);

@@ -12,6 +12,7 @@
 #include "scrap/mallatri.h"
 #include "scrap/material.h"
 #include "scrap/nodo3d.h"
+#include "scrap/suelo.h"
 #include "scrap/varios.h"
 
 #define CNODO3D_VFTABLE 0x3d7e78
@@ -499,7 +500,7 @@ byte __thiscall CNodo3D_BuildD3D(CNodo3D *self, uint32_t flags) {
 	if (clase != CLASE_OBJ3D_SUELO) {
 		return 0;
 	}
-	CSuelo_BuildD3D(Obj3D_Cast(self->obj3D, CLASE_OBJ3D_SUELO), flags);
+	CSuelo_NodosToD3D(Obj3D_Cast(self->obj3D, CLASE_OBJ3D_SUELO), flags);
 	return 1;
 }
 

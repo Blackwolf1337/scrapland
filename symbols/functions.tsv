@@ -7443,70 +7443,70 @@ rva	size	source	callconv	name	signature
 00258290	121	USER_DEFINED	__cdecl	Tabla_Read2	void __cdecl(void *f, void *t)
 00258310	131	USER_DEFINED	__cdecl	Tabla_Read1C	void __cdecl(void *f, void *t)
 002583a0	125	USER_DEFINED	__cdecl	Tabla_ReadC	void __cdecl(void *f, void *t)
-00258420	48	DEFAULT	unknown	FUN_00658420	
-00258450	58	DEFAULT	unknown	FUN_00658450	
-00258490	52	DEFAULT	unknown	FUN_00658490	
-002584d0	474	DEFAULT	unknown	FUN_006584d0	
-002586b0	109	DEFAULT	unknown	FUN_006586b0	
-00258720	60	DEFAULT	unknown	FUN_00658720	
-00258760	473	DEFAULT	unknown	FUN_00658760	
-00258980	64	DEFAULT	unknown	FUN_00658980	
-002589c0	34	DEFAULT	unknown	FUN_006589c0	
-002589f0	747	DEFAULT	unknown	FUN_006589f0	
-00258ce0	91	DEFAULT	unknown	FUN_00658ce0	
-00258d40	72	DEFAULT	unknown	FUN_00658d40	
-00258d90	158	DEFAULT	unknown	FUN_00658d90	
-00258e30	161	ANALYSIS	__thiscall	CNodo3D::vf00	undefined __thiscall(void)
-00258ee0	100	ANALYSIS	__thiscall	CSuelo::vf00	undefined __thiscall(void)
-00258f50	100	DEFAULT	unknown	FUN_00658f50	
+00258420	48	USER_DEFINED	__cdecl	Tabla_Write2	void __cdecl(void * f, void * t)
+00258450	58	USER_DEFINED	__cdecl	Tabla_Write1C	void __cdecl(void * f, void * t)
+00258490	52	USER_DEFINED	__cdecl	Tabla_WriteC	void __cdecl(void * f, void * t)
+002584d0	474	USER_DEFINED	__fastcall	CAlturas_ctor	void * __fastcall(void * self)
+002586b0	109	USER_DEFINED	__fastcall	CCollideMesh_ctor	void * __fastcall(void * self)
+00258720	60	USER_DEFINED	__fastcall	CCollideQuad_ctor	void * __fastcall(void * self)
+00258760	473	USER_DEFINED	__fastcall	CSuelo_ctor	void * __fastcall(void * self)
+00258980	64	USER_DEFINED	__fastcall	Tabla_FreeObjs	void __fastcall(void * t)
+002589c0	34	USER_DEFINED	__fastcall	Tabla_Free	void __fastcall(void * t)
+002589f0	747	USER_DEFINED	__fastcall	CAlturas_dtor	void __fastcall(void * self)
+00258ce0	91	USER_DEFINED	__fastcall	CCollideQuad_dtor	void __fastcall(void * self)
+00258d40	72	USER_DEFINED	__fastcall	CSuelo_dtor	void __fastcall(void * self)
+00258d90	158	USER_DEFINED	__thiscall	CCollideQuad_Delete	void * __thiscall(uint flags)
+00258e30	161	USER_DEFINED	__thiscall	CNodo3D_VecDelete	void * __thiscall(uint flags)
+00258ee0	100	USER_DEFINED	__thiscall	CSuelo_Delete	void * __thiscall(byte flags)
+00258f50	100	USER_DEFINED	__thiscall	CCollideMesh_TriWithPlane	void __thiscall(void * out, int i)
 00258fc0	1267	DEFAULT	unknown	FUN_00658fc0	
-002594c0	453	DEFAULT	unknown	FUN_006594c0	
-00259690	1397	DEFAULT	unknown	FUN_00659690	
-00259c10	275	DEFAULT	unknown	FUN_00659c10	
-00259d30	233	DEFAULT	unknown	FUN_00659d30	
-00259e20	523	DEFAULT	unknown	FUN_00659e20	
+002594c0	453	USER_DEFINED	__thiscall	CCollideMesh_TriPlane	float * __thiscall(float * out, uint i)
+00259690	1397	USER_DEFINED	__thiscall	CSuelo_AddMesh	void __thiscall(void * mesh, void * tm, uint * outID, int * outIni)
+00259c10	275	USER_DEFINED	__thiscall	CSuelo_RemoveMesh	void __thiscall(void * mesh, int a2, int a3)
+00259d30	233	USER_DEFINED	__thiscall	CSuelo_SetMeshCollide	void __thiscall(void * mesh, byte on, int MeshID, int IniTri)
+00259e20	523	USER_DEFINED	__fastcall	CSuelo_CreateQuadCollision	void __fastcall(void * self)
 0025a030	550	DEFAULT	unknown	FUN_0065a030	
 0025a260	2507	DEFAULT	unknown	FUN_0065a260	
-0025ac30	87	ANALYSIS	__thiscall	CSuelo::vf04	undefined __thiscall(void)
-0025ac90	125	DEFAULT	unknown	FUN_0065ac90	
-0025ad10	125	DEFAULT	unknown	FUN_0065ad10	
-0025ad90	220	DEFAULT	unknown	FUN_0065ad90	
-0025ae70	200	DEFAULT	unknown	FUN_0065ae70	
-0025af90	87	ANALYSIS	__thiscall	CSuelo::vf03	undefined __thiscall(void)
-0025aff0	126	DEFAULT	unknown	FUN_0065aff0	
-0025b070	779	DEFAULT	unknown	FUN_0065b070	
-0025b380	466	DEFAULT	unknown	FUN_0065b380	
-0025b560	1085	DEFAULT	unknown	FUN_0065b560	
-0025b9a0	194	ANALYSIS	__thiscall	CSuelo::vf06	undefined __thiscall(void)
-0025ba70	356	DEFAULT	unknown	FUN_0065ba70	
-0025bbe0	114	DEFAULT	unknown	FUN_0065bbe0	
-0025bc60	2043	DEFAULT	unknown	FUN_0065bc60	
-0025c460	348	DEFAULT	unknown	FUN_0065c460	
-0025c5c0	563	DEFAULT	unknown	FUN_0065c5c0	
-0025c800	205	ANALYSIS	__thiscall	CSuelo::vf02	undefined __thiscall(void)
-0025c8d0	309	DEFAULT	unknown	FUN_0065c8d0	
-0025ca10	783	DEFAULT	unknown	FUN_0065ca10	
-0025cd20	163	ANALYSIS	__thiscall	CSuelo::vf05	undefined __thiscall(void)
-0025cdd0	199	DEFAULT	unknown	FUN_0065cdd0	
-0025cea0	148	DEFAULT	unknown	FUN_0065cea0	
-0025cf40	1023	DEFAULT	unknown	FUN_0065cf40	
-0025d340	54	DEFAULT	unknown	FUN_0065d340	
-0025d380	3	ANALYSIS	__thiscall	CSuelo::vf01	undefined __thiscall(void)
-0025d390	507	DEFAULT	unknown	FUN_0065d390	
-0025d590	121	DEFAULT	unknown	FUN_0065d590	
-0025d610	524	DEFAULT	unknown	FUN_0065d610	
-0025d820	284	DEFAULT	unknown	FUN_0065d820	
-0025d940	974	DEFAULT	unknown	FUN_0065d940	
-0025dd10	1927	DEFAULT	unknown	FUN_0065dd10	
-0025e4a0	1669	DEFAULT	unknown	FUN_0065e4a0	
-0025eb30	1383	DEFAULT	unknown	FUN_0065eb30	
-0025f0a0	2653	DEFAULT	unknown	FUN_0065f0a0	
-0025fb00	85	USER_DEFINED	__thiscall	CSuelo_BuildD3D	void __thiscall(void * arg)
-0025fb60	3249	DEFAULT	unknown	FUN_0065fb60	
-00260820	637	DEFAULT	unknown	FUN_00660820	
-00260aa0	722	DEFAULT	unknown	FUN_00660aa0	
-00260d80	558	DEFAULT	unknown	FUN_00660d80	
-00260fc0	461	DEFAULT	unknown	FUN_00660fc0	
+0025ac30	87	USER_DEFINED	__thiscall	CSuelo_NodosVf4	void __thiscall(void * arg)
+0025ac90	125	USER_DEFINED	__thiscall	CCollideQuad_TriMaxY	float __thiscall(void * tri)
+0025ad10	125	USER_DEFINED	__thiscall	CCollideQuad_TriMinY	float __thiscall(void * tri)
+0025ad90	220	USER_DEFINED	__fastcall	CCollideQuad_LowestTri	int __fastcall(void * self)
+0025ae70	200	USER_DEFINED	__thiscall	CCollideMesh_GetTri	void __thiscall(int i, void * tri, float * v0, float * v1, float * v2)
+0025af90	87	USER_DEFINED	__thiscall	CSuelo_NodosVf3	void __thiscall(void * arg)
+0025aff0	126	USER_DEFINED	__fastcall	CSuelo_CalcGaps	void __fastcall(void * self)
+0025b070	779	USER_DEFINED	__thiscall	CSuelo_BuildSectorMesh	void __thiscall(void * mesh, int mode, uint sector)
+0025b380	466	USER_DEFINED	__thiscall	CCollideMesh_Read	void __thiscall(void * f)
+0025b560	1085	USER_DEFINED	__thiscall	CSuelo_LoadCollision	int __thiscall(char * name)
+0025b9a0	194	USER_DEFINED	__thiscall	CSuelo_Read	byte __thiscall(void * f, void * ctx)
+0025ba70	356	USER_DEFINED	__thiscall	CCollideQuad_Read	void __thiscall(void * f)
+0025bbe0	114	USER_DEFINED	__cdecl	Suelo_DrawBox	void __cdecl(float * c, float r, uint color)
+0025bc60	2043	USER_DEFINED	__thiscall	CAlturas_QuadAddMesh	void __thiscall(void * mesh, int initTri)
+0025c460	348	USER_DEFINED	__thiscall	CCollideQuad_Find	void * __thiscall(void * cuad, uint id, void * mesh)
+0025c5c0	563	USER_DEFINED	__thiscall	CAlturas_QuadInit	void __thiscall(int unused, float * box, int numTri)
+0025c800	205	USER_DEFINED	__thiscall	CSuelo_Draw	void __thiscall(void * dev, int unused)
+0025c8d0	309	USER_DEFINED	__thiscall	CCollideMesh_Write	void __thiscall(void * f)
+0025ca10	783	USER_DEFINED	__thiscall	CSuelo_SaveCollision	int __thiscall(char * name)
+0025cd20	163	USER_DEFINED	__thiscall	CSuelo_Write	byte __thiscall(void * f, void * ctx)
+0025cdd0	199	USER_DEFINED	__thiscall	CCollideQuad_Write	void __thiscall(void * f)
+0025cea0	148	USER_DEFINED	__thiscall	CAlturas_SetParam	void __thiscall(byte param)
+0025cf40	1023	USER_DEFINED	__fastcall	CCollideQuad_CalcGap	void __fastcall(void * self)
+0025d340	54	USER_DEFINED	__cdecl	Suelo_DrawDebug	void __cdecl(void)
+0025d380	3	USER_DEFINED	__thiscall	CSuelo_Nop	void __thiscall(void * arg)
+0025d390	507	USER_DEFINED	__thiscall	CCollideQuad_CalcExtens	void __thiscall(void * q)
+0025d590	121	USER_DEFINED	__thiscall	CCollideQuad_AddAllTris	void __thiscall(void * q)
+0025d610	524	USER_DEFINED	__cdecl	Suelo_SphereTri	byte __cdecl(float * c, float r, void * tri, void * mesh, float * res)
+0025d820	284	USER_DEFINED	__cdecl	Suelo_SegPlane	byte __cdecl(float * a, float * b, float r, float * pl, float * t)
+0025d940	974	USER_DEFINED	__cdecl	Suelo_SegEdge	byte __cdecl(float * a, float * b, float * p, float * q, float r, float * t)
+0025dd10	1927	USER_DEFINED	__thiscall	CSuelo_CollideSphere	byte __thiscall(float * a, float * b, float r, float * out, float * hit, float * n)
+0025e4a0	1669	USER_DEFINED	__thiscall	CSuelo_SphereContact	byte __thiscall(float * a, float * b, float r, float * out, float * hit, float * n)
+0025eb30	1383	USER_DEFINED	__thiscall	CSuelo_SweepSphere	byte __thiscall(float * a, float * b, float r, float * out, float * hit, float * n)
+0025f0a0	2653	USER_DEFINED	__cdecl	Suelo_SweepTri	byte __cdecl(float * a, float * b, float r, void * tri, void * mesh, float * res)
+0025fb00	85	USER_DEFINED	__thiscall	CSuelo_NodosToD3D	void __thiscall(int fvf)
+0025fb60	3249	USER_DEFINED	__thiscall	CSuelo_Build	void __thiscall(void * esc)
+00260820	637	USER_DEFINED	__cdecl	Suelo_PointInTri	byte __cdecl(float * p, float * a, float * b, float * c)
+00260aa0	722	USER_DEFINED	__cdecl	Suelo_DistPointSeg	float __cdecl(float * a, float * b, float * p, float * out)
+00260d80	558	USER_DEFINED	__cdecl	Suelo_Dist2PointSeg	float __cdecl(float * a, float * b, float * p, float * out)
+00260fc0	461	USER_DEFINED	__fastcall	CSuelo_NewQuery	void __fastcall(void * self)
 00261190	112	USER_DEFINED	__thiscall	Tabla_Alloc2	void __thiscall(int num)
 00261200	115	USER_DEFINED	__thiscall	Tabla_Alloc1C	void __thiscall(int num)
 00261280	115	USER_DEFINED	__thiscall	Tabla_AllocC	void __thiscall(int num)
