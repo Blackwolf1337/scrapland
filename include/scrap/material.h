@@ -208,8 +208,6 @@ void AnimMat_Free(CAnimMat **slot);
 void AnimMat_FromMapa(CAnimMat **slot, const CMapa *mapa);
 /* Render_SetMaterial of pass 0 with anim (if set) in place of the animation of the first map */
 void Render_SetMaterialAnim(CMaterial *m, CAnimMat *anim);
-/* rva 0x24bf30 (render.cpp): the material for a pass, -1 with no material */
-int Render_SetMaterial(void *mat, int pass);
 byte Mat_CompareNames(const CMaterial *a, const CMaterial *b);
 const char *Mat_Str(const CMaterial *m);
 /* sort order for drawing */

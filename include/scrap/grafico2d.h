@@ -77,10 +77,4 @@ void __fastcall CGrafico2D_Init(CGrafico2D *self);
 uint32_t Grafico2D_NumPrims(int tipo, uint32_t nVert);
 void Grafico2D_GetPantalla(int *w, int *h);
 
-/* other modules (src/imports.inc) */
-/* rva 0x24e650, 0x24e620 (render.cpp): the viewport size, CHECK that it is set */
-int Render_GetViewportW(void);
-int Render_GetViewportH(void);
-#define g_RenderOff GAME_DATA(byte, 0x4a8ef8)	/* nothing is drawn (render.cpp) */
-
 #endif

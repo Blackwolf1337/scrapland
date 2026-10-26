@@ -288,7 +288,6 @@ matrix_t *Matrix_LoadIdentity(matrix_t *m);	/* rva 0x214710 */
 matrix_t *Matrix_MulD3D(matrix_t *out, const matrix_t *a, const matrix_t *b);	/* rva 0x2391f0, out = a * b */
 void __thiscall CRotacion_SetEuler(CRotacion *self, const vec3_t *ang);	/* rva 0x212510 */
 void *CSistPart_Cast(IObjeto3D *obj);	/* rva 0x23f310, CHECK of the class */
-int Render_SetWorldMatrix(const matrix_t *m, byte defer);	/* rva 0x24bac0, the world transform of the device; 0 */
 byte __thiscall CNodo3D_DebugDraw(CNodo3D *self, CNodoR *r);	/* rva 0x23d9d0, R_ShowLocalBox; 0: not drawn */
 void __thiscall CNodoR_UpdateNodo(CNodoR *self);	/* rva 0x23f5d0 */
 int __thiscall CNodoR_ApplyFX(CNodoR *self, matrix_t *m);	/* rva 0x23f540 */

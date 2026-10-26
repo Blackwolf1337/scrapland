@@ -403,7 +403,6 @@ SD_IMPORT(Portales_DebugDraw, 0x26d0d0)
 
 /* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/mundo.h) */
 SD_IMPORT(Color_ToD3D, 0x214f70)
-SD_IMPORT(Render_Clear, 0x249de0)
 SD_IMPORT(Bsp_Free, 0x290520)
 SD_IMPORT(Bsp_ReleaseD3D, 0x286c80)
 SD_IMPORT(Bsp_InitD3D, 0x286cb0)
@@ -418,6 +417,13 @@ SD_IMPORT(Sectores_Crear, 0x26d5a0)
 SD_IMPORT(Portales_SetView, 0x26db80)
 SD_IMPORT(CSuelo_FreeNodos, 0x261530)
 SD_IMPORT(Font_PrintfXY, 0x299ce0)
+
+/* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
+SD_IMPORT(Render_ClipRect, 0x24e220)
+SD_IMPORT(Render_HasStencil, 0x24e6f0)
+SD_IMPORT(RenderMallaD3D_Flush, 0x2b6af0)
+SD_IMPORT(RenderMallaD3D_Flush2, 0x2b6e60)
+SD_IMPORT(RenderObjBase3D_Flush, 0x2b7260)
 
 /* src/game/engine3d/Engine/Grafico2D.c (called from Engine/grafico2d.cpp, include/scrap/grafico2d.h) */
 SD_IMPORT(Render_GetViewportW, 0x24e650)

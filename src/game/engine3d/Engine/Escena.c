@@ -24,13 +24,6 @@ static double Escena_Seconds(uint32_t t0) {
 	return (double)(uint32_t)(exe_timeGetTime() - t0) / 1000.0;
 }
 
-void Render_GetViewportSize(int *ancho, int *alto) {
-	CHECK(g_ViewportW && g_ViewportH);
-	CHECK(ancho && alto);
-	*ancho = g_ViewportW;
-	*alto = g_ViewportH;
-}
-
 CEscena *__fastcall CEscena_ctor(CEscena *self) {
 	self->name = NULL;
 	self->Refs = 0;

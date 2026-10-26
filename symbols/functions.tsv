@@ -7181,7 +7181,7 @@ rva	size	source	callconv	name	signature
 00243990	51	USER_DEFINED	__cdecl	VertCache_Oldest	int __cdecl(void)
 002439d0	36	USER_DEFINED	__cdecl	VertCache_Find	int __cdecl(int v)
 00243a00	162	DEFAULT	unknown	FUN_00643a00	
-00243ab0	158	DEFAULT	unknown	FUN_00643ab0	
+00243ab0	158	USER_DEFINED	__cdecl	Render_PSFixed	void __cdecl(void * arg, byte flags)
 00243b50	575	DEFAULT	unknown	FUN_00643b50	
 00243d90	137	DEFAULT	unknown	FUN_00643d90	
 00243e20	980	DEFAULT	unknown	FUN_00643e20	
@@ -7204,28 +7204,28 @@ rva	size	source	callconv	name	signature
 00248f00	106	DEFAULT	unknown	FUN_00648f00	
 00248f70	106	DEFAULT	unknown	FUN_00648f70	
 00248fe0	308	DEFAULT	unknown	FUN_00648fe0	
-00249120	85	DEFAULT	unknown	FUN_00649120	
-00249180	85	DEFAULT	unknown	FUN_00649180	
-002491e0	85	DEFAULT	unknown	FUN_006491e0	
-00249240	85	DEFAULT	unknown	FUN_00649240	
-002492a0	85	DEFAULT	unknown	FUN_006492a0	
-00249300	85	DEFAULT	unknown	FUN_00649300	
-00249360	85	DEFAULT	unknown	FUN_00649360	
-002493c0	85	DEFAULT	unknown	FUN_006493c0	
-00249420	85	DEFAULT	unknown	FUN_00649420	
+00249120	85	USER_DEFINED	__cdecl	Render_PS0	void __cdecl(void * arg, byte flags)
+00249180	85	USER_DEFINED	__cdecl	Render_PS1	void __cdecl(void * arg, byte flags)
+002491e0	85	USER_DEFINED	__cdecl	Render_PS2	void __cdecl(void * arg, byte flags)
+00249240	85	USER_DEFINED	__cdecl	Render_PS3	void __cdecl(void * arg, byte flags)
+002492a0	85	USER_DEFINED	__cdecl	Render_PS4	void __cdecl(void * arg, byte flags)
+00249300	85	USER_DEFINED	__cdecl	Render_PS5	void __cdecl(void * arg, byte flags)
+00249360	85	USER_DEFINED	__cdecl	Render_PS6	void __cdecl(void * arg, byte flags)
+002493c0	85	USER_DEFINED	__cdecl	Render_PS7	void __cdecl(void * arg, byte flags)
+00249420	85	USER_DEFINED	__cdecl	Render_PS8	void __cdecl(void * arg, byte flags)
 00249490	3	DEFAULT	unknown	FUN_00649490	
-002494a0	448	DEFAULT	unknown	FUN_006494a0	
-00249670	442	DEFAULT	unknown	FUN_00649670	
-00249830	456	DEFAULT	unknown	FUN_00649830	
-00249a00	52	DEFAULT	unknown	FUN_00649a00	
-00249a40	66	DEFAULT	unknown	FUN_00649a40	
-00249a90	211	DEFAULT	unknown	FUN_00649a90	
-00249b70	217	DEFAULT	unknown	FUN_00649b70	
-00249c50	29	DEFAULT	unknown	FUN_00649c50	
-00249c70	29	DEFAULT	unknown	FUN_00649c70	
-00249c90	156	DEFAULT	unknown	FUN_00649c90	
-00249d30	166	DEFAULT	unknown	FUN_00649d30	
-00249de0	234	USER_DEFINED	unknown	Render_Clear	
+002494a0	448	USER_DEFINED	__cdecl	Frustum_TestSeg	int __cdecl(void * a, void * b)
+00249670	442	USER_DEFINED	__cdecl	Frustum_PlaneOutside	int __cdecl(void * p, uint skip)
+00249830	456	USER_DEFINED	__cdecl	Frustum_TestSpheres	void __cdecl(void * centers, float * radius, int n, int * out)
+00249a00	52	USER_DEFINED	__fastcall	CRenderIB_Reset	void __fastcall(void * self)
+00249a40	66	USER_DEFINED	__fastcall	CRenderVB_Reset	void __fastcall(void * self)
+00249a90	211	USER_DEFINED	__thiscall	CRenderIB_Add	void __thiscall(int numtri, ushort * idx)
+00249b70	217	USER_DEFINED	__thiscall	CRenderVB_Add	void __thiscall(int numvert, void * verts)
+00249c50	29	USER_DEFINED	__thiscall	CRenderIB_Get	void * __thiscall(int * used)
+00249c70	29	USER_DEFINED	__thiscall	CRenderVB_Get	void * __thiscall(int * used)
+00249c90	156	USER_DEFINED	__thiscall	CRenderIB_Create	void __thiscall(uint numtri)
+00249d30	166	USER_DEFINED	__thiscall	CRenderVB_Create	void __thiscall(uint numvert, int size, uint fvf)
+00249de0	234	USER_DEFINED	__cdecl	Render_Clear	byte __cdecl(int * rect, uint flags, uint color, float z, uint stencil)
 00249ed0	98	DEFAULT	unknown	FUN_00649ed0	
 00249f40	265	DEFAULT	unknown	FUN_00649f40	
 0024a050	649	DEFAULT	unknown	FUN_0064a050	
@@ -7275,12 +7275,12 @@ rva	size	source	callconv	name	signature
 0024d570	44	DEFAULT	unknown	FUN_0064d570	
 0024d5a0	153	DEFAULT	unknown	FUN_0064d5a0	
 0024d640	3028	DEFAULT	unknown	FUN_0064d640	
-0024e220	363	DEFAULT	unknown	FUN_0064e220	
+0024e220	363	USER_DEFINED	unknown	Render_ClipRect	
 0024e390	24	DEFAULT	unknown	FUN_0064e390	
 0024e3b0	530	DEFAULT	unknown	FUN_0064e3b0	
 0024e620	43	USER_DEFINED	unknown	Render_GetViewportH	
 0024e650	43	USER_DEFINED	unknown	Render_GetViewportW	
-0024e6f0	47	DEFAULT	unknown	FUN_0064e6f0	
+0024e6f0	47	USER_DEFINED	unknown	Render_HasStencil	
 0024e750	116	USER_DEFINED	__cdecl	Render_GetViewportSize	void __cdecl(int * ancho, int * alto)
 0024e7d0	230	USER_DEFINED	__fastcall	CEscena_ctor	void * __fastcall(void * self)
 0024e8c0	528	USER_DEFINED	__fastcall	CEscena_dtor	void __fastcall(void * self)
@@ -8453,14 +8453,14 @@ rva	size	source	callconv	name	signature
 002b5d90	2445	DEFAULT	unknown	FUN_006b5d90	
 002b6720	117	DEFAULT	unknown	FUN_006b6720	
 002b67a0	844	USER_DEFINED	__cdecl	MallaD3D_Render	int __cdecl(void * mesh, void * ctx)
-002b6af0	322	DEFAULT	unknown	FUN_006b6af0	
+002b6af0	322	USER_DEFINED	unknown	RenderMallaD3D_Flush	
 002b6c40	59	DEFAULT	unknown	FUN_006b6c40	
 002b6c80	60	DEFAULT	unknown	FUN_006b6c80	
 002b6cc0	401	DEFAULT	unknown	FUN_006b6cc0	
-002b6e60	691	DEFAULT	unknown	FUN_006b6e60	
+002b6e60	691	USER_DEFINED	unknown	RenderMallaD3D_Flush2	
 002b7120	36	DEFAULT	unknown	FUN_006b7120	
 002b7150	265	DEFAULT	unknown	FUN_006b7150	
-002b7260	359	DEFAULT	unknown	FUN_006b7260	
+002b7260	359	USER_DEFINED	unknown	RenderObjBase3D_Flush	
 002b73d0	36	DEFAULT	unknown	FUN_006b73d0	
 002b7400	232	DEFAULT	unknown	FUN_006b7400	
 002b74f0	167	DEFAULT	unknown	FUN_006b74f0	

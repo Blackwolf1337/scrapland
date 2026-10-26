@@ -35,8 +35,6 @@ void Texto_Printf(int x, int y, const char *fmt, ...);
 void Texto_Mensaje(uint32_t ms, const char *fmt, ...);
 
 /* other modules (src/imports.inc) */
-/* rva 0x24cf00 (render.cpp): the screen position (pixels) of a world position; 0, -1 when it is not on the screen */
-int Render_ToScreen(const vec3_t *pos, float *xy);
 /* rva 0x2170d0 (ScrapEngMain.cpp): text in font fnt (1 or 2), align 3 centered */
 void Eng_Printf(int fnt, float x, float y, int align, uint32_t color, const char *fmt, ...);
 

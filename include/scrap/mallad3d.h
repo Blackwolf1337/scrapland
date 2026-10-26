@@ -216,9 +216,6 @@ int MallaD3D_CompareVertIdx(const void *a, const void *b);
 int MallaD3D_CompareGrupo(const void *a, const void *b);
 int MallaD3D_CompareTri(const void *a, const void *b);
 
-/* Engine/render.cpp: the vertex buffer of a vertex list and the index buffer of triangles (HRESULT) */
-int Render_CreateVB(void **vb, CListaVert *vert, int flags);
-int Render_CreateIB(void **ib, const void *tris, uint32_t nTri, int flags);
 /* the drawing of a mesh list (HRESULT) */
 int MallaD3D_Render(CMallaD3D *self, void *ctx);
 /* the plane through three points; 0 for a degenerate triangle (calc_plano) */

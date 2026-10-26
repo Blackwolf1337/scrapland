@@ -26,10 +26,6 @@ enum {
 	ESCENA_MSG_CAMARAS = 3		/* a, b: the floats at 0x2c and 0x30 of the cameras, 0 keeps them */
 };
 
-/* the viewport size of render.cpp */
-#define g_ViewportW GAME_DATA(int, 0x4ad7e8)
-#define g_ViewportH GAME_DATA(int, 0x4ad7ec)
-void Render_GetViewportSize(int *ancho, int *alto);
 
 CEscena *__fastcall CEscena_ctor(CEscena *self);
 void __fastcall CEscena_dtor(CEscena *self);

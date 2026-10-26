@@ -32,8 +32,4 @@ void Debug_DrawTri(const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t c
 /* "MallaTri", "Luz", ... "otro" for an unknown class */
 const char *Obj3D_ClaseName(uint32_t clase);
 
-/* other modules (src/imports.inc) */
-/* rva 0x24b960 (render.cpp): a line in the current world matrix; an error without a device */
-int Render_Line(const vec3_t *a, const vec3_t *b, uint32_t color);
-
 #endif

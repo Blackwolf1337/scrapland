@@ -121,8 +121,6 @@ void Debug_PuntosClear(void);
 int Debug_PuntosDraw(void);
 
 /* other modules (src/imports.inc) */
-/* rva 0x249de0 (render.cpp), rect NULL for all */
-byte Render_Clear(const void *rect, uint32_t flags, uint32_t color, float z, uint32_t stencil);
 /* bsp.cpp, the shadow maps (rva 0x290520, 0x286c80, 0x286cb0, 0x291000, 0x296cd0) */
 void Bsp_Free(void);
 void Bsp_ReleaseD3D(void);
