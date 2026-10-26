@@ -46,8 +46,13 @@ def agidx(p, objs):
 		if objs[i] == p:
 			return i
 	return '?'
+# the name shows only the string arguments, the others are heap pointers
 def agcall(name, rva, sig, *args):
-	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: apply(SDTest.Call, (rva, sig) + args))
+	shown = []
+	for a in args:
+		if type(a) == type(''):
+			shown.append(a)
+	check(name + fmt(tuple(shown)), lambda rva=rva, sig=sig, args=args: apply(SDTest.Call, (rva, sig) + args))
 
 # MorphData_Find on 10 steps with some tags
 md = agcalloc(0x50)
@@ -91,9 +96,9 @@ mdr = agcalloc(0x50)
 for i in range(7):
 	agwi(mdr + 8 * i, 0x11223344)
 	agwi(mdr + 8 * i + 4, 0x55667788)
-	check('MorphData_Read' + fmt((i,)), lambda i=i: (SDTest.Call(0x251b30, 'biisiii', ini, 'Morphing:grpm', i, mdr + 8 * i, 5)[0],
+	check('MorphData_Read' + fmt((i,)), lambda i=i: (SDTest.Call(0x251b30, 'bisiii', ini, 'Morphing:grpm', i, mdr + 8 * i, 5)[0],
 		agi(mdr + 8 * i), agi(mdr + 8 * i + 4)))
-check('MorphData_Read none', lambda: (SDTest.Call(0x251b30, 'biisiii', ini, 'nosect', 0, mdr, 5)[0], agi(mdr), agi(mdr + 4)))
+check('MorphData_Read none', lambda: (SDTest.Call(0x251b30, 'bisiii', ini, 'nosect', 0, mdr, 5)[0], agi(mdr), agi(mdr + 4)))
 
 # fake scenes: a CEscena of 0x50 bytes, nodes of 0x60 bytes in a list by sig (0xc)
 nodes = []
@@ -214,7 +219,7 @@ agcall('CAnimGrupos_Add hole', 0x251d00, 'tiii', slots, grupos[5])
 agwi(slots + 4 * 41, grupos[6])
 agwi(slots + 4 * 43, grupos[7])
 check('CAnimGrupos slots', agslots)
-agcall('CAnimGrupos_Count', 0x2529b0, 'ti', slots)
+agcall('CAnimGrupos_Count', 0x2529b0, 'tii', slots)
 for i in (0, 1, 4, 5, 41, 43, 44, -1, 1000):
 	check('CAnimGrupos_Get' + fmt((i,)), lambda i=i: agidx(SDTest.Call(0x251d70, 'tiii', slots, i)[0], grupos))
 for n in ('grp', 'GRP', 'anim1', 'grpm', 'one', 'none', 'me', 'nothing', ''):
@@ -225,13 +230,13 @@ check('CAnimGrupo_dtor', lambda: (SDTest.Call(0x251980, 'tvi', grupos[8]), agi(g
 	agi(grupos[8] + 0x8c), agi(grupos[8] + 0x94), agi(anim2 + 8)))
 agdel(grupos[8], 0x98)
 check('CAnimGrupos_Clear', lambda: (SDTest.Call(0x251940, 'tvi', slots), agslots(), agi(anim + 8)))
-agcall('CAnimGrupos_Count empty', 0x2529b0, 'ti', slots)
+agcall('CAnimGrupos_Count empty', 0x2529b0, 'tii', slots)
 for i in range(44):
 	agwi(slots + 4 * i, 1)
-agcall('CAnimGrupos_Count full', 0x2529b0, 'ti', slots)
+agcall('CAnimGrupos_Count full', 0x2529b0, 'tii', slots)
 agwi(slots + 4 * 7, 0)
 agwi(slots + 4 * 42, 0)
-agcall('CAnimGrupos_Count 42', 0x2529b0, 'ti', slots)
+agcall('CAnimGrupos_Count 42', 0x2529b0, 'tii', slots)
 for i in range(44):
 	agwi(slots + 4 * i, 0)
 # a group with a morph table, its events and a name destroyed by Clear

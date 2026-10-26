@@ -7075,7 +7075,7 @@ rva	size	source	callconv	name	signature
 0023dfe0	1428	DEFAULT	unknown	FUN_0063dfe0	
 0023e590	149	DEFAULT	unknown	FUN_0063e590	
 0023e630	149	DEFAULT	unknown	FUN_0063e630	
-0023e6d0	101	DEFAULT	unknown	FUN_0063e6d0	
+0023e6d0	101	USER_DEFINED	__thiscall	CNodo3D_FindByName	void * __thiscall(char * name, byte incl)
 0023e740	101	DEFAULT	unknown	FUN_0063e740	
 0023e7b0	71	DEFAULT	unknown	FUN_0063e7b0	
 0023e800	14	DEFAULT	unknown	FUN_0063e800	
@@ -7297,7 +7297,7 @@ rva	size	source	callconv	name	signature
 0024fa10	120	DEFAULT	unknown	FUN_0064fa10	
 0024fa90	329	DEFAULT	unknown	FUN_0064fa90	
 0024fbe0	188	DEFAULT	unknown	FUN_0064fbe0	
-0024fca0	34	DEFAULT	unknown	FUN_0064fca0	
+0024fca0	34	USER_DEFINED	__thiscall	CEscena_NodoObjeto	void * __thiscall(int iObjeto)
 0024fcd0	58	DEFAULT	unknown	FUN_0064fcd0	
 0024fd10	58	DEFAULT	unknown	FUN_0064fd10	
 0024fd50	586	DEFAULT	unknown	FUN_0064fd50	
@@ -7315,12 +7315,12 @@ rva	size	source	callconv	name	signature
 00250be0	334	DEFAULT	unknown	FUN_00650be0	
 00250d30	140	DEFAULT	unknown	FUN_00650d30	
 00250dc0	141	DEFAULT	unknown	FUN_00650dc0	
-00250e50	182	DEFAULT	unknown	FUN_00650e50	
-00250f10	1	DEFAULT	unknown	FUN_00650f10	
+00250e50	182	USER_DEFINED	__thiscall	CAnimCtrl_ctor	void * __thiscall(void)
+00250f10	1	USER_DEFINED	__thiscall	CAnimCtrl_dtor	void __thiscall(void)
 00250f20	8	DEFAULT	unknown	FUN_00650f20	
 00250f30	25	DEFAULT	unknown	FUN_00650f30	
 00250f50	96	DEFAULT	unknown	FUN_00650f50	
-00250fb0	19	DEFAULT	unknown	FUN_00650fb0	
+00250fb0	19	USER_DEFINED	__thiscall	CAnimCtrl_SetFrames	void __thiscall(int primero, int frames)
 00250fd0	75	DEFAULT	unknown	FUN_00650fd0	
 00251030	183	DEFAULT	unknown	FUN_00651030	
 002510f0	164	DEFAULT	unknown	FUN_006510f0	
@@ -7331,19 +7331,19 @@ rva	size	source	callconv	name	signature
 00251530	885	DEFAULT	unknown	FUN_00651530	
 002518b0	18	DEFAULT	unknown	FUN_006518b0	
 002518d0	111	DEFAULT	unknown	FUN_006518d0	
-00251940	52	DEFAULT	unknown	FUN_00651940	
-00251980	269	DEFAULT	unknown	FUN_00651980	
-00251a90	37	DEFAULT	unknown	FUN_00651a90	
-00251ac0	99	DEFAULT	unknown	FUN_00651ac0	
-00251b30	461	DEFAULT	unknown	FUN_00651b30	
-00251d00	103	DEFAULT	unknown	FUN_00651d00	
-00251d70	24	DEFAULT	unknown	FUN_00651d70	
-00251d90	88	DEFAULT	unknown	FUN_00651d90	
-00251df0	517	DEFAULT	unknown	FUN_00651df0	
-00252000	1448	DEFAULT	unknown	FUN_00652000	
-002525b0	763	DEFAULT	unknown	FUN_006525b0	
-002528b0	239	DEFAULT	unknown	FUN_006528b0	
-002529b0	150	DEFAULT	unknown	FUN_006529b0	
+00251940	52	USER_DEFINED	__fastcall	CAnimGrupos_Clear	void __fastcall(void * self)
+00251980	269	USER_DEFINED	__fastcall	CAnimGrupo_dtor	void __fastcall(void * self)
+00251a90	37	USER_DEFINED	__fastcall	AnimEventos_Free	void __fastcall(void * list)
+00251ac0	99	USER_DEFINED	__cdecl	MorphData_Find	int __cdecl(void * md, char * tag)
+00251b30	461	USER_DEFINED	__cdecl	MorphData_Read	byte __cdecl(void * ini, char * sect, int i, void * d, int targets)
+00251d00	103	USER_DEFINED	__thiscall	CAnimGrupos_Add	int __thiscall(void * g)
+00251d70	24	USER_DEFINED	__thiscall	CAnimGrupos_Get	void * __thiscall(uint i)
+00251d90	88	USER_DEFINED	__thiscall	CAnimGrupos_Find	void * __thiscall(char * name, int * idx)
+00251df0	517	USER_DEFINED	__cdecl	AnimGrupo_AlignNode	byte __cdecl(void * escena, void * anim, char * nodo)
+00252000	1448	USER_DEFINED	__cdecl	AnimGrupo_New	void * __cdecl(void * escena, void * anim, char * nombre)
+002525b0	763	USER_DEFINED	__cdecl	AnimGrupo_MapNodes	void __cdecl(void * escena, void * anim)
+002528b0	239	USER_DEFINED	__cdecl	AnimGrupo_Compact	void __cdecl(void * anim)
+002529b0	150	USER_DEFINED	__fastcall	CAnimGrupos_Count	int __fastcall(void * self)
 00252a80	585	DEFAULT	unknown	FUN_00652a80	
 00252cd0	34	DEFAULT	unknown	FUN_00652cd0	
 00252d00	120	DEFAULT	unknown	FUN_00652d00	
@@ -8511,12 +8511,12 @@ rva	size	source	callconv	name	signature
 002bb6a0	69	DEFAULT	unknown	FUN_006bb6a0	
 002bb6f0	437	DEFAULT	unknown	FUN_006bb6f0	
 002bb8b0	45	DEFAULT	unknown	FUN_006bb8b0	
-002bb8e0	44	DEFAULT	unknown	FUN_006bb8e0	
+002bb8e0	44	USER_DEFINED	__thiscall	CAnimEvent_ctor	void * __thiscall(float t, int id, int arg)
 002bb910	56	DEFAULT	unknown	FUN_006bb910	
-002bb980	39	DEFAULT	unknown	FUN_006bb980	
+002bb980	39	USER_DEFINED	__thiscall	CAnimEvent_dtor	void __thiscall(void)
 002bb9b0	51	DEFAULT	unknown	FUN_006bb9b0	
 002bb9f0	123	DEFAULT	unknown	FUN_006bb9f0	
-002bba70	19	DEFAULT	unknown	FUN_006bba70	
+002bba70	19	USER_DEFINED	__thiscall	AnimEventos_Add	void * __thiscall(void * ev)
 002bba90	30	DEFAULT	unknown	FUN_006bba90	
 002bbac0	199	DEFAULT	unknown	FUN_006bbac0	
 002bbb90	298	DEFAULT	unknown	FUN_006bbb90	
