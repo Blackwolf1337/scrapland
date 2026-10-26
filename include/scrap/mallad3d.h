@@ -14,7 +14,6 @@
 #include "scrap/material.h"
 #include "scrap/tabla.h"
 
-#define CLASE_OBJ3D_MALLAD3D 0xa1000002
 #define CMALLAD3D_VFTABLE 0x3e3584
 
 /* Build flags */

@@ -11,7 +11,6 @@
 #include "scrap/mathlib.h"
 #include "scrap/nodo3d.h"
 
-#define CLASE_OBJ3D_LUZ 0xa3000008
 #define MAX_LUCES 1024
 #define MAX_LUCES_OBJ 16	/* the size of the output of Luz_Select */
 

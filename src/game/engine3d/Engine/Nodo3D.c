@@ -271,11 +271,11 @@ void __thiscall CNodo3D_Render(CNodo3D *self, void *arg, CNodoR *r) {
 	}
 	if (CNodo3D_AnimAlpha(self, &alpha) && !g_SkipAnimVis) {
 		o = self->obj3D;
-		if (o && o->clase == CLASE_OBJ3D_A6000080) {
+		if (o && o->clase == CLASE_OBJ3D_FLARE) {
 			if (alpha <= 2) {
 				return;
 			}
-			o = Obj3D_Cast(o, CLASE_OBJ3D_A6000080);
+			o = Obj3D_Cast(o, CLASE_OBJ3D_FLARE);
 			*(float *)((byte *)o + A6000080_ALPHA) = (float)((double)alpha * (1.0 / 255.0));
 		} else if (o && o->clase == CLASE_OBJ3D_SISTPART) {
 			if (alpha <= 2) {

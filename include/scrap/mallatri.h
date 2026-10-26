@@ -11,7 +11,6 @@
 #include "scrap/listavert.h"
 #include "scrap/mallad3d.h"
 
-#define CLASE_OBJ3D_MALLATRI 0xa1000001
 /* flexible vertex format of CVertMalla: D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1 */
 #define MALLATRI_FVF 0x112
 

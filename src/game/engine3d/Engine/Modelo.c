@@ -677,14 +677,14 @@ void __thiscall CModelo_SetEscena(CModelo *self, CEscena *esc) {
 	}
 	self->hasMesh = 0;
 	for (CNodo3D *n = self->escena->Nodo3D; n; n = n->sig) {
-		if ((CNodo3D_Clase(n) == CLASE_OBJ3D_MALLA || CNodo3D_Clase(n) == CLASE_OBJ3D_MALLAD3D) && !(n->flags & 0xa8)) {
+		if ((CNodo3D_Clase(n) == CLASE_OBJ3D_MALLATRI || CNodo3D_Clase(n) == CLASE_OBJ3D_MALLAD3D) && !(n->flags & 0xa8)) {
 			self->hasMesh = 1;
 			break;
 		}
 	}
 	self->hasShadow = 0;
 	for (CNodo3D *n = self->escena->Nodo3D; n; n = n->sig) {
-		if ((n->flags >> 30 & 1) && (CNodo3D_Clase(n) == CLASE_OBJ3D_MALLA || CNodo3D_Clase(n) == CLASE_OBJ3D_MALLAD3D ||
+		if ((n->flags >> 30 & 1) && (CNodo3D_Clase(n) == CLASE_OBJ3D_MALLATRI || CNodo3D_Clase(n) == CLASE_OBJ3D_MALLAD3D ||
 			CNodo3D_Clase(n) == CLASE_OBJ3D_SISTPART) && !(n->flags & 0x88)) {
 			self->hasShadow = 1;
 			return;

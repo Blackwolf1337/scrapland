@@ -12,10 +12,16 @@
 #include "scrap/archio.h"
 #include "scrap/mathlib.h"
 
+/* the classes of the 3D objects (IObjeto3D clase, objeto3d.h), Obj3D_ClaseName gives their names */
+#define CLASE_OBJ3D_MALLATRI 0xa1000001
 #define CLASE_OBJ3D_MALLAD3D 0xa1000002
+#define CLASE_OBJ3D_CAMARA 0xa2000004
+#define CLASE_OBJ3D_LUZ 0xa3000008
 #define CLASE_OBJ3D_SUELO 0xa4000010
 #define CLASE_OBJ3D_SISTPART 0xa5000020
-#define CLASE_OBJ3D_A6000080 0xa6000080	/* the animated visibility sets its float at 0x28 (alpha 0..1) */
+#define CLASE_OBJ3D_GRAFICO3D 0xa6000040
+#define CLASE_OBJ3D_FLARE 0xa6000080	/* the animated visibility sets its float at 0x28 (alpha 0..1) */
+#define CLASE_OBJ3D_PORTAL 0xa7000100
 #define MAX_ANIM_CHANNEL 4
 
 /* flags */

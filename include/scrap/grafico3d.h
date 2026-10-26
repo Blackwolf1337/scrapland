@@ -9,7 +9,6 @@
 #include "scrap/sueloportal.h"
 
 #define CGRAFICO3D_VFTABLE 0x3e45b8
-#define CLASE_OBJ3D_GRAFICO3D 0xa6000040
 #define g_ShowSprites GAME_DATA(int, 0x4e1dd0)	/* 1: visibility, 2: drawn, 3: with the name */
 
 typedef struct CGrafico3D {

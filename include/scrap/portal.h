@@ -8,7 +8,6 @@
 #include "scrap/mallad3d.h"
 
 #define CPORTAL_VFTABLE 0x3e46c0
-#define CLASE_OBJ3D_PORTAL 0xa7000100
 #define g_ShowPortals GAME_DATA(int, 0x4e1de8)	/* gvRenderShowPortals */
 
 typedef struct CPortal {

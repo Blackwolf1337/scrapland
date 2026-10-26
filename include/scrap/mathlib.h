@@ -115,6 +115,8 @@ double Game_Pow(double x, double y);
 int64_t X87_Fistp(double x);	/* round to nearest */
 void X87_SinCos(float a, float *s, float *c);	/* fsincos, both rounded to float */
 void Game_ExpPd(const double in[2], double out[2]);	/* the vectorised exp of loops, two at once */
+void Game_SinPd(const double in[2], double out[2]);
+void Game_CosPd(const double in[2], double out[2]);
 
 
 /* Engine/calculo3d.cpp (src/game/engine3d/Engine/Calculo3d.c) */

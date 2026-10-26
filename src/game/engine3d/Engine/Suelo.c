@@ -21,7 +21,6 @@
 #define CCOLLIDEQUAD_DTOR 0x258ce0
 #define CNODO3D_DTOR 0x23d070
 #define SUELO_FLT_MAX 3.4028234663852886e+38f
-#define CLASE_OBJ3D_MALLAD3D 0xa1000002
 #define g_MatrixIdentity ((const matrix_t *)Game_Ptr(0x4ad6f8))
 
 /* the statistics of the queries, cleared with the query number */

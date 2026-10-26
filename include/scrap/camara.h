@@ -8,8 +8,8 @@
 
 #include "scrap/archio.h"
 #include "scrap/mathlib.h"
+#include "scrap/nodo3d.h"
 
-#define CLASE_OBJ3D_CAMARA 0xa2000004
 #define CAMARA_LOOKAT 0x463		/* mode: the angles follow the target */
 
 typedef struct CNodoRef {

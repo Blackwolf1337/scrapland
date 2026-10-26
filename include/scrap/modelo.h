@@ -30,9 +30,6 @@ enum {
 	ESCENA_F20 = 0x20,
 };
 
-/* classes of the scene objects (IObjeto3D clase) */
-#define CLASE_OBJ3D_MALLA 0xa1000001
-
 /* an animation slot: the animation and the one it blends out of (a NodoAnimPair for the render context) */
 typedef struct CAnimSlot {
 	CAnimGrupo *anim;		/* 0x0 */

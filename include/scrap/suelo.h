@@ -14,7 +14,6 @@
 #include "scrap/nodo3d.h"
 #include "scrap/tabla.h"
 
-#define CLASE_OBJ3D_SUELO 0xa4000010
 #define MAX_COLLIDE_SECTORS 128
 #define CNDX_MAX 0xffff
 #define AMC_VER 100
