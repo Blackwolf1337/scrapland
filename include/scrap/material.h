@@ -10,6 +10,14 @@
 #include "scrap/archio.h"
 
 #define MAPA_TOTAL 5
+/* the maps of a material */
+enum {
+	MAPA_DIFFUSE = 0,
+	MAPA_OPACITY = 1,
+	MAPA_ENTORNO = 2,		/* the reflection */
+	MAPA_BUMP = 3,
+	MAPA_GLOW = 4,
+};
 #define MAX_RUTAS_TEXTURAS 10
 #define MAX_EXTENS_TEXTURAS 10
 

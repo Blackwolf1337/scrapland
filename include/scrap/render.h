@@ -113,12 +113,16 @@ struct CListaVert;
 #define g_EnvMapViewDep GAME_DATA(int, 0x4adb58)	/* R_EnvMapViewDep 0, 1, 2 */
 #define g_EnvBump GAME_DATA(int, 0x4ad838)		/* R_EnvBump */
 #define g_EnvMap GAME_DATA(int, 0x4adda0)		/* R_EnvMap */
+#define g_EnvBlend GAME_DATA(int, 0x4ad9d8)		/* R_EnvBlend */
 /* the render functions of the shader modes (two tables, the second for the modes with 0x100) */
 #define MAX_SHADER_TAB 32
 typedef void (*shaderRender_t)(void *a, void *b);
 typedef struct ShaderTab {
 	uint32_t Index;			/* 0x00 its own index */
-	int i4[4];			/* 0x04 */
+	const char *Nombre;		/* 0x04 */
+	const char *Archivo;		/* 0x08 the .psh, NULL without a pixel shader */
+	int i0c;			/* 0x0c */
+	uint32_t flags;			/* 0x10 0x100, 0x101 */
 	shaderRender_t fnRender;	/* 0x14 */
 } ShaderTab;
 SD_SIZE(ShaderTab, 0x18);
@@ -127,7 +131,30 @@ SD_SIZE(ShaderTab, 0x18);
 /* the pixel shaders: on (the device has them), their handles, the ones switched off (a bit each from 0x200000) */
 #define MAX_PS 9
 #define g_PSOn GAME_DATA(int, 0x4ada50)
-#define g_PS (g_PSHandles + 21)
+#define PS_POST 21				/* the first of the post effect shaders */
+#define g_PS (g_PSHandles + PS_POST)
+/* the pixel shaders of g_PSNames the shader modes use */
+enum {
+	PS_GLOWMAPMASKENVBUMP = 2,
+	PS_MASKENVBUMP = 3,
+	PS_MASKENVMAP = 4,
+	PS_GLOWMAPMASKENVMAP = 5,
+	PS_GLOWMAPMASKENVMAP_LM = 6,
+	PS_MASKENVBUMP_LM = 7,
+	PS_MASKENVMAP_LM = 8,
+	PS_CLOUDS = 9,
+	PS_ENVMAP = 10,
+	PS_ENVMAP_LM = 11,
+	PS_GLOWMAP = 12,
+	PS_GLOWMAP_LM = 13,
+	PS_HOLOGRAM = 14,
+	PS_GLOWFLICK_LM = 15,
+	PS_ELECTRIC = 16,
+	PS_FIRE = 17,
+	PS_GLASS = 18,
+	PS_WAVES = 19,
+	PS_NOISE = 20,
+};
 #define g_PSOff GAME_DATA(uint32_t, 0x4ada98)
 /* all pixel shaders made from their files (the names end with NULL) */
 #define g_PSNames ((const char *const *)Game_Ptr(0x431d88))
@@ -191,6 +218,24 @@ void Render_PS7(void *arg, byte flags);
 void Render_PS8(void *arg, byte flags);
 /* stage 0 texture times diffuse (four times with DiffuseMod4x when on) */
 void Render_PSFixed(void *arg, byte flags);
+/* the render functions of the shader modes, g_ShaderTab and the lightmap ones of g_ShaderTab2 (flags: 1 begin, 4
+ * the next material of the mode, 2 end) */
+void Shader_DiffuseNoLit(CMaterial *mat, uint32_t flags);
+void Shader_DiffuseLightmap(CMaterial *mat, uint32_t flags);
+void Shader_Envmap(CMaterial *mat, uint32_t flags);
+void Shader_EnvmapLightmap(CMaterial *mat, uint32_t flags);
+void Shader_MaskEnvmap(CMaterial *mat, uint32_t flags);
+void Shader_MaskEnvmapLightmap(CMaterial *mat, uint32_t flags);
+void Shader_MaskEnvBump(CMaterial *mat, uint32_t flags);
+void Shader_MaskEnvBumpLightmap(CMaterial *mat, uint32_t flags);
+void Shader_Glowmap(CMaterial *mat, uint32_t flags);		/* also GlowFlick */
+void Shader_GlowmapLightmap(CMaterial *mat, uint32_t flags);
+void Shader_GlowmapMaskEnvmap(CMaterial *mat, uint32_t flags);
+void Shader_GlowmapMaskEnvmapLightmap(CMaterial *mat, uint32_t flags);
+void Shader_GlowmapMaskEnvBump(CMaterial *mat, uint32_t flags);
+void Shader_Glass(CMaterial *mat, uint32_t flags);
+void Shader_Scroll(CMaterial *mat, uint32_t flags);
+void Shader_ScrollLightmap(CMaterial *mat, uint32_t flags);
 /* the segment ab against the frustum: 0 seen, 1..6 both ends outside that plane, 10 not seen */
 int Frustum_TestSeg(const vec3_t *a, const vec3_t *b);
 /* the first plane (1..6) p is outside of, the planes in skip not tried; 0 inside */

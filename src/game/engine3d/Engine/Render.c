@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/archio.h"
 #include "scrap/camara.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
@@ -18,26 +19,35 @@
 #include "scrap/utild3d.h"
 #include "scrap/varios.h"
 
-/* the off bit of pixel shader i in g_PSOff */
-#define PS_OFF(i) (0x200000u << (i))
-
 static void Render_TSS(uint32_t stage, uint32_t type, uint32_t value) {
 	void *dev = g_pd3dDevice;
 	D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, stage, type, value);
 }
 
+/* pixel shader i of g_PSNames when the device has it and it is not switched off in g_PSOff, else 0 */
+static uint32_t Render_PSHandle(int i) {
+	if (!g_PSOn || !g_PSHandles[i] || g_PSOff & 1u << i) {
+		return 0;
+	}
+	return g_PSHandles[i];
+}
+
+static void Render_SetPS(uint32_t handle) {
+	void *dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetPixelShader_t, D3DDEV_SETPIXELSHADER)(dev, handle);
+}
+
 static void Render_PS(int i, void *arg, byte flags) {
-	if (!g_PSOn || !g_PS[i] || g_PSOff & PS_OFF(i)) {
+	uint32_t ps = Render_PSHandle(PS_POST + i);
+	if (!ps) {
 		Render_PSFixed(arg, flags);
 		return;
 	}
-	void *dev = g_pd3dDevice;
 	if (flags & 1) {
-		D3D_METHOD(dev, d3dSetPixelShader_t, D3DDEV_SETPIXELSHADER)(dev, g_PS[i]);
+		Render_SetPS(ps);
 	}
 	if (flags & 2) {
-		dev = g_pd3dDevice;
-		D3D_METHOD(dev, d3dSetPixelShader_t, D3DDEV_SETPIXELSHADER)(dev, 0);
+		Render_SetPS(0);
 	}
 }
 
@@ -77,19 +87,457 @@ void Render_PS8(void *arg, byte flags) {
 	Render_PS(8, arg, flags);
 }
 
+static void Stage_Color(uint32_t stage, uint32_t arg1, uint32_t arg2, uint32_t op) {
+	Render_TSS(stage, D3DTSS_COLORARG1, arg1);
+	Render_TSS(stage, D3DTSS_COLORARG2, arg2);
+	Render_TSS(stage, D3DTSS_COLOROP, op);
+}
+
+static void Stage_Alpha(uint32_t stage, uint32_t arg1, uint32_t arg2, uint32_t op) {
+	Render_TSS(stage, D3DTSS_ALPHAARG1, arg1);
+	Render_TSS(stage, D3DTSS_ALPHAARG2, arg2);
+	Render_TSS(stage, D3DTSS_ALPHAOP, op);
+}
+
+static uint32_t Op_Diffuse(void) {
+	return g_DiffuseMod4x ? D3DTOP_MODULATE4X : D3DTOP_MODULATE;
+}
+
+static void Stage_Off(uint32_t stage) {
+	Stage_Color(stage, D3DTA_TEXTURE, D3DTA_CURRENT, D3DTOP_DISABLE);
+	Stage_Alpha(stage, D3DTA_TEXTURE, D3DTA_CURRENT, D3DTOP_DISABLE);
+}
+
+/* the stage 0 of the shader modes: the texture, its alpha */
+static void Stage_Base(void) {
+	Stage_Color(0, D3DTA_TEXTURE, D3DTA_DIFFUSE, D3DTOP_SELECTARG1);
+	Stage_Alpha(0, D3DTA_TEXTURE, D3DTA_DIFFUSE, D3DTOP_SELECTARG1);
+}
+
+/* the reflection texture added by the alpha so far (R_EnvBlend 0) or blended by it; the alpha kept */
+static void Stage_EnvBlend(uint32_t stage) {
+	if (!g_EnvBlend) {
+		Stage_Color(stage, D3DTA_CURRENT, D3DTA_TEXTURE, D3DTOP_MODULATEALPHA_ADDCOLOR);
+	} else {
+		Stage_Color(stage, D3DTA_TEXTURE, D3DTA_CURRENT, D3DTOP_BLENDCURRENTALPHA);
+	}
+	Stage_Alpha(stage, D3DTA_TEXTURE, D3DTA_CURRENT, D3DTOP_SELECTARG2);
+}
+
+/* the color so far added to (ADD), times the diffuse or the lightmap; the alpha kept */
+static void Stage_Next(uint32_t stage, uint32_t arg1, uint32_t op) {
+	Stage_Color(stage, arg1, D3DTA_CURRENT, op);
+	Stage_Alpha(stage, D3DTA_TEXTURE, D3DTA_CURRENT, D3DTOP_SELECTARG2);
+}
+
+/* the stage 0 back to texture times diffuse */
+static void Stage_End(void) {
+	Stage_Color(0, D3DTA_TEXTURE, D3DTA_DIFFUSE, D3DTOP_MODULATE);
+}
+
 void Render_PSFixed(void *arg, byte flags) {
 	(void)arg;
 	if (flags & 1) {
-		byte mod4x = g_DiffuseMod4x != 0;
-		Render_TSS(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-		Render_TSS(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
-		Render_TSS(0, D3DTSS_COLOROP, mod4x ? D3DTOP_MODULATE4X : D3DTOP_MODULATE);
+		Stage_Color(0, D3DTA_TEXTURE, D3DTA_DIFFUSE, Op_Diffuse());
 	}
 	if (flags & 2) {
-		Render_TSS(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-		Render_TSS(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
-		Render_TSS(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+		Stage_End();
 	}
+}
+
+/* the shader modes (g_ShaderTab, g_ShaderTab2 with the lightmap): a pixel shader with its constants, the fixed
+ * texture stages without one. Flags 1 begin, 4 the next material of the same mode, 2 end; the end takes the
+ * textures of the stages beyond 0 away. */
+#define LIGHTMAP(stage) Render_SetMapa(stage, g_LightmapMat->mapa[0])
+
+void Shader_DiffuseNoLit(CMaterial *mat, uint32_t flags) {
+	(void)mat;
+	if (flags & 1) {
+		Stage_Color(0, D3DTA_TEXTURE, D3DTA_DIFFUSE, D3DTOP_SELECTARG1);
+	}
+	if (flags & 2) {
+		Stage_End();
+	}
+}
+
+void Shader_DiffuseLightmap(CMaterial *mat, uint32_t flags) {
+	(void)mat;
+	if (flags & 1) {
+		Stage_Base();
+		Stage_Next(1, D3DTA_TEXTURE, g_LightmapOp);
+	}
+	if (flags & 5) {
+		LIGHTMAP(1);
+	}
+	if (flags & 2) {
+		Stage_End();
+		Stage_Off(1);
+		Render_SetMapa(1, NULL);
+	}
+}
+
+/* Envmap, MaskEnvmap: the reflection in stage 1 (added, or blended by R_EnvBlend), the diffuse and the lightmap
+ * after it */
+static void Shader_Env(CMaterial *mat, uint32_t flags, int ps, byte mask, byte lightmap) {
+	uint32_t h = Render_PSHandle(ps);
+	Mat_StageEnvMap(mat, flags, 1, 0.0f);
+	if (!h) {
+		if (flags & 1) {
+			if (mask) {
+				if (lightmap) {
+					Stage_Base();
+				} else {
+					Stage_Alpha(0, D3DTA_TEXTURE, D3DTA_DIFFUSE, D3DTOP_SELECTARG1);
+				}
+				Stage_EnvBlend(1);
+				if (!lightmap) {
+					Stage_Color(0, D3DTA_TEXTURE, D3DTA_DIFFUSE, D3DTOP_SELECTARG1);
+				}
+			} else {
+				Stage_Base();
+				Stage_Next(1, D3DTA_TEXTURE, D3DTOP_ADD);
+			}
+			if (lightmap) {
+				Stage_Next(2, D3DTA_TEXTURE, g_LightmapOp);
+				Render_TSS(2, D3DTSS_TEXCOORDINDEX, 1);
+			} else {
+				Stage_Next(2, D3DTA_DIFFUSE, Op_Diffuse());
+			}
+		}
+	} else if (flags & 1) {
+		Render_SetPS(h);
+		if (lightmap) {
+			Render_TSS(2, D3DTSS_TEXCOORDINDEX, 1);
+		}
+	}
+	if (flags & 5) {
+		Render_SetMapa(1, mat->mapa[MAPA_ENTORNO]);
+		if (lightmap) {
+			LIGHTMAP(2);
+		}
+	}
+	if (!(flags & 2)) {
+		return;
+	}
+	if (!h) {
+		Stage_End();
+		Stage_Off(1);
+		Stage_Off(2);
+	} else {
+		Render_SetPS(0);
+	}
+	if (lightmap) {
+		Render_TSS(2, D3DTSS_TEXCOORDINDEX, 2);
+	}
+	Render_SetMapa(1, NULL);
+	if (lightmap) {
+		Render_SetMapa(2, NULL);
+	}
+}
+
+void Shader_Envmap(CMaterial *mat, uint32_t flags) {
+	Shader_Env(mat, flags, PS_ENVMAP, 0, 0);
+}
+
+void Shader_EnvmapLightmap(CMaterial *mat, uint32_t flags) {
+	Shader_Env(mat, flags, PS_ENVMAP_LM, 0, 1);
+}
+
+void Shader_MaskEnvmap(CMaterial *mat, uint32_t flags) {
+	Shader_Env(mat, flags, PS_MASKENVMAP, 1, 0);
+}
+
+void Shader_MaskEnvmapLightmap(CMaterial *mat, uint32_t flags) {
+	Shader_Env(mat, flags, PS_MASKENVMAP_LM, 1, 1);
+}
+
+/* MaskEnvBump: the bump map (mapa 3) in stage 1 moves the reflection of stage 2 */
+static void Shader_EnvBump(CMaterial *mat, uint32_t flags, int ps, byte lightmap) {
+	uint32_t h = Render_PSHandle(ps);
+	Mat_StageEnvBump(mat, flags, 2, h ? 2 : 1);
+	if (!h) {
+		if (flags & 1) {
+			Stage_Base();
+			Stage_Next(1, D3DTA_TEXTURE, D3DTOP_BUMPENVMAP);
+			Stage_EnvBlend(2);
+			if (lightmap) {
+				Stage_Next(3, D3DTA_TEXTURE, g_LightmapOp);
+			} else {
+				Stage_Next(3, D3DTA_DIFFUSE, Op_Diffuse());
+			}
+		}
+	} else if (flags & 1) {
+		Render_SetPS(h);
+	}
+	if (flags & 1) {
+		Render_TSS(1, D3DTSS_TEXCOORDINDEX, 0);
+		if (lightmap) {
+			Render_TSS(3, D3DTSS_TEXCOORDINDEX, 1);
+		}
+	}
+	if (flags & 5) {
+		Render_SetMapa(1, mat->mapa[MAPA_BUMP]);
+		Render_SetMapa(2, mat->mapa[MAPA_ENTORNO]);
+		if (lightmap) {
+			LIGHTMAP(3);
+		}
+	}
+	if (!(flags & 2)) {
+		return;
+	}
+	if (!h) {
+		Stage_End();
+		Stage_Off(1);
+		Stage_Off(2);
+		Stage_Off(3);
+	} else {
+		Render_SetPS(0);
+	}
+	Render_TSS(1, D3DTSS_TEXCOORDINDEX, 1);
+	if (lightmap) {
+		Render_TSS(3, D3DTSS_TEXCOORDINDEX, 3);
+	}
+	Render_SetMapa(1, NULL);
+	Render_SetMapa(2, NULL);
+	if (lightmap) {
+		Render_SetMapa(3, NULL);
+	}
+}
+
+void Shader_MaskEnvBump(CMaterial *mat, uint32_t flags) {
+	Shader_EnvBump(mat, flags, PS_MASKENVBUMP, 0);
+}
+
+void Shader_MaskEnvBumpLightmap(CMaterial *mat, uint32_t flags) {
+	Shader_EnvBump(mat, flags, PS_MASKENVBUMP_LM, 1);
+}
+
+/* Glowmap: the glow map (mapa 4) added in the last stage; the pixel shaders take the alpha constant */
+void Shader_Glowmap(CMaterial *mat, uint32_t flags) {
+	uint32_t h = Render_PSHandle(PS_GLOWMAP);
+	if (flags & 1) {
+		if (!h) {
+			Stage_Color(0, D3DTA_TEXTURE, D3DTA_DIFFUSE, Op_Diffuse());
+			Stage_Alpha(0, D3DTA_TEXTURE, D3DTA_DIFFUSE, D3DTOP_SELECTARG1);
+			Stage_Next(1, D3DTA_TEXTURE, D3DTOP_ADD);
+		} else {
+			Render_SetPS(h);
+		}
+		Render_TSS(1, D3DTSS_TEXCOORDINDEX, 0);
+	}
+	if (flags & 5) {
+		if (h) {
+			Render_PSConstAlpha(mat, 0);
+		}
+		Render_SetMapa(1, mat->mapa[MAPA_GLOW]);
+	}
+	if (!(flags & 2)) {
+		return;
+	}
+	if (!h) {
+		Stage_End();
+		Stage_Off(1);
+	} else {
+		Render_SetPS(0);
+	}
+	Render_TSS(1, D3DTSS_TEXCOORDINDEX, 1);
+	Render_SetMapa(1, NULL);
+}
+
+/* without the pixel shader the glow is left out */
+void Shader_GlowmapLightmap(CMaterial *mat, uint32_t flags) {
+	uint32_t h = Render_PSHandle(PS_GLOWMAP_LM);
+	if (!h) {
+		Shader_DiffuseLightmap(mat, flags);
+		return;
+	}
+	if (flags & 1) {
+		Render_SetPS(h);
+		Render_TSS(2, D3DTSS_TEXCOORDINDEX, 0);
+	}
+	if (flags & 5) {
+		Render_PSConstAlpha(mat, 0);
+		LIGHTMAP(1);
+		Render_SetMapa(2, mat->mapa[MAPA_GLOW]);
+	}
+	if (flags & 2) {
+		Render_SetPS(0);
+		Render_TSS(2, D3DTSS_TEXCOORDINDEX, 2);
+		Render_SetMapa(1, NULL);
+		Render_SetMapa(2, NULL);
+	}
+}
+
+/* the fixed stages of GlowmapMaskEnvmap: the reflection, the diffuse or the lightmap, the glow */
+static void Stage_GlowEnv(byte lightmap) {
+	Stage_Base();
+	Stage_EnvBlend(1);
+	if (lightmap) {
+		Stage_Next(2, D3DTA_TEXTURE, g_LightmapOp);
+	} else {
+		Stage_Next(2, D3DTA_DIFFUSE, Op_Diffuse());
+	}
+	Stage_Next(3, D3DTA_TEXTURE, D3DTOP_ADD);
+}
+
+void Shader_GlowmapMaskEnvmap(CMaterial *mat, uint32_t flags) {
+	uint32_t h = Render_PSHandle(PS_GLOWMAPMASKENVMAP);
+	Mat_StageEnvMap(mat, flags, 1, 0.0f);
+	/* the glow in stage 3, in stage 2 with the pixel shader */
+	uint32_t glow = h ? 2 : 3;
+	if (flags & 1) {
+		if (!h) {
+			Stage_GlowEnv(0);
+		} else {
+			Render_SetPS(h);
+		}
+		Render_TSS(glow, D3DTSS_TEXCOORDINDEX, 0);
+	}
+	if (flags & 5) {
+		if (h) {
+			Render_PSConstAlpha(mat, 0);
+		}
+		Render_SetMapa(1, mat->mapa[MAPA_ENTORNO]);
+		Render_SetMapa(glow, mat->mapa[MAPA_GLOW]);
+	}
+	if (flags & 2) {
+		if (!h) {
+			Stage_End();
+			Stage_Off(1);
+			Stage_Off(2);
+			Stage_Off(3);
+		} else {
+			Render_SetPS(0);
+		}
+		Render_TSS(glow, D3DTSS_TEXCOORDINDEX, glow);
+		Render_SetMapa(1, NULL);
+		Render_SetMapa(glow, NULL);
+	}
+}
+
+void Shader_GlowmapMaskEnvmapLightmap(CMaterial *mat, uint32_t flags) {
+	uint32_t h = Render_PSHandle(PS_GLOWMAPMASKENVMAP_LM);
+	Mat_StageEnvMap(mat, flags, 1, 0.0f);
+	if (flags & 1) {
+		if (!h) {
+			Stage_GlowEnv(1);
+		} else {
+			Render_SetPS(h);
+		}
+		Render_TSS(2, D3DTSS_TEXCOORDINDEX, 1);
+		Render_TSS(3, D3DTSS_TEXCOORDINDEX, 0);
+	}
+	if (flags & 5) {
+		if (h) {
+			Render_PSConstAlpha(mat, 0);
+		}
+		Render_SetMapa(1, mat->mapa[MAPA_ENTORNO]);
+		LIGHTMAP(2);
+		Render_SetMapa(3, mat->mapa[MAPA_GLOW]);
+	}
+	if (!(flags & 2)) {
+		return;
+	}
+	if (!h) {
+		Stage_End();
+		Stage_Off(1);
+		Stage_Off(2);
+		Stage_Off(3);
+	} else {
+		Render_SetPS(0);
+	}
+	Render_TSS(2, D3DTSS_TEXCOORDINDEX, 2);
+	Render_TSS(3, D3DTSS_TEXCOORDINDEX, 3);
+	Render_SetMapa(1, NULL);
+	Render_SetMapa(2, NULL);
+	Render_SetMapa(3, NULL);
+}
+
+/* also the lightmap mode, without the lightmap */
+void Shader_GlowmapMaskEnvBump(CMaterial *mat, uint32_t flags) {
+	uint32_t h = Render_PSHandle(PS_GLOWMAPMASKENVBUMP);
+	Mat_StageEnvBump(mat, flags, 2, h ? 2 : 1);
+	/* the glow in stage 4, in stage 3 with the pixel shader */
+	uint32_t glow = h ? 3 : 4;
+	if (flags & 1) {
+		if (!h) {
+			Stage_Base();
+			Stage_Next(1, D3DTA_TEXTURE, D3DTOP_BUMPENVMAP);
+			Stage_EnvBlend(2);
+			Stage_Next(3, D3DTA_DIFFUSE, Op_Diffuse());
+			Stage_Next(4, D3DTA_TEXTURE, D3DTOP_ADD);
+		} else {
+			Render_SetPS(h);
+		}
+		Render_TSS(1, D3DTSS_TEXCOORDINDEX, 0);
+		Render_TSS(glow, D3DTSS_TEXCOORDINDEX, 0);
+	}
+	if (flags & 5) {
+		if (h) {
+			Render_PSConstAlpha(mat, 0);
+		}
+		Render_SetMapa(1, mat->mapa[MAPA_BUMP]);
+		Render_SetMapa(2, mat->mapa[MAPA_ENTORNO]);
+		Render_SetMapa(glow, mat->mapa[MAPA_GLOW]);
+	}
+	if (flags & 2) {
+		if (!h) {
+			Stage_End();
+			Stage_Off(1);
+			Stage_Off(2);
+			Stage_Off(3);
+			Stage_Off(4);
+		} else {
+			Render_SetPS(0);
+		}
+		Render_TSS(1, D3DTSS_TEXCOORDINDEX, 1);
+		Render_TSS(glow, D3DTSS_TEXCOORDINDEX, glow);
+		Render_SetMapa(1, NULL);
+		Render_SetMapa(2, NULL);
+		Render_SetMapa(glow, NULL);
+	}
+}
+
+/* the reflection through the pixel shader only, the material must be transparent */
+void Shader_Glass(CMaterial *mat, uint32_t flags) {
+	uint32_t h = Render_PSHandle(PS_GLASS);
+	if (!h) {
+		Render_PSFixed(mat, (byte)flags);
+		return;
+	}
+	Mat_StageEnvMap(mat, flags, 1, 0.0f);
+	if (flags & 1) {
+		Render_SetPS(h);
+	}
+	if (flags & 5) {
+		if (!mat->params.transp) {
+			CheckFailed("mat->params.dif_alpha", __FILE__, __TIMESTAMP__, __LINE__);
+		}
+		Render_SetMapa(1, mat->mapa[MAPA_ENTORNO]);
+	}
+	if (flags & 2) {
+		Render_SetPS(0);
+		Render_SetMapa(1, NULL);
+	}
+}
+
+/* Glowmap with the scroll of map 0 and of the glow map */
+static void Shader_ScrollGlow(CMaterial *mat, uint32_t flags, uint32_t glowStage) {
+	if (mat && mat->mapa[MAPA_ENTORNO]) {
+		CheckFailed("!mat || !mat->obt_mapa(MAPA_ENTORNO)", __FILE__, __TIMESTAMP__, __LINE__);
+	}
+	Mat_StageScroll(mat, MAPA_DIFFUSE, flags, 0, 1.0f);
+	Mat_StageScroll(mat, MAPA_GLOW, flags, glowStage, 1.0f);
+}
+
+void Shader_Scroll(CMaterial *mat, uint32_t flags) {
+	Shader_ScrollGlow(mat, flags, 1);
+	Shader_Glowmap(mat, flags);
+}
+
+void Shader_ScrollLightmap(CMaterial *mat, uint32_t flags) {
+	Shader_ScrollGlow(mat, flags, 2);
+	Shader_GlowmapLightmap(mat, flags);
 }
 
 /* the distance of p to frustum plane i */

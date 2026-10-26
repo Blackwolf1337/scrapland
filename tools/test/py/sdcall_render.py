@@ -420,3 +420,39 @@ for b3b in (0, 0x01000000):
 	rdtris = SDTest.Peek(0x4a8f00, 'i')
 SDTest.Poke(rmat2 + 0x38 - 0x400000, 0)
 SDTest.Poke(0x431bdc, rdhw)
+
+# the render functions of the shader modes of both tables through the D3D log: with and without the pixel shaders,
+# both R_EnvBlend and DiffuseMod4x, a material with all maps, one with maps 0 and 4 for Scroll (it must have no reflection),
+# grey as the lightmap; time and rand fixed for each call
+rdsh = (SDTest.Peek(0x4ada98, 'i'), SDTest.Peek(0x4ad9d8, 'i'), SDTest.Peek(0x431be8, 'i'), SDTest.Peek(0x4addc4, 'i'),
+	SDTest.Peek(0x4a8ef0, 'i'), rdi(rmat + 0x38))
+SDTest.Call(0x236030, 'tviis', rmat, 4, 'bmp/partic1.bmp')
+rmat3 = SDTest.Call(0x233830, 'tii', SDTest.Call(0x1334d0, 'ii', 0xb0)[0])[0]
+for i in (0, 4):
+	SDTest.Call(0x236030, 'tviis', rmat3, i, 'bmp/partic1.bmp')
+SDTest.Poke(rmat + 0x38 - 0x400000, 1 << 16)
+SDTest.Poke(0x4addc4, SDTest.Peek(0x4ad6e0, 'i'))
+SDTest.Poke(0x4a8ef0, 54321)
+def rdshader(fn, mat, flags):
+	SDTest.Call(0x323c50, 'vi', 77)
+	return rdlog(lambda fn=fn, mat=mat, flags=flags: SDTest.Call(fn, 'vii', mat, flags))
+for tab in (0x431e08, 0x432108):
+	for i in range(26):
+		fn = SDTest.Peek(tab + 0x18 * i + 0x14, 'i')
+		if not fn:
+			continue
+		mat = rmat
+		if i == 14:
+			mat = rmat3
+		for off in (rdsh[0], -1):
+			SDTest.Poke(0x4ada98, off)
+			for blend in (0, 1):
+				SDTest.Poke(0x4ad9d8, blend)
+				for mod in (0, 1):
+					SDTest.Poke(0x431be8, mod)
+					for flags in (1, 4, 5, 2):
+						check('Shader' + fmt((tab, i, off == -1, blend, mod, flags)), lambda fn=fn - 0x400000,
+							mat=mat, flags=flags: rdshader(fn, mat, flags))
+for a, v in ((0x4ada98, rdsh[0]), (0x4ad9d8, rdsh[1]), (0x431be8, rdsh[2]), (0x4addc4, rdsh[3]), (0x4a8ef0, rdsh[4]),
+	(rmat + 0x38 - 0x400000, rdsh[5])):
+	SDTest.Poke(a, v)
