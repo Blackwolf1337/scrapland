@@ -340,13 +340,8 @@ SD_IMPORT(PySys_GetObject, 0x2f4390)	/* sysmodule.c */
 SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 
 /* engine: FileSys/ (include/scrap/filesys.h) */
-SD_IMPORT(File_OpenRel, 0x21bc10)
-SD_IMPORT(File_Access, 0x21bb60)
 SD_IMPORT(cStringList_NewNode, 0x0605f0)
-SD_IMPORT(File_MkDirRel, 0x21bb80)
-SD_IMPORT(ArchIO_Open, 0x21bdd0)
-SD_IMPORT(ArchIO_Gets, 0x21b8e0)
-SD_IMPORT(ArchIO_Close, 0x21b850)
+SD_IMPORT(E3D_Log, 0x237ca0)
 SD_IMPORT(Loading_Step, 0x2157a0)
 SD_IMPORT(Console_Execute, 0x20aaf0)
 

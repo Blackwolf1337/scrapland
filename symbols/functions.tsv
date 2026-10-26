@@ -6581,51 +6581,51 @@ rva	size	source	callconv	name	signature
 0021ae00	948	DEFAULT	unknown	FUN_0061ae00	
 0021b1c0	24	DEFAULT	unknown	FUN_0061b1c0	
 0021b1e0	1	DEFAULT	unknown	FUN_0061b1e0	
-0021b1f0	105	DEFAULT	unknown	FUN_0061b1f0	
-0021b290	99	DEFAULT	unknown	FUN_0061b290	
-0021b300	33	DEFAULT	unknown	FUN_0061b300	
-0021b330	272	DEFAULT	unknown	FUN_0061b330	
-0021b440	8	DEFAULT	unknown	FUN_0061b440	
-0021b450	57	DEFAULT	unknown	FUN_0061b450	
-0021b490	102	DEFAULT	unknown	FUN_0061b490	
-0021b500	71	DEFAULT	unknown	FUN_0061b500	
-0021b550	155	DEFAULT	unknown	FUN_0061b550	
-0021b5f0	274	DEFAULT	unknown	FUN_0061b5f0	
-0021b710	65	DEFAULT	unknown	FUN_0061b710	
-0021b760	159	DEFAULT	unknown	FUN_0061b760	
-0021b800	65	DEFAULT	unknown	FUN_0061b800	
+0021b1f0	105	USER_DEFINED	thiscall	CArchIO_ctor	CArchIO * CArchIO_ctor(CArchIO *self, char *name, char *mode)
+0021b290	99	USER_DEFINED	thiscall	CArchIO_dtor	void CArchIO_dtor(CArchIO *self)
+0021b300	33	USER_DEFINED	cdecl	Ptr_Delete	void Ptr_Delete(void **p)
+0021b330	272	USER_DEFINED	cdecl	ArchIO_ReadAll	void * ArchIO_ReadAll(char *name, void **buf, uint *size)
+0021b440	8	USER_DEFINED	thiscall	CArchIO_Finish	int CArchIO_Finish(CArchIO *self)
+0021b450	57	USER_DEFINED	cdecl	File_RelPath	void File_RelPath(char *dest, char *path)
+0021b490	102	USER_DEFINED	thiscall	CArchIO_Close	int CArchIO_Close(CArchIO *self)
+0021b500	71	USER_DEFINED	thiscall	CArchIO_Write	int CArchIO_Write(CArchIO *self, void *buf, int n)
+0021b550	155	USER_DEFINED	thiscall	CArchIO_WriteString	int CArchIO_WriteString(CArchIO *self, char *s)
+0021b5f0	274	USER_DEFINED	thiscall	CArchIO_EndBlockWrite	int CArchIO_EndBlockWrite(CArchIO *self, char *id)
+0021b710	65	USER_DEFINED	thiscall	CArchIO_WriteInt	int CArchIO_WriteInt(CArchIO *self, int v)
+0021b760	159	USER_DEFINED	thiscall	CArchIO_BeginBlockWrite	int CArchIO_BeginBlockWrite(CArchIO *self, char *id)
+0021b800	65	USER_DEFINED	thiscall	CArchIO_WriteFloat	int CArchIO_WriteFloat(CArchIO *self, float v)
 0021b850	48	USER_DEFINED	cdecl	ArchIO_Close	int ArchIO_Close(void *f)
-0021b8a0	56	DEFAULT	unknown	FUN_0061b8a0	
+0021b8a0	56	USER_DEFINED	cdecl	ArchIO_Getc	char ArchIO_Getc(void *f)
 0021b8e0	172	USER_DEFINED	cdecl	ArchIO_Gets	char * ArchIO_Gets(char *buf, int size, void *f)
-0021b990	51	DEFAULT	unknown	FUN_0061b990	
-0021b9d0	61	DEFAULT	unknown	FUN_0061b9d0	
-0021ba10	91	DEFAULT	unknown	FUN_0061ba10	
-0021ba70	12	DEFAULT	unknown	FUN_0061ba70	
-0021ba80	12	DEFAULT	unknown	FUN_0061ba80	
-0021ba90	61	DEFAULT	unknown	FUN_0061ba90	
-0021bae0	23	DEFAULT	unknown	FUN_0061bae0	
-0021bb00	90	DEFAULT	unknown	FUN_0061bb00	
+0021b990	51	USER_DEFINED	thiscall	CArchIO_Unsupported	int CArchIO_Unsupported(CArchIO *self)
+0021b9d0	61	USER_DEFINED	cdecl	ArchIO_Read	int ArchIO_Read(void *buf, int size, int count, void *f)
+0021ba10	91	USER_DEFINED	cdecl	ArchIO_Seek	int ArchIO_Seek(void *f, int off, int origin)
+0021ba70	12	USER_DEFINED	cdecl	ArchIO_Size	int ArchIO_Size(void *f)
+0021ba80	12	USER_DEFINED	cdecl	ArchIO_Tell	int ArchIO_Tell(void *f)
+0021ba90	61	USER_DEFINED	cdecl	ArchIO_Write	int ArchIO_Write(void *buf, int size, int count, void *f)
+0021bae0	23	USER_DEFINED	cdecl	File_AccessPack	int File_AccessPack(char *name, int mode)
+0021bb00	90	USER_DEFINED	cdecl	IdToDword	uint IdToDword(char *id)
 0021bb60	23	USER_DEFINED	__cdecl	File_Access	int __cdecl(char * name, int mode)
 0021bb80	143	USER_DEFINED	cdecl	File_MkDirRel	void File_MkDirRel(char *dir)
 0021bc10	384	USER_DEFINED	__cdecl	File_OpenRel	void * __cdecl(char * name, char * mode)
-0021bd90	21	DEFAULT	unknown	FUN_0061bd90	
+0021bd90	21	USER_DEFINED	cdecl	File_Stat	int File_Stat(char *name, void *st)
 0021bdd0	397	USER_DEFINED	cdecl	ArchIO_Open	void * ArchIO_Open(char *name, char *mode)
-0021bf60	21	DEFAULT	unknown	FUN_0061bf60	
-0021bf80	110	DEFAULT	unknown	FUN_0061bf80	
-0021bff0	102	DEFAULT	unknown	FUN_0061bff0	
-0021c060	71	DEFAULT	unknown	FUN_0061c060	
-0021c0b0	201	DEFAULT	unknown	FUN_0061c0b0	
-0021c180	206	DEFAULT	unknown	FUN_0061c180	
-0021c250	10	DEFAULT	unknown	FUN_0061c250	
-0021c260	64	DEFAULT	unknown	FUN_0061c260	
-0021c2a0	75	DEFAULT	unknown	FUN_0061c2a0	
-0021c2f0	84	DEFAULT	unknown	FUN_0061c2f0	
-0021c350	64	DEFAULT	unknown	FUN_0061c350	
-0021c390	127	DEFAULT	unknown	FUN_0061c390	
-0021c410	23	DEFAULT	unknown	FUN_0061c410	
-0021c430	185	DEFAULT	unknown	FUN_0061c430	
-0021c4f0	244	DEFAULT	unknown	FUN_0061c4f0	
-0021c5f0	206	DEFAULT	unknown	FUN_0061c5f0	
+0021bf60	21	USER_DEFINED	cdecl	File_StatPack	int File_StatPack(char *name, void *st)
+0021bf80	110	USER_DEFINED	thiscall	CArchIO_ReadBool	byte CArchIO_ReadBool(CArchIO *self)
+0021bff0	102	USER_DEFINED	thiscall	CArchIO_ReadInt	int CArchIO_ReadInt(CArchIO *self)
+0021c060	71	USER_DEFINED	thiscall	CArchIO_Read	int CArchIO_Read(CArchIO *self, void *buf, int n)
+0021c0b0	201	USER_DEFINED	thiscall	CArchIO_ReadString	int CArchIO_ReadString(CArchIO *self, char *buf, uint size)
+0021c180	206	USER_DEFINED	thiscall	CArchIO_ReadStringNull	int CArchIO_ReadStringNull(CArchIO *self, char *buf, uint size, byte *isNull)
+0021c250	10	USER_DEFINED	thiscall	CArchIO_Error	int CArchIO_Error(CArchIO *self, char *what)
+0021c260	64	USER_DEFINED	thiscall	CArchIO_Read4	int CArchIO_Read4(CArchIO *self, void *out)
+0021c2a0	75	USER_DEFINED	thiscall	CArchIO_BeginBlock	int CArchIO_BeginBlock(CArchIO *self, char *id)
+0021c2f0	84	USER_DEFINED	thiscall	CArchIO_BeginBlockSize	int CArchIO_BeginBlockSize(CArchIO *self, char *id, int *size)
+0021c350	64	USER_DEFINED	thiscall	CArchIO_Read4b	int CArchIO_Read4b(CArchIO *self, void *out)
+0021c390	127	USER_DEFINED	thiscall	CArchIO_PushBlock	void CArchIO_PushBlock(CArchIO *self, char *id, int pos)
+0021c410	23	USER_DEFINED	thiscall	CArchIO_SetError	int CArchIO_SetError(CArchIO *self, char *what)
+0021c430	185	USER_DEFINED	thiscall	CArchIO_PopBlock	void CArchIO_PopBlock(CArchIO *self, char *id)
+0021c4f0	244	USER_DEFINED	cdecl	File_Check	int File_Check(char *name, int mode, byte pack)
+0021c5f0	206	USER_DEFINED	cdecl	File_StatX	int File_StatX(char *name, void *st, byte pack)
 0021c6c0	243	DEFAULT	unknown	FUN_0061c6c0	
 0021c7c0	154	DEFAULT	unknown	FUN_0061c7c0	
 0021c860	55	DEFAULT	unknown	FUN_0061c860	
@@ -6982,7 +6982,7 @@ rva	size	source	callconv	name	signature
 00237ab0	77	DEFAULT	unknown	FUN_00637ab0	
 00237b00	210	DEFAULT	unknown	FUN_00637b00	
 00237be0	188	DEFAULT	unknown	FUN_00637be0	
-00237ca0	210	DEFAULT	unknown	FUN_00637ca0	
+00237ca0	210	USER_DEFINED	cdecl	E3D_Log	void E3D_Log(void *log, char *fmt, ...)
 00237d80	188	DEFAULT	unknown	FUN_00637d80	
 00237e40	275	DEFAULT	unknown	FUN_00637e40	
 00237f60	132	DEFAULT	unknown	FUN_00637f60	

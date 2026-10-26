@@ -180,9 +180,4 @@ int Proc_ReadField(va_list *ap, const char **psrc, const char **pfmt);	/* 0 or -
 int Proc_DefineType(const char *ident, const void *defin);
 int Proc_Scan(const char *s, const char *fmt, ...);	/* the number of values read */
 
-/* Engine/ArchIO.cpp: files through the packs ("rb" only); gets keeps the '\n' (rva 0x21bdd0, 0x21b8e0, 0x21b850) */
-void *ArchIO_Open(const char *name, const char *mode);
-char *ArchIO_Gets(char *buf, int size, void *f);
-int ArchIO_Close(void *f);
-
 #endif

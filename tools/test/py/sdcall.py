@@ -380,4 +380,57 @@ for i in range(16):
 	if SDTest.Peek(0x4324b8 + 12 * i, 'p') == 'sdtipo':
 		SDTest.Poke(0x4324b8 + 12 * i, 0)
 check('Proc types', lambda: map(lambda i: SDTest.Peek(0x4324b8 + 12 * i, 'p'), range(16)))
+
+# engine3d Engine/ArchIO.c: reads only (writing blocks and seeking need the pack building mode, else a CHECK
+# fails), CArchIO on a block file of the packs
+for t in ('ABCD', 'AB', '', 'ABCDEF', 'DUM'):
+	call('IdToDword', 0x21bb00, 'is', t)
+for n in ('Bin/Scrap.exe', 'Bin', 'sdnofile.txt', 'm3d.ini'):
+	call('File_Access', 0x21bb60, 'isi', n, 0)
+	call('File_AccessPack', 0x21bae0, 'isi', n, 0)
+	call('File_Check', 0x21c4f0, 'isii', n, 0, 1)
+	call('File_Stat', 0x21bd90, 'isb', n, '')
+	call('File_StatPack', 0x21bf60, 'isb', n, '')
+call('File_RelPath', 0x21b450, 'vbs', '', 'a/b/c.txt')
+def readall(n):
+	r = SDTest.Call(0x21b330, 'iszp', n, None, 0)
+	text = SDTest.Call(0x22cf50, 'sbii', '', r[0], 40)[1]
+	return (r[1], text)
+check('ArchIO_ReadAll', lambda: readall('m3d.ini'))
+f = SDTest.Call(0x21bdd0, 'iss', 'm3d.ini', 'rb')[0]
+check('ArchIO_Open', lambda: f != 0)
+call('ArchIO_Open missing', 0x21bdd0, 'iss', 'sdnofile.txt', 'rb')
+check('ArchIO_Size', lambda: SDTest.Call(0x21ba70, 'ii', f))
+for i in range(4):
+	check('ArchIO_Gets', lambda: (SDTest.Call(0x21b8e0, 'sbii', '', 260, f), SDTest.Call(0x21ba80, 'ii', f)))
+check('ArchIO_Gets short', lambda: SDTest.Call(0x21b8e0, 'sbii', '', 4, f))
+check('ArchIO_Getc', lambda: SDTest.Call(0x21b8a0, 'bi', f))
+check('ArchIO_Read', lambda: SDTest.Call(0x21b9d0, 'ibiii', '', 3, 4, f))
+check('ArchIO_Tell', lambda: SDTest.Call(0x21ba80, 'ii', f))
+check('ArchIO_Close', lambda: SDTest.Call(0x21b850, 'ii', f))
+io = SDTest.Call(0x1335a0, 'ii', 16)[0]
+def cio():
+	return (SDTest.Peek(io, '@b'), SDTest.Peek(io + 4, '@i'), SDTest.Peek(io + 8, '@i') != 0, SDTest.Peek(io + 12, '@i'))
+def iostep(name, rva, sig, *args):
+	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig, io) + args), cio()))
+check('CArchIO_ctor missing', lambda: (SDTest.Call(0x21b1f0, 'tiiss', io, 'sdnofile.dum', 'rb')[0] == io, cio()))
+iostep('CArchIO_Error', 0x21c250, 'tiiz', None)
+iostep('CArchIO_Read error', 0x21c060, 'tiibi', '', 4)
+iostep('CArchIO_ReadString error', 0x21c0b0, 'tiibi', '', 4)
+iostep('CArchIO_Unsupported', 0x21b990, 'tii')
+iostep('CArchIO_dtor', 0x21b290, 'tvi')
+check('CArchIO_ctor', lambda: (SDTest.Call(0x21b1f0, 'tiiss', io, 'levels/fake/map/map3d.dum', 'rb')[0] == io, cio()))
+iostep('CArchIO_BeginBlockSize', 0x21c2f0, 'tiisp', 'DUM', 0)
+iostep('CArchIO_ReadInt', 0x21bff0, 'tii')
+iostep('CArchIO_ReadBool', 0x21bf80, 'tbi')
+iostep('CArchIO_Read4', 0x21c350, 'tiip', 0)
+iostep('CArchIO_ReadStringNull', 0x21c180, 'tiibip', '', 260, 7)
+iostep('CArchIO_Read', 0x21c060, 'tiibi', '', 12)
+iostep('CArchIO_Read 0', 0x21c060, 'tiibi', '', 0)
+iostep('CArchIO_SetError', 0x21c410, 'tiis', 'test')
+iostep('CArchIO_Read after', 0x21c060, 'tiibi', '', 4)
+iostep('CArchIO_ReadStringNull after', 0x21c180, 'tiibip', '', 260, 7)
+iostep('CArchIO_Finish', 0x21b440, 'tii')
+iostep('CArchIO_Close', 0x21b490, 'tii')
+SDTest.Call(0x133550, 'vi', io)
 finish()

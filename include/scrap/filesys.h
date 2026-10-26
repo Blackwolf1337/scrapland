@@ -101,12 +101,13 @@ SD_SIZE(cFileBlock, 0x8);
 #define FILEBLOCK_READ 0x2
 #define FILEBLOCK_MUST_EXIST 0x10
 
-/* fopen relative to the game directory, "El path debe ser relativo" for drive paths (rva 0x21bc10) */
+/* Engine/ArchIO.cpp (src/game/engine3d/Engine/ArchIO.c): fopen relative to the game directory, a drive in the path is
+ * fatal */
 void *File_OpenRel(const char *name, const char *mode);
-/* 0 if the file is there (rva 0x21bb60) */
+/* 0 if the file is there */
 int File_Access(const char *name, int mode);
 
-/* mkdir relative to the game directory, logs "FILE MKDIR" (rva 0x21bb80) */
+/* mkdir relative to the game directory, logs "FILE MKDIR" */
 void File_MkDirRel(const char *dir);
 
 /* src/game/Global/FileUtils.c */

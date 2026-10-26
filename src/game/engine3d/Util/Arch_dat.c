@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/archio.h"
 #include "scrap/e3dutil.h"
 
 char *crt_strncat(char *dst, const char *src, size_t n);

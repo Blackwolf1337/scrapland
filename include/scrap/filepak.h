@@ -118,6 +118,7 @@ int __thiscall cFilePack_Size(cFilePack *self);
 
 /* 1 unless the file list is being recorded */
 int PackLog_Closed(void);
+byte Pack_FileExists(const char *name);	/* in the index of the packs */
 int PackLog_Add(const char *name);
 /* mounts name.packed (src/game/FileSys/FilePak.c) */
 byte Pack_Open(const char *name, const char *dir, size_t bufSize);
