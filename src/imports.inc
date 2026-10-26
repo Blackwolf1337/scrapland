@@ -389,6 +389,8 @@ SD_IMPORT(Vec3_Differ, 0x067380)
 /* module agent: Engine/Nodo3D (imports below this line) */
 
 /* module agent: Engine/Animacion (imports below this line) */
+SD_IMPORT(CEVA_ctor, 0x2d33e0)
+SD_IMPORT(Matrix_ToEuler, 0x2392d0)
 
 /* module agent: Engine/AnimGrupo (imports below this line) */
 
