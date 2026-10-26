@@ -172,9 +172,13 @@ void Dat_GetList(cArchDatos *dat, const char *sect, const char *key, cArchDatos 
 int Dat_GetWord(cArchDatos *dat, const char *sect, const char *key, uint16_t *out);
 int Dat_GetStr(cArchDatos *dat, const char *sect, const char *key, char *dest, int size);
 
-/* Util/Proc_dat.cpp: sscanf of the engine with its own conversions ("&l", "&f", "&.*t", "&(tipo_si_no)l"); the
- * number of values read (rva 0x265260) */
-int Proc_Scan(const char *s, const char *fmt, ...);
+/* Util/Proc_dat.cpp: sscanf of the engine with its own conversions ("&l", "&f", "&.*t", "&(tipo_si_no)l"), see
+ * src/game/engine3d/Util/Proc_dat.c */
+int Proc_Note(char *dest, const char *src, const void *tipo, int size);	/* converter of tipo_nota */
+int Proc_TypeLookup(char *dest, const char *name, const void *data, int size);
+int Proc_ReadField(va_list *ap, const char **psrc, const char **pfmt);	/* 0 or -1 */
+int Proc_DefineType(const char *ident, const void *defin);
+int Proc_Scan(const char *s, const char *fmt, ...);	/* the number of values read */
 
 /* Engine/ArchIO.cpp: files through the packs ("rb" only); gets keeps the '\n' (rva 0x21bdd0, 0x21b8e0, 0x21b850) */
 void *ArchIO_Open(const char *name, const char *mode);

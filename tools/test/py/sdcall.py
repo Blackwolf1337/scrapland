@@ -345,4 +345,39 @@ dcall('Arch_Load missing', 0x2a2780, 'iisi', dat, 'sdnofile.txt', 0)
 dcall('Dat_GetBool', 0x2a30c0, 'iissp', dat, 'video', 'Sharpen', 7)
 dcall('Dat_GetLong', 0x2a3270, 'iissp', dat, 'suelo', 'suelo_caras_cuadr', 7)
 SDTest.Call(0x2a2660, 'vi', dat)
+
+# engine3d Util/Proc_dat.c: no bad numbers or identifiers, those open a message box in both (a note like "A#4"
+# is one: the identifier ends at the '#')
+for src, f, sig, args in (('12', '&l', 'issp', (0,)), ('  -5 , 7', '&l,&l', 'isspp', (0, 0)), ('3.25', '&f', 'issp', (0,)),
+		('1e3', '&g', 'issD', (0.0,)), ('200', '&b', 'issp', (0,)), ('-100', '&c', 'issp', (0,)), ('30000', '&s', 'issp', (0,)),
+		('65000', '&w', 'issp', (0,)), ('4000000000', '&d', 'issp', (0,)), ('SI', '&(tipo_si_no)l', 'issp', (7,)),
+		('off', '&(tipo_si_no)l', 'issp', (7,)), ('True', '&(tipo_si_no)b', 'issp', (0,)), ('GLOBAL', '&(tipo_bucle)l', 'issp', (7,)),
+		('C4', '&(tipo_nota)l', 'issp', (7,)), ('Bb3', '&(tipo_nota)l', 'issp', (7,)), ('gx2', '&(tipo_nota)l', 'issp', (7,)),
+		('ST', '&(tipo_sample_mnst)w', 'issp', (7,)), ('hello world , next', '&t,&t', 'issbb', ('', '')),
+		('hello world', '&.*t', 'issib', (5, '')), ('hello world', '&.3t', 'issb', ('',)), ('a , b', '&.0t,&t', 'issbb', ('', '')),
+		('12 34', '&l &l', 'isspp', (0, 0)), ('12x', '&lx&l', 'isspp', (0, 0)), ('12', '&l &l', 'isspp', (0, 0)),
+		('12,', '&l,&l', 'isspp', (0, 0)), ('12;3', '&l,&l', 'isspp', (0, 0)), ('1', '&', 'iss', ()), ('1', '&(tipo_si_no', 'iss', ()),
+		('1', '&.', 'iss', ()), ('1', '&.5', 'iss', ()), ('1', '&()l', 'issp', (7,)), ('', '&l', 'issp', (7,)), ('5', '', 'iss', ()),
+		(' 7', '&l', 'issp', (0,)), ('8 ', ' &l', 'issp', (0,)), ('x9', 'x&l', 'issp', (0,)), ('9', '&l&l', 'isspp', (0, 0)),
+		('1 2 3', '&l&l', 'isspp', (0, 0)), ('0x10', '&l', 'issp', (0,)), ('-0', '&w', 'issp', (5,)), ('1.5e-2', '&f&t', 'issbb', ('', ''))):
+	if sig[-1] == 'b' and f == '&f&t':
+		sig = 'isspb'
+		args = (0, '')
+	apply(call, ('Proc_Scan', 0x265260, sig, src, f) + args)
+for n in ('C4', 'a0', 'G#9', 'Bb3', 'Ex-1', 'C', 'H2', 'C#b4', 'D##2'):
+	call('Proc_Note', 0x264a60, 'ibszi', '', n, None, 16)
+sino = SDTest.Peek(0x4324b8 + 4, 'i')
+for n in ('si', 'YES', 'false', 'Nope', 'S', ''):
+	call('Proc_TypeLookup', 0x264c00, 'ibsii', '', n, sino, 260)
+	call('Proc_TypeLookup short', 0x264c00, 'ibsii', '', n, sino, 1)
+sdtipo = 'sdtipo'
+bucle = SDTest.Peek(0x4324b8 + 16, 'i')
+check('Proc_DefineType', lambda: SDTest.Call(0x2651b0, 'isi', sdtipo, bucle)[0])
+check('Proc_DefineType again', lambda: SDTest.Call(0x2651b0, 'isi', sdtipo, bucle)[0])
+check('Proc_DefineType taken', lambda: SDTest.Call(0x2651b0, 'isi', 'tipo_si_no', bucle)[0])
+call('Proc_Scan sdtipo', 0x265260, 'issp', 'LOCAL', '&(sdtipo)l', 7)
+for i in range(16):
+	if SDTest.Peek(0x4324b8 + 12 * i, 'p') == 'sdtipo':
+		SDTest.Poke(0x4324b8 + 12 * i, 0)
+check('Proc types', lambda: map(lambda i: SDTest.Peek(0x4324b8 + 12 * i, 'p'), range(16)))
 finish()

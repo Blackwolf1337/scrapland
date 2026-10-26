@@ -983,3 +983,10 @@ SD_HOOK(Dat_GetText, 0x2a3390, 146)
 SD_HOOK(Dat_GetList, 0x2a3430, 273)
 SD_HOOK(Dat_GetWord, 0x2a3550, 141)
 SD_HOOK(Dat_GetStr, 0x2a35e0, 96)
+
+/* src/game/engine3d/Util/Proc_dat.c */
+SD_HOOK(Proc_Note, 0x264a60, 285)
+SD_HOOK(Proc_TypeLookup, 0x264c00, 148)
+SD_HOOK(Proc_ReadField, 0x264ca0, 1152)
+SD_HOOK(Proc_DefineType, 0x2651b0, 167)
+SD_HOOK(Proc_Scan, 0x265260, 324)

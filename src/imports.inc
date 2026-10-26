@@ -133,6 +133,7 @@ SD_IMPORT(crt_isalnum, 0x34f755)
 SD_IMPORT(crt_isxdigit, 0x34f956)
 SD_IMPORT(crt_iob_func, 0x3507fa)
 SD_IMPORT(crt_stdio_common_vfprintf, 0x33b5da)
+SD_IMPORT(crt_strcspn, 0x3506a0)
 
 /* engine: Net/ (include/scrap/net.h) */
 SD_IMPORT(Net_IsServer, 0x18b280)
@@ -346,7 +347,6 @@ SD_IMPORT(File_MkDirRel, 0x21bb80)
 SD_IMPORT(ArchIO_Open, 0x21bdd0)
 SD_IMPORT(ArchIO_Gets, 0x21b8e0)
 SD_IMPORT(ArchIO_Close, 0x21b850)
-SD_IMPORT(Proc_Scan, 0x265260)
 SD_IMPORT(Loading_Step, 0x2157a0)
 SD_IMPORT(Console_Execute, 0x20aaf0)
 

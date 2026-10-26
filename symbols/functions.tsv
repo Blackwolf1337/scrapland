@@ -7592,10 +7592,10 @@ rva	size	source	callconv	name	signature
 00264580	267	DEFAULT	unknown	FUN_00664580	
 002646c0	91	DEFAULT	unknown	FUN_006646c0	
 00264720	820	DEFAULT	unknown	FUN_00664720	
-00264a60	285	DEFAULT	unknown	FUN_00664a60	
-00264c00	148	DEFAULT	unknown	FUN_00664c00	
-00264ca0	1152	DEFAULT	unknown	FUN_00664ca0	
-002651b0	167	DEFAULT	unknown	FUN_006651b0	
+00264a60	285	USER_DEFINED	cdecl	Proc_Note	int Proc_Note(char *dest, char *src, void *tipo, int size)
+00264c00	148	USER_DEFINED	cdecl	Proc_TypeLookup	int Proc_TypeLookup(char *dest, char *name, void *data, int size)
+00264ca0	1152	USER_DEFINED	cdecl	Proc_ReadField	int Proc_ReadField(char **ap, char **psrc, char **pfmt)
+002651b0	167	USER_DEFINED	cdecl	Proc_DefineType	int Proc_DefineType(char *ident, void *defin)
 00265260	324	USER_DEFINED	cdecl	Proc_Scan	int Proc_Scan(char *s, char *fmt, ...)
 002653f0	104	DEFAULT	unknown	FUN_006653f0	
 00265460	99	DEFAULT	unknown	FUN_00665460	
