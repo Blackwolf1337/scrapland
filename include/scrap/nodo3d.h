@@ -184,7 +184,8 @@ typedef struct CNodoR {
 	matrix_t m;			/* 0x10 world */
 	matrix_t mObj;			/* 0x50 mObj of the node times m */
 	int frame;			/* 0x90 g_FrameCount of the last update */
-	byte pad_94[8];
+	void *skin;			/* 0x94 the skin of the meshes of this node (RenderEVA.cpp) */
+	byte pad_98[4];
 	IObjeto3D *obj3D;		/* 0x9c instead of the node's, the same class */
 	IObjeto3D *obj3D2;		/* 0xa0 owned */
 	struct CNodo3D *nodo;		/* 0xa4 a reference */

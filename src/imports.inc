@@ -413,6 +413,10 @@ SD_IMPORT(CSuelo_FreeNodos, 0x261530)
 SD_IMPORT(Font_PrintfXY, 0x299ce0)
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
+SD_IMPORT(RenderEVA_DrawSkin, 0x2b5d90)
+SD_IMPORT(RenderEVA_DrawSkinNodo, 0x2b4660)
+SD_IMPORT(Stencil_Malla, 0x267530)
+SD_IMPORT(CListaVert_EnvMapUV, 0x2418c0)
 SD_IMPORT(CAnimMat_GetFrame, 0x258060)
 SD_IMPORT(Matrix_Invert, 0x239560)
 SD_IMPORT(RenderLock_ReleaseD3D, 0x2a4860)

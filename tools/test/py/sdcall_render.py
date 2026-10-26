@@ -381,3 +381,23 @@ for v, p in ((idm, pm), (vm, pm), ((0.8, 0.0, -0.6, 0.0, 0.0, 1.0, 0.0, 0.0, 0.6
 	check('Frustum_Calc' + fmt((v[12], p[0])), lambda v=v, p=p: (SDTest.Call(0x24d640, 'vFF', v, p), rdints(0x4adbf0, 24)))
 for i in range(24):
 	SDTest.Poke(0x4adbf0 + 4 * i, rdplanes[i])
+
+# Render_MallaD3D with the mesh of the buffer draws and the material without textures, no render node
+SDTest.Poke(md + 0xc - 0x400000, 20)
+SDTest.Poke(md + 0x18 - 0x400000, 33)
+SDTest.Poke(md + 0x9c - 0x400000, 0)
+SDTest.Poke(md + 0xa0 - 0x400000, 0)
+SDTest.Poke(md + 0xa4 - 0x400000, 0)
+SDTest.Poke(md + 0xb0 - 0x400000, rdi(ib))
+SDTest.Poke(md + 0x4c - 0x400000, rmat2)
+rdvb = SDTest.Peek(0x431bac, 'i')
+rdhw = SDTest.Peek(0x431bdc, 'i')
+SDTest.Poke(0x431bdc, 1)
+rdtris = SDTest.Peek(0x4a8f00, 'i')
+for b3b in (0, 0x01000000):
+	SDTest.Poke(rmat2 + 0x38 - 0x400000, b3b)
+	check('Render_MallaD3D' + fmt((b3b != 0,)), lambda: (SDTest.Call(0x24bf30, 'iii', 0, -1), rdlog(lambda: SDTest.Call(0x24bc40,
+		'iii', md, 0)), SDTest.Peek(0x4a8f00, 'i') - rdtris))
+	rdtris = SDTest.Peek(0x4a8f00, 'i')
+SDTest.Poke(rmat2 + 0x38 - 0x400000, 0)
+SDTest.Poke(0x431bdc, rdhw)

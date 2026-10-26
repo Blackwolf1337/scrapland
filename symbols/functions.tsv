@@ -7128,7 +7128,7 @@ rva	size	source	callconv	name	signature
 00241710	223	USER_DEFINED	__cdecl	ListaVert_PackNormal	uint __cdecl(float *n)
 002417f0	89	USER_DEFINED	__cdecl	ListaVert_UnpackNormal	float * __cdecl(float *out, uint packed)
 00241850	106	USER_DEFINED	__thiscall	CListaVert_SetColor	void __thiscall(uint and, uint or)
-002418c0	1346	DEFAULT	unknown	FUN_006418c0	
+002418c0	1346	USER_DEFINED	unknown	CListaVert_EnvMapUV	
 00241e10	272	USER_DEFINED	__thiscall	CListaVert_GetExtents	void __thiscall(float *ext, byte reset)
 00241f20	751	DEFAULT	unknown	FUN_00641f20	
 00242210	127	USER_DEFINED	__thiscall	CListaVert_SetLTex1	void __thiscall(uint i, void *v)
@@ -7249,7 +7249,7 @@ rva	size	source	callconv	name	signature
 0024bbb0	11	USER_DEFINED	__cdecl	Render_WorldDirty	void __cdecl(void)
 0024bbc0	57	USER_DEFINED	__cdecl	Render_GetWorld	int __cdecl(void * out)
 0024bc00	57	USER_DEFINED	__cdecl	Render_SetWorld	int __cdecl(void)
-0024bc40	732	DEFAULT	unknown	FUN_0064bc40	
+0024bc40	732	USER_DEFINED	__cdecl	Render_MallaD3D	int __cdecl(void * m, void * r)
 0024bf30	1422	USER_DEFINED	__cdecl	Render_SetMaterial	int __cdecl(void * mat, int pass)
 0024c4d0	6	USER_DEFINED	__cdecl	Render_GetProj	void * __cdecl(void)
 0024c4e0	444	USER_DEFINED	__cdecl	Render_ProjTile	byte __cdecl(void * proj)
@@ -7609,7 +7609,7 @@ rva	size	source	callconv	name	signature
 00265510	3229	DEFAULT	unknown	FUN_00665510	
 002661b0	4765	DEFAULT	unknown	FUN_006661b0	
 00267460	202	DEFAULT	unknown	FUN_00667460	
-00267530	3410	DEFAULT	unknown	FUN_00667530	
+00267530	3410	USER_DEFINED	unknown	Stencil_Malla	
 00268290	52	DEFAULT	unknown	FUN_00668290	
 002682d0	534	USER_DEFINED	__cdecl	E3D_SetShadowLight	void __cdecl(void *light, int arg)
 002684f0	208	DEFAULT	unknown	FUN_006684f0	
@@ -8447,10 +8447,10 @@ rva	size	source	callconv	name	signature
 002b44e0	85	DEFAULT	unknown	FUN_006b44e0	
 002b4550	34	USER_DEFINED	unknown	RenderEVA_ReleaseD3D	
 002b4580	209	DEFAULT	unknown	FUN_006b4580	
-002b4660	1507	DEFAULT	unknown	FUN_006b4660	
+002b4660	1507	USER_DEFINED	unknown	RenderEVA_DrawSkinNodo	
 002b4c50	2430	DEFAULT	unknown	FUN_006b4c50	
 002b55d0	1978	DEFAULT	unknown	FUN_006b55d0	
-002b5d90	2445	DEFAULT	unknown	FUN_006b5d90	
+002b5d90	2445	USER_DEFINED	unknown	RenderEVA_DrawSkin	
 002b6720	117	DEFAULT	unknown	FUN_006b6720	
 002b67a0	844	USER_DEFINED	__cdecl	MallaD3D_Render	int __cdecl(void * mesh, void * ctx)
 002b6af0	322	USER_DEFINED	unknown	RenderMallaD3D_Flush	

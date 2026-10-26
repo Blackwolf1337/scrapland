@@ -10,6 +10,7 @@
 #include "scrap/grafico2d.h"
 #include "scrap/listavert.h"
 #include "scrap/mallad3d.h"
+#include "scrap/modelo.h"
 #include "scrap/material.h"
 #include "scrap/nodo3d.h"
 #include "scrap/utild3d.h"
@@ -1301,4 +1302,62 @@ void Frustum_Calc(const matrix_t *view, const matrix_t *proj) {
 	for (int i = 0; i < MAX_PLANOS_FRUSTUM; i++) {
 		Plane_From3(&fr[i], &c[planos[i][0]], &c[planos[i][1]], &c[planos[i][2]]);
 	}
+}
+
+int Render_MallaD3D(CMallaD3D *m, CNodoR *r) {
+	CHECK(m);
+	/* the shadow pass of a model being drawn with stencil shadows */
+	if (r && ((CModelo *)r->owner)->visible == 2) {
+		CHECK(g_RenderPass == 1 || g_RenderPass == 11);
+		if (m->pSkin) {
+			RenderEVA_DrawSkin(m, r);
+		} else if (r->skin) {
+			RenderEVA_DrawSkinNodo(m, r, r->skin);
+		} else {
+			Stencil_Malla(&m->vert, m->pTri, m->nTri, m, r);
+		}
+		return 0;
+	}
+	if (g_RenderSoloB38 && m->mat && !m->mat->params.b38) {
+		return 0;
+	}
+	void *dev = g_MotorDev;
+	if (!dev) {
+		return E_FAIL;
+	}
+	byte pass1 = 0, envSoft = 0;
+	if (m->mat && m->mat->params.b3b) {
+		pass1 = 1;
+		if (!g_UsarHWEnvMap) {
+			matrix_t view, world;
+			D3D_METHOD(dev, d3dGetTransform_t, D3DDEV_GETTRANSFORM)(dev, D3DTS_VIEW, &view);
+			D3D_METHOD(dev, d3dGetTransform_t, D3DDEV_GETTRANSFORM)(dev, D3DTS_WORLD, &world);
+			CListaVert_EnvMapUV(&m->vert, &world, &view, m->mat->mapa[2], 1);
+			envSoft = 1;
+		}
+	}
+	Render_SetMaterial(m->mat, 0);
+	CHECK(!m->b50);
+	if (m->pSkin) {
+		RenderEVA_DrawSkin(m, r);
+	} else if (r && r->skin) {
+		RenderEVA_DrawSkinNodo(m, r, r->skin);
+	} else if (m->b51) {
+		CHECK(0);
+	} else {
+		if (m->pVertVB && g_UsarVB && !envSoft) {
+			Render_DrawMallaD3D(m);
+		} else {
+			CHECK(0);
+			Render_DrawListaIdx(&m->vert, (const uint16_t *)m->pTri, (int)m->nTri, 0);
+		}
+		Stencil_Malla(&m->vert, m->pTri, m->nTri, m, r);
+	}
+	if (pass1 && !g_UsarShaders) {
+		Render_SetMaterial(m->mat, 1);
+		Render_DrawListaIdx(&m->vert, (const uint16_t *)m->pTri, (int)m->nTri, 0);
+	}
+	g_RenderTris += (int)m->nTri;
+	g_RenderVerts += m->vert.nVert;
+	return 0;
 }

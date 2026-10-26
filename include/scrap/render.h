@@ -22,6 +22,10 @@ struct CListaVert;
 #define g_RenderVerts GAME_DATA(int, 0x4a8f04)
 /* nothing is drawn */
 #define g_RenderOff GAME_DATA(byte, 0x4a8ef8)
+/* only the meshes whose material has b38 are drawn */
+#define g_RenderSoloB38 GAME_DATA(byte, 0x4a8ef9)
+/* the meshes are drawn from their vertex buffers */
+#define g_UsarVB GAME_DATA(byte, 0x431bac)
 #define g_RenderPass GAME_DATA(int, 0x4afdb8)
 /* the D3DRS_ZENABLE value of the frame and whether the fog is on */
 #define g_ZEnable GAME_DATA(uint32_t, 0x4ad740)
@@ -231,6 +235,10 @@ int Render_DrawMallaD3D(const struct CMallaD3D *m);
 int Render_DrawVBIB(void *vb, void *ib, const struct CListaVert *v, uint32_t ntri);
 /* the view matrix, its inverse as the billboard matrix and the eye */
 int Render_SetView(const matrix_t *m);
+/* a mesh with its material (and the second pass of its second texture set), the skinned and stencil shadow ones
+ * through their modules; r is the render node, NULL */
+struct CNodoR;
+int Render_MallaD3D(struct CMallaD3D *m, struct CNodoR *r);
 int Render_GetWorld(matrix_t *out);
 /* the alpha constant of the pixel shaders in reg: 1 1 1 0, 0 for transparent materials (not MAT_1000) and with a
  * forced material */
@@ -295,6 +303,13 @@ void Frustum_Calc(const matrix_t *view, const matrix_t *proj);
 
 
 /* other modules (src/imports.inc) */
+int RenderEVA_DrawSkin(struct CMallaD3D *m, struct CNodoR *r);			/* rva 0x2b5d90 */
+int RenderEVA_DrawSkinNodo(struct CMallaD3D *m, struct CNodoR *r, void *skin);	/* rva 0x2b4660 */
+/* rva 0x267530 (stencil.cpp): the shadow volume of the triangles of a mesh */
+void Stencil_Malla(struct CListaVert *v, const void *tris, uint32_t nTri, struct CMallaD3D *m, struct CNodoR *r);
+/* rva 0x2418c0 (ListaVert.cpp): the coordinates of the reflection map of the vertices in software */
+void __thiscall CListaVert_EnvMapUV(struct CListaVert *self, const matrix_t *world, const matrix_t *view,
+	struct CMapa *mapa, byte set);
 void RenderLock_ReleaseD3D(void);		/* rva 0x2a4860 (RenderLock.cpp) */
 void ListaVert_ReleaseD3D(void);		/* rva 0x2404e0 (ListaVert.cpp), empty */
 void RenderEVA_ReleaseD3D(void);		/* rva 0x2b4550 (RenderEVA.cpp) */
