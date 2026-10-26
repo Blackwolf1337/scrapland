@@ -7,14 +7,12 @@
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
+#include "scrap/mundo.h"
 #include "scrap/portal.h"
 #include "scrap/sistpart.h"
 #include "scrap/sueloportal.h"
 #include "scrap/varios.h"
 
-#define g_Mundo GAME_DATA(byte *, 0x4afde8)	/* gMundo of mundo.h */
-#define MUNDO_SUELO 0xb0			/* gMundo->obtSuelo() */
-#define MUNDO_CAMARA 0xa4			/* the camera of the world */
 #define PORTAL_ASPECT 1.33f			/* the screen height of a sphere */
 #define PORTAL_EPS 8.0e-6f			/* the step out of a portal, times the distance to the origin */
 
@@ -125,7 +123,7 @@ byte Sector_FindPos(const vec3_t *pos, int *sector, const char *name) {
 		return 1;
 	}
 	CHECK(g_Mundo);
-	void *suelo = *(void **)(g_Mundo + MUNDO_SUELO);
+	void *suelo = g_Mundo->ObjSuelo;
 	CHECK(suelo);
 	res.flags = 0x202;
 	res.y = pos->y;
@@ -437,7 +435,7 @@ void Zona_Pintar(uint32_t zona, const box_t *rect) {
 		}
 		box_t r = { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
 		CHECK(g_Mundo);
-		CCamara *cam = *(CCamara **)(g_Mundo + MUNDO_CAMARA);
+		CCamara *cam = g_Mundo->cam;
 		float cerca = (float)((double)(cam->zNear * (1.0f / 256.0f)) * 128.0 * (double)g_PortalNear);
 		if (g_PortalFront) {
 			float sign = po->zonas[0] == g_Zonas[zona]->nodo ? -1.0f : 1.0f;

@@ -27,7 +27,6 @@
 #define g_NodesRendered GAME_DATA(int, 0x4a8f10)
 #define g_NodesUpdated GAME_DATA(int, 0x4a8f14)
 /* the pass of the renderer and its filters of the nodes */
-#define g_RenderPass GAME_DATA(int, 0x4afdb8)
 #define g_RenderClaseMask GAME_DATA(uint32_t, 0x4ad568)
 #define g_RenderFlagMask GAME_DATA(uint32_t, 0x4ad5fc)
 #define g_RenderFlagNeg GAME_DATA(byte, 0x4ad4ec)	/* drawn if (flags & mask) == 0 differs from it */

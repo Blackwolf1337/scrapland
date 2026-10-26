@@ -9,7 +9,6 @@
 #include "scrap/mallatri.h"
 #include "scrap/sistpart.h"
 
-#define g_DebugFont GAME_DATA(void *, 0x4d6dcc)
 #define g_RenderTris GAME_DATA(int, 0x4a8f00)
 #define g_RenderVerts GAME_DATA(int, 0x4a8f04)
 #define D3DFVF_SPRITE 0x1c2		/* XYZ | DIFFUSE | SPECULAR | TEX1 */

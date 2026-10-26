@@ -6475,7 +6475,7 @@ rva	size	source	callconv	name	signature
 00214cf0	95	DEFAULT	unknown	FUN_00614cf0	
 00214d50	392	DEFAULT	unknown	FUN_00614d50	
 00214ee0	139	DEFAULT	unknown	FUN_00614ee0	
-00214f70	202	DEFAULT	unknown	FUN_00614f70	
+00214f70	202	USER_DEFINED	unknown	Color_ToD3D	
 00215040	272	DEFAULT	unknown	FUN_00615040	
 00215150	8	DEFAULT	unknown	FUN_00615150	
 00215160	5	DEFAULT	unknown	thunk_FUN_0064b960	
@@ -7225,7 +7225,7 @@ rva	size	source	callconv	name	signature
 00249c70	29	DEFAULT	unknown	FUN_00649c70	
 00249c90	156	DEFAULT	unknown	FUN_00649c90	
 00249d30	166	DEFAULT	unknown	FUN_00649d30	
-00249de0	234	DEFAULT	unknown	FUN_00649de0	
+00249de0	234	USER_DEFINED	unknown	Render_Clear	
 00249ed0	98	DEFAULT	unknown	FUN_00649ed0	
 00249f40	265	DEFAULT	unknown	FUN_00649f40	
 0024a050	649	DEFAULT	unknown	FUN_0064a050	
@@ -7513,7 +7513,7 @@ rva	size	source	callconv	name	signature
 00261300	223	USER_DEFINED	__thiscall	Tabla_New24	void __thiscall(int num)
 002613e0	226	USER_DEFINED	__thiscall	Tabla_NewFC	void __thiscall(int num)
 002614d0	94	USER_DEFINED	__thiscall	Tabla_Alloc1	void __thiscall(int num)
-00261530	66	DEFAULT	unknown	FUN_00661530	
+00261530	66	USER_DEFINED	unknown	CSuelo_FreeNodos	
 00261580	161	DEFAULT	unknown	FUN_00661580	
 00261630	187	DEFAULT	unknown	FUN_00661630	
 002616f0	137	DEFAULT	unknown	FUN_006616f0	
@@ -7616,42 +7616,43 @@ rva	size	source	callconv	name	signature
 002685c0	57	DEFAULT	unknown	FUN_006685c0	
 00268600	501	DEFAULT	unknown	FUN_00668600	
 00268800	1641	DEFAULT	unknown	FUN_00668800	
-00269210	270	DEFAULT	unknown	FUN_00669210	
-00269320	342	DEFAULT	unknown	FUN_00669320	
-00269480	225	DEFAULT	unknown	FUN_00669480	
-00269570	83	DEFAULT	unknown	FUN_00669570	
-002695d0	126	DEFAULT	unknown	FUN_006695d0	
-00269650	142	DEFAULT	unknown	FUN_00669650	
-002696e0	150	DEFAULT	unknown	FUN_006696e0	
-00269780	71	DEFAULT	unknown	FUN_00669780	
-002697e0	159	DEFAULT	unknown	FUN_006697e0	
-00269880	176	DEFAULT	unknown	FUN_00669880	
-00269930	158	DEFAULT	unknown	FUN_00669930	
-002699d0	659	DEFAULT	unknown	FUN_006699d0	
-00269c70	667	DEFAULT	unknown	FUN_00669c70	
-00269f10	948	DEFAULT	unknown	FUN_00669f10	
-0026a2d0	359	DEFAULT	unknown	FUN_0066a2d0	
-0026a440	394	DEFAULT	unknown	FUN_0066a440	
-0026a5d0	305	DEFAULT	unknown	FUN_0066a5d0	
-0026a710	127	DEFAULT	unknown	FUN_0066a710	
-0026a790	37	DEFAULT	unknown	FUN_0066a790	
-0026a7c0	40	DEFAULT	unknown	FUN_0066a7c0	
-0026a7f0	123	DEFAULT	unknown	FUN_0066a7f0	
-0026a870	123	DEFAULT	unknown	FUN_0066a870	
-0026a8f0	79	DEFAULT	unknown	FUN_0066a8f0	
-0026a940	129	DEFAULT	unknown	FUN_0066a940	
-0026a9d0	45	DEFAULT	unknown	FUN_0066a9d0	
-0026aa00	559	DEFAULT	unknown	FUN_0066aa00	
-0026ac30	45	DEFAULT	unknown	FUN_0066ac30	
-0026ac60	1448	DEFAULT	unknown	FUN_0066ac60	
-0026b210	62	DEFAULT	unknown	FUN_0066b210	
-0026b250	25	DEFAULT	unknown	FUN_0066b250	
-0026b270	25	DEFAULT	unknown	FUN_0066b270	
-0026b290	25	DEFAULT	unknown	FUN_0066b290	
-0026b2c0	50	DEFAULT	unknown	FUN_0066b2c0	
-0026b300	327	DEFAULT	unknown	FUN_0066b300	
-0026b450	46	DEFAULT	unknown	FUN_0066b450	
-0026b480	1062	DEFAULT	unknown	FUN_0066b480	
+00269210	270	USER_DEFINED	__fastcall	CMundo_ctor	void * __fastcall(void * self)
+00269320	342	USER_DEFINED	__thiscall	MundoDummy_ctorNodo	void * __thiscall(void * nodo)
+00269480	225	USER_DEFINED	__thiscall	MundoDummy_ctor	void * __thiscall(char * name, void * pos, void * rot)
+00269570	83	USER_DEFINED	__fastcall	MundoDummy_ctorEmpty	void * __fastcall(void * self)
+002695d0	126	USER_DEFINED	__fastcall	CMundo_dtor	void __fastcall(void * self)
+00269650	142	USER_DEFINED	__fastcall	MundoDummy_dtor	void __fastcall(void * self)
+002696e0	150	USER_DEFINED	__thiscall	CMundo_AddDummy	void __thiscall(void * d)
+00269780	71	USER_DEFINED	__fastcall	MundoDummy_Clear	void __fastcall(void * self)
+002697d0	14	USER_DEFINED	__fastcall	MundoDummy_Count	int __fastcall(void * list)
+002697e0	159	USER_DEFINED	__cdecl	MundoDummy_FreeList	void __cdecl(void ** list)
+00269880	176	USER_DEFINED	__fastcall	CMundo_ReleaseD3D	void __fastcall(void * self)
+00269930	158	USER_DEFINED	__fastcall	CMundo_InitD3D	void __fastcall(void * self)
+002699d0	659	USER_DEFINED	__cdecl	Mundo_LoadDUM	int __cdecl(char * path, void ** list)
+00269c70	667	USER_DEFINED	__thiscall	CMundo_LoadMoreDummies	byte __thiscall(char * ini)
+00269f10	948	USER_DEFINED	__fastcall	CMundo_Render	void __fastcall(void * self)
+0026a2d0	359	USER_DEFINED	__fastcall	CMundo_DrawDummies	void __fastcall(void * self)
+0026a440	394	USER_DEFINED	__cdecl	Mundo_SaveDUM	int __cdecl(char * path, void * list)
+0026a5d0	305	USER_DEFINED	__thiscall	CMundo_SaveMoreDummies	byte __thiscall(char * ini)
+0026a710	127	USER_DEFINED	__thiscall	MundoDummy_Find	void * __thiscall(char * name, byte self_too, byte case_sens)
+0026a790	37	USER_DEFINED	__thiscall	CMundo_SetCieloPos	void __thiscall(float pct)
+0026a7c0	40	USER_DEFINED	__thiscall	CMundo_SetCieloRot	void __thiscall(float deg)
+0026a7f0	123	USER_DEFINED	__thiscall	CMundo_SetLucesCielo	void __thiscall(byte activa)
+0026a870	123	USER_DEFINED	__thiscall	CMundo_SetLucesSuelo	void __thiscall(byte activa)
+0026a8f0	79	USER_DEFINED	__thiscall	CMundo_SetClip	void __thiscall(float zNear, float zFar)
+0026a940	129	USER_DEFINED	__thiscall	CMundo_SetCamara	void __thiscall(void * cam)
+0026a9d0	45	USER_DEFINED	__thiscall	CMundo_LoadCielo	void __thiscall(char * name)
+0026aa00	559	USER_DEFINED	__thiscall	CMundo_LoadCieloEscala	void __thiscall(char * name, void * escala)
+0026ac30	45	USER_DEFINED	__thiscall	CMundo_LoadSuelo	void __thiscall(char * name)
+0026ac60	1448	USER_DEFINED	__thiscall	CMundo_LoadSueloEscala	void __thiscall(char * name, void * escala)
+0026b210	62	USER_DEFINED	__thiscall	CMundo_GetCamaraSuelo	void * __thiscall(byte update)
+0026b250	25	USER_DEFINED	__thiscall	CMundo_FindClase	void * __thiscall(void * from, uint clase)
+0026b270	25	USER_DEFINED	__thiscall	CMundo_FindNodo	void * __thiscall(char * name)
+0026b290	25	USER_DEFINED	__thiscall	CMundo_FindNodoWild	void * __thiscall(char * pat)
+0026b2c0	50	USER_DEFINED	__cdecl	Debug_PuntoLinea	int __cdecl(void * a, void * b, uint ca, uint cb)
+0026b300	327	USER_DEFINED	__cdecl	Debug_Punto	int __cdecl(void * pos, uint color, float tipo)
+0026b450	46	USER_DEFINED	__cdecl	Debug_PuntosClear	void __cdecl(void)
+0026b480	1062	USER_DEFINED	__cdecl	Debug_PuntosDraw	int __cdecl(void)
 0026b8b0	115	USER_DEFINED	__thiscall	Tabla_Alloc14	void __thiscall(int num)
 0026b930	162	USER_DEFINED	__thiscall	Tabla_Resize14	void __thiscall(int n)
 0026b9e0	170	USER_DEFINED	__fastcall	CZona_ctor	void * __fastcall(void * self)
@@ -7680,8 +7681,8 @@ rva	size	source	callconv	name	signature
 0026d0d0	636	DEFAULT	unknown	FUN_0066d0d0	
 0026d350	450	USER_DEFINED	__cdecl	Portales_Cull	void __cdecl(uint sector)
 0026d520	127	USER_DEFINED	__cdecl	Sectores_Free	void __cdecl(void)
-0026d5a0	1497	DEFAULT	unknown	FUN_0066d5a0	
-0026db80	1016	DEFAULT	unknown	FUN_0066db80	
+0026d5a0	1497	USER_DEFINED	unknown	Sectores_Crear	
+0026db80	1016	USER_DEFINED	unknown	Portales_SetView	
 0026df80	1281	DEFAULT	unknown	FUN_0066df80	
 0026e490	2200	USER_DEFINED	__thiscall	CSuelo_Trace	byte __thiscall(float *from, float *to, void *a, float b, void *c)
 0026ed30	1004	DEFAULT	unknown	FUN_0066ed30	
@@ -7749,23 +7750,23 @@ rva	size	source	callconv	name	signature
 00276d00	320	DEFAULT	unknown	FUN_00676d00	
 00276e40	72	DEFAULT	unknown	FUN_00676e40	
 00276e90	249	DEFAULT	unknown	FUN_00676e90	
-00276f90	796	DEFAULT	unknown	FUN_00676f90	
+00276f90	796	USER_DEFINED	unknown	Debug_DrawBoxM	
 002772b0	798	DEFAULT	unknown	FUN_006772b0	
 002775d0	631	DEFAULT	unknown	FUN_006775d0	
-00277850	328	DEFAULT	unknown	FUN_00677850	
+00277850	328	USER_DEFINED	unknown	Debug_DrawAxes	
 002779a0	321	DEFAULT	unknown	FUN_006779a0	
-00277af0	323	DEFAULT	unknown	FUN_00677af0	
+00277af0	323	USER_DEFINED	unknown	Debug_DrawPoint	
 00277c40	1420	DEFAULT	unknown	FUN_00677c40	
 002781d0	41	DEFAULT	unknown	FUN_006781d0	
 00278200	32	DEFAULT	unknown	FUN_00678200	
-00278220	24	DEFAULT	unknown	FUN_00678220	
+00278220	24	USER_DEFINED	unknown	Debug_DrawLine	
 00278240	60	DEFAULT	unknown	FUN_00678240	
 00278280	62	DEFAULT	unknown	FUN_00678280	
 002782c0	156	DEFAULT	unknown	FUN_006782c0	
-00278360	48	DEFAULT	unknown	FUN_00678360	
-00278390	1	DEFAULT	unknown	FUN_00678390	
-002783a0	113	DEFAULT	unknown	FUN_006783a0	
-00278420	600	DEFAULT	unknown	FUN_00678420	
+00278360	48	USER_DEFINED	unknown	CNiebla_ctor	
+00278390	1	USER_DEFINED	unknown	CNiebla_dtor	
+002783a0	113	USER_DEFINED	unknown	CNiebla_InitD3D	
+00278420	600	USER_DEFINED	unknown	CNiebla_Apply	
 00278680	26	DEFAULT	unknown	FUN_00678680	
 002786a0	27	DEFAULT	unknown	FUN_006786a0	
 002786c0	101	DEFAULT	unknown	FUN_006786c0	
@@ -7960,8 +7961,8 @@ rva	size	source	callconv	name	signature
 00285d80	2835	DEFAULT	unknown	FUN_00685d80	
 002868a0	915	DEFAULT	unknown	FUN_006868a0	
 00286c40	55	DEFAULT	unknown	FUN_00686c40	
-00286c80	47	DEFAULT	unknown	FUN_00686c80	
-00286cb0	104	DEFAULT	unknown	FUN_00686cb0	
+00286c80	47	USER_DEFINED	unknown	Bsp_ReleaseD3D	
+00286cb0	104	USER_DEFINED	unknown	Bsp_InitD3D	
 00286d20	652	DEFAULT	unknown	FUN_00686d20	
 00286fb0	414	USER_DEFINED	__cdecl	Plane_Calc	byte __cdecl(float * plane, float * v1, float * v2, float * v3)
 00287150	916	DEFAULT	unknown	FUN_00687150	
@@ -8009,7 +8010,7 @@ rva	size	source	callconv	name	signature
 00290070	91	DEFAULT	unknown	FUN_00690070	
 002900d0	230	DEFAULT	unknown	FUN_006900d0	
 002901c0	851	DEFAULT	unknown	FUN_006901c0	
-00290520	53	DEFAULT	unknown	FUN_00690520	
+00290520	53	USER_DEFINED	unknown	Bsp_Free	
 00290560	226	DEFAULT	unknown	FUN_00690560	
 00290650	34	DEFAULT	unknown	FUN_00690650	
 00290680	33	DEFAULT	unknown	FUN_00690680	
@@ -8020,7 +8021,7 @@ rva	size	source	callconv	name	signature
 00290870	52	DEFAULT	unknown	FUN_00690870	
 002908b0	97	DEFAULT	unknown	FUN_006908b0	
 00290930	1735	DEFAULT	unknown	FUN_00690930	
-00291000	1757	DEFAULT	unknown	FUN_00691000	
+00291000	1757	USER_DEFINED	unknown	Bsp_Crear	
 002916e0	500	DEFAULT	unknown	FUN_006916e0	
 002918e0	721	DEFAULT	unknown	FUN_006918e0	
 00291bd0	1154	DEFAULT	unknown	FUN_00691bd0	
@@ -8037,7 +8038,7 @@ rva	size	source	callconv	name	signature
 002969f0	297	DEFAULT	unknown	FUN_006969f0	
 00296b20	318	DEFAULT	unknown	FUN_00696b20	
 00296c60	98	DEFAULT	unknown	FUN_00696c60	
-00296cd0	98	DEFAULT	unknown	FUN_00696cd0	
+00296cd0	98	USER_DEFINED	unknown	Bsp_Render	
 00296dc0	541	DEFAULT	unknown	FUN_00696dc0	
 00296fe0	199	DEFAULT	unknown	FUN_00696fe0	
 002970b0	485	DEFAULT	unknown	FUN_006970b0	
@@ -8066,7 +8067,7 @@ rva	size	source	callconv	name	signature
 002999c0	236	DEFAULT	unknown	FUN_006999c0	
 00299ab0	191	DEFAULT	unknown	FUN_00699ab0	
 00299b70	356	DEFAULT	unknown	FUN_00699b70	
-00299ce0	103	DEFAULT	unknown	FUN_00699ce0	
+00299ce0	103	USER_DEFINED	unknown	Font_PrintfXY	
 00299d50	374	DEFAULT	unknown	FUN_00699d50	
 00299ed0	739	DEFAULT	unknown	FUN_00699ed0	
 0029a1c0	230	DEFAULT	unknown	FUN_0069a1c0	
@@ -8624,14 +8625,14 @@ rva	size	source	callconv	name	signature
 002c93f0	179	DEFAULT	unknown	FUN_006c93f0	
 002c94b0	651	DEFAULT	unknown	FUN_006c94b0	
 002c9740	345	DEFAULT	unknown	FUN_006c9740	
-002c98a0	129	DEFAULT	unknown	FUN_006c98a0	
-002c98b0	15	DEFAULT	unknown	FUN_006c98b0	
+002c98a0	129	USER_DEFINED	unknown	BspQ3_ReleaseD3D	
+002c98b0	15	USER_DEFINED	unknown	BspQ3_InitD3D	
 002c98c0	117	DEFAULT	unknown	FUN_006c98c0	
 002c9940	246	DEFAULT	unknown	FUN_006c9940	
 002c9a40	770	DEFAULT	unknown	FUN_006c9a40	
-002c9d50	41	DEFAULT	unknown	FUN_006c9d50	
-002c9d80	1	DEFAULT	unknown	FUN_006c9d80	
-002c9d90	15	DEFAULT	unknown	FUN_006c9d90	
+002c9d50	41	USER_DEFINED	unknown	BspQ3_Free	
+002c9d80	1	USER_DEFINED	unknown	BspQ3_Crear	
+002c9d90	15	USER_DEFINED	unknown	BspQ3_Render	
 002c9da0	590	DEFAULT	unknown	FUN_006c9da0	
 002c9ff0	874	DEFAULT	unknown	FUN_006c9ff0	
 002ca360	1168	DEFAULT	unknown	FUN_006ca360	

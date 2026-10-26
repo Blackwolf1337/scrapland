@@ -5,7 +5,9 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/debug3d.h"
 #include "scrap/e3dutil.h"
+#include "scrap/mundo.h"
 #include "scrap/win32.h"
 #include "scrap/mallatri.h"
 #include "scrap/material.h"
@@ -20,8 +22,6 @@
 #define CNODO3D_DTOR 0x23d070
 #define SUELO_FLT_MAX 3.4028234663852886e+38f
 #define CLASE_OBJ3D_MALLAD3D 0xa1000002
-#define g_Mundo GAME_DATA(byte *, 0x4afde8)	/* gMundo of mundo.h */
-#define MUNDO_SUELO 0xb0	/* gMundo->obtSuelo() */
 #define g_MatrixIdentity ((const matrix_t *)Game_Ptr(0x4ad6f8))
 
 /* the statistics of the queries, cleared with the query number */
@@ -45,13 +45,10 @@ byte BoxTri(const vec3_t *bmin, const vec3_t *bmax, const CCollideTri *tri, cons
 /* the CTabla resize of tabla.h for vec3_t and CCollideTri */
 void __thiscall Tabla_ResizeC(CTabla *t, int n);
 void __thiscall Tabla_Resize1C(CTabla *t, int n);
-/* the drawing of render.cpp: the batches of vertex buffer meshes, a debug box */
+/* the drawing of render.cpp: the batches of vertex buffer meshes */
 void Batch_AddMalla(void *malla, void *dev);
 void Batch_Flush(void *dev);
-void Debug_DrawBox(const vec3_t *mn, const vec3_t *mx, uint32_t color);
 void __fastcall CSuelo_DrawDebug(CSuelo *self);
-/* Escena.cpp: the update of all nodes of a scene; the sector of a node (SueloPortal.cpp) */
-void __fastcall CEscena_UpdateNodes(void *esc);
 
 static void *Suelo_Obj(const CSuelo *self, uint32_t i) {
 	TABLA_CHECK(self->nodos, i, self->nNodos);
@@ -1758,7 +1755,7 @@ void Suelo_DrawBox(const vec3_t *c, float r, uint32_t color) {
 
 void Suelo_DrawDebug(void) {
 	CHECK(g_Mundo);
-	CSuelo *suelo = *(CSuelo **)(g_Mundo + MUNDO_SUELO);
+	CSuelo *suelo = g_Mundo->ObjSuelo;
 	if (suelo) {
 		CSuelo_DrawDebug(suelo);
 	}

@@ -8,13 +8,11 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
+#include "scrap/mundo.h"
 #include "scrap/sistpart.h"
 #include "scrap/varios.h"
 
 #define g_MatIdentity ((const matrix_t *)Game_Ptr(0x4ad6f8))
-#define g_Mundo GAME_DATA(byte *, 0x4afde8)	/* gMundo of mundo.h */
-#define MUNDO_SUELO 0xb0			/* gMundo->obtSuelo() */
-#define g_DebugFont GAME_DATA(void *, 0x4d6dcc)
 #define SISTPART_DEFAULT_COLOR 0xffffff
 
 /* the triangle a segment hit (CSuelo_TraceSeg): its index into the index list of the mesh */
@@ -852,7 +850,7 @@ static void Particula_Bounce(CParticulaActive *a, const vec3_t *prev, float dt) 
 	SistPartHit info = { 0, 0, NULL };
 
 	CHECK(g_Mundo);
-	void *suelo = *(void **)(g_Mundo + MUNDO_SUELO);
+	void *suelo = g_Mundo->ObjSuelo;
 	if (!suelo || !CSuelo_TraceSeg(suelo, prev, &a->p.pos, &hit, &info, 0)) {
 		return;
 	}

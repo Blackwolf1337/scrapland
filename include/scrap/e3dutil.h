@@ -20,6 +20,16 @@
 #define g_TimeMs GAME_DATA(uint32_t, 0x4a8ef0)
 /* video var DiffuseMod4x: colors divided by 4 */
 #define g_DiffuseMod4x GAME_DATA(int, 0x431be8)
+/* the render pass of render.cpp */
+#define g_RenderPass GAME_DATA(int, 0x4afdb8)
+/* the D3DRS_ZENABLE value of the frame and whether the fog is on (render.cpp) */
+#define g_ZEnable GAME_DATA(uint32_t, 0x4ad740)
+#define g_FogActive GAME_DATA(int, 0x4ad744)
+/* the D3DRS_AMBIENT of the scenes */
+#define g_AmbientD3D GAME_DATA(uint32_t, 0x4ad748)
+/* the debug fonts (their cursor x, y first) */
+#define g_DebugFont GAME_DATA(void *, 0x4d6dcc)
+#define g_DebugFont2 GAME_DATA(void *, 0x4d6dc8)
 
 /* the getters of render.cpp (rva 0x24c4d0, 0x24cdb0, 0x24cdc0, 0x24cdd0): the projection and the view matrix, the
  * camera turn of the sprites and the camera position */

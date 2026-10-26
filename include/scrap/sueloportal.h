@@ -43,7 +43,6 @@ typedef struct SectorVis {
 #define g_NumZonas GAME_DATA(int, 0x4b00d8)
 #define g_SectorCache GAME_DATA(int, 0x4b0128)	/* the cached sector is used when the position is the same */
 #define g_PortalesOn GAME_DATA(int, 0x4e1e00)	/* 0: everything is seen */
-#define g_DebugFont2 GAME_DATA(void *, 0x4d6dc8)
 #define g_PortalTest GAME_DATA(int, 0x4b1178)	/* the screen rectangle test; 2: drawn */
 #define g_PortalFront GAME_DATA(int, 0x4b0110)	/* portals the camera is in front of beyond the near distance are skipped */
 #define g_PortalExterior GAME_DATA(int, 0x4b1190)	/* exterior sectors do not look into interior ones */
@@ -64,6 +63,7 @@ SD_SIZE(ZonaPintar, 0x20);
 #define g_PintarI148 GAME_DATA(int, 0x4b0148)
 #define g_PintarRect (*(box_t *)Game_Ptr(0x4b014c))
 #define g_PintarNum GAME_DATA(int, 0x4b0164)
+#define g_PintarTodas ((ZonaPintar *)Game_Ptr(0x4b0148))	/* the same three as one */
 
 
 CZona *__fastcall CZona_ctor(CZona *self);
@@ -88,6 +88,11 @@ void Zona_Pintar(uint32_t zona, const box_t *rect);
 void Portales_Cull(uint32_t sector);
 /* rva 0x26d0d0, the debug drawing of the seen sectors */
 void Portales_DebugDraw(void);
+/* rva 0x26d5a0: the sectors and portals of the floor scene */
+void Sectores_Crear(CEscena *esc);
+/* rva 0x26db80: the projection narrowed to the screen rectangle of zp (NULL: back to the whole view); 0 when
+ * nothing of it is seen */
+byte Portales_SetView(const ZonaPintar *zp);
 /* the sector under pos into *sector; whether it is seen (always without portals); name is not used */
 byte Sector_FindPos(const vec3_t *pos, int *sector, const char *name);
 const char *Sector_GetName(int sector);

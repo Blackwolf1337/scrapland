@@ -12,12 +12,9 @@
 
 #define g_EscenaAnimPadre GAME_DATA(CEscena *, 0x4e1ec0)	/* while crear_animacion makes its scene */
 #define g_EscenaLODPadre GAME_DATA(CEscena *, 0x4e1ec4)	/* while a LOD model is made */
-#define g_ModelosOn GAME_DATA(byte, 0x432418)	/* the models are drawn */
-#define g_RenderPass GAME_DATA(int, 0x4afdb8)
 #define g_SortModels GAME_DATA(int, 0x4ae790)	/* R_SortModels */
 #define g_SortShow GAME_DATA(int, 0x4ae7a8)	/* R_SortShow */
 #define g_SortInvert GAME_DATA(int, 0x4ae7c0)	/* R_SortInvert */
-#define g_Font GAME_DATA(float *, 0x4d6dcc)	/* the debug font, its cursor x, y first */
 
 #define SORT_TEXT_X 200.0f
 #define SORT_TEXT_Y 10.0f
@@ -429,11 +426,11 @@ void Modelos_Render(void) {
 		if (!vis && g_SortShow < 2) {
 			continue;
 		}
-		Font_SetColor(g_Font, vis & 1 ? 0xffffff : vis ? 0xffff00 : 0xff);
-		Font_Printf(g_Font, SORT_TEXT_X, (float)y + SORT_TEXT_Y, 2, "%s %.2f", m->name, (double)lm->sortKey);
+		Font_SetColor(g_DebugFont, vis & 1 ? 0xffffff : vis ? 0xffff00 : 0xff);
+		Font_Printf(g_DebugFont, SORT_TEXT_X, (float)y + SORT_TEXT_Y, 2, "%s %.2f", m->name, (double)lm->sortKey);
 		if (m->sortZBias != 0.0f || m->sortZMult != 1.0f) {
-			Font_SetColor(g_Font, SORT_TEXT_COLOR);
-			float *f = g_Font;
+			Font_SetColor(g_DebugFont, SORT_TEXT_COLOR);
+			float *f = g_DebugFont;
 			Font_Printf(f, f[0], f[1], 2, " %.2f %.2f", (double)m->sortZBias, (double)m->sortZMult);
 		}
 		n = g_NumModelosRender;

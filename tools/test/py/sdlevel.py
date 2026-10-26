@@ -453,4 +453,89 @@ for a in range(min(nz, 6)):
 		pb = SDTest.Peek(SDTest.Peek(0x4afed8 + 4 * b, 'i') + 0x24, '@i')
 		check('Sector_Recorrer' + fmt((a, b)), lambda a=a, pa=pa, pb=pb: SDTest.Call(0x26cba0, 'iiiii', a, pa + 0x8c,
 			pb + 0x8c, 0)[0])
+
+# the world (Engine/Mundo.c) after the level load: gMundo, its dummies, the .dum file written and read back, the debug
+# points. Floats as their bits, pointers only compared.
+mundo = SDTest.Peek(0x4afde8, 'i')
+def mwi(a):
+	return SDTest.Peek(a, '@i')
+def mwints(a, n):
+	r = []
+	for i in range(n):
+		r.append(mwi(a + 4 * i))
+	return r
+def mwdummies(d):
+	r = []
+	while d:
+		r.append((SDTest.Peek(d + 4, '@p'), mwints(d + 8, 6), mwi(d + 0x20) != 0))
+		d = mwi(d)
+	return r
+def mwnodo(n):
+	if n:
+		return SDTest.Peek(n + 4, '@p')
+	return None
+dummies = mwi(mundo + 0xc4)
+check('CMundo', lambda: (mwints(mundo + 0x24, 2), mwi(mundo + 0xa4) == mundo + 0x2c, mwints(mundo + 0x2c + 0x14, 9),
+	mwi(mundo + 0xa8) != 0, mwi(mundo + 0xac) != 0, mwi(mundo + 0xb0) != 0, mwi(mundo + 0xb4) != 0,
+	mwi(mundo + 0xb8) != 0, mwi(mundo + 0xbc) != 0, mwi(mundo + 0xc0) & 0xff))
+check('CMundo dummies', lambda: mwdummies(dummies))
+check('MundoDummy_Count', lambda: SDTest.Call(0x2697d0, 'tii', dummies)[0])
+def mwfind(name, own, case):
+	d = SDTest.Call(0x26a710, 'tiisii', dummies, name, own, case)[0]
+	i = 0
+	e = dummies
+	while e and e != d:
+		e = mwi(e)
+		i = i + 1
+	return (d != 0, i)
+if dummies:
+	first = SDTest.Peek(dummies + 4, '@p')
+	for name, own, case in ((first, 1, 1), (first, 0, 1), (strop.upper(first), 1, 0), (strop.upper(first), 1, 1),
+		(SDTest.Peek(mwi(dummies) + 4, '@p') or 'x', 0, 0), ('DM_sdnone', 1, 0)):
+		check('MundoDummy_Find' + fmt((name, own, case)), lambda n=name, o=own, c=case: mwfind(n, o, c))
+for name in ('DM_sdnone', 'sd*'):
+	check('CMundo_FindNodo' + fmt((name,)), lambda n=name: mwnodo(SDTest.Call(0x26b270, 'tiis', mundo, n)[0]))
+	check('CMundo_FindNodoWild' + fmt((name,)), lambda n=name: mwnodo(SDTest.Call(0x26b290, 'tiis', mundo, n)[0]))
+check('CMundo_FindClase(luz)', lambda: mwnodo(SDTest.Call(0x26b250, 'tiiii', mundo, 0, 0xa3000008)[0]))
+check('CMundo_GetCamaraSuelo', lambda: SDTest.Call(0x26b210, 'tiii', mundo, 0)[0] != 0)
+saved = mwints(mundo + 0x24, 2)
+check('CMundo_SetCieloPos', lambda: (SDTest.Call(0x26a790, 'tvif', mundo, 37.5), mwi(mundo + 0x24)))
+check('CMundo_SetCieloRot', lambda: (SDTest.Call(0x26a7c0, 'tvif', mundo, -30.0), mwi(mundo + 0x28)))
+SDTest.Poke(mundo + 0x24 - 0x400000, saved[0])
+SDTest.Poke(mundo + 0x28 - 0x400000, saved[1])
+# the .dum file of the floor scene read again (files cannot be written here), a dummy made here
+escpath = SDTest.Peek(mwi(mundo + 0xac) + 4, '@p')
+loaded = SDTest.Call(0x2699d0, 'isp', escpath, 0)
+check('Mundo_LoadDUM', lambda: (loaded[0], mwdummies(loaded[1])))
+cell = SDTest.Call(0x1334d0, 'ii', 4)[0]
+SDTest.Poke(cell - 0x400000, loaded[1])
+check('MundoDummy_FreeList', lambda: (SDTest.Call(0x2697e0, 'vi', cell), mwi(cell)))
+for name in ('DM_sdnuevo', 'sdnuevo'):
+	d = SDTest.Call(0x269480, 'tiisFF', SDTest.Call(0x1334d0, 'ii', 0x24)[0], name, (1.5, -2.0, 3.0), (0.1, 0.2, -0.3))[0]
+	check('MundoDummy_ctor' + fmt((name,)), lambda d=d: mwdummies(d))
+	check('MundoDummy_dtor' + fmt((name,)), lambda d=d: (SDTest.Call(0x269650, 'tvi', d), mwi(d + 4)))
+# the debug points: a point, a line, a box, then cleared; the limit with a count of 3
+sdon = SDTest.Peek(0x4a8efa, 'i')
+sdmax = SDTest.Peek(0x432584, 'i')
+def mwpuntos():
+	n = SDTest.Peek(0x4afecc, 'i')
+	p = SDTest.Peek(0x4afec8, 'i')
+	if p:
+		return (n, SDTest.Peek(0x4afec4, 'i'), mwints(p, 5 * n))
+	return (n, SDTest.Peek(0x4afec4, 'i'))
+SDTest.Call(0x26b450, 'v')
+check('Debug_Punto', lambda: (SDTest.Call(0x26b300, 'iFif', (1.0, 2.0, 3.0), 0xff0000, 0.5)[0], mwpuntos()))
+check('Debug_PuntoLinea', lambda: (SDTest.Call(0x26b2c0, 'iFFii', (0.0, 0.0, 0.0), (4.0, 5.0, 6.0), 0xff, 0xff00)[0],
+	mwpuntos()))
+for i in range(5):
+	check('Debug_Punto box' + fmt((i,)), lambda i=i: (SDTest.Call(0x26b300, 'iFif', (float(i), 1.0, -1.0), i, -2.0)[0],
+		mwpuntos()))
+check('Debug_PuntosClear', lambda: (SDTest.Call(0x26b450, 'v'), mwpuntos()))
+SDTest.Poke(0x432584, 3)
+for i in range(5):
+	check('Debug_Punto max' + fmt((i,)), lambda i=i: (SDTest.Call(0x26b300, 'iFif', (0.0, float(i), 0.0), 7, 1.0)[0],
+		mwpuntos()))
+SDTest.Call(0x26b450, 'v')
+SDTest.Poke(0x432584, sdmax)
+SDTest.Poke(0x4a8efa, sdon)
 finish()

@@ -106,6 +106,9 @@ SD_OFFSET(CSuelo, Extens, 0x30);
 SD_OFFSET(CSuelo, alturas, 0x70);
 SD_SIZE(CSuelo, 0x3524);
 
+/* rva 0x261530: the floor nodes freed (with the shadow maps they are not needed) */
+void __fastcall CSuelo_FreeNodos(CSuelo *self);
+
 #define g_CollisionEpsilon GAME_DATA(float, 0x43241c)
 #define g_CollisionBalance GAME_DATA(float, 0x4af868)
 #define g_QuadTriCacheID GAME_DATA(int, 0x4af7d8)
@@ -193,6 +196,8 @@ byte __thiscall CSuelo_SphereContact(CSuelo *self, const vec3_t *a, const vec3_t
 /* a sphere of radius r moving from a to b: the contact nearest to a (out and hit the same point); without outputs the first contact ends it */
 byte __thiscall CSuelo_SweepSphere(CSuelo *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out,
 	vec3_t *hit, vec3_t *n);
+struct CMallaTri;
+
 /* the triangles of tm added to mesh (a mesh added at run time: outID and outIni get its MeshID and first triangle),
  * then into the quads */
 void __thiscall CSuelo_AddMesh(CSuelo *self, CCollideMesh *mesh, struct CMallaTri *tm, uint32_t *outID, int *outIni);

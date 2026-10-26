@@ -7,6 +7,7 @@
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/luz.h"
+#include "scrap/mundo.h"
 #include "scrap/sueloportal.h"
 
 #define CLUZ_VFTABLE 0x3d79fc
@@ -21,11 +22,8 @@
 #define g_LucesD3D GAME_DATA(int, 0x4ac430)	/* with act_D3D */
 #define g_LucesTotal GAME_DATA(int, 0x4ac42c)
 #define g_LuzIndD3D GAME_DATA(uint32_t, 0x4ac428)	/* the next light gets index 4 + this */
-#define g_AmbientD3D GAME_DATA(uint32_t, 0x4ad748)	/* the ambient of the scenes */
 #define g_ProfMode GAME_DATA(int, 0x4a9018)	/* 5: timing with rdtsc */
 #define g_ProfTicksLuces GAME_DATA(uint64_t, 0x4b18c8)
-#define gMundo GAME_DATA(byte *, 0x4afde8)
-#define MUNDO_SUELO 0xb0	/* gMundo->obtSuelo() */
 
 /* the engine variables of the lights (Gvars) */
 #define g_LightEnaD3D GAME_DATA(int, 0x4ac228)	/* R_LightEnaD3D: 0 always, 1 on changes, from 2 never */
@@ -269,8 +267,8 @@ int Luz_Select(const vec3_t *pos, int sector, const vec3_t *center, float radius
 			if (ok && n < g_LightSort) {
 				if (g_LightTrace && l->tipo != LUZ_DIREC) {
 					vec3_t p = l->d3d.Position;
-					CHECK(gMundo && *(void **)(gMundo + MUNDO_SUELO));
-					ok = !CSuelo_Trace(*(void **)(gMundo + MUNDO_SUELO), pos, &p, NULL, 0.0f, NULL);
+					CHECK(g_Mundo && g_Mundo->ObjSuelo);
+					ok = !CSuelo_Trace(g_Mundo->ObjSuelo, pos, &p, NULL, 0.0f, NULL);
 				}
 				if (ok) {
 					CHECK(out && n < MAX_LUCES_OBJ);
