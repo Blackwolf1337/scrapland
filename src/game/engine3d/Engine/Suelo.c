@@ -35,7 +35,6 @@
 
 typedef void(__thiscall *objCall_t)(void *self, void *arg);
 
-void __fastcall CCollideMesh_dtor(CCollideMesh *self);
 vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);
 double crt_ceil(double x);
 /* the triangle (its verts in v) touches the box */

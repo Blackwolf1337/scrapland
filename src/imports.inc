@@ -455,7 +455,6 @@ SD_IMPORT(MallaD3D_Render, 0x2b67a0)
 SD_IMPORT(CMallaD3D_CalcSegmentos, 0x2d5350)
 
 /* module agent: Engine/Suelo (imports below this line) */
-SD_IMPORT(CCollideMesh_dtor, 0x20eb70)
 SD_IMPORT(Vec3_Normalize, 0x261580)
 SD_IMPORT(crt_ceil, 0x345010)
 SD_IMPORT(BoxTri, 0x271d60)
@@ -484,12 +483,13 @@ SD_IMPORT(CEscena_Shared, 0x24ecb0)
 SD_IMPORT(CModelo_Render, 0x253610)
 SD_IMPORT(Escena_Load, 0x2c2d60)
 SD_IMPORT(Escena_ShowTree, 0x216960)
+SD_IMPORT(Sector_At, 0x2146e0)
+SD_IMPORT(CNodoR_SetLook, 0x23f7f0)
 
 /* module agent: Engine/Nodo3D (imports below this line) */
 SD_IMPORT(Matrix_LoadIdentity, 0x214710)
 SD_IMPORT(Matrix_MulD3D, 0x2391f0)
 SD_IMPORT(Matrix_ToEuler, 0x2392d0)
-SD_IMPORT(CRotacion_SetEuler, 0x212510)
 SD_IMPORT(CSistPart_Cast, 0x23f310)
 SD_IMPORT(CNodo3D_DebugDraw, 0x23d9d0)
 SD_IMPORT(CNodoR_UpdateNodo, 0x23f5d0)

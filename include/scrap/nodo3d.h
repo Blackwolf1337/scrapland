@@ -25,6 +25,7 @@
 #define MAX_ANIM_CHANNEL 4
 
 /* flags */
+#define NODO_COLISION (1u << 12)	/* a mesh of the static collision of a game model */
 #define NODO_POSFIJA (1u << 16)		/* the position of the node instead of the animated one */
 #define NODO_NOUPDATE (1u << 17)
 #define NODO_SLERP2 (1u << 18)		/* R_NodeSlerp2 1: the blend of two channels relative to rot */

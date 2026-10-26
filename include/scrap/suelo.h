@@ -47,6 +47,8 @@ typedef struct CCollideMesh {
 	CCollideTri *pTri;		/* 0x30 */
 } CCollideMesh;
 SD_SIZE(CCollideMesh, 0x34);
+/* the tables freed, CHECK(!Refs) (an inline of suelo.h, rva 0x20eb70) */
+void __fastcall CCollideMesh_dtor(CCollideMesh *self);
 
 typedef struct CCollideQuad {
 	float gapTop;			/* 0x00 the largest vertical gap without triangles */
