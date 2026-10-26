@@ -341,6 +341,9 @@ SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 /* engine: FileSys/ (include/scrap/filesys.h) */
 SD_IMPORT(cStringList_NewNode, 0x0605f0)
 SD_IMPORT(E3D_Log, 0x237ca0)
+SD_IMPORT(E3D_LogBlue, 0x237be0)
+SD_IMPORT(E3D_LogDebug, 0x237d80)
+SD_IMPORT(E3D_LogInfo, 0x238180)
 SD_IMPORT(Loading_Step, 0x2157a0)
 SD_IMPORT(Console_Execute, 0x20aaf0)
 

@@ -7517,43 +7517,43 @@ rva	size	source	callconv	name	signature
 002616f0	137	DEFAULT	unknown	FUN_006616f0	
 00261780	168	DEFAULT	unknown	FUN_00661780	
 00261830	162	DEFAULT	unknown	FUN_00661830	
-002618e0	156	DEFAULT	unknown	FUN_006618e0	
-00261980	14	DEFAULT	unknown	FUN_00661980	
-00261990	59	DEFAULT	unknown	FUN_00661990	
-002619d0	161	DEFAULT	unknown	FUN_006619d0	
-00261a80	40	DEFAULT	unknown	FUN_00661a80	
-00261ab0	29	DEFAULT	unknown	FUN_00661ab0	
-00261ad0	23	DEFAULT	unknown	FUN_00661ad0	
-00261af0	51	DEFAULT	unknown	FUN_00661af0	
-00261b60	46	DEFAULT	unknown	FUN_00661b60	
-00261b90	41	DEFAULT	unknown	FUN_00661b90	
-00261bc0	11	DEFAULT	unknown	FUN_00661bc0	
-00261bd0	215	DEFAULT	unknown	FUN_00661bd0	
-00261cb0	65	DEFAULT	unknown	FUN_00661cb0	
-00261d00	65	DEFAULT	unknown	FUN_00661d00	
-00261d50	190	DEFAULT	unknown	FUN_00661d50	
-00261e10	209	DEFAULT	unknown	FUN_00661e10	
-00261ef0	224	DEFAULT	unknown	FUN_00661ef0	
-00261fd0	22	DEFAULT	unknown	FUN_00661fd0	
-00261ff0	225	DEFAULT	unknown	FUN_00661ff0	
-002620e0	41	DEFAULT	unknown	FUN_006620e0	
-00262110	97	DEFAULT	unknown	FUN_00662110	
-00262180	26	DEFAULT	unknown	FUN_00662180	
-002621a0	26	DEFAULT	unknown	FUN_006621a0	
-002621c0	202	DEFAULT	unknown	FUN_006621c0	
-00262290	42	DEFAULT	unknown	FUN_00662290	
-002622c0	20	DEFAULT	unknown	FUN_006622c0	
-002622e0	26	DEFAULT	unknown	FUN_006622e0	
-00262300	97	DEFAULT	unknown	FUN_00662300	
-00262370	26	DEFAULT	unknown	FUN_00662370	
-00262390	26	DEFAULT	unknown	FUN_00662390	
-002623b0	156	DEFAULT	unknown	FUN_006623b0	
-00262450	26	DEFAULT	unknown	FUN_00662450	
-00262470	26	DEFAULT	unknown	FUN_00662470	
-00262490	26	DEFAULT	unknown	FUN_00662490	
-002624b0	29	DEFAULT	unknown	FUN_006624b0	
-002624d0	31	DEFAULT	unknown	FUN_006624d0	
-002624f0	20	DEFAULT	unknown	FUN_006624f0	
+002618e0	156	USER_DEFINED	__thiscall	CArchINI_ctorLoad	void * __thiscall(char *name, char *dir)
+00261980	14	USER_DEFINED	__thiscall	CArchINI_ctor	void * __thiscall(void)
+00261990	59	USER_DEFINED	__thiscall	CArchINI_dtor	void __thiscall(void)
+002619d0	161	USER_DEFINED	__cdecl	ArchINI_Read	void __cdecl(void *f, void **ini)
+00261a80	40	USER_DEFINED	__cdecl	ArchINI_Write	void __cdecl(void *f, void *ini)
+00261ab0	29	USER_DEFINED	__thiscall	CArchINI_FindKey	int __thiscall(char *key, char *value, int size, int from)
+00261ad0	23	USER_DEFINED	__thiscall	CArchINI_FindSection	int __thiscall(char *name, int from)
+00261af0	51	USER_DEFINED	__thiscall	CArchINI_GetBool	byte __thiscall(char *sect, char *key, byte def)
+00261b60	46	USER_DEFINED	__thiscall	CArchINI_GetFloat	float __thiscall(char *sect, char *key, float def)
+00261b90	41	USER_DEFINED	__thiscall	CArchINI_GetInt	int __thiscall(char *sect, char *key, int def)
+00261bc0	11	USER_DEFINED	__thiscall	CArchINI_Count	int __thiscall(void)
+00261bd0	215	USER_DEFINED	__thiscall	CArchINI_GetColor	uint __thiscall(char *sect, char *key, uint def)
+00261cb0	65	USER_DEFINED	__thiscall	CArchINI_GetSectionName	byte __thiscall(int idx, char *dest, int size)
+00261d00	65	USER_DEFINED	__thiscall	CArchINI_GetText	char * __thiscall(char *sect, char *key, char *dest, int size, char *def)
+00261d50	190	USER_DEFINED	__thiscall	CArchINI_GetVec2	float * __thiscall(float *out, char *sect, char *key, float *def)
+00261e10	209	USER_DEFINED	__thiscall	CArchINI_GetVec3	float * __thiscall(float *out, char *sect, char *key, float *def)
+00261ef0	224	USER_DEFINED	__thiscall	CArchINI_ReadBlock	void __thiscall(void *f)
+00261fd0	22	USER_DEFINED	__thiscall	CArchINI_Clear	void __thiscall(void)
+00261ff0	225	USER_DEFINED	__thiscall	CArchINI_WriteBlock	void __thiscall(void *f)
+002620e0	41	USER_DEFINED	__thiscall	CArchINI_SetYesNo	int __thiscall(char *sect, char *key, byte v)
+00262110	97	USER_DEFINED	__thiscall	CArchINI_SetFloat	int __thiscall(char *sect, char *key, float v, int prec)
+00262180	26	USER_DEFINED	__thiscall	CArchINI_SetInt	int __thiscall(char *sect, char *key, int v)
+002621a0	26	USER_DEFINED	__thiscall	CArchINI_SetStr	int __thiscall(char *sect, char *key, char *v)
+002621c0	202	USER_DEFINED	__thiscall	CArchINI_Load	int __thiscall(char *name, char *dir, byte verbose)
+00262290	42	USER_DEFINED	__thiscall	CArchINI_AddLine	void __thiscall(char *text, int idx)
+002622c0	20	USER_DEFINED	__thiscall	CArchINI_DeleteLine	void __thiscall(int idx)
+002622e0	26	USER_DEFINED	__thiscall	CArchINI_SetBool	int __thiscall(char *sect, char *key, int v)
+00262300	97	USER_DEFINED	__thiscall	CArchINI_SetFloat2	int __thiscall(char *sect, char *key, float v, int prec)
+00262370	26	USER_DEFINED	__thiscall	CArchINI_SetInt2	int __thiscall(char *sect, char *key, int v)
+00262390	26	USER_DEFINED	__thiscall	CArchINI_SetStr2	int __thiscall(char *sect, char *key, char *v)
+002623b0	156	USER_DEFINED	__thiscall	CArchINI_Save	int __thiscall(char *name, char *dir, int unused)
+00262450	26	USER_DEFINED	__thiscall	CArchINI_ReadBool	int __thiscall(char *sect, char *key, int *out)
+00262470	26	USER_DEFINED	__thiscall	CArchINI_ReadFloat	int __thiscall(char *sect, char *key, float *out)
+00262490	26	USER_DEFINED	__thiscall	CArchINI_ReadInt	int __thiscall(char *sect, char *key, int *out)
+002624b0	29	USER_DEFINED	__thiscall	CArchINI_ReadText	int __thiscall(char *sect, char *key, char *dest, int size)
+002624d0	31	USER_DEFINED	__thiscall	CArchINI_LineText	char * __thiscall(int idx)
+002624f0	20	USER_DEFINED	__thiscall	CArchINI_LineType	int __thiscall(int idx)
 00262510	220	DEFAULT	unknown	FUN_00662510	
 002625f0	219	DEFAULT	unknown	FUN_006625f0	
 002626d0	153	DEFAULT	unknown	FUN_006626d0	

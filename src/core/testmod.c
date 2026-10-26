@@ -10,7 +10,7 @@
  *           passed as an array of floats (up to MAX_FLOATS) that comes back as a tuple
  * The result is a tuple: the return value, then the b, p, D and F arguments in their order. cdecl functions with up to
  * MAX_ARGS arguments of 4 bytes; "t" before sig calls a thiscall method, the first argument is this (up to
- * MAX_THIS_ARGS more, no float return).
+ * MAX_THIS_ARGS more).
  *
  * SDTest.Peek(rva, kind) reads a global of the exe: i int, b byte, d double, s the characters at rva, p the string a
  * pointer at rva points to (None for NULL); with '@' before the kind rva is an address (from a returned pointer).
@@ -36,32 +36,42 @@ typedef uint32_t (*call_int_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t,
 typedef float (*call_float_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t,
 	uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 
-typedef uint32_t(__thiscall *this0_t)(uint32_t);
-typedef uint32_t(__thiscall *this1_t)(uint32_t, uint32_t);
-typedef uint32_t(__thiscall *this2_t)(uint32_t, uint32_t, uint32_t);
-typedef uint32_t(__thiscall *this3_t)(uint32_t, uint32_t, uint32_t, uint32_t);
-typedef uint32_t(__thiscall *this4_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
-typedef uint32_t(__thiscall *this5_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
-typedef uint32_t(__thiscall *this6_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+#define THIS_TYPES(name, ret) \
+	typedef ret(__thiscall *name##0_t)(uint32_t); \
+	typedef ret(__thiscall *name##1_t)(uint32_t, uint32_t); \
+	typedef ret(__thiscall *name##2_t)(uint32_t, uint32_t, uint32_t); \
+	typedef ret(__thiscall *name##3_t)(uint32_t, uint32_t, uint32_t, uint32_t); \
+	typedef ret(__thiscall *name##4_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); \
+	typedef ret(__thiscall *name##5_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); \
+	typedef ret(__thiscall *name##6_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+THIS_TYPES(this, uint32_t)
+THIS_TYPES(thisf, float)
 
 /* the callee pops its arguments, so the call needs the exact count */
-static uint32_t Call_This(void *fn, const uint32_t *a, int n) {
-	switch (n) {
-	case 1:
-		return ((this0_t)fn)(a[0]);
-	case 2:
-		return ((this1_t)fn)(a[0], a[1]);
-	case 3:
-		return ((this2_t)fn)(a[0], a[1], a[2]);
-	case 4:
-		return ((this3_t)fn)(a[0], a[1], a[2], a[3]);
-	case 5:
-		return ((this4_t)fn)(a[0], a[1], a[2], a[3], a[4]);
-	case 6:
-		return ((this5_t)fn)(a[0], a[1], a[2], a[3], a[4], a[5]);
-	default:
-		return ((this6_t)fn)(a[0], a[1], a[2], a[3], a[4], a[5], a[6]);
+#define CALL_THIS(name, fn, a, n) \
+	switch (n) { \
+	case 1: \
+		return ((name##0_t)fn)(a[0]); \
+	case 2: \
+		return ((name##1_t)fn)(a[0], a[1]); \
+	case 3: \
+		return ((name##2_t)fn)(a[0], a[1], a[2]); \
+	case 4: \
+		return ((name##3_t)fn)(a[0], a[1], a[2], a[3]); \
+	case 5: \
+		return ((name##4_t)fn)(a[0], a[1], a[2], a[3], a[4]); \
+	case 6: \
+		return ((name##5_t)fn)(a[0], a[1], a[2], a[3], a[4], a[5]); \
+	default: \
+		return ((name##6_t)fn)(a[0], a[1], a[2], a[3], a[4], a[5], a[6]); \
 	}
+
+static uint32_t Call_This(void *fn, const uint32_t *a, int n) {
+	CALL_THIS(this, fn, a, n)
+}
+
+static float Call_ThisFloat(void *fn, const uint32_t *a, int n) {
+	CALL_THIS(thisf, fn, a, n)
 }
 
 /* the return value as the first character of sig says, NULL for None */
@@ -100,7 +110,7 @@ static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 	int thiscall = sig[0] == 't';
 	sig += thiscall;
 	int n = (int)strlen(sig) - 1;
-	if (n < 0 || n > MAX_ARGS || (thiscall && (n < 1 || n > MAX_THIS_ARGS + 1 || sig[0] == 'f'))) {
+	if (n < 0 || n > MAX_ARGS || (thiscall && (n < 1 || n > MAX_THIS_ARGS + 1))) {
 		return NULL;
 	}
 	for (int i = 0; i < n; i++) {
@@ -178,7 +188,9 @@ static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 
 	void *fn = Game_Ptr((uint32_t)rva);
 	PyObject *ret;
-	if (thiscall) {
+	if (thiscall && sig[0] == 'f') {
+		ret = PyFloat_FromDouble(Call_ThisFloat(fn, a, n));
+	} else if (thiscall) {
 		ret = SDTest_Result(sig[0], Call_This(fn, a, n));
 	} else if (sig[0] == 'f') {
 		float f = ((call_float_t)fn)(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11],

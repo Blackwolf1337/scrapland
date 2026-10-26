@@ -536,4 +536,60 @@ fcall('Matrix_Perspective flat', 0x15d350, 'bFffff', ident, 1.0, 1.0, 5.0, 5.001
 fcall('Matrix_Perspective narrow', 0x15d350, 'bFffff', ident, 0.0, 1.0, 1.0, 10.0)
 fcall('Matrix_TransformProject w0', 0x15d790, 'bFFF', zero3, (1.0, 2.0, 3.0), (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0))
 fcall('Quat_ToAxisAngle identity', 0x15db50, 'vFFF', zero3, (0.0,), (0.0, 0.0, 0.0, 1.0))
+
+# engine3d Engine/ArchINI.c on two ini files of the packs
+ini = SDTest.Call(0x1335a0, 'ii', 4)[0]
+def istep(name, rva, sig, *args):
+	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: apply(SDTest.Call, (rva, sig, ini) + args))
+check('CArchINI_ctorLoad', lambda: SDTest.Call(0x2618e0, 'tiisz', ini, 'm3d.ini', None)[0] == ini)
+istep('CArchINI_Load', 0x2621c0, 'tiiszi', 'map3d.ini', 'levels/menu/map/', 1)
+istep('CArchINI_Load missing', 0x2621c0, 'tiiszi', 'sdnofile.ini', None, 0)
+istep('CArchINI_Count', 0x261bc0, 'tii')
+for sect, key in (('video', 'VSync'), ('video', 'Sharpen'), ('video', 'TextBPP'), ('suelo', 'suelo_caras_cuadr'),
+		('mapa_sombras', 'escala'), ('mapa_sombras', 'sombras_suaves'), ('suelo', 'model_ambient'), ('Model', 'TexturePath'),
+		('cielo', 'path'), ('none', 'x'), ('video', 'none')):
+	if key in ('VSync', 'Sharpen', 'sombras_suaves', 'none', 'x'):
+		istep('CArchINI_GetBool', 0x261af0, 'tbissi', sect, key, 7)
+		istep('CArchINI_ReadBool', 0x262450, 'tiissp', sect, key, 7)
+	if key in ('TextBPP', 'suelo_caras_cuadr', 'none', 'x'):
+		istep('CArchINI_GetInt', 0x261b90, 'tiissi', sect, key, -5)
+		istep('CArchINI_ReadInt', 0x262490, 'tiissp', sect, key, 7)
+	if key in ('escala', 'TextBPP', 'none', 'x'):
+		istep('CArchINI_GetFloat', 0x261b60, 'tfissf', sect, key, 2.5)
+		istep('CArchINI_ReadFloat', 0x262470, 'tiissp', sect, key, 7)
+	if key in ('model_ambient', 'none', 'x'):
+		istep('CArchINI_GetColor', 0x261bd0, 'tiissi', sect, key, 0x11223344)
+	istep('CArchINI_GetText', 0x261d00, 'tsissbiz', sect, key, '', 40, None)
+	istep('CArchINI_GetText def', 0x261d00, 'tsissbis', sect, key, '', 40, 'default')
+	istep('CArchINI_ReadText', 0x2624b0, 'tiissbi', sect, key, '', 6)
+	if key in ('none', 'x'):
+		istep('CArchINI_GetVec2', 0x261d50, 'tviFssF', (0.0, 0.0), sect, key, (1.0, 2.0))
+		istep('CArchINI_GetVec3', 0x261e10, 'tviFssF', (0.0, 0.0, 0.0), sect, key, (1.0, 2.0, 3.0))
+for n in ('video', 'suelo', 'cielo', 'none'):
+	istep('CArchINI_FindSection', 0x261ad0, 'tiisi', n, 0)
+istep('CArchINI_FindKey', 0x261ab0, 'tiisbii', 'Depth', '', 40, 1)
+for i in range(0, 12):
+	istep('CArchINI_LineText', 0x2624d0, 'tsii', i)
+	istep('CArchINI_LineType', 0x2624f0, 'tiii', i)
+	istep('CArchINI_GetSectionName', 0x261cb0, 'tbiibi', i, '', 40)
+istep('CArchINI_SetStr', 0x2621a0, 'tiisss', 'video', 'VSync', 'SI')
+istep('CArchINI_SetStr same', 0x262390, 'tiisss', 'video', 'VSync', 'SI')
+istep('CArchINI_SetInt', 0x262180, 'tiissi', 'video', 'Depth', 32)
+istep('CArchINI_SetInt 2', 0x262370, 'tiissi', 'sd', 'n', -7)
+istep('CArchINI_SetFloat', 0x262110, 'tiissfi', 'sd', 'f', 1.0 / 3, 3)
+istep('CArchINI_SetFloat 2', 0x262300, 'tiissfi', 'sd', 'g', -2.5, 0)
+istep('CArchINI_SetYesNo', 0x2620e0, 'tiissi', 'sd', 'y', 1)
+istep('CArchINI_SetBool', 0x2622e0, 'tiissi', 'sd', 'b', 0)
+istep('CArchINI_AddLine', 0x262290, 'tvisi', '; sd line', -1)
+istep('CArchINI_AddLine 2', 0x262290, 'tvisi', '; sd first', 0)
+istep('CArchINI_DeleteLine', 0x2622c0, 'tvii', 3)
+istep('CArchINI_Save', 0x2623b0, 'tiiszi', 'sdini2.txt', None, 0)
+check('CArchINI_Save file', lambda: open('sdini2.txt').read())
+istep('CArchINI_Clear', 0x261fd0, 'tvi')
+istep('CArchINI_Count', 0x261bc0, 'tii')
+istep('CArchINI_dtor', 0x261990, 'tvi')
+check('CArchINI_ctor', lambda: SDTest.Call(0x261980, 'tii', ini)[0] == ini)
+istep('CArchINI_Count', 0x261bc0, 'tii')
+SDTest.Call(0x261990, 'tvi', ini)
+SDTest.Call(0x133550, 'vi', ini)
 finish()

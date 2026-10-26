@@ -160,9 +160,9 @@ int Arch_LineType(cArchDatos *dat, int idx);
 void Arch_Printf(const char *fmt, ...);	/* stdout of the exe's CRT */
 
 /* Util/Dat_simp.cpp: typed values of a cArchDatos; the getters give 0 or -1 */
-void Dat_SetBool(cArchDatos *dat, const char *sect, const char *key, int v);	/* "SI" / "NO" */
-void Dat_SetInt(cArchDatos *dat, const char *sect, const char *key, int v);
-void Dat_SetStr(cArchDatos *dat, const char *sect, const char *key, const char *value);
+int Dat_SetBool(cArchDatos *dat, const char *sect, const char *key, int v);	/* "SI" / "NO" */
+int Dat_SetInt(cArchDatos *dat, const char *sect, const char *key, int v);
+int Dat_SetStr(cArchDatos *dat, const char *sect, const char *key, const char *value);	/* 0 if unchanged */
 int Dat_GetBool(cArchDatos *dat, const char *sect, const char *key, int *out);
 int Dat_GetDouble(cArchDatos *dat, const char *sect, const char *key, double *out);
 int Dat_GetFloat(cArchDatos *dat, const char *sect, const char *key, float *out);

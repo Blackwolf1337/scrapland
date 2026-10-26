@@ -7,22 +7,22 @@
 
 #define VALUE_SIZE 0x101
 
-void Dat_SetBool(cArchDatos *dat, const char *sect, const char *key, int v) {
+int Dat_SetBool(cArchDatos *dat, const char *sect, const char *key, int v) {
 	char buf[4];
 
 	Bprintf(buf, sizeof(buf), "%s", v ? "SI" : "NO");
-	Dat_SetStr(dat, sect, key, buf);
+	return Dat_SetStr(dat, sect, key, buf);
 }
 
-void Dat_SetInt(cArchDatos *dat, const char *sect, const char *key, int v) {
+int Dat_SetInt(cArchDatos *dat, const char *sect, const char *key, int v) {
 	char buf[16];
 
 	Bprintf(buf, sizeof(buf), "%d", v);
-	Dat_SetStr(dat, sect, key, buf);
+	return Dat_SetStr(dat, sect, key, buf);
 }
 
-/* a new section at the end, a new key after the last one of the section */
-void Dat_SetStr(cArchDatos *dat, const char *sect, const char *key, const char *value) {
+/* a new section at the end, a new key after the last one of the section; 0 if the value was there already */
+int Dat_SetStr(cArchDatos *dat, const char *sect, const char *key, const char *value) {
 	char buf[0x104];
 
 	int s = Arch_FindSection(dat, sect, 1);
@@ -37,7 +37,10 @@ void Dat_SetStr(cArchDatos *dat, const char *sect, const char *key, const char *
 		Arch_AddLine(dat, buf, Arch_SectionEnd(dat, s));
 	} else if (strcmp(buf, value) != 0) {
 		Arch_SetValue(dat, value, k);
+	} else {
+		return 0;
 	}
+	return 1;
 }
 
 /* the value of key in sect, NULL if there is none */
