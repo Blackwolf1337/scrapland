@@ -7,9 +7,14 @@
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
 #include "scrap/escena.h"
+#include "scrap/flare.h"
+#include "scrap/grafico3d.h"
 #include "scrap/leedatos.h"
 #include "scrap/leem3d.h"
+#include "scrap/mallatri.h"
 #include "scrap/material.h"
+#include "scrap/render.h"
+#include "scrap/sistpart.h"
 #include "scrap/varios.h"
 
 /* a binary string: its length, then the characters */
@@ -324,5 +329,273 @@ void M3D_SetOk(byte ok) {
 	if (g_M3DOk) {
 		g_M3DOk = 0;
 		E3D_LogVerbose(g_FileLog, "ERROR: lee_M3D(): '%s'", g_M3DName);
+	}
+}
+
+void Escena_CheckDuplicados(CEscena *esc, CNodo3D *nodo) {
+	for (CNodo3D *n = esc->Nodo3D; n;) {
+		CNodo3D *n2 = CNodo3D_Find(n, nodo->name, 1);
+		CHECK(n2);
+		if (n2 == nodo) {
+			return;
+		}
+		E3D_LogVerbose(g_FileLog, "Duplicated node: '%s' [%s] (%d,%d) [%s] [%s]", nodo->name, esc->name, nodo->indice,
+			n2->indice, nodo->padre ? nodo->padre->name : "(null)", n2->padre ? n2->padre->name : "(null)");
+		if (CNodo3D_Clase(nodo) || nodo->flags & NODO_JOIN2 || CNodo3D_Clase(n2) || n2->flags & NODO_JOIN2) {
+			Con_Warnf("Duplicated node: %s\n", nodo->name);
+		}
+		n = n2->sig;
+	}
+}
+
+void Nodo_MarcarBip(CNodo3D *nodo) {
+	static const char *const pre[4] = { "Bip ", "Bip_", "BipB", "Bone" };
+	for (int i = 0; i < 4; i++) {
+		if (!crt_strncmp(nodo->name, pre[i], 4)) {
+			nodo->flags |= NODO_BIP;
+			return;
+		}
+	}
+}
+
+/* the material of the first triangle of the mesh of the node */
+static CMaterial *Nodo_MatTri0(CNodo3D *n, CMallaTri **malla) {
+	*malla = Obj3D_MallaTri(n->obj3D);
+	return CMallaTri_GetTri(*malla, 0)->mat;
+}
+
+void Escena_Flares(CEscena *esc) {
+	if (!esc || !esc->Nodo3D) {
+		return;
+	}
+	for (CNodo3D *n = CNodo3D_FindWild(esc->Nodo3D, "flare*", 1); n; n = CNodo3D_FindWild(n, "flare*", 0)) {
+		if (!n->obj3D) {
+			continue;
+		}
+		CMallaTri *mt;
+		CMaterial *mat = Nodo_MatTri0(n, &mt);
+		CFlare *f = operator_new(sizeof(CFlare));
+		f = f ? CFlare_ctor(f) : NULL;
+		byte opac = CMaterial_GetMapName(mat, 1) != NULL;
+		byte alpha = mat->params.diffuse[3];
+		int src = opac ? mat->params.srcBlend : 2, dst = opac ? mat->params.dstBlend : 6;
+		const char *op = CMaterial_GetMapName(mat, opac);
+		CFlare_SetTexture(f, CMaterial_GetMapName(mat, 0), op, src, dst, alpha);
+		f->pos = n->pos;
+		CObjBase3D_SetNodo((IObjeto3D *)f, n);
+		CNodo3D_FreeObj3D(n);
+		CNodo3D_SetObj3D(n, (IObjeto3D *)f);
+		int tam;
+		if (Nodo_ParamInt(n->name, "tam", &tam)) {
+			f->escala[0] = (float)tam;
+			f->escala[1] = (float)tam;
+		}
+	}
+}
+
+void Escena_Sprites(CEscena *esc) {
+	if (!esc || !esc->Nodo3D) {
+		return;
+	}
+	for (CNodo3D *n = CNodo3D_FindWild(esc->Nodo3D, "sprite*", 1); n; n = CNodo3D_FindWild(n, "sprite*", 0)) {
+		CMallaTri *mt;
+		CMaterial *mat = Nodo_MatTri0(n, &mt);
+		CGrafico3D *g = operator_new(sizeof(CGrafico3D));
+		g = g ? CGrafico3D_ctor(g) : NULL;
+		const char *op = CMaterial_GetMapName(mat, 1);
+		CGrafico3D_CreateMat(g, CMaterial_GetMapName(mat, 0), op, mat->params.srcBlend, mat->params.dstBlend,
+			mat->params.diffuse[3]);
+		CMallaTri_CalcBox(mt, NULL, 1);
+		g->pos = n->pos;
+		const box_t *b = &mt->box;
+		float dx = b->max.x - b->min.x, dy = b->max.y - b->min.y, dz = b->max.z - b->min.z;
+		float r = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) * 0.5f;
+		g->ancho = r;
+		g->alto = r;
+		CGrafico3D_SetNodo(g, n);
+		CNodo3D_FreeObj3D(n);
+		CNodo3D_SetObj3D(n, (IObjeto3D *)g);
+	}
+}
+
+void Escena_Particles(CEscena *esc) {
+	if (!g_EscenaLODPadre && !esc->fromAmc) {
+		CArchINI *ini = operator_new(sizeof(CArchINI));
+		esc->userProp = ini ? CArchINI_ctor(ini) : NULL;
+		if (!CArchINI_Load(esc->userProp, esc->name, "model_particles.ini", 0)) {
+			E3D_LogDebug(g_FileLog, "INI: %s: %s", esc->name, "model_particles.ini");
+		} else if (esc->userProp) {
+			CArchINI_dtor(esc->userProp);
+			operator_delete_sized(esc->userProp, sizeof(CArchINI));
+			esc->userProp = NULL;
+		}
+	}
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		if (!n->ini || !CArchINI_FindSection(n->ini, "Particles", 1)) {
+			continue;
+		}
+		if (n->nodoR != -1) {
+			CheckFailed("nodo->iNodeXRef == -1", __FILE__, __TIMESTAMP__, __LINE__);
+		}
+		if (!g_EscenaLODPadre) {
+			if (n->obj3D) {
+				CNodo3D_FreeObj3D(n);
+				Con_Bluef("ERROR: (Particle System) Node Material not supported (Node: %s)\n", n->name);
+			}
+			CSistPart *sp = SistPart_FromNode(n, esc->userProp);
+			if (!sp) {
+				CheckFailed("sistpart", __FILE__, __TIMESTAMP__, __LINE__);
+			}
+			CNodo3D_SetObj3D(n, (IObjeto3D *)sp);
+			continue;
+		}
+		CNodo3D *n2 = CEscena_FindNodo(g_EscenaLODPadre, n->name);
+		if (!n2) {
+			E3D_LogBlue(g_FileLog, "ERROR: LOD particles node not found in main LOD: %s", n->name);
+			continue;
+		}
+		if (CNodo3D_Clase(n2) != CLASE_OBJ3D_SISTPART) {
+			CheckFailed("nodo2->clase_obj3D() == CLASE_OBJ3D_SISTPART", __FILE__, __TIMESTAMP__, __LINE__);
+		}
+		n->nodoR = n2->i48;
+		if (n->obj3D) {
+			CheckFailed("!nodo->obj3D", __FILE__, __TIMESTAMP__, __LINE__);
+		}
+		n->flags |= 0x80;
+		n->indice = -1;
+	}
+}
+
+void Escena_Limpiar(CEscena *esc, const char *pass) {
+	E3D_LogWhite(g_FileLog, "cleaning nodes (pass %s):", pass);
+	CEscena_DeleteEmpty(esc, 0, 0, 1);
+	if (g_ShowNodesTree && !g_EscenaAnimPadre) {
+		Escena_ShowTree(esc, 0, 0);
+	}
+}
+
+byte Float_CasiIgual(float a, float b) {
+	if (a == b) {
+		return 1;
+	}
+	if (a == 0.0f || b == 0.0f) {
+		return 0;
+	}
+	if ((a > 0.0f && 0.0f > b) || (0.0f > a && b > 0.0f)) {
+		return 0;
+	}
+	double r = (double)(a / b);
+	if (r > 0x1.000004p+0) {
+		return 0;
+	}
+	return !(0x1.fffff8p-1 > r);
+}
+
+byte Nodo_EsAntecesor(const CNodo3D *nodo, const CNodo3D *ant, byte cruzar) {
+	CHECK(nodo && ant);
+	for (const CNodo3D *p = nodo->padre; p; p = p->padre) {
+		if (p == ant) {
+			return 1;
+		}
+		if (!cruzar && p->flags & NODO_BORRAR) {
+			return 0;
+		}
+	}
+	return 0;
+}
+
+byte Nodo_EsDeJuego(const CNodo3D *nodo) {
+	static const struct {
+		const char *pre;
+		int n;
+	} pre[8] = { { "DR_", 3 }, { "DM_", 3 }, { "DC_", 3 }, { "DF_", 3 }, { "D_Cam-", 6 }, { "Actor_", 6 },
+		{ "Traffic_", 8 }, { "NAVEBERTO", 10 } };
+	for (int i = 0; i < 8; i++) {
+		if (!crt_strnicmp(nodo->name, pre[i].pre, pre[i].n)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+byte Nodo_ParamInt(const char *name, const char *key, int *out) {
+	const char *s = name;
+	size_t len = strlen(key);
+
+	if (!*s) {
+		return 0;
+	}
+	do {
+		if (*s == '(') {
+			const char *p = s + 1;
+			while (*p == ' ') {
+				p++;
+			}
+			s = *p == '+' ? p + 1 : p;
+			if (!*s) {
+				return 0;
+			}
+			if (!crt_strnicmp(s, key, (int)len)) {
+				s += len;
+				while (*s == ' ') {
+					s++;
+				}
+				if (*s == '=') {
+					s++;
+					if (!*s) {
+						return 0;
+					}
+					int v;
+					if (Proc_Scan(s, "&l", &v) == 1) {
+						if (out) {
+							*out = v;
+						}
+						return 1;
+					}
+				}
+			}
+		}
+		if (!*s) {
+			return 0;
+		}
+		s++;
+	} while (*s);
+	return 0;
+}
+
+void Nodo_LimpiarNombre(char *name) {
+	int i = 0;
+
+	if (!*name) {
+		return;
+	}
+	int last;
+	do {
+		last = i;
+		if ((byte)name[i] > 0x7f) {
+			name[i] = '_';
+		}
+		i++;
+	} while (name[i]);
+	if (i > 0 && name[last] == ' ') {
+		Con_Verbosef("WARN: Space at end of node name: '%s'\n", name);
+	}
+}
+
+byte M3D_MapaActivo(const CMaterial *mat, int idmapa) {
+	if (mat->params.atrib & MAT_SHADER) {
+		return 1;
+	}
+	switch (idmapa) {
+	case MAPA_OPACITY:
+		return g_M3DUseOpacity;
+	case MAPA_ENTORNO:
+		return g_UsarEnvMap && g_M3DUseEnvmap;
+	case MAPA_BUMP:
+		return g_UsarBumpMap && g_M3DUseBumpmap;
+	case MAPA_GLOW:
+		return g_UsarGlowMap && g_M3DUseGlowmap;
+	default:
+		return 1;
 	}
 }

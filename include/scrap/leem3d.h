@@ -29,6 +29,12 @@
 #define g_SM3UseScenes GAME_DATA(int, 0x4e1f98)		/* SM3_UseScenes 0, 1, 2 */
 #define g_CM3DeleteM3D GAME_DATA(int, 0x4e1ed8)		/* CM3_DeleteM3D */
 #define g_M3DOk GAME_DATA(byte, 0x432a7c)
+#define g_ShowNodesTree GAME_DATA(int, 0x4e1ef0)		/* ShowNodesTree */
+/* the [Model] switches of the ini of the model being read */
+#define g_M3DUseOpacity GAME_DATA(byte, 0x4e1fa6)
+#define g_M3DUseEnvmap GAME_DATA(byte, 0x4e1fa7)
+#define g_M3DUseBumpmap GAME_DATA(byte, 0x4e1fb4)
+#define g_M3DUseGlowmap GAME_DATA(byte, 0x4e1fb5)
 
 /* a transform of the scene nodes ("MT:" blocks) */
 typedef struct m3dTransform_t {
@@ -68,7 +74,31 @@ void CM3_Save(const char *name, CEscena *esc);
 void SM3_Save(const char *name, CEscena *esc);
 /* ok: g_M3DOk set; else the first failure after it reported */
 void M3D_SetOk(byte ok);
-/* rva 0x2c2650: the particle systems of model_particles.ini for the scene */
+/* the particle systems of the nodes with a Particles section (model_particles.ini of the scene in userProp); the
+ * nodes of a LOD model point at those of the main LOD */
 void Escena_Particles(CEscena *esc);
+/* the log of the other nodes named as nodo before it */
+void Escena_CheckDuplicados(CEscena *esc, CNodo3D *nodo);
+void Nodo_MarcarBip(CNodo3D *nodo);
+/* the "flare*" nodes to CFlare (size from "(tam=n)" in the name), the "sprite*" nodes to CGrafico3D, both from the
+ * material of their first triangle */
+void Escena_Flares(CEscena *esc);
+void Escena_Sprites(CEscena *esc);
+/* the empty nodes deleted; the tree logged with ShowNodesTree */
+void Escena_Limpiar(CEscena *esc, const char *pass);
+/* a and b equal or of the same sign within 2^-22 of each other */
+byte Float_CasiIgual(float a, float b);
+/* ant is above nodo; cruzar: also through NODO_BORRAR nodes */
+byte Nodo_EsAntecesor(const CNodo3D *nodo, const CNodo3D *ant, byte cruzar);
+/* the nodes the game uses by name: DR_, DM_, DC_, DF_, D_Cam-, Actor_, Traffic_, NAVEBERTO */
+byte Nodo_EsDeJuego(const CNodo3D *nodo);
+/* the int of "(key=n)" or "(+key=n)" in name */
+byte Nodo_ParamInt(const char *name, const char *key, int *out);
+/* bytes above 127 to '_', a warning for a space at the end */
+void Nodo_LimpiarNombre(char *name);
+/* map idmapa of the material used by the switches of the ini of the model and the video (MAT_SHADER: all) */
+byte M3D_MapaActivo(const CMaterial *mat, int idmapa);
+/* rva 0x216960 (ScrapEngMain.cpp): the node tree of the scene in the log */
+void Escena_ShowTree(CEscena *esc, int a, int b);
 
 #endif

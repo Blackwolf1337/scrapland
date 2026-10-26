@@ -81,6 +81,14 @@ void __thiscall CMallaTri_SetVert(CMallaTri *self, uint32_t i, const vec3_t *v);
 vec3_t *__thiscall CMallaTri_GetVert(CMallaTri *self, vec3_t *out, uint32_t i);
 void __thiscall CMallaTri_SetTVert(CMallaTri *self, uint32_t i, const uv_t *uv);
 CTriMalla *__thiscall CMallaTri_GetTri(CMallaTri *self, uint32_t i);
+/* the object as a CMallaTri, the objeto3d.h CHECK and NULL for another class */
+static inline CMallaTri *Obj3D_MallaTri(IObjeto3D *o) {
+	if (o->clase != CLASE_OBJ3D_MALLATRI) {
+		CheckFailed("devNULL", "objeto3d.h", __TIMESTAMP__, __LINE__);
+		return NULL;
+	}
+	return (CMallaTri *)o;
+}
 void __thiscall CMallaTri_SetTriVerts(CMallaTri *self, uint32_t i, int a, int b, int c);
 void __thiscall CMallaTri_SetTriTVerts(CMallaTri *self, uint32_t i, int a, int b, int c);
 void __thiscall CMallaTri_SetTriNormals(CMallaTri *self, uint32_t i, const vec3_t *a, const vec3_t *b, const vec3_t *c);

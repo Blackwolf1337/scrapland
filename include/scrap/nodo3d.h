@@ -29,6 +29,7 @@
 #define NODO_NOUPDATE (1u << 17)
 #define NODO_SLERP2 (1u << 18)		/* R_NodeSlerp2 1: the blend of two channels relative to rot */
 #define NODO_FX (1u << 19)		/* CNodoR_ApplyFX on the world matrix */
+#define NODO_BIP (1u << 21)		/* a node of a Biped or bone hierarchy ("Bip ", "Bone" names) */
 #define NODO_NO_TABNODOR (1u << 22)	/* no render node of its own; the render nodes of a model end at the first */
 #define NODO_SOMBRA (1u << 26)		/* lights of this node cast shadows */
 #define NODO_PASS100 (1u << 30)		/* drawn only in the render pass 100, and only those */

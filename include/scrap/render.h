@@ -104,7 +104,10 @@ struct CListaVert;
 #define g_MatFX3 GAME_DATA(const CMaterial *, 0x4ad758)	/* its colors for the D3D material */
 /* bUsarHWEnvMap: the environment maps through the texture transform of the device (materials with two texture sets
  * get VERT_TEX1 instead of VERT_TEX2) */
+#define g_UsarEnvMap GAME_DATA(int, 0x431bd8)		/* video UsarEnvMap */
 #define g_UsarHWEnvMap GAME_DATA(int, 0x431bdc)
+#define g_UsarBumpMap GAME_DATA(int, 0x431be0)		/* video UsarBumpMap */
+#define g_UsarGlowMap GAME_DATA(int, 0x431be4)		/* video UsarGlowMap */
 /* the engine variables of the environment and bump maps (Gvars) */
 #define g_EnvBumpBias GAME_DATA(int, 0x4adbb8)		/* R_EnvBumpBias, DXT1 bump textures */
 #define g_EnvBumpScale GAME_DATA(float, 0x4ada08)	/* R_EnvBumpScale */

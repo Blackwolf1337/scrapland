@@ -37,3 +37,50 @@ for base, anim in ((models[0], 'models/elements/antenaa/anm/loop.m3d'), (models[
 # CM3_Save and SM3_Save are not tested: an open for writing is a fatal CHECK in the test setup
 for ok in (0, 1, 0, 0):
 	check('M3D_SetOk' + fmt((ok,)), lambda ok=ok: (SDTest.Call(0x2c0c40, 'vi', ok), SDTest.Peek(0x432a7c, 'i') & 0xff))
+
+# the node and name utilities
+for a, b in ((1.0, 1.0), (1.0, 1.0000001), (1.0, 1.001), (-2.0, -2.0000002), (2.0, -2.0), (0.0, 1e-30), (0.0, -0.0),
+	(1e-30, 1e-30 * 1.0000001), (-1.0, 1.0)):
+	check('Float_CasiIgual' + fmt((a, b)), lambda a=a, b=b: SDTest.Call(0x2c28c0, 'bff', a, b)[0])
+m3nb = SDTest.Call(0x1334d0, 'ii', 0x100)[0]
+for nm in ('Bip Spine', 'Bip_x', 'BipB', 'Bone01', 'bip x', 'DR_door', 'dm_x', 'D_Cam-1', 'Actor_A', 'Traffic_3',
+	'NAVEBERTO', 'Navebert', 'flare01 (tam=12)', 'x(+tam = 7)', 'b(tam)', '(TAM=3x)', 'n\351me ', ''):
+	SDTest.Call(0x3197d0, 'iisi', m3nb, nm, len(nm) + 1)
+	nodo = SDTest.Call(0x1334d0, 'ii', 0xfc)[0]
+	SDTest.Poke(nodo + 4 - 0x400000, m3nb)
+	SDTest.Poke(nodo + 0x18 - 0x400000, 0x10)
+	m3out = SDTest.Call(0x1334d0, 'ii', 4)[0]
+	SDTest.Poke(m3out - 0x400000, -5)
+	check('Nodo names' + fmt((nm,)), lambda nodo=nodo, m3out=m3out: (SDTest.Call(0x2c22c0, 'vi', nodo), m3i(nodo + 0x18),
+		SDTest.Call(0x2c29a0, 'bi', nodo)[0], SDTest.Call(0x2c6790, 'bisi', m3nb, 'tam', m3out)[0], m3i(m3out),
+		SDTest.Call(0x2c1380, 'vi', m3nb), SDTest.Peek(m3nb, '@s')))
+mat = SDTest.Call(0x233830, 'tii', SDTest.Call(0x1334d0, 'ii', 0xb0)[0])[0]
+rdmu = []
+for a in (0x4e1fa6, 0x4e1fb4):
+	rdmu.append(SDTest.Peek(a, 'i'))
+for atrib in (0, 0x200):
+	SDTest.Poke(mat + 0x3c - 0x400000, atrib)
+	for use in (0, 0x01000100, 0x01010101):
+		SDTest.Poke(0x4e1fa6, use)
+		SDTest.Poke(0x4e1fb4, use)
+		check('M3D_MapaActivo' + fmt((atrib, use)), lambda mat=mat: map(lambda i, mat=mat: SDTest.Call(0x2c1010, 'bii',
+			mat, i)[0], (0, 1, 2, 3, 4, 5)))
+SDTest.Poke(0x4e1fa6, rdmu[0])
+SDTest.Poke(0x4e1fb4, rdmu[1])
+for name in (models[2], models[0]):
+	e = m3esc[name]
+	n = m3i(e + 0xc)
+	nodes = []
+	while n:
+		nodes.append(n)
+		n = m3i(n + 0xc)
+	for i in range(1, len(nodes), 3):
+		for j in (0, i / 2, i - 1):
+			for cr in (0, 1):
+				check('Nodo_EsAntecesor' + fmt((name, i, j, cr)), lambda nodes=nodes, i=i, j=j, cr=cr:
+					SDTest.Call(0x2c2930, 'biii', nodes[i], nodes[j], cr)[0])
+	for nd in nodes[-3:]:
+		check('Escena_CheckDuplicados' + fmt((name,)), lambda e=e, nd=nd: SDTest.Call(0x2c21e0, 'vii', e, nd))
+	check('Escena_Flares/Sprites' + fmt((name,)), lambda e=e: (SDTest.Call(0x2c2330, 'vi', e), SDTest.Call(0x2c24b0,
+		'vi', e), m3scene(e)))
+	check('Escena_Limpiar' + fmt((name,)), lambda e=e: (SDTest.Call(0x2c2870, 'vis', e, 'sd'), m3scene(e)))
