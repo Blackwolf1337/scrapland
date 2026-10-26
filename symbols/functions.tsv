@@ -7033,36 +7033,36 @@ rva	size	source	callconv	name	signature
 0023a9b0	163	USER_DEFINED	__cdecl	Vec3_StrDeg	char * __cdecl(float *v, uint slot, int prec)
 0023aa60	123	USER_DEFINED	__cdecl	Vec3_Str	char * __cdecl(float *v, uint slot, int prec)
 0023aae0	111	USER_DEFINED	__cdecl	E3D_MathErr	int __cdecl(void *exc)
-0023ab70	406	DEFAULT	unknown	FUN_0063ab70	
-0023ad20	366	DEFAULT	unknown	FUN_0063ad20	
-0023ae90	7	DEFAULT	unknown	FUN_0063ae90	
-0023aea0	38	ANALYSIS	__thiscall	TMR::`scalar_deleting_destructor'	void * __thiscall(uint param_1)
-0023aed0	36	ANALYSIS	__thiscall	IObjeto3D::vf00	undefined __thiscall(void)
-0023af00	1681	DEFAULT	unknown	FUN_0063af00	
-0023b5d0	357	DEFAULT	unknown	FUN_0063b5d0	
-0023b740	10	ANALYSIS	__thiscall	CLuz::vf04	undefined __thiscall(void)
-0023b750	34	ANALYSIS	__thiscall	CLuz::vf03	undefined __thiscall(void)
-0023b780	165	DEFAULT	unknown	FUN_0063b780	
-0023b830	110	DEFAULT	unknown	FUN_0063b830	
-0023b8a0	399	ANALYSIS	__thiscall	CLuz::vf06	undefined __thiscall(void)
-0023ba30	5	ANALYSIS	__thiscall	IObjeto3D::vf06	undefined __thiscall(void)
-0023ba40	289	DEFAULT	unknown	FUN_0063ba40	
+0023ab70	406	USER_DEFINED	__fastcall	CLuz_ctor	void * __fastcall(void *self)
+0023ad20	366	USER_DEFINED	__fastcall	CLuz_dtor	void __fastcall(void *self)
+0023ae90	7	USER_DEFINED	__fastcall	IObjeto3D_dtor	void __fastcall(void *self)
+0023aea0	38	USER_DEFINED	__thiscall	CLuz_Delete	void * __thiscall(byte flags)
+0023aed0	36	USER_DEFINED	__thiscall	IObjeto3D_Delete	void * __thiscall(byte flags)
+0023af00	1681	USER_DEFINED	__cdecl	Luz_Select	int __cdecl(float *pos, int sector, float *center, float radius, void **out, int maxOn)
+0023b5d0	357	USER_DEFINED	__cdecl	Luz_SetDefault	int __cdecl(byte on)
+0023b740	10	USER_DEFINED	__thiscall	CLuz_Hide	void __thiscall(int arg)
+0023b750	34	USER_DEFINED	__thiscall	CLuz_Reset	void __thiscall(int arg)
+0023b780	165	USER_DEFINED	__cdecl	Luz_SetDirLight	void __cdecl(uint idx, float *color, float *dir)
+0023b830	110	USER_DEFINED	__thiscall	CLuz_EnableD3D	void __thiscall(byte enable)
+0023b8a0	399	USER_DEFINED	__thiscall	CLuz_Read	byte __thiscall(void *f, void *ctx)
+0023ba30	5	USER_DEFINED	__thiscall	IObjeto3D_Read	byte __thiscall(void *f, void *ctx)
+0023ba40	289	USER_DEFINED	__cdecl	Luz_List	void __cdecl(void)
 0023bb70	1650	ANALYSIS	__thiscall	CLuz::vf02	undefined __thiscall(void)
-0023c1f0	359	ANALYSIS	__thiscall	CLuz::vf05	undefined __thiscall(void)
-0023c360	5	ANALYSIS	__thiscall	IObjeto3D::vf05	undefined __thiscall(void)
-0023c370	579	ANALYSIS	__thiscall	CLuz::vf01	undefined __thiscall(void)
-0023c5c0	291	DEFAULT	unknown	FUN_0063c5c0	
-0023c6f0	901	DEFAULT	unknown	FUN_0063c6f0	
-0023ca80	74	DEFAULT	unknown	FUN_0063ca80	
-0023cad0	74	DEFAULT	unknown	FUN_0063cad0	
-0023cb20	229	DEFAULT	unknown	FUN_0063cb20	
-0023cc10	36	DEFAULT	unknown	FUN_0063cc10	
-0023cc40	454	DEFAULT	unknown	FUN_0063cc40	
-0023ce10	6	DEFAULT	unknown	FUN_0063ce10	
-0023ce20	6	DEFAULT	unknown	FUN_0063ce20	
-0023ce30	6	DEFAULT	unknown	FUN_0063ce30	
-0023ce40	184	DEFAULT	unknown	FUN_0063ce40	
-0023cf00	59	DEFAULT	unknown	FUN_0063cf00	
+0023c1f0	359	USER_DEFINED	__thiscall	CLuz_Write	byte __thiscall(void *f, void *ctx)
+0023c360	5	USER_DEFINED	__thiscall	IObjeto3D_Write	byte __thiscall(void *f, void *ctx)
+0023c370	579	USER_DEFINED	__thiscall	CLuz_Update	void __thiscall(int arg)
+0023c5c0	291	USER_DEFINED	__cdecl	Luz_EnableAll	void __cdecl(byte enable)
+0023c6f0	901	USER_DEFINED	__thiscall	CLuz_AdjustD3D	void __thiscall(void *light)
+0023ca80	74	USER_DEFINED	__thiscall	CLuz_SetNodo	void __thiscall(void *nodo)
+0023cad0	74	USER_DEFINED	__thiscall	CLuz_SetNodoObjetivo	void __thiscall(void *nodo)
+0023cb20	229	USER_DEFINED	__thiscall	CLuz_SetActiva	void __thiscall(byte activa)
+0023cc10	36	USER_DEFINED	__cdecl	Luz_Compare	int __cdecl(void *a, void *b)
+0023cc40	454	USER_DEFINED	__thiscall	CLuz_FillD3D	void __thiscall(void *light)
+0023ce10	6	USER_DEFINED	__cdecl	Luz_NumD3D	int __cdecl(void)
+0023ce20	6	USER_DEFINED	__cdecl	Luz_NumActivas	int __cdecl(void)
+0023ce30	6	USER_DEFINED	__cdecl	Luz_NumTotal	int __cdecl(void)
+0023ce40	184	USER_DEFINED	__thiscall	CLuz_UpdateD3D	void __thiscall(byte hide)
+0023cf00	59	USER_DEFINED	__fastcall	Box_Zero	void * __fastcall(void *self)
 0023cf40	293	DEFAULT	unknown	FUN_0063cf40	
 0023d070	169	DEFAULT	unknown	FUN_0063d070	
 0023d120	38	DEFAULT	unknown	FUN_0063d120	
@@ -7091,7 +7091,7 @@ rva	size	source	callconv	name	signature
 0023ecd0	152	DEFAULT	unknown	FUN_0063ecd0	
 0023ed70	103	DEFAULT	unknown	FUN_0063ed70	
 0023ede0	104	DEFAULT	unknown	FUN_0063ede0	
-0023ee50	96	DEFAULT	unknown	FUN_0063ee50	
+0023ee50	96	USER_DEFINED	__thiscall	CNodo_LightColor	byte __thiscall(float *color, float *mult)
 0023eeb0	110	DEFAULT	unknown	FUN_0063eeb0	
 0023ef20	93	DEFAULT	unknown	FUN_0063ef20	
 0023ef80	198	DEFAULT	unknown	FUN_0063ef80	
@@ -7264,11 +7264,11 @@ rva	size	source	callconv	name	signature
 0024cdc0	6	DEFAULT	unknown	FUN_0064cdc0	
 0024cdd0	6	DEFAULT	unknown	FUN_0064cdd0	
 0024cde0	221	DEFAULT	unknown	FUN_0064cde0	
-0024cec0	25	DEFAULT	unknown	FUN_0064cec0	
+0024cec0	25	USER_DEFINED	__cdecl	E3D_FlushBatch	void __cdecl(void)
 0024cf00	467	DEFAULT	unknown	FUN_0064cf00	
 0024d0e0	437	DEFAULT	unknown	FUN_0064d0e0	
 0024d2c0	24	DEFAULT	unknown	FUN_0064d2c0	
-0024d2e0	152	DEFAULT	unknown	FUN_0064d2e0	
+0024d2e0	152	USER_DEFINED	__cdecl	Sph_IsVisible	byte __cdecl(float *center, float radius, int arg)
 0024d380	222	DEFAULT	unknown	FUN_0064d380	
 0024d460	267	DEFAULT	unknown	FUN_0064d460	
 0024d570	44	DEFAULT	unknown	FUN_0064d570	
@@ -7610,7 +7610,7 @@ rva	size	source	callconv	name	signature
 00267460	202	DEFAULT	unknown	FUN_00667460	
 00267530	3410	DEFAULT	unknown	FUN_00667530	
 00268290	52	DEFAULT	unknown	FUN_00668290	
-002682d0	534	DEFAULT	unknown	FUN_006682d0	
+002682d0	534	USER_DEFINED	__cdecl	E3D_SetShadowLight	void __cdecl(void *light, int arg)
 002684f0	208	DEFAULT	unknown	FUN_006684f0	
 002685c0	57	DEFAULT	unknown	FUN_006685c0	
 00268600	501	DEFAULT	unknown	FUN_00668600	
@@ -7666,7 +7666,7 @@ rva	size	source	callconv	name	signature
 0026c370	22	DEFAULT	unknown	FUN_0066c370	
 0026c390	32	DEFAULT	unknown	FUN_0066c390	
 0026c3b0	22	DEFAULT	unknown	FUN_0066c3b0	
-0026c3d0	30	DEFAULT	unknown	FUN_0066c3d0	
+0026c3d0	30	USER_DEFINED	__cdecl	Sector_IsVisible	byte __cdecl(int sector)
 0026c3f0	169	DEFAULT	unknown	FUN_0066c3f0	
 0026c4a0	1417	DEFAULT	unknown	FUN_0066c4a0	
 0026ca30	99	DEFAULT	unknown	FUN_0066ca30	
@@ -7682,7 +7682,7 @@ rva	size	source	callconv	name	signature
 0026d5a0	1497	DEFAULT	unknown	FUN_0066d5a0	
 0026db80	1016	DEFAULT	unknown	FUN_0066db80	
 0026df80	1281	DEFAULT	unknown	FUN_0066df80	
-0026e490	2200	DEFAULT	unknown	FUN_0066e490	
+0026e490	2200	USER_DEFINED	__thiscall	CSuelo_Trace	byte __thiscall(float *from, float *to, void *a, float b, void *c)
 0026ed30	1004	DEFAULT	unknown	FUN_0066ed30	
 0026f120	1332	DEFAULT	unknown	FUN_0066f120	
 0026f660	478	DEFAULT	unknown	FUN_0066f660	
@@ -7695,7 +7695,7 @@ rva	size	source	callconv	name	signature
 002723e0	2436	DEFAULT	unknown	FUN_006723e0	
 00272d70	542	DEFAULT	unknown	FUN_00672d70	
 00272f90	171	DEFAULT	unknown	FUN_00672f90	
-00273040	25	DEFAULT	unknown	FUN_00673040	
+00273040	25	USER_DEFINED	__cdecl	Prof_Count	int __cdecl(int section, int n)
 00273060	18	DEFAULT	unknown	FUN_00673060	
 00273080	137	DEFAULT	unknown	FUN_00673080	
 00273110	50	DEFAULT	unknown	FUN_00673110	

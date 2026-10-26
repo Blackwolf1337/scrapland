@@ -503,7 +503,7 @@ void __thiscall CLuz_AdjustD3D(CLuz *self, D3DLight *l) {
 		l->Diffuse.g = l->Diffuse.g * k;
 		l->Diffuse.b = l->Diffuse.b * k;
 		l->Diffuse.a = l->Diffuse.a * k;
-		l->Attenuation1 = l->Attenuation1 / (self->mult * g_LightMult2 * self->intensidad);
+		l->Attenuation0 = l->Attenuation0 / (self->mult * g_LightMult2 * self->intensidad);
 	} else {
 		float m = spot ? g_SpotlightMult : g_LightMult;
 		if (*g_LightMultName && !Wild_MatchLower(g_LightMultName, self->nodo->name)) {
