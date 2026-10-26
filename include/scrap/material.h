@@ -130,6 +130,9 @@ CMaterial *__thiscall CMaterial_ctor(CMaterial *self);
 void __thiscall CMaterial_dtor(CMaterial *self);
 /* free the old string, a Mem_Alloc copy of s (NULL stays NULL) */
 void __thiscall Cad_Set(char **self, const char *s);
+/* rva 0x2a18a0 and 0x2a1920: the string as a CArchIO string (empty is NULL) */
+void __thiscall Cad_Read(char **self, CArchIO *f);
+void __thiscall Cad_Write(char **self, CArchIO *f);
 
 void __fastcall CObjRef_dtor(int *Refs);
 void __fastcall CTextEst_dtor(CTextEst *self);

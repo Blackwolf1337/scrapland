@@ -8,6 +8,9 @@
 
 #include "scrap/archio.h"
 
+/* the index check of the CTabla accessors of tabla.h: "p && (dword)i<(dword)n" */
+#define TABLA_CHECK(p, i, n) CHECK((p) && (uint32_t)(i) < (uint32_t)(n))
+
 typedef struct CTabla {
 	int n;				/* 0x0 */
 	void *p;			/* 0x4 */
@@ -55,5 +58,7 @@ void Array_WriteC(CArchIO *f, const void *p, uint32_t n);
 void Array_Write10(CArchIO *f, const void *p, uint32_t n);
 /* the delete[] of the elements, empty after (two copies in the exe) */
 void __fastcall Tabla_Free(CTabla *t);
+/* n pointers, the old ones kept as far as they fit; n < 1 frees */
+void __thiscall Tabla_Resize4(CTabla *t, int n);
 
 #endif

@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/e3dutil.h"
 #include "scrap/luz.h"
 
 #define CLUZ_VFTABLE 0x3d79fc
@@ -19,7 +20,6 @@
 #define g_LucesD3D GAME_DATA(int, 0x4ac430)	/* with act_D3D */
 #define g_LucesTotal GAME_DATA(int, 0x4ac42c)
 #define g_LuzIndD3D GAME_DATA(uint32_t, 0x4ac428)	/* the next light gets index 4 + this */
-#define g_pd3dDevice GAME_DATA(void *, 0x4ad6f4)	/* IDirect3DDevice8 */
 #define g_AmbientD3D GAME_DATA(uint32_t, 0x4ad748)	/* the ambient of the scenes */
 #define g_ProfMode GAME_DATA(int, 0x4a9018)	/* 5: timing with rdtsc */
 #define g_ProfTicksLuces GAME_DATA(uint64_t, 0x4b18c8)

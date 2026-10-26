@@ -7281,40 +7281,40 @@ rva	size	source	callconv	name	signature
 0024e620	43	DEFAULT	unknown	FUN_0064e620	
 0024e650	43	DEFAULT	unknown	FUN_0064e650	
 0024e6f0	47	DEFAULT	unknown	FUN_0064e6f0	
-0024e750	116	DEFAULT	unknown	FUN_0064e750	
-0024e7d0	230	DEFAULT	unknown	FUN_0064e7d0	
-0024e8c0	528	DEFAULT	unknown	FUN_0064e8c0	
-0024ead0	35	ANALYSIS	__thiscall	CEscena::vf00	undefined __thiscall(void)
-0024eb00	308	DEFAULT	unknown	FUN_0064eb00	
-0024ec50	42	DEFAULT	unknown	FUN_0064ec50	
-0024ec80	42	DEFAULT	unknown	FUN_0064ec80	
+0024e750	116	USER_DEFINED	__cdecl	Render_GetViewportSize	void __cdecl(int * ancho, int * alto)
+0024e7d0	230	USER_DEFINED	__fastcall	CEscena_ctor	void * __fastcall(void * self)
+0024e8c0	528	USER_DEFINED	__fastcall	CEscena_dtor	void __fastcall(void * self)
+0024ead0	35	USER_DEFINED	__thiscall	CEscena_Delete	void * __thiscall(byte flags)
+0024eb00	308	USER_DEFINED	__thiscall	CEscena_Msg	void __thiscall(int msg, int a, int b, int c, int d)
+0024ec50	42	USER_DEFINED	__thiscall	CEscena_ReleaseD3D	void __thiscall(void * dev)
+0024ec80	42	USER_DEFINED	__thiscall	CEscena_InitD3D	void __thiscall(void * dev)
 0024ecb0	1	DEFAULT	unknown	FUN_0064ecb0	
-0024ecc0	2028	DEFAULT	unknown	FUN_0064ecc0	
-0024f4b0	288	DEFAULT	unknown	FUN_0064f4b0	
-0024f5d0	813	DEFAULT	unknown	FUN_0064f5d0	
-0024f900	218	DEFAULT	unknown	FUN_0064f900	
-0024f9e0	34	DEFAULT	unknown	FUN_0064f9e0	
-0024fa10	120	DEFAULT	unknown	FUN_0064fa10	
-0024fa90	329	DEFAULT	unknown	FUN_0064fa90	
-0024fbe0	188	DEFAULT	unknown	FUN_0064fbe0	
-0024fca0	34	USER_DEFINED	__thiscall	CEscena_NodoObjeto	void * __thiscall(int iObjeto)
-0024fcd0	58	DEFAULT	unknown	FUN_0064fcd0	
-0024fd10	58	DEFAULT	unknown	FUN_0064fd10	
-0024fd50	586	DEFAULT	unknown	FUN_0064fd50	
-0024ffa0	264	DEFAULT	unknown	FUN_0064ffa0	
-002500e0	46	DEFAULT	unknown	FUN_006500e0	
-00250110	25	DEFAULT	unknown	FUN_00650110	
-002501d0	390	DEFAULT	unknown	FUN_006501d0	
-00250360	326	DEFAULT	unknown	FUN_00650360	
-002504b0	328	DEFAULT	unknown	FUN_006504b0	
-00250600	586	DEFAULT	unknown	FUN_00650600	
-00250850	457	DEFAULT	unknown	FUN_00650850	
-00250a20	296	DEFAULT	unknown	FUN_00650a20	
+0024ecc0	2028	USER_DEFINED	__thiscall	CEscena_Read	void __thiscall(void * f, byte bAnim)
+0024f4b0	288	USER_DEFINED	__thiscall	CEscena_Render	void __thiscall(void * ctx)
+0024f5d0	813	USER_DEFINED	__thiscall	CEscena_Write	void __thiscall(void * f, byte bAnim)
+0024f900	218	USER_DEFINED	__thiscall	CEscena_Update	void __thiscall(void * ctx)
+0024f9e0	34	USER_DEFINED	__fastcall	CEscena_UpdateNodes	void __fastcall(void * self)
+0024fa10	120	USER_DEFINED	__thiscall	CEscena_AddNodo	void __thiscall(void * nodo)
+0024fa90	329	USER_DEFINED	__fastcall	CEscena_CompactMats	void __fastcall(void * self)
+0024fbe0	188	USER_DEFINED	__fastcall	CEscena_DeleteNodes	void __fastcall(void * self)
+0024fca0	34	USER_DEFINED	__thiscall	CEscena_NodoObjeto	void * __thiscall(int indice)
+0024fcd0	58	USER_DEFINED	__thiscall	CEscena_FindClase	void * __thiscall(void * from, uint clase)
+0024fd10	58	USER_DEFINED	__thiscall	CEscena_FindNodo	void * __thiscall(char * name)
+0024fd50	586	USER_DEFINED	__thiscall	CEscena_UpdateBox	void __thiscall(void * out, byte first)
+0024ffa0	264	USER_DEFINED	__fastcall	CEscena_CalcPesos	void __fastcall(void * self)
+002500e0	46	USER_DEFINED	__thiscall	CEscena_CountClase	int __thiscall(uint clase)
+00250110	25	USER_DEFINED	__fastcall	CEscena_NumNodos	int __fastcall(void * self)
+002501d0	390	USER_DEFINED	__thiscall	CEscena_ConvertD3D	void __thiscall(uint flags)
+00250360	326	USER_DEFINED	__fastcall	CEscena_ToSuelo	void __fastcall(void * self)
+002504b0	328	USER_DEFINED	__thiscall	CEscena_DeleteEmpty	void __thiscall(uint clase, byte bRefs, byte flagged)
+00250600	586	USER_DEFINED	__thiscall	CEscena_SetEscala	void __thiscall(void * escala)
+00250850	457	USER_DEFINED	__thiscall	CEscena_Join	void __thiscall(byte sel, char * name)
+00250a20	296	USER_DEFINED	__thiscall	CEscena_SetAlpha	void __thiscall(float alpha, char * name)
 00250b50	112	USER_DEFINED	__thiscall	Tabla_Alloc4	void __thiscall(int num)
-00250bc0	30	DEFAULT	unknown	FUN_00650bc0	
-00250be0	334	DEFAULT	unknown	FUN_00650be0	
-00250d30	140	DEFAULT	unknown	FUN_00650d30	
-00250dc0	141	DEFAULT	unknown	FUN_00650dc0	
+00250bc0	30	USER_DEFINED	__thiscall	CEscena_SetNodos54	void __thiscall(int v)
+00250be0	334	USER_DEFINED	__thiscall	CEscena_PrecalcIlum	void __thiscall(byte noLuces, byte visible)
+00250d30	140	USER_DEFINED	__thiscall	CEscena_RemoveNodo	void __thiscall(void * nodo)
+00250dc0	141	USER_DEFINED	__thiscall	Tabla_Resize4	void __thiscall(int n)
 00250e50	182	USER_DEFINED	__thiscall	CAnimCtrl_ctor	void * __thiscall(void)
 00250f10	1	USER_DEFINED	__thiscall	CAnimCtrl_dtor	void __thiscall(void)
 00250f20	8	DEFAULT	unknown	FUN_00650f20	
@@ -8473,7 +8473,7 @@ rva	size	source	callconv	name	signature
 002b82f0	228	DEFAULT	unknown	FUN_006b82f0	
 002b83e0	367	DEFAULT	unknown	FUN_006b83e0	
 002b8570	759	DEFAULT	unknown	FUN_006b8570	
-002b8870	144	DEFAULT	unknown	FUN_006b8870	
+002b8870	144	USER_DEFINED	__cdecl	Box_Merge	void __cdecl(void * box, void * other, byte first)
 002b8900	1210	DEFAULT	unknown	FUN_006b8900	
 002b8dd0	34	DEFAULT	unknown	FUN_006b8dd0	
 002b8e00	115	DEFAULT	unknown	FUN_006b8e00	

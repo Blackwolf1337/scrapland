@@ -702,7 +702,7 @@ void __thiscall CModelo_SetPivot(CModelo *self, const vec3_t *v, byte rel, byte 
 	if (rel) {
 		CHECK(self->escena);
 		if (update) {
-			CEscena_UpdateBox(self->escena, 0, 1);
+			CEscena_UpdateBox(self->escena, NULL, 1);
 		}
 		const box_t *b = &self->escena->box;
 		float dx = b->max.x - b->min.x;

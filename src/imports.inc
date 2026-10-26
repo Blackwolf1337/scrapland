@@ -377,7 +377,18 @@ SD_IMPORT(CAnimMat_dtor, 0x257fb0)
 SD_IMPORT(CAnimMat_Start, 0x258110)
 SD_IMPORT(Vec3_Differ, 0x067380)
 
-/* module agent: Engine/Escena (imports below this line) */
+/* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/escena.h) */
+SD_IMPORT(Box_Transform, 0x239880)
+SD_IMPORT(Cad_Read, 0x2a18a0)
+SD_IMPORT(Cad_Write, 0x2a1920)
+SD_IMPORT(CAnimacion_ctor, 0x2ab6f0)
+SD_IMPORT(CAnimacion_dtor, 0x2ab940)
+SD_IMPORT(CMallaD3D_CalcPesos, 0x2b8900)
+SD_IMPORT(CMallaD3D_CalcIlum, 0x2b8e80)
+SD_IMPORT(CSuelo_CalcIlum, 0x261630)
+SD_IMPORT(NodeFX_New, 0x2b2cc0)
+SD_IMPORT(Obj3D_A6000040_ctor, 0x2b95a0)
+SD_IMPORT(Obj3D_A7000100_ctor, 0x2ba0e0)
 
 /* module agent: Engine/SistPart (imports below this line) */
 
@@ -407,7 +418,6 @@ SD_IMPORT(Batch_AddMalla, 0x2c81d0)
 SD_IMPORT(Batch_Flush, 0x2c83c0)
 SD_IMPORT(Debug_DrawBox, 0x2772b0)
 SD_IMPORT(CSuelo_DrawDebug, 0x25a260)
-SD_IMPORT(CEscena_UpdateNodes, 0x24f9e0)
 SD_IMPORT(Sector_OfNode, 0x26caa0)
 
 /* module agent: Engine/Trails (imports below this line) */
@@ -424,14 +434,7 @@ SD_IMPORT(CNodoR_dtor, 0x23f450)
 SD_IMPORT(CNodoR_SetNodo, 0x23f890)
 SD_IMPORT(RenderCtx_Init, 0x23fac0)
 SD_IMPORT(RenderCtx_SetCanal, 0x23fb10)
-SD_IMPORT(CEscena_Msg, 0x24eb00)
-SD_IMPORT(CEscena_ReleaseD3D, 0x24ec50)
-SD_IMPORT(CEscena_InitD3D, 0x24ec80)
 SD_IMPORT(CEscena_Shared, 0x24ecb0)
-SD_IMPORT(CEscena_FindClase, 0x24fcd0)
-SD_IMPORT(CEscena_UpdateBox, 0x24fd50)
-SD_IMPORT(CEscena_NumNodos, 0x250110)
-SD_IMPORT(CEscena_SetEscala, 0x250600)
 SD_IMPORT(CAnimCtrl_Play, 0x250f20)
 SD_IMPORT(CAnimCtrl_Start, 0x251030)
 SD_IMPORT(CAnimCtrl_Stop, 0x2511a0)
@@ -462,7 +465,6 @@ SD_IMPORT(CNodoR_ApplyFX, 0x23f540)
 SD_IMPORT(CEVA_ctor, 0x2d33e0)
 
 /* module agent: Engine/AnimGrupo (imports below this line) */
-SD_IMPORT(CEscena_NodoObjeto, 0x24fca0)
 SD_IMPORT(CAnimCtrl_ctor, 0x250e50)
 SD_IMPORT(CAnimCtrl_dtor, 0x250f10)
 SD_IMPORT(CAnimCtrl_SetFrames, 0x250fb0)

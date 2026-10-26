@@ -48,7 +48,6 @@ typedef void *(__thiscall *deleteObj_t)(void *self, int flags);
 #define g_RutasTexturas ((char (*)[MAX_RUTA])Game_Ptr(0x4aa398))
 #define g_ExtensTexturas ((char (*)[MAX_RUTA])Game_Ptr(0x4aadc0))
 #define g_MatStr ((char *)Game_Ptr(0x4ab7e8))
-#define g_TexDev GAME_DATA(void *, 0x4ad6f4)
 #define g_LightmapsHigh GAME_DATA(int, 0x4afdb0)
 #define g_MotorDev (*(void **)(GAME_DATA(byte *, 0x4b1c04) + 0x2a3d8))
 #define g_AnimFpsDefault GAME_DATA(float, 0x431d20)
@@ -1124,7 +1123,7 @@ void *__thiscall CMapa_GetTexture(CMapa *self, byte load) {
 	if (!load) {
 		return NULL;
 	}
-	return Textura_Load(e->Hint, g_TexDev);
+	return Textura_Load(e->Hint, g_pd3dDevice);
 }
 
 char *__thiscall CMaterial_GetMapName(CMaterial *self, uint32_t idmapa) {

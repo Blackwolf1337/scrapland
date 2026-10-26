@@ -10,6 +10,9 @@
 
 #include "scrap/game.h"
 
+/* the D3D device of the engine3d (render.cpp), NULL without one */
+#define g_pd3dDevice GAME_DATA(void *, 0x4ad6f4)
+
 #define MAX_RUTA 0x104
 
 /* Ruta_Part masks */

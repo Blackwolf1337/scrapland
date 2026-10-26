@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # SDTest.Call(rva, sig, args...) in the test scripts: the number of arguments must match the signature
-# (sig: optional 't', the return kind, then one letter an argument). Prints the mismatches.
+# (sig: optional 't', the return kind, then one letter an argument), and no global may be named out (the log file
+# of sdlib). Prints the mismatches.
 import re
 import sys
 import glob
@@ -40,6 +41,10 @@ def split_args(s):
 bad = 0
 for path in sys.argv[1:] or sorted(glob.glob('tools/test/py/*.py')):
 	src = open(path).read()
+	if not path.endswith('sdlib.py'):
+		for m in re.finditer(r'^out\s*=', src, re.M):
+			print('%s:%d: a global named out hides the log file of sdlib' % (path, src.count('\n', 0, m.start()) + 1))
+			bad += 1
 	for m in re.finditer(r'SDTest\.Call\(', src):
 		args = split_args(src[m.end():])
 		if not args or len(args) < 2:

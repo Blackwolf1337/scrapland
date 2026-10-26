@@ -9,6 +9,7 @@
 
 #include "scrap/animgrupo.h"
 #include "scrap/archio.h"
+#include "scrap/escena.h"
 #include "scrap/luz.h"
 #include "scrap/mathlib.h"
 #include "scrap/nodo3d.h"
@@ -276,14 +277,6 @@ void __thiscall CNodoR_SetNodo(CNodoR *self, CNodo3D *nodo);		/* rva 0x23f890 */
 void __thiscall RenderCtx_Init(NodoAnimCtx *self, CModelo *m, const vec3_t *scale);
 void __thiscall RenderCtx_SetCanal(NodoAnimChannel *self, CAnimSlot *slot);	/* rva 0x23fb10 */
 const vec3_t *Render_GetEyePos(void);					/* rva 0x24cdd0, the camera position */
-void __thiscall CEscena_Msg(CEscena *self, int msg, int a, int b, int c, int d);	/* rva 0x24eb00 */
-void __thiscall CEscena_ReleaseD3D(CEscena *self, void *dev);		/* rva 0x24ec50 */
-void __thiscall CEscena_InitD3D(CEscena *self, void *dev);		/* rva 0x24ec80 */
-void __thiscall CEscena_Shared(CEscena *self);				/* rva 0x24ecb0, empty */
-CNodo3D *__thiscall CEscena_FindClase(CEscena *self, CNodo3D *from, uint32_t clase);	/* rva 0x24fcd0 */
-void __thiscall CEscena_UpdateBox(CEscena *self, int a, int b);		/* rva 0x24fd50 */
-int __thiscall CEscena_NumNodos(CEscena *self);				/* rva 0x250110 */
-void __thiscall CEscena_SetEscala(CEscena *self, const vec3_t *escala);	/* rva 0x250600 */
 /* the play state of an animation group */
 void __thiscall CAnimCtrl_Play(CAnimCtrl *self);			/* rva 0x250f20 */
 void __thiscall CAnimCtrl_Start(CAnimCtrl *self);			/* rva 0x251030 */

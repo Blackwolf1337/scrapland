@@ -14,6 +14,7 @@
 
 #include "scrap/animacion.h"
 #include "scrap/archio.h"
+#include "scrap/escena.h"
 #include "scrap/luz.h"
 #include "scrap/mathlib.h"
 #include "scrap/tabla.h"
@@ -97,7 +98,6 @@ typedef struct CAnimGrupos {
 /* of other modules, called in the exe */
 /* Engine/Nodo3D.cpp: the node named name from self on (self itself with incl), by sig */
 /* Engine/escena.cpp: the node with that iObjeto */
-CNodo3D *__thiscall CEscena_NodoObjeto(CEscena *self, int iObjeto);
 CAnimCtrl *__thiscall CAnimCtrl_ctor(CAnimCtrl *self);
 void __thiscall CAnimCtrl_dtor(CAnimCtrl *self);
 void __thiscall CAnimCtrl_SetFrames(CAnimCtrl *self, int primero, int frames);

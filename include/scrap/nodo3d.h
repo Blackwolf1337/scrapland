@@ -34,6 +34,27 @@ typedef struct IObjeto3D {
 } IObjeto3D;
 SD_SIZE(IObjeto3D, 8);
 
+/* the slots of the vftable of the 3D objects (objeto3d.h) */
+enum {
+	OBJ3D_VF_DELETE = 0,		/* (int flags) */
+	OBJ3D_VF_UPDATE = 1,		/* (CNodoR *) */
+	OBJ3D_VF_RENDER = 2,		/* (void *arg, CNodoR *) */
+	OBJ3D_VF_INITD3D = 3,		/* (void *dev) */
+	OBJ3D_VF_RELEASED3D = 4,	/* (void *dev) */
+	OBJ3D_VF_WRITE = 5,		/* byte (CArchIO *f, MallaD3D_FileCtx *ctx) */
+	OBJ3D_VF_READ = 6		/* byte (CArchIO *f, MallaD3D_FileCtx *ctx) */
+};
+typedef void *(__thiscall *objDelete_t)(void *self, int flags);	/* the deleting destructor of any object */
+typedef void(__thiscall *objDev_t)(IObjeto3D *self, void *dev);
+typedef byte(__thiscall *objFile_t)(IObjeto3D *self, CArchIO *f, void *ctx);
+#define OBJ3D_CALL(o, slot, type, ...) ((type)(o)->vftable[slot])((o), ##__VA_ARGS__)
+
+/* o as a class: CHECK on another class and NULL (objeto3d.h) */
+static inline void *Obj3D_Cast(IObjeto3D *o, uint32_t clase) {
+	CHECK(o->clase == clase);
+	return o->clase == clase ? o : NULL;
+}
+
 /* a rotation given by angles, its quaternion made on demand */
 typedef struct CRotacion {
 	vec3_t ang;			/* 0x00 radians */
@@ -64,31 +85,40 @@ SD_SIZE(NodoAnimChannel, 0x18);
 typedef struct NodoAnimCtx {
 	NodoAnimChannel chan[MAX_ANIM_CHANNEL];	/* 0x00 */
 	matrix_t m;			/* 0x60 the parent of the nodes without one */
+	struct CModelo *modelo;		/* 0xa0 */
+	void *nodosR;			/* 0xa4 set: the render nodes of modelo are drawn instead of the scene's */
 } NodoAnimCtx;
 SD_OFFSET(NodoAnimCtx, m, 0x60);
 
-/* the members of a scene (Engine/escena.cpp) read by the nodes, the animation groups and the models */
+/* a scene (Engine/escena.cpp): a list of nodes with their materials, an animation and the user properties */
 typedef struct CEscena {
 	void **vftable;			/* 0x00 [0] the deleting destructor */
 	char *name;			/* 0x04 */
 	int Refs;			/* 0x08 */
 	struct CNodo3D *Nodo3D;		/* 0x0c the first node */
-	NodoAnimCtx *anim;		/* 0x10 */
-	byte pad_14[0x10];
-	box_t box;			/* 0x24 */
+	NodoAnimCtx *anim;		/* 0x10 the render context during CEscena_Render and CEscena_Update */
+	uint32_t ambiente;		/* 0x14 0x0b0b0b */
+	float f18;			/* 0x18 1 */
+	float f1c;			/* 0x1c */
+	float f20;			/* 0x20 1 */
+	box_t box;			/* 0x24 CEscena_UpdateBox */
 	struct CAnimacion *AnimM3D;	/* 0x3c */
-	const char *nodo;		/* 0x40 the name of the node whose animation node a group starts at */
+	char *nodo;			/* 0x40 the name of the node whose animation node a group starts at */
 	char *mainLOD;			/* 0x44 the scene name of the main LOD */
-	float umbralUnirVert;		/* 0x48 the weld threshold of the vertices */
-	CArchINI *ini;			/* 0x4c */
-	byte pad_50[0x10];
+	float umbralUnirVert;		/* 0x48 the weld threshold of the vertices, -1 */
+	CArchINI *ini;			/* 0x4c FileINI */
+	CArchINI *userProp;		/* 0x50 */
+	IObjeto3D *CollideMesh;		/* 0x54 deleted through vftable[0] */
+	CTabla mats;			/* 0x58 TabMaterial: CMaterial * */
 	byte fromAmc;			/* 0x60 loaded from the .sm3 and the .amc */
 } CEscena;
-SD_OFFSET(CEscena, fromAmc, 0x60);
+SD_SIZE(CEscena, 0x64);
 SD_OFFSET(CEscena, anim, 0x10);
 SD_OFFSET(CEscena, box, 0x24);
 SD_OFFSET(CEscena, AnimM3D, 0x3c);
 SD_OFFSET(CEscena, ini, 0x4c);
+SD_OFFSET(CEscena, mats, 0x58);
+SD_OFFSET(CEscena, fromAmc, 0x60);
 
 /* how a render node orients its node (CNodoR look) */
 typedef struct NodoLook {
@@ -137,7 +167,7 @@ typedef struct CNodo3D {
 	int i48;			/* 0x48 -1 */
 	int nodoR;			/* 0x4c -1, else Update goes to CNodoR_UpdateNodo */
 	int i50;			/* 0x50 */
-	int pad_54;
+	int i54;			/* 0x54 CEscena_SetNodos54 */
 	IObjeto3D *obj58;		/* 0x58 owned, deleted through its vftable[0] */
 	matrix_t m;			/* 0x5c world, the position in m[12..14] */
 	matrix_t mObj;			/* 0x9c the object in the node */

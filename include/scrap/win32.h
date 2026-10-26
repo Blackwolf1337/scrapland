@@ -35,4 +35,8 @@ typedef int(__stdcall *setfileattributes_t)(const char *name, uint32_t attr);
 #define exe_GetFileAttributesA GAME_DATA(getfileattributes_t, 0x3a1284)
 #define exe_SetFileAttributesA GAME_DATA(setfileattributes_t, 0x3a1288)
 
+/* winmm */
+typedef uint32_t(__stdcall *timegettime_t)(void);
+#define exe_timeGetTime GAME_DATA(timegettime_t, 0x3a1468)
+
 #endif

@@ -47,16 +47,10 @@
 	Con_FatalErrorf("\nFATAL ERROR: Check failed!\n\nError: %s\n\nExpression: %s\n\nFile: '%s'\nDate: %s\nLine: %d", \
 		(self)->name, expr, __FILE__, __TIMESTAMP__, __LINE__)
 
-typedef void(__thiscall *objDelete_t)(IObjeto3D *self, int flags);
 typedef void(__thiscall *objUpdate_t)(IObjeto3D *self, CNodoR *r);
 typedef void(__thiscall *objRender_t)(IObjeto3D *self, void *arg, CNodoR *r);
 
 /* the casts of objeto3d.h: NULL after the failed check */
-static void *Obj3D_Cast(IObjeto3D *o, uint32_t clase) {
-	CHECK(o->clase == clase);
-	return o->clase == clase ? o : NULL;
-}
-
 /* the track set of an animation of a channel */
 static void *Anim_Set(void *anim) {
 	return *(void **)(*(byte **)((byte *)anim + 0x94) + 0x3c);

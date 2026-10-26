@@ -61,6 +61,7 @@ typedef struct CAnimacion {
 } CAnimacion;
 SD_OFFSET(CAnimacion, tabla, 0x18);
 SD_OFFSET(CAnimacion, AnimBlock, 0x28);
+SD_SIZE(CAnimacion, 0x34);
 
 /* a stream while it is built */
 typedef struct CAnimStream {

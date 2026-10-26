@@ -6,6 +6,7 @@
 
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
+#include "scrap/win32.h"
 #include "scrap/mallatri.h"
 #include "scrap/material.h"
 #include "scrap/suelo.h"
@@ -32,9 +33,7 @@
 #define g_SaveCollideMeshParam GAME_DATA(int, 0x4af8a4)
 
 /* the accessor of tabla.h */
-#define TABLA_CHECK(p, i, n) CHECK((p) && (uint32_t)(i) < (uint32_t)(n))
 
-typedef void *(__thiscall *objDelete_t)(void *self, int flags);
 typedef void(__thiscall *objCall_t)(void *self, void *arg);
 
 /* the sectors of the world (engine3d/engine/mundo.h, SueloPortal.cpp) */
@@ -1505,8 +1504,6 @@ static void Suelo_NewCacheID(CSuelo *self) {
 }
 
 /* through the import table of the exe (winmm) */
-typedef uint32_t(__stdcall *timeGetTime_t)(void);
-#define Suelo_TimeGetTime() (GAME_DATA(timeGetTime_t, 0x3a1468)())
 
 static const char *const sueloVertExpr[3] = { "(tri->v[0] + NumVert <= CNDX_MAX)", "(tri->v[1] + NumVert <= CNDX_MAX)",
 	"(tri->v[2] + NumVert <= CNDX_MAX)" };
@@ -1586,9 +1583,9 @@ void __thiscall CSuelo_AddMesh(CSuelo *self, CCollideMesh *mesh, CMallaTri *tm, 
 	}
 	CHECK(b->max.x >= b->min.x && b->max.y >= b->min.y && b->max.z >= b->min.z);
 	int mem = g_MemStats->bytes;
-	uint32_t t0 = Suelo_TimeGetTime();
+	uint32_t t0 = exe_timeGetTime();
 	CAlturas_QuadAddMesh(&self->alturas, mesh, nt);
-	uint32_t t1 = Suelo_TimeGetTime();
+	uint32_t t1 = exe_timeGetTime();
 	E3D_LogWhite(g_FileLog, "QuadAddMesh: %d Kb  [%d tri, %d vtx]  [sector: %d]  [%.2f sec.]",
 		(g_MemStats->bytes - mem) / 1024, tm->nTri, tm->nVert, mesh->sector - 1, (double)(t1 - t0) / 1000.0);
 }
@@ -1801,7 +1798,7 @@ static CMallaTri *Suelo_NodoMalla(CNodo3D *node) {
 }
 
 static void Suelo_LogMemory(int mem, uint32_t t0) {
-	uint32_t t1 = Suelo_TimeGetTime();
+	uint32_t t1 = exe_timeGetTime();
 	Con_Verbosef("Map collision memory: %d Kb  [Quads: %d]  [%.2f sec.]\n", (g_MemStats->bytes - mem) / 1024,
 		g_CollisionQuadCount, (double)(t1 - t0) / 1000.0);
 }
@@ -1863,7 +1860,7 @@ void __thiscall CSuelo_Build(CSuelo *self, CEscena *esc) {
 
 	if (esc->fromAmc) {
 		int mem = g_MemStats->bytes;
-		uint32_t t0 = Suelo_TimeGetTime();
+		uint32_t t0 = exe_timeGetTime();
 		if (CSuelo_LoadCollision(self, name)) {
 			CheckFailed("!LoadCollision( Escena->Nombre )", __FILE__, __TIMESTAMP__, __LINE__);
 		}
@@ -1964,7 +1961,7 @@ void __thiscall CSuelo_Build(CSuelo *self, CEscena *esc) {
 	CHECK(ce->max.x >= ce->min.x && ce->max.y >= ce->min.y && ce->max.z >= ce->min.z);
 	Box_Widen(ce, g_CollisionEpsilon * 10.0f);
 	int mem = g_MemStats->bytes;
-	uint32_t t0 = Suelo_TimeGetTime();
+	uint32_t t0 = exe_timeGetTime();
 	if (CSuelo_LoadCollision(self, name)) {
 		CSuelo_CreateQuadCollision(self);
 		CSuelo_SaveCollision(self, name);

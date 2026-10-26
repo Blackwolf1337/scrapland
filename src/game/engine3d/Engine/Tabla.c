@@ -121,3 +121,27 @@ void __fastcall Tabla_Free(CTabla *t) {
 		t->n = 0;
 	}
 }
+
+void __thiscall Tabla_Resize4(CTabla *t, int n) {
+	if (n < 1) {
+		if (t->p) {
+			operator_delete_array(t->p);
+			t->p = NULL;
+			t->n = 0;
+		}
+		return;
+	}
+	if (n == t->n) {
+		return;
+	}
+	void *old = t->p;
+	if (!old) {
+		Tabla_Alloc4(t, n);
+		return;
+	}
+	t->p = New_Array((uint32_t)n, 4);
+	memcpy(t->p, old, (uint32_t)(t->n < n ? t->n : n) * 4);
+	operator_delete_array(old);
+	t->n = n;
+}
+
