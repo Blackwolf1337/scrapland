@@ -552,6 +552,33 @@ for i in range(30):
 	fcall('Quat_SlerpFlip', 0x2a4310, 'bFFFf', (0.0, 0.0, 0.0, 0.0), q1, q2, rnd(0.0, 1.0))
 	fcall('Quat_SlerpFlip near', 0x2a4310, 'bFFFf', (0.0, 0.0, 0.0, 0.0), q1, q1, rnd(0.0, 1.0))
 	fcall('Quat_SlerpFlip any', 0x2a4310, 'bFFFf', (0.0, 0.0, 0.0, 0.0), quat(), quat(), rnd(0.0, 1.0))
+# Engine/calculo3d.cpp
+for i in range(30):
+	a, v, w = mat(), vec(), vec()
+	fcall('Matrix_AddPos', 0x23a4d0, 'vFF', a, v)
+	fcall('Vec3_TransformH', 0x23a510, 'iFFF', zero3, v, a)
+	fcall('Vec3_TransformDir0', 0x23a5f0, 'iFFF', zero3, v, a)
+	fcall('Sph_InCone', 0x23a6f0, 'bFfFFf', v, rnd(0.0, 3.0), w, vec(), rnd(0.0, 3.0))
+	fcall('Vec3_StrDeg', 0x23a9b0, 'sFii', v, i % 4, i % 7)
+	fcall('Vec3_Str', 0x23aa60, 'sFii', v, (i + 1) % 4, i % 9)
+for c, r, a, d, ang in (((0.0, 0.0, 5.0), 1.0, zero3, (0.0, 0.0, 1.0), 0.5), ((0.0, 5.0, 0.0), 1.0, zero3, (0.0, 0.0, 1.0), 0.5),
+		((0.0, 0.0, 5.0), 6.0, zero3, (0.0, 0.0, 1.0), 0.1), ((1.0, 1.0, 1.0), 0.5, zero3, zero3, 1.0),
+		((0.0, 3.0, 4.0), 5.0, zero3, (1.0, 0.0, 0.0), 0.0), ((0.0, 0.0, -5.0), 0.1, zero3, (0.0, 0.0, 2.0), 3.1)):
+	fcall('Sph_InCone s', 0x23a6f0, 'bFfFFf', c, r, a, d, ang)
+SDTest.Call(0x323c50, 'vi', 77)
+for mn, mx, av, tr in ((0, 10, 3, 5), (5, 5, 5, 3), (5, 5, 4, 3), (-3, 3, 0, 0), (0, 1, 0, 1), (0, 1, 1, 20), (100, 200, 150, 2)):
+	call('Rand_Other', 0x23a680, 'iiiii', mn, mx, av, tr)
+mex = SDTest.Call(0x133650, 'ii', 64)[0]
+mname = SDTest.Call(0x133650, 'ii', 16)[0]
+SDTest.Call(0x1365c0, 'sisi', mname, 'sqrt', 16)
+for t, hi in ((1, 0), (3, 0x3ff00000), (6, -0x40100000), (0, 0), (9, 0x40590000)):
+	SDTest.Poke(mex - 0x400000, t)
+	SDTest.Poke(mex + 4 - 0x400000, mname)
+	SDTest.Poke(mex + 12 - 0x400000, hi)
+	check('E3D_MathErr' + fmt((t, hi)), lambda: SDTest.Call(0x23aae0, 'ii', mex))
+call('E3D_MathErr NULL', 0x23aae0, 'ii', 0)
+SDTest.Call(0x133550, 'vi', mex)
+SDTest.Call(0x133550, 'vi', mname)
 for q1, q2 in (((0.0, 0.0, 0.9, 0.1), (0.0, 0.0, -0.9, 0.1)), ((0.7, 0.0, 0.0, -0.7), (0.0, 0.7, 0.0, 0.7)),
 		((0.0, 0.0, 0.0, 1.0), (0.0, 0.0, 0.0, -1.0)), ((0.0, 0.99, 0.0, -0.14), (0.0, -0.98, 0.0, -0.2))):
 	for t in (0.0, 0.3, 1.0):

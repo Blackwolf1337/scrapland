@@ -1273,6 +1273,16 @@ SD_HOOK(CEVA_NumAnimated, 0x2d4770, 151)
 SD_HOOK(CEVA_Optimize, 0x2d4810, 406)
 SD_HOOK(CAnimVert_Optimize, 0x2d49b0, 332)
 
+/* src/game/engine3d/Engine/Calculo3d.c */
+SD_HOOK(Matrix_AddPos, 0x23a4d0, 55)
+SD_HOOK(Vec3_TransformH, 0x23a510, 211)
+SD_HOOK(Vec3_TransformDir0, 0x23a5f0, 144)
+SD_HOOK(Rand_Other, 0x23a680, 100)
+SD_HOOK(Sph_InCone, 0x23a6f0, 695)
+SD_HOOK(Vec3_StrDeg, 0x23a9b0, 163)
+SD_HOOK(Vec3_Str, 0x23aa60, 123)
+SD_HOOK(E3D_MathErr, 0x23aae0, 111)
+
 /* src/game/engine3d/Engine/LeeDatos.c */
 SD_HOOK(Lee_String, 0x2d58a0, 236)
 SD_HOOK(Lee_Pop, 0x2d59d0, 88)

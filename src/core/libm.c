@@ -11,6 +11,7 @@
 #define LIBM_SSE2_COS 0x346fe0
 #define LIBM_SSE2_SIN 0x3471a0
 #define LIBM_SSE2_EXP 0x34e950
+#define LIBM_SSE2_ASIN 0x350150
 #define LIBM_SSE2_POW 0x321440
 #define CI_ATAN2 0x329f3a
 #define LIBM_VEC_EXP2 0x314a00
@@ -39,6 +40,10 @@ double Game_Cos(double x) {
 
 double Game_Sin(double x) {
 	return Libm_Sse2(LIBM_SSE2_SIN, x);
+}
+
+double Game_Asin(double x) {
+	return Libm_Sse2(LIBM_SSE2_ASIN, x);
 }
 
 double Game_Exp(double x) {

@@ -7025,14 +7025,14 @@ rva	size	source	callconv	name	signature
 0023a290	24	DEFAULT	unknown	FUN_0063a290	
 0023a2b0	24	DEFAULT	unknown	FUN_0063a2b0	
 0023a2d0	498	DEFAULT	unknown	FUN_0063a2d0	
-0023a4d0	55	DEFAULT	unknown	FUN_0063a4d0	
-0023a510	211	DEFAULT	unknown	FUN_0063a510	
-0023a5f0	144	DEFAULT	unknown	FUN_0063a5f0	
-0023a680	100	DEFAULT	unknown	FUN_0063a680	
-0023a6f0	695	DEFAULT	unknown	FUN_0063a6f0	
-0023a9b0	163	DEFAULT	unknown	FUN_0063a9b0	
-0023aa60	123	DEFAULT	unknown	FUN_0063aa60	
-0023aae0	111	DEFAULT	unknown	FUN_0063aae0	
+0023a4d0	55	USER_DEFINED	__cdecl	Matrix_AddPos	void __cdecl(float *m, float *v)
+0023a510	211	USER_DEFINED	__cdecl	Vec3_TransformH	int __cdecl(float *out, float *v, float *m)
+0023a5f0	144	USER_DEFINED	__cdecl	Vec3_TransformDir0	int __cdecl(float *out, float *v, float *m)
+0023a680	100	USER_DEFINED	__cdecl	Rand_Other	int __cdecl(int min, int max, int avoid, int tries)
+0023a6f0	695	USER_DEFINED	__cdecl	Sph_InCone	byte __cdecl(float *center, float radius, float *apex, float *dir, float angle)
+0023a9b0	163	USER_DEFINED	__cdecl	Vec3_StrDeg	char * __cdecl(float *v, uint slot, int prec)
+0023aa60	123	USER_DEFINED	__cdecl	Vec3_Str	char * __cdecl(float *v, uint slot, int prec)
+0023aae0	111	USER_DEFINED	__cdecl	E3D_MathErr	int __cdecl(void *exc)
 0023ab70	406	DEFAULT	unknown	FUN_0063ab70	
 0023ad20	366	DEFAULT	unknown	FUN_0063ad20	
 0023ae90	7	DEFAULT	unknown	FUN_0063ae90	

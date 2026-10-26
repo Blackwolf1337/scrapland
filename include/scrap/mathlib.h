@@ -109,10 +109,28 @@ double Game_Acos(double x);
 double Game_Cos(double x);
 double Game_Sin(double x);
 double Game_Atan2(double y, double x);	/* _CIatan2 */
+double Game_Asin(double x);
 double Game_Exp(double x);
 double Game_Pow(double x, double y);
 int64_t X87_Fistp(double x);	/* round to nearest */
 void X87_SinCos(float a, float *s, float *c);	/* fsincos, both rounded to float */
 void Game_ExpPd(const double in[2], double out[2]);	/* the vectorised exp of loops, two at once */
+
+
+/* Engine/calculo3d.cpp (src/game/engine3d/Engine/Calculo3d.c) */
+void Matrix_AddPos(matrix_t *m, const vec3_t *v);
+/* v * m divided by w, no check of w; 0 */
+int Vec3_TransformH(vec3_t *out, const vec3_t *v, const matrix_t *m);
+/* Matrix_TransformDir that returns 0 */
+int Vec3_TransformDir0(vec3_t *out, const vec3_t *v, const matrix_t *m);
+/* a rand() number in min..max other than avoid, up to tries times (avoid for no tries) */
+int Rand_Other(int min, int max, int avoid, int tries);
+/* whether a sphere is seen in a cone from apex along dir, angle the opening (radians) */
+byte Sph_InCone(const vec3_t *center, float radius, const vec3_t *apex, const vec3_t *dir, float angle);
+/* "x y z" with prec decimals into one of 4 static buffers (slot); StrDeg of an angle vector in degrees */
+char *Vec3_StrDeg(const vec3_t *v, uint32_t slot, int prec);
+char *Vec3_Str(const vec3_t *v, uint32_t slot, int prec);
+/* the _matherr of the exe: a line in the file log, 0 */
+int E3D_MathErr(void *exc);
 
 #endif
