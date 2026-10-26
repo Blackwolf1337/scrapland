@@ -389,6 +389,24 @@ SD_IMPORT(Vec3_Differ, 0x067380)
 /* module agent: Engine/MallaD3D (imports below this line) */
 
 /* module agent: Engine/Suelo (imports below this line) */
+SD_IMPORT(Imp_Sector_Last, 0x26d0a0)
+SD_IMPORT(Imp_Sector_IsOutside, 0x26c390)
+SD_IMPORT(Imp_Sector_GetName, 0x26c340)
+SD_IMPORT(Imp_Sector_Find, 0x26cb20)
+SD_IMPORT(Imp_CCollideMesh_dtor, 0x20eb70)
+SD_IMPORT(Imp_Vec3_Normalize, 0x261580)
+SD_IMPORT(Imp_CNodo3D_dtor, 0x23d070)
+SD_IMPORT(Imp_crt_ceil, 0x345010)
+SD_IMPORT(Imp_BoxTri, 0x271d60)
+SD_IMPORT(Imp_Tabla_ResizeC, 0x261830)
+SD_IMPORT(Imp_Tabla_Resize1C, 0x261780)
+SD_IMPORT(Imp_CMallaD3D_ctorTri, 0x2af820)
+SD_IMPORT(Imp_CNodo3D_ToD3D, 0x23e810)
+SD_IMPORT(Imp_Render_SetWorldMatrix, 0x24bac0)
+SD_IMPORT(Imp_Batch_AddMalla, 0x2c81d0)
+SD_IMPORT(Imp_Batch_Flush, 0x2c83c0)
+SD_IMPORT(Imp_Debug_DrawBox, 0x2772b0)
+SD_IMPORT(Imp_CSuelo_DrawDebug, 0x25a260)
 
 /* module agent: Engine/Trails (imports below this line) */
 
