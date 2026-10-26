@@ -377,6 +377,13 @@ SD_IMPORT(CAnimMat_dtor, 0x257fb0)
 SD_IMPORT(CAnimMat_Start, 0x258110)
 SD_IMPORT(Vec3_Differ, 0x067380)
 
+/* module agent: Engine/Escena (imports below this line) */
+
+/* module agent: Engine/SistPart (imports below this line) */
+
+/* module agent: Engine/RenderTarget (imports below this line) */
+
+
 /* module agent: Engine/MallaD3D (imports below this line) */
 
 /* module agent: Engine/Suelo (imports below this line) */

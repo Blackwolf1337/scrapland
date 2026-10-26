@@ -1366,7 +1366,7 @@ SDTest.Call(0x133550, 'vi', tbl)
 # the tests of single modules (tools/test/py/sdcall_*.py); a missing one is skipped
 for part in ('sdcall_listavert.py', 'sdcall_mallatri.py', 'sdcall_material.py', 'sdcall_luz.py', 'sdcall_nodo3d.py',
 		'sdcall_animacion.py', 'sdcall_animgrupo.py', 'sdcall_textura.py', 'sdcall_mallad3d.py', 'sdcall_suelo.py',
-		'sdcall_trails.py', 'sdcall_modelo.py'):
+		'sdcall_trails.py', 'sdcall_modelo.py', 'sdcall_escena.py', 'sdcall_sistpart.py', 'sdcall_rendertarget.py'):
 	try:
 		f = open(part)
 	except IOError:
