@@ -242,7 +242,6 @@ void __thiscall CMultiSprite_GetUV(void *self, int i, float *uv0, float *uv1);
 /* rva 0x26f120 (suelo.cpp): the segment from a to b against the floor of the world */
 byte __thiscall CSuelo_TraceSeg(void *suelo, const vec3_t *a, const vec3_t *b, vec3_t *hit, void *tri, int flags);
 /* rva 0x26bff0 and 0x26bc30 (SueloPortal.cpp): the visibility of a sphere for the debug output */
-byte __thiscall SectorVis_Sphere(SectorVis *vis, const vec3_t *pos, const vec3_t *center, float radius, const char *name);
 /* rva 0x299d50, a debug text at pos */
 void Debug_Text3D(void *font, float x, float y, const vec3_t *pos, uint32_t color, const char *fmt, ...);
 /* rva 0x2b7150 and 0x2b55d0 (the particle renderer) */

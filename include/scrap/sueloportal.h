@@ -44,6 +44,7 @@ typedef struct SectorVis {
 #define g_SectorCache GAME_DATA(int, 0x4b0128)	/* the cached sector is used when the position is the same */
 #define g_PortalesOn GAME_DATA(int, 0x4e1e00)	/* 0: everything is seen */
 #define g_DebugFont2 GAME_DATA(void *, 0x4d6dc8)
+#define g_PortalTest GAME_DATA(int, 0x4b1178)	/* the screen rectangle test; 2: drawn */
 
 
 CZona *__fastcall CZona_ctor(CZona *self);
@@ -54,6 +55,14 @@ void __thiscall SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible,
 byte __thiscall SectorVis_Check(SectorVis *self, const vec3_t *pos, const char *name);
 /* the sector of pos (looked up again for a new position) is seen */
 byte __thiscall SectorVis_Update(SectorVis *self, const vec3_t *pos, const char *name);
+/* the screen position (-1..1) of p and its w; 0 outside the view (out then the direction to p on the border) */
+byte Portal_Project(const vec3_t *p, float *out, float *w);
+/* the sphere is seen through the screen rectangle of its sector (always without the portal test) */
+byte __thiscall SectorVis_Sphere(SectorVis *self, const vec3_t *pos, const vec3_t *center, float radius,
+	const char *name);
+/* the sector reached from sector by the segment from a to b through the portals; front: only through portals
+ * whose front side a is not on */
+int Sector_Recorrer(int sector, const vec3_t *a, const vec3_t *b, byte front);
 /* the sector under pos into *sector; whether it is seen (always without portals); name is not used */
 byte Sector_FindPos(const vec3_t *pos, int *sector, const char *name);
 const char *Sector_GetName(int sector);
@@ -85,7 +94,8 @@ typedef struct SueloRayo {
 	int sector;			/* 0x1c out, -1 none */
 } SueloRayo;
 byte __thiscall CSuelo_RayoVert(void *suelo, float x, float z, SueloRayo *res);
-/* rva 0x26cba0: the sector reached from sector going from a to b through the portals */
-int Sector_Recorrer(int sector, const vec3_t *a, const vec3_t *b, byte arg);
+/* rva 0x24c4d0 and 0x24cdb0 (render.cpp): the projection and the view matrix */
+const matrix_t *Render_GetProj(void);
+const matrix_t *Render_GetView(void);
 
 #endif

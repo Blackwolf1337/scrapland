@@ -419,4 +419,20 @@ for st in range(10):
 			apply(SAI.SetStateChar, (st,) + a))
 check('SAI.SetStateVehicle(0, Parked)', lambda: SAI.SetStateVehicle(0, 'Parked'))
 check('SAI.SetStateChar(0, Player0)', lambda: SAI.SetStateChar(0, 'Player0'))
+
+# the sectors of the level (Engine/SueloPortal.c): their names and the sector walks between their first nodes
+import SDTest
+nz = SDTest.Peek(0x4b00d8, 'i')
+check('sectors', lambda: (nz, SDTest.Peek(0x4e1e00, 'i')))
+for i in range(min(nz, 12)):
+	check('Sector_GetName' + fmt((i,)), lambda i=i: SDTest.Call(0x26c340, 'si', i)[0])
+	check('Sector_IsOutside' + fmt((i,)), lambda i=i: SDTest.Call(0x26c390, 'bi', i)[0])
+	z = SDTest.Peek(0x4afed8 + 4 * i, 'i')
+	check('CZona' + fmt((i,)), lambda z=z: (SDTest.Peek(z, '@i'), SDTest.Peek(z + 0x30, '@i'), SDTest.Peek(z + 0x134, '@i')))
+for a in range(min(nz, 6)):
+	for b in range(min(nz, 6)):
+		pa = SDTest.Peek(SDTest.Peek(0x4afed8 + 4 * a, 'i') + 0x24, '@i')
+		pb = SDTest.Peek(SDTest.Peek(0x4afed8 + 4 * b, 'i') + 0x24, '@i')
+		check('Sector_Recorrer' + fmt((a, b)), lambda a=a, pa=pa, pb=pb: SDTest.Call(0x26cba0, 'iiiii', a, pa + 0x8c,
+			pb + 0x8c, 0)[0])
 finish()

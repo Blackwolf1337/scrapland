@@ -391,14 +391,14 @@ SD_IMPORT(NodeFX_New, 0x2b2cc0)
 SD_IMPORT(CObjBase3D_SetNodo, 0x2cad70)
 SD_IMPORT(CMultiSprite_GetUV, 0x29d800)
 SD_IMPORT(CSuelo_TraceSeg, 0x26f120)
-SD_IMPORT(SectorVis_Sphere, 0x26bff0)
 SD_IMPORT(Debug_Text3D, 0x299d50)
 SD_IMPORT(SistPart_Draw, 0x2b7150)
 SD_IMPORT(SistPart_Draw2, 0x2b55d0)
 
 /* src/game/engine3d/Engine/SueloPortal.c (called from Engine/SueloPortal.cpp, include/scrap/sueloportal.h) */
 SD_IMPORT(CSuelo_RayoVert, 0x2ca360)
-SD_IMPORT(Sector_Recorrer, 0x26cba0)
+SD_IMPORT(Render_GetProj, 0x24c4d0)
+SD_IMPORT(Render_GetView, 0x24cdb0)
 
 /* src/game/engine3d/Engine/Grafico3D.c (called from Engine/grafico3d.cpp, include/scrap/grafico3d.h) */
 SD_IMPORT(Render_GetBillboard, 0x24cdc0)

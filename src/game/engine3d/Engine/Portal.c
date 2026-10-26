@@ -178,11 +178,6 @@ void __thiscall CPortal_UpdateCache(CPortal *self, const matrix_t *unused) {
 	}
 }
 
-/* the screen coordinate of r (-1..1) in a viewport side of size n starting at o, as the exe rounds */
-static int Portal_Pixel(float r, uint32_t n, uint32_t o) {
-	return (int)(r * (float)(double)n * 0.5f + (float)(double)o);
-}
-
 static int Portal_Clamp(int v, int n) {
 	if (v < 1) {
 		return 0;
