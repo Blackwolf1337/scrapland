@@ -11,6 +11,7 @@
 #define LIBM_SSE2_COS 0x346fe0
 #define LIBM_SSE2_SIN 0x3471a0
 #define CI_ATAN2 0x329f3a
+#define LIBM_VEC_EXP2 0x314a00
 
 static double Libm_Sse2(uint32_t rva, double x) {
 	double r;
@@ -62,4 +63,17 @@ void X87_SinCos(float a, float *s, float *c) {
 	__asm__("fsincos" : "=t"(cl), "=u"(sl) : "0"((long double)a));
 	*c = (float)cl;
 	*s = (float)sl;
+}
+
+/* the packed double exp the compiler calls for vectorised loops, argument and result in xmm0 */
+void Game_ExpPd(const double in[2], double out[2]) {
+	void *fn = Game_Ptr(LIBM_VEC_EXP2);
+
+	__asm__ volatile(
+		"movupd %[in], %%xmm0\n\t"
+		"call *%[fn]\n\t"
+		"movupd %%xmm0, %[out]\n\t"
+		: [out] "=m"(*(double(*)[2])out)
+		: [in] "m"(*(const double(*)[2])in), [fn] "r"(fn)
+		: "eax", "ecx", "edx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", "memory", "cc");
 }

@@ -105,5 +105,6 @@ double Game_Cos(double x);
 double Game_Sin(double x);
 double Game_Atan2(double y, double x);	/* _CIatan2 */
 void X87_SinCos(float a, float *s, float *c);	/* fsincos, both rounded to float */
+void Game_ExpPd(const double in[2], double out[2]);	/* the vectorised exp of loops, two at once */
 
 #endif

@@ -35,6 +35,7 @@ size_t crt_strftime(char *buf, size_t size, const char *fmt, const void *tm);
 [[noreturn]] void crt_exit_now(int code);
 [[noreturn]] void crt_report_rangecheckfailure(void);
 void *crt_fopen(const char *name, const char *mode);
+void *crt_fsopen(const char *name, const char *mode, int share);
 int crt_fclose(void *f);
 size_t crt_fread(void *dst, size_t size, size_t count, void *f);
 size_t crt_fwrite(const void *src, size_t size, size_t count, void *f);

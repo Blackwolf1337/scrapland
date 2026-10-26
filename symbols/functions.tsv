@@ -8007,7 +8007,7 @@ rva	size	source	callconv	name	signature
 00290650	34	DEFAULT	unknown	FUN_00690650	
 00290680	33	DEFAULT	unknown	FUN_00690680	
 002906b0	127	DEFAULT	unknown	FUN_006906b0	
-00290730	124	DEFAULT	unknown	FUN_00690730	
+00290730	124	USER_DEFINED	__thiscall	CBmpFlt_Pixel	float * __thiscall(uint x, uint y)
 002907b0	52	DEFAULT	unknown	FUN_006907b0	
 002907f0	127	DEFAULT	unknown	FUN_006907f0	
 00290870	52	DEFAULT	unknown	FUN_00690870	
@@ -8684,15 +8684,15 @@ rva	size	source	callconv	name	signature
 002ce3b0	86	DEFAULT	unknown	FUN_006ce3b0	
 002ce410	1586	DEFAULT	unknown	FUN_006ce410	
 002cea50	1094	DEFAULT	unknown	FUN_006cea50	
-002ceea0	355	DEFAULT	unknown	FUN_006ceea0	
-002cf010	350	DEFAULT	unknown	FUN_006cf010	
-002cf170	83	DEFAULT	unknown	FUN_006cf170	
-002cf260	121	DEFAULT	unknown	FUN_006cf260	
-002cf2e0	214	DEFAULT	unknown	FUN_006cf2e0	
-002cf500	91	DEFAULT	unknown	FUN_006cf500	
-002cf560	158	DEFAULT	unknown	FUN_006cf560	
-002cf600	429	DEFAULT	unknown	FUN_006cf600	
-002cf7b0	1255	DEFAULT	unknown	FUN_006cf7b0	
+002ceea0	355	USER_DEFINED	__cdecl	TXF_Load	int __cdecl(char *name, void *dest, int flags, void *extra, int nbytes)
+002cf010	350	USER_DEFINED	__cdecl	TXF_Save	int __cdecl(char *name, void *orig, byte flags, void *extra, int nbytes)
+002cf170	83	USER_DEFINED	__thiscall	CBmpFlt_Fill	void __thiscall(float *color)
+002cf260	121	USER_DEFINED	__thiscall	CBmpFlt_Save	int __thiscall(char *name, byte flags, void *extra, int nbytes)
+002cf2e0	214	USER_DEFINED	__thiscall	CBmpFlt_Exposure	void __thiscall(float a, float b)
+002cf500	91	USER_DEFINED	__thiscall	CBmpFlt_Create	void __thiscall(int ancho, int alto)
+002cf560	158	USER_DEFINED	__thiscall	CBmpFlt_Load	int __thiscall(char *name, int flags, void *extra, int nbytes)
+002cf600	429	USER_DEFINED	__thiscall	CBmpFlt_Blend	void __thiscall(int x, int y, void *orig, int ox, int oy, int w, int h, int a, int b)
+002cf7b0	1255	USER_DEFINED	__thiscall	CBmpFlt_Resample	void __thiscall(void *orig, uint mask)
 002cfca0	359	DEFAULT	unknown	FUN_006cfca0	
 002cfe10	353	DEFAULT	unknown	FUN_006cfe10	
 002cff80	92	DEFAULT	unknown	FUN_006cff80	
@@ -9919,7 +9919,7 @@ rva	size	source	callconv	name	signature
 00314930	5	DEFAULT	unknown	thunk_FUN_00714fd0	
 00314940	5	DEFAULT	unknown	thunk_FUN_00715170	
 00314950	170	ANALYSIS	unknown	__alldiv	undefined(void)
-00314a00	679	DEFAULT	unknown	FUN_00714a00	
+00314a00	679	USER_DEFINED	__cdecl	Libm_ExpPd	void __cdecl(void)
 00314a30	22	ANALYSIS	unknown	__alloca_probe_16	undefined(void)
 00314a46	22	ANALYSIS	unknown	__alloca_probe_8	undefined(void)
 00314a5c	410	ANALYSIS	unknown	___isa_available_init	undefined(void)

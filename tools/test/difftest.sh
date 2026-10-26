@@ -29,7 +29,8 @@ run() {
 	local arg
 	arg="-PythonExecute:execfile($(python3 -I -c "print('+'.join('chr(%d)' % ord(c) for c in '$name.py'))"))"
 	printf '[general]\nhooks=%s\ntestmod=1\n' "$2" > "$ini"
-	rm -f "$result"
+	# files the scripts write, so the second run does not find those of the first
+	rm -f "$result" "$game"/sd*.txt "$game"/sd*.txf
 	# shellcheck disable=SC2086 # extra arguments of the scenario, word split on purpose
 	HEADLESS_TIMEOUT=${DIFFTEST_TIMEOUT:-90} WINEDLLOVERRIDES="dinput8=n,b" WINE_LOG="$out/wine-$tag.log" \
 		"$root/tools/test/wine.sh" Scrap.exe -fullscreen:0 ${extra[$name]} "$arg" &
@@ -71,5 +72,5 @@ for s in "${scenarios[@]}"; do
 	fi
 done
 grep -h 'hooks installed' "$out"/scrapdecomp-*-c.log | sort -u
-rm -f "$ini" "$game"/sd*.py "$game"/sd*.out "$game"/sd*.txt
+rm -f "$ini" "$game"/sd*.py "$game"/sd*.out "$game"/sd*.txt "$game"/sd*.txf
 exit $rc

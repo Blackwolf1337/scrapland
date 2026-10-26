@@ -1133,6 +1133,18 @@ SD_HOOK(CArchINI_ReadText, 0x2624b0, 29)
 SD_HOOK(CArchINI_LineText, 0x2624d0, 31)
 SD_HOOK(CArchINI_LineType, 0x2624f0, 20)
 
+/* src/game/engine3d/Engine/BmpFlt.c */
+SD_HOOK(TXF_Load, 0x2ceea0, 355)
+SD_HOOK(TXF_Save, 0x2cf010, 350)
+SD_HOOK(CBmpFlt_Fill, 0x2cf170, 83)
+SD_HOOK(CBmpFlt_Save, 0x2cf260, 121)
+SD_HOOK(CBmpFlt_Exposure, 0x2cf2e0, 214)
+SD_HOOK(CBmpFlt_Create, 0x2cf500, 91)
+SD_HOOK(CBmpFlt_Load, 0x2cf560, 158)
+SD_HOOK(CBmpFlt_Blend, 0x2cf600, 429)
+SD_HOOK(CBmpFlt_Resample, 0x2cf7b0, 1255)
+SD_HOOK(CBmpFlt_Pixel, 0x290730, 124)
+
 /* src/game/engine3d/Engine/TablaHash.c */
 SD_HOOK(CTablaHash_ctor, 0x2d06e0, 102)
 SD_HOOK(CTablaHash_dtor, 0x2d0750, 171)
