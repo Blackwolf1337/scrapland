@@ -56,11 +56,13 @@ void *Mem_Alloc(uint32_t size) {
 	return p;
 }
 
-void Mem_Free(void *p) {
+/* NULL, callers in the exe do p = Mem_Free(p) */
+void *Mem_Free(void *p) {
 	if (p) {
 		Mem_Count(1, (int)crt_msize(p));
 		crt_free(p);
 	}
+	return NULL;
 }
 
 void *operator_new(uint32_t size) {

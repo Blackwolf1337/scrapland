@@ -42,7 +42,7 @@ void operator_delete(void *p);
 void operator_delete_array(void *p);
 /* the engine's malloc with the same statistics (rva 0x1335a0) */
 void *Mem_Alloc(uint32_t size);
-void Mem_Free(void *p);	/* rva 0x133550 */
+void *Mem_Free(void *p);	/* NULL (rva 0x133550) */
 void *Mem_Realloc(void *p, uint32_t size);	/* rva 0x133690 */
 
 /* Global/StrUtils.cpp: copy with CHECK(dst && src && bytes_dst>0), always terminated (rva 0x1365c0) */

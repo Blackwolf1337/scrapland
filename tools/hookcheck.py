@@ -2,6 +2,8 @@
 # Static checks of the hooks against Scrap.exe, for mistakes the differential tests may not reach:
 #   ret     the stack bytes the C definition pops (calling convention, arguments) against the ret of the original
 #   calls   functions of src/hooks.inc and src/imports.inc the original calls but the C body never names
+#   eax     hooks the C version declares void although callers in the exe read eax after the call (the original
+#           left a pointer there that they use)
 # The C side comes from the preprocessed sources (build/compile_commands.json, cmake must have run), the original
 # from objdump -d of game/Bin/Scrap.exe. Output only for findings; "calls" has false positives (tables of
 # function pointers, calls the C version leaves out on purpose).
@@ -12,7 +14,7 @@ import collections, glob, json, os, re, shlex, subprocess, sys
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 work = os.path.join(root, 'build', 'hookcheck')
 os.makedirs(work, exist_ok=True)
-checks = sys.argv[1:] or ['ret', 'calls']
+checks = sys.argv[1:] or ['ret', 'calls', 'eax']
 
 hooks = re.findall(r'^SD_HOOK\((\w+), (0x[0-9a-f]+), (\d+)\)', open(os.path.join(root, 'src/hooks.inc')).read(), re.M)
 imports = dict((int(a, 16), n) for n, a in
@@ -82,6 +84,38 @@ def popped(name):
 	skip = 1 if '__thiscall' in ret else 2 if '__fastcall' in ret else 0 if '__stdcall' in ret else None
 	return 0 if skip is None else sum(argsize(p) for p in ps[skip:])
 
+# the instructions after each call of an address, for the eax check
+callers = collections.defaultdict(list)
+for i, a in enumerate(addrs):
+	m = re.match(r'call\s+0x([0-9a-f]+)$', code[a])
+	if m:
+		callers[int(m.group(1), 16) - 0x400000].append(i)
+
+def reads_eax(i):
+	# the first instruction after the call that touches eax: does it read it?
+	for k in range(i + 1, min(i + 10, len(addrs))):
+		x = code[addrs[k]]
+		m = re.match(r'(\w+)\s*(.*)', x)
+		op, args = m.group(1), m.group(2)
+		ops = [o.strip() for o in re.split(r',(?![^\[]*\])', args)] if args else []
+		if op in ('call', 'ret', 'jmp') or op.startswith('j'):
+			return False
+		if op == 'lahf':
+			return False
+		if not re.search(r'\b(eax|ax|al|ah)\b', args) or op in ('nop', 'xchg'):
+			continue
+		# writes that do not depend on the old value: or eax,-1, setcc al, imul eax,r,imm
+		if (op == 'or' and ops[1] in ('0xffffffff', '-1')) or op.startswith('set') or (op == 'imul' and len(ops) == 3):
+			return False
+		if op in ('xor', 'sub') and len(ops) == 2 and ops[0] == ops[1]:
+			return False
+		dst, srcs = (ops[0], ops[1:]) if ops else ('', [])
+		if op in ('mov', 'lea', 'movzx', 'movsx', 'pop', 'movd', 'setne', 'sete', 'cvttss2si', 'cvttsd2si') and \
+			re.match(r'(eax|ax|al)$', dst):
+			return any(re.search(r'\b(eax|ax|al|ah)\b', o) for o in srcs)
+		return True
+	return False
+
 def fullbody(name, seen):
 	seen.add(name)
 	b = bodies.get(name, '')
@@ -102,6 +136,10 @@ for n, a, sz in hooks:
 				rets.add(int(m.group(1), 16) if m.group(1) else 0)
 		if rets and rets != {popped(n)}:
 			print('ret   %-28s %s: C pops %d, the original %s' % (n, a, popped(n), sorted(rets)))
+	if 'eax' in checks and re.match(r'\s*(static\s+)?void\s*(__\w+\s*)?$', protos[n][0]):
+		users = ['%x' % (addrs[i] + 0x400000) for i in callers.get(int(a, 16), []) if reads_eax(i)]
+		if users:
+			print('eax   %-28s %s: void in C, %d callers read eax (%s)' % (n, a, len(users), ' '.join(users[:4])))
 	if 'calls' in checks:
 		b = fullbody(n, set())
 		missing = set()
