@@ -17,3 +17,6 @@ __pycache__/
 
 # editor
 /compile_commands.json
+
+# agent worktrees of Claude Code
+/.claude/

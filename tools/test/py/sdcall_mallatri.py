@@ -32,13 +32,21 @@ def mtnew():
 def mthead(m):
 	w = tpeek(m, 13)
 	return (w[1], w[2:8], w[8] != 0, w[9] != 0, w[10] != 0, w[11] != 0, w[12] != 0)
+# heap addresses differ between the runs: not in the names
+def mtfmt(args):
+	a = []
+	for x in args:
+		if type(x) == type(0) and x >= 0x1000000:
+			x = 'ptr'
+		a.append(x)
+	return fmt(tuple(a))
 def mtstep0(name, m, rva, sig, *args):
-	check(name + fmt(args), lambda m=m, rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig, m) + args), mthead(m)))
+	check(name + mtfmt(args), lambda m=m, rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig, m) + args), mthead(m)))
 def mtstep(name, m, rva, sig, *args):
-	check(name + fmt(args), lambda m=m, rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig, m) + args), mtget(m)))
+	check(name + mtfmt(args), lambda m=m, rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig, m) + args), mtget(m)))
 # for functions that return a pointer: whether it is the expected one
 def mtptr(name, m, rva, sig, want, *args):
-	check(name + fmt(args), lambda m=m, rva=rva, sig=sig, want=want, args=args: (apply(SDTest.Call, (rva, sig, m) + args)[0] == want, mtget(m)))
+	check(name + mtfmt(args), lambda m=m, rva=rva, sig=sig, want=want, args=args: (apply(SDTest.Call, (rva, sig, m) + args)[0] == want, mtget(m)))
 def mtfill(m, nv, ntv, nt):
 	for i in range(nv):
 		SDTest.Call(0x264270, 'tviiF', m, i, vec())

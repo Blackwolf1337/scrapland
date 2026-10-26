@@ -6439,7 +6439,7 @@ rva	size	source	callconv	name	signature
 00212490	58	DEFAULT	unknown	FUN_00612490	
 002124d0	56	DEFAULT	unknown	FUN_006124d0	
 00212510	84	DEFAULT	unknown	FUN_00612510	
-00212570	469	DEFAULT	unknown	FUN_00612570	
+00212570	469	USER_DEFINED	__thiscall	CListaVert_GetPos	float * __thiscall(float *out, uint i)
 00212770	57	DEFAULT	unknown	FUN_00612770	
 002127b0	271	DEFAULT	unknown	FUN_006127b0	
 002128c0	667	DEFAULT	unknown	FUN_006128c0	
@@ -7246,9 +7246,9 @@ rva	size	source	callconv	name	signature
 0024bb30	51	DEFAULT	unknown	FUN_0064bb30	
 0024bbb0	11	DEFAULT	unknown	FUN_0064bbb0	
 0024bbc0	57	DEFAULT	unknown	FUN_0064bbc0	
-0024bc00	57	DEFAULT	unknown	FUN_0064bc00	
+0024bc00	57	USER_DEFINED	__cdecl	Render_SetWorld	int __cdecl(void)
 0024bc40	732	DEFAULT	unknown	FUN_0064bc40	
-0024bf30	1422	DEFAULT	unknown	FUN_0064bf30	
+0024bf30	1422	USER_DEFINED	__cdecl	Render_SetMaterial	int __cdecl(void *mat, int pass)
 0024c4d0	6	DEFAULT	unknown	FUN_0064c4d0	
 0024c4e0	444	DEFAULT	unknown	FUN_0064c4e0	
 0024c6a0	86	DEFAULT	unknown	FUN_0064c6a0	
@@ -7554,44 +7554,44 @@ rva	size	source	callconv	name	signature
 002624b0	29	USER_DEFINED	__thiscall	CArchINI_ReadText	int __thiscall(char *sect, char *key, char *dest, int size)
 002624d0	31	USER_DEFINED	__thiscall	CArchINI_LineText	char * __thiscall(int idx)
 002624f0	20	USER_DEFINED	__thiscall	CArchINI_LineType	int __thiscall(int idx)
-00262510	220	DEFAULT	unknown	FUN_00662510	
-002625f0	219	DEFAULT	unknown	FUN_006625f0	
-002626d0	153	DEFAULT	unknown	FUN_006626d0	
-00262790	22	DEFAULT	unknown	FUN_00662790	
-002627b0	47	ANALYSIS	__thiscall	CMallaTri::vf00	undefined __thiscall(void)
+00262510	220	USER_DEFINED	__thiscall	CMallaTri_ctorCopy	void * __thiscall(void *orig)
+002625f0	219	USER_DEFINED	__thiscall	CMallaTri_ctorD3D	void * __thiscall(void *src, byte all)
+002626d0	153	USER_DEFINED	__fastcall	CMallaTri_ctor	void * __fastcall(void *self)
+00262790	22	USER_DEFINED	__fastcall	CMallaTri_dtor	void __fastcall(void *self)
+002627b0	47	USER_DEFINED	__thiscall	CMallaTri_Delete	void * __thiscall(byte flags)
 002627e0	3	ANALYSIS	__thiscall	CMallaTri::vf04	undefined __thiscall(void)
-002627f0	46	DEFAULT	unknown	FUN_006627f0	
+002627f0	46	USER_DEFINED	__thiscall	CMallaTri_GetBox	void __thiscall(float *out, byte recalc)
 00262820	3	ANALYSIS	__thiscall	CMallaTri::vf03	undefined __thiscall(void)
-00262830	5	ANALYSIS	__thiscall	CMallaTri::vf06	undefined __thiscall(void)
-00262840	917	ANALYSIS	__thiscall	CMallaTri::vf02	undefined __thiscall(void)
-00262be0	5	ANALYSIS	__thiscall	CMallaTri::vf05	undefined __thiscall(void)
+00262830	5	USER_DEFINED	__thiscall	CMallaTri_Read	byte __thiscall(void *f, void *ctx)
+00262840	917	USER_DEFINED	__thiscall	CMallaTri_Draw	void __thiscall(void *dev, int unused)
+00262be0	5	USER_DEFINED	__thiscall	CMallaTri_Write	byte __thiscall(void *f, void *ctx)
 00262bf0	3	ANALYSIS	__thiscall	CMallaTri::vf01	undefined __thiscall(void)
-00262c00	1213	DEFAULT	unknown	FUN_00662c00	
-002630c0	914	DEFAULT	unknown	FUN_006630c0	
-00263460	113	DEFAULT	unknown	FUN_00663460	
-00263510	618	DEFAULT	unknown	FUN_00663510	
-002637e0	152	DEFAULT	unknown	FUN_006637e0	
-00263880	246	DEFAULT	unknown	FUN_00663880	
-00263980	275	DEFAULT	unknown	FUN_00663980	
-00263aa0	248	DEFAULT	unknown	FUN_00663aa0	
-00263c00	235	DEFAULT	unknown	FUN_00663c00	
-00263cf0	325	DEFAULT	unknown	FUN_00663cf0	
-00263e40	205	DEFAULT	unknown	FUN_00663e40	
-00263f10	104	DEFAULT	unknown	FUN_00663f10	
-00263f80	100	DEFAULT	unknown	FUN_00663f80	
-00263ff0	100	DEFAULT	unknown	FUN_00663ff0	
-00264060	159	DEFAULT	unknown	FUN_00664060	
-00264100	120	DEFAULT	unknown	FUN_00664100	
-00264180	119	DEFAULT	unknown	FUN_00664180	
-00264200	101	DEFAULT	unknown	FUN_00664200	
-00264270	109	DEFAULT	unknown	FUN_00664270	
-002642e0	216	DEFAULT	unknown	FUN_006642e0	
-002643c0	96	DEFAULT	unknown	FUN_006643c0	
-00264420	110	DEFAULT	unknown	FUN_00664420	
-00264490	210	DEFAULT	unknown	FUN_00664490	
-00264580	267	DEFAULT	unknown	FUN_00664580	
-002646c0	91	DEFAULT	unknown	FUN_006646c0	
-00264720	820	DEFAULT	unknown	FUN_00664720	
+00262c00	1213	USER_DEFINED	__thiscall	CMallaTri_AddD3D	void __thiscall(void *src, byte all)
+002630c0	914	USER_DEFINED	__thiscall	CMallaTri_Add	void __thiscall(void *orig, uint mask, byte want)
+00263460	113	USER_DEFINED	__fastcall	CMallaTri_CreateTVert	void __fastcall(void *self)
+00263510	618	USER_DEFINED	__thiscall	CMallaTri_AddTriVerts	void __thiscall(float *a, float *b, float *c, void *mat, byte tvert, uint flags)
+002637e0	152	USER_DEFINED	__thiscall	CMallaTri_RemoveTri	void __thiscall(uint i)
+00263880	246	USER_DEFINED	__thiscall	CMallaTri_CalcBox	void __thiscall(float *out, byte first)
+00263980	275	USER_DEFINED	__thiscall	CMallaTri_GetTriVert	void __thiscall(float *out, uint tri, uint vert)
+00263aa0	248	USER_DEFINED	__thiscall	CMallaTri_GetTriVert2	void __thiscall(float *out, uint tri, uint vert)
+00263c00	235	USER_DEFINED	__thiscall	CMallaTri_SetNumTVert	void __thiscall(int n, byte realloc)
+00263cf0	325	USER_DEFINED	__thiscall	CMallaTri_SetNumTri	void __thiscall(int n, byte realloc)
+00263e40	205	USER_DEFINED	__thiscall	CMallaTri_SetNumVert	void __thiscall(int n, byte realloc)
+00263f10	104	USER_DEFINED	__fastcall	CMallaTri_AllocSkin	void * __fastcall(void *self)
+00263f80	100	USER_DEFINED	__thiscall	CMallaTri_SetTriFlags	void __thiscall(uint i, uint flags)
+00263ff0	100	USER_DEFINED	__thiscall	CMallaTri_SetTriMat	void __thiscall(uint i, void *mat)
+00264060	159	USER_DEFINED	__thiscall	CMallaTri_SetTriNormals	void __thiscall(uint i, float *a, float *b, float *c)
+00264100	120	USER_DEFINED	__thiscall	CMallaTri_SetTriTVerts	void __thiscall(uint i, int a, int b, int c)
+00264180	119	USER_DEFINED	__thiscall	CMallaTri_SetTriVerts	void __thiscall(uint i, int a, int b, int c)
+00264200	101	USER_DEFINED	__thiscall	CMallaTri_SetTVert	void __thiscall(uint i, float *uv)
+00264270	109	USER_DEFINED	__thiscall	CMallaTri_SetVert	void __thiscall(uint i, float *v)
+002642e0	216	USER_DEFINED	__fastcall	CMallaTri_Clear	void __fastcall(void *self)
+002643c0	96	USER_DEFINED	__thiscall	CMallaTri_GetTri	void * __thiscall(uint i)
+00264420	110	USER_DEFINED	__thiscall	CMallaTri_GetVert	float * __thiscall(float *out, uint i)
+00264490	210	USER_DEFINED	__thiscall	CListaVert_GetNormal	float * __thiscall(float *out, uint i)
+00264580	267	USER_DEFINED	__thiscall	CListaVert_GetUV	float * __thiscall(float *out, uint i)
+002646c0	91	USER_DEFINED	__thiscall	CMallaTri_GetSkin	void * __thiscall(uint i)
+00264720	820	USER_DEFINED	__thiscall	CMallaTri_Transform	void __thiscall(float *m)
 00264a60	285	USER_DEFINED	__cdecl	Proc_Note	int __cdecl(char *dest, char *src, void *tipo, int size)
 00264c00	148	USER_DEFINED	__cdecl	Proc_TypeLookup	int __cdecl(char *dest, char *name, void *data, int size)
 00264ca0	1152	USER_DEFINED	__cdecl	Proc_ReadField	int __cdecl(char **ap, char **psrc, char **pfmt)
