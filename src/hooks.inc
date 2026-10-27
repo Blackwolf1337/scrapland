@@ -5193,3 +5193,11 @@ SD_HOOK(CNodesWorldSup_BoxCells, 0x0bb4d0, 162)
 SD_HOOK(NWVisList_RemoveHead, 0x0bb580, 68)
 SD_HOOK(NWVisList_Release, 0x0bb5d0, 104)
 SD_HOOK(CNodesWorldSup_Unreachable, 0x0bb640, 1070)
+
+/* module agent: Entities/Char/Type part 2+WalkCharControl (hooks below this line) */
+
+/* module agent: Logic part 1 (AlarmStatus..Domination) (hooks below this line) */
+
+/* module agent: Scorer part 2 (Scorer+ScraplandScorer+Slider+SpecialAction) (hooks below this line) */
+
+/* module agent: AI/IVehicle.cpp (hooks below this line) */

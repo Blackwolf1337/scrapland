@@ -698,3 +698,11 @@ SD_IMPORT(cWalkCharControl_Update, 0x0d0410)
 SD_IMPORT(cActCtrl_PlayNew, 0x0631c0)
 SD_IMPORT(cWalkCharEntity_SetFalling, 0x0d4c60)
 SD_IMPORT(CNodesWorld2D_Generate, 0x0b2f60)
+
+/* module agent: Entities/Char/Type part 2+WalkCharControl (imports below this line) */
+
+/* module agent: Logic part 1 (AlarmStatus..Domination) (imports below this line) */
+
+/* module agent: Scorer part 2 (Scorer+ScraplandScorer+Slider+SpecialAction) (imports below this line) */
+
+/* module agent: AI/IVehicle.cpp (imports below this line) */
