@@ -21,36 +21,37 @@
 #include "scrap/logic.h"
 #include "scrap/sound.h"
 #include "scrap/walkcharcontrol.h"
+#include "scrap/walkcharentity.h"
 #include "scrap/world.h"
 
 /* the fields of the characters (cWalkCharEntity) the types use */
-#define WChar_Cam(e) (*(cEntity **)((byte *)(e) + 0xf0))		/* the follow camera of a player */
-#define WChar_Sounds(e) ((cSndInterface *)((byte *)(e) + 0x144))
+#define WChar_Cam(e) (WChar(e)->obj.cam)		/* the follow camera of a player */
+#define WChar_Sounds(e) (&WChar(e)->obj.snd)
 #define WChar_FX(e) (*(void **)((byte *)(e) + 0x224))			/* the embedded effect */
-#define WChar_MaxLife(e) (*(int *)((byte *)(e) + 0x22c))
-#define WChar_Life(e) (*(int *)((byte *)(e) + 0x238))
-#define WChar_God(e) (*(byte *)((byte *)(e) + 0x23c))			/* no damage */
-#define WChar_Attack(e) ((void *)((byte *)(e) + 0x298))		/* who hit it last (cVehicleAttack) */
-#define WChar_Shadow(e) ((void *)((byte *)(e) + 0x39c))		/* cPrimitive */
-#define WChar_B381(e) (*(byte *)((byte *)(e) + 0x381))		/* cleared by the flash */
-#define WChar_OwnerSlot(e) (*(int *)((byte *)(e) + 0x424))		/* "UsrControl", -1 for an AI */
-#define WChar_Ang(e) ((vec3_t *)((byte *)(e) + 0x428))
-#define WChar_FallVel(e) (*(vec3_t *)((byte *)(e) + 0x480))		/* the velocity of the fall */
-#define WChar_SlideTime(e) (*(float *)((byte *)(e) + 0x460))		/* "SlidingAndFallingTime" */
-#define WChar_Falling(e) (*(byte *)((byte *)(e) + 0x464))
-#define WChar_DisplAng(e) (*(float *)((byte *)(e) + 0x468))
-#define WChar_EnergyUsed(e) (*(float *)((byte *)(e) + 0x498))		/* 1 minus the weapon energy */
-#define WChar_ViewLock(e) (*(byte *)((byte *)(e) + 0x4d4))		/* the actions set the view angles */
-#define WChar_EnergyBarDecr(e) (*(float *)((byte *)(e) + 0x4b0))	/* the energy an action needs */
-#define WChar_Money(e) (*(int *)((byte *)(e) + 0x4cc))		/* "Money" */
-#define WChar_MoneyReward(e) (*(int *)((byte *)(e) + 0x4d0))		/* "MoneyReward" */
-#define WChar_Control(e) ((cWalkCharControl *)((byte *)(e) + 0x4ec))	/* Entities/Char/WalkCharControl.cpp */
-#define WChar_ControlF4f8(e) (*(float *)((byte *)(e) + 0x4f8))	/* the walk of the control (x, z) */
-#define WChar_ControlF4fc(e) (*(float *)((byte *)(e) + 0x4fc))
-#define WChar_ActionPress(e) (*(byte *)((byte *)(e) + 0x504))		/* the action button is down */
-#define WChar_ListenNode(e) ((Nto1Node *)((byte *)(e) + 0x520))	/* to the character it listens to */
+#define WChar_MaxLife(e) (WChar(e)->maxLife)
+#define WChar_Life(e) (WChar(e)->life)
+#define WChar_God(e) (WChar(e)->god)			/* no damage */
+#define WChar_Attack(e) ((void *)WChar(e)->attack)		/* who hit it last (cVehicleAttack) */
+#define WChar_Shadow(e) ((void *)&WChar(e)->prim)		/* cPrimitive */
+#define WChar_B381(e) (WChar(e)->arrow.canUse)		/* "ArrowCanUse", cleared by the flash */
+#define WChar_OwnerSlot(e) (WChar(e)->ownerSlot)		/* "UsrControl", -1 for an AI */
+#define WChar_Ang(e) (&WChar(e)->view)
+#define WChar_FallVel(e) (WChar(e)->fallVel)		/* the velocity of the fall */
+#define WChar_SlideTime(e) (WChar(e)->slideTime)		/* "SlidingAndFallingTime" */
+#define WChar_Falling(e) (WChar(e)->falling)
+#define WChar_DisplAng(e) (WChar(e)->displAng)
+#define WChar_EnergyUsed(e) (WChar(e)->energyUsed)		/* 1 minus the weapon energy */
+#define WChar_ViewLock(e) (WChar(e)->viewLock)		/* the actions set the view angles */
+#define WChar_EnergyBarDecr(e) (WChar(e)->energyBarDecr)	/* the energy an action needs */
+#define WChar_Money(e) (WChar(e)->money)		/* "Money" */
+#define WChar_MoneyReward(e) (WChar(e)->moneyReward)		/* "MoneyReward" */
+#define WChar_Control(e) (&WChar(e)->control)	/* Entities/Char/WalkCharControl.cpp */
+#define WChar_ControlF4f8(e) (WChar(e)->control.walk)	/* the walk of the control (x, z) */
+#define WChar_ControlF4fc(e) (WChar(e)->control.strafe)
+#define WChar_ActionPress(e) (WChar(e)->control.act)		/* the action button is down */
+#define WChar_ListenNode(e) (&WChar(e)->listen)	/* to the character it listens to */
 #define WChar_Listen(e) (*(cEntity **)((byte *)(e) + 0x528))		/* its target: the mayor, the police */
-#define WChar_ListenOn(e) (*(byte *)((byte *)(e) + 0x530))		/* the player still talks to it */
+#define WChar_ListenOn(e) (WChar(e)->listenOn)		/* the player still talks to it */
 #define WChar_Victim(e) (*(cEntity **)((byte *)(e) + 0x53c))		/* the character the banker robs */
 
 /* the slots of the character vtables the types call (after the ones of cObjEntityVtbl) */
@@ -340,7 +341,7 @@ static inline const char *ChType_ClassName(cEntity *e) {
 	return *(const char **)(ChType_ActClass(ChType_ActCtrl(e)) + 4);
 }
 
-#define WChar_DisplOn(e) (*(byte *)((byte *)(e) + 0x48c))		/* the displacement angle 0x468 applies */
+#define WChar_DisplOn(e) (WChar(e)->disableControl)		/* "DisableControl": the slot only turns the body */
 /* a flag of the AI controller of the world (aiCtrl + 0x31): with the alarm on the sentinels call no others */
 #define World_AlarmChase(w) (*(byte *)((byte *)(w) + 0x21f9))
 

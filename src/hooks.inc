@@ -5531,5 +5531,64 @@ SD_HOOK(cSpecialActionScorer_DrawCannon, 0x178a60, 642)
 /* module agent: Logic part 2 (Enemies..GenCharGroup) (hooks below this line) */
 
 /* module agent: Entities/Char/WalkCharEntity.cpp (hooks below this line) */
+SD_HOOK(cWalkCharEntity_Touch, 0x0d1a60, 256)			/* vf11 */
+SD_HOOK(cWalkCharEntity_Walk, 0x0d1b60, 1917)
+SD_HOOK(cWalkCharEntity_Turn, 0x0d22e0, 211)			/* vf58 */
+SD_HOOK(cWalkCharEntity_PlayWalk, 0x0d23c0, 147)
+SD_HOOK(cWalkCharEntity_UpdateHitFlash, 0x0d2460, 243)
+SD_HOOK(cWalkCharEntity_EnableAI, 0x0d2560, 1426)		/* vf56 */
+SD_HOOK(cWalkCharEntity_VarF, 0x0d2b00, 1393)			/* vf17 */
+SD_HOOK(cWalkCharEntity_Fall, 0x0d3080, 643)			/* vf60 */
+SD_HOOK(cWalkCharEntity_Fly, 0x0d3310, 1045)			/* vf64 */
+SD_HOOK(cWithLifeEntity_GetActCtrl, 0x0d3730, 16)		/* vf53 */
+SD_HOOK(cWalkCharEntity_GetEnergyFrac, 0x0d3740, 47)
+SD_HOOK(cWalkCharEntity_GetRenderAng, 0x0d3770, 31)		/* vf27 */
+SD_HOOK(cWalkCharEntity_GetSndAng, 0x0d3790, 92)		/* vf28 */
+SD_HOOK(cWalkCharEntity_RelaxName, 0x0d37f0, 74)
+SD_HOOK(cWalkCharEntity_GetCamera, 0x0d3840, 93)		/* vf39 */
+SD_HOOK(cWalkCharEntity_GetClassName, 0x0d38a0, 16)		/* vf04 */
+SD_HOOK(cWalkCharEntity_GetOwnerSlot, 0x0d38b0, 16)
+SD_HOOK(cWalkCharEntity_GetRadius, 0x0d38c0, 27)		/* vf40 */
+SD_HOOK(cWalkCharEntity_GetBatteries, 0x0d38e0, 21)
+SD_HOOK(cWalkCharEntity_VarI, 0x0d3900, 1463)			/* vf16 */
+SD_HOOK(cWalkCharEntity_IsType, 0x0d3ec0, 80)			/* vf05 */
+SD_HOOK(cWithLifeEntity_TestLine, 0x0d3f10, 15)			/* vf09 */
+SD_HOOK(cObjEntity_Vf43, 0x0d3f20, 16)
+SD_HOOK(cObjEntity_Vf41, 0x0d3f30, 16)
+SD_HOOK(cWalkCharEntity_Tick, 0x0d3f40, 324)			/* vf23 */
+SD_HOOK(cWalkCharEntity_UnlinkListen, 0x0d4090, 84)		/* vf48 */
+SD_HOOK(Nto1Node_UnlinkChecked, 0x0d4170, 63)
+SD_HOOK(cWalkCharEntity_Idle, 0x0d41b0, 1899)			/* vf59 */
+SD_HOOK(cWalkCharEntity_UpdateSelect, 0x0d4920, 565)		/* vf57 */
+SD_HOOK(cWalkCharEntity_SetActive, 0x0d4b60, 63)		/* vf08 */
+SD_HOOK(cWalkCharEntity_SetAng, 0x0d4ba0, 32)			/* vf33 */
+SD_HOOK(cWalkCharEntity_SetEnergy, 0x0d4bc0, 54)
+SD_HOOK(cWalkCharEntity_SetEnergyUsed, 0x0d4c00, 43)
+SD_HOOK(cWalkCharEntity_SetEmbeddedFX, 0x0d4c30, 33)		/* vf15 */
+SD_HOOK(cWalkCharEntity_SetFalling, 0x0d4c60, 395)
+SD_HOOK(cWithLifeEntity_SetMass, 0x0d4df0, 63)			/* vf51 */
+SD_HOOK(cWalkCharEntity_SetModel, 0x0d4e30, 275)		/* vf12 */
+SD_HOOK(cWalkCharEntity_UpdateSlotRate, 0x0d4f50, 141)
+SD_HOOK(cWalkCharEntity_SetPush, 0x0d4fe0, 71)
+SD_HOOK(cWalkCharEntity_ApplyPush, 0x0d5030, 130)
+SD_HOOK(cWalkCharEntity_SetUsrControl, 0x0d50c0, 145)
+SD_HOOK(cWalkCharEntity_SetVel, 0x0d5160, 54)			/* vf35 */
+SD_HOOK(cWalkCharEntity_SetViewAng, 0x0d51a0, 149)		/* vf67 */
+SD_HOOK(cWalkCharEntity_SetViewFrom, 0x0d5240, 103)
+SD_HOOK(cWalkCharEntity_SetYModelDisp, 0x0d52b0, 74)		/* vf68 */
+SD_HOOK(cWalkCharEntity_Accel, 0x0d5300, 584)			/* vf61 */
+SD_HOOK(cWalkCharEntity_Update, 0x0d5550, 604)			/* vf00 */
+SD_HOOK(cWalkCharEntity_FlySound, 0x0d57b0, 206)		/* vf65 */
+SD_HOOK(cWalkCharEntity_WalkSound, 0x0d5880, 189)		/* vf66 */
+SD_HOOK(cWithLifeEntity_TestSphere, 0x0d5940, 38)		/* vf10 */
+SD_HOOK(cWalkCharEntity_VarS, 0x0d5970, 624)			/* vf18 */
+SD_HOOK(cObjEntity_Vf42, 0x0d5be0, 16)
+SD_HOOK(cWalkCharEntity_VarV, 0x0d5bf0, 566)			/* vf19 */
+SD_HOOK(cWalkCharEntity_WalkAnim, 0x0d5e30, 2346)		/* vf62 */
+SD_HOOK(cWalkCharEntity_IsMoveAnim, 0x0d6780, 117)
+SD_HOOK(cWalkCharEntity_IsBackOrMoveAnim, 0x0d6800, 62)
+SD_HOOK(cWalkCharEntity_IsAlarm, 0x0d6840, 68)
+SD_HOOK(cWalkCharEntity_IsStrafeAnim, 0x0d6890, 84)
+SD_HOOK(cEmbeddedFX_dtor, 0x0d68f0, 16)
 
 /* module agent: Scorer part 3 (Gradient+Sprite+Tab) (hooks below this line) */

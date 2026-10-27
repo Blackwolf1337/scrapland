@@ -7,8 +7,9 @@
  * The vtable of cEmbeddedFX (rva 0x3b08a0): 0 deleting destructor, 1 Reset (after the constructor, returns 1),
  * 2 Release (the particle nodes let go before the delete), 3 Update (each frame, dt), 4 Tick (each frame, only
  * the head has one), 5 Stop (keep: 0 the particles and trails cleared).
- * The constructors (rva 0xd6930..0xd6fe0), the base destructor (rva 0xd68f0) and the destructor of
- * cEmbeddedFXBankDirector (rva 0xd6ff0, inlined in its vf00) are in the exe.
+ * The constructors (rva 0xd6930..0xd6fe0) and the destructor of
+ * cEmbeddedFXBankDirector (rva 0xd6ff0, inlined in its vf00) are in the exe, the base destructor (rva 0xd68f0) in
+ * EmbeddedFXChar.c.
  */
 #ifndef SCRAP_EMBEDDEDFXCHAR_H
 #define SCRAP_EMBEDDEDFXCHAR_H
