@@ -331,9 +331,12 @@ if vmonode:
 vmoiscar = 0
 if vmocar:
 	vmoiscar = SDTest.Call(vmoi(vmoi(vmocar) + 0x14) - 0x400000, 'tbis', vmocar, 'Car')[0]
-if not vmoiscar:
+vmohasmodel = 0
+if vmoiscar:
+	vmohasmodel = SDTest.Call(0x210da0, 'tbi', vmocar + 0xb8)[0]
+if not vmohasmodel:
 	vmocar = 0
-check('VMO car', lambda: (vmocar != 0, vmoiscar))
+check('VMO car', lambda: (vmocar != 0, vmoiscar, vmohasmodel))
 if vmocar:
 	vmoms = vmocar + 0x720
 	check('car motors', lambda: (vmoi(vmoms) - 0x400000, vmoi(vmoms + 4) == vmocar))

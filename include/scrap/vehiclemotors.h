@@ -105,19 +105,18 @@ SD_SIZE(cVehicleMotors, 0xc8);
 /* the vehicle fields the motors read */
 #define VM_FIELD(e, type, off) (*(type *)((byte *)(e) + (off)))
 #define VM_Timer(e) ((cTimer *)((byte *)(e) + 0x110))
-#define VM_Thrust(e) VM_FIELD(e, float, 0x4b0)		/* -1..1 */
+#define VM_Thrust(e) VM_FIELD(e, float, 0x4b0)		/* negative backwards */
 #define VM_F490(e) VM_FIELD(e, float, 0x490)
 #define VM_F494(e) VM_FIELD(e, float, 0x494)
 #define VM_F4bc(e) VM_FIELD(e, float, 0x4bc)
 #define VM_F4c4(e) VM_FIELD(e, float, 0x4c4)
 #define VM_F4c8(e) VM_FIELD(e, float, 0x4c8)
 #define VM_LocalVel(e) VM_FIELD(e, vec3_t, 0x4e4)	/* z the forward speed */
-#define VM_Hidden(e) VM_FIELD(e, byte, 0x588)
-#define VM_Team(e) ((void *)((byte *)(e) + 0x314))
+#define VM_Hidden(e) VM_FIELD(e, byte, 0x588)		/* no exhaust effects */
+#define VM_Team(e) ((void *)((byte *)(e) + 0x314))	/* for Vehicle_TeamColor */
 
-/* the emit positions of the Calima particles of all motors */
+/* the emit positions of the Calima particles of all motors (8) */
 #define g_CalimaPos ((vec3_t *)Game_Ptr(0x4482b8))
-#define VM_CALIMA_POS 8
 
 /* the engine variables */
 #define g_EnginePathFmt GAME_DATA(const char *, 0x4482b0)		/* EnginePathFmt */
@@ -141,7 +140,8 @@ SD_SIZE(cVehicleMotors, 0xc8);
 
 /* VehicleEntity.cpp */
 cVehicleMotor *__thiscall cVehicleMotor_ctor(cVehicleMotor *self);
-/* ObjEntity.cpp (rva 0xf6b20): the color of the team at +0x74 of the team info (0..3, else white) */
+/* rva 0xf6b20 (Entities/ObjEntity range): the trail color of the team at +0x74 of the team info (0..3, else
+ * white) */
 uint32_t __thiscall Vehicle_TeamColor(void *team);
 
 /* VehicleMotors.cpp */
