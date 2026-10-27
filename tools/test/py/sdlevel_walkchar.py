@@ -1,12 +1,13 @@
 # game Entities/Char/WalkCharEntity.c, the rest of WalkCharEntity.cpp (execfile'd by sdlevel.py, Python 1.5.2).
-# A WalkChar of our own made by cWorld_CreateEntity far above the player (rand seeded), the coin model on it, and a
-# fake action controller in calloc memory: the class is the one of the player (only read), the action of layer 0 a
-# fake one with the fields set by hand, the layers off (the action names are "", nothing is active). So no action is
-# played (an action needs the model of its class), and the falling state never changes (the floor test far above
-# the map finds nothing, falling is set before). The read-only helpers also on Player0. The sound item 0 of our
-# entity is a fake one while the loop sounds are tested. Not called: the AI made by EnableAI, the Update (its
-# WithLife part ticks the slots by the real time), the model part of SetModel (the coin has no DC_Floor), SetFalling
-# with a change and the walk, run, back and strafe actions (they play actions), SetEmbeddedFX (it loads effects).
+# A WalkChar of our own made by cWorld_CreateEntity above the atmosphere limit (rand seeded), the coin model on it,
+# and a fake action controller in calloc memory: the class a copy of the one of the player (its actions shared, CanFly
+# set so that SetFalling changes nothing), the action of layer 0 a fake one with the fields set by hand, the layers
+# off (the action names are "", nothing is active). So no action is played (an action needs the model of its class).
+# The walk of the class without CanFly comes last: its floor test far above the map must find nothing. The read-only
+# helpers also on Player0. The sound item 0 of our entity is a fake one while the loop sounds are tested. Not called:
+# the AI made by EnableAI, the Update (its WithLife part ticks the slots by the real time), the model part of
+# SetModel (the coin has no DC_Floor), SetFalling with a change and the walk, run, back and strafe actions (they play
+# actions), SetEmbeddedFX (it loads effects).
 def wcei(a):
 	return SDTest.Peek(a, '@i')
 def wceb(a):
@@ -166,8 +167,14 @@ wcefc = 0
 if wcew and wcecls:
 	wcefc = wcez(0x7c)
 	wcefa = wcez(0x80)
+	# a copy of the class (0x20c bytes, its actions shared): CanFly set, SetFalling then changes nothing
+	wcecc = wcez(0x20c)
+	SDTest.Call(0x3197d0, 'iiii', wcecc, wcecls, 0x20c)
+	def wcecanfly(on):
+		wcepokeb(wcecc + 0x186, on)
+	wcecanfly(1)
 	wcepoke(wcefc + 4, wcew)
-	wcepoke(wcefc + 8, wcecls)
+	wcepoke(wcefc + 8, wcecc)
 	wcepoke(wcefc + 0x14, wcefa)
 	wcepoke(wcew + 0x234, wcefc)
 	# the action: turn speed and maximum, root motion, walk, hover, move type, look at, look y, x, head node, priority
@@ -203,9 +210,11 @@ if wcew and wcecls:
 	check('WCE Touch Player0', lambda: (wceset(wcew + 0xd4, (1.0, 2.0, 3.0)), SDTest.Call(0x0d1a60, 'tviiii', wcew,
 		wceplayer, 0, 0), wcefl(wcew + 0xd4, 3), wcebytes(wceplayer, (0x48,))))
 	# Turn: the view by the control
-	for wcev in ((0.5, 0.25, 0.0, 0.1), (0.0, 3.0, 0.5, 1.0), (0.0, -3.0, -0.5, 1.0), (-1.0, 0.1, 1.0, 0.05)):
-		check('WCE Turn %s' % fmt(wcev), lambda v=wcev: (wceset(wcew + 0x4ec, (v[0], v[1])), wceset(wcew + 0x428,
-			(v[2],)), SDTest.Call(0x0d22e0, 'tvif', wcew, v[3]), wcefl(wcew + 0x428, 6)))
+	for wcev in ((0.5, 0.25, 0.0, 0.1, 1), (0.0, 3.0, 0.5, 1.0, 1), (0.0, -3.0, -0.5, 1.0, 1), (-1.0, 0.1, 1.0, 0.05, 1),
+			(0.0, 3.0, 0.5, 1.0, 0), (0.0, -3.0, -0.5, 1.0, 0), (0.25, 0.2, 0.0, 0.5, 0)):
+		check('WCE Turn %s' % fmt(wcev), lambda v=wcev: (wcecanfly(v[4]), wceset(wcew + 0x4ec, (v[0], v[1])),
+			wceset(wcew + 0x428, (v[2],)), SDTest.Call(0x0d22e0, 'tvif', wcew, v[3]), wcefl(wcew + 0x428, 6)))
+	wcecanfly(1)
 	wceset(wcew + 0x4ec, (0.0, 0.0))
 	# Accel: walk, strafe, view y, velocity, dt
 	for wcev in ((0.1, 0.1, 0.0, (0.0, 0.0, 0.0), 0.1), (1.0, 0.0, 0.5, (0.0, 0.0, 0.0), 0.1),
@@ -228,9 +237,9 @@ if wcew and wcecls:
 	wceset(wcew + 0x4f8, (0.0, 0.0, 0.0))
 	wceset(wcew + 0x428, (0.0, 0.0, 0.0))
 	wceact((2.0, 0.5, 0, 1, 0, 1, 0.0, 0.0, 0.0, 0, 3))
-	# Fall: falling, velocity y, the step of the walk (moved2), move type, dt; a floor test only while falling
+	# Fall: falling, velocity y, the step of the walk (moved2), move type, dt (CanFly: no change of the falling state)
 	for wcev in ((1, 5.0, 1000.0, 1, 0.05), (1, -50.0, 1000.0, 1, 0.05), (1, 20000.0, 1.0, 0, 0.5),
-			(0, 0.0, 0.0, 0, 0.1), (0, -3.0, 0.001, 1, 0.1)):
+			(0, 0.0, 0.0, 0, 0.1), (0, -3.0, 0.001, 1, 0.1), (0, -3.0, 1000.0, 1, 0.1), (0, 0.0, 1000.0, 0, 0.1)):
 		check('WCE Fall %s' % fmt(wcev), lambda v=wcev: (wcepokeb(wcew + 0x464, v[0]), wceset(wcew + 0xd4, (1.0, v[1],
 			2.0)), wceset(wcew + 0x3f8, (v[2],)), wcepoke(wcefa + 0x4c, v[3]), SDTest.Call(0x0d3080, 'tvif', wcew,
 			v[4]), wcef(wcew)))
@@ -368,16 +377,21 @@ if wcew and wcecls:
 	wcepoke(wcew + 0x14c, wcesn[1])
 	wcefree(wcesa)
 	wcefree(wcesi)
-	# the walk of a slot, falling far above the map: walk, strafe, hRot, vRot, push, dt
+	# the walk of a slot far above the map (the class flies): walk, strafe, hRot, vRot, push, dt
 	wceset(wcew + 0x28, wcesp)
 	wceset(wcew + 0xd4, (0.0, 0.0, 0.0))
+	def wcewalk(v):
+		wcepokeb(wcew + 0x464, 1)
+		wceset(wcew + 0x4ec, (v[2], v[3], 9.0, v[0], v[1]))
+		if v[4]:
+			SDTest.Call(0x0d4fe0, 'tbiF', wcew, v[4])
+		SDTest.Call(0x0d1b60, 'tvif', wcew, v[5])
+		return (wcef(wcew), wcefl(wcew + 0x460, 1), wcei(wcew + 0x3f0) != 0, wcefl(wcew + 0x498, 1),
+			wcebytes(wcew, (0x504, 0x505, 0x506, 0x507, 0x508, 0x509)))
 	for wcev in ((0.0, 0.0, 0.0, 0.0, None, 0.05), (1.0, 0.5, 0.25, -0.1, None, 0.05),
 			(0.0, 0.0, 0.0, 0.0, (20000.0, 0.0, 0.0), 0.001), (0.0, 0.0, 0.0, 0.0, (0.0, 0.0, 0.0), 0.05),
 			(-1.0, 0.0, 0.0, 0.0, None, 0.1)):
-		check('WCE Walk %s' % fmt(wcev[:4]), lambda v=wcev: (wcepokeb(wcew + 0x464, 1), wceset(wcew + 0x4ec, (v[2],
-			v[3], 9.0, v[0], v[1])), (v[4] and SDTest.Call(0x0d4fe0, 'tbiF', wcew, v[4])[0]), SDTest.Call(0x0d1b60,
-			'tvif', wcew, v[5]), wcef(wcew), wcefl(wcew + 0x460, 1), wcei(wcew + 0x3f0) != 0, wcefl(wcew + 0x498, 1),
-			wcebytes(wcew, (0x504, 0x505, 0x506, 0x507, 0x508, 0x509))))
+		check('WCE Walk %s' % fmt(wcev[:4]), lambda v=wcev: wcewalk(v))
 	wceset(wcew + 0x4ec, (0.0, 0.0, 0.0, 0.0, 0.0))
 	wcepokeb(wcew + 0x4dc, 0)
 	# the slot: the view of the slot (extrapolated), the selection, the turn of the body
@@ -391,10 +405,18 @@ if wcew and wcecls:
 	wcepokeb(wcew + 0x1ac, 0)
 	wcepokeb(wcew + 0x1e0, 0)
 	wcepokeb(wcew + 0x48c, 0)
+	# last (a floor up there would change the falling state and play an action): the walk of a class that walks
+	wcecanfly(0)
+	wceset(wcew + 0x28, wcesp)
+	wceset(wcew + 0xd4, (0.0, 0.0, 0.0))
+	check('WCE Walk falling', lambda: wcewalk((0.5, 0.0, 0.0, 0.0, None, 0.05)))
+	check('WCE Walk falling 2', lambda: wcewalk((0.0, 1.0, 0.1, 0.0, None, 0.1)))
+	wceset(wcew + 0x4ec, (0.0, 0.0, 0.0, 0.0, 0.0))
 	# the end: the controller off, the model released (SetModel with no file), the entity deleted
 	wcepoke(wcew + 0x234, 0)
 	wcefree(wcefa)
 	wcefree(wcefc)
+	wcefree(wcecc)
 	check('WCE SetModel none', lambda: (SDTest.Call(0x0d4e30, 'tvisfffi', wcew, '', 1.0, 1.0, 1.0, 0),
 		SDTest.Call(0x210da0, 'tbi', wcew + 0xb8)[0], wcefl(wcew + 0x494, 1)))
 	wcefree(wcetx)
