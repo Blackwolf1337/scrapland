@@ -567,8 +567,6 @@ SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
 
 /* module agent: Input/ActionSet+IDevice+PcKeyboard+PcMouse+PcPad.cpp (imports below this line) */
 SD_IMPORT(CNodesWorldSup_SaveInfPath, 0x0bba70)
-SD_IMPORT(DListVec3_Clear, 0x06d8a0)
-SD_IMPORT(DListVec3_Add, 0x06d720)
 SD_IMPORT(CNodesWorld_AddExtraPoints, 0x0a93d0)
 SD_IMPORT(CNodesWorld_Generate, 0x0a7a00)
 SD_IMPORT(CNodesWorld_AnalizeMap, 0x0a2e80)
@@ -677,15 +675,11 @@ SD_IMPORT(Taunts_Think, 0x154e40)
 SD_IMPORT(Taunts_Warnings, 0x155000)
 
 /* module agent: AI/ICharControl+2D+3D.cpp (imports below this line) */
-SD_IMPORT(cAICharControl_ctor, 0x06cba0)
-SD_IMPORT(cAICharControl_dtor, 0x06d520)
-SD_IMPORT(cAICharControl_Draw, 0x070330)
 SD_IMPORT(cAIChar_GetControl, 0x0697f0)
 SD_IMPORT(CAStar2D_FindPath, 0x09a5e0)
 SD_IMPORT(CAStar2D_GetPointsVis, 0x09a6e0)
 SD_IMPORT(CAStar_FindPath, 0x099b30)
 SD_IMPORT(CAStar_GetPointsVis, 0x099bf0)
-SD_IMPORT(DListSeg_Clear, 0x06d810)
 
 /* module agent: AI/IVehicleControl+IVehicleShootControl.cpp (imports below this line) */
 SD_IMPORT(cAIEntityGroup_ctor, 0x084620)

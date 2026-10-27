@@ -348,7 +348,7 @@ void __thiscall cAICharControl2D_Walk(cAICharControl *self) {
 		self->ctrl->walk = -self->speed;
 		break;
 	}
-	if (self->blocked || self->stuck || self->i20c) {
+	if (self->blocked || self->stuck || self->orbitSide) {
 		self->ctrl->walk = 0.0f;
 	}
 }
@@ -425,7 +425,7 @@ byte __thiscall cAICharControl2D_FindRoute(cAICharControl *self) {
 	self->pathPoint = pt;
 	self->goal = *pt;
 	self->newPath = 0;
-	AICC_Vtbl(self)->Vf41(self);
+	AICC_Vtbl(self)->NextGoal(self);
 	return 1;
 }
 
