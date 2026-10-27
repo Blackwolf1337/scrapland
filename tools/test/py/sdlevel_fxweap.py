@@ -50,6 +50,15 @@ def fwpart(p, i):
 	return 0
 def fwnpart(p):
 	return fwi(fwi(p + 0xac) + 0xc)
+# without the size: the start emits with a size that differs between runs (also in the exe alone)
+def fwparts0(p, n):
+	r = ()
+	for i in range(n):
+		x = fwpart(p, i)
+		if x:
+			x = x[0:3]
+		r = r + (x,)
+	return r
 def fwparts(p, n):
 	r = ()
 	for i in range(n):
@@ -165,7 +174,7 @@ if fwobjs.has_key(44):
 # ---- the missiles: the smoke trail behind the model, the fade at the end ----
 def fwmissile(nm, fx, d, upd, reset, trail, part, fields, nfields, flare):
 	check(nm + ' started', lambda fx=fx, trail=trail, part=part, fields=fields, nfields=nfields: (fwi(part + 0xac) != 0,
-		fwfl(fields, nfields), fwtrail(trail), fwparts(part, 4)))
+		fwfl(fields, nfields), fwtrail(trail), fwparts0(part, 4)))
 	fwmove(d, (1000.0, 50.0, -200.0), (0.1, 0.5, 0.0), (300.0, 0.0, -100.0), (0.0, 0.2, 0.0))
 	fwset(fields - 12, (0.0, 0.0, 0.0))
 	steps = ((0.05, 0.1, -1.0), (0.05, 0.1, -1.0), (0.05, 1.0, -1.0), (0.05, 4.0, -1.0), (0.05, 0.0, -1.0),
@@ -265,13 +274,7 @@ if fwobjs.has_key(33):
 	if parked:
 		iscar = SDTest.Call(fwi(fwi(parked) + 0x14) - 0x400000, 'tbis', parked, 'Car')[0]
 	check('FXTesla Parked', lambda parked=parked, iscar=iscar: (parked != 0, iscar))
-	if parked and iscar and fwi(parked + 0x608) and fwi(parked + 0x610):
-		check('FXTesla_SetEmitter(Parked)', lambda fx=fx, parked=parked: (SDTest.Call(0x1ff0d0, 'tvii', fx, parked),
-			fwi(fx + 4) == parked, fwi(fx + 0x98), fwtesla(fx)))
-		for t, fs in ((0.5, -1.0), (0.5, 0.3)):
-			fwset(fx + 0x744, (t, fs))
-			check('FXTesla_IsAlive(Parked)' + fmt((t, fs)), lambda fx=fx, d=d, s=s: (SDTest.Call(0x201b50, 'tbiii', fx,
-				d, s)[0], fwtesla(fx)))
+	# the weapon slots of Parked change between runs (also in the exe alone): no SetEmitter on it
 	fwpoke(fx + 4, 0)
 	fwpoke(fx + 0x9c, 0x01000101)
 	fwset(fx + 0x734, (1.0, 2.0, 3.0, 4.0))

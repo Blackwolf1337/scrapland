@@ -3201,7 +3201,7 @@ rva	size	source	callconv	name	signature
 0011a0d0	32	DEFAULT	unknown	FUN_0051a0d0	
 0011a0f0	143	DEFAULT	unknown	FUN_0051a0f0	
 0011a190	1309	DEFAULT	unknown	FUN_0051a190	
-0011a6c0	35	DEFAULT	unknown	FUN_0051a6c0	
+0011a6c0	35	USER_DEFINED	__thiscall	cTargetLock_GetAmmo	float __thiscall(int ammo)
 0011a6f0	45	DEFAULT	unknown	FUN_0051a6f0	
 0011a720	20	USER_DEFINED	__thiscall	cTargetLock_GetEntity	void * __thiscall(void)
 0011a740	19	USER_DEFINED	__thiscall	cTargetLock_GetPoint	void * __thiscall(void)
@@ -3210,7 +3210,7 @@ rva	size	source	callconv	name	signature
 0011a870	101	DEFAULT	unknown	FUN_0051a870	
 0011a8f0	43	DEFAULT	unknown	FUN_0051a8f0	
 0011a920	200	DEFAULT	unknown	FUN_0051a920	
-0011a9f0	61	DEFAULT	unknown	FUN_0051a9f0	
+0011a9f0	61	USER_DEFINED	__thiscall	cTargetLock_HasSlot	byte __thiscall(int weap, int slot)
 0011aa30	72	DEFAULT	unknown	FUN_0051aa30	
 0011aa80	70	DEFAULT	unknown	FUN_0051aa80	
 0011aad0	287	DEFAULT	unknown	FUN_0051aad0	
@@ -6107,39 +6107,39 @@ rva	size	source	callconv	name	signature
 001f9e30	62	ANALYSIS	__thiscall	cObjElementFXSwarmMissile::vf00	undefined __thiscall(void)
 001f9e70	129	ANALYSIS	__thiscall	cObjElementFXTesla::vf00	undefined __thiscall(void)
 001f9f00	4590	ANALYSIS	__thiscall	cObjElementFXATPC::vf01	undefined __thiscall(void)
-001fb0f0	137	ANALYSIS	__thiscall	cObjElementFXDevastatorShoot::vf01	undefined __thiscall(void)
-001fb180	1287	ANALYSIS	__thiscall	cObjElementFXInfernoExplosion::vf01	undefined __thiscall(void)
-001fb690	783	ANALYSIS	__thiscall	cObjElementFXInfernoMissile::vf01	undefined __thiscall(void)
-001fb9a0	1058	ANALYSIS	__thiscall	cObjElementFXLaser::vf01	undefined __thiscall(void)
-001fbdd0	713	ANALYSIS	__thiscall	cObjElementFXSwarmMissile::vf01	undefined __thiscall(void)
+001fb0f0	137	USER_DEFINED	__thiscall	cObjElementFXDevastatorShoot_Update	void __thiscall(void * debris, float dt)
+001fb180	1287	USER_DEFINED	__thiscall	cObjElementFXInfernoExplosion_Update	void __thiscall(void * debris, float dt)
+001fb690	783	USER_DEFINED	__thiscall	cObjElementFXInfernoMissile_Update	void __thiscall(void * debris, float dt)
+001fb9a0	1058	USER_DEFINED	__thiscall	cObjElementFXLaser_Update	void __thiscall(void * debris, float dt)
+001fbdd0	713	USER_DEFINED	__thiscall	cObjElementFXSwarmMissile_Update	void __thiscall(void * debris, float dt)
 001fc0a0	7597	ANALYSIS	__thiscall	cObjElementFXTesla::vf01	undefined __thiscall(void)
 001fde50	4078	DEFAULT	unknown	FUN_005fde50	
-001fee40	650	DEFAULT	unknown	FUN_005fee40	
-001ff0d0	191	DEFAULT	unknown	FUN_005ff0d0	
+001fee40	650	USER_DEFINED	__thiscall	cObjElementFXLaser_Shoot	void __thiscall(float x0, float y0, float z0, float x1, float y1, float z1, float time)
+001ff0d0	191	USER_DEFINED	__thiscall	cObjElementFXTesla_SetEmitter	void __thiscall(void * e)
 001ff190	3340	DEFAULT	unknown	FUN_005ff190	
 001ffea0	4554	DEFAULT	unknown	FUN_005ffea0	
-00201070	341	ANALYSIS	__thiscall	cObjElementFXATPC::vf03	undefined __thiscall(void)
-002011d0	59	ANALYSIS	__thiscall	cObjElementFXDevastatorShoot::vf03	undefined __thiscall(void)
-00201210	226	ANALYSIS	__thiscall	cObjElementFXInfernoExplosion::vf03	undefined __thiscall(void)
-00201300	624	ANALYSIS	__thiscall	cObjElementFXInfernoMissile::vf03	undefined __thiscall(void)
-00201570	138	ANALYSIS	__thiscall	cObjElementFXLaser::vf03	undefined __thiscall(void)
-00201600	717	ANALYSIS	__thiscall	cObjElementFXSwarmMissile::vf03	undefined __thiscall(void)
-002018d0	265	ANALYSIS	__thiscall	cObjElementFXTesla::vf03	undefined __thiscall(void)
-002019e0	18	ANALYSIS	__thiscall	cObjElementFXATPC::vf02	undefined __thiscall(void)
-00201a00	35	ANALYSIS	__thiscall	cObjElementFXDevastatorShoot::vf02	undefined __thiscall(void)
-00201a30	18	ANALYSIS	__thiscall	cObjElementFXInfernoExplosion::vf02	undefined __thiscall(void)
-00201a50	111	ANALYSIS	__thiscall	cObjElementFXInfernoMissile::vf02	undefined __thiscall(void)
-00201ac0	21	ANALYSIS	__thiscall	cObjElementFXLaser::vf02	undefined __thiscall(void)
-00201ae0	111	ANALYSIS	__thiscall	cObjElementFXSwarmMissile::vf02	undefined __thiscall(void)
-00201b50	173	ANALYSIS	__thiscall	cObjElementFXTesla::vf02	undefined __thiscall(void)
-00201c00	92	ANALYSIS	__thiscall	cObjElementFXATPC::vf04	undefined __thiscall(void)
-00201c60	41	ANALYSIS	__thiscall	cObjElementFXDevastatorShoot::vf04	undefined __thiscall(void)
-00201c90	82	ANALYSIS	__thiscall	cObjElementFXInfernoExplosion::vf04	undefined __thiscall(void)
-00201cf0	77	ANALYSIS	__thiscall	cObjElementFXInfernoMissile::vf04	undefined __thiscall(void)
-00201d40	52	ANALYSIS	__thiscall	cObjElementFXLaser::vf04	undefined __thiscall(void)
-00201d80	57	ANALYSIS	__thiscall	cObjElementFXSwarmMissile::vf04	undefined __thiscall(void)
-00201dc0	196	ANALYSIS	__thiscall	cObjElementFXTesla::vf04	undefined __thiscall(void)
-00201e90	16	DEFAULT	unknown	FUN_00601e90	
+00201070	341	USER_DEFINED	__thiscall	cObjElementFXATPC_Start	void __thiscall(void * debris)
+002011d0	59	USER_DEFINED	__thiscall	cObjElementFXDevastatorShoot_Start	void __thiscall(void * debris)
+00201210	226	USER_DEFINED	__thiscall	cObjElementFXInfernoExplosion_Start	void __thiscall(void * debris)
+00201300	624	USER_DEFINED	__thiscall	cObjElementFXInfernoMissile_Start	void __thiscall(void * debris)
+00201570	138	USER_DEFINED	__thiscall	cObjElementFXLaser_Start	void __thiscall(void * debris)
+00201600	717	USER_DEFINED	__thiscall	cObjElementFXSwarmMissile_Start	void __thiscall(void * debris)
+002018d0	265	USER_DEFINED	__thiscall	cObjElementFXTesla_Start	void __thiscall(void * debris)
+002019e0	18	USER_DEFINED	__thiscall	cObjElementFXATPC_IsAlive	byte __thiscall(void * debris, void * sys)
+00201a00	35	USER_DEFINED	__thiscall	cObjElementFXDevastatorShoot_IsAlive	byte __thiscall(void * debris, void * sys)
+00201a30	18	USER_DEFINED	__thiscall	cObjElementFXInfernoExplosion_IsAlive	byte __thiscall(void * debris, void * sys)
+00201a50	111	USER_DEFINED	__thiscall	cObjElementFXInfernoMissile_IsAlive	byte __thiscall(void * debris, void * sys)
+00201ac0	21	USER_DEFINED	__thiscall	cObjElementFXLaser_IsAlive	byte __thiscall(void * debris, void * sys)
+00201ae0	111	USER_DEFINED	__thiscall	cObjElementFXSwarmMissile_IsAlive	byte __thiscall(void * debris, void * sys)
+00201b50	173	USER_DEFINED	__thiscall	cObjElementFXTesla_IsAlive	byte __thiscall(void * debris, void * sys)
+00201c00	92	USER_DEFINED	__thiscall	cObjElementFXATPC_Reset	void __thiscall(void * debris)
+00201c60	41	USER_DEFINED	__thiscall	cObjElementFXDevastatorShoot_Reset	void __thiscall(void * debris)
+00201c90	82	USER_DEFINED	__thiscall	cObjElementFXInfernoExplosion_Reset	void __thiscall(void * debris)
+00201cf0	77	USER_DEFINED	__thiscall	cObjElementFXInfernoMissile_Reset	void __thiscall(void * debris)
+00201d40	52	USER_DEFINED	__thiscall	cObjElementFXLaser_Reset	void __thiscall(void * debris)
+00201d80	57	USER_DEFINED	__thiscall	cObjElementFXSwarmMissile_Reset	void __thiscall(void * debris)
+00201dc0	196	USER_DEFINED	__thiscall	cObjElementFXTesla_Reset	void __thiscall(void * debris)
+00201e90	16	USER_DEFINED	__thiscall	cObjElementFXInfernoMissile_SetFlare	void __thiscall(byte on)
 00201eb0	3565	DEFAULT	unknown	FUN_00601eb0	
 00202ca0	354	USER_DEFINED	__thiscall	cMapElement_ctor	void * __thiscall(char * name, void * pos, void * rot)
 00202e10	9	DEFAULT	unknown	FUN_00602e10	
@@ -6909,12 +6909,12 @@ rva	size	source	callconv	name	signature
 00232dd0	163	DEFAULT	unknown	FUN_00632dd0	
 00232e80	135	USER_DEFINED	__thiscall	CGameLensFlare_ctor	void * __thiscall(void)
 00232f10	27	USER_DEFINED	__thiscall	CGameLensFlare_dtor	void __thiscall(void)
-00232f30	11	DEFAULT	unknown	FUN_00632f30	
-00232f80	25	DEFAULT	unknown	FUN_00632f80	
-00232fa0	25	DEFAULT	unknown	FUN_00632fa0	
-00232fc0	34	DEFAULT	unknown	FUN_00632fc0	
+00232f30	11	USER_DEFINED	__thiscall	CGameLensFlare_SetOn	void __thiscall(byte on)
+00232f80	25	USER_DEFINED	__thiscall	CGameLensFlare_SetIntensity	void __thiscall(float v)
+00232fa0	25	USER_DEFINED	__thiscall	CGameLensFlare_SetF30	void __thiscall(float v)
+00232fc0	34	USER_DEFINED	__thiscall	CGameLensFlare_SetPos	void __thiscall(float x, float y, float z)
 00232ff0	25	DEFAULT	unknown	FUN_00632ff0	
-00233010	11	DEFAULT	unknown	FUN_00633010	
+00233010	11	USER_DEFINED	__thiscall	CGameLensFlare_SetI1c	void __thiscall(int v)
 00233020	11	DEFAULT	unknown	FUN_00633020	
 00233030	741	DEFAULT	unknown	FUN_00633030	
 002333b0	88	DEFAULT	unknown	FUN_006333b0	
