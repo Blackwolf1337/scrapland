@@ -89,7 +89,7 @@ void __thiscall CMallaD3D_CalcIlum(CMallaD3D *self, CNodo3D *nodo, CEscena *esc)
 			n = CEscena_FindClase(esc, n, CLASE_OBJ3D_LUZ)) {
 			CLuz *luz = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_LUZ);
 			if (luz && luz->activa) {
-				RenderCalcIlum_Luz(sum, &self->vert, self->mat, luz);
+				Ilum_ListaVert((color4_t *)sum, &self->vert, self->mat, luz);
 			}
 		}
 		for (int i = 0; i < lv.nVert; i++) {

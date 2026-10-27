@@ -225,9 +225,7 @@ int MallaD3D_CompareTri(const void *a, const void *b);
 int MallaD3D_Render(CMallaD3D *self, void *ctx);
 /* the plane through three points; 0 for a degenerate triangle (calc_plano) */
 byte Plane_Calc(plane_t *plane, const vec3_t *v1, const vec3_t *v2, const vec3_t *v3);
-/* rva 0x2ce410 (Engine/RenderCalcIlum.cpp): the light of luz on the vertices of v with mat added to sum */
-struct CLuz;
-void RenderCalcIlum_Luz(float (*sum)[4], CListaVert *v, CMaterial *mat, struct CLuz *luz);
+/* Ilum_ListaVert (the light of a CLuz on the vertices of a list, Engine/RenderCalcIlum.cpp): luz.h */
 /* Engine/CalcSegmentos.cpp: the segments of the list from pPos */
 void __thiscall CMallaD3D_CalcSegmentos(CMallaD3D *self, byte all);
 

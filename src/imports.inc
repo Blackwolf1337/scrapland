@@ -198,9 +198,6 @@ SD_IMPORT(CAnimacion_dtor, 0x2ab940)
 SD_IMPORT(CSuelo_CalcIlum, 0x261630)
 
 /* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
-SD_IMPORT(SistPart_Draw, 0x2b7150)
-SD_IMPORT(SistPart_Draw2, 0x2b55d0)
-SD_IMPORT(CObjBase3D_SetNodo, 0x2cad70)
 
 /* src/game/engine3d/Engine/SueloPortal.c (called from Engine/SueloPortal.cpp, include/scrap/sueloportal.h) */
 SD_IMPORT(Portales_DebugDraw, 0x26d0d0)
@@ -242,8 +239,6 @@ SD_IMPORT(Debug_Line, 0x27cb80)
 
 
 /* module agent: Engine/MallaD3D (imports below this line) */
-SD_IMPORT(MallaD3D_Render, 0x2b67a0)
-SD_IMPORT(CMallaD3D_CalcSegmentos, 0x2d5350)
 
 /* module agent: Engine/Suelo (imports below this line) */
 SD_IMPORT(Vec3_Normalize, 0x261580)
@@ -621,7 +616,6 @@ SD_IMPORT(Matrix_ToTransform, 0x2d6c50)
 SD_IMPORT(Ang_Wrap, 0x238b80)
 SD_IMPORT(Matrix_Transpose, 0x239860)
 SD_IMPORT(CMaterial_ScaleColors, 0x237020)
-SD_IMPORT(RenderCalcIlum_Luz, 0x2ce410)
 
 /* module agent: Engine leftovers 0x265000..0x278000 (imports below this line) */
 
