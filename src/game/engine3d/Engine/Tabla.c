@@ -157,3 +157,7 @@ void __thiscall Tabla_Resize14(CTabla *t, int n) {
 void __thiscall Tabla_Resize2C(CTabla *t, int n) {
 	Tabla_Resize(t, n, 0x2c, Tabla_Alloc2C);
 }
+
+void __thiscall Tabla_Resize38(CTabla *t, int n) {
+	Tabla_Resize(t, n, 0x38, Tabla_Alloc38);
+}

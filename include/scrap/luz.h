@@ -41,6 +41,24 @@ typedef struct D3DLight {
 } D3DLight;
 SD_SIZE(D3DLight, 0x68);
 
+/* Engine/RenderCalcIlum.cpp (RenderCalcIlum.c): a light with the distance from which it fades out to its range */
+typedef struct IlumLuz {
+	D3DLight d3d;			/* 0x00 */
+	float rangeIni;			/* 0x68 */
+} IlumLuz;
+SD_SIZE(IlumLuz, 0x6c);
+#define ILUM_SUAVE 0x1		/* smooth fades instead of the D3D attenuation */
+/* v smoothed by the weight g_IlumSmooth */
+float Ilum_Smooth(float v);
+struct CListaVert;
+struct CMaterial;
+struct CLuz;
+/* the light Luz at the vertices of lv added to their colors in dest (one a vertex, no smoothing); 0 */
+int Ilum_ListaVert(color4_t *dest, struct CListaVert *lv, struct CMaterial *Mat, struct CLuz *Luz);
+/* the light at pos with normal n added to dest; mat: the diffuse and ambient color (D3DMATERIAL8); 1 for no light */
+int Ilum_Light(color4_t *dest, const vec3_t *pos, const vec3_t *n, const float *mat, const IlumLuz *luz,
+	uint32_t flags);
+
 typedef struct CLuz {
 	void *vftable;			/* 0x00 */
 	uint32_t clase;			/* 0x04 CLASE_OBJ3D_LUZ */

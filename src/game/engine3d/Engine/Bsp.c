@@ -2640,10 +2640,10 @@ int __thiscall BspRegion_Enlazar(CBsp *self, BspRegion *a, BspRegion *b, int enl
 		return 0;
 	}
 	CHECK(!enlace);
-	if (!b->i10 && !b->interior) {
+	if (!b->padre && !b->interior) {
 		return 0;
 	}
-	if (!a->i10 && !a->interior) {
+	if (!a->padre && !a->interior) {
 		return 0;
 	}
 	if (a->color[1] + a->color[0] + a->color[2] == 0.0f && b->color[1] + b->color[0] + b->color[2] == 0.0f) {

@@ -65,6 +65,10 @@ static CCollideQuad *Alturas_Cell(CAlturas *alt, uint32_t x, uint32_t z) {
 	return NULL;
 }
 
+CCollideQuad *__thiscall CAlturas_GetCell(CAlturas *self, uint32_t x, uint32_t z) {
+	return Alturas_Cell(self, x, z);
+}
+
 static float Vec3_Dist2(const vec3_t *a, const vec3_t *b) {
 	float dy = a->y - b->y, dx = a->x - b->x, dz = a->z - b->z;
 	return dy * dy + dx * dx + dz * dz;

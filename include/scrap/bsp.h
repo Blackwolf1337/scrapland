@@ -15,6 +15,7 @@
 #include "scrap/mundo.h"
 #include "scrap/render.h"
 #include "scrap/tabla.h"
+#include "scrap/tablahash.h"
 
 #define BSP_MAX_LISTAS 80000
 #define BSP_MAX_NOLMAP 20000
@@ -31,7 +32,7 @@ typedef struct BspEnlace {
 /* a node of the region tree of a list (Engine radiosity code, 100 bytes) */
 typedef struct BspRegion {
 	struct BspRegion *hijo[4];	/* 0x00 ra rb rc rd */
-	int i10;			/* 0x10 */
+	struct BspRegion *padre;	/* 0x10 */
 	byte interior;			/* 0x14 any child */
 	byte pad15[3];
 	float area;			/* 0x18 */
@@ -406,10 +407,116 @@ void __fastcall CBsp_Preparar(CBsp *self);		/* rva 0x28efe0, the pages, material
 void Dlg_SetFloat(void *hwnd, int id, float v, int prec);
 byte Dlg_GetFloat(void *hwnd, int id, float *out);
 
-/* exe functions of other files */
-BspRegion *__thiscall BspRegion_ctor(BspRegion *self, int x, int y, int lx, int ly, BspRegion *padre);	/* rva 0x2d2920 */
-void __fastcall BspRegion_dtor(BspRegion *self);	/* rva 0x2d2ac0 */
-void __fastcall BspLuces_dtor(void *self);		/* rva 0x2d1290 */
-void __fastcall BspLuces_Render(void *self);		/* rva 0x2d1860 */
+/*
+ * Engine/bsp2.cpp (Bsp2.c): the BSP tree of the triangles that cast shadows (CBsp.luces), split along the axis
+ * planes through the middle of their box while both sides keep more than 5 triangles.
+ */
+typedef struct Bsp2Tri {
+	vec3_t v[3];			/* 0x00 */
+	plane_t plano;			/* 0x24 */
+	CMaterial *Mat;			/* 0x34 */
+} Bsp2Tri;
+SD_SIZE(Bsp2Tri, 0x38);
+
+typedef struct Bsp2Nodo {
+	plane_t plano;			/* 0x00 */
+	struct Bsp2Nodo *front;		/* 0x10 the side of the normal */
+	struct Bsp2Nodo *back;		/* 0x14 */
+	CTabla tris;			/* 0x18 Bsp2Tri, of the leaves */
+} Bsp2Nodo;
+SD_SIZE(Bsp2Nodo, 0x20);
+
+typedef struct BspLuces {
+	Bsp2Nodo *root;			/* 0x0 */
+} BspLuces;
+
+/* the statistics of the line checks */
+#define g_Bsp2NTriCmp GAME_DATA(int, 0x4e738c)
+#define g_Bsp2NComp GAME_DATA(int, 0x4e7390)
+#define g_Bsp2Hits GAME_DATA(int, 0x4e7394)
+#define g_Bsp2Misses GAME_DATA(int, 0x4e7398)
+/* the eye of the debug drawing and the color index of the next leaf */
+#define g_Bsp2Eye GAME_DATA(vec3_t, 0x4e739c)
+#define g_Bsp2Color GAME_DATA(int, 0x4e73a8)
+
+Bsp2Nodo *__fastcall Bsp2Nodo_ctor(Bsp2Nodo *self);
+void __fastcall Bsp2Nodo_dtor(Bsp2Nodo *self);
+void __fastcall BspLuces_dtor(void *self);
+/* the segment a b blocked by a shadow triangle: the first hit into out (may be NULL) */
+int __thiscall BspLuces_CheckLine(BspLuces *self, const vec3_t *a, const vec3_t *b, vec3_t *out);
+/* 1 blocked, -1 free */
+int Bsp2_CheckLine(const vec3_t *a, const vec3_t *b, vec3_t *out, Bsp2Nodo *node);
+/* the leaves as debug triangles, from the far side of the eye */
+void __fastcall BspLuces_Render(void *self);
+void Bsp2_Render(Bsp2Nodo *node);
+/* a triangle of src with the corners v0 v1 v2 into the front (lado 1) or the back child, or only counted */
+void Bsp2_AddTri(byte countOnly, Bsp2Nodo *node, uint32_t *nFront, uint32_t *nBack, int lado, const Bsp2Tri *src,
+	const vec3_t *v0, const vec3_t *v1, const vec3_t *v2);
+void Bsp2_Stats(int print);
+/* the axis plane to split the leaf at, 0 for none */
+byte __thiscall Bsp2_ChoosePlane(BspLuces *self, Bsp2Nodo *node, plane_t *dest);
+/* the leaf below the root a point is in (the root when its child on that side is missing) */
+Bsp2Nodo *__thiscall BspLuces_FindLeaf(BspLuces *self, const vec3_t *p);
+Bsp2Nodo *Bsp2_FindLeaf(const vec3_t *p, Bsp2Nodo *node);
+/* the triangles of the tree */
+int Bsp2_Count(const Bsp2Nodo *node);
+Bsp2Tri *Bsp2Tri_Copy(Bsp2Tri *dest, const Bsp2Tri *src);
+/* the leaf split until no plane is found, with a debug line a node */
+void __thiscall Bsp2_Build(BspLuces *self, Bsp2Nodo *node, int depth);
+/* the triangles of the leaf by pl into two new children (countOnly: only the counts); crossing ones go to both */
+void Bsp2_Split(byte countOnly, Bsp2Nodo *node, const plane_t *pl, int *outFront, int *outBack);
+
+/*
+ * Engine/radiosidad.cpp (Radiosidad.c): the regions and links of the radiosity, and the area lights of the
+ * materials: a material named "(+area_light: name)" (MAT_AREALIGHT, older ones "(+name)") emits the light of the
+ * section name of the .rad files of the map ("rgbi", "aten", "falloff").
+ */
+typedef struct RadAreaLuz {
+	struct RadAreaLuz *sig;		/* 0x00 */
+	char *nombre;			/* 0x04 Cad_Set */
+	byte rgbi[4];			/* 0x08 r g b, from the diffuse color of the material */
+	float intensidad;		/* 0x0c */
+	float f10;			/* 0x10 */
+	float aten[2];			/* 0x14 */
+	float falloff;			/* 0x1c */
+} RadAreaLuz;
+SD_SIZE(RadAreaLuz, 0x20);
+
+typedef struct CRadiosidad {
+	CArchINI ini;			/* 0x0 the .rad files */
+	CTablaHash *tabla;		/* 0x4 the area lights by material */
+	RadAreaLuz *lista;		/* 0x8 */
+} CRadiosidad;
+SD_SIZE(CRadiosidad, 0xc);
+
+/* the links alive */
+#define g_BspNumEnlaces GAME_DATA(int, 0x4e73ac)
+/* the unit normals of bmp\normales.rad, read once */
+#define g_RadNormales GAME_DATA(CTabla, 0x4e73b0)
+
+BspEnlace *__thiscall BspEnlace_ctor(BspEnlace *self, BspEnlace *sig, BspRegion *region, float ff);
+/* the next links deleted */
+void __fastcall BspEnlace_dtor(BspEnlace *self);
+BspEnlace *__thiscall BspEnlace_Delete(BspEnlace *self, byte flags);
+RadAreaLuz *__fastcall RadAreaLuz_ctor(RadAreaLuz *self);
+RadAreaLuz *__thiscall RadAreaLuz_Delete(RadAreaLuz *self, byte flags);
+/* the color and the plane of padre */
+BspRegion *__thiscall BspRegion_ctor(BspRegion *self, int x, int y, int lx, int ly, BspRegion *padre);
+void __fastcall BspRegion_dtor(BspRegion *self);
+/* the .rad files: name.rad and luces.rad of dir (may be NULL), then the global one */
+CRadiosidad *__thiscall CRadiosidad_ctor(CRadiosidad *self, const char *dir);
+void __fastcall CRadiosidad_dtor(CRadiosidad *self);
+/* the area light of Mat, read when it is not in the table yet (NULL for none) */
+RadAreaLuz *__thiscall CRadiosidad_Get(CRadiosidad *self, CMaterial *Mat);
+RadAreaLuz *__thiscall CRadiosidad_Add(CRadiosidad *self, CMaterial *Mat);
+RadAreaLuz *__thiscall CRadiosidad_Find(CRadiosidad *self, CMaterial *Mat);
+/* the section of the area light named in the material name into dest (may be NULL): 1 found */
+byte __thiscall CRadiosidad_ReadMat(CRadiosidad *self, CMaterial *Mat, RadAreaLuz *dest);
+/* rgbi and intensidad of the area light of Mat: 1 found */
+byte __thiscall CRadiosidad_GetColor(CRadiosidad *self, CMaterial *Mat, void *dest);
+/* CRadiosidad_ReadMat with the warnings of a missing or old definition */
+byte __thiscall CRadiosidad_ReadMatWarn(CRadiosidad *self, CMaterial *Mat, RadAreaLuz *dest);
+/* the normals and their count */
+vec3_t *Rad_Normales(uint32_t *num);
 
 #endif

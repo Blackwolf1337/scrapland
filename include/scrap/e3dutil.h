@@ -202,4 +202,75 @@ int Proc_ReadField(va_list *ap, const char **psrc, const char **pfmt);	/* 0 or -
 int Proc_DefineType(const char *ident, const void *defin);
 int Proc_Scan(const char *s, const char *fmt, ...);	/* the number of values read */
 
+/*
+ * Util/Paletas.cpp (engine3d/util/paletas.h): palettes of 4 bytes a color (r g b and a flag, 5 when loaded) and
+ * 16 bit palettes for a pixel format given by its masks. A 16 bit palette is a Mem_Alloc block of 0x200 bytes more
+ * than the colors need, the colors start at the first 512 byte boundary after its start.
+ */
+typedef struct Pal16Shift {
+	byte rShr, rShl;		/* 0x0 the 8 bit value shifted right, then left into its place */
+	byte gShr, gShl;		/* 0x2 */
+	byte bShr, bShl;		/* 0x4 */
+} Pal16Shift;
+#define g_Pal16Shift GAME_DATA(Pal16Shift, 0x4e6e18)
+#define PAL16_COLORS(pal) ((uint16_t *)(((uintptr_t)(pal) + 0x200) & ~(uintptr_t)0x1ff))
+
+uint32_t Pal16_FromRGB(byte r, byte g, byte b);	/* 16 bits, the upper ones 0 */
+void Pal16_ToRGB(byte *r, byte *g, byte *b, uint16_t c);
+/* the color first..last nearest to r g b (sum of the differences), the first with distance 0 at once */
+int Pal_Nearest(const byte *pal, int first, int last, int r, int g, int b);
+/* the 768 bytes of a 6 bit palette file into 256 colors */
+void Pal_Load(const char *name, byte *dest);
+/* the same as a new 16 bit palette; CHECK(dest && !*dest) */
+void Pal16_Load(const char *name, void **dest);
+/* num colors of src from i2 to dst at i1; CHECK(num > 0 && i1 > 0 && i2 > 0) */
+void Pal_Copy(byte *dst, int i1, const byte *src, int i2, int num);
+void *Pal_ToPal16(const byte *pal, int num);
+/* each component scaled and clamped to 0..255 first */
+void *Pal_ToPal16Scaled(const byte *pal, int num, float r, float g, float b);
+/* the shifts of the 16 bit format from its masks; 8/0 for each without all three masks */
+void Pal16_SetMasks(uint32_t r, uint32_t g, uint32_t b);
+/* r g b towards r2 g2 b2 by t (-32..32, 64ths from -32), r2 g2 b2 from 32 on, unchanged up to -32 */
+void RGB_Blend(int *r, int *g, int *b, int r2, int g2, int b2, int t);
+/* the num colors of a 16 bit palette scaled */
+void Pal16_Scale(void *pal16, int num, float r, float g, float b);
+
+/* Util/Pcx.cpp: 8 bit PCX images, run length coded; lx and ly in the header are the size (from the window when 0) */
+typedef struct PcxHeader {
+	byte manuf;			/* 0x00 10 */
+	byte version;			/* 0x01 5 */
+	byte encoding;			/* 0x02 1 */
+	byte bpp;			/* 0x03 8 */
+	int16_t xmin, ymin;		/* 0x04 */
+	int16_t xmax, ymax;		/* 0x08 */
+	byte pad_0c[0x35];
+	byte planes;			/* 0x41 */
+	uint16_t bpl;			/* 0x42 bytes a line of a plane */
+	uint16_t palInfo;		/* 0x44 */
+	uint16_t lx;			/* 0x46 */
+	uint16_t ly;			/* 0x48 */
+	byte pad_4a[0x36];
+} PcxHeader;
+SD_OFFSET(PcxHeader, planes, 0x41);
+SD_OFFSET(PcxHeader, lx, 0x46);
+SD_SIZE(PcxHeader, 0x80);
+
+/* the error code of a header that is no 8 bit PCX (errno) */
+#define g_ErrPcxFormat GAME_DATA(int, 0x3de07c)
+
+/* the pixels from src into dest (planes interleaved), the end of the data read */
+const byte *Pcx_Decode(byte *dest, const byte *src, const PcxHeader *hdr);
+/* the same from a FILE of the exe's CRT: 0, -1 at the end of the file */
+int Pcx_DecodeFile(byte *dest, void *f, const PcxHeader *hdr);
+/* a 24 bit image (3 bytes a pixel) to f as 3 planes: 0, -1 when a write fails */
+int Pcx_Write24(void *f, const byte *mem, int lx, int ly);
+/* an 8 bit image with the palette after it (pal 768 6 bit bytes, or 256 colors of 4 bytes with pal4): 0 or -1 */
+int Pcx_Write8(void *f, const byte *mem, int lx, int ly, const byte *pal, int pal4);
+/* 0, -1 with errno */
+int Pcx_ReadHeader(void *f, PcxHeader *hdr);
+/* the palette after the image (12, then num colors of 3 bytes) into 4 byte colors; 0 also without one, -1 */
+int Pcx_ReadPal(byte *dest, void *f, int num);
+/* 0 for an 8 bit PCX (lx and ly set), else -1 with errno g_ErrPcxFormat */
+int Pcx_CheckHeader(PcxHeader *hdr);
+
 #endif

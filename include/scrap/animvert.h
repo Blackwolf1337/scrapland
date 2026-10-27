@@ -23,6 +23,8 @@ typedef struct CEVA {
 } CEVA;
 SD_SIZE(CEVA, 0x8);
 
+CAnimVert *__fastcall CAnimVert_ctor(CAnimVert *self);
+CEVA *__thiscall CEVA_ctor(CEVA *self);
 void __fastcall CAnimVert_dtor(CAnimVert *self);
 /* the scalar and vector deleting destructor: flags 1 delete, 2 an array */
 void *__thiscall CAnimVert_Delete(CAnimVert *self, uint32_t flags);
