@@ -766,6 +766,7 @@ SD_IMPORT(CAStar2D_FindPath, 0x09a5e0)
 SD_IMPORT(CAStar2D_GetPointsVis, 0x09a6e0)
 SD_IMPORT(CAStar_FindPath, 0x099b30)
 SD_IMPORT(CAStar_GetPointsVis, 0x099bf0)
+SD_IMPORT(DListSeg_Clear, 0x06d810)
 
 /* module agent: AI/IVehicleControl+IVehicleShootControl.cpp (imports below this line) */
 

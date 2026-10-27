@@ -152,7 +152,7 @@ typedef struct cAICharControl2DVtbl {
 	cAICharControlVtbl base;
 	byte(__thiscall *FloorAhead)(cAICharControl *self, const vec3_t *p);			/* 0x190 */
 	byte(__thiscall *FloorAt)(cAICharControl *self, const vec3_t *p, vec3_t *out);		/* 0x194 */
-	byte(__thiscall *TestStep)(cAICharControl *self, const vec3_t *a, const vec3_t *b, const vec3_t *c);	/* 0x198 */
+	byte(__thiscall *TestStep)(cAICharControl *self, const vec3_t *a, const vec3_t *b, const vec3_t *c, float r);	/* 0x198 */
 } cAICharControl2DVtbl;
 SD_SIZE(cAICharControl2DVtbl, 103 * 4);
 
@@ -406,6 +406,8 @@ void __thiscall cAICharControl_SetHold(cAICharControl *self, byte on);
 cAICharControl *__thiscall cAICharControl_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg);
 void __fastcall cAICharControl_dtor(cAICharControl *self);
 void __thiscall cAICharControl_Draw(cAICharControl *self);	/* rva 0x070330 */
+/* the segment list (0x20 byte nodes) emptied (fastcall) */
+void __fastcall DListSeg_Clear(cNWSegList *list);
 /* the control of the AI of a character (0x19c of cAIChar) */
 cAICharControl *__thiscall cAIChar_GetControl(cAIChar *ai);
 
@@ -465,6 +467,11 @@ byte __thiscall cAICharControl2D_InWay(cAICharControl *self, vec3_t dest, cEntit
  * lines of the length FactorDistTestColCharAI * radius around it (to the sides, up, the diagonals), then
  * FloorAhead(b); the corridor into debugSegs. To dest the test of TestPathEnd */
 byte __thiscall cAICharControl2D_TestPath(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
+/* TestPath with the 7 lines aimed at b, the step of a forward walk (TestStep with r), then FloorAhead(b) */
+byte __thiscall cAICharControl2D_TestPathEnd(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
+/* the 7 lines around a along the way from b to c (at most the radius plus 5 long); r not used */
+byte __thiscall cAICharControl2D_TestStep(cAICharControl *self, const vec3_t *a, const vec3_t *b, const vec3_t *c,
+	float r);
 /* the corridor of the walk back from a to b: 5 lines of the length FactorDistTestColBackCharAI * radius around
  * the line between the floors, back along it (not down); r not used */
 byte __thiscall cAICharControl2D_TestSides(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
@@ -474,6 +481,10 @@ byte __thiscall cAICharControl2D_FloorAt(cAICharControl *self, const vec3_t *p, 
 void __thiscall cAICharControl2D_StepGoal(cAICharControl *self, vec3_t *p);
 byte __thiscall cAICharControl2D_TryStrafe(cAICharControl *self, int side, cEntity *hitEnt, byte back, float keep,
 	byte fwd, float sd, byte e2);
+byte __thiscall cAICharControl2D_StrafeBack(cAICharControl *self, const vec3_t *pos, const vec3_t *away,
+	const vec3_t *dir, float dist, byte left, byte flag);
+byte __thiscall cAICharControl2D_StrafeFwd(cAICharControl *self, const vec3_t *pos, const vec3_t *away,
+	const vec3_t *dir, float dist, byte left, byte flag);
 
 /* the A* search on CNodesWorld (AI/AStar.cpp, not in C), as CAStar2D_FindPath and CAStar2D_GetPointsVis */
 byte __thiscall CAStar_FindPath(void *astar, cNWVecList *path, const vec3_t *dest, const vec3_t *pos, float r,

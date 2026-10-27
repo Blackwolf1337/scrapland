@@ -542,26 +542,40 @@ byte __thiscall cAICharControl2D_InWay(cAICharControl *self, vec3_t dest, cEntit
 	return k >= d;
 }
 
-/* a segment of the corridor: p = a + v * r, q = nl + p; 1 when it is free */
-static int AICC2D_Seg(vec3_t *p, vec3_t *q, const vec3_t *a, const vec3_t *v, float r, const vec3_t *nl) {
+/* a segment of the corridor: p = a + v * r, q = p + nl (aim: q = p + normalize(b - p) * len); 1 when it is free */
+static int AICC2D_Seg(vec3_t *p, vec3_t *q, const vec3_t *a, const vec3_t *v, float r, const vec3_t *nl,
+	const vec3_t *b, float len) {
+	vec3_t d, e;
+
 	p->x = a->x + v->x * r;
 	p->y = a->y + v->y * r;
 	p->z = a->z + v->z * r;
-	q->x = nl->x + p->x;
-	q->y = nl->y + p->y;
-	q->z = nl->z + p->z;
+	if (b) {
+		d.x = b->x - p->x;
+		d.y = b->y - p->y;
+		d.z = b->z - p->z;
+		Vec3_NormalizeTo(&e, &d);
+		q->x = e.x * len + p->x;
+		q->y = e.y * len + p->y;
+		q->z = e.z * len + p->z;
+	} else {
+		q->x = nl->x + p->x;
+		q->y = nl->y + p->y;
+		q->z = nl->z + p->z;
+	}
 	return !Engine_TestLine(p, q, NULL, NULL);
 }
 
-byte __thiscall cAICharControl2D_TestPath(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+/* TestPath (end 0: the 7 lines along the way from a to b) and TestPathEnd (end 1: the lines from the points around
+ * a to b, then the step of a walk forward) */
+static byte AICC2D_Corridor(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r, int end) {
 	cEntity *me = self->ent;
+	const cAICharControl2DVtbl *vt = AICC_Vtbl2D(self);
 	vec3_t hitA, hitB, A, D, N, P, s, U, V, nl, in, tmp;
 	vec3_t p1, q1, p2, q2, p3, q3, p4, q4, p5, q5, p6, q6, p7, q7;
 	const vec3_t up = { 0.0f, 1.0f, 0.0f };
+	const vec3_t *to = end ? b : NULL;
 
-	if (b->x == self->dest.x && b->y == self->dest.y && b->z == self->dest.z) {
-		return AICC_Vtbl(self)->TestPathEnd(self, a, b, r);
-	}
 	if (!NW2D_Probe(a, &hitA)) {
 		return 0;
 	}
@@ -602,45 +616,48 @@ byte __thiscall cAICharControl2D_TestPath(cAICharControl *self, const vec3_t *a,
 	nl.x = N.x * L;
 	nl.y = N.y * L;
 	nl.z = N.z * L;
-	if (!AICC2D_Seg(&p1, &q1, &A, &s, Obj_Vtbl(me)->GetRadius(me), &nl)) {
+	if (!AICC2D_Seg(&p1, &q1, &A, &s, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
 		return 0;
 	}
 	s.x = -s.x;
 	s.y = -s.y;
 	s.z = -s.z;
-	if (!AICC2D_Seg(&p2, &q2, &A, &s, Obj_Vtbl(me)->GetRadius(me), &nl)) {
+	if (!AICC2D_Seg(&p2, &q2, &A, &s, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
 		return 0;
 	}
-	if (!AICC2D_Seg(&p3, &q3, &A, &up, Obj_Vtbl(me)->GetRadius(me), &nl)) {
+	if (!AICC2D_Seg(&p3, &q3, &A, &up, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
 		return 0;
 	}
 	in.x = s.x + 0.0f;
 	in.y = s.y + 1.0f;
 	in.z = s.z + 0.0f;
 	Vec3_NormalizeTo(&U, &in);
-	if (!AICC2D_Seg(&p4, &q4, &A, &U, Obj_Vtbl(me)->GetRadius(me), &nl)) {
+	if (!AICC2D_Seg(&p4, &q4, &A, &U, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
 		return 0;
 	}
 	U.x = -U.x;
 	U.y = -U.y;
 	U.z = -U.z;
-	if (!AICC2D_Seg(&p5, &q5, &A, &U, Obj_Vtbl(me)->GetRadius(me), &nl)) {
+	if (!AICC2D_Seg(&p5, &q5, &A, &U, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
 		return 0;
 	}
 	in.x = s.x - 0.0f;
 	in.y = s.y - 1.0f;
 	in.z = s.z - 0.0f;
 	V = *Vec3_NormalizeTo(&tmp, &in);
-	if (!AICC2D_Seg(&p6, &q6, &A, &V, Obj_Vtbl(me)->GetRadius(me), &nl)) {
+	if (!AICC2D_Seg(&p6, &q6, &A, &V, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
 		return 0;
 	}
 	V.x = -V.x;
 	V.y = -V.y;
 	V.z = -V.z;
-	if (!AICC2D_Seg(&p7, &q7, &A, &V, Obj_Vtbl(me)->GetRadius(me), &nl)) {
+	if (!AICC2D_Seg(&p7, &q7, &A, &V, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
 		return 0;
 	}
-	if (!AICC_Vtbl2D(self)->FloorAhead(self, b)) {
+	if (end && self->walkDir == 1 && !vt->TestStep(self, &A, &hitA, &hitB, r)) {
+		return 0;
+	}
+	if (!vt->FloorAhead(self, b)) {
 		return 0;
 	}
 	/* the corridor for the debug view; segment 4 is not set here */
@@ -661,6 +678,85 @@ byte __thiscall cAICharControl2D_TestPath(cAICharControl *self, const vec3_t *a,
 	self->debugSegs[8].a = p7;
 	self->debugSegs[8].b = q7;
 	return 1;
+}
+
+byte __thiscall cAICharControl2D_TestPath(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+	if (b->x == self->dest.x && b->y == self->dest.y && b->z == self->dest.z) {
+		return AICC_Vtbl(self)->TestPathEnd(self, a, b, r);
+	}
+	return AICC2D_Corridor(self, a, b, r, 0);
+}
+
+byte __thiscall cAICharControl2D_TestPathEnd(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+	return AICC2D_Corridor(self, a, b, r, 1);
+}
+
+byte __thiscall cAICharControl2D_TestStep(cAICharControl *self, const vec3_t *a, const vec3_t *b, const vec3_t *c,
+	float r) {
+	cEntity *me = self->ent;
+	vec3_t D, N, P, s, U, V, nl, in, tmp, p, q;
+	const vec3_t up = { 0.0f, 1.0f, 0.0f };
+
+	(void)r;
+	D.y = c->y - b->y;
+	D.x = c->x - b->x;
+	D.z = c->z - b->z;
+	float len = (float)__builtin_sqrt((double)(D.y * D.y + D.x * D.x + D.z * D.z));
+	float L = Float_MinSS(len, AICC_X87Add(Obj_Vtbl(me)->GetRadius(me), 5.0f));
+	if (len == 0.0f) {
+		N = D;
+	} else {
+		float inv = 1.0f / len;
+		N.x = D.x * inv;
+		N.y = D.y * inv;
+		N.z = D.z * inv;
+	}
+	P.x = N.y * 0.0f - N.z;
+	P.y = N.z * 0.0f - N.x * 0.0f;
+	P.z = N.x - N.y * 0.0f;
+	if (P.x == 0.0f && P.y == 0.0f && P.z == 0.0f) {
+		return 1;
+	}
+	s = *Vec3_NormalizeTo(&tmp, &P);
+	nl.x = N.x * L;
+	nl.y = N.y * L;
+	nl.z = N.z * L;
+	if (!AICC2D_Seg(&p, &q, a, &s, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
+		return 0;
+	}
+	s.x = -s.x;
+	s.y = -s.y;
+	s.z = -s.z;
+	if (!AICC2D_Seg(&p, &q, a, &s, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
+		return 0;
+	}
+	if (!AICC2D_Seg(&p, &q, a, &up, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
+		return 0;
+	}
+	in.x = s.x + 0.0f;
+	in.y = s.y + 1.0f;
+	in.z = s.z + 0.0f;
+	Vec3_NormalizeTo(&U, &in);
+	if (!AICC2D_Seg(&p, &q, a, &U, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
+		return 0;
+	}
+	U.x = -U.x;
+	U.y = -U.y;
+	U.z = -U.z;
+	if (!AICC2D_Seg(&p, &q, a, &U, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
+		return 0;
+	}
+	in.x = s.x - 0.0f;
+	in.y = s.y - 1.0f;
+	in.z = s.z - 0.0f;
+	V = *Vec3_NormalizeTo(&tmp, &in);
+	if (!AICC2D_Seg(&p, &q, a, &V, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
+		return 0;
+	}
+	V.x = -V.x;
+	V.y = -V.y;
+	V.z = -V.z;
+	return AICC2D_Seg(&p, &q, a, &V, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f) != 0;
 }
 
 byte __thiscall cAICharControl2D_TestSides(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
@@ -713,23 +809,23 @@ byte __thiscall cAICharControl2D_TestSides(cAICharControl *self, const vec3_t *a
 	ml.x = M.x * L;
 	ml.y = M.y * L;
 	ml.z = M.z * L;
-	if (!AICC2D_Seg(&p1, &q1, &A, &s, Obj_Vtbl(me)->GetRadius(me), &ml)) {
+	if (!AICC2D_Seg(&p1, &q1, &A, &s, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
 		return 0;
 	}
 	s.x = -s.x;
 	s.y = -s.y;
 	s.z = -s.z;
-	if (!AICC2D_Seg(&p2, &q2, &A, &s, Obj_Vtbl(me)->GetRadius(me), &ml)) {
+	if (!AICC2D_Seg(&p2, &q2, &A, &s, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
 		return 0;
 	}
-	if (!AICC2D_Seg(&p3, &q3, &A, &up, Obj_Vtbl(me)->GetRadius(me), &ml)) {
+	if (!AICC2D_Seg(&p3, &q3, &A, &up, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
 		return 0;
 	}
 	in.x = s.x + 0.0f;
 	in.y = s.y + 1.0f;
 	in.z = s.z + 0.0f;
 	Vec3_NormalizeTo(&U, &in);
-	if (!AICC2D_Seg(&p4, &q4, &A, &U, Obj_Vtbl(me)->GetRadius(me), &ml)) {
+	if (!AICC2D_Seg(&p4, &q4, &A, &U, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
 		return 0;
 	}
 	in.x = s.x - 0.0f;
@@ -739,7 +835,7 @@ byte __thiscall cAICharControl2D_TestSides(cAICharControl *self, const vec3_t *a
 	W.x = -W.x;
 	W.y = -W.y;
 	W.z = -W.z;
-	if (!AICC2D_Seg(&p5, &q5, &A, &W, Obj_Vtbl(me)->GetRadius(me), &ml)) {
+	if (!AICC2D_Seg(&p5, &q5, &A, &W, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
 		return 0;
 	}
 	/* the corridor for the debug view; segment 4 is not set here */
@@ -854,6 +950,137 @@ void __thiscall cAICharControl2D_StepGoal(cAICharControl *self, vec3_t *p) {
 		break;
 	}
 	self->path.iter = save;
+}
+
+/* the point at dist from pos along the away direction a turned by ang around y (the sign of the side) */
+static void AICC2D_ArcPoint(vec3_t *out, const vec3_t *pos, const vec3_t *a, float ang, float dist) {
+	vec3_t rot, v, n;
+
+	rot.x = 0.0f;
+	rot.z = 0.0f;
+	rot.y = ang;
+	Vec3_NormalizeTo(&n, Vec3_Rotate(&v, a, &rot));
+	out->x = pos->x + n.x * dist;
+	out->y = pos->y + n.y * dist;
+	out->z = pos->z + n.z * dist;
+}
+
+/* the way of the character from s to a free and the corner s a b on the floor */
+static int AICC2D_ArcStep(cAICharControl *self, const vec3_t *s, const vec3_t *a, const vec3_t *b, byte left) {
+	cEntity *me = self->ent;
+
+	float fr = AICC_FloorRadius(self);
+	float fd = WChar(me)->floorDist;
+	float r2 = Obj_Vtbl(me)->GetRadius(me);
+	float r = Obj_Vtbl(me)->GetRadius(me);
+	if (!CNodesWorld2D_TestCorner(g_NodesWorld2D, s, a, b, r, r2, fd, fr, left, &self->debug348)) {
+		return 0;
+	}
+	fr = AICC_FloorRadius(self);
+	fd = WChar(me)->floorDist;
+	r2 = Obj_Vtbl(me)->GetRadius(me);
+	r = Obj_Vtbl(me)->GetRadius(me);
+	return CNodesWorld2D_TestPath(g_NodesWorld2D, a, b, r, r2, fd, fr, &self->debug348) != 0;
+}
+
+/* the walk around pos on the circle of radius dist from the way away to the way dir (the other way round without
+ * flag), in steps of the radius of the character: each step and corner free on the floor */
+byte __thiscall cAICharControl2D_StrafeBack(cAICharControl *self, const vec3_t *pos, const vec3_t *away,
+	const vec3_t *dir, float dist, byte left, byte flag) {
+	cEntity *me = self->ent;
+	vec3_t a, d, prev, cur, S, buf;
+
+	DListSeg_Clear(&self->debug348);
+	a = AICC2D_FlatNorm(away->x, away->z);
+	d = AICC2D_FlatNorm(dir->x, dir->z);
+	float sign = left ? 1.0f : -1.0f;
+	double ang = Vec3_Angle(&a, &d);
+	if (!flag) {
+		ang = 6.2831854820251465 - ang;
+	}
+	float step = Game_Atan2F(Obj_Vtbl(me)->GetRadius(me), dist);
+	prev.x = pos->x + a.x * dist;
+	prev.y = pos->y + a.y * dist;
+	prev.z = pos->z + a.z * dist;
+	if (g_ShowShirkAI == 1) {
+		DListVec3_Add(&self->debug318, AICC_Pos(self, &buf));
+		DListVec3_Add(&self->debug318, &prev);
+	}
+	float fr = AICC_FloorRadius(self);
+	float fd = WChar(me)->floorDist;
+	float r2 = Obj_Vtbl(me)->GetRadius(me);
+	float r = Obj_Vtbl(me)->GetRadius(me);
+	if (!CNodesWorld2D_TestPath(g_NodesWorld2D, AICC_Pos(self, &buf), &prev, r, r2, fd, fr, &self->debug348)) {
+		return 0;
+	}
+	AICC_Pos(self, &S);
+	float t = step;
+	while (ang > (double)t) {
+		AICC2D_ArcPoint(&cur, pos, &a, t * sign, dist);
+		if (g_ShowShirkAI == 1) {
+			DListVec3_Add(&self->debug318, &cur);
+		}
+		if (!AICC2D_ArcStep(self, &S, &prev, &cur, left)) {
+			return 0;
+		}
+		t = t + step;
+		S = prev;
+		prev = cur;
+	}
+	AICC2D_ArcPoint(&cur, pos, &a, (float)ang * sign, dist);
+	if (g_ShowShirkAI == 1) {
+		DListVec3_Add(&self->debug318, &cur);
+	}
+	if (!AICC2D_ArcStep(self, &S, &prev, &cur, left)) {
+		return 0;
+	}
+	return 1;
+}
+
+/* the floor below p raised (FloorAt into out) free of the other characters */
+static int AICC2D_ArcFloor(cAICharControl *self, const vec3_t *p, vec3_t *out) {
+	cEntity *hit;
+
+	if (!AICC_Vtbl2D(self)->FloorAt(self, p, out)) {
+		return -1;
+	}
+	if (g_ShowShirkAI == 1) {
+		DListVec3_Add(&self->debug330, out);
+	}
+	float r = WChar(self->ent)->prim.radius + 1.0f - g_MarginCollCharAI;
+	return !cWorld_TestSphereEntities(g_pWorld, self->ent, (void *)0x10, out, r, &hit, 1, 0);
+}
+
+/* StrafeBack on the floor in half steps: each point of the circle on the floor and free of the other characters */
+byte __thiscall cAICharControl2D_StrafeFwd(cAICharControl *self, const vec3_t *pos, const vec3_t *away,
+	const vec3_t *dir, float dist, byte left, byte flag) {
+	cEntity *me = self->ent;
+	vec3_t a, d, cur, out;
+
+	a = AICC2D_FlatNorm(away->x, away->z);
+	d = AICC2D_FlatNorm(dir->x, dir->z);
+	float sign = left ? 1.0f : -1.0f;
+	double ang = Vec3_Angle(&a, &d);
+	if (!flag) {
+		ang = 6.2831854820251465 - ang;
+	}
+	float step = (float)Game_Atan2(Obj_Vtbl(me)->GetRadius(me), dist) * 0.5f;
+	cur.x = pos->x + a.x * dist;
+	cur.y = pos->y + a.y * dist;
+	cur.z = pos->z + a.z * dist;
+	if (AICC2D_ArcFloor(self, &cur, &out) <= 0) {
+		return 0;
+	}
+	float t = step;
+	while (ang > (double)t) {
+		AICC2D_ArcPoint(&cur, pos, &a, t * sign, dist);
+		if (AICC2D_ArcFloor(self, &cur, &out) <= 0) {
+			return 0;
+		}
+		t = t + step;
+	}
+	AICC2D_ArcPoint(&cur, pos, &a, (float)ang * sign, dist);
+	return AICC2D_ArcFloor(self, &cur, &out) > 0;
 }
 
 byte __thiscall cAICharControl2D_TryStrafe(cAICharControl *self, int side, cEntity *hitEnt, byte back, float keep,
