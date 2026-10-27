@@ -1,33 +1,13 @@
 /*
- * The string and GUID helpers of the DX8 SDK framework (dxutil.cpp) and the small parts of d3dapp.cpp and
- * d3dutil.cpp in the engine3d range (include/scrap/dxutil.h). The generic strings are ANSI.
+ * The string and GUID helpers of the DX8 SDK framework (dxutil.cpp, include/scrap/dxutil.h). The generic strings
+ * are ANSI.
  */
 #include <string.h>
 
 #include "scrap/crt.h"
 #include "scrap/dxutil.h"
-#include "scrap/e3dutil.h"
 #include "scrap/global.h"
 #include "scrap/win32.h"
-
-int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b) {
-	if (a->Width < b->Width) {
-		return -1;
-	}
-	if (a->Width > b->Width) {
-		return 1;
-	}
-	if (a->Height < b->Height) {
-		return -1;
-	}
-	if (a->Height > b->Height) {
-		return 1;
-	}
-	if ((int)a->Format > (int)b->Format) {
-		return -1;
-	}
-	return (int)a->Format < (int)b->Format;
-}
 
 /* the original copies without a bound for cch -1 */
 void DXUtil_AnsiToGeneric(char *dst, const char *src, int cch) {
@@ -102,27 +82,4 @@ void DXUtil_WideToGeneric(char *dst, const uint16_t *src, int cch) {
 	if (dst && src && cch) {
 		DXUtil_WideToAnsi(dst, src, cch);
 	}
-}
-
-typedef intptr_t(__thiscall *d3dappMsgProc_t)(byte *self, void *hwnd, uint32_t msg, uintptr_t w, intptr_t l);
-
-intptr_t __stdcall D3DApp_WndProc(void *hwnd, uint32_t msg, uintptr_t w, intptr_t l) {
-	byte *app = g_Motor;
-	return ((d3dappMsgProc_t)(*(void ***)app)[0x30 / 4])(app, hwnd, msg, w, l);
-}
-
-typedef int(__stdcall *d3dCheckDeviceFormat_t)(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t usage,
-	uint32_t rtype, uint32_t check);
-typedef int(__stdcall *d3dCheckDepthStencilMatch_t)(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt,
-	uint32_t rt, uint32_t ds);
-
-/* IDirect3D8::CheckDeviceFormat (as D3DUSAGE_DEPTHSTENCIL of a surface) and CheckDepthStencilMatch */
-byte D3DApp_DepthFormatOk(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t ds) {
-	if (D3D_METHOD(d3d, d3dCheckDeviceFormat_t, 0x28)(d3d, adapter, type, fmt, 2, 1, ds) < 0) {
-		return 0;
-	}
-	if (D3D_METHOD(d3d, d3dCheckDepthStencilMatch_t, 0x30)(d3d, adapter, type, fmt, fmt, ds) < 0) {
-		return 0;
-	}
-	return 1;
 }

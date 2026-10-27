@@ -1,12 +1,13 @@
 /*
- * The helpers of the DX8 SDK framework inside the engine3d (dxutil.cpp, d3dutil.cpp and the static parts of
- * d3dapp.cpp, src/game/engine3d/Engine/DXUtil.c). The rest of CD3DApplication (g_Motor, scrapmain.h) is still the
- * exe's.
+ * The DX8 SDK framework inside the engine3d: the helpers of dxutil.cpp (src/game/engine3d/Engine/DXUtil.c) and the
+ * small parts of CD3DApplication of d3dapp.cpp (g_Motor, D3DApp.c; more of it in e3dutil.h and scrapmain.h). The
+ * enumeration, the creation, the frame and the device dialog of CD3DApplication are still the exe's.
  */
 #ifndef SCRAP_DXUTIL_H
 #define SCRAP_DXUTIL_H
 
 #include "scrap/d3d8.h"
+#include "scrap/e3dutil.h"
 
 typedef struct D3DDisplayMode {
 	uint32_t Width;			/* 0x0 */
@@ -24,8 +25,16 @@ typedef struct D3DGuid {
 } D3DGuid;
 SD_SIZE(D3DGuid, 0x10);
 
-/* qsort order of the display modes: width, height, then the format (the higher first) */
-int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b);
+/* more of g_Motor */
+#define MOTOR_U32(m, off) (*(uint32_t *)((m) + (off)))
+#define MOTOR_ACTIVE(m) MOTOR_U32(m, 0x2a388)
+#define MOTOR_READY(m) MOTOR_U32(m, 0x2a38c)
+#define MOTOR_FRAMEMOVING(m) MOTOR_U32(m, 0x2a390)
+#define MOTOR_SINGLESTEP(m) MOTOR_U32(m, 0x2a394)
+#define MOTOR_D3D(m) (*(void **)((m) + 0x2a3d4))	/* IDirect3D8 */
+#define MOTOR_USEDEPTH(m) MOTOR_U32(m, 0x2a5b0)
+
+/* dxutil.cpp */
 /* cch characters with the end (-1: the whole string); the generic strings are ANSI (two copies in the exe) */
 void DXUtil_AnsiToGeneric(char *dst, const char *src, int cch);
 void DXUtil_AnsiToWide(uint16_t *dst, const char *src, int cch);
@@ -36,9 +45,23 @@ void DXUtil_WideToGeneric(char *dst, const uint16_t *src, int cch);
 void DXUtil_GUIDToString(const D3DGuid *g, char *buf);
 /* 1 parsed, else 0 and the GUID cleared */
 int DXUtil_StringToGUID(const char *s, D3DGuid *g);
+/* still the exe's (src/imports.inc): the timer of the framework, cmd 1 start, 2 stop (rva 0x276790) */
+float DXUtil_Timer(int cmd);
+
+/* d3dapp.cpp */
+/* qsort order of the display modes: width, height, then the format (the higher first) */
+int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b);
 /* the window procedure of the application window: the MsgProc of g_Motor (vtable 0x30) */
 intptr_t __stdcall D3DApp_WndProc(void *hwnd, uint32_t msg, uintptr_t w, intptr_t l);
 /* ds is a depth/stencil format the adapter supports with the format fmt (IDirect3D8 d3d) */
 byte D3DApp_DepthFormatOk(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t ds);
+/* the defaults, g_Motor set (cleared by the destructor) */
+byte *__fastcall CD3DApp_ctor(byte *self);
+void __fastcall CD3DApp_dtor(byte *self);
+int __thiscall CD3DApp_AdjustWindowForChange(byte *self);
+void __thiscall CD3DApp_Pause(byte *self, int pause);
+/* the back buffer and depth buffer descriptions and the aspect ratio, a new device id */
+void __fastcall CD3DApp_UpdateBackBufferDesc(byte *self);
+/* CD3DApp_ResetDevice and CD3DApp_Reset: scrapmain.h */
 
 #endif

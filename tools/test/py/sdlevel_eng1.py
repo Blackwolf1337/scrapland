@@ -420,3 +420,33 @@ if en1d3d:
 		for en1ds in (80, 77, 75, 79, 71, 0):
 			check('en1 D3DApp_DepthFormatOk' + fmt((en1f, en1ds)), lambda f=en1f, ds=en1ds: SDTest.Call(0x276470,
 				'biiiii', en1d3d, 0, 1, f, ds)[0])
+
+# CD3DApplication: the constructor and destructor on a buffer (g_Motor set back), the window style, the back buffer
+# description (a new device id) and pause; these change the state of the device, so they come last
+if en1motor:
+	en1app = en1z(0x2a600)
+	def en1appf(a):
+		return map(lambda o, a=a: en1i(a + o), (0, 0x2a37c, 0x2a380, 0x2a384, 0x2a388, 0x2a38c, 0x2a390, 0x2a394,
+			0x2a3cc, 0x2a3d0, 0x2a3d4, 0x2a3d8, 0x2a4f0, 0x2a520, 0x2a524, 0x2a57c, 0x2a5a8, 0x2a5b0, 0x2a5b4,
+			0x2a5b8, 0x2a5bc, 0x2a5c0, 0x2a5c4, 0x2a5c8, 0x2a5cc, 0x2a5d0, 0x2a5d4, 0x2a5d8))
+	for en1k in range(0, 0x2a600, 4):
+		if en1k >= 0x2a370:
+			en1poke(en1app + en1k, 0x5a5a5a5a)
+	def en1ctor():
+		r = SDTest.Call(0x2732a0, 'tii', en1app)[0] == en1app
+		m = SDTest.Peek(0x4b1c04, 'i') == en1app
+		f = en1appf(en1app)
+		title = SDTest.Peek(en1i(en1app + 0x2a5ac), '@s')
+		SDTest.Call(0x2733c0, 'tvi', en1app)
+		m2 = SDTest.Peek(0x4b1c04, 'i')
+		SDTest.Poke(0x4b1c04, en1motor)
+		return (r, m, f, title, m2)
+	check('en1 CD3DApp_ctor dtor', en1ctor)
+	check('en1 CD3DApp_AdjustWindowForChange', lambda: SDTest.Call(0x2733e0, 'tii', en1motor)[0])
+	en1devid = en1i(en1motor + 0x2a5a8)
+	check('en1 CD3DApp_UpdateBackBufferDesc', lambda: (en1lg(lambda: (SDTest.Call(0x276280, 'tvi', en1motor),)),
+		en1ints(en1motor + 0x2a4b0, 16), en1fl(0x8a8968, 1), en1i(en1motor + 0x2a5a8) - en1devid))
+	en1pc = SDTest.Peek(0x4b1c3c, 'i')
+	for en1p in (1, 1, 0, 0):
+		check('en1 CD3DApp_Pause' + fmt((en1p,)), lambda p=en1p: (SDTest.Call(0x2750b0, 'tvii', en1motor, p),
+			SDTest.Peek(0x4b1c3c, 'i') - en1pc, en1i(en1motor + 0x2a38c)))
