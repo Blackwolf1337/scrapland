@@ -200,7 +200,6 @@ SD_IMPORT(Steam_GetID, 0x134720)
 SD_IMPORT(Steam_GetTicket, 0x1345e0)
 SD_IMPORT(Gog_GetID, 0x137160)
 SD_IMPORT(Anm_Preload, 0x2051a0)
-SD_IMPORT(cWorld_GetUsrEntity, 0x0c1430)
 SD_IMPORT(Alarm_Set, 0x13fe60)
 SD_IMPORT(Alarm_SetChar, 0x13ff20)
 SD_IMPORT(Alarm_SetGrow, 0x13fd50)
@@ -702,3 +701,5 @@ SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
 /* module agent: Scorer/AbstractText+Button+Circuit+Head+Mission+Monitor+Radar (imports below this line) */
 
 /* module agent: Entities/Char/Type part 1 (imports below this line) */
+SD_IMPORT(cActCtrl_GetActionName, 0x062c40)
+SD_IMPORT(cWalkCharEntity_SetEnergy, 0x0d4bc0)

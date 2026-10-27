@@ -4563,3 +4563,28 @@ SD_HOOK(cFollowCamEntity_SetAng2, 0x0c09a0, 27)
 SD_HOOK(cFollowCamEntity_Update, 0x0c09c0, 321)
 SD_HOOK(cFollowCamEntity_VarS, 0x0c0b10, 489)
 SD_HOOK(cFollowCamEntity_VarV, 0x0c0d00, 26)
+/* src/game/Entities/Char/Type/Banker.c */
+SD_HOOK(ChType_BankDirectorActionPress, 0x0c0d20, 342)
+SD_HOOK(ChType_BankDirectorActionRelease, 0x0c0e80, 298)
+SD_HOOK(ChType_BankDirectorEndActionInit, 0x0c0fb0, 278)
+SD_HOOK(ChType_BankerAttack, 0x0c10d0, 646)
+SD_HOOK(ChType_BankerVictim, 0x0c1360, 97)
+SD_HOOK(ChType_CanRob, 0x0c13d0, 91)
+SD_HOOK(cWorld_GetUsrEntity, 0x0c1430, 79)
+SD_HOOK(ChType_Steal, 0x0c1480, 392)
+/* src/game/Entities/Char/Type/BankMaster.c */
+SD_HOOK(ChType_BankMasterActionEnd, 0x0c1610, 366)
+SD_HOOK(ChType_BankMasterActionInit, 0x0c1780, 254)
+SD_HOOK(ChType_ActionPress, 0x0c1880, 217)		/* BankMasterActionPress */
+SD_HOOK(ChType_BankMasterAttack, 0x0c1960, 257)
+SD_HOOK(ChType_BankMasterSuction, 0x0c1a70, 828)
+SD_HOOK(ChType_BankMasterHitEvent, 0x0c1db0, 410)
+SD_HOOK(ChType_FXBankMasterAttack, 0x0c1f50, 299)
+/* src/game/Entities/Char/Type/Berto.c */
+SD_HOOK(ChType_BertoActionEnd, 0x0c2080, 261)
+SD_HOOK(ChType_BertoActionInit, 0x0c2190, 254)
+SD_HOOK(ChType_ActionPress, 0x0c2290, 217)		/* BertoActionPress */
+SD_HOOK(ChType_BertoAttack, 0x0c2370, 257)
+SD_HOOK(ChType_BertoFlashHit, 0x0c2480, 411)
+SD_HOOK(ChType_BertoHitEvent, 0x0c2620, 362)
+SD_HOOK(ChType_FXBertoAttack, 0x0c2790, 299)
