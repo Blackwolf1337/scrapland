@@ -48,21 +48,28 @@ SD_SIZE(cEmbeddedFXAmplifier, 0xcc);
 
 #define FXBATTERY_TRAILS 3
 
+/* a ray of the battery, between two random points of the root */
+typedef struct cEmbeddedFXBatteryRay {
+	vec3_t a;
+	vec3_t b;
+} cEmbeddedFXBatteryRay;
+
 typedef struct cEmbeddedFXBattery {
 	cEmbeddedFX base;
 	byte visible;			/* 0x008 */
 	byte pad_09[3];
 	int dummyGlow;			/* 0x00c DOB_Batery_Glow */
-	CGameParticles glow;		/* 0x010 */
+	CGameParticles glow;		/* 0x010 the ray ends and the sparks */
 	int dummyRoot;			/* 0x0c0 DC_Root */
-	int i0c4;			/* 0x0c4 */
-	CGameTrail trails[FXBATTERY_TRAILS];	/* 0x0c8 */
-	byte pad_d4[0x11c - 0xd4];
-	float f11c[FXBATTERY_TRAILS];	/* 0x11c */
-	float f128[FXBATTERY_TRAILS];	/* 0x128 0.4..1.2 */
+	float sparkT;			/* 0x0c4 to the next sparks */
+	CGameTrail trails[FXBATTERY_TRAILS];	/* 0x0c8 the rays */
+	cEmbeddedFXBatteryRay rays[FXBATTERY_TRAILS];	/* 0x0d4 */
+	float life[FXBATTERY_TRAILS];	/* 0x11c of the ray */
+	float delay[FXBATTERY_TRAILS];	/* 0x128 to the next ray, 0.4..1.2 after the Reset */
 } cEmbeddedFXBattery;
 SD_OFFSET(cEmbeddedFXBattery, trails, 0xc8);
-SD_OFFSET(cEmbeddedFXBattery, f11c, 0x11c);
+SD_OFFSET(cEmbeddedFXBattery, rays, 0xd4);
+SD_OFFSET(cEmbeddedFXBattery, life, 0x11c);
 SD_SIZE(cEmbeddedFXBattery, 0x134);
 
 #define FXBOSSSHIELD_TRAILS 16
@@ -70,17 +77,22 @@ SD_SIZE(cEmbeddedFXBattery, 0x134);
 
 typedef struct cEmbeddedFXBossShield {
 	cEmbeddedFX base;
-	CGameParticles particles;	/* 0x0008 Dummy01 */
-	float f0b8[FXBOSSSHIELD_SLOTS];	/* 0x00b8 -1 */
-	byte pad_4b4[0x1c9c - 0x4b4];
-	int i1c9c;			/* 0x1c9c set by the network message */
-	byte pad_1ca0[4];
-	float f1ca4;			/* 0x1ca4 */
-	int i1ca8;			/* 0x1ca8 */
-	int i1cac;			/* 0x1cac */
-	CGameTrail trails[FXBOSSSHIELD_TRAILS];	/* 0x1cb0 */
+	CGameParticles particles;	/* 0x0008 Dummy01, a glow per slot */
+	float t[FXBOSSSHIELD_SLOTS];	/* 0x00b8 0..1, -1 after the Reset */
+	float speed[FXBOSSSHIELD_SLOTS];	/* 0x04b4 */
+	vec3_t dir[FXBOSSSHIELD_SLOTS];	/* 0x08b0 on the shield */
+	float size[FXBOSSSHIELD_SLOTS];	/* 0x14a4 */
+	uint32_t color[FXBOSSSHIELD_SLOTS];	/* 0x18a0 */
+	int mode;			/* 0x1c9c 1, 2 shown (the color set), else hidden; the network message */
+	float regen;			/* 0x1ca0 Value of the RegenerationBar of the scorer */
+	float hit;			/* 0x1ca4 1 on a hit, falls to 0 */
+	float spin;			/* 0x1ca8 of the rings */
+	float f1cac;			/* 0x1cac */
+	CGameTrail trails[FXBOSSSHIELD_TRAILS];	/* 0x1cb0 the rings */
 } cEmbeddedFXBossShield;
-SD_OFFSET(cEmbeddedFXBossShield, i1c9c, 0x1c9c);
+SD_OFFSET(cEmbeddedFXBossShield, dir, 0x8b0);
+SD_OFFSET(cEmbeddedFXBossShield, color, 0x18a0);
+SD_OFFSET(cEmbeddedFXBossShield, mode, 0x1c9c);
 SD_OFFSET(cEmbeddedFXBossShield, trails, 0x1cb0);
 SD_SIZE(cEmbeddedFXBossShield, 0x1cf0);
 

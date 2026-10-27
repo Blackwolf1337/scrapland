@@ -10,6 +10,7 @@
 #include "scrap/fxmisc.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
+#include "scrap/scorer.h"
 #include "scrap/timer.h"
 
 #define CGAMEPARTICLES_CTOR 0x21d1b0
@@ -418,27 +419,27 @@ byte __fastcall cEmbeddedFXBattery_Reset(cEmbeddedFXBattery *self) {
 		CGameTrail_SetTexture(t, 9);
 		CGameTrail_SetPremul(t, 1);
 		int r = crt_rand() & 0x7fff;
-		self->f11c[i] = 0.0f;
-		self->f128[i] = (float)((double)r * (1.0 / 32767.0) * 0x1.99999cp-1 + 0x1.99999ap-2);
+		self->life[i] = 0.0f;
+		self->delay[i] = (float)((double)r * (1.0 / 32767.0) * 0x1.99999cp-1 + 0x1.99999ap-2);
 	}
-	self->i0c4 = 0;
+	self->sparkT = 0.0f;
 	return 1;
 }
 
 byte __fastcall cEmbeddedFXBossShield_Reset(cEmbeddedFXBossShield *self) {
 	for (int i = 0; i < FXBOSSSHIELD_SLOTS; i++) {
-		self->f0b8[i] = -1.0f;
+		self->t[i] = -1.0f;
 	}
-	self->i1ca8 = 0;
-	self->i1cac = 0;
+	self->spin = 0.0f;
+	self->f1cac = 0.0f;
 	for (int i = 0; i < FXBOSSSHIELD_TRAILS; i++) {
 		CGameTrail *t = &self->trails[i];
 		CGameTrail_SetMaxTrails(t, 31);
 		CGameTrail_SetSmooth(t, 0);
 		CGameTrail_SetTexture(t, 11);
 	}
-	self->i1c9c = 0;
-	self->f1ca4 = 0.0f;
+	self->mode = 0;
+	self->hit = 0.0f;
 	return 1;
 }
 
@@ -517,7 +518,7 @@ void __fastcall cEmbeddedFXBattery_Release(cEmbeddedFXBattery *self) {
 	for (int i = 0; i < FXBATTERY_TRAILS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
 	}
-	self->i0c4 = 0;
+	self->sparkT = 0.0f;
 }
 
 /* BossShield: the trails cleared (also its Stop) */
@@ -667,12 +668,12 @@ void __thiscall cEmbeddedFXTreasure_Stop(cEmbeddedFXTreasure *self, byte keep) {
 
 /* ---- setters (most have no caller in the exe) ---- */
 
-void __thiscall cEmbeddedFXBossShield_SetI1c9c(cEmbeddedFXBossShield *self, int v) {
-	self->i1c9c = v;
+void __thiscall cEmbeddedFXBossShield_SetMode(cEmbeddedFXBossShield *self, int mode) {
+	self->mode = mode;
 }
 
-void __thiscall cEmbeddedFXBossShield_SetF1ca4(cEmbeddedFXBossShield *self, float v) {
-	self->f1ca4 = v;
+void __thiscall cEmbeddedFXBossShield_SetHit(cEmbeddedFXBossShield *self, float hit) {
+	self->hit = hit;
 }
 
 /* the float at 0xc0: the scale of Coin and Item, t of Conversor and Flag */
@@ -1137,15 +1138,15 @@ static cEmbeddedFX *EFXM_ObjFX(const char *name) {
 	return Entity_EmbeddedFX(v);
 }
 
-/* the entity BossShield: f1ca4 to 1 */
-void EmbeddedFXMisc_BossShieldSet(void) {
+/* the shield of the entity BossShield hit */
+void EmbeddedFXMisc_BossShieldHit(void) {
 	cEmbeddedFXBossShield *fx = (cEmbeddedFXBossShield *)EFXM_ObjFX("BossShield");
 
 	CHECK(fx);
-	fx->f1ca4 = 1.0f;
+	fx->hit = 1.0f;
 }
 
-/* the entity name and the value of i1c9c */
+/* the entity name and the mode of its shield */
 void EmbeddedFXMisc_BossShieldMsg(cAbstractFile *f) {
 	char name[128];
 	int v = 0;
@@ -1154,7 +1155,7 @@ void EmbeddedFXMisc_BossShieldMsg(cAbstractFile *f) {
 	f->vftable->Read(f, &v, 4);
 	cEmbeddedFXBossShield *fx = (cEmbeddedFXBossShield *)EFXM_ObjFX(name);
 	CHECK(fx);
-	fx->i1c9c = v;
+	fx->mode = v;
 }
 
 /* the entity name, a and the count of the meeting point count down (b = count * 220) */
@@ -1934,5 +1935,381 @@ void __thiscall cEmbeddedFXTreasure_Update(cEmbeddedFXTreasure *self, float dt) 
 			q.z = (rz + sz * 1.9f) + scale * 0.0f;
 			CGameTrail_Add(&self->trail, q, scale * 105.0f, top);
 		}
+	}
+}
+
+/* the BossShield engine variables */
+#define g_FXBossShieldAspect GAME_DATA(float, 0x447404)
+#define g_FXBossShieldRadius GAME_DATA(float, 0x447454)
+#define g_FXBossShieldScale GAME_DATA(float, 0x4473ec)
+
+/* a random point on the shield */
+static void EFXM_ShieldDir(vec3_t *out) {
+	vec3_t tmp;
+	float aspect = g_FXBossShieldAspect;
+	float radius = g_FXBossShieldRadius;
+
+	vec3_t *d = FX_RandomDir(&tmp);
+	out->x = d->x * radius;
+	out->y = d->y * radius * aspect;
+	out->z = d->z * radius;
+}
+
+/* a random color of the mode (1 blue, 2 green), else keep */
+static uint32_t EFXM_ShieldColor(int mode, uint32_t keep) {
+	uint32_t c;
+
+	if (mode == 1) {
+		c = (uint32_t)(crt_rand() % 16 + 0x40) << 8;
+		c |= (uint32_t)(crt_rand() % 16 + 0x40) << 16;
+		return (uint32_t)(crt_rand() % 32 + 0xa4) | c;
+	}
+	if (mode == 2) {
+		c = (uint32_t)(crt_rand() % 32 + 0x9a) << 8;
+		c |= (uint32_t)(crt_rand() % 16 + 0x40) << 16;
+		return (uint32_t)(crt_rand() % 16 + 0x40) | c;
+	}
+	return keep;
+}
+
+/* the swell of the shield by the hit: 1 + 0.4 h^2 (2 - h) */
+static inline float EFXM_ShieldSwell(float h) {
+	return h * h * (2.0f - h) * 0.4f + 1.0f;
+}
+
+/* the visibility of the shield by the hit and the regeneration, random */
+static float EFXM_ShieldVis(cEmbeddedFXBossShield *self, float h, float a) {
+	float w = h > 1.0f ? 1.0f + self->regen : h + self->regen + self->regen;
+
+	w = w * a;
+	return Float_MinSS(1.0f, (float)(EFXM_Rnd() * 0.40000003576278687 + 0.800000011920929) * w);
+}
+
+/* the glows of the slots move on the shield; 16 rings turn around it; the regeneration from the scorer */
+void __thiscall cEmbeddedFXBossShield_Update(cEmbeddedFXBossShield *self, float dt) {
+	CGameParticles *p = &self->particles;
+	vec3_t pos, rot, o, o2, P = { 0.0f, 0.0f, 0.0f };
+	uint32_t c = 0;
+
+	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CHECK(CGameModel_IsLoaded(model));
+	if (self->mode < 1 || self->mode > 2) {
+		if (CGameModel_IsEnabled(model)) {
+			for (int i = 0; i < FXBOSSSHIELD_TRAILS; i++) {
+				CGameTrail_Clear(&self->trails[i]);
+			}
+		}
+		CGameModel_Disable(model);
+		return;
+	}
+	CGameModel_Enable(model);
+	CGameParticles_SetAlpha(p, (float)(EFXM_Rnd() * 0.5 + 0.5));
+	for (int i = 0; i < FXBOSSSHIELD_SLOTS; i++) {
+		float t = self->speed[i] * dt + self->t[i];
+		self->t[i] = t;
+		if (0.0f > t || t >= 1.0f) {
+			self->t[i] = 0.0f;
+			EFXM_ShieldDir(&self->dir[i]);
+			self->speed[i] = (float)(EFXM_Rnd() * 6.350000381469727 + 2.450000047683716);
+			self->size[i] = (float)(EFXM_Rnd() * 65.0 + 155.0) * g_FXBossShieldScale;
+			self->color[i] = EFXM_ShieldColor(self->mode, self->color[i]);
+		}
+		P = self->dir[i];
+		int odd = i & 1;
+		if (odd) {
+			EFXM_ShieldDir(&P);
+		}
+		float h = self->hit;
+		float size = self->size[i];
+		if (h > 0.0f) {
+			float k = EFXM_ShieldSwell(h);
+			P.x = P.x * k;
+			P.y = P.y * k;
+			P.z = P.z * k;
+			size = self->size[i] * ((3.0f - (h + h)) * (h * h) + 1.0f);
+		}
+		float tt = self->t[i];
+		float a;
+		if (0.1f > tt) {
+			a = 1.0f - tt * 10.0f;
+		} else if (tt > 0.5f) {
+			a = (tt - 0.5f) + (tt - 0.5f);
+		} else {
+			a = 0.0f;
+		}
+		float vis = EFXM_ShieldVis(self, h, a);
+		int al = 0xff - (int)(vis * 255.0f);
+		uint32_t color = (self->color[i] & 0xffffff) | ((uint32_t)al << 24);
+		if (al >= 0xff) {
+			CGameParticles_Kill(p, i);
+		} else if (odd) {
+			float spin = (float)(EFXM_Rnd() * 6.2831854820251465 + 0.0);
+			float s = (float)(EFXM_Rnd() * 0.10000002384185791 + 1.350000023841858) * size;
+			CGameParticles_SetParticle(p, i, P.x, P.y, P.z, s, color, 0x2b, spin);
+		} else {
+			CGameParticles_SetParticle(p, i, P.x, P.y, P.z, size * 0.6f, color, 5, 0.0f);
+		}
+	}
+	self->spin = dt * 14.0f + self->spin;
+	self->f1cac = dt * 20.0f + self->f1cac;
+	for (int j = 0, n = FXBOSSSHIELD_TRAILS; n > 0; j++, n--) {
+		CGameTrail *trail = &self->trails[j];
+		c = EFXM_ShieldColor(self->mode, c);
+		float radius = g_FXBossShieldRadius * 1.8f;
+		float h = self->hit;
+		if (h > 0.0f) {
+			radius = radius * EFXM_ShieldSwell(h);
+		}
+		float vis = EFXM_ShieldVis(self, h, 1.0f);
+		CGameTrail_Reset(trail);
+		CGameTrail_SetTransp(trail, (byte)(int)((float)n * 0.0625f * 232.0f));
+		int np = CGameTrail_GetMaxTrails(trail);
+		int half = np / 2;
+		for (int k = 0; k < np; k++) {
+			float f = (float)k / (float)half;
+			float a = k < half ? -(1.0f - f) : f - 1.0f;
+			int r = crt_rand() % 64;
+			int al = -1 - (int)((float)(r - (int)(((float)__builtin_fabs((double)a) - 1.0f) * 191.0f)) * vis);
+			uint32_t color = ((uint32_t)al << 24) | (c & 0xffffff);
+			float sn, cs;
+			X87_SinCos(a, &sn, &cs);
+			float aspect = g_FXBossShieldAspect;
+			float ang = self->spin + (float)j * 0.055f;
+			vec3_t rr, v;
+			if (j & 1) {
+				rr = (vec3_t){ ang, 3.1415927f, 0.0f };
+			} else {
+				rr = (vec3_t){ ang + 3.1415927f, 3.1415927f, 0.0f };
+			}
+			v = (vec3_t){ sn, 0.0f, cs };
+			Vec3_Rotate(&o, &v, &rr);
+			vec3_t q = { o.x * radius, o.y * radius * aspect, o.z * radius };
+			vec3_t *r2 = Vec3_Rotate(&o2, &q, CGameModel_GetRot(model, &rot));
+			vec3_t *at = CGameModel_GetPos(model, &pos);
+			vec3_t pt = { r2->x + at->x, r2->y + at->y, r2->z + at->z };
+			CGameTrail_Add(trail, pt, 125.0f, color);
+		}
+	}
+	cEntity *boss = World_FindEntity("Boss");
+	if (boss && boss->vftable->IsType(boss, TYEN_CAR)) {
+		cScorer *scorer = Scorer_Get(0);
+		cScorerItem *item = scorer ? cScorer_FindItem(scorer, "RegenerationBar") : NULL;
+		if (item) {
+			/* not written by Var when the item has no Value: then the original reads the x, y of the last glow */
+			double v;
+			memcpy(&v, &P, sizeof(v));
+			self->regen = 0.0f;
+			item->vftable->Var(item, "Value", 0, NULL, &v, NULL);
+			self->regen = (float)v;
+		}
+	}
+	if (self->hit > 0.0f) {
+		self->hit = self->hit - dt * 4.0f;
+		return;
+	}
+	self->hit = 0.0f;
+}
+
+/* the color ramps of the battery sparks (9 colors) */
+#define RAMP_BATTERY_FLASH 0x428450
+#define RAMP_BATTERY_SPARKS 0x428474	/* [2] */
+
+static inline void EFXM_ParticleColor(CGameParticles *p, int n, const vec3_t *pos, float size, int a, int sprite) {
+	CGameParticles_SetParticle(p, n, pos->x, pos->y, pos->z, size, ((uint32_t)a << 24) | 0x64d2ff, sprite, 0.0f);
+}
+
+/* the start of the particles of the sparks at s * a random direction from c */
+static void EFXM_SparkPos(CGameParticles *p, float s, const vec3_t *c) {
+	vec3_t tmp;
+
+	vec3_t *dir = FX_RandomDir(&tmp);
+	p->initPosMin.x = s * dir->x + c->x;
+	p->initPosMin.y = dir->y * s + c->y;
+	p->initPosMin.z = dir->z * s + c->z;
+	p->initPosMax = p->initPosMin;
+}
+
+/* a flash of the sparks: the sizes and the life from the random ranges */
+static void EFXM_SparkFlash(CGameParticles *p, double ini, double iniAdd, double endAdd, byte sprite, double life,
+	double lifeAdd) {
+	CGameParticles_SetColorRamp(p, (uint32_t *)Game_Ptr(RAMP_BATTERY_FLASH));
+	p->sizeIni = (float)(EFXM_Rnd() * ini + iniAdd);
+	p->sizeEnd = (float)(EFXM_Rnd() * 15.0 + endAdd);
+	int r = crt_rand() & 0x7fff;
+	p->sizeLife = 0.15f;
+	p->spriteIni = sprite;
+	p->spriteEnd = sprite;
+	p->lifeTime = (float)((double)r * (1.0 / 32767.0) * life + lifeAdd);
+	CGameParticles_Apply(p);
+	CGameParticles_EmitN(p, 1, 1);
+}
+
+/* three rays that jump between random points now and then, a burst of sparks at the top */
+void __thiscall cEmbeddedFXBattery_Update(cEmbeddedFXBattery *self, float dt) {
+	CGameParticles *p = &self->glow;
+	matrix_t m;
+	vec3_t rot, d, ang, tmp, ta, tb, up;
+
+	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	if (!CGameModel_IsLoaded(model)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(model));
+	byte vis = CGameModel_IsVisible(model);
+	if (!vis) {
+		if (self->visible != vis) {
+			cEmbeddedFXBattery_Clear(self);
+			self->visible = 0;
+		}
+		return;
+	}
+	self->visible = vis;
+	vec3_t down = { 0.0f, -1.0f, 0.0f };
+	Vec3_Rotate(&d, &down, CGameModel_GetRot(model, &rot));
+	CGameModel_NodoMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
+	float rx = m.m[12];
+	float ry = m.m[13];
+	float rz = m.m[14];
+	Matrix_GetEuler(&m, &ang);
+	CGameParticles_NumParticles(p);
+	for (int i = 0; i < FXBATTERY_TRAILS; i++) {
+		CGameTrail *trail = &self->trails[i];
+		cEmbeddedFXBatteryRay *ray = &self->rays[i];
+		if (self->life[i] > 0.0f) {
+			CGameTrail_Clear(trail);
+			CGameTrail_SetUV(trail, (float)(EFXM_Rnd() + 0.0), 0.0f);
+			float t = self->life[i] - dt;
+			self->life[i] = t;
+			if (!(t > 0.0f)) {
+				CGameParticles_KillRange(p, 4 * i, 4 * i + 4);
+				continue;
+			}
+			float frac = 1.0f;
+			FX_InRange(t, 0.0f, 0.05f, &frac);
+			int al = (int)((1.0f - frac) * 164.0f);
+			vec3_t *r = Vec3_Rotate(&ta, &ray->a, &ang);
+			vec3_t a = { rx + r->x, r->y + ry, r->z + rz };
+			r = Vec3_Rotate(&tb, &ray->b, &ang);
+			vec3_t b = { r->x + rx, r->y + ry, r->z + rz };
+			uint32_t color = ((uint32_t)(al + 8) << 24) | 0x122c40;
+			vec3_t step = { b.x - a.x, b.y - a.y, b.z - a.z };
+			CGameTrail_Add(trail, a, 8.0f, color);
+			step.x = step.x * 0.25f;
+			step.y = step.y * 0.25f;
+			step.z = step.z * 0.25f;
+			for (int j = 1; j < 4; j++) {
+				float s = (float)(EFXM_Rnd() * 3.0 + 0.5);
+				vec3_t *dir = FX_RandomDir(&tmp);
+				float nx = s * dir->x;
+				float ny = dir->y * s;
+				float nz = dir->z * s;
+				float u = (float)(EFXM_Rnd() * 0.3500000238418579 + 0.25) + (float)j;
+				vec3_t q = { a.x + step.x * u + nx, a.y + step.y * u + ny, a.z + step.z * u + nz };
+				CGameTrail_Add(trail, q, (float)(EFXM_Rnd() + 0.0) + 5.0f, color);
+			}
+			CGameTrail_Add(trail, b, 8.0f, color);
+			EFXM_ParticleColor(p, 4 * i, &b, 8.0f, crt_rand() % 16 + (al + 0x10), 1);
+			EFXM_ParticleColor(p, 4 * i + 1, &b, 24.0f, crt_rand() % 64 + (al + 0x20), 5);
+			EFXM_ParticleColor(p, 4 * i + 2, &a, 8.0f, crt_rand() % 16 + (al + 0x10), 1);
+			EFXM_ParticleColor(p, 4 * i + 3, &a, 24.0f, crt_rand() % 64 + (al + 0x20), 5);
+			continue;
+		}
+		float delay = self->delay[i];
+		if (delay > 0.0f) {
+			self->delay[i] = delay - dt;
+			continue;
+		}
+		if (CGameModel_GetEffect(model, NULL)) {
+			continue;
+		}
+		/* a new ray from the bottom (y -36) to the top (y 30) or the other way */
+		self->delay[i] = (float)(EFXM_Rnd() * 0.5 + 0.30000001192092896);
+		self->life[i] = (float)(EFXM_Rnd() * 0.04999999701976776 + 0.20000000298023224);
+		float z;
+		if (crt_rand() & 1) {
+			z = (float)(EFXM_Rnd() * 2.0 + 0.0) + 18.0f;
+		} else {
+			z = -18.0f - (float)(EFXM_Rnd() * 2.0 + 0.0);
+		}
+		vec3_t *from = &ray->b;
+		vec3_t *to = &ray->a;
+		if (crt_rand() & 1) {
+			from = &ray->a;
+			to = &ray->b;
+		}
+		from->y = -36.0f;
+		from->x = (float)(EFXM_Rnd() * 64.0 - 32.0);
+		from->z = z;
+		to->x = (float)(EFXM_Rnd() * 12.0 - 6.0) + from->x;
+		to->y = 30.0f;
+		to->z = z;
+	}
+	float st = self->sparkT - dt;
+	self->sparkT = st;
+	if (!(0.0f >= st)) {
+		return;
+	}
+	self->sparkT = (float)(EFXM_Rnd() * 0.699999988079071 + 0.30000001192092896);
+	p->birthRate = 0;
+	CGameParticles_SetSparksOn(p, 0);
+	vec3_t v = { 0.0f, 55.0f, 0.0f };
+	vec3_t *r = Vec3_Rotate(&tmp, &v, &ang);
+	vec3_t c = { rx + r->x, r->y + ry, r->z + rz };
+	float r1 = (float)(EFXM_Rnd() - 0.5);
+	float r2 = (float)(EFXM_Rnd() - 0.5);
+	float r3 = (float)(EFXM_Rnd() - 0.5);
+	vec3_t rr = { r3, r2, r1 };
+	vec3_t upv = { 0.0f, 1.0f, 0.0f };
+	Vec3_Rotate(&up, &upv, &rr);
+	EFXM_SparkPos(p, (float)(EFXM_Rnd() * 3.0 + 1.0), &c);
+	p->initVelMin.x = 0.0f;
+	p->initVelMin.y = 0.0f;
+	p->initVelMin.z = 0.0f;
+	p->initVelMax = p->initVelMin;
+	p->initAccMin.x = 0.0f;
+	p->initAccMin.y = 0.0f;
+	p->initAccMin.z = 0.0f;
+	p->initAccMax = p->initAccMin;
+	EFXM_SparkFlash(p, 10.0, 40.0, 165.0, 6, 0.019999995827674866, 0.18000000715255737);
+	EFXM_SparkFlash(p, 2.0, 4.0, 55.0, 5, 0.02000001072883606, 0.1599999964237213);
+	CGameParticles_SetSparksOn(p, 1);
+	p->birthRate = 0;
+	for (int j = 0; j < crt_rand() % 6 + 8; j++) {
+		EFXM_SparkPos(p, (float)(EFXM_Rnd() * 3.0 + 1.0), &c);
+		float speed = (float)(EFXM_Rnd() * 250.0 + 150.0);
+		float q1 = (float)(EFXM_Rnd() * 1.2000000476837158 - 0.6000000238418579);
+		float q2 = (float)(EFXM_Rnd() * 1.2000000476837158 - 0.6000000238418579);
+		float q3 = (float)(EFXM_Rnd() * 1.2000000476837158 - 0.6000000238418579);
+		vec3_t rot2 = { q3, q2, q1 };
+		vec3_t *w = Vec3_Rotate(&ta, &up, &rot2);
+		p->initVelMin.x = w->x * speed;
+		p->initVelMin.y = w->y * speed;
+		p->initVelMin.z = w->z * speed;
+		p->initVelMax = p->initVelMin;
+		float k = (float)(EFXM_Rnd() * 0.06000000238418579 + 0.6200000047683716);
+		float ax = -p->initVelMin.x * k;
+		float ay = -p->initVelMin.y * k;
+		float az = -p->initVelMin.z * k;
+		p->initAccMin.y = ay - 280.0f;
+		p->initAccMin.x = ax + 0.0f;
+		p->initAccMin.z = az + 0.0f;
+		p->initAccMax = p->initAccMin;
+		float size = (float)(EFXM_Rnd() * 6.0 + 12.0);
+		p->sizeIni = size;
+		p->sizeEnd = size;
+		int rl = crt_rand() & 0x7fff;
+		p->sizeLife = 1.0f;
+		p->rotIni = 0.0f;
+		p->rotEnd = 0.0f;
+		p->rotVar = 0.0f;
+		p->sparkVelScale = 1.0f;
+		p->lifeTime = (float)((double)rl * (1.0 / 32767.0) * 0.20000001788139343 + 0.4000000059604645);
+		p->sparkMaxSize = (float)(EFXM_Rnd() * 1.899999976158142 + 0.6000000238418579);
+		p->spriteIni = (byte)((crt_rand() & 1) + 0x41);
+		p->spriteEnd = 0x44;
+		CGameParticles_Apply(p);
+		CGameParticles_SetColorRampOn(p, 1);
+		CGameParticles_SetColorRamp(p, (uint32_t *)Game_Ptr(RAMP_BATTERY_SPARKS + 36 * (crt_rand() & 1)));
+		CGameParticles_EmitDt(p, 1, 0, (float)(EFXM_Rnd() * 0.10000000149011612 + 0.0));
 	}
 }
