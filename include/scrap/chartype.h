@@ -29,14 +29,19 @@
 #define WChar_MaxLife(e) (*(int *)((byte *)(e) + 0x22c))
 #define WChar_Life(e) (*(int *)((byte *)(e) + 0x238))
 #define WChar_God(e) (*(byte *)((byte *)(e) + 0x23c))			/* no damage */
+#define WChar_Attack(e) ((void *)((byte *)(e) + 0x298))		/* who hit it last (cVehicleAttack) */
+#define WChar_Shadow(e) ((void *)((byte *)(e) + 0x39c))		/* cPrimitive */
+#define WChar_OwnerSlot(e) (*(int *)((byte *)(e) + 0x424))		/* "UsrControl", -1 for an AI */
 #define WChar_Ang(e) ((vec3_t *)((byte *)(e) + 0x428))
 #define WChar_Falling(e) (*(byte *)((byte *)(e) + 0x464))
 #define WChar_DisplAng(e) (*(float *)((byte *)(e) + 0x468))
 #define WChar_EnergyUsed(e) (*(float *)((byte *)(e) + 0x498))		/* 1 minus the weapon energy */
+#define WChar_ViewLock(e) (*(byte *)((byte *)(e) + 0x4d4))		/* the actions set the view angles */
 #define WChar_EnergyBarDecr(e) (*(float *)((byte *)(e) + 0x4b0))	/* the energy an action needs */
 #define WChar_Money(e) (*(int *)((byte *)(e) + 0x4cc))		/* "Money" */
 #define WChar_MoneyReward(e) (*(int *)((byte *)(e) + 0x4d0))		/* "MoneyReward" */
-#define WChar_Move(e) ((void *)((byte *)(e) + 0x4ec))
+#define WChar_Control(e) ((void *)((byte *)(e) + 0x4ec))		/* Entities/Char/WalkCharControl.cpp */
+#define WChar_ControlF4f8(e) (*(float *)((byte *)(e) + 0x4f8))
 #define WChar_ActionPress(e) (*(byte *)((byte *)(e) + 0x504))		/* the action button is down */
 #define WChar_Victim(e) (*(cEntity **)((byte *)(e) + 0x53c))		/* the character the banker robs */
 
@@ -53,6 +58,11 @@ static inline const cChTypeVtbl *ChType_Vtbl(cEntity *e) {
 
 static inline void *ChType_ActCtrl(cEntity *e) {
 	return WithLife_Vtbl(e)->GetActCtrl(e);
+}
+
+/* the action class of the controller */
+static inline byte *ChType_ActClass(void *ctrl) {
+	return *(byte **)((byte *)ctrl + 8);
 }
 
 /* the action of layer 0 of the controller has a priority (another one runs) */
@@ -82,6 +92,8 @@ static inline const cChTypeLogicVtbl *ChLogic_Vtbl(cLocalLogic *l) {
 /* the natives one native calls through a sphere or flash test (rva, the same pointer as the original) */
 #define CHTYPE_BANKMASTERSUCTION 0x0c1a70
 #define CHTYPE_BERTOFLASHHIT 0x0c2480
+#define CHTYPE_BETTYKILL 0x0c2c80
+#define CHTYPE_DTRITUSKILL 0x0c5cd0
 
 /* engine variables (Gvars) */
 #define g_FXBankerStealFile GAME_DATA(char *, 0x446018)
@@ -96,17 +108,38 @@ static inline const cChTypeLogicVtbl *ChLogic_Vtbl(cLocalLogic *l) {
 #define g_BertoFlashSoundVol GAME_DATA(float, 0x446238)
 #define g_BertoAmmoCost GAME_DATA(float, 0x446270)
 #define g_FXBertoAttackFile GAME_DATA(char *, 0x446298)
+#define g_BettyHitTimeFader GAME_DATA(float, 0x4462d4)
+#define g_FXBettyAttackFile GAME_DATA(char *, 0x44631c)
+#define g_BettyHSpeed GAME_DATA(float, 0x446334)
+#define g_BettyHitPosY GAME_DATA(float, 0x44634c)
+#define g_BettyHitRadius GAME_DATA(float, 0x446364)
+#define g_BettyVSpeed GAME_DATA(float, 0x44637c)
+#define g_FXBettyKillFile GAME_DATA(char *, 0x4463a4)
+#define g_BettyHitTopLimit GAME_DATA(float, 0x4463bc)
+#define g_BettyHitPosX GAME_DATA(float, 0x4463d4)
+#define g_BettyHitTimeSpeed GAME_DATA(float, 0x4463ec)
+#define g_BettyHitPosZ GAME_DATA(float, 0x446404)
+#define g_FXBishopSellLifeFile GAME_DATA(char *, 0x4464a4)
+#define g_DTritusHitTimeFader GAME_DATA(float, 0x446670)
+#define g_FXDTritusAttackFile GAME_DATA(char *, 0x4466c8)
+#define g_DTritusHitTimeSpeed GAME_DATA(float, 0x4466e0)
+#define g_FXDTritusKillFile GAME_DATA(char *, 0x4466f8)
 #define g_GearLowWeaponEnergy GAME_DATA(float, 0x446ac0)
 
 /* the characters of the running actions (the "MeEnt" CHECKs) */
 #define g_BankMasterEnt GAME_DATA(cEntity *, 0x4460a0)
 #define g_BertoEnt GAME_DATA(cEntity *, 0x4461ac)
+#define g_BettyEnt GAME_DATA(cEntity *, 0x4462a0)
+#define g_DtritusEnt GAME_DATA(cEntity *, 0x44665c)
 
 /* engine side */
 /* the name of the action of layer i, "" when it does not run (rva 0x62c40) */
 const char *__thiscall cActCtrl_GetActionName(void *ctrl, int i);
 /* the weapon energy of a character, 0 or more (rva 0xd4bc0) */
 void __thiscall cWalkCharEntity_SetEnergy(cEntity *self, float energy);
+/* the control of a character (rva 0xd0390, 0xd0410) */
+void __thiscall cWalkCharControl_Reset(void *ctrl, byte on);
+void __thiscall cWalkCharControl_Update(void *ctrl, cEntity *wle, float dt);
 
 /* Banker.c: the shared parts */
 /* World.h, inlined: the entity of player slot 0 with the CHECK of a set one (cWorld_GetUsrEntity of scrap.h is the
@@ -148,6 +181,33 @@ void ChType_BertoAttack(cAbstractFile *params);
 void ChType_BertoFlashHit(cAbstractFile *params);
 void ChType_BertoHitEvent(cAbstractFile *params);
 void ChType_FXBertoAttack(cAbstractFile *params);
+
+/* Betty.c */
+void ChType_BettyActionPress(cAbstractFile *params);
+void ChType_BettyCameraSet(cAbstractFile *params);
+/* out the angles that turn the z axis into dir (cdecl, rva 0xc3780) */
+void ChType_DirAngles(const vec3_t *dir, vec3_t *out);
+void ChType_BettyKill(cAbstractFile *params);
+void ChType_BettyEndEvent(cAbstractFile *params);
+void ChType_BettyHitEvent(cAbstractFile *params);
+void ChType_BettyRestoreTime(cAbstractFile *params);
+void ChType_FXBettyAttack(cAbstractFile *params);
+
+/* Bishop.c (BishopEndActionEnd and GearEndActionEnd): the action again while the button is down and the energy
+ * lasts, always for an AI */
+void ChType_EndActionEnd(cAbstractFile *params);
+void ChType_FXBishopSellLife(cAbstractFile *params);
+
+/* CrazyGambler.c */
+void ChType_FXCrazyGamblerSetHeadModel(cAbstractFile *params);
+
+/* Dtritus.c */
+void ChType_DtritusActionPress(cAbstractFile *params);
+void ChType_DtritusKill(cAbstractFile *params);
+void ChType_DtritusEndEvent(cAbstractFile *params);
+void ChType_DtritusHitEvent(cAbstractFile *params);
+void ChType_DtritusRestartEvent(cAbstractFile *params);
+void ChType_FXDTritusAttack(cAbstractFile *params);
 
 /* the shared steps of the natives (Banker.c) */
 /* the parameters: the name, an event name and a float (unused) */

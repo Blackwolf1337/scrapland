@@ -27,7 +27,6 @@ SD_IMPORT(Domination_SetBatonState, 0x144d50)
 
 /* engine: World/FX/ and effects of Entities/ */
 SD_IMPORT(FX_ShipExplosion, 0x1f4d50)
-SD_IMPORT(FX_BishopSellLife, 0x0c4650)
 
 /* engine: Actions/ */
 SD_IMPORT(cActClassList_Create, 0x061f70)
@@ -703,3 +702,5 @@ SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
 /* module agent: Entities/Char/Type part 1 (imports below this line) */
 SD_IMPORT(cActCtrl_GetActionName, 0x062c40)
 SD_IMPORT(cWalkCharEntity_SetEnergy, 0x0d4bc0)
+SD_IMPORT(cWalkCharControl_Reset, 0x0d0390)
+SD_IMPORT(cWalkCharControl_Update, 0x0d0410)

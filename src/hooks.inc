@@ -4588,3 +4588,26 @@ SD_HOOK(ChType_BertoAttack, 0x0c2370, 257)
 SD_HOOK(ChType_BertoFlashHit, 0x0c2480, 411)
 SD_HOOK(ChType_BertoHitEvent, 0x0c2620, 362)
 SD_HOOK(ChType_FXBertoAttack, 0x0c2790, 299)
+/* src/game/Entities/Char/Type/Betty.c */
+SD_HOOK(ChType_BettyActionPress, 0x0c28c0, 413)
+SD_HOOK(ChType_BettyCameraSet, 0x0c2a60, 530)
+SD_HOOK(ChType_BettyKill, 0x0c2c80, 858)
+SD_HOOK(ChType_BettyEndEvent, 0x0c2fe0, 436)
+SD_HOOK(ChType_BettyHitEvent, 0x0c31a0, 586)
+SD_HOOK(ChType_BettyRestoreTime, 0x0c33f0, 337)
+SD_HOOK(ChType_FXBettyAttack, 0x0c3550, 560)
+SD_HOOK(ChType_DirAngles, 0x0c3780, 44)
+/* src/game/Entities/Char/Type/Bishop.c */
+SD_HOOK(ChType_ActionPress, 0x0c37b0, 217)		/* BishopActionPress */
+SD_HOOK(ChType_EndActionEnd, 0x0c43f0, 387)		/* BishopEndActionEnd */
+SD_HOOK(ChType_FXBishopSellLife, 0x0c4580, 197)
+SD_HOOK(FX_BishopSellLife, 0x0c4650, 249)
+/* src/game/Entities/Char/Type/CrazyGambler.c */
+SD_HOOK(ChType_FXCrazyGamblerSetHeadModel, 0x0c4750, 577)
+/* src/game/Entities/Char/Type/Dtritus.c */
+SD_HOOK(ChType_DtritusActionPress, 0x0c5b70, 331)
+SD_HOOK(ChType_DtritusKill, 0x0c5cd0, 1203)
+SD_HOOK(ChType_DtritusEndEvent, 0x0c6190, 593)
+SD_HOOK(ChType_DtritusHitEvent, 0x0c63f0, 606)
+SD_HOOK(ChType_DtritusRestartEvent, 0x0c6650, 351)
+SD_HOOK(ChType_FXDTritusAttack, 0x0c67b0, 337)
