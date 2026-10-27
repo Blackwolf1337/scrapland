@@ -58,8 +58,6 @@ if sc1sc:
 	sc1scsaved = sc1ints(sc1sc, (0x20, 0x28))
 	sc1setf(sc1sc + 0x20, (12.5,))
 	sc1setf(sc1sc + 0x28, (0.2,))
-SDTest.Poke(0x4ad7e8, 640)
-SDTest.Poke(0x4ad7ec, 480)
 sc1horatio = SDTest.Call(0x21ad30, 'is', 'Horatio')[0]
 sc1buf = SDTest.Call(0x1334d0, 'ii', 0x40)[0]
 
@@ -321,6 +319,10 @@ if sc1a:
 			SDTest.Call(0x161540, 'tiiis', a, sc1buf + 0x20, t)[0], SDTest.Peek(o, '@s'), sc1i(sc1buf + 0x20) == o))
 	sc1set('sc1Button', 'MaxLineSize', -1)
 
+# the viewport of the draws from here on (put back with the engine variables at the end)
+SDTest.Poke(0x4ad7e8, 640)
+SDTest.Poke(0x4ad7ec, 480)
+
 # ---- Radar: the floors of the world and the view cones ----
 sc1a = sc1item['Radar']
 if sc1a and sc1world:
@@ -466,6 +468,20 @@ for sc1k in range(4):
 check('SC1 cNewsPanel_dtor', lambda p=sc1np: SDTest.Call(0x16bb00, 'tvi', p))
 
 # ---- everything back; Clear(0) deletes the items ----
+# Clear only marks them; until the next frame deletes them, every frame index is 0 again: their sheets are
+# white.tga, which CHECKs any other frame
+for sc1name, sc1v, sc1val in (('sc1Cannon', 'AimAc', 2), ('sc1Radar', 'IconAc', 4), ('sc1Monitor',
+	'WeaponIconAc', 3), ('sc1Monitor', 'UpgradeIconAc', 12)):
+	sc1set(sc1name, sc1v, sc1val)
+for sc1name, sc1v in (('sc1Cannon', 'AimIndex'), ('sc1Radar', 'IconIndex'), ('sc1Monitor', 'WeaponIconIndex'),
+	('sc1Monitor', 'UpgradeIconIndex')):
+	sc1set(sc1name, sc1v, 0)
+for sc1name, sc1v in (('sc1Cannon', 'AimAc'), ('sc1Radar', 'IconAc'), ('sc1Monitor', 'WeaponIconAc'),
+	('sc1Monitor', 'UpgradeIconAc'), ('sc1Radar', 'RadarIndex'), ('sc1Radar', 'MaskIndex'), ('sc1Monitor',
+	'PanelIndex'), ('sc1Monitor', 'MaskIndex'), ('sc1Monitor', 'FrameIndex'), ('sc1Monitor', 'ObjetiveIndex'),
+	('sc1Monitor', 'ObjetiveChargeIndex'), ('sc1Monitor', 'ObjetiveBlackIndex'), ('sc1Monitor', 'ObjetiveWhiteIndex'),
+	('sc1Monitor', 'StaticIndex'), ('sc1Monitor', 'CanPossessIndex'), ('sc1Monitor', 'CanPossessGlowIndex')):
+	sc1set(sc1name, sc1v, 0)
 check('SC1 SScorer.Clear(0)', lambda: SScorer.Clear(0))
 check('SC1 items gone', lambda: map(lambda t: SScorer.GetItem(0, t[0]), sc1types))
 SScorer.SetLabelText(sc1label, 0.0)
