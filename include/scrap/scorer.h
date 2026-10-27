@@ -165,7 +165,7 @@ void Scorer_AddChatMsg(const char *text, uint32_t rgb);
 void Scorer_SetConsole(int on);
 void Scorer_SetSpeechText(const char *text, float time, int a, int b, int c);
 void Scorer_SetSpeechCallback(const char *func, PyObject *arg);
-void Scorer_CancelSpeech(int arg);
+void Scorer_CancelSpeech(float time);
 void Scorer_SetHeadMonitor(const char *a, const char *b, int c);
 void Scorer_SetMsgText(const char *text, float time, const char *font);
 void Scorer_SetLabelText(const char *text, float time);

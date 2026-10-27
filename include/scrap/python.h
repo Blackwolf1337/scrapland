@@ -17,6 +17,7 @@ static_assert(sizeof(PyTypeObject) == 0x6c, "PyTypeObject of 1.5.2 without COUNT
 #define PyList_Type GAME_DATA(PyTypeObject, 0x432ff0)
 #define PyString_Type GAME_DATA(PyTypeObject, 0x432b90)
 #define PyInt_Type GAME_DATA(PyTypeObject, 0x433128)
+#define PyFloat_Type GAME_DATA(PyTypeObject, 0x433288)
 
 /* the exe has the function form of ceval.c (rva 0x2ee850), the header only the macro */
 #undef PyEval_CallObject
