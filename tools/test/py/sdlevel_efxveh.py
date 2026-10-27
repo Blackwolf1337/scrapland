@@ -36,7 +36,7 @@ ealarm = ei(eworld + 0x1c70)
 erepos = (ei(0x844900), ei(0x844858))
 eset(eworld + 0x2d4, (0.04,))
 esirenrefs = ei(0x84750c)
-check('siren refs', lambda: esirenrefs)
+# the siren count of the level differs between two runs of the exe: only the change of it
 
 # the fake vehicles
 evt = ez(0x100)
@@ -112,7 +112,7 @@ def esirens(f):
 	s = ei(f + 0x1a8)
 	if not s:
 		return 0
-	return (ei(s) == f, efl(s + 4, 8), ei(0x84750c), SDTest.Call(0x210da0, 'tbi', 0x847478)[0],
+	return (ei(s) == f, efl(s + 4, 8), ei(0x84750c) - esirenrefs, SDTest.Call(0x210da0, 'tbi', 0x847478)[0],
 		ei(0x847510 + 0xac) != 0)
 def eparts(p):
 	return (map(lambda o, p=p: ei(p + o), (0, 4, 0x18)), efl(p + 8, 4), efl(p + 0x1c, 1), efl(p + 0x2c, 6),
@@ -192,7 +192,7 @@ def eprobeparts(p, n0, n3):
 			r.append((x[0], x[1], x[2], x[3]))
 	return (r, eparts(p + 0x2cc))
 check('cEmbeddedFXVehicle_SetOwner probe', lambda: (SDTest.Call(0x0ee390, 'tvii', efx, ecprobe), efxstate(efx),
-	efl(efx + 0x198, 3), esirens(efx), ei(0x84750c)))
+	efl(efx + 0x198, 3), esirens(efx), ei(0x84750c) - esirenrefs))
 ep = ei(efx + 0x1ac)
 check('cEmbeddedFXVehicleProbe_Init', lambda: (eprobe(ep), eprobeparts(ep, 5, 4)))
 em = ei(ecprobe + 0xb8)
@@ -253,7 +253,8 @@ check('cEmbeddedFXVehicleVote_Done', lambda: (SDTest.Call(0x0ed700, 'tvi', ev), 
 check('cEmbeddedFXVehicle_Done', lambda: (SDTest.Call(0x0ed5f0, 'tvi', efx), efxstate(efx), efxmodel(efx)))
 check('cEmbeddedFXVehicle_Delete(0)', lambda: (SDTest.Call(0x0eb570, 'tiii', efx, 0)[0] == efx, ei(efx) - 0x400000))
 efree(efx)
-check('siren refs after', lambda: (ei(0x84750c), SDTest.Call(0x210da0, 'tbi', 0x847478)[0]))
+# the siren model stays loaded only when a siren of the level holds it: not printed after the release
+check('siren refs after', lambda: ei(0x84750c) - esirenrefs)
 
 # the sirens, Probe and Vote on their own: constructors, destructors, deleting destructors
 efx = ez(0x1b0)
@@ -261,10 +262,9 @@ SDTest.Call(0x0eb0d0, 'tii', efx)
 epoke(efx + 4, ecpol)
 s = ez(0x24)
 check('cFXVehicleSirens_ctor', lambda s=s: (SDTest.Call(0x0eb270, 'tiii', s, efx)[0] == s, ei(s) == efx))
-check('cFXVehicleSirens_Init', lambda s=s: (SDTest.Call(0x0ede00, 'tbi', s)[0], efl(s + 4, 8), ei(0x84750c),
+check('cFXVehicleSirens_Init', lambda s=s: (SDTest.Call(0x0ede00, 'tbi', s)[0], efl(s + 4, 8), ei(0x84750c) - esirenrefs,
 	SDTest.Call(0x210da0, 'tbi', 0x847478)[0]))
-check('cFXVehicleSirens_dtor', lambda s=s: (SDTest.Call(0x0ed6c0, 'tvi', s), ei(0x84750c),
-	SDTest.Call(0x210da0, 'tbi', 0x847478)[0]))
+check('cFXVehicleSirens_dtor', lambda s=s: (SDTest.Call(0x0ed6c0, 'tvi', s), ei(0x84750c) - esirenrefs))
 efree(s)
 for name, ctor, dtor, delete, size in (('Probe', 0x0eb170, 0x0eb430, 0x0eb5a0, 0x390),
 		('Vote', 0x0eb2b0, 0x0eb4f0, 0x0eb5d0, 0x2e0)):
@@ -295,4 +295,4 @@ for c, n in ecars:
 	efree(c)
 efree(evt)
 epoke(eworld + 0x2d4, edelta)
-check('siren refs end', lambda: ei(0x84750c))
+check('siren refs end', lambda: ei(0x84750c) - esirenrefs)

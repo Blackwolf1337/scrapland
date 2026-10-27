@@ -3061,7 +3061,7 @@ rva	size	source	callconv	name	signature
 00101c30	88	DEFAULT	unknown	FUN_00501c30	
 00101c90	51	DEFAULT	unknown	FUN_00501c90	
 00101d00	34	DEFAULT	unknown	FUN_00501d00	
-00101d30	12	DEFAULT	unknown	FUN_00501d30	
+00101d30	12	USER_DEFINED	__fastcall	cVehicleEffects_ClearDamage	void __fastcall(void * self)
 00101d60	520	DEFAULT	unknown	FUN_00501d60	
 00101f70	343	DEFAULT	unknown	FUN_00501f70	
 001020d0	456	DEFAULT	unknown	FUN_005020d0	
@@ -6023,91 +6023,91 @@ rva	size	source	callconv	name	signature
 001e9de0	213	DEFAULT	unknown	FUN_005e9de0	
 001e9ec0	146	DEFAULT	unknown	FUN_005e9ec0	
 001e9f60	146	DEFAULT	unknown	FUN_005e9f60	
-001ea000	65	DEFAULT	unknown	FUN_005ea000	
-001ea050	20	DEFAULT	unknown	FUN_005ea050	
-001ea070	93	DEFAULT	unknown	FUN_005ea070	
-001ea0d0	100	DEFAULT	unknown	FUN_005ea0d0	
-001ea140	93	DEFAULT	unknown	FUN_005ea140	
-001ea1a0	123	DEFAULT	unknown	FUN_005ea1a0	
-001ea220	137	DEFAULT	unknown	FUN_005ea220	
-001ea2b0	106	DEFAULT	unknown	FUN_005ea2b0	
-001ea320	190	DEFAULT	unknown	FUN_005ea320	
-001ea3e0	115	DEFAULT	unknown	FUN_005ea3e0	
-001ea460	150	DEFAULT	unknown	FUN_005ea460	
-001ea500	170	DEFAULT	unknown	FUN_005ea500	
-001ea5b0	25	DEFAULT	unknown	FUN_005ea5b0	
-001ea5d0	25	DEFAULT	unknown	FUN_005ea5d0	
-001ea5f0	25	DEFAULT	unknown	FUN_005ea5f0	
-001ea610	95	DEFAULT	unknown	FUN_005ea610	
-001ea670	47	DEFAULT	unknown	FUN_005ea670	
-001ea6a0	25	DEFAULT	unknown	FUN_005ea6a0	
-001ea6c0	95	DEFAULT	unknown	FUN_005ea6c0	
-001ea720	53	DEFAULT	unknown	FUN_005ea720	
-001ea760	95	DEFAULT	unknown	FUN_005ea760	
-001ea7c0	95	DEFAULT	unknown	FUN_005ea7c0	
-001ea820	54	ANALYSIS	__thiscall	cObjElementFXFiredDebris::vf00	undefined __thiscall(void)
-001ea860	54	ANALYSIS	__thiscall	cObjElementFXFiredEntity::vf00	undefined __thiscall(void)
-001ea8a0	54	ANALYSIS	__thiscall	cObjElementFXSmokeDebris::vf00	undefined __thiscall(void)
-001ea8e0	126	ANALYSIS	__thiscall	cObjElementFXVehicleAccelerator::vf00	undefined __thiscall(void)
-001ea960	76	ANALYSIS	__thiscall	cObjElementFXVehicleDamage::vf00	undefined __thiscall(void)
-001ea9b0	51	ANALYSIS	__thiscall	cObjElementFXVehicleDeathTrail::vf00	undefined __thiscall(void)
-001ea9f0	126	ANALYSIS	__thiscall	cObjElementFXVehicleEMI::vf00	undefined __thiscall(void)
-001eaa70	82	ANALYSIS	__thiscall	cObjElementFXVehicleFire::vf00	undefined __thiscall(void)
-001eaad0	126	ANALYSIS	__thiscall	cObjElementFXVehicleSpawn::vf00	undefined __thiscall(void)
-001eab50	126	ANALYSIS	__thiscall	cObjElementFXVehicleSputnik::vf00	undefined __thiscall(void)
-001eabd0	3319	ANALYSIS	__thiscall	cObjElementFXFiredDebris::vf01	undefined __thiscall(void)
+001ea000	65	USER_DEFINED	__thiscall	cObjElementFXSceneDecontamination_SetNames	void __thiscall(char * a, char * b)
+001ea050	20	USER_DEFINED	__thiscall	cObjElementFXSceneDecontamination_SetFC	void __thiscall(float v)
+001ea070	93	USER_DEFINED	__thiscall	cObjElementFXFiredDebris_ctor	void * __thiscall(void)
+001ea0d0	100	USER_DEFINED	__thiscall	cObjElementFXFiredEntity_ctor	void * __thiscall(void)
+001ea140	93	USER_DEFINED	__thiscall	cObjElementFXSmokeDebris_ctor	void * __thiscall(void)
+001ea1a0	123	USER_DEFINED	__thiscall	cObjElementFXVehicleAccelerator_ctor	void * __thiscall(void)
+001ea220	137	USER_DEFINED	__thiscall	cObjElementFXVehicleDamage_ctor	void * __thiscall(void)
+001ea2b0	106	USER_DEFINED	__thiscall	cObjElementFXVehicleDeathTrail_ctor	void * __thiscall(void)
+001ea320	190	USER_DEFINED	__thiscall	cObjElementFXVehicleEMI_ctor	void * __thiscall(void)
+001ea3e0	115	USER_DEFINED	__thiscall	cObjElementFXVehicleFire_ctor	void * __thiscall(void)
+001ea460	150	USER_DEFINED	__thiscall	cObjElementFXVehicleSpawn_ctor	void * __thiscall(void)
+001ea500	170	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_ctor	void * __thiscall(void)
+001ea5b0	25	USER_DEFINED	__thiscall	cObjElementFXFiredDebris_dtor	void __thiscall(void)
+001ea5d0	25	USER_DEFINED	__thiscall	cObjElementFXFiredEntity_dtor	void __thiscall(void)
+001ea5f0	25	USER_DEFINED	__thiscall	cObjElementFXSmokeDebris_dtor	void __thiscall(void)
+001ea610	95	USER_DEFINED	__thiscall	cObjElementFXVehicleAccelerator_dtor	void __thiscall(void)
+001ea670	47	USER_DEFINED	__thiscall	cObjElementFXVehicleDamage_dtor	void __thiscall(void)
+001ea6a0	25	USER_DEFINED	__thiscall	cObjElementFXVehicleDeathTrail_dtor	void __thiscall(void)
+001ea6c0	95	USER_DEFINED	__thiscall	cObjElementFXVehicleEMI_dtor	void __thiscall(void)
+001ea720	53	USER_DEFINED	__thiscall	cObjElementFXVehicleFire_dtor	void __thiscall(void)
+001ea760	95	USER_DEFINED	__thiscall	cObjElementFXVehicleSpawn_dtor	void __thiscall(void)
+001ea7c0	95	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_dtor	void __thiscall(void)
+001ea820	54	USER_DEFINED	__thiscall	cObjElementFXFiredDebris_Delete	void * __thiscall(uint flags)
+001ea860	54	USER_DEFINED	__thiscall	cObjElementFXFiredEntity_Delete	void * __thiscall(uint flags)
+001ea8a0	54	USER_DEFINED	__thiscall	cObjElementFXSmokeDebris_Delete	void * __thiscall(uint flags)
+001ea8e0	126	USER_DEFINED	__thiscall	cObjElementFXVehicleAccelerator_Delete	void * __thiscall(uint flags)
+001ea960	76	USER_DEFINED	__thiscall	cObjElementFXVehicleDamage_Delete	void * __thiscall(uint flags)
+001ea9b0	51	USER_DEFINED	__thiscall	cObjElementFXVehicleDeathTrail_Delete	void * __thiscall(uint flags)
+001ea9f0	126	USER_DEFINED	__thiscall	cObjElementFXVehicleEMI_Delete	void * __thiscall(uint flags)
+001eaa70	82	USER_DEFINED	__thiscall	cObjElementFXVehicleFire_Delete	void * __thiscall(uint flags)
+001eaad0	126	USER_DEFINED	__thiscall	cObjElementFXVehicleSpawn_Delete	void * __thiscall(uint flags)
+001eab50	126	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_Delete	void * __thiscall(uint flags)
+001eabd0	3319	USER_DEFINED	__thiscall	cObjElementFXFiredDebris_Update	void __thiscall(void * debris, float dt)
 001eb8d0	4270	ANALYSIS	__thiscall	cObjElementFXFiredEntity::vf01	undefined __thiscall(void)
-001ec980	2032	ANALYSIS	__thiscall	cObjElementFXSmokeDebris::vf01	undefined __thiscall(void)
+001ec980	2032	USER_DEFINED	__thiscall	cObjElementFXSmokeDebris_Update	void __thiscall(void * debris, float dt)
 001ed170	2087	ANALYSIS	__thiscall	cObjElementFXVehicleAccelerator::vf01	undefined __thiscall(void)
 001ed9c0	12368	ANALYSIS	__thiscall	cObjElementFXVehicleDamage::vf01	undefined __thiscall(void)
-001f0a10	137	ANALYSIS	__thiscall	cObjElementFXVehicleDeathTrail::vf01	undefined __thiscall(void)
+001f0a10	137	USER_DEFINED	__thiscall	cObjElementFXVehicleDeathTrail_Update	void __thiscall(void * debris, float dt)
 001f0aa0	4325	ANALYSIS	__thiscall	cObjElementFXVehicleEMI::vf01	undefined __thiscall(void)
 001f1b90	5552	ANALYSIS	__thiscall	cObjElementFXVehicleFire::vf01	undefined __thiscall(void)
-001f3140	2078	ANALYSIS	__thiscall	cObjElementFXVehicleSpawn::vf01	undefined __thiscall(void)
+001f3140	2078	USER_DEFINED	__thiscall	cObjElementFXVehicleSpawn_Update	void __thiscall(void * debris, float dt)
 001f3960	3922	ANALYSIS	__thiscall	cObjElementFXVehicleSputnik::vf01	undefined __thiscall(void)
 001f48c0	1147	DEFAULT	unknown	FUN_005f48c0	
 001f4d50	13631	USER_DEFINED	unknown	FX_ShipExplosion	undefined(void)
-001f8290	145	ANALYSIS	__thiscall	cObjElementFXFiredDebris::vf03	undefined __thiscall(void)
-001f8330	87	ANALYSIS	__thiscall	cObjElementFXFiredEntity::vf03	undefined __thiscall(void)
-001f8390	145	ANALYSIS	__thiscall	cObjElementFXSmokeDebris::vf03	undefined __thiscall(void)
-001f8430	264	ANALYSIS	__thiscall	cObjElementFXVehicleAccelerator::vf03	undefined __thiscall(void)
-001f8540	292	ANALYSIS	__thiscall	cObjElementFXVehicleDamage::vf03	undefined __thiscall(void)
-001f8670	13	ANALYSIS	__thiscall	cObjElementFXVehicleDeathTrail::vf03	undefined __thiscall(void)
-001f8680	293	ANALYSIS	__thiscall	cObjElementFXVehicleEMI::vf03	undefined __thiscall(void)
-001f87b0	167	ANALYSIS	__thiscall	cObjElementFXVehicleFire::vf03	undefined __thiscall(void)
-001f8860	113	ANALYSIS	__thiscall	cObjElementFXVehicleSpawn::vf03	undefined __thiscall(void)
-001f88e0	241	ANALYSIS	__thiscall	cObjElementFXVehicleSputnik::vf03	undefined __thiscall(void)
-001f89e0	18	ANALYSIS	__thiscall	cObjElementFXFiredDebris::vf02	undefined __thiscall(void)
-001f8a00	78	ANALYSIS	__thiscall	cObjElementFXFiredEntity::vf02	undefined __thiscall(void)
-001f8a50	18	ANALYSIS	__thiscall	cObjElementFXSmokeDebris::vf02	undefined __thiscall(void)
-001f8a70	18	ANALYSIS	__thiscall	cObjElementFXVehicleAccelerator::vf02	undefined __thiscall(void)
-001f8a90	231	ANALYSIS	__thiscall	cObjElementFXVehicleDamage::vf02	undefined __thiscall(void)
-001f8b80	35	ANALYSIS	__thiscall	cObjElementFXVehicleDeathTrail::vf02	undefined __thiscall(void)
-001f8bb0	73	ANALYSIS	__thiscall	cObjElementFXVehicleEMI::vf02	undefined __thiscall(void)
-001f8c00	86	ANALYSIS	__thiscall	cObjElementFXVehicleFire::vf02	undefined __thiscall(void)
-001f8c60	18	ANALYSIS	__thiscall	cObjElementFXVehicleSpawn::vf02	undefined __thiscall(void)
-001f8c80	102	ANALYSIS	__thiscall	cObjElementFXVehicleSputnik::vf02	undefined __thiscall(void)
-001f8cf0	78	ANALYSIS	__thiscall	cObjElementFXFiredDebris::vf04	undefined __thiscall(void)
-001f8d40	24	ANALYSIS	__thiscall	cObjElementFXFiredEntity::vf04	undefined __thiscall(void)
-001f8d60	58	ANALYSIS	__thiscall	cObjElementFXSmokeDebris::vf04	undefined __thiscall(void)
-001f8da0	50	ANALYSIS	__thiscall	cObjElementFXVehicleAccelerator::vf04	undefined __thiscall(void)
-001f8de0	65	ANALYSIS	__thiscall	cObjElementFXVehicleDamage::vf04	undefined __thiscall(void)
-001f8e30	41	ANALYSIS	__thiscall	cObjElementFXVehicleDeathTrail::vf04	undefined __thiscall(void)
-001f8e60	203	ANALYSIS	__thiscall	cObjElementFXVehicleEMI::vf04	undefined __thiscall(void)
-001f8f30	40	ANALYSIS	__thiscall	cObjElementFXVehicleFire::vf04	undefined __thiscall(void)
-001f8f60	75	ANALYSIS	__thiscall	cObjElementFXVehicleSpawn::vf04	undefined __thiscall(void)
-001f8fb0	154	ANALYSIS	__thiscall	cObjElementFXVehicleSputnik::vf04	undefined __thiscall(void)
-001f9050	199	USER_DEFINED	__thiscall	FXVehicle_RenderAttached	void __thiscall(void)
-001f9120	45	DEFAULT	unknown	FUN_005f9120	
-001f9150	111	DEFAULT	unknown	FUN_005f9150	
-001f91c0	244	DEFAULT	unknown	FUN_005f91c0	
-001f92c0	193	DEFAULT	unknown	FUN_005f92c0	
-001f9390	193	DEFAULT	unknown	FUN_005f9390	
-001f9460	352	DEFAULT	unknown	FUN_005f9460	
-001f95c0	83	DEFAULT	unknown	FUN_005f95c0	
-001f9620	62	DEFAULT	unknown	FUN_005f9620	
-001f9660	16	DEFAULT	unknown	FUN_005f9660	
-001f9670	20	DEFAULT	unknown	FUN_005f9670	
+001f8290	145	USER_DEFINED	__thiscall	cObjElementFXFiredDebris_Start	void __thiscall(void * debris)
+001f8330	87	USER_DEFINED	__thiscall	cObjElementFXFiredEntity_Start	void __thiscall(void * debris)
+001f8390	145	USER_DEFINED	__thiscall	cObjElementFXSmokeDebris_Start	void __thiscall(void * debris)
+001f8430	264	USER_DEFINED	__thiscall	cObjElementFXVehicleAccelerator_Start	void __thiscall(void * debris)
+001f8540	292	USER_DEFINED	__thiscall	cObjElementFXVehicleDamage_Start	void __thiscall(void * debris)
+001f8670	13	USER_DEFINED	__thiscall	cObjElementFXVehicleDeathTrail_Start	void __thiscall(void * debris)
+001f8680	293	USER_DEFINED	__thiscall	cObjElementFXVehicleEMI_Start	void __thiscall(void * debris)
+001f87b0	167	USER_DEFINED	__thiscall	cObjElementFXVehicleFire_Start	void __thiscall(void * debris)
+001f8860	113	USER_DEFINED	__thiscall	cObjElementFXVehicleSpawn_Start	void __thiscall(void * debris)
+001f88e0	241	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_Start	void __thiscall(void * debris)
+001f89e0	18	USER_DEFINED	__thiscall	cObjElementFXFiredDebris_IsAlive	byte __thiscall(void * debris, void * sys)
+001f8a00	78	USER_DEFINED	__thiscall	cObjElementFXFiredEntity_IsAlive	byte __thiscall(void * debris, void * sys)
+001f8a50	18	USER_DEFINED	__thiscall	cObjElementFXSmokeDebris_IsAlive	byte __thiscall(void * debris, void * sys)
+001f8a70	18	USER_DEFINED	__thiscall	cObjElementFXVehicleAccelerator_IsAlive	byte __thiscall(void * debris, void * sys)
+001f8a90	231	USER_DEFINED	__thiscall	cObjElementFXVehicleDamage_IsAlive	byte __thiscall(void * debris, void * sys)
+001f8b80	35	USER_DEFINED	__thiscall	cObjElementFXVehicleDeathTrail_IsAlive	byte __thiscall(void * debris, void * sys)
+001f8bb0	73	USER_DEFINED	__thiscall	cObjElementFXVehicleEMI_IsAlive	byte __thiscall(void * debris, void * sys)
+001f8c00	86	USER_DEFINED	__thiscall	cObjElementFXVehicleFire_IsAlive	byte __thiscall(void * debris, void * sys)
+001f8c60	18	USER_DEFINED	__thiscall	cObjElementFXVehicleSpawn_IsAlive	byte __thiscall(void * debris, void * sys)
+001f8c80	102	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_IsAlive	byte __thiscall(void * debris, void * sys)
+001f8cf0	78	USER_DEFINED	__thiscall	cObjElementFXFiredDebris_Reset	void __thiscall(void * debris)
+001f8d40	24	USER_DEFINED	__thiscall	cObjElementFXFiredEntity_Reset	void __thiscall(void * debris)
+001f8d60	58	USER_DEFINED	__thiscall	cObjElementFXSmokeDebris_Reset	void __thiscall(void * debris)
+001f8da0	50	USER_DEFINED	__thiscall	cObjElementFXVehicleAccelerator_Reset	void __thiscall(void * debris)
+001f8de0	65	USER_DEFINED	__thiscall	cObjElementFXVehicleDamage_Reset	void __thiscall(void * debris)
+001f8e30	41	USER_DEFINED	__thiscall	cObjElementFXVehicleDeathTrail_Reset	void __thiscall(void * debris)
+001f8e60	203	USER_DEFINED	__thiscall	cObjElementFXVehicleEMI_Reset	void __thiscall(void * debris)
+001f8f30	40	USER_DEFINED	__thiscall	cObjElementFXVehicleFire_Reset	void __thiscall(void * debris)
+001f8f60	75	USER_DEFINED	__thiscall	cObjElementFXVehicleSpawn_Reset	void __thiscall(void * debris)
+001f8fb0	154	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_Reset	void __thiscall(void * debris)
+001f9050	199	USER_DEFINED	__fastcall	FXVehicle_RenderAttached	void __fastcall(void * element)
+001f9120	45	USER_DEFINED	__thiscall	cObjElementFXVehicleAccelerator_SetAccelerator	void __thiscall(void * a)
+001f9150	111	USER_DEFINED	__thiscall	cObjElementFXFiredEntity_SetEntity	void __thiscall(void * e)
+001f91c0	244	USER_DEFINED	__thiscall	cObjElementFXVehicleDamage_SetEntity	void __thiscall(void * e)
+001f92c0	193	USER_DEFINED	__thiscall	cObjElementFXVehicleEMI_SetEntity	void __thiscall(void * e)
+001f9390	193	USER_DEFINED	__thiscall	cObjElementFXVehicleFire_SetEntity	void __thiscall(void * e)
+001f9460	352	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_SetEntity	void __thiscall(void * e)
+001f95c0	83	USER_DEFINED	__thiscall	cObjElementFXVehicleAccelerator_SetOwner	void __thiscall(void * e)
+001f9620	62	USER_DEFINED	__thiscall	cObjElementFXVehicleSpawn_SetEntity	void __thiscall(void * e)
+001f9660	16	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_SetC0	void __thiscall(int v)
+001f9670	20	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_SetC4	void __thiscall(float v)
 001f9690	220	DEFAULT	unknown	FUN_005f9690	
 001f9770	106	DEFAULT	unknown	FUN_005f9770	
 001f97e0	158	DEFAULT	unknown	FUN_005f97e0	

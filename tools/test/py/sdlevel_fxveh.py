@@ -1,7 +1,7 @@
 # game World/FX/FXVehicle.c (execfile'd by sdlevel.py, Python 1.5.2): the vehicle effects made by Scrap.SetDebrisSys
 # with the models of the FX engine variables and the effect kinds of the debris factory (Start and Reset run on the
 # new debris), the Accelerator and Spawn (their models are not in the archives) built by their constructors in zeroed
-# memory and started on the FiredDebris debris. Then Reset, Start again, the setters with the ship Parked (when it is
+# memory and started on the FiredDebris debris. Then Reset, Start again, the setters with a car of our own (when it is
 # a Car), the Updates of FiredDebris, SmokeDebris and Spawn with the frame time of the world timer set by hand
 # (restored) and the visible flag of the debris model poked (restored), IsAlive only where it returns before the
 # debris step (no entity), the constructors, destructors and Delete (flags 0) on zeroed memory.
@@ -76,9 +76,10 @@ for fxvname, fxvkind, fxvvt in fxvkinds:
 		fxvobjs[fxvkind] = (fxvs, fxvd, fxvfx)
 	check('FXV debris' + fmt((fxvname, fxvkind)), lambda d=fxvd, fx=fxvfx, ok=fxvok: (d != 0, fx != 0, ok))
 
-# the ship Parked by the entity table of the world
-fxvslot = SDTest.Call(0x131f70, 'tiis', fxvworld + 4, 'Parked')[0]
-fxvnode = SDTest.Call(0x131e50, 'tiisi', fxvworld + 4, 'Parked', fxvslot)[0]
+# a car of our own far away: the AI ship Parked moves, its values differ between two runs of the exe
+fxvcarobj = Scrap.CreateEntity('Car', 52000.0, 50000.0, 50000.0, 'SDFxvCar')
+fxvslot = SDTest.Call(0x131f70, 'tiis', fxvworld + 4, 'SDFxvCar')[0]
+fxvnode = SDTest.Call(0x131e50, 'tiisi', fxvworld + 4, 'SDFxvCar', fxvslot)[0]
 fxvparked = 0
 if fxvnode:
 	fxvparked = fxvi(fxvnode)
@@ -90,7 +91,7 @@ if fxvcar:
 	for fxvk in range(4):
 		if not fxvi(fxvparked + 0x728 + 4 * fxvk):
 			fxvcar = 0
-check('FXV Parked', lambda: (fxvparked != 0, fxvcar))
+check('FXV car', lambda: (fxvparked != 0, fxvcar))
 # the exhausts of a SetEntity: count and (motor, side) pairs
 def fxvexh(a):
 	n = fxvi(a)
@@ -128,6 +129,10 @@ for fxvname, fxvctor, fxvdtor, fxvdel, fxvsize, fxvvt, fxvoffs in fxvclasses:
 	check('FXV Delete ' + fxvname, lambda o=fxvo, d=fxvdel, offs=fxvoffs: (SDTest.Call(d, 'tiii', o, 0)[0] == o,
 		fxvi(o) - 0x400000, fxvfields(o, offs)))
 
+# a Start attaches the particles again: release the ones a Start before attached (CGameParticles_Release)
+def fxvrel(fx, offs):
+	for o in offs:
+		SDTest.Call(0x21d1c0, 'tvi', fx + o)
 # ---- FiredDebris and SmokeDebris: Start/Reset, the Update along the way of the debris ----
 # the debris model: position, rotation, velocities (the ones cDebris_Move adds over dt)
 def fxvmove(d, pos, rot, vel, avel):
@@ -141,8 +146,8 @@ def fxvdebrisfx(nm, kind, start, reset, upd, steps):
 	s, d, fx = fxvobjs[kind]
 	p = fx + 4
 	check(nm + ' started', lambda fx=fx, p=p: (fxvi(p + 0xac) != 0, fxvdeb(fx), fxvpart(p)))
-	check(nm + '_Start', lambda fx=fx, d=d, p=p, start=start: (SDTest.Call(start, 'tvii', fx, d), fxvdeb(fx),
-		fxvpart(p)))
+	check(nm + '_Start', lambda fx=fx, d=d, p=p, start=start: (fxvrel(fx, (4,)), SDTest.Call(start, 'tvii', fx, d),
+		fxvdeb(fx), fxvpart(p)))
 	fxvset(fx + 0xb4, (3.0,))
 	fxvset(fx + 0xc0, (1.0, 2.0, 3.0))
 	check(nm + '_Reset', lambda fx=fx, d=d, p=p, reset=reset: (SDTest.Call(reset, 'tvii', fx, d), fxvdeb(fx),
@@ -181,7 +186,7 @@ if fxvobjs.has_key(30):
 	check('FXFiredEntity started', lambda fxvfx=fxvfx: (fxvi(fxvfx + 0xc8) != 0, fxvfe(fxvfx)))
 	fxvset(fxvfx + 0xcc, (2.0,))
 	fxvpoke(fxvfx + 8, 1)
-	check('FXFiredEntity_Start', lambda fxvfx=fxvfx, fxvd=fxvd: (SDTest.Call(0x1f8330, 'tvii', fxvfx, fxvd), fxvfe(fxvfx)))
+	check('FXFiredEntity_Start', lambda fxvfx=fxvfx, fxvd=fxvd: (fxvrel(fxvfx, (0x1c,)), SDTest.Call(0x1f8330, 'tvii', fxvfx, fxvd), fxvfe(fxvfx)))
 	if fxvcar:
 		check('FXFiredEntity_SetEntity', lambda fxvfx=fxvfx: (SDTest.Call(0x1f9150, 'tvii', fxvfx, fxvparked),
 			fxvi(fxvfx + 4) == fxvparked, fxvfl(fxvfx + 0xc, 4), fxvfe(fxvfx)))
@@ -199,7 +204,7 @@ if fxvobjs.has_key(38):
 	fxvpoke(fxvfx + 8, 0)
 	fxvpoke(fxvfx + 0x18, 1)
 	fxvpoke(fxvfx + 0x17c, 5)
-	check('FXDamage_Start', lambda fxvfx=fxvfx, fxvd=fxvd: (SDTest.Call(0x1f8540, 'tvii', fxvfx, fxvd), fxvdmg(fxvfx)))
+	check('FXDamage_Start', lambda fxvfx=fxvfx, fxvd=fxvd: (fxvrel(fxvfx, (0x1c, 0xcc, 0x184)), SDTest.Call(0x1f8540, 'tvii', fxvfx, fxvd), fxvdmg(fxvfx)))
 	check('FXVehicle_RenderAttached no entity', lambda fxvfx=fxvfx: (SDTest.Call(0x1f9050, 'tvi', fxvfx), fxvdmg(fxvfx)))
 	if fxvcar:
 		check('FXDamage_SetEntity', lambda fxvfx=fxvfx: (SDTest.Call(0x1f91c0, 'tvii', fxvfx, fxvparked),
@@ -220,7 +225,7 @@ if fxvobjs.has_key(36):
 	fxvpoke(fxvfx + 0x4220, 9)
 	fxvpoke(fxvfx + 0x42a0, 0x12345678)
 	fxvpoke(fxvfx + 0xc0, 4)
-	check('FXVehicleEMI_Start 4', lambda fxvfx=fxvfx, fxvd=fxvd: (SDTest.Call(0x1f8680, 'tvii', fxvfx, fxvd), fxvemi(fxvfx)))
+	check('FXVehicleEMI_Start 4', lambda fxvfx=fxvfx, fxvd=fxvd: (fxvrel(fxvfx, (8,)), SDTest.Call(0x1f8680, 'tvii', fxvfx, fxvd), fxvemi(fxvfx)))
 	fxvpoke(fxvfx + 0xc0, 16)
 	fxvpoke(fxvfx + 0x4220 + 0x3c, 9)
 	fxvpoke(fxvfx + 0x42a0 + 0x3c00, 0x12345678)
@@ -242,7 +247,7 @@ if fxvobjs.has_key(49):
 	check('FXVehicleFire started', lambda fxvfx=fxvfx: (fxvi(fxvfx + 0xb4) != 0, fxvi(fxvfx + 0x164) != 0, fxvfire(fxvfx)))
 	fxvpoke(fxvfx + 0x16c, 4)
 	fxvpoke(fxvfx + 0x174, 5)
-	check('FXVehicleFire_Start', lambda fxvfx=fxvfx, fxvd=fxvd: (SDTest.Call(0x1f87b0, 'tvii', fxvfx, fxvd), fxvfire(fxvfx)))
+	check('FXVehicleFire_Start', lambda fxvfx=fxvfx, fxvd=fxvd: (fxvrel(fxvfx, (8, 0xb8)), SDTest.Call(0x1f87b0, 'tvii', fxvfx, fxvd), fxvfire(fxvfx)))
 	check('FXVehicleFire_IsAlive no entity', lambda fxvfx=fxvfx, fxvd=fxvd, fxvs=fxvs: (SDTest.Call(0x1f8c00, 'tbiii', fxvfx, fxvd, fxvs)[0],
 		fxvfire(fxvfx)))
 	if fxvcar:
@@ -258,7 +263,7 @@ if fxvobjs.has_key(39):
 		return (fxvi(fx + 4) != 0, fxvints(fx + 0xb8, 3), fxvfl(fx + 0xc4, 1), fxvb(fx + 0x171c))
 	check('FXVehicleSputnik started', lambda fxvfx=fxvfx: (fxvi(fxvfx + 0xb4) != 0, fxvsput(fxvfx), fxvints(fxvfx + 0xaec, 195),
 		fxvints(fxvfx + 0x1104, 195)))
-	check('FXVehicleSputnik_Start', lambda fxvfx=fxvfx, fxvd=fxvd: (SDTest.Call(0x1f88e0, 'tvii', fxvfx, fxvd), fxvsput(fxvfx),
+	check('FXVehicleSputnik_Start', lambda fxvfx=fxvfx, fxvd=fxvd: (fxvrel(fxvfx, (8,)), SDTest.Call(0x1f88e0, 'tvii', fxvfx, fxvd), fxvsput(fxvfx),
 		fxvtrail(fxvfx + 0x194), fxvtrail(fxvfx + 0x19c), fxvtrail(fxvfx + 0x1c4)))
 	check('FXVehicleSputnik_IsAlive no entity', lambda fxvfx=fxvfx, fxvd=fxvd, fxvs=fxvs: SDTest.Call(0x1f8c80, 'tbiii', fxvfx, fxvd, fxvs)[0])
 	check('FXVehicleSputnik_SetC0', lambda fxvfx=fxvfx: (SDTest.Call(0x1f9660, 'tvii', fxvfx, -7), fxvi(fxvfx + 0xc0)))
@@ -341,3 +346,5 @@ fxvdc = fxvz(0x100)
 check('FXSceneDecontamination_SetNames', lambda: (SDTest.Call(0x1ea000, 'tviss', fxvdc, 'DecontaminationDtritus',
 	'Decon'), SDTest.Peek(fxvdc + 0xbc, '@s'), SDTest.Peek(fxvdc + 0xdc, '@s'), fxvints(fxvdc + 0xbc, 16)))
 check('FXSceneDecontamination_SetFC', lambda: (SDTest.Call(0x1ea050, 'tvif', fxvdc, 145.0), fxvfl(fxvdc + 0xfc, 1)))
+if fxvcarobj is not None:
+	check('SDFxvCar Del', lambda: fxvcarobj.Del())
