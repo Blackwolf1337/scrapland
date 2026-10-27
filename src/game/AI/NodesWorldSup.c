@@ -685,7 +685,7 @@ void __thiscall CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, in
 }
 
 int __thiscall CNodesWorldSup_Hash(CNodesWorld *self, int a, int b) {
-	return (a + b) % self->numSets;
+	return (int)((uint32_t)a + (uint32_t)b) % self->numSets;
 }
 
 void __thiscall CNodesWorldSup_ReleaseVis(CNodesWorld *self, int index) {
@@ -892,7 +892,8 @@ int __thiscall CNodesWorldSup_BoxCells(CNodesWorld *self, const cNWBox *box) {
 	int ny = (int)(((self->margin + box->b.y) - box->a.y) / self->nodeSize.y);
 	int nx = (int)(((self->margin + box->b.x) - box->a.x) / self->nodeSize.x);
 
-	return nz * ny * nx;
+	/* wraps like the imul of the original */
+	return (int)((uint32_t)nz * (uint32_t)ny * (uint32_t)nx);
 }
 
 byte __thiscall CNodesWorldSup_FindSorted(CNodesWorld *self, cNWIntList *list, const void *key, cNWIntNode **at) {
