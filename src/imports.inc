@@ -197,8 +197,6 @@ SD_IMPORT(CSuelo_CalcIlum, 0x261630)
 /* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
 
 /* src/game/engine3d/Engine/SueloPortal.c (called from Engine/SueloPortal.cpp, include/scrap/sueloportal.h) */
-SD_IMPORT(CSuelo_RayoVert, 0x2ca360)
-SD_IMPORT(Portales_DebugDraw, 0x26d0d0)
 
 /* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/mundo.h) */
 SD_IMPORT(BspQ3_Render, 0x2c9d90)

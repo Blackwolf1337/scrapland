@@ -334,20 +334,17 @@ void __thiscall CGameModel_SetEffectParam(CGameModel *self, int i, uint32_t v) {
 }
 
 /* the render state an immediate draw clears */
-#define g_Render4ec GAME_DATA(byte, 0x4ad4ec)
-#define g_Render568 GAME_DATA(int, 0x4ad568)
-#define g_Render5fc GAME_DATA(int, 0x4ad5fc)
 
 void __thiscall CGameModel_RenderNow(CGameModel *self, byte flags) {
 	GM_CHECK(self);
 	if (!Render_GetViewportW()) {
 		CheckFailed("obt_ancho_render()", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	int pass = g_RenderPass, fog = g_FogActive, r5fc = g_Render5fc, r568 = g_Render568;
-	byte r4ec = g_Render4ec;
-	g_Render5fc = 0;
-	g_Render4ec = 0;
-	g_Render568 = 0;
+	int pass = g_RenderPass, fog = g_FogActive, r5fc = g_RenderFlagMask, r568 = g_RenderClaseMask;
+	byte r4ec = g_RenderFlagNeg;
+	g_RenderFlagMask = 0;
+	g_RenderFlagNeg = 0;
+	g_RenderClaseMask = 0;
 	g_RenderPass = 0;
 	g_FogActive = 0;
 	CModelo *m = self->Model;
@@ -374,9 +371,9 @@ void __thiscall CGameModel_RenderNow(CGameModel *self, byte flags) {
 	}
 	self->Model->alwaysVisible = always;
 	g_FogActive = fog;
-	g_Render5fc = r5fc;
-	g_Render4ec = r4ec;
-	g_Render568 = r568;
+	g_RenderFlagMask = r5fc;
+	g_RenderFlagNeg = r4ec;
+	g_RenderClaseMask = r568;
 	g_RenderPass = pass;
 }
 

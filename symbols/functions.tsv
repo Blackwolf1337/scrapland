@@ -7702,18 +7702,18 @@ rva	size	source	callconv	name	signature
 00264ca0	1152	USER_DEFINED	__cdecl	Proc_ReadField	int __cdecl(char **ap, char **psrc, char **pfmt)
 002651b0	167	USER_DEFINED	__cdecl	Proc_DefineType	int __cdecl(char *ident, void *defin)
 00265260	324	USER_DEFINED	__cdecl	Proc_Scan	int __cdecl(char *s, char *fmt, ...)
-002653f0	104	DEFAULT	unknown	FUN_006653f0	
-00265460	99	DEFAULT	unknown	FUN_00665460	
-00265510	3229	DEFAULT	unknown	FUN_00665510	
-002661b0	4765	DEFAULT	unknown	FUN_006661b0	
+002653f0	104	USER_DEFINED	__cdecl	StencilBlock_SetLuces	void __cdecl(byte on)
+00265460	99	USER_DEFINED	__cdecl	Stencil_DebugLine	void __cdecl(void * a, void * b, uint color)
+00265510	3229	USER_DEFINED	__cdecl	Stencil_DrawSegs	void __cdecl(int pass)
+002661b0	4765	USER_DEFINED	__cdecl	Stencil_DrawTris	void __cdecl(int pass)
 00267460	202	USER_DEFINED	__cdecl	SombrasStencil_Set	void __cdecl(byte on)
 00267530	3410	USER_DEFINED	unknown	Stencil_Malla	
-00268290	52	DEFAULT	unknown	FUN_00668290	
-002682d0	534	USER_DEFINED	__cdecl	E3D_SetShadowLight	void __cdecl(void *light, int arg)
-002684f0	208	DEFAULT	unknown	FUN_006684f0	
-002685c0	57	DEFAULT	unknown	FUN_006685c0	
-00268600	501	DEFAULT	unknown	FUN_00668600	
-00268800	1641	DEFAULT	unknown	FUN_00668800	
+00268290	52	USER_DEFINED	__cdecl	SombrasStencil_Capturar	void __cdecl(byte on)
+002682d0	534	USER_DEFINED	__cdecl	E3D_SetShadowLight	void __cdecl(void * l, int arg)
+002684f0	208	USER_DEFINED	__cdecl	Stencil_Free	void __cdecl(void)
+002685c0	57	USER_DEFINED	__cdecl	Stencil_GetLightPos	void __cdecl(void * out)
+00268600	501	USER_DEFINED	__cdecl	Stencil_Init	void __cdecl(void)
+00268800	1641	USER_DEFINED	__cdecl	SombrasStencil_Render	void __cdecl(void)
 00269210	270	USER_DEFINED	__fastcall	CMundo_ctor	void * __fastcall(void * self)
 00269320	342	USER_DEFINED	__thiscall	MundoDummy_ctorNodo	void * __thiscall(void * nodo)
 00269480	225	USER_DEFINED	__thiscall	MundoDummy_ctor	void * __thiscall(char * name, void * pos, void * rot)
@@ -7754,9 +7754,9 @@ rva	size	source	callconv	name	signature
 0026b8b0	115	USER_DEFINED	__thiscall	Tabla_Alloc14	void __thiscall(int num)
 0026b930	162	USER_DEFINED	__thiscall	Tabla_Resize14	void __thiscall(int n)
 0026b9e0	170	USER_DEFINED	__fastcall	CZona_ctor	void * __fastcall(void * self)
-0026ba90	60	DEFAULT	unknown	FUN_0066ba90	
+0026ba90	60	USER_DEFINED	__fastcall	ZonaPintar_ctor	void * __fastcall(void * self)
 0026bad0	334	USER_DEFINED	__fastcall	CZona_dtor	void __fastcall(void * self)
-0026bc20	1	DEFAULT	unknown	FUN_0066bc20	
+0026bc20	1	USER_DEFINED	__fastcall	ZonaPintar_dtor	void __fastcall(void * self)
 0026bc30	175	USER_DEFINED	__thiscall	SectorVis_Draw	void __thiscall(void * pos, byte visible, byte cached, char * name)
 0026bce0	127	USER_DEFINED	__thiscall	SectorVis_Check	byte __thiscall(void * pos, char * name)
 0026bd60	396	USER_DEFINED	__cdecl	Portal_Project	byte __cdecl(void * p, float * out, float * w)
@@ -7776,75 +7776,75 @@ rva	size	source	callconv	name	signature
 0026d040	91	USER_DEFINED	__cdecl	Sector_Get	void * __cdecl(uint sector)
 0026d0a0	6	USER_DEFINED	__cdecl	Sector_Num	int __cdecl(void)
 0026d0b0	29	USER_DEFINED	__cdecl	Sector_OfZonaNodo	int __cdecl(void * nodo)
-0026d0d0	636	DEFAULT	unknown	FUN_0066d0d0	
+0026d0d0	636	USER_DEFINED	__cdecl	Portales_DebugDraw	void __cdecl(void)
 0026d350	450	USER_DEFINED	__cdecl	Portales_Cull	void __cdecl(uint sector)
 0026d520	127	USER_DEFINED	__cdecl	Sectores_Free	void __cdecl(void)
-0026d5a0	1497	USER_DEFINED	unknown	Sectores_Crear	
-0026db80	1016	USER_DEFINED	unknown	Portales_SetView	
-0026df80	1281	DEFAULT	unknown	FUN_0066df80	
-0026e490	2200	USER_DEFINED	__thiscall	CSuelo_Trace	byte __thiscall(float *from, float *to, void *a, float b, void *c)
-0026ed30	1004	DEFAULT	unknown	FUN_0066ed30	
-0026f120	1332	DEFAULT	unknown	FUN_0066f120	
-0026f660	478	DEFAULT	unknown	FUN_0066f660	
-0026f840	286	DEFAULT	unknown	FUN_0066f840	
-0026f9a0	324	DEFAULT	unknown	FUN_0066f9a0	
-0026fb10	6740	DEFAULT	unknown	FUN_0066fb10	
-00271590	1381	DEFAULT	unknown	FUN_00671590	
-00271b00	604	DEFAULT	unknown	FUN_00671b00	
-00271d60	1623	DEFAULT	unknown	FUN_00671d60	
-002723e0	2436	DEFAULT	unknown	FUN_006723e0	
-00272d70	542	DEFAULT	unknown	FUN_00672d70	
-00272f90	171	DEFAULT	unknown	FUN_00672f90	
+0026d5a0	1497	USER_DEFINED	__cdecl	Sectores_Crear	void __cdecl(void * esc)
+0026db80	1016	USER_DEFINED	__cdecl	Portales_SetView	byte __cdecl(void * zp)
+0026df80	1281	USER_DEFINED	__thiscall	CSuelo_TraceSegPos	byte __thiscall(void * a, void * b, void * hit, int flags)
+0026e490	2200	USER_DEFINED	__thiscall	CSuelo_Trace	byte __thiscall(void * from, void * to, void * a, float b, void * c)
+0026ed30	1004	USER_DEFINED	__thiscall	CSuelo_TestSeg	byte __thiscall(void * a, void * b, int flags)
+0026f120	1332	USER_DEFINED	__thiscall	CSuelo_TraceSeg	byte __thiscall(void * a, void * b, void * hit, void * tri, int flags)
+0026f660	478	USER_DEFINED	__cdecl	Suelo_PointInTriIn	byte __cdecl(void * p, void * a, void * b, void * c)
+0026f840	286	USER_DEFINED	__cdecl	Alturas_CellStep	byte __cdecl(void * alt, int * x, int * z, void * a, void * b, float * t)
+0026f9a0	324	USER_DEFINED	__cdecl	Alturas_TraceStep	byte __cdecl(void * alt)
+0026fb10	6740	USER_DEFINED	__thiscall	CSuelo_CheckBBox	byte __thiscall(void * colis)
+00271590	1381	USER_DEFINED	__thiscall	CSuelo_CollideOBB	byte __thiscall(void * m, void * half, void * outPos, void * outN)
+00271b00	604	USER_DEFINED	__cdecl	Box_ClipTri	int __cdecl(void * m, float * half, void * tri, void * center)
+00271d60	1623	USER_DEFINED	__cdecl	BoxTri	byte __cdecl(void * bmin, void * bmax, void * tri, void * v)
+002723e0	2436	USER_DEFINED	__cdecl	Poly_ClipPlane	void __cdecl(void * n, float d, int * count, void * pts)
+00272d70	542	USER_DEFINED	__cdecl	Box_PointDepth	float __cdecl(void * m, float * half, void * p)
+00272f90	171	USER_DEFINED	__cdecl	Tsc_CpuFreq	float __cdecl(int recalc)
 00273040	25	USER_DEFINED	__cdecl	Prof_Count	int __cdecl(int section, int n)
-00273060	18	DEFAULT	unknown	FUN_00673060	
-00273080	137	DEFAULT	unknown	FUN_00673080	
-00273110	50	DEFAULT	unknown	FUN_00673110	
-00273150	91	DEFAULT	unknown	FUN_00673150	
-002731b0	102	DEFAULT	unknown	FUN_006731b0	
-00273220	121	DEFAULT	unknown	FUN_00673220	
-002732a0	279	DEFAULT	unknown	FUN_006732a0	
-002733c0	17	DEFAULT	unknown	FUN_006733c0	
-002733e0	144	ANALYSIS	__thiscall	CD3DApplication::vf00	undefined __thiscall(void)
+00273060	18	USER_DEFINED	__cdecl	Prof_Avg32	int __cdecl(uint section)
+00273080	137	USER_DEFINED	__cdecl	Prof_Reset	int __cdecl(uint section)
+00273110	50	USER_DEFINED	__cdecl	Prof_GetCount	int __cdecl(int section, int reset)
+00273150	91	USER_DEFINED	__cdecl	Prof_GetTime	float __cdecl(int section, int reset)
+002731b0	102	USER_DEFINED	__cdecl	Prof_GetMaxTime	float __cdecl(int section, int reset)
+00273220	121	USER_DEFINED	__cdecl	Prof_Avg	int __cdecl(uint section, uint frames)
+002732a0	279	USER_DEFINED	__fastcall	CD3DApp_ctor	byte * __fastcall(byte * self)
+002733c0	17	USER_DEFINED	__fastcall	CD3DApp_dtor	void __fastcall(byte * self)
+002733e0	144	USER_DEFINED	__thiscall	CD3DApp_AdjustWindowForChange	int __thiscall(void)
 00273470	2332	DEFAULT	unknown	FUN_00673470	
-00273d90	118	DEFAULT	unknown	FUN_00673d90	
-00273e10	5	ANALYSIS	__thiscall	CD3DApplication::vf01	undefined __thiscall(void)
+00273d90	118	USER_DEFINED	__thiscall	CD3DApp_Cleanup	int __thiscall(void)
+00273e10	5	USER_DEFINED	__thiscall	CD3DApp_ConfirmDevice	int __thiscall(void * caps, uint behavior, uint fmt)
 00273e20	528	ANALYSIS	__thiscall	CD3DApplication::vf10	undefined __thiscall(void)
-00274030	3	ANALYSIS	__thiscall	CD3DApplication::vf08	undefined __thiscall(void)
-00274040	817	DEFAULT	unknown	FUN_00674040	
-002743a0	3	ANALYSIS	__thiscall	CD3DApplication::vf09	undefined __thiscall(void)
-002743b0	769	DEFAULT	unknown	FUN_006743b0	
-002746c0	252	DEFAULT	unknown	FUN_006746c0	
-002747c0	3	ANALYSIS	__thiscall	CD3DApplication::vf05	undefined __thiscall(void)
-002747d0	3	ANALYSIS	__thiscall	CD3DApplication::vf03	undefined __thiscall(void)
-002747e0	881	DEFAULT	unknown	FUN_006747e0	
+00274030	3	USER_DEFINED	__thiscall	CD3DApp_Nop	int __thiscall(void)
+00274040	817	USER_DEFINED	__thiscall	CD3DApp_DisplayErrorMsg	int __thiscall(int hr, int type)
+002743a0	3	USER_DEFINED	__thiscall	CD3DApp_Nop	int __thiscall(void)
+002743b0	769	USER_DEFINED	__thiscall	CD3DApp_FindDepthStencilFormat	int __thiscall(uint adapter, uint type, uint fmt, uint * out)
+002746c0	252	USER_DEFINED	__thiscall	CD3DApp_ForceWindowed	int __thiscall(void)
+002747c0	3	USER_DEFINED	__thiscall	CD3DApp_Nop	int __thiscall(void)
+002747d0	3	USER_DEFINED	__thiscall	CD3DApp_Nop	int __thiscall(void)
+002747e0	881	USER_DEFINED	__thiscall	CD3DApp_Initialize3DEnvironment	int __thiscall(void)
 00274b60	1160	ANALYSIS	__thiscall	CD3DApplication::vf12	undefined __thiscall(void)
-002750a0	3	ANALYSIS	__thiscall	CD3DApplication::vf02	undefined __thiscall(void)
-002750b0	112	ANALYSIS	__thiscall	CD3DApplication::vf13	undefined __thiscall(void)
+002750a0	3	USER_DEFINED	__thiscall	CD3DApp_Nop	int __thiscall(void)
+002750b0	112	USER_DEFINED	__thiscall	CD3DApp_Pause	void __thiscall(int pause)
 00275120	787	DEFAULT	unknown	FUN_00675120	
-00275460	3	ANALYSIS	__thiscall	CD3DApplication::vf06	undefined __thiscall(void)
-00275470	54	DEFAULT	unknown	FUN_00675470	
-002754b0	172	DEFAULT	unknown	FUN_006754b0	
-00275560	3	ANALYSIS	__thiscall	CD3DApplication::vf04	undefined __thiscall(void)
+00275460	3	USER_DEFINED	__thiscall	CD3DApp_Nop	int __thiscall(void)
+00275470	54	USER_DEFINED	__thiscall	CD3DApp_ResetDevice	int __thiscall(void)
+002754b0	172	USER_DEFINED	__thiscall	CD3DApp_Reset	int __thiscall(void)
+00275560	3	USER_DEFINED	__thiscall	CD3DApp_Nop	int __thiscall(void)
 00275570	955	ANALYSIS	__thiscall	CD3DApplication::vf11	undefined __thiscall(void)
 00275960	1835	DEFAULT	unknown	FUN_00675960	
-00276090	66	DEFAULT	unknown	FUN_00676090	
-002760e0	410	DEFAULT	unknown	FUN_006760e0	
-00276280	238	DEFAULT	unknown	FUN_00676280	
-00276370	227	DEFAULT	unknown	FUN_00676370	
-00276460	15	DEFAULT	unknown	FUN_00676460	
-00276470	68	DEFAULT	unknown	FUN_00676470	
-002764c0	70	DEFAULT	unknown	FUN_006764c0	
-00276510	73	DEFAULT	unknown	FUN_00676510	
-00276560	76	DEFAULT	unknown	FUN_00676560	
-002765b0	70	DEFAULT	unknown	FUN_006765b0	
-00276600	41	DEFAULT	unknown	FUN_00676600	
-00276630	198	DEFAULT	unknown	FUN_00676630	
-00276700	81	DEFAULT	unknown	FUN_00676700	
-00276760	41	DEFAULT	unknown	FUN_00676760	
-00276790	1037	DEFAULT	unknown	FUN_00676790	
+00276090	66	USER_DEFINED	__cdecl	D3DApp_SortModes	int __cdecl(void * a, void * b)
+002760e0	410	USER_DEFINED	__thiscall	CD3DApp_ToggleFullscreen	int __thiscall(void)
+00276280	238	USER_DEFINED	__fastcall	CD3DApp_UpdateBackBufferDesc	void __fastcall(byte * self)
+00276370	227	USER_DEFINED	__thiscall	CD3DApp_UserSelectNewDevice	int __thiscall(void)
+00276460	15	USER_DEFINED	__stdcall	D3DApp_WndProc	int __stdcall(void * hwnd, uint msg, int w, int l)
+00276470	68	USER_DEFINED	__cdecl	D3DApp_DepthFormatOk	byte __cdecl(void * d3d, uint adapter, uint type, uint fmt, uint ds)
+002764c0	70	USER_DEFINED	__cdecl	DXUtil_AnsiToGeneric	void __cdecl(char * dst, char * src, int cch)
+00276510	73	USER_DEFINED	__cdecl	DXUtil_AnsiToWide	void __cdecl(ushort * dst, char * src, int cch)
+00276560	76	USER_DEFINED	__cdecl	DXUtil_GUIDToString	void __cdecl(void * g, char * buf)
+002765b0	70	USER_DEFINED	__cdecl	DXUtil_AnsiToGeneric	void __cdecl(char * dst, char * src, int cch)
+00276600	41	USER_DEFINED	__cdecl	DXUtil_GenericToWide	void __cdecl(ushort * dst, char * src, int cch)
+00276630	198	USER_DEFINED	__cdecl	DXUtil_StringToGUID	int __cdecl(char * s, void * g)
+00276700	81	USER_DEFINED	__cdecl	DXUtil_WideToAnsi	void __cdecl(char * dst, ushort * src, int cch)
+00276760	41	USER_DEFINED	__cdecl	DXUtil_WideToGeneric	void __cdecl(char * dst, ushort * src, int cch)
+00276790	1037	USER_DEFINED	__cdecl	DXUtil_Timer	float __cdecl(int cmd)
 00276ba0	55	DEFAULT	unknown	FUN_00676ba0	
-00276be0	207	DEFAULT	unknown	FUN_00676be0	
-00276cb0	67	DEFAULT	unknown	FUN_00676cb0	
+00276be0	207	USER_DEFINED	__cdecl	Timer_FixedStep	int __cdecl(float fps)
+00276cb0	67	USER_DEFINED	__cdecl	Timer_GetFreq	int __cdecl(void * out)
 00276d00	320	DEFAULT	unknown	FUN_00676d00	
 00276e40	72	DEFAULT	unknown	FUN_00676e40	
 00276e90	249	USER_DEFINED	__cdecl	Color_FromFloat	uint __cdecl(float * c)
@@ -8740,31 +8740,31 @@ rva	size	source	callconv	name	signature
 002c9d50	41	USER_DEFINED	__cdecl	BspQ3_Free	void __cdecl(void)
 002c9d80	1	USER_DEFINED	__cdecl	BspQ3_Crear	void __cdecl(void)
 002c9d90	15	USER_DEFINED	unknown	BspQ3_Render	
-002c9da0	590	DEFAULT	unknown	FUN_006c9da0	
-002c9ff0	874	DEFAULT	unknown	FUN_006c9ff0	
-002ca360	1168	DEFAULT	unknown	FUN_006ca360	
-002ca7f0	693	DEFAULT	unknown	FUN_006ca7f0	
-002caab0	577	DEFAULT	unknown	FUN_006caab0	
-002cad00	104	DEFAULT	unknown	FUN_006cad00	
-002cad70	100	DEFAULT	unknown	FUN_006cad70	
-002cadf0	88	DEFAULT	unknown	FUN_006cadf0	
-002cae50	127	DEFAULT	unknown	FUN_006cae50	
-002caed0	148	DEFAULT	unknown	FUN_006caed0	
-002caf70	269	DEFAULT	unknown	FUN_006caf70	
-002cb080	115	DEFAULT	unknown	FUN_006cb080	
-002cb100	121	DEFAULT	unknown	FUN_006cb100	
-002cb180	213	DEFAULT	unknown	FUN_006cb180	
-002cb260	362	DEFAULT	unknown	FUN_006cb260	
-002cb3d0	178	DEFAULT	unknown	FUN_006cb3d0	
-002cb490	120	DEFAULT	unknown	FUN_006cb490	
-002cb510	374	DEFAULT	unknown	FUN_006cb510	
-002cb690	571	DEFAULT	unknown	FUN_006cb690	
-002cb8d0	764	DEFAULT	unknown	FUN_006cb8d0	
-002cbbd0	794	DEFAULT	unknown	FUN_006cbbd0	
-002cbef0	824	DEFAULT	unknown	FUN_006cbef0	
-002cc230	84	DEFAULT	unknown	FUN_006cc230	
-002cc290	190	DEFAULT	unknown	FUN_006cc290	
-002cc350	125	DEFAULT	unknown	FUN_006cc350	
+002c9da0	590	USER_DEFINED	__thiscall	CSuelo_GetY	float __thiscall(float x, float z, float maxY, byte all)
+002c9ff0	874	USER_DEFINED	__thiscall	CSuelo_GetYInfo	byte __thiscall(float x, float z, void * info)
+002ca360	1168	USER_DEFINED	__thiscall	CSuelo_RayoVert	byte __thiscall(float x, float z, void * res)
+002ca7f0	693	USER_DEFINED	__thiscall	CSuelo_GetYRange	float __thiscall(float x, float z, float maxY, float minY, byte all)
+002caab0	577	USER_DEFINED	__thiscall	CSuelo_GetYBelow	byte __thiscall(float x, float z, float maxY, float * out)
+002cad00	104	USER_DEFINED	__thiscall	CAlturas_GetCell	void * __thiscall(uint x, uint z)
+002cad70	100	USER_DEFINED	__thiscall	CObjBase3D_SetNodo	void __thiscall(void * nodo)
+002cadf0	88	USER_DEFINED	__cdecl	Pal16_FromRGB	uint __cdecl(byte r, byte g, byte b)
+002cae50	127	USER_DEFINED	__cdecl	Pal16_ToRGB	void __cdecl(byte * r, byte * g, byte * b, ushort c)
+002caed0	148	USER_DEFINED	__cdecl	Pal_Nearest	int __cdecl(byte * pal, int first, int last, int r, int g, int b)
+002caf70	269	USER_DEFINED	__cdecl	Pal_Load	void __cdecl(char * name, byte * dest)
+002cb080	115	USER_DEFINED	__cdecl	Pal16_Load	void __cdecl(char * name, void ** dest)
+002cb100	121	USER_DEFINED	__cdecl	Pal_Copy	void __cdecl(byte * dst, int i1, byte * src, int i2, int num)
+002cb180	213	USER_DEFINED	__cdecl	Pal_ToPal16	void * __cdecl(byte * pal, int num)
+002cb260	362	USER_DEFINED	__cdecl	Pal_ToPal16Scaled	void * __cdecl(byte * pal, int num, float r, float g, float b)
+002cb3d0	178	USER_DEFINED	__cdecl	Pal16_SetMasks	void __cdecl(uint r, uint g, uint b)
+002cb490	120	USER_DEFINED	__cdecl	RGB_Blend	void __cdecl(int * r, int * g, int * b, int r2, int g2, int b2, int t)
+002cb510	374	USER_DEFINED	__cdecl	Pal16_Scale	void __cdecl(void * pal16, int num, float r, float g, float b)
+002cb690	571	USER_DEFINED	__cdecl	Pcx_Decode	byte * __cdecl(byte * dest, byte * src, void * hdr)
+002cb8d0	764	USER_DEFINED	__cdecl	Pcx_DecodeFile	int __cdecl(byte * dest, void * f, void * hdr)
+002cbbd0	794	USER_DEFINED	__cdecl	Pcx_Write24	int __cdecl(void * f, byte * mem, int lx, int ly)
+002cbef0	824	USER_DEFINED	__cdecl	Pcx_Write8	int __cdecl(void * f, byte * mem, int lx, int ly, byte * pal, int pal4)
+002cc230	84	USER_DEFINED	__cdecl	Pcx_ReadHeader	int __cdecl(void * f, void * hdr)
+002cc290	190	USER_DEFINED	__cdecl	Pcx_ReadPal	int __cdecl(byte * dest, void * f, int num)
+002cc350	125	USER_DEFINED	__cdecl	Pcx_CheckHeader	int __cdecl(void * hdr)
 002cc410	566	USER_DEFINED	__cdecl	Lex_String	void __cdecl(void)
 002cc690	344	USER_DEFINED	__cdecl	Lex_Directive	void __cdecl(void)
 002cc7f0	377	USER_DEFINED	__cdecl	Lex_Hex	void __cdecl(void)
@@ -8797,9 +8797,9 @@ rva	size	source	callconv	name	signature
 002cdfe0	320	USER_DEFINED	__cdecl	CmdLex_SkipTo	void __cdecl(int c)
 002ce120	334	USER_DEFINED	__cdecl	CmdLex_SkipToAny	void __cdecl(char *chars)
 002ce270	307	USER_DEFINED	__cdecl	CmdLex_Next	void __cdecl(void)
-002ce3b0	86	DEFAULT	unknown	FUN_006ce3b0	
-002ce410	1586	DEFAULT	unknown	FUN_006ce410	
-002cea50	1094	DEFAULT	unknown	FUN_006cea50	
+002ce3b0	86	USER_DEFINED	__cdecl	Ilum_Smooth	float __cdecl(float v)
+002ce410	1586	USER_DEFINED	__cdecl	Ilum_ListaVert	int __cdecl(void * dest, void * lv, void * Mat, void * Luz)
+002cea50	1094	USER_DEFINED	__cdecl	Ilum_Light	int __cdecl(void * dest, void * pos, void * n, float * mat, void * luz, uint flags)
 002ceea0	355	USER_DEFINED	__cdecl	TXF_Load	int __cdecl(char *name, void *dest, int flags, void *extra, int nbytes)
 002cf010	350	USER_DEFINED	__cdecl	TXF_Save	int __cdecl(char *name, void *orig, byte flags, void *extra, int nbytes)
 002cf170	83	USER_DEFINED	__thiscall	CBmpFlt_Fill	void __thiscall(float *color)
@@ -8832,41 +8832,43 @@ rva	size	source	callconv	name	signature
 002d0b00	106	USER_DEFINED	__thiscall	CTablaHash_List	int __thiscall(void **out, int max)
 002d0b70	174	USER_DEFINED	__thiscall	CTablaHash_GetList	int __thiscall(void **elems, int *num)
 002d0c20	109	USER_DEFINED	__thiscall	CTablaHash_Slot	uint __thiscall(char *key)
-002d1250	41	DEFAULT	unknown	FUN_006d1250	
+002d1250	41	USER_DEFINED	__fastcall	Bsp2Nodo_ctor	void * __fastcall(void * self)
 002d1290	37	USER_DEFINED	__fastcall	BspLuces_dtor	void __fastcall(void * self)
-002d12c0	101	DEFAULT	unknown	FUN_006d12c0	
-002d1330	73	DEFAULT	unknown	FUN_006d1330	
-002d1380	1240	DEFAULT	unknown	FUN_006d1380	
+002d12c0	101	USER_DEFINED	__fastcall	Bsp2Nodo_dtor	void __fastcall(void * self)
+002d1330	73	USER_DEFINED	__thiscall	BspLuces_CheckLine	int __thiscall(void * a, void * b, void * out)
+002d1380	1240	USER_DEFINED	__cdecl	Bsp2_CheckLine	int __cdecl(void * a, void * b, void * out, void * node)
 002d1860	50	USER_DEFINED	__fastcall	BspLuces_Render	void __fastcall(void * self)
-002d18a0	407	DEFAULT	unknown	FUN_006d18a0	
-002d1a40	58	DEFAULT	unknown	FUN_006d1a40	
-002d1a80	943	DEFAULT	unknown	FUN_006d1a80	
-002d1e30	83	DEFAULT	unknown	FUN_006d1e30	
-002d1e90	99	DEFAULT	unknown	FUN_006d1e90	
-002d1f00	62	DEFAULT	unknown	FUN_006d1f00	
-002d1f40	43	DEFAULT	unknown	FUN_006d1f40	
-002d1f70	136	DEFAULT	unknown	FUN_006d1f70	
+002d18a0	407	USER_DEFINED	__cdecl	Bsp2_AddTri	void __cdecl(byte countOnly, void * node, uint * nFront, uint * nBack, int lado, void * src, void * v0, void * v1, void * v2)
+002d1a40	58	USER_DEFINED	__cdecl	Bsp2_Stats	void __cdecl(int print)
+002d1a80	943	USER_DEFINED	__thiscall	Bsp2_ChoosePlane	byte __thiscall(void * node, void * dest)
+002d1e30	83	USER_DEFINED	__thiscall	BspLuces_FindLeaf	void * __thiscall(void * p)
+002d1e90	99	USER_DEFINED	__cdecl	Bsp2_FindLeaf	void * __cdecl(void * p, void * node)
+002d1f00	62	USER_DEFINED	__cdecl	Bsp2_Count	int __cdecl(void * node)
+002d1f40	43	USER_DEFINED	__cdecl	Bsp2Tri_Copy	void * __cdecl(void * dest, void * src)
+002d1f70	136	USER_DEFINED	__thiscall	Bsp2_Build	void __thiscall(void * node, int depth)
 002d2000	115	USER_DEFINED	__thiscall	Tabla_Alloc38	void __thiscall(int num)
-002d2080	1276	DEFAULT	unknown	FUN_006d2080	
-002d2580	168	DEFAULT	unknown	FUN_006d2580	
-002d2630	224	DEFAULT	unknown	FUN_006d2630	
-002d2710	36	DEFAULT	unknown	FUN_006d2710	
-002d2740	89	DEFAULT	unknown	FUN_006d2740	
-002d27a0	379	DEFAULT	unknown	FUN_006d27a0	
+002d2080	1276	USER_DEFINED	__cdecl	Bsp2_Split	void __cdecl(byte countOnly, void * node, void * pl, int * outFront, int * outBack)
+002d2580	168	USER_DEFINED	__thiscall	Tabla_Resize38	void __thiscall(int n)
+002d2630	224	USER_DEFINED	__cdecl	Bsp2_Render	void __cdecl(void * node)
+002d2710	36	USER_DEFINED	__thiscall	BspEnlace_ctor	void * __thiscall(void * sig, void * region, float ff)
+002d2740	89	USER_DEFINED	__fastcall	RadAreaLuz_ctor	void * __fastcall(void * self)
+002d27a0	379	USER_DEFINED	__thiscall	CRadiosidad_ctor	void * __thiscall(char * dir)
 002d2920	182	USER_DEFINED	__thiscall	BspRegion_ctor	void * __thiscall(int x, int y, int lx, int ly, void * padre)
-002d2a20	160	DEFAULT	unknown	FUN_006d2a20	
+002d29e0	50	USER_DEFINED	__fastcall	BspEnlace_dtor	void __fastcall(void * self)
+002d2a20	160	USER_DEFINED	__fastcall	CRadiosidad_dtor	void __fastcall(void * self)
 002d2ac0	197	USER_DEFINED	__fastcall	BspRegion_dtor	void __fastcall(void * self)
-002d2b90	62	DEFAULT	unknown	FUN_006d2b90	
-002d2bd0	115	DEFAULT	unknown	FUN_006d2bd0	
-002d2c50	33	DEFAULT	unknown	FUN_006d2c50	
-002d2c80	281	DEFAULT	unknown	FUN_006d2c80	
-002d2da0	107	DEFAULT	unknown	FUN_006d2da0	
-002d2e10	115	DEFAULT	unknown	FUN_006d2e10	
-002d2e90	699	DEFAULT	unknown	FUN_006d2e90	
-002d3150	86	DEFAULT	unknown	FUN_006d3150	
-002d31b0	77	DEFAULT	unknown	FUN_006d31b0	
-002d3200	468	DEFAULT	unknown	FUN_006d3200	
-002d33e0	10	DEFAULT	unknown	FUN_006d33e0	
+002d2b90	62	USER_DEFINED	__thiscall	BspEnlace_Delete	void * __thiscall(byte flags)
+002d2bd0	115	USER_DEFINED	__thiscall	RadAreaLuz_Delete	void * __thiscall(byte flags)
+002d2c50	33	USER_DEFINED	__thiscall	CRadiosidad_Get	void * __thiscall(void * Mat)
+002d2c80	281	USER_DEFINED	__thiscall	CRadiosidad_Add	void * __thiscall(void * Mat)
+002d2da0	107	USER_DEFINED	__thiscall	CRadiosidad_Find	void * __thiscall(void * Mat)
+002d2e10	115	USER_DEFINED	__thiscall	Tabla_AllocC	void __thiscall(int num)
+002d2e90	699	USER_DEFINED	__thiscall	CRadiosidad_ReadMat	byte __thiscall(void * Mat, void * dest)
+002d3150	86	USER_DEFINED	__thiscall	CRadiosidad_GetColor	byte __thiscall(void * Mat, void * dest)
+002d31b0	77	USER_DEFINED	__thiscall	CRadiosidad_ReadMatWarn	byte __thiscall(void * Mat, void * dest)
+002d3200	468	USER_DEFINED	__cdecl	Rad_Normales	void * __cdecl(uint * num)
+002d33e0	10	USER_DEFINED	__thiscall	CEVA_ctor	void * __thiscall(void)
+002d33f0	16	USER_DEFINED	__fastcall	CAnimVert_ctor	void * __fastcall(void * self)
 002d3400	54	USER_DEFINED	__fastcall	CEVA_Free	void __fastcall(void *self)
 002d3440	195	USER_DEFINED	__fastcall	CAnimVert_dtor	void __fastcall(void *self)
 002d3510	154	USER_DEFINED	__thiscall	CAnimVert_Delete	void * __thiscall(uint flags)

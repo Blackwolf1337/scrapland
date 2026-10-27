@@ -10,6 +10,7 @@
 
 #include "scrap/luz.h"
 #include "scrap/material.h"
+#include "scrap/render.h"
 
 #define STENCIL_MAX_GRUPOS 0x400
 
@@ -52,10 +53,6 @@ SD_SIZE(StencilBlock, 0x80);
 #define g_StencilSelf GAME_DATA(int, 0x3901b0)	/* R_StencilSelf */
 #define g_StencilTog GAME_DATA(int, 0x390180)	/* R_StencilTog: switched once */
 
-/* the filters of the scene drawing (render.cpp, also in Nodo3D.c) */
-#define g_RenderClaseMask GAME_DATA(uint32_t, 0x4ad568)
-#define g_RenderFlagMask GAME_DATA(uint32_t, 0x4ad5fc)
-#define g_RenderFlagNeg GAME_DATA(byte, 0x4ad4ec)
 #define g_FrameMs GAME_DATA(float, 0x4a8ed4)	/* the time of the last frame in ms */
 #define g_KeyV GAME_DATA(byte, 0x4db2ef)	/* with X held: the shadows switched */
 

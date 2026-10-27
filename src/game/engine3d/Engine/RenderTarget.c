@@ -58,7 +58,6 @@ typedef int(__stdcall *rtLockRect_t)(void *surf, RTLockedRect *lr, const int *re
 #define D3DLOCK_READONLY 0x10
 
 /* the classes of the scene nodes drawn (the DuDv pass draws only its own) */
-#define g_RenderClaseMask GAME_DATA(uint32_t, 0x4ad568)
 
 static void *RT_Dev(void) {
 	return g_pd3dDevice;

@@ -12,6 +12,7 @@
 #include "scrap/mallatri.h"
 #include "scrap/material.h"
 #include "scrap/nodo3d.h"
+#include "scrap/render.h"
 #include "scrap/sistpart.h"
 #include "scrap/suelo.h"
 #include "scrap/varios.h"
@@ -27,9 +28,6 @@
 #define g_NodesRendered GAME_DATA(int, 0x4a8f10)
 #define g_NodesUpdated GAME_DATA(int, 0x4a8f14)
 /* the pass of the renderer and its filters of the nodes */
-#define g_RenderClaseMask GAME_DATA(uint32_t, 0x4ad568)
-#define g_RenderFlagMask GAME_DATA(uint32_t, 0x4ad5fc)
-#define g_RenderFlagNeg GAME_DATA(byte, 0x4ad4ec)	/* drawn if (flags & mask) == 0 differs from it */
 
 /* the engine variables of the nodes (Gvars) */
 #define g_NodeSlerp2 GAME_DATA(int, 0x4ad560)	/* R_NodeSlerp2 0/1/2 */
