@@ -33,6 +33,24 @@ void DList_LinkFirst(void *list, void *node) {
 	l->head = n;
 }
 
+void DList_LinkLast(void *list, void *node) {
+	cDList *l = list;
+	cDListNode *n = node;
+
+	if (!l->head) {
+		n->next = n;
+		n->prev = n;
+		l->count++;
+		l->head = n;
+		return;
+	}
+	n->prev = l->head->prev;
+	n->next = l->head;
+	l->head->prev->next = n;
+	l->head->prev = n;
+	l->count++;
+}
+
 void DList_Release(void *list, void *node, uint32_t size) {
 	cDList *l = list;
 	cDListNode *n = node;

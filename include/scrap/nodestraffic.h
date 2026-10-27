@@ -39,7 +39,7 @@ typedef struct cGridElementsVtbl {
 	byte(__thiscall *Draw)(cGridElements *self, uint32_t color);				/* 0x10 */
 	byte(__thiscall *CellCoords)(cGridElements *self, const vec3_t *p, int *x, int *y, int *z);	/* 0x14 */
 	void(__thiscall *GetDivs)(cGridElements *self, int *nx, int *ny, int *nz);		/* 0x18 */
-	void(__thiscall *GetCellSize)(cGridElements *self, vec3_t *out);			/* 0x1c */
+	vec3_t *(__thiscall *GetCellSize)(cGridElements *self, vec3_t *out);			/* 0x1c */
 	byte(__thiscall *IsInside)(cGridElements *self, const vec3_t *p);			/* 0x20 */
 	void(__thiscall *Free)(cGridElements *self);						/* 0x24 */
 	int(__thiscall *CellIndex)(cGridElements *self, const vec3_t *p);			/* 0x28 */
@@ -62,6 +62,11 @@ SD_SIZE(cGridElements, 0x3c);
 
 cGridElements *__thiscall cGridElements_ctor(cGridElements *self, const vec3_t *max, const vec3_t *min, int nx,
 	int ny, int nz);
+/* the constructor of all instances, with the vtable (rva) of the instance */
+cGridElements *cGridElements_Init(cGridElements *self, uint32_t vftable, const vec3_t *max, const vec3_t *min, int nx,
+	int ny, int nz);
+/* the cells emptied with clear and freed with their free nodes of nodeSize bytes, then the cell array */
+void cGridElements_FreeCells(cGridElements *self, void(__fastcall *clear)(void *cell), uint32_t nodeSize);
 void __fastcall cGridElements_dtor(cGridElements *self);
 cGridElements *__thiscall cGridElements_Delete(cGridElements *self, byte flags);
 /* the cells freed with their nodes, then the cell array */
@@ -76,7 +81,7 @@ byte __thiscall cGridElements_Draw(cGridElements *self, uint32_t color);
 /* the cell of p, each clamped to the last one (a CHECK out of the box); 1 */
 byte __thiscall cGridElements_CellCoords(cGridElements *self, const vec3_t *p, int *x, int *y, int *z);
 void __thiscall cGridElements_GetDivs(cGridElements *self, int *nx, int *ny, int *nz);
-void __thiscall cGridElements_GetCellSize(cGridElements *self, vec3_t *out);
+vec3_t *__thiscall cGridElements_GetCellSize(cGridElements *self, vec3_t *out);
 byte __thiscall cGridElements_IsInside(cGridElements *self, const vec3_t *p);
 /* the index of the cell of p, no check below 0, at most the last cell */
 int __thiscall cGridElements_CellIndex(cGridElements *self, const vec3_t *p);

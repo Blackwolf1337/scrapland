@@ -39,13 +39,10 @@ SD_IMPORT(cActClass_Var, 0x060770)
 SD_IMPORT(cAction_Var, 0x064280)
 
 /* engine: AI/ (include/scrap/ai.h) */
-SD_IMPORT(CNodesWorld2D_ctor, 0x0ad950)
 SD_IMPORT(CAStar_ctor, 0x099330)
 SD_IMPORT(CAStar2D_ctor, 0x09a2f0)
 SD_IMPORT(cAIVehicleGroup_ctor, 0x096bf0)
 SD_IMPORT(cAICharGroup_ctor, 0x080790)
-SD_IMPORT(CNodesWorld2D_Load, 0x0b6200)
-SD_IMPORT(CNodesWorld2D_AnalizeGraph, 0x0adc20)
 SD_IMPORT(cAICharGroup_GetReposPos, 0x080d20)
 SD_IMPORT(cAIVehicle_GetState, 0x08b740)
 SD_IMPORT(cAIVehicle_SetState, 0x08dfb0)
@@ -705,10 +702,6 @@ SD_IMPORT(cAIVehicle_PlaceOnTrack, 0x08d930)
 /* module agent: AI/NodesWorld.cpp (imports below this line) */
 
 /* module agent: Input/ActionSet+IDevice+PcKeyboard+PcMouse+PcPad.cpp (imports below this line) */
-SD_IMPORT(CNodesWorldSup_ctor, 0x0b80f0)
-SD_IMPORT(CNodesWorldSup_dtor, 0x0b8620)
-SD_IMPORT(CNodesWorldSup_FreeGraph, 0x0b92d0)
-SD_IMPORT(CNodesWorldSup_LoadGraph, 0x0badb0)
 SD_IMPORT(CNodesWorldSup_SaveInfPath, 0x0bba70)
 SD_IMPORT(DListVec3_Clear, 0x06d8a0)
 SD_IMPORT(DListVec3_Add, 0x06d720)
@@ -718,3 +711,5 @@ SD_IMPORT(CNodesWorld_AnalizeMap, 0x0a2e80)
 SD_IMPORT(crt_chmod, 0x345287)
 
 /* module agent: AI/NodesWorld2D+NodesWorldSup.cpp (imports below this line) */
+SD_IMPORT(CNodesWorld2D_TestPath, 0x0ae190)
+SD_IMPORT(CNodesWorld2D_Generate, 0x0b2f60)
