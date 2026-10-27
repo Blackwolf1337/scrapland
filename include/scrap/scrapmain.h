@@ -265,7 +265,11 @@ void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *rel
 void Engine3D_Shutdown(void);
 byte *__fastcall CMotorApp_ctor(byte *self);
 int __thiscall CMotorApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior, int format);
-int __thiscall CMotorApp_CountFrame(byte *self);
+int __thiscall CMotorApp_RestoreDeviceObjects(byte *self);
+int __thiscall CMotorApp_OneTimeSceneInit(byte *self);
+int __thiscall CMotorApp_FrameMove(byte *self);
+int __thiscall CMotorApp_DeleteDeviceObjects(byte *self);
+int __thiscall CMotorApp_FinalCleanup(byte *self);
 int __thiscall CD3DApplication_Nothing(byte *self);
 char *Motor_ColorStr(const byte *c);
 const char *Motor_BoolStr(int b);

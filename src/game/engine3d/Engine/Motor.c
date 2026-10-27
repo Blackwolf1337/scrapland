@@ -6,6 +6,15 @@
  */
 #include "scrap/dxutil.h"
 #include "scrap/e3dutil.h"
+#include "scrap/app.h"
+#include "scrap/flare.h"
+#include "scrap/fuentes.h"
+#include "scrap/material.h"
+#include "scrap/nodefx.h"
+#include "scrap/render.h"
+#include "scrap/stencil.h"
+#include "scrap/textura.h"
+#include "scrap/trails.h"
 #include "scrap/modelo.h"
 #include "scrap/mundo.h"
 #include "scrap/nodo3d.h"
@@ -51,6 +60,35 @@ typedef void(__stdcall *initcommoncontrols_t)(void);
 
 /* the ini of the engine into the variables (rva 0x230440) */
 void Motor_LoadIni(const char *name, int arg);
+/* the console command handler of the engine (rva 0x22eda0, still the exe's) */
+#define MOTOR_CMDPROC 0x22eda0
+#define g_E3DCmdProc GAME_DATA(void *, 0x4ab8f8)
+#define g_Entrada GAME_DATA(void *, 0x4db418)	/* the input of the engine, a CEntradaNula */
+#define MOTOR_OVERLAY(m) (*(void **)((m) + 0x2a5f0))	/* 8 bytes with a CGrafico2D */
+#define MOTOR_OBJ2A5F4(m) (*(void ***)((m) + 0x2a5f4))
+#define MOTOR_TIME(m) (*(float *)((m) + 0x2a518))	/* s */
+#define MOTOR_ELAPSED(m) (*(float *)((m) + 0x2a51c))
+/* the clock of the engine */
+#define g_FrameDelta GAME_DATA(float, 0x4a8ed4)
+#define g_RealFrameSecs GAME_DATA(float, 0x4a8ee4)
+#define g_TimeD GAME_DATA(double, 0x4a8ed8)
+#define g_TimeMsInt GAME_DATA(int, 0x4a8ee0)
+#define g_GameTimeD GAME_DATA(double, 0x4a8ee8)
+#define g_LastTime GAME_DATA(float, 0x4a903c)
+#define g_FpsTime GAME_DATA(float, 0x4a9040)
+#define g_FpsFrames GAME_DATA(int, 0x4a9044)
+#define g_Fps GAME_DATA(float, 0x431ba8)
+#define MOTOR_MAXFRAME 0.1f
+
+/* of the 0x2a3000.. part of the engine (still the exe's) */
+void *__fastcall IEntrada_ctor(void *self);		/* rva 0x2a39d0 */
+void *__fastcall MotorOverlay_ctor(void *self);		/* rva 0x2a4e90 */
+void __fastcall MotorOverlay_dtor(void *self);		/* rva 0x2a4ea0 */
+void Window_SetTextf(void *hwnd, const char *fmt, ...);	/* rva 0x2a5cc0 */
+int LensFlares_ReleaseD3D(void);			/* rva 0x2a6050, 0 */
+void LensFlares_Off(void);				/* rva 0x2a5fe0 */
+void LensFlares_FreeSprite(void);			/* rva 0x2a56f0 */
+int LensFlares_Init(void);				/* rva 0x2a6140 */
 /* the base class of the inputs (rva 0x2a3a40) */
 void __fastcall IEntrada_dtor(void *self);
 
@@ -128,6 +166,116 @@ void Engine3D_Shutdown(void) {
 	g_Motor3D = NULL;
 }
 
+/* OneTimeSceneInit: the init callback of the game, the input, the fonts and trails, the global scene */
+int __thiscall CMotorApp_OneTimeSceneInit(byte *self) {
+	void *mem;
+
+	g_E3DCmdProc = Game_Ptr(MOTOR_CMDPROC);
+	E3D_DebugPrintf("\nprg: '%s'", E3D_GetExePath());
+	if (g_MotorInit && !((byte(*)(void))g_MotorInit)()) {
+		return (int)0x80004005;
+	}
+	CHECK(g_Mundo);
+	mem = operator_new(CENTRADANULA_SIZE);
+	if (mem) {
+		IEntrada_ctor(mem);
+		*(void **)mem = Game_Ptr(CENTRADANULA_VFTABLE);
+	}
+	g_Entrada = mem;
+	mem = operator_new(8);
+	MOTOR_OVERLAY(self) = mem ? MotorOverlay_ctor(mem) : NULL;
+	Fonts_Init();
+	Trails_InitLists();
+	LensFlares_Init();
+	Escenas_Msg(1, 0, 0, 0, 0);
+	Escenas_Msg(2, 0, 0, 0, 0);
+	Motor_GetEscena(self);
+	return 0;
+}
+
+/* FrameMove: the clock of the engine (real and game time, fps once a second) */
+int __thiscall CMotorApp_FrameMove(byte *self) {
+	float t = MOTOR_TIME(self), d;
+
+	g_FrameDelta = t - g_LastTime;
+	g_LastTime = t;
+	g_TimeMsF = (float)((double)t * 1000.0);
+	g_RealFrameSecs = MOTOR_ELAPSED(self);
+	g_TimeD = (double)MOTOR_TIME(self);
+	g_TimeMsInt = (int)(g_TimeD * 1000.0);
+	g_FrameSec = World_TimeScale() * MOTOR_ELAPSED(self);
+	if (!(MOTOR_MAXFRAME > g_FrameSec)) {
+		g_FrameSec = MOTOR_MAXFRAME;
+	}
+	g_GameTimeD = (double)g_FrameSec + g_GameTimeD;
+	g_TimeMs = (uint32_t)(int)(g_GameTimeD * 1000.0);
+	d = t - g_FpsTime;
+	if (d > 1.0f && g_FrameCount > 0) {
+		int n = g_FrameCount;
+
+		g_FpsTime = t;
+		g_Fps = (float)(n - g_FpsFrames) / d;
+		g_FpsFrames = n;
+		if (g_RenderOff) {
+			Window_SetTextf(MOTOR_HWND(self), "Scrapland dedicated server");
+		}
+	}
+	return 0;
+}
+
+/* DeleteDeviceObjects: the device objects of the input, the textures, materials, shadows, trails and the world */
+int __thiscall CMotorApp_DeleteDeviceObjects(byte *self) {
+	((void(__thiscall *)(void *))(*(void ***)g_Entrada)[2])(g_Entrada);
+	Tabla_Free(MOTOR_TABLA(self));
+	Textura_ReleaseAllD3D();
+	CListaMat_Release(g_ListaMat);
+	Stencil_Free();
+	Trails_Release();
+	LensFlares_ReleaseD3D();
+	UtilEscena_ReleaseD3D();
+	CMundo_ReleaseD3D(Mundo_Get());
+	Render_FinD3D();
+	return 0;
+}
+
+/* FinalCleanup: the global scene, the release callback of the game, everything of the engine */
+int __thiscall CMotorApp_FinalCleanup(byte *self) {
+	void *ov;
+
+	Motor_ReleaseEscena(self);
+	if (g_MotorRelease) {
+		((byte(*)(void))g_MotorRelease)();
+	}
+	CHECK(!g_Mundo);
+	Fonts_Free();
+	Debug_PuntosClear();
+	ov = MOTOR_OVERLAY(self);
+	if (ov) {
+		MotorOverlay_dtor(ov);
+		operator_delete_sized(ov, 8);
+		MOTOR_OVERLAY(self) = NULL;
+	}
+	if (MOTOR_OBJ2A5F4(self)) {
+		void **obj = MOTOR_OBJ2A5F4(self);
+
+		((void *(__thiscall *)(void *, int))((void **)obj[0])[0])(obj, 1);
+		MOTOR_OBJ2A5F4(self) = NULL;
+	}
+	UtilEscena_FreeAll();
+	Trails_ResetAll();
+	LensFlares_Off();
+	LensFlares_FreeSprite();
+	CListaMat_DeleteAll(g_ListaMat);
+	Textura_DeleteAll();
+	Tex_ClearPaths();
+	Tex_ClearExtensions();
+	if (g_Entrada) {
+		((void *(__thiscall *)(void *, int))(*(void ***)g_Entrada)[0])(g_Entrada, 1);
+		g_Entrada = NULL;
+	}
+	return 0;
+}
+
 /* ConfirmDevice: no device with the pure behaviour 0x10 */
 int __thiscall CMotorApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior, int format) {
 	(void)self;
@@ -136,7 +284,7 @@ int __thiscall CMotorApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior
 	return (byte)(behavior & 0x10) ? (int)0x80004005 : 0;
 }
 
-int __thiscall CMotorApp_CountFrame(byte *self) {
+int __thiscall CMotorApp_RestoreDeviceObjects(byte *self) {
 	(void)self;
 	g_MotorFrameCount++;
 	return 0;
