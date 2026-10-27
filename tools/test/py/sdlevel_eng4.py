@@ -168,3 +168,10 @@ check('e4 Anm_Preload', lambda: SDTest.Call(0x2051a0, 'vss', 'Models/Elements/Fi
 
 # ---- Motor.cpp ----
 check('e4 Mundo_GetChecked', lambda: SDTest.Call(0x230890, 'i')[0] == SDTest.Peek(0x4afde8, 'i'))
+# the commands of the debug console of the engine (the output goes to the debug console, off)
+e4vu = SDTest.Peek(0x4ad6f0, 'i')
+for c in ('listar luces', 'LISTAR', 'mem', 'ver uniones', 'ver uniones', 'nada', 'arbo', 'imbecil', 'Idiota', 'capullo'):
+	e4srand(55)
+	check('e4 E3D_Command' + fmt((c,)), lambda c=c: (SDTest.Call(0x22eda0, 'vs', c), SDTest.Peek(0x4ad6f0, 'i') & 0xff,
+		SDTest.Call(0x323c2f, 'i')[0]))
+SDTest.Poke(0x4ad6f0, e4vu)

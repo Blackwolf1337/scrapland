@@ -9,6 +9,8 @@
 #include "scrap/dxutil.h"
 #include "scrap/e3dutil.h"
 #include "scrap/app.h"
+#include "scrap/crt.h"
+#include "scrap/luz.h"
 #include "scrap/archio.h"
 #include "scrap/flare.h"
 #include "scrap/fuentes.h"
@@ -62,7 +64,7 @@
 typedef void(__stdcall *initcommoncontrols_t)(void);
 #define exe_InitCommonControls GAME_DATA(initcommoncontrols_t, 0x3a104c)
 
-/* the console command handler of the engine (rva 0x22eda0, still the exe's) */
+/* the console command handler of the engine (E3D_Command) */
 #define MOTOR_CMDPROC 0x22eda0
 #define g_E3DCmdProc GAME_DATA(void *, 0x4ab8f8)
 #define g_Entrada GAME_DATA(void *, 0x4db418)	/* the input of the engine, a CEntradaNula */
@@ -481,6 +483,54 @@ void Escena_LogTree(CEscena *esc, CNodo3D *nodo, int indent) {
 		}
 		n = n->sig;
 	} while (n);
+}
+
+/* the commands of the debug console of the engine (g_E3DCmdProc) */
+#define g_VerUniones GAME_DATA(byte, 0x4ad6f0)	/* the joints of the meshes drawn */
+#define GWL_HINSTANCE (-6)
+
+void E3D_Command(char *cmd) {
+	char *s;
+	CEscena *e;
+	void *hwnd;
+
+	E3D_DebugPrintf("\n> cmd: %s", cmd);
+	if (!crt_stricmp(cmd, "listar luces")) {
+		Luz_List();
+		return;
+	}
+	if (!crt_stricmp(cmd, "listar")) {
+		UtilEscena_Dump(NULL);
+		return;
+	}
+	if (!crt_strnicmp(cmd, "arbol ", 6)) {
+		/* the tree of the first scene whose file name matches, in the log and in the lights dialog */
+		for (s = cmd + 5; *s == ' '; s++) {
+		}
+		for (e = Escena_Next(NULL); e; e = Escena_Next(e)) {
+			if (Wild_Match(s, Ruta_FileName(e->name))) {
+				break;
+			}
+		}
+		Escena_LogTree(e, NULL, 0);
+		hwnd = MOTOR_HWND(g_Motor);
+		exe_CreateDialogParamA((void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE), (const char *)MOTOR_LIGHTSDIALOG, hwnd,
+			Game_Ptr(MOTOR_LIGHTSPROC), (intptr_t)e);
+		return;
+	}
+	if (!crt_stricmp(cmd, "mem")) {
+		return;
+	}
+	if (!crt_stricmp(cmd, "ver uniones")) {
+		g_VerUniones = g_VerUniones == 0;
+		E3D_DebugPrintf("\nver uniones: %d", g_VerUniones);
+		return;
+	}
+	if (crt_stricmp(cmd, "imbecil") && crt_stricmp(cmd, "idiota") && crt_stricmp(cmd, "capullo")) {
+		E3D_DebugPrintf("\ncomando no reconocido.");
+		return;
+	}
+	E3D_DebugPrintf(crt_rand() & 1 ? "\nque te zurzan" : "\npirate");
 }
 
 /* ---- CEntradaNula: every method of the input does nothing ---- */
