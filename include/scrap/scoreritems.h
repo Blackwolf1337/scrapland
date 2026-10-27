@@ -6,6 +6,7 @@
 #ifndef SCRAP_SCORERITEMS_H
 #define SCRAP_SCORERITEMS_H
 
+#include "scrap/app.h"
 #include "scrap/entity.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapmain.h"
@@ -33,6 +34,13 @@ static inline float Scorer_X87MulAdd(float a, float b, float c) {
 	/* a * b + c */
 	__asm__("fmuls %1\n\tfadds %2" : "=t"(r) : "m"(b), "m"(c), "0"(a));
 	return r;
+}
+
+/* the abs of the originals (cdq, xor, sub): INT_MIN stays */
+static inline int Scorer_Abs(int v) {
+	uint32_t s = (uint32_t)(v >> 31);
+
+	return (int)(((uint32_t)v ^ s) - s);
 }
 
 /* the variables of the scripts: a float (2) and the color bytes of an 0xAARRGGBB color */
@@ -492,5 +500,203 @@ cCopMeterScorer *__thiscall cCopMeterScorer_Delete(cCopMeterScorer *self, byte f
 /* Sprite (set), Percent, Target (0..100), BackIndex, BackOffX/Y, LightIndex, LightOffX/Y, BarOffX/Y, BarIndex */
 int __thiscall cCopMeterScorer_Var(cCopMeterScorer *self, const char *name, byte set, char **s, double *d, int *i);
 void __thiscall cCopMeterScorer_Draw(cCopMeterScorer *self, int player);
+
+/* ---- HangarShipScorer.cpp ---- */
+
+#define CHANGARSHIPSCORER_VFTABLE 0x3c28e8
+
+/* a ship of the world turning in a view of its own over a grid frame (0xf0 bytes) */
+typedef struct cHangarShipScorer {
+	cSpriteScorer base;		/* 0x00 */
+	CGameCamera *cam;		/* 0xc4 */
+	CPsaImage *grid;		/* 0xc8 the sprite sheet of the item */
+	char *targetName;		/* 0xcc cString, the ship */
+	byte reset;			/* 0xd0 the angles start at 0 in the next frame */
+	byte pad_d1[3];
+	vec3_t rot;			/* 0xd4 the angles of the ship in the view */
+	int gridIndex;			/* 0xe0 */
+	uint32_t gridColor;		/* 0xe4 */
+	float camDist;			/* 0xe8 100 */
+	float camFov;			/* 0xec 20 degrees */
+} cHangarShipScorer;
+SD_SIZE(cHangarShipScorer, 0xf0);
+
+cHangarShipScorer *__fastcall cHangarShipScorer_ctor(cHangarShipScorer *self);
+void __fastcall cHangarShipScorer_dtor(cHangarShipScorer *self);
+cHangarShipScorer *__thiscall cHangarShipScorer_Delete(cHangarShipScorer *self, byte flags);
+/* GridSpriteIndex, GridColorRed/Green/Blue/Alpha, TargetName, CamDist, CamFov */
+int __thiscall cHangarShipScorer_Var(cHangarShipScorer *self, const char *name, byte set, char **s, double *d,
+	int *i);
+void __thiscall cHangarShipScorer_Draw(cHangarShipScorer *self, int player);
+
+/* ---- the models of the scorer (Scorer.cpp, SScorer.AddModel) ---- */
+
+typedef struct cScorerModel {
+	char name[0x20];		/* 0x00 */
+	CGameModel model;		/* 0x20 */
+	int numAnims;			/* 0x3c */
+	int anims[8];			/* 0x40 */
+	struct cScorerModel *next;	/* 0x60 */
+	float radius;			/* 0x64 */
+	float height;			/* 0x68 the eyes */
+	void *extra;			/* 0x6c drawn after the model through its slot 0x10 */
+} cScorerModel;
+SD_OFFSET(cScorerModel, numAnims, 0x3c);
+SD_OFFSET(cScorerModel, extra, 0x6c);
+
+/* the model of that name of the scorer, NULL if none (rva 0x170d60) */
+cScorerModel *__thiscall cScorer_FindModel(cScorer *scorer, const char *name);
+
+/* ---- HeadScorer.cpp ---- */
+
+#define CHEADSCORER_VFTABLE 0x3c2968
+
+/* a talking head: a scorer model in a view of its own, the camera swaying (0xc4 bytes) */
+typedef struct cHeadScorer {
+	cScorerItem base;		/* 0x00 */
+	float time;			/* 0xac the sway, random start */
+	cScorerModel *model;		/* 0xb0 */
+	int anim;			/* 0xb4 1 */
+	CGameCamera *cam;		/* 0xb8 */
+	float vw, vh;			/* 0xbc the view size */
+} cHeadScorer;
+SD_SIZE(cHeadScorer, 0xc4);
+
+/* the head slots of the vtables of cHeadScorer and cMonitorScorer */
+#define HeadScorer_SetAnim(self, a) \
+	((void(__thiscall *)(void *, int))((const cScorerItemVtbl *)(self)->base.vftable)->vf04)((self), (a))
+#define HeadScorer_SetModel(self, name) \
+	((byte(__thiscall *)(void *, const char *))((const cScorerItemVtbl *)(self)->base.vftable)->vf05)((self), (name))
+
+cHeadScorer *__fastcall cHeadScorer_ctor(cHeadScorer *self);
+void __fastcall cHeadScorer_dtor(cHeadScorer *self);
+cHeadScorer *__thiscall cHeadScorer_Delete(cHeadScorer *self, byte flags);
+/* HeadModel (set), HeadAnimIndex, VW, VH */
+int __thiscall cHeadScorer_Var(cHeadScorer *self, const char *name, byte set, char **s, double *d, int *i);
+void __thiscall cHeadScorer_Draw(cHeadScorer *self, int player);
+/* vf05: the model of that name of the scorer of the item, its animation set again; 1 if found */
+byte __thiscall cHeadScorer_SetModel(cHeadScorer *self, const char *name);
+/* vf04: the animation (an index of the model's list) from its start, looped */
+void __thiscall cHeadScorer_SetAnim(cHeadScorer *self, int anim);
+
+/* ---- MissionScorer.cpp ---- */
+
+#define CMISSIONSCORER_VFTABLE 0x3c2b70
+#define MISSION_STATUS 3
+
+/* the mission icons (three status lamps) and the text of the next mission's map (0xec bytes); the status and
+ * the blink are engine variables shared by all */
+typedef struct cMissionScorer {
+	cSpriteScorer base;		/* 0x00 */
+	const char *nextText;		/* 0xc4 the language text NextMissionMapText */
+	CFont *font;			/* 0xc8 Horatio */
+	char *forceMap;			/* 0xcc cString, the map instead of the save variable Mission.Map */
+	int backIndex;			/* 0xd0 */
+	int primaryIndex;		/* 0xd4 the frame of status 0 */
+	int secondaryIndex;		/* 0xd8 of status 1 and 2 */
+	uint32_t textColor;		/* 0xdc */
+	CPsaImage *tab;			/* 0xe0 */
+	int tabIndex;			/* 0xe4 */
+	int tabBlend;			/* 0xe8 0..6 */
+} cMissionScorer;
+SD_SIZE(cMissionScorer, 0xec);
+
+#define g_MissionBlinkOn GAME_DATA(int, 0x45fa80)
+#define g_MissionBlinkTime GAME_DATA(float, 0x45fa84)	/* BlinkTime: the icons blink until 0 */
+#define g_MissionBlinkLast GAME_DATA(float, 0x45fa88)	/* the blink time of the last toggle */
+#define g_MissionStatus ((int *)Game_Ptr(0x45fa90))		/* Status0..2 */
+#define g_MissionStatusTime ((float *)Game_Ptr(0x45fa9c))	/* the scorer time each was set */
+#define g_MissionMapName GAME_DATA(const char *, 0x45faa8)	/* the language text of the station */
+#define g_ScorerMarginH GAME_DATA(int, 0x460040)		/* ScorerMarginH */
+#define g_NextMissionLine1XBox GAME_DATA(float, 0x45faec)	/* NextMissionFirstLineOffsetXBox */
+#define g_NextMissionLine2XBox GAME_DATA(float, 0x45fabc)	/* NextMissionSecondLineOffsetXBox */
+#define g_NextMissionLine1PC GAME_DATA(float, 0x45fb04)	/* NextMissionFirstLineOffsetPC */
+#define g_NextMissionLine2PC GAME_DATA(float, 0x45fad4)	/* NextMissionSecondLineOffsetPC */
+#define g_MissionStatusColors ((const uint32_t *)Game_Ptr(0x428bd0))
+#define g_MissionStatusOfs ((const float (*)[2])Game_Ptr(0x428bdc))
+
+cMissionScorer *__fastcall cMissionScorer_ctor(cMissionScorer *self);
+void __fastcall cMissionScorer_dtor(cMissionScorer *self);
+cMissionScorer *__thiscall cMissionScorer_Delete(cMissionScorer *self, byte flags);
+/* ForceMap (set), BackIndex, PrimaryIndex, SecondaryIndex, BlinkTime, SolidTime, Status0..2, LastStatus (get),
+ * StatusClear (set), TabSprite (set), TabBlendingMode, TabSpriteIndex, TabRed/Green/Blue/Alpha, TextRed/Green/Blue */
+int __thiscall cMissionScorer_Var(cMissionScorer *self, const char *name, byte set, char **s, double *d, int *i);
+void __thiscall cMissionScorer_Draw(cMissionScorer *self, int player);
+
+/* ---- MonitorScorer.cpp ---- */
+
+#define CMONITORSCORER_VFTABLE 0x3c2cb4
+#define MONITOR_WEAPONS 7
+#define MONITOR_UPGRADES 13
+
+/* the ship monitor: the panel, the head of the talk (Scorer_SetHeadMonitor) with its text, the weapon and upgrade
+ * icons, the objective, the static noise; the view of the target (0x354 bytes) */
+typedef struct cMonitorScorer {
+	cScorerItem base;		/* 0x000 */
+	float textTime;			/* 0x0ac */
+	float noise;			/* 0x0b0 4 */
+	CGameCamera *cam;		/* 0x0b4 */
+	float fb8;			/* 0x0b8 */
+	char text[0x140];		/* 0x0bc */
+	int textPos;			/* 0x1fc the characters shown */
+	CFont *smallFont;		/* 0x200 Terminal8 */
+	CFont *bigFont;			/* 0x204 Horatio */
+	cScorerModel *model;		/* 0x208 the head */
+	int anim;			/* 0x20c 1 */
+	byte targetView;		/* 0x210 */
+	byte pad_211[3];
+	int i214, i218, i21c, i220;	/* 0x214 */
+	byte b224;			/* 0x224 */
+	byte pad_225[0x2a4 - 0x225];
+	float f2a4;			/* 0x2a4 1 */
+	byte b2a8;			/* 0x2a8 */
+	byte pad_2a9[3];
+	CPsaImage *weapon;		/* 0x2ac the weapon icons */
+	float weaponOffX, weaponOffY;	/* 0x2b0 */
+	int weaponIcons[MONITOR_WEAPONS];	/* 0x2b8 */
+	int weaponIconAc;		/* 0x2d4 the weapon of WeaponIconIndex */
+	int upgradeIcons[MONITOR_UPGRADES];	/* 0x2d8 */
+	int upgradeIconAc;		/* 0x30c */
+	CPsaImage *panel;		/* 0x310 */
+	int panelIndex;			/* 0x314 */
+	CPsaImage *mask;		/* 0x318 */
+	int maskIndex;			/* 0x31c */
+	CPsaImage *frame;		/* 0x320 */
+	int frameIndex;			/* 0x324 */
+	CPsaImage *staticImg;		/* 0x328 */
+	int staticIndex;		/* 0x32c */
+	CPsaImage *objetive;		/* 0x330 */
+	int objetiveIndex;		/* 0x334 */
+	int objetiveChargeIndex;	/* 0x338 */
+	int objetiveBlackIndex;		/* 0x33c */
+	int objetiveWhiteIndex;		/* 0x340 */
+	int canPossessIndex;		/* 0x344 */
+	int canPossessGlowIndex;	/* 0x348 */
+	CPsaImage *noiseImg;		/* 0x34c */
+	CPsaImage *img350;		/* 0x350 white */
+} cMonitorScorer;
+SD_SIZE(cMonitorScorer, 0x354);
+SD_OFFSET(cMonitorScorer, model, 0x208);
+SD_OFFSET(cMonitorScorer, weapon, 0x2ac);
+
+/* the head and text of Scorer_SetHeadMonitor */
+#define g_HeadMonitorName ((char *)Game_Ptr(0x45fb10))	/* 0x80, the scorer model */
+#define g_HeadMonitorText ((char *)Game_Ptr(0x45fb90))	/* 0x80 */
+#define g_HeadMonitorAnim GAME_DATA(int, 0x428bf4)	/* the animation, negative: with noise */
+#define g_FirstPhotoMessage GAME_DATA(char *, 0x45fc20)	/* FirstPhotoMessage */
+
+cMonitorScorer *__fastcall cMonitorScorer_ctor(cMonitorScorer *self);
+void __fastcall cMonitorScorer_dtor(cMonitorScorer *self);
+cMonitorScorer *__thiscall cMonitorScorer_Delete(cMonitorScorer *self, byte flags);
+/* the monitor of the entity of the camera of player (rva 0x168c60, not decompiled) */
+void __thiscall cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEntity *target);
+/* vf01: TargetView=1 */
+void __thiscall cMonitorScorer_SetParam(cMonitorScorer *self, const char *name, const char *value);
+int __thiscall cMonitorScorer_Var(cMonitorScorer *self, const char *name, byte set, char **s, double *d, int *i);
+void __thiscall cMonitorScorer_Draw(cMonitorScorer *self, int player);
+byte __thiscall cMonitorScorer_SetModel(cMonitorScorer *self, const char *name);
+void __thiscall cMonitorScorer_SetAnim(cMonitorScorer *self, int anim);
+/* the message FirstPhotoMessage again when the message text ended */
+void Monitor_RepeatPhotoMessage(void);
 
 #endif

@@ -45,7 +45,7 @@ struct cScorerItem {
 	byte visible;			/* 0x29 1 */
 	byte pad_2a[2];
 	int i2c;			/* 0x2c */
-	int i30;			/* 0x30 */
+	int player;			/* 0x30 of the scorer */
 	char *left, *right, *up, *down;	/* 0x34 cStrings, the item names of the cursor moves */
 	cPy_Function onAccept;		/* 0x44 */
 	cPy_Function onDelete;		/* 0x58 */

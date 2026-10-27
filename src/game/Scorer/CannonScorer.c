@@ -168,10 +168,7 @@ void __thiscall cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntit
 		&self->img->x);
 	if (Entity_LifeI(ship) * 100 / Veh(ship)->maxLife < g_WarningLifeLevel) {
 		cScorer *sc = Scorer_Get(player);
-		int v = (int)(sc->time * 1024.0f) % 511 - 255;
-		if (v < 0) {
-			v = -v;
-		}
+		int v = Scorer_Abs((int)(sc->time * 1024.0f) % 511 - 255);
 		CFont_PrintfAlignColor(g_FontHoratioSmall, self->img->x, self->img->y - 50.0f, TEXTSCORER_CENTER,
 			((uint32_t)v | 0xff00) << 8, "%s", "DANGER");
 	}
@@ -245,20 +242,14 @@ void __thiscall cCannonScorer_DrawLock(cCannonScorer *self, int player, const fl
 	float t = Vehicle_LockTime(e);
 	if (t == 0.0f) {
 		text = "Searching...";
-		v = (int)(Scorer_Get(player)->time * 1024.0f) % 511 - 255;
-		if (v < 0) {
-			v = -v;
-		}
+		v = Scorer_Abs((int)(Scorer_Get(player)->time * 1024.0f) % 511 - 255);
 		color = ((uint32_t)v << 8 | (uint32_t)v) << 8;
 	} else {
 		if (!(1.5f >= t)) {
 			return;
 		}
 		text = "Target Lock";
-		v = (int)(t * 1024.0f) % 511 - 255;
-		if (v < 0) {
-			v = -v;
-		}
+		v = Scorer_Abs((int)(t * 1024.0f) % 511 - 255);
 		color = ((uint32_t)v | 0xff00) << 8;
 	}
 	CFont_PrintfAlignColor(g_FontHoratio, pos[0], pos[1] - 50.0f, TEXTSCORER_CENTER, color, "%s", text);

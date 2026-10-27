@@ -679,10 +679,7 @@ static void Button_DrawSprite(cButtonScorer *self, int player) {
 
 /* the alpha of the pulsing highlight and glow */
 static uint32_t Button_PulseAlpha(const cScorer *sc) {
-	int v = (int)((double)sc->time * 680.0) % 255 - 127;
-	if (v < 0) {
-		v = -v;
-	}
+	int v = Scorer_Abs((int)((double)sc->time * 680.0) % 255 - 127);
 	return (uint32_t)(byte)(v - 0x80) << 24;
 }
 

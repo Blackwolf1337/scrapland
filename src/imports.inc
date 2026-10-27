@@ -182,7 +182,6 @@ SD_IMPORT(Scorer_SetConsole, 0x1749d0)
 SD_IMPORT(Scorer_SetSpeechText, 0x181420)
 SD_IMPORT(Scorer_SetSpeechCallback, 0x181350)
 SD_IMPORT(Scorer_CancelSpeech, 0x181330)
-SD_IMPORT(Scorer_SetHeadMonitor, 0x16b3d0)
 SD_IMPORT(Scorer_PreloadTexture, 0x172500)
 
 /* engine: functions behind the Scrap module (include/scrap/scrap.h) */
@@ -755,3 +754,5 @@ SD_IMPORT(cSpriteScorer_dtor, 0x17b320)
 SD_IMPORT(cSpriteScorer_Var, 0x17b6e0)
 SD_IMPORT(Menu_DrawBar, 0x1847f0)
 SD_IMPORT(cAutoAim_GetPoint, 0x0fdea0)
+SD_IMPORT(cScorer_FindModel, 0x170d60)
+SD_IMPORT(cMonitorScorer_DrawMonitor, 0x168c60)
