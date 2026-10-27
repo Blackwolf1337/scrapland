@@ -403,7 +403,7 @@ cWorld *__thiscall cWorld_ctor(cWorld *self) {
 	self->ammo.count = 0;
 	Grid_ctor(self->grid);
 	Alarm_ctor(self->alarm);
-	Unk2078_ctor(self->unk2078);
+	cStrMoney_ctor(self->strMoney);
 	Logic_ctor(self->taunts);
 	self->nameCount = 0;
 	self->testing = 0;
@@ -1134,7 +1134,7 @@ void __thiscall cWorld_Update(cWorld *self, float dt) {
 		Sound_Update(cTimer_GetDelta(timer));
 		cWorld_UpdateListeners(self, cTimer_GetDelta(timer));
 		Alarm_Update(self->alarm, cTimer_GetDelta(timer));
-		Unk2078_Update(self->unk2078, cTimer_GetDelta(timer));
+		cStrMoney_Update(self->strMoney, cTimer_GetDelta(timer));
 		if (g_VehicleGroup) {
 			AIGroup_Update(g_VehicleGroup, cTimer_GetDelta(timer));
 		}

@@ -10,6 +10,7 @@
 
 #include "scrap/ai.h"
 #include "scrap/collisiongrid.h"
+#include "scrap/dlist.h"
 #include "scrap/entity.h"
 #include "scrap/filesys.h"
 #include "scrap/pyfunction.h"
@@ -76,7 +77,7 @@ typedef struct cLocalLogicVtbl {
 	void *vf13;
 	void *vf14;
 	void *vf15;
-	void *vf16;
+	void(__thiscall *OnAlarm)(void *self, cEntity *e);				/* 0x40 vf16 */
 	void(__thiscall *Update)(void *self, float dt);					/* 0x44 */
 	void(__thiscall *SetOriginFrom)(void *self, cEntity *e);				/* 0x48 */
 	byte(__thiscall *SetState)(void *self, int state, cEntity *target);			/* 0x4c vf19 */
@@ -84,15 +85,18 @@ typedef struct cLocalLogicVtbl {
 	void(__thiscall *SetActionRadius)(void *self, float radius);				/* 0x54 */
 	void(__thiscall *SetOrigin)(void *self, float x, float y, float z);			/* 0x58 */
 	void(__thiscall *SetOriginAng)(void *self, float x, float y, float z);		/* 0x5c */
-	void(__thiscall *RestartState)(void *self);						/* 0x60 */
-	void *vf25;
+	byte(__thiscall *RestartState)(void *self);						/* 0x60 */
+	byte(__thiscall *CanAttack)(void *self, cEntity *e);		/* 0x64 vf25 the special attack against e */
 	void(__thiscall *UpdateView)(void *self);			/* 0x68 vf26 the view flag (+0x381) and the team */
 	void(__thiscall *ToRelax)(void *self, void *ai);			/* 0x6c vf27 the AI to its zone, relaxed */
 	void(__thiscall *ToAlert)(void *self, void *ai);			/* 0x70 vf28 the same in alert */
-	void *vf29_31[3];
+	void(__thiscall *Accuse)(void *self, cEntity *e);			/* 0x74 vf29 state 2 against e */
+	cEntity *(__thiscall *FindTarget)(void *self);			/* 0x78 vf30 of the special attack */
+	byte(__thiscall *TargetDone)(void *self);				/* 0x7c vf31 the special attack ends */
 	void(__thiscall *Work)(void *self, float dt);				/* 0x80 vf32 functionaries */
 	void(__thiscall *Vf33)(void *self, byte restart);			/* 0x84 */
-	void *vf34_35[2];
+	void(__thiscall *GoTo)(void *self, void *ai, cEntity *e);		/* 0x88 vf34 the AI walks to e */
+	void(__thiscall *UpdateGetIt)(void *self, void *ai, float dt);	/* 0x8c vf35 state 10 */
 	byte(__thiscall *CanTalk)(void *self);				/* 0x90 vf36 */
 	void(__thiscall *StopWork)(void *self, byte restart);			/* 0x94 vf37 */
 	vec3_t *(__thiscall *GetWorkAng)(void *self, vec3_t *out);		/* 0x98 vf38 */
@@ -140,11 +144,11 @@ SD_SIZE(cBaseLocalLogic, 0x48);
 /* GenCharLogic.cpp, 0x68 bytes */
 typedef struct cGenCharLocalLogic {
 	cBaseLocalLogic base;		/* 0x00 */
-	int i48;			/* 0x48 */
-	int i4c;			/* 0x4c */
-	int i50;			/* 0x50 */
-	char *s54;			/* 0x54 cString */
-	byte b58;			/* 0x58 1 */
+	float time;			/* 0x48 in the state: GenCharAcuseTime left of state 2, the time of state 3 */
+	float accuseAgain;		/* 0x4c GenCharAcuseAgainTime after a hit, no new accuse before 0 */
+	int defaultState;		/* 0x50 "DefaultState" (GENCHAR_STAY, RELAX, CHASE or GET_IT) */
+	char *defaultTarget;		/* 0x54 cString "DefaultTarget" */
+	byte canAttack;			/* 0x58 1: the special attack is allowed (CanAttack) */
 	byte specialOn;			/* 0x59 the special action time runs */
 	byte ignoreAlarm;		/* 0x5a "IgnoreAlarm", set by the bank logics */
 	byte pad_5b;
@@ -232,6 +236,15 @@ SD_SIZE(cBossLocalLogic, 0x80);
 #define WORLD_GENCHARS3 0x224c
 #define WORLD_GENCHARS4 0x2250		/* an object with the list at +0x10 */
 
+/* the type name of the action class of a character */
+static inline const char *Logic_TypeName(cEntity *e) {
+	void *ctrl = WithLife_Vtbl(e)->GetActCtrl(e);
+	return *(char **)(*(byte **)((byte *)ctrl + 8) + 4);
+}
+
+/* the radar marker of an object (cObjEntity.radarShow, "RadarShow") */
+#define Logic_RadarShow(e) (*(int *)((byte *)(e) + 0x13c))
+
 /* the first and the next entity node of a list ring, NULL at the end */
 static inline Nto1Node *Logic_ListFirst(cEntityListData *l) {
 	Nto1Node *n = l->ring.next;
@@ -286,8 +299,6 @@ void __thiscall AICtrl_SendSentinelToWatch(void *aiCtrl, const vec3_t *pos);
 void __thiscall AICtrl_GearAttack(void *aiCtrl, cEntity *target, int arg);
 /* a character that saw the player goes to accuse it ("Sending %s to acuse the main character"); 1 if one went */
 byte __thiscall AICtrl_SendAccuser(void *aiCtrl, byte check);
-/* rva 0x14f960, for the target of the gear */
-void __thiscall AICtrl_CallGears(void *aiCtrl, cEntity *e);
 
 /* BaseLogic.cpp */
 cBaseLocalLogic *__thiscall cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity *parent);
@@ -303,6 +314,8 @@ int __thiscall cBaseLocalLogic_SetState(cBaseLocalLogic *self, int state, cEntit
 byte __thiscall cBaseLocalLogic_VarF(cBaseLocalLogic *self, const char *name, double *d, byte set);
 byte __thiscall cBaseLocalLogic_VarI(cBaseLocalLogic *self, const char *name, int *i, byte set);
 byte __thiscall cBaseLocalLogic_VarS(cBaseLocalLogic *self, const char *name, char **s, byte set);
+byte __thiscall cBaseLocalLogic_VarV(cBaseLocalLogic *self, const char *name, double *x, double *y, double *z,
+	byte set);
 void __thiscall cBaseLocalLogic_Update(cBaseLocalLogic *self, float dt);
 void __thiscall cBaseLocalLogic_SetIdle(cBaseLocalLogic *self, byte idle);
 /* the debug texts of ShowAI (a character node of a list with the state names, the ships) */
@@ -330,7 +343,7 @@ byte Logic_Chance(cBaseLocalLogic *l, cEntity *attacker, float chance);
 cGenCharLocalLogic *__thiscall cGenCharLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent, int arg);
 void __fastcall cGenCharLocalLogic_dtor(cGenCharLocalLogic *self);
 void __thiscall cGenCharLocalLogic_Update(cGenCharLocalLogic *self, float dt);
-int __thiscall cGenCharLocalLogic_SetState(cGenCharLocalLogic *self, int state, cEntity *target);
+byte __thiscall cGenCharLocalLogic_SetState(cGenCharLocalLogic *self, int state, cEntity *target);
 cFunctionaryLocalLogic *__thiscall cFunctionaryLocalLogic_ctor(cFunctionaryLocalLogic *self, cEntity *parent);
 void __fastcall cFunctionaryLocalLogic_dtor(cFunctionaryLocalLogic *self);
 void __thiscall cFunctionaryLocalLogic_Update(cFunctionaryLocalLogic *self, float dt);
@@ -652,7 +665,7 @@ SD_SIZE(cGearLocalLogic, 0x5c);
 
 /* the AI control: level to at least level (rva 0x14fb00), the gear becomes a police (rva 0x14eb50) */
 void __thiscall AICtrl_RaiseLevel(void *aiCtrl, int level);
-void __thiscall AICtrl_GearToPolice(void *aiCtrl, cEntity *gear);
+byte __thiscall AICtrl_GearToPolice(void *aiCtrl, cEntity *gear);
 
 byte __thiscall cGearLocalLogic_SetState(cGearLocalLogic *self, int state, cEntity *target);
 
@@ -670,6 +683,29 @@ SD_SIZE(cGenCharGroup, 0x1c);
 
 #define World_GenCharGroup() ((cGenCharGroup *)((byte *)g_pWorld + 0x2238))
 
+cGenCharGroup *__fastcall cGenCharGroup_ctor(cGenCharGroup *self);
+void __fastcall cGenCharGroup_dtor(cGenCharGroup *self);
+void __fastcall cGenCharGroup_Init(cGenCharGroup *self);
+void __thiscall cGenCharGroup_Update(cGenCharGroup *self, float dt);
+int __fastcall cGenCharGroup_GetLevel(cGenCharGroup *self);
+void __thiscall cGenCharGroup_RaiseLevel(cGenCharGroup *self, int level);
+byte __fastcall cGenCharGroup_TakeAttack(cGenCharGroup *self);
+/* the maker of the logics of the GenChar lists (cEntityListData.func, rva 0x14b860) */
+#define GENCHARGROUP_MAKELOGIC 0x14b860
+
+/* the Init and Update of the mode objects of part 2 */
+void __fastcall cExtPolice_Init(cExtPolice *self);
+void __thiscall cExtPolice_Update(cExtPolice *self, float dt);
+void __fastcall cEnemies_Init(cEnemies *self);
+void __thiscall cEnemies_Update(cEnemies *self, float dt);
+void __fastcall cFriends_Init(cFriends *self);
+void __thiscall cFriends_Update(cFriends *self, float dt);
+cGateKeepers *__fastcall cGateKeepers_ctor(cGateKeepers *self);
+void __fastcall cGateKeepers_Init(cGateKeepers *self);
+void __thiscall cGateKeepers_Update(cGateKeepers *self, float dt);
+cDominationLogic *__fastcall cDominationFriendsLogic_ctor(cDominationLogic *self);
+void __fastcall cDominationFriendsLogic_dtor(cDominationLogic *self);
+
 /* MessengerLogic.cpp (imports) */
 void *__thiscall cMessengers_ctor(void *self);
 void __fastcall cMessengers_dtor(void *self);
@@ -677,7 +713,7 @@ void __fastcall cMessengers_Init(void *self);
 void __fastcall cMessengers_Think(void *self);
 
 /* the constructors of the logics of the other types (later sources of Logic/, imports) */
-void *__thiscall cPoliceLocalLogic_ctor(void *self, cEntity *parent);
+void *__thiscall cLittlePoliceLocalLogic_ctor(void *self, cEntity *parent);
 void *__thiscall cMayorLocalLogic_ctor(void *self, cEntity *parent);
 void *__thiscall cRustyLocalLogic_ctor(void *self, cEntity *parent);
 void *__thiscall cSputnikJunkyardLocalLogic_ctor(void *self, cEntity *parent);
@@ -697,11 +733,307 @@ cGenCharLocalLogic *__thiscall cBishopLocalLogic_ctor(cGenCharLocalLogic *self, 
 cGenCharLocalLogic *__thiscall cCrazyDealerLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent);
 cBossLocalLogic *__thiscall cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity *parent);
 
-/* GenCharLogic.cpp */
+/* GenCharLogic.cpp: the states (GENCHAR_ of the CHECK of DefaultState); 7 and 8 are of the police */
+#define GENCHAR_RELAX 0
+#define GENCHAR_ALERT 1
+#define GENCHAR_ACCUSE 2
+#define GENCHAR_GETAWAY 3
+#define GENCHAR_ATTACK 4		/* the special attack against the target */
+#define GENCHAR_CHASE 5
+#define GENCHAR_STAY 6
+#define GENCHAR_GET_IT 10		/* walk to the target */
+
 #define g_GenCharMaxSpecialActionTime GAME_DATA(float, 0x44d2e4)
 #define g_GenCharAlertSpeed GAME_DATA(float, 0x44d194)
+#define g_OnDefStateCallback ((cPy_Function *)Game_Ptr(0x44d128))	/* (name) after RestartState */
+#define g_GenCharAcuseAgainTime GAME_DATA(float, 0x44d14c)
+#define g_GenCharRobberyDetection GAME_DATA(float, 0x44d164)
+#define g_GenCharAcuseTime GAME_DATA(float, 0x44d1ac)
+#define g_GenCharSpecialChaseSpeed GAME_DATA(float, 0x44d1c4)
+#define g_GenCharAttackSpeed GAME_DATA(float, 0x44d224)
+#define g_GenCharGetAwayTime GAME_DATA(float, 0x44d23c)
+#define g_GenCharAttackLimit GAME_DATA(float, 0x44d26c)
+#define g_GenCharPoliceRefuse GAME_DATA(float, 0x44d284)
+#define g_GenCharEscapeSpeed GAME_DATA(float, 0x44d29c)
 /* the type of the player draws the attention of a generic character (rva 0x14c5a0) */
 byte Logic_IsSuspectType(const char *type);
-void __thiscall cGenCharLocalLogic_RestartState(cGenCharLocalLogic *self);
+byte __thiscall cGenCharLocalLogic_RestartState(cGenCharLocalLogic *self);
+void __thiscall cGenCharLocalLogic_OnHit(cGenCharLocalLogic *self, cEntity *attacker);
+void __thiscall cGenCharLocalLogic_GoTo(cGenCharLocalLogic *self, cAIChar *ai, cEntity *e);
+byte __thiscall cGenCharLocalLogic_CanAttack(cGenCharLocalLogic *self, cEntity *e);
+/* the special action over, the next target search in a random time */
+void __fastcall cGenCharLocalLogic_ResetSpecial(cGenCharLocalLogic *self);
+/* the action Discover of a character that stands */
+void __fastcall cGenCharLocalLogic_Discover(cGenCharLocalLogic *self);
+/* SetState(2, e): the vf29 of the GenChars and the vf16 of the nurses */
+void __thiscall Logic_SetState2(cBaseLocalLogic *self, cEntity *e);
+/* the empty slots with two arguments */
+void __thiscall Logic_Nop2(void *self, int a, int b);
+byte __thiscall Logic_True2(void *self, int a, int b);
+
+/* HumanLogic.cpp, 0x5c bytes: the characters near the human flee from it */
+typedef struct cHumanLocalLogic {
+	cBaseLocalLogic base;		/* 0x00 */
+	cPy_Function func;		/* 0x48 HumanLogic_Escape */
+} cHumanLocalLogic;
+SD_SIZE(cHumanLocalLogic, 0x5c);
+
+#define CHUMANLOCALLOGIC_VFTABLE 0x3bf75c
+#define g_HumanEnt GAME_DATA(cEntity *, 0x44d304)	/* the parent of the last human logic made */
+
+/* HumphreyLogic.cpp: a cFunctionaryLocalLogic (isDefault: "Humphrey_Default") at the desktop "HumphreyDesktop" */
+#define CHUMPHREYLOCALLOGIC_VFTABLE 0x3bf7e0
+
+/* InfItem.cpp: the item list of the world (cItemList of game.h, g_pWorld + 0x20e0, 100 bytes), DLists of
+ * cItemDesc nodes: the life items and the ammo items of three kinds */
+typedef struct cInfItemNode {
+	struct cInfItemNode *next;	/* 0x0 */
+	struct cInfItemNode *prev;	/* 0x4 */
+	cItemDesc item;			/* 0x8 */
+} cInfItemNode;
+SD_SIZE(cInfItemNode, 0x10);
+
+typedef DLIST(cInfItemNode) cInfItemList;
+
+typedef struct cInfItem {
+	const cItemListVtbl *vftable;	/* 0x00 */
+	cInfItemList life;		/* 0x04 */
+	cInfItemList ammo0;		/* 0x1c kind 0 */
+	cInfItemList ammo2;		/* 0x34 kind 2 */
+	cInfItemList ammo1;		/* 0x4c kind 1 */
+} cInfItem;
+SD_SIZE(cInfItem, 0x64);
+
+#define CINFITEM_VFTABLE 0x3bf8d0
+
+cInfItem *__fastcall cInfItem_ctor(cInfItem *self);
+void __fastcall cInfItem_dtor(cInfItem *self);
+
+/* IntPolice.cpp: the AI control of the indoor police (g_pWorld->aiCtrl, cLogicControl + 0x134): the sentinels
+ * search and accuse, the gears attack; two police of the second GenChar list fuse into gears that fight */
+typedef struct cAICtrl {
+	int level;			/* 0x00 the highest alarm level of the round (RaiseLevel), -1 */
+	int attacking;			/* 0x04 the gears in state 1 or 2 */
+	byte alarm;			/* 0x08 the alarm at the last think */
+	byte pad_9[3];
+	cEntity *lastUsr;		/* 0x0c the player at the last think */
+	float timer;			/* 0x10 Think every 0.5 s */
+	byte sameChar;			/* 0x14 the alarm is on for the type of now */
+	byte notDefChar;		/* 0x15 */
+	byte alarmOn;			/* 0x16 */
+	byte pad_17;
+	cEntity *usr;			/* 0x18 */
+	Nto1Node watch;			/* 0x1c to the sentinel in state 5, data the control */
+	float watchTime;		/* 0x2c no sentinel is sent to watch before 0 */
+	byte alerted;			/* 0x30 a sentinel is in state 6 */
+	byte accusing;			/* 0x31 a sentinel accuses */
+	byte chased;			/* 0x32 a gear played the voice "Chase", "Abort" follows */
+	byte pad_33;
+	cEntityListData *sentinels;	/* 0x34 "Sentinel" (WORLD_SENTINELS) */
+	cEntityListData *gears;		/* 0x38 "Gear" (WORLD_GEARS) */
+} cAICtrl;
+SD_OFFSET(cAICtrl, watch, 0x1c);
+SD_OFFSET(cAICtrl, gears, 0x38);
+SD_SIZE(cAICtrl, 0x3c);
+
+#define World_AICtrl() ((cAICtrl *)g_pWorld->aiCtrl)
+#define g_CreatePolice ((cPy_Function *)Game_Ptr(0x44d330))	/* (name, x, y, z) */
+#define g_CreateGear ((cPy_Function *)Game_Ptr(0x44d37c))	/* (name, x, y, z) */
+#define g_PoliceLogicBelligerant GAME_DATA(int, 0x44d354)
+#define g_SentinelNextGotoTime GAME_DATA(float, 0x44daa8)
+#define g_SentinelAbortyNPCAttDist GAME_DATA(float, 0x44db38)
+
+void *__fastcall AICtrl_ctor(void *aiCtrl);
+void __fastcall AICtrl_dtor(void *aiCtrl);
+void __fastcall AICtrl_Init(void *aiCtrl);
+void __thiscall AICtrl_Update(void *aiCtrl, float dt);
+/* the police e may become a gear (the gear "Gear" + the name after "Police" does not exist) */
+byte __thiscall AICtrl_CanFuse(void *aiCtrl, cEntity *e);
+/* the police becomes a gear (into *gear, may be NULL); 0 if it may not */
+byte __thiscall AICtrl_Fuse(void *aiCtrl, cEntity *police, cEntity **gear);
+/* the sentinel nearest to e goes for it (state 6), only before the alarm (rva 0x14f960) */
+void __thiscall AICtrl_SendSentinelToNPC(void *aiCtrl, cEntity *e);
+/* the gears that chase the player go for e, without one the gear attack on e (rva 0x14fba0) */
+void __thiscall AICtrl_GearsChase(void *aiCtrl, cEntity *e);
+
+/* the sentinels (SentinelLogic.cpp, the source after this part, imports) */
+void *__thiscall cSentinelLocalLogic_ctor(void *self, cEntity *parent);
+/* to the place pos to watch it */
+void __thiscall cSentinelLocalLogic_Watch(void *self, const vec3_t *pos);
+/* back to state 0 (1 with the alarm), unless idle */
+void __fastcall cSentinelLocalLogic_Return(void *self);
+/* the voice event of the character of that name (Sound/, rva 0x1a1090) */
+byte Sound_PlayVoice(const char *name, const char *event, int arg, int force);
+/* GearLogic.cpp */
+cGearLocalLogic *__thiscall cGearLocalLogic_ctor(cGearLocalLogic *self, cEntity *parent);
+byte __thiscall cGearLocalLogic_Call(cGearLocalLogic *self, cEntity *e);
+
+/* LittlePoliceLogic.cpp, 0x78 bytes: the police of the indoor maps (the type "Police") */
+typedef struct cLittlePoliceLocalLogic {
+	cGenCharLocalLogic base;	/* 0x00 specialTime: the time of the chase in state 4 */
+	float sirenTime;		/* 0x68 with the alarm: the next siren */
+	float lostTime;			/* 0x6c of the player, 5 when the AI walks to it */
+	byte bribe;			/* 0x70 the arrow shows the options of the bribe */
+	byte pad_71[3];
+	int policeResult;		/* 0x74 "PoliceResult": 1 when it goes to the main mission */
+} cLittlePoliceLocalLogic;
+SD_OFFSET(cLittlePoliceLocalLogic, policeResult, 0x74);
+SD_SIZE(cLittlePoliceLocalLogic, 0x78);
+
+#define CLITTLEPOLICELOCALLOGIC_VFTABLE 0x3bfc50
+#define g_LittlePoliceStopAcusingMaxDistFromUser GAME_DATA(float, 0x44d3a0)
+#define g_LittlePoliceMaxDistFar GAME_DATA(float, 0x44d3b8)
+#define g_LittlePoliceAsksForMoney GAME_DATA(int, 0x44d3d0)
+#define g_LittlePoliceChasingTime GAME_DATA(float, 0x44d3e8)
+#define g_MainMissionStopDist GAME_DATA(float, 0x44d400)
+#define g_LittlePoliceArrived GAME_DATA(byte, 0x44d408)	/* GoTo left the AI in state 4 */
+#define g_PoliceStealQuanto GAME_DATA(int, 0x446ff0)
+
+/* Logic.cpp: the logic control at g_pWorld->taunts (0x1c8 bytes), the owner of the mode objects */
+typedef struct cNurses {
+	float timer;			/* 0x0 Think every 0.73 s */
+	cEntityListData *list;		/* 0x4 "Nurse" (WORLD_NURSES) */
+} cNurses;
+SD_SIZE(cNurses, 8);
+
+typedef struct cLogicControl {
+	void *vftable;			/* 0x000 */
+	byte warned;			/* 0x004 the last warning think played one */
+	byte pad_5[3];
+	float warnTime;			/* 0x008 */
+	float timer;			/* 0x00c the taunts and warnings every 0.5 s */
+	float tauntTime;		/* 0x010 */
+	float talkEnd;			/* 0x014 the world time the talk of RemainTalkTime ends (Taunts_UpdateEndTime) */
+	byte parking[0x4c - 0x18];	/* 0x018 the parking zones (rva 0x1555e0) */
+	cInfItem items;			/* 0x04c */
+	byte shipRegen[0xc4 - 0xb0];	/* 0x0b0 rva 0x156200 */
+	cExtPolice extPolice;		/* 0x0c4 */
+	cEnemies enemies;		/* 0x0dc */
+	cFriends friends;		/* 0x0ec */
+	void *mosquitos;		/* 0x0f4 "Mosquitos" (rva 0x1570b0) */
+	void *madHunters;		/* 0x0f8 "MadHunters" */
+	cDeathMatch deathMatch;		/* 0x0fc */
+	cCTFFriends ctfFriends;		/* 0x104 */
+	cCTFEnemies ctfEnemies;		/* 0x108 */
+	cDominationLogic dominFriends;	/* 0x10c */
+	cDominationLogic dominEnemies;	/* 0x120 */
+	cAICtrl aiCtrl;			/* 0x134 */
+	byte unk170[0x19c - 0x170];	/* 0x170 rva 0x159760 */
+	cNurses nurses;			/* 0x19c */
+	cGenCharGroup genChars;		/* 0x1a4 */
+	cGateKeepers gateKeepers;	/* 0x1c0 */
+} cLogicControl;
+SD_OFFSET(cLogicControl, items, 0x4c);
+SD_OFFSET(cLogicControl, extPolice, 0xc4);
+SD_OFFSET(cLogicControl, mosquitos, 0xf4);
+SD_OFFSET(cLogicControl, dominFriends, 0x10c);
+SD_OFFSET(cLogicControl, dominEnemies, 0x120);
+SD_OFFSET(cLogicControl, aiCtrl, 0x134);
+SD_OFFSET(cLogicControl, nurses, 0x19c);
+SD_OFFSET(cLogicControl, genChars, 0x1a4);
+SD_OFFSET(cLogicControl, gateKeepers, 0x1c0);
+SD_SIZE(cLogicControl, 0x1c8);
+
+#define CLOGICCONTROL_VFTABLE 0x3bfe20
+#define g_RemainTalkTime GAME_DATA(float, 0x462148)
+#define g_TimeBetweeenTaunts GAME_DATA(float, 0x44d648)
+#define g_TimeBetweeenWarnings GAME_DATA(float, 0x44d6b4)
+/* the callback the world puts a new entity at its origin with (set by Logic_ctor) */
+#define g_SetOriginFunc GAME_DATA(void *, 0x444730)
+
+
+/* MaintenanceLogic.cpp, 0xdc bytes: the maintenance robot of the ship editor walks around the ship on the
+ * platform (states 7: wait for the ship, 8: work) */
+typedef struct cMaintenanceLocalLogic {
+	cGenCharLocalLogic base;	/* 0x00 */
+	vec3_t points[8];		/* 0x68 the corners of the box around the ship */
+	vec3_t reposition;		/* 0xc8 "RepositionPoint" */
+	int point;			/* 0xd4 the corner it walks to, -1 */
+	float timer;			/* 0xd8 MaintenanceTimeToNextPos */
+} cMaintenanceLocalLogic;
+SD_OFFSET(cMaintenanceLocalLogic, reposition, 0xc8);
+SD_SIZE(cMaintenanceLocalLogic, 0xdc);
+
+#define CMAINTENANCELOCALLOGIC_VFTABLE 0x3bff4c
+#define g_MaintenanceShip GAME_DATA(cEntity *, 0x44d43c)	/* the ship on the platform */
+#define g_MaintenanceFirstShip GAME_DATA(cEntity *, 0x44d440)	/* the one the work began with */
+#define g_MaintenanceTimeToNextPos GAME_DATA(float, 0x44d454)
+#define g_MaintenanceSphereRadiusFactor GAME_DATA(float, 0x44d46c)
+
+/* MayorLogic.cpp, 0xe8 bytes */
+typedef struct cMayorLocalLogic {
+	cGenCharLocalLogic base;	/* 0x00 */
+	char listener[0x80];		/* 0x68 the character that talks to the mayor, "" none */
+} cMayorLocalLogic;
+SD_SIZE(cMayorLocalLogic, 0xe8);
+
+#define CMAYORLOCALLOGIC_VFTABLE 0x3c0074
+#define g_MayorBlabliblaRadius GAME_DATA(float, 0x446c10)
+/* the search of the sphere native: the mayor, the nearest dazed character in its view and the square distance */
+#define g_MayorSearchEnt GAME_DATA(cEntity *, 0x44d478)
+#define g_MayorTarget GAME_DATA(cEntity *, 0x44d474)
+#define g_MayorTargetDist GAME_DATA(float, 0x428ba4)
+
+
+#define CMERCENARYLOCALLOGIC_VFTABLE 0x3c0108
+
+/* MessengerLogic.cpp: the messengers (cMessengers, 0x14 bytes, of cGenCharGroup) */
+typedef struct cMessengers {
+	cEntity *desk;			/* 0x00 the desk of the data pack of the player */
+	cEntity *target;		/* 0x04 the desk of the messenger with the pack */
+	float timer;			/* 0x08 5 s */
+	int count;			/* 0x0c the most desks of the type seen, 5 */
+	cEntityListData *list;		/* 0x10 "Messenger" */
+} cMessengers;
+SD_SIZE(cMessengers, 0x14);
+
+#define CMESSENGERLOCALLOGIC_VFTABLE 0x3c0440
+#define g_MessengerTubeState GAME_DATA(int, 0x44d48c)
+#define g_MessengerTubeStateDef GAME_DATA(int, 0x44d490)
+#define g_MessengerDropPrice GAME_DATA(int, 0x44d4e0)
+#define g_MessengerDropPriceDef GAME_DATA(int, 0x44d4e4)
+#define g_MessengerDropCallback ((cPy_Function *)Game_Ptr(0x44d4f8))
+#define g_MessengerDataPackMissionArrow GAME_DATA(int, 0x44d534)
+#define g_MessengerDataPackMissionArrowDef GAME_DATA(int, 0x44d538)
+#define g_MessengerGotoSpeed GAME_DATA(float, 0x44d564)
+
+/* a random desk of the type of the tube state; count grows to the desks seen */
+cEntity *__fastcall cMessengers_FindDesk(cMessengers *self);
+/* the state of every messenger but e (and not on the radar), -1: back to its default state */
+void __thiscall cMessengers_SetStateAll(cMessengers *self, int state, cEntity *e);
+
+/* StrMoney.c (g_pWorld + 0x2078): the money of the world (cWorld.money) as digits, one changes per update */
+typedef struct cStrMoney {
+	char digits[16];		/* 0x00 "0000000000000000", 1..15 change */
+	char end;			/* 0x10 0 */
+	char len;			/* 0x11 the digits from the first one not "0" */
+	byte pad_12[2];
+	float timer;			/* 0x14 StrMoneyUpdate */
+	int money;			/* 0x18 cWorld.money */
+} cStrMoney;
+SD_OFFSET(cStrMoney, money, 0x18);
+
+#define g_OnMoneyReachCallback ((cPy_Function *)Game_Ptr(0x44d57c))
+#define g_OnMoneyReachValue GAME_DATA(int, 0x44d5a0)
+#define g_StrMoneyUpdate GAME_DATA(float, 0x44d5b8)
+
+/* NurseLogic.cpp: the nurses (cLogicControl.nurses) take the dazed characters away; the logic is 0x4c bytes */
+typedef struct cNurseLocalLogic {
+	cBaseLocalLogic base;		/* 0x00 */
+	float time;			/* 0x48 of the escape (state 2) or the pick up (3) */
+} cNurseLocalLogic;
+SD_SIZE(cNurseLocalLogic, 0x4c);
+
+#define CNURSELOCALLOGIC_VFTABLE 0x3c06d4
+#define g_NurseBankerDetect GAME_DATA(float, 0x44d5d0)
+#define g_NursePoliceRefuse GAME_DATA(float, 0x44d5e8)
+#define g_NurseEscapeTime GAME_DATA(float, 0x44d600)
+
+void *__fastcall cNurses_ctor(cNurses *self);
+void __fastcall cNurses_Init(cNurses *self);
+void __thiscall cNurses_Update(cNurses *self, float dt);
+void *__thiscall cNurseLocalLogic_ctor(void *self, cEntity *parent);
+/* the state of the nurse with its AI (rva 0x154970, the source after this part) */
+byte __thiscall cNurseLocalLogic_SetState(cNurseLocalLogic *self, int state, cEntity *target);
 
 #endif

@@ -14,11 +14,7 @@ SD_IMPORT(operator_delete_sized, 0x313634)
 /* engine: Entities/ and the entity lists of World/ */
 
 /* engine: Logic/ and AI/ (include/scrap/logic.h) */
-SD_IMPORT(Logic_SetOnFloor, 0x151fd0)
-SD_IMPORT(Taunts_UpdateEndTime, 0x151fb0)
 SD_IMPORT(ShipRegen_Set, 0x1564c0)
-SD_IMPORT(AICtrl_SendSentinelToWatch, 0x14f5f0)
-SD_IMPORT(AICtrl_GearAttack, 0x14f140)
 
 /* engine: World/FX/ and effects of Entities/ */
 SD_IMPORT(FX_ShipExplosion, 0x1f4d50)
@@ -367,12 +363,6 @@ SD_IMPORT(CSuelo_CheckBBox, 0x26fb10)
 
 /* module agent: World/World.cpp (imports below this line) */
 SD_IMPORT(cWithLifeEntity_ctor, 0x12b580)
-SD_IMPORT(Logic_ctor, 0x151900)
-SD_IMPORT(Logic_dtor, 0x151a90)
-SD_IMPORT(Logic_Reset, 0x151d00)
-SD_IMPORT(Logic_Update, 0x151dc0)
-SD_IMPORT(Unk2078_ctor, 0x1540f0)
-SD_IMPORT(Unk2078_Update, 0x154170)
 SD_IMPORT(Elements_ctor, 0x202e10)
 SD_IMPORT(Elements_dtor, 0x202e40)
 SD_IMPORT(Elements_Update, 0x203550)
@@ -639,17 +629,11 @@ SD_IMPORT(CNodesWorld2D_Generate, 0x0b2f60)
 
 /* module agent: Entities/Char/Type part 2+WalkCharControl (imports below this line) */
 SD_IMPORT(cActCtrl_PlayAction, 0x063030)
-SD_IMPORT(cMayorLocalLogic_SetListener, 0x153010)
-SD_IMPORT(AICtrl_CallGears, 0x14f960)
-SD_IMPORT(AICtrl_SentinelsChase, 0x14fba0)
 SD_IMPORT(cActCtrl_TurnHead, 0x062dc0)
 SD_IMPORT(cActClassCam_Update, 0x0616e0)
 
 /* module agent: Logic part 1 (AlarmStatus..Domination) (imports below this line) */
-SD_IMPORT(AICtrl_SendAccuser, 0x14f840)
 SD_IMPORT(Taunts_Play, 0x155210)
-SD_IMPORT(cGenCharLocalLogic_Update, 0x14c6e0)
-SD_IMPORT(cGenCharLocalLogic_SetState, 0x14d390)
 
 /* module agent: Scorer part 2 (Scorer+ScraplandScorer+Slider+SpecialAction) (imports below this line) */
 SD_IMPORT(Scorer_DrawDebug, 0x173450)
@@ -663,28 +647,11 @@ SD_IMPORT(crt_ltoa, 0x34d525)
 SD_IMPORT(Logic_RandomCar, 0x154b20)
 SD_IMPORT(PoliceAI_RestoreParams, 0x15b2f0)
 SD_IMPORT(PoliceAI_RandomParams, 0x15b3c0)
-SD_IMPORT(cGenCharLocalLogic_VarI, 0x14c4f0)
-SD_IMPORT(cGenCharLocalLogic_VarS, 0x14d6e0)
-SD_IMPORT(cGenCharLocalLogic_OnRobbery, 0x14cd20)
 SD_IMPORT(cActCtrl_GetDefLoopName, 0x062c80)
-SD_IMPORT(AICtrl_RaiseLevel, 0x14fb00)
-SD_IMPORT(AICtrl_GearToPolice, 0x14eb50)
-SD_IMPORT(cMessengers_ctor, 0x1530f0)
-SD_IMPORT(cMessengers_dtor, 0x153100)
-SD_IMPORT(cMessengers_Init, 0x153260)
 SD_IMPORT(cMessengers_Think, 0x153350)
-SD_IMPORT(cPoliceLocalLogic_ctor, 0x14fe50)
-SD_IMPORT(cMayorLocalLogic_ctor, 0x152c60)
 SD_IMPORT(cRustyLocalLogic_ctor, 0x156730)
 SD_IMPORT(cSputnikJunkyardLocalLogic_ctor, 0x159220)
-SD_IMPORT(cMaintenanceLocalLogic_ctor, 0x152230)
 SD_IMPORT(cPoliceBossLocalLogic_ctor, 0x156010)
-SD_IMPORT(cMessengerLocalLogic_ctor, 0x153d10)
-SD_IMPORT(cMercenaryLocalLogic_ctor, 0x153040)
-SD_IMPORT(cHumphreyLocalLogic_ctor, 0x14db90)
-SD_IMPORT(cHumanLocalLogic_ctor, 0x14d830)
-SD_IMPORT(Logic_IsSuspectType, 0x14c5a0)
-SD_IMPORT(cGenCharLocalLogic_RestartState, 0x14d130)
 
 /* module agent: Entities/Char/WalkCharEntity.cpp (imports below this line) */
 SD_IMPORT(cWithLifeEntity_SetEmbeddedFX, 0x12c7f0)
@@ -757,6 +724,27 @@ SD_IMPORT(cTargetScorer_DrawEnemies, 0x182430)
 SD_IMPORT(cWaypointScorer_DrawTarget, 0x185e90)
 
 /* module agent: Logic part 3 (GenCharLogic..Messenger) (imports below this line) */
+SD_IMPORT(cSentinelLocalLogic_ctor, 0x158470)
+SD_IMPORT(cSentinelLocalLogic_Watch, 0x158560)
+SD_IMPORT(cSentinelLocalLogic_Return, 0x158fc0)
+SD_IMPORT(Sound_PlayVoice, 0x1a1090)
+SD_IMPORT(cNurseLocalLogic_SetState, 0x154970)
+SD_IMPORT(Parking_ctor, 0x1555e0)
+SD_IMPORT(Parking_dtor, 0x155650)
+SD_IMPORT(Parking_Update, 0x155f70)
+SD_IMPORT(ShipRegen_ctor, 0x156200)
+SD_IMPORT(ShipRegen_dtor, 0x156230)
+SD_IMPORT(ShipRegen_Update, 0x156590)
+SD_IMPORT(cShipGroup_ctor, 0x1570b0)
+SD_IMPORT(cShipGroup_dtor, 0x157230)
+SD_IMPORT(cShipGroup_Init, 0x157dc0)
+SD_IMPORT(cShipGroup_Update, 0x158160)
+SD_IMPORT(cEnemiesTraffic_ctor, 0x159760)
+SD_IMPORT(cEnemiesTraffic_dtor, 0x159860)
+SD_IMPORT(cEnemiesTraffic_Init, 0x15ad30)
+SD_IMPORT(cEnemiesTraffic_Update, 0x15b4f0)
+SD_IMPORT(Taunts_Think, 0x154e40)
+SD_IMPORT(Taunts_Warnings, 0x155000)
 
 /* module agent: AI/ICharControl+2D+3D.cpp (imports below this line) */
 

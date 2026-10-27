@@ -97,7 +97,7 @@ static const struct {
 	uint32_t size;
 	GenChar_Ctor ctor;
 } g_GenCharTypes[] = {
-	{ "Police", 0, 0x78, cPoliceLocalLogic_ctor },
+	{ "Police", 0, 0x78, cLittlePoliceLocalLogic_ctor },
 	{ "BankDirector", 0, 0x68, (GenChar_Ctor)cBankDirectorLocalLogic_ctor },
 	{ "BankMaster", 0, 0x68, (GenChar_Ctor)cBankMasterLocalLogic_ctor },
 	{ "Desktop", 0, 0x68, (GenChar_Ctor)cDesktopLocalLogic_ctor },
