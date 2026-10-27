@@ -716,3 +716,5 @@ SD_IMPORT(CNodesWorld_AddExtraPoints, 0x0a93d0)
 SD_IMPORT(CNodesWorld_Generate, 0x0a7a00)
 SD_IMPORT(CNodesWorld_AnalizeMap, 0x0a2e80)
 SD_IMPORT(crt_chmod, 0x345287)
+
+/* module agent: AI/NodesWorld2D+NodesWorldSup.cpp (imports below this line) */

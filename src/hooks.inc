@@ -4691,3 +4691,5 @@ SD_HOOK(NWPointList_Release, 0x0ac830, 104)
 SD_HOOK(CNodesWorld_SaveInfPath, 0x0acd00, 186)
 SD_HOOK(CNodesWorld_SavePath, 0x0ad180, 592)
 SD_HOOK(NWBox_Init, 0x0ad920, 42)
+
+/* module agent: AI/NodesWorld2D+NodesWorldSup.cpp (hooks below this line) */
