@@ -20,13 +20,18 @@ int __stdcall D3DX_CreateTextureFromFileInMemoryEx(void *dev, const void *data, 
 	uint32_t levels, uint32_t usage, int fmt, int pool, uint32_t filter, uint32_t mipFilter, uint32_t colorKey,
 	void *srcInfo, void *palette, void **tex);
 
-/* IDirect3DDevice8 and IDirect3DTexture8 methods not in d3d8.h */
+/* IDirect3DDevice8, IDirect3DTexture8 and IDirect3DSurface8 methods not in d3d8.h */
 #define D3DDEV_CREATEDEPTHSTENCILSURFACE 0x68
+#define D3DDEV_COPYRECTS 0x70
 #define D3DDEV_SETRENDERTARGET 0x7c
 #define D3DDEV_GETRENDERTARGET 0x80
 #define D3DDEV_GETDEPTHSTENCILSURFACE 0x84
+#define D3DDEV_BEGINSCENE 0x88
+#define D3DDEV_ENDSCENE 0x8c
 #define D3DDEV_GETRENDERSTATE 0xcc
 #define D3DTEX_GETSURFACELEVEL 0x3c
+#define D3DSURF_GETDESC 0x20
+#define D3DSURF_LOCKRECT 0x24
 typedef int(__stdcall *rtCreateTexture_t)(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint32_t usage, int fmt,
 	int pool, void **tex);
 typedef int(__stdcall *rtCreateDepthStencil_t)(void *dev, uint32_t w, uint32_t h, int fmt, int multisample,
@@ -35,12 +40,22 @@ typedef int(__stdcall *rtSetRenderTarget_t)(void *dev, void *surf, void *z);
 typedef int(__stdcall *rtGetSurface_t)(void *dev, void **surf);
 typedef int(__stdcall *rtGetRenderState_t)(void *dev, uint32_t state, uint32_t *value);
 typedef int(__stdcall *rtGetSurfaceLevel_t)(void *tex, uint32_t level, void **surf);
+typedef int(__stdcall *rtCreateImageSurface_t)(void *dev, uint32_t w, uint32_t h, int fmt, void **surf);
+typedef int(__stdcall *rtCopyRects_t)(void *dev, void *src, const int *rects, uint32_t n, void *dst, const void *pts);
+typedef int(__stdcall *rtScene_t)(void *dev);
+typedef int(__stdcall *rtGetDesc_t)(void *surf, uint32_t *desc);	/* D3DSURFACE_DESC, 8 words */
+typedef struct RTLockedRect {
+	int Pitch;
+	byte *pBits;
+} RTLockedRect;
+typedef int(__stdcall *rtLockRect_t)(void *surf, RTLockedRect *lr, const int *rect, uint32_t flags);
 
 #define D3DUSAGE_RENDERTARGET 1
 #define D3DFMT_A8R8G8B8 0x15
 #define D3DRS_FILLMODE 8
 #define D3DFILL_WIREFRAME 2
 #define D3DFILL_SOLID 3
+#define D3DLOCK_READONLY 0x10
 
 /* the classes of the scene nodes drawn (the DuDv pass draws only its own) */
 #define g_RenderClaseMask GAME_DATA(uint32_t, 0x4ad568)
@@ -77,24 +92,6 @@ static void RT_SetTargetTexture(void *tex) {
 	RT_SetRenderTarget(surf, NULL);
 	COM_RELEASE(surf);
 }
-
-/* the device and surface methods of the caps checks */
-#define D3DDEV_CREATEIMAGESURFACE2 0x6c
-#define D3DDEV_COPYRECTS 0x70
-#define D3DDEV_BEGINSCENE 0x88
-#define D3DDEV_ENDSCENE 0x8c
-#define D3DSURF_GETDESC 0x20
-#define D3DSURF_LOCKRECT 0x24
-#define D3DLOCK_READONLY 0x10
-typedef int(__stdcall *rtCreateImageSurface_t)(void *dev, uint32_t w, uint32_t h, int fmt, void **surf);
-typedef int(__stdcall *rtCopyRects_t)(void *dev, void *src, const int *rects, uint32_t n, void *dst, const void *pts);
-typedef int(__stdcall *rtScene_t)(void *dev);
-typedef int(__stdcall *rtGetDesc_t)(void *surf, uint32_t *desc);
-typedef struct RTLockedRect {
-	int Pitch;
-	byte *pBits;
-} RTLockedRect;
-typedef int(__stdcall *rtLockRect_t)(void *surf, RTLockedRect *lr, const int *rect, uint32_t flags);
 
 static void RT_SetRS(uint32_t state, uint32_t value) {
 	void *dev = RT_Dev();
@@ -230,7 +227,7 @@ static void RT_Quad2(RTVert2 *v, float w, float h, uint32_t color, float w0, flo
 }
 
 /* a quad from 0, y0 to w, y1 with four texture sets: u[cx][set] on the left and right side, t[cy][set] on the top
- * and bottom; with texels in texels of su x sv */
+ * and bottom; the coordinates in texels of su x sv when texels is set */
 static void RT_Quad4Y(float w, float y0, float y1, const float u[2][4], const float t[2][4], byte texels, float su,
 	float sv) {
 	RTVert4 v[4];
@@ -1605,8 +1602,8 @@ void Scene_Init(void) {
 	g_SceneNoSwap = 0;
 	void *dev = RT_Dev();
 	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, vp);
-	g_SceneW = (float)(double)vp[2];
-	g_SceneH = (float)(double)vp[3];
+	g_SceneW = RT_UToF(vp[2]);
+	g_SceneH = RT_UToF(vp[3]);
 	if (g_SplitScreen && !g_SceneRTargetSwap) {
 		g_SceneH = g_SceneH * 0.5f;
 		memcpy(g_SceneViewport, g_ViewportFull, 6 * sizeof(uint32_t));
@@ -1783,7 +1780,7 @@ static byte RT_CapsCopy(void **img) {
 	int rect[4];
 
 	void *dev = RT_Dev();
-	if (D3D_METHOD(dev, rtCreateImageSurface_t, D3DDEV_CREATEIMAGESURFACE2)(dev, 0x100, 0x100, D3DFMT_A8R8G8B8,
+	if (D3D_METHOD(dev, rtCreateImageSurface_t, D3DDEV_CREATEIMAGESURFACE)(dev, 0x100, 0x100, D3DFMT_A8R8G8B8,
 		img) < 0) {
 		return 0;
 	}
@@ -1816,7 +1813,7 @@ static void RT_CapsRelease(void) {
 	g_RTZBuffer = NULL;
 }
 
-/* surface 0 of want against the copy img (saved as a screenshot with shot); ok and the result */
+/* surface 0 of want against the copy img (saved as a screenshot with shot); ok when it was made and both match */
 static byte RT_CapsCompare(void *want, void *img, byte ok, byte shot, byte dudv, int maxPixels) {
 	static const byte points[8][2] = { { 0, 0 }, { 255, 0 }, { 0, 255 }, { 255, 255 },
 		{ 4, 4 }, { 251, 4 }, { 4, 251 }, { 251, 251 } };
