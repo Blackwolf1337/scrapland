@@ -411,9 +411,6 @@ byte __thiscall cActCtrl_PlayAction(void *ctrl, void *action, int arg, int set, 
 void __thiscall cMayorLocalLogic_SetListener(cLocalLogic *self, cEntity *e);
 /* the view of a character set to the direction from pos to it (rva 0xd5240) */
 void __thiscall cWalkCharEntity_SetViewFrom(cEntity *self, const vec3_t *pos);
-/* the gears called on target, the sentinels set to chase it (rva 0x14f960, 0x14fba0) */
-void __thiscall AICtrl_CallGears(void *aiCtrl, cEntity *target);
-void __thiscall AICtrl_SentinelsChase(void *aiCtrl, cEntity *target);
 
 /* Mayor.c */
 void ChType_ListeningMayor(cAbstractFile *params);

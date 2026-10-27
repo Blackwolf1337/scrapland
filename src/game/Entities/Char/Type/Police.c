@@ -236,7 +236,7 @@ void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 	} else if (victim && !strcmp(act, "ActionBad")) {
 		act = "Relax";
 		if (!usr) {
-			AICtrl_CallGears(g_pWorld->aiCtrl, victim);
+			AICtrl_SendSentinelToNPC(g_pWorld->aiCtrl, victim);
 			AICtrl_GearAttack(g_pWorld->aiCtrl, victim, 0);
 			if (!strcmp(cActCtrl_GetActionName(ChType_ActCtrl(me), 0), "Fusion")) {
 				return;

@@ -430,7 +430,7 @@ void __thiscall cBaseLocalLogic_Update(cBaseLocalLogic *self, float dt) {
 					victim = p;
 				}
 				AICtrl_GearAttack(g_pWorld->aiCtrl, victim, 0);
-				AICtrl_CallGears(g_pWorld->aiCtrl, victim);
+				AICtrl_SendSentinelToNPC(g_pWorld->aiCtrl, victim);
 				self->rageTime = 0.0f;
 			}
 		}

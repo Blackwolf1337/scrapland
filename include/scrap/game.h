@@ -105,7 +105,7 @@ typedef struct cWorld {
 	byte alarmOn;			/* 0x1c70 */
 	char alarmChars[0x1e71 - 0x1c71]; /* 0x1c71 Scrap.GetAlarmChars */
 	char alarmChars2[0x2078 - 0x1e71]; /* 0x1e71 */
-	byte unk2078[0x2090 - 0x2078];	/* 0x2078 updated every frame (rva 0x154170) */
+	byte strMoney[0x2090 - 0x2078];	/* 0x2078 the digits of the money (cStrMoney, logic.h), its int is money */
 	int money;			/* 0x2090 Scrap.GetMoney */
 	/* embedded objects of unknown size, only their addresses are used so far */
 	byte taunts[0x20ac - 0x2094];	/* 0x2094 SLogic.UpdateTauntEndTime */
@@ -127,7 +127,7 @@ SD_OFFSET(cWorld, debris, 0x0298);
 SD_OFFSET(cWorld, ignore, 0x02a8);
 SD_OFFSET(cWorld, lists, 0x02b8);
 SD_OFFSET(cWorld, checkInput, 0x02c4);
-SD_OFFSET(cWorld, unk2078, 0x2078);
+SD_OFFSET(cWorld, strMoney, 0x2078);
 SD_OFFSET(cWorld, timer, 0x02c8);
 SD_OFFSET(cWorld, floor, 0x02f0);
 SD_OFFSET(cWorld, elements, 0x1bb4);
