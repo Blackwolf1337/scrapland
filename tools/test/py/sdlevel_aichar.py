@@ -90,7 +90,7 @@ aicQ = aicAdd(aicP, (200.0, 0.0, 0.0))
 SDTest.Call(0x323c50, 'vi', 1717)
 aicW = SDTest.Call(0x208360, 'tiisfffs', aicWorld, 'SDAicWalk', aicP[0], aicP[1], aicP[2], 'WalkChar')[0]
 aicW2 = SDTest.Call(0x208360, 'tiisfffs', aicWorld, 'SDAicWalk2', aicQ[0], aicQ[1], aicQ[2], 'WalkChar')[0]
-check('AIC WalkChars', lambda: (aicW != 0, aicW2 != 0, aicGroup != 0, aicW and aicI(aicW + 0x78),
+check('AIC WalkChars', lambda: (aicW != 0, aicW2 != 0, aicGroup != 0, aicW and aicI(aicW + 0x78) == 0,
 	aicW2 and aicI(aicW2 + 0x254 + 8) == aicW2, aicW2 and aicB(aicW2 + 0x4c), aicW and aicI(aicW + 0x3e8 + 0xc) != 0))
 if aicW and aicW2 and aicI(aicW2 + 0x254 + 8) == aicW2 and aicI(aicW + 0x254 + 8) == aicW:
 	aicSetPos(aicW, aicP)
@@ -228,7 +228,7 @@ if aicW and aicW2 and aicI(aicW2 + 0x254 + 8) == aicW2 and aicI(aicW + 0x254 + 8
 		check('AIC React %d' % aicS, lambda: (SDTest.Call(0x0689f0, 'tbi', aicA)[0], aicState()))
 	aicPoke(aicA + 0x1a0, 0)
 	# the entity run into
-	check('AIC GetCollide none', lambda: SDTest.Call(0x069810, 'tii', aicA)[0])
+	check('AIC GetCollide none', lambda: SDTest.Call(0x069810, 'tii', aicA)[0] == 0)
 	if aicI(aicW + 0x3e8 + 0xc):
 		SDTest.Call(0x067450, 'tvii', aicW2 + 0x254, aicW + 0x3e8)
 		check('AIC GetCollide', lambda: SDTest.Call(0x069810, 'tii', aicA)[0] == aicW2)
