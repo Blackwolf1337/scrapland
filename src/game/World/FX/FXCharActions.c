@@ -337,8 +337,8 @@ void *__thiscall cObjElementFXPoliceGearConversion_ctor(void *self) {
 		Game_Ptr(CGAMEMODEL_RESET));
 	s->started = 0;
 	s->ent = NULL;
-	s->fc = 0.0f;
-	s->i8 = 0;
+	s->time = 0.0f;
+	s->t2 = 0.0f;
 	return s;
 }
 
@@ -899,11 +899,11 @@ void __thiscall cObjElementFXPoliceGearConversion_Attach(cObjElementFXPoliceGear
 		}
 	}
 	FXA_Trails(self->trails, FXGEAR_TRAILS, 31, 10, 3);
-	self->f844 = 0;
-	self->fc = 0.0f;
-	self->f10 = 0.0f;
-	self->f848 = 0;
-	self->fcc = 0;
+	self->count = 0;
+	self->time = 0.0f;
+	self->lastTime = 0.0f;
+	self->emitT = 0.0f;
+	self->smokeT = 0.0f;
 }
 
 void __thiscall cObjElementFXSebastianFlash_Attach(cObjElementFXSebastianFlash *self, cDebris *d) {
@@ -1048,9 +1048,9 @@ void __thiscall cObjElementFXMessengerTakeDataPack_Reset(cObjElementFXMessengerT
 
 void __thiscall cObjElementFXPoliceGearConversion_Reset(cObjElementFXPoliceGearConversion *self, int arg) {
 	(void)arg;
-	self->fc = 0.0f;
-	self->f10 = 0.0f;
-	self->i8 = 0;
+	self->time = 0.0f;
+	self->lastTime = 0.0f;
+	self->t2 = 0.0f;
 	/* the 45 piece flags, 0x96c..0x998 (the last 0x2d bytes, the movups of the original) */
 	for (int i = 0; i < FXGEAR_ARMORS; i++) {
 		for (int k = 0; k < FXGEAR_PIECES; k++) {
@@ -1059,9 +1059,9 @@ void __thiscall cObjElementFXPoliceGearConversion_Reset(cObjElementFXPoliceGearC
 	}
 	CGameParticles_KillAll(&self->particles);
 	FXA_ClearTrails(self->trails, FXGEAR_TRAILS);
-	self->f844 = 0;
-	self->f848 = 0;
-	self->fcc = 0;
+	self->count = 0;
+	self->emitT = 0.0f;
+	self->smokeT = 0.0f;
 }
 
 void __thiscall cObjElementFXPoliceSteal_Reset(cObjElementFXPoliceSteal *self, int arg) {
@@ -1574,6 +1574,319 @@ void __thiscall cObjElementFXBettyAttack_Update(cObjElementFXBettyAttack *self, 
 		CGameLensFlare_SetF18(&self->flare, 1.0f);
 	} else {
 		CGameLensFlare_SetOn(&self->flare, 0);
+	}
+	self->lastTime = self->time;
+}
+#define FXA_RAMP_GEARPIECE 0x430644
+
+/* the armors still shown hidden */
+static void FXGear_HideArmors(cObjElementFXPoliceGearConversion *self) {
+	for (int i = 0; i < FXGEAR_ARMORS; i++) {
+		if (CGameModel_IsEnabled(&self->armor[i])) {
+			CGameModel_Disable(&self->armor[i]);
+		}
+	}
+}
+
+/* a still particle at p */
+static void FXA_StillAt(CGameParticles *sp, float x, float y, float z) {
+	sp->initPosMin.x = x;
+	sp->initPosMin.y = y;
+	sp->initPosMin.z = z;
+	sp->initPosMax = sp->initPosMin;
+	sp->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	sp->initVelMax = sp->initVelMin;
+	sp->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	sp->initAccMax = sp->initAccMin;
+}
+
+/* the acceleration k * -vel (the particles slow down) */
+static void FXA_Brake(CGameParticles *sp, float k) {
+	sp->initAccMin.x = k * -sp->initVelMin.x;
+	sp->initAccMin.y = k * -sp->initVelMin.y;
+	sp->initAccMin.z = k * -sp->initVelMin.z;
+	sp->initAccMax = sp->initAccMin;
+}
+
+void __thiscall cObjElementFXPoliceGearConversion_Update(cObjElementFXPoliceGearConversion *self, cDebris *d,
+	float dt) {
+	vec3_t p, rot, v, dir, o, ang, tmp, verts[6];
+	float a;
+	uint32_t bits;
+
+	(void)dt;
+	cEntity *e = self->ent;
+	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+		self->ent = NULL;
+		FXGear_HideArmors(self);
+	}
+	if (!self->ent || !self->ent->flag_4c) {
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	CGameModel_GetPos(m, &p);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &p);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), -76.0f, 0.0f);
+	if (CGameModel_IsVisible(m)) {
+		CGameModel_Enable(Debris_Model(d));
+	} else {
+		CGameModel_Disable(Debris_Model(d));
+	}
+	float delta = cTimer_GetDelta(&g_pWorld->timer);
+	self->time = delta + self->time;
+	self->t2 = delta + self->t2;
+	if (self->ent && !cActCtrl_IsActive(WithLife_Vtbl(self->ent)->GetActCtrl(self->ent), "Fusion")) {
+		FXGear_HideArmors(self);
+	}
+	/* the armors fade in over their times of the fusion */
+	static const float from[FXGEAR_ARMORS] = { 2.6f, 3.0f, 3.2f }, to[FXGEAR_ARMORS] = { 2.9f, 3.1f, 3.5f };
+	for (int i = 0; i < FXGEAR_ARMORS; i++) {
+		FX_InRange(self->time, from[i], to[i], &a);
+		CGameModel *am = &self->armor[i];
+		CGameModel_AnimDelta(am, (uint32_t)self->anim[i], self->time, NULL);
+		CGameModel_SetEffect(am, 3);
+		float f = 1.0f - (a * a) * (2.0f - a);
+		memcpy(&bits, &f, sizeof(bits));
+		CGameModel_SetEffectParam(am, 0, bits);
+	}
+	CGameParticles *sp = &self->particles;
+	if (FX_InRange(self->time, 0.6f, 4.0f, &a)) {
+		vec3_t root;
+
+		self->emitT = self->emitT + delta;
+		CGameModel_Vertices(m, &root, NULL, NULL, 1, 0, NULL, (uint32_t)self->nodeRoot, NULL);
+		float s = (3.0f - a * 2.0f) * (a * a);
+		int alpha = (int)((3.0f - (s + s)) * (s * s) * 255.0f);
+		for (int i = 0; i < FXGEAR_TRAILS; i++) {
+			CGameTrail_Reset(&self->trails[i]);
+			CGameTrail_SetTransp(&self->trails[i], (byte)alpha);
+		}
+		/* the bubbles rise and leave bolts and glows */
+		int trail = 0, pt = 0;
+		if (CGameModel_IsVisible(m)) {
+			for (int k = 0, idx = 0xfe; k < self->count; k++, idx--) {
+				vec3_t *bp = &self->bubblePos[k];
+				if (self->bubbleH[k] > 0.25f && trail < 4) {
+					float r1 = FXA_Rand(112.0, -16.0);
+					float y = (((root.y - bp->y) + (root.y - bp->y)) + r1) + bp->y;
+					float x = bp->x + 0.0f, z = bp->z + 0.0f;
+					float w = self->bubbleH[k] * FXA_Rand(0.30000001192092896, 0.80000001192092896);
+					uint32_t g = (uint32_t)(crt_rand() % 32 + 0x46) << 8;
+					uint32_t rg = (uint32_t)(crt_rand() % 64 + 0xb4) << 16 | g;
+					CGameTrail *tr = &self->trails[trail];
+					uint32_t color = (uint32_t)(crt_rand() % 32 + 0x28) | rg | 0x30000000;
+					CGameTrail_Add(tr, *bp, w, color);
+					g = (uint32_t)(crt_rand() % 24 + 0x32) << 8;
+					rg = (uint32_t)(crt_rand() % 48 + 0x6e) << 16 | g;
+					color = (uint32_t)(crt_rand() % 16 + 0x1e) | rg | 0xff000000;
+					CGameTrail_Add(tr, (vec3_t){ x, y, z }, w, color);
+					int al = alpha + 0x30;
+					if (al > 0xff) {
+						al = 0xff;
+					}
+					float sz = FXA_Rand(0.74999994039535522, 0.80000001192092896);
+					float px = bp->x + 0.0f, py = bp->y + 10.0f, pz = bp->z + 0.0f;
+					g = (uint32_t)(crt_rand() % 32 + 0x3c) << 8;
+					rg = (uint32_t)(crt_rand() % 24 + 0xdc) << 16 | g;
+					color = (uint32_t)(crt_rand() % 32 + 0x14) | (uint32_t)al << 24 | rg;
+					CGameParticles_SetParticle(sp, idx, px, py, pz, sz * w, color, 6, 0.0f);
+					if (++pt >= 15) {
+						trail++;
+						pt = 0;
+					}
+				}
+				float vel = self->bubbleVel[k];
+				self->bubbleH[k] = vel * delta + self->bubbleH[k];
+				self->bubbleVel[k] = delta * self->bubbleAcc[k] + vel;
+				float mx = self->bubbleMax[k];
+				if (self->bubbleH[k] > mx && 3.40282347e+38f > mx) {
+					self->bubbleH[k] = mx;
+					self->bubbleVel[k] = 0.0f;
+					self->bubbleAcc[k] = 0.0f;
+				}
+			}
+		}
+		/* new bubbles on a ring around the waist */
+		while (self->count < FXGEAR_BUBBLES) {
+			float r = FX_Vtbl(self->ent)->GetRadius(self->ent);
+			float hh = Entity_F45C(self->ent);
+			float a1 = FXA_Rand(6.2831854820251465, -3.1415927410125732);
+			ang.x = FXA_Rand(6.2831854820251465, -3.1415927410125732);
+			ang.y = 0.0f;
+			ang.z = a1;
+			v = (vec3_t){ 0.0f, -1.0f, 0.0f };
+			Vec3_Rotate(&o, &v, &ang);
+			float x = root.x + o.x * r;
+			float z = root.z + o.z * r;
+			const vec3_t *c = FX_Vtbl(self->ent)->GetCenter(self->ent, &tmp);
+			int k = self->count;
+			self->bubblePos[k].y = c->y - hh;
+			self->bubblePos[k].x = x;
+			self->bubblePos[k].z = z;
+			self->bubbleH[k] = FXA_Rand(1.5, 4.5);
+			self->bubbleVel[k] = FXA_Rand(110.0, 85.0);
+			self->bubbleAcc[k] = -FXA_Rand(7.0, 8.5);
+			self->bubbleMax[k] = FXA_Rand(30.0, 105.0);
+			self->count++;
+		}
+		/* the smoke of the bubbles */
+		if (CGameModel_IsVisible(m) && 3.2f > self->time && self->emitT > 0.03f) {
+			self->emitT = 0.0f;
+			crt_rand();
+			crt_rand();
+			for (int n = 0; n < 3; n++) {
+				const vec3_t *bp = &self->bubblePos[crt_rand() % self->count];
+				float r1 = FXA_Rand(32.0, -16.0);
+				float x0 = (bp->x + 0.0f) + 0.0f;
+				float y0 = r1 + (bp->y + (root.y - bp->y) * 0.5f);
+				float z0 = (bp->z + 0.0f) + 0.0f;
+				float r2 = FXA_Rand(6.0, 2.0);
+				float r3 = FXA_Rand(192.0, 64.0);
+				float r4 = FXA_Rand(6.0, 2.0);
+				float x1 = r4 + (bp->x + 0.0f);
+				float y1 = r3 + (bp->y + (root.y - bp->y));
+				float z1 = r2 + (bp->z + 0.0f);
+				float lt = FXA_Rand(0.050000011920928955, 0.44999998807907104);
+				float k = FXA_Rand(5.0, 10.0);
+				FX_RandomDir(&dir);
+				sp->initPosMin.x = dir.x * k + x0;
+				sp->initPosMin.y = dir.y * k + y0;
+				sp->initPosMin.z = dir.z * k + z0;
+				sp->initPosMax = sp->initPosMin;
+				float inv = 1.0f / lt;
+				sp->initVelMin.x = inv * (x1 - x0);
+				sp->initVelMin.y = inv * (y1 - y0);
+				sp->initVelMin.z = inv * (z1 - z0);
+				sp->initVelMax = sp->initVelMin;
+				FXA_Brake(sp, FXA_Rand(0.049999997019767761, 0.20000000298023224));
+				sp->sizeIni = FXA_Rand(20.0, 115.0);
+				sp->sizeLife = 1.0f;
+				sp->sizeEnd = FXA_Rand(10.0, 165.0);
+				sp->lifeTime = lt;
+				sp->rotIni = sp->rotEnd = FXA_Rand(6.2831854820251465, 0.0);
+				sp->spriteIni = 0x33;
+				sp->spriteEnd = 0x33;
+				sp->rotVar = FXA_Rand(1.0471975803375244, -0.52359879016876221);
+				CGameParticles_Apply(sp);
+				CGameParticles_SetColorRampOn(sp, 1);
+				CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FXA_RAMP_GEAR) + crt_rand() % 3 * 9);
+				CGameParticles_EmitDt(sp, 1, 1, FXA_Rand(0.019999999552965164, 0.0));
+			}
+		}
+	} else if (CGameTrail_IsRender(&self->trails[0])) {
+		FXA_ClearTrails(self->trails, FXGEAR_TRAILS);
+		CGameParticles_KillRange(sp, 0xfb, 0xff);
+	}
+	if (!CGameModel_IsVisible(m)) {
+		return;
+	}
+	/* the smoke ring over the head */
+	if (FX_InRange(self->time, 2.0f, 3.0f, &a)) {
+		float st = self->smokeT + delta;
+		self->smokeT = st;
+		if (st > 0.03f) {
+			self->smokeT = 0.0f;
+			const vec3_t *c = FX_Vtbl(self->ent)->GetCenter(self->ent, &tmp);
+			float bx = c->x + 0.0f, by = c->y + 180.0f, bz = c->z + 0.0f;
+			for (int n = 0; n < 6; n++) {
+				FX_RandomDir(&dir);
+				float k = FXA_Rand(30.0, 20.0);
+				FXA_StillAt(sp, k * dir.x + bx, k * dir.y + by, k * dir.z + bz);
+				sp->sizeIni = FXA_Rand(20.0, 45.0);
+				sp->sizeEnd = FXA_Rand(10.0, 135.0);
+				sp->sizeLife = 0.3f;
+				sp->lifeTime = FXA_Rand(0.049999982118606567, 0.40000000596046448);
+				sp->rotIni = sp->rotEnd = FXA_Rand(6.2831854820251465, 0.0);
+				sp->rotVar = FXA_Rand(1.0471975803375244, -0.52359879016876221);
+				byte sprite = (crt_rand() & 1) ? 5 : 2;
+				sp->spriteIni = sprite;
+				sp->spriteEnd = sprite;
+				CGameParticles_Apply(sp);
+				CGameParticles_SetColorRampOn(sp, 1);
+				CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FXA_RAMP_GEAR) + crt_rand() % 3 * 9);
+				CGameParticles_EmitDt(sp, 1, 0, FXA_Rand(0.10000000894069672, 0.05000000074505806));
+			}
+		}
+	}
+	/* the pieces of the armors fall off at their times: sparks at 6 vertices of each, a flash in their middle */
+	if (FX_InRange(self->time, 2.8f, 3.8f, &a)) {
+		for (int i = 0; i < FXGEAR_ARMORS; i++) {
+			CGameModel *am = &self->armor[i];
+			for (int k = 0; k < self->numPieces[i]; k++) {
+				int node = self->piece[i][k];
+				if (node == -1 || self->pieceOff[i][k]) {
+					continue;
+				}
+				float pt = self->pieceTime[i][k];
+				if (!(self->time >= pt) || !(pt >= self->lastTime)) {
+					continue;
+				}
+				CGameModel_Vertices(am, verts, NULL, NULL, 6, -1, NULL, (uint32_t)node, NULL);
+				sp->birthRate = 0;
+				CGameParticles_SetColorRampOn(sp, 1);
+				vec3_t c = verts[0];
+				float rad = 0.0f;
+				for (int j = 0; j < 6; j++) {
+					const vec3_t *vv = &verts[j];
+					CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FXA_RAMP_GEAR) + (crt_rand() & 1) * 9);
+					sp->initPosMin = *vv;
+					sp->initPosMax = sp->initPosMin;
+					float kv = FXA_Rand(15.0, 15.0);
+					FX_RandomDir(&dir);
+					sp->initVelMin.x = dir.x * kv;
+					sp->initVelMin.y = dir.y * kv;
+					sp->initVelMin.z = dir.z * kv;
+					sp->initVelMax = sp->initVelMin;
+					FXA_Brake(sp, FXA_Rand(0.099999994039535522, 0.34999999403953552));
+					sp->sizeIni = FXA_Rand(30.0, 45.0);
+					sp->sizeEnd = FXA_Rand(25.0, 155.0);
+					sp->sizeLife = 0.35f;
+					sp->lifeTime = FXA_Rand(0.099999964237213135, 0.85000002384185791);
+					switch (crt_rand() % 4) {
+					case 0:
+						sp->spriteIni = (byte)((crt_rand() & 1) + 9);
+						break;
+					case 1:
+						sp->spriteIni = 0x36;
+						break;
+					case 2:
+						sp->spriteIni = 5;
+						break;
+					case 3:
+						sp->spriteIni = 2;
+						break;
+					}
+					sp->spriteEnd = sp->spriteIni;
+					sp->rotIni = sp->rotEnd = FXA_Rand(6.2831854820251465, 0.0);
+					sp->rotVar = FXA_Rand(2.0943951606750488, -1.0471975803375244);
+					CGameParticles_Apply(sp);
+					CGameParticles_EmitN(sp, 1, 0);
+					/* the middle of the vertices so far and their spread */
+					float nx = c.x + (vv->x - c.x) * 0.5f;
+					float ny = c.y + (vv->y - c.y) * 0.5f;
+					float nz = c.z + (vv->z - c.z) * 0.5f;
+					float dy = vv->y - ny, dx = vv->x - nx, dz = vv->z - nz;
+					c = (vec3_t){ nx, ny, nz };
+					float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+					rad = (len + rad) * 0.5f;
+				}
+				CGameParticles_SetColorRamp(sp, Game_Ptr(FXA_RAMP_GEARPIECE));
+				FXA_StillAt(sp, c.x, c.y, c.z);
+				sp->sizeIni = FXA_Rand(0.19999998807907104, 0.69999998807907104) * rad;
+				sp->sizeEnd = FXA_Rand(1.5, 7.5) * rad;
+				sp->sizeLife = 0.25f;
+				sp->spriteIni = 5;
+				sp->spriteEnd = 5;
+				sp->lifeTime = FXA_Rand(0.02000001072883606, 0.25999999046325684);
+				sp->rotIni = sp->rotEnd = FXA_Rand(6.2831854820251465, 0.0);
+				sp->rotVar = FXA_Rand(1.5707963705062866, -0.78539818525314331);
+				CGameParticles_Apply(sp);
+				CGameParticles_EmitN(sp, 1, 0);
+				self->pieceOff[i][k] = 1;
+			}
+		}
 	}
 	self->lastTime = self->time;
 }
