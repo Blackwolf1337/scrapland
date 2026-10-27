@@ -2770,129 +2770,133 @@ rva	size	source	callconv	name	signature
 000ee780	312	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_Configure	void __thiscall(int unused)
 000ee8c0	3	USER_DEFINED	__thiscall	cEmbeddedFXVehicleProbe_Configure	void __thiscall(int unused)
 000ee8e0	3	USER_DEFINED	__thiscall	cEmbeddedFXVehicleVote_Configure	void __thiscall(int unused)
-000ee8f0	556	DEFAULT	unknown	FUN_004ee8f0	
-000eeb20	104	DEFAULT	unknown	FUN_004eeb20	
-000eeb90	104	DEFAULT	unknown	FUN_004eeb90	
-000eec00	187	DEFAULT	unknown	FUN_004eec00	
-000eecc0	309	DEFAULT	unknown	FUN_004eecc0	
-000eee00	35	ANALYSIS	__thiscall	cEntity::vf03	undefined __thiscall(void)
-000eee30	146	DEFAULT	unknown	FUN_004eee30	
+000ee8f0	556	USER_DEFINED	__thiscall	cEntity_ctor	void * __thiscall(char *, float, float, float)
+000eeb20	104	USER_DEFINED	__fastcall	Nto1Node_dtor	void __fastcall(void *)
+000eeb90	104	USER_DEFINED	__fastcall	Nto1Node_dtor	void __fastcall(void *)
+000eec00	187	USER_DEFINED	__thiscall	EntityDList_dtor	void __thiscall()
+000eecc0	309	USER_DEFINED	__fastcall	cEntity_dtor	void __fastcall(void *)
+000eee00	35	USER_DEFINED	__thiscall	cEntity_Delete	void * __thiscall(uint)
+000eee30	146	USER_DEFINED	__thiscall	EntityDList_Add	void __thiscall(void *)
 000eeed0	118	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Add	byte __thiscall(char * key, void * value, byte warn)
 000eef50	231	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Insert	void * __thiscall(char * key, uint slot, void * value)
-000ef040	18	DEFAULT	unknown	FUN_004ef040	
-000ef060	88	DEFAULT	unknown	FUN_004ef060	
-000ef0c0	79	USER_DEFINED	__thiscall	cEntity::Del	byte __thiscall(void)
-000ef110	318	USER_DEFINED	__thiscall	cEntity::AimWeapon	undefined __thiscall(void)
-000ef250	124	ANALYSIS	__thiscall	cEntity::vf17	undefined __thiscall(void)
-000ef2d0	4	ANALYSIS	__thiscall	cEntity::vf22	undefined __thiscall(void)
-000ef2e0	13	DEFAULT	unknown	FUN_004ef2e0	
-000ef310	20	DEFAULT	unknown	FUN_004ef310	
-000ef330	25	USER_DEFINED	__thiscall	cEntity::GetPos	undefined __thiscall(void)
-000ef350	16	USER_DEFINED	__thiscall	cEntity::GetTargetAngle	undefined __thiscall(void)
-000ef360	6	ANALYSIS	__thiscall	cEntity::vf04	undefined __thiscall(void)
-000ef370	1	ANALYSIS	__thiscall	cEntity::vf02	undefined __thiscall(void)
-000ef380	591	ANALYSIS	__thiscall	cEntity::vf16	undefined __thiscall(void)
-000ef5d0	73	USER_DEFINED	__thiscall	cEntity::IsType	byte __thiscall(char * type)
-000ef620	182	DEFAULT	unknown	FUN_004ef620	
-000ef6e0	125	DEFAULT	unknown	FUN_004ef6e0	
-000ef760	3	ANALYSIS	__thiscall	cEntity::vf01	undefined __thiscall(void)
+000ef040	18	USER_DEFINED	__fastcall	cEntity_CollisionOff	void __fastcall(void *)
+000ef060	88	USER_DEFINED	__cdecl	Nto1Node_LinkAs	void __cdecl(void *, void *)
+000ef0c0	79	USER_DEFINED	__thiscall	cEntity_Del	byte __thiscall()
+000ef110	318	USER_DEFINED	__thiscall	cEntity_AimWeapon	void __thiscall(float, float, void *, void *, void *, int)
+000ef250	124	USER_DEFINED	__thiscall	cEntity_VarF	byte __thiscall(char *, void *, int)
+000ef2d0	4	USER_DEFINED	__thiscall	cEntity_GetAI	void * __thiscall()
+000ef2e0	13	USER_DEFINED	__fastcall	cEntity_GetListName	char * __fastcall(void *)
+000ef2f0	20	USER_DEFINED	__fastcall	cEntity_NextInList	void * __fastcall(void *)
+000ef310	20	USER_DEFINED	__fastcall	cEntity_Next	void * __fastcall(void *)
+000ef330	25	USER_DEFINED	__thiscall	cEntity_GetPos	void * __thiscall(void *)
+000ef350	16	USER_DEFINED	__thiscall	cEntity_GetTargetAngle	void __thiscall(void *, float, void *)
+000ef360	6	USER_DEFINED	__thiscall	cEntity_GetClassName	char * __thiscall()
+000ef370	1	USER_DEFINED	__thiscall	cEntity_UpdateOff	void __thiscall()
+000ef380	591	USER_DEFINED	__thiscall	cEntity_VarI	byte __thiscall(char *, void *, int)
+000ef5d0	73	USER_DEFINED	__thiscall	cEntity_IsType	int __thiscall(char *)
+000ef620	182	USER_DEFINED	__thiscall	cEntity_SetList	byte __thiscall(char *)
+000ef6e0	125	USER_DEFINED	__cdecl	Nto1Node_LinkByName	void __cdecl(void *, char *)
+000ef760	3	USER_DEFINED	__thiscall	cEntity_Render	void __thiscall(void *)
 000ef770	115	USER_DEFINED	__fastcall	Nto1Head::UnlinkAll	void __fastcall(void * head)
 000ef7f0	115	USER_DEFINED	__fastcall	Nto1Head::UnlinkAll	void __fastcall(void * head)
 000ef870	115	USER_DEFINED	__fastcall	Nto1Head::UnlinkAll	void __fastcall(void * head)
-000ef910	38	ANALYSIS	__thiscall	cEntity::vf08	undefined __thiscall(void)
-000ef940	22	USER_DEFINED	__thiscall	cEntity::SetEmbeddedFX	void __thiscall(char * fxType)
-000ef960	22	USER_DEFINED	__thiscall	cEntity::SetModel	undefined __thiscall(void)
-000ef980	27	ANALYSIS	__thiscall	cEntity::vf07	undefined __thiscall(void)
-000ef9a0	1	ANALYSIS	__thiscall	cEntity::vf00	undefined __thiscall(void)
-000ef9b0	657	ANALYSIS	__thiscall	cEntity::vf18	undefined __thiscall(void)
-000efc50	25	DEFAULT	unknown	FUN_004efc50	
-000efc70	359	ANALYSIS	__thiscall	cEntity::vf19	undefined __thiscall(void)
-000efde0	636	DEFAULT	unknown	FUN_004efde0	
-000f0060	18	DEFAULT	unknown	FUN_004f0060	
-000f0080	745	DEFAULT	unknown	FUN_004f0080	
-000f0370	18	DEFAULT	unknown	FUN_004f0370	
-000f0390	18	DEFAULT	unknown	FUN_004f0390	
-000f03b0	369	DEFAULT	unknown	FUN_004f03b0	
-000f0530	18	DEFAULT	unknown	FUN_004f0530	
-000f0550	18	DEFAULT	unknown	FUN_004f0550	
-000f0570	519	DEFAULT	unknown	FUN_004f0570	
-000f0780	593	DEFAULT	unknown	FUN_004f0780	
-000f09e0	360	DEFAULT	unknown	FUN_004f09e0	
-000f0b50	143	DEFAULT	unknown	FUN_004f0b50	
-000f0be0	38	ANALYSIS	__thiscall	cItemEntity::vf03	undefined __thiscall(void)
-000f0c10	268	ANALYSIS	__thiscall	cItemEntity::vf11	undefined __thiscall(void)
-000f0d20	541	ANALYSIS	__thiscall	cItemEntity::vf17	undefined __thiscall(void)
-000f0f40	31	DEFAULT	unknown	FUN_004f0f40	
-000f0f80	6	ANALYSIS	__thiscall	cItemEntity::vf04	undefined __thiscall(void)
-000f0f90	7	ANALYSIS	__thiscall	cItemEntity::vf40	undefined __thiscall(void)
-000f0fa0	706	ANALYSIS	__thiscall	cItemEntity::vf16	undefined __thiscall(void)
-000f1270	80	ANALYSIS	__thiscall	cItemEntity::vf05	undefined __thiscall(void)
-000f12c0	79	ANALYSIS	__thiscall	cItemEntity::vf43	undefined __thiscall(void)
-000f1310	86	ANALYSIS	__thiscall	cItemEntity::vf41	undefined __thiscall(void)
-000f1370	949	ANALYSIS	__thiscall	cItemEntity::vf23	undefined __thiscall(void)
-000f1730	36	DEFAULT	unknown	FUN_004f1730	
-000f1760	61	DEFAULT	unknown	FUN_004f1760	
-000f17a0	35	ANALYSIS	__thiscall	cItemEntity::vf07	undefined __thiscall(void)
-000f17d0	101	DEFAULT	unknown	FUN_004f17d0	
-000f1840	787	DEFAULT	unknown	FUN_004f1840	
-000f1b60	151	DEFAULT	unknown	FUN_004f1b60	
-000f1c50	332	ANALYSIS	__thiscall	cItemEntity::vf00	undefined __thiscall(void)
-000f1da0	455	ANALYSIS	__thiscall	cItemEntity::vf10	undefined __thiscall(void)
-000f1f70	545	ANALYSIS	__thiscall	cItemEntity::vf18	undefined __thiscall(void)
-000f21a0	119	ANALYSIS	__thiscall	cItemEntity::vf42	undefined __thiscall(void)
-000f2220	488	ANALYSIS	__thiscall	cItemEntity::vf19	undefined __thiscall(void)
-000f2410	439	DEFAULT	unknown	FUN_004f2410	
-000f25d0	119	DEFAULT	unknown	FUN_004f25d0	
-000f2650	152	ANALYSIS	__thiscall	cMissileEntity::vf03	undefined __thiscall(void)
+000ef8f0	20	USER_DEFINED	__fastcall	cEntity_CollisionOn	void __fastcall(void *)
+000ef910	38	USER_DEFINED	__thiscall	cEntity_SetActive	void __thiscall(byte)
+000ef940	22	USER_DEFINED	__thiscall	cEntity_SetEmbeddedFX	void __thiscall(char *)
+000ef960	22	USER_DEFINED	__thiscall	cEntity_SetModel	void __thiscall(char *, float, float, float, int)
+000ef980	27	USER_DEFINED	__thiscall	cEntity_SetPos	void __thiscall(void *)
+000ef9a0	1	USER_DEFINED	__thiscall	cEntity_Update	void __thiscall()
+000ef9b0	657	USER_DEFINED	__thiscall	cEntity_VarS	byte __thiscall(char *, void *, int)
+000efc50	25	USER_DEFINED	__cdecl	Nto1Node_TargetName	char * __cdecl(void *)
+000efc70	359	USER_DEFINED	__thiscall	cEntity_VarV	byte __thiscall(char *, void *, void *, void *, int)
+000efde0	636	USER_DEFINED	__cdecl	Doors_AcceleratorOnEnter	void __cdecl(void *)
+000f0060	18	USER_DEFINED	__cdecl	Doors_AutoDoorSlot	void __cdecl(void *)
+000f0080	745	USER_DEFINED	__cdecl	Doors_Slot	void __cdecl(void *, uint)
+000f0370	18	USER_DEFINED	__cdecl	Doors_AutoDoorUsrSlot	void __cdecl(void *)
+000f0390	18	USER_DEFINED	__cdecl	Doors_BackDoorSlot	void __cdecl(void *)
+000f03b0	369	USER_DEFINED	__cdecl	Doors_ChangeDoorState	void __cdecl(void *)
+000f0530	18	USER_DEFINED	__cdecl	Doors_CloseDoorSlot	void __cdecl(void *)
+000f0550	18	USER_DEFINED	__cdecl	Doors_FrontDoorSlot	void __cdecl(void *)
+000f0570	519	USER_DEFINED	__cdecl	Doors_SphereEntity	void __cdecl(void *)
+000f0780	593	USER_DEFINED	__cdecl	Doors_Usr0AutoDoorSlot	void __cdecl(void *)
+000f09e0	360	USER_DEFINED	__thiscall	cItemEntity_ctor	void * __thiscall(char *, float, float, float)
+000f0b50	143	USER_DEFINED	__fastcall	cItemEntity_dtor	void __fastcall(void *)
+000f0be0	38	USER_DEFINED	__thiscall	cItemEntity_Delete	void * __thiscall(uint)
+000f0c10	268	USER_DEFINED	__thiscall	cItemEntity_Touch	void __thiscall(void *, void *, void *)
+000f0d20	541	USER_DEFINED	__thiscall	cItemEntity_VarF	byte __thiscall(char *, void *, int)
+000f0f40	31	USER_DEFINED	__thiscall	cItemEntity_GetOrigin	void * __thiscall(void *)
+000f0f60	16	USER_DEFINED	__fastcall	cItemEntity_GetOwner	char * __fastcall(void *)
+000f0f70	16	USER_DEFINED	__fastcall	cItemEntity_GetBackTime	float __fastcall(void *)
+000f0f80	6	USER_DEFINED	__thiscall	cItemEntity_GetClassName	char * __thiscall()
+000f0f90	7	USER_DEFINED	__thiscall	cItemEntity_GetRadius	float __thiscall()
+000f0fa0	706	USER_DEFINED	__thiscall	cItemEntity_VarI	byte __thiscall(char *, void *, int)
+000f1270	80	USER_DEFINED	__thiscall	cItemEntity_IsType	byte __thiscall(char *)
+000f12c0	79	USER_DEFINED	__thiscall	cItemEntity_NetRead	void __thiscall(void *, int)
+000f1310	86	USER_DEFINED	__thiscall	cItemEntity_NetWrite	void __thiscall(int, void *, byte)
+000f1370	949	USER_DEFINED	__thiscall	cItemEntity_Tick	void __thiscall(float)
+000f1730	36	USER_DEFINED	__thiscall	cItemEntity_SetOrigin	void __thiscall(void *)
+000f1760	61	USER_DEFINED	__thiscall	cItemEntity_SetOwner	void __thiscall(char *)
+000f17a0	35	USER_DEFINED	__thiscall	cItemEntity_SetPos	void __thiscall(void *)
+000f17d0	101	USER_DEFINED	__thiscall	cItemEntity_SetBackTime	void __thiscall(float)
+000f1840	787	USER_DEFINED	__thiscall	cItemEntity_SetRespawn	void __thiscall(float)
+000f1b60	151	USER_DEFINED	__thiscall	cItemEntity_SetTypeMarker	void __thiscall(char *)
+000f1c50	332	USER_DEFINED	__thiscall	cItemEntity_Update	void __thiscall()
+000f1da0	455	USER_DEFINED	__thiscall	cItemEntity_TestSphere	byte __thiscall(void *, void *, float, int)
+000f1f70	545	USER_DEFINED	__thiscall	cItemEntity_VarS	byte __thiscall(char *, void *, int)
+000f21a0	119	USER_DEFINED	__thiscall	cItemEntity_NetNeedsSend	byte __thiscall(float)
+000f2220	488	USER_DEFINED	__thiscall	cItemEntity_VarV	byte __thiscall(char *, void *, void *, void *, int)
+000f2410	439	USER_DEFINED	__thiscall	cMissileEntity_ctor	void * __thiscall(char *, float, float, float)
+000f25d0	119	USER_DEFINED	__fastcall	cMissileEntity_dtor	void __fastcall(void *)
+000f2650	152	USER_DEFINED	__thiscall	cMissileEntity_Delete	void * __thiscall(uint)
 000f26f0	941	ANALYSIS	__thiscall	cMissileEntity::vf64	undefined __thiscall(void)
-000f2aa0	108	ANALYSIS	__thiscall	cMissileEntity::vf57	undefined __thiscall(void)
-000f2b10	151	ANALYSIS	__thiscall	cMissileEntity::vf11	undefined __thiscall(void)
-000f2bb0	117	ANALYSIS	__thiscall	cMissileEntity::vf61	undefined __thiscall(void)
-000f2c30	443	ANALYSIS	__thiscall	cMissileEntity::vf56	undefined __thiscall(void)
-000f2df0	159	ANALYSIS	__thiscall	cMissileEntity::vf58	undefined __thiscall(void)
-000f2e90	1058	ANALYSIS	__thiscall	cMissileEntity::vf17	undefined __thiscall(void)
-000f32c0	32	DEFAULT	unknown	FUN_004f32c0	
-000f32e0	6	ANALYSIS	__thiscall	cMissileEntity::vf04	undefined __thiscall(void)
-000f32f0	26	ANALYSIS	__thiscall	cMissileEntity::vf02	undefined __thiscall(void)
-000f3310	910	ANALYSIS	__thiscall	cMissileEntity::vf16	undefined __thiscall(void)
-000f36a0	80	ANALYSIS	__thiscall	cMissileEntity::vf05	undefined __thiscall(void)
-000f36f0	698	ANALYSIS	__thiscall	cMissileEntity::vf63	undefined __thiscall(void)
+000f2aa0	108	USER_DEFINED	__thiscall	cMissileEntity_RotStep	void __thiscall(float)
+000f2b10	151	USER_DEFINED	__thiscall	cMissileEntity_Touch	void __thiscall(void *, void *, void *)
+000f2bb0	117	USER_DEFINED	__thiscall	cMissileEntity_LifeTick	void __thiscall()
+000f2c30	443	USER_DEFINED	__thiscall	cMissileEntity_Wobble	void __thiscall(float)
+000f2df0	159	USER_DEFINED	__thiscall	cMissileEntity_Fall	void __thiscall(float)
+000f2e90	1058	USER_DEFINED	__thiscall	cMissileEntity_VarF	byte __thiscall(char *, void *, int)
+000f32c0	32	USER_DEFINED	__fastcall	cMissileEntity_GetSwarmCount	int __fastcall(void *)
+000f32e0	6	USER_DEFINED	__thiscall	cMissileEntity_GetClassName	char * __thiscall()
+000f32f0	26	USER_DEFINED	__thiscall	cMissileEntity_UpdateOff	void __thiscall()
+000f3310	910	USER_DEFINED	__thiscall	cMissileEntity_VarI	byte __thiscall(char *, void *, int)
+000f36a0	80	USER_DEFINED	__thiscall	cMissileEntity_IsType	byte __thiscall(char *)
+000f36f0	698	USER_DEFINED	__thiscall	cMissileEntity_Hit	byte __thiscall(int, int)
 000f39b0	349	ANALYSIS	__thiscall	cMissileEntity::vf43	undefined __thiscall(void)
 000f3b10	299	ANALYSIS	__thiscall	cMissileEntity::vf41	undefined __thiscall(void)
 000f3c40	2649	ANALYSIS	__thiscall	cMissileEntity::vf23	undefined __thiscall(void)
-000f46a0	12	ANALYSIS	__thiscall	cMissileEntity::vf49	undefined __thiscall(void)
+000f46a0	12	USER_DEFINED	__thiscall	cMissileEntity_OnDeath	void __thiscall()
 000f46b0	1	ANALYSIS	__thiscall	cWithLifeEntity::vf48	undefined __thiscall(void)
-000f46c0	54	ANALYSIS	__thiscall	cMissileEntity::vf08	undefined __thiscall(void)
-000f4700	119	ANALYSIS	__thiscall	cMissileEntity::vf33	undefined __thiscall(void)
-000f4780	16	DEFAULT	unknown	FUN_004f4780	
+000f46c0	54	USER_DEFINED	__thiscall	cMissileEntity_SetActive	void __thiscall(byte)
+000f4700	119	USER_DEFINED	__thiscall	cMissileEntity_SetAng	void __thiscall(void *)
+000f4780	16	USER_DEFINED	__thiscall	cMissileEntity_SetFlag585	void __thiscall(byte)
 000f4790	656	ANALYSIS	__thiscall	cMissileEntity::vf15	undefined __thiscall(void)
-000f4a20	45	DEFAULT	unknown	FUN_004f4a20	
-000f4a50	80	DEFAULT	unknown	FUN_004f4a50	
-000f4aa0	129	DEFAULT	unknown	FUN_004f4aa0	
-000f4b30	20	DEFAULT	unknown	FUN_004f4b30	
-000f4b50	16	DEFAULT	unknown	FUN_004f4b50	
+000f4a20	45	USER_DEFINED	__thiscall	cMissileEntity_SetHiddenSwarm	void __thiscall(byte)
+000f4a50	80	USER_DEFINED	__thiscall	cMissileEntity_SetHideMain	void __thiscall(byte)
+000f4aa0	129	USER_DEFINED	__thiscall	cMissileEntity_SetHitType	void __thiscall(int)
+000f4b30	20	USER_DEFINED	__thiscall	cMissileEntity_SetLifeTime	void __thiscall(float)
+000f4b50	16	USER_DEFINED	__thiscall	cMissileEntity_SetType	void __thiscall(int)
 000f4b60	418	ANALYSIS	__thiscall	cMissileEntity::vf12	undefined __thiscall(void)
-000f4d10	16	DEFAULT	unknown	FUN_004f4d10	
-000f4d20	16	DEFAULT	unknown	FUN_004f4d20	
-000f4d30	30	DEFAULT	unknown	FUN_004f4d30	
-000f4d50	20	DEFAULT	unknown	FUN_004f4d50	
-000f4d70	20	DEFAULT	unknown	FUN_004f4d70	
-000f4d90	28	DEFAULT	unknown	FUN_004f4d90	
-000f4db0	20	DEFAULT	unknown	FUN_004f4db0	
-000f4dd0	165	ANALYSIS	__thiscall	cMissileEntity::vf65	undefined __thiscall(void)
-000f4e80	16	DEFAULT	unknown	FUN_004f4e80	
-000f4e90	20	DEFAULT	unknown	FUN_004f4e90	
-000f4eb0	45	DEFAULT	unknown	FUN_004f4eb0	
-000f4ee0	20	DEFAULT	unknown	FUN_004f4ee0	
-000f4f00	20	DEFAULT	unknown	FUN_004f4f00	
-000f4f20	161	ANALYSIS	__thiscall	cMissileEntity::vf62	undefined __thiscall(void)
-000f4fd0	202	ANALYSIS	__thiscall	cMissileEntity::vf35	undefined __thiscall(void)
-000f50a0	136	ANALYSIS	__thiscall	cMissileEntity::vf00	undefined __thiscall(void)
-000f5130	125	ANALYSIS	__thiscall	cMissileEntity::vf60	undefined __thiscall(void)
-000f51b0	1143	ANALYSIS	__thiscall	cMissileEntity::vf18	undefined __thiscall(void)
+000f4d10	16	USER_DEFINED	__thiscall	cMissileEntity_SetCount	void __thiscall(int)
+000f4d20	16	USER_DEFINED	__thiscall	cMissileEntity_SetNoWorldHit	void __thiscall(byte)
+000f4d30	30	USER_DEFINED	__thiscall	cMissileEntity_SetParent	void __thiscall(char *)
+000f4d50	20	USER_DEFINED	__thiscall	cMissileEntity_SetRadius	void __thiscall(float)
+000f4d70	20	USER_DEFINED	__thiscall	cMissileEntity_SetRadiusGrow	void __thiscall(float)
+000f4d90	28	USER_DEFINED	__thiscall	cMissileEntity_SetSpeed	void __thiscall(float)
+000f4db0	20	USER_DEFINED	__thiscall	cMissileEntity_SetSwDthTime	void __thiscall(float)
+000f4dd0	165	USER_DEFINED	__thiscall	cMissileEntity_SetSwarm	void __thiscall(int)
+000f4e80	16	USER_DEFINED	__thiscall	cMissileEntity_SetFlag584	void __thiscall(byte)
+000f4e90	20	USER_DEFINED	__thiscall	cMissileEntity_SetSwarmSpeed	void __thiscall(float)
+000f4eb0	45	USER_DEFINED	__thiscall	cMissileEntity_SetTarget	void __thiscall(char *)
+000f4ee0	20	USER_DEFINED	__thiscall	cMissileEntity_SetTopRadius	void __thiscall(float)
+000f4f00	20	USER_DEFINED	__thiscall	cMissileEntity_SetTurnSpeed	void __thiscall(float)
+000f4f20	161	USER_DEFINED	__thiscall	cMissileEntity_UpdateVel	void __thiscall()
+000f4fd0	202	USER_DEFINED	__thiscall	cMissileEntity_SetVel	void __thiscall(void *)
+000f50a0	136	USER_DEFINED	__thiscall	cMissileEntity_Update	void __thiscall()
+000f5130	125	USER_DEFINED	__thiscall	cMissileEntity_ScaleWeapon	void __thiscall(int)
+000f51b0	1143	USER_DEFINED	__thiscall	cMissileEntity_VarS	byte __thiscall(char *, void *, int)
 000f5650	862	ANALYSIS	__thiscall	cMissileEntity::vf66	undefined __thiscall(void)
 000f59b0	1381	ANALYSIS	__thiscall	cMissileEntity::vf59	undefined __thiscall(void)
-000f5f20	26	ANALYSIS	__thiscall	cMissileEntity::vf19	undefined __thiscall(void)
+000f5f20	26	USER_DEFINED	__thiscall	cMissileEntity_VarV	byte __thiscall(char *, void *, void *, void *, int)
 000f5f40	249	DEFAULT	unknown	FUN_004f5f40	
 000f6040	164	DEFAULT	unknown	FUN_004f6040	
 000f60f0	105	DEFAULT	unknown	FUN_004f60f0	
