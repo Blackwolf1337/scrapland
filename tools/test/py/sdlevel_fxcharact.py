@@ -69,6 +69,10 @@ fxaclasses = (
 	('PoliceGearConversion', 0x1b5d30, 0x1b6420, 0x1b6b90, 0xa54, 0x3cb60c, (4, 8, 0xc), (0xa50,)),
 	('PoliceSteal', 0x1b5df0, 0x1b64a0, 0x1b6c30, 0xcc, 0x3cb5dc, (4, 8, 0xbc, 0xc0, 0xc4), (0xc8,)),
 	('SebastianFlash', 0x1b5e80, 0x1b64c0, 0x1b6c70, 0x7e0, 0x3cb6e4, (4, 0xb8, 0xbc), (0x7dc,)),
+	('DebrisCloud', 0x1c9630, 0x1c98d0, 0x1c99d0, 0x1f4, 0x3cbe5c, (4, 0xbc, 0xc0), (0x1f0,)),
+	('EMI', 0x1c96b0, 0x1c98f0, 0x1c9a10, 0xd20, 0x3cbe2c, (4, 0xbc, 0xc0, 0xc4, 0xd14, 0xc9c), (0xd1c,)),
+	('Hook', 0x1c97b0, 0x1c9970, 0x1c9ab0, 0x15c, 0x3cbe14, (4, 8, 0x98, 0x14c), (0x158,)),
+	('SonicExplosion', 0x1c9850, 0x1c99a0, 0x1c9b00, 0x220, 0x3cbe44, (0x164, 0x168), (0x21c,)),
 )
 def fxaclass(name):
 	for c in fxaclasses:
@@ -96,6 +100,10 @@ for fxac in fxaclasses:
 	check('cObjElementFX' + fxac[0] + '_Delete', lambda c=fxac, p=fxap: (SDTest.Call(c[3], 'tiii', p, 0)[0] == p,
 		fxai(p) == 0x7cb0e4))
 	fxafree(fxap)
+fxap = fxanew('EMI')
+check('cObjElementFXEMI links', lambda: map(lambda i, p=fxap: (fxai(p + 0xc94 + 16 * i) == p + 0xc94 + 16 * i,
+	fxai(p + 0xca0 + 16 * i) == p), range(8)))
+fxadel(fxap, 'EMI')
 fxap = fxanew('BankMasterAttack')
 check('cObjElementFXBankMasterAttack particles', lambda: (fxaints(fxap + 8, (0, 4, 0x18, 0x98, 0xa4)),
 	fxafl(fxap + 8 + 8, 6), fxai(fxap + 0xc0) != 0))
@@ -210,6 +218,8 @@ check('cObjElementFXSebastianFlash_RandomPoints', lambda: (SDTest.Call(0x1c48e0,
 	75), fxavecs(fxap + 0x444, 75)))
 fxadel(fxap, 'SebastianFlash')
 
+# the Betty shot needs a particle system: not called; the countermeasure elements of the end of the range are in the
+# class loop above
 # the Messenger lightning near the player (the branches stop at the floor)
 fxapos = fxafl(fxaplayer + 0x28, 3)
 fxap = fxanew('MessengerAttack')
@@ -242,10 +252,12 @@ def fxamodel():
 		(0.0, 0.0, 0.0))[1], fxafl(fxad + 0x4c, 1))
 fxaset(fxaworld + 0x2d4, (0.01,))
 
-# no entity: the debris ends
+# no entity: the debris ends (or the Update returns)
 for fxau in (('BankMasterAttack', 0x1b6cf0), ('BertoAttack', 0x1b7e20), ('BertoFlash', 0x1b8230), ('BettyKill',
 	0x1ba040), ('DTritusAttack', 0x1bc6d0), ('DTritusKill', 0x1bcb10), ('SebastianFlash', 0x1c4030), ('PoliceSteal',
-	0x1c3b70)):
+	0x1c3b70), ('BankerSteal', 0x1b7700), ('BankMasterSuction', 0x1b70d0), ('FunctionarySpecialAction', 0x1bcf50),
+	('MessengerAttack', 0x1c0f40), ('MessengerTakeDataPack', 0x1c17d0), ('MercenaryDrink', 0x1c03e0),
+	('BishopAttack', 0x1ba480), ('BishopSellLife', 0x1bb1b0)):
 	fxap = fxanew(fxau[0])
 	fxadebris(1.0)
 	check('cObjElementFX' + fxau[0] + '_Update none', lambda u=fxau, p=fxap: (SDTest.Call(u[1], 'tviif', p, fxad,
@@ -287,6 +299,46 @@ fxaset(fxap + 0xb8, (0.25, 1.6))
 check('cObjElementFXSebastianFlash_Update late', lambda: (SDTest.Call(0x1c4030, 'tviif', fxap, fxad, 0.1),
 	fxafl(fxap + 0xb8, 2), fxamodel()))
 fxadel(fxap, 'SebastianFlash')
+
+# BankerSteal: the target missing, the debris near its end, the coin wait not reached (the player is its own target)
+fxap = fxanew('BankerSteal')
+fxapoke(fxap + 4, fxaplayer)
+fxadebris(1.0)
+check('cObjElementFXBankerSteal_Update no target', lambda: (SDTest.Call(0x1b7700, 'tviif', fxap, fxad, 0.1),
+	fxai(fxap + 8), fxamodel()))
+fxapoke(fxap + 8, fxaplayer)
+for fxalife, fxat in ((0.5, 0.0), (1.0, 0.0), (1.0, 0.1)):
+	fxadebris(fxalife)
+	fxaset(fxap + 0xc0, (fxat,))
+	check('cObjElementFXBankerSteal_Update' + fmt((fxalife, fxat)), lambda: (SDTest.Call(0x1b7700, 'tviif', fxap,
+		fxad, 0.1), fxafl(fxap + 0xc0, 1), fxaints(fxap, (0xc4, 0xc8)), fxamodel()))
+fxadel(fxap, 'BankerSteal')
+
+# BankMasterSuction: no target
+fxap = fxanew('BankMasterSuction')
+fxapoke(fxap + 4, fxaplayer)
+fxadebris(1.0)
+check('cObjElementFXBankMasterSuction_Update no target', lambda: (SDTest.Call(0x1b70d0, 'tviif', fxap, fxad, 0.1),
+	fxafl(fxad + 0x4c, 1)))
+fxadel(fxap, 'BankMasterSuction')
+
+# MercenaryDrink: the drop timer short of 0.03
+fxap = fxanew('MercenaryDrink')
+fxapoke(fxap + 4, fxaplayer)
+fxadebris(1.0)
+fxaset(fxap + 0xb8, (0.0, 0.25))
+check('cObjElementFXMercenaryDrink_Update early', lambda: (SDTest.Call(0x1c03e0, 'tviif', fxap, fxad, 0.1),
+	fxafl(fxap + 0xb8, 2), fxamodel()))
+fxadel(fxap, 'MercenaryDrink')
+
+# BishopSellLife: no attacker, the emission timer short of 0.02
+fxap = fxanew('BishopSellLife')
+fxapoke(fxap + 8, fxaplayer)
+fxadebris(1.0)
+fxaset(fxap + 0x16c, (0.5, 0.0))
+check('cObjElementFXBishopSellLife_Update early', lambda: (SDTest.Call(0x1bb1b0, 'tviif', fxap, fxad, 0.1),
+	fxafl(fxap + 0x16c, 2), fxai(fxap + 4)))
+fxadel(fxap, 'BishopSellLife')
 
 SDTest.Poke(fxaworld + 0x2d4 - 0x400000, fxadelta)
 SDTest.Call(0x20ec10, 'tvi', fxad)

@@ -218,4 +218,16 @@ void __thiscall cObjElementFXDebrisCloud_SetEntity(cObjElementFXDebrisCloud *sel
 /* four Updates with dt 0 */
 void __thiscall cObjElementFXDebrisCloud_Warm(cObjElementFXDebrisCloud *self, cDebris *debris);
 
+/* the constructors and destructors (rva 0x1c9610..0x1c99c4, after World/FX/FXCharActions.cpp); the node of the
+ * links of the EMI as array member */
+Nto1Node *__thiscall FXCountermeasures_NodeCtor(Nto1Node *self);
+void *__thiscall cObjElementFXDebrisCloud_ctor(void *self);
+void *__thiscall cObjElementFXEMI_ctor(void *self);
+void *__thiscall cObjElementFXHook_ctor(void *self);
+void *__thiscall cObjElementFXSonicExplosion_ctor(void *self);
+void __thiscall cObjElementFXDebrisCloud_dtor(void *self);
+void __thiscall cObjElementFXEMI_dtor(void *self);
+void __thiscall cObjElementFXHook_dtor(void *self);
+void __thiscall cObjElementFXSonicExplosion_dtor(void *self);
+
 #endif
