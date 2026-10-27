@@ -30,7 +30,6 @@ SD_IMPORT(crt_malloc, 0x34c977)
 SD_IMPORT(crt_free, 0x34c972)
 SD_IMPORT(crt_realloc, 0x34c9e8)
 SD_IMPORT(crt_msize, 0x34c9b5)
-SD_IMPORT(crt_fprintf, 0x0bd230)
 SD_IMPORT(crt_fflush, 0x3463cc)
 SD_IMPORT(crt_time32, 0x345d95)
 SD_IMPORT(crt_gmtime32, 0x346bb1)
@@ -85,8 +84,6 @@ SD_IMPORT(crt_isdigit, 0x34f817)
 SD_IMPORT(crt_toupper, 0x34fd03)
 SD_IMPORT(crt_tolower, 0x34fcd3)
 SD_IMPORT(crt_strupr, 0x34cf71)
-SD_IMPORT(crt_sscanf, 0x081ac0)
-SD_IMPORT(crt_sprintf, 0x06cb50)
 SD_IMPORT(crt_fgetc, 0x350c9f)
 SD_IMPORT(crt_ungetc, 0x350d9e)
 SD_IMPORT(crt_isalnum, 0x34f755)
@@ -452,7 +449,6 @@ SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
 /* module agent: AI/NodesWorld.cpp (imports below this line) */
 
 /* module agent: Input/ActionSet+IDevice+PcKeyboard+PcMouse+PcPad.cpp (imports below this line) */
-SD_IMPORT(CNodesWorldSup_SaveInfPath, 0x0bba70)
 SD_IMPORT(CNodesWorld_AddExtraPoints, 0x0a93d0)
 SD_IMPORT(CNodesWorld_Generate, 0x0a7a00)
 SD_IMPORT(CNodesWorld_AnalizeMap, 0x0a2e80)
@@ -480,22 +476,14 @@ SD_IMPORT(crt_ltoa, 0x34d525)
 /* module agent: AI/IVehicle.cpp (imports below this line) */
 
 /* module agent: Logic part 2 (Enemies..GenCharGroup) (imports below this line) */
-SD_IMPORT(cMessengers_Think, 0x153350)
 
 /* module agent: Entities/Char/WalkCharEntity.cpp (imports below this line) */
 
 /* module agent: Scorer part 3 (Gradient+Sprite+Tab) (imports below this line) */
-SD_IMPORT(cAIVehicle_GraphTraffic, 0x089070)
-SD_IMPORT(cAIVehicle_Repos, 0x089b00)
-SD_IMPORT(cAIVehicle_TrackPoint, 0x08a850)
-SD_IMPORT(cAIVehicle_TestHookPoint, 0x08ab20)
-SD_IMPORT(cAIVehicle_TrackPointRandom, 0x08b120)
-SD_IMPORT(cAIVehicle_ReposTraffic, 0x08d3c0)
 SD_IMPORT(crt_strtime, 0x33bb73)
 SD_IMPORT(CPsaImage_GetNumFrames, 0x22d280)
 SD_IMPORT(PyFloat_AsDouble, 0x2dfa30)	/* floatobject.c */
 SD_IMPORT(cTargetScorer_DrawTarget, 0x181600)
-SD_IMPORT(cTargetScorer_DrawEnemies, 0x182430)
 SD_IMPORT(cWaypointScorer_DrawTarget, 0x185e90)
 
 /* module agent: Logic part 3 (GenCharLogic..Messenger) (imports below this line) */
@@ -592,3 +580,4 @@ SD_IMPORT(CGameLensFlare_SetB2c, 0x233020)
 
 /* module agent: Rest A, game leftovers below 0x1a8000 (imports below this line) */
 SD_IMPORT(crt_ui64toa, 0x34d6d5)
+SD_IMPORT(crt_stdio_common_vsscanf, 0x344793)

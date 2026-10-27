@@ -1,14 +1,27 @@
 /*
  * Logic/MessengerLogic.cpp of the game: the messengers (cMessengers of the GenChar group, the list "Messenger")
  * and their logic (a GenChar logic that ignores the alarm). The messengers carry the data pack "MessengerDataPack"
- * between the desks of the tube state (functionaries or the door makers); the think that follows the pack
- * (cMessengers_Think, rva 0x153350) and its delivery (rva 0x153940) are not in C yet.
+ * between the desks of the tube state (functionaries or the door makers); the think follows the pack and its
+ * carrier (the player or a messenger) and hands it over at the desk.
  */
 #include <string.h>
 
+#include "scrap/arrowindicator.h"
 #include "scrap/chartype.h"
+/* fxcharactions.h and embeddedfxchar.h both name their trail counts so; neither is used here */
+#undef FXMESSENGER_TRAILS
+#include "scrap/embeddedfxmisc.h"
+#include "scrap/itementity.h"
+#include "scrap/modmove.h"
+#include "scrap/scrap.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
+#include "scrap/withlifeentity.h"
+
+#define g_MessengerPrepareDistance GAME_DATA(float, 0x44d51c)	/* MessengerPrepareDistance */
+#define g_MessengerObjetiveDistance GAME_DATA(float, 0x44d4a4)	/* MessengerObjetiveDistance */
+#define MSG_THINK_STEP 0.13f				/* rva 0x3b60e0, the interval of the think */
+#define MSG_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* "" */
 
 #define MSG_VT(self) ((self)->base.vftable)
 
@@ -45,6 +58,222 @@ cEntity *__fastcall cMessengers_FindDesk(cMessengers *self) {
 		self->count = found;
 	}
 	return best;
+}
+
+/* the GenChar character of the type "Messenger" (WalkChar) */
+static int Msg_IsMessenger(cEntity *e) {
+	return e->vftable->IsType(e, TYEN_WALKCHAR) && !strcmp(Logic_TypeName(e), "Messenger");
+}
+
+/* messenger m with the pack at the desk: near it the drop starts (DropDataInit, then the DropData loop); at the node
+ * DC_DataPack of the desk the pack goes onto it (the price and the stat for the player, the callback, the desk
+ * closes). 1 while the drop goes on, 0 out of range (the drop is ended) */
+byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack) {
+	vec3_t tmp;
+	matrix_t mat;
+
+	if (!desk || !pack || !m) {
+		return 0;
+	}
+	CGameModel *model = Obj_Vtbl(desk)->GetModel(desk);
+	byte dropping = cActCtrl_IsActive(ChType_ActCtrl(m), "DropData");
+	const matrix_t *mm = CGameModel_NodoMatrix(model, &mat, CGameModel_FindNodoR(model, "DC_DataPack"), 0, NULL, 0);
+	float px = mm->m[12];
+	float py = mm->m[13];
+	float pz = mm->m[14];
+	const vec3_t *mp = m->vftable->GetPos(m, &tmp);
+	float dx = mp->x - px;
+	float dy = mp->y - py;
+	float dz = mp->z - pz;
+	float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+	if (!(g_MessengerPrepareDistance > dist)) {
+		if (dropping) {
+			cActCtrl_Play(ChType_ActCtrl(m), "DropDataEnd", 1, 1.0f);
+			cActCtrl_SetDefLoop(ChType_ActCtrl(m), "Relax", 1);
+		}
+		return 0;
+	}
+	if (crt_strncmp(cActCtrl_GetActionName(ChType_ActCtrl(m), 0), "DropData", 8) &&
+		cActCtrl_Play(ChType_ActCtrl(m), "DropDataInit", 0, 1.0f)) {
+		cActCtrl_SetDefLoop(ChType_ActCtrl(m), "DropData", 1);
+		return 1;
+	}
+	if (!dropping || !(g_MessengerObjetiveDistance > dist)) {
+		return 1;
+	}
+	cActCtrl_Play(ChType_ActCtrl(m), "Relax", 1, 1.0f);
+	cActCtrl_SetDefLoop(ChType_ActCtrl(m), "Relax", 1);
+	if (cPy_Function_IsValid(g_MessengerDropCallback)) {
+		cPy_Function_AddParamS(g_MessengerDropCallback, m->name);
+		cPy_Function_AddParamI(g_MessengerDropCallback, g_MessengerTubeState);
+		cPy_Function_Execute(g_MessengerDropCallback, 0);
+	}
+	if (g_MessengerTubeState) {
+		if (cWalkCharEntity_GetOwnerSlot(m) == 0) {
+			g_pWorld->money += g_MessengerDropPrice;
+			SaveVar_Inc("Stats.Messenger", 1);
+		}
+		if (g_MessengerTubeState && ((cObjEntity *)pack)->fx) {
+			cEmbeddedFXDataPack_SetOn((cEmbeddedFXDataPack *)((cObjEntity *)pack)->fx, 0);
+		}
+	}
+	pack->vftable->SetPos(pack, CGameModel_GetPos(Obj_Vtbl(pack)->GetModel(pack), &tmp));
+	cObjEntity *po = (cObjEntity *)pack;
+	cModMove_Link(&po->mod, MSG_EMPTY, MSG_EMPTY);
+	po->mod.offMul = 0.0f;
+	po->mod.deltaOffMul = 4.0f;
+	po->mod.useLinkAng = 1;
+	cModMove_Link(&po->mod, desk->name, "DC_DataPack");
+	cPy_Function_Clear(&((cItemEntity *)pack)->onTake);
+	cActCtrl_Play(ChType_ActCtrl(desk), "Close", 0, 1.0f);
+	if (!strcmp(cActCtrl_GetActionName(ChType_ActCtrl(desk), 0), "Close")) {
+		cActCtrl_SetDefLoop(ChType_ActCtrl(desk), "Closed", 0);
+		cPy_Function_Clear(&((cObjEntity *)desk)->onObjSlot);
+	}
+	return 1;
+}
+
+/* every 0.13 s: the pack on a desk (the door of the desk closes, after 5 s the pack goes back out, the tube state
+ * changes), carried by the player (the messengers follow, the mission arrow on the desk) or by a messenger (to a
+ * desk of the tube state), or free (the messengers go for it) */
+void __fastcall cMessengers_Think(void *obj) {
+	cMessengers *self = obj;
+	vec3_t old, p;
+	matrix_t mat;
+	byte opened;
+
+	cEntity *pack = World_FindEntity(g_MessengerDataPack);
+	if (pack && !pack->vftable->IsType(pack, "item")) {
+		pack = NULL;
+	}
+	cEntity *user = ChType_Usr0();
+	if (user && !Msg_IsMessenger(user)) {
+		user = NULL;
+	}
+	cEntity *carrier = pack ? ((cObjEntity *)pack)->mod.link.target : NULL;
+	cEntity *msg = carrier;
+	cEntity *desk = carrier;
+	if (carrier) {
+		if (Msg_IsMessenger(carrier)) {
+			desk = NULL;
+		} else {
+			msg = NULL;
+			if (!carrier->vftable->IsType(carrier, TYEN_WITH_LIFE) || !ChType_ActCtrl(carrier)) {
+				desk = NULL;
+			}
+		}
+	}
+	if (!pack) {
+		goto update;
+	}
+	byte flag = msg == NULL;
+	if (desk) {
+		if (!strcmp(Logic_TypeName(desk), "DoorDataTMaker")) {
+			flag = cPy_Function_IsValid(&((cObjEntity *)desk)->onObjSlot);
+		} else {
+			flag = crt_strncmp(cActCtrl_GetActionName(ChType_ActCtrl(desk), 1), "Close", 5) != 0;
+		}
+		if (!flag && cActCtrl_IsActive(ChType_ActCtrl(desk), "Closed")) {
+			self->timer = self->timer - MSG_THINK_STEP;
+			if (0.0f >= self->timer) {
+				self->desk = NULL;
+				self->target = NULL;
+				self->timer = 5.0f;
+				CGameModel_GetPos(Obj_Vtbl(pack)->GetModel(pack), &old);
+				int node = CGameModel_FindNodoR(Obj_Vtbl(desk)->GetModel(desk), "DC_DataPack");
+				const matrix_t *mm = CGameModel_NodoMatrix(Obj_Vtbl(desk)->GetModel(desk), &mat, node, 0, NULL, 0);
+				p.x = mm->m[12];
+				p.y = mm->m[13];
+				p.z = mm->m[14];
+				pack->vftable->SetPos(pack, &p);
+				CGameModel_SetPos(Obj_Vtbl(pack)->GetModel(pack), &old);
+				g_MessengerTubeState = g_MessengerTubeState == 0;
+				if (((cObjEntity *)pack)->fx) {
+					cEmbeddedFXDataPack_SetOn((cEmbeddedFXDataPack *)((cObjEntity *)pack)->fx,
+						g_MessengerTubeState != 0);
+				}
+				if (!strcmp(cActCtrl_GetActionName(ChType_ActCtrl(desk), 0), "Closed")) {
+					cPy_Function_SetFunc(&((cObjEntity *)desk)->onObjSlot, "!AutoDoorSlot");
+				} else {
+					cActCtrl_Play(ChType_ActCtrl(desk), "Open", 0, 1.0f);
+				}
+			}
+		}
+		opened = cActCtrl_IsActive(ChType_ActCtrl(desk), "Opened");
+	} else {
+		opened = flag;
+	}
+	/* the pack can be taken while it is free or its desk is open */
+	cPy_Function *take = &((cItemEntity *)pack)->onTake;
+	if (opened) {
+		if (!cPy_Function_IsValid(take)) {
+			cPy_Function_SetNative(take, (nativefunc_t)Game_Ptr(CHTYPE_MESSENGERTAKEDATAPACK));
+		}
+	} else if (cPy_Function_IsValid(take)) {
+		cPy_Function_Clear(take);
+	}
+	if (!user) {
+		cMessengers_SetStateAll(self, -1, NULL);
+		Logic_RadarShow(pack) = g_MessengerDataPackMissionArrow == 1;
+		if (self->desk) {
+			((cWithLifeEntity *)self->desk)->arrow.canMission = 0;
+			Logic_RadarShow(self->desk) = 0;
+		}
+		goto update;
+	}
+	if (msg == user) {
+		self->target = NULL;
+		cMessengers_SetStateAll(self, GENCHAR_ATTACK, user);
+		if (Logic_RadarShow(pack)) {
+			Logic_RadarShow(pack) = 0;
+			if (!self->desk) {
+				self->desk = cMessengers_FindDesk(self);
+			}
+			if (self->desk && g_MessengerDataPackMissionArrow) {
+				Logic_RadarShow(self->desk) = g_MessengerDataPackMissionArrow;
+				((cWithLifeEntity *)self->desk)->arrow.canMission = 1;
+				cArrowIndicator_LoadMission(&((cWithLifeEntity *)self->desk)->arrow,
+					g_MessengerDataPackMissionArrow == 1 ? *g_MissionArrowOn : *g_MissionArrowOff);
+			}
+		}
+		Messenger_Deliver(user, self->desk, pack);
+		goto update;
+	}
+	Logic_RadarShow(pack) = g_MessengerDataPackMissionArrow;
+	if (self->desk) {
+		((cWithLifeEntity *)self->desk)->arrow.canMission = 0;
+		Logic_RadarShow(self->desk) = 0;
+	}
+	if (msg) {
+		cMessengers_SetStateAll(self, GENCHAR_ATTACK, msg);
+		cBaseLocalLogic *l = (cBaseLocalLogic *)Logic_GetLocalLogic(msg);
+		if (l && !Logic_RadarShow(msg)) {
+			if (!self->target) {
+				cEntity *t = cMessengers_FindDesk(self);
+				self->target = t;
+				if (t) {
+					l->vftable->SetState(l, GENCHAR_GET_IT, t);
+				} else {
+					l->vftable->RestartState(l);
+				}
+			} else if (l->state == GENCHAR_ATTACK) {
+				self->target = NULL;
+			} else {
+				Messenger_Deliver(msg, self->target, pack);
+			}
+		}
+	} else if (flag) {
+		cMessengers_SetStateAll(self, GENCHAR_GET_IT, pack);
+		self->target = NULL;
+	} else {
+		cMessengers_SetStateAll(self, -1, NULL);
+		self->target = NULL;
+	}
+update:
+	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
+		cLocalLogic *l = Logic_GetLocalLogic(n->data);
+		l->vftable->Update(l, MSG_THINK_STEP);
+	}
 }
 
 void __fastcall cMessengers_Init(void *obj) {

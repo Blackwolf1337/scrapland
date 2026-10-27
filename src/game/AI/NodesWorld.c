@@ -17,7 +17,6 @@
 
 #define NW_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* the "" of the exe */
 
-int crt_chmod(const char *path, int mode);	/* rva 0x345287 */
 
 /* ---- Global/DList.h ---- */
 

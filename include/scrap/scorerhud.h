@@ -269,8 +269,8 @@ SD_SIZE(cTargetScorer, 0x148);
 cTargetScorer *__fastcall cTargetScorer_ctor(cTargetScorer *self);
 void __fastcall cTargetScorer_dtor(cTargetScorer *self);
 cTargetScorer *__thiscall cTargetScorer_Delete(cTargetScorer *self, byte flags);
-/* the target of the ship (rva 0x181600, not decompiled) and the enemies aiming at it (rva 0x182430, not
- * decompiled); ship may be NULL */
+/* the target of the ship (rva 0x181600, not decompiled) and the marks of the enemies and friends around it; ship
+ * may be NULL for DrawTarget */
 void __thiscall cTargetScorer_DrawTarget(cTargetScorer *self, cEntity *ship);
 void __thiscall cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship);
 int __thiscall cTargetScorer_Var(cTargetScorer *self, const char *name, byte set, char **s, double *d, int *i);
