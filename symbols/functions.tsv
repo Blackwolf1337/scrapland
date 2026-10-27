@@ -5562,56 +5562,56 @@ rva	size	source	callconv	name	signature
 001a87c0	126	USER_DEFINED	__thiscall	cObjElementFXMaintenanceWork_Delete	void * __thiscall(uint flags)
 001a8840	54	USER_DEFINED	__thiscall	cObjElementFXMoneyTransfer_Delete	void * __thiscall(uint flags)
 001a8880	54	USER_DEFINED	__thiscall	cObjElementFXSputnik_Delete	void * __thiscall(uint flags)
-001a88c0	4362	ANALYSIS	__thiscall	cObjElementFXCharacterConversion::vf01	undefined __thiscall(void)
+001a88c0	4362	USER_DEFINED	__thiscall	cObjElementFXCharacterConversion_Update	void __thiscall(void * debris, float dt)
 001a99f0	10167	ANALYSIS	__thiscall	cObjElementFXCharacterConversor::vf01	undefined __thiscall(void)
 001ac1b0	7611	ANALYSIS	__thiscall	cObjElementFXCharacterDeath::vf01	undefined __thiscall(void)
 001adf80	9070	ANALYSIS	__thiscall	cObjElementFXCharacterTeleport::vf01	undefined __thiscall(void)
-001b02f0	3197	ANALYSIS	__thiscall	cObjElementFXMaintenanceWork::vf01	undefined __thiscall(void)
-001b0f70	1024	ANALYSIS	__thiscall	cObjElementFXMoneyTransfer::vf01	undefined __thiscall(void)
-001b1370	2508	ANALYSIS	__thiscall	cObjElementFXSputnik::vf01	undefined __thiscall(void)
-001b1d40	319	DEFAULT	unknown	FUN_005b1d40	
-001b1e80	1089	DEFAULT	unknown	FUN_005b1e80	
-001b22d0	1614	DEFAULT	unknown	FUN_005b22d0	
-001b2920	471	USER_DEFINED	unknown	FX_CharacterConversion	undefined(void)
-001b2b00	266	USER_DEFINED	unknown	FX_CharacterConversor	undefined(void)
-001b2c10	1464	DEFAULT	unknown	FUN_005b2c10	
-001b31d0	657	DEFAULT	unknown	FUN_005b31d0	
-001b3470	89	USER_DEFINED	unknown	FX_MoneyTransfer	undefined(void)
-001b34d0	533	ANALYSIS	__thiscall	cObjElementFXCharacterConversion::vf03	undefined __thiscall(void)
-001b36f0	205	ANALYSIS	__thiscall	cObjElementFXCharacterConversor::vf03	undefined __thiscall(void)
-001b37c0	332	ANALYSIS	__thiscall	cObjElementFXCharacterDeath::vf03	undefined __thiscall(void)
-001b3910	59	ANALYSIS	__thiscall	cObjElementFXCharacterTeleport::vf03	undefined __thiscall(void)
-001b3950	223	ANALYSIS	__thiscall	cObjElementFXMaintenanceWork::vf03	undefined __thiscall(void)
-001b3a30	114	ANALYSIS	__thiscall	cObjElementFXMoneyTransfer::vf03	undefined __thiscall(void)
-001b3ab0	69	ANALYSIS	__thiscall	cObjElementFXSputnik::vf03	undefined __thiscall(void)
-001b3b00	147	ANALYSIS	__thiscall	cObjElementFXCharacterConversion::vf02	undefined __thiscall(void)
-001b3ba0	230	ANALYSIS	__thiscall	cObjElementFXCharacterConversor::vf02	undefined __thiscall(void)
-001b3c90	18	ANALYSIS	__thiscall	cObjElementFXCharacterDeath::vf02	undefined __thiscall(void)
-001b3cb0	134	ANALYSIS	__thiscall	cObjElementFXCharacterTeleport::vf02	undefined __thiscall(void)
-001b3d40	67	ANALYSIS	__thiscall	cObjElementFXMaintenanceWork::vf02	undefined __thiscall(void)
-001b3d90	18	ANALYSIS	__thiscall	cObjElementFXMoneyTransfer::vf02	undefined __thiscall(void)
-001b3db0	46	ANALYSIS	__thiscall	cObjElementFXSputnik::vf02	undefined __thiscall(void)
-001b3de0	389	ANALYSIS	__thiscall	cObjElementFXCharacterConversion::vf04	undefined __thiscall(void)
-001b3f70	176	ANALYSIS	__thiscall	cObjElementFXCharacterConversor::vf04	undefined __thiscall(void)
-001b4020	87	ANALYSIS	__thiscall	cObjElementFXCharacterDeath::vf04	undefined __thiscall(void)
-001b4080	33	ANALYSIS	__thiscall	cObjElementFXCharacterTeleport::vf04	undefined __thiscall(void)
-001b40b0	77	ANALYSIS	__thiscall	cObjElementFXMaintenanceWork::vf04	undefined __thiscall(void)
-001b4100	27	ANALYSIS	__thiscall	cObjElementFXMoneyTransfer::vf04	undefined __thiscall(void)
-001b4120	55	ANALYSIS	__thiscall	cObjElementFXSputnik::vf04	undefined __thiscall(void)
-001b4160	111	DEFAULT	unknown	FUN_005b4160	
-001b41d0	62	DEFAULT	unknown	FUN_005b41d0	
+001b02f0	3197	USER_DEFINED	__thiscall	cObjElementFXMaintenanceWork_Update	void __thiscall(void * debris, float dt)
+001b0f70	1024	USER_DEFINED	__thiscall	cObjElementFXMoneyTransfer_Update	void __thiscall(void * debris, float dt)
+001b1370	2508	USER_DEFINED	__thiscall	cObjElementFXSputnik_Update	void __thiscall(void * debris, float dt)
+001b1d40	319	USER_DEFINED	__thiscall	cObjElementFXMaintenanceWork_Start	void __thiscall(void * debris)
+001b1e80	1089	USER_DEFINED	__cdecl	FX_Character	void __cdecl(void * e, char * name)
+001b22d0	1614	USER_DEFINED	__cdecl	FX_CharacterBlaBliBla	void __cdecl(void * params)
+001b2920	471	USER_DEFINED	__cdecl	FX_CharacterConversion	void __cdecl(void * attacker, void * attacked, float time)
+001b2b00	266	USER_DEFINED	__cdecl	FX_CharacterConversor	void __cdecl(void * character, void * conversor, int phase, float time, float b)
+001b2c10	1464	USER_DEFINED	__cdecl	FX_CharacterDazed	void __cdecl(void * params)
+001b31d0	657	USER_DEFINED	__cdecl	FX_CharacterTeleport	void __cdecl(void * params)
+001b3470	89	USER_DEFINED	__cdecl	FX_MoneyTransfer	void __cdecl(void * from, void * to, float time)
+001b34d0	533	USER_DEFINED	__thiscall	cObjElementFXCharacterConversion_Attach	void __thiscall(void * debris)
+001b36f0	205	USER_DEFINED	__thiscall	cObjElementFXCharacterConversor_Attach	void __thiscall(void * debris)
+001b37c0	332	USER_DEFINED	__thiscall	cObjElementFXCharacterDeath_Attach	void __thiscall(void * debris)
+001b3910	59	USER_DEFINED	__thiscall	cObjElementFXCharacterTeleport_Attach	void __thiscall(void * debris)
+001b3950	223	USER_DEFINED	__thiscall	cObjElementFXMaintenanceWork_Attach	void __thiscall(void * debris)
+001b3a30	114	USER_DEFINED	__thiscall	cObjElementFXMoneyTransfer_Attach	void __thiscall(void * debris)
+001b3ab0	69	USER_DEFINED	__thiscall	cObjElementFXSputnik_Attach	void __thiscall(void * debris)
+001b3b00	147	USER_DEFINED	__thiscall	cObjElementFXCharacterConversion_Alive	byte __thiscall(void * debris, void * sys)
+001b3ba0	230	USER_DEFINED	__thiscall	cObjElementFXCharacterConversor_Alive	byte __thiscall(void * debris, void * sys)
+001b3c90	18	USER_DEFINED	__thiscall	cObjElementFXCharacterDeath_Alive	byte __thiscall(void * debris, void * sys)
+001b3cb0	134	USER_DEFINED	__thiscall	cObjElementFXCharacterTeleport_Alive	byte __thiscall(void * debris, void * sys)
+001b3d40	67	USER_DEFINED	__thiscall	cObjElementFXMaintenanceWork_Alive	byte __thiscall(void * debris, void * sys)
+001b3d90	18	USER_DEFINED	__thiscall	cObjElementFXMoneyTransfer_Alive	byte __thiscall(void * debris, void * sys)
+001b3db0	46	USER_DEFINED	__thiscall	cObjElementFXSputnik_Alive	byte __thiscall(void * debris, void * sys)
+001b3de0	389	USER_DEFINED	__thiscall	cObjElementFXCharacterConversion_Reset	void __thiscall(int arg)
+001b3f70	176	USER_DEFINED	__thiscall	cObjElementFXCharacterConversor_Reset	void __thiscall(int arg)
+001b4020	87	USER_DEFINED	__thiscall	cObjElementFXCharacterDeath_Reset	void __thiscall(int arg)
+001b4080	33	USER_DEFINED	__thiscall	cObjElementFXCharacterTeleport_Reset	void __thiscall(int arg)
+001b40b0	77	USER_DEFINED	__thiscall	cObjElementFXMaintenanceWork_Reset	void __thiscall(int arg)
+001b4100	27	USER_DEFINED	__thiscall	cObjElementFXMoneyTransfer_Reset	void __thiscall(int arg)
+001b4120	55	USER_DEFINED	__thiscall	cObjElementFXSputnik_Reset	void __thiscall(int arg)
+001b4160	111	USER_DEFINED	__thiscall	cObjElementFXMoneyTransfer_SetEntities	void __thiscall(void * from, void * to)
+001b41d0	62	USER_DEFINED	__thiscall	cObjElementFXCharacterDeath_SetEntity	void __thiscall(void * e)
 001b4210	123	USER_DEFINED	__thiscall	FXSputnik_Start	void __thiscall(void * e)
-001b4290	66	DEFAULT	unknown	FUN_005b4290	
-001b42e0	78	DEFAULT	unknown	FUN_005b42e0	
-001b4330	142	DEFAULT	unknown	FUN_005b4330	
-001b43c0	13	DEFAULT	unknown	FUN_005b43c0	
-001b43d0	296	DEFAULT	unknown	FUN_005b43d0	
-001b4500	13	DEFAULT	unknown	FUN_005b4500	
-001b4510	119	DEFAULT	unknown	FUN_005b4510	
-001b4590	62	DEFAULT	unknown	FUN_005b4590	
+001b4290	66	USER_DEFINED	__thiscall	cObjElementFXCharacterConversion_SetAttacked	void __thiscall(void * e)
+001b42e0	78	USER_DEFINED	__thiscall	cObjElementFXCharacterConversion_SetAttacker	void __thiscall(void * e)
+001b4330	142	USER_DEFINED	__thiscall	cObjElementFXCharacterConversor_SetCharacter	void __thiscall(void * e)
+001b43c0	13	USER_DEFINED	__thiscall	FXChar_SetI8	void __thiscall(int v)
+001b43d0	296	USER_DEFINED	__thiscall	cObjElementFXCharacterConversor_SetConversor	void __thiscall(void * e)
+001b4500	13	USER_DEFINED	__thiscall	FXChar_SetI4	void __thiscall(int v)
+001b4510	119	USER_DEFINED	__thiscall	cObjElementFXMaintenanceWork_SetMaintenance	void __thiscall(void * e)
+001b4590	62	USER_DEFINED	__thiscall	cObjElementFXMaintenanceWork_SetShip	void __thiscall(void * e)
 001b45d0	20	USER_DEFINED	__thiscall	FXSputnik_SetB	void __thiscall(float v)
 001b45f0	20	USER_DEFINED	__thiscall	FXSputnik_SetA	void __thiscall(float v)
-001b4610	3341	DEFAULT	unknown	FUN_005b4610	
+001b4610	3341	USER_DEFINED	__fastcall	cObjElementFXCharacterConversion_Emit	void __fastcall(void * self)
 001b5320	150	DEFAULT	unknown	FUN_005b5320	
 001b53c0	142	DEFAULT	unknown	FUN_005b53c0	
 001b5450	147	DEFAULT	unknown	FUN_005b5450	
@@ -5749,7 +5749,7 @@ rva	size	source	callconv	name	signature
 001c6a60	27	ANALYSIS	__thiscall	cObjElementFXPoliceSteal::vf04	undefined __thiscall(void)
 001c6a80	65	ANALYSIS	__thiscall	cObjElementFXSebastianFlash::vf04	undefined __thiscall(void)
 001c6ad0	86	DEFAULT	unknown	FUN_005c6ad0	
-001c6b30	633	DEFAULT	unknown	FUN_005c6b30	
+001c6b30	633	USER_DEFINED	__thiscall	cObjElementFXFunctionarySpecialAction_Start	void __thiscall(void * e)
 001c6db0	62	DEFAULT	unknown	FUN_005c6db0	
 001c6df0	66	DEFAULT	unknown	FUN_005c6df0	
 001c6e40	178	DEFAULT	unknown	FUN_005c6e40	
