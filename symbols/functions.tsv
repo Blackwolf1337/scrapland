@@ -3342,52 +3342,53 @@ rva	size	source	callconv	name	signature
 00127920	68	USER_DEFINED	__cdecl	Swarm_NetSetUpNative	void __cdecl(void * f)
 00127970	1263	USER_DEFINED	__cdecl	Swarm_NetSetUp	void __cdecl(char * name)
 00127e60	472	USER_DEFINED	__cdecl	Tesla_Shoot	byte __cdecl(void * v)
-00128040	674	DEFAULT	unknown	FUN_00528040	
-001282f0	743	DEFAULT	unknown	FUN_005282f0	
-001285e0	1004	DEFAULT	unknown	FUN_005285e0	
-001289d0	497	DEFAULT	unknown	FUN_005289d0	
-00128bd0	205	DEFAULT	unknown	FUN_00528bd0	
-00128ca0	216	DEFAULT	unknown	FUN_00528ca0	
-00128d80	203	DEFAULT	unknown	FUN_00528d80	
-00128e50	351	DEFAULT	unknown	FUN_00528e50	
-00128fb0	7244	DEFAULT	unknown	FUN_00528fb0	
-0012ac00	545	DEFAULT	unknown	FUN_0052ac00	
-0012ae30	868	DEFAULT	unknown	FUN_0052ae30	
-0012b1a0	310	DEFAULT	unknown	FUN_0052b1a0	
-0012b2e0	192	DEFAULT	unknown	FUN_0052b2e0	
-0012b3a0	193	DEFAULT	unknown	FUN_0052b3a0	
-0012b470	272	DEFAULT	unknown	FUN_0052b470	
-0012b580	507	DEFAULT	unknown	FUN_0052b580	
-0012b780	280	DEFAULT	unknown	FUN_0052b780	
-0012b8a0	272	DEFAULT	unknown	FUN_0052b8a0	
-0012b9b0	38	ANALYSIS	__thiscall	cWithLifeEntity::vf03	undefined __thiscall(void)
-0012b9e0	42	DEFAULT	unknown	FUN_0052b9e0	
-0012ba10	281	DEFAULT	unknown	FUN_0052ba10	
-0012bb30	641	ANALYSIS	__thiscall	cWithLifeEntity::vf17	undefined __thiscall(void)
-0012bdc0	34	ANALYSIS	__thiscall	cWithLifeEntity::vf52	undefined __thiscall(void)
-0012bdf0	24	ANALYSIS	__thiscall	cWithLifeEntity::vf25	undefined __thiscall(void)
-0012be20	197	ANALYSIS	__thiscall	cWithLifeEntity::vf31	undefined __thiscall(void)
-0012bef0	6	ANALYSIS	__thiscall	cWithLifeEntity::vf04	undefined __thiscall(void)
-0012bf00	7	ANALYSIS	__thiscall	cWithLifeEntity::vf40	undefined __thiscall(void)
-0012bf10	153	ANALYSIS	__thiscall	cWithLifeEntity::vf02	undefined __thiscall(void)
-0012bfb0	639	ANALYSIS	__thiscall	cWithLifeEntity::vf16	undefined __thiscall(void)
-0012c230	80	ANALYSIS	__thiscall	cWithLifeEntity::vf05	undefined __thiscall(void)
-0012c280	183	ANALYSIS	__thiscall	cWithLifeEntity::vf47	undefined __thiscall(void)
-0012c340	244	DEFAULT	unknown	FUN_0052c340	
-0012c440	91	ANALYSIS	__thiscall	cWithLifeEntity::vf23	undefined __thiscall(void)
-0012c4a0	139	ANALYSIS	__thiscall	cWithLifeEntity::vf50	undefined __thiscall(void)
-0012c530	109	ANALYSIS	__thiscall	cWithLifeEntity::vf49	undefined __thiscall(void)
-0012c5a0	97	ANALYSIS	__thiscall	cWithLifeEntity::vf46	undefined __thiscall(void)
-0012c610	345	ANALYSIS	__thiscall	cWithLifeEntity::vf54	undefined __thiscall(void)
-0012c770	74	ANALYSIS	__thiscall	cWithLifeEntity::vf08	undefined __thiscall(void)
-0012c7c0	47	DEFAULT	unknown	FUN_0052c7c0	
-0012c7f0	54	ANALYSIS	__thiscall	cWithLifeEntity::vf15	undefined __thiscall(void)
-0012c830	37	ANALYSIS	__thiscall	cWithLifeEntity::vf07	undefined __thiscall(void)
-0012c860	102	DEFAULT	unknown	FUN_0052c860	
-0012c8d0	132	ANALYSIS	__thiscall	cWithLifeEntity::vf00	undefined __thiscall(void)
-0012c960	1043	ANALYSIS	__thiscall	cWithLifeEntity::vf18	undefined __thiscall(void)
-0012cd80	419	ANALYSIS	__thiscall	cWithLifeEntity::vf19	undefined __thiscall(void)
-0012cf30	3	ANALYSIS	__thiscall	cWithLifeEntity::vf55	undefined __thiscall(void)
+00128040	674	USER_DEFINED	__cdecl	Tesla_CreateNative	void __cdecl(void * f)
+001282f0	743	USER_DEFINED	__cdecl	Tesla_HudNative	void __cdecl(void * f)
+001285e0	1004	USER_DEFINED	__cdecl	Tesla_FireNative	void __cdecl(void * f)
+001289d0	497	USER_DEFINED	__cdecl	Tesla_Push	void __cdecl(void * v, void * e, int n)
+00128bd0	205	USER_DEFINED	__cdecl	Tesla_AimOnNative	void __cdecl(void * f)
+00128ca0	216	USER_DEFINED	__cdecl	Tesla_AimOffNative	void __cdecl(void * f)
+00128d80	203	USER_DEFINED	__cdecl	Tesla_AimOn	void __cdecl(void * v)
+00128e50	351	USER_DEFINED	__cdecl	Vulcan_Shoot	void __cdecl(void * v)
+00128fb0	7244	USER_DEFINED	__cdecl	Vulcan_CreateNative	void __cdecl(void * f)
+0012ac00	545	USER_DEFINED	__cdecl	Vulcan_HudNative	void __cdecl(void * f)
+0012ae30	868	USER_DEFINED	__cdecl	Vulcan_FireNative	void __cdecl(void * f)
+0012b1a0	310	USER_DEFINED	__cdecl	Vulcan_Push	void __cdecl(void * v, void * e, int n)
+0012b2e0	192	USER_DEFINED	__cdecl	Vulcan_AimOnNative	void __cdecl(void * f)
+0012b3a0	193	USER_DEFINED	__cdecl	Vulcan_AimOffNative	void __cdecl(void * f)
+0012b470	272	USER_DEFINED	__cdecl	Vulcan_AimOn	void __cdecl(void * v)
+0012b580	507	USER_DEFINED	__thiscall	cWithLifeEntity_ctor	void * __thiscall(char * name, float x, float y, float z)
+0012b780	280	USER_DEFINED	__fastcall	cWithLifeEntity_dtor	void __fastcall(void * self)
+0012b8a0	272	USER_DEFINED	__fastcall	cVehicleAttack_dtor	void __fastcall(void * self)
+0012b9b0	38	USER_DEFINED	__thiscall	cWithLifeEntity_Delete	void * __thiscall(uint flags)
+0012b9e0	42	USER_DEFINED	__thiscall	cWithLifeEntity_SetSndTime	void __thiscall(float t, int i)
+0012ba10	281	USER_DEFINED	__thiscall	cWithLifeEntity_Burn	void __thiscall(float dt)
+0012bb30	641	USER_DEFINED	__thiscall	cWithLifeEntity_VarF	byte __thiscall(char * name, double * d, int set)
+0012bdc0	34	USER_DEFINED	__thiscall	cWithLifeEntity_GetAction	void * __thiscall(char * name)
+0012bdf0	24	USER_DEFINED	__thiscall	cWithLifeEntity_GetNodeSlot	int __thiscall(void)
+0012be10	7	USER_DEFINED	__thiscall	cWithLifeEntity_GetBurner	void * __thiscall(void)
+0012be20	197	USER_DEFINED	__thiscall	cWithLifeEntity_GetSndPos	void * __thiscall(void * out)
+0012bef0	6	USER_DEFINED	__thiscall	cWithLifeEntity_GetClassName	char * __thiscall(void)
+0012bf00	7	USER_DEFINED	__thiscall	cWithLifeEntity_GetRadius	float __thiscall(void)
+0012bf10	153	USER_DEFINED	__thiscall	cWithLifeEntity_UpdateOff	void __thiscall(void)
+0012bfb0	639	USER_DEFINED	__thiscall	cWithLifeEntity_VarI	byte __thiscall(char * name, int * i, int set)
+0012c230	80	USER_DEFINED	__thiscall	cWithLifeEntity_IsType	int __thiscall(char * type)
+0012c280	183	USER_DEFINED	__thiscall	cWithLifeEntity_CheckLife	void __thiscall(void)
+0012c340	244	USER_DEFINED	__thiscall	cWithLifeEntity_FadeSounds	void __thiscall(float dt)
+0012c440	91	USER_DEFINED	__thiscall	cWithLifeEntity_Tick	void __thiscall(float dt)
+0012c4a0	139	USER_DEFINED	__thiscall	cWithLifeEntity_OnDamage	void __thiscall(int damage)
+0012c530	109	USER_DEFINED	__thiscall	cWithLifeEntity_OnDeath	void __thiscall(void)
+0012c5a0	97	USER_DEFINED	__thiscall	cWithLifeEntity_RenderNow	void __thiscall(void)
+0012c610	345	USER_DEFINED	__thiscall	cWithLifeEntity_SetActCtrl	void __thiscall(char * cls)
+0012c770	74	USER_DEFINED	__thiscall	cWithLifeEntity_SetActive	void __thiscall(byte on)
+0012c7c0	47	USER_DEFINED	__thiscall	cWithLifeEntity_SetUsrName	void __thiscall(char * name)
+0012c7f0	54	USER_DEFINED	__thiscall	cWithLifeEntity_SetEmbeddedFX	void __thiscall(char * fxType)
+0012c830	37	USER_DEFINED	__thiscall	cWithLifeEntity_SetPos	void __thiscall(void * pos)
+0012c860	102	USER_DEFINED	__thiscall	cWithLifeEntity_SetBurner	void __thiscall(void * attacker)
+0012c8d0	132	USER_DEFINED	__thiscall	cWithLifeEntity_Update	void __thiscall(void)
+0012c960	1043	USER_DEFINED	__thiscall	cWithLifeEntity_VarS	byte __thiscall(char * name, char ** s, int set)
+0012cd80	419	USER_DEFINED	__thiscall	cWithLifeEntity_VarV	byte __thiscall(char * name, double * x, double * y, double * z, int set)
+0012cf30	3	USER_DEFINED	__thiscall	cWithLifeEntity_IsEMIed	byte __thiscall(void)
 0012cf40	71	USER_DEFINED	__fastcall	cAbstractFile::~cAbstractFile	void __fastcall(void * self)
 0012cf90	103	USER_DEFINED	__thiscall	cAbstractFile::Destroy	void * __thiscall(int flags)
 0012d000	37	USER_DEFINED	__thiscall	cAbstractFile::Close	int __thiscall(void)
