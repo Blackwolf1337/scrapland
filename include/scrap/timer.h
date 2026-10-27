@@ -27,6 +27,8 @@ cTimer *__fastcall cTimer_ctor(cTimer *self);
 void __thiscall cTimer_Advance(cTimer *self, float dt);
 /* 0 while paused */
 float __fastcall cTimer_GetSpeed(cTimer *self);
+/* the speed a blend goes to (rva 0x136890) */
+float __fastcall cTimer_GetSpeedTo(cTimer *self);
 float __fastcall cTimer_GetDelta(cTimer *self);
 float __thiscall Timer_GetTime(cTimer *self);
 void __thiscall Timer_SetTime(cTimer *self, float t);

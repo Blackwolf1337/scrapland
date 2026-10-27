@@ -3910,6 +3910,164 @@ SD_HOOK(cObjElementFXVehicleSputnik_SetC4, 0x1f9670, 20)
 /* module agent: Engine/bsp.cpp (hooks below this line) */
 
 /* module agent: World/FX/FXCharActions.cpp (hooks below this line) */
+SD_HOOK(cObjElementFXBankMasterAttack_ctor, 0x1b5320, 150)
+SD_HOOK(cObjElementFXBankMasterSuction_ctor, 0x1b53c0, 142)
+SD_HOOK(cObjElementFXBankerSteal_ctor, 0x1b5450, 147)
+SD_HOOK(cObjElementFXBertoAttack_ctor, 0x1b54f0, 120)
+SD_HOOK(cObjElementFXBertoFlash_ctor, 0x1b5570, 157)
+SD_HOOK(cObjElementFXBettyAttack_ctor, 0x1b5610, 235)
+SD_HOOK(cObjElementFXBettyKill_ctor, 0x1b5700, 150)
+SD_HOOK(cObjElementFXBishopAttack_ctor, 0x1b57a0, 174)
+SD_HOOK(cObjElementFXBishopSellLife_ctor, 0x1b5850, 142)
+SD_HOOK(cObjElementFXDTritusAttack_ctor, 0x1b58e0, 150)
+SD_HOOK(cObjElementFXDTritusKill_ctor, 0x1b5980, 150)
+SD_HOOK(cObjElementFXFunctionarySpecialAction_ctor, 0x1b5a20, 150)
+SD_HOOK(cObjElementFXGearMissile_ctor, 0x1b5ac0, 200)
+SD_HOOK(cObjElementFXMercenaryDrink_ctor, 0x1b5b90, 120)
+SD_HOOK(cObjElementFXMessengerAttack_ctor, 0x1b5c10, 144)
+SD_HOOK(cObjElementFXMessengerTakeDataPack_ctor, 0x1b5ca0, 137)
+SD_HOOK(cObjElementFXPoliceGearConversion_ctor, 0x1b5d30, 189)
+SD_HOOK(cObjElementFXPoliceSteal_ctor, 0x1b5df0, 137)
+SD_HOOK(cObjElementFXSebastianFlash_ctor, 0x1b5e80, 150)
+SD_HOOK(cObjElementFXBankMasterAttack_dtor, 0x1b5f20, 47)
+SD_HOOK(cObjElementFXBankMasterSuction_dtor, 0x1b5f50, 36)
+SD_HOOK(cObjElementFXBankerSteal_dtor, 0x1b5f80, 25)
+SD_HOOK(cObjElementFXBertoAttack_dtor, 0x1b5fa0, 25)
+SD_HOOK(cObjElementFXBertoFlash_dtor, 0x1b5fc0, 95)
+SD_HOOK(cObjElementFXBettyAttack_dtor, 0x1b6020, 149)
+SD_HOOK(cObjElementFXBettyKill_dtor, 0x1b60c0, 95)
+SD_HOOK(cObjElementFXBishopAttack_dtor, 0x1b6120, 69)
+SD_HOOK(cObjElementFXBishopSellLife_dtor, 0x1b6170, 36)
+SD_HOOK(cObjElementFXDTritusAttack_dtor, 0x1b61a0, 95)
+SD_HOOK(cObjElementFXDTritusKill_dtor, 0x1b6200, 95)
+SD_HOOK(cObjElementFXFunctionarySpecialAction_dtor, 0x1b6260, 95)
+SD_HOOK(cObjElementFXGearMissile_dtor, 0x1b62c0, 117)
+SD_HOOK(cObjElementFXMercenaryDrink_dtor, 0x1b6340, 25)
+SD_HOOK(cObjElementFXMessengerAttack_dtor, 0x1b6360, 95)
+SD_HOOK(cObjElementFXMessengerTakeDataPack_dtor, 0x1b63c0, 95)
+SD_HOOK(cObjElementFXPoliceGearConversion_dtor, 0x1b6420, 127)
+SD_HOOK(cObjElementFXPoliceSteal_dtor, 0x1b64a0, 25)
+SD_HOOK(cObjElementFXSebastianFlash_dtor, 0x1b64c0, 95)
+SD_HOOK(cObjElementFXBankMasterAttack_Delete, 0x1b6520, 76)
+SD_HOOK(cObjElementFXBankMasterSuction_Delete, 0x1b6570, 65)
+SD_HOOK(cObjElementFXBankerSteal_Delete, 0x1b65c0, 54)
+SD_HOOK(cObjElementFXBertoAttack_Delete, 0x1b6600, 54)
+SD_HOOK(cObjElementFXBertoFlash_Delete, 0x1b6640, 126)
+SD_HOOK(cObjElementFXBettyAttack_Delete, 0x1b66c0, 38)
+SD_HOOK(cObjElementFXBettyKill_Delete, 0x1b66f0, 126)
+SD_HOOK(cObjElementFXBishopAttack_Delete, 0x1b6770, 98)
+SD_HOOK(cObjElementFXBishopSellLife_Delete, 0x1b67e0, 65)
+SD_HOOK(cObjElementFXDTritusAttack_Delete, 0x1b6830, 126)
+SD_HOOK(cObjElementFXDTritusKill_Delete, 0x1b68b0, 126)
+SD_HOOK(cObjElementFXFunctionarySpecialAction_Delete, 0x1b6930, 126)
+SD_HOOK(cObjElementFXGearMissile_Delete, 0x1b69b0, 148)
+SD_HOOK(cObjElementFXMercenaryDrink_Delete, 0x1b6a50, 54)
+SD_HOOK(cObjElementFXMessengerAttack_Delete, 0x1b6a90, 126)
+SD_HOOK(cObjElementFXMessengerTakeDataPack_Delete, 0x1b6b10, 126)
+SD_HOOK(cObjElementFXPoliceGearConversion_Delete, 0x1b6b90, 158)
+SD_HOOK(cObjElementFXPoliceSteal_Delete, 0x1b6c30, 54)
+SD_HOOK(cObjElementFXSebastianFlash_Delete, 0x1b6c70, 126)
+SD_HOOK(cObjElementFXBankMasterAttack_Attach, 0x1c49f0, 239)
+SD_HOOK(cObjElementFXBankMasterSuction_Attach, 0x1c4ae0, 171)
+SD_HOOK(FXCharActions_AttachC, 0x1c4b90, 114)		/* BankerSteal */
+SD_HOOK(FXCharActions_Attach8, 0x1c4c10, 151)		/* BertoAttack */
+SD_HOOK(cObjElementFXBertoFlash_Attach, 0x1c4cb0, 196)
+SD_HOOK(cObjElementFXBettyAttack_Attach, 0x1c4d80, 321)
+SD_HOOK(cObjElementFXKill_Attach, 0x1c4ed0, 196)		/* BettyKill */
+SD_HOOK(cObjElementFXBishopAttack_Attach, 0x1c4fa0, 442)
+SD_HOOK(cObjElementFXBishopSellLife_Attach, 0x1c5160, 248)
+SD_HOOK(cObjElementFXDTritusAttack_Attach, 0x1c5260, 196)
+SD_HOOK(cObjElementFXKill_Attach, 0x1c5330, 196)		/* DTritusKill */
+SD_HOOK(cObjElementFXFunctionarySpecialAction_Attach, 0x1c5400, 236)
+SD_HOOK(cObjElementFXGearMissile_Attach, 0x1c54f0, 463)
+SD_HOOK(FXCharActions_Attach8, 0x1c56c0, 151)		/* MercenaryDrink */
+SD_HOOK(cObjElementFXMessengerAttack_Attach, 0x1c5760, 269)
+SD_HOOK(cObjElementFXMessengerTakeDataPack_Attach, 0x1c5870, 275)
+SD_HOOK(cObjElementFXPoliceGearConversion_Attach, 0x1c5990, 1562)
+SD_HOOK(FXCharActions_AttachC, 0x1c5fb0, 114)		/* PoliceSteal */
+SD_HOOK(cObjElementFXSebastianFlash_Attach, 0x1c6030, 196)
+SD_HOOK(FXCharActions_AliveAction, 0x1c6100, 106)	/* BankMasterAttack */
+SD_HOOK(FXMisc_Alive, 0x1c6170, 18)		/* BankMasterSuction */
+SD_HOOK(FXMisc_Alive, 0x1c6190, 18)		/* BankerSteal */
+SD_HOOK(FXCharActions_AliveAction, 0x1c61b0, 106)	/* BertoAttack */
+SD_HOOK(FXMisc_Alive, 0x1c6220, 18)		/* BertoFlash */
+SD_HOOK(FXMisc_Alive, 0x1c6240, 18)		/* BettyAttack */
+SD_HOOK(FXMisc_Alive, 0x1c6260, 18)		/* BettyKill */
+SD_HOOK(FXMisc_Alive, 0x1c6280, 18)		/* BishopAttack */
+SD_HOOK(FXMisc_Alive, 0x1c62a0, 18)		/* BishopSellLife */
+SD_HOOK(FXMisc_Alive, 0x1c62c0, 18)		/* DTritusAttack */
+SD_HOOK(FXMisc_Alive, 0x1c62e0, 18)		/* DTritusKill */
+SD_HOOK(cObjElementFXFunctionarySpecialAction_Alive, 0x1c6300, 349)
+SD_HOOK(FXMisc_Alive, 0x1c6460, 18)		/* GearMissile */
+SD_HOOK(FXMisc_Alive, 0x1c6480, 18)		/* MercenaryDrink */
+SD_HOOK(FXMisc_Alive, 0x1c64a0, 18)		/* MessengerAttack */
+SD_HOOK(FXMisc_Alive, 0x1c64c0, 18)		/* MessengerTakeDataPack */
+SD_HOOK(cObjElementFXPoliceGearConversion_Alive, 0x1c64e0, 63)
+SD_HOOK(FXMisc_Alive, 0x1c6520, 18)		/* PoliceSteal */
+SD_HOOK(FXMisc_Alive, 0x1c6540, 18)		/* SebastianFlash */
+SD_HOOK(cObjElementFXBankMasterAttack_Reset, 0x1c6560, 59)
+SD_HOOK(cObjElementFXBankMasterSuction_Reset, 0x1c65a0, 43)
+SD_HOOK(cObjElementFXBankerSteal_Reset, 0x1c65d0, 27)
+SD_HOOK(cObjElementFXBertoAttack_Reset, 0x1c65f0, 31)
+SD_HOOK(cObjElementFXBertoFlash_Reset, 0x1c6610, 65)
+SD_HOOK(cObjElementFXBettyAttack_Reset, 0x1c6660, 149)
+SD_HOOK(cObjElementFXKill_Reset, 0x1c6700, 65)		/* BettyKill */
+SD_HOOK(cObjElementFXBishopAttack_Reset, 0x1c6750, 73)
+SD_HOOK(cObjElementFXBishopSellLife_Reset, 0x1c67a0, 60)
+SD_HOOK(cObjElementFXDTritusAttack_Reset, 0x1c67e0, 65)
+SD_HOOK(cObjElementFXKill_Reset, 0x1c6830, 65)		/* DTritusKill */
+SD_HOOK(cObjElementFXFunctionarySpecialAction_Reset, 0x1c6880, 75)
+SD_HOOK(cObjElementFXGearMissile_Reset, 0x1c68d0, 101)
+SD_HOOK(cObjElementFXMercenaryDrink_Reset, 0x1c6940, 23)
+SD_HOOK(cObjElementFXMessengerAttack_Reset, 0x1c6960, 57)
+SD_HOOK(cObjElementFXMessengerTakeDataPack_Reset, 0x1c69a0, 52)
+SD_HOOK(cObjElementFXPoliceGearConversion_Reset, 0x1c69e0, 126)
+SD_HOOK(cObjElementFXPoliceSteal_Reset, 0x1c6a60, 27)
+SD_HOOK(cObjElementFXSebastianFlash_Reset, 0x1c6a80, 65)
+SD_HOOK(cObjElementFXBankerSteal_SetEntity, 0x1c6ad0, 86)
+SD_HOOK(cObjElementFXFunctionarySpecialAction_Start, 0x1c6b30, 633)
+SD_HOOK(FXMisc_SetEntity, 0x1c6db0, 62)		/* PoliceSteal */
+SD_HOOK(cObjElementFXBishopSellLife_SetAttacked, 0x1c6df0, 66)
+SD_HOOK(cObjElementFXBishopSellLife_SetAttacker, 0x1c6e40, 178)
+SD_HOOK(FXMisc_SetI8, 0x1c6f00, 13)		/* BankerSteal */
+SD_HOOK(FXCharActions_SetEntity8, 0x1c6f10, 62)	/* PoliceSteal */
+SD_HOOK(cObjElementFXMessengerTakeDataPack_SetItem, 0x1c6f50, 96)
+SD_HOOK(FXChar_SetI4, 0x1c6fb0, 13)		/* GearMissile */
+SD_HOOK(cObjElementFXMercenaryDrink_SetC0, 0x1c6fc0, 46)
+SD_HOOK(cObjElementFXBankMasterAttack_Start, 0x1c6ff0, 118)
+SD_HOOK(FXMisc_SetEntity, 0x1c7070, 62)		/* BankMasterSuction */
+SD_HOOK(cObjElementFXBertoAttack_Start, 0x1c70b0, 119)
+SD_HOOK(FXMisc_SetEntity, 0x1c7130, 62)		/* BertoFlash */
+SD_HOOK(FXMisc_SetEntity, 0x1c7170, 62)		/* BettyAttack */
+SD_HOOK(cObjElementFXKill_Start, 0x1c71b0, 750)		/* BettyKill */
+SD_HOOK(FXMisc_SetEntity, 0x1c74a0, 62)		/* BishopAttack */
+SD_HOOK(cObjElementFXDTritusAttack_Start, 0x1c74e0, 804)
+SD_HOOK(cObjElementFXKill_Start, 0x1c7810, 750)		/* DTritusKill */
+SD_HOOK(cObjElementFXMercenaryDrink_Start, 0x1c7b00, 86)
+SD_HOOK(FXMisc_SetEntity, 0x1c7b60, 62)		/* MessengerAttack */
+SD_HOOK(cObjElementFXMessengerTakeDataPack_SetOwner, 0x1c7ba0, 96)
+SD_HOOK(FXMisc_SetEntity, 0x1c8490, 62)		/* SebastianFlash */
+SD_HOOK(FXCharActions_SetEntity8, 0x1c84d0, 62)	/* BankMasterSuction */
+SD_HOOK(FXCharActions_SetEntity8, 0x1c8510, 62)	/* BertoFlash */
+SD_HOOK(cObjElementFXKill_SetAngles, 0x1c8550, 46)		/* BettyKill */
+SD_HOOK(cObjElementFXKill_SetAngles, 0x1c8580, 46)		/* DTritusKill */
+SD_HOOK(cObjElementFXBishopAttack_SetLine, 0x1c89a0, 383)
+SD_HOOK(cObjElementFXGearMissile_Run, 0x1c8b20, 44)
+SD_HOOK(cObjElementFXBankMasterSuction_RandomPoints, 0x1c4670, 285)
+SD_HOOK(cObjElementFXBertoFlash_RandomPoints, 0x1c4790, 321)
+SD_HOOK(cObjElementFXSebastianFlash_RandomPoints, 0x1c48e0, 258)
+SD_HOOK(cObjElementFXBettyAttack_Emit, 0x1c85b0, 1008)
+SD_HOOK(cObjElementFXMessengerTakeDataPack_Start, 0x1c9270, 924)
+SD_HOOK(cObjElementFXMessengerAttack_SetLine, 0x1c8b50, 1814)
+SD_HOOK(cObjElementFXPoliceGearConversion_Start, 0x1c7c00, 2186)
+SD_HOOK(cObjElementFXBankMasterAttack_Update, 0x1b6cf0, 980)
+SD_HOOK(cObjElementFXBertoAttack_Update, 0x1b7e20, 1028)
+SD_HOOK(cObjElementFXBertoFlash_Update, 0x1b8230, 1392)
+SD_HOOK(cObjElementFXBettyKill_Update, 0x1ba040, 1083)
+SD_HOOK(cObjElementFXSebastianFlash_Update, 0x1c4030, 1597)
+SD_HOOK(cObjElementFXPoliceSteal_Update, 0x1c3b70, 1209)
+SD_HOOK(cObjElementFXDTritusAttack_Update, 0x1bc6d0, 1081)
+SD_HOOK(cObjElementFXDTritusKill_Update, 0x1bcb10, 1083)
 
 /* module agent: Entities/More+ObjEntity (hooks below this line) */
 

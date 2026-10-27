@@ -696,7 +696,6 @@ SD_IMPORT(cDebris_Step, 0x204970)
 SD_IMPORT(cDebrisSys_Release, 0x2053d0)
 
 /* module agent: World/FX/FXChar.cpp (imports below this line) */
-SD_IMPORT(cObjElementFXFunctionarySpecialAction_Start, 0x1c6b30)
 
 /* module agent: World/FX/FXScene.cpp (imports below this line) */
 SD_IMPORT(CGameLensFlare_SetF18, 0x232ff0)
