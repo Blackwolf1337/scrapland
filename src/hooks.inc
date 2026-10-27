@@ -7250,3 +7250,5 @@ SD_HOOK(Tabla_Get8, 0x2bc1b0, 57)
 /* module agent: Engine leftovers 0x29c000..0x2b2000 (hooks below this line) */
 
 /* module agent: Big leftovers 0x0f0000..0x110000 (hooks below this line) */
+
+/* module agent: Big FX leftovers 0x1a8000..0x1eab00 (hooks below this line) */
