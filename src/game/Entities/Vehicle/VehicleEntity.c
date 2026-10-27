@@ -11,6 +11,8 @@
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/missileentity.h"
+#include "scrap/vehiclemotors.h"
+#include "scrap/vehicletraffic.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
 #include "scrap/weaps2.h"
@@ -107,11 +109,11 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	*(int *)(self->collision + 4) = 0;
 	cVehicleControls_ctor(self->controls);
 	crt_eh_vector_ctor(&self->pilot, sizeof(CGameModel), 1, Game_Ptr(CGAMEMODEL_CTOR), Game_Ptr(CGAMEMODEL_DTOR));
-	cVehicleTraffic_ctor(self->traffic);
+	cVehicleTraffic_ctor((cVehicleTraffic *)self->traffic);
 	cWeaponManager_ctor(&self->weapons);
 	cVehicleO648_ctor(self->o648);
 	cAutoAim_ctor(self->autoAim);
-	cVehicleMotors_ctor(self->motors);
+	cVehicleMotors_ctor((cVehicleMotors *)self->motors);
 	cVehicleEffects_ctor(&self->effects);
 	self->base.mask |= 1;
 	self->thrust = 0.0f;
@@ -128,7 +130,7 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	self->wRadius = 150.0f;
 	cPrimitive_SetSize((byte *)self + 0x39c, 130.0f);
 	self->slot = -1;
-	cVehicleMotors_SetOwner(self->motors, Veh_Ent(self));
+	cVehicleMotors_SetOwner((cVehicleMotors *)self->motors, Veh_Ent(self));
 	cWeaponManager_Init(&self->weapons, Veh_Ent(self));
 	self->netCtrl = NULL;
 	if (self->net) {
@@ -192,7 +194,7 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	self->hitTime = 0.0f;
 	self->timeOfs = (float)((double)(crt_rand() & 0x7fff) * VEH_RAND_SCALE * 100.0 + 0.0);
 	cVehicleEffects_SetOwner(&self->effects, Veh_Ent(self));
-	cVehicleTraffic_SetOwner(self->traffic, Veh_Ent(self));
+	cVehicleTraffic_SetParent((cVehicleTraffic *)self->traffic, Veh_Ent(self));
 	*((byte *)self + 0x384) = 1;
 	self->fixedModel = 0;
 	self->typeName[0] = 0;
@@ -214,7 +216,7 @@ void __fastcall cVehicleEntity_dtor(cVehicleEntity *self) {
 	}
 	self->base.ai = NULL;
 	cVehicleEffects_dtor(&self->effects);
-	cVehicleMotors_dtor(self->motors);
+	cVehicleMotors_dtor((cVehicleMotors *)self->motors);
 	cAutoAim_dtor(self->autoAim);
 	cVehicleO648_dtor(self->o648);
 	cWeaponManager_dtor(&self->weapons);
@@ -556,7 +558,7 @@ void __thiscall cVehicleEntity_Collide(cVehicleEntity *self, vec3_t *from, float
 		to.y = g_SpaceLimit;
 	}
 	if (from->x != to.x || from->y != to.y || from->z != to.z) {
-		if (cVehicleTraffic_Collide(self->traffic, from, &to, self->wRadius, pos, speed, self->collision)) {
+		if (cVehicleTraffic_Move((cVehicleTraffic *)self->traffic, from, &to, self->wRadius, pos, speed, (CSphereBox *)self->collision)) {
 			self->hitTime = Timer_GetTime(&self->timer);
 			float inv = 1.0f / dt;
 			vec3_t v;
@@ -570,14 +572,14 @@ void __thiscall cVehicleEntity_Collide(cVehicleEntity *self, vec3_t *from, float
 			}
 		}
 	}
-	if (cVehicleTraffic_TestEntities(self->traffic) &&
+	if (cVehicleTraffic_CollideEntities((cVehicleTraffic *)self->traffic) &&
 		cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, from, self->radius, NULL, 0,
 			(int)(intptr_t)pos)) {
 		self->hitTime = Timer_GetTime(&self->timer);
 		to.x = from->x + self->vel.x * dt;
 		to.y = from->y + self->vel.y * dt;
 		to.z = from->z + self->vel.z * dt;
-		cVehicleTraffic_Collide(self->traffic, from, &to, self->wRadius, pos, self->speed, self->collision);
+		cVehicleTraffic_Move((cVehicleTraffic *)self->traffic, from, &to, self->wRadius, pos, self->speed, (CSphereBox *)self->collision);
 		if (cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, pos, self->radius, NULL, 1, 0)) {
 			*pos = *from;
 		}
@@ -1142,12 +1144,12 @@ void __thiscall cVehicleEntity_SetModel(cVehicleEntity *self, const char *file, 
 	vec3_t tmp;
 
 	cVehicleEffects_Reset(&self->effects);
-	cVehicleMotors_ResetSounds(self->motors);
+	cVehicleMotors_ClearEffects((cVehicleMotors *)self->motors);
 	if (CGameModel_IsLoaded(&self->pilot)) {
 		CGameModel_Disable(&self->pilot);
 	}
 	self->pilotNode = -1;
-	cVehicleMotors_Reset(self->motors);
+	cVehicleMotors_Reset((cVehicleMotors *)self->motors);
 	if (!file || !*file) {
 		cObjEntity_SetModel(Veh_Ent(self), NULL, sx, sy, sz, 1);
 		return;
@@ -1183,7 +1185,7 @@ void __thiscall cVehicleEntity_SetModel(cVehicleEntity *self, const char *file, 
 	cWeaponManager_ClearWeaps(&self->weapons);
 	cWeaponManager_ClearAmmo(&self->weapons);
 	cVehicleEffects_Init(&self->effects);
-	cVehicleMotors_Init(self->motors);
+	cVehicleMotors_InitEffects((cVehicleMotors *)self->motors);
 	Veh_Vtbl(self)->SetEmbeddedFX(self, "EmbeddedFX");
 }
 
@@ -1225,7 +1227,7 @@ void __thiscall cVehicleEntity_SetFX(cVehicleEntity *self, int fx) {
 	if (CGameModel_IsLoaded(&self->pilot)) {
 		CGameModel_SetEffect(&self->pilot, (uint32_t)fx);
 	}
-	cVehicleMotors_SetFX(self->motors, fx);
+	cVehicleMotors_SetEffect((cVehicleMotors *)self->motors, fx);
 }
 
 void __thiscall cVehicleEntity_SetFXParam(cVehicleEntity *self, int i, float v) {
@@ -1235,7 +1237,7 @@ void __thiscall cVehicleEntity_SetFXParam(cVehicleEntity *self, int i, float v) 
 		memcpy(&bits, &v, sizeof(bits));
 		CGameModel_SetEffectParam(&self->pilot, i, bits);
 	}
-	cVehicleMotors_SetFXParam(self->motors, i, v);
+	cVehicleMotors_SetEffectParam((cVehicleMotors *)self->motors, i, v);
 }
 
 void __thiscall cVehicleEntity_SetActive(cVehicleEntity *self, byte on) {
@@ -1256,7 +1258,7 @@ void __thiscall cVehicleEntity_SetActive(cVehicleEntity *self, byte on) {
 		}
 	}
 	cVehicleEffects_SetActive(&self->effects, on);
-	cVehicleMotors_SetActive(self->motors, on);
+	cVehicleMotors_SetEnabled((cVehicleMotors *)self->motors, on);
 	if (self->slot != -1 && self->base.flag_4c) {
 		g_pWorld->owners[self->slot] = Veh_Ent(self);
 	}
@@ -1283,7 +1285,7 @@ void __thiscall cVehicleEntity_RenderNow(cVehicleEntity *self) {
 	if (self->pilotNode != -1) {
 		CGameModel_RenderNow(&self->pilot, 1);
 	}
-	cVehicleMotors_Render(self->motors);
+	cVehicleMotors_Render((cVehicleMotors *)self->motors);
 	if (fx == 3) {
 		Veh_Vtbl(self)->SetFX(self, 3);
 	}
@@ -1393,7 +1395,7 @@ byte __thiscall cVehicleEntity_VarF(cVehicleEntity *self, const char *name, doub
 		return 1;
 	}
 	if (!strncmp(name, "Traf_", 5)) {
-		return cVehicleTraffic_VarF(self->traffic, name + 5, d, set);
+		return cVehicleTraffic_VarF((cVehicleTraffic *)self->traffic, name + 5, d, set);
 	}
 	if (cWeaponManager_VarF(&self->weapons, name, d, (byte)set) ||
 		Veh_MotorsVtbl(self)->VarF(self->motors, name, d, set)) {
@@ -1492,7 +1494,7 @@ byte __thiscall cVehicleEntity_VarI(cVehicleEntity *self, const char *name, int 
 	}
 	size_t len = strlen(name);
 	if (!strncmp(name, "Traf_", 5)) {
-		return cVehicleTraffic_VarI(self->traffic, name + 5, i, set);
+		return cVehicleTraffic_VarI((cVehicleTraffic *)self->traffic, name + 5, i, set);
 	}
 	if (cWeaponManager_VarI(&self->weapons, name, i, (byte)set) ||
 		Veh_MotorsVtbl(self)->VarI(self->motors, name, i, set)) {
@@ -1577,7 +1579,7 @@ byte __thiscall cVehicleEntity_VarS(cVehicleEntity *self, const char *name, char
 	}
 	size_t len = strlen(name);
 	if (!strncmp(name, "Traf_", 5)) {
-		return cVehicleTraffic_VarS(self->traffic, name + 5, s, set);
+		return cVehicleTraffic_VarS((cVehicleTraffic *)self->traffic, name + 5, s, set);
 	}
 	if (cWeaponManager_VarS(&self->weapons, name, s, (byte)set) ||
 		Veh_MotorsVtbl(self)->VarS(self->motors, name, s, set)) {
@@ -1618,7 +1620,7 @@ byte __thiscall cVehicleEntity_VarV(cVehicleEntity *self, const char *name, doub
 	}
 	size_t len = strlen(name);
 	if (!strncmp(name, "Traf_", 5)) {
-		return cVehicleTraffic_VarV(self->traffic, name + 5, x, y, z, set);
+		return cVehicleTraffic_VarV((cVehicleTraffic *)self->traffic, name + 5, x, y, z, set);
 	}
 	if (cWeaponManager_VarV(&self->weapons, name, x, y, z, (byte)set) ||
 		Veh_MotorsVtbl(self)->VarV(self->motors, name, x, y, z, set)) {

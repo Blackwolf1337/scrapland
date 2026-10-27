@@ -91,8 +91,6 @@ void __thiscall cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, con
 	vec3_t origin);
 /* a random float between lo and hi (rva 0x10e8f0) */
 float Rand_FloatRange(float lo, float hi);
-/* Weaps/Inferno.cpp: the shot of a net client (rva 0x120fa0) */
-void Inferno_ClientFire(const char *name);
 
 /* the AI of a vehicle takes the new weapon list (rva 0x8fd20) */
 void __thiscall cAIVehicle_WeapListChanged(void *ai);
@@ -255,6 +253,14 @@ void Cloud_OnHit(cAbstractFile *params);
 #define g_EMIIDAmmo GAME_DATA(int, 0x44945c)
 /* WeaponManager.cpp before rva 0x11a0f0: the fire stamp delayed by t (to -t when it is beyond t) */
 void __thiscall cWeaponManager_DelayFire(cWeaponManager *self, float t);
+#define CWEAPONMANAGER_VFTABLE 0x3b664c
+cWeaponManager *__fastcall cWeaponManager_ctor(cWeaponManager *self);
+void __fastcall cWeaponManager_dtor(cWeaponManager *self);
+cWeaponManager *__thiscall cWeaponManager_Delete(cWeaponManager *self, byte flags);
+/* the item i of the world weapons table, int3 out of range */
+cWeapInfo *__thiscall WeapTable_At(void *table, uint32_t i);
+void __fastcall cWeaponManager_ClearAmmo(cWeaponManager *self);
+void __fastcall cWeaponManager_ClearWeaps(cWeaponManager *self);
 
 void Devastator_Start(cEntity *v);
 void Devastator_FX(cAbstractFile *params);

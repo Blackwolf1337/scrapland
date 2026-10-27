@@ -274,18 +274,11 @@ static inline const cVehicleMotorsVtbl *Veh_MotorsVtbl(cVehicleEntity *v) {
 #define g_AtmosphereLimit GAME_DATA(float, 0x467644)	/* above it the ships fall back */
 #define g_SpaceLimit GAME_DATA(float, 0x4675d8)
 
-/* the parts of other files (not decompiled yet); the objects inside the vehicle by their offset */
+/* the parts of other files (not decompiled yet; VehicleMotors, VehicleTraffic and WeaponManager in their headers);
+ * the objects inside the vehicle by their offset */
 void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt);		/* rva 0x10a730, the flight */
 void __fastcall cVehicleMotors_ctor(void *motors);
-void __thiscall cVehicleMotors_SetOwner(void *motors, cEntity *v);
 void __fastcall cVehicleMotors_dtor(void *motors);
-void __fastcall cVehicleMotors_Reset(void *motors);
-void __fastcall cVehicleMotors_ResetSounds(void *motors);
-void __fastcall cVehicleMotors_Init(void *motors);
-void __fastcall cVehicleMotors_Render(void *motors);
-void __thiscall cVehicleMotors_SetActive(void *motors, byte on);
-void __thiscall cVehicleMotors_SetFX(void *motors, int fx);
-void __thiscall cVehicleMotors_SetFXParam(void *motors, int i, float v);
 void __fastcall cVehicleO648_ctor(void *o);
 void __fastcall cVehicleO648_dtor(void *o);
 void __thiscall cVehicleO648_SetSlot(void *o, int slot);
@@ -298,20 +291,6 @@ void __thiscall cVehicleControls_Tick(void *controls, cEntity *v, float dt);
 void __fastcall cAutoAim_ctor(void *aim);
 byte __thiscall cAutoAim_VarF(void *aim, const char *name, double *d, int set);
 byte __thiscall cAutoAim_VarS(void *aim, const char *name, char **s, int set);
-void __fastcall cWeaponManager_ctor(cTargetLock *self);
-void __fastcall cWeaponManager_dtor(cTargetLock *self);
-void __fastcall cWeaponManager_ClearAmmo(cTargetLock *self);
-void __fastcall cWeaponManager_ClearWeaps(cTargetLock *self);
-/* the "Traf_" object at 0x5c4: the world collision and the variables of the traffic */
-void __fastcall cVehicleTraffic_ctor(void *traffic);
-void __thiscall cVehicleTraffic_SetOwner(void *traffic, cEntity *v);
-byte __fastcall cVehicleTraffic_TestEntities(void *traffic);
-byte __thiscall cVehicleTraffic_VarF(void *traffic, const char *name, double *d, int set);
-byte __thiscall cVehicleTraffic_VarI(void *traffic, const char *name, int *i, int set);
-byte __thiscall cVehicleTraffic_VarS(void *traffic, const char *name, char **s, int set);
-byte __thiscall cVehicleTraffic_VarV(void *traffic, const char *name, double *x, double *y, double *z, int set);
-byte __thiscall cVehicleTraffic_Collide(void *traffic, const vec3_t *from, vec3_t *to, float radius, vec3_t *pos,
-	float speed, void *state);
 /* the time of the life sound i set to -t */
 void __thiscall cWithLifeEntity_SetSndTime(cEntity *self, float t, int i);
 void __thiscall cWithLifeEntity_Tick(cEntity *self, float dt);

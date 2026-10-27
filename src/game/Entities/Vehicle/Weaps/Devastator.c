@@ -10,6 +10,7 @@
 #include "scrap/net.h"
 #include "scrap/scorer.h"
 #include "scrap/weapons.h"
+#include "scrap/weaps2.h"
 
 #define DEV_PI 3.14159274f		/* rva 0x3a3a30 */
 
@@ -373,5 +374,5 @@ void Inferno_ClientFireNet(cAbstractFile *params) {
 	char name[128];
 
 	cAbstractFile_ReadString(params, name, 0x80);
-	Inferno_ClientFire(name);
+	Inferno_Shoot(name);
 }

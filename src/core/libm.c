@@ -92,7 +92,7 @@ double Game_Atan2(double y, double x) {
 	return r;
 }
 
-/* x is loaded first, y on top of it, as the exe's callers do */
+/* _CIfmod: x loaded first, y on top of it, the fprem remainder of x / y */
 double Game_Fmod(double x, double y) {
 	double r;
 	void *fn = Game_Ptr(CI_FMOD);

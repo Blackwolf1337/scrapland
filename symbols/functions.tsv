@@ -1724,7 +1724,7 @@ rva	size	source	callconv	name	signature
 0008a840	4	DEFAULT	unknown	FUN_0048a840	
 0008a850	691	DEFAULT	unknown	FUN_0048a850	
 0008ab20	1457	DEFAULT	unknown	FUN_0048ab20	
-0008b0e0	53	DEFAULT	unknown	FUN_0048b0e0	
+0008b0e0	53	USER_DEFINED	__thiscall	cAIVehicle_GetPathWidth	float __thiscall(void)
 0008b120	1545	DEFAULT	unknown	FUN_0048b120	
 0008b740	39	USER_DEFINED	__thiscall	cAIVehicle::GetState	int __thiscall(void)
 0008b780	28	DEFAULT	unknown	FUN_0048b780	
@@ -2909,7 +2909,7 @@ rva	size	source	callconv	name	signature
 000f6910	263	DEFAULT	unknown	FUN_004f6910	
 000f6a40	158	DEFAULT	unknown	FUN_004f6a40	
 000f6b00	29	DEFAULT	unknown	FUN_004f6b00	
-000f6b20	45	DEFAULT	unknown	FUN_004f6b20	
+000f6b20	45	USER_DEFINED	__thiscall	Vehicle_TeamColor	uint __thiscall(void)
 000f6b80	1096	DEFAULT	unknown	FUN_004f6b80	
 000f6fd0	18	DEFAULT	unknown	FUN_004f6fd0	
 000f6ff0	156	DEFAULT	unknown	FUN_004f6ff0	
@@ -3139,84 +3139,84 @@ rva	size	source	callconv	name	signature
 0010bb10	27	USER_DEFINED	__fastcall	cVehicleEntity_IsBoostReady	byte __fastcall(void * self)
 0010bb30	21	USER_DEFINED	__thiscall	cVehicleEntity_IsEMIed	int __thiscall(void)
 0010bb50	51	USER_DEFINED	__fastcall	cVehicleEntity_CanFire	int __fastcall(void * self)
-0010bb90	141	DEFAULT	unknown	FUN_0050bb90	
+0010bb90	141	USER_DEFINED	__thiscall	cVehicleMotor_ctor	void * __thiscall(void)
 0010bc20	140	DEFAULT	unknown	FUN_0050bc20	
 0010bcb0	86	DEFAULT	unknown	FUN_0050bcb0	
 0010bd10	177	DEFAULT	unknown	FUN_0050bd10	
-0010bdd0	3388	DEFAULT	unknown	FUN_0050bdd0	
-0010cb10	87	DEFAULT	unknown	FUN_0050cb10	
-0010cb70	140	DEFAULT	unknown	FUN_0050cb70	
-0010cc00	8	DEFAULT	unknown	FUN_0050cc00	
-0010cc10	25	DEFAULT	unknown	FUN_0050cc10	
-0010cc30	234	ANALYSIS	__thiscall	cVehicleMotors::vf01	undefined __thiscall(void)
-0010cd20	201	DEFAULT	unknown	FUN_0050cd20	
-0010cdf0	261	DEFAULT	unknown	FUN_0050cdf0	
-0010cf00	97	DEFAULT	unknown	FUN_0050cf00	
-0010cf70	152	DEFAULT	unknown	FUN_0050cf70	
-0010d010	4	DEFAULT	unknown	FUN_0050d010	
-0010d020	533	ANALYSIS	__thiscall	cVehicleMotors::vf00	undefined __thiscall(void)
-0010d240	45	DEFAULT	unknown	FUN_0050d240	
-0010d270	89	DEFAULT	unknown	FUN_0050d270	
-0010d2d0	93	DEFAULT	unknown	FUN_0050d2d0	
-0010d330	175	DEFAULT	unknown	FUN_0050d330	
-0010d3e0	31	DEFAULT	unknown	FUN_0050d3e0	
-0010d400	31	DEFAULT	unknown	FUN_0050d400	
-0010d420	420	DEFAULT	unknown	FUN_0050d420	
-0010d5d0	195	DEFAULT	unknown	FUN_0050d5d0	
-0010d6a0	214	DEFAULT	unknown	FUN_0050d6a0	
-0010d780	98	DEFAULT	unknown	FUN_0050d780	
-0010d7f0	214	DEFAULT	unknown	FUN_0050d7f0	
-0010d8d0	129	DEFAULT	unknown	FUN_0050d8d0	
-0010d960	51	DEFAULT	unknown	FUN_0050d960	
-0010d9a0	50	DEFAULT	unknown	FUN_0050d9a0	
-0010d9e0	84	DEFAULT	unknown	FUN_0050d9e0	
-0010da40	61	DEFAULT	unknown	FUN_0050da40	
-0010da80	95	DEFAULT	unknown	FUN_0050da80	
-0010dae0	339	ANALYSIS	__thiscall	cVehicleMotors::vf02	undefined __thiscall(void)
-0010dc40	415	ANALYSIS	__thiscall	cVehicleMotors::vf03	undefined __thiscall(void)
-0010dde0	143	DEFAULT	unknown	FUN_0050dde0	
-0010de70	54	DEFAULT	unknown	FUN_0050de70	
-0010deb0	28	DEFAULT	unknown	FUN_0050deb0	
-0010ded0	266	DEFAULT	unknown	FUN_0050ded0	
-0010dfe0	325	DEFAULT	unknown	FUN_0050dfe0	
-0010e130	57	DEFAULT	unknown	FUN_0050e130	
-0010e170	70	DEFAULT	unknown	FUN_0050e170	
-0010e1c0	1834	DEFAULT	unknown	FUN_0050e1c0	
+0010bdd0	3388	USER_DEFINED	__fastcall	cVehicleMotors_Update	void __fastcall(void * self)
+0010cb10	87	USER_DEFINED	__fastcall	cVehicleMotor_Reset	void __fastcall(void * self)
+0010cb70	140	USER_DEFINED	__fastcall	cVehicleMotors_Reset	void __fastcall(void * self)
+0010cc00	8	USER_DEFINED	__fastcall	cVehicleMotors_ClearEffects	void __fastcall(void * self)
+0010cc10	25	USER_DEFINED	__fastcall	cVehicleMotors_InitEffects	void __fastcall(void * self)
+0010cc30	234	USER_DEFINED	__thiscall	cVehicleMotors_VarF	byte __thiscall(char * name, double * v, byte set)
+0010cd20	201	USER_DEFINED	__thiscall	cVehicleMotors_GetExhaust	byte __thiscall(uint motor, uint side, float * pos, float * ang)
+0010cdf0	261	USER_DEFINED	__thiscall	cVehicleMotors_GetSlot	byte __thiscall(uint motor, uint side, float * pos, float * ang)
+0010cf00	97	USER_DEFINED	__thiscall	cVehicleMotors_GetMotorName	char * __thiscall(uint motor, int * count)
+0010cf70	152	USER_DEFINED	__thiscall	cVehicleMotors_NumSlots	int __thiscall(byte motor)
+0010d010	4	USER_DEFINED	__fastcall	cVehicleMotors_GetOwner	void * __fastcall(void * self)
+0010d020	533	USER_DEFINED	__thiscall	cVehicleMotors_VarI	byte __thiscall(char * name, int * v, byte set)
+0010d240	45	USER_DEFINED	__fastcall	cVehicleMotor_Render	void __fastcall(void * self)
+0010d270	89	USER_DEFINED	__fastcall	cVehicleMotors_Render	void __fastcall(void * self)
+0010d2d0	93	USER_DEFINED	__thiscall	cVehicleMotor_SetEnabled	void __thiscall(byte on)
+0010d330	175	USER_DEFINED	__thiscall	cVehicleMotors_SetEnabled	void __thiscall(byte on)
+0010d3e0	31	USER_DEFINED	__thiscall	cVehicleMotors_StartAnimF	void __thiscall(uint motor, char * anim)
+0010d400	31	USER_DEFINED	__thiscall	cVehicleMotors_StartAnimM	void __thiscall(uint motor, char * anim)
+0010d420	420	USER_DEFINED	__thiscall	cVehicleMotor_Load	int __thiscall(void * owner, byte motor, char * file, float * scale)
+0010d5d0	195	USER_DEFINED	__thiscall	cVehicleMotors_SetMotor	int __thiscall(uint motor, char * file, float sx, float sy, float sz)
+0010d6a0	214	USER_DEFINED	__thiscall	cVehicleMotor_StartAnimF	void __thiscall(char * anim)
+0010d780	98	USER_DEFINED	__thiscall	cVehicleMotor_SetAnimF	void __thiscall(float k)
+0010d7f0	214	USER_DEFINED	__thiscall	cVehicleMotor_StartAnimM	void __thiscall(char * anim)
+0010d8d0	129	USER_DEFINED	__thiscall	cVehicleMotor_UpdateAnimM	void __thiscall(float dt)
+0010d960	51	USER_DEFINED	__thiscall	cVehicleMotors_SetOwner	void __thiscall(void * owner)
+0010d9a0	50	USER_DEFINED	__thiscall	cVehicleMotor_SetEffect	void __thiscall(uint fx)
+0010d9e0	84	USER_DEFINED	__thiscall	cVehicleMotors_SetEffect	void __thiscall(uint fx)
+0010da40	61	USER_DEFINED	__thiscall	cVehicleMotor_SetEffectParam	void __thiscall(int i, float v)
+0010da80	95	USER_DEFINED	__thiscall	cVehicleMotors_SetEffectParam	void __thiscall(int i, float v)
+0010dae0	339	USER_DEFINED	__thiscall	cVehicleMotors_VarS	byte __thiscall(char * name, void * v, byte set)
+0010dc40	415	USER_DEFINED	__thiscall	cVehicleMotors_VarV	byte __thiscall(char * name, double * x, double * y, double * z, byte set)
+0010dde0	143	USER_DEFINED	__fastcall	cVehicleMotorsEffects_ctor	void * __fastcall(void * self)
+0010de70	54	USER_DEFINED	__fastcall	cVehicleMotorsEffects_dtor	void __fastcall(void * self)
+0010deb0	28	USER_DEFINED	__thiscall	Vec3_Assign	float * __thiscall(float * v)
+0010ded0	266	USER_DEFINED	__fastcall	cVehicleMotorsEffects_Clear	void __fastcall(void * self)
+0010dfe0	325	USER_DEFINED	__fastcall	cVehicleMotorsEffects_Stop	void __fastcall(void * self)
+0010e130	57	USER_DEFINED	__fastcall	cVehicleMotorsEffects_HideTrails	void __fastcall(void * self)
+0010e170	70	USER_DEFINED	__thiscall	cVehicleMotorsEffects_GetModel	void * __thiscall(int side)
+0010e1c0	1834	USER_DEFINED	__fastcall	cVehicleMotorsEffects_Init	void __fastcall(void * self)
 0010e8f0	71	USER_DEFINED	__cdecl	Rand_FloatRange	float __cdecl(float lo, float hi)
-0010e940	635	DEFAULT	unknown	FUN_0050e940	
-0010ebc0	247	DEFAULT	unknown	FUN_0050ebc0	
-0010ed30	683	DEFAULT	unknown	FUN_0050ed30	
-0010efe0	72	DEFAULT	unknown	FUN_0050efe0	
-0010f030	125	DEFAULT	unknown	FUN_0050f030	
-0010f0b0	17	DEFAULT	unknown	FUN_0050f0b0	
-0010f0d0	17	DEFAULT	unknown	FUN_0050f0d0	
-0010f0f0	24	DEFAULT	unknown	FUN_0050f0f0	
-0010f110	197	DEFAULT	unknown	FUN_0050f110	
-0010f210	34801	DEFAULT	unknown	FUN_0050f210	
-00117ab0	1437	DEFAULT	unknown	FUN_00517ab0	
-00118050	1631	DEFAULT	unknown	FUN_00518050	
+0010e940	635	USER_DEFINED	__stdcall	VMEffects_SetupCalima	void __stdcall(float thrust, float speed, float * pos, int n, void * ps)
+0010ebc0	247	USER_DEFINED	__thiscall	cVehicleMotorsEffects_SetType	void __thiscall(int type)
+0010ed30	683	USER_DEFINED	__thiscall	cVehicleMotorsEffects_Glow	void __thiscall(float thrust, float k, float dist, int * first, void * ps)
+0010efe0	72	USER_DEFINED	__thiscall	cVehicleMotorsEffects_StopGlow	void __thiscall(int * first, void * ps)
+0010f030	125	USER_DEFINED	__thiscall	cVehicleMotorsEffects_SetColor	void __thiscall(uint color)
+0010f0b0	17	USER_DEFINED	__thiscall	cVehicleMotorsEffects_SetOffset	void __thiscall(float v)
+0010f0d0	17	USER_DEFINED	__thiscall	cVehicleMotorsEffects_SetScale	void __thiscall(float v)
+0010f0f0	24	USER_DEFINED	__thiscall	cVehicleMotorsEffects_Set	void __thiscall(void * owner, void * motors, void * motor)
+0010f110	197	USER_DEFINED	__thiscall	cVehicleMotorsEffects_SetVisible	void __thiscall(byte on)
+0010f210	34801	USER_DEFINED	__thiscall	cVehicleMotorsEffects_Exhaust	void __thiscall(float thrust, float k, float f4bc, float speed, byte cloud, float fade)
+00117ab0	1437	USER_DEFINED	__thiscall	cVehicleMotorsEffects_Smoke	void __thiscall(float dt, void * ps)
+00118050	1631	USER_DEFINED	__thiscall	cVehicleMotorsEffects_Trails	void __thiscall(float dt, float px, float py, float pz, float rx, float ry, float rz, float vx, float vy, float vz, float thrust, float k, uint color)
 001186b0	62	DEFAULT	unknown	FUN_005186b0	
 001186f0	46	ANALYSIS	__thiscall	cNetVController::vf03	undefined __thiscall(void)
 00118720	2039	ANALYSIS	__thiscall	cNetVController::vf01	undefined __thiscall(void)
 00118f20	2326	ANALYSIS	__thiscall	cNetVController::vf02	undefined __thiscall(void)
 00119840	5	ANALYSIS	__thiscall	cNetVController::vf00	undefined __thiscall(void)
-00119850	79	DEFAULT	unknown	FUN_00519850	
-001198a0	64	DEFAULT	unknown	FUN_005198a0	
-001198e0	128	DEFAULT	unknown	FUN_005198e0	
-00119960	13	DEFAULT	unknown	FUN_00519960	
-00119970	46	DEFAULT	unknown	FUN_00519970	
-001199a0	122	DEFAULT	unknown	FUN_005199a0	
-00119a20	436	DEFAULT	unknown	FUN_00519a20	
-00119be0	274	DEFAULT	unknown	FUN_00519be0	
-00119d00	498	DEFAULT	unknown	FUN_00519d00	
-00119f00	61	DEFAULT	unknown	FUN_00519f00	
-00119f40	152	DEFAULT	unknown	FUN_00519f40	
-00119fe0	30	DEFAULT	unknown	FUN_00519fe0	
-0011a010	35	ANALYSIS	__thiscall	cWeaponManager::vf00	undefined __thiscall(void)
-0011a040	52	DEFAULT	unknown	FUN_0051a040	
+00119850	79	USER_DEFINED	__fastcall	cVehicleTraffic_ctor	void * __fastcall(void * self)
+001198a0	64	USER_DEFINED	__fastcall	cVehicleTraffic_CollideEntities	byte __fastcall(void * self)
+001198e0	128	USER_DEFINED	__thiscall	cVehicleTraffic_VarF	byte __thiscall(char * name, double * v, byte set)
+00119960	13	USER_DEFINED	__thiscall	cVehicleTraffic_SetOff	void __thiscall(byte off)
+00119970	46	USER_DEFINED	__thiscall	cVehicleTraffic_SetParent	void __thiscall(void * parent)
+001199a0	122	USER_DEFINED	__thiscall	cVehicleTraffic_VarI	byte __thiscall(char * name, int * v, byte set)
+00119a20	436	USER_DEFINED	__thiscall	cVehicleTraffic_Move	byte __thiscall(float * from, float * to, float radius, float * out, float len, void * cache)
+00119be0	274	USER_DEFINED	__thiscall	cVehicleTraffic_VarS	byte __thiscall(char * name, void * v, byte set)
+00119d00	498	USER_DEFINED	__thiscall	cVehicleTraffic_VarV	byte __thiscall(char * name, double * x, double * y, double * z, byte set)
+00119f00	61	USER_DEFINED	__fastcall	cWeaponManager_ctor	void * __fastcall(void * self)
+00119f40	152	USER_DEFINED	__fastcall	cWeaponManager_dtor	void __fastcall(void * self)
+00119fe0	30	USER_DEFINED	__thiscall	WeapTable_At	void * __thiscall(uint i)
+0011a010	35	USER_DEFINED	__thiscall	cWeaponManager_Delete	void * __thiscall(byte flags)
+0011a040	52	USER_DEFINED	__thiscall	cTargetLock_SetHookDelay	void __thiscall(float t)
 0011a080	47	USER_DEFINED	__thiscall	cWeaponManager_DelayFire	void __thiscall(float t)
-0011a0b0	29	DEFAULT	unknown	FUN_0051a0b0	
-0011a0d0	32	DEFAULT	unknown	FUN_0051a0d0	
+0011a0b0	29	USER_DEFINED	__fastcall	cWeaponManager_ClearAmmo	void __fastcall(void * self)
+0011a0d0	32	USER_DEFINED	__fastcall	cWeaponManager_ClearWeaps	void __fastcall(void * self)
 0011a0f0	143	USER_DEFINED	__thiscall	cWeaponManager_HasMinAmmo	int __thiscall(uint w)
 0011a190	1309	USER_DEFINED	__thiscall	cWeaponManager_VarF	byte __thiscall(char * name, double * v, byte set)
 0011a6c0	35	USER_DEFINED	__thiscall	cTargetLock_GetAmmo	float __thiscall(int ammo)

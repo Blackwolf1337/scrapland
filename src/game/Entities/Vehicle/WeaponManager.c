@@ -2,7 +2,7 @@
  * Entities/Vehicle/WeaponManager.cpp of the game: the weapons of a vehicle, see include/scrap/weapons.h. The world
  * keeps the weapon and ammo tables (g_pWorld->weapons, ->ammo), the manager the mounted slots, upgrades and ammo of
  * its vehicle, the stamps of the next shot and the lock on an entity or a point.
- * Not here: the constructor and destructor before rva 0x11a0f0.
+ * The constructor, the destructor and the small methods before rva 0x11a0f0 sit behind VehicleTraffic.cpp in the exe.
  */
 #include "scrap/console.h"
 #include "scrap/crt.h"
@@ -803,4 +803,65 @@ int __thiscall cWeaponManager_WeaponNeed(cWeaponManager *self) {
 		}
 	}
 	return 0;
+}
+
+/* the functions before rva 0x11a0f0 */
+
+cWeaponManager *__fastcall cWeaponManager_ctor(cWeaponManager *self) {
+	self->vftable = Game_Ptr(CWEAPONMANAGER_VFTABLE);
+	self->lock.target = NULL;
+	self->lock.data = NULL;
+	self->lock.next = &self->lock;
+	self->lock.prev = &self->lock;
+	self->owner = NULL;
+	self->on = 0;
+	self->wasOn = 0;
+	self->flag46 = 0;
+	self->lock.data = self;
+	return self;
+}
+
+void __fastcall cWeaponManager_dtor(cWeaponManager *self) {
+	self->vftable = Game_Ptr(CWEAPONMANAGER_VFTABLE);
+	Mem_Free(self->weaps);
+	Mem_Free(self->ammo);
+	Mem_Free(self->nodes);
+	Nto1Node_Done(&self->lock);
+}
+
+/* Table<cWeapInfo>::operator[] (the world weapons) */
+cWeapInfo *__thiscall WeapTable_At(void *table, uint32_t i) {
+	return TABLE_AT(*(TABLE(cWeapInfo) *)table, i);
+}
+
+cWeaponManager *__thiscall cWeaponManager_Delete(cWeaponManager *self, byte flags) {
+	cWeaponManager_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(cWeaponManager));
+	}
+	return self;
+}
+
+void __thiscall cTargetLock_SetHookDelay(cTargetLock *self, float t) {
+	if (self->fireStamp > t) {
+		self->cmStamp = -t;
+	} else {
+		self->cmStamp = self->cmStamp - t;
+	}
+}
+
+void __thiscall cWeaponManager_DelayFire(cWeaponManager *self, float t) {
+	if (self->fireStamp > t) {
+		self->fireStamp = -t;
+	} else {
+		self->fireStamp = self->fireStamp - t;
+	}
+}
+
+void __fastcall cWeaponManager_ClearAmmo(cWeaponManager *self) {
+	memset(self->ammo, 0, g_pWorld->ammo.count * 4);
+}
+
+void __fastcall cWeaponManager_ClearWeaps(cWeaponManager *self) {
+	memset(self->weaps, 0, g_pWorld->weapons.count * sizeof(cWeaponSlot));
 }
