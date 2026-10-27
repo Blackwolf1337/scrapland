@@ -1,0 +1,476 @@
+# game AI/IVehicleControl.c and IVehicleShootControl.c (execfile'd by sdlevel.py, Python 1.5.2): the move control and
+# the shoot control of the vehicle AI. Two Cars of our own far away ("SDIvcCar", "SDIvcCar2" ahead of it as target)
+# with the model SPoli1, the cAIVehicle of the first made by the constructor of the exe (it makes both controls) after
+# a fixed srand; a second control and shoot control made directly and deleted. On the move control: the getters and
+# setters, the line tests of the corridor around the car in the air and through the ground, the direct path of
+# SetMove(2) and what runs on it (smoothing, the point search, the turn, the strafe, the acceleration, the arrival
+# with the events the frozen AI ignores, the update), the orientation to the target (SetMove(6)), the chase parts
+# with the target, the random goals. Not called: the moves that search the graph (SetPath, SetChase, RebuildPath:
+# a failed search is an event that changes the state of the AI). On the shoot control: the weapon table with weapons
+# given to the car for the test (slots, upgrade, ammo), the ammo sums, the ranges, the choice of the weapon and of
+# the countermeasure, the modes and the updates with the target. The vehicle group: the elevators of FZ, a group of
+# our own. Everything poked is restored; heap addresses are only compared.
+def ivcI(a):
+	return SDTest.Peek(a, '@i')
+def ivcB(a):
+	return SDTest.Peek(a, '@b')
+def ivcF(a, n):
+	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+def ivcSet(a, v):
+	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+def ivcPoke(a, v):
+	SDTest.Poke(a - 0x400000, v)
+def ivcSetByte(a, v):
+	w = ivcI(a & ~3)
+	sh = 8 * (a & 3)
+	ivcPoke(a & ~3, (w & ~(0xff << sh)) | (v << sh))
+def ivcAlloc(n):
+	return SDTest.Call(0x133650, 'ii', n)[0]
+def ivcFree(p):
+	SDTest.Call(0x133550, 'ii', p)
+def ivcNew(n):
+	return SDTest.Call(0x1334d0, 'ii', n)[0]
+def ivcSrand(s):
+	SDTest.Call(0x323c50, 'vi', s)
+def ivcInts(a, offs):
+	r = ()
+	for o in offs:
+		r = r + (ivcI(a + o),)
+	return r
+def ivcBytes(a, offs):
+	r = ()
+	for o in offs:
+		r = r + (ivcB(a + o),)
+	return r
+def ivcSave(a, n):
+	r = ()
+	for k in range(n):
+		r = r + (ivcI(a + 4 * k),)
+	return r
+def ivcRestore(a, v):
+	for k in range(len(v)):
+		ivcPoke(a + 4 * k, v[k])
+def ivcFind(name):
+	w = SDTest.Peek(0x467450, 'i')
+	slot = SDTest.Call(0x131f70, 'tiis', w + 4, name)[0]
+	node = SDTest.Call(0x131e50, 'tiisi', w + 4, name, slot)[0]
+	if node:
+		return ivcI(node)
+	return 0
+def ivcVt(e, off):
+	return ivcI(ivcI(e) + off) - 0x400000
+def ivcPos(e):
+	return SDTest.Call(ivcVt(e, 0x18), 'tiiF', e, (0.0, 0.0, 0.0))[1]
+def ivcAdd(a, b):
+	return (a[0] + b[0], a[1] + b[1], a[2] + b[2])
+
+# the doubles of the variadic SetMove as two ints (low, high)
+ivcD0 = (0, 0)
+ivcD05 = (0, 0x3fe00000)
+ivcD1 = (0, 0x3ff00000)
+ivcD2 = (0, 0x40000000)
+ivcD300 = (0, 0x4072c000)
+ivcD5000 = (0, 0x40b38800)
+
+ivcGroup = SDTest.Peek(0x444b84, 'i')
+ivcNodesWorld = SDTest.Peek(0x444d34, 'i')
+ivcCarObj = Scrap.CreateEntity('Car', 64000.0, 52000.0, 60000.0, 'SDIvcCar')
+ivcCar = ivcFind('SDIvcCar')
+ivcCar2Obj = Scrap.CreateEntity('Car', 64000.0, 52000.0, 52000.0, 'SDIvcCar2')
+ivcCar2 = ivcFind('SDIvcCar2')
+check('SDIvcCar', lambda: (ivcCarObj is not None, ivcCar != 0, ivcCar2 != 0, ivcGroup != 0, ivcNodesWorld != 0))
+if ivcCar and ivcCar2 and ivcGroup and ivcNodesWorld:
+	for ivcC in (ivcCar, ivcCar2):
+		SDTest.Call(0x109db0, 'tvisfffi', ivcC, 'SPoli1', 1.0, 1.0, 1.0, 1)
+		ivcSet(ivcC + 0xac, (0.0, 0.0, 0.0))
+	ivcGroupSave = ivcSave(ivcGroup + 0x5c, 6) + (ivcI(ivcGroup + 0xf0),)
+	ivcCarSave = ivcSave(ivcCar + 0xac, 3) + ivcSave(ivcCar + 0xd4, 6) + (ivcI(ivcCar + 0x46c),)
+	ivcCtlSave = ivcSave(ivcCar + 0x414, 17)
+	ivcCar2Active = ivcB(ivcCar2 + 0x4c)
+	# the parameter blocks of the AI in their ranges (a value out of them is a CHECK)
+	ivcP1 = ivcAlloc(0x2c)
+	ivcP2 = ivcAlloc(0x18)
+	ivcP3 = ivcAlloc(0x1c)
+	ivcSet(ivcP1, (0.5, 0.25, 0.75))
+	ivcPoke(ivcP1 + 0xc, 0)
+	ivcPoke(ivcP1 + 0x10, 1)
+	ivcPoke(ivcP1 + 0x14, 0)
+	ivcPoke(ivcP1 + 0x18, 0)
+	ivcPoke(ivcP1 + 0x1c, 3)
+	ivcPoke(ivcP1 + 0x20, 0)
+	ivcPoke(ivcP1 + 0x24, 40)
+	ivcPoke(ivcP1 + 0x28, 60)
+	ivcPoke(ivcP2, 0)
+	ivcPoke(ivcP2 + 4, 2)
+	ivcPoke(ivcP2 + 8, 1)
+	ivcPoke(ivcP2 + 0xc, 4)
+	ivcSet(ivcP2 + 0x10, (0.5,))
+	ivcPoke(ivcP2 + 0x14, 5)
+	ivcPoke(ivcP3, 50)
+	ivcPoke(ivcP3 + 4, 3)
+	ivcSet(ivcP3 + 8, (1.0, 0.5))
+	ivcPoke(ivcP3 + 0x10, 35)
+	ivcPoke(ivcP3 + 0x14, 50)
+	ivcPoke(ivcP3 + 0x18, 15)
+	ivcSrand(777)
+	ivcMem = ivcNew(0x3b0)
+	ivcAI = SDTest.Call(0x086390, 'tiiiiii', ivcMem, ivcCar, ivcP1, ivcP2, ivcP3)[0]
+	ivcC = ivcI(ivcAI + 0x194)
+	ivcS = ivcI(ivcAI + 0x198)
+	ivcCtl = ivcCar + 0x414
+	def ivcCtls(a=0):
+		return ivcF(ivcCtl + 4, 5) + (ivcBytes(ivcCtl, (0x20, 0x21, 0x22, 0x23, 0x24)),)
+	# the fields of the move control the code writes (not the radius: the model of the car)
+	def ivcCF(a=0):
+		return (ivcF(ivcC + 0x38, 5), ivcInts(ivcC, (0x88, 0x8c, 0xac, 0xd8, 0x18c)), ivcF(ivcC + 0x90, 2),
+			ivcF(ivcC + 0xa4, 2), ivcBytes(ivcC, (4, 0xb0, 0xb1, 0xf8, 0x100, 0x108, 0x174, 0x188, 0x189, 0x190,
+			0x192, 0x193, 0x19c, 0x19d)), ivcF(ivcC + 0xf0, 2), ivcF(ivcC + 0xfc, 1), ivcF(ivcC + 0x104, 1),
+			ivcF(ivcC + 0x160, 2), ivcF(ivcC + 0x178, 4), ivcF(ivcC + 0x194, 2))
+	def ivcPts(a=0):
+		return (ivcF(ivcC + 0x7c, 3), ivcF(ivcC + 0x98, 3), ivcF(ivcC + 0xc4, 3), ivcF(ivcC + 0x1a0, 3))
+	check('cAIVehicle_ctor', lambda: (ivcAI == ivcMem, ivcC != 0, ivcS != 0, ivcI(ivcC) - 0x400000,
+		ivcI(ivcS) - 0x400000, ivcI(ivcC + 0x28) == ivcAI, ivcI(ivcC + 0x2c) == ivcCar, ivcI(ivcC + 0x30) == ivcCtl,
+		ivcI(ivcS + 0xc) == ivcAI, ivcI(ivcS + 0x44) == ivcCar, ivcI(ivcS + 0x48) == ivcCtl))
+	check('cAIVehicleControl after ctor', lambda: (ivcCF(), ivcPts(), ivcInts(ivcC, (0x4c, 0x50, 0x54, 0x58, 0x60, 0x64,
+		0x68, 0x6c, 0x70, 0x78, 0xe0, 0xe4)), ivcF(ivcC + 0x5c, 1), ivcF(ivcC + 0x74, 1), ivcF(ivcC + 0x1b0, 54),
+		ivcF(ivcC + 0x288, 12), ivcB(ivcCar + 0x71c), ivcI(ivcC + 0x34) == ivcI(ivcCar + 0x3a0)))
+
+	# a move control of its own, made and deleted
+	ivcSrand(778)
+	ivcM2 = ivcNew(0x2b8)
+	ivcC2 = SDTest.Call(0x08fd30, 'tiiiii', ivcM2, ivcCar, ivcAI, ivcP2)[0]
+	check('cAIVehicleControl_ctor', lambda: (ivcC2 == ivcM2, ivcI(ivcC2) - 0x400000, ivcF(ivcC2 + 0x38, 4),
+		ivcInts(ivcC2, (0x88, 0x8c, 0xac, 0x15c, 0x18c, 0x1ac, 0xd0, 0xd4, 0xd8, 0xdc, 0xe0, 0xe4, 0xe8, 0xec)),
+		ivcF(ivcC2 + 0x7c, 3), ivcF(ivcC2 + 0x90, 6), ivcF(ivcC2 + 0xc4, 3), ivcF(ivcC2 + 0x168, 3),
+		ivcF(ivcC2 + 0x178, 4), ivcF(ivcC2 + 0x194, 2), ivcF(ivcC2 + 0x1a0, 3), ivcBytes(ivcC2, (4, 0xb0, 0xb1, 0xf8,
+		0x100, 0x174, 0x188, 0x189, 0x190, 0x191, 0x192, 0x193, 0x19c, 0x19d)), ivcF(ivcC2 + 0x1b0, 54),
+		ivcF(ivcC2 + 0x288, 12), ivcF(ivcC2 + 0xc, 3), ivcF(ivcC2 + 0x120, 3), ivcF(ivcC2 + 0x150, 3)))
+	check('cAIVehicleControl_Delete', lambda: SDTest.Call(0x090440, 'tiii', ivcC2, 1)[0] == ivcC2)
+
+	# the getters and setters
+	check('cAIVehicleControl getters', lambda: (SDTest.Call(0x095c00, 'tiiF', ivcC, (0.0,) * 3)[1],
+		SDTest.Call(0x095c20, 'tiiF', ivcC, (0.0,) * 3)[1], SDTest.Call(0x095c40, 'tii', ivcC)[0] == ivcC + 0x4c,
+		SDTest.Call(0x095c50, 'tii', ivcC)[0] == ivcC + 0x64, SDTest.Call(0x095dc0, 'tbi', ivcC)[0],
+		SDTest.Call(0x095dd0, 'tbi', ivcC)[0], SDTest.Call(0x095d00, 'tbi', ivcC)[0]))
+	for ivcV in (0, 1):
+		check('cAIVehicleControl_SetInertia(%d)' % ivcV, lambda v=ivcV: (SDTest.Call(0x096180, 'tvii', ivcC, v),
+			ivcB(ivcC + 0xb1)))
+		check('cAIVehicleControl_SetFlagB0(%d)' % ivcV, lambda v=ivcV: (SDTest.Call(0x096980, 'tvii', ivcC, v),
+			ivcB(ivcC + 0xb0)))
+	check('cAIVehicleControl_SetRotStatic', lambda: (SDTest.Call(0x096990, 'tviff', ivcC, 0.375, 0.0625),
+		ivcF(ivcC + 0xa4, 2)))
+	ivcSave2 = ivcI(ivcC + 0x60)
+	for ivcV in (6, 4, 3, 0):
+		ivcPoke(ivcC + 0x60, ivcV)
+		check('cAIVehicleControl_ApplyParams(%d)' % ivcV, lambda: (SDTest.Call(0x090470, 'tvi', ivcC),
+			ivcB(ivcCar + 0x71c)))
+	ivcPoke(ivcC + 0x60, ivcSave2)
+	SDTest.Call(0x090470, 'tvi', ivcC)
+	check('cAIVehicleControl_ClearDest', lambda: (SDTest.Call(0x095fc0, 'tvi', ivcC), ivcPts()))
+	check('cAIVehicleControl_ResetLife', lambda: (SDTest.Call(0x095fe0, 'tvi', ivcC), ivcCF()))
+	check('cAIVehicleControl_Stop', lambda: (SDTest.Call(0x095750, 'tvi', ivcC), ivcCtls()))
+	check('cAIVehicleControl_ResetClear', lambda: (SDTest.Call(0x096b50, 'tvi', ivcC), ivcCF(), ivcPts(), ivcCtls()))
+	check('cAIVehicleControl_ClearAll', lambda: (SDTest.Call(0x096b70, 'tvi', ivcC), ivcPts(), ivcCtls()))
+
+	# the line tests around the car (in the air) and down through the level
+	ivcP = ivcPos(ivcCar)
+	for ivcD in ((0.0, 0.0, -8000.0), (3000.0, 500.0, 2000.0), (0.0, 0.0, -30000.0), (0.0, 5000.0, 0.0),
+			(0.0, -5000.0, 0.0), (0.0, 0.0, 0.0), (0.0, -200000.0, 0.0), (20000.0, -150000.0, 10000.0),
+			(1.0e-20, 0.0, 0.0)):
+		ivcB2 = ivcAdd(ivcP, ivcD)
+		check('cAIVehicleControl_TestCorridor' + fmt((ivcD,)), lambda b=ivcB2: (SDTest.Call(0x090490, 'tbiFFf', ivcC,
+			ivcP, b, 123.0)[0], ivcF(ivcC + 0x1b0, 54)))
+		check('cAIVehicleControl_TestEndTo' + fmt((ivcD,)), lambda b=ivcB2: (SDTest.Call(0x091a30, 'tbiFF', ivcC,
+			ivcP, b)[0], ivcF(ivcC + 0x288, 12)))
+	for ivcDir, ivcL in (((0.0, 0.0, -1.0), 500.0), ((0.6, 0.0, 0.8), 3000.0), ((0.0, 1.0, 0.0), 0.0),
+			((0.0, -1.0, 0.0), 1.0e9), ((0.0, 0.0, 0.0), 100.0), ((0.5, 0.5, 0.70710677), -50.0)):
+		check('cAIVehicleControl_TestEnd' + fmt((ivcDir, ivcL)), lambda d=ivcDir, l=ivcL: (SDTest.Call(0x0912b0,
+			'tbiFFf', ivcC, ivcP, d, l)[0], ivcF(ivcC + 0x288, 12)))
+
+	# SetMove(2): the direct path to a point ahead in the air; what runs on it
+	ivcGoal = ivcAdd(ivcP, (2000.0, 300.0, -9000.0))
+	def ivcMove2(boost, d=0):
+		return SDTest.Call(0x096190, 'biifffiiiiiiiii', ivcC, 2, ivcGoal[0], ivcGoal[1], ivcGoal[2],
+			ivcD300[0], ivcD300[1], boost, ivcD1[0], ivcD1[1], ivcD2[0], ivcD2[1], ivcD05[0], ivcD05[1])[0]
+	check('cAIVehicleControl_SetMove(2)', lambda: (ivcMove2(1), ivcCF(), ivcPts(), ivcI(ivcC + 0xe8) != 0))
+	check('cAIVehicleControl_SetMove(2) again', lambda: (ivcMove2(0), ivcCF(), ivcPts()))
+	check('cAIVehicleControl path nodes', lambda: (SDTest.Call(0x095c60, 'tbi', ivcC)[0],
+		SDTest.Call(0x095cb0, 'tbi', ivcC)[0], SDTest.Call(0x095d10, 'tbi', ivcC)[0], ivcI(ivcC + 0xd4) != 0))
+	check('cAIVehicleControl_CheckPathFree', lambda: (SDTest.Call(0x091bb0, 'tbi', ivcC)[0], ivcCF()))
+	ivcPoke(ivcC + 0x18c, 1)
+	check('cAIVehicleControl_CheckPathFree state 1', lambda: (SDTest.Call(0x091bb0, 'tbi', ivcC)[0], ivcCF(),
+		ivcPts()))
+	ivcPoke(ivcC + 0x18c, 0)
+	check('cAIVehicleControl_Smooth', lambda: (SDTest.Call(0x095780, 'tvi', ivcC), ivcPts(), ivcF(ivcC + 0x1b0, 54)))
+	# the point search and the update of the path only where the segment to the goal is free (else a graph search)
+	ivcFree = SDTest.Call(0x090490, 'tbiFFf', ivcC, ivcP, ivcGoal, 0.0)[0]
+	check('corridor to the goal', lambda: ivcFree)
+	if ivcFree:
+		check('cAIVehicleControl_FindPoint', lambda: (SDTest.Call(0x091c60, 'tbi', ivcC)[0], ivcCF(), ivcPts(),
+			ivcI(ivcC + 0xec)))
+	for ivcV in (0, 1):
+		SDTest.Call(0x096980, 'tvii', ivcC, ivcV)
+		ivcSet(ivcC + 0x90, (0.0, 0.0))
+		ivcSet(ivcCar + 0xac, (0.25, -0.5, 0.0))
+		check('cAIVehicleControl_TurnToPoint direct %d' % ivcV, lambda: (SDTest.Call(0x0928e0, 'tvi', ivcC),
+			ivcF(ivcC + 0x44, 2), ivcF(ivcC + 0x90, 2), ivcF(ivcC + 0xf0, 2), ivcCtls(), ivcF(ivcCar + 0xac, 3)))
+		check('cAIVehicleControl_TurnToPoint again %d' % ivcV, lambda: (SDTest.Call(0x0928e0, 'tvi', ivcC),
+			ivcF(ivcC + 0x90, 2), ivcCtls()))
+	SDTest.Call(0x096980, 'tvii', ivcC, 0)
+	ivcSet(ivcCar + 0xac, (0.0, 0.0, 0.0))
+	check('cAIVehicleControl_StrafeToPoint', lambda: (SDTest.Call(0x092f80, 'tvi', ivcC), ivcCtls()))
+	check('cAIVehicleControl_StrafeToPoint copy', lambda: (SDTest.Call(0x093cf0, 'tvi', ivcC), ivcCtls()))
+	for ivcBrake in (0, 1, 2):
+		for ivcStop in (0, 1):
+			ivcPoke(ivcC + 0x54, ivcBrake)
+			ivcSetByte(ivcC + 0x108, ivcStop)
+			check('cAIVehicleControl_AccelPath' + fmt((ivcBrake, ivcStop)), lambda: (SDTest.Call(0x0945c0, 'tvi',
+				ivcC), ivcCtls(), ivcBytes(ivcC, (0xf8,)), ivcF(ivcC + 0x104, 1)))
+	ivcPoke(ivcC + 0x54, 1)
+	ivcSetByte(ivcC + 0x108, 0)
+	# the velocity of the car toward the goal and along the nose
+	ivcSet(ivcCar + 0xd4, (100.0, 20.0, -700.0))
+	ivcSetByte(ivcC + 0xb1, 0)
+	check('cAIVehicleControl_AccelPath moving', lambda: (SDTest.Call(0x0945c0, 'tvi', ivcC), ivcCtls(),
+		ivcF(ivcCar + 0xd4, 3)))
+	ivcSetByte(ivcC + 0xb1, 1)
+	ivcSet(ivcCar + 0xd4, (0.0, 0.0, 0.0))
+	# the strafe slots with a fixed srand
+	for ivcDt in (0.1, 0.25, 0.5, 3.0):
+		ivcSrand(55)
+		ivcSet(ivcC + 0x40, (ivcDt,))
+		check('cAIVehicleControl_StrafeRandom' + fmt((ivcDt,)), lambda: (SDTest.Call(0x0939f0, 'tvi', ivcC),
+			ivcF(ivcC + 0x178, 4), ivcCtls()))
+	for ivcOn, ivcLife in ((0, 0), (1, 0), (1, -5), (1, 0)):
+		ivcSrand(56)
+		ivcSetByte(ivcC + 0x192, ivcOn)
+		ivcPoke(ivcC + 0xac, ivcI(ivcCar + 0x238) - ivcLife)
+		ivcSet(ivcC + 0x40, (0.3,))
+		check('cAIVehicleControl_StrafeDodge' + fmt((ivcOn, ivcLife)), lambda: (SDTest.Call(0x093150, 'tbi', ivcC)[0],
+			ivcF(ivcC + 0x178, 4), ivcF(ivcC + 0x194, 2), ivcI(ivcC + 0xac) - ivcI(ivcCar + 0x238), ivcCtls()))
+	ivcSetByte(ivcC + 0x192, 0)
+	# the arrival: point and goal are the same on the direct path, the events of a frozen AI do nothing
+	for ivcDist in (300.0, 3000.0, 30000.0):
+		ivcSet(ivcC + 0x38, (ivcDist,))
+		check('cAIVehicleControl_CheckArrive' + fmt((ivcDist,)), lambda: (SDTest.Call(0x092520, 'tvi', ivcC),
+			ivcInts(ivcAI, (0x19c, 0x1a4)), ivcCF()))
+	ivcSet(ivcC + 0x38, (300.0,))
+	for ivcDt in (0.05, 0.3):
+		ivcSrand(57)
+		check('cAIVehicleControl_Update(2)' + fmt((ivcDt,)), lambda d=ivcDt: (SDTest.Call(0x092630, 'tvif', ivcC, d),
+			ivcCF(), ivcPts(), ivcCtls(), ivcInts(ivcAI, (0x19c, 0x1a4))))
+		check('cAIVehicleControl_UpdateDirect' + fmt((ivcDt,)), lambda d=ivcDt: (SDTest.Call(0x095f20, 'tbif', ivcC,
+			d)[0], ivcCtls()))
+		if ivcFree:
+			ivcSrand(58)
+			check('cAIVehicleControl_UpdatePoint' + fmt((ivcDt,)), lambda d=ivcDt: (SDTest.Call(0x095ec0, 'tbif', ivcC,
+				d)[0], ivcCF(), ivcPts(), ivcCtls()))
+	check('cAIVehicleControl_Draw', lambda: SDTest.Call(0x094ec0, 'tvi', ivcC))
+	# the random goals
+	ivcSrand(59)
+	check('cAIVehicleControl_RandomDest', lambda: (SDTest.Call(0x096400, 'tviF', ivcC, (0.0,) * 3)[1], ivcPts()))
+	ivcMove2(0)
+	ivcSrand(60)
+	check('cAIVehicleControl_RandomNear', lambda: (SDTest.Call(0x096670, 'tviF', ivcC, ivcAdd(ivcGoal, (0.0, 0.0,
+		500.0)))[1], ivcI(ivcC + 0xd4) != 0))
+	check('cAIVehicleControl_RandomNear goal', lambda: SDTest.Call(0x096670, 'tviF', ivcC, ivcF(ivcC + 0x7c, 3))[1])
+	check('cAIVehicleControl_SetMove(0)', lambda: (SDTest.Call(0x096190, 'bii', ivcC, 0)[0], ivcCF(), ivcPts(),
+		ivcCtls()))
+
+	# the target SDIvcCar2 (the node of the AI is left alone, only its target is set)
+	if ivcCar2Active:
+		ivcPoke(ivcAI + 0x40, ivcCar2)
+		check('cAIVehicleControl_SetMove(6)', lambda: (SDTest.Call(0x096190, 'bii', ivcC, 6)[0],
+			ivcI(ivcC + 0x15c) == ivcAI + 0x38, ivcCF()))
+		check('cAIVehicleControl_CheckTarget', lambda: SDTest.Call(0x091b40, 'tbi', ivcC)[0])
+		for ivcDt in (0.1, 0.4):
+			ivcSet(ivcC + 0x40, (ivcDt,))
+			check('cAIVehicleControl_ChaseLine' + fmt((ivcDt,)), lambda: (SDTest.Call(0x0923e0, 'tbi', ivcC)[0],
+				ivcCF(), ivcPts()))
+		ivcSet(ivcC + 0x90, (0.0, 0.0))
+		check('cAIVehicleControl_TurnToTarget', lambda: (SDTest.Call(0x0926f0, 'tvi', ivcC), ivcF(ivcC + 0x44, 2),
+			ivcF(ivcC + 0x90, 2), ivcCtls()))
+		check('cAIVehicleControl_UpdateOrient', lambda: (SDTest.Call(0x095e70, 'tbif', ivcC, 0.1)[0], ivcCtls()))
+		check('cAIVehicleControl_Update(6)', lambda: (SDTest.Call(0x092630, 'tvif', ivcC, 0.2), ivcCF(), ivcCtls()))
+		for ivcMin, ivcMax in ((5000.0, 20000.0), (1000.0, 4000.0), (20000.0, 40000.0), (8000.0, 8000.0)):
+			for ivcHy in (0, 1):
+				ivcSet(ivcC + 0x160, (ivcMax, ivcMin))
+				ivcSetByte(ivcC + 0x188, ivcHy)
+				ivcSetByte(ivcC + 0x189, ivcHy)
+				check('cAIVehicleControl_AccelChase' + fmt((ivcMin, ivcMax, ivcHy)), lambda: (SDTest.Call(0x0942c0,
+					'tvi', ivcC), ivcCtls(), ivcBytes(ivcC, (0xf8, 0x188, 0x189))))
+				ivcSrand(61)
+				ivcSet(ivcC + 0x40, (0.5,))
+				check('cAIVehicleControl_StrafeChase' + fmt((ivcMin, ivcMax, ivcHy)), lambda: (SDTest.Call(0x0935c0,
+					'tvi', ivcC), ivcF(ivcC + 0x178, 4), ivcCtls()))
+				check('cAIVehicleControl_AccelToTarget' + fmt((ivcMin, ivcMax, ivcHy)), lambda: (SDTest.Call(0x093ec0,
+					'tvi', ivcC), ivcCtls(), ivcF(ivcC + 0xfc, 1)))
+		ivcSetByte(ivcC + 0x188, 0)
+		ivcSetByte(ivcC + 0x189, 0)
+		check('cAIVehicleControl_SetOrient', lambda: (SDTest.Call(0x096870, 'tbii', ivcC, ivcAI + 0x38)[0], ivcCF()))
+		check('cAIVehicleControl_SetMove(0) after', lambda: (SDTest.Call(0x096190, 'bii', ivcC, 0)[0], ivcCF()))
+
+	# ---- the shoot control ----
+	def ivcSF(a=0):
+		return (ivcInts(ivcS, (4, 8, 0x100, 0x118, 0x124, 0x128, 0x17c)), ivcF(ivcS + 0x40, 1), ivcF(ivcS + 0x164, 4),
+			ivcBytes(ivcS, (0x178, 0x180)), ivcI(ivcS + 0x174) == ivcAI + 0x38)
+	def ivcWeaps(a=0):
+		r = ()
+		for k in range(7):
+			e = ivcS + 0x4c + 0x18 * k
+			if ivcB(e + 0x15):
+				r = r + ((ivcI(e + 0xc), 1, ivcI(e), ivcI(e + 0x10)),)
+			else:
+				r = r + ((ivcI(e + 0xc), 0),)
+		return r
+	check('cAIVehicleShoot after ctor', lambda: (ivcSF(), ivcWeaps(), ivcInts(ivcS, (0x12c, 0x130, 0x13c, 0x140, 0x144,
+		0x148, 0x14c)), ivcF(ivcS + 0x134, 2)))
+	ivcM3 = ivcNew(0x184)
+	ivcS2 = SDTest.Call(0x097020, 'tiiiii', ivcM3, ivcCar, ivcAI, ivcP3)[0]
+	check('cAIVehicleShoot_ctor', lambda: (ivcS2 == ivcM3, ivcI(ivcS2) - 0x400000, ivcInts(ivcS2, (4, 8, 0x100,
+		0x118, 0x124, 0x128, 0x174, 0x17c)), ivcI(ivcS2 + 0x17c) == ivcI(ivcCar + 0x238), ivcB(ivcS2 + 0x180),
+		ivcF(ivcS2 + 0x164, 4), ivcF(ivcS2 + 0x40, 1), ivcF(ivcS2 + 0x14, 3), ivcF(ivcS2 + 0x34, 3)))
+	check('cAIVehicleShoot_Delete', lambda: SDTest.Call(0x097190, 'tiii', ivcS2, 1)[0] == ivcS2)
+	check('cAIVehicleShoot getters', lambda: (SDTest.Call(0x098980, 'tvippp', ivcS, 0, 0, 0)[1:],
+		SDTest.Call(0x0989b0, 'tii', ivcS)[0] == ivcS + 0x12c, SDTest.Call(0x0989c0, 'tii', ivcS)[0] == ivcS + 0x148,
+		SDTest.Call(0x0989d0, 'tii', ivcS)[0] == ivcS + 0x4c, SDTest.Call(0x098ae0, 'tbi', ivcS)[0]))
+	ivcIds = ()
+	for ivcA in (0x4487d0, 0x448818, 0x448830, 0x4487e8, 0x448884, 0x448800, 0x44886c):
+		ivcIds = ivcIds + (SDTest.Peek(ivcA, 'i'),)
+	check('weapon ids', lambda: ivcIds)
+	for ivcW in ivcIds + (-1, 99):
+		check('cAIVehicleShoot_WeaponName(%d)' % ivcW, lambda w=ivcW: SDTest.Call(0x0989e0, 'tviib', 0, w, '')[1])
+	# the weapons of the car for the test: slots, the upgraded vulcan, ammo of every kind
+	ivcWm = ivcCar + 0x5f0
+	ivcWs = ivcI(ivcWm + 0x18)
+	ivcAmmo = ivcI(ivcWm + 0x20)
+	ivcNW = ivcI(SDTest.Peek(0x467450, 'i') + 0x1bb8)
+	ivcNA = ivcI(SDTest.Peek(0x467450, 'i') + 0x1bc4)
+	check('weapon tables', lambda: (ivcWs != 0, ivcAmmo != 0, ivcNW, ivcNA))
+	ivcOk = ivcWs and ivcAmmo and ivcNA >= 4
+	for ivcW in ivcIds:
+		if ivcW < 0 or ivcW >= ivcNW:
+			ivcOk = 0
+	if ivcOk:
+		# the target first: the inferno sums measure the distance to it
+		ivcPoke(ivcAI + 0x40, ivcCar2)
+		ivcPoke(ivcS + 0x174, ivcAI + 0x38)
+		ivcWsSave = ivcSave(ivcWs, 3 * ivcNW)
+		ivcAmmoSave = ivcSave(ivcAmmo, ivcNA)
+		def ivcAmmos(a=0):
+			return ivcF(ivcAmmo, 4)
+		def ivcGive(slots, upg):
+			for k in range(7):
+				ivcPoke(ivcWs + 12 * ivcIds[k], slots[k])
+				ivcPoke(ivcWs + 12 * ivcIds[k] + 4, upg[k])
+			SDTest.Call(0x099090, 'tvi', ivcS)
+		def ivcAmmoSums(a=0):
+			r = ()
+			for d in (100.0, 50000.0):
+				r = r + (SDTest.Call(0x0985b0, 'tfif', ivcS, d)[0], SDTest.Call(0x098680, 'tfif', ivcS, d)[0])
+			for k in range(3):
+				for d in (100.0, 50000.0):
+					r = r + (SDTest.Call(0x098d40, 'tbiif', ivcS, k, d)[0],)
+			for f in (0.0, 0.25, 0.9, 2.0):
+				r = r + (SDTest.Call(0x098af0, 'tbif', ivcS, f)[0],)
+			r = r + (SDTest.Call(0x0987b0, 'tfi', ivcS)[0], SDTest.Call(0x098880, 'tfi', ivcS)[0])
+			for w in ivcIds + (-1,):
+				r = r + (SDTest.Call(0x098910, 'tfii', ivcS, w)[0],)
+			for d in (100.0, 10000.0, 100000.0):
+				r = r + (SDTest.Call(0x098ce0, 'tbif', ivcS, d)[0],)
+			return r
+		for ivcSl, ivcUp, ivcAm in (((0, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0), (0.0, 0.0, 0.0, 0.0)),
+				((1, 1, 0, 0, 1, 0, 0), (0, 2, 0, 0, 0, 0, 0), (50.0, 0.0, 120.0, 30.0)),
+				((1, 1, 1, 1, 1, 1, 1), (1, 1, 0, 2, 0, 0, 1), (300.0, 200.0, 0.0, 150.0)),
+				((0, 0, 3, 1, 0, 1, 1), (0, 0, 1, 1, 0, 0, 0), (10.0, 500.0, 40.0, 0.5))):
+			ivcSet(ivcAmmo, ivcAm)
+			check('cAIVehicleShoot_InitWeapons' + fmt((ivcSl, ivcUp)), lambda s=ivcSl, u=ivcUp: (ivcGive(s, u),
+				ivcWeaps()))
+			check('cAIVehicleShoot ammo' + fmt((ivcSl, ivcUp, ivcAm)), lambda: ivcAmmoSums())
+			if ivcCar2Active:
+				ivcPoke(ivcAI + 0x40, ivcCar2)
+				ivcPoke(ivcS + 0x174, ivcAI + 0x38)
+				# the kind of the vulcan is read also when the car does not have it (then the original leaves a
+				# value of the stack there): only with the vulcan
+				ivcRange = ()
+				for ivcW in ivcIds + (-1,):
+					if ivcW != ivcIds[1] or ivcB(ivcS + 0x79):
+						ivcRange = ivcRange + (SDTest.Call(0x098dd0, 'tbii', ivcS, ivcW)[0],)
+				check('cAIVehicleShoot_InRange' + fmt((ivcSl,)), lambda r=ivcRange: r)
+				for ivcSeed in (1, 2, 3):
+					ivcSrand(ivcSeed)
+					check('cAIVehicleShoot_TargetInSight' + fmt((ivcSl, ivcSeed)), lambda: (SDTest.Call(0x097e70,
+						'tbii', ivcS, 1)[0], ivcI(ivcS + 0x100), ivcI(ivcCtl)))
+					ivcSrand(ivcSeed)
+					check('cAIVehicleShoot_SelectCM' + fmt((ivcSl, ivcSeed)), lambda: (SDTest.Call(0x098220, 'tvi',
+						ivcS), ivcI(ivcS + 0x118), ivcI(ivcCtl)))
+				check('cAIVehicleShoot_TargetInSight 0', lambda: (SDTest.Call(0x097e70, 'tbii', ivcS, 0)[0],
+					ivcI(ivcS + 0x100)))
+				for ivcA, ivcB2, ivcCm in ((1, 1, 0), (1, 2, 1), (0, 2, 0), (1, 0, 0), (2, 3, 1), (0, 0, 0)):
+					ivcSrand(ivcA + 4 * ivcB2)
+					check('cAIVehicleShoot_SetMode' + fmt((ivcSl, ivcA, ivcB2, ivcCm)), lambda a=ivcA, b=ivcB2,
+						c=ivcCm: (SDTest.Call(0x098f70, 'tbiiii', ivcS, a, b, c)[0], ivcSF(), ivcCtls()))
+					for ivcIn in (0, 1):
+						ivcSetByte(ivcC + 0x174, ivcIn)
+						for ivcDt in (0.25, 0.6):
+							ivcSrand(9)
+							check('cAIVehicleShoot_Update' + fmt((ivcIn, ivcDt)), lambda d=ivcDt: (SDTest.Call(0x0983c0,
+								'tvif', ivcS, d), ivcSF(), ivcCtls()))
+							ivcSrand(10)
+							check('cAIVehicleShoot_Update2' + fmt((ivcIn, ivcDt)), lambda d=ivcDt: (SDTest.Call(
+								0x098430, 'tvif', ivcS, d), ivcSF(), ivcCtls()))
+				ivcSetByte(ivcC + 0x174, 0)
+				ivcPoke(ivcS + 0x17c, ivcI(ivcCar + 0x238) + 10)
+				ivcSetByte(ivcS + 0x180, 1)
+				check('cAIVehicleShoot_PullFire', lambda: (SDTest.Call(0x097bc0, 'tvi', ivcS), ivcCtls(), ivcSF()))
+				check('cAIVehicleShoot_CheckTarget', lambda: (SDTest.Call(0x0971c0, 'tbi', ivcS)[0],
+					SDTest.Call(0x097220, 'tbi', ivcS)[0]))
+				ivcSrand(12)
+				check('cAIVehicleShoot_WeapListChanged', lambda: (SDTest.Call(0x099280, 'tvi', ivcS), ivcSF(),
+					ivcWeaps(), ivcI(ivcCtl)))
+				SDTest.Call(0x098f70, 'tbiiii', ivcS, 0, 0, 0)
+		ivcRestore(ivcWs, ivcWsSave)
+		ivcRestore(ivcAmmo, ivcAmmoSave)
+		SDTest.Call(0x099090, 'tvi', ivcS)
+	check('cAIVehicleShoot_Draw', lambda: SDTest.Call(0x0984b0, 'tvi', ivcS))
+
+	# ---- the vehicle group ----
+	ivcNE = ivcI(ivcGroup + 0xec)
+	check('cAIVehicleGroup elevators', lambda: (ivcNE, ivcF(ivcGroup + 0x74, 3 * ivcNE)))
+	check('cAIVehicleGroup_FindElevators', lambda: (SDTest.Call(0x096e90, 'tvi', ivcGroup), ivcI(ivcGroup + 0xec),
+		ivcF(ivcGroup + 0x74, 3 * ivcI(ivcGroup + 0xec))))
+	ivcTests = ((0.0, 0.0, 0.0), (64000.0, 52000.0, 60000.0))
+	for ivcK in range(ivcI(ivcGroup + 0xec)):
+		ivcE = ivcF(ivcGroup + 0x74 + 12 * ivcK, 3)
+		ivcTests = ivcTests + (ivcE, ivcAdd(ivcE, (300.0, 0.0, 0.0)), ivcAdd(ivcE, (0.0, -1000.0, 2000.0)))
+	for ivcT in ivcTests:
+		for ivcD in (0.0, 299.0, 500.0, 5000.0):
+			check('cAIVehicleGroup_ElevatorNear' + fmt((ivcT, ivcD)), lambda t=ivcT, d=ivcD: SDTest.Call(0x096e10,
+				'tbiFf', ivcGroup, t, d)[0])
+	check('cAIVehicleGroup_ResetRepos', lambda: (SDTest.Call(0x097000, 'tvi', ivcGroup),
+		SDTest.Call(0x096cd0, 'tbi', ivcGroup)[0]))
+	check('cAIVehicleGroup_Draw', lambda: SDTest.Call(0x096d10, 'tvi', ivcGroup))
+	ivcM4 = ivcNew(0xf4)
+	ivcG2 = SDTest.Call(0x096bf0, 'tii', ivcM4)[0]
+	check('cAIVehicleGroup_ctor', lambda: (ivcG2 == ivcM4, ivcI(ivcG2) - 0x400000, ivcInts(ivcG2, (0x54, 0x60, 0x64,
+		0x68, 0x6c, 0x70, 0xec)), ivcB(ivcG2 + 0x58), ivcF(ivcG2 + 0x5c, 1), ivcF(ivcG2 + 0x74, 3 * ivcI(ivcG2 + 0xec)),
+		SDTest.Call(0x096cd0, 'tbi', ivcG2)[0]))
+	check('cAIVehicleGroup_Delete', lambda: SDTest.Call(0x096ca0, 'tiii', ivcG2, 1)[0] == ivcG2)
+
+	# away again
+	ivcPoke(ivcAI + 0x40, 0)
+	ivcPoke(ivcS + 0x174, 0)
+	check('cAIVehicle_Delete', lambda: SDTest.Call(0x0868b0, 'tiii', ivcAI, 1)[0] == ivcAI)
+	ivcFree(ivcP1)
+	ivcFree(ivcP2)
+	ivcFree(ivcP3)
+	ivcRestore(ivcGroup + 0x5c, ivcGroupSave[0:6])
+	ivcPoke(ivcGroup + 0xf0, ivcGroupSave[6])
+	ivcRestore(ivcCar + 0xac, ivcCarSave[0:3])
+	ivcRestore(ivcCar + 0xd4, ivcCarSave[3:9])
+	ivcPoke(ivcCar + 0x46c, ivcCarSave[9])
+	ivcRestore(ivcCtl, ivcCtlSave)
+if ivcCarObj:
+	check('SDIvcCar Del', lambda: ivcCarObj.Del())
+if ivcCar2Obj:
+	check('SDIvcCar2 Del', lambda: ivcCar2Obj.Del())

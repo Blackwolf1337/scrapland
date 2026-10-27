@@ -13,6 +13,7 @@
 #include <stdarg.h>
 
 #include "scrap/ai.h"
+#include "scrap/aivehiclecontrol.h"
 #include "scrap/cstring.h"
 #include "scrap/nodestraffic.h"
 #include "scrap/pyfunction.h"
@@ -39,17 +40,6 @@ enum {
 
 /* the events of the move (cAIVehicle_Event): 0 path lost, 1 target not reachable, 2 arrived, 3 target gone */
 
-/* the move control and the shoot control (AI/IVehicleControl.cpp and its neighbours, not in C yet) */
-typedef struct cAIObjVtbl {
-	void *(__thiscall *Delete)(void *self, byte flags);	/* 0x00 */
-} cAIObjVtbl;
-typedef struct cAIVehicleControl {
-	const cAIObjVtbl *vftable;	/* 0x00 */
-	byte boost;			/* 0x04 the boost of the vehicle on */
-} cAIVehicleControl;
-typedef struct cAIVehicleShoot {
-	const cAIObjVtbl *vftable;
-} cAIVehicleShoot;
 
 /* a state with its arguments: the one to take when the vehicle group lets it (pending) and the one kept by
  * cAIVehicle_SaveState to come back to after an event (saved) */
@@ -89,24 +79,17 @@ typedef struct cAIVehicleVtbl {
 	byte(__thiscall *VarI)(cAIVehicle *self, const char *name, int *i, byte set);	/* 0x1c */
 	void *vf08_0c[5];
 	void(__thiscall *OnEvent)(cAIVehicle *self, int ev);				/* 0x34 the debug text of the event */
-	void *vf0e_15[8];
-	void(__thiscall *Event)(cAIVehicle *self, int ev);				/* 0x58 vf22 */
+	Nto1Node *(__thiscall *GetTargetNode)(cAIVehicle *self);			/* 0x38 &target */
+	void *vf0f_15[7];
+	byte(__thiscall *Event)(cAIVehicle *self, int ev);				/* 0x58 vf22 */
 	byte(__thiscall *IsMoving)(cAIVehicle *self);					/* 0x5c vf23 */
 	byte(__thiscall *CanTarget)(cAIVehicle *self, cEntity *e);			/* 0x60 */
 } cAIVehicleVtbl;
 SD_OFFSET(cAIVehicleVtbl, Debugf, 0x18);
 SD_OFFSET(cAIVehicleVtbl, OnEvent, 0x34);
+SD_OFFSET(cAIVehicleVtbl, GetTargetNode, 0x38);
 SD_OFFSET(cAIVehicleVtbl, Event, 0x58);
 SD_OFFSET(cAIVehicleVtbl, CanTarget, 0x60);
-
-/* a cSlotController inside the AI (0x10 bytes, AIV_Slot) */
-typedef struct cAIVSlot {
-	byte raw[CSLOTCONTROLLER_SIZE];
-} cAIVSlot;
-
-static inline cSlotController *AIV_Slot(cAIVSlot *s) {
-	return (cSlotController *)s->raw;
-}
 
 struct cAIVehicle {
 	const cAIVehicleVtbl *vftable;	/* 0x000 */
@@ -278,7 +261,7 @@ void __thiscall cAIVehicle_CheckParams2(cAIVehicle *self, const cAIVehicleParams
 void __thiscall cAIVehicle_CheckParams3(cAIVehicle *self, const cAIVehicleParams3 *p);
 byte __thiscall cAIVehicle_IsMoving(cAIVehicle *self);
 void cAIVehicle_Debugf(cAIVehicle *self, const char *fmt, ...);
-void __thiscall cAIVehicle_Event(cAIVehicle *self, int ev);
+byte __thiscall cAIVehicle_Event(cAIVehicle *self, int ev);
 byte __thiscall cAIVehicle_EventChase(cAIVehicle *self, int ev);
 byte __thiscall cAIVehicle_EventDefault(cAIVehicle *self, int ev);
 byte __thiscall cAIVehicle_EventFighting(cAIVehicle *self, int ev);
@@ -379,7 +362,8 @@ byte __thiscall cAIMove_VarI(void *self, const char *name, int *i, byte set);
 byte __thiscall cAIMove_VarS(void *self, const char *name, char **s, byte set);
 byte __thiscall cAIMove_VarV(void *self, const char *name, double *x, double *y, double *z, byte set);
 
-/* ---- cAIVehicleControl and cAIVehicleShoot (AI/IVehicleControl.cpp ..) ---- */
+/* ---- cAIVehicleControl and cAIVehicleShoot (src/game/AI/IVehicleControl.c, IVehicleShootControl.c; the rest of
+ * them in aivehiclecontrol.h) ---- */
 cAIVehicleControl *__thiscall cAIVehicleControl_ctor(void *mem, cEntity *v, cAIVehicle *ai, void *params);
 void __thiscall cAIVehicleControl_ApplyParams(cAIVehicleControl *self);
 void __thiscall cAIVehicleControl_Update(cAIVehicleControl *self, float dt);
@@ -415,7 +399,7 @@ byte __thiscall cAIVehicleShoot_HasAmmo(cAIVehicleShoot *self, float factor);
 /* the vehicle has a weapon for the ammo kind (the ones of the factor below a limit or above) */
 byte __thiscall cAIVehicleShoot_UsesAmmo(cAIVehicleShoot *self, int kind, float factor);
 byte __thiscall cAIVehicleShoot_TargetInSight(cAIVehicleShoot *self, int arg);
-void __thiscall cAIVehicleShoot_SetMode(cAIVehicleShoot *self, int a, int b, byte c);
+byte __thiscall cAIVehicleShoot_SetMode(cAIVehicleShoot *self, int a, int b, byte c);
 /* the fields at 0x124, 0x128 (2 in a race at the finishing line, assumed) and 0x178 */
 void __thiscall cAIVehicleShoot_GetInfo(cAIVehicleShoot *self, int *a, int *kind, byte *flag);
 

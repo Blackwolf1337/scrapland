@@ -57,8 +57,13 @@ struct cAIVehicleGroup {
 	int numStoppedMedium;		/* 0x68 */
 	int numStoppedLight;		/* 0x6c */
 	int numStoppedRoute;		/* 0x70 */
+	vec3_t elevators[10];		/* 0x74 the elevator and metro doors of the level */
+	int numElevators;		/* 0xec */
+	float reposTime;		/* 0xf0 the world time of the last repositioning */
 };
 SD_OFFSET(cAIVehicleGroup, numStoppedRoute, 0x70);
+SD_OFFSET(cAIVehicleGroup, numElevators, 0xec);
+SD_SIZE(cAIVehicleGroup, 0xf4);
 
 /* the first slots of every AI (cAIVehicle, cAIChar); variadic methods are __cdecl with self on the stack */
 typedef struct cAIVtbl {

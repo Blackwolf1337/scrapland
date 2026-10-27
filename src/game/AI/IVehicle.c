@@ -796,7 +796,8 @@ void cAIVehicle_Debugf(cAIVehicle *self, const char *fmt, ...) {
 
 /* ---- the events of the move (cAIMove), by state ---- */
 
-void __thiscall cAIVehicle_Event(cAIVehicle *self, int ev) {
+/* the handler of the state, else the default one; the result of the one that ran (callers test al) */
+byte __thiscall cAIVehicle_Event(cAIVehicle *self, int ev) {
 	byte done = 0;
 
 	switch (self->state) {
@@ -830,8 +831,9 @@ void __thiscall cAIVehicle_Event(cAIVehicle *self, int ev) {
 		break;
 	}
 	if (!done) {
-		cAIVehicle_EventDefault(self, ev);
+		done = cAIVehicle_EventDefault(self, ev);
 	}
+	return done;
 }
 
 byte __thiscall cAIVehicle_EventChase(cAIVehicle *self, int ev) {

@@ -30,5 +30,7 @@ int __thiscall cSlotController_Tick(cSlotController *self, float dt);
 byte __thiscall cSlotController_Fire(cSlotController *self, float *out);
 /* the same, the time left set to 0 first */
 byte __thiscall cSlotController_FireReset(cSlotController *self, float *out);
+/* a slot still more than 1 ms ahead starts now, its interval shortened by the time left */
+void __fastcall cSlotController_Restart(cSlotController *self);
 
 #endif
