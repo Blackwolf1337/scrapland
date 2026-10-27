@@ -290,6 +290,8 @@ static inline int Logic_Count(const int *numElems) {
 cLocalLogic *Logic_GetLocalLogic(cEntity *e);
 /* puts the entity on the floor; 0 if not possible */
 byte Logic_SetOnFloor(cEntity *e);
+/* a character on the floor below it (floorDist above the hit), 0 and an error without a floor */
+byte Logic_CharOnFloor(cEntity *e);
 /* flash at pos with radius; the last argument is -1 from the script module */
 int Logic_Flash(const vec3_t *pos, float radius, int arg);
 

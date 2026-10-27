@@ -158,18 +158,11 @@ typedef struct cAICharControl2DVtbl {
 } cAICharControl2DVtbl;
 SD_SIZE(cAICharControl2DVtbl, 103 * 4);
 
-/* the slots of the AI of the character (cAIChar) the control calls */
-typedef struct cAICharCtlOwnerVtbl {
-	void *vf00_0d[14];
-	Nto1Node *(__thiscall *GetTarget)(cAIChar *self);	/* 0x38 the link to the target entity */
-	void *vf0f_15[7];
-	byte(__thiscall *Event)(cAIChar *self, int ev);		/* 0x58 the move tells the AI (arrived, blocked, ..) */
-} cAICharCtlOwnerVtbl;
-SD_OFFSET(cAICharCtlOwnerVtbl, GetTarget, 0x38);
-SD_OFFSET(cAICharCtlOwnerVtbl, Event, 0x58);
+/* the AI of the character (cAIChar, include/scrap/ai.h): the control calls GetTarget (0x38) and Event (0x58) */
+typedef cAICharVtbl cAICharCtlOwnerVtbl;
 
 static inline const cAICharCtlOwnerVtbl *AICC_OwnerVtbl(cAIChar *ai) {
-	return *(const cAICharCtlOwnerVtbl **)ai;
+	return ai->vftable;
 }
 
 /* a cSlotController inside the control (0x10 bytes) */

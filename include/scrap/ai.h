@@ -6,6 +6,8 @@
 #ifndef SCRAP_AI_H
 #define SCRAP_AI_H
 
+#include <stdarg.h>
+
 #include "scrap/entity.h"
 #include "scrap/nodesworld.h"
 #include "scrap/python.h"
@@ -76,20 +78,236 @@ static inline void AI_Debugf(void *ai, const char *text) {
 	(*(const cAIVtbl **)ai)->Debugf(ai, text);
 }
 
+/* ---- the AI of a walking character (AI/AIChar.cpp, src/game/AI/IChar.c; the states and the functions in
+ * include/scrap/aichar.h) ---- */
+
+/* a state with its arguments (cAIChar_SaveState): the one to take when the character group lets it (pending), the
+ * one to come back to after a pause or an event (resume) and the one of the last change (last) */
+typedef struct cAICharSaved {
+	int state;			/* 0x00 AIC_ */
+	int internState;		/* 0x04 AICI_ */
+	vec3_t dest;			/* 0x08 */
+	float dist;			/* 0x14 */
+	float speed;			/* 0x18 */
+	char target[0x80];		/* 0x1c the name of the target entity, "" for none */
+	vec3_t dir;			/* 0x9c */
+	byte pathA;			/* 0xa8 */
+	byte pauses;			/* 0xa9 */
+	byte pad_aa[2];
+	vec3_t center;			/* 0xac */
+	float radius;			/* 0xb8 */
+	int action;			/* 0xbc */
+	float stateTime;		/* 0xc0 */
+	byte changing;			/* 0xc4 */
+	byte changed;			/* 0xc5 */
+	byte back;			/* 0xc6 */
+	byte orient;			/* 0xc7 */
+} cAICharSaved;
+SD_OFFSET(cAICharSaved, target, 0x1c);
+SD_OFFSET(cAICharSaved, center, 0xac);
+SD_SIZE(cAICharSaved, 0xc8);
+
+typedef struct cAICharControl cAICharControl;
+
+/* cAIChar::vftable (99 slots, rva 0x3a49b4); the variadic ones are __cdecl with self on the stack */
 typedef struct cAICharVtbl {
-	cAIVtbl base;
-	void *vf07_1a[20];
+	cAIChar *(__thiscall *Delete)(cAIChar *self, byte flags);					/* 0x00 */
+	void(__thiscall *Update)(cAIChar *self, float dt);						/* 0x04 */
+	void(__thiscall *UpdateOff)(cAIChar *self, float dt);						/* 0x08 */
+	void(__thiscall *Draw)(cAIChar *self);								/* 0x0c */
+	byte(__thiscall *GetChanged)(cAIChar *self);							/* 0x10 */
+	byte(__thiscall *InView)(cAIChar *self);							/* 0x14 */
+	void (*Debugf)(cAIChar *self, const char *fmt, ...);						/* 0x18 */
+	byte(__thiscall *VarI)(cAIChar *self, const char *name, int *i, byte set);			/* 0x1c */
+	byte(__thiscall *VarF)(cAIChar *self, const char *name, double *d, byte set);			/* 0x20 */
+	byte(__thiscall *VarS)(cAIChar *self, const char *name, char **s, byte set);			/* 0x24 */
+	byte(__thiscall *VarV)(cAIChar *self, const char *name, double *x, double *y, double *z, byte set);	/* 0x28 */
+	void *vf0b_0c[2];
+	void(__thiscall *OnEvent)(cAIChar *self, int ev);						/* 0x34 the debug text */
+	Nto1Node *(__thiscall *GetTarget)(cAIChar *self);						/* 0x38 the link to the target */
+	void *vf0f_10[2];
+	byte(__thiscall *IsPaused)(cAIChar *self);							/* 0x44 */
+	void *vf12_15[4];
+	/* the move tells the AI (arrived, blocked, ..): the reaction of the state, else EventDefault */
+	byte(__thiscall *Event)(cAIChar *self, int ev);							/* 0x58 */
+	byte(__thiscall *IsMoving)(cAIChar *self);							/* 0x5c */
+	byte(__thiscall *CanTarget)(cAIChar *self, cEntity *e);					/* 0x60 */
+	void(__thiscall *CheckParams)(cAIChar *self, int stupidPathfinding);				/* 0x64 */
+	byte(__thiscall *ChangeState)(cAIChar *self, int state, va_list ap);				/* 0x68 */
 	/* SAI_CHAR_ state; the arguments depend on the state (see SAIPy.c) */
-	byte (*SetState)(cAIChar *self, int state, ...);	/* 0x6c */
-	void *vf1c_1e[3];
-	int(__thiscall *GetState)(cAIChar *self);	/* 0x7c */
+	byte (*SetState)(cAIChar *self, int state, ...);						/* 0x6c */
+	byte(__thiscall *RestoreState)(cAIChar *self, const cAICharSaved *s);				/* 0x70 */
+	void(__thiscall *SetInternStateV)(cAIChar *self, int state, va_list ap);			/* 0x74 */
+	void (*SetInternState)(cAIChar *self, int state, ...);						/* 0x78 */
+	int(__thiscall *GetState)(cAIChar *self);							/* 0x7c */
+	int(__thiscall *GetInternState)(cAIChar *self);							/* 0x80 */
+	void(__thiscall *StateName)(cAIChar *self, int state, char *buf);				/* 0x84 */
+	void(__thiscall *GetStateName)(cAIChar *self, char *buf);					/* 0x88 */
+	void(__thiscall *InternStateName)(cAIChar *self, int state, char *buf);				/* 0x8c */
+	void(__thiscall *GetInternStateName)(cAIChar *self, char *buf);					/* 0x90 */
+	byte(__thiscall *GetDirect)(cAIChar *self);							/* 0x94 */
+	byte(__thiscall *GetDirect2)(cAIChar *self);							/* 0x98 */
+	cAICharControl *(__thiscall *GetControl)(cAIChar *self);					/* 0x9c */
+	cAICharSaved *(__thiscall *GetLast)(cAIChar *self);						/* 0xa0 */
+	cAICharSaved *(__thiscall *SaveTo)(cAIChar *self, cAICharSaved *s);				/* 0xa4 */
+	byte(__thiscall *SetRepos)(cAIChar *self, byte on, byte now);					/* 0xa8 */
+	byte(__thiscall *GetRepos)(cAIChar *self);							/* 0xac */
+	byte(__thiscall *IsTalking)(cAIChar *self);							/* 0xb0 */
+	cEntity *(__thiscall *GetCollide)(cAIChar *self);						/* 0xb4 */
+	byte(__thiscall *React)(cAIChar *self);								/* 0xb8 */
+	byte(__thiscall *CheckAction)(cAIChar *self);							/* 0xbc */
+	byte(__thiscall *GetChanged2)(cAIChar *self);							/* 0xc0 */
+	byte(__thiscall *CanTalk)(cAIChar *self);							/* 0xc4 */
+	byte (*SetStateIntern)(cAIChar *self, int state, ...);						/* 0xc8 */
+	byte(__thiscall *RestoreStateIntern)(cAIChar *self, const cAICharSaved *s);			/* 0xcc */
+	byte(__thiscall *ChangeStateMore)(cAIChar *self, int state, int allowed, va_list ap);		/* 0xd0 */
+	byte(__thiscall *IsGroupState)(cAIChar *self, int state);					/* 0xd4 */
+	byte(__thiscall *Repos)(cAIChar *self, float minDist, float maxDist, byte flag);		/* 0xd8 */
+	void(__thiscall *AfterRepos)(cAIChar *self);							/* 0xdc */
+	void(__thiscall *SetDists)(cAIChar *self);							/* 0xe0 */
+	void(__thiscall *SetDists2)(cAIChar *self);							/* 0xe4 */
+	void(__thiscall *BeginChange)(cAIChar *self, int state);					/* 0xe8 */
+	void(__thiscall *SetPauseCheck)(cAIChar *self, byte on);					/* 0xec */
+	void(__thiscall *SaveState)(cAIChar *self, cAICharSaved *s);					/* 0xf0 */
+	void(__thiscall *RestoreSaved)(cAIChar *self, const cAICharSaved *s);				/* 0xf4 */
+	void(__thiscall *SetPaused)(cAIChar *self, byte on);						/* 0xf8 */
+	void(__thiscall *UpdateAction1)(cAIChar *self);							/* 0xfc */
+	void(__thiscall *UpdateAction0)(cAIChar *self);							/* 0x100 */
+	void(__thiscall *UpdateAction)(cAIChar *self);							/* 0x104 */
+	void(__thiscall *CheckActDist)(cAIChar *self);							/* 0x108 */
+	void(__thiscall *SetAction)(cAIChar *self, int action);						/* 0x10c */
+	void(__thiscall *UpdateMove)(cAIChar *self, float dt);						/* 0x110 */
+	byte(__thiscall *EventDefault)(cAIChar *self, int ev);						/* 0x114 */
+	byte(__thiscall *EventInRoute)(cAIChar *self, int ev);						/* 0x118 */
+	byte(__thiscall *EventPatrol)(cAIChar *self, int ev);						/* 0x11c */
+	byte(__thiscall *EventGoTo)(cAIChar *self, int ev);						/* 0x120 */
+	byte(__thiscall *EventGetAway)(cAIChar *self, int ev);						/* 0x124 */
+	byte(__thiscall *EventChase)(cAIChar *self, int ev);						/* 0x128 */
+	byte(__thiscall *EventChaseBack)(cAIChar *self, int ev);					/* 0x12c */
+	byte(__thiscall *EventChaseNoAction)(cAIChar *self, int ev);					/* 0x130 */
+	byte(__thiscall *EventLostPath)(cAIChar *self, int ev);						/* 0x134 */
+	void(__thiscall *Resume)(cAIChar *self);							/* 0x138 */
+	void(__thiscall *UpdateThink)(cAIChar *self);							/* 0x13c */
+	void(__thiscall *CheckPause)(cAIChar *self);							/* 0x140 */
+	void(__thiscall *CheckRepos)(cAIChar *self);							/* 0x144 */
+	byte(__thiscall *CanRepos)(cAIChar *self, int state);						/* 0x148 */
+	void(__thiscall *Think)(cAIChar *self);								/* 0x14c */
+	void(__thiscall *ThinkInRoute)(cAIChar *self);							/* 0x150 */
+	void(__thiscall *ThinkGetAway)(cAIChar *self);							/* 0x154 */
+	void(__thiscall *ThinkChase)(cAIChar *self);							/* 0x158 */
+	void(__thiscall *ThinkChaseBack)(cAIChar *self);						/* 0x15c */
+	void(__thiscall *ThinkChaseNoAction)(cAIChar *self);						/* 0x160 */
+	void(__thiscall *ThinkLostPath)(cAIChar *self);							/* 0x164 */
+	void(__thiscall *ThinkLostPathChase)(cAIChar *self);						/* 0x168 */
+	void(__thiscall *ReactLostPath)(cAIChar *self);							/* 0x16c */
+	void(__thiscall *ReactLostPathChase)(cAIChar *self);						/* 0x170 */
+	void(__thiscall *ReactPatrol)(cAIChar *self);							/* 0x174 */
+	void(__thiscall *ReactInRoute)(cAIChar *self);							/* 0x178 */
+	void(__thiscall *ThinkGoTo)(cAIChar *self);							/* 0x17c */
+	void(__thiscall *ThinkPatrol)(cAIChar *self);							/* 0x180 */
+	void(__thiscall *CheckTalk)(cAIChar *self);							/* 0x184 */
+	byte(__thiscall *Facing)(cAIChar *self, cEntity *a, cEntity *b);				/* 0x188 */
 } cAICharVtbl;
+SD_OFFSET(cAICharVtbl, Debugf, 0x18);
+SD_OFFSET(cAICharVtbl, GetTarget, 0x38);
+SD_OFFSET(cAICharVtbl, IsPaused, 0x44);
+SD_OFFSET(cAICharVtbl, Event, 0x58);
 SD_OFFSET(cAICharVtbl, SetState, 0x6c);
 SD_OFFSET(cAICharVtbl, GetState, 0x7c);
+SD_OFFSET(cAICharVtbl, GetDirect, 0x94);
+SD_OFFSET(cAICharVtbl, SaveTo, 0xa4);
+SD_OFFSET(cAICharVtbl, GetRepos, 0xac);
+SD_OFFSET(cAICharVtbl, SetStateIntern, 0xc8);
+SD_OFFSET(cAICharVtbl, SaveState, 0xf0);
+SD_OFFSET(cAICharVtbl, EventDefault, 0x114);
+SD_OFFSET(cAICharVtbl, Think, 0x14c);
+SD_OFFSET(cAICharVtbl, Facing, 0x188);
+SD_SIZE(cAICharVtbl, 99 * 4);
 
+/* 0x380 bytes; the first 0x90 are cAIMove (AI/AIMove.cpp) with its base cAI */
 struct cAIChar {
-	const cAICharVtbl *vftable;
+	const cAICharVtbl *vftable;	/* 0x000 */
+	byte pad_4[4];
+	cEntity *owner;			/* 0x008 of cAI */
+	float dt;			/* 0x00c the time of the frame */
+	byte slotThink[0x10];		/* 0x010 the think slot of cAI (a cSlotController) */
+	byte changing;			/* 0x020 a change of state runs */
+	byte pad_21[3];
+	int relaxCount;			/* 0x024 the relax actions played in the internal state */
+	byte changed;			/* 0x028 the internal state changed in this frame */
+	byte pad_29;
+	byte b2a;			/* 0x02a */
+	byte pad_2b;
+	float stateTime;		/* 0x02c */
+	byte pad_30[8];
+	Nto1Node target;		/* 0x038 the target entity at 0x40, data the AI */
+	byte flying;			/* 0x048 the 3D control (CanFly) */
+	byte pad_49[3];
+	vec3_t dest;			/* 0x04c */
+	float dist;			/* 0x058 the goal is reached that near */
+	int moveMode;			/* 0x05c AICC_ */
+	float speed;			/* 0x060 */
+	vec3_t dir;			/* 0x064 the direction of the orient and path moves */
+	vec3_t center;			/* 0x070 PATROL_ZONE */
+	float radius;			/* 0x07c PATROL_ZONE */
+	byte pathA;			/* 0x080 */
+	byte pathB;			/* 0x081 */
+	byte b82;			/* 0x082 */
+	byte inPath;			/* 0x083 FOLLOW_THE_PATH set it */
+	byte paused;			/* 0x084 far from the camera: no update */
+	byte arrived;			/* 0x085 GO_TO reached the end */
+	byte repos;			/* 0x086 "Repos" */
+	byte reposing;			/* 0x087 inside Repos */
+	byte b88;			/* 0x088 */
+	byte pad_89[3];
+	int i8c;			/* 0x08c */
+	cAICharSaved pending;		/* 0x090 state AIC_STATE_NONE for none */
+	byte slotAction[0x10];		/* 0x158 0.2 s, the distance check of the action */
+	byte slotPause[0x10];		/* 0x168 1 s */
+	byte slotRepos[0x10];		/* 0x178 1 s */
+	byte slotLost[0x10];		/* 0x188 0.2 s, LOST_PATH looks for the graph */
+	cEntity *ent;			/* 0x198 the character (cWalkCharEntity) */
+	cAICharControl *control;	/* 0x19c the move control (2D or 3D) */
+	int state;			/* 0x1a0 AIC_ */
+	int internState;		/* 0x1a4 AICI_ */
+	int action;			/* 0x1a8 1 while the action button is used on the target */
+	struct cWalkCharControl *ctrl;	/* 0x1ac the control of the character (0x4ec of it) */
+	float actMin;			/* 0x1b0 the action between these distances to the target */
+	float actMax;			/* 0x1b4 */
+	float chaseNear;		/* 0x1b8 */
+	float chaseFar;			/* 0x1bc */
+	byte pauses;			/* 0x1c0 IN_ROUTE and PATROL_ZONE stop now and then */
+	byte back;			/* 0x1c1 */
+	byte pauseCheck;		/* 0x1c2 */
+	byte pad_1c3;
+	cAICharSaved resume;		/* 0x1c4 kept before a pause or an event */
+	cAICharSaved last;		/* 0x28c the state when the last change began */
+	float actTime;			/* 0x354 the action button held */
+	float standTime;		/* 0x358 the target did not move */
+	byte canTalk;			/* 0x35c */
+	byte talking;			/* 0x35d */
+	byte talkTurn;			/* 0x35e */
+	byte pad_35f;
+	int numTalks;			/* 0x360 */
+	int talkRun;			/* 0x364 the talk actions in a row */
+	int lastTalk;			/* 0x368 0..2, Talk0..Talk2 */
+	float routeTime;		/* 0x36c */
+	byte orient;			/* 0x370 */
+	byte pad_371[3];
+	vec3_t lostPoint;		/* 0x374 -FLT_MAX for none */
 };
+SD_OFFSET(cAIChar, slotThink, 0x10);
+SD_OFFSET(cAIChar, target, 0x38);
+SD_OFFSET(cAIChar, center, 0x70);
+SD_OFFSET(cAIChar, pending, 0x90);
+SD_OFFSET(cAIChar, slotAction, 0x158);
+SD_OFFSET(cAIChar, ent, 0x198);
+SD_OFFSET(cAIChar, pauses, 0x1c0);
+SD_OFFSET(cAIChar, resume, 0x1c4);
+SD_OFFSET(cAIChar, last, 0x28c);
+SD_OFFSET(cAIChar, actTime, 0x354);
+SD_OFFSET(cAIChar, lostPoint, 0x374);
+SD_SIZE(cAIChar, 0x380);
 
 /* the three parameter blocks of SAI.EnableAIVehicle, named by the CHECKs of cAIVehicle_CheckParams1..3 */
 typedef struct cAIVehicleParams1 {
