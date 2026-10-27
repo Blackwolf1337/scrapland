@@ -2728,3 +2728,133 @@ void __thiscall cObjElementFXMercenaryDrink_Update(cObjElementFXMercenaryDrink *
 		FXMercenary_Drop(sp, life, 1);
 	}
 }
+
+/* the 15 sparks of an end of the Bishop ray: spread by up to 60 degrees around dir times len (out of the end with
+ * sign 1, into it with -1) */
+static void FXBishop_Sparks(CGameTrail *tr, const vec3_t *end, const vec3_t *dir, float len, float sign, uint32_t c,
+	uint32_t c2) {
+	vec3_t ang, o, tmp;
+
+	for (int i = 0; i < 15; i++) {
+		float az = (float)(FXA_Rnd() * (double)2.09439516f - (double)1.04719758f);
+		float ay = (float)(FXA_Rnd() * (double)2.09439516f - (double)1.04719758f);
+		ang.x = (float)(FXA_Rnd() * (double)2.09439516f - (double)1.04719758f);
+		ang.y = ay;
+		ang.z = az;
+		const vec3_t *r = Vec3_Rotate(&o, dir, &ang);
+		float ox = r->x * len;
+		float oy = r->y * len;
+		float oz = r->z * len;
+		float w = FXA_Rand(20.0, 50.0);
+		float rr = FXA_Rand(10.0, 0.0);
+		const vec3_t *dd = FX_RandomDir(&tmp);
+		vec3_t pa, pb;
+		if (sign > 0.0f) {
+			pa.x = dd->x * rr + end->x;
+			pa.y = end->y + dd->y * rr;
+			pa.z = end->z + dd->z * rr;
+			pb.x = ox + end->x;
+			pb.y = oy + end->y;
+			pb.z = oz + end->z;
+		} else {
+			pa.x = end->x + dd->x * rr;
+			pa.y = end->y + dd->y * rr;
+			pa.z = end->z + dd->z * rr;
+			pb.x = end->x - ox;
+			pb.y = end->y - oy;
+			pb.z = end->z - oz;
+		}
+		CGameTrail_Add(tr, pa, w, c);
+		CGameTrail_Add(tr, pb, w * 2.5f, c2);
+	}
+}
+
+/* the flashes at an end of the Bishop ray: three at the end, eight spread around it along dir times k */
+static void FXBishop_Flashes(CGameParticles *sp, int first, const vec3_t *end, const vec3_t *dir, float k, float spread,
+	const float *sizes, float size8, int alpha) {
+	vec3_t tmp;
+
+	CGameParticles_SetParticle(sp, first, end->x, end->y, end->z, sizes[0],
+		(uint32_t)FXA_Min255(alpha + 4) << 24 | 0xc0ffc0, 1, 0.0f);
+	CGameParticles_SetParticle(sp, first + 1, end->x, end->y, end->z, sizes[1],
+		(uint32_t)FXA_Min255(alpha + 0x10) << 24 | 0x80ff80, 5, 0.0f);
+	CGameParticles_SetParticle(sp, first + 2, end->x, end->y, end->z, sizes[2],
+		(uint32_t)FXA_Min255(alpha + 0xc0) << 24 | 0x40ff40, 2, 0.0f);
+	for (int i = 0; i < 8; i++) {
+		uint32_t e = (uint32_t)FXA_Min255(alpha + 0x40) << 24 | 0xc0ffc0;
+		const vec3_t *dd = FX_RandomDir(&tmp);
+		float x = (end->x + dir->x * k) + dd->x * spread;
+		float y = (end->y + dir->y * k) + dd->y * spread;
+		float z = (end->z + dir->z * k) + dd->z * spread;
+		CGameParticles_SetParticle(sp, first + 3 + i, x, y, z, size8, e, 2, 0.0f);
+	}
+}
+
+void __thiscall cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self, cDebris *d, float dt) {
+	vec3_t pos, rot, tmp;
+	float f, a;
+	static const float fromSizes[3] = { 100.0f, 240.0f, 300.0f };
+	static const float toSizes[3] = { 120.0f, 260.0f, 320.0f };
+
+	(void)dt;
+	FXA_Keep(&self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), -80.0f, 0.0f);
+	float delta = FXA_Delta();
+	self->fc = delta + self->fc;
+	float t = delta + self->f10;
+	self->f10 = t;
+	if (0.06f > t) {
+		FX_InRange(t, 0.0f, 0.06f, &f);
+		a = f;
+	} else if (0.1f > t) {
+		a = 1.0f;
+	} else if (FX_InRange(t, 0.1f, 0.35f, &f)) {
+		a = 1.0f - f;
+	} else {
+		a = 0.0f;
+	}
+	float width = (3.0f - a * 2.0f) * (a * a) * 42.0f + 36.0f;
+	int alpha = (int)((1.0f - (2.0f - a) * (a * a)) * 255.0f);
+	uint32_t c = (uint32_t)FXA_Min255(alpha + 0x18) << 24 | 0x30ff30;
+	CGameTrail_Reset(&self->trails[0]);
+	CGameTrail_Add(&self->trails[0], self->from, width, c);
+	CGameTrail_Add(&self->trails[0], self->to, width, c);
+	CGameTrail_Reset(&self->trails[1]);
+	for (int i = 0; i < 4; i++) {
+		uint32_t a1 = (uint32_t)FXA_Min255(alpha + 4);
+		float r = FXA_Rand(13.0, 1.0);
+		const vec3_t *dd = FX_RandomDir(&tmp);
+		float ex = dd->x * r;
+		float ey = dd->y * r;
+		float ez = dd->z * r;
+		uint32_t col = (uint32_t)(0x80 - crt_rand() % 64) << 8;
+		col = (uint32_t)(crt_rand() % 32 + 0x18) << 16 | col;
+		col = (uint32_t)(crt_rand() % 32 + 0x18) | a1 << 24 | col;
+		double rr = FXA_Rnd();
+		float w = (float)(rr + rr + 11.0);
+		vec3_t p = { ex + self->from.x, self->from.y + ey, self->from.z + ez };
+		CGameTrail_Add(&self->trails[1], p, w, col);
+		p = (vec3_t){ self->to.x + ex, self->to.y + ey, self->to.z + ez };
+		CGameTrail_Add(&self->trails[1], p, w, col);
+	}
+	CGameTrail_SetUV(&self->trails[1], self->f10 * -8.0f, 0.0f);
+	CGameTrail_Reset(&self->trails[2]);
+	uint32_t c4 = (uint32_t)FXA_Min255(alpha + 8) << 24 | 0x3040c0;
+	FXBishop_Sparks(&self->trails[2], &self->from, &self->dir, 150.0f, 1.0f, c4, c4 | 0xff000000);
+	CGameParticles *sp = &self->particles;
+	FXBishop_Flashes(sp, 0, &self->from, &self->dir, 35.0f, 18.0f, fromSizes, 95.0f, alpha);
+	CGameTrail_Reset(&self->trails[3]);
+	FXBishop_Sparks(&self->trails[3], &self->to, &self->dir, 160.0f, -1.0f, c4, c4 | 0xff000000);
+	FXBishop_Flashes(sp, 0xc, &self->to, &self->dir, -15.0f, 20.0f, toSizes, 115.0f, alpha);
+	if (!(0.02f > self->fc)) {
+		self->fc = 0.0f;
+	}
+}

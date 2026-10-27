@@ -546,6 +546,8 @@ void __thiscall cObjElementFXMessengerTakeDataPack_Update(cObjElementFXMessenger
 	float dt);
 /* the mercury drops out of the jar of the Mercenary from 0.5 to 1.3 s */
 void __thiscall cObjElementFXMercenaryDrink_Update(cObjElementFXMercenaryDrink *self, cDebris *d, float dt);
+/* the green ray of the Bishop from .. to with sparks at both ends */
+void __thiscall cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self, cDebris *d, float dt);
 void __thiscall cObjElementFXBettyKill_Update(cObjElementFXKill *self, cDebris *d, float dt);
 void __thiscall cObjElementFXDTritusKill_Update(cObjElementFXKill *self, cDebris *d, float dt);
 void __thiscall cObjElementFXDTritusAttack_Start(cObjElementFXDTritusAttack *self, cEntity *e);
