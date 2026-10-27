@@ -29,6 +29,7 @@ typedef uint32_t(__stdcall *d3dRelease_t)(void *obj);
 #define D3DDEV_SETLIGHT 0xb0
 #define D3DDEV_LIGHTENABLE 0xb8
 #define D3DDEV_SETRENDERSTATE 0xc8
+#define D3DDEV_GETRENDERSTATE 0xcc
 #define D3DDEV_SETTEXTURE 0xf4
 #define D3DDEV_GETTEXTURESTAGESTATE 0xf8
 #define D3DDEV_SETTEXTURESTAGESTATE 0xfc
@@ -57,6 +58,7 @@ typedef int(__stdcall *d3dDeletePixelShader_t)(void *dev, uint32_t handle);
 typedef int(__stdcall *d3dDrawIndexedPrimitiveUP_t)(void *dev, int type, uint32_t minIndex, uint32_t numVertices,
 	uint32_t primCount, const void *idx, int idxFmt, const void *data, uint32_t stride);
 typedef int(__stdcall *d3dSetRenderState_t)(void *dev, uint32_t state, uint32_t value);
+typedef int(__stdcall *d3dGetRenderState_t)(void *dev, uint32_t state, uint32_t *value);
 typedef int(__stdcall *d3dSetTextureStageState_t)(void *dev, uint32_t stage, uint32_t type, uint32_t value);
 typedef int(__stdcall *d3dSetPixelShader_t)(void *dev, uint32_t handle);
 typedef int(__stdcall *d3dCreatePixelShader_t)(void *dev, const void *code, uint32_t *handle);
@@ -86,6 +88,7 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DTS_TEXTURE0 16
 #define D3DTS_WORLD 256
 #define D3DRS_ZENABLE 7
+#define D3DRS_FILLMODE 8
 #define D3DRS_ZWRITEENABLE 14
 #define D3DRS_ALPHATESTENABLE 15
 #define D3DRS_SRCBLEND 19

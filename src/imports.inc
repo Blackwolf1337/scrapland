@@ -197,15 +197,10 @@ SD_IMPORT(Cad_Read, 0x2a18a0)
 SD_IMPORT(Cad_Write, 0x2a1920)
 SD_IMPORT(CAnimacion_ctor, 0x2ab6f0)
 SD_IMPORT(CAnimacion_dtor, 0x2ab940)
-SD_IMPORT(CMallaD3D_CalcPesos, 0x2b8900)
-SD_IMPORT(CMallaD3D_CalcIlum, 0x2b8e80)
 SD_IMPORT(CSuelo_CalcIlum, 0x261630)
-SD_IMPORT(NodeFX_New, 0x2b2cc0)
 
 /* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
 SD_IMPORT(CObjBase3D_SetNodo, 0x2cad70)
-SD_IMPORT(SistPart_Draw, 0x2b7150)
-SD_IMPORT(SistPart_Draw2, 0x2b55d0)
 
 /* src/game/engine3d/Engine/SueloPortal.c (called from Engine/SueloPortal.cpp, include/scrap/sueloportal.h) */
 SD_IMPORT(CSuelo_RayoVert, 0x2ca360)
@@ -224,25 +219,17 @@ SD_IMPORT(CSuelo_FreeNodos, 0x261530)
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
 SD_IMPORT(RenderLock_InitD3D, 0x2a48f0)
 SD_IMPORT(ListaVert_InitD3D, 0x2404f0)
-SD_IMPORT(RenderEVA_InitD3D, 0x2b4320)
-SD_IMPORT(ModelFX_InitD3D, 0x2b8570)
-SD_IMPORT(RenderEVA_DrawSkin, 0x2b5d90)
-SD_IMPORT(RenderEVA_DrawSkinNodo, 0x2b4660)
 SD_IMPORT(Stencil_Malla, 0x267530)
 SD_IMPORT(CListaVert_EnvMapUV, 0x2418c0)
 SD_IMPORT(CAnimMat_GetFrame, 0x258060)
 SD_IMPORT(Matrix_Invert, 0x239560)
 SD_IMPORT(RenderLock_ReleaseD3D, 0x2a4860)
 SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
-SD_IMPORT(RenderEVA_ReleaseD3D, 0x2b4550)
 SD_IMPORT(RenderGamma_ReleaseD3D, 0x2a7980)
 SD_IMPORT(RenderGamma_Begin, 0x2a7520)
 SD_IMPORT(RenderGamma_LogShaderMask, 0x2a7cd0)
 SD_IMPORT(Vec3_ToAngles, 0x239150)
 SD_IMPORT(Matrix_RotationZ, 0x23a2b0)
-SD_IMPORT(RenderMallaD3D_Flush, 0x2b6af0)
-SD_IMPORT(RenderMallaD3D_Flush2, 0x2b6e60)
-SD_IMPORT(RenderObjBase3D_Flush, 0x2b7260)
 
 /* src/game/engine3d/Engine/Grafico2D.c (called from Engine/grafico2d.cpp, include/scrap/grafico2d.h) */
 
@@ -254,7 +241,6 @@ SD_IMPORT(RenderObjBase3D_Flush, 0x2b7260)
 SD_IMPORT(CAnimMat_ctorCopy, 0x257f10)
 
 /* src/game/engine3d/Engine/Portal.c (called from Engine/portal.cpp, include/scrap/portal.h) */
-SD_IMPORT(CPortal_DrawDebug, 0x2ba2b0)
 SD_IMPORT(CPortal_ClipRect, 0x2ba930)
 SD_IMPORT(Debug_Line, 0x27cb80)
 
@@ -262,7 +248,6 @@ SD_IMPORT(Debug_Line, 0x27cb80)
 
 
 /* module agent: Engine/MallaD3D (imports below this line) */
-SD_IMPORT(MallaD3D_Render, 0x2b67a0)
 SD_IMPORT(CMallaD3D_CalcSegmentos, 0x2d5350)
 
 /* module agent: Engine/Suelo (imports below this line) */
@@ -676,3 +661,7 @@ SD_IMPORT(cAICharGroup_FindRepos, 0x080ee0)
 /* module agent: Engine/lee_M3D.cpp and bsp_q3.cpp (imports below this line) */
 
 /* module agent: Engine NodeFX..ModelFX (imports below this line) */
+SD_IMPORT(Ang_Wrap, 0x238b80)
+SD_IMPORT(Matrix_Transpose, 0x239860)
+SD_IMPORT(CMaterial_ScaleColors, 0x237020)
+SD_IMPORT(RenderCalcIlum_Luz, 0x2ce410)

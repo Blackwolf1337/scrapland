@@ -47,12 +47,12 @@ void __thiscall CPortal_UpdateCache(CPortal *self, const matrix_t *m);
 static inline int Portal_Pixel(float r, uint32_t n, uint32_t o) {
 	return (int)(r * (float)(double)n * 0.5f + (float)(double)o);
 }
+/* the debug drawing of the rectangle (R_ShowPortals) */
+void __thiscall CPortal_DrawDebug(CPortal *self, uint32_t color);
 /* a screen rectangle (-1..1) drawn in the viewport vp (x, y, w, h) for the debug output */
 void Portal_DrawRect(const int *vp, const float *rect, uint32_t color);
 
 /* other modules (src/imports.inc) */
-/* rva 0x2ba2b0, the debug drawing of the rectangle */
-void __thiscall CPortal_DrawDebug(CPortal *self, uint32_t color);
 /* rva 0x2ba930: the screen rectangle (-1..1) the portal covers, clipped; 0 when it is not seen */
 byte __thiscall CPortal_ClipRect(CPortal *self, box_t *rect);
 /* rva 0x27cb80, a GDI line on the window for the debug output */

@@ -258,6 +258,34 @@ CModelo *Crear_Modelo2(const char *name, const char *name2, uint32_t flags);
 CModelo *Crear_Modelo4(const char *name, const char *name2, float umbral, uint32_t flags);
 int ListaModelo_CompareKey(const void *a, const void *b);	/* qsort, larger sortKey first */
 
+/* Engine/ModelFX.cpp (src/game/engine3d/Engine/ModelFX.c): the render effects of a model, f10c the effect (1..8,
+ * MODEL_EFFECT_LAST), the float in f110 its parameter. Drawn in the passes 0, 3 and 13 as several draws of the scene
+ * with g_MatFX1 or g_MatForzado; 6..8 need the pixel shaders. */
+struct CGrafico2D;
+#define g_FXMat (*(CMaterial *)Game_Ptr(0x4e1c68))	/* the colors and blends of the effects */
+#define g_FXGrfNoise1 (*(struct CGrafico2D *)Game_Ptr(0x4e1c20))	/* bmp/noise.tga */
+#define g_FXGrfStatic (*(struct CGrafico2D *)Game_Ptr(0x4e1d18))	/* bmp/noise_static.alpha.tga, the scan lines */
+#define g_FXGrfNoise2 (*(struct CGrafico2D *)Game_Ptr(0x4e1d60))	/* bmp/noise2.tga */
+#define g_MatElectric GAME_DATA(CMaterial *, 0x4e1c64)	/* fx_Electric (+shader:Electric) */
+#define g_MatFire GAME_DATA(CMaterial *, 0x4e1d5c)		/* fx_Fire (+shader:Fire) */
+#define g_MatNoise GAME_DATA(CMaterial *, 0x4e1da4)		/* fx_Noise (+shader:Noise) */
+void __thiscall ModelFX_Render(CModelo *self, NodoAnimCtx *ctx);
+/* 1: a TV picture with static, 2 and 3: faded out (2 over a gray pass), 4: 1 in wire frame, 5: green glow, 6:
+ * electric, 7: fire, 8: noise */
+void ModelFX_Static(CModelo *m, NodoAnimCtx *ctx);
+void ModelFX_FadeLit(CModelo *m, NodoAnimCtx *ctx);
+void ModelFX_Fade(CModelo *m, NodoAnimCtx *ctx);
+void ModelFX_Wire(CModelo *m, NodoAnimCtx *ctx);
+void ModelFX_Glow(CModelo *m, NodoAnimCtx *ctx);
+void ModelFX_Electric(CModelo *m, NodoAnimCtx *ctx);
+void ModelFX_Fire(CModelo *m, NodoAnimCtx *ctx);
+void ModelFX_Noise(CModelo *m, NodoAnimCtx *ctx);
+/* the gray pass of 2 and 8, and a variant of 1 no effect uses */
+void ModelFX_Base(CModelo *m, NodoAnimCtx *ctx);
+void ModelFX_Static2(CModelo *m, NodoAnimCtx *ctx);
+/* the overlays and the shader materials */
+void ModelFX_InitD3D(void);
+
 /* other modules (src/imports.inc) */
 float World_TimeScale(void);						/* rva 0x20aea0 */
 void __fastcall CNodoR_dtor(CNodoR *self);				/* rva 0x23f450 */

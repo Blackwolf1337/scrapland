@@ -59,12 +59,12 @@ typedef struct CMallaD3D {
 	CListaVert vert;		/* 0x14 */
 	uint16_t *vertOrig;		/* 0x28 the CMallaTri vertex of each vertex (MALLAD3D_VERTORIG) */
 	int triBase;			/* 0x2c the first triangle of this mesh in the list (CalcSegmentos) */
-	uint32_t nSeg;			/* 0x30 */
+	uint32_t nSeg;			/* 0x30 the triangles of the whole list (pSeg) */
 	uint32_t n34;			/* 0x34 */
 	uint32_t nPos;			/* 0x38 */
-	void *pSeg;			/* 0x3c 16 bytes each (CalcSegmentos) */
+	void *pSeg;			/* 0x3c MallaTriPlane of each triangle of the list, the shadow volume (pTriSeg) */
 	void *p40;			/* 0x40 8 bytes each */
-	vec3_t *pPos;			/* 0x44 the CMallaTri positions (MALLAD3D_POS) */
+	vec3_t *pPos;			/* 0x44 the CMallaTri positions (MALLAD3D_POS), of the frame with a skin (pVertOrig) */
 	uint32_t *triFlags;		/* 0x48 NULL for none */
 	CMaterial *mat;			/* 0x4c */
 	byte b50;			/* 0x50 MALLAD3D_WEIGHT */
@@ -84,8 +84,8 @@ typedef struct CMallaD3D {
 	void *pVertVB;			/* 0xac IDirect3DVertexBuffer8 */
 	void *pVertIB;			/* 0xb0 IDirect3DIndexBuffer8 */
 	CNodo3D *nodo;			/* 0xb4 referenced */
-	int ib8;			/* 0xb8 */
-	int ibc;			/* 0xbc */
+	void *ib8;			/* 0xb8 the render node of the last skinning (RenderEVA_DrawSkin) */
+	int ibc;			/* 0xbc its frame */
 	void *pc0;			/* 0xc0 COM objects released with the buffers */
 	void *pc4;			/* 0xc4 */
 } CMallaD3D;
@@ -97,6 +97,13 @@ SD_OFFSET(CMallaD3D, center, 0x84);
 SD_OFFSET(CMallaD3D, skinRef, 0x98);
 SD_OFFSET(CMallaD3D, nodo, 0xb4);
 SD_SIZE(CMallaD3D, 0xc8);
+
+/* the plane of a triangle in pSeg: n.p + d = 0 */
+typedef struct MallaTriPlane {
+	float d;			/* 0x0 */
+	vec3_t n;			/* 0x4 */
+} MallaTriPlane;
+SD_SIZE(MallaTriPlane, 0x10);
 
 /* the context of Read and Write: the materials of the model (a CTabla of CMaterial *) and the node */
 typedef struct MallaD3D_FileCtx {
@@ -218,6 +225,9 @@ int MallaD3D_CompareTri(const void *a, const void *b);
 int MallaD3D_Render(CMallaD3D *self, void *ctx);
 /* the plane through three points; 0 for a degenerate triangle (calc_plano) */
 byte Plane_Calc(plane_t *plane, const vec3_t *v1, const vec3_t *v2, const vec3_t *v3);
+/* rva 0x2ce410 (Engine/RenderCalcIlum.cpp): the light of luz on the vertices of v with mat added to sum */
+struct CLuz;
+void RenderCalcIlum_Luz(float (*sum)[4], CListaVert *v, CMaterial *mat, struct CLuz *luz);
 /* Engine/CalcSegmentos.cpp: the segments of the list from pPos */
 void __thiscall CMallaD3D_CalcSegmentos(CMallaD3D *self, byte all);
 

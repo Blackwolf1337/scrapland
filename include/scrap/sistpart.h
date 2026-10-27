@@ -230,8 +230,10 @@ void __thiscall CSistPart_Update(CSistPart *self, CNodoR *r);
 /* rva 0x2cad70: the node of a 3D object, counted */
 void __thiscall CObjBase3D_SetNodo(IObjeto3D *self, CNodo3D *nodo);
 /* rva 0x26bff0 and 0x26bc30 (SueloPortal.cpp): the visibility of a sphere for the debug output */
-/* rva 0x2b7150 and 0x2b55d0 (the particle renderer) */
-void SistPart_Draw(CSistPart *sp, CNodoR *r);
-void SistPart_Draw2(CSistPart *sp, void *dev);
+/* src/game/engine3d/Engine/RenderMallaD3D.c (RenderObjBase3D.cpp): the system (or flare) queued with the render node
+ * r for the draw sorted by distance after the meshes; HRESULT */
+int SistPart_Draw(CSistPart *sp, CNodoR *r);
+/* src/game/engine3d/Engine/RenderEVA.c: the active particles drawn, in the space of r or of the node; 0 */
+int SistPart_Draw2(CSistPart *sp, CNodoR *r);
 
 #endif

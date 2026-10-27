@@ -34,6 +34,17 @@ CGrafico3D *__thiscall CGrafico3D_ctorTex(CGrafico3D *self, const char *tex, con
 	return self;
 }
 
+CGrafico3D *__thiscall CGrafico3D_ctorTex2(CGrafico3D *self, const char *tex, const char *opac) {
+	Grafico3D_Clear(self);
+	CGrafico3D_SetTexture(self, tex, opac);
+	return self;
+}
+
+/* the constructor of the vertices (nothing to do), the static vertex arrays of the exe call it */
+Grafico3DVert *__fastcall Grafico3DVert_ctor(Grafico3DVert *self) {
+	return self;
+}
+
 CGrafico3D *__fastcall CGrafico3D_ctor(CGrafico3D *self) {
 	Grafico3D_Clear(self);
 	return self;

@@ -2,8 +2,10 @@
  * Engine/portal.cpp of the engine3d: CPortal, see include/scrap/portal.h.
  */
 #include "scrap/portal.h"
+#include "scrap/render.h"
 #include "scrap/sistpart.h"
 #include "scrap/suelo.h"
+#include "scrap/utild3d.h"
 #include "scrap/varios.h"
 
 CPortal *__fastcall CPortal_ctor(CPortal *self) {
@@ -87,6 +89,30 @@ void __thiscall CPortal_Render(CPortal *self, void *dev, CNodoR *r) {
 	if (g_ShowPortals) {
 		CPortal_DrawDebug(self, 0x808080);
 	}
+}
+
+/* the material of the debug drawing, a static of CPortal_DrawDebug */
+#define g_PortalMat (*(CMaterial *)Game_Ptr(0x4e1e08))
+#define g_PortalMatGuard ((int *)Game_Ptr(0x4e1eb8))
+#define PORTAL_MAT_DTOR 0x38f010		/* the atexit destructor of it */
+
+void __thiscall CPortal_DrawDebug(CPortal *self, uint32_t color) {
+	CHECK(g_ShowPortals);
+	float hw = self->ancho * 0.5f, hh = self->alto * 0.5f;
+	if (*g_PortalMatGuard > crt_InitEpoch()) {
+		crt_Init_thread_header(g_PortalMatGuard);
+		if (*g_PortalMatGuard == -1) {
+			CMaterial_ctor(&g_PortalMat);
+			crt_atexit(Game_Ptr(PORTAL_MAT_DTOR));
+			crt_Init_thread_footer(g_PortalMatGuard);
+		}
+	}
+	g_PortalMat.params.b39 = 0;
+	g_PortalMat.params.i40 = 8;
+	g_MatFX1 = &g_PortalMat;
+	vec3_t mn = { -hw, 0.0f, -hh }, mx = { hw, 0.0f, hh };
+	Debug_DrawBoxM(&self->nodo->m, &mn, &mx, color);
+	g_MatFX1 = NULL;
 }
 
 /* the signed distance of p to the cached plane */

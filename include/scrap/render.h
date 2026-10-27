@@ -10,6 +10,7 @@
 #include "scrap/cstring.h"
 #include "scrap/d3d8.h"
 #include "scrap/mathlib.h"
+#include "scrap/tabla.h"
 
 struct CMaterial;
 typedef struct CMaterial CMaterial;
@@ -191,7 +192,12 @@ enum {
 #define g_ShowSphereVis GAME_DATA(int, 0x4adbd0)	/* R_ShowSphereVis 0, 1, 2 */
 #define g_VersionStr ((char *)Game_Ptr(0x4ae540))	/* 0x40 */
 #define MOTOR_ZFORMAT(m) (*(uint32_t *)((m) + 0x2a4d0))
-#define g_MatActual GAME_DATA(const CMaterial *, 0x4ae580)	/* the last one Render_SetMaterial set */
+#define g_MatActual GAME_DATA(const CMaterial *, 0x4ae580)
+/* what CNodo3D_Render draws: the object classes (low 24 bits of the mask), the nodes whose flags & g_RenderFlagMask
+ * is not 0 when g_RenderFlagNeg */
+#define g_RenderClaseMask GAME_DATA(uint32_t, 0x4ad568)
+#define g_RenderFlagMask GAME_DATA(uint32_t, 0x4ad5fc)
+#define g_RenderFlagNeg GAME_DATA(byte, 0x4ad4ec)	/* the last one Render_SetMaterial set */
 /* the D3DADAPTER_IDENTIFIER8 of the device, its texts "driver [description]  version" and the ids, and the device
  * of the last log of them */
 #define g_Adapter (*(D3DAdapterId *)Game_Ptr(0x4addc8))
@@ -392,12 +398,114 @@ int Render_ToScreen(const vec3_t *pos, float *xy);
 /* the planes of the frustum of view and proj (UpdateVisibilityPlanes) */
 void Frustum_Calc(const matrix_t *view, const matrix_t *proj);
 
+/* Engine/RenderEVA.cpp (src/game/engine3d/Engine/RenderEVA.c): the meshes with a vertex animation (EVA) or a skin,
+ * moved in software into a dynamic vertex buffer of 0x1000 vertices (VERT_TEX1), their shadow positions into the
+ * main mesh of the node; and the particles, quads in a dynamic vertex buffer of 0x800 vertices drawn through a fixed
+ * index buffer of 0x200 quads */
+#define MAX_VERT_VB 0x1000
+#define VB_PARTICLES 0x200
+#define g_EVAVB GAME_DATA(void *, 0x4dea50)		/* IDirect3DVertexBuffer8, D3DFVF 0x112 */
+#define g_EVAVBUsed GAME_DATA(int, 0x4deb74)
+#define g_PartVB GAME_DATA(void *, 0x4deb78)		/* D3DFVF 0x1c2 (Grafico3DVert) */
+#define g_PartIB GAME_DATA(void *, 0x4deb7c)
+#define g_PartVBUsed GAME_DATA(int, 0x4deb80)
+#define g_PartTri GAME_DATA(uint16_t *, 0x4deb84)	/* pTriParticles, new[] */
+#define g_PartNumTri GAME_DATA(int, 0x4deb88)
+/* the particles drawn in the frame (statistics) */
+#define g_RenderParts GAME_DATA(int, 0x4a8f18)
+/* the engine variables */
+#define g_MaxSparkSize GAME_DATA(float, 0x4dea94)	/* R_MaxSparkSize */
+#define g_MinSparkDist GAME_DATA(float, 0x4deadc)	/* R_MinSparkDist */
+#define g_ParticlesAlphaDist GAME_DATA(int, 0x4deb24)	/* R_ParticlesAlphaDist */
+#define g_ParticlesDraw GAME_DATA(int, 0x4deaf4)	/* R_ParticlesDraw */
+#define g_ParticlesLock GAME_DATA(int, 0x4deb54)	/* R_ParticlesLock: 1 always discard, 2 the size too */
+#define g_ParticlesOne GAME_DATA(int, 0x4dea64)		/* R_ParticlesOne */
+#define g_ParticlesZBias GAME_DATA(int, 0x4deb0c)	/* R_ParticlesZBias */
+#define g_ShowEVA GAME_DATA(int, 0x4deac4)		/* R_ShowEVA */
+#define g_ShowSkin GAME_DATA(int, 0x4deaac)		/* R_ShowSkin */
+#define g_SkinNodeSpace GAME_DATA(int, 0x4deb6c)	/* R_SkinNodeSpace */
+#define g_UseEVA GAME_DATA(int, 0x4deb3c)		/* R_UseEVA */
+#define g_UseSkin GAME_DATA(int, 0x4dea7c)		/* R_UseSkin */
+
+struct CParticula;
+struct Grafico3DVert;
+/* both vertex buffers and the index buffer of the particles made (EVA_crear_VB); HRESULT */
+int RenderEVA_InitD3D(void);
+int RenderEVA_CreateParticles(void);
+/* the buffers of the particles released; 0 */
+int RenderEVA_FreeParticles(void);
+int RenderEVA_ReleaseD3D(void);
+/* nvert vertices of the particle (skin) buffer locked after the used ones, from the start (discarded) when they do
+ * not fit; HRESULT */
+int RenderEVA_LockParticles(int nvert, void **data);
+int RenderEVA_LockSkin(int nvert, void **data);
+/* the mesh with the vertex animation skin (a CEVA) at the blend of the animation slot of r; HRESULT */
+int RenderEVA_DrawSkinNodo(struct CMallaD3D *m, struct CNodoR *r, void *skin);
+/* the mesh with its skin over the render nodes of the model; HRESULT */
+int RenderEVA_DrawSkin(struct CMallaD3D *m, struct CNodoR *r);
+/* the four corners of a particle: a square of its size turned by rot facing the camera (bill: the billboard
+ * matrix in the space of the particles, view: the view matrix of it), sparks stretched along their screen motion;
+ * alpha (below 1) scales the inverted alpha of the color, zbias moves it to the camera */
+void Particula_Quad(struct CParticula *p, const matrix_t *bill, const matrix_t *view, struct Grafico3DVert *out,
+	float alpha, float zbias);
+
+/* Engine/RenderMallaD3D.cpp, RenderMallaD3D_transp.cpp and RenderObjBase3D.cpp
+ * (src/game/engine3d/Engine/RenderMallaD3D.c): the batches of a view. Opaque meshes (R_MeshCache) are sorted by
+ * texture, material and skin, transparent ones and the particle systems and flares far to near, each drawn with the
+ * world matrix it was queued with. Up to 0x400 of each, a full batch is drawn at once. */
+#define MAX_RENDER_BATCH 0x400
+typedef struct RenderMallaEntry {
+	struct CMallaD3D *malla;	/* 0x00 */
+	matrix_t world;			/* 0x04 */
+	uint32_t tex;			/* 0x44 the diffuse texture >> 1, 0 without */
+	int list;			/* 0x48 the batch count when the list of the mesh was queued */
+	struct CNodoR *r;		/* 0x4c */
+} RenderMallaEntry;
+SD_SIZE(RenderMallaEntry, 0x50);
+typedef struct RenderTranspEntry {
+	struct CMallaD3D *malla;	/* 0x00 */
+	matrix_t world;			/* 0x04 */
+	int group;			/* 0x44 g_TranspGroup, 0 for the identity */
+	struct CNodoR *r;		/* 0x48 */
+	float dist2;			/* 0x4c to the eye, squared */
+} RenderTranspEntry;
+SD_SIZE(RenderTranspEntry, 0x50);
+typedef struct RenderObjEntry {
+	struct IObjeto3D *obj;		/* 0x00 a CSistPart or a CFlare */
+	matrix_t world;			/* 0x04 */
+	struct CNodoR *r;		/* 0x44 */
+	float dist2;			/* 0x48 */
+} RenderObjEntry;
+SD_SIZE(RenderObjEntry, 0x4c);
+#define g_TabMalla (*(CTabla *)Game_Ptr(0x4deb90))		/* TabMallaD3D: RenderMallaEntry */
+#define g_ListaMalla ((RenderMallaEntry **)Game_Ptr(0x4debb0))
+#define g_UsadosMalla GAME_DATA(int, 0x4dfbb0)
+#define g_TabTransp (*(CTabla *)Game_Ptr(0x4dfbb8))		/* RenderTranspEntry */
+#define g_ListaTransp ((RenderTranspEntry **)Game_Ptr(0x4dfbf0))
+#define g_UsadosTransp GAME_DATA(int, 0x4e0bf0)
+#define g_TranspGroup GAME_DATA(int, 0x432a78)		/* counted up for each mesh list, 1 after a flush */
+#define g_TabObj (*(CTabla *)Game_Ptr(0x4e0bf8))		/* TabObjBase3D: RenderObjEntry */
+#define g_ListaObj ((RenderObjEntry **)Game_Ptr(0x4e0c00))
+#define g_UsadosObj GAME_DATA(int, 0x4e1c00)
+#define g_MeshCache GAME_DATA(int, 0x4deba8)		/* R_MeshCache, 10 logs the batches */
+#define g_ShowTranspBox GAME_DATA(int, 0x4dfbe8)	/* R_ShowTranspBox */
+#define g_TranspZBias GAME_DATA(float, 0x4dfbd0)	/* R_TranspZBias */
+
+/* the batches drawn; E_FAIL without a device, else 0 */
+int RenderMallaD3D_Flush(void);
+int RenderMallaD3D_Flush2(void);
+int RenderObjBase3D_Flush(void);
+/* a transparent mesh queued (cont: the same list as the one before, else a new group); HRESULT */
+int RenderMallaD3D_AddTransp(struct CMallaD3D *m, const matrix_t *world, byte cont, struct CNodoR *r);
+/* the qsort orders: texture, material, then the skinned ones last; the transparent ones and the objects far first */
+int RenderMalla_Compare(const void *a, const void *b);
+int RenderTransp_Compare(const void *a, const void *b);
+int RenderObj_Compare(const void *a, const void *b);
+
 /* still the exe's */
 
 
 /* other modules (src/imports.inc) */
-int RenderEVA_DrawSkin(struct CMallaD3D *m, struct CNodoR *r);			/* rva 0x2b5d90 */
-int RenderEVA_DrawSkinNodo(struct CMallaD3D *m, struct CNodoR *r, void *skin);	/* rva 0x2b4660 */
 /* rva 0x267530 (stencil.cpp): the shadow volume of the triangles of a mesh */
 void Stencil_Malla(struct CListaVert *v, const void *tris, uint32_t nTri, struct CMallaD3D *m, struct CNodoR *r);
 /* rva 0x2418c0 (ListaVert.cpp): the coordinates of the reflection map of the vertices in software */
@@ -406,17 +514,12 @@ void __thiscall CListaVert_EnvMapUV(struct CListaVert *self, const matrix_t *wor
 void RenderLock_ReleaseD3D(void);		/* rva 0x2a4860 (RenderLock.cpp) */
 void RenderLock_InitD3D(void);			/* rva 0x2a48f0 */
 void ListaVert_InitD3D(void);			/* rva 0x2404f0, empty */
-int RenderEVA_InitD3D(void);			/* rva 0x2b4320, EVA_crear_VB */
 void RenderTarget_InitD3D(void);		/* rva 0x220d20 */
-void ModelFX_InitD3D(void);			/* rva 0x2b8570 */
+void ModelFX_InitD3D(void);			/* ModelFX.c, modelo.h */
 void ListaVert_ReleaseD3D(void);		/* rva 0x2404e0 (ListaVert.cpp), empty */
-void RenderEVA_ReleaseD3D(void);		/* rva 0x2b4550 (RenderEVA.cpp) */
 void RenderTarget_ReleaseD3D(void);		/* rva 0x220c60 (RenderTarget.cpp) */
 void RenderGamma_ReleaseD3D(void);		/* rva 0x2a7980 (RenderGamma.cpp) */
 void RenderGamma_Begin(void);			/* rva 0x2a7520 */
 void RenderGamma_LogShaderMask(void);		/* rva 0x2a7cd0, "ShaderModeMask" */
-void RenderMallaD3D_Flush(void);		/* rva 0x2b6af0 (RenderMallaD3D.cpp) */
-void RenderMallaD3D_Flush2(void);		/* rva 0x2b6e60 */
-void RenderObjBase3D_Flush(void);		/* rva 0x2b7260 (RenderObjBase3D.cpp) */
 
 #endif
