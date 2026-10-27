@@ -102,7 +102,7 @@ def m3dopen():
 	del m3dst[:]
 	return fm
 def m3dpos(fm):
-	return m3di(fm + 0x18) - m3di(fm + 0xc)
+	return m3di(fm + 0x10) - m3di(fm + 0xc)
 SDTest.Poke(0x4e1fa0, 14)
 SDTest.Poke(0x4e1fb0, 3)
 SDTest.Poke(0x4e1fa8, 0)
@@ -540,9 +540,10 @@ def m3descena(name, nodes):
 		m3dsetf(n + 0x1c, pos)
 		r.append(n)
 	for i in range(len(nodes)):
+		SDTest.Call(0x24fa10, 'tvii', e, r[i])
+	for i in range(len(nodes)):
 		if nodes[i][1] >= 0:
 			SDTest.Call(0x23eac0, 'tvii', r[i], r[nodes[i][1]])
-		SDTest.Call(0x24fa10, 'tvii', e, r[i])
 	return e, r
 def m3dlist(e):
 	r = ()
