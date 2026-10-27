@@ -6511,3 +6511,11 @@ SD_HOOK(Net_IsMaster, 0x191d00, 6)
 SD_HOOK(Transport_RecvFrom, 0x191d10, 435)
 SD_HOOK(Transport_RecvFrom, 0x191ed0, 27)
 SD_HOOK(Transport_SendTo, 0x191ef0, 599)
+
+/* module agent: Logic part 4 (Nurse..Traffic) (hooks below this line) */
+
+/* module agent: Actions and Events (ActClass..AIBishop) (hooks below this line) */
+
+/* module agent: AI/AIChar.cpp (hooks below this line) */
+
+/* module agent: AI/AICharControl.cpp (hooks below this line) */

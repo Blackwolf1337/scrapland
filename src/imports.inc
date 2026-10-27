@@ -716,3 +716,11 @@ SD_IMPORT_STDCALL(Wsock_gethostbyaddr, 12, 0x20da0e)
 SD_IMPORT_STDCALL(Wsock_gethostbyname, 4, 0x20da14)
 SD_IMPORT_STDCALL(Wsock_WSAStartup, 8, 0x20da1a)
 SD_IMPORT_STDCALL(Wsock_WSACleanup, 0, 0x20da20)
+
+/* module agent: Logic part 4 (Nurse..Traffic) (imports below this line) */
+
+/* module agent: Actions and Events (ActClass..AIBishop) (imports below this line) */
+
+/* module agent: AI/AIChar.cpp (imports below this line) */
+
+/* module agent: AI/AICharControl.cpp (imports below this line) */
