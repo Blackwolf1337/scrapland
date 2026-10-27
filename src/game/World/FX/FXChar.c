@@ -1,5 +1,7 @@
 /*
  * World/FX/FXChar.cpp of the game: the effects of the characters, see include/scrap/fxchar.h.
+ * Not here (too large): the Update of CharacterConversor (rva 0x1a99f0), CharacterDeath (0x1ac1b0) and
+ * CharacterTeleport (0x1adf80).
  */
 #include <string.h>
 
