@@ -215,7 +215,7 @@ int __thiscall cActClassCam_Var(cActClassCam *self, const char *name, int set, c
 	return ACTVAR_DOUBLE;
 }
 
-/* ActCtrl.c: the class of the controller of e */
+/* the class of the action controller of e */
 static cActClass *Ent_ActClass(cEntity *e) {
 	return ((cActCtrl *)WithLife_Vtbl(e)->GetActCtrl(e))->cls;
 }
