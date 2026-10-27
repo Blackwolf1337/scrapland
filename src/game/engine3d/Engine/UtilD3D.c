@@ -69,7 +69,7 @@ void Debug_DrawConeM(const matrix_t *m, float len, float ang) {
 }
 
 /* the lines from pos - size to pos + size along x, y and z */
-static void Cross_Lines(const vec3_t *pos, float size, const uint32_t color[3]) {
+void Debug_CrossLines(const vec3_t *pos, float size, const uint32_t color[3]) {
 	for (int i = 0; i < 3; i++) {
 		vec3_t d = { i == 0 ? size : 0.0f, i == 1 ? size : 0.0f, i == 2 ? size : 0.0f };
 		vec3_t a = { pos->x - d.x, pos->y - d.y, pos->z - d.z };
@@ -81,13 +81,13 @@ static void Cross_Lines(const vec3_t *pos, float size, const uint32_t color[3]) 
 void Debug_DrawAxes(const matrix_t *m, const vec3_t *pos, float size) {
 	static const uint32_t colors[3] = { 0x800000, 0x8000, 0x80 };
 	Render_SetWorldMatrix(m, 0);
-	Cross_Lines(pos, size, colors);
+	Debug_CrossLines(pos, size, colors);
 }
 
 void Debug_DrawPointM(const matrix_t *m, const vec3_t *pos, float size, uint32_t color) {
 	const uint32_t colors[3] = { color, color, color };
 	Render_SetWorldMatrix(m, 0);
-	Cross_Lines(pos, size, colors);
+	Debug_CrossLines(pos, size, colors);
 }
 
 void Debug_DrawPoint(const vec3_t *pos, float size, uint32_t color) {

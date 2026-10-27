@@ -48,4 +48,10 @@ typedef int(__stdcall *lstrlen_t)(const char *s);
 typedef uint32_t(__stdcall *timegettime_t)(void);
 #define exe_timeGetTime GAME_DATA(timegettime_t, 0x3a1468)
 
+/* user32: the key state (negative while held) and a modeless dialog */
+typedef int16_t(__stdcall *getasynckeystate_t)(int vk);
+typedef void *(__stdcall *createdialogparam_t)(void *inst, const char *tmpl, void *parent, void *proc, intptr_t param);
+#define exe_GetAsyncKeyState GAME_DATA(getasynckeystate_t, 0x3a1424)
+#define exe_CreateDialogParamA GAME_DATA(createdialogparam_t, 0x3a133c)
+
 #endif
