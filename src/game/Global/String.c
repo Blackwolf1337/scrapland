@@ -265,3 +265,7 @@ int __thiscall cString_ICmp(const cString *self, const cString *other) {
 int __thiscall cString_ICmpStr(const cString *self, const char *other) {
 	return StrICmp(*self, other);
 }
+
+int __fastcall cString_Length(const cString *self) {
+	return *self ? (int)strlen(*self) : 0;
+}

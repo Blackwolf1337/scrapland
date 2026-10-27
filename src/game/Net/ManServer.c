@@ -1,0 +1,421 @@
+/*
+ * Net/ManServer.cpp of the game: cClientNetManager, the user manager of the server for one client. It makes the
+ * ship of the client, reads its hello (the ship config) and its messages, and sends it the entity stream with the
+ * near entities, the level, the resources and the player descriptors. See include/scrap/net.h.
+ */
+#include <string.h>
+
+#include "scrap/app.h"
+#include "scrap/console.h"
+#include "scrap/crt.h"
+#include "scrap/mathlib.h"
+#include "scrap/net.h"
+#include "scrap/objentity.h"
+#include "scrap/vehicleentity.h"
+#include "scrap/vehiclemotors.h"
+#include "scrap/weapons.h"
+
+
+static void ClientNet_ClearConfig(cClientNetManager *self) {
+	self->usrName[0] = 0;
+	self->model[0] = 0;
+	self->pilot[0] = 0;
+	for (int m = 0; m < 4; m++) {
+		self->motors[m][0] = 0;
+	}
+	self->weapons[0] = 0;
+	self->team = 0;
+}
+
+/* the message buffer for a reliable message to this client */
+static void *ClientNet_Begin(int size) {
+	void *buf = cStaticBuffer_Get(g_NetStaticBuffer, size);
+	cFileMem_SetBuffer(g_NetMsg, buf, size, 0, 0);
+	return buf;
+}
+
+cClientNetManager *__thiscall cClientNetManager_ctor(cClientNetManager *self, cNetClient *client, int slot) {
+	cUserNetManager_ctor(&self->base, client, slot);
+	self->base.vftable = g_ClientNetManagerVftable;
+	Con_Print(0x707000, "Creating new client!\n", 0);
+	ClientNet_ClearConfig(self);
+	self->sends = 0;
+	cClientNetManager_InitClient(self);
+	return self;
+}
+
+void __fastcall cClientNetManager_dtor(cClientNetManager *self) {
+	self->base.vftable = g_ClientNetManagerVftable;
+	cEntity *e = World_FindEntity(self->name);
+	cPy_Function_AddParamS(g_OnClientExit, self->name);
+	cPy_Function_AddParamS(g_OnClientExit, self->model);
+	cPy_Function_AddParamS(g_OnClientExit, self->usrName);
+	cPy_Function_Execute(g_OnClientExit, 0);
+	byte msg[2] = { NETMSG_DELETE, (byte)self->base.slot };
+	NetServer_SendAllBut(msg, 2, self->base.slot);
+	if (e) {
+		CHECK(e->vftable->IsType(e, TYEN_CAR));
+		cEntity_Del(e);
+	} else {
+		Con_Warnf("WARNING : Player without entity '%s' disconected...\n", self->name);
+	}
+	Con_Printf("Client %s disconected!\n", self->name);
+	ClientNet_ClearConfig(self);
+	cUserNetManager_dtor(&self->base);
+}
+
+cClientNetManager *__thiscall cClientNetManager_Delete(cClientNetManager *self, byte flags) {
+	cClientNetManager_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(*self));
+	}
+	return self;
+}
+
+/* the hello of the client: id, version, password and the ship config */
+static void ClientNet_ReadHello(cClientNetManager *self) {
+	char s[0x80];
+	uint16_t id = 0;
+	cAbstractFile *f = &g_NetMsg->base;
+
+	f->vftable->Read(f, &id, 2);
+	CHECK(id == NET_GAME_ID);
+	f->vftable->Read(f, &id, 2);
+	CHECK(id == NET_GAME_VERSION);
+	cAbstractFile_ReadString8(f, s, sizeof(s));
+	cAbstractFile_ReadString8(f, self->usrName, sizeof(self->usrName));
+	cAbstractFile_ReadString8(f, self->model, sizeof(self->model));
+	f->vftable->Read(f, &self->maxLife, 2);
+	cAbstractFile_ReadString8(f, self->pilot, sizeof(self->pilot));
+	for (int m = 0; m < 4; m++) {
+		cAbstractFile_ReadString8(f, self->motors[m], sizeof(self->motors[m]));
+	}
+	cAbstractFile_ReadString8(f, self->weapons, sizeof(self->weapons));
+	f->vftable->Read(f, &self->team, 4);
+	cFileMem_Close(g_NetMsg);
+}
+
+void __thiscall cClientNetManager_OnReceive(cClientNetManager *self, void *data, int size, void *ctl, int ctlSize) {
+	char s[0x80];
+	byte kind;
+	cEntity *e = World_FindEntity(self->name);
+
+	if (e && size > 0) {
+		cFileMem_SetBuffer(g_NetMsg, data, size, 0, 0);
+		cFileMem_Open(g_NetMsg, "", FILE_MODE_READ);
+		CHECK(e->vftable->IsType(e, TYEN_CAR));
+		Net_Vtbl(e)->NetRead(e, g_NetMsg, 0);
+		cFileMem_Close(g_NetMsg);
+	}
+	if (ctlSize < 1) {
+		return;
+	}
+	cFileMem_SetBuffer(g_NetMsg, ctl, ctlSize, 0, 0);
+	cFileMem_Open(g_NetMsg, "", FILE_MODE_READ);
+	g_NetMsg->base.vftable->Read(&g_NetMsg->base, &kind, 1);
+	if (!e && kind) {
+		cFileMem_Close(g_NetMsg);
+		return;
+	}
+	switch (kind) {
+	case NETMSG_LEVEL:
+	case NETMSG_DELETE: {
+		ClientNet_ReadHello(self);
+		if (kind == NETMSG_LEVEL) {
+			cClientNetManager_InitClient(self);
+			e = World_FindEntity(self->name);
+		}
+		cWithLifeEntity_SetUsrName(e, self->usrName);
+		cPy_Function *f = (kind == NETMSG_DELETE || kind == NETMSG_LEVEL) ? g_OnClientJoin : g_OnClientModify;
+		cPy_Function_AddParamS(f, self->name);
+		cPy_Function_AddParamS(f, self->model);
+		cPy_Function_AddParamI(f, self->maxLife);
+		cPy_Function_AddParamS(f, self->usrName);
+		cPy_Function_AddParamS(f, self->pilot);
+		for (int m = 0; m < 4; m++) {
+			cPy_Function_AddParamS(f, self->motors[m]);
+		}
+		cPy_Function_AddParamS(f, self->weapons);
+		cPy_Function_AddParamI(f, self->team);
+		cPy_Function_Execute(f, 0);
+		cClientNetManager_SendUsers(self, 0);
+		return;
+	}
+	case NETMSG_GOODBYE:
+		cFileMem_Close(g_NetMsg);
+		Con_Print(0x707000, "Goodbye recived!\n", 0);
+		return;
+	case NETMSG_CHAT:
+	case NETMSG_USR_STRING: {
+		cPy_Function *f = kind == NETMSG_CHAT ? g_OnChatString : g_OnUsrString;
+		cAbstractFile_ReadString8(&g_NetMsg->base, s, sizeof(s));
+		cFileMem_Close(g_NetMsg);
+		cPy_Function_AddParamI(f, self->base.slot);
+		cPy_Function_AddParamS(f, s);
+		cPy_Function_Execute(f, 0);
+		return;
+	}
+	case NETMSG_USR_DATA:
+		cFileMem_Close(g_NetMsg);
+		self->fullSends = 0;
+		return;
+	case NETMSG_CONSOLE:
+		cAbstractFile_ReadString8(&g_NetMsg->base, s, sizeof(s));
+		if (*g_ServerRemotePassword && **g_ServerRemotePassword && !cString_CmpStr(g_ServerRemotePassword, s)) {
+			cAbstractFile_ReadString8(&g_NetMsg->base, s, sizeof(s));
+			cFileMem_Close(g_NetMsg);
+			Console_Execute(s);
+			return;
+		}
+		cFileMem_Close(g_NetMsg);
+		return;
+	default:
+		/* the file stays open, as in the original */
+		CHECK(0);
+		return;
+	}
+}
+
+void __fastcall cClientNetManager_InitClient(cClientNetManager *self) {
+	self->fullSends = 0;
+	crt_sprintf(self->name, "net%d", self->base.slot);
+	cEntity *e = World_FindEntity(self->name);
+	if (e) {
+		Con_Warnf("WARNING : Entity '%s' allready exists \n", self->name);
+		CHECK(e->vftable->IsType(e, TYEN_CAR));
+	} else {
+		e = cWorld_CreateEntity(g_pWorld, self->name, 0.0f, 0.0f, 0.0f, TYEN_CAR);
+	}
+	cVehicleEntity_NetCreate((cVehicleEntity *)e);
+	e->vftable->SetActive(e, 0);
+	CHECK(strcmp(self->name, e->name) == 0);
+	byte msg = NETMSG_LEVEL;
+	void *buf = ClientNet_Begin(24000);
+	cFileMem_Open(g_NetMsg, "", 6);
+	g_NetMsg->base.vftable->Write(&g_NetMsg->base, &msg, 1);
+	cAbstractFile_WriteString8(&g_NetMsg->base, g_pApp->levelPath);
+	cAbstractFile_WriteString8(&g_NetMsg->base, g_ServerType);
+	cNetClient_Push(self->base.client, buf, (uint16_t)cFileMem_Size(g_NetMsg));
+	cFileMem_Close(g_NetMsg);
+	cStaticBuffer_Unlock(g_NetStaticBuffer);
+	cClientNetManager_SendResources(self);
+}
+
+void ManServer_SendUsrData(int slot, byte toAll) {
+	byte msg = NETMSG_USR_DATA;
+	void *buf = ClientNet_Begin(24000);
+
+	cFileMem_Open(g_NetMsg, "", 6);
+	g_NetMsg->base.vftable->Write(&g_NetMsg->base, &msg, 1);
+	NetData_WriteUsr(&g_NetMsg->base, (uint16_t)slot);
+	if (toAll) {
+		NetServer_SendAll(buf, (uint16_t)cFileMem_Size(g_NetMsg));
+	} else {
+		NetServer_SendAllBut(buf, (uint16_t)cFileMem_Size(g_NetMsg), slot);
+	}
+	cFileMem_Close(g_NetMsg);
+	cStaticBuffer_Unlock(g_NetStaticBuffer);
+}
+
+/* runs of resource names, NetMaxResourcesSend at most and gaps of up to 16 unused numbers in one message */
+void __fastcall cClientNetManager_SendResources(cClientNetManager *self) {
+	void *buf = ClientNet_Begin(24000);
+	int i = 0;
+
+	do {
+		int first = -1, last = -1, gap = 0;
+		if (i >= NET_RESOURCES) {
+			break;
+		}
+		do {
+			if (last - first >= g_NetMaxResourcesSend) {
+				break;
+			}
+			if (Net_GetResourceName(i)) {
+				last = i;
+				if (first == -1) {
+					first = i;
+				}
+			} else if (first != -1 && ++gap > 16) {
+				break;
+			}
+			i++;
+		} while (i < NET_RESOURCES);
+		if (first != -1) {
+			byte msg = NETMSG_RESOURCES;
+			cFileMem_Open(g_NetMsg, "", 6);
+			g_NetMsg->base.vftable->Write(&g_NetMsg->base, &msg, 1);
+			NetData_WriteResources(&g_NetMsg->base, (uint16_t)first, (byte)((byte)last - (byte)first + 1));
+			cNetClient_Push(self->base.client, buf, (uint16_t)cFileMem_Size(g_NetMsg));
+			cFileMem_Close(g_NetMsg);
+		}
+	} while (i < NET_RESOURCES);
+	cStaticBuffer_Unlock(g_NetStaticBuffer);
+}
+
+/* the ping byte of the stream: log2(ping + 1) * 24 */
+static byte ClientNet_PingByte(cNetClient *c) {
+	float p = (float)(double)(uint32_t)(c->ping + 1);
+	double a = Game_Log((double)p);
+	double b = Game_Log(2.0);
+	int v = (int)(a / b * 24.0);
+	if (v > 0xff) {
+		v = 0xff;
+	}
+	return (byte)v;
+}
+
+void __thiscall cClientNetManager_Send(cClientNetManager *self, uint32_t time) {
+	byte b[2];
+	uint32_t v;
+	vec3_t tmp;
+	cAbstractFile *f = &g_NetMsg->base;
+
+	void *buf = ClientNet_Begin(24000);
+	cFileMem_Open(g_NetMsg, "", 6);
+	uint32_t old = self->fullSends;
+	uint32_t count = 0, myIdx = 0xffff;
+	int full = old < 5;
+	if (old < 5) {
+		self->fullSends = old + 1;
+	}
+	/* the head: my index and the count are written again at the end */
+	v = 0xffff;
+	f->vftable->Write(f, &v, 2);
+	v = 0;
+	f->vftable->Write(f, &v, 2);
+	f->vftable->Write(f, &g_NetOrigin.x, 4);
+	f->vftable->Write(f, &g_NetOrigin.y, 4);
+	f->vftable->Write(f, &g_NetOrigin.z, 4);
+	uint32_t idx = (uint32_t)NetServer_GetSlotByIndex((int)self->sends % Net_GetSendRate());
+	if (idx <= 0xff) {
+		cNetClient *c = NetServer_GetClient((int)idx);
+		CHECK(c);
+		byte pb = ClientNet_PingByte(c);
+		b[0] = (byte)idx;
+		f->vftable->Write(f, b, 1);
+		b[0] = pb;
+		f->vftable->Write(f, b, 1);
+	} else {
+		b[0] = 0;
+		f->vftable->Write(f, b, 1);
+		b[0] = 0;
+		f->vftable->Write(f, b, 1);
+		Con_Print(0x707000, "Invalid Ping\n", 0);
+	}
+	/* the origin of the positions: the own ship or the entity it is in */
+	cEntity *me = World_FindEntity(self->name);
+	const vec3_t *o = NULL;
+	if (me) {
+		CHECK(me->vftable->IsType(me, TYEN_CAR));
+		if (me->flag_4c) {
+			o = me->vftable->GetPos(me, &tmp);
+		} else {
+			cEntity *t = World_FindEntity(NetEnt_Target(me));
+			if (t) {
+				o = t->vftable->GetPos(t, &tmp);
+			}
+		}
+	}
+	if (o) {
+		g_NetOrigin.x = o->x;
+		g_NetOrigin.y = o->y;
+		g_NetOrigin.z = o->z;
+	} else {
+		g_NetOrigin.z = 0.0f;
+		g_NetOrigin.y = 0.0f;
+		g_NetOrigin.x = 0.0f;
+	}
+	/* the vehicles first, then the other entities */
+	byte pass = 1;
+	cEntity *e = cWorld_GetFirstEntity(g_pWorld);
+	while (e) {
+		const char *name = e->name;
+		byte isVeh = e->vftable->IsType(e, TYEN_CAR);
+		if ((isVeh == 0) != pass && strlen(name) > 3 && name[0] == 'n' && name[1] == 'e' && name[2] == 't') {
+			byte near;
+			if (!me) {
+				near = 0;
+			} else {
+				near = me == e || !strcmp(name, NetEnt_Target(me));
+			}
+			CHECK(e->vftable->IsType(e, TYEN_OBJECT));
+			byte hdr[3];
+			uint16_t id = (uint16_t)crt_atoi(name + 3);
+			memcpy(hdr, &id, 2);
+			hdr[2] = NetEnt_Kind(e);
+			if (id <= NET_PLAYER_MAX_ID) {
+				CHECK(pass);
+				if (me == e) {
+					myIdx = (uint16_t)count;
+				}
+			}
+			const vec3_t *pos = e->vftable->GetPos(e, &tmp);
+			float dy = pos->y - g_NetOrigin.y;
+			float dx = pos->x - g_NetOrigin.x;
+			float dz = pos->z - g_NetOrigin.z;
+			float d2 = dy * dy + dx * dx + dz * dz;
+			if (d2 > g_NetMaxDist2 && near) {
+				d2 = g_NetMaxDist2;
+			}
+			if (Net_Vtbl(e)->NetNeedsSend(e, d2) || old < 5) {
+				cFileMem_Write(g_NetMsg, hdr, 3);
+				Net_Vtbl(e)->NetWrite(e, d2, g_NetMsg, full);
+				count++;
+			}
+		}
+		e = cEntity_Next(e);
+		if (pass && !e) {
+			e = cWorld_GetFirstEntity(g_pWorld);
+			pass = 0;
+		}
+	}
+	cFileMem_Seek(g_NetMsg, 0);
+	v = (uint16_t)myIdx;
+	f->vftable->Write(f, &v, 2);
+	v = (uint16_t)count;
+	f->vftable->Write(f, &v, 2);
+	f->vftable->Write(f, &g_NetOrigin.x, 4);
+	f->vftable->Write(f, &g_NetOrigin.y, 4);
+	f->vftable->Write(f, &g_NetOrigin.z, 4);
+	if (NetServer_SendTo(time, self->base.slot, cFileMem_Size(g_NetMsg), buf)) {
+		self->sends++;
+	}
+	cFileMem_Close(g_NetMsg);
+	cStaticBuffer_Unlock(g_NetStaticBuffer);
+}
+
+void __thiscall cClientNetManager_SendUsers(cClientNetManager *self, byte local) {
+	void *buf = ClientNet_Begin(24000);
+	cEntity *e = cWorld_GetFirstEntity(g_pWorld);
+
+	if (!local) {
+		while (e) {
+			byte msg = NETMSG_USR_DATA;
+			cFileMem_Open(g_NetMsg, "", 6);
+			g_NetMsg->base.vftable->Write(&g_NetMsg->base, &msg, 1);
+			e = NetData_WriteUsrDescriptors(&g_NetMsg->base, e);
+			cNetClient_Push(self->base.client, buf, (uint16_t)cFileMem_Size(g_NetMsg));
+			cFileMem_Close(g_NetMsg);
+		}
+	}
+	cStaticBuffer_Unlock(g_NetStaticBuffer);
+	ManServer_SendUsrData(self->base.slot, local);
+}
+
+void __fastcall cClientNetManager_SetLocalData(cClientNetManager *self) {
+	cEntity *e = World_FindEntity(self->name);
+
+	Con_Printf("SetLocalData()->%s\n", self->name);
+	CHECK(e && e->vftable->IsType(e, TYEN_CAR));
+	Str_Copy(self->model, NetEnt_TypeName(e), sizeof(self->model));
+	self->maxLife = (uint16_t)NetEnt_MaxLife(e);
+	Str_Copy(self->usrName, NetEnt_UsrName(e) ? NetEnt_UsrName(e) : "", sizeof(self->usrName));
+	Str_Copy(self->pilot, Net_Vtbl(e)->GetPilot(e, 0), sizeof(self->pilot));
+	for (uint32_t m = 0; m < 4; m++) {
+		Str_Copy(self->motors[m], cVehicleMotors_GetMotorName(NetEnt_Motors(e), m, NULL), sizeof(self->motors[m]));
+	}
+	Str_Copy(self->weapons, cWeaponManager_GetWeapList(NetEnt_Weapons(e)), sizeof(self->weapons));
+	self->team = NetEnt_Team(e);
+	cClientNetManager_SendUsers(self, 1);
+}

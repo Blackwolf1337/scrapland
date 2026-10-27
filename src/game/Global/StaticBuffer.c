@@ -30,3 +30,8 @@ void *__thiscall cStaticBuffer_Get(cStaticBuffer *self, uint32_t size) {
 	self->lock = 1;
 	return self->data;
 }
+
+void __fastcall cStaticBuffer_Unlock(cStaticBuffer *self) {
+	CHECK(self->lock);
+	self->lock = 0;
+}

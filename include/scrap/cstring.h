@@ -32,6 +32,8 @@ int __thiscall cString_Cmp(const cString *self, const cString *other);
 int __thiscall cString_CmpStr(const cString *self, const char *other);
 int __thiscall cString_ICmp(const cString *self, const cString *other);
 int __thiscall cString_ICmpStr(const cString *self, const char *other);
+/* strlen, 0 for no string (the copy compiled into Net/, rva 0x1907a0) */
+int __fastcall cString_Length(const cString *self);
 
 #define g_StrTmp ((char *)Game_Ptr(0x44b648))	/* 0x100 bytes, the old text in cString_Append */
 

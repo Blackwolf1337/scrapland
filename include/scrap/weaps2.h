@@ -241,7 +241,6 @@ static inline const WeapEntityVtbl *Weap_Vtbl(cEntity *e) {
 
 /* the exe functions of other modules */
 void __thiscall cWithLifeEntity_SetBurner(cEntity *e, cEntity *attacker);
-int Net_GetPlayerIndex(const char *name);	/* n of "net<n>", -1 for other names */
 void __thiscall cTargetLock_SetHookDelay(cTargetLock *self, float t);
 /* SndInterface.c */
 byte __thiscall cSndItem_Play(cSndItem *self, cEntity *e);

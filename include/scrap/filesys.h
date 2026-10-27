@@ -78,6 +78,18 @@ int __thiscall cFile_Tell(cFile *self);
 int __thiscall cFile_Size(cFile *self);
 
 cFileMem *__thiscall cFileMem_ctor(cFileMem *self, void *buffer, int maxSize, byte ownsBuffer);
+/* a new buffer with size bytes of data in it */
+void __thiscall cFileMem_SetBuffer(cFileMem *self, void *buffer, int maxSize, byte ownsBuffer, int size);
+int __thiscall cFileMem_Open(cFileMem *self, const char *name, uint32_t mode);
+int __thiscall cFileMem_Close(cFileMem *self);
+int __thiscall cFileMem_Read(cFileMem *self, void *dst, int size);
+int __thiscall cFileMem_Write(cFileMem *self, const void *src, int size);
+int __thiscall cFileMem_Seek(cFileMem *self, int pos);
+int __thiscall cFileMem_Tell(cFileMem *self);
+int __thiscall cFileMem_Size(cFileMem *self);
+/* a string with a length byte into buf of size bytes; one of less than 256 characters with its length byte */
+int __thiscall cAbstractFile_ReadString8(cAbstractFile *self, char *buf, byte size);
+int __thiscall cAbstractFile_WriteString8(cAbstractFile *self, const char *s);
 
 /*
  * FileSys/FileBlock.cpp: a file of nested blocks, each a 4 character id, the size of its data (int) and the data.

@@ -7,6 +7,7 @@
 #define SCRAP_SCORERITEMS_H
 
 #include "scrap/app.h"
+#include "scrap/crt.h"
 #include "scrap/entity.h"
 #include "scrap/input.h"
 #include "scrap/scorer.h"
@@ -1195,6 +1196,5 @@ float __thiscall cWalkCharEntity_GetEnergyFrac(cEntity *e);	/* rva 0x0d3740 */
 int __thiscall cWalkCharEntity_GetBatteries(cEntity *e);	/* rva 0x0d38e0 */
 /* frame + 1 stretched to the width w, frame at both ends (the right one mirrored), h the y scale (rva 0x184710) */
 void Menu_DrawStretch(CPsaImage *img, int frame, float x, float y, float w, float h);
-char *crt_ltoa(long v, char *buf, int radix);			/* rva 0x34d525 */
 
 #endif

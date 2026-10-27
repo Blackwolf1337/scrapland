@@ -20,6 +20,7 @@
 #define LIBM_VEC_COS2 0x314930
 #define LIBM_VEC_SIN2 0x314940
 #define CRT_FTOUI3 0x314310
+#define CRT_DTOUI3 0x3144f1
 
 static double Libm_Sse2(uint32_t rva, double x) {
 	double r;
@@ -176,6 +177,20 @@ uint32_t Game_FtoUI(float x) {
 
 	__asm__ volatile(
 		"movss %[x], %%xmm0\n\t"
+		"call *%[fn]\n\t"
+		: "=a"(r)
+		: [x] "m"(x), [fn] "r"(fn)
+		: "ecx", "edx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", "memory", "cc");
+	return r;
+}
+
+/* __dtoui3: a double in xmm0 to an unsigned int in eax */
+uint32_t Game_DtoUI(double x) {
+	uint32_t r;
+	void *fn = Game_Ptr(CRT_DTOUI3);
+
+	__asm__ volatile(
+		"movsd %[x], %%xmm0\n\t"
 		"call *%[fn]\n\t"
 		: "=a"(r)
 		: [x] "m"(x), [fn] "r"(fn)

@@ -101,6 +101,8 @@ typedef struct cStaticBuffer {
 SD_OFFSET(cStaticBuffer, lock, 0x8);
 /* at least size bytes, locks the buffer (rva 0x18c050) */
 void *__thiscall cStaticBuffer_Get(cStaticBuffer *self, uint32_t size);
+/* the end of the use of the buffer (CHECK lock); inlined in most places (rva 0x190370) */
+void __fastcall cStaticBuffer_Unlock(cStaticBuffer *self);
 /* the path of the game into buf (rva 0x20d100) */
 void App_GetPath(char *buf, int size);
 float __thiscall cWorld_GetMinCamDistSq(cWorld *world, const vec3_t *pos);
