@@ -629,3 +629,5 @@ SD_IMPORT(crt_close, 0x358d98)
 /* module agent: Big leftovers 0x0f0000..0x110000 (imports below this line) */
 
 /* module agent: Big FX leftovers 0x1a8000..0x1eab00 (imports below this line) */
+
+/* module agent: Big FX leftovers 0x1eab00..0x200000 (imports below this line) */

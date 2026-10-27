@@ -7315,3 +7315,5 @@ SD_HOOK(CMallaD3D_CalcSegmentos, 0x2d5350, 1353)
 /* module agent: Big leftovers 0x0f0000..0x110000 (hooks below this line) */
 
 /* module agent: Big FX leftovers 0x1a8000..0x1eab00 (hooks below this line) */
+
+/* module agent: Big FX leftovers 0x1eab00..0x200000 (hooks below this line) */
