@@ -275,6 +275,13 @@ SD_SIZE(cSndInterface, 0x1c);
 #define cSndInterface_vftable ((const void *)Game_Ptr(0x3c9cfc))
 #define g_SndInterfaces GAME_DATA(cSndInterface *, 0x466bb0)
 
+/* Sound/SndInterface.cpp (src/game/Sound/SndInterface.c) */
+cSndInterface *__thiscall cSndInterface_ctor(cSndInterface *self, int n);
+void __fastcall cSndInterface_dtor(cSndInterface *self);
+/* the looping sounds stop */
+void __thiscall cSndInterface_StopAll(cSndInterface *self, int unused);
+void __thiscall cSndInterface_Tick(cSndInterface *self, float dt);
+
 void Sound_UpdatePaused(void);
 
 /* Sound/SoundDX8.cpp (src/game/Sound/SoundDX8.c) */

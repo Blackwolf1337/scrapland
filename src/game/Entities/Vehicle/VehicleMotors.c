@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/arrowindicator.h"
 #include "scrap/vehiclemotors.h"
 
 #define VM_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* the "" of the exe */
@@ -109,7 +110,7 @@ static void VM_UpdateEffects(cVehicleMotors *self, cVehicleMotorsEffects *eff, V
 	vec3_t vel = VM_LocalVel(self->owner);
 	vec3_t *pa = Weap_Vtbl(self->owner)->GetAngles(self->owner, &a);
 	vec3_t *pc = Weap_Vtbl(self->owner)->GetCenter(self->owner, &c);
-	uint32_t color = Vehicle_TeamColor(VM_Team(self->owner));
+	uint32_t color = cArrowIndicator_GetColor((cArrowIndicator *)VM_Team(self->owner));
 	cVehicleMotorsEffects_Trails(eff, u->dt, *pc, *pa, vel, u->thrust * u->alpha, u->k4c8, color);
 }
 

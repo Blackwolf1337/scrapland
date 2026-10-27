@@ -74,13 +74,6 @@ static inline float X87_DivMul(float a, float b, float c) {
 	return r;
 }
 
-static inline double X87_Mul(double a, double b) {
-	double r;
-
-	__asm__("fmull %1" : "=t"(r) : "m"(b), "0"(a));
-	return r;
-}
-
 cEntity *__thiscall cItemEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	cItemEntity *self = mem;
 
@@ -293,7 +286,7 @@ void __thiscall cItemEntity_Tick(cItemEntity *self, float dt) {
 	vec3_t to, hit;
 
 	if (Net_IsNetEntity(Item_Ent(self))) {
-		cObjNet *net = self->net;
+		cNetController *net = self->net;
 		if (self->base.pos.x != net->pos.x || self->base.pos.y != net->pos.y || self->base.pos.z != net->pos.z) {
 			self->base.pos.x = net->pos.x;
 			self->base.pos.y = net->pos.y;

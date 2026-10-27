@@ -137,6 +137,9 @@ cEntity *__thiscall cObjEntity_ctor(void *mem, const char *name, float x, float 
 cEntity *__fastcall cEntity_Next(cEntity *e);
 /* the entity a follow camera follows */
 cEntity *__fastcall cCamEntity_GetTarget(cEntity *cam);
+/* the entity the camera follows (its +0xf0 points back), and the angles of the camera (x and y) */
+void __thiscall cCamEntity_SetTarget(cEntity *cam, cEntity *target);
+void __thiscall cCamEntity_SetAng(cEntity *cam, vec3_t ang);
 
 /* an entity list of g_pWorld->lists (0x44 bytes: name, two functions, the entities at 0x30) */
 void *__thiscall cEntityList_ctor(void *mem, const char *name);

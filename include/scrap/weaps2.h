@@ -15,6 +15,7 @@
 #include "scrap/fxweapons.h"
 #include "scrap/missileentity.h"
 #include "scrap/net.h"
+#include "scrap/primitive.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/sound.h"
@@ -239,9 +240,6 @@ static inline const WeapEntityVtbl *Weap_Vtbl(cEntity *e) {
 #define g_SwarmSlotData ((int **)Game_Ptr(0x428918))	/* per slot: a pointer to the int AddBees takes */
 
 /* the exe functions of other modules */
-void __thiscall cPrimitive_SetSize(void *prim, float size);
-void __thiscall cEntity_SetNetResource(cEntity *e, const char *name);
-const char *__thiscall cHitInfo_GetName(void *info);	/* the entity of the hit info, "" for none */
 void __thiscall cWithLifeEntity_SetBurner(cEntity *e, cEntity *attacker);
 int Net_GetPlayerIndex(const char *name);	/* n of "net<n>", -1 for other names */
 void __thiscall cTargetLock_SetHookDelay(cTargetLock *self, float t);

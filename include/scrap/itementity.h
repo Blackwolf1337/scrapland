@@ -7,6 +7,7 @@
 #ifndef SCRAP_ITEMENTITY_H
 #define SCRAP_ITEMENTITY_H
 
+#include "scrap/objentity.h"
 #include "scrap/pyfunction.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/world.h"
@@ -14,30 +15,13 @@
 #define CITEMENTITY_VFTABLE 0x3b294c
 #define CITEMENTITY_SIZE 0x398
 
-/* the network copy of an "Obj" (at 0xf4): the state the server sends */
-typedef struct cObjNet cObjNet;
-typedef struct cObjNetVtbl {
-	void *vf00;
-	void(__thiscall *Read)(cObjNet *self, void *msg);					/* 0x04 */
-	void(__thiscall *Write)(cObjNet *self, int kind, cEntity *e, void *msg, int full);	/* 0x08 */
-} cObjNetVtbl;
-
-struct cObjNet {
-	const cObjNetVtbl *vftable;	/* 0x00 */
-	byte pad_04[4];
-	vec3_t pos;			/* 0x08 */
-	byte pad_14[0x38 - 0x14];
-	byte flags;			/* 0x38 bit 0: the item is there */
-};
-SD_OFFSET(cObjNet, flags, 0x38);
-
 typedef struct cItemEntity {
 	cEntity base;			/* 0x000 */
 	byte pad_7c[0xb8 - 0x7c];
 	CGameModel model;		/* 0x0b8 of the cObjEntity */
 	vec3_t vel;			/* 0x0d4 */
 	byte pad_e0[0xf4 - 0xe0];
-	cObjNet *net;			/* 0x0f4 */
+	cNetController *net;		/* 0x0f4 the flags bit 0: the item is there */
 	byte pad_f8[0x140 - 0xf8];
 	byte *obj140;			/* 0x140 a float at 0xc is set to 0.05 */
 	byte pad_144[0x228 - 0x144];
@@ -78,17 +62,6 @@ SD_SIZE(cItemEntity, CITEMENTITY_SIZE);
 #define g_ItemFxDist GAME_DATA(float, 0x447694)		/* the fade effects only nearer (60000) */
 #define g_ItemSyncDist GAME_DATA(float, 0x4476ac)
 #define g_ItemSyncCount GAME_DATA(uint32_t, 0x4476b4)
-
-/* the base class "Obj" (Entities/Obj, not decompiled yet) */
-void __fastcall cObjEntity_dtor(cEntity *self);
-void __thiscall cObjEntity_Update(cEntity *self);
-byte __thiscall cObjEntity_IsType(cEntity *self, const char *type);
-void __thiscall cObjEntity_SetPos(cEntity *self, const vec3_t *pos);
-byte __thiscall cObjEntity_VarI(cEntity *self, const char *name, int *i, int set);
-byte __thiscall cObjEntity_VarF(cEntity *self, const char *name, double *d, int set);
-byte __thiscall cObjEntity_VarS(cEntity *self, const char *name, char **s, int set);
-byte __thiscall cObjEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
-void __thiscall cObjEntity_Tick(cEntity *self, float dt);
 
 void __fastcall cItemEntity_dtor(cItemEntity *self);
 cItemEntity *__thiscall cItemEntity_Delete(cItemEntity *self, uint32_t flags);

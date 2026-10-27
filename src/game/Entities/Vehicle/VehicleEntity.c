@@ -4,12 +4,14 @@
 #include <string.h>
 
 #include "scrap/ai.h"
+#include "scrap/autoaim.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/doors.h"
 #include "scrap/embeddedfxvehicle.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
+#include "scrap/primitive.h"
 #include "scrap/missileentity.h"
 #include "scrap/vehiclemotors.h"
 #include "scrap/vehicletraffic.h"
@@ -107,12 +109,12 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	self->base.vftable = Game_Ptr(CVEHICLEENTITY_VFTABLE);
 	*(int *)(self->collision + 0) = 0;
 	*(int *)(self->collision + 4) = 0;
-	cVehicleControls_ctor(self->controls);
+	Controls_ctor(self->controls);
 	crt_eh_vector_ctor(&self->pilot, sizeof(CGameModel), 1, Game_Ptr(CGAMEMODEL_CTOR), Game_Ptr(CGAMEMODEL_DTOR));
 	cVehicleTraffic_ctor((cVehicleTraffic *)self->traffic);
 	cWeaponManager_ctor(&self->weapons);
 	cVehicleO648_ctor(self->o648);
-	cAutoAim_ctor(self->autoAim);
+	cAutoAim_ctor((cAutoAim *)self->autoAim);
 	cVehicleMotors_ctor((cVehicleMotors *)self->motors);
 	cVehicleEffects_ctor(&self->effects);
 	self->base.mask |= 1;
@@ -128,7 +130,7 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	self->engine = 2800.0f;
 	cVehicleEntity_UpdateTrust(self);
 	self->wRadius = 150.0f;
-	cPrimitive_SetSize((byte *)self + 0x39c, 130.0f);
+	cPrimitive_SetSize((cPrimitive *)((byte *)self + 0x39c), 130.0f);
 	self->slot = -1;
 	cVehicleMotors_SetOwner((cVehicleMotors *)self->motors, Veh_Ent(self));
 	cWeaponManager_Init(&self->weapons, Veh_Ent(self));
@@ -217,7 +219,7 @@ void __fastcall cVehicleEntity_dtor(cVehicleEntity *self) {
 	self->base.ai = NULL;
 	cVehicleEffects_dtor(&self->effects);
 	cVehicleMotors_dtor((cVehicleMotors *)self->motors);
-	cAutoAim_dtor(self->autoAim);
+	cAutoAim_dtor((cAutoAim *)self->autoAim);
 	cVehicleO648_dtor(self->o648);
 	cWeaponManager_dtor(&self->weapons);
 	crt_eh_vector_dtor(&self->pilot, sizeof(CGameModel), 1, Game_Ptr(CGAMEMODEL_DTOR));
@@ -643,7 +645,7 @@ void __thiscall cVehicleEntity_ServerMove(cVehicleEntity *self, float dt) {
 				self->net->flags &= 0xef;
 			}
 			self->net->vftable->Move(self->net, Veh_Ent(self), dt, 1);
-			cAutoAim_Update(self->autoAim, Veh_Ent(self), dt);
+			cAutoAim_Update((cAutoAim *)self->autoAim, Veh_Ent(self), dt);
 		} else {
 			self->net->wait = self->net->wait - dt;
 		}
@@ -691,7 +693,7 @@ void __thiscall cVehicleEntity_Move(cVehicleEntity *self, float dt) {
 
 void __thiscall cVehicleEntity_Tick(cVehicleEntity *self, float dt) {
 	if ((Net_IsNetEntity(Veh_Ent(self)) && !Veh_IsPlayerSlot(self->slot)) || (Veh_IsServer() && self->netCtrl)) {
-		cVehicleControls_Update(self->controls, Veh_Ent(self), dt);
+		Controls_FromNet(self->controls, Veh_Ent(self), dt);
 		if (self->boost == 0.0f && !(self->net->keys & 0x1000)) {
 			cVehicleEntity_StartBoost(self);
 			self->boost = self->boostTime + 0.1f;
@@ -906,7 +908,7 @@ void __thiscall cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot) {
 		self->money = -1;
 	}
 	if (Veh_IsPlayerSlot(self->slot)) {
-		cVehicleControls_Reset(self->controls);
+		Controls_Reset(self->controls);
 	}
 	int old = self->slot;
 	byte *phys = self->phys;
@@ -1171,7 +1173,7 @@ void __thiscall cVehicleEntity_SetModel(cVehicleEntity *self, const char *file, 
 	dx = root.x - v.x;
 	dy = root.y - v.y;
 	dz = root.z - v.z;
-	cPrimitive_SetSize((byte *)self + 0x39c, (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)));
+	cPrimitive_SetSize((cPrimitive *)((byte *)self + 0x39c), (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)));
 	for (int i = 0; i < g_pWorld->ammo.count; i++) {
 		for (int j = 0; j < 4; j++) {
 			cWorld *wd = g_pWorld;
@@ -1223,7 +1225,7 @@ void __thiscall cVehicleEntity_SetAIRange(cVehicleEntity *self, byte on) {
 }
 
 void __thiscall cVehicleEntity_SetFX(cVehicleEntity *self, int fx) {
-	cObjEntity_SetFX(Veh_Ent(self), fx);
+	cObjEntity_SetEffect(Veh_Ent(self), fx);
 	if (CGameModel_IsLoaded(&self->pilot)) {
 		CGameModel_SetEffect(&self->pilot, (uint32_t)fx);
 	}
@@ -1231,7 +1233,7 @@ void __thiscall cVehicleEntity_SetFX(cVehicleEntity *self, int fx) {
 }
 
 void __thiscall cVehicleEntity_SetFXParam(cVehicleEntity *self, int i, float v) {
-	cObjEntity_SetFXParam(Veh_Ent(self), i, v);
+	cObjEntity_SetEffectParam(Veh_Ent(self), i, v);
 	if (CGameModel_IsLoaded(&self->pilot)) {
 		uint32_t bits;
 		memcpy(&bits, &v, sizeof(bits));
@@ -1245,7 +1247,7 @@ void __thiscall cVehicleEntity_SetActive(cVehicleEntity *self, byte on) {
 		return;
 	}
 	if (!on && self->base.flag_4c) {
-		cVehicleControls_Reset(self->controls);
+		Controls_Reset(self->controls);
 		cWeaponManager_Update(&self->weapons, 0.005f);
 		self->active = 0.0f;
 	}
@@ -1302,7 +1304,7 @@ void __thiscall cVehicleEntity_GetCamPoint(cVehicleEntity *self, vec3_t *pos, ve
 	vec3_t v, r;
 
 	if (!Veh_IsServer() || !self->netCtrl) {
-		cObjEntity_GetCamPoint(Veh_Ent(self), pos, ang);
+		cObjEntity_GetCamera(Veh_Ent(self), pos, ang);
 		return;
 	}
 	cNetVController *net = self->net;
@@ -1391,7 +1393,7 @@ byte __thiscall cVehicleEntity_VarF(cVehicleEntity *self, const char *name, doub
 	if (!*name) {
 		return 0;
 	}
-	if (!crt_strncmp("InCtrl_", name, 7) && cVehicleControls_VarF(self->controls, name + 7, d, set)) {
+	if (!crt_strncmp("InCtrl_", name, 7) && Controls_VarF(self->controls, name + 7, d, set)) {
 		return 1;
 	}
 	if (!strncmp(name, "Traf_", 5)) {
@@ -1439,7 +1441,7 @@ byte __thiscall cVehicleEntity_VarF(cVehicleEntity *self, const char *name, doub
 	if (!strcmp(name, "TrustTime")) {
 		return Veh_VarFloat(&self->trustTime, d, set);
 	}
-	if (!crt_strncmp("Can_", name, 4) && cAutoAim_VarF(self->autoAim, name + 4, d, set)) {
+	if (!crt_strncmp("Can_", name, 4) && cAutoAim_VarF((cAutoAim *)self->autoAim, name + 4, d, set)) {
 		return 1;
 	}
 	if (!(byte)set) {
@@ -1605,7 +1607,7 @@ byte __thiscall cVehicleEntity_VarS(cVehicleEntity *self, const char *name, char
 		}
 		return 1;
 	}
-	if (!crt_strncmp("Can_", name, 4) && cAutoAim_VarS(self->autoAim, name + 4, s, set)) {
+	if (!crt_strncmp("Can_", name, 4) && cAutoAim_VarS((cAutoAim *)self->autoAim, name + 4, s, set)) {
 		return 1;
 	}
 	return cWithLifeEntity_VarS(Veh_Ent(self), name, s, set);

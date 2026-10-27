@@ -2246,7 +2246,7 @@ rva	size	source	callconv	name	signature
 000bed40	661	ANALYSIS	__thiscall	cFollowCamEntity::vf26	undefined __thiscall(void)
 000befe0	1468	ANALYSIS	__thiscall	cFollowCamEntity::vf25	undefined __thiscall(void)
 000bf5a0	1256	ANALYSIS	__thiscall	cFollowCamEntity::vf17	undefined __thiscall(void)
-000bfa90	106	DEFAULT	unknown	FUN_004bfa90	
+000bfa90	106	USER_DEFINED	__thiscall	cCamEntity_SetAng	void __thiscall(float x, float y, float z)
 000bfb00	1967	DEFAULT	unknown	FUN_004bfb00	
 000c03e0	7	DEFAULT	unknown	FUN_004c03e0	
 000c03f0	27	ANALYSIS	__thiscall	cFollowCamEntity::vf29	undefined __thiscall(void)
@@ -2258,7 +2258,7 @@ rva	size	source	callconv	name	signature
 000c0570	375	DEFAULT	unknown	FUN_004c0570	
 000c06f0	113	DEFAULT	unknown	FUN_004c06f0	
 000c0770	127	DEFAULT	unknown	FUN_004c0770	
-000c07f0	419	DEFAULT	unknown	FUN_004c07f0	
+000c07f0	419	USER_DEFINED	__thiscall	cCamEntity_SetTarget	void __thiscall(void * target)
 000c09a0	27	ANALYSIS	__thiscall	cFollowCamEntity::vf30	undefined __thiscall(void)
 000c09c0	321	ANALYSIS	__thiscall	cFollowCamEntity::vf00	undefined __thiscall(void)
 000c0b10	489	ANALYSIS	__thiscall	cFollowCamEntity::vf18	undefined __thiscall(void)
@@ -2897,138 +2897,138 @@ rva	size	source	callconv	name	signature
 000f5650	862	ANALYSIS	__thiscall	cMissileEntity::vf66	undefined __thiscall(void)
 000f59b0	1381	ANALYSIS	__thiscall	cMissileEntity::vf59	undefined __thiscall(void)
 000f5f20	26	USER_DEFINED	__thiscall	cMissileEntity_VarV	byte __thiscall(char *, void *, void *, void *, int)
-000f5f40	249	DEFAULT	unknown	FUN_004f5f40	
-000f6040	164	DEFAULT	unknown	FUN_004f6040	
-000f60f0	105	DEFAULT	unknown	FUN_004f60f0	
-000f6160	262	DEFAULT	unknown	FUN_004f6160	
-000f6270	648	DEFAULT	unknown	FUN_004f6270	
-000f6500	99	DEFAULT	unknown	FUN_004f6500	
-000f6580	71	DEFAULT	unknown	FUN_004f6580	
-000f65d0	52	DEFAULT	unknown	FUN_004f65d0	
-000f6610	755	DEFAULT	unknown	FUN_004f6610	
-000f6910	263	DEFAULT	unknown	FUN_004f6910	
-000f6a40	158	DEFAULT	unknown	FUN_004f6a40	
-000f6b00	29	DEFAULT	unknown	FUN_004f6b00	
-000f6b20	45	USER_DEFINED	__thiscall	Vehicle_TeamColor	uint __thiscall(void)
-000f6b80	1096	DEFAULT	unknown	FUN_004f6b80	
-000f6fd0	18	DEFAULT	unknown	FUN_004f6fd0	
-000f6ff0	156	DEFAULT	unknown	FUN_004f6ff0	
-000f7090	23	DEFAULT	unknown	FUN_004f7090	
-000f70b0	95	DEFAULT	unknown	FUN_004f70b0	
-000f7110	83	DEFAULT	unknown	FUN_004f7110	
-000f7170	247	DEFAULT	unknown	FUN_004f7170	
-000f7270	13	DEFAULT	unknown	FUN_004f7270	
-000f7280	247	DEFAULT	unknown	FUN_004f7280	
-000f7380	66	DEFAULT	unknown	FUN_004f7380	
-000f73d0	149	DEFAULT	unknown	FUN_004f73d0	
-000f7470	32	DEFAULT	unknown	FUN_004f7470	
-000f7490	32	DEFAULT	unknown	FUN_004f7490	
-000f74b0	59	DEFAULT	unknown	FUN_004f74b0	
-000f74f0	49	DEFAULT	unknown	FUN_004f74f0	
-000f7530	22	DEFAULT	unknown	FUN_004f7530	
-000f7550	438	DEFAULT	unknown	FUN_004f7550	
-000f7710	30	DEFAULT	unknown	FUN_004f7710	
-000f7730	770	DEFAULT	unknown	FUN_004f7730	
-000f7a40	798	DEFAULT	unknown	FUN_004f7a40	
-000f7d60	1255	DEFAULT	unknown	FUN_004f7d60	
-000f8270	45	DEFAULT	unknown	FUN_004f8270	
-000f82a0	133	USER_DEFINED	unknown	MissionArrows_Switch	undefined(void)
-000f8330	104	DEFAULT	unknown	FUN_004f8330	
-000f83a0	171	DEFAULT	unknown	FUN_004f83a0	
-000f8450	246	DEFAULT	unknown	FUN_004f8450	
-000f8550	240	DEFAULT	unknown	FUN_004f8550	
-000f8640	388	DEFAULT	unknown	FUN_004f8640	
-000f87d0	807	DEFAULT	unknown	FUN_004f87d0	
+000f5f40	249	USER_DEFINED	__fastcall	cArrowIndicator_ctor	void * __fastcall(void * self)
+000f6040	164	USER_DEFINED	__fastcall	cArrowIndicator_dtor	void __fastcall(void * self)
+000f60f0	105	USER_DEFINED	__thiscall	cArrowIndicator_AddOpt	byte __thiscall(char * s)
+000f6160	262	USER_DEFINED	__thiscall	cArrowIndicator_Execute	void __thiscall(void * user)
+000f6270	648	USER_DEFINED	__cdecl	ArrowIndicator_Visible	byte __cdecl(void * self, void * other, float ang, float maxDist, float * outDist, byte mark, byte useAng)
+000f6500	99	USER_DEFINED	__cdecl	GameModelList_Free	void __cdecl(void)
+000f6580	71	USER_DEFINED	__cdecl	ArrowIndicator_ClearSel	void __cdecl(void)
+000f65d0	52	USER_DEFINED	__fastcall	cArrowIndicator_ClearOpts	void __fastcall(void * self)
+000f6610	755	USER_DEFINED	__cdecl	ArrowIndicator_FindSel	void * __cdecl(void * self, float ang)
+000f6910	263	USER_DEFINED	__thiscall	cArrowIndicator_VarF	byte __thiscall(char * name, double * d, int set)
+000f6a40	158	USER_DEFINED	__cdecl	ArrowPool_Get	void * __cdecl(byte * fresh)
+000f6b00	29	USER_DEFINED	__thiscall	cArrowIndicator_GetOpt	char * __thiscall(int i)
+000f6b20	45	USER_DEFINED	__fastcall	cArrowIndicator_GetColor	uint __fastcall(void * self)
+000f6b80	1096	USER_DEFINED	__thiscall	cArrowIndicator_VarI	byte __thiscall(char * name, int * i, int set)
+000f6fd0	18	USER_DEFINED	__fastcall	cArrowIndicator_NextOpt	void __fastcall(void * self)
+000f6ff0	156	USER_DEFINED	__cdecl	Vec2_Normalize	float * __cdecl(float * out, float * in)
+000f7090	23	USER_DEFINED	__fastcall	cArrowIndicator_PrevOpt	void __fastcall(void * self)
+000f70b0	95	USER_DEFINED	__fastcall	cArrowIndicator_ReleaseMission	void __fastcall(void * self)
+000f7110	83	USER_DEFINED	__fastcall	cArrowIndicator_ReleaseArrow	void __fastcall(void * self)
+000f7170	247	USER_DEFINED	__thiscall	cArrowIndicator_SetModels	void __thiscall(byte on)
+000f7270	13	USER_DEFINED	__thiscall	cArrowIndicator_SetShown	void __thiscall(byte on)
+000f7280	247	USER_DEFINED	__thiscall	cArrowIndicator_LoadMission	void __thiscall(char * name)
+000f7380	66	USER_DEFINED	__thiscall	cArrowIndicator_LoadArrow	void __thiscall(char * name)
+000f73d0	149	USER_DEFINED	__thiscall	cArrowIndicator_LoadModel	void __thiscall(void * model, char * name)
+000f7470	32	USER_DEFINED	__thiscall	cArrowIndicator_SetUseFunc	void __thiscall(char * name)
+000f7490	32	USER_DEFINED	__thiscall	cArrowIndicator_SetViewFunc	void __thiscall(char * name)
+000f74b0	59	USER_DEFINED	__thiscall	cArrowIndicator_SetOpt	byte __thiscall(int i, char * s)
+000f74f0	49	USER_DEFINED	__thiscall	cArrowIndicator_SetParent	void __thiscall(void * parent)
+000f7530	22	USER_DEFINED	__thiscall	cArrowGlow_SetVisible	void __thiscall(byte on)
+000f7550	438	USER_DEFINED	__thiscall	cArrowGlow_Attach	void __thiscall(void * model, char * name)
+000f7710	30	USER_DEFINED	__thiscall	cArrowIndicator_SetIOpt	byte __thiscall(int i)
+000f7730	770	USER_DEFINED	__fastcall	cArrowIndicator_Update	void __fastcall(void * self)
+000f7a40	798	USER_DEFINED	__thiscall	cArrowGlow_Update	void __thiscall(void * model)
+000f7d60	1255	USER_DEFINED	__thiscall	cArrowIndicator_VarS	byte __thiscall(char * name, char * * s, int set)
+000f8270	45	USER_DEFINED	__fastcall	cArrowIndicator_Reload	void __fastcall(void * self)
+000f82a0	133	USER_DEFINED	__cdecl	MissionArrows_Switch	void __cdecl(char * on, char * off)
+000f8330	104	USER_DEFINED	__fastcall	cModMove_ctor	void * __fastcall(void * self)
+000f83a0	171	USER_DEFINED	__fastcall	cModMove_dtor	void __fastcall(void * self)
+000f8450	246	USER_DEFINED	__thiscall	cModMove_VarF	byte __thiscall(char * name, double * d, int set)
+000f8550	240	USER_DEFINED	__thiscall	cModMove_VarI	byte __thiscall(char * name, int * i, int set)
+000f8640	388	USER_DEFINED	__thiscall	cModMove_Link	void __thiscall(char * name, char * node)
+000f87d0	807	USER_DEFINED	__thiscall	cModMove_Update	void __thiscall(float dt)
 000f8b00	115	USER_DEFINED	__fastcall	Nto1Head::UnlinkAll	void __fastcall(void * head)
-000f8b80	59	DEFAULT	unknown	FUN_004f8b80	
-000f8bc0	220	DEFAULT	unknown	FUN_004f8bc0	
-000f8ca0	190	DEFAULT	unknown	FUN_004f8ca0	
-000f8d60	169	DEFAULT	unknown	FUN_004f8d60	
-000f8e10	8	DEFAULT	unknown	FUN_004f8e10	
-000f8e20	1073	DEFAULT	unknown	FUN_004f8e20	
-000f9260	41	DEFAULT	unknown	FUN_004f9260	
-000f9290	20	DEFAULT	unknown	FUN_004f9290	
-000f92b0	143	DEFAULT	unknown	FUN_004f92b0	
-000f9340	35	DEFAULT	unknown	FUN_004f9340	
-000f9370	144	DEFAULT	unknown	FUN_004f9370	
-000f9400	31	DEFAULT	unknown	FUN_004f9400	
-000f9420	12	DEFAULT	unknown	FUN_004f9420	
-000f9430	121	DEFAULT	unknown	FUN_004f9430	
-000f94b0	58	DEFAULT	unknown	FUN_004f94b0	
-000f94f0	499	DEFAULT	unknown	FUN_004f94f0	
-000f96f0	547	DEFAULT	unknown	FUN_004f96f0	
-000f9920	220	DEFAULT	unknown	FUN_004f9920	
-000f9a00	130	DEFAULT	unknown	FUN_004f9a00	
-000f9aa0	10	DEFAULT	unknown	FUN_004f9aa0	
-000f9ab0	131	DEFAULT	unknown	FUN_004f9ab0	
-000f9b40	4	DEFAULT	unknown	FUN_004f9b40	
-000f9b50	5	DEFAULT	unknown	FUN_004f9b50	
+000f8b80	59	USER_DEFINED	__thiscall	cModMove_SetParent	void __thiscall(void * parent)
+000f8bc0	220	USER_DEFINED	__thiscall	cModMove_VarS	byte __thiscall(char * name, char * * s, int set)
+000f8ca0	190	USER_DEFINED	__thiscall	cModMove_VarV	byte __thiscall(char * name, double * x, double * y, double * z, int set)
+000f8d60	169	USER_DEFINED	__fastcall	cObjMove_ctor	void * __fastcall(void * self)
+000f8e10	8	USER_DEFINED	__fastcall	cObjMove_dtor	void __fastcall(void * self)
+000f8e20	1073	USER_DEFINED	__thiscall	cObjMove_Tick	void __thiscall(void * e, float dt)
+000f9260	41	USER_DEFINED	__thiscall	cObjMove_SetTime	void __thiscall(float t)
+000f9290	20	USER_DEFINED	__fastcall	cPrimitive_ctor	void * __fastcall(void * self)
+000f92b0	143	USER_DEFINED	__thiscall	cPrimitive_VarF	byte __thiscall(char * name, double * d, int set)
+000f9340	35	USER_DEFINED	__thiscall	cPrimitive_TestSegment	byte __thiscall(float * a, float * p)
+000f9370	144	USER_DEFINED	__thiscall	cPrimitive_SegHit	byte __thiscall(float * a, float * p)
+000f9400	31	USER_DEFINED	__thiscall	cPrimitive_SetOn	void __thiscall(byte on)
+000f9420	12	USER_DEFINED	__thiscall	cPrimitive_SetOwner	void __thiscall(void * owner)
+000f9430	121	USER_DEFINED	__thiscall	cPrimitive_SetSize	void __thiscall(float size)
+000f94b0	58	USER_DEFINED	__thiscall	cPrimitive_TestSphere	byte __thiscall(void * other, float * c, float r, float * prev)
+000f94f0	499	USER_DEFINED	__thiscall	cPrimitive_SphereHit	byte __thiscall(void * other, float * c, float r, float * prev)
+000f96f0	547	USER_DEFINED	__thiscall	cPrimitive_UnelasticDisp	void __thiscall(float * out, float * from, void * other, byte xz)
+000f9920	220	USER_DEFINED	__fastcall	cVehicleAttack_ctor	void * __fastcall(void * self)
+000f9a00	130	USER_DEFINED	__fastcall	cVehicleAttack_Expire	void __fastcall(void * self)
+000f9aa0	10	USER_DEFINED	__thiscall	cHitInfo_GetName	char * __thiscall(void)
+000f9ab0	131	USER_DEFINED	__thiscall	cVehicleAttack_NetChanged	byte __thiscall(byte * out)
+000f9b40	4	USER_DEFINED	__thiscall	cVehicleAttack_GetPoint	float * __thiscall(void)
+000f9b50	5	USER_DEFINED	__thiscall	cVehicleAttack_VarI	byte __thiscall(char * name, int * i, int set)
 000f9b60	171	USER_DEFINED	__thiscall	cVehicleAttack_HitBy	void __thiscall(char * name)
 000f9c10	226	USER_DEFINED	__thiscall	cVehicleAttack_ShotAt	void __thiscall(char * name, int n)
 000f9d00	139	USER_DEFINED	__thiscall	cVehicleAttack_ShotAtPoint	void __thiscall(float * p, int n)
 000f9d90	644	USER_DEFINED	__thiscall	cVehicleAttack_Update	void __thiscall(void)
-000fa020	158	DEFAULT	unknown	FUN_004fa020	
-000fa0c0	215	DEFAULT	unknown	FUN_004fa0c0	
-000fa1a0	46	DEFAULT	unknown	FUN_004fa1a0	
-000fa1d0	153	DEFAULT	unknown	FUN_004fa1d0	
-000fa270	651	DEFAULT	unknown	FUN_004fa270	
-000fa500	216	DEFAULT	unknown	FUN_004fa500	
-000fa5e0	38	ANALYSIS	__thiscall	cObjEntity::vf03	undefined __thiscall(void)
-000fa610	1244	ANALYSIS	__thiscall	cNetController::vf04	undefined __thiscall(void)
-000faaf0	73	ANALYSIS	__thiscall	cObjEntity::vf24	undefined __thiscall(void)
-000fab40	194	DEFAULT	unknown	FUN_004fab40	
-000fac10	125	DEFAULT	unknown	FUN_004fac10	
-000fac90	708	ANALYSIS	__thiscall	cNetController::vf03	undefined __thiscall(void)
-000faf60	64	DEFAULT	unknown	FUN_004faf60	
-000fafa0	46	DEFAULT	unknown	FUN_004fafa0	
-000fafd0	714	ANALYSIS	__thiscall	cObjEntity::vf17	undefined __thiscall(void)
-000fb2a0	31	ANALYSIS	__thiscall	cObjEntity::vf32	undefined __thiscall(void)
-000fb2c0	31	ANALYSIS	__thiscall	cObjEntity::vf36	undefined __thiscall(void)
-000fb2e0	31	ANALYSIS	__thiscall	cObjEntity::vf30	undefined __thiscall(void)
-000fb300	31	ANALYSIS	__thiscall	cObjEntity::vf29	undefined __thiscall(void)
-000fb320	31	ANALYSIS	__thiscall	cObjEntity::vf27	undefined __thiscall(void)
-000fb340	31	ANALYSIS	__thiscall	cObjEntity::vf26	undefined __thiscall(void)
-000fb360	18	ANALYSIS	__thiscall	cObjEntity::vf28	undefined __thiscall(void)
-000fb380	7	ANALYSIS	__thiscall	cObjEntity::vf38	undefined __thiscall(void)
-000fb3b0	18	ANALYSIS	__thiscall	cObjEntity::vf06	undefined __thiscall(void)
-000fb3d0	3	ANALYSIS	__thiscall	cObjEntity::vf25	undefined __thiscall(void)
-000fb3e0	18	ANALYSIS	__thiscall	cObjEntity::vf31	undefined __thiscall(void)
-000fb400	30	DEFAULT	unknown	FUN_004fb400	
-000fb420	324	ANALYSIS	__thiscall	cObjEntity::vf13	undefined __thiscall(void)
-000fb570	402	ANALYSIS	__thiscall	cObjEntity::vf39	undefined __thiscall(void)
-000fb710	6	ANALYSIS	__thiscall	cObjEntity::vf04	undefined __thiscall(void)
-000fb720	31	ANALYSIS	__thiscall	cObjEntity::vf34	undefined __thiscall(void)
-000fb740	3	ANALYSIS	__thiscall	cObjEntity::vf40	undefined __thiscall(void)
-000fb750	122	ANALYSIS	__thiscall	cObjEntity::vf02	undefined __thiscall(void)
-000fb7d0	753	ANALYSIS	__thiscall	cObjEntity::vf16	undefined __thiscall(void)
-000fbad0	80	ANALYSIS	__thiscall	cObjEntity::vf05	undefined __thiscall(void)
-000fbb20	973	ANALYSIS	__thiscall	cNetController::vf01	undefined __thiscall(void)
-000fbef0	1675	ANALYSIS	__thiscall	cNetController::vf02	undefined __thiscall(void)
-000fc580	113	ANALYSIS	__thiscall	cObjEntity::vf23	undefined __thiscall(void)
-000fc600	14	ANALYSIS	__thiscall	cNetController::vf00	undefined __thiscall(void)
-000fc610	29	ANALYSIS	__thiscall	cObjEntity::vf46	undefined __thiscall(void)
-000fc630	102	ANALYSIS	__thiscall	cObjEntity::vf08	undefined __thiscall(void)
-000fc6a0	155	ANALYSIS	__thiscall	cObjEntity::vf33	undefined __thiscall(void)
-000fc740	36	ANALYSIS	__thiscall	cObjEntity::vf37	undefined __thiscall(void)
-000fc770	54	ANALYSIS	__thiscall	cObjEntity::vf15	undefined __thiscall(void)
-000fc7b0	404	ANALYSIS	__thiscall	cObjEntity::vf12	undefined __thiscall(void)
-000fc950	33	DEFAULT	unknown	FUN_004fc950	
-000fc980	80	ANALYSIS	__thiscall	cObjEntity::vf07	undefined __thiscall(void)
-000fc9d0	15	ANALYSIS	__thiscall	cObjEntity::vf44	undefined __thiscall(void)
-000fc9e0	32	ANALYSIS	__thiscall	cObjEntity::vf45	undefined __thiscall(void)
-000fca00	78	DEFAULT	unknown	FUN_004fca00	
-000fca50	45	ANALYSIS	__thiscall	cObjEntity::vf35	undefined __thiscall(void)
-000fca80	1563	ANALYSIS	__thiscall	cObjEntity::vf00	undefined __thiscall(void)
-000fd0a0	529	ANALYSIS	__thiscall	cObjEntity::vf18	undefined __thiscall(void)
-000fd2c0	1967	ANALYSIS	__thiscall	cObjEntity::vf19	undefined __thiscall(void)
-000fda70	165	DEFAULT	unknown	FUN_004fda70	
-000fdb20	815	DEFAULT	unknown	FUN_004fdb20	
-000fde50	71	DEFAULT	unknown	FUN_004fde50	
-000fdea0	837	DEFAULT	unknown	FUN_004fdea0	
+000fa020	158	USER_DEFINED	__thiscall	cVehicleAttack_VarS	byte __thiscall(char * name, char * * s, int set)
+000fa0c0	215	USER_DEFINED	__thiscall	cVehicleAttack_VarV	byte __thiscall(char * name, double * x, double * y, double * z, int set)
+000fa1a0	46	USER_DEFINED	__thiscall	cVehicleAttack_NetFlags	int __thiscall(byte flags, byte * changed)
+000fa1d0	153	USER_DEFINED	__fastcall	cNetController_ctor	void * __fastcall(void * self)
+000fa270	651	USER_DEFINED	__thiscall	cObjEntity_ctor	void * __thiscall(char * name, float x, float y, float z)
+000fa500	216	USER_DEFINED	__fastcall	cObjEntity_dtor	void __fastcall(void * self)
+000fa5e0	38	USER_DEFINED	__thiscall	cObjEntity_Delete	void * __thiscall(uint flags)
+000fa610	1244	USER_DEFINED	__thiscall	cNetController_Apply	void __thiscall(void * e, float dt, byte move)
+000faaf0	73	USER_DEFINED	__thiscall	cObjEntity_UpdateModel	void __thiscall(void)
+000fab40	194	USER_DEFINED	__thiscall	cObjEntity_UpdateTimer	void __thiscall(void)
+000fac10	125	USER_DEFINED	__fastcall	cObjEntity_NewSlot	void __fastcall(void * self)
+000fac90	708	USER_DEFINED	__thiscall	cNetController_Changed	byte __thiscall(byte flags, void * e)
+000faf60	64	USER_DEFINED	__thiscall	cObjEntity_RadarTick	void __thiscall(float dt)
+000fafa0	46	USER_DEFINED	__fastcall	cObjEntity_ReleaseFX	void __fastcall(void * self)
+000fafd0	714	USER_DEFINED	__thiscall	cObjEntity_VarF	byte __thiscall(char * name, double * d, int set)
+000fb2a0	31	USER_DEFINED	__thiscall	cObjEntity_GetAng	float * __thiscall(float * out)
+000fb2c0	31	USER_DEFINED	__thiscall	cObjEntity_GetRotVel	float * __thiscall(float * out)
+000fb2e0	31	USER_DEFINED	__thiscall	cObjEntity_GetViewAng	float * __thiscall(float * out)
+000fb300	31	USER_DEFINED	__thiscall	cObjEntity_GetViewPos	float * __thiscall(float * out)
+000fb320	31	USER_DEFINED	__thiscall	cObjEntity_GetRenderAng	float * __thiscall(float * out)
+000fb340	31	USER_DEFINED	__thiscall	cObjEntity_GetRenderPos	float * __thiscall(float * out)
+000fb360	18	USER_DEFINED	__thiscall	cObjEntity_GetSndAng	float * __thiscall(float * out)
+000fb380	7	USER_DEFINED	__thiscall	cObjEntity_GetModel	void * __thiscall(void)
+000fb3b0	18	USER_DEFINED	__thiscall	cObjEntity_GetPos	float * __thiscall(float * out)
+000fb3d0	3	USER_DEFINED	__thiscall	cObjEntity_GetNodeSlot	int __thiscall(void)
+000fb3e0	18	USER_DEFINED	__thiscall	cObjEntity_GetSndPos	float * __thiscall(float * out)
+000fb400	30	USER_DEFINED	__fastcall	cObjEntity_GetCollision	byte __fastcall(void * self)
+000fb420	324	USER_DEFINED	__thiscall	cObjEntity_GetTargetAngle	void __thiscall(float * ang, float dist, void * * target)
+000fb570	402	USER_DEFINED	__thiscall	cObjEntity_GetCamera	void __thiscall(float * pos, float * ang)
+000fb710	6	USER_DEFINED	__thiscall	cObjEntity_GetClassName	char * __thiscall(void)
+000fb720	31	USER_DEFINED	__thiscall	cObjEntity_GetVel	float * __thiscall(float * out)
+000fb740	3	USER_DEFINED	__thiscall	cObjEntity_GetRadius	float __thiscall(void)
+000fb750	122	USER_DEFINED	__thiscall	cObjEntity_UpdateOff	void __thiscall(void)
+000fb7d0	753	USER_DEFINED	__thiscall	cObjEntity_VarI	byte __thiscall(char * name, int * i, int set)
+000fbad0	80	USER_DEFINED	__thiscall	cObjEntity_IsType	int __thiscall(char * type)
+000fbb20	973	USER_DEFINED	__thiscall	cNetController_Read	void __thiscall(void * msg)
+000fbef0	1675	USER_DEFINED	__thiscall	cNetController_Write	void __thiscall(byte flags, void * e, void * msg, byte force)
+000fc580	113	USER_DEFINED	__thiscall	cObjEntity_Tick	void __thiscall(float dt)
+000fc600	14	USER_DEFINED	__thiscall	cNetController_Reset	void __thiscall(void)
+000fc610	29	USER_DEFINED	__thiscall	cObjEntity_Render	void __thiscall(void)
+000fc630	102	USER_DEFINED	__thiscall	cObjEntity_SetActive	void __thiscall(byte on)
+000fc6a0	155	USER_DEFINED	__thiscall	cObjEntity_SetAng	void __thiscall(float * ang)
+000fc740	36	USER_DEFINED	__thiscall	cObjEntity_SetRotVel	void __thiscall(float * v)
+000fc770	54	USER_DEFINED	__thiscall	cObjEntity_SetEmbeddedFX	void __thiscall(char * fxType)
+000fc7b0	404	USER_DEFINED	__thiscall	cObjEntity_SetModel	void __thiscall(char * file, float sx, float sy, float sz, int flag)
+000fc950	33	USER_DEFINED	__thiscall	cEntity_SetNetResource	void __thiscall(char * name)
+000fc980	80	USER_DEFINED	__thiscall	cObjEntity_SetPos	void __thiscall(float * pos)
+000fc9d0	15	USER_DEFINED	__thiscall	cObjEntity_SetEffect	void __thiscall(uint fx)
+000fc9e0	32	USER_DEFINED	__thiscall	cObjEntity_SetEffectParam	void __thiscall(int i, float v)
+000fca00	78	USER_DEFINED	__thiscall	cObjEntity_Switch	void __thiscall(byte on)
+000fca50	45	USER_DEFINED	__thiscall	cObjEntity_SetVel	void __thiscall(float * vel)
+000fca80	1563	USER_DEFINED	__thiscall	cObjEntity_Update	void __thiscall(void)
+000fd0a0	529	USER_DEFINED	__thiscall	cObjEntity_VarS	byte __thiscall(char * name, char * * s, int set)
+000fd2c0	1967	USER_DEFINED	__thiscall	cObjEntity_VarV	byte __thiscall(char * name, double * x, double * y, double * z, int set)
+000fda70	165	USER_DEFINED	__fastcall	cAutoAim_ctor	void * __fastcall(void * self)
+000fdb20	815	USER_DEFINED	__thiscall	cAutoAim_VarF	byte __thiscall(char * name, double * d, int set)
+000fde50	71	USER_DEFINED	__thiscall	cAutoAim_SetSlot	void __thiscall(float interval, float * ang)
+000fdea0	837	USER_DEFINED	__thiscall	cAutoAim_GetAimPos	float * __thiscall(float * out, void * owner)
 000fe1f0	1391	USER_DEFINED	__thiscall	cAutoAim_Update	void __thiscall(void * owner, float dt)
 000fe780	38	USER_DEFINED	__thiscall	cAutoAim_SetAngle	void __thiscall(float ang)
 000fe7b0	17	USER_DEFINED	__thiscall	cAutoAim_SetRange	void __thiscall(float range)
-000fe7d0	460	DEFAULT	unknown	FUN_004fe7d0	
+000fe7d0	460	USER_DEFINED	__thiscall	cAutoAim_VarS	byte __thiscall(char * name, char * * s, int set)
 000fe9b0	390	DEFAULT	unknown	FUN_004fe9b0	
 000feb40	347	DEFAULT	unknown	FUN_004feb40	
 000feca0	387	DEFAULT	unknown	FUN_004feca0	
@@ -3042,11 +3042,11 @@ rva	size	source	callconv	name	signature
 000ff5f0	169	DEFAULT	unknown	FUN_004ff5f0	
 000ff6a0	236	DEFAULT	unknown	FUN_004ff6a0	
 000ff790	257	DEFAULT	unknown	FUN_004ff790	
-000ff8a0	18	DEFAULT	unknown	FUN_004ff8a0	
-000ff8c0	122	DEFAULT	unknown	FUN_004ff8c0	
-000ff940	582	DEFAULT	unknown	FUN_004ff940	
+000ff8a0	18	USER_DEFINED	__fastcall	Controls_ctor	void * __fastcall(void * self)
+000ff8c0	122	USER_DEFINED	__fastcall	Controls_Reset	void __fastcall(void * self)
+000ff940	582	USER_DEFINED	__thiscall	Controls_VarF	byte __thiscall(char * name, double * d, int set)
 000ffb90	3	USER_DEFINED	__thiscall	Controls_GetWeapon	int __thiscall(void)
-000ffba0	154	DEFAULT	unknown	FUN_004ffba0	
+000ffba0	154	USER_DEFINED	__thiscall	Controls_FromNet	void __thiscall(void * v, float dt)
 000ffc40	29	USER_DEFINED	__thiscall	Controls_SetWeapon	void __thiscall(int w)
 000ffc60	39	USER_DEFINED	__thiscall	Controls_RumbleA	void __thiscall(float strength, float time)
 000ffc90	39	USER_DEFINED	__thiscall	Controls_RumbleB	void __thiscall(float strength, float time)
@@ -4889,7 +4889,7 @@ rva	size	source	callconv	name	signature
 0018e960	99	USER_DEFINED	unknown	Net_GetBotName	undefined(void)
 0018e9d0	61	DEFAULT	unknown	FUN_0058e9d0	
 0018ea10	99	USER_DEFINED	unknown	Net_GetObjName	undefined(void)
-0018ea80	33	DEFAULT	unknown	FUN_0058ea80	
+0018ea80	33	USER_DEFINED	__cdecl	Net_GetResourceName	char * __cdecl(int i)
 0018eab0	162	USER_DEFINED	unknown	Net_GetPing	undefined(void)
 0018eb60	122	DEFAULT	unknown	FUN_0058eb60	
 0018ebe0	286	DEFAULT	unknown	FUN_0058ebe0	

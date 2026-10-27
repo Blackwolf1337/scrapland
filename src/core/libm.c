@@ -92,6 +92,23 @@ double Game_Atan2(double y, double x) {
 	return r;
 }
 
+/* the same with the result stored as a float straight from the x87 (fstp DWORD) */
+float Game_Atan2F(double y, double x) {
+	float r;
+	void *fn = Game_Ptr(CI_ATAN2);
+
+	__asm__ volatile(
+		"fldl %[y]\n\t"
+		"fldl %[x]\n\t"
+		"call *%[fn]\n\t"
+		"fstps %[r]\n\t"
+		: [r] "=m"(r)
+		: [y] "m"(y), [x] "m"(x), [fn] "r"(fn)
+		: "eax", "ecx", "edx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", "st", "st(1)",
+		"memory", "cc");
+	return r;
+}
+
 /* _CIfmod: x loaded first, y on top of it, the fprem remainder of x / y */
 double Game_Fmod(double x, double y) {
 	double r;

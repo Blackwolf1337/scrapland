@@ -8,6 +8,7 @@
 #define SCRAP_DOORS_H
 
 #include "scrap/filesys.h"
+#include "scrap/objentity.h"
 #include "scrap/pyfunction.h"
 #include "scrap/world.h"
 
@@ -49,8 +50,6 @@ void __thiscall cActCtrl_SetDefLoop(void *ctrl, const char *action, byte force);
 /* the layer i of the actions (16 bytes, the time of its action first) */
 float *__thiscall cActCtrl_GetLayer(void *ctrl, int i);
 
-/* the "Obj" entity on or off */
-void __thiscall cObjEntity_Switch(cEntity *self, byte on);
 /* vehicles: a state flag for the network game, and the speed from the velocity */
 void __thiscall cVehicleEntity_SetNetFlag(cEntity *self, byte on);
 void __thiscall cVehicleEntity_UpdateSpeed(cEntity *self);

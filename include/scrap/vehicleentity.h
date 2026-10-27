@@ -283,24 +283,11 @@ void __fastcall cVehicleO648_ctor(void *o);
 void __fastcall cVehicleO648_dtor(void *o);
 void __thiscall cVehicleO648_SetSlot(void *o, int slot);
 void __thiscall cVehicleO648_Update(void *o, float dt);
-void __fastcall cVehicleControls_ctor(void *controls);
-void __fastcall cVehicleControls_Reset(void *controls);
-byte __thiscall cVehicleControls_VarF(void *controls, const char *name, double *d, int set);
-void __thiscall cVehicleControls_Update(void *controls, cEntity *v, float dt);
 void __thiscall cVehicleControls_Tick(void *controls, cEntity *v, float dt);
-void __fastcall cAutoAim_ctor(void *aim);
-byte __thiscall cAutoAim_VarF(void *aim, const char *name, double *d, int set);
-byte __thiscall cAutoAim_VarS(void *aim, const char *name, char **s, int set);
 /* the time of the life sound i set to -t */
 void __thiscall cWithLifeEntity_SetSndTime(cEntity *self, float t, int i);
 void __thiscall cWithLifeEntity_Tick(cEntity *self, float dt);
 void __thiscall cWithLifeEntity_RenderNow(cEntity *self);
-void __thiscall cObjEntity_GetCamPoint(cEntity *self, vec3_t *pos, vec3_t *ang);
-void __thiscall cObjEntity_SetEmbeddedFX(cEntity *self, const char *fxType);
-void __thiscall cObjEntity_SetModel(cEntity *self, const char *file, float sx, float sy, float sz, int flag);
-void __thiscall cObjEntity_SetFX(cEntity *self, int fx);
-void __thiscall cObjEntity_SetFXParam(cEntity *self, int i, float v);
-void __thiscall cObjEntity_SetVel(cEntity *self, const vec3_t *vel);
 void *__thiscall cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void *p3);
 cNetVController *__thiscall cNetVController_ctor(void *mem, cEntity *v);
 

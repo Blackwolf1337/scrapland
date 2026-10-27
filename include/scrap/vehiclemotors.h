@@ -113,7 +113,7 @@ SD_SIZE(cVehicleMotors, 0xc8);
 #define VM_F4c8(e) VM_FIELD(e, float, 0x4c8)
 #define VM_LocalVel(e) VM_FIELD(e, vec3_t, 0x4e4)	/* z the forward speed */
 #define VM_Hidden(e) VM_FIELD(e, byte, 0x588)		/* no exhaust effects */
-#define VM_Team(e) ((void *)((byte *)(e) + 0x314))	/* for Vehicle_TeamColor */
+#define VM_Team(e) ((void *)((byte *)(e) + 0x314))	/* for cArrowIndicator_GetColor */
 
 /* the emit positions of the Calima particles of all motors (8) */
 #define g_CalimaPos ((vec3_t *)Game_Ptr(0x4482b8))
@@ -142,7 +142,6 @@ SD_SIZE(cVehicleMotors, 0xc8);
 cVehicleMotor *__thiscall cVehicleMotor_ctor(cVehicleMotor *self);
 /* rva 0xf6b20 (Entities/ObjEntity range): the trail color of the team at +0x74 of the team info (0..3, else
  * white) */
-uint32_t __thiscall Vehicle_TeamColor(void *team);
 
 /* VehicleMotors.cpp */
 void __fastcall cVehicleMotors_Update(cVehicleMotors *self);
