@@ -225,6 +225,18 @@ byte __thiscall cAICharControl3D_TestSides(cAICharControl *self, const vec3_t *a
 	return 1;
 }
 
+byte __thiscall cAICharControl3D_TestStep(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+	cEntity *me = self->ent;
+	cAICCSeg segs[8];
+	vec3_t n;
+
+	(void)r;
+	float rad = Obj_Vtbl(me)->GetRadius(me);
+	float t = AICC_X87Add(Obj_Vtbl(me)->GetRadius(me), 5.0f);
+	float len = Float_MinSS(AICC3D_Way(a, b, &n), t);
+	return AICC3D_Lines(a, &n, rad, len, NULL, segs) != 0;
+}
+
 byte __thiscall cAICharControl3D_SideBlocked(cAICharControl *self, int side) {
 	vec3_t d, p, buf;
 

@@ -280,6 +280,46 @@ if iccw and iccw2:
 	check('ICC 3D StepGoal', lambda: SDTest.Call(0x07ec30, 'tviF', iccc3, iccadd(iccP, (0.0, 0.0, 400.0)))[1])
 	check('ICC 3D StepGoal dest', lambda: SDTest.Call(0x07ec30, 'tviF', iccc3, iccadd(iccP, (0.0, 0.0, 900.0)))[1])
 
+	# the corridor tests up there: 3D all free (the corridor in debugSegs), 2D without a floor
+	for iccr in iccc:
+		iccset(iccr[0] + 0x68, iccadd(iccP, (0.0, -5000.0, 0.0)))
+	for iccq in ((400.0, 0.0, 0.0), (0.0, 300.0, 0.0), (100.0, -50.0, 250.0), (0.0, 0.0, 0.0)):
+		iccb2 = iccadd(iccP, iccq)
+		check('ICC 3D corridor %s' % fmt(iccq), lambda b=iccb2: (SDTest.Call(0x07a040, 'tbiFFf', iccc3, iccP, b,
+			40.0)[0], iccf(iccc3 + 0x240, 54), SDTest.Call(0x07bce0, 'tbiFFf', iccc3, iccP, b, 40.0)[0],
+			iccf(iccc3 + 0x240, 54), SDTest.Call(0x07aed0, 'tbiFFf', iccc3, iccP, b, 40.0)[0], iccf(iccc3 + 0x240, 54),
+			SDTest.Call(0x07ced0, 'tbiFFf', iccc3, iccP, b, 40.0)[0]))
+		check('ICC 2D corridor %s' % fmt(iccq), lambda b=iccb2: (SDTest.Call(0x073480, 'tbiFFf', iccc2, iccP, b,
+			40.0)[0], SDTest.Call(0x0753d0, 'tbiFFf', iccc2, iccP, b, 40.0)[0], SDTest.Call(0x074410, 'tbiFFf', iccc2,
+			iccP, b, 40.0)[0], SDTest.Call(0x076700, 'tbiFFFf', iccc2, iccP, iccP, b, 40.0)[0]))
+		check('ICC 2D strafe arcs %s' % fmt(iccq), lambda b=iccb2: (SDTest.Call(0x078df0, 'tbiFFFfii', iccc2,
+			iccP, (1.0, 0.0, 0.0), (0.0, 0.0, 1.0), 200.0, 1, 1)[0], SDTest.Call(0x079610, 'tbiFFFfii', iccc2, iccP,
+			(1.0, 0.0, 0.0), (0.0, 0.0, 1.0), 200.0, 0, 0)[0]))
+	# the 2D corridor on the floor of the map below a fixed point (the map does not move)
+	iccF = None
+	for iccxz in ((0.0, 0.0), (2000.0, 2000.0), (-3000.0, 1000.0), (5000.0, -4000.0)):
+		iccl = SDTest.Call(0x213150, 'bFFFi', (iccxz[0], 30000.0, iccxz[1]), (iccxz[0], -30000.0, iccxz[1]),
+			(0.0, 0.0, 0.0), 0)
+		if iccl[0] and iccF is None:
+			iccF = iccl[3]
+	check('ICC floor', lambda: (iccF is not None, iccF))
+	if iccF is not None:
+		iccS = iccadd(iccF, (0.0, 60.0, 0.0))
+		iccsetpos(iccw, iccS)
+		iccset(iccc2 + 0x68, iccadd(iccS, (0.0, -5000.0, 0.0)))
+		for iccq in ((150.0, 0.0, 0.0), (0.0, 0.0, -120.0), (60.0, 0.0, 60.0), (0.0, 0.0, 0.0)):
+			iccb2 = iccadd(iccS, iccq)
+			iccpoke(iccc2 + 0x94, 1)
+			check('ICC 2D floor corridor %s' % fmt(iccq), lambda b=iccb2: (SDTest.Call(0x073480, 'tbiFFf', iccc2, iccS,
+				b, 40.0)[0], iccf(iccc2 + 0x240, 54), SDTest.Call(0x0753d0, 'tbiFFf', iccc2, iccS, b, 40.0)[0],
+				iccf(iccc2 + 0x240, 54), SDTest.Call(0x074410, 'tbiFFf', iccc2, iccS, b, 40.0)[0],
+				iccf(iccc2 + 0x258, 6), SDTest.Call(0x0750f0, 'tbiF', iccc2, b)[0], SDTest.Call(0x078610, 'tbiFF',
+				iccc2, b, (0.0, 0.0, 0.0))))
+			iccpoke(iccc2 + 0x94, 0)
+			check('ICC 2D floor strafe %s' % fmt(iccq), lambda b=iccb2: SDTest.Call(0x078df0, 'tbiFFFfii', iccc2,
+				iccS, (1.0, 0.0, 0.0), (0.0, 0.0, 1.0), 120.0, 1, 1)[0])
+		iccsetpos(iccw, iccP)
+
 	# the strafe with both sides (the back side of the 2D control reads the floor radius of the fake class)
 	for iccr in iccc:
 		iccset(iccr[0] + 0x10c, iccadd(iccP, (600.0, 0.0, 200.0)))

@@ -6023,6 +6023,7 @@ SD_HOOK(cAICharControl2D_StrafeFwd, 0x079610, 1792)
 SD_HOOK(cAICharControl3D_TestPath, 0x07a040, 3717)
 SD_HOOK(cAICharControl3D_TestSides, 0x07aed0, 3597)
 SD_HOOK(cAICharControl3D_TestPathEnd, 0x07bce0, 4592)
+SD_HOOK(cAICharControl3D_TestStep, 0x07ced0, 2441)
 
 /* module agent: AI/IVehicleControl+IVehicleShootControl.cpp (hooks below this line) */
 

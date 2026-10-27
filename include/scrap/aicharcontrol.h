@@ -530,6 +530,8 @@ byte __thiscall cAICharControl3D_TestLine(cAICharControl *self, const vec3_t *a,
 byte __thiscall cAICharControl3D_TestPath(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
 byte __thiscall cAICharControl3D_TestPathEnd(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
 byte __thiscall cAICharControl3D_TestSides(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
+/* slot 100 of the 3D control: the 8 lines around a along the way to b (at most the radius plus 5); r not used */
+byte __thiscall cAICharControl3D_TestStep(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
 /* the way of 1.5 radius to the side (3 up, 4 down) not free */
 byte __thiscall cAICharControl3D_SideBlocked(cAICharControl *self, int side);
 byte __thiscall cAICharControl3D_UpdateFollow(cAICharControl *self);
