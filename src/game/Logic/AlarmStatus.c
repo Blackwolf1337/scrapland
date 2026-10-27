@@ -34,8 +34,9 @@ void *__thiscall Alarm_ctor(void *alarm) {
 	return alarm;
 }
 
+/* the sign of the grow rate (-1, 0, 1), not of the level: the exe reads the float at +0 */
 int __thiscall Alarm_GetValue(void *alarm) {
-	float v = ((cAlarm *)alarm)->value;
+	float v = ((cAlarm *)alarm)->grow;
 
 	if (v == 0.0f) {
 		return 0;

@@ -237,7 +237,7 @@ void __thiscall AICtrl_GearAttack(void *aiCtrl, cEntity *target, int arg);
 /* a character that saw the player goes to accuse it ("Sending %s to acuse the main character"); 1 if one went */
 byte __thiscall AICtrl_SendAccuser(void *aiCtrl, byte check);
 /* rva 0x14f960, for the target of the gear */
-void __thiscall AICtrl_Accuse(void *aiCtrl, cEntity *e);
+void __thiscall AICtrl_CallGears(void *aiCtrl, cEntity *e);
 
 /* BaseLogic.cpp */
 cBaseLocalLogic *__thiscall cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity *parent);

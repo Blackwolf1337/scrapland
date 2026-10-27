@@ -579,7 +579,7 @@ check('CNiebla_InitD3D', lambda: (SDTest.Call(0x2783a0, 'tvi', nb), nbset(nb)))
 check('CNiebla_SetColor', lambda: (SDTest.Call(0x278680, 'tviif', nb, 0x11223344, 0.75), mwints(nb, 9)))
 check('CNiebla_SetRango', lambda: (SDTest.Call(0x2786a0, 'tviff', nb, 0.25, 0.9), mwints(nb, 9)))
 # the tests of single modules in the level (tools/test/py/sdlevel_*.py); a missing one is skipped
-for part in ('sdlevel_collision.py', 'sdlevel_scrapworld.py', 'sdlevel_world.py', 'sdlevel_fxcounter.py', 'sdlevel_grid.py', 'sdlevel_fxmisc.py', 'sdlevel_fxweap.py', 'sdlevel_efxchar.py', 'sdlevel_fxelem.py', 'sdlevel_efxveh.py', 'sdlevel_efxmisc.py', 'sdlevel_entity.py', 'sdlevel_weap1.py', 'sdlevel_weap2.py', 'sdlevel_fxchar.py', 'sdlevel_fxveh.py', 'sdlevel_fxscene.py', 'sdlevel_bsp.py', 'sdlevel_vehent.py', 'sdlevel_fxcharact.py', 'sdlevel_vehmot.py', 'sdlevel_entmore.py', 'sdlevel_nodestraf.py', 'sdlevel_nodesworld.py', 'sdlevel_chartype1.py', 'sdlevel_nodes2d.py', 'sdlevel_chartype2.py'):
+for part in ('sdlevel_collision.py', 'sdlevel_scrapworld.py', 'sdlevel_world.py', 'sdlevel_fxcounter.py', 'sdlevel_grid.py', 'sdlevel_fxmisc.py', 'sdlevel_fxweap.py', 'sdlevel_efxchar.py', 'sdlevel_fxelem.py', 'sdlevel_efxveh.py', 'sdlevel_efxmisc.py', 'sdlevel_entity.py', 'sdlevel_weap1.py', 'sdlevel_weap2.py', 'sdlevel_fxchar.py', 'sdlevel_fxveh.py', 'sdlevel_fxscene.py', 'sdlevel_bsp.py', 'sdlevel_vehent.py', 'sdlevel_fxcharact.py', 'sdlevel_vehmot.py', 'sdlevel_entmore.py', 'sdlevel_nodestraf.py', 'sdlevel_nodesworld.py', 'sdlevel_chartype1.py', 'sdlevel_nodes2d.py', 'sdlevel_chartype2.py', 'sdlevel_logic1.py'):
 	try:
 		f = open(part)
 	except IOError:

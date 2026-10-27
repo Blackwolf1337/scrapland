@@ -220,8 +220,8 @@ for lg1v in ((0, 0.0), (1, 0.0), (1, 100.0)):
 	else:
 		lg1poke(lg1gc + 0x10, 0)
 	lg1set(lg1gc + 0x5c, (lg1v[1],))
-	check('LG1 cBankDirectorLocalLogic_LoseTarget%s' % fmt(lg1v), lambda: (SDTest.Call(0x140250, 'tii', lg1gc)[0],
-		SDTest.Call(0x140750, 'tii', lg1gc)[0]))
+	check('LG1 cBankDirectorLocalLogic_LoseTarget%s' % fmt(lg1v), lambda: (SDTest.Call(0x140250, 'tbi', lg1gc)[0],
+		SDTest.Call(0x140750, 'tbi', lg1gc)[0]))
 lg1poke(lg1gc + 0x10, 0)
 check('LG1 cBishopLocalLogic_LoseTarget', lambda: SDTest.Call(0x142c00, 'tbi', lg1gc)[0])
 if lg1listsok:

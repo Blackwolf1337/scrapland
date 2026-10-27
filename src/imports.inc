@@ -695,7 +695,6 @@ SD_IMPORT(cActClassCam_Update, 0x0616e0)
 
 /* module agent: Logic part 1 (AlarmStatus..Domination) (imports below this line) */
 SD_IMPORT(AICtrl_SendAccuser, 0x14f840)
-SD_IMPORT(AICtrl_Accuse, 0x14f960)
 SD_IMPORT(Taunts_Play, 0x155210)
 SD_IMPORT(cGenCharLocalLogic_ctor, 0x14c0a0)
 SD_IMPORT(cGenCharLocalLogic_dtor, 0x14c1b0)
