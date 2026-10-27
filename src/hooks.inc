@@ -3116,3 +3116,11 @@ SD_HOOK(FXElementsPress_Create, 0x1d7370, 1786)
 SD_HOOK(cFXElementsMentalControllerMainFX_SetController, 0x1d7a70, 100)
 SD_HOOK(cFXElementsMentalControllerMainFX_SetPhase, 0x1d7ae0, 298)
 SD_HOOK(cFXElementsMentalController_Update, 0x1d7c30, 236)
+
+/* module agent: World/FX/FXElements+FXElementsAB.cpp (hooks below this line) */
+
+/* module agent: Entities/EmbeddedFX/EmbeddedFXChar+CharHead.cpp (hooks below this line) */
+
+/* module agent: Entities/EmbeddedFX/EmbeddedFXVehicle.cpp+mpeg/music_fmod.cpp (hooks below this line) */
+
+/* module agent: World/FX/FXWeapons.cpp (hooks below this line) */

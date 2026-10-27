@@ -618,3 +618,11 @@ SD_IMPORT(cMapElement_dtor, 0x202e20)
 SD_IMPORT(cMapElement_Init, 0x203310)
 SD_IMPORT(cMapElement_Update, 0x203520)
 SD_IMPORT(cFXElementsOrbitBoyaController_ctor, 0x1d5820)
+
+/* module agent: World/FX/FXElements+FXElementsAB.cpp (imports below this line) */
+
+/* module agent: Entities/EmbeddedFX/EmbeddedFXChar+CharHead.cpp (imports below this line) */
+
+/* module agent: Entities/EmbeddedFX/EmbeddedFXVehicle.cpp+mpeg/music_fmod.cpp (imports below this line) */
+
+/* module agent: World/FX/FXWeapons.cpp (imports below this line) */
