@@ -316,6 +316,7 @@ if accw and accw2:
 		# the strafe: the collision timers, the avoid update without a linked character, the jump
 		accset(accC + 0x5c, (0.25,))
 		accset(accC + 0xf4, (0.75,))
+		accpokeb(accC + 0xe4, 0)	# not set by the constructor, written only when FindAvoid runs
 		for accst in ((0, 0, 0.0, 0, 0), (1, 0, 0.0, 0, 0), (1, 1, 2.0, 0, 0), (1, 0, 2.0, 1, 1), (2, 0, 2.0, 2, 0)):
 			accpoke(accC + 0x94, accst[0])
 			accpokeb(accC + 0xd4, accst[1])

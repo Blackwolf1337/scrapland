@@ -111,8 +111,8 @@ if vhecar:
 			s)[0])
 		check('cVehicleEntity_GetPilotPos' + fmt((vheslot,)), lambda c=vhec, s=vheslot: SDTest.Call(0x1083e0, 'tbiiFF',
 			c, s, (1.0, 2.0, 3.0), (4.0, 5.0, 6.0)))
-	check('cVehicleEntity_SetPilotAnim(0, 2)', lambda c=vhec: (SDTest.Call(0x10a340, 'tbiii', c, 0, 2)[0],
-		vhei(vhec + 0x548)))
+	# without a pilot model it returns early (the anim slot is not written)
+	check('cVehicleEntity_SetPilotAnim(0, 2)', lambda c=vhec: SDTest.Call(0x10a340, 'tbiii', c, 0, 2)[0])
 	check('cVehicleEntity_UpdatePilotPos', lambda c=vhec: SDTest.Call(0x10b860, 'tvii', c, 1))
 
 	# the script variables
