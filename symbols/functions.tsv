@@ -2323,64 +2323,64 @@ rva	size	source	callconv	name	signature
 000c92f0	609	USER_DEFINED	__cdecl	ChType_FlashHit	void __cdecl(void * params)
 000c9560	490	USER_DEFINED	__cdecl	ChType_FXMaintenanceWork	void __cdecl(void * params)
 000c9750	18	USER_DEFINED	__fastcall	cAIChar_TestFlags	byte __fastcall(void * self)
-000c9770	684	DEFAULT	unknown	FUN_004c9770	
+000c9770	684	USER_DEFINED	__cdecl	ChType_ListeningMayor	void __cdecl(void * params)
 000c9a20	97	USER_DEFINED	__thiscall	cEntity::AddLink	void __thiscall(void * node)
-000c9a90	385	DEFAULT	unknown	FUN_004c9a90	
-000c9c20	868	DEFAULT	unknown	FUN_004c9c20	
-000c9f90	377	DEFAULT	unknown	FUN_004c9f90	
-000ca110	217	DEFAULT	unknown	FUN_004ca110	
-000ca1f0	1783	DEFAULT	unknown	FUN_004ca1f0	
-000ca8f0	387	DEFAULT	unknown	FUN_004ca8f0	
-000caa80	1079	DEFAULT	unknown	FUN_004caa80	
-000caec0	243	DEFAULT	unknown	FUN_004caec0	
-000cafe0	3572	DEFAULT	unknown	FUN_004cafe0	
-000cbde0	226	DEFAULT	unknown	FUN_004cbde0	
-000cbed0	27	DEFAULT	unknown	FUN_004cbed0	
-000cbef0	2180	DEFAULT	unknown	FUN_004cbef0	
-000cc780	233	DEFAULT	unknown	FUN_004cc780	
-000cc870	272	DEFAULT	unknown	FUN_004cc870	
-000cc980	266	DEFAULT	unknown	FUN_004cc980	
-000cca90	261	DEFAULT	unknown	FUN_004cca90	
-000ccba0	299	DEFAULT	unknown	FUN_004ccba0	
-000cccd0	353	DEFAULT	unknown	FUN_004cccd0	
-000cce40	324	DEFAULT	unknown	FUN_004cce40	
-000ccf90	710	DEFAULT	unknown	FUN_004ccf90	
-000cd260	695	DEFAULT	unknown	FUN_004cd260	
-000cd520	315	DEFAULT	unknown	FUN_004cd520	
-000cd660	1329	DEFAULT	unknown	FUN_004cd660	
-000cdba0	245	DEFAULT	unknown	FUN_004cdba0	
-000cdca0	1987	DEFAULT	unknown	FUN_004cdca0	
-000ce470	329	DEFAULT	unknown	FUN_004ce470	
-000ce5c0	273	DEFAULT	unknown	FUN_004ce5c0	
-000ce6e0	312	DEFAULT	unknown	FUN_004ce6e0	
-000ce820	398	DEFAULT	unknown	FUN_004ce820	
-000ce9b0	70	DEFAULT	unknown	FUN_004ce9b0	
-000cea00	3789	DEFAULT	unknown	FUN_004cea00	
-000cf8d0	302	DEFAULT	unknown	FUN_004cf8d0	
-000cfa00	241	DEFAULT	unknown	FUN_004cfa00	
-000cfb00	267	DEFAULT	unknown	FUN_004cfb00	
-000cfc10	73	DEFAULT	unknown	FUN_004cfc10	
-000cfc60	873	DEFAULT	unknown	FUN_004cfc60	
-000cffd0	29	DEFAULT	unknown	FUN_004cffd0	
-000cfff0	108	DEFAULT	unknown	FUN_004cfff0	
-000d0060	83	DEFAULT	unknown	FUN_004d0060	
-000d00c0	74	DEFAULT	unknown	FUN_004d00c0	
-000d0110	617	DEFAULT	unknown	FUN_004d0110	
-000d0380	14	DEFAULT	unknown	FUN_004d0380	
-000d0390	82	DEFAULT	unknown	FUN_004d0390	
-000d03f0	24	DEFAULT	unknown	FUN_004d03f0	
-000d0410	2549	DEFAULT	unknown	FUN_004d0410	
-000d0e40	844	DEFAULT	unknown	FUN_004d0e40	
-000d1190	104	DEFAULT	unknown	FUN_004d1190	
-000d1200	104	DEFAULT	unknown	FUN_004d1200	
-000d1270	411	DEFAULT	unknown	FUN_004d1270	
-000d1410	114	DEFAULT	unknown	FUN_004d1410	
-000d1490	38	ANALYSIS	__thiscall	cWalkCharEntity::vf03	undefined __thiscall(void)
-000d14c0	692	ANALYSIS	__thiscall	cWalkCharEntity::vf63	undefined __thiscall(void)
-000d1780	342	ANALYSIS	__thiscall	cWalkCharEntity::vf24	undefined __thiscall(void)
-000d18e0	169	DEFAULT	unknown	FUN_004d18e0	
-000d1990	115	DEFAULT	unknown	FUN_004d1990	
-000d1a10	70	DEFAULT	unknown	FUN_004d1a10	
+000c9a90	385	USER_DEFINED	__cdecl	ChType_MayorEndAction	void __cdecl(void * params)
+000c9c20	868	USER_DEFINED	__cdecl	ChType_MayorSphereHit	void __cdecl(void * params)
+000c9f90	377	USER_DEFINED	__cdecl	ChType_FXMercenaryDrink	void __cdecl(void * params)
+000ca110	217	USER_DEFINED	__cdecl	ChType_ActionPress	void __cdecl(void * params)
+000ca1f0	1783	USER_DEFINED	__cdecl	ChType_MessengerAttack	void __cdecl(void * params)
+000ca8f0	387	USER_DEFINED	__cdecl	ChType_EndActionEnd	void __cdecl(void * params)
+000caa80	1079	USER_DEFINED	__cdecl	ChType_MessengerTakeDataPack	void __cdecl(void * params)
+000caec0	243	USER_DEFINED	__cdecl	ChType_NurseSphereHit	void __cdecl(void * params)
+000cafe0	3572	USER_DEFINED	__cdecl	Nurse_HammerFX	void __cdecl(void * v)
+000cbde0	226	USER_DEFINED	__cdecl	ChType_NurseActionPress	void __cdecl(void * params)
+000cbed0	27	USER_DEFINED	__cdecl	ChType_NurseActionRelease	void __cdecl(void * params)
+000cbef0	2180	USER_DEFINED	__cdecl	ChType_NurseHit	void __cdecl(void)
+000cc780	233	USER_DEFINED	__cdecl	ChType_NurseBackHitControl	void __cdecl(void * params)
+000cc870	272	USER_DEFINED	__cdecl	ChType_NurseDoHammerHit	void __cdecl(void * params)
+000cc980	266	USER_DEFINED	__cdecl	ChType_NurseInitHammerLoop	void __cdecl(void * params)
+000cca90	261	USER_DEFINED	__cdecl	ChType_NurseTryHammerAgain	void __cdecl(void * params)
+000ccba0	299	USER_DEFINED	__cdecl	ChType_FXPoliceGearConversion	void __cdecl(void * params)
+000cccd0	353	USER_DEFINED	__cdecl	ChType_FXPoliceSteal	void __cdecl(void * params)
+000cce40	324	USER_DEFINED	__cdecl	FX_PoliceSteal	void __cdecl(void * attacker, void * attacked)
+000ccf90	710	USER_DEFINED	__cdecl	ChType_ListeningPolice	void __cdecl(void * params)
+000cd260	695	USER_DEFINED	__cdecl	ChType_PoliceActionPress	void __cdecl(void * params)
+000cd520	315	USER_DEFINED	__cdecl	ChType_PoliceFindListener	byte __cdecl(void * v, void ** victim, byte * usr, void ** action)
+000cd660	1329	USER_DEFINED	__cdecl	ChType_PoliceEndActionMoney	void __cdecl(void * params)
+000cdba0	245	USER_DEFINED	__cdecl	ChType_PoliceRestoreFreeTurn	void __cdecl(void * params)
+000cdca0	1987	USER_DEFINED	__cdecl	ChType_FXPoliceBossBrup	void __cdecl(void * params)
+000ce470	329	USER_DEFINED	__cdecl	ChType_PoliceBossBrupBounce	void __cdecl(void * d, byte * hit)
+000ce5c0	273	USER_DEFINED	__cdecl	ChType_PoliceBossAction	void __cdecl(void * params)
+000ce6e0	312	USER_DEFINED	__cdecl	ChType_PoliceBossBrup	void __cdecl(void * params)
+000ce820	398	USER_DEFINED	__cdecl	ChType_PoliceBossSphereHit	void __cdecl(void * params)
+000ce9b0	70	USER_DEFINED	__cdecl	ChType_PoliceBossTryAction	void __cdecl(void * v)
+000cea00	3789	USER_DEFINED	__cdecl	ChType_FXRustyHit	void __cdecl(void * params)
+000cf8d0	302	USER_DEFINED	__cdecl	ChType_FXSebastianFlash	void __cdecl(void * params)
+000cfa00	241	USER_DEFINED	__cdecl	ChType_SentinelActionPress	void __cdecl(void * params)
+000cfb00	267	USER_DEFINED	__cdecl	ChType_SentinelActionRelease	void __cdecl(void * params)
+000cfc10	73	USER_DEFINED	__cdecl	ChType_SentinelTarget	void * __cdecl(void * e)
+000cfc60	873	USER_DEFINED	__cdecl	ChType_SentinelPoint	void __cdecl(void * params)
+000cffd0	29	USER_DEFINED	__cdecl	ChType_SentinelCanCall	byte __cdecl(void)
+000cfff0	108	USER_DEFINED	__fastcall	cWalkCharControl_ctor	void * __fastcall(void * self)
+000d0060	83	USER_DEFINED	__thiscall	cWalkCharControl_SetTarget	void __thiscall(void * e)
+000d00c0	74	USER_DEFINED	__fastcall	cWalkCharControl_Clear	void __fastcall(void * self)
+000d0110	617	USER_DEFINED	__thiscall	cWalkCharControl_VarF	byte __thiscall(char * name, double * d, byte set)
+000d0380	14	USER_DEFINED	__fastcall	cWalkCharControl_RestartCenter	void __fastcall(void * self)
+000d0390	82	USER_DEFINED	__thiscall	cWalkCharControl_Reset	void __thiscall(byte on)
+000d03f0	24	USER_DEFINED	__thiscall	cWalkCharControl_Latch	void __thiscall(void * wle, float dt)
+000d0410	2549	USER_DEFINED	__thiscall	cWalkCharControl_Update	void __thiscall(void * wle, float dt)
+000d0e40	844	USER_DEFINED	__thiscall	cWalkCharEntity_ctor	void * __thiscall(char * name, float x, float y, float z)
+000d1190	104	USER_DEFINED	__fastcall	Nto1Node_dtor	void __fastcall(void * node)
+000d1200	104	USER_DEFINED	__fastcall	Nto1Node_dtor	void __fastcall(void * node)
+000d1270	411	USER_DEFINED	__fastcall	cWalkCharEntity_dtor	void __fastcall(void * self)
+000d1410	114	USER_DEFINED	__fastcall	cWalkCharControl_dtor	void __fastcall(void * self)
+000d1490	38	USER_DEFINED	__thiscall	cWalkCharEntity_Delete	void * __thiscall(uint flags)
+000d14c0	692	USER_DEFINED	__thiscall	cWalkCharEntity_ActionTick	void __thiscall(float dt)
+000d1780	342	USER_DEFINED	__thiscall	cWalkCharEntity_UpdateModel	void __thiscall(void)
+000d18e0	169	USER_DEFINED	__thiscall	cWalkCharEntity_UpdateViewLock	void __thiscall(float dt)
+000d1990	115	USER_DEFINED	__thiscall	cWalkCharEntity_CanActOnVictim	byte __thiscall(byte checkClass)
+000d1a10	70	USER_DEFINED	__fastcall	cWalkCharEntity_Unlink3e8	void __fastcall(void * self)
 000d1a60	256	ANALYSIS	__thiscall	cWalkCharEntity::vf11	undefined __thiscall(void)
 000d1b60	1917	DEFAULT	unknown	FUN_004d1b60	
 000d22e0	211	ANALYSIS	__thiscall	cWalkCharEntity::vf58	undefined __thiscall(void)
