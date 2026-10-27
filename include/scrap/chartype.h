@@ -34,6 +34,7 @@
 #define WChar_B381(e) (*(byte *)((byte *)(e) + 0x381))		/* cleared by the flash */
 #define WChar_OwnerSlot(e) (*(int *)((byte *)(e) + 0x424))		/* "UsrControl", -1 for an AI */
 #define WChar_Ang(e) ((vec3_t *)((byte *)(e) + 0x428))
+#define WChar_FallVel(e) (*(vec3_t *)((byte *)(e) + 0x480))		/* the velocity of the fall */
 #define WChar_SlideTime(e) (*(float *)((byte *)(e) + 0x460))		/* "SlidingAndFallingTime" */
 #define WChar_Falling(e) (*(byte *)((byte *)(e) + 0x464))
 #define WChar_DisplAng(e) (*(float *)((byte *)(e) + 0x468))
@@ -140,6 +141,9 @@ static inline const cChTypeLogicVtbl *ChLogic_Vtbl(cLocalLogic *l) {
 #define g_DesktopJumpPrice GAME_DATA(int, 0x4465d4)
 #define g_DesktopJumpSlideTime GAME_DATA(float, 0x4465ec)
 #define g_DesktopJumpSpeed GAME_DATA(float, 0x44663c)
+#define g_FXDesktopFallEndDist GAME_DATA(float, 0x446614)
+#define g_FXDesktopFallEndFile GAME_DATA(char *, 0x446654)
+#define g_FallSoundVel GAME_DATA(float, 0x4472e4)		/* FallSoundVel */
 #define g_FXBishopSellLifeFile GAME_DATA(char *, 0x4464a4)
 #define g_FXBishopAttackFile GAME_DATA(char *, 0x4464dc)
 #define g_BishopAttackPosX GAME_DATA(float, 0x4464f4)
@@ -266,6 +270,7 @@ void ChType_FXCrazyGamblerSetHeadModel(cAbstractFile *params);
 
 /* Desktop.c */
 void ChType_DesktopActionPress(cAbstractFile *params);
+void ChType_FXDesktopFallEnd(cAbstractFile *params);
 
 /* Dtritus.c */
 void ChType_DtritusActionPress(cAbstractFile *params);

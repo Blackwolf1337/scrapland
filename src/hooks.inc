@@ -4607,6 +4607,7 @@ SD_HOOK(FX_BishopSellLife, 0x0c4650, 249)
 SD_HOOK(ChType_FXCrazyGamblerSetHeadModel, 0x0c4750, 577)
 /* src/game/Entities/Char/Type/Desktop.c */
 SD_HOOK(ChType_DesktopActionPress, 0x0c49a0, 1736)
+SD_HOOK(ChType_FXDesktopFallEnd, 0x0c5070, 2801)
 /* src/game/Entities/Char/Type/Dtritus.c */
 SD_HOOK(ChType_DtritusActionPress, 0x0c5b70, 331)
 SD_HOOK(ChType_DtritusKill, 0x0c5cd0, 1203)

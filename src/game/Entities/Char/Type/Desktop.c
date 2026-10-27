@@ -1,11 +1,161 @@
 /*
  * Entities/Char/Type/Desktop.cpp of the game: the desktop, who jumps (forward, back or to a side) and can land on
- * a character for money (include/scrap/chartype.h). FXDesktopFallEnd (the dust of the landing) is not in C yet.
+ * a character for money, with the dust of the landing (include/scrap/chartype.h).
  */
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/fxelements.h"
+#include "scrap/scrapcollision.h"
+#include "scrap/scrapparticles.h"
 #include "scrap/weapons.h"
+
+#define DESKTOP_TWO_PI 6.2831854820251465	/* rva 0x3a5d00, (double)6.2831855f */
+
+/* params: the desktop. A fast landing seen from near enough: four puffs around the point it lands on and a ring of
+ * dust thrown out of it. */
+void ChType_FXDesktopFallEnd(cAbstractFile *params) {
+	char name[0x80];
+	vec3_t tmp, one, rot, d, xaxis;
+
+	cAbstractFile_ReadString(params, name, 0x80);
+	cEntity *v = ChType_CheckChar(name);
+	if (WChar_Cam(v)) {
+		cPad_Rumble(&g_Pads[0], 0.5f, 0.0f, 0.125f);
+	}
+	const vec3_t *c = WEnt_Vtbl(v)->GetCenter(v, &tmp);
+	if (!FX_IsVisible(c->x, c->y, c->z, 250.0f, g_FXDesktopFallEndDist, NULL, 0)) {
+		return;
+	}
+	cWorld *w = g_pWorld;
+	vec3_t cp = w->camPos[w->curCam];
+	c = WEnt_Vtbl(v)->GetCenter(v, &tmp);
+	float dx = cp.x - c->x;
+	float dy = cp.y - c->y;
+	float dz = cp.z - c->z;
+	if (dy * dy + dx * dx + dz * dz > g_FXDesktopFallEndDist * g_FXDesktopFallEndDist) {
+		return;
+	}
+	vec3_t fall = WChar_FallVel(v);
+	if (fall.y > -g_FallSoundVel) {
+		return;
+	}
+	float r = Obj_Vtbl(v)->GetRadius(v);
+	vec3_t p = *v->vftable->GetPos(v, &tmp);
+	vec3_t hit, to;
+	/* the point it lands on: the floor below the feet, else a bit under its center */
+	float ax = p.x + 0.0f;
+	float ay = p.y + r * -1.39999998f;
+	float az = p.z + 0.0f;
+	to.x = p.x - 0.0f;
+	to.y = p.y - r * 2.0f;
+	to.z = p.z - 0.0f;
+	if (Engine_TestLine(&p, &to, &hit, NULL)) {
+		ax = hit.x + 0.0f;
+		ay = hit.y + 10.0f;
+		az = hit.z + 0.0f;
+	}
+	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXDesktopFallEndFile);
+	cDebris *dbr = cDebrisSys_NewElement(sys);
+	CGameModel_SetPos(Debris_Model(dbr), WEnt_Vtbl(v)->GetCenter(v, &tmp));
+	Debris_Life(dbr) = 1.0f;
+	cDebrisSys_Drop(sys, dbr);
+	byte *el = Debris_Element(dbr);
+	if (!el) {
+		return;
+	}
+	if (!el[0xb5]) {
+		*(uint16_t *)(el + 0xb4) = 0x100;
+	}
+	CGameParticles *pt = (CGameParticles *)(el + 4);
+	float bx = ax + 0.0f;
+	float by = ay - 5.0f;
+	float bz = az + 0.0f;
+	pt->birthRate = 0;
+	for (int i = 0; i < 4; i++) {
+		float r1 = FxElem_Rand(DESKTOP_TWO_PI, 0.0);
+		float r2 = FxElem_Rand(DESKTOP_TWO_PI, 0.0);
+		one.x = 1.0f;
+		one.y = 1.0f;
+		one.z = 1.0f;
+		rot.x = FxElem_Rand(DESKTOP_TWO_PI, 0.0);
+		rot.y = r2;
+		rot.z = r1;
+		const vec3_t *dir = Vec3_Rotate(&d, &one, &rot);
+		float k = FxElem_Rand(2.0, 1.0);
+		pt->initPosMin.x = bx + k * dir->x;
+		pt->initPosMin.y = by + k * dir->y;
+		pt->initPosMin.z = bz + k * dir->z;
+		pt->initPosMax = pt->initPosMin;
+		pt->initVelMin.x = 0.0f;
+		pt->initVelMin.y = 0.0f;
+		pt->initVelMin.z = 0.0f;
+		pt->initVelMax = pt->initVelMin;
+		pt->initAccMin.x = 0.0f;
+		pt->initAccMin.y = 0.0f;
+		pt->initAccMin.z = 0.0f;
+		pt->initAccMax = pt->initAccMin;
+		pt->sizeIni = FxElem_Rand(10.0, 10.0);
+		pt->sizeEnd = FxElem_Rand(20.0, 80.0);
+		pt->sizeLife = 0.200000003f;
+		pt->lifeTime = FxElem_Rand(0.09999999403953552, 0.30000001192092896);
+		pt->rotVar = 0.0f;
+		pt->spriteIni = 2;
+		pt->spriteEnd = 2;
+		float a = FxElem_Rand(DESKTOP_TWO_PI, 0.0);
+		pt->rotIni = a;
+		pt->rotEnd = a;
+		CGameParticles_Apply(pt);
+		CGameParticles_SetColorRampOn(pt, 1);
+		CGameParticles_SetColorRamp(pt, (uint32_t *)Game_Ptr(0x428050));
+		CGameParticles_EmitN(pt, 1, 1);
+	}
+	/* the ring: every 6 degrees a particle thrown out and up */
+	float ang = 0.0f;
+	do {
+		rot.x = 0.0f;
+		rot.y = ang;
+		rot.z = 0.0f;
+		xaxis.x = 1.0f;
+		xaxis.y = 0.0f;
+		xaxis.z = 0.0f;
+		Vec3_Rotate(&d, &xaxis, &rot);
+		float k = FxElem_Rand(2.0, 0.0);
+		pt->initPosMin.x = k * d.x + ax;
+		pt->initPosMin.y = k * d.y + ay;
+		pt->initPosMin.z = k * d.z + az;
+		pt->initPosMax = pt->initPosMin;
+		float s = FxElem_Rand(40.0, 145.0);
+		pt->initVelMin.x = d.x * s;
+		pt->initVelMin.y = d.y * s;
+		pt->initVelMin.z = d.z * s;
+		pt->initVelMax = pt->initVelMin;
+		float up = FxElem_Rand(30.0, 115.0);
+		float g = FxElem_Rand(0.10000002384185791, 0.6499999761581421);
+		pt->initAccMin.y = -pt->initVelMin.y * g + up;
+		pt->initAccMin.x = -pt->initVelMin.x * g + 0.0f;
+		pt->initAccMin.z = -pt->initVelMin.z * g + 0.0f;
+		pt->initAccMax = pt->initAccMin;
+		pt->sizeIni = FxElem_Rand(10.0, 25.0);
+		pt->sizeEnd = FxElem_Rand(20.0, 75.0);
+		pt->sizeLife = 1.0f;
+		pt->lifeTime = FxElem_Rand(0.15000003576278687, 0.6499999761581421);
+		float a = FxElem_Rand(DESKTOP_TWO_PI, 0.0);
+		pt->rotIni = a;
+		pt->rotEnd = a;
+		pt->rotVar = FxElem_Rand(0.5235987901687622, -0.2617993950843811);
+		byte sprite = (byte)((crt_rand() & 1) + 0x11);
+		pt->spriteIni = sprite;
+		pt->spriteEnd = sprite;
+		CGameParticles_Apply(pt);
+		CGameParticles_SetColorRampOn(pt, 1);
+		int ramp = crt_rand() % 2;
+		CGameParticles_SetColorRamp(pt, (uint32_t *)Game_Ptr(0x428008 + 0x24 * ramp));
+		float dt = FxElem_Rand(0.15000000596046448, 0.0) + 0.0500000007f;
+		CGameParticles_EmitDt(pt, 1, 1, dt);
+		ang = ang + 0.104719758f;
+	} while (6.28318548f > ang);
+}
 
 /* the characters a landing pays twice for */
 static byte Desktop_BonusClass(cEntity *t) {
