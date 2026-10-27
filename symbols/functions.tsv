@@ -3057,88 +3057,88 @@ rva	size	source	callconv	name	signature
 00100b60	168	DEFAULT	unknown	FUN_00500b60	
 00100c10	69	DEFAULT	unknown	FUN_00500c10	
 00100c60	2423	DEFAULT	unknown	FUN_00500c60	
-001015e0	1608	DEFAULT	unknown	FUN_005015e0	
-00101c30	88	DEFAULT	unknown	FUN_00501c30	
-00101c90	51	DEFAULT	unknown	FUN_00501c90	
-00101d00	34	DEFAULT	unknown	FUN_00501d00	
+001015e0	1608	USER_DEFINED	__thiscall	cVehicleTrails_Update	void __thiscall(float dt)
+00101c30	88	USER_DEFINED	__fastcall	cVehicleEffects_Reset	void __fastcall(void * self)
+00101c90	51	USER_DEFINED	__fastcall	cVehicleTubes_Reset	void __fastcall(void * self)
+00101d00	34	USER_DEFINED	__fastcall	cVehicleTrails_Clear	void __fastcall(void * self)
 00101d30	12	USER_DEFINED	__fastcall	cVehicleEffects_ClearDamage	void __fastcall(void * self)
-00101d60	520	DEFAULT	unknown	FUN_00501d60	
-00101f70	343	DEFAULT	unknown	FUN_00501f70	
-001020d0	456	DEFAULT	unknown	FUN_005020d0	
-001022a0	31	DEFAULT	unknown	FUN_005022a0	
-001022c0	1329	DEFAULT	unknown	FUN_005022c0	
-00102800	116	DEFAULT	unknown	FUN_00502800	
-00102880	96	DEFAULT	unknown	FUN_00502880	
-001028e0	96	DEFAULT	unknown	FUN_005028e0	
+00101d60	520	USER_DEFINED	__fastcall	cVehicleEffects_Init	void __fastcall(void * self)
+00101f70	343	USER_DEFINED	__fastcall	cVehicleTubes_Init	void __fastcall(void * self)
+001020d0	456	USER_DEFINED	__fastcall	cVehicleTrails_Init	void __fastcall(void * self)
+001022a0	31	USER_DEFINED	__thiscall	cVehicleEffects_SetActive	void __thiscall(byte on)
+001022c0	1329	USER_DEFINED	__thiscall	cVehicleEffects_Start	void __thiscall(char * name)
+00102800	116	USER_DEFINED	__thiscall	cVehicleEffects_SetOwner	void __thiscall(void * e)
+00102880	96	USER_DEFINED	__thiscall	cVehicleTubes_SetOwner	void __thiscall(void * e)
+001028e0	96	USER_DEFINED	__thiscall	cVehicleTrails_SetOwner	void __thiscall(void * e)
 00102940	1869	DEFAULT	unknown	FUN_00502940	
-00103090	1123	DEFAULT	unknown	FUN_00503090	
+00103090	1123	USER_DEFINED	__thiscall	cVehicleEffects_UpdateState	void __thiscall(float dt)
 00103500	9002	USER_DEFINED	__thiscall	cVehicleEffects_Shoot	void __thiscall(int weap, int slot)
-00105830	1137	DEFAULT	unknown	FUN_00505830	
-00105cb0	304	DEFAULT	unknown	FUN_00505cb0	
-00105de0	114	DEFAULT	unknown	FUN_00505de0	
-00105e70	38	ANALYSIS	__thiscall	cVehicleEntity::vf03	undefined __thiscall(void)
+00105830	1137	USER_DEFINED	__thiscall	cVehicleEntity_ctor	void * __thiscall(char * name, float x, float y, float z)
+00105cb0	304	USER_DEFINED	__fastcall	cVehicleEntity_dtor	void __fastcall(void * self)
+00105de0	114	USER_DEFINED	__fastcall	cAutoAim_dtor	void __fastcall(void * self)
+00105e70	38	USER_DEFINED	__thiscall	cVehicleEntity_Delete	void * __thiscall(byte flags)
 00105ea0	1872	ANALYSIS	__thiscall	cVehicleEntity::vf24	undefined __thiscall(void)
-001065f0	259	DEFAULT	unknown	FUN_005065f0	
-00106700	155	DEFAULT	unknown	FUN_00506700	
-001067a0	46	DEFAULT	unknown	FUN_005067a0	
-001067d0	7	ANALYSIS	__thiscall	cVehicleEntity::vf59	undefined __thiscall(void)
-001067e0	286	DEFAULT	unknown	FUN_005067e0	
-00106900	745	DEFAULT	unknown	FUN_00506900	
-00106bf0	1090	ANALYSIS	__thiscall	cVehicleEntity::vf11	undefined __thiscall(void)
-00107040	643	ANALYSIS	__thiscall	cVehicleEntity::vf57	undefined __thiscall(void)
-001072d0	105	DEFAULT	unknown	FUN_005072d0	
-00107340	36	DEFAULT	unknown	FUN_00507340	
-00107370	219	DEFAULT	unknown	FUN_00507370	
-00107450	65	DEFAULT	unknown	FUN_00507450	
-001074a0	175	ANALYSIS	__thiscall	cVehicleEntity::vf58	undefined __thiscall(void)
-00107550	1436	DEFAULT	unknown	FUN_00507550	
-00107af0	2235	ANALYSIS	__thiscall	cVehicleEntity::vf17	undefined __thiscall(void)
-001083b0	43	ANALYSIS	__thiscall	cVehicleEntity::vf61	undefined __thiscall(void)
-001083e0	170	ANALYSIS	__thiscall	cVehicleEntity::vf64	undefined __thiscall(void)
-00108490	259	ANALYSIS	__thiscall	cVehicleEntity::vf39	undefined __thiscall(void)
-001085a0	6	ANALYSIS	__thiscall	cVehicleEntity::vf04	undefined __thiscall(void)
-001085b0	7	USER_DEFINED	__thiscall	cVehicleEntity::GetOwnerSlot	int __thiscall(void)
-001085c0	7	ANALYSIS	__thiscall	cVehicleEntity::vf40	undefined __thiscall(void)
-001085d0	15	ANALYSIS	__thiscall	cVehicleEntity::vf02	undefined __thiscall(void)
-001085e0	150	DEFAULT	unknown	FUN_005085e0	
-00108680	1653	ANALYSIS	__thiscall	cVehicleEntity::vf16	undefined __thiscall(void)
-00108d00	80	ANALYSIS	__thiscall	cVehicleEntity::vf05	undefined __thiscall(void)
-00108d50	111	DEFAULT	unknown	FUN_00508d50	
-00108dc0	53	DEFAULT	unknown	FUN_00508dc0	
-00108e00	21	ANALYSIS	__thiscall	cVehicleEntity::vf43	undefined __thiscall(void)
-00108e20	126	ANALYSIS	__thiscall	cVehicleEntity::vf41	undefined __thiscall(void)
-00108ea0	671	ANALYSIS	__thiscall	cVehicleEntity::vf23	undefined __thiscall(void)
-00109140	221	ANALYSIS	__thiscall	cVehicleEntity::vf65	undefined __thiscall(void)
-00109220	738	ANALYSIS	__thiscall	cVehicleEntity::vf63	undefined __thiscall(void)
-00109520	90	DEFAULT	unknown	FUN_00509520	
-00109580	156	DEFAULT	unknown	FUN_00509580	
-00109620	439	ANALYSIS	__thiscall	cVehicleEntity::vf46	undefined __thiscall(void)
-001097e0	807	DEFAULT	unknown	FUN_005097e0	
-00109b10	184	ANALYSIS	__thiscall	cVehicleEntity::vf08	undefined __thiscall(void)
-00109bd0	296	ANALYSIS	__thiscall	cVehicleEntity::vf15	undefined __thiscall(void)
-00109d00	15	DEFAULT	unknown	FUN_00509d00	
-00109d10	23	DEFAULT	unknown	FUN_00509d10	
-00109d30	44	DEFAULT	unknown	FUN_00509d30	
-00109d60	70	ANALYSIS	__thiscall	cVehicleEntity::vf51	undefined __thiscall(void)
-00109db0	919	ANALYSIS	__thiscall	cVehicleEntity::vf12	undefined __thiscall(void)
+001065f0	259	USER_DEFINED	__fastcall	cVehicleEntity_UpdateTrust	void __fastcall(void * self)
+00106700	155	USER_DEFINED	__thiscall	cVehicleEntity_UpdateSpeed	void __thiscall(void)
+001067a0	46	USER_DEFINED	__thiscall	cVehicleEntity_BoostTick	void __thiscall(float dt)
+001067d0	7	USER_DEFINED	__thiscall	cVehicleEntity_GetLaunchTaunts	byte __thiscall(void)
+001067e0	286	USER_DEFINED	__thiscall	cVehicleEntity_NetMove	void __thiscall(float dt)
+00106900	745	USER_DEFINED	__thiscall	cVehicleEntity_Collide	void __thiscall(void * from, float dt)
+00106bf0	1090	USER_DEFINED	__thiscall	cVehicleEntity_Touch	void __thiscall(void * e, void * point, void * normal)
+00107040	643	USER_DEFINED	__thiscall	cVehicleEntity_UpdateHistory	void __thiscall(void)
+001072d0	105	USER_DEFINED	__fastcall	cVehicleEntity_NetCreate	void __fastcall(void * self)
+00107340	36	USER_DEFINED	__fastcall	cVehicleEntity_NetDelete	void __fastcall(void * self)
+00107370	219	USER_DEFINED	__fastcall	cVehicleEntity_StartBoost	void __fastcall(void * self)
+00107450	65	USER_DEFINED	__thiscall	cVehicleEntity_EMITick	void __thiscall(float dt)
+001074a0	175	USER_DEFINED	__thiscall	cVehicleEntity_EnableAI	void __thiscall(byte enable, void * p1, void * p2, void * p3)
+00107550	1436	USER_DEFINED	__thiscall	cVehicleEntity_Smooth	void __thiscall(float dt)
+00107af0	2235	USER_DEFINED	__thiscall	cVehicleEntity_VarF	byte __thiscall(char * name, void * d, int set)
+001083b0	43	USER_DEFINED	__thiscall	cVehicleEntity_GetPilot	char * __thiscall(int slot)
+001083e0	170	USER_DEFINED	__thiscall	cVehicleEntity_GetPilotPos	byte __thiscall(int slot, void * pos, void * ang)
+00108490	259	USER_DEFINED	__thiscall	cVehicleEntity_GetCamPoint	void __thiscall(void * pos, void * ang)
+001085a0	6	USER_DEFINED	__thiscall	cVehicleEntity_GetClassName	char * __thiscall(void)
+001085b0	7	USER_DEFINED	__thiscall	cVehicleEntity_GetOwnerSlot	int __thiscall(void)
+001085c0	7	USER_DEFINED	__thiscall	cVehicleEntity_GetWRadius	float __thiscall(void)
+001085d0	15	USER_DEFINED	__thiscall	cVehicleEntity_UpdateOff	void __thiscall(void)
+001085e0	150	USER_DEFINED	__cdecl	Vehicle_TurnCurve	float __cdecl(float x)
+00108680	1653	USER_DEFINED	__thiscall	cVehicleEntity_VarI	byte __thiscall(char * name, void * i, int set)
+00108d00	80	USER_DEFINED	__thiscall	cVehicleEntity_IsType	byte __thiscall(char * type)
+00108d50	111	USER_DEFINED	__cdecl	Vehicle_SndCrossFade	void __cdecl(void * a, void * b)
+00108dc0	53	USER_DEFINED	__thiscall	cVehicleEntity_CloudTick	void __thiscall(float dt)
+00108e00	21	USER_DEFINED	__thiscall	cVehicleEntity_NetRead	void __thiscall(void * msg, int unused)
+00108e20	126	USER_DEFINED	__thiscall	cVehicleEntity_NetWrite	void __thiscall(float dist2, void * msg, int full)
+00108ea0	671	USER_DEFINED	__thiscall	cVehicleEntity_Tick	void __thiscall(float dt)
+00109140	221	USER_DEFINED	__thiscall	cVehicleEntity_Crash	void __thiscall(void * acc, float force)
+00109220	738	USER_DEFINED	__thiscall	cVehicleEntity_UpdatePilot	void __thiscall(int slot, float dt)
+00109520	90	USER_DEFINED	__thiscall	cVehicleEntity_NoFireTick	void __thiscall(float dt)
+00109580	156	USER_DEFINED	__thiscall	cVehicleEntity_ClientMove	void __thiscall(float dt)
+00109620	439	USER_DEFINED	__thiscall	cVehicleEntity_RenderNow	void __thiscall(void)
+001097e0	807	USER_DEFINED	__thiscall	cVehicleEntity_ServerMove	void __thiscall(float dt)
+00109b10	184	USER_DEFINED	__thiscall	cVehicleEntity_SetActive	void __thiscall(byte on)
+00109bd0	296	USER_DEFINED	__thiscall	cVehicleEntity_SetEmbeddedFX	void __thiscall(char * fxType)
+00109d00	15	USER_DEFINED	__fastcall	cVehicleEntity_StartFade	void __fastcall(void * self)
+00109d10	23	USER_DEFINED	__thiscall	cVehicleEntity_SetAIRange	void __thiscall(byte on)
+00109d30	44	USER_DEFINED	__thiscall	cVehicleEntity_SetNetFlag	void __thiscall(byte on)
+00109d60	70	USER_DEFINED	__thiscall	cVehicleEntity_SetMass	void __thiscall(float mass)
+00109db0	919	USER_DEFINED	__thiscall	cVehicleEntity_SetModel	void __thiscall(char * file, float sx, float sy, float sz, byte inDir)
 0010a150	29	USER_DEFINED	__thiscall	cVehicleEntity_SetCloud	void __thiscall(float time, byte on)
-0010a170	456	ANALYSIS	__thiscall	cVehicleEntity::vf60	undefined __thiscall(void)
-0010a340	282	ANALYSIS	__thiscall	cVehicleEntity::vf62	undefined __thiscall(void)
-0010a460	63	ANALYSIS	__thiscall	cVehicleEntity::vf44	undefined __thiscall(void)
-0010a4a0	96	ANALYSIS	__thiscall	cVehicleEntity::vf45	undefined __thiscall(void)
-0010a500	362	DEFAULT	unknown	FUN_0050a500	
-0010a670	189	ANALYSIS	__thiscall	cVehicleEntity::vf35	undefined __thiscall(void)
+0010a170	456	USER_DEFINED	__thiscall	cVehicleEntity_SetPilot	byte __thiscall(int slot, char * name, float sx, float sy, float sz)
+0010a340	282	USER_DEFINED	__thiscall	cVehicleEntity_SetPilotAnim	byte __thiscall(int slot, int anim)
+0010a460	63	USER_DEFINED	__thiscall	cVehicleEntity_SetFX	void __thiscall(int fx)
+0010a4a0	96	USER_DEFINED	__thiscall	cVehicleEntity_SetFXParam	void __thiscall(int i, float v)
+0010a500	362	USER_DEFINED	__thiscall	cVehicleEntity_SetUsrControl	void __thiscall(int slot)
+0010a670	189	USER_DEFINED	__thiscall	cVehicleEntity_SetVel	void __thiscall(void * vel)
 0010a730	2590	DEFAULT	unknown	FUN_0050a730	
-0010b150	70	DEFAULT	unknown	FUN_0050b150	
-0010b1a0	150	ANALYSIS	__thiscall	cVehicleEntity::vf00	undefined __thiscall(void)
-0010b240	877	ANALYSIS	__thiscall	cVehicleEntity::vf56	undefined __thiscall(void)
-0010b5b0	524	ANALYSIS	__thiscall	cVehicleEntity::vf18	undefined __thiscall(void)
-0010b7c0	157	DEFAULT	unknown	FUN_0050b7c0	
-0010b860	202	DEFAULT	unknown	FUN_0050b860	
-0010b930	470	ANALYSIS	__thiscall	cVehicleEntity::vf19	undefined __thiscall(void)
-0010bb10	27	DEFAULT	unknown	FUN_0050bb10	
-0010bb30	21	ANALYSIS	__thiscall	cVehicleEntity::vf55	undefined __thiscall(void)
-0010bb50	51	DEFAULT	unknown	FUN_0050bb50	
+0010b150	70	USER_DEFINED	__thiscall	cVehicleEntity_Move	void __thiscall(float dt)
+0010b1a0	150	USER_DEFINED	__thiscall	cVehicleEntity_Update	void __thiscall(void)
+0010b240	877	USER_DEFINED	__thiscall	cVehicleEntity_UpdateSounds	void __thiscall(float dt)
+0010b5b0	524	USER_DEFINED	__thiscall	cVehicleEntity_VarS	byte __thiscall(char * name, void * s, int set)
+0010b7c0	157	USER_DEFINED	__thiscall	cVehicleEntity_PushTick	void __thiscall(float dt)
+0010b860	202	USER_DEFINED	__thiscall	cVehicleEntity_UpdatePilotPos	void __thiscall(byte on)
+0010b930	470	USER_DEFINED	__thiscall	cVehicleEntity_VarV	byte __thiscall(char * name, void * x, void * y, void * z, int set)
+0010bb10	27	USER_DEFINED	__fastcall	cVehicleEntity_IsBoostReady	byte __fastcall(void * self)
+0010bb30	21	USER_DEFINED	__thiscall	cVehicleEntity_IsEMIed	int __thiscall(void)
+0010bb50	51	USER_DEFINED	__fastcall	cVehicleEntity_CanFire	int __fastcall(void * self)
 0010bb90	141	DEFAULT	unknown	FUN_0050bb90	
 0010bc20	140	DEFAULT	unknown	FUN_0050bc20	
 0010bcb0	86	DEFAULT	unknown	FUN_0050bcb0	

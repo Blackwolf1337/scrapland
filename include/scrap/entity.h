@@ -101,13 +101,8 @@ SD_SIZE(cEntity, 0x7c);
 
 #define CENTITY_VFTABLE 0x3b25f8
 
-/* a vehicle ("Car"); only the fields used so far */
-typedef struct cVehicleEntity {
-	cEntity base;
-	byte pad_7c[0x238 - 0x7c];
-	int life;			/* 0x238 > 0 while the ship is alive (SLogic.GetNearestShip) */
-} cVehicleEntity;
-SD_OFFSET(cVehicleEntity, life, 0x238);
+/* a vehicle ("Car"): include/scrap/vehicleentity.h */
+typedef struct cVehicleEntity cVehicleEntity;
 
 /* Global/DList.h: node of the entity lists of the world; the list ends at a node without data */
 typedef struct DListNode {
