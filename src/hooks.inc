@@ -7186,6 +7186,7 @@ SD_HOOK(cVehicleO648_Cycle, 0x0ff480, 364)
 SD_HOOK(cVehicleO648_PickInView, 0x0ff5f0, 169)
 SD_HOOK(cVehicleO648_Update, 0x0ff6a0, 236)
 SD_HOOK(cVehicleO648_IsStale, 0x0ff790, 257)
+SD_HOOK(cVehicleControls_Tick, 0x0ffcc0, 3551)
 /* src/game/Entities/Vehicle/VehicleEffects.c */
 SD_HOOK(cVehicleEffects_ctor, 0x100ab0, 56)
 SD_HOOK(cVehicleTubes_ctor, 0x100af0, 49)

@@ -774,4 +774,103 @@ if gbgc4:
 		k = k + 1
 	gbgset(c + 0x118, gbgtimer)
 	gbgset(c + 0x3e8, gbgofs)
+	# the controls of a player ship from the actions of player 0 (poked and restored)
+	gbgsets = gbgi(0x84c12c)
+	gbgset1 = gbgsets and gbgi(0x84c128) > 1 and gbgsets + 0xc
+	gbgacts = gbgset1 and gbgi(gbgset1 + 8)
+	gbgnact = gbgset1 and gbgi(gbgset1 + 4)
+	check('GBG action set', lambda: (gbgacts != 0, gbgnact))
+	if gbgacts and gbgnact >= 32:
+		gbgctlp = c + 0x414
+		def gbgctl(p):
+			return (gbgi(p), gbgfl(p + 4, 7), map(lambda o, p=p: gbgb(p + o), range(0x20, 0x29)), gbgfl(p + 0x2c, 6))
+		def gbgactset(vals):
+			for i in range(32):
+				gbgset(gbgacts + 0x7c * i + 8, (0.0,))
+				gbgset(gbgacts + 0x7c * i + 0x18, (0.0,))
+			for i, v in vals:
+				gbgset(gbgacts + 0x7c * i + 0x18, (v,))
+		gbgactsaved = map(lambda i: (gbgfl(gbgacts + 0x7c * i + 8, 1), gbgfl(gbgacts + 0x7c * i + 0x18, 1)), range(32))
+		gbgctlsaved = gbgfl(gbgctlp, 0x44 / 4)
+		gbgcamd = (gbgfl(0x845f08, 1), gbgfl(0x845ed8, 1))
+		gbgpad = gbgfl(0x84c510 + 0xc, 4)
+		gbgcurset = gbgi(0x828ac0)
+		gbglock = gbgfl(0x847ba4, 1)
+		# NextWeap and PrevWeap loop when the iNext or iPrev chain of the weapon does not come back
+		gbgnw = gbgi(gbgworld + 0x1bb8)
+		gbgweapt = gbgi(gbgworld + 0x1bbc)
+		def gbgchain(w, off):
+			seen = {}
+			i = w
+			while 1:
+				if i < 0 or i >= gbgnw or seen.has_key(i):
+					return 0
+				seen[i] = 1
+				i = gbgi(gbgweapt + 0xb0 * i + off)
+				if i == w:
+					return 1
+		gbglaser = gbgi(0x8487d0)
+		gbgchains = (gbgchain(gbglaser, 0x90), gbgchain(gbglaser, 0x94))
+		check('GBG weapon chains', lambda: (gbglaser, gbgchains))
+		gbgpoke(c + 0x410, 0)
+		gbgset(gbgctlp + 4, (0.0,) * 16)
+		gbgpoke(gbgctlp, gbglaser)
+		gbgstr(c + 0x650, 'Player0')
+		for vals, lock in (((), 0.0), (((8, 1.0), (7, 0.3), (5, 0.7), (4, 0.2), (2, 0.4), (3, 0.1), (10, 0.6),
+				(11, 0.1), (13, 0.5), (12, 0.2), (9, 1.0), (16, 1.0)), 0.0), (((6, 1.0), (8, 0.2), (16, 0.0)), 0.0),
+				(((18, 1.0), (4, 0.25), (5, 0.5), (2, 0.75), (3, 0.125), (6, 0.5), (7, 0.25)), 0.0),
+				(((22, 1.0), (2, 0.3), (5, 0.1)), 0.5), (((22, 1.0), (8, 0.0)), 0.5), (((2, 0.0),), 0.5),
+				(((8, 0.6),), 0.5), (((14, 1.0),), 0.0), (((15, 1.0),), 0.0), (((24, 1.0), (25, 1.0)), 0.0), (((31, 1.0),), 0.0),
+				(((31, 1.0),), 0.0), (((31, 1.0),), 0.0), (((31, 1.0),), 0.0), (((19, 1.0), (20, 1.0), (21, 1.0)), 0.0),
+				(((17, 1.0), (16, 1.0)), 0.0)):
+			if (vals == ((14, 1.0),) and not gbgchains[0]) or (vals == ((15, 1.0),) and not gbgchains[1]):
+				continue
+			gbgactset(vals)
+			gbgset(0x847ba4, (lock,))
+			check('cVehicleControls_Tick' + fmt((vals, lock)), lambda c=c: (SDTest.Call(0x0ffcc0, 'tviif', gbgctlp, c,
+				0.05), gbgctl(gbgctlp), gbgfl(0x845f08, 1), gbgs(c + 0x650)))
+		# BlockSwitchAdvance in the strafe mode
+		gbgbsa = gbgi(0x847bd4)
+		gbgpoke(0x847bd4, 1)
+		gbgactset(((18, 1.0), (6, 0.5), (7, 0.25), (8, 1.0)))
+		check('cVehicleControls_Tick block switch', lambda c=c: (SDTest.Call(0x0ffcc0, 'tviif', gbgctlp, c, 0.05),
+			gbgctl(gbgctlp)))
+		gbgpoke(0x847bd4, gbgbsa)
+		# the empty weapon: the next one after TimeWSwitchNo
+		gbgpoke(gbgctlp, gbgi(c + 0x5f0 + 0xc))
+		if not gbgchains[0]:
+			gbgpoke(gbgctlp, gbgi(c + 0x5f0 + 0xc) + 1)
+		for vals in (((16, 1.0),), ((16, 1.0),), ((17, 1.0),), ((16, 1.0),), ((16, 1.0),), ((16, 1.0),), ()):
+			gbgactset(vals)
+			gbgsetbyte(gbgctlp + 0x20, 1)
+			gbgsetbyte(gbgctlp + 0x21, 1)
+			check('cVehicleControls_Tick empty' + fmt(vals), lambda c=c: (SDTest.Call(0x0ffcc0, 'tviif', gbgctlp, c,
+				0.5), gbgctl(gbgctlp)))
+		# the rumble of the pad (action set 1, a camera block, the last hit just now)
+		gbgcam = gbgz(0x240)
+		gbgpoke(c + 0xf0, gbgcam)
+		gbgpoke(0x828ac0, 1)
+		gbgset(c + 0x118, (50.0, 0.02))
+		for hit, p220, p224, shake, ra, rb in ((49.8, 0.0, 0.0, 0.5, 0.3, 0.2), (49.0, 0.5, 0.04, 3.0, 2.0, 0.0),
+				(10.0, 0.5, 0.0, 0.0, 0.0, 0.0), (49.99, 0.01, 1.0, 1.5, 0.7, 1.2)):
+			gbgactset(())
+			gbgset(c + 0x308, (hit,))
+			gbgset(gbgcam + 0x220, (p220, p224))
+			gbgset(c + 0x4c8, (shake,))
+			gbgset(gbgctlp + 0x34, (ra, rb, 1.0, 2.0))
+			check('cVehicleControls_Tick rumble' + fmt((hit, p220, p224, shake, ra, rb)), lambda c=c: (SDTest.Call(0x0ffcc0,
+				'tviif', gbgctlp, c, 0.05), gbgctl(gbgctlp), gbgfl(0x84c510 + 0xc, 4)))
+		gbgpoke(c + 0xf0, 0)
+		gbgfree(gbgcam)
+		gbgpoke(0x828ac0, gbgcurset)
+		gbgset(0x84c510 + 0xc, gbgpad)
+		gbgset(0x847ba4, gbglock)
+		gbgset(0x845f08, gbgcamd[0])
+		gbgset(0x845ed8, gbgcamd[1])
+		for i in range(32):
+			gbgset(gbgacts + 0x7c * i + 8, gbgactsaved[i][0])
+			gbgset(gbgacts + 0x7c * i + 0x18, gbgactsaved[i][1])
+		gbgset(gbgctlp, gbgctlsaved)
+		gbgpoke(c + 0x410, -1)
+		gbgstr(c + 0x650, '')
 	check('GBG SDGbgCar4 Del', lambda: Scrap.GetEntity('SDGbgCar4').Del())

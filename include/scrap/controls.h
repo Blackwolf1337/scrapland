@@ -15,29 +15,29 @@ typedef struct cVehicleControls {
 	float acc;			/* 0x0c "Acc" */
 	float str;			/* 0x10 "Str" */
 	float vStr;			/* 0x14 "VStr" */
-	int i18;			/* 0x18 cleared with a new weapon */
-	int i1c;			/* 0x1c */
+	float fireWait;			/* 0x18 the fire is held 0.2 s after the button, cleared with a new weapon */
+	float padBounce;		/* 0x1c "VehicleCenterPadBounce" grows back to the pitch of the stick */
 	byte firePrev;			/* 0x20 */
 	byte cmPrev;			/* 0x21 */
 	byte fire;			/* 0x22 */
 	byte cm;			/* 0x23 the ammo button (countermeasures) */
 	byte b24;			/* 0x24 */
-	byte b25;			/* 0x25 1 after Reset */
-	byte b26;			/* 0x26 */
+	byte b25;			/* 0x25 1 after Reset: the second accelerate action counts */
+	byte b26;			/* 0x26 the target in view is picked */
 	byte netFire;			/* 0x27 the toggle bit of the fire of the network state */
-	byte b28;			/* 0x28 */
+	byte b28;			/* 0x28 the aim follows the target */
 	byte pad_29[3];
-	int i2c;			/* 0x2c */
-	int i30;			/* 0x30 */
+	float attackTime;		/* 0x2c the target is followed */
+	float emptyTime;		/* 0x30 without ammo, the next weapon after TimeWSwitchNo */
 	float rumbleA;			/* 0x34 */
 	float rumbleB;			/* 0x38 */
 	float rumbleARate;		/* 0x3c per second */
 	float rumbleBRate;		/* 0x40 */
-	/* more fields follow */
 } cVehicleControls;
 SD_OFFSET(cVehicleControls, fire, 0x22);
 SD_OFFSET(cVehicleControls, netFire, 0x27);
 SD_OFFSET(cVehicleControls, rumbleA, 0x34);
+SD_SIZE(cVehicleControls, 0x44);
 
 byte *__fastcall Controls_ctor(byte *self);
 /* the first weapon of the world, everything else 0 */

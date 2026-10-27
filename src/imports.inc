@@ -486,7 +486,6 @@ SD_IMPORT(Dlg_GetFloat, 0x2a5d80)
 /* module agent: Entities/More+ObjEntity (imports below this line) */
 
 /* module agent: Entities/Vehicle/VehicleEffects+VehicleEntity.cpp (imports below this line) */
-SD_IMPORT(cVehicleControls_Tick, 0x0ffcc0)
 SD_IMPORT(cNetVController_ctor, 0x1186b0)
 
 /* module agent: Entities/Vehicle/VehicleMotors+MotorsEffects+Traffic.cpp (imports below this line) */

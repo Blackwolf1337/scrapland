@@ -1874,7 +1874,6 @@ void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt) {
 
 #define g_HiRacerFov GAME_DATA(float, 0x447f20)		/* degrees at top speed */
 #define g_LoRacerFov GAME_DATA(float, 0x448250)
-#define g_VehicleCamDist2 GAME_DATA(float, 0x445ed8)	/* VehicleCamDist of player 1 */
 #define g_MotorTrustRotationX GAME_DATA(float, 0x4480a0)
 #define g_MotorTrustRotationY GAME_DATA(float, 0x447f98)
 #define g_PilotViewDist GAME_DATA(float, 0x448238)	/* the pilot is drawn nearer to the camera */
