@@ -415,6 +415,8 @@ cAICharControl *__thiscall cAIChar_GetControl(cAIChar *ai);
 #define g_MarginCollCharAI GAME_DATA(float, 0x444508)		/* "MarginCollCharAI" */
 #define g_ShowShirkAI GAME_DATA(int, 0x4443e8)			/* "ShowShirkAI" */
 #define g_ShowPathAI GAME_DATA(int, 0x444744)			/* "ShowPathAI" */
+#define g_FactorDistTestColCharAI GAME_DATA(float, 0x444478)	/* "FactorDistTestColCharAI" */
+#define g_FactorDistTestColBackCharAI GAME_DATA(float, 0x4444f0)	/* "FactorDistTestColBackCharAI" */
 
 /* the A* search on CNodesWorld2D (AI/AStar2D.cpp, not in C): the path from pos to dest into path; noPath and
  * reach tell the AI why there is none, res the kind of the path */
@@ -459,6 +461,13 @@ byte __thiscall cAICharControl2D_OnFloor(cAICharControl *self, const vec3_t *p);
 byte __thiscall cAICharControl2D_Near(cAICharControl *self, cEntity *e);
 /* dest within the distance to keep from hitEnt */
 byte __thiscall cAICharControl2D_InWay(cAICharControl *self, vec3_t dest, cEntity *hitEnt);
+/* the corridor of the body from the floor below a to the floor below b free: the line between them raised, and 7
+ * lines of the length FactorDistTestColCharAI * radius around it (to the sides, up, the diagonals), then
+ * FloorAhead(b); the corridor into debugSegs. To dest the test of TestPathEnd */
+byte __thiscall cAICharControl2D_TestPath(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
+/* the corridor of the walk back from a to b: 5 lines of the length FactorDistTestColBackCharAI * radius around
+ * the line between the floors, back along it (not down); r not used */
+byte __thiscall cAICharControl2D_TestSides(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
 byte __thiscall cAICharControl2D_FloorAhead(cAICharControl *self, const vec3_t *p);
 /* the floor below p raised by the floor distance of the character into out; 0 (out = p) without one */
 byte __thiscall cAICharControl2D_FloorAt(cAICharControl *self, const vec3_t *p, vec3_t *out);

@@ -4,6 +4,7 @@
  * the strafe around a character in the way.
  */
 #include <float.h>
+#include <string.h>
 
 #include "scrap/aicharcontrol.h"
 #include "scrap/fxelements.h"
@@ -539,6 +540,222 @@ byte __thiscall cAICharControl2D_InWay(cAICharControl *self, vec3_t dest, cEntit
 	float d = (float)__builtin_sqrt((double)(dx * dx + 0.0f + dz * dz));
 	float k = AICC_Vtbl(self)->KeepDist(self, hitEnt);
 	return k >= d;
+}
+
+/* a segment of the corridor: p = a + v * r, q = nl + p; 1 when it is free */
+static int AICC2D_Seg(vec3_t *p, vec3_t *q, const vec3_t *a, const vec3_t *v, float r, const vec3_t *nl) {
+	p->x = a->x + v->x * r;
+	p->y = a->y + v->y * r;
+	p->z = a->z + v->z * r;
+	q->x = nl->x + p->x;
+	q->y = nl->y + p->y;
+	q->z = nl->z + p->z;
+	return !Engine_TestLine(p, q, NULL, NULL);
+}
+
+byte __thiscall cAICharControl2D_TestPath(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+	cEntity *me = self->ent;
+	vec3_t hitA, hitB, A, D, N, P, s, U, V, nl, in, tmp;
+	vec3_t p1, q1, p2, q2, p3, q3, p4, q4, p5, q5, p6, q6, p7, q7;
+	const vec3_t up = { 0.0f, 1.0f, 0.0f };
+
+	if (b->x == self->dest.x && b->y == self->dest.y && b->z == self->dest.z) {
+		return AICC_Vtbl(self)->TestPathEnd(self, a, b, r);
+	}
+	if (!NW2D_Probe(a, &hitA)) {
+		return 0;
+	}
+	float fd = WChar(me)->floorDist;
+	A.x = hitA.x;
+	A.y = fd + hitA.y;
+	A.z = hitA.z;
+	float h = Float_MaxSS(AICC_X87SubR(Obj_Vtbl(me)->GetRadius(me), fd), g_NW2DHeight);
+	hitA.y = hitA.y + h;
+	if (!NW2D_Probe(b, &hitB)) {
+		return 0;
+	}
+	hitB.y = hitB.y + h;
+	if (Engine_TestLine(&hitA, &hitB, NULL, NULL)) {
+		return 0;
+	}
+	D.y = hitB.y - hitA.y;
+	D.x = hitB.x - hitA.x;
+	D.z = hitB.z - hitA.z;
+	float len = (float)__builtin_sqrt((double)(D.y * D.y + D.x * D.x + D.z * D.z));
+	float L = Float_MinSS(len, AICC_X87Mul(Obj_Vtbl(me)->GetRadius(me), g_FactorDistTestColCharAI));
+	if (len == 0.0f) {
+		N = D;
+	} else {
+		float inv = 1.0f / len;
+		N.x = D.x * inv;
+		N.y = D.y * inv;
+		N.z = D.z * inv;
+	}
+	/* the side: N across the up axis */
+	P.x = N.y * 0.0f - N.z;
+	P.y = N.z * 0.0f - N.x * 0.0f;
+	P.z = N.x - N.y * 0.0f;
+	if (P.x == 0.0f && P.y == 0.0f && P.z == 0.0f) {
+		return 1;
+	}
+	s = *Vec3_NormalizeTo(&tmp, &P);
+	nl.x = N.x * L;
+	nl.y = N.y * L;
+	nl.z = N.z * L;
+	if (!AICC2D_Seg(&p1, &q1, &A, &s, Obj_Vtbl(me)->GetRadius(me), &nl)) {
+		return 0;
+	}
+	s.x = -s.x;
+	s.y = -s.y;
+	s.z = -s.z;
+	if (!AICC2D_Seg(&p2, &q2, &A, &s, Obj_Vtbl(me)->GetRadius(me), &nl)) {
+		return 0;
+	}
+	if (!AICC2D_Seg(&p3, &q3, &A, &up, Obj_Vtbl(me)->GetRadius(me), &nl)) {
+		return 0;
+	}
+	in.x = s.x + 0.0f;
+	in.y = s.y + 1.0f;
+	in.z = s.z + 0.0f;
+	Vec3_NormalizeTo(&U, &in);
+	if (!AICC2D_Seg(&p4, &q4, &A, &U, Obj_Vtbl(me)->GetRadius(me), &nl)) {
+		return 0;
+	}
+	U.x = -U.x;
+	U.y = -U.y;
+	U.z = -U.z;
+	if (!AICC2D_Seg(&p5, &q5, &A, &U, Obj_Vtbl(me)->GetRadius(me), &nl)) {
+		return 0;
+	}
+	in.x = s.x - 0.0f;
+	in.y = s.y - 1.0f;
+	in.z = s.z - 0.0f;
+	V = *Vec3_NormalizeTo(&tmp, &in);
+	if (!AICC2D_Seg(&p6, &q6, &A, &V, Obj_Vtbl(me)->GetRadius(me), &nl)) {
+		return 0;
+	}
+	V.x = -V.x;
+	V.y = -V.y;
+	V.z = -V.z;
+	if (!AICC2D_Seg(&p7, &q7, &A, &V, Obj_Vtbl(me)->GetRadius(me), &nl)) {
+		return 0;
+	}
+	if (!AICC_Vtbl2D(self)->FloorAhead(self, b)) {
+		return 0;
+	}
+	/* the corridor for the debug view; segment 4 is not set here */
+	self->debugSegs[0].a = hitA;
+	self->debugSegs[0].b = hitB;
+	self->debugSegs[1].a = p1;
+	self->debugSegs[1].b = q1;
+	self->debugSegs[2].a = p2;
+	self->debugSegs[2].b = q2;
+	self->debugSegs[3].a = p3;
+	self->debugSegs[3].b = q3;
+	self->debugSegs[5].a = p4;
+	self->debugSegs[5].b = q4;
+	self->debugSegs[6].a = p5;
+	self->debugSegs[6].b = q5;
+	self->debugSegs[7].a = p6;
+	self->debugSegs[7].b = q6;
+	self->debugSegs[8].a = p7;
+	self->debugSegs[8].b = q7;
+	return 1;
+}
+
+byte __thiscall cAICharControl2D_TestSides(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+	cEntity *me = self->ent;
+	vec3_t hitA, hitB, A, D, N, M, P, s, U, W, ml, in, tmp;
+	vec3_t p1, q1, p2, q2, p3, q3, p4, q4, p5, q5;
+	const vec3_t up = { 0.0f, 1.0f, 0.0f };
+
+	(void)r;
+	if (!NW2D_Probe(a, &hitA)) {
+		return 0;
+	}
+	float fd = WChar(me)->floorDist;
+	A.x = hitA.x;
+	A.y = fd + hitA.y;
+	A.z = hitA.z;
+	float h = Float_MaxSS(AICC_X87SubR(Obj_Vtbl(me)->GetRadius(me), fd), g_NW2DHeight);
+	hitA.y = hitA.y + h;
+	if (!NW2D_Probe(b, &hitB)) {
+		return 0;
+	}
+	hitB.y = hitB.y + h;
+	float L = AICC_X87Mul(Obj_Vtbl(me)->GetRadius(me), g_FactorDistTestColBackCharAI);
+	D.y = hitB.y - hitA.y;
+	D.x = hitB.x - hitA.x;
+	D.z = hitB.z - hitA.z;
+	float len = (float)__builtin_sqrt((double)(D.y * D.y + D.x * D.x + D.z * D.z));
+	if (len == 0.0f) {
+		N = D;
+	} else {
+		float inv = 1.0f / len;
+		N.x = D.x * inv;
+		N.y = inv * D.y;
+		N.z = D.z * inv;
+	}
+	/* back along the line, not down */
+	M.x = -N.x;
+	M.y = -N.y;
+	M.z = -N.z;
+	if (0.0f > M.y) {
+		M.y = 0.0f;
+	}
+	P.x = M.y * 0.0f - M.z;
+	P.y = M.z * 0.0f - M.x * 0.0f;
+	P.z = M.x - M.y * 0.0f;
+	if (P.x == 0.0f && P.y == 0.0f && P.z == 0.0f) {
+		return 1;
+	}
+	Vec3_NormalizeTo(&s, &P);
+	ml.x = M.x * L;
+	ml.y = M.y * L;
+	ml.z = M.z * L;
+	if (!AICC2D_Seg(&p1, &q1, &A, &s, Obj_Vtbl(me)->GetRadius(me), &ml)) {
+		return 0;
+	}
+	s.x = -s.x;
+	s.y = -s.y;
+	s.z = -s.z;
+	if (!AICC2D_Seg(&p2, &q2, &A, &s, Obj_Vtbl(me)->GetRadius(me), &ml)) {
+		return 0;
+	}
+	if (!AICC2D_Seg(&p3, &q3, &A, &up, Obj_Vtbl(me)->GetRadius(me), &ml)) {
+		return 0;
+	}
+	in.x = s.x + 0.0f;
+	in.y = s.y + 1.0f;
+	in.z = s.z + 0.0f;
+	Vec3_NormalizeTo(&U, &in);
+	if (!AICC2D_Seg(&p4, &q4, &A, &U, Obj_Vtbl(me)->GetRadius(me), &ml)) {
+		return 0;
+	}
+	in.x = s.x - 0.0f;
+	in.y = s.y - 1.0f;
+	in.z = s.z - 0.0f;
+	W = *Vec3_NormalizeTo(&tmp, &in);
+	W.x = -W.x;
+	W.y = -W.y;
+	W.z = -W.z;
+	if (!AICC2D_Seg(&p5, &q5, &A, &W, Obj_Vtbl(me)->GetRadius(me), &ml)) {
+		return 0;
+	}
+	/* the corridor for the debug view; segment 4 is not set here */
+	memset(&self->debugSegs[0], 0, sizeof(cAICCSeg));
+	self->debugSegs[1].a = p1;
+	self->debugSegs[1].b = q1;
+	self->debugSegs[2].a = p2;
+	self->debugSegs[2].b = q2;
+	self->debugSegs[3].a = p3;
+	self->debugSegs[3].b = q3;
+	self->debugSegs[5].a = p4;
+	self->debugSegs[5].b = q4;
+	memset(&self->debugSegs[6], 0, 2 * sizeof(cAICCSeg));
+	self->debugSegs[8].a = p5;
+	self->debugSegs[8].b = q5;
+	return 1;
 }
 
 /* the floor ahead towards p (on the floor) within the reach of a step: free, or what is hit leaves a floor point
