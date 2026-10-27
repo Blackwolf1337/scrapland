@@ -102,7 +102,7 @@ void __thiscall Floor_dtor(void *floor);
 void __thiscall Elements_ctor(void *elements);
 void __thiscall Elements_dtor(void *elements);
 void __thiscall Elements_Update(void *elements, float dt);
-void __thiscall Alarm_ctor(void *alarm);
+void *__thiscall Alarm_ctor(void *alarm);
 void __thiscall Alarm_Update(void *alarm, float dt);
 void __thiscall Unk2078_ctor(void *obj);
 void __thiscall Unk2078_Update(void *obj, float dt);
