@@ -605,6 +605,9 @@ SD_IMPORT(cFXElementsOrbitBoyaController_ctor, 0x1d5820)
 /* module agent: Entities/EmbeddedFX/EmbeddedFXChar+CharHead.cpp (imports below this line) */
 
 /* module agent: Entities/EmbeddedFX/EmbeddedFXVehicle.cpp+mpeg/music_fmod.cpp (imports below this line) */
+SD_IMPORT(cEmbeddedFX_dtor, 0xd68f0)
+SD_IMPORT(FXVehicle_RenderAttached, 0x1f9050)
+SD_IMPORT(cAIVehicle_GetFadeDists, 0x8a140)
 SD_IMPORT_STDCALL(FSOUND_Stream_GetSample, 4, 0x317ada)
 SD_IMPORT_STDCALL(FSOUND_Stream_GetOpenState, 4, 0x317ad4)
 SD_IMPORT_STDCALL(FSOUND_Stream_GetLengthMs, 4, 0x317ace)

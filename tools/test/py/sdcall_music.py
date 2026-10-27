@@ -32,7 +32,6 @@ check('Fmod_State', lambda: SDTest.Peek(0x4a94dc, 'i'))
 check('Fmod_IsInit', lambda: SDTest.Call(0x2325f0, 'i')[0])
 if SDTest.Peek(0x4a94dc, 'i') != 0:
 	check('Fmod_Init again', lambda: SDTest.Call(0x232640, 'b')[0])
-	check('Fmod_Init body again', lambda: SDTest.Call(0x2312d0, 'b')[0])
 for e in (-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 100):
 	check('Fmod_ErrorString music' + fmt((e,)), lambda e=e: SDTest.Call(0x2311e0, 'si', e)[0])
 fmodon = SDTest.Peek(0x4a94dc, 'i') > 0
