@@ -44,6 +44,8 @@ static inline void Nto1Node_LinkTo(Nto1Node *head, Nto1Node *node) {
 
 /* unlinks every node of the head (rva 0xd40f0, ecx = head) */
 void __fastcall Nto1Head_UnlinkAll(Nto1Node *head);
+/* the out of line Nto1Node_Unlink with the CHECK of Node (rva 0xd4170, src/game/Entities/Char/WalkCharEntity.c) */
+void __fastcall Nto1Node_UnlinkChecked(Nto1Node *node);
 
 /* destructor of a node, inlined everywhere */
 static inline void Nto1Node_Done(Nto1Node *node) {

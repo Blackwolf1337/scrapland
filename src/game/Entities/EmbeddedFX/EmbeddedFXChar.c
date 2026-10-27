@@ -13,6 +13,7 @@
 
 #define CGAMETRAIL_DTOR 0x21de40
 
+#define VT_EMBEDDEDFX 0x3b08a0
 #define VT_SENTINEL 0x3b09e8
 #define VT_GEAR 0x3b0a04
 #define VT_POLICE 0x3b0a20
@@ -102,6 +103,11 @@ static inline void EFX_TrailStyle(CGameTrail *t, byte segments, byte smooth, int
 }
 
 /* ---- destructors ---- */
+
+/* EmbeddedFX.h, in the exe after WalkCharEntity.cpp */
+void __fastcall cEmbeddedFX_dtor(cEmbeddedFX *self) {
+	EFX_SetVtbl(self, VT_EMBEDDEDFX);
+}
 
 static void cEmbeddedFXBankDirector_Destruct(cEmbeddedFXBankDirector *self) {
 	EFX_SetVtbl(self, VT_BANKDIRECTOR);
