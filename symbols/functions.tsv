@@ -5802,39 +5802,44 @@ rva	size	source	callconv	name	signature
 001ceed0	13	USER_DEFINED	__thiscall	cObjElementFXEMI_SetEntity	void __thiscall(void * e)
 001ceee0	44	USER_DEFINED	__thiscall	cObjElementFXDebrisCloud_Warm	void __thiscall(void * debris)
 001cef10	2363	USER_DEFINED	__thiscall	cObjElementFXSonicExplosion_Explode	void __thiscall(float x, float y, float z)
-001cf850	96	DEFAULT	unknown	FUN_005cf850	
+001cf850	96	USER_DEFINED	__thiscall	cFXElementsFireDrop_ctor	void * __thiscall(char * name, void * pos, void * rot)
 001cf8b0	194	DEFAULT	unknown	FUN_005cf8b0	
-001cf980	126	DEFAULT	unknown	FUN_005cf980	
-001cfa00	84	DEFAULT	unknown	FUN_005cfa00	
-001cfa60	25	DEFAULT	unknown	FUN_005cfa60	
-001cfa80	133	DEFAULT	unknown	FUN_005cfa80	
-001cfb10	115	ANALYSIS	__thiscall	cFXElementsFireDrop::vf00	undefined __thiscall(void)
-001cfb90	51	ANALYSIS	__thiscall	cFXElementsLensFlare::vf00	undefined __thiscall(void)
-001cfbd0	38	ANALYSIS	__thiscall	cFXElementsLighting::vf00	undefined __thiscall(void)
-001cfc20	42	DEFAULT	unknown	FUN_005cfc20	
-001cfc50	410	ANALYSIS	__thiscall	cFXElementsFireDrop::vf01	undefined __thiscall(void)
-001cfdf0	3	ANALYSIS	__thiscall	cFXElementsLensFlare::vf01	undefined __thiscall(void)
-001cfe00	1709	ANALYSIS	__thiscall	cFXElementsLighting::vf01	undefined __thiscall(void)
-001d04b0	6045	ANALYSIS	__thiscall	cFXElementsFireDrop::vf02	undefined __thiscall(void)
-001d1c50	3	ANALYSIS	__thiscall	cFXElementsLensFlare::vf02	undefined __thiscall(void)
-001d1c60	5627	ANALYSIS	__thiscall	cFXElementsLighting::vf02	undefined __thiscall(void)
-001d3260	171	DEFAULT	unknown	FUN_005d3260	
-001d3310	149	DEFAULT	unknown	FUN_005d3310	
-001d33b0	132	DEFAULT	unknown	FUN_005d33b0	
-001d3440	101	DEFAULT	unknown	FUN_005d3440	
-001d34b0	163	ANALYSIS	__thiscall	cFXElementsABFakeLimit::vf00	undefined __thiscall(void)
-001d3560	132	ANALYSIS	__thiscall	cFXElementsABFakeMeteors::vf00	undefined __thiscall(void)
-001d35f0	77	DEFAULT	unknown	FUN_005d35f0	
-001d3650	810	ANALYSIS	__thiscall	cFXElementsABFakeLimit::vf01	undefined __thiscall(void)
-001d3980	262	ANALYSIS	__thiscall	cFXElementsABFakeMeteors::vf01	undefined __thiscall(void)
-001d3a90	867	DEFAULT	unknown	FUN_005d3a90	
-001d3e00	5074	ANALYSIS	__thiscall	cFXElementsABFakeLimit::vf02	undefined __thiscall(void)
-001d51e0	1493	ANALYSIS	__thiscall	cFXElementsABFakeMeteors::vf02	undefined __thiscall(void)
-001d57c0	96	DEFAULT	unknown	FUN_005d57c0	
+001cf980	126	USER_DEFINED	__thiscall	cFXElementsLighting_ctor	void * __thiscall(char * name, void * pos, void * rot)
+001cfa00	84	USER_DEFINED	__fastcall	cFXElementsFireDrop_dtor	void __fastcall(void * self)
+001cfa60	25	USER_DEFINED	__fastcall	cFXElementsLensFlare_dtor	void __fastcall(void * self)
+001cfa80	133	USER_DEFINED	__fastcall	cFXElementsLighting_dtor	void __fastcall(void * self)
+001cfb10	115	USER_DEFINED	__thiscall	cFXElementsFireDrop_Delete	void * __thiscall(byte flags)
+001cfb90	51	USER_DEFINED	__thiscall	cFXElementsLensFlare_Delete	void * __thiscall(byte flags)
+001cfbd0	38	USER_DEFINED	__thiscall	cFXElementsLighting_Delete	void * __thiscall(byte flags)
+001cfc00	16	USER_DEFINED	__fastcall	cFXElementsFireDrop_Release	void __fastcall(void * self)
+001cfc10	16	USER_DEFINED	__fastcall	cFXElementsLensFlare_Release	void __fastcall(void * self)
+001cfc20	42	USER_DEFINED	__fastcall	cFXElementsLighting_Release	void __fastcall(void * self)
+001cfc50	410	USER_DEFINED	__fastcall	cFXElementsFireDrop_Init	byte __fastcall(void * self)
+001cfdf0	3	USER_DEFINED	__fastcall	cFXElementsLensFlare_Init	byte __fastcall(void * self)
+001cfe00	1709	USER_DEFINED	__fastcall	cFXElementsLighting_Init	byte __fastcall(void * self)
+001d04b0	6045	USER_DEFINED	__thiscall	cFXElementsFireDrop_Update	void __thiscall(float dt)
+001d1c50	3	USER_DEFINED	__thiscall	cFXElementsLensFlare_Update	void __thiscall(float dt)
+001d1c60	5627	USER_DEFINED	__thiscall	cFXElementsLighting_Update	void __thiscall(float dt)
+001d3260	171	USER_DEFINED	__thiscall	cFXElementsABFakeLimit_ctor	void * __thiscall(char * name, void * pos, void * rot)
+001d3310	149	USER_DEFINED	__thiscall	cFXElementsABFakeMeteors_ctor	void * __thiscall(char * name, void * pos, void * rot)
+001d33b0	132	USER_DEFINED	__fastcall	cFXElementsABFakeLimit_dtor	void __fastcall(void * self)
+001d3440	101	USER_DEFINED	__fastcall	cFXElementsABFakeMeteors_dtor	void __fastcall(void * self)
+001d34b0	163	USER_DEFINED	__thiscall	cFXElementsABFakeLimit_Delete	void * __thiscall(byte flags)
+001d3560	132	USER_DEFINED	__thiscall	cFXElementsABFakeMeteors_Delete	void * __thiscall(byte flags)
+001d35f0	77	USER_DEFINED	__fastcall	cFXElementsABFakeLimit_Clear	void __fastcall(void * self)
+001d3650	810	USER_DEFINED	__fastcall	cFXElementsABFakeLimit_Init	byte __fastcall(void * self)
+001d3980	262	USER_DEFINED	__fastcall	cFXElementsABFakeMeteors_Init	byte __fastcall(void * self)
+001d3a90	867	USER_DEFINED	__cdecl	FXElementsAB_Create	void __cdecl(void)
+001d3e00	5074	USER_DEFINED	__thiscall	cFXElementsABFakeLimit_Update	void __thiscall(float dt)
+001d51e0	1493	USER_DEFINED	__thiscall	cFXElementsABFakeMeteors_Update	void __thiscall(float dt)
+001d57c0	96	USER_DEFINED	__thiscall	cFXElementsOrbitBoya_ctor	void * __thiscall(char * name, void * pos, void * rot)
 001d5820	128	USER_DEFINED	__thiscall	cFXElementsOrbitBoyaController_ctor	void * __thiscall(char * name, void * pos, void * rot)
-001d58a0	84	DEFAULT	unknown	FUN_005d58a0	
-001d5910	115	ANALYSIS	__thiscall	cFXElementsOrbitBoya::vf00	undefined __thiscall(void)
-001d5990	44	ANALYSIS	__thiscall	cFXElementsOrbitBoyaController::vf00	undefined __thiscall(void)
+001d58a0	84	USER_DEFINED	__fastcall	cFXElementsOrbitBoya_dtor	void __fastcall(void * self)
+001d5900	11	USER_DEFINED	__fastcall	cFXElementsOrbitBoyaController_dtor	void __fastcall(void * self)
+001d5910	115	USER_DEFINED	__thiscall	cFXElementsOrbitBoya_Delete	void * __thiscall(byte flags)
+001d5990	44	USER_DEFINED	__thiscall	cFXElementsOrbitBoyaController_Delete	void * __thiscall(byte flags)
+001d59c0	16	USER_DEFINED	__fastcall	cFXElementsOrbitBoya_ReleaseLight	void __fastcall(void * self)
+001d59d0	16	USER_DEFINED	__fastcall	cFXElementsOrbitBoyaController_Release	void __fastcall(void * self)
 001d59e0	191	USER_DEFINED	__fastcall	cFXElementsOrbitBoya_Init	byte __fastcall(void * self)
 001d5aa0	8	USER_DEFINED	__fastcall	cFXElementsOrbitBoyaController_Init	byte __fastcall(void * self)
 001d5ab0	929	USER_DEFINED	__cdecl	FXElementsOrbit_Create	void __cdecl(void)
