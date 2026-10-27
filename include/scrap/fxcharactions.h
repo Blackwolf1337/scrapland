@@ -60,6 +60,18 @@
 #define g_FXFunctionaryVertex ((int *)Game_Ptr(0x466fc4))		/* [14] */
 #define g_FXFunctionaryColor ((uint32_t *)Game_Ptr(0x466ffc))		/* [14] */
 
+/* the engine variables (Gvars) */
+#define g_BankerSteal1Sound GAME_DATA(const char *, 0x446098)
+#define g_BankerSteal2Sound GAME_DATA(const char *, 0x446000)
+#define g_BankerSteal3Sound GAME_DATA(const char *, 0x446030)
+#define g_BankerStealSoundVol GAME_DATA(float, 0x445f98)
+#define g_BankerStealPosX GAME_DATA(float, 0x445fd8)
+#define g_BankerStealPosY GAME_DATA(float, 0x446080)
+#define g_BankerStealPosZ GAME_DATA(float, 0x445fc0)
+#define g_BankMasterBatonPosX GAME_DATA(float, 0x446164)
+#define g_BankMasterBatonPosY GAME_DATA(float, 0x44614c)
+#define g_BankMasterBatonPosZ GAME_DATA(float, 0x4460f4)
+
 /* the timer of a character (cWalkChar + 0x110) */
 #define Entity_Timer(e) ((cTimer *)((byte *)(e) + 0x110))
 /* a float of the Police character: its center is this much above the feet */
@@ -91,9 +103,9 @@ typedef struct cObjElementFXBankMasterSuction {
 	float phase[FXBMSUCTION_POINTS];	/* 0x0c4 -0.9..0 */
 	vec3_t dir[FXBMSUCTION_POINTS];	/* 0x0fc random directions of length 0.25..1 */
 	float angle[FXBMSUCTION_POINTS];	/* 0x1a4 0..2 pi */
-	CGameTrail trail;		/* 0x1dc */
-	int f1e0;			/* 0x1e0 */
-	int f1e4;			/* 0x1e4 */
+	CGameTrail trail;		/* 0x1dc only its Bezier helpers are used */
+	int count;			/* 0x1e0 the points born since the last sound */
+	int lastSound;			/* 0x1e4 */
 	byte started;			/* 0x1e8 */
 } cObjElementFXBankMasterSuction;
 SD_OFFSET(cObjElementFXBankMasterSuction, dir, 0xfc);
@@ -103,12 +115,12 @@ SD_SIZE(cObjElementFXBankMasterSuction, 0x1ec);
 typedef struct cObjElementFXBankerSteal {
 	void *vftable;			/* 0x00 */
 	cEntity *ent;			/* 0x04 */
-	int i8;				/* 0x08 */
+	cEntity *target;		/* 0x08 set by FXMisc_SetI8 */
 	CGameParticles particles;	/* 0x0c on Dummy01 */
 	int node;			/* 0xbc DF_BankerSteal of the character */
-	float fc0;			/* 0xc0 */
-	int fc4;			/* 0xc4 */
-	int fc8;			/* 0xc8 */
+	float time;			/* 0xc0 since the last coin */
+	int toggle;			/* 0xc4 a sound every second coin */
+	int lastSound;			/* 0xc8 0..2, -1 */
 	byte started;			/* 0xcc */
 } cObjElementFXBankerSteal;
 SD_OFFSET(cObjElementFXBankerSteal, node, 0xbc);
@@ -244,7 +256,7 @@ typedef struct cObjElementFXFunctionarySpecialAction {
 	byte pad_c0[4];
 	CGameTrail trails[FXFUNCTIONARY_TRAILS];	/* 0x0c4 */
 	vec3_t pos[FXFUNCTIONARY_TRAILS];	/* 0x0fc the vertices of g_FXFunctionaryVertex */
-	int f1a4;			/* 0x1a4 */
+	float alpha;			/* 0x1a4 the model effect, up with the speed of the character */
 	byte started;			/* 0x1a8 */
 } cObjElementFXFunctionarySpecialAction;
 SD_OFFSET(cObjElementFXFunctionarySpecialAction, trails, 0xc4);
@@ -523,6 +535,13 @@ void __thiscall cObjElementFXPoliceSteal_Update(cObjElementFXPoliceSteal *self, 
 void __thiscall cObjElementFXSebastianFlash_Update(cObjElementFXSebastianFlash *self, cDebris *d, float dt);
 /* the flash of Berto: trails from Berto to the target, in 0.2 s, out until 0.7 s */
 void __thiscall cObjElementFXBertoFlash_Update(cObjElementFXBertoFlash *self, cDebris *d, float dt);
+/* the coins from the target to the banker, faster when near, a steal sound every second coin */
+void __thiscall cObjElementFXBankerSteal_Update(cObjElementFXBankerSteal *self, cDebris *d, float dt);
+/* the money sucked from the target to the baton along a Bezier curve, a steal sound every 8 points */
+void __thiscall cObjElementFXBankMasterSuction_Update(cObjElementFXBankMasterSuction *self, cDebris *d, float dt);
+/* the trails of the Functionary while it runs fast (its speed above 1) */
+void __thiscall cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFunctionarySpecialAction *self, cDebris *d,
+	float dt);
 void __thiscall cObjElementFXBettyKill_Update(cObjElementFXKill *self, cDebris *d, float dt);
 void __thiscall cObjElementFXDTritusKill_Update(cObjElementFXKill *self, cDebris *d, float dt);
 void __thiscall cObjElementFXDTritusAttack_Start(cObjElementFXDTritusAttack *self, cEntity *e);

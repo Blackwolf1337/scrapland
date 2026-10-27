@@ -2,6 +2,8 @@
  * World/FX/FXCharActions.cpp of the game: the effects of the special actions of the characters, see
  * include/scrap/fxcharactions.h.
  */
+#include <string.h>
+
 #include "scrap/crt.h"
 #include "scrap/doors.h"
 #include "scrap/fxcharactions.h"
@@ -10,6 +12,7 @@
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/sound.h"
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 
@@ -154,10 +157,10 @@ void *__thiscall cObjElementFXBankerSteal_ctor(void *self) {
 	CGameParticles_ctor(&s->particles);
 	s->started = 0;
 	s->ent = NULL;
-	s->i8 = 0;
-	s->fc0 = 0.0f;
-	s->fc4 = 0;
-	s->fc8 = -1;
+	s->target = NULL;
+	s->time = 0.0f;
+	s->toggle = 0;
+	s->lastSound = -1;
 	s->node = -1;
 	return s;
 }
@@ -695,8 +698,8 @@ void __thiscall cObjElementFXBankMasterAttack_Attach(cObjElementFXBankMasterAtta
 void __thiscall cObjElementFXBankMasterSuction_Attach(cObjElementFXBankMasterSuction *self, cDebris *d) {
 	FXA_AttachDummy01(&self->particles, d);
 	CHECK(self->particles.SistPart);
-	self->f1e4 = 0;
-	self->f1e0 = 0;
+	self->lastSound = 0;
+	self->count = 0;
 }
 
 void __thiscall FXCharActions_AttachC(void *self, cDebris *d) {
@@ -786,7 +789,7 @@ void __thiscall cObjElementFXFunctionarySpecialAction_Attach(cObjElementFXFuncti
 		CGameTrail_SetFade(t, 1);
 		CGameTrail_SetOrient(t, (vec3_t){ 0.0f, 1.0f, 0.0f }, 2);
 	}
-	self->f1a4 = 0;
+	self->alpha = 0.0f;
 }
 
 void __thiscall cObjElementFXGearMissile_Attach(cObjElementFXGearMissile *self, cDebris *d) {
@@ -936,15 +939,15 @@ void __thiscall cObjElementFXBankMasterSuction_Reset(cObjElementFXBankMasterSuct
 	(void)arg;
 	self->fc0 = 0.0f;
 	self->fbc = 0.0f;
-	self->f1e0 = 0;
-	self->f1e4 = 0;
+	self->count = 0;
+	self->lastSound = 0;
 }
 
 void __thiscall cObjElementFXBankerSteal_Reset(cObjElementFXBankerSteal *self, int arg) {
 	(void)arg;
 	self->ent = NULL;
-	self->i8 = 0;
-	self->fc0 = 0.0f;
+	self->target = NULL;
+	self->time = 0.0f;
 }
 
 void __thiscall cObjElementFXBertoAttack_Reset(cObjElementFXBertoAttack *self, int arg) {
@@ -1017,7 +1020,7 @@ void __thiscall cObjElementFXFunctionarySpecialAction_Reset(cObjElementFXFunctio
 	self->fb8 = 0.0f;
 	CGameParticles_KillAll(&self->particles);
 	FXA_ClearTrails(self->trails, FXFUNCTIONARY_TRAILS);
-	self->f1a4 = 0;
+	self->alpha = 0.0f;
 }
 
 void __thiscall cObjElementFXGearMissile_Reset(cObjElementFXGearMissile *self, int arg) {
@@ -2027,4 +2030,343 @@ void __thiscall cObjElementFXBertoFlash_Update(cObjElementFXBertoFlash *self, cD
 	uint32_t color = (uint32_t)alpha << 24 | 0xc08040;
 	CGameParticles_SetParticle(sp, 0, base.x, base.y, base.z, FXA_Rand(50.0, 450.0), color, 5, 0.0f);
 	CGameParticles_SetParticle(sp, 1, base.x, base.y, base.z, FXA_Rand(50.0, 300.0), color, 2, 0.0f);
+}
+
+
+/* one of the three steal sounds other than the last one at the position of m (at without m); the new last one */
+static int FXA_StealSound(int last, CGameModel *m, const vec3_t *at) {
+	vec3_t pos;
+	const char *name;
+
+	int s = crt_rand() % 3;
+	if (s == last) {
+		s = (s + 1) % 3;
+	}
+	switch (s) {
+	case 0:
+		name = g_BankerSteal1Sound;
+		break;
+	case 1:
+		name = g_BankerSteal2Sound;
+		break;
+	case 2:
+		name = g_BankerSteal3Sound;
+		break;
+	default:
+		return s;
+	}
+	const CSoundSysVtbl *vt = g_pSound->vftable;
+	int vol = Snd_Volume(g_BankerStealSoundVol);
+	vt->PlayAt(g_pSound, name, m ? CGameModel_GetPos(m, &pos) : at, vol);
+	return s;
+}
+
+void __thiscall cObjElementFXBankerSteal_Update(cObjElementFXBankerSteal *self, cDebris *d, float dt) {
+	vec3_t tmp, a, b, off, src, tp, v, ang, dir;
+	matrix_t mtx;
+
+	(void)dt;
+	FXA_Keep(&self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		return;
+	}
+	FXA_Keep(&self->target);
+	if (!self->target || !self->target->flag_4c) {
+		return;
+	}
+	if (0.65f > Debris_Life(d)) {
+		return;
+	}
+	CGameModel *m = FX_Vtbl(self->ent)->GetModel(self->ent);
+	if (!CGameModel_IsLoaded(m)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(m));
+	CGameModel *mt = FX_Vtbl(self->target)->GetModel(self->target);
+	if (!CGameModel_IsLoaded(mt)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(mt));
+	CGameModel_SetPos(Debris_Model(d), CGameModel_GetPos(m, &tmp));
+	CGameModel_SetRot(Debris_Model(d), CGameModel_GetRot(m, &tmp));
+	self->time = self->time + FXA_Delta();
+	const vec3_t *pa = CGameModel_GetPos(mt, &a);
+	const vec3_t *pb = CGameModel_GetPos(m, &b);
+	float dy = pb->y - pa->y;
+	float dx = pb->x - pa->x;
+	float dz = pb->z - pa->z;
+	float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+	float x = (500.0f - dist) / 3000.0f;
+	float wait = 0.04f > x ? 0.04f : Float_MinSS(0.15f, x);
+	if (wait > self->time) {
+		return;
+	}
+	self->time = 0.0f;
+	off.x = g_BankerStealPosX;
+	off.y = g_BankerStealPosY;
+	off.z = g_BankerStealPosZ;
+	const vec3_t *r = Vec3_Rotate(&v, &off, CGameModel_GetRot(m, &tmp));
+	const vec3_t *p = CGameModel_GetPos(m, &b);
+	src.x = r->x + p->x;
+	src.y = p->y + r->y;
+	src.z = p->z + r->z;
+	CGameModel_GetPos(mt, &tp);
+	if (self->node != -1) {
+		const matrix_t *mm = CGameModel_NodoMatrix(m, &mtx, (uint32_t)self->node, 1, NULL, 0);
+		src.x = mm->m[12];
+		src.y = mm->m[13];
+		src.z = mm->m[14];
+	}
+	float az = FXA_Rand((double)6.28318548f, 0.0);
+	float ay = FXA_Rand((double)6.28318548f, 0.0);
+	ang.x = FXA_Rand((double)6.28318548f, 0.0);
+	ang.y = ay;
+	ang.z = az;
+	v = (vec3_t){ 1.0f, 1.0f, 1.0f };
+	Vec3_Rotate(&dir, &v, &ang);
+	float life = FXA_Rand((double)0.19999999f, (double)0.45f);
+	CGameParticles *sp = &self->particles;
+	CGameParticles_SetSparksOn(sp, 0);
+	sp->birthRate = 0;
+	float hi = FX_Vtbl(self->target)->GetRadius(self->target) * 0.5f;
+	float lo = FX_Vtbl(self->target)->GetRadius(self->target) * 0.25f;
+	float rr = Rand_FloatRange(lo, hi);
+	sp->initPosMin.x = tp.x + dir.x * rr;
+	sp->initPosMin.z = tp.z + dir.z * rr;
+	sp->initPosMin.y = tp.y + dir.y * rr;
+	sp->initPosMax = sp->initPosMin;
+	float inv = 1.0f / life;
+	sp->initVelMin.x = (src.x - sp->initPosMin.x) * inv;
+	sp->initVelMin.y = (src.y - sp->initPosMin.y) * inv;
+	sp->initVelMin.z = (src.z - sp->initPosMin.z) * inv;
+	sp->initVelMax = sp->initVelMin;
+	sp->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	sp->initAccMax = sp->initAccMin;
+	sp->lifeTime = life;
+	sp->sizeLife = 1.0f;
+	sp->sizeIni = sp->sizeEnd = FXA_Rand(5.0, 35.0);
+	sp->rotIni = sp->rotEnd = FXA_Rand((double)6.28318548f, 0.0);
+	sp->rotVar = (float)(FXA_Rnd() * (double)0.785398185f - (double)0.392699093f);
+	byte sprite = (byte)(crt_rand() % 7 + 1);
+	sp->spriteIni = sprite;
+	sp->spriteEnd = sprite + 8;
+	CGameParticles_Apply(sp);
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, Game_Ptr(FXA_RAMP_POLICESTEAL));
+	CGameParticles_EmitN(sp, 1, 0);
+	self->toggle ^= 1;
+	if (self->toggle) {
+		self->lastSound = FXA_StealSound(self->lastSound, mt, NULL);
+	}
+}
+
+void __thiscall cObjElementFXBankMasterSuction_Update(cObjElementFXBankMasterSuction *self, cDebris *d, float dt) {
+	vec3_t pos, rot, off, o, a, t, in, p, b;
+	vec3_t pts[4], coefs[4];
+
+	(void)dt;
+	FXA_Keep(&self->ent);
+	if (!self->ent) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	FXA_Keep(&self->target);
+	if (!self->target) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	float delta = FXA_Delta();
+	self->fc0 = self->fc0 + delta;
+	self->fbc = self->fbc + delta;
+	float radius = FX_Vtbl(self->target)->GetRadius(self->target) * 0.5f;
+	FX_Vtbl(self->target)->GetCenter(self->target, &t);
+	off.x = g_BankMasterBatonPosX;
+	off.y = g_BankMasterBatonPosY;
+	off.z = g_BankMasterBatonPosZ;
+	const vec3_t *r = Vec3_Rotate(&o, &off, &rot);
+	a.x = pos.x + r->x;
+	a.y = r->y + pos.y;
+	a.z = r->z + pos.z;
+	float dx = a.x - t.x;
+	float dy = a.y - t.y;
+	float dz = a.z - t.z;
+	float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+	pts[0] = t;
+	in = (vec3_t){ 0.0f, 0.0f, dist * 0.5f };
+	r = Vec3_Rotate(&o, &in, &rot);
+	pts[1].x = a.x - r->x;
+	pts[1].y = a.y - r->y;
+	pts[1].z = a.z - r->z;
+	in = (vec3_t){ 0.0f, 0.0f, dist * 0.25f };
+	r = Vec3_Rotate(&o, &in, &rot);
+	pts[2].x = a.x - r->x;
+	pts[2].y = a.y - r->y;
+	pts[2].z = a.z - r->z;
+	pts[3] = a;
+	CGameTrail_BezierCoefs(&self->trail, 4, pts, coefs);
+	float step = delta * 2.0f;
+	CGameParticles *sp = &self->particles;
+	for (int i = 0; i < FXBMSUCTION_POINTS; i++) {
+		float old = self->phase[i];
+		float v = step + old;
+		self->phase[i] = v;
+		if (v > 0.0f && 0.0f >= old) {
+			int k = self->count;
+			self->count = k + 1;
+			if (k > 6) {
+				self->count = 0;
+				self->lastSound = FXA_StealSound(self->lastSound, NULL, &pos);
+			}
+		}
+		v = self->phase[i];
+		if (0.0f > v || v >= 1.0f) {
+			CGameParticles_Kill(sp, i);
+			continue;
+		}
+		int alpha = 0;
+		if (0.1f >= v) {
+			alpha = 0xff - (int)(v * 10.0f * 255.0f);
+		} else if (v >= 0.8f) {
+			alpha = (int)((v - 0.8f) * 5.0f * 255.0f);
+		}
+		float size = (45.0f - radius) * v + radius;
+		CGameTrail_BezierPoint(&self->trail, 4, coefs, &b, v);
+		uint32_t c = (uint32_t)(0xff - alpha);
+		p.x = b.x + self->dir[i].x * size;
+		p.y = b.y + self->dir[i].y * size;
+		p.z = b.z + size * self->dir[i].z;
+		int sprite = 1 - (int)(self->phase[i] * -16.0f);
+		CGameParticles_SetParticle(sp, i, p.x, p.y, p.z, 40.0f, (c << 8 | c << 16) | (uint32_t)alpha << 24 | c, sprite,
+			self->angle[i]);
+	}
+}
+
+/* a player character: its controller at 0xf0 */
+#define FXA_Player(e) (*(int *)((byte *)(e) + 0xf0))
+
+static inline uint32_t FXA_Bits(float f) {
+	uint32_t u;
+
+	memcpy(&u, &f, sizeof(u));
+	return u;
+}
+
+void __thiscall cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFunctionarySpecialAction *self, cDebris *d,
+	float dt) {
+	vec3_t pos, rot;
+	vec3_t pts[FXFUNCTIONARY_TRAILS];
+	float target;
+
+	FXA_Keep(&self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		return;
+	}
+	CGameModel *m = FX_Vtbl(self->ent)->GetModel(self->ent);
+	if (!CGameModel_IsLoaded(m)) {
+		self->ent = NULL;
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(m));
+	float delta = FXA_Delta();
+	self->fbc = self->fbc + delta;
+	self->fb8 = self->fb8 + delta;
+	if (Entity_LifeI(self->ent) <= 0) {
+		if (Debris_Life(d) > 0.4f) {
+			Debris_Life(d) = 0.4f;
+		}
+		return;
+	}
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), -74.0f, 0.0f);
+	FX_Vtbl(self->ent)->GetRadius(self->ent);
+	float speed = cTimer_GetSpeed(Entity_Timer(self->ent));
+	cTimer_GetSpeedTo(Entity_Timer(self->ent));
+	byte run = 0;
+	if (WithLife_Vtbl(self->ent)->GetActCtrl(self->ent)) {
+		if (cActCtrl_IsActive(WithLife_Vtbl(self->ent)->GetActCtrl(self->ent), "Run") && speed > 1.0f) {
+			run = 1;
+		}
+	}
+	if (self->ent && FXA_Player(self->ent) && speed == 1.0f && Debris_Life(d) > 0.4f) {
+		Debris_Life(d) = 0.4f;
+	}
+	target = (speed - 1.0f) / 3.0f;
+	if (0.4f > Debris_Life(d)) {
+		FX_InRange(Debris_Life(d) - dt, 0.0f, 0.4f, &target);
+	} else {
+		FX_InRange(target, 0.0f, 1.0f, &target);
+	}
+	Float_Approach(&self->alpha, target, delta * 4.0f);
+	if (0.0f >= self->alpha) {
+		CGameModel_SetEffect(m, 0);
+		CGameModel_SetEffectParam(m, 0, 0);
+	} else {
+		CGameModel_SetEffect(m, 2);
+		CGameModel_SetEffectParam(m, 0, FXA_Bits(self->alpha * 0.5f));
+	}
+	CGameModel_Vertices(m, pts, NULL, NULL, FXFUNCTIONARY_TRAILS, -1, NULL, 0xffffffffu, g_FXFunctionaryVertex);
+	CGameParticles *sp = &self->particles;
+	for (int i = 0; i < FXFUNCTIONARY_TRAILS; i++) {
+		CGameTrail *t = &self->trails[i];
+		vec3_t *p = &self->pos[i];
+
+		CGameTrail_SetTransp(t, (byte)(0xff - (int)(self->alpha * 255.0f)));
+		CGameParticles_SetAlpha(sp, self->alpha);
+		CGameParticles_SetParticle(sp, i, pts[i].x, pts[i].y, pts[i].z, 55.0f, (g_FXFunctionaryColor[i] & 0xffffff) |
+			0xa4000000, 2, 0.0f);
+		float dx = p->x - pts[i].x;
+		float dy = p->y - pts[i].y;
+		float dz = p->z - pts[i].z;
+		if (dy * dy + dx * dx + dz * dz > 3600.0f) {
+			*p = pts[i];
+			self->fb8 = 0.0f;
+			if (!run) {
+				continue;
+			}
+			CGameTrail_Add(t, pts[i], 50.0f, (g_FXFunctionaryColor[i] & 0xffffff) | 0xc4000000);
+			sp->birthRate = 0;
+			sp->lifeTime = FXA_Rand((double)0.019999996f, (double)0.24f);
+			sp->sizeIni = FXA_Rand(20.0, 45.0);
+			sp->sizeEnd = FXA_Rand(10.0, 105.0);
+			sp->sizeLife = FXA_Rand((double)0.02000001f, (double)0.34f);
+			sp->rotIni = sp->rotEnd = FXA_Rand((double)6.28318548f, 0.0);
+			float rv = (float)(FXA_Rnd() * (double)0.785398185f - (double)0.392699093f);
+			sp->spriteIni = 0x2b;
+			sp->spriteEnd = 0x2b;
+			sp->rotVar = rv;
+			CGameParticles_SetColorRampOn(sp, 0);
+			sp->colorIni = (g_FXFunctionaryColor[i] & 0xffffff) | 0xc4000000;
+			sp->colorEnd = g_FXFunctionaryColor[i] | 0xff000000;
+			sp->initPosMin.x = pts[i].x + (pts[i].x - p->x) * 0.5f;
+			sp->initPosMin.y = pts[i].y + (pts[i].y - p->y) * 0.5f;
+			sp->initPosMin.z = pts[i].z + (pts[i].z - p->z) * 0.5f;
+			sp->initPosMax = sp->initPosMin;
+			sp->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			sp->initVelMax = sp->initVelMin;
+			sp->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			sp->initAccMax = sp->initAccMin;
+			CGameParticles_Apply(sp);
+			CGameParticles_EmitN(sp, 1, 0);
+		} else {
+			CGameTrail_SetLastPos(t, pts[i]);
+			if (self->fb8 > 0.01f && 1.0f >= speed && self->fb8 > 0.0f) {
+				float k = 0.0f;
+				do {
+					CGameTrail_Shrink(t);
+					k = k + 0.01f;
+				} while (self->fb8 > k);
+			}
+		}
+	}
+	if (self->fb8 > 0.01f) {
+		self->fb8 = 0.0f;
+	}
 }
