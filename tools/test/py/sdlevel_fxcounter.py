@@ -39,19 +39,19 @@ check('cWorld_GetCamPos', lambda: (SDTest.Call(0x1ce910, 'tiii', fxworld, fxbuf)
 def fxdebris(name, kind):
 	fxsrand(1234)
 	Scrap.SetDebrisSys(name, 1, 0.0, 0.0, 1.0, 0.0, 0, kind)
-	sys = SDTest.Call(0x209590, 'tiis', fxworld, name)[0]
-	d = fxi(sys)
-	return (sys, d, fxi(d + 0x54))
+	s = SDTest.Call(0x209590, 'tiis', fxworld, name)[0]
+	d = fxi(s)
+	return (s, d, fxi(d + 0x54))
 fxkinds = (('Models/Weapons/Laser/Hook.M3D', 31, 0x3cbe14), ('Models/Weapons/EMI/EMI.M3D', 35, 0x3cbe2c),
 	('Models/Weapons/Cloud/Cloud.M3D', 42, 0x3cbe5c), ('Models/Weapons/Sonic/Xplde.M3D', 50, 0x3cbe44))
 fxobjs = {}
 for name, kind, vt in fxkinds:
-	sys, d, fx = fxdebris(name, kind)
-	fxobjs[kind] = (sys, d, fx)
+	fxsys, d, fx = fxdebris(name, kind)
+	fxobjs[kind] = (fxsys, d, fx)
 	check('FX debris' + fmt((name, kind)), lambda d=d, fx=fx, vt=vt: (d != 0, fx != 0, fx != 0 and fxi(fx) == 0x400000 + vt))
 
 # hook: Start (the Dummy01 particles, the two trails) and Reset ran in SetDebrisSys
-sys, d, fx = fxobjs[31]
+fxsys, d, fx = fxobjs[31]
 if fx and fxi(fx) == 0x400000 + 0x3cbe14:
 	check('FXHook started', lambda fx=fx: (fxi(fx + 0x148) != 0, fxi(fx + 0x98), fxints(fx + 0x14c, 1),
 		fxints(fx + 0x154, 1), SDTest.Call(0x21e1b0, 'tii', fx + 0x18)[0], SDTest.Call(0x21e1b0, 'tii', fx + 0x1c)[0]))
@@ -70,19 +70,19 @@ for wt in (0, 1):
 		check('FXHook_IsAlive' + fmt((wt, fade)), lambda fh=fh: (SDTest.Call(0x1cec60, 'tbiii', fh, 0, 0)[0], fxb(fh + 0x10)))
 
 # EMI: Start set the 8 trails; IsAlive is 0 without entity
-sys, d, fx = fxobjs[35]
+fxsys, d, fx = fxobjs[35]
 if fx and fxi(fx) == 0x400000 + 0x3cbe2c:
 	check('FXEMI started', lambda fx=fx: (fxi(fx + 8), fxi(fx + 0xb8) != 0, fxints(fx + 0xd4, 8), fxints(fx + 0xc54, 16),
 		fxi(fx + 0xd18), SDTest.Call(0x21e1b0, 'tii', fx + 0xf4)[0], SDTest.Call(0x21e1b0, 'tii', fx + 0x110)[0]))
 	check('FXEMI_SetEntity', lambda fx=fx: (SDTest.Call(0x1ceed0, 'tvii', fx, 0), fxi(fx + 4)))
-	check('FXEMI_IsAlive', lambda fx=fx, d=d, sys=sys: SDTest.Call(0x1cec40, 'tbiii', fx, d, sys)[0])
+	check('FXEMI_IsAlive', lambda fx=fx, d=d, fxsys=fxsys: SDTest.Call(0x1cec40, 'tbiii', fx, d, fxsys)[0])
 	fxpoke(fx + 0xbc, 5)
 	fxpoke(fx + 0xd18, 7)
 	check('FXEMI_Reset', lambda fx=fx, d=d: (SDTest.Call(0x1cedb0, 'tvii', fx, d), fxi(fx + 4), fxi(fx + 0xbc),
 		fxi(fx + 0xc4), fxints(fx + 0xd4, 8), fxints(fx + 0xc54, 8), fxi(fx + 0xd18)))
 
 # debris cloud: Start and Reset fill the random numbers
-sys, d, fx = fxobjs[42]
+fxsys, d, fx = fxobjs[42]
 if fx and fxi(fx) == 0x400000 + 0x3cbe5c:
 	check('FXDebrisCloud started', lambda fx=fx: (fxi(fx + 8), fxi(fx + 0xb8) != 0, fxints(fx + 0xd0, 0x48)))
 	check('FXDebrisCloud_SetEntity', lambda fx=fx: (SDTest.Call(0x1ceec0, 'tvii', fx, 0), fxi(fx + 4)))
@@ -91,30 +91,30 @@ if fx and fxi(fx) == 0x400000 + 0x3cbe5c:
 		fxi(fx + 0xc0), fxints(fx + 0xd0, 0x48)))
 
 # sonic explosion: Explode fills the rings and the particle parameters, Update grows the rings
-sys, d, fx = fxobjs[50]
+fxsys, d, fx = fxobjs[50]
 if fx and fxi(fx) == 0x400000 + 0x3cbe44:
 	check('FXSonic started', lambda fx=fx: (fxi(fx + 0xb0) != 0, fxi(fx + 0x160) != 0))
 	for x, y, z, seed in ((0.0, 0.0, 0.0, 77), (1500.5, -20.25, 333.0, 78)):
 		fxsrand(seed)
 		check('FXSonic_Explode' + fmt((x, y, z)), lambda fx=fx, x=x, y=y, z=z: (SDTest.Call(0x1cef10, 'tvifff', fx, x,
 			y, z), fxints(fx + 0x16c, 44), fxpart(fx + 4)))
-	timer = fxworld + 0x2c8 + 0xc
-	savedt = fxi(timer)
-	dudv = SDTest.Peek(0x4a8b34, 'i')
+	fxtimer = fxworld + 0x2c8 + 0xc
+	fxsavedt = fxi(fxtimer)
+	fxdudv = SDTest.Peek(0x4a8b34, 'i')
 	nrings = fxi(fxi(fx + 0x160) + 0xc)
-	check('FXSonic rings', lambda nrings=nrings: (nrings >= 8, dudv))
-	fxset(timer, (0.05,))
+	check('FXSonic rings', lambda nrings=nrings: (nrings >= 8, fxdudv))
+	fxset(fxtimer, (0.05,))
 	SDTest.Poke(0x4a8b34, 0)
 	check('FXSonic_Update dudv off', lambda fx=fx: (SDTest.Call(0x1ce230, 'tviif', fx, 0, 0.0), fxints(fx + 0x164, 2),
 		fxints(fx + 0x17c, 8), fxints(fx + 0x1bc, 8)))
 	if nrings >= 8:
 		SDTest.Poke(0x4a8b34, 1)
 		for dt in (0.05, 0.25, 1.5):
-			fxset(timer, (dt,))
+			fxset(fxtimer, (dt,))
 			check('FXSonic_Update' + fmt((dt,)), lambda fx=fx: (SDTest.Call(0x1ce230, 'tviif', fx, 0, 0.0),
 				fxints(fx + 0x164, 2), fxints(fx + 0x17c, 8), fxints(fx + 0x1bc, 8), fxints(fx + 0x1fc, 8)))
-	SDTest.Poke(0x4a8b34, dudv)
-	fxpoke(timer, savedt)
+	SDTest.Poke(0x4a8b34, fxdudv)
+	fxpoke(fxtimer, fxsavedt)
 	check('FXSonic_Reset', lambda fx=fx, d=d: (SDTest.Call(0x1ceea0, 'tvii', fx, d), fxints(fx + 0x164, 2)))
 
 # ---- the map elements, made from their models (pos and rot in fxbuf) ----
