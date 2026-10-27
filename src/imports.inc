@@ -567,3 +567,12 @@ SD_IMPORT(Matrix_RotationX, 0x23a270)
 /* module agent: App/CApp+CWinApp (imports below this line) */
 
 /* module agent: World/FX/FXCountermeasures+FXElementsOrbit+FXElementsPress.cpp (imports below this line) */
+SD_IMPORT(cTargetLock_GetPoint, 0x11a740)
+SD_IMPORT(cTargetLock_GetEntity, 0x11a720)
+SD_IMPORT(PtrArray_Get, 0x1a26e0)
+SD_IMPORT(cDebris_Update, 0x204ea0)
+SD_IMPORT(cMapElement_ctor, 0x202ca0)
+SD_IMPORT(cMapElement_dtor, 0x202e20)
+SD_IMPORT(cMapElement_Init, 0x203310)
+SD_IMPORT(cMapElement_Update, 0x203520)
+SD_IMPORT(cFXElementsOrbitBoyaController_ctor, 0x1d5820)
