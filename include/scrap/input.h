@@ -71,4 +71,7 @@ char __thiscall cPlayerInput_GetCursorChar(cPlayerInput *in);
 byte __thiscall cVirtualKeyboard_Set(cVirtualKeyboard *vk, const char *text);
 void __thiscall cPad_Rumble(cPad *pad, float a, float b, float c);
 
+/* rva 0x13a1b0: whether the action is pressed for the player */
+byte __thiscall cInputAction_Pressed(void *action, int player);
+
 #endif

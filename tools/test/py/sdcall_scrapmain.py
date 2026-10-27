@@ -80,7 +80,8 @@ SDTest.Poke(0x4adda0, smenv)
 
 smini = SDTest.Peek(0x431bf0, 's')
 for n in ('sdtest', 'levels/sd/sd2.txt', 'C:\\sd\\x', ''):
-	check('Engine_SetIniName' + fmt((n,)), lambda n=n: (SDTest.Call(0x217b00, 'is', n)[0] == 0x831bf0,
+	# with one empty path Ruta_Merge of the exe returns garbage (al 0), the C returns dest: no return then
+	check('Engine_SetIniName' + fmt((n,)), lambda n=n: ((SDTest.Call(0x217b00, 'is', n)[0] == 0x831bf0) or n == '',
 		SDTest.Peek(0x431bf0, 's')))
 	smstr(0x431bf0, smini)
 check('Engine_SetIniName back', lambda: SDTest.Peek(0x431bf0, 's'))
@@ -101,13 +102,19 @@ check('CArchINI_Load m3d.ini', lambda: SDTest.Call(0x2621c0, 'tiiszi', smi, 'm3d
 for k, v in (('c1', '10 20 30 0.5'), ('c2', '255,128,0,2'), ('c3', 'abc'), ('c4', '300 -1 7 1e3')):
 	SDTest.Call(0x2621a0, 'tiisss', smi, 'sd', k, v)
 smcol = smz(8)
+# Proc_Scan crashes on texts that are not number lists ('abc'), in both runs
+def smnums(t):
+	for c in t:
+		if not c in '0123456789.,- ':
+			return 0
+	return 1
 for s, k in (('sd', 'c1'), ('sd', 'c2'), ('sd', 'c3'), ('sd', 'c4'), ('suelo', 'model_ambient'), ('niebla', 'color'),
 		('none', 'x')):
 	txt = SDTest.Call(0x2624b0, 'tiissbi', smi, s, k, '', 0x40)
 	check('Ini text' + fmt((s, k)), lambda txt=txt: txt)
 	# only the texts with four values: another count is a CHECK
 	n = 0
-	if txt[0] == 0:
+	if txt[0] == 0 and smnums(txt[1]):
 		n = SDTest.Call(0x265260, 'issiiii', txt[1], '&b&b&b&f', smz(8), smz(8), smz(8), smz(8))[0]
 	if txt[0] != 0 or n == 4:
 		SDTest.Call(0x3197d0, 'iiFi', smcol, (0.0, 0.0), 8)
@@ -154,6 +161,10 @@ SDTest.Poke(0x4b1cf0, smcur0[0])
 SDTest.Poke(0x4b1cf4, smcur0[1])
 smfonts = (SDTest.Peek(0x4a8910, 'i'), SDTest.Peek(0x4a891c, 'i'))
 if smfonts[0] and smfonts[1]:
+	# the font prints CHECK the viewport size
+	smvpwh = (SDTest.Peek(0x4ad7e8, 'i'), SDTest.Peek(0x4ad7ec, 'i'))
+	SDTest.Poke(0x4ad7e8, 640)
+	SDTest.Poke(0x4ad7ec, 480)
 	smfsave = (smints(smfonts[0] - 0x400000, 13), smints(smfonts[1] - 0x400000, 13))
 	for fnt in (1, 2):
 		for align in (0, 1, 2, 3):
@@ -161,6 +172,8 @@ if smfonts[0] and smfonts[1]:
 				100.0, 200.0, align, 0xff8040, 'sd %d', 42), smints(smfonts[fnt - 1] - 0x400000, 6)))
 	smpoke(smfonts[0] - 0x400000, smfsave[0])
 	smpoke(smfonts[1] - 0x400000, smfsave[1])
+	SDTest.Poke(0x4ad7e8, smvpwh[0])
+	SDTest.Poke(0x4ad7ec, smvpwh[1])
 
 # the view in 640 x 480 coordinates, then the whole view again; the viewport, projection and frustum put back
 smvp = (smints(0x4ad7e0, 6), smints(0x4ae3f8, 16), smints(0x4adbf0, 24), smints(0x4ad7f8, 6))

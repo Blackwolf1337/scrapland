@@ -11,7 +11,9 @@
 #include "scrap/material.h"
 #include "scrap/scheduler.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
+#include "scrap/scrapworld.h"
 #include "scrap/sound.h"
 #include "scrap/world.h"
 
@@ -409,7 +411,7 @@ cWorld *__thiscall cWorld_ctor(cWorld *self) {
 	self->testing = 0;
 	self->entityList.target = self;
 	self->deadList.target = self;
-	ScrapEng_GetWorldBox(&box);
+	World_GetCollideBox(&box);
 	cell.x = g_GridScaleX;
 	cell.y = g_GridScaleY;
 	cell.z = g_GridScaleZ;
@@ -684,7 +686,7 @@ void __fastcall cWorld_Clear(cWorld *self) {
 			WEnt_Vtbl(e)->SetTarget(e, NULL);
 		}
 	}
-	ScrapEng_SetCamera(NULL);
+	Camera_SetActual(NULL);
 	self->curCam = 0;
 	for (int i = 0; i < 4; i++) {
 		self->camName[i][0] = 0;
@@ -1015,7 +1017,7 @@ int __thiscall cWorld_SetCam(cWorld *world, int i, const char *name) {
 	}
 	if (cam) {
 		if (!g_SplitScreenGame) {
-			ScrapEng_SetCamera(CamEntity_Cam(cam));
+			Camera_SetActual((CGameCamera *)CamEntity_Cam(cam));
 		}
 		world->camPos[i] = *CamEntity_Cam(cam);
 		CamEntity_Slot(cam) = i;
@@ -1023,7 +1025,7 @@ int __thiscall cWorld_SetCam(cWorld *world, int i, const char *name) {
 		return 0;
 	}
 	if (!g_SplitScreenGame) {
-		ScrapEng_SetCamera(NULL);
+		Camera_SetActual(NULL);
 	}
 	*key = 0;
 	return 0;
@@ -1083,7 +1085,7 @@ void __thiscall cWorld_Update(cWorld *self, float dt) {
 			cEntity *cam = World_Lookup(self, key);
 			if (cam) {
 				CHECK(WEnt_Vtbl(cam)->IsType(cam, "Cam"));
-				ScrapEng_SetCamera(CamEntity_Cam(cam));
+				Camera_SetActual((CGameCamera *)CamEntity_Cam(cam));
 			}
 		}
 	}

@@ -154,4 +154,11 @@ static inline float Float_MaxSS(float a, float b) {
 	return a > b ? a : b;
 }
 
+/* the value hidden from the optimizer: keeps an operation the compiler would fold algebraically ((-a) - (-b) to
+ * b - a), which changes the sign of a NaN result */
+static inline float Float_Keep(float v) {
+	__asm__("" : "+x"(v));
+	return v;
+}
+
 #endif

@@ -155,14 +155,11 @@ void *__thiscall cEntityList_ctor(void *mem, const char *name);
 void __thiscall EntityDList_dtor(void *list);
 
 /* the engine3d side: the camera of the view (NULL for none) and the box of the level */
-void ScrapEng_SetCamera(void *cam);
-void ScrapEng_GetWorldBox(box_t *box);
 /* frees the model list at rva 0x4479a8 */
 void GameModelList_Free(void);
 void Sound_Update(float dt);
 void Sound_UpdatePaused(void);
 /* the action went over 0.5 for the player in this frame */
-byte __thiscall cInputAction_Pressed(void *action, int player);
 /* RemainTalkTime > 0: a talk text is shown */
 int Talk_IsShown(void);
 void __thiscall cPy_Function_Clear(cPy_Function *self);

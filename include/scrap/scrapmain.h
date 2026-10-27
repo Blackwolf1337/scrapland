@@ -248,7 +248,6 @@ byte Avi_Load(const char *name);
 int RenderTarget_Begin(const char *name);			/* rva 0x220b40 */
 int RenderTarget_End(int mode);					/* rva 0x220bd0 */
 void SombrasStencil_Set(byte on);				/* rva 0x267460 */
-byte __thiscall cInputAction_Pressed(void *action, int player);	/* rva 0x13a1b0 */
 CPsaImage *__thiscall CPsaImage_ctor(CPsaImage *self, const char *name, int flags);	/* rva 0x22d120 */
 void __fastcall CPsaImage_dtor(CPsaImage *self);			/* rva 0x22d160 */
 void __thiscall CPsaImage_Draw(CPsaImage *self, float x, float y);	/* rva 0x22d3c0 */

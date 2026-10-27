@@ -149,7 +149,8 @@ for m in wmasks:
 				m, a, b, r, '__main__.sdwcb')[0], len(sdwcalls)))
 	for c in (wp, wadd(wp, (500.0, 0.0, 0.0)), (0.0, 0.0, 0.0)):
 		for r in (10.0, 500.0, 5000.0):
-			for ex, a, b in ((0, 1, 0), (wplayer, 0, 1), (wplayer, 2, 0)):
+			# b goes to the TestSphere of the entities as a pointer: only 0
+			for ex, a, b in ((0, 1, 0), (wplayer, 0, 0), (wplayer, 2, 0)):
 				check('cWorld_TestSphereEntities' + fmt((m, c, r, ex != 0, a, b)), lambda m=m, c=c, r=r, ex=ex, a=a, b=b:
 					wtsphere(m, c, r, ex, a, b))
 			for f in (0, 1):

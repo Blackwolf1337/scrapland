@@ -523,8 +523,6 @@ SD_IMPORT(cDebrisSys_ShowInfo, 0x205210)
 SD_IMPORT(cDebrisSys_SetName, 0x205450)
 SD_IMPORT(cDebrisSys_Update, 0x205490)
 SD_IMPORT(cScheduledFuncStack_dtor, 0x2056f0)
-SD_IMPORT(ScrapEng_GetWorldBox, 0x2143e0)
-SD_IMPORT(ScrapEng_SetCamera, 0x217a20)
 
 /* module agent: ScrapEng/ScrapEngWorld.cpp (imports below this line) */
 
@@ -553,7 +551,6 @@ SD_IMPORT(Avi_Load, 0x27f9b0)
 SD_IMPORT(RenderTarget_Begin, 0x220b40)
 SD_IMPORT(RenderTarget_End, 0x220bd0)
 SD_IMPORT(SombrasStencil_Set, 0x267460)
-SD_IMPORT(cInputAction_Pressed, 0x13a1b0)
 SD_IMPORT(CPsaImage_ctor, 0x22d120)
 SD_IMPORT(CPsaImage_dtor, 0x22d160)
 SD_IMPORT(CPsaImage_Draw, 0x22d3c0)

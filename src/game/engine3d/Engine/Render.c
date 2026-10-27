@@ -1267,9 +1267,7 @@ void Render_EndView(void) {
 	Render_SetMaterial(g_MatDefault, 0);
 	void *dev = g_pd3dDevice;
 	D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, g_ViewportFull);
-	for (int i = 0; i < 5; i++) {
-		g_Viewport[i] = 0;
-	}
+	memset(g_Viewport, 0, 6 * sizeof(uint32_t));
 }
 
 void Render_ClearForced(void) {
@@ -1742,8 +1740,8 @@ byte Render_ProjTile(const matrix_t *proj) {
 	float fn = (float)n;
 	float x0 = (float)g_TileX / fn - 0.5f;
 	float x1 = (float)(g_TileX + 1) / fn - 0.5f;
-	float y0 = -((float)g_TileY / fn - 0.5f);
-	float y1 = -((float)(g_TileY + 1) / fn - 0.5f);
+	float y0 = Float_Keep(-((float)g_TileY / fn - 0.5f));
+	float y1 = Float_Keep(-((float)(g_TileY + 1) / fn - 0.5f));
 	Proj_Sub(&g_MatProj, proj, x0, x1, y0, y1);
 	CHECK(g_pd3dDevice);
 	void *dev = g_pd3dDevice;
@@ -2064,8 +2062,8 @@ byte Render_SetViewRect(const box_t *rect, byte proj) {
 	if (proj) {
 		float fw = (float)w, fh = (float)h;
 		matrix_t m;
-		Proj_Sub(&m, &g_MatProj, (float)r[0] / fw - 0.5f, (float)r[2] / fw - 0.5f, -((float)r[1] / fh - 0.5f),
-			-((float)r[3] / fh - 0.5f));
+		Proj_Sub(&m, &g_MatProj, (float)r[0] / fw - 0.5f, (float)r[2] / fw - 0.5f,
+			Float_Keep(-((float)r[1] / fh - 0.5f)), Float_Keep(-((float)r[3] / fh - 0.5f)));
 		dev = g_pd3dDevice;
 		D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &m);
 	}
