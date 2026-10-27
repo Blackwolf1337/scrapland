@@ -7,6 +7,7 @@
 #include "scrap/dxutil.h"
 #include "scrap/e3dutil.h"
 #include "scrap/app.h"
+#include "scrap/archio.h"
 #include "scrap/flare.h"
 #include "scrap/fuentes.h"
 #include "scrap/material.h"
@@ -58,8 +59,6 @@
 typedef void(__stdcall *initcommoncontrols_t)(void);
 #define exe_InitCommonControls GAME_DATA(initcommoncontrols_t, 0x3a104c)
 
-/* the ini of the engine into the variables (rva 0x230440) */
-void Motor_LoadIni(const char *name, int arg);
 /* the console command handler of the engine (rva 0x22eda0, still the exe's) */
 #define MOTOR_CMDPROC 0x22eda0
 #define g_E3DCmdProc GAME_DATA(void *, 0x4ab8f8)
@@ -108,7 +107,7 @@ byte *__fastcall CMotorApp_ctor(byte *self) {
 	MOTOR_W2A5F0(self)[1] = 0;
 	MOTOR_W2A5F0(self)[2] = 0;
 	MOTOR_W2A5F0(self)[3] = 0;
-	Motor_LoadIni(g_M3dIni, 0);
+	Motor_LoadIni(g_M3dIni, NULL);
 	MOTOR_VSYNC(self) = g_VSync;
 	MOTOR_B2A5F9(self) = g_MotorIni7c != 0;
 	g_VertexSpecular = g_MotorIni80 != 0;
@@ -339,6 +338,95 @@ void __fastcall Motor_GetEscena(byte *self) {
 		CHECK(MOTOR_ESCENA(self));
 	}
 	MOTOR_ESCENA(self)->Refs++;
+}
+
+/* ---- m3d.ini: the variables of the engine, in the order of the original ---- */
+
+enum { INI_BOOL, INI_LONG, INI_FLOAT, INI_TEXT };
+#define INI_TEXT_SIZE 0x40
+
+static const struct {
+	byte kind;
+	const char *sect;
+	const char *key;
+	uint32_t rva;
+} motorIni[] = {
+	{ INI_BOOL, "video", "TexPersp", 0x431bd0 },
+	{ INI_BOOL, "video", "Tramas", 0x431bd4 },
+	{ INI_BOOL, "video", "Filtrado", 0x431bc8 },
+	{ INI_BOOL, "video", "UsarTexturas", 0x431bcc },
+	{ INI_BOOL, "video", "UsarEnvMap", 0x431bd8 },
+	{ INI_BOOL, "video", "UsarHWEnvMap", 0x431bdc },
+	{ INI_BOOL, "video", "UsarBumpMap", 0x431be0 },
+	{ INI_BOOL, "video", "UsarGlowMap", 0x431be4 },
+	{ INI_BOOL, "video", "DiffuseMod4x", 0x431be8 },
+	{ INI_BOOL, "video", "Sharpen", 0x4b25e8 },
+	{ INI_BOOL, "video", "ErrDif", 0x4b25ec },
+	{ INI_LONG, "video", "TextBPP", 0x432938 },
+	{ INI_LONG, "video", "TextOpBPP", 0x43293c },
+	{ INI_BOOL, "video", "gamma2x", 0x4db878 },
+	{ INI_BOOL, "video", "sobredib", 0x4a8f2c },
+	{ INI_BOOL, "video", "tricolis", 0x4a8f70 },
+	{ INI_BOOL, "video", "bufferw", 0x4a8f7c },
+	{ INI_FLOAT, "video", "limitaFPS", 0x4a8f8c },
+	{ INI_FLOAT, "video", "despMipmap", 0x4ad73c },
+	{ INI_BOOL, "video", "LinearMipmap", 0x4a8f88 },
+	{ INI_LONG, "video", "MaxAnisoFlt", 0x431d74 },
+	{ INI_BOOL, "video", "ConsolaWnd", 0x4ab8f0 },
+	{ INI_BOOL, "video", "ConsolaTxt", 0x4ab8f4 },
+	{ INI_BOOL, "video", "IlumSpec", 0x4a8f80 },
+	{ INI_LONG, "video", "Stencil", 0x4a8f84 },
+	{ INI_LONG, "video", "Depth", 0x431cf4 },
+	{ INI_FLOAT, "sombras", "sombras", 0x431bb0 },
+	{ INI_LONG, "sombras", "objeto_ini", 0x4a8f28 },
+	{ INI_LONG, "sombras", "objeto_fin", 0x431bb4 },
+	{ INI_BOOL, "sombras", "modif_vnorm", 0x431bb8 },
+	{ INI_BOOL, "sombras", "proc_objetos", 0x431bbc },
+	{ INI_TEXT, "sombras", "nombre_luz", 0x4a8f30 },
+	{ INI_BOOL, "dinput", "raton_excl", 0x431cfc },
+	{ INI_BOOL, "dinput", "usar_di", 0x431cf8 },
+	{ INI_BOOL, "dinput", "raton_inv_x", 0x4db41c },
+	{ INI_BOOL, "dinput", "raton_inv_y", 0x4db420 },
+	{ INI_BOOL, "dinput", "raton_inv_z", 0x4db424 },
+	{ INI_LONG, "suelo", "suelo_caras_cuadr", 0x431bc0 },
+};
+
+/* the ini name (in dir, NULL for the game directory) into the variables */
+void Motor_LoadIni(const char *name, const char *dir) {
+	char path[MAX_RUTA];
+	cArchDatos *dat;
+	unsigned i;
+
+	Ruta_Merge(path, dir, name);
+	Ruta_Copy(path, path, -1);
+	E3D_DebugPrintf("\nINI: %s", path);
+	dat = Arch_New();
+	if (!Arch_Load(dat, path, Arch_Count(dat))) {
+		for (i = 0; i < sizeof(motorIni) / sizeof(motorIni[0]); i++) {
+			void *v = Game_Ptr(motorIni[i].rva);
+
+			switch (motorIni[i].kind) {
+			case INI_BOOL:
+				Dat_GetBool(dat, motorIni[i].sect, motorIni[i].key, v);
+				break;
+			case INI_LONG:
+				Dat_GetLong(dat, motorIni[i].sect, motorIni[i].key, v);
+				break;
+			case INI_FLOAT:
+				Dat_GetFloat(dat, motorIni[i].sect, motorIni[i].key, v);
+				break;
+			default:
+				Dat_GetText(dat, motorIni[i].sect, motorIni[i].key, v, INI_TEXT_SIZE);
+				break;
+			}
+		}
+		E3D_LogInfo(g_FileLog, "*INI: [Video,etc.]: %s%s", path, " <ok>");
+	} else {
+		E3D_DebugPrintf("\nINI: no encontrado");
+		E3D_LogInfo(g_FileLog, "*INI: [Video,etc.]: %s%s", path, " <not found>");
+		E3D_LogBlue(g_FileLog, "INI: %s%s", path, " <not found>");
+	}
+	Arch_Free(dat);
 }
 
 /* ---- CEntradaNula: every method of the input does nothing ---- */

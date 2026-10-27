@@ -264,6 +264,8 @@ void Loading_Step(int percent);					/* rva 0x2157a0, -1: one step */
 void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *release, int arg);
 void Engine3D_Shutdown(void);
 byte *__fastcall CMotorApp_ctor(byte *self);
+/* the ini name (in dir, NULL for the game directory) into the variables of the engine */
+void Motor_LoadIni(const char *name, const char *dir);
 int __thiscall CMotorApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior, int format);
 int __thiscall CMotorApp_RestoreDeviceObjects(byte *self);
 int __thiscall CMotorApp_OneTimeSceneInit(byte *self);
