@@ -200,7 +200,6 @@ SD_IMPORT(CMatId_Register, 0x2a7ae0)
 SD_IMPORT(CAnimMat_ctor, 0x257f70)
 SD_IMPORT(CAnimMat_dtor, 0x257fb0)
 SD_IMPORT(CAnimMat_Start, 0x258110)
-SD_IMPORT(Vec3_Differ, 0x067380)
 
 /* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/escena.h) */
 SD_IMPORT(Box_Transform, 0x239880)
@@ -616,7 +615,6 @@ SD_IMPORT(cWithLifeEntity_SetEmbeddedFX, 0x12c7f0)
 SD_IMPORT(cAIBankDirector_ctor, 0x066120)
 SD_IMPORT(cAIBankMaster_ctor, 0x066560)
 SD_IMPORT(cAIBishop_ctor, 0x0669c0)
-SD_IMPORT(cAIChar_ctor, 0x0670b0)
 SD_IMPORT(cAIDesktop_ctor, 0x084310)
 SD_IMPORT(cAIGear_ctor, 0x084790)
 SD_IMPORT(cAIHuman_ctor, 0x084d50)
@@ -627,8 +625,6 @@ SD_IMPORT(cAIPolice_ctor, 0x085f20)
 SD_IMPORT(cAISentinel_ctor, 0x086100)
 
 /* module agent: Scorer part 3 (Gradient+Sprite+Tab) (imports below this line) */
-SD_IMPORT(Nto1Head_Link, 0x067450)
-SD_IMPORT(Nto1Node_UnlinkChecked, 0x06af70)
 SD_IMPORT(cAIVehicle_GraphTraffic, 0x089070)
 SD_IMPORT(cAIVehicle_Repos, 0x089b00)
 SD_IMPORT(cAIVehicle_TrackPoint, 0x08a850)
@@ -675,7 +671,6 @@ SD_IMPORT(Taunts_Think, 0x154e40)
 SD_IMPORT(Taunts_Warnings, 0x155000)
 
 /* module agent: AI/ICharControl+2D+3D.cpp (imports below this line) */
-SD_IMPORT(cAIChar_GetControl, 0x0697f0)
 SD_IMPORT(CAStar2D_FindPath, 0x09a5e0)
 SD_IMPORT(CAStar2D_GetPointsVis, 0x09a6e0)
 SD_IMPORT(CAStar_FindPath, 0x099b30)
@@ -716,5 +711,6 @@ SD_IMPORT_STDCALL(Wsock_WSACleanup, 0, 0x20da20)
 /* module agent: Actions and Events (ActClass..AIBishop) (imports below this line) */
 
 /* module agent: AI/AIChar.cpp (imports below this line) */
+SD_IMPORT(cAICharGroup_FindRepos, 0x080ee0)
 
 /* module agent: AI/AICharControl.cpp (imports below this line) */

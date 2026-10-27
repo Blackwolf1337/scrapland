@@ -381,8 +381,8 @@ byte __thiscall cAICharControl_Update(cAICharControl *self, float dt) {
 	if (self->hold) {
 		return 1;
 	}
-	if (!AICC_OwnerVtbl(self->ai)->GetChanged(self->ai)) {
-		if (!AICC_OwnerVtbl(self->ai)->CheckState(self->ai) || !vt->CheckTarget(self)) {
+	if (!AICC_OwnerVtbl(self->ai)->GetChanged2(self->ai)) {
+		if (!AICC_OwnerVtbl(self->ai)->React(self->ai) || !vt->CheckTarget(self)) {
 			return 0;
 		}
 	}
@@ -1623,7 +1623,7 @@ byte __thiscall cAICharControl_UpdateAway(cAICharControl *self, float dt) {
 	self->goal = *AICC_EntPos(AICC_TargetEnt(self), &buf);
 	self->dest = self->goal;
 	vt->AwayCheck(self);
-	if (!AICC_OwnerVtbl(self->ai)->Changed(self->ai)) {
+	if (!AICC_OwnerVtbl(self->ai)->GetChanged(self->ai)) {
 		vt->TurnFollow(self);
 		self->ctrl->strafe = 0.0f;
 		self->ctrl->jump = 0.0f;
@@ -1639,7 +1639,7 @@ static byte AICC_PathFrame(cAICharControl *self, byte(__thiscall *check)(cAIChar
 
 	if (self->path.count > 0) {
 		vt->CheckArrived(self);
-		if (!AICC_OwnerVtbl(self->ai)->Changed(self->ai)) {
+		if (!AICC_OwnerVtbl(self->ai)->GetChanged(self->ai)) {
 			if (check && !check(self)) {
 				return 0;
 			}
@@ -1661,7 +1661,7 @@ byte __thiscall cAICharControl_UpdateDir(cAICharControl *self, float dt) {
 
 	(void)dt;
 	vt->DirCheck(self);
-	if (!AICC_OwnerVtbl(self->ai)->Changed(self->ai)) {
+	if (!AICC_OwnerVtbl(self->ai)->GetChanged(self->ai)) {
 		vt->DirTurn(self);
 		self->ctrl->strafe = 0.0f;
 		self->ctrl->jump = 0.0f;

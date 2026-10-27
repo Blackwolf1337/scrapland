@@ -404,8 +404,6 @@ byte __thiscall cAIVehicleShoot_SetMode(cAIVehicleShoot *self, int a, int b, byt
 void __thiscall cAIVehicleShoot_GetInfo(cAIVehicleShoot *self, int *a, int *kind, byte *flag);
 
 /* ---- Global/Nto1Links.h: the out of line copies the AI calls ---- */
-/* node into the ring of head (CHECK: the node not linked) */
-void __thiscall Nto1Head_Link(Nto1Node *head, Nto1Node *node);
 /* node out of its ring (CHECK: Node, its data set) */
 void __fastcall Nto1Node_UnlinkChecked(Nto1Node *node);
 

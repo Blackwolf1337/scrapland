@@ -225,33 +225,11 @@ typedef struct cAICharControl2DVtbl {
 } cAICharControl2DVtbl;
 SD_SIZE(cAICharControl2DVtbl, 103 * 4);
 
-/* the slots of the AI of the character (cAIChar) the control calls */
-typedef struct cAICharCtlOwnerVtbl {
-	void *vf00_03[4];
-	byte(__thiscall *Changed)(cAIChar *self);		/* 0x10 byte 0x28 of the AI: an event this frame */
-	void *vf05_0d[9];
-	Nto1Node *(__thiscall *GetTarget)(cAIChar *self);	/* 0x38 the link to the target entity */
-	byte(__thiscall *CanJump)(cAIChar *self);		/* 0x3c byte 0x48 of the AI */
-	void *vf10_15[6];
-	byte(__thiscall *Event)(cAIChar *self, int ev);		/* 0x58 the move tells the AI (arrived, blocked, ..) */
-	void *vf17_1e[8];
-	int(__thiscall *GetState)(cAIChar *self);		/* 0x7c */
-	int(__thiscall *GetInternState)(cAIChar *self);		/* 0x80 */
-	void *vf21_2d[13];
-	byte(__thiscall *CheckState)(cAIChar *self);		/* 0xb8 the checks of the state, 1 without an event */
-	void *vf2f;
-	byte(__thiscall *GetChanged)(cAIChar *self);		/* 0xc0 the same as Changed */
-} cAICharCtlOwnerVtbl;
-SD_OFFSET(cAICharCtlOwnerVtbl, Changed, 0x10);
-SD_OFFSET(cAICharCtlOwnerVtbl, GetTarget, 0x38);
-SD_OFFSET(cAICharCtlOwnerVtbl, CanJump, 0x3c);
-SD_OFFSET(cAICharCtlOwnerVtbl, Event, 0x58);
-SD_OFFSET(cAICharCtlOwnerVtbl, GetState, 0x7c);
-SD_OFFSET(cAICharCtlOwnerVtbl, CheckState, 0xb8);
-SD_OFFSET(cAICharCtlOwnerVtbl, GetChanged, 0xc0);
+/* the AI of the character (cAIChar, include/scrap/ai.h): the control calls GetTarget (0x38) and Event (0x58) */
+typedef cAICharVtbl cAICharCtlOwnerVtbl;
 
 static inline const cAICharCtlOwnerVtbl *AICC_OwnerVtbl(cAIChar *ai) {
-	return *(const cAICharCtlOwnerVtbl **)ai;
+	return ai->vftable;
 }
 
 /* a cSlotController inside the control (0x10 bytes) */
