@@ -117,13 +117,20 @@ def reads_eax(i):
 		return True
 	return False
 
-def fullbody(name, seen):
-	seen.add(name)
-	b = bodies.get(name, '')
-	for c in set(re.findall(r'\b(\w+)\s*\(', b)):
-		if c in bodies and c not in seen:
-			b += fullbody(c, seen)
-	return b
+# the names in each body and the C functions it calls, once; a hook's names include those of everything it calls
+idents = dict((n, set(re.findall(r'\w+', b))) for n, b in bodies.items())
+calls = dict((n, set(c for c in re.findall(r'\b(\w+)\s*\(', b) if c in bodies)) for n, b in bodies.items())
+
+def fullnames(name):
+	seen, todo, names = {name}, [name], set()
+	while todo:
+		n = todo.pop()
+		names |= idents.get(n, set())
+		for c in calls.get(n, ()):
+			if c not in seen:
+				seen.add(c)
+				todo.append(c)
+	return names
 
 for n, a, sz in hooks:
 	# the hook writes a 5 byte jmp; hook.c skips shorter functions at runtime
@@ -145,13 +152,13 @@ for n, a, sz in hooks:
 		if users:
 			print('eax   %-28s %s: void in C, %d callers read eax (%s)' % (n, a, len(users), ' '.join(users[:4])))
 	if 'calls' in checks:
-		b = fullbody(n, set())
+		b = fullnames(n)
 		missing = set()
 		for x in ins:
 			m = re.match(r'call\s+0x([0-9a-f]+)$', x)
 			if m:
 				names = byaddr.get(int(m.group(1), 16) - 0x400000)
-				if names and names != {'CheckFailed'} and not any(re.search(r'\b%s\b' % k, b) for k in names):
+				if names and names != {'CheckFailed'} and not names & b:
 					missing.add('/'.join(sorted(names)))
 		if missing:
 			print('calls %-28s %s: %s' % (n, a, ', '.join(sorted(missing))))
