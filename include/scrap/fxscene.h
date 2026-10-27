@@ -110,18 +110,27 @@ typedef struct cObjElementFXSceneEnterMatrix {
 	float t;			/* 0x004 */
 	float tPrev;			/* 0x008 */
 	cEntity *ent;			/* 0x00c */
-	CGameParticles particles;	/* 0x010 Dummy01 */
-	byte pad_c0[0x18c - 0xc0];
-	float f18c[FXMATRIX_TRAILS];	/* 0x18c */
-	float f1cc[FXMATRIX_TRAILS];	/* 0x1cc */
-	byte pad_20c[0x28c - 0x20c];
+	CGameParticles particles;	/* 0x010 Dummy01: the glows at the ends of the rays, 6 a ray */
+	byte pad_c0[0x180 - 0xc0];
+	vec3_t center;			/* 0x180 of EnterMatrixMatrix */
+	float life[FXMATRIX_TRAILS];	/* 0x18c of the ray, -1 none */
+	float wait[FXMATRIX_TRAILS];	/* 0x1cc until the next ray */
+	float segLen[FXMATRIX_TRAILS];	/* 0x20c the length of a segment of the trail */
+	float uvOff[FXMATRIX_TRAILS];	/* 0x24c the scroll of the texture */
 	CGameTrail trails[FXMATRIX_TRAILS];	/* 0x28c */
-	byte pad_2cc[0x78c - 0x2cc];
-	int i78c;			/* 0x78c */
+	vec3_t pts[FXMATRIX_TRAILS][5];	/* 0x2cc the control points of the curve of the ray */
+	int kind[FXMATRIX_TRAILS];	/* 0x68c the path of the second part */
+	float prog[FXMATRIX_TRAILS];	/* 0x6cc along the path, 1 at its end */
+	float speed[FXMATRIX_TRAILS];	/* 0x70c */
+	float spread[FXMATRIX_TRAILS];	/* 0x74c the end ahead of the start */
+	int lastKind;			/* 0x78c -1, no path is taken twice in a row */
 	void *flare;			/* 0x790 CGameLensFlare */
 	byte started;			/* 0x794 */
 } cObjElementFXSceneEnterMatrix;
+SD_OFFSET(cObjElementFXSceneEnterMatrix, center, 0x180);
 SD_OFFSET(cObjElementFXSceneEnterMatrix, trails, 0x28c);
+SD_OFFSET(cObjElementFXSceneEnterMatrix, kind, 0x68c);
+SD_OFFSET(cObjElementFXSceneEnterMatrix, lastKind, 0x78c);
 SD_OFFSET(cObjElementFXSceneEnterMatrix, started, 0x794);
 
 typedef struct cObjElementFXSceneHumanCD {
@@ -209,6 +218,7 @@ void __thiscall cObjElementFXSceneBillArrives_A_Update(cObjElementFXSceneBillArr
 void __thiscall cObjElementFXSceneBishops_Update(cObjElementFXSceneBishops *self, cDebris *d, float dt);
 void __thiscall cObjElementFXSceneDecontamination_Update(cObjElementFXSceneDecontamination *self, cDebris *d,
 	float dt);
+void __thiscall cObjElementFXSceneEnterMatrix_Update(cObjElementFXSceneEnterMatrix *self, cDebris *d, float dt);
 void __thiscall cObjElementFXSceneHumanCD_Update(cObjElementFXSceneHumanCD *self, cDebris *d, float dt);
 void __thiscall cObjElementFXSceneTheEndB_Update(cObjElementFXSceneTheEndB *self, cDebris *d, float dt);
 void __thiscall cObjElementFXSceneYakuzzi_Update(cObjElementFXSceneYakuzzi *self, cDebris *d, float dt);

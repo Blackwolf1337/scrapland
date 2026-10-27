@@ -9,6 +9,7 @@
 #include "scrap/fxscene.h"
 #include "scrap/fxweapons.h"
 #include "scrap/mathlib.h"
+#include "scrap/scrapcollision.h"
 #include "scrap/timer.h"
 #include "scrap/weapons.h"
 #include "scrap/world.h"
@@ -307,10 +308,10 @@ void __thiscall cObjElementFXSceneEnterMatrix_Attach(cObjElementFXSceneEnterMatr
 		CGameTrail_SetSmooth(t, 1);
 		CGameTrail_SetTexture(t, (~crt_rand() & 1) | 8);
 		CGameTrail_SetPremul(t, 1);
-		self->f18c[i] = -1.0f;
-		self->f1cc[i] = FxElem_Rand(0.45f, 0.15f);
+		self->life[i] = -1.0f;
+		self->wait[i] = FxElem_Rand(0.45f, 0.15f);
 	}
-	self->i78c = -1;
+	self->lastKind = -1;
 }
 
 void __thiscall cObjElementFXSceneHumanCD_Attach(cObjElementFXSceneHumanCD *self, cDebris *d) {
@@ -393,8 +394,8 @@ void __thiscall cObjElementFXSceneEnterMatrix_Reset(cObjElementFXSceneEnterMatri
 	self->tPrev = 0.0f;
 	for (int i = 0; i < FXMATRIX_TRAILS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
-		self->f18c[i] = -1.0f;
-		self->f1cc[i] = FxElem_Rand(0.45f, 0.15f);
+		self->life[i] = -1.0f;
+		self->wait[i] = FxElem_Rand(0.45f, 0.15f);
 	}
 }
 
@@ -1812,5 +1813,394 @@ void __thiscall cObjElementFXSceneBillArrives_A_Update(cObjElementFXSceneBillArr
 		static const vec3_t offA = { -60.0f, 0.0f, 0.0f }, offB = { 60.0f, 0.0f, -20.0f };
 		FXS_BillPuff(self, (t >= 18.13f && 18.13f >= self->tPrev) ? &offA : &offB);
 	}
+	self->tPrev = self->t;
+}
+
+/* ---- EnterMatrix: the rays of the matrix ---- */
+
+/* the paths of the rays of the second part (8, rva 0x430f68): two segments a path, A to C and B to D */
+#define FXS_MATRIX_PATHS 0x430f68
+#define FXMATRIX_RAYCOLOR 0xc3e1640
+#define FXMATRIX_RAYCOLOR_END 0x2c3e1640
+
+/* the inner control points 1..3 moved by random speeds of range + add */
+static void FXS_MatrixJitter(vec3_t *P, double range, double add, float delta) {
+	vec3_t dir;
+
+	for (int j = 1; j < 4; j++) {
+		float r = FxElem_Rand(range, add);
+		const vec3_t *d = FX_RandomDir(&dir);
+		float dx = d->x * r, dy = d->y * r, dz = d->z * r;
+		P[j].y = dy * delta + P[j].y;
+		P[j].z = dz * delta + P[j].z;
+		P[j].x = P[j].x + dx * delta;
+	}
+}
+
+/* the life of a live ray down, its end at the full path; its alpha factor (the fade of the last 0.05) */
+static float FXS_MatrixFade(cObjElementFXSceneEnterMatrix *self, int k, float life, float delta) {
+	if (self->prog[k] >= 1.0f) {
+		self->prog[k] = 1.0f;
+		if (life > 0.04f) {
+			self->life[k] = 0.04f;
+		}
+	}
+	float a = 0.0f;
+	float l = self->life[k];
+	if (0.05f > l) {
+		float q = 1.0f - (l - delta) / 0.05f;
+		a = 0.0f > q ? 0.0f : Float_MinSS(1.0f, q);
+	}
+	return a;
+}
+
+/* the trail of ray k along the curve of its control points and the 6 glows at its ends (from idx - 4); second the
+ * second part of the scene */
+static void FXS_MatrixDraw(cObjElementFXSceneEnterMatrix *self, int k, int idx, float a, int alpha, float delta,
+	int second) {
+	CGameTrail *tr = &self->trails[k];
+	vec3_t *P = self->pts[k];
+	vec3_t coefs[GAMETRAIL_MAX_BEZIER], pt, dir;
+
+	int maxT = CGameTrail_GetMaxTrails(tr);
+	float dx = P[0].x - P[4].x, dy = P[0].y - P[4].y, dz = P[0].z - P[4].z;
+	float len = (float)__builtin_sqrt((double)(dx * dx + dy * dy + dz * dz));
+	int n = (int)(len / self->segLen[k]);
+	if (n < 5) {
+		n = 5;
+	} else if (n > maxT) {
+		n = maxT;
+	}
+	CGameTrail_SetSegments(tr, (byte)n);
+	CGameTrail_Reset(tr);
+	CGameTrail_BezierCoefs(tr, 5, P, coefs);
+	CGameTrail_SetUV(tr, self->uvOff[k] + 16.0f, 0.0f);
+	CGameTrail_SetUVScale(tr, 1.0f, 1.0f);
+	if (self->uvOff[k] > 0.0f) {
+		self->uvOff[k] = FxElem_Rand(3.5f, 0.5f) * delta + self->uvOff[k];
+		CGameTrail_SetULen(tr, second ? 8.0f : 4.0f, 1.0f);
+	} else {
+		self->uvOff[k] = self->uvOff[k] - FxElem_Rand(3.5f, 0.5f) * delta;
+		CGameTrail_SetULen(tr, second ? (self->t > 30.5f ? 16.0f : 8.0f) : -4.0f, 1.0f);
+	}
+	if (n - 1 > 0) {
+		float last = (float)(n - 2);
+		for (int s = 0; s < n - 1; s++) {
+			float w;
+			CGameTrail_BezierPoint(tr, 5, coefs, &pt, (float)s / last);
+			if (s == 0 || s == n - 2) {
+				w = self->segLen[k] + self->segLen[k];
+			} else {
+				if (s < 3 || s > n - 5) {
+					float r = second ? FxElem_Rand(140.0f, 145.0f) : FxElem_Rand(3.0f, 3.0f);
+					const vec3_t *d = FX_RandomDir(&dir);
+					pt.x = pt.x + d->x * r;
+					pt.y = pt.y + d->y * r;
+					pt.z = pt.z + d->z * r;
+				} else {
+					float r;
+					if (!second) {
+						r = FxElem_Rand(4.0f, 4.0f);
+					} else if (self->t > 30.5f) {
+						r = FxElem_Rand(300.0f, 645.0f);
+					} else {
+						r = FxElem_Rand(150.0f, 195.0f);
+					}
+					const vec3_t *d = FX_RandomDir(&dir);
+					pt.x = d->x * r + pt.x;
+					pt.y = d->y * r + pt.y;
+					pt.z = d->z * r + pt.z;
+				}
+				w = self->segLen[k] * (second ? FxElem_Rand(0.79999995f, 1.2f) : FxElem_Rand(0.5f, 0.75f));
+			}
+			uint32_t c = (s <= 1 || s == n - 2) ? FXMATRIX_RAYCOLOR_END : FXMATRIX_RAYCOLOR;
+			if (second && self->t > 30.0f) {
+				uint32_t ca = (c >> 24) + 0x10;
+				if (ca > 0xff) {
+					ca = 0xff;
+				}
+				c = (c & 0xffffff) | ca << 24;
+			}
+			CGameTrail_Add(tr, pt, w, c);
+		}
+	}
+	CGameParticles *sp = &self->particles;
+	float w2 = self->segLen[k] + self->segLen[k];
+	uint32_t c1 = (uint32_t)alpha << 24 | 0xf05cff;
+	float s1 = w2 * 1.5f;
+	float s2 = w2 * 2.5f;
+	uint32_t c2 = (0x800000ffu - ((uint32_t)(int)(a * -127.0f) << 24)) | 0xf05cff;
+	float s3 = w2 * 5.0f;
+	CGameParticles_SetParticle(sp, idx - 4, P[0].x, P[0].y, P[0].z, s1, c1, 1, 0.0f);
+	CGameParticles_SetParticle(sp, idx - 3, P[0].x, P[0].y, P[0].z, s2, c2, 2, 0.0f);
+	CGameParticles_SetParticle(sp, idx - 2, P[0].x, P[0].y, P[0].z, s3, c2, 5, 0.0f);
+	CGameParticles_SetParticle(sp, idx - 1, P[4].x, P[4].y, P[4].z, s1, c1, 1, 0.0f);
+	CGameParticles_SetParticle(sp, idx, P[4].x, P[4].y, P[4].z, s2, c2, 2, 0.0f);
+	CGameParticles_SetParticle(sp, idx + 1, P[4].x, P[4].y, P[4].z, s3, c2, 5, 0.0f);
+}
+
+/* the first part (15 <= t <= 20): rays from the matrix to points near the scene */
+static void FXS_MatrixRays1(cObjElementFXSceneEnterMatrix *self, float delta) {
+	vec3_t tmp, ang, in, B, T, dir;
+
+	cEntity *m = World_FindEntity("EnterMatrixMatrix");
+	if (m && m->flag_4c && !Entity_Removed(m)) {
+		self->center = *FX_Vtbl(m)->GetCenter(m, &tmp);
+	}
+	int idx = 4;
+	for (int k = 0; k < FXMATRIX_TRAILS; k++, idx += 6) {
+		vec3_t *P = self->pts[k];
+		if (self->life[k] > 0.0f) {
+			float life = self->life[k] - delta;
+			self->life[k] = life;
+			if (!(life > 0.0f)) {
+				CGameTrail_Clear(&self->trails[k]);
+				CGameParticles_KillRange(&self->particles, idx - 4, idx + 2);
+				continue;
+			}
+			float a = FXS_MatrixFade(self, k, life, delta);
+			FXS_MatrixJitter(P, 130.0f, 20.0f, delta);
+			int alpha = (int)(a * 255.0f);
+			CGameTrail_SetTransp(&self->trails[k], (byte)alpha);
+			FXS_MatrixDraw(self, k, idx, a, alpha, delta, 0);
+			continue;
+		}
+		float w = self->wait[k] - delta;
+		self->wait[k] = w;
+		if (0.0f < w) {
+			continue;
+		}
+		/* a new ray from the matrix to a point near the scene, ended at the ground */
+		self->life[k] = FxElem_Rand(0.19f, 0.16f);
+		self->wait[k] = FxElem_Rand(0.45000002f, 0.15f);
+		self->segLen[k] = FxElem_Rand(6.0f, 12.0f);
+		self->uvOff[k] = FxElem_Rand(8.0f, -4.0f);
+		float ry = FxElem_Rand(85.0f, -25.0f);
+		B.x = self->center.x + 0.0f;
+		B.y = self->center.y + ry;
+		B.z = self->center.z + 0.0f;
+		/* a random direction that is not used */
+		FxElem_Rand(130.0f, 485.0f);
+		float a1 = FxElem_Rand(1.6f, -0.8f);
+		float a2 = FxElem_Rand(0.8f, -0.4f);
+		ang.x = FxElem_Rand(1.6f, -0.8f);
+		ang.y = a2;
+		ang.z = a1;
+		in.x = 0.0f;
+		in.y = 0.0f;
+		in.z = 1.0f;
+		Vec3_Rotate(&tmp, &in, &ang);
+		const vec3_t *d;
+		float r;
+		if (crt_rand() & 1) {
+			r = FxElem_Rand(12.0f, 0.0);
+			d = FX_RandomDir(&dir);
+			T.x = d->x * r + 72629.7f;
+		} else {
+			r = FxElem_Rand(12.0f, 0.0);
+			d = FX_RandomDir(&dir);
+			T.x = d->x * r + 73177.5f;
+		}
+		T.z = d->z * r - 9327.0f;
+		T.y = d->y * r + 37218.5f;
+		Engine_TestLine(&B, &T, &T, NULL);
+		P[0] = B;
+		P[4] = T;
+		float sx = (T.x - P[0].x) * 0.25f, sy = (T.y - P[0].y) * 0.25f, sz = (T.z - P[0].z) * 0.25f;
+		for (int j = 1; j < 4; j++) {
+			float fj = (float)j;
+			P[j].x = P[0].x + sx * fj;
+			P[j].z = sz * fj + P[0].z;
+			P[j].y = P[0].y + sy * fj;
+			float rr = FxElem_Rand(15.0f, 15.0f);
+			const vec3_t *dd = FX_RandomDir(&dir);
+			P[j].x = rr * dd->x + P[j].x;
+			P[j].y = dd->y * rr + P[j].y;
+			P[j].z = dd->z * rr + P[j].z;
+		}
+	}
+}
+
+/* the control points of ray k of the second part along path kind from its progress */
+static void FXS_MatrixPath(cObjElementFXSceneEnterMatrix *self, int k) {
+	vec3_t *P = self->pts[k];
+	vec3_t N, v, tmp, dir;
+
+	const vec3_t *tab = (const vec3_t *)Game_Ptr(FXS_MATRIX_PATHS) + self->kind[k] * 4;
+	float e1x = tab[2].x - tab[0].x, e2x = tab[3].x - tab[1].x;
+	float e1y = tab[2].y - tab[0].y, e1z = tab[2].z - tab[0].z;
+	float e2y = tab[3].y - tab[1].y, e2z = tab[3].z - tab[1].z;
+	float u = self->prog[k] + FxElem_Rand(0.004f, -0.002f);
+	vec3_t S = { e1x * u + tab[0].x, tab[0].y + e1y * u, tab[0].z + e1z * u };
+	float u2 = (self->spread[k] + self->prog[k]) + FxElem_Rand(0.004f, -0.002f);
+	vec3_t F = { e2x * u2 + tab[1].x, tab[1].y + e2y * u2, tab[1].z + e2z * u2 };
+	float dx = F.x - S.x, dy = F.y - S.y, dz = F.z - S.z;
+	vec3_t M = { S.x + dx * 0.5f, S.y + dy * 0.5f, S.z + dz * 0.5f };
+	if (self->t > 30.5f) {
+		/* the end: the rays bend far up */
+		float b1 = FxElem_Rand(0.4f, -0.2f);
+		float b2 = (float)(FXS_Rnd() + 0.2f);
+		v.x = FxElem_Rand(0.4f, -0.2f);
+		v.y = b2;
+		v.z = b1;
+		Vec3_NormalizeTo(&N, &v);
+		P[0] = S;
+		float r = FxElem_Rand(200.0f, 175.0f);
+		const vec3_t *d = FX_RandomDir(&dir);
+		float jx = r * d->x * 5.0f, jy = d->y * r * 5.0f, jz = d->z * r * 5.0f;
+		float w = FxElem_Rand(2700.0f, 7150.0f);
+		float nx = N.x * w, ny = N.y * w, nz = N.z * w;
+		float s = FxElem_Rand(0.10000001f, 0.2f);
+		P[1].x = jx + (nx + (S.x + dx * s));
+		P[1].y = jy + (ny + (S.y + dy * s));
+		P[1].z = jz + (nz + (S.z + dz * s));
+		r = FxElem_Rand(190.0f, 245.0f);
+		d = FX_RandomDir(&dir);
+		jx = r * d->x * 5.0f;
+		jy = d->y * r * 5.0f;
+		jz = d->z * r * 5.0f;
+		w = FxElem_Rand(3500.0f, 13250.0f);
+		nx = N.x * w;
+		ny = N.y * w;
+		nz = N.z * w;
+		s = FxElem_Rand(0.100000024f, 0.45f);
+		P[2].x = jx + (nx + (S.x + dx * s));
+		P[2].y = jy + (ny + (S.y + dy * s));
+		P[2].z = jz + (nz + (S.z + dz * s));
+		r = FxElem_Rand(200.0f, 175.0f);
+		d = FX_RandomDir(&dir);
+		jx = r * d->x * 5.0f;
+		jy = d->y * r * 5.0f;
+		jz = d->z * r * 5.0f;
+		w = FxElem_Rand(2700.0f, 7150.0f);
+		nx = w * N.x;
+		ny = w * N.y;
+		nz = w * N.z;
+		s = FxElem_Rand(0.100000024f, 0.7f);
+		P[3].x = jx + (nx + (S.x + s * dx));
+		P[3].y = jy + (ny + (S.y + s * dy));
+		P[3].z = jz + (nz + (S.z + s * dz));
+	} else {
+		/* bent sideways: the first segment of the path turned by -90 degrees around y */
+		vec3_t L = { tab[0].x - tab[1].x, tab[0].y - tab[1].y, tab[0].z - tab[1].z };
+		const vec3_t ang = { 0.0f, -1.5707964f, 0.0f };
+		Vec3_NormalizeTo(&N, Vec3_Rotate(&tmp, &L, &ang));
+		P[0] = S;
+		float r = FxElem_Rand(200.0f, 175.0f);
+		const vec3_t *d = FX_RandomDir(&dir);
+		float jx = r * d->x, jy = d->y * r, jz = d->z * r;
+		float w = FxElem_Rand(300.0f, 2150.0f);
+		P[1].x = (w * N.x + S.x) + jx;
+		P[1].y = (w * N.y + S.y) + jy;
+		P[1].z = (w * N.z + S.z) + jz;
+		r = FxElem_Rand(190.0f, 245.0f);
+		d = FX_RandomDir(&dir);
+		jx = r * d->x;
+		jy = d->y * r;
+		jz = d->z * r;
+		w = FxElem_Rand(500.0f, 2250.0f);
+		P[2].x = (w * N.x + M.x) + jx;
+		P[2].y = (w * N.y + M.y) + jy;
+		P[2].z = (w * N.z + M.z) + jz;
+		r = FxElem_Rand(200.0f, 175.0f);
+		d = FX_RandomDir(&dir);
+		jx = r * d->x;
+		jy = d->y * r;
+		jz = d->z * r;
+		w = FxElem_Rand(300.0f, 2150.0f);
+		P[3].x = (w * N.x + F.x) + jx;
+		P[3].y = (w * N.y + F.y) + jy;
+		P[3].z = (w * N.z + F.z) + jz;
+	}
+	P[4] = F;
+}
+
+/* the second part (20 <= t <= 33.2): rays along the paths of the table */
+static void FXS_MatrixRays2(cObjElementFXSceneEnterMatrix *self, float delta) {
+	if (20.0f > self->tPrev) {
+		for (int k = 0; k < FXMATRIX_TRAILS; k++) {
+			CGameTrail_Clear(&self->trails[k]);
+			self->life[k] = -1.0f;
+			self->wait[k] = FxElem_Rand(0.49999997f, 0.4f);
+		}
+	}
+	int idx = 4;
+	for (int k = 0; k < FXMATRIX_TRAILS; k++, idx += 6) {
+		if (self->life[k] > 0.0f) {
+			float life = self->life[k] - delta;
+			self->life[k] = life;
+			if (!(life > 0.0f)) {
+				CGameTrail_Clear(&self->trails[k]);
+				CGameParticles_KillRange(&self->particles, idx - 4, idx + 2);
+				continue;
+			}
+			float a = FXS_MatrixFade(self, k, life, delta);
+			int alpha = (int)(a * 255.0f);
+			CGameTrail_SetTransp(&self->trails[k], (byte)alpha);
+			float p = self->prog[k];
+			if (1.0f > p) {
+				self->prog[k] = self->speed[k] * delta + p;
+			}
+			FXS_MatrixPath(self, k);
+			if (self->t > 30.5f) {
+				FXS_MatrixJitter(self->pts[k], 450.0f, 150.0f, delta);
+			}
+			FXS_MatrixDraw(self, k, idx, a, alpha, delta, 1);
+			continue;
+		}
+		float w = self->wait[k] - delta;
+		self->wait[k] = w;
+		if (0.0f < w) {
+			continue;
+		}
+		/* a new ray on a path other than the last one */
+		self->life[k] = self->t > 30.3f ? FxElem_Rand(0.08f, 0.16f) : FxElem_Rand(0.32f, 0.18f);
+		self->wait[k] = FxElem_Rand(0.49999997f, 0.4f);
+		self->segLen[k] = self->t > 30.3f ? FxElem_Rand(620.0f, 980.0f) : FxElem_Rand(260.0f, 360.0f);
+		self->uvOff[k] = FxElem_Rand(8.0f, -4.0f);
+		do {
+			self->kind[k] = self->t > 30.3f ? crt_rand() % 4 + 4 : crt_rand() % 4;
+		} while (self->lastKind == self->kind[k]);
+		float t = self->t;
+		self->prog[k] = (t > 26.3f && 30.6f > t) ? FxElem_Rand(0.19999999f, 0.68f) : FxElem_Rand(0.8f, 0.08f);
+		self->spread[k] = FxElem_Rand(0.08f, -0.04f);
+		self->speed[k] = (crt_rand() & 1) ? FxElem_Rand(0.04f, 0.1f) : FxElem_Rand(0.34999996f, 0.3f);
+	}
+}
+
+void __thiscall cObjElementFXSceneEnterMatrix_Update(cObjElementFXSceneEnterMatrix *self, cDebris *d, float dt) {
+	float f;
+
+	(void)dt;
+	if (!FXS_Alive(&self->ent)) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	float delta = FXS_Delta();
+	self->t = self->t + delta;
+	if (FX_InRange(self->t, 15.0f, 20.0f, &f)) {
+		FXS_MatrixRays1(self, delta);
+	} else if (FX_InRange(self->t, 20.0f, 33.2f, &f)) {
+		FXS_MatrixRays2(self, delta);
+	}
+	if (!FX_InRange(self->t, 30.3f, 33.0f, &f)) {
+		CGameLensFlare_SetOn(&self->flare, 0);
+		self->tPrev = self->t;
+		return;
+	}
+	const vec3_t fp = { 72655.1f, 73667.0f, -10498.7f };
+	CGameLensFlare_SetPos(&self->flare, fp);
+	CGameLensFlare_SetOn(&self->flare, 1);
+	float v;
+	if (0.2f > f) {
+		float g = f * 5.0f;
+		v = g * g * (2.0f - g) * 0.5f;
+	} else {
+		float g = (f - 0.2f) * 1.25f;
+		v = 0.5f - (3.0f - (g + g)) * (g * g) * 0.5f;
+	}
+	CGameLensFlare_SetIntensity(&self->flare, v);
+	CGameLensFlare_SetF18(&self->flare, 1.0f);
+	CGameLensFlare_SetI1c(&self->flare, 2);
 	self->tPrev = self->t;
 }
