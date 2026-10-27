@@ -212,10 +212,6 @@ SD_IMPORT(CSuelo_RayoVert, 0x2ca360)
 SD_IMPORT(Portales_DebugDraw, 0x26d0d0)
 
 /* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/mundo.h) */
-SD_IMPORT(BspQ3_Free, 0x2c9d50)
-SD_IMPORT(BspQ3_ReleaseD3D, 0x2c98a0)
-SD_IMPORT(BspQ3_InitD3D, 0x2c98b0)
-SD_IMPORT(BspQ3_Crear, 0x2c9d80)
 SD_IMPORT(BspQ3_Render, 0x2c9d90)
 SD_IMPORT(Sectores_Crear, 0x26d5a0)
 SD_IMPORT(Portales_SetView, 0x26db80)
@@ -271,8 +267,6 @@ SD_IMPORT(crt_ceil, 0x345010)
 SD_IMPORT(BoxTri, 0x271d60)
 SD_IMPORT(Tabla_ResizeC, 0x261830)
 SD_IMPORT(Tabla_Resize1C, 0x261780)
-SD_IMPORT(Batch_AddMalla, 0x2c81d0)
-SD_IMPORT(Batch_Flush, 0x2c83c0)
 SD_IMPORT(CSuelo_DrawDebug, 0x25a260)
 
 /* module agent: Engine/Trails (imports below this line) */
@@ -674,5 +668,13 @@ SD_IMPORT(cAICharGroup_FindRepos, 0x080ee0)
 /* module agent: Vehicle weapons Tesla+Vulcan and WithLifeEntity (imports below this line) */
 
 /* module agent: Engine/lee_M3D.cpp and bsp_q3.cpp (imports below this line) */
+SD_IMPORT(crt_fileno, 0x3541cc)
+SD_IMPORT(crt_filelength, 0x358bef)
+SD_IMPORT(Cad_Printf, 0x2a1970)
+SD_IMPORT(CListaVert_Optimize, 0x243090)
+SD_IMPORT(RenderTransp_Add, 0x2b6cc0)
+SD_IMPORT(M3DTransform_ToMatrix, 0x2d6750)
+SD_IMPORT(M3DTransform_ToMatrixAnim, 0x2d65d0)
+SD_IMPORT(FXTextura_Tipo, 0x2a82f0)
 
 /* module agent: Engine NodeFX..ModelFX (imports below this line) */

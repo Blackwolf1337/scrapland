@@ -154,6 +154,8 @@ void __thiscall CAnimMat_Start(CAnimMat *self);
 /* rva 0x258060: the frame of now (updated once each frame) */
 int __fastcall CAnimMat_GetFrame(CAnimMat *self);
 void __thiscall Cad_Set(char **self, const char *s);
+/* rva 0x2a1970: *self a Cad_Dup of the printf of fmt, NULL (freed) for fmt NULL */
+void Cad_Printf(char **self, const char *fmt, ...);
 /* rva 0x2a18a0 and 0x2a1920: the string as a CArchIO string (empty is NULL) */
 void __thiscall Cad_Read(char **self, CArchIO *f);
 void __thiscall Cad_Write(char **self, CArchIO *f);
@@ -174,6 +176,8 @@ void __fastcall CMapa_Release(CMapa *self);
 byte __thiscall CMapa_GetSize(CMapa *self, int *w, int *h);
 void *__thiscall CMapa_GetTexture(CMapa *self, byte load);
 char *__thiscall CMapa_FramePath(CMapa *self, int frame, char *buf, int size);
+/* rva 0x2a82f0: the kind of FXTextura of a map named name ("(...)" parts), 0 for none */
+byte FXTextura_Tipo(const char *name);
 
 CMaterial *__thiscall CMaterial_Delete(CMaterial *self, byte flags);
 /* name, parameters and copies of the maps */

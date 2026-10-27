@@ -78,6 +78,8 @@ void __fastcall CListaVert_Free(CListaVert *self);
 void __thiscall CListaVert_SetFormat(CListaVert *self, int frmt);
 /* n vertices; with pVert set (realloc) 25% more room */
 void __thiscall CListaVert_Alloc(CListaVert *self, int n, byte realloc);
+/* rva 0x243090: an empty stub, returns 0 */
+byte __thiscall CListaVert_Optimize(CListaVert *self, void *tris, int nTri);
 /* the first 4 fields */
 void __thiscall CListaVert_Swap(CListaVert *self, CListaVert *other);
 /* the "LFVF" block */
