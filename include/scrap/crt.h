@@ -49,6 +49,8 @@ long crt_ftell(void *f);
 int crt_stricmp(const char *a, const char *b);
 int crt_strncmp(const char *a, const char *b, size_t n);
 char *crt_asctime(const void *tm);
+/* _strtime: "hh:mm:ss" into buf (9 bytes) */
+char *crt_strtime(char *buf);
 void crt_qsort(void *base, size_t n, size_t size, int (*cmp)(const void *, const void *));
 int crt_atoi(const char *s);
 double crt_atof(const char *s);

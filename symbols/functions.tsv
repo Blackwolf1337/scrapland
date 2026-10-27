@@ -1681,7 +1681,7 @@ rva	size	source	callconv	name	signature
 000870e0	382	DEFAULT	unknown	FUN_004870e0	
 00087260	772	DEFAULT	unknown	FUN_00487260	
 00087580	126	DEFAULT	unknown	FUN_00487580	
-00087600	126	DEFAULT	unknown	FUN_00487600	
+00087600	126	USER_DEFINED	__thiscall	cAIVehicle_ReactLostPathChase	void __thiscall(void)
 00087690	63	DEFAULT	unknown	FUN_00487690	
 00087710	249	DEFAULT	unknown	FUN_00487710	
 00087850	429	DEFAULT	unknown	FUN_00487850	
@@ -1691,7 +1691,7 @@ rva	size	source	callconv	name	signature
 00087d20	311	DEFAULT	unknown	FUN_00487d20	
 00087e60	275	DEFAULT	unknown	FUN_00487e60	
 00087f80	240	DEFAULT	unknown	FUN_00487f80	
-00088070	240	DEFAULT	unknown	FUN_00488070	
+00088070	240	USER_DEFINED	__thiscall	cAIVehicle_ThinkLostPathChase	void __thiscall(void)
 00088160	1032	DEFAULT	unknown	FUN_00488160	
 00088570	54	DEFAULT	unknown	FUN_00488570	
 000885d0	435	DEFAULT	unknown	FUN_004885d0	
@@ -1752,7 +1752,7 @@ rva	size	source	callconv	name	signature
 0008c400	464	DEFAULT	unknown	FUN_0048c400	
 0008c5d0	596	DEFAULT	unknown	FUN_0048c5d0	
 0008c830	121	ANALYSIS	__thiscall	cAIVehicle::vf23	undefined __thiscall(void)
-0008c8b0	265	ANALYSIS	__thiscall	cAIVehicle::vf06	undefined __thiscall(void)
+0008c8b0	265	USER_DEFINED	__cdecl	cAIVehicle_Debugf	void __cdecl(void * self, char * fmt, ...)
 0008c9c0	117	ANALYSIS	__thiscall	cAIVehicle::vf22	undefined __thiscall(void)
 0008ca70	106	DEFAULT	unknown	FUN_0048ca70	
 0008cae0	296	DEFAULT	unknown	FUN_0048cae0	
@@ -1775,10 +1775,10 @@ rva	size	source	callconv	name	signature
 0008df70	58	USER_DEFINED	__thiscall	cAIVehicle::SetRotStatic	void __thiscall(float a, float b)
 0008dfb0	90	USER_DEFINED	__cdecl	cAIVehicle_SetState	byte __cdecl(void * ai, int state, ...)
 0008e010	635	DEFAULT	unknown	FUN_0048e010	
-0008e2d0	1882	DEFAULT	unknown	FUN_0048e2d0	
-0008ea60	3175	DEFAULT	unknown	FUN_0048ea60	
-0008f6f0	617	DEFAULT	unknown	FUN_0048f6f0	
-0008f980	141	DEFAULT	unknown	FUN_0048f980	
+0008e2d0	1882	USER_DEFINED	__cdecl	cAIVehicle_SetInternState	void __cdecl(void * self, int state, ...)
+0008ea60	3175	USER_DEFINED	__thiscall	cAIVehicle_ChangeState	byte __thiscall(int state, char * args)
+0008f6f0	617	USER_DEFINED	__thiscall	cAIVehicle_ChangeStateMore	byte __thiscall(int state, byte allowed, char * args)
+0008f980	141	USER_DEFINED	__cdecl	cAIVehicle_SetStateIntern	byte __cdecl(void * self, int state, ...)
 0008fa10	635	DEFAULT	unknown	FUN_0048fa10	
 0008fcd0	26	ANALYSIS	__thiscall	cAIVehicle::vf09	undefined __thiscall(void)
 0008fd00	26	ANALYSIS	__thiscall	cAIVehicle::vf10	undefined __thiscall(void)

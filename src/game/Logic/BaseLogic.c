@@ -233,7 +233,7 @@ void Logic_ShowShip(cEntity *e) {
 	e->vftable->GetPos(e, &p);
 	cAIVehicle *ai = e->vftable->GetAI(e);
 	cAIVehicle_GetStateName(ai, state);
-	cAIVehicle_GetSubStateName(ai, sub);
+	cAIVehicle_GetInternStateName(ai, sub);
 	int st = cAIVehicle_GetState(ai);
 	if ((st == AIV_STATE_ATTACK || st == AIV_STATE_CHASE) && Logic_AIVtbl(ai)->GetTarget(ai)) {
 		cEntity *t = Logic_AIVtbl(ai)->GetTarget(ai);

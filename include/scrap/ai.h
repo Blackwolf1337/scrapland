@@ -36,11 +36,29 @@ typedef struct cAIVehicleGroupVtbl {
 	void *vf00;
 	void(__thiscall *InitRace)(cAIVehicleGroup *self);			/* 0x4 */
 	void(__thiscall *AddVehicle)(cAIVehicleGroup *self, cEntity *vehicle);	/* 0x8 */
+	cEntity *(__thiscall *GetVehicle)(cAIVehicleGroup *self, int i);	/* 0xc */
+	int(__thiscall *NumVehicles)(cAIVehicleGroup *self);			/* 0x10 */
+	/* the time since the last change of state of a vehicle AI reached the limit */
+	byte(__thiscall *CanChange)(cAIVehicleGroup *self);			/* 0x14 */
+	void(__thiscall *ResetChange)(cAIVehicleGroup *self);			/* 0x18 the time to 0 */
+	void(__thiscall *AllowChange)(cAIVehicleGroup *self);			/* 0x1c the time to the limit */
 } cAIVehicleGroupVtbl;
+SD_OFFSET(cAIVehicleGroupVtbl, AllowChange, 0x1c);
 
 struct cAIVehicleGroup {
-	const cAIVehicleGroupVtbl *vftable;
+	const cAIVehicleGroupVtbl *vftable;	/* 0x00 */
+	byte pad_4[0x54 - 0x4];
+	int numVehicles;		/* 0x54 */
+	byte pad_58[0x5c - 0x58];
+	float changeTime;		/* 0x5c the time since the last change of state */
+	/* the vehicle AIs in the internal state STOPPED: all, the traffic by class (2, 1, 0) and IN_ROUTE */
+	int numStopped;			/* 0x60 */
+	int numStoppedHeavy;		/* 0x64 */
+	int numStoppedMedium;		/* 0x68 */
+	int numStoppedLight;		/* 0x6c */
+	int numStoppedRoute;		/* 0x70 */
 };
+SD_OFFSET(cAIVehicleGroup, numStoppedRoute, 0x70);
 
 /* the first slots of every AI (cAIVehicle, cAIChar); variadic methods are __cdecl with self on the stack */
 typedef struct cAIVtbl {
@@ -68,24 +86,40 @@ struct cAIChar {
 	const cAICharVtbl *vftable;
 };
 
-/* the three parameter blocks of SAI.EnableAIVehicle; field meaning not known yet, named by type and order */
+/* the three parameter blocks of SAI.EnableAIVehicle, named by the CHECKs of cAIVehicle_CheckParams1..3 */
 typedef struct cAIVehicleParams1 {
-	float f0, f1, f2;
-	int i3, i4, i5, i6, i7, i8, i9, i10;
+	float damageGetAway;		/* 0x00 FACTOR_DAMAGE_GET_AWAY 0..1 */
+	float damageItemLife;		/* 0x04 FACTOR_DAMAGE_ITEM_LIFE 0..1 */
+	float itemAmmo;			/* 0x08 FACTOR_ITEM_AMMO 0..1 */
+	int boostGetAway;		/* 0x0c CONTROL_BOOST_GET_AWAY 0..1 */
+	int boostItemLife;		/* 0x10 CONTROL_BOOST_ITEM_LIFE 0..1 */
+	int boostItemAmmo;		/* 0x14 CONTROL_BOOST_ITEM_AMMO 0..1 */
+	int hookRace;			/* 0x18 CONTROL_HOOK_RACE */
+	int hookMap;			/* 0x1c FACTOR_HOOK_MAP 0..10 */
+	int strafeEvasion;		/* 0x20 CONTROL_STRAFE_EVASION 0..1 */
+	int percHook;			/* 0x24 USE_PERC_HOOK 0..100 */
+	int percHookGetAway;		/* 0x28 USE_PERC_HOOK_GET_AWAY 0..100 */
 } cAIVehicleParams1;
 SD_SIZE(cAIVehicleParams1, 0x2c);
 
 typedef struct cAIVehicleParams2 {
-	int i0, i1, i2, i3;
-	float f4;
-	int i5;
+	int stupidPathfinding;		/* 0x00 STUPID_PATHFINDING, must be 0 */
+	int strafe;			/* 0x04 CONTROL_STRAFE, must be 2 */
+	int brake;			/* 0x08 CONTROL_BRAKE 0..1 */
+	int maxTimeStrafe;		/* 0x0c MAX_TIME_STRAFE 0..10 */
+	float maxVelStrafe;		/* 0x10 MAX_VEL_STRAFE 0..1 */
+	int aim;			/* 0x14 CONTROL_AIM 1..10 */
 } cAIVehicleParams2;
 SD_SIZE(cAIVehicleParams2, 0x18);
 
 typedef struct cAIVehicleParams3 {
-	int i0, i1;
-	float f2, f3;
-	int i4, i5, i6;
+	int cadence;			/* 0x00 CADENCE_SHOOT 0..100 */
+	int cadenceCM;			/* 0x04 CADENCE_SHOOT_CM 0..7 */
+	float angAttack;		/* 0x08 ANG_ATTACK 0..pi */
+	float counterattack;		/* 0x0c COUNTERATTACK 0..1 */
+	int percCloud;			/* 0x10 USE_PERC_CLOUD 0..100 */
+	int percSonic;			/* 0x14 USE_PERC_SONIC 0..100 */
+	int percElectro;		/* 0x18 USE_PERC_ELECTRO 0..100 */
 } cAIVehicleParams3;
 SD_SIZE(cAIVehicleParams3, 0x1c);
 
@@ -133,7 +167,7 @@ void __thiscall cAIVehicle_SetInertia(cAIVehicle *ai, int on);
 
 /* the names of the state and its sub state for the debug texts (0x100 bytes) */
 void __thiscall cAIVehicle_GetStateName(cAIVehicle *ai, char *out);
-void __thiscall cAIVehicle_GetSubStateName(cAIVehicle *ai, char *out);
+void __thiscall cAIVehicle_GetInternStateName(cAIVehicle *ai, char *out);
 
 /* < 0 when no player controls the entity (assumed from SAI.EnableAI*) */
 int __thiscall cVehicleEntity_GetOwnerSlot(cEntity *e);

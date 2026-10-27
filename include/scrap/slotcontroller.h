@@ -28,5 +28,7 @@ cSlotController *__thiscall cSlotController_ctor(cSlotController *self, float in
 int __thiscall cSlotController_Tick(cSlotController *self, float dt);
 /* when the slot came: its interval into *out and on to the next; 1 then */
 byte __thiscall cSlotController_Fire(cSlotController *self, float *out);
+/* the same, the time left set to 0 first */
+byte __thiscall cSlotController_FireReset(cSlotController *self, float *out);
 
 #endif

@@ -183,8 +183,8 @@ void __thiscall cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, 
 			}
 		} else {
 			if (team == 0) {
-				cAIVehicle_GetParams2(ai)->i5 = g_DominFightingFreezeControlAim;
-				cAIVehicle_GetParams3(ai)->i0 = g_DominFightingFreezeCadenceShoot;
+				cAIVehicle_GetParams2(ai)->aim = g_DominFightingFreezeControlAim;
+				cAIVehicle_GetParams3(ai)->cadence = g_DominFightingFreezeCadenceShoot;
 			}
 			DominZone *z = &g_DominZones[i];
 			Domin_Chase(ai, z->zone);

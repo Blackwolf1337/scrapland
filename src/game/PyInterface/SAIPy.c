@@ -607,14 +607,18 @@ PyObject *SAI_GetStateChar(PyObject *self, PyObject *args) {
 PyObject *SAI_EnableAIVehicle(PyObject *self, PyObject *args) {
 	char *name;
 	int enable;
-	cAIVehicleParams1 p1 = { .i4 = 1, .i5 = 1, .f2 = 0.25f, .i6 = 0, .i7 = 0, .i8 = 0, .i9 = 0, .i10 = 0 };
+	cAIVehicleParams1 p1 = { .boostItemLife = 1, .boostItemAmmo = 1, .itemAmmo = 0.25f, .hookRace = 0, .hookMap = 0,
+		.strafeEvasion = 0, .percHook = 0, .percHookGetAway = 0 };
 	cAIVehicleParams2 p2;
-	cAIVehicleParams3 p3 = { .i1 = 3, .f3 = 1.0f, .i4 = 35, .i5 = 50, .i6 = 15 };
+	cAIVehicleParams3 p3 = { .cadenceCM = 3, .counterattack = 1.0f, .percCloud = 35, .percSonic = 50,
+		.percElectro = 15 };
 
 	(void)self;
-	if (!PyArg_ParseTuple(args, "sifiiiiifiiff|iiffiiiiiiiiii", &name, &enable, &p1.f0, &p2.i1, &p2.i2, &p1.i3,
-			&p2.i0, &p2.i3, &p2.f4, &p2.i5, &p3.i0, &p3.f2, &p1.f1, &p1.i4, &p1.i5, &p1.f2, &p3.f3, &p1.i6,
-			&p1.i7, &p1.i8, &p3.i1, &p3.i5, &p3.i4, &p3.i6, &p1.i9, &p1.i10)) {
+	if (!PyArg_ParseTuple(args, "sifiiiiifiiff|iiffiiiiiiiiii", &name, &enable, &p1.damageGetAway, &p2.strafe,
+			&p2.brake, &p1.boostGetAway, &p2.stupidPathfinding, &p2.maxTimeStrafe, &p2.maxVelStrafe, &p2.aim,
+			&p3.cadence, &p3.angAttack, &p1.damageItemLife, &p1.boostItemLife, &p1.boostItemAmmo, &p1.itemAmmo,
+			&p3.counterattack, &p1.hookRace, &p1.hookMap, &p1.strafeEvasion, &p3.cadenceCM, &p3.percSonic,
+			&p3.percCloud, &p3.percElectro, &p1.percHook, &p1.percHookGetAway)) {
 		return NULL;
 	}
 	cEntity *e = FindAIEntity(name, TYEN_CAR);
