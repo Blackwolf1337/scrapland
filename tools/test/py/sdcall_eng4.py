@@ -374,3 +374,15 @@ check('en4 Window_GetNormalRect NULL', lambda: SDTest.Call(0x238130, 'vii', 0, 0
 en4lg = en4z(8)
 check('en4 cLog_dtor', lambda: (SDTest.Call(0x2373a0, 'tvi', en4lg), en4words(en4lg, 2)))
 en4free(en4lg)
+
+# ---- the menu commands of the D3D window through CMotorApp_MsgProc (the menu itself is not there) ----
+en4mot = SDTest.Peek(0x4b1c04, 'i')
+en4hw = SDTest.Call(0x20d290, 'i')[0]
+en4sv = (SDTest.Peek(0x4af7d4, 'i'), SDTest.Peek(0x4a8efb, 'i'), SDTest.Peek(0x431d70, 'i'))
+check('en4 motor menu', lambda: en4i(en4mot + 0x2a5dc) != 0)
+for w in (0x9c64, 0x9c64, 0x9c63, 0x9c4c, 0x9c4b, 0x9c50, 0x1234):
+	check('en4 CMotorApp_MsgProc' + fmt((w,)), lambda w=w: (SDTest.Call(0x22f440, 'tiiiiii', en4mot, en4hw, 0x111, w, 0)[0],
+		SDTest.Peek(0x4af7d4, 'i') & 0xff, SDTest.Peek(0x4a8efb, 'i') & 0xff, SDTest.Peek(0x431d70, 'i')))
+SDTest.Poke(0x4af7d4, en4sv[0])
+SDTest.Poke(0x4a8efb, en4sv[1])
+SDTest.Poke(0x431d70, en4sv[2])
