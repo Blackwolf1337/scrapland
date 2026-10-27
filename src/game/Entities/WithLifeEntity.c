@@ -41,7 +41,7 @@ cEntity *__thiscall cWithLifeEntity_ctor(void *mem, const char *name, float x, f
 	e->vftable = Game_Ptr(CWITHLIFEENTITY_VFTABLE);
 	Nto1Node_Init(&self->burner);
 	cString_ctor(&self->usrName);
-	Nto1Node_Init(&self->n254);
+	Nto1Node_Init(&self->targets);
 	cPy_Function_ctor(&self->onDeath);
 	cPy_Function_ctor(&self->onDamage);
 	cVehicleAttack_ctor(&self->attack);
@@ -68,7 +68,7 @@ cEntity *__thiscall cWithLifeEntity_ctor(void *mem, const char *name, float x, f
 	self->actCtrl = NULL;
 	cArrowIndicator_SetParent(&self->arrow, e);
 	self->headAnim = 0;
-	self->n254.data = self;
+	self->targets.target = self;
 	self->god = 0;
 	return e;
 }
@@ -87,7 +87,7 @@ void __fastcall cWithLifeEntity_dtor(cEntity *self) {
 	cVehicleAttack_dtor(&w->attack);
 	cPy_Function_dtor(&w->onDamage);
 	cPy_Function_dtor(&w->onDeath);
-	Nto1Node_Done(&w->n254);
+	Nto1Node_Done(&w->targets);
 	cString_dtor(&w->usrName);
 	Nto1Node_Done(&w->burner);
 	cObjEntity_dtor(self);

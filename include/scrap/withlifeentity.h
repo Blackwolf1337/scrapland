@@ -35,7 +35,7 @@ typedef struct cWithLifeEntity {
 	byte pad_23d[3];
 	Nto1Node burner;		/* 0x240 "Pyromaniac": who set it on fire, data the entity */
 	cString usrName;		/* 0x250 "Descriptor" */
-	Nto1Node n254;			/* 0x254 data the entity */
+	Nto1Node targets;		/* 0x254 head of the links to the entity (the AI targets), target the entity */
 	cPy_Function onDeath;		/* 0x264 "OnDeath" (name, attacker) */
 	cPy_Function onDamage;		/* 0x278 "OnDamage" (name, attacker, damage) */
 	float fireAtt;			/* 0x28c "FireAtenuationFactor", -1 for no fire */
