@@ -6892,3 +6892,5 @@ SD_HOOK(cAICharControl_Wait, 0x0722e0, 83)
 /* module agent: Engine/lee_M3D.cpp and bsp_q3.cpp (hooks below this line) */
 
 /* module agent: Engine NodeFX..ModelFX (hooks below this line) */
+
+/* module agent: Engine leftovers 0x265000..0x278000 (hooks below this line) */
