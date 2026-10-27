@@ -469,7 +469,6 @@ SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
 
 /* module agent: Input/ActionSet+IDevice+PcKeyboard+PcMouse+PcPad.cpp (imports below this line) */
 SD_IMPORT(CNodesWorldSup_SaveInfPath, 0x0bba70)
-SD_IMPORT(CNodesWorld_AddExtraPoints, 0x0a93d0)
 SD_IMPORT(CNodesWorld_Generate, 0x0a7a00)
 SD_IMPORT(CNodesWorld_AnalizeMap, 0x0a2e80)
 SD_IMPORT(crt_chmod, 0x345287)

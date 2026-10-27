@@ -65,6 +65,24 @@ typedef struct cNWTriNode {
 SD_SIZE(cNWTriNode, 0x44);
 typedef DLIST(cNWTriNode) cNWTriList;
 
+/* three words: a pair of points with their distance (InsertPair), a word and a pair (HasPair) */
+typedef union cNWPair {
+	int w[3];
+	struct {
+		int a, b;
+		float dist;
+	};
+} cNWPair;
+SD_SIZE(cNWPair, 0xc);
+
+typedef struct cNWPairNode {
+	struct cNWPairNode *next;	/* 0x00 */
+	struct cNWPairNode *prev;	/* 0x04 */
+	cNWPair p;			/* 0x08 */
+} cNWPairNode;
+SD_SIZE(cNWPairNode, 0x14);
+typedef DLIST(cNWPairNode) cNWPairList;
+
 /* the box the generation fills (FLT_MAX first, -FLT_MAX after) */
 typedef struct cNWBox {
 	vec3_t a, b;
@@ -307,8 +325,22 @@ void __fastcall NWBox_Init(cNWBox *box);
 
 /* ---- CNodesWorld ---- */
 
-/* the generation of the graph (not in C yet) */
+/* the generation of the graph */
+/* the dummies DM_PointGraph3DAI* into extraPoints (a fatal error for one in the level) */
 void __thiscall CNodesWorld_AddExtraPoints(CNodesWorld *self);
+/* the pairs of points nearer than 2 * f40 that are not linked, into list sorted by the distance */
+void __thiscall CNodesWorld_GetPairs(CNodesWorld *self, cNWPairList *list);
+/* the extra points into the points, linked to the points free of the level within linkDist */
+void __thiscall CNodesWorld_LinkExtra(CNodesWorld *self);
+/* the distance from pos to the nearest point of the set of its buffer cell, FLT_MAX without one */
+float __thiscall CNodesWorld_NearestVisDist(CNodesWorld *self, const vec3_t *pos);
+/* the cell to link the pair of points through: NWSup_FindLinkBox, NWSup_FindLinkCell; Free: the cells of tmp1c8 whose
+ * center sees both points free of the level (the distance on the floor plane) */
+byte __thiscall CNodesWorld_FindLinkBox(CNodesWorld *self, const vec3_t *const *pair, const cNWBox *box, int *out);
+byte __thiscall CNodesWorld_FindLinkCell(CNodesWorld *self, const vec3_t *const *pair, int *out);
+byte __thiscall CNodesWorld_FindLinkFree(CNodesWorld *self, const vec3_t *const *pair, int *out);
+/* the next start of the generation (NWSup_NextInit), the way to the cell free of the level */
+byte __thiscall CNodesWorld_NextInit(CNodesWorld *self, vec3_t *out);
 byte __thiscall CNodesWorld_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 void __thiscall CNodesWorld_AnalizeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 

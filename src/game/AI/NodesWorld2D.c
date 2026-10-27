@@ -1296,3 +1296,72 @@ void __thiscall CNodesWorld2D_Load(CNodesWorld2D *self, int arg, const char *nam
 end:
 	Con_Bluef("%s", NW2D_EMPTY);
 }
+
+/* ---- the generation of the graph ---- */
+
+byte __thiscall CNodesWorld2D_FindLinkBox(CNodesWorld2D *self, const vec3_t *const *pair, const cNWBox *box,
+	int *out) {
+	return NWSup_FindLinkBox(NW2D_SUP(self), pair, box, out, 1);
+}
+
+byte __thiscall CNodesWorld2D_FindLinkCell(CNodesWorld2D *self, const vec3_t *const *pair, int *out) {
+	return NWSup_FindLinkCell(NW2D_SUP(self), pair, out, 1);
+}
+
+/* the floor points of a and b raised by g_NW2DHeight see each other */
+static int NW2D_GroundsSee(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b) {
+	vec3_t ga, gb;
+
+	return CNodesWorld2D_Ground(self, a, &ga, g_NW2DHeight) && CNodesWorld2D_Ground(self, b, &gb, g_NW2DHeight) &&
+		!Engine_TestLine(&ga, &gb, NULL, NULL);
+}
+
+byte __thiscall CNodesWorld2D_FindLinkFree(CNodesWorld2D *self, const vec3_t *const *pair, int *out) {
+	CNodesWorld *w = NW2D_SUP(self);
+	int best[3];
+	float bestDist = 3.4028234663852886e+38f;
+	byte found = 0;
+	const int *cells = w->tmp1c8;
+
+	for (int k = 0; k < w->num1cc; k++) {
+		vec3_t c, c2;
+		int idx = cells[k];
+		if (w->buffer[idx].state == 5) {
+			continue;
+		}
+		w->vftable->BufferPos(w, &c, idx);
+		if (!NWSup_Near(w, &c, pair) || !NW2D_GroundsSee(self, &c, pair[0]) || !NW2D_GroundsSee(self, &c, pair[1]) ||
+			!CNodesWorld2D_TestWalk(self, &c, pair[0], 0.0f) || !CNodesWorld2D_TestWalk(self, &c, pair[1], 0.0f) ||
+			!w->vftable->Unreachable(w, pair[0], pair[1], idx)) {
+			continue;
+		}
+		w->vftable->BufferPos(w, &c2, idx);
+		float d = NWSup_PairDist(&c2, pair, 1);
+		if (bestDist > d) {
+			bestDist = d;
+			found = 1;
+			best[0] = idx;
+			*out = idx;
+			best[1] = (int)(uintptr_t)pair[0];
+			best[2] = (int)(uintptr_t)pair[1];
+		}
+	}
+	if (found) {
+		NWSup_LinkFound(w, best, g_NW2DDrawMode);
+	}
+	return found;
+}
+
+static int NW2D_InitFree(CNodesWorld *w, const vec3_t *n, const vec3_t *c) {
+	CNodesWorld2D *self = (CNodesWorld2D *)w;
+
+	return NW2D_GroundsSee(self, n, c) && CNodesWorld2D_TestWalk(self, n, c, 0.0f);
+}
+
+static float NW2D_InitDist(CNodesWorld *w, const vec3_t *n) {
+	return CNodesWorld2D_NearestVisDist((CNodesWorld2D *)w, n);
+}
+
+byte __thiscall CNodesWorld2D_NextInit(CNodesWorld2D *self, vec3_t *out) {
+	return NWSup_NextInit(NW2D_SUP(self), out, NW2D_InitFree, NW2D_InitDist);
+}

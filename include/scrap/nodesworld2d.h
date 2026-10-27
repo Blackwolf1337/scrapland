@@ -109,6 +109,14 @@ byte __thiscall CNodesWorld2D_TestCorner(CNodesWorld2D *self, const vec3_t *a, c
 	float r, float r2, float h, float h2, byte flat, cNWSegList *debug);
 /* the generation of the graph (not in C yet) */
 byte __thiscall CNodesWorld2D_Generate(CNodesWorld2D *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
+/* the cell to link the pair of points through (NWSup_FindLinkBox, NWSup_FindLinkCell); Free: the cells of tmp1c8
+ * whose center sees both points on the floor and walks to them */
+byte __thiscall CNodesWorld2D_FindLinkBox(CNodesWorld2D *self, const vec3_t *const *pair, const cNWBox *box,
+	int *out);
+byte __thiscall CNodesWorld2D_FindLinkCell(CNodesWorld2D *self, const vec3_t *const *pair, int *out);
+byte __thiscall CNodesWorld2D_FindLinkFree(CNodesWorld2D *self, const vec3_t *const *pair, int *out);
+/* the next start of the generation (NWSup_NextInit), the floor points see each other and the bodies walk */
+byte __thiscall CNodesWorld2D_NextInit(CNodesWorld2D *self, vec3_t *out);
 /* the pairs of points nearer than 2 * f40 that are not linked, into list sorted by the distance on the floor */
 void __thiscall CNodesWorld2D_GetPairs(CNodesWorld2D *self, cNWPairList *list);
 /* the extra points into the points, linked to the points they walk to */

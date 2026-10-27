@@ -14,24 +14,6 @@
 /* the cNWPointNode of a point pos (the data of the point lists and links) */
 #define NW_POINT(v) ((cNWPointNode *)((byte *)(v) - offsetof(cNWPointNode, pos)))
 
-/* three words: a pair of points with their distance (InsertPair), a word and a pair (HasPair) */
-typedef union cNWPair {
-	int w[3];
-	struct {
-		int a, b;
-		float dist;
-	};
-} cNWPair;
-SD_SIZE(cNWPair, 0xc);
-
-typedef struct cNWPairNode {
-	struct cNWPairNode *next;	/* 0x00 */
-	struct cNWPairNode *prev;	/* 0x04 */
-	cNWPair p;			/* 0x08 */
-} cNWPairNode;
-SD_SIZE(cNWPairNode, 0x14);
-typedef DLIST(cNWPairNode) cNWPairList;
-
 #define NWGRID_VFTABLE 0x3ac354
 #define CNODESWORLDSUP_VFTABLE 0x3ac264
 
@@ -112,5 +94,26 @@ byte __thiscall CNodesWorldSup_VisHas(CNodesWorld *self, const vec3_t *point, in
 byte __thiscall CNodesWorldSup_Linked(CNodesWorld *self, const vec3_t *a, const vec3_t *b);
 void __thiscall CNodesWorldSup_FreeTemp(CNodesWorld *self);
 byte __thiscall CNodesWorldSup_InList(CNodesWorld *self, cNWNode *const *list, int n, const cNWNode *node);
+
+/* ---- the cells that link two points of the generation (CNodesWorld and CNodesWorld2D) ---- */
+
+/* the distance of the generation: the squares of y, x, then z summed */
+float NWSup_Dist(const vec3_t *c, const vec3_t *p);
+/* the distances from c to the two points summed, flat: on the floor plane */
+float NWSup_PairDist(const vec3_t *c, const vec3_t *const *pair, byte flat);
+/* c nearer than f40 to both points */
+byte NWSup_Near(const CNodesWorld *self, const vec3_t *c, const vec3_t *const *pair);
+/* the best cell {index, a, b} into the first debug list when drawMode is on */
+void NWSup_LinkFound(CNodesWorld *self, const int *best, int drawMode);
+/* the nearest cell of the box (2D: also not state 0) whose set has both points that do not reach each other over
+ * its links; out its index */
+byte NWSup_FindLinkBox(CNodesWorld *self, const vec3_t *const *pair, const cNWBox *box, int *out, byte is2D);
+/* the same over the cells of tmp1c8 */
+byte NWSup_FindLinkCell(CNodesWorld *self, const vec3_t *const *pair, int *out, byte is2D);
+/* the next start of the generation: the free neighbour cell (state 4) of a cell of list1d0 in state 5 whose point
+ * of visibility is the nearest one, isFree tests the way from the neighbour to the cell */
+typedef int (*nwInitFree_t)(CNodesWorld *self, const vec3_t *n, const vec3_t *c);
+typedef float (*nwInitDist_t)(CNodesWorld *self, const vec3_t *n);
+byte NWSup_NextInit(CNodesWorld *self, vec3_t *out, nwInitFree_t isFree, nwInitDist_t dist);
 
 #endif

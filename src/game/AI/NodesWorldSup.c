@@ -6,7 +6,7 @@
 
 #include "scrap/console.h"
 #include "scrap/filepak.h"
-#include "scrap/nodesworldsup.h"
+#include "scrap/nodesworld2d.h"
 #include "scrap/scrap.h"
 
 double crt_ceil(double x);	/* rva 0x345010 */
@@ -1053,4 +1053,175 @@ byte __thiscall CNodesWorldSup_InList(CNodesWorld *self, cNWNode *const *list, i
 		}
 	}
 	return 0;
+}
+
+/* ---- the cells that link two points of the generation (the searches of CNodesWorld and CNodesWorld2D) ---- */
+
+float NWSup_Dist(const vec3_t *c, const vec3_t *p) {
+	float dx = c->x - p->x, dy = c->y - p->y, dz = c->z - p->z;
+
+	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+}
+
+float NWSup_PairDist(const vec3_t *c, const vec3_t *const *pair, byte flat) {
+	if (flat) {
+		float az = c->z - pair[0]->z, ax = c->x - pair[0]->x;
+		float bx = c->x - pair[1]->x, bz = c->z - pair[1]->z;
+		float da = (float)__builtin_sqrt((double)(az * az + ax * ax));
+		float db = (float)__builtin_sqrt((double)(bz * bz + bx * bx));
+		return da + db;
+	}
+	float da = NWSup_Dist(c, pair[0]);
+	float db = NWSup_Dist(c, pair[1]);
+	return da + db;
+}
+
+byte NWSup_Near(const CNodesWorld *self, const vec3_t *c, const vec3_t *const *pair) {
+	return self->f40 > NWSup_Dist(c, pair[0]) && self->f40 > NWSup_Dist(c, pair[1]);
+}
+
+/* both points in the set of the cell, not reachable from each other over the links of the set */
+static byte NWSup_LinkVis(CNodesWorld *self, const vec3_t *const *pair, int idx) {
+	cNWIntNode *at;
+
+	if (!self->vftable->FindSorted(self, &self->buffer[idx].vis->points, pair[0], &at)) {
+		return 0;
+	}
+	if (!self->vftable->FindSorted(self, &self->buffer[idx].vis->points, pair[1], &at)) {
+		return 0;
+	}
+	return self->vftable->Unreachable(self, pair[0], pair[1], idx);
+}
+
+void NWSup_LinkFound(CNodesWorld *self, const int *best, int drawMode) {
+	if (drawMode) {
+		NWVecList_Add(&self->lists25c[0], (const vec3_t *)best);
+	}
+}
+
+byte NWSup_FindLinkBox(CNodesWorld *self, const vec3_t *const *pair, const cNWBox *box, int *out, byte is2D) {
+	int best[3];
+	float bestDist = 3.4028234663852886e+38f;
+	byte found = 0;
+	float x0 = box->a.x + self->halfNode.x;
+	float y0 = self->halfNode.y + box->a.y;
+	float z0 = self->halfNode.z + box->a.z;
+	float x1 = (box->b.x - self->halfNode.x) + self->margin;
+	float y1 = (box->b.y - self->halfNode.y) + self->margin;
+	float z1 = (box->b.z - self->halfNode.z) + self->margin;
+
+	for (float x = x0; x1 >= x; x = x + self->axis[0].x) {
+		for (float y = y0; y1 >= y; y = self->axis[1].y + y) {
+			for (float z = z0; z1 >= z; z = self->axis[2].z + z) {
+				vec3_t p = { x, y, z }, c;
+				int idx = self->vftable->BufferIndex(self, &p);
+				int st = self->buffer[idx].state;
+				if (st == 3 || st == 6 || st == 5 || (is2D && st == 0)) {
+					continue;
+				}
+				self->vftable->BufferPos(self, &c, idx);
+				if (!NWSup_Near(self, &c, pair) || !NWSup_LinkVis(self, pair, idx)) {
+					continue;
+				}
+				float d = NWSup_PairDist(&c, pair, is2D);
+				if (bestDist > d) {
+					bestDist = d;
+					found = 1;
+					best[0] = idx;
+					*out = idx;
+					best[1] = (int)(uintptr_t)pair[0];
+					best[2] = (int)(uintptr_t)pair[1];
+				}
+			}
+		}
+	}
+	if (found) {
+		NWSup_LinkFound(self, best, is2D ? g_NW2DDrawMode : g_NWDrawMode);
+	}
+	return found;
+}
+
+byte NWSup_FindLinkCell(CNodesWorld *self, const vec3_t *const *pair, int *out, byte is2D) {
+	int best[3];
+	float bestDist = 3.4028234663852886e+38f;
+	byte found = 0;
+	const int *cells = self->tmp1c8;
+
+	for (int k = 0; k < self->num1cc; k++) {
+		vec3_t c, c2;
+		int idx = cells[k];
+		int st = self->buffer[idx].state;
+		if (st == 5 || (is2D && st == 0)) {
+			continue;
+		}
+		self->vftable->BufferPos(self, &c, idx);
+		if (!NWSup_Near(self, &c, pair) || !NWSup_LinkVis(self, pair, idx)) {
+			continue;
+		}
+		self->vftable->BufferPos(self, &c2, idx);
+		float d = NWSup_PairDist(&c2, pair, is2D);
+		if (bestDist > d) {
+			bestDist = d;
+			found = 1;
+			best[0] = idx;
+			*out = idx;
+			best[1] = (int)(uintptr_t)pair[0];
+			best[2] = (int)(uintptr_t)pair[1];
+		}
+	}
+	if (found) {
+		NWSup_LinkFound(self, best, is2D ? g_NW2DDrawMode : g_NWDrawMode);
+	}
+	return found;
+}
+
+/* the neighbour n of the cell center c as the next start when it is better than best */
+static void NWSup_TryInit(CNodesWorld *self, const vec3_t *n, const vec3_t *c, nwInitFree_t isFree,
+	nwInitDist_t dist, float *best, vec3_t *out, byte *found) {
+	int idx = self->vftable->BufferIndex(self, n);
+
+	if (self->buffer[idx].state != 4 || !isFree(self, n, c)) {
+		return;
+	}
+	float d = dist(self, n);
+	if (*best > d) {
+		*found = 1;
+		*out = *n;
+		*best = d;
+	}
+}
+
+byte NWSup_NextInit(CNodesWorld *self, vec3_t *out, nwInitFree_t isFree, nwInitDist_t dist) {
+	byte found = 0;
+	float best = 3.4028234663852886e+38f;
+
+	Con_Printf("Selecting Next Node Init...\n");
+	cNWIntNode *it = self->list1d0.iter = self->list1d0.head;
+	while (it) {
+		int idx = (int)(intptr_t)it->data;
+		if (self->buffer[idx].state == 5) {
+			vec3_t c, n;
+			self->vftable->BufferPos(self, &c, idx);
+			for (int k = 0; k < 3; k++) {
+				const vec3_t *ax = &self->axis[k];
+				n.x = ax->x + c.x;
+				n.y = ax->y + c.y;
+				n.z = ax->z + c.z;
+				if ((&self->max.x)[k] >= (&n.x)[k] + (&self->halfNode.x)[k]) {
+					NWSup_TryInit(self, &n, &c, isFree, dist, &best, out, &found);
+				}
+				n.x = c.x - ax->x;
+				n.y = c.y - ax->y;
+				n.z = c.z - ax->z;
+				if ((&n.x)[k] - (&self->halfNode.x)[k] >= (&self->min.x)[k]) {
+					NWSup_TryInit(self, &n, &c, isFree, dist, &best, out, &found);
+				}
+			}
+		}
+		it = self->list1d0.iter = self->list1d0.iter->next;
+		if (it == self->list1d0.head) {
+			break;
+		}
+	}
+	return found;
 }

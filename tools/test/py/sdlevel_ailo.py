@@ -294,8 +294,191 @@ def aloSup():
 	aloFree(t)
 	check('alo InDoor BuildGrid', lambda: SDTest.Call(0x0a1dc0, 'tvi', 0))
 
+# ---- the generation tools of CNodesWorld and CNodesWorld2D on a fresh object with cells and points set up here ----
+
+def aloSetF(a, v):
+	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+def aloPoke(a, v):
+	SDTest.Poke(a - 0x400000, v)
+
+# the index of a pointer in a list of known pointers, 'x' for an unknown one, 0 for NULL
+def aloKnown(v, known):
+	if v == 0:
+		return 0
+	for k in range(len(known)):
+		if known[k] == v:
+			return k + 1
+	return 'x'
+
+def aloRing(lst, m):
+	r = []
+	h = aloI(lst)
+	p = h
+	while p and len(r) < m:
+		r.append(aloI(p + 8))
+		p = aloI(p)
+		if p == h:
+			break
+	return r
+
+def aloLinks(v, pts):
+	l = map(lambda x, pts=pts: aloKnown(x, pts), aloRing(v + 0xc, 60))
+	l.sort()
+	return (aloI(v + 0x14), l)
+
+def aloPairList(pl, pts):
+	r = []
+	h = aloI(pl)
+	p = h
+	while p and len(r) < 40:
+		r.append((aloKnown(aloI(p + 8), pts), aloKnown(aloI(p + 0xc), pts), aloF(p + 0x10, 1)))
+		p = aloI(p)
+		if p == h:
+			break
+	return (aloI(pl + 8), r)
+
+# the debug list of the found cells: index and the two points
+def aloFoundList(m, pts):
+	r = []
+	h = aloI(m + 0x25c)
+	p = h
+	while p and len(r) < 20:
+		r.append((aloI(p + 8), aloKnown(aloI(p + 0xc), pts), aloKnown(aloI(p + 0x10), pts)))
+		p = aloI(p)
+		if p == h:
+			break
+	return (aloI(m + 0x264), r)
+
+# a buffer of 4 x 2 x 3 cells of 100 50 80 from (-200, dy, 100), 5 hash lists of sets, 6 points in the sets of
+# their cells and some more, the cells of tmp1c8 and list1d0
+def aloGenSetup(m, dy):
+	aloSetF(m + 4, (50.0, 25.0, 40.0, 100.0, 0.0, 0.0, 0.0, 50.0, 0.0, 0.0, 0.0, 80.0, 100.0, 50.0, 80.0, 400.0))
+	aloSetF(m + 0x50, (5.0,))
+	aloSetF(m + 0x58, (300.0,))
+	aloSetF(m + 0x74, (-200.0, dy, 100.0, 200.0, dy + 100.0, 340.0))
+	for off, v in ((0x1b4, 4), (0x1b8, 2), (0x1bc, 3), (0x1c0, 24), (0x1ec, 5)):
+		aloPoke(m + off, v)
+	buf = aloCalloc(24 * 8)
+	sets = aloCalloc(5 * 0x18)
+	aloPoke(m + 0x1b0, buf)
+	aloPoke(m + 0x1e8, sets)
+	st = (4, 3, 4, 5, 6, 1, 2, 4, 5, 0)
+	for i in range(24):
+		aloPoke(buf + 8 * i, st[i % len(st)])
+	pos = ((-150.0, 10.0, 120.0), (-120.0, 30.0, 130.0), (-60.0, 20.0, 150.0), (50.0, 70.0, 300.0),
+		(150.0, 90.0, 200.0), (-180.0, 60.0, 260.0))
+	pts = []
+	for p in pos:
+		SDTest.Call(0x0a2690, 'tviF', m + 0x190, (p[0], p[1] + dy, p[2]) + (0.0,) * 12)
+		pts.append(aloI(m + 0x190) + 8)
+	adds = ((0, 0), (1, 0), (0, 5), (1, 5), (2, 5), (2, 0), (3, 7), (0, 7), (4, 7), (1, 7), (4, 0), (5, 9), (5, 0),
+		(0, 9), (3, 9), (2, 9), (1, 9), (4, 9), (3, 23), (4, 23), (0, 2), (3, 2), (1, 12), (2, 12), (5, 13), (4, 13))
+	for p, c in adds:
+		SDTest.Call(0x0ba080, 'tviii', m, pts[p], c)
+	# LinkPoints CHECKs that the cell of each point has a set
+	for k in range(len(pts)):
+		c = SDTest.Call(0x0b98c0, 'tiiF', m, (pos[k][0], pos[k][1] + dy, pos[k][2]))[0]
+		if not aloI(buf + 8 * c + 4):
+			SDTest.Call(0x0ba080, 'tviii', m, pts[k], c)
+	# the searches read the set of every cell they take: the cells without a set 3, 5 or 6
+	k = 0
+	for i in range(24):
+		if not aloI(buf + 8 * i + 4):
+			aloPoke(buf + 8 * i, (3, 5, 6)[k % 3])
+			k = k + 1
+	cl = aloCalloc(4 * 24)
+	n = 0
+	for i in range(24):
+		if not aloI(buf + 8 * i) in (3, 6):
+			aloPoke(cl + 4 * n, i)
+			n = n + 1
+	aloPoke(m + 0x1c8, cl)
+	aloPoke(m + 0x1cc, n)
+	for i in (3, 8, 13, 18, 23, 2):
+		SDTest.Call(0x0a2460, 'tvip', m + 0x1d0, i)
+	return (buf, sets, pts, pos)
+
+# the cell searches on the pairs of points
+def aloFindLinks(tag, m, pts, dy, rvas):
+	pair = aloCalloc(8)
+	dm = SDTest.Peek(rvas[3], 'i')
+	for a, b in ((0, 1), (0, 2), (1, 2), (3, 4), (0, 4), (2, 5), (5, 3), (1, 1)):
+		aloPoke(pair, pts[a])
+		aloPoke(pair + 4, pts[b])
+		for box in ((-200.0, dy, 100.0, 200.0, dy + 100.0, 340.0), (-200.0, dy, 100.0, 0.0, dy + 50.0, 260.0),
+				(-60.0, dy + 10.0, 150.0, 140.0, dy + 90.0, 330.0)):
+			check('alo %s FindLinkBox(%d, %d)%s' % (tag, a, b, fmt(box)), lambda m=m, pair=pair, box=box, f=rvas[0]:
+				(lambda r: (r[0], r[2]))(SDTest.Call(f, 'tbiiFp', m, pair, box, -1)))
+		check('alo %s FindLinkCell(%d, %d)' % (tag, a, b), lambda m=m, pair=pair, f=rvas[1]: SDTest.Call(f, 'tbiip', m,
+			pair, -1))
+		if rvas[2]:
+			check('alo %s FindLinkFree(%d, %d)' % (tag, a, b), lambda m=m, pair=pair, f=rvas[2]: SDTest.Call(f, 'tbiip',
+				m, pair, -1))
+	# with the debug view on: the found cells into the first debug list
+	SDTest.Poke(rvas[3], 1)
+	aloPoke(pair, pts[0])
+	aloPoke(pair + 4, pts[2])
+	check('alo %s FindLink debug' % tag, lambda m=m, pair=pair, rvas=rvas, pts=pts, dy=dy: (SDTest.Call(rvas[0], 'tbiiFp',
+		m, pair, (-200.0, dy, 100.0, 200.0, dy + 100.0, 340.0), -1)[0], SDTest.Call(rvas[1], 'tbiip', m, pair, -1),
+		rvas[2] and SDTest.Call(rvas[2], 'tbiip', m, pair, -1), aloFoundList(m, pts)))
+	SDTest.Poke(rvas[3], dm)
+	SDTest.Call(0x0a5900, 'tvi', m + 0x25c)
+	aloFree(pair)
+
+def aloGen3D(dy):
+	tag = '3d%d' % int(dy)
+	m = aloNew(0x3f0)
+	SDTest.Call(0x0a21b0, 'tii', m)
+	buf, sets, pts, pos = aloGenSetup(m, dy)
+	for k in range(len(pos)):
+		p = (pos[k][0], pos[k][1] + dy, pos[k][2])
+		check('alo %s NearestVisDist(%d)' % (tag, k), lambda m=m, p=p: SDTest.Call(0x0ac5a0, 'tfiF', m, p)[0])
+	aloFindLinks(tag, m, pts, dy, (0x0a7e80, 0x0a8270, 0x0a8530, 0x444d48))
+	check('alo %s NextInit' % tag, lambda m=m: SDTest.Call(0x0ad3d0, 'tbiF', m, (0.0,) * 3))
+	pl = aloCalloc(0x18)
+	check('alo %s GetPairs' % tag, lambda m=m, pl=pl, pts=pts: (SDTest.Call(0x0a8a40, 'tvii', m, pl), aloPairList(pl,
+		pts)))
+	SDTest.Call(0x0a5900, 'tvi', pl)
+	# the links: then the cell searches and the pairs again
+	check('alo %s LinkPoints' % tag, lambda m=m, pts=pts: (SDTest.Call(0x0ba8d0, 'tvi', m), aloI(m + 0x1c4),
+		map(lambda v, pts=pts: aloLinks(v, pts), pts)))
+	aloFindLinks(tag + ' linked', m, pts, dy, (0x0a7e80, 0x0a8270, 0x0a8530, 0x444d48))
+	check('alo %s GetPairs linked' % tag, lambda m=m, pl=pl, pts=pts: (SDTest.Call(0x0a8a40, 'tvii', m, pl),
+		aloPairList(pl, pts)))
+	SDTest.Call(0x0a5900, 'tvi', pl)
+	aloFree(pl)
+	# the extra points linked to the points within linkDist
+	SDTest.Call(0x0a2540, 'tviF', m + 0x1f0, (-100.0, 40.0 + dy, 140.0))
+	SDTest.Call(0x0a2540, 'tviF', m + 0x1f0, (100.0, 60.0 + dy, 250.0))
+	SDTest.Call(0x0a2540, 'tviF', m + 0x1f0, (pp[0], pp[1], pp[2]))
+	check('alo %s LinkExtra' % tag, lambda m=m, pts=pts: (SDTest.Call(0x0ac200, 'tvi', m), aloI(m + 0x198),
+		aloI(m + 0x1c4), aloI(m + 0x1f4) != 0, aloI(m + 0x194) == 0, map(lambda v, pts=pts: aloLinks(v, pts), pts)))
+	check('alo %s FreeTemp' % tag, lambda m=m: (SDTest.Call(0x0b9180, 'tvi', m), aloI(m + 0x1b0), aloI(m + 0x1e8)))
+	check('alo %s AddExtraPoints' % tag, lambda m=m: (SDTest.Call(0x0a93d0, 'tvi', m), aloI(m + 0x1f8)))
+	check('alo %s Delete' % tag, lambda m=m: SDTest.Call(0x0a2430, 'tiii', m, 1)[0] == m)
+
+def aloGen2D(dy):
+	tag = '2d%d' % int(dy)
+	m = aloNew(0x378)
+	SDTest.Call(0x0ad950, 'tii', m)
+	buf, sets, pts, pos = aloGenSetup(m, dy)
+	# the free searches walk the bodies on the floor: only far above the level, where there is no floor
+	free = 0
+	if dy > 100000.0:
+		free = 0x0b39d0
+	aloFindLinks(tag, m, pts, dy, (0x0b3370, 0x0b3730, free, 0x444ddc))
+	if free:
+		check('alo %s NextInit' % tag, lambda m=m: SDTest.Call(0x0b7810, 'tbiF', m, (0.0,) * 3))
+	check('alo %s FreeTemp' % tag, lambda m=m: (SDTest.Call(0x0b9180, 'tvi', m), aloI(m + 0x1b0), aloI(m + 0x1e8)))
+	check('alo %s Delete' % tag, lambda m=m: SDTest.Call(0x0ada70, 'tiii', m, 1)[0] == m)
+
+
 aloW = SDTest.Peek(0x444d34, 'i')
 check('alo start', lambda: (aloW != 0, SDTest.Peek(0x444c7c, 'i') != 0))
 if aloW:
 	aloMain(aloW)
 aloSup()
+aloGen3D(0.0)
+aloGen3D(1000000.0)
+aloGen2D(0.0)
+aloGen2D(1000000.0)

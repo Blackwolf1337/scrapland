@@ -9,6 +9,7 @@
 #include "scrap/filepak.h"
 #include "scrap/mathlib.h"
 #include "scrap/fxmisc.h"
+#include "scrap/nodesworldsup.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapmain.h"
@@ -1350,4 +1351,170 @@ void __thiscall CNodesWorld_AnalizeGraph(CNodesWorld *self) {
 	}
 	Con_Printf("\nGRAFO CON LINKS CONMUTATIVOS\n");
 	Con_Bluef("%s", NW_EMPTY);
+}
+
+/* ---- the generation of the graph ---- */
+
+void __thiscall CNodesWorld_AddExtraPoints(CNodesWorld *self) {
+	char buf[20];
+	vec3_t p;
+	float ang[3];
+	byte flag;
+
+	DummySearch_Start("DM_PointGraph3DAI*", 1);
+	while (DummySearch_Next(buf, sizeof(buf), &p, ang, &flag)) {
+		if (Engine_TestSphere(&p, &p, g_NWNodeRadius, NULL, NULL)) {
+			Con_FatalErrorf("Punto Extra Grafo 3D Erroneo: %f %f %f\n", (double)p.x, (double)p.y, (double)p.z);
+		}
+		NWVecList_Add(&self->extraPoints, &p);
+	}
+}
+
+void __thiscall CNodesWorld_GetPairs(CNodesWorld *self, cNWPairList *list) {
+	Con_Printf("Getting Pairs Points Visibility No Linked...\n");
+	cNWPointNode *saved = self->points.iter;
+	cNWPointNode *pn = self->points.iter = self->points.head;
+	while (pn) {
+		const vec3_t *p = &pn->pos;
+		cNWPointNode *cur = self->points.iter;
+		cNWPointNode *qn = self->points.iter = cur->next;
+		while (qn != self->points.head) {
+			const vec3_t *q = &qn->pos;
+			float dx = p->x - q->x, dy = p->y - q->y, dz = p->z - q->z;
+			float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+			if (self->f40 + self->f40 > d && !self->vftable->Linked(self, p, q)) {
+				cNWPair pair;
+				float ex = p->x - q->x, ey = p->y - q->y, ez = p->z - q->z;
+				pair.a = (int)(uintptr_t)p;
+				pair.b = (int)(uintptr_t)q;
+				pair.dist = ey * ey + ex * ex + ez * ez;
+				self->vftable->InsertPair(self, list, &pair);
+			}
+			qn = self->points.iter = self->points.iter->next;
+		}
+		self->points.iter = cur;
+		pn = self->points.iter = cur->next;
+		if (pn == self->points.head) {
+			break;
+		}
+	}
+	self->points.iter = saved;
+	Con_Printf("Num Pairs Points Visibility No Linked: %ld\n", (long)list->count);
+	Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+}
+
+void __thiscall CNodesWorld_LinkExtra(CNodesWorld *self) {
+	Con_Printf("Linking Points of Visibility Extra...\n");
+	cNWVecNode *esaved = self->extraPoints.iter;
+	cNWVecNode *en = self->extraPoints.iter = self->extraPoints.head;
+	while (en) {
+		/* the data of a cNWPointNode: the position, the links and the box zeroed */
+		cNWPointNode tmp;
+		memset(&tmp, 0, sizeof(tmp));
+		tmp.pos = en->v;
+		NWPointList_Add(&self->points, &tmp.pos);
+		cNWPointNode *saved = self->points.iter;
+		cNWPointNode *pn = self->points.iter = self->points.head;
+		const vec3_t *p = pn ? &pn->pos : NULL;
+		cNWPointNode *qn = self->points.iter = self->points.iter->next;
+		while (qn != self->points.head) {
+			const vec3_t *q = &qn->pos;
+			float dx = p->x - q->x, dy = p->y - q->y, dz = p->z - q->z;
+			float d = (float)__builtin_sqrt((double)(dx * dx + dy * dy + dz * dz));
+			if (self->linkDist > d && !Engine_TestSphere(p, q, g_NWNodeRadius, NULL, NULL)) {
+				NWIntList_Add(&NW_POINT(p)->links, (void *const *)&q);
+				NWIntList_AddKeepIter(&NW_POINT(q)->links, p);
+				self->numPointLinks++;
+			}
+			qn = self->points.iter = self->points.iter->next;
+		}
+		self->points.iter = saved;
+		en = self->extraPoints.iter = self->extraPoints.iter->next;
+		if (en == self->extraPoints.head) {
+			en = NULL;
+		}
+		NWIntList_Free(&tmp.links);
+	}
+	self->extraPoints.iter = esaved;
+}
+
+float __thiscall CNodesWorld_NearestVisDist(CNodesWorld *self, const vec3_t *pos) {
+	float best = 3.4028234663852886e+38f;
+	int i = self->vftable->BufferIndex(self, pos);
+	cNWVis *vis = self->buffer[i].vis;
+
+	if (!vis) {
+		return best;
+	}
+	cNWIntNode *saved = vis->points.iter;
+	cNWIntNode *it = vis->points.iter = vis->points.head;
+	while (it) {
+		const vec3_t *q = it->data;
+		float dx = q->x - pos->x, dy = q->y - pos->y, dz = q->z - pos->z;
+		float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+		vis = self->buffer[i].vis;
+		best = Float_MinSS(d, best);
+		it = vis->points.iter = vis->points.iter->next;
+		if (it == vis->points.head) {
+			break;
+		}
+	}
+	self->buffer[i].vis->points.iter = saved;
+	return best;
+}
+
+byte __thiscall CNodesWorld_FindLinkBox(CNodesWorld *self, const vec3_t *const *pair, const cNWBox *box, int *out) {
+	return NWSup_FindLinkBox(self, pair, box, out, 0);
+}
+
+byte __thiscall CNodesWorld_FindLinkCell(CNodesWorld *self, const vec3_t *const *pair, int *out) {
+	return NWSup_FindLinkCell(self, pair, out, 0);
+}
+
+byte __thiscall CNodesWorld_FindLinkFree(CNodesWorld *self, const vec3_t *const *pair, int *out) {
+	int best[3];
+	float bestDist = 3.4028234663852886e+38f;
+	byte found = 0;
+	const int *cells = self->tmp1c8;
+
+	for (int k = 0; k < self->num1cc; k++) {
+		vec3_t c, c2;
+		int idx = cells[k];
+		if (self->buffer[idx].state == 5) {
+			continue;
+		}
+		self->vftable->BufferPos(self, &c, idx);
+		if (!NWSup_Near(self, &c, pair) || Engine_TestSphere(&c, pair[0], g_NWNodeRadius, NULL, NULL) ||
+			Engine_TestSphere(&c, pair[1], g_NWNodeRadius, NULL, NULL) ||
+			!self->vftable->Unreachable(self, pair[0], pair[1], idx)) {
+			continue;
+		}
+		self->vftable->BufferPos(self, &c2, idx);
+		float d = NWSup_PairDist(&c2, pair, 1);
+		if (bestDist > d) {
+			bestDist = d;
+			found = 1;
+			best[0] = idx;
+			*out = idx;
+			best[1] = (int)(uintptr_t)pair[0];
+			best[2] = (int)(uintptr_t)pair[1];
+		}
+	}
+	if (found) {
+		NWSup_LinkFound(self, best, g_NWDrawMode);
+	}
+	return found;
+}
+
+static int NW_InitFree(CNodesWorld *self, const vec3_t *n, const vec3_t *c) {
+	(void)self;
+	return !Engine_TestSphere(n, c, g_NWNodeRadius, NULL, NULL);
+}
+
+static float NW_InitDist(CNodesWorld *self, const vec3_t *n) {
+	return CNodesWorld_NearestVisDist(self, n);
+}
+
+byte __thiscall CNodesWorld_NextInit(CNodesWorld *self, vec3_t *out) {
+	return NWSup_NextInit(self, out, NW_InitFree, NW_InitDist);
 }
