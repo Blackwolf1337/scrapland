@@ -512,3 +512,314 @@ void __thiscall cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
 		cVehicleEffects_WindSmoke(&self->owner->effects, hit.x, hit.y, hit.z);
 	}
 }
+
+/* ---- the parts before the range of the file: constructors, destructor, Update and the escape tubes ---- */
+
+#define VEFF_TUBE_STEP 0.025f			/* between two emissions */
+#define g_VehicleSmokeRamps ((uint32_t *)Game_Ptr(0x428670))	/* 3 color ramps of 9 colors */
+
+cVehicleEffects *__fastcall cVehicleEffects_ctor(cVehicleEffects *self) {
+	self->owner = NULL;
+	self->damageOn = 0;
+	self->damageTime = 0.0f;
+	self->emiOn = 0;
+	self->emiTime = 0.0f;
+	self->fireOn = 0;
+	self->fireTime = 0.0f;
+	self->trails = NULL;
+	self->tubes = NULL;
+	return self;
+}
+
+cVehicleTubes *__fastcall cVehicleTubes_ctor(cVehicleTubes *self) {
+	crt_eh_vector_ctor(self->particles, sizeof(CGameParticles), VEFF_TUBES, Game_Ptr(CGAMEPARTICLES_CTOR),
+		Game_Ptr(CGAMEPARTICLES_DTOR));
+	self->owner = NULL;
+	return self;
+}
+
+cVehicleTrails *__fastcall cVehicleTrails_ctor(cVehicleTrails *self) {
+	crt_eh_vector_ctor(self->trails, sizeof(CGameTrail), VEFF_TRAILS, Game_Ptr(CGAMETRAIL_CTOR),
+		Game_Ptr(CGAMETRAIL_DTOR));
+	self->owner = NULL;
+	return self;
+}
+
+void __fastcall cVehicleEffects_dtor(cVehicleEffects *self) {
+	cVehicleTrails *t = self->trails;
+	if (t) {
+		crt_eh_vector_dtor(t->trails, sizeof(CGameTrail), VEFF_TRAILS, Game_Ptr(CGAMETRAIL_DTOR));
+		operator_delete_sized(t, sizeof(*t));
+		self->trails = NULL;
+	}
+	cVehicleTubes *u = self->tubes;
+	if (u) {
+		crt_eh_vector_dtor(u->particles, sizeof(CGameParticles), VEFF_TUBES, Game_Ptr(CGAMEPARTICLES_DTOR));
+		operator_delete_sized(u, sizeof(*u));
+		self->tubes = NULL;
+	}
+}
+
+void __thiscall cVehicleEffects_Update(cVehicleEffects *self, float dt) {
+	if (self->trails && self->trails->count > 0) {
+		cVehicleTrails_Update(self->trails, dt);
+	}
+	if (self->tubes && self->tubes->count > 0) {
+		cVehicleTubes_Update(self->tubes, dt);
+	}
+}
+
+/* rand / 32767 * range + add in double, as the original */
+static inline float VE_RandAdd(double range, double add) {
+	return (float)((double)(crt_rand() & 0x7fff) * VEFF_RAND_SCALE * range + add);
+}
+
+/* the constants of the smoke of one kind of tube */
+typedef struct VE_TubeSmoke {
+	double velZ[2];			/* range, add of the velocity: z */
+	double velXY[2];		/* x and y (minus) */
+	double accX[2];			/* the acceleration x (minus) */
+	double accY[2];			/* y (plus) */
+	double accZ[2];			/* z, with the sign of accZSub */
+	byte accZSub;			/* 1: add - rand * range (the SLifeBoat), else rand * range - add */
+	double sizeEnd;			/* range of sizeEnd (plus 215) */
+	double life[2];			/* range, add of the life time */
+	double rotVar[2];		/* range, minus */
+} VE_TubeSmoke;
+
+static const VE_TubeSmoke VE_TubeSmokes[2] = {
+	/* VEFF_TUBES_LIFEBOAT */
+	{ { 500.0, 350.0 }, { 110.0, 55.0 }, { 50.0, 25.0 }, { 1150.0, 300.0 }, { 50.0, -15.0 }, 1, 20.0,
+		{ 0x1.6666640000000p-2, 0x1.19999a0000000p-1 }, { 0x1.921fb60000000p-1, 0x1.921fb60000000p-2 } },
+	/* VEFF_TUBES_MERC */
+	{ { 150.0, 650.0 }, { 100.0, 50.0 }, { 40.0, 20.0 }, { 950.0, 400.0 }, { 40.0, 20.0 }, 0, 40.0,
+		{ 0x1.9999980000000p-3, 0x1.cccccc0000000p-2 }, { 0x1.41b2f80000000p-1, 0x1.41b2f80000000p-2 } },
+};
+
+/* one puff of a tube: the velocity and acceleration (turned with the model), emitted when the system has room */
+static void VE_TubePuff(cVehicleTubes *self, CGameParticles *p, const VE_TubeSmoke *k, float f, const vec3_t *rot) {
+	vec3_t v, vel, a, acc;
+
+	float vz = VE_RandAdd(k->velZ[0], k->velZ[1]);
+	float vy = VE_RandSub(k->velXY[0], k->velXY[1]);
+	float vx = VE_RandSub(k->velXY[0], k->velXY[1]);
+	float m = f + f + 1.0f;
+	v.x = vx * m;
+	v.y = vy * m;
+	v.z = vz * m;
+	Vec3_Rotate(&vel, &v, rot);
+	float az;
+	if (k->accZSub) {
+		az = (float)(k->accZ[1] - (double)(crt_rand() & 0x7fff) * VEFF_RAND_SCALE * k->accZ[0]);
+	} else {
+		az = VE_RandSub(k->accZ[0], k->accZ[1]);
+	}
+	float ay = VE_RandAdd(k->accY[0], k->accY[1]);
+	float ax = VE_RandSub(k->accX[0], k->accX[1]);
+	float m2 = 1.0f - f * 1.5f;
+	a.x = ax * m2;
+	a.y = ay * m2;
+	a.z = az * m2;
+	Vec3_Rotate(&acc, &a, rot);
+	float active = (float)(CGameParticles_NumActive(p) / self->count);
+	float total = (float)(CGameParticles_NumParticles(p) / self->count);
+	if (!(total * (f + 0.45f) > active)) {
+		return;
+	}
+	CGameParticles_SetColorRampOn(p, 1);
+	p->birthRate = 0;
+	p->initPosMin.x = 0.0f;
+	p->initPosMin.y = 0.0f;
+	p->initPosMin.z = 0.0f;
+	p->initPosMax.x = 0.0f;
+	p->initPosMax.y = p->initPosMin.y;
+	p->initPosMax.z = p->initPosMin.z;
+	p->initVelMin.y = vel.y;
+	p->initVelMin.z = vel.z;
+	p->initVelMin.x = vel.x;
+	p->initVelMax.x = vel.x;
+	p->initVelMax.y = p->initVelMin.y;
+	p->initVelMax.z = p->initVelMin.z;
+	p->initAccMin.y = acc.y;
+	p->initAccMin.x = acc.x;
+	p->initAccMin.z = acc.z;
+	p->initAccMax.x = acc.x;
+	p->initAccMax.y = p->initAccMin.y;
+	p->initAccMax.z = p->initAccMin.z;
+	p->sizeIni = VE_RandAdd(10.0, 35.0);
+	p->sizeEnd = VE_RandAdd(k->sizeEnd, 215.0);
+	float lf = f * 0.5f;
+	float life = VE_RandAdd(k->life[0], k->life[1]);
+	p->lifeTime = life * (1.0f - lf);
+	float r = VE_RandAdd(0x1.921fb60000000p+2, 0.0);
+	p->rotIni = r;
+	p->rotEnd = r;
+	p->rotVar = VE_RandSub(k->rotVar[0], k->rotVar[1]);
+	p->sizeLife = 1.0f;
+	byte s = (byte)((crt_rand() & 1) + 0x11);
+	p->spriteIni = s;
+	p->spriteEnd = s;
+	CGameParticles_SetColorRamp(p, g_VehicleSmokeRamps + (crt_rand() % 3) * 9);
+	CGameParticles_Apply(p);
+	CGameParticles_EmitN(p, 1, 0);
+}
+
+void __thiscall cVehicleTubes_Update(cVehicleTubes *self, float dt) {
+	vec3_t pos, rot;
+
+	CHECK(self->owner);
+	CHECK(self->owner->embeddedFX);
+	CGameModel *model = VE_Model(self->owner);
+	if (!CGameModel_IsLoaded(model)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(model));
+	if (!CGameModel_IsVisible(model) || !self->owner->base.flag_4c) {
+		return;
+	}
+	uint32_t fx = CGameModel_GetEffect(&self->owner->model, NULL);
+	if (fx) {
+		return;
+	}
+	float t = self->time + dt;
+	self->time = t;
+	if (VEFF_TUBE_STEP > t) {
+		return;
+	}
+	self->time = 0.0f;
+	CGameModel_GetPos(model, &pos);
+	CGameModel_GetRot(model, &rot);
+	vec3_t v = self->owner->localVel;
+	float down = 0.0f;
+	if (!(v.z > 0.0f)) {
+		down = -v.z;
+	}
+	float f = Float_MinSS(1.0f, down * 0.5f / self->owner->maxSpeed);
+	for (int i = 0; i < VEFF_TUBES; i++) {
+		if (self->nodes[i] == -1 || (uint32_t)self->kind > VEFF_TUBES_MERC) {
+			continue;
+		}
+		VE_TubePuff(self, &self->particles[i], &VE_TubeSmokes[self->kind], f, &rot);
+	}
+}
+
+/* ---- the wind smoke ---- */
+
+#define g_WindSmokeRamps ((uint32_t *)Game_Ptr(0x428798))	/* 2 color ramps of 9 colors */
+
+/* rand / 32767 * range + add with a float range, as the original */
+static inline float VE_RandAddF(float range, float add) {
+	return (float)((double)(crt_rand() & 0x7fff) * VEFF_RAND_SCALE * (double)range + (double)add);
+}
+
+/* -1 or 1 */
+static inline float VE_RandSign(void) {
+	return (float)((crt_rand() & 1) * 2 - 1);
+}
+
+void __thiscall cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float y, float z) {
+	vec3_t vel, cam, tmp, n, unit, side, ang, dir;
+
+	Obj_Vtbl(VE_Ent(self->owner))->GetVel(VE_Ent(self->owner), &vel);
+	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_WindFxSmokeFile);
+	cDebris *d = cDebrisSys_GetIdle(sys);
+	cam = g_pWorld->camPos[g_pWorld->curCam];
+	CGameModel_SetPos(Debris_Model(d), &cam);
+	d->speed = 1.0f;
+	if (!cDebrisSys_IsIdle(sys, d)) {
+		cDebrisSys_Drop(sys, d);
+	}
+	cObjElementFXSistPart *el = Debris_Element(d);
+	if (!el->on) {
+		el->move = 0;
+		el->on = 1;
+	}
+	CGameParticles *p = &el->particles;
+	p->birthRate = 0;
+	const vec3_t *c = Veh_Vtbl(self->owner)->GetCenter(self->owner, &tmp);
+	float dy = y - c->y;
+	float dx = x - c->x;
+	float dz = z - c->z;
+	float q = dy * dy + dx * dx + dz * dz;
+	float md = g_WindFXSmokeMaxDist;
+	if (q > md * md) {
+		return;
+	}
+	float radius = Veh_Vtbl(self->owner)->GetRadius(self->owner);
+	float len = (float)__builtin_sqrt((double)q);
+	if (len == 0.0f) {
+		n.x = dx;
+		n.y = dy;
+		n.z = dz;
+	} else {
+		float inv = 1.0f / len;
+		n.x = dx * inv;
+		n.y = dy * inv;
+		n.z = dz * inv;
+	}
+	/* the smoke starts a bit before the hit, spread sideways along the x axis of the ship */
+	float back = VE_RandAdd(15.0, 40.0);
+	unit.x = 1.0f;
+	unit.y = 0.0f;
+	unit.z = 0.0f;
+	float bx = x - back * n.x;
+	float by = y - back * n.y;
+	float bz = z - back * n.z;
+	Vec3_Rotate(&side, &unit, Veh_Vtbl(self->owner)->GetAngles(self->owner, &ang));
+	float scale = radius / g_WindFXSmokeSizeDiv;
+	float posLo = radius * 0x1.333334p-3f;
+	float posRange = radius * 0x1.333334p+0f - posLo;
+	float velLo = radius * 0x1.666666p-1f;
+	float velRange = radius * 0x1.ccccccp+0f - velLo;
+	for (int i = 3; i; i--) {
+		float s = VE_RandAddF(posRange, posLo);
+		float sg = VE_RandSign();
+		float sx = side.x * sg;
+		float sy = side.y * sg;
+		float sz = side.z * sg;
+		float ox = s * sx;
+		float oy = s * sy;
+		float oz = s * sz;
+		float t = VE_RandAdd(50.0, 15.0);
+		const vec3_t *u = FX_RandomDir(&dir);
+		p->initPosMin.x = t * u->x + bx + ox;
+		p->initPosMin.y = u->y * t + by + oy;
+		p->initPosMin.z = u->z * t + bz + oz;
+		p->initPosMax = p->initPosMin;
+		float s2 = VE_RandAddF(velRange, velLo);
+		float sg2 = VE_RandSign();
+		float s2x = side.x * sg2;
+		float s2z = side.z * sg2;
+		float s2y = side.y * sg2;
+		float o2x = s2 * s2x;
+		float o2y = s2 * s2y;
+		float o2z = s2 * s2z;
+		float w = VE_RandAdd(270.0, 80.0);
+		float vz = vel.z * 0.75f;
+		float vx = vel.x * 0.75f;
+		float vy = vel.y * 0.75f;
+		p->initVelMin.x = vx - w * n.x + o2x;
+		p->initVelMin.y = vy - w * n.y + o2y;
+		p->initVelMin.z = vz - w * n.z + o2z;
+		p->initVelMax = p->initVelMin;
+		p->initAccMin.x = p->initVelMin.x * 0.25f;
+		p->initAccMin.y = p->initVelMin.y * 0.25f;
+		p->initAccMin.z = p->initVelMin.z * 0.25f;
+		p->initAccMax = p->initAccMin;
+		p->sizeIni = VE_RandAdd(150.0, 550.0) * scale;
+		p->sizeEnd = VE_RandAdd(250.0, 1300.0) * scale;
+		p->lifeTime = VE_RandAdd(0x1.9999980000000p-3, 0x1.cccccc0000000p-2);
+		p->sizeLife = VE_RandAdd(0x1.99999c0000000p-3, 0x1.6666660000000p-2);
+		float r = VE_RandAdd(0x1.921fb60000000p+2, 0.0);
+		p->rotIni = r;
+		p->rotEnd = r;
+		p->rotVar = VE_RandSub(0x1.921fb60000000p-1, 0x1.921fb60000000p-2);
+		byte sp = (byte)((crt_rand() & 1) + 0x11);
+		p->spriteIni = sp;
+		p->spriteEnd = sp;
+		CGameParticles_SetColorRampOn(p, 1);
+		CGameParticles_SetColorRamp(p, g_WindSmokeRamps + (crt_rand() & 1) * 9);
+		CGameParticles_Apply(p);
+		CGameParticles_EmitN(p, 1, 0);
+	}
+}

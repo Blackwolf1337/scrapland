@@ -89,9 +89,16 @@ SD_SIZE(cVehicleEffects, 0x24);
 #define g_WindFXSmokeSizeDiv GAME_DATA(float, 0x447c7c)
 #define g_WindFXSmokeLast GAME_DATA(float, 0x447e04)	/* the world time of the last wind smoke */
 
-/* the other parts (rva 0x100ab0, 0x100b60, 0x100c10) */
-void __fastcall cVehicleEffects_ctor(cVehicleEffects *self);
+/* the parts before the range of the file in the exe (rva 0x100ab0..0x100c60) */
+cVehicleEffects *__fastcall cVehicleEffects_ctor(cVehicleEffects *self);
+/* the constructors of the optional parts (Init inlines them) */
+cVehicleTubes *__fastcall cVehicleTubes_ctor(cVehicleTubes *self);
+cVehicleTrails *__fastcall cVehicleTrails_ctor(cVehicleTrails *self);
 void __fastcall cVehicleEffects_dtor(cVehicleEffects *self);
+/* the trails and tubes that found their nodes */
+void __thiscall cVehicleEffects_Update(cVehicleEffects *self, float dt);
+/* the smoke puffs of the escape tubes every 0.025 s, stronger with the sink speed */
+void __thiscall cVehicleTubes_Update(cVehicleTubes *self, float dt);
 
 void __fastcall cVehicleEffects_Reset(cVehicleEffects *self);
 void __fastcall cVehicleTubes_Reset(cVehicleTubes *self);

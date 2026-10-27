@@ -486,14 +486,8 @@ SD_IMPORT(Dlg_GetFloat, 0x2a5d80)
 /* module agent: Entities/More+ObjEntity (imports below this line) */
 
 /* module agent: Entities/Vehicle/VehicleEffects+VehicleEntity.cpp (imports below this line) */
-SD_IMPORT(cVehicleEffects_dtor, 0x100b60)
-SD_IMPORT(cVehicleEffects_WindSmoke, 0x102940)
-SD_IMPORT(cVehicleEntity_Step, 0x10a730)
-SD_IMPORT(cVehicleMotors_dtor, 0x10bd10)
 SD_IMPORT(cVehicleControls_Tick, 0x0ffcc0)
 SD_IMPORT(cNetVController_ctor, 0x1186b0)
-SD_IMPORT(cVehicleMotors_ctor, 0x10bc20)
-SD_IMPORT(cVehicleEffects_ctor, 0x100ab0)
 
 /* module agent: Entities/Vehicle/VehicleMotors+MotorsEffects+Traffic.cpp (imports below this line) */
 
@@ -501,7 +495,6 @@ SD_IMPORT(cVehicleEffects_ctor, 0x100ab0)
 SD_IMPORT(Surface_SaveShot, 0x27fe90)
 
 /* module agent: AI/NodesTraffic+NodesTrafficInDoor.cpp (imports below this line) */
-SD_IMPORT(cVehicleMotor_ctor, 0x10bb90)
 SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
 
 /* module agent: Scorer/AbstractText+Button+Circuit+Head+Mission+Monitor+Radar (imports below this line) */

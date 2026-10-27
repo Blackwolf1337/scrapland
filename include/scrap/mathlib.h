@@ -119,6 +119,7 @@ matrix_t *Quat_ToMatrixD3D(matrix_t *out, const quat_t *q);
 double Game_Acos(double x);
 double Game_Cos(double x);
 double Game_Sin(double x);
+double Game_Atan(double x);
 double Game_Atan2(double y, double x);	/* _CIatan2 */
 float Game_Atan2F(double y, double x);	/* _CIatan2 stored as a float (fstp DWORD) */
 double Game_Fmod(double x, double y);	/* _CIfmod */

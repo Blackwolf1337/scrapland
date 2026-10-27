@@ -5,6 +5,7 @@
 
 #include "scrap/ai.h"
 #include "scrap/autoaim.h"
+#include "scrap/camcontrol.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/doors.h"
@@ -12,6 +13,7 @@
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/primitive.h"
+#include "scrap/scoreritems.h"
 #include "scrap/missileentity.h"
 #include "scrap/vehiclemotors.h"
 #include "scrap/vehicletraffic.h"
@@ -1649,4 +1651,372 @@ byte __thiscall cVehicleEntity_VarV(cVehicleEntity *self, const char *name, doub
 		}
 	}
 	return cWithLifeEntity_VarV(Veh_Ent(self), name, x, y, z, set);
+}
+
+/* ---- the flight (rva 0x10a730) ---- */
+
+/* the magnet that pulls the ships back to the center in the free space */
+#define g_FreeSpaceMagnetCenterX GAME_DATA(float, 0x447f38)
+#define g_FreeSpaceMagnetCenterY GAME_DATA(float, 0x448160)
+#define g_FreeSpaceMagnetCenterZ GAME_DATA(float, 0x447f80)
+#define g_FreeSpaceMagnetLoRadius GAME_DATA(float, 0x447ef0)
+#define g_FreeSpaceMagnetHiRadius GAME_DATA(float, 0x447ed8)
+#define g_FreeSpaceMagnetAccel GAME_DATA(float, 0x448130)
+
+#define VEH_PI_F 0x1.921fb6p+1f
+#define VEH_PI_2_F 0x1.921fb6p+0f		/* the limits of the pitch */
+#define VEH_TOP_SPEED 28000.0f
+#define VEH_BOOST_SPEED 16800.0f		/* at least after a boost */
+
+/* Vehicle_TurnCurve inlined, all in SSE */
+static inline float Veh_StepCurve(float x) {
+	if (!(__builtin_fabs((double)x) > 1.0)) {
+		return x;
+	}
+	if (x > 0.0f) {
+		return (float)__builtin_sqrt((double)x - 0.75) + 0.5f;
+	}
+	float s = (float)__builtin_sqrt((double)-x - 0.75);
+	return -s - 0.5f;
+}
+
+/* the thrust towards frwTrust * thrustIn within trustTime, or at once (full thrust or backwards) */
+static inline void Veh_StepThrust(cVehicleEntity *self, float dt) {
+	float th = self->thrust;
+
+	if (th >= 0.0f) {
+		if (self->fullThrust) {
+			self->thrust = self->frwTrust * self->thrustIn;
+			return;
+		}
+		float frw = self->frwTrust;
+		float t = frw * dt / self->trustTime * self->thrustIn + th;
+		self->thrust = t;
+		if (t > frw) {
+			self->thrust = frw;
+		}
+		return;
+	}
+	if (0.0f > self->thrustIn) {
+		self->thrust = self->backTrust * self->thrustIn;
+	} else {
+		self->thrust = 0.0f;
+	}
+}
+
+/* below the atmosphere: the thrust, the turn, the friction and the speed limit */
+static void Veh_StepFly(cVehicleEntity *self, float dt, float ax, float ay) {
+	vec3_t in, out;
+	float vx = self->vel.x;
+	float vy = self->vel.y;
+	float vz = self->vel.z;
+	float before = (float)__builtin_sqrt((double)(vx * vx + vy * vy + vz * vz));
+
+	in.x = 0.0f;
+	in.y = 0.0f;
+	in.z = self->thrust * dt;
+	const vec3_t *r = Vec3_RotateXY(&out, &in, ax, ay);
+	self->vel.x = self->vel.x - r->x;
+	self->vel.y = self->vel.y - r->y;
+	self->vel.z = self->vel.z - r->z;
+	in.x = 0.0f;
+	in.z = 0.0f;
+	in.y = self->turnSpeedY * dt;
+	r = Vec3_RotateXY(&out, &in, self->ang.x, self->ang.y);
+	self->vel.x = self->vel.x - r->x;
+	self->vel.y = self->vel.y - r->y;
+	self->vel.z = self->vel.z - r->z;
+	/* the side push of the turn */
+	float k = self->turnSpeedX * dt;
+	double a = (double)self->ang.y + 1.5707963267948966;
+	self->vel.x = (float)Game_Sin(a) * k + self->vel.x;
+	self->vel.z = (float)Game_Cos(a) * k + self->vel.z;
+	float fx = self->vel.x * dt;
+	float fy = self->vel.y * dt;
+	float fz = self->vel.z * dt;
+	float fr = self->friction;
+	fx = fx * fr;
+	fy = fy * fr;
+	fz = fz * fr;
+	self->vel.x = self->vel.x - fx;
+	self->vel.y = self->vel.y - fy;
+	self->vel.z = self->vel.z - fz;
+	vx = self->vel.x;
+	vy = self->vel.y;
+	vz = self->vel.z;
+	float sp = (float)__builtin_sqrt((double)(vx * vx + vy * vy + vz * vz));
+	float ms = self->maxSpeed;
+	self->speed = sp;
+	/* above MaxSpeed it does not get faster than it was */
+	if (sp > ms && sp >= before) {
+		float lim = Float_MaxSS(ms, before);
+		float f = lim / sp;
+		self->vel.x = f * self->vel.x;
+		self->vel.y = self->vel.y * f;
+		self->vel.z = self->vel.z * f;
+		self->speed = lim;
+	}
+}
+
+static void Veh_StepMagnet(cVehicleEntity *self, float dt) {
+	float dy = g_FreeSpaceMagnetCenterY - self->base.pos.y;
+	float dx = g_FreeSpaceMagnetCenterX - self->base.pos.x;
+	float dz = g_FreeSpaceMagnetCenterZ - self->base.pos.z;
+	float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+	float lo = g_FreeSpaceMagnetLoRadius;
+
+	if (!(d > lo)) {
+		return;
+	}
+	float hi = g_FreeSpaceMagnetHiRadius;
+	float m = Float_MinSS(hi, d);
+	float f = (m - lo) / (hi - lo) * g_FreeSpaceMagnetAccel / m;
+	float px = dx * dt;
+	float py = dy * dt;
+	float pz = dz * dt;
+	self->vel.x = f * px + self->vel.x;
+	self->vel.y = f * py + self->vel.y;
+	self->vel.z = f * pz + self->vel.z;
+}
+
+void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt) {
+	vec3_t in, out;
+	byte high = self->base.pos.y > g_AtmosphereLimit;
+	float sx = Veh_StepCurve(self->stickX);
+	float sy = Veh_StepCurve(self->stickY);
+
+	if (self->pushTime > 0.0f) {
+		self->pushTime = self->pushTime - dt;
+		float k = dt * 1000.0f / self->mass;
+		self->vel.x = k * self->push.x + self->vel.x;
+		self->vel.y = self->vel.y + self->push.y * k;
+		self->vel.z = self->vel.z + self->push.z * k;
+	}
+	Veh_StepThrust(self, dt);
+	float tx = self->turnX;
+	float ay = self->ang.y - tx * VEH_PI_F * 0.125f;
+	self->turnSpeedX = tx * self->strTrust;
+	float ty = self->turnY;
+	float ax = self->ang.x - ty * VEH_PI_F * 0.125f;
+	self->turnSpeedY = ty * self->strTrust;
+	/* the boost: forward at the boost speed */
+	if (!self->traffic[0x1c] && !self->cloudOn && self->boostKey && 0.0f >= self->boost &&
+		self->thrust > self->frwTrust * 0.5f) {
+		float s = self->speed;
+		self->cloud = 0.0f;
+		self->boost = self->boostTime;
+		if (15400.0f > s) {
+			self->speed = VEH_BOOST_SPEED;
+		} else {
+			self->speed = s + 1400.0f;
+		}
+		in.x = 0.0f;
+		in.y = 0.0f;
+		in.z = -self->speed;
+		self->vel = *Vec3_RotateXY(&out, &in, ax, ay);
+		cVehicleEntity_StartBoost(self);
+	}
+	if (high) {
+		/* above the atmosphere the ship falls back, slower towards the space limit */
+		float lim = (g_SpaceLimit - self->base.pos.y) * VEH_BOOST_SPEED / (g_SpaceLimit - g_AtmosphereLimit);
+		float vy = self->vel.y - g_DebrisDefault * dt;
+		self->vel.y = vy;
+		if (vy > lim) {
+			self->vel.y = lim;
+		}
+		float pitch = self->ang.x;
+		self->thrust = 0.0f;
+		if (pitch > 0.0f) {
+			self->ang.x = pitch - dt;
+		}
+	} else {
+		Veh_StepFly(self, dt, ax, ay);
+	}
+	if (g_FreeSpaceMagnet) {
+		Veh_StepMagnet(self, dt);
+	}
+	float sp = self->speed;
+	if (sp > VEH_TOP_SPEED) {
+		float f = VEH_TOP_SPEED / sp;
+		self->vel.x = f * self->vel.x;
+		self->vel.y = self->vel.y * f;
+		self->vel.z = self->vel.z * f;
+		self->speed = VEH_TOP_SPEED;
+	}
+	self->base.pos.x = self->base.pos.x + self->vel.x * dt;
+	self->base.pos.y = self->vel.y * dt + self->base.pos.y;
+	self->base.pos.z = self->vel.z * dt + self->base.pos.z;
+	/* the turn gets slower with the speed */
+	float ms = self->maxSpeed;
+	float g = (ms + ms) / (self->speed + ms);
+	float rx = g * sy;
+	self->rotVel.x = rx;
+	float pitch = rx * dt + self->ang.x;
+	self->ang.x = pitch;
+	if (pitch > VEH_PI_2_F) {
+		self->ang.x = VEH_PI_2_F;
+	} else if (-VEH_PI_2_F > pitch) {
+		self->ang.x = -VEH_PI_2_F;
+	}
+	float s2 = sx + sx;
+	float roll = (float)Game_Atan((double)(s2 - self->turnX)) * 0.5f;
+	self->roll = roll;
+	float az = self->ang.z;
+	float rz = (roll - az) * 4.0f;
+	self->rotVel.z = rz;
+	float ry = s2 * g;
+	self->rotVel.y = ry;
+	self->ang.z = rz * dt + az;
+	self->ang.y = ry * dt + self->ang.y;
+}
+
+/* ---- the model and the camera of a slot (vf24, rva 0x105ea0) ---- */
+
+#define g_HiRacerFov GAME_DATA(float, 0x447f20)		/* degrees at top speed */
+#define g_LoRacerFov GAME_DATA(float, 0x448250)
+#define g_VehicleCamDist2 GAME_DATA(float, 0x445ed8)	/* VehicleCamDist of player 1 */
+#define g_MotorTrustRotationX GAME_DATA(float, 0x4480a0)
+#define g_MotorTrustRotationY GAME_DATA(float, 0x447f98)
+#define g_PilotViewDist GAME_DATA(float, 0x448238)	/* the pilot is drawn nearer to the camera */
+
+/* the camera data of the ship of a player (+0xf0) */
+#define VehCam_Fov(p) (*(float *)((p) + 0xa8))
+#define VehCam_Dist(p) (*(float *)((p) + 0x214))
+#define VehCam_Pitch(p) (*(uint32_t *)((p) + 0x218))
+#define VehCam_Shake(p) (*(float *)((p) + 0x21c))
+#define VehCam_F220(p) (*(float *)((p) + 0x220))
+
+#define VEH_CAM_PITCH 0xbe860a92u			/* -15 degrees */
+#define VEH_FLOAT_PERIOD 25.132741228718345		/* 8 pi */
+
+/* the camera of a player ship: the shake, the field of view by the speed, the distance and the motion blur */
+static void Veh_UpdateCamera(cVehicleEntity *self) {
+	byte *pl = self->player;
+	float sh = self->shake;
+	float lo = -sh;
+	double range = (double)(sh - Float_Keep(lo));
+	float r = (float)((double)(crt_rand() & 0x7fff) * 3.051850947599719e-05 * range + (double)lo);
+
+	VehCam_Shake(pl) = r * 0x1.99999ap-7f;
+	float fov = (g_HiRacerFov - g_LoRacerFov) * self->smoothSpeed / VEH_TOP_SPEED + g_LoRacerFov;
+	VehCam_Fov(self->player) = (float)((double)fov * M_PI_D / 180.0);
+	VehCam_Dist(self->player) = self->slot == 1 ? g_VehicleCamDist2 : g_VehicleCamDist;
+	VehCam_Pitch(self->player) = VEH_CAM_PITCH;
+	float m = VehCam_F220(self->player) * 4.0f;
+	float c = 0x1.666666p-2f;
+	float lim = c > m ? m : c;
+	float q = self->shake * 0x1.99999ap-1f;
+	float blur = lim > q ? Float_MinSS(m, c) : q;
+	g_MotionBlurFactorBegin = 0.0f;
+	g_MotionBlurFactorEnd = blur;
+	g_MotionBlurOffVar = 0.0f;
+	g_MotionBlurTime = 0.0f;
+	g_MotionBlurEndTime = 0.0f;
+}
+
+/* the floating of the model and its tilt by the acceleration */
+static void Veh_UpdateFloating(cVehicleEntity *self, float t, vec3_t *rot, vec3_t *pos) {
+	float k = Float_MaxSS(0.5f, 1.0f - self->speed / VEH_BOOST_SPEED);
+	float amp = (g_VehicleEditingMode ? 0x1.99999ap-3f : g_FXVehicleFloatingFactor) * k;
+
+	pos->x = (float)(Game_Sin((double)t * 0.9) * 10.0) * amp + pos->x;
+	pos->y = (float)(Game_Sin((double)t) * 10.0) * amp + pos->y;
+	pos->z = (float)(Game_Sin((double)t * 1.1) * 10.0) * amp + pos->z;
+	float rz = (float)(Game_Sin((double)(t + t)) / VEH_FLOAT_PERIOD) * amp + rot->z;
+	float rx = (float)(Game_Sin((double)(t * 0x1.b33334p+0f)) / VEH_FLOAT_PERIOD) * amp + rot->x;
+	rot->y = (float)(Game_Sin((double)(t * 0x1.266666p+1f)) / VEH_FLOAT_PERIOD) * amp + rot->y;
+	rot->x = (float)Game_Atan((double)(self->localAcc.z / VEH_BOOST_SPEED)) * g_MotorTrustRotationY *
+		self->vertBalance + rx;
+	rot->z = (float)Game_Atan((double)(self->localAcc.x / -VEH_BOOST_SPEED)) * g_MotorTrustRotationX *
+		self->vertBalance + rz;
+}
+
+/* the pilot model at its node when the camera is near or the ship is the target of player 0 */
+static void Veh_UpdatePilotModel(cVehicleEntity *self, const vec3_t *pos, float dt) {
+	vec3_t cam, ang, ppos;
+	matrix_t mtx;
+	byte near = 0;
+
+	if (g_SplitScreenGame || self->base.flag_4c) {
+		cam = g_pWorld->camPos[g_pWorld->curCam];
+		float dy = pos->y - cam.y;
+		float dx = pos->x - cam.x;
+		float dz = pos->z - cam.z;
+		float r = g_PilotViewDist;
+		near = r * r > dy * dy + dx * dx + dz * dz;
+	}
+	byte target = 0;
+	if (!near) {
+		cEntity *u = cWorld_GetUsrEntity(g_pWorld, 0);
+		if (u && u->vftable->IsType(u, TYEN_CAR) && Veh(u)->target[0]) {
+			/* the first two bytes as a short, then the rest */
+			uint16_t a, b;
+			memcpy(&a, self->base.name, 2);
+			memcpy(&b, Veh(u)->target, 2);
+			target = a == b && !strcmp(self->base.name + 2, Veh(u)->target + 2);
+		}
+	}
+	if (!self->base.flag_4c || (!near && !target)) {
+		if (self->pilotNode != -1 && CGameModel_IsEnabled(&self->pilot)) {
+			CGameModel_Disable(&self->pilot);
+		}
+		return;
+	}
+	if (self->pilotNode == -1) {
+		return;
+	}
+	if (near) {
+		CGameModel_Enable(&self->pilot);
+	} else {
+		CGameModel_Disable(&self->pilot);
+	}
+	CGameModel_NodoMatrix(&self->model, &mtx, (uint32_t)self->pilotNode, 0, NULL, 0);
+	CGameModel_SetRot(&self->pilot, Matrix_GetEuler(&mtx, &ang));
+	ppos.x = mtx.m[12];
+	ppos.y = mtx.m[13];
+	ppos.z = mtx.m[14];
+	CGameModel_SetPos(&self->pilot, &ppos);
+	Veh_Vtbl(self)->UpdatePilot(self, 0, dt);
+}
+
+void __thiscall cVehicleEntity_UpdateModel(cVehicleEntity *self) {
+	vec3_t rot, pos;
+	float h = (self->base.pos.y - g_AtmosphereLimit) / (g_SpaceLimit - g_AtmosphereLimit);
+	float t = Timer_GetTime(&self->timer) + self->timeOfs;
+
+	rot = self->renderRot;
+	pos = self->renderPos;
+	if (self->fixedModel) {
+		rot.x = 0.0f;
+		rot.y = 0.0f;
+		rot.z = 0.0f;
+	}
+	/* the wobble above the atmosphere */
+	h = Float_MinSS(1.0f, h);
+	if (h > 0.0f) {
+		double s = Game_Sin((double)(t * 0x1.333334p-1f)) * (double)h;
+		rot.x = (float)(s + s) + rot.x;
+		rot.y = (float)(Game_Sin((double)(t * 0.5f)) * (double)h * 1.600000023841858) + rot.y;
+		rot.z = (float)(Game_Sin((double)(t * 0x1.666666p-1f)) * (double)h * 1.100000023841858) + rot.z;
+	}
+	if (self->player && self->slot != -1) {
+		Veh_UpdateCamera(self);
+	}
+	if (self->fixedModel || self->player ||
+		(self->dying && self->f1a4 >= self->f1a8 && CGameModel_IsVisible(&self->model))) {
+		Veh_UpdateFloating(self, t, &rot, &pos);
+	}
+	if (CGameModel_IsLoaded(&self->model)) {
+		float dt = cTimer_GetDelta(&self->timer);
+		CGameModel_SetRot(&self->model, &rot);
+		CGameModel_SetPos(&self->model, &pos);
+		Veh_UpdatePilotModel(self, &pos, dt);
+		cVehicleMotors_Update(Vehicle_Motors(self));
+		if (!self->rendering) {
+			cVehicleEffects_Update(&self->effects, dt);
+		}
+	}
+	if (self->embeddedFX && !self->rendering) {
+		self->embeddedFX->vftable->Update(self->embeddedFX);
+	}
 }

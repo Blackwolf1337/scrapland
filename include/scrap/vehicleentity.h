@@ -3,8 +3,6 @@
  * cWithLifeEntity (0x3e8 bytes) with the flight model, the network controller, the pilot model at the node
  * DC_Player_01, the weapons (cWeaponManager at 0x5f0), the motors (cVehicleMotors at 0x720) and the effects
  * (cVehicleEffects at 0x7f0, include/scrap/vehicleeffects.h). src/game/Entities/Vehicle/VehicleEntity.c.
- * Not in C yet: the model and camera update vf24 (rva 0x105ea0), the collision vf11 (0x106bf0), the flight step
- * (0x10a730) and the functions of cVehicleMotors (0x10bb90.., VehicleMotors.cpp by class).
  */
 #ifndef SCRAP_VEHICLEENTITY_H
 #define SCRAP_VEHICLEENTITY_H
@@ -277,8 +275,12 @@ static inline const cVehicleMotorsVtbl *Veh_MotorsVtbl(cVehicleEntity *v) {
 
 /* the parts of other files (not decompiled yet; VehicleMotors, VehicleTraffic and WeaponManager in their headers);
  * the objects inside the vehicle by their offset */
-void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt);		/* rva 0x10a730, the flight */
-void __fastcall cVehicleMotors_ctor(void *motors);
+/* the flight of dt: thrust, turn, boost, friction, the fall above the atmosphere and the free space magnet */
+void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt);
+/* vf24: the model of the slot (the wobble above the atmosphere, the floating, the tilt), the player camera, the
+ * pilot, the motors and the effects */
+void __thiscall cVehicleEntity_UpdateModel(cVehicleEntity *self);
+void *__fastcall cVehicleMotors_ctor(void *motors);
 void __fastcall cVehicleMotors_dtor(void *motors);
 void __thiscall cVehicleControls_Tick(void *controls, cEntity *v, float dt);
 

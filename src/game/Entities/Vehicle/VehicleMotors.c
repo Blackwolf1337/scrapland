@@ -860,3 +860,61 @@ CGameModel *__thiscall cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *sel
 	}
 	return NULL;
 }
+
+/* ---- the constructors and destructors (rva 0x10bb90..0x10bdc0, after VehicleEntity.cpp) ---- */
+
+#define CGAMEMODEL_CTOR_NULL 0x105e60		/* thiscall CGameModel_ctor(self, NULL) */
+#define CGAMEMODEL_DTOR 0x20ec10		/* CGameModel_Reset */
+
+cVehicleMotor *__thiscall cVehicleMotor_ctor(cVehicleMotor *self) {
+	crt_eh_vector_ctor(self->model, sizeof(CGameModel), VM_SIDES, Game_Ptr(CGAMEMODEL_CTOR_NULL),
+		Game_Ptr(CGAMEMODEL_DTOR));
+	cVehicleMotorsEffects_ctor(&self->effects);
+	self->name[0] = 0;
+	self->animMOn = 0;
+	self->animFOn = 0;
+	self->durF = 0.0f;
+	self->durM = 0.0f;
+	self->timeM = 0.0f;
+	self->node[0] = -1;
+	self->node[1] = -1;
+	return self;
+}
+
+void *__fastcall cVehicleMotors_ctor(void *motors) {
+	cVehicleMotors *self = motors;
+
+	self->vftable = Game_Ptr(CVEHICLEMOTORS_VFTABLE);
+	cVehicleMotorsEffects_ctor(&self->effects);
+	self->owner = NULL;
+	self->stopped = 0;
+	self->lastVisible = 0;
+	self->speed = 0.0f;
+	cVehicleMotorsEffects_SetType(&self->effects, 1);
+	for (int i = 0; i < VM_MOTORS; i++) {
+		self->motor[i] = NULL;
+	}
+	return self;
+}
+
+void __fastcall cVehicleMotor_dtor(cVehicleMotor *self) {
+	cVehicleMotorsEffects_Stop(&self->effects);
+	cVehicleMotorsEffects_dtor(&self->effects);
+	crt_eh_vector_dtor(self->model, sizeof(CGameModel), VM_SIDES, Game_Ptr(CGAMEMODEL_DTOR));
+}
+
+void __fastcall cVehicleMotors_dtor(void *motors) {
+	cVehicleMotors *self = motors;
+
+	self->vftable = Game_Ptr(CVEHICLEMOTORS_VFTABLE);
+	cVehicleMotorsEffects_Clear(&self->effects);
+	/* the pointers are kept */
+	for (int i = 0; i < VM_MOTORS; i++) {
+		cVehicleMotor *m = self->motor[i];
+		if (m) {
+			cVehicleMotor_dtor(m);
+			operator_delete_sized(m, sizeof(cVehicleMotor));
+		}
+	}
+	cVehicleMotorsEffects_dtor(&self->effects);
+}

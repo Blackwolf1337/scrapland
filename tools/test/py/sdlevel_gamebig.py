@@ -447,8 +447,11 @@ if gbgcar and gbgc2 and gbgc3:
 		l = gbgi(o + 4)
 		r = (gbgi(o) == gbgcar, l != 0, gbgs(o + 8))
 		if l:
-			# a list made by Rebuild also has the enemies of the level (their count is not printed)
-			r = r + (min(gbgi(l), 3), gbgfl(l + 4, 1), gbgi(l + 0x80c), gbgs(l + 8))
+			# a list made by Rebuild also has the enemies of the level (their count is not printed); a new list
+			# has no names
+			r = r + (min(gbgi(l), 3), gbgfl(l + 4, 1), gbgi(l + 0x80c))
+			if gbgi(l) > 0:
+				r = r + (gbgs(l + 8),)
 		return r
 	gbgteams = (gbgi(gbgcar + 0x388), gbgi(gbgc2 + 0x388), gbgi(gbgc3 + 0x388))
 	check('GBG teams', lambda: gbgteams)
@@ -552,3 +555,223 @@ if gbgcar and gbgc2 and gbgc3:
 for n in ('SDGbgCar', 'SDGbgCar2', 'SDGbgCar3', 'SDGbgItem'):
 	if gbgfind(n):
 		check('GBG %s Del' % n, lambda n=n: Scrap.GetEntity(n).Del())
+
+# ---- the vehicle effects, motors, flight and model (the ship SDGbgCar4 with the model SPoli1) ----
+def gbgnew(n):
+	return SDTest.Call(0x1334d0, 'ii', n)[0]
+def gbgdelete(p):
+	SDTest.Call(0x1334e0, 'vi', p)
+def gbgpoison(a, n):
+	for k in range(n):
+		gbgpoke(a + 4 * k, 0x5a5a5a5a)
+# the parameters of a CGameParticles without its padding and the node
+def gbgpart(p):
+	return (gbgints(p, 0x98 / 4), gbgb(p + 0x98), gbgb(p + 0x99), gbgints(p + 0x9c, 2), gbgb(p + 0xa4))
+gbgve = gbgnew(0x24)
+gbgpoison(gbgve, 9)
+check('cVehicleEffects_ctor', lambda: (SDTest.Call(0x100ab0, 'tii', gbgve)[0] == gbgve, gbgints(gbgve, 9)))
+gbgtu = gbgnew(0x17c)
+gbgpoison(gbgtu, 0x17c / 4)
+check('cVehicleTubes_ctor', lambda: (SDTest.Call(0x100af0, 'tii', gbgtu)[0] == gbgtu, gbgi(gbgtu),
+	gbgints(gbgtu + 0x1c + 0xa8, 2), gbgints(gbgtu + 0x1c + 0xb0 + 0xa8, 2), gbgi(gbgtu + 4)))
+gbgtr = gbgnew(0x60)
+gbgpoison(gbgtr, 0x60 / 4)
+check('cVehicleTrails_ctor', lambda: (SDTest.Call(0x100b30, 'tii', gbgtr)[0] == gbgtr, gbgi(gbgtr), gbgi(gbgtr + 4)))
+gbgpoke(gbgtu + 4, 0)
+gbgpoke(gbgtr + 4, 0)
+gbgpoke(gbgve + 0x1c, gbgtr)
+gbgpoke(gbgve + 0x20, gbgtu)
+check('cVehicleEffects_Update counts 0', lambda: (SDTest.Call(0x100c10, 'tvif', gbgve, 0.1), gbgints(gbgve, 9) ==
+	(0, 0, 0, 0, 0, 0, 0, gbgtr, gbgtu)))
+check('cVehicleEffects_dtor', lambda: (SDTest.Call(0x100b60, 'tvi', gbgve), gbgints(gbgve, 9)))
+check('cVehicleEffects_dtor empty', lambda: (SDTest.Call(0x100b60, 'tvi', gbgve), gbgints(gbgve, 9)))
+check('cVehicleEffects_Update none', lambda: SDTest.Call(0x100c10, 'tvif', gbgve, 0.1))
+gbgdelete(gbgve)
+
+# the motors on memory of our own
+gbgms = gbgnew(0xc8)
+gbgpoison(gbgms, 0xc8 / 4)
+check('cVehicleMotors_ctor', lambda: (SDTest.Call(0x10bc20, 'tii', gbgms)[0] == gbgms, gbgi(gbgms) - 0x400000,
+	gbgints(gbgms + 4, 7), gbgi(gbgms + 0x20), gbgi(gbgms + 0x30)))
+gbgm1 = gbgnew(0x11c)
+gbgpoison(gbgm1, 0x11c / 4)
+check('cVehicleMotor_ctor', lambda: (SDTest.Call(0x10bb90, 'tii', gbgm1)[0] == gbgm1, gbgints(gbgm1 + 0x38, 2),
+	gbgb(gbgm1 + 0x40), gbgb(gbgm1 + 0x60), gbgb(gbgm1 + 0x6c), gbgints(gbgm1 + 0x64, 4), gbgi(gbgm1 + 0x74)))
+gbgm2 = gbgnew(0x11c)
+SDTest.Call(0x10bb90, 'tii', gbgm2)
+check('cVehicleMotor_dtor', lambda: (SDTest.Call(0x10bcb0, 'tvi', gbgm2), gbgints(gbgm2 + 0x38, 2), gbgi(gbgm2 + 0x74)))
+gbgdelete(gbgm2)
+gbgpoke(gbgms + 0xc, gbgm1)
+check('cVehicleMotors_dtor', lambda: (SDTest.Call(0x10bd10, 'tvi', gbgms), gbgi(gbgms) - 0x400000,
+	gbgi(gbgms + 0xc) == gbgm1, gbgi(gbgms + 0x20)))
+gbgdelete(gbgms)
+
+gbgc4obj = Scrap.CreateEntity('SDGbgCar4', gbgmpos[0], gbgmpos[1] - 3000.0, gbgmpos[2] + 5000.0, 'Car')
+gbgc4 = gbgfind('SDGbgCar4')
+check('SDGbgCar4', lambda: (gbgc4obj is not None, gbgc4 != 0))
+if gbgc4:
+	c = gbgc4
+	check('GBG SetModel SPoli1', lambda c=c: (SDTest.Call(0x109db0, 'tvisfffi', c, 'SPoli1', 1.0, 1.0, 1.0, 1),
+		gbgi(c + 0x51c), gbgi(c + 0x224) != 0, gbgi(c + 0x80c) != 0, gbgi(c + 0x810) != 0))
+	# the wind smoke at the ship
+	gbgwind = gbgs(SDTest.Peek(0x447d0c, 'i'))
+	gbgwsys = gbgdebris(gbgwind)
+	check('GBG wind smoke', lambda: (gbgwind, gbgwsys != 0, gbgfl(0x847dcc, 1), gbgfl(0x847c7c, 1)))
+	gbgwel = 0
+	if gbgwsys:
+		gbgcpos = SDTest.Call(gbgi(gbgi(c) + 0x74) - 0x400000, 'tiiF', c, (0.0, 0.0, 0.0))[1]
+		gbgsrand(1357)
+		for d in ((0.0, -300.0, 0.0), (100.0, -200.0, 50.0), (0.0, 0.0, 0.0), (1e6, 0.0, 0.0)):
+			gbgwd = SDTest.Call(0x204d40, 'tii', gbgwsys)[0]
+			gbgwel = gbgwd and gbgi(gbgwd + 0x54)
+			# the original reads the element without a check
+			if gbgwel:
+				check('cVehicleEffects_WindSmoke' + fmt(d), lambda c=c, d=d, el=gbgwel: (SDTest.Call(0x102940,
+					'tvifff', c + 0x7f0, gbgcpos[0] + d[0], gbgcpos[1] + d[1], gbgcpos[2] + d[2]),
+					gbgpart(el + 4), SDTest.Call(0x323c2f, 'i')[0]))
+	# the escape tubes on a tubes object of our own: the particles are copies of the particles of a wind smoke element
+	# (attached to its own system)
+	gbgsp = gbgwel and gbgwel + 4
+	check('GBG tube particles', lambda: (gbgsp != 0, gbgsp and gbgi(gbgsp + 0xac) != 0, gbgfl(c + 0x498, 1)))
+	if gbgsp and gbgi(gbgsp + 0xac) and gbgi(c + 0x224):
+		gbgtu = gbgnew(0x17c)
+		SDTest.Call(0x100af0, 'tii', gbgtu)
+		SDTest.Call(0x3197d0, 'iiii', gbgtu + 0x1c, gbgsp, 0xb0)
+		SDTest.Call(0x3197d0, 'iiii', gbgtu + 0x1c + 0xb0, gbgsp, 0xb0)
+		gbgpoke(gbgtu, c)
+		gbgpoke(gbgtu + 4, 2)
+		gbgpoke(gbgtu + 0x14, 0)
+		gbgpoke(gbgtu + 0x18, -1)
+		# the model counts as seen in the last frame
+		gbgmodelo = gbgi(c + 0xb8)
+		gbgvis = gbgb(gbgmodelo + 0x121)
+		gbgsetbyte(gbgmodelo + 0x121, 1)
+		gbgsrand(2468)
+		for kind, dt, lvz, nodes in ((0, 0.01, 0.0, (0, -1)), (0, 0.03, -3000.0, (0, -1)), (1, 0.03, 500.0, (-1, 0)),
+				(1, 0.05, -100000.0, (0, 0)), (2, 0.05, 0.0, (0, 0)), (0, 0.02, -1000.0, (-1, -1))):
+			gbgpoke(gbgtu + 0xc, kind)
+			gbgpoke(gbgtu + 0x14, nodes[0])
+			gbgpoke(gbgtu + 0x18, nodes[1])
+			gbgset(c + 0x4e4, (0.0, 0.0, lvz))
+			check('cVehicleTubes_Update' + fmt((kind, dt, lvz, nodes)), lambda dt=dt: (SDTest.Call(0x100c60, 'tvif',
+				gbgtu, dt), gbgfl(gbgtu + 0x10, 1), gbgpart(gbgtu + 0x1c), gbgpart(gbgtu + 0x1c + 0xb0),
+				SDTest.Call(0x323c2f, 'i')[0]))
+		gbgsetbyte(c + 0x4c, 0)
+		check('cVehicleTubes_Update inactive', lambda: (SDTest.Call(0x100c60, 'tvif', gbgtu, 0.5), gbgfl(gbgtu + 0x10, 1)))
+		gbgsetbyte(c + 0x4c, 1)
+		gbgpoke(gbgtu + 4, 1)
+		gbgpoke(gbgtu + 0x14, 0)
+		gbgpoke(gbgtu + 0x18, -1)
+		gbgve = gbgnew(0x24)
+		SDTest.Call(0x100ab0, 'tii', gbgve)
+		gbgpoke(gbgve + 0x20, gbgtu)
+		check('cVehicleEffects_Update tubes', lambda: (SDTest.Call(0x100c10, 'tvif', gbgve, 0.04), gbgfl(gbgtu + 0x10, 1),
+			gbgpart(gbgtu + 0x1c)))
+		gbgdelete(gbgve)
+		gbgsetbyte(gbgmodelo + 0x121, gbgvis)
+		gbgset(c + 0x4e4, (0.0, 0.0, 0.0))
+		# the copies are not released
+		gbgdelete(gbgtu)
+	# the flight
+	gbgstepf = ((0x28, 3), (0xac, 3), (0xd4, 3), (0xe0, 3), (0x45c, 5), (0x46c, 2), (0x490, 1), (0x590, 1))
+	def gbgstep(c):
+		r = ()
+		for o, n in gbgstepf:
+			r = r + (gbgfl(c + o, n),)
+		return r
+	gbgstepsaved = gbgfl(c + 0x418, 0x4a0 / 4 - 0x418 / 4)
+	gbgposlow = (gbgmpos[0], 20000.0, gbgmpos[2] + 5000.0)
+	gbgset(c + 0x230, (900.0,))
+	gbgset(c + 0x480, (1.5, 9000.0, 4000.0, 3.0, 0.0, 2.0, 12000.0, 0.8))
+	for st in (((0.3, -0.2, 1.0, 0.1, -0.05), 0, 0, 100.0, 0.0), ((1.5, -2.0, 1.0, 0.4, 0.2), 0, 0, 5000.0, 0.0),
+			((-1.2, 1.7, -1.0, -0.3, 0.6), 0, 0, -20.0, 0.0), ((0.0, 0.0, -1.0, 0.0, 0.0), 0, 1, 3000.0, 0.0),
+			((0.5, 0.5, 1.0, 0.0, 0.0), 1, 0, 8500.0, 0.0), ((0.5, 0.5, 1.0, 0.0, 0.0), 1, 0, 8500.0, 15500.0),
+			((0.5, 0.5, 0.5, 0.2, 0.1), 1, 0, 8000.0, 0.0), ((0.0, 0.0, 0.0, 0.0, 0.0), 0, 0, 0.0, 30000.0)):
+		sticks, boost, full, thrust, speed = st
+		gbgset(c + 0x28, gbgposlow)
+		gbgset(c + 0xac, (0.2, -1.0, 0.1))
+		gbgset(c + 0xd4, (100.0, -50.0, 300.0))
+		gbgset(c + 0x418, sticks)
+		gbgsetbyte(c + 0x438, boost)
+		gbgsetbyte(c + 0x439, full)
+		gbgset(c + 0x45c, (thrust,))
+		gbgset(c + 0x46c, (speed,))
+		gbgset(c + 0x490, (0.0,))
+		check('cVehicleEntity_Step' + fmt(st), lambda c=c: (SDTest.Call(0x10a730, 'tvif', c, 0.05), gbgstep(c)))
+	gbgsetbyte(c + 0x438, 0)
+	gbgsetbyte(c + 0x439, 0)
+	# the push, above the atmosphere, the free space magnet
+	gbgset(c + 0x470, (0.5, 100.0, 200.0, -300.0))
+	gbgset(c + 0x28, gbgposlow)
+	check('cVehicleEntity_Step push', lambda c=c: (SDTest.Call(0x10a730, 'tvif', c, 0.1), gbgstep(c),
+		gbgfl(c + 0x470, 1)))
+	gbgspace = gbgfl(0x8675d8, 1)[0]
+	for y in (gbgatm + 100.0, (gbgatm + gbgspace) * 0.5, gbgspace + 10.0):
+		gbgset(c + 0x28, (gbgmpos[0], y, gbgmpos[2]))
+		gbgset(c + 0xac, (0.3, 0.0, 0.0))
+		check('cVehicleEntity_Step high' + fmt(y), lambda c=c: (SDTest.Call(0x10a730, 'tvif', c, 0.1), gbgstep(c)))
+	gbgmag = (gbgi(0x847f08), gbgfl(0x847f38, 1), gbgfl(0x848160, 1), gbgfl(0x847f80, 1), gbgfl(0x847ef0, 1),
+		gbgfl(0x847ed8, 1), gbgfl(0x848130, 1))
+	check('GBG magnet', lambda: gbgmag)
+	gbgpoke(0x847f08, 1)
+	gbgset(0x847f38, (0.0,))
+	gbgset(0x848160, (0.0,))
+	gbgset(0x847f80, (0.0,))
+	gbgset(0x847ef0, (1000.0,))
+	gbgset(0x847ed8, (60000.0,))
+	gbgset(0x848130, (500.0,))
+	for p in (gbgposlow, (100.0, 200.0, 300.0), (gbgmpos[0], 30000.0, 90000.0)):
+		gbgset(c + 0x28, p)
+		check('cVehicleEntity_Step magnet' + fmt(p), lambda c=c: (SDTest.Call(0x10a730, 'tvif', c, 0.1), gbgstep(c)))
+	gbgpoke(0x847f08, gbgmag[0])
+	gbgset(0x847f38, gbgmag[1])
+	gbgset(0x848160, gbgmag[2])
+	gbgset(0x847f80, gbgmag[3])
+	gbgset(0x847ef0, gbgmag[4])
+	gbgset(0x847ed8, gbgmag[5])
+	gbgset(0x848130, gbgmag[6])
+	gbgset(c + 0x418, gbgstepsaved)
+
+	# the model of a slot
+	def gbgmodel(c):
+		return (SDTest.Call(0x20fa30, 'tiiF', c + 0xb8, (0.0, 0.0, 0.0))[1],
+			SDTest.Call(0x210830, 'tiiF', c + 0xb8, (0.0, 0.0, 0.0))[1])
+	gbgblur = map(lambda a: gbgfl(a, 1)[0], (0x85fec0, 0x860118, 0x8601a8, 0x860088, 0x85ffb0))
+	gbgtimer = gbgfl(c + 0x118, 2)
+	gbgofs = gbgfl(c + 0x3e8, 1)
+	gbgset(c + 0x3e8, (0.75,))
+	gbgset(c + 0x4c4, (9000.0, 0.3))
+	gbgset(c + 0x4f0, (2000.0, 0.0, -4000.0))
+	gbgset(c + 0x7e8, (1.25,))
+	gbgcam = gbgz(0x240)
+	gbgset(gbgcam + 0x220, (0.06,))
+	gbgsrand(5150)
+	for t, y, fixed, cam, slot, dying in ((10.0, 20000.0, 0, 0, -1, 0), (10.0, 20000.0, 1, 0, -1, 0),
+			(12.5, gbgatm + 5000.0, 0, 0, -1, 0), (12.5, gbgspace + 5000.0, 1, 0, -1, 0), (3.0, 20000.0, 0, 1, 0, 0),
+			(3.25, 20000.0, 0, 1, 1, 0), (7.0, gbgatm + 100.0, 0, 1, 2, 0), (4.0, 20000.0, 0, 0, -1, 1)):
+		gbgset(c + 0x118, (t, 0.02))
+		gbgset(c + 0x28, (gbgmpos[0], y, gbgmpos[2]))
+		gbgset(c + 0x94, (0.1, -0.2, 0.05, gbgmpos[0], y, gbgmpos[2]))
+		gbgsetbyte(c + 0x638, fixed)
+		gbgsetbyte(c + 0x1ac, dying)
+		gbgset(c + 0x1a4, (1.0, 0.5))
+		if cam:
+			gbgpoke(c + 0xf0, gbgcam)
+		else:
+			gbgpoke(c + 0xf0, 0)
+		gbgpoke(c + 0x410, slot)
+		check('cVehicleEntity_UpdateModel' + fmt((t, y, fixed, cam, slot, dying)), lambda c=c: (
+			SDTest.Call(0x105ea0, 'tvi', c), gbgmodel(c), gbgfl(gbgcam + 0xa8, 1), gbgfl(gbgcam + 0x214, 3),
+			map(lambda a: gbgfl(a, 1)[0], (0x85fec0, 0x860118, 0x8601a8, 0x860088, 0x85ffb0))))
+	gbgpoke(c + 0xf0, 0)
+	gbgpoke(c + 0x410, -1)
+	gbgsetbyte(c + 0x638, 0)
+	gbgsetbyte(c + 0x1ac, 0)
+	gbgfree(gbgcam)
+	k = 0
+	for a in (0x85fec0, 0x860118, 0x8601a8, 0x860088, 0x85ffb0):
+		gbgset(a, (gbgblur[k],))
+		k = k + 1
+	gbgset(c + 0x118, gbgtimer)
+	gbgset(c + 0x3e8, gbgofs)
+	check('GBG SDGbgCar4 Del', lambda: Scrap.GetEntity('SDGbgCar4').Del())

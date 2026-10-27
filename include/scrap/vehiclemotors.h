@@ -140,6 +140,7 @@ SD_SIZE(cVehicleMotors, 0xc8);
 
 /* VehicleEntity.cpp */
 cVehicleMotor *__thiscall cVehicleMotor_ctor(cVehicleMotor *self);
+void __fastcall cVehicleMotor_dtor(cVehicleMotor *self);
 /* rva 0xf6b20 (Entities/ObjEntity range): the trail color of the team at +0x74 of the team info (0..3, else
  * white) */
 

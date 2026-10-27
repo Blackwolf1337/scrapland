@@ -7186,3 +7186,19 @@ SD_HOOK(cVehicleO648_Cycle, 0x0ff480, 364)
 SD_HOOK(cVehicleO648_PickInView, 0x0ff5f0, 169)
 SD_HOOK(cVehicleO648_Update, 0x0ff6a0, 236)
 SD_HOOK(cVehicleO648_IsStale, 0x0ff790, 257)
+/* src/game/Entities/Vehicle/VehicleEffects.c */
+SD_HOOK(cVehicleEffects_ctor, 0x100ab0, 56)
+SD_HOOK(cVehicleTubes_ctor, 0x100af0, 49)
+SD_HOOK(cVehicleTrails_ctor, 0x100b30, 46)
+SD_HOOK(cVehicleEffects_dtor, 0x100b60, 168)
+SD_HOOK(cVehicleEffects_Update, 0x100c10, 69)
+SD_HOOK(cVehicleTubes_Update, 0x100c60, 2423)
+SD_HOOK(cVehicleEffects_WindSmoke, 0x102940, 1869)
+/* src/game/Entities/Vehicle/VehicleEntity.c */
+SD_HOOK(cVehicleEntity_UpdateModel, 0x105ea0, 1872)	/* vf24 */
+SD_HOOK(cVehicleEntity_Step, 0x10a730, 2590)
+/* src/game/Entities/Vehicle/VehicleMotors.c */
+SD_HOOK(cVehicleMotor_ctor, 0x10bb90, 141)
+SD_HOOK(cVehicleMotors_ctor, 0x10bc20, 140)
+SD_HOOK(cVehicleMotor_dtor, 0x10bcb0, 86)
+SD_HOOK(cVehicleMotors_dtor, 0x10bd10, 177)

@@ -10,6 +10,7 @@
 #define LIBM_SSE2_ACOS 0x329f50
 #define LIBM_SSE2_COS 0x346fe0
 #define LIBM_SSE2_SIN 0x3471a0
+#define LIBM_SSE2_ATAN 0x347370
 #define LIBM_SSE2_EXP 0x34e950
 #define LIBM_SSE2_ASIN 0x350150
 #define LIBM_SSE2_POW 0x321440
@@ -46,6 +47,11 @@ double Game_Cos(double x) {
 
 double Game_Sin(double x) {
 	return Libm_Sse2(LIBM_SSE2_SIN, x);
+}
+
+/* __libm_sse2_atan (its table holds pi / 2 and the series 1/3, 1/5, ...) */
+double Game_Atan(double x) {
+	return Libm_Sse2(LIBM_SSE2_ATAN, x);
 }
 
 double Game_Asin(double x) {
