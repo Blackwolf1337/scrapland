@@ -433,12 +433,8 @@ SD_IMPORT(CSuelo_TraceSeg, 0x26f120)
 SD_IMPORT(CSuelo_CheckBBox, 0x26fb10)
 
 /* module agent: World/World.cpp (imports below this line) */
-SD_IMPORT(cCamPathEntity_ctor, 0x0bdb40)
 SD_IMPORT(cWalkCharEntity_ctor, 0x0d0e40)
-SD_IMPORT(cCamEntity_ctor, 0x0bd260)
-SD_IMPORT(cFollowCamEntity_ctor, 0x0beaa0)
 SD_IMPORT(cWithLifeEntity_ctor, 0x12b580)
-SD_IMPORT(cCamEntity_GetTarget, 0x0c03e0)
 SD_IMPORT(cInputAction_Pressed, 0x13a1b0)
 SD_IMPORT(Alarm_ctor, 0x13fb10)
 SD_IMPORT(Alarm_Update, 0x13ff70)
@@ -674,8 +670,6 @@ SD_IMPORT(Dlg_GetFloat, 0x2a5d80)
 /* module agent: World/FX/FXCharActions.cpp (imports below this line) */
 
 /* module agent: Entities/More+ObjEntity (imports below this line) */
-SD_IMPORT(cCamEntity_SetAng, 0x0bfa90)
-SD_IMPORT(cCamEntity_SetTarget, 0x0c07f0)
 SD_IMPORT(Net_GetResourceName, 0x18ea80)
 
 /* module agent: Entities/Vehicle/VehicleEffects+VehicleEntity.cpp (imports below this line) */

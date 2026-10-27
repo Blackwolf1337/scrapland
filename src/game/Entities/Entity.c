@@ -452,3 +452,37 @@ byte __thiscall cEntity_VarV(cEntity *self, const char *name, double *x, double 
 	}
 	return 0;
 }
+
+/* the inline virtual functions of Entity.h; their code sits in the camera part of the exe (rva 0xbd430..) */
+byte __thiscall cEntity_TestLine(cEntity *self, const vec3_t *from, vec3_t *hit) {
+	(void)self;
+	(void)from;
+	(void)hit;
+	return 0;
+}
+
+byte __thiscall cEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *center, float radius, int arg) {
+	(void)self;
+	(void)exclude;
+	(void)center;
+	(void)radius;
+	(void)arg;
+	return 0;
+}
+
+void __thiscall cEntity_Vf11(cEntity *self, int a, int b, int c) {
+	(void)self;
+	(void)a;
+	(void)b;
+	(void)c;
+}
+
+void __thiscall cEntity_Vf20(cEntity *self) {
+	(void)self;
+}
+
+int __thiscall cEntity_Vf21(cEntity *self, int a) {
+	(void)self;
+	(void)a;
+	return 0;
+}

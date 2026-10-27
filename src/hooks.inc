@@ -4502,3 +4502,64 @@ SD_HOOK(cWeaponManager_ClearWeaps, 0x11a0d0, 32)
 /* module agent: Scorer/AbstractText+Button+Circuit+Head+Mission+Monitor+Radar (hooks below this line) */
 
 /* module agent: Entities/Char/Type part 1 (hooks below this line) */
+/* src/game/Entities/CamControl.c */
+SD_HOOK(cCamEntity_ctor, 0x0bd260, 200)
+SD_HOOK(cCamControl_dtor, 0x0bd330, 164)
+SD_HOOK(cCamControl_Delete, 0x0bd3e0, 38)
+SD_HOOK(cCamControl_NopF, 0x0bd410, 16)		/* vf26 */
+SD_HOOK(cCamControl_NopF, 0x0bd420, 16)		/* vf25 */
+SD_HOOK(cEntity_Vf11, 0x0bd430, 16)		/* src/game/Entities/Entity.c */
+SD_HOOK(cEntity_Vf20, 0x0bd440, 16)		/* src/game/Entities/Entity.c */
+SD_HOOK(cCamControl_VarF, 0x0bd450, 430)
+SD_HOOK(cCamControl_GetCamPos, 0x0bd600, 37)
+SD_HOOK(cEntity_Vf21, 0x0bd630, 5)		/* src/game/Entities/Entity.c */
+SD_HOOK(cCamControl_GetClassName, 0x0bd640, 6)
+SD_HOOK(cCamControl_NopF, 0x0bd650, 16)		/* vf28 */
+SD_HOOK(cCamControl_VarI, 0x0bd660, 128)
+SD_HOOK(cCamControl_IsType, 0x0bd6e0, 80)
+SD_HOOK(cEntity_TestLine, 0x0bd730, 5)		/* src/game/Entities/Entity.c */
+SD_HOOK(cCamControl_SetTarget, 0x0bd740, 176)
+SD_HOOK(cCamControl_SetCamPos, 0x0bd7f0, 43)
+SD_HOOK(cCamControl_SetViewPos, 0x0bd820, 120)
+SD_HOOK(cEntity_TestSphere, 0x0bd8a0, 5)	/* src/game/Entities/Entity.c */
+SD_HOOK(cCamControl_VarS, 0x0bd8b0, 135)
+SD_HOOK(cCamControl_VarV, 0x0bd940, 505)
+/* src/game/Entities/CamPathEntity.c */
+SD_HOOK(cCamPathEntity_ctor, 0x0bdb40, 301)
+SD_HOOK(cCamPathPoint_ctor, 0x0bdc70, 125)
+SD_HOOK(cCamPathEntity_dtor, 0x0bdcf0, 28)
+SD_HOOK(cCamPathEntity_Delete, 0x0bdd10, 57)
+SD_HOOK(cCamPathEntity_VarF, 0x0bdd50, 638)
+SD_HOOK(cCamPathEntity_PointIndex, 0x0bdfd0, 96)
+SD_HOOK(cCamPathEntity_GetClassName, 0x0be030, 6)
+SD_HOOK(cCamPathEntity_VarI, 0x0be040, 374)
+SD_HOOK(cCamPathEntity_Interp, 0x0be1c0, 843)
+SD_HOOK(cCamPathEntity_IsType, 0x0be520, 80)
+SD_HOOK(cCamPathPoint_Refresh, 0x0be570, 192)
+SD_HOOK(cCamPathEntity_Update, 0x0be630, 257)
+SD_HOOK(cCamPathEntity_VarS, 0x0be740, 293)
+SD_HOOK(cCamPathEntity_VarV, 0x0be870, 558)
+/* src/game/Entities/FollowCamEntity.c */
+SD_HOOK(cFollowCamEntity_ctor, 0x0beaa0, 405)
+SD_HOOK(cFollowCamEntity_dtor, 0x0bec40, 99)
+SD_HOOK(cFollowCamEntity_Delete, 0x0becb0, 130)
+SD_HOOK(cFollowCamEntity_Slot, 0x0bed40, 661)
+SD_HOOK(cFollowCamEntity_Lerp, 0x0befe0, 1468)
+SD_HOOK(cFollowCamEntity_VarF, 0x0bf5a0, 1256)
+SD_HOOK(cCamEntity_SetAng, 0x0bfa90, 106)
+SD_HOOK(cFollowCamEntity_FreeMove, 0x0bfb00, 1967)
+SD_HOOK(cCamEntity_GetTarget, 0x0c03e0, 7)
+SD_HOOK(cFollowCamEntity_GetAng2, 0x0c03f0, 27)
+SD_HOOK(cFollowCamEntity_GetClassName, 0x0c0410, 6)
+SD_HOOK(cFollowCamEntity_UpdateOff, 0x0c0420, 23)
+SD_HOOK(cFollowCamEntity_VarI, 0x0c0440, 164)
+SD_HOOK(cFollowCamEntity_IsType, 0x0c04f0, 80)
+SD_HOOK(cFollowCamEntity_SetTargetName, 0x0c0540, 45)
+SD_HOOK(cFollowCamEntity_Quake, 0x0c0570, 375)
+SD_HOOK(cFollowCamEntity_ResetAngles, 0x0c06f0, 113)
+SD_HOOK(cFollowCamEntity_SetFreeCam, 0x0c0770, 127)
+SD_HOOK(cCamEntity_SetTarget, 0x0c07f0, 419)
+SD_HOOK(cFollowCamEntity_SetAng2, 0x0c09a0, 27)
+SD_HOOK(cFollowCamEntity_Update, 0x0c09c0, 321)
+SD_HOOK(cFollowCamEntity_VarS, 0x0c0b10, 489)
+SD_HOOK(cFollowCamEntity_VarV, 0x0c0d00, 26)
