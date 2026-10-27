@@ -342,7 +342,6 @@ SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 
 /* engine: FileSys/ (include/scrap/filesys.h) */
 SD_IMPORT(cStringList_NewNode, 0x0605f0)
-SD_IMPORT(Loading_Step, 0x2157a0)
 SD_IMPORT(Console_Execute, 0x20aaf0)
 
 /* engine3d: Engine/ListaVert.cpp and Engine/render.cpp (include/scrap/listavert.h, mallatri.h) */
@@ -387,7 +386,6 @@ SD_IMPORT(CSuelo_RayoVert, 0x2ca360)
 SD_IMPORT(Portales_DebugDraw, 0x26d0d0)
 
 /* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/mundo.h) */
-SD_IMPORT(Color_ToD3D, 0x214f70)
 SD_IMPORT(Bsp_Free, 0x290520)
 SD_IMPORT(Bsp_ReleaseD3D, 0x286c80)
 SD_IMPORT(Bsp_InitD3D, 0x286cb0)
@@ -479,11 +477,9 @@ SD_IMPORT(CEscena_Shared, 0x24ecb0)
 SD_IMPORT(CModelo_Render, 0x253610)
 SD_IMPORT(Escena_Load, 0x2c2d60)
 SD_IMPORT(Escena_ShowTree, 0x216960)
-SD_IMPORT(Sector_At, 0x2146e0)
 SD_IMPORT(CNodoR_SetLook, 0x23f7f0)
 
 /* module agent: Engine/Nodo3D (imports below this line) */
-SD_IMPORT(Matrix_LoadIdentity, 0x214710)
 SD_IMPORT(Matrix_MulD3D, 0x2391f0)
 SD_IMPORT(Matrix_ToEuler, 0x2392d0)
 SD_IMPORT(CSistPart_Cast, 0x23f310)
@@ -513,6 +509,9 @@ SD_IMPORT(CSuelo_CheckBBox, 0x26fb10)
 /* module agent: World/World.cpp (imports below this line) */
 
 /* module agent: ScrapEng/ScrapEngWorld.cpp (imports below this line) */
+SD_IMPORT(Splash_LevelName, 0x2178e0)
+SD_IMPORT(Shadows_SetStencil, 0x267460)
+SD_IMPORT(App_GetHwnd, 0x20d290)
 
 /* module agent: ScrapEng/ScrapEngMain.cpp (imports below this line) */
 

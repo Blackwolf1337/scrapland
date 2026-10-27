@@ -48,7 +48,7 @@ void __thiscall CNiebla_SetColor(CNiebla *self, uint32_t rgba, float intens);
 void __thiscall CNiebla_SetRango(CNiebla *self, float inicio, float fin);
 
 /* other modules (src/imports.inc) */
-/* rva 0x214f70: the D3D color of a color and its intensity */
+/* the D3D color of a color and its intensity (src/game/ScrapEng/ScrapEngWorld.c) */
 uint32_t Color_ToD3D(const ColorIntens *c);
 
 #endif

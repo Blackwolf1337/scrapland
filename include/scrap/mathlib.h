@@ -91,7 +91,7 @@ void __thiscall Matrix_RotAxis(matrix_t *self, const vec3_t *axis, float ang);
 const vec3_t *__thiscall Matrix_Translate(matrix_t *self, const vec3_t *v);	/* returns v */
 byte Matrix_TransformProject(vec3_t *out, const vec3_t *v, const matrix_t *m);
 /* the math of the engine3d still in the exe */
-matrix_t *Matrix_LoadIdentity(matrix_t *m);			/* rva 0x214710 */
+matrix_t *Matrix_LoadIdentity(matrix_t *m);			/* src/game/ScrapEng/ScrapEngWorld.c */
 void Matrix_PostScale(matrix_t *m, const vec3_t *s);		/* rva 0x239210 */
 void Matrix_PostRotate(matrix_t *m, const vec3_t *rot);		/* rva 0x23a100, yaw y pitch x roll z */
 matrix_t *Matrix_RotationX(matrix_t *out, float ang);		/* rva 0x23a270, D3DXMatrixRotationX */

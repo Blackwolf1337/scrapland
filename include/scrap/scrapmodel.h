@@ -142,7 +142,7 @@ byte __fastcall CGameModel_CollideOn(const CGameModel *self);
 
 /* inline methods of the engine3d instantiated here */
 void __thiscall CAnimMat_SetFrame(CAnimMat *self, int frame);
-/* rva 0x2146e0 (ScrapEngMain.cpp): the sector of the floor at pos, -2 for none */
+/* the sector of the floor at pos, -2 for none (ScrapEngWorld.c) */
 int Sector_At(const vec3_t *pos);
 /* rva 0x23f7f0 (NodoR.cpp): the look type of the node */
 void __thiscall CNodoR_SetLook(CNodoR *self, int tipo);
