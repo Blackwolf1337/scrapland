@@ -7565,3 +7565,5 @@ SD_HOOK(cObjElementFXFadeOutTrail_Update, 0x1da950, 125)
 /* module agent: Engine leftovers 0x200000..0x240000 (hooks below this line) */
 
 /* module agent: AI leftovers 0x098000..0x0b8000 (hooks below this line) */
+
+/* module agent: Rest A, game leftovers below 0x1a8000 (hooks below this line) */

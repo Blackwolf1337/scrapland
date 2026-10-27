@@ -610,3 +610,5 @@ SD_IMPORT(CGameLensFlare_SetB2c, 0x233020)
 /* module agent: Engine leftovers 0x200000..0x240000 (imports below this line) */
 
 /* module agent: AI leftovers 0x098000..0x0b8000 (imports below this line) */
+
+/* module agent: Rest A, game leftovers below 0x1a8000 (imports below this line) */
