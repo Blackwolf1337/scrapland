@@ -6268,71 +6268,72 @@ rva	size	source	callconv	name	signature
 0020a520	182	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Unlink	void * __thiscall(char * key, uint slot)
 0020a5e0	182	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Unlink	void * __thiscall(char * key, uint slot)
 0020a6a0	49	USER_DEFINED	__thiscall	cWorld_IsIgnored	byte __thiscall(void * e)
-0020a6e0	284	DEFAULT	unknown	FUN_0060a6e0	
-0020a800	138	DEFAULT	unknown	FUN_0060a800	
-0020a890	35	ANALYSIS	__thiscall	CApp::vf03	undefined __thiscall(void)
-0020a8c0	1	ANALYSIS	__thiscall	CApp::vf02	undefined __thiscall(void)
-0020a8d0	537	ANALYSIS	__thiscall	CApp::vf00	undefined __thiscall(void)
+0020a6e0	284	USER_DEFINED	__thiscall	CApp_ctor	void * __thiscall(char * cmdLine)
+0020a800	138	USER_DEFINED	__fastcall	CApp_dtor	void __fastcall(void * self)
+0020a890	35	USER_DEFINED	__thiscall	CApp_Delete	void * __thiscall(byte flags)
+0020a8c0	1	USER_DEFINED	__thiscall	CApp_InitDebug	void __thiscall(void)
+0020a8d0	537	USER_DEFINED	__thiscall	CApp_DoneGame	void __thiscall(void)
 0020aaf0	447	USER_DEFINED	__cdecl	Console_Execute	void __cdecl(char * cmd)
-0020ace0	1	ANALYSIS	__thiscall	CApp::vf08	undefined __thiscall(void)
-0020acf0	5	ANALYSIS	__thiscall	CApp::vf11	undefined __thiscall(void)
-0020ad00	214	ANALYSIS	__thiscall	CApp::vf06	undefined __thiscall(void)
-0020ade0	69	USER_DEFINED	unknown	Loading_End	undefined(void)
-0020ae30	1	ANALYSIS	__thiscall	CApp::vf09	undefined __thiscall(void)
-0020ae40	8	ANALYSIS	__thiscall	CApp::vf13	undefined __thiscall(void)
-0020ae50	4	ANALYSIS	__thiscall	CApp::vf15	undefined __thiscall(void)
-0020ae60	57	DEFAULT	unknown	FUN_0060ae60	
-0020aea0	49	DEFAULT	unknown	FUN_0060aea0	
-0020aee0	722	ANALYSIS	__thiscall	CApp::vf04	undefined __thiscall(void)
-0020b1c0	157	ANALYSIS	__thiscall	CApp::vf01	undefined __thiscall(void)
-0020b260	45	USER_DEFINED	unknown	Loading_Init	undefined(void)
-0020b290	180	DEFAULT	unknown	FUN_0060b290	
-0020b350	419	ANALYSIS	__thiscall	CApp::vf07	undefined __thiscall(void)
-0020b500	510	DEFAULT	unknown	FUN_0060b500	
-0020b700	405	ANALYSIS	__thiscall	CApp::vf05	undefined __thiscall(void)
-0020b8a0	46	USER_DEFINED	unknown	CWinApp::LoadLevel	undefined(void)
-0020b8d0	620	ANALYSIS	__thiscall	CApp::vf12	undefined __thiscall(void)
-0020bb40	541	DEFAULT	unknown	FUN_0060bb40	
-0020bd90	1366	DEFAULT	unknown	FUN_0060bd90	
-0020c2f0	25	ANALYSIS	__thiscall	CApp::vf19	undefined __thiscall(void)
-0020c310	30	ANALYSIS	__cdecl	SFINIT0	void __cdecl(void)
-0020c330	162	ANALYSIS	__thiscall	CApp::SFLB_0	void __thiscall(void)
-0020c3e0	124	ANALYSIS	__thiscall	CApp::SFLB_1	void __thiscall(void)
-0020c460	894	DEFAULT	unknown	FUN_0060c460	
-0020c7e0	29	ANALYSIS	__thiscall	CApp::vf10	undefined __thiscall(void)
-0020c800	3	ANALYSIS	__thiscall	CApp::vf20	undefined __thiscall(void)
-0020c810	221	USER_DEFINED	__thiscall	CWinApp::CWinApp	undefined __thiscall(void)
-0020c8f0	28	DEFAULT	unknown	FUN_0060c8f0	
-0020c910	5	DEFAULT	unknown	thunk_FUN_0060d860	
-0020c920	57	ANALYSIS	__thiscall	CWinApp::vf03	undefined __thiscall(void)
-0020c960	700	DEFAULT	unknown	FUN_0060c960	
-0020cd80	21	ANALYSIS	__thiscall	CWinApp::vf17	undefined __thiscall(void)
-0020cda0	18	ANALYSIS	__thiscall	CWinApp::vf16	undefined __thiscall(void)
-0020cdc0	127	DEFAULT	unknown	FUN_0060cdc0	
-0020ce40	230	DEFAULT	unknown	FUN_0060ce40	
-0020cf30	18	ANALYSIS	__thiscall	CWinApp::vf18	undefined __thiscall(void)
-0020cf50	21	ANALYSIS	__thiscall	CWinApp::vf08	undefined __thiscall(void)
-0020cf70	5	ANALYSIS	__thiscall	CWinApp::vf11	undefined __thiscall(void)
-0020cf80	69	ANALYSIS	__thiscall	CWinApp::vf06	undefined __thiscall(void)
-0020cfd0	16	ANALYSIS	__thiscall	CWinApp::vf09	undefined __thiscall(void)
-0020cfe0	12	ANALYSIS	__thiscall	CWinApp::vf13	undefined __thiscall(void)
-0020d030	197	DEFAULT	unknown	FUN_0060d030	
+0020acd0	16	USER_DEFINED	__cdecl	App_CheckBlock	byte __cdecl(void)
+0020ace0	1	USER_DEFINED	__thiscall	CApp_InitDedicated	void __thiscall(void)
+0020acf0	5	USER_DEFINED	__thiscall	CApp_Render	void __thiscall(void)
+0020ad00	214	USER_DEFINED	__thiscall	CApp_Shutdown	void __thiscall(void)
+0020ade0	69	USER_DEFINED	__cdecl	Loading_End	void __cdecl(void)
+0020ae30	1	USER_DEFINED	__thiscall	CApp_Exit	void __thiscall(void)
+0020ae40	8	USER_DEFINED	__thiscall	CApp_ResetParams	void __thiscall(void)
+0020ae50	4	USER_DEFINED	__thiscall	CApp_GetGameTime	double __thiscall(void)
+0020ae60	57	USER_DEFINED	__cdecl	App_GetObjData	void * __cdecl(char * name)
+0020aea0	49	USER_DEFINED	__cdecl	World_TimeScale	float __cdecl(void)
+0020aee0	722	USER_DEFINED	__thiscall	CApp_Init	byte __thiscall(void)
+0020b1c0	157	USER_DEFINED	__thiscall	CApp_InitGame	void __thiscall(char * level)
+0020b260	45	USER_DEFINED	__cdecl	Loading_Init	void __cdecl(void)
+0020b290	180	USER_DEFINED	__fastcall	Loading_Start	void __fastcall(void * unused)
+0020b350	419	USER_DEFINED	__thiscall	CApp_LoadLevelNow	void __thiscall(char * level)
+0020b500	510	USER_DEFINED	__cdecl	Loading_DrawXbox	byte __cdecl(void)
+0020b700	405	USER_DEFINED	__thiscall	CApp_Frame	byte __thiscall(void)
+0020b8a0	46	USER_DEFINED	__thiscall	CWinApp_LoadLevel	void __thiscall(char * level)
+0020b8d0	620	USER_DEFINED	__thiscall	CApp_ParseParam	byte __thiscall(char * param, char * ext)
+0020bb40	541	USER_DEFINED	__fastcall	CApp_ParseCmdLine	void __fastcall(void * self)
+0020bd90	1366	USER_DEFINED	__cdecl	Loading_Draw	byte __cdecl(void)
+0020c2f0	25	USER_DEFINED	__thiscall	CApp_RunApp	byte __thiscall(char * exe, char * cmdLine, int arg)
+0020c310	30	USER_DEFINED	__cdecl	CApp_SFINIT0	void __cdecl(void)
+0020c330	162	USER_DEFINED	__cdecl	CApp_SFLB_0	void __cdecl(void * self)
+0020c3e0	124	USER_DEFINED	__cdecl	CApp_SFLB_1	void __cdecl(void * self)
+0020c460	894	USER_DEFINED	__thiscall	App_PickLoadingTip	void __thiscall(char * level)
+0020c7e0	29	USER_DEFINED	__thiscall	CApp_Update	void __thiscall(float dt)
+0020c800	3	USER_DEFINED	__thiscall	CApp_IsDedicatedWin	byte __thiscall(void)
+0020c810	221	USER_DEFINED	__thiscall	CWinApp_ctor	void * __thiscall(void * hInst, void * hPrev, char * cmdLine, int nCmdShow)
+0020c8f0	28	USER_DEFINED	__fastcall	CWinApp_dtor	void __fastcall(void * self)
+0020c910	5	USER_DEFINED	__fastcall	GogListeners_dtorThunk	void __fastcall(void * self)
+0020c920	57	USER_DEFINED	__thiscall	CWinApp_Delete	void * __thiscall(byte flags)
+0020c960	700	USER_DEFINED	__thiscall	CWinApp_WndProc	int __thiscall(void * hwnd, uint msg, uint wParam, int lParam)
+0020cd80	21	USER_DEFINED	__thiscall	CWinApp_ConsoleAdd	int __thiscall(char * text, uint color)
+0020cda0	18	USER_DEFINED	__thiscall	CWinApp_ShowConsole	int __thiscall(byte show)
+0020cdc0	127	USER_DEFINED	__fastcall	CWinApp_CreateMainWindow	byte __fastcall(void * self)
+0020ce40	230	USER_DEFINED	__fastcall	CWinApp_CreateWindow	void * __fastcall(void * self)
+0020cf30	18	USER_DEFINED	__thiscall	CWinApp_DebugInput	char * __thiscall(char * prompt)
+0020cf50	21	USER_DEFINED	__thiscall	CWinApp_InitDedicated	void __thiscall(void)
+0020cf70	5	USER_DEFINED	__thiscall	CWinApp_Render	void __thiscall(void)
+0020cf80	69	USER_DEFINED	__thiscall	CWinApp_Shutdown	void __thiscall(void)
+0020cfd0	16	USER_DEFINED	__thiscall	CWinApp_Exit	void __thiscall(void)
+0020cfe0	12	USER_DEFINED	__thiscall	CWinApp_ResetParams	void __thiscall(void)
+0020d030	197	USER_DEFINED	__thiscall	CWinApp_HasArg	int __thiscall(char * name)
 0020d100	21	USER_DEFINED	__cdecl	App_GetPath	void __cdecl(char * buf, int size)
-0020d120	116	DEFAULT	unknown	FUN_0060d120	
-0020d1a0	9	DEFAULT	unknown	FUN_0060d1a0	
-0020d1b0	218	ANALYSIS	__thiscall	CWinApp::vf14	undefined __thiscall(void)
+0020d120	116	USER_DEFINED	__thiscall	App_RegGetString	char * __thiscall(char * name)
+0020d1a0	9	USER_DEFINED	__cdecl	App_GetHInstance	void * __cdecl(void)
+0020d1b0	218	USER_DEFINED	__thiscall	CWinApp_GetTime	double __thiscall(void)
 0020d290	9	USER_DEFINED	__cdecl	App_GetHWnd	void * __cdecl(void)
-0020d2a0	615	ANALYSIS	__thiscall	CWinApp::vf04	undefined __thiscall(void)
-0020d510	64	ANALYSIS	__thiscall	CWinApp::vf05	undefined __thiscall(void)
+0020d2a0	615	USER_DEFINED	__thiscall	CWinApp_Init	byte __thiscall(void)
+0020d510	64	USER_DEFINED	__thiscall	CWinApp_Frame	byte __thiscall(void)
 0020d550	28	USER_DEFINED	__cdecl	ConsoleWin_Add	void __cdecl(char * text, uint color)
 0020d570	268	USER_DEFINED	__cdecl	App_GetConfigDir	void __cdecl(char * buf, int size)
-0020d680	94	ANALYSIS	__thiscall	CWinApp::vf12	undefined __thiscall(void)
-0020d6e0	216	ANALYSIS	__thiscall	CWinApp::vf19	undefined __thiscall(void)
+0020d680	94	USER_DEFINED	__thiscall	CWinApp_ParseParam	byte __thiscall(char * param, char * ext)
+0020d6e0	216	USER_DEFINED	__thiscall	CWinApp_RunApp	byte __thiscall(char * exe, char * cmdLine, int arg)
 0020d7c0	114	DEFAULT	unknown	FUN_0060d7c0	
-0020d840	26	DEFAULT	unknown	FUN_0060d840	
-0020d860	80	DEFAULT	unknown	FUN_0060d860	
-0020d8b0	7	ANALYSIS	__thiscall	CWinApp::vf20	undefined __thiscall(void)
-0020d8c0	238	DEFAULT	unknown	FUN_0060d8c0	
+0020d840	26	USER_DEFINED	__stdcall	App_WndProc	int __stdcall(void * hwnd, uint msg, uint wParam, int lParam)
+0020d860	80	USER_DEFINED	__fastcall	GogListeners_dtor	void __fastcall(void * self)
+0020d8b0	7	USER_DEFINED	__thiscall	CWinApp_IsDedicatedWin	byte __thiscall(void)
+0020d8c0	238	USER_DEFINED	__stdcall	App_WinMain	int __stdcall(void * hInst, void * hPrev, char * cmdLine, int nCmdShow)
 0020d9ae	6	DEFAULT	unknown	XINPUT9_1_0.DLL::XInputGetState	
 0020d9c6	6	DEFAULT	unknown	DINPUT8.DLL::DirectInput8Create	
 0020d9cc	6	DEFAULT	unknown	WSOCK32.DLL::Ordinal_2	
@@ -6350,27 +6351,27 @@ rva	size	source	callconv	name	signature
 0020da14	6	DEFAULT	unknown	WSOCK32.DLL::Ordinal_52	
 0020da1a	6	DEFAULT	unknown	WSOCK32.DLL::Ordinal_115	
 0020da20	6	DEFAULT	unknown	WSOCK32.DLL::Ordinal_116	
-0020db70	31	DEFAULT	unknown	FUN_0060db70	
-0020db90	489	DEFAULT	unknown	FUN_0060db90	
-0020dd80	79	DEFAULT	unknown	FUN_0060dd80	
-0020ddd0	61	DEFAULT	unknown	FUN_0060ddd0	
-0020de10	183	DEFAULT	unknown	FUN_0060de10	
-0020ded0	39	DEFAULT	unknown	FUN_0060ded0	
-0020df00	60	DEFAULT	unknown	FUN_0060df00	
-0020df40	125	DEFAULT	unknown	FUN_0060df40	
-0020dfc0	516	DEFAULT	unknown	FUN_0060dfc0	
-0020e1d0	6	DEFAULT	unknown	FUN_0060e1d0	
-0020e1e0	236	DEFAULT	unknown	FUN_0060e1e0	
-0020e2d0	154	DEFAULT	unknown	FUN_0060e2d0	
-0020e370	107	DEFAULT	unknown	FUN_0060e370	
-0020e3e0	58	DEFAULT	unknown	FUN_0060e3e0	
-0020e420	59	DEFAULT	unknown	FUN_0060e420	
-0020e460	50	DEFAULT	unknown	FUN_0060e460	
-0020e4a0	301	DEFAULT	unknown	FUN_0060e4a0	
-0020e5d0	36	DEFAULT	unknown	FUN_0060e5d0	
-0020e600	112	DEFAULT	unknown	FUN_0060e600	
-0020e670	29	DEFAULT	unknown	FUN_0060e670	
-0020e690	1032	DEFAULT	unknown	FUN_0060e690	
+0020db70	31	USER_DEFINED	__cdecl	ConsoleWin_Toggle	int __cdecl(byte open, void * parent, byte bottom)
+0020db90	489	USER_DEFINED	__cdecl	ConsoleWin_Layout	void __cdecl(void)
+0020dd80	79	USER_DEFINED	__cdecl	ConsoleWin_Close	int __cdecl(void)
+0020ddd0	61	USER_DEFINED	__cdecl	ConsoleWin_Input	char * __cdecl(char * prompt)
+0020de10	183	USER_DEFINED	__cdecl	ConsoleWin_Print	int __cdecl(char * text, uint color)
+0020ded0	39	USER_DEFINED	__cdecl	ConsoleWin_ToggleSize	void __cdecl(void)
+0020df00	60	USER_DEFINED	__cdecl	ConsoleWin_Focus	void __cdecl(void * hwnd)
+0020df40	125	USER_DEFINED	__stdcall	ConsoleWin_DlgProc	int __stdcall(void * hdlg, uint msg, uint wParam, int lParam)
+0020dfc0	516	USER_DEFINED	__stdcall	ConsoleWin_EditProc	int __stdcall(void * hwnd, uint msg, uint wParam, int lParam)
+0020e1d0	6	USER_DEFINED	__cdecl	ConsoleWin_GetHwnd	void * __cdecl(void)
+0020e1e0	236	USER_DEFINED	__cdecl	ConsoleWin_Open	int __cdecl(void * parent, byte bottom)
+0020e2d0	154	USER_DEFINED	__cdecl	ConsoleWin_Create	int __cdecl(void * inst, int x, int y, int nCmdShow, void * parent)
+0020e370	107	USER_DEFINED	__cdecl	ConsoleWin_RegisterClass	int __cdecl(void * inst)
+0020e3e0	58	USER_DEFINED	__cdecl	ConsoleWin_HistoryNewer	void __cdecl(void)
+0020e420	59	USER_DEFINED	__cdecl	ConsoleWin_HistoryOlder	void __cdecl(void)
+0020e460	50	USER_DEFINED	__stdcall	ConsoleWin_StreamOut	uint __stdcall(void * file, void * buf, int n, void * written)
+0020e4a0	301	USER_DEFINED	__cdecl	ConsoleWin_SaveOutput	int __cdecl(void)
+0020e5d0	36	USER_DEFINED	__cdecl	ConsoleWin_Show	int __cdecl(byte show)
+0020e600	112	USER_DEFINED	__cdecl	ConsoleWin_Enter	void __cdecl(void)
+0020e670	29	USER_DEFINED	__cdecl	ConsoleWin_ToggleInput	void __cdecl(void)
+0020e690	1032	USER_DEFINED	__stdcall	ConsoleWin_WndProc	int __stdcall(void * hwnd, uint msg, uint wParam, int lParam)
 0020eb10	80	DEFAULT	unknown	FUN_0060eb10	
 0020eb70	150	DEFAULT	unknown	FUN_0060eb70	
 0020ec10	86	DEFAULT	unknown	FUN_0060ec10	
