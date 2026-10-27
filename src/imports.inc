@@ -302,7 +302,6 @@ SD_IMPORT(Steam_Done, 0x1a64d0)	/* Sound agent range */
 SD_IMPORT(Steam_GetLanguage, 0x1a65f0)	/* Sound agent range */
 SD_IMPORT(Steam_Init, 0x1a6620)	/* Sound agent range */
 SD_IMPORT(Steam_RunCallbacks, 0x1a66e0)	/* Sound agent range */
-SD_IMPORT(D3DApp_MsgProc, 0x233030)
 SD_IMPORT(crt_srand, 0x323c50)
 
 /* module agent: World/FX/FXCountermeasures+FXElementsOrbit+FXElementsPress.cpp (imports below this line) */

@@ -34,7 +34,6 @@
 #define CENTRADANULA_SIZE 0x114
 
 #define MOTOR_TITLE(m) (*(const char **)((m) + 0x2a5ac))
-#define MOTOR_I2A5B0(m) (*(int *)((m) + 0x2a5b0))
 #define MOTOR_I2A5B4(m) (*(int *)((m) + 0x2a5b4))
 #define MOTOR_I2A5B8(m) (*(int *)((m) + 0x2a5b8))
 #define MOTOR_MINW(m) (*(int *)((m) + 0x2a5bc))
@@ -102,7 +101,7 @@ byte *__fastcall CMotorApp_ctor(byte *self) {
 	MOTOR_TABLA(self)->p = NULL;
 	MOTOR_TABLA(self)->n = 0;
 	MOTOR_TITLE(self) = "ScrapEngine [DX8]";
-	MOTOR_I2A5B0(self) = 1;
+	MOTOR_USEDEPTH(self) = 1;
 	MOTOR_MINW(self) = 640;
 	MOTOR_MINH(self) = 480;
 	MOTOR_MENU(self) = NULL;
