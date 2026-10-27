@@ -18,10 +18,16 @@ typedef struct cEntity cEntity;
 
 /* the first slots of cEntity::vftable; Ghidra names the rest cEntity::vfNN */
 typedef struct cEntityVtbl {
-	void *vf00_04[5];
+	void(__thiscall *Update)(cEntity *self);				/* 0x00 vf00 */
+	void(__thiscall *Render)(cEntity *self, void *arg);			/* 0x04 vf01 */
+	void(__thiscall *UpdateOff)(cEntity *self);				/* 0x08 vf02 */
+	cEntity *(__thiscall *Delete)(cEntity *self, uint32_t flags);		/* 0x0c vf03 deleting destructor */
+	const char *(__thiscall *GetClassName)(cEntity *self);		/* 0x10 vf04 "Entity", "Car", ... */
 	byte(__thiscall *IsType)(cEntity *self, const char *type);		/* 0x14 vf05 */
 	vec3_t *(__thiscall *GetPos)(cEntity *self, vec3_t *out);		/* 0x18 vf06, returns out */
-	void *vf07_11[5];
+	void(__thiscall *SetPos)(cEntity *self, const vec3_t *pos);		/* 0x1c vf07 */
+	void(__thiscall *SetActive)(cEntity *self, byte on);			/* 0x20 vf08 flag_4c */
+	void *vf09_11[3];
 	void(__thiscall *SetModel)(cEntity *self, const char *file, float sx, float sy, float sz, int flag); /* 0x30 */
 	/* angle to the target in ang (in: x, y; out: x, y), target found in *target */
 	void(__thiscall *GetTargetAngle)(cEntity *self, float *ang, float dist, cEntity **target);	/* 0x34 vf13 */
@@ -46,7 +52,9 @@ typedef struct cWithLifeEntityVtbl {
 	void *(__thiscall *GetActCtrl)(cEntity *self);				/* 0xd4 vf53 */
 } cWithLifeEntityVtbl;
 SD_OFFSET(cWithLifeEntityVtbl, GetActCtrl, 0xd4);
+SD_OFFSET(cEntityVtbl, GetClassName, 0x10);
 SD_OFFSET(cEntityVtbl, IsType, 0x14);
+SD_OFFSET(cEntityVtbl, SetActive, 0x20);
 SD_OFFSET(cEntityVtbl, GetPos, 0x18);
 SD_OFFSET(cEntityVtbl, SetModel, 0x30);
 SD_OFFSET(cEntityVtbl, GetTargetAngle, 0x34);
@@ -58,23 +66,45 @@ SD_OFFSET(cEntityVtbl, VarS, 0x48);
 SD_OFFSET(cEntityVtbl, VarV, 0x4c);
 SD_OFFSET(cEntityVtbl, GetAI, 0x58);
 
+/* Nto1Links.h with a shared count: the head (data NULL) owns the int, every linked node points to it */
+typedef struct EntityDNode {
+	Nto1Node node;			/* 0x00 */
+	int *numElems;			/* 0x10 */
+} EntityDNode;
+SD_SIZE(EntityDNode, 0x14);
+
+/* Entities/Entity.cpp (src/game/Entities/Entity.c), 0x7c bytes */
 struct cEntity {
 	const cEntityVtbl *vftable;	/* 0x00 */
-	char *name;			/* 0x04 */
-	byte pad_08[0x4c - 0x08];
-	byte flag_4c;			/* 0x4c checked by the SAI functions before they touch the AI */
-	byte pad_4d[0x64 - 0x4d];
+	char *name;			/* 0x04 string object, unique in g_pWorld->entities */
+	Nto1Node worldNode;		/* 0x08 in g_pWorld->entityList, data the entity */
+	Nto1Node deadNode;		/* 0x18 in g_pWorld->deadList once deleted (cEntity_Del) */
+	vec3_t pos;			/* 0x28 */
+	Nto1Node gridNode;		/* 0x34 cell of the collision grid, data the entity */
+	uint32_t savedMask;		/* 0x44 the mask while the collision is off (ActiveCMask 0) */
+	uint32_t mask;			/* 0x48 the entity lists it is in, a bit each */
+	byte flag_4c;			/* 0x4c "Active"; checked by the SAI functions before they touch the AI */
+	byte pad_4d[3];
+	EntityDNode listNode;		/* 0x50 in the ring of its cEntityListData ("EntityList"), target the list */
 	Nto1Node links;			/* 0x64 head of the script handles (cPyEntity), target the entity */
+	void *lLogic;			/* 0x74 local logic made by the list ("LLogic" variables) */
+	void *ai;			/* 0x78 the AI (GetAI, "AI_" variables) */
 };
 SD_OFFSET(cEntity, name, 0x4);
+SD_OFFSET(cEntity, pos, 0x28);
+SD_OFFSET(cEntity, mask, 0x48);
 SD_OFFSET(cEntity, flag_4c, 0x4c);
+SD_OFFSET(cEntity, listNode, 0x50);
 SD_OFFSET(cEntity, links, 0x64);
-SD_SIZE(cEntity, 0x74);
+SD_OFFSET(cEntity, ai, 0x78);
+SD_SIZE(cEntity, 0x7c);
+
+#define CENTITY_VFTABLE 0x3b25f8
 
 /* a vehicle ("Car"); only the fields used so far */
 typedef struct cVehicleEntity {
 	cEntity base;
-	byte pad_74[0x238 - 0x74];
+	byte pad_7c[0x238 - 0x7c];
 	int life;			/* 0x238 > 0 while the ship is alive (SLogic.GetNearestShip) */
 } cVehicleEntity;
 SD_OFFSET(cVehicleEntity, life, 0x238);
@@ -102,6 +132,46 @@ void __thiscall cEntity_AddLink(cEntity *self, Nto1Node *node);
 
 /* removes the entity; 0 if it cannot (rva 0xef0c0) */
 byte __thiscall cEntity_Del(cEntity *self);
+
+/* Entities/Entity.cpp; cEntity_ctor, cEntity_Next and EntityDList_dtor are declared in world.h */
+void __fastcall Nto1Node_dtor(Nto1Node *node);
+void __fastcall cEntity_dtor(cEntity *self);
+/* node joins the ring of head and counts in its numElems */
+void __thiscall EntityDList_Add(void *head, EntityDNode *node);
+/* the mask to savedMask (no collisions) and back */
+void __fastcall cEntity_CollisionOff(cEntity *self);
+void __fastcall cEntity_CollisionOn(cEntity *self);
+/* node linked to the entity src is linked to, or unlinked */
+void Nto1Node_LinkAs(Nto1Node *node, const Nto1Node *src);
+/* node linked to the entity of that name, or unlinked */
+void Nto1Node_LinkByName(Nto1Node *node, const char *name);
+/* the name of the entity node is linked to, "" for none */
+const char *Nto1Node_TargetName(const Nto1Node *node);
+/* the name of the entity list, NULL for none */
+char *__fastcall cEntity_GetListName(cEntity *self);
+cEntity *__fastcall cEntity_NextInList(cEntity *self);
+/* into the entity list of that name (NULL or "": none), which also makes the local logic; 0 if no such list */
+byte __thiscall cEntity_SetList(cEntity *self, const char *list);
+/* the cEntity vtable slots */
+void __thiscall cEntity_Update(cEntity *self);
+void __thiscall cEntity_Render(cEntity *self, void *arg);
+void __thiscall cEntity_UpdateOff(cEntity *self);
+cEntity *__thiscall cEntity_Delete(cEntity *self, uint32_t flags);
+const char *__thiscall cEntity_GetClassName(cEntity *self);
+int __thiscall cEntity_IsType(cEntity *self, const char *type);
+vec3_t *__thiscall cEntity_GetPos(cEntity *self, vec3_t *out);
+void __thiscall cEntity_SetPos(cEntity *self, const vec3_t *pos);
+void __thiscall cEntity_SetActive(cEntity *self, byte on);
+void __thiscall cEntity_SetModel(cEntity *self, const char *file, float sx, float sy, float sz, int flag);
+void __thiscall cEntity_GetTargetAngle(cEntity *self, float *ang, float dist, cEntity **target);
+void __thiscall cEntity_AimWeapon(cEntity *self, float ax, float ay, float *dist, vec3_t *out, cEntity **target,
+	int flags);
+void __thiscall cEntity_SetEmbeddedFX(cEntity *self, const char *fxType);
+byte __thiscall cEntity_VarI(cEntity *self, const char *name, int *i, int set);
+byte __thiscall cEntity_VarF(cEntity *self, const char *name, double *d, int set);
+byte __thiscall cEntity_VarS(cEntity *self, const char *name, char **s, int set);
+byte __thiscall cEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
+void *__thiscall cEntity_GetAI(cEntity *self);
 
 /* vehicles ("Car") and characters ("WalkChar") continue the vtable of cWithLifeEntity */
 typedef struct cVehicleEntityVtbl {

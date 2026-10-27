@@ -12,7 +12,6 @@ SD_IMPORT(operator_delete_sized, 0x313634)
 
 
 /* engine: Entities/ and the entity lists of World/ */
-SD_IMPORT(cEntity_Del, 0x0ef0c0)
 
 /* engine: Logic/ and AI/ (include/scrap/logic.h) */
 SD_IMPORT(Logic_GetLocalLogic, 0x141ac0)
@@ -451,7 +450,6 @@ SD_IMPORT(CSuelo_TraceSeg, 0x26f120)
 SD_IMPORT(CSuelo_CheckBBox, 0x26fb10)
 
 /* module agent: World/World.cpp (imports below this line) */
-SD_IMPORT(cEntity_ctor, 0x0ee8f0)
 SD_IMPORT(cCamPathEntity_ctor, 0x0bdb40)
 SD_IMPORT(cWalkCharEntity_ctor, 0x0d0e40)
 SD_IMPORT(cVehicleEntity_ctor, 0x105830)
@@ -461,9 +459,7 @@ SD_IMPORT(cMissileEntity_ctor, 0x0f2410)
 SD_IMPORT(cItemEntity_ctor, 0x0f09e0)
 SD_IMPORT(cWithLifeEntity_ctor, 0x12b580)
 SD_IMPORT(cObjEntity_ctor, 0x0fa270)
-SD_IMPORT(cEntity_Next, 0x0ef310)
 SD_IMPORT(cCamEntity_GetTarget, 0x0c03e0)
-SD_IMPORT(EntityDList_dtor, 0x0eec00)
 SD_IMPORT(GameModelList_Free, 0x0f6500)
 SD_IMPORT(cInputAction_Pressed, 0x13a1b0)
 SD_IMPORT(Alarm_ctor, 0x13fb10)
@@ -659,3 +655,9 @@ SD_IMPORT(CGameLensFlare_SetI1c, 0x233010)
 /* module agent: Entities/Vehicle/Weaps/Inferno+Laser+Swarm.cpp (imports below this line) */
 
 /* module agent: Entities/Entity+Game/Doors.cpp (imports below this line) */
+SD_IMPORT(cActCtrl_Play, 0x063150)
+SD_IMPORT(cActCtrl_SetDefLoop, 0x063210)
+SD_IMPORT(cActCtrl_IsActive, 0x063dc0)
+SD_IMPORT(cObjEntity_Switch, 0x0fca00)
+SD_IMPORT(cVehicleEntity_UpdateSpeed, 0x106700)
+SD_IMPORT(cVehicleEntity_SetNetFlag, 0x109d30)

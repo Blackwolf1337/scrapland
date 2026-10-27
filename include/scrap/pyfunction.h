@@ -46,6 +46,8 @@ void __thiscall cPy_Function_dtor(cPy_Function *self);
 /* 1 if set; also 1 for an empty name (the function is cleared then) and while Python is not running */
 byte __thiscall cPy_Function_SetFunc(cPy_Function *self, const char *name);
 int __thiscall cPy_Function_IsValid(cPy_Function *self);
+/* binds the C function func (NULL: only cleared); always 1 */
+byte __thiscall cPy_Function_SetNative(cPy_Function *self, nativefunc_t func);
 void __thiscall cPy_Function_AddParamI(cPy_Function *self, int v);
 void __thiscall cPy_Function_AddParamF(cPy_Function *self, float v);
 void __thiscall cPy_Function_AddParamS(cPy_Function *self, const char *v);
