@@ -7195,6 +7195,7 @@ SD_HOOK(cVehicleEffects_dtor, 0x100b60, 168)
 SD_HOOK(cVehicleEffects_Update, 0x100c10, 69)
 SD_HOOK(cVehicleTubes_Update, 0x100c60, 2423)
 SD_HOOK(cVehicleEffects_WindSmoke, 0x102940, 1869)
+SD_HOOK(cVehicleEffects_Shoot, 0x103500, 9002)
 /* src/game/Entities/Vehicle/VehicleEntity.c */
 SD_HOOK(cVehicleEntity_UpdateModel, 0x105ea0, 1872)	/* vf24 */
 SD_HOOK(cVehicleEntity_Step, 0x10a730, 2590)

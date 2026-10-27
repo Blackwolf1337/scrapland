@@ -672,6 +672,45 @@ if gbgc4:
 		gbgset(c + 0x4e4, (0.0, 0.0, 0.0))
 		# the copies are not released
 		gbgdelete(gbgtu)
+	# the shoot effects on m_FollowSistPart2 of the embedded FX (a copy of the wind smoke particles when it has
+	# none), the weapon nodes of slot 0 set to node 0, the model counted as seen
+	gbgfx = gbgi(c + 0x224)
+	gbgnodes = gbgi(c + 0x5f0 + 0x1c)
+	check('GBG shoot setup', lambda: (gbgfx != 0, gbgnodes != 0, gbgfx and gbgi(gbgfx + 0x184) != 0, gbgsp != 0))
+	if gbgfx and gbgnodes and (gbgi(gbgfx + 0x184) or (gbgsp and gbgi(gbgsp + 0xac))):
+		gbgfxsaved = gbgz(0xb0)
+		SDTest.Call(0x3197d0, 'iiii', gbgfxsaved, gbgfx + 0xd8, 0xb0)
+		if not gbgi(gbgfx + 0x184):
+			SDTest.Call(0x3197d0, 'iiii', gbgfx + 0xd8, gbgsp, 0xb0)
+		gbgmodelo = gbgi(c + 0xb8)
+		gbgvis = gbgb(gbgmodelo + 0x121)
+		gbgsetbyte(gbgmodelo + 0x121, 1)
+		gbgweap = map(lambda a: gbgi(a), (0x8487d0, 0x848818, 0x848830, 0x848800, 0x8487e8, 0x84886c, 0x848884))
+		gbgammoid = map(lambda a: gbgi(a), (0x84a8b0, 0x849108, 0x84a4f0, 0x848e4c, 0x8497f0))
+		gbgnsaved = map(lambda k: gbgi(gbgnodes + 0x10 * k), gbgammoid)
+		for k in gbgammoid:
+			gbgpoke(gbgnodes + 0x10 * k, 0)
+		gbgset(gbgfx + 0x198, (10.0, 20.0, -30.0))
+		check('GBG shoot weapons', lambda: (gbgweap, gbgammoid))
+		gbgsrand(9753)
+		for w in gbgweap + [12345]:
+			check('cVehicleEffects_Shoot' + fmt(w), lambda c=c, w=w: (SDTest.Call(0x103500, 'tviii', c + 0x7f0, w, 0),
+				gbgpart(gbgfx + 0xd8), SDTest.Call(0x323c2f, 'i')[0]))
+		gbgsetbyte(gbgmodelo + 0x121, 0)
+		check('cVehicleEffects_Shoot unseen', lambda c=c: (SDTest.Call(0x103500, 'tviii', c + 0x7f0, gbgweap[1], 0),
+			SDTest.Call(0x323c2f, 'i')[0]))
+		gbgfol = gbgb(gbgfx + 0x189)
+		gbgsetbyte(gbgfx + 0x189, 1)
+		check('cVehicleEffects_Shoot followed', lambda c=c: (SDTest.Call(0x103500, 'tviii', c + 0x7f0, gbgweap[1], 0),
+			gbgpart(gbgfx + 0xd8), SDTest.Call(0x323c2f, 'i')[0]))
+		gbgsetbyte(gbgfx + 0x189, gbgfol)
+		k = 0
+		for a in gbgammoid:
+			gbgpoke(gbgnodes + 0x10 * a, gbgnsaved[k])
+			k = k + 1
+		gbgsetbyte(gbgmodelo + 0x121, gbgvis)
+		SDTest.Call(0x3197d0, 'iiii', gbgfx + 0xd8, gbgfxsaved, 0xb0)
+		gbgfree(gbgfxsaved)
 	# the flight
 	gbgstepf = ((0x28, 3), (0xac, 3), (0xd4, 3), (0xe0, 3), (0x45c, 5), (0x46c, 2), (0x490, 1), (0x590, 1))
 	def gbgstep(c):
