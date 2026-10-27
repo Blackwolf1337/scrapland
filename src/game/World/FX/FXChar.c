@@ -1076,3 +1076,216 @@ void FX_Character(cEntity *e, const char *name) {
 		}
 	}
 }
+
+/* ---- the native functions ---- */
+
+/* the parameters: the character, a second name and 4 bytes */
+static cEntity *FXC_ReadParams(cAbstractFile *f, char *name, char *name2, void *v) {
+	cAbstractFile_ReadString(f, name, 0x80);
+	cAbstractFile_ReadString(f, name2, 0x80);
+	f->vftable->Read(f, v, 4);
+	cEntity *ch = World_FindEntity(name);
+	CHECK(ch);
+	return ch;
+}
+
+/* an idle debris of the system of file (else the oldest one) at pos with the life; dropped when it was idle */
+static cDebris *FXC_IdleDebris(cDebrisSys *sys, const vec3_t *pos, float life) {
+	cDebris *d = cDebrisSys_GetIdle(sys);
+
+	CGameModel_SetPos(Debris_Model(d), pos);
+	Debris_Life(d) = life;
+	if (!cDebrisSys_IsIdle(sys, d)) {
+		cDebrisSys_Drop(sys, d);
+	}
+	return d;
+}
+
+void FX_CharacterBlaBliBla(cAbstractFile *params) {
+	char name[128], name2[128];
+	int unused;
+	vec3_t tmp, rot, in, p, n;
+
+	cEntity *ch = FXC_ReadParams(params, name, name2, &unused);
+	CHECK(Entity_IsType(ch, TYEN_WALKCHAR));
+	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXCharacterBlaBliBlaFile);
+	vec3_t cp = FXC_CamPos();
+	cDebris *d = FXC_IdleDebris(sys, &cp, 2.0f);
+	cObjElementFXSistPart *el = Debris_Element(d);
+	if (!el) {
+		return;
+	}
+	CGameParticles *sp = &el->particles;
+	if (!el->on) {
+		el->move = 0;
+		el->on = 1;
+	}
+	/* a word bubble above the head, turned with the character */
+	rot.x = 0.0f;
+	rot.y = FX_Vtbl(ch)->GetAngles(ch, &tmp)->y;
+	rot.z = 0.0f;
+	float r1 = FXC_Rand(0.10000002384185791, 0.44999998807907104);
+	float r2 = FXC_Rand(0.06000000238418579, 0.3400000035762787);
+	float r3 = (float)(FXC_Rnd() * 0.20000000298023224 - 0.10000000149011612);
+	in.x = FX_Vtbl(ch)->GetRadius(ch) * r3;
+	in.y = FX_Vtbl(ch)->GetRadius(ch) * r2;
+	in.z = -(FX_Vtbl(ch)->GetRadius(ch) * r1);
+	Vec3_Rotate(&p, &in, &rot);
+	sp->birthRate = 0;
+	const vec3_t *c = FX_Vtbl(ch)->GetCenter(ch, &tmp);
+	sp->initPosMin.x = c->x + p.x;
+	sp->initPosMin.y = c->y + p.y;
+	sp->initPosMin.z = c->z + p.z;
+	sp->initPosMax = sp->initPosMin;
+	float speed = FXC_Rand(75.0, 100.0);
+	float len = (float)__builtin_sqrt((double)(p.y * p.y + p.x * p.x + p.z * p.z));
+	if (len == 0.0f) {
+		n = p;
+	} else {
+		float inv = 1.0f / len;
+		n.x = p.x * inv;
+		n.y = p.y * inv;
+		n.z = p.z * inv;
+	}
+	sp->initVelMin.x = speed * n.x;
+	sp->initVelMin.y = speed * n.y;
+	sp->initVelMin.z = speed * n.z;
+	sp->initVelMax = sp->initVelMin;
+	float s = FXC_Rand(0.19999998807907104, 0.25);
+	sp->initAccMin.x = s * -sp->initVelMin.x;
+	sp->initAccMin.y = s * -sp->initVelMin.y;
+	sp->initAccMin.z = s * -sp->initVelMin.z;
+	sp->initAccMax = sp->initAccMin;
+	sp->lifeTime = FXC_Rand(0.09999996423721313, 0.949999988079071);
+	sp->sizeLife = FXC_Rand(0.19999998807907104, 0.25);
+	sp->sizeIni = FXC_Rand(5.0, 5.0);
+	sp->sizeEnd = FXC_Rand(30.0, 40.0);
+	sp->rotIni = sp->rotEnd = (float)(FXC_Rnd() * 0.7853981852531433 - 0.39269909262657166);
+	sp->rotVar = FXC_Rand(0.39269909262657166, 0.0);
+	if (crt_rand() % 3 == 0) {
+		sp->spriteIni = (byte)(crt_rand() % 3 + 1);
+	} else {
+		sp->spriteIni = 1;
+	}
+	sp->spriteEnd = sp->spriteIni;
+	CGameParticles_Apply(sp);
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, Game_Ptr(0x430318));
+	CGameParticles_EmitN(sp, 1, 0);
+}
+
+void FX_CharacterDazed(cAbstractFile *params) {
+	char name[128], name2[128];
+	float time;
+	vec3_t tmp, rot, in, off;
+
+	cEntity *ch = FXC_ReadParams(params, name, name2, &time);
+	CHECK(Entity_IsType(ch, TYEN_WALKCHAR));
+	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXCharacterDazedFile);
+	vec3_t cp = FXC_CamPos();
+	cDebris *d = FXC_IdleDebris(sys, &cp, 2.0f);
+	cObjElementFXSistPart *el = Debris_Element(d);
+	if (!el) {
+		return;
+	}
+	CGameParticles *sp = &el->particles;
+	if (!el->on) {
+		el->move = 0;
+		el->on = 1;
+	}
+	/* stars above the head */
+	int n = crt_rand() % 2 + 1;
+	rot.x = 0.0f;
+	rot.y = FX_Vtbl(ch)->GetAngles(ch, &tmp)->y;
+	rot.z = 0.0f;
+	float a = FX_Vtbl(ch)->GetRadius(ch) * 0.25f;
+	float b = FX_Vtbl(ch)->GetRadius(ch) * -0.5f;
+	in.x = 0.0f;
+	in.y = a;
+	in.z = b;
+	Vec3_Rotate(&off, &in, &rot);
+	for (int k = 0; k < n; k++) {
+		sp->birthRate = 0;
+		const vec3_t *c = FX_Vtbl(ch)->GetCenter(ch, &tmp);
+		sp->initPosMin.x = c->x + off.x;
+		sp->initPosMin.y = c->y + off.y;
+		sp->initPosMin.z = c->z + off.z;
+		sp->initPosMax = sp->initPosMin;
+		float vz = (float)(FXC_Rnd() * 16.0 - 8.0);
+		float vy = FXC_Rand(20.0, 80.0);
+		sp->initVelMin.x = (float)(FXC_Rnd() * 16.0 - 8.0);
+		sp->initVelMin.y = vy;
+		sp->initVelMin.z = vz;
+		sp->initVelMax = sp->initVelMin;
+		double ra = FXC_Rnd();
+		float ay = (float)(-25.0 - FXC_Rnd() * 5.0);
+		double rb = FXC_Rnd();
+		sp->initAccMin.x = (float)((rb + rb) - 1.0);
+		sp->initAccMin.y = ay;
+		sp->initAccMin.z = (float)((ra + ra) - 1.0);
+		sp->initAccMax = sp->initAccMin;
+		sp->sizeLife = 1.0f;
+		sp->lifeTime = FXC_Rand(0.2999999523162842, 1.2000000476837158);
+		sp->sizeIni = FXC_Rand(5.0, 15.0);
+		sp->sizeEnd = FXC_Rand(5.0, 35.0);
+		sp->rotIni = sp->rotEnd = (float)(FXC_Rnd() * 1.0471975803375244 - 0.5235987901687622);
+		sp->spriteIni = 1;
+		sp->spriteEnd = 1;
+		sp->rotVar = FXC_Rand(0.39269909262657166, 0.0);
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, Game_Ptr(0x430264));
+		CGameParticles_EmitDt(sp, 1, 0, (time / (float)n) * (float)k);
+	}
+}
+
+void FX_CharacterTeleport(cAbstractFile *params) {
+	char name[128], name2[128];
+	int mode;
+	vec3_t tmp;
+
+	cEntity *ch = FXC_ReadParams(params, name, name2, &mode);
+	CHECK(Entity_IsType(ch, TYEN_WALKCHAR));
+	cEntity *tp = World_FindEntity(name2);
+	CHECK(tp);
+	CHECK(Entity_IsType(tp, TYEN_WITH_LIFE));
+	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXCharacterTeleportFile);
+	cDebris *d = cDebrisSys_GetIdle(sys);
+	CGameModel_SetPos(Debris_Model(d), tp->vftable->GetPos(tp, &tmp));
+	Debris_Life(d) = 1.1f;
+	if (!cDebrisSys_IsIdle(sys, d)) {
+		cDebrisSys_Drop(sys, d);
+	} else if (Debris_Element(d)) {
+		/* the element of a reused debris starts over (vf04) */
+		void *el = Debris_Element(d);
+		(*(void(__thiscall **)(void *, cDebris *))(*(byte **)el + 0x10))(el, d);
+	}
+	cObjElementFXCharacterTeleport *el = Debris_Element(d);
+	if (el) {
+		if (!el->started) {
+			el->started = 1;
+		}
+		el->character = ch;
+		el->teleport = tp;
+		el->mode = mode;
+		el->fc0 = 1.0f;
+		if (mode == 1) {
+			el->fc4 = 0.2f;
+			el->fc8 = 0.1f;
+		} else if (mode == 2) {
+			el->fc4 = 0.1f;
+			el->fc8 = 0.2f;
+		}
+	}
+	const char *snd;
+	if (mode == 1) {
+		snd = g_CharacterTeleportUpSound;
+	} else if (mode == 2) {
+		snd = g_CharacterTeleportDownSound;
+	} else {
+		return;
+	}
+	CSoundSys *s = g_pSound;
+	int vol = Snd_Volume(g_CharacterTeleportSoundVol);
+	s->vftable->PlayAt(s, snd, ch->vftable->GetPos(ch, &tmp), vol);
+}
