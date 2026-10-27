@@ -139,20 +139,43 @@ SD_SIZE(cObjElementFXDebrisCloud, 0x1f4);
 #define WEAPON_LASER 0x18						/* the slot of the laser in Entity_Weapons */
 #define Weapon_HookOn(w) (*(byte *)((byte *)(w) + 0x9c))
 
-/* the lock of a ship on an entity or a point */
+/* a weapon of the world in a cTargetLock: the mounted slots (bit per slot), the upgrade and its ammo */
+typedef struct cWeaponSlot {
+	uint32_t slots;			/* 0x0 */
+	int upgrade;			/* 0x4 */
+	float uammo;			/* 0x8 the ammo of the upgrade, 0..200 */
+} cWeaponSlot;
+SD_SIZE(cWeaponSlot, 0xc);
+
+/* the weapons of a ship and its lock on an entity or a point: the cWeaponManager of the RTTI (0x48 bytes,
+ * vftable rva 0x3b664c), src/game/Entities/Vehicle/WeaponManager.c */
 typedef struct cTargetLock {
-	byte pad_00[0x30];
-	cEntity *entity;		/* 0x30 */
-	byte pad_34[4];
-	vec3_t point;			/* 0x38 */
+	const void *vftable;		/* 0x00 */
+	cEntity *owner;			/* 0x04 the vehicle */
+	int prevWeap;			/* 0x08 */
+	int curWeap;			/* 0x0c */
+	float fireStamp;		/* 0x10 the weapon fires again from 0 on */
+	float cmStamp;			/* 0x14 the same for the ammo (countermeasures) */
+	cWeaponSlot *weaps;		/* 0x18 per weapon of the world */
+	int (*nodes)[4];		/* 0x1c render node per ammo kind and slot, -1 none */
+	float *ammo;			/* 0x20 per ammo kind */
+	int weapSnd;			/* 0x24 the sound of the owner the weapon plays, -1 none */
+	Nto1Node lock;			/* 0x28 target the locked entity */
+	vec3_t point;			/* 0x38 the locked point without entity */
 	byte on;			/* 0x44 */
+	byte wasOn;			/* 0x45 on of the last Update */
+	byte flag46;			/* 0x46 */
+	byte pad_47;
 } cTargetLock;
+SD_OFFSET(cTargetLock, weaps, 0x18);
+SD_OFFSET(cTargetLock, lock, 0x28);
 SD_OFFSET(cTargetLock, point, 0x38);
 SD_OFFSET(cTargetLock, on, 0x44);
+SD_SIZE(cTargetLock, 0x48);
 
-/* rva 0x11a740, 0x11a720: the point of a lock without entity, the entity of a lock (NULL when off) */
+/* rva 0x11a740, 0x11a720: the point of a lock without entity, the name of the locked entity (NULL when off) */
 vec3_t *__thiscall cTargetLock_GetPoint(cTargetLock *self);
-cEntity *__thiscall cTargetLock_GetEntity(cTargetLock *self);
+char *__thiscall cTargetLock_GetEntity(cTargetLock *self);
 /* rva 0x1a26e0: item i of an array of pointers (count at +4, items at +8), NULL out of range */
 void *__thiscall PtrArray_Get(void *self, int i);
 
