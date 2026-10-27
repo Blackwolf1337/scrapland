@@ -7,6 +7,7 @@
 #define SCRAP_AI_H
 
 #include "scrap/entity.h"
+#include "scrap/nodesworld.h"
 #include "scrap/python.h"
 
 typedef struct CNodesWorld CNodesWorld;		/* RTTI CNodesWorld: visibility graph of the level */
@@ -15,17 +16,6 @@ typedef struct cAIVehicleGroup cAIVehicleGroup;
 typedef struct cAICharGroup cAICharGroup;
 typedef struct cAIVehicle cAIVehicle;
 typedef struct cAIChar cAIChar;
-
-typedef struct CNodesWorldVtbl {
-	void *vf00_0a[11];
-	const vec3_t *(__thiscall *GetVisPoint)(CNodesWorld *self, int i);	/* 0x2c */
-	int(__thiscall *NumVisPoints)(CNodesWorld *self);			/* 0x30 */
-} CNodesWorldVtbl;
-SD_OFFSET(CNodesWorldVtbl, GetVisPoint, 0x2c);
-
-struct CNodesWorld {
-	const CNodesWorldVtbl *vftable;
-};
 
 /* CNodesTraffic or CNodesTrafficInDoor */
 typedef struct cNodesTraffic cNodesTraffic;

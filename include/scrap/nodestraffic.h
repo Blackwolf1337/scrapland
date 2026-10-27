@@ -345,16 +345,10 @@ byte __thiscall CNodesTrafficInDoor_PickPoint(CNodesTrafficInDoor *self, int *ou
 	int typeC, cTrafficSector *sectorsC, int numC);
 
 /* the exe functions of other modules */
-/* the point is in a sector the camera sees (AI/NodesWorld.cpp, next round) */
-byte __thiscall CNodesWorld_PointSeen(CNodesWorld *self, const vec3_t *pos);
 /* AI/AIVehicle.cpp: the vehicle entity of the AI (+0x190), +0x1a4, the AI put on the track */
 void *__thiscall cAIVehicle_GetVehicle(cAIVehicle *ai);
 int __thiscall cAIVehicle_Get1A4(cAIVehicle *ai);
 void __thiscall cAIVehicle_PlaceOnTrack(cAIVehicle *ai, int type, const vec3_t *pos, int track, int node);
 #define VEHICLE_CLASS(v) (*(int *)((byte *)(v) + 0x5e8))	/* 0 light, 1 medium, 2 heavy */
-
-/* the segment a b free of the level with a capsule of the radius (AI/NodesWorld.cpp, next round) */
-byte __thiscall CNodesWorld_TestPath(CNodesWorld *self, const vec3_t *a, const vec3_t *b, float r1, float r2,
-	int a5, int a6);
 
 #endif
