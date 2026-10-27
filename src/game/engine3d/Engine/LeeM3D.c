@@ -21,6 +21,135 @@
 #include "scrap/utild3d.h"
 #include "scrap/varios.h"
 
+/* the constructors and destructors of the reader data, passed to the new[] and delete[] loops of the CRT */
+#define M3DTABLA_CTOR 0x2bba90
+#define M3DTABLA_DTOR 0x2bbd20		/* Tabla_Free */
+#define CAD_CTOR 0x2bbab0
+#define CAD_DTOR 0x233be0		/* the string freed (Material.cpp) */
+#define M3DSKINVERT_DTOR 0x2bc160
+#define M3DNODO_DTOR 0x2bbf10
+
+static void M3D_CadFree(char **s) {
+	if (*s) {
+		Cad_Set(s, NULL);
+	}
+}
+
+M3DTabla *__fastcall M3DTabla_ctor(M3DTabla *self) {
+	self->p = NULL;
+	self->n = 0;
+	self->fija = 0;
+	return self;
+}
+
+char **__fastcall Cad_ctor(char **self) {
+	*self = NULL;
+	return self;
+}
+
+M3DPista *__fastcall M3DPista_ctor(M3DPista *self) {
+	crt_eh_vector_ctor(&self->pos, sizeof(M3DTabla), 4, Game_Ptr(M3DTABLA_CTOR), Game_Ptr(M3DTABLA_DTOR));
+	self->sgn.p = NULL;
+	self->sgn.n = 0;
+	self->sgn.fija = 0;
+	crt_eh_vector_ctor(&self->rot, sizeof(M3DTabla), 4, Game_Ptr(M3DTABLA_CTOR), Game_Ptr(M3DTABLA_DTOR));
+	crt_eh_vector_ctor(&self->rotEsc, sizeof(M3DTabla), 4, Game_Ptr(M3DTABLA_CTOR), Game_Ptr(M3DTABLA_DTOR));
+	crt_eh_vector_ctor(&self->esc, sizeof(M3DTabla), 4, Game_Ptr(M3DTABLA_CTOR), Game_Ptr(M3DTABLA_DTOR));
+	return self;
+}
+
+M3DNodo *__fastcall M3DNodo_ctor(M3DNodo *self) {
+	self->objetivo = NULL;
+	self->lado2 = NULL;
+	self->skin.p = NULL;
+	self->skin.n = 0;
+	M3DPista_ctor(&self->pista);
+	M3DPista_ctor(&self->pista2);
+	for (int i = 0; i < 6; i++) {
+		self->t2a4[i].p = NULL;
+		self->t2a4[i].n = 0;
+		self->t2a4[i].fija = 0;
+	}
+	return self;
+}
+
+M3DSkinVert *__fastcall M3DSkinVert_ctor(M3DSkinVert *self) {
+	crt_eh_vector_ctor(self->bone, sizeof(char *), SKIN_MAX_BONES, Game_Ptr(CAD_CTOR), Game_Ptr(CAD_DTOR));
+	return self;
+}
+
+void __fastcall M3DSkinVert_dtor(M3DSkinVert *self) {
+	crt_eh_vector_dtor(self->bone, sizeof(char *), SKIN_MAX_BONES, Game_Ptr(CAD_DTOR));
+}
+
+void __fastcall M3DTabla4_dtor(M3DTabla4 *self) {
+	crt_eh_vector_dtor(self->t, sizeof(M3DTabla), 4, Game_Ptr(M3DTABLA_DTOR));
+}
+
+void __fastcall M3DPista_dtor(M3DPista *self) {
+	crt_eh_vector_dtor(&self->esc, sizeof(M3DTabla), 4, Game_Ptr(M3DTABLA_DTOR));
+	crt_eh_vector_dtor(&self->rotEsc, sizeof(M3DTabla), 4, Game_Ptr(M3DTABLA_DTOR));
+	crt_eh_vector_dtor(&self->rot, sizeof(M3DTabla), 4, Game_Ptr(M3DTABLA_DTOR));
+	Tabla_Free((CTabla *)&self->sgn);
+	crt_eh_vector_dtor(&self->pos, sizeof(M3DTabla), 4, Game_Ptr(M3DTABLA_DTOR));
+}
+
+void __fastcall M3DTabla6_dtor(M3DTabla *self) {
+	for (int i = 5; i >= 0; i--) {
+		Tabla_Free((CTabla *)&self[i]);
+	}
+}
+
+void __fastcall M3DSkin_Free(CTabla *self) {
+	if (self->p) {
+		Delete_Objects(self->p, sizeof(M3DSkinVert), M3DSKINVERT_DTOR);
+		self->p = NULL;
+		self->n = 0;
+	}
+}
+
+void __fastcall M3DNodo_dtor(M3DNodo *self) {
+	M3DTabla6_dtor(self->t2a4);
+	M3DPista_dtor(&self->pista2);
+	M3DPista_dtor(&self->pista);
+	M3DSkin_Free(&self->skin);
+	M3D_CadFree(&self->lado2);
+	M3D_CadFree(&self->objetivo);
+}
+
+/* the deleting destructors: flags 2 the array with its count before it, 1 the memory freed */
+M3DNodo *__thiscall M3DNodo_Delete(M3DNodo *self, uint32_t flags) {
+	if (flags & 2) {
+		uint32_t *mem = (uint32_t *)self - 1;
+		crt_eh_vector_dtor(self, sizeof(M3DNodo), *mem, Game_Ptr(M3DNODO_DTOR));
+		if (flags & 1) {
+			operator_delete_array(mem);
+		}
+		return (M3DNodo *)mem;
+	}
+	M3DNodo_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(M3DNodo));
+	}
+	return self;
+}
+
+M3DSkinVert *__thiscall M3DSkinVert_Delete(M3DSkinVert *self, uint32_t flags) {
+	if (flags & 2) {
+		uint32_t *mem = (uint32_t *)self - 1;
+		crt_eh_vector_dtor(self, sizeof(M3DSkinVert), *mem, Game_Ptr(M3DSKINVERT_DTOR));
+		if (flags & 1) {
+			operator_delete_array(mem);
+		}
+		return (M3DSkinVert *)mem;
+	}
+	M3DSkinVert_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(M3DSkinVert));
+	}
+	return self;
+}
+
 /* a binary string: its length, then the characters */
 static void M3D_ReadBinString(char *dest, int size) {
 	int n = M3D_ReadInt(NULL);

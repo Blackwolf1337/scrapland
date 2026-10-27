@@ -179,6 +179,23 @@ byte Nodo_ParamInt(const char *name, const char *key, int *out);
 void Nodo_LimpiarNombre(char *name);
 /* map idmapa of the material used by the switches of the ini of the model and the video (MAT_SHADER: all) */
 byte M3D_MapaActivo(const CMaterial *mat, int idmapa);
+/* the constructors and destructors of the reader data (rva 0x2bba90..0x2bc2a0); M3DTabla is freed by Tabla_Free */
+M3DTabla *__fastcall M3DTabla_ctor(M3DTabla *self);
+char **__fastcall Cad_ctor(char **self);
+M3DPista *__fastcall M3DPista_ctor(M3DPista *self);
+M3DNodo *__fastcall M3DNodo_ctor(M3DNodo *self);
+M3DSkinVert *__fastcall M3DSkinVert_ctor(M3DSkinVert *self);
+void __fastcall M3DSkinVert_dtor(M3DSkinVert *self);
+void __fastcall M3DTabla4_dtor(M3DTabla4 *self);
+void __fastcall M3DPista_dtor(M3DPista *self);
+/* 6 tables freed, the last first */
+void __fastcall M3DTabla6_dtor(M3DTabla *self);
+/* the delete[] of a table of M3DSkinVert */
+void __fastcall M3DSkin_Free(CTabla *self);
+void __fastcall M3DNodo_dtor(M3DNodo *self);
+/* flags 2: the new[] array with the count before it; 1: freed */
+M3DNodo *__thiscall M3DNodo_Delete(M3DNodo *self, uint32_t flags);
+M3DSkinVert *__thiscall M3DSkinVert_Delete(M3DSkinVert *self, uint32_t flags);
 /* the material of the file for its material index and sub material (-1: the material itself); a sub material
  * index past the end wraps around unless it is below the count */
 CMaterial *M3D_FindMat(int iMat, int iSubmat);

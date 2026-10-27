@@ -265,6 +265,7 @@ m3dI(0)
 m3dS('nulo')
 m3dI(0)
 m3dI(1)
+m3dI(1)
 m3dS('SDMulti')
 m3dS('Multi/Sub-Object')
 m3dV(0.0, 0.0, 0.0)
@@ -346,6 +347,9 @@ for near, far in ((1.0, 500.0), (0.001, 5000.0)):
 	m3dF(30.0)
 m3dfm = m3dopen()
 for i in (0, 1):
+	if i:
+		m3dcam = m3dnodo('sdcam2', 0)
+		m3dsetf(m3dcam + 0x1c, (1.0, 2.0, 3.0, 0.0, 0.6, 0.0, 0.8))
 	check('M3D_LeeCamara' + fmt((i,)), lambda m3dcam=m3dcam, m3dnodos=m3dnodos: (SDTest.Call(0x2bd150, 'viii', m3dcam,
 		0, 0), m3dfl(m3di(m3dcam + 0x3c) + 8, 14), m3dstr(m3dnodos + 0xf8)))
 m3dluz = m3dnodo('sdluz(mult=50)(radcoef=20)', 1)
@@ -374,6 +378,8 @@ m3dF(0.5)
 m3dI(0)
 m3dfm = m3dopen()
 for i in (0, 1):
+	if i:
+		m3dluz = m3dnodo('sdluz2', 1)
 	check('M3D_LeeLuz' + fmt((i,)), lambda m3dluz=m3dluz: (SDTest.Call(0x2beb20, 'viii', m3dluz, 0, 0),
 		m3di(m3di(m3dluz + 0x3c) + 8), m3di(m3di(m3dluz + 0x3c) + 0xc) & 0xffff, m3dfl(m3di(m3dluz + 0x3c) + 0x10, 6),
 		m3di(m3di(m3dluz + 0x3c) + 0x28), m3dfl(m3di(m3dluz + 0x3c) + 0x2c, 7)))
@@ -391,6 +397,8 @@ m3dS('a')
 m3dS('b')
 m3dfm = m3dopen()
 for i in (0, 1):
+	if i:
+		m3dpor = m3dnodo('sdportal2', 2)
 	check('M3D_LeePortal' + fmt((i,)), lambda m3dpor=m3dpor, m3dnodos=m3dnodos: (SDTest.Call(0x2c08b0, 'vii', m3dpor, 0),
 		m3dfl(m3di(m3dpor + 0x3c) + 0xc, 2), m3dstr(m3dnodos + 0x2ec * 2 + 0xf8),
 		m3dstr(m3dnodos + 0x2ec * 2 + 0xfc)))
@@ -489,6 +497,36 @@ check('M3D_LeeMalla 2', lambda m3dmal2=m3dmal2, m3dfm=m3dfm: (SDTest.Call(0x2bd4
 	m3dmalla(m3dmal2)))
 check('M3D_LeeMalla anim', lambda m3dmal2=m3dmal2: SDTest.Call(0x2bd4b0, 'vii', m3dmal2, 1))
 SDTest.Poke(0x4e73bc, m3dsave[0])
+
+# the constructors and destructors of the reader data
+def m3dgarb(n):
+	p = SDTest.Call(0x1334d0, 'ii', n)[0]
+	SDTest.Call(0x319210, 'iiii', p, 0x55, n)
+	return p
+m3dno = m3dgarb(0x2ec)
+check('M3DNodo_ctor', lambda m3dno=m3dno: (SDTest.Call(0x2bbb90, 'tii', m3dno)[0] == m3dno, m3dints(m3dno + 0xf8, 6),
+	m3dints(m3dno + 0x10c, 0x33), m3dints(m3dno + 0x1d8, 0x33), m3dints(m3dno + 0x2a4, 18)))
+m3dcad(m3dno + 0xf8, 'obj')
+check('M3DNodo_Delete', lambda m3dno=m3dno: SDTest.Call(0x2bc1f0, 'tiii', m3dno, 1)[0] == m3dno)
+m3dsv = m3dgarb(0x1c)
+check('M3DSkinVert_ctor', lambda m3dsv=m3dsv: (SDTest.Call(0x2bbcc0, 'tii', m3dsv)[0] == m3dsv, m3dints(m3dsv, 7)))
+m3dcad(m3dsv + 8, 'bone')
+check('M3DSkinVert_dtor', lambda m3dsv=m3dsv: (SDTest.Call(0x2bc160, 'tvi', m3dsv), m3dints(m3dsv, 7)))
+check('M3DSkinVert_Delete', lambda m3dsv=m3dsv: SDTest.Call(0x2bc2a0, 'tiii', m3dsv, 1)[0] == m3dsv)
+m3dt1 = m3dgarb(0xc)
+check('M3DTabla_ctor', lambda m3dt1=m3dt1: (SDTest.Call(0x2bba90, 'tii', m3dt1)[0] == m3dt1, m3dints(m3dt1, 3)))
+m3dc1 = m3dgarb(4)
+check('Cad_ctor', lambda m3dc1=m3dc1: (SDTest.Call(0x2bbab0, 'tii', m3dc1)[0] == m3dc1, m3di(m3dc1)))
+m3dpi = m3dgarb(0xcc)
+check('M3DPista_ctor', lambda m3dpi=m3dpi: (SDTest.Call(0x2bbac0, 'tii', m3dpi)[0] == m3dpi, m3dints(m3dpi, 0x33)))
+check('M3DTabla4_dtor', lambda m3dpi=m3dpi: (SDTest.Call(0x2bbd50, 'tvi', m3dpi), m3dints(m3dpi, 12)))
+check('M3DPista_dtor', lambda m3dnodos=m3dnodos: (SDTest.Call(0x2bbd90, 'tvi', m3dnodos + 0x10c),
+	m3dints(m3dnodos + 0x10c, 0x33)))
+check('M3DTabla6_dtor', lambda m3dtb=m3dtb: (SDTest.Call(0x2bbe50, 'tvi', m3dtb), m3dints(m3dtb, 18)))
+check('Tabla_Free', lambda m3dtb=m3dtb: (SDTest.Call(0x2bbcf0, 'tvi', m3dtb + 0x48), SDTest.Call(0x2bbd20, 'tvi',
+	m3dtb + 0x54), m3dints(m3dtb + 0x48, 6)))
+check('M3DSkin_Free', lambda m3dnodos=m3dnodos: (SDTest.Call(0x2bc0d0, 'tvi', m3dnodos + 0x2ec * 3 + 0x104),
+	m3dints(m3dnodos + 0x2ec * 3 + 0x104, 2)))
 SDTest.Poke(0x4e1fa4, m3dsave[1])
 
 # the scene passes on scenes built here
