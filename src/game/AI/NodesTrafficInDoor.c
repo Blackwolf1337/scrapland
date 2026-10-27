@@ -368,6 +368,11 @@ void __thiscall CNodesTrafficInDoor_Init(CNodesTrafficInDoor *self) {
 	}
 }
 
+/* vtable slot 0x48: no grid indoors */
+void __thiscall CNodesTrafficInDoor_BuildGrid(CNodesTrafficInDoor *self) {
+	(void)self;
+}
+
 void __stdcall TrafficSectors_SetTracks(cTrafficSector *list, int num) {
 	int tracks[100];
 

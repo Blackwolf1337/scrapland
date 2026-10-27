@@ -337,6 +337,8 @@ int __thiscall CNodesTrafficInDoor_HiddenNode(CNodesTrafficInDoor *self, int tra
 void __fastcall CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self);
 void __stdcall TrafficSectors_Add(cTrafficSector *list, int *num, int sector);
 void __thiscall CNodesTrafficInDoor_Init(CNodesTrafficInDoor *self);
+/* vtable slot 0x48, empty (the slot 0x3c is CNodesTraffic_Draw) */
+void __thiscall CNodesTrafficInDoor_BuildGrid(CNodesTrafficInDoor *self);
 void __stdcall TrafficSectors_SetTracks(cTrafficSector *list, int num);
 /* the traffic vehicle into the list of the class of its vehicle */
 void __thiscall CNodesTrafficInDoor_AddVehicle(CNodesTrafficInDoor *self, cAIVehicle *ai);

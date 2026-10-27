@@ -22,8 +22,6 @@ SD_IMPORT(FX_ShipExplosion, 0x1f4d50)
 SD_IMPORT(cActClass_CreateAction, 0x05fe90)
 
 /* engine: AI/ (include/scrap/ai.h) */
-SD_IMPORT(CAStar_ctor, 0x099330)
-SD_IMPORT(CAStar2D_ctor, 0x09a2f0)
 
 /* MSVC 2015 static CRT (cdecl) */
 SD_IMPORT(crt_rand, 0x323c2f)
@@ -522,10 +520,6 @@ SD_IMPORT(cWaypointScorer_DrawTarget, 0x185e90)
 SD_IMPORT(Sound_PlayVoice, 0x1a1090)
 
 /* module agent: AI/ICharControl+2D+3D.cpp (imports below this line) */
-SD_IMPORT(CAStar2D_FindPath, 0x09a5e0)
-SD_IMPORT(CAStar2D_GetPointsVis, 0x09a6e0)
-SD_IMPORT(CAStar_FindPath, 0x099b30)
-SD_IMPORT(CAStar_GetPointsVis, 0x099bf0)
 
 /* module agent: AI/IVehicleControl+IVehicleShootControl.cpp (imports below this line) */
 
