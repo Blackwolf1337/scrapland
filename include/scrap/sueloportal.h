@@ -1,8 +1,8 @@
 /*
  * Engine/SueloPortal.cpp of the engine3d: the sectors (zonas) of a floor, joined by portals, and which of them are
  * seen in a frame. A sector is the node it was made from, its portals (objects of class CLASE_OBJ3D_A7000100) and
- * the sector behind each portal. Here: the sectors, their lookups and the cached sector of an object (SectorVis);
- * the portal culling itself (rva 0x26c4a0, 0x26cba0, 0x26d350) is still the exe's.
+ * the sector behind each portal: the sectors, their lookups, the cached sector of an object (SectorVis), the portal
+ * culling and the viewport narrowed to a seen sector.
  */
 #ifndef SCRAP_SUELOPORTAL_H
 #define SCRAP_SUELOPORTAL_H
@@ -86,11 +86,14 @@ int Sector_Recorrer(int sector, const vec3_t *a, const vec3_t *b, byte front);
 void Zona_Pintar(uint32_t zona, const box_t *rect);
 /* the sectors seen from sector (the one of the camera) this frame */
 void Portales_Cull(uint32_t sector);
-/* rva 0x26d0d0, the debug drawing of the seen sectors */
+/* the elements of g_ZonasPintar: the rectangle cleared */
+ZonaPintar *__fastcall ZonaPintar_ctor(ZonaPintar *self);
+void __fastcall ZonaPintar_dtor(ZonaPintar *self);
+/* the debug drawing of the seen sectors (gvRenderShowPortals 2, 3 also their rectangles as text) */
 void Portales_DebugDraw(void);
-/* rva 0x26d5a0: the sectors and portals of the floor scene */
+/* the sectors (the nodes the portals join) and their portals from the floor scene */
 void Sectores_Crear(CEscena *esc);
-/* rva 0x26db80: the projection narrowed to the screen rectangle of zp (NULL: back to the whole view); 0 when
+/* the projection narrowed to the screen rectangle of zp (NULL: back to the whole view); 0 when
  * nothing of it is seen */
 byte Portales_SetView(const ZonaPintar *zp);
 /* the sector under pos into *sector; whether it is seen (always without portals); name is not used */

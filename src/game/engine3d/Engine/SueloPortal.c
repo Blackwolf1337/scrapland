@@ -10,12 +10,22 @@
 #include "scrap/fuentes.h"
 #include "scrap/mundo.h"
 #include "scrap/portal.h"
+#include "scrap/render.h"
 #include "scrap/sistpart.h"
 #include "scrap/sueloportal.h"
+#include "scrap/texto.h"
 #include "scrap/varios.h"
 
 #define PORTAL_ASPECT 1.33f			/* the screen height of a sphere */
 #define PORTAL_EPS 8.0e-6f			/* the step out of a portal, times the distance to the origin */
+#define MAX_ZONAS 0x80
+
+/* the sector counts by their name tags (the sky ones are g_PortalUnion) */
+#define g_NumEndSectors GAME_DATA(int, 0x4b00e0)
+#define g_NumOutSectors GAME_DATA(int, 0x4b00e4)
+/* the projection and the viewport narrowed to the rectangle of each seen sector */
+#define g_PortalClip GAME_DATA(int, 0x4b00f8)
+#define g_PortalBand GAME_DATA(int, 0x4b11a8)	/* pixels added around it */
 
 
 CZona *__fastcall CZona_ctor(CZona *self) {
@@ -488,4 +498,230 @@ void Portales_Cull(uint32_t sector) {
 		}
 	}
 	Portales_DebugDraw();
+}
+
+ZonaPintar *__fastcall ZonaPintar_ctor(ZonaPintar *self) {
+	self->rect = (box_t){ { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
+	return self;
+}
+
+void __fastcall ZonaPintar_dtor(ZonaPintar *self) {
+	(void)self;
+}
+
+void Portales_DebugDraw(void) {
+	uint32_t vp[6];
+	void *dev;
+
+	if (g_ShowPortals < 2) {
+		return;
+	}
+	dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, vp);
+	Texto_Printf(300, 0x14, Game_Ptr(0x3dcf1c), g_NumZonasPintar);	/* "zonas: %d" */
+	for (int i = 0; i < g_NumZonasPintar; i++) {
+		const ZonaPintar *zp = &g_ZonasPintar[i];
+		const box_t *r = &zp->rect;
+		if (g_ShowPortals > 2) {
+			Texto_Printf(300, 0x22 + i * 0xe, Game_Ptr(0x3dcf28), i, zp->zona, zp->veces, (double)r->min.x,
+				(double)r->min.y, (double)r->min.z, (double)r->max.x, (double)r->max.y, (double)r->max.z);
+		}
+		int x0 = Portal_Pixel(r->min.x + 1.0f, vp[2], vp[0]) + 1;
+		int y0 = Portal_Pixel(1.0f - r->min.y, vp[3], vp[1]) - 2;
+		int x1 = Portal_Pixel(r->max.x + 1.0f, vp[2], vp[0]) - 2;
+		int y1 = Portal_Pixel(1.0f - r->max.y, vp[3], vp[1]) + 1;
+		if (i) {
+			Debug_Line(x0, y0, x1, y0, 0xff, 0);
+			Debug_Line(x1, y0, x1, y1, 0xff, 0);
+			Debug_Line(x1, y1, x0, y1, 0xff, 0);
+			Debug_Line(x0, y1, x0, y0, 0xff, 0);
+		}
+	}
+}
+
+/* the sector of the node, NULL */
+static CZona *Zona_OfNodo(const CNodo3D *nodo) {
+	for (int i = 0; i < g_NumZonas; i++) {
+		if (g_Zonas[i]->nodo == nodo) {
+			return g_Zonas[i];
+		}
+	}
+	return NULL;
+}
+
+static const char *Nodo_NameOrNull(const CNodo3D *n) {
+	return n ? n->name : Game_Ptr(0x3d5da4);	/* "(null)" */
+}
+
+void Sectores_Crear(CEscena *esc) {
+	CNodo3D *n;
+
+	g_PintarRect = (box_t){ { -1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f } };
+	g_NumZonas = 0;
+	g_NumZonasPintar = 0;
+	g_PortalUnion = 0;
+	g_NumEndSectors = 0;
+	g_NumOutSectors = 0;
+	g_PintarNum = 1;
+	g_PintarI148 = -1;
+	/* a sector for each node a portal joins */
+	for (n = esc->Nodo3D; n; n = n->sig) {
+		if (CNodo3D_Clase(n) != CLASE_OBJ3D_PORTAL) {
+			continue;
+		}
+		CPortal *po = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_PORTAL);
+		CPortal_LinkZonas(po);
+		for (int side = 0; side < 2; side++) {
+			CNodo3D *zn = po->zonas[side & 1];
+			if (!zn || Zona_OfNodo(zn)) {
+				continue;
+			}
+			CZona *z = operator_new(sizeof(CZona));
+			z = z ? CZona_ctor(z) : NULL;
+			z->id = g_NumZonas;
+			zn->Refs++;
+			ObjRef_Release(&z->nodo);
+			z->nodo = zn;
+			CHECK(g_NumZonas < MAX_ZONAS);
+			g_Zonas[g_NumZonas++] = z;
+			if (strstr(zn->name, "(+end_sector)")) {
+				g_NumEndSectors++;
+				z->exterior = 1;
+			} else {
+				z->exterior = 0;
+			}
+			if (strstr(zn->name, "(+sky_sector)")) {
+				g_PortalUnion++;
+				z->b139 = 1;
+			} else {
+				z->b139 = 0;
+			}
+			if (strstr(zn->name, "(+out_sector)")) {
+				g_NumOutSectors++;
+				z->b13a = 1;
+			} else {
+				z->b13a = 0;
+			}
+		}
+	}
+	/* the portals into the sectors on both sides */
+	for (n = esc->Nodo3D; n; n = n->sig) {
+		if (CNodo3D_Clase(n) != CLASE_OBJ3D_PORTAL) {
+			continue;
+		}
+		CPortal *po = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_PORTAL);
+		if (po->zonas[0] == po->zonas[1]) {
+			continue;
+		}
+		for (uint32_t side = 0; side < 2; side++) {
+			CNodo3D *zn = po->zonas[side & 1];
+			if (!zn) {
+				continue;
+			}
+			CZona *z = Zona_OfNodo(zn);
+			if (!z || z->numPortales >= MAX_PORTALES) {
+				CheckFailed("zona && zona->num_portales < MAX_PORTALES_ZONA", __FILE__, __TIMESTAMP__, __LINE__);
+			}
+			int k = z->numPortales;
+			n->Refs++;
+			ObjRef_Release(&z->portales[k]);
+			z->portales[k] = n;
+			z->zonas[z->numPortales] = Zona_OfNodo(po->zonas[~side & 1]);
+			z->numPortales++;
+		}
+	}
+	Con_Verbosef("Sectors: %d\n", g_NumZonas);
+	Con_Verbosef("SkySectors: %d, EndSectors: %d, OutSectors: %d\n", g_PortalUnion, g_NumEndSectors, g_NumOutSectors);
+	for (int i = 0; i < g_NumZonas; i++) {
+		CZona *z = g_Zonas[i];
+		CHECK(i == z->id);
+		E3D_LogDebug2(g_FileLog, "Sector: %s  Ident: %d", z->nodo->name, z->id);
+		for (int k = 0; k < z->numNodos; k++) {
+			E3D_LogDebug2(g_FileLog, "  Node: %d  (%s)", k, z->nodos[k]->name);
+		}
+		for (int k = 0; k < z->numPortales; k++) {
+			CNodo3D *s1 = ((CPortal *)Obj3D_Cast(z->portales[k]->obj3D, CLASE_OBJ3D_PORTAL))->zonas[0];
+			CNodo3D *s2 = ((CPortal *)Obj3D_Cast(z->portales[k]->obj3D, CLASE_OBJ3D_PORTAL))->zonas[1];
+			E3D_LogDebug2(g_FileLog, "  Portal: %d  (%s)  Side1: '%s'  Side2: '%s'", k, z->portales[k]->name,
+				Nodo_NameOrNull(s1), Nodo_NameOrNull(s2));
+			if (!s1 || !s2) {
+				E3D_LogBlue(g_FileLog, "  WARN: Portal: %d  (%s)  Side1: '%s'  Side2: '%s'", k,
+					z->portales[k]->name, Nodo_NameOrNull(s1), Nodo_NameOrNull(s2));
+			}
+		}
+	}
+}
+
+/* the portal rectangle side r (-1..1) as a pixel of the viewport size n */
+static int Portal_ViewPixel(float r, int n) {
+	return Portal_Pixel(r, (uint32_t)n, 0);
+}
+
+static int Int_Clamp0(int v, int n) {
+	if (v <= 0) {
+		return 0;
+	}
+	return v >= n ? n : v;
+}
+
+byte Portales_SetView(const ZonaPintar *zp) {
+	void *dev;
+	matrix_t m;
+
+	if (!g_PortalClip) {
+		return 1;
+	}
+	if (!zp) {
+		uint32_t vp[6];
+		m = *Render_GetProj();
+		dev = g_pd3dDevice;
+		D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &m);
+		dev = g_pd3dDevice;
+		D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, vp);
+		vp[0] = 0;
+		vp[1] = 0;
+		vp[2] = (uint32_t)Render_GetViewportW();
+		vp[3] = (uint32_t)Render_GetViewportH();
+		dev = g_pd3dDevice;
+		D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, vp);
+		return 1;
+	}
+	int w = Render_GetViewportW();
+	int h = Render_GetViewportH();
+	int pad = g_PortalBand;
+	int x0 = Portal_ViewPixel(zp->rect.min.x + 1.0f, w) - pad;
+	int y1 = pad + 1 + Portal_ViewPixel(1.0f - zp->rect.min.y, h);
+	int x1 = Portal_ViewPixel(zp->rect.max.x + 1.0f, w) + 1 + pad;
+	int y0 = Portal_ViewPixel(1.0f - zp->rect.max.y, h) - pad;
+	x0 = Int_Clamp0(x0, w);
+	y0 = Int_Clamp0(y0, h);
+	x1 = Int_Clamp0(x1, w);
+	y1 = Int_Clamp0(y1, h);
+	int lx = x1 - x0;
+	if (lx <= 0) {
+		return 0;
+	}
+	int ly = y1 - y0;
+	if (ly <= 0) {
+		return 0;
+	}
+	if (g_ShowPortals > 2) {
+		Texto_PrintfRel(0, 0xe, Game_Ptr(0x3dd008), zp->zona, lx, ly);	/* "zona: %d  LX: %d  LY: %d" */
+		Texto_PrintfRel(0, 0xe, Game_Ptr(0x3dd024), x0, y0, x1, y1);	/* "  %d %d  %d %d" */
+	}
+	uint32_t vp[6] = { (uint32_t)x0, (uint32_t)y0, (uint32_t)lx, (uint32_t)ly, 0, 0x3f800000 };
+	dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, vp);
+	float fy0 = -((float)y0 / (float)h - 0.5f);
+	float fx0 = (float)x0 / (float)w - 0.5f;
+	float fx1 = (float)x1 / (float)w - 0.5f;
+	float fy1 = -((float)y1 / (float)h - 0.5f);
+	m = *Render_GetProj();
+	m.m[0] = m.m[0] / (fx1 - fx0);
+	m.m[5] = m.m[5] / (fy0 - fy1);
+	m.m[8] = (fx1 + fx0) / (fx0 - fx1);
+	m.m[9] = (fy1 + fy0) / (fy1 - fy0);
+	dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &m);
+	return 1;
 }

@@ -11,6 +11,7 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/filesys.h"
+#include "scrap/mathlib.h"
 #include "scrap/scrapmain.h"
 #include "scrap/win32.h"
 
@@ -359,14 +360,6 @@ void *App_GetHInstance(void) {
 	return g_pApp->hInstance;
 }
 
-/* __ltod3 of the CRT: the high word times 2^32 plus the low word as unsigned */
-static double App_Int64ToDouble(int64_t v) {
-	double hi = (double)(int32_t)(v >> 32) * 4294967296.0;
-	int32_t lo = (int32_t)(uint32_t)v;
-	double d = (double)lo + (lo < 0 ? 4294967296.0 : 0.0);
-	return d + hi;
-}
-
 /* vf14: seconds since the first call, by the performance counter if there is one, else by timeGetTime */
 double __thiscall CWinApp_GetTime(CWinApp *self) {
 	(void)self;
@@ -380,8 +373,8 @@ double __thiscall CWinApp_GetTime(CWinApp *self) {
 		int64_t now;
 		Timer_GetFreq64(&now);
 		uint64_t c = (uint64_t)now - g_TimeQPPause - (uint64_t)g_TimeQPStart;
-		double t = App_Int64ToDouble((int64_t)c);
-		return t / App_Int64ToDouble(g_TimeQPFreq);
+		double t = Int64_ToDouble((int64_t)c);
+		return t / Int64_ToDouble(g_TimeQPFreq);
 	}
 	uint32_t ms = exe_timeGetTime() - g_TimeMsPause - g_TimeMsStart;
 	double d = (double)(int32_t)ms + ((int32_t)ms < 0 ? 4294967296.0 : 0.0);

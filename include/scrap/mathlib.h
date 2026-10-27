@@ -180,6 +180,14 @@ static inline void Vec3_Unit(vec3_t *v) {
 	}
 }
 
+/* __ltod3 of the CRT: the high word times 2^32 plus the low word as unsigned */
+static inline double Int64_ToDouble(int64_t v) {
+	double hi = (double)(int32_t)(v >> 32) * 4294967296.0;
+	int32_t lo = (int32_t)(uint32_t)v;
+	double d = (double)lo + (lo < 0 ? 4294967296.0 : 0.0);
+	return d + hi;
+}
+
 /* the value hidden from the optimizer: keeps an operation the compiler would fold algebraically ((-a) - (-b) to
  * b - a), which changes the sign of a NaN result */
 static inline float Float_Keep(float v) {

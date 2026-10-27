@@ -38,8 +38,6 @@ typedef void(__thiscall *objCall_t)(void *self, void *arg);
 
 vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);
 double crt_ceil(double x);
-/* the triangle (its verts in v) touches the box */
-byte BoxTri(const vec3_t *bmin, const vec3_t *bmax, const CCollideTri *tri, const vec3_t *v);
 /* the CTabla resize of tabla.h for vec3_t and CCollideTri */
 void __thiscall Tabla_ResizeC(CTabla *t, int n);
 void __thiscall Tabla_Resize1C(CTabla *t, int n);
@@ -53,14 +51,6 @@ static void *Suelo_Obj(const CSuelo *self, uint32_t i) {
 static CCollideQuad *Alturas_Cuad(CAlturas *alt, uint32_t i) {
 	TABLA_CHECK(alt->cuads, i, alt->nCuads);
 	return &alt->cuads[i];
-}
-
-/* the quads of cell x z, NULL outside the grid */
-static CCollideQuad *Alturas_Cell(CAlturas *alt, uint32_t x, uint32_t z) {
-	if (x < (uint32_t)alt->nx && z < (uint32_t)alt->nz) {
-		return Alturas_Cuad(alt, alt->nx * z + x);
-	}
-	return NULL;
 }
 
 CCollideQuad *__thiscall CAlturas_GetCell(CAlturas *self, uint32_t x, uint32_t z) {
@@ -273,7 +263,7 @@ CSuelo *__fastcall CSuelo_ctor(CSuelo *self) {
 	memset(&self->CollideExt, 0, sizeof(self->CollideExt));
 	CAlturas_ctor(&self->alturas);
 	self->clase = CLASE_OBJ3D_SUELO;
-	memset(self->pad_8, 0, sizeof(self->pad_8));
+	memset(self->traceStats, 0, sizeof(self->traceStats));
 	g_QuadTriCacheID = 1;
 	memset(self->cache, 0, sizeof(self->cache));
 	memset(g_CollisionStats, 0, 6 * sizeof(uint32_t));
@@ -683,31 +673,19 @@ void __fastcall CSuelo_NewQuery(CSuelo *self) {
 /* the geometry */
 
 byte Suelo_PointInTri(const vec3_t *p, const vec3_t *a, const vec3_t *b, const vec3_t *c) {
-	float dx = p->x - a->x, dy = p->y - a->y, dz = p->z - a->z;
-	float bx = b->x - a->x, by = b->y - a->y, bz = b->z - a->z;
-	float nx = dy * bz - dz * by;
-	float ny = dz * bx - dx * bz;
-	float nz = dx * by - dy * bx;
-	float ex = p->x - b->x, ey = p->y - b->y, ez = p->z - b->z;
-	float cx = c->x - b->x, cy = c->y - b->y, cz = c->z - b->z;
-	float mx = ey * cz - ez * cy;
-	float my = ez * cx - ex * cz;
-	float mz = ex * cy - ey * cx;
+	vec3_t n = Suelo_EdgeCross(p, a, b);
+	vec3_t m = Suelo_EdgeCross(p, b, c);
 
-	float d1 = nx * mx + ny * my + nz * mz;
+	float d1 = n.x * m.x + n.y * m.y + n.z * m.z;
 	if (0.0f > d1) {
 		return 0;
 	}
-	float fx = p->x - c->x, fy = p->y - c->y, fz = p->z - c->z;
-	float ax = a->x - c->x, ay = a->y - c->y, az = a->z - c->z;
-	float kx = fy * az - fz * ay;
-	float ky = fz * ax - fx * az;
-	float kz = fx * ay - fy * ax;
-	if (0.0f > kx * nx + ky * ny + kz * nz) {
+	vec3_t k = Suelo_EdgeCross(p, c, a);
+	if (0.0f > k.x * n.x + k.y * n.y + k.z * n.z) {
 		return 0;
 	}
 	/* p on the line of a b: the third side decides */
-	if (d1 == 0.0f && nx == 0.0f && ny == 0.0f && nz == 0.0f && 0.0f > kx * mx + ky * my + kz * mz) {
+	if (d1 == 0.0f && n.x == 0.0f && n.y == 0.0f && n.z == 0.0f && 0.0f > k.x * m.x + k.y * m.y + k.z * m.z) {
 		return 0;
 	}
 	return 1;

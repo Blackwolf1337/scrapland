@@ -11,7 +11,21 @@
 #define g_ProfMode GAME_DATA(int, 0x4a9018)	/* 5: timing with rdtsc */
 #define g_ProfTicks ((uint64_t *)Game_Ptr(0x4b17e0))	/* per section */
 
-int Prof_Count(int section, int n);	/* rva 0x273040, a profiler counter, the new value */
+/* Util/tsc.cpp (src/game/engine3d/Util/Tsc.c) */
+/* the rdtsc ticks per millisecond, measured once (or again with recalc) over 200 ms of timeGetTime (rva 0x272f90,
+ * src/imports.inc) */
+float Tsc_CpuFreq(int recalc);
+int Prof_Count(int section, int n);	/* a profiler counter, the new value */
+/* the ticks of the section summed over frames calls, then their average (the last one in between) */
+int64_t Prof_Avg(uint32_t section, uint32_t frames);
+int64_t Prof_Avg32(uint32_t section);
+/* the ticks of the frame, also into the maximum; the sum cleared */
+int64_t Prof_Reset(uint32_t section);
+/* the counter of the frame (reset: taken and cleared) */
+int Prof_GetCount(int section, int reset);
+/* the average (reset: the frame) and the maximum in milliseconds */
+float Prof_GetTime(int section, int reset);
+float Prof_GetMaxTime(int section, int reset);
 
 static inline void Prof_Begin(int section) {
 	if (g_ProfMode == 5) {

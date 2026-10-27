@@ -172,9 +172,6 @@ SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 /* engine3d: Engine/ListaVert.cpp and Engine/render.cpp (include/scrap/listavert.h, mallatri.h) */
 
 /* engine3d: called from Engine/luz.cpp (include/scrap/luz.h) */
-SD_IMPORT(E3D_SetShadowLight, 0x2682d0)
-SD_IMPORT(Prof_Count, 0x273040)
-SD_IMPORT(CSuelo_Trace, 0x26e490)
 /* engine3d: Engine/Material.c (include/scrap/material.h), the parts of the classes outside Material.cpp and the
  * texture manager */
 SD_IMPORT(CMapa_ctor, 0x233760)
@@ -200,12 +197,11 @@ SD_IMPORT(CSuelo_CalcIlum, 0x261630)
 /* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
 
 /* src/game/engine3d/Engine/SueloPortal.c (called from Engine/SueloPortal.cpp, include/scrap/sueloportal.h) */
+SD_IMPORT(CSuelo_RayoVert, 0x2ca360)
 SD_IMPORT(Portales_DebugDraw, 0x26d0d0)
 
 /* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/mundo.h) */
 SD_IMPORT(BspQ3_Render, 0x2c9d90)
-SD_IMPORT(Sectores_Crear, 0x26d5a0)
-SD_IMPORT(Portales_SetView, 0x26db80)
 SD_IMPORT(CSuelo_FreeNodos, 0x261530)
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
@@ -243,7 +239,6 @@ SD_IMPORT(Debug_Line, 0x27cb80)
 /* module agent: Engine/Suelo (imports below this line) */
 SD_IMPORT(Vec3_Normalize, 0x261580)
 SD_IMPORT(crt_ceil, 0x345010)
-SD_IMPORT(BoxTri, 0x271d60)
 SD_IMPORT(Tabla_ResizeC, 0x261830)
 SD_IMPORT(Tabla_Resize1C, 0x261780)
 SD_IMPORT(CSuelo_DrawDebug, 0x25a260)
@@ -288,10 +283,6 @@ SD_IMPORT_STDCALL(D3DX_CreateTextureFromFileInMemoryEx, 60, 0x0062a7)
 SD_IMPORT_STDCALL(D3DX_LoadSurfaceFromSurface, 32, 0x004dbf)
 
 /* src/game/ScrapEng/ScrapEngCollision.c (called from suelo.cpp and checkbbox.cpp, include/scrap/suelo.h) */
-SD_IMPORT(CSuelo_TestSeg, 0x26ed30)
-SD_IMPORT(CSuelo_TraceSegPos, 0x26df80)
-SD_IMPORT(CSuelo_TraceSeg, 0x26f120)
-SD_IMPORT(CSuelo_CheckBBox, 0x26fb10)
 
 /* module agent: World/World.cpp (imports below this line) */
 SD_IMPORT(Elements_ctor, 0x202e10)
@@ -313,17 +304,12 @@ SD_IMPORT(cScheduledFuncStack_dtor, 0x2056f0)
 /* module agent: ScrapEng/ScrapEngMain.cpp (imports below this line) */
 SD_IMPORT(Engine3D_Create, 0x22da30)
 SD_IMPORT(Engine3D_Shutdown, 0x22dc00)
-SD_IMPORT(CD3DApp_Cleanup, 0x273d90)
 SD_IMPORT(CD3DApp_Render, 0x275120)
-SD_IMPORT(CD3DApp_ResetDevice, 0x275470)
-SD_IMPORT(CD3DApp_Reset, 0x2754b0)
-SD_IMPORT(Timer_GetFreq, 0x276cb0)
 SD_IMPORT(Timer_GetQPFreq, 0x276d00)
 SD_IMPORT(Video_PlayFile, 0x281660)
 SD_IMPORT(Avi_Save, 0x27fa20)
 SD_IMPORT(Avi_Frame, 0x27f9f0)
 SD_IMPORT(Avi_Load, 0x27f9b0)
-SD_IMPORT(SombrasStencil_Set, 0x267460)
 SD_IMPORT(CPsaImage_ctor, 0x22d120)
 SD_IMPORT(CPsaImage_dtor, 0x22d160)
 SD_IMPORT(CPsaImage_Draw, 0x22d3c0)
@@ -618,6 +604,12 @@ SD_IMPORT(Matrix_Transpose, 0x239860)
 SD_IMPORT(CMaterial_ScaleColors, 0x237020)
 
 /* module agent: Engine leftovers 0x265000..0x278000 (imports below this line) */
+SD_IMPORT(Stencil_DrawSegs, 0x265510)
+SD_IMPORT(Stencil_DrawTris, 0x2661b0)
+SD_IMPORT(DXUtil_Timer, 0x276790)
+SD_IMPORT(Tsc_CpuFreq, 0x272f90)
+SD_IMPORT(CD3DApp_DisplayErrorMsg, 0x274040)
+SD_IMPORT(CD3DApp_Initialize3DEnvironment, 0x2747e0)
 
 /* module agent: Engine leftovers 0x2c9d90..0x2d6010 (imports below this line) */
 SD_IMPORT(crt_open, 0x359882)
