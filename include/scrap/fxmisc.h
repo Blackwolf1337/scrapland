@@ -10,6 +10,7 @@
 #ifndef SCRAP_FXMISC_H
 #define SCRAP_FXMISC_H
 
+#include "scrap/crt.h"
 #include "scrap/entity.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcamera.h"
@@ -48,6 +49,24 @@ SD_OFFSET(FXEntityVtbl, SetFXParam, 0xb4);
 
 static inline const FXEntityVtbl *FX_Vtbl(cEntity *e) {
 	return (const FXEntityVtbl *)e->vftable;
+}
+
+/* the inline normalize of the effects: the length of (y y + x x) + z z, 1 / len in float; d as it is for length 0 */
+static inline vec3_t FX_Unit(vec3_t d) {
+	float len = (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z));
+
+	if (len != 0.0f) {
+		float k = 1.0f / len;
+		d.x = d.x * k;
+		d.y = d.y * k;
+		d.z = d.z * k;
+	}
+	return d;
+}
+
+/* rand() & 0x7fff of the exe as 0..1 times range, plus add (all in double), the way the effects pick values */
+static inline float FX_Rand(double range, double add) {
+	return (float)((double)(crt_rand() & 0x7fff) * (1.0 / 32767.0) * range + add);
 }
 
 /* an entity that is deleted (the int at 0x20) or off: the effect lets it go */
@@ -155,7 +174,10 @@ typedef struct cObjElementFXSparks {
 	int freeList[FXSPARKS_MAXSPARKS];	/* 0xabc */
 	CGameTrail trails[FXSPARKS_MAXSPARKS];	/* 0xb3c */
 	CGameParticles particles;		/* 0xbbc */
+	byte on;				/* 0xc6c set by the hook laser that emits */
+	byte pad_c6d[3];
 } cObjElementFXSparks;
+SD_SIZE(cObjElementFXSparks, 0xc70);
 SD_OFFSET(cObjElementFXSparks, life, 0x630);
 SD_OFFSET(cObjElementFXSparks, trailT, 0x9b0);
 SD_OFFSET(cObjElementFXSparks, trails, 0xb3c);
@@ -225,6 +247,36 @@ byte __thiscall cObjElementFXTrail_Alive(cObjElementFXTrail *self, cDebris *d, c
 void __thiscall cObjElementFXTrail_Reset(cObjElementFXTrail *self, int arg);
 byte __thiscall cObjElementFXFadeOutTrail_Alive(cObjElementFXFadeOutTrail *self, cDebris *d, cDebrisSys *sys);
 void __thiscall cObjElementFXFadeOutTrail_Reset(cObjElementFXFadeOutTrail *self, int arg);
+void __thiscall cObjElementFXFadeOutTrail_Update(cObjElementFXFadeOutTrail *self, cDebris *d, float dt);
+/* the constructors and destructors (rva 0x1da190..0x1da6c8, fastcall) and the deleting destructors (vtable slot
+ * 0, rva 0x1da6d0..0x1da940) */
+void *__fastcall cObjElementFXFadeOutTrail_ctor(void *self);
+void *__fastcall cObjElementFXItemFade_ctor(void *self);
+void *__fastcall cObjElementFXItemTake_ctor(void *self);
+void *__fastcall cObjElementFXModelFade_ctor(void *self);
+void *__fastcall cObjElementFXModelNoise_ctor(void *self);
+void *__fastcall cObjElementFXSistPart_ctor(void *self);
+void *__fastcall cObjElementFXSistPartDuDv_ctor(void *self);
+void *__fastcall cObjElementFXSparks_ctor(void *self);
+void *__fastcall cObjElementFXTrail_ctor(void *self);
+void __fastcall cObjElementFXFadeOutTrail_dtor(void *self);
+void __fastcall cObjElementFXItemFade_dtor(void *self);
+void __fastcall cObjElementFXItemTake_dtor(void *self);
+void __fastcall cObjElementFXModelFade_dtor(void *self);
+void __fastcall cObjElementFXModelNoise_dtor(void *self);
+void __fastcall cObjElementFXSistPart_dtor(void *self);
+void __fastcall cObjElementFXSistPartDuDv_dtor(void *self);
+void __fastcall cObjElementFXSparks_dtor(void *self);
+void __fastcall cObjElementFXTrail_dtor(void *self);
+void *__thiscall cObjElementFXFadeOutTrail_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXItemFade_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXItemTake_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXModelFade_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXModelNoise_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXSistPart_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXSistPartDuDv_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXSparks_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXTrail_Delete(void *self, uint32_t flags);
 /* the elements of the effects started by name: the entity (its model a CHECK), fields at 0x8 and 0xc */
 void __thiscall FXMisc_SetEntity(void *self, cEntity *e);
 void __thiscall FXMisc_SetF8(void *self, float v);

@@ -1,7 +1,5 @@
 /*
  * World/FX/FXChar.cpp of the game: the effects of the characters, see include/scrap/fxchar.h.
- * Not here (too large): the Update of CharacterConversor (rva 0x1a99f0), CharacterDeath (0x1ac1b0) and
- * CharacterTeleport (0x1adf80).
  */
 #include <string.h>
 
@@ -9,6 +7,7 @@
 #include "scrap/doors.h"
 #include "scrap/fx.h"
 #include "scrap/fxchar.h"
+#include "scrap/fxcharactions.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/sound.h"
@@ -237,16 +236,16 @@ void __thiscall cObjElementFXCharacterConversor_Attach(cObjElementFXCharacterCon
 		CGameTrail_SetTexture(t, 9);
 		CGameTrail_SetPremul(t, 1);
 		CGameTrail_SetUVScale(t, 8.0f, 1.0f);
-		self->f284[i] = 0.5f;
+		self->width[i] = 0.5f;
 		self->trailT[i] = -1.0f;
 	}
-	self->n290 = 5;
+	self->numPoints = 5;
 }
 
 void __thiscall cObjElementFXCharacterConversor_Reset(cObjElementFXCharacterConversor *self, int arg) {
 	(void)arg;
-	self->fcc = 0.0f;
-	self->fd0 = 0.0f;
+	self->time = 0.0f;
+	self->emitT = 0.0f;
 	self->phase = 0;
 	self->character = NULL;
 	self->conversor = NULL;
@@ -260,9 +259,9 @@ void __thiscall cObjElementFXCharacterConversor_Reset(cObjElementFXCharacterConv
 }
 
 static void FXDeath_ResetTrails(cObjElementFXCharacterDeath *self, byte attach) {
-	self->f218 = 0.0f;
-	self->f21c = 0.0f;
-	self->f220 = 0.0f;
+	self->time = 0.0f;
+	self->emitT = 0.0f;
+	self->lastTime = 0.0f;
 	for (int k = 0; k < FXDEATH_TRAILS; k++) {
 		CGameTrail *t = &self->trails[k];
 		if (attach) {
@@ -273,8 +272,8 @@ static void FXDeath_ResetTrails(cObjElementFXCharacterDeath *self, byte attach) 
 			CGameTrail_Clear(t);
 		}
 	}
-	for (int i = 0; i < 0x78; i++) {
-		self->f7e4[i] = 5.0f;
+	for (int i = 0; i < FXDEATH_POINTS; i++) {
+		self->phase[i] = 5.0f;
 	}
 }
 
@@ -299,8 +298,8 @@ void __thiscall cObjElementFXCharacterTeleport_Attach(cObjElementFXCharacterTele
 
 void __thiscall cObjElementFXCharacterTeleport_Reset(cObjElementFXCharacterTeleport *self, int arg) {
 	(void)arg;
-	self->fcc = 0.0f;
-	self->fd0 = 0.0f;
+	self->t = 0.0f;
+	self->emitT = 0.0f;
 	self->mode = 0;
 }
 
@@ -848,6 +847,1017 @@ void __thiscall cObjElementFXMaintenanceWork_Update(cObjElementFXMaintenanceWork
 	CGameParticles_SetSparksOn(sp, 0);
 }
 
+#define FXC_RAMP_TELEPORT 0x430340	/* 3 color ramps of 9 colors */
+#define FXC_RAMP_TELEPORT_GLOW 0x430388
+
+static inline uint32_t *FXC_Ramp(uint32_t rva, int i) {
+	return (uint32_t *)Game_Ptr(rva) + i * 9;
+}
+
+/* a particle that does not move at x y z */
+static void FXC_Still(CGameParticles *sp, float x, float y, float z) {
+	sp->initPosMin.x = x;
+	sp->initPosMin.y = y;
+	sp->initPosMin.z = z;
+	sp->initPosMax = sp->initPosMin;
+	sp->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	sp->initVelMax = sp->initVelMin;
+	sp->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	sp->initAccMax = sp->initAccMin;
+}
+
+/* velocity and acceleration along y only */
+static void FXC_VelY(CGameParticles *sp, float vy, float ay) {
+	sp->initVelMin = (vec3_t){ 0.0f, vy, 0.0f };
+	sp->initVelMax = sp->initVelMin;
+	sp->initAccMin = (vec3_t){ 0.0f, ay, 0.0f };
+	sp->initAccMax = sp->initAccMin;
+}
+
+/* the glow of the teleport on the character at x y z, its size by the radius r */
+static void FXTeleport_Glow(CGameParticles *sp, float x, float y, float z, float r) {
+	CGameParticles_SetSparksOn(sp, 0);
+	sp->birthRate = 0;
+	FXC_Still(sp, x, y, z);
+	sp->rotVar = 0.0f;
+	sp->rotIni = sp->rotEnd = FXC_Rand(6.2831854820251465, 0.0);
+	sp->sizeLife = 1.0f;
+	sp->lifeTime = FXC_Rand(0.019999995827674866, 0.18000000715255737);
+	sp->spriteIni = 9;
+	sp->spriteEnd = 9;
+	sp->sizeIni = sp->sizeEnd = FXC_Rand(0.099999904632568359, 1.2000000476837158) * r;
+	CGameParticles_Apply(sp);
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_RAMP_TELEPORT, crt_rand() % 3));
+	CGameParticles_EmitN(sp, 1, 0);
+}
+
+/* a spark out of the center c: up (mode 1) or down from yDown, the speed and acceleration along y */
+static void FXTeleport_Spark(CGameParticles *sp, const vec3_t *c, int mode, float yUp, float yDown, double velRange,
+	double velAdd, float size, float maxSize, int sprite) {
+	vec3_t d;
+
+	FX_RandomDir(&d);
+	CGameParticles_SetSparksOn(sp, 1);
+	sp->birthRate = 0;
+	float k = FXC_Rand(25.0, 75.0);
+	float vy, ay;
+	if (mode == 1) {
+		sp->initPosMin.x = (c->x + 0.0f) + d.x * k;
+		sp->initPosMin.y = (c->y + yUp) + d.y * k;
+		sp->initPosMin.z = (c->z + 0.0f) + d.z * k;
+		sp->initPosMax = sp->initPosMin;
+		vy = FXC_Rand(velRange, velAdd);
+		ay = FXC_Rand(150.0, 550.0);
+	} else {
+		sp->initPosMin.x = (c->x + 0.0f) + d.x * k;
+		sp->initPosMin.y = (c->y + yDown) + d.y * k;
+		sp->initPosMin.z = (c->z + 0.0f) + d.z * k;
+		sp->initPosMax = sp->initPosMin;
+		vy = -FXC_Rand(velRange, velAdd);
+		ay = -FXC_Rand(150.0, 550.0);
+	}
+	FXC_VelY(sp, vy, ay);
+	sp->rotIni = 0.0f;
+	sp->rotEnd = 0.0f;
+	sp->rotVar = 0.0f;
+	sp->sizeLife = 1.0f;
+	sp->sizeIni = size;
+	sp->sizeEnd = size;
+	sp->lifeTime = FXC_Rand(0.19999998807907104, 0.30000001192092896);
+	if (sprite < 0) {
+		sprite = (crt_rand() & 1) + 0x45;
+	}
+	sp->spriteIni = (byte)sprite;
+	sp->spriteEnd = (byte)sprite;
+	sp->sparkMaxSize = maxSize;
+	sp->sparkVelScale = 100.0f;
+	CGameParticles_Apply(sp);
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_RAMP_TELEPORT, crt_rand() & 1));
+	CGameParticles_EmitN(sp, 1, 0);
+}
+
+/* the smoke along the character: the random rotation, the life (random for life < 0), sprite 9 */
+static void FXTeleport_Smoke(CGameParticles *sp, float life) {
+	sp->rotIni = sp->rotEnd = FXC_Rand(6.2831854820251465, 0.0);
+	sp->rotVar = FXC_Rand(1.5707963705062866, 0.0);
+	if (life < 0.0f) {
+		life = FXC_Rand(0.15000000596046448, 0.34999999403953552);
+	}
+	sp->lifeTime = life;
+	sp->sizeIni = FXC_Rand(5.0, 55.0);
+	sp->sizeLife = 0.1f;
+	sp->spriteIni = 9;
+	sp->spriteEnd = 9;
+	sp->sizeEnd = FXC_Rand(5.0, 70.0);
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_RAMP_TELEPORT, crt_rand() % 2));
+	CGameParticles_Apply(sp);
+	CGameParticles_EmitN(sp, 1, 0);
+}
+
+#define FXTELEPORT_VERTS 0x60
+#define FXTELEPORT_GLOWS 0x18
+
+void __thiscall cObjElementFXCharacterTeleport_Update(cObjElementFXCharacterTeleport *self, cDebris *d, float dt) {
+	vec3_t c, p, diff, n, verts[FXTELEPORT_VERTS];
+	uint32_t bits;
+
+	(void)dt;
+	self->character = FXC_Keep(self->character);
+	if (!self->character || !self->character->flag_4c) {
+		return;
+	}
+	self->teleport = FXC_Keep(self->teleport);
+	if (!self->teleport || !self->teleport->flag_4c) {
+		return;
+	}
+	vec3_t cam = FXC_CamPos();
+	CGameModel_SetPos(Debris_Model(d), &cam);
+	CGameModel_SetSortZ(Debris_Model(d), -64.0f, 0.0f);
+	float delta = FXC_Delta();
+	self->t = self->t + delta;
+	self->emitT = self->emitT + delta;
+	FX_Vtbl(self->teleport)->GetCenter(self->teleport, &c);
+	float r = FX_Vtbl(self->character)->GetRadius(self->character);
+	/* f: the character comes in (mode 1) or goes out (mode 2); g: the effect of its model over the duration */
+	float q = 0.0f;
+	if (self->mode == 1) {
+		q = self->timeIn > self->t ? self->t / self->timeIn : 1.0f;
+	} else if (self->mode == 2) {
+		float b = self->duration - self->timeOut;
+		q = self->t > b ? (self->timeOut - (self->t - b)) / self->timeOut : 1.0f;
+	}
+	float f = 0.0f > q ? 0.0f : Float_MinSS(1.0f, q);
+	float g = (self->t * 1.2f - 0.2f) / self->duration;
+	g = 0.0f > g ? 0.0f : Float_MinSS(1.0f, g);
+	CGameModel *m = FX_Vtbl(self->character)->GetModel(self->character);
+	CHECK(CGameModel_IsLoaded(m));
+	CGameModel_SetSortZ(m, -63.9f, 0.0f);
+	CGameModel_SetEffect(m, 2);
+	float e = self->mode == 2 ? 1.0f - g : g;
+	memcpy(&bits, &e, sizeof(bits));
+	CGameModel_SetEffectParam(m, 0, bits);
+	CGameModel_GetPos(m, &p);
+	/* the particles sit a bit towards the camera */
+	cam = FXC_CamPos();
+	diff.x = cam.x - c.x;
+	diff.y = cam.y - c.y;
+	diff.z = cam.z - c.z;
+	Vec3_NormalizeTo(&n, &diff);
+	float ox = n.x * r * 0.45f, oy = n.y * r * 0.45f, oz = n.z * r * 0.45f;
+	/* the column of light of the teleport */
+	int a = 0x80 - (int)((f - 1.0f) * 128.0f);
+	if (a < 0x80) {
+		a = 0x80;
+	} else if (a > 0xff) {
+		a = 0xff;
+	}
+	for (int i = 0; i < 5; i++) {
+		uint32_t div = (i > 0 && i < 4) ? 1 : 2;
+		uint32_t gl = 0x20 / div;
+		uint32_t color = (((uint32_t)a << 8 | gl) << 8 | gl) << 8 | (0xff / div);
+		CGameParticles_SetParticle(&self->particles, i, c.x + 0.0f, (float)i * 100.0f * 1.4f + c.y, c.z + 0.0f,
+			800.0f, color, 2, 0.0f);
+	}
+	if (!(self->emitT > 0.025f)) {
+		return;
+	}
+	if (!(self->duration - (self->timeOut + self->timeOut) > self->t)) {
+		return;
+	}
+	/* the glows on the vertices at the height that moves over the character */
+	float h = ((self->t - self->timeIn) + (self->t - self->timeIn)) / ((self->duration - self->timeIn) - self->timeOut)
+		- 1.0f;
+	h = -1.0f > h ? -1.0f : Float_MinSS(1.0f, h);
+	if (self->mode == 2) {
+		h = -h;
+	}
+	float s = r * 2.5f * h;
+	CGameParticles *sp = &self->particles;
+	CGameModel_RandomVertices(m, verts, NULL, NULL, FXTELEPORT_VERTS, 0xffffffffu);
+	int cnt = 0;
+	for (int j = 0; j < FXTELEPORT_VERTS; j++) {
+		const vec3_t *v = &verts[j];
+		if (__builtin_fabs((double)((p.y + s) - v->y)) > 20.0) {
+			continue;
+		}
+		if (cnt++ > FXTELEPORT_GLOWS) {
+			break;
+		}
+		FXTeleport_Glow(sp, v->x + ox, v->y + oy, v->z + oz, r);
+	}
+	/* too few vertices there: random points around the height */
+	if ((uint32_t)(cnt - 1) <= 6) {
+		for (int k = 0; k < crt_rand() % 8 + 8; k++) {
+			float rz = FXC_Rand(0.20000000298023224, -0.10000000149011612);
+			float ry = FXC_Rand(0.10000000149011612, -0.05000000074505806);
+			float rx = FXC_Rand(0.20000000298023224, -0.10000000149011612);
+			vec3_t *v = &verts[k];
+			v->x = rx * r + p.x;
+			v->y = ry * r + (p.y + s);
+			v->z = rz * r + p.z;
+			FXTeleport_Glow(sp, v->x + ox, oy + v->y, oz + v->z, r);
+		}
+	}
+	/* the sparks and the smoke of the column */
+	FXTeleport_Spark(sp, &c, self->mode, 100.0f, 400.0f, 700.0, 250.0, 250.0f, 1.5f, -1);
+	FXTeleport_Spark(sp, &c, self->mode, 0.0f, 300.0f, 600.0, 350.0, 200.0f, 2.5f, 0x46);
+	vec3_t dir;
+	FX_RandomDir(&dir);
+	CGameParticles_SetSparksOn(sp, 0);
+	sp->birthRate = 0;
+	float k = FXC_Rand(90.0, 10.0);
+	float dx = dir.x * k, dy = dir.y * k, dz = dir.z * k;
+	float ry = FXC_Rand(250.0, -50.0);
+	float vy;
+	if (self->mode == 1) {
+		sp->initPosMin.x = (c.x + 0.0f) + dx;
+		sp->initPosMin.y = (c.y + ry) + dy;
+		sp->initPosMin.z = (c.z + 0.0f) + dz;
+		sp->initPosMax = sp->initPosMin;
+		vy = FXC_Rand(150.0, 150.0);
+	} else {
+		sp->initPosMin.x = ((c.x + 0.0f) + 0.0f) + dx;
+		sp->initPosMin.y = ((c.y + ry) + 150.0f) + dy;
+		sp->initPosMin.z = ((c.z + 0.0f) + 0.0f) + dz;
+		sp->initPosMax = sp->initPosMin;
+		vy = -FXC_Rand(150.0, 150.0);
+	}
+	FXC_VelY(sp, vy, 0.0f);
+	sp->rotVar = 0.0f;
+	sp->rotIni = sp->rotEnd = FXC_Rand(6.2831854820251465, 0.0);
+	sp->sizeLife = 0.2f;
+	sp->lifeTime = FXC_Rand(0.19999998807907104, 0.60000002384185791);
+	sp->sizeIni = FXC_Rand(5.0, 30.0);
+	sp->sizeEnd = FXC_Rand(5.0, 70.0);
+	byte sprite = (crt_rand() & 1) ? 9 : 15;
+	sp->spriteIni = sprite;
+	sp->spriteEnd = sprite;
+	CGameParticles_Apply(sp);
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_RAMP_TELEPORT, crt_rand() & 1));
+	CGameParticles_EmitN(sp, 1, 0);
+	/* smoke out of 8 vertices of the character */
+	CHECK(CGameModel_IsLoaded(m));
+	CGameModel_RandomVertices(m, verts, NULL, NULL, 8, 0xffffffffu);
+	for (int i = 0; i < 8; i++) {
+		const vec3_t *v = &verts[i];
+		if (self->mode == 1) {
+			diff.x = v->x - c.x;
+			diff.y = v->y - c.y;
+			diff.z = v->z - c.z;
+			n = FX_Unit(diff);
+			sp->birthRate = 0;
+			sp->initPosMin.x = (v->x + ox) + n.x * 2.0f;
+			sp->initPosMin.y = (v->y + oy) + n.y * 2.0f;
+			sp->initPosMin.z = (v->z + oz) + n.z * 2.0f;
+			sp->initPosMax = sp->initPosMin;
+			float up = FXC_Rand(100.0, 200.0);
+			float kv = FXC_Rand(10.0, 80.0);
+			sp->initVelMin.x = n.x * kv + 0.0f;
+			sp->initVelMin.y = n.y * kv + up;
+			sp->initVelMin.z = n.z * kv + 0.0f;
+			sp->initVelMax = sp->initVelMin;
+			float up2 = FXC_Rand(100.0, 200.0);
+			float ka = FXC_Rand(0.099999964237213135, 0.80000001192092896);
+			sp->initAccMin.x = ka * sp->initVelMin.x + 0.0f;
+			sp->initAccMin.y = ka * sp->initVelMin.y + up2;
+			sp->initAccMin.z = ka * sp->initVelMin.z + 0.0f;
+			sp->initAccMax = sp->initAccMin;
+			FXTeleport_Smoke(sp, -1.0f);
+		} else {
+			vec3_t rd;
+			FX_RandomDir(&rd);
+			diff.x = v->x - c.x;
+			diff.y = v->y - c.y;
+			diff.z = v->z - c.z;
+			n = FX_Unit(diff);
+			float lt = FXC_Rand(0.099999994039535522, 0.34999999403953552);
+			sp->birthRate = 0;
+			float rx = rd.x * 100.0f * 0.5f, rry = rd.y * 100.0f * 0.5f, rz = rd.z * 100.0f * 0.5f;
+			float up = FXC_Rand(150.0, 150.0);
+			sp->initPosMin.x = ((c.x + ox) + 0.0f) + rx;
+			sp->initPosMin.z = ((c.z + oz) + 0.0f) + rz;
+			sp->initPosMin.y = (up + (oy + c.y)) + rry;
+			sp->initPosMax = sp->initPosMin;
+			float nx = n.x * 2.0f, ny = n.y * 2.0f, nz = n.z * 2.0f;
+			float inv = 1.0f / lt;
+			sp->initVelMin.x = ((nx + v->x) - sp->initPosMin.x) * inv;
+			sp->initVelMin.y = ((ny + v->y) - sp->initPosMin.y) * inv;
+			sp->initVelMin.z = ((nz + v->z) - sp->initPosMin.z) * inv;
+			sp->initVelMax = sp->initVelMin;
+			sp->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			sp->initAccMax = sp->initAccMin;
+			FXTeleport_Smoke(sp, lt);
+			/* and a flash where it arrives */
+			sp->birthRate = 0;
+			FXC_Still(sp, nx + v->x, ny + v->y, nz + v->z);
+			sp->rotVar = 0.0f;
+			sp->rotIni = sp->rotEnd = FXC_Rand(6.2831854820251465, 0.0);
+			sp->lifeTime = FXC_Rand(0.030000008642673492, 0.11999999731779099);
+			sp->sizeIni = FXC_Rand(15.0, 50.0);
+			sp->sizeEnd = FXC_Rand(15.0, 100.0);
+			sp->sizeLife = 0.1f;
+			sp->spriteIni = 5;
+			sp->spriteEnd = 5;
+			CGameParticles_SetColorRampOn(sp, 1);
+			CGameParticles_SetColorRamp(sp, Game_Ptr(FXC_RAMP_TELEPORT_GLOW));
+			CGameParticles_Apply(sp);
+			CGameParticles_EmitDt(sp, 1, 0, lt);
+		}
+	}
+	self->emitT = 0.0f;
+}
+#define FXC_RAMP_DEATH 0x430288		/* 4 color ramps of 9 colors */
+#define FXDEATH_VERTS 0x60
+
+static inline float FXC_Smooth(float k) {
+	return (3.0f - (k + k)) * (k * k);
+}
+
+/* the dust of the death at a vertex v (moved by o) of the dead character: up or down by the height band */
+static void FXDeath_Dust(CGameParticles *sp, const vec3_t *v, float ox, float oy, float oz, double kRange,
+	double kAdd, float velK, float q) {
+	vec3_t dir;
+
+	sp->birthRate = 0;
+	float k = FXC_Rand(kRange, kAdd);
+	FX_RandomDir(&dir);
+	sp->initPosMin.x = (v->x + ox) + k * dir.x;
+	sp->initPosMin.y = (v->y + oy) + dir.y * k;
+	sp->initPosMin.z = (v->z + oz) + dir.z * k;
+	sp->initPosMax = sp->initPosMin;
+	float vy;
+	if ((int)(sp->initPosMin.y / 10.0f) & 1) {
+		vy = velK < 0.0f ? -(FXC_Rand(25.0, 300.0) * q) : FXC_Rand(25.0, 300.0) * -velK * q;
+	} else {
+		vy = velK < 0.0f ? FXC_Rand(25.0, 300.0) * q : FXC_Rand(25.0, 300.0) * velK * q;
+	}
+	sp->initVelMin = (vec3_t){ 0.0f, vy, 0.0f };
+	sp->initVelMax = sp->initVelMin;
+	float k2 = FXC_Rand(0.019999980926513672, 1.6000000238418579);
+	sp->initAccMin.x = k2 * -sp->initVelMin.x;
+	sp->initAccMin.y = k2 * -sp->initVelMin.y;
+	sp->initAccMin.z = k2 * -sp->initVelMin.z;
+	sp->initAccMax = sp->initAccMin;
+	sp->lifeTime = FXC_Rand(0.030000030994415283, 0.81999999284744263);
+	sp->sizeLife = 1.0f;
+}
+
+/* a glow at the hand of the dead character */
+static void FXDeath_Glow(CGameParticles *sp, const vec3_t *v, float r, double iniRange, double iniAdd, double endRange,
+	double endAdd, byte sprite) {
+	FXC_Still(sp, v->x, v->y, v->z);
+	sp->lifeTime = FXC_Rand(0.019999995827674866, 0.2199999988079071);
+	sp->sizeIni = FXC_Rand(iniRange, iniAdd) * r;
+	sp->sizeLife = 0.25f;
+	sp->sizeEnd = FXC_Rand(endRange, endAdd) * r;
+	sp->rotIni = sp->rotEnd = FXC_Rand(6.2831854820251465, 0.0);
+	sp->rotVar = 0.0f;
+	sp->spriteIni = sprite;
+	sp->spriteEnd = sprite;
+	CGameParticles_Apply(sp);
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_RAMP_DEATH, 0));
+	CGameParticles_EmitN(sp, 1, 0);
+}
+
+void __thiscall cObjElementFXCharacterDeath_Update(cObjElementFXCharacterDeath *self, cDebris *d, float dt) {
+	vec3_t p, dir, verts[FXDEATH_VERTS];
+	float a;
+	uint32_t bits;
+
+	(void)dt;
+	self->ent = FXC_Keep(self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		return;
+	}
+	float delta = FXC_Delta();
+	float t = self->time + delta;
+	float et = self->emitT + delta;
+	self->time = t;
+	self->emitT = et;
+	/* the character slows down over the first 0.7 s */
+	FX_InRange(t, 0.0f, 0.7f, &a);
+	float k = 1.0f - a;
+	if (self->ent) {
+		cTimer_SetSpeedChecked(Entity_Timer(self->ent), FXC_Smooth(k));
+	}
+	CGameModel *m = FX_Vtbl(self->ent)->GetModel(self->ent);
+	CHECK(CGameModel_IsLoaded(m));
+	CGameModel_GetPos(m, &p);
+	CGameModel_SetPos(Debris_Model(d), &p);
+	CGameModel_SetSortZ(Debris_Model(d), -61.0f, 0.0f);
+	/* the model fades out from 0.75 s on, the effect shows while the character does */
+	if (FX_InRange(self->time, 0.75f, 1.0f, &a)) {
+		CGameModel_SetSortZ(m, -60.9f, 0.0f);
+		CGameModel_SetEffect(m, 2);
+		float e = (a * a) * (2.0f - a);
+		memcpy(&bits, &e, sizeof(bits));
+		CGameModel_SetEffectParam(m, 0, bits);
+	} else if (a >= 1.0f) {
+		CGameModel_Disable(m);
+	} else if (CGameModel_IsVisible(m)) {
+		CGameModel_Enable(Debris_Model(d));
+	} else {
+		CGameModel_Disable(Debris_Model(d));
+	}
+	byte vis = CGameModel_IsVisible(Debris_Model(d));
+	vec3_t cam = FXC_CamPos();
+	vec3_t n = FX_Unit((vec3_t){ cam.x - p.x, cam.y - p.y, cam.z - p.z });
+	float r = FX_Vtbl(self->ent)->GetRadius(self->ent);
+	float ox = n.x * r * 0.6f, oy = n.y * r * 0.6f, oz = n.z * r * 0.6f;
+
+	/* the trails up from the vertices */
+	if (!FX_InRange(self->time, 0.55f, 1.6f, &a)) {
+		if (CGameTrail_IsRender(&self->trails[0])) {
+			for (int i = 0; i < FXDEATH_TRAILS; i++) {
+				CGameTrail_Clear(&self->trails[i]);
+			}
+			CGameParticles_KillAll(&self->particles);
+		}
+	} else {
+		float q = 0.0f;
+		if (FX_InRange(self->time, 0.55f, 0.75f, &q)) {
+			q = 1.0f - (q * q) * (2.0f - q);
+		} else if (FX_InRange(self->time, 1.0f, 1.5f, &q)) {
+			q = (3.0f - q * 2.0f) * (q * q);
+		}
+		CGameParticles_SetAlpha(&self->particles, 1.0f - q);
+		for (int i = 0; i < FXDEATH_TRAILS; i++) {
+			CGameTrail *tr = &self->trails[i];
+			CGameTrail_Reset(tr);
+			CGameTrail_SetTransp(tr, (byte)(int)(q * 255.0f));
+			CGameTrail_SetUV(tr, (i & 1) ? 0.5f : 0.0f, (i & 2) ? 0.5f : 0.0f);
+			CGameTrail_SetULen(tr, 0.15f, 0.25f);
+		}
+		if (vis) {
+			int pt = 0, trail = 0;
+			for (int i = 0; i < FXDEATH_POINTS; i++) {
+				float ph = self->phase[i];
+				if (ph > 1.0f && 1.6f > self->time) {
+					/* a new point on a random vertex */
+					if (ph == 5.0f) {
+						self->phase[i] = (float)(FXC_Rnd() - 1.0);
+					} else {
+						self->phase[i] = 0.0f;
+					}
+					vec3_t *pp = &self->pos[i];
+					CGameModel_Vertices(m, pp, NULL, NULL, 1, -1, NULL, 0xffffffffu, NULL);
+					float kp = FXC_Rand(0.049999997019767761, 0.029999999329447746);
+					FX_RandomDir(&dir);
+					float dx = dir.x * r, dy = dir.y * r, dz = dir.z * r;
+					pp->x = pp->x + kp * dx;
+					pp->y = pp->y + kp * dy;
+					pp->z = pp->z + kp * dz;
+					float w = FXC_Rand(0.40000003576278687, 0.20000000298023224);
+					self->width[i] = w;
+					if (self->time > 1.0f) {
+						self->width[i] = (self->time * self->time) * w;
+					}
+					uint32_t g = (uint32_t)(crt_rand() % 40 + 0x8c) << 8;
+					uint32_t rg = (uint32_t)(crt_rand() % 55 + 0xc8) << 16 | g;
+					self->color[i] = (uint32_t)(crt_rand() % 26 + 0x3c) | rg;
+					self->speed[i] = FXC_Rand(1.2999999523162842, 2.7999999523162842);
+				}
+				float v = self->speed[i] * delta + self->phase[i];
+				self->phase[i] = v;
+				if (0.0f > v || v > 1.0f) {
+					continue;
+				}
+				int alpha = 0;
+				if (0.1f > v) {
+					alpha = (int)((v / 0.1f - 1.0f) * -255.0f);
+				} else if (v > 0.5f) {
+					alpha = (int)(((v - 0.5f) * 2.0f) * 255.0f);
+				}
+				float v4 = v * v * v * v;
+				float s = (v4 + v4) + 1.0f;
+				float h = s * r * self->width[i];
+				if (alpha < 0xff) {
+					const vec3_t *pp = &self->pos[i];
+					CGameTrail *tr = &self->trails[trail];
+					uint32_t col = (self->color[i] & 0xffffff) | (uint32_t)alpha << 24;
+					float wd = r * 0.2f;
+					vec3_t q1 = { (pp->x + ox) - 0.0f, (pp->y + oy) - h, (pp->z + oz) - 0.0f };
+					CGameTrail_Add(tr, q1, wd, col);
+					vec3_t q2 = { (pp->x + ox) + 0.0f, (pp->y + oy) + h, (pp->z + oz) + 0.0f };
+					CGameTrail_Add(tr, q2, wd, col);
+					float kk = FXC_Rand(0.099999964237213135, 0.85000002384185791);
+					CGameParticles_SetParticle(&self->particles, i, pp->x + ox, pp->y + oy, pp->z + oz,
+						((s * self->width[i]) * r) * kk, col, 5, 0.0f);
+				}
+				if (++pt >= FXDEATH_TRAILPOINTS) {
+					pt = 0;
+					trail++;
+				}
+			}
+		}
+	}
+
+	/* the dust when the model is gone */
+	if (self->time >= 1.0f && 1.0f >= self->lastTime && vis) {
+		CGameModel_Vertices(m, verts, NULL, NULL, FXDEATH_VERTS, -1, NULL, 0xffffffffu, NULL);
+		float q = r / 60.0f;
+		for (int j = 0; j < FXDEATH_VERTS; j++) {
+			const vec3_t *v = &verts[j];
+			CGameParticles *sp = &self->particles3;
+			FXDeath_Dust(sp, v, ox, oy, oz, 5.0, 1.0, -1.0f, q);
+			sp->sizeIni = sp->sizeEnd = FXC_Rand(0.34000000357627869, 0.34000000357627869) * r * 0.5f;
+			sp->rotIni = sp->rotEnd = (float)(crt_rand() % 4) * 1.57079637f;
+			sp->rotVar = 0.0f;
+			byte sprite = (byte)(crt_rand() % 4 + 1);
+			sp->spriteIni = sprite;
+			sp->spriteEnd = sprite;
+			CGameParticles_Apply(sp);
+			CGameParticles_SetColorRampOn(sp, 1);
+			CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_RAMP_DEATH, crt_rand() & 1));
+			CGameParticles_EmitN(sp, 1, 0);
+			sp = &self->particles2;
+			FXDeath_Dust(sp, v, ox, oy, oz, 4.0, 0.0, 0.95f, q);
+			sp->sizeIni = sp->sizeEnd = FXC_Rand(0.2199999988079071, 0.25999999046325684) * r * 0.85f;
+			sp->rotIni = sp->rotEnd = FXC_Rand(6.2831854820251465, 0.0);
+			sp->spriteIni = 5;
+			sp->spriteEnd = 5;
+			sp->rotVar = FXC_Rand(1.5707963705062866, -0.78539818525314331);
+			CGameParticles_Apply(sp);
+			CGameParticles_SetColorRampOn(sp, 1);
+			CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_RAMP_DEATH, 0));
+			CGameParticles_EmitN(sp, 1, 0);
+		}
+	}
+	float tt = self->time;
+	self->lastTime = tt;
+	if (0.025f > self->emitT) {
+		return;
+	}
+	self->emitT = 0.0f;
+	if (!vis) {
+		return;
+	}
+	CGameParticles *sp = &self->particles2;
+	/* the smoke from the vertices */
+	if (FX_InRange(tt, 0.15f, 0.55f, &a)) {
+		CGameModel_Vertices(m, verts, NULL, NULL, 0x18, -1, NULL, 0xffffffffu, NULL);
+		ox = ox * 0.5f;
+		oy = oy * 0.5f;
+		oz = oz * 0.5f;
+		sp->birthRate = 0;
+		for (int j = 0; j < 0x18; j++) {
+			const vec3_t *v = &verts[j];
+			FXC_Still(sp, v->x + ox, v->y + oy, v->z + oz);
+			sp->lifeTime = FXC_Rand(0.02000001072883606, 0.12999999523162842);
+			sp->sizeIni = FXC_Rand(0.0099999904632568359, 0.20000000298023224) * r;
+			sp->sizeLife = 0.2f;
+			sp->sizeEnd = FXC_Rand(0.01000000536441803, 0.2199999988079071) * r;
+			sp->rotIni = sp->rotEnd = FXC_Rand(6.2831854820251465, 0.0);
+			sp->rotVar = FXC_Rand(1.5707963705062866, -0.78539818525314331);
+			sp->spriteIni = (byte)(crt_rand() % 4 + 0x25);
+			sp->spriteEnd = 0x28;
+			CGameParticles_Apply(sp);
+			CGameParticles_SetColorRampOn(sp, 1);
+			CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_RAMP_DEATH, crt_rand() % 4));
+			CGameParticles_EmitN(sp, 1, 0);
+		}
+	}
+	/* now and then a flash with sparks between two vertices */
+	if (!(crt_rand() & 1)) {
+		return;
+	}
+	if (!FX_InRange(self->time, 0.1f, 0.5f, &a)) {
+		return;
+	}
+	CGameModel_Vertices(m, verts, NULL, NULL, 2, -1, NULL, 0xffffffffu, NULL);
+	sp->birthRate = 0;
+	FXDeath_Glow(sp, &verts[0], r, 0.020000003278255463, 0.11999999731779099, 0.060000002384185791, 0.2800000011920929,
+		2);
+	FXDeath_Glow(sp, &verts[1], r, 0.099999994039535522, 0.14000000059604645, 0.030000001192092896,
+		0.44999998807907104, 5);
+	CGameParticles_SetSparksOn(sp, 1);
+	vec3_t nd = FX_Unit((vec3_t){ verts[0].x - p.x, verts[0].y - p.y, verts[0].z - p.z });
+	for (int j = 0; j < crt_rand() % 8 + 8; j++) {
+		vec3_t ang, tdir;
+		sp->initPosMin = verts[0];
+		sp->initPosMax = sp->initPosMin;
+		float w = FXC_Rand(215.0, 135.0);
+		float a1 = FXC_Rand(1.0471975803375244, -0.52359879016876221);
+		float a2 = FXC_Rand(1.0471975803375244, -0.52359879016876221);
+		ang.x = FXC_Rand(1.0471975803375244, -0.52359879016876221);
+		ang.y = a2;
+		ang.z = a1;
+		Vec3_Rotate(&tdir, &nd, &ang);
+		float tx = w * tdir.x, ty = tdir.y * w, tz = tdir.z * w;
+		float kv = FXC_Rand(75.0, 10.0);
+		FX_RandomDir(&dir);
+		sp->initVelMin.x = kv * dir.x + tx;
+		sp->initVelMin.y = dir.y * kv + ty;
+		sp->initVelMin.z = dir.z * kv + tz;
+		sp->initVelMax = sp->initVelMin;
+		float ka = FXC_Rand(0.099999994039535522, 0.30000001192092896);
+		sp->initAccMin.x = ka * -sp->initVelMin.x + 0.0f;
+		sp->initAccMin.y = ka * -sp->initVelMin.y - 280.0f;
+		sp->initAccMin.z = ka * -sp->initVelMin.z + 0.0f;
+		sp->initAccMax = sp->initAccMin;
+		sp->lifeTime = FXC_Rand(0.069999992847442627, 0.37999999523162842);
+		sp->sizeLife = 1.0f;
+		sp->rotIni = 0.0f;
+		sp->rotEnd = 0.0f;
+		sp->rotVar = 0.0f;
+		sp->sizeIni = sp->sizeEnd = FXC_Rand(0.060000002384185791, 0.12999999523162842) * r;
+		sp->spriteIni = (byte)((crt_rand() & 1) + 0x41);
+		sp->spriteEnd = 0x44;
+		sp->sparkMaxSize = 1.0f;
+		sp->sparkVelScale = 10.0f;
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_RAMP_DEATH, 0));
+		CGameParticles_EmitDt(sp, 1, 0, FXC_Rand(0.039999999105930328, 0.0));
+	}
+	CGameParticles_SetSparksOn(sp, 0);
+}
+#define FXC_RAMP_CONVERSOR 0x4304b0	/* 3 color ramps of 9 colors */
+#define FXCONVERSOR_VERTS 0x60
+
+/* lo when v is smaller, at most 255 */
+static inline int FXC_Clamp(int v, int lo) {
+	if (v < lo) {
+		return lo;
+	}
+	return v > 0xff ? 0xff : v;
+}
+
+/* the two glows of the conversor on the character at x y z, their life limited by the debris */
+static void FXConversor_Glow(CGameParticles *sp, cDebris *d, float x, float y, float z, float r) {
+	CGameParticles_SetSparksOn(sp, 0);
+	sp->birthRate = 0;
+	FXC_Still(sp, x, y, z);
+	sp->rotVar = 0.0f;
+	sp->rotIni = sp->rotEnd = FXC_Rand(6.2831854820251465, 0.0);
+	float lt = FXC_Rand(0.019999995827674866, 0.18000000715255737);
+	sp->sizeLife = 1.0f;
+	sp->lifeTime = Float_MinSS(Debris_Life(d) * 0.9f, lt);
+	sp->spriteIni = 9;
+	sp->spriteEnd = 9;
+	sp->sizeIni = sp->sizeEnd = FXC_Rand(0.099999904632568359, 1.2000000476837158) * r;
+	CGameParticles_Apply(sp);
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_RAMP_CONVERSOR, crt_rand() % 3));
+	CGameParticles_EmitN(sp, 1, 0);
+	CGameParticles_SetSparksOn(sp, 0);
+	sp->birthRate = 0;
+	FXC_Still(sp, x, y, z);
+	sp->rotVar = 0.0f;
+	sp->rotIni = sp->rotEnd = FXC_Rand(6.2831854820251465, 0.0);
+	lt = FXC_Rand(0.049999982118606567, 0.30000001192092896);
+	sp->sizeLife = 1.0f;
+	sp->lifeTime = Float_MinSS(Debris_Life(d) * 0.9f, lt);
+	sp->spriteIni = 0x2b;
+	sp->spriteEnd = 0x2b;
+	sp->sizeIni = sp->sizeEnd = FXC_Rand(0.10000002384185791, 1.0) * r;
+	CGameParticles_Apply(sp);
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_RAMP_CONVERSOR, crt_rand() % 3));
+	CGameParticles_EmitDt(sp, 1, 0, FXC_Rand(0.23999999463558197, 0.0099999997764825821));
+}
+
+/* the direction of the exit node of the conversor (y of its matrix, turned by the conversor) and its position */
+static void FXConversor_Exit(CGameModel *mc, int node, const vec3_t *rot, vec3_t *dir, vec3_t *p) {
+	matrix_t mat;
+	vec3_t eu, o1;
+	const vec3_t up = { 0.0f, 1.0f, 0.0f };
+
+	CGameModel_NodoMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
+	p->x = mat.m[12];
+	p->y = mat.m[13];
+	p->z = mat.m[14];
+	Matrix_GetEuler(&mat, &eu);
+	Vec3_Rotate(dir, Vec3_Rotate(&o1, &up, rot), &eu);
+}
+
+void __thiscall cObjElementFXCharacterConversor_Update(cObjElementFXCharacterConversor *self, cDebris *d, float dt) {
+	vec3_t c, cc, rot, eu, o1, o2, p, pt, dir, verts[FXCONVERSOR_VERTS], coefs[FXCONVERSOR_POINTS];
+	matrix_t mat;
+	uint32_t bits;
+	float ct;
+
+	(void)dt;
+	cEntity *ch = self->character;
+	if (ch && (Entity_Removed(ch) || !ch->flag_4c)) {
+		/* the character went: its model back to normal */
+		CGameModel *m = FX_Vtbl(ch)->GetModel(ch);
+		if (!m || !CGameModel_IsLoaded(m)) {
+			self->character = NULL;
+			return;
+		}
+		CHECK(CGameModel_IsLoaded(m));
+		if (self->phase == 1) {
+			CGameModel_SetEffect(m, 0);
+			CGameModel_SetSortZ(m, 0.0f, 1.0f);
+			CGameModel_Disable(m);
+		} else if (self->phase == 2) {
+			CGameModel_SetEffect(m, 0);
+			CGameModel_SetSortZ(m, 0.0f, 1.0f);
+			CGameModel_Enable(m);
+		}
+		self->character = NULL;
+	}
+	if (!self->character || !self->character->flag_4c) {
+		return;
+	}
+	self->conversor = FXC_Keep(self->conversor);
+	vec3_t cam = FXC_CamPos();
+	CGameModel_SetPos(Debris_Model(d), &cam);
+	CGameModel_SetSortZ(Debris_Model(d), -62.0f, 0.0f);
+	float delta = FXC_Delta();
+	float et = self->emitT + delta;
+	float t = self->time + delta;
+	self->emitT = et;
+	self->time = t;
+	/* f: the fade of the character, h: the height of the glows, g: the effect of its model */
+	float q = 0.0f;
+	if (self->phase == 1) {
+		q = self->timeIn > t ? t / self->timeIn : 1.0f;
+	} else if (self->phase == 2) {
+		float b = self->duration - self->timeOut;
+		q = t > b ? (self->timeOut - (t - b)) / self->timeOut : 1.0f;
+	}
+	float f = 0.0f > q ? 0.0f : Float_MinSS(1.0f, q);
+	float r = FX_Vtbl(self->character)->GetRadius(self->character);
+	t = self->time;
+	float h = ((t - self->timeIn) + (t - self->timeIn)) / ((self->duration - self->timeIn) - self->timeOut) - 1.0f;
+	h = -1.0f > h ? -1.0f : Float_MinSS(1.0f, h);
+	if (self->phase == 2) {
+		h = -h;
+	}
+	float g = 0.0f;	/* not set in the original for the other phases */
+	if (self->phase == 1) {
+		g = ((t - self->timeIn) - self->timeIn) / (self->duration - self->timeIn * 5.0f);
+	} else if (self->phase == 2) {
+		g = ((self->duration - self->timeOut) - t) / (self->duration - self->timeOut * 5.0f);
+	}
+	g = 0.0f > g ? 0.0f : Float_MinSS(1.0f, g);
+	CGameModel *m = FX_Vtbl(self->character)->GetModel(self->character);
+	CHECK(CGameModel_IsLoaded(m));
+	if (m) {
+		if (!CGameModel_IsEnabled(m)) {
+			CGameModel_Enable(m);
+		}
+		CGameModel_SetSortZ(m, -61.9f, 0.0f);
+		CGameModel_SetEffect(m, 2);
+		memcpy(&bits, &g, sizeof(bits));
+		CGameModel_SetEffectParam(m, 0, bits);
+	}
+	CGameParticles *sp = &self->particles;
+	if (self->conversor) {
+		/* the end of the animation of the conversor ends the effect */
+		CGameModel *cm = FX_Vtbl(self->conversor)->GetModel(self->conversor);
+		CHECK(CGameModel_IsLoaded(cm));
+		if (CGameModel_IsVisible(cm)) {
+			CGameModel_Enable(Debris_Model(d));
+		} else {
+			CGameModel_Disable(Debris_Model(d));
+		}
+		CGameModel_ChanTime(cm, 0, &ct);
+		if ((self->phase == 1 && ct >= 1.7f) || (self->phase == 2 && ct >= 1.0f && 1.7f >= ct)) {
+			CHECK(sp);
+			CHECK(sp->SistPart);
+			CGameParticles_KillAll(sp);
+			for (int i = 0; i < self->numTrails; i++) {
+				CGameTrail_Clear(&self->trails[i]);
+				self->trailT[i] = 0.0f;
+			}
+			return;
+		}
+	}
+	FX_Vtbl(self->character)->GetCenter(self->character, &c);
+	if (self->conversor) {
+		CGameModel *mc = FX_Vtbl(self->conversor)->GetModel(self->conversor);
+		CHECK(CGameModel_IsLoaded(mc));
+		CGameModel_GetRot(mc, &rot);
+		FX_Vtbl(self->conversor)->GetCenter(self->conversor, &cc);
+		const vec3_t ang = { 0.0f, rot.y, 0.0f };
+		/* the column of the conversor */
+		float f1 = f - 1.0f;
+		uint32_t col = (uint32_t)FXC_Clamp(0xc4 - (int)(f1 * 64.0f), 0xc4) << 24 | 0x4040ff;
+		for (int i = 0, hh = 0; hh < 500; i++, hh += 125) {
+			const vec3_t v = { 0.0f, -25.0f, -100.0f };
+			float y = (float)hh * 0.4f;
+			const vec3_t *o = Vec3_Rotate(&o1, &v, &ang);
+			CGameParticles_SetParticle(sp, i, (o->x + cc.x) + 0.0f, y + (o->y + cc.y), (o->z + cc.z) + 0.0f, 500.0f, col,
+				2, 0.0f);
+		}
+		int k1 = FXC_Clamp(0x20 - (int)(f1 * 220.0f), 0x20);
+		int k2 = FXC_Clamp(0x80 - (int)(f1 * 128.0f), 0x80);
+		/* the lights */
+		for (int j = 0, idx = 0x17; idx < 0x1f; j++, idx += 2) {
+			int node = self->nodeLight[j];
+			if (node == -1) {
+				continue;
+			}
+			const vec3_t v = { 0.0f, 0.0f, 4.0f };
+			CGameModel_NodoMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
+			float px = mat.m[12], py = mat.m[13], pz = mat.m[14];
+			Matrix_GetEuler(&mat, &eu);
+			Vec3_Rotate(&o2, Vec3_Rotate(&o1, &v, &eu), &ang);
+			float x = o2.x + px, y = o2.y + py, z = o2.z + pz;
+			CGameParticles_SetParticle(sp, idx - 1, x, y, z, 30.0f, (uint32_t)k1 << 24 | 0xffc8c8, 2, 0.0f);
+			CGameParticles_SetParticle(sp, idx, x, y, z, 150.0f, (uint32_t)k2 << 24 | 0xff0000, 5, 0.0f);
+		}
+		/* the walls and the exits */
+		for (int j = 0, idx = 5; idx < 0xb; j++, idx += 2) {
+			int node = self->nodePared[j];
+			if (node != -1) {
+				const vec3_t v = { 0.0f, 0.0f, -8.0f };
+				CGameModel_NodoMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
+				float px = mat.m[12], py = mat.m[13], pz = mat.m[14];
+				Vec3_Rotate(&o2, &v, &ang);
+				float x = o2.x + px, y = o2.y + py, z = o2.z + pz;
+				CGameParticles_SetParticle(sp, idx - 1, x, y, z, 40.0f, (uint32_t)k1 << 24 | 0xc8c8ff, 2, 0.0f);
+				CGameParticles_SetParticle(sp, idx, x, y, z, 200.0f, (uint32_t)k2 << 24 | 0x32ff, 5, 0.0f);
+			}
+			node = self->nodeSalida[j];
+			if (node != -1) {
+				FXConversor_Exit(mc, node, &rot, &o2, &p);
+				CGameParticles_SetParticle(sp, idx + 5, o2.x * 5.0f + p.x, o2.y * 5.0f + p.y, o2.z * 5.0f + p.z, 35.0f,
+					(uint32_t)k1 << 24 | 0x96c8ff, 2, 0.0f);
+				CGameParticles_SetParticle(sp, idx + 6, o2.x * 5.0f + p.x, o2.y * 5.0f + p.y, o2.z * 5.0f + p.z,
+					120.0f, (uint32_t)k2 << 24 | 0x1432ff, 5, 0.0f);
+			}
+		}
+		/* the lightnings from the walls to the exits */
+		for (int j = 0; j < self->numTrails; j++) {
+			int idx = 0x11 + 2 * j;
+			CGameTrail *tr = &self->trails[j];
+			vec3_t *pts = self->pts[j];
+			float tt = self->trailT[j] - delta;
+			self->trailT[j] = tt;
+			int a = 0;
+			if (0.02f > tt) {
+				a = (int)((1.0f - (tt - delta) / 0.02f) * 255.0f);
+				if (a < 0) {
+					a = 0;
+				} else if (a > 0xff) {
+					a = 0xff;
+				}
+			}
+			CGameTrail_SetTransp(tr, (byte)a);
+			if (self->trailT[j] > 0.0f) {
+				int node = self->nodePared[j];
+				if (node != -1) {
+					const vec3_t v = { 0.0f, 0.0f, -30.0f };
+					const matrix_t *mp = CGameModel_NodoMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
+					pts[0].x = mp->m[12];
+					pts[0].y = mp->m[13];
+					pts[0].z = mp->m[14];
+					const vec3_t *o = Vec3_Rotate(&o1, &v, &rot);
+					pts[1].x = o->x + pts[0].x;
+					pts[1].y = o->y + pts[0].y;
+					pts[1].z = o->z + pts[0].z;
+				}
+				node = self->nodeSalida[j];
+				if (node != -1) {
+					FXConversor_Exit(mc, node, &rot, &o2, &p);
+					int n = self->numPoints;
+					pts[n - 1].x = o2.x * -22.0f + p.x;
+					pts[n - 1].y = o2.y * -22.0f + p.y;
+					pts[n - 1].z = o2.z * -22.0f + p.z;
+					pts[n - 2].x = o2.x * -45.0f + p.x;
+					pts[n - 2].y = o2.y * -45.0f + p.y;
+					pts[n - 2].z = o2.z * -45.0f + p.z;
+					CGameParticles_SetParticle(sp, idx - 1, o2.x * -23.0f + p.x, o2.y * -23.0f + p.y,
+						o2.z * -23.0f + p.z, 40.0f, FXC_Alpha(a, 0x20, 0xc8c8ff), 2, 0.0f);
+					CGameParticles_SetParticle(sp, idx, o2.x * -24.0f + p.x, o2.y * -24.0f + p.y, o2.z * -24.0f + p.z,
+						150.0f, FXC_Alpha(a, 0x40, 0x32ff), 5, 0.0f);
+				}
+				/* the points between shake */
+				for (int k = 2; k < self->numPoints - 2; k++) {
+					float w = FXC_Rand(250.0, 100.0);
+					FX_RandomDir(&dir);
+					float dx = w * dir.x, dy = dir.y * w, dz = dir.z * w;
+					pts[k].x = pts[k].x + dx * delta;
+					pts[k].y = dy * delta + pts[k].y;
+					pts[k].z = dz * delta + pts[k].z;
+				}
+				int mx = CGameTrail_GetMaxTrails(tr);
+				CGameTrail_BezierCoefs(tr, self->numPoints, pts, coefs);
+				int cnt = mx - 1;
+				if (cnt > 0) {
+					float dm = (float)(mx - 2);
+					vec3_t prev = { 0.0f, 0.0f, 0.0f }, cur;
+					for (int i = 0; i < cnt; i++) {
+						CGameTrail_BezierPoint(tr, self->numPoints, coefs, &pt, (float)i / dm);
+						cur = pt;
+						if (i == 0) {
+							prev = pt;
+						}
+						float dx = prev.x - pt.x, dy = prev.y - pt.y, dz = prev.z - pt.z;
+						float wd;
+						if (i > 0 && i < mx - 3) {
+							/* a zigzag by the length of the piece */
+							double rr = FXC_Rnd();
+							float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+							float jit = (float)(rr * (double)(len * 0.18f) + 0.0);
+							FX_RandomDir(&dir);
+							cur.x = jit * dir.x + cur.x;
+							cur.y = dir.y * jit + cur.y;
+							cur.z = dir.z * jit + cur.z;
+							wd = FXC_Rand(20.0, 35.0);
+						} else {
+							wd = FXC_Rand(10.0, 85.0);
+						}
+						float gg = FXC_Rand(6.0, 18.0);
+						float b1 = FXC_Rand(16.0, 32.0);
+						float b2 = FXC_Rand(16.0, 32.0);
+						uint32_t color = ((((uint32_t)(int)gg << 8 | (uint32_t)(int)b1) << 8 | (uint32_t)(int)b2) << 8) |
+							0x5c;
+						CGameTrail_Add(tr, cur, self->width[j] * wd, color);
+						prev = cur;
+					}
+				}
+			} else if (self->duration - self->timeOut > self->time) {
+				/* a new lightning */
+				self->trailT[j] = FXC_Rand(0.11000000685453415, 0.070000000298023224);
+				self->width[j] = FXC_Rand(0.069999992847442627, 0.090000003576278687);
+				int node = self->nodePared[j];
+				if (node != -1) {
+					const matrix_t *mp = CGameModel_NodoMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
+					pts[0].x = mp->m[12];
+					pts[0].y = mp->m[13];
+					pts[0].z = mp->m[14];
+				}
+				node = self->nodeSalida[j];
+				int n = self->numPoints;
+				if (node != -1) {
+					FXConversor_Exit(mc, node, &rot, &o2, &p);
+					pts[n - 1].x = o2.x * -22.0f + p.x;
+					pts[n - 1].y = o2.y * -22.0f + p.y;
+					pts[n - 1].z = o2.z * -22.0f + p.z;
+					pts[n - 2].x = o2.x * -45.0f + p.x;
+					pts[n - 2].y = o2.y * -45.0f + p.y;
+					pts[n - 2].z = o2.z * -45.0f + p.z;
+				}
+				n = self->numPoints;
+				float inv = 1.0f / (float)(n - 2);
+				float dx = (pts[n - 2].x - pts[0].x) * inv;
+				float dy = (pts[n - 2].y - pts[0].y) * inv;
+				float dz = (pts[n - 2].z - pts[0].z) * inv;
+				for (int k = 1; k < self->numPoints - 2; k++) {
+					float fk = (float)k;
+					pts[k].x = dx * fk + pts[0].x;
+					pts[k].y = dy * fk + pts[0].y;
+					pts[k].z = dz * fk + pts[0].z;
+					float wv = FXC_Rand(5.0, 10.0);
+					FX_RandomDir(&dir);
+					pts[k].x = wv * dir.x + pts[k].x;
+					pts[k].y = dir.y * wv + pts[k].y;
+					pts[k].z = dir.z * wv + pts[k].z;
+				}
+			}
+		}
+	}
+	/* the glows over the vertices of the character at the height that moves */
+	if (!CGameModel_IsVisible(m)) {
+		return;
+	}
+	if (!(self->emitT > 0.02f)) {
+		return;
+	}
+	if (!(self->duration - self->timeOut > self->time)) {
+		return;
+	}
+	float s = r * 2.5f * h;
+	cam = FXC_CamPos();
+	const vec3_t *mp = CGameModel_GetPos(m, &p);
+	vec3_t n = FX_Unit((vec3_t){ cam.x - mp->x, cam.y - mp->y, cam.z - mp->z });
+	float ox = n.x * r * 0.25f, oy = n.y * r * 0.25f, oz = n.z * r * 0.25f;
+	CGameModel_Vertices(m, verts, NULL, NULL, FXCONVERSOR_VERTS, -1, NULL, 0xffffffffu, NULL);
+	int cnt = 0;
+	for (int j = 0; j < FXCONVERSOR_VERTS; j++) {
+		const vec3_t *v = &verts[j];
+		if (__builtin_fabs((double)((c.y + s) - v->y)) > 15.0) {
+			continue;
+		}
+		if (cnt++ > 0x30) {
+			break;
+		}
+		FXConversor_Glow(sp, d, v->x + ox, oy + v->y, oz + v->z, r);
+	}
+	if ((uint32_t)(cnt - 1) <= 0xe) {
+		for (int k = 0; k < crt_rand() % 8 + 8; k++) {
+			float rz = FXC_Rand(0.20000000298023224, -0.10000000149011612);
+			float ry = FXC_Rand(0.10000000149011612, -0.05000000074505806);
+			float rx = FXC_Rand(0.20000000298023224, -0.10000000149011612);
+			vec3_t *v = &verts[k];
+			v->x = rx * r + c.x;
+			v->y = (c.y + s) + ry * r;
+			v->z = rz * r + c.z;
+			FXConversor_Glow(sp, d, v->x + ox, oy + v->y, oz + v->z, r);
+		}
+	}
+	self->emitT = 0.0f;
+}
 /* the acceleration of the Sputnik sparks: against the velocity and down */
 static void FXSputnik_SetAcc(CGameParticles *sp) {
 	sp->initAccMin.x = -(sp->initVelMin.x * 0.15f) + 0.0f;
@@ -1184,8 +2194,8 @@ void FX_CharacterConversor(cEntity *character, cEntity *conversor, int phase, fl
 	cObjElementFXCharacterConversor_SetCharacter(el, character);
 	cObjElementFXCharacterConversor_SetConversor(el, conversor);
 	el->duration = a;
-	el->fc4 = b;
-	el->fc8 = b;
+	el->timeIn = b;
+	el->timeOut = b;
 }
 
 /* the Sputnik effects by name: the life of the debris and the duration of the element */
@@ -1466,13 +2476,13 @@ void FX_CharacterTeleport(cAbstractFile *params) {
 		el->character = ch;
 		el->teleport = tp;
 		el->mode = mode;
-		el->fc0 = 1.0f;
+		el->duration = 1.0f;
 		if (mode == 1) {
-			el->fc4 = 0.2f;
-			el->fc8 = 0.1f;
+			el->timeIn = 0.2f;
+			el->timeOut = 0.1f;
 		} else if (mode == 2) {
-			el->fc4 = 0.1f;
-			el->fc8 = 0.2f;
+			el->timeIn = 0.1f;
+			el->timeOut = 0.2f;
 		}
 	}
 	const char *snd;

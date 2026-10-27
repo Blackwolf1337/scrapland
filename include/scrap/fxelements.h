@@ -127,7 +127,7 @@ SD_SIZE(cFXElementsMentalController, 0x40);
 typedef struct cFXElementsMentalControllerDamageFX {
 	cFXElementsMentalController base;
 	CGameParticles smoke;		/* 0x040 DF_Smoke */
-	int smokeTime;			/* 0x0f0 */
+	float smokeTime;		/* 0x0f0 since the last smoke */
 	int smokeNode[FXMENTALDAMAGEEMITTERS];		/* 0x0f4 DF_SmokeEmitter_nn, -1 */
 	vec3_t smokePos[FXMENTALDAMAGEEMITTERS];	/* 0x104 */
 	vec3_t smokeRot[FXMENTALDAMAGEEMITTERS];	/* 0x134 */
@@ -140,7 +140,7 @@ typedef struct cFXElementsMentalControllerDamageFX {
 	float smokeLifeMin[FXMENTALDAMAGEEMITTERS];	/* 0x244 */
 	float smokeLifeMax[FXMENTALDAMAGEEMITTERS];	/* 0x254 */
 	CGameParticles flash;		/* 0x264 DF_Flash */
-	int flashTime;			/* 0x314 */
+	float flashTime;		/* 0x314 since the last flash step */
 	int flashNode[FXMENTALDAMAGEEMITTERS];		/* 0x318 DF_FlashEmitter_nn, -1 */
 	vec3_t flashPos[FXMENTALDAMAGEEMITTERS];	/* 0x328 */
 	vec3_t flashRot[FXMENTALDAMAGEEMITTERS];	/* 0x358 */
@@ -229,6 +229,9 @@ void __fastcall cFXElementsMentalControllerMainFX_Clear(cFXElementsMentalControl
 byte __fastcall cFXElementsMentalController_Init(cFXElementsMentalController *self);
 void __thiscall cFXElementsMentalController_Update(cFXElementsMentalController *self, float dt);
 byte __fastcall cFXElementsMentalControllerDamageFX_Init(cFXElementsMentalControllerDamageFX *self);
+/* near the camera: smoke from the emitters (more often the nearer), flashes with sparks and a sound when they sleep
+ * out */
+void __thiscall cFXElementsMentalControllerDamageFX_Update(cFXElementsMentalControllerDamageFX *self, float dt);
 byte __fastcall cFXElementsMentalControllerMainFX_Init(cFXElementsMentalControllerMainFX *self);
 void __thiscall cFXElementsMentalControllerMainFX_SetController(cFXElementsMentalControllerMainFX *self, int index,
 	cFXElementsMentalController *ctrl);
@@ -352,6 +355,9 @@ SD_SIZE(cFXElementsLighting, 0xe88);
 #define g_FireDropSound GAME_DATA(char *, 0x4670ec)	/* FXElementsFireDropSound, a cString */
 
 cFXElementsFireDrop *__thiscall cFXElementsFireDrop_ctor(cFXElementsFireDrop *self, const char *name,
+	const vec3_t *pos, const vec3_t *rot);
+/* the flare at pos: intensity 0.65, 0x30 0.3, on */
+cFXElementsLensFlare *__thiscall cFXElementsLensFlare_ctor(cFXElementsLensFlare *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
 cFXElementsLighting *__thiscall cFXElementsLighting_ctor(cFXElementsLighting *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);

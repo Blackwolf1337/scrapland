@@ -1472,3 +1472,232 @@ void *__thiscall cObjElementFXSceneYakuzzi_Delete(void *self, uint32_t flags) {
 	cObjElementFXSceneYakuzzi_dtor(self);
 	return FX_Delete(self, flags, 0xd4);
 }
+
+/* the elements of this file (rva 0x1da190..0x1da940) */
+
+#define VT_FXFADEOUTTRAIL 0x3ccce4
+#define VT_FXITEMFADE 0x3ccd14
+#define VT_FXITEMTAKE 0x3cccfc
+#define VT_FXMODELFADE 0x3ccd44
+#define VT_FXMODELNOISE 0x3ccd5c
+#define VT_FXSISTPART 0x3cccb4
+#define VT_FXSISTPARTDUDV 0x3ccd74
+#define VT_FXSPARKS 0x3ccd2c
+#define VT_FXTRAIL 0x3ccccc
+
+#define FX_U16(self, off) (*(uint16_t *)((byte *)(self) + (off)))
+
+static inline void FX_TrailCtor(void *self, uint32_t off) {
+	CGameTrail_ctor((CGameTrail *)((byte *)self + off));
+}
+
+static inline void FX_TrailDtor(void *self, uint32_t off) {
+	CGameTrail_dtor((CGameTrail *)((byte *)self + off));
+}
+
+void *__fastcall cObjElementFXFadeOutTrail_ctor(void *self) {
+	FX_SetVtbl(self, VT_FXFADEOUTTRAIL);
+	FX_TrailCtor(self, 0x4);
+	FX_U16(self, 0x10) = 1;		/* running 1, on 0 */
+	FX_U32(self, 0xc) = 0;
+	FX_U32(self, 0x8) = 0;
+	return self;
+}
+
+void *__fastcall cObjElementFXItemFade_ctor(void *self) {
+	FX_SetVtbl(self, VT_FXITEMFADE);
+	FX_PartsCtor(self, 0x8);
+	FX_U16(self, 0xc8) = 0;
+	FX_U32(self, 0xc0) = 0;
+	FX_U32(self, 0xb8) = 0;
+	FX_U32(self, 0xbc) = 0;
+	FX_U32(self, 0xc4) = 0x3f800000;
+	return self;
+}
+
+void *__fastcall cObjElementFXItemTake_ctor(void *self) {
+	FX_SetVtbl(self, VT_FXITEMTAKE);
+	FX_PartsCtor(self, 0xc);
+	FX_TrailCtor(self, 0xec);
+	FX_U16(self, 0x644) = 0;
+	FX_U32(self, 0x638) = 0;
+	FX_U32(self, 0x63c) = 0;
+	FX_U32(self, 0x630) = 0;
+	FX_U32(self, 0x634) = 0;
+	FX_U32(self, 0x640) = 0x3f800000;
+	return self;
+}
+
+void *__fastcall cObjElementFXModelFade_ctor(void *self) {
+	FX_SetVtbl(self, VT_FXMODELFADE);
+	FX_U8(self, 0x10) = 0;
+	FX_U32(self, 0x4) = 0;
+	FX_U32(self, 0x8) = 0;
+	FX_U32(self, 0xc) = 0;
+	return self;
+}
+
+void *__fastcall cObjElementFXModelNoise_ctor(void *self) {
+	FX_SetVtbl(self, VT_FXMODELNOISE);
+	FX_U8(self, 0x10) = 0;
+	FX_U32(self, 0x8) = 0;
+	FX_U32(self, 0xc) = 0;
+	return self;
+}
+
+void *__fastcall cObjElementFXSistPart_ctor(void *self) {
+	FX_SetVtbl(self, VT_FXSISTPART);
+	FX_PartsCtor(self, 0x4);
+	FX_U16(self, 0xb4) = 1;		/* move 1, on 0 */
+	return self;
+}
+
+void *__fastcall cObjElementFXSistPartDuDv_ctor(void *self) {
+	FX_SetVtbl(self, VT_FXSISTPARTDUDV);
+	FX_PartsCtor(self, 0x4);
+	FX_U16(self, 0xb4) = 1;
+	return self;
+}
+
+void *__fastcall cObjElementFXSparks_ctor(void *self) {
+	FX_SetVtbl(self, VT_FXSPARKS);
+	FX_TrailsCtor(self, 0xb3c, FXSPARKS_MAXSPARKS);
+	FX_PartsCtor(self, 0xbbc);
+	FX_U8(self, 0xc6c) = 0;
+	FX_U32(self, 0x4) = 0;
+	FX_U32(self, 0x8) = 0;
+	FX_U32(self, 0x9b0) = 0;
+	return self;
+}
+
+void *__fastcall cObjElementFXTrail_ctor(void *self) {
+	FX_SetVtbl(self, VT_FXTRAIL);
+	FX_TrailCtor(self, 0x4);
+	FX_U16(self, 0x19) = 1;		/* on 1 */
+	FX_U32(self, 0x14) = 0x43480000;	/* minDist 200 */
+	FX_U8(self, 0x18) = 0;
+	return self;
+}
+
+void __fastcall cObjElementFXFadeOutTrail_dtor(void *self) {
+	*(void **)self = Game_Ptr(VT_FXFADEOUTTRAIL);
+	FX_TrailDtor(self, 0x4);
+	cObjElement_dtor(self);
+}
+
+void __fastcall cObjElementFXItemFade_dtor(void *self) {
+	*(void **)self = Game_Ptr(VT_FXITEMFADE);
+	FX_PartsRelease(self, 0x8);
+	cObjElement_dtor(self);
+}
+
+void __fastcall cObjElementFXItemTake_dtor(void *self) {
+	*(void **)self = Game_Ptr(VT_FXITEMTAKE);
+	FX_TrailDtor(self, 0xec);
+	FX_PartsRelease(self, 0xc);
+	cObjElement_dtor(self);
+}
+
+void __fastcall cObjElementFXSistPart_dtor(void *self) {
+	*(void **)self = Game_Ptr(VT_FXSISTPART);
+	FX_PartsRelease(self, 0x4);
+	cObjElement_dtor(self);
+}
+
+void __fastcall cObjElementFXSistPartDuDv_dtor(void *self) {
+	*(void **)self = Game_Ptr(VT_FXSISTPARTDUDV);
+	FX_PartsRelease(self, 0x4);
+	cObjElement_dtor(self);
+}
+
+void __fastcall cObjElementFXSparks_dtor(void *self) {
+	*(void **)self = Game_Ptr(VT_FXSPARKS);
+	FX_PartsRelease(self, 0xbbc);
+	FX_TrailsDtor(self, 0xb3c, FXSPARKS_MAXSPARKS);
+	cObjElement_dtor(self);
+}
+
+void __fastcall cObjElementFXTrail_dtor(void *self) {
+	*(void **)self = Game_Ptr(VT_FXTRAIL);
+	FX_TrailDtor(self, 0x4);
+	cObjElement_dtor(self);
+}
+
+void __fastcall cObjElementFXModelFade_dtor(void *self) {
+	*(void **)self = Game_Ptr(VT_FXMODELFADE);
+	cObjElement_dtor(self);
+}
+
+void __fastcall cObjElementFXModelNoise_dtor(void *self) {
+	*(void **)self = Game_Ptr(VT_FXMODELNOISE);
+	cObjElement_dtor(self);
+}
+
+void *__thiscall cObjElementFXFadeOutTrail_Delete(void *self, uint32_t flags) {
+	cObjElementFXFadeOutTrail_dtor(self);
+	return FX_Delete(self, flags, 0x14);
+}
+
+void *__thiscall cObjElementFXItemFade_Delete(void *self, uint32_t flags) {
+	cObjElementFXItemFade_dtor(self);
+	return FX_Delete(self, flags, 0xcc);
+}
+
+void *__thiscall cObjElementFXItemTake_Delete(void *self, uint32_t flags) {
+	cObjElementFXItemTake_dtor(self);
+	return FX_Delete(self, flags, 0x648);
+}
+
+void *__thiscall cObjElementFXModelFade_Delete(void *self, uint32_t flags) {
+	cObjElementFXModelFade_dtor(self);
+	return FX_Delete(self, flags, 0x14);
+}
+
+void *__thiscall cObjElementFXModelNoise_Delete(void *self, uint32_t flags) {
+	cObjElementFXModelNoise_dtor(self);
+	return FX_Delete(self, flags, 0x14);
+}
+
+void *__thiscall cObjElementFXSistPart_Delete(void *self, uint32_t flags) {
+	cObjElementFXSistPart_dtor(self);
+	return FX_Delete(self, flags, 0xb8);
+}
+
+void *__thiscall cObjElementFXSistPartDuDv_Delete(void *self, uint32_t flags) {
+	cObjElementFXSistPartDuDv_dtor(self);
+	return FX_Delete(self, flags, 0xb8);
+}
+
+void *__thiscall cObjElementFXSparks_Delete(void *self, uint32_t flags) {
+	cObjElementFXSparks_dtor(self);
+	return FX_Delete(self, flags, 0xc70);
+}
+
+void *__thiscall cObjElementFXTrail_Delete(void *self, uint32_t flags) {
+	cObjElementFXTrail_dtor(self);
+	return FX_Delete(self, flags, 0x1c);
+}
+
+/* the alpha of the trail goes up with t over the duration while it is not running */
+void __thiscall cObjElementFXFadeOutTrail_Update(cObjElementFXFadeOutTrail *self, cDebris *d, float dt) {
+	(void)d;
+	(void)dt;
+	float t = self->t + cTimer_GetDelta(&g_pWorld->timer);
+	self->t = t;
+	if (!self->running && t > self->duration) {
+		return;
+	}
+	int a = 0;
+	if (!self->running) {
+		a = (int)((t / self->duration) * 255.0f);
+		if (a > 0xff) {
+			a = 0xff;
+		} else if (a < 0) {
+			a = 0;
+		}
+	}
+	if (self->on) {
+		CGameTrail_SetTransp(&self->trail, (byte)a);
+	}
+	self->running = 0;
+}

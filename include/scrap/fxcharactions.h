@@ -51,6 +51,7 @@
 #define FXDATAPACK_POINTS 3		/* per trail */
 #define FXGEAR_ARMORS 3
 #define FXGEAR_PIECES 15		/* the node slots per armor */
+#define FXGEAR_BUBBLES 60
 #define FXGEAR_TRAILS 4
 #define FXSEBASTIAN_POINTS 75
 #define FXSEBASTIAN_TRAILS 5
@@ -160,12 +161,12 @@ typedef struct cObjElementFXBettyAttack {
 	cEntity *ent;			/* 0x004 */
 	CGameParticles particles;	/* 0x008 on Dummy01 */
 	CGameParticles particles2;	/* 0x0b8 on "Dummy02 (+dudv_pass)" if the model has it */
-	float f168;			/* 0x168 */
-	float f16c;			/* 0x16c */
-	float f170;			/* 0x170 */
-	vec3_t pos;			/* 0x174 */
+	float t2;			/* 0x168 since the start (not read) */
+	float time;			/* 0x16c since the start */
+	float lastTime;			/* 0x170 time of the last Update */
+	vec3_t pos;			/* 0x174 the center of the attack (Emit) */
 	CGameTrail trails[2];		/* 0x180 */
-	int f188;			/* 0x188 */
+	float ring;			/* 0x188 the radius of the ring that grows */
 	CGameTrail trails2[FXBETTYATTACK_TRAILS];	/* 0x18c */
 	CGameTrail trail;		/* 0x19c */
 	void *flare;			/* 0x1a0 CGameLensFlare */
@@ -339,28 +340,36 @@ SD_SIZE(cObjElementFXMessengerTakeDataPack, 0x174);
 typedef struct cObjElementFXPoliceGearConversion {
 	void *vftable;			/* 0x000 */
 	cEntity *ent;			/* 0x004 */
-	int i8;				/* 0x008 */
-	float fc;			/* 0x00c */
-	float f10;			/* 0x010 */
+	float t2;			/* 0x008 since the start (not read) */
+	float time;			/* 0x00c since the start */
+	float lastTime;			/* 0x010 time of the last Update */
 	byte pad_14[4];
 	CGameParticles particles;	/* 0x018 on Dummy01 */
 	int nodeRoot;			/* 0x0c8 R_Police-NoArmr_tronco-inferior */
-	int fcc;			/* 0x0cc */
+	float smokeT;			/* 0x0cc since the last smoke ring */
 	byte pad_d0[4];
 	CGameParticles particles2;	/* 0x0d4 */
-	byte pad_184[0x834 - 0x184];
+	byte pad_184[0x1a4 - 0x184];
+	vec3_t bubblePos[FXGEAR_BUBBLES];	/* 0x1a4 the bubbles of the fusion around the waist */
+	float bubbleH[FXGEAR_BUBBLES];		/* 0x474 their height */
+	float bubbleVel[FXGEAR_BUBBLES];	/* 0x564 */
+	float bubbleAcc[FXGEAR_BUBBLES];	/* 0x654 */
+	float bubbleMax[FXGEAR_BUBBLES];	/* 0x744 */
 	CGameTrail trails[FXGEAR_TRAILS];	/* 0x834 */
-	int f844;			/* 0x844 */
-	int f848;			/* 0x848 */
+	int count;			/* 0x844 the bubbles made */
+	float emitT;			/* 0x848 since the last smoke */
 	CGameModel armor[FXGEAR_ARMORS];	/* 0x84c Gear_Armor1..3 */
 	int anim[FXGEAR_ARMORS];	/* 0x8a0 Gear_ArmorFusion1..3 */
 	int numPieces[FXGEAR_ARMORS];	/* 0x8ac */
 	int piece[FXGEAR_ARMORS][FXGEAR_PIECES];	/* 0x8b8 nodes OB_PiezasGear_nn of the armors, -1 */
 	byte pieceOff[FXGEAR_ARMORS][FXGEAR_PIECES];	/* 0x96c */
 	byte pad_999[3];
-	byte pad_99c[0xa50 - 0x99c];	/* 0x99c the times of the pieces */
+	float pieceTime[FXGEAR_ARMORS][FXGEAR_PIECES];	/* 0x99c the times the pieces fall off */
 	byte started;			/* 0xa50 */
 } cObjElementFXPoliceGearConversion;
+SD_OFFSET(cObjElementFXPoliceGearConversion, bubbleH, 0x474);
+SD_OFFSET(cObjElementFXPoliceGearConversion, bubbleMax, 0x744);
+SD_OFFSET(cObjElementFXPoliceGearConversion, pieceTime, 0x99c);
 SD_OFFSET(cObjElementFXPoliceGearConversion, particles2, 0xd4);
 SD_OFFSET(cObjElementFXPoliceGearConversion, trails, 0x834);
 SD_OFFSET(cObjElementFXPoliceGearConversion, armor, 0x84c);
@@ -558,6 +567,13 @@ void __thiscall cObjElementFXBishopAttack_SetLine(cObjElementFXBishopAttack *sel
 	float tx, float ty, float tz);
 /* the shot of the Betty attack at x y z: a sphere of particles */
 void __thiscall cObjElementFXBettyAttack_Emit(cObjElementFXBettyAttack *self, float x, float y, float z);
+/* the attack of Betty: bolts out of the center, a ring that grows with bolts and dust on the side away from the
+ * camera, the ring line, a wave in the dudv pass and a flash */
+void __thiscall cObjElementFXBettyAttack_Update(cObjElementFXBettyAttack *self, cDebris *d, float dt);
+/* the conversion of the police into Gear: the armors fade in, bubbles with bolts rise around the waist, smoke, the
+ * pieces of the armors fall off with sparks */
+void __thiscall cObjElementFXPoliceGearConversion_Update(cObjElementFXPoliceGearConversion *self, cDebris *d,
+	float dt);
 /* the trails from the owner to the item, 3 points each */
 void __fastcall cObjElementFXMessengerTakeDataPack_Start(cObjElementFXMessengerTakeDataPack *self);
 /* the lightning from .. to and 5 branches off its Bezier curve (stopped by the floor) */

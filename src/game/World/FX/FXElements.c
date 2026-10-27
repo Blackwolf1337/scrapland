@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/fxelements.h"
+#include "scrap/fxweapons.h"
 #include "scrap/fxmisc.h"
 #include "scrap/mathlib.h"
 #include "scrap/scrap.h"
@@ -24,6 +25,20 @@ cFXElementsFireDrop *__thiscall cFXElementsFireDrop_ctor(cFXElementsFireDrop *se
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = Game_Ptr(CFXELEMENTSFIREDROP_VFTABLE);
 	CGameParticles_ctor(&self->drops);
+	return self;
+}
+
+cFXElementsLensFlare *__thiscall cFXElementsLensFlare_ctor(cFXElementsLensFlare *self, const char *name,
+	const vec3_t *pos, const vec3_t *rot) {
+	cMapElement_ctor(&self->base, name, pos, rot);
+	self->base.vftable = Game_Ptr(CFXELEMENTSLENSFLARE_VFTABLE);
+	CGameLensFlare_ctor(self->flare);
+	CGameLensFlare_SetI1c(self->flare, 0);
+	CGameLensFlare_SetPos(self->flare, *pos);
+	CGameLensFlare_SetIntensity(self->flare, 0.65f);
+	CGameLensFlare_SetB2c(self->flare, 1);
+	CGameLensFlare_SetF30(self->flare, 0.3f);
+	CGameLensFlare_SetOn(self->flare, 1);
 	return self;
 }
 

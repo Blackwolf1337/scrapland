@@ -16,7 +16,10 @@
 #define FXCONVERSION_TRAILS 5
 #define FXCONVERSION_POINTS 75
 #define FXCONVERSOR_TRAILS 3
+#define FXCONVERSOR_POINTS 10
 #define FXDEATH_TRAILS 8
+#define FXDEATH_TRAILPOINTS 15
+#define FXDEATH_POINTS (FXDEATH_TRAILS * FXDEATH_TRAILPOINTS)
 
 /* the engine variables (Gvars) */
 #define g_FXCharacterConversionFile GAME_DATA(const char *, 0x466e78)
@@ -75,25 +78,26 @@ typedef struct cObjElementFXCharacterConversor {
 	CGameParticles particles;	/* 0x00c on Dummy01 */
 	int phase;			/* 0x0bc 1 in (the character disabled at the end), 2 out */
 	float duration;			/* 0x0c0 */
-	float fc4;			/* 0x0c4 */
-	float fc8;			/* 0x0c8 */
-	float fcc;			/* 0x0cc */
-	float fd0;			/* 0x0d0 */
+	float timeIn;			/* 0x0c4 the fade of phase 1 */
+	float timeOut;			/* 0x0c8 the fade of phase 2 */
+	float time;			/* 0x0cc since the start */
+	float emitT;			/* 0x0d0 since the last particles */
 	byte pad_d4[4];
 	int nodePared[3];		/* 0x0d8 DF_Pared_01..03 of the conversor */
 	int nodeSalida[3];		/* 0x0e4 DF_Salida_01..03 */
 	int nodeLight[4];		/* 0x0f0 DF_Light_01..04 */
 	int numTrails;			/* 0x100 */
-	float trailT[FXCONVERSOR_TRAILS];	/* 0x104 */
+	float trailT[FXCONVERSOR_TRAILS];	/* 0x104 the life of the lightning, a new one at 0 */
 	CGameTrail trails[FXCONVERSOR_TRAILS];	/* 0x110 */
-	byte pad_11c[0x284 - 0x11c];
-	float f284[FXCONVERSOR_TRAILS];	/* 0x284 */
-	int n290;			/* 0x290 */
+	vec3_t pts[FXCONVERSOR_TRAILS][FXCONVERSOR_POINTS];	/* 0x11c the control points of the lightnings */
+	float width[FXCONVERSOR_TRAILS];	/* 0x284 */
+	int numPoints;			/* 0x290 the control points used, 5 */
 	byte started;			/* 0x294 */
 } cObjElementFXCharacterConversor;
 SD_OFFSET(cObjElementFXCharacterConversor, nodePared, 0xd8);
 SD_OFFSET(cObjElementFXCharacterConversor, trails, 0x110);
-SD_OFFSET(cObjElementFXCharacterConversor, f284, 0x284);
+SD_OFFSET(cObjElementFXCharacterConversor, pts, 0x11c);
+SD_OFFSET(cObjElementFXCharacterConversor, width, 0x284);
 SD_SIZE(cObjElementFXCharacterConversor, 0x298);
 
 typedef struct cObjElementFXCharacterDeath {
@@ -102,17 +106,20 @@ typedef struct cObjElementFXCharacterDeath {
 	CGameParticles particles;	/* 0x008 on Dummy01 */
 	CGameParticles particles2;	/* 0x0b8 on Dummy02 */
 	CGameParticles particles3;	/* 0x168 on Dummy03 */
-	float f218;			/* 0x218 */
-	float f21c;			/* 0x21c */
-	float f220;			/* 0x220 */
-	CGameTrail trails[FXDEATH_TRAILS];	/* 0x224 */
-	byte pad_244[0x7e4 - 0x244];
-	float f7e4[0x78];		/* 0x7e4 5 at the start */
-	byte pad_9c4[0xf64 - 0x9c4];
+	float time;			/* 0x218 since the start */
+	float emitT;			/* 0x21c since the last particles */
+	float lastTime;			/* 0x220 time of the last Update */
+	CGameTrail trails[FXDEATH_TRAILS];	/* 0x224 15 points each */
+	vec3_t pos[FXDEATH_POINTS];	/* 0x244 the points of the trails, on vertices of the model */
+	float phase[FXDEATH_POINTS];	/* 0x7e4 0..1 up along the trail, 5 at the start (a new point) */
+	float width[FXDEATH_POINTS];	/* 0x9c4 */
+	float speed[FXDEATH_POINTS];	/* 0xba4 of the phase */
+	uint32_t color[FXDEATH_POINTS];	/* 0xd84 */
 	byte started;			/* 0xf64 */
 } cObjElementFXCharacterDeath;
 SD_OFFSET(cObjElementFXCharacterDeath, trails, 0x224);
-SD_OFFSET(cObjElementFXCharacterDeath, f7e4, 0x7e4);
+SD_OFFSET(cObjElementFXCharacterDeath, phase, 0x7e4);
+SD_OFFSET(cObjElementFXCharacterDeath, color, 0xd84);
 SD_SIZE(cObjElementFXCharacterDeath, 0xf68);
 
 typedef struct cObjElementFXCharacterTeleport {
@@ -121,11 +128,11 @@ typedef struct cObjElementFXCharacterTeleport {
 	cEntity *character;		/* 0x08 */
 	CGameParticles particles;	/* 0x0c on Dummy01 */
 	int mode;			/* 0xbc 1 up, 2 down */
-	float fc0;			/* 0xc0 */
-	float fc4;			/* 0xc4 */
-	float fc8;			/* 0xc8 */
-	float fcc;			/* 0xcc */
-	float fd0;			/* 0xd0 */
+	float duration;			/* 0xc0 */
+	float timeIn;			/* 0xc4 the fade of the character at the start (mode 1) */
+	float timeOut;			/* 0xc8 the fade at the end (mode 2) */
+	float t;			/* 0xcc since the start */
+	float emitT;			/* 0xd0 since the last particles */
 	byte started;			/* 0xd4 */
 } cObjElementFXCharacterTeleport;
 SD_OFFSET(cObjElementFXCharacterTeleport, mode, 0xbc);
@@ -194,14 +201,21 @@ void __thiscall cObjElementFXCharacterConversion_SetAttacked(cObjElementFXCharac
 void __fastcall cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConversion *self);
 byte __thiscall cObjElementFXCharacterConversor_Alive(cObjElementFXCharacterConversor *self, cDebris *d,
 	cDebrisSys *sys);
+/* the conversor machine: the character fades in or out, light from the nodes of the conversor, lightnings from its
+ * walls to the exits, glows over the vertices of the character; at the end of the animation the particles go */
+void __thiscall cObjElementFXCharacterConversor_Update(cObjElementFXCharacterConversor *self, cDebris *d, float dt);
 void __thiscall cObjElementFXCharacterConversor_Attach(cObjElementFXCharacterConversor *self, cDebris *d);
 void __thiscall cObjElementFXCharacterConversor_Reset(cObjElementFXCharacterConversor *self, int arg);
 void __thiscall cObjElementFXCharacterConversor_SetCharacter(cObjElementFXCharacterConversor *self, cEntity *e);
 /* the conversor and the nodes of its model */
 void __thiscall cObjElementFXCharacterConversor_SetConversor(cObjElementFXCharacterConversor *self, cEntity *e);
+/* the character dies: it slows down and fades, trails and smoke go up from its vertices, flashes and sparks */
+void __thiscall cObjElementFXCharacterDeath_Update(cObjElementFXCharacterDeath *self, cDebris *d, float dt);
 void __thiscall cObjElementFXCharacterDeath_Attach(cObjElementFXCharacterDeath *self, cDebris *d);
 void __thiscall cObjElementFXCharacterDeath_Reset(cObjElementFXCharacterDeath *self, int arg);
 void __thiscall cObjElementFXCharacterDeath_SetEntity(cObjElementFXCharacterDeath *self, cEntity *e);
+/* the light column and the fade of the character, glows over its vertices, sparks and smoke */
+void __thiscall cObjElementFXCharacterTeleport_Update(cObjElementFXCharacterTeleport *self, cDebris *d, float dt);
 byte __thiscall cObjElementFXCharacterTeleport_Alive(cObjElementFXCharacterTeleport *self, cDebris *d,
 	cDebrisSys *sys);
 void __thiscall cObjElementFXCharacterTeleport_Attach(cObjElementFXCharacterTeleport *self, cDebris *d);
