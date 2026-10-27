@@ -267,7 +267,7 @@ byte *__fastcall CMotorApp_ctor(byte *self);
 /* the ini name (in dir, NULL for the game directory) into the variables of the engine */
 void Motor_LoadIni(const char *name, const char *dir);
 void __thiscall CMotorApp_LightsDialog(byte *self, void *hwnd, void *inst);
-void TreeView_InsertItemf(void *hwnd, void *item, const char *fmt, ...);
+intptr_t TreeView_InsertItemf(void *hwnd, void *item, const char *fmt, ...);
 void Escena_LogTree(CEscena *esc, CNodo3D *nodo, int indent);
 /* a command of the debug console of the engine: listar, listar luces, arbol <scene>, ver uniones */
 void E3D_Command(char *cmd);

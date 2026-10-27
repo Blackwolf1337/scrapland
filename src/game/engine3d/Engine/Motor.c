@@ -460,17 +460,19 @@ void __thiscall CMotorApp_LightsDialog(byte *self, void *hwnd, void *inst) {
 	((pause_t)(*(void ***)self)[MOTOR_VT_PAUSE / 4])(self, 0);
 }
 
-/* a tree view item with the printf text (TVINSERTSTRUCT, its pszText at 0x18) */
-void TreeView_InsertItemf(void *hwnd, void *item, const char *fmt, ...) {
+/* a tree view item with the printf text (TVINSERTSTRUCT, its pszText at 0x18); the new item */
+intptr_t TreeView_InsertItemf(void *hwnd, void *item, const char *fmt, ...) {
 	char buf[0x400];
+	intptr_t r;
 	va_list ap;
 
 	va_start(ap, fmt);
 	VBprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 	*(char **)((byte *)item + 0x18) = buf;
-	exe_SendMessageA(hwnd, TVM_INSERTITEM, 0, (intptr_t)item);
+	r = exe_SendMessageA(hwnd, TVM_INSERTITEM, 0, (intptr_t)item);
 	*(char **)((byte *)item + 0x18) = NULL;
+	return r;
 }
 
 /* the nodes of the scene into the log, the children indented by 4 */
