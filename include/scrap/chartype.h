@@ -34,6 +34,7 @@
 #define WChar_B381(e) (*(byte *)((byte *)(e) + 0x381))		/* cleared by the flash */
 #define WChar_OwnerSlot(e) (*(int *)((byte *)(e) + 0x424))		/* "UsrControl", -1 for an AI */
 #define WChar_Ang(e) ((vec3_t *)((byte *)(e) + 0x428))
+#define WChar_SlideTime(e) (*(float *)((byte *)(e) + 0x460))		/* "SlidingAndFallingTime" */
 #define WChar_Falling(e) (*(byte *)((byte *)(e) + 0x464))
 #define WChar_DisplAng(e) (*(float *)((byte *)(e) + 0x468))
 #define WChar_EnergyUsed(e) (*(float *)((byte *)(e) + 0x498))		/* 1 minus the weapon energy */
@@ -42,7 +43,8 @@
 #define WChar_Money(e) (*(int *)((byte *)(e) + 0x4cc))		/* "Money" */
 #define WChar_MoneyReward(e) (*(int *)((byte *)(e) + 0x4d0))		/* "MoneyReward" */
 #define WChar_Control(e) ((void *)((byte *)(e) + 0x4ec))		/* Entities/Char/WalkCharControl.cpp */
-#define WChar_ControlF4f8(e) (*(float *)((byte *)(e) + 0x4f8))
+#define WChar_ControlF4f8(e) (*(float *)((byte *)(e) + 0x4f8))	/* the walk of the control (x, z) */
+#define WChar_ControlF4fc(e) (*(float *)((byte *)(e) + 0x4fc))
 #define WChar_ActionPress(e) (*(byte *)((byte *)(e) + 0x504))		/* the action button is down */
 #define WChar_Victim(e) (*(cEntity **)((byte *)(e) + 0x53c))		/* the character the banker robs */
 
@@ -135,6 +137,9 @@ static inline const cChTypeLogicVtbl *ChLogic_Vtbl(cLocalLogic *l) {
 #define g_BishopHitSoundVol GAME_DATA(float, 0x44645c)
 #define g_BishopWeaponDamage GAME_DATA(int, 0x446474)
 #define g_BishopAttackPosZ GAME_DATA(float, 0x44648c)
+#define g_DesktopJumpPrice GAME_DATA(int, 0x4465d4)
+#define g_DesktopJumpSlideTime GAME_DATA(float, 0x4465ec)
+#define g_DesktopJumpSpeed GAME_DATA(float, 0x44663c)
 #define g_FXBishopSellLifeFile GAME_DATA(char *, 0x4464a4)
 #define g_FXBishopAttackFile GAME_DATA(char *, 0x4464dc)
 #define g_BishopAttackPosX GAME_DATA(float, 0x4464f4)
@@ -192,6 +197,8 @@ const char *__thiscall cActCtrl_GetActionName(void *ctrl, int i);
 void __thiscall cWalkCharEntity_SetEnergy(cEntity *self, float energy);
 /* the action, unless it runs already in its layer; 0 then or without it (rva 0x631c0) */
 byte __thiscall cActCtrl_PlayNew(void *ctrl, const char *action, int arg, float speed);
+/* the falling state of a character (0x464), with what goes with it (rva 0xd4c60) */
+void __thiscall cWalkCharEntity_SetFalling(cEntity *self, byte on);
 /* the control of a character (rva 0xd0390, 0xd0410) */
 void __thiscall cWalkCharControl_Reset(void *ctrl, byte on);
 void __thiscall cWalkCharControl_Update(void *ctrl, cEntity *wle, float dt);
@@ -256,6 +263,9 @@ void ChType_BishopAttack(cAbstractFile *params);
 
 /* CrazyGambler.c */
 void ChType_FXCrazyGamblerSetHeadModel(cAbstractFile *params);
+
+/* Desktop.c */
+void ChType_DesktopActionPress(cAbstractFile *params);
 
 /* Dtritus.c */
 void ChType_DtritusActionPress(cAbstractFile *params);
