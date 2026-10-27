@@ -585,8 +585,6 @@ SD_IMPORT(App_SetExceptionFilter, 0x2333b0)
 SD_IMPORT(crt_srand, 0x323c50)
 
 /* module agent: World/FX/FXCountermeasures+FXElementsOrbit+FXElementsPress.cpp (imports below this line) */
-SD_IMPORT(cTargetLock_GetPoint, 0x11a740)
-SD_IMPORT(cTargetLock_GetEntity, 0x11a720)
 SD_IMPORT(cDebris_Update, 0x204ea0)
 SD_IMPORT(cMapElement_ctor, 0x202ca0)
 SD_IMPORT(cMapElement_dtor, 0x202e20)
@@ -638,8 +636,6 @@ SD_IMPORT_STDCALL(FSOUND_Sample_GetName, 4, 0x3179fc)
 SD_IMPORT_STDCALL(FSOUND_GetCPUUsage, 0, 0x3179e4)
 
 /* module agent: World/FX/FXWeapons.cpp (imports below this line) */
-SD_IMPORT(cTargetLock_GetAmmo, 0x11a6c0)
-SD_IMPORT(cTargetLock_HasSlot, 0x11a9f0)
 SD_IMPORT(CGameLensFlare_SetOn, 0x232f30)
 SD_IMPORT(CGameLensFlare_SetIntensity, 0x232f80)
 SD_IMPORT(CGameLensFlare_SetF30, 0x232fa0)
@@ -649,6 +645,33 @@ SD_IMPORT(CGameLensFlare_SetI1c, 0x233010)
 /* module agent: Entities/EmbeddedFX/EmbeddedFXMisc.cpp (imports below this line) */
 
 /* module agent: Entities/Vehicle/WeaponManager+Weaps/ATPC+Devastator.cpp (imports below this line) */
+SD_IMPORT(Controls_GetWeapon, 0x0ffb90)
+SD_IMPORT(Controls_SetWeapon, 0x0ffc40)
+SD_IMPORT(cAutoAim_SetAngle, 0x0fe780)
+SD_IMPORT(cAutoAim_SetRange, 0x0fe7b0)
+SD_IMPORT(cAutoAim_Update, 0x0fe1f0)
+SD_IMPORT(cVehicleAttack_Update, 0x0f9d90)
+SD_IMPORT(cVehicleAttack_ShotAt, 0x0f9c10)
+SD_IMPORT(cVehicleAttack_ShotAtPoint, 0x0f9d00)
+SD_IMPORT(cVehicleAttack_HitBy, 0x0f9b60)
+SD_IMPORT(Controls_RumbleA, 0x0ffc60)
+SD_IMPORT(Controls_RumbleB, 0x0ffc90)
+SD_IMPORT(cVehicleEntity_SetCloud, 0x10a150)
+SD_IMPORT(cMissileEntity_SetLifeTime, 0x0f4b30)
+SD_IMPORT(cMissileEntity_SetMode, 0x0f4b50)
+SD_IMPORT(cMissileEntity_SetAmmo, 0x0f4d10)
+SD_IMPORT(cMissileEntity_SetF3f4, 0x0f4d90)
+SD_IMPORT(cMissileEntity_SetF594, 0x0f4e90)
+SD_IMPORT(cMissileEntity_SetHitName, 0x0f4eb0)
+SD_IMPORT(cMissileEntity_SetF3f8, 0x0f4f00)
+SD_IMPORT(Rand_FloatRange, 0x10e8f0)
+SD_IMPORT(Inferno_ClientFire, 0x120fa0)
+SD_IMPORT(cWeaponManager_DelayFire, 0x11a080)
+SD_IMPORT(cVehicleEffects_Shoot, 0x103500)
+SD_IMPORT(cObjElementFXATPC_Shoot, 0x1fde50)
+SD_IMPORT(Net_IsNetEntity, 0x18f840)
+SD_IMPORT(Nto1Node_LinkByName, 0x0ef6e0)
+SD_IMPORT(cAIVehicle_WeapListChanged, 0x08fd20)
 
 /* module agent: Entities/Vehicle/Weaps/Inferno+Laser+Swarm.cpp (imports below this line) */
 
