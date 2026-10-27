@@ -1,7 +1,8 @@
 /*
- * Engine/bsp.cpp of the engine3d: the light maps of the floor, see include/scrap/bsp.h. Not here (still the exe's):
- * the map compiler itself (the shadow and radiosity passes, the light map filters, the .EMI reader and writer, the
- * region links), the creation of the lists from the model and the vertex buffers of the sectors.
+ * Engine/bsp.cpp of the engine3d: the light maps of the floor, see include/scrap/bsp.h. Still the exe's: the large
+ * passes of the map compiler (the lists made from the model and their light, rva 0x28a860 and 0x2888c0, the light
+ * map filters 0x285d80, 0x28d520, 0x292060, 0x293af0, the pages grouped and saved 0x284d00, the lights 0x290930),
+ * the .EMI reader and writer (0x28c650, 0x28eae0), the materials and vertex buffers (0x28efe0, 0x28f710).
  */
 #include <string.h>
 
