@@ -58,6 +58,8 @@ int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b);
 intptr_t __stdcall D3DApp_WndProc(void *hwnd, uint32_t msg, uintptr_t w, intptr_t l);
 /* ds is a depth/stencil format the adapter supports with the format fmt (IDirect3D8 d3d) */
 byte D3DApp_DepthFormatOk(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t ds);
+/* the depth/stencil format (D3DFMT_*) of a device for the minimum bits of g_Motor; 0 for none */
+int __thiscall CD3DApp_FindDepthStencilFormat(byte *self, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t *out);
 /* the defaults, g_Motor set (cleared by the destructor) */
 byte *__fastcall CD3DApp_ctor(byte *self);
 void __fastcall CD3DApp_dtor(byte *self);

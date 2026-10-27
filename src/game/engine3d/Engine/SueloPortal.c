@@ -505,6 +505,10 @@ ZonaPintar *__fastcall ZonaPintar_ctor(ZonaPintar *self) {
 	return self;
 }
 
+void __fastcall ZonaPintar_dtor(ZonaPintar *self) {
+	(void)self;
+}
+
 void Portales_DebugDraw(void) {
 	uint32_t vp[6];
 	void *dev;

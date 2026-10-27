@@ -88,6 +88,7 @@ void Zona_Pintar(uint32_t zona, const box_t *rect);
 void Portales_Cull(uint32_t sector);
 /* the elements of g_ZonasPintar: the rectangle cleared */
 ZonaPintar *__fastcall ZonaPintar_ctor(ZonaPintar *self);
+void __fastcall ZonaPintar_dtor(ZonaPintar *self);
 /* the debug drawing of the seen sectors (gvRenderShowPortals 2, 3 also their rectangles as text) */
 void Portales_DebugDraw(void);
 /* the sectors (the nodes the portals join) and their portals from the floor scene */

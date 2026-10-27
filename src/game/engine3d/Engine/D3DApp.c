@@ -63,6 +63,58 @@ byte D3DApp_DepthFormatOk(void *d3d, uint32_t adapter, uint32_t type, uint32_t f
 	return 1;
 }
 
+/* D3DFMT_* of the depth buffers */
+#define FMT_D16 0x50
+#define FMT_D15S1 0x49
+#define FMT_D24X8 0x4d
+#define FMT_D24S8 0x4b
+#define FMT_D24X4S4 0x4f
+#define FMT_D32 0x47
+
+static byte D3DApp_TryDepth(byte *self, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t ds, uint32_t *out) {
+	if (!D3DApp_DepthFormatOk(MOTOR_D3D(self), adapter, type, fmt, ds)) {
+		return 0;
+	}
+	*out = ds;
+	return 1;
+}
+
+/* the depth/stencil format for m_dwMinDepthBits and m_dwMinStencilBits, then the depth alone, then D16 */
+int __thiscall CD3DApp_FindDepthStencilFormat(byte *self, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t *out) {
+	uint32_t depth = MOTOR_U32(self, 0x2a5b4), stencil = MOTOR_U32(self, 0x2a5b8);
+
+	if (depth <= 16 && stencil == 0 && D3DApp_TryDepth(self, adapter, type, fmt, FMT_D16, out)) {
+		return 1;
+	}
+	if (depth <= 15 && stencil <= 1 && D3DApp_TryDepth(self, adapter, type, fmt, FMT_D15S1, out)) {
+		return 1;
+	}
+	if (depth <= 24) {
+		if (stencil == 0 && D3DApp_TryDepth(self, adapter, type, fmt, FMT_D24X8, out)) {
+			return 1;
+		}
+		if (stencil <= 8 && D3DApp_TryDepth(self, adapter, type, fmt, FMT_D24S8, out)) {
+			return 1;
+		}
+		if (stencil <= 4 && D3DApp_TryDepth(self, adapter, type, fmt, FMT_D24X4S4, out)) {
+			return 1;
+		}
+	}
+	if (depth <= 32 && stencil == 0 && D3DApp_TryDepth(self, adapter, type, fmt, FMT_D32, out)) {
+		return 1;
+	}
+	if (depth <= 16 && D3DApp_TryDepth(self, adapter, type, fmt, FMT_D16, out)) {
+		return 1;
+	}
+	if (depth <= 24 && D3DApp_TryDepth(self, adapter, type, fmt, FMT_D24X8, out)) {
+		return 1;
+	}
+	if (depth <= 32 && D3DApp_TryDepth(self, adapter, type, fmt, FMT_D32, out)) {
+		return 1;
+	}
+	return D3DApp_TryDepth(self, adapter, type, fmt, FMT_D16, out);
+}
+
 byte *__fastcall CD3DApp_ctor(byte *self) {
 	*(void **)self = Game_Ptr(CD3DAPPLICATION_VFTABLE);
 	g_Motor = self;
