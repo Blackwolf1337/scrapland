@@ -759,14 +759,7 @@ SD_IMPORT(cVehicleTraffic_SetOwner, 0x119970)
 
 /* module agent: Engine/RenderTarget.cpp (imports below this line) */
 SD_IMPORT(Credits_Blur, 0x21e960)
-SD_IMPORT(Bloom_Blur, 0x2211b0)
-SD_IMPORT(Bloom_Filter, 0x222340)
-SD_IMPORT(Bloom_Show, 0x222da0)
-SD_IMPORT(Blur_Draw, 0x223730)
 SD_IMPORT(DuDv_CheckCaps, 0x224a00)
-SD_IMPORT(MotionBlur_Add, 0x2275a0)
-SD_IMPORT(MotionBlur_Draw, 0x2281d0)
-SD_IMPORT(RadialBlur_Draw, 0x228a40)
 SD_IMPORT(Scene_CheckCaps, 0x229640)
 
 /* module agent: AI/NodesTraffic+NodesTrafficInDoor.cpp (imports below this line) */

@@ -153,6 +153,104 @@ static void RT_DrawQuad(const RTVert *v) {
 	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert));
 }
 
+/* FVF 0x2c4: XYZRHW, DIFFUSE, SPECULAR, TEX2 */
+#define RT_FVF2 0x2c4
+typedef struct RTVert2 {
+	float x, y, z, rhw;
+	uint32_t diffuse;
+	uint32_t specular;
+	float t[2][2];
+} RTVert2;
+SD_SIZE(RTVert2, 0x28);
+
+/* FVF 0x444: XYZRHW, DIFFUSE, TEX4 */
+#define RT_FVF4 0x444
+typedef struct RTVert4 {
+	float x, y, z, rhw;
+	uint32_t diffuse;
+	float t[4][2];
+} RTVert4;
+SD_SIZE(RTVert4, 0x34);
+
+/* the viewport w x h from 0, 0 with two texture sets, each 0..1 moved by the texel center of its texture size;
+ * in texels with g_RTLinNonPow2 */
+static void RT_Quad2(RTVert2 *v, float w, float h, uint32_t color, float w0, float h0, float w1, float h1) {
+	float du0 = 0.5f / w0, dv0 = 0.5f / h0;
+	float du1 = 0.5f / w1, dv1 = 0.5f / h1;
+	for (int i = 0; i < 4; i++) {
+		int cx = i & 1;
+		int cy = i >> 1;
+		v[i].x = cx ? w : 0.0f;
+		v[i].y = cy ? h : 0.0f;
+		v[i].z = 0.0f;
+		v[i].rhw = 1.0f;
+		v[i].diffuse = color;
+		v[i].specular = 0;
+		v[i].t[0][0] = du0 + (float)cx;
+		v[i].t[0][1] = dv0 + (float)cy;
+		v[i].t[1][0] = du1 + (float)cx;
+		v[i].t[1][1] = dv1 + (float)cy;
+	}
+	if (g_RTLinNonPow2) {
+		for (int i = 0; i < 4; i++) {
+			v[i].t[0][0] = v[i].t[0][0] * w0;
+			v[i].t[0][1] = v[i].t[0][1] * h0;
+			v[i].t[1][0] = v[i].t[1][0] * w1;
+			v[i].t[1][1] = v[i].t[1][1] * h1;
+		}
+	}
+	void *dev = RT_Dev();
+	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, RT_FVF2);
+	dev = RT_Dev();
+	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert2));
+}
+
+/* the viewport w x h from 0, 0 with four texture sets: u[cx][set] on the left and right side, t[cy][set] on the top
+ * and bottom; in texels of su x sv with g_RTLinNonPow2 */
+static void RT_Quad4(float w, float h, const float u[2][4], const float t[2][4], float su, float sv) {
+	RTVert4 v[4];
+
+	for (int i = 0; i < 4; i++) {
+		int cx = i & 1;
+		int cy = i >> 1;
+		v[i].x = cx ? w : 0.0f;
+		v[i].y = cy ? h : 0.0f;
+		v[i].z = 0.0f;
+		v[i].rhw = 1.0f;
+		v[i].diffuse = 0xffffffff;
+		for (int k = 0; k < 4; k++) {
+			v[i].t[k][0] = u[cx][k];
+			v[i].t[k][1] = t[cy][k];
+		}
+	}
+	if (g_RTLinNonPow2) {
+		for (int i = 0; i < 4; i++) {
+			for (int k = 0; k < 4; k++) {
+				v[i].t[k][0] = v[i].t[k][0] * su;
+				v[i].t[k][1] = v[i].t[k][1] * sv;
+			}
+		}
+	}
+	void *dev = RT_Dev();
+	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, RT_FVF4);
+	dev = RT_Dev();
+	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert4));
+}
+
+/* stages 0..3 with their own texture coordinates, filter, clamp; with setTex the texture of each */
+static void RT_Stages4(uint32_t filter, byte setTex, void *tex) {
+	for (uint32_t i = 0; i < 4; i++) {
+		RT_TSS(i, D3DTSS_TEXCOORDINDEX, i);
+		RT_TSS(i, D3DTSS_MINFILTER, filter);
+		RT_TSS(i, D3DTSS_MAGFILTER, filter);
+		RT_TSS(i, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+		RT_TSS(i, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+		if (setTex) {
+			RT_SetTexture(i, tex);
+		}
+	}
+}
+
 /* the back buffer and the depth buffer of the device kept in g_RTBackBuffer, g_RTZBuffer */
 static void RT_GetBackBuffer(void) {
 	void *dev = RT_Dev();
@@ -547,6 +645,135 @@ void Bloom_Render(void) {
 	Render_ClearForced();
 }
 
+/* the source into the first bloom target through four taps, two horizontal and two vertical */
+void Bloom_Filter(void) {
+	uint32_t vp[6];
+	float u[2][4], t[2][4];
+
+	CHECK(g_SceneBloomRTarget);
+	CHECK(g_BloomTarget1);
+	RT_SetTargetTexture(g_BloomTarget1);
+	RT_GetViewport(vp);
+	float w = RT_UToF(vp[2]);
+	float h = RT_UToF(vp[3]);
+	Render_SetMaterial(g_BloomMatFilter, 0);
+	RT_Stages4(2, 1, g_SceneSourceTexture);
+	float du = 0.5f / g_SceneW;
+	float dv = 0.5f / g_SceneH;
+	float ou = g_SceneBloomBlurOffset / g_SceneW;
+	float ov = g_SceneBloomBlurOffset / g_SceneH;
+	for (int c = 0; c < 2; c++) {
+		float b = (float)c;
+		u[c][0] = (b - ou) + du;
+		u[c][1] = (ou + b) + du;
+		u[c][2] = du + b;
+		u[c][3] = du + b;
+		t[c][0] = dv + b;
+		t[c][1] = dv + b;
+		t[c][2] = (b - ov) + dv;
+		t[c][3] = (ov + b) + dv;
+	}
+	RT_Quad4(w, h, u, t, g_SceneW, g_SceneH);
+}
+
+/* the passes of the blur between the two bloom targets: four taps horizontal into the second, four vertical back
+ * into the first */
+void Bloom_Blur(void) {
+	uint32_t vp[6];
+	float u[2][4], t[2][4];
+	void *surf;
+
+	CHECK(g_SceneBloomRTarget);
+	CHECK(g_BloomTarget1);
+	RT_Stages4(2, 0, NULL);
+	RT_GetViewport(vp);
+	float w = RT_UToF(vp[2]);
+	float h = RT_UToF(vp[3]);
+	Render_SetMaterial(g_BloomMatBlur, 0);
+	float dv = 0.5f / g_BloomH;
+	surf = NULL;
+	float du = 0.5f / g_BloomW;
+	if (g_SceneBloomBlurPasses <= 0) {
+		return;
+	}
+	float dv1 = dv + 1.0f;
+	float du1 = du + 1.0f;
+	for (int pass = 0; pass < g_SceneBloomBlurPasses; pass++) {
+		float o = g_SceneBloomBlurOffset / g_BloomW;
+		RT_GetSurfaceLevel(g_BloomTarget2, &surf);
+		RT_SetRenderTarget(surf, NULL);
+		COM_RELEASE(surf);
+		for (uint32_t i = 0; i < 4; i++) {
+			RT_SetTexture(i, g_BloomTarget1);
+		}
+		float o2 = o + o;
+		for (int c = 0; c < 2; c++) {
+			float b = (float)c;
+			u[c][0] = du + (b - o2);
+			u[c][1] = (b - o) + du;
+			u[c][2] = (o + b) + du;
+			u[c][3] = du + (o2 + b);
+		}
+		for (int k = 0; k < 4; k++) {
+			t[0][k] = dv + 0.0f;
+			t[1][k] = dv1;
+		}
+		RT_Quad4(w, h, u, t, g_BloomW, g_BloomH);
+		o = g_SceneBloomBlurOffset / g_BloomH;
+		RT_GetSurfaceLevel(g_BloomTarget1, &surf);
+		RT_SetRenderTarget(surf, NULL);
+		COM_RELEASE(surf);
+		for (uint32_t i = 0; i < 4; i++) {
+			RT_SetTexture(i, g_BloomTarget2);
+		}
+		o2 = o + o;
+		t[0][0] = dv + (0.0f - o2);
+		t[0][1] = (0.0f - o) + dv;
+		t[0][2] = (o + 0.0f) + dv;
+		t[0][3] = dv + (o2 + 0.0f);
+		t[1][0] = (1.0f - o2) + dv;
+		t[1][1] = (1.0f - o) + dv;
+		t[1][2] = (o + 1.0f) + dv;
+		t[1][3] = o2 + 1.0f + dv;
+		for (int k = 0; k < 4; k++) {
+			u[0][k] = du + 0.0f;
+			u[1][k] = du1;
+		}
+		RT_Quad4(w, h, u, t, g_BloomW, g_BloomH);
+	}
+}
+
+/* the source with the first bloom target added into the target (R_SceneBloomRTarget 2: the bloom alone, dark) */
+void Bloom_Show(void) {
+	uint32_t vp[6];
+	RTVert2 v[4];
+
+	CHECK(g_SceneBloomRTarget);
+	RT_SetRenderTarget(g_SceneTargetSurface, NULL);
+	RT_GetViewport(vp);
+	Render_SetMaterial(g_BloomMatTarget, 0);
+	RT_SetTexture(0, g_SceneSourceTexture);
+	RT_SetTexture(1, g_BloomTarget1);
+	if (g_SceneBloomRTarget == 2) {
+		Render_SetMaterial(g_BloomMatShow, 0);
+		RT_SetTexture(0, g_BloomTarget1);
+	}
+	RT_TSS(0, D3DTSS_MINFILTER, 1);
+	RT_TSS(0, D3DTSS_MAGFILTER, 1);
+	RT_TSS(1, D3DTSS_MINFILTER, 2);
+	RT_TSS(1, D3DTSS_MAGFILTER, 2);
+	if (g_SceneBloomRTarget == 2) {
+		RT_TSS(0, D3DTSS_MINFILTER, 2);
+		RT_TSS(0, D3DTSS_MAGFILTER, 2);
+	}
+	RT_TSS(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+	RT_TSS(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+	RT_TSS(1, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+	RT_TSS(1, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+	RT_Quad2(v, RT_UToF(vp[2]), RT_UToF(vp[3]), g_SceneBloomRTarget == 2 ? 0x40404040 : 0xffffffff, g_SceneW,
+		g_SceneH, g_BloomW, g_BloomH);
+}
+
 void Bloom_Release(void) {
 	g_BloomMatShow = NULL;
 	g_BloomMatFilter = NULL;
@@ -580,6 +807,53 @@ void Blur_Render(void) {
 	Render_ClearForced();
 	Blur_Draw();
 	Render_ClearForced();
+}
+
+/* the source blurred through four taps into the first bloom target, then copied to the target */
+void Blur_Draw(void) {
+	uint32_t vp[6];
+	float u[2][4], t[2][4];
+	RTVert v[4];
+
+	CHECK(g_SceneBlurRTarget);
+	RT_SetTargetTexture(g_BloomTarget1);
+	RT_GetViewport(vp);
+	float w = RT_UToF(vp[2]);
+	float h = RT_UToF(vp[3]);
+	Render_SetMaterial(g_BlurMatTarget, 0);
+	RT_Stages4(2, 1, g_SceneSourceTexture);
+	float ov = g_SceneBlurOffset / g_SceneH;
+	float dv = 0.5f / g_SceneH;
+	float du = 0.5f / g_SceneW;
+	float ou = g_SceneBlurOffset / g_SceneW;
+	for (int c = 0; c < 2; c++) {
+		float b = (float)c;
+		u[c][0] = du + (b - ou);
+		u[c][1] = du + (ou + b);
+		u[c][2] = du + b;
+		u[c][3] = du + b;
+		t[c][0] = dv + b;
+		t[c][1] = dv + b;
+		t[c][2] = dv + (b - ov);
+		t[c][3] = dv + (ov + b);
+	}
+	RT_Quad4(w, h, u, t, g_SceneW, g_SceneH);
+	RT_SetRenderTarget(g_SceneTargetSurface, NULL);
+	RT_GetViewport(vp);
+	Render_SetMaterial(g_BlurMatCopy, 0);
+	RT_TSS(0, D3DTSS_TEXCOORDINDEX, 0);
+	RT_TSS(0, D3DTSS_MINFILTER, 2);
+	RT_TSS(0, D3DTSS_MAGFILTER, 2);
+	RT_TSS(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+	RT_TSS(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+	RT_SetTexture(0, g_BloomTarget1);
+	du = 0.5f / g_BloomW;
+	dv = 0.5f / g_BloomH;
+	RT_Quad(v, 0.0f, 0.0f, RT_UToF(vp[2]), RT_UToF(vp[3]), 0x40404040, du + 0.0f, dv + 0.0f, du + 1.0f, dv + 1.0f);
+	if (g_RTLinNonPow2) {
+		RT_QuadTexels(v, g_BloomW, g_BloomH);
+	}
+	RT_DrawQuad(v);
 }
 
 void Blur_Release(void) {
@@ -887,6 +1161,104 @@ void MotionBlur_Render(void) {
 	Render_ClearForced();
 }
 
+#define g_MotionBlurTime GAME_DATA(uint32_t, 0x4a8eac)
+
+/* the source added to the motion blur target through four taps, about every 1/25 s of game time; the shader
+ * constants: the fade of the time passed since then, a quarter for each tap */
+void MotionBlur_Add(void) {
+	uint32_t vp[6];
+	float u[2][4], t[2][4];
+	float c0[4], c1[4];
+
+	CHECK(g_SceneMotionBlurRTarget);
+	CHECK(g_MotionBlurTarget);
+	RT_SetTargetTexture(g_MotionBlurTarget);
+	if (!g_MotionBlurFilled) {
+		g_MotionBlurFilled = 1;
+		Render_Clear(NULL, 1, 0, 1.0f, 0);
+	}
+	RT_GetViewport(vp);
+	float w = RT_UToF(vp[2]);
+	float h = RT_UToF(vp[3]);
+	Render_SetMaterial(g_MotionBlurMatAdd, 0);
+	RT_Stages4(2, 1, g_SceneSourceTexture);
+	uint32_t now = g_TimeMs;
+	float dt = RT_UToF(now - g_MotionBlurTime) * 0.001f;
+	if (World_TimeScale() * 0.04f > dt) {
+		return;
+	}
+	g_MotionBlurTime = now;
+	float rest = dt - World_TimeScale() * 0.04f;
+	c0[0] = 0.0f;
+	c0[1] = 0.0f;
+	c0[2] = 0.0f;
+	c0[3] = rest + rest + 0.15f;
+	void *dev = RT_Dev();
+	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, 0, c0, 1);
+	c1[0] = c1[1] = c1[2] = c1[3] = 0.25f;
+	dev = RT_Dev();
+	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, 1, c1, 1);
+	float ov = g_SceneMotionBlurOffset / g_SceneH;
+	float ou = g_SceneMotionBlurOffset / g_SceneW;
+	float dv = 0.5f / g_SceneH;
+	float du = 0.5f / g_SceneW;
+	float off = g_SceneMotionBlurOff;
+	/* the left and top side moved by +off, the right and bottom one by -off */
+	u[0][0] = du + ((0.0f - ou) + off);
+	u[0][1] = du + ((ou + 0.0f) + off);
+	u[0][2] = du + (off + 0.0f);
+	u[0][3] = u[0][2];
+	u[1][0] = du + (1.0f - ou - off);
+	u[1][1] = du + (ou + 1.0f - off);
+	u[1][2] = du + (1.0f - off);
+	u[1][3] = u[1][2];
+	t[0][0] = dv + (off + 0.0f);
+	t[0][1] = t[0][0];
+	t[0][2] = dv + ((0.0f - ov) + off);
+	t[0][3] = dv + ((ov + 0.0f) + off);
+	t[1][0] = dv + (1.0f - off);
+	t[1][1] = t[1][0];
+	t[1][2] = dv + (1.0f - ov - off);
+	t[1][3] = dv + (ov + 1.0f - off);
+	RT_Quad4(w, h, u, t, g_SceneW, g_SceneH);
+}
+
+/* the source and the motion blur target mixed into the target by R_SceneMotionBlurValue (0..1) */
+void MotionBlur_Draw(void) {
+	uint32_t vp[6];
+	RTVert2 v[4];
+	float c0[4], c1[4];
+
+	CHECK(g_SceneMotionBlurRTarget);
+	CHECK(g_SceneTargetSurface);
+	RT_SetRenderTarget(g_SceneTargetSurface, NULL);
+	RT_GetViewport(vp);
+	Render_SetMaterial(g_MotionBlurMatTarget, 0);
+	RT_SetTexture(0, g_SceneSourceTexture);
+	RT_SetTexture(1, g_MotionBlurTarget);
+	float k;
+	if (g_SceneMotionBlurValue > 0.0f) {
+		k = 1.0f;
+		if (g_SceneMotionBlurValue <= 1.0f) {
+			k = g_SceneMotionBlurValue;
+		}
+	} else {
+		k = 0.0f;
+	}
+	c0[0] = c0[1] = c0[2] = c0[3] = k;
+	void *dev = RT_Dev();
+	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, 0, c0, 1);
+	float r = 1.0f - k;
+	c1[0] = c1[1] = c1[2] = c1[3] = r;
+	dev = RT_Dev();
+	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, 1, c1, 1);
+	RT_TSS(0, D3DTSS_MINFILTER, 1);
+	RT_TSS(0, D3DTSS_MAGFILTER, 1);
+	RT_TSS(1, D3DTSS_MINFILTER, 2);
+	RT_TSS(1, D3DTSS_MAGFILTER, 2);
+	RT_Quad2(v, RT_UToF(vp[2]), RT_UToF(vp[3]), 0xffffffff, g_SceneW, g_SceneH, g_MotionBlurW, g_MotionBlurH);
+}
+
 void MotionBlur_Release(void) {
 	g_MotionBlurMatTarget = NULL;
 	g_MotionBlurMatAdd = NULL;
@@ -920,6 +1292,66 @@ void RadialBlur_Render(void) {
 	Render_ClearForced();
 	RadialBlur_Draw();
 	Render_ClearForced();
+}
+
+/* the source three times, the copies moved by R_SceneRadialBlurValue * R_SceneRadialBlurOffset to the middle, through
+ * the radial mask into the target */
+void RadialBlur_Draw(void) {
+	uint32_t vp[6];
+	RTVert4 v[4];
+
+	CHECK(g_SceneRadialBlurRTarget);
+	RT_SetRenderTarget(g_SceneTargetSurface, NULL);
+	RT_GetViewport(vp);
+	Render_SetMaterial(g_RadialBlurMat, 0);
+	for (uint32_t i = 0; i < 4; i++) {
+		RT_TSS(i, D3DTSS_TEXCOORDINDEX, i);
+		RT_TSS(i, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+		RT_TSS(i, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+		uint32_t filter = i < 2 ? 1 : 2;
+		RT_TSS(i, D3DTSS_MINFILTER, filter);
+		RT_TSS(i, D3DTSS_MAGFILTER, filter);
+		RT_SetTexture(i, g_SceneSourceTexture);
+	}
+	CMapa *mask = g_RadialBlurMat->mapa[MAPA_DIFFUSE];
+	RT_SetTexture(0, mask ? CMapa_GetTexture(mask, 0) : NULL);
+	RT_TSS(0, D3DTSS_MINFILTER, 2);
+	RT_TSS(0, D3DTSS_MAGFILTER, 2);
+	float du = 0.5f / g_SceneW;
+	float dv = 0.5f / g_SceneH;
+	float ov = g_SceneRadialBlurValue * g_SceneRadialBlurOffset / g_SceneH;
+	float ou = g_SceneRadialBlurValue * g_SceneRadialBlurOffset / g_SceneW;
+	float u[2][3] = { { du + 0.0f, ou + 0.0f + du, ou * 2.0f + 0.0f + du },
+		{ du + 1.0f, (1.0f - ou) + du, (1.0f - ou * 2.0f) + du } };
+	float t[2][3] = { { dv + 0.0f, ov + 0.0f + dv, ov * 2.0f + 0.0f + dv },
+		{ dv + 1.0f, (1.0f - ov) + dv, (1.0f - ov * 2.0f) + dv } };
+	for (int i = 0; i < 4; i++) {
+		int cx = i & 1;
+		int cy = i >> 1;
+		v[i].x = cx ? RT_UToF(vp[2]) : 0.0f;
+		v[i].y = cy ? RT_UToF(vp[3]) : 0.0f;
+		v[i].z = 0.0f;
+		v[i].rhw = 1.0f;
+		v[i].diffuse = 0xffffffff;
+		v[i].t[0][0] = (float)cx;
+		v[i].t[0][1] = (float)cy;
+		for (int k = 0; k < 3; k++) {
+			v[i].t[1 + k][0] = u[cx][k];
+			v[i].t[1 + k][1] = t[cy][k];
+		}
+	}
+	if (g_RTLinNonPow2) {
+		for (int i = 0; i < 4; i++) {
+			for (int k = 1; k < 4; k++) {
+				v[i].t[k][0] = v[i].t[k][0] * g_SceneW;
+				v[i].t[k][1] = v[i].t[k][1] * g_SceneH;
+			}
+		}
+	}
+	void *dev = RT_Dev();
+	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, RT_FVF4);
+	dev = RT_Dev();
+	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert4));
 }
 
 void RadialBlur_Release(void) {
