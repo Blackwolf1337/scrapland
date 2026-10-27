@@ -74,9 +74,9 @@ ivcD5000 = (0, 0x40b38800)
 
 ivcGroup = SDTest.Peek(0x444b84, 'i')
 ivcNodesWorld = SDTest.Peek(0x444d34, 'i')
-ivcCarObj = Scrap.CreateEntity('Car', 64000.0, 52000.0, 60000.0, 'SDIvcCar')
+ivcCarObj = Scrap.CreateEntity('Car', 56000.0, 50000.0, 60000.0, 'SDIvcCar')
 ivcCar = ivcFind('SDIvcCar')
-ivcCar2Obj = Scrap.CreateEntity('Car', 64000.0, 52000.0, 52000.0, 'SDIvcCar2')
+ivcCar2Obj = Scrap.CreateEntity('Car', 56000.0, 50000.0, 52000.0, 'SDIvcCar2')
 ivcCar2 = ivcFind('SDIvcCar2')
 check('SDIvcCar', lambda: (ivcCarObj is not None, ivcCar != 0, ivcCar2 != 0, ivcGroup != 0, ivcNodesWorld != 0))
 if ivcCar and ivcCar2 and ivcGroup and ivcNodesWorld:
@@ -439,7 +439,7 @@ if ivcCar and ivcCar2 and ivcGroup and ivcNodesWorld:
 	check('cAIVehicleGroup elevators', lambda: (ivcNE, ivcF(ivcGroup + 0x74, 3 * ivcNE)))
 	check('cAIVehicleGroup_FindElevators', lambda: (SDTest.Call(0x096e90, 'tvi', ivcGroup), ivcI(ivcGroup + 0xec),
 		ivcF(ivcGroup + 0x74, 3 * ivcI(ivcGroup + 0xec))))
-	ivcTests = ((0.0, 0.0, 0.0), (64000.0, 52000.0, 60000.0))
+	ivcTests = ((0.0, 0.0, 0.0), (56000.0, 50000.0, 60000.0))
 	for ivcK in range(ivcI(ivcGroup + 0xec)):
 		ivcE = ivcF(ivcGroup + 0x74 + 12 * ivcK, 3)
 		ivcTests = ivcTests + (ivcE, ivcAdd(ivcE, (300.0, 0.0, 0.0)), ivcAdd(ivcE, (0.0, -1000.0, 2000.0)))

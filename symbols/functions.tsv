@@ -1783,105 +1783,112 @@ rva	size	source	callconv	name	signature
 0008fcd0	26	ANALYSIS	__thiscall	cAIVehicle::vf09	undefined __thiscall(void)
 0008fd00	26	ANALYSIS	__thiscall	cAIVehicle::vf10	undefined __thiscall(void)
 0008fd20	11	USER_DEFINED	__thiscall	cAIVehicle_WeapListChanged	void __thiscall(void)
-0008fd30	1716	DEFAULT	unknown	FUN_0048fd30	
-000903f0	66	DEFAULT	unknown	FUN_004903f0	
-00090440	38	ANALYSIS	__thiscall	cAIVehicleControl::vf00	undefined __thiscall(void)
-00090470	25	DEFAULT	unknown	FUN_00490470	
-00090490	3602	DEFAULT	unknown	FUN_00490490	
-000912b0	1919	DEFAULT	unknown	FUN_004912b0	
-00091a30	268	DEFAULT	unknown	FUN_00491a30	
-00091b40	98	DEFAULT	unknown	FUN_00491b40	
-00091bb0	167	DEFAULT	unknown	FUN_00491bb0	
-00091c60	468	DEFAULT	unknown	FUN_00491c60	
-00091e40	475	DEFAULT	unknown	FUN_00491e40	
-00092020	955	DEFAULT	unknown	FUN_00492020	
-000923e0	313	DEFAULT	unknown	FUN_004923e0	
-00092520	267	DEFAULT	unknown	FUN_00492520	
-00092630	160	DEFAULT	unknown	FUN_00492630	
-000926f0	495	DEFAULT	unknown	FUN_004926f0	
-000928e0	481	DEFAULT	unknown	FUN_004928e0	
-00092ad0	477	DEFAULT	unknown	FUN_00492ad0	
-00092cb0	492	DEFAULT	unknown	FUN_00492cb0	
-00092ea0	223	DEFAULT	unknown	FUN_00492ea0	
-00092f80	450	DEFAULT	unknown	FUN_00492f80	
-00093150	1135	DEFAULT	unknown	FUN_00493150	
-000935c0	1061	DEFAULT	unknown	FUN_004935c0	
-000939f0	763	DEFAULT	unknown	FUN_004939f0	
-00093cf0	450	DEFAULT	unknown	FUN_00493cf0	
-00093ec0	1010	DEFAULT	unknown	FUN_00493ec0	
-000942c0	755	DEFAULT	unknown	FUN_004942c0	
-000945c0	1356	DEFAULT	unknown	FUN_004945c0	
-00094b10	462	DEFAULT	unknown	FUN_00494b10	
-00094ce0	156	DEFAULT	unknown	FUN_00494ce0	
-00094d80	312	DEFAULT	unknown	FUN_00494d80	
-00094ec0	2178	DEFAULT	unknown	FUN_00494ec0	
-00095750	46	DEFAULT	unknown	FUN_00495750	
-00095780	1142	DEFAULT	unknown	FUN_00495780	
-00095c00	31	DEFAULT	unknown	FUN_00495c00	
-00095c20	31	DEFAULT	unknown	FUN_00495c20	
-00095c40	4	DEFAULT	unknown	FUN_00495c40	
-00095c50	4	DEFAULT	unknown	FUN_00495c50	
-00095d00	7	DEFAULT	unknown	FUN_00495d00	
-00095d10	167	DEFAULT	unknown	FUN_00495d10	
-00095dc0	7	DEFAULT	unknown	FUN_00495dc0	
-00095dd0	7	DEFAULT	unknown	FUN_00495dd0	
-00095de0	138	DEFAULT	unknown	FUN_00495de0	
-00095e70	66	DEFAULT	unknown	FUN_00495e70	
-00095ec0	90	DEFAULT	unknown	FUN_00495ec0	
-00095f20	58	DEFAULT	unknown	FUN_00495f20	
-00095f60	90	DEFAULT	unknown	FUN_00495f60	
-00095fc0	31	DEFAULT	unknown	FUN_00495fc0	
-00096000	384	DEFAULT	unknown	FUN_00496000	
-00096180	16	DEFAULT	unknown	FUN_00496180	
-00096190	586	DEFAULT	unknown	FUN_00496190	
-00096400	618	DEFAULT	unknown	FUN_00496400	
-00096670	497	DEFAULT	unknown	FUN_00496670	
-00096870	116	DEFAULT	unknown	FUN_00496870	
-000968f0	141	DEFAULT	unknown	FUN_004968f0	
-00096980	16	DEFAULT	unknown	FUN_00496980	
-00096990	33	DEFAULT	unknown	FUN_00496990	
-000969c0	199	DEFAULT	unknown	FUN_004969c0	
-00096a90	181	DEFAULT	unknown	FUN_00496a90	
-00096b70	103	DEFAULT	unknown	FUN_00496b70	
-00096bf0	152	USER_DEFINED	__thiscall	cAIVehicleGroup::cAIVehicleGroup	undefined __thiscall(void)
-00096ca0	44	ANALYSIS	__thiscall	cAIVehicleGroup::vf00	undefined __thiscall(void)
-00096cd0	53	DEFAULT	unknown	FUN_00496cd0	
-00096d10	243	DEFAULT	unknown	FUN_00496d10	
-00096e10	121	DEFAULT	unknown	FUN_00496e10	
-00096e90	365	DEFAULT	unknown	FUN_00496e90	
-00097000	28	DEFAULT	unknown	FUN_00497000	
-00097020	342	DEFAULT	unknown	FUN_00497020	
-00097190	39	ANALYSIS	__thiscall	cAIVehicleShootControl::vf00	undefined __thiscall(void)
-000971c0	95	DEFAULT	unknown	FUN_004971c0	
-00097220	157	DEFAULT	unknown	FUN_00497220	
-000972c0	275	DEFAULT	unknown	FUN_004972c0	
-000973e0	247	DEFAULT	unknown	FUN_004973e0	
-000974e0	646	DEFAULT	unknown	FUN_004974e0	
-00097770	617	DEFAULT	unknown	FUN_00497770	
-000979e0	471	DEFAULT	unknown	FUN_004979e0	
-00097bc0	673	DEFAULT	unknown	FUN_00497bc0	
-00097e70	934	DEFAULT	unknown	FUN_00497e70	
-00098220	415	DEFAULT	unknown	FUN_00498220	
-000983c0	107	DEFAULT	unknown	FUN_004983c0	
-00098430	124	DEFAULT	unknown	FUN_00498430	
-000984b0	246	DEFAULT	unknown	FUN_004984b0	
-000985b0	195	DEFAULT	unknown	FUN_004985b0	
-00098680	290	DEFAULT	unknown	FUN_00498680	
-000987b0	193	DEFAULT	unknown	FUN_004987b0	
-00098880	142	DEFAULT	unknown	FUN_00498880	
-00098910	98	DEFAULT	unknown	FUN_00498910	
-00098980	40	DEFAULT	unknown	FUN_00498980	
-000989b0	7	DEFAULT	unknown	FUN_004989b0	
-000989c0	7	DEFAULT	unknown	FUN_004989c0	
-000989e0	248	DEFAULT	unknown	FUN_004989e0	
-00098ae0	4	DEFAULT	unknown	FUN_00498ae0	
-00098af0	478	DEFAULT	unknown	FUN_00498af0	
-00098ce0	84	DEFAULT	unknown	FUN_00498ce0	
-00098d40	136	DEFAULT	unknown	FUN_00498d40	
-00098dd0	414	DEFAULT	unknown	FUN_00498dd0	
-00098f70	277	DEFAULT	unknown	FUN_00498f70	
-00099090	455	DEFAULT	unknown	FUN_00499090	
-00099280	39	DEFAULT	unknown	FUN_00499280	
+0008fd30	1716	USER_DEFINED	__thiscall	cAIVehicleControl_ctor	void * __thiscall(void * v, void * ai, void * params)
+000903f0	66	USER_DEFINED	__fastcall	cAIVehicleControl_dtor	void __fastcall(void * self)
+00090440	38	USER_DEFINED	__thiscall	cAIVehicleControl_Delete	void * __thiscall(byte flags)
+00090470	25	USER_DEFINED	__thiscall	cAIVehicleControl_ApplyParams	void __thiscall(void)
+00090490	3602	USER_DEFINED	__thiscall	cAIVehicleControl_TestCorridor	byte __thiscall(void * a, void * b, float r)
+000912b0	1919	USER_DEFINED	__thiscall	cAIVehicleControl_TestEnd	byte __thiscall(void * a, void * dir, float len)
+00091a30	268	USER_DEFINED	__thiscall	cAIVehicleControl_TestEndTo	byte __thiscall(void * a, void * b)
+00091b40	98	USER_DEFINED	__fastcall	cAIVehicleControl_CheckTarget	byte __fastcall(void * self)
+00091bb0	167	USER_DEFINED	__fastcall	cAIVehicleControl_CheckPathFree	byte __fastcall(void * self)
+00091c60	468	USER_DEFINED	__fastcall	cAIVehicleControl_FindPoint	byte __fastcall(void * self)
+00091e40	475	USER_DEFINED	__fastcall	cAIVehicleControl_FindPointDir	byte __fastcall(void * self)
+00092020	955	USER_DEFINED	__fastcall	cAIVehicleControl_ChasePath	byte __fastcall(void * self)
+000923e0	313	USER_DEFINED	__fastcall	cAIVehicleControl_ChaseLine	byte __fastcall(void * self)
+00092520	267	USER_DEFINED	__fastcall	cAIVehicleControl_CheckArrive	void __fastcall(void * self)
+00092630	160	USER_DEFINED	__thiscall	cAIVehicleControl_Update	void __thiscall(float dt)
+000926f0	495	USER_DEFINED	__fastcall	cAIVehicleControl_TurnToTarget	void __fastcall(void * self)
+000928e0	481	USER_DEFINED	__fastcall	cAIVehicleControl_TurnToPoint	void __fastcall(void * self)
+00092ad0	477	USER_DEFINED	__fastcall	cAIVehicleControl_PathStep	byte __fastcall(void * self)
+00092cb0	492	USER_DEFINED	__fastcall	cAIVehicleControl_PathStepChase	byte __fastcall(void * self)
+00092ea0	223	USER_DEFINED	__fastcall	cAIVehicleControl_PathStepDir	byte __fastcall(void * self)
+00092f80	450	USER_DEFINED	__fastcall	cAIVehicleControl_StrafeToPoint	void __fastcall(void * self)
+00093150	1135	USER_DEFINED	__fastcall	cAIVehicleControl_StrafeDodge	byte __fastcall(void * self)
+000935c0	1061	USER_DEFINED	__fastcall	cAIVehicleControl_StrafeChase	void __fastcall(void * self)
+000939f0	763	USER_DEFINED	__fastcall	cAIVehicleControl_StrafeRandom	void __fastcall(void * self)
+00093cf0	450	USER_DEFINED	__fastcall	cAIVehicleControl_StrafeToPoint	void __fastcall(void * self)
+00093ec0	1010	USER_DEFINED	__fastcall	cAIVehicleControl_AccelToTarget	void __fastcall(void * self)
+000942c0	755	USER_DEFINED	__fastcall	cAIVehicleControl_AccelChase	void __fastcall(void * self)
+000945c0	1356	USER_DEFINED	__fastcall	cAIVehicleControl_AccelPath	void __fastcall(void * self)
+00094b10	462	USER_DEFINED	__thiscall	cAIVehicleControl_SetPath	byte __thiscall(void * p)
+00094ce0	156	USER_DEFINED	__thiscall	cAIVehicleControl_SetDirectPath	byte __thiscall(void * p)
+00094d80	312	USER_DEFINED	__fastcall	cAIVehicleControl_RebuildPath	byte __fastcall(void * self)
+00094ec0	2178	USER_DEFINED	__thiscall	cAIVehicleControl_Draw	void __thiscall(void)
+00095750	46	USER_DEFINED	__thiscall	cAIVehicleControl_Stop	void __thiscall(void)
+00095780	1142	USER_DEFINED	__fastcall	cAIVehicleControl_Smooth	void __fastcall(void * self)
+00095c00	31	USER_DEFINED	__thiscall	cAIVehicleControl_GetGoal	void * __thiscall(void * out)
+00095c20	31	USER_DEFINED	__thiscall	cAIVehicleControl_GetDest	void * __thiscall(void * out)
+00095c40	4	USER_DEFINED	__thiscall	cAIVehicleControl_GetParams	void * __thiscall(void)
+00095c50	4	USER_DEFINED	__thiscall	cAIVehicleControl_GetParamsInit	void * __thiscall(void)
+00095c60	66	USER_DEFINED	__fastcall	cAIVehicleControl_NodeIsFirst	byte __fastcall(void * self)
+00095cb0	71	USER_DEFINED	__fastcall	cAIVehicleControl_NodeIsLast	byte __fastcall(void * self)
+00095d00	7	USER_DEFINED	__fastcall	cAIVehicleControl_GetStrafing	byte __fastcall(void * self)
+00095d10	167	USER_DEFINED	__fastcall	cAIVehicleControl_NodeOnWay	byte __fastcall(void * self)
+00095dc0	7	USER_DEFINED	__thiscall	cAIVehicleControl_GetFlag	byte __thiscall(void)
+00095dd0	7	USER_DEFINED	__thiscall	cAIVehicleControl_GetFlag2	byte __thiscall(void)
+00095de0	138	USER_DEFINED	__thiscall	cAIVehicleControl_UpdateChase	byte __thiscall(float dt)
+00095e70	66	USER_DEFINED	__thiscall	cAIVehicleControl_UpdateOrient	byte __thiscall(float dt)
+00095ec0	90	USER_DEFINED	__thiscall	cAIVehicleControl_UpdatePoint	byte __thiscall(float dt)
+00095f20	58	USER_DEFINED	__thiscall	cAIVehicleControl_UpdateDirect	byte __thiscall(float dt)
+00095f60	90	USER_DEFINED	__thiscall	cAIVehicleControl_UpdatePath	byte __thiscall(float dt)
+00095fc0	31	USER_DEFINED	__thiscall	cAIVehicleControl_ClearDest	void __thiscall(void)
+00095fe0	27	USER_DEFINED	__fastcall	cAIVehicleControl_ResetLife	void __fastcall(void * self)
+00096000	384	USER_DEFINED	__thiscall	cAIVehicleControl_SetChase	byte __thiscall(void * node, float chaseMin, float chaseMax, byte boost, float rotA, float rotB)
+00096180	16	USER_DEFINED	__thiscall	cAIVehicleControl_SetInertia	void __thiscall(int on)
+00096190	586	USER_DEFINED	__cdecl	cAIVehicleControl_SetMove	byte __cdecl(void * self, int mode, ...)
+00096400	618	USER_DEFINED	__thiscall	cAIVehicleControl_RandomDest	void __thiscall(void * out)
+00096670	497	USER_DEFINED	__thiscall	cAIVehicleControl_RandomNear	void __thiscall(void * p)
+00096870	116	USER_DEFINED	__thiscall	cAIVehicleControl_SetOrient	byte __thiscall(void * node)
+000968f0	141	USER_DEFINED	__thiscall	cAIVehicleControl_MovePath	byte __thiscall(void * dir, float dist, byte boost, float accel, byte direct, byte flat, float rotA, float rotB, byte strafe)
+00096980	16	USER_DEFINED	__thiscall	cAIVehicleControl_SetFlagB0	void __thiscall(byte on)
+00096990	33	USER_DEFINED	__thiscall	cAIVehicleControl_SetRotStatic	void __thiscall(float a, float b)
+000969c0	199	USER_DEFINED	__thiscall	cAIVehicleControl_MovePoint	byte __thiscall(void * dest, float dist, byte boost, float accel, float rotA, float rotB, byte stopAtGoal, byte strafe)
+00096a90	181	USER_DEFINED	__thiscall	cAIVehicleControl_MoveDirect	byte __thiscall(void * dest, float dist, byte boost, float accel, float rotA, float rotB)
+00096b50	31	USER_DEFINED	__fastcall	cAIVehicleControl_ResetClear	void __fastcall(void * self)
+00096b70	103	USER_DEFINED	__fastcall	cAIVehicleControl_ClearAll	void __fastcall(void * self)
+00096bf0	152	USER_DEFINED	__thiscall	cAIVehicleGroup_ctor	void * __thiscall(void)
+00096c90	11	USER_DEFINED	__fastcall	cAIVehicleGroup_dtor	void __fastcall(void * self)
+00096ca0	44	USER_DEFINED	__thiscall	cAIVehicleGroup_Delete	void * __thiscall(byte flags)
+00096cd0	53	USER_DEFINED	__fastcall	cAIVehicleGroup_ReposReady	byte __fastcall(void * self)
+00096d10	243	USER_DEFINED	__fastcall	cAIVehicleGroup_Draw	void __fastcall(void * self)
+00096e10	121	USER_DEFINED	__thiscall	cAIVehicleGroup_ElevatorNear	byte __thiscall(void * pos, float dist)
+00096e90	365	USER_DEFINED	__fastcall	cAIVehicleGroup_FindElevators	void __fastcall(void * self)
+00097000	28	USER_DEFINED	__fastcall	cAIVehicleGroup_ResetRepos	void __fastcall(void * self)
+00097020	342	USER_DEFINED	__thiscall	cAIVehicleShoot_ctor	void * __thiscall(void * v, void * ai, void * params)
+00097180	7	USER_DEFINED	__fastcall	cAIVehicleShoot_dtor	void __fastcall(void * self)
+00097190	39	USER_DEFINED	__thiscall	cAIVehicleShoot_Delete	void * __thiscall(byte flags)
+000971c0	95	USER_DEFINED	__fastcall	cAIVehicleShoot_CheckTarget	byte __fastcall(void * self)
+00097220	157	USER_DEFINED	__fastcall	cAIVehicleShoot_CheckTargetCM	byte __fastcall(void * self)
+000972c0	275	USER_DEFINED	__fastcall	cAIVehicleShoot_UpdateWeapon	void __fastcall(void * self)
+000973e0	247	USER_DEFINED	__fastcall	cAIVehicleShoot_UpdateCM	void __fastcall(void * self)
+000974e0	646	USER_DEFINED	__fastcall	cAIVehicleShoot_Fire	void __fastcall(void * self)
+00097770	617	USER_DEFINED	__fastcall	cAIVehicleShoot_FireCM	void __fastcall(void * self)
+000979e0	471	USER_DEFINED	__fastcall	cAIVehicleShoot_FireHook	void __fastcall(void * self)
+00097bc0	673	USER_DEFINED	__fastcall	cAIVehicleShoot_PullFire	void __fastcall(void * self)
+00097e70	934	USER_DEFINED	__thiscall	cAIVehicleShoot_TargetInSight	byte __thiscall(int arg)
+00098220	415	USER_DEFINED	__fastcall	cAIVehicleShoot_SelectCM	void __fastcall(void * self)
+000983c0	107	USER_DEFINED	__thiscall	cAIVehicleShoot_Update	void __thiscall(float dt)
+00098430	124	USER_DEFINED	__thiscall	cAIVehicleShoot_Update2	void __thiscall(float dt)
+000984b0	246	USER_DEFINED	__thiscall	cAIVehicleShoot_Draw	void __thiscall(void)
+000985b0	195	USER_DEFINED	__thiscall	cAIVehicleShoot_AmmoAt	float __thiscall(float dist)
+00098680	290	USER_DEFINED	__thiscall	cAIVehicleShoot_MaxAmmoAt	float __thiscall(float dist)
+000987b0	193	USER_DEFINED	__fastcall	cAIVehicleShoot_MaxAmmo	float __fastcall(void * self)
+00098880	142	USER_DEFINED	__fastcall	cAIVehicleShoot_TotalAmmo	float __fastcall(void * self)
+00098910	98	USER_DEFINED	__thiscall	cAIVehicleShoot_WeapAmmo	float __thiscall(int w)
+00098980	40	USER_DEFINED	__thiscall	cAIVehicleShoot_GetInfo	void __thiscall(int * a, int * kind, byte * flag)
+000989b0	7	USER_DEFINED	__thiscall	cAIVehicleShoot_GetParams	void * __thiscall(void)
+000989c0	7	USER_DEFINED	__thiscall	cAIVehicleShoot_GetParamsInit	void * __thiscall(void)
+000989d0	16	USER_DEFINED	__fastcall	cAIVehicleShoot_GetWeaps	void * __fastcall(void * self)
+000989e0	248	USER_DEFINED	__stdcall	cAIVehicleShoot_WeaponName	void __stdcall(int w, char * buf)
+00098ae0	4	USER_DEFINED	__thiscall	cAIVehicleShoot_HasHook	byte __thiscall(void)
+00098af0	478	USER_DEFINED	__thiscall	cAIVehicleShoot_HasAmmo	byte __thiscall(float factor)
+00098ce0	84	USER_DEFINED	__thiscall	cAIVehicleShoot_InfernoReady	byte __thiscall(float dist)
+00098d40	136	USER_DEFINED	__thiscall	cAIVehicleShoot_UsesAmmo	byte __thiscall(int kind, float factor)
+00098dd0	414	USER_DEFINED	__thiscall	cAIVehicleShoot_InRange	byte __thiscall(int w)
+00098f70	277	USER_DEFINED	__thiscall	cAIVehicleShoot_SetMode	byte __thiscall(int a, int b, byte c)
+00099090	455	USER_DEFINED	__fastcall	cAIVehicleShoot_InitWeapons	void __fastcall(void * self)
+00099280	39	USER_DEFINED	__thiscall	cAIVehicleShoot_WeapListChanged	void __thiscall(void)
 000992b0	118	USER_DEFINED	__thiscall	cBinaryHeap_ctor	void * __thiscall(int capacity, void *less, void *equals, void *setIndex)
 00099330	290	USER_DEFINED	__thiscall	CAStar::CAStar	undefined __thiscall(void)
 00099460	66	USER_DEFINED	__fastcall	cBinaryHeap_dtor	void __fastcall(void *self)
