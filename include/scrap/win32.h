@@ -11,6 +11,10 @@ typedef struct exe_rect {
 	int32_t left, top, right, bottom;
 } exe_rect;
 
+typedef struct exe_point {
+	int32_t x, y;
+} exe_point;
+
 typedef int(__stdcall *messagebox_t)(void *hwnd, const char *text, const char *caption, unsigned type);
 typedef int(__stdcall *showcursor_t)(int show);
 typedef void *(__stdcall *getdc_t)(void *hwnd);
@@ -34,6 +38,21 @@ typedef int(__stdcall *exttextout_t)(void *dc, int x, int y, unsigned options, c
 #define exe_SetTextColor GAME_DATA(settextcolor_t, 0x3a1070)
 #define exe_SetBkMode GAME_DATA(setbkmode_t, 0x3a106c)
 #define exe_ExtTextOutA GAME_DATA(exttextout_t, 0x3a1094)
+typedef int(__stdcall *clienttoscreen_t)(void *hwnd, exe_point *pt);
+typedef int(__stdcall *setstretchbltmode_t)(void *dc, int mode);
+typedef int(__stdcall *stretchblt_t)(void *dc, int x, int y, int w, int h, void *src, int sx, int sy, int sw, int sh,
+	uint32_t rop);
+#define exe_ClientToScreen GAME_DATA(clienttoscreen_t, 0x3a13a4)
+#define exe_SetStretchBltMode GAME_DATA(setstretchbltmode_t, 0x3a10a4)
+#define exe_StretchBlt GAME_DATA(stretchblt_t, 0x3a10a0)
+typedef void *(__stdcall *createpen_t)(int style, int width, uint32_t color);
+typedef void *(__stdcall *selectobject_t)(void *dc, void *obj);
+typedef int(__stdcall *movetoex_t)(void *dc, int x, int y, void *old);
+typedef int(__stdcall *lineto_t)(void *dc, int x, int y);
+#define exe_CreatePen GAME_DATA(createpen_t, 0x3a1078)
+#define exe_SelectObject GAME_DATA(selectobject_t, 0x3a1088)
+#define exe_MoveToEx GAME_DATA(movetoex_t, 0x3a108c)
+#define exe_LineTo GAME_DATA(lineto_t, 0x3a1084)
 
 /* kernel32 */
 typedef uint32_t(__stdcall *getfileattributes_t)(const char *name);
@@ -52,6 +71,7 @@ typedef int(__stdcall *widechartomultibyte_t)(uint32_t cp, uint32_t flags, const
 #define exe_WideCharToMultiByte GAME_DATA(widechartomultibyte_t, 0x3a12b4)
 typedef int(__stdcall *queryperformancecounter_t)(int64_t *count);
 #define exe_QueryPerformanceCounter GAME_DATA(queryperformancecounter_t, 0x3a12a8)
+#define exe_QueryPerformanceFrequency GAME_DATA(queryperformancecounter_t, 0x3a12ac)
 
 /* winmm */
 typedef uint32_t(__stdcall *timegettime_t)(void);

@@ -253,6 +253,9 @@ CEscena *Crear_Escena(byte *shared, const char *name, const char *name2, const v
 	uint32_t flags);
 CModelo *Crear_Modelo(const char *name, const char *name2, const vec3_t *escala, float umbral, uint32_t flags);
 CModelo *Crear_Modelo3(const char *name, const char *name2, const vec3_t *escala, uint32_t flags);
+/* EfecMalla.c (efec_malla.cpp): a model registered as a screen or as a model of the mesh view */
+void EfecMalla_AddPantalla(CModelo *m);
+void EfecMalla_AddModelo(CModelo *m);
 CModelo *Crear_ModeloLOD(const char *name, const char *name2, const vec3_t *escala, CModelo *main, uint32_t flags);
 CModelo *Crear_Modelo2(const char *name, const char *name2, uint32_t flags);
 CModelo *Crear_Modelo4(const char *name, const char *name2, float umbral, uint32_t flags);

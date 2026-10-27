@@ -119,6 +119,8 @@ static inline CCollideQuad *Alturas_Cell(CAlturas *alt, uint32_t x, uint32_t z) 
 
 /* rva 0x261530: the floor nodes freed (with the shadow maps they are not needed) */
 void __fastcall CSuelo_FreeNodos(CSuelo *self);
+/* rva 0x261580: in / |in| into out (the length through double, 1 / len rounded to float), a copy for length 0 */
+vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);
 
 #define g_CollisionEpsilon GAME_DATA(float, 0x43241c)
 #define g_CollisionBalance GAME_DATA(float, 0x4af868)

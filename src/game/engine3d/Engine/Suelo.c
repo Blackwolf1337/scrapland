@@ -6,6 +6,7 @@
 
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
+#include "scrap/escena.h"
 #include "scrap/mallatri.h"
 #include "scrap/material.h"
 #include "scrap/mundo.h"
@@ -36,11 +37,7 @@
 
 typedef void(__thiscall *objCall_t)(void *self, void *arg);
 
-vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);
 double crt_ceil(double x);
-/* the CTabla resize of tabla.h for vec3_t and CCollideTri */
-void __thiscall Tabla_ResizeC(CTabla *t, int n);
-void __thiscall Tabla_Resize1C(CTabla *t, int n);
 void __fastcall CSuelo_DrawDebug(CSuelo *self);
 
 static void *Suelo_Obj(const CSuelo *self, uint32_t i) {
@@ -1326,26 +1323,6 @@ CCollideQuad *__thiscall CCollideQuad_Find(CAlturas *self, CCollideQuad *cuad, u
 	return cuad->next;
 }
 
-/* the CTabla<word> resize of tabla.h: the elements kept up to the smaller count */
-static void Tabla_Resize2(CTabla *t, int n) {
-	if (n < 1) {
-		Tabla_Free(t);
-		return;
-	}
-	if (n == t->n) {
-		return;
-	}
-	void *old = t->p;
-	if (!old) {
-		Tabla_Alloc2(t, n);
-		return;
-	}
-	t->p = New_Array(n, 2);
-	memcpy(t->p, old, (t->n < n ? t->n : n) * 2);
-	operator_delete_array(old);
-	t->n = n;
-}
-
 void __thiscall CAlturas_QuadInit(CAlturas *self, int unused, const box_t *box, int numTri) {
 	(void)unused;
 	CHECK(!self->CollideMesh1.pTri && !self->CollideMesh1.pVert);
@@ -1936,4 +1913,35 @@ void __thiscall CSuelo_Build(CSuelo *self, CEscena *esc) {
 		CSuelo_SaveCollision(self, name);
 	}
 	Suelo_LogMemory(mem, t0);
+}
+
+void __fastcall CSuelo_FreeNodos(CSuelo *self) {
+	Tabla_FreeObjs((CTabla *)&self->nNodos);
+}
+
+vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in) {
+	float len = (float)__builtin_sqrt((double)(in->x * in->x + in->y * in->y + in->z * in->z));
+
+	if ((double)len != 0.0) {
+		float k = (float)(1.0 / (double)len);
+		out->x = in->x * k;
+		out->y = in->y * k;
+		out->z = in->z * k;
+		return out;
+	}
+	*out = *in;
+	return out;
+}
+
+/* the lighting of the device meshes of the nodes; nodo and esc go through unchanged */
+void __thiscall CSuelo_CalcIlum(void *suelo, CNodo3D *nodo, CEscena *esc) {
+	CSuelo *self = suelo;
+
+	for (int i = 0; i < self->nNodos; i++) {
+		TABLA_CHECK(self->nodos, i, self->nNodos);
+		if (CNodo3D_Clase(&self->nodos[i]) == CLASE_OBJ3D_MALLAD3D) {
+			TABLA_CHECK(self->nodos, i, self->nNodos);
+			CMallaD3D_CalcIlum(Obj3D_Cast(self->nodos[i].obj3D, CLASE_OBJ3D_MALLAD3D), nodo, esc);
+		}
+	}
 }

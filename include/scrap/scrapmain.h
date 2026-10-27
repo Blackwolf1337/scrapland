@@ -266,11 +266,15 @@ void *App_GetHInstance(void);					/* rva 0x20d1a0 */
 void *App_GetHWnd(void);					/* rva 0x20d290 */
 int Timer_GetFreq(int64_t *out);				/* rva 0x276cb0 */
 int Timer_GetQPFreq(int64_t *out);				/* rva 0x276d00 */
-int Video_PlayFile(const char *name, int flags);		/* rva 0x281660 */
-/* AVI capture of DVF_Process (rva 0x27fa20, 0x27f9f0, 0x27f9b0) */
+/* Video_PlayFile: video.h */
+/* AVI capture of DVF_Process (CaptPant.c): Save and Load close the file (Save with a log line), Frame is 0 while
+ * frame is past the frames written */
 byte Avi_Save(const char *name);
 byte Avi_Frame(const char *name, int frame);
 byte Avi_Load(const char *name);
+/* a frame of lx * ly RGB bytes into the AVI file name (made on the first frame, the compressor chosen in a
+ * dialog); without buf nothing, without name the file closed */
+void Avi_Write(const char *name, int lx, int ly, const void *buf, int bufsize);
 void SombrasStencil_Set(byte on);				/* rva 0x267460 */
 CPsaImage *__thiscall CPsaImage_ctor(CPsaImage *self, const char *name, int flags);	/* rva 0x22d120 */
 void __fastcall CPsaImage_dtor(CPsaImage *self);			/* rva 0x22d160 */
@@ -278,6 +282,6 @@ void __thiscall CPsaImage_Draw(CPsaImage *self, float x, float y);	/* rva 0x22d3
 /* the camera of ScrapEngCamera.cpp (rva 0x21c6c0, 0x21c7c0, 0x21c980, 0x21ce80, 0x21ccf0) */
 /* the viewer camera moved by the keys of the second action set (rva 0x218080, this file, still the exe's) */
 void ViewerCamera_Move(CGameCamera *cam);
-void Cmd_ReadFile(const char *name);				/* rva 0x280b10 */
+/* Cmd_ReadFile: cmd.h */
 
 #endif

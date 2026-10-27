@@ -178,27 +178,19 @@ SD_IMPORT(CMapa_ctor, 0x233760)
 SD_IMPORT(CMapa_dtor, 0x233a30)
 SD_IMPORT(CMaterial_ctor, 0x233830)
 SD_IMPORT(CMaterial_dtor, 0x233af0)
-SD_IMPORT(CAnimMat_ctor, 0x257f70)
-SD_IMPORT(CAnimMat_dtor, 0x257fb0)
-SD_IMPORT(CAnimMat_Start, 0x258110)
 
 /* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/escena.h) */
 SD_IMPORT(Box_Transform, 0x239880)
-SD_IMPORT(CSuelo_CalcIlum, 0x261630)
 
 /* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
 
 /* src/game/engine3d/Engine/SueloPortal.c (called from Engine/SueloPortal.cpp, include/scrap/sueloportal.h) */
 
 /* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/mundo.h) */
-SD_IMPORT(BspQ3_Render, 0x2c9d90)
-SD_IMPORT(CSuelo_FreeNodos, 0x261530)
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
 SD_IMPORT(ListaVert_InitD3D, 0x2404f0)
 SD_IMPORT(Stencil_Malla, 0x267530)
-SD_IMPORT(CListaVert_EnvMapUV, 0x2418c0)
-SD_IMPORT(CAnimMat_GetFrame, 0x258060)
 SD_IMPORT(Matrix_Invert, 0x239560)
 SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
 SD_IMPORT(Vec3_ToAngles, 0x239150)
@@ -211,10 +203,8 @@ SD_IMPORT(Matrix_RotationZ, 0x23a2b0)
 /* src/game/engine3d/Engine/UtilD3D.c (called from Engine/util_d3d.cpp, include/scrap/utild3d.h) */
 
 /* src/game/engine3d/Engine/Grafico3D.c (called from Engine/grafico3d.cpp, include/scrap/grafico3d.h) */
-SD_IMPORT(CAnimMat_ctorCopy, 0x257f10)
 
 /* src/game/engine3d/Engine/Portal.c (called from Engine/portal.cpp, include/scrap/portal.h) */
-SD_IMPORT(Debug_Line, 0x27cb80)
 
 /* module agent: Engine/RenderTarget (imports below this line) */
 
@@ -222,10 +212,7 @@ SD_IMPORT(Debug_Line, 0x27cb80)
 /* module agent: Engine/MallaD3D (imports below this line) */
 
 /* module agent: Engine/Suelo (imports below this line) */
-SD_IMPORT(Vec3_Normalize, 0x261580)
 SD_IMPORT(crt_ceil, 0x345010)
-SD_IMPORT(Tabla_ResizeC, 0x261830)
-SD_IMPORT(Tabla_Resize1C, 0x261780)
 SD_IMPORT(CSuelo_DrawDebug, 0x25a260)
 
 /* module agent: Engine/Trails (imports below this line) */
@@ -290,16 +277,10 @@ SD_IMPORT(cScheduledFuncStack_dtor, 0x2056f0)
 SD_IMPORT(Engine3D_Create, 0x22da30)
 SD_IMPORT(Engine3D_Shutdown, 0x22dc00)
 SD_IMPORT(CD3DApp_Render, 0x275120)
-SD_IMPORT(Timer_GetQPFreq, 0x276d00)
-SD_IMPORT(Video_PlayFile, 0x281660)
-SD_IMPORT(Avi_Save, 0x27fa20)
-SD_IMPORT(Avi_Frame, 0x27f9f0)
-SD_IMPORT(Avi_Load, 0x27f9b0)
 SD_IMPORT(CPsaImage_ctor, 0x22d120)
 SD_IMPORT(CPsaImage_dtor, 0x22d160)
 SD_IMPORT(CPsaImage_Draw, 0x22d3c0)
 SD_IMPORT(ViewerCamera_Move, 0x218080)
-SD_IMPORT(Cmd_ReadFile, 0x280b10)
 
 /* module agent: ScrapEng/ScrapEngCamera+Particles+Trails.cpp (imports below this line) */
 SD_IMPORT(Matrix_RotationX, 0x23a270)
@@ -445,7 +426,6 @@ SD_IMPORT(cNetVController_ctor, 0x1186b0)
 /* module agent: Entities/Vehicle/VehicleMotors+MotorsEffects+Traffic.cpp (imports below this line) */
 
 /* module agent: Engine/RenderTarget.cpp (imports below this line) */
-SD_IMPORT(Surface_SaveShot, 0x27fe90)
 
 /* module agent: AI/NodesTraffic+NodesTrafficInDoor.cpp (imports below this line) */
 SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
@@ -561,7 +541,6 @@ SD_IMPORT(crt_strtok, 0x33bbc1)
 /* module agent: Engine/lee_M3D.cpp and bsp_q3.cpp (imports below this line) */
 SD_IMPORT(crt_fileno, 0x3541cc)
 SD_IMPORT(crt_filelength, 0x358bef)
-SD_IMPORT(CListaVert_Optimize, 0x243090)
 SD_IMPORT(M3DTransform_ToMatrix, 0x2d6750)
 SD_IMPORT(M3DTransform_ToMatrixAnim, 0x2d65d0)
 SD_IMPORT(Matrix_ToTransform, 0x2d6c50)
@@ -574,8 +553,6 @@ SD_IMPORT(CMaterial_ScaleColors, 0x237020)
 /* module agent: Engine leftovers 0x265000..0x278000 (imports below this line) */
 SD_IMPORT(Stencil_DrawSegs, 0x265510)
 SD_IMPORT(Stencil_DrawTris, 0x2661b0)
-SD_IMPORT(DXUtil_Timer, 0x276790)
-SD_IMPORT(Tsc_CpuFreq, 0x272f90)
 SD_IMPORT(CD3DApp_DisplayErrorMsg, 0x274040)
 SD_IMPORT(CD3DApp_Initialize3DEnvironment, 0x2747e0)
 
@@ -601,3 +578,5 @@ SD_IMPORT(CGameLensFlare_SetB2c, 0x233020)
 /* module agent: Rest A, game leftovers below 0x1a8000 (imports below this line) */
 
 /* module agent: Rest B, game leftovers from 0x240000 (imports below this line) */
+SD_IMPORT(Matrix_MulCopy, 0x239820)
+SD_IMPORT(Matrix_RotationY, 0x23a290)

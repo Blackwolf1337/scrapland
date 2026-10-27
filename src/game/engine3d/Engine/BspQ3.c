@@ -538,3 +538,9 @@ void BspQ3_Free(void) {
 
 void BspQ3_Crear(void) {
 }
+
+void BspQ3_Render(void) {
+	if (g_BspQ3) {
+		CBspQ3_Render(g_BspQ3);
+	}
+}

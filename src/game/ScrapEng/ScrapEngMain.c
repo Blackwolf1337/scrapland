@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "scrap/cmd.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/filesys.h"
@@ -25,6 +26,7 @@
 #include "scrap/textura.h"
 #include "scrap/utild3d.h"
 #include "scrap/varios.h"
+#include "scrap/video.h"
 #include "scrap/win32.h"
 
 #define g_IsViewer GAME_DATA(int, 0x467b34)

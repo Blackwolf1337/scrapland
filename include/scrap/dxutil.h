@@ -48,8 +48,20 @@ int DXUtil_StringToGUID(const char *s, D3DGuid *g);
 /* the counter of the engine advanced by 1/fps seconds per call (frames of a fixed length), 0: the real counter
  * again; Timer_GetFreq (scrapmain.h) reads it */
 int Timer_FixedStep(float fps);
-/* still the exe's (src/imports.inc): the timer of the framework, cmd 1 start, 2 stop (rva 0x276790) */
-float DXUtil_Timer(int cmd);
+/* the timer of the framework (DXUtil_Timer of the SDK, stdcall), on the performance counter of Timer_GetFreq or
+ * else timeGetTime */
+#define DXUTIL_TIMER_RESET 0
+#define DXUTIL_TIMER_START 1
+#define DXUTIL_TIMER_STOP 2
+#define DXUTIL_TIMER_ADVANCE 3		/* 0.1 s while stopped */
+#define DXUTIL_TIMER_GETABSOLUTETIME 4
+#define DXUTIL_TIMER_GETAPPTIME 5
+#define DXUTIL_TIMER_GETELAPSEDTIME 6
+float __stdcall DXUtil_Timer(int cmd);
+/* the distinct values of timeGetTime seen during ms (busy waiting) */
+int Timer_CountTicks(int ms);
+/* the performance counter ticks during ms, from the start of a timeGetTime tick on (busy waiting) */
+int64_t Timer_MeasureQP(int ms);
 
 /* d3dapp.cpp */
 /* qsort order of the display modes: width, height, then the format (the higher first) */

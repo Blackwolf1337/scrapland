@@ -4,7 +4,11 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/d3d8.h"
+#include "scrap/e3dutil.h"
 #include "scrap/listavert.h"
+#include "scrap/luz.h"
+#include "scrap/material.h"
 
 #define LISTAVERT_ID "LFVF"
 #define LISTAVERT_VER 1
@@ -445,6 +449,13 @@ static byte *ListaVert_Vert(CListaVert *self, uint32_t i, int frmt, int size) {
 	CHECK(self->pVert && i < (uint32_t)self->totVert);
 	CHECK(self->frmt == frmt);
 	return self->pVert + i * size;
+}
+
+byte __thiscall CListaVert_Optimize(CListaVert *self, void *tris, int nTri) {
+	(void)self;
+	(void)tris;
+	(void)nTri;
+	return 0;
 }
 
 byte *__thiscall CListaVert_Tex1(CListaVert *self, uint32_t i) {
@@ -1202,4 +1213,99 @@ byte VertCache_Optimize(uint16_t *tris, int nTri) {
 	E3D_LogDebug(g_FileLog, " prev. hit: %d  miss: %d", hits, misses);
 	E3D_LogDebug(g_FileLog, " opt.  hit: %d  miss: %d", g_VCacheHits, g_VCacheMisses);
 	return 1;
+}
+
+void __thiscall CListaVert_EnvMapUV(CListaVert *self, const matrix_t *world, const matrix_t *view,
+	const CMapa *mapa, int itex) {
+	matrix_t wv, inv;
+
+	CHECK(self->pVert);
+	CHECK(mapa);
+	Matrix_MulCopy(&wv, world, view);
+	CHECK(Matrix_Invert(&inv, view) == 0);
+	float u0 = wv.m[0], u1 = wv.m[4], u2 = wv.m[8];
+	float v0 = wv.m[1], v1 = wv.m[5], v2 = wv.m[9];
+	float offU = mapa->f10[0], offV = mapa->f10[1];
+	float scaleU = mapa->f18[0], scaleV = mapa->f18[1];
+	CHECK(itex >= 0);
+	CHECK(LVERT_TEX2D_SET1 + itex <= LVERT_TEX2D_SET1 + 7);
+	byte *pv = CListaVert_GetField(self, LVERT_POS, 0);
+	byte *pn = CListaVert_GetField(self, LVERT_NORMAL, 0);
+	byte *pt = CListaVert_GetField(self, LVERT_TEX2D_SET1 + itex, 0);
+	int stride = ListaVert_FormatSize(self->frmt);
+	CHECK(pv && pn && pt);
+	if (mapa->bb == 1) {
+		for (int i = 0; i < self->nVert; i++) {
+			vec3_t p, n, r;
+			Vec3_TransformH(&p, (const vec3_t *)pv, world);
+			/* the direction to the camera, normalized inline */
+			float ex = inv.m[12] - p.x;
+			float ey = inv.m[13] - p.y;
+			float ez = inv.m[14] - p.z;
+			float len = (float)__builtin_sqrt((double)(ey * ey + ex * ex + ez * ez));
+			if ((double)len != 0.0) {
+				float k = (float)(1.0 / (double)len);
+				ex = ex * k;
+				ey = ey * k;
+				ez = ez * k;
+			}
+			Vec3_TransformDir0(&n, (const vec3_t *)pn, world);
+			float d = n.y * ey + n.x * ex + n.z * ez;
+			d = d + d;
+			r.x = n.x * d - ex;
+			r.y = n.y * d - ey;
+			r.z = n.z * d - ez;
+			Vec3_TransformDir0(&r, &r, view);
+			((float *)pt)[0] = ((r.x + 1.0f) * 0.5f + offU) * scaleU;
+			((float *)pt)[1] = ((r.y + 1.0f) * 0.5f + offV) * scaleV;
+			pv += stride;
+			pn += stride;
+			pt += stride;
+		}
+		return;
+	}
+	for (int i = 0; i < self->nVert; i++) {
+		const float *nv = (const float *)pn;
+		float x = nv[0], y = nv[1], z = nv[2];
+		((float *)pt)[0] = ((y * u1 + x * u0 + z * u2 + 1.0f) * 0.5f + offU) * scaleU;
+		((float *)pt)[1] = ((1.0f - (y * v1 + x * v0 + z * v2)) * 0.5f + offV) * scaleV;
+		pn += stride;
+		pt += stride;
+	}
+}
+
+static void ListaVert_RampUV(CListaVert *self, int stride, int off, const matrix_t *r) {
+	float a = r->m[2], b = r->m[6], c = r->m[10];
+
+	for (int i = 0; i < self->nVert; i++) {
+		float *v = (float *)(self->pVert + i * stride);
+		v[off / 4 + 1] = 0.5f;
+		v[off / 4] = ((v[4] * b + v[3] * a + v[5] * c) * 0.95f + 1.0f) * 0.5f;
+	}
+}
+
+void __thiscall CListaVert_LightRampUV(CListaVert *self, const matrix_t *world) {
+	matrix_t rx, ry, rot, r;
+	D3DLight light;
+	int on;
+
+	CHECK(self->pVert);
+	on = 0;
+	void *dev = g_MotorDev;
+	if (D3D_METHOD(dev, d3dGetLightEnable_t, D3DDEV_GETLIGHTENABLE)(dev, 0, &on) || !on) {
+		return;
+	}
+	dev = g_MotorDev;
+	D3D_METHOD(dev, d3dGetLight_t, D3DDEV_GETLIGHT)(dev, 0, &light);
+	const vec3_t *d = &light.Direction;
+	double len = __builtin_sqrt((double)(d->z * d->z + d->x * d->x));
+	Matrix_RotationX(&rx, -(float)Game_Atan2((double)d->y, len));
+	Matrix_RotationY(&ry, Game_Atan2F((double)d->x, (double)d->z));
+	rot = *Matrix_MulD3D(&r, &ry, &rx);
+	Matrix_MulCopy(&r, world, &rot);
+	if (self->frmt == VERT_TEX1) {
+		ListaVert_RampUV(self, 0x20, 0x18, &r);
+	} else if (self->frmt == VERT_TEX2) {
+		ListaVert_RampUV(self, 0x28, 0x20, &r);
+	}
 }

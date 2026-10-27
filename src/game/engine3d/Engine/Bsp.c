@@ -19,6 +19,7 @@
 #include "scrap/prof.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
+#include "scrap/suelo.h"
 #include "scrap/sueloportal.h"
 #include "scrap/texto.h"
 #include "scrap/utild3d.h"
@@ -2576,7 +2577,6 @@ intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intpt
 #define g_BspEnlaces GAME_DATA(int, 0x4e73ac)		/* the region links (radiosity code) */
 
 /* exe functions of other files with their prototypes there */
-vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);	/* rva 0x261580 */
 double crt_ceil(double x);				/* rva 0x345010 */
 
 /* brightness and gamma on the light maps, then the vertex colors from them */

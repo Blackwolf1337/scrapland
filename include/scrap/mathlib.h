@@ -98,7 +98,9 @@ matrix_t *Matrix_LoadIdentity(matrix_t *m);			/* src/game/ScrapEng/ScrapEngWorld
 void Matrix_PostScale(matrix_t *m, const vec3_t *s);		/* rva 0x239210 */
 void Matrix_PostRotate(matrix_t *m, const vec3_t *rot);		/* rva 0x23a100, yaw y pitch x roll z */
 matrix_t *Matrix_RotationX(matrix_t *out, float ang);		/* rva 0x23a270, D3DXMatrixRotationX */
+matrix_t *Matrix_RotationY(matrix_t *out, float ang);		/* rva 0x23a290, D3DXMatrixRotationY */
 matrix_t *Matrix_RotationZ(matrix_t *out, float ang);		/* rva 0x23a2b0, D3DXMatrixRotationZ */
+void Matrix_MulCopy(matrix_t *out, const matrix_t *a, const matrix_t *b);	/* rva 0x239820, out = a * b (a temporary) */
 vec3_t *Vec3_ToAngles(vec3_t *out, const vec3_t *dir);		/* rva 0x239150, x pitch, y yaw, z 0 */
 int Matrix_Invert(matrix_t *out, const matrix_t *m);		/* rva 0x239560 (matriz.h), 0 S_OK */
 matrix_t *Matrix_MulD3D(matrix_t *out, const matrix_t *a, const matrix_t *b);	/* rva 0x2391f0, out = a * b */
