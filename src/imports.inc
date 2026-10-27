@@ -176,7 +176,6 @@ SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 /* engine3d: called from Engine/luz.cpp (include/scrap/luz.h) */
 SD_IMPORT(E3D_SetShadowLight, 0x2682d0)
 SD_IMPORT(Prof_Count, 0x273040)
-SD_IMPORT(CSuelo_Trace, 0x26e490)
 /* engine3d: Engine/Material.c (include/scrap/material.h), the parts of the classes outside Material.cpp and the
  * texture manager */
 SD_IMPORT(CMapa_ctor, 0x233760)
@@ -268,7 +267,6 @@ SD_IMPORT(CMallaD3D_CalcSegmentos, 0x2d5350)
 /* module agent: Engine/Suelo (imports below this line) */
 SD_IMPORT(Vec3_Normalize, 0x261580)
 SD_IMPORT(crt_ceil, 0x345010)
-SD_IMPORT(BoxTri, 0x271d60)
 SD_IMPORT(Tabla_ResizeC, 0x261830)
 SD_IMPORT(Tabla_Resize1C, 0x261780)
 SD_IMPORT(Batch_AddMalla, 0x2c81d0)
@@ -316,10 +314,6 @@ SD_IMPORT_STDCALL(D3DX_CreateTextureFromFileInMemoryEx, 60, 0x0062a7)
 SD_IMPORT_STDCALL(D3DX_LoadSurfaceFromSurface, 32, 0x004dbf)
 
 /* src/game/ScrapEng/ScrapEngCollision.c (called from suelo.cpp and checkbbox.cpp, include/scrap/suelo.h) */
-SD_IMPORT(CSuelo_TestSeg, 0x26ed30)
-SD_IMPORT(CSuelo_TraceSegPos, 0x26df80)
-SD_IMPORT(CSuelo_TraceSeg, 0x26f120)
-SD_IMPORT(CSuelo_CheckBBox, 0x26fb10)
 
 /* module agent: World/World.cpp (imports below this line) */
 SD_IMPORT(Elements_ctor, 0x202e10)

@@ -6941,3 +6941,16 @@ SD_HOOK(cWithLifeEntity_IsEMIed, 0x12cf30, 16)			/* vf55, 3 bytes and int3 */
 /* module agent: Engine NodeFX..ModelFX (hooks below this line) */
 
 /* module agent: Engine leftovers 0x265000..0x278000 (hooks below this line) */
+SD_HOOK(CSuelo_TraceSegPos, 0x26df80, 1281)
+SD_HOOK(CSuelo_Trace, 0x26e490, 2200)
+SD_HOOK(CSuelo_TestSeg, 0x26ed30, 1004)
+SD_HOOK(CSuelo_TraceSeg, 0x26f120, 1332)
+SD_HOOK(Suelo_PointInTriIn, 0x26f660, 478)
+SD_HOOK(Alturas_CellStep, 0x26f840, 286)
+SD_HOOK(Alturas_TraceStep, 0x26f9a0, 324)
+SD_HOOK(CSuelo_CheckBBox, 0x26fb10, 6740)
+SD_HOOK(CSuelo_CollideOBB, 0x271590, 1381)
+SD_HOOK(Box_ClipTri, 0x271b00, 604)
+SD_HOOK(BoxTri, 0x271d60, 1623)
+SD_HOOK(Poly_ClipPlane, 0x2723e0, 2436)
+SD_HOOK(Box_PointDepth, 0x272d70, 542)

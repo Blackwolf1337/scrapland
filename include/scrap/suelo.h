@@ -91,8 +91,8 @@ SD_SIZE(CAlturas, 0x34b4);
 typedef struct CSuelo {
 	void *vftable;			/* 0x00 */
 	uint32_t clase;			/* 0x04 CLASE_OBJ3D_SUELO */
-	int pad_8[3];			/* 0x08 */
-	int cache[3];			/* 0x14 cleared whenever the meshes change */
+	int traceStats[3];		/* 0x08 CSuelo_Trace: triangles tested, cache hits, cache misses */
+	int cache[3];			/* 0x14 a CSueloHit, the last hit of CSuelo_Trace; cleared whenever the meshes change */
 	int nx;				/* 0x20 grid of the floor nodes */
 	int nz;				/* 0x24 */
 	int nNodos;			/* 0x28 CTabla of CNodo3D (0xfc bytes each) */
@@ -107,6 +107,16 @@ SD_OFFSET(CSuelo, Extens, 0x30);
 SD_OFFSET(CSuelo, alturas, 0x70);
 SD_SIZE(CSuelo, 0x3524);
 
+/* the quads of cell x z of the grid, NULL outside it (the accessor of tabla.h inlined) */
+static inline CCollideQuad *Alturas_Cell(CAlturas *alt, uint32_t x, uint32_t z) {
+	if (x >= (uint32_t)alt->nx || z >= (uint32_t)alt->nz) {
+		return NULL;
+	}
+	uint32_t i = alt->nx * z + x;
+	TABLA_CHECK(alt->cuads, i, alt->nCuads);
+	return &alt->cuads[i];
+}
+
 /* rva 0x261530: the floor nodes freed (with the shadow maps they are not needed) */
 void __fastcall CSuelo_FreeNodos(CSuelo *self);
 
@@ -118,6 +128,17 @@ void __fastcall CSuelo_FreeNodos(CSuelo *self);
 #define g_CollisionTests GAME_DATA(uint32_t, 0x4af7ec)
 #define g_CollisionTestsTotal GAME_DATA(uint32_t, 0x4af7f0)
 #define g_CollisionQuadCount GAME_DATA(int, 0x4af7f4)
+
+/* the triangle not tested yet in this query: marked as tested (counted in g_CollisionTests) */
+static inline int CCollideTri_Mark(CCollideTri *tri) {
+	if (tri->ncomp == g_CollisionNComp) {
+		return 0;
+	}
+	tri->ncomp = g_CollisionNComp;
+	tri->flags |= TRI_ALT_TESTED;
+	g_CollisionTests++;
+	return 1;
+}
 
 /* engine3d/engine/tabla.h: count, sizeof(T) and the elements */
 void Tabla_Write2(CArchIO *f, CTabla *t);
@@ -226,6 +247,13 @@ void Suelo_DrawBox(const vec3_t *c, float r, uint32_t color);
 /* the collision debug drawing of the floor of gMundo */
 void Suelo_DrawDebug(void);
 
+/* (p - a) x (b - a): the side of p to the edge a b, in the operation order of suelo.cpp and checkline3d.cpp */
+static inline vec3_t Suelo_EdgeCross(const vec3_t *p, const vec3_t *a, const vec3_t *b) {
+	float dx = p->x - a->x, dy = p->y - a->y, dz = p->z - a->z;
+	float ex = b->x - a->x, ey = b->y - a->y, ez = b->z - a->z;
+	return (vec3_t){ dy * ez - dz * ey, dz * ex - dx * ez, dx * ey - dy * ex };
+}
+
 /* point p in the triangle a b c (on the side of its normal), also on its edges */
 byte Suelo_PointInTri(const vec3_t *p, const vec3_t *a, const vec3_t *b, const vec3_t *c);
 /* distance of p to the segment a b, the nearest point into out (may be NULL) */
@@ -269,6 +297,28 @@ byte __thiscall CSuelo_TraceSeg(CSuelo *self, const vec3_t *a, const vec3_t *b, 
 	int flags);
 /* rva 0x26fb10: 1 if a triangle is in the box */
 byte __thiscall CSuelo_CheckBBox(CSuelo *self, CColisBBox *colis);
+
+/* checkbbox.cpp */
+/* the triangle (its verts in v) touches the box */
+byte BoxTri(const vec3_t *bmin, const vec3_t *bmax, const CCollideTri *tri, const vec3_t *v);
+/* the convex polygon of count points clipped to the side n.p >= d (a little more, by the collision epsilon) */
+void Poly_ClipPlane(const vec3_t *n, float d, int *count, vec3_t *pts);
+/* the triangle tri clipped by the box of matrix m and half sizes half: 1 and the center of what is left in it */
+int Box_ClipTri(const matrix_t *m, const float *half, const vec3_t *tri, vec3_t *center);
+/* how deep p is in that box (the smallest distance to its six sides, < 0 outside) */
+float Box_PointDepth(const matrix_t *m, const float *half, const vec3_t *p);
+/* the box of matrix m and half sizes half against the floor (drawn as a debug box): the triangle nearest to its
+ * center, outPos the center of its part in the box and outN its normal; without outputs the first one ends it */
+byte __thiscall CSuelo_CollideOBB(CSuelo *self, const matrix_t *m, const vec3_t *half, vec3_t *outPos, vec3_t *outN);
+
+/* checkline3d.cpp */
+/* the cell walk of a segment from a to b through the grid: the cell x z it leaves through first (the next one into x
+ * and z, the parameter of the exit into t); 0 in the cell of b (t 1) */
+byte Alturas_CellStep(CAlturas *alt, int *x, int *z, const vec3_t *a, const vec3_t *b, float *t);
+/* the same for CSuelo_Trace on its walk state (g_TraceCell) */
+byte Alturas_TraceStep(CAlturas *alt);
+/* p in the triangle a b c (on the side of its normal), also on its edges */
+byte Suelo_PointInTriIn(const vec3_t *p, const vec3_t *a, const vec3_t *b, const vec3_t *c);
 
 /* the position where a sphere of radius r moving from a to b first touches the triangle */
 byte Suelo_SweepTri(const vec3_t *a, const vec3_t *b, float r, const CCollideTri *tri, const CCollideMesh *mesh,
