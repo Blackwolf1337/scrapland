@@ -243,7 +243,9 @@ void Steam_RunCallbacks(void);					/* rva 0x1a66e0 */
 void Font_SetLanguage(const char *lang);			/* rva 0x21b1e0 */
 void *__thiscall CPsaImage_ctorTex(void *self, const char *name, int a, int b);	/* rva 0x22d0c0 */
 void *__thiscall CPsaImage_ctorFlags(void *self, const char *name, int a, int b, int flags);	/* rva 0x22d0f0 */
-void __thiscall CPsaImage_DrawPoly(void *self, const float *pos, const float *uv, int a, int n, int b);	/* rva 0x22d520 */
+/* a polygon of n corners (pos, uv and colors optional, NULL for the image ones); mode 6 */
+void __thiscall CPsaImage_DrawPoly(void *self, const float *pos, const float *uv, const uint32_t *colors, int n,
+	int mode);	/* rva 0x22d520 */
 void D3DApp_OnActivate(void);					/* rva 0x2325e0 */
 intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);	/* rva 0x233030 */
 void App_SetExceptionFilter(byte on);				/* rva 0x2333b0 */

@@ -8,6 +8,7 @@
 
 #include "scrap/app.h"
 #include "scrap/entity.h"
+#include "scrap/input.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapmain.h"
 
@@ -784,5 +785,74 @@ void __fastcall cNewsPanel_Update(cNewsPanel *self);
 void __thiscall cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e);
 /* the news: the head opening between the background and the logo */
 void __thiscall cNewsPanel_DrawNews(cNewsPanel *self, float dt);
+
+/* ---- RadarScorer.cpp ---- */
+
+#define CRADARSCORER_VFTABLE 0x3c33c4
+#define RADAR_FLOORS 16
+
+/* the radar of the ship of the camera, in the menu (MenuMap) the scrolling map of the floors (0x94c bytes) */
+typedef struct cRadarScorer {
+	cScorerItem base;		/* 0x000 */
+	float halfW, halfH;		/* 0x0ac the half size of the radar: 55 or 200, 100 in the menu */
+	float halfW2, halfH2;		/* 0x0b4 56.25 or 200, 100 */
+	CPsaImage *radar;		/* 0x0bc */
+	int radarIndex;			/* 0x0c0 */
+	CPsaImage *mask;		/* 0x0c4 */
+	int maskIndex;			/* 0x0c8 */
+	CPsaImage *icons;		/* 0x0cc */
+	int iconAc;			/* 0x0d0 the icon of IconIndex */
+	int iconIndex[(0x8c4 - 0xd4) / 4];	/* 0x0d4 */
+	CPsaImage *noise;		/* 0x8c4 */
+	CPsaImage *cone;		/* 0x8c8 white, the view cones */
+	int floor;			/* 0x8cc the floor of the ship */
+	int prevFloor;			/* 0x8d0 */
+	float floorFade;		/* 0x8d4 0..1 since the floor changed */
+	int outAlphaFactor;		/* 0x8d8 100 */
+	CPsaImage *floorMaps[RADAR_FLOORS];	/* 0x8dc FileNameMap2D of each floor */
+	float map2dScale;		/* 0x91c 512 */
+	float map2dScaleFactor;		/* 0x920 0.01 */
+	float mapW, mapH;		/* 0x924 the map: DM_2dMap0 to DM_2dMap1, else the box of the world */
+	float mapX0, mapZ0;		/* 0x92c */
+	byte menuMap;			/* 0x934 */
+	byte pad_935[3];
+	float menuMinScale;		/* 0x938 512 */
+	float menuMaxScale;		/* 0x93c 512 */
+	float menuScaleSpeed;		/* 0x940 10 */
+	float scrollX, scrollY;		/* 0x944 of the menu map */
+} cRadarScorer;
+SD_SIZE(cRadarScorer, 0x94c);
+SD_OFFSET(cRadarScorer, noise, 0x8c4);
+SD_OFFSET(cRadarScorer, map2dScale, 0x91c);
+
+/* a floor of the world (0x18c bytes from world + 0x2f4, their count at 0x2f0): its lowest height first */
+#define World_NumFloors() (*(int *)((byte *)g_pWorld + 0x2f0))
+#define World_FloorHeight(i) (*(float *)((byte *)g_pWorld + 0x2f4 + (i) * 0x18c))
+/* the view of the radar: the turn and center of the map, its scale */
+#define g_RadarAngle GAME_DATA(float, 0x45fe84)
+#define g_RadarCenterX GAME_DATA(float, 0x45fe88)
+#define g_RadarCenterZ GAME_DATA(float, 0x45fe8c)
+#define g_RadarScale GAME_DATA(float, 0x45fe80)
+#define g_FileNameMap2D GAME_DATA(char *, 0x45fe60)	/* FileNameMap2D, a printf format of the floor */
+
+cRadarScorer *__fastcall cRadarScorer_ctor(cRadarScorer *self);
+void __fastcall cRadarScorer_dtor(cRadarScorer *self);
+/* the Global/Table.h lookups of the input actions compiled here */
+cInputAction *__thiscall InputActionTable_At(void *table, uint32_t i);
+cActionSet *__thiscall ActionSetTable_At(void *table, uint32_t i);
+cRadarScorer *__thiscall cRadarScorer_Delete(cRadarScorer *self, byte flags);
+/* the floor of height y; the fade starts when it changed */
+void __thiscall cRadarScorer_UpdateFloor(cRadarScorer *self, float y);
+/* the radar and the entities on it (rva 0x16d570 and its helpers 0x16ca80, 0x16d090, not decompiled) */
+void __thiscall cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity *cam);
+/* a view cone at pos to the angle, spread wide, range long, mode 1..3 the color */
+void __thiscall cRadarScorer_DrawCone(cRadarScorer *self, const vec3_t *pos, float ang, float spread, float range,
+	int mode);
+/* y is on the floor shown before */
+byte __thiscall cRadarScorer_OnPrevFloor(cRadarScorer *self, float y);
+/* y below the floor (-1), on it (0) or above it (1) */
+int __thiscall cRadarScorer_FloorSide(cRadarScorer *self, float y);
+int __thiscall cRadarScorer_Var(cRadarScorer *self, const char *name, byte set, char **s, double *d, int *i);
+void __thiscall cRadarScorer_Draw(cRadarScorer *self, int player);
 
 #endif
