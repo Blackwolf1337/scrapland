@@ -3359,3 +3359,11 @@ SD_HOOK(cObjElementFXLaser_Reset, 0x201d40, 52)
 SD_HOOK(cObjElementFXSwarmMissile_Reset, 0x201d80, 57)
 SD_HOOK(cObjElementFXTesla_Reset, 0x201dc0, 196)
 SD_HOOK(cObjElementFXInfernoMissile_SetFlare, 0x201e90, 16)
+
+/* module agent: Entities/EmbeddedFX/EmbeddedFXMisc.cpp (hooks below this line) */
+
+/* module agent: Entities/Vehicle/WeaponManager+Weaps/ATPC+Devastator.cpp (hooks below this line) */
+
+/* module agent: Entities/Vehicle/Weaps/Inferno+Laser+Swarm.cpp (hooks below this line) */
+
+/* module agent: Entities/Entity+Game/Doors.cpp (hooks below this line) */

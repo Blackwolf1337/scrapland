@@ -651,3 +651,11 @@ SD_IMPORT(CGameLensFlare_SetIntensity, 0x232f80)
 SD_IMPORT(CGameLensFlare_SetF30, 0x232fa0)
 SD_IMPORT(CGameLensFlare_SetPos, 0x232fc0)
 SD_IMPORT(CGameLensFlare_SetI1c, 0x233010)
+
+/* module agent: Entities/EmbeddedFX/EmbeddedFXMisc.cpp (imports below this line) */
+
+/* module agent: Entities/Vehicle/WeaponManager+Weaps/ATPC+Devastator.cpp (imports below this line) */
+
+/* module agent: Entities/Vehicle/Weaps/Inferno+Laser+Swarm.cpp (imports below this line) */
+
+/* module agent: Entities/Entity+Game/Doors.cpp (imports below this line) */
