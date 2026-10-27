@@ -31,7 +31,9 @@ SD_SIZE(D3DModeInfo, 0x14);
 #define MAX_D3DDEVICES 5
 
 typedef struct D3DDeviceInfo {
-	byte pad_00[0xdc];		/* the type, the caps and the description */
+	uint32_t DeviceType;		/* 0x00 1 HAL, 2 REF */
+	uint32_t d3dCaps[0x35];		/* 0x04 D3DCAPS8: Caps2 at word 3, DevCaps at word 7 */
+	const char *strDesc;		/* 0xd8 "HAL", "REF" (strings of the exe) */
 	int bCanDoWindowed;		/* 0xdc */
 	int dwNumModes;			/* 0xe0 */
 	D3DModeInfo modes[MAX_D3DMODES];	/* 0xe4 */
@@ -43,7 +45,9 @@ SD_OFFSET(D3DDeviceInfo, dwCurrentMode, 0xc9c);
 SD_SIZE(D3DDeviceInfo, 0xca8);
 
 typedef struct D3DAdapterInfo {
-	byte d3dAdapterIdentifier[0x42c];	/* 0x0000 */
+	char Driver[0x200];			/* 0x0000 D3DADAPTER_IDENTIFIER8 */
+	char Description[0x200];		/* 0x0200 */
+	byte identRest[0x2c];			/* 0x0400 */
 	uint32_t desktopMode[4];		/* 0x042c d3ddmDesktop: width, height, refresh rate, format */
 	uint32_t dwNumDevices;			/* 0x043c */
 	D3DDeviceInfo devices[MAX_D3DDEVICES];	/* 0x0440 */

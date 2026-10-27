@@ -1,7 +1,6 @@
 /*
  * The DX8 SDK framework inside the engine3d: the helpers of dxutil.cpp (src/game/engine3d/Engine/DXUtil.c) and the
- * small parts of CD3DApplication of d3dapp.cpp (g_Motor, D3DApp.c; more of it in e3dutil.h and scrapmain.h). The
- * enumeration, the creation, the frame and the device dialog of CD3DApplication are still the exe's.
+ * CD3DApplication of d3dapp.cpp (g_Motor, D3DApp.c; more of it in e3dutil.h and scrapmain.h).
  */
 #ifndef SCRAP_DXUTIL_H
 #define SCRAP_DXUTIL_H
@@ -89,8 +88,19 @@ int __thiscall CD3DApp_ToggleFullscreen(byte *self);
 int __thiscall CD3DApp_UserSelectNewDevice(byte *self);
 /* CD3DApp_Cleanup, CD3DApp_ResetDevice and CD3DApp_Reset: scrapmain.h */
 
-/* still the exe's (src/imports.inc): the error message box (type 1: then quit), its hr; the device created */
+/* the error text of hr reported (type 1: fatal; else also fatal while fullscreen, then as a warning with the
+ * note about the REF device), hr */
 int __thiscall CD3DApp_DisplayErrorMsg(byte *self, int hr, int type);
+/* the device of the current adapter, device and mode created and its objects made; a failed HAL falls back to the
+ * REF device */
 int __thiscall CD3DApp_Initialize3DEnvironment(byte *self);
+/* Direct3D, the device list, the window (if there is none yet) and the environment; the error shown */
+int __thiscall CD3DApp_Create(byte *self, void *inst);
+int __fastcall CD3DApp_BuildDeviceList(byte *self);
+intptr_t __thiscall CD3DApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintptr_t w, intptr_t l);
+/* the message loop with the frames, the wParam of WM_QUIT */
+int __thiscall CD3DApp_Run(byte *self);
+/* the device dialog (DialogBoxParam with the application) */
+intptr_t __stdcall D3DApp_SelectDeviceProc(void *dlg, uint32_t msg, uintptr_t w, intptr_t l);
 
 #endif

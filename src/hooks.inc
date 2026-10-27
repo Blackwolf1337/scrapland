@@ -7612,6 +7612,14 @@ SD_HOOK(cObjElementFXFadeOutTrail_Update, 0x1da950, 125)
 /* module agent: Rest A, game leftovers below 0x1a8000 (hooks below this line) */
 
 /* module agent: Rest B, game leftovers from 0x240000 (hooks below this line) */
+SD_HOOK(CD3DApp_BuildDeviceList, 0x273470, 2332)
+SD_HOOK(CD3DApp_Create, 0x273e20, 528)
+SD_HOOK(CD3DApp_DisplayErrorMsg, 0x274040, 817)
+SD_HOOK(CD3DApp_Initialize3DEnvironment, 0x2747e0, 881)
+SD_HOOK(CD3DApp_MsgProc, 0x274b60, 1160)
+SD_HOOK(CD3DApp_Render, 0x275120, 787)
+SD_HOOK(CD3DApp_Run, 0x275570, 955)
+SD_HOOK(D3DApp_SelectDeviceProc, 0x275960, 1835)
 SD_HOOK(Collide_TriVerts, 0x258fc0, 1267)
 SD_HOOK(CCollideMesh_DrawDebug, 0x25a030, 550)
 SD_HOOK(CModelo_Render, 0x253610, 3241)

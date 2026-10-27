@@ -275,7 +275,6 @@ SD_IMPORT(cScheduledFuncStack_dtor, 0x2056f0)
 /* module agent: ScrapEng/ScrapEngMain.cpp (imports below this line) */
 SD_IMPORT(Engine3D_Create, 0x22da30)
 SD_IMPORT(Engine3D_Shutdown, 0x22dc00)
-SD_IMPORT(CD3DApp_Render, 0x275120)
 SD_IMPORT(CPsaImage_ctor, 0x22d120)
 SD_IMPORT(CPsaImage_dtor, 0x22d160)
 SD_IMPORT(CPsaImage_Draw, 0x22d3c0)
@@ -552,8 +551,6 @@ SD_IMPORT(CMaterial_ScaleColors, 0x237020)
 /* module agent: Engine leftovers 0x265000..0x278000 (imports below this line) */
 SD_IMPORT(Stencil_DrawSegs, 0x265510)
 SD_IMPORT(Stencil_DrawTris, 0x2661b0)
-SD_IMPORT(CD3DApp_DisplayErrorMsg, 0x274040)
-SD_IMPORT(CD3DApp_Initialize3DEnvironment, 0x2747e0)
 
 /* module agent: Engine leftovers 0x2c9d90..0x2d6010 (imports below this line) */
 SD_IMPORT(crt_open, 0x359882)
