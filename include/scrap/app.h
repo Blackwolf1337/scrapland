@@ -224,6 +224,9 @@ void Input_OnChar(int c);					/* rva 0x13c900 */
 void Scorer_Done(void);						/* rva 0x170ad0 */
 void Scorer_Init(void);						/* rva 0x171120 */
 void Menu_DrawFrame(void *img, int arg, float x, float y, float w, float h);	/* rva 0x184ef0 */
+/* a bar of frac (0..1) of the frame rectangle u0..v1 over the rectangle bu0..bv1, colors main and black */
+void Menu_DrawBar(void *img, float x, float y, float frac, int mode, float f, float u0, float v0, float u1, float v1,
+	float bu0, float bv0, float bu1, float bv1, uint32_t color, uint32_t black);	/* rva 0x1847f0 */
 byte Net_ClientFrame(void);					/* rva 0x18aa50 */
 byte Net_ClientReady(void);					/* rva 0x18ae50 */
 byte Net_ServerFrame(void);					/* rva 0x18b330 */
@@ -240,7 +243,9 @@ void Steam_RunCallbacks(void);					/* rva 0x1a66e0 */
 void Font_SetLanguage(const char *lang);			/* rva 0x21b1e0 */
 void *__thiscall CPsaImage_ctorTex(void *self, const char *name, int a, int b);	/* rva 0x22d0c0 */
 void *__thiscall CPsaImage_ctorFlags(void *self, const char *name, int a, int b, int flags);	/* rva 0x22d0f0 */
-void __thiscall CPsaImage_DrawPoly(void *self, const float *pos, const float *uv, int a, int n, int b);	/* rva 0x22d520 */
+/* a polygon of n corners (pos, uv and colors optional, NULL for the image ones); mode 6 */
+void __thiscall CPsaImage_DrawPoly(void *self, const float *pos, const float *uv, const uint32_t *colors, int n,
+	int mode);	/* rva 0x22d520 */
 void D3DApp_OnActivate(void);					/* rva 0x2325e0 */
 intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);	/* rva 0x233030 */
 void App_SetExceptionFilter(byte on);				/* rva 0x2333b0 */

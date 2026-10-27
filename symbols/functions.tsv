@@ -4464,136 +4464,137 @@ rva	size	source	callconv	name	signature
 0015e350	95	USER_DEFINED	__cdecl	Vec2_Rotate	float * __cdecl(float *out, float *in, float ang)
 0015e3b0	277	USER_DEFINED	__cdecl	Vec3_Rotate	float * __cdecl(float *out, float *in, float *rot)
 0015e4d0	178	USER_DEFINED	__cdecl	Vec3_RotateXY	float * __cdecl(float *out, float *in, float ax, float ay)
-0015e590	192	DEFAULT	unknown	FUN_0055e590	
-0015e650	153	DEFAULT	unknown	FUN_0055e650	
-0015e6f0	144	DEFAULT	unknown	FUN_0055e6f0	
-0015e780	144	DEFAULT	unknown	FUN_0055e780	
-0015e810	155	DEFAULT	unknown	FUN_0055e810	
-0015e8b0	39	DEFAULT	unknown	FUN_0055e8b0	
-0015e8e0	49	DEFAULT	unknown	FUN_0055e8e0	
-0015e920	75	DEFAULT	unknown	FUN_0055e920	
-0015e970	75	DEFAULT	unknown	FUN_0055e970	
-0015e9c0	39	DEFAULT	unknown	FUN_0055e9c0	
-0015e9f0	68	ANALYSIS	__thiscall	cAbstractTextScorer::vf03	undefined __thiscall(void)
-0015ea40	78	ANALYSIS	__thiscall	cCreditsScorer::vf03	undefined __thiscall(void)
-0015ea90	104	ANALYSIS	__thiscall	cHintScorer::vf03	undefined __thiscall(void)
-0015eb00	104	ANALYSIS	__thiscall	cLabelScorer::vf03	undefined __thiscall(void)
-0015eb70	68	ANALYSIS	__thiscall	cMsgScorer::vf03	undefined __thiscall(void)
-0015ebc0	569	DEFAULT	unknown	FUN_0055ebc0	
-0015ee00	3	ANALYSIS	__thiscall	cScorerItem::vf01	undefined __thiscall(void)
-0015ee10	1213	ANALYSIS	__thiscall	cAbstractTextScorer::vf02	undefined __thiscall(void)
-0015f2d0	508	ANALYSIS	__thiscall	cCreditsScorer::vf02	undefined __thiscall(void)
-0015f4d0	837	ANALYSIS	__thiscall	cHintScorer::vf02	undefined __thiscall(void)
-0015f820	837	ANALYSIS	__thiscall	cLabelScorer::vf02	undefined __thiscall(void)
-0015fb70	9	ANALYSIS	__thiscall	cMsgScorer::vf02	undefined __thiscall(void)
-0015fb80	515	ANALYSIS	__thiscall	cCreditsScorer::vf00	undefined __thiscall(void)
-0015fd90	874	ANALYSIS	__thiscall	cHintScorer::vf00	undefined __thiscall(void)
-00160100	438	ANALYSIS	__thiscall	cLabelScorer::vf00	undefined __thiscall(void)
-001602d0	174	ANALYSIS	__thiscall	cMsgScorer::vf00	undefined __thiscall(void)
-00160380	39	USER_DEFINED	unknown	Scorer_SetLabelText	undefined(void)
-001603b0	78	USER_DEFINED	unknown	Scorer_SetMsgText	undefined(void)
-00160400	197	DEFAULT	unknown	FUN_00560400	
-001604e0	44	ANALYSIS	__thiscall	cBarScorer::vf03	undefined __thiscall(void)
-00160510	1764	ANALYSIS	__thiscall	cBarScorer::vf02	undefined __thiscall(void)
-00160c00	704	ANALYSIS	__thiscall	cBarScorer::vf00	undefined __thiscall(void)
-00160ec0	573	DEFAULT	unknown	FUN_00560ec0	
-00161100	120	DEFAULT	unknown	FUN_00561100	
-00161180	34	DEFAULT	unknown	FUN_00561180	
-001611b0	258	DEFAULT	unknown	FUN_005611b0	
-001612c0	25	DEFAULT	unknown	FUN_005612c0	
-001612e0	155	DEFAULT	unknown	FUN_005612e0	
-00161380	38	ANALYSIS	__thiscall	cButtonScorer::vf03	undefined __thiscall(void)
-001613b0	120	DEFAULT	unknown	FUN_005613b0	
-00161430	34	DEFAULT	unknown	FUN_00561430	
-00161460	223	DEFAULT	unknown	FUN_00561460	
-00161540	472	DEFAULT	unknown	FUN_00561540	
-00161720	165	DEFAULT	unknown	FUN_00561720	
-001617d0	4561	ANALYSIS	__thiscall	cButtonScorer::vf02	undefined __thiscall(void)
-001629b0	4223	ANALYSIS	__thiscall	cButtonScorer::vf00	undefined __thiscall(void)
-00163a50	1339	DEFAULT	unknown	FUN_00563a50	
-00163f90	209	DEFAULT	unknown	FUN_00563f90	
-00164070	47	DEFAULT	unknown	FUN_00564070	
-001640a0	76	ANALYSIS	__thiscall	cCannonScorer::vf03	undefined __thiscall(void)
-001640f0	679	DEFAULT	unknown	FUN_005640f0	
-001643a0	321	DEFAULT	unknown	FUN_005643a0	
-001644f0	469	DEFAULT	unknown	FUN_005644f0	
-001646d0	522	ANALYSIS	__thiscall	cCannonScorer::vf02	undefined __thiscall(void)
-001648e0	264	ANALYSIS	__thiscall	cCannonScorer::vf00	undefined __thiscall(void)
-001649f0	324	ANALYSIS	__thiscall	cCannonScorer::vf04	undefined __thiscall(void)
-00164b40	196	DEFAULT	unknown	FUN_00564b40	
-00164c20	47	DEFAULT	unknown	FUN_00564c20	
-00164c50	76	ANALYSIS	__thiscall	cChatScorer::vf03	undefined __thiscall(void)
-00164ca0	75	USER_DEFINED	unknown	Scorer_AddChatMsg	undefined(void)
-00164cf0	103	ANALYSIS	__thiscall	cChatScorer::vf02	undefined __thiscall(void)
-00164d60	304	ANALYSIS	__thiscall	cChatScorer::vf00	undefined __thiscall(void)
-00164e90	3	DEFAULT	unknown	FUN_00564e90	
-00164ea0	217	DEFAULT	unknown	FUN_00564ea0	
-00164f80	106	DEFAULT	unknown	FUN_00564f80	
-00164ff0	38	ANALYSIS	__thiscall	cCircuitScorer::vf03	undefined __thiscall(void)
-00165020	1102	DEFAULT	unknown	FUN_00565020	
-00165470	155	DEFAULT	unknown	FUN_00565470	
-00165510	230	DEFAULT	unknown	FUN_00565510	
-00165600	708	ANALYSIS	__thiscall	cCircuitScorer::vf02	undefined __thiscall(void)
-001658d0	1123	ANALYSIS	__thiscall	cCircuitScorer::vf00	undefined __thiscall(void)
-00165d40	267	DEFAULT	unknown	FUN_00565d40	
-00165e50	75	DEFAULT	unknown	FUN_00565e50	
-00165ea0	104	ANALYSIS	__thiscall	cCopMeterScorer::vf03	undefined __thiscall(void)
-00165f10	1536	ANALYSIS	__thiscall	cCopMeterScorer::vf02	undefined __thiscall(void)
-00166510	1411	ANALYSIS	__thiscall	cCopMeterScorer::vf00	undefined __thiscall(void)
-00166aa0	213	DEFAULT	unknown	FUN_00566aa0	
-00166b80	86	DEFAULT	unknown	FUN_00566b80	
-00166be0	115	ANALYSIS	__thiscall	cHangarShipScorer::vf03	undefined __thiscall(void)
-00166c60	1041	ANALYSIS	__thiscall	cHangarShipScorer::vf02	undefined __thiscall(void)
-00167080	698	ANALYSIS	__thiscall	cHangarShipScorer::vf00	undefined __thiscall(void)
-00167340	211	DEFAULT	unknown	FUN_00567340	
-00167420	57	DEFAULT	unknown	FUN_00567420	
-00167460	86	ANALYSIS	__thiscall	cHeadScorer::vf03	undefined __thiscall(void)
-001674c0	331	ANALYSIS	__thiscall	cHeadScorer::vf02	undefined __thiscall(void)
-00167610	642	ANALYSIS	__thiscall	cHeadScorer::vf00	undefined __thiscall(void)
-001678a0	178	ANALYSIS	__thiscall	cHeadScorer::vf05	undefined __thiscall(void)
-00167960	195	ANALYSIS	__thiscall	cHeadScorer::vf04	undefined __thiscall(void)
-00167a30	191	DEFAULT	unknown	FUN_00567a30	
-00167af0	58	DEFAULT	unknown	FUN_00567af0	
-00167b30	87	ANALYSIS	__thiscall	cMissionScorer::vf03	undefined __thiscall(void)
-00167b90	2182	ANALYSIS	__thiscall	cMissionScorer::vf02	undefined __thiscall(void)
-00168420	1067	ANALYSIS	__thiscall	cMissionScorer::vf00	undefined __thiscall(void)
-00168850	719	DEFAULT	unknown	FUN_00568850	
-00168b20	271	DEFAULT	unknown	FUN_00568b20	
-00168c30	38	ANALYSIS	__thiscall	cMonitorScorer::vf03	undefined __thiscall(void)
-00168c60	5943	DEFAULT	unknown	FUN_00568c60	
-0016a3a0	46	ANALYSIS	__thiscall	cMonitorScorer::vf01	undefined __thiscall(void)
-0016a3d0	3457	ANALYSIS	__thiscall	cMonitorScorer::vf02	undefined __thiscall(void)
-0016b160	368	ANALYSIS	__thiscall	cMonitorScorer::vf00	undefined __thiscall(void)
-0016b2d0	241	ANALYSIS	__thiscall	cMonitorScorer::vf05	undefined __thiscall(void)
-0016b3d0	52	USER_DEFINED	unknown	Scorer_SetHeadMonitor	undefined(void)
-0016b410	201	ANALYSIS	__thiscall	cMonitorScorer::vf04	undefined __thiscall(void)
-0016b4e0	89	DEFAULT	unknown	FUN_0056b4e0	
-0016b540	146	DEFAULT	unknown	FUN_0056b540	
-0016b5e0	47	DEFAULT	unknown	FUN_0056b5e0	
-0016b610	76	ANALYSIS	__thiscall	cNetStatsScorer::vf03	undefined __thiscall(void)
-0016b660	9	ANALYSIS	__thiscall	cNetStatsScorer::vf02	undefined __thiscall(void)
-0016b670	984	ANALYSIS	__thiscall	cNetStatsScorer::vf00	undefined __thiscall(void)
-0016ba50	174	DEFAULT	unknown	FUN_0056ba50	
-0016bb00	105	DEFAULT	unknown	FUN_0056bb00	
-0016bb70	67	DEFAULT	unknown	FUN_0056bb70	
-0016bbc0	176	DEFAULT	unknown	FUN_0056bbc0	
-0016bc70	421	DEFAULT	unknown	FUN_0056bc70	
-0016be20	500	DEFAULT	unknown	FUN_0056be20	
-0016c020	1223	DEFAULT	unknown	FUN_0056c020	
-0016c4f0	816	DEFAULT	unknown	FUN_0056c4f0	
-0016c820	237	DEFAULT	unknown	FUN_0056c820	
-0016c910	27	DEFAULT	unknown	FUN_0056c910	
-0016c930	28	DEFAULT	unknown	FUN_0056c930	
-0016c950	38	ANALYSIS	__thiscall	cRadarScorer::vf03	undefined __thiscall(void)
-0016c980	247	DEFAULT	unknown	FUN_0056c980	
+0015e590	192	USER_DEFINED	__fastcall	cAbstractTextScorer_ctor	void * __fastcall(void * self)
+0015e650	153	USER_DEFINED	__fastcall	cCreditsScorer_ctor	void * __fastcall(void * self)
+0015e6f0	144	USER_DEFINED	__fastcall	cHintScorer_ctor	void * __fastcall(void * self)
+0015e780	144	USER_DEFINED	__fastcall	cLabelScorer_ctor	void * __fastcall(void * self)
+0015e810	155	USER_DEFINED	__fastcall	cMsgScorer_ctor	void * __fastcall(void * self)
+0015e8b0	39	USER_DEFINED	__fastcall	cAbstractTextScorer_dtor	void __fastcall(void * self)
+0015e8e0	49	USER_DEFINED	__fastcall	cCreditsScorer_dtor	void __fastcall(void * self)
+0015e920	75	USER_DEFINED	__fastcall	cHintScorer_dtor	void __fastcall(void * self)
+0015e970	75	USER_DEFINED	__fastcall	cLabelScorer_dtor	void __fastcall(void * self)
+0015e9c0	39	USER_DEFINED	__fastcall	cMsgScorer_dtor	void __fastcall(void * self)
+0015e9f0	68	USER_DEFINED	__thiscall	cAbstractTextScorer_Delete	void * __thiscall(byte flags)
+0015ea40	78	USER_DEFINED	__thiscall	cCreditsScorer_Delete	void * __thiscall(byte flags)
+0015ea90	104	USER_DEFINED	__thiscall	cHintScorer_Delete	void * __thiscall(byte flags)
+0015eb00	104	USER_DEFINED	__thiscall	cLabelScorer_Delete	void * __thiscall(byte flags)
+0015eb70	68	USER_DEFINED	__thiscall	cMsgScorer_Delete	void * __thiscall(byte flags)
+0015ebc0	569	USER_DEFINED	__thiscall	cCreditsScorer_DrawLines	void __thiscall(byte fade, uint color)
+0015ee00	3	USER_DEFINED	__thiscall	cScorerItem_SetParam	void __thiscall(char * name, char * value)
+0015ee10	1213	USER_DEFINED	__thiscall	cAbstractTextScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+0015f2d0	508	USER_DEFINED	__thiscall	cCreditsScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+0015f4d0	837	USER_DEFINED	__thiscall	cHintScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+0015f820	837	USER_DEFINED	__thiscall	cLabelScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+0015fb70	9	USER_DEFINED	__thiscall	cMsgScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+0015fb80	515	USER_DEFINED	__thiscall	cCreditsScorer_Draw	void __thiscall(int player)
+0015fd90	874	USER_DEFINED	__thiscall	cHintScorer_Draw	void __thiscall(int player)
+00160100	438	USER_DEFINED	__thiscall	cLabelScorer_Draw	void __thiscall(int player)
+001602d0	174	USER_DEFINED	__thiscall	cMsgScorer_Draw	void __thiscall(int player)
+00160380	39	USER_DEFINED	__cdecl	Scorer_SetLabelText	void __cdecl(char * text, float time)
+001603b0	78	USER_DEFINED	__cdecl	Scorer_SetMsgText	void __cdecl(char * text, float time, char * font)
+00160400	197	USER_DEFINED	__fastcall	cBarScorer_ctor	void * __fastcall(void * self)
+001604d0	11	USER_DEFINED	__fastcall	cBarScorer_dtor	void __fastcall(void * self)
+001604e0	44	USER_DEFINED	__thiscall	cBarScorer_Delete	void * __thiscall(byte flags)
+00160510	1764	USER_DEFINED	__thiscall	cBarScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+00160c00	704	USER_DEFINED	__thiscall	cBarScorer_Draw	void __thiscall(int player)
+00160ec0	573	USER_DEFINED	__fastcall	cButtonScorer_ctor	void * __fastcall(void * self)
+00161100	120	USER_DEFINED	__fastcall	StrTable_Free	void __fastcall(void * self)
+00161180	34	USER_DEFINED	__fastcall	ByteTable_Free	void __fastcall(void * self)
+001611b0	258	USER_DEFINED	__fastcall	cButtonScorer_dtor	void __fastcall(void * self)
+001612c0	25	USER_DEFINED	__thiscall	StrTable_At	void * __thiscall(uint i)
+001612e0	155	USER_DEFINED	__thiscall	cString_DeleteVec	void * __thiscall(uint flags)
+00161380	38	USER_DEFINED	__thiscall	cButtonScorer_Delete	void * __thiscall(byte flags)
+001613b0	120	USER_DEFINED	__fastcall	StrTable_Free2	void __fastcall(void * self)
+00161430	34	USER_DEFINED	__fastcall	ByteTable_Free2	void __fastcall(void * self)
+00161460	223	USER_DEFINED	__thiscall	StrTable_Init	void __thiscall(int num)
+00161540	472	USER_DEFINED	__thiscall	cButtonScorer_WrapLines	int __thiscall(void * out, char * text)
+00161720	165	USER_DEFINED	__thiscall	cButtonScorer_SetFile	void __thiscall(uint flags, char * name)
+001617d0	4561	USER_DEFINED	__thiscall	cButtonScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+001629b0	4223	USER_DEFINED	__thiscall	cButtonScorer_Draw	void __thiscall(int player)
+00163a50	1339	USER_DEFINED	__thiscall	cButtonScorer_SetText	int __thiscall(char * text)
+00163f90	209	USER_DEFINED	__fastcall	cCannonScorer_ctor	void * __fastcall(void * self)
+00164070	47	USER_DEFINED	__fastcall	cCannonScorer_dtor	void __fastcall(void * self)
+001640a0	76	USER_DEFINED	__thiscall	cCannonScorer_Delete	void * __thiscall(byte flags)
+001640f0	679	USER_DEFINED	__thiscall	cCannonScorer_DrawAim	void __thiscall(int weapon, void * pos, void * scale, void * unused, float angle, uint color)
+001643a0	321	USER_DEFINED	__thiscall	cCannonScorer_DrawShipAim	void __thiscall(int player, void * ship)
+001644f0	469	USER_DEFINED	__thiscall	cCannonScorer_DrawCenter	void __thiscall(int player, void * ship)
+001646d0	522	USER_DEFINED	__thiscall	cCannonScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+001648e0	264	USER_DEFINED	__thiscall	cCannonScorer_Draw	void __thiscall(int player)
+001649f0	324	USER_DEFINED	__thiscall	cCannonScorer_DrawLock	void __thiscall(int player, void * pos)
+00164b40	196	USER_DEFINED	__fastcall	cChatScorer_ctor	void * __fastcall(void * self)
+00164c20	47	USER_DEFINED	__fastcall	cChatScorer_dtor	void __fastcall(void * self)
+00164c50	76	USER_DEFINED	__thiscall	cChatScorer_Delete	void * __thiscall(byte flags)
+00164ca0	75	USER_DEFINED	__cdecl	Scorer_AddChatMsg	void __cdecl(char * text, uint rgb)
+00164cf0	103	USER_DEFINED	__thiscall	cChatScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+00164d60	304	USER_DEFINED	__thiscall	cChatScorer_Draw	void __thiscall(int player)
+00164e90	3	USER_DEFINED	__fastcall	cCircuitPath_ctor	void * __fastcall(void * self)
+00164ea0	217	USER_DEFINED	__fastcall	cCircuitScorer_ctor	void * __fastcall(void * self)
+00164f80	106	USER_DEFINED	__fastcall	cCircuitScorer_dtor	void __fastcall(void * self)
+00164ff0	38	USER_DEFINED	__thiscall	cCircuitScorer_Delete	void * __thiscall(byte flags)
+00165020	1102	USER_DEFINED	__cdecl	CircuitScorer_InitPaths	void __cdecl(void)
+00165470	155	USER_DEFINED	__thiscall	cCircuitScorer_SetCircuitFile	void __thiscall(uint flags, char * name)
+00165510	230	USER_DEFINED	__thiscall	cCircuitScorer_SetFlareFile	void __thiscall(uint flags, char * name)
+00165600	708	USER_DEFINED	__thiscall	cCircuitScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+001658d0	1123	USER_DEFINED	__thiscall	cCircuitScorer_Draw	void __thiscall(int player)
+00165d40	267	USER_DEFINED	__fastcall	cCopMeterScorer_ctor	void * __fastcall(void * self)
+00165e50	75	USER_DEFINED	__fastcall	cCopMeterScorer_dtor	void __fastcall(void * self)
+00165ea0	104	USER_DEFINED	__thiscall	cCopMeterScorer_Delete	void * __thiscall(byte flags)
+00165f10	1536	USER_DEFINED	__thiscall	cCopMeterScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+00166510	1411	USER_DEFINED	__thiscall	cCopMeterScorer_Draw	void __thiscall(int player)
+00166aa0	213	USER_DEFINED	__fastcall	cHangarShipScorer_ctor	void * __fastcall(void * self)
+00166b80	86	USER_DEFINED	__fastcall	cHangarShipScorer_dtor	void __fastcall(void * self)
+00166be0	115	USER_DEFINED	__thiscall	cHangarShipScorer_Delete	void * __thiscall(byte flags)
+00166c60	1041	USER_DEFINED	__thiscall	cHangarShipScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+00167080	698	USER_DEFINED	__thiscall	cHangarShipScorer_Draw	void __thiscall(int player)
+00167340	211	USER_DEFINED	__fastcall	cHeadScorer_ctor	void * __fastcall(void * self)
+00167420	57	USER_DEFINED	__fastcall	cHeadScorer_dtor	void __fastcall(void * self)
+00167460	86	USER_DEFINED	__thiscall	cHeadScorer_Delete	void * __thiscall(byte flags)
+001674c0	331	USER_DEFINED	__thiscall	cHeadScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+00167610	642	USER_DEFINED	__thiscall	cHeadScorer_Draw	void __thiscall(int player)
+001678a0	178	USER_DEFINED	__thiscall	cHeadScorer_SetModel	byte __thiscall(char * name)
+00167960	195	USER_DEFINED	__thiscall	cHeadScorer_SetAnim	void __thiscall(int anim)
+00167a30	191	USER_DEFINED	__fastcall	cMissionScorer_ctor	void * __fastcall(void * self)
+00167af0	58	USER_DEFINED	__fastcall	cMissionScorer_dtor	void __fastcall(void * self)
+00167b30	87	USER_DEFINED	__thiscall	cMissionScorer_Delete	void * __thiscall(byte flags)
+00167b90	2182	USER_DEFINED	__thiscall	cMissionScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+00168420	1067	USER_DEFINED	__thiscall	cMissionScorer_Draw	void __thiscall(int player)
+00168850	719	USER_DEFINED	__fastcall	cMonitorScorer_ctor	void * __fastcall(void * self)
+00168b20	271	USER_DEFINED	__fastcall	cMonitorScorer_dtor	void __fastcall(void * self)
+00168c30	38	USER_DEFINED	__thiscall	cMonitorScorer_Delete	void * __thiscall(byte flags)
+00168c60	5943	USER_DEFINED	__thiscall	cMonitorScorer_DrawMonitor	void __thiscall(int player, void * target)
+0016a3a0	46	USER_DEFINED	__thiscall	cMonitorScorer_SetParam	void __thiscall(char * name, char * value)
+0016a3d0	3457	USER_DEFINED	__thiscall	cMonitorScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+0016b160	368	USER_DEFINED	__thiscall	cMonitorScorer_Draw	void __thiscall(int player)
+0016b2d0	241	USER_DEFINED	__thiscall	cMonitorScorer_SetModel	byte __thiscall(char * name)
+0016b3d0	52	USER_DEFINED	__cdecl	Scorer_SetHeadMonitor	void __cdecl(char * a, char * b, int c)
+0016b410	201	USER_DEFINED	__thiscall	cMonitorScorer_SetAnim	void __thiscall(int anim)
+0016b4e0	89	USER_DEFINED	__cdecl	Monitor_RepeatPhotoMessage	void __cdecl(void)
+0016b540	146	USER_DEFINED	__fastcall	cNetStatsScorer_ctor	void * __fastcall(void * self)
+0016b5e0	47	USER_DEFINED	__fastcall	cNetStatsScorer_dtor	void __fastcall(void * self)
+0016b610	76	USER_DEFINED	__thiscall	cNetStatsScorer_Delete	void * __thiscall(byte flags)
+0016b660	9	USER_DEFINED	__thiscall	cNetStatsScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+0016b670	984	USER_DEFINED	__thiscall	cNetStatsScorer_Draw	void __thiscall(int player)
+0016ba50	174	USER_DEFINED	__fastcall	cNewsPanel_ctor	void * __fastcall(void * self)
+0016bb00	105	USER_DEFINED	__fastcall	cNewsPanel_dtor	void __fastcall(void * self)
+0016bb70	67	USER_DEFINED	__thiscall	cNewsPanel_GetWatched	void * __thiscall(int list)
+0016bbc0	176	USER_DEFINED	__fastcall	cNewsPanel_Reset	void __fastcall(void * self)
+0016bc70	421	USER_DEFINED	__fastcall	cNewsPanel_Update	void __fastcall(void * self)
+0016be20	500	USER_DEFINED	__thiscall	cNewsPanel_DrawEntity	void __thiscall(void * e)
+0016c020	1223	USER_DEFINED	__thiscall	cNewsPanel_DrawNews	void __thiscall(float dt)
+0016c4f0	816	USER_DEFINED	__fastcall	cRadarScorer_ctor	void * __fastcall(void * self)
+0016c820	237	USER_DEFINED	__fastcall	cRadarScorer_dtor	void __fastcall(void * self)
+0016c910	27	USER_DEFINED	__thiscall	InputActionTable_At	void * __thiscall(uint i)
+0016c930	28	USER_DEFINED	__thiscall	ActionSetTable_At	void * __thiscall(uint i)
+0016c950	38	USER_DEFINED	__thiscall	cRadarScorer_Delete	void * __thiscall(byte flags)
+0016c980	247	USER_DEFINED	__thiscall	cRadarScorer_UpdateFloor	void __thiscall(float y)
 0016ca80	1544	DEFAULT	unknown	FUN_0056ca80	
 0016d090	1247	DEFAULT	unknown	FUN_0056d090	
-0016d570	4014	DEFAULT	unknown	FUN_0056d570	
-0016e520	735	DEFAULT	unknown	FUN_0056e520	
-0016e800	82	DEFAULT	unknown	FUN_0056e800	
-0016e860	83	DEFAULT	unknown	FUN_0056e860	
-0016e8c0	1779	ANALYSIS	__thiscall	cRadarScorer::vf02	undefined __thiscall(void)
-0016efc0	1101	ANALYSIS	__thiscall	cRadarScorer::vf00	undefined __thiscall(void)
+0016d570	4014	USER_DEFINED	__thiscall	cRadarScorer_DrawRadar	void __thiscall(void * target, void * cam)
+0016e520	735	USER_DEFINED	__thiscall	cRadarScorer_DrawCone	void __thiscall(void * pos, float ang, float spread, float range, int mode)
+0016e800	82	USER_DEFINED	__thiscall	cRadarScorer_OnPrevFloor	byte __thiscall(float y)
+0016e860	83	USER_DEFINED	__thiscall	cRadarScorer_FloorSide	int __thiscall(float y)
+0016e8c0	1779	USER_DEFINED	__thiscall	cRadarScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
+0016efc0	1101	USER_DEFINED	__thiscall	cRadarScorer_Draw	void __thiscall(int player)
 0016f4f0	753	DEFAULT	unknown	FUN_0056f4f0	
 0016f7f0	372	DEFAULT	unknown	FUN_0056f7f0	
 0016f970	142	DEFAULT	unknown	FUN_0056f970	

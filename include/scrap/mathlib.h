@@ -127,6 +127,7 @@ double Game_Exp(double x);
 double Game_Log(double x);
 double Game_Pow(double x, double y);
 int64_t X87_Fistp(double x);	/* round to nearest */
+uint32_t Game_FtoUI(float x);	/* (uint32_t)x of the MSVC runtime (__ftoui3, rva 0x314310) */
 void X87_SinCos(float a, float *s, float *c);	/* fsincos, both rounded to float */
 void Game_ExpPd(const double in[2], double out[2]);	/* the vectorised exp of loops, two at once */
 void Game_SinPd(const double in[2], double out[2]);

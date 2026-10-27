@@ -19,6 +19,7 @@
 #define LIBM_VEC_EXP2 0x314a00
 #define LIBM_VEC_COS2 0x314930
 #define LIBM_VEC_SIN2 0x314940
+#define CRT_FTOUI3 0x314310
 
 static double Libm_Sse2(uint32_t rva, double x) {
 	double r;
@@ -166,4 +167,18 @@ void Game_SinPd(const double in[2], double out[2]) {
 
 void Game_CosPd(const double in[2], double out[2]) {
 	Libm_Pd(LIBM_VEC_COS2, in, out);
+}
+
+/* __ftoui3: a float in xmm0 to an unsigned int in eax, truncated, with the range checks of the runtime */
+uint32_t Game_FtoUI(float x) {
+	uint32_t r;
+	void *fn = Game_Ptr(CRT_FTOUI3);
+
+	__asm__ volatile(
+		"movss %[x], %%xmm0\n\t"
+		"call *%[fn]\n\t"
+		: "=a"(r)
+		: [x] "m"(x), [fn] "r"(fn)
+		: "ecx", "edx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", "memory", "cc");
+	return r;
 }
