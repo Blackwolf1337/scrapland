@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "scrap/crt.h"
+#include "scrap/doors.h"
 #include "scrap/fx.h"
 #include "scrap/fxchar.h"
 #include "scrap/global.h"
@@ -482,6 +483,286 @@ void __thiscall cObjElementFXMoneyTransfer_Update(cObjElementFXMoneyTransfer *se
 	CGameParticles_SetColorRampOn(sp, 1);
 	CGameParticles_SetColorRamp(sp, Game_Ptr(FXC_RAMP_MONEY));
 	CGameParticles_EmitN(sp, 1, 0);
+}
+
+/* the alpha a plus add (at most 255) in the top byte of rgb */
+static inline uint32_t FXC_Alpha(int a, int add, uint32_t rgb) {
+	int v = a + add;
+
+	if (v > 255) {
+		v = 255;
+	}
+	return ((uint32_t)v << 24) | rgb;
+}
+
+/* a still particle at p */
+static void FXC_SetStill(CGameParticles *sp, const vec3_t *p) {
+	sp->initPosMin.x = p->x + 0.0f;
+	sp->initPosMin.y = p->y + 0.0f;
+	sp->initPosMin.z = p->z + 0.0f;
+	sp->initPosMax = sp->initPosMin;
+	sp->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	sp->initVelMax = sp->initVelMin;
+	sp->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	sp->initAccMax = sp->initAccMin;
+}
+
+void __thiscall cObjElementFXMaintenanceWork_Update(cObjElementFXMaintenanceWork *self, cDebris *d, float dt) {
+	vec3_t laserPos, c, diff, n, dir, rot;
+
+	self->maintenance = FXC_Keep(self->maintenance);
+	if (!self->maintenance || !self->maintenance->flag_4c) {
+		return;
+	}
+	self->ship = FXC_Keep(self->ship);
+	if (!self->ship || !self->ship->flag_4c) {
+		return;
+	}
+	CGameModel_SetSortZ(Debris_Model(d), -75.0f, 0.0f);
+	float delta = FXC_Delta();
+	self->fc0 = self->fc0 + delta;
+	self->fbc = self->fbc + delta;
+	/* the work ends with the edit door of the ship changing or the robot not working */
+	cEntity *door = World_FindEntity("DM_Door_EditShip_00");
+	if (!door || (self->life > 0.0f && cActCtrl_IsActive(WithLife_Vtbl(door)->GetActCtrl(door), "Change"))) {
+		self->life = delta;
+	}
+	cEntity *robot = self->maintenance;
+	if (!cActCtrl_IsActive(WithLife_Vtbl(robot)->GetActCtrl(robot), "Work") && self->life > 0.1f) {
+		self->life = 0.1f - delta;
+	}
+	float life = self->life - delta;
+	self->life = life;
+	if (!(life > 0.0f)) {
+		CGameTrail_Clear(&self->trails[0]);
+		CGameTrail_Clear(&self->trails[1]);
+		CGameParticles_KillRange(&self->particles, 0, 6);
+		if (self->sound) {
+			CSoundSys *snd = g_pSound;
+			snd->vftable->StopSound(snd, self->sound);
+			self->sound = 0;
+		}
+		return;
+	}
+	int alpha = 255 - (int)(Float_MinSS(1.0f, life / 0.1f) * 255.0f);
+	CGameTrail_SetTransp(&self->trails[0], (byte)alpha);
+	CGameTrail_SetTransp(&self->trails[1], (byte)alpha);
+	CGameModel *mm = FX_Vtbl(self->maintenance)->GetModel(self->maintenance);
+	CHECK(CGameModel_IsLoaded(mm));
+	CGameModel *ms = FX_Vtbl(self->ship)->GetModel(self->ship);
+	CHECK(CGameModel_IsLoaded(ms));
+	CGameModel_Vertices(mm, &laserPos, NULL, NULL, 1, 0, NULL, (uint32_t)self->nodeLaser, NULL);
+	vec3_t laser = laserPos;
+	FX_Vtbl(self->ship)->GetCenter(self->ship, &c);
+	CGameModel_Vertices(ms, &c, NULL, NULL, 1, self->vertex, NULL, 0xffffffffu, NULL);
+	/* the beam */
+	CGameTrail_Reset(&self->trails[0]);
+	CGameTrail_Add(&self->trails[0], laser, 16.0f, 0x880c4ff);
+	CGameTrail_Add(&self->trails[0], c, 16.0f, 0x880c4ff);
+	CGameTrail_Reset(&self->trails[1]);
+	CGameTrail_Add(&self->trails[1], laser, 84.0f, 0x40202080);
+	CGameTrail_Add(&self->trails[1], c, 84.0f, 0x40202080);
+	/* the glows at both ends */
+	CGameParticles *sp = &self->particles;
+	CGameParticles_SetParticle(sp, 0, laser.x, laser.y, laser.z, 24.0f, FXC_Alpha(alpha, 8, 0xe6e6ff), 1, 0.0f);
+	CGameParticles_SetParticle(sp, 1, laser.x, laser.y, laser.z, 84.0f, FXC_Alpha(alpha, 16, 0xa2a2ff), 1, 0.0f);
+	CGameParticles_SetParticle(sp, 2, laser.x, laser.y, laser.z, 120.0f, FXC_Alpha(alpha, 128, 0x4040ff), 5, 0.0f);
+	CGameParticles_SetParticle(sp, 3, c.x, c.y, c.z, 30.0f, FXC_Alpha(alpha, 8, 0xdcdcff), 1, 0.0f);
+	CGameParticles_SetParticle(sp, 4, c.x, c.y, c.z, 95.0f, FXC_Alpha(alpha, 64, 0xa2a2ff), 1, 0.0f);
+	CGameParticles_SetParticle(sp, 5, c.x, c.y, c.z, 155.0f, FXC_Alpha(alpha, 192, 0x4040ff), 2, 0.0f);
+	if (!(self->fbc > 0.04f)) {
+		return;
+	}
+	self->fbc = 0.0f;
+	/* the flashes and sparks at the ship */
+	sp->birthRate = 0;
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, Game_Ptr(0x430520));
+	FXC_SetStill(sp, &c);
+	sp->sizeIni = FXC_Rand(10.0, 30.0);
+	sp->sizeEnd = FXC_Rand(20.0, 240.0);
+	float lt = FXC_Rand(0.040000006556510925, 0.1899999976158142);
+	sp->sizeLife = 0.15f;
+	sp->spriteIni = 5;
+	sp->spriteEnd = 5;
+	sp->lifeTime = Float_MinSS(Debris_Life(d) - dt, lt);
+	CGameParticles_Apply(sp);
+	CGameParticles_EmitN(sp, 1, 1);
+	CGameParticles_SetColorRamp(sp, Game_Ptr(0x430520));
+	FXC_SetStill(sp, &c);
+	sp->sizeIni = FXC_Rand(2.0, 4.0);
+	sp->sizeEnd = FXC_Rand(5.0, 45.0);
+	lt = FXC_Rand(0.019999995827674866, 0.18000000715255737);
+	sp->sizeLife = 0.15f;
+	sp->spriteIni = 1;
+	sp->spriteEnd = 1;
+	sp->lifeTime = Float_MinSS(Debris_Life(d) - dt, lt);
+	CGameParticles_Apply(sp);
+	CGameParticles_EmitN(sp, 1, 1);
+	int sparks = (int)FXC_Rand(5.0, 3.0);
+	CGameParticles_SetSparksOn(sp, 1);
+	for (; sparks > 0; sparks--) {
+		CGameParticles_SetColorRamp(sp, Game_Ptr(0x430568));
+		float r1 = (float)(FXC_Rnd() * 1.2566370964050293 - 0.6283185482025146);
+		float r2 = (float)(FXC_Rnd() * 1.2566370964050293 - 0.6283185482025146);
+		rot.x = (float)(FXC_Rnd() * 1.2566370964050293 - 0.6283185482025146);
+		rot.y = r2;
+		rot.z = r1;
+		diff.x = laser.x - c.x;
+		diff.y = laser.y - c.y;
+		diff.z = laser.z - c.z;
+		Vec3_Rotate(&dir, Vec3_NormalizeTo(&n, &diff), &rot);
+		float s = FXC_Rand(20.0, 5.0);
+		sp->initPosMin.x = s * dir.x + c.x;
+		sp->initPosMin.y = s * dir.y + c.y;
+		sp->initPosMin.z = s * dir.z + c.z;
+		sp->initPosMax = sp->initPosMin;
+		s = FXC_Rand(900.0, 550.0);
+		sp->initVelMin.x = s * dir.x;
+		sp->initVelMin.y = s * dir.y;
+		sp->initVelMin.z = s * dir.z;
+		sp->initVelMax = sp->initVelMin;
+		float a = FXC_Rand(0.04999999701976776, 0.15000000596046448);
+		sp->initAccMin.x = sp->initVelMin.x * a + 0.0f;
+		sp->initAccMin.y = a * sp->initVelMin.y - 1550.0f;
+		sp->initAccMin.z = a * sp->initVelMin.z + 0.0f;
+		sp->initAccMax = sp->initAccMin;
+		float e = FXC_Rand(0.029999999329447746, 0.0);
+		float rem = Debris_Life(d) - dt;
+		lt = Float_MinSS(rem, FXC_Rand(0.09999999403953552, 0.30000001192092896));
+		CGameParticles_SetSparksOn(sp, 1);
+		sp->lifeTime = lt;
+		float size = FXC_Rand(10.0, 55.0);
+		sp->sizeLife = 1.0f;
+		sp->rotIni = 0.0f;
+		sp->rotEnd = 0.0f;
+		sp->rotVar = 0.0f;
+		sp->sizeIni = size;
+		sp->sizeEnd = size;
+		byte sprite = (byte)((crt_rand() & 1) + 0x41);
+		sp->spriteEnd = 0x43;
+		sp->sparkVelScale = 1.0f;
+		sp->spriteIni = sprite;
+		sp->sparkMaxSize = FXC_Rand(0.699999988079071, 0.30000001192092896);
+		CGameParticles_Apply(sp);
+		CGameParticles_EmitDt(sp, 1, 0, e + 0.03f);
+	}
+	CGameParticles_SetSparksOn(sp, 0);
+}
+
+/* the acceleration of the Sputnik sparks: against the velocity and down */
+static void FXSputnik_SetAcc(CGameParticles *sp) {
+	sp->initAccMin.x = -(sp->initVelMin.x * 0.15f) + 0.0f;
+	sp->initAccMin.y = -(sp->initVelMin.y * 0.15f) - 25.0f;
+	sp->initAccMin.z = -(sp->initVelMin.z * 0.15f) + 0.0f;
+	sp->initAccMax = sp->initAccMin;
+}
+
+void __thiscall cObjElementFXSputnik_Update(cObjElementFXSputnik *self, cDebris *d, float dt) {
+	vec3_t pos, rot, dir;
+	matrix_t mat;
+
+	(void)dt;
+	self->ent = FXC_Keep(self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		return;
+	}
+	CGameModel *m = FXC_Model(self->ent);
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), 0.0f, 0.0f);
+	float delta = FXC_Delta();
+	float e = delta + self->emitT;
+	float t = delta + self->t;
+	self->t = t;
+	self->emitT = e;
+	if (0.02f > e) {
+		return;
+	}
+	if (self->duration > 0.0f && t > self->duration) {
+		return;
+	}
+	m = FX_Vtbl(self->ent)->GetModel(self->ent);
+	if (!CGameModel_IsLoaded(m)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(m));
+	if (!CGameModel_IsVisible(m) || self->node == -1) {
+		return;
+	}
+	const matrix_t *mp = CGameModel_NodoMatrix(m, &mat, (uint32_t)self->node, 1, NULL, 0);
+	float px = mp->m[12], py = mp->m[13], pz = mp->m[14];
+	if (self->minMove > 0.0f) {
+		float dx = self->last.x - px, dy = self->last.y - py, dz = self->last.z - pz;
+		float mm = self->minMove * self->minMove;
+		if (mm > dy * dy + dx * dx + dz * dz) {
+			Float_Approach(&self->moveT, 0.0f, self->emitT * 4.0f);
+		} else {
+			Float_Approach(&self->moveT, 1.0f, self->emitT);
+		}
+		self->last.x = px;
+		self->last.y = py;
+		self->last.z = pz;
+		if (0.5f > self->moveT) {
+			return;
+		}
+	}
+	/* the glow at the node */
+	CGameParticles *sp = &self->particles;
+	sp->birthRate = 0;
+	CGameParticles_SetColorRampOn(sp, 1);
+	sp->initPosMin.x = px;
+	sp->initPosMin.y = py;
+	sp->initPosMin.z = pz;
+	sp->initPosMax = sp->initPosMin;
+	sp->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	sp->initVelMax = sp->initVelMin;
+	FXSputnik_SetAcc(sp);
+	sp->lifeTime = FXC_Rand(0.10000000894069672, 0.20000000298023224);
+	sp->sizeIni = FXC_Rand(10.0, 70.0);
+	sp->sizeEnd = FXC_Rand(25.0, 265.0);
+	sp->sizeLife = FXC_Rand(0.09999999403953552, 0.30000001192092896);
+	sp->rotIni = FXC_Rand(6.2831854820251465, 0.0);
+	float r = (float)(FXC_Rnd() * 0.7853981852531433 - 0.39269909262657166);
+	sp->rotVar = 0.0f;
+	sp->spriteIni = 5;
+	sp->spriteEnd = 5;
+	sp->rotEnd = r;
+	CGameParticles_SetColorRamp(sp, Game_Ptr(0x4303d4));
+	CGameParticles_Apply(sp);
+	CGameParticles_EmitN(sp, 1, 0);
+	/* three sparks */
+	for (int i = 0; i < 3; i++) {
+		FX_RandomDir(&dir);
+		float s = FXC_Rand(30.0, 0.0);
+		sp->initPosMin.x = dir.x * s + px;
+		sp->initPosMin.y = dir.y * s + py;
+		sp->initPosMin.z = dir.z * s + pz;
+		sp->initPosMax = sp->initPosMin;
+		FX_RandomDir(&dir);
+		s = FXC_Rand(25.0, 40.0);
+		sp->initVelMin.x = dir.x * s;
+		sp->initVelMin.y = dir.y * s;
+		sp->initVelMin.z = dir.z * s;
+		sp->initVelMax = sp->initVelMin;
+		FXSputnik_SetAcc(sp);
+		sp->lifeTime = FXC_Rand(0.19999998807907104, 0.5);
+		sp->sizeIni = FXC_Rand(10.0, 50.0);
+		sp->sizeEnd = FXC_Rand(25.0, 135.0);
+		sp->sizeLife = FXC_Rand(0.10000002384185791, 0.8999999761581421);
+		sp->rotIni = FXC_Rand(6.2831854820251465, 0.0);
+		sp->rotVar = 0.0f;
+		sp->rotEnd = (float)(FXC_Rnd() * 0.7853981852531433 - 0.39269909262657166);
+		byte sprite = (crt_rand() & 1) ? 9 : 15;
+		sp->spriteIni = sprite;
+		sp->spriteEnd = sprite;
+		CGameParticles_SetColorRamp(sp, Game_Ptr(0x4303b0));
+		CGameParticles_Apply(sp);
+		CGameParticles_EmitN(sp, 1, 0);
+	}
+	self->emitT = 0.0f;
 }
 
 /* ---- the starts ---- */
