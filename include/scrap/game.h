@@ -154,27 +154,103 @@ int __thiscall cAmmoInfo_GetS(cAmmoInfo *ammo, const char *var, char **value);
 int __thiscall cAmmoInfo_SetF(cAmmoInfo *ammo, const char *var, float value);
 int __thiscall cAmmoInfo_SetS(cAmmoInfo *ammo, const char *var, const char *value);
 
-/* the application: allocated (0x90 bytes) and run by the WinMain message loop at rva 0x20d8c0 */
+/*
+ * the application (App/, include/scrap/app.h): CApp (0x48 bytes, vftable rva 0x3cf190) is the game part, CWinApp
+ * (0x90 bytes, vftable rva 0x3cf7d4) adds the Win32 window. Allocated and run by WinMain (rva 0x20d8c0). The slots
+ * are the vf numbers of both classes.
+ */
 typedef struct CWinApp CWinApp;
 typedef struct CWinAppVtbl {
-	void *vf00_08[9];
-	void(__thiscall *Exit)(CWinApp *self);				/* 0x24 */
-	void *vf0a_11[8];
-	const char *(__thiscall *DebugInput)(CWinApp *self, const char *text);	/* 0x48 */
-	void(__thiscall *RunApp)(CWinApp *self, const char *exe, const char *cmdLine, int arg);	/* 0x4c */
+	void(__thiscall *DoneGame)(CWinApp *self);					/* 0x00 vf00 */
+	void(__thiscall *InitGame)(CWinApp *self, const char *level);			/* 0x04 vf01 */
+	void(__thiscall *InitDebug)(CWinApp *self);					/* 0x08 vf02 */
+	CWinApp *(__thiscall *Delete)(CWinApp *self, byte flags);			/* 0x0c vf03 */
+	byte(__thiscall *Init)(CWinApp *self);						/* 0x10 vf04 */
+	byte(__thiscall *Frame)(CWinApp *self);						/* 0x14 vf05 */
+	void(__thiscall *Shutdown)(CWinApp *self);					/* 0x18 vf06 */
+	void(__thiscall *LoadLevelNow)(CWinApp *self, const char *level);		/* 0x1c vf07 */
+	void(__thiscall *InitDedicated)(CWinApp *self);					/* 0x20 vf08 */
+	void(__thiscall *Exit)(CWinApp *self);						/* 0x24 vf09 */
+	void(__thiscall *Update)(CWinApp *self, float dt);				/* 0x28 vf10 */
+	void(__thiscall *Render)(CWinApp *self);					/* 0x2c vf11 */
+	byte(__thiscall *ParseParam)(CWinApp *self, const char *param, const char *ext);	/* 0x30 vf12 */
+	void(__thiscall *ResetParams)(CWinApp *self);					/* 0x34 vf13 */
+	double(__thiscall *GetTime)(CWinApp *self);					/* 0x38 vf14 */
+	double(__thiscall *GetGameTime)(CWinApp *self);					/* 0x3c vf15 */
+	void(__thiscall *ShowConsole)(CWinApp *self, byte show);			/* 0x40 vf16 */
+	void(__thiscall *ConsoleAdd)(CWinApp *self, const char *text, uint32_t color);	/* 0x44 vf17 */
+	const char *(__thiscall *DebugInput)(CWinApp *self, const char *text);		/* 0x48 vf18 */
+	byte(__thiscall *RunApp)(CWinApp *self, const char *exe, const char *cmdLine, int arg);	/* 0x4c vf19 */
+	byte(__thiscall *IsDedicatedWin)(CWinApp *self);				/* 0x50 vf20 */
 } CWinAppVtbl;
 SD_OFFSET(CWinAppVtbl, Exit, 0x24);
 SD_OFFSET(CWinAppVtbl, DebugInput, 0x48);
+SD_OFFSET(CWinAppVtbl, IsDedicatedWin, 0x50);
+
+/* WNDCLASSA */
+typedef struct exe_wndclass {
+	uint32_t style;			/* 0x00 */
+	void *wndProc;			/* 0x04 */
+	int clsExtra;			/* 0x08 */
+	int wndExtra;			/* 0x0c */
+	void *hInstance;		/* 0x10 */
+	void *hIcon;			/* 0x14 */
+	void *hCursor;			/* 0x18 */
+	void *hbrBackground;		/* 0x1c */
+	const char *menuName;		/* 0x20 */
+	const char *className;		/* 0x24 */
+} exe_wndclass;
+SD_SIZE(exe_wndclass, 0x28);
+
+/* the GOG Galaxy listeners of CWinApp: a vector of objects deleted through their slot 0 */
+typedef struct cGogListeners {
+	void **begin;			/* 0x0 */
+	void **end;			/* 0x4 */
+	void **cap;			/* 0x8 */
+} cGogListeners;
+
+#define APPF_CLIENT 1
+#define APPF_SERVER 2
+#define APPF_DEDICATED 4
 
 struct CWinApp {
-	const CWinAppVtbl *vftable;	/* 0x00 CWinApp::vftable */
-	byte pad_04[0x30 - 0x04];
-	uint32_t flags;			/* 0x30 bit 2: dedicated server (SNet.IsDedicated) */
+	const CWinAppVtbl *vftable;	/* 0x00 */
+	byte pad_04[4];
+	char *cmdLine;			/* 0x08 copy (Mem_Alloc) */
+	byte pad_0c[4];
+	double time;			/* 0x10 GetTime of this frame */
+	double lastFrame;		/* 0x18 */
+	double gameTime;		/* 0x20 the sum of the frame times */
+	int build;			/* 0x28 -build[:mode]: Pack_Build of Data */
+	byte active;			/* 0x2c WM_ACTIVATEAPP */
+	byte dedicated;			/* 0x2d -dedicated */
+	byte pad_2e[2];
+	uint32_t flags;			/* 0x30 APPF_ (SNet.IsDedicated) */
 	char *levelPath;		/* 0x34 Scrap.GetLevelPath */
 	char *newLevelPath;		/* 0x38 Scrap.GetNewLevelPath */
-	byte pad_3c[0x90 - 0x3c];
+	byte loadPending;		/* 0x3c newLevelPath is loaded at the next frame */
+	byte pad_3d[3];
+	void (*onLevelLoaded)(void);	/* 0x40 called once after LoadLevelNow */
+	byte pad_44[4];
+	/* CWinApp */
+	void *hInstance;		/* 0x48 */
+	void *hPrevInstance;		/* 0x4c */
+	int nCmdShow;			/* 0x50 */
+	exe_wndclass wc;		/* 0x54 "ScrapClass" */
+	void *hwnd;			/* 0x7c */
+	byte console;			/* 0x80 -console: the console window */
+	byte dedicatedWin;		/* 0x81 -dedicated: small window */
+	byte pad_82[2];
+	cGogListeners gog;		/* 0x84 */
 };
+SD_OFFSET(CWinApp, cmdLine, 0x08);
+SD_OFFSET(CWinApp, gameTime, 0x20);
+SD_OFFSET(CWinApp, flags, 0x30);
 SD_OFFSET(CWinApp, levelPath, 0x34);
+SD_OFFSET(CWinApp, onLevelLoaded, 0x40);
+SD_OFFSET(CWinApp, wc, 0x54);
+SD_OFFSET(CWinApp, hwnd, 0x7c);
+SD_OFFSET(CWinApp, gog, 0x84);
 SD_SIZE(CWinApp, 0x90);
 
 #define g_pWorld GAME_DATA(cWorld *, 0x467450)

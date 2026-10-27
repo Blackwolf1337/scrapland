@@ -23,6 +23,7 @@ typedef struct crt_finddata32 {
 enum { CRT_A_HIDDEN = 0x2, CRT_A_SYSTEM = 0x4, CRT_A_SUBDIR = 0x10 };
 
 int crt_rand(void);
+void crt_srand(unsigned int seed);
 void *crt_malloc(size_t size);
 void crt_free(void *p);
 void *crt_realloc(void *p, size_t size);

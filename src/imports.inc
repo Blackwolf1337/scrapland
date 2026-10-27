@@ -83,7 +83,6 @@ SD_IMPORT(crt_time32, 0x345d95)
 SD_IMPORT(crt_gmtime32, 0x346bb1)
 SD_IMPORT(crt_strftime, 0x346fbf)
 SD_IMPORT(crt_exit_now, 0x346155)
-SD_IMPORT(ConsoleWin_Add, 0x20d550)
 SD_IMPORT(crt_report_rangecheckfailure, 0x313d15)
 SD_IMPORT(crt_fopen, 0x344c5e)
 SD_IMPORT(crt_fsopen, 0x344bea)
@@ -206,19 +205,14 @@ SD_IMPORT(Steam_SetAchievement, 0x1a66a0)
 SD_IMPORT(Steam_GetID, 0x134720)
 SD_IMPORT(Steam_GetTicket, 0x1345e0)
 SD_IMPORT(Gog_GetID, 0x137160)
-SD_IMPORT(Loading_Init, 0x20b260)
-SD_IMPORT(Loading_End, 0x20ade0)
 SD_IMPORT(Anm_Preload, 0x2051a0)
 SD_IMPORT(DummySearch_Start, 0x1a7ad0)
 SD_IMPORT(MissionArrows_Switch, 0x0f82a0)
-SD_IMPORT(CWinApp_LoadLevel, 0x20b8a0)
 SD_IMPORT(cWorld_GetUsrEntity, 0x0c1430)
 SD_IMPORT(Alarm_Set, 0x13fe60)
 SD_IMPORT(Alarm_SetChar, 0x13ff20)
 SD_IMPORT(Alarm_SetGrow, 0x13fd50)
 SD_IMPORT(Alarm_SetLock, 0x13fe50)
-SD_IMPORT(App_GetPath, 0x20d100)
-SD_IMPORT(App_GetConfigDir, 0x20d570)
 SD_IMPORT(Grid_Set, 0x1a7710)
 SD_IMPORT(Parking_AddZone, 0x155700)
 SD_IMPORT(Parking_Find, 0x155bf0)
@@ -311,7 +305,6 @@ SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 
 /* engine: FileSys/ (include/scrap/filesys.h) */
 SD_IMPORT(cStringList_NewNode, 0x0605f0)
-SD_IMPORT(Console_Execute, 0x20aaf0)
 
 /* engine3d: Engine/ListaVert.cpp and Engine/render.cpp (include/scrap/listavert.h, mallatri.h) */
 
@@ -434,7 +427,6 @@ SD_IMPORT_STDCALL(D3DX_MatrixInverse, 12, 0x007cea)
 SD_IMPORT_STDCALL(D3DX_AssembleShader, 24, 0x00b2c2)
 
 /* module agent: Engine/Modelo (imports below this line) */
-SD_IMPORT(World_TimeScale, 0x20aea0)
 SD_IMPORT(Matrix_PostScale, 0x239210)
 SD_IMPORT(Matrix_PostRotate, 0x23a100)
 SD_IMPORT(CNodoR_dtor, 0x23f450)
@@ -533,8 +525,6 @@ SD_IMPORT(CD3DApp_Cleanup, 0x273d90)
 SD_IMPORT(CD3DApp_Render, 0x275120)
 SD_IMPORT(CD3DApp_ResetDevice, 0x275470)
 SD_IMPORT(CD3DApp_Reset, 0x2754b0)
-SD_IMPORT(App_GetHInstance, 0x20d1a0)
-SD_IMPORT(App_GetHWnd, 0x20d290)
 SD_IMPORT(Timer_GetFreq, 0x276cb0)
 SD_IMPORT(Timer_GetQPFreq, 0x276d00)
 SD_IMPORT(Video_PlayFile, 0x281660)
@@ -565,6 +555,48 @@ SD_IMPORT(Matrix_RotationX, 0x23a270)
 /* module agent: World/CollisionGrid+FX/FXMisc.cpp (imports below this line) */
 
 /* module agent: App/CApp+CWinApp (imports below this line) */
+SD_IMPORT(ActClassList_Done, 0x062140)
+SD_IMPORT(ActClassList_Init, 0x0623a0)
+SD_IMPORT(GogListeners_ctor, 0x136f10)
+SD_IMPORT(Gog_GetLanguage, 0x137140)
+SD_IMPORT(Gog_Init, 0x137250)
+SD_IMPORT(Gog_Done, 0x137430)
+SD_IMPORT(Gog_ProcessData, 0x137570)
+SD_IMPORT(PtrVector_Deallocate, 0x137c30)
+SD_IMPORT(InputMaps_Done, 0x139900)
+SD_IMPORT(InputMaps_Init, 0x139ba0)
+SD_IMPORT(InputMaps_Clear, 0x139cf0)
+SD_IMPORT(Input_ResetActions, 0x13a380)
+SD_IMPORT(Input_ResetStates, 0x13a4b0)
+SD_IMPORT(Input_Update, 0x13bf20)
+SD_IMPORT(Input_ReleaseAll, 0x13c610)
+SD_IMPORT(Input_CloseDevices, 0x13c660)
+SD_IMPORT(Input_OpenDevices, 0x13c6e0)
+SD_IMPORT(Input_OnChar, 0x13c900)
+SD_IMPORT(Scorer_Done, 0x170ad0)
+SD_IMPORT(Scorer_Init, 0x171120)
+SD_IMPORT(Menu_DrawFrame, 0x184ef0)
+SD_IMPORT(Net_ClientFrame, 0x18aa50)
+SD_IMPORT(Net_ClientReady, 0x18ae50)
+SD_IMPORT(Net_ServerFrame, 0x18b330)
+SD_IMPORT(Net_Done, 0x18e920)
+SD_IMPORT(Net_Init, 0x18eb60)
+SD_IMPORT(Net_Update, 0x18f950)
+SD_IMPORT(Sound_ResetVolumes, 0x1a2060)	/* Sound agent range */
+SD_IMPORT(Sound_Done, 0x1a3150)	/* Sound agent range */
+SD_IMPORT(Sound_Init, 0x1a3260)	/* Sound agent range */
+SD_IMPORT(Steam_Done, 0x1a64d0)	/* Sound agent range */
+SD_IMPORT(Steam_GetLanguage, 0x1a65f0)	/* Sound agent range */
+SD_IMPORT(Steam_Init, 0x1a6620)	/* Sound agent range */
+SD_IMPORT(Steam_RunCallbacks, 0x1a66e0)	/* Sound agent range */
+SD_IMPORT(Font_SetLanguage, 0x21b1e0)
+SD_IMPORT(CPsaImage_ctorTex, 0x22d0c0)
+SD_IMPORT(CPsaImage_ctorFlags, 0x22d0f0)
+SD_IMPORT(CPsaImage_DrawPoly, 0x22d520)
+SD_IMPORT(D3DApp_OnActivate, 0x2325e0)
+SD_IMPORT(D3DApp_MsgProc, 0x233030)
+SD_IMPORT(App_SetExceptionFilter, 0x2333b0)
+SD_IMPORT(crt_srand, 0x323c50)
 
 /* module agent: World/FX/FXCountermeasures+FXElementsOrbit+FXElementsPress.cpp (imports below this line) */
 SD_IMPORT(cTargetLock_GetPoint, 0x11a740)
