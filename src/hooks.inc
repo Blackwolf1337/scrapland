@@ -2721,3 +2721,11 @@ SD_HOOK(CGameTrail_SetLastPos, 0x21e4c0, 34)
 SD_HOOK(CGameTrail_SetLastPosColor, 0x21e4f0, 37)
 SD_HOOK(CGameTrail_SetPoint, 0x21e520, 11)
 SD_HOOK(CGameTrail_Move, 0x21e530, 34)
+
+/* module agent: Sound/Sound+SoundDX8+Wav.cpp (hooks below this line) */
+
+/* module agent: World/CollisionGrid+FX/FXMisc.cpp (hooks below this line) */
+
+/* module agent: App/CApp+CWinApp (hooks below this line) */
+
+/* module agent: World/FX/FXCountermeasures+FXElementsOrbit+FXElementsPress.cpp (hooks below this line) */

@@ -559,3 +559,11 @@ SD_IMPORT(Cmd_ReadFile, 0x280b10)
 
 /* module agent: ScrapEng/ScrapEngCamera+Particles+Trails.cpp (imports below this line) */
 SD_IMPORT(Matrix_RotationX, 0x23a270)
+
+/* module agent: Sound/Sound+SoundDX8+Wav.cpp (imports below this line) */
+
+/* module agent: World/CollisionGrid+FX/FXMisc.cpp (imports below this line) */
+
+/* module agent: App/CApp+CWinApp (imports below this line) */
+
+/* module agent: World/FX/FXCountermeasures+FXElementsOrbit+FXElementsPress.cpp (imports below this line) */
