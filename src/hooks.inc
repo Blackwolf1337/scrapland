@@ -5939,3 +5939,11 @@ SD_HOOK(cWindFxScorer_ctor, 0x188d10, 213)
 SD_HOOK(cWindFxScorer_dtor, 0x188df0, 58)
 SD_HOOK(cWindFxScorer_Delete, 0x188e30, 87)
 SD_HOOK(cScorerItem_Var, 0x188e90, 9)
+
+/* module agent: Logic part 3 (GenCharLogic..Messenger) (hooks below this line) */
+
+/* module agent: AI/ICharControl+2D+3D.cpp (hooks below this line) */
+
+/* module agent: AI/IVehicleControl+IVehicleShootControl.cpp (hooks below this line) */
+
+/* module agent: net (GameServer..transport) (hooks below this line) */

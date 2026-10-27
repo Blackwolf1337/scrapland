@@ -755,3 +755,11 @@ SD_IMPORT(PyFloat_AsDouble, 0x2dfa30)	/* floatobject.c */
 SD_IMPORT(cTargetScorer_DrawTarget, 0x181600)
 SD_IMPORT(cTargetScorer_DrawEnemies, 0x182430)
 SD_IMPORT(cWaypointScorer_DrawTarget, 0x185e90)
+
+/* module agent: Logic part 3 (GenCharLogic..Messenger) (imports below this line) */
+
+/* module agent: AI/ICharControl+2D+3D.cpp (imports below this line) */
+
+/* module agent: AI/IVehicleControl+IVehicleShootControl.cpp (imports below this line) */
+
+/* module agent: net (GameServer..transport) (imports below this line) */
