@@ -706,3 +706,5 @@ SD_IMPORT(cAIVehicle_GetPathWidth, 0x8b0e0)
 SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
 
 /* module agent: Scorer/AbstractText+Button+Circuit+Head+Mission+Monitor+Radar (imports below this line) */
+
+/* module agent: Entities/Char/Type part 1 (imports below this line) */

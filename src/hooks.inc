@@ -4500,3 +4500,5 @@ SD_HOOK(cWeaponManager_ClearAmmo, 0x11a0b0, 29)
 SD_HOOK(cWeaponManager_ClearWeaps, 0x11a0d0, 32)
 
 /* module agent: Scorer/AbstractText+Button+Circuit+Head+Mission+Monitor+Radar (hooks below this line) */
+
+/* module agent: Entities/Char/Type part 1 (hooks below this line) */
