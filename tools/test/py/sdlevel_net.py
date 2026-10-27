@@ -25,9 +25,7 @@ def netb(a, n):
 		r.append(SDTest.Peek(a + k, '@b'))
 	return tuple(r)
 def netword(b0, b1, b2, b3):
-	if b3 >= 128:
-		b3 = b3 - 256
-	return b0 + b1 * 256 + b2 * 65536 + b3 * 16777216
+	return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
 # bytes into memory in whole words (up to 3 zero bytes after them)
 def netsetb(a, l):
 	l = list(l) + [0, 0, 0]
@@ -294,7 +292,7 @@ SDTest.Poke(0x463f4c, netbot)
 SDTest.Poke(0x463f48, netobj)
 for netname in ('net0', 'net12', 'net300', 'net', 'nex5', 'Net5', 'netabc', 'net-3', 'net00042x', ''):
 	check('Net names' + fmt((netname,)), lambda n=netname: (SDTest.Call(0x18e9d0, 'is', n)[0],
-		SDTest.Call(0x18f7f0, 'isp', n, 99), SDTest.Call(0x18f890, 'bs', n)[0]))
+		SDTest.Call(0x18f7f0, 'bsp', n, 99), SDTest.Call(0x18f890, 'bs', n)[0]))
 # a kick of "net0" would read the empty client table of single player
 for netname in ('x', 'net12', 'net300', 'net-3'):
 	check('Net_Kick' + fmt((netname,)), lambda n=netname: SDTest.Call(0x18b290, 'bs', n)[0])

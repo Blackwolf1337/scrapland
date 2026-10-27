@@ -295,9 +295,4 @@ byte __thiscall cAIVehicleShoot_InfernoReady(cAIVehicleShoot *self, float dist);
 byte __thiscall cAIVehicleShoot_InRange(cAIVehicleShoot *self, int w);
 void __fastcall cAIVehicleShoot_InitWeapons(cAIVehicleShoot *self);
 
-/* ---- AI/AStar.cpp (another source): a path over the visibility graph from from to to; startOk and goalOk
- * 0 when the end has no point of visibility ---- */
-byte __thiscall CAStar_FindPath(void *astar, cNWVecList *path, const vec3_t *to, const vec3_t *from, float radius,
-	float dist, int stupid, byte *startOk, byte *goalOk, int *state);
-
 #endif

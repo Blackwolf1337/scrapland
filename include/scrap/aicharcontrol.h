@@ -511,10 +511,7 @@ byte __thiscall cAICharControl2D_StrafeBack(cAICharControl *self, const vec3_t *
 byte __thiscall cAICharControl2D_StrafeFwd(cAICharControl *self, const vec3_t *pos, const vec3_t *away,
 	const vec3_t *dir, float dist, byte left, byte flag);
 
-/* the A* search on CNodesWorld (AI/AStar.cpp, not in C), as CAStar2D_FindPath and CAStar2D_GetPointsVis */
-byte __thiscall CAStar_FindPath(void *astar, cNWVecList *path, const vec3_t *dest, const vec3_t *pos, float r,
-	float dist, int soft, byte *noPath, byte *reach, int *res);
-void __thiscall CAStar_GetPointsVis(void *astar, const vec3_t *pos, const vec3_t **list, int max, int *count, float r);
+/* CAStar_FindPath and CAStar_GetPointsVis (the same arguments on CNodesWorld): nodesworld.h */
 
 /* ---- AI/AICharControl3D.cpp (src/game/AI/ICharControl3D.c): the slots as in 2D, in all three axes ---- */
 cAICharControl *__thiscall cAICharControl3D_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg);

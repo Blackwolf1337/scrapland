@@ -385,4 +385,10 @@ void __thiscall CNodesWorld_RandomAheadNode(CNodesWorld *self, int node, const v
 /* CNodesWorld_GetRacePoint (a random point of visibility on the floor of initial between minDist and maxDist),
  * CNodesWorld_Analize (Load in the analysis mode, writes AnalisisMap.txt) and CNodesWorld_AnalizeGraph: ai.h */
 
+/* ---- AI/AStar.cpp (another source, not in C): a path over the visibility graph from from to to; startOk and
+ * goalOk 0 when the end has no point of visibility ---- */
+byte __thiscall CAStar_FindPath(void *astar, cNWVecList *path, const vec3_t *to, const vec3_t *from, float radius,
+	float dist, int stupid, byte *startOk, byte *goalOk, int *state);
+void __thiscall CAStar_GetPointsVis(void *astar, const vec3_t *pos, const vec3_t **list, int max, int *count, float r);
+
 #endif
