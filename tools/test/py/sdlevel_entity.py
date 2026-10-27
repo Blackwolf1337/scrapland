@@ -45,6 +45,7 @@ check('entity player', lambda: ntname(ntplayer))
 # the world ring by cEntity_Next: the entities of each class (GetClassName through the vtable)
 ntclasses = {}
 ntobjs = []
+ntitems = []
 ntcount = 0
 nte = SDTest.Call(0x2092a0, 'tii', ntworld)[0]
 while nte and ntcount < 5000:
@@ -56,6 +57,8 @@ while nte and ntcount < 5000:
 		ntclasses[c] = 1
 	if SDTest.Call(ntslot(nte, 0x14), 'tbis', nte, 'Obj')[0]:
 		ntobjs.append(ntname(nte))
+	if c == 'item':
+		ntitems.append(nte)
 	nte = SDTest.Call(0x0ef310, 'tii', nte)[0]
 ntkeys = ntclasses.keys()
 ntkeys.sort()
@@ -229,6 +232,113 @@ ntfree(ntn2)
 ntfree(ntsdl)
 ntfree(ntsdn)
 ntfree(ntsde)
+
+# cItemEntity: the items of the level (reads only) and SDItem, made by cWorld_CreateEntity without a model and
+# deleted again (its Update and Tick are not called: no model)
+ntivi = ('FadeInEffect', 'FadeOutEffect', 'Blink', 'AutoFace', 'AppearsIfFree', 'OnlyUser', 'Active', 'Bogus', '')
+ntivf = ('TakeSoundVol', 'Radius', 'rTime', 'BackTime', 'Bogus', '')
+ntivs = ('TakeSound', 'Owner', 'Name', 'Type', 'OnTake', 'TgTypeMarker', 'Bogus', '')
+ntivv = ('Origin', 'Vel', 'Pos', 'Bogus', '')
+def ntitemfields(e):
+	return (ntname(e), ntpeek(e) == 0x7b294c, ntfl(e + 0x228, 1), ntpeek(e + 0x22c), ntstr(e + 0x230), ntfl(e + 0x2b0, 4),
+		ntpeek(e + 0x2c0) & 0xffffff, ntfl(e + 0x2c4, 1), ntstr(e + 0x2c8), SDTest.Peek(e + 0x348, '@b'),
+		ntname(ntpeek(e + 0x354)), ntpeek(e + 0x35c) & 0xffff, ntfl(e + 0x360, 1), SDTest.Peek(e + 0x364, '@b'),
+		ntints(e + 0x368, 2), ntpeek(e + 0x48), ntfl(e + 0xd4, 3))
+def ntitem(e, tag):
+	check('cItemEntity fields %s' % tag, lambda e=e: ntitemfields(e))
+	for v in ntivi:
+		check('cItemEntity_VarI(%s, %s)' % (tag, v), lambda e=e, v=v: SDTest.Call(0x0f0fa0, 'tbispi', e, v, -5, 0))
+	for v in ntivf:
+		check('cItemEntity_VarF(%s, %s)' % (tag, v), lambda e=e, v=v: SDTest.Call(0x0f0d20, 'tbisDi', e, v, -5.0, 0))
+	for v in ntivs:
+		check('cItemEntity_VarS(%s, %s)' % (tag, v), lambda e=e, v=v: (lambda r: (r[0], r[0] and ntstr(r[1])))(
+			SDTest.Call(0x0f1f70, 'tbispi', e, v, 0, 0)))
+	for v in ntivv:
+		check('cItemEntity_VarV(%s, %s)' % (tag, v), lambda e=e, v=v: SDTest.Call(0x0f2220, 'tbisDDDi', e, v, -1.0, -2.0,
+			-3.0, 0))
+	check('cItemEntity_IsType(%s)' % tag, lambda e=e: map(lambda t, e=e: SDTest.Call(0x0f1270, 'tbis', e, t)[0],
+		('item', 'Obj', 'Entity', 'Car', 'itemx', '')))
+	check('cItemEntity getters %s' % tag, lambda e=e: (SDTest.Call(0x0f0f80, 'tsi', e)[0], SDTest.Call(0x0f0f90, 'tfi', e)[0],
+		SDTest.Call(0x0f0f70, 'tfi', e)[0], SDTest.Call(0x0f0f60, 'tsi', e)[0],
+		(lambda r: (r[0] != 0, r[1]))(SDTest.Call(0x0f0f40, 'tiiF', e, (0.0, 0.0, 0.0)))))
+check('items', lambda: len(ntitems))
+for i in range(len(ntitems)):
+	if i < 6:
+		ntitem(ntitems[i], 'level %d' % i)
+nti = SDTest.Call(0x208360, 'tiisfffs', ntworld, 'SDItem', ntpp[0] + 500.0, ntpp[1], ntpp[2], 'item')[0]
+check('cItemEntity_ctor', lambda: ntpeek(nti + 0x34c) == nti + 0x34c and ntpeek(nti + 0x358) == nti)
+ntitem(nti, 'SDItem')
+ntcalls = []
+def ntontake(*args):
+	ntcalls.append(args)
+def ntvarsi(n, s):
+	a = ntcstr(s)
+	r = SDTest.Call(0x0f1f70, 'tbispi', nti, n, a, 1)[0]
+	ntfree(a)
+	return r
+for n, s in (('TakeSound', 'SDSound'), ('TakeSound', ''), ('Owner', 'SDNoOwner'), ('TgTypeMarker', 'rBgnk'),
+		('TgTypeMarker', 'RX'), ('TgTypeMarker', ''), ('OnTake', '__main__.ntontake'), ('OnReset', '__main__.ntontake'),
+		('Name', 'x'), ('Bogus', 'x')):
+	check('cItemEntity_VarS(SDItem, %s set %s)' % (n, s), lambda n=n, s=s: (ntvarsi(n, s), ntitemfields(nti)))
+for v in (('FadeInEffect', 2), ('FadeOutEffect', 0), ('Blink', 7), ('AutoFace', 1), ('AppearsIfFree', 1), ('OnlyUser', 0),
+		('Blink', 0), ('AutoFace', 0), ('Bogus', 1), ('Blink', 256)):
+	n, i = v
+	check('cItemEntity_VarI(SDItem, %s set %d)' % v, lambda n=n, i=i: (SDTest.Call(0x0f0fa0, 'tbispi', nti, n, i, 1)[0],
+		SDTest.Call(0x0f0fa0, 'tbispi', nti, n, -5, 0)))
+for v in (('TakeSoundVol', 0.75), ('Radius', 250.5), ('rTime', 5.0), ('rTime', 0.0), ('BackTime', 2.0), ('BackTime', 0.0),
+		('rTime', -1.0), ('Bogus', 1.0)):
+	n, f = v
+	check('cItemEntity_VarF(SDItem, %s set %s)' % (n, fmt(f)), lambda n=n, f=f: (SDTest.Call(0x0f0d20, 'tbisDi', nti, n, f, 1)[0],
+		ntitemfields(nti)))
+check('cItemEntity_VarV(SDItem, Origin set)', lambda: (SDTest.Call(0x0f2220, 'tbisDDDi', nti, 'Origin', 1.5, -2.5, 1e10, 1)[0],
+	ntfl(nti + 0x2b0, 3)))
+check('cItemEntity_VarV(SDItem, Vel set)', lambda: (SDTest.Call(0x0f2220, 'tbisDDDi', nti, 'Vel', 10.0, 0.0, -5.0, 1)[0],
+	ntfl(nti + 0xd4, 3), SDTest.Call(0x0f2220, 'tbisDDDi', nti, 'Vel', 0.0, 0.0, 0.0, 0)))
+check('cItemEntity_SetOrigin', lambda: (SDTest.Call(0x0f1730, 'tviF', nti, (ntpp[0] + 600.0, ntpp[1], ntpp[2])),
+	ntfl(nti + 0x2b0, 3)))
+check('cItemEntity_SetPos', lambda: (SDTest.Call(0x0f17a0, 'tviF', nti, (ntpp[0] + 700.0, ntpp[1], ntpp[2])),
+	ntpeek(nti + 0x22c), ntfl(nti + 0x28, 3)))
+for t in (3.0, 0.0, -2.0, 1.0):
+	check('cItemEntity_SetBackTime(%s)' % fmt(t), lambda t=t: (SDTest.Call(0x0f17d0, 'tvif', nti, t), ntfl(nti + 0x2bc, 1),
+		ntfl(nti + 0x28, 3), len(ntcalls)))
+for t in (3.0, 4.0, 0.0, -1.0, 2.0, 0.0):
+	check('cItemEntity_SetRespawn(%s)' % fmt(t), lambda t=t: (SDTest.Call(0x0f1840, 'tvif', nti, t), ntitemfields(nti)))
+for s in ('RBGNK', 'rbgnk', 'Rx?', '', 'kN', 'A'):
+	check('cItemEntity_SetTypeMarker(%s)' % s, lambda s=s: (SDTest.Call(0x0f1b60, 'tvis', nti, s), ntpeek(nti + 0x35c) & 0xffff))
+for s in ('', 'Player0', 'SDNoOwner'):
+	check('cItemEntity_SetOwner(%s)' % s, lambda s=s: (SDTest.Call(0x0f1760, 'tvis', nti, s), ntitemfields(nti)))
+SDTest.Call(0x0f1840, 'tvif', nti, 0.0)
+# the sphere: the other entity nt1 (its touch slot does nothing) or none
+ntip = SDTest.Call(0x0ef330, 'tiiF', nti, (0.0, 0.0, 0.0))[1]
+for d in ((0.0, 0.0, 0.0), (100.0, 0.0, 0.0), (0.5, 0.25, 0.0), (300.0, 0.0, 0.0), (0.0, -260.0, 0.0), (1000.0, 1000.0, 0.0)):
+	c = (ntip[0] + d[0], ntip[1] + d[1], ntip[2] + d[2])
+	for r in (0.0, 10.0, 100.0):
+		for o in (0, nt1):
+			check('cItemEntity_TestSphere' + fmt((d, r, o != 0)), lambda c=c, r=r, o=o: SDTest.Call(0x0f1da0, 'tbiiFfi', nti, o,
+				c, r, 0)[0])
+# the touch of nt1: its mask, OnlyUser and the type marker decide; OnTake gets (item, taker)
+def nttouch():
+	SDTest.Call(0x0f0c10, 'tviiii', nti, nt1, 0, 0)
+	return (map(lambda c: c, ntcalls), ntname(ntpeek(nti + 0x354)))
+check('cItemEntity_Touch mask 0', lambda: nttouch())
+ntpoke(nt1 + 0x48, 0x11)
+check('cItemEntity_Touch', lambda: nttouch())
+check('cItemEntity_Touch again', lambda: nttouch())
+SDTest.Call(0x0f0fa0, 'tbispi', nti, 'OnlyUser', 1, 1)
+check('cItemEntity_Touch OnlyUser', lambda: nttouch())
+SDTest.Call(0x0f0fa0, 'tbispi', nti, 'OnlyUser', 0, 1)
+SDTest.Call(0x0f1b60, 'tvis', nti, 'R')
+check('cItemEntity_Touch type R', lambda: nttouch())
+SDTest.Call(0x0f1b60, 'tvis', nti, '')
+check('cItemEntity_SetRespawn(1) taker', lambda: (SDTest.Call(0x0f1840, 'tvif', nti, 1.0), ntname(ntpeek(nti + 0x354)),
+	ntpeek(nti + 0x34c) == nti + 0x34c))
+check('cItemEntity_Touch taken', lambda: nttouch())
+ntpoke(nt1 + 0x48, 0)
+check('cItemEntity_NetNeedsSend', lambda: (SDTest.Call(0x0f21a0, 'tbif', nti, 1e30)[0], ntfl(0x8476ac, 1)))
+ntpoke(nti + 0x22c, 0)
+check('cItemEntity_NetNeedsSend far', lambda: (SDTest.Call(0x0f21a0, 'tbif', nti, 1e30)[0], ntpeek(0x8476b4) != 0))
+check('name of SDItem out', lambda: SDTest.Call(0x208810, 'tbis', ntworld + 4, 'SDItem')[0])
+check('cItemEntity_Delete', lambda: SDTest.Call(0x0f0be0, 'tiii', nti, 1)[0] == nti)
 
 # the doors: ChangeDoorState with an unknown state, AcceleratorOnEnter that stops at a type check
 def ntnative(f, params):
