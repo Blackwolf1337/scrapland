@@ -13,6 +13,7 @@
 #define SCRAP_EMBEDDEDFXMISC_H
 
 #include "scrap/embeddedfxchar.h"
+#include "scrap/filesys.h"
 
 #define TYEN_OBJECT "Obj"
 
@@ -289,5 +290,14 @@ SD_SIZE(cEmbeddedFXTreasure, 0xf0);
 
 /* the effect of the object model replaces *fx; other models leave *fx as it is */
 void EmbeddedFXMisc_Create(cEntity *obj, const char *model, cEmbeddedFX **fx);
+/* the handlers registered at rva 0x444f80..: the shield of the entity BossShield hit, the network messages of the
+ * shield mode and of the count down of a meeting point */
+void EmbeddedFXMisc_BossShieldHit(void);
+void EmbeddedFXMisc_BossShieldMsg(cAbstractFile *f);
+void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f);
+void __thiscall cEmbeddedFXMeetingPoint_SetCountDown(cEmbeddedFXMeetingPoint *self, float a, float b);
+vec3_t *__thiscall cEmbeddedFXMoto_EnginePos(cEmbeddedFXMoto *self, vec3_t *out);
+void __thiscall cEmbeddedFXMoto_SetF7d4(cEmbeddedFXMoto *self, float a, float b);
+void __thiscall cEmbeddedFXDataPack_SetOn(cEmbeddedFXDataPack *self, byte on);
 
 #endif
