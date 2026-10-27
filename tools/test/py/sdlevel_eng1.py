@@ -420,6 +420,16 @@ if en1d3d:
 		for en1ds in (80, 77, 75, 79, 71, 0):
 			check('en1 D3DApp_DepthFormatOk' + fmt((en1f, en1ds)), lambda f=en1f, ds=en1ds: SDTest.Call(0x276470,
 				'biiiii', en1d3d, 0, 1, f, ds)[0])
+	en1mb = (en1i(en1motor + 0x2a5b4), en1i(en1motor + 0x2a5b8))
+	for en1f in (22, 23):
+		for en1db in ((16, 0), (15, 1), (24, 0), (24, 8), (24, 4), (32, 0), (16, 9), (24, 9), (32, 1), (40, 0)):
+			def en1fd(f=en1f, db=en1db):
+				en1poke(en1motor + 0x2a5b4, db[0])
+				en1poke(en1motor + 0x2a5b8, db[1])
+				return SDTest.Call(0x2743b0, 'tiiiiip', en1motor, 0, 1, f, 0x5a5a)
+			check('en1 CD3DApp_FindDepthStencilFormat' + fmt((en1f, en1db)), en1fd)
+	en1poke(en1motor + 0x2a5b4, en1mb[0])
+	en1poke(en1motor + 0x2a5b8, en1mb[1])
 
 # CD3DApplication: the constructor and destructor on a buffer (g_Motor set back), the window style, the back buffer
 # description (a new device id) and pause; these change the state of the device, so they come last
