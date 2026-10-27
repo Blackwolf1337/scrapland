@@ -3,10 +3,10 @@
  * cVehicleEffects at vehicle + 0x7f0. It starts the damage, EMI and fire effects (debris elements of
  * World/FX/FXVehicle.cpp) when the life is low, the EMI counter runs or the ship burns, the wind smoke under a fast
  * player ship, and keeps two optional parts: the speed trails of the ships (not for the traffic "T..." and the
- * SMosquito) and the escape tubes of the SLifeBoat. src/game/Entities/Vehicle/VehicleEffects.c.
- * The constructor (rva 0x100ab0), destructor (0x100b60) and Update (0x100c10) sit before the range of this file in
- * the exe and are not here; neither are the update of the escape tubes (0x100c60), the wind smoke (0x102940) and the
- * shoot effects cVehicleEffects_Shoot (0x103500, 9 KB).
+ * SMosquito) and the escape tubes of the SLifeBoat. src/game/Entities/Vehicle/VehicleEffects.c. The constructor,
+ * destructor, Update and the escape tubes (rva 0x100ab0..0x101560) sit before the CHECK range of the file in the exe.
+ * The shoot effects (cVehicleEffects_Shoot, declared in include/scrap/weapons.h) are particles of m_FollowSistPart2
+ * of the embedded FX at the weapon node of the slot.
  */
 #ifndef SCRAP_VEHICLEEFFECTS_H
 #define SCRAP_VEHICLEEFFECTS_H
