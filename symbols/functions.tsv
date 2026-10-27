@@ -8522,75 +8522,77 @@ rva	size	source	callconv	name	signature
 002b20b0	44	USER_DEFINED	__cdecl	MallaD3D_GrupoFits	int __cdecl(void * g, void * t)
 002b20e0	75	USER_DEFINED	__fastcall	CMallaD3D_Check	int __fastcall(void * self)
 002b2130	543	USER_DEFINED	__cdecl	MallaD3DObj_Weld	int __cdecl(void * obj)
-002b2350	136	DEFAULT	unknown	FUN_006b2350	
-002b23e0	606	DEFAULT	unknown	FUN_006b23e0	
-002b2640	100	DEFAULT	unknown	FUN_006b2640	
-002b26b0	162	DEFAULT	unknown	FUN_006b26b0	
-002b2760	1064	DEFAULT	unknown	FUN_006b2760	
-002b2b90	97	DEFAULT	unknown	FUN_006b2b90	
-002b2c20	7	DEFAULT	unknown	FUN_006b2c20	
-002b2c30	36	ANALYSIS	__thiscall	CNodeFX_Spring::vf00	undefined __thiscall(void)
-002b2c60	36	ANALYSIS	__thiscall	CNodeFX_Wheel::vf00	undefined __thiscall(void)
-002b2c90	36	ANALYSIS	__thiscall	std::_Facet_base::`scalar_deleting_destructor'	void * __thiscall(uint param_1)
-002b2cc0	560	DEFAULT	unknown	FUN_006b2cc0	
-002b2ef0	154	DEFAULT	unknown	FUN_006b2ef0	
-002b2f90	3	ANALYSIS	__thiscall	CNodeFX_Spring::vf01	undefined __thiscall(void)
-002b2fa0	3	ANALYSIS	__thiscall	CNodeFX_Wheel::vf01	undefined __thiscall(void)
-002b2fb0	3	ANALYSIS	__thiscall	INodeFX::vf01	undefined __thiscall(void)
-002b2fc0	3122	ANALYSIS	__thiscall	CNodeFX_Spring::vf02	undefined __thiscall(void)
-002b3c00	1660	ANALYSIS	__thiscall	CNodeFX_Wheel::vf02	undefined __thiscall(void)
-002b4280	96	DEFAULT	unknown	FUN_006b4280	
-002b42e0	60	DEFAULT	unknown	FUN_006b42e0	
-002b4320	178	DEFAULT	unknown	FUN_006b4320	
-002b43e0	231	DEFAULT	unknown	FUN_006b43e0	
-002b44e0	85	DEFAULT	unknown	FUN_006b44e0	
-002b4550	34	USER_DEFINED	unknown	RenderEVA_ReleaseD3D	
-002b4580	209	DEFAULT	unknown	FUN_006b4580	
-002b4660	1507	USER_DEFINED	unknown	RenderEVA_DrawSkinNodo	
-002b4c50	2430	DEFAULT	unknown	FUN_006b4c50	
-002b55d0	1978	DEFAULT	unknown	FUN_006b55d0	
-002b5d90	2445	USER_DEFINED	unknown	RenderEVA_DrawSkin	
-002b6720	117	DEFAULT	unknown	FUN_006b6720	
-002b67a0	844	USER_DEFINED	__cdecl	MallaD3D_Render	int __cdecl(void * mesh, void * ctx)
-002b6af0	322	USER_DEFINED	unknown	RenderMallaD3D_Flush	
-002b6c40	59	DEFAULT	unknown	FUN_006b6c40	
-002b6c80	60	DEFAULT	unknown	FUN_006b6c80	
-002b6cc0	401	DEFAULT	unknown	FUN_006b6cc0	
-002b6e60	691	USER_DEFINED	unknown	RenderMallaD3D_Flush2	
-002b7120	36	DEFAULT	unknown	FUN_006b7120	
-002b7150	265	DEFAULT	unknown	FUN_006b7150	
-002b7260	359	USER_DEFINED	unknown	RenderObjBase3D_Flush	
-002b73d0	36	DEFAULT	unknown	FUN_006b73d0	
-002b7400	232	DEFAULT	unknown	FUN_006b7400	
-002b74f0	167	DEFAULT	unknown	FUN_006b74f0	
-002b75a0	85	DEFAULT	unknown	FUN_006b75a0	
-002b7600	167	DEFAULT	unknown	FUN_006b7600	
-002b76b0	1047	DEFAULT	unknown	FUN_006b76b0	
-002b7ad0	1129	DEFAULT	unknown	FUN_006b7ad0	
-002b7f40	84	DEFAULT	unknown	FUN_006b7f40	
-002b7fa0	597	DEFAULT	unknown	FUN_006b7fa0	
-002b8200	239	DEFAULT	unknown	FUN_006b8200	
-002b82f0	228	DEFAULT	unknown	FUN_006b82f0	
-002b83e0	367	DEFAULT	unknown	FUN_006b83e0	
-002b8570	759	DEFAULT	unknown	FUN_006b8570	
+002b2350	136	USER_DEFINED	__thiscall	CNodeFX_Spring_ctorCopy	void * __thiscall(void * src)
+002b23e0	606	USER_DEFINED	__thiscall	CNodeFX_Spring_ctor	void * __thiscall(void * nodo, int type)
+002b2640	100	USER_DEFINED	__fastcall	CNodeFX_Spring_ctor0	void * __fastcall(void * self)
+002b26b0	162	USER_DEFINED	__thiscall	CNodeFX_Wheel_ctorCopy	void * __thiscall(void * src)
+002b2760	1064	USER_DEFINED	__thiscall	CNodeFX_Wheel_ctor	void * __thiscall(void * nodo, int type)
+002b2b90	97	USER_DEFINED	__fastcall	CNodeFX_Wheel_ctor0	void * __fastcall(void * self)
+002b2c00	16	USER_DEFINED	__fastcall	INodeFX_ctor	void __fastcall(void * self)
+002b2c10	16	USER_DEFINED	__fastcall	INodeFX_ctor	void __fastcall(void * self)
+002b2c20	7	USER_DEFINED	__fastcall	INodeFX_ctor	void __fastcall(void * self)
+002b2c30	36	USER_DEFINED	__thiscall	CNodeFX_Spring_Delete	void * __thiscall(byte flags)
+002b2c60	36	USER_DEFINED	__thiscall	CNodeFX_Wheel_Delete	void * __thiscall(byte flags)
+002b2c90	36	USER_DEFINED	__thiscall	INodeFX_Delete	void * __thiscall(byte flags)
+002b2cc0	560	USER_DEFINED	__cdecl	NodeFX_New	void * __cdecl(char * type, void * nodo)
+002b2ef0	154	USER_DEFINED	__cdecl	NodeFX_Clone	void * __cdecl(void * fx)
+002b2f90	3	USER_DEFINED	__fastcall	CNodeFX_Spring_Type	byte __fastcall(void * self)
+002b2fa0	3	USER_DEFINED	__fastcall	CNodeFX_Wheel_Type	byte __fastcall(void * self)
+002b2fb0	3	USER_DEFINED	__fastcall	INodeFX_Type	byte __fastcall(void * self)
+002b2fc0	3122	USER_DEFINED	__thiscall	CNodeFX_Spring_Apply	int __thiscall(void * m, void * nodo, void * r)
+002b3c00	1660	USER_DEFINED	__thiscall	CNodeFX_Wheel_Apply	int __thiscall(void * m, void * nodo, void * r)
+002b4280	96	USER_DEFINED	__fastcall	CNodeFX_Spring_Reset	void __fastcall(void * self)
+002b42e0	60	USER_DEFINED	__fastcall	CNodeFX_Wheel_Reset	int __fastcall(void * self)
+002b4320	178	USER_DEFINED	__cdecl	RenderEVA_InitD3D	int __cdecl(void)
+002b43e0	231	USER_DEFINED	__cdecl	RenderEVA_CreateParticles	int __cdecl(void)
+002b44e0	85	USER_DEFINED	__cdecl	RenderEVA_FreeParticles	int __cdecl(void)
+002b4550	34	USER_DEFINED	__cdecl	RenderEVA_ReleaseD3D	int __cdecl(void)
+002b4580	209	USER_DEFINED	__cdecl	RenderEVA_LockParticles	int __cdecl(int nvert, void ** data)
+002b4660	1507	USER_DEFINED	__cdecl	RenderEVA_DrawSkinNodo	int __cdecl(void * m, void * r, void * skin)
+002b4c50	2430	USER_DEFINED	__cdecl	Particula_Quad	void __cdecl(void * p, void * bill, void * view, void * out, float alpha, float zbias)
+002b55d0	1978	USER_DEFINED	__cdecl	SistPart_Draw2	int __cdecl(void * sp, void * r)
+002b5d90	2445	USER_DEFINED	__cdecl	RenderEVA_DrawSkin	int __cdecl(void * m, void * r)
+002b6720	117	USER_DEFINED	__cdecl	RenderEVA_LockSkin	int __cdecl(int nvert, void ** data)
+002b67a0	844	USER_DEFINED	__cdecl	MallaD3D_Render	int __cdecl(void * self, void * ctx)
+002b6af0	322	USER_DEFINED	__cdecl	RenderMallaD3D_Flush	int __cdecl(void)
+002b6c40	59	USER_DEFINED	__cdecl	RenderMalla_Compare	int __cdecl(void * a, void * b)
+002b6c80	60	USER_DEFINED	__thiscall	Tabla_Get50	void * __thiscall(uint i)
+002b6cc0	401	USER_DEFINED	__cdecl	RenderMallaD3D_AddTransp	int __cdecl(void * m, void * world, byte cont, void * r)
+002b6e60	691	USER_DEFINED	__cdecl	RenderMallaD3D_Flush2	int __cdecl(void)
+002b7120	36	USER_DEFINED	__cdecl	RenderTransp_Compare	int __cdecl(void * a, void * b)
+002b7150	265	USER_DEFINED	__cdecl	SistPart_Draw	int __cdecl(void * sp, void * r)
+002b7260	359	USER_DEFINED	__cdecl	RenderObjBase3D_Flush	int __cdecl(void)
+002b73d0	36	USER_DEFINED	__cdecl	RenderObj_Compare	int __cdecl(void * a, void * b)
+002b7400	232	USER_DEFINED	__cdecl	ModelFX_Glow	void __cdecl(void * m, void * ctx)
+002b74f0	167	USER_DEFINED	__cdecl	ModelFX_Electric	void __cdecl(void * m, void * ctx)
+002b75a0	85	USER_DEFINED	__cdecl	ModelFX_Base	void __cdecl(void * m, void * ctx)
+002b7600	167	USER_DEFINED	__cdecl	ModelFX_Fire	void __cdecl(void * m, void * ctx)
+002b76b0	1047	USER_DEFINED	__cdecl	ModelFX_Static	void __cdecl(void * m, void * ctx)
+002b7ad0	1129	USER_DEFINED	__cdecl	ModelFX_Static2	void __cdecl(void * m, void * ctx)
+002b7f40	84	USER_DEFINED	__cdecl	ModelFX_Wire	void __cdecl(void * m, void * ctx)
+002b7fa0	597	USER_DEFINED	__cdecl	ModelFX_Noise	void __cdecl(void * m, void * ctx)
+002b8200	239	USER_DEFINED	__cdecl	ModelFX_FadeLit	void __cdecl(void * m, void * ctx)
+002b82f0	228	USER_DEFINED	__cdecl	ModelFX_Fade	void __cdecl(void * m, void * ctx)
+002b83e0	367	USER_DEFINED	__thiscall	ModelFX_Render	void __thiscall(void * ctx)
+002b8570	759	USER_DEFINED	__cdecl	ModelFX_InitD3D	void __cdecl(void)
 002b8870	144	USER_DEFINED	__cdecl	Box_Merge	void __cdecl(void * box, void * other, byte first)
-002b8900	1210	DEFAULT	unknown	FUN_006b8900	
-002b8dd0	34	DEFAULT	unknown	FUN_006b8dd0	
-002b8e00	115	DEFAULT	unknown	FUN_006b8e00	
-002b8e80	1329	DEFAULT	unknown	FUN_006b8e80	
-002b93c0	231	DEFAULT	unknown	FUN_006b93c0	
+002b8900	1210	USER_DEFINED	__thiscall	CMallaD3D_CalcPesos	byte __thiscall(void * nodo)
+002b8dd0	34	USER_DEFINED	__fastcall	Tabla_Free	void __fastcall(void * t)
+002b8e00	115	USER_DEFINED	__thiscall	Tabla_Alloc10	void __thiscall(int num)
+002b8e80	1329	USER_DEFINED	__thiscall	CMallaD3D_CalcIlum	void __thiscall(void * nodo, void * esc)
+002b93c0	231	USER_DEFINED	__thiscall	CGrafico3D_ctorTex2	void * __thiscall(char * tex, char * opac)
 002b94b0	240	USER_DEFINED	__thiscall	CGrafico3D_ctorTex	void * __thiscall(char * tex, void * pos, float * size)
 002b95a0	134	USER_DEFINED	__fastcall	CGrafico3D_ctor	void * __fastcall(void * self)
-002b9630	3	DEFAULT	unknown	FUN_006b9630	
+002b9630	3	USER_DEFINED	__fastcall	Grafico3DVert_ctor	void * __fastcall(void * self)
 002b9640	94	USER_DEFINED	__fastcall	CGrafico3D_dtor	void __fastcall(void * self)
 002b96a0	35	USER_DEFINED	__thiscall	CGrafico3D_Delete	void * __thiscall(byte flags)
-002b96d0	3	ANALYSIS	__thiscall	CGrafico3D::vf04	undefined __thiscall(void)
-002b96e0	3	ANALYSIS	__thiscall	CGrafico3D::vf03	undefined __thiscall(void)
+002b96d0	3	USER_DEFINED	__thiscall	FXMisc_Nop	void __thiscall(int arg)
+002b96e0	3	USER_DEFINED	__thiscall	FXMisc_Nop	void __thiscall(int arg)
 002b96f0	337	USER_DEFINED	__thiscall	CGrafico3D_Read	byte __thiscall(void * f, void * ctx)
 002b9850	967	USER_DEFINED	__fastcall	CGrafico3D_Draw	void __fastcall(void * self)
 002b9c20	240	USER_DEFINED	__thiscall	CGrafico3D_Render	void __thiscall(void * dev, void * r)
 002b9d10	293	USER_DEFINED	__thiscall	CGrafico3D_Write	byte __thiscall(void * f, void * ctx)
-002b9e40	3	ANALYSIS	__thiscall	CGrafico3D::vf01	undefined __thiscall(void)
+002b9e40	3	USER_DEFINED	__thiscall	FXMisc_Nop	void __thiscall(int arg)
 002b9e50	62	USER_DEFINED	__thiscall	CGrafico3D_SetNodo	void __thiscall(void * nodo)
 002b9e90	47	USER_DEFINED	__thiscall	CGrafico3D_SetTexture	void __thiscall(char * tex, char * opac)
 002b9ec0	439	USER_DEFINED	__thiscall	CGrafico3D_CreateMat	void __thiscall(char * tex, char * opac, int src, int dst, byte alpha)
@@ -8599,15 +8601,15 @@ rva	size	source	callconv	name	signature
 002ba130	173	USER_DEFINED	__fastcall	CPortal_dtor	void __fastcall(void * self)
 002ba1e0	35	USER_DEFINED	__thiscall	CPortal_Delete	void * __thiscall(byte flags)
 002ba210	151	USER_DEFINED	__fastcall	CPortal_LinkZonas	void __fastcall(void * self)
-002ba2b0	346	DEFAULT	unknown	FUN_006ba2b0	
+002ba2b0	346	USER_DEFINED	__thiscall	CPortal_DrawDebug	void __thiscall(uint color)
 002ba410	143	USER_DEFINED	__thiscall	CPortal_Read	byte __thiscall(void * f, void * ctx)
 002ba4a0	76	USER_DEFINED	__thiscall	CPortal_PlaneDist	float __thiscall(void * p)
 002ba4f0	414	USER_DEFINED	__thiscall	CPortal_Dist	float __thiscall(void * p)
 002ba690	94	USER_DEFINED	__thiscall	CPortal_Render	void __thiscall(void * dev, void * r)
 002ba6f0	162	USER_DEFINED	__thiscall	CPortal_Write	byte __thiscall(void * f, void * ctx)
-002ba7a0	3	ANALYSIS	__thiscall	CPortal::vf01	undefined __thiscall(void)
+002ba7a0	3	USER_DEFINED	__thiscall	FXMisc_Nop	void __thiscall(int arg)
 002ba7b0	376	USER_DEFINED	__thiscall	CPortal_SegCross	byte __thiscall(void * a, void * b, void * out)
-002ba930	3029	DEFAULT	unknown	FUN_006ba930	
+002ba930	3029	USER_DEFINED	__thiscall	CPortal_ClipRect	byte __thiscall(void * rect)
 002bb510	399	USER_DEFINED	__cdecl	Portal_DrawRect	void __cdecl(int * vp, float * rect, uint color)
 002bb6a0	69	USER_DEFINED	__thiscall	CPortal_SetZona	void __thiscall(uint i, void * zona)
 002bb6f0	437	USER_DEFINED	__thiscall	CPortal_UpdateCache	void __thiscall(void * m)
@@ -8622,15 +8624,15 @@ rva	size	source	callconv	name	signature
 002bbac0	199	DEFAULT	unknown	FUN_006bbac0	
 002bbb90	298	DEFAULT	unknown	FUN_006bbb90	
 002bbcc0	40	DEFAULT	unknown	FUN_006bbcc0	
-002bbcf0	34	DEFAULT	unknown	FUN_006bbcf0	
-002bbd20	34	DEFAULT	unknown	FUN_006bbd20	
+002bbcf0	34	USER_DEFINED	__fastcall	Tabla_Free	void __fastcall(void * t)
+002bbd20	34	USER_DEFINED	__fastcall	Tabla_Free	void __fastcall(void * t)
 002bbd50	64	DEFAULT	unknown	FUN_006bbd50	
 002bbd90	183	DEFAULT	unknown	FUN_006bbd90	
 002bbe50	184	DEFAULT	unknown	FUN_006bbe50	
 002bbf10	445	DEFAULT	unknown	FUN_006bbf10	
 002bc0d0	129	DEFAULT	unknown	FUN_006bc0d0	
 002bc160	67	ANALYSIS	__thiscall	Concurrency::details::SubAllocator::~SubAllocator	void __thiscall(void)
-002bc1b0	57	DEFAULT	unknown	FUN_006bc1b0	
+002bc1b0	57	USER_DEFINED	__thiscall	Tabla_Get8	void * __thiscall(uint i)
 002bc1f0	161	DEFAULT	unknown	FUN_006bc1f0	
 002bc2a0	184	DEFAULT	unknown	FUN_006bc2a0	
 002bc360	593	DEFAULT	unknown	FUN_006bc360	
