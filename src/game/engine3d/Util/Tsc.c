@@ -1,14 +1,13 @@
 /*
- * The rdtsc timers of the engine3d profiler, original source Util/tsc.cpp (include/scrap/prof.h): the processor
- * clock measured against timeGetTime, and per section the ticks of the frame, their average over n frames and the
- * maximum, in milliseconds.
+ * The rdtsc timers of the engine3d profiler, original source Util/tsc.cpp (include/scrap/prof.h): per section the
+ * ticks of the frame, their average over n frames and the maximum, in milliseconds. The measurement of the processor
+ * clock (Tsc_CpuFreq, 200 ms of busy waiting) is still the exe's.
  */
 #include "scrap/crt.h"
 #include "scrap/game.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/prof.h"
-#include "scrap/win32.h"
 
 #define PROF_SECTIONS 32
 
@@ -17,7 +16,6 @@
 #define g_ProfFrames ((byte *)Game_Ptr(0x4b1ae0))	/* the frames summed into g_ProfTicks */
 #define g_ProfCounts ((int *)Game_Ptr(0x4b1b00))	/* Prof_Count */
 #define g_ProfLastCounts ((int *)Game_Ptr(0x4b1b80))
-#define g_CpuFreq GAME_DATA(float, 0x4b1c00)		/* ticks per millisecond */
 
 /* the x87 division of the original (fdivr QWORD) in the precision the game set, stored as a float */
 static float X87_DivToFloat(double num, float den) {
@@ -25,20 +23,6 @@ static float X87_DivToFloat(double num, float den) {
 
 	__asm__("fdivrl %2" : "=t"(r) : "0"((long double)den), "m"(num));
 	return (float)r;
-}
-
-/* the original busy-waits the 200 ms of the measurement */
-float Tsc_CpuFreq(int recalc) {
-	if (g_CpuFreq == 0.0f || recalc) {
-		uint64_t t0 = __builtin_ia32_rdtsc();
-		uint32_t start = exe_timeGetTime();
-		while (exe_timeGetTime() - start < 200) {
-		}
-		uint64_t t1 = __builtin_ia32_rdtsc();
-		g_CpuFreq = (float)Int64_ToDouble((int64_t)(t1 - t0)) * 5.0f;
-		CHECK(g_CpuFreq != 0.0f);
-	}
-	return g_CpuFreq;
 }
 
 int Prof_Count(int section, int n) {

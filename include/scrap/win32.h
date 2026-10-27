@@ -50,6 +50,8 @@ typedef int(__stdcall *widechartomultibyte_t)(uint32_t cp, uint32_t flags, const
 	const char *defChar, int *usedDef);
 #define exe_MultiByteToWideChar GAME_DATA(multibytetowidechar_t, 0x3a12b0)
 #define exe_WideCharToMultiByte GAME_DATA(widechartomultibyte_t, 0x3a12b4)
+typedef int(__stdcall *queryperformancecounter_t)(int64_t *count);
+#define exe_QueryPerformanceCounter GAME_DATA(queryperformancecounter_t, 0x3a12a8)
 
 /* winmm */
 typedef uint32_t(__stdcall *timegettime_t)(void);

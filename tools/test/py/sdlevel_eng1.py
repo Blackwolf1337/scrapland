@@ -450,3 +450,18 @@ if en1motor:
 	for en1p in (1, 1, 0, 0):
 		check('en1 CD3DApp_Pause' + fmt((en1p,)), lambda p=en1p: (SDTest.Call(0x2750b0, 'tvii', en1motor, p),
 			SDTest.Peek(0x4b1c3c, 'i') - en1pc, en1i(en1motor + 0x2a38c)))
+
+# the counter of the engine with a fixed time poked (the real one differs between the runs), the base set back
+en1tf = (en1i(0x8b1c80), en1i(0x8b1c84), en1i(0x8b1c88), en1i(0x8b1c8c))
+en1tq = en1z(8)
+for en1v in ((12345, 0), (0x7fff0000, 3), (5, 0)):
+	en1poke(0x8b1c80, en1v[0])
+	en1poke(0x8b1c84, en1v[1])
+	check('en1 Timer_GetFreq' + fmt(en1v), lambda: (SDTest.Call(0x276cb0, 'ii', en1tq)[0], en1ints(en1tq, 2)))
+	for en1fps in (60.0, 30.0, 0.5, 1000000.0):
+		check('en1 Timer_FixedStep' + fmt((en1v, en1fps)), lambda f=en1fps: (SDTest.Call(0x276be0, 'if', f)[0],
+			en1i(0x8b1c80), en1i(0x8b1c84)))
+	check('en1 Timer_FixedStep 0' + fmt(en1v), lambda: (SDTest.Call(0x276be0, 'if', 0.0)[0], en1i(0x8b1c80),
+		en1i(0x8b1c84)))
+for en1k in range(4):
+	en1poke(0x8b1c80 + 4 * en1k, en1tf[en1k])

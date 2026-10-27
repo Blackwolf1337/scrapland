@@ -1,12 +1,14 @@
 /*
- * The string and GUID helpers of the DX8 SDK framework (dxutil.cpp, include/scrap/dxutil.h). The generic strings
- * are ANSI.
+ * The string and GUID helpers of the DX8 SDK framework (dxutil.cpp, include/scrap/dxutil.h; the generic strings
+ * are ANSI) and the performance counter of the engine next to them.
  */
 #include <string.h>
 
 #include "scrap/crt.h"
 #include "scrap/dxutil.h"
 #include "scrap/global.h"
+#include "scrap/mathlib.h"
+#include "scrap/scrapmain.h"
 #include "scrap/win32.h"
 
 /* the original copies without a bound for cch -1 */
@@ -82,4 +84,40 @@ void DXUtil_WideToGeneric(char *dst, const uint16_t *src, int cch) {
 	if (dst && src && cch) {
 		DXUtil_WideToAnsi(dst, src, cch);
 	}
+}
+
+/* the performance counter of the engine: since g_TimerBase, or the fixed time while one is set */
+#define g_TimerFixed GAME_DATA(int64_t, 0x4b1c80)
+#define g_TimerBase GAME_DATA(int64_t, 0x4b1c88)
+
+int Timer_GetFreq(int64_t *out) {
+	if (g_TimerFixed) {
+		*out = g_TimerFixed;
+		return 1;
+	}
+	int r = exe_QueryPerformanceCounter(out);
+	*out -= g_TimerBase;
+	return r;
+}
+
+int Timer_FixedStep(float fps) {
+	int64_t t;
+
+	if (fps == 0.0f) {
+		/* back to the counter, from the fixed time on */
+		if (g_TimerFixed) {
+			exe_QueryPerformanceCounter(&t);
+			g_TimerBase = t - g_TimerFixed;
+		}
+		g_TimerFixed = 0;
+		return 1;
+	}
+	if (!g_TimerFixed) {
+		exe_QueryPerformanceCounter(&t);
+		t -= g_TimerBase;
+		g_TimerFixed = t;
+	}
+	Timer_GetQPFreq(&t);
+	g_TimerFixed += (int)((float)Int64_ToDouble(t) / fps);
+	return 1;
 }

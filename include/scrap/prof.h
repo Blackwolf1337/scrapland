@@ -12,7 +12,8 @@
 #define g_ProfTicks ((uint64_t *)Game_Ptr(0x4b17e0))	/* per section */
 
 /* Util/tsc.cpp (src/game/engine3d/Util/Tsc.c) */
-/* the rdtsc ticks per millisecond, measured once (or again with recalc) over 200 ms of timeGetTime */
+/* the rdtsc ticks per millisecond, measured once (or again with recalc) over 200 ms of timeGetTime (rva 0x272f90,
+ * src/imports.inc) */
 float Tsc_CpuFreq(int recalc);
 int Prof_Count(int section, int n);	/* a profiler counter, the new value */
 /* the ticks of the section summed over frames calls, then their average (the last one in between) */

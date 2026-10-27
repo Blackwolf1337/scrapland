@@ -45,6 +45,9 @@ void DXUtil_WideToGeneric(char *dst, const uint16_t *src, int cch);
 void DXUtil_GUIDToString(const D3DGuid *g, char *buf);
 /* 1 parsed, else 0 and the GUID cleared */
 int DXUtil_StringToGUID(const char *s, D3DGuid *g);
+/* the counter of the engine advanced by 1/fps seconds per call (frames of a fixed length), 0: the real counter
+ * again; Timer_GetFreq (scrapmain.h) reads it */
+int Timer_FixedStep(float fps);
 /* still the exe's (src/imports.inc): the timer of the framework, cmd 1 start, 2 stop (rva 0x276790) */
 float DXUtil_Timer(int cmd);
 
