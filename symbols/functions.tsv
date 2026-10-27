@@ -3695,128 +3695,136 @@ rva	size	source	callconv	name	signature
 00139500	11	DEFAULT	unknown	FUN_00539500	
 00139510	180	DEFAULT	unknown	FUN_00539510	
 001395d0	223	DEFAULT	unknown	FUN_005395d0	
-001396b0	188	DEFAULT	unknown	FUN_005396b0	
-00139810	196	DEFAULT	unknown	FUN_00539810	
+001396b0	188	USER_DEFINED	__thiscall	cPlayerInput_PressKey	void __thiscall(int player)
+00139810	196	USER_DEFINED	__thiscall	cActionSet_HoldPressed	void __thiscall(void)
 00139900	1	DEFAULT	unknown	FUN_00539900	
 00139910	6	USER_DEFINED	__cdecl	Input_GetActionSet	uint __cdecl(void)
 00139920	48	USER_DEFINED	__thiscall	cPlayerInput::GetCursorChar	char __thiscall(void)
-00139950	223	DEFAULT	unknown	FUN_00539950	
-00139a30	223	DEFAULT	unknown	FUN_00539a30	
-00139b10	34	DEFAULT	unknown	FUN_00539b10	
-00139b40	30	DEFAULT	unknown	FUN_00539b40	
-00139b60	61	DEFAULT	unknown	FUN_00539b60	
-00139ba0	336	DEFAULT	unknown	FUN_00539ba0	
-00139cf0	72	DEFAULT	unknown	FUN_00539cf0	
-00139d40	432	DEFAULT	unknown	FUN_00539d40	
-00139ef0	202	DEFAULT	unknown	FUN_00539ef0	
-00139fc0	130	DEFAULT	unknown	FUN_00539fc0	
-0013a050	164	DEFAULT	unknown	FUN_0053a050	
-0013a140	99	DEFAULT	unknown	FUN_0053a140	
-0013a1b0	44	DEFAULT	unknown	FUN_0053a1b0	
-0013a230	148	DEFAULT	unknown	FUN_0053a230	
-0013a2d0	44	DEFAULT	unknown	FUN_0053a2d0	
-0013a300	58	DEFAULT	unknown	FUN_0053a300	
-0013a340	59	DEFAULT	unknown	FUN_0053a340	
-0013a380	50	DEFAULT	unknown	FUN_0053a380	
-0013a400	100	DEFAULT	unknown	FUN_0053a400	
-0013a470	57	DEFAULT	unknown	FUN_0053a470	
-0013a4b0	59	DEFAULT	unknown	FUN_0053a4b0	
-0013a510	69	DEFAULT	unknown	FUN_0053a510	
+00139950	223	USER_DEFINED	__thiscall	ActionTable_Init	void __thiscall(int num)
+00139a30	223	USER_DEFINED	__thiscall	ActionSetTable_Init	void __thiscall(int num)
+00139b10	34	USER_DEFINED	__thiscall	cInputAction_Init	void __thiscall(char * name, byte latch)
+00139b40	30	USER_DEFINED	__thiscall	cActionSet_Init	void __thiscall(int num, char * name)
+00139b60	61	USER_DEFINED	__thiscall	cPad_Init	void __thiscall(int index)
+00139ba0	336	USER_DEFINED	__cdecl	InputMaps_Init	void __cdecl(void)
+00139cf0	72	USER_DEFINED	__cdecl	InputMaps_Clear	void __cdecl(void)
+00139d40	432	USER_DEFINED	__thiscall	cPad_Update	void __thiscall(void)
+00139ef0	202	USER_DEFINED	__thiscall	cPlayerInput_MoveCursor	void __thiscall(float dx, float dy)
+00139fc0	130	USER_DEFINED	__thiscall	cPlayerInput_SetCursorChar	byte __thiscall(char c)
+0013a050	164	USER_DEFINED	__cdecl	Input_UpdateActions	void __cdecl(void)
+0013a100	53	USER_DEFINED	__thiscall	cInputAction_Shift	void __thiscall(void)
+0013a140	99	USER_DEFINED	__thiscall	cActionSet_Shift	void __thiscall(void)
+0013a1b0	44	USER_DEFINED	__thiscall	cInputAction_Pressed	byte __thiscall(int player)
+0013a1e0	75	USER_DEFINED	__thiscall	cInputAction_Fire	void __thiscall(void)
+0013a230	148	USER_DEFINED	__thiscall	cActionSet_Fire	void __thiscall(void)
+0013a2d0	44	USER_DEFINED	__thiscall	cInputAction_Released	byte __thiscall(int player)
+0013a300	58	USER_DEFINED	__thiscall	cPad_Stop	void __thiscall(void)
+0013a340	59	USER_DEFINED	__cdecl	Input_ClearActions	void __cdecl(void)
+0013a380	50	USER_DEFINED	__cdecl	Input_ResetActions	void __cdecl(void)
+0013a3c0	57	USER_DEFINED	__thiscall	cInputAction_Clear	void __thiscall(void)
+0013a400	100	USER_DEFINED	__thiscall	cActionSet_Clear	void __thiscall(void)
+0013a470	57	USER_DEFINED	__thiscall	cPlayerInput_Clear	void __thiscall(void)
+0013a4b0	59	USER_DEFINED	__cdecl	Input_ResetStates	void __cdecl(void)
+0013a4f0	25	USER_DEFINED	__thiscall	cInputAction_Keep	void __thiscall(void)
+0013a510	69	USER_DEFINED	__thiscall	cActionSet_Keep	void __thiscall(void)
 0013a560	200	USER_DEFINED	__cdecl	Input_SelectActionSet	void __cdecl(int index)
-0013a690	132	DEFAULT	unknown	FUN_0053a690	
-0013a720	219	USER_DEFINED	__thiscall	cVirtualKeyboard::Set	byte __thiscall(char * text)
-0013a800	25	USER_DEFINED	__thiscall	cPlayerInput::SetInputFunc	void __thiscall(char * func)
-0013a820	120	USER_DEFINED	__thiscall	cPad::Rumble	void __thiscall(float a, float b, float c)
-0013a8a0	130	USER_DEFINED	__thiscall	cPlayerInput::SetString	void __thiscall(char * text)
-0013a930	49	DEFAULT	unknown	FUN_0053a930	
-0013a970	86	DEFAULT	unknown	FUN_0053a970	
-0013a9d0	30	DEFAULT	unknown	FUN_0053a9d0	
-0013a9f0	54	DEFAULT	unknown	FUN_0053a9f0	
-0013aa30	93	DEFAULT	unknown	FUN_0053aa30	
-0013aa90	121	ANALYSIS	__thiscall	cAbstractIDevice::vf00	undefined __thiscall(void)
+0013a630	88	USER_DEFINED	__thiscall	cInputAction_Latch	void __thiscall(void)
+0013a690	132	USER_DEFINED	__thiscall	cActionSet_Latch	void __thiscall(void)
+0013a720	219	USER_DEFINED	__thiscall	cVirtualKeyboard_Set	byte __thiscall(char * text)
+0013a800	25	USER_DEFINED	__thiscall	cPlayerInput_SetInputFunc	void __thiscall(char * func)
+0013a820	120	USER_DEFINED	__thiscall	cPad_Rumble	void __thiscall(float a, float b, float c)
+0013a8a0	130	USER_DEFINED	__thiscall	cPlayerInput_SetString	void __thiscall(char * text)
+0013a930	49	USER_DEFINED	__cdecl	Input_OnTextDone	void __cdecl(int player, char * text)
+0013a970	86	USER_DEFINED	__thiscall	cActionSet_AnyActive	byte __thiscall(void)
+0013a9d0	30	USER_DEFINED	__thiscall	cAbstractIDevice_ctor	void * __thiscall(void)
+0013a9f0	54	USER_DEFINED	__thiscall	cFuncGvarDevices_ctor	void * __thiscall(void * dev)
+0013aa30	93	USER_DEFINED	__thiscall	cAbstractIDevice_dtor	void __thiscall(void)
+0013aa90	121	USER_DEFINED	__thiscall	cAbstractIDevice_Delete	void * __thiscall(byte flags)
 0013ab10	31	USER_DEFINED	__cdecl	Input_AbortListenToDefine	void __cdecl(void)
-0013ab30	114	ANALYSIS	__thiscall	cAbstractIDevice::vf08	undefined __thiscall(void)
-0013abb0	507	USER_DEFINED	__cdecl	Input_AssignEntry	int __cdecl(char * a, char * b, int c, char * d, char * e)
-0013adc0	283	USER_DEFINED	__cdecl	Input_Bind	int __cdecl(int player, char * a, char * b, char * c)
-0013aef0	132	DEFAULT	unknown	FUN_0053aef0	
-0013af80	134	DEFAULT	unknown	FUN_0053af80	
-0013b010	264	DEFAULT	unknown	FUN_0053b010	
-0013b120	226	USER_DEFINED	__cdecl	Input_ClearDefinedList	int __cdecl(int player, char * a, char * b, int flag)
-0013b210	137	DEFAULT	unknown	FUN_0053b210	
-0013b2a0	370	DEFAULT	unknown	FUN_0053b2a0	
-0013b420	223	USER_DEFINED	__cdecl	Input_GetDefinedEntry	char * __cdecl(int player, char * a, char * b, char * c, int flag)
-0013b510	366	DEFAULT	unknown	FUN_0053b510	
-0013b680	234	USER_DEFINED	__cdecl	Input_GetDefinedList	int __cdecl(int player, char * a, char * b, char * buf, int size, int flag)
-0013b780	116	DEFAULT	unknown	FUN_0053b780	
-0013b800	505	USER_DEFINED	__cdecl	Input_GetEntry	int __cdecl(char * a, char * b, char * c, int * index, char * * name)
-0013ba10	42	DEFAULT	unknown	FUN_0053ba10	
-0013ba40	326	USER_DEFINED	__cdecl	Input_ListenToDefine	int __cdecl(int player, char * a, char * b, char * c)
-0013bba0	242	DEFAULT	unknown	FUN_0053bba0	
-0013bca0	617	ANALYSIS	__thiscall	cFuncGvarDevices::vf01	undefined __thiscall(void)
-0013bf20	126	DEFAULT	unknown	FUN_0053bf20	
-0013bfc0	67	DEFAULT	unknown	FUN_0053bfc0	
-0013c010	37	DEFAULT	unknown	FUN_0053c010	
+0013ab30	114	USER_DEFINED	__thiscall	cAbstractIDevice_SetEntry	byte __thiscall(int entry, int set, int player, int action, byte check)
+0013abb0	507	USER_DEFINED	__cdecl	Input_AssignEntry	int __cdecl(char * device, char * entry, int player, char * set, char * action)
+0013adc0	283	USER_DEFINED	__cdecl	Input_Bind	int __cdecl(int player, char * set, char * action, char * func)
+0013aef0	132	USER_DEFINED	__cdecl	Input_CheckInactivity	void __cdecl(float dt)
+0013af80	134	USER_DEFINED	__thiscall	InputDevices_Clear	void __thiscall(void)
+0013b010	264	USER_DEFINED	__cdecl	Input_ClearBinding	int __cdecl(uint player, int set, int action, byte check)
+0013b120	226	USER_DEFINED	__cdecl	Input_ClearDefinedList	int __cdecl(int player, char * set, char * action, int check)
+0013b210	137	USER_DEFINED	__thiscall	cAbstractIDevice_ClearEntries	void __thiscall(void)
+0013b2a0	370	USER_DEFINED	__cdecl	Input_FindBinding	char * __cdecl(uint player, int set, int action, char * device, byte check)
+0013b420	223	USER_DEFINED	__cdecl	Input_GetDefinedEntry	char * __cdecl(int player, char * set, char * action, char * device, int check)
+0013b510	366	USER_DEFINED	__cdecl	Input_ListBindings	int __cdecl(uint player, int set, int action, char * buf, int size, byte check)
+0013b680	234	USER_DEFINED	__cdecl	Input_GetDefinedList	int __cdecl(int player, char * set, char * action, char * buf, int size, int check)
+0013b780	116	USER_DEFINED	__thiscall	cAbstractIDevice_GetEntry	void __thiscall(int entry, int set, void * player, void * action)
+0013b800	505	USER_DEFINED	__cdecl	Input_GetEntry	int __cdecl(char * device, char * entry, char * set, void * player, void * action)
+0013ba10	42	USER_DEFINED	__thiscall	cAbstractIDevice_InitEntries	void __thiscall(int n)
+0013ba40	326	USER_DEFINED	__cdecl	Input_ListenToDefine	int __cdecl(int player, char * set, char * action, char * func)
+0013bba0	242	USER_DEFINED	__cdecl	Input_SetToDefine	void __cdecl(int player, int action, uint set)
+0013bca0	617	USER_DEFINED	__thiscall	cFuncGvarDevices_Load	void __thiscall(void * f)
+0013bf20	126	USER_DEFINED	__cdecl	Input_Update	void __cdecl(float dt)
+0013bfa0	25	USER_DEFINED	__cdecl	Input_OnDefined	void __cdecl(void)
+0013bfc0	67	USER_DEFINED	__cdecl	Input_UpdateDevices	void __cdecl(float dt)
+0013c010	37	USER_DEFINED	__cdecl	Input_ResetInactivity	void __cdecl(void)
 0013c040	71	USER_DEFINED	__cdecl	Input_ResetToDefault	void __cdecl(void)
-0013c090	477	ANALYSIS	__thiscall	cFuncGvarDevices::vf00	undefined __thiscall(void)
-0013c280	107	DEFAULT	unknown	FUN_0053c280	
-0013c2f0	636	DEFAULT	unknown	FUN_0053c2f0	
-0013c580	45	DEFAULT	unknown	FUN_0053c580	
-0013c5b0	78	DEFAULT	unknown	FUN_0053c5b0	
-0013c600	5	ANALYSIS	__thiscall	cAbstractIDevice::vf07	undefined __thiscall(void)
-0013c610	40	DEFAULT	unknown	FUN_0053c610	
-0013c660	77	DEFAULT	unknown	FUN_0053c660	
-0013c6e0	112	DEFAULT	unknown	FUN_0053c6e0	
-0013c750	155	DEFAULT	unknown	FUN_0053c750	
-0013c7f0	35	ANALYSIS	__thiscall	cPcKeyboard::vf00	undefined __thiscall(void)
-0013c820	27	DEFAULT	unknown	FUN_0053c820	
-0013c840	103	DEFAULT	unknown	FUN_0053c840	
-0013c8b0	78	ANALYSIS	__thiscall	cPcKeyboard::vf08	undefined __thiscall(void)
-0013c900	74	DEFAULT	unknown	FUN_0053c900	
-0013c950	38	DEFAULT	unknown	FUN_0053c950	
-0013c980	6	ANALYSIS	__thiscall	cPcKeyboard::vf03	undefined __thiscall(void)
-0013c990	1388	ANALYSIS	__thiscall	cPcKeyboard::vf05	undefined __thiscall(void)
-0013d230	43	ANALYSIS	__thiscall	cPcKeyboard::vf04	undefined __thiscall(void)
-0013d260	91	DEFAULT	unknown	FUN_0053d260	
-0013d2c0	577	ANALYSIS	__thiscall	cPcKeyboard::vf01	undefined __thiscall(void)
-0013d510	115	DEFAULT	unknown	FUN_0053d510	
-0013d590	66	ANALYSIS	__thiscall	cPcKeyboard::vf06	undefined __thiscall(void)
-0013d5e0	846	ANALYSIS	__thiscall	cPcKeyboard::vf02	undefined __thiscall(void)
-0013d930	83	DEFAULT	unknown	FUN_0053d930	
-0013d990	40	ANALYSIS	__thiscall	cPcKeyboard::vf07	undefined __thiscall(void)
-0013daa0	170	DEFAULT	unknown	FUN_0053daa0	
-0013db50	35	ANALYSIS	__thiscall	cPcMouse::vf00	undefined __thiscall(void)
-0013db80	27	DEFAULT	unknown	FUN_0053db80	
-0013dba0	59	ANALYSIS	__thiscall	cPcMouse::vf08	undefined __thiscall(void)
-0013dbe0	38	DEFAULT	unknown	FUN_0053dbe0	
-0013dc10	6	ANALYSIS	__thiscall	cPcMouse::vf03	undefined __thiscall(void)
-0013dc20	193	ANALYSIS	__thiscall	cPcMouse::vf05	undefined __thiscall(void)
-0013dd00	257	ANALYSIS	__thiscall	cPcMouse::vf04	undefined __thiscall(void)
-0013de20	91	DEFAULT	unknown	FUN_0053de20	
-0013de80	156	ANALYSIS	__thiscall	cPcMouse::vf01	undefined __thiscall(void)
-0013df20	115	DEFAULT	unknown	FUN_0053df20	
-0013dfa0	610	ANALYSIS	__thiscall	cPcMouse::vf06	undefined __thiscall(void)
-0013e210	309	ANALYSIS	__thiscall	cPcMouse::vf02	undefined __thiscall(void)
-0013e350	139	DEFAULT	unknown	FUN_0053e350	
-0013e3e0	23	ANALYSIS	__thiscall	cPcMouse::vf07	undefined __thiscall(void)
-0013e400	137	DEFAULT	unknown	FUN_0053e400	
-0013e490	5	DEFAULT	unknown	thunk_FUN_0053aa30	
-0013e4a0	35	ANALYSIS	__thiscall	cPcPad::vf00	undefined __thiscall(void)
-0013e4d0	1	DEFAULT	unknown	FUN_0053e4d0	
-0013e4e0	253	DEFAULT	unknown	FUN_0053e4e0	
-0013e5e0	31	ANALYSIS	__thiscall	cPcPad::vf08	undefined __thiscall(void)
-0013e600	1	DEFAULT	unknown	FUN_0053e600	
-0013e610	532	DEFAULT	unknown	FUN_0053e610	
-0013e830	903	DEFAULT	unknown	FUN_0053e830	
-0013ebc0	73	ANALYSIS	__thiscall	cPcPad::vf03	undefined __thiscall(void)
-0013ec20	9	ANALYSIS	__thiscall	cPcPad::vf05	undefined __thiscall(void)
-0013ec30	461	ANALYSIS	__thiscall	cPcPad::vf04	undefined __thiscall(void)
-0013eec0	264	DEFAULT	unknown	FUN_0053eec0	
-0013efe0	764	ANALYSIS	__thiscall	cPcPad::vf01	undefined __thiscall(void)
-0013f2e0	5	DEFAULT	unknown	thunk_FUN_0053eec0	
-0013f2f0	1911	ANALYSIS	__thiscall	cPcPad::vf06	undefined __thiscall(void)
-0013fa70	1	ANALYSIS	__thiscall	cPcPad::vf02	undefined __thiscall(void)
-0013fa80	119	DEFAULT	unknown	FUN_0053fa80	
-0013fb00	5	ANALYSIS	__thiscall	cPcPad::vf07	undefined __thiscall(void)
+0013c090	477	USER_DEFINED	__thiscall	cFuncGvarDevices_Save	void __thiscall(void * f)
+0013c280	107	USER_DEFINED	__thiscall	cAbstractIDevice_SetAxis	void __thiscall(int entry, float value)
+0013c2f0	636	USER_DEFINED	__thiscall	cAbstractIDevice_SetValue	void __thiscall(int entry, float value)
+0013c580	45	USER_DEFINED	__cdecl	Input_SetDefineCallback	void __cdecl(void * f)
+0013c5b0	78	USER_DEFINED	__cdecl	Input_SetDefineFunc	void __cdecl(char * func)
+0013c600	5	USER_DEFINED	__thiscall	cAbstractIDevice_IsReserved	byte __thiscall(int entry)
+0013c610	40	USER_DEFINED	__cdecl	Input_ReleaseAll	void __cdecl(byte on)
+0013c640	27	USER_DEFINED	__cdecl	DInput_Release	void __cdecl(void)
+0013c660	77	USER_DEFINED	__cdecl	Input_CloseDevices	void __cdecl(void)
+0013c6b0	41	USER_DEFINED	__cdecl	DInput_Create	int __cdecl(void)
+0013c6e0	112	USER_DEFINED	__cdecl	Input_OpenDevices	void __cdecl(void)
+0013c750	155	USER_DEFINED	__thiscall	cPcKeyboard_ctor	void * __thiscall(void)
+0013c7f0	35	USER_DEFINED	__thiscall	cPcKeyboard_Delete	void * __thiscall(byte flags)
+0013c820	27	USER_DEFINED	__cdecl	Keyboard_Acquire	void __cdecl(byte on)
+0013c840	103	USER_DEFINED	__thiscall	InputDevices_Add	void __thiscall(void * dev)
+0013c8b0	78	USER_DEFINED	__thiscall	cPcKeyboard_SetEntry	byte __thiscall(int entry, int set, int player, int action, byte check)
+0013c900	74	USER_DEFINED	__cdecl	Input_OnChar	void __cdecl(char c)
+0013c950	38	USER_DEFINED	__cdecl	Keyboard_Close	void __cdecl(void)
+0013c980	6	USER_DEFINED	__thiscall	cPcKeyboard_GetName	char * __thiscall(void)
+0013c990	1388	USER_DEFINED	__thiscall	cPcKeyboard_GetEntryName	char * __thiscall(int entry)
+0013d230	43	USER_DEFINED	__thiscall	cPcKeyboard_GetEntryLabel	char * __thiscall(int entry)
+0013d260	91	USER_DEFINED	__cdecl	Keyboard_Create	int __cdecl(void)
+0013d2c0	577	USER_DEFINED	__thiscall	cPcKeyboard_SetDefaults	void __thiscall(void)
+0013d510	115	USER_DEFINED	__cdecl	Keyboard_Init	void __cdecl(void)
+0013d590	66	USER_DEFINED	__thiscall	cPcKeyboard_Update	void __thiscall(float dt)
+0013d5e0	846	USER_DEFINED	__thiscall	cPcKeyboard_SetGameDefaults	void __thiscall(void)
+0013d930	83	USER_DEFINED	__cdecl	Keyboard_Poll	int __cdecl(void)
+0013d990	40	USER_DEFINED	__thiscall	cPcKeyboard_IsReserved	byte __thiscall(int entry)
+0013daa0	170	USER_DEFINED	__thiscall	cPcMouse_ctor	void * __thiscall(void)
+0013db50	35	USER_DEFINED	__thiscall	cPcMouse_Delete	void * __thiscall(byte flags)
+0013db80	27	USER_DEFINED	__cdecl	Mouse_Acquire	void __cdecl(byte on)
+0013dba0	59	USER_DEFINED	__thiscall	cPcMouse_SetEntry	byte __thiscall(int entry, int set, int player, int action, byte check)
+0013dbe0	38	USER_DEFINED	__cdecl	Mouse_Close	void __cdecl(void)
+0013dc10	6	USER_DEFINED	__thiscall	cPcMouse_GetName	char * __thiscall(void)
+0013dc20	193	USER_DEFINED	__thiscall	cPcMouse_GetEntryName	char * __thiscall(int entry)
+0013dd00	257	USER_DEFINED	__thiscall	cPcMouse_GetEntryLabel	char * __thiscall(int entry)
+0013de20	91	USER_DEFINED	__cdecl	Mouse_Create	int __cdecl(void)
+0013de80	156	USER_DEFINED	__thiscall	cPcMouse_SetDefaults	void __thiscall(void)
+0013df20	115	USER_DEFINED	__cdecl	Mouse_Init	void __cdecl(void)
+0013dfa0	610	USER_DEFINED	__thiscall	cPcMouse_Update	void __thiscall(float dt)
+0013e210	309	USER_DEFINED	__thiscall	cPcMouse_SetGameDefaults	void __thiscall(void)
+0013e350	139	USER_DEFINED	__cdecl	Mouse_Poll	int __cdecl(void)
+0013e3e0	23	USER_DEFINED	__thiscall	cPcMouse_IsReserved	int __thiscall(int entry)
+0013e400	137	USER_DEFINED	__thiscall	cPcPad_ctor	void * __thiscall(int index)
+0013e490	5	USER_DEFINED	__thiscall	thunk_cAbstractIDevice_dtor	void __thiscall(void)
+0013e4a0	35	USER_DEFINED	__thiscall	cPcPad_Delete	void * __thiscall(byte flags)
+0013e4d0	1	USER_DEFINED	__cdecl	Pad_Acquire	void __cdecl(byte on)
+0013e4e0	253	USER_DEFINED	__cdecl	Pad_DeadZone	void __cdecl(void * x, void * y, float dz)
+0013e5e0	31	USER_DEFINED	__thiscall	cPcPad_SetEntry	byte __thiscall(int entry, int set, int player, int action, byte check)
+0013e600	1	USER_DEFINED	__cdecl	Pad_Close	void __cdecl(void)
+0013e610	532	USER_DEFINED	__thiscall	cPcPad_SetVehicleDefaults	void __thiscall(void)
+0013e830	903	USER_DEFINED	__thiscall	cPcPad_SetCharDefaults	void __thiscall(void)
+0013ebc0	73	USER_DEFINED	__thiscall	cPcPad_GetName	char * __thiscall(void)
+0013ec20	9	USER_DEFINED	__thiscall	cPcPad_GetEntryName	char * __thiscall(int entry)
+0013ec30	461	USER_DEFINED	__thiscall	cPcPad_GetEntryLabel	char * __thiscall(int entry)
+0013eec0	264	USER_DEFINED	__cdecl	Pad_Init	int __cdecl(void)
+0013efe0	764	USER_DEFINED	__thiscall	cPcPad_SetDefaults	void __thiscall(void)
+0013f2e0	5	USER_DEFINED	__cdecl	thunk_Pad_Init	int __cdecl(void)
+0013f2f0	1911	USER_DEFINED	__thiscall	cPcPad_Update	void __thiscall(float dt)
+0013fa70	1	USER_DEFINED	__thiscall	cPcPad_SetGameDefaults	void __thiscall(void)
+0013fa80	119	USER_DEFINED	__cdecl	Pad_Poll	uint __cdecl(int index)
+0013fb00	5	USER_DEFINED	__thiscall	cPcPad_IsReserved	byte __thiscall(int entry)
 0013fb10	27	DEFAULT	unknown	FUN_0053fb10	
 0013fb30	35	USER_DEFINED	unknown	Alarm::GetValue	undefined(void)
 0013fb60	35	USER_DEFINED	unknown	Alarm::IsLocked	undefined(void)
@@ -4616,7 +4624,7 @@ rva	size	source	callconv	name	signature
 00170ed0	289	DEFAULT	unknown	FUN_00570ed0	
 00171000	6	DEFAULT	unknown	FUN_00571000	
 00171010	210	DEFAULT	unknown	FUN_00571010	
-001710f0	38	DEFAULT	unknown	FUN_005710f0	
+001710f0	38	USER_DEFINED	__cdecl	Scorer_SetInputState	void __cdecl(int state)
 00171120	830	DEFAULT	unknown	FUN_00571120	
 00171460	42	DEFAULT	unknown	FUN_00571460	
 00171490	235	DEFAULT	unknown	FUN_00571490	

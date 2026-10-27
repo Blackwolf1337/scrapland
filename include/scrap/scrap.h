@@ -61,6 +61,10 @@ SD_OFFSET(cGVar, def, 0x14);
 SD_OFFSET(cGVar, type, 0x0d);
 SD_OFFSET(cGVar, value, 0x10);
 cGVar *GVar_Find(const char *name);
+/* the base constructor (src/game/Global/Gvars.c): in front of g_GVars, the derived class sets the type */
+cGVar *__thiscall cGVar_ctor(cGVar *self, const char *name, byte flags, const char *description);
+/* "name = value # comment" of Scrap.cfg: cuts the comment, splits at '=' and trims both; 0 without '=' */
+byte Cfg_ParseLine(char *line, char **value);
 
 typedef struct cGVarListVtbl {
 	void(__thiscall *Save)(void *self, void *f);	/* 0x0 */
