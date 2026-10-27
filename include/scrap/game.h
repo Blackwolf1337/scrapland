@@ -60,8 +60,12 @@ typedef struct cItemList cItemList;
 typedef struct cItemListVtbl {
 	void *vf00;
 	void(__thiscall *AddLife)(cItemList *self, cItemDesc *item);			/* 0x04 */
-	void *vf02_03[2];
+	/* the walk over the life items: iter is the cursor (one pointer), NULL after the last */
+	cItemDesc *(__thiscall *FirstLife)(cItemList *self, void **iter);		/* 0x08 */
+	cItemDesc *(__thiscall *NextLife)(cItemList *self, void **iter);		/* 0x0c */
 	void(__thiscall *AddAmmo)(cItemList *self, int kind, cItemDesc *item);		/* 0x10 */
+	cItemDesc *(__thiscall *FirstAmmo)(cItemList *self, int kind, void **iter);	/* 0x14 */
+	cItemDesc *(__thiscall *NextAmmo)(cItemList *self, int kind, void **iter);	/* 0x18 */
 } cItemListVtbl;
 SD_OFFSET(cItemListVtbl, AddAmmo, 0x10);
 

@@ -161,7 +161,7 @@ void __thiscall CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicl
 			seen = seenC;
 			n = *numSeenC;
 		}
-		if (cAIVehicle_GetState(ai[v]) != 9 || cAIVehicle_Get1A4(ai[v])) {
+		if (cAIVehicle_GetState(ai[v]) != 9 || cAIVehicle_GetInternState(ai[v])) {
 			continue;
 		}
 		const cTrafficSector *s = &sectors[seen[crt_rand() % n]];
