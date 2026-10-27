@@ -233,20 +233,12 @@ SD_IMPORT_STDCALL(D3DX_MatrixInverse, 12, 0x007cea)
 SD_IMPORT_STDCALL(D3DX_AssembleShader, 24, 0x00b2c2)
 
 /* module agent: Engine/Modelo (imports below this line) */
-SD_IMPORT(CNodoR_dtor, 0x23f450)
-SD_IMPORT(CNodoR_SetNodo, 0x23f890)
-SD_IMPORT(RenderCtx_Init, 0x23fac0)
-SD_IMPORT(RenderCtx_SetCanal, 0x23fb10)
 SD_IMPORT(CEscena_Shared, 0x24ecb0)
 SD_IMPORT(CModelo_Render, 0x253610)
 SD_IMPORT(Escena_Load, 0x2c2d60)
-SD_IMPORT(CNodoR_SetLook, 0x23f7f0)
 
 /* module agent: Engine/Nodo3D (imports below this line) */
-SD_IMPORT(CSistPart_Cast, 0x23f310)
 SD_IMPORT(CNodo3D_DebugDraw, 0x23d9d0)
-SD_IMPORT(CNodoR_UpdateNodo, 0x23f5d0)
-SD_IMPORT(CNodoR_ApplyFX, 0x23f540)
 
 /* module agent: Engine/Animacion (imports below this line) */
 
