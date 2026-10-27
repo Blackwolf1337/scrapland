@@ -7516,6 +7516,49 @@ SD_HOOK(CAnimacion_dtor, 0x2ab940, 326)
 SD_HOOK(CAnimNodo_Delete, 0x2aba90, 179)
 
 /* module agent: Big leftovers 0x0f0000..0x110000 (hooks below this line) */
+/* src/game/Entities/MissileEntity.c */
+SD_HOOK(cMissileEntity_AddToSwarm, 0x0f26f0, 941)		/* vf64 */
+SD_HOOK(cMissileEntity_NetRead, 0x0f39b0, 349)			/* vf43 */
+SD_HOOK(cMissileEntity_NetWrite, 0x0f3b10, 299)			/* vf41 */
+SD_HOOK(cMissileEntity_Tick, 0x0f3c40, 2649)			/* vf23 */
+SD_HOOK(cMissileEntity_SetEmbeddedFX, 0x0f4790, 656)		/* vf15 */
+SD_HOOK(cMissileEntity_SetModel, 0x0f4b60, 418)			/* vf12 */
+SD_HOOK(cMissileEntity_Explode, 0x0f5650, 862)			/* vf66 */
+SD_HOOK(cMissileEntity_Swarm, 0x0f59b0, 1381)			/* vf59 */
+/* src/game/Entities/WithLifeEntity.c: a ret with int3 padding up to 0x0f46c0 */
+SD_HOOK(cWithLifeEntity_Vf48, 0x0f46b0, 16)
+/* src/game/Entities/Vehicle/Controls.c */
+SD_HOOK(Controls_TakeEnerNative, 0x0fe9b0, 390)
+SD_HOOK(Controls_TakeLifeNative, 0x0feb40, 347)
+SD_HOOK(Controls_TakeMissNative, 0x0feca0, 387)
+SD_HOOK(Controls_TakePartNative, 0x0fee30, 382)
+SD_HOOK(cVehicleO648_ctor, 0x0fefb0, 20)
+SD_HOOK(cVehicleO648_dtor, 0x0ff010, 22)
+SD_HOOK(cVehicleO648_IsBlocked, 0x0ff030, 60)
+SD_HOOK(cVehicleO648_Rebuild, 0x0ff070, 885)
+SD_HOOK(cVehicleO648_SetSlot, 0x0ff3f0, 135)
+SD_HOOK(cVehicleO648_Cycle, 0x0ff480, 364)
+SD_HOOK(cVehicleO648_PickInView, 0x0ff5f0, 169)
+SD_HOOK(cVehicleO648_Update, 0x0ff6a0, 236)
+SD_HOOK(cVehicleO648_IsStale, 0x0ff790, 257)
+SD_HOOK(cVehicleControls_Tick, 0x0ffcc0, 3551)
+/* src/game/Entities/Vehicle/VehicleEffects.c */
+SD_HOOK(cVehicleEffects_ctor, 0x100ab0, 56)
+SD_HOOK(cVehicleTubes_ctor, 0x100af0, 49)
+SD_HOOK(cVehicleTrails_ctor, 0x100b30, 46)
+SD_HOOK(cVehicleEffects_dtor, 0x100b60, 168)
+SD_HOOK(cVehicleEffects_Update, 0x100c10, 69)
+SD_HOOK(cVehicleTubes_Update, 0x100c60, 2423)
+SD_HOOK(cVehicleEffects_WindSmoke, 0x102940, 1869)
+SD_HOOK(cVehicleEffects_Shoot, 0x103500, 9002)
+/* src/game/Entities/Vehicle/VehicleEntity.c */
+SD_HOOK(cVehicleEntity_UpdateModel, 0x105ea0, 1872)	/* vf24 */
+SD_HOOK(cVehicleEntity_Step, 0x10a730, 2590)
+/* src/game/Entities/Vehicle/VehicleMotors.c */
+SD_HOOK(cVehicleMotor_ctor, 0x10bb90, 141)
+SD_HOOK(cVehicleMotors_ctor, 0x10bc20, 140)
+SD_HOOK(cVehicleMotor_dtor, 0x10bcb0, 86)
+SD_HOOK(cVehicleMotors_dtor, 0x10bd10, 177)
 
 /* module agent: Big FX leftovers 0x1a8000..0x1eab00 (hooks below this line) */
 SD_HOOK(cObjElementFXDebrisCloud_Delete, 0x1c99d0, 54)

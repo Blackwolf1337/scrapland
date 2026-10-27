@@ -2,8 +2,7 @@
  * cMissileEntity ("Missile"): the shots of the weapons, a cWithLifeEntity (1000 bytes) that flies with its speed
  * along its angles ("Linear", "Dumb", "Cloud" or "Fall") until its life time ran out or it hit something. A
  * swarm missile carries bees, debris of the system swarmSys that fly around it. src/game/Entities/MissileEntity.c;
- * the original code follows the items, its source file has no CHECK. Not decompiled yet: the update of the
- * flight (vf23), the swarm functions vf59, vf64 and vf66 (Explode), the network vf41/vf43 and SetFX/SetModel.
+ * the original code follows the items, its source file has no CHECK.
  */
 #ifndef SCRAP_MISSILEENTITY_H
 #define SCRAP_MISSILEENTITY_H
@@ -48,7 +47,7 @@ typedef struct cMissileEntity {
 	char target[0x80];		/* 0x47c */
 	char swarmSys[0x80];		/* 0x4fc the debris system of the bees */
 	int type;			/* 0x57c Linear 0, Dumb 1, Cloud 2, Fall 3 */
-	int i580;			/* 0x580 */
+	float beeTime;			/* 0x580 the bees get a random push every 0.05 s of it */
 	byte flag584;			/* 0x584 */
 	byte flag585;			/* 0x585 */
 	byte pad_586[2];
@@ -57,7 +56,7 @@ typedef struct cMissileEntity {
 	byte pad_58d[3];
 	struct cDebris *swarm;		/* 0x590 the bees, linked at 0x50 */
 	float swarmSpeed;		/* 0x594 */
-	vec3_t v598;			/* 0x598 */
+	vec3_t lastPos;			/* 0x598 the view position of the last Swarm, 0 before the first */
 	float radius;			/* 0x5a4 */
 	float topRadius;		/* 0x5a8 */
 	float radiusGrow;		/* 0x5ac */
@@ -103,6 +102,21 @@ void __thiscall cDebris_Step(struct cDebris *self, float dt);
 void __thiscall cDebrisSys_Release(struct cDebrisSys *sys, struct cDebris *d);
 
 void __fastcall cMissileEntity_dtor(cMissileEntity *self);
+/* vf12: the model, its debris system of the bees has the same name */
+void __thiscall cMissileEntity_SetModel(cMissileEntity *self, const char *file, float sx, float sy, float sz, int flag);
+/* vf15: the fire effects DumbMotor, GearMissile, Cloud and EMI (a debris element of the life time) */
+void __thiscall cMissileEntity_SetEmbeddedFX(cMissileEntity *self, const char *name);
+/* vf23 (every slot): the flight, the turn to the target and the hits of the world and the entities */
+void __thiscall cMissileEntity_Tick(cMissileEntity *self, float dt);
+/* vf41, vf43: the parent or target and the bees in the network state */
+void __thiscall cMissileEntity_NetWrite(cMissileEntity *self, float dist2, void *msg, int full);
+void __thiscall cMissileEntity_NetRead(cMissileEntity *self, void *msg, int isNew);
+/* vf59: the bees fly around the missile within the radius */
+void __thiscall cMissileEntity_Swarm(cMissileEntity *self, float dt);
+/* vf64: n new bees */
+void __thiscall cMissileEntity_AddToSwarm(cMissileEntity *self, int n);
+/* vf66: the bees fly to at (flag584) or die where they are */
+void __thiscall cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at);
 cMissileEntity *__thiscall cMissileEntity_Delete(cMissileEntity *self, uint32_t flags);
 void __thiscall cMissileEntity_RotStep(cMissileEntity *self, float dt);
 void __thiscall cMissileEntity_Touch(cMissileEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir);

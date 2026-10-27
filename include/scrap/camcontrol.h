@@ -139,6 +139,7 @@ static inline const cCamControlVtbl *CamCtl_Vtbl(cEntity *e) {
 #define g_FullCameraTest GAME_DATA(int, 0x445ea8)	/* FullCameraTest */
 #define g_WalkCameraCenter GAME_DATA(float, 0x4472b4)	/* WalkCameraCenter */
 #define g_VehicleCamDist GAME_DATA(float, 0x445f08)
+#define g_VehicleCamDist2 GAME_DATA(float, 0x445ed8)	/* VehicleCamDist2, of player 1 */
 #define g_VehicleCamNear GAME_DATA(float, 0x445f20)
 #define g_VehicleCamFar GAME_DATA(float, 0x445ec0)
 #define g_WalkCamNear GAME_DATA(float, 0x445f80)

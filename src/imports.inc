@@ -411,7 +411,6 @@ SD_IMPORT(CGameLensFlare_SetI1c, 0x233010)
 /* module agent: Entities/EmbeddedFX/EmbeddedFXMisc.cpp (imports below this line) */
 
 /* module agent: Entities/Vehicle/WeaponManager+Weaps/ATPC+Devastator.cpp (imports below this line) */
-SD_IMPORT(cVehicleEffects_Shoot, 0x103500)
 SD_IMPORT(cObjElementFXATPC_Shoot, 0x1fde50)
 
 /* module agent: Entities/Vehicle/Weaps/Inferno+Laser+Swarm.cpp (imports below this line) */
@@ -441,18 +440,7 @@ SD_IMPORT(CBsp_Preparar, 0x28efe0)
 /* module agent: Entities/More+ObjEntity (imports below this line) */
 
 /* module agent: Entities/Vehicle/VehicleEffects+VehicleEntity.cpp (imports below this line) */
-SD_IMPORT(cVehicleEffects_dtor, 0x100b60)
-SD_IMPORT(cVehicleEffects_WindSmoke, 0x102940)
-SD_IMPORT(cVehicleEntity_Step, 0x10a730)
-SD_IMPORT(cVehicleMotors_dtor, 0x10bd10)
-SD_IMPORT(cVehicleO648_dtor, 0x0ff010)
-SD_IMPORT(cVehicleO648_SetSlot, 0x0ff3f0)
-SD_IMPORT(cVehicleO648_Update, 0x0ff6a0)
-SD_IMPORT(cVehicleControls_Tick, 0x0ffcc0)
 SD_IMPORT(cNetVController_ctor, 0x1186b0)
-SD_IMPORT(cVehicleO648_ctor, 0x0fefb0)
-SD_IMPORT(cVehicleMotors_ctor, 0x10bc20)
-SD_IMPORT(cVehicleEffects_ctor, 0x100ab0)
 
 /* module agent: Entities/Vehicle/VehicleMotors+MotorsEffects+Traffic.cpp (imports below this line) */
 
@@ -460,7 +448,6 @@ SD_IMPORT(cVehicleEffects_ctor, 0x100ab0)
 SD_IMPORT(Surface_SaveShot, 0x27fe90)
 
 /* module agent: AI/NodesTraffic+NodesTrafficInDoor.cpp (imports below this line) */
-SD_IMPORT(cVehicleMotor_ctor, 0x10bb90)
 SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
 
 /* module agent: Scorer/AbstractText+Button+Circuit+Head+Mission+Monitor+Radar (imports below this line) */
