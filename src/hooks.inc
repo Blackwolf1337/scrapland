@@ -6941,6 +6941,15 @@ SD_HOOK(cWithLifeEntity_IsEMIed, 0x12cf30, 16)			/* vf55, 3 bytes and int3 */
 /* module agent: Engine NodeFX..ModelFX (hooks below this line) */
 
 /* module agent: Engine leftovers 0x265000..0x278000 (hooks below this line) */
+SD_HOOK(StencilBlock_SetLuces, 0x2653f0, 104)
+SD_HOOK(Stencil_DebugLine, 0x265460, 99)
+SD_HOOK(SombrasStencil_Set, 0x267460, 202)
+SD_HOOK(SombrasStencil_Capturar, 0x268290, 52)
+SD_HOOK(E3D_SetShadowLight, 0x2682d0, 534)
+SD_HOOK(Stencil_Free, 0x2684f0, 208)
+SD_HOOK(Stencil_GetLightPos, 0x2685c0, 57)
+SD_HOOK(Stencil_Init, 0x268600, 501)
+SD_HOOK(SombrasStencil_Render, 0x268800, 1641)
 SD_HOOK(ZonaPintar_ctor, 0x26ba90, 60)
 SD_HOOK(Portales_DebugDraw, 0x26d0d0, 636)
 SD_HOOK(Sectores_Crear, 0x26d5a0, 1497)

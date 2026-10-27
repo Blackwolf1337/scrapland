@@ -276,6 +276,10 @@ def en1lg(fn):
 	r = fn()
 	SDTest.D3DLog(0)
 	return (r, SDTest.Out())
+# the viewport size is 0 while the script runs (a CHECK in Render_GetViewportW)
+en1vw = (SDTest.Peek(0x4ad7e8, 'i'), SDTest.Peek(0x4ad7ec, 'i'))
+SDTest.Poke(0x4ad7e8, 640)
+SDTest.Poke(0x4ad7ec, 480)
 for en1v in (0, 1):
 	SDTest.Poke(0x4b00f8, en1v)
 	for en1pd in (0, 3):
@@ -305,3 +309,52 @@ for en1v in (0, 1, 2, 3):
 SDTest.Poke(0x4e1de8, en1sp)
 SDTest.Poke(0x4afed0, en1nzp)
 en1set(0x8b0168, en1zps)
+SDTest.Poke(0x4ad7e8, en1vw[0])
+SDTest.Poke(0x4ad7ec, en1vw[1])
+
+# Engine/stencil.cpp: the capture switch, the shadow light of a fake light, the debug line, the switch with the frame
+# state it clears, and the buffers made again (through the D3D log)
+en1sg = (0x8afdb0, 0x8afdc0, 0x832578, 0x8afdc4, 0x83257c, 0x790030, 0x790034, 0x790038, 0x79006c, 0x790070,
+	0x790074, 0x832580, 0x8afdc8, 0x8afdbc, 0x8ad568, 0x8ad5fc, 0x8afdb8, 0x8afdd0, 0x8afdd8, 0x8afde0)
+en1ss = map(en1i, en1sg)
+en1s4ec = SDTest.Peek(0x4ad4ec, 'b')
+def en1st():
+	return (en1i(0x8afdb0), en1i(0x8afdc0), en1fl(0x832578, 1), en1i(0x8afdc4) != 0, en1i(0x83257c),
+		en1fl(0x790030, 3), en1fl(0x79006c, 3), en1fl(0x832580, 1), en1fl(0x8afdc8, 1), en1i(0x8afdbc),
+		en1i(0x8ad568), en1i(0x8ad5fc), SDTest.Peek(0x4ad4ec, 'b'), en1i(0x8afdb8), en1i(0x8afdd0), en1i(0x8afdd8),
+		en1i(0x8afde0))
+en1roff = SDTest.Peek(0x4a8ef8, 'i')
+for en1v in ((0, 0), (1, 0), (1, 1), (0, 1)):
+	en1poke(0x8a8ef8, (en1roff & ~0xff) | en1v[0])
+	en1poke(0x8afdb0, en1v[1])
+	for en1on in (0, 1, 7):
+		check('en1 SombrasStencil_Capturar' + fmt((en1v, en1on)), lambda on=en1on: (SDTest.Call(0x268290, 'vi', on),
+			en1i(0x8afdc0), en1fl(0x832578, 1)))
+en1poke(0x8a8ef8, en1roff)
+en1luz = en1z(0xcc)
+for en1t in (0x138a, 2, 3):
+	for en1dir in ((0.0, -1.0, 0.0), (3.0, -4.0, 12.0), (0.0, 0.0, 0.0)):
+		for en1rg in (0.0, 250.0):
+			for en1cap in ((1, 1), (1, 0), (0, 1)):
+				def en1sl(t=en1t, d=en1dir, rg=en1rg, cap=en1cap):
+					en1poke(en1luz + 8, t)
+					en1set(en1luz + 0x80, (10.0, 20.0, -30.0) + d)
+					en1set(en1luz + 0x34, (rg, 0.0, 45.0))
+					en1poke(0x8afdb0, cap[0])
+					en1poke(0x8afdc0, cap[1])
+					SDTest.Call(0x2682d0, 'vii', en1luz, 0)
+					r1 = en1st()
+					SDTest.Call(0x2682d0, 'vii', 0, 0)
+					return (r1, en1i(0x8afdc4))
+				check('en1 E3D_SetShadowLight' + fmt((en1t, en1dir, en1rg, en1cap)), en1sl)
+en1poke(0x8afdb0, en1ss[0])
+check('en1 Stencil_DebugLine', lambda: en1lg(lambda: (SDTest.Call(0x265460, 'vFFi', (1.0, 2.0, 3.0), (-4.0, 5.0, 6.5),
+	0xff00ff),)))
+for en1on in (0, 1, 0, 1):
+	check('en1 SombrasStencil_Set' + fmt((en1on,)), lambda on=en1on: (SDTest.Call(0x267460, 'vi', on), en1st()))
+check('en1 Stencil_Free Init', lambda: en1lg(lambda: (SDTest.Call(0x2684f0, 'v'), SDTest.Call(0x268600, 'v'), en1st(),
+	en1i(0x8afddc) != 0, en1i(0x8afdcc) != 0, en1i(0x8afdd4) != 0, en1i(0x7902b0) != 0, en1i(0x7902b4) != 0,
+	en1i(0x7902b8) != 0, en1i(0x7902bc) != 0, SDTest.Peek(0x3902a8, 'i'))))
+for en1k in range(len(en1sg)):
+	en1poke(en1sg[en1k], en1ss[en1k])
+en1poke(0x8ad4ec, (SDTest.Peek(0x4ad4ec, 'i') & 0xffffff00) | en1s4ec)

@@ -174,7 +174,6 @@ SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 /* engine3d: Engine/ListaVert.cpp and Engine/render.cpp (include/scrap/listavert.h, mallatri.h) */
 
 /* engine3d: called from Engine/luz.cpp (include/scrap/luz.h) */
-SD_IMPORT(E3D_SetShadowLight, 0x2682d0)
 /* engine3d: Engine/Material.c (include/scrap/material.h), the parts of the classes outside Material.cpp and the
  * texture manager */
 SD_IMPORT(CMapa_ctor, 0x233760)
@@ -341,7 +340,6 @@ SD_IMPORT(Video_PlayFile, 0x281660)
 SD_IMPORT(Avi_Save, 0x27fa20)
 SD_IMPORT(Avi_Frame, 0x27f9f0)
 SD_IMPORT(Avi_Load, 0x27f9b0)
-SD_IMPORT(SombrasStencil_Set, 0x267460)
 SD_IMPORT(CPsaImage_ctor, 0x22d120)
 SD_IMPORT(CPsaImage_dtor, 0x22d160)
 SD_IMPORT(CPsaImage_Draw, 0x22d3c0)
@@ -651,3 +649,5 @@ SD_IMPORT(cAICharGroup_FindRepos, 0x080ee0)
 /* module agent: Engine NodeFX..ModelFX (imports below this line) */
 
 /* module agent: Engine leftovers 0x265000..0x278000 (imports below this line) */
+SD_IMPORT(Stencil_DrawSegs, 0x265510)
+SD_IMPORT(Stencil_DrawTris, 0x2661b0)

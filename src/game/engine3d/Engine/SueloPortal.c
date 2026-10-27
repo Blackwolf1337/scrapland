@@ -24,8 +24,8 @@
 #define g_NumEndSectors GAME_DATA(int, 0x4b00e0)
 #define g_NumOutSectors GAME_DATA(int, 0x4b00e4)
 /* the projection and the viewport narrowed to the rectangle of each seen sector */
-#define g_PortalView GAME_DATA(int, 0x4b00f8)
-#define g_PortalViewPad GAME_DATA(int, 0x4b11a8)	/* pixels added around it */
+#define g_PortalClip GAME_DATA(int, 0x4b00f8)
+#define g_PortalBand GAME_DATA(int, 0x4b11a8)	/* pixels added around it */
 
 
 CZona *__fastcall CZona_ctor(CZona *self) {
@@ -664,7 +664,7 @@ byte Portales_SetView(const ZonaPintar *zp) {
 	void *dev;
 	matrix_t m;
 
-	if (!g_PortalView) {
+	if (!g_PortalClip) {
 		return 1;
 	}
 	if (!zp) {
@@ -684,7 +684,7 @@ byte Portales_SetView(const ZonaPintar *zp) {
 	}
 	int w = Render_GetViewportW();
 	int h = Render_GetViewportH();
-	int pad = g_PortalViewPad;
+	int pad = g_PortalBand;
 	int x0 = Portal_ViewPixel(zp->rect.min.x + 1.0f, w) - pad;
 	int y1 = pad + 1 + Portal_ViewPixel(1.0f - zp->rect.min.y, h);
 	int x1 = Portal_ViewPixel(zp->rect.max.x + 1.0f, w) + 1 + pad;
