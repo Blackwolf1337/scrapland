@@ -2560,54 +2560,54 @@ rva	size	source	callconv	name	signature
 000dfc20	3	ANALYSIS	__thiscall	cEmbeddedFXHeadCrazyGambler::vf05	undefined __thiscall(void)
 000dfc30	191	USER_DEFINED	__thiscall	cEmbeddedFXHeadCrazyGambler_Init	void __thiscall(void * owner, char * glow)
 000dfcf0	3	ANALYSIS	__thiscall	cEmbeddedFXHeadCrazyGambler::vf03	undefined __thiscall(void)
-000dfd00	118	DEFAULT	unknown	FUN_004dfd00	
-000dfd80	123	DEFAULT	unknown	FUN_004dfd80	
-000dfe00	123	DEFAULT	unknown	FUN_004dfe00	
-000dfe80	111	DEFAULT	unknown	FUN_004dfe80	
-000dfef0	93	DEFAULT	unknown	FUN_004dfef0	
-000dff50	93	DEFAULT	unknown	FUN_004dff50	
-000dffb0	125	DEFAULT	unknown	FUN_004dffb0	
-000e0030	108	DEFAULT	unknown	FUN_004e0030	
-000e00a0	151	DEFAULT	unknown	FUN_004e00a0	
-000e0140	108	DEFAULT	unknown	FUN_004e0140	
-000e01b0	113	DEFAULT	unknown	FUN_004e01b0	
-000e0230	93	DEFAULT	unknown	FUN_004e0230	
-000e0290	127	DEFAULT	unknown	FUN_004e0290	
-000e0310	163	DEFAULT	unknown	FUN_004e0310	
-000e03c0	177	DEFAULT	unknown	FUN_004e03c0	
-000e0480	128	DEFAULT	unknown	FUN_004e0480	
-000e0500	36	DEFAULT	unknown	FUN_004e0500	
-000e0530	95	DEFAULT	unknown	FUN_004e0530	
-000e0590	95	DEFAULT	unknown	FUN_004e0590	
-000e05f0	87	DEFAULT	unknown	FUN_004e05f0	
-000e0650	25	DEFAULT	unknown	FUN_004e0650	
-000e0670	25	DEFAULT	unknown	FUN_004e0670	
-000e0690	36	DEFAULT	unknown	FUN_004e0690	
-000e06c0	36	DEFAULT	unknown	FUN_004e06c0	
-000e06f0	58	DEFAULT	unknown	FUN_004e06f0	
-000e0730	36	DEFAULT	unknown	FUN_004e0730	
-000e0760	25	DEFAULT	unknown	FUN_004e0760	
-000e0780	25	DEFAULT	unknown	FUN_004e0780	
-000e07a0	47	DEFAULT	unknown	FUN_004e07a0	
-000e07d0	47	DEFAULT	unknown	FUN_004e07d0	
-000e0800	135	DEFAULT	unknown	FUN_004e0800	
-000e0890	36	DEFAULT	unknown	FUN_004e0890	
-000e08c0	65	ANALYSIS	__thiscall	cEmbeddedFXAmplifier::vf00	undefined __thiscall(void)
-000e0910	126	ANALYSIS	__thiscall	cEmbeddedFXBattery::vf00	undefined __thiscall(void)
-000e0990	126	ANALYSIS	__thiscall	cEmbeddedFXBossShield::vf00	undefined __thiscall(void)
-000e0a10	118	ANALYSIS	__thiscall	cEmbeddedFXCapsule::vf00	undefined __thiscall(void)
-000e0a90	54	ANALYSIS	__thiscall	cEmbeddedFXCoin::vf00	undefined __thiscall(void)
-000e0ad0	54	ANALYSIS	__thiscall	cEmbeddedFXConversor::vf00	undefined __thiscall(void)
-000e0b10	65	ANALYSIS	__thiscall	cEmbeddedFXDTritusDesktop::vf00	undefined __thiscall(void)
-000e0b60	65	ANALYSIS	__thiscall	cEmbeddedFXDataCube::vf00	undefined __thiscall(void)
-000e0bb0	87	ANALYSIS	__thiscall	cEmbeddedFXDataPack::vf00	undefined __thiscall(void)
-000e0c10	65	ANALYSIS	__thiscall	cEmbeddedFXExtraLife::vf00	undefined __thiscall(void)
-000e0c60	54	ANALYSIS	__thiscall	cEmbeddedFXFlag::vf00	undefined __thiscall(void)
-000e0ca0	54	ANALYSIS	__thiscall	cEmbeddedFXItem::vf00	undefined __thiscall(void)
-000e0ce0	76	ANALYSIS	__thiscall	cEmbeddedFXMatrix::vf00	undefined __thiscall(void)
-000e0d30	76	ANALYSIS	__thiscall	cEmbeddedFXMeetingPoint::vf00	undefined __thiscall(void)
-000e0d80	166	ANALYSIS	__thiscall	cEmbeddedFXMoto::vf00	undefined __thiscall(void)
-000e0e30	65	ANALYSIS	__thiscall	cEmbeddedFXTreasure::vf00	undefined __thiscall(void)
+000dfd00	118	USER_DEFINED	__fastcall	cEmbeddedFXAmplifier_ctor	void * __fastcall(void * self)
+000dfd80	123	USER_DEFINED	__fastcall	cEmbeddedFXBattery_ctor	void * __fastcall(void * self)
+000dfe00	123	USER_DEFINED	__fastcall	cEmbeddedFXBossShield_ctor	void * __fastcall(void * self)
+000dfe80	111	USER_DEFINED	__fastcall	cEmbeddedFXCapsule_ctor	void * __fastcall(void * self)
+000dfef0	93	USER_DEFINED	__fastcall	cEmbeddedFXCoin_ctor	void * __fastcall(void * self)
+000dff50	93	USER_DEFINED	__fastcall	cEmbeddedFXConversor_ctor	void * __fastcall(void * self)
+000dffb0	125	USER_DEFINED	__fastcall	cEmbeddedFXDTritusDesktop_ctor	void * __fastcall(void * self)
+000e0030	108	USER_DEFINED	__fastcall	cEmbeddedFXDataCube_ctor	void * __fastcall(void * self)
+000e00a0	151	USER_DEFINED	__fastcall	cEmbeddedFXDataPack_ctor	void * __fastcall(void * self)
+000e0140	108	USER_DEFINED	__fastcall	cEmbeddedFXExtraLife_ctor	void * __fastcall(void * self)
+000e01b0	113	USER_DEFINED	__fastcall	cEmbeddedFXFlag_ctor	void * __fastcall(void * self)
+000e0230	93	USER_DEFINED	__fastcall	cEmbeddedFXItem_ctor	void * __fastcall(void * self)
+000e0290	127	USER_DEFINED	__fastcall	cEmbeddedFXMatrix_ctor	void * __fastcall(void * self)
+000e0310	163	USER_DEFINED	__fastcall	cEmbeddedFXMeetingPoint_ctor	void * __fastcall(void * self)
+000e03c0	177	USER_DEFINED	__fastcall	cEmbeddedFXMoto_ctor	void * __fastcall(void * self)
+000e0480	128	USER_DEFINED	__fastcall	cEmbeddedFXTreasure_ctor	void * __fastcall(void * self)
+000e0500	36	USER_DEFINED	__fastcall	cEmbeddedFXAmplifier_dtor	void __fastcall(void * self)
+000e0530	95	USER_DEFINED	__fastcall	cEmbeddedFXBattery_dtor	void __fastcall(void * self)
+000e0590	95	USER_DEFINED	__fastcall	cEmbeddedFXBossShield_dtor	void __fastcall(void * self)
+000e05f0	87	USER_DEFINED	__fastcall	cEmbeddedFXCapsule_dtor	void __fastcall(void * self)
+000e0650	25	USER_DEFINED	__fastcall	cEmbeddedFXCoin_dtor	void __fastcall(void * self)
+000e0670	25	USER_DEFINED	__fastcall	cEmbeddedFXConversor_dtor	void __fastcall(void * self)
+000e0690	36	USER_DEFINED	__fastcall	cEmbeddedFXDTritusDesktop_dtor	void __fastcall(void * self)
+000e06c0	36	USER_DEFINED	__fastcall	cEmbeddedFXDataCube_dtor	void __fastcall(void * self)
+000e06f0	58	USER_DEFINED	__fastcall	cEmbeddedFXDataPack_dtor	void __fastcall(void * self)
+000e0730	36	USER_DEFINED	__fastcall	cEmbeddedFXExtraLife_dtor	void __fastcall(void * self)
+000e0760	25	USER_DEFINED	__fastcall	cEmbeddedFXFlag_dtor	void __fastcall(void * self)
+000e0780	25	USER_DEFINED	__fastcall	cEmbeddedFXItem_dtor	void __fastcall(void * self)
+000e07a0	47	USER_DEFINED	__fastcall	cEmbeddedFXMatrix_dtor	void __fastcall(void * self)
+000e07d0	47	USER_DEFINED	__fastcall	cEmbeddedFXMeetingPoint_dtor	void __fastcall(void * self)
+000e0800	135	USER_DEFINED	__fastcall	cEmbeddedFXMoto_dtor	void __fastcall(void * self)
+000e0890	36	USER_DEFINED	__fastcall	cEmbeddedFXTreasure_dtor	void __fastcall(void * self)
+000e08c0	65	USER_DEFINED	__thiscall	cEmbeddedFXAmplifier_Delete	void * __thiscall(byte flags)
+000e0910	126	USER_DEFINED	__thiscall	cEmbeddedFXBattery_Delete	void * __thiscall(byte flags)
+000e0990	126	USER_DEFINED	__thiscall	cEmbeddedFXBossShield_Delete	void * __thiscall(byte flags)
+000e0a10	118	USER_DEFINED	__thiscall	cEmbeddedFXCapsule_Delete	void * __thiscall(byte flags)
+000e0a90	54	USER_DEFINED	__thiscall	cEmbeddedFXCoin_Delete	void * __thiscall(byte flags)
+000e0ad0	54	USER_DEFINED	__thiscall	cEmbeddedFXConversor_Delete	void * __thiscall(byte flags)
+000e0b10	65	USER_DEFINED	__thiscall	cEmbeddedFXDTritusDesktop_Delete	void * __thiscall(byte flags)
+000e0b60	65	USER_DEFINED	__thiscall	cEmbeddedFXDataCube_Delete	void * __thiscall(byte flags)
+000e0bb0	87	USER_DEFINED	__thiscall	cEmbeddedFXDataPack_Delete	void * __thiscall(byte flags)
+000e0c10	65	USER_DEFINED	__thiscall	cEmbeddedFXExtraLife_Delete	void * __thiscall(byte flags)
+000e0c60	54	USER_DEFINED	__thiscall	cEmbeddedFXFlag_Delete	void * __thiscall(byte flags)
+000e0ca0	54	USER_DEFINED	__thiscall	cEmbeddedFXItem_Delete	void * __thiscall(byte flags)
+000e0ce0	76	USER_DEFINED	__thiscall	cEmbeddedFXMatrix_Delete	void * __thiscall(byte flags)
+000e0d30	76	USER_DEFINED	__thiscall	cEmbeddedFXMeetingPoint_Delete	void * __thiscall(byte flags)
+000e0d80	166	USER_DEFINED	__thiscall	cEmbeddedFXMoto_Delete	void * __thiscall(byte flags)
+000e0e30	65	USER_DEFINED	__thiscall	cEmbeddedFXTreasure_Delete	void * __thiscall(byte flags)
 000e0e80	1	ANALYSIS	__thiscall	cEmbeddedFXAmplifier::vf04	undefined __thiscall(void)
 000e0e90	1	ANALYSIS	__thiscall	cEmbeddedFXBattery::vf04	undefined __thiscall(void)
 000e0ea0	1	ANALYSIS	__thiscall	cEmbeddedFXBossShield::vf04	undefined __thiscall(void)
@@ -2624,105 +2624,113 @@ rva	size	source	callconv	name	signature
 000e0f50	1	ANALYSIS	__thiscall	cEmbeddedFXMeetingPoint::vf04	undefined __thiscall(void)
 000e0f60	1	ANALYSIS	__thiscall	cEmbeddedFXMoto::vf04	undefined __thiscall(void)
 000e0f70	1	ANALYSIS	__thiscall	cEmbeddedFXTreasure::vf04	undefined __thiscall(void)
-000e0f80	15	ANALYSIS	__thiscall	cEmbeddedFXAmplifier::vf02	undefined __thiscall(void)
-000e0f90	57	ANALYSIS	__thiscall	cEmbeddedFXBattery::vf02	undefined __thiscall(void)
-000e0fd0	34	ANALYSIS	__thiscall	cEmbeddedFXBossShield::vf02	undefined __thiscall(void)
-000e1000	34	ANALYSIS	__thiscall	cEmbeddedFXCapsule::vf02	undefined __thiscall(void)
-000e1030	15	ANALYSIS	__thiscall	cEmbeddedFXCoin::vf02	undefined __thiscall(void)
-000e1040	15	ANALYSIS	__thiscall	cEmbeddedFXConversor::vf02	undefined __thiscall(void)
-000e1050	15	ANALYSIS	__thiscall	cEmbeddedFXDTritusDesktop::vf02	undefined __thiscall(void)
-000e1060	40	ANALYSIS	__thiscall	cEmbeddedFXDataCube::vf02	undefined __thiscall(void)
-000e1090	61	ANALYSIS	__thiscall	cEmbeddedFXDataPack::vf02	undefined __thiscall(void)
-000e10d0	25	ANALYSIS	__thiscall	cEmbeddedFXExtraLife::vf02	undefined __thiscall(void)
-000e10f0	15	ANALYSIS	__thiscall	cEmbeddedFXFlag::vf02	undefined __thiscall(void)
-000e1100	15	ANALYSIS	__thiscall	cEmbeddedFXItem::vf02	undefined __thiscall(void)
-000e1110	40	ANALYSIS	__thiscall	cEmbeddedFXMatrix::vf02	undefined __thiscall(void)
-000e1140	15	ANALYSIS	__thiscall	cEmbeddedFXMeetingPoint::vf02	undefined __thiscall(void)
-000e1150	109	ANALYSIS	__thiscall	cEmbeddedFXMoto::vf02	undefined __thiscall(void)
-000e11c0	61	ANALYSIS	__thiscall	cEmbeddedFXTreasure::vf02	undefined __thiscall(void)
-000e1210	34	DEFAULT	unknown	FUN_004e1210	
-000e12e0	58	DEFAULT	unknown	FUN_004e12e0	
-000e1320	3402	DEFAULT	unknown	FUN_004e1320	
-000e2120	267	DEFAULT	unknown	FUN_004e2120	
-000e2230	367	DEFAULT	unknown	FUN_004e2230	
-000e23a0	180	DEFAULT	unknown	FUN_004e23a0	
-000e2460	38	ANALYSIS	__thiscall	cEmbeddedFXAmplifier::vf01	undefined __thiscall(void)
-000e2490	121	ANALYSIS	__thiscall	cEmbeddedFXBattery::vf01	undefined __thiscall(void)
-000e2510	107	ANALYSIS	__thiscall	cEmbeddedFXBossShield::vf01	undefined __thiscall(void)
+000e0f80	15	USER_DEFINED	__fastcall	cEmbeddedFXAmplifier_Release	void __fastcall(void * self)
+000e0f90	57	USER_DEFINED	__fastcall	cEmbeddedFXBattery_Release	void __fastcall(void * self)
+000e0fd0	34	USER_DEFINED	__fastcall	cEmbeddedFXBossShield_Release	void __fastcall(void * self)
+000e1000	34	USER_DEFINED	__fastcall	cEmbeddedFXCapsule_Release	void __fastcall(void * self)
+000e1030	15	USER_DEFINED	__fastcall	cEmbeddedFXCoin_Release	void __fastcall(void * self)
+000e1040	15	USER_DEFINED	__fastcall	cEmbeddedFXConversor_Release	void __fastcall(void * self)
+000e1050	15	USER_DEFINED	__fastcall	cEmbeddedFXDTritusDesktop_Release	void __fastcall(void * self)
+000e1060	40	USER_DEFINED	__fastcall	cEmbeddedFXDataCube_Release	void __fastcall(void * self)
+000e1090	61	USER_DEFINED	__fastcall	cEmbeddedFXDataPack_Release	void __fastcall(void * self)
+000e10d0	25	USER_DEFINED	__fastcall	cEmbeddedFXExtraLife_Release	void __fastcall(void * self)
+000e10f0	15	USER_DEFINED	__fastcall	cEmbeddedFXFlag_Release	void __fastcall(void * self)
+000e1100	15	USER_DEFINED	__fastcall	cEmbeddedFXItem_Release	void __fastcall(void * self)
+000e1110	40	USER_DEFINED	__fastcall	cEmbeddedFXMatrix_Release	void __fastcall(void * self)
+000e1140	15	USER_DEFINED	__fastcall	cEmbeddedFXMeetingPoint_Release	void __fastcall(void * self)
+000e1150	109	USER_DEFINED	__fastcall	cEmbeddedFXMoto_Release	void __fastcall(void * self)
+000e11c0	61	USER_DEFINED	__fastcall	cEmbeddedFXTreasure_Release	void __fastcall(void * self)
+000e1200	10	USER_DEFINED	__fastcall	cEmbeddedFXAmplifier_Clear	void __fastcall(void * self)
+000e1210	34	USER_DEFINED	__fastcall	cEmbeddedFXBattery_Clear	void __fastcall(void * self)
+000e1260	10	USER_DEFINED	__fastcall	cEmbeddedFXDTritusDesktop_Clear	void __fastcall(void * self)
+000e1270	10	USER_DEFINED	__fastcall	cEmbeddedFXDataPack_Clear	void __fastcall(void * self)
+000e1280	10	USER_DEFINED	__fastcall	cEmbeddedFXExtraLife_Clear	void __fastcall(void * self)
+000e12b0	10	USER_DEFINED	__fastcall	cEmbeddedFXMatrix_Clear	void __fastcall(void * self)
+000e12d0	10	USER_DEFINED	__fastcall	cEmbeddedFXTreasure_Clear	void __fastcall(void * self)
+000e12e0	58	USER_DEFINED	__thiscall	cEmbeddedFXMeetingPoint_SetCountDown	void __thiscall(float a, float b)
+000e1320	3402	USER_DEFINED	__cdecl	EmbeddedFXMisc_Create	void __cdecl(void * obj, char * model, void * fx)
+000e2070	172	USER_DEFINED	__cdecl	EmbeddedFXMisc_BossShieldHit	void __cdecl(void)
+000e2120	267	USER_DEFINED	__cdecl	EmbeddedFXMisc_BossShieldMsg	void __cdecl(void * f)
+000e2230	367	USER_DEFINED	__cdecl	EmbeddedFXMisc_MeetingPointMsg	void __cdecl(void * f)
+000e23a0	180	USER_DEFINED	__thiscall	cEmbeddedFXMoto_EnginePos	void * __thiscall(void * out)
+000e2460	38	USER_DEFINED	__fastcall	cEmbeddedFXAmplifier_Reset	byte __fastcall(void * self)
+000e2490	121	USER_DEFINED	__fastcall	cEmbeddedFXBattery_Reset	byte __fastcall(void * self)
+000e2510	107	USER_DEFINED	__fastcall	cEmbeddedFXBossShield_Reset	byte __fastcall(void * self)
 000e2580	3	ANALYSIS	__thiscall	cEmbeddedFXCapsule::vf01	undefined __thiscall(void)
-000e2590	13	ANALYSIS	__thiscall	cEmbeddedFXCoin::vf01	undefined __thiscall(void)
-000e25a0	13	ANALYSIS	__thiscall	cEmbeddedFXConversor::vf01	undefined __thiscall(void)
-000e25b0	38	ANALYSIS	__thiscall	cEmbeddedFXDTritusDesktop::vf01	undefined __thiscall(void)
+000e2590	13	USER_DEFINED	__fastcall	cEmbeddedFXCoin_Reset	byte __fastcall(void * self)
+000e25a0	13	USER_DEFINED	__fastcall	cEmbeddedFXConversor_Reset	byte __fastcall(void * self)
+000e25b0	38	USER_DEFINED	__fastcall	cEmbeddedFXDTritusDesktop_Reset	byte __fastcall(void * self)
 000e25e0	3	ANALYSIS	__thiscall	cEmbeddedFXDataCube::vf01	undefined __thiscall(void)
-000e25f0	16	ANALYSIS	__thiscall	cEmbeddedFXDataPack::vf01	undefined __thiscall(void)
-000e2600	81	ANALYSIS	__thiscall	cEmbeddedFXExtraLife::vf01	undefined __thiscall(void)
+000e25f0	16	USER_DEFINED	__fastcall	cEmbeddedFXDataPack_Reset	byte __fastcall(void * self)
+000e2600	81	USER_DEFINED	__fastcall	cEmbeddedFXExtraLife_Reset	byte __fastcall(void * self)
 000e2660	3	ANALYSIS	__thiscall	cEmbeddedFXFlag::vf01	undefined __thiscall(void)
-000e2670	42	ANALYSIS	__thiscall	cEmbeddedFXItem::vf01	undefined __thiscall(void)
-000e26a0	101	ANALYSIS	__thiscall	cEmbeddedFXMatrix::vf01	undefined __thiscall(void)
+000e2670	42	USER_DEFINED	__fastcall	cEmbeddedFXItem_Reset	byte __fastcall(void * self)
+000e26a0	101	USER_DEFINED	__fastcall	cEmbeddedFXMatrix_Reset	byte __fastcall(void * self)
 000e2710	3	ANALYSIS	__thiscall	cEmbeddedFXMeetingPoint::vf01	undefined __thiscall(void)
-000e2720	51	ANALYSIS	__thiscall	cEmbeddedFXMoto::vf01	undefined __thiscall(void)
-000e2760	68	ANALYSIS	__thiscall	cEmbeddedFXTreasure::vf01	undefined __thiscall(void)
-000e27b0	24	ANALYSIS	__thiscall	cEmbeddedFXAmplifier::vf05	undefined __thiscall(void)
-000e27d0	43	ANALYSIS	__thiscall	cEmbeddedFXBattery::vf05	undefined __thiscall(void)
+000e2720	51	USER_DEFINED	__fastcall	cEmbeddedFXMoto_Reset	byte __fastcall(void * self)
+000e2760	68	USER_DEFINED	__fastcall	cEmbeddedFXTreasure_Reset	byte __fastcall(void * self)
+000e27b0	24	USER_DEFINED	__thiscall	cEmbeddedFXAmplifier_Stop	void __thiscall(byte keep)
+000e27d0	43	USER_DEFINED	__thiscall	cEmbeddedFXBattery_Stop	void __thiscall(byte keep)
 000e2800	3	ANALYSIS	__thiscall	cEmbeddedFXBossShield::vf05	undefined __thiscall(void)
 000e2810	3	ANALYSIS	__thiscall	cEmbeddedFXCapsule::vf05	undefined __thiscall(void)
 000e2820	3	ANALYSIS	__thiscall	cEmbeddedFXCoin::vf05	undefined __thiscall(void)
 000e2830	3	ANALYSIS	__thiscall	cEmbeddedFXConversor::vf05	undefined __thiscall(void)
-000e2840	24	ANALYSIS	__thiscall	cEmbeddedFXDTritusDesktop::vf05	undefined __thiscall(void)
+000e2840	24	USER_DEFINED	__thiscall	cEmbeddedFXDTritusDesktop_Stop	void __thiscall(byte keep)
 000e2860	3	ANALYSIS	__thiscall	cEmbeddedFXDataCube::vf05	undefined __thiscall(void)
-000e2870	24	ANALYSIS	__thiscall	cEmbeddedFXDataPack::vf05	undefined __thiscall(void)
-000e2890	24	ANALYSIS	__thiscall	cEmbeddedFXExtraLife::vf05	undefined __thiscall(void)
+000e2870	24	USER_DEFINED	__thiscall	cEmbeddedFXDataPack_Stop	void __thiscall(byte keep)
+000e2890	24	USER_DEFINED	__thiscall	cEmbeddedFXExtraLife_Stop	void __thiscall(byte keep)
 000e28b0	3	ANALYSIS	__thiscall	cEmbeddedFXFlag::vf05	undefined __thiscall(void)
 000e28c0	3	ANALYSIS	__thiscall	cEmbeddedFXItem::vf05	undefined __thiscall(void)
-000e28d0	24	ANALYSIS	__thiscall	cEmbeddedFXMatrix::vf05	undefined __thiscall(void)
+000e28d0	24	USER_DEFINED	__thiscall	cEmbeddedFXMatrix_Stop	void __thiscall(byte keep)
 000e28f0	3	ANALYSIS	__thiscall	cEmbeddedFXMeetingPoint::vf05	undefined __thiscall(void)
 000e2900	3	ANALYSIS	__thiscall	cEmbeddedFXMoto::vf05	undefined __thiscall(void)
-000e2910	24	ANALYSIS	__thiscall	cEmbeddedFXTreasure::vf05	undefined __thiscall(void)
-000e2940	16	DEFAULT	unknown	FUN_004e2940	
-000e2950	206	DEFAULT	unknown	FUN_004e2950	
-000e2a20	16	DEFAULT	unknown	FUN_004e2a20	
-000e2a30	409	DEFAULT	unknown	FUN_004e2a30	
-000e2bd0	298	DEFAULT	unknown	FUN_004e2bd0	
-000e2d00	246	DEFAULT	unknown	FUN_004e2d00	
-000e2e00	440	DEFAULT	unknown	FUN_004e2e00	
-000e2fc0	289	DEFAULT	unknown	FUN_004e2fc0	
-000e30f0	247	DEFAULT	unknown	FUN_004e30f0	
-000e31f0	503	DEFAULT	unknown	FUN_004e31f0	
-000e33f0	697	DEFAULT	unknown	FUN_004e33f0	
-000e36b0	558	DEFAULT	unknown	FUN_004e36b0	
-000e38e0	349	DEFAULT	unknown	FUN_004e38e0	
-000e3a40	247	DEFAULT	unknown	FUN_004e3a40	
-000e3b40	289	DEFAULT	unknown	FUN_004e3b40	
-000e3c70	404	DEFAULT	unknown	FUN_004e3c70	
-000e3e10	859	DEFAULT	unknown	FUN_004e3e10	
-000e4170	698	DEFAULT	unknown	FUN_004e4170	
-000e4430	298	DEFAULT	unknown	FUN_004e4430	
-000e4560	16	DEFAULT	unknown	FUN_004e4560	
-000e4570	20	DEFAULT	unknown	FUN_004e4570	
-000e4590	20	DEFAULT	unknown	FUN_004e4590	
-000e45b0	20	DEFAULT	unknown	FUN_004e45b0	
-000e45d0	20	DEFAULT	unknown	FUN_004e45d0	
-000e45f0	20	DEFAULT	unknown	FUN_004e45f0	
-000e4610	20	DEFAULT	unknown	FUN_004e4610	
-000e4630	13	DEFAULT	unknown	FUN_004e4630	
-000e4640	40	DEFAULT	unknown	FUN_004e4640	
-000e4670	16	DEFAULT	unknown	FUN_004e4670	
-000e4680	1003	ANALYSIS	__thiscall	cEmbeddedFXAmplifier::vf03	undefined __thiscall(void)
-000e4a70	4497	ANALYSIS	__thiscall	cEmbeddedFXBattery::vf03	undefined __thiscall(void)
-000e5c10	2929	ANALYSIS	__thiscall	cEmbeddedFXBossShield::vf03	undefined __thiscall(void)
+000e2910	24	USER_DEFINED	__thiscall	cEmbeddedFXTreasure_Stop	void __thiscall(byte keep)
+000e2930	5	USER_DEFINED	__fastcall	cEmbeddedFXDataPack_On	void __fastcall(void * self)
+000e2940	16	USER_DEFINED	__thiscall	cEmbeddedFXCoin_SetColor	void __thiscall(uint color)
+000e2950	206	USER_DEFINED	__thiscall	cEmbeddedFXFlag_SetColor	void __thiscall(char * name)
+000e2a20	16	USER_DEFINED	__thiscall	cEmbeddedFXItem_SetColor	void __thiscall(uint color)
+000e2a30	409	USER_DEFINED	__thiscall	cEmbeddedFXAmplifier_Init	void __thiscall(void * e)
+000e2bd0	298	USER_DEFINED	__thiscall	cEmbeddedFXBattery_Init	void __thiscall(void * e)
+000e2d00	246	USER_DEFINED	__thiscall	cEmbeddedFXBossShield_Init	void __thiscall(void * e)
+000e2e00	440	USER_DEFINED	__thiscall	cEmbeddedFXCapsule_Init	void __thiscall(void * e)
+000e2fc0	289	USER_DEFINED	__thiscall	cEmbeddedFXCoin_Init	void __thiscall(void * e, char * node)
+000e30f0	247	USER_DEFINED	__thiscall	cEmbeddedFXConversor_Init	void __thiscall(void * e)
+000e31f0	503	USER_DEFINED	__thiscall	cEmbeddedFXDTritusDesktop_Init	void __thiscall(void * e)
+000e33f0	697	USER_DEFINED	__thiscall	cEmbeddedFXDataCube_Init	void __thiscall(void * e)
+000e36b0	558	USER_DEFINED	__thiscall	cEmbeddedFXDataPack_Init	void __thiscall(void * e)
+000e38e0	349	USER_DEFINED	__thiscall	cEmbeddedFXExtraLife_Init	void __thiscall(void * e)
+000e3a40	247	USER_DEFINED	__thiscall	cEmbeddedFXFlag_Init	void __thiscall(void * e)
+000e3b40	289	USER_DEFINED	__thiscall	cEmbeddedFXItem_Init	void __thiscall(void * e, char * node)
+000e3c70	404	USER_DEFINED	__thiscall	cEmbeddedFXMatrix_Init	void __thiscall(void * e)
+000e3e10	859	USER_DEFINED	__thiscall	cEmbeddedFXMeetingPoint_Init	void __thiscall(void * e)
+000e4170	698	USER_DEFINED	__thiscall	cEmbeddedFXMoto_Init	void __thiscall(void * e)
+000e4430	298	USER_DEFINED	__thiscall	cEmbeddedFXTreasure_Init	void __thiscall(void * e)
+000e4560	16	USER_DEFINED	__thiscall	cEmbeddedFXBossShield_SetMode	void __thiscall(int mode)
+000e4570	20	USER_DEFINED	__thiscall	cEmbeddedFXCoin_SetScale	void __thiscall(float v)
+000e4590	20	USER_DEFINED	__thiscall	cEmbeddedFXExtraLife_SetScale	void __thiscall(float v)
+000e45b0	20	USER_DEFINED	__thiscall	cEmbeddedFXItem_SetScale	void __thiscall(float v)
+000e45d0	20	USER_DEFINED	__thiscall	cEmbeddedFXMatrix_SetScale	void __thiscall(float v)
+000e45f0	20	USER_DEFINED	__thiscall	cEmbeddedFXTreasure_SetScale	void __thiscall(float v)
+000e4610	20	USER_DEFINED	__thiscall	cEmbeddedFXBossShield_SetHit	void __thiscall(float hit)
+000e4630	13	USER_DEFINED	__thiscall	cEmbeddedFXDataPack_SetOn	void __thiscall(byte on)
+000e4640	40	USER_DEFINED	__thiscall	cEmbeddedFXMoto_SetF7d4	void __thiscall(float a, float b)
+000e4670	16	USER_DEFINED	__thiscall	cEmbeddedFXTreasure_SetType	void __thiscall(int type)
+000e4680	1003	USER_DEFINED	__thiscall	cEmbeddedFXAmplifier_Update	void __thiscall(float dt)
+000e4a70	4497	USER_DEFINED	__thiscall	cEmbeddedFXBattery_Update	void __thiscall(float dt)
+000e5c10	2929	USER_DEFINED	__thiscall	cEmbeddedFXBossShield_Update	void __thiscall(float dt)
 000e6790	3	ANALYSIS	__thiscall	cEmbeddedFXCapsule::vf03	undefined __thiscall(void)
-000e67a0	638	ANALYSIS	__thiscall	cEmbeddedFXCoin::vf03	undefined __thiscall(void)
-000e6a20	668	ANALYSIS	__thiscall	cEmbeddedFXConversor::vf03	undefined __thiscall(void)
-000e6cc0	1287	ANALYSIS	__thiscall	cEmbeddedFXDTritusDesktop::vf03	undefined __thiscall(void)
+000e67a0	638	USER_DEFINED	__thiscall	cEmbeddedFXCoin_Update	void __thiscall(float dt)
+000e6a20	668	USER_DEFINED	__thiscall	cEmbeddedFXConversor_Update	void __thiscall(float dt)
+000e6cc0	1287	USER_DEFINED	__thiscall	cEmbeddedFXDTritusDesktop_Update	void __thiscall(float dt)
 000e71d0	3	ANALYSIS	__thiscall	cEmbeddedFXDataCube::vf03	undefined __thiscall(void)
-000e71e0	823	ANALYSIS	__thiscall	cEmbeddedFXDataPack::vf03	undefined __thiscall(void)
-000e7520	1887	ANALYSIS	__thiscall	cEmbeddedFXExtraLife::vf03	undefined __thiscall(void)
-000e7c80	1390	ANALYSIS	__thiscall	cEmbeddedFXFlag::vf03	undefined __thiscall(void)
-000e81f0	567	ANALYSIS	__thiscall	cEmbeddedFXItem::vf03	undefined __thiscall(void)
-000e8430	1865	ANALYSIS	__thiscall	cEmbeddedFXMatrix::vf03	undefined __thiscall(void)
-000e8b80	1390	ANALYSIS	__thiscall	cEmbeddedFXMeetingPoint::vf03	undefined __thiscall(void)
+000e71e0	823	USER_DEFINED	__thiscall	cEmbeddedFXDataPack_Update	void __thiscall(float dt)
+000e7520	1887	USER_DEFINED	__thiscall	cEmbeddedFXExtraLife_Update	void __thiscall(float dt)
+000e7c80	1390	USER_DEFINED	__thiscall	cEmbeddedFXFlag_Update	void __thiscall(float dt)
+000e81f0	567	USER_DEFINED	__thiscall	cEmbeddedFXItem_Update	void __thiscall(float dt)
+000e8430	1865	USER_DEFINED	__thiscall	cEmbeddedFXMatrix_Update	void __thiscall(float dt)
+000e8b80	1390	USER_DEFINED	__thiscall	cEmbeddedFXMeetingPoint_Update	void __thiscall(float dt)
 000e90f0	5676	ANALYSIS	__thiscall	cEmbeddedFXMoto::vf03	undefined __thiscall(void)
-000ea730	2450	ANALYSIS	__thiscall	cEmbeddedFXTreasure::vf03	undefined __thiscall(void)
+000ea730	2450	USER_DEFINED	__thiscall	cEmbeddedFXTreasure_Update	void __thiscall(float dt)
 000eb0d0	159	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_ctor	void * __thiscall(void)
 000eb170	247	USER_DEFINED	__thiscall	cEmbeddedFXVehicleProbe_ctor	void * __thiscall(void * fx)
 000eb270	50	USER_DEFINED	__thiscall	cFXVehicleSirens_ctor	void * __thiscall(void * owner)

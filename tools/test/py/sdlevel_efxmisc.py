@@ -133,7 +133,9 @@ def efmstate(p, c):
 	trails = []
 	for o, n in c[6]:
 		trails.append(efmtrails(p + o, n))
-	return (efmi(p) - 0x400000, parts, tuple(trails), efmints(p, c[7]), efmbytes(p, c[8]))
+	# +4 is the entity (a heap address): only whether it is set
+	ints = map(lambda o, v: (o == 4 and [v != 0] or [v])[0], c[7], efmints(p, c[7]))
+	return (efmi(p) - 0x400000, parts, tuple(trails), tuple(ints), efmbytes(p, c[8]))
 # the fields a Reset writes
 efmresetfields = {
 	'Battery': ((0xc4, 0x11c, 0x120, 0x124, 0x128, 0x12c, 0x130), ()),
@@ -370,7 +372,10 @@ for c in efmmodels:
 		extra = efmupdated[name]
 		if name == 'BossShield':
 			# speed and regen are not written before the first Update: 0
-			efmset(fx + 0x4b4, (0.0,) * 255)
+			# nor the slots a mode out of range never writes: speed, dir, size, color
+			for efma, efmn in ((0x4b4, 255), (0x8b0, 765), (0x14a4, 510)):
+				for efmk in range(0, efmn, 51):
+					efmset(fx + efma + 4 * efmk, (0.0,) * 51)
 			efmset(fx + 0x1ca0, (0.0,))
 		for d, rot in efmplaces:
 			efmplace(gm, d, rot)
