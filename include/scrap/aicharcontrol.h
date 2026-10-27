@@ -14,8 +14,10 @@
 #include <stdarg.h>
 
 #include "scrap/ai.h"
+#include "scrap/fxmisc.h"
 #include "scrap/nodesworld.h"
 #include "scrap/objentity.h"
+#include "scrap/scrapcollision.h"
 #include "scrap/slotcontroller.h"
 #include "scrap/walkcharentity.h"
 
@@ -376,8 +378,31 @@ static inline float AICC_X87AddAdd(float a, float b, float c) {
 	return r;
 }
 
+/* a segment of the corridor: p = a + v * r, q = p + nl (aim: q = p + normalize(b - p) * len); 1 when it is free */
+static inline int AICC_Seg(vec3_t *p, vec3_t *q, const vec3_t *a, const vec3_t *v, float r, const vec3_t *nl,
+	const vec3_t *b, float len) {
+	vec3_t d, e;
+
+	p->x = a->x + v->x * r;
+	p->y = a->y + v->y * r;
+	p->z = a->z + v->z * r;
+	if (b) {
+		d.x = b->x - p->x;
+		d.y = b->y - p->y;
+		d.z = b->z - p->z;
+		Vec3_NormalizeTo(&e, &d);
+		q->x = e.x * len + p->x;
+		q->y = e.y * len + p->y;
+		q->z = e.z * len + p->z;
+	} else {
+		q->x = nl->x + p->x;
+		q->y = nl->y + p->y;
+		q->z = nl->z + p->z;
+	}
+	return !Engine_TestLine(p, q, NULL, NULL);
+}
+
 /* ---- the base part, AI/AICharControl.cpp (src/game/AI/ICharControl.c) ---- */
-/* Vec3_NormalizeTo (rva 0x072340): fxmisc.h */
 void __thiscall cAICharControl_ClearAvoid(cAICharControl *self);
 /* the strafe around e (a character in the way): 1 when the control strafes, *found 1 when e is in the way */
 byte __thiscall cAICharControl_Avoid(cAICharControl *self, cEntity *e, byte *found);
@@ -499,6 +524,12 @@ void __thiscall cAICharControl3D_Draw(cAICharControl *self);
 byte __thiscall cAICharControl3D_Facing(cAICharControl *self, cEntity *hitEnt, vec3_t *toE, vec3_t *toGoal);
 /* the segment free of the level */
 byte __thiscall cAICharControl3D_TestLine(cAICharControl *self, const vec3_t *a, const vec3_t *b);
+/* the segment a b free and 8 lines around it from a: along it (at most FactorDistTestColCharAI * radius long),
+ * aimed at b (TestPathEnd); the lines back from a (at most the radius plus 5) for TestSides. The corridor into
+ * debugSegs. TestPath to dest is TestPathEnd */
+byte __thiscall cAICharControl3D_TestPath(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
+byte __thiscall cAICharControl3D_TestPathEnd(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
+byte __thiscall cAICharControl3D_TestSides(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);
 /* the way of 1.5 radius to the side (3 up, 4 down) not free */
 byte __thiscall cAICharControl3D_SideBlocked(cAICharControl *self, int side);
 byte __thiscall cAICharControl3D_UpdateFollow(cAICharControl *self);

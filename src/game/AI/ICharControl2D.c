@@ -542,30 +542,6 @@ byte __thiscall cAICharControl2D_InWay(cAICharControl *self, vec3_t dest, cEntit
 	return k >= d;
 }
 
-/* a segment of the corridor: p = a + v * r, q = p + nl (aim: q = p + normalize(b - p) * len); 1 when it is free */
-static int AICC2D_Seg(vec3_t *p, vec3_t *q, const vec3_t *a, const vec3_t *v, float r, const vec3_t *nl,
-	const vec3_t *b, float len) {
-	vec3_t d, e;
-
-	p->x = a->x + v->x * r;
-	p->y = a->y + v->y * r;
-	p->z = a->z + v->z * r;
-	if (b) {
-		d.x = b->x - p->x;
-		d.y = b->y - p->y;
-		d.z = b->z - p->z;
-		Vec3_NormalizeTo(&e, &d);
-		q->x = e.x * len + p->x;
-		q->y = e.y * len + p->y;
-		q->z = e.z * len + p->z;
-	} else {
-		q->x = nl->x + p->x;
-		q->y = nl->y + p->y;
-		q->z = nl->z + p->z;
-	}
-	return !Engine_TestLine(p, q, NULL, NULL);
-}
-
 /* TestPath (end 0: the 7 lines along the way from a to b) and TestPathEnd (end 1: the lines from the points around
  * a to b, then the step of a walk forward) */
 static byte AICC2D_Corridor(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r, int end) {
@@ -616,42 +592,42 @@ static byte AICC2D_Corridor(cAICharControl *self, const vec3_t *a, const vec3_t 
 	nl.x = N.x * L;
 	nl.y = N.y * L;
 	nl.z = N.z * L;
-	if (!AICC2D_Seg(&p1, &q1, &A, &s, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
+	if (!AICC_Seg(&p1, &q1, &A, &s, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
 		return 0;
 	}
 	s.x = -s.x;
 	s.y = -s.y;
 	s.z = -s.z;
-	if (!AICC2D_Seg(&p2, &q2, &A, &s, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
+	if (!AICC_Seg(&p2, &q2, &A, &s, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
 		return 0;
 	}
-	if (!AICC2D_Seg(&p3, &q3, &A, &up, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
+	if (!AICC_Seg(&p3, &q3, &A, &up, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
 		return 0;
 	}
 	in.x = s.x + 0.0f;
 	in.y = s.y + 1.0f;
 	in.z = s.z + 0.0f;
 	Vec3_NormalizeTo(&U, &in);
-	if (!AICC2D_Seg(&p4, &q4, &A, &U, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
+	if (!AICC_Seg(&p4, &q4, &A, &U, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
 		return 0;
 	}
 	U.x = -U.x;
 	U.y = -U.y;
 	U.z = -U.z;
-	if (!AICC2D_Seg(&p5, &q5, &A, &U, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
+	if (!AICC_Seg(&p5, &q5, &A, &U, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
 		return 0;
 	}
 	in.x = s.x - 0.0f;
 	in.y = s.y - 1.0f;
 	in.z = s.z - 0.0f;
 	V = *Vec3_NormalizeTo(&tmp, &in);
-	if (!AICC2D_Seg(&p6, &q6, &A, &V, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
+	if (!AICC_Seg(&p6, &q6, &A, &V, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
 		return 0;
 	}
 	V.x = -V.x;
 	V.y = -V.y;
 	V.z = -V.z;
-	if (!AICC2D_Seg(&p7, &q7, &A, &V, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
+	if (!AICC_Seg(&p7, &q7, &A, &V, Obj_Vtbl(me)->GetRadius(me), &nl, to, L)) {
 		return 0;
 	}
 	if (end && self->walkDir == 1 && !vt->TestStep(self, &A, &hitA, &hitB, r)) {
@@ -721,42 +697,42 @@ byte __thiscall cAICharControl2D_TestStep(cAICharControl *self, const vec3_t *a,
 	nl.x = N.x * L;
 	nl.y = N.y * L;
 	nl.z = N.z * L;
-	if (!AICC2D_Seg(&p, &q, a, &s, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
+	if (!AICC_Seg(&p, &q, a, &s, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
 		return 0;
 	}
 	s.x = -s.x;
 	s.y = -s.y;
 	s.z = -s.z;
-	if (!AICC2D_Seg(&p, &q, a, &s, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
+	if (!AICC_Seg(&p, &q, a, &s, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
 		return 0;
 	}
-	if (!AICC2D_Seg(&p, &q, a, &up, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
+	if (!AICC_Seg(&p, &q, a, &up, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
 		return 0;
 	}
 	in.x = s.x + 0.0f;
 	in.y = s.y + 1.0f;
 	in.z = s.z + 0.0f;
 	Vec3_NormalizeTo(&U, &in);
-	if (!AICC2D_Seg(&p, &q, a, &U, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
+	if (!AICC_Seg(&p, &q, a, &U, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
 		return 0;
 	}
 	U.x = -U.x;
 	U.y = -U.y;
 	U.z = -U.z;
-	if (!AICC2D_Seg(&p, &q, a, &U, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
+	if (!AICC_Seg(&p, &q, a, &U, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
 		return 0;
 	}
 	in.x = s.x - 0.0f;
 	in.y = s.y - 1.0f;
 	in.z = s.z - 0.0f;
 	V = *Vec3_NormalizeTo(&tmp, &in);
-	if (!AICC2D_Seg(&p, &q, a, &V, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
+	if (!AICC_Seg(&p, &q, a, &V, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f)) {
 		return 0;
 	}
 	V.x = -V.x;
 	V.y = -V.y;
 	V.z = -V.z;
-	return AICC2D_Seg(&p, &q, a, &V, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f) != 0;
+	return AICC_Seg(&p, &q, a, &V, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f) != 0;
 }
 
 byte __thiscall cAICharControl2D_TestSides(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
@@ -809,23 +785,23 @@ byte __thiscall cAICharControl2D_TestSides(cAICharControl *self, const vec3_t *a
 	ml.x = M.x * L;
 	ml.y = M.y * L;
 	ml.z = M.z * L;
-	if (!AICC2D_Seg(&p1, &q1, &A, &s, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
+	if (!AICC_Seg(&p1, &q1, &A, &s, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
 		return 0;
 	}
 	s.x = -s.x;
 	s.y = -s.y;
 	s.z = -s.z;
-	if (!AICC2D_Seg(&p2, &q2, &A, &s, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
+	if (!AICC_Seg(&p2, &q2, &A, &s, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
 		return 0;
 	}
-	if (!AICC2D_Seg(&p3, &q3, &A, &up, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
+	if (!AICC_Seg(&p3, &q3, &A, &up, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
 		return 0;
 	}
 	in.x = s.x + 0.0f;
 	in.y = s.y + 1.0f;
 	in.z = s.z + 0.0f;
 	Vec3_NormalizeTo(&U, &in);
-	if (!AICC2D_Seg(&p4, &q4, &A, &U, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
+	if (!AICC_Seg(&p4, &q4, &A, &U, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
 		return 0;
 	}
 	in.x = s.x - 0.0f;
@@ -835,7 +811,7 @@ byte __thiscall cAICharControl2D_TestSides(cAICharControl *self, const vec3_t *a
 	W.x = -W.x;
 	W.y = -W.y;
 	W.z = -W.z;
-	if (!AICC2D_Seg(&p5, &q5, &A, &W, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
+	if (!AICC_Seg(&p5, &q5, &A, &W, Obj_Vtbl(me)->GetRadius(me), &ml, NULL, 0.0f)) {
 		return 0;
 	}
 	/* the corridor for the debug view; segment 4 is not set here */

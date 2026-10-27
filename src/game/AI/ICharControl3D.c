@@ -4,6 +4,7 @@
  * from the target, the strafe around a character in the way.
  */
 #include <float.h>
+#include <string.h>
 
 #include "scrap/aicharcontrol.h"
 #include "scrap/fxelements.h"
@@ -76,6 +77,152 @@ byte __thiscall cAICharControl3D_Facing(cAICharControl *self, cEntity *hitEnt, v
 byte __thiscall cAICharControl3D_TestLine(cAICharControl *self, const vec3_t *a, const vec3_t *b) {
 	(void)self;
 	return Engine_TestLine(a, b, NULL, NULL) == 0;
+}
+
+/* the 8 lines around a of the corridors: to the side of n (and up for n vertical), turned around n; each from
+ * a + v * r along n * len (aim: to b) */
+static int AICC3D_Lines(const vec3_t *a, const vec3_t *n, float r, float len, const vec3_t *aim, cAICCSeg *segs) {
+	vec3_t P, s, u, w, in, nl, tmp;
+
+	P.x = n->y * 0.0f - n->z;
+	P.y = n->z * 0.0f - n->x * 0.0f;
+	P.z = n->x - n->y * 0.0f;
+	if (P.x == 0.0f && P.y == 0.0f && P.z == 0.0f) {
+		P.x = 1.0f;
+		P.y = 0.0f;
+		P.z = 0.0f;
+	}
+	Vec3_NormalizeTo(&s, &P);
+	nl.x = n->x * len;
+	nl.y = n->y * len;
+	nl.z = n->z * len;
+	if (!AICC_Seg(&segs[0].a, &segs[0].b, a, &s, r, &nl, aim, len)) {
+		return 0;
+	}
+	s.x = -s.x;
+	s.y = -s.y;
+	s.z = -s.z;
+	if (!AICC_Seg(&segs[1].a, &segs[1].b, a, &s, r, &nl, aim, len)) {
+		return 0;
+	}
+	in.x = s.z * n->y - s.y * n->z;
+	in.y = s.x * n->z - s.z * n->x;
+	in.z = s.y * n->x - s.x * n->y;
+	u = *Vec3_NormalizeTo(&tmp, &in);
+	if (!AICC_Seg(&segs[2].a, &segs[2].b, a, &u, r, &nl, aim, len)) {
+		return 0;
+	}
+	u.x = -u.x;
+	u.y = -u.y;
+	u.z = -u.z;
+	if (!AICC_Seg(&segs[3].a, &segs[3].b, a, &u, r, &nl, aim, len)) {
+		return 0;
+	}
+	in.x = u.x + s.x;
+	in.y = u.y + s.y;
+	in.z = u.z + s.z;
+	Vec3_NormalizeTo(&w, &in);
+	if (!AICC_Seg(&segs[4].a, &segs[4].b, a, &w, r, &nl, aim, len)) {
+		return 0;
+	}
+	w.x = -w.x;
+	w.y = -w.y;
+	w.z = -w.z;
+	if (!AICC_Seg(&segs[5].a, &segs[5].b, a, &w, r, &nl, aim, len)) {
+		return 0;
+	}
+	in.x = s.x - u.x;
+	in.y = s.y - u.y;
+	in.z = s.z - u.z;
+	w = *Vec3_NormalizeTo(&tmp, &in);
+	if (!AICC_Seg(&segs[6].a, &segs[6].b, a, &w, r, &nl, aim, len)) {
+		return 0;
+	}
+	w.x = -w.x;
+	w.y = -w.y;
+	w.z = -w.z;
+	return AICC_Seg(&segs[7].a, &segs[7].b, a, &w, r, &nl, aim, len);
+}
+
+/* the way from a to b and its unit vector */
+static float AICC3D_Way(const vec3_t *a, const vec3_t *b, vec3_t *n) {
+	vec3_t d;
+
+	d.y = b->y - a->y;
+	d.x = b->x - a->x;
+	d.z = b->z - a->z;
+	float len = AICC3D_Len(d.x, d.y, d.z);
+	if (len == 0.0f) {
+		*n = d;
+	} else {
+		float inv = 1.0f / len;
+		n->x = d.x * inv;
+		n->y = d.y * inv;
+		n->z = d.z * inv;
+	}
+	return len;
+}
+
+static byte AICC3D_Corridor(cAICharControl *self, const vec3_t *a, const vec3_t *b, int end) {
+	cEntity *me = self->ent;
+	cAICCSeg segs[8];
+	vec3_t A0 = *a, B0 = *b, n;
+
+	if (Engine_TestLine(a, b, NULL, NULL)) {
+		return 0;
+	}
+	float r = Obj_Vtbl(me)->GetRadius(me);
+	float t = AICC_X87Mul(Obj_Vtbl(me)->GetRadius(me), g_FactorDistTestColCharAI);
+	float len = Float_MinSS(AICC3D_Way(a, b, &n), t);
+	if (!AICC3D_Lines(a, &n, r, len, end ? b : NULL, segs)) {
+		return 0;
+	}
+	self->debugSegs[0].a = A0;
+	self->debugSegs[0].b = B0;
+	memcpy(&self->debugSegs[1], segs, sizeof(segs));
+	return 1;
+}
+
+byte __thiscall cAICharControl3D_TestPath(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+	if (b->x == self->dest.x && b->y == self->dest.y && b->z == self->dest.z) {
+		return AICC_Vtbl(self)->TestPathEnd(self, a, b, r);
+	}
+	return AICC3D_Corridor(self, a, b, 0);
+}
+
+byte __thiscall cAICharControl3D_TestPathEnd(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+	(void)r;
+	return AICC3D_Corridor(self, a, b, 1);
+}
+
+byte __thiscall cAICharControl3D_TestSides(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+	cEntity *me = self->ent;
+	cAICCSeg segs[8];
+	vec3_t A0 = *a, Q0, n, m, ml;
+
+	(void)r;
+	float rad = Obj_Vtbl(me)->GetRadius(me);
+	float len = AICC_X87Add(Obj_Vtbl(me)->GetRadius(me), 5.0f);
+	AICC3D_Way(a, b, &n);
+	m.x = -n.x;
+	m.y = -n.y;
+	m.z = -n.z;
+	ml.x = m.x * len;
+	ml.y = m.y * len;
+	ml.z = m.z * len;
+	Q0.x = a->x + ml.x;
+	Q0.y = a->y + ml.y;
+	Q0.z = a->z + ml.z;
+	if (Engine_TestLine(&A0, &Q0, NULL, NULL)) {
+		return 0;
+	}
+	if (!AICC3D_Lines(a, &m, rad, len, NULL, segs)) {
+		return 0;
+	}
+	self->debugSegs[0].a = A0;
+	self->debugSegs[0].b = Q0;
+	memcpy(&self->debugSegs[1], segs, sizeof(segs));
+	return 1;
 }
 
 byte __thiscall cAICharControl3D_SideBlocked(cAICharControl *self, int side) {
