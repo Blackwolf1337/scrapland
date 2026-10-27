@@ -44,16 +44,16 @@ for i in (0, 3, 7):
 	if muvoice[i][0] != 0:
 		check('Voice busy' + fmt((i,)), lambda: 1)
 		continue
-	check('Voice_GetString' + fmt((i,)), lambda i=i: SDTest.Call(0x2327d0, 'iibi', i, 'junk', 32))
-	check('Voice_SetString' + fmt((i,)), lambda i=i, v=v: (SDTest.Call(0x232d10, 'iis', i, 'hello'),
+	check('Voice_GetString' + fmt((i,)), lambda i=i: SDTest.Call(0x2327d0, 'bibi', i, 'junk', 32))
+	check('Voice_SetString' + fmt((i,)), lambda i=i, v=v: (SDTest.Call(0x232d10, 'bis', i, 'hello'),
 		SDTest.Peek(v + 0x10c - 0x400000, 's')))
-	check('Voice_SetParam' + fmt((i,)), lambda i=i: SDTest.Call(0x232a80, 'iif', i, 0.5))
-	check('Voice_SetVolume' + fmt((i,)), lambda i=i: SDTest.Call(0x232dd0, 'iif', i, 0.5))
-	check('Voice_Remain' + fmt((i,)), lambda i=i: SDTest.Call(0x232c60, 'iip', i, 12345))
-	check('Voice_Play' + fmt((i,)), lambda i=i, v=v: (SDTest.Call(0x232b40, 'ii', i), mui(v + 0x108)))
+	check('Voice_SetParam' + fmt((i,)), lambda i=i: SDTest.Call(0x232a80, 'bif', i, 0.5))
+	check('Voice_SetVolume' + fmt((i,)), lambda i=i: SDTest.Call(0x232dd0, 'bif', i, 0.5))
+	check('Voice_Remain' + fmt((i,)), lambda i=i: SDTest.Call(0x232c60, 'bip', i, 12345))
+	check('Voice_Play' + fmt((i,)), lambda i=i, v=v: (SDTest.Call(0x232b40, 'bi', i), mui(v + 0x108)))
 	mupoke(v + 0x18c, 1)
 	SDTest.Call(0x22cf50, 'iisi', v + 0x10c, 'text', 0x80)
-	check('Voice_Stop' + fmt((i,)), lambda i=i, v=v: (SDTest.Call(0x232d80, 'ii', i), mui(v + 0x18c),
+	check('Voice_Stop' + fmt((i,)), lambda i=i, v=v: (SDTest.Call(0x232d80, 'bi', i), mui(v + 0x18c),
 		SDTest.Peek(v + 0x10c - 0x400000, 's')))
 	mupoke(v + 0x18c, 1)
 	SDTest.Call(0x22cf50, 'iisi', v + 0x10c, 'text', 0x80)

@@ -1713,7 +1713,7 @@ rva	size	source	callconv	name	signature
 0008a0e0	34	ANALYSIS	__thiscall	cAIVehicle::vf02	undefined __thiscall(void)
 0008a110	26	ANALYSIS	__thiscall	cAIVehicle::vf08	undefined __thiscall(void)
 0008a130	7	DEFAULT	unknown	FUN_0048a130	
-0008a140	29	DEFAULT	unknown	FUN_0048a140	
+0008a140	29	USER_DEFINED	__thiscall	cAIVehicle_GetFadeDists	void __thiscall(void * nearDist, void * farDist)
 0008a160	7	DEFAULT	unknown	FUN_0048a160	
 0008a170	173	DEFAULT	unknown	FUN_0048a170	
 0008a220	36	DEFAULT	unknown	FUN_0048a220	
@@ -2723,42 +2723,45 @@ rva	size	source	callconv	name	signature
 000e8b80	1390	ANALYSIS	__thiscall	cEmbeddedFXMeetingPoint::vf03	undefined __thiscall(void)
 000e90f0	5676	ANALYSIS	__thiscall	cEmbeddedFXMoto::vf03	undefined __thiscall(void)
 000ea730	2450	ANALYSIS	__thiscall	cEmbeddedFXTreasure::vf03	undefined __thiscall(void)
-000eb0d0	159	DEFAULT	unknown	FUN_004eb0d0	
-000eb170	247	DEFAULT	unknown	FUN_004eb170	
-000eb270	50	DEFAULT	unknown	FUN_004eb270	
-000eb2b0	201	DEFAULT	unknown	FUN_004eb2b0	
-000eb380	161	DEFAULT	unknown	FUN_004eb380	
-000eb430	164	DEFAULT	unknown	FUN_004eb430	
-000eb4f0	119	DEFAULT	unknown	FUN_004eb4f0	
-000eb570	38	ANALYSIS	__thiscall	Mod1::`scalar_deleting_destructor'	void * __thiscall(uint param_1)
-000eb5a0	38	ANALYSIS	__thiscall	cEmbeddedFXVehicleProbe::vf00	undefined __thiscall(void)
-000eb5d0	150	ANALYSIS	__thiscall	cEmbeddedFXVehicleVote::vf00	undefined __thiscall(void)
-000eb670	954	ANALYSIS	__thiscall	cEmbeddedFXVehicle::vf04	undefined __thiscall(void)
-000eba30	2152	ANALYSIS	__thiscall	cEmbeddedFXVehicleProbe::vf04	undefined __thiscall(void)
-000ec2a0	2034	DEFAULT	unknown	FUN_004ec2a0	
-000ecaa0	2894	ANALYSIS	__thiscall	cEmbeddedFXVehicleVote::vf04	undefined __thiscall(void)
-000ed5f0	181	ANALYSIS	__thiscall	cEmbeddedFXVehicle::vf02	undefined __thiscall(void)
-000ed6b0	1	ANALYSIS	__thiscall	cEmbeddedFXVehicleProbe::vf02	undefined __thiscall(void)
-000ed700	53	ANALYSIS	__thiscall	cEmbeddedFXVehicleVote::vf02	undefined __thiscall(void)
-000ed740	112	DEFAULT	unknown	FUN_004ed740	
-000ed7c0	34	DEFAULT	unknown	FUN_004ed7c0	
-000ed7f0	353	ANALYSIS	__thiscall	cEmbeddedFXVehicle::vf01	undefined __thiscall(void)
-000ed960	1175	ANALYSIS	__thiscall	cEmbeddedFXVehicleProbe::vf01	undefined __thiscall(void)
-000ede00	536	DEFAULT	unknown	FUN_004ede00	
-000ee020	555	ANALYSIS	__thiscall	cEmbeddedFXVehicleVote::vf01	undefined __thiscall(void)
-000ee250	135	DEFAULT	unknown	FUN_004ee250	
-000ee300	41	ANALYSIS	__thiscall	cEmbeddedFXVehicle::vf05	undefined __thiscall(void)
-000ee330	24	ANALYSIS	__thiscall	cEmbeddedFXVehicleProbe::vf05	undefined __thiscall(void)
-000ee350	43	ANALYSIS	__thiscall	cEmbeddedFXVehicleVote::vf05	undefined __thiscall(void)
-000ee380	16	DEFAULT	unknown	FUN_004ee380	
-000ee390	876	DEFAULT	unknown	FUN_004ee390	
-000ee700	16	DEFAULT	unknown	FUN_004ee700	
-000ee710	16	DEFAULT	unknown	FUN_004ee710	
-000ee720	66	DEFAULT	unknown	FUN_004ee720	
-000ee770	16	DEFAULT	unknown	FUN_004ee770	
-000ee780	312	ANALYSIS	__thiscall	cEmbeddedFXVehicle::vf03	undefined __thiscall(void)
-000ee8c0	3	ANALYSIS	__thiscall	cEmbeddedFXVehicleProbe::vf03	undefined __thiscall(void)
-000ee8e0	3	ANALYSIS	__thiscall	cEmbeddedFXVehicleVote::vf03	undefined __thiscall(void)
+000eb0d0	159	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_ctor	void * __thiscall(void)
+000eb170	247	USER_DEFINED	__thiscall	cEmbeddedFXVehicleProbe_ctor	void * __thiscall(void * fx)
+000eb270	50	USER_DEFINED	__thiscall	cFXVehicleSirens_ctor	void * __thiscall(void * owner)
+000eb2b0	201	USER_DEFINED	__thiscall	cEmbeddedFXVehicleVote_ctor	void * __thiscall(void * fx)
+000eb380	161	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_dtor	void __thiscall(void)
+000eb430	164	USER_DEFINED	__thiscall	cEmbeddedFXVehicleProbe_dtor	void __thiscall(void)
+000eb4f0	119	USER_DEFINED	__thiscall	cEmbeddedFXVehicleVote_dtor	void __thiscall(void)
+000eb570	38	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_Delete	void * __thiscall(byte flags)
+000eb5a0	38	USER_DEFINED	__thiscall	cEmbeddedFXVehicleProbe_Delete	void * __thiscall(byte flags)
+000eb5d0	150	USER_DEFINED	__thiscall	cEmbeddedFXVehicleVote_Delete	void * __thiscall(byte flags)
+000eb670	954	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_Update	void __thiscall(void)
+000eba30	2152	USER_DEFINED	__thiscall	cEmbeddedFXVehicleProbe_Update	void __thiscall(void)
+000ec2a0	2034	USER_DEFINED	__thiscall	cFXVehicleSirens_Update	void __thiscall(void)
+000ecaa0	2894	USER_DEFINED	__thiscall	cEmbeddedFXVehicleVote_Update	void __thiscall(void)
+000ed5f0	181	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_Done	void __thiscall(void)
+000ed6b0	1	USER_DEFINED	__thiscall	cEmbeddedFXVehicleProbe_Done	void __thiscall(void)
+000ed6c0	52	USER_DEFINED	__thiscall	cFXVehicleSirens_dtor	void __thiscall(void)
+000ed700	53	USER_DEFINED	__thiscall	cEmbeddedFXVehicleVote_Done	void __thiscall(void)
+000ed740	112	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_Hide	void __thiscall(void)
+000ed7b0	16	USER_DEFINED	__thiscall	cEmbeddedFXVehicleProbe_ClearTrail	void __thiscall(void)
+000ed7c0	34	USER_DEFINED	__thiscall	cEmbeddedFXVehicleVote_ClearTrails	void __thiscall(void)
+000ed7f0	353	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_Init	byte __thiscall(void)
+000ed960	1175	USER_DEFINED	__thiscall	cEmbeddedFXVehicleProbe_Init	byte __thiscall(void)
+000ede00	536	USER_DEFINED	__thiscall	cFXVehicleSirens_Init	byte __thiscall(void)
+000ee020	555	USER_DEFINED	__thiscall	cEmbeddedFXVehicleVote_Init	byte __thiscall(void)
+000ee250	135	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_Render	void __thiscall(void)
+000ee2e0	27	USER_DEFINED	__cdecl	cFXVehicleSirens_RenderModel	void __cdecl(void)
+000ee300	41	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_SetActive	void __thiscall(byte on)
+000ee330	24	USER_DEFINED	__thiscall	cEmbeddedFXVehicleProbe_SetActive	void __thiscall(byte on)
+000ee350	43	USER_DEFINED	__thiscall	cEmbeddedFXVehicleVote_SetActive	void __thiscall(byte on)
+000ee380	16	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_SetAttached	void __thiscall(void * element)
+000ee390	876	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_SetOwner	void __thiscall(void * owner)
+000ee700	16	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_SetTraffic	void __thiscall(byte on)
+000ee710	16	USER_DEFINED	__thiscall	cEmbeddedFXVehicleVote_SetType	void __thiscall(int type)
+000ee720	66	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_StartFade	void __thiscall(void)
+000ee770	16	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_SetAIRange	void __thiscall(byte on)
+000ee780	312	USER_DEFINED	__thiscall	cEmbeddedFXVehicle_Configure	void __thiscall(int unused)
+000ee8c0	3	USER_DEFINED	__thiscall	cEmbeddedFXVehicleProbe_Configure	void __thiscall(int unused)
+000ee8e0	3	USER_DEFINED	__thiscall	cEmbeddedFXVehicleVote_Configure	void __thiscall(int unused)
 000ee8f0	556	DEFAULT	unknown	FUN_004ee8f0	
 000eeb20	104	DEFAULT	unknown	FUN_004eeb20	
 000eeb90	104	DEFAULT	unknown	FUN_004eeb90	
@@ -6082,7 +6085,7 @@ rva	size	source	callconv	name	signature
 001f8f30	40	ANALYSIS	__thiscall	cObjElementFXVehicleFire::vf04	undefined __thiscall(void)
 001f8f60	75	ANALYSIS	__thiscall	cObjElementFXVehicleSpawn::vf04	undefined __thiscall(void)
 001f8fb0	154	ANALYSIS	__thiscall	cObjElementFXVehicleSputnik::vf04	undefined __thiscall(void)
-001f9050	199	DEFAULT	unknown	FUN_005f9050	
+001f9050	199	USER_DEFINED	__thiscall	FXVehicle_RenderAttached	void __thiscall(void)
 001f9120	45	DEFAULT	unknown	FUN_005f9120	
 001f9150	111	DEFAULT	unknown	FUN_005f9150	
 001f91c0	244	DEFAULT	unknown	FUN_005f91c0	
@@ -6873,48 +6876,54 @@ rva	size	source	callconv	name	signature
 00231170	3	ANALYSIS	__thiscall	CEntradaNula::vf02	undefined __thiscall(void)
 00231180	43	DEFAULT	unknown	FUN_00631180	
 002311b0	1	DEFAULT	unknown	FUN_006311b0	
-002311e0	162	DEFAULT	unknown	FUN_006311e0	
+002311e0	162	USER_DEFINED	__cdecl	Fmod_ErrorString	char * __cdecl(int err)
 002312d0	438	DEFAULT	__thiscall	FUN_006312d0	
-002314c0	67	DEFAULT	unknown	FUN_006314c0	
-00231550	119	DEFAULT	unknown	FUN_00631550	
-002315d0	405	DEFAULT	unknown	FUN_006315d0	
-00231770	465	DEFAULT	unknown	FUN_00631770	
-00231950	128	DEFAULT	unknown	FUN_00631950	
-002319d0	281	DEFAULT	unknown	FUN_006319d0	
-00231af0	41	DEFAULT	unknown	FUN_00631af0	
-00231b20	293	DEFAULT	unknown	FUN_00631b20	
-00231c50	133	DEFAULT	unknown	FUN_00631c50	
-00231ce0	58	DEFAULT	unknown	FUN_00631ce0	
-00231d20	96	DEFAULT	unknown	FUN_00631d20	
-00231d80	168	DEFAULT	unknown	FUN_00631d80	
-00231e50	708	DEFAULT	unknown	FUN_00631e50	
-00232120	107	DEFAULT	unknown	FUN_00632120	
-002321c0	77	DEFAULT	unknown	FUN_006321c0	
-00232210	41	DEFAULT	unknown	FUN_00632210	
-00232240	282	DEFAULT	unknown	FUN_00632240	
-00232360	96	DEFAULT	unknown	FUN_00632360	
-002323c0	187	DEFAULT	unknown	FUN_006323c0	
-00232480	90	DEFAULT	unknown	FUN_00632480	
-002324e0	85	DEFAULT	unknown	FUN_006324e0	
-00232540	18	DEFAULT	unknown	FUN_00632540	
-00232560	23	DEFAULT	unknown	FUN_00632560	
-00232580	26	DEFAULT	unknown	FUN_00632580	
-002325a0	26	DEFAULT	unknown	FUN_006325a0	
-002325c0	18	DEFAULT	unknown	FUN_006325c0	
-002325e0	14	DEFAULT	unknown	FUN_006325e0	
-00232600	28	DEFAULT	unknown	FUN_00632600	
-00232620	27	DEFAULT	unknown	FUN_00632620	
-00232640	5	DEFAULT	__thiscall	thunk_FUN_006312d0	
-00232650	384	DEFAULT	unknown	FUN_00632650	
-002327d0	107	DEFAULT	unknown	FUN_006327d0	
-00232840	146	DEFAULT	unknown	FUN_00632840	
-002328e0	403	DEFAULT	unknown	FUN_006328e0	
-00232a80	179	DEFAULT	unknown	FUN_00632a80	
-00232b40	279	DEFAULT	unknown	FUN_00632b40	
-00232c60	167	DEFAULT	unknown	FUN_00632c60	
-00232d10	102	DEFAULT	unknown	FUN_00632d10	
-00232d80	80	DEFAULT	unknown	FUN_00632d80	
-00232dd0	163	DEFAULT	unknown	FUN_00632dd0	
+002314c0	67	USER_DEFINED	__cdecl	Voice_Get	void * __cdecl(uint voice)
+00231510	52	USER_DEFINED	__cdecl	Music_GetOpenState	int __cdecl(void)
+00231550	119	USER_DEFINED	__cdecl	Music_Ready	byte __cdecl(void)
+002315d0	405	USER_DEFINED	__cdecl	Music_UpdateVolumes	byte __cdecl(void)
+00231770	465	USER_DEFINED	__cdecl	Music_DrawDebug	void __cdecl(int x, int y)
+00231950	128	USER_DEFINED	__cdecl	Music_Wait	byte __cdecl(void)
+002319d0	281	USER_DEFINED	__cdecl	Music_Open	byte __cdecl(char * name)
+00231af0	41	USER_DEFINED	__cdecl	Music_SetPaused	void __cdecl(int paused)
+00231b20	293	USER_DEFINED	__cdecl	Music_Start	byte __cdecl(void)
+00231c50	133	USER_DEFINED	__cdecl	Voice_Close	void __cdecl(void * v)
+00231ce0	58	USER_DEFINED	__cdecl	Music_ApplyVolume	void __cdecl(void)
+00231d20	96	USER_DEFINED	__cdecl	Voice_ApplyVolume	void __cdecl(void * v, float volume)
+00231d80	168	USER_DEFINED	__cdecl	Voices_UpdatePause	void __cdecl(void)
+00231e30	18	USER_DEFINED	__cdecl	Voices_DrawDebugDefault	byte __cdecl(void)
+00231e50	708	USER_DEFINED	__cdecl	Voices_DrawDebug	void __cdecl(int x, int y)
+00232120	107	USER_DEFINED	__cdecl	Voice_Wait	void __cdecl(void * v, char * what)
+00232190	16	USER_DEFINED	__cdecl	Music_Nop	void __cdecl(void)
+002321a0	16	USER_DEFINED	__stdcall	Music_True16a	byte __stdcall(int a, int b, int c, int d)
+002321b0	16	USER_DEFINED	__stdcall	Music_True16b	byte __stdcall(int a, int b, int c, int d)
+002321c0	77	USER_DEFINED	__cdecl	Music_SetMainVolume	byte __cdecl(float v)
+00232210	41	USER_DEFINED	__cdecl	Music_Pause	byte __cdecl(void)
+00232240	282	USER_DEFINED	__cdecl	Music_PlayFile	byte __cdecl(char * name, char * dir)
+00232360	96	USER_DEFINED	__cdecl	Music_Stop	byte __cdecl(void)
+002323c0	187	USER_DEFINED	__cdecl	Music_Voiceover	byte __cdecl(float factor, float speed)
+00232480	90	USER_DEFINED	__cdecl	Music_FadeOut	byte __cdecl(float a, float vol)
+002324e0	85	USER_DEFINED	__cdecl	Music_SetVolume	byte __cdecl(float v)
+00232540	18	USER_DEFINED	__stdcall	Music_FileClose	int __stdcall(void * f)
+00232560	23	USER_DEFINED	__stdcall	Music_FileOpen	void * __stdcall(char * name)
+00232580	26	USER_DEFINED	__stdcall	Music_FileRead	int __stdcall(void * buf, int size, void * f)
+002325a0	26	USER_DEFINED	__stdcall	Music_FileSeek	int __stdcall(void * f, int pos, byte mode)
+002325c0	18	USER_DEFINED	__stdcall	Music_FileTell	int __stdcall(void * f)
+002325e0	14	USER_DEFINED	__cdecl	D3DApp_OnActivate	void __cdecl(void)
+002325f0	12	USER_DEFINED	__cdecl	Fmod_IsInit	int __cdecl(void)
+00232600	28	USER_DEFINED	__cdecl	Music_Update	byte __cdecl(void)
+00232620	27	USER_DEFINED	__cdecl	Fmod_Close	int __cdecl(void)
+00232640	5	USER_DEFINED	__cdecl	Fmod_Init	int __cdecl(void)
+00232650	384	USER_DEFINED	__cdecl	Music_DrawStream	void __cdecl(float x, float y, void * stream, int channel, void * playing)
+002327d0	107	USER_DEFINED	__cdecl	Voice_GetString	int __cdecl(int voice, char * buf, int size)
+00232840	146	USER_DEFINED	__cdecl	Voice_Unused	int __cdecl(int voice)
+002328e0	403	USER_DEFINED	__cdecl	Voice_Open	int __cdecl(char * name, int voice, int voiceover)
+00232a80	179	USER_DEFINED	__cdecl	Voice_SetParam	int __cdecl(int voice, float pan)
+00232b40	279	USER_DEFINED	__cdecl	Voice_Play	int __cdecl(int voice)
+00232c60	167	USER_DEFINED	__cdecl	Voice_Remain	int __cdecl(int voice, void * remain)
+00232d10	102	USER_DEFINED	__cdecl	Voice_SetString	int __cdecl(int voice, char * text)
+00232d80	80	USER_DEFINED	__cdecl	Voice_Stop	int __cdecl(int voice)
+00232dd0	163	USER_DEFINED	__cdecl	Voice_SetVolume	int __cdecl(int voice, float volume)
 00232e80	135	USER_DEFINED	__thiscall	CGameLensFlare_ctor	void * __thiscall(void)
 00232f10	27	USER_DEFINED	__thiscall	CGameLensFlare_dtor	void __thiscall(void)
 00232f30	11	USER_DEFINED	__thiscall	CGameLensFlare_SetOn	void __thiscall(byte on)

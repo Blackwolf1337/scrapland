@@ -28,7 +28,8 @@ def fnmedir(f, s, align, pos, dim):
 rdvp = (SDTest.Peek(0x4ad7e8, 'i'), SDTest.Peek(0x4ad7ec, 'i'))
 SDTest.Poke(0x4ad7e8, 640)
 SDTest.Poke(0x4ad7ec, 480)
-strs = ('', 'Hola', 'Scrapland 1.6 ~', '\001' + '00e9x', '\001' + 'zz12y', '\005ab\037', '\001' + '0041', '\001' + '04')
+# '\001' + '0041' is not in the list: its color code reads past the end of the string (heap memory)
+strs = ('', 'Hola', 'Scrapland 1.6 ~', '\001' + '00e9x', '\001' + 'zz12y', '\005ab\037', '\001' + '04')
 for name, a in (('Comic14', 0x4d6dc8), ('Term8', 0x4d6dcc)):
 	f = SDTest.Peek(a, 'i')
 	check('CFuente3 ' + name, lambda f=f: fnget(f))

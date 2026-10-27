@@ -88,7 +88,7 @@ void __fastcall cEmbeddedFXVehicle_dtor(cEmbeddedFXVehicle *self) {
 	CGameParticles_Release(&self->follow2);
 	CGameParticles_Release(&self->follow);
 	CGameModel_Reset(&self->model);
-	cEmbeddedFX_dtor(self);
+	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }
 
 cEmbeddedFXVehicle *__thiscall cEmbeddedFXVehicle_Delete(cEmbeddedFXVehicle *self, byte flags) {
@@ -528,7 +528,7 @@ void __fastcall cEmbeddedFXVehicleProbe_dtor(cEmbeddedFXVehicleProbe *self) {
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->trans);
 	crt_eh_vector_dtor(self->lights, sizeof(CGameParticles), PROBE_LIGHTS, Game_Ptr(CGAMEPARTICLES_DTOR));
-	cEmbeddedFX_dtor(self);
+	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }
 
 cEmbeddedFXVehicleProbe *__thiscall cEmbeddedFXVehicleProbe_Delete(cEmbeddedFXVehicleProbe *self, byte flags) {
@@ -750,7 +750,7 @@ void __fastcall cEmbeddedFXVehicleVote_dtor(cEmbeddedFXVehicleVote *self) {
 	crt_eh_vector_dtor(self->motor, sizeof(CGameParticles), VOTE_MOTORS, Game_Ptr(CGAMEPARTICLES_DTOR));
 	crt_eh_vector_dtor(self->trails, sizeof(CGameTrail), 2, Game_Ptr(CGAMETRAIL_DTOR));
 	CGameParticles_Release(&self->glow);
-	cEmbeddedFX_dtor(self);
+	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }
 
 cEmbeddedFXVehicleVote *__thiscall cEmbeddedFXVehicleVote_Delete(cEmbeddedFXVehicleVote *self, byte flags) {

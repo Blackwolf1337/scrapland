@@ -11,6 +11,7 @@
 #ifndef SCRAP_EMBEDDEDFXVEHICLE_H
 #define SCRAP_EMBEDDEDFXVEHICLE_H
 
+#include "scrap/embeddedfxchar.h"
 #include "scrap/entity.h"
 #include "scrap/scrapparticles.h"
 #include "scrap/scraptrails.h"
@@ -134,8 +135,6 @@ SD_SIZE(cEmbeddedFXVehicleVote, 0x2e0);
 #define g_MinDistReposAI GAME_DATA(float, 0x444900)
 #define g_MaxDistReposAI GAME_DATA(float, 0x444858)
 
-/* the base destructor (rva 0xd68f0): the vtable of cEmbeddedFX */
-void __fastcall cEmbeddedFX_dtor(void *self);
 /* World/FX/FXVehicle.cpp (rva 0x1f9050): an element drawn with the followed vehicle */
 void __fastcall FXVehicle_RenderAttached(void *element);
 /* the near and far distance of the AI of a vehicle (rva 0x8a140) */
