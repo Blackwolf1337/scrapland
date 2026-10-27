@@ -105,7 +105,7 @@ PyObject *SScorer_Fade(PyObject *self, PyObject *args) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (sc) {
-		ScorerFade_Start(sc->fade, PackColor(r1, g1, b1, a1), PackColor(r2, g2, b2, a2), time);
+		ScorerFade_Start(&sc->fade, PackColor(r1, g1, b1, a1), PackColor(r2, g2, b2, a2), time);
 	}
 	return ReturnNone();
 }
@@ -121,7 +121,7 @@ PyObject *SScorer_SetCinema(PyObject *self, PyObject *args) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (sc) {
-		ScorerCinema_Set(sc->cinema, on != 0, time);
+		ScorerCinema_Set(&sc->cinema, on != 0, time);
 	}
 	return ReturnNone();
 }

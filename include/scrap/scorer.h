@@ -44,7 +44,7 @@ struct cScorerItem {
 	byte delMe;			/* 0x28 */
 	byte visible;			/* 0x29 1 */
 	byte pad_2a[2];
-	int i2c;			/* 0x2c */
+	struct cScorerItem *next;	/* 0x2c in the list of the scorer */
 	int player;			/* 0x30 of the scorer */
 	char *left, *right, *up, *down;	/* 0x34 cStrings, the item names of the cursor moves */
 	cPy_Function onAccept;		/* 0x44 */
@@ -67,18 +67,41 @@ void __fastcall cScorerItem_dtor(cScorerItem *self);
  * MultiPress, Visible */
 int __thiscall cScorerItem_Var(cScorerItem *self, const char *name, byte set, char **s, double *d, int *i);
 
+/* the cinema bars (SScorer.SetCinema), 0x10 bytes */
+typedef struct ScorerCinema {
+	float time;			/* 0x0 0..life */
+	float life;			/* 0x4 */
+	byte on;			/* 0x8 */
+	byte pad_9[3];
+	float height;			/* 0xc CinemaBlackBandHeight while on */
+} ScorerCinema;
+SD_SIZE(ScorerCinema, 0x10);
+
+/* a fade of the whole screen (SScorer.Fade): the colors as floats 0..255, 0x28 bytes */
+typedef struct ScorerFade {
+	float from[4];			/* 0x00 r, g, b, a: the color at the start */
+	float to[4];			/* 0x10 the color at the end */
+	float time;			/* 0x20 counts down to 0 */
+	float life;			/* 0x24 */
+} ScorerFade;
+SD_SIZE(ScorerFade, 0x28);
+
 typedef struct cScorer {
-	void *vftable;			/* 0x00 */
-	byte pad_04[0x20 - 0x04];
+	void *vftable;			/* 0x00 rva 0x3c3bb4, only the deleting destructor */
+	cScorerItem *found;		/* 0x04 the last item of FindItem */
+	byte cleared;			/* 0x08 Clear ran in this frame: only items marked DelMe are drawn */
+	byte pad_09[3];
+	float marker[4];		/* 0x0c x0, y0, x1, y1 of the focus marker, moving to the cursor item */
+	float markerAlpha;		/* 0x1c 0..1 */
 	float time;			/* 0x20 the time of the scorer (blinking) */
-	byte pad_24[0x28 - 0x24];
+	float lastTime;			/* 0x24 */
 	float frameTime;		/* 0x28 the time of the last frame */
-	byte pad_2c[0x30 - 0x2c];
+	float acceptTime;		/* 0x2c counts down while the accept is held; -10 off */
 	char *hint;			/* 0x30 cString, the hint shown (cHintScorer) */
 	char *specialHint;		/* 0x34 cString, the hint while onSpecialHint returns 1 */
 	float hintTime;			/* 0x38 the hint shows HintAppearsTime after this */
 	int hintWidth;			/* 0x3c the line width of the hint */
-	byte pad_40[0x44 - 0x40];
+	cScorerItem *items;		/* 0x40 linked by next, drawn in this order */
 	byte visible;			/* 0x44 SScorer.Show/Hide */
 	byte pad_45[3];
 	char *actual;			/* 0x48 cString, the name of the cursor item (SScorer.GetActual) */
@@ -88,11 +111,16 @@ typedef struct cScorer {
 	cPy_Function onNext;		/* 0x68 */
 	cPy_Function onPrev;		/* 0x7c */
 	cPy_Function onSpecialHint;	/* 0x90 */
-	byte pad_a4[0xb0 - 0xa4];
-	byte fade[0xd8 - 0xb0];		/* 0xb0 fade object (SScorer.Fade) */
-	byte cinema[0xec - 0xd8];	/* 0xd8 cinema bars (SScorer.SetCinema) */
-	cPy_Function mpFunc;		/* 0xec */
-	byte pad_100[0x104 - 0x100];
+	int skipFrames;			/* 0xa4 frames without the cursor moves (Scorer_SetInputState) */
+	struct cScorerModel *models;	/* 0xa8 SScorer.AddModel */
+	int player;			/* 0xac */
+	ScorerFade fade;		/* 0xb0 */
+	ScorerCinema cinema;		/* 0xd8 */
+	byte fx;			/* 0xe8 the noise and motion blur, an object without fields (globals) */
+	byte pad_e9[3];
+	cPy_Function mpFunc;		/* 0xec SScorer.SetMPFunc */
+	byte focusSound;		/* 0x100 the focus sound plays on the next cursor move */
+	byte pad_101[3];
 } cScorer;
 SD_SIZE(cScorer, 0x104);
 SD_OFFSET(cScorer, time, 0x20);
@@ -102,20 +130,23 @@ SD_OFFSET(cScorer, hintWidth, 0x3c);
 SD_OFFSET(cScorer, visible, 0x44);
 SD_OFFSET(cScorer, cursor, 0x50);
 SD_OFFSET(cScorer, onSpecialHint, 0x90);
+SD_OFFSET(cScorer, models, 0xa8);
 SD_OFFSET(cScorer, fade, 0xb0);
 SD_OFFSET(cScorer, cinema, 0xd8);
 SD_OFFSET(cScorer, mpFunc, 0xec);
+SD_OFFSET(cScorer, focusSound, 0x100);
 
 cScorer *Scorer_Get(int player);
 cScorerItem *__thiscall cScorer_FindItem(cScorer *scorer, const char *name);
-void *__thiscall cScorer_AddItem(cScorer *scorer, const char *name, const char *type, byte flag);
+cScorerItem *__thiscall cScorer_AddItem(cScorer *scorer, const char *name, const char *type, byte flag);
 void __thiscall cScorer_Clear(cScorer *scorer);
 void __thiscall cScorer_SetDefault(cScorer *scorer, const char *name);
 void __thiscall cScorer_SetMarkerSprite(cScorer *scorer, const char *sprite);
-int __thiscall cScorer_AddModel(cScorer *scorer, const char *name, const char *model, const char *anim, int numAnim,
-	float radius, float c, byte flag);
-void __thiscall ScorerFade_Start(void *fade, uint32_t from, uint32_t to, float time);
-void __thiscall ScorerCinema_Set(void *cinema, byte on, float time);
+/* the model of the new entry (never NULL) */
+void *__thiscall cScorer_AddModel(cScorer *scorer, const char *name, const char *model, const char *anim, int numAnim,
+	float radius, float height, byte head);
+void __thiscall ScorerFade_Start(ScorerFade *fade, uint32_t from, uint32_t to, float time);
+void __thiscall ScorerCinema_Set(ScorerCinema *cinema, byte on, float time);
 /* cPyMenuEntity (type object rva 0x428f78): Python handle of a scorer item by player and item name */
 typedef struct cPyMenuEntity {
 	PyObject_HEAD

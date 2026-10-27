@@ -242,7 +242,7 @@ cEntity *Inferno_Hit(const char *name) {
 					}
 					if (found && sc) {
 						uint32_t a = (uint32_t)(-64 - (int)(w * -63.0f));
-						ScorerFade_Start(sc->fade, (a << 24) | 0xffbe3c, 0xffffff, g_InfernoLifeTime * w * 0.5f);
+						ScorerFade_Start(&sc->fade, (a << 24) | 0xffbe3c, 0xffffff, g_InfernoLifeTime * w * 0.5f);
 					}
 					cEntity *cam = Ent_Cam(o);
 					if (cam) {
