@@ -9,7 +9,10 @@
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
+#include "scrap/escena.h"
 #include "scrap/fuentes.h"
+#include "scrap/leem3d.h"
+#include "scrap/luz.h"
 #include "scrap/mallad3d.h"
 #include "scrap/portal.h"
 #include "scrap/prof.h"
@@ -2304,4 +2307,530 @@ void __thiscall Bsp_FinMensaje(CBsp *self, int secs) {
 		crt_fflush(NULL);
 		crt_exit_now(-1);
 	}
+}
+
+
+/* the map: made from the floor of the world */
+
+#define g_LmapOpcion58 GAME_DATA(int, 0x4b2b58)		/* a switch of the dialog (0x40d) */
+#define g_LmapGuardarIni GAME_DATA(int, 0x43298c)	/* the settings back into the .ini of the map */
+#define g_MapaSombrasDlgCalc ((void *)Game_Ptr(0x282e60))	/* Bsp_DlgProc */
+
+typedef int(__stdcall *isdlgbuttonchecked_t)(void *hwnd, int id);
+typedef int(__stdcall *checkdlgbutton_t)(void *hwnd, int id, unsigned check);
+typedef int(__stdcall *setdlgitemtext_t)(void *hwnd, int id, const char *s);
+typedef int(__stdcall *enddialog_t)(void *hwnd, intptr_t res);
+typedef void *(__stdcall *getdlgitem_t)(void *hwnd, int id);
+typedef int(__stdcall *enablewindow_t)(void *hwnd, int enable);
+typedef intptr_t(__stdcall *getwindowlong_t)(void *hwnd, int index);
+typedef intptr_t(__stdcall *dialogboxparam_t)(void *inst, const char *tmpl, void *parent, void *proc, intptr_t param);
+#define exe_IsDlgButtonChecked GAME_DATA(isdlgbuttonchecked_t, 0x3a13ac)
+#define exe_CheckDlgButton GAME_DATA(checkdlgbutton_t, 0x3a13a8)
+#define exe_SetDlgItemTextA GAME_DATA(setdlgitemtext_t, 0x3a1344)
+#define exe_EndDialog GAME_DATA(enddialog_t, 0x3a1444)
+#define exe_GetDlgItem GAME_DATA(getdlgitem_t, 0x3a1340)
+#define exe_EnableWindow GAME_DATA(enablewindow_t, 0x3a1374)
+#define exe_GetWindowLongA GAME_DATA(getwindowlong_t, 0x3a1460)
+#define exe_DialogBoxParamA GAME_DATA(dialogboxparam_t, 0x3a1440)
+
+/* the obj3D of a node as its class (the inline cast of objeto3D.h, NULL with a failed CHECK) */
+static void *Obj3D_As(CNodo3D *n, uint32_t clase) {
+	IObjeto3D *o = n->obj3D;
+
+	if (o->clase != clase) {
+		CheckFailed("devNULL", "objeto3D.h", __TIMESTAMP__, __LINE__);
+		return NULL;
+	}
+	return o;
+}
+
+CBsp *__thiscall CBsp_ctor(CBsp *self, const char *nombre, const vec3_t *escala) {
+	char buf[0x104];
+
+	self->nombre = NULL;
+	self->zonas.p = NULL;
+	self->zonas.n = 0;
+	Cad_Set(&self->nombre, nombre);
+	self->modelo = NULL;
+	memset(self->listas, 0, sizeof(self->listas));
+	self->num_listas = 0;
+	memset(self->nolmap, 0, sizeof(self->nolmap));
+	self->num_nolmap = 0;
+	self->nodos = NULL;
+	self->luces = NULL;
+	self->matFX = NULL;
+	self->matWire = NULL;
+	int n = Sector_Num();
+	g_BspSecVisto = 0;
+	g_PortalesOn = n > 0;
+	g_BspOjoAnt = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	if (g_LmapInfo) {
+		Tex_AddExtension("<U><D><N>.INFO<E>");
+	}
+	if (!g_MapaSombrasCalcular) {
+		if (CBsp_LeerEMI(self)) {
+			Con_FatalErrorf("No hay iluminaci\xf3n precalculada para:\n%s", self->nombre);
+		}
+	} else {
+		self->modelo = Crear_Modelo3(nombre, NULL, escala, 4);
+		self->modelo->dynLight = 0;
+		self->modelo->alwaysVisible = 1;
+		CBsp_Calcular(self);
+	}
+	CBsp_CrearZonas(self);
+	CBsp_Preparar(self);
+	if (!self->modelo) {
+		if (Mundo_Get()->EscSuelo->fromAmc) {
+			Ruta_Format(buf, nombre, "&U&D&N_2._SM3_");
+			self->modelo = Crear_Modelo3(buf, NULL, escala, 0x14);
+		} else if (!self->modelo) {
+			self->modelo = Crear_Modelo3(nombre, NULL, escala, 4);
+		}
+	}
+	self->modelo->dynLight = 0;
+	self->modelo->alwaysVisible = 1;
+	return self;
+}
+
+/* the node class of the log lines */
+static const char *Bsp_NodoClase(CNodo3D *n) {
+	return Obj3D_ClaseName(CNodo3D_Clase(n));
+}
+
+/* the nodes of a scene into the file log; done: the ones out of the map (both flags 0x20008) too */
+static void Bsp_LogNodos(CEscena *esc, const char *fmt, byte done) {
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		uint32_t f = n->flags;
+		if ((f & 0x20008) == 0x20008) {
+			if (done) {
+				E3D_LogInfo(g_FileLog, "Map node: %s  [c:%s]", n->name, Bsp_NodoClase(n));
+			}
+			continue;
+		}
+		const char *cls = Bsp_NodoClase(n);
+		E3D_LogWhite(g_FileLog, fmt, n->name, f >> 17 & 1 ? "" : "  [TRANS]", f >> 3 & 1 ? "" : "  [RENDER]", cls);
+	}
+}
+
+void Bsp_Crear(void) {
+	char buf[0x104];
+
+	if (!g_MapaSombrasUsar) {
+		return;
+	}
+	if (g_MapaSombrasDlg) {
+		void *hwnd = MOTOR_HWND(g_Motor);
+		void *inst = (void *)exe_GetWindowLongA(hwnd, -6);
+		if (!exe_DialogBoxParamA(inst, (const char *)0xa2, hwnd, g_MapaSombrasDlgCalc, 0)) {
+			g_MapaSombrasUsar = 0;
+			return;
+		}
+	}
+	if (!g_MapaSombrasUsar) {
+		return;
+	}
+	CMundo *mundo = Mundo_Get();
+	CHECK(mundo->Suelo);
+	CBsp *bsp = operator_new(sizeof(CBsp));
+	g_Bsp = bsp ? CBsp_ctor(bsp, mundo->EscSuelo->name, &mundo->Suelo->escala) : NULL;
+	CSuelo_FreeNodos(mundo->ObjSuelo);
+	/* the world keeps no lights and no meshes: they are in the map now */
+	for (CNodo3D *n = mundo->EscSuelo->Nodo3D; n; n = n->sig) {
+		if (CNodo3D_Clase(n) == CLASE_OBJ3D_LUZ) {
+			CLuz *luz = Obj3D_As(n, CLASE_OBJ3D_LUZ);
+			if (n->flags & 0x6000000) {
+				continue;
+			}
+			CHECK(!luz->activa);
+			n->flags |= 0x20008;
+			Bsp_NodoMarcar(n, 1);
+			E3D_LogWhite(g_FileLog, "World: Light object DELETED: %s", n->name);
+			continue;
+		}
+		if (CNodo3D_Clase(n) != CLASE_OBJ3D_SUELO && CNodo3D_Clase(n) != CLASE_OBJ3D_PORTAL &&
+			CNodo3D_Clase(n) != CLASE_OBJ3D_CAMARA) {
+			Bsp_NodoMarcar(n, 1);
+			n->flags |= 0x20008;
+		}
+		Bsp_NodoMarcar(n, 0);
+		if (CNodo3D_Clase(n) == CLASE_OBJ3D_PORTAL) {
+			n->flags |= 0x20008;
+		}
+	}
+	CEscena_CompactMats(mundo->EscSuelo);
+	CEscena_DeleteEmpty(mundo->EscSuelo, 0, 0, 1);
+	/* the map keeps only its meshes */
+	for (CNodo3D *n = g_Bsp->modelo->escena->Nodo3D; n; n = n->sig) {
+		if (Mundo_Get()->EscSuelo->fromAmc) {
+			break;
+		}
+		CHECK(CNodo3D_Clase(n) != CLASE_OBJ3D_MALLAD3D);
+		if (CNodo3D_Clase(n) == CLASE_OBJ3D_MALLATRI) {
+			uint32_t f = n->flags;
+			if (f >> 7 & 1) {
+				if (f >> 13 & 1 && !(f >> 29 & 1)) {
+					Con_Warnf("WARN: Only area lights can be both NO_RENDER and NO_COLLIDE: %s\n", n->name);
+				}
+				if (n->flags >> 29 & 1 && !(n->flags >> 13 & 1)) {
+					Con_Warnf("WARN: Hidden area light without NO_COLLIDE: %s\n", n->name);
+				}
+			}
+			if (n->flags >> 25 & 1 && !(n->flags >> 7 & 1)) {
+				CNodo3D_BuildD3D(n, 2);
+				CEscena *esc = Mundo_Get()->EscSuelo;
+				CMallaD3D_CalcIlum(Obj3D_As(n, CLASE_OBJ3D_MALLAD3D), n, esc);
+				Con_Warnf("MAP NODE: NODO_RT_LIGHTING: %s\n", n->name);
+			} else {
+				Bsp_NodoMarcar(n, 1);
+				n->flags |= 8;
+			}
+		}
+		if (CNodo3D_Clase(n) == CLASE_OBJ3D_LUZ || CNodo3D_Clase(n) == CLASE_OBJ3D_CAMARA ||
+			CNodo3D_Clase(n) == CLASE_OBJ3D_PORTAL || !CNodo3D_Clase(n)) {
+			Bsp_NodoMarcar(n, 1);
+			n->flags |= 8;
+		}
+	}
+	CEscena_CompactMats(g_Bsp->modelo->escena);
+	CEscena_DeleteEmpty(g_Bsp->modelo->escena, 0, 0, 1);
+	Bsp_LogNodos(mundo->EscSuelo, "World node: %s%s%s  [c:%s]", 0);
+	Bsp_LogNodos(g_Bsp->modelo->escena, "Map node: %s%s%s  [c:%s]", 1);
+	CEscena *mesc = g_Bsp->modelo->escena;
+	E3D_LogInfo(g_FileLog, "Total: %d world nodes, %d map nodes", CEscena_NumNodos(mundo->EscSuelo),
+		CEscena_NumNodos(mesc));
+	if (!Mundo_Get()->EscSuelo->fromAmc) {
+		Ruta_Format(buf, g_Bsp->nombre, "&U&D&N_2.SM3");
+		SM3_Save(buf, g_Bsp->modelo->escena);
+	}
+}
+
+/* the switches of the map compiler dialog */
+void Bsp_DlgEnable(void *hwnd) {
+	static const int ids[] = { 0x412, 0x413, 0x40f, 0x410, 0x411, 0x414, 0x41f, 0x41e };
+	int on = exe_IsDlgButtonChecked(hwnd, 0x409);
+
+	for (int i = 0; i < 8; i++) {
+		exe_EnableWindow(exe_GetDlgItem(hwnd, ids[i]), on);
+	}
+}
+
+/* the checkboxes of the dialog and their switches */
+static const struct {
+	int id;
+	uint32_t var;
+} g_BspDlgChecks[] = {
+	{ 0x40a, 0x4b2af8 }, { 0x409, 0x4b2afc }, { 0x40d, 0x4b2b58 }, { 0x40e, 0x4b2b5c }, { 0x411, 0x43298c },
+	{ 0x414, 0x4b2b04 }, { 0x417, 0x4b2b10 }, { 0x41a, 0x4b2b14 }, { 0x418, 0x4b2b18 }, { 0x41b, 0x4b2b1c },
+	{ 0x420, 0x4b2b20 }, { 0x419, 0x4b2b24 },
+};
+
+intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intptr_t lparam) {
+	char buf[0x100];
+
+	(void)lparam;
+	switch (msg) {
+	case 0x10:	/* WM_CLOSE */
+		break;
+	case 0x110:	/* WM_INITDIALOG */
+		Bprintf(buf, sizeof(buf),
+			" brillo = %.2f\n gamma = %.2f\n texturas = %d x %d\n rebotes = %d\n coef. rad = %.2f\n",
+			(double)GAME_DATA(float, 0x432964), (double)GAME_DATA(float, 0x432960), g_MapaSombrasTexX,
+			g_MapaSombrasTexY, GAME_DATA(int, 0x432968), (double)GAME_DATA(float, 0x43296c));
+		exe_SetDlgItemTextA(hwnd, 0x40b, buf);
+		for (int i = 0; i < 12; i++) {
+			exe_CheckDlgButton(hwnd, g_BspDlgChecks[i].id, (unsigned)GAME_DATA(int, g_BspDlgChecks[i].var));
+		}
+		Dlg_SetFloat(hwnd, 0x410, g_MapaSombrasEscala, 3);
+		Dlg_SetFloat(hwnd, 0x40f, g_MapaSombrasResol, 3);
+		Dlg_SetFloat(hwnd, 0x41e, GAME_DATA(float, 0x432960), 2);
+		Bsp_DlgEnable(hwnd);
+		return 1;
+	case 0x111:	/* WM_COMMAND */
+		if (wparam == 1) {
+			for (int i = 0; i < 12; i++) {
+				GAME_DATA(int, g_BspDlgChecks[i].var) = exe_IsDlgButtonChecked(hwnd, g_BspDlgChecks[i].id);
+			}
+			if (Dlg_GetFloat(hwnd, 0x410, &g_MapaSombrasEscala) && Dlg_GetFloat(hwnd, 0x40f, &g_MapaSombrasResol) &&
+				Dlg_GetFloat(hwnd, 0x41e, &GAME_DATA(float, 0x432960)) && (double)g_MapaSombrasEscala > 0.001 &&
+				(double)g_MapaSombrasResol > 0.001) {
+				exe_EndDialog(hwnd, 1);
+				return 1;
+			}
+			Err_Printf(0, "N\xfamero no v\xe1lido");
+			return 1;
+		}
+		if (wparam == 2) {
+			break;
+		}
+		Bsp_DlgEnable(hwnd);
+		return 0;
+	default:
+		return 0;
+	}
+	exe_EndDialog(hwnd, 0);
+	return 1;
+}
+
+
+/* the radiosity: the areas and region trees of the lists, the links between regions */
+
+#define g_LightmapDebugTex GAME_DATA(int, 0x4d5d38)	/* gvar */
+#define g_BspAreasTotal ((int *)Game_Ptr(0x4d5d78))	/* the areas of all lists by level */
+#define g_BspEnlaces GAME_DATA(int, 0x4e73ac)		/* the region links (radiosity code) */
+
+/* exe functions of other files with their prototypes there */
+vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);	/* rva 0x261580 */
+double crt_ceil(double x);				/* rva 0x345010 */
+
+/* brightness and gamma on the light maps, then the vertex colors from them */
+void __fastcall CBsp_AjustarGamma(CBsp *self) {
+	int n = self->num_listas;
+
+	for (int i = 0; i < n; n = self->num_listas) {
+		BspTri *list = self->listas[i];
+		E3D_DebugPrintf("ajustar gamma:  %d / %d  \r", ++i, n);
+		if (list->luz2.img) {
+			CBmpFlt2_Blend(&list->luz2, 0, 0, &list->luz, 0, 0, list->luz2.ancho, list->luz2.alto, 0x100, -0x100);
+			CBmpFlt2_Scale(&list->luz2, GAME_DATA(float, 0x432964));
+			CBmpFlt2_Gamma(&list->luz2, GAME_DATA(float, 0x432960), 1.0f);
+		}
+		CBmpFlt2_Scale(&list->luz, GAME_DATA(float, 0x432964));
+		CBmpFlt2_Gamma(&list->luz, GAME_DATA(float, 0x432960), 1.0f);
+		if (g_LightmapDebugTex) {
+			Img_Free(&list->luz2, 0xc);
+			CBmpFlt2_Resample(&list->luz2, &list->luz, 0xf);
+			for (int k = 0; k < list->luz2.alto * list->luz2.ancho; k++) {
+				float c[3] = { 0.0f, 0.0f, 0.0f };
+				if (list->luzA.img) {
+					const float *p = (const float *)list->luzA.img + 4 * k;
+					c[0] = p[0] * 4.0f;
+					c[1] = p[1] * 4.0f;
+					c[2] = p[2] * 4.0f;
+				}
+				memcpy((float *)list->luz2.img + 3 * k, c, sizeof(c));
+			}
+			CBmpFlt2_Gamma(&list->luz2, 2.0f, 1.0f);
+		}
+		for (BspTri *t = list; t; t = t->sig) {
+			for (int v = 0; v < 3; v++) {
+				float c[4];
+				int y = (int)((float)g_MapaSombrasTexY * t->uvl[v][1]);
+				BspTri_Media(c, list, (int)((float)g_MapaSombrasTexX * t->uvl[v][0]), y);
+				float k = g_DiffuseMod4x ? 0.25f : 1.0f;
+				c[2] = c[2] * k;
+				c[0] = k * c[0];
+				c[1] = c[1] * k;
+				c[3] = (float)(int)(t->color[v] >> 24) / 255.0f;
+				t->color[v] = Color_FromFloat(c);
+			}
+		}
+	}
+	E3D_DebugPrintf("\n");
+}
+
+static inline byte BspRegion_Hijos(const BspRegion *r) {
+	return r->hijo[0] || r->hijo[1] || r->hijo[2] || r->hijo[3];
+}
+
+/* the light between the regions a and b with the form factors over umbral: linked when the floor does not block
+ * them, else the larger one split into its children; 1 when linked */
+int __thiscall BspRegion_Enlazar(CBsp *self, BspRegion *a, BspRegion *b, int enlace, float umbral) {
+	if (!a || !b) {
+		return 0;
+	}
+	CHECK(!enlace);
+	if (!b->i10 && !b->interior) {
+		return 0;
+	}
+	if (!a->i10 && !a->interior) {
+		return 0;
+	}
+	if (a->color[1] + a->color[0] + a->color[2] == 0.0f && b->color[1] + b->color[0] + b->color[2] == 0.0f) {
+		return 0;
+	}
+	float ffa = BspRegion_FormFactor(a, b);
+	float ffb = BspRegion_FormFactor(b, a);
+	if (enlace && umbral > ffa && umbral > ffb) {
+		return 1;
+	}
+	CHECK(a->interior == BspRegion_Hijos(a));
+	CHECK(b->interior == BspRegion_Hijos(b));
+	if (ffa > umbral && ffa >= ffb && b->interior) {
+		for (int k = 0; k < 4; k++) {
+			BspRegion_Enlazar(self, a, b->hijo[k], 0, umbral);
+		}
+		return 0;
+	}
+	float d = a->centro.y * b->plano.n.y + a->centro.x * b->plano.n.x + a->centro.z * b->plano.n.z + b->plano.d;
+	float v = ffb;
+	if (a->interior && a->area > d * d) {
+		v = umbral + umbral;
+	}
+	if (v > umbral && a->interior) {
+		for (int k = 0; k < 4; k++) {
+			BspRegion_Enlazar(self, a->hijo[k], b, 0, umbral);
+		}
+		return 0;
+	}
+	CSuelo *suelo = Mundo_Get()->ObjSuelo;
+	CHECK(suelo);
+	vec3_t dir = { a->centro.x - b->centro.x, a->centro.y - b->centro.y, a->centro.z - b->centro.z };
+	vec3_t n;
+	Vec3_Normalize(&n, &dir);
+	float k = 0.3f / g_MapaSombrasEscala;
+	vec3_t p1 = { b->centro.x + n.x * k, b->centro.y + n.y * k, b->centro.z + n.z * k };
+	vec3_t p0 = { a->centro.x - n.x * k, a->centro.y - n.y * k, a->centro.z - n.z * k };
+	if (CSuelo_Trace(suelo, &p0, &p1, NULL, 0.0f, NULL)) {
+		return 0;
+	}
+	for (int i = 0; i < 4; i++) {
+		a->acum[i] = a->acum[i] + b->color[i] * ffa;
+	}
+	for (int i = 0; i < 4; i++) {
+		b->acum[i] = b->acum[i] + a->color[i] * v;
+	}
+	return 1;
+}
+
+/* the region trees of the lists (the area lights emit their color) and two rounds of links and light */
+void __fastcall CBsp_IniciarRegiones(CBsp *self) {
+	E3D_DebugPrintf("rad_inic_regiones()\n");
+	for (int i = 0; i < self->num_listas; i++) {
+		BspTri *list = self->listas[i];
+		if (!list) {
+			continue;
+		}
+		double l2 = Game_Log(2.0);
+		for (BspTri *t = list; t; t = t->sig) {
+			BspRegion *r = operator_new(sizeof(BspRegion));
+			if (r) {
+				r = BspRegion_ctor(r, 0, 0, 0, 0, NULL);
+			}
+			t->region = r;
+			if (list->radluz_ok) {
+				const byte *c = (const byte *)&list->radColor;
+				float s = list->radInt * 0.003921568859368563f;
+				for (int k = 0; k < 4; k++) {
+					r->color[k] = (float)(int)c[k] * s * 80.0f;
+				}
+			}
+			r->x = 0;
+			r->y = 0;
+			r->lx = (uint16_t)list->mask.ancho;
+			r->ly = (uint16_t)list->mask.alto;
+			r->area = t->area;
+			r->centro = t->centro;
+			r->plano = t->plano;
+			int e = (int)crt_ceil(Game_Log((double)r->lx) / l2);
+			r->lx = (uint16_t)(1u << (e & 31));
+			e = (int)crt_ceil(Game_Log((double)r->ly) / l2);
+			r->ly = (uint16_t)(1u << (e & 31));
+			BspRegion_Dividir(r, &t->areas[0]);
+			if (!r->interior && t->region) {
+				BspRegion *old = t->region;
+				BspRegion_dtor(old);
+				operator_delete_sized(old, sizeof(BspRegion));
+				t->region = NULL;
+			}
+		}
+	}
+	for (int pass = 2; pass; pass--) {
+		E3D_DebugPrintf("enlazar_regiones:\n");
+		for (int i = 0; i < self->num_listas;) {
+			BspTri *list = self->listas[i];
+			E3D_DebugPrintf("region: %d / %d   ", ++i, self->num_listas);
+			for (BspTri *ta = list; ta; ta = ta->sig) {
+				for (int j = i; j < self->num_listas; j++) {
+					for (BspTri *tb = self->listas[j]; tb; tb = tb->sig) {
+						BspRegion_Enlazar(self, ta->region, tb->region, 0, 0.001f);
+					}
+				}
+			}
+			E3D_DebugPrintf("Kb: %-5d   enlaces: %d   \r", g_MemStats->bytes / 1024, g_BspEnlaces);
+		}
+		E3D_DebugPrintf("\n");
+		CBsp_IlumRegiones(self, 1);
+	}
+	E3D_DebugPrintf("\n");
+}
+
+/* the sample points of the texels of each triangle of the lists and their levels of detail */
+void __fastcall CBsp_IniciarAreas(CBsp *self) {
+	CTabla tmp;
+
+	E3D_DebugPrintf("rad_inic_areas()\n");
+	for (int i = 0; i < 4; i++) {
+		g_BspAreasTotal[i] = 0;
+	}
+	tmp.p = NULL;
+	tmp.n = 0;
+	Tabla_Alloc18(&tmp, g_MapaSombrasTexY * g_MapaSombrasTexX);
+	int nl = self->num_listas;
+	for (int i = 0; i < nl; nl = self->num_listas) {
+		BspTri *list = self->listas[i];
+		E3D_DebugPrintf("%d / %d   \r", ++i, nl);
+		int x0 = list->ext[0];
+		int y0 = list->ext[1];
+		list->grande = 0;
+		list->numAreas = 0;
+		for (BspTri *t = list; t; t = t->sig) {
+			int n = 0;
+			if (!(__builtin_fabs((double)(list->plano.n.x - t->plano.n.x)) < BSP_EPS_NORMAL &&
+				__builtin_fabs((double)(list->plano.n.y - t->plano.n.y)) < BSP_EPS_NORMAL &&
+				__builtin_fabs((double)(list->plano.n.z - t->plano.n.z)) < BSP_EPS_NORMAL)) {
+				list->grande = 1;
+			}
+			BspTri_CalcCentro(t);
+			for (int y = 0; y < list->mask.alto; y++) {
+				for (int x = 0; x < list->mask.ancho; x++) {
+					if (Color_SwapRB(*CBmp_Pixel(&list->mask, (uint32_t)x, (uint32_t)y)) != (uint32_t)(uintptr_t)t) {
+						continue;
+					}
+					vec3_t p;
+					float peso = 1.0f;
+					BspTri_Muestra(&p, x + x0, y + y0, list->eje, g_MapaSombrasEscala * g_MapaSombrasResol, t, list,
+						&peso);
+					BspArea *a = &((BspArea *)tmp.p)[n];
+					TABLA_CHECK(tmp.p, n, tmp.n);
+					a->pos = p;
+					TABLA_CHECK(tmp.p, n, tmp.n);
+					a->peso = peso / (g_MapaSombrasResol * g_MapaSombrasResol);
+					TABLA_CHECK(tmp.p, n, tmp.n);
+					a->x = (uint16_t)x;
+					TABLA_CHECK(tmp.p, n, tmp.n);
+					a->y = (uint16_t)y;
+					TABLA_CHECK(tmp.p, n, tmp.n);
+					a->f14 = 0.0f;
+					n++;
+				}
+			}
+			if (n) {
+				CHECK(!t->areas[0].p && n > 0);
+				t->areas[0].n = n;
+				t->areas[0].p = New_Array((uint32_t)n, sizeof(BspArea));
+				CHECK(t->areas[0].p);
+				for (int k = 0; k < n; k++) {
+					TABLA_CHECK(tmp.p, k, tmp.n);
+					TABLA_CHECK(t->areas[0].p, k, t->areas[0].n);
+					((BspArea *)t->areas[0].p)[k] = ((const BspArea *)tmp.p)[k];
+				}
+			}
+			BspTri_AreasLod(&t->areas[1], &t->areas[0], list->mask.ancho, list->mask.alto, 2);
+			BspTri_AreasLod(&t->areas[2], &t->areas[0], list->mask.ancho, list->mask.alto, 4);
+			BspTri_AreasLod(&t->areas[3], &t->areas[0], list->mask.ancho, list->mask.alto, 8);
+			g_BspAreasTotal[0] += n;
+			g_BspAreasTotal[1] += t->areas[1].n;
+			g_BspAreasTotal[2] += t->areas[2].n;
+			g_BspAreasTotal[3] += t->areas[3].n;
+			list->numAreas += n;
+		}
+	}
+	if (tmp.p) {
+		operator_delete_array(tmp.p);
+		tmp.p = NULL;
+		tmp.n = 0;
+	}
+	E3D_DebugPrintf("total areas: %d %d %d %d   \n", g_BspAreasTotal[0], g_BspAreasTotal[1], g_BspAreasTotal[2],
+		g_BspAreasTotal[3]);
+	E3D_DebugPrintf("memoria usada: %-5d Kb\n", g_MemStats->bytes / 1024);
 }

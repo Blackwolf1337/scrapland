@@ -618,3 +618,50 @@ if not bspusar:
 	for bsp_rva, bsp_name in ((0x290520, 'Bsp_Free'), (0x286c80, 'Bsp_ReleaseD3D'), (0x286cb0, 'Bsp_InitD3D'),
 			(0x296cd0, 'Bsp_Render'), (0x296c60, 'Bsp_RenderTransp'), (0x283970, 'Bsp_RenderPortales')):
 		check(bsp_name, lambda bsp_rva=bsp_rva: (SDTest.Call(bsp_rva, 'v'), SDTest.Peek(0x4b2b38, 'i')))
+	check('Bsp_Crear', lambda: (SDTest.Call(0x291000, 'v'), SDTest.Peek(0x4b2b38, 'i')))
+
+# the links of two regions: only the cases that end before the floor is traced
+bspe1 = bspreg((0.0, 0.0, 0.0), (0.0, 0.0, 1.0), 1.0, (0.0, 0.0, 0.0, 1.0))
+bspe2 = bspreg((0.0, 0.0, 5.0), (0.0, 0.0, -1.0), 1.0, (0.0, 0.0, 0.0, 1.0))
+check('BspRegion_Enlazar null', lambda: (SDTest.Call(0x291bd0, 'tiiiiif', bspgm, 0, bspe2, 0, 0.001)[0],
+	SDTest.Call(0x291bd0, 'tiiiiif', bspgm, bspe1, 0, 0, 0.001)[0]))
+check('BspRegion_Enlazar alone', lambda: SDTest.Call(0x291bd0, 'tiiiiif', bspgm, bspe1, bspe2, 0, 0.001)[0])
+bsppoke(bspe1 + 0x10, bspe2)
+bsppoke(bspe2 + 0x10, bspe1)
+check('BspRegion_Enlazar dark', lambda: (SDTest.Call(0x291bd0, 'tiiiiif', bspgm, bspe1, bspe2, 0, 0.001)[0],
+	bspfl(bspe1 + 0x50, 4), bspfl(bspe2 + 0x50, 4)))
+
+# a map of one list through the radiosity steps: the areas of its texels, the regions, the light, the colors
+bspone = bspz(0x61aa8)
+bspol = bsplist()
+bsppoke(bspone + 8, bspol)
+bsppoke(bspone + 0x4e208, 1)
+bspset(bspol + 4, (0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 3.0, 0.0))
+bspset(bspol + 0x28, (0.0, 0.0, 1.0) * 3)
+bspset(bspol + 0x64, (0.0, 0.0, 0.5, 0.0, 0.0, 0.5))
+bsppoke(bspol + 0xac, bspmat)
+bsppoke(bspol + 0xdc, 0)
+bsppoke(bspol + 0xe0, 0)
+bspbyte(bspol + 0x154, 0)
+bsppoke(bspol + 0x7c, 0x10203040)
+bsppoke(bspol + 0x80, -0x7f000000)
+bsppoke(bspol + 0x84, 0x7f000000)
+SDTest.Call(0x287bf0, 'vi', bspol)
+SDTest.Call(0x2a9bc0, 'tviii', bspol + 0x114, 4, 4)
+bspsw = (bspol & -0x1000000) | ((bspol & 0xff) << 16) | (bspol & 0xff00) | ((bspol >> 16) & 0xff)
+for bsp_i in range(16):
+	if bsp_i % 5:
+		bsppoke(bspi(bspol + 0x11c) + 4 * bsp_i, bspsw)
+	else:
+		bsppoke(bspi(bspol + 0x11c) + 4 * bsp_i, 0)
+bspflt2(bspol + 0xb0, 4, 4, bsprnds(48, 0.0, 1.5))
+bspflt2(bspol + 0xfc, 4, 4, bsprnds(48, 0.0, 1.0))
+bspflt2(bspol + 0x108, 4, 4, bsprnds(48, 0.0, 1.0))
+# the sample table has the size of a light map
+if bsptexx * bsptexy >= 16:
+	check('CBsp_IniciarAreas', lambda: (SDTest.Call(0x2958b0, 'tvi', bspone), bspi(bspol + 0x1a4),
+		(bspi(bspol + 0x154) >> 16) & 0xff, bsparecs(bspol + 0x184), tpeek(bspol + 0x18c, 1), tpeek(bspol + 0x194, 1),
+		tpeek(bspol + 0x19c, 1), tpeek(0x8d5d78, 4), bspfl(bspol + 0x1a8, 5)))
+	check('CBsp_IniciarRegiones', lambda: (SDTest.Call(0x295ef0, 'tvi', bspone), bspwalk(bspi(bspol + 0x1bc)),
+		bspimg(bspol + 0xfc, 3)))
+check('CBsp_AjustarGamma', lambda: (SDTest.Call(0x285500, 'tvi', bspone), bspimg(bspol + 0xb0, 3), tpeek(bspol + 0x7c, 3)))

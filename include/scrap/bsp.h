@@ -350,6 +350,10 @@ void BspLMap_Guardar(char *copia, CBmp *bmp, const char *ruta, int n, const char
 void __fastcall CBsp_AreasGlow(CBsp *self);
 void __fastcall CBsp_AreasMax(CBsp *self);
 void __thiscall CBsp_IlumRegiones(CBsp *self, int n);
+void __fastcall CBsp_AjustarGamma(CBsp *self);
+int __thiscall BspRegion_Enlazar(CBsp *self, BspRegion *a, BspRegion *b, int enlace, float umbral);
+void __fastcall CBsp_IniciarRegiones(CBsp *self);
+void __fastcall CBsp_IniciarAreas(CBsp *self);
 void __thiscall Bsp_FinMensaje(CBsp *self, int secs);
 
 /* the rest */
@@ -382,8 +386,21 @@ void Bsp_RenderStencil(void);
 void Bsp_RenderTransp(void);
 void Bsp_RenderPortales(void);
 
+/* the map made from the floor: read from the .EMI (without calcular) or computed */
+CBsp *__thiscall CBsp_ctor(CBsp *self, const char *nombre, const vec3_t *escala);
+/* the map compiler dialog */
+void Bsp_DlgEnable(void *hwnd);
+intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intptr_t lparam);
+
 /* exe functions of this file still the exe's */
 void __fastcall CBsp_InitD3D(CBsp *self);		/* rva 0x28f710 */
+int __fastcall CBsp_LeerEMI(CBsp *self);		/* rva 0x28c650, 0 when read */
+void __fastcall CBsp_Calcular(CBsp *self);		/* rva 0x28a860, the light maps computed */
+void __fastcall CBsp_Preparar(CBsp *self);		/* rva 0x28efe0, the pages, materials and vertices */
+
+/* the float edits of the dialogs (rva 0x2a5d20, 0x2a5d80) */
+void Dlg_SetFloat(void *hwnd, int id, float v, int prec);
+byte Dlg_GetFloat(void *hwnd, int id, float *out);
 
 /* exe functions of other files */
 BspRegion *__thiscall BspRegion_ctor(BspRegion *self, int x, int y, int lx, int ly, BspRegion *padre);	/* rva 0x2d2920 */

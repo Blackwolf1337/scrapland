@@ -57,3 +57,18 @@ def bsplzonas():
 	return r
 check('CBsp_CrearZonas', lambda: (SDTest.Call(0x285be0, 'tvi', bsplmap), bsplzonas()))
 check('Tabla_FreeB4', lambda: (SDTest.Call(0x281fe0, 'tvi', bsplmap + 0x61a98), bspli(bsplmap + 0x61a98)))
+# two regions near the player linked through the floor trace (and one through a wall of the level, maybe)
+def bsplreg(c, n, col, other):
+	r = bsplz(0x64)
+	SDTest.Call(0x3197d0, 'iiFi', r + 0x18, (2.0,) + c + n + (0.0, 0.0, 0.0) + col, 4 * 14)
+	bsplpoke(r + 0x10, other)
+	return r
+def bsplacum(r):
+	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * 4, r + 0x50, 16)[1]
+bsplp = (pp[0], pp[1] + 50.0, pp[2])
+for bspl_d in ((0.0, 0.0, 300.0), (0.0, 0.0, 3000.0), (0.0, -500.0, 10.0)):
+	bspla = bsplreg(bsplp, (0.0, 0.0, 1.0), (0.5, 0.25, 1.0, 1.0), 1)
+	bsplb = bsplreg((bsplp[0] + bspl_d[0], bsplp[1] + bspl_d[1], bsplp[2] + bspl_d[2]), (0.0, 0.0, -1.0),
+		(1.0, 1.0, 0.5, 1.0), 1)
+	check('BspRegion_Enlazar' + fmt(bspl_d), lambda: (SDTest.Call(0x291bd0, 'tiiiiif', bsplmap, bspla, bsplb, 0, 0.001)[0],
+		bsplacum(bspla), bsplacum(bsplb)))
