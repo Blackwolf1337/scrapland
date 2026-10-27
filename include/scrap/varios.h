@@ -78,5 +78,9 @@ char *Cad_Unquote(char *dest, const char *src);
 /* 1 / sqrt(x) from a table: the estimate and two Newton steps */
 float RSqrt_Estimate(float x);
 float RSqrt(float x);
+/* the table of RSqrt_Estimate made (rva 0x238b10) */
+void RSqrt_InitTable(void);
+/* the path of the exe (GetModuleFileName) */
+char *E3D_GetExePath(void);
 
 #endif

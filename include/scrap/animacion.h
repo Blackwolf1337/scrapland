@@ -146,7 +146,5 @@ void __thiscall CAnimacion_SwapNodos(CAnimacion *self, uint32_t i, uint32_t j);
 void __fastcall CAnimNodo_Optimize(CAnimNodo *self);
 
 /* the code of the exe this module calls */
-/* the euler angles of a rotation matrix (rva 0x2392d0, not in C) */
-vec3_t *Matrix_ToEuler(vec3_t *out, const matrix_t *m);
 
 #endif

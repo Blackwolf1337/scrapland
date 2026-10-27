@@ -9,6 +9,7 @@
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
 #include "scrap/filepak.h"
+#include "scrap/nodefx.h"
 
 #define LOG_LINE 0x400
 #define LOG_NAME "engine.log"
@@ -289,6 +290,28 @@ char *Cad_Unquote(char *dest, const char *src) {
 }
 
 #define g_RSqrtTable ((const byte *)Game_Ptr(0x4abf88))
+#define g_ExePath ((char *)Game_Ptr(0x4abd78))	/* GetModuleFileName at the start, 0x103 */
+
+char *E3D_GetExePath(void) {
+	return g_ExePath;
+}
+
+/* the bits 15..22 (rounded) of 1 / sqrt of the 128 mantissa steps of the exponents 0x7f (0..63) and 0x7e */
+void RSqrt_InitTable(void) {
+	byte *t = (byte *)g_RSqrtTable;
+	int i;
+
+	for (i = 0; i < 0x80; i++) {
+		uint32_t u = (uint32_t)(i | 0x1f80) << 17, r;
+		float f, inv;
+
+		memcpy(&f, &u, sizeof(f));
+		inv = (float)(1.0 / __builtin_sqrt((double)f));
+		memcpy(&r, &inv, sizeof(r));
+		t[i] = (byte)((r + 0x2000) >> 15);
+	}
+	t[0x40] = 0xff;
+}
 
 float RSqrt_Estimate(float x) {
 	uint32_t u, r;
@@ -298,6 +321,16 @@ float RSqrt_Estimate(float x) {
 	r = ((0x17c - (u >> 23 & 0xff)) & 0x3fe) << 22 | (uint32_t)g_RSqrtTable[u >> 17 & 0x7f] << 15;
 	memcpy(&f, &r, sizeof(f));
 	return f;
+}
+
+float Ang_Wrap(float a) {
+	if (a > M_2PI_F) {
+		a = a - M_2PI_F;
+	}
+	if (-M_2PI_F > a) {
+		a = a + M_2PI_F;
+	}
+	return a;
 }
 
 float RSqrt(float x) {

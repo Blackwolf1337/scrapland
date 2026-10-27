@@ -94,17 +94,18 @@ void Debug_DrawPoint(const vec3_t *pos, float size, uint32_t color) {
 	Debug_DrawPointM(g_MatIdentity, pos, size, color);
 }
 
-void Debug_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int divH) {
+static void Debug_SphereCenter(const matrix_t *m, const vec3_t *c, float r) {
+	Debug_DrawPointM(m, c, r, 0x640000);
+}
+
+void Debug_SphereLines(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int nEcu,
+	void (*center)(const matrix_t *m, const vec3_t *c, float r)) {
 	vec3_t pts[MAX_DIVY_ESFERA];
 
-	if (0.0f >= r) {
-		return;
-	}
-	int nEcu = divH != -1 ? divH : divV;
 	CHECK(divV > 1);
 	CHECK(nEcu > 1);
 	CHECK(nEcu < MAX_DIVY_ESFERA);
-	Debug_DrawPointM(m, c, r, 0x640000);
+	center(m, c, r);
 	Render_SetWorldMatrix(m, 0);
 	/* the half circle of the first meridian; two points at a time through the packed sin and cos like the
 	 * vectorised loop of the original, the last odd one through the scalar ones */
@@ -152,6 +153,13 @@ void Debug_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_t col
 		}
 		Render_Line(&pts[i - 1], &pts[i], color);
 	}
+}
+
+void Debug_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int divH) {
+	if (0.0f >= r) {
+		return;
+	}
+	Debug_SphereLines(m, c, r, color, divV, divH != -1 ? divH : divV, Debug_SphereCenter);
 }
 
 void Debug_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH) {

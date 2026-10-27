@@ -45,6 +45,19 @@ matrix_t *__thiscall Matrix_Mul(const matrix_t *self, matrix_t *out, const matri
 	return out;
 }
 
+/* the z angle of Matrix_GetEuler and Matrix_ToEuler outside the poles (h: the length of the third row in xz) */
+static float Euler_Z(const matrix_t *self, float h) {
+	float m8 = self->m[8], m9 = self->m[9], m10 = self->m[10];
+	float a = -1.0f / h * m8;
+	float b = 1.0f / h * m10;
+	float inv = 1.0f / (float)__builtin_sqrt((double)(m9 * m9 + h * h));
+	float m0 = self->m[0], m2 = self->m[2];
+	float y = inv * h * self->m[1] - (m2 * b - m0 * a) * (inv * m9);
+	float x = m0 * b + m2 * a;
+
+	return Game_Atan2F((double)y, (double)x);
+}
+
 /* the angles of Matrix_Rotate from the rotation part */
 vec3_t *__thiscall Matrix_GetEuler(const matrix_t *self, vec3_t *out) {
 	float m8 = self->m[8], m9 = self->m[9], m10 = self->m[10];
@@ -61,13 +74,31 @@ vec3_t *__thiscall Matrix_GetEuler(const matrix_t *self, vec3_t *out) {
 		out->z = (float)Game_Atan2((double)r.y, (double)r.x);
 		return out;
 	}
-	float a = -1.0f / h * m8;
-	float b = 1.0f / h * m10;
-	float inv = 1.0f / (float)__builtin_sqrt((double)(m9 * m9 + h * h));
-	float m0 = self->m[0], m2 = self->m[2];
-	float y = inv * h * self->m[1] - (m2 * b - m0 * a) * (inv * m9);
-	float x = m0 * b + m2 * a;
-	out->z = (float)Game_Atan2((double)y, (double)x);
+	out->z = Euler_Z(self, h);
+	return out;
+}
+
+/* the same in the engine3d (matriz.h, rva 0x2392d0): at the poles the first row turned back by x and y inline */
+vec3_t *Matrix_ToEuler(vec3_t *out, const matrix_t *m) {
+	float m8 = m->m[8], m9 = m->m[9], m10 = m->m[10];
+	float h = (float)__builtin_sqrt((double)(m10 * m10 + m8 * m8));
+	float x, y;
+
+	out->z = 0.0f;
+	y = Game_Atan2F((double)m8, (double)m10);
+	out->y = y;
+	x = Game_Atan2F((double)-m9, (double)h);
+	out->x = x;
+	if (1e-4f > __builtin_fabs((double)h)) {
+		float m0 = m->m[0], m1 = m->m[1], m2 = m->m[2];
+		float s0, c0, s1, c1;
+
+		X87_SinCos(-x, &s0, &c0);
+		X87_SinCos(-y, &s1, &c1);
+		out->z = Game_Atan2F((double)(m1 * c0 - s0 * (m2 * c1 - s1 * m0)), (double)(m2 * s1 + m0 * c1));
+		return out;
+	}
+	out->z = Euler_Z(m, h);
 	return out;
 }
 
@@ -112,6 +143,11 @@ byte Matrix_InvertAffine(matrix_t *out, const matrix_t *m) {
 	return 1;
 }
 
+/* the same as an HRESULT, 0 (S_OK) or E_INVALIDARG (matriz.h, rva 0x239560) */
+int Matrix_Invert(matrix_t *out, const matrix_t *m) {
+	return Matrix_InvertAffine(out, m) ? 0 : (int)0x80070057;
+}
+
 /* m = m * Rz * Rx * Ry for the angles ang */
 matrix_t *Matrix_Rotate(matrix_t *m, const vec3_t *ang) {
 	matrix_t rx, ry, rz, t1, t2, t3;
@@ -154,6 +190,11 @@ byte Matrix_Perspective(matrix_t *out, float fov, float aspect, float zNear, flo
 	out->m[10] = q;
 	out->m[14] = -(q * zNear);
 	return 1;
+}
+
+/* the same as an HRESULT (matriz.h, rva 0x23a190) */
+int Matrix_PerspectiveD3D(matrix_t *out, float fov, float aspect, float zNear, float zFar) {
+	return Matrix_Perspective(out, fov, aspect, zNear, zFar) ? 0 : (int)0x80070057;
 }
 
 void __thiscall Matrix_RotX(matrix_t *self, float ang) {

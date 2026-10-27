@@ -159,7 +159,7 @@ int __thiscall cSpriteScorer_Var(cSpriteScorer *self, const char *name, byte set
 			return r;
 		}
 		if (!crt_stricmp(name, "Unit")) {
-			return ScorerVar_Bool(&self->img->b22, set, i);
+			return ScorerVar_Bool(&self->img->unit, set, i);
 		}
 		if (!crt_stricmp(name, "Mirror")) {
 			if (set) {

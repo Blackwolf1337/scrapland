@@ -27,6 +27,9 @@ void Debug_DrawPoint(const vec3_t *pos, float size, uint32_t color);
 /* divV meridians, divH (-1: divV) parts of each, a cross at the center */
 void Debug_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int divH);
 void Debug_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
+/* the lines of both after the check of r: nEcu parts of each meridian, center draws the middle */
+void Debug_SphereLines(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int nEcu,
+	void (*center)(const matrix_t *m, const vec3_t *c, float r));
 void Debug_DrawLineM(const matrix_t *m, const vec3_t *a, const vec3_t *b, uint32_t color);
 void Debug_DrawLine(const vec3_t *a, const vec3_t *b, uint32_t color);
 void Debug_DrawTriM(const matrix_t *m, const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color);

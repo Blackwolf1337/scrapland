@@ -179,7 +179,6 @@ SD_IMPORT(CAnimMat_dtor, 0x257fb0)
 SD_IMPORT(CAnimMat_Start, 0x258110)
 
 /* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/escena.h) */
-SD_IMPORT(Box_Transform, 0x239880)
 SD_IMPORT(Cad_Read, 0x2a18a0)
 SD_IMPORT(Cad_Write, 0x2a1920)
 SD_IMPORT(CAnimacion_ctor, 0x2ab6f0)
@@ -200,14 +199,11 @@ SD_IMPORT(ListaVert_InitD3D, 0x2404f0)
 SD_IMPORT(Stencil_Malla, 0x267530)
 SD_IMPORT(CListaVert_EnvMapUV, 0x2418c0)
 SD_IMPORT(CAnimMat_GetFrame, 0x258060)
-SD_IMPORT(Matrix_Invert, 0x239560)
 SD_IMPORT(RenderLock_ReleaseD3D, 0x2a4860)
 SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
 SD_IMPORT(RenderGamma_ReleaseD3D, 0x2a7980)
 SD_IMPORT(RenderGamma_Begin, 0x2a7520)
 SD_IMPORT(RenderGamma_LogShaderMask, 0x2a7cd0)
-SD_IMPORT(Vec3_ToAngles, 0x239150)
-SD_IMPORT(Matrix_RotationZ, 0x23a2b0)
 
 /* src/game/engine3d/Engine/Grafico2D.c (called from Engine/grafico2d.cpp, include/scrap/grafico2d.h) */
 
@@ -241,8 +237,6 @@ SD_IMPORT_STDCALL(D3DX_MatrixInverse, 12, 0x007cea)
 SD_IMPORT_STDCALL(D3DX_AssembleShader, 24, 0x00b2c2)
 
 /* module agent: Engine/Modelo (imports below this line) */
-SD_IMPORT(Matrix_PostScale, 0x239210)
-SD_IMPORT(Matrix_PostRotate, 0x23a100)
 SD_IMPORT(CNodoR_dtor, 0x23f450)
 SD_IMPORT(CNodoR_SetNodo, 0x23f890)
 SD_IMPORT(RenderCtx_Init, 0x23fac0)
@@ -253,8 +247,6 @@ SD_IMPORT(Escena_Load, 0x2c2d60)
 SD_IMPORT(CNodoR_SetLook, 0x23f7f0)
 
 /* module agent: Engine/Nodo3D (imports below this line) */
-SD_IMPORT(Matrix_MulD3D, 0x2391f0)
-SD_IMPORT(Matrix_ToEuler, 0x2392d0)
 SD_IMPORT(CSistPart_Cast, 0x23f310)
 SD_IMPORT(CNodo3D_DebugDraw, 0x23d9d0)
 SD_IMPORT(CNodoR_UpdateNodo, 0x23f5d0)
@@ -287,18 +279,13 @@ SD_IMPORT(Video_PlayFile, 0x281660)
 SD_IMPORT(Avi_Save, 0x27fa20)
 SD_IMPORT(Avi_Frame, 0x27f9f0)
 SD_IMPORT(Avi_Load, 0x27f9b0)
-SD_IMPORT(CPsaImage_ctor, 0x22d120)
-SD_IMPORT(CPsaImage_dtor, 0x22d160)
-SD_IMPORT(CPsaImage_Draw, 0x22d3c0)
 SD_IMPORT(ViewerCamera_Move, 0x218080)
 SD_IMPORT(Cmd_ReadFile, 0x280b10)
 
 /* module agent: ScrapEng/ScrapEngCamera+Particles+Trails.cpp (imports below this line) */
-SD_IMPORT(Matrix_RotationX, 0x23a270)
 
 /* module agent: Sound/Sound+SoundDX8+Wav.cpp (imports below this line) */
 SD_IMPORT(Sound_UpdateVoice, 0x1a0320)
-SD_IMPORT(DebugUtils_DrawSphere, 0x219d20)
 SD_IMPORT_STDCALL(FSOUND_GetError, 0, 0x3179c6)
 SD_IMPORT_STDCALL(FSOUND_GetMaxChannels, 0, 0x3179cc)
 SD_IMPORT_STDCALL(FSOUND_GetMemoryStats, 8, 0x3179ea)
@@ -333,10 +320,6 @@ SD_IMPORT(Steam_Done, 0x1a64d0)	/* Sound agent range */
 SD_IMPORT(Steam_GetLanguage, 0x1a65f0)	/* Sound agent range */
 SD_IMPORT(Steam_Init, 0x1a6620)	/* Sound agent range */
 SD_IMPORT(Steam_RunCallbacks, 0x1a66e0)	/* Sound agent range */
-SD_IMPORT(Font_SetLanguage, 0x21b1e0)
-SD_IMPORT(CPsaImage_ctorTex, 0x22d0c0)
-SD_IMPORT(CPsaImage_ctorFlags, 0x22d0f0)
-SD_IMPORT(CPsaImage_DrawPoly, 0x22d520)
 SD_IMPORT(D3DApp_MsgProc, 0x233030)
 SD_IMPORT(App_SetExceptionFilter, 0x2333b0)
 SD_IMPORT(crt_srand, 0x323c50)
@@ -460,10 +443,6 @@ SD_IMPORT(CNodesWorld_AnalizeMap, 0x0a2e80)
 SD_IMPORT(crt_chmod, 0x345287)
 
 /* module agent: AI/NodesWorld2D+NodesWorldSup.cpp (imports below this line) */
-SD_IMPORT(CPsaImage_GetFrameSize, 0x22d2e0)
-SD_IMPORT(CPsaImage_GetFrameUV, 0x22d320)
-SD_IMPORT(CPsaImage_DrawFrame, 0x22d440)
-SD_IMPORT(CPsaImage_DrawFrameFlip, 0x22d480)
 SD_IMPORT(cMonitorScorer_DrawMonitor, 0x168c60)
 SD_IMPORT(cRadarScorer_DrawRadar, 0x16d570)
 SD_IMPORT(cPlayerInput_PressKey, 0x1396b0)
@@ -495,7 +474,6 @@ SD_IMPORT(cAIVehicle_TestHookPoint, 0x08ab20)
 SD_IMPORT(cAIVehicle_TrackPointRandom, 0x08b120)
 SD_IMPORT(cAIVehicle_ReposTraffic, 0x08d3c0)
 SD_IMPORT(crt_strtime, 0x33bb73)
-SD_IMPORT(CPsaImage_GetNumFrames, 0x22d280)
 SD_IMPORT(PyFloat_AsDouble, 0x2dfa30)	/* floatobject.c */
 SD_IMPORT(cTargetScorer_DrawTarget, 0x181600)
 SD_IMPORT(cTargetScorer_DrawEnemies, 0x182430)
@@ -565,8 +543,6 @@ SD_IMPORT(FXTextura_Tipo, 0x2a82f0)
 SD_IMPORT(Matrix_ToTransform, 0x2d6c50)
 
 /* module agent: Engine NodeFX..ModelFX (imports below this line) */
-SD_IMPORT(Ang_Wrap, 0x238b80)
-SD_IMPORT(Matrix_Transpose, 0x239860)
 SD_IMPORT(CMaterial_ScaleColors, 0x237020)
 
 /* module agent: Engine leftovers 0x265000..0x278000 (imports below this line) */
@@ -592,3 +568,10 @@ SD_IMPORT(crt_close, 0x358d98)
 
 /* module agent: Engine leftovers 0x200000..0x240000 (imports below this line) */
 SD_IMPORT(cFXElementsLensFlare_ctor, 0x1cf8b0)
+SD_IMPORT(BlendMode_GetDst, 0x2a1a00)
+SD_IMPORT(BlendMode_GetSrc, 0x2a1a60)
+SD_IMPORT_STDCALL(D3DX_MatrixMultiply, 12, 0x0077b8)
+SD_IMPORT_STDCALL(D3DX_MatrixTranspose, 8, 0x007a01)
+SD_IMPORT_STDCALL(D3DX_MatrixRotationX, 8, 0x0082fb)
+SD_IMPORT_STDCALL(D3DX_MatrixRotationY, 8, 0x008397)
+SD_IMPORT_STDCALL(D3DX_MatrixRotationZ, 8, 0x008434)

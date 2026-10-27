@@ -82,3 +82,8 @@ void Fonts_Load(void) {
 byte Fonts_Unifont(void) {
 	return g_Unifont.grf && g_Unifont.sprites;
 }
+
+/* the language of the fonts: nothing to do in this version */
+void Font_SetLanguage(const char *lang) {
+	(void)lang;
+}
