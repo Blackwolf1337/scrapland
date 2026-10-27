@@ -214,8 +214,7 @@ CNodesWorld *__thiscall CNodesWorld_Delete(CNodesWorld *self, byte flags) {
 	return self;
 }
 
-/* the name of the level with the file after it, in a buffer of 0x100 like the original */
-static void NW_Path(char *path, const CNodesWorld *self, const char *file) {
+void NW_LevelPath(char *path, const CNodesWorld *self, const char *file) {
 	size_t n = strnlen(self->name, sizeof(self->name));
 	size_t f = strlen(file);
 
@@ -231,14 +230,14 @@ byte __thiscall CNodesWorld_LoadGraph(CNodesWorld *self) {
 	char path[0x100];
 
 	Con_Printf("Loading Graph 3D AI...\n");
-	NW_Path(path, self, "/AI/PathAI");
+	NW_LevelPath(path, self, "/AI/PathAI");
 	return CNodesWorldSup_LoadGraph(self, path) != 0;
 }
 
 byte __thiscall CNodesWorld_SaveInfPath(CNodesWorld *self) {
 	char path[0x100];
 
-	NW_Path(path, self, "/AI/InfPathAI.pth");
+	NW_LevelPath(path, self, "/AI/InfPathAI.pth");
 	if (!CNodesWorldSup_SaveInfPath(self, path)) {
 		CHECK(!"CNodesWorld_SavePath_File_InfPathAI_Not_Open");
 		return 0;
@@ -252,7 +251,7 @@ byte __thiscall CNodesWorld_SavePath(CNodesWorld *self) {
 	byte ok;
 
 	Con_Printf("Saving Path AI...\n");
-	NW_Path(path, self, "/AI/PathAI.pth");
+	NW_LevelPath(path, self, "/AI/PathAI.pth");
 	crt_chmod(path, 0x180);
 	cFilePack_ctor(&f);
 	if (!cFilePack_Open(&f, path, 6)) {
@@ -309,9 +308,7 @@ void __thiscall CNodesWorld_ClearLists(CNodesWorld *self) {
 	}
 }
 
-/* x y z made a unit vector (left as it is for the length 0); the length. The original sums the squares x or y
- * first, the same sum. */
-static float NW_Normalize(vec3_t *out, float x, float y, float z) {
+float NW_Normalize(vec3_t *out, float x, float y, float z) {
 	float len = (float)__builtin_sqrt((double)(y * y + x * x + z * z));
 
 	if (len == 0.0f) {
@@ -327,15 +324,14 @@ static float NW_Normalize(vec3_t *out, float x, float y, float z) {
 	return len;
 }
 
-static void NW_DebugSeg(cNWSegList *debug, const vec3_t *a, const vec3_t *b) {
+void NW_DebugSeg(cNWSegList *debug, const vec3_t *a, const vec3_t *b) {
 	if (g_NWDebugSegs && debug) {
 		vec3_t seg[2] = { *a, *b };
 		NWSegList_Append(debug, seg);
 	}
 }
 
-/* the segment from a + side * r along dl; 1 if it is free */
-static int NW_PathSide(const vec3_t *a, const vec3_t *side, float r, const vec3_t *dl, cNWSegList *debug) {
+int NW_PathSide(const vec3_t *a, const vec3_t *side, float r, const vec3_t *dl, cNWSegList *debug) {
 	vec3_t p, q;
 
 	p.x = side->x * r + a->x;
@@ -437,8 +433,7 @@ byte __thiscall CNodesWorld_TestPath(CNodesWorld *self, const vec3_t *a, const v
 	return 1;
 }
 
-/* the segment between b + u * r and b + v * r free of the level */
-static int NW_CornerSide(const vec3_t *b, const vec3_t *u, const vec3_t *v, float r, cNWSegList *debug) {
+int NW_CornerSide(const vec3_t *b, const vec3_t *u, const vec3_t *v, float r, cNWSegList *debug) {
 	vec3_t p, q;
 
 	p.x = u->x * r + b->x;
@@ -822,8 +817,7 @@ byte __thiscall CNodesWorld_HasPointVis(CNodesWorld *self, const vec3_t *pos, fl
 	return count > 0;
 }
 
-/* the position of the camera entity of view 0 (vtable slot 0x5c of the Cam) */
-static void NW_CamPos(float *x, float *y, float *z) {
+void NW_CamPos(float *x, float *y, float *z) {
 	typedef void(__thiscall * getCamPos_t)(cEntity * e, float *x, float *y, float *z);
 	cEntity *e = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
 
@@ -1242,7 +1236,7 @@ void __thiscall CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, c
 		if (made) {
 			CNodesWorld_SaveInfPath(self);
 		}
-		self->vftable->MakeNodes(self);
+		self->vftable->FreeTemp(self);
 		if (self->vftable->Create(self)) {
 			if (arg == 0) {
 				self->vftable->BuildGrid(self);
@@ -1255,7 +1249,7 @@ void __thiscall CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, c
 		}
 	} else {
 		CNodesWorld_AnalizeMap(self, &self->nodeInit, &self->min, &self->max);
-		self->vftable->MakeNodes(self);
+		self->vftable->FreeTemp(self);
 		if (self->vftable->Create(self)) {
 			self->vftable->BuildGrid(self);
 			self->created = 1;

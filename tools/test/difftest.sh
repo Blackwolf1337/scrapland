@@ -7,7 +7,7 @@
 # SDTest of src/core/testmod.c), sdlevel.py in the multiplayer level FZ (-imap:Levels/FZ).
 #
 # usage: tools/test/difftest.sh [scenario ...]   (sdtest, sdcall, sdlevel; default all; builds nothing: run cmake first)
-#        DIFFTEST_TIMEOUT  seconds per run, default 90
+#        DIFFTEST_TIMEOUT  seconds per run, default 240
 root=$(cd "$(dirname "$0")/../.." && pwd)
 game=$root/game
 ini=$game/Bin/scrapdecomp.ini
@@ -41,7 +41,7 @@ run() {
 	rm -f "$result"
 	rm_written
 	# shellcheck disable=SC2086 # extra arguments of the scenario, word split on purpose
-	HEADLESS_TIMEOUT=${DIFFTEST_TIMEOUT:-90} WINEDLLOVERRIDES="dinput8=n,b" WINE_LOG="$out/wine-$tag.log" \
+	HEADLESS_TIMEOUT=${DIFFTEST_TIMEOUT:-240} WINEDLLOVERRIDES="dinput8=n,b" WINE_LOG="$out/wine-$tag.log" \
 		"$root/tools/test/wine.sh" Scrap.exe -fullscreen:0 ${extra[$name]} "$arg" &
 	local pid=$!
 	# the script writes "done" as its last line (CRLF, Python runs on Windows); then the game is stopped

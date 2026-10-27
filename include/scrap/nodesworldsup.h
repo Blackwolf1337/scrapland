@@ -1,0 +1,116 @@
+/*
+ * AI/NodesWorldSup.cpp of the game: CNodesWorldSup, the base class of the graphs CNodesWorld and CNodesWorld2D
+ * (the layout is the first 0x360 bytes of CNodesWorld in include/scrap/nodesworld.h). It loads the graph files
+ * (<path>.pth, <path>1.pth ...), builds the grid of the points of visibility (Global/GridElements.h with the node
+ * pointers of the points) and keeps the tools of the generation: the buffer of cells with the sets of points seen
+ * from them (shared and reference counted, in hash lists), the links between the generated points and the sorted
+ * Global/DList.h lists of the searches.
+ */
+#ifndef SCRAP_NODESWORLDSUP_H
+#define SCRAP_NODESWORLDSUP_H
+
+#include "scrap/nodestraffic.h"
+
+/* the cNWPointNode of a point pos (the data of the point lists and links) */
+#define NW_POINT(v) ((cNWPointNode *)((byte *)(v) - offsetof(cNWPointNode, pos)))
+
+/* three words: a pair of points with their distance (InsertPair), a word and a pair (HasPair) */
+typedef union cNWPair {
+	int w[3];
+	struct {
+		int a, b;
+		float dist;
+	};
+} cNWPair;
+SD_SIZE(cNWPair, 0xc);
+
+typedef struct cNWPairNode {
+	struct cNWPairNode *next;	/* 0x00 */
+	struct cNWPairNode *prev;	/* 0x04 */
+	cNWPair p;			/* 0x08 */
+} cNWPairNode;
+SD_SIZE(cNWPairNode, 0x14);
+typedef DLIST(cNWPairNode) cNWPairList;
+
+#define NWGRID_VFTABLE 0x3ac354
+#define CNODESWORLDSUP_VFTABLE 0x3ac264
+
+/* ---- Global/DList.h instances ---- */
+
+/* the free nodes of the point list deleted with their links */
+void __fastcall NWPointList_FreePool(cNWPointList *list);
+void __thiscall NWVisList_Add(cNWVisList *list, const cNWVis *vis);
+/* to the free list while it has room, else the points and the node deleted */
+void __thiscall NWVisList_Release(cNWVisList *list, cNWVisNode *node);
+void __fastcall NWVisList_RemoveHead(cNWVisList *list);
+void __fastcall NWVisList_RemoveIter(cNWVisList *list);
+void __fastcall NWVisList_Clear(cNWVisList *list);
+/* in front of the iterator, the head kept (Add when the iterator is the head) */
+void __thiscall NWVecList_AddBefore(cNWVecList *list, const vec3_t *v);
+/* at the end, head stays */
+void __thiscall NWVecList_Append(cNWVecList *list, const vec3_t *v);
+void __thiscall NWIntList_Append(cNWIntList *list, void *const *data);
+/* v added in front of head, the iterator kept */
+void NWIntList_AddKeepIter(cNWIntList *list, const void *v);
+
+/* ---- Global/GridElements.h with the node pointers of the points (cells of cNWIntList) ---- */
+
+cGridElements *__thiscall NWGrid_ctor(cGridElements *self, const vec3_t *max, const vec3_t *min, int nx, int ny,
+	int nz);
+void __fastcall NWGrid_dtor(cGridElements *self);
+cGridElements *__thiscall NWGrid_Delete(cGridElements *self, byte flags);
+void __thiscall NWGrid_Free(cGridElements *self);
+byte __thiscall NWGrid_Add(cGridElements *self, const vec3_t *p, void *const *data);
+
+/* ---- CNodesWorldSup (thiscall on the CNodesWorld layout; vtable slots in CNodesWorldVtbl) ---- */
+
+/* CNodesWorldSup_ctor, _dtor, _FreeGraph and _LoadGraph: nodesworld.h */
+CNodesWorld *__thiscall CNodesWorldSup_Delete(CNodesWorld *self, byte flags);
+void __thiscall CNodesWorldSup_GetBox(CNodesWorld *self, vec3_t *min, vec3_t *max);
+byte __thiscall CNodesWorldSup_Create(CNodesWorld *self);
+int __thiscall CNodesWorldSup_FileOf(CNodesWorld *self, const cNWNode *node);
+int __thiscall CNodesWorldSup_CommonFile(CNodesWorld *self, cNWNode *const *nodes, int n);
+vec3_t *__thiscall CNodesWorldSup_SnapPos(CNodesWorld *self, vec3_t *out, const vec3_t *pos);
+void __thiscall CNodesWorldSup_OtherLinks(CNodesWorld *self, const cNWNode *node, const vec3_t *pos, cNWNode **list,
+	int max, int *count);
+byte __thiscall CNodesWorldSup_IsCreated(CNodesWorld *self);
+vec3_t *__thiscall CNodesWorldSup_LastNodePos(CNodesWorld *self, vec3_t *out);
+const vec3_t *__thiscall CNodesWorldSup_GetVisPoint(CNodesWorld *self, int i);
+int __thiscall CNodesWorldSup_NumVisPoints(CNodesWorld *self);
+float __thiscall CNodesWorldSup_GetMaxVisDist(CNodesWorld *self);
+byte __thiscall CNodesWorldSup_InGrid(CNodesWorld *self, const vec3_t *pos);
+/* every buffer index back from its position; a fatal error if one differs */
+byte __thiscall CNodesWorldSup_CheckBuffer(CNodesWorld *self);
+/* the grid of the points over the box of the level (outdoors up to DM_MapTop + 5000), cells of f54 */
+void __thiscall CNodesWorldSup_BuildGrid(CNodesWorld *self);
+int __thiscall CNodesWorldSup_BufferIndex(CNodesWorld *self, const vec3_t *pos);
+vec3_t *__thiscall CNodesWorldSup_BufferPos(CNodesWorld *self, vec3_t *out, int index);
+/* the positions of the buffer cells into lists28c by state; the warning when no cell is outside (state 6) */
+void __thiscall CNodesWorldSup_GetInfoNodes(CNodesWorld *self);
+/* the point added to the set of the cell: an equal set of the hash list is shared, else the set is changed (one
+ * user) or copied */
+void __thiscall CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, int index);
+int __thiscall CNodesWorldSup_Hash(CNodesWorld *self, int a, int b);
+/* one user less of the set of the cell; the last one frees it */
+void __thiscall CNodesWorldSup_ReleaseVis(CNodesWorld *self, int index);
+/* each point linked to the points of the set of its cell, then LinkBack; numPointLinks the pairs */
+void __thiscall CNodesWorldSup_LinkPoints(CNodesWorld *self);
+/* the links made both ways */
+void __thiscall CNodesWorldSup_LinkBack(CNodesWorld *self);
+byte __thiscall CNodesWorldSup_PointLinked(CNodesWorld *self, const vec3_t *point, const vec3_t *other);
+/* the point linked both ways to the points of the set of its cell */
+void __thiscall CNodesWorldSup_LinkPoint(CNodesWorld *self, const vec3_t *point);
+/* to is not reached from from over links whose points are in the set of the cell index */
+byte __thiscall CNodesWorldSup_Unreachable(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index);
+int __thiscall CNodesWorldSup_BoxCells(CNodesWorld *self, const cNWBox *box);
+/* key in the list sorted by address: 1; else 0 and at the node to insert in front of */
+byte __thiscall CNodesWorldSup_FindSorted(CNodesWorld *self, cNWIntList *list, const void *key, cNWIntNode **at);
+byte __thiscall CNodesWorldSup_HasPair(CNodesWorld *self, cNWPairList *list, const cNWPair *pair);
+/* the pair (a, b, dist) into the list sorted by distance, not twice */
+void __thiscall CNodesWorldSup_InsertPair(CNodesWorld *self, cNWPairList *list, const cNWPair *pair);
+byte __thiscall CNodesWorldSup_VisHas(CNodesWorld *self, const vec3_t *point, int index);
+byte __thiscall CNodesWorldSup_Linked(CNodesWorld *self, const vec3_t *a, const vec3_t *b);
+void __thiscall CNodesWorldSup_FreeTemp(CNodesWorld *self);
+byte __thiscall CNodesWorldSup_InList(CNodesWorld *self, cNWNode *const *list, int n, const cNWNode *node);
+
+#endif

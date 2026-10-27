@@ -42,9 +42,9 @@ static int Grid_Outside(const cGridElements *self, const vec3_t *p) {
 		p->z > self->max.z || p->z < self->min.z;
 }
 
-cGridElements *__thiscall cGridElements_ctor(cGridElements *self, const vec3_t *max, const vec3_t *min, int nx,
+cGridElements *cGridElements_Init(cGridElements *self, uint32_t vftable, const vec3_t *max, const vec3_t *min, int nx,
 	int ny, int nz) {
-	self->vftable = Game_Ptr(CGRIDELEMENTS_VFTABLE);
+	self->vftable = Game_Ptr(vftable);
 	CHECK((max->x >= min->x) && (max->y >= min->y) && (max->z >= min->z) && (nx > 0) && (ny > 0) && (nz > 0));
 	self->max = *max;
 	self->min = *min;
@@ -66,22 +66,31 @@ cGridElements *__thiscall cGridElements_ctor(cGridElements *self, const vec3_t *
 	return self;
 }
 
-void __thiscall cGridElements_Free(cGridElements *self) {
+cGridElements *__thiscall cGridElements_ctor(cGridElements *self, const vec3_t *max, const vec3_t *min, int nx,
+	int ny, int nz) {
+	return cGridElements_Init(self, CGRIDELEMENTS_VFTABLE, max, min, nx, ny, nz);
+}
+
+void cGridElements_FreeCells(cGridElements *self, void(__fastcall *clear)(void *cell), uint32_t nodeSize) {
 	for (int i = 0; i < self->numCells; i++) {
 		if (!self->cells[i]) {
 			continue;
 		}
-		TrafficCell_Clear(self->cells[i]);
+		clear(self->cells[i]);
 		cTrafficCell *cell = self->cells[i];
 		if (cell) {
 			/* the destructor of the cell */
-			TrafficCell_Clear(cell);
-			DList_FreePool(cell, sizeof(cTrafficCellNode));
+			clear(cell);
+			DList_FreePool(cell, nodeSize);
 			operator_delete_sized(cell, sizeof(*cell));
 		}
 		self->cells[i] = NULL;
 	}
 	Mem_Free(self->cells);
+}
+
+void __thiscall cGridElements_Free(cGridElements *self) {
+	cGridElements_FreeCells(self, (void(__fastcall *)(void *))TrafficCell_Clear, sizeof(cTrafficCellNode));
 }
 
 void __fastcall cGridElements_dtor(cGridElements *self) {
@@ -206,8 +215,9 @@ void __thiscall cGridElements_GetDivs(cGridElements *self, int *nx, int *ny, int
 	*nz = self->nz;
 }
 
-void __thiscall cGridElements_GetCellSize(cGridElements *self, vec3_t *out) {
+vec3_t *__thiscall cGridElements_GetCellSize(cGridElements *self, vec3_t *out) {
 	*out = self->cell;
+	return out;
 }
 
 byte __thiscall cGridElements_IsInside(cGridElements *self, const vec3_t *p) {

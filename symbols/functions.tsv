@@ -1973,7 +1973,7 @@ rva	size	source	callconv	name	signature
 0009d7b0	103	USER_DEFINED	__thiscall	cGridElements_GetCell	byte __thiscall(int * x, int * y, int * z, void * out)
 0009d820	127	USER_DEFINED	__thiscall	cGridElements_GetCellAt	byte __thiscall(float * p, void * out)
 0009d8a0	298	USER_DEFINED	__thiscall	CNodesTraffic_NextAway	byte __thiscall(float * out, int track, int node, int * outTrack, int * outNode)
-0009d9d0	25	USER_DEFINED	__thiscall	cGridElements_GetCellSize	void __thiscall(float * out)
+0009d9d0	25	USER_DEFINED	__thiscall	cGridElements_GetCellSize	void * __thiscall(void * out)
 0009d9f0	580	USER_DEFINED	__thiscall	CNodesTraffic_RandomNode	byte __thiscall(float * out, int type, float * pos, float distMin, float distMax, int unused, float * dir, float maxAngle, int * outTrack, int * outNode)
 0009dc40	645	USER_DEFINED	__thiscall	CNodesTraffic_FindNodes	void __thiscall(float * pos, int type, int * list, int max, int * count, float radius, float distMin, float distMax, byte soft, byte vis)
 0009ded0	3037	USER_DEFINED	__thiscall	CNodesTraffic_SearchRings	void __thiscall(float * pos, int type, int * list, int max, int * count, float radius, float distMin, float distMax, byte soft, byte vis)
@@ -2078,115 +2078,115 @@ rva	size	source	callconv	name	signature
 000ad180	592	USER_DEFINED	__thiscall	CNodesWorld_SavePath	byte __thiscall(void)
 000ad3d0	1356	DEFAULT	unknown	FUN_004ad3d0	
 000ad920	42	USER_DEFINED	__fastcall	NWBox_Init	void __fastcall(void * box)
-000ad950	123	USER_DEFINED	__thiscall	CNodesWorld2D::CNodesWorld2D	undefined __thiscall(void)
-000ad9d0	95	DEFAULT	unknown	FUN_004ad9d0	
-000ada30	54	DEFAULT	unknown	FUN_004ada30	
-000ada70	126	ANALYSIS	__thiscall	CNodesWorld2D::vf00	undefined __thiscall(void)
-000adaf0	179	DEFAULT	unknown	FUN_004adaf0	
-000adbb0	101	DEFAULT	unknown	FUN_004adbb0	
-000adc20	1382	USER_DEFINED	__thiscall	CNodesWorld2D::AnalizeGraph	void __thiscall(void)
-000ae190	3794	DEFAULT	unknown	FUN_004ae190	
-000af070	632	DEFAULT	unknown	FUN_004af070	
-000af2f0	4553	DEFAULT	unknown	FUN_004af2f0	
-000b04c0	369	DEFAULT	unknown	FUN_004b04c0	
-000b0640	842	DEFAULT	unknown	FUN_004b0640	
-000b0990	553	DEFAULT	unknown	FUN_004b0990	
-000b0bc0	284	DEFAULT	unknown	FUN_004b0bc0	
-000b0ce0	1110	DEFAULT	unknown	FUN_004b0ce0	
-000b1140	112	DEFAULT	unknown	FUN_004b1140	
-000b11b0	85	DEFAULT	unknown	FUN_004b11b0	
+000ad950	123	USER_DEFINED	__thiscall	CNodesWorld2D_ctor	void * __thiscall(void)
+000ad9d0	95	USER_DEFINED	__fastcall	CNodesWorld2D_dtor	void __fastcall(void * self)
+000ada30	54	USER_DEFINED	__fastcall	NW2DRegion_dtor	void __fastcall(void * r)
+000ada70	126	USER_DEFINED	__thiscall	CNodesWorld2D_Delete	void * __thiscall(byte flags)
+000adaf0	179	USER_DEFINED	__thiscall	NW2DRegionList_Add	void __thiscall(void * r)
+000adbb0	101	USER_DEFINED	__thiscall	NWIntList_Append	void __thiscall(void ** data)
+000adc20	1382	USER_DEFINED	__thiscall	CNodesWorld2D_AnalizeGraph	void __thiscall(void)
+000ae190	3794	USER_DEFINED	__thiscall	CNodesWorld2D_TestPath	byte __thiscall(void * a, void * b, float r, float r2, float h, float h2, void * debug)
+000af070	632	USER_DEFINED	__thiscall	CNodesWorld2D_TestStep	byte __thiscall(void * a, void * b, float r, float h)
+000af2f0	4553	USER_DEFINED	__thiscall	CNodesWorld2D_TestCorner	byte __thiscall(void * a, void * b, void * c, float r, float r2, float h, float h2, byte flat, void * debug)
+000b04c0	369	USER_DEFINED	__thiscall	CNodesWorld2D_GroundSees	byte __thiscall(void * p, void * b, float height)
+000b0640	842	USER_DEFINED	__thiscall	CNodesWorld2D_TestWalk	byte __thiscall(void * a, void * b, float shrink)
+000b0990	553	USER_DEFINED	__thiscall	CNodesWorld2D_WalkFit	byte __thiscall(void * a, void * b, float up, float foot, float r, float h2, float h1)
+000b0bc0	284	USER_DEFINED	__thiscall	CNodesWorld2D_FitAt	byte __thiscall(float x, float y, float z, void * out, float down, float foot, float r, float h2, float h1)
+000b0ce0	1110	USER_DEFINED	__thiscall	CNodesWorld2D_Walk	byte __thiscall(void * a, void * b, float up, float foot, float r, float h2, float h1)
+000b1140	112	USER_DEFINED	__thiscall	CNodesWorld2D_GroundLine	byte __thiscall(void * a, void * b, int u0, int u1, int u2)
+000b11b0	85	USER_DEFINED	__fastcall	NW2DRegionList_Clear	void __fastcall(void * list)
 000b1210	2549	DEFAULT	unknown	FUN_004b1210	
-000b1c30	170	ANALYSIS	__thiscall	CNodesWorld2D::vf38	undefined __thiscall(void)
-000b1ce0	111	DEFAULT	unknown	FUN_004b1ce0	
+000b1c30	170	USER_DEFINED	__thiscall	CNodesWorld2D_ClearLists	void __thiscall(void)
+000b1ce0	111	USER_DEFINED	__fastcall	NW2DRegionList_FreePool	void __fastcall(void * list)
 000b1d50	922	DEFAULT	unknown	FUN_004b1d50	
 000b20f0	3693	DEFAULT	unknown	FUN_004b20f0	
 000b2f60	1035	DEFAULT	unknown	FUN_004b2f60	
 000b3370	960	DEFAULT	unknown	FUN_004b3370	
 000b3730	658	DEFAULT	unknown	FUN_004b3730	
 000b39d0	860	DEFAULT	unknown	FUN_004b39d0	
-000b3d30	370	DEFAULT	unknown	FUN_004b3d30	
-000b3eb0	1311	DEFAULT	unknown	FUN_004b3eb0	
-000b43d0	284	DEFAULT	unknown	FUN_004b43d0	
-000b44f0	561	DEFAULT	unknown	FUN_004b44f0	
-000b4730	339	DEFAULT	unknown	FUN_004b4730	
-000b4890	331	DEFAULT	unknown	FUN_004b4890	
-000b49e0	3235	DEFAULT	unknown	FUN_004b49e0	
-000b5690	433	DEFAULT	unknown	FUN_004b5690	
+000b3d30	370	USER_DEFINED	__thiscall	CNodesWorld2D_GetPairs	void __thiscall(void * list)
+000b3eb0	1311	USER_DEFINED	__thiscall	CNodesWorld2D_BuildPath	byte __thiscall(void * path, int depth, void * dir, void * start, byte direct, void ** node, float r, float h1, float h2, byte flat)
+000b43d0	284	USER_DEFINED	__thiscall	CNodesWorld2D_FitAt2	byte __thiscall(float x, float y, float z, void * out, float down, float foot, float r, float h2, float h1)
+000b44f0	561	USER_DEFINED	__thiscall	CNodesWorld2D_NearestPointVis	void __thiscall(void * pos, void * out)
+000b4730	339	USER_DEFINED	__thiscall	CNodesWorld2D_AddExtraPoints	void __thiscall(void)
+000b4890	331	USER_DEFINED	__thiscall	CNodesWorld2D_GetPointsVis	void __thiscall(void * pos, void ** list, int max, int * count, float r, float h1, float h2, float distMin, float distMax, byte soft, int mode)
+000b49e0	3235	USER_DEFINED	__thiscall	CNodesWorld2D_SearchRings	void __thiscall(void * pos, void ** list, int max, int * count, float r, float h1, float h2, float distMin, float distMax, byte soft, int mode)
+000b5690	433	USER_DEFINED	__thiscall	CNodesWorld2D_CollectCell	void __thiscall(void * pos, void * cell, void ** list, int max, int * count, float r, float h1, float h2, float distMin, float distMax, int mode, byte useMax)
 000b5860	2457	DEFAULT	unknown	FUN_004b5860	
-000b6200	1546	USER_DEFINED	__thiscall	CNodesWorld2D::Load	void __thiscall(int arg, char * name, float * pos)
-000b6840	87	DEFAULT	unknown	FUN_004b6840	
-000b68a0	864	DEFAULT	unknown	FUN_004b68a0	
-000b6c00	144	ANALYSIS	__thiscall	CNodesWorld2D::vf03	undefined __thiscall(void)
-000b6c90	194	DEFAULT	unknown	FUN_004b6c90	
-000b6d60	366	DEFAULT	unknown	FUN_004b6d60	
-000b6ed0	104	DEFAULT	unknown	FUN_004b6ed0	
+000b6200	1546	USER_DEFINED	__thiscall	CNodesWorld2D_Load	void __thiscall(int arg, char * name, void * pos)
+000b6840	87	USER_DEFINED	__thiscall	CNodesWorld2D_HasPointVis	byte __thiscall(void * pos, float r, float h1, float h2)
+000b68a0	864	USER_DEFINED	__thiscall	CNodesWorld2D_LinkExtra	void __thiscall(void)
+000b6c00	144	USER_DEFINED	__thiscall	CNodesWorld2D_LoadGraph	byte __thiscall(void)
+000b6c90	194	USER_DEFINED	__thiscall	CNodesWorld2D_NearestVisDist	float __thiscall(void * pos)
+000b6d60	366	USER_DEFINED	__thiscall	CNodesWorld2D_Ground	byte __thiscall(void * p, void * hit, float height)
+000b6ed0	104	USER_DEFINED	__thiscall	NW2DRegionList_Release	void __thiscall(void * node)
 000b6f40	1218	DEFAULT	unknown	FUN_004b6f40	
-000b7410	184	DEFAULT	unknown	FUN_004b7410	
-000b74d0	827	ANALYSIS	__thiscall	CNodesWorld2D::vf15	undefined __thiscall(void)
+000b7410	184	USER_DEFINED	__thiscall	CNodesWorld2D_SaveInfPath	byte __thiscall(void)
+000b74d0	827	USER_DEFINED	__thiscall	CNodesWorld2D_SavePath	byte __thiscall(void)
 000b7810	1926	DEFAULT	unknown	FUN_004b7810	
-000b7fa0	329	DEFAULT	unknown	FUN_004b7fa0	
+000b7fa0	329	USER_DEFINED	__thiscall	NWGrid_ctor	void * __thiscall(void * max, void * min, int nx, int ny, int nz)
 000b80f0	1262	USER_DEFINED	__thiscall	CNodesWorldSup_ctor	void * __thiscall(void)
-000b85e0	60	DEFAULT	unknown	FUN_004b85e0	
+000b85e0	60	USER_DEFINED	__fastcall	NWGrid_dtor	void __fastcall(void * self)
 000b8620	802	USER_DEFINED	__fastcall	CNodesWorldSup_dtor	void __fastcall(void * self)
-000b8950	54	DEFAULT	unknown	FUN_004b8950	
-000b8990	92	ANALYSIS	__thiscall	cGridElements<InfPointVis*>::vf00	undefined __thiscall(void)
-000b89f0	38	ANALYSIS	__thiscall	CNodesWorldSup::vf00	undefined __thiscall(void)
-000b8a20	103	DEFAULT	unknown	FUN_004b8a20	
-000b8a90	113	DEFAULT	unknown	FUN_004b8a90	
-000b8b10	177	DEFAULT	unknown	FUN_004b8b10	
-000b8bd0	117	DEFAULT	unknown	FUN_004b8bd0	
-000b8c50	111	DEFAULT	unknown	FUN_004b8c50	
-000b8cc0	134	ANALYSIS	__thiscall	CNodesWorldSup::vf33	undefined __thiscall(void)
-000b8d50	132	ANALYSIS	__thiscall	CNodesWorldSup::vf34	undefined __thiscall(void)
-000b8de0	274	ANALYSIS	__thiscall	CNodesWorldSup::vf07	undefined __thiscall(void)
-000b8f00	119	ANALYSIS	__thiscall	CNodesWorldSup::vf16	undefined __thiscall(void)
-000b8f80	134	DEFAULT	unknown	FUN_004b8f80	
-000b9010	85	DEFAULT	unknown	FUN_004b9010	
-000b9070	123	ANALYSIS	__thiscall	CNodesWorldSup::vf23	undefined __thiscall(void)
-000b90f0	138	ANALYSIS	__thiscall	cGridElements<InfPointVis*>::vf09	undefined __thiscall(void)
-000b9180	331	ANALYSIS	__thiscall	CNodesWorldSup::vf36	undefined __thiscall(void)
+000b8950	54	USER_DEFINED	__fastcall	NWIntList_FreeAt0c2	void __fastcall(void * owner)
+000b8990	92	USER_DEFINED	__thiscall	NWGrid_Delete	void * __thiscall(byte flags)
+000b89f0	38	USER_DEFINED	__thiscall	CNodesWorldSup_Delete	void * __thiscall(byte flags)
+000b8a20	103	USER_DEFINED	__thiscall	NWIntList_Add3	void __thiscall(void * data)
+000b8a90	113	USER_DEFINED	__thiscall	NWVecList_Add2	void __thiscall(void * v)
+000b8b10	177	USER_DEFINED	__thiscall	NWVisList_Add	void __thiscall(void * vis)
+000b8bd0	117	USER_DEFINED	__thiscall	NWVecList_AddBefore	void __thiscall(void * v)
+000b8c50	111	USER_DEFINED	__thiscall	NWVecList_Append	void __thiscall(void * v)
+000b8cc0	134	USER_DEFINED	__thiscall	CNodesWorldSup_VisHas	byte __thiscall(void * point, int index)
+000b8d50	132	USER_DEFINED	__thiscall	CNodesWorldSup_Linked	byte __thiscall(void * a, void * b)
+000b8de0	274	USER_DEFINED	__thiscall	CNodesWorldSup_SnapPos	void * __thiscall(void * out, void * pos)
+000b8f00	119	USER_DEFINED	__thiscall	CNodesWorldSup_CheckBuffer	byte __thiscall(void)
+000b8f80	134	USER_DEFINED	__fastcall	NWIntList_Clear3	void __fastcall(void * list)
+000b9010	85	USER_DEFINED	__fastcall	NWVisList_Clear	void __fastcall(void * list)
+000b9070	123	USER_DEFINED	__thiscall	CNodesWorldSup_ReleaseVis	void __thiscall(int index)
+000b90f0	138	USER_DEFINED	__thiscall	NWGrid_Free	void __thiscall(void)
+000b9180	331	USER_DEFINED	__thiscall	CNodesWorldSup_FreeTemp	void __thiscall(void)
 000b92d0	282	USER_DEFINED	__thiscall	CNodesWorldSup_FreeGraph	void __thiscall(void)
-000b93f0	60	ANALYSIS	__thiscall	CNodesWorldSup::vf01	undefined __thiscall(void)
-000b9430	716	ANALYSIS	__thiscall	cGridElements<InfPointVis*>::vf04	undefined __thiscall(void)
-000b9700	111	DEFAULT	unknown	FUN_004b9700	
-000b9770	215	ANALYSIS	__thiscall	cGridElements<InfPointVis*>::vf05	undefined __thiscall(void)
-000b9850	4	ANALYSIS	__thiscall	CNodesWorldSup::vf13	undefined __thiscall(void)
-000b9860	95	ANALYSIS	__thiscall	cGridElements<InfPointVis*>::vf10	undefined __thiscall(void)
-000b98c0	132	ANALYSIS	__thiscall	CNodesWorldSup::vf18	undefined __thiscall(void)
-000b9950	306	ANALYSIS	__thiscall	CNodesWorldSup::vf20	undefined __thiscall(void)
-000b9a90	22	ANALYSIS	__thiscall	CNodesWorldSup::vf22	undefined __thiscall(void)
-000b9ab0	103	ANALYSIS	__thiscall	cGridElements<InfPointVis*>::vf03	undefined __thiscall(void)
-000b9b20	127	ANALYSIS	__thiscall	cGridElements<InfPointVis*>::vf02	undefined __thiscall(void)
-000b9ba0	25	ANALYSIS	__thiscall	cGridElements<InfPointVis*>::vf07	undefined __thiscall(void)
-000b9bc0	112	ANALYSIS	__thiscall	CNodesWorldSup::vf05	undefined __thiscall(void)
-000b9c30	91	ANALYSIS	__thiscall	CNodesWorldSup::vf06	undefined __thiscall(void)
-000b9c90	31	ANALYSIS	__thiscall	cGridElements<InfPointVis*>::vf06	undefined __thiscall(void)
-000b9cb0	7	ANALYSIS	__thiscall	CNodesWorldSup::vf12	undefined __thiscall(void)
-000b9cc0	320	ANALYSIS	__thiscall	CNodesWorldSup::vf19	undefined __thiscall(void)
-000b9e00	63	ANALYSIS	__thiscall	CNodesWorldSup::vf10	undefined __thiscall(void)
-000b9e40	68	ANALYSIS	__thiscall	CNodesWorldSup::vf11	undefined __thiscall(void)
-000b9e90	114	ANALYSIS	__thiscall	CNodesWorldSup::vf08	undefined __thiscall(void)
-000b9f10	211	ANALYSIS	__thiscall	cGridElements<InfPointVis*>::vf01	undefined __thiscall(void)
-000b9ff0	142	ANALYSIS	__thiscall	CNodesWorldSup::vf32	undefined __thiscall(void)
-000ba080	1159	ANALYSIS	__thiscall	CNodesWorldSup::vf21	undefined __thiscall(void)
-000ba510	4	ANALYSIS	__thiscall	CNodesWorldSup::vf09	undefined __thiscall(void)
-000ba520	108	ANALYSIS	__thiscall	CNodesWorldSup::vf31	undefined __thiscall(void)
-000ba590	112	ANALYSIS	__thiscall	CNodesWorldSup::vf30	undefined __thiscall(void)
-000ba600	80	ANALYSIS	__thiscall	cGridElements<InfPointVis*>::vf08	undefined __thiscall(void)
-000ba650	17	ANALYSIS	__thiscall	CNodesWorldSup::vf14	undefined __thiscall(void)
-000ba670	78	ANALYSIS	__thiscall	CNodesWorldSup::vf26	undefined __thiscall(void)
-000ba6c0	43	ANALYSIS	__thiscall	CNodesWorldSup::vf37	undefined __thiscall(void)
-000ba6f0	71	DEFAULT	unknown	FUN_004ba6f0	
-000ba740	393	ANALYSIS	__thiscall	CNodesWorldSup::vf27	undefined __thiscall(void)
-000ba8d0	414	ANALYSIS	__thiscall	CNodesWorldSup::vf24	undefined __thiscall(void)
-000baa70	295	ANALYSIS	__thiscall	CNodesWorldSup::vf25	undefined __thiscall(void)
-000baba0	489	ANALYSIS	__thiscall	CNodesWorldSup::vf17	undefined __thiscall(void)
-000bad90	24	ANALYSIS	__thiscall	CNodesWorldSup::vf04	undefined __thiscall(void)
+000b93f0	60	USER_DEFINED	__thiscall	CNodesWorldSup_GetBox	void __thiscall(void * min, void * max)
+000b9430	716	USER_DEFINED	__thiscall	cGridElements_Draw2	byte __thiscall(uint color)
+000b9700	111	USER_DEFINED	__fastcall	NWPointList_FreePool	void __fastcall(void * list)
+000b9770	215	USER_DEFINED	__thiscall	cGridElements_CellCoords2	byte __thiscall(void * p, void * x, void * y, void * z)
+000b9850	4	USER_DEFINED	__thiscall	CNodesWorldSup_GetMaxVisDist	float __thiscall(void)
+000b9860	95	USER_DEFINED	__thiscall	cGridElements_CellIndex2	int __thiscall(void * p)
+000b98c0	132	USER_DEFINED	__thiscall	CNodesWorldSup_BufferIndex	int __thiscall(void * pos)
+000b9950	306	USER_DEFINED	__thiscall	CNodesWorldSup_GetInfoNodes	void __thiscall(void)
+000b9a90	22	USER_DEFINED	__thiscall	CNodesWorldSup_Hash	int __thiscall(int a, int b)
+000b9ab0	103	USER_DEFINED	__thiscall	cGridElements_GetCell2	byte __thiscall(void * x, void * y, void * z, void * out)
+000b9b20	127	USER_DEFINED	__thiscall	cGridElements_GetCellAt2	byte __thiscall(void * p, void * out)
+000b9ba0	25	USER_DEFINED	__thiscall	cGridElements_GetCellSize2	void * __thiscall(void * out)
+000b9bc0	112	USER_DEFINED	__thiscall	CNodesWorldSup_FileOf	int __thiscall(void * node)
+000b9c30	91	USER_DEFINED	__thiscall	CNodesWorldSup_CommonFile	int __thiscall(void ** nodes, int n)
+000b9c90	31	USER_DEFINED	__thiscall	cGridElements_GetDivs2	void __thiscall(void * nx, void * ny, void * nz)
+000b9cb0	7	USER_DEFINED	__thiscall	CNodesWorldSup_NumVisPoints	int __thiscall(void)
+000b9cc0	320	USER_DEFINED	__thiscall	CNodesWorldSup_BufferPos	void * __thiscall(void * out, int index)
+000b9e00	63	USER_DEFINED	__thiscall	CNodesWorldSup_LastNodePos	void * __thiscall(void * out)
+000b9e40	68	USER_DEFINED	__thiscall	CNodesWorldSup_GetVisPoint	void * __thiscall(int i)
+000b9e90	114	USER_DEFINED	__thiscall	CNodesWorldSup_OtherLinks	void __thiscall(void * node, void * pos, void ** list, int max, int * count)
+000b9f10	211	USER_DEFINED	__thiscall	NWGrid_Add	byte __thiscall(void * p, void ** data)
+000b9ff0	142	USER_DEFINED	__thiscall	CNodesWorldSup_InsertPair	void __thiscall(void * list, void * pair)
+000ba080	1159	USER_DEFINED	__thiscall	CNodesWorldSup_AddVis	void __thiscall(void * point, int index)
+000ba510	4	USER_DEFINED	__thiscall	CNodesWorldSup_IsCreated	byte __thiscall(void)
+000ba520	108	USER_DEFINED	__thiscall	CNodesWorldSup_HasPair	byte __thiscall(void * list, void * pair)
+000ba590	112	USER_DEFINED	__thiscall	CNodesWorldSup_FindSorted	byte __thiscall(void * list, void * key, void ** at)
+000ba600	80	USER_DEFINED	__thiscall	cGridElements_IsInside2	byte __thiscall(void * p)
+000ba650	17	USER_DEFINED	__thiscall	CNodesWorldSup_InGrid	byte __thiscall(void * pos)
+000ba670	78	USER_DEFINED	__thiscall	CNodesWorldSup_PointLinked	byte __thiscall(void * point, void * other)
+000ba6c0	43	USER_DEFINED	__thiscall	CNodesWorldSup_InList	byte __thiscall(void ** list, int n, void * node)
+000ba6f0	71	USER_DEFINED	__fastcall	NWVisList_RemoveIter	void __fastcall(void * list)
+000ba740	393	USER_DEFINED	__thiscall	CNodesWorldSup_LinkPoint	void __thiscall(void * point)
+000ba8d0	414	USER_DEFINED	__thiscall	CNodesWorldSup_LinkPoints	void __thiscall(void)
+000baa70	295	USER_DEFINED	__thiscall	CNodesWorldSup_LinkBack	void __thiscall(void)
+000baba0	489	USER_DEFINED	__thiscall	CNodesWorldSup_BuildGrid	void __thiscall(void)
+000bad90	24	USER_DEFINED	__thiscall	CNodesWorldSup_Create	byte __thiscall(void)
 000badb0	1809	USER_DEFINED	__thiscall	CNodesWorldSup_LoadGraph	byte __thiscall(char * path)
-000bb4d0	162	ANALYSIS	__thiscall	CNodesWorldSup::vf29	undefined __thiscall(void)
-000bb580	68	DEFAULT	unknown	FUN_004bb580	
-000bb5d0	104	DEFAULT	unknown	FUN_004bb5d0	
-000bb640	1070	ANALYSIS	__thiscall	CNodesWorldSup::vf28	undefined __thiscall(void)
+000bb4d0	162	USER_DEFINED	__thiscall	CNodesWorldSup_BoxCells	int __thiscall(void * box)
+000bb580	68	USER_DEFINED	__fastcall	NWVisList_RemoveHead	void __fastcall(void * list)
+000bb5d0	104	USER_DEFINED	__thiscall	NWVisList_Release	void __thiscall(void * node)
+000bb640	1070	USER_DEFINED	__thiscall	CNodesWorldSup_Unreachable	byte __thiscall(void * from, void * to, int index)
 000bba70	251	USER_DEFINED	__thiscall	CNodesWorldSup_SaveInfPath	byte __thiscall(char * path)
 000bbb70	46	USER_DEFINED	__cdecl	DebugLog_CloseAll	void __cdecl(void)
 000bbba0	465	USER_DEFINED	__cdecl	Con_FatalErrorf	void __cdecl(char *fmt, ...)

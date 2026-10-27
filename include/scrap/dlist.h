@@ -29,6 +29,8 @@ SD_SIZE(cDList, 0x18);
 void *DList_NewNode(void *list, uint32_t size);
 /* the node in front of head, as the new head */
 void DList_LinkFirst(void *list, void *node);
+/* the node in front of head, head kept: at the end of the ring */
+void DList_LinkLast(void *list, void *node);
 /* to the free list while it has room, else deleted */
 void DList_Release(void *list, void *node, uint32_t size);
 void DList_RemoveHead(void *list, uint32_t size);
