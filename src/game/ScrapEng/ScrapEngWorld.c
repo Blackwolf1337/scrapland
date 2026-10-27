@@ -25,8 +25,6 @@ int __stdcall D3DX_CreateTextureFromFileInMemoryEx(void *dev, const void *data, 
 
 /* the methods of IDirect3DDevice8, IDirect3DSurface8 and IDirect3D8 only this file calls */
 #define D3DDEV_PRESENT 0x3c
-#define D3DDEV_GETBACKBUFFER 0x40
-#define D3DDEV_COPYRECTS 0x70
 #define D3DDEV_BEGINSCENE 0x88
 #define D3DDEV_ENDSCENE 0x8c
 #define D3DSURF_GETDESC 0x20

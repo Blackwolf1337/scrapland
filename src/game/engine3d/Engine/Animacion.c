@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/animacion.h"
+#include "scrap/material.h"
 
 #define ANIMNODO_CTOR 0x2ab6a0
 #define ANIMNODO_DTOR 0x2ab8f0
@@ -225,6 +226,70 @@ void __thiscall CAnimacion_Init(CAnimacion *self, int nobjetos, int nframes, int
 	}
 	self->AnimBlock.UsedBlock = 0;
 	self->AnimBlock.SizeBlock = 0;
+}
+
+/* the parts of the constructors of the node: the count of the live nodes, no tracks, pos and rot tracks of nframes */
+CAnimNodo *__thiscall CAnimNodo_ctorFrames(CAnimNodo *self, uint32_t nframes, uint32_t first) {
+	g_AnimNodoCount++;
+	memset(&self->Pos, 0, sizeof(*self) - offsetof(CAnimNodo, Pos));
+	CAnimNodo_Init(self, nframes, first, ANIM_POS | ANIM_ROT);
+	return self;
+}
+
+CAnimNodo *__fastcall CAnimNodo_ctor(CAnimNodo *self) {
+	return CAnimNodo_ctorFrames(self, 0, 0);
+}
+
+void __fastcall CAnimNodo_dtor(CAnimNodo *self) {
+	g_AnimNodoCount--;
+	CAnimNodo_Init(self, 0, 0, ANIM_POS | ANIM_ROT);
+}
+
+CAnimNodo *__thiscall CAnimNodo_Delete(CAnimNodo *self, uint32_t flags) {
+	if (flags & 2) {
+		uint32_t *mem = (uint32_t *)self - 1;
+		if (flags & 1) {
+			Delete_Objects(self, sizeof(CAnimNodo), ANIMNODO_DTOR);
+		} else {
+			crt_eh_vector_dtor(self, sizeof(CAnimNodo), *mem, Game_Ptr(ANIMNODO_DTOR));
+		}
+		return (CAnimNodo *)mem;
+	}
+	CAnimNodo_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(CAnimNodo));
+	}
+	return self;
+}
+
+CAnimacion *__fastcall CAnimacion_ctor(CAnimacion *self) {
+	self->name = NULL;
+	self->Refs = 0;
+	self->tabla.p = NULL;
+	self->tabla.n = 0;
+	memset(&self->AnimBlock, 0, sizeof(self->AnimBlock));
+	self->AnimNodo = NULL;
+	self->fps = 25.0f;
+	CAnimacion_Init(self, 0, 0, 0);
+	return self;
+}
+
+void __fastcall AnimBlock_dtor(CAnimBlock *self) {
+	CHECK(!self->MemBlock);
+}
+
+void __fastcall AnimStream_dtor(CAnimStream *self) {
+	Mem_Free(self->p);
+}
+
+void __fastcall CAnimacion_dtor(CAnimacion *self) {
+	CAnimacion_Init(self, 0, 0, 0);
+	AnimBlock_dtor(&self->AnimBlock);
+	Tabla_Free(&self->tabla);
+	CHECK(!self->Refs);
+	if (self->name) {
+		Cad_Set(&self->name, NULL);
+	}
 }
 
 void __thiscall CAnimNodo_ReadTrack(CAnimNodo *self, CArchIO *f, uint32_t flag, void **ptr, int size) {

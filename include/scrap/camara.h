@@ -65,5 +65,10 @@ matrix_t *__thiscall CCamara_GetProj(CCamara *self, matrix_t *m);
 void __thiscall CCamara_Move(CCamara *self, float d);
 /* along the x axis of the angles and the up vector */
 void __thiscall CCamara_Strafe(CCamara *self, float side, float rise);
+/* the IObjeto3D methods: Update follows the node with CamaraNodos, the others do nothing */
+void __thiscall CCamara_Update(CCamara *self, CNodoR *r);
+void __thiscall CCamara_Render(CCamara *self, void *arg, CNodoR *r);
+void __thiscall CCamara_InitD3D(CCamara *self, void *dev);
+void __thiscall CCamara_ReleaseD3D(CCamara *self, void *dev);
 
 #endif

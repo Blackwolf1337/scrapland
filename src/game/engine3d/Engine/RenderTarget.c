@@ -22,14 +22,8 @@ int __stdcall D3DX_CreateTextureFromFileInMemoryEx(void *dev, const void *data, 
 
 /* IDirect3DDevice8, IDirect3DTexture8 and IDirect3DSurface8 methods not in d3d8.h */
 #define D3DDEV_CREATEDEPTHSTENCILSURFACE 0x68
-#define D3DDEV_COPYRECTS 0x70
-#define D3DDEV_SETRENDERTARGET 0x7c
-#define D3DDEV_GETRENDERTARGET 0x80
-#define D3DDEV_GETDEPTHSTENCILSURFACE 0x84
 #define D3DDEV_BEGINSCENE 0x88
 #define D3DDEV_ENDSCENE 0x8c
-#define D3DDEV_GETRENDERSTATE 0xcc
-#define D3DTEX_GETSURFACELEVEL 0x3c
 #define D3DSURF_GETDESC 0x20
 #define D3DSURF_LOCKRECT 0x24
 typedef int(__stdcall *rtCreateTexture_t)(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint32_t usage, int fmt,
@@ -50,10 +44,7 @@ typedef struct RTLockedRect {
 } RTLockedRect;
 typedef int(__stdcall *rtLockRect_t)(void *surf, RTLockedRect *lr, const int *rect, uint32_t flags);
 
-#define D3DUSAGE_RENDERTARGET 1
 #define D3DFMT_A8R8G8B8 0x15
-#define D3DRS_FILLMODE 8
-#define D3DFILL_WIREFRAME 2
 #define D3DFILL_SOLID 3
 #define D3DLOCK_READONLY 0x10
 

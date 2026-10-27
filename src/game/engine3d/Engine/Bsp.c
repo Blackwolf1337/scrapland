@@ -28,10 +28,6 @@
 typedef uint32_t(__stdcall *getenvvar_t)(const char *name, char *buf, uint32_t size);
 #define exe_GetEnvironmentVariableA GAME_DATA(getenvvar_t, 0x3a12c0)
 
-#ifndef D3DRS_FILLMODE
-#define D3DRS_FILLMODE 8
-#endif
-
 /* the "uint as double" conversions of the original: the int plus 2^32 for a set top bit */
 static inline float Uint_ToFloat(uint32_t u) {
 	return (float)(double)u;

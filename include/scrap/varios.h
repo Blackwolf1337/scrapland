@@ -78,5 +78,7 @@ char *Cad_Unquote(char *dest, const char *src);
 /* 1 / sqrt(x) from a table: the estimate and two Newton steps */
 float RSqrt_Estimate(float x);
 float RSqrt(float x);
+/* SetWindowTextA of a VBprintf (1 KB): 1 when set */
+int Win_SetTextf(void *hwnd, const char *fmt, ...);
 
 #endif

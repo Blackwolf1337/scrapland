@@ -402,8 +402,8 @@ int __fastcall CBsp_LeerEMI(CBsp *self);		/* rva 0x28c650, 0 when read */
 void __fastcall CBsp_Calcular(CBsp *self);		/* rva 0x28a860, the light maps computed */
 void __fastcall CBsp_Preparar(CBsp *self);		/* rva 0x28efe0, the pages, materials and vertices */
 
-/* the float edits of the dialogs (rva 0x2a5d20, 0x2a5d80) */
-void Dlg_SetFloat(void *hwnd, int id, float v, int prec);
+/* the float edits of the dialogs (src/game/engine3d/Engine/Varios.c): set returns 1, get 1 for a number */
+byte Dlg_SetFloat(void *hwnd, int id, float v, int prec);
 byte Dlg_GetFloat(void *hwnd, int id, float *out);
 
 /* exe functions of other files */

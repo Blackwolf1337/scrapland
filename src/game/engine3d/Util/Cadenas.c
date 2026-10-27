@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "scrap/e3dutil.h"
+#include "scrap/material.h"
 
 #define g_ThousandsSep GAME_DATA(char, 0x431b88)
 #define g_IntBuf ((char *)Game_Ptr(0x4a8eb4))	/* the result of Cad_FromInt(NULL, n) */
@@ -52,4 +53,45 @@ char *Cad_FromInt(char *buf, int n) {
 	crt_sprintf(buf, "%d", n);
 	Cad_Thousands(buf);
 	return buf;
+}
+
+/* the string members of the engine classes (CCadena of the headers): a Mem_Alloc copy, NULL for none */
+void __thiscall Cad_Set(char **self, const char *s) {
+	if (*self) {
+		*self = Mem_Free(*self);
+	}
+	if (s) {
+		*self = Cad_Dup(s);
+	}
+}
+
+void __thiscall Cad_Read(char **self, CArchIO *f) {
+	char buf[0x100];
+	byte isNull;
+
+	CArchIO_ReadStringNull(f, buf, sizeof(buf), &isNull);
+	Cad_Set(self, isNull ? NULL : buf);
+}
+
+void __thiscall Cad_Write(char **self, CArchIO *f) {
+	CArchIO_WriteString(f, *self);
+}
+
+void Cad_Printf(char **self, const char *fmt, ...) {
+	char buf[0x400];
+	va_list ap;
+
+	if (!fmt) {
+		if (*self) {
+			*self = Mem_Free(*self);
+		}
+		return;
+	}
+	va_start(ap, fmt);
+	VBprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+	if (*self) {
+		*self = Mem_Free(*self);
+	}
+	*self = Cad_Dup(buf);
 }
