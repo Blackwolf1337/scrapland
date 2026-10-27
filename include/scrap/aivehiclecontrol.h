@@ -268,9 +268,7 @@ byte __fastcall cAIVehicleGroup_ReposReady(cAIVehicleGroup *self);
 void __fastcall cAIVehicleGroup_Draw(cAIVehicleGroup *self);
 void __fastcall cAIVehicleGroup_FindElevators(cAIVehicleGroup *self);
 void __fastcall cAIVehicleGroup_ResetRepos(cAIVehicleGroup *self);
-/* the base class (AI/AIEntityGroup, not in C yet) */
-void *__fastcall cAIEntityGroup_ctor(void *self);
-void __fastcall cAIEntityGroup_dtor(void *self);
+/* the base class cAIEntityGroup: ai.h */
 
 /* ---- AI/AIVehicleShootControl.cpp (src/game/AI/IVehicleShootControl.c); the rest in aivehicle.h ---- */
 void __fastcall cAIVehicleShoot_dtor(cAIVehicleShoot *self);

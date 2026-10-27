@@ -10,34 +10,28 @@
 #include "scrap/walkcharentity.h"
 
 #define CAIBISHOP_SIZE 0x398
-#define CAICONTROLBISHOP_SIZE 0x384
 #define BISHOP_BLOCK_TIME 7.5f		/* the way to the target is tested again after it (rva 0x3a46d0) */
 
 void *__thiscall cAIBishop_ctor(void *mem, cEntity *e, int *arg) {
 	cAIBishop *self = mem;
-	cAICharView *c = &self->base;
+	cAIChar *c = &self->base;
 
 	cAIChar_ctor(mem, e, arg);
-	*(const void **)self = Game_Ptr(CAIBISHOP_VFTABLE);
-	if (c->control) {
-		((void *(__thiscall *)(void *, byte))AI_VSlot(c->control, 0))(c->control, 1);
-	}
-	void *ctl = operator_new(CAICONTROLBISHOP_SIZE);
-	c->control = ctl ? cAIControlBishop_ctor(ctl, e, self, arg) : NULL;
-	CHECK(c->control);
+	c->vftable = Game_Ptr(CAIBISHOP_VFTABLE);
+	cAIChar_NewControl(c, CAICONTROLSHOOT_SIZE, cAIControlBishop_ctor, e, arg);
 	self->targetLife = 0;
 	self->blocked = 0;
 	return self;
 }
 
-void __fastcall cAIBishop_dtor(void *self) {
-	*(const void **)self = Game_Ptr(CAIBISHOP_VFTABLE);
-	cAIChar_dtor((cAIChar *)self);
+void __fastcall cAIBishop_dtor(cAIChar *self) {
+	self->vftable = Game_Ptr(CAIBISHOP_VFTABLE);
+	cAIChar_dtor(self);
 }
 
-void *__thiscall cAIBishop_Delete(void *self, byte flags) {
-	*(const void **)self = Game_Ptr(CAIBISHOP_VFTABLE);
-	cAIChar_dtor((cAIChar *)self);
+cAIChar *__thiscall cAIBishop_Delete(cAIChar *self, byte flags) {
+	self->vftable = Game_Ptr(CAIBISHOP_VFTABLE);
+	cAIChar_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIBISHOP_SIZE);
 	}
@@ -67,92 +61,89 @@ double Vec3_Angle(const vec3_t *a, const vec3_t *b) {
 	return Game_Acos((double)Float_MaxSS(-1.0f, Float_MinSS(1.0f, dot)));
 }
 
-static int Layer0_Priority(cEntity *e) {
-	return ((cActCtrl *)WithLife_Vtbl(e)->GetActCtrl(e))->layers[0].action->priority;
-}
-
 static int Ent_Life(cEntity *e) {
 	return WChar(e)->life;
 }
 
 void __thiscall cAIBishop_CheckAttack(cAIBishop *self) {
-	cAICharView *c = &self->base;
-	float f = c->blockTime;
+	cAIChar *c = &self->base;
+	float f = c->standTime;
 	vec3_t a, b, d;
 
 	self->blocked = 0;
 	if (1.0f > f) {
-		self->targetLife = Ent_Life(c->target);
-	} else if (f > BISHOP_BLOCK_TIME && self->targetLife <= Ent_Life(c->target)) {
+		self->targetLife = Ent_Life(c->target.target);
+	} else if (f > BISHOP_BLOCK_TIME && self->targetLife <= Ent_Life(c->target.target)) {
 		/* hit since the last check: is the way to the target free */
-		cEntity *tgt = c->target;
-		void *test = AI_VSlot(c->control, 0x38);
-		cEntity *own = c->own;
+		cEntity *tgt = c->target.target;
+		cAICharControl *ctl = c->control;
+		cEntity *own = c->ent;
 		float r = Obj_Vtbl(own)->GetRadius(own);
 		const vec3_t *tp = tgt->vftable->GetPos(tgt, &b);
 		const vec3_t *op = own->vftable->GetPos(own, &a);
-		if (!((byte(__thiscall *)(void *, const vec3_t *, const vec3_t *, float))test)(c->control, op, tp, r)) {
+		if (!AICC_Vtbl(ctl)->TestPath(ctl, op, tp, r)) {
 			self->blocked = 1;
-			c->attack[0x18] = 0;
+			c->ctrl->act = 0;
 			return;
 		}
 		self->blocked = 0;
-		c->blockTime = 0.0f;
+		c->standTime = 0.0f;
 	}
-	cEntity *tgt = c->target;
-	const vec3_t *op = c->own->vftable->GetPos(c->own, &a);
+	cEntity *tgt = c->target.target;
+	const vec3_t *op = c->ent->vftable->GetPos(c->ent, &a);
 	const vec3_t *tp = tgt->vftable->GetPos(tgt, &b);
 	d.y = tp->y - op->y;
 	d.x = tp->x - op->x;
 	d.z = tp->z - op->z;
 	float dist = (float)__builtin_sqrt((double)(d.x * d.x + 0.0f + d.z * d.z));
-	if (!AICharView_Vtbl(self)->CanShoot(self) || Layer0_Priority(c->own) > 0x65 || !(dist > c->attackMin) ||
-		!(c->attackMax > dist)) {
-		c->blockTime = 0.0f;
-		c->attack[0x18] = 0;
+	if (!c->vftable->GetDirect2(c) || AIChar_Action0(c->ent)->priority > 0x65 || !(dist > c->actMin) ||
+		!(c->actMax > dist)) {
+		c->standTime = 0.0f;
+		c->ctrl->act = 0;
 		return;
 	}
 	/* the half angle of the target at its distance, the angle of the view (down z) to it */
-	float tr = Obj_Vtbl(c->target)->GetRadius(c->target);
+	cEntity *t = c->target.target;
+	float tr = Obj_Vtbl(t)->GetRadius(t);
 	double half = Game_Atan2((double)tr, (double)dist);
 	vec3_t fwd = { 0.0f, 0.0f, -1.0f };
-	vec3_t view = WChar(c->own)->view;
+	vec3_t view = WChar(c->ent)->view;
 	vec3_t dir;
 	Vec3_Rotate(&dir, &fwd, &view);
 	double ang = Vec3_Angle(&dir, &d);
 	if (!((double)self->shootAng + half > ang)) {
-		c->attack[0x18] = 0;
+		c->ctrl->act = 0;
 		return;
 	}
-	if (c->attack[0x18]) {
-		c->attack[0x18] = !(c->attackTime > self->shootTime);
+	if (c->ctrl->act) {
+		c->ctrl->act = !(c->actTime > self->shootTime);
 		return;
 	}
-	if ((self->shootFactor == 0 || crt_rand() % self->shootFactor == 0) && !WChar(c->own)->falling &&
-		Layer0_Priority(c->own) == 0) {
-		c->attackTime = 0.0f;
-		c->attack[0x18] = 1;
+	if ((self->shootFactor == 0 || crt_rand() % self->shootFactor == 0) && !WChar(c->ent)->falling &&
+		AIChar_Action0(c->ent)->priority == 0) {
+		c->actTime = 0.0f;
+		c->ctrl->act = 1;
 		return;
 	}
-	c->attack[0x18] = 0;
+	c->ctrl->act = 0;
 }
 
 void __thiscall cAIBishop_SetRanges(cAIBishop *self) {
-	cAICharView *c = &self->base;
+	cAIChar *c = &self->base;
 
 	if (c->state != 2) {
-		cAIChar_SetDists((cAIChar *)self);
+		cAIChar_SetDists(c);
 		return;
 	}
-	c->attackMin = 0.0f;
+	c->actMin = 0.0f;
 	float mx = self->shootDist;
-	c->rangeMin = 400.0f;
-	c->rangeMax = 1250.0f;
-	c->attackMax = mx;
+	c->chaseNear = 400.0f;
+	c->chaseFar = 1250.0f;
+	c->actMax = mx;
 }
 
 void __thiscall cAIBishop_SetShoot(cAIBishop *self) {
-	cEntity *t = self->base.target;
+	cEntity *t = self->base.target.target;
 
 	if (t->vftable->GetAI(t)) {
 		self->shootFactor = g_ShootBishopAIDef;
@@ -165,5 +156,5 @@ void __thiscall cAIBishop_SetShoot(cAIBishop *self) {
 		self->shootTime = g_TimeShootBishopAI;
 		self->shootDist = g_DistMaxShootBishopAI;
 	}
-	AICharView_Vtbl(self)->SetRanges(self);
+	self->base.vftable->SetDists(&self->base);
 }

@@ -72,6 +72,8 @@ int crt_memicmp(const void *a, const void *b, size_t n);
 int crt_chdir(const char *dir);
 void crt_splitpath(const char *path, char *drive, char *dir, char *name, char *ext);
 char *crt_strtok_s(char *s, const char *sep, char **ctx);
+/* strtok with the context of the thread data (rva 0x33bbc1) */
+char *crt_strtok(char *s, const char *sep);
 int *crt_errno(void);
 int crt_getdrive(void);
 int crt_chdrive(int drive);
