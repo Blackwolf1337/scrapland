@@ -131,7 +131,9 @@ struct cAIVehicle {
 	byte b81;			/* 0x081 */
 	byte pad_82[0x86 - 0x82];
 	byte repos;			/* 0x086 "Repos" */
-	byte pad_87[0x90 - 0x87];
+	byte pad_87;
+	byte b88;			/* 0x088 TRAFFIC with a kind of track */
+	byte pad_89[0x90 - 0x89];
 	cAIVehicleSaved pending;	/* 0x090 state AIV_STATE_NONE for none */
 	byte(*onArrive)(cAIVehicle *self);	/* 0x15c GO_TO arrived: 1 if it took care of it */
 	cAIVSlot slotAttack;		/* 0x160 */
@@ -345,10 +347,14 @@ void __thiscall cAIVehicle_ThinkRace(cAIVehicle *self);
  * FOLLOW_THE_PATH: vec3_t dir, speed, b1a8, b81, repos, a, b; FOLLOW_THE_PATH_WITH_SHOOT_CM: vec3_t dir, speed,
  * b1a8, b81 */
 void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...);
+/* the external state from SetState: 0 if the arguments did not fit */
+byte __thiscall cAIVehicle_ChangeState(cAIVehicle *self, int state, va_list args);
+byte __thiscall cAIVehicle_ChangeStateMore(cAIVehicle *self, int state, byte allowed, va_list args);
+/* the vehicle too far from the camera for its view (the repos distances reset to the engine variables) */
+byte __thiscall cAIVehicle_NeedRepos(cAIVehicle *self);
 
 /* ---- the parts of AIVehicle.cpp not in C yet ---- */
 /* the repositioning near the camera */
-byte __thiscall cAIVehicle_NeedRepos(cAIVehicle *self);		/* rva 0x868f0 */
 byte __thiscall cAIVehicle_Repos(cAIVehicle *self);			/* rva 0x89b00 */
 void __thiscall cAIVehicle_GraphTraffic(cAIVehicle *self);		/* rva 0x89070 */
 /* the hook point p free for the vehicle (a line test to a point beside it) */
@@ -357,8 +363,10 @@ byte __thiscall cAIVehicle_TestHookPoint(cAIVehicle *self, const vec3_t *p);	/* 
 vec3_t *__thiscall cAIVehicle_TrackPoint(cAIVehicle *self, vec3_t *out, const vec3_t *p, int track, int node);
 vec3_t *__thiscall cAIVehicle_TrackPointRandom(cAIVehicle *self, vec3_t *out, const vec3_t *p, int track,
 	int node);
-/* the external state from SetState: 0 if the arguments did not fit */
-byte __thiscall cAIVehicle_ChangeState(cAIVehicle *self, int state, va_list args);	/* rva 0x8ea60 */
+/* a point of a traffic track near the camera for the vehicle (in view between minVis and maxVis, else between
+ * minNotVis and maxNotVis, around the point); track and node set; 0 for none */
+byte __thiscall cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis, float maxVis, float minNotVis,
+	float maxNotVis, float around);							/* rva 0x8d3c0 */
 
 /* ---- cAIMove (AI/AIMove.cpp), the base class ---- */
 void *__thiscall cAIMove_ctor(void *self, cEntity *e);
@@ -391,6 +399,8 @@ void __thiscall cAIVehicleControl_Stop(cAIVehicleControl *self);
 /* the move of the control (mode 0 stop, 1 to a point, 2 direct, 3 chase, 6 orient, 7 path; the arguments by mode,
  * see cAIVehicle_SetInternState); 0 if it was refused */
 byte cAIVehicleControl_SetMove(cAIVehicleControl *self, int mode, ...);
+/* the byte at 0xb0: 1 in LOST_PATH, 0 at every change of state */
+void __thiscall cAIVehicleControl_SetFlagB0(cAIVehicleControl *self, byte on);
 cAIVehicleShoot *__thiscall cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehicle *ai, void *params);
 void __thiscall cAIVehicleShoot_Update(cAIVehicleShoot *self, float dt);
 void __thiscall cAIVehicleShoot_Update2(cAIVehicleShoot *self, float dt);

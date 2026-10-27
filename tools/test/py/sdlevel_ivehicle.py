@@ -431,6 +431,57 @@ if ivhCar and ivhCar2 and ivhGroup:
 			ivhState()))
 		check('cAIVehicle_RestoreStateIntern(%d)' % ivhS, lambda: (SDTest.Call(0x08fa10, 'tbii', ivhAI, ivhBuf)[0],
 			ivhState()))
+	# the changes to the states with a target (SDIvhCar2), a goal or a route: the timer of the group set full before
+	# each (a change sets it to 0), the doubles of the arguments as two ints (low, high)
+	def ivhFull(a=0):
+		ivhSet(ivhGroup + 0x5c, (1.0e9,))
+	def ivhChange(sig, args):
+		ivhFull()
+		return (apply(SDTest.Call, (0x08dfb0, sig, ivhAI) + args)[0], ivhState(), ivhI(ivhAI + 0x40) == ivhCar2,
+			ivhF(ivhAI + 0x304, 2), ivhF(ivhAI + 0x4c, 4), ivhF(ivhAI + 0x310, 2), ivhI(ivhAI + 0x5c))
+	ivhD1 = (0, 0x3ff00000)
+	ivhD2 = (0, 0x40000000)
+	ivhD5000 = (0, 0x40b38800)
+	ivhD20000 = (0, 0x40d38800)
+	ivhD300 = (0, 0x4072c000)
+	ivhSrand(31)
+	# the states that move CHECK the radius of the vehicle against RADIUS_SHIP_GRAPH
+	ivhRadius = SDTest.Call(ivhVt(ivhCar, 0xa0), 'tfi', ivhCar)[0]
+	check('radius graph', lambda: (ivhRadius, ivhF(0x844d30, 1)))
+	if ivhRadius < ivhF(0x844d30, 1)[0]:
+		ivhMoves = 1
+	else:
+		ivhMoves = 0
+	for ivhName, ivhSig, ivhArgs in (('FIGHTING', 'biii', (2, ivhCar2)), ('FIGHTING_FREEZE', 'biii', (8, ivhCar2)),
+			('CHASE', 'biiiiiii', (7, ivhCar2) + ivhD5000 + ivhD20000), ('GET_AWAY', 'biii', (12, ivhCar2)),
+			('GET_AWAY_STOP', 'biiiii', (5, ivhCar2) + ivhD5000), ('FIGHTING_HOOK', 'biii', (10, ivhCar2)),
+			('GO_TO', 'biifffiiiiiiiiii', (1, 54000.0, 50000.0, 70000.0) + ivhD300 + (1,) + ivhD2 + ivhD1 + ivhD2 +
+				(1,)),
+			('RACE', 'biifffiiii', (6, 54000.0, 50500.0, 65000.0) + ivhD300 + (0, 1)),
+			('IN_ROUTE', 'biiiiiii', (3, 1) + ivhD1 + ivhD2), ('FREEZE', 'bii', (0,))):
+		if ivhMoves or ivhName == 'FREEZE':
+			check('cAIVehicle_SetState ' + ivhName, lambda s=ivhSig, a=ivhArgs: ivhChange(s, a))
+	if ivhNodesWorld and ivhMoves:
+		for ivhS in (13, 14):
+			check('cAIVehicle_SetState(%d)' % ivhS, lambda s=ivhS: (ivhChange('bii', (s,)), ivhB(ivhCar + 0x5ec)))
+		# FREEZE with the lane off waits (without FREEZE_CHANGE_STATE)
+		check('cAIVehicle_SetState(0) lane off', lambda: (ivhChange('bii', (0,)), ivhB(ivhCar + 0x5ec)))
+		SDTest.Call(0x119960, 'tvii', ivhCar + 0x5c4, 0)
+		check('cAIVehicle_SetState(0) lane on', lambda: ivhChange('bii', (0,)))
+	if ivhMoves:
+		# not let through by the group: pending with the name of its target, FREEZE_CHANGE_STATE meanwhile, then
+		# taken from the pending state
+		ivhSet(ivhGroup + 0x5c, (0.0,))
+		check('cAIVehicle_SetState FIGHTING pending', lambda: (SDTest.Call(0x08dfb0, 'biii', ivhAI, 2, ivhCar2)[0],
+			ivhState(), SDTest.Peek(ivhAI + 0xa9, '@s')))
+		ivhFull()
+		check('cAIVehicle_RestoreState pending', lambda: (SDTest.Call(0x08e010, 'tbii', ivhAI, ivhAI + 0x90)[0],
+			ivhState(), ivhI(ivhAI + 0x40) == ivhCar2))
+		check('cAIVehicle_SetState FREEZE again', lambda: (ivhChange('bii', (0,)), ivhI(ivhAI + 0x40)))
+		# a target the AI cannot have, a state that does not exist
+		check('cAIVehicle_SetState FIGHTING null', lambda: ivhChange('biii', (2, 0)))
+		check('cAIVehicle_SetState unknown', lambda: ivhChange('bii', (17,)))
+
 	# a pending change to FREEZE taken in the update once the group lets it (its timer set full)
 	SDTest.Call(0x08dfb0, 'bii', ivhAI, 15)
 	ivhPoke(ivhAI + 0x90, 0)

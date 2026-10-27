@@ -314,6 +314,44 @@ void __thiscall cAIVehicle_UpdateGraph(cAIVehicle *self) {
 	} while (cSlotController_FireReset(slot, &t));
 }
 
+/* the camera entity of view 0: its rotation at 0x88, its field of view at 0xa8 */
+#define AIV_CAM_ROT(c) ((const vec3_t *)((byte *)(c) + 0x88))
+#define AIV_CAM_FOV(c) (*(float *)((byte *)(c) + 0xa8))
+
+/* the vehicle too far from the camera: in view farther than MaxDistReposAI, out of view farther than
+ * MaxDistReposNotVisAI or (unseen) farther than MinDistReposNotVisAI; the repos distances of the AI reset */
+byte __thiscall cAIVehicle_NeedRepos(cAIVehicle *self) {
+	static const vec3_t front = { 0.0f, 0.0f, 1.0f };
+	vec3_t a, d, dir;
+	cWorld *w = g_pWorld;
+	vec3_t cam = w->camPos[w->curCam];
+	cEntity *c = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
+	const vec3_t *v = self->vehicle->vftable->GetPos(self->vehicle, &a);
+
+	d.y = v->y - cam.y;
+	d.x = v->x - cam.x;
+	d.z = v->z - cam.z;
+	float dist = (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z));
+	self->maxDistRepos = g_MaxDistReposAI;
+	self->minDistRepos = g_MinDistReposAI;
+	self->maxDistReposNotVis = g_MaxDistReposNotVisAI;
+	self->minDistReposNotVis = g_MinDistReposNotVisAI;
+	Vec3_Rotate(&dir, &front, AIV_CAM_ROT(c));
+	double angle = Vec3_Angle(&d, &dir);
+	if (!(angle > (double)(AIV_CAM_FOV(c) * 0.5f * 1.5f))) {
+		if (!(dist > self->maxDistRepos)) {
+			return 0;
+		}
+	}
+	else if (!(dist > self->maxDistReposNotVis)) {
+		if (!(dist > self->minDistReposNotVis) || self->vftable->Vf05(self)) {
+			return 0;
+		}
+	}
+	self->b2e0 = 0;
+	return 1;
+}
+
 void __thiscall cAIVehicle_ReposIfFar(cAIVehicle *self) {
 	if (cAIVehicle_NeedRepos(self)) {
 		cAIVehicle_Repos(self);
@@ -1040,6 +1078,35 @@ static void AIV_SetRotSpeed(cAIVehicle *self, float speed) {
 	self->rotA = a / AIV_ROT_SPEED_A;
 }
 
+/* the vehicle on its way to np, the node of its track (FINISHING_LINE_DIRECT): the speed of the track for the kinds of
+ * track the vehicle keeps to, the turn speeds, the lane from the vehicle to np, one more vehicle on the track */
+static void AIV_StartTrack(cAIVehicle *self, byte indoor, const vec3_t *np) {
+	cTrafficTrackInfo info;
+	vec3_t a;
+	float speed;
+	int type = self->trackType;
+
+	if (type == 1 || type == 0 || type == 2 ||
+			((type == 4 || type == 3) && AIV_VehTraffic(self->vehicle)->type != 0)) {
+		CNodesTraffic *t = indoor ? AIV_Indoor() : AIV_Outdoor();
+		t->vftable->GetInfo(t, &info, self->track);
+		AIV_VehTraffic(self->vehicle)->speed = info.speed;
+		speed = info.speed;
+	}
+	else {
+		speed = g_VelTrafficLightRotAI;
+	}
+	AIV_SetRotSpeed(self, speed);
+	const vec3_t *p = self->vehicle->vftable->GetPos(self->vehicle, &a);
+	AIV_VehTraffic(self->vehicle)->begin = *p;
+	AIV_VehTraffic(self->vehicle)->end = *np;
+	CNodesTraffic *t = indoor ? AIV_Indoor() : AIV_Outdoor();
+	t->vftable->AddVehicle(t, self->track);
+	cAIVehicle_SetInternState(self, AIVI_FINISHING_LINE_DIRECT, *np,
+		(double)(indoor ? g_RadiusObjectiveTrafficInDoor : g_RadiusObjectiveTraffic), 0, (double)self->rotA,
+		(double)self->rotB);
+}
+
 /* the vehicle put on the track at pos, turned to the node, on its way to the node with FINISHING_LINE_DIRECT;
  * 0 if an entity is in the way */
 byte __thiscall cAIVehicle_PlaceOnTrack(cAIVehicle *ai, int type, const vec3_t *pos, int track, int node) {
@@ -1047,8 +1114,6 @@ byte __thiscall cAIVehicle_PlaceOnTrack(cAIVehicle *ai, int type, const vec3_t *
 	cEntity *v = self->vehicle;
 	cEntity *hit;
 	vec3_t np, d, ang, tmp;
-	cTrafficTrackInfo info;
-	float speed;
 
 	self->trackType = type;
 	if (cWorld_TestSphereEntities(g_pWorld, v, (void *)1, pos, Veh(v)->radius * 3.0f, &hit, 1, 0)) {
@@ -1073,25 +1138,7 @@ byte __thiscall cAIVehicle_PlaceOnTrack(cAIVehicle *ai, int type, const vec3_t *
 	tmp.z = 0.0f;
 	AIV_EntVtbl(self->vehicle)->SetVel(self->vehicle, &tmp);
 	np = *cAIVehicle_TrackPointRandom(self, &tmp, &np, self->track, self->node);
-	type = self->trackType;
-	if (type == 1 || type == 0 || type == 2 ||
-			((type == 4 || type == 3) && AIV_VehTraffic(self->vehicle)->type != 0)) {
-		t = AIV_Indoor();
-		t->vftable->GetInfo(t, &info, self->track);
-		AIV_VehTraffic(self->vehicle)->speed = info.speed;
-		speed = info.speed;
-	}
-	else {
-		speed = g_VelTrafficLightRotAI;
-	}
-	AIV_SetRotSpeed(self, speed);
-	const vec3_t *p = self->vehicle->vftable->GetPos(self->vehicle, &tmp);
-	AIV_VehTraffic(self->vehicle)->begin = *p;
-	AIV_VehTraffic(self->vehicle)->end = np;
-	t = AIV_Indoor();
-	t->vftable->AddVehicle(t, self->track);
-	cAIVehicle_SetInternState(self, AIVI_FINISHING_LINE_DIRECT, np, (double)g_RadiusObjectiveTrafficInDoor, 0,
-		(double)self->rotA, (double)self->rotB);
+	AIV_StartTrack(self, 1, &np);
 	self->i34 = 2;
 	return 1;
 }
@@ -1435,6 +1482,336 @@ shoot:
 done:
 	va_end(ap);
 
+}
+
+#define g_RadiusShipGraph GAME_DATA(float, 0x444d30)			/* RADIUS_SHIP_GRAPH */
+#define g_DepthPathRouteOutDoorAI GAME_DATA(int, 0x444960)
+#define g_DepthPathRouteOutDoorAIInit GAME_DATA(int, 0x444964)	/* its default */
+#define g_MaxDistAroundReposAI GAME_DATA(float, 0x444930)
+#define AIV_LOST_SPEED 600.0				/* rva 0x3a8e40 */
+
+/* the name of the target into the pending state (the original copies without a bound) */
+static void AIV_PendingTarget(cAIVehicle *self, const cEntity *e) {
+	const char *src = e->name;
+	char *dst = self->pending.target;
+	int n = sizeof(self->pending.target);
+
+	while (--n > 0 && *src) {
+		*dst++ = *src++;
+	}
+	*dst = 0;
+}
+
+/* the target entity e linked (the link it had let go) */
+static void AIV_LinkTarget(cAIVehicle *self, cEntity *e) {
+	if (AIV_Target(self) == e) {
+		return;
+	}
+	if (AIV_Target(self)) {
+		Nto1Node_UnlinkChecked(&self->target);
+	}
+	Nto1Head_Link((Nto1Node *)((byte *)e + 0x254), &self->target);
+}
+
+/* the states from FIGHTING_HOOK on; 0 for an unknown state or a target the AI cannot have */
+byte __thiscall cAIVehicle_ChangeStateMore(cAIVehicle *self, int state, byte allowed, va_list ap) {
+	cEntity *e;
+	vec3_t a, b;
+
+	switch (state) {
+	case AIV_FIGHTING_HOOK:
+		e = va_arg(ap, cEntity *);
+		if (!self->vftable->CanTarget(self, e)) {
+			return 0;
+		}
+		AIV_PendingTarget(self, e);
+		if (!allowed) {
+			return 1;
+		}
+		AIV_LinkTarget(self, e);
+		self->f330 = 0.0f;
+		cAIVehicle_SetInternState(self, AIVI_CHASE_SHOOTING, (double)g_AIChaseDefault1, (double)g_AIChaseDefault2);
+		return 1;
+	case AIV_FREEZE_OBJ_NOT_ACCESS:
+	case AIV_FREEZE_LOST:
+	case AIV_FREEZE_CHANGE_STATE:
+		cAIVehicle_SetInternState(self, AIVI_STOPPED);
+		return 1;
+	case AIV_GET_AWAY:
+		e = va_arg(ap, cEntity *);
+		if (!self->vftable->CanTarget(self, e)) {
+			return 0;
+		}
+		AIV_PendingTarget(self, e);
+		if (!allowed) {
+			return 1;
+		}
+		AIV_LinkTarget(self, e);
+		g_DepthPathRouteOutDoorAI = 6;
+		AIV_AwayFromTarget(self);
+		cAIVehicle_CheckItems(self);
+		return 1;
+	case AIV_LOST_PATH:
+	case AIV_LOST_PATH_CHASE: {
+		const vec3_t *p = self->vehicle->vftable->GetPos(self->vehicle, &b);
+		CNodesWorld_NearestPointVis(g_NodesWorld, p, &a);
+		cAIVehicle_SetInternState(self, AIVI_FINISHING_LINE_DIRECT, a, AIV_LOST_SPEED, 0, 20.0, 20.0);
+		cAIVehicleControl_SetFlagB0(self->control, 1);
+		cVehicleTraffic_SetOff(AIV_VehTraffic(self->vehicle), 1);
+		return 1;
+	}
+	}
+	Con_Bluef("ERROR PARAM. AI: ESTADO INEXISTENTE.\n");
+	return 0;
+}
+
+/* the external state with its arguments (see SAIPy.c); a change the vehicle group does not let through yet (or one of
+ * a vehicle whose traffic lane is off) waits as pending, the move in FREEZE_CHANGE_STATE meanwhile; 0 for arguments
+ * that do not fit (the AI then in FREEZE) */
+byte __thiscall cAIVehicle_ChangeState(cAIVehicle *self, int state, va_list ap) {
+	char name[256];
+	byte allowed = 1;
+	byte ok = 1;
+	cEntity *e;
+
+	if (state == AIV_LOST_PATH) {
+		goto change;
+	}
+	if (!AIV_FreeState(state)) {
+		allowed = g_VehicleGroup->vftable->CanChange(g_VehicleGroup);
+	}
+	if (state == AIV_LOST_PATH_CHASE || !AIV_VehTraffic(self->vehicle)->off) {
+		if (allowed) {
+			goto change;
+		}
+	}
+	else {
+		allowed = 0;
+	}
+	self->pending.state = state;
+	goto common;
+change:
+	if (state != AIV_FREEZE_CHANGE_STATE) {
+		self->pending.state = AIV_STATE_NONE;
+	}
+	if (state == AIV_TRAFFIC && !g_IsMapOutDoor) {
+		state = AIV_TRAFFIC_INDOOR;
+	}
+	self->stateTime = 0.0f;
+	self->changing = 1;
+	self->changed = 1;
+	self->vehicle->vftable->SetActive(self->vehicle, 1);
+	self->lifeMark = Veh(self->vehicle)->life;
+	cAIVehicleControl_SetFlagB0(self->control, 0);
+	self->prevState = self->state;
+	self->state = state;
+	if (state != AIV_RACE) {
+		cWeaponManager_LockEntity(&Veh(self->vehicle)->weapons, NULL);
+		cWeaponManager_LockPoint(&Veh(self->vehicle)->weapons, NULL);
+	}
+common: {
+	int s = self->state;
+	if (s != AIV_TRAFFIC && s != AIV_TRAFFIC_INDOOR && s != AIV_FREEZE && s != AIV_FREEZE_LOST &&
+			s != AIV_FREEZE_OBJ_NOT_ACCESS && s != AIV_FREEZE_CHANGE_STATE && s != AIV_FIGHTING_FREEZE) {
+		cEntity *v = self->vehicle;
+		if (!(AIV_EntVtbl(v)->GetRadius(v) < g_RadiusShipGraph)) {
+			const char *vname = self->vehicle->name;
+			Con_Bluef("RADIO VEHICULO INVALIDO: %s %f\n", vname,
+				(double)AIV_EntVtbl(self->vehicle)->GetRadius(self->vehicle));
+		}
+		CHECK(AIV_EntVtbl(self->vehicle)->GetRadius(self->vehicle) < g_RadiusShipGraph);
+	}
+	}
+	if (AIV_Target(self)) {
+		CHECK(self->target.data);
+		Nto1Node_Unlink(&self->target);
+	}
+	switch (state) {
+	case AIV_FREEZE:
+		cAIVehicle_SetInternState(self, AIVI_STOPPED);
+		break;
+	case AIV_GO_TO: {
+		cAIVehicleSaved *p = &self->pending;
+		p->dest = va_arg(ap, vec3_t);
+		p->speed = (float)va_arg(ap, double);
+		p->b18 = (byte)va_arg(ap, int);
+		p->f30c = (float)va_arg(ap, double);
+		p->rotA = (float)va_arg(ap, double);
+		p->rotB = (float)va_arg(ap, double);
+		p->b32c = (byte)va_arg(ap, int);
+		if (!allowed) {
+			goto wait;
+		}
+		self->rotA = p->rotA;
+		self->rotB = p->rotB;
+		cAIVehicle_SetInternState(self, AIVI_FINISHING_LINE, p->dest, (double)p->speed, p->b18, (double)p->rotA,
+			(double)p->rotB, (double)p->f30c, p->b32c);
+		break;
+	}
+	case AIV_RACE: {
+		cAIVehicleSaved *p = &self->pending;
+		p->dest = va_arg(ap, vec3_t);
+		p->speed = (float)va_arg(ap, double);
+		p->b18 = (byte)va_arg(ap, int);
+		p->b32c = (byte)va_arg(ap, int);
+		if (!allowed) {
+			goto wait;
+		}
+		Nto1Node_UnlinkChecked(&self->target);
+		self->rotA = 20.0f;
+		self->rotB = 20.0f;
+		cAIVehicle_SetInternState(self, AIVI_FINISHING_LINE, p->dest, (double)p->speed, p->b18, 20.0, 20.0, 1.0,
+			p->b32c);
+		break;
+	}
+	case AIV_FIGHTING_FREEZE:
+	case AIV_FIGHTING:
+	case AIV_CHASE:
+	case AIV_GET_AWAY_STOP:
+		e = va_arg(ap, cEntity *);
+		if (!self->vftable->CanTarget(self, e)) {
+			ok = 0;
+			break;
+		}
+		AIV_PendingTarget(self, e);
+		if (state == AIV_CHASE) {
+			self->pending.chaseMin = (float)va_arg(ap, double);
+			self->pending.chaseMax = (float)va_arg(ap, double);
+		}
+		if (!allowed) {
+			goto wait;
+		}
+		AIV_LinkTarget(self, e);
+		switch (state) {
+		case AIV_FIGHTING_FREEZE:
+			self->rotA = 20.0f;
+			self->rotB = 20.0f;
+			cAIVehicle_SetInternState(self, AIVI_ORIENT_SHOOTING);
+			break;
+		case AIV_FIGHTING:
+			self->rotA = 20.0f;
+			self->rotB = 20.0f;
+			cAIVehicle_SetInternState(self, AIVI_CHASE_SHOOTING, (double)g_AIChaseDefault1,
+				(double)g_AIChaseDefault2);
+			self->b354 = 0;
+			self->b340 = 0;
+			cAIVehicle_CheckItems(self);
+			break;
+		case AIV_CHASE:
+			self->rotA = 20.0f;
+			self->rotB = 20.0f;
+			cAIVehicle_SetInternState(self, AIVI_CHASE_NOT_SHOOTING, (double)self->pending.chaseMin,
+				(double)self->pending.chaseMax);
+			self->b354 = 0;
+			self->b340 = 0;
+			cAIVehicle_CheckItems(self);
+			break;
+		case AIV_GET_AWAY_STOP:
+			self->f2f0 = (float)va_arg(ap, double);
+			g_DepthPathRouteOutDoorAI = 6;
+			self->rotA = 3.0f;
+			self->rotB = 2.0f;
+			AIV_AwayFromTarget(self);
+			cAIVehicle_CheckItems(self);
+			break;
+		}
+		break;
+	case AIV_IN_ROUTE: {
+		cAIVehicleSaved *p = &self->pending;
+		p->repos = (byte)va_arg(ap, int);
+		p->rotA = (float)va_arg(ap, double);
+		p->rotB = (float)va_arg(ap, double);
+		if (!allowed) {
+			goto wait;
+		}
+		g_DepthPathRouteOutDoorAI = g_DepthPathRouteOutDoorAIInit;
+		/* a random direction in the plane, x and z in -1..1 */
+		double r = (double)(crt_rand() & 0x7fff) * g_WeapRandScale;
+		vec3_t dir;
+		dir.x = (float)(r + r - 1.0);
+		r = (double)(crt_rand() & 0x7fff) * g_WeapRandScale;
+		self->rotA = p->rotA;
+		dir.z = (float)(r + r - 1.0);
+		dir.y = 0.0f;
+		self->rotB = p->rotB;
+		cAIVehicle_SetInternState(self, AIVI_FOLLOW_THE_PATH, dir, (double)g_RadiusObjectiveInRoute, 0, 1, p->repos,
+			(double)self->rotA, (double)self->rotB);
+		cAIVehicle_CheckItems(self);
+		break;
+	}
+	case AIV_TRAFFIC: {
+		vec3_t p, tmp;
+		self->repos = 1;
+		cAIVehicle_PickTrackType(self);
+		AIV_VehTraffic(self->vehicle)->active = 0;
+		self->vehicle->vftable->SetActive(self->vehicle, 0);
+		self->b88 = 0;
+		if (self->trackType == 5) {
+			ok = 0;
+			break;
+		}
+		self->b88 = 1;
+		self->b2e0 = 0;
+		if (!cAIVehicle_ReposTraffic(self, &p, 0.0f, self->maxDistRepos, 0.0f, self->maxDistReposNotVis,
+				g_MaxDistAroundReposAI)) {
+			self->b2e0 = 0;
+			self->vehicle->vftable->SetActive(self->vehicle, 0);
+			cAIVehicle_SetInternState(self, AIVI_STOPPED);
+			break;
+		}
+		p = *cAIVehicle_TrackPointRandom(self, &tmp, &p, self->track, self->node);
+		AIV_VehTraffic(self->vehicle)->active = 1;
+		AIV_StartTrack(self, 0, &p);
+		break;
+	}
+	case AIV_TRAFFIC_INDOOR:
+		cAIVehicle_PickTrackType(self);
+		AIV_VehTraffic(self->vehicle)->active = 0;
+		self->vehicle->vftable->SetActive(self->vehicle, 0);
+		if (self->trackType == 5) {
+			ok = 0;
+			break;
+		}
+		CNodesTrafficInDoor_AddVehicle((CNodesTrafficInDoor *)g_NodesTrafficInDoor, self);
+		cAIVehicle_SetInternState(self, AIVI_STOPPED);
+		break;
+	default:
+		ok = cAIVehicle_ChangeStateMore(self, state, allowed, ap);
+		break;
+	}
+	if (allowed) {
+		self->changing = 0;
+		if (!ok) {
+			goto bad;
+		}
+		if (!AIV_FreeState(state)) {
+			g_VehicleGroup->vftable->ResetChange(g_VehicleGroup);
+		}
+		cAIVehicle_StateName(state, name);
+		if (!AIV_Target(self)) {
+			self->vftable->Debugf(self, "CAMBIO DE ESTADO REALIZADO -> %s", name);
+		}
+		else {
+			self->vftable->Debugf(self, "CAMBIO DE ESTADO REALIZADO -> %s - OBJETIVO: %s", name,
+				AIV_Target(self)->name);
+		}
+		return ok;
+	}
+	if (ok) {
+		goto waiting;
+	}
+bad:
+	Con_Bluef("CAMBIO de ESTADO con PARAMETROS INCORRECTOS\n");
+	cAIVehicle_SetStateIntern(self, AIV_FREEZE);
+	return ok;
+wait:
+	ok = 1;
+waiting:
+	if (!AIV_VehTraffic(self->vehicle)->off) {
+		self->vftable->Debugf(self, "En ESPERA CAMBIO de ESTADO -> FREEZE_CHANGE_STATE");
+		cAIVehicle_SetStateIntern(self, AIV_FREEZE_CHANGE_STATE);
+	}
+	return ok;
 }
 
 /* the saved state taken again with its arguments; the target by its name */
