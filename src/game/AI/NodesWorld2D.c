@@ -323,21 +323,9 @@ byte __thiscall CNodesWorld2D_FitAt(CNodesWorld2D *self, float x, float y, float
 byte __thiscall CNodesWorld2D_Walk(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float up, float foot,
 	float r, float h2, float h1) {
 	vec3_t c = *a, dir, next, hit, d;
-	float dx = b->x - a->x;
-	float dz = b->z - a->z;
-	float len = (float)__builtin_sqrt((double)((dx * dx + 0.0f) + dz * dz));
 
 	(void)self;
-	if (len == 0.0f) {
-		dir.x = dx;
-		dir.y = 0.0f;
-		dir.z = dz;
-	} else {
-		float inv = 1.0f / len;
-		dir.x = dx * inv;
-		dir.y = inv * 0.0f;
-		dir.z = dz * inv;
-	}
+	NW_Normalize(&dir, b->x - a->x, 0.0f, b->z - a->z);
 	/* the box of a and b on the floor the steps stay in */
 	float minX = a->x, maxX, minZ = a->z, maxZ;
 	if (b->x > minX) {
@@ -407,6 +395,187 @@ byte __thiscall CNodesWorld2D_WalkFit(CNodesWorld2D *self, const vec3_t *a, cons
 		return 0;
 	}
 	return CNodesWorld2D_Walk(self, &hb, &ha, up, foot, r, h2, h1);
+}
+
+byte __thiscall CNodesWorld2D_TestStep(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float r, float h) {
+	vec3_t s = *a, f, q, hit, p, g;
+
+	s.y = s.y - r;
+	float len = NW_Normalize(&f, b->x - s.x, 0.0f, b->z - s.z);
+	q.x = f.x * len + s.x;
+	q.y = f.y * len + s.y;
+	q.z = f.z * len + s.z;
+	if (!Engine_TestLine(&s, &q, &hit, NULL)) {
+		return 1;
+	}
+	float d = (float)__builtin_sqrt((double)((s.y - hit.y) * (s.y - hit.y) + (s.x - hit.x) * (s.x - hit.x) +
+		(s.z - hit.z) * (s.z - hit.z)));
+	float back = 20.0f > d ? d * 0.5f : 20.0f;
+	p.x = hit.x - f.x * back;
+	p.y = hit.y - f.y * back;
+	p.z = hit.z - f.z * back;
+	if (!CNodesWorld2D_Ground(self, &p, &g, h)) {
+		return 0;
+	}
+	return Engine_TestSphere(&g, &g, r, NULL, NULL) == 0;
+}
+
+static void NW2D_Neg(vec3_t *out, const vec3_t *v) {
+	out->x = -v->x;
+	out->y = -v->y;
+	out->z = -v->z;
+}
+
+/* the sides u and -u of the path from a along dl at radius r free */
+static int NW2D_PathSides(const vec3_t *a, const vec3_t *u, float r, const vec3_t *dl, cNWSegList *debug) {
+	vec3_t nu;
+
+	if (!NW_PathSide(a, u, r, dl, debug)) {
+		return 0;
+	}
+	NW2D_Neg(&nu, u);
+	return NW_PathSide(a, &nu, r, dl, debug);
+}
+
+byte __thiscall CNodesWorld2D_TestPath(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float r, float r2,
+	float h, float h2, cNWSegList *debug) {
+	static const vec3_t up = { 0.0f, 1.0f, 0.0f };
+	vec3_t ha, hb, A, B, d, n, nn, u, v, dl;
+
+	(void)r2;
+	(void)h2;
+	if (!NW2D_Probe(a, &ha)) {
+		return 0;
+	}
+	A.x = ha.x;
+	A.y = ha.y + h;
+	A.z = ha.z;
+	float off = Float_MaxSS(h - r, g_NW2DHeight);
+	ha.y = ha.y + off;
+	if (!NW2D_Probe(b, &hb)) {
+		return 0;
+	}
+	B.x = hb.x;
+	B.y = hb.y + h;
+	B.z = hb.z;
+	hb.y = hb.y + off;
+	if (Engine_TestLine(&ha, &hb, NULL, NULL)) {
+		return 0;
+	}
+	NW_DebugSeg(debug, &ha, &hb);
+	float len = NW_Normalize(&d, hb.x - ha.x, hb.y - ha.y, hb.z - ha.z);
+	/* the side of the path: d x (0 1 0), the products with 0 kept; a vertical path is free */
+	float sx = d.y * 0.0f - d.z, sy = d.z * 0.0f - d.x * 0.0f, sz = d.x - d.y * 0.0f;
+	if (sx == 0.0f && sy == 0.0f && sz == 0.0f) {
+		return 1;
+	}
+	NW_Normalize(&n, sx, sy, sz);
+	dl.x = d.x * len;
+	dl.y = d.y * len;
+	dl.z = d.z * len;
+	if (!NW2D_PathSides(&A, &n, r, &dl, debug)) {
+		return 0;
+	}
+	NW2D_Neg(&nn, &n);
+	if (!NW_PathSide(&A, &up, r, &dl, debug)) {
+		return 0;
+	}
+	v.x = nn.x + 0.0f;
+	v.y = nn.y + 1.0f;
+	v.z = nn.z + 0.0f;
+	Vec3_NormalizeTo(&u, &v);
+	if (!NW2D_PathSides(&A, &u, r, &dl, debug)) {
+		return 0;
+	}
+	v.x = nn.x - 0.0f;
+	v.y = nn.y - 1.0f;
+	v.z = nn.z - 0.0f;
+	Vec3_NormalizeTo(&u, &v);
+	if (!NW2D_PathSides(&A, &u, r, &dl, debug)) {
+		return 0;
+	}
+	if (!CNodesWorld2D_TestStep(self, &A, &B, r, h)) {
+		return 0;
+	}
+	return CNodesWorld2D_TestStep(self, &B, &A, r, h) != 0;
+}
+
+/* the side of the direction d: d x (0 1 0), the products with 0 kept; 0 for a vertical d */
+static int NW2D_Side(vec3_t *out, const vec3_t *d) {
+	out->x = d->y * 0.0f - d->z;
+	out->y = d->z * 0.0f - d->x * 0.0f;
+	out->z = d->x - d->y * 0.0f;
+	return out->x != 0.0f || out->y != 0.0f || out->z != 0.0f;
+}
+
+/* the corner at b between the sides u1 and u0 free: the sides, then the sides turned up and down */
+static int NW2D_CornerSides(const vec3_t *b, const vec3_t *u1, const vec3_t *u0, float r, cNWSegList *debug) {
+	vec3_t v, s1, s0;
+
+	if (!NW_CornerSide(b, u1, u0, r, debug)) {
+		return 0;
+	}
+	v.x = u1->x + 0.0f;
+	v.y = u1->y + 1.0f;
+	v.z = u1->z + 0.0f;
+	Vec3_NormalizeTo(&s1, &v);
+	v.x = u0->x + 0.0f;
+	v.y = u0->y + 1.0f;
+	v.z = u0->z + 0.0f;
+	Vec3_NormalizeTo(&s0, &v);
+	if (!NW_CornerSide(b, &s1, &s0, r, debug)) {
+		return 0;
+	}
+	v.x = u1->x - 0.0f;
+	v.y = u1->y - 1.0f;
+	v.z = u1->z - 0.0f;
+	Vec3_NormalizeTo(&s1, &v);
+	v.x = u0->x - 0.0f;
+	v.y = u0->y - 1.0f;
+	v.z = u0->z - 0.0f;
+	Vec3_NormalizeTo(&s0, &v);
+	return NW_CornerSide(b, &s1, &s0, r, debug);
+}
+
+byte __thiscall CNodesWorld2D_TestCorner(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, const vec3_t *c,
+	float r, float r2, float h, float h2, byte flat, cNWSegList *debug) {
+	vec3_t ha, hb, hc, B, d1, d0, n, n1, n0;
+
+	(void)self;
+	(void)r2;
+	(void)h2;
+	if (!NW2D_Probe(b, &hb)) {
+		return 0;
+	}
+	B.x = hb.x;
+	B.y = hb.y + h;
+	B.z = hb.z;
+	float off = Float_MaxSS(h - r, g_NW2DHeight);
+	hb.y = hb.y + off;
+	if (!NW2D_Probe(c, &hc)) {
+		return 0;
+	}
+	hc.y = hc.y + off;
+	if (!NW2D_Probe(a, &ha)) {
+		return 0;
+	}
+	ha.y = ha.y + off;
+	NW_Normalize(&d1, hc.x - hb.x, hc.y - hb.y, hc.z - hb.z);
+	NW_Normalize(&d0, hb.x - ha.x, hb.y - ha.y, hb.z - ha.z);
+	/* a vertical side is free */
+	if (!NW2D_Side(&n, &d1)) {
+		return 1;
+	}
+	Vec3_NormalizeTo(&n1, &n);
+	if (!NW2D_Side(&n, &d0)) {
+		return 1;
+	}
+	Vec3_NormalizeTo(&n0, &n);
+	if (!flat) {
+		NW2D_Neg(&n1, &n1);
+		NW2D_Neg(&n0, &n0);
+	}
+	return NW2D_CornerSides(&B, &n1, &n0, r, debug);
 }
 
 byte __thiscall CNodesWorld2D_TestWalk(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float shrink) {
@@ -639,7 +808,7 @@ void __thiscall CNodesWorld2D_CollectCell(CNodesWorld2D *self, const vec3_t *pos
 		if (w->maxVisDist * w->maxVisDist > d2 && d2 > distMin * distMin && (!useMax || distMax * distMax > d2)) {
 			int add;
 			if (mode == 0) {
-				add = CNodesWorld2D_TestPath(self, pos, &q, r, r, h1, h2, 0);
+				add = CNodesWorld2D_TestPath(self, pos, &q, r, r, h1, h2, NULL);
 			} else if (mode == 1) {
 				add = CNodesWorld2D_GroundSees(self, &q, pos, h1);
 			} else if (mode == 2 && !g_IsMapOutDoor) {
@@ -708,20 +877,7 @@ void __thiscall CNodesWorld2D_SearchRings(CNodesWorld2D *self, const vec3_t *pos
 	w->grid->vftable->CellCoords(w->grid, pos, &c[0], &c[1], &c[2]);
 	w->grid->vftable->GetDivs(w->grid, &n[0], &n[1], &n[2]);
 	w->grid->vftable->GetCellSize(w->grid, &cs);
-	{
-		float dx = (pos->x + 1.0f) - pos->x, dy = (pos->y + 1.0f) - pos->y, dz = (pos->z + 1.0f) - pos->z;
-		float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-		if (len == 0.0f) {
-			dir.x = dx;
-			dir.y = dy;
-			dir.z = dz;
-		} else {
-			float inv = 1.0f / len;
-			dir.x = dx * inv;
-			dir.y = dy * inv;
-			dir.z = dz * inv;
-		}
-	}
+	NW_Normalize(&dir, (pos->x + 1.0f) - pos->x, (pos->y + 1.0f) - pos->y, (pos->z + 1.0f) - pos->z);
 	/* the start box: from the cell of pos to the cell of the point distMin along the diagonal */
 	if (distMin > 0.0f) {
 		st[0] = (int)(((pos->x + dir.x * distMin) - w->min.x) / cs.x);
@@ -921,7 +1077,7 @@ byte __thiscall CNodesWorld2D_BuildPath(CNodesWorld2D *self, cNWVecList *path, i
 	CHECK(depth <= 20);
 	DListVec3_Clear(path);
 	s = *start;
-	if (direct && CNodesWorld2D_TestPath(self, &s, &(*node)->pos, r, r, h1, h2, 0)) {
+	if (direct && CNodesWorld2D_TestPath(self, &s, &(*node)->pos, r, r, h1, h2, NULL)) {
 		cur = *node;
 		cand[0] = cur;
 		ncand = 1;

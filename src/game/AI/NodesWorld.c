@@ -308,9 +308,7 @@ void __thiscall CNodesWorld_ClearLists(CNodesWorld *self) {
 	}
 }
 
-/* x y z made a unit vector (left as it is for the length 0); the length. The original sums the squares x or y
- * first, the same sum. */
-static float NW_Normalize(vec3_t *out, float x, float y, float z) {
+float NW_Normalize(vec3_t *out, float x, float y, float z) {
 	float len = (float)__builtin_sqrt((double)(y * y + x * x + z * z));
 
 	if (len == 0.0f) {
@@ -326,15 +324,14 @@ static float NW_Normalize(vec3_t *out, float x, float y, float z) {
 	return len;
 }
 
-static void NW_DebugSeg(cNWSegList *debug, const vec3_t *a, const vec3_t *b) {
+void NW_DebugSeg(cNWSegList *debug, const vec3_t *a, const vec3_t *b) {
 	if (g_NWDebugSegs && debug) {
 		vec3_t seg[2] = { *a, *b };
 		NWSegList_Append(debug, seg);
 	}
 }
 
-/* the segment from a + side * r along dl; 1 if it is free */
-static int NW_PathSide(const vec3_t *a, const vec3_t *side, float r, const vec3_t *dl, cNWSegList *debug) {
+int NW_PathSide(const vec3_t *a, const vec3_t *side, float r, const vec3_t *dl, cNWSegList *debug) {
 	vec3_t p, q;
 
 	p.x = side->x * r + a->x;
@@ -436,8 +433,7 @@ byte __thiscall CNodesWorld_TestPath(CNodesWorld *self, const vec3_t *a, const v
 	return 1;
 }
 
-/* the segment between b + u * r and b + v * r free of the level */
-static int NW_CornerSide(const vec3_t *b, const vec3_t *u, const vec3_t *v, float r, cNWSegList *debug) {
+int NW_CornerSide(const vec3_t *b, const vec3_t *u, const vec3_t *v, float r, cNWSegList *debug) {
 	vec3_t p, q;
 
 	p.x = u->x * r + b->x;

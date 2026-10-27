@@ -73,6 +73,23 @@ def n2dVecRing(lst, m):
 def n2dNodeIdx(nodes, v):
 	return (v - nodes) / 0x14
 
+# the debug segments of a list, freed after
+def n2dSegs(lst):
+	r = []
+	h = n2dI(lst)
+	p = h
+	while p and len(r) < 50:
+		r.append(n2dF(p + 8, 6))
+		q = n2dI(p)
+		n2dDelete(p, 0x20)
+		p = q
+		if p == h:
+			break
+	n = n2dI(lst + 8)
+	n2dPoke(lst, 0)
+	n2dPoke(lst + 8, 0)
+	return (n, r)
+
 # ---- the 3D graph of FZ: the CNodesWorldSup methods and the 2D queries ----
 
 def n2dSupW(w, n, nodes):
@@ -151,6 +168,37 @@ def n2dGround(w, n, nodes):
 			for shrink in (0.0, 1.0):
 				check('n2d TestWalk%s%s %s' % (fmt(p), fmt(d), fmt(shrink)), lambda w=w, p=p, q=q, shrink=shrink:
 					SDTest.Call(0x0b0640, 'tbiFFf', w, p, q, shrink)[0])
+		for d in ((0.0, 0.0, 0.0), (300.0, 10.0, 200.0), (0.0, 400.0, 0.0), (-800.0, 0.0, 50.0)):
+			q = n2dAdd(p, d)
+			for r, h in ((0.0, 30.0), (40.0, 100.0), (155.0, 50.0)):
+				check('n2d TestPath%s%s %s %s' % (fmt(p), fmt(d), fmt(r), fmt(h)), lambda w=w, p=p, q=q, r=r, h=h:
+					(SDTest.Call(0x0ae190, 'tbiFFffffi', w, p, q, r, r, h, 7.0, 0)[0], SDTest.Call(0x0af070, 'tbiFFff', w,
+					p, q, r, h)[0]))
+			sw = SDTest.Peek(0x444e3c, 'i')
+			SDTest.Poke(0x444e3c, 1)
+			dbg = n2dCalloc(0x18)
+			check('n2d TestPath%s%s segs' % (fmt(p), fmt(d)), lambda w=w, p=p, q=q, dbg=dbg: (SDTest.Call(0x0ae190,
+				'tbiFFffffi', w, p, q, 25.0, 25.0, 40.0, 0.0, dbg)[0], n2dSegs(dbg)))
+			n2dFree(dbg)
+			SDTest.Poke(0x444e3c, sw)
+		for d1, d2 in (((300.0, 0.0, 0.0), (0.0, 0.0, 300.0)), ((200.0, 50.0, 100.0), (-100.0, 0.0, 250.0)),
+				((0.0, 0.0, 0.0), (100.0, 0.0, 0.0)), ((0.0, 300.0, 0.0), (150.0, 0.0, -40.0))):
+			b = n2dAdd(p, d1)
+			c = n2dAdd(b, d2)
+			for r, h in ((0.0, 30.0), (40.0, 100.0)):
+				for flat in (0, 1):
+					check('n2d TestCorner%s%s%s %s %s %d' % (fmt(p), fmt(d1), fmt(d2), fmt(r), fmt(h), flat), lambda w=w,
+						p=p, b=b, c=c, r=r, h=h, flat=flat: SDTest.Call(0x0af2f0, 'tbiFFFffffii', w, p, b, c, r, r, h, 3.0,
+						flat, 0)[0])
+			sw = SDTest.Peek(0x444e3c, 'i')
+			SDTest.Poke(0x444e3c, 1)
+			dbg = n2dCalloc(0x18)
+			for flat in (0, 1):
+				check('n2d TestCorner%s%s%s segs %d' % (fmt(p), fmt(d1), fmt(d2), flat), lambda w=w, p=p, b=b, c=c,
+					flat=flat, dbg=dbg: (SDTest.Call(0x0af2f0, 'tbiFFFffffii', w, p, b, c, 20.0, 20.0, 40.0, 0.0, flat,
+					dbg)[0], n2dSegs(dbg)))
+			n2dFree(dbg)
+			SDTest.Poke(0x444e3c, sw)
 
 # the point searches of the 2D graph on a graph with a grid; list holds 40 pointers
 def n2dSearch(w, n, nodes, tag, lst):
@@ -350,6 +398,12 @@ def n2dFiles():
 		if not n2dInside(n2dF(n2dI(m2 + 0x1a8) + 0x14 * i, 3), box[0:3], box[3:6]):
 			ok = 0
 	n2dDelete2D(m2)
+	# a grid of cells of 750 over the box: not too many
+	cells = 1.0
+	for k in range(3):
+		cells = cells * (int((box[k + 3] - box[k]) / 750.0) + 1)
+	if cells > 200000.0:
+		ok = 0
 	check('n2d Load(-1) inside', lambda ok=ok: ok)
 	if ok:
 		out = SDTest.Peek(0x4677e8, 'i')

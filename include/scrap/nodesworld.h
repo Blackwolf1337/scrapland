@@ -316,6 +316,15 @@ void __thiscall CNodesWorld_AnalizeMap(CNodesWorld *self, const vec3_t *init, co
 void NW_LevelPath(char *path, const CNodesWorld *self, const char *file);
 /* the position of the camera entity of view 0 (vtable slot 0x5c of the Cam) */
 void NW_CamPos(float *x, float *y, float *z);
+/* x y z made a unit vector (left as it is for the length 0); the length. The original sums the squares x or y
+ * first, the same sum. */
+float NW_Normalize(vec3_t *out, float x, float y, float z);
+/* the segment a b into the debug list of the path tests when g_NWDebugSegs is on */
+void NW_DebugSeg(cNWSegList *debug, const vec3_t *a, const vec3_t *b);
+/* the segment from a + side * r along dl; 1 if it is free */
+int NW_PathSide(const vec3_t *a, const vec3_t *side, float r, const vec3_t *dl, cNWSegList *debug);
+/* the segment between b + u * r and b + v * r free of the level */
+int NW_CornerSide(const vec3_t *b, const vec3_t *u, const vec3_t *v, float r, cNWSegList *debug);
 /* CNodesWorld_ctor: ai.h */
 void __fastcall CNodesWorld_dtor(CNodesWorld *self);
 CNodesWorld *__thiscall CNodesWorld_Delete(CNodesWorld *self, byte flags);

@@ -92,9 +92,18 @@ byte __thiscall CNodesWorld2D_WalkFit(CNodesWorld2D *self, const vec3_t *a, cons
 	float r, float h2, float h1);
 /* the three bodies (radius less shrink) fit at a and b and walk both ways */
 byte __thiscall CNodesWorld2D_TestWalk(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float shrink);
-/* the segment a b free on the floor, with the sides at radius r (the original, not in C yet) */
+/* the body of radius r at the foot height of a walks straight towards b (y kept), or what it hits leaves room 20
+ * (at most half the way) before it for a sphere of r on the floor there */
+byte __thiscall CNodesWorld2D_TestStep(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float r, float h);
+/* the floor points of a and b (raised by max(h - r, g_NW2DHeight)) see each other, the segments at radius r around
+ * the path at height h are free (the side, up, and the two between), and TestStep both ways; r2 and h2 not used,
+ * debug as in CNodesWorld_TestPath */
 byte __thiscall CNodesWorld2D_TestPath(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float r, float r2,
-	float h1, float h2, int debug);
+	float h, float h2, cNWSegList *debug);
+/* the corner a b c at b free on the floor: the segments between the sides of a b and of b c at radius r and height h,
+ * turned up and down (not flat: the other side); r2 and h2 not used, debug as in CNodesWorld_TestPath */
+byte __thiscall CNodesWorld2D_TestCorner(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, const vec3_t *c,
+	float r, float r2, float h, float h2, byte flat, cNWSegList *debug);
 /* the generation of the graph (not in C yet) */
 byte __thiscall CNodesWorld2D_Generate(CNodesWorld2D *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 /* the pairs of points nearer than 2 * f40 that are not linked, into list sorted by the distance on the floor */
