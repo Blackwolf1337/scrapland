@@ -1547,244 +1547,263 @@ rva	size	source	callconv	name	signature
 0007ee50	1018	USER_DEFINED	__thiscall	cAICharControl3D_TryStrafe	byte __thiscall(int side, void * hitEnt, byte back, float keep, byte fwd, float sd, byte e2)
 0007f250	2805	ANALYSIS	__thiscall	cAICharControl3D::vf30	undefined __thiscall(void)
 0007fd50	2582	ANALYSIS	__thiscall	cAICharControl3D::vf31	undefined __thiscall(void)
-00080770	32	DEFAULT	unknown	FUN_00480770	
-00080790	98	USER_DEFINED	__thiscall	cAICharGroup::cAICharGroup	undefined __thiscall(void)
-00080800	16	DEFAULT	unknown	FUN_00480800	
-00080810	57	DEFAULT	unknown	FUN_00480810	
-00080850	111	DEFAULT	unknown	FUN_00480850	
-000808c0	205	DEFAULT	unknown	FUN_004808c0	
-00080990	208	DEFAULT	unknown	FUN_00480990	
-00080a60	35	ANALYSIS	__thiscall	cAICharGroup::vf00	undefined __thiscall(void)
-00080a90	285	DEFAULT	unknown	FUN_00480a90	
-00080bb0	134	DEFAULT	unknown	FUN_00480bb0	
-00080c40	74	DEFAULT	unknown	FUN_00480c40	
-00080c90	123	DEFAULT	unknown	FUN_00480c90	
-00080d20	448	USER_DEFINED	__thiscall	cAICharGroup::GetReposPos	byte __thiscall(float * pos, char * name, float * out, void * target)
-00080ee0	1469	DEFAULT	unknown	FUN_00480ee0	
-000814b0	1402	DEFAULT	unknown	FUN_004814b0	
+00080770	32	USER_DEFINED	__fastcall	cAICGPoint_ctor	void * __fastcall(void * self)
+00080790	98	USER_DEFINED	__thiscall	cAICharGroup_ctor	void * __thiscall(void)
+00080800	16	USER_DEFINED	__fastcall	cAICGZoneList_dtor	void __fastcall(void * list)
+00080810	57	USER_DEFINED	__fastcall	cAICGZoneData_dtor	void __fastcall(void * zone)
+00080850	111	USER_DEFINED	__fastcall	cAICGPoint_dtor	void __fastcall(void * self)
+000808c0	205	USER_DEFINED	__fastcall	cAICharGroup_dtor	void __fastcall(void * self)
+00080990	208	USER_DEFINED	__thiscall	cAICGPoint_Delete	void * __thiscall(uint flags)
+00080a60	35	USER_DEFINED	__thiscall	cAICharGroup_Delete	void * __thiscall(byte flags)
+00080a90	285	USER_DEFINED	__fastcall	cAICGZoneList_Clear	void __fastcall(void * list)
+00080bb0	134	USER_DEFINED	__fastcall	cAICGPosList_Clear	void __fastcall(void * list)
+00080c40	74	USER_DEFINED	__stdcall	Nto1Node_UnlinkOpt	void __stdcall(void * node)
+00080c90	123	USER_DEFINED	__fastcall	cAICGZoneList_FreePool	void __fastcall(void * list)
+00080d10	16	USER_DEFINED	__thiscall	cAICharGroup_GetZones	void * __thiscall(void)
+00080d20	448	USER_DEFINED	__thiscall	cAICharGroup_GetReposPos	byte __thiscall(void * pos, char * name, void * out, void * target)
+00080ee0	1469	USER_DEFINED	__thiscall	cAICharGroup_FindRepos	byte __thiscall(void * out, void * e, float minDist, float maxDist, byte flag)
+000814a0	16	USER_DEFINED	__thiscall	cAICharGroup_NumZones	int __thiscall(void)
+000814b0	1402	USER_DEFINED	__thiscall	cAICharGroup_Init	void __thiscall(void)
 00081a30	115	USER_DEFINED	__fastcall	Nto1Head::UnlinkAll	void __fastcall(void * head)
 00081ab0	6	DEFAULT	unknown	FUN_00481ab0	
 00081ac0	37	DEFAULT	unknown	FUN_00481ac0	
-00081af0	39	DEFAULT	unknown	FUN_00481af0	
-00081b30	44	ANALYSIS	__thiscall	cAIControlBankDirector::vf00	undefined __thiscall(void)
-00081b60	736	ANALYSIS	__thiscall	cAIControlBankDirector::vf91	undefined __thiscall(void)
-00081e40	39	DEFAULT	unknown	FUN_00481e40	
-00081e80	44	ANALYSIS	__thiscall	cAIControlBankMaster::vf00	undefined __thiscall(void)
-00081eb0	1162	ANALYSIS	__thiscall	cAIControlBankMaster::vf97	undefined __thiscall(void)
-00082340	736	ANALYSIS	__thiscall	cAIControlBankMaster::vf91	undefined __thiscall(void)
-00082620	134	DEFAULT	unknown	FUN_00482620	
-000826c0	44	ANALYSIS	__thiscall	cAIControlBishop::vf00	undefined __thiscall(void)
-000826f0	106	ANALYSIS	__thiscall	cAIControlBishop::vf87	undefined __thiscall(void)
-00082760	57	ANALYSIS	__thiscall	cAIControlBishop::vf90	undefined __thiscall(void)
-000827a0	1739	DEFAULT	unknown	FUN_004827a0	
-00082e70	24	ANALYSIS	__thiscall	cAIControlBishop::vf91	undefined __thiscall(void)
-00082e90	93	ANALYSIS	__thiscall	cAIControlBishop::vf25	undefined __thiscall(void)
-00082ef0	134	DEFAULT	unknown	FUN_00482ef0	
-00082f90	44	ANALYSIS	__thiscall	cAIControlGear::vf00	undefined __thiscall(void)
-00082fc0	193	ANALYSIS	__thiscall	cAIControlGear::vf87	undefined __thiscall(void)
-00083090	101	ANALYSIS	__thiscall	cAIControlGear::vf83	undefined __thiscall(void)
-00083100	101	ANALYSIS	__thiscall	cAIControlGear::vf70	undefined __thiscall(void)
-00083170	101	ANALYSIS	__thiscall	cAIControlGear::vf53	undefined __thiscall(void)
-000831e0	57	ANALYSIS	__thiscall	cAIControlGear::vf90	undefined __thiscall(void)
-00083220	1819	DEFAULT	unknown	FUN_00483220	
-00083940	24	ANALYSIS	__thiscall	cAIControlGear::vf91	undefined __thiscall(void)
-00083960	8	ANALYSIS	__thiscall	cAIControlGear::vf89	undefined __thiscall(void)
-00083970	97	ANALYSIS	__thiscall	cAIControlGear::vf25	undefined __thiscall(void)
-000839e0	134	ANALYSIS	__thiscall	cAIControlGear::vf29	undefined __thiscall(void)
-00083a70	39	DEFAULT	unknown	FUN_00483a70	
-00083ab0	44	ANALYSIS	__thiscall	cAIControlMessenger::vf00	undefined __thiscall(void)
-00083ae0	198	ANALYSIS	__thiscall	cAIControlMessenger::vf85	undefined __thiscall(void)
-00083bb0	95	ANALYSIS	__thiscall	cAIControlMessenger::vf29	undefined __thiscall(void)
-00083c10	39	DEFAULT	unknown	FUN_00483c10	
-00083c50	44	ANALYSIS	__thiscall	cAIControlNurse::vf00	undefined __thiscall(void)
-00083c80	282	ANALYSIS	__thiscall	cAIControlNurse::vf91	undefined __thiscall(void)
-00083da0	134	DEFAULT	unknown	FUN_00483da0	
-00083e40	44	ANALYSIS	__thiscall	cAIControlSentinel::vf00	undefined __thiscall(void)
-00083e70	57	ANALYSIS	__thiscall	cAIControlSentinel::vf90	undefined __thiscall(void)
-00083eb0	1082	DEFAULT	unknown	FUN_00483eb0	
-000842f0	24	ANALYSIS	__thiscall	cAIControlSentinel::vf91	undefined __thiscall(void)
-00084310	36	ANALYSIS	__thiscall	CDocObjectServerItem::CDocObjectServerItem	undefined __thiscall(COleServerDoc * param_1, int param_2)
-00084350	44	ANALYSIS	__thiscall	cAIDesktop::vf00	undefined __thiscall(void)
-00084380	660	ANALYSIS	__thiscall	cAIDesktop::vf64	undefined __thiscall(void)
-00084620	33	DEFAULT	unknown	FUN_00484620	
-00084650	7	DEFAULT	unknown	FUN_00484650	
-00084660	36	ANALYSIS	__thiscall	cAIEntityGroup::vf00	undefined __thiscall(void)
-00084690	70	ANALYSIS	__thiscall	cAIEntityGroup::vf02	undefined __thiscall(void)
-000846e0	14	ANALYSIS	__thiscall	cAIEntityGroup::vf07	undefined __thiscall(void)
-000846f0	8	ANALYSIS	__thiscall	cAIEntityGroup::vf06	undefined __thiscall(void)
-00084700	50	ANALYSIS	__thiscall	cAIEntityGroup::vf03	undefined __thiscall(void)
-00084740	4	ANALYSIS	__thiscall	cAIEntityGroup::vf04	undefined __thiscall(void)
-00084750	8	ANALYSIS	__thiscall	cAIEntityGroup::vf01	undefined __thiscall(void)
-00084760	16	ANALYSIS	__thiscall	cAIEntityGroup::vf05	undefined __thiscall(void)
-00084770	22	ANALYSIS	__thiscall	cAIEntityGroup::vf08	undefined __thiscall(void)
-00084790	208	DEFAULT	unknown	FUN_00484790	
-00084870	44	ANALYSIS	__thiscall	cAIGear::vf00	undefined __thiscall(void)
-000848a0	329	ANALYSIS	__thiscall	cAIGear::vf65	undefined __thiscall(void)
-000849f0	672	ANALYSIS	__thiscall	cAIGear::vf66	undefined __thiscall(void)
-00084c90	7	DEFAULT	unknown	FUN_00484c90	
-00084ca0	82	ANALYSIS	__thiscall	cAIGear::vf56	undefined __thiscall(void)
-00084d00	74	ANALYSIS	__thiscall	cAIGear::vf57	undefined __thiscall(void)
-00084d50	43	DEFAULT	unknown	FUN_00484d50	
-00084d90	44	ANALYSIS	__thiscall	cAIHuman::vf00	undefined __thiscall(void)
-00084dc0	34	ANALYSIS	__thiscall	cAIHuman::vf56	undefined __thiscall(void)
-00084df0	36	ANALYSIS	__thiscall	CDocObjectServerItem::CDocObjectServerItem	undefined __thiscall(COleServerDoc * param_1, int param_2)
-00084e30	44	ANALYSIS	__thiscall	cAIMayor::vf00	undefined __thiscall(void)
-00084e60	204	ANALYSIS	__thiscall	cAIMayor::vf66	undefined __thiscall(void)
-00084f30	62	ANALYSIS	__thiscall	cAIMayor::vf56	undefined __thiscall(void)
-00084f80	191	DEFAULT	unknown	FUN_00484f80	
-00085050	44	ANALYSIS	__thiscall	cAIMessenger::vf00	undefined __thiscall(void)
-00085080	545	ANALYSIS	__thiscall	cAIMessenger::vf66	undefined __thiscall(void)
-000852b0	64	ANALYSIS	__thiscall	cAIMessenger::vf56	undefined __thiscall(void)
-000852f0	67	ANALYSIS	__thiscall	cAIMessenger::vf57	undefined __thiscall(void)
-00085340	316	DEFAULT	unknown	FUN_00485340	
-00085480	50	DEFAULT	unknown	FUN_00485480	
-000854c0	118	DEFAULT	unknown	FUN_004854c0	
-00085540	142	ANALYSIS	__thiscall	cAIMove::vf00	undefined __thiscall(void)
-000855d0	179	ANALYSIS	__thiscall	cAIMove::vf21	undefined __thiscall(void)
-00085690	5	ANALYSIS	__thiscall	cAIMove::vf03	undefined __thiscall(void)
-000856a0	45	ANALYSIS	__thiscall	cAIMove::vf01	undefined __thiscall(void)
-000856d0	23	ANALYSIS	__thiscall	cAIMove::vf02	undefined __thiscall(void)
-000856f0	26	ANALYSIS	__thiscall	cAIMove::vf08	undefined __thiscall(void)
-00085710	4	ANALYSIS	__thiscall	cAIMove::vf15	undefined __thiscall(void)
-00085720	4	ANALYSIS	__thiscall	cAIMove::vf18	undefined __thiscall(void)
-00085730	4	ANALYSIS	__thiscall	cAIMove::vf14	undefined __thiscall(void)
-00085740	652	ANALYSIS	__thiscall	cAIMove::vf20	undefined __thiscall(void)
-000859d0	26	ANALYSIS	__thiscall	cAIMove::vf07	undefined __thiscall(void)
-000859f0	7	ANALYSIS	__thiscall	cAIMove::vf16	undefined __thiscall(void)
-00085a00	63	ANALYSIS	__thiscall	cAIMove::vf24	undefined __thiscall(void)
-00085a40	7	ANALYSIS	__thiscall	cAIMove::vf19	undefined __thiscall(void)
-00085a50	7	ANALYSIS	__thiscall	cAIMove::vf17	undefined __thiscall(void)
-00085a60	5	ANALYSIS	__thiscall	cAIMove::vf22	undefined __thiscall(void)
-00085a70	151	ANALYSIS	__thiscall	cAIMove::vf09	undefined __thiscall(void)
-00085b10	26	ANALYSIS	__thiscall	cAIMove::vf10	undefined __thiscall(void)
-00085b30	198	DEFAULT	unknown	FUN_00485b30	
-00085c10	44	ANALYSIS	__thiscall	cAINurse::vf00	undefined __thiscall(void)
-00085c40	304	ANALYSIS	__thiscall	cAINurse::vf66	undefined __thiscall(void)
-00085d70	97	ANALYSIS	__thiscall	cAINurse::vf56	undefined __thiscall(void)
-00085de0	160	USER_DEFINED	__cdecl	cAINurse_SetState	byte __cdecl(void * self, int state, ...)
-00085e80	154	USER_DEFINED	__cdecl	cAINurse_SetStateIntern	byte __cdecl(void * self, int state, ...)
-00085f20	36	ANALYSIS	__thiscall	CDocObjectServerItem::CDocObjectServerItem	undefined __thiscall(COleServerDoc * param_1, int param_2)
-00085f60	44	ANALYSIS	__thiscall	cAIPolice::vf00	undefined __thiscall(void)
-00085f90	206	ANALYSIS	__thiscall	cAIPolice::vf66	undefined __thiscall(void)
-00086060	160	ANALYSIS	__thiscall	cAIPolice::vf56	undefined __thiscall(void)
-00086100	191	DEFAULT	unknown	FUN_00486100	
-000861d0	44	ANALYSIS	__thiscall	cAISentinel::vf00	undefined __thiscall(void)
-00086200	221	ANALYSIS	__thiscall	cAISentinel::vf66	undefined __thiscall(void)
-000862e0	144	ANALYSIS	__thiscall	cAISentinel::vf56	undefined __thiscall(void)
-00086390	1099	DEFAULT	unknown	FUN_00486390	
+00081af0	39	USER_DEFINED	__thiscall	cAIControlBankDirector_ctor	void * __thiscall(void * e, void * ai, int * arg)
+00081b20	11	USER_DEFINED	__fastcall	cAIControlBankDirector_dtor	void __fastcall(void * self)
+00081b30	44	USER_DEFINED	__thiscall	cAIControlBankDirector_Delete	void * __thiscall(byte flags)
+00081b60	736	USER_DEFINED	__thiscall	cAIControlBank_Walk	void __thiscall(void)
+00081e40	39	USER_DEFINED	__thiscall	cAIControlBankMaster_ctor	void * __thiscall(void * e, void * ai, int * arg)
+00081e70	11	USER_DEFINED	__fastcall	cAIControlBankMaster_dtor	void __fastcall(void * self)
+00081e80	44	USER_DEFINED	__thiscall	cAIControlBankMaster_Delete	void * __thiscall(byte flags)
+00081eb0	1162	USER_DEFINED	__thiscall	cAIControlBankMaster_Orbit	void __thiscall(void)
+00082340	736	USER_DEFINED	__thiscall	cAIControlBank_Walk	void __thiscall(void)
+00082620	134	USER_DEFINED	__thiscall	cAIControlBishop_ctor	void * __thiscall(void * e, void * ai, int * arg)
+000826b0	11	USER_DEFINED	__fastcall	cAIControlBishop_dtor	void __fastcall(void * self)
+000826c0	44	USER_DEFINED	__thiscall	cAIControlBishop_Delete	void * __thiscall(byte flags)
+000826f0	106	USER_DEFINED	__thiscall	cAIControlBishop_CheckWait	byte __thiscall(void)
+00082760	57	USER_DEFINED	__thiscall	cAIControlBishop_Strafe2	void __thiscall(void)
+000827a0	1739	USER_DEFINED	__thiscall	cAIControlBishop_Strafe	void __thiscall(void)
+00082e70	24	USER_DEFINED	__thiscall	cAIControlShoot_Walk	void __thiscall(void)
+00082e90	93	USER_DEFINED	__thiscall	cAIControlBishop_SetParams	void __thiscall(void)
+00082ef0	134	USER_DEFINED	__thiscall	cAIControlGear_ctor	void * __thiscall(void * e, void * ai, int * arg)
+00082f80	11	USER_DEFINED	__fastcall	cAIControlGear_dtor	void __fastcall(void * self)
+00082f90	44	USER_DEFINED	__thiscall	cAIControlGear_Delete	void * __thiscall(byte flags)
+00082fc0	193	USER_DEFINED	__thiscall	cAIControlGear_CheckWait	byte __thiscall(void)
+00083090	101	USER_DEFINED	__thiscall	cAIControlGear_TurnFollow	void __thiscall(void)
+00083100	101	USER_DEFINED	__thiscall	cAIControlGear_Turn	void __thiscall(void)
+00083170	101	USER_DEFINED	__thiscall	cAIControlGear_DirTurn	void __thiscall(void)
+000831e0	57	USER_DEFINED	__thiscall	cAIControlGear_Strafe2	void __thiscall(void)
+00083220	1819	USER_DEFINED	__thiscall	cAIControlGear_Strafe	void __thiscall(void)
+00083940	24	USER_DEFINED	__thiscall	cAIControlShoot_Walk	void __thiscall(void)
+00083960	8	USER_DEFINED	__thiscall	cAIControlGear_Vf89	byte __thiscall(void)
+00083970	97	USER_DEFINED	__thiscall	cAIControlGear_SetParams	void __thiscall(void)
+000839e0	134	USER_DEFINED	__thiscall	cAIControlGear_SetTurnSpeed	void __thiscall(float speed)
+00083a70	39	USER_DEFINED	__thiscall	cAIControlMessenger_ctor	void * __thiscall(void * e, void * ai, int * arg)
+00083aa0	11	USER_DEFINED	__fastcall	cAIControlMessenger_dtor	void __fastcall(void * self)
+00083ab0	44	USER_DEFINED	__thiscall	cAIControlMessenger_Delete	void * __thiscall(byte flags)
+00083ae0	198	USER_DEFINED	__thiscall	cAIControlMessenger_UpdateFollowMode	byte __thiscall(float dt)
+00083bb0	95	USER_DEFINED	__thiscall	cAIControlMessenger_SetTurnSpeed	void __thiscall(float speed)
+00083c10	39	USER_DEFINED	__thiscall	cAIControlNurse_ctor	void * __thiscall(void * e, void * ai, int * arg)
+00083c40	11	USER_DEFINED	__fastcall	cAIControlNurse_dtor	void __fastcall(void * self)
+00083c50	44	USER_DEFINED	__thiscall	cAIControlNurse_Delete	void * __thiscall(byte flags)
+00083c80	282	USER_DEFINED	__thiscall	cAIControlNurse_Walk	void __thiscall(void)
+00083da0	134	USER_DEFINED	__thiscall	cAIControlSentinel_ctor	void * __thiscall(void * e, void * ai, int * arg)
+00083e30	11	USER_DEFINED	__fastcall	cAIControlSentinel_dtor	void __fastcall(void * self)
+00083e40	44	USER_DEFINED	__thiscall	cAIControlSentinel_Delete	void * __thiscall(byte flags)
+00083e70	57	USER_DEFINED	__thiscall	cAIControlSentinel_Strafe2	void __thiscall(void)
+00083eb0	1082	USER_DEFINED	__thiscall	cAIControlSentinel_Strafe	void __thiscall(void)
+000842f0	24	USER_DEFINED	__thiscall	cAIControlSentinel_Walk	void __thiscall(void)
+00084310	36	USER_DEFINED	__thiscall	cAIDesktop_ctor	void * __thiscall(void * e, int * arg)
+00084340	11	USER_DEFINED	__fastcall	cAIDesktop_dtor	void __fastcall(void * self)
+00084350	44	USER_DEFINED	__thiscall	cAIDesktop_Delete	void * __thiscall(byte flags)
+00084380	660	USER_DEFINED	__thiscall	cAIDesktop_UpdateAction0	void __thiscall(void)
+00084620	33	USER_DEFINED	__fastcall	cAIEntityGroup_ctor	void * __fastcall(void * self)
+00084650	7	USER_DEFINED	__fastcall	cAIEntityGroup_dtor	void __fastcall(void * self)
+00084660	36	USER_DEFINED	__thiscall	cAIEntityGroup_Delete	void * __thiscall(byte flags)
+00084690	70	USER_DEFINED	__thiscall	cAIEntityGroup_Add	byte __thiscall(void * e)
+000846e0	14	USER_DEFINED	__thiscall	cAIEntityGroup_AllowChange	void __thiscall(void)
+000846f0	8	USER_DEFINED	__thiscall	cAIEntityGroup_ResetChange	void __thiscall(void)
+00084700	50	USER_DEFINED	__thiscall	cAIEntityGroup_Get	void * __thiscall(int i)
+00084740	4	USER_DEFINED	__thiscall	cAIEntityGroup_Num	int __thiscall(void)
+00084750	8	USER_DEFINED	__thiscall	cAIEntityGroup_Clear	void __thiscall(void)
+00084760	16	USER_DEFINED	__thiscall	cAIEntityGroup_CanChange	byte __thiscall(void)
+00084770	22	USER_DEFINED	__thiscall	cAIEntityGroup_Update	void __thiscall(float dt)
+00084790	208	USER_DEFINED	__thiscall	cAIGear_ctor	void * __thiscall(void * e, int * arg)
+00084860	11	USER_DEFINED	__fastcall	cAIGear_dtor	void __fastcall(void * self)
+00084870	44	USER_DEFINED	__thiscall	cAIGear_Delete	void * __thiscall(byte flags)
+000848a0	329	USER_DEFINED	__thiscall	cAIGear_UpdateAction	void __thiscall(void)
+000849f0	672	USER_DEFINED	__thiscall	cAIGear_CheckActDist	void __thiscall(void)
+00084c90	7	USER_DEFINED	__fastcall	cAIGear_IsBlocked	byte __fastcall(void * self)
+00084ca0	82	USER_DEFINED	__thiscall	cAIGear_SetDists	void __thiscall(void)
+00084d00	74	USER_DEFINED	__thiscall	cAIGear_SetShoot	void __thiscall(void)
+00084d50	43	USER_DEFINED	__thiscall	cAIHuman_ctor	void * __thiscall(void * e, int * arg)
+00084d80	11	USER_DEFINED	__fastcall	cAIHuman_dtor	void __fastcall(void * self)
+00084d90	44	USER_DEFINED	__thiscall	cAIHuman_Delete	void * __thiscall(byte flags)
+00084dc0	34	USER_DEFINED	__thiscall	cAIHuman_SetDists	void __thiscall(void)
+00084df0	36	USER_DEFINED	__thiscall	cAIMayor_ctor	void * __thiscall(void * e, int * arg)
+00084e20	11	USER_DEFINED	__fastcall	cAIMayor_dtor	void __fastcall(void * self)
+00084e30	44	USER_DEFINED	__thiscall	cAIMayor_Delete	void * __thiscall(byte flags)
+00084e60	204	USER_DEFINED	__thiscall	cAIMayor_CheckActDist	void __thiscall(void)
+00084f30	62	USER_DEFINED	__thiscall	cAIMayor_SetDists	void __thiscall(void)
+00084f80	191	USER_DEFINED	__thiscall	cAIMessenger_ctor	void * __thiscall(void * e, int * arg)
+00085040	11	USER_DEFINED	__fastcall	cAIMessenger_dtor	void __fastcall(void * self)
+00085050	44	USER_DEFINED	__thiscall	cAIMessenger_Delete	void * __thiscall(byte flags)
+00085080	545	USER_DEFINED	__thiscall	cAIMessenger_CheckActDist	void __thiscall(void)
+000852b0	64	USER_DEFINED	__thiscall	cAIMessenger_SetDists	void __thiscall(void)
+000852f0	67	USER_DEFINED	__thiscall	cAIMessenger_SetShoot	void __thiscall(void)
+00085340	316	USER_DEFINED	__thiscall	cAIMove_ctor	void * __thiscall(void * e)
+00085480	50	USER_DEFINED	__fastcall	cAIMove_ctorDefault	void * __fastcall(void * self)
+000854c0	118	USER_DEFINED	__fastcall	cAIMove_dtor	void __fastcall(void * self)
+00085540	142	USER_DEFINED	__thiscall	cAIMove_Delete	void * __thiscall(byte flags)
+000855d0	179	USER_DEFINED	__thiscall	cAIMove_CheckStopped	void __thiscall(float dt)
+00085690	5	USER_DEFINED	__thiscall	cAIMove_Draw	void __thiscall(void)
+000856a0	45	USER_DEFINED	__thiscall	cAIMove_Update	void __thiscall(float dt)
+000856d0	23	USER_DEFINED	__thiscall	cAIMove_UpdateOff	void __thiscall(float dt)
+000856f0	26	USER_DEFINED	__thiscall	cAIMove_VarF	byte __thiscall(char * name, double * d, byte set)
+00085710	4	USER_DEFINED	__thiscall	cAIMove_CanJump	byte __thiscall(void)
+00085720	4	USER_DEFINED	__thiscall	cAIMove_GetTargetEnt	void * __thiscall(void)
+00085730	4	USER_DEFINED	__thiscall	cAIMove_GetTarget	void * __thiscall(void)
+00085740	652	USER_DEFINED	__thiscall	cAIMove_RandomPoint	void * __thiscall(void * out, void * p, float r)
+000859d0	26	USER_DEFINED	__thiscall	cAIMove_VarI	byte __thiscall(char * name, int * i, byte set)
+000859f0	7	USER_DEFINED	__thiscall	cAIMove_GetStopped	byte __thiscall(void)
+00085a00	63	USER_DEFINED	__thiscall	cAIMove_CanTarget	byte __thiscall(void * e)
+00085a40	7	USER_DEFINED	__thiscall	cAIMove_GetArrived	byte __thiscall(void)
+00085a50	7	USER_DEFINED	__thiscall	cAIMove_IsPaused	byte __thiscall(void)
+00085a60	5	USER_DEFINED	__thiscall	cAIMove_Event	byte __thiscall(int ev)
+00085a70	151	USER_DEFINED	__thiscall	cAIMove_VarS	byte __thiscall(char * name, char ** s, byte set)
+00085b10	26	USER_DEFINED	__thiscall	cAIMove_VarV	byte __thiscall(char * name, double * x, double * y, double * z, byte set)
+00085b30	198	USER_DEFINED	__thiscall	cAINurse_ctor	void * __thiscall(void * e, int * arg)
+00085c00	11	USER_DEFINED	__fastcall	cAINurse_dtor	void __fastcall(void * self)
+00085c10	44	USER_DEFINED	__thiscall	cAINurse_Delete	void * __thiscall(byte flags)
+00085c40	304	USER_DEFINED	__thiscall	cAINurse_CheckActDist	void __thiscall(void)
+00085d70	97	USER_DEFINED	__thiscall	cAINurse_SetDists	void __thiscall(void)
+00085de0	160	USER_DEFINED	__cdecl	cAINurse_SetState	byte __cdecl(void * self, int state, int arg)
+00085e80	154	USER_DEFINED	__cdecl	cAINurse_SetStateIntern	byte __cdecl(void * self, int state, int arg)
+00085f20	36	USER_DEFINED	__thiscall	cAIPolice_ctor	void * __thiscall(void * e, int * arg)
+00085f50	11	USER_DEFINED	__fastcall	cAIPolice_dtor	void __fastcall(void * self)
+00085f60	44	USER_DEFINED	__thiscall	cAIPolice_Delete	void * __thiscall(byte flags)
+00085f90	206	USER_DEFINED	__thiscall	cAIPolice_CheckActDist	void __thiscall(void)
+00086060	160	USER_DEFINED	__thiscall	cAIPolice_SetDists	void __thiscall(void)
+00086100	191	USER_DEFINED	__thiscall	cAISentinel_ctor	void * __thiscall(void * e, int * arg)
+000861c0	11	USER_DEFINED	__fastcall	cAISentinel_dtor	void __fastcall(void * self)
+000861d0	44	USER_DEFINED	__thiscall	cAISentinel_Delete	void * __thiscall(byte flags)
+00086200	221	USER_DEFINED	__thiscall	cAISentinel_CheckActDist	void __thiscall(void)
+000862e0	144	USER_DEFINED	__thiscall	cAISentinel_SetDists	void __thiscall(void)
+00086390	1099	USER_DEFINED	__thiscall	cAIVehicle_ctor	void * __thiscall(void * v, void * p1, void * p2, void * p3)
 000867e0	5	DEFAULT	__thiscall	cString::~cString	
 000867f0	5	DEFAULT	__thiscall	cString::~cString	
-00086800	167	DEFAULT	unknown	FUN_00486800	
-000868b0	38	ANALYSIS	__thiscall	cAIVehicle::vf00	undefined __thiscall(void)
-000868e0	11	DEFAULT	unknown	FUN_004868e0	
-000868f0	454	DEFAULT	unknown	FUN_004868f0	
-00086ad0	693	DEFAULT	unknown	FUN_00486ad0	
-00086d90	275	DEFAULT	unknown	FUN_00486d90	
-00086eb0	546	DEFAULT	unknown	FUN_00486eb0	
-000870e0	382	DEFAULT	unknown	FUN_004870e0	
-00087260	772	DEFAULT	unknown	FUN_00487260	
-00087580	126	DEFAULT	unknown	FUN_00487580	
-00087600	126	USER_DEFINED	__thiscall	cAIVehicle_ReactLostPathChase	void __thiscall(void)
-00087690	63	DEFAULT	unknown	FUN_00487690	
-00087710	249	DEFAULT	unknown	FUN_00487710	
-00087850	429	DEFAULT	unknown	FUN_00487850	
-00087a00	447	DEFAULT	unknown	FUN_00487a00	
-00087bc0	35	DEFAULT	unknown	FUN_00487bc0	
-00087bf0	291	DEFAULT	unknown	FUN_00487bf0	
-00087d20	311	DEFAULT	unknown	FUN_00487d20	
-00087e60	275	DEFAULT	unknown	FUN_00487e60	
-00087f80	240	DEFAULT	unknown	FUN_00487f80	
-00088070	240	USER_DEFINED	__thiscall	cAIVehicle_ThinkLostPathChase	void __thiscall(void)
-00088160	1032	DEFAULT	unknown	FUN_00488160	
-00088570	54	DEFAULT	unknown	FUN_00488570	
-000885d0	435	DEFAULT	unknown	FUN_004885d0	
-00088790	848	DEFAULT	unknown	FUN_00488790	
-00088ae0	316	DEFAULT	unknown	FUN_00488ae0	
-00088c20	335	DEFAULT	unknown	FUN_00488c20	
-00088d70	364	DEFAULT	unknown	FUN_00488d70	
-00088ee0	223	DEFAULT	unknown	FUN_00488ee0	
-00088ff0	22	DEFAULT	unknown	FUN_00488ff0	
-00089010	87	DEFAULT	unknown	FUN_00489010	
+00086800	167	USER_DEFINED	__fastcall	cAIVehicle_dtor	void __fastcall(void * self)
+000868b0	38	USER_DEFINED	__thiscall	cAIVehicle_Delete	void * __thiscall(byte flags)
+000868e0	11	USER_DEFINED	__thiscall	cAIVehicle_ApplyParams	void __thiscall(void)
+000868f0	454	USER_DEFINED	__thiscall	cAIVehicle_NeedRepos	byte __thiscall(void)
+00086ad0	693	USER_DEFINED	__thiscall	cAIVehicle_FightingAfterItem	void __thiscall(void)
+00086d90	275	USER_DEFINED	__thiscall	cAIVehicle_ReactFighting	void __thiscall(void)
+00086eb0	546	USER_DEFINED	__thiscall	cAIVehicle_ReactHook	void __thiscall(void)
+000870e0	382	USER_DEFINED	__thiscall	cAIVehicle_ReactGetAway	void __thiscall(void)
+00087260	772	USER_DEFINED	__thiscall	cAIVehicle_ReactGetAwayStop	void __thiscall(void)
+00087580	126	USER_DEFINED	__thiscall	cAIVehicle_ReactLostPath	void __thiscall(void)
+00087600	126	USER_DEFINED	__thiscall	cAIVehicle_ReactLostPath	void __thiscall(void)
+00087690	63	USER_DEFINED	__thiscall	cAIVehicle_React	void __thiscall(void)
+00087710	249	USER_DEFINED	__thiscall	cAIVehicle_Think	byte __thiscall(void)
+00087850	429	USER_DEFINED	__thiscall	cAIVehicle_ThinkChase	void __thiscall(void)
+00087a00	447	USER_DEFINED	__thiscall	cAIVehicle_ThinkFighting	void __thiscall(void)
+00087bc0	35	USER_DEFINED	__thiscall	cAIVehicle_ThinkHook	void __thiscall(void)
+00087bf0	291	USER_DEFINED	__thiscall	cAIVehicle_ThinkGetAway	void __thiscall(void)
+00087d20	311	USER_DEFINED	__thiscall	cAIVehicle_ThinkGetAwayStop	void __thiscall(void)
+00087e60	275	USER_DEFINED	__thiscall	cAIVehicle_ThinkGoTo	void __thiscall(void)
+00087f80	240	USER_DEFINED	__thiscall	cAIVehicle_ThinkLostPath	void __thiscall(void)
+00088070	240	USER_DEFINED	__thiscall	cAIVehicle_ThinkLostPath	void __thiscall(void)
+00088160	1032	USER_DEFINED	__thiscall	cAIVehicle_ThinkRace	void __thiscall(void)
+00088570	54	USER_DEFINED	__thiscall	cAIVehicle_CheckItems	void __thiscall(void)
+000885d0	435	USER_DEFINED	__thiscall	cAIVehicle_ItemsChase	void __thiscall(void)
+00088790	848	USER_DEFINED	__thiscall	cAIVehicle_ItemsFighting	void __thiscall(void)
+00088ae0	316	USER_DEFINED	__thiscall	cAIVehicle_ItemsGetAway	void __thiscall(void)
+00088c20	335	USER_DEFINED	__thiscall	cAIVehicle_ItemsGetAwayStop	void __thiscall(void)
+00088d70	364	USER_DEFINED	__thiscall	cAIVehicle_ItemsInRoute	void __thiscall(void)
+00088ee0	223	USER_DEFINED	__thiscall	cAIVehicle_UpdateGraph	void __thiscall(void)
+00088ff0	22	USER_DEFINED	__thiscall	cAIVehicle_ReposIfFar	void __thiscall(void)
+00089010	87	USER_DEFINED	__thiscall	cAIVehicle_UpdateRoute	void __thiscall(void)
 00089070	1470	DEFAULT	unknown	FUN_00489070	
-00089630	275	DEFAULT	unknown	FUN_00489630	
-00089750	262	DEFAULT	unknown	FUN_00489750	
-000898b0	100	DEFAULT	unknown	FUN_004898b0	
-00089920	31	ANALYSIS	__thiscall	cAIVehicle::vf03	undefined __thiscall(void)
-00089940	448	DEFAULT	unknown	FUN_00489940	
+00089630	275	USER_DEFINED	__thiscall	cAIVehicle_GraphTrafficInDoor	void __thiscall(void)
+00089750	262	USER_DEFINED	__thiscall	cAIVehicle_UpdateThink	void __thiscall(void)
+000898b0	100	USER_DEFINED	__thiscall	cAIVehicle_CheckTarget	byte __thiscall(void)
+00089920	31	USER_DEFINED	__thiscall	cAIVehicle_Draw	void __thiscall(void)
+00089940	448	USER_DEFINED	__thiscall	cAIVehicle_TryHook	byte __thiscall(int a, int b)
 00089b00	1292	DEFAULT	unknown	FUN_00489b00	
-0008a010	201	ANALYSIS	__thiscall	cAIVehicle::vf01	undefined __thiscall(void)
-0008a0e0	34	ANALYSIS	__thiscall	cAIVehicle::vf02	undefined __thiscall(void)
-0008a110	26	ANALYSIS	__thiscall	cAIVehicle::vf08	undefined __thiscall(void)
-0008a130	7	DEFAULT	unknown	FUN_0048a130	
-0008a140	29	USER_DEFINED	__thiscall	cAIVehicle_GetFadeDists	void __thiscall(void * nearDist, void * farDist)
+0008a010	201	USER_DEFINED	__thiscall	cAIVehicle_Update	void __thiscall(float dt)
+0008a0e0	34	USER_DEFINED	__thiscall	cAIVehicle_UpdateOff	void __thiscall(float dt)
+0008a110	26	USER_DEFINED	__thiscall	cAIVehicle_VarF	byte __thiscall(char * name, double * d, byte set)
+0008a130	7	USER_DEFINED	__thiscall	cAIVehicle_GetControl	void * __thiscall(void)
+0008a140	29	USER_DEFINED	__thiscall	cAIVehicle_GetFadeDists	void __thiscall(float * nearDist, float * farDist)
 0008a160	7	USER_DEFINED	__thiscall	cAIVehicle_GetVehicle	void * __thiscall(void)
-0008a170	173	DEFAULT	unknown	FUN_0048a170	
-0008a220	36	DEFAULT	unknown	FUN_0048a220	
-0008a250	330	DEFAULT	unknown	FUN_0048a250	
-0008a3a0	713	DEFAULT	unknown	FUN_0048a3a0	
-0008a670	325	DEFAULT	unknown	FUN_0048a670	
-0008a7d0	100	USER_DEFINED	__thiscall	cAIVehicle::GetNearestItemLife	void * __thiscall(void)
-0008a840	4	DEFAULT	unknown	FUN_0048a840	
+0008a170	173	USER_DEFINED	__thiscall	cAIVehicle_FindAmmo	void __thiscall(void * exclude)
+0008a220	36	USER_DEFINED	__thiscall	cAIVehicle_FindLife	void __thiscall(void * exclude)
+0008a250	330	USER_DEFINED	__thiscall	cAIVehicle_NearestAmmo	void * __thiscall(int kind, float * dist, void * out, void * exclude)
+0008a3a0	713	USER_DEFINED	__thiscall	cAIVehicle_NearestAmmoAny	void * __thiscall(float * dist, void * out, void * exclude, float factor)
+0008a670	325	USER_DEFINED	__thiscall	cAIVehicle_NearestLife	void * __thiscall(float * dist, void * out, void * exclude)
+0008a7d0	100	USER_DEFINED	__thiscall	cAIVehicle_GetNearestItemLife	void * __thiscall(void)
+0008a840	4	USER_DEFINED	__thiscall	cAIVehicle_GetChanged	byte __thiscall(void)
 0008a850	691	DEFAULT	unknown	FUN_0048a850	
 0008ab20	1457	DEFAULT	unknown	FUN_0048ab20	
-0008b0e0	53	USER_DEFINED	__thiscall	cAIVehicle_GetPathWidth	float __thiscall(void)
+0008b0e0	53	USER_DEFINED	__thiscall	cAIVehicle_GetPathWidth	int __thiscall(void)
 0008b120	1545	DEFAULT	unknown	FUN_0048b120	
-0008b740	39	USER_DEFINED	__thiscall	cAIVehicle::GetState	int __thiscall(void)
-0008b780	28	DEFAULT	unknown	FUN_0048b780	
-0008b7a0	7	USER_DEFINED	__thiscall	cAIVehicle_Get1A4	int __thiscall(void)
-0008b7b0	409	DEFAULT	unknown	FUN_0048b7b0	
-0008b980	21	DEFAULT	unknown	FUN_0048b980	
-0008b9a0	533	DEFAULT	unknown	FUN_0048b9a0	
-0008bc00	21	DEFAULT	unknown	FUN_0048bc00	
-0008bc20	7	USER_DEFINED	__thiscall	cAIVehicle::GetParams1	undefined __thiscall(void)
-0008bc30	7	DEFAULT	unknown	FUN_0048bc30	
-0008bc40	11	USER_DEFINED	__thiscall	cAIVehicle::GetParams2	undefined __thiscall(void)
-0008bc50	11	DEFAULT	unknown	FUN_0048bc50	
-0008bc60	11	USER_DEFINED	__thiscall	cAIVehicle::GetParams3	undefined __thiscall(void)
-0008bc70	11	DEFAULT	unknown	FUN_0048bc70	
-0008bc80	155	ANALYSIS	__thiscall	cAIVehicle::vf07	undefined __thiscall(void)
-0008bd20	86	DEFAULT	unknown	FUN_0048bd20	
-0008bd80	262	DEFAULT	unknown	FUN_0048bd80	
-0008be90	92	DEFAULT	unknown	FUN_0048be90	
-0008bef0	11	DEFAULT	unknown	FUN_0048bef0	
-0008bf00	11	DEFAULT	unknown	FUN_0048bf00	
-0008bf10	235	DEFAULT	unknown	FUN_0048bf10	
-0008c000	57	DEFAULT	unknown	FUN_0048c000	
-0008c040	39	USER_DEFINED	__thiscall	cAIVehicle::Setup	void __thiscall(void * p1, void * p2, void * p3)
-0008c070	912	DEFAULT	unknown	FUN_0048c070	
-0008c400	464	DEFAULT	unknown	FUN_0048c400	
-0008c5d0	596	DEFAULT	unknown	FUN_0048c5d0	
-0008c830	121	ANALYSIS	__thiscall	cAIVehicle::vf23	undefined __thiscall(void)
-0008c8b0	265	USER_DEFINED	__cdecl	cAIVehicle_Debugf	void __cdecl(void * self, char * fmt, ...)
-0008c9c0	117	ANALYSIS	__thiscall	cAIVehicle::vf22	undefined __thiscall(void)
-0008ca70	106	DEFAULT	unknown	FUN_0048ca70	
-0008cae0	296	DEFAULT	unknown	FUN_0048cae0	
-0008cc10	132	DEFAULT	unknown	FUN_0048cc10	
-0008cca0	229	DEFAULT	unknown	FUN_0048cca0	
-0008cd90	229	DEFAULT	unknown	FUN_0048cd90	
-0008ce80	128	DEFAULT	unknown	FUN_0048ce80	
-0008cf00	259	DEFAULT	unknown	FUN_0048cf00	
-0008d010	44	DEFAULT	unknown	FUN_0048d010	
-0008d050	372	DEFAULT	unknown	FUN_0048d050	
-0008d1d0	483	DEFAULT	unknown	FUN_0048d1d0	
+0008b740	39	USER_DEFINED	__thiscall	cAIVehicle_GetState	int __thiscall(void)
+0008b770	7	USER_DEFINED	__thiscall	cAIVehicle_GetPrevState	int __thiscall(void)
+0008b780	28	USER_DEFINED	__thiscall	cAIVehicle_GetStateFor	int __thiscall(int state)
+0008b7a0	7	USER_DEFINED	__thiscall	cAIVehicle_GetInternState	int __thiscall(void)
+0008b7b0	409	USER_DEFINED	__stdcall	cAIVehicle_InternStateName	void __stdcall(int state, char * buf)
+0008b980	21	USER_DEFINED	__thiscall	cAIVehicle_GetInternStateName	void __thiscall(char * out)
+0008b9a0	533	USER_DEFINED	__stdcall	cAIVehicle_StateName	void __stdcall(int state, char * buf)
+0008bc00	21	USER_DEFINED	__thiscall	cAIVehicle_GetStateName	void __thiscall(char * out)
+0008bc20	7	USER_DEFINED	__thiscall	cAIVehicle_GetParams1	void * __thiscall(void)
+0008bc30	7	USER_DEFINED	__thiscall	cAIVehicle_GetParamsInit	void * __thiscall(void)
+0008bc40	11	USER_DEFINED	__thiscall	cAIVehicle_GetParams2	void * __thiscall(void)
+0008bc50	11	USER_DEFINED	__thiscall	cAIVehicle_GetParams2Init	void * __thiscall(void)
+0008bc60	11	USER_DEFINED	__thiscall	cAIVehicle_GetParams3	void * __thiscall(void)
+0008bc70	11	USER_DEFINED	__thiscall	cAIVehicle_GetParams3Init	void * __thiscall(void)
+0008bc80	155	USER_DEFINED	__thiscall	cAIVehicle_VarI	byte __thiscall(char * name, int * i, byte set)
+0008bd20	86	USER_DEFINED	__thiscall	cAIVehicle_CanHook	byte __thiscall(void * e)
+0008bd80	262	USER_DEFINED	__thiscall	cAIVehicle_InHookRange	byte __thiscall(void * e)
+0008be90	92	USER_DEFINED	__thiscall	cAIVehicle_IsNear	byte __thiscall(void * p)
+0008bef0	11	USER_DEFINED	__thiscall	cAIVehicle_ControlFlag	byte __thiscall(void)
+0008bf00	11	USER_DEFINED	__thiscall	cAIVehicle_ControlFlag2	byte __thiscall(void)
+0008bf10	235	USER_DEFINED	__thiscall	cAIVehicle_InHookRangePos	byte __thiscall(void * p)
+0008c000	57	USER_DEFINED	__stdcall	cAIVehicle_IsGroupState	byte __stdcall(int state)
+0008c040	39	USER_DEFINED	__thiscall	cAIVehicle_Setup	void __thiscall(void * p1, void * p2, void * p3)
+0008c070	912	USER_DEFINED	__thiscall	cAIVehicle_CheckParams1	void __thiscall(void * p)
+0008c400	464	USER_DEFINED	__thiscall	cAIVehicle_CheckParams2	void __thiscall(void * p)
+0008c5d0	596	USER_DEFINED	__thiscall	cAIVehicle_CheckParams3	void __thiscall(void * p)
+0008c830	121	USER_DEFINED	__thiscall	cAIVehicle_IsMoving	byte __thiscall(void)
+0008c8b0	265	USER_DEFINED	__cdecl	cAIVehicle_Debugf	void __cdecl(void * self, char * fmt, int arg)
+0008c9c0	117	USER_DEFINED	__thiscall	cAIVehicle_Event	byte __thiscall(int ev)
+0008ca70	106	USER_DEFINED	__thiscall	cAIVehicle_EventChase	byte __thiscall(int ev)
+0008cae0	296	USER_DEFINED	__thiscall	cAIVehicle_EventDefault	byte __thiscall(int ev)
+0008cc10	132	USER_DEFINED	__thiscall	cAIVehicle_EventFighting	byte __thiscall(int ev)
+0008cca0	229	USER_DEFINED	__thiscall	cAIVehicle_EventGetAway	byte __thiscall(int ev)
+0008cd90	229	USER_DEFINED	__thiscall	cAIVehicle_EventGetAwayStop	byte __thiscall(int ev)
+0008ce80	128	USER_DEFINED	__thiscall	cAIVehicle_EventGoTo	byte __thiscall(int ev)
+0008cf00	259	USER_DEFINED	__thiscall	cAIVehicle_EventInRoute	byte __thiscall(int ev)
+0008d010	44	USER_DEFINED	__thiscall	cAIVehicle_EventLostPath	byte __thiscall(int ev)
+0008d050	372	USER_DEFINED	__thiscall	cAIVehicle_EventTraffic	byte __thiscall(int ev)
+0008d1d0	483	USER_DEFINED	__thiscall	cAIVehicle_EventTrafficInDoor	byte __thiscall(int ev)
 0008d3c0	1328	DEFAULT	unknown	FUN_0048d3c0	
-0008d8f0	58	DEFAULT	unknown	FUN_0048d8f0	
-0008d930	765	USER_DEFINED	__thiscall	cAIVehicle_PlaceOnTrack	void __thiscall(int type, float * pos, int track, int node)
-0008dc30	233	DEFAULT	unknown	FUN_0048dc30	
-0008dd20	231	DEFAULT	unknown	FUN_0048dd20	
-0008de10	59	DEFAULT	unknown	FUN_0048de10	
-0008de50	261	DEFAULT	unknown	FUN_0048de50	
-0008df60	15	USER_DEFINED	__thiscall	cAIVehicle::SetInertia	void __thiscall(int on)
-0008df70	58	USER_DEFINED	__thiscall	cAIVehicle::SetRotStatic	void __thiscall(float a, float b)
-0008dfb0	90	USER_DEFINED	__cdecl	cAIVehicle_SetState	byte __cdecl(void * ai, int state, ...)
-0008e010	635	DEFAULT	unknown	FUN_0048e010	
-0008e2d0	1882	USER_DEFINED	__cdecl	cAIVehicle_SetInternState	void __cdecl(void * self, int state, ...)
-0008ea60	3175	USER_DEFINED	__thiscall	cAIVehicle_ChangeState	byte __thiscall(int state, char * args)
-0008f6f0	617	USER_DEFINED	__thiscall	cAIVehicle_ChangeStateMore	byte __thiscall(int state, byte allowed, char * args)
-0008f980	141	USER_DEFINED	__cdecl	cAIVehicle_SetStateIntern	byte __cdecl(void * self, int state, ...)
-0008fa10	635	DEFAULT	unknown	FUN_0048fa10	
-0008fcd0	26	ANALYSIS	__thiscall	cAIVehicle::vf09	undefined __thiscall(void)
-0008fd00	26	ANALYSIS	__thiscall	cAIVehicle::vf10	undefined __thiscall(void)
+0008d8f0	58	USER_DEFINED	__thiscall	cAIVehicle_PlaceOnTrackStart	byte __thiscall(int track)
+0008d930	765	USER_DEFINED	__thiscall	cAIVehicle_PlaceOnTrack	byte __thiscall(int type, void * pos, int track, int node)
+0008dc30	233	USER_DEFINED	__thiscall	cAIVehicle_SaveState	void __thiscall(void * s)
+0008dd20	231	USER_DEFINED	__cdecl	SegmentPlane_Hit	int __cdecl(void * out, void * a, void * b, void * pl)
+0008de10	59	USER_DEFINED	__thiscall	cAIVehicle_SetRotSpeed	void __thiscall(float speed)
+0008de50	261	USER_DEFINED	__thiscall	cAIVehicle_PickTrackType	void __thiscall(void)
+0008df60	15	USER_DEFINED	__thiscall	cAIVehicle_SetInertia	void __thiscall(int on)
+0008df70	58	USER_DEFINED	__thiscall	cAIVehicle_SetRotStatic	void __thiscall(float a, float b)
+0008dfb0	90	USER_DEFINED	__cdecl	cAIVehicle_SetState	byte __cdecl(void * ai, int state, int arg)
+0008e010	635	USER_DEFINED	__thiscall	cAIVehicle_RestoreState	byte __thiscall(void * s)
+0008e2d0	1882	USER_DEFINED	__cdecl	cAIVehicle_SetInternState	void __cdecl(void * self, int state, int arg)
+0008ea60	3175	USER_DEFINED	__thiscall	cAIVehicle_ChangeState	byte __thiscall(int state, int args)
+0008f6f0	617	USER_DEFINED	__thiscall	cAIVehicle_ChangeStateMore	byte __thiscall(int state, byte allowed, int args)
+0008f980	141	USER_DEFINED	__cdecl	cAIVehicle_SetStateIntern	byte __cdecl(void * self, int state, int arg)
+0008fa10	635	USER_DEFINED	__thiscall	cAIVehicle_RestoreStateIntern	byte __thiscall(void * s)
+0008fcd0	26	USER_DEFINED	__thiscall	cAIVehicle_VarS	byte __thiscall(char * name, char ** s, byte set)
+0008fcf0	7	USER_DEFINED	__thiscall	cAIVehicle_GetTrackType	int __thiscall(void)
+0008fd00	26	USER_DEFINED	__thiscall	cAIVehicle_VarV	byte __thiscall(char * name, double * x, double * y, double * z, byte set)
 0008fd20	11	USER_DEFINED	__thiscall	cAIVehicle_WeapListChanged	void __thiscall(void)
 0008fd30	1716	USER_DEFINED	__thiscall	cAIVehicleControl_ctor	void * __thiscall(void * v, void * ai, void * params)
 000903f0	66	USER_DEFINED	__fastcall	cAIVehicleControl_dtor	void __fastcall(void * self)
@@ -2860,7 +2879,7 @@ rva	size	source	callconv	name	signature
 000f2410	439	USER_DEFINED	__thiscall	cMissileEntity_ctor	void * __thiscall(char *, float, float, float)
 000f25d0	119	USER_DEFINED	__fastcall	cMissileEntity_dtor	void __fastcall(void *)
 000f2650	152	USER_DEFINED	__thiscall	cMissileEntity_Delete	void * __thiscall(uint)
-000f26f0	941	ANALYSIS	__thiscall	cMissileEntity::vf64	undefined __thiscall(void)
+000f26f0	941	USER_DEFINED	__thiscall	cMissileEntity_AddToSwarm	void __thiscall(int n)
 000f2aa0	108	USER_DEFINED	__thiscall	cMissileEntity_RotStep	void __thiscall(float)
 000f2b10	151	USER_DEFINED	__thiscall	cMissileEntity_Touch	void __thiscall(void *, void *, void *)
 000f2bb0	117	USER_DEFINED	__thiscall	cMissileEntity_LifeTick	void __thiscall()
@@ -2873,21 +2892,21 @@ rva	size	source	callconv	name	signature
 000f3310	910	USER_DEFINED	__thiscall	cMissileEntity_VarI	byte __thiscall(char *, void *, int)
 000f36a0	80	USER_DEFINED	__thiscall	cMissileEntity_IsType	byte __thiscall(char *)
 000f36f0	698	USER_DEFINED	__thiscall	cMissileEntity_Hit	byte __thiscall(int, int)
-000f39b0	349	ANALYSIS	__thiscall	cMissileEntity::vf43	undefined __thiscall(void)
-000f3b10	299	ANALYSIS	__thiscall	cMissileEntity::vf41	undefined __thiscall(void)
-000f3c40	2649	ANALYSIS	__thiscall	cMissileEntity::vf23	undefined __thiscall(void)
+000f39b0	349	USER_DEFINED	__thiscall	cMissileEntity_NetRead	void __thiscall(void * msg, int isNew)
+000f3b10	299	USER_DEFINED	__thiscall	cMissileEntity_NetWrite	void __thiscall(float dist2, void * msg, int full)
+000f3c40	2649	USER_DEFINED	__thiscall	cMissileEntity_Tick	void __thiscall(float dt)
 000f46a0	12	USER_DEFINED	__thiscall	cMissileEntity_OnDeath	void __thiscall()
-000f46b0	1	ANALYSIS	__thiscall	cWithLifeEntity::vf48	undefined __thiscall(void)
+000f46b0	1	USER_DEFINED	__thiscall	cWithLifeEntity_Vf48	void __thiscall(void)
 000f46c0	54	USER_DEFINED	__thiscall	cMissileEntity_SetActive	void __thiscall(byte)
 000f4700	119	USER_DEFINED	__thiscall	cMissileEntity_SetAng	void __thiscall(void *)
 000f4780	16	USER_DEFINED	__thiscall	cMissileEntity_SetFlag585	void __thiscall(byte)
-000f4790	656	ANALYSIS	__thiscall	cMissileEntity::vf15	undefined __thiscall(void)
+000f4790	656	USER_DEFINED	__thiscall	cMissileEntity_SetEmbeddedFX	void __thiscall(char * name)
 000f4a20	45	USER_DEFINED	__thiscall	cMissileEntity_SetHiddenSwarm	void __thiscall(byte)
 000f4a50	80	USER_DEFINED	__thiscall	cMissileEntity_SetHideMain	void __thiscall(byte)
 000f4aa0	129	USER_DEFINED	__thiscall	cMissileEntity_SetHitType	void __thiscall(int)
 000f4b30	20	USER_DEFINED	__thiscall	cMissileEntity_SetLifeTime	void __thiscall(float)
 000f4b50	16	USER_DEFINED	__thiscall	cMissileEntity_SetType	void __thiscall(int)
-000f4b60	418	ANALYSIS	__thiscall	cMissileEntity::vf12	undefined __thiscall(void)
+000f4b60	418	USER_DEFINED	__thiscall	cMissileEntity_SetModel	void __thiscall(char * file, float sx, float sy, float sz, int flag)
 000f4d10	16	USER_DEFINED	__thiscall	cMissileEntity_SetCount	void __thiscall(int)
 000f4d20	16	USER_DEFINED	__thiscall	cMissileEntity_SetNoWorldHit	void __thiscall(byte)
 000f4d30	30	USER_DEFINED	__thiscall	cMissileEntity_SetParent	void __thiscall(char *)
@@ -2906,8 +2925,8 @@ rva	size	source	callconv	name	signature
 000f50a0	136	USER_DEFINED	__thiscall	cMissileEntity_Update	void __thiscall()
 000f5130	125	USER_DEFINED	__thiscall	cMissileEntity_ScaleWeapon	void __thiscall(int)
 000f51b0	1143	USER_DEFINED	__thiscall	cMissileEntity_VarS	byte __thiscall(char *, void *, int)
-000f5650	862	ANALYSIS	__thiscall	cMissileEntity::vf66	undefined __thiscall(void)
-000f59b0	1381	ANALYSIS	__thiscall	cMissileEntity::vf59	undefined __thiscall(void)
+000f5650	862	USER_DEFINED	__thiscall	cMissileEntity_Explode	void __thiscall(void * at)
+000f59b0	1381	USER_DEFINED	__thiscall	cMissileEntity_Swarm	void __thiscall(float dt)
 000f5f20	26	USER_DEFINED	__thiscall	cMissileEntity_VarV	byte __thiscall(char *, void *, void *, void *, int)
 000f5f40	249	USER_DEFINED	__fastcall	cArrowIndicator_ctor	void * __fastcall(void * self)
 000f6040	164	USER_DEFINED	__fastcall	cArrowIndicator_dtor	void __fastcall(void * self)
@@ -3041,19 +3060,19 @@ rva	size	source	callconv	name	signature
 000fe780	38	USER_DEFINED	__thiscall	cAutoAim_SetAngle	void __thiscall(float ang)
 000fe7b0	17	USER_DEFINED	__thiscall	cAutoAim_SetRange	void __thiscall(float range)
 000fe7d0	460	USER_DEFINED	__thiscall	cAutoAim_VarS	byte __thiscall(char * name, char * * s, int set)
-000fe9b0	390	DEFAULT	unknown	FUN_004fe9b0	
-000feb40	347	DEFAULT	unknown	FUN_004feb40	
-000feca0	387	DEFAULT	unknown	FUN_004feca0	
-000fee30	382	DEFAULT	unknown	FUN_004fee30	
-000fefb0	20	DEFAULT	unknown	FUN_004fefb0	
-000ff010	22	DEFAULT	unknown	FUN_004ff010	
-000ff030	60	DEFAULT	unknown	FUN_004ff030	
-000ff070	885	DEFAULT	unknown	FUN_004ff070	
-000ff3f0	135	DEFAULT	unknown	FUN_004ff3f0	
-000ff480	364	DEFAULT	unknown	FUN_004ff480	
-000ff5f0	169	DEFAULT	unknown	FUN_004ff5f0	
-000ff6a0	236	DEFAULT	unknown	FUN_004ff6a0	
-000ff790	257	DEFAULT	unknown	FUN_004ff790	
+000fe9b0	390	USER_DEFINED	__cdecl	Controls_TakeEnerNative	void __cdecl(void * f)
+000feb40	347	USER_DEFINED	__cdecl	Controls_TakeLifeNative	void __cdecl(void * f)
+000feca0	387	USER_DEFINED	__cdecl	Controls_TakeMissNative	void __cdecl(void * f)
+000fee30	382	USER_DEFINED	__cdecl	Controls_TakePartNative	void __cdecl(void * f)
+000fefb0	20	USER_DEFINED	__fastcall	cVehicleO648_ctor	void * __fastcall(void * o)
+000ff010	22	USER_DEFINED	__fastcall	cVehicleO648_dtor	void __fastcall(void * o)
+000ff030	60	USER_DEFINED	__fastcall	cVehicleO648_IsBlocked	byte __fastcall(void * o)
+000ff070	885	USER_DEFINED	__fastcall	cVehicleO648_Rebuild	void __fastcall(void * o)
+000ff3f0	135	USER_DEFINED	__thiscall	cVehicleO648_SetSlot	void __thiscall(int slot)
+000ff480	364	USER_DEFINED	__thiscall	cVehicleO648_Cycle	void __thiscall(byte next)
+000ff5f0	169	USER_DEFINED	__fastcall	cVehicleO648_PickInView	void __fastcall(void * o)
+000ff6a0	236	USER_DEFINED	__thiscall	cVehicleO648_Update	void __thiscall(float dt)
+000ff790	257	USER_DEFINED	__fastcall	cVehicleO648_IsStale	byte __fastcall(void * o)
 000ff8a0	18	USER_DEFINED	__fastcall	Controls_ctor	void * __fastcall(void * self)
 000ff8c0	122	USER_DEFINED	__fastcall	Controls_Reset	void __fastcall(void * self)
 000ff940	582	USER_DEFINED	__thiscall	Controls_VarF	byte __thiscall(char * name, double * d, int set)
@@ -3062,13 +3081,13 @@ rva	size	source	callconv	name	signature
 000ffc40	29	USER_DEFINED	__thiscall	Controls_SetWeapon	void __thiscall(int w)
 000ffc60	39	USER_DEFINED	__thiscall	Controls_RumbleA	void __thiscall(float strength, float time)
 000ffc90	39	USER_DEFINED	__thiscall	Controls_RumbleB	void __thiscall(float strength, float time)
-000ffcc0	3551	DEFAULT	unknown	FUN_004ffcc0	
-00100ab0	56	DEFAULT	unknown	FUN_00500ab0	
-00100af0	49	DEFAULT	unknown	FUN_00500af0	
-00100b30	46	DEFAULT	unknown	FUN_00500b30	
-00100b60	168	DEFAULT	unknown	FUN_00500b60	
-00100c10	69	DEFAULT	unknown	FUN_00500c10	
-00100c60	2423	DEFAULT	unknown	FUN_00500c60	
+000ffcc0	3551	USER_DEFINED	__thiscall	cVehicleControls_Tick	void __thiscall(void * v, float dt)
+00100ab0	56	USER_DEFINED	__fastcall	cVehicleEffects_ctor	void * __fastcall(void * self)
+00100af0	49	USER_DEFINED	__fastcall	cVehicleTubes_ctor	void * __fastcall(void * self)
+00100b30	46	USER_DEFINED	__fastcall	cVehicleTrails_ctor	void * __fastcall(void * self)
+00100b60	168	USER_DEFINED	__fastcall	cVehicleEffects_dtor	void __fastcall(void * self)
+00100c10	69	USER_DEFINED	__thiscall	cVehicleEffects_Update	void __thiscall(float dt)
+00100c60	2423	USER_DEFINED	__thiscall	cVehicleTubes_Update	void __thiscall(float dt)
 001015e0	1608	USER_DEFINED	__thiscall	cVehicleTrails_Update	void __thiscall(float dt)
 00101c30	88	USER_DEFINED	__fastcall	cVehicleEffects_Reset	void __fastcall(void * self)
 00101c90	51	USER_DEFINED	__fastcall	cVehicleTubes_Reset	void __fastcall(void * self)
@@ -3082,14 +3101,14 @@ rva	size	source	callconv	name	signature
 00102800	116	USER_DEFINED	__thiscall	cVehicleEffects_SetOwner	void __thiscall(void * e)
 00102880	96	USER_DEFINED	__thiscall	cVehicleTubes_SetOwner	void __thiscall(void * e)
 001028e0	96	USER_DEFINED	__thiscall	cVehicleTrails_SetOwner	void __thiscall(void * e)
-00102940	1869	DEFAULT	unknown	FUN_00502940	
+00102940	1869	USER_DEFINED	__thiscall	cVehicleEffects_WindSmoke	void __thiscall(float x, float y, float z)
 00103090	1123	USER_DEFINED	__thiscall	cVehicleEffects_UpdateState	void __thiscall(float dt)
 00103500	9002	USER_DEFINED	__thiscall	cVehicleEffects_Shoot	void __thiscall(int weap, int slot)
 00105830	1137	USER_DEFINED	__thiscall	cVehicleEntity_ctor	void * __thiscall(char * name, float x, float y, float z)
 00105cb0	304	USER_DEFINED	__fastcall	cVehicleEntity_dtor	void __fastcall(void * self)
 00105de0	114	USER_DEFINED	__fastcall	cAutoAim_dtor	void __fastcall(void * self)
 00105e70	38	USER_DEFINED	__thiscall	cVehicleEntity_Delete	void * __thiscall(byte flags)
-00105ea0	1872	ANALYSIS	__thiscall	cVehicleEntity::vf24	undefined __thiscall(void)
+00105ea0	1872	USER_DEFINED	__thiscall	cVehicleEntity_UpdateModel	void __thiscall(void)
 001065f0	259	USER_DEFINED	__fastcall	cVehicleEntity_UpdateTrust	void __fastcall(void * self)
 00106700	155	USER_DEFINED	__thiscall	cVehicleEntity_UpdateSpeed	void __thiscall(void)
 001067a0	46	USER_DEFINED	__thiscall	cVehicleEntity_BoostTick	void __thiscall(float dt)
@@ -3140,7 +3159,7 @@ rva	size	source	callconv	name	signature
 0010a4a0	96	USER_DEFINED	__thiscall	cVehicleEntity_SetFXParam	void __thiscall(int i, float v)
 0010a500	362	USER_DEFINED	__thiscall	cVehicleEntity_SetUsrControl	void __thiscall(int slot)
 0010a670	189	USER_DEFINED	__thiscall	cVehicleEntity_SetVel	void __thiscall(void * vel)
-0010a730	2590	DEFAULT	unknown	FUN_0050a730	
+0010a730	2590	USER_DEFINED	__thiscall	cVehicleEntity_Step	void __thiscall(float dt)
 0010b150	70	USER_DEFINED	__thiscall	cVehicleEntity_Move	void __thiscall(float dt)
 0010b1a0	150	USER_DEFINED	__thiscall	cVehicleEntity_Update	void __thiscall(void)
 0010b240	877	USER_DEFINED	__thiscall	cVehicleEntity_UpdateSounds	void __thiscall(float dt)
@@ -3152,9 +3171,9 @@ rva	size	source	callconv	name	signature
 0010bb30	21	USER_DEFINED	__thiscall	cVehicleEntity_IsEMIed	int __thiscall(void)
 0010bb50	51	USER_DEFINED	__fastcall	cVehicleEntity_CanFire	int __fastcall(void * self)
 0010bb90	141	USER_DEFINED	__thiscall	cVehicleMotor_ctor	void * __thiscall(void)
-0010bc20	140	DEFAULT	unknown	FUN_0050bc20	
-0010bcb0	86	DEFAULT	unknown	FUN_0050bcb0	
-0010bd10	177	DEFAULT	unknown	FUN_0050bd10	
+0010bc20	140	USER_DEFINED	__fastcall	cVehicleMotors_ctor	void * __fastcall(void * motors)
+0010bcb0	86	USER_DEFINED	__fastcall	cVehicleMotor_dtor	void __fastcall(void * self)
+0010bd10	177	USER_DEFINED	__fastcall	cVehicleMotors_dtor	void __fastcall(void * motors)
 0010bdd0	3388	USER_DEFINED	__fastcall	cVehicleMotors_Update	void __fastcall(void * self)
 0010cb10	87	USER_DEFINED	__fastcall	cVehicleMotor_Reset	void __fastcall(void * self)
 0010cb70	140	USER_DEFINED	__fastcall	cVehicleMotors_Reset	void __fastcall(void * self)
@@ -3553,33 +3572,33 @@ rva	size	source	callconv	name	signature
 00133670	23	USER_DEFINED	__cdecl	Mem_Size	uint __cdecl(void * p)
 00133690	233	USER_DEFINED	__cdecl	Mem_Realloc	void * __cdecl(void * p, uint size)
 00133780	153	USER_DEFINED	__cdecl	Mem_Count	void __cdecl(int freed, int size)
-00133820	57	USER_DEFINED	__thiscall	cString::cString	void * __thiscall(int n)
-00133860	118	USER_DEFINED	__thiscall	cString::cString	void * __thiscall(char * a, int alen, char * b, int blen)
-001338e0	76	USER_DEFINED	__thiscall	cString::cString	void * __thiscall(void * src)
-00133930	76	USER_DEFINED	__thiscall	cString::cString	void * __thiscall(char * s)
-00133980	9	USER_DEFINED	__thiscall	cString::cString	void * __thiscall(void)
-00133990	74	USER_DEFINED	__thiscall	cString::~cString	void __thiscall(void)
+00133820	57	USER_DEFINED	__thiscall	cString_ctorReserve	void * __thiscall(int n)
+00133860	118	USER_DEFINED	__thiscall	cString_ctorConcat	void * __thiscall(char * a, int alen, char * b, int blen)
+001338e0	76	USER_DEFINED	__thiscall	cString_ctorCopy	void * __thiscall(void * src)
+00133930	76	USER_DEFINED	__thiscall	cString_ctorStr	void * __thiscall(char * s)
+00133980	9	USER_DEFINED	__thiscall	cString_ctor	void * __thiscall(void)
+00133990	74	USER_DEFINED	__thiscall	cString_dtor	void __thiscall(void)
 001339e0	73	USER_DEFINED	__cdecl	cString_Eq	byte __cdecl(void * a, void * b)
 00133a30	71	USER_DEFINED	__cdecl	cString_EqStr	byte __cdecl(void * a, char * b)
 00133a80	71	USER_DEFINED	__cdecl	cString_StrEq	byte __cdecl(char * a, void * b)
 00133ad0	99	USER_DEFINED	__cdecl	cString_Add	void * __cdecl(void * out, void * a, void * b)
 00133b40	99	USER_DEFINED	__cdecl	cString_AddStr	void * __cdecl(void * out, void * a, char * b)
 00133bb0	99	USER_DEFINED	__cdecl	cString_StrAdd	void * __cdecl(void * out, char * a, void * b)
-00133c20	66	USER_DEFINED	__thiscall	cString::AppendC	void * __thiscall(void * s)
-00133c70	34	USER_DEFINED	__thiscall	cString::AppendChar	void * __thiscall(char c)
-00133ca0	64	USER_DEFINED	__thiscall	cString::AppendStr	void * __thiscall(char * s)
-00133ce0	340	USER_DEFINED	__thiscall	cString::Append	void __thiscall(char * s, int n)
-00133e40	86	USER_DEFINED	__thiscall	cString::SetN	void __thiscall(char * s, int n)
-00133ea0	51	USER_DEFINED	__thiscall	cString::Find	char * __thiscall(char * sub, int * pos)
-00133ee0	135	USER_DEFINED	__thiscall	cString::Left	void * __thiscall(void * out, int n)
-00133f70	143	USER_DEFINED	__thiscall	cString::Right	void * __thiscall(void * out, int n)
-00134000	55	USER_DEFINED	__thiscall	cString::Assign	void __thiscall(void * src)
-00134040	59	USER_DEFINED	__thiscall	cString::Set	void __thiscall(char * s)
-00134080	139	USER_DEFINED	__cdecl	cString_Printf	void __cdecl(void * self, char * fmt, ...)
-00134130	81	USER_DEFINED	__thiscall	cString::Cmp	int __thiscall(void * other)
-00134190	79	USER_DEFINED	__thiscall	cString::CmpStr	int __thiscall(char * other)
-001341e0	58	USER_DEFINED	__thiscall	cString::ICmp	int __thiscall(void * other)
-00134220	56	USER_DEFINED	__thiscall	cString::ICmpStr	int __thiscall(char * other)
+00133c20	66	USER_DEFINED	__thiscall	cString_AppendC	void * __thiscall(void * s)
+00133c70	34	USER_DEFINED	__thiscall	cString_AppendChar	void * __thiscall(char c)
+00133ca0	64	USER_DEFINED	__thiscall	cString_AppendStr	void * __thiscall(char * s)
+00133ce0	340	USER_DEFINED	__thiscall	cString_Append	void __thiscall(char * s, int n)
+00133e40	86	USER_DEFINED	__thiscall	cString_SetN	void __thiscall(char * s, int n)
+00133ea0	51	USER_DEFINED	__thiscall	cString_Find	char * __thiscall(char * sub, int * pos)
+00133ee0	135	USER_DEFINED	__thiscall	cString_Left	void * __thiscall(void * out, int n)
+00133f70	143	USER_DEFINED	__thiscall	cString_Right	void * __thiscall(void * out, int n)
+00134000	55	USER_DEFINED	__thiscall	cString_Assign	void __thiscall(void * src)
+00134040	59	USER_DEFINED	__thiscall	cString_Set	void __thiscall(char * s)
+00134080	139	USER_DEFINED	__cdecl	cString_Printf	void __cdecl(void * self, char * fmt, int arg)
+00134130	81	USER_DEFINED	__thiscall	cString_Cmp	int __thiscall(void * other)
+00134190	79	USER_DEFINED	__thiscall	cString_CmpStr	int __thiscall(char * other)
+001341e0	58	USER_DEFINED	__thiscall	cString_ICmp	int __thiscall(void * other)
+00134220	56	USER_DEFINED	__thiscall	cString_ICmpStr	int __thiscall(char * other)
 00134260	15	ANALYSIS	__thiscall	CCallbackImpl<8>::vf00	undefined __thiscall(void)
 00134270	6	ANALYSIS	__thiscall	CCallbackImpl<8>::vf02	undefined __thiscall(void)
 00134280	14	ANALYSIS	__thiscall	CCallback<cGetAuthSessionTicketResponseExt,GetAuthSessionTicketResponse_t,0>::vf01	undefined __thiscall(void)
@@ -3981,9 +4000,9 @@ rva	size	source	callconv	name	signature
 00144ac0	3	USER_DEFINED	__thiscall	cDesktopLocalLogic_Vf31	byte __thiscall(void)
 00144ad0	3	USER_DEFINED	__thiscall	cDesktopLocalLogic_Vf30	void * __thiscall(void)
 00144af0	118	USER_DEFINED	__cdecl	HashItem_Free	void __cdecl(void * p)
-00144b70	118	USER_DEFINED	__thiscall	HashTable<cNameItem>::Add	byte __thiscall(char * key, void * value, byte warn)
+00144b70	118	USER_DEFINED	__thiscall	NameTable_Add	byte __thiscall(char * key, int * v, byte warn)
 00144bf0	78	USER_DEFINED	__cdecl	Domination_AddZone	void __cdecl(void * zone)
-00144c40	262	USER_DEFINED	__thiscall	HashTable<cNameItem>::Insert	void * __thiscall(char * key, uint slot, void * value)
+00144c40	262	USER_DEFINED	__thiscall	NameTable_Insert	void * __thiscall(char * key, uint slot, int * v)
 00144d50	90	USER_DEFINED	__cdecl	Domination_SetBatonState	void __cdecl(void * pos, int state)
 00144db0	88	USER_DEFINED	__cdecl	Domination_SetZoneState	void __cdecl(int zone, int state)
 00144e10	193	USER_DEFINED	__thiscall	cDominationLogic_GetZone	void * __thiscall(void * ai)
@@ -3991,10 +4010,10 @@ rva	size	source	callconv	name	signature
 00144f50	49	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Get	byte __thiscall(char * key, void * out)
 00144f90	143	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Find	void * __thiscall(char * key, uint slot)
 00145020	362	USER_DEFINED	__thiscall	cDominationLogic_FindEnemy	void * __thiscall(void * pos, void * other, float maxDist)
-00145190	227	DEFAULT	unknown	FUN_00545190	
+00145190	227	USER_DEFINED	__thiscall	HashTable_Slot	uint __thiscall(char * key)
 00145280	1194	USER_DEFINED	__thiscall	cDominationLogic_UpdateShip	void __thiscall(void * v, void * target, void * baton)
 00145730	182	USER_DEFINED	__thiscall	HashTable<cNameItem>::Unlink	void * __thiscall(char * key, uint slot)
-001457f0	105	DEFAULT	unknown	FUN_005457f0	
+001457f0	105	USER_DEFINED	__thiscall	HashTable_ctor	void * __thiscall(int numSlots, byte caseSensitive)
 00145860	202	USER_DEFINED	__fastcall	cDominationEnemiesLogic_ctor	void * __fastcall(void * self)
 00145930	54	USER_DEFINED	__fastcall	HashTable<cNameItem>::~HashTable	void __fastcall(void * self)
 00145970	108	USER_DEFINED	__fastcall	cDominationEnemiesLogic_dtor	void __fastcall(void * self)
@@ -4002,7 +4021,7 @@ rva	size	source	callconv	name	signature
 00145a30	129	USER_DEFINED	__thiscall	cDominationEnemiesLogic_Delete	void * __thiscall(byte flags)
 00145ac0	105	USER_DEFINED	__thiscall	cDominationLogic_Delete	void * __thiscall(byte flags)
 00145b30	216	USER_DEFINED	__thiscall	cDominationLogic_NearestZone	int __thiscall(void * pos)
-00145c10	273	USER_DEFINED	__fastcall	HashTable<cNameItem>::Clear	void __fastcall(void * self)
+00145c10	273	USER_DEFINED	__fastcall	NameTable_Clear	void __fastcall(void * self)
 00145d30	706	USER_DEFINED	__fastcall	cDominationSide_Think	void __fastcall(void * self)
 00146000	7	USER_DEFINED	__thiscall	cDominationEnemiesLogic_GetList	void * __thiscall(void)
 00146010	80	USER_DEFINED	__thiscall	cDominationEnemiesLogic_GetLeader	void * __thiscall(void)
@@ -4372,7 +4391,7 @@ rva	size	source	callconv	name	signature
 00156e30	191	USER_DEFINED	__fastcall	cRustyLocalLogic_NextJunk	void __fastcall(void * self)
 00156ef0	308	USER_DEFINED	__thiscall	cRustyLocalLogic_SetState	byte __thiscall(int state, void * target)
 00157030	9	USER_DEFINED	__thiscall	cRustyLocalLogic_VarS	byte __thiscall(char * name, char ** s, byte set)
-00157040	105	DEFAULT	unknown	FUN_00557040	
+00157040	105	USER_DEFINED	__thiscall	HashTable_ctor	void * __thiscall(int numSlots, byte caseSensitive)
 001570b0	120	USER_DEFINED	__thiscall	cShipGroup_ctor	void * __thiscall(char * list)
 00157130	168	USER_DEFINED	__thiscall	cShipGroupData_ctor	void * __thiscall(char * list)
 001571e0	54	USER_DEFINED	__fastcall	HashTable<cWorldStrItem>::~HashTable	void __fastcall(void * self)
@@ -4383,14 +4402,14 @@ rva	size	source	callconv	name	signature
 001573c0	267	USER_DEFINED	__thiscall	HashTable<cWorldStrItem>::Insert	void * __thiscall(char * key, uint slot, void * value)
 001574d0	11	USER_DEFINED	__thiscall	cShipGroup_SetLair	void __thiscall(char * name, void * pos)
 001574e0	125	USER_DEFINED	__thiscall	cShipGroupData_SetLair	void __thiscall(char * name, void * pos)
-00157560	273	USER_DEFINED	__fastcall	HashTable<cWorldStrItem>::Clear	void __fastcall(void * self)
+00157560	273	USER_DEFINED	__fastcall	WorldStrTable_Clear	void __fastcall(void * self)
 00157680	14	USER_DEFINED	__thiscall	cShipGroup_DeleteLair	byte __thiscall(char * name)
 00157690	100	USER_DEFINED	__thiscall	HashTable<cWorldStrItem>::Delete	byte __thiscall(char * key)
 00157700	1198	USER_DEFINED	__fastcall	cShipGroupData_Think	void __fastcall(void * self)
 00157bb0	63	USER_DEFINED	__thiscall	HashTable<cWorldStrItem>::Get	byte __thiscall(char * key, void * out)
 00157bf0	143	USER_DEFINED	__thiscall	HashTable<cWorldStrItem>::Find	void * __thiscall(char * key, uint slot)
 00157c90	57	USER_DEFINED	__thiscall	cShipGroup_GetLair	void __thiscall(char * name, void * out)
-00157cd0	227	DEFAULT	unknown	FUN_00557cd0	
+00157cd0	227	USER_DEFINED	__thiscall	HashTable_Slot	uint __thiscall(char * key)
 00157dc0	45	USER_DEFINED	__fastcall	cShipGroup_Init	void __fastcall(void * self)
 00157df0	99	USER_DEFINED	__thiscall	HashTable<cWorldStrItem>::Set	byte __thiscall(char * key, void * value)
 00157e60	165	USER_DEFINED	__cdecl	ShipGroup_OnAIEnd	byte __cdecl(void * ai)
@@ -4426,22 +4445,22 @@ rva	size	source	callconv	name	signature
 00159340	151	USER_DEFINED	__cdecl	Sputnik_LaughDone	void __cdecl(void * params)
 001593e0	323	USER_DEFINED	__thiscall	cSputnikJunkyardLocalLogic_Update	void __thiscall(float dt)
 00159530	447	USER_DEFINED	__thiscall	cSputnikJunkyardLocalLogic_SetState	byte __thiscall(int state, void * target)
-001596f0	105	DEFAULT	unknown	FUN_005596f0	
+001596f0	105	USER_DEFINED	__thiscall	HashTable_ctor	void * __thiscall(int numSlots, byte caseSensitive)
 00159760	191	USER_DEFINED	__fastcall	cEnemiesTraffic_ctor	void * __fastcall(void * self)
 00159820	54	USER_DEFINED	__fastcall	HashTable<cNameItem>::~HashTable	void __fastcall(void * self)
 00159860	61	USER_DEFINED	__fastcall	cEnemiesTraffic_dtor	void __fastcall(void * self)
 001598a0	118	USER_DEFINED	__cdecl	HashItem_Free	void __cdecl(void * p)
-00159920	118	USER_DEFINED	__thiscall	HashTable<cNameItem>::Add	byte __thiscall(char * key, void * value, byte warn)
-001599a0	255	USER_DEFINED	__thiscall	HashTable<cNameItem>::Insert	void * __thiscall(char * key, uint slot, void * value)
+00159920	118	USER_DEFINED	__thiscall	NameTable_Add	byte __thiscall(char * key, int * v, byte warn)
+001599a0	255	USER_DEFINED	__thiscall	NameTable_Insert	void * __thiscall(char * key, uint slot, int * v)
 00159aa0	78	USER_DEFINED	__cdecl	Traffic_FightChance	byte __cdecl(void * a, void * b)
-00159af0	273	USER_DEFINED	__fastcall	HashTable<cNameItem>::Clear	void __fastcall(void * self)
+00159af0	273	USER_DEFINED	__fastcall	NameTable_Clear	void __fastcall(void * self)
 00159c10	159	USER_DEFINED	__fastcall	cEnemiesTraffic_RemoveFarthest	void __fastcall(void * self)
 00159cb0	100	USER_DEFINED	__thiscall	HashTable<cNameItem>::Delete	byte __thiscall(char * key)
 00159d20	3364	USER_DEFINED	__fastcall	cEnemiesTraffic_Think	void __fastcall(void * self)
 0015aa50	49	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Get	byte __thiscall(char * key, void * out)
 0015aa90	143	USER_DEFINED	__thiscall	HashTable<cPtrItem>::Find	void * __thiscall(char * key, uint slot)
 0015ab20	272	USER_DEFINED	__cdecl	Traffic_FindOther	void * __cdecl(void * e)
-0015ac40	227	DEFAULT	unknown	FUN_0055ac40	
+0015ac40	227	USER_DEFINED	__thiscall	HashTable_Slot	uint __thiscall(char * key)
 0015ad30	197	USER_DEFINED	__fastcall	cEnemiesTraffic_Init	void __fastcall(void * self)
 0015ae00	87	USER_DEFINED	__thiscall	HashTable<cNameItem>::Set	byte __thiscall(char * key, void * value)
 0015ae60	165	USER_DEFINED	__cdecl	Traffic_OnAIEnd	byte __cdecl(void * ai)
@@ -4737,7 +4756,7 @@ rva	size	source	callconv	name	signature
 0017ac90	1341	DEFAULT	unknown	FUN_0057ac90	
 0017b1d0	78	USER_DEFINED	__fastcall	cGradientScorer_ctor	void * __fastcall(void * self)
 0017b220	167	USER_DEFINED	__fastcall	cSpriteScorer_ctor	void * __fastcall(void * self)
-0017b2d0	68	USER_DEFINED	__fastcall	cGradientScorer_dtor	void __fastcall(void * self)
+0017b2d0	68	USER_DEFINED	__fastcall	cSpriteScorer_dtor	void __fastcall(void * self)
 0017b320	68	USER_DEFINED	__fastcall	cSpriteScorer_dtor	void __fastcall(void * self)
 0017b370	97	USER_DEFINED	__thiscall	cGradientScorer_Delete	void * __thiscall(byte flags)
 0017b3e0	97	USER_DEFINED	__thiscall	cSpriteScorer_Delete	void * __thiscall(byte flags)
@@ -4785,7 +4804,7 @@ rva	size	source	callconv	name	signature
 00182a90	177	USER_DEFINED	__fastcall	cTextScorer_ctor	void * __fastcall(void * self)
 00182b50	84	USER_DEFINED	__fastcall	cTextTypingScorer_ctor	void * __fastcall(void * self)
 00182bb0	58	USER_DEFINED	__fastcall	cTextScorer_dtor	void __fastcall(void * self)
-00182bf0	58	USER_DEFINED	__fastcall	cTextTypingScorer_dtor	void __fastcall(void * self)
+00182bf0	58	USER_DEFINED	__fastcall	cTextScorer_dtor	void __fastcall(void * self)
 00182c30	87	USER_DEFINED	__thiscall	cTextScorer_Delete	void * __thiscall(byte flags)
 00182c90	87	USER_DEFINED	__thiscall	cTextTypingScorer_Delete	void * __thiscall(byte flags)
 00182cf0	104	USER_DEFINED	__cdecl	TextEdit_End	void __cdecl(int player)
@@ -4825,7 +4844,7 @@ rva	size	source	callconv	name	signature
 00188d10	213	USER_DEFINED	__fastcall	cWindFxScorer_ctor	void * __fastcall(void * self)
 00188df0	58	USER_DEFINED	__fastcall	cWindFxScorer_dtor	void __fastcall(void * self)
 00188e30	87	USER_DEFINED	__thiscall	cWindFxScorer_Delete	void * __thiscall(byte flags)
-00188e90	9	USER_DEFINED	__thiscall	cWindFxScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
+00188e90	9	USER_DEFINED	__thiscall	cScorerItem_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
 00188ea0	2595	ANALYSIS	__thiscall	cWindFxScorer::vf00	undefined __thiscall(void)
 001898d0	41	USER_DEFINED	__thiscall	cNetBuffer_ctor	void * __thiscall(uint cap)
 00189900	97	USER_DEFINED	__fastcall	cNetBuffer_dtor	void __fastcall(void * self)
@@ -5502,7 +5521,7 @@ rva	size	source	callconv	name	signature
 001a4590	23	USER_DEFINED	__thiscall	cSound_UpdateVP	byte __thiscall(int volume, int pan)
 001a45b0	18	USER_DEFINED	__thiscall	CSoundSys_VoiceUnused	int __thiscall(int voice)
 001a45d0	100	USER_DEFINED	__cdecl	Snd_Volume	int __cdecl(float volume)
-001a4640	105	DEFAULT	unknown	FUN_005a4640	
+001a4640	105	USER_DEFINED	__thiscall	HashTable_ctor	void * __thiscall(int numSlots, byte caseSensitive)
 001a46b0	169	USER_DEFINED	__fastcall	CSoundXBox_ctor	void * __fastcall(void * self)
 001a4760	54	USER_DEFINED	__fastcall	HashTable<cSoundStrItem>::~HashTable	void __fastcall(void * self)
 001a47a0	84	USER_DEFINED	__fastcall	CSoundXBox_dtor	void __fastcall(void * self)
@@ -5522,7 +5541,7 @@ rva	size	source	callconv	name	signature
 001a5040	94	USER_DEFINED	__thiscall	HashTable<cSoundStrItem>::GetWarn	byte __thiscall(char * key, void * out, byte warn)
 001a50a0	143	USER_DEFINED	__thiscall	HashTable<cSoundStrItem>::Find	void * __thiscall(char * key, uint slot)
 001a5160	129	USER_DEFINED	__thiscall	CSoundXBox_GetDesc	byte __thiscall(char * name, void * out)
-001a51f0	227	DEFAULT	unknown	FUN_005a51f0	
+001a51f0	227	USER_DEFINED	__thiscall	HashTable_Slot	uint __thiscall(char * key)
 001a52e0	43	USER_DEFINED	__fastcall	CSoundXBox_Init	void __fastcall(void * self)
 001a5310	774	USER_DEFINED	__thiscall	CSoundXBox_Load	void __thiscall(char * name, int unused)
 001a5620	31	USER_DEFINED	__thiscall	CSoundXBox_LoadSound2	void __thiscall(char * name)
@@ -6100,16 +6119,16 @@ rva	size	source	callconv	name	signature
 001eaad0	126	USER_DEFINED	__thiscall	cObjElementFXVehicleSpawn_Delete	void * __thiscall(uint flags)
 001eab50	126	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_Delete	void * __thiscall(uint flags)
 001eabd0	3319	USER_DEFINED	__thiscall	cObjElementFXFiredDebris_Update	void __thiscall(void * debris, float dt)
-001eb8d0	4270	ANALYSIS	__thiscall	cObjElementFXFiredEntity::vf01	undefined __thiscall(void)
+001eb8d0	4270	USER_DEFINED	__thiscall	cObjElementFXFiredEntity_Update	void __thiscall(void * debris, float dt)
 001ec980	2032	USER_DEFINED	__thiscall	cObjElementFXSmokeDebris_Update	void __thiscall(void * debris, float dt)
-001ed170	2087	ANALYSIS	__thiscall	cObjElementFXVehicleAccelerator::vf01	undefined __thiscall(void)
+001ed170	2087	USER_DEFINED	__thiscall	cObjElementFXVehicleAccelerator_Update	void __thiscall(void * debris, float dt)
 001ed9c0	12368	ANALYSIS	__thiscall	cObjElementFXVehicleDamage::vf01	undefined __thiscall(void)
-001f0a10	137	USER_DEFINED	__thiscall	cObjElementFXVehicleDeathTrail_Update	void __thiscall(void * debris, float dt)
-001f0aa0	4325	ANALYSIS	__thiscall	cObjElementFXVehicleEMI::vf01	undefined __thiscall(void)
-001f1b90	5552	ANALYSIS	__thiscall	cObjElementFXVehicleFire::vf01	undefined __thiscall(void)
+001f0a10	137	USER_DEFINED	__thiscall	cObjElementFXDevastatorShoot_Update	void __thiscall(void * debris, float dt)
+001f0aa0	4325	USER_DEFINED	__thiscall	cObjElementFXVehicleEMI_Update	void __thiscall(void * debris, float dt)
+001f1b90	5552	USER_DEFINED	__thiscall	cObjElementFXVehicleFire_Update	void __thiscall(void * debris, float dt)
 001f3140	2078	USER_DEFINED	__thiscall	cObjElementFXVehicleSpawn_Update	void __thiscall(void * debris, float dt)
-001f3960	3922	ANALYSIS	__thiscall	cObjElementFXVehicleSputnik::vf01	undefined __thiscall(void)
-001f48c0	1147	DEFAULT	unknown	FUN_005f48c0	
+001f3960	3922	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_Update	void __thiscall(void * debris, float dt)
+001f48c0	1147	USER_DEFINED	__fastcall	cObjElementFXVehicleAccelerator_InitRays	void __fastcall(void * self)
 001f4d50	13631	USER_DEFINED	unknown	FX_ShipExplosion	undefined(void)
 001f8290	145	USER_DEFINED	__thiscall	cObjElementFXFiredDebris_Start	void __thiscall(void * debris)
 001f8330	87	USER_DEFINED	__thiscall	cObjElementFXFiredEntity_Start	void __thiscall(void * debris)
@@ -6121,22 +6140,22 @@ rva	size	source	callconv	name	signature
 001f87b0	167	USER_DEFINED	__thiscall	cObjElementFXVehicleFire_Start	void __thiscall(void * debris)
 001f8860	113	USER_DEFINED	__thiscall	cObjElementFXVehicleSpawn_Start	void __thiscall(void * debris)
 001f88e0	241	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_Start	void __thiscall(void * debris)
-001f89e0	18	USER_DEFINED	__thiscall	cObjElementFXFiredDebris_IsAlive	byte __thiscall(void * debris, void * sys)
+001f89e0	18	USER_DEFINED	__thiscall	FXMisc_Alive	byte __thiscall(void * d, void * sys)
 001f8a00	78	USER_DEFINED	__thiscall	cObjElementFXFiredEntity_IsAlive	byte __thiscall(void * debris, void * sys)
-001f8a50	18	USER_DEFINED	__thiscall	cObjElementFXSmokeDebris_IsAlive	byte __thiscall(void * debris, void * sys)
-001f8a70	18	USER_DEFINED	__thiscall	cObjElementFXVehicleAccelerator_IsAlive	byte __thiscall(void * debris, void * sys)
+001f8a50	18	USER_DEFINED	__thiscall	FXMisc_Alive	byte __thiscall(void * d, void * sys)
+001f8a70	18	USER_DEFINED	__thiscall	FXMisc_Alive	byte __thiscall(void * d, void * sys)
 001f8a90	231	USER_DEFINED	__thiscall	cObjElementFXVehicleDamage_IsAlive	byte __thiscall(void * debris, void * sys)
-001f8b80	35	USER_DEFINED	__thiscall	cObjElementFXVehicleDeathTrail_IsAlive	byte __thiscall(void * debris, void * sys)
+001f8b80	35	USER_DEFINED	__thiscall	cObjElementFXDevastatorShoot_IsAlive	byte __thiscall(void * debris, void * sys)
 001f8bb0	73	USER_DEFINED	__thiscall	cObjElementFXVehicleEMI_IsAlive	byte __thiscall(void * debris, void * sys)
 001f8c00	86	USER_DEFINED	__thiscall	cObjElementFXVehicleFire_IsAlive	byte __thiscall(void * debris, void * sys)
-001f8c60	18	USER_DEFINED	__thiscall	cObjElementFXVehicleSpawn_IsAlive	byte __thiscall(void * debris, void * sys)
+001f8c60	18	USER_DEFINED	__thiscall	FXMisc_Alive	byte __thiscall(void * d, void * sys)
 001f8c80	102	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_IsAlive	byte __thiscall(void * debris, void * sys)
 001f8cf0	78	USER_DEFINED	__thiscall	cObjElementFXFiredDebris_Reset	void __thiscall(void * debris)
 001f8d40	24	USER_DEFINED	__thiscall	cObjElementFXFiredEntity_Reset	void __thiscall(void * debris)
 001f8d60	58	USER_DEFINED	__thiscall	cObjElementFXSmokeDebris_Reset	void __thiscall(void * debris)
 001f8da0	50	USER_DEFINED	__thiscall	cObjElementFXVehicleAccelerator_Reset	void __thiscall(void * debris)
 001f8de0	65	USER_DEFINED	__thiscall	cObjElementFXVehicleDamage_Reset	void __thiscall(void * debris)
-001f8e30	41	USER_DEFINED	__thiscall	cObjElementFXVehicleDeathTrail_Reset	void __thiscall(void * debris)
+001f8e30	41	USER_DEFINED	__thiscall	cObjElementFXDevastatorShoot_Reset	void __thiscall(void * debris)
 001f8e60	203	USER_DEFINED	__thiscall	cObjElementFXVehicleEMI_Reset	void __thiscall(void * debris)
 001f8f30	40	USER_DEFINED	__thiscall	cObjElementFXVehicleFire_Reset	void __thiscall(void * debris)
 001f8f60	75	USER_DEFINED	__thiscall	cObjElementFXVehicleSpawn_Reset	void __thiscall(void * debris)
@@ -6152,39 +6171,39 @@ rva	size	source	callconv	name	signature
 001f9620	62	USER_DEFINED	__thiscall	cObjElementFXVehicleSpawn_SetEntity	void __thiscall(void * e)
 001f9660	16	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_SetC0	void __thiscall(int v)
 001f9670	20	USER_DEFINED	__thiscall	cObjElementFXVehicleSputnik_SetC4	void __thiscall(float v)
-001f9690	220	DEFAULT	unknown	FUN_005f9690	
-001f9770	106	DEFAULT	unknown	FUN_005f9770	
-001f97e0	158	DEFAULT	unknown	FUN_005f97e0	
-001f9880	120	DEFAULT	unknown	FUN_005f9880	
-001f9900	105	DEFAULT	unknown	FUN_005f9900	
-001f9970	105	DEFAULT	unknown	FUN_005f9970	
-001f99e0	202	DEFAULT	unknown	FUN_005f99e0	
-001f9ab0	91	DEFAULT	unknown	FUN_005f9ab0	
-001f9b10	25	DEFAULT	unknown	FUN_005f9b10	
-001f9b30	106	DEFAULT	unknown	FUN_005f9b30	
-001f9ba0	44	DEFAULT	unknown	FUN_005f9ba0	
-001f9bd0	33	DEFAULT	unknown	FUN_005f9bd0	
-001f9c00	33	DEFAULT	unknown	FUN_005f9c00	
-001f9c30	98	DEFAULT	unknown	FUN_005f9c30	
-001f9ca0	38	ANALYSIS	__thiscall	cObjElementFXATPC::vf00	undefined __thiscall(void)
-001f9cd0	51	ANALYSIS	__thiscall	cObjElementFXDevastatorShoot::vf00	undefined __thiscall(void)
-001f9d10	137	ANALYSIS	__thiscall	cObjElementFXInfernoExplosion::vf00	undefined __thiscall(void)
-001f9da0	73	ANALYSIS	__thiscall	cObjElementFXInfernoMissile::vf00	undefined __thiscall(void)
-001f9df0	62	ANALYSIS	__thiscall	cObjElementFXLaser::vf00	undefined __thiscall(void)
-001f9e30	62	ANALYSIS	__thiscall	cObjElementFXSwarmMissile::vf00	undefined __thiscall(void)
-001f9e70	129	ANALYSIS	__thiscall	cObjElementFXTesla::vf00	undefined __thiscall(void)
-001f9f00	4590	ANALYSIS	__thiscall	cObjElementFXATPC::vf01	undefined __thiscall(void)
+001f9690	220	USER_DEFINED	__thiscall	cObjElementFXATPC_ctor	void * __thiscall(void)
+001f9770	106	USER_DEFINED	__thiscall	cObjElementFXDevastatorShoot_ctor	void * __thiscall(void)
+001f97e0	158	USER_DEFINED	__thiscall	cObjElementFXInfernoExplosion_ctor	void * __thiscall(void)
+001f9880	120	USER_DEFINED	__thiscall	cObjElementFXInfernoMissile_ctor	void * __thiscall(void)
+001f9900	105	USER_DEFINED	__thiscall	cObjElementFXLaser_ctor	void * __thiscall(void)
+001f9970	105	USER_DEFINED	__thiscall	cObjElementFXSwarmMissile_ctor	void * __thiscall(void)
+001f99e0	202	USER_DEFINED	__thiscall	cObjElementFXTesla_ctor	void * __thiscall(void)
+001f9ab0	91	USER_DEFINED	__thiscall	cObjElementFXATPC_dtor	void __thiscall(void)
+001f9b10	25	USER_DEFINED	__thiscall	cObjElementFXDevastatorShoot_dtor	void __thiscall(void)
+001f9b30	106	USER_DEFINED	__thiscall	cObjElementFXInfernoExplosion_dtor	void __thiscall(void)
+001f9ba0	44	USER_DEFINED	__thiscall	cObjElementFXInfernoMissile_dtor	void __thiscall(void)
+001f9bd0	33	USER_DEFINED	__thiscall	cObjElementFXLaser_dtor	void __thiscall(void)
+001f9c00	33	USER_DEFINED	__thiscall	cObjElementFXSwarmMissile_dtor	void __thiscall(void)
+001f9c30	98	USER_DEFINED	__thiscall	cObjElementFXTesla_dtor	void __thiscall(void)
+001f9ca0	38	USER_DEFINED	__thiscall	cObjElementFXATPC_Delete	void * __thiscall(uint flags)
+001f9cd0	51	USER_DEFINED	__thiscall	cObjElementFXDevastatorShoot_Delete	void * __thiscall(uint flags)
+001f9d10	137	USER_DEFINED	__thiscall	cObjElementFXInfernoExplosion_Delete	void * __thiscall(uint flags)
+001f9da0	73	USER_DEFINED	__thiscall	cObjElementFXInfernoMissile_Delete	void * __thiscall(uint flags)
+001f9df0	62	USER_DEFINED	__thiscall	cObjElementFXLaser_Delete	void * __thiscall(uint flags)
+001f9e30	62	USER_DEFINED	__thiscall	cObjElementFXSwarmMissile_Delete	void * __thiscall(uint flags)
+001f9e70	129	USER_DEFINED	__thiscall	cObjElementFXTesla_Delete	void * __thiscall(uint flags)
+001f9f00	4590	USER_DEFINED	__thiscall	cObjElementFXATPC_Update	void __thiscall(void * debris, float dt)
 001fb0f0	137	USER_DEFINED	__thiscall	cObjElementFXDevastatorShoot_Update	void __thiscall(void * debris, float dt)
 001fb180	1287	USER_DEFINED	__thiscall	cObjElementFXInfernoExplosion_Update	void __thiscall(void * debris, float dt)
 001fb690	783	USER_DEFINED	__thiscall	cObjElementFXInfernoMissile_Update	void __thiscall(void * debris, float dt)
 001fb9a0	1058	USER_DEFINED	__thiscall	cObjElementFXLaser_Update	void __thiscall(void * debris, float dt)
 001fbdd0	713	USER_DEFINED	__thiscall	cObjElementFXSwarmMissile_Update	void __thiscall(void * debris, float dt)
-001fc0a0	7597	ANALYSIS	__thiscall	cObjElementFXTesla::vf01	undefined __thiscall(void)
-001fde50	4078	DEFAULT	unknown	FUN_005fde50	
+001fc0a0	7597	USER_DEFINED	__thiscall	cObjElementFXTesla_Update	void __thiscall(void * debris, float dt)
+001fde50	4078	USER_DEFINED	__thiscall	cObjElementFXATPC_Shoot	void __thiscall(void * v, char * target, float hx, float hy, float hz, float ox, float oy, float oz)
 001fee40	650	USER_DEFINED	__thiscall	cObjElementFXLaser_Shoot	void __thiscall(float x0, float y0, float z0, float x1, float y1, float z1, float time)
 001ff0d0	191	USER_DEFINED	__thiscall	cObjElementFXTesla_SetEmitter	void __thiscall(void * e)
-001ff190	3340	DEFAULT	unknown	FUN_005ff190	
-001ffea0	4554	DEFAULT	unknown	FUN_005ffea0	
+001ff190	3340	USER_DEFINED	__cdecl	FXSwarm_BeeDeath	void __cdecl(float x, float y, float z, float vx, float vy, float vz, float size, float time, int n)
+001ffea0	4554	USER_DEFINED	__cdecl	FXSwarm_Hit	void __cdecl(float x, float y, float z, float vx, float vy, float vz, float size, float time, float dx, float dy, float dz)
 00201070	341	USER_DEFINED	__thiscall	cObjElementFXATPC_Start	void __thiscall(void * debris)
 002011d0	59	USER_DEFINED	__thiscall	cObjElementFXDevastatorShoot_Start	void __thiscall(void * debris)
 00201210	226	USER_DEFINED	__thiscall	cObjElementFXInfernoExplosion_Start	void __thiscall(void * debris)
@@ -6442,75 +6461,75 @@ rva	size	source	callconv	name	signature
 0020e600	112	USER_DEFINED	__cdecl	ConsoleWin_Enter	void __cdecl(void)
 0020e670	29	USER_DEFINED	__cdecl	ConsoleWin_ToggleInput	void __cdecl(void)
 0020e690	1032	USER_DEFINED	__stdcall	ConsoleWin_WndProc	int __stdcall(void * hwnd, uint msg, uint wParam, int lParam)
-0020eb10	80	DEFAULT	unknown	FUN_0060eb10	
-0020eb70	150	DEFAULT	unknown	FUN_0060eb70	
-0020ec10	86	DEFAULT	unknown	FUN_0060ec10	
-0020ec70	153	DEFAULT	unknown	FUN_0060ec70	
-0020ed10	160	DEFAULT	unknown	FUN_0060ed10	
-0020edb0	188	DEFAULT	unknown	FUN_0060edb0	
-0020ee70	354	DEFAULT	unknown	FUN_0060ee70	
-0020efe0	54	DEFAULT	unknown	FUN_0060efe0	
-0020f020	135	DEFAULT	unknown	FUN_0060f020	
-0020f0b0	54	DEFAULT	unknown	FUN_0060f0b0	
-0020f0f0	100	DEFAULT	unknown	FUN_0060f0f0	
-0020f160	116	DEFAULT	unknown	FUN_0060f160	
-0020f1e0	100	DEFAULT	unknown	FUN_0060f1e0	
-0020f250	100	DEFAULT	unknown	FUN_0060f250	
-0020f2c0	296	DEFAULT	unknown	FUN_0060f2c0	
-0020f3f0	44	DEFAULT	unknown	FUN_0060f3f0	
-0020f420	44	DEFAULT	unknown	FUN_0060f420	
-0020f450	58	DEFAULT	unknown	FUN_0060f450	
-0020f490	104	DEFAULT	unknown	FUN_0060f490	
-0020f500	108	DEFAULT	unknown	FUN_0060f500	
-0020f570	96	DEFAULT	unknown	FUN_0060f570	
-0020f5d0	144	DEFAULT	unknown	FUN_0060f5d0	
-0020f660	101	DEFAULT	unknown	FUN_0060f660	
-0020f6d0	93	DEFAULT	unknown	FUN_0060f6d0	
-0020f730	49	DEFAULT	unknown	FUN_0060f730	
-0020f770	44	DEFAULT	unknown	FUN_0060f770	
-0020f7a0	43	DEFAULT	unknown	FUN_0060f7a0	
-0020f7d0	76	DEFAULT	unknown	FUN_0060f7d0	
-0020f820	76	DEFAULT	unknown	FUN_0060f820	
-0020f870	160	DEFAULT	unknown	FUN_0060f870	
-0020f910	286	DEFAULT	unknown	FUN_0060f910	
-0020fa30	64	DEFAULT	unknown	FUN_0060fa30	
-0020fa70	93	DEFAULT	unknown	FUN_0060fa70	
-0020fad0	169	DEFAULT	unknown	FUN_0060fad0	
-0020fb80	1395	DEFAULT	unknown	FUN_0060fb80	
-00210100	1619	DEFAULT	unknown	FUN_00610100	
-00210760	96	DEFAULT	unknown	FUN_00610760	
-002107c0	102	DEFAULT	unknown	FUN_006107c0	
-00210830	64	DEFAULT	unknown	FUN_00610830	
-00210870	99	DEFAULT	unknown	FUN_00610870	
-002108e0	1206	DEFAULT	unknown	FUN_006108e0	
-00210da0	7	DEFAULT	unknown	FUN_00610da0	
-00210db0	374	DEFAULT	unknown	FUN_00610db0	
-00210f30	46	DEFAULT	unknown	FUN_00610f30	
-00210f60	18	DEFAULT	unknown	FUN_00610f60	
-00210f80	61	DEFAULT	unknown	FUN_00610f80	
-00210fc0	66	DEFAULT	unknown	FUN_00610fc0	
-00211010	66	DEFAULT	unknown	FUN_00611010	
-00211060	141	DEFAULT	unknown	FUN_00611060	
-002110f0	344	DEFAULT	unknown	FUN_006110f0	
-00211250	534	DEFAULT	unknown	FUN_00611250	
-00211470	142	DEFAULT	unknown	FUN_00611470	
-00211500	1262	DEFAULT	unknown	FUN_00611500	
-002119f0	47	DEFAULT	unknown	FUN_006119f0	
-00211a20	20	DEFAULT	unknown	FUN_00611a20	
-00211a40	74	DEFAULT	unknown	FUN_00611a40	
-00211a90	376	DEFAULT	unknown	FUN_00611a90	
-00211c30	94	DEFAULT	unknown	FUN_00611c30	
-00211c90	54	DEFAULT	unknown	FUN_00611c90	
-00211cd0	66	DEFAULT	unknown	FUN_00611cd0	
-00211d20	66	DEFAULT	unknown	FUN_00611d20	
-00211d70	98	DEFAULT	unknown	FUN_00611d70	
-00211de0	98	DEFAULT	unknown	FUN_00611de0	
-00211e50	66	DEFAULT	unknown	FUN_00611e50	
-00211ea0	196	DEFAULT	unknown	FUN_00611ea0	
-00211f80	243	DEFAULT	unknown	FUN_00611f80	
-00212080	1035	DEFAULT	unknown	FUN_00612080	
-00212490	58	DEFAULT	unknown	FUN_00612490	
-002124d0	56	DEFAULT	unknown	FUN_006124d0	
+0020eb10	80	USER_DEFINED	__thiscall	CGameModel_ctor	void * __thiscall(char * name)
+0020eb70	150	USER_DEFINED	__fastcall	CCollideMesh_dtor	void __fastcall(void * self)
+0020ec10	86	USER_DEFINED	__fastcall	CGameModel_Reset	void __fastcall(void * self)
+0020ec70	153	USER_DEFINED	__thiscall	CGameModel_AddAnim	int __thiscall(char * name)
+0020ed10	160	USER_DEFINED	__thiscall	CGameModel_MoveForward	void __thiscall(float d)
+0020edb0	188	USER_DEFINED	__thiscall	CGameModel_AnimCmd	void __thiscall(char * cmd)
+0020ee70	354	USER_DEFINED	__thiscall	CGameModel_AnimTime	byte __thiscall(int i, float frame, float * time)
+0020efe0	54	USER_DEFINED	__thiscall	CGameModel_FindAnim	int __thiscall(char * name)
+0020f020	135	USER_DEFINED	__thiscall	CGameModel_AnimInfo	byte __thiscall(int i, float * dur, float * fps)
+0020f0b0	54	USER_DEFINED	__thiscall	CGameModel_AnimName	char * __thiscall(int i)
+0020f0f0	100	USER_DEFINED	__thiscall	CGameModel_SetAnimVel	byte __thiscall(int i, float vel)
+0020f160	116	USER_DEFINED	__thiscall	CGameModel_SetAnimSpeed	byte __thiscall(int i, float speed)
+0020f1e0	100	USER_DEFINED	__thiscall	CGameModel_SetAnimLoop	byte __thiscall(int i, byte loop)
+0020f250	100	USER_DEFINED	__thiscall	CGameModel_SetAnimFactor	byte __thiscall(int i, float factor)
+0020f2c0	296	USER_DEFINED	__thiscall	CGameModel_Release	void __thiscall(byte free)
+0020f3f0	44	USER_DEFINED	__fastcall	CGameModel_Disable	void __fastcall(void * self)
+0020f420	44	USER_DEFINED	__fastcall	CGameModel_Enable	void __fastcall(void * self)
+0020f450	58	USER_DEFINED	__thiscall	CGameModel_ChanEnd	byte __thiscall(uint chan)
+0020f490	104	USER_DEFINED	__thiscall	CGameModel_ChanAnim	void * __thiscall(uint chan)
+0020f500	108	USER_DEFINED	__thiscall	CGameModel_ChanInfo	byte __thiscall(uint chan, int * mode, int * anim)
+0020f570	96	USER_DEFINED	__thiscall	CGameModel_ChanTime	byte __thiscall(uint chan, float * t)
+0020f5d0	144	USER_DEFINED	__fastcall	CGameModel_Radius	float __fastcall(void * self)
+0020f660	101	USER_DEFINED	__thiscall	CGameModel_NodoIniFloat	float __thiscall(uint i, char * sect, char * key, float def)
+0020f6d0	93	USER_DEFINED	__thiscall	CGameModel_NodoIniInt	int __thiscall(uint i, char * sect, char * key, int def)
+0020f730	49	USER_DEFINED	__fastcall	CGameModel_SceneName	char * __fastcall(void * self)
+0020f770	44	USER_DEFINED	__fastcall	CGameModel_GetSector	int __fastcall(void * self)
+0020f7a0	43	USER_DEFINED	__fastcall	CGameModel_Name	char * __fastcall(void * self)
+0020f7d0	76	USER_DEFINED	__thiscall	CGameModel_FindNodoR	int __thiscall(char * name)
+0020f820	76	USER_DEFINED	__thiscall	CGameModel_FindNodoRWild	int __thiscall(char * name)
+0020f870	160	USER_DEFINED	__thiscall	CGameModel_NodoPos	void * __thiscall(void * out, uint i, byte animated)
+0020f910	286	USER_DEFINED	__thiscall	CGameModel_VertexCounts	int __thiscall(int * out, int max)
+0020fa30	64	USER_DEFINED	__thiscall	CGameModel_GetPos	void * __thiscall(void * out)
+0020fa70	93	USER_DEFINED	__thiscall	CGameModel_NodoIniColor	uint __thiscall(uint i, char * sect, char * key, uint def)
+0020fad0	169	USER_DEFINED	__thiscall	CGameModel_NodoRRef	void * __thiscall(uint i)
+0020fb80	1395	USER_DEFINED	__thiscall	CGameModel_RandomVertices	void __thiscall(void * pos, void * normal, void * area, int count, uint nodo)
+00210100	1619	USER_DEFINED	__thiscall	CGameModel_Vertices	void __thiscall(void * pos, void * normal, void * area, int count, int first, int * index, uint nodo, int * indices)
+00210760	96	USER_DEFINED	__thiscall	CGameModel_GetEffect	uint __thiscall(uint * out)
+002107c0	102	USER_DEFINED	__thiscall	CGameModel_GetEffectParam	void __thiscall(int i, uint * out)
+00210830	64	USER_DEFINED	__thiscall	CGameModel_GetRot	void * __thiscall(void * out)
+00210870	99	USER_DEFINED	__thiscall	CGameModel_NodoIniVec3	void * __thiscall(void * out, uint i, char * sect, char * key, void * def)
+002108e0	1206	USER_DEFINED	__thiscall	CGameModel_ClosestVertex	void __thiscall(float x, float y, float z, void * pos, int * index, uint nodo)
+00210da0	7	USER_DEFINED	__fastcall	CGameModel_IsLoaded	byte __fastcall(void * self)
+00210db0	374	USER_DEFINED	__thiscall	CGameModel_RootMotion	void __thiscall(float t, void * move, int * saltos)
+00210f30	46	USER_DEFINED	__fastcall	CGameModel_IsEnabled	byte __fastcall(void * self)
+00210f60	18	USER_DEFINED	__fastcall	CGameModel_CollideOn	byte __fastcall(void * self)
+00210f80	61	USER_DEFINED	__fastcall	CGameModel_IsVisible	byte __fastcall(void * self)
+00210fc0	66	USER_DEFINED	__thiscall	CGameModel_SetAnim	void __thiscall(int i, uint chan, int unused)
+00211010	66	USER_DEFINED	__thiscall	CGameModel_SetAnimName	void __thiscall(char * name, uint chan, int unused)
+00211060	141	USER_DEFINED	__thiscall	CGameModel_NodoMatrix	void * __thiscall(void * out, uint i, byte anim, byte * visible, uint slot)
+002110f0	344	USER_DEFINED	__thiscall	CGameModel_RenderNow	void __thiscall(byte flags)
+00211250	534	USER_DEFINED	__thiscall	CGameModel_AnimDelta	byte __thiscall(uint chan, float t, void * move)
+00211470	142	USER_DEFINED	__thiscall	CGameModel_SetTexFrame	byte __thiscall(char * name, int frame)
+00211500	1262	USER_DEFINED	__thiscall	CGameModel_Load	void __thiscall(char * name, char * name2, void * scale)
+002119f0	47	USER_DEFINED	__thiscall	CGameModel_LoadName	void __thiscall(char * name)
+00211a20	20	USER_DEFINED	__thiscall	CGameModel_LoadScaled	void __thiscall(char * name, void * scale)
+00211a40	74	USER_DEFINED	__thiscall	CGameModel_SetSortZ	void __thiscall(float bias, float mult)
+00211a90	376	USER_DEFINED	__thiscall	CGameModel_NodoLook	byte __thiscall(uint i, int mode, void * v)
+00211c30	94	USER_DEFINED	__thiscall	CGameModel_SetPivot	void __thiscall(void * v, byte rel, byte recalcBB)
+00211c90	54	USER_DEFINED	__thiscall	CGameModel_SetPivotNodo	void __thiscall(char * name)
+00211cd0	66	USER_DEFINED	__thiscall	CGameModel_SetRot2	void __thiscall(void * v)
+00211d20	66	USER_DEFINED	__thiscall	CGameModel_SetPos	void __thiscall(void * v)
+00211d70	98	USER_DEFINED	__thiscall	CGameModel_SetEffect	void __thiscall(uint fx)
+00211de0	98	USER_DEFINED	__thiscall	CGameModel_SetEffectParam	void __thiscall(int i, uint v)
+00211e50	66	USER_DEFINED	__thiscall	CGameModel_SetRot	void __thiscall(void * v)
+00211ea0	196	USER_DEFINED	__fastcall	CGameModel_FreeCollision	void __fastcall(void * self)
+00211f80	243	USER_DEFINED	__thiscall	CGameModel_EnableCollision	void __thiscall(byte on, byte create)
+00212080	1035	USER_DEFINED	__thiscall	CGameModel_CreateCollision	byte __thiscall(byte all)
+00212490	58	USER_DEFINED	__fastcall	CGameModel_StopAnims	void __fastcall(void * self)
+002124d0	56	USER_DEFINED	__thiscall	CGameModel_StopAnim	void __thiscall(uint chan)
 00212510	84	USER_DEFINED	__thiscall	CRotacion_SetEuler	void __thiscall(void * ang)
 00212570	469	USER_DEFINED	__thiscall	CListaVert_GetPos	float * __thiscall(float *out, uint i)
 00212770	57	USER_DEFINED	__fastcall	ProfScope_End	void __fastcall(int * section)
@@ -6633,34 +6652,34 @@ rva	size	source	callconv	name	signature
 00219d20	41	USER_DEFINED	__cdecl	DebugUtils_DrawSphere	void __cdecl(float * pos, float radius, uint color, int slices, int stacks)
 00219d50	60	USER_DEFINED	__cdecl	DebugUtils_DrawTriM	void __cdecl(void * m, void * a, void * b, void * c, uint color)
 00219d90	62	USER_DEFINED	__cdecl	DebugUtils_DrawTri	void __cdecl(void * a, void * b, void * c, uint color)
-00219dd0	116	DEFAULT	unknown	FUN_00619dd0	
-00219e50	39	DEFAULT	unknown	FUN_00619e50	
-00219e80	7	DEFAULT	unknown	FUN_00619e80	
-00219e90	149	DEFAULT	unknown	FUN_00619e90	
-00219f30	52	USER_DEFINED	unknown	Font_TextSize	undefined(void)
-00219f70	53	DEFAULT	unknown	FUN_00619f70	
-00219fb0	922	DEFAULT	unknown	FUN_00619fb0	
-0021a350	114	DEFAULT	unknown	FUN_0061a350	
-0021a3d0	106	DEFAULT	unknown	FUN_0061a3d0	
-0021a440	117	DEFAULT	unknown	FUN_0061a440	
-0021a4c0	126	DEFAULT	unknown	FUN_0061a4c0	
-0021a540	106	DEFAULT	unknown	FUN_0061a540	
-0021a5b0	118	DEFAULT	unknown	FUN_0061a5b0	
-0021a630	73	DEFAULT	unknown	FUN_0061a630	
-0021a680	47	DEFAULT	unknown	FUN_0061a680	
-0021a6b0	107	DEFAULT	unknown	FUN_0061a6b0	
-0021a720	34	DEFAULT	unknown	FUN_0061a720	
-0021a750	117	DEFAULT	unknown	FUN_0061a750	
-0021a7d0	133	DEFAULT	unknown	FUN_0061a7d0	
-0021a860	22	DEFAULT	unknown	FUN_0061a860	
-0021a880	229	DEFAULT	unknown	FUN_0061a880	
-0021a970	135	DEFAULT	unknown	FUN_0061a970	
-0021aa00	382	DEFAULT	unknown	FUN_0061aa00	
-0021ab80	137	USER_DEFINED	unknown	Font_Build	undefined(void)
-0021ac10	279	DEFAULT	unknown	FUN_0061ac10	
-0021ad30	193	USER_DEFINED	unknown	Font_Get	undefined(void)
-0021ae00	948	DEFAULT	unknown	FUN_0061ae00	
-0021b1c0	24	DEFAULT	unknown	FUN_0061b1c0	
+00219dd0	116	USER_DEFINED	__thiscall	CFont_ctor	void * __thiscall(char * name, void * unused)
+00219e50	39	USER_DEFINED	__fastcall	CFont_dtor	void __fastcall(void * self)
+00219e80	7	USER_DEFINED	__fastcall	CFont_ResetX	void __fastcall(void * self)
+00219e90	149	USER_DEFINED	__thiscall	CFont_Build	byte __thiscall(char * name, int size)
+00219f30	52	USER_DEFINED	__cdecl	Font_TextSize	void __cdecl(void * font, float * pos, float * dim, float x, float y, char * fmt, int arg)
+00219f70	53	USER_DEFINED	__cdecl	Font_TextSizeAlign	void __cdecl(void * font, float * pos, float * dim, float x, float y, byte flags, char * fmt, int arg)
+00219fb0	922	USER_DEFINED	__thiscall	CFont_Load	void __thiscall(char * name, void * unused, void * ini)
+0021a350	114	USER_DEFINED	__cdecl	CFont_Printf	void __cdecl(void * font, char * fmt, int arg)
+0021a3d0	106	USER_DEFINED	__cdecl	CFont_PrintfAlign	void __cdecl(void * font, float x, float y, uint align, char * fmt, int arg)
+0021a440	117	USER_DEFINED	__cdecl	CFont_PrintfAlignColor	void __cdecl(void * font, float x, float y, uint align, uint color, char * fmt, int arg)
+0021a4c0	126	USER_DEFINED	__cdecl	CFont_PrintfAlignColorSombra	void __cdecl(void * font, float x, float y, uint align, uint color, char * fmt, int arg)
+0021a540	106	USER_DEFINED	__cdecl	CFont_PrintfColor	void __cdecl(void * font, float x, float y, uint color, char * fmt, int arg)
+0021a5b0	118	USER_DEFINED	__cdecl	CFont_PrintfColorSombra	void __cdecl(void * font, float x, float y, uint color, char * fmt, int arg)
+0021a630	73	USER_DEFINED	__cdecl	CFont_Printf3D	void __cdecl(void * font, void * pos, uint flags, char * fmt, int arg)
+0021a680	47	USER_DEFINED	__cdecl	CFont_PrintfFlags	void __cdecl(void * font, float x, float y, uint flags, char * fmt, int arg)
+0021a6b0	107	USER_DEFINED	__cdecl	CFont_PrintfSombra	void __cdecl(void * font, float x, float y, char * fmt, int arg)
+0021a720	34	USER_DEFINED	__thiscall	CFont_PrintXY	void __thiscall(float x, float y, char * txt)
+0021a750	117	USER_DEFINED	__thiscall	CFont_PrintfVA	void __thiscall(char * fmt, int ap)
+0021a7d0	133	USER_DEFINED	__cdecl	CFont_PrintfXY	void __cdecl(void * font, float x, float y, char * fmt, int arg)
+0021a860	22	USER_DEFINED	__fastcall	CFont_ResetEfectos	void __fastcall(void * self)
+0021a880	229	USER_DEFINED	__thiscall	CFont_MedirV	void __thiscall(float * pos, float * dim, float x, float y, byte flags, char * fmt, int ap)
+0021a970	135	USER_DEFINED	__thiscall	CFont_Print	void __thiscall(char * txt)
+0021aa00	382	USER_DEFINED	__thiscall	CFont_PrintfV	void __thiscall(float x, float y, uint flags, char * fmt, int ap)
+0021ab80	137	USER_DEFINED	__cdecl	Font_Build	byte __cdecl(char * name, int size)
+0021ac10	279	USER_DEFINED	__cdecl	Fonts_Unload	void __cdecl(void)
+0021ad30	193	USER_DEFINED	__cdecl	Font_Get	void * __cdecl(char * name)
+0021ae00	948	USER_DEFINED	__cdecl	Fonts_Load	void __cdecl(void)
+0021b1c0	24	USER_DEFINED	__cdecl	Fonts_Unifont	byte __cdecl(void)
 0021b1e0	1	DEFAULT	unknown	FUN_0061b1e0	
 0021b1f0	105	USER_DEFINED	__thiscall	CArchIO_ctor	void * __thiscall(char *name, char *mode)
 0021b290	99	USER_DEFINED	__thiscall	CArchIO_dtor	void __thiscall(void)
@@ -6883,11 +6902,11 @@ rva	size	source	callconv	name	signature
 0022cd20	197	USER_DEFINED	__cdecl	Ruta_LastDir	char * __cdecl(char *dest, char *ruta)
 0022cdf0	84	USER_DEFINED	__cdecl	Ruta_DriveNum	int __cdecl(char *ruta)
 0022ce50	179	USER_DEFINED	__cdecl	Ruta_GetCwd	int __cdecl(int drive, char *dest, int size)
-0022cf10	51	USER_DEFINED	__cdecl	Cad_InsertChar	void __cdecl(char *s, char c, int pos, int len)
-0022cf50	75	USER_DEFINED	__cdecl	Cad_Copy	char * __cdecl(char *dst, char *src, int size)
-0022cfa0	81	USER_DEFINED	__cdecl	Cad_Dup	char * __cdecl(char *s)
-0022d000	129	USER_DEFINED	__cdecl	Cad_Thousands	int __cdecl(char *s)
-0022d090	45	USER_DEFINED	__cdecl	Cad_FromInt	char * __cdecl(char *buf, int n)
+0022cf10	51	USER_DEFINED	__cdecl	Cad_InsertChar	void __cdecl(char * s, char c, int pos, int len)
+0022cf50	75	USER_DEFINED	__cdecl	Cad_Copy	char * __cdecl(char * dst, char * src, int size)
+0022cfa0	81	USER_DEFINED	__cdecl	Cad_Dup	char * __cdecl(char * s)
+0022d000	129	USER_DEFINED	__cdecl	Cad_Thousands	int __cdecl(char * s)
+0022d090	45	USER_DEFINED	__cdecl	Cad_FromInt	char * __cdecl(char * buf, int n)
 0022d0c0	36	DEFAULT	unknown	FUN_0062d0c0	
 0022d0f0	37	DEFAULT	unknown	FUN_0062d0f0	
 0022d120	35	DEFAULT	unknown	FUN_0062d120	
@@ -7210,12 +7229,12 @@ rva	size	source	callconv	name	signature
 0023f890	557	DEFAULT	unknown	FUN_0063f890	
 0023fac0	79	DEFAULT	unknown	FUN_0063fac0	
 0023fb10	179	DEFAULT	unknown	FUN_0063fb10	
-0023fbd0	37	USER_DEFINED	__fastcall	CListaVert_ctor	void * __fastcall(void *self)
-0023fc00	95	USER_DEFINED	__fastcall	CListaVert_dtor	void __fastcall(void *self)
-0023fc60	1100	USER_DEFINED	__cdecl	ListaVert_Strip	byte __cdecl(void *out, void *in, ushort *tris, int nTri)
+0023fbd0	37	USER_DEFINED	__fastcall	CListaVert_ctor	void * __fastcall(void * self)
+0023fc00	95	USER_DEFINED	__fastcall	CListaVert_Free	void __fastcall(void * self)
+0023fc60	1100	USER_DEFINED	__cdecl	ListaVert_Strip	byte __cdecl(void * out, void * in, ushort * tris, int nTri)
 002400b0	475	USER_DEFINED	__thiscall	CListaVert_Read	void __thiscall(void * f)
 00240290	255	USER_DEFINED	__thiscall	CListaVert_Write	void __thiscall(void * f)
-00240390	326	USER_DEFINED	__cdecl	VertCache_Optimize	byte __cdecl(ushort *tris, int nTri)
+00240390	326	USER_DEFINED	__cdecl	VertCache_Optimize	byte __cdecl(ushort * tris, int nTri)
 002404e0	1	USER_DEFINED	unknown	ListaVert_ReleaseD3D	
 002404f0	1	DEFAULT	unknown	FUN_006404f0	
 00240500	1348	USER_DEFINED	__thiscall	CListaVert_Pack	void __thiscall(int frmt, float posScale, float texScale)
@@ -7225,21 +7244,21 @@ rva	size	source	callconv	name	signature
 002413c0	398	USER_DEFINED	__cdecl	ListaVert_FormatFVF	uint __cdecl(int frmt)
 002415a0	128	USER_DEFINED	__cdecl	ListaVert_FormatSize	int __cdecl(int frmt)
 00241670	114	USER_DEFINED	__cdecl	ListaVert_FormatName	char * __cdecl(int frmt)
-00241710	223	USER_DEFINED	__cdecl	ListaVert_PackNormal	uint __cdecl(float *n)
-002417f0	89	USER_DEFINED	__cdecl	ListaVert_UnpackNormal	float * __cdecl(float *out, uint packed)
+00241710	223	USER_DEFINED	__cdecl	ListaVert_PackNormal	uint __cdecl(void * n)
+002417f0	89	USER_DEFINED	__cdecl	ListaVert_UnpackNormal	void * __cdecl(void * out, uint packed)
 00241850	106	USER_DEFINED	__thiscall	CListaVert_SetColor	void __thiscall(uint and, uint or)
 002418c0	1346	USER_DEFINED	unknown	CListaVert_EnvMapUV	
-00241e10	272	USER_DEFINED	__thiscall	CListaVert_GetExtents	void __thiscall(float *ext, byte reset)
+00241e10	272	USER_DEFINED	__thiscall	CListaVert_GetExtents	void __thiscall(void * ext, byte reset)
 00241f20	751	DEFAULT	unknown	FUN_00641f20	
-00242210	127	USER_DEFINED	__thiscall	CListaVert_SetLTex1	void __thiscall(uint i, void *v)
-00242290	110	USER_DEFINED	__thiscall	CListaVert_SetTex1	void __thiscall(uint i, void *v)
-00242300	119	USER_DEFINED	__thiscall	CListaVert_SetTex1B1	void __thiscall(uint i, void *v)
-00242380	123	USER_DEFINED	__thiscall	CListaVert_SetTex2	void __thiscall(uint i, void *v)
+00242210	127	USER_DEFINED	__thiscall	CListaVert_SetLTex1	void __thiscall(uint i, void * v)
+00242290	110	USER_DEFINED	__thiscall	CListaVert_SetTex1	void __thiscall(uint i, void * v)
+00242300	119	USER_DEFINED	__thiscall	CListaVert_SetTex1B1	void __thiscall(uint i, void * v)
+00242380	123	USER_DEFINED	__thiscall	CListaVert_SetTex2	void __thiscall(uint i, void * v)
 00242400	88	USER_DEFINED	__thiscall	CListaVert_SetFormat	void __thiscall(int frmt)
-00242460	12	USER_DEFINED	__fastcall	CListaVert_FormatName	char * __fastcall(void *self)
+00242460	12	USER_DEFINED	__fastcall	CListaVert_FormatName	char * __fastcall(void * self)
 00242470	126	USER_DEFINED	__thiscall	CListaVert_Alloc	void __thiscall(int n, byte realloc)
-002424f0	80	USER_DEFINED	__thiscall	CListaVert_Swap	void __thiscall(void *other)
-00242540	47	USER_DEFINED	__fastcall	CListaVert_Free	void __fastcall(void *self)
+002424f0	80	USER_DEFINED	__thiscall	CListaVert_Swap	void __thiscall(void * other)
+00242540	47	USER_DEFINED	__fastcall	CListaVert_Free	void __fastcall(void * self)
 00242570	439	USER_DEFINED	__thiscall	CListaVert_GetField	void * __thiscall(int f, uint i)
 00242770	51	USER_DEFINED	__thiscall	VertLTex1_Field	void * __thiscall(int f)
 002427c0	51	USER_DEFINED	__thiscall	VertLTex1N_Field	void * __thiscall(int f)
@@ -7255,8 +7274,8 @@ rva	size	source	callconv	name	signature
 00242b00	58	USER_DEFINED	__thiscall	VertTex1CXBox_Field	void * __thiscall(int f)
 00242b60	46	USER_DEFINED	__thiscall	VertTex1XBox_Field	void * __thiscall(int f)
 00242b90	51	USER_DEFINED	__thiscall	VertTex2_Field	void * __thiscall(int f)
-00242be0	12	USER_DEFINED	__fastcall	CListaVert_FVF	uint __fastcall(void *self)
-00242bf0	298	USER_DEFINED	__thiscall	CListaVert_GetTex1	void * __thiscall(void *out, uint i)
+00242be0	12	USER_DEFINED	__fastcall	CListaVert_FVF	uint __fastcall(void * self)
+00242bf0	298	USER_DEFINED	__thiscall	CListaVert_GetTex1	void * __thiscall(void * out, uint i)
 00242d20	102	USER_DEFINED	__thiscall	CListaVert_LTex1	byte * __thiscall(uint i)
 00242d90	96	USER_DEFINED	__thiscall	CListaVert_LTex1N	byte * __thiscall(uint i)
 00242df0	95	USER_DEFINED	__thiscall	CListaVert_LTex2	byte * __thiscall(uint i)
@@ -7267,43 +7286,44 @@ rva	size	source	callconv	name	signature
 00242fd0	96	USER_DEFINED	__thiscall	CListaVert_Tex1B1	byte * __thiscall(uint i)
 00243030	96	USER_DEFINED	__thiscall	CListaVert_Tex2	byte * __thiscall(uint i)
 00243090	5	DEFAULT	unknown	FUN_00643090	
-002430a0	376	USER_DEFINED	__cdecl	Strip_FindFirst	int __cdecl(ushort *tris, int nTri, int depth)
-00243220	254	USER_DEFINED	__cdecl	Strip_Length	int __cdecl(int t, ushort *tris, int nTri, int depth, uint a, uint b)
-00243320	573	USER_DEFINED	__cdecl	Strip_FindNew	int __cdecl(ushort *tris, int nTri, int depth)
-00243560	177	USER_DEFINED	__cdecl	Strip_Next	int __cdecl(ushort *tris, int nTri, uint a, uint b, int depth, int *side)
-00243620	67	USER_DEFINED	__cdecl	Tri_Mark	void __cdecl(ushort *tri)
-00243670	76	USER_DEFINED	__cdecl	Tri_Rotate	void __cdecl(ushort *tri, int n)
-002436c0	67	USER_DEFINED	__cdecl	Tri_Unmark	void __cdecl(ushort *tri)
-00243710	12	USER_DEFINED	__fastcall	CListaVert_Size	int __fastcall(void *self)
-00243720	406	USER_DEFINED	__thiscall	CListaVert_Transform	void __thiscall(float *m, byte normalize)
+002430a0	376	USER_DEFINED	__cdecl	Strip_FindFirst	int __cdecl(ushort * tris, int nTri, int depth)
+00243220	254	USER_DEFINED	__cdecl	Strip_Length	int __cdecl(int t, ushort * tris, int nTri, int depth, uint a, uint b)
+00243320	573	USER_DEFINED	__cdecl	Strip_FindNew	int __cdecl(ushort * tris, int nTri, int depth)
+00243560	177	USER_DEFINED	__cdecl	Strip_Next	int __cdecl(ushort * tris, int nTri, uint a, uint b, int depth, int * side)
+00243620	67	USER_DEFINED	__cdecl	Tri_Mark	void __cdecl(ushort * tri)
+00243670	76	USER_DEFINED	__cdecl	Tri_Rotate	void __cdecl(ushort * tri, int n)
+002436c0	67	USER_DEFINED	__cdecl	Tri_Unmark	void __cdecl(ushort * tri)
+00243710	12	USER_DEFINED	__fastcall	CListaVert_Size	int __fastcall(void * self)
+00243720	406	USER_DEFINED	__thiscall	CListaVert_Transform	void __thiscall(void * m, byte normalize)
 002438c0	135	USER_DEFINED	__cdecl	VertCache_Add	void __cdecl(int v)
 00243950	62	USER_DEFINED	__cdecl	VertCache_Reset	void __cdecl(void)
 00243990	51	USER_DEFINED	__cdecl	VertCache_Oldest	int __cdecl(void)
 002439d0	36	USER_DEFINED	__cdecl	VertCache_Find	int __cdecl(int v)
-00243a00	162	DEFAULT	unknown	FUN_00643a00	
+00243a00	162	USER_DEFINED	__cdecl	VertCache_Compare	int __cdecl(void * a, void * b)
 00243ab0	158	USER_DEFINED	__cdecl	Render_PSFixed	void __cdecl(void * arg, byte flags)
-00243b50	575	DEFAULT	unknown	FUN_00643b50	
-00243d90	137	DEFAULT	unknown	FUN_00643d90	
-00243e20	980	DEFAULT	unknown	FUN_00643e20	
-00244200	1174	DEFAULT	unknown	FUN_00644200	
-002446a0	1023	DEFAULT	unknown	FUN_006446a0	
-00244aa0	1220	DEFAULT	unknown	FUN_00644aa0	
-00244f70	1448	DEFAULT	unknown	FUN_00644f70	
-00245520	1630	DEFAULT	unknown	FUN_00645520	
-00245b80	768	DEFAULT	unknown	FUN_00645b80	
-00245e80	389	DEFAULT	unknown	FUN_00645e80	
-00246010	1684	DEFAULT	unknown	FUN_00646010	
-002466b0	1650	DEFAULT	unknown	FUN_006466b0	
-00246d40	2216	DEFAULT	unknown	FUN_00646d40	
-00247600	1679	DEFAULT	unknown	FUN_00647600	
-00247c90	665	DEFAULT	unknown	FUN_00647c90	
-00248340	853	DEFAULT	unknown	FUN_00648340	
-002486a0	783	DEFAULT	unknown	FUN_006486a0	
-002489b0	278	DEFAULT	unknown	FUN_006489b0	
-00248ad0	1071	DEFAULT	unknown	FUN_00648ad0	
-00248f00	106	DEFAULT	unknown	FUN_00648f00	
-00248f70	106	DEFAULT	unknown	FUN_00648f70	
-00248fe0	308	DEFAULT	unknown	FUN_00648fe0	
+00243b50	575	USER_DEFINED	__cdecl	Shader_DiffuseLightmap	void __cdecl(void * mat, uint flags)
+00243d90	137	USER_DEFINED	__cdecl	Shader_DiffuseNoLit	void __cdecl(void * mat, uint flags)
+00243e20	980	USER_DEFINED	__cdecl	Shader_Envmap	void __cdecl(void * mat, uint flags)
+00244200	1174	USER_DEFINED	__cdecl	Shader_EnvmapLightmap	void __cdecl(void * mat, uint flags)
+002446a0	1023	USER_DEFINED	__cdecl	Shader_MaskEnvmap	void __cdecl(void * mat, uint flags)
+00244aa0	1220	USER_DEFINED	__cdecl	Shader_MaskEnvmapLightmap	void __cdecl(void * mat, uint flags)
+00244f70	1448	USER_DEFINED	__cdecl	Shader_MaskEnvBump	void __cdecl(void * mat, uint flags)
+00245520	1630	USER_DEFINED	__cdecl	Shader_MaskEnvBumpLightmap	void __cdecl(void * mat, uint flags)
+00245b80	768	USER_DEFINED	__cdecl	Shader_Glowmap	void __cdecl(void * mat, uint flags)
+00245e80	389	USER_DEFINED	__cdecl	Shader_GlowmapLightmap	void __cdecl(void * mat, uint flags)
+00246010	1684	USER_DEFINED	__cdecl	Shader_GlowmapMaskEnvmap	void __cdecl(void * mat, uint flags)
+002466b0	1650	USER_DEFINED	__cdecl	Shader_GlowmapMaskEnvmapLightmap	void __cdecl(void * mat, uint flags)
+00246d40	2216	USER_DEFINED	__cdecl	Shader_GlowmapMaskEnvBump	void __cdecl(void * mat, uint flags)
+00247600	1679	USER_DEFINED	__cdecl	Shader_Clouds	void __cdecl(void * mat, uint flags)
+00247c90	665	USER_DEFINED	__cdecl	Shader_Hologram	void __cdecl(void * mat, uint flags)
+00247f30	1038	USER_DEFINED	__cdecl	Shader_GlowFlickLightmap	void __cdecl(void * mat, uint flags)
+00248340	853	USER_DEFINED	__cdecl	Shader_Electric	void __cdecl(void * mat, uint flags)
+002486a0	783	USER_DEFINED	__cdecl	Shader_Fire	void __cdecl(void * mat, uint flags)
+002489b0	278	USER_DEFINED	__cdecl	Shader_Glass	void __cdecl(void * mat, uint flags)
+00248ad0	1071	USER_DEFINED	__cdecl	Shader_Waves	void __cdecl(void * mat, uint flags)
+00248f00	106	USER_DEFINED	__cdecl	Shader_Scroll	void __cdecl(void * mat, uint flags)
+00248f70	106	USER_DEFINED	__cdecl	Shader_ScrollLightmap	void __cdecl(void * mat, uint flags)
+00248fe0	308	USER_DEFINED	__cdecl	Shader_Noise	void __cdecl(void * mat, uint flags)
 00249120	85	USER_DEFINED	__cdecl	Render_PS0	void __cdecl(void * arg, byte flags)
 00249180	85	USER_DEFINED	__cdecl	Render_PS1	void __cdecl(void * arg, byte flags)
 002491e0	85	USER_DEFINED	__cdecl	Render_PS2	void __cdecl(void * arg, byte flags)
@@ -7339,8 +7359,8 @@ rva	size	source	callconv	name	signature
 0024adf0	233	USER_DEFINED	__cdecl	Render_FinD3D	void __cdecl(void)
 0024aee0	77	USER_DEFINED	__cdecl	Render_EndView	void __cdecl(void)
 0024af30	75	USER_DEFINED	__cdecl	Render_ClearForced	void __cdecl(void)
-0024af80	6	USER_DEFINED	__cdecl	Render_GetCaps	void * __cdecl(void)
-0024af90	2286	DEFAULT	unknown	FUN_0064af90	
+0024af80	6	USER_DEFINED	__cdecl	Render_GetDriver	char * __cdecl(void)
+0024af90	2286	USER_DEFINED	__cdecl	Render_IniD3D	void __cdecl(void)
 0024b880	212	USER_DEFINED	__cdecl	Render_BeginFrame	void __cdecl(void)
 0024b960	211	USER_DEFINED	__cdecl	Render_Line	int __cdecl(void * a, void * b, uint color)
 0024ba40	125	USER_DEFINED	__cdecl	Render_DrawListaIdx	int __cdecl(void * v, ushort * idx, int ntri, byte stats)
@@ -7535,7 +7555,7 @@ rva	size	source	callconv	name	signature
 00257fc0	33	DEFAULT	unknown	FUN_00657fc0	
 00258000	75	DEFAULT	unknown	FUN_00658000	
 00258060	31	USER_DEFINED	unknown	CAnimMat_GetFrame	
-00258090	25	DEFAULT	unknown	FUN_00658090	
+00258090	25	USER_DEFINED	__thiscall	CAnimMat_SetFrame	void __thiscall(int frame)
 002580b0	24	DEFAULT	unknown	FUN_006580b0	
 00258110	37	DEFAULT	unknown	FUN_00658110	
 00258160	56	DEFAULT	unknown	FUN_00658160	
@@ -8144,77 +8164,77 @@ rva	size	source	callconv	name	signature
 00296fe0	199	USER_DEFINED	__cdecl	BspTri_SumTexel	void __cdecl(void * tri, uint x, uint y, float * acc, int * n)
 002970b0	485	USER_DEFINED	__cdecl	BspTri_Media	float * __cdecl(float * out, void * tri, int x, int y)
 00297710	1201	USER_DEFINED	__cdecl	BspTri_Interp	void __cdecl(void * tri, void * p, void * n, float * uv, byte lmap)
-00297bd0	180	DEFAULT	unknown	FUN_00697bd0	
-00297c90	137	DEFAULT	unknown	FUN_00697c90	
-00297d20	121	DEFAULT	unknown	FUN_00697d20	
-00297da0	142	ANALYSIS	__thiscall	CFlare::vf00	undefined __thiscall(void)
-00297e30	32	DEFAULT	unknown	FUN_00697e30	
-00297e50	1286	ANALYSIS	__thiscall	CFlare::vf02	undefined __thiscall(void)
-00298360	27	DEFAULT	unknown	FUN_00698360	
-00298380	180	DEFAULT	unknown	FUN_00698380	
-00298440	173	DEFAULT	unknown	FUN_00698440	
-002984f0	3713	DEFAULT	unknown	FUN_006984f0	
-00299380	234	DEFAULT	unknown	FUN_00699380	
-00299480	34	DEFAULT	unknown	FUN_00699480	
-002994c0	69	DEFAULT	unknown	FUN_006994c0	
-00299510	64	DEFAULT	unknown	FUN_00699510	
-00299550	656	DEFAULT	unknown	FUN_00699550	
-002997f0	66	DEFAULT	unknown	FUN_006997f0	
-00299840	48	DEFAULT	unknown	FUN_00699840	
-00299870	174	DEFAULT	unknown	FUN_00699870	
-00299920	85	DEFAULT	unknown	FUN_00699920	
-00299980	18	DEFAULT	unknown	FUN_00699980	
-002999a0	18	DEFAULT	unknown	FUN_006999a0	
-002999c0	236	DEFAULT	unknown	FUN_006999c0	
-00299ab0	191	DEFAULT	unknown	FUN_00699ab0	
-00299b70	356	DEFAULT	unknown	FUN_00699b70	
-00299ce0	103	USER_DEFINED	unknown	Font_PrintfXY	
-00299d50	374	DEFAULT	unknown	FUN_00699d50	
-00299ed0	739	DEFAULT	unknown	FUN_00699ed0	
-0029a1c0	230	DEFAULT	unknown	FUN_0069a1c0	
-0029a2b0	62	DEFAULT	unknown	FUN_0069a2b0	
-0029a2f0	565	DEFAULT	unknown	FUN_0069a2f0	
-0029a530	4569	DEFAULT	unknown	FUN_0069a530	
-0029b710	307	DEFAULT	unknown	FUN_0069b710	
-0029b850	224	DEFAULT	unknown	FUN_0069b850	
+00297bd0	180	USER_DEFINED	__cdecl	Floats11_Equal	byte __cdecl(float * a, float * b)
+00297c90	137	USER_DEFINED	__fastcall	CFlare_ctor	void * __fastcall(void * self)
+00297d20	121	USER_DEFINED	__fastcall	CFlare_dtor	void __fastcall(void * self)
+00297da0	142	USER_DEFINED	__thiscall	CFlare_Delete	void * __thiscall(byte flags)
+00297e30	32	USER_DEFINED	__fastcall	CFlare_Draw	void __fastcall(void * self)
+00297e50	1286	USER_DEFINED	__thiscall	CFlare_Render	void __thiscall(void * dev, void * r)
+00298360	27	USER_DEFINED	__thiscall	CFlare_SetTextureAdd	void __thiscall(char * tex, char * opac)
+00298380	180	USER_DEFINED	__thiscall	CFlare_SetTexture	void __thiscall(char * tex, char * opac, int src, int dst, byte alpha)
+00298440	173	USER_DEFINED	__thiscall	CFuenteGrid_ctor	void * __thiscall(char * tex, char * opac, byte pri, byte ult, int celdaAncho, int celdaAlto, float espacio)
+002984f0	3713	USER_DEFINED	__thiscall	CFuente3_ctor	void * __thiscall(char * tex, char * opac, byte pri, byte ult, float ancho, byte generar, uint flags, float unused)
+00299380	234	USER_DEFINED	__fastcall	CDigitos_ctor	void * __fastcall(void * self)
+00299480	34	USER_DEFINED	__fastcall	Tabla_Free	void __fastcall(void * t)
+002994c0	69	USER_DEFINED	__fastcall	CFuente3_dtor	void __fastcall(void * self)
+00299510	64	USER_DEFINED	__fastcall	CDigitos_dtor	void __fastcall(void * self)
+00299550	656	USER_DEFINED	__thiscall	CFuente3_Medir	void __thiscall(float x, float y, ushort align, char * s, float * pos, float * dim)
+002997f0	66	USER_DEFINED	__thiscall	CFuente3_GlifoAncho	float __thiscall(void * g)
+00299840	48	USER_DEFINED	__thiscall	CFuente3_GlifoAlto	float __thiscall(void * g)
+00299870	174	USER_DEFINED	__cdecl	Bmp_FilaBorde	int __cdecl(void * b, int y, uint borde)
+00299920	85	USER_DEFINED	__thiscall	CFuente3_SetEscala	void __thiscall(float x, float y)
+00299980	18	USER_DEFINED	__thiscall	Font_SetColor	uint __thiscall(uint color)
+002999a0	18	USER_DEFINED	__thiscall	Font_SetFlags	uint __thiscall(uint flags)
+002999c0	236	USER_DEFINED	__thiscall	CFuenteGrid_Print	void __thiscall(float x, float y, char * s)
+00299ab0	191	USER_DEFINED	__cdecl	Fonts_Free	void __cdecl(void)
+00299b70	356	USER_DEFINED	__cdecl	Fonts_Init	void __cdecl(void)
+00299ce0	103	USER_DEFINED	__cdecl	Font_PrintfXY	void __cdecl(void * font, float x, float y, char * fmt, int arg)
+00299d50	374	USER_DEFINED	__cdecl	Debug_Text3D	void __cdecl(void * font, float x, float y, void * pos, uint color, char * fmt, int arg)
+00299ed0	739	USER_DEFINED	__thiscall	CFuente3_Print	void __thiscall(float x, float y, char * s)
+0029a1c0	230	USER_DEFINED	__thiscall	CFuente3_PrintAlign	void __thiscall(float x, float y, uint flags, uint color, char * s)
+0029a2b0	62	USER_DEFINED	__thiscall	CFuente3_PrintColor	void __thiscall(float x, float y, uint color, char * s)
+0029a2f0	565	USER_DEFINED	__thiscall	CFuente3_PrintOnda	void __thiscall(float x, float y, uint color, float onda, char * s)
+0029a530	4569	USER_DEFINED	__thiscall	CFuente3_PrintContorno	void __thiscall(float x, float y, uint color, char * s)
+0029b710	307	USER_DEFINED	__cdecl	Font_PrintfCentro	void __cdecl(void * font, float x, float y, char * fmt, int arg)
+0029b850	224	USER_DEFINED	__cdecl	Font_Printf	void __cdecl(void * font, float x, float y, byte flags, char * fmt, int arg)
 0029b930	115	USER_DEFINED	__thiscall	Tabla_Alloc10	void __thiscall(int num)
-0029b9d0	54	DEFAULT	unknown	FUN_0069b9d0	
-0029ba10	98	DEFAULT	unknown	FUN_0069ba10	
-0029ba80	82	DEFAULT	unknown	FUN_0069ba80	
-0029bae0	599	DEFAULT	unknown	FUN_0069bae0	
-0029bd40	187	DEFAULT	unknown	FUN_0069bd40	
-0029be00	316	DEFAULT	unknown	FUN_0069be00	
-0029bf50	446	USER_DEFINED	__thiscall	CCamara_ctorCopy	void * __thiscall(void *other)
-0029c110	242	USER_DEFINED	__fastcall	CCamara_ctor	void * __fastcall(void *self)
-0029c210	227	USER_DEFINED	__fastcall	CCamara_dtor	void __fastcall(void *self)
-0029c300	35	ANALYSIS	__thiscall	CCamara::vf00	undefined __thiscall(void)
-0029c330	665	USER_DEFINED	__thiscall	CCamara_LookAt	void __thiscall(float *m, float *dir, float *up)
-0029c5d0	18	USER_DEFINED	__thiscall	CCamara_GetProj	float * __thiscall(float *m)
-0029c5f0	18	USER_DEFINED	__thiscall	CCamara_GetView	float * __thiscall(float *m)
-0029c610	103	USER_DEFINED	__fastcall	CCamara_Clear	void __fastcall(void *self)
-0029c680	3	ANALYSIS	__thiscall	CCamara::vf04	undefined __thiscall(void)
-0029c690	3	ANALYSIS	__thiscall	CCamara::vf03	undefined __thiscall(void)
-0029c6a0	315	ANALYSIS	__thiscall	CCamara::vf06	undefined __thiscall(void)
-0029c7e0	371	USER_DEFINED	__thiscall	CCamara_ViewMatrix	void __thiscall(float *m)
-0029c960	3	ANALYSIS	__thiscall	CCamara::vf02	undefined __thiscall(void)
-0029c970	267	ANALYSIS	__thiscall	CCamara::vf05	undefined __thiscall(void)
-0029ca80	284	USER_DEFINED	__thiscall	CCamara_ProjMatrix	byte __thiscall(float *m)
-0029cba0	108	ANALYSIS	__thiscall	CCamara::vf01	undefined __thiscall(void)
+0029b9d0	54	USER_DEFINED	__cdecl	Unifont_Exit	void __cdecl(void)
+0029ba10	98	USER_DEFINED	__fastcall	CUnifont_Free	void __fastcall(void * self)
+0029ba80	82	USER_DEFINED	__thiscall	CUnifont_Ancho	float __thiscall(ushort i, float h)
+0029bae0	599	USER_DEFINED	__fastcall	CUnifont_Load	void __fastcall(void * self)
+0029bd40	187	USER_DEFINED	__thiscall	CUnifont_Parse	byte __thiscall(char * s, ushort * out)
+0029be00	316	USER_DEFINED	__thiscall	CUnifont_SetSprite	byte __thiscall(ushort i, float w, float h)
+0029bf50	446	USER_DEFINED	__thiscall	CCamara_ctorCopy	void * __thiscall(void * other)
+0029c110	242	USER_DEFINED	__fastcall	CCamara_ctor	void * __fastcall(void * self)
+0029c210	227	USER_DEFINED	__fastcall	CCamara_dtor	void __fastcall(void * self)
+0029c300	35	USER_DEFINED	__thiscall	CCamara_Delete	void * __thiscall(byte flags)
+0029c330	665	USER_DEFINED	__thiscall	CCamara_LookAt	void __thiscall(void * m, void * dir, void * up)
+0029c5d0	18	USER_DEFINED	__thiscall	CCamara_GetProj	void * __thiscall(void * m)
+0029c5f0	18	USER_DEFINED	__thiscall	CCamara_GetView	void * __thiscall(void * m)
+0029c610	103	USER_DEFINED	__fastcall	CCamara_Clear	void __fastcall(void * self)
+0029c680	3	USER_DEFINED	__thiscall	CCamara_ReleaseD3D	void __thiscall(void * dev)
+0029c690	3	USER_DEFINED	__thiscall	CCamara_InitD3D	void __thiscall(void * dev)
+0029c6a0	315	USER_DEFINED	__thiscall	CCamara_Read	int __thiscall(void * f, void * ctx)
+0029c7e0	371	USER_DEFINED	__thiscall	CCamara_ViewMatrix	void __thiscall(void * m)
+0029c960	3	USER_DEFINED	__thiscall	CCamara_Render	void __thiscall(void * arg, void * r)
+0029c970	267	USER_DEFINED	__thiscall	CCamara_Write	int __thiscall(void * f, void * ctx)
+0029ca80	284	USER_DEFINED	__thiscall	CCamara_ProjMatrix	byte __thiscall(void * m)
+0029cba0	108	USER_DEFINED	__thiscall	CCamara_Update	void __thiscall(void * r)
 0029cc10	73	USER_DEFINED	__thiscall	CCamara_Move	void __thiscall(float d)
 0029cc60	195	USER_DEFINED	__thiscall	CCamara_Strafe	void __thiscall(float side, float rise)
-0029cd30	100	USER_DEFINED	__thiscall	CCamara_SetNodo	void __thiscall(void *nodo)
-0029cda0	100	USER_DEFINED	__thiscall	CCamara_SetNodoObjetivo	void __thiscall(void *nodo)
-0029ce10	173	USER_DEFINED	__fastcall	CCamara_UpdateVectors	void __fastcall(void *self)
-0029cec0	183	USER_DEFINED	__fastcall	CCamara_LookAtRot	void __fastcall(CCamara * self)
-0029cf80	40	USER_DEFINED	__thiscall	CMultiSprite_ctor	void * __thiscall(void)
-0029cfb0	35	USER_DEFINED	__thiscall	CMultiSprite_dtor	void __thiscall(void)
+0029cd30	100	USER_DEFINED	__thiscall	CCamara_SetNodo	void __thiscall(void * nodo)
+0029cda0	100	USER_DEFINED	__thiscall	CCamara_SetNodoObjetivo	void __thiscall(void * nodo)
+0029ce10	173	USER_DEFINED	__fastcall	CCamara_UpdateVectors	void __fastcall(void * self)
+0029cec0	183	USER_DEFINED	__fastcall	CCamara_LookAtRot	void __fastcall(void * self)
+0029cf80	40	USER_DEFINED	__fastcall	CMultiSprite_ctor	void * __fastcall(void * self)
+0029cfb0	35	USER_DEFINED	__fastcall	CMultiSprite_dtor	void __fastcall(void * self)
 0029cfe0	278	USER_DEFINED	__thiscall	CMultiSprite_Build	byte __thiscall(char * name)
-0029d100	1637	DEFAULT	unknown	FUN_0069d100	
-0029d770	115	DEFAULT	unknown	FUN_0069d770	
-0029d800	334	DEFAULT	unknown	FUN_0069d800	
-0029d950	112	DEFAULT	unknown	FUN_0069d950	
-0029d9c0	257	DEFAULT	unknown	FUN_0069d9c0	
-0029dad0	204	DEFAULT	unknown	FUN_0069dad0	
+0029d100	1637	USER_DEFINED	__thiscall	CMultiSprite_BuildTable	byte __thiscall(char * name)
+0029d770	115	USER_DEFINED	__thiscall	CMultiSprite_GetSize	byte __thiscall(uint i, uint * cx, uint * cy)
+0029d800	334	USER_DEFINED	__thiscall	CMultiSprite_GetUV	byte __thiscall(uint i, float * texMin, float * texMax)
+0029d950	112	USER_DEFINED	__thiscall	Tabla_Alloc8	void __thiscall(int num)
+0029d9c0	257	USER_DEFINED	__thiscall	CMultiSprite_Load	byte __thiscall(char * name)
+0029dad0	204	USER_DEFINED	__thiscall	CMultiSprite_Save	byte __thiscall(char * name)
 0029dba0	197	USER_DEFINED	__fastcall	CTrail_ctor	void * __fastcall(void * self)
 0029dc80	138	USER_DEFINED	__fastcall	CTrail_dtor	void __fastcall(void * self)
 0029dd10	333	USER_DEFINED	__cdecl	Trails_UpdateRender	void __cdecl(void * t)
@@ -8223,20 +8243,20 @@ rva	size	source	callconv	name	signature
 0029dff0	30	USER_DEFINED	__fastcall	CTrail_Shrink	void __fastcall(void * self)
 0029e010	25	USER_DEFINED	__thiscall	CTrail_SetActive	void __thiscall(byte on)
 0029e030	50	USER_DEFINED	__fastcall	CTrail_Reset	void __fastcall(void * self)
-0029e070	46	USER_DEFINED	__thiscall	CTrail_AddPos	void __thiscall(float x, float y, float z)
-0029e0a0	46	USER_DEFINED	__thiscall	CTrail_AddPosColor	void __thiscall(float x, float y, float z, uint color)
-0029e0d0	174	USER_DEFINED	__thiscall	CTrail_Add	void __thiscall(float x, float y, float z, float width, uint color)
-0029e180	138	USER_DEFINED	__thiscall	CTrail_Build	int __thiscall(void * pVertex, void * pIndex)
-0029e220	2836	USER_DEFINED	__thiscall	CTrail_BuildRibbon	int __thiscall(void * pVertex, void * pIndex)
-0029ed50	3374	USER_DEFINED	__thiscall	CTrail_BuildCross	int __thiscall(void * pVertex, void * pIndex)
-0029fa90	1662	USER_DEFINED	__thiscall	CTrail_BuildQuads	int __thiscall(void * pVertex, void * pIndex)
-002a0110	876	USER_DEFINED	__thiscall	CTrail_BuildFan	int __thiscall(void * pVertex, void * pIndex)
+0029e070	46	USER_DEFINED	__thiscall	CTrail_AddPos	void __thiscall(int pos)
+0029e0a0	46	USER_DEFINED	__thiscall	CTrail_AddPosColor	void __thiscall(int pos, uint color)
+0029e0d0	174	USER_DEFINED	__thiscall	CTrail_Add	void __thiscall(int pos, float width, uint color)
+0029e180	138	USER_DEFINED	__thiscall	CTrail_Build	int __thiscall(void ** pVertex, ushort ** pIndex)
+0029e220	2836	USER_DEFINED	__thiscall	CTrail_BuildRibbon	int __thiscall(void ** pVertex, ushort ** pIndex)
+0029ed50	3374	USER_DEFINED	__thiscall	CTrail_BuildCross	int __thiscall(void ** pVertex, ushort ** pIndex)
+0029fa90	1662	USER_DEFINED	__thiscall	CTrail_BuildQuads	int __thiscall(void ** pVertex, ushort ** pIndex)
+002a0110	876	USER_DEFINED	__thiscall	CTrail_BuildFan	int __thiscall(void ** pVertex, ushort ** pIndex)
 002a0480	13	USER_DEFINED	__thiscall	CTrail_SetTransp	void __thiscall(byte transp)
 002a0490	13	USER_DEFINED	__thiscall	CTrail_SetColor	void __thiscall(uint color)
 002a04a0	13	USER_DEFINED	__thiscall	CTrail_SetSmooth	void __thiscall(byte on)
 002a04b0	211	USER_DEFINED	__thiscall	CTrail_SetMaxTrails	void __thiscall(byte segments)
 002a0590	19	USER_DEFINED	__thiscall	CTrail_SetUV	void __thiscall(float u0, float v0)
-002a05b0	29	USER_DEFINED	__thiscall	CTrail_SetOrient	void __thiscall(float x, float y, float z, byte mode)
+002a05b0	29	USER_DEFINED	__thiscall	CTrail_SetOrient	void __thiscall(int v, byte mode)
 002a05d0	13	USER_DEFINED	__thiscall	CTrail_SetType	void __thiscall(byte type)
 002a05e0	52	USER_DEFINED	__thiscall	CTrail_SetSegments	void __thiscall(byte segments)
 002a0620	13	USER_DEFINED	__thiscall	CTrail_SetPremul	void __thiscall(byte on)
@@ -8252,17 +8272,17 @@ rva	size	source	callconv	name	signature
 002a08b0	2096	USER_DEFINED	__cdecl	Trails_Init	int __cdecl(void)
 002a10e0	54	USER_DEFINED	__cdecl	Trails_InitLists	int __cdecl(void)
 002a1120	1312	USER_DEFINED	__cdecl	Trails_Render	void __cdecl(int texture)
-002a1640	132	USER_DEFINED	__thiscall	CTrail_SetLast	void __thiscall(float * pos, float * width, uint * color)
-002a16d0	80	USER_DEFINED	__thiscall	CTrail_SetLastPos	void __thiscall(float x, float y, float z)
-002a1720	97	USER_DEFINED	__thiscall	CTrail_SetLastPosColor	void __thiscall(float x, float y, float z, uint color)
-002a1790	142	USER_DEFINED	__thiscall	CTrail_SetPoint	void __thiscall(int i, float * pos, float * width, uint * color)
-002a1820	114	USER_DEFINED	__thiscall	CTrail_Move	void __thiscall(float dx, float dy, float dz)
-002a18a0	117	DEFAULT	unknown	FUN_006a18a0	
-002a1920	17	DEFAULT	unknown	FUN_006a1920	
-002a1940	46	DEFAULT	unknown	FUN_006a1940	
-002a1970	136	USER_DEFINED	__cdecl	Cad_Printf	void __cdecl(void * self, char * fmt, ...)
-002a1a00	86	DEFAULT	unknown	FUN_006a1a00	
-002a1a60	86	DEFAULT	unknown	FUN_006a1a60	
+002a1640	132	USER_DEFINED	__thiscall	CTrail_SetLast	void __thiscall(void * pos, float * width, uint * color)
+002a16d0	80	USER_DEFINED	__thiscall	CTrail_SetLastPos	void __thiscall(int pos)
+002a1720	97	USER_DEFINED	__thiscall	CTrail_SetLastPosColor	void __thiscall(int pos, uint color)
+002a1790	142	USER_DEFINED	__thiscall	CTrail_SetPoint	void __thiscall(int i, void * pos, float * width, uint * color)
+002a1820	114	USER_DEFINED	__thiscall	CTrail_Move	void __thiscall(int d)
+002a18a0	117	USER_DEFINED	__thiscall	Cad_Read	void __thiscall(void * f)
+002a1920	17	USER_DEFINED	__thiscall	Cad_Write	void __thiscall(void * f)
+002a1940	46	USER_DEFINED	__thiscall	Cad_Set	void __thiscall(char * s)
+002a1970	136	USER_DEFINED	__cdecl	Cad_Printf	void __cdecl(char ** self, char * fmt, int arg)
+002a1a00	86	USER_DEFINED	__cdecl	BlendMode_GetDst	uint __cdecl(uint mode)
+002a1a60	86	USER_DEFINED	__cdecl	BlendMode_GetSrc	uint __cdecl(uint mode)
 002a1ac0	183	USER_DEFINED	__cdecl	Arch_AddSection	void __cdecl(void *dat, char *name, int idx)
 002a1b80	87	USER_DEFINED	__cdecl	Arch_AddLine	void __cdecl(void *dat, char *text, int idx)
 002a1be0	244	USER_DEFINED	__cdecl	Arch_InsertAt	void __cdecl(void *dat, char *text, int idx)
@@ -8297,34 +8317,34 @@ rva	size	source	callconv	name	signature
 002a3430	273	USER_DEFINED	__cdecl	Dat_GetList	void __cdecl(void *dat, char *sect, char *key, void *dest)
 002a3550	141	USER_DEFINED	__cdecl	Dat_GetWord	int __cdecl(void *dat, char *sect, char *key, ushort *out)
 002a35e0	96	USER_DEFINED	__cdecl	Dat_GetStr	int __cdecl(void *dat, char *sect, char *key, char *dest, int size)
-002a3640	13	DEFAULT	unknown	FUN_006a3640	
-002a3660	80	DEFAULT	unknown	FUN_006a3660	
-002a36b0	21	DEFAULT	unknown	FUN_006a36b0	
-002a36d0	119	DEFAULT	unknown	FUN_006a36d0	
-002a37c0	163	DEFAULT	unknown	FUN_006a37c0	
-002a3870	110	DEFAULT	unknown	FUN_006a3870	
-002a38e0	119	DEFAULT	unknown	FUN_006a38e0	
-002a3960	106	DEFAULT	unknown	FUN_006a3960	
-002a39d0	73	DEFAULT	unknown	FUN_006a39d0	
-002a3a40	14	DEFAULT	unknown	FUN_006a3a40	
-002a3a50	46	ANALYSIS	__thiscall	CEntradaDInput::vf00	undefined __thiscall(void)
-002a3a80	46	ANALYSIS	__thiscall	CEntradaWindows::vf00	undefined __thiscall(void)
-002a3ab0	46	ANALYSIS	__thiscall	IEntrada::vf00	undefined __thiscall(void)
-002a3ae0	9	ANALYSIS	__thiscall	CEntradaDInput::vf07	undefined __thiscall(void)
-002a3af0	120	ANALYSIS	__thiscall	CEntradaWindows::vf07	undefined __thiscall(void)
-002a3b90	151	ANALYSIS	__thiscall	IEntrada::vf07	undefined __thiscall(void)
-002a3c30	47	ANALYSIS	__thiscall	CEntradaDInput::vf05	undefined __thiscall(void)
-002a3c60	67	ANALYSIS	__thiscall	CEntradaWindows::vf05	undefined __thiscall(void)
-002a3cb0	47	ANALYSIS	__thiscall	CEntradaDInput::vf06	undefined __thiscall(void)
-002a3ce0	5	ANALYSIS	__thiscall	CEntradaWindows::vf06	undefined __thiscall(void)
-002a3cf0	184	ANALYSIS	__thiscall	CEntradaDInput::vf01	undefined __thiscall(void)
-002a3db0	5	ANALYSIS	__thiscall	CEntradaWindows::vf01	undefined __thiscall(void)
-002a3dc0	198	ANALYSIS	__thiscall	CEntradaDInput::vf03	undefined __thiscall(void)
-002a3e90	149	ANALYSIS	__thiscall	CEntradaWindows::vf03	undefined __thiscall(void)
-002a3f30	86	ANALYSIS	__thiscall	CEntradaDInput::vf04	undefined __thiscall(void)
-002a3f90	47	ANALYSIS	__thiscall	CEntradaWindows::vf04	undefined __thiscall(void)
-002a3fc0	109	ANALYSIS	__thiscall	CEntradaDInput::vf02	undefined __thiscall(void)
-002a4030	3	ANALYSIS	__thiscall	CEntradaWindows::vf02	undefined __thiscall(void)
+002a3640	13	USER_DEFINED	__cdecl	Tiempo_Get	uint __cdecl(void)
+002a3660	80	USER_DEFINED	__cdecl	Tiempo_Pausa	void __cdecl(int on)
+002a36b0	21	USER_DEFINED	__cdecl	Teclado_Clear	void __cdecl(void)
+002a36d0	119	USER_DEFINED	__cdecl	Teclado_GetChars	int __cdecl(ushort * dest, int n)
+002a37c0	163	USER_DEFINED	__cdecl	Teclado_KeyDown	void __cdecl(ushort ch, uint lparam)
+002a3870	110	USER_DEFINED	__cdecl	Teclado_KeyUp	void __cdecl(uint wparam, uint lparam)
+002a38e0	119	USER_DEFINED	__fastcall	CEntradaDInput_ctor	void * __fastcall(void * self)
+002a3960	106	USER_DEFINED	__fastcall	CEntradaWindows_ctor	void * __fastcall(void * self)
+002a39d0	73	USER_DEFINED	__fastcall	IEntrada_ctor	void * __fastcall(void * self)
+002a3a40	14	USER_DEFINED	__fastcall	IEntrada_dtor	void __fastcall(void * self)
+002a3a50	46	USER_DEFINED	__thiscall	CEntradaDInput_Delete	void * __thiscall(byte flags)
+002a3a80	46	USER_DEFINED	__thiscall	CEntradaWindows_Delete	void * __thiscall(byte flags)
+002a3ab0	46	USER_DEFINED	__thiscall	IEntrada_Delete	void * __thiscall(byte flags)
+002a3ae0	9	USER_DEFINED	__thiscall	CEntradaDInput_WndProc	void __thiscall(void * hwnd, uint msg, uint wparam, uint lparam)
+002a3af0	120	USER_DEFINED	__thiscall	CEntradaWindows_WndProc	void __thiscall(void * hwnd, uint msg, uint wparam, uint lparam)
+002a3b90	151	USER_DEFINED	__thiscall	IEntrada_WndProc	void __thiscall(void * hwnd, uint msg, uint wparam, uint lparam)
+002a3c30	47	USER_DEFINED	__thiscall	CEntradaDInput_AcquireMouse	int __thiscall(byte on)
+002a3c60	67	USER_DEFINED	__thiscall	CEntradaWindows_AcquireMouse	int __thiscall(byte on)
+002a3cb0	47	USER_DEFINED	__thiscall	CEntradaDInput_AcquireKeys	int __thiscall(byte on)
+002a3ce0	5	USER_DEFINED	__thiscall	CEntradaWindows_AcquireKeys	int __thiscall(byte on)
+002a3cf0	184	USER_DEFINED	__thiscall	CEntradaDInput_Init	int __thiscall(void * hwnd, void * hinst, byte exclusive)
+002a3db0	5	USER_DEFINED	__thiscall	CEntradaWindows_Init	int __thiscall(void * hwnd, void * hinst, byte exclusive)
+002a3dc0	198	USER_DEFINED	__thiscall	CEntradaDInput_ReadMouse	int __thiscall(int * out)
+002a3e90	149	USER_DEFINED	__thiscall	CEntradaWindows_ReadMouse	int __thiscall(int * out)
+002a3f30	86	USER_DEFINED	__fastcall	CEntradaDInput_ReadKeys	int __fastcall(void * self)
+002a3f90	47	USER_DEFINED	__fastcall	CEntradaWindows_ReadKeys	int __fastcall(void * self)
+002a3fc0	109	USER_DEFINED	__fastcall	CEntradaDInput_Release	int __fastcall(void * self)
+002a4030	3	USER_DEFINED	__fastcall	CEntradaWindows_Release	int __fastcall(void * self)
 002a4040	281	USER_DEFINED	__cdecl	Quat_FromEuler	float * __cdecl(float *out, float x, float y, float z)
 002a4160	159	USER_DEFINED	__cdecl	Quat_ToAxisAngle2	float * __cdecl(float *axis, float *ang, float *q)
 002a4200	71	USER_DEFINED	__cdecl	Quat_ToMatrixD3D	float * __cdecl(float *out, float *q)
@@ -8332,80 +8352,80 @@ rva	size	source	callconv	name	signature
 002a4310	712	USER_DEFINED	__cdecl	Quat_SlerpFlip	byte __cdecl(float *out, float *a, float *b, float t)
 002a45e0	461	USER_DEFINED	__cdecl	Quat_Slerp2	float * __cdecl(float *out, float *a, float *b, float t)
 002a47b0	116	USER_DEFINED	__cdecl	Quat_FromAxisAngle2	float * __cdecl(float *out, float *axis, float ang)
-002a4830	44	DEFAULT	unknown	FUN_006a4830	
-002a4860	131	USER_DEFINED	unknown	RenderLock_ReleaseD3D	
-002a48f0	236	DEFAULT	unknown	FUN_006a48f0	
-002a49e0	36	DEFAULT	unknown	FUN_006a49e0	
-002a4a10	153	DEFAULT	unknown	FUN_006a4a10	
-002a4ab0	549	DEFAULT	unknown	FUN_006a4ab0	
-002a4ce0	421	DEFAULT	unknown	FUN_006a4ce0	
-002a4e90	16	DEFAULT	unknown	FUN_006a4e90	
-002a4ea0	104	DEFAULT	unknown	FUN_006a4ea0	
-002a4f10	23	DEFAULT	unknown	FUN_006a4f10	
-002a4f30	168	DEFAULT	unknown	FUN_006a4f30	
-002a4fe0	40	DEFAULT	unknown	FUN_006a4fe0	
-002a5010	148	DEFAULT	unknown	FUN_006a5010	
-002a50b0	92	DEFAULT	unknown	FUN_006a50b0	
-002a5110	78	DEFAULT	unknown	FUN_006a5110	
-002a5160	43	DEFAULT	unknown	FUN_006a5160	
-002a5190	910	DEFAULT	unknown	FUN_006a5190	
-002a5520	8	DEFAULT	unknown	FUN_006a5520	
-002a5530	435	DEFAULT	unknown	FUN_006a5530	
-002a56f0	41	DEFAULT	unknown	FUN_006a56f0	
-002a5720	345	DEFAULT	unknown	FUN_006a5720	
-002a5880	66	DEFAULT	unknown	FUN_006a5880	
-002a58d0	64	DEFAULT	unknown	FUN_006a58d0	
-002a5910	64	DEFAULT	unknown	FUN_006a5910	
-002a5950	646	DEFAULT	unknown	FUN_006a5950	
-002a5be0	104	DEFAULT	unknown	FUN_006a5be0	
-002a5c50	104	DEFAULT	unknown	FUN_006a5c50	
+002a4830	44	USER_DEFINED	__thiscall	Box_Set	void * __thiscall(void * min, void * max)
+002a4860	131	USER_DEFINED	__cdecl	RenderLock_ReleaseD3D	void __cdecl(void)
+002a48f0	236	USER_DEFINED	__cdecl	RenderLock_InitD3D	void __cdecl(void)
+002a49e0	36	USER_DEFINED	__cdecl	RenderLock_Frame	void __cdecl(void)
+002a4a10	153	USER_DEFINED	__cdecl	RenderLock_CopyBack	void __cdecl(void)
+002a4ab0	549	USER_DEFINED	__cdecl	RenderLock_DrawMem	void __cdecl(void)
+002a4ce0	421	USER_DEFINED	__cdecl	RenderLock_Clear	void __cdecl(void)
+002a4e90	16	USER_DEFINED	__fastcall	CListaGrf2D_ctor	void * __fastcall(void * self)
+002a4ea0	104	USER_DEFINED	__fastcall	CListaGrf2D_DeleteAll	void __fastcall(void * self)
+002a4f10	23	USER_DEFINED	__fastcall	CListaGrf2D_Render	void __fastcall(void * self)
+002a4f30	168	USER_DEFINED	__thiscall	CListaGrf2D_Add	void __thiscall(void * grf)
+002a4fe0	40	USER_DEFINED	__thiscall	CListaGrf2D_Delete	void __thiscall(void * grf)
+002a5010	148	USER_DEFINED	__thiscall	CListaGrf2D_Remove	void __thiscall(void * grf)
+002a50b0	92	USER_DEFINED	__thiscall	CFondo2D_ctorFile	void * __thiscall(char * name)
+002a5110	78	USER_DEFINED	__fastcall	CFondo2D_ctor	void * __fastcall(void * self)
+002a5160	43	USER_DEFINED	__fastcall	CBmp_dtor	void __fastcall(void * self)
+002a5190	910	USER_DEFINED	__fastcall	CFondo2D_Render	void __fastcall(void * self)
+002a5520	8	USER_DEFINED	__cdecl	Fondo2D_Reset	void __cdecl(void)
+002a5530	435	USER_DEFINED	__cdecl	Fondo2D_Render	void __cdecl(void)
+002a56f0	41	USER_DEFINED	__cdecl	Fondo2D_Release	void __cdecl(void)
+002a5720	345	USER_DEFINED	__fastcall	CFondo2D_Init	void __fastcall(void * self)
+002a5880	66	USER_DEFINED	__cdecl	Fondo2D_Set	void __cdecl(char * name, uint color, byte deferred)
+002a58d0	64	USER_DEFINED	__cdecl	EfecMalla_AddPantalla	void __cdecl(void * m)
+002a5910	64	USER_DEFINED	__cdecl	EfecMalla_AddModelo	void __cdecl(void * m)
+002a5950	646	USER_DEFINED	__cdecl	EfecMalla_Render	void __cdecl(void)
+002a5be0	104	USER_DEFINED	__cdecl	EfecMalla_RenderModelos	void __cdecl(void)
+002a5c50	104	USER_DEFINED	__cdecl	EfecMalla_RenderPantallas	void __cdecl(void)
 002a5cc0	85	USER_DEFINED	__cdecl	Win_SetTextf	int __cdecl(void * hwnd, char * fmt, ...)
 002a5d20	89	USER_DEFINED	__cdecl	Dlg_SetFloat	void __cdecl(void * hwnd, int id, float v, int prec)
 002a5d80	78	USER_DEFINED	__cdecl	Dlg_GetFloat	byte __cdecl(void * hwnd, int id, float * out)
-002a5dd0	131	DEFAULT	unknown	FUN_006a5dd0	
-002a5e70	66	DEFAULT	unknown	FUN_006a5e70	
-002a5ec0	223	DEFAULT	unknown	FUN_006a5ec0	
-002a5fa0	51	DEFAULT	unknown	FUN_006a5fa0	
-002a5fe0	75	DEFAULT	unknown	FUN_006a5fe0	
-002a6030	22	DEFAULT	unknown	FUN_006a6030	
-002a6050	3	DEFAULT	unknown	FUN_006a6050	
-002a6060	220	DEFAULT	unknown	FUN_006a6060	
-002a6140	30	DEFAULT	unknown	FUN_006a6140	
-002a6160	382	DEFAULT	unknown	FUN_006a6160	
-002a62e0	3728	DEFAULT	unknown	FUN_006a62e0	
-002a7180	722	DEFAULT	unknown	FUN_006a7180	
-002a7460	17	DEFAULT	unknown	FUN_006a7460	
-002a7480	17	DEFAULT	unknown	FUN_006a7480	
-002a74a0	17	DEFAULT	unknown	FUN_006a74a0	
-002a74c0	23	DEFAULT	unknown	FUN_006a74c0	
-002a74e0	17	DEFAULT	unknown	FUN_006a74e0	
-002a7500	13	DEFAULT	unknown	FUN_006a7500	
-002a7510	13	DEFAULT	unknown	FUN_006a7510	
+002a5dd0	131	USER_DEFINED	__fastcall	CLensFlare_ctor	void * __fastcall(void * self)
+002a5e70	66	USER_DEFINED	__fastcall	CLensFlare_dtor	void __fastcall(void * self)
+002a5ec0	223	USER_DEFINED	__cdecl	LensFlare_Update	void __cdecl(void * lf)
+002a5fa0	51	USER_DEFINED	__thiscall	CLensFlare_SetOn	void __thiscall(byte on)
+002a5fe0	75	USER_DEFINED	__cdecl	LensFlare_ClearAll	int __cdecl(void)
+002a6030	22	USER_DEFINED	__cdecl	LensFlare_Set	void __cdecl(void * lf, byte on)
+002a6050	3	USER_DEFINED	__cdecl	LensFlare_Release	int __cdecl(void)
+002a6060	220	USER_DEFINED	__cdecl	LensFlare_Init	int __cdecl(void)
+002a6140	30	USER_DEFINED	__cdecl	LensFlare_InitList	int __cdecl(void)
+002a6160	382	USER_DEFINED	__cdecl	LensFlare_RenderAll	void __cdecl(void)
+002a62e0	3728	USER_DEFINED	__thiscall	CLensFlare_Render	void __thiscall(int view, int proj)
+002a7180	722	USER_DEFINED	__thiscall	CLensFlare_DrawSprite	void __thiscall(float dist, uint sprite, float size, float r, float g, float b, float a)
+002a7460	17	USER_DEFINED	__thiscall	CLensFlare_SetIntens	void __thiscall(float v)
+002a7480	17	USER_DEFINED	__thiscall	CLensFlare_SetTraceInterval	void __thiscall(float v)
+002a74a0	17	USER_DEFINED	__thiscall	CLensFlare_SetMargen	void __thiscall(float v)
+002a74c0	23	USER_DEFINED	__thiscall	CLensFlare_SetPos	void __thiscall(int pos)
+002a74e0	17	USER_DEFINED	__thiscall	CLensFlare_SetEscala	void __thiscall(float v)
+002a7500	13	USER_DEFINED	__thiscall	CLensFlare_SetTipo	void __thiscall(int tipo)
+002a7510	13	USER_DEFINED	__thiscall	CLensFlare_SetRelativo	void __thiscall(byte relativo)
 002a7520	1118	USER_DEFINED	unknown	RenderGamma_Begin	
 002a7980	95	USER_DEFINED	unknown	RenderGamma_ReleaseD3D	
-002a79e0	16	DEFAULT	unknown	FUN_006a79e0	
-002a79f0	1	DEFAULT	unknown	FUN_006a79f0	
-002a7a00	128	DEFAULT	unknown	FUN_006a7a00	
-002a7a80	87	DEFAULT	unknown	FUN_006a7a80	
-002a7ae0	485	DEFAULT	unknown	FUN_006a7ae0	
-002a7cd0	88	USER_DEFINED	unknown	RenderGamma_LogShaderMask	
-002a7d30	26	DEFAULT	unknown	FUN_006a7d30	
-002a7d50	341	DEFAULT	unknown	FUN_006a7d50	
-002a7eb0	254	DEFAULT	unknown	FUN_006a7eb0	
-002a7fc0	145	DEFAULT	unknown	FUN_006a7fc0	
-002a8060	145	DEFAULT	unknown	FUN_006a8060	
-002a8100	7	DEFAULT	unknown	FUN_006a8100	
-002a8110	36	ANALYSIS	__thiscall	CFXNewsPanel::vf00	undefined __thiscall(void)
-002a8140	35	ANALYSIS	__thiscall	CFXTexLava::vf00	undefined __thiscall(void)
-002a8170	35	ANALYSIS	__thiscall	CFXTexScroll::vf00	undefined __thiscall(void)
-002a81a0	36	ANALYSIS	__thiscall	std::_Facet_base::`scalar_deleting_destructor'	void * __thiscall(uint param_1)
-002a81d0	250	DEFAULT	unknown	FUN_006a81d0	
-002a82d0	5	ANALYSIS	__thiscall	CFXNewsPanel::vf02	undefined __thiscall(void)
-002a82e0	3	ANALYSIS	__thiscall	IFXTextura::vf02	undefined __thiscall(void)
-002a82f0	123	DEFAULT	unknown	FUN_006a82f0	
-002a8370	13	ANALYSIS	__thiscall	CFXNewsPanel::vf01	undefined __thiscall(void)
-002a8380	700	ANALYSIS	__thiscall	CFXTexLava::vf01	undefined __thiscall(void)
-002a8640	243	ANALYSIS	__thiscall	CFXTexScroll::vf01	undefined __thiscall(void)
+002a79e0	16	USER_DEFINED	__fastcall	CMatId_ctor	void * __fastcall(void * self)
+002a79f0	1	USER_DEFINED	__fastcall	CMatId_dtor	void __fastcall(void * self)
+002a7a00	128	USER_DEFINED	__thiscall	CMatId_Check	byte __thiscall(void * mat)
+002a7a80	87	USER_DEFINED	__cdecl	Shader_Find	int __cdecl(char * name)
+002a7ae0	485	USER_DEFINED	__thiscall	CMatId_Register	void __thiscall(void * mat)
+002a7cd0	88	USER_DEFINED	__cdecl	RenderGamma_LogShaderMask	void __cdecl(void)
+002a7d30	26	USER_DEFINED	__fastcall	CFXNewsPanel_ctor	void * __fastcall(void * self)
+002a7d50	341	USER_DEFINED	__thiscall	CFXTexLava_ctor	void * __thiscall(char * file)
+002a7eb0	254	USER_DEFINED	__thiscall	CFXTexScroll_ctor	void * __thiscall(char * file)
+002a7fc0	145	USER_DEFINED	__fastcall	CFXTexLava_dtor	void __fastcall(void * self)
+002a8060	145	USER_DEFINED	__fastcall	CFXTexScroll_dtor	void __fastcall(void * self)
+002a8100	7	USER_DEFINED	__fastcall	IFXTextura_dtor	void __fastcall(void * self)
+002a8110	36	USER_DEFINED	__thiscall	CFXNewsPanel_Delete	void * __thiscall(byte flags)
+002a8140	35	USER_DEFINED	__thiscall	CFXTexLava_Delete	void * __thiscall(byte flags)
+002a8170	35	USER_DEFINED	__thiscall	CFXTexScroll_Delete	void * __thiscall(byte flags)
+002a81a0	36	USER_DEFINED	__thiscall	IFXTextura_Delete	void * __thiscall(byte flags)
+002a81d0	250	USER_DEFINED	__cdecl	FXTextura_Create	void * __cdecl(byte kind, void * mapa)
+002a82d0	5	USER_DEFINED	__fastcall	CFXNewsPanel_GetTexture	void * __fastcall(void * self)
+002a82e0	3	USER_DEFINED	__fastcall	IFXTextura_GetTexture	void * __fastcall(void * self)
+002a82f0	123	USER_DEFINED	__cdecl	FXTextura_Kind	byte __cdecl(char * name)
+002a8370	13	USER_DEFINED	__thiscall	CFXNewsPanel_Update	int __thiscall(void * mapa)
+002a8380	700	USER_DEFINED	__thiscall	CFXTexLava_Update	int __thiscall(void * mapa)
+002a8640	243	USER_DEFINED	__thiscall	CFXTexScroll_Update	int __thiscall(void * mapa)
 002a8740	230	USER_DEFINED	__cdecl	Color_Lerp	uint __cdecl(uint a, uint b, float t)
 002a8830	908	USER_DEFINED	__fastcall	CBmp_Blur	void __fastcall(void *self)
 002a8bc0	72	USER_DEFINED	__thiscall	CBmp_Fill	void __thiscall(uint color)
@@ -8427,52 +8447,53 @@ rva	size	source	callconv	name	signature
 002aa920	607	USER_DEFINED	__thiscall	CBmp_Sample	uint * __thiscall(uint *out, float u, float v)
 002aab80	1124	USER_DEFINED	__fastcall	CBmp_Sharpen	void __fastcall(void *self)
 002aaff0	1603	USER_DEFINED	__thiscall	CBmp_Resample	void __thiscall(void *orig, uint mask)
-002ab640	81	DEFAULT	unknown	FUN_006ab640	
-002ab6f0	275	DEFAULT	unknown	FUN_006ab6f0	
-002ab830	34	DEFAULT	unknown	FUN_006ab830	
-002ab860	59	DEFAULT	unknown	FUN_006ab860	
-002ab8a0	79	DEFAULT	unknown	FUN_006ab8a0	
-002ab8f0	66	USER_DEFINED	__thiscall	CAnimNodo_dtor	void __thiscall(void)
-002ab940	326	DEFAULT	unknown	FUN_006ab940	
-002aba90	179	DEFAULT	unknown	FUN_006aba90	
-002abb50	111	DEFAULT	unknown	FUN_006abb50	
-002abbc0	160	DEFAULT	unknown	FUN_006abbc0	
-002abca0	516	DEFAULT	unknown	FUN_006abca0	
-002abeb0	559	DEFAULT	unknown	FUN_006abeb0	
-002ac0e0	3162	DEFAULT	unknown	FUN_006ac0e0	
-002acd40	213	DEFAULT	unknown	FUN_006acd40	
-002ace20	117	DEFAULT	unknown	FUN_006ace20	
-002acea0	120	DEFAULT	unknown	FUN_006acea0	
-002acf20	252	DEFAULT	unknown	FUN_006acf20	
-002ad020	124	DEFAULT	unknown	FUN_006ad020	
-002ad0a0	112	DEFAULT	unknown	FUN_006ad0a0	
-002ad110	241	DEFAULT	unknown	FUN_006ad110	
-002ad210	375	DEFAULT	unknown	FUN_006ad210	
-002ad390	137	DEFAULT	unknown	FUN_006ad390	
-002ad420	764	DEFAULT	unknown	FUN_006ad420	
-002ad720	756	DEFAULT	unknown	FUN_006ad720	
-002ada20	202	DEFAULT	unknown	FUN_006ada20	
-002adb50	170	DEFAULT	unknown	FUN_006adb50	
-002adc00	642	DEFAULT	unknown	FUN_006adc00	
-002ade90	143	DEFAULT	unknown	FUN_006ade90	
-002adf20	161	DEFAULT	unknown	FUN_006adf20	
-002adfd0	386	DEFAULT	unknown	FUN_006adfd0	
-002ae160	180	DEFAULT	unknown	FUN_006ae160	
-002ae220	89	DEFAULT	unknown	FUN_006ae220	
-002ae280	50	USER_DEFINED	__thiscall	AnimSet_GetTrack	void * __thiscall(int indice)
-002ae2c0	666	DEFAULT	unknown	FUN_006ae2c0	
-002ae560	338	DEFAULT	unknown	FUN_006ae560	
-002ae6c0	145	DEFAULT	unknown	FUN_006ae6c0	
-002ae760	69	DEFAULT	unknown	FUN_006ae760	
-002ae7b0	22	DEFAULT	unknown	FUN_006ae7b0	
-002ae7d0	462	USER_DEFINED	__thiscall	AnimTrack_Color	byte __thiscall(void * color, void * mult, int frame, float t)
-002ae9a0	343	USER_DEFINED	__thiscall	AnimTrack_Float	byte __thiscall(void * out, int frame, float t)
-002aeb00	90	DEFAULT	unknown	FUN_006aeb00	
-002aeb60	194	DEFAULT	unknown	FUN_006aeb60	
-002aec30	778	USER_DEFINED	__thiscall	AnimTrack_Sample	byte __thiscall(void * pos, void * rot, int frame, float t)
-002aef40	297	USER_DEFINED	__thiscall	AnimTrack_Alpha	byte __thiscall(void * out, int frame, float t)
-002af070	93	DEFAULT	unknown	FUN_006af070	
-002af0d0	523	DEFAULT	unknown	FUN_006af0d0	
+002ab640	81	USER_DEFINED	__thiscall	CAnimNodo_ctorFrames	void * __thiscall(uint nframes, uint first)
+002ab6a0	73	USER_DEFINED	__fastcall	CAnimNodo_ctor	void * __fastcall(void * self)
+002ab6f0	275	USER_DEFINED	__fastcall	CAnimacion_ctor	void * __fastcall(void * self)
+002ab830	34	USER_DEFINED	__fastcall	Tabla_Free	void __fastcall(void * t)
+002ab860	59	USER_DEFINED	__fastcall	AnimStream_dtor	void __fastcall(void * self)
+002ab8a0	79	USER_DEFINED	__fastcall	AnimBlock_dtor	void __fastcall(void * self)
+002ab8f0	66	USER_DEFINED	__fastcall	CAnimNodo_dtor	void __fastcall(void * self)
+002ab940	326	USER_DEFINED	__fastcall	CAnimacion_dtor	void __fastcall(void * self)
+002aba90	179	USER_DEFINED	__thiscall	CAnimNodo_Delete	void * __thiscall(uint flags)
+002abb50	111	USER_DEFINED	__cdecl	AnimBlock_Free	void __cdecl(void * ptr, uint flags)
+002abbc0	160	USER_DEFINED	__thiscall	CAnimNodo_TrackKind	int __thiscall(int frame, int unused, uint flag)
+002abca0	516	USER_DEFINED	__thiscall	CAnimacion_Read	void __thiscall(void * f)
+002abeb0	559	USER_DEFINED	__thiscall	CAnimNodo_Read	void __thiscall(void * f)
+002ac0e0	3162	USER_DEFINED	__fastcall	CAnimNodo_Optimize	void __fastcall(void * self)
+002acd40	213	USER_DEFINED	__cdecl	Vec3_Pack	uint __cdecl(void * v)
+002ace20	117	USER_DEFINED	__thiscall	AnimStream_AddByte	void __thiscall(int data)
+002acea0	120	USER_DEFINED	__thiscall	AnimStream_AddBytes	void __thiscall(void * data, int n)
+002acf20	252	USER_DEFINED	__thiscall	AnimStream_AddHeader	void __thiscall(int start, int keys)
+002ad020	124	USER_DEFINED	__thiscall	AnimStream_AddShort	void __thiscall(int data)
+002ad0a0	112	USER_DEFINED	__cdecl	Quat_ToEulerNeg	void * __cdecl(void * out, void * q)
+002ad110	241	USER_DEFINED	__thiscall	CAnimNodo_ReadTrack	void __thiscall(void * f, uint flag, void ** ptr, int size)
+002ad210	375	USER_DEFINED	__thiscall	CAnimacion_Write	void __thiscall(void * f)
+002ad390	137	USER_DEFINED	__thiscall	CAnimNodo_WriteTrack	void __thiscall(void * f, uint flag, void * ptr, int size, byte header)
+002ad420	764	USER_DEFINED	__thiscall	CAnimNodo_WriteData	void __thiscall(void * f)
+002ad720	756	USER_DEFINED	__thiscall	CAnimNodo_WriteHeader	void __thiscall(void * f)
+002ada20	202	USER_DEFINED	__cdecl	Vec3_AngDiff	void * __cdecl(void * out, void * a, void * b)
+002adb50	170	USER_DEFINED	__thiscall	CAnimNodo_FrameIndex	int __thiscall(int frame, void * ptr, uint flag)
+002adc00	642	USER_DEFINED	__fastcall	CAnimacion_Trim	void __fastcall(void * self)
+002ade90	143	USER_DEFINED	__thiscall	CAnimNodo_Translate	byte __thiscall(void * d)
+002adf20	161	USER_DEFINED	__thiscall	CAnimNodo_FreeTracks	void __thiscall(uint flags)
+002adfd0	386	USER_DEFINED	__cdecl	Quat_Similar	byte __cdecl(void * a, void * b)
+002ae160	180	USER_DEFINED	__thiscall	CAnimNodo_Scale	void __thiscall(void * s)
+002ae220	89	USER_DEFINED	__thiscall	CAnimacion_Scale	void __thiscall(void * s)
+002ae280	50	USER_DEFINED	__thiscall	CAnimacion_GetNodoTabla	void * __thiscall(uint i)
+002ae2c0	666	USER_DEFINED	__thiscall	CAnimNodo_Init	void __thiscall(uint nframes, uint first, uint flags)
+002ae560	338	USER_DEFINED	__thiscall	CAnimacion_Init	void __thiscall(int nobjetos, int nframes, int first)
+002ae6c0	145	USER_DEFINED	__thiscall	CAnimNodo_SetEVA	void __thiscall(int verts)
+002ae760	69	USER_DEFINED	__thiscall	CAnimacion_GetNodo	void * __thiscall(uint i)
+002ae7b0	22	USER_DEFINED	__thiscall	CAnimNodo_GetVert	void * __thiscall(uint i)
+002ae7d0	462	USER_DEFINED	__thiscall	CAnimNodo_GetColor	byte __thiscall(void * color, float * intens, int frame, float subframe)
+002ae9a0	343	USER_DEFINED	__thiscall	CAnimNodo_GetFOV	byte __thiscall(float * fov, int frame, float subframe)
+002aeb00	90	USER_DEFINED	__fastcall	CAnimNodo_GetFlags	uint __fastcall(void * self)
+002aeb60	194	USER_DEFINED	__thiscall	CAnimNodo_GetPosRotFrame	byte __thiscall(void * pos, void * rot, int frame)
+002aec30	778	USER_DEFINED	__thiscall	CAnimNodo_GetPosRot	byte __thiscall(void * pos, void * rot, int frame, float subframe)
+002aef40	297	USER_DEFINED	__thiscall	CAnimNodo_GetVisible	byte __thiscall(byte * visible, int frame, float subframe)
+002af070	93	USER_DEFINED	__fastcall	CAnimNodo_OptimizeEVA	void __fastcall(void * self)
+002af0d0	523	USER_DEFINED	__thiscall	CAnimacion_SwapNodos	void __thiscall(uint i, uint j)
 002af2e0	117	USER_DEFINED	__cdecl	Array_Read2	void __cdecl(void *f, void **p, uint *n)
 002af360	118	USER_DEFINED	__cdecl	Array_Read4	void __cdecl(void *f, void **p, uint *n)
 002af3e0	118	USER_DEFINED	__cdecl	Array_Read8	void __cdecl(void *f, void **p, uint *n)
