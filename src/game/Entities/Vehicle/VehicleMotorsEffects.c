@@ -2,8 +2,8 @@
  * Entities/Vehicle/VehicleMotorsEffects.cpp of the game: the exhaust effects of the motors of a ship, see
  * include/scrap/vehiclemotors.h: the particles at the DF_MotorTrust nodes, the glow, the trails, the smoke of the
  * motors and the Calima (hot air) particles.
- * Not here: the exhaust particles per FxClass (rva 0x10f210, 34 KB, a switch over the types) and cNetVController
- * (rva 0x1186b0..0x119850, the network copy of a ship) that follows in the exe.
+ * Not here: the exhaust particles per FxClass (rva 0x10f210, 34 KB, a switch over the types); cNetVController
+ * (rva 0x1186b0..0x119850, the network copy of a ship) that follows in the exe is in NetVController.c.
  */
 #include <string.h>
 

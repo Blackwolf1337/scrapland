@@ -78,7 +78,173 @@ void __fastcall cStringList_FreePool(cStringList *list) {
 	list->numFree = 0;
 }
 
+/* the list destructor: the nodes and the free pool */
+void __fastcall cStringList_dtor(cStringList *list) {
+	cStringList_Clear(list);
+	cStringList_FreePool(list);
+}
+
 /* ---- cActClass ---- */
+
+#define ACTCLASS_SLOTS 0x1c9
+
+cActNodeMod *__fastcall cActNodeMod_ctor(cActNodeMod *self) {
+	memset(self->ang, 0, sizeof(self->ang));
+	self->node = ACT_NODE_NONE;
+	return self;
+}
+
+cActClass *__thiscall cActClass_ctor(cActClass *self, const char *name) {
+	self->vftable = Game_Ptr(CACTCLASS_VFTABLE);
+	cString_ctor(&self->name);
+	self->actions.numSlots = ACTCLASS_SLOTS;
+	self->actions.slots = New_Array(ACTCLASS_SLOTS, sizeof(HashNode *));
+	memset(self->actions.slots, 0, ACTCLASS_SLOTS * sizeof(HashNode *));
+	self->actions.locked = 0;
+	self->actions.caseSensitive = 1;
+	CGameModel_ctor(&self->model, NULL);
+	memset(&self->sounds, 0, sizeof(self->sounds));
+	for (int i = 0; i < ACT_NODEMODS; i++) {
+		cActNodeMod_ctor(&self->nodes[i]);
+	}
+	self->cam.camDist = 200.0f;
+	self->cam.camAng = 0.0f;
+	self->cam.camRot = 0.0f;
+	self->cam.fov = 1.5707964f;
+	self->cam.minFov = 1.5707964f;
+	self->cam.maxFov = 2.0943952f;
+	/* (float)fabs(the double at rva 0x3a36f0), the range of the two above */
+	self->cam.fovRange = 0.52359879f;
+	self->cam.fovTime = 0.5f;
+	self->cam.fovLeft = 0.0f;
+	self->cam.fovStart = 0.0f;
+	cString_ctor(&self->fallSound);
+	cPy_Function_ctor(&self->actionPress);
+	cPy_Function_ctor(&self->actionRelease);
+	cPy_Function_ctor(&self->photoPress);
+	cPy_Function_ctor(&self->possessionPress);
+	cPy_Function_ctor(&self->onCreate);
+	cPy_Function_ctor(&self->onFreeResources);
+	cString_Set(&self->name, name);
+	self->modelFile = NULL;
+	self->defAction = NULL;
+	self->first = NULL;
+	self->last = NULL;
+	self->turnAngLimit = 0.78539819f;
+	self->maxTimeToExtraRelax = 2.0f;
+	self->minTimeToExtraRelax = 5.0f;
+	self->minFallDist = 30.0f;
+	self->wRadius = 60.0f;
+	self->vRadius = 60.0f;
+	self->sRadius = 10.0f;
+	self->flyAccel = 600.0f;
+	self->flyFric = 3.0f;
+	self->flySpeed = 1000.0f;
+	self->flyFallAccel = 200.0f;
+	self->minTimeWalking = 0.3f;
+	self->canBePossessed = 0;
+	self->discardable = 0;
+	self->canFly = 0;
+	self->canJump = 0;
+	self->yModelDisp = 0.0f;
+	self->initEndWalkInterpFactor = 2.0f;
+	self->fireAsSelect = 0;
+	self->skipInitOnChange = 1;
+	self->dinaShip = 0;
+	self->fallSoundVol = 0.0f;
+	self->users = 0;
+	self->soundDisp.x = 0.0f;
+	self->soundDisp.y = 0.0f;
+	self->soundDisp.z = 0.0f;
+	self->pretransformChan = 0;
+	self->strafeChar = 1;
+	self->relaxAlarm = 0;
+	return self;
+}
+
+void __fastcall cActClass_dtor(cActClass *self) {
+	self->vftable = Game_Ptr(CACTCLASS_VFTABLE);
+	if (self->users) {
+		Con_Bluef("ERROR : The class %s is going to be deleted but the reference counter is %d\n", self->name,
+			self->users);
+	}
+	if (self->discardable) {
+		cActClass_FreeResources(self);
+	}
+	for (;;) {
+		uint32_t i;
+		HashNode *it = NULL;
+
+		for (i = 0; (int)i < (int)self->actions.numSlots; i++) {
+			if (self->actions.slots[i]) {
+				it = self->actions.slots[i];
+				break;
+			}
+		}
+		if (!it) {
+			break;
+		}
+		cAction *data = it->value;
+		if (!PtrTable_Delete(&self->actions, it->key)) {
+			CheckFailed("Actions.Delete( item->ident)", __FILE__, __TIMESTAMP__, __LINE__);
+		}
+		if (!data) {
+			CheckFailed("data!=NULL", __FILE__, __TIMESTAMP__, __LINE__);
+			continue;
+		}
+		data->vftable->Delete(data, 1);
+	}
+	if (self->modelFile) {
+		Mem_Free(self->modelFile);
+	}
+	cPy_Function_dtor(&self->onFreeResources);
+	cPy_Function_dtor(&self->onCreate);
+	cPy_Function_dtor(&self->possessionPress);
+	cPy_Function_dtor(&self->photoPress);
+	cPy_Function_dtor(&self->actionRelease);
+	cPy_Function_dtor(&self->actionPress);
+	cString_dtor(&self->fallSound);
+	cStringList_dtor(&self->sounds);
+	CGameModel_Reset(&self->model);
+	PtrTable_Clear(&self->actions);
+	cString_dtor(&self->name);
+}
+
+cActClass *__thiscall cActClass_Delete(cActClass *self, byte flags) {
+	cActClass_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(*self));
+	}
+	return self;
+}
+
+cAction *__thiscall cActClass_CreateAction(cActClass *self, const char *name) {
+	cAction *act = operator_new(sizeof(cAction));
+
+	if (act) {
+		act = cAction_ctor(act, self, name);
+	}
+	const char *key = act->name;
+	if (self->actions.locked) {
+		CheckFailed("!bLocked", __FILE__, __TIMESTAMP__, __LINE__);
+	}
+	uint32_t slot = HashTable_Slot(&self->actions, key);
+	if (PtrTable_Find(&self->actions, key, slot)) {
+		Con_Warnf("CHashTable3: Symbol already defined: '%s'\n", key);
+		CheckFailed("Actions.Add(act->GetName(),act,true)", __FILE__, __TIMESTAMP__, __LINE__);
+	} else {
+		PtrTable_Insert(&self->actions, key, slot, (void *const *)&act);
+	}
+	if (self->first) {
+		self->last->next = act;
+		self->last = self->last->next;
+	} else {
+		self->first = act;
+		self->last = act;
+		act->next = NULL;
+	}
+	return act;
+}
 
 void __thiscall cActClass_AddSoundRes(cActClass *self, const char *file) {
 	char name[0x80];

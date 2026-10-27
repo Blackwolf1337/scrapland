@@ -198,6 +198,18 @@ static int CheckAIEntity(cEntity *e, const char *type) {
 	return 0;
 }
 
+/* whether the dot product of p with each of the n vectors reaches r * r (rva 0x195ef0, not called in the exe) */
+byte Vec3_AllDotsReach(const vec3_t *v, int n, const vec3_t *p, float r) {
+	float r2 = r * r;
+
+	for (int i = 0; i < n; i++) {
+		if (r2 > v[i].x * p->x + v[i].y * p->y + v[i].z * p->z) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 int SetState_CheckChar(cEntity *e) {
 	return CheckAIEntity(e, TYEN_WALKCHAR);
 }

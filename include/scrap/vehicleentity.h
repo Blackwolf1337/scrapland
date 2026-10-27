@@ -291,6 +291,9 @@ void __thiscall cWithLifeEntity_Tick(cEntity *self, float dt);
 void __thiscall cWithLifeEntity_RenderNow(cEntity *self);
 void *__thiscall cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void *p3);
 cNetVController *__thiscall cNetVController_ctor(void *mem, cEntity *v);
+/* NetVController.c */
+byte __thiscall cNetVController_Changed(cNetVController *self, byte flags, cEntity *e);
+void __thiscall cNetVController_Reset(cNetVController *self);
 
 /* VehicleEntity.c; the constructor (rva 0x105830) is declared in world.h */
 void __fastcall cVehicleEntity_dtor(cVehicleEntity *self);

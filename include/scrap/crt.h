@@ -54,6 +54,7 @@ char *crt_strtime(char *buf);
 void crt_qsort(void *base, size_t n, size_t size, int (*cmp)(const void *, const void *));
 int crt_atoi(const char *s);
 char *crt_ltoa(long v, char *buf, int radix);
+char *crt_ui64toa(uint64_t v, char *buf, int radix);
 double crt_atof(const char *s);
 char *crt_strncat(char *dst, const char *src, size_t n);
 int crt_stdio_common_vsprintf(uint64_t options, char *buf, size_t count, const char *fmt, void *locale, va_list ap);

@@ -219,7 +219,10 @@ SD_OFFSET(cActCtrl, rootSum, 0x5c);
 SD_SIZE(cActCtrl, 0x7c);
 
 /* Actions/ActClass.cpp (src/game/Actions/ActClass.c) */
-cActClass *__thiscall cActClass_ctor(cActClass *self, const char *name);	/* rva 0x5f890, an import */
+cActClass *__thiscall cActClass_ctor(cActClass *self, const char *name);
+void __fastcall cActClass_dtor(cActClass *self);
+cActClass *__thiscall cActClass_Delete(cActClass *self, byte flags);
+cActNodeMod *__fastcall cActNodeMod_ctor(cActNodeMod *self);
 cAction *__thiscall cActClass_CreateAction(cActClass *cls, const char *name);
 cAction *__thiscall cActClass_GetAction(cActClass *cls, const char *name);
 /* set != 0: writes the string *s, or the number *d / *i when s is NULL; set == 0: reads into all three.
@@ -245,6 +248,7 @@ cStringNode *__thiscall cStringList_NewNode(cStringList *list);
 void __fastcall cStringList_Clear(cStringList *list);
 void __fastcall cStringList_FreePool(cStringList *list);
 void __fastcall cStringList_RemoveHead(cStringList *list);
+void __fastcall cStringList_dtor(cStringList *list);
 
 /* Actions/ActClassList.cpp (src/game/Actions/ActClassList.c) */
 cActClassList *__fastcall cActClassList_ctor(cActClassList *self);

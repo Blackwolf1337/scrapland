@@ -7,9 +7,7 @@
  * The vtable of cEmbeddedFX (rva 0x3b08a0): 0 deleting destructor, 1 Reset (after the constructor, returns 1),
  * 2 Release (the particle nodes let go before the delete), 3 Update (each frame, dt), 4 Tick (each frame, only
  * the head has one), 5 Stop (keep: 0 the particles and trails cleared).
- * The constructors (rva 0xd6930..0xd6fe0) and the destructor of
- * cEmbeddedFXBankDirector (rva 0xd6ff0, inlined in its vf00) are in the exe, the base destructor (rva 0xd68f0) in
- * EmbeddedFXChar.c.
+ * The constructors and destructors are in EmbeddedFXChar.c, also the base destructor (rva 0xd68f0, EmbeddedFX.h).
  */
 #ifndef SCRAP_EMBEDDEDFXCHAR_H
 #define SCRAP_EMBEDDEDFXCHAR_H
@@ -242,8 +240,9 @@ typedef struct cEmbeddedFXHeadCrazyGambler {
 } cEmbeddedFXHeadCrazyGambler;
 SD_SIZE(cEmbeddedFXHeadCrazyGambler, 0xc4);
 
-/* the exe parts of the classes */
+/* the constructors and destructors (EmbeddedFXChar.c) */
 void __fastcall cEmbeddedFX_dtor(cEmbeddedFX *self);			/* rva 0xd68f0 */
+cEmbeddedFX *__thiscall cEmbeddedFX_Delete(cEmbeddedFX *self, byte flags);	/* rva 0xd6900 */
 cEmbeddedFX *__fastcall cEmbeddedFXBankDirector_ctor(void *self);	/* rva 0xd6930 */
 cEmbeddedFX *__fastcall cEmbeddedFXBankMaster_ctor(void *self);	/* rva 0xd69a0 */
 cEmbeddedFX *__fastcall cEmbeddedFXCrazyGambler_ctor(void *self);	/* rva 0xd6a30 */
@@ -252,8 +251,10 @@ cEmbeddedFX *__fastcall cEmbeddedFXMaintenance_ctor(void *self);	/* rva 0xd6b90 
 cEmbeddedFX *__fastcall cEmbeddedFXMercenary_ctor(void *self);	/* rva 0xd6c10 */
 cEmbeddedFX *__fastcall cEmbeddedFXMessenger_ctor(void *self);	/* rva 0xd6cb0 */
 cEmbeddedFX *__fastcall cEmbeddedFXPolice_ctor(void *self);		/* rva 0xd6d40 */
+cEmbeddedFXAlarm *__fastcall cEmbeddedFXAlarm_ctor(cEmbeddedFXAlarm *self);	/* rva 0xd6dc0 */
 cEmbeddedFX *__fastcall cEmbeddedFXRusty_ctor(void *self);		/* rva 0xd6df0 */
 cEmbeddedFX *__fastcall cEmbeddedFXSentinel_ctor(void *self);	/* rva 0xd6ed0 */
+void __fastcall cEmbeddedFXBankDirector_dtor(cEmbeddedFXBankDirector *self);	/* rva 0xd6ff0 */
 
 /* EmbeddedFXChar.c */
 void EmbeddedFXChar_Create(cEntity *withLife, const char *model, cEmbeddedFX **fx);

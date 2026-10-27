@@ -47,6 +47,9 @@ void __stdcall crt_eh_vector_dtor(void *p, uint32_t size, uint32_t count, void *
  * allocation fails. Delete_Objects is the delete[] of it. (src/game/Global/Mem.c) */
 void *New_Objects(uint32_t count, uint32_t size, uint32_t ctor, uint32_t dtor);
 void Delete_Objects(void *p, uint32_t size, uint32_t dtor);
+/* the array part of a vector deleting destructor (flags 2): the dtor on each object, the block freed with flags 1;
+ * returns the block */
+void *Delete_VectorPart(void *p, uint32_t flags, uint32_t size, uint32_t dtor);
 /* new[] of count items as the compiler makes it: a size that overflows is -1, which the allocator refuses */
 static inline void *New_Array(uint32_t count, uint32_t size) {
 	uint64_t bytes = (uint64_t)count * size;

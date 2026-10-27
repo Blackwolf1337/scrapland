@@ -183,6 +183,67 @@ cWeapInfo *__thiscall cWeapInfo_ctor(cWeapInfo *self) {
 	return self;
 }
 
+void __fastcall cAmmoInfo_dtor(cAmmoInfo *self) {
+	cPy_Function_dtor(&self->onHit);
+	cPy_Function_dtor(&self->onFire);
+	cPy_Function_dtor(&self->onRelease);
+	cPy_Function_dtor(&self->onPress);
+	cString_dtor(&self->name);
+}
+
+void __fastcall cWeapInfo_dtor(cWeapInfo *self) {
+	cPy_Function_dtor(&self->setFx);
+	cPy_Function_dtor(&self->onEnd);
+	cPy_Function_dtor(&self->onStart);
+	cPy_Function_dtor(&self->onHit);
+	cPy_Function_dtor(&self->onFire);
+	cPy_Function_dtor(&self->onRelease);
+	cPy_Function_dtor(&self->onPress);
+	cString_dtor(&self->name);
+}
+
+/* the vector deleting destructors */
+cAmmoInfo *__thiscall cAmmoInfo_Delete(cAmmoInfo *self, uint32_t flags) {
+	if (flags & 2) {
+		return Delete_VectorPart(self, flags, sizeof(*self), CAMMOINFO_DTOR);
+	}
+	cAmmoInfo_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(*self));
+	}
+	return self;
+}
+
+cWeapInfo *__thiscall cWeapInfo_Delete(cWeapInfo *self, uint32_t flags) {
+	if (flags & 2) {
+		return Delete_VectorPart(self, flags, sizeof(*self), CWEAPINFO_DTOR);
+	}
+	cWeapInfo_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(*self));
+	}
+	return self;
+}
+
+/* the Global/Table.h Init of the two instances: new T[num] with the constructors */
+void __thiscall AmmoTable_Init(void *table, int num) {
+	TABLE(cAmmoInfo) *t = table;
+
+	CHECK(!t->items && num > 0);
+	t->count = num;
+	t->items = New_Objects(num, sizeof(cAmmoInfo), CAMMOINFO_CTOR, CAMMOINFO_DTOR);
+	CHECK(t->items);
+}
+
+void __thiscall WeapTable_Init(void *table, int num) {
+	TABLE(cWeapInfo) *t = table;
+
+	CHECK(!t->items && num > 0);
+	t->count = num;
+	t->items = New_Objects(num, sizeof(cWeapInfo), CWEAPINFO_CTOR, CWEAPINFO_DTOR);
+	CHECK(t->items);
+}
+
 int __thiscall cAmmoInfo_GetF(cAmmoInfo *ammo, const char *var, float *value) {
 	if (!crt_stricmp(var, "Max")) {
 		*value = ammo->max;

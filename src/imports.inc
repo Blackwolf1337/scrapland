@@ -19,7 +19,6 @@ SD_IMPORT(operator_delete_sized, 0x313634)
 SD_IMPORT(FX_ShipExplosion, 0x1f4d50)
 
 /* engine: Actions/ */
-SD_IMPORT(cActClass_CreateAction, 0x05fe90)
 
 /* engine: AI/ (include/scrap/ai.h) */
 SD_IMPORT(CAStar_ctor, 0x099330)
@@ -108,8 +107,6 @@ SD_IMPORT(Elements_Create, 0x203000)
 SD_IMPORT(Floor_Get, 0x203af0)
 SD_IMPORT(Achievement_Unlock, 0x137470)
 SD_IMPORT(Steam_SetAchievement, 0x1a66a0)
-SD_IMPORT(Steam_GetID, 0x134720)
-SD_IMPORT(Steam_GetTicket, 0x1345e0)
 SD_IMPORT(Gog_GetID, 0x137160)
 SD_IMPORT(Anm_Preload, 0x2051a0)
 SD_IMPORT(Object3D_Preload, 0x205140)
@@ -119,14 +116,10 @@ SD_IMPORT(cDebrisSys_Drop, 0x204a40)
 
 /* engine: Input/ */
 SD_IMPORT(ActionSet_IsNamed, 0x133a30)
-SD_IMPORT(Input_GetActionSet, 0x139910)
-SD_IMPORT(cPlayerInput_GetCursorChar, 0x139920)
 
 /* engine: Math/ */
 
 /* engine: World/ (weapon and ammo tables of cWorld) */
-SD_IMPORT(WeapTable_Init, 0x19fd40)
-SD_IMPORT(AmmoTable_Init, 0x19fc60)
 
 /* Python 1.5.2 */
 SD_IMPORT(PyArg_ParseTuple, 0x2f0560)	/* getargs.c */
@@ -363,16 +356,6 @@ SD_IMPORT(cMapElement_Update, 0x203520)
 /* module agent: World/FX/FXElements+FXElementsAB.cpp (imports below this line) */
 
 /* module agent: Entities/EmbeddedFX/EmbeddedFXChar+CharHead.cpp (imports below this line) */
-SD_IMPORT(cEmbeddedFXBankDirector_ctor, 0xd6930)
-SD_IMPORT(cEmbeddedFXBankMaster_ctor, 0xd69a0)
-SD_IMPORT(cEmbeddedFXCrazyGambler_ctor, 0xd6a30)
-SD_IMPORT(cEmbeddedFXGear_ctor, 0xd6af0)
-SD_IMPORT(cEmbeddedFXMaintenance_ctor, 0xd6b90)
-SD_IMPORT(cEmbeddedFXMercenary_ctor, 0xd6c10)
-SD_IMPORT(cEmbeddedFXMessenger_ctor, 0xd6cb0)
-SD_IMPORT(cEmbeddedFXPolice_ctor, 0xd6d40)
-SD_IMPORT(cEmbeddedFXRusty_ctor, 0xd6df0)
-SD_IMPORT(cEmbeddedFXSentinel_ctor, 0xd6ed0)
 
 /* module agent: Entities/EmbeddedFX/EmbeddedFXVehicle.cpp+mpeg/music_fmod.cpp (imports below this line) */
 SD_IMPORT_STDCALL(FSOUND_Stream_GetSample, 4, 0x317ada)
@@ -449,7 +432,6 @@ SD_IMPORT(cVehicleO648_dtor, 0x0ff010)
 SD_IMPORT(cVehicleO648_SetSlot, 0x0ff3f0)
 SD_IMPORT(cVehicleO648_Update, 0x0ff6a0)
 SD_IMPORT(cVehicleControls_Tick, 0x0ffcc0)
-SD_IMPORT(cNetVController_ctor, 0x1186b0)
 SD_IMPORT(cVehicleO648_ctor, 0x0fefb0)
 SD_IMPORT(cVehicleMotors_ctor, 0x10bc20)
 SD_IMPORT(cVehicleEffects_ctor, 0x100ab0)
@@ -483,8 +465,6 @@ SD_IMPORT(CPsaImage_DrawFrame, 0x22d440)
 SD_IMPORT(CPsaImage_DrawFrameFlip, 0x22d480)
 SD_IMPORT(cMonitorScorer_DrawMonitor, 0x168c60)
 SD_IMPORT(cRadarScorer_DrawRadar, 0x16d570)
-SD_IMPORT(cPlayerInput_PressKey, 0x1396b0)
-SD_IMPORT(cActionSet_HoldPressed, 0x139810)
 SD_IMPORT(CNodesWorld2D_Generate, 0x0b2f60)
 
 /* module agent: Entities/Char/Type part 2+WalkCharControl (imports below this line) */
@@ -560,7 +540,6 @@ SD_IMPORT(crt_Init_thread_header, 0x31409d)
 SD_IMPORT(crt_Init_thread_footer, 0x31405e)
 
 /* module agent: Actions and Events (ActClass..AIBishop) (imports below this line) */
-SD_IMPORT(cActClass_ctor, 0x05f890)
 
 /* module agent: AI/AIChar.cpp (imports below this line) */
 
@@ -612,3 +591,4 @@ SD_IMPORT(CGameLensFlare_SetB2c, 0x233020)
 /* module agent: AI leftovers 0x098000..0x0b8000 (imports below this line) */
 
 /* module agent: Rest A, game leftovers below 0x1a8000 (imports below this line) */
+SD_IMPORT(crt_ui64toa, 0x34d6d5)
