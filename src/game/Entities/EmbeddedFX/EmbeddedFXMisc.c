@@ -487,9 +487,9 @@ byte __fastcall cEmbeddedFXMatrix_Reset(cEmbeddedFXMatrix *self) {
 }
 
 byte __fastcall cEmbeddedFXMoto_Reset(cEmbeddedFXMoto *self) {
-	self->v08.x = 0.0f;
-	self->v08.y = 0.0f;
-	self->v08.z = 0.0f;
+	self->t[0] = 0.0f;
+	self->t[1] = 0.0f;
+	self->t[2] = 0.0f;
 	self->f7d4 = 1.0f;
 	self->f7d8 = 0.0f;
 	self->b7dc = 0;

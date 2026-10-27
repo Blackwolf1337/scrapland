@@ -248,8 +248,8 @@ SD_SIZE(cEmbeddedFXMeetingPoint, 0x230);
 
 typedef struct cEmbeddedFXMoto {
 	cEmbeddedFX base;
-	vec3_t v08;			/* 0x008 */
-	byte pad_14[0x38 - 0x14];
+	float t[FXMOTO_ENGINES];	/* 0x008 the times of the engines (the Update is in the exe) */
+	vec3_t pos[FXMOTO_ENGINES];	/* 0x014 */
 	int nodeEngine[FXMOTO_ENGINES];	/* 0x038 DF_MotorTrust_01..03 */
 	CGameParticles engine[FXMOTO_ENGINES];	/* 0x044 */
 	CGameParticles down[FXMOTO_DOWN];	/* 0x254 DF_MotorTrust_04, 05 */
@@ -259,6 +259,7 @@ typedef struct cEmbeddedFXMoto {
 	byte b7dc;			/* 0x7dc */
 	byte pad_7dd[3];
 } cEmbeddedFXMoto;
+SD_OFFSET(cEmbeddedFXMoto, nodeEngine, 0x38);
 SD_OFFSET(cEmbeddedFXMoto, engine, 0x44);
 SD_OFFSET(cEmbeddedFXMoto, down, 0x254);
 SD_OFFSET(cEmbeddedFXMoto, tube, 0x3b4);
