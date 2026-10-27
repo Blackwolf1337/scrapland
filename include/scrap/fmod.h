@@ -31,4 +31,34 @@ byte __stdcall FSOUND_IsPlaying(int channel);
 byte __stdcall FSOUND_GetReserved(int channel);
 void *__stdcall FSOUND_GetCurrentSample(int channel);
 
+/* the system and the streams (engine3d/mpeg/music_fmod.cpp) */
+#define FSOUND_OUTPUT_DSOUND 2
+#define FSOUND_STREAM_OPENING (-2)	/* FSOUND_Stream_GetOpenState while the stream opens */
+
+float __stdcall FSOUND_GetVersion(void);
+byte __stdcall FSOUND_SetOutput(int type);
+int __stdcall FSOUND_GetOutput(void);
+int __stdcall FSOUND_GetNumDrivers(void);
+const char *__stdcall FSOUND_GetDriverName(int id);
+byte __stdcall FSOUND_GetDriverCaps(int id, uint32_t *caps);
+byte __stdcall FSOUND_SetDriver(int driver);
+byte __stdcall FSOUND_Init(int mixrate, int maxchannels, uint32_t flags);
+void __stdcall FSOUND_Close(void);
+int __stdcall FSOUND_GetMixer(void);
+double __stdcall FSOUND_GetCPUUsage(void);	/* a float in st0, the original stores it as a double */
+byte __stdcall FSOUND_SetReserved(int channel, byte reserved);
+int __stdcall FSOUND_GetVolume(int channel);
+int __stdcall FSOUND_GetPan(int channel);
+int __stdcall FSOUND_GetFrequency(int channel);
+int __stdcall FSOUND_GetNumSubChannels(int channel);
+const char *__stdcall FSOUND_Sample_GetName(void *sample);
+byte __stdcall FSOUND_Stream_SetBufferSize(int ms);
+void *__stdcall FSOUND_Stream_Open(const char *name, uint32_t mode, int offset, int length);
+byte __stdcall FSOUND_Stream_Close(void *stream);
+int __stdcall FSOUND_Stream_GetOpenState(void *stream);
+void *__stdcall FSOUND_Stream_GetSample(void *stream);
+int __stdcall FSOUND_Stream_PlayEx(int channel, void *stream, void *dsp, byte paused);
+int __stdcall FSOUND_Stream_GetLengthMs(void *stream);
+int __stdcall FSOUND_Stream_GetTime(void *stream);
+
 #endif

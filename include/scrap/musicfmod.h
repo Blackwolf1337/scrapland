@@ -1,0 +1,82 @@
+/*
+ * engine3d/mpeg/music_fmod.cpp of the game: the FMOD start and end, the music stream (one .ogg, opened in the
+ * background, started when FMOD has opened it; its volume is MusicMainVolume * the fade volume * the voiceover
+ * factor) and the 8 voice streams (&U&D&N.ogg, the dialogs; a voiceover voice turns the music down while it is
+ * open). The screen debug info of both with S_Show 2. The results are bytes in al; the ones the sound code passes
+ * on in eax are declared int.
+ */
+#ifndef SCRAP_MUSICFMOD_H
+#define SCRAP_MUSICFMOD_H
+
+#include "scrap/game.h"
+
+#define MUSIC_MAX_VOICES 8
+
+typedef struct cMusicVoice {
+	char name[0x104];		/* 0x000 the file */
+	void *stream;			/* 0x104 FSOUND_STREAM */
+	int channel;			/* 0x108 -1 until it plays */
+	char text[0x80];		/* 0x10c Voice_SetString */
+	int voiceover;			/* 0x18c 0/1 */
+	uint32_t openTime;		/* 0x190 timeGetTime when opened */
+	uint32_t waitTime;		/* 0x194 the last time it was seen opening (debug info) */
+	uint32_t playTime;		/* 0x198 */
+} cMusicVoice;
+SD_SIZE(cMusicVoice, 0x19c);
+
+#define g_FmodState GAME_DATA(int, 0x4a94dc)		/* > 0 running, < 0 failed */
+#define g_MusicVoices ((cMusicVoice *)Game_Ptr(0x4a94e0))
+
+int Fmod_Init(void);
+int Fmod_Close(void);
+int Fmod_IsInit(void);
+
+/* the voices; NULL without FMOD */
+cMusicVoice *Voice_Get(uint32_t voice);
+void Voice_Wait(cMusicVoice *v, const char *what);	/* until FMOD has opened the stream; what is not used */
+void Voice_Close(cMusicVoice *v);
+void Voice_ApplyVolume(cMusicVoice *v, float volume);
+int Voice_GetString(int voice, char *buf, int size);
+int Voice_Unused(int voice);			/* CHECK(0), then whether it plays */
+int Voice_Open(const char *name, int voice, int voiceover);
+int Voice_SetParam(int voice, float pan);		/* -1..1 */
+int Voice_Play(int voice);
+int Voice_Remain(int voice, float *remain);	/* in s */
+int Voice_SetString(int voice, const char *text);
+int Voice_Stop(int voice);
+int Voice_SetVolume(int voice, float volume);
+void Voices_UpdatePause(void);			/* paused with the time scale 0 or the window inactive */
+void Voices_DrawDebug(int x, int y);
+byte Voices_DrawDebugDefault(void);
+
+/* the music */
+int Music_GetOpenState(void);			/* -2 also the first second after it opened */
+byte Music_Ready(void);				/* started now if FMOD has opened it, closed if it failed */
+byte Music_UpdateVolumes(void);
+void Music_DrawDebug(int x, int y);
+byte Music_Wait(void);
+byte Music_Open(const char *name);
+void Music_SetPaused(int paused);
+byte Music_Start(void);
+void Music_ApplyVolume(void);
+byte Music_Voiceover(float factor, float speed);
+void Music_DrawStream(float x, float y, void *stream, int channel, byte *playing);
+byte Music_PlayFile(const char *name, const char *dir);	/* rva 0x232240 */
+byte Music_Pause(void);						/* rva 0x232210 */
+byte Music_Stop(void);						/* rva 0x232360 */
+byte Music_SetVolume(float v);					/* rva 0x2324e0 */
+byte Music_SetMainVolume(float v);				/* rva 0x2321c0 */
+byte Music_FadeOut(float a, float vol);				/* rva 0x232480 */
+byte Music_Update(void);					/* rva 0x232600 */
+
+/* the FMOD file callbacks (not set by the game) */
+int __stdcall Music_FileClose(void *f);
+void *__stdcall Music_FileOpen(const char *name);
+int __stdcall Music_FileRead(void *buf, int size, void *f);
+int __stdcall Music_FileSeek(void *f, int pos, signed char mode);
+int __stdcall Music_FileTell(void *f);
+void Music_Nop(void);
+byte __stdcall Music_True16a(int a, int b, int c, int d);
+byte __stdcall Music_True16b(int a, int b, int c, int d);
+
+#endif
