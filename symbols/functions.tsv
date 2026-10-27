@@ -1296,7 +1296,7 @@ rva	size	source	callconv	name	signature
 00066910	168	ANALYSIS	__thiscall	cAIBankMaster::vf50	undefined __thiscall(void)
 000669c0	201	DEFAULT	unknown	FUN_004669c0	
 00066aa0	44	ANALYSIS	__thiscall	cAIBishop::vf00	undefined __thiscall(void)
-00066ad0	420	DEFAULT	unknown	FUN_00466ad0	
+00066ad0	420	USER_DEFINED	__cdecl	Vec3_Angle	double __cdecl(float * a, float * b)
 00066c80	760	ANALYSIS	__thiscall	cAIBishop::vf66	undefined __thiscall(void)
 00066f90	54	ANALYSIS	__thiscall	cAIBishop::vf56	undefined __thiscall(void)
 00066ff0	138	ANALYSIS	__thiscall	cAIBishop::vf57	undefined __thiscall(void)
@@ -1460,7 +1460,7 @@ rva	size	source	callconv	name	signature
 00072230	90	ANALYSIS	__thiscall	cAICharControl::vf61	undefined __thiscall(void)
 00072290	70	ANALYSIS	__thiscall	cAICharControl::vf63	undefined __thiscall(void)
 000722e0	83	ANALYSIS	__thiscall	cAICharControl::vf86	undefined __thiscall(void)
-00072340	176	DEFAULT	unknown	FUN_00472340	
+00072340	176	USER_DEFINED	__cdecl	Vec3_NormalizeTo	float * __cdecl(float * out, float * in)
 000723f0	115	USER_DEFINED	__fastcall	Nto1Head::UnlinkAll	void __fastcall(void * head)
 00072470	61	ANALYSIS	__thiscall	cAICharControl::vf19	undefined __thiscall(void)
 000724b0	543	ANALYSIS	__thiscall	cAICharControl::vf73	undefined __thiscall(void)
@@ -5582,7 +5582,7 @@ rva	size	source	callconv	name	signature
 001b4120	55	ANALYSIS	__thiscall	cObjElementFXSputnik::vf04	undefined __thiscall(void)
 001b4160	111	DEFAULT	unknown	FUN_005b4160	
 001b41d0	62	DEFAULT	unknown	FUN_005b41d0	
-001b4210	123	DEFAULT	unknown	FUN_005b4210	
+001b4210	123	USER_DEFINED	__thiscall	FXSputnik_Start	void __thiscall(void * e)
 001b4290	66	DEFAULT	unknown	FUN_005b4290	
 001b42e0	78	DEFAULT	unknown	FUN_005b42e0	
 001b4330	142	DEFAULT	unknown	FUN_005b4330	
@@ -5591,8 +5591,8 @@ rva	size	source	callconv	name	signature
 001b4500	13	DEFAULT	unknown	FUN_005b4500	
 001b4510	119	DEFAULT	unknown	FUN_005b4510	
 001b4590	62	DEFAULT	unknown	FUN_005b4590	
-001b45d0	20	DEFAULT	unknown	FUN_005b45d0	
-001b45f0	20	DEFAULT	unknown	FUN_005b45f0	
+001b45d0	20	USER_DEFINED	__thiscall	FXSputnik_SetB	void __thiscall(float v)
+001b45f0	20	USER_DEFINED	__thiscall	FXSputnik_SetA	void __thiscall(float v)
 001b4610	3341	DEFAULT	unknown	FUN_005b4610	
 001b5320	150	DEFAULT	unknown	FUN_005b5320	
 001b53c0	142	DEFAULT	unknown	FUN_005b53c0	
@@ -6171,8 +6171,8 @@ rva	size	source	callconv	name	signature
 00204bd0	367	USER_DEFINED	__thiscall	cDebrisSys::NewElement	void * __thiscall(void)
 00204d40	12	USER_DEFINED	__thiscall	cDebrisSys_GetIdle	void * __thiscall(void)
 00204d50	128	USER_DEFINED	__thiscall	cDebrisSys::Init	void __thiscall(int n, int e)
-00204dd0	16	DEFAULT	unknown	FUN_00604dd0	
-00204de0	183	DEFAULT	unknown	FUN_00604de0	
+00204dd0	16	USER_DEFINED	__thiscall	cDebrisSys_IsIdle	byte __thiscall(void * d)
+00204de0	183	USER_DEFINED	__thiscall	cDebris_Move	void __thiscall(float dt)
 00204ea0	664	USER_DEFINED	__thiscall	cDebris_Update	byte __thiscall(void * sys)
 00205140	91	USER_DEFINED	__cdecl	Object3D_Preload	void __cdecl(char * name, float * scale)
 002051a0	99	USER_DEFINED	unknown	Anm_Preload	undefined(void)
@@ -6907,8 +6907,8 @@ rva	size	source	callconv	name	signature
 00232d10	102	DEFAULT	unknown	FUN_00632d10	
 00232d80	80	DEFAULT	unknown	FUN_00632d80	
 00232dd0	163	DEFAULT	unknown	FUN_00632dd0	
-00232e80	135	DEFAULT	unknown	FUN_00632e80	
-00232f10	27	DEFAULT	unknown	FUN_00632f10	
+00232e80	135	USER_DEFINED	__thiscall	CGameLensFlare_ctor	void * __thiscall(void)
+00232f10	27	USER_DEFINED	__thiscall	CGameLensFlare_dtor	void __thiscall(void)
 00232f30	11	DEFAULT	unknown	FUN_00632f30	
 00232f80	25	DEFAULT	unknown	FUN_00632f80	
 00232fa0	25	DEFAULT	unknown	FUN_00632fa0	
