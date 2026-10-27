@@ -6954,6 +6954,7 @@ SD_HOOK(FXMisc_Nop, 0x2b96e0, 16)		/* CGrafico3D vf03 */
 SD_HOOK(FXMisc_Nop, 0x2b9e40, 16)		/* CGrafico3D vf01 */
 SD_HOOK(CPortal_DrawDebug, 0x2ba2b0, 346)
 SD_HOOK(FXMisc_Nop, 0x2ba7a0, 16)		/* CPortal vf01 */
+SD_HOOK(CPortal_ClipRect, 0x2ba930, 3029)
 SD_HOOK(Tabla_Free, 0x2b8dd0, 34)
 SD_HOOK(Tabla_Alloc10, 0x2b8e00, 115)
 SD_HOOK(Tabla_Free, 0x2bbcf0, 34)

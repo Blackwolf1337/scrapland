@@ -241,7 +241,6 @@ SD_IMPORT(Matrix_RotationZ, 0x23a2b0)
 SD_IMPORT(CAnimMat_ctorCopy, 0x257f10)
 
 /* src/game/engine3d/Engine/Portal.c (called from Engine/portal.cpp, include/scrap/portal.h) */
-SD_IMPORT(CPortal_ClipRect, 0x2ba930)
 SD_IMPORT(Debug_Line, 0x27cb80)
 
 /* module agent: Engine/RenderTarget (imports below this line) */
