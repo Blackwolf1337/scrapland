@@ -430,7 +430,6 @@ SD_IMPORT(cDebris_Move, 0x204de0)
 SD_IMPORT(CGameLensFlare_ctor, 0x232e80)
 SD_IMPORT(CGameLensFlare_dtor, 0x232f10)
 SD_IMPORT(Vec3_Angle, 0x066ad0)
-SD_IMPORT(Vec3_NormalizeTo, 0x072340)
 
 /* module agent: App/CApp+CWinApp (imports below this line) */
 SD_IMPORT(ActClassList_Done, 0x062140)
@@ -716,10 +715,18 @@ SD_IMPORT(Taunts_Think, 0x154e40)
 SD_IMPORT(Taunts_Warnings, 0x155000)
 
 /* module agent: AI/ICharControl+2D+3D.cpp (imports below this line) */
+SD_IMPORT(cAICharControl_ctor, 0x06cba0)
+SD_IMPORT(cAICharControl_dtor, 0x06d520)
+SD_IMPORT(cAICharControl_Draw, 0x070330)
+SD_IMPORT(cAIChar_GetControl, 0x0697f0)
+SD_IMPORT(CAStar2D_FindPath, 0x09a5e0)
+SD_IMPORT(CAStar2D_GetPointsVis, 0x09a6e0)
+SD_IMPORT(CAStar_FindPath, 0x099b30)
+SD_IMPORT(CAStar_GetPointsVis, 0x099bf0)
+SD_IMPORT(DListSeg_Clear, 0x06d810)
 
 /* module agent: AI/IVehicleControl+IVehicleShootControl.cpp (imports below this line) */
 SD_IMPORT(cAIEntityGroup_ctor, 0x084620)
 SD_IMPORT(cAIEntityGroup_dtor, 0x084650)
-SD_IMPORT(CAStar_FindPath, 0x099b30)
 
 /* module agent: net (GameServer..transport) (imports below this line) */
