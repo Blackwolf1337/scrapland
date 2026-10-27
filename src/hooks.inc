@@ -3908,3 +3908,9 @@ SD_HOOK(cObjElementFXVehicleSputnik_SetC0, 0x1f9660, 16)
 SD_HOOK(cObjElementFXVehicleSputnik_SetC4, 0x1f9670, 20)
 
 /* module agent: Engine/bsp.cpp (hooks below this line) */
+
+/* module agent: World/FX/FXCharActions.cpp (hooks below this line) */
+
+/* module agent: Entities/More+ObjEntity (hooks below this line) */
+
+/* module agent: Entities/Vehicle/VehicleEffects+VehicleEntity.cpp (hooks below this line) */

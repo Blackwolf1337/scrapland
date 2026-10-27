@@ -706,3 +706,9 @@ SD_IMPORT(cActCtrl_GetLayer, 0x062c70)
 SD_IMPORT(cVehicleEffects_ClearDamage, 0x101d30)
 
 /* module agent: Engine/bsp.cpp (imports below this line) */
+
+/* module agent: World/FX/FXCharActions.cpp (imports below this line) */
+
+/* module agent: Entities/More+ObjEntity (imports below this line) */
+
+/* module agent: Entities/Vehicle/VehicleEffects+VehicleEntity.cpp (imports below this line) */
