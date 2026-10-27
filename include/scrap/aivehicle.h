@@ -44,7 +44,8 @@ typedef struct cAIObjVtbl {
 	void *(__thiscall *Delete)(void *self, byte flags);	/* 0x00 */
 } cAIObjVtbl;
 typedef struct cAIVehicleControl {
-	const cAIObjVtbl *vftable;
+	const cAIObjVtbl *vftable;	/* 0x00 */
+	byte boost;			/* 0x04 the boost of the vehicle on */
 } cAIVehicleControl;
 typedef struct cAIVehicleShoot {
 	const cAIObjVtbl *vftable;
@@ -126,7 +127,9 @@ struct cAIVehicle {
 	int moveMode;			/* 0x05c */
 	byte pad_60[0x64 - 0x60];
 	vec3_t dest2;			/* 0x064 */
-	byte pad_70[0x86 - 0x70];
+	byte pad_70[0x81 - 0x70];
+	byte b81;			/* 0x081 */
+	byte pad_82[0x86 - 0x82];
 	byte repos;			/* 0x086 "Repos" */
 	byte pad_87[0x90 - 0x87];
 	cAIVehicleSaved pending;	/* 0x090 state AIV_STATE_NONE for none */
@@ -181,8 +184,8 @@ struct cAIVehicle {
 	byte pad_355[3];
 	cItemDesc itemAmmo;		/* 0x358 the nearest ammo item */
 	cItemDesc itemAmmoK[3];		/* 0x360 the nearest of each kind */
-	float itemAmmoDist;		/* 0x378 */
-	float f37c;			/* 0x37c */
+	float itemAmmoLevel;		/* 0x378 the ammo of the kind of the item when it was found */
+	float itemAmmoStart;		/* 0x37c the ammo when the AI went for the item */
 	cEntity *itemAmmoEnt[3];	/* 0x380 */
 	cEntity *itemAmmoBest;		/* 0x38c */
 	float itemAmmoDistK[3];		/* 0x390 */
@@ -248,8 +251,8 @@ byte __thiscall cAIVehicle_VarV(cAIVehicle *self, const char *name, double *x, d
 cAIVehicleControl *__thiscall cAIVehicle_GetControl(cAIVehicle *self);
 byte __thiscall cAIVehicle_GetChanged(cAIVehicle *self);
 int __thiscall cAIVehicle_GetPrevState(cAIVehicle *self);
-/* the state an event of the state ev counts in: FIGHTING for GET_AWAY */
-int __thiscall cAIVehicle_GetStateFor(cAIVehicle *self, int ev);
+/* FIGHTING when asked with GET_AWAY, else the state of the AI */
+int __thiscall cAIVehicle_GetStateFor(cAIVehicle *self, int state);
 /* the name of the state into buf; buf unchanged for a state out of the range */
 void __stdcall cAIVehicle_InternStateName(int state, char *buf);
 void __thiscall cAIVehicle_GetInternStateName(cAIVehicle *self, char *buf);
@@ -302,42 +305,58 @@ cEntity *__thiscall cAIVehicle_NearestAmmo(cAIVehicle *self, int kind, float *di
 	cEntity *exclude);
 void __thiscall cAIVehicle_FindLife(cAIVehicle *self, cEntity *exclude);
 int __thiscall cAIVehicle_GetTrackType(cAIVehicle *self);
+/* the reactions of the think slot, by state */
+void __thiscall cAIVehicle_ReactFighting(cAIVehicle *self);
+void __thiscall cAIVehicle_ReactHook(cAIVehicle *self);
+void __thiscall cAIVehicle_ReactGetAway(cAIVehicle *self);
+void __thiscall cAIVehicle_ReactGetAwayStop(cAIVehicle *self);
+/* LOST_PATH and LOST_PATH_CHASE (two copies): FREEZE_LOST when the place of the vehicle is free after 15 s */
+void __thiscall cAIVehicle_ReactLostPath(cAIVehicle *self);
+/* the hook of the states that move: aimed or let go on the hook slot */
+void __thiscall cAIVehicle_ThinkChase(cAIVehicle *self);
+void __thiscall cAIVehicle_ThinkFighting(cAIVehicle *self);
+void __thiscall cAIVehicle_ThinkGetAway(cAIVehicle *self);
+void __thiscall cAIVehicle_ThinkGetAwayStop(cAIVehicle *self);
+void __thiscall cAIVehicle_ThinkGoTo(cAIVehicle *self);
+/* LOST_PATH and LOST_PATH_CHASE (two copies): back to the kept state once the vehicle is in the graph again */
+void __thiscall cAIVehicle_ThinkLostPath(cAIVehicle *self);
+/* the hook point: tried when the vehicle moves, let go near the goal or out of range; 1 while it is set */
+byte __thiscall cAIVehicle_TryHook(cAIVehicle *self, int a, int b);
+/* the life items (and the ammo items for FIGHTING) the states go for */
+void __thiscall cAIVehicle_ItemsChase(cAIVehicle *self);
+void __thiscall cAIVehicle_ItemsFighting(cAIVehicle *self);
+void __thiscall cAIVehicle_ItemsGetAway(cAIVehicle *self);
+void __thiscall cAIVehicle_ItemsGetAwayStop(cAIVehicle *self);
+void __thiscall cAIVehicle_ItemsInRoute(cAIVehicle *self);
+void __thiscall cAIVehicle_FightingAfterItem(cAIVehicle *self);
+/* the nearest ammo item of a kind the shoot control uses (kinds 0, 2, 1); itemAmmoLevel the ammo of that kind */
+cEntity *__thiscall cAIVehicle_NearestAmmoAny(cAIVehicle *self, float *dist, cItemDesc *out, cEntity *exclude,
+	float factor);
+/* itemAmmoBest: the nearest ammo item, with a random factor first (0 or FLT_MAX), the other one when none */
+void __thiscall cAIVehicle_FindAmmo(cAIVehicle *self, cEntity *exclude);
+void __thiscall cAIVehicle_GraphTrafficInDoor(cAIVehicle *self);
+void __thiscall cAIVehicle_ThinkRace(cAIVehicle *self);
+/* the internal state (AIVI_) and its move; the arguments by state, floats as double, bytes as int:
+ * STOPPED, ORIENT_SHOOTING: none
+ * FINISHING_LINE: vec3_t dest, speed, b1a8, a, b, f30c, b32c
+ * FINISHING_LINE_WITH_SHOOT_CM, _LIFE, _AMMO: vec3_t dest, speed (WITH_SHOOT_CM also b1a8)
+ * FINISHING_LINE_DIRECT: vec3_t dest, speed, b1a8, rotA, rotB
+ * CHASE_SHOOTING: chaseMin, chaseMax; CHASE_NOT_SHOOTING: chaseMin, rotB
+ * FOLLOW_THE_PATH: vec3_t dir, speed, b1a8, b81, repos, a, b; FOLLOW_THE_PATH_WITH_SHOOT_CM: vec3_t dir, speed,
+ * b1a8, b81 */
+void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...);
 
 /* ---- the parts of AIVehicle.cpp not in C yet ---- */
-/* the reactions of the think slot, by state */
-void __thiscall cAIVehicle_ReactFighting(cAIVehicle *self);		/* rva 0x86d90 */
-void __thiscall cAIVehicle_ReactHook(cAIVehicle *self);		/* rva 0x86eb0 */
-void __thiscall cAIVehicle_ReactGetAway(cAIVehicle *self);		/* rva 0x870e0 */
-void __thiscall cAIVehicle_ReactGetAwayStop(cAIVehicle *self);	/* rva 0x87260 */
-void __thiscall cAIVehicle_ReactLostPath(cAIVehicle *self);		/* rva 0x87580 */
-void __thiscall cAIVehicle_ReactLostPathChase(cAIVehicle *self);	/* rva 0x87600 */
-/* the moves of the states */
-void __thiscall cAIVehicle_ThinkChase(cAIVehicle *self);		/* rva 0x87850 */
-void __thiscall cAIVehicle_ThinkFighting(cAIVehicle *self);		/* rva 0x87a00 */
-void __thiscall cAIVehicle_ThinkGetAway(cAIVehicle *self);		/* rva 0x87bf0 */
-void __thiscall cAIVehicle_ThinkGetAwayStop(cAIVehicle *self);	/* rva 0x87d20 */
-void __thiscall cAIVehicle_ThinkGoTo(cAIVehicle *self);		/* rva 0x87e60 */
-void __thiscall cAIVehicle_ThinkLostPath(cAIVehicle *self);		/* rva 0x87f80 */
-void __thiscall cAIVehicle_ThinkLostPathChase(cAIVehicle *self);	/* rva 0x88070 */
-void __thiscall cAIVehicle_ThinkRace(cAIVehicle *self);		/* rva 0x88160 */
-/* the items the states go for */
-void __thiscall cAIVehicle_ItemsChase(cAIVehicle *self);		/* rva 0x885d0 */
-void __thiscall cAIVehicle_ItemsFighting(cAIVehicle *self);		/* rva 0x88790 */
-void __thiscall cAIVehicle_ItemsGetAway(cAIVehicle *self);		/* rva 0x88ae0 */
-void __thiscall cAIVehicle_ItemsGetAwayStop(cAIVehicle *self);	/* rva 0x88c20 */
-void __thiscall cAIVehicle_ItemsInRoute(cAIVehicle *self);		/* rva 0x88d70 */
-void __thiscall cAIVehicle_FightingAfterItem(cAIVehicle *self);	/* rva 0x86ad0 */
 /* the repositioning near the camera */
 byte __thiscall cAIVehicle_NeedRepos(cAIVehicle *self);		/* rva 0x868f0 */
 byte __thiscall cAIVehicle_Repos(cAIVehicle *self);			/* rva 0x89b00 */
 void __thiscall cAIVehicle_GraphTraffic(cAIVehicle *self);		/* rva 0x89070 */
-void __thiscall cAIVehicle_GraphTrafficInDoor(cAIVehicle *self);	/* rva 0x89630 */
+/* the hook point p free for the vehicle (a line test to a point beside it) */
+byte __thiscall cAIVehicle_TestHookPoint(cAIVehicle *self, const vec3_t *p);	/* rva 0x8ab20 */
 /* the point of the track node for the vehicle (out returned); Random with a random offset kept in trackOfs */
 vec3_t *__thiscall cAIVehicle_TrackPoint(cAIVehicle *self, vec3_t *out, const vec3_t *p, int track, int node);
 vec3_t *__thiscall cAIVehicle_TrackPointRandom(cAIVehicle *self, vec3_t *out, const vec3_t *p, int track,
 	int node);
-/* the internal state and its move (the arguments by state) */
-void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...);			/* rva 0x8e2d0 */
 /* the external state from SetState: 0 if the arguments did not fit */
 byte __thiscall cAIVehicle_ChangeState(cAIVehicle *self, int state, va_list args);	/* rva 0x8ea60 */
 
@@ -369,6 +388,9 @@ vec3_t *__thiscall cAIVehicleControl_GetDest(cAIVehicleControl *self, vec3_t *ou
 void __thiscall cAIVehicleControl_ClearDest(cAIVehicleControl *self);
 /* the controls of the vehicle let go */
 void __thiscall cAIVehicleControl_Stop(cAIVehicleControl *self);
+/* the move of the control (mode 0 stop, 1 to a point, 2 direct, 3 chase, 6 orient, 7 path; the arguments by mode,
+ * see cAIVehicle_SetInternState); 0 if it was refused */
+byte cAIVehicleControl_SetMove(cAIVehicleControl *self, int mode, ...);
 cAIVehicleShoot *__thiscall cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehicle *ai, void *params);
 void __thiscall cAIVehicleShoot_Update(cAIVehicleShoot *self, float dt);
 void __thiscall cAIVehicleShoot_Update2(cAIVehicleShoot *self, float dt);
@@ -376,5 +398,25 @@ void __thiscall cAIVehicleShoot_Draw(cAIVehicleShoot *self);
 cAIVehicleParams3 *__thiscall cAIVehicleShoot_GetParams(cAIVehicleShoot *self);
 cAIVehicleParams3 *__thiscall cAIVehicleShoot_GetParamsInit(cAIVehicleShoot *self);
 void __thiscall cAIVehicleShoot_WeapListChanged(cAIVehicleShoot *self);
+/* the vehicle has the hook (byte at 0x61) */
+byte __thiscall cAIVehicleShoot_HasHook(cAIVehicleShoot *self);
+/* the ammo of the weapons in use above factor of the maximum */
+byte __thiscall cAIVehicleShoot_HasAmmo(cAIVehicleShoot *self, float factor);
+/* the vehicle has a weapon for the ammo kind (the ones of the factor below a limit or above) */
+byte __thiscall cAIVehicleShoot_UsesAmmo(cAIVehicleShoot *self, int kind, float factor);
+byte __thiscall cAIVehicleShoot_TargetInSight(cAIVehicleShoot *self, int arg);
+void __thiscall cAIVehicleShoot_SetMode(cAIVehicleShoot *self, int a, int b, byte c);
+/* the fields at 0x124, 0x128 (2 in a race at the finishing line, assumed) and 0x178 */
+void __thiscall cAIVehicleShoot_GetInfo(cAIVehicleShoot *self, int *a, int *kind, byte *flag);
+
+/* ---- Global/Nto1Links.h: the out of line copies the AI calls ---- */
+/* node into the ring of head (CHECK: the node not linked) */
+void __thiscall Nto1Head_Link(Nto1Node *head, Nto1Node *node);
+/* node out of its ring (CHECK: Node, its data set) */
+void __fastcall Nto1Node_UnlinkChecked(Nto1Node *node);
+
+/* ---- cAIVehicleGroup ---- */
+/* an elevator of the group within dist of pos */
+byte __thiscall cAIVehicleGroup_ElevatorNear(cAIVehicleGroup *self, const vec3_t *pos, float dist);
 
 #endif

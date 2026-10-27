@@ -273,6 +273,113 @@ if ivhCar and ivhCar2 and ivhGroup:
 	ivhSetByte(ivhAI + 0x1a8, 0)
 	ivhSetByte(ivhAI + 0x32c, 0)
 
+	# the decisions with SDIvhCar2 as target (the node of the link is left alone, only its target is set) and the
+	# life full (no item search): reactions, the hook slots and the items
+	ivhPoke(ivhAI + 0x40, ivhCar2)
+	ivhSet(ivhAI + 0xc, (0.25,))
+	check('target', lambda: (ivhB(ivhCar2 + 0x4c), ivhI(ivhCar + 0x238), ivhI(ivhCar + 0x640), ivhB(ivhAI + 0x340)))
+	for ivhIn in (9, 0, 4):
+		ivhPoke(ivhAI + 0x1a4, ivhIn)
+		for ivhBoost in (0, 1):
+			ivhPoke(ivhAI + 0x1c0, ivhBoost)
+			check('cAIVehicle_ReactGetAway' + fmt((ivhIn, ivhBoost)), lambda: (SDTest.Call(0x0870e0, 'tvi', ivhAI),
+				ivhB(ivhCtrl + 4), ivhState()))
+		ivhSetByte(ivhCtrl + 4, 0)
+	for ivhIn, ivhDist in ((4, 0.0), (9, 1000.0), (9, 6000.0), (1, 0.0), (0, 0.0)):
+		for ivhBoost in (0, 1):
+			ivhPoke(ivhAI + 0x1a4, ivhIn)
+			ivhSet(ivhAI + 0x2f0, (ivhDist,))
+			ivhPoke(ivhAI + 0x1c0, ivhBoost)
+			check('cAIVehicle_ReactGetAwayStop' + fmt((ivhIn, ivhDist, ivhBoost)), lambda: (SDTest.Call(0x087260, 'tvi',
+				ivhAI), ivhB(ivhCtrl + 4), ivhState()))
+	ivhPoke(ivhAI + 0x1c0, 0)
+	ivhSetByte(ivhCtrl + 4, 0)
+	ivhPoke(ivhAI + 0x1a4, 0)
+	for ivhChase in (SDTest.Peek(0x444948, 'i'), SDTest.Peek(0x4449fc, 'i'), 0x40000000):
+		ivhPoke(ivhAI + 0x310, ivhChase)
+		check('cAIVehicle_ReactFighting %x' % ivhChase, lambda: (SDTest.Call(0x086d90, 'tvi', ivhAI), ivhState(),
+			ivhF(ivhAI + 0x310, 2)))
+	for ivhT in (0.0, 15.0, 15.5):
+		ivhSet(ivhAI + 0x2c, (ivhT,))
+		check('cAIVehicle_ReactLostPath' + fmt((ivhT,)), lambda: (SDTest.Call(0x087580, 'tvi', ivhAI), ivhState(),
+			ivhB(ivhCar + 0x5ec)))
+		check('cAIVehicle_ReactLostPath copy' + fmt((ivhT,)), lambda: (SDTest.Call(0x087600, 'tvi', ivhAI), ivhState()))
+	SDTest.Call(0x08dfb0, 'bii', ivhAI, 0)
+	if ivhNodesWorld:
+		for ivhDt in (0.1, 0.3):
+			ivhSet(ivhAI + 0xc, (ivhDt,))
+			check('cAIVehicle_ThinkLostPath' + fmt((ivhDt,)), lambda: (SDTest.Call(0x087f80, 'tvi', ivhAI), ivhState(),
+				ivhF(ivhAI + 0x164, 2)))
+			check('cAIVehicle_ThinkLostPath copy' + fmt((ivhDt,)), lambda: (SDTest.Call(0x088070, 'tvi', ivhAI),
+				ivhState()))
+	# the hook slots: no hook point yet, without and with thrust (FACTOR_HOOK_MAP 3: at random)
+	ivhSrand(2024)
+	for ivhThrust in (0.0, 0.5):
+		ivhSet(ivhCar + 0x420, (ivhThrust,))
+		for ivhIn in (4, 5, 6, 7, 9):
+			ivhPoke(ivhAI + 0x1a4, ivhIn)
+			for ivhRva, ivhName in ((0x087e60, 'ThinkGoTo'), (0x087850, 'ThinkChase'), (0x087a00, 'ThinkFighting'),
+					(0x087bf0, 'ThinkGetAway'), (0x087d20, 'ThinkGetAwayStop')):
+				ivhSet(ivhAI + 0xc, (0.3,))
+				check('cAIVehicle_%s' % ivhName + fmt((ivhThrust, ivhIn)), lambda r=ivhRva: (SDTest.Call(r, 'tvi',
+					ivhAI), SDTest.Call(0x11a740, 'tii', ivhCar + 0x5f0)[0] != 0, ivhState(), ivhF(ivhAI + 0x184, 2)))
+	# RACE with a target only (without one the vehicles of the group are tried)
+	for ivhT, ivhIn in ((20.0, 1), (0.0, 1), (0.0, 6), (14.5, 6)):
+		ivhPoke(ivhAI + 0x40, ivhCar2)
+		ivhPoke(ivhAI + 0x1a4, ivhIn)
+		ivhSet(ivhAI + 0x330, (ivhT,))
+		ivhSet(ivhAI + 0xc, (0.3,))
+		check('cAIVehicle_ThinkRace' + fmt((ivhT, ivhIn)), lambda: (SDTest.Call(0x088160, 'tvi', ivhAI), ivhState(),
+			ivhI(ivhAI + 0x40) == ivhCar2, ivhF(ivhAI + 0x330, 1)))
+	for ivhK in range(3):
+		ivhPoke(ivhCar + 0x420 + 4 * ivhK, ivhCarSave[ivhK])
+	SDTest.Call(0x11b2e0, 'tvii', ivhCar + 0x5f0, 0)
+	ivhPoke(ivhAI + 0x1a4, 0)
+	SDTest.Call(0x08dfb0, 'bii', ivhAI, 0)
+	ivhPoke(ivhAI + 0x40, ivhCar2)
+	# the items with the life full
+	ivhPoke(ivhAI + 0x1ac, ivhI(ivhCar + 0x238))
+	for ivhIn in (5, 6, 7, 8, 9, 3):
+		ivhPoke(ivhAI + 0x1a4, ivhIn)
+		for ivhRva, ivhName in ((0x0885d0, 'ItemsChase'), (0x088790, 'ItemsFighting'), (0x088ae0, 'ItemsGetAway'),
+				(0x088c20, 'ItemsGetAwayStop'), (0x088d70, 'ItemsInRoute')):
+			check('cAIVehicle_%s' % ivhName + fmt((ivhIn,)), lambda r=ivhRva: (SDTest.Call(r, 'tvi', ivhAI),
+				ivhState(), ivhB(ivhAI + 0x340)))
+	ivhPoke(ivhAI + 0x1a4, 0)
+	SDTest.Call(0x08dfb0, 'bii', ivhAI, 0)
+	ivhPoke(ivhAI + 0x40, ivhCar2)
+	# the ammo items for a vehicle without weapons (only then: with weapons the items of the level are searched)
+	ivhUses = ()
+	for ivhK in range(3):
+		for ivhFac in (0.0, 3.0e38):
+			ivhUses = ivhUses + (SDTest.Call(0x098d40, 'tbiif', ivhShoot, ivhK, ivhFac)[0],)
+	check('cAIVehicleShoot_UsesAmmo', lambda: ivhUses)
+	if ivhUses != (0, 0, 0, 0, 0, 0):
+		ivhSkip = 1
+	else:
+		ivhSkip = 0
+	for ivhS in range(1, 4 - 3 * ivhSkip):
+		ivhSrand(ivhS)
+		check('cAIVehicle_FindAmmo srand %d' % ivhS, lambda: (SDTest.Call(0x08a170, 'tvii', ivhAI, 0),
+			ivhI(ivhAI + 0x38c) == 0, ivhI(ivhAI + 0x3ac)))
+	ivhD = ivhAlloc(8)
+	if not ivhSkip:
+		for ivhFac in (0.0, 0.5, 3.0e38):
+			check('cAIVehicle_NearestAmmoAny' + fmt((ivhFac,)), lambda f=ivhFac: SDTest.Call(0x08a3a0, 'tiiFiif', ivhAI,
+				(0.0,), ivhD, 0, f)[0:2])
+		ivhPoke(ivhAI + 0x1a4, 6)
+		ivhSrand(9)
+		check('cAIVehicle_FightingAfterItem', lambda: (SDTest.Call(0x086ad0, 'tvi', ivhAI), ivhState(),
+			ivhB(ivhAI + 0x354), ivhI(ivhAI + 0x38c) == 0, ivhI(ivhAI + 0x3ac)))
+	SDTest.Call(0x133990, 'tvi', ivhD)
+	ivhFree(ivhD)
+	ivhSetByte(ivhAI + 0x340, 1)
+	check('cAIVehicle_FightingAfterItem item', lambda: (SDTest.Call(0x086ad0, 'tvi', ivhAI), ivhState()))
+	ivhSetByte(ivhAI + 0x340, 0)
+	ivhPoke(ivhAI + 0x1a4, 0)
+	ivhPoke(ivhAI + 0x40, 0)
+	SDTest.Call(0x08dfb0, 'bii', ivhAI, 0)
+
 	# the parameter checks with the valid blocks
 	check('cAIVehicle_CheckParams', lambda: (SDTest.Call(0x08c070, 'tvii', ivhAI, ivhP1),
 		SDTest.Call(0x08c400, 'tvii', ivhAI, ivhP2), SDTest.Call(0x08c5d0, 'tvii', ivhAI, ivhP3),

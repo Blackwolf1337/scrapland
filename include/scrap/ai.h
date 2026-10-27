@@ -46,8 +46,19 @@ typedef struct cAIVehicleGroupVtbl {
 SD_OFFSET(cAIVehicleGroupVtbl, AllowChange, 0x1c);
 
 struct cAIVehicleGroup {
-	const cAIVehicleGroupVtbl *vftable;
+	const cAIVehicleGroupVtbl *vftable;	/* 0x00 */
+	byte pad_4[0x54 - 0x4];
+	int numVehicles;		/* 0x54 */
+	byte pad_58[0x5c - 0x58];
+	float changeTime;		/* 0x5c the time since the last change of state */
+	/* the vehicle AIs in the internal state STOPPED: all, the traffic by class (2, 1, 0) and IN_ROUTE */
+	int numStopped;			/* 0x60 */
+	int numStoppedHeavy;		/* 0x64 */
+	int numStoppedMedium;		/* 0x68 */
+	int numStoppedLight;		/* 0x6c */
+	int numStoppedRoute;		/* 0x70 */
 };
+SD_OFFSET(cAIVehicleGroup, numStoppedRoute, 0x70);
 
 /* the first slots of every AI (cAIVehicle, cAIChar); variadic methods are __cdecl with self on the stack */
 typedef struct cAIVtbl {

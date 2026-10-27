@@ -34,10 +34,16 @@ typedef struct AIVehEntVtbl {
 	void *vf00_1f[32];
 	vec3_t *(__thiscall *GetRot)(cEntity *self, vec3_t *out);	/* 0x80 */
 	void(__thiscall *SetRot)(cEntity *self, const vec3_t *rot);	/* 0x84 */
-	void *vf22;
+	vec3_t *(__thiscall *GetVel)(cEntity *self, vec3_t *out);	/* 0x88 */
 	void(__thiscall *SetVel)(cEntity *self, const vec3_t *vel);	/* 0x8c */
+	void *vf24_27[4];
+	float(__thiscall *GetRadius)(cEntity *self);			/* 0xa0 */
+	void *vf29_36[14];
+	byte(__thiscall *IsEMI)(cEntity *self);				/* 0xdc EMICounter > 0 */
 } AIVehEntVtbl;
 SD_OFFSET(AIVehEntVtbl, SetVel, 0x8c);
+SD_OFFSET(AIVehEntVtbl, GetRadius, 0xa0);
+SD_OFFSET(AIVehEntVtbl, IsEMI, 0xdc);
 
 static inline const AIVehEntVtbl *AIV_EntVtbl(cEntity *e) {
 	return (const AIVehEntVtbl *)e->vftable;
@@ -114,8 +120,8 @@ void *__thiscall cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void
 	self->rotB = 0.0f;
 	self->rotA = 0.0f;
 	self->f2f0 = 0.0f;
-	self->f37c = 0.0f;
-	self->itemAmmoDist = 0.0f;
+	self->itemAmmoStart = 0.0f;
+	self->itemAmmoLevel = 0.0f;
 	self->trackType = 5;
 	self->b340 = 0;
 	self->b354 = 0;
@@ -196,10 +202,8 @@ void __thiscall cAIVehicle_React(cAIVehicle *self) {
 		cAIVehicle_ReactGetAway(self);
 		return;
 	case AIV_LOST_PATH:
-		cAIVehicle_ReactLostPath(self);
-		return;
 	case AIV_LOST_PATH_CHASE:
-		cAIVehicle_ReactLostPathChase(self);
+		cAIVehicle_ReactLostPath(self);
 		return;
 	}
 }
@@ -242,10 +246,8 @@ byte __thiscall cAIVehicle_Think(cAIVehicle *self) {
 		cAIVehicle_ThinkGetAway(self);
 		break;
 	case AIV_LOST_PATH:
-		cAIVehicle_ThinkLostPath(self);
-		break;
 	case AIV_LOST_PATH_CHASE:
-		cAIVehicle_ThinkLostPathChase(self);
+		cAIVehicle_ThinkLostPath(self);
 		break;
 	}
 	return self->changed == 0;
@@ -491,8 +493,8 @@ int __thiscall cAIVehicle_GetPrevState(cAIVehicle *self) {
 	return self->prevState;
 }
 
-int __thiscall cAIVehicle_GetStateFor(cAIVehicle *self, int ev) {
-	if (ev != AIV_GET_AWAY) {
+int __thiscall cAIVehicle_GetStateFor(cAIVehicle *self, int state) {
+	if (state != AIV_GET_AWAY) {
 		return self->state;
 	}
 	return AIV_FIGHTING;
@@ -865,10 +867,9 @@ byte __thiscall cAIVehicle_EventFighting(cAIVehicle *self, int ev) {
 }
 
 /* the internal state FOLLOW_THE_PATH_WITH_SHOOT_CM from the target to the vehicle */
-static void AIV_FollowAway(cAIVehicle *self, int ev) {
+static void AIV_AwayFromTarget(cAIVehicle *self) {
 	vec3_t a, b;
 
-	self->vftable->OnEvent(self, ev);
 	cEntity *t = AIV_Target(self);
 	const vec3_t *tp = t->vftable->GetPos(t, &a);
 	const vec3_t *vp = self->vehicle->vftable->GetPos(self->vehicle, &b);
@@ -878,6 +879,11 @@ static void AIV_FollowAway(cAIVehicle *self, int ev) {
 	d.y = vp->y - tp->y;
 	cAIVehicle_SetInternState(self, AIVI_FOLLOW_THE_PATH_WITH_SHOOT_CM, d, (double)g_RadiusObjectiveInRoute,
 		self->params.boostGetAway, 0);
+}
+
+static void AIV_FollowAway(cAIVehicle *self, int ev) {
+	self->vftable->OnEvent(self, ev);
+	AIV_AwayFromTarget(self);
 }
 
 byte __thiscall cAIVehicle_EventGetAway(cAIVehicle *self, int ev) {
@@ -1233,6 +1239,204 @@ byte cAIVehicle_SetStateIntern(cAIVehicle *self, int state, ...) {
 	return r;
 }
 
+/* the stopped count d (+1 into STOPPED, -1 out of it) of a counter of the group, not below 0 */
+static void AIV_CountStopped(int *n, int d) {
+	*n += d;
+	if (*n < 0) {
+		*n = 0;
+	}
+}
+
+void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
+	static const double d1 = 1.0, d05 = 0.5, d3 = 3.0, d20 = 20.0;
+	char name[256];
+	va_list ap;
+	byte ok;
+	int sa = 0, sb = 0;	/* the arguments of cAIVehicleShoot_SetMode */
+	byte sc = 1;
+
+	cAIVehicle_InternStateName(state, name);
+	self->vftable->Debugf(self, "CAMBIO de ESTADO INTERNO -> %s", name);
+	int old = self->internState;
+	int d = 0;
+	self->changed = 1;
+	self->internState = state;
+	if (state == AIVI_STOPPED) {
+		if (old != AIVI_STOPPED) {
+			d = 1;
+		}
+	}
+	else if (old == AIVI_STOPPED) {
+		d = -1;
+	}
+	g_VehicleGroup->numStopped += d;
+	switch (self->state) {
+	case AIV_IN_ROUTE:
+		AIV_CountStopped(&g_VehicleGroup->numStoppedRoute, d);
+		break;
+	case AIV_TRAFFIC:
+	case AIV_TRAFFIC_INDOOR: {
+		int cls = AIV_VehTraffic(self->vehicle)->type;
+		if (cls == 2) {
+			AIV_CountStopped(&g_VehicleGroup->numStoppedHeavy, d);
+		}
+		else if (cls == 1) {
+			AIV_CountStopped(&g_VehicleGroup->numStoppedMedium, d);
+		}
+		else {
+			AIV_CountStopped(&g_VehicleGroup->numStoppedLight, d);
+		}
+		break;
+	}
+	}
+	va_start(ap, state);
+	switch (self->internState) {
+	case AIVI_STOPPED:
+		self->moveMode = 0;
+		self->b2e0 = 0;
+		ok = cAIVehicleControl_SetMove(self->control, 0);
+		break;
+	case AIVI_FINISHING_LINE: {
+		self->dest = va_arg(ap, vec3_t);
+		double speed = va_arg(ap, double);
+		int b1a8 = va_arg(ap, int);
+		float a = (float)va_arg(ap, double);
+		float b = (float)va_arg(ap, double);
+		float f30c = (float)va_arg(ap, double);
+		self->b32c = (byte)va_arg(ap, int);
+		self->b1a8 = (byte)b1a8;
+		self->moveMode = 1;
+		self->speed = (float)speed;
+		self->f30c = f30c;
+		ok = cAIVehicleControl_SetMove(self->control, 1, self->dest, (double)self->speed, self->b1a8,
+			(double)self->f30c, (double)a, (double)b, self->b32c, 0);
+		if (!ok) {
+			goto done;
+		}
+		if (self->state == AIV_RACE) {
+			if (AIV_Target(self)) {
+				sb = 2;
+			}
+			else if (cTargetLock_GetPoint(&Veh(self->vehicle)->weapons)) {
+				sb = 2;
+				sc = 0;
+			}
+		}
+		goto shoot;
+	}
+	case AIVI_FINISHING_LINE_WITH_SHOOT_CM:
+		self->dest = va_arg(ap, vec3_t);
+		self->speed = (float)va_arg(ap, double);
+		self->b1a8 = (byte)va_arg(ap, int);
+		self->moveMode = 1;
+		ok = cAIVehicleControl_SetMove(self->control, 1, self->dest, (double)self->speed, self->b1a8, d1, d3, d3,
+			0, 0);
+		sb = 1;
+		break;
+	case AIVI_FINISHING_LINE_DIRECT: {
+		self->dest = va_arg(ap, vec3_t);
+		double speed = va_arg(ap, double);
+		int b1a8 = va_arg(ap, int);
+		float a = (float)va_arg(ap, double);
+		float b = (float)va_arg(ap, double);
+		self->b1a8 = (byte)b1a8;
+		self->moveMode = 2;
+		self->speed = (float)speed;
+		ok = cAIVehicleControl_SetMove(self->control, 2, self->dest, (double)self->speed, self->b1a8, d1,
+			(double)a, (double)b);
+		break;
+	}
+	case AIVI_FINISHING_LINE_LIFE:
+	case AIVI_FINISHING_LINE_AMMO: {
+		int boost = self->internState == AIVI_FINISHING_LINE_LIFE ? self->params.boostItemLife :
+			self->params.boostItemAmmo;
+		self->dest = va_arg(ap, vec3_t);
+		self->moveMode = 1;
+		self->speed = (float)va_arg(ap, double);
+		ok = cAIVehicleControl_SetMove(self->control, 1, self->dest, (double)self->speed, boost, d1, d20, d20, 0,
+			self->params.strafeEvasion == 1);
+		if (!ok) {
+			goto done;
+		}
+		if (self->state == AIV_FIGHTING || self->state == AIV_GET_AWAY || self->state == AIV_GET_AWAY_STOP) {
+			sb = 1;
+		}
+		goto shoot;
+	}
+	case AIVI_CHASE_SHOOTING:
+		self->moveMode = 3;
+		self->chaseMin = (float)va_arg(ap, double);
+		self->chaseMax = (float)va_arg(ap, double);
+		ok = cAIVehicleControl_SetMove(self->control, 3, (double)self->chaseMin, (double)self->chaseMax, 1, d20,
+			d20);
+		if (!ok) {
+			goto done;
+		}
+		switch (self->state) {
+		case AIV_FIGHTING:
+			sa = 1;
+			goto shoot;
+		case AIV_FIGHTING_HOOK:
+		case AIV_RACE:
+			sb = 2;
+			goto shoot;
+		}
+		goto done;
+	case AIVI_CHASE_NOT_SHOOTING:
+		self->moveMode = 3;
+		self->chaseMin = (float)va_arg(ap, double);
+		self->rotB = (float)va_arg(ap, double);
+		ok = cAIVehicleControl_SetMove(self->control, 3, (double)self->chaseMin, (double)self->chaseMax, 1, d20,
+			d20);
+		break;
+	case AIVI_FOLLOW_THE_PATH: {
+		self->dest2 = va_arg(ap, vec3_t);
+		double speed = va_arg(ap, double);
+		int b1a8 = va_arg(ap, int);
+		int b81 = va_arg(ap, int);
+		self->repos = (byte)va_arg(ap, int);
+		float a = (float)va_arg(ap, double);
+		float b = (float)va_arg(ap, double);
+		self->b81 = (byte)b81;
+		self->b1a8 = (byte)b1a8;
+		self->moveMode = 7;
+		self->speed = (float)speed;
+		ok = cAIVehicleControl_SetMove(self->control, 7, self->dest2, (double)self->speed, self->b1a8, d05,
+			self->changing == 0, self->b81, (double)a, (double)b, 0);
+		break;
+	}
+	case AIVI_FOLLOW_THE_PATH_WITH_SHOOT_CM: {
+		self->dest2 = va_arg(ap, vec3_t);
+		double speed = va_arg(ap, double);
+		int b1a8 = va_arg(ap, int);
+		int b81 = va_arg(ap, int);
+		self->b81 = (byte)b81;
+		self->b1a8 = (byte)b1a8;
+		self->moveMode = 7;
+		self->speed = (float)speed;
+		ok = cAIVehicleControl_SetMove(self->control, 7, self->dest2, (double)self->speed, self->b1a8, d1,
+			self->changing == 0, self->b81, d3, d3, self->params.strafeEvasion == 1);
+		sb = 1;
+		break;
+	}
+	case AIVI_ORIENT_SHOOTING:
+		self->moveMode = 6;
+		ok = cAIVehicleControl_SetMove(self->control, 6);
+		sa = 1;
+		break;
+	default:
+		goto done;
+	}
+	if (!ok) {
+		goto done;
+	}
+shoot:
+	cAIVehicleShoot_SetMode(self->shoot, sa, sb, sc);
+done:
+	va_end(ap);
+
+}
+
 /* the saved state taken again with its arguments; the target by its name */
 static byte AIV_Restore(cAIVehicle *self, const cAIVehicleSaved *s, byte (*set)(cAIVehicle *self, int state, ...)) {
 	cEntity *t;
@@ -1340,6 +1544,833 @@ cEntity *__thiscall cAIVehicle_GetNearestItemLife(cAIVehicle *ai) {
 	cEntity *e = cAIVehicle_NearestLife(ai, &dist, &desc, NULL);
 	cString_dtor(&desc.name);
 	return e;
+}
+
+/* the nearest ammo item of the three kinds the vehicle has weapons for and is short of; the kinds are tried in the
+ * order 0, 2, 1 and kept in the slots 0, 1, 2 */
+cEntity *__thiscall cAIVehicle_NearestAmmoAny(cAIVehicle *self, float *dist, cItemDesc *out, cEntity *exclude,
+	float factor) {
+	static const int kinds[3] = { 0, 2, 1 };
+	byte found = 0;
+	int best = 0;
+
+	*dist = FLT_MAX;
+	for (int i = 0; i < 3; i++) {
+		int kind = kinds[i];
+		if (!cAIVehicleShoot_UsesAmmo(self->shoot, kind, factor)) {
+			continue;
+		}
+		cAmmoInfo *info = TABLE_AT(g_pWorld->ammo, kind);
+		float ammo = cTargetLock_GetAmmo(&Veh(self->vehicle)->weapons, kind);
+		if (!(info->max > ammo)) {
+			continue;
+		}
+		cEntity *e = cAIVehicle_NearestAmmo(self, kind, &self->itemAmmoDistK[i], &self->itemAmmoK[i], exclude);
+		self->itemAmmoEnt[i] = e;
+		if (e && (i == 0 || *dist > self->itemAmmoDistK[i])) {
+			*dist = self->itemAmmoDistK[i];
+			found = 1;
+			best = i;
+		}
+	}
+	if (!found) {
+		return NULL;
+	}
+	self->itemAmmoLevel = cTargetLock_GetAmmo(&Veh(self->vehicle)->weapons, kinds[best]);
+	cEntity *e = self->itemAmmoEnt[best];
+	cString_Assign(&out->name, &self->itemAmmoK[best].name);
+	out->value = self->itemAmmoK[best].value;
+	return e;
+}
+
+void __thiscall cAIVehicle_FindAmmo(cAIVehicle *self, cEntity *exclude) {
+	float dist, factor;
+
+	if (crt_rand() % 2 == 0) {
+		self->i3ac = 0;
+		factor = 0.0f;
+	}
+	else {
+		factor = FLT_MAX;
+		self->i3ac = 1;
+	}
+	self->itemAmmoBest = cAIVehicle_NearestAmmoAny(self, &dist, &self->itemAmmo, exclude, factor);
+	if (self->itemAmmoBest) {
+		return;
+	}
+	if (self->i3ac == 0) {
+		factor = FLT_MAX;
+		self->i3ac = 1;
+	}
+	else {
+		factor = 0.0f;
+		self->i3ac = 0;
+	}
+	self->itemAmmoBest = cAIVehicle_NearestAmmoAny(self, &dist, &self->itemAmmo, exclude, factor);
+}
+
+/* ---- the reactions, the hook and the items of the states ---- */
+
+#define g_DistNotGetAwayAI GAME_DATA(float, 0x4447bc)
+#define g_DistGetAwayBoostAI GAME_DATA(float, 0x444a2c)
+#define g_MaxDistElevatorAI GAME_DATA(float, 0x4448b8)
+#define g_MinDistChaseElevatorAI GAME_DATA(float, 0x4449fc)
+#define g_MaxDistChaseElevatorAI GAME_DATA(float, 0x4448a0)
+#define AIV_LOST_TIME 15.0f			/* rva 0x3a7728 */
+#define AIV_ITEM_NEAR 10000.0f			/* rva 0x3a5ac0 */
+
+/* the target within dist on each axis */
+static byte AIV_TargetInBox(cAIVehicle *self, float dist) {
+	vec3_t a, b;
+	cEntity *t = AIV_Target(self);
+	const vec3_t *tp = t->vftable->GetPos(t, &a);
+	const vec3_t *vp = self->vehicle->vftable->GetPos(self->vehicle, &b);
+
+	return (double)dist > __builtin_fabs((double)(vp->x - tp->x)) &&
+		(double)dist > __builtin_fabs((double)(vp->y - tp->y)) &&
+		(double)dist > __builtin_fabs((double)(vp->z - tp->z));
+}
+
+/* the line from the vehicle to the target hits the level */
+static byte AIV_TargetBlocked(cAIVehicle *self) {
+	vec3_t a, b;
+	cEntity *t = AIV_Target(self);
+	const vec3_t *tp = t->vftable->GetPos(t, &a);
+	const vec3_t *vp = self->vehicle->vftable->GetPos(self->vehicle, &b);
+
+	return Engine_TestLine(vp, tp, NULL, NULL);
+}
+
+/* the sphere of the vehicle free of the level */
+static byte AIV_PlaceFree(cAIVehicle *self) {
+	vec3_t a, b;
+	cEntity *v = self->vehicle;
+	float r = AIV_EntVtbl(v)->GetRadius(v);
+	const vec3_t *pa = v->vftable->GetPos(v, &a);
+	const vec3_t *pb = v->vftable->GetPos(v, &b);
+
+	return !Engine_TestSphere(pb, pa, r, NULL, NULL);
+}
+
+/* the vehicle closer than 15000 to dest */
+static byte AIV_NearDest(cAIVehicle *self) {
+	vec3_t a;
+	const vec3_t *v = self->vehicle->vftable->GetPos(self->vehicle, &a);
+	float dy = v->y - self->dest.y;
+	float dx = v->x - self->dest.x;
+	float dz = v->z - self->dest.z;
+
+	return AIV_NEAR_DIST2 > dy * dy + dx * dx + dz * dz;
+}
+
+/* the FIGHTING_HOOK the move takes at random (USE_PERC_HOOK_GET_AWAY) when the vehicle has the hook, with the aim at
+ * 10 until it lets go; 1 if it did */
+static byte AIV_HookChance(cAIVehicle *self, int mode) {
+	if (!cAIVehicleShoot_HasHook(self->shoot) || self->params.percHookGetAway <= 0 ||
+			crt_rand() % 101 > self->params.percHookGetAway) {
+		return 0;
+	}
+	cAIVehicleParams2 *p = cAIVehicleControl_GetParams(self->control);
+	self->hookSaved = p->aim;
+	p->aim = 10;
+	self->hookMode = mode;
+	cAIVehicle_SetStateIntern(self, AIV_FIGHTING_HOOK, AIV_Target(self));
+	return 1;
+}
+
+static cEntity *AIV_FindLifeItem(cAIVehicle *self) {
+	float dist;
+	cEntity *e = cAIVehicle_NearestLife(self, &dist, &self->itemLife, NULL);
+
+	self->itemLifeEnt = e;
+	return e;
+}
+
+/* to the item e with FINISHING_LINE_LIFE or FINISHING_LINE_AMMO */
+static void AIV_GoToItem(cAIVehicle *self, int intern, cEntity *e) {
+	vec3_t a;
+	const vec3_t *p = e->vftable->GetPos(e, &a);
+
+	cAIVehicle_SetInternState(self, intern, *p, (double)((cItemEntity *)e)->radius);
+}
+
+static void AIV_GoToLife(cAIVehicle *self, cEntity *e) {
+	self->itemLifeMark = Veh(self->vehicle)->life;
+	AIV_GoToItem(self, AIVI_FINISHING_LINE_LIFE, e);
+}
+
+static void AIV_Chase(cAIVehicle *self, int intern) {
+	self->b340 = 0;
+	cAIVehicle_SetInternState(self, intern, (double)self->chaseMin, (double)self->chaseMax);
+}
+
+/* the life of the vehicle below FACTOR_DAMAGE_ITEM_LIFE of its maximum */
+static byte AIV_NeedLife(cAIVehicle *self) {
+	cVehicleEntity *v = Veh(self->vehicle);
+
+	return (float)v->maxLife * self->params.damageItemLife > (float)v->life;
+}
+
+/* the life item the AI goes for was taken (it respawns): on to the next one, unless the vehicle got life meanwhile */
+enum { AIV_ITEM_THERE, AIV_ITEM_NEXT, AIV_ITEM_GOT_LIFE, AIV_ITEM_NONE };
+static int AIV_RetryLife(cAIVehicle *self) {
+	if (!(((cItemEntity *)self->itemLifeEnt)->respawn > 0.0f)) {
+		return AIV_ITEM_THERE;
+	}
+	if (Veh(self->vehicle)->life > self->itemLifeMark) {
+		return AIV_ITEM_GOT_LIFE;
+	}
+	cEntity *e = AIV_FindLifeItem(self);
+	if (!e) {
+		return AIV_ITEM_NONE;
+	}
+	AIV_GoToLife(self, e);
+	return AIV_ITEM_NEXT;
+}
+
+/* the life item when the life went below the factor (FINISHING_LINE_LIFE) */
+static void AIV_LifeIfLow(cAIVehicle *self) {
+	if (!AIV_NeedLife(self)) {
+		return;
+	}
+	cEntity *e = AIV_FindLifeItem(self);
+	if (e) {
+		self->b340 = 1;
+		AIV_GoToLife(self, e);
+	}
+}
+
+/* FIGHTING: the chase distances for inside a hangar (an elevator of the group near the target) and back; the hook
+ * at random (USE_PERC_HOOK) when the target is in range */
+void __thiscall cAIVehicle_ReactFighting(cAIVehicle *self) {
+	vec3_t a;
+	float dist = g_MaxDistElevatorAI;
+	cEntity *t = AIV_Target(self);
+	const vec3_t *p = t->vftable->GetPos(t, &a);
+	byte near = cAIVehicleGroup_ElevatorNear(g_VehicleGroup, p, dist);
+	float cm = self->chaseMin;
+
+	if (cm == g_AIChaseDefault1) {
+		if (near) {
+			cAIVehicle_SetInternState(self, AIVI_CHASE_SHOOTING, (double)g_MinDistChaseElevatorAI,
+				(double)g_MaxDistChaseElevatorAI);
+		}
+	}
+	else if (cm == g_MinDistChaseElevatorAI && !near) {
+		cAIVehicle_SetInternState(self, AIVI_CHASE_SHOOTING, (double)g_AIChaseDefault1, (double)g_AIChaseDefault2);
+	}
+	if (cAIVehicleShoot_HasHook(self->shoot) && self->params.percHook > 0) {
+		t = AIV_Target(self);
+		if (!AIV_EntVtbl(t)->IsEMI(t) && cAIVehicleControl_GetFlag(self->control) &&
+				cAIVehicle_InHookRange(self, AIV_Target(self)) && crt_rand() % 101 <= self->params.percHook) {
+			cAIVehicle_SetStateIntern(self, AIV_FIGHTING_HOOK, AIV_Target(self));
+		}
+	}
+}
+
+/* FIGHTING_HOOK: the hook kept while the target is in range (1 s of a hook out of a GET_AWAY, else 3 s), then back to
+ * what the AI did before it */
+void __thiscall cAIVehicle_ReactHook(cAIVehicle *self) {
+	cEntity *t = AIV_Target(self);
+
+	if (!AIV_EntVtbl(t)->IsEMI(t) && cAIVehicleControl_GetFlag(self->control) &&
+			cAIVehicle_InHookRange(self, AIV_Target(self))) {
+		if (self->params.percHookGetAway > 0 && self->hookMode != 0) {
+			if (!(self->f330 > 1.0f)) {
+				return;
+			}
+		}
+		else if (self->params.percHook <= 0 || !(self->f330 > 3.0f)) {
+			return;
+		}
+	}
+	if (self->params.percHookGetAway <= 0 || self->hookMode == 0) {
+		if (self->params.percHook > 0) {
+			cAIVehicle_SetStateIntern(self, AIV_FIGHTING, AIV_Target(self));
+		}
+		return;
+	}
+	cAIVehicleControl_GetParams(self->control)->aim = self->hookSaved;
+	switch (self->hookMode) {
+	case 1:
+		cAIVehicle_SetStateIntern(self, AIV_GET_AWAY, AIV_Target(self));
+		break;
+	case 2: {
+		/* FIGHTING without a new hook, then to the life item */
+		int keep = self->params.percHookGetAway;
+		t = AIV_Target(self);
+		self->itemLifeMark = Veh(self->vehicle)->life;
+		self->params.percHookGetAway = 0;
+		cAIVehicle_SetStateIntern(self, AIV_FIGHTING, t);
+		self->params.percHookGetAway = keep;
+		cEntity *e = AIV_FindLifeItem(self);
+		if (e) {
+			AIV_GoToItem(self, AIVI_FINISHING_LINE_LIFE, e);
+			self->hookMode = 0;
+			return;
+		}
+		break;
+	}
+	case 3: {
+		t = AIV_Target(self);
+		self->itemAmmoStart = self->itemAmmoLevel;
+		cAIVehicle_SetStateIntern(self, AIV_FIGHTING, t);
+		cAIVehicle_FindAmmo(self, NULL);
+		cEntity *e = self->itemAmmoBest;
+		if (e) {
+			AIV_GoToItem(self, AIVI_FINISHING_LINE_AMMO, e);
+			self->hookMode = 0;
+			return;
+		}
+		break;
+	}
+	}
+	self->hookMode = 0;
+}
+
+/* GET_AWAY: FIGHTING again when the target is no longer close (DistNotGetAwayAI), the boost while it is very close */
+void __thiscall cAIVehicle_ReactGetAway(cAIVehicle *self) {
+	if (self->internState != AIVI_FOLLOW_THE_PATH_WITH_SHOOT_CM) {
+		return;
+	}
+	if (!AIV_TargetInBox(self, g_DistNotGetAwayAI)) {
+		cEntity *t = AIV_Target(self);
+		self->lifeMark = Veh(self->vehicle)->life;
+		cAIVehicle_SetStateIntern(self, AIV_FIGHTING, t);
+		return;
+	}
+	if (!self->params.boostGetAway) {
+		return;
+	}
+	self->control->boost = AIV_TargetInBox(self, g_DistGetAwayBoostAI);
+}
+
+/* GET_AWAY_STOP: away from the target while it is within f2f0 and in sight, stopped when the line to it is blocked */
+void __thiscall cAIVehicle_ReactGetAwayStop(cAIVehicle *self) {
+	switch (self->internState) {
+	case AIVI_STOPPED:
+		if (!AIV_TargetBlocked(self)) {
+			AIV_AwayFromTarget(self);
+		}
+		return;
+	case AIVI_FINISHING_LINE_LIFE:
+		self->control->boost = AIV_TargetInBox(self, g_DistGetAwayBoostAI);
+		return;
+	case AIVI_FOLLOW_THE_PATH_WITH_SHOOT_CM:
+		if (AIV_TargetInBox(self, self->f2f0)) {
+			if (!self->params.boostGetAway) {
+				self->control->boost = 0;
+				return;
+			}
+			self->control->boost = AIV_TargetInBox(self, g_DistGetAwayBoostAI);
+			return;
+		}
+		if (AIV_TargetBlocked(self)) {
+			cAIVehicle_SetInternState(self, AIVI_STOPPED);
+		}
+		return;
+	}
+}
+
+void __thiscall cAIVehicle_ReactLostPath(cAIVehicle *self) {
+	if (!(self->stateTime > AIV_LOST_TIME) || !AIV_PlaceFree(self)) {
+		return;
+	}
+	cVehicleTraffic_SetOff(AIV_VehTraffic(self->vehicle), 0);
+	cAIVehicle_SetStateIntern(self, AIV_FREEZE_LOST);
+}
+
+void __thiscall cAIVehicle_ThinkLostPath(cAIVehicle *self) {
+	cSlotController *slot = AIV_Slot(&self->slotAttack);
+	float t;
+
+	if (!cSlotController_Tick(slot, self->dt) || !cSlotController_FireReset(slot, &t)) {
+		return;
+	}
+	do {
+		vec3_t a;
+		cEntity *v = self->vehicle;
+		float r = AIV_EntVtbl(v)->GetRadius(v);
+		const vec3_t *p = v->vftable->GetPos(v, &a);
+		if (CNodesWorld_HasPointVis(g_NodesWorld, p, r) && AIV_PlaceFree(self)) {
+			cVehicleTraffic_SetOff(AIV_VehTraffic(self->vehicle), 0);
+			cAIVehicle_RestoreStateIntern(self, &self->saved);
+		}
+	} while (cSlotController_FireReset(slot, &t));
+}
+
+byte __thiscall cAIVehicle_TryHook(cAIVehicle *self, int a, int b) {
+	vec3_t goal, v;
+	cTargetLock *w = &Veh(self->vehicle)->weapons;
+
+	if (!cTargetLock_GetPoint(w)) {
+		if (!(Veh(self->vehicle)->thrustIn > 0.0f)) {
+			goto done;
+		}
+		int map = self->params.hookMap;
+		if (map != 10 && (map <= 0 || crt_rand() % ((10 - map) * 2) != 0)) {
+			goto done;
+		}
+		const vec3_t *g = cAIVehicleControl_GetGoal(self->control, &goal);
+		const vec3_t *p = self->vehicle->vftable->GetPos(self->vehicle, &v);
+		float dy = p->y - g->y;
+		float dx = p->x - g->x;
+		float dz = p->z - g->z;
+		if (AIV_NEAR_DIST2 > dy * dy + dx * dx + dz * dz || !cAIVehicle_TestHookPoint(self, &goal)) {
+			goto done;
+		}
+		cWeaponManager_LockPoint(&Veh(self->vehicle)->weapons, &goal);
+		cAIVehicleShoot_SetMode(self->shoot, 0, 2, 0);
+	}
+	else {
+		const vec3_t *g = cAIVehicleControl_GetGoal(self->control, &goal);
+		const vec3_t *p = self->vehicle->vftable->GetPos(self->vehicle, &v);
+		w = &Veh(self->vehicle)->weapons;
+		float dy = p->y - g->y;
+		float dx = p->x - g->x;
+		float dz = p->z - g->z;
+		/* far from the goal the hook stays while its point is in range */
+		if (!(AIV_NEAR_DIST2 > dy * dy + dx * dx + dz * dz) &&
+				cAIVehicle_InHookRangePos(self, cTargetLock_GetPoint(w))) {
+			goto done;
+		}
+		cWeaponManager_LockPoint(w, NULL);
+		cAIVehicleShoot_SetMode(self->shoot, a, b, 1);
+	}
+done:
+	return cTargetLock_GetPoint(&Veh(self->vehicle)->weapons) != NULL;
+}
+
+/* one step of the hook slot: let go when release, else the hook tried; 1 ends the slot */
+static byte AIV_HookStep(cAIVehicle *self, byte release, int a, int b) {
+	if (cTargetLock_GetPoint(&Veh(self->vehicle)->weapons)) {
+		if (release) {
+			cWeaponManager_LockPoint(&Veh(self->vehicle)->weapons, NULL);
+			cAIVehicleShoot_SetMode(self->shoot, a, b, 1);
+			return 1;
+		}
+	}
+	else if (release) {
+		return 0;
+	}
+	return cAIVehicle_TryHook(self, a, b);
+}
+
+/* the hook slot of a state: the target checked first (not for GO_TO), FACTOR_HOOK_MAP > 0 */
+static byte AIV_HookSlot(cAIVehicle *self, byte target, float *t) {
+	cSlotController *slot = AIV_Slot(&self->slotItems);
+
+	if (target && !cAIVehicle_CheckTarget(self)) {
+		return 0;
+	}
+	return self->params.hookMap > 0 && cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, t);
+}
+
+static byte AIV_TargetInSight(cAIVehicle *self) {
+	return cAIVehicleControl_GetFlag(self->control) && cAIVehicleShoot_TargetInSight(self->shoot, 0);
+}
+
+void __thiscall cAIVehicle_ThinkChase(cAIVehicle *self) {
+	float t;
+
+	if (!AIV_HookSlot(self, 1, &t)) {
+		return;
+	}
+	do {
+		int in = self->internState;
+		if (in == AIVI_FINISHING_LINE_LIFE) {
+			if (AIV_HookStep(self, AIV_NearDest(self), 0, 1)) {
+				return;
+			}
+		}
+		else if (in == AIVI_CHASE_NOT_SHOOTING) {
+			if (AIV_HookStep(self, AIV_TargetInSight(self), 0, 0)) {
+				return;
+			}
+		}
+	} while (cSlotController_FireReset(AIV_Slot(&self->slotItems), &t));
+}
+
+void __thiscall cAIVehicle_ThinkFighting(cAIVehicle *self) {
+	float t;
+
+	if (!AIV_HookSlot(self, 1, &t)) {
+		return;
+	}
+	do {
+		int in = self->internState;
+		if (in == AIVI_FINISHING_LINE_LIFE || in == AIVI_FINISHING_LINE_AMMO) {
+			if (AIV_HookStep(self, AIV_NearDest(self), 0, 1)) {
+				return;
+			}
+		}
+		else if (in == AIVI_CHASE_SHOOTING) {
+			if (AIV_HookStep(self, AIV_TargetInSight(self), 1, 0)) {
+				return;
+			}
+		}
+	} while (cSlotController_FireReset(AIV_Slot(&self->slotItems), &t));
+}
+
+void __thiscall cAIVehicle_ThinkGetAway(cAIVehicle *self) {
+	float t;
+
+	if (!AIV_HookSlot(self, 1, &t)) {
+		return;
+	}
+	do {
+		if (AIV_HookStep(self, AIV_NearDest(self), 0, 1)) {
+			return;
+		}
+	} while (cSlotController_FireReset(AIV_Slot(&self->slotItems), &t));
+}
+
+void __thiscall cAIVehicle_ThinkGetAwayStop(cAIVehicle *self) {
+	float t;
+
+	if (!AIV_HookSlot(self, 1, &t)) {
+		return;
+	}
+	do {
+		int in = self->internState;
+		if (in == AIVI_FINISHING_LINE_LIFE || in == AIVI_FOLLOW_THE_PATH_WITH_SHOOT_CM) {
+			if (AIV_HookStep(self, AIV_NearDest(self), 0, 1)) {
+				return;
+			}
+		}
+	} while (cSlotController_FireReset(AIV_Slot(&self->slotItems), &t));
+}
+
+void __thiscall cAIVehicle_ThinkGoTo(cAIVehicle *self) {
+	float t;
+
+	if (!AIV_HookSlot(self, 0, &t)) {
+		return;
+	}
+	do {
+		if (AIV_HookStep(self, AIV_NearDest(self), 0, 0)) {
+			return;
+		}
+	} while (cSlotController_FireReset(AIV_Slot(&self->slotItems), &t));
+}
+
+/* RACE: on to the finishing line (FINISHING_LINE) after a chase of 15 s, near the goal or when the target is out of
+ * hook range; without a target the hook on the way and at random (CONTROL_HOOK_RACE) a chase of a vehicle of the
+ * group it can hook */
+void __thiscall cAIVehicle_ThinkRace(cAIVehicle *self) {
+	cSlotController *slot = AIV_Slot(&self->slotItems);
+	int a, kind;
+	byte flag;
+	float t;
+
+	self->f330 = self->dt + self->f330;
+	cAIVehicleShoot_GetInfo(self->shoot, &a, &kind, &flag);
+	if (kind == 2 && flag && (!AIV_Target(self) || !AIV_Target(self)->flag_4c)) {
+		goto race;
+	}
+	if (!cSlotController_Tick(slot, self->dt) || !cSlotController_FireReset(slot, &t)) {
+		return;
+	}
+	do {
+		cEntity *target = AIV_Target(self);
+		if (!target) {
+			if (self->params.hookMap > 0) {
+				byte near = AIV_NearDest(self);
+				if (cTargetLock_GetPoint(&Veh(self->vehicle)->weapons)) {
+					if (near) {
+						cWeaponManager_LockPoint(&Veh(self->vehicle)->weapons, NULL);
+						cAIVehicleShoot_SetMode(self->shoot, 0, 0, 1);
+						return;
+					}
+					if (cAIVehicle_TryHook(self, 0, 0)) {
+						return;
+					}
+				}
+				else if (!near && cAIVehicle_TryHook(self, 0, 0)) {
+					return;
+				}
+			}
+			if (0.0f >= Veh(self->vehicle)->thrustIn) {
+				return;
+			}
+			int race = self->params.hookRace;
+			if (race == 0 || (race != 10 && crt_rand() % ((10 - race) * 2) != 0)) {
+				continue;
+			}
+			int n = g_VehicleGroup->vftable->NumVehicles(g_VehicleGroup);
+			for (int i = 0; i < n; i++) {
+				cEntity *e = g_VehicleGroup->vftable->GetVehicle(g_VehicleGroup, i);
+				if (e == self->vehicle || !self->vftable->CanTarget(self, e) || !cAIVehicle_CanHook(self, e)) {
+					continue;
+				}
+				if (AIV_Target(self) != e) {
+					if (AIV_Target(self)) {
+						Nto1Node_UnlinkChecked(&self->target);
+					}
+					/* the head of the links to the vehicle */
+					Nto1Head_Link((Nto1Node *)((byte *)e + 0x254), &self->target);
+				}
+				float r = Veh(self->vehicle)->radius + Veh(AIV_Target(self))->radius;
+				cAIVehicle_SetInternState(self, AIVI_CHASE_SHOOTING, (double)r, (double)(r + r));
+				self->f330 = 0.0f;
+				break;
+			}
+			continue;
+		}
+		if (self->f330 > AIV_LOST_TIME || AIV_NearDest(self)) {
+			CHECK(self->target.data);
+			Nto1Node_Unlink(&self->target);
+			goto race;
+		}
+		if (!cAIVehicle_CanHook(self, AIV_Target(self))) {
+			Nto1Node_UnlinkChecked(&self->target);
+			goto race;
+		}
+		if (self->internState == AIVI_CHASE_SHOOTING && cTargetLock_GetEntity(&Veh(self->vehicle)->weapons)) {
+			const char *name = AIV_Target(self)->name;
+			if (!strcmp(name, cTargetLock_GetEntity(&Veh(self->vehicle)->weapons))) {
+				goto race;
+			}
+		}
+	} while (cSlotController_FireReset(slot, &t));
+	return;
+race:
+	cAIVehicle_SetInternState(self, AIVI_FINISHING_LINE, self->dest, (double)self->speed, self->b1a8, 20.0, 20.0,
+		1.0, self->b32c);
+	self->f330 = 0.0f;
+}
+
+/* CHASE: the life item when the life is low and the target has at least half of it */
+void __thiscall cAIVehicle_ItemsChase(cAIVehicle *self) {
+	int in = self->internState;
+
+	if (in == AIVI_FINISHING_LINE_LIFE) {
+		cVehicleEntity *v = Veh(self->vehicle);
+		if (v->life < v->maxLife) {
+			switch (AIV_RetryLife(self)) {
+			case AIV_ITEM_THERE:
+			case AIV_ITEM_NEXT:
+				return;
+			case AIV_ITEM_NONE:
+				AIV_Chase(self, AIVI_CHASE_SHOOTING);
+				return;
+			}
+		}
+		AIV_Chase(self, AIVI_CHASE_NOT_SHOOTING);
+		return;
+	}
+	if (in != AIVI_CHASE_NOT_SHOOTING || !AIV_NeedLife(self) ||
+			(float)Veh(self->vehicle)->life * 0.5f > (float)Veh(AIV_Target(self))->life) {
+		return;
+	}
+	self->b340 = 1;
+	cEntity *e = AIV_FindLifeItem(self);
+	if (!e) {
+		self->b340 = 0;
+		return;
+	}
+	AIV_GoToLife(self, e);
+}
+
+/* FIGHTING: the life item (CHASE_SHOOTING when it is gone or the life is full again), the life item when the life is
+ * low, and GET_AWAY (or a hook) after much damage in TimeDamageAI */
+void __thiscall cAIVehicle_ItemsFighting(cAIVehicle *self) {
+	cVehicleEntity *v = Veh(self->vehicle);
+
+	switch (self->internState) {
+	case AIVI_FINISHING_LINE_LIFE:
+		if (v->life < v->maxLife) {
+			int r = AIV_RetryLife(self);
+			if (r == AIV_ITEM_THERE || r == AIV_ITEM_NEXT) {
+				return;
+			}
+		}
+		AIV_Chase(self, AIVI_CHASE_SHOOTING);
+		return;
+	case AIVI_FINISHING_LINE_AMMO: {
+		if (!AIV_NeedLife(self)) {
+			return;
+		}
+		self->b340 = 1;
+		cEntity *e = AIV_FindLifeItem(self);
+		if (!e) {
+			self->b340 = 0;
+			return;
+		}
+		AIV_GoToLife(self, e);
+		return;
+	}
+	case AIVI_CHASE_SHOOTING:
+		if (AIV_NeedLife(self) && !((float)v->life * 0.5f > (float)Veh(AIV_Target(self))->life)) {
+			self->b340 = 1;
+			if (AIV_FindLifeItem(self)) {
+				if (!AIV_HookChance(self, 2)) {
+					AIV_GoToLife(self, self->itemLifeEnt);
+					return;
+				}
+			}
+			else {
+				self->b340 = 0;
+			}
+		}
+		v = Veh(self->vehicle);
+		if (!((float)(self->lifeMark - v->life) > (float)v->maxLife * self->params.damageGetAway)) {
+			return;
+		}
+		if (AIV_HookChance(self, 1)) {
+			return;
+		}
+		cAIVehicle_SetStateIntern(self, AIV_GET_AWAY, AIV_Target(self));
+		return;
+	}
+}
+
+/* GET_AWAY: the life item (FIGHTING when it is gone), the life item when the life is low */
+void __thiscall cAIVehicle_ItemsGetAway(cAIVehicle *self) {
+	int in = self->internState;
+
+	if (in == AIVI_FINISHING_LINE_LIFE) {
+		int r = AIV_RetryLife(self);
+		if (r == AIV_ITEM_GOT_LIFE || r == AIV_ITEM_NONE) {
+			cEntity *t = AIV_Target(self);
+			self->b340 = 0;
+			cAIVehicle_SetStateIntern(self, AIV_FIGHTING, t);
+		}
+		return;
+	}
+	if (in == AIVI_FOLLOW_THE_PATH_WITH_SHOOT_CM) {
+		AIV_LifeIfLow(self);
+	}
+}
+
+/* GET_AWAY_STOP: the same, back to GET_AWAY_STOP with its distance */
+void __thiscall cAIVehicle_ItemsGetAwayStop(cAIVehicle *self) {
+	int in = self->internState;
+
+	if (in == AIVI_FINISHING_LINE_LIFE) {
+		int r = AIV_RetryLife(self);
+		if (r == AIV_ITEM_GOT_LIFE || r == AIV_ITEM_NONE) {
+			double d = self->f2f0;
+			self->b340 = 0;
+			cAIVehicle_SetStateIntern(self, AIV_GET_AWAY_STOP, AIV_Target(self), d);
+		}
+		return;
+	}
+	if (in == AIVI_FOLLOW_THE_PATH_WITH_SHOOT_CM) {
+		AIV_LifeIfLow(self);
+	}
+}
+
+/* IN_ROUTE: the same, back to IN_ROUTE */
+void __thiscall cAIVehicle_ItemsInRoute(cAIVehicle *self) {
+	int in = self->internState;
+
+	if (in == AIVI_FINISHING_LINE_LIFE) {
+		int r = AIV_RetryLife(self);
+		if (r == AIV_ITEM_GOT_LIFE || r == AIV_ITEM_NONE) {
+			self->b340 = 0;
+			cAIVehicle_SetStateIntern(self, AIV_IN_ROUTE, self->repos, (double)self->rotA, (double)self->rotB);
+		}
+		return;
+	}
+	if (in == AIVI_FOLLOW_THE_PATH) {
+		AIV_LifeIfLow(self);
+	}
+}
+
+/* FIGHTING without a life item: the ammo item when the ammo is low (FINISHING_LINE_AMMO, or a hook first), and after
+ * it a life item within 10000 or CHASE_SHOOTING again */
+void __thiscall cAIVehicle_FightingAfterItem(cAIVehicle *self) {
+	if (self->b340) {
+		return;
+	}
+	int in = self->internState;
+	if (in == AIVI_FINISHING_LINE_AMMO) {
+		if (!(((cItemEntity *)self->itemAmmoBest)->respawn > 0.0f) && !(self->itemAmmoLevel > self->itemAmmoStart)) {
+			return;
+		}
+		self->b354 = 0;
+		self->i3ac = 3;
+		cVehicleEntity *v = Veh(self->vehicle);
+		if (v->life < v->maxLife) {
+			cItemDesc desc;
+			float dist;
+			cString_ctor(&desc.name);
+			cEntity *e = cAIVehicle_NearestLife(self, &dist, &desc, NULL);
+			self->itemLifeEnt = e;
+			if (e && AIV_ITEM_NEAR > dist) {
+				AIV_GoToLife(self, e);
+				cString_dtor(&desc.name);
+				return;
+			}
+			cString_dtor(&desc.name);
+		}
+		cAIVehicle_SetInternState(self, AIVI_CHASE_SHOOTING, (double)self->chaseMin, (double)self->chaseMax);
+		return;
+	}
+	if (in != AIVI_CHASE_SHOOTING || cAIVehicleShoot_HasAmmo(self->shoot, self->params.itemAmmo)) {
+		return;
+	}
+	self->b354 = 1;
+	cAIVehicle_FindAmmo(self, NULL);
+	if (!self->itemAmmoBest) {
+		self->b354 = 0;
+		return;
+	}
+	if (AIV_HookChance(self, 3)) {
+		return;
+	}
+	cEntity *e = self->itemAmmoBest;
+	self->itemAmmoStart = self->itemAmmoLevel;
+	AIV_GoToItem(self, AIVI_FINISHING_LINE_AMMO, e);
+}
+
+/* TRAFFIC_INDOOR: a stopped vehicle onto a track of a sector in view; on the track (i34: 0 not seen, 1 seen, 2 just
+ * placed) off the track once it was out of view for a second */
+void __thiscall cAIVehicle_GraphTrafficInDoor(cAIVehicle *self) {
+	int in = self->internState;
+
+	if (in == AIVI_STOPPED) {
+		int type, track, node;
+		vec3_t p;
+		if (CNodesTrafficInDoor_GetRespawnPoint((CNodesTrafficInDoor *)g_NodesTrafficInDoor, self, &type, &p, &track,
+				&node)) {
+			cAIVehicle_PlaceOnTrack(self, type, &p, track, node);
+		}
+		return;
+	}
+	if (in != AIVI_FINISHING_LINE_DIRECT) {
+		return;
+	}
+	switch (self->i34) {
+	case 0:
+		if (self->vftable->Vf05(self)) {
+			self->i34 = 1;
+			return;
+		}
+		if (self->f30 > 1.0f) {
+			CNodesTraffic *t = AIV_Indoor();
+			t->vftable->RemoveVehicle(t, self->track);
+			cAIVehicle_SetInternState(self, AIVI_STOPPED);
+			self->vehicle->vftable->SetActive(self->vehicle, 0);
+		}
+		return;
+	case 1:
+		if (!self->vftable->Vf05(self)) {
+			self->i34 = 0;
+		}
+		return;
+	case 2:
+		if (self->vftable->Vf05(self)) {
+			self->i34 = 1;
+			return;
+		}
+		if (!CNodesTrafficInDoor_SectorHasTrack((CNodesTrafficInDoor *)g_NodesTrafficInDoor, self->track,
+				self->trackType)) {
+			self->i34 = 0;
+		}
+		return;
+	}
 }
 
 int __thiscall cAIVehicle_GetTrackType(cAIVehicle *self) {
