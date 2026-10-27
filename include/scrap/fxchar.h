@@ -17,6 +17,8 @@
 #define FXCONVERSION_POINTS 75
 #define FXCONVERSOR_TRAILS 3
 #define FXDEATH_TRAILS 8
+#define FXDEATH_TRAILPOINTS 15
+#define FXDEATH_POINTS (FXDEATH_TRAILS * FXDEATH_TRAILPOINTS)
 
 /* the engine variables (Gvars) */
 #define g_FXCharacterConversionFile GAME_DATA(const char *, 0x466e78)
@@ -102,17 +104,20 @@ typedef struct cObjElementFXCharacterDeath {
 	CGameParticles particles;	/* 0x008 on Dummy01 */
 	CGameParticles particles2;	/* 0x0b8 on Dummy02 */
 	CGameParticles particles3;	/* 0x168 on Dummy03 */
-	float f218;			/* 0x218 */
-	float f21c;			/* 0x21c */
-	float f220;			/* 0x220 */
-	CGameTrail trails[FXDEATH_TRAILS];	/* 0x224 */
-	byte pad_244[0x7e4 - 0x244];
-	float f7e4[0x78];		/* 0x7e4 5 at the start */
-	byte pad_9c4[0xf64 - 0x9c4];
+	float time;			/* 0x218 since the start */
+	float emitT;			/* 0x21c since the last particles */
+	float lastTime;			/* 0x220 time of the last Update */
+	CGameTrail trails[FXDEATH_TRAILS];	/* 0x224 15 points each */
+	vec3_t pos[FXDEATH_POINTS];	/* 0x244 the points of the trails, on vertices of the model */
+	float phase[FXDEATH_POINTS];	/* 0x7e4 0..1 up along the trail, 5 at the start (a new point) */
+	float width[FXDEATH_POINTS];	/* 0x9c4 */
+	float speed[FXDEATH_POINTS];	/* 0xba4 of the phase */
+	uint32_t color[FXDEATH_POINTS];	/* 0xd84 */
 	byte started;			/* 0xf64 */
 } cObjElementFXCharacterDeath;
 SD_OFFSET(cObjElementFXCharacterDeath, trails, 0x224);
-SD_OFFSET(cObjElementFXCharacterDeath, f7e4, 0x7e4);
+SD_OFFSET(cObjElementFXCharacterDeath, phase, 0x7e4);
+SD_OFFSET(cObjElementFXCharacterDeath, color, 0xd84);
 SD_SIZE(cObjElementFXCharacterDeath, 0xf68);
 
 typedef struct cObjElementFXCharacterTeleport {
@@ -199,6 +204,8 @@ void __thiscall cObjElementFXCharacterConversor_Reset(cObjElementFXCharacterConv
 void __thiscall cObjElementFXCharacterConversor_SetCharacter(cObjElementFXCharacterConversor *self, cEntity *e);
 /* the conversor and the nodes of its model */
 void __thiscall cObjElementFXCharacterConversor_SetConversor(cObjElementFXCharacterConversor *self, cEntity *e);
+/* the character dies: it slows down and fades, trails and smoke go up from its vertices, flashes and sparks */
+void __thiscall cObjElementFXCharacterDeath_Update(cObjElementFXCharacterDeath *self, cDebris *d, float dt);
 void __thiscall cObjElementFXCharacterDeath_Attach(cObjElementFXCharacterDeath *self, cDebris *d);
 void __thiscall cObjElementFXCharacterDeath_Reset(cObjElementFXCharacterDeath *self, int arg);
 void __thiscall cObjElementFXCharacterDeath_SetEntity(cObjElementFXCharacterDeath *self, cEntity *e);
