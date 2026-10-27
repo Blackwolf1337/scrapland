@@ -9,6 +9,7 @@
 
 #include "scrap/fxcountermeasures.h"
 #include "scrap/fxmisc.h"
+#include "scrap/global.h"
 
 #define COBJELEMENTFXSWARMMISSILE_VFTABLE 0x3cdc50
 #define COBJELEMENTFXLASER_VFTABLE 0x3cdc68
@@ -52,30 +53,39 @@ byte __thiscall cTargetLock_HasSlot(cTargetLock *self, int weap, int slot);
 #define g_FXInfernoExplosionFadeTime GAME_DATA(float, 0x449a18)
 #define g_FXInfernoRayMinSize GAME_DATA(float, 0x449b60)
 
-/* the ATPC shot (0x1e8 bytes, constructor rva 0x1f9690) */
+/* the ATPC shot: the beam from the shooter to the hit, its rings and glow (0x1e8 bytes, constructor rva 0x1f9690) */
+#define FXATPC_SLOTS 4
 typedef struct cObjElementFXATPC {
 	cObjElementFX base;
-	int f04;			/* 0x004 */
-	byte pad_08[0x20 - 0x08];
+	cEntity *shooter;		/* 0x004 */
+	vec3_t from;			/* 0x008 the origin of the shot */
+	vec3_t to;			/* 0x014 the hit */
 	CGameParticles particles;	/* 0x020 on Dummy01 */
 	CGameParticles particles2;	/* 0x0d0 */
-	int f180;			/* 0x180 */
-	byte pad_184[0x18c - 0x184];
-	int f18c;			/* 0x18c */
-	byte pad_190[0x1c4 - 0x190];
-	CGameTrail trail1c4;		/* 0x1c4 */
-	CGameTrail trail1c8;		/* 0x1c8 */
-	int n1cc;			/* 0x1cc 12 */
+	float time;			/* 0x180 since the shot */
+	byte pad_184[0x188 - 0x184];
+	int numSlots;			/* 0x188 the mounted slots of the shooter */
+	byte slotOn[FXATPC_SLOTS];	/* 0x18c */
+	vec3_t slotPos[FXATPC_SLOTS];	/* 0x190 the weapon nodes of the slots */
+	float width;			/* 0x1c0 by the slots and ATPCShootSize */
+	CGameTrail trail1c4;		/* 0x1c4 the core */
+	CGameTrail trail1c8;		/* 0x1c8 the line */
+	int n1cc;			/* 0x1cc 12 the points of the rings of trail1d0 */
 	CGameTrail trail1d0;		/* 0x1d0 */
-	int n1d4;			/* 0x1d4 8 */
+	int n1d4;			/* 0x1d4 8 the points of the ring of trail1d8 */
 	CGameTrail trail1d8;		/* 0x1d8 */
-	int f1dc;			/* 0x1dc */
-	CGameTrail trail1e0;		/* 0x1e0 2 * n1cc + 1 points */
+	float angle;			/* 0x1dc of the rings */
+	CGameTrail trail1e0;		/* 0x1e0 2 * n1cc + 1 points, the dudv pass */
 	byte on;			/* 0x1e4 */
 	byte pad_1e5[3];
 } cObjElementFXATPC;
+SD_OFFSET(cObjElementFXATPC, from, 0x8);
 SD_OFFSET(cObjElementFXATPC, particles2, 0xd0);
+SD_OFFSET(cObjElementFXATPC, time, 0x180);
+SD_OFFSET(cObjElementFXATPC, slotPos, 0x190);
+SD_OFFSET(cObjElementFXATPC, width, 0x1c0);
 SD_OFFSET(cObjElementFXATPC, trail1c4, 0x1c4);
+SD_OFFSET(cObjElementFXATPC, angle, 0x1dc);
 SD_OFFSET(cObjElementFXATPC, on, 0x1e4);
 SD_SIZE(cObjElementFXATPC, 0x1e8);
 
@@ -188,40 +198,109 @@ SD_OFFSET(cObjElementFXSwarmMissile, last, 0xbc);
 SD_OFFSET(cObjElementFXSwarmMissile, lastShrink, 0xd8);
 SD_SIZE(cObjElementFXSwarmMissile, 0xe0);
 
-/* the Tesla ray from the weapon slots of the emitter (0x768 bytes, constructor rva 0x1f99e0) */
+/* the Tesla ray from the weapon slots of the emitter to the target: per slot a Bezier curve through numPts points
+ * that wander by random offsets (0x768 bytes, constructor rva 0x1f99e0) */
+#define FXTESLA_PTS 10
 typedef struct cObjElementFXTesla {
 	cObjElementFX base;
 	cEntity *emitter;		/* 0x004 */
-	byte b8;			/* 0x008 */
-	byte pad_09[0x88 - 0x09];
-	int f88;			/* 0x088 */
-	byte pad_8c[0x98 - 0x8c];
+	char name[0x80];		/* 0x008 the target of the hit info of the emitter */
+	cEntity *target;		/* 0x088 */
+	vec3_t tpos;			/* 0x08c the end of the ray */
 	int numSlots;			/* 0x098 */
 	byte slotOn[FXTESLA_SLOTS];	/* 0x09c */
 	CGameParticles particles;	/* 0x0a0 on Dummy01 */
-	int f150;			/* 0x150 10 */
-	byte pad_154[0x6f4 - 0x154];
+	int numPts;			/* 0x150 10 */
+	vec3_t offs[FXTESLA_SLOTS][2 * FXTESLA_PTS];	/* 0x154 the offsets of the points, then the ones before */
+	vec3_t pts[FXTESLA_SLOTS][FXTESLA_PTS];	/* 0x514 the control points */
 	CGameTrail trails[FXTESLA_SLOTS * FXTESLA_TRAILS];	/* 0x6f4 */
-	int a734[FXTESLA_SLOTS];	/* 0x734 */
+	float uvOfs[FXTESLA_SLOTS];	/* 0x734 */
 	float time;			/* 0x744 */
 	float fadeStart;		/* 0x748 -1 while shooting */
 	byte shooting;			/* 0x74c */
-	byte b74d;			/* 0x74d */
+	byte first;			/* 0x74d the next Update takes the offsets as they are */
 	byte pad_74e[2];
-	int a750[FXTESLA_SLOTS];	/* 0x750 */
+	float stepTime[FXTESLA_SLOTS];	/* 0x750 since the offsets changed */
 	float followTime;		/* 0x760 */
 	byte on;			/* 0x764 */
 	byte pad_765[3];
 } cObjElementFXTesla;
+SD_OFFSET(cObjElementFXTesla, target, 0x88);
 SD_OFFSET(cObjElementFXTesla, numSlots, 0x98);
 SD_OFFSET(cObjElementFXTesla, particles, 0xa0);
+SD_OFFSET(cObjElementFXTesla, numPts, 0x150);
+SD_OFFSET(cObjElementFXTesla, pts, 0x514);
 SD_OFFSET(cObjElementFXTesla, trails, 0x6f4);
 SD_OFFSET(cObjElementFXTesla, time, 0x744);
 SD_OFFSET(cObjElementFXTesla, shooting, 0x74c);
-SD_OFFSET(cObjElementFXTesla, a750, 0x750);
+SD_OFFSET(cObjElementFXTesla, stepTime, 0x750);
 SD_OFFSET(cObjElementFXTesla, followTime, 0x760);
 SD_SIZE(cObjElementFXTesla, 0x768);
 
+/* the helpers of the constructors and destructors of the effects (also FXVehicle.c) */
+#define CGAMETRAIL_CTOR 0x21ddb0
+#define CGAMETRAIL_DTOR 0x21de40
+
+/* the start of every constructor: the base class leaves 0, then the vtable of the class */
+static inline void FXObj_SetVtbl(void *self, uint32_t vt) {
+	*(void **)self = NULL;
+	*(void **)self = Game_Ptr(vt);
+}
+
+static inline void FXObj_TrailsCtor(CGameTrail *t, uint32_t n) {
+	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, Game_Ptr(CGAMETRAIL_CTOR), Game_Ptr(CGAMETRAIL_DTOR));
+}
+
+static inline void FXObj_TrailsDtor(CGameTrail *t, uint32_t n) {
+	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, Game_Ptr(CGAMETRAIL_DTOR));
+}
+
+static inline void *FXObj_Delete(void *self, uint32_t flags, uint32_t size) {
+	if (flags & 1) {
+		operator_delete_sized(self, size);
+	}
+	return self;
+}
+
+/* (x, y, z) normalized into out, the length summed y first (the vector itself for the length 0) */
+static inline void FX_Normalize(vec3_t *out, float x, float y, float z) {
+	float len = (float)__builtin_sqrt((double)(y * y + x * x + z * z));
+	if (len == 0.0f) {
+		out->x = x;
+		out->y = y;
+		out->z = z;
+		return;
+	}
+	float inv = 1.0f / len;
+	out->x = x * inv;
+	out->y = y * inv;
+	out->z = z * inv;
+}
+
+/* the constructors (rva 0x1f9690..), destructors and deleting destructors (vf00) */
+void *__thiscall cObjElementFXATPC_ctor(void *self);
+void *__thiscall cObjElementFXDevastatorShoot_ctor(void *self);
+void *__thiscall cObjElementFXInfernoExplosion_ctor(void *self);
+void *__thiscall cObjElementFXInfernoMissile_ctor(void *self);
+void *__thiscall cObjElementFXLaser_ctor(void *self);
+void *__thiscall cObjElementFXSwarmMissile_ctor(void *self);
+void *__thiscall cObjElementFXTesla_ctor(void *self);
+void __thiscall cObjElementFXATPC_dtor(void *self);
+void __thiscall cObjElementFXDevastatorShoot_dtor(void *self);
+void __thiscall cObjElementFXInfernoExplosion_dtor(void *self);
+void __thiscall cObjElementFXInfernoMissile_dtor(void *self);
+void __thiscall cObjElementFXLaser_dtor(void *self);
+void __thiscall cObjElementFXSwarmMissile_dtor(void *self);
+void __thiscall cObjElementFXTesla_dtor(void *self);
+void *__thiscall cObjElementFXATPC_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXDevastatorShoot_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXInfernoExplosion_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXInfernoMissile_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXLaser_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXSwarmMissile_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXTesla_Delete(void *self, uint32_t flags);
+
+void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debris, float dt);
 void __thiscall cObjElementFXATPC_Start(cObjElementFXATPC *self, cDebris *debris);
 void __thiscall cObjElementFXATPC_Reset(cObjElementFXATPC *self, cDebris *debris);
 
@@ -255,6 +334,7 @@ byte __thiscall cObjElementFXSwarmMissile_IsAlive(cObjElementFXSwarmMissile *sel
 void __thiscall cObjElementFXSwarmMissile_Start(cObjElementFXSwarmMissile *self, cDebris *debris);
 void __thiscall cObjElementFXSwarmMissile_Reset(cObjElementFXSwarmMissile *self, cDebris *debris);
 
+void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *debris, float dt);
 byte __thiscall cObjElementFXTesla_IsAlive(cObjElementFXTesla *self, cDebris *debris, cDebrisSys *sys);
 void __thiscall cObjElementFXTesla_Start(cObjElementFXTesla *self, cDebris *debris);
 void __thiscall cObjElementFXTesla_Reset(cObjElementFXTesla *self, cDebris *debris);

@@ -5,7 +5,7 @@
 # for the laser (restored), IsAlive where it only reads the effect, the Tesla emitter on the ship Parked when it is
 # a Car with weapon tables. Particles are read only while active, trail points only the ones written. rand is seeded
 # before each use. Not called: IsAlive of the missiles and FXMisc_Alive (they step the debris: the camera decides),
-# the Updates of ATPC and Tesla (not in C).
+# the Updates of ATPC and Tesla (in sdlevel_fxbig2.py).
 def fwi(a):
 	return SDTest.Peek(a, '@i')
 def fwb(a):
