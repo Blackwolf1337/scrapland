@@ -473,6 +473,113 @@ def aloGen2D(dy):
 	check('alo %s Delete' % tag, lambda m=m: SDTest.Call(0x0ada70, 'tiii', m, 1)[0] == m)
 
 
+# the whole generation on a small box of FZ: a fresh CNodesWorld with the node size of the level, the start at a
+# free cell found in the air above nodes of the graph; nodeInitDummy 0 (the region may reach the sides of the box),
+# then 1 (the level is open there)
+def aloPoints(m, pts):
+	r = []
+	h = aloI(m + 0x190)
+	p = h
+	while p and len(r) < 40:
+		r.append((aloF(p + 8, 3), aloLinks(p + 8, pts), aloF(p + 0x2c, 6)))
+		p = aloI(p)
+		if p == h:
+			break
+	return (aloI(m + 0x198), r)
+
+def aloPointList(m):
+	r = []
+	h = aloI(m + 0x190)
+	p = h
+	while p and len(r) < 200:
+		r.append(p + 8)
+		p = aloI(p)
+		if p == h:
+			break
+	return r
+
+def aloStates(m):
+	buf = aloI(m + 0x1b0)
+	r = []
+	if buf:
+		for i in range(min(aloI(m + 0x1c0), 200)):
+			r.append(aloI(buf + 8 * i))
+	return r
+
+def aloSetDummy(m, v):
+	w = aloI(m + 0x188)
+	aloPoke(m + 0x188, (w & 0xffffff) | (v << 24))
+
+def aloGenerate(w):
+	nodes = aloI(w + 0x1a8)
+	m = aloNew(0x3f0)
+	SDTest.Call(0x0a21b0, 'tii', m)
+	SDTest.Call(0x0ab650, 'tviisF', m, -2, '', (1400.0, 1400.0, 1400.0))
+	snap = aloI(aloI(m) + 0x1c) - 0x400000
+	r = aloF(0x844d30, 1)[0]
+	starts = []
+	for k in (100, 300, 400, 600):
+		for dy in (0.0, 1500.0, 3000.0):
+			p = aloF(nodes + 0x14 * k, 3)
+			p = SDTest.Call(snap, 'tiiFF', m, (0.0,) * 3, (p[0], p[1] + dy, p[2]))[1]
+			if not SDTest.Call(0x212fe0, 'bFFF', p, (-700.0, -700.0, -700.0), (700.0, 700.0, 700.0))[0] and \
+					not SDTest.Call(0x213d60, 'bFFfii', p, p, r, 0, 0)[0]:
+				starts.append(p)
+				break
+	check('alo gen starts', lambda starts=starts: starts)
+	k = 0
+	for p in starts[0:3]:
+		for f40, sz in ((3000.0, 2), (25000.0, 1), (2000.0, 3)):
+			aloSetF(m + 0x40, (f40,))
+			aloSetDummy(m, 0)
+			s = sz * 1400.0
+			mn = (p[0] - s, p[1] - s, p[2] - s)
+			mx = (p[0] + s, p[1] + s, p[2] + s)
+			check('alo gen Generate(%d) %s %d' % (k, fmt(f40), sz), lambda m=m, p=p, mn=mn, mx=mx: (SDTest.Call(0x0a7a00,
+				'tbiFFF', m, p, mn, mx)[0], aloI(m + 0x198), aloI(m + 0x1c4), aloI(m + 0x1c0), aloI(m + 0x1cc),
+				aloI(m + 0x1f8), aloF(m + 0x304, 3), SDTest.Peek(m + 0x368, '@b')))
+			pts = aloPointList(m)
+			check('alo gen points(%d) %s %d' % (k, fmt(f40), sz), lambda m=m, pts=pts: aloPoints(m, pts))
+			check('alo gen states(%d) %s %d' % (k, fmt(f40), sz), lambda m=m: aloStates(m))
+			SDTest.Call(aloI(aloI(m) + 0x90) - 0x400000, 'tvi', m)
+			SDTest.Call(0x0a5ab0, 'tvi', m + 0x190)
+		# the region reaches the side of the box: open
+		aloSetDummy(m, 1)
+		s = 1400.0
+		mn = (p[0] - s, p[1] - s, p[2] - s)
+		mx = (p[0] + s, p[1] + s, p[2] + s)
+		check('alo gen Generate(%d) open' % k, lambda m=m, p=p, mn=mn, mx=mx: (SDTest.Call(0x0a7a00, 'tbiFFF', m, p, mn,
+			mx)[0], aloI(m + 0x198), aloI(m + 0x1cc), aloF(m + 0x304, 3), SDTest.Peek(m + 0x368, '@b')))
+		SDTest.Call(aloI(aloI(m) + 0x90) - 0x400000, 'tvi', m)
+		SDTest.Call(0x0a5ab0, 'tvi', m + 0x190)
+		k = k + 1
+	check('alo gen Delete', lambda m=m: SDTest.Call(0x0a2430, 'tiii', m, 1)[0] == m)
+
+# the 2D steps of the generation far above the level, where the bodies find no floor (the walk tests are not
+# reached): the buffer, a region with the debug regions on, the next start
+def aloGenerate2D():
+	m = aloNew(0x378)
+	SDTest.Call(0x0ad950, 'tii', m)
+	SDTest.Call(0x0b6200, 'tviisF', m, -2, '', (300.0, 400.0, 500.0))
+	q = (1000.0, 1000000.0, -2000.0)
+	mn = (q[0] - 600.0, q[1] - 800.0, q[2] - 1000.0)
+	mx = (q[0] + 600.0, q[1] + 800.0, q[2] + 1000.0)
+	# the buffer is relative to the box of the object (Generate sets it)
+	aloSetF(m + 0x74, mn + mx)
+	p = SDTest.Call(aloI(aloI(m) + 0x1c) - 0x400000, 'tiiFF', m, (0.0,) * 3, q)[1]
+	check('alo gen2d IniBuffer', lambda m=m, p=p, mn=mn, mx=mx: (SDTest.Call(0x0b5860, 'tbiFFF', m, p, mn, mx)[0],
+		aloI(m + 0x1c0), aloI(m + 0x1cc), aloI(m + 0x1ec), aloStates(m)))
+	SDTest.Call(0x0a2690, 'tviF', m + 0x190, p + (0.0,) * 6 + (3.4e38, 3.4e38, 3.4e38, -3.4e38, -3.4e38, -3.4e38))
+	dm = SDTest.Peek(0x444ddc, 'i')
+	SDTest.Poke(0x444ddc, 1)
+	check('alo gen2d CreateRegion', lambda m=m, p=p: (SDTest.Call(0x0b20f0, 'tviF', m, p)[0], aloStates(m),
+		aloI(m + 0x1d8), aloI(m + 0x368), aloI(m + 0x360) and aloI(aloI(m + 0x360) + 8), aloI(m + 0x360) and
+		aloI(aloI(m + 0x360) + 0x14), aloF(aloI(m + 0x190) + 0x2c, 6)))
+	SDTest.Poke(0x444ddc, dm)
+	check('alo gen2d NextInit', lambda m=m: SDTest.Call(0x0b7810, 'tbiF', m, (0.0,) * 3))
+	SDTest.Call(aloI(aloI(m) + 0x90) - 0x400000, 'tvi', m)
+	check('alo gen2d Delete', lambda m=m: SDTest.Call(0x0ada70, 'tiii', m, 1)[0] == m)
+
 aloW = SDTest.Peek(0x444d34, 'i')
 check('alo start', lambda: (aloW != 0, SDTest.Peek(0x444c7c, 'i') != 0))
 if aloW:
@@ -482,3 +589,6 @@ aloGen3D(0.0)
 aloGen3D(1000000.0)
 aloGen2D(0.0)
 aloGen2D(1000000.0)
+if aloW:
+	aloGenerate(aloW)
+aloGenerate2D()

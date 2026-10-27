@@ -469,7 +469,6 @@ SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
 
 /* module agent: Input/ActionSet+IDevice+PcKeyboard+PcMouse+PcPad.cpp (imports below this line) */
 SD_IMPORT(CNodesWorldSup_SaveInfPath, 0x0bba70)
-SD_IMPORT(CNodesWorld_Generate, 0x0a7a00)
 SD_IMPORT(CNodesWorld_AnalizeMap, 0x0a2e80)
 SD_IMPORT(crt_chmod, 0x345287)
 
@@ -482,7 +481,6 @@ SD_IMPORT(cMonitorScorer_DrawMonitor, 0x168c60)
 SD_IMPORT(cRadarScorer_DrawRadar, 0x16d570)
 SD_IMPORT(cPlayerInput_PressKey, 0x1396b0)
 SD_IMPORT(cActionSet_HoldPressed, 0x139810)
-SD_IMPORT(CNodesWorld2D_Generate, 0x0b2f60)
 
 /* module agent: Entities/Char/Type part 2+WalkCharControl (imports below this line) */
 
@@ -602,3 +600,5 @@ SD_IMPORT(CMapa_CopyBmp, 0x2370a0)
 /* module agent: Engine leftovers 0x200000..0x240000 (imports below this line) */
 
 /* module agent: AI leftovers 0x098000..0x0b8000 (imports below this line) */
+SD_IMPORT(crt_difftime32, 0x345bb1)
+SD_IMPORT(crt_ctime32, 0x345734)

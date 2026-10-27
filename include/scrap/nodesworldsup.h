@@ -115,5 +115,40 @@ byte NWSup_FindLinkCell(CNodesWorld *self, const vec3_t *const *pair, int *out, 
 typedef int (*nwInitFree_t)(CNodesWorld *self, const vec3_t *n, const vec3_t *c);
 typedef float (*nwInitDist_t)(CNodesWorld *self, const vec3_t *n);
 byte NWSup_NextInit(CNodesWorld *self, vec3_t *out, nwInitFree_t isFree, nwInitDist_t dist);
+/* the buffer of the generation for the box min max (nx ny nz, state 6), the cells reached from the cell of init
+ * over the neighbours along the axes into state 0 when step lets them (step also sets the state of the others),
+ * then tmp1c8 with the reached cells and the hash lists of the sets; 3D: open (and 0) when the region reaches the
+ * side of the box with nodeInitDummy (the top only indoors), the analysis of the level */
+typedef void (*nwFloodStep_t)(CNodesWorld *self, cNWVecList *queue, const vec3_t *c, const vec3_t *n);
+byte NWSup_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max, nwFloodStep_t step,
+	byte is3D);
+/* the region of the new point (the head of points) grown from start over the cells reach lets in: the cells into the
+ * set of the point (AddVis) and its box, then 4, the border 5; 2D: the cells into a new debug region when the view
+ * is on */
+typedef int (*nwRegionReach_t)(CNodesWorld *self, const vec3_t *start, const vec3_t *n);
+void NWSup_CreateRegion(CNodesWorld *self, const vec3_t *start, nwRegionReach_t reach, byte is2D);
+/* the steps of the generation that differ between CNodesWorld and CNodesWorld2D */
+typedef struct nwGenOps {
+	void (*getPairs)(CNodesWorld *self, cNWPairList *list);
+	byte (*findBox)(CNodesWorld *self, const vec3_t *const *pair, const cNWBox *box, int *out);
+	byte (*findCell)(CNodesWorld *self, const vec3_t *const *pair, int *out);
+	void (*createRegion)(CNodesWorld *self, const vec3_t *start);
+	/* the start cell is free */
+	int (*initOk)(CNodesWorld *self, const vec3_t *p);
+	byte (*iniBuffer)(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
+	byte (*nextInit)(CNodesWorld *self, vec3_t *out);
+	void (*interRegion)(CNodesWorld *self);
+	void (*linkExtra)(CNodesWorld *self);
+	byte is2D;
+} nwGenOps;
+/* "hh:mm:ss" of the seconds from t0 to t1 into the console with fmt */
+void NWSup_PrintTime(const char *fmt, int32_t t1, int32_t t0);
+/* the pairs of points not linked: a new point of visibility with its region in the cell that links them, until no
+ * pair has such a cell */
+void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops);
+/* the graph of the box from init: the regions of the points of visibility from start to start (NextInit), their
+ * links, the points between the regions and the extra points; the start snapped to its cell must be inside the box
+ * and free (a fatal error else) */
+byte NWSup_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max, const nwGenOps *ops);
 
 #endif

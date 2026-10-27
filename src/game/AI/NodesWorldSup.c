@@ -5,11 +5,16 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/crt.h"
 #include "scrap/filepak.h"
 #include "scrap/nodesworld2d.h"
 #include "scrap/scrap.h"
+#include "scrap/scrapcollision.h"
+#include "scrap/scrapmodel.h"
 
 double crt_ceil(double x);	/* rva 0x345010 */
+
+#define NWSUP_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* the "" of the exe */
 
 /* ---- Global/DList.h ---- */
 
@@ -1224,4 +1229,407 @@ byte NWSup_NextInit(CNodesWorld *self, vec3_t *out, nwInitFree_t isFree, nwInitD
 		}
 	}
 	return found;
+}
+
+/* ---- the buffer of the generation: the cells reached from the start ---- */
+
+/* the neighbour n of the cell c, in the box: a cell still unknown (6) is tested by step */
+static void NWSup_FloodCell(CNodesWorld *self, cNWVecList *queue, const vec3_t *c, const vec3_t *n,
+	nwFloodStep_t step) {
+	int idx = self->vftable->BufferIndex(self, n);
+
+	if (self->buffer[idx].state == 6) {
+		step(self, queue, c, n);
+	}
+}
+
+byte NWSup_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max, nwFloodStep_t step,
+	byte is3D) {
+	cNWVecList queue;
+	byte ok;
+
+	self->nx = (int)((max->x - min->x) / self->nodeSize.x);
+	self->ny = (int)((max->y - min->y) / self->nodeSize.y);
+	self->nz = (int)((max->z - min->z) / self->nodeSize.z);
+	self->dimBuffer = self->nz * self->ny * self->nx;
+	if (is3D) {
+		Con_Printf("Region Nodes: PMin: %f %f %f PMax: %f %f %f\n", (double)min->x, (double)min->y, (double)min->z,
+			(double)max->x, (double)max->y, (double)max->z);
+	}
+	Con_Printf("Number of Nodes Map: %d...\n", self->dimBuffer);
+	Con_Printf("Allocating Buffer Nodes Size: %d bytes...\n", self->dimBuffer << 3);
+	self->buffer = Mem_Alloc(self->dimBuffer << 3);
+	if (!self->buffer) {
+		Con_Bluef("ERROR: IniBuffNodesPointVis - Insuficiente memoria Buffer Nodes\n");
+		CHECK(!"cNodesWorld_IniBuffNodesPointVis_new_BufferNodes_Fail");
+		return 0;
+	}
+	Con_Printf("Allocated Buffer Nodes.\n");
+	Con_Printf("Initializing Buffer Nodes...\n");
+	memset(self->buffer, 0, self->dimBuffer << 3);
+	for (int i = 0; i < self->dimBuffer; i++) {
+		self->buffer[i].state = 6;
+		self->buffer[i].vis = NULL;
+	}
+	int idx = self->vftable->BufferIndex(self, init);
+	memset(&queue, 0, sizeof(queue));
+	self->buffer[idx].state = 0;
+	DListVec3_Add(&queue, init);
+	DListVec3_Clear(&self->lists28c[0]);
+	self->num1cc = 0;
+	self->openPos.x = 1.17549435e-38f;
+	self->openPos.y = 1.17549435e-38f;
+	self->openPos.z = 1.17549435e-38f;
+	if (is3D) {
+		self->open = 0;
+	}
+	while (queue.head) {
+		vec3_t c, n;
+
+		queue.iter = queue.head;
+		const vec3_t *p = &queue.head->v;
+		if (is3D && self->analizing) {
+			vec3_t hit;
+			CColisTri tri;
+			if (Sector_At(p) < 0 && self->errUnlinked.count < 100) {
+				DListVec3_Add(&self->errUnlinked, p);
+			}
+			if (CNodesWorld_TestSurfaceAround(self, p, &hit, &tri)) {
+				if (!self->b3b0) {
+					memcpy(self->firstTri, &tri, sizeof(tri));
+					self->b3b0 = 1;
+				}
+				CNodesWorld_LogTri(self, p, &hit, &tri);
+			}
+		}
+		c = *p;
+		NWVecList_RemoveHead(&queue);
+		self->num1cc++;
+		for (int k = 0; k < 3; k++) {
+			const vec3_t *ax = &self->axis[k];
+			for (int s = 0; s < 2; s++) {
+				int inside;
+				if (!s) {
+					n.x = ax->x + c.x;
+					n.y = ax->y + c.y;
+					n.z = ax->z + c.z;
+					inside = (&max->x)[k] >= (&n.x)[k] + (&self->halfNode.x)[k];
+				} else {
+					n.x = c.x - ax->x;
+					n.y = c.y - ax->y;
+					n.z = c.z - ax->z;
+					inside = (&n.x)[k] - (&self->halfNode.x)[k] >= (&min->x)[k];
+				}
+				if (inside) {
+					NWSup_FloodCell(self, &queue, &c, &n, step);
+				} else if (is3D && self->nodeInitDummy && (k != 1 || s || !g_IsMapOutDoor)) {
+					/* the region reaches the side of the box: the level is open there */
+					self->openPos = n;
+					self->open = 1;
+					Con_Bluef("ERROR AI: ESCENARIO ABIERTO!.\n");
+					ok = 0;
+					goto end;
+				}
+			}
+		}
+	}
+	self->tmp1c8 = Mem_Alloc(self->num1cc << 2);
+	if (!self->tmp1c8) {
+		Con_Bluef("ERROR: GenPointsVisInterRegNoLinkPVisDistMin - Insuficiente memoria Buffer Ind Nodes\n");
+		CHECK(!"cNodesWorld_GenPointsVisInterRegNoLinkPVisDistMin_new_BufferIndNodes_Fail");
+		ok = 0;
+		goto end;
+	}
+	int *cells = self->tmp1c8;
+	for (int i = 0; i < self->dimBuffer; i++) {
+		int st = self->buffer[i].state;
+		if (st != 3 && st != 6) {
+			*cells++ = i;
+		}
+	}
+	self->numSets = self->num1cc / 2 + 1;
+	self->sets = Mem_Alloc(self->numSets * sizeof(cNWVisList));
+	if (!self->sets) {
+		Con_Bluef("ERROR: GenPointsVisInterRegNoLinkPVisDistMin - Insuficiente memoria Hash Lists Point Vis.\n");
+		CHECK(!"cNodesWorld_GenPointsVisInterRegNoLinkPVisDistMin_new_BufferHash_Fail");
+		ok = 0;
+		goto end;
+	}
+	memset(self->sets, 0, self->numSets * sizeof(cNWVisList));
+	Con_Printf("Buffer Nodes Initializated\n");
+	Con_Printf("Num. Nodes Trans.: %ld\n", (long)self->num1cc);
+	Con_Printf("Num. Nodes No Trans.: %ld\n", (long)(self->dimBuffer - self->num1cc));
+	if (is3D) {
+		Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+	}
+	ok = 1;
+end:
+	DListVec3_Clear(&queue);
+	DList_FreePool(&queue, sizeof(cNWVecNode));
+	return ok;
+}
+
+/* ---- the region of a new point of visibility ---- */
+
+/* the neighbour n of a cell of the region: a free cell (0) or one of another region (4, 5) joins the region when
+ * reach lets it, else it is a border cell (2), the free ones also start cells of later points (list1d0) */
+static void NWSup_RegionCell(CNodesWorld *self, const vec3_t *start, const vec3_t *n, cNWVecList *queue,
+	cNWIntList *cells, nwRegionReach_t reach) {
+	int idx = self->vftable->BufferIndex(self, n);
+	int st = self->buffer[idx].state;
+
+	if (st != 5 && st != 0 && st != 4) {
+		return;
+	}
+	if (reach(self, start, n)) {
+		self->buffer[idx].state = 1;
+		DListVec3_Add(queue, n);
+		return;
+	}
+	st = self->buffer[idx].state;
+	if (st == 4) {
+		return;
+	}
+	if (st != 5) {
+		NWIntList_Add(&self->list1d0, (void *const *)&idx);
+	}
+	self->buffer[idx].state = 2;
+	NWIntList_Add(cells, (void *const *)&idx);
+}
+
+void NWSup_CreateRegion(CNodesWorld *self, const vec3_t *start, nwRegionReach_t reach, byte is2D) {
+	cNWVecList queue;
+	cNWIntList cells;
+
+	memset(&queue, 0, sizeof(queue));
+	memset(&cells, 0, sizeof(cells));
+	DListVec3_Add(&queue, start);
+	if (is2D && g_NW2DDrawMode) {
+		cNW2DRegion r;
+		memset(&r, 0, sizeof(r));
+		r.id = self->points.count - 1;
+		NW2DRegionList_Add(&((CNodesWorld2D *)self)->regions, &r);
+		DListVec3_Clear(&r.points);
+		DList_FreePool(&r.points, sizeof(cNWVecNode));
+	}
+	cNWPointNode *pn = self->points.iter = self->points.head;
+	cNWPointNode *P = pn;
+	while (queue.head) {
+		vec3_t c, n;
+
+		queue.iter = queue.head;
+		c = queue.head->v;
+		NWVecList_RemoveHead(&queue);
+		if (is2D && g_NW2DDrawMode) {
+			cNW2DRegionList *regions = &((CNodesWorld2D *)self)->regions;
+			cNW2DRegionNode *rn = regions->iter = regions->head;
+			NWVecList_Add(&rn->r.points, &c);
+		}
+		int idx = self->vftable->BufferIndex(self, &c);
+		NWIntList_Add(&cells, (void *const *)&idx);
+		self->buffer[idx].state = 1;
+		self->vftable->AddVis(self, &P->pos, idx);
+		P->boxA.x = Float_MinSS(P->boxA.x, c.x - self->halfNode.x);
+		P->boxA.y = Float_MinSS(P->boxA.y, c.y - self->halfNode.y);
+		P->boxA.z = Float_MinSS(P->boxA.z, c.z - self->halfNode.z);
+		P->boxB.x = Float_MaxSS(P->boxB.x, c.x + self->halfNode.x);
+		P->boxB.y = Float_MaxSS(P->boxB.y, self->halfNode.y + c.y);
+		P->boxB.z = Float_MaxSS(P->boxB.z, self->halfNode.z + c.z);
+		for (int k = 0; k < 3; k++) {
+			const vec3_t *ax = &self->axis[k];
+			n.x = ax->x + c.x;
+			n.y = ax->y + c.y;
+			n.z = ax->z + c.z;
+			if ((&self->max.x)[k] >= (&n.x)[k] + (&self->halfNode.x)[k]) {
+				NWSup_RegionCell(self, start, &n, &queue, &cells, reach);
+			}
+			n.x = c.x - ax->x;
+			n.y = c.y - ax->y;
+			n.z = c.z - ax->z;
+			if ((&n.x)[k] - (&self->halfNode.x)[k] >= (&self->min.x)[k]) {
+				NWSup_RegionCell(self, start, &n, &queue, &cells, reach);
+			}
+		}
+	}
+	/* the region done: its cells 4, its border 5 */
+	cNWIntNode *it = cells.iter = cells.head;
+	while (it) {
+		int i = (int)(intptr_t)it->data;
+		if (self->buffer[i].state == 1) {
+			self->buffer[i].state = 4;
+		} else if (self->buffer[i].state == 2) {
+			self->buffer[i].state = 5;
+		}
+		it = it->next;
+		if (it == cells.head) {
+			break;
+		}
+	}
+	cells.iter = it;
+	NWIntList_Clear(&cells);
+	DList_FreePool(&cells, sizeof(cNWIntNode));
+	DListVec3_Clear(&queue);
+	DList_FreePool(&queue, sizeof(cNWVecNode));
+}
+
+/* ---- the points of visibility between the regions ---- */
+
+void NWSup_PrintTime(const char *fmt, int32_t t1, int32_t t0) {
+	int s = (int)crt_difftime32(t1, t0);
+	int h = s / 3600, r = s % 3600;
+
+	Con_Printf(fmt, (long)h, (long)(r / 60), (long)(r % 60));
+}
+
+void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
+	cNWPairList pairs;
+	int32_t t0, t1;
+	const vec3_t *const *pp = NULL;
+	byte first = 1;
+	int made = 0;
+
+	Con_Printf("\nGenerating Points Visibility Inter-Region No Linked Mem. Din...\n");
+	if (!ops->is2D) {
+		Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+	}
+	NWVecList_Clear(&self->lists25c[0]);
+	crt_time32(&t0);
+	memset(&pairs, 0, sizeof(pairs));
+	ops->getPairs(self, &pairs);
+	int total = pairs.count;
+	Con_Printf("Searching Points Visibility No Linked...\n");
+	while (pairs.head) {
+		cNWBox box;
+		int idx;
+
+		if (first) {
+			pairs.iter = pairs.head;
+			pp = pairs.head ? (const vec3_t *const *)&pairs.head->p : NULL;
+		}
+		const cNWPointNode *a = NW_POINT(pp[0]), *b = NW_POINT(pp[1]);
+		box.a.x = Float_MaxSS(a->boxA.x, b->boxA.x);
+		box.a.y = Float_MaxSS(a->boxA.y, b->boxA.y);
+		box.a.z = Float_MaxSS(a->boxA.z, b->boxA.z);
+		box.b.x = Float_MinSS(a->boxB.x, b->boxB.x);
+		box.b.y = Float_MinSS(a->boxB.y, b->boxB.y);
+		box.b.z = Float_MinSS(a->boxB.z, b->boxB.z);
+		byte found;
+		if (self->vftable->BoxCells(self, &box) < self->num1cc) {
+			found = ops->findBox(self, pp, &box, &idx);
+		} else {
+			found = ops->findCell(self, pp, &idx);
+		}
+		if (!found) {
+			first = 1;
+			NWVecList_RemoveHead((cNWVecList *)&pairs);
+			Con_Printf("Num. Total Pairs PVis Remain: %d of %d\n", pairs.count, total);
+			if (!ops->is2D) {
+				Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+			}
+			continue;
+		}
+		/* a new point of visibility in the cell that links the pair */
+		cNWPointNode tmp;
+		vec3_t c;
+		memset(&tmp, 0, sizeof(tmp));
+		tmp.pos = *self->vftable->BufferPos(self, &c, idx);
+		NWPointList_Add(&self->points, &tmp.pos);
+		made++;
+		Con_Printf("Creating Point of Visibility Inter-Region No Link Num: %d...\n", made);
+		Con_Printf("Point of Visibility: %.2f %.2f %.2f\n", (double)tmp.pos.x, (double)tmp.pos.y, (double)tmp.pos.z);
+		Con_Bluef("%s", NWSUP_EMPTY);
+		Con_Printf("Creating Region...\n");
+		if (!ops->is2D) {
+			Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+		}
+		cNWPointNode *pn = self->points.iter = self->points.head;
+		const vec3_t *P = pn ? &pn->pos : NULL;
+		ops->createRegion(self, &tmp.pos);
+		if (!ops->is2D) {
+			NWIntList_Clear(&self->list1d0);
+			Con_Printf("Point of Visibility created...\n");
+			Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+			self->vftable->LinkPoint(self, P);
+		} else {
+			self->vftable->LinkPoint(self, P);
+			Con_Printf("Point of Visibility created...\n");
+		}
+		first = 0;
+		crt_time32(&t1);
+		NWSup_PrintTime("Time Creating Point Inter Reg. No Link: %02ld:%02ld:%02ld\n", t1, t0);
+		Con_Printf("\nTime Act: %s\n", crt_ctime32(&t1));
+		if (!ops->is2D) {
+			Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+		}
+		Con_Printf("Searching New Point Visibility No Linked...\n");
+		crt_time32(&t0);
+		NWIntList_Free(&tmp.links);
+	}
+	Con_Printf("Num. Points Visibility Inter-Region No Linked: %d\n", made);
+	NWVecList_Clear((cNWVecList *)&pairs);
+	DList_FreePool(&pairs, sizeof(cNWPairNode));
+}
+
+/* ---- the generation of the graph ---- */
+
+byte NWSup_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max, const nwGenOps *ops) {
+	vec3_t p = *init, snap;
+	int32_t t0, t1, t2;
+	byte more;
+
+	p = *self->vftable->SnapPos(self, &snap, &p);
+	if (self->halfNode.x + p.x > max->x || min->x > p.x - self->halfNode.x ||
+		self->halfNode.y + p.y > max->y || min->y > p.y - self->halfNode.y ||
+		self->halfNode.z + p.z > max->z || min->z > p.z - self->halfNode.z || !ops->initOk(self, &p)) {
+		Con_Bluef("ERROR: GenerateRegPointVis - Nodo Inicial Incorrecto: %f %f %f\n", (double)p.x, (double)p.y,
+			(double)p.z);
+		CHECK(!"Incorrect_Initial_Node");
+		return 0;
+	}
+	crt_time32(&t0);
+	Con_Printf(ops->is2D ? "\nTime Ini Creating Graph 2D: %s\n" : "\nTime Ini Creating Graph: %s\n", crt_ctime32(&t0));
+	self->min = *min;
+	self->max = *max;
+	if (!ops->iniBuffer(self, &p, min, max)) {
+		return 0;
+	}
+	NWIntList_Clear(&self->list1d0);
+	do {
+		/* the new point of visibility: links empty, the box FLT_MAX FLT_MAX FLT_MAX -FLT_MAX -FLT_MAX -FLT_MAX */
+		cNWPointNode tmp;
+		memset(&tmp, 0, sizeof(tmp));
+		tmp.pos = p;
+		NWBox_Init((cNWBox *)&tmp.boxA);
+		NWPointList_Add(&self->points, &tmp.pos);
+		Con_Printf("Created Point of Visibility Num: %d\n", self->points.count);
+		Con_Printf("Point of Visibility: %.2f %.2f %.2f\n", (double)tmp.pos.x, (double)tmp.pos.y, (double)tmp.pos.z);
+		Con_Bluef("%s", NWSUP_EMPTY);
+		Con_Printf("Creating Region...\n");
+		ops->createRegion(self, &p);
+		if (!ops->is2D) {
+			Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+		}
+		more = ops->nextInit(self, &p);
+		Con_Printf(more ? "New Node Init Selected.\n" : "Last Node Init.\n");
+		NWIntList_FreeAt0c(&tmp.pos);
+	} while (more);
+	NWIntList_Clear(&self->list1d0);
+	self->vftable->LinkPoints(self);
+	crt_time32(&t1);
+	NWSup_PrintTime("\nTime Creating Graph Points Vis. Min.: %02ld:%02ld:%02ld\n", t1, t0);
+	ops->interRegion(self);
+	ops->linkExtra(self);
+	crt_time32(&t2);
+	NWSup_PrintTime("\nTime Creating Graph Linking Points Vis. No Vis.: %02ld:%02ld:%02ld\n", t2, t1);
+	crt_time32(&t1);
+	Con_Printf("\nTime End Creating Graph: %s", crt_ctime32(&t1));
+	NWSup_PrintTime(ops->is2D ? "Time Creating Graph 2D: %02ld:%02ld:%02ld\n" : "Time Creating Graph: %02ld:%02ld:%02ld\n",
+		t1, t0);
+	if (!ops->is2D) {
+		Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+	}
+	if (ops->is2D ? g_NW2DDrawMode : g_NWDrawMode) {
+		self->vftable->GetInfoNodes(self);
+	}
+	return 1;
 }

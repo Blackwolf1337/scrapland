@@ -242,7 +242,7 @@ struct CNodesWorld {
 	int numFiles;			/* 0x258 */
 	cNWVecList lists25c[2];		/* 0x25c the nodes of the debug view */
 	cNWVecList lists28c[5];		/* 0x28c the buffer cells by state (GetInfoNodes) */
-	vec3_t v304;			/* 0x304 */
+	vec3_t openPos;			/* 0x304 the cell where the region of the generation left the box */
 	cNWVecList errCollide;		/* 0x310 AnalizeGraph: the links through the level, 3 points each */
 	cNWVecList errUnlinked;		/* 0x328 the nodes without links */
 	cNWVecList errOneWay;		/* 0x340 the links without the link back, 2 points each */
@@ -254,7 +254,8 @@ struct CNodesWorld {
 	byte pad_361[3];
 	void *file;			/* 0x364 AnalisisMap.txt */
 	byte open;			/* 0x368 the level is open */
-	byte pad_369[0x3b0 - 0x369];
+	byte pad_369[3];
+	byte firstTri[0x44];		/* 0x36c the first triangle the analysis found (a CColisTri) */
 	byte b3b0;			/* 0x3b0 */
 	byte pad_3b1[3];
 	vec3_t analizeSize;		/* 0x3b4 */
@@ -270,7 +271,7 @@ SD_OFFSET(CNodesWorld, buffer, 0x1b0);
 SD_OFFSET(CNodesWorld, sets, 0x1e8);
 SD_OFFSET(CNodesWorld, extraPoints, 0x1f0);
 SD_OFFSET(CNodesWorld, numFiles, 0x258);
-SD_OFFSET(CNodesWorld, v304, 0x304);
+SD_OFFSET(CNodesWorld, openPos, 0x304);
 SD_OFFSET(CNodesWorld, errCollide, 0x310);
 SD_OFFSET(CNodesWorld, analizing, 0x360);
 SD_OFFSET(CNodesWorld, hitFrom, 0x3c0);
@@ -341,6 +342,17 @@ byte __thiscall CNodesWorld_FindLinkCell(CNodesWorld *self, const vec3_t *const 
 byte __thiscall CNodesWorld_FindLinkFree(CNodesWorld *self, const vec3_t *const *pair, int *out);
 /* the next start of the generation (NWSup_NextInit), the way to the cell free of the level */
 byte __thiscall CNodesWorld_NextInit(CNodesWorld *self, vec3_t *out);
+/* the buffer of the box min max: the cells reached from init free of the level (NWSup_IniBuffer); with the
+ * analysis also the cells outside the sectors and the triangles around them (LogTri) */
+byte __thiscall CNodesWorld_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
+/* the triangle tri hit around p into tris and the file of the analysis (not twice, at most 1000); hit is changed
+ * into meters with y and z swapped */
+void __thiscall CNodesWorld_LogTri(CNodesWorld *self, const vec3_t *p, vec3_t *hit, const struct CColisTri *tri);
+/* the region of the new point of visibility (NWSup_CreateRegion): the cells nearer than f40 that a sphere reaches */
+void __thiscall CNodesWorld_CreateRegion(CNodesWorld *self, const vec3_t *start);
+/* the points of visibility between the regions (NWSup_InterRegion) */
+void __fastcall CNodesWorld_InterRegion(CNodesWorld *self);
+/* NWSup_Generate: the start free of the level */
 byte __thiscall CNodesWorld_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 void __thiscall CNodesWorld_AnalizeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 

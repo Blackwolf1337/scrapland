@@ -6,6 +6,8 @@
 
 #include "scrap/ai.h"
 #include "scrap/console.h"
+#include "scrap/crt.h"
+#include "scrap/e3dutil.h"
 #include "scrap/filepak.h"
 #include "scrap/mathlib.h"
 #include "scrap/fxmisc.h"
@@ -1517,4 +1519,133 @@ static float NW_InitDist(CNodesWorld *self, const vec3_t *n) {
 
 byte __thiscall CNodesWorld_NextInit(CNodesWorld *self, vec3_t *out) {
 	return NWSup_NextInit(self, out, NW_InitFree, NW_InitDist);
+}
+
+void __thiscall CNodesWorld_LogTri(CNodesWorld *self, const vec3_t *p, vec3_t *hit, const CColisTri *tri) {
+	char buf[200];
+	float data[15];
+
+	if (self->tris.count >= 1000) {
+		return;
+	}
+	cNWTriNode *node = self->tris.iter = self->tris.head;
+	while (node) {
+		const float *d = node->data, *t = &tri->v[0].x;
+		if (d[0] == t[0] && d[1] == t[1] && d[2] == t[2] && d[3] == t[3] && d[4] == t[4] && d[5] == t[5] &&
+			d[6] == t[6] && d[7] == t[7] && d[8] == t[8]) {
+			return;
+		}
+		node = self->tris.iter = self->tris.iter->next;
+		if (node == self->tris.head) {
+			break;
+		}
+	}
+	/* the vertices, the point and the hit; without a hit only the mark FLT_MAX (the original leaves the other
+	 * vertex words as they are on the stack) */
+	memset(data, 0, sizeof(data));
+	if (tri->hit.x == 3.40282347e+38f) {
+		data[0] = 3.40282347e+38f;
+	} else {
+		memcpy(data, tri->v, 9 * sizeof(float));
+	}
+	data[9] = p->x;
+	data[10] = p->y;
+	data[11] = p->z;
+	data[12] = hit->x;
+	data[13] = hit->y;
+	data[14] = hit->z;
+	NWTriList_Add(&self->tris, data);
+	/* in meters, y and z swapped */
+	float z = hit->y / 100.0f;
+	hit->y = hit->z;
+	float y = hit->y / 100.0f;
+	float x = hit->x / 100.0f;
+	hit->z = z;
+	hit->x = x;
+	hit->y = y;
+	Bprintf(buf, sizeof(buf), "\nPoint: %.3f\t%.3f\t%.3f\n", (double)x, (double)y, (double)z);
+	crt_fwrite(buf, 1, strlen(buf), self->file);
+	for (int i = 0; i < 3; i++) {
+		static const char *const fmts[3] = { "Triang Vert. 1: %.3f\t%.3f\t%.3f\n", "Triang Vert. 2: %.3f\t%.3f\t%.3f\n",
+			"Triang Vert. 3: %.3f\t%.3f\t%.3f\n" };
+		const vec3_t *v = &tri->v[i];
+		float vy = v->y / 100.0f, vz = v->z / 100.0f, vx = v->x / 100.0f;
+		Bprintf(buf, sizeof(buf), fmts[i], (double)vx, (double)vz, (double)vy);
+		crt_fwrite(buf, 1, strlen(buf), self->file);
+	}
+}
+
+static void NW_FloodStep(CNodesWorld *self, cNWVecList *queue, const vec3_t *c, const vec3_t *n) {
+	vec3_t neg = { -self->halfNode.x, -self->halfNode.y, -self->halfNode.z };
+
+	(void)c;
+	if (!Collision_Box(n, &neg, &self->halfNode) && !Engine_TestSphere(n, n, g_NWNodeRadius, NULL, NULL)) {
+		self->buffer[self->vftable->BufferIndex(self, n)].state = 0;
+		DListVec3_Add(queue, n);
+	} else {
+		self->buffer[self->vftable->BufferIndex(self, n)].state = 3;
+	}
+}
+
+byte __thiscall CNodesWorld_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
+	return NWSup_IniBuffer(self, init, min, max, NW_FloodStep, 1);
+}
+
+/* the cell n joins the region of the point at start: nearer than f40 and the sphere goes there free */
+static int NW_RegionReach(CNodesWorld *self, const vec3_t *start, const vec3_t *n) {
+	return !(NWSup_Dist(start, n) >= self->f40) && !Engine_TestSphere(start, n, g_NWNodeRadius, NULL, NULL);
+}
+
+void __thiscall CNodesWorld_CreateRegion(CNodesWorld *self, const vec3_t *start) {
+	NWSup_CreateRegion(self, start, NW_RegionReach, 0);
+}
+
+/* the steps of the generation of CNodesWorld */
+static void NW_OpPairs(CNodesWorld *self, cNWPairList *list) {
+	CNodesWorld_GetPairs(self, list);
+}
+
+static byte NW_OpFindBox(CNodesWorld *self, const vec3_t *const *pair, const cNWBox *box, int *out) {
+	return CNodesWorld_FindLinkBox(self, pair, box, out);
+}
+
+static byte NW_OpFindCell(CNodesWorld *self, const vec3_t *const *pair, int *out) {
+	return CNodesWorld_FindLinkCell(self, pair, out);
+}
+
+static void NW_OpRegion(CNodesWorld *self, const vec3_t *start) {
+	CNodesWorld_CreateRegion(self, start);
+}
+
+static int NW_OpInitOk(CNodesWorld *self, const vec3_t *p) {
+	vec3_t neg = { -self->halfNode.x, -self->halfNode.y, -self->halfNode.z };
+
+	return !Collision_Box(p, &neg, &self->halfNode) && !Engine_TestSphere(p, p, g_NWNodeRadius, NULL, NULL);
+}
+
+static byte NW_OpIniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
+	return CNodesWorld_IniBuffer(self, init, min, max);
+}
+
+static byte NW_OpNextInit(CNodesWorld *self, vec3_t *out) {
+	return CNodesWorld_NextInit(self, out);
+}
+
+static void NW_OpInterRegion(CNodesWorld *self) {
+	CNodesWorld_InterRegion(self);
+}
+
+static void NW_OpLinkExtra(CNodesWorld *self) {
+	CNodesWorld_LinkExtra(self);
+}
+
+static const nwGenOps nw_ops = { NW_OpPairs, NW_OpFindBox, NW_OpFindCell, NW_OpRegion, NW_OpInitOk, NW_OpIniBuffer,
+	NW_OpNextInit, NW_OpInterRegion, NW_OpLinkExtra, 0 };
+
+void __fastcall CNodesWorld_InterRegion(CNodesWorld *self) {
+	NWSup_InterRegion(self, &nw_ops);
+}
+
+byte __thiscall CNodesWorld_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
+	return NWSup_Generate(self, init, min, max, &nw_ops);
 }
