@@ -46,6 +46,8 @@ byte __thiscall cActCtrl_IsActive(void *ctrl, const char *action);
 byte __thiscall cActCtrl_Play(void *ctrl, const char *action, int arg, float speed);
 /* the action that runs when nothing else does; a warning if the class has no such action */
 void __thiscall cActCtrl_SetDefLoop(void *ctrl, const char *action, byte force);
+/* the layer i of the actions (16 bytes, the time of its action first) */
+float *__thiscall cActCtrl_GetLayer(void *ctrl, int i);
 
 /* the "Obj" entity on or off */
 void __thiscall cObjEntity_Switch(cEntity *self, byte on);
