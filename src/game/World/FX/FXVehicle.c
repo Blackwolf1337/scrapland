@@ -1,8 +1,6 @@
 /*
  * World/FX/FXVehicle.cpp of the game: the effects of the vehicles, see include/scrap/fxvehicle.h.
- * Not here (too large): the Updates (vf01) of FiredEntity (rva 0x1eb8d0), Accelerator (0x1ed170), Damage
- * (0x1ed9c0), EMI (0x1f0aa0), Fire (0x1f1b90), Sputnik (0x1f3960), the ray setup of the Accelerator (0x1f48c0, not
- * called) and FX_ShipExplosion (0x1f4d50).
+ * Not here (too large): the Update (vf01) of Damage (rva 0x1ed9c0) and FX_ShipExplosion (0x1f4d50).
  */
 #include "scrap/crt.h"
 #include "scrap/embeddedfxvehicle.h"
@@ -11,33 +9,14 @@
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/timer.h"
+#include "scrap/vehicleentity.h"
+#include "scrap/weapons.h"
 #include "scrap/world.h"
-
-#define CGAMETRAIL_CTOR 0x21ddb0
-#define CGAMETRAIL_DTOR 0x21de40
 
 #define g_RandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
 
-/* the same helpers as the constructors of FXMisc.c (kept local, FXMisc.c has them static) */
-static inline void FXV_SetVtbl(void *self, uint32_t vt) {
-	*(void **)self = NULL;
-	*(void **)self = Game_Ptr(vt);
-}
-
-static inline void FXV_TrailsCtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, Game_Ptr(CGAMETRAIL_CTOR), Game_Ptr(CGAMETRAIL_DTOR));
-}
-
-static inline void FXV_TrailsDtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, Game_Ptr(CGAMETRAIL_DTOR));
-}
-
-static inline void *FXV_Delete(void *self, uint32_t flags, uint32_t size) {
-	if (flags & 1) {
-		operator_delete_sized(self, size);
-	}
-	return self;
-}
+/* the ship of an effect */
+#define FXV_Veh(e) ((const cVehicleEntity *)(e))
 
 /* the node of name in model, CHECKed */
 static int FXV_Node(CGameModel *model, const char *name) {
@@ -83,7 +62,7 @@ static void FXV_Exhausts(cEntity *e, int *num, FXVExhaust *ex) {
 
 void *__thiscall cObjElementFXFiredDebris_ctor(void *self) {
 	cObjElementFXFiredDebris *s = self;
-	FXV_SetVtbl(s, COBJELEMENTFXFIREDDEBRIS_VFTABLE);
+	FXObj_SetVtbl(s, COBJELEMENTFXFIREDDEBRIS_VFTABLE);
 	CGameParticles_ctor(&s->particles);
 	s->on = 0;
 	return s;
@@ -91,7 +70,7 @@ void *__thiscall cObjElementFXFiredDebris_ctor(void *self) {
 
 void *__thiscall cObjElementFXFiredEntity_ctor(void *self) {
 	cObjElementFXFiredEntity *s = self;
-	FXV_SetVtbl(s, COBJELEMENTFXFIREDENTITY_VFTABLE);
+	FXObj_SetVtbl(s, COBJELEMENTFXFIREDENTITY_VFTABLE);
 	CGameParticles_ctor(&s->particles);
 	s->on = 0;
 	s->entity = NULL;
@@ -100,7 +79,7 @@ void *__thiscall cObjElementFXFiredEntity_ctor(void *self) {
 
 void *__thiscall cObjElementFXSmokeDebris_ctor(void *self) {
 	cObjElementFXSmokeDebris *s = self;
-	FXV_SetVtbl(s, COBJELEMENTFXSMOKEDEBRIS_VFTABLE);
+	FXObj_SetVtbl(s, COBJELEMENTFXSMOKEDEBRIS_VFTABLE);
 	CGameParticles_ctor(&s->particles);
 	s->on = 0;
 	return s;
@@ -108,16 +87,16 @@ void *__thiscall cObjElementFXSmokeDebris_ctor(void *self) {
 
 void *__thiscall cObjElementFXVehicleAccelerator_ctor(void *self) {
 	cObjElementFXVehicleAccelerator *s = self;
-	FXV_SetVtbl(s, COBJELEMENTFXVEHICLEACCELERATOR_VFTABLE);
+	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEACCELERATOR_VFTABLE);
 	CGameParticles_ctor(&s->particles);
-	FXV_TrailsCtor(s->trails, FXVACCEL_TRAILS);
+	FXObj_TrailsCtor(s->trails, FXVACCEL_TRAILS);
 	s->on = 0;
 	return s;
 }
 
 void *__thiscall cObjElementFXVehicleDamage_ctor(void *self) {
 	cObjElementFXVehicleDamage *s = self;
-	FXV_SetVtbl(s, COBJELEMENTFXVEHICLEDAMAGE_VFTABLE);
+	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEDAMAGE_VFTABLE);
 	CGameParticles_ctor(&s->parts3);
 	CGameParticles_ctor(&s->parts2);
 	CGameParticles_ctor(&s->parts1);
@@ -129,7 +108,7 @@ void *__thiscall cObjElementFXVehicleDamage_ctor(void *self) {
 
 void *__thiscall cObjElementFXVehicleDeathTrail_ctor(void *self) {
 	cObjElementFXDevastatorShoot *s = self;
-	FXV_SetVtbl(s, COBJELEMENTFXVEHICLEDEATHTRAIL_VFTABLE);
+	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEDEATHTRAIL_VFTABLE);
 	CGameTrail_ctor(&s->trail);
 	s->first = 1;
 	s->on = 0;
@@ -140,23 +119,23 @@ void *__thiscall cObjElementFXVehicleDeathTrail_ctor(void *self) {
 
 void *__thiscall cObjElementFXVehicleEMI_ctor(void *self) {
 	cObjElementFXVehicleEMI *s = self;
-	FXV_SetVtbl(s, COBJELEMENTFXVEHICLEEMI_VFTABLE);
+	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEEMI_VFTABLE);
 	CGameParticles_ctor(&s->particles);
-	FXV_TrailsCtor(s->trails, FXVEMI_TRAILS);
+	FXObj_TrailsCtor(s->trails, FXVEMI_TRAILS);
 	s->on = 0;
 	s->entity = NULL;
-	s->fbc = 0;
-	s->fb8 = 0;
+	s->time = 0.0f;
+	s->stepTime = 0.0f;
 	s->numTrails = FXVEMI_TRAILS;
-	s->fc4 = 22.0f;
-	s->fc8 = 0x1000;
-	s->fcc = 0x40;
+	s->offset = 22.0f;
+	s->numVerts = 0x1000;
+	s->maxPts = 0x40;
 	return s;
 }
 
 void *__thiscall cObjElementFXVehicleFire_ctor(void *self) {
 	cObjElementFXVehicleFire *s = self;
-	FXV_SetVtbl(s, COBJELEMENTFXVEHICLEFIRE_VFTABLE);
+	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEFIRE_VFTABLE);
 	CGameParticles_ctor(&s->particles);
 	CGameParticles_ctor(&s->particlesOut);
 	s->on = 0;
@@ -166,9 +145,9 @@ void *__thiscall cObjElementFXVehicleFire_ctor(void *self) {
 
 void *__thiscall cObjElementFXVehicleSpawn_ctor(void *self) {
 	cObjElementFXVehicleSpawn *s = self;
-	FXV_SetVtbl(s, COBJELEMENTFXVEHICLESPAWN_VFTABLE);
+	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLESPAWN_VFTABLE);
 	CGameParticles_ctor(&s->particles);
-	FXV_TrailsCtor(s->trails, FXVSPAWN_TRAILS);
+	FXObj_TrailsCtor(s->trails, FXVSPAWN_TRAILS);
 	s->on = 0;
 	s->entity = NULL;
 	s->time = 0.0f;
@@ -178,15 +157,15 @@ void *__thiscall cObjElementFXVehicleSpawn_ctor(void *self) {
 
 void *__thiscall cObjElementFXVehicleSputnik_ctor(void *self) {
 	cObjElementFXVehicleSputnik *s = self;
-	FXV_SetVtbl(s, COBJELEMENTFXVEHICLESPUTNIK_VFTABLE);
+	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLESPUTNIK_VFTABLE);
 	CGameParticles_ctor(&s->particles);
-	FXV_TrailsCtor(s->trails, FXVSPUTNIK_TRAILS);
+	FXObj_TrailsCtor(s->trails, FXVSPUTNIK_TRAILS);
 	s->on = 0;
 	s->entity = NULL;
-	s->fb8 = 0;
-	s->fbc = 0;
-	s->fc0 = 1;
-	s->fc4 = 0.8f;
+	s->time = 0.0f;
+	s->time2 = 0.0f;
+	s->phase = 1;
+	s->duration = 0.8f;
 	return s;
 }
 
@@ -216,7 +195,7 @@ void __thiscall cObjElementFXSmokeDebris_dtor(void *self) {
 void __thiscall cObjElementFXVehicleAccelerator_dtor(void *self) {
 	cObjElementFXVehicleAccelerator *s = self;
 	*(void **)s = Game_Ptr(COBJELEMENTFXVEHICLEACCELERATOR_VFTABLE);
-	FXV_TrailsDtor(s->trails, FXVACCEL_TRAILS);
+	FXObj_TrailsDtor(s->trails, FXVACCEL_TRAILS);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
@@ -240,7 +219,7 @@ void __thiscall cObjElementFXVehicleDeathTrail_dtor(void *self) {
 void __thiscall cObjElementFXVehicleEMI_dtor(void *self) {
 	cObjElementFXVehicleEMI *s = self;
 	*(void **)s = Game_Ptr(COBJELEMENTFXVEHICLEEMI_VFTABLE);
-	FXV_TrailsDtor(s->trails, FXVEMI_TRAILS);
+	FXObj_TrailsDtor(s->trails, FXVEMI_TRAILS);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
@@ -249,7 +228,7 @@ void __thiscall cObjElementFXVehicleFire_dtor(void *self) {
 	cObjElementFXVehicleFire *s = self;
 	*(void **)s = Game_Ptr(COBJELEMENTFXVEHICLEFIRE_VFTABLE);
 	s->entity = NULL;
-	s->f168 = 0;
+	s->time = 0.0f;
 	CGameParticles_Release(&s->particlesOut);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
@@ -258,7 +237,7 @@ void __thiscall cObjElementFXVehicleFire_dtor(void *self) {
 void __thiscall cObjElementFXVehicleSpawn_dtor(void *self) {
 	cObjElementFXVehicleSpawn *s = self;
 	*(void **)s = Game_Ptr(COBJELEMENTFXVEHICLESPAWN_VFTABLE);
-	FXV_TrailsDtor(s->trails, FXVSPAWN_TRAILS);
+	FXObj_TrailsDtor(s->trails, FXVSPAWN_TRAILS);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
@@ -266,7 +245,7 @@ void __thiscall cObjElementFXVehicleSpawn_dtor(void *self) {
 void __thiscall cObjElementFXVehicleSputnik_dtor(void *self) {
 	cObjElementFXVehicleSputnik *s = self;
 	*(void **)s = Game_Ptr(COBJELEMENTFXVEHICLESPUTNIK_VFTABLE);
-	FXV_TrailsDtor(s->trails, FXVSPUTNIK_TRAILS);
+	FXObj_TrailsDtor(s->trails, FXVSPUTNIK_TRAILS);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
@@ -275,52 +254,52 @@ void __thiscall cObjElementFXVehicleSputnik_dtor(void *self) {
 
 void *__thiscall cObjElementFXFiredDebris_Delete(void *self, uint32_t flags) {
 	cObjElementFXFiredDebris_dtor(self);
-	return FXV_Delete(self, flags, sizeof(cObjElementFXFiredDebris));
+	return FXObj_Delete(self, flags, sizeof(cObjElementFXFiredDebris));
 }
 
 void *__thiscall cObjElementFXFiredEntity_Delete(void *self, uint32_t flags) {
 	cObjElementFXFiredEntity_dtor(self);
-	return FXV_Delete(self, flags, sizeof(cObjElementFXFiredEntity));
+	return FXObj_Delete(self, flags, sizeof(cObjElementFXFiredEntity));
 }
 
 void *__thiscall cObjElementFXSmokeDebris_Delete(void *self, uint32_t flags) {
 	cObjElementFXSmokeDebris_dtor(self);
-	return FXV_Delete(self, flags, sizeof(cObjElementFXSmokeDebris));
+	return FXObj_Delete(self, flags, sizeof(cObjElementFXSmokeDebris));
 }
 
 void *__thiscall cObjElementFXVehicleAccelerator_Delete(void *self, uint32_t flags) {
 	cObjElementFXVehicleAccelerator_dtor(self);
-	return FXV_Delete(self, flags, sizeof(cObjElementFXVehicleAccelerator));
+	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleAccelerator));
 }
 
 void *__thiscall cObjElementFXVehicleDamage_Delete(void *self, uint32_t flags) {
 	cObjElementFXVehicleDamage_dtor(self);
-	return FXV_Delete(self, flags, sizeof(cObjElementFXVehicleDamage));
+	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleDamage));
 }
 
 void *__thiscall cObjElementFXVehicleDeathTrail_Delete(void *self, uint32_t flags) {
 	cObjElementFXVehicleDeathTrail_dtor(self);
-	return FXV_Delete(self, flags, sizeof(cObjElementFXDevastatorShoot));
+	return FXObj_Delete(self, flags, sizeof(cObjElementFXDevastatorShoot));
 }
 
 void *__thiscall cObjElementFXVehicleEMI_Delete(void *self, uint32_t flags) {
 	cObjElementFXVehicleEMI_dtor(self);
-	return FXV_Delete(self, flags, sizeof(cObjElementFXVehicleEMI));
+	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleEMI));
 }
 
 void *__thiscall cObjElementFXVehicleFire_Delete(void *self, uint32_t flags) {
 	cObjElementFXVehicleFire_dtor(self);
-	return FXV_Delete(self, flags, sizeof(cObjElementFXVehicleFire));
+	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleFire));
 }
 
 void *__thiscall cObjElementFXVehicleSpawn_Delete(void *self, uint32_t flags) {
 	cObjElementFXVehicleSpawn_dtor(self);
-	return FXV_Delete(self, flags, sizeof(cObjElementFXVehicleSpawn));
+	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleSpawn));
 }
 
 void *__thiscall cObjElementFXVehicleSputnik_Delete(void *self, uint32_t flags) {
 	cObjElementFXVehicleSputnik_dtor(self);
-	return FXV_Delete(self, flags, sizeof(cObjElementFXVehicleSputnik));
+	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleSputnik));
 }
 
 /* ---- Update (vf01) ---- */
@@ -590,21 +569,6 @@ static inline void FXV_CheckEntity(cEntity **entity) {
 	}
 }
 
-/* v normalized into out (v itself for the length 0) */
-static void FXV_Normalize(vec3_t *out, float x, float y, float z) {
-	float len = (float)__builtin_sqrt((double)(y * y + x * x + z * z));
-	if (len == 0.0f) {
-		out->x = x;
-		out->y = y;
-		out->z = z;
-		return;
-	}
-	float inv = 1.0f / len;
-	out->x = x * inv;
-	out->y = y * inv;
-	out->z = z * inv;
-}
-
 /* the rays grow out of the vertices of the ship while it appears */
 void __thiscall cObjElementFXVehicleSpawn_Update(cObjElementFXVehicleSpawn *self, cDebris *debris, float dt) {
 	(void)dt;
@@ -651,7 +615,7 @@ void __thiscall cObjElementFXVehicleSpawn_Update(cObjElementFXVehicleSpawn *self
 		if (self->rayLen[i] > 0.25f && trail < FXVSPAWN_TRAILS) {
 			vec3_t *b = &self->rayBase[i];
 			CGameModel_Vertices(em, b, NULL, NULL, 1, self->rayVertex[i], NULL, 0xffffffffu, NULL);
-			FXV_Normalize(&self->rayDir[i], b->x - pos.x, b->y - pos.y, b->z - pos.z);
+			FX_Normalize(&self->rayDir[i], b->x - pos.x, b->y - pos.y, b->z - pos.z);
 			*b = pos;
 			const vec3_t *dir = &self->rayDir[i];
 			float len = self->rayLen[i];
@@ -686,7 +650,7 @@ void __thiscall cObjElementFXVehicleSpawn_Update(cObjElementFXVehicleSpawn *self
 		CGameModel_Vertices(em, b, NULL, NULL, 1, -1, &self->rayVertex[n], 0xffffffffu, NULL);
 		n = self->numRays;
 		b = &self->rayBase[n];
-		FXV_Normalize(&self->rayDir[n], b->x - pos.x, b->y - pos.y, b->z - pos.z);
+		FX_Normalize(&self->rayDir[n], b->x - pos.x, b->y - pos.y, b->z - pos.z);
 		self->rayLen[self->numRays] = FXV_Rand(0.5, 0.30000001192092896);
 		self->raySpeed[self->numRays] = FXV_Rand(230.0, 185.0);
 		double r = (double)(crt_rand() & 0x7fff) * g_RandScale;
@@ -702,6 +666,1138 @@ void __thiscall cObjElementFXVehicleSpawn_Update(cObjElementFXVehicleSpawn *self
 		self->numRays++;
 	}
 	self->stepTime = 0.0f;
+}
+
+/* ---- FiredEntity ---- */
+
+#define g_FXFiredEntitySmokeStep GAME_DATA(float, 0x467390)
+#define FXV_RAMP_FIREDENT_SMOKE 0x4315e8	/* [2] */
+#define FXV_RAMP_FIREDENT_FIRE 0x431630		/* [5] */
+
+/* (0, 0, z) turned by rot */
+static vec3_t *FXV_TurnZ(vec3_t *out, float z, const vec3_t *rot) {
+	vec3_t v;
+	v.x = 0.0f;
+	v.y = 0.0f;
+	v.z = z;
+	return Vec3_Rotate(out, &v, rot);
+}
+
+/* the smoke and fire behind a burning entity, one emission per step of the way since the last one */
+void __thiscall cObjElementFXFiredEntity_Update(cObjElementFXFiredEntity *self, cDebris *debris, float dt) {
+	(void)dt;
+	FXV_CheckEntity(&self->entity);
+	float d = cTimer_GetDelta(&g_pWorld->timer);
+	cEntity *e = self->entity;
+	if (!e || !e->flag_4c || !CGameModel_IsLoaded(FX_Vtbl(e)->GetModel(e))
+		|| !CGameModel_IsVisible(FX_Vtbl(self->entity)->GetModel(self->entity))) {
+		self->b08 = 0;
+		return;
+	}
+	CGameModel *em = FX_Vtbl(self->entity)->GetModel(self->entity);
+	CGameModel *model = Debris_Model(debris);
+	CGameParticles *p = &self->particles;
+	vec3_t pos, rot, dv, n, dir, o;
+
+	CHECK(CGameModel_IsLoaded(em));
+	CGameModel_GetPos(em, &pos);
+	CGameModel_GetRot(em, &rot);
+	CGameModel_SetPos(model, &pos);
+	CGameModel_SetRot(model, &rot);
+	CGameModel_SetSortZ(model, -1024.0f, 1.0f);
+	float size = self->radius * FXV_Rand(0.5999999046325684, 1.2000000476837158);
+	float scale = FXV_Rand(0.10000002384185791, 0.699999988079071);
+	if (size > 350.0f) {
+		scale = (size - 350.0f) / 900.0f + scale;
+	}
+	if (!self->b08) {
+		self->pos = pos;
+	}
+	float time = self->time + d;
+	self->b08 = 1;
+	self->time = time;
+	dv.x = self->pos.x - pos.x;
+	dv.y = self->pos.y - pos.y;
+	dv.z = self->pos.z - pos.z;
+	float d2 = dv.y * dv.y + dv.x * dv.x + dv.z * dv.z;
+	float step = g_FXFiredEntitySmokeStep;
+	if (step * step > d2 && 0.035f >= time) {
+		return;
+	}
+	float dist = (float)__builtin_sqrt((double)d2);
+	Vec3_NormalizeTo(&n, &dv);
+	/* standing still: straight back from the entity */
+	if (time > 0.035f && 5.0f > dist) {
+		FXV_TurnZ(&dir, 1.0f, &rot);
+	} else {
+		dir = n;
+	}
+	byte still = 0;
+	if (self->time > 0.035f) {
+		still = 1;
+		dist = g_FXFiredEntitySmokeStep;
+	}
+	self->time = 0.0f;
+	p->birthRate = 0;
+	CGameParticles_SetColorRampOn(p, 1);
+
+	float k = 0.0f;
+	do {
+		float kd = k * dist;
+		vec3_t start;
+		start.x = dir.x * kd + pos.x;
+		start.y = dir.y * kd + pos.y;
+		start.z = dir.z * kd + pos.z;
+
+		/* the smoke */
+		for (float j = k; g_FXFiredEntitySmokeStep / dist > j;
+			j = g_FXFiredEntitySmokeStep * 0.33f / dist + j) {
+			vec3_t rd, at;
+			float sj = (j + k) * dist;
+			at.x = dir.x * sj + pos.x;
+			at.y = dir.y * sj + pos.y;
+			at.z = dir.z * sj + pos.z;
+			FX_RandomDir(&rd);
+			double r = (double)(crt_rand() & 0x7fff) * g_RandScale;
+			if (still) {
+				float sc = (float)(r * 4.0 + 1.0);
+				float rx = rd.x * sc;
+				float ry = rd.y * sc;
+				float rz = rd.z * sc;
+				float lo = size * -0.5f;
+				FXV_TurnZ(&o, (float)((double)(crt_rand() & 0x7fff) * g_RandScale * (double)(size * 0.5f - lo)
+					+ (double)lo), &rot);
+				p->initPosMin.x = pos.x + o.x + rx;
+				p->initPosMin.y = o.y + pos.y + ry;
+				p->initPosMin.z = o.z + pos.z + rz;
+				p->initPosMax = p->initPosMin;
+				float v = FXV_Rand(520.0, 440.0);
+				FXV_TurnZ(&o, 1.0f, &rot);
+				p->initVelMin.x = v * o.x;
+				p->initVelMin.y = o.y * v;
+				p->initVelMin.z = o.z * v;
+				p->initVelMax = p->initVelMin;
+				float a = FXV_Rand(0.1499999761581421, 0.30000001192092896);
+				p->initAccMin.x = a * -p->initVelMin.x;
+				p->initAccMin.y = a * -p->initVelMin.y;
+				p->initAccMin.z = a * -p->initVelMin.z;
+			} else {
+				float sc = (float)(r * 15.0 + 10.0);
+				float rx = sc * rd.x;
+				float ry = sc * rd.y;
+				float rz = sc * rd.z;
+				FXV_TurnZ(&o, size * -0.25f, &rot);
+				p->initPosMin.x = o.x + at.x + rx;
+				p->initPosMin.y = o.y + at.y + ry;
+				p->initPosMin.z = o.z + at.z + rz;
+				p->initPosMax = p->initPosMin;
+				p->initVelMin.x = 0.0f;
+				p->initVelMin.y = 0.0f;
+				p->initVelMin.z = 0.0f;
+				p->initVelMax = p->initVelMin;
+				p->initAccMin.x = 0.0f;
+				p->initAccMin.y = 0.0f;
+				p->initAccMin.z = 0.0f;
+			}
+			p->initAccMax = p->initAccMin;
+			p->sizeIni = FXV_Rand(50.0, 150.0) * scale;
+			p->sizeEnd = FXV_Rand(50.0, 500.0) * scale;
+			p->lifeTime = FXV_Rand(0.050000011920928955, 0.25);
+			float ri = FXV_Rand(6.2831854820251465, 0.0);
+			p->rotIni = ri;
+			p->rotEnd = ri;
+			p->rotVar = FXV_Rand(1.5707963705062866, -0.7853981852531433);
+			p->sizeLife = FXV_Rand(0.19999998807907104, 0.25);
+			switch (crt_rand() % 3) {
+			case 0:
+				FXV_SetSprite(p, (byte)((crt_rand() & 1) + 0x19));
+				break;
+			case 1:
+				FXV_SetSprite(p, (byte)((crt_rand() & 1) + 0x1c));
+				break;
+			case 2:
+				FXV_SetSprite(p, 0x37);
+				break;
+			}
+			CGameParticles_SetColorRamp(p, FXV_RandRamp(FXV_RAMP_FIREDENT_SMOKE));
+			CGameParticles_Apply(p);
+			CGameParticles_EmitN(p, 1, 1);
+		}
+
+		/* the fire */
+		vec3_t rd;
+		FXV_TurnZ(&o, size, &rot);
+		p->initPosMin.x = start.x + o.x;
+		p->initPosMin.y = o.y + start.y;
+		p->initPosMin.z = o.z + start.z;
+		p->initPosMax = p->initPosMin;
+		FX_RandomDir(&rd);
+		float v = FXV_Rand(25.0, 65.0);
+		p->initVelMin.x = v * rd.x;
+		p->initVelMin.y = v * rd.y;
+		p->initVelMin.z = v * rd.z;
+		v = FXV_Rand(40.0, 225.0);
+		p->initVelMax.x = v * rd.x;
+		p->initVelMax.y = v * rd.y;
+		p->initVelMax.z = v * rd.z;
+		if (still) {
+			v = FXV_Rand(290.0, 150.0);
+			FXV_TurnZ(&o, 1.0f, &rot);
+			p->initVelMin.x = v * o.x + p->initVelMin.x;
+			p->initVelMin.y = p->initVelMin.y + o.y * v;
+			p->initVelMin.z = p->initVelMin.z + o.z * v;
+			v = FXV_Rand(290.0, 150.0);
+			FXV_TurnZ(&o, 1.0f, &rot);
+			p->initVelMax.x = o.x * v + p->initVelMax.x;
+			p->initVelMax.y = o.y * v + p->initVelMax.y;
+			p->initVelMax.z = o.z * v + p->initVelMax.z;
+		}
+		p->initAccMin.x = 0.0f;
+		p->initAccMin.y = 350.0f;
+		p->initAccMin.z = 0.0f;
+		p->initAccMax.x = 0.0f;
+		p->initAccMax.y = 850.0f;
+		p->initAccMax.z = 0.0f;
+		p->sizeIni = FXV_Rand(50.0, 700.0) * scale;
+		p->sizeEnd = FXV_Rand(100.0, 1250.0) * scale;
+		p->lifeTime = FXV_Rand(0.10000002384185791, 1.149999976158142);
+		float ri = FXV_Rand(6.2831854820251465, 0.0);
+		p->rotIni = ri;
+		p->rotEnd = ri;
+		p->sizeLife = 1.0f;
+		p->rotVar = FXV_Rand(0.7853981852531433, -0.39269909262657166);
+		if (crt_rand() % 5 == 0) {
+			FXV_SetSprite(p, (byte)((crt_rand() & 1) + 0x1c));
+		} else {
+			FXV_SetSprite(p, (byte)((crt_rand() & 1) + 0x11));
+		}
+		CGameParticles_SetColorRamp(p, FXV_Ramp(FXV_RAMP_FIREDENT_FIRE + (uint32_t)(crt_rand() % 5) * 0x24));
+		CGameParticles_Apply(p);
+		CGameParticles_EmitN(p, 1, 1);
+		k = k + g_FXFiredEntitySmokeStep / dist;
+	} while (1.0f > k);
+	self->pos = pos;
+}
+
+/* the model of exhaust ex of the ship e: the motor holds one per side (side * 0x1c) */
+static inline CGameModel *FXV_ExhaustModel(cEntity *e, const FXVExhaust *ex) {
+	return (CGameModel *)(FXVeh_Motor(e, ex->motor) + ex->side * (int)sizeof(CGameModel));
+}
+
+/* ---- EMI ---- */
+
+/* the marks of the vertices of ray i cleared */
+static void FXV_EMIClearMarks(cObjElementFXVehicleEMI *self, int i) {
+	for (int j = 0; j < self->numVerts >> 4; j++) {
+		self->marks[i][j] = 0;
+	}
+}
+
+/* the trails and their marks back to the start */
+static void FXV_EMIClear(cObjElementFXVehicleEMI *self, int i) {
+	self->part[i] = -1;
+	self->count[i] = 0;
+	self->tail[i] = 0;
+	self->head[i] = 0;
+	FXV_EMIClearMarks(self, i);
+}
+
+/* point idx of the flat array of all rays (the original reads the one before a ray too) */
+static inline vec3_t *FXV_EMIPt(cObjElementFXVehicleEMI *self, int idx) {
+	return (vec3_t *)((byte *)self->pts + idx * (int)sizeof(vec3_t));
+}
+
+static inline int *FXV_EMIVidx(cObjElementFXVehicleEMI *self, int idx) {
+	return (int *)((byte *)self->vidx + idx * 4);
+}
+
+static inline uint16_t *FXV_EMIMark(cObjElementFXVehicleEMI *self, int i, int vi) {
+	return (uint16_t *)((byte *)self->marks[i] + (vi >> 4) * 2);
+}
+
+/* the rays jump from vertex to vertex, each step to the nearest free one more than 16 away from the last point */
+void __thiscall cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cDebris *debris, float dt) {
+	cEntity *e = self->entity;
+	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+		FX_Vtbl(e)->SetFX(e, 0);
+		self->entity = NULL;
+	}
+	e = self->entity;
+	if (!e || !e->flag_4c) {
+		return;
+	}
+	CGameModel *model = FX_Vtbl(e)->GetModel(e);
+	CGameModel *dm = Debris_Model(debris);
+	CGameParticles *ps = &self->particles;
+	vec3_t pos, rot, tmp;
+	CHECK(CGameModel_IsLoaded(model));
+	CGameModel_GetPos(model, &pos);
+	CGameModel_GetRot(model, &rot);
+	CGameModel_SetPos(dm, &pos);
+	CGameModel_SetRot(dm, &rot);
+	CGameModel_SetSortZ(dm, -36.0f, 0.0f);
+	float d = cTimer_GetDelta(&g_pWorld->timer);
+	self->time = self->time + d;
+	self->stepTime = self->stepTime + d;
+	FX_Vtbl(self->entity)->SetFX(self->entity, 6);
+	float v = self->time;
+	if (v > 0.5f) {
+		v = debris->speed - dt;
+		if (v > 0.5f) {
+			v = 1.0f;
+		} else {
+			v = v + v;
+		}
+	} else {
+		v = v + v;
+	}
+	FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, v);
+
+	if (!FXV_Veh(self->entity)->player) {
+		if (!CGameTrail_IsRender(&self->trails[0]) && !CGameTrail_IsRender(&self->trails[1])) {
+			return;
+		}
+		for (int i = 0; i < self->numTrails; i++) {
+			CGameTrail_Clear(&self->trails[i]);
+		}
+		CGameParticles_KillAll(ps);
+		return;
+	}
+	if (!CGameModel_IsVisible(model)) {
+		for (int i = 0; i < self->numTrails; i++) {
+			CGameTrail_Clear(&self->trails[i]);
+		}
+		CGameParticles_KillAll(ps);
+		return;
+	}
+
+	if (self->time > 0.05f) {
+		int partIdx = 1;
+		for (int i = 0; i < self->numTrails; i++, partIdx += 3) {
+			CGameTrail *tr = &self->trails[i];
+			if (!(self->rayTime[i] > 0.0f)) {
+				if (!(debris->speed >= 0.6f)) {
+					continue;
+				}
+				/* a new ray from a random vertex of the ship, later also of a motor */
+				vec3_t vtx, dv, r, n;
+				int vi;
+				self->part[i] = -1;
+				self->rayTime[i] = FXV_Rand(0.19999998807907104, 0.800000011920929);
+				if (i > 8 && self->numExhausts > 0) {
+					int k = crt_rand() % self->numExhausts;
+					self->part[i] = k;
+					model = FXV_ExhaustModel(self->entity, &self->exhausts[k]);
+					CHECK(CGameModel_IsLoaded(model));
+					pos = *CGameModel_GetPos(model, &tmp);
+					rot = *CGameModel_GetRot(model, &tmp);
+				}
+				CGameModel_Vertices(model, &vtx, NULL, NULL, 1, -1, &vi, 0xffffffffu, NULL);
+				dv.x = vtx.x - pos.x;
+				dv.y = vtx.y - pos.y;
+				dv.z = vtx.z - pos.z;
+				Vec3_RotateInv(&r, &dv, &rot);
+				dv.x = vtx.x - pos.x;
+				dv.y = vtx.y - pos.y;
+				dv.z = vtx.z - pos.z;
+				Vec3_NormalizeTo(&n, &dv);
+				float o = self->offset;
+				self->pts[i][0].x = r.x + n.x * o;
+				self->pts[i][0].y = r.y + n.y * o;
+				self->pts[i][0].z = r.z + n.z * o;
+				self->vidx[i][0] = vi;
+				self->count[i] = 0;
+				self->tail[i] = 0;
+				self->head[i] = 0;
+				FXV_EMIClearMarks(self, i);
+				continue;
+			}
+
+			float t = self->rayTime[i] - d;
+			self->rayTime[i] = t;
+			if (t > 0.0f && self->count[i] > 0) {
+				int k = self->part[i];
+				if (k != -1) {
+					model = FXV_ExhaustModel(self->entity, &self->exhausts[k]);
+					CHECK(CGameModel_IsLoaded(model));
+					pos = *CGameModel_GetPos(model, &tmp);
+					rot = *CGameModel_GetRot(model, &tmp);
+				}
+				int a = 0xff - (int)(Float_MinSS(1.0f, self->rayTime[i] * 4.0f) * 255.0f);
+				CGameTrail_Reset(tr);
+				CGameTrail_SetTransp(tr, (byte)a);
+
+				/* the last (up to 6) points of the ring as the control points */
+				vec3_t ctrl[GAMETRAIL_MAX_BEZIER], coefs[GAMETRAIL_MAX_BEZIER];
+				int n = self->count[i] < 6 ? self->count[i] : 6;
+				int j = self->tail[i] - n;
+				if (j < 0) {
+					j += self->maxPts;
+				}
+				for (int m = 0; m < n; m++) {
+					vec3_t o;
+					Vec3_Rotate(&o, FXV_EMIPt(self, i * FXVEMI_POINTS + j), &rot);
+					j++;
+					ctrl[m].x = pos.x + o.x;
+					ctrl[m].y = o.y + pos.y;
+					ctrl[m].z = o.z + pos.z;
+					if (j >= self->maxPts) {
+						j = 0;
+					}
+				}
+				CGameTrail_BezierCoefs(tr, n, ctrl, coefs);
+				int nm = CGameTrail_GetMaxTrails(tr);
+				if (nm - 1 > 0) {
+					float last = (float)(nm - 2);
+					for (int m = 0; m < nm - 1; m++) {
+						vec3_t p, rd;
+						CGameTrail_BezierPoint(tr, n, coefs, &p, (float)m / last);
+						float w = FXV_Rand(12.0, 24.0);
+						float sc = FXV_Rand(1.5, 0.5);
+						FX_RandomDir(&rd);
+						p.x = p.x + sc * rd.x;
+						p.z = p.z + rd.z * sc;
+						p.y = p.y + rd.y * sc;
+						CGameTrail_Add(tr, p, w, 0x088080ff);
+					}
+				}
+				/* the glow at the head of the ray */
+				vec3_t q = ctrl[n - 1];
+				int a1 = a + 0xe6;
+				if (a1 > 0xff) {
+					a1 = 0xff;
+				}
+				CGameParticles_SetParticle(ps, partIdx - 1, q.x, q.y, q.z, 800.0f, (uint32_t)a1 << 24 | 0x2020ff, 5,
+					0.0f);
+				a1 = a + 0x40;
+				if (a1 > 0xff) {
+					a1 = 0xff;
+				}
+				CGameParticles_SetParticle(ps, partIdx, q.x, q.y, q.z, 150.0f, (uint32_t)a1 << 24 | 0x4040ff, 1, 0.0f);
+				a1 = a + 0x10;
+				if (a1 > 0xff) {
+					a1 = 0xff;
+				}
+				CGameParticles_SetParticle(ps, partIdx + 1, q.x, q.y, q.z, 64.0f, (uint32_t)a1 << 24 | 0x8080ff, 1,
+					0.0f);
+			}
+			if (!(self->rayTime[i] > 0.0f)) {
+				CGameTrail_Clear(tr);
+				CGameParticles_KillRange(ps, partIdx - 1, partIdx + 1);
+			}
+			if (!(self->rayTime[i] > 0.0f) || !(self->stepTime > 0.02f)) {
+				continue;
+			}
+
+			/* the step: the ring moves on, the vertex that drops out is free again */
+			if (self->count[i] < self->maxPts) {
+				self->count[i]++;
+			} else {
+				int vi = *FXV_EMIVidx(self, i * FXVEMI_POINTS + self->head[i]);
+				if (vi >= 0 && vi < self->numVerts) {
+					*FXV_EMIMark(self, i, vi) &= (uint16_t)~(1u << (vi & 0xf));
+				}
+				int h = self->head[i] + 1;
+				self->head[i] = h < self->maxPts ? h : 0;
+			}
+			int tl = self->tail[i] + 1;
+			self->tail[i] = tl < self->maxPts ? tl : 0;
+			int best = -1;
+			vec3_t prev = *FXV_EMIPt(self, i * FXVEMI_POINTS + self->tail[i] - 1);
+			vec3_t verts[FXVEMI_POINTS], c, sn;
+			int vids[FXVEMI_POINTS];
+			CGameModel_Vertices(model, verts, NULL, NULL, FXVEMI_POINTS, -1, vids, 0xffffffffu, NULL);
+			float bestDist = 3.4028235e38f;
+			X87_SinCos(-rot.x, &sn.x, &c.x);
+			X87_SinCos(-rot.y, &sn.y, &c.y);
+			X87_SinCos(-rot.z, &sn.z, &c.z);
+			for (int m = 0; m < FXVEMI_POINTS; m++) {
+				int vi = vids[m];
+				if (vi > self->numVerts || (*FXV_EMIMark(self, i, vi) & (1 << (vi & 0xf)))) {
+					continue;
+				}
+				vec3_t dv, r, n;
+				dv.x = verts[m].x - pos.x;
+				dv.y = verts[m].y - pos.y;
+				dv.z = verts[m].z - pos.z;
+				Vec3_RotateSC(&r, &dv, &c, &sn);
+				dv.x = verts[m].x - pos.x;
+				dv.y = verts[m].y - pos.y;
+				dv.z = verts[m].z - pos.z;
+				Vec3_NormalizeTo(&n, &dv);
+				float o = self->offset;
+				r.x = r.x + n.x * o;
+				r.y = r.y + n.y * o;
+				r.z = r.z + n.z * o;
+				float dx = r.x - prev.x;
+				float dy = r.y - prev.y;
+				float dz = r.z - prev.z;
+				float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+				if (best == -1 || (dist > 16.0f && bestDist >= dist)) {
+					best = m;
+					bestDist = dist;
+					*FXV_EMIVidx(self, i * FXVEMI_POINTS + self->tail[i]) = vids[m];
+					*FXV_EMIPt(self, i * FXVEMI_POINTS + self->tail[i]) = r;
+				}
+			}
+			if (best >= 0) {
+				int vi = *FXV_EMIVidx(self, i * FXVEMI_POINTS + self->tail[i]);
+				*FXV_EMIMark(self, i, vi) |= (uint16_t)(1u << (vi & 0xf));
+				const vec3_t *p = FXV_EMIPt(self, i * FXVEMI_POINTS + self->tail[i]);
+				FX_Normalize(&self->dir, prev.x - p->x, prev.y - p->y, prev.z - p->z);
+			}
+		}
+	}
+	if (self->stepTime > 0.02f) {
+		self->stepTime = 0.0f;
+	}
+}
+
+/* ---- Fire ---- */
+
+#define FXV_RAMP_FIRE 0x431530		/* [3] */
+#define FXV_RAMP_FIRE2 0x431554		/* [2] */
+#define FXV_RAMP_FIRESMOKE 0x43159c	/* [2] */
+
+/* (Rand_FloatRange(-0.35, 0.35) * s + s) * r, r drawn first */
+static inline float FXV_FireSize(float s, float r) {
+	float f = Rand_FloatRange(-0.35f, 0.35f);
+	return (f * s + s) * r;
+}
+
+/* the flames along the ship (16 of its vertices and 8 of a motor) and the smoke behind a fast AI ship */
+void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, cDebris *debris, float dt) {
+	cEntity *e = self->entity;
+	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+		FX_Vtbl(e)->SetFX(e, 0);
+		self->entity = NULL;
+	}
+	float d = cTimer_GetDelta(&g_pWorld->timer);
+	e = self->entity;
+	self->time = self->time + d;
+	self->emitTime = self->emitTime + d;
+	if (!e || !e->flag_4c || !CGameModel_IsLoaded(FX_Vtbl(e)->GetModel(e))
+		|| !CGameModel_IsVisible(FX_Vtbl(self->entity)->GetModel(self->entity))) {
+		return;
+	}
+	CGameModel *model = FX_Vtbl(self->entity)->GetModel(self->entity);
+	CGameModel *dm = Debris_Model(debris);
+	CGameParticles *p = &self->particles;
+	vec3_t pos, rot;
+	CHECK(CGameModel_IsLoaded(model));
+	CGameModel_GetPos(model, &pos);
+	CGameModel_GetRot(model, &rot);
+	CGameModel_SetPos(dm, &pos);
+	CGameModel_SetRot(dm, &rot);
+	CGameModel_SetSortZ(dm, -49.0f, 0.0f);
+	FX_Vtbl(self->entity)->SetFX(self->entity, 7);
+	float v = self->time;
+	if (v > 0.2f) {
+		v = debris->speed - dt;
+		if (v > 0.2f) {
+			v = 1.0f;
+		} else {
+			v = v * 5.0f;
+		}
+	} else {
+		v = v * 5.0f;
+	}
+	FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, v);
+	if (!(debris->speed > 0.0f) || !(self->emitTime > 0.04f) || !(FXV_Veh(self->entity)->burnTime > 0.5f)) {
+		return;
+	}
+
+	const cVehicleEntity *veh = FXV_Veh(self->entity);
+	float life = (1.0f - veh->speedFactor * 0.25f) * 0.75f;
+	float rad = FX_Vtbl(self->entity)->GetRadius(self->entity);
+	float s1 = FXV_Rand(0.20000000298023224, 0.20000000298023224) * rad;
+	float s2 = FXV_Rand(0.25, 0.8500000238418579) * rad;
+	vec3_t lv = FXV_Veh(self->entity)->localVel;
+	float vz = 0.0f;
+	if (!(lv.z > 0.0f)) {
+		vz = lv.z * 0.5f;
+	}
+	float vx = -(lv.x * 0.25f) * 0.55f;
+	float vy = -(lv.y * 0.25f) * 0.55f;
+	vz = -vz * 0.55f;
+	/* 16 vertices of the ship, 8 of a motor (left as they are on the stack without one) */
+	vec3_t verts[24];
+	CGameModel_Vertices(model, verts, NULL, NULL, 16, -1, NULL, 0xffffffffu, NULL);
+	if (self->numExhausts > 0 && (crt_rand() & 1)) {
+		int k = crt_rand() % self->numExhausts;
+		CGameModel *mm = FXV_ExhaustModel(self->entity, &self->exhausts[k]);
+		CHECK(CGameModel_IsLoaded(mm));
+		CGameModel_Vertices(mm, &verts[16], NULL, NULL, 8, -1, NULL, 0xffffffffu, NULL);
+	}
+	vec3_t c, sn;
+	X87_SinCos(-rot.x, &sn.x, &c.x);
+	X87_SinCos(-rot.y, &sn.y, &c.y);
+	X87_SinCos(-rot.z, &sn.z, &c.z);
+	p->birthRate = 0;
+	CGameParticles_SetColorRampOn(p, 1);
+
+	for (int i = 0; i < 24; i++) {
+		vec3_t dv, r, n;
+		dv.x = verts[i].x - pos.x;
+		dv.y = verts[i].y - pos.y;
+		dv.z = verts[i].z - pos.z;
+		Vec3_RotateSC(&r, &dv, &c, &sn);
+		Vec3_NormalizeTo(&n, &r);
+		float t;
+		switch (crt_rand() % 3) {
+		case 0:
+			p->initPosMin.x = r.x + n.x * 5.0f;
+			p->initPosMin.z = r.z + n.z * 5.0f;
+			p->initPosMin.y = r.y + n.y * 5.0f;
+			p->initPosMax = p->initPosMin;
+			p->initVelMin.x = vx;
+			p->initVelMin.y = vy;
+			p->initVelMin.z = vz;
+			p->initVelMax = p->initVelMin;
+			t = FXV_Rand(0.09999996423721313, 0.6000000238418579);
+			p->initAccMin.x = -p->initVelMin.x * t;
+			p->initAccMin.y = -p->initVelMin.y * t;
+			p->initAccMin.z = -p->initVelMin.z * t;
+			p->initAccMax = p->initAccMin;
+			p->sizeIni = FXV_FireSize(s1, FXV_Rand(0.10000002384185791, 0.5));
+			p->sizeEnd = FXV_FireSize(s2, FXV_Rand(0.10000002384185791, 0.699999988079071));
+			t = FXV_Rand(0.19999998807907104, 0.25) * life;
+			p->lifeTime = Float_MinSS(debris->speed, t);
+			t = FXV_Rand(6.2831854820251465, 0.0);
+			p->rotIni = t;
+			p->rotEnd = t;
+			p->rotVar = FXV_Rand(1.0471975803375244, -0.5235987901687622);
+			FXV_SetSprite(p, 0x13);
+			p->sizeLife = FXV_Rand(0.10000002384185791, 0.5);
+			CGameParticles_SetColorRamp(p, FXV_Ramp(FXV_RAMP_FIRE + (uint32_t)(crt_rand() % 3) * 0x24));
+			CGameParticles_Apply(p);
+			CGameParticles_EmitDt(p, 1, 1, self->emitTime * 0.25f);
+			break;
+		case 1:
+			p->initPosMin.z = n.z * 3.0f + r.z;
+			p->initPosMin.x = n.x * 3.0f + r.x;
+			p->initPosMin.y = n.y * 3.0f + r.y;
+			p->initPosMax = p->initPosMin;
+			p->initVelMin.x = vx;
+			p->initVelMin.y = vy;
+			p->initVelMin.z = vz;
+			p->initVelMax = p->initVelMin;
+			t = FXV_Rand(0.09999996423721313, 0.6000000238418579);
+			p->initAccMin.x = t * -p->initVelMin.x;
+			p->initAccMin.y = t * -p->initVelMin.y;
+			p->initAccMin.z = t * -p->initVelMin.z;
+			p->initAccMax = p->initAccMin;
+			p->sizeIni = FXV_FireSize(s1, FXV_Rand(0.10000002384185791, 0.5));
+			p->sizeEnd = FXV_FireSize(s2, FXV_Rand(0.10000002384185791, 0.699999988079071));
+			t = FXV_Rand(0.19999998807907104, 0.25) * life;
+			p->lifeTime = Float_MinSS(debris->speed, t);
+			t = FXV_Rand(6.2831854820251465, 0.0);
+			p->rotIni = t;
+			p->rotEnd = t;
+			p->rotVar = FXV_Rand(1.0471975803375244, -0.5235987901687622);
+			p->sizeLife = FXV_Rand(0.10000002384185791, 0.5);
+			FXV_SetSprite(p, (byte)((crt_rand() & 1) + 0x1c));
+			CGameParticles_SetColorRamp(p, FXV_Ramp(FXV_RAMP_FIRE + (uint32_t)(crt_rand() % 2) * 0x24));
+			CGameParticles_Apply(p);
+			CGameParticles_EmitDt(p, 1, 1, self->emitTime * 0.25f);
+			break;
+		case 2:
+			p->initPosMin = r;
+			p->initPosMax = p->initPosMin;
+			p->initVelMin.x = vx;
+			p->initVelMin.y = vy;
+			p->initVelMin.z = vz;
+			p->initVelMax = p->initVelMin;
+			t = FXV_Rand(0.10000002384185791, 0.5);
+			p->initAccMin.x = t * -p->initVelMin.x;
+			p->initAccMin.y = t * -p->initVelMin.y;
+			p->initAccMin.z = t * -p->initVelMin.z;
+			p->initAccMax = p->initAccMin;
+			p->sizeIni = FXV_FireSize(s1, FXV_Rand(0.10000000894069672, 0.20000000298023224));
+			p->sizeEnd = FXV_FireSize(s2, FXV_Rand(0.19999998807907104, 0.699999988079071));
+			t = FXV_Rand(0.19999998807907104, 0.30000001192092896) * life;
+			p->lifeTime = Float_MinSS(debris->speed, t);
+			t = FXV_Rand(1.5707963705062866, -0.7853981852531433);
+			p->rotIni = t;
+			p->rotEnd = t;
+			p->rotVar = FXV_Rand(1.0471975803375244, -0.5235987901687622);
+			p->sizeLife = 1.0f;
+			FXV_SetSprite(p, 0x37);
+			CGameParticles_SetColorRamp(p, FXV_Ramp(FXV_RAMP_FIRE2 + (uint32_t)(crt_rand() % 2) * 0x24));
+			CGameParticles_Apply(p);
+			CGameParticles_EmitDt(p, 1, 1, self->emitTime * 0.5f);
+			break;
+		}
+	}
+
+	/* the smoke behind an AI ship faster than 250 */
+	veh = FXV_Veh(self->entity);
+	if (!veh->player && veh->speed > 250.0f) {
+		CGameParticles *po = &self->particlesOut;
+		float t;
+		po->birthRate = 0;
+		CGameParticles_SetColorRampOn(po, 1);
+		po->initPosMin = verts[crt_rand() % 8];
+		po->initPosMax = po->initPosMin;
+		po->initVelMin.x = 0.0f;
+		po->initVelMin.y = 0.0f;
+		po->initVelMin.z = 0.0f;
+		po->initVelMax = po->initVelMin;
+		po->initAccMin.x = 0.0f;
+		po->initAccMin.y = 0.0f;
+		po->initAccMin.z = 0.0f;
+		po->initAccMax = po->initAccMin;
+		po->sizeIni = FXV_FireSize(s1, FXV_Rand(0.5, 1.0));
+		po->sizeEnd = FXV_FireSize(s2, FXV_Rand(1.2000000476837158, 2.200000047683716));
+		t = FXV_Rand(0.09999999403953552, 0.25);
+		po->lifeTime = Float_MinSS(debris->speed, t);
+		t = FXV_Rand(6.2831854820251465, 0.0);
+		po->rotIni = t;
+		po->rotEnd = t;
+		po->sizeLife = 1.0f;
+		po->rotVar = FXV_Rand(0.5235987901687622, -0.2617993950843811);
+		if (crt_rand() & 1) {
+			FXV_SetSprite(po, (byte)((crt_rand() & 1) + 0x11));
+		} else {
+			FXV_SetSprite(po, (byte)(crt_rand() % 4 + 0x21));
+		}
+		CGameParticles_SetColorRamp(po, FXV_Ramp(FXV_RAMP_FIRE + (uint32_t)(crt_rand() % 3) * 0x24));
+		CGameParticles_Apply(po);
+		CGameParticles_EmitN(po, 1, 1);
+
+		po->initPosMin = verts[crt_rand() % 8];
+		po->initPosMax = po->initPosMin;
+		t = FXV_Rand(160.0, 125.0);
+		po->initVelMin.x = 0.0f;
+		po->initVelMin.z = 0.0f;
+		po->initVelMin.y = t;
+		po->initVelMax = po->initVelMin;
+		t = FXV_Rand(100.0, 550.0);
+		po->initAccMin.x = 0.0f;
+		po->initAccMin.z = 0.0f;
+		po->initAccMin.y = t;
+		po->initAccMax = po->initAccMin;
+		po->sizeIni = FXV_FireSize(s1, FXV_Rand(0.7999999523162842, 2.0));
+		po->sizeEnd = FXV_FireSize(s2, FXV_Rand(1.2000000476837158, 3.700000047683716));
+		t = FXV_Rand(0.20999997854232788, 0.7400000095367432);
+		po->lifeTime = Float_MinSS(debris->speed, t);
+		t = FXV_Rand(6.2831854820251465, 0.0);
+		po->rotIni = t;
+		po->rotEnd = t;
+		po->sizeLife = 1.0f;
+		po->rotVar = FXV_Rand(0.5235987901687622, -0.2617993950843811);
+		if (crt_rand() & 1) {
+			byte spr = (byte)((crt_rand() & 1) + 0x21);
+			po->spriteEnd = 0x24;
+			po->spriteIni = spr;
+		} else {
+			FXV_SetSprite(po, (byte)((crt_rand() & 1) + 0x11));
+		}
+		CGameParticles_SetColorRamp(po, FXV_RandRamp(FXV_RAMP_FIRESMOKE));
+		CGameParticles_Apply(po);
+		CGameParticles_EmitDt(po, 1, 1, Rand_FloatRange(0.0f, self->emitTime / 3.0f));
+	}
+	self->emitTime = 0.0f;
+}
+
+/* ---- Sputnik ---- */
+
+/* rand() % n of the original (the sign kept) */
+static inline int FXV_RandMod(int n) {
+	return crt_rand() % n;
+}
+
+/* the phase 1 lets the ship appear (FX 8, parameter 1 - c), phase 2 vanish; the rays run from the Sputnik to random
+ * points of the ship while 0 < c < 1 */
+void __thiscall cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *self, cDebris *debris, float dt) {
+	(void)dt;
+	cEntity *e = self->entity;
+	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+		FX_Vtbl(e)->SetFX(e, 0);
+		FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, 0.0f);
+		self->entity = NULL;
+	}
+	e = self->entity;
+	if (!e || !e->flag_4c) {
+		return;
+	}
+	CGameModel *em = FX_Vtbl(e)->GetModel(e);
+	CGameModel *model = Debris_Model(debris);
+	vec3_t pos, rot;
+	CHECK(CGameModel_IsLoaded(em));
+	CGameModel_GetPos(em, &pos);
+	CGameModel_GetRot(em, &rot);
+	CGameModel_SetPos(model, &pos);
+	CGameModel_SetRot(model, &rot);
+	CGameModel_SetSortZ(model, -39.0f, 0.0f);
+	float d = cTimer_GetDelta(&g_pWorld->timer);
+	float t = self->time + d;
+	self->time = t;
+	self->time2 = self->time2 + d;
+
+	/* c: the progress of the phase, c2 the same with the first 0.1 faster */
+	int phase = self->phase;
+	float x = 0.0f;
+	if (phase == 1) {
+		x = (t - 0.8f) / (self->duration - 0.8f);
+	} else if (phase == 2) {
+		x = (t - 0.8f) / (self->duration - 1.6f);
+	}
+	float c = Float_MaxSS(0.0f, x);
+	x = 0.0f;
+	if (phase == 1) {
+		if (0.9f > t) {
+			x = (t - 0.8f) * 10.0f;
+		} else {
+			x = (t - 0.8f) / (self->duration - 0.8f);
+		}
+	} else if (phase == 2) {
+		if (0.9f > t) {
+			x = (t - 0.8f) * 10.0f;
+		} else {
+			x = (t - 0.8f) / (self->duration - 1.6f);
+		}
+	}
+	float c2 = Float_MaxSS(0.0f, x);
+	CHECK(phase > 0);
+	if (c >= 0.0f && 1.0f >= c) {
+		FX_Vtbl(self->entity)->SetFX(self->entity, 8);
+		if (self->phase == 1) {
+			FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, 1.0f - c);
+		} else {
+			FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, c);
+		}
+	} else if (self->phase == 1) {
+		float v = c - 1.05f;
+		if (1.05f > c) {
+			v = v * 20.0f;
+		} else {
+			v = 1.0f - (v + v);
+		}
+		FX_Vtbl(self->entity)->SetFX(self->entity, 6);
+		FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, v * 0.5f);
+	} else if (self->phase == 2 && c2 > 1.0f) {
+		self->entity->vftable->SetActive(self->entity, 0);
+	}
+
+	HashTable *ht = &g_pWorld->entities;
+	HashNode *node = HashTable_Find(ht, "Sputnik", HashTable_Hash(ht, "Sputnik"));
+	if (!node || !node->value || self->sputnikNode == -1) {
+		return;
+	}
+	cEntity *sp = node->value;
+	CGameModel *spm = FX_Vtbl(sp)->GetModel(sp);
+	matrix_t mat;
+	CHECK(CGameModel_IsLoaded(spm));
+	const matrix_t *m = CGameModel_NodoMatrix(spm, &mat, (uint32_t)self->sputnikNode, 1, NULL, 0);
+	vec3_t spos;
+	spos.x = m->m[12];
+	spos.y = m->m[13];
+	spos.z = m->m[14];
+	CGameParticles *ps = &self->particles;
+	int np = CGameParticles_NumParticles(ps);
+	/* the model the rays start on: the ship, after a while one of its motors */
+	CGameModel *src = em;
+
+	if (c > 0.0f && 1.0f > c) {
+		for (int i = 0; i < FXVSPUTNIK_TRAILS; i++) {
+			CGameTrail *tr = &self->trails[i];
+			CGameTrail_Reset(tr);
+			float u = FXV_Rand(1.0, 0.0);
+			float v = FXV_Rand(1.0, 0.0);
+			CGameTrail_SetUV(tr, v, u);
+			int a;
+			if (0.5f > c2) {
+				a = 0;
+			} else {
+				a = (int)(((c2 - 0.5f) + (c2 - 0.5f)) * 255.0f);
+			}
+			CGameTrail_SetTransp(tr, (byte)a);
+		}
+		int trail = 0;
+		int inTrail = 0;
+		for (int i = 0; i < FXVSPUTNIK_RANDS; i++) {
+			float life = self->rayLife[i] - d;
+			self->rayLife[i] = life;
+			if (life > 0.0f) {
+				vec3_t *rp = &self->rayPos[i];
+				vec3_t dv, n, off, o, tgt, p;
+				double r = (double)(crt_rand() & 0x7fff) * g_RandScale;
+				dv.x = rp->x - spos.x;
+				dv.z = rp->z - spos.z;
+				float w = (float)(r + r - 1.0) + self->rayWidth[i];
+				dv.y = rp->y - spos.y;
+				FX_Normalize(&n, dv.x, dv.y, dv.z);
+				float s = FXV_Rand(48.0, 8.0);
+				off.x = -10.0f;
+				off.y = -20.0f;
+				off.z = 0.0f;
+				float nx = n.x * s;
+				float ny = n.y * s;
+				float nz = n.z * s;
+				Vec3_Rotate(&o, &off, CGameModel_GetRot(spm, &rot));
+				tgt.x = spos.x + o.x + nx;
+				tgt.y = o.y + spos.y + ny;
+				tgt.z = o.z + spos.z + nz;
+				p = *rp;
+				float f = self->rayLife[i] / self->rayLifeMax[i] + FXV_Rand(0.4000000059604645, -0.20000000298023224);
+				float af = 0.0f >= f ? 0.0f : Float_MinSS(1.0f, f);
+				if (!FXV_RandMod(16)) {
+					goto next;
+				}
+				CGameTrail *tr = &self->trails[trail];
+				uint32_t cg, cb;
+				float w2;
+				int r0 = crt_rand();
+				if (trail < 2) {
+					cg = (uint32_t)(r0 % 16 + 0x18) << 8;
+					cg |= (uint32_t)(FXV_RandMod(16) + 0x18) << 16;
+					cb = (uint32_t)(FXV_RandMod(32) + 0x80);
+					CGameTrail_Add(tr, tgt, w, cb | (uint32_t)(-1 - (int)(af * 128.0f)) << 24 | cg);
+					cg = (uint32_t)(FXV_RandMod(16) + 0x18) << 8;
+					cg = (uint32_t)(FXV_RandMod(16) + 0x18) << 16 | cg;
+					cb = (uint32_t)(FXV_RandMod(32) + 0x80);
+					w2 = w;
+				} else {
+					cg = (uint32_t)(r0 % 16 + 0x20) << 8;
+					cg |= (uint32_t)(FXV_RandMod(16) + 0x20) << 16;
+					cb = (uint32_t)(FXV_RandMod(32) + 0x40);
+					CGameTrail_Add(tr, tgt, w, cb | (uint32_t)(-1 - (int)(af * 128.0f)) << 24 | cg);
+					float s2 = FXV_Rand(5.0, 30.0);
+					cg = (uint32_t)(FXV_RandMod(16) + 0x20) << 8;
+					cg = (uint32_t)(FXV_RandMod(16) + 0x20) << 16 | cg;
+					cb = (uint32_t)(FXV_RandMod(32) + 0x40);
+					w2 = s2 * w;
+				}
+				CGameTrail_Add(tr, p, w2, cb | cg | 0xff000000u);
+				if (i & 1) {
+					float ss = FXV_Rand(0.10000002384185791, 1.0);
+					uint32_t color = (uint32_t)(-1 - (int)((c2 - 1.0f) * af * -32.0f)) << 24 | 0x2020ff;
+					float rad = FX_Vtbl(self->entity)->GetRadius(self->entity);
+					CGameParticles_SetParticle(ps, i, p.x, p.y, p.z, rad * ss, color, 5, 0.0f);
+				}
+			} else {
+				CGameParticles_Kill(ps, i);
+				float rd = self->rayDelay[i] - d;
+				self->rayDelay[i] = rd;
+				if (!(rd > 0.0f)) {
+					/* a new ray */
+					vec3_t dir;
+					self->rayDelay[i] = FXV_Rand(0.10000000894069672, 0.05000000074505806);
+					float l = FXV_Rand(0.20000000298023224, 0.05000000074505806);
+					self->rayLifeMax[i] = l;
+					self->rayLife[i] = l;
+					self->rayWidth[i] = FXV_Rand(3.5, 4.0);
+					if (!FXV_RandMod(12) && self->numExhausts > 0) {
+						int k = self->numExhausts > 1 ? FXV_RandMod(self->numExhausts) : 0;
+						src = (CGameModel *)(FXVeh_Motor(self->entity, self->exhausts[k].motor)
+							+ self->exhausts[k].side * sizeof(CGameModel));
+					}
+					CGameModel_Vertices(src, &self->rayPos[i], NULL, NULL, 1, -1, NULL, 0xffffffffu, NULL);
+					float s = FXV_Rand(8.0, 0.0);
+					FX_RandomDir(&dir);
+					self->rayPos[i].x = s * dir.x + self->rayPos[i].x;
+					self->rayPos[i].y = dir.y * s + self->rayPos[i].y;
+					self->rayPos[i].z = dir.z * s + self->rayPos[i].z;
+				}
+			}
+		next:
+			inTrail++;
+			if (inTrail >= 15) {
+				inTrail = 0;
+				trail++;
+			}
+		}
+	} else {
+		for (int i = 0; i < FXVSPUTNIK_TRAILS; i++) {
+			CGameTrail_Clear(&self->trails[i]);
+		}
+		for (int i = 0; i < FXVSPUTNIK_RANDS; i++) {
+			CGameParticles_Kill(ps, i);
+		}
+	}
+
+	/* the glow at the Sputnik: the last 8 particles */
+	int idx = np - 1;
+	for (int k = 0; k < 8; k++) {
+		if (c > 0.0f && 1.0f > c) {
+			vec3_t dir, off, o;
+			float s = FXV_Rand(10.0, 2.0);
+			FX_RandomDir(&dir);
+			float rx = dir.x * s;
+			float ry = dir.y * s;
+			float rz = dir.z * s;
+			off.x = -10.0f;
+			off.y = -19.0f;
+			off.z = 0.0f;
+			Vec3_Rotate(&o, &off, CGameModel_GetRot(spm, &rot));
+			float gx = spos.x + o.x + rx;
+			float gy = o.y + spos.y + ry;
+			float gz = o.z + spos.z + rz;
+			float size = FXV_Rand(16.0, 32.0);
+			uint32_t color = (uint32_t)(-1 - (int)((c2 - 1.0f) * -64.0f)) << 24 | 0x4040ff;
+			CGameParticles_SetParticle(ps, idx, gx, gy, gz, size, color, 5, 0.0f);
+		} else {
+			CGameParticles_Kill(ps, idx);
+		}
+		idx--;
+	}
+}
+
+/* ---- Accelerator ---- */
+
+/* the rays grow from the ship along their curves and fade out */
+void __thiscall cObjElementFXVehicleAccelerator_Update(cObjElementFXVehicleAccelerator *self, cDebris *debris,
+	float dt) {
+	FXV_CheckEntity(&self->owner);
+	if (!self->owner || !self->owner->flag_4c) {
+		return;
+	}
+	CGameModel_SetSortZ(Debris_Model(debris), -47.0f, 0.0f);
+	cEntity *e = self->owner;
+	if (!e || !e->vftable->IsType(e, TYEN_CAR) || !FXV_Veh(e)->player) {
+		if (CGameParticles_IsVisible(&self->particles)) {
+			for (int i = 0; i < FXVACCEL_TRAILS; i++) {
+				self->fade[i] = 0.0f;
+				CGameTrail_Clear(&self->trails[i]);
+			}
+			CGameParticles_KillAll(&self->particles);
+			CGameParticles_SetVisible(&self->particles, 0);
+		}
+		return;
+	}
+	CGameModel *model = FX_Vtbl(e)->GetModel(e);
+	CHECK(model && CGameModel_IsLoaded(model));
+
+	for (int i = 0; i < FXVACCEL_TRAILS; i++) {
+		if (self->delay[i] > 0.0f) {
+			self->delay[i] = self->delay[i] - dt;
+			continue;
+		}
+		if (!(self->fade[i] > 0.0f)) {
+			continue;
+		}
+		float f = self->fade[i] - dt;
+		self->fade[i] = f;
+		if (f > 0.0f) {
+			CGameTrail *t = &self->trails[i];
+			FXVAccelCtrl *c = &self->ctrl[i];
+			vec3_t rd, rot, p0, p3, pos, coefs[4], pts[4];
+
+			int a = 0xff - (int)(Float_MinSS(1.0f, f / 0.06f) * 255.0f);
+			CGameTrail_Reset(t);
+			CGameTrail_SetTransp(t, (byte)a);
+			/* the inner control points wander */
+			FX_RandomDir(&rd);
+			c->a.x = c->a.x + rd.x * dt * 20.0f;
+			c->a.y = c->a.y + rd.y * dt * 20.0f;
+			c->a.z = c->a.z + rd.z * dt * 20.0f;
+			FX_RandomDir(&rd);
+			c->b.x = c->b.x + rd.x * dt * 20.0f;
+			c->b.y = c->b.y + rd.y * dt * 20.0f;
+			c->b.z = c->b.z + rd.z * dt * 20.0f;
+			Vec3_Rotate(&p0, &self->from[i], CGameModel_GetRot(model, &rot));
+			Vec3_Rotate(&p3, &self->to[i], CGameModel_GetRot(model, &rot));
+			CGameModel_GetPos(model, &pos);
+			pts[0].x = p0.x + pos.x;
+			pts[0].y = pos.y + p0.y;
+			pts[0].z = pos.z + p0.z;
+			CGameModel_GetPos(model, &pos);
+			pts[3].x = p3.x + pos.x;
+			pts[3].y = pos.y + p3.y;
+			pts[3].z = pos.z + p3.z;
+			float dz = (pts[3].z - pts[0].z) * 0.33333334f;
+			float dx = (pts[3].x - pts[0].x) * 0.33333334f;
+			float dy = (pts[3].y - pts[0].y) * 0.33333334f;
+			pts[1].z = c->a.z + (pts[0].z + dz);
+			pts[1].x = pts[0].x + dx + c->a.x;
+			pts[1].y = pts[0].y + dy + c->a.y;
+			pts[2].x = pts[0].x + dx * 2.0f + c->b.x;
+			pts[2].z = pts[0].z + dz * 2.0f + c->b.z;
+			pts[2].y = pts[0].y + dy * 2.0f + c->b.y;
+			CGameTrail_BezierCoefs(t, 4, pts, coefs);
+
+			int n = CGameTrail_GetMaxTrails(t);
+			for (int j = 0; j < n - 1; j++) {
+				vec3_t p;
+				CGameTrail_BezierPoint(t, 4, coefs, &p, (float)j / (float)(n - 2));
+				if (j > 0 && j < n - 2) {
+					float r = FXV_Rand(5.800000190734863, 7.800000190734863);
+					FX_RandomDir(&rd);
+					p.x = p.x + rd.x * r;
+					p.y = p.y + rd.y * r;
+					p.z = p.z + rd.z * r;
+				}
+				float w = FXV_Rand(20.0, 55.0);
+				int c1 = crt_rand() % 3;
+				int c2 = crt_rand() % 3;
+				int fade = (int)((float)j / (float)n * -192.0f);
+				uint32_t color = (uint32_t)(c2 + 0x24) << 16 | (uint32_t)(0x10 - fade) << 24
+					| (uint32_t)(c1 + 0x24) << 8 | 0x5a;
+				CGameTrail_Add(t, p, self->width[i] * w, color);
+			}
+
+			/* the glow at the start of the ray */
+			CGameParticles *ps = &self->particles;
+			CGameParticles_SetVisible(ps, 1);
+			int a1 = a + 0x20;
+			if (a1 > 0xff) {
+				a1 = 0xff;
+			}
+			CGameParticles_SetParticle(ps, i * 2, pts[0].x, pts[0].y, pts[0].z, self->width[i] * 164.0f,
+				(uint32_t)a1 << 24 | 0xc0c0ff, 2, 0.0f);
+			int a2 = a + 0xc0;
+			if (a2 > 0xff) {
+				a2 = 0xff;
+			}
+			float r = FXV_Rand(6.2831854820251465, 0.0);
+			CGameParticles_SetParticle(ps, i * 2 + 1, pts[0].x, pts[0].y, pts[0].z, self->width[i] * 850.0f,
+				(uint32_t)a2 << 24 | 0x3030ff, 5, r);
+		}
+		if (!(self->fade[i] > 0.0f)) {
+			CGameTrail_Clear(&self->trails[i]);
+			CGameParticles_KillRange(&self->particles, i * 2, i * 2 + 2);
+		}
+	}
+}
+
+void __fastcall cObjElementFXVehicleAccelerator_InitRays(cObjElementFXVehicleAccelerator *self) {
+	CHECK(self->owner);
+	CGameModel *model = FX_Vtbl(self->owner)->GetModel(self->owner);
+	CHECK(model && CGameModel_IsLoaded(model));
+	for (int i = 0; i < FXVACCEL_TRAILS; i++) {
+		vec3_t v, pos, rot, d, rd, n, r;
+
+		self->delay[i] = FXV_Rand(0.18000000715255737, 0.0);
+		self->fade[i] = FXV_Rand(0.13999998569488525, 0.11999999731779099);
+		self->width[i] = FXV_Rand(1.5499999523162842, 0.699999988079071);
+		CGameModel_Vertices(model, &v, NULL, NULL, 1, -1, NULL, 0xffffffffu, NULL);
+		CGameModel_GetPos(model, &pos);
+		d.y = v.y - pos.y;
+		d.z = v.z - pos.z;
+		d.x = v.x - pos.x;
+		self->from[i] = *Vec3_RotateInv(&r, &d, CGameModel_GetRot(model, &rot));
+		float s = FXV_Rand(270.0, 50.0);
+		FX_RandomDir(&rd);
+		self->ctrl[i].a.x = s * rd.x;
+		self->ctrl[i].a.y = rd.y * s;
+		self->ctrl[i].a.z = rd.z * s;
+		s = FXV_Rand(270.0, 50.0);
+		FX_RandomDir(&rd);
+		self->ctrl[i].b.x = s * rd.x;
+		self->ctrl[i].b.y = rd.y * s;
+		self->ctrl[i].b.z = rd.z * s;
+		float len = FXV_Rand(220.0, 1430.0);
+		rot.z = FXV_Rand(0.4487989544868469, -0.22439947724342346);
+		rot.y = FXV_Rand(0.4487989544868469, -0.22439947724342346);
+		rot.x = FXV_Rand(0.4487989544868469, -0.22439947724342346);
+		/* the direction of the vertex turned a bit */
+		Vec3_NormalizeTo(&n, &self->from[i]);
+		Vec3_Rotate(&r, &n, &rot);
+		self->to[i].x = r.x * len;
+		self->to[i].y = r.y * len;
+		self->to[i].z = r.z * len;
+	}
 }
 
 /* ---- IsAlive (vf02) ---- */
@@ -886,17 +1982,6 @@ void __thiscall cObjElementFXVehicleDeathTrail_Start(cObjElementFXDevastatorShoo
 	CGameTrail_SetMaxTrails(&self->trail, 0x1e);
 }
 
-/* the trails and their marks back to the start */
-static void FXV_EMIClear(cObjElementFXVehicleEMI *self, int i) {
-	self->f160[i] = -1;
-	self->f4260[i] = 0;
-	self->f4220[i] = 0;
-	self->f41e0[i] = 0;
-	for (int j = 0; j < self->fc8 >> 4; j++) {
-		self->marks[i][j] = 0;
-	}
-}
-
 void __thiscall cObjElementFXVehicleEMI_Start(cObjElementFXVehicleEMI *self, cDebris *debris) {
 	int node = FXV_NodeOrDebris(debris);
 	if (node != -1) {
@@ -904,7 +1989,7 @@ void __thiscall cObjElementFXVehicleEMI_Start(cObjElementFXVehicleEMI *self, cDe
 	}
 	for (int i = 0; i < self->numTrails; i++) {
 		CGameTrail *t = &self->trails[i];
-		self->f1a0[i] = 0;
+		self->rayTime[i] = 0.0f;
 		CGameTrail_SetMaxTrails(t, 0x12);
 		CGameTrail_SetSmooth(t, 0);
 		CGameTrail_SetColor(t, 0xc0c0ff);
@@ -927,7 +2012,7 @@ void __thiscall cObjElementFXVehicleFire_Start(cObjElementFXVehicleFire *self, c
 		CGameParticles_Attach(&self->particlesOut, model, node);
 	}
 	CHECK(self->particlesOut.SistPart);
-	self->f16c = 0;
+	self->emitTime = 0.0f;
 	self->numExhausts = 0;
 }
 
@@ -1013,10 +2098,10 @@ void __thiscall cObjElementFXVehicleDamage_Reset(cObjElementFXVehicleDamage *sel
 
 void __thiscall cObjElementFXVehicleEMI_Reset(cObjElementFXVehicleEMI *self, cDebris *debris) {
 	(void)debris;
-	self->fbc = 0;
-	self->fb8 = 0;
+	self->time = 0.0f;
+	self->stepTime = 0.0f;
 	for (int i = 0; i < self->numTrails; i++) {
-		self->f1a0[i] = 0;
+		self->rayTime[i] = 0.0f;
 		CGameTrail_Clear(&self->trails[i]);
 		FXV_EMIClear(self, i);
 	}
@@ -1026,8 +2111,8 @@ void __thiscall cObjElementFXVehicleEMI_Reset(cObjElementFXVehicleEMI *self, cDe
 void __thiscall cObjElementFXVehicleFire_Reset(cObjElementFXVehicleFire *self, cDebris *debris) {
 	(void)debris;
 	self->entity = NULL;
-	self->f168 = 0;
-	self->f16c = 0;
+	self->time = 0.0f;
+	self->emitTime = 0.0f;
 	self->numExhausts = 0;
 }
 
@@ -1044,15 +2129,15 @@ void __thiscall cObjElementFXVehicleSpawn_Reset(cObjElementFXVehicleSpawn *self,
 
 void __thiscall cObjElementFXVehicleSputnik_Reset(cObjElementFXVehicleSputnik *self, cDebris *debris) {
 	(void)debris;
-	self->fb8 = 0;
-	self->fbc = 0;
+	self->time = 0.0f;
+	self->time2 = 0.0f;
 	CGameParticles_KillAll(&self->particles);
 	for (int i = 0; i < FXVSPUTNIK_TRAILS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
 	}
 	for (int i = 0; i < FXVSPUTNIK_RANDS; i++) {
-		self->faec[i] = -1.0f;
-		self->rands[i] = (float)((double)(crt_rand() & 0x7fff) * g_RandScale * (double)0.4f + (double)0.15f);
+		self->rayLife[i] = -1.0f;
+		self->rayDelay[i] = (float)((double)(crt_rand() & 0x7fff) * g_RandScale * (double)0.4f + (double)0.15f);
 	}
 }
 
@@ -1105,11 +2190,11 @@ void __thiscall cObjElementFXVehicleSputnik_SetEntity(cObjElementFXVehicleSputni
 }
 
 void __thiscall cObjElementFXVehicleSputnik_SetC0(cObjElementFXVehicleSputnik *self, int v) {
-	self->fc0 = v;
+	self->phase = v;
 }
 
 void __thiscall cObjElementFXVehicleSputnik_SetC4(cObjElementFXVehicleSputnik *self, float v) {
-	self->fc4 = v;
+	self->duration = v;
 }
 
 void __thiscall cObjElementFXVehicleSpawn_SetEntity(cObjElementFXVehicleSpawn *self, cEntity *e) {

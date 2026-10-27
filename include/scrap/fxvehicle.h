@@ -95,21 +95,34 @@ SD_OFFSET(cObjElementFXFiredEntity, particles, 0x1c);
 SD_OFFSET(cObjElementFXFiredEntity, on, 0xd0);
 SD_SIZE(cObjElementFXFiredEntity, 0xd4);
 
-/* the rays of the accelerator (0x4c0 bytes) */
+/* the two inner control points of a ray of the accelerator, offsets that move at random */
+typedef struct FXVAccelCtrl {
+	vec3_t a;			/* 0x00 */
+	vec3_t b;			/* 0x0c */
+} FXVAccelCtrl;
+SD_SIZE(FXVAccelCtrl, 0x18);
+
+/* the rays of the accelerator: Bezier curves from a vertex of the ship (0x4c0 bytes) */
 typedef struct cObjElementFXVehicleAccelerator {
 	cObjElementFX base;
 	cEntity *owner;			/* 0x004 */
 	void *accelerator;		/* 0x008 */
-	CGameParticles particles;	/* 0x00c on Dummy01 */
-	float fade[FXVACCEL_TRAILS];	/* 0x0bc */
-	float delay[FXVACCEL_TRAILS];	/* 0x0fc */
+	CGameParticles particles;	/* 0x00c on Dummy01, two per ray */
+	float fade[FXVACCEL_TRAILS];	/* 0x0bc the time the ray has left */
+	float delay[FXVACCEL_TRAILS];	/* 0x0fc before the ray starts */
 	CGameTrail trails[FXVACCEL_TRAILS];	/* 0x13c */
-	byte pad_17c[0x4bc - 0x17c];
+	float width[FXVACCEL_TRAILS];	/* 0x17c */
+	vec3_t from[FXVACCEL_TRAILS];	/* 0x1bc in the space of the ship */
+	FXVAccelCtrl ctrl[FXVACCEL_TRAILS];	/* 0x27c */
+	vec3_t to[FXVACCEL_TRAILS];	/* 0x3fc in the space of the ship */
 	byte on;			/* 0x4bc */
 	byte pad_4bd[3];
 } cObjElementFXVehicleAccelerator;
 SD_OFFSET(cObjElementFXVehicleAccelerator, delay, 0xfc);
 SD_OFFSET(cObjElementFXVehicleAccelerator, trails, 0x13c);
+SD_OFFSET(cObjElementFXVehicleAccelerator, from, 0x1bc);
+SD_OFFSET(cObjElementFXVehicleAccelerator, ctrl, 0x27c);
+SD_OFFSET(cObjElementFXVehicleAccelerator, to, 0x3fc);
 SD_SIZE(cObjElementFXVehicleAccelerator, 0x4c0);
 
 /* the damage of a ship: smoke and sparks at the motors while the life is low (0x2d0 bytes) */
@@ -146,35 +159,42 @@ SD_OFFSET(cObjElementFXVehicleDamage, exhausts, 0x24c);
 SD_OFFSET(cObjElementFXVehicleDamage, on, 0x2cc);
 SD_SIZE(cObjElementFXVehicleDamage, 0x2d0);
 
-/* the electromagnetic interference of a ship: trails along the motors (0x82e4 bytes) */
+/* the electromagnetic interference of a ship: rays that jump along the vertices of the ship or of one of its motors,
+ * drawn as Bezier trails through their last points (0x82e4 bytes) */
+#define FXVEMI_POINTS 64
+#define FXVEMI_MARKS 0x200
 typedef struct cObjElementFXVehicleEMI {
 	cObjElementFX base;
 	cEntity *entity;		/* 0x0004 */
-	CGameParticles particles;	/* 0x0008 on Dummy01 */
-	int fb8;			/* 0x00b8 */
-	int fbc;			/* 0x00bc */
+	CGameParticles particles;	/* 0x0008 on Dummy01, three per ray */
+	float stepTime;			/* 0x00b8 a step of the rays every 0.02 */
+	float time;			/* 0x00bc */
 	int numTrails;			/* 0x00c0 16 */
-	float fc4;			/* 0x00c4 22 */
-	int fc8;			/* 0x00c8 0x1000, 16 per entry of marks */
-	int fcc;			/* 0x00cc 0x40 */
-	byte pad_d0[0xdc - 0xd0];
+	float offset;			/* 0x00c4 22, the points out along the normal */
+	int numVerts;			/* 0x00c8 0x1000, the vertices the marks hold */
+	int maxPts;			/* 0x00cc 0x40 */
+	vec3_t dir;			/* 0x00d0 of the last step */
 	int numExhausts;		/* 0x00dc */
 	FXVExhaust exhausts[FXV_EXHAUSTS];	/* 0x00e0 */
 	byte pad_120[0x160 - 0x120];
-	int f160[FXVEMI_TRAILS];	/* 0x0160 -1 */
-	int f1a0[FXVEMI_TRAILS];	/* 0x01a0 */
-	byte pad_1e0[0x41e0 - 0x1e0];
-	int f41e0[FXVEMI_TRAILS];	/* 0x41e0 */
-	int f4220[FXVEMI_TRAILS];	/* 0x4220 */
-	int f4260[FXVEMI_TRAILS];	/* 0x4260 */
-	uint16_t marks[FXVEMI_TRAILS][0x200];	/* 0x42a0 */
+	int part[FXVEMI_TRAILS];	/* 0x0160 the exhaust of the ray, -1 the whole ship */
+	float rayTime[FXVEMI_TRAILS];	/* 0x01a0 */
+	vec3_t pts[FXVEMI_TRAILS][FXVEMI_POINTS];	/* 0x01e0 a ring, in the space of the model */
+	int vidx[FXVEMI_TRAILS][FXVEMI_POINTS];		/* 0x31e0 the vertex of each point */
+	int head[FXVEMI_TRAILS];	/* 0x41e0 */
+	int tail[FXVEMI_TRAILS];	/* 0x4220 */
+	int count[FXVEMI_TRAILS];	/* 0x4260 */
+	uint16_t marks[FXVEMI_TRAILS][FXVEMI_MARKS];	/* 0x42a0 a bit per vertex in the ring */
 	CGameTrail trails[FXVEMI_TRAILS];	/* 0x82a0 */
 	byte on;			/* 0x82e0 */
 	byte pad_82e1[3];
 } cObjElementFXVehicleEMI;
+SD_OFFSET(cObjElementFXVehicleEMI, dir, 0xd0);
 SD_OFFSET(cObjElementFXVehicleEMI, numExhausts, 0xdc);
-SD_OFFSET(cObjElementFXVehicleEMI, f160, 0x160);
-SD_OFFSET(cObjElementFXVehicleEMI, f41e0, 0x41e0);
+SD_OFFSET(cObjElementFXVehicleEMI, part, 0x160);
+SD_OFFSET(cObjElementFXVehicleEMI, pts, 0x1e0);
+SD_OFFSET(cObjElementFXVehicleEMI, vidx, 0x31e0);
+SD_OFFSET(cObjElementFXVehicleEMI, head, 0x41e0);
 SD_OFFSET(cObjElementFXVehicleEMI, marks, 0x42a0);
 SD_OFFSET(cObjElementFXVehicleEMI, trails, 0x82a0);
 SD_SIZE(cObjElementFXVehicleEMI, 0x82e4);
@@ -184,9 +204,9 @@ typedef struct cObjElementFXVehicleFire {
 	cObjElementFX base;
 	cEntity *entity;		/* 0x004 */
 	CGameParticles particles;	/* 0x008 on Dummy01 */
-	CGameParticles particlesOut;	/* 0x0b8 on Dummy02 */
-	int f168;			/* 0x168 */
-	int f16c;			/* 0x16c */
+	CGameParticles particlesOut;	/* 0x0b8 on Dummy02, the smoke */
+	float time;			/* 0x168 */
+	float emitTime;			/* 0x16c since the last emission */
 	byte pad_170[4];
 	int numExhausts;		/* 0x174 */
 	FXVExhaust exhausts[FXV_EXHAUSTS];	/* 0x178 */
@@ -226,35 +246,39 @@ SD_OFFSET(cObjElementFXVehicleSpawn, trails, 0xc90);
 SD_OFFSET(cObjElementFXVehicleSpawn, numRays, 0xdd0);
 SD_SIZE(cObjElementFXVehicleSpawn, 0xdd8);
 
-/* the Sputnik of a ship (0x1720 bytes) */
+/* the Sputnik of a ship: rays from the Sputnik to points of the ship drawn as trails, a glow at the Sputnik
+ * (0x1720 bytes) */
 typedef struct cObjElementFXVehicleSputnik {
 	cObjElementFX base;
 	cEntity *entity;		/* 0x0004 */
 	CGameParticles particles;	/* 0x0008 on Dummy01 */
-	int fb8;			/* 0x00b8 */
-	int fbc;			/* 0x00bc */
-	int fc0;			/* 0x00c0 1 */
-	float fc4;			/* 0x00c4 0.8 */
+	float time;			/* 0x00b8 */
+	float time2;			/* 0x00bc */
+	int phase;			/* 0x00c0 1 */
+	float duration;			/* 0x00c4 0.8 */
 	byte active;			/* 0x00c8 the flag_4c of the entity at the start, a change ends the effect */
 	byte pad_c9[3];
 	int numExhausts;		/* 0x00cc */
 	FXVExhaust exhausts[FXV_EXHAUSTS];	/* 0x00d0 */
 	byte pad_110[0x190 - 0x110];
 	int sputnikNode;		/* 0x0190 "Bip Spootnick MASTER" of the entity "Sputnik", -1 none */
-	CGameTrail trails[FXVSPUTNIK_TRAILS];	/* 0x0194 */
-	byte pad_1c8[0xaec - 0x1c8];
-	float faec[FXVSPUTNIK_RANDS];	/* 0x0aec -1 */
-	byte pad_df8[0x1104 - 0xdf8];
-	float rands[FXVSPUTNIK_RANDS];	/* 0x1104 0.15..0.55 */
-	byte pad_1410[0x171c - 0x1410];
+	CGameTrail trails[FXVSPUTNIK_TRAILS];	/* 0x0194 15 rays per trail */
+	vec3_t rayPos[FXVSPUTNIK_RANDS];	/* 0x01c8 the point of the ship */
+	float rayLife[FXVSPUTNIK_RANDS];	/* 0x0aec -1 */
+	float rayLifeMax[FXVSPUTNIK_RANDS];	/* 0x0df8 */
+	float rayDelay[FXVSPUTNIK_RANDS];	/* 0x1104 0.15..0.55 before the next ray */
+	float rayWidth[FXVSPUTNIK_RANDS];	/* 0x1410 */
 	byte on;			/* 0x171c */
 	byte pad_171d[3];
 } cObjElementFXVehicleSputnik;
 SD_OFFSET(cObjElementFXVehicleSputnik, active, 0xc8);
 SD_OFFSET(cObjElementFXVehicleSputnik, sputnikNode, 0x190);
 SD_OFFSET(cObjElementFXVehicleSputnik, trails, 0x194);
-SD_OFFSET(cObjElementFXVehicleSputnik, faec, 0xaec);
-SD_OFFSET(cObjElementFXVehicleSputnik, rands, 0x1104);
+SD_OFFSET(cObjElementFXVehicleSputnik, rayPos, 0x1c8);
+SD_OFFSET(cObjElementFXVehicleSputnik, rayLife, 0xaec);
+SD_OFFSET(cObjElementFXVehicleSputnik, rayLifeMax, 0xdf8);
+SD_OFFSET(cObjElementFXVehicleSputnik, rayDelay, 0x1104);
+SD_OFFSET(cObjElementFXVehicleSputnik, rayWidth, 0x1410);
 SD_OFFSET(cObjElementFXVehicleSputnik, on, 0x171c);
 SD_SIZE(cObjElementFXVehicleSputnik, 0x1720);
 
@@ -292,6 +316,13 @@ void *__thiscall cObjElementFXVehicleSputnik_Delete(void *self, uint32_t flags);
 
 /* Update */
 void __thiscall cObjElementFXFiredDebris_Update(cObjElementFXFiredDebris *self, cDebris *debris, float dt);
+void __thiscall cObjElementFXFiredEntity_Update(cObjElementFXFiredEntity *self, cDebris *debris, float dt);
+void __thiscall cObjElementFXVehicleAccelerator_Update(cObjElementFXVehicleAccelerator *self, cDebris *debris,
+	float dt);
+void __thiscall cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *self, cDebris *debris, float dt);
+void __thiscall cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cDebris *debris, float dt);
+void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, cDebris *debris, float dt);
+void __thiscall cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *self, cDebris *debris, float dt);
 void __thiscall cObjElementFXSmokeDebris_Update(cObjElementFXSmokeDebris *self, cDebris *debris, float dt);
 void __thiscall cObjElementFXVehicleSpawn_Update(cObjElementFXVehicleSpawn *self, cDebris *debris, float dt);
 
@@ -337,6 +368,8 @@ void __thiscall cObjElementFXVehicleSputnik_SetC4(cObjElementFXVehicleSputnik *s
 void __thiscall cObjElementFXVehicleSpawn_SetEntity(cObjElementFXVehicleSpawn *self, cEntity *e);
 void __thiscall cObjElementFXVehicleAccelerator_SetOwner(cObjElementFXVehicleAccelerator *self, cEntity *e);
 void __thiscall cObjElementFXVehicleAccelerator_SetAccelerator(cObjElementFXVehicleAccelerator *self, void *a);
+/* random rays: start delay, time, width and the points of the curves (rva 0x1f48c0, not called in 1.6.1) */
+void __fastcall cObjElementFXVehicleAccelerator_InitRays(cObjElementFXVehicleAccelerator *self);
 /* FXVehicle_RenderAttached (rva 0x1f9050, the damage effect drawn with its ship) is in embeddedfxvehicle.h */
 
 #endif
