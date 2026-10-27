@@ -126,9 +126,14 @@ typedef struct cAICharVtbl {
 	void(__thiscall *OnEvent)(cAIChar *self, int ev);						/* 0x34 the debug text */
 	Nto1Node *(__thiscall *GetTarget)(cAIChar *self);						/* 0x38 the link to the target */
 	byte(__thiscall *CanJump)(cAIChar *self);							/* 0x3c byte 0x48 of the AI */
-	void *vf10;
+	byte(__thiscall *GetStopped)(cAIChar *self);							/* 0x40 */
 	byte(__thiscall *IsPaused)(cAIChar *self);							/* 0x44 */
-	void *vf12_15[4];
+	cEntity *(__thiscall *GetTargetEnt)(cAIChar *self);						/* 0x48 */
+	byte(__thiscall *GetArrived)(cAIChar *self);							/* 0x4c */
+	/* a random point within r of p the character can reach (p itself after three tries), out returned */
+	vec3_t *(__thiscall *RandomPoint)(cAIChar *self, vec3_t *out, const vec3_t *p, float r);	/* 0x50 */
+	/* moving without a velocity for 10 s: stopped and the event 7 */
+	void(__thiscall *CheckStopped)(cAIChar *self, float dt);					/* 0x54 */
 	/* the move tells the AI (arrived, blocked, ..): the reaction of the state, else EventDefault */
 	byte(__thiscall *Event)(cAIChar *self, int ev);							/* 0x58 */
 	byte(__thiscall *IsMoving)(cAIChar *self);							/* 0x5c */
@@ -253,7 +258,7 @@ struct cAIChar {
 	float radius;			/* 0x07c PATROL_ZONE */
 	byte pathA;			/* 0x080 */
 	byte pathB;			/* 0x081 */
-	byte b82;			/* 0x082 */
+	byte stopped;			/* 0x082 CheckStopped: no velocity for 10 s */
 	byte inPath;			/* 0x083 FOLLOW_THE_PATH set it */
 	byte paused;			/* 0x084 far from the camera: no update */
 	byte arrived;			/* 0x085 GO_TO reached the end */
@@ -261,7 +266,7 @@ struct cAIChar {
 	byte reposing;			/* 0x087 inside Repos */
 	byte b88;			/* 0x088 */
 	byte pad_89[3];
-	int i8c;			/* 0x08c */
+	float stopTime;			/* 0x08c the time without a velocity */
 	cAICharSaved pending;		/* 0x090 state AIC_STATE_NONE for none */
 	byte slotAction[0x10];		/* 0x158 0.2 s, the distance check of the action */
 	byte slotPause[0x10];		/* 0x168 1 s */
@@ -475,75 +480,87 @@ void __thiscall cAI_Print(cAI *self, const char *text);
 void __thiscall cAI_GetEventName(cAI *self, int ev, char *out);
 void __thiscall cAI_OnEvent(cAI *self, int ev);
 
-/* ---- the AIs of the bank director, the bank master and the bishop (AI/AIBankDirector.cpp, AIBankMaster.cpp,
- * AIBishop.cpp, src/game/AI/), cAIChar with their move controls (cAIControlBankDirector, cAIControlBankMaster,
- * cAIControlBishop). The fields of cAIChar they use: ---- */
-typedef struct cAICharView {
-	byte pad_0[0x40];
-	cEntity *target;		/* 0x040 the character it deals with */
-	byte pad_44[0x198 - 0x44];
-	cEntity *own;			/* 0x198 its character (a WalkChar) */
-	void *control;			/* 0x19c cAICharControl */
-	int state;			/* 0x1a0 SAI_CHAR_ */
-	byte pad_1a4[0x1ac - 0x1a4];
-	byte *attack;			/* 0x1ac the byte at +0x18: it attacks */
-	float attackMin;		/* 0x1b0 the distance to the target of the attack */
-	float attackMax;		/* 0x1b4 */
-	float rangeMin;			/* 0x1b8 */
-	float rangeMax;			/* 0x1bc */
-	byte pad_1c0[0x354 - 0x1c0];
-	float attackTime;		/* 0x354 */
-	float blockTime;		/* 0x358 */
-	byte pad_35c[0x380 - 0x35c];
-} cAICharView;
-SD_OFFSET(cAICharView, own, 0x198);
-SD_OFFSET(cAICharView, attackMax, 0x1b4);
-SD_OFFSET(cAICharView, blockTime, 0x358);
-SD_SIZE(cAICharView, 0x380);
+/* ---- cAIMove (AI/AIMove.cpp, src/game/AI/AIMove.c): the base of cAIChar and cAIVehicle (the first 0x90 bytes of
+ * cAIChar: the target link, the move of the state, the check of a character that does not move); the prototypes in
+ * aivehicle.h ---- */
+#define CAIMOVE_VFTABLE 0x3a7754
+#define CAIMOVE_SIZE 0x90
 
-/* the slots of the cAIChar vtable they call */
-typedef struct cAICharViewVtbl {
-	void *vf00_05[6];
-	void (*Debugf)(void *self, const char *fmt, ...);				/* 0x18 */
-	void *vf07_20[26];
-	void(__thiscall *GetStateName)(void *self, int state, char *out);		/* 0x84 0x100 bytes */
-	void *vf22_25[4];
-	byte(__thiscall *CanShoot)(void *self);						/* 0x98 vf38 */
-	void *vf27_34[14];
-	byte(__thiscall *IsGroupState)(void *self, int state);			/* 0xd4 the group limits it */
-	void *vf36_37[2];
-	void(__thiscall *SetRanges)(void *self);					/* 0xe0 vf56 */
-	void *vf57;
-	void(__thiscall *SwitchState)(void *self, int state);				/* 0xe8 vf58 */
-} cAICharViewVtbl;
-SD_OFFSET(cAICharViewVtbl, GetStateName, 0x84);
-SD_OFFSET(cAICharViewVtbl, CanShoot, 0x98);
-SD_OFFSET(cAICharViewVtbl, IsGroupState, 0xd4);
-SD_OFFSET(cAICharViewVtbl, SwitchState, 0xe8);
+/* ---- cAIEntityGroup (AI/AIEntityGroup.cpp, src/game/AI/AIEntityGroup.c): the base of the vehicle and the character
+ * groups, up to 20 entities (a race) and the time since an AI of the group took a group state; the next one may take
+ * one when the time reached TimeBetwChangeStateAI ---- */
+#define CAIENTITYGROUP_VFTABLE 0x3a6f18
+#define CAIENTITYGROUP_SIZE 0x60
+#define CAIENTITYGROUP_MAX 20
 
-static inline const cAICharViewVtbl *AICharView_Vtbl(const void *ai) {
-	return *(const cAICharViewVtbl *const *)ai;
-}
+typedef struct cAIEntityGroup cAIEntityGroup;
 
-/* a slot of the vtable of an object (the move controls, the group), called as the original does */
-static inline void *AI_VSlot(const void *obj, uint32_t off) {
-	return *(void *const *)(*(const byte *const *)obj + off);
-}
+typedef struct cAIEntityGroupVtbl {
+	cAIEntityGroup *(__thiscall *Delete)(cAIEntityGroup *self, byte flags);	/* 0x00 */
+	void(__thiscall *Clear)(cAIEntityGroup *self);				/* 0x04 no entities */
+	byte(__thiscall *Add)(cAIEntityGroup *self, cEntity *e);			/* 0x08 0 when full */
+	cEntity *(__thiscall *Get)(cAIEntityGroup *self, int i);			/* 0x0c */
+	int(__thiscall *Num)(cAIEntityGroup *self);				/* 0x10 */
+	byte(__thiscall *CanChange)(cAIEntityGroup *self);			/* 0x14 */
+	void(__thiscall *ResetChange)(cAIEntityGroup *self);			/* 0x18 the time to 0 */
+	void(__thiscall *AllowChange)(cAIEntityGroup *self);			/* 0x1c the time to the limit */
+	void(__thiscall *Update)(cAIEntityGroup *self, float dt);		/* 0x20 the time on */
+} cAIEntityGroupVtbl;
+SD_OFFSET(cAIEntityGroupVtbl, Update, 0x20);
 
+struct cAIEntityGroup {
+	const cAIEntityGroupVtbl *vftable;	/* 0x00 */
+	cEntity *ents[CAIENTITYGROUP_MAX];	/* 0x04 */
+	int num;				/* 0x54 */
+	byte b58;				/* 0x58 */
+	byte pad_59[3];
+	float changeTime;			/* 0x5c */
+};
+SD_OFFSET(cAIEntityGroup, num, 0x54);
+SD_OFFSET(cAIEntityGroup, changeTime, 0x5c);
+SD_SIZE(cAIEntityGroup, CAIENTITYGROUP_SIZE);
+
+#define g_TimeBetwChangeStateAI GAME_DATA(float, 0x444698)	/* "TimeBetwChangeStateAI" */
+
+/* ctor and dtor are fastcall on the memory of the subclasses */
+void *__fastcall cAIEntityGroup_ctor(void *self);
+void __fastcall cAIEntityGroup_dtor(void *self);
+cAIEntityGroup *__thiscall cAIEntityGroup_Delete(cAIEntityGroup *self, byte flags);
+void __thiscall cAIEntityGroup_Clear(cAIEntityGroup *self);
+byte __thiscall cAIEntityGroup_Add(cAIEntityGroup *self, cEntity *e);
+cEntity *__thiscall cAIEntityGroup_Get(cAIEntityGroup *self, int i);
+int __thiscall cAIEntityGroup_Num(cAIEntityGroup *self);
+byte __thiscall cAIEntityGroup_CanChange(cAIEntityGroup *self);
+void __thiscall cAIEntityGroup_ResetChange(cAIEntityGroup *self);
+void __thiscall cAIEntityGroup_AllowChange(cAIEntityGroup *self);
+void __thiscall cAIEntityGroup_Update(cAIEntityGroup *self, float dt);
+
+/* ---- the AIs of the character classes (AI/AIBankDirector.cpp .. AISentinel.cpp, src/game/AI/AI<Class>.c): a cAIChar
+ * with its own slots and its own move control (cAIControl<Class>, aicharcontrol.h). The constructors are declared in
+ * walkcharentity.h. Most of them replace the action check (CheckActDist, the action button at the target) and the
+ * distances of the states (SetDists); the ones that shoot take their parameters in SetDists2 ---- */
 #define CAIBANKDIRECTOR_VFTABLE 0x3a40a8
 #define CAIBANKMASTER_VFTABLE 0x3a42b8
 #define CAIBISHOP_VFTABLE 0x3a452c
+#define CAIDESKTOP_VFTABLE 0x3a6d14
+#define CAIGEAR_VFTABLE 0x3a6fdc
+#define CAIHUMAN_VFTABLE 0x3a7180
+#define CAIMAYOR_VFTABLE 0x3a7310
+#define CAIMESSENGER_VFTABLE 0x3a7580
+#define CAINURSE_VFTABLE 0x3a7864
+#define CAIPOLICE_VFTABLE 0x3a7a14
+#define CAISENTINEL_VFTABLE 0x3a7ba8
 
 /* the director and the master (0x384 bytes) */
 typedef struct cAIBank {
-	cAICharView base;		/* 0x000 */
+	cAIChar base;			/* 0x000 */
 	int money;			/* 0x380 the money of the character at the demand of the attack (state 2) */
 } cAIBank;
 SD_SIZE(cAIBank, 0x384);
 
 /* the bishop (0x398 bytes) */
 typedef struct cAIBishop {
-	cAICharView base;		/* 0x000 */
+	cAIChar base;			/* 0x000 */
 	int targetLife;			/* 0x380 the life of the target at the last check */
 	byte blocked;			/* 0x384 the way to the target is not free */
 	byte pad_385[3];
@@ -554,10 +571,40 @@ typedef struct cAIBishop {
 } cAIBishop;
 SD_SIZE(cAIBishop, 0x398);
 
-void __fastcall cAIBankDirector_dtor(void *self);
-void *__thiscall cAIBankDirector_Delete(void *self, byte flags);
-void __fastcall cAIBankMaster_dtor(void *self);
-void *__thiscall cAIBankMaster_Delete(void *self, byte flags);
+/* the gear (0x390 bytes): the shot of the bishop without the time of the button */
+typedef struct cAIGear {
+	cAIChar base;			/* 0x000 */
+	int targetLife;			/* 0x380 */
+	byte blocked;			/* 0x384 */
+	byte pad_385[3];
+	int shootFactor;		/* 0x388 ShootGearAI */
+	float shootAng;			/* 0x38c OffsetAngShootGearAI */
+} cAIGear;
+SD_SIZE(cAIGear, 0x390);
+
+/* the messenger (0x390 bytes) */
+typedef struct cAIMessenger {
+	cAIChar base;			/* 0x000 */
+	int shootFactor;		/* 0x380 ShootMessengerAI */
+	float shootAng;			/* 0x384 OffsetAngShootMessengerAI */
+	float shootTime;		/* 0x388 TimeShootMessengerAI */
+	float shootDist;		/* 0x38c DistMaxShootMessengerAI */
+} cAIMessenger;
+SD_SIZE(cAIMessenger, 0x390);
+
+/* the nurse (0x384 bytes) */
+typedef struct cAINurse {
+	cAIChar base;			/* 0x000 */
+	byte fresh;			/* 0x380 set by the start of state 2: the action within actMax at once */
+	byte pad_381[3];
+} cAINurse;
+SD_SIZE(cAINurse, 0x384);
+
+/* AIBankDirector.c, AIBankMaster.c */
+void __fastcall cAIBankDirector_dtor(cAIChar *self);
+cAIChar *__thiscall cAIBankDirector_Delete(cAIChar *self, byte flags);
+void __fastcall cAIBankMaster_dtor(cAIChar *self);
+cAIChar *__thiscall cAIBankMaster_Delete(cAIChar *self, byte flags);
 /* vf66 of the director and the master: the attack when the character got money or the control is idle */
 void __thiscall cAIBank_CheckAttack(cAIBank *self);
 /* vf56 */
@@ -566,19 +613,66 @@ void __thiscall cAIBankMaster_SetRanges(cAIBank *self);
 /* vf27 and vf50 of both: the state from outside and from inside (ATTACK, 2, becomes 7 with the money noted) */
 byte cAIBank_SetState(cAIBank *self, int state, ...);
 byte cAIBank_SetStateIntern(cAIBank *self, int state, ...);
-void __fastcall cAIBishop_dtor(void *self);
-void *__thiscall cAIBishop_Delete(void *self, byte flags);
+/* AIBishop.c */
+void __fastcall cAIBishop_dtor(cAIChar *self);
+cAIChar *__thiscall cAIBishop_Delete(cAIChar *self, byte flags);
 /* vf66: the shot at the target in the cone of the view */
 void __thiscall cAIBishop_CheckAttack(cAIBishop *self);
 void __thiscall cAIBishop_SetRanges(cAIBishop *self);
 /* vf57: the shot parameters for a target with or without an AI, then the ranges */
 void __thiscall cAIBishop_SetShoot(cAIBishop *self);
+/* AIDesktop.c: the action button while it flees or patrols (the alarm on) without a strafe, but not in a fall or
+ * the ActMore and ActUp actions */
+void __fastcall cAIDesktop_dtor(cAIChar *self);
+cAIChar *__thiscall cAIDesktop_Delete(cAIChar *self, byte flags);
+void __thiscall cAIDesktop_UpdateAction0(cAIChar *self);
+/* AIGear.c */
+void __fastcall cAIGear_dtor(cAIChar *self);
+cAIChar *__thiscall cAIGear_Delete(cAIChar *self, byte flags);
+/* vf65: blocked by a paused AI it ran into (not the gate keeper, Sebastian): the action button */
+void __thiscall cAIGear_UpdateAction(cAIGear *self);
+void __thiscall cAIGear_CheckActDist(cAIGear *self);
+void __thiscall cAIGear_SetDists(cAIGear *self);
+void __thiscall cAIGear_SetShoot(cAIGear *self);
+/* the way to the target was not free (vf89 of the move control asks it) */
+byte __fastcall cAIGear_IsBlocked(cAIGear *self);
+/* AIHuman.c */
+void __fastcall cAIHuman_dtor(cAIChar *self);
+cAIChar *__thiscall cAIHuman_Delete(cAIChar *self, byte flags);
+void __thiscall cAIHuman_SetDists(cAIChar *self);
+/* AIMayor.c */
+void __fastcall cAIMayor_dtor(cAIChar *self);
+cAIChar *__thiscall cAIMayor_Delete(cAIChar *self, byte flags);
+void __thiscall cAIMayor_CheckActDist(cAIChar *self);
+void __thiscall cAIMayor_SetDists(cAIChar *self);
+/* AIMessenger.c */
+void __fastcall cAIMessenger_dtor(cAIChar *self);
+cAIChar *__thiscall cAIMessenger_Delete(cAIChar *self, byte flags);
+void __thiscall cAIMessenger_CheckActDist(cAIMessenger *self);
+void __thiscall cAIMessenger_SetDists(cAIMessenger *self);
+void __thiscall cAIMessenger_SetShoot(cAIMessenger *self);
+/* AINurse.c */
+void __fastcall cAINurse_dtor(cAIChar *self);
+cAIChar *__thiscall cAINurse_Delete(cAIChar *self, byte flags);
+/* the action at a dazed target */
+void __thiscall cAINurse_CheckActDist(cAINurse *self);
+void __thiscall cAINurse_SetDists(cAINurse *self);
+/* vf27 and vf50: the state from outside and from inside, the start of state 2 marked */
+byte cAINurse_SetState(cAINurse *self, int state, ...);
+byte cAINurse_SetStateIntern(cAINurse *self, int state, ...);
+/* AIPolice.c */
+void __fastcall cAIPolice_dtor(cAIChar *self);
+cAIChar *__thiscall cAIPolice_Delete(cAIChar *self, byte flags);
+void __thiscall cAIPolice_CheckActDist(cAIChar *self);
+void __thiscall cAIPolice_SetDists(cAIChar *self);
+/* AISentinel.c */
+void __fastcall cAISentinel_dtor(cAIChar *self);
+cAIChar *__thiscall cAISentinel_Delete(cAIChar *self, byte flags);
+void __thiscall cAISentinel_CheckActDist(cAIChar *self);
+void __thiscall cAISentinel_SetDists(cAIChar *self);
 
-/* cAIChar_dtor, cAIChar_SetDists (vf56) and cAIChar_ChangeState (vf26): aichar.h */
-/* the move controls (AI/AIControl*.cpp, imports) */
-void *__thiscall cAIControlBankDirector_ctor(void *mem, cEntity *e, void *ai, int *arg);	/* rva 0x81af0 */
-void *__thiscall cAIControlBankMaster_ctor(void *mem, cEntity *e, void *ai, int *arg);	/* rva 0x81e40 */
-void *__thiscall cAIControlBishop_ctor(void *mem, cEntity *e, void *ai, int *arg);	/* rva 0x82620 */
+/* cAIChar_dtor, cAIChar_SetDists (vf56) and cAIChar_ChangeState (vf26): aichar.h; the move controls:
+ * aicharcontrol.h */
 
 #define g_MaxHeightChaseCharAI GAME_DATA(float, 0x4442e8)
 #define g_BankMasterVacumDist GAME_DATA(float, 0x4460dc)
@@ -591,5 +685,16 @@ void *__thiscall cAIControlBishop_ctor(void *mem, cEntity *e, void *ai, int *arg
 #define g_TimeShootBishopAIDef GAME_DATA(float, 0x444208)
 #define g_DistMaxShootBishopAI GAME_DATA(float, 0x4441ec)
 #define g_DistMaxShootBishopAIDef GAME_DATA(float, 0x4441f0)
+/* the same pairs of the gear */
+#define g_ShootGearAI GAME_DATA(int, 0x4446b0)
+#define g_ShootGearAIDef GAME_DATA(int, 0x4446b4)
+#define g_OffsetAngShootGearAI GAME_DATA(float, 0x4446c8)
+#define g_OffsetAngShootGearAIDef GAME_DATA(float, 0x4446cc)
+#define g_ShootMessengerAI GAME_DATA(int, 0x4446f8)
+#define g_OffsetAngShootMessengerAI GAME_DATA(float, 0x4446e0)
+#define g_TimeShootMessengerAI GAME_DATA(float, 0x444710)
+#define g_DistMaxShootMessengerAI GAME_DATA(float, 0x444728)
+#define g_DistActionNurseAI GAME_DATA(float, 0x44475c)
+#define g_OffsetMoveNurseAI GAME_DATA(float, 0x444774)
 
 #endif

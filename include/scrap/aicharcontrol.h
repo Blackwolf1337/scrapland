@@ -695,4 +695,115 @@ void __thiscall cAICharControl3D_StepGoal(cAICharControl *self, vec3_t *p);
 byte __thiscall cAICharControl3D_TryStrafe(cAICharControl *self, int side, cEntity *hitEnt, byte back, float keep,
 	byte fwd, float sd, byte e2);
 
+/* ---- the move controls of the character classes (AI/AIControl<Class>.cpp, src/game/AI/AIControls.c): the 2D
+ * control for the bank director, the bank master, the bishop and the gear, the 3D one for the messenger, the nurse and
+ * the sentinel, each with some slots of its own ---- */
+#define CAICONTROLBANKDIRECTOR_VFTABLE 0x3a6000
+#define CAICONTROLBANKMASTER_VFTABLE 0x3a61a0
+#define CAICONTROLBISHOP_VFTABLE 0x3a63b0
+#define CAICONTROLGEAR_VFTABLE 0x3a65a8
+#define CAICONTROLMESSENGER_VFTABLE 0x3a67d0
+#define CAICONTROLNURSE_VFTABLE 0x3a6968
+#define CAICONTROLSENTINEL_VFTABLE 0x3a6b7c
+#define CAICONTROLSHOOT_SIZE 0x384		/* the bishop and the gear */
+#define CAICONTROLSENTINEL_SIZE 0x37c		/* without strafeTime and strafeAng */
+
+/* the bishop, the gear and the sentinel strafe while a Bishop, a Gear (or a Dtritus) aims at them, or (the sentinel)
+ * when they were hit */
+typedef struct cAIControlShoot {
+	cAICharControl base;		/* 0x000 */
+	cAICCSlot slotSide;		/* 0x360 the side of the strafe blocked (0.2 s) */
+	int side;			/* 0x370 the strafe: 0 none, 1, 2 */
+	float time;			/* 0x374 since the last strafe started */
+	byte other;			/* 0x378 the side was blocked: the other side next */
+	byte pad_379[3];
+	float strafeTime;		/* 0x37c TimeStrafeUnderAttack<Class>AI (the sentinel: the gvar itself) */
+	float strafeAng;		/* 0x380 AngleStrafeUnderAttack<Class>AI */
+} cAIControlShoot;
+SD_OFFSET(cAIControlShoot, side, 0x370);
+SD_OFFSET(cAIControlShoot, strafeTime, 0x37c);
+SD_SIZE(cAIControlShoot, CAICONTROLSHOOT_SIZE);
+
+/* the strafe parameters by the target (with an AI or not) */
+#define g_TimeStrafeUnderAttackBishopAI GAME_DATA(float, 0x4445d8)
+#define g_TimeStrafeUnderAttackBishopAIDef GAME_DATA(float, 0x4445dc)
+#define g_AngleStrafeUnderAttackBishopAI GAME_DATA(float, 0x4445f0)
+#define g_AngleStrafeUnderAttackBishopAIDef GAME_DATA(float, 0x4445f4)
+#define g_TimeStrafeUnderAttackGearAI GAME_DATA(float, 0x444608)
+#define g_TimeStrafeUnderAttackGearAIDef GAME_DATA(float, 0x44460c)
+#define g_AngleStrafeUnderAttackGearAI GAME_DATA(float, 0x444620)
+#define g_AngleStrafeUnderAttackGearAIDef GAME_DATA(float, 0x444624)
+#define g_TimeStrafeUnderAttackSentinelAI GAME_DATA(float, 0x444668)
+#define g_AngleStrafeUnderAttackSentinelAI GAME_DATA(float, 0x444680)
+#define g_VelRotDinamicMessengerAI GAME_DATA(float, 0x444650)
+#define g_LimVelRotDinamicMessengerAI GAME_DATA(float, 0x444638)
+
+cAICharControl *__thiscall cAIControlBankDirector_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
+void __fastcall cAIControlBankDirector_dtor(cAICharControl *self);
+cAICharControl *__thiscall cAIControlBankDirector_Delete(cAICharControl *self, byte flags);
+/* the Walk of the bank director and the master: forward beyond farDist, back within nearDist when the way back is
+ * free */
+void __thiscall cAIControlBank_Walk(cAICharControl *self);
+cAICharControl *__thiscall cAIControlBankMaster_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
+void __fastcall cAIControlBankMaster_dtor(cAICharControl *self);
+cAICharControl *__thiscall cAIControlBankMaster_Delete(cAICharControl *self, byte flags);
+/* the Orbit of the control, but not while the action button is down or its ActionEnd plays */
+void __thiscall cAIControlBankMaster_Orbit(cAICharControl *self);
+cAICharControl *__thiscall cAIControlBishop_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
+void __fastcall cAIControlBishop_dtor(cAICharControl *self);
+cAICharControl *__thiscall cAIControlBishop_Delete(cAICharControl *self, byte flags);
+/* CheckWait, but not while the target plays its ActionEnd */
+byte __thiscall cAIControlBishop_CheckWait(cAICharControl *self);
+void __thiscall cAIControlBishop_Strafe2(cAIControlShoot *self);
+void __thiscall cAIControlBishop_Strafe(cAIControlShoot *self);
+/* the 2D Walk without a strafe of its own (the gear too) */
+void __thiscall cAIControlShoot_Walk(cAIControlShoot *self);
+/* Nop of the control: the strafe parameters by the target */
+void __thiscall cAIControlBishop_SetParams(cAIControlShoot *self);
+cAICharControl *__thiscall cAIControlGear_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
+void __fastcall cAIControlGear_dtor(cAICharControl *self);
+cAICharControl *__thiscall cAIControlGear_Delete(cAICharControl *self, byte flags);
+/* CheckWait, but not while the target plays its ActionInit or ActionEnd */
+byte __thiscall cAIControlGear_CheckWait(cAICharControl *self);
+/* the turns stop during the PostFusion action of the gear */
+void __thiscall cAIControlGear_TurnFollow(cAICharControl *self);
+void __thiscall cAIControlGear_Turn(cAICharControl *self);
+void __thiscall cAIControlGear_DirTurn(cAICharControl *self);
+void __thiscall cAIControlGear_Strafe2(cAIControlShoot *self);
+void __thiscall cAIControlGear_Strafe(cAIControlShoot *self);
+/* vf89: the AI of the gear saw the way to the target blocked */
+byte __thiscall cAIControlGear_Vf89(cAICharControl *self);
+void __thiscall cAIControlGear_SetParams(cAIControlShoot *self);
+void __thiscall cAIControlGear_SetTurnSpeed(cAICharControl *self, float speed);
+cAICharControl *__thiscall cAIControlMessenger_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
+void __fastcall cAIControlMessenger_dtor(cAICharControl *self);
+cAICharControl *__thiscall cAIControlMessenger_Delete(cAICharControl *self, byte flags);
+byte __thiscall cAIControlMessenger_UpdateFollowMode(cAICharControl *self, float dt);
+void __thiscall cAIControlMessenger_SetTurnSpeed(cAICharControl *self, float speed);
+cAICharControl *__thiscall cAIControlNurse_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
+void __fastcall cAIControlNurse_dtor(cAICharControl *self);
+cAICharControl *__thiscall cAIControlNurse_Delete(cAICharControl *self, byte flags);
+/* forward beyond farDist only (3D) */
+void __thiscall cAIControlNurse_Walk(cAICharControl *self);
+cAICharControl *__thiscall cAIControlSentinel_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
+void __fastcall cAIControlSentinel_dtor(cAICharControl *self);
+cAICharControl *__thiscall cAIControlSentinel_Delete(cAICharControl *self, byte flags);
+void __thiscall cAIControlSentinel_Strafe2(cAIControlShoot *self);
+void __thiscall cAIControlSentinel_Strafe(cAIControlShoot *self);
+/* the 3D Walk without a strafe of its own */
+void __thiscall cAIControlSentinel_Walk(cAIControlShoot *self);
+
+typedef cAICharControl *(__thiscall *cAICharControlCtor_t)(void *mem, cEntity *e, cAIChar *ai, int *arg);
+
+/* the constructors of the cAIChar subclasses: the move control of cAIChar deleted, one of the class in its place */
+static inline void cAIChar_NewControl(cAIChar *self, uint32_t size, cAICharControlCtor_t ctor, cEntity *e, int *arg) {
+	if (self->control) {
+		AICC_Vtbl(self->control)->Delete(self->control, 1);
+	}
+	void *mem = operator_new(size);
+	cAICharControl *ControlMov = mem ? ctor(mem, e, self, arg) : NULL;
+	self->control = ControlMov;
+	CHECK(ControlMov);
+}
+
 #endif

@@ -12,8 +12,12 @@
 #ifndef SCRAP_AICHAR_H
 #define SCRAP_AICHAR_H
 
+#include <string.h>
+
+#include "scrap/actions.h"
 #include "scrap/ai.h"
 #include "scrap/aicharcontrol.h"
+#include "scrap/dlist.h"
 
 #define CAICHAR_VFTABLE 0x3a49b4
 #define CAICHAR_SIZE 0x380
@@ -34,23 +38,137 @@ enum {
 	AICI_TALK_TO, AICI_NONE
 };
 
-/* the character group (AI/AICharGroup.cpp): a change to a group state waits until the time reached the limit */
+/* ---- the character group (AI/AICharGroup.cpp, src/game/AI/ICharGroup.c, g_CharGroup): a cAIEntityGroup (a change to
+ * a group state waits until the time reached the limit) with the points of the repositioning out of view, the dummies
+ * "DM_NPC_Repos_<zone>_..." of the level by zone. The zone is the name of the action class of a character, a point
+ * is taken by linking it to the head at 0x4bc of the character ---- */
+#define CAICHARGROUP_VFTABLE 0x3a5f24
+#define CAICHARGROUP_SIZE 0x68
+
+/* a point of a zone (0x1c bytes, new[] of the exe with the count before it) */
+typedef struct cAICGPoint {
+	Nto1Node link;			/* 0x00 data the point itself, target the character that took it */
+	vec3_t pos;			/* 0x10 */
+} cAICGPoint;
+SD_SIZE(cAICGPoint, 0x1c);
+
+typedef struct cAICGZone {
+	char name[0x80];		/* 0x00 */
+	cAICGPoint *points;		/* 0x80 */
+	int numPoints;			/* 0x84 */
+} cAICGZone;
+SD_SIZE(cAICGZone, 0x88);
+
+/* the lists of the dummies while the zones are made (Global/DList.h instances) */
+typedef struct cAICGPosNode {
+	struct cAICGPosNode *next;	/* 0x00 */
+	struct cAICGPosNode *prev;	/* 0x04 */
+	vec3_t pos;			/* 0x08 */
+} cAICGPosNode;
+SD_SIZE(cAICGPosNode, 0x14);
+typedef DLIST(cAICGPosNode) cAICGPosList;
+
+typedef struct cAICGZoneData {
+	char name[0x80];		/* 0x00 */
+	cAICGPosList points;		/* 0x80 */
+} cAICGZoneData;
+SD_SIZE(cAICGZoneData, 0x98);
+
+typedef struct cAICGZoneNode {
+	struct cAICGZoneNode *next;	/* 0x00 */
+	struct cAICGZoneNode *prev;	/* 0x04 */
+	cAICGZoneData zone;		/* 0x08 */
+} cAICGZoneNode;
+SD_SIZE(cAICGZoneNode, 0xa0);
+typedef DLIST(cAICGZoneNode) cAICGZoneList;
+
+/* the slots of cAIEntityGroup with the group as self */
 typedef struct cAICharGroupVtbl {
-	void *vf00_04[5];
+	cAICharGroup *(__thiscall *Delete)(cAICharGroup *self, byte flags);	/* 0x00 */
+	void *vf01_04[4];
 	byte(__thiscall *CanChange)(cAICharGroup *self);	/* 0x14 */
 	void(__thiscall *ResetChange)(cAICharGroup *self);	/* 0x18 the time to 0 */
 	void(__thiscall *AllowChange)(cAICharGroup *self);	/* 0x1c the time to the limit */
+	void(__thiscall *Update)(cAICharGroup *self, float dt);	/* 0x20 */
 } cAICharGroupVtbl;
 SD_OFFSET(cAICharGroupVtbl, AllowChange, 0x1c);
 
 struct cAICharGroup {
-	const cAICharGroupVtbl *vftable;
+	union {
+		cAIEntityGroup base;			/* 0x00 */
+		const cAICharGroupVtbl *vftable;
+	};
+	cAICGZone *zones;		/* 0x60 Mem_Alloc */
+	int numZones;			/* 0x64 */
 };
+SD_OFFSET(cAICharGroup, zones, 0x60);
+SD_SIZE(cAICharGroup, CAICHARGROUP_SIZE);
 
-/* a point for the repositioning of e out of view between minDist and maxDist from the camera into out
- * (rva 0x80ee0) */
+/* the constructor and GetReposPos (SAI.GetReposPos) are declared in ai.h */
+cAICGPoint *__fastcall cAICGPoint_ctor(cAICGPoint *self);
+void __fastcall cAICGPoint_dtor(cAICGPoint *self);
+/* the deleting destructor of a point or (flags 2) of the new[] array it starts */
+void *__thiscall cAICGPoint_Delete(cAICGPoint *self, uint32_t flags);
+/* the out of line Nto1Node_Unlink with the CHECK of Node for a node that may be NULL (stdcall) */
+void __stdcall Nto1Node_UnlinkOpt(Nto1Node *node);
+void __fastcall cAICharGroup_dtor(cAICharGroup *self);
+cAICharGroup *__thiscall cAICharGroup_Delete(cAICharGroup *self, byte flags);
+/* the zones and their points from the dummies of the level */
+void __thiscall cAICharGroup_Init(cAICharGroup *self);
+cAICGZone *__thiscall cAICharGroup_GetZones(cAICharGroup *self);
+int __thiscall cAICharGroup_NumZones(cAICharGroup *self);
+/* a point for the repositioning of e out of view between minDist and maxDist from the camera into out; with flag 0 a
+ * free point beyond maxDist is taken too, with flag 1 only one the graph does not see from the camera (or in front of
+ * it beyond minDist). The point e held before is given up (rva 0x80ee0) */
 byte __thiscall cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float minDist, float maxDist,
 	byte flag);
+/* the lists of the dummies: emptied (the free nodes kept), the free nodes deleted, both (the destructors) */
+void __fastcall cAICGZoneList_Clear(cAICGZoneList *list);
+void __fastcall cAICGZoneList_FreePool(cAICGZoneList *list);
+void __fastcall cAICGZoneList_dtor(cAICGZoneList *list);
+void __fastcall cAICGPosList_Clear(cAICGPosList *list);
+void __fastcall cAICGZoneData_dtor(cAICGZoneData *zone);
+/* the action of layer 0 of a character and its name, as the AIs read them (one GetActCtrl each) */
+static inline cActionChar *AIChar_Action0(cEntity *e) {
+	return ((cActCtrlChar *)WithLife_Vtbl(e)->GetActCtrl(e))->action0;
+}
+
+static inline int AIChar_ActionIs(cEntity *e, const char *name) {
+	return !strcmp(cActCtrl_GetActionName(WithLife_Vtbl(e)->GetActCtrl(e), 0), name);
+}
+
+/* the distance from the character to its target (the positions in this order) as the subclasses sum it: on the floor
+ * (x, + 0, z) or in space (y, x, z) */
+static inline float AIChar_TargetDistFlat(cAIChar *c) {
+	vec3_t a, b;
+	cEntity *t = c->target.target;
+	const vec3_t *op = c->ent->vftable->GetPos(c->ent, &a);
+	const vec3_t *tp = t->vftable->GetPos(t, &b);
+	float dx = tp->x - op->x;
+	float dz = tp->z - op->z;
+
+	return (float)__builtin_sqrt((double)(dx * dx + 0.0f + dz * dz));
+}
+
+static inline float AIChar_TargetDist(cAIChar *c) {
+	vec3_t a, b;
+	cEntity *t = c->target.target;
+	const vec3_t *op = c->ent->vftable->GetPos(c->ent, &a);
+	const vec3_t *tp = t->vftable->GetPos(t, &b);
+	float dy = tp->y - op->y;
+	float dx = tp->x - op->x;
+	float dz = tp->z - op->z;
+
+	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+}
+
+/* the debug text of a demand of a change of state (the name of the state, 0x100 bytes) */
+static inline void AIChar_DebugState(cAIChar *c, const char *fmt, int state) {
+	char name[0x100];
+
+	c->vftable->StateName(c, state, name);
+	c->vftable->Debugf(c, fmt, name);
+}
 
 /* the engine variables of the character AI */
 #define g_DistMaxCheckPauseAI GAME_DATA(float, 0x4442b8)	/* "DistMaxCheckPauseAI" */

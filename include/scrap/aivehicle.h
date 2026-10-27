@@ -361,6 +361,20 @@ byte __thiscall cAIMove_VarF(void *self, const char *name, double *d, byte set);
 byte __thiscall cAIMove_VarI(void *self, const char *name, int *i, byte set);
 byte __thiscall cAIMove_VarS(void *self, const char *name, char **s, byte set);
 byte __thiscall cAIMove_VarV(void *self, const char *name, double *x, double *y, double *z, byte set);
+/* the rest of AI/AIMove.cpp (src/game/AI/AIMove.c; the slots of cAIChar, include/scrap/ai.h) */
+void *__fastcall cAIMove_ctorDefault(void *self);
+void *__thiscall cAIMove_Delete(void *self, byte flags);
+void __thiscall cAIMove_CheckStopped(void *self, float dt);
+byte __thiscall cAIMove_CanJump(void *self);
+cEntity *__thiscall cAIMove_GetTargetEnt(void *self);
+Nto1Node *__thiscall cAIMove_GetTarget(void *self);
+byte __thiscall cAIMove_GetStopped(void *self);
+byte __thiscall cAIMove_GetArrived(void *self);
+byte __thiscall cAIMove_IsPaused(void *self);
+byte __thiscall cAIMove_Event(void *self, int ev);
+/* e there and active, else a warning */
+byte __thiscall cAIMove_CanTarget(void *self, cEntity *e);
+vec3_t *__thiscall cAIMove_RandomPoint(void *self, vec3_t *out, const vec3_t *p, float r);
 
 /* ---- cAIVehicleControl and cAIVehicleShoot (src/game/AI/IVehicleControl.c, IVehicleShootControl.c; the rest of
  * them in aivehiclecontrol.h) ---- */

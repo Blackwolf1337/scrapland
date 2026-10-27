@@ -67,7 +67,7 @@ typedef struct cWalkCharEntity {
 	float energyBarDecr;		/* 0x4b0 "EnergyBarDecr": the energy an action needs */
 	float energyTime;		/* 0x4b4 "EnergyBarConstantDecr" */
 	float hitFlash;			/* 0x4b8 the seconds left of the flash of a hit */
-	Nto1Node n4bc;			/* 0x4bc */
+	Nto1Node reposHead;		/* 0x4bc the point of the character group it was placed at (cAICGPoint) */
 	int money;			/* 0x4cc "Money" */
 	int moneyReward;		/* 0x4d0 "MoneyReward" */
 	byte viewLock;			/* 0x4d4 the actions set the view angles */
@@ -98,7 +98,7 @@ SD_OFFSET(cWalkCharEntity, renderView, 0x44c);
 SD_OFFSET(cWalkCharEntity, falling, 0x464);
 SD_OFFSET(cWalkCharEntity, fallVel, 0x480);
 SD_OFFSET(cWalkCharEntity, onEnergyFull, 0x49c);
-SD_OFFSET(cWalkCharEntity, n4bc, 0x4bc);
+SD_OFFSET(cWalkCharEntity, reposHead, 0x4bc);
 SD_OFFSET(cWalkCharEntity, viewLock, 0x4d4);
 SD_OFFSET(cWalkCharEntity, control, 0x4ec);
 SD_OFFSET(cWalkCharEntity, listen, 0x520);

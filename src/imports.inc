@@ -24,8 +24,6 @@ SD_IMPORT(cActClass_CreateAction, 0x05fe90)
 /* engine: AI/ (include/scrap/ai.h) */
 SD_IMPORT(CAStar_ctor, 0x099330)
 SD_IMPORT(CAStar2D_ctor, 0x09a2f0)
-SD_IMPORT(cAICharGroup_ctor, 0x080790)
-SD_IMPORT(cAICharGroup_GetReposPos, 0x080d20)
 
 /* MSVC 2015 static CRT (cdecl) */
 SD_IMPORT(crt_rand, 0x323c2f)
@@ -582,14 +580,6 @@ SD_IMPORT(cMessengers_Think, 0x153350)
 
 /* module agent: Entities/Char/WalkCharEntity.cpp (imports below this line) */
 SD_IMPORT(cWithLifeEntity_SetEmbeddedFX, 0x12c7f0)
-SD_IMPORT(cAIDesktop_ctor, 0x084310)
-SD_IMPORT(cAIGear_ctor, 0x084790)
-SD_IMPORT(cAIHuman_ctor, 0x084d50)
-SD_IMPORT(cAIMayor_ctor, 0x084df0)
-SD_IMPORT(cAIMessenger_ctor, 0x084f80)
-SD_IMPORT(cAINurse_ctor, 0x085b30)
-SD_IMPORT(cAIPolice_ctor, 0x085f20)
-SD_IMPORT(cAISentinel_ctor, 0x086100)
 
 /* module agent: Scorer part 3 (Gradient+Sprite+Tab) (imports below this line) */
 SD_IMPORT(cAIVehicle_GraphTraffic, 0x089070)
@@ -598,15 +588,6 @@ SD_IMPORT(cAIVehicle_TrackPoint, 0x08a850)
 SD_IMPORT(cAIVehicle_TestHookPoint, 0x08ab20)
 SD_IMPORT(cAIVehicle_TrackPointRandom, 0x08b120)
 SD_IMPORT(cAIVehicle_ReposTraffic, 0x08d3c0)
-SD_IMPORT(cAIMove_ctor, 0x085340)
-SD_IMPORT(cAIMove_dtor, 0x0854c0)
-SD_IMPORT(cAIMove_Draw, 0x085690)
-SD_IMPORT(cAIMove_Update, 0x0856a0)
-SD_IMPORT(cAIMove_UpdateOff, 0x0856d0)
-SD_IMPORT(cAIMove_VarF, 0x0856f0)
-SD_IMPORT(cAIMove_VarI, 0x0859d0)
-SD_IMPORT(cAIMove_VarS, 0x085a70)
-SD_IMPORT(cAIMove_VarV, 0x085b10)
 SD_IMPORT(crt_strtime, 0x33bb73)
 SD_IMPORT(CPsaImage_GetNumFrames, 0x22d280)
 SD_IMPORT(PyFloat_AsDouble, 0x2dfa30)	/* floatobject.c */
@@ -624,8 +605,6 @@ SD_IMPORT(CAStar_FindPath, 0x099b30)
 SD_IMPORT(CAStar_GetPointsVis, 0x099bf0)
 
 /* module agent: AI/IVehicleControl+IVehicleShootControl.cpp (imports below this line) */
-SD_IMPORT(cAIEntityGroup_ctor, 0x084620)
-SD_IMPORT(cAIEntityGroup_dtor, 0x084650)
 
 /* module agent: net (GameServer..transport) (imports below this line) */
 /* the All-Seeing Eye SDK */
@@ -660,16 +639,13 @@ SD_IMPORT(crt_Init_thread_footer, 0x31405e)
 
 /* module agent: Actions and Events (ActClass..AIBishop) (imports below this line) */
 SD_IMPORT(cActClass_ctor, 0x05f890)
-SD_IMPORT(cAIControlBankDirector_ctor, 0x081af0)
-SD_IMPORT(cAIControlBankMaster_ctor, 0x081e40)
-SD_IMPORT(cAIControlBishop_ctor, 0x082620)
 
 /* module agent: AI/AIChar.cpp (imports below this line) */
-SD_IMPORT(cAICharGroup_FindRepos, 0x080ee0)
 
 /* module agent: AI/AICharControl.cpp (imports below this line) */
 
 /* module agent: AI/AICharGroup and the AI subclasses (imports below this line) */
+SD_IMPORT(crt_strtok, 0x33bbc1)
 
 /* module agent: Vehicle weapons Tesla+Vulcan and WithLifeEntity (imports below this line) */
 
