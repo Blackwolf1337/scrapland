@@ -1017,3 +1017,16 @@ intptr_t __stdcall ConsoleWin_WndProc(void *hwnd, uint32_t msg, uintptr_t wParam
 	}
 	return exe_DefWindowProcA(hwnd, msg, wParam, lParam);
 }
+
+/* the message of the test version of 2004 and the exit after November 2004 (not called) */
+void App_CheckExpiry(void) {
+	uint16_t st[8];
+
+	exe_GetLocalTime(st);
+	if ((uint32_t)st[0] * 100 + st[1] < 200412) {
+		exe_MessageBoxA(NULL, "This test version will expire Nov.30.2004", "Message", 0x2040);
+		return;
+	}
+	exe_MessageBoxA(NULL, "This test version has expired.", "Message", 0x2030);
+	crt_exit(-1);
+}

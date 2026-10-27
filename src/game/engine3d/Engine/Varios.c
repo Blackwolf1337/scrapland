@@ -1,6 +1,6 @@
 /*
- * Logs and helpers of the engine3d, original source Engine/varios.cpp (include/scrap/varios.h). The windows of the
- * debug console stay in the exe.
+ * Logs and helpers of the engine3d, original source Engine/varios.cpp (include/scrap/varios.h). The dialog procedure
+ * of the debug console stays in the exe.
  */
 #include <stdarg.h>
 #include <string.h>
@@ -10,6 +10,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/filepak.h"
 #include "scrap/nodefx.h"
+#include "scrap/win32.h"
 
 #define LOG_LINE 0x400
 #define LOG_NAME "engine.log"
@@ -38,6 +39,17 @@ void __fastcall cLog_Open(cLog *self) {
 	crt_setlocale(CRT_LC_TIME, "");
 	if (crt_strftime(date, sizeof(date), "%#c", tm)) {
 		crt_fprintf(self->f, "\r\n(%s)", date);
+	}
+}
+
+/* the end of the log file: a line end and closed */
+void __fastcall cLog_dtor(cLog *self) {
+	if (self->f) {
+		crt_fprintf(self->f, "\r\n");
+		if (self->f) {
+			crt_fclose(self->f);
+			self->f = NULL;
+		}
 	}
 }
 
@@ -338,4 +350,171 @@ float RSqrt(float x) {
 
 	y = (3.0f - y * y * x) * y * 0.5f;
 	return (3.0f - y * y * x) * y * 0.5f;
+}
+
+/* ---- the debug consoles: a list box in a dialog and a text console ---- */
+
+#define g_DbgStdOpen GAME_DATA(byte, 0x4ab91c)
+#define g_DbgWinOpen GAME_DATA(byte, 0x4ab91d)
+#define g_DbgWnd GAME_DATA(void *, 0x4ab920)
+#define g_DbgList GAME_DATA(void *, 0x4ab924)	/* the list box of the dialog */
+#define g_DbgLine ((char *)Game_Ptr(0x4ab970))	/* 0x400, the line being written */
+#define g_DbgLinePos GAME_DATA(int, 0x4abd70)
+#define g_DbgLineLen GAME_DATA(int, 0x4abd74)
+#define g_DbgCharMap ((const char *)Game_Ptr(0x431c70))	/* the characters from 0xe1 for the console */
+#define DBGWIN_DIALOG 0x9a
+#define DBGWIN_PROC 0x2373d0
+#define DBGWIN_LINE 0x400
+#define LB_ADDSTRING 0x180
+#define LB_DELETESTRING 0x182
+#define LB_SETCURSEL 0x186
+#define LB_GETCOUNT 0x18b
+#define GWL_HINSTANCE (-6)
+
+/* the window moved to x, y and sized w, h relative to rect (left, top, right, bottom) */
+int Window_MoveRel(void *hwnd, const int32_t *rect, int x, int y, int w, int h) {
+	return exe_MoveWindow(hwnd, x + rect[0], y + rect[1], rect[2] - rect[0] + w, rect[3] - rect[1] + h, 1);
+}
+
+void DbgStd_Printf(const char *fmt, ...) {
+	char buf[0x400];
+	uint32_t written, n;
+	va_list ap;
+
+	if (!g_DbgCon || !g_DbgStdOpen || !fmt || exe_GetStdHandle((uint32_t)STD_OUTPUT) == (void *)-1) {
+		return;
+	}
+	va_start(ap, fmt);
+	VBprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+	for (n = 0; buf[n]; n++) {
+		if ((byte)buf[n] >= 0xe1) {
+			buf[n] = g_DbgCharMap[(byte)buf[n]];
+		}
+	}
+	exe_WriteConsoleA(exe_GetStdHandle((uint32_t)STD_OUTPUT), buf, n, &written, NULL);
+}
+
+/* the text console made, black on gray */
+void DbgStd_Open(void *hwnd) {
+	uint32_t written;
+
+	(void)hwnd;
+	if (!g_DbgCon || g_DbgStdOpen) {
+		return;
+	}
+	g_DbgStdOpen = 1;
+	exe_AllocConsole();
+	exe_SetConsoleTextAttribute(exe_GetStdHandle((uint32_t)STD_OUTPUT), 0x70);
+	exe_FillConsoleOutputAttribute(exe_GetStdHandle((uint32_t)STD_OUTPUT), 0x70, 24000, 0, &written);
+}
+
+/* the line into the list box (cut with a '>' at size), the list scrolled to it */
+void DbgWin_AddLine(char *line, int len, int size) {
+	if (len >= size) {
+		len = size - 1;
+		line[len - 1] = '>';
+	}
+	line[len] = 0;
+	exe_SendMessageA(g_DbgList, LB_ADDSTRING, 0, (intptr_t)line);
+	exe_SendMessageA(g_DbgList, LB_SETCURSEL, (uintptr_t)(exe_SendMessageA(g_DbgList, LB_GETCOUNT, 0, 0) - 1), 0);
+}
+
+/* the text into the list box: the last line written again, backspace, line feed and carriage return */
+void DbgWin_Printf(const char *fmt, ...) {
+	char buf[0x400];
+	intptr_t count;
+	int pos, len;
+	const char *p;
+	va_list ap;
+
+	if (!g_DbgCon || !g_DbgWinOpen || !g_DbgWnd || !fmt) {
+		return;
+	}
+	if (!exe_IsWindow(g_DbgWnd)) {
+		g_DbgWnd = NULL;
+		return;
+	}
+	va_start(ap, fmt);
+	VBprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+	count = exe_SendMessageA(g_DbgList, LB_GETCOUNT, 0, 0);
+	if (count > 0) {
+		exe_SendMessageA(g_DbgList, LB_DELETESTRING, (uintptr_t)(count - 1), (intptr_t)buf);
+	}
+	len = g_DbgLineLen;
+	if (buf[0]) {
+		pos = g_DbgLinePos;
+		for (p = buf; *p; p++) {
+			switch (*p) {
+			case '\b':
+				if (pos > 0) {
+					pos--;
+					g_DbgLinePos = pos;
+				}
+				break;
+			case '\n':
+				DbgWin_AddLine(g_DbgLine, len, DBGWIN_LINE);
+				len = 0;
+				g_DbgLineLen = 0;
+				pos = 0;
+				g_DbgLinePos = 0;
+				break;
+			case '\r':
+				pos = 0;
+				g_DbgLinePos = 0;
+				break;
+			default:
+				if ((uint32_t)pos < DBGWIN_LINE - 1) {
+					g_DbgLine[pos] = *p;
+				}
+				pos++;
+				g_DbgLinePos = pos;
+				if (pos > len) {
+					len = pos;
+					g_DbgLineLen = len;
+				}
+				break;
+			}
+		}
+	}
+	DbgWin_AddLine(g_DbgLine, len, DBGWIN_LINE);
+}
+
+/* the dialog of the debug output made once */
+void DbgWin_Open(void *hwnd) {
+	if (!g_DbgCon || g_DbgWinOpen || g_DbgWnd) {
+		return;
+	}
+	g_DbgWinOpen = 1;
+	g_DbgWnd = exe_CreateDialogParamA((void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE), (const char *)DBGWIN_DIALOG, hwnd,
+		Game_Ptr(DBGWIN_PROC), 0);
+}
+
+/* the debug output on with the dialog or the text console of the ini */
+void DbgWin_Init(void *hwnd) {
+	if (!g_DbgConWindow && !g_DbgConStd) {
+		g_DbgCon = g_DbgConStd;
+		return;
+	}
+	g_DbgCon = 1;
+	if (g_DbgConWindow && !g_DbgWinOpen && !g_DbgWnd) {
+		g_DbgWinOpen = 1;
+		g_DbgWnd = exe_CreateDialogParamA((void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE),
+			(const char *)DBGWIN_DIALOG, hwnd, Game_Ptr(DBGWIN_PROC), 0);
+	}
+	if (g_DbgConStd) {
+		DbgStd_Open(hwnd);
+	}
+}
+
+/* the normal (restored) rectangle of the window */
+void Window_GetNormalRect(void *hwnd, int32_t *rect) {
+	uint32_t wp[11];
+
+	if (rect) {
+		wp[0] = 0x2c;
+		exe_GetWindowPlacement(hwnd, wp);
+		memcpy(rect, &wp[7], 16);
+	}
 }

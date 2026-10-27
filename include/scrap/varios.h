@@ -53,6 +53,14 @@ void E3D_Log(cLog *log, const char *fmt, ...);	/* orange */
 void E3D_DebugPrintf(const char *fmt, ...);
 void DbgWin_Printf(const char *fmt, ...);
 void DbgStd_Printf(const char *fmt, ...);
+void DbgStd_Open(void *hwnd);
+void DbgWin_AddLine(char *line, int len, int size);
+void DbgWin_Open(void *hwnd);
+/* the debug output of the ini settings (DbgConWindow, DbgConStd) */
+void DbgWin_Init(void *hwnd);
+void __fastcall cLog_dtor(cLog *self);
+int Window_MoveRel(void *hwnd, const int32_t *rect, int x, int y, int w, int h);
+void Window_GetNormalRect(void *hwnd, int32_t *rect);
 
 /* where the relative paths start: the game directory with a "\\" at the end */
 #define g_E3DDir ((char *)Game_Ptr(0x4abe80))

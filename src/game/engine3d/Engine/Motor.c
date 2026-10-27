@@ -49,9 +49,8 @@
 typedef void(__stdcall *initcommoncontrols_t)(void);
 #define exe_InitCommonControls GAME_DATA(initcommoncontrols_t, 0x3a104c)
 
-/* the ini of the engine into the variables (rva 0x230440), the debug output windows of the ini (0x237ff0) */
+/* the ini of the engine into the variables (rva 0x230440) */
 void Motor_LoadIni(const char *name, int arg);
-void DbgWin_Init(void *hwnd);
 /* the base class of the inputs (rva 0x2a3a40) */
 void __fastcall IEntrada_dtor(void *self);
 

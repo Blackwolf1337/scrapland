@@ -242,6 +242,10 @@ void __thiscall CPsaImage_DrawPoly(void *self, const float *pos, const float *uv
 	int mode);	/* rva 0x22d520 */
 void D3DApp_OnActivate(void);					/* rva 0x2325e0 */
 intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);	/* rva 0x233030 */
-void App_SetExceptionFilter(byte on);				/* rva 0x2333b0 */
+/* ScrapEngWin32.cpp (src/game/ScrapEng/ScrapEngWin32.c): the filter of the unhandled exceptions on or off */
+void App_SetExceptionFilter(byte on);
+int __stdcall App_ExceptionFilter(void **ep);
+/* the expiry of the test version of 2004 (not called) */
+void App_CheckExpiry(void);
 
 #endif

@@ -47,8 +47,6 @@ SD_IMPORT(crt_fputc, 0x350b30)
 SD_IMPORT(crt_setlocale, 0x34ff2c)
 SD_IMPORT(crt_remove, 0x3588ca)
 SD_IMPORT(crt_rename, 0x350089)
-SD_IMPORT(DbgWin_Printf, 0x237950)
-SD_IMPORT(DbgStd_Printf, 0x237830)
 SD_IMPORT_STDCALL(crt_eh_vector_ctor, 20, 0x313a76)
 SD_IMPORT_STDCALL(crt_eh_vector_dtor, 16, 0x313ae4)
 SD_IMPORT(crt_fseek, 0x347c87)
@@ -305,7 +303,6 @@ SD_IMPORT(Steam_GetLanguage, 0x1a65f0)	/* Sound agent range */
 SD_IMPORT(Steam_Init, 0x1a6620)	/* Sound agent range */
 SD_IMPORT(Steam_RunCallbacks, 0x1a66e0)	/* Sound agent range */
 SD_IMPORT(D3DApp_MsgProc, 0x233030)
-SD_IMPORT(App_SetExceptionFilter, 0x2333b0)
 SD_IMPORT(crt_srand, 0x323c50)
 
 /* module agent: World/FX/FXCountermeasures+FXElementsOrbit+FXElementsPress.cpp (imports below this line) */
@@ -563,5 +560,4 @@ SD_IMPORT(LensFlare_SetB2c, 0x2a7510)
 SD_IMPORT(CMatId_ctor, 0x2a79e0)
 SD_IMPORT(CMatId_dtor, 0x2a79f0)
 SD_IMPORT(Motor_LoadIni, 0x230440)
-SD_IMPORT(DbgWin_Init, 0x237ff0)
 SD_IMPORT(IEntrada_dtor, 0x2a3a40)

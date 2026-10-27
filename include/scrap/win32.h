@@ -52,6 +52,23 @@ typedef int(__stdcall *widechartomultibyte_t)(uint32_t cp, uint32_t flags, const
 #define exe_WideCharToMultiByte GAME_DATA(widechartomultibyte_t, 0x3a12b4)
 typedef int(__stdcall *queryperformancecounter_t)(int64_t *count);
 #define exe_QueryPerformanceCounter GAME_DATA(queryperformancecounter_t, 0x3a12a8)
+/* the text console of the debug output, the unhandled exceptions, the local time */
+typedef void *(__stdcall *getstdhandle_t)(uint32_t which);
+typedef int(__stdcall *writeconsole_t)(void *h, const void *buf, uint32_t n, uint32_t *written, void *reserved);
+typedef int(__stdcall *allocconsole_t)(void);
+typedef int(__stdcall *setconsoletextattribute_t)(void *h, uint16_t attr);
+typedef int(__stdcall *fillconsoleoutputattribute_t)(void *h, uint16_t attr, uint32_t n, uint32_t coord,
+	uint32_t *written);
+typedef void *(__stdcall *setunhandledexceptionfilter_t)(void *filter);
+typedef void(__stdcall *getlocaltime_t)(uint16_t *st);	/* SYSTEMTIME: year, month, ... */
+#define exe_GetStdHandle GAME_DATA(getstdhandle_t, 0x3a128c)
+#define exe_WriteConsoleA GAME_DATA(writeconsole_t, 0x3a129c)
+#define exe_AllocConsole GAME_DATA(allocconsole_t, 0x3a1298)
+#define exe_SetConsoleTextAttribute GAME_DATA(setconsoletextattribute_t, 0x3a1294)
+#define exe_FillConsoleOutputAttribute GAME_DATA(fillconsoleoutputattribute_t, 0x3a1290)
+#define exe_SetUnhandledExceptionFilter GAME_DATA(setunhandledexceptionfilter_t, 0x3a1280)
+#define exe_GetLocalTime GAME_DATA(getlocaltime_t, 0x3a1188)
+#define STD_OUTPUT (-11)
 
 /* winmm */
 typedef uint32_t(__stdcall *timegettime_t)(void);
@@ -133,6 +150,9 @@ typedef int(__stdcall *bringwindowtotop_t)(void *hwnd);
 #define exe_RegisterClassA GAME_DATA(registerclass_t, 0x3a1408)
 #define exe_UnregisterClassA GAME_DATA(unregisterclass_t, 0x3a1434)
 #define exe_MoveWindow GAME_DATA(movewindow_t, 0x3a1438)
+typedef int(__stdcall *getwindowplacement_t)(void *hwnd, uint32_t *wp);	/* WINDOWPLACEMENT, 0x2c bytes */
+#define exe_GetWindowPlacement GAME_DATA(getwindowplacement_t, 0x3a1364)
+#define exe_IsWindow GAME_DATA(hwndfn_t, 0x3a1360)
 #define exe_SetWindowPos GAME_DATA(setwindowpos_t, 0x3a143c)
 #define exe_DialogBoxParamA GAME_DATA(dialogboxparam_t, 0x3a1440)
 #define exe_EndDialog GAME_DATA(enddialog_t, 0x3a1444)
