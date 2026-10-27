@@ -15,6 +15,7 @@
 #define LIBM_SSE2_POW 0x321440
 #define LIBM_SSE2_LOG 0x34ec30
 #define CI_ATAN2 0x329f3a
+#define CI_FMOD 0x32201a
 #define LIBM_VEC_EXP2 0x314a00
 #define LIBM_VEC_COS2 0x314930
 #define LIBM_VEC_SIN2 0x314940
@@ -86,6 +87,23 @@ double Game_Atan2(double y, double x) {
 		"fstpl %[r]\n\t"
 		: [r] "=m"(r)
 		: [y] "m"(y), [x] "m"(x), [fn] "r"(fn)
+		: "eax", "ecx", "edx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", "st", "st(1)",
+		"memory", "cc");
+	return r;
+}
+
+/* _CIfmod: x loaded first, y on top of it, the fprem remainder of x / y */
+double Game_Fmod(double x, double y) {
+	double r;
+	void *fn = Game_Ptr(CI_FMOD);
+
+	__asm__ volatile(
+		"fldl %[x]\n\t"
+		"fldl %[y]\n\t"
+		"call *%[fn]\n\t"
+		"fstpl %[r]\n\t"
+		: [r] "=m"(r)
+		: [x] "m"(x), [y] "m"(y), [fn] "r"(fn)
 		: "eax", "ecx", "edx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", "st", "st(1)",
 		"memory", "cc");
 	return r;
