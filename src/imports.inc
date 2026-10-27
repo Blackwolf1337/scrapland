@@ -761,3 +761,7 @@ SD_IMPORT(cVehicleMotors_SetOwner, 0x10d960)
 SD_IMPORT(cVehicleTraffic_SetOwner, 0x119970)
 
 /* module agent: Entities/Vehicle/VehicleMotors+MotorsEffects+Traffic.cpp (imports below this line) */
+
+/* module agent: Engine/RenderTarget.cpp (imports below this line) */
+
+/* module agent: AI/NodesTraffic+NodesTrafficInDoor.cpp (imports below this line) */

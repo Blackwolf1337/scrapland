@@ -4112,3 +4112,7 @@ SD_HOOK(cVehicleEntity_Touch, 0x106bf0, 1090)
 SD_HOOK(cVehicleTrails_Update, 0x1015e0, 1608)
 
 /* module agent: Entities/Vehicle/VehicleMotors+MotorsEffects+Traffic.cpp (hooks below this line) */
+
+/* module agent: Engine/RenderTarget.cpp (hooks below this line) */
+
+/* module agent: AI/NodesTraffic+NodesTrafficInDoor.cpp (hooks below this line) */
