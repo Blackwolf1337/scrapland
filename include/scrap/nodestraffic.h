@@ -262,7 +262,97 @@ void __thiscall CNodesTraffic_RandomPointAhead(CNodesTraffic *self, int track, i
 	float distMin, float distMax, int unused, const vec3_t *dir, float maxAngle, vec3_t *out, int *outTrack,
 	int *outNode);
 
+/* ---- CNodesTrafficInDoor ---- */
+
+/* the nodes of the tracks of one type in one sector */
+typedef struct cTrafficSector {
+	int sector;			/* 0x00 */
+	InfoTrafficNode *nodes;		/* 0x04 Mem_Alloc */
+	int numNodes;			/* 0x08 */
+	int *tracks;			/* 0x0c the tracks of the nodes, each once (Mem_Alloc) */
+	int numTracks;			/* 0x10 */
+	byte visible;			/* 0x14 Sector_Visible at the last update */
+	byte pad_15[3];
+} cTrafficSector;
+SD_SIZE(cTrafficSector, 0x18);
+
+typedef struct cTrafficSectorList {
+	cTrafficSector *list;		/* 0x0 */
+	int num;			/* 0x4 */
+} cTrafficSectorList;
+
+/* the sectors of a type that came into view at the last update and their nodes */
+typedef struct cTrafficSeen {
+	int index[20];			/* 0x00 into the sector list */
+	int num;			/* 0x50 */
+	int numNodes;			/* 0x54 */
+} cTrafficSeen;
+SD_SIZE(cTrafficSeen, 0x58);
+
+typedef struct CNodesTrafficInDoor {
+	CNodesTraffic base;		/* 0x000 */
+	cTrafficSectorList heavy;	/* 0x070 the sectors by the type of the tracks */
+	cTrafficSectorList medium;	/* 0x078 */
+	cTrafficSectorList light;	/* 0x080 */
+	cTrafficSectorList heavyLight;	/* 0x088 */
+	cTrafficSectorList mediumLight;	/* 0x090 */
+	cAIVehicle *heavyAI[100];	/* 0x098 the traffic vehicles by the class of the vehicle (2) */
+	int numHeavyAI;			/* 0x228 */
+	cAIVehicle *mediumAI[250];	/* 0x22c (1) */
+	int numMediumAI;		/* 0x614 */
+	cAIVehicle *lightAI[500];	/* 0x618 (0) */
+	int numLightAI;			/* 0xde8 */
+	cTrafficSeen seenHeavy;		/* 0xdec */
+	cTrafficSeen seenMedium;	/* 0xe44 */
+	cTrafficSeen seenLight;		/* 0xe9c */
+	cTrafficSeen seenHeavyLight;	/* 0xef4 */
+	cTrafficSeen seenMediumLight;	/* 0xf4c */
+} CNodesTrafficInDoor;
+SD_OFFSET(CNodesTrafficInDoor, heavyAI, 0x98);
+SD_OFFSET(CNodesTrafficInDoor, numLightAI, 0xde8);
+SD_OFFSET(CNodesTrafficInDoor, seenMediumLight, 0xf4c);
+SD_SIZE(CNodesTrafficInDoor, 0xfa4);
+
+#define CNODESTRAFFICINDOOR_VFTABLE 0x3aa784
+#define TRAFFICINDOOR_FRAME 0x0a0c20
+
+void __fastcall CNodesTrafficInDoor_dtor(CNodesTrafficInDoor *self);
+CNodesTrafficInDoor *__thiscall CNodesTrafficInDoor_Delete(CNodesTrafficInDoor *self, byte flags);
+/* the engine callback 2 of the indoor levels: UpdateVehicles of g_NodesTrafficInDoor; 1 */
+byte TrafficInDoor_Frame(void);
+/* the vehicles waiting for a place (state 9) put on tracks of sectors that came into view */
+void __thiscall CNodesTrafficInDoor_UpdateVehicles(CNodesTrafficInDoor *self);
+void __thiscall CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicle **ai, int numAI, int typeA,
+	cTrafficSector *sectorsA, int numA, int *seenA, int *numSeenA, int *nodesA, byte updateA, int typeB,
+	cTrafficSector *sectorsB, int numB, int *seenB, int *numSeenB, int *nodesB, byte updateB, int typeC,
+	cTrafficSector *sectorsC, int numC, int *seenC, int *numSeenC, int *nodesC, byte updateC);
+/* the node before the first node of the track the camera sees (0 if that is the last one) */
+int __thiscall CNodesTrafficInDoor_HiddenNode(CNodesTrafficInDoor *self, int track);
+/* the sector lists of the tracks */
+void __fastcall CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self);
+void __stdcall TrafficSectors_Add(cTrafficSector *list, int *num, int sector);
+void __thiscall CNodesTrafficInDoor_Init(CNodesTrafficInDoor *self);
+void __stdcall TrafficSectors_SetTracks(cTrafficSector *list, int num);
+/* the traffic vehicle into the list of the class of its vehicle */
+void __thiscall CNodesTrafficInDoor_AddVehicle(CNodesTrafficInDoor *self, cAIVehicle *ai);
+/* a visible sector of the type has the track */
+byte __thiscall CNodesTrafficInDoor_SectorHasTrack(CNodesTrafficInDoor *self, int track, int type);
+/* a point near a hidden node of a visible sector for the vehicle of the AI, by the class of the vehicle */
+byte __thiscall CNodesTrafficInDoor_GetRespawnPoint(CNodesTrafficInDoor *self, cAIVehicle *ai, int *outType,
+	vec3_t *out, int *outTrack, int *outNode);
+byte __thiscall CNodesTrafficInDoor_PickPoint(CNodesTrafficInDoor *self, int *outType, vec3_t *out, int *outTrack,
+	int *outNode, int typeA, cTrafficSector *sectorsA, int numA, int typeB, cTrafficSector *sectorsB, int numB,
+	int typeC, cTrafficSector *sectorsC, int numC);
+
 /* the exe functions of other modules */
+/* the point is in a sector the camera sees (AI/NodesWorld.cpp, next round) */
+byte __thiscall CNodesWorld_PointSeen(CNodesWorld *self, const vec3_t *pos);
+/* AI/AIVehicle.cpp: the vehicle entity of the AI (+0x190), +0x1a4, the AI put on the track */
+void *__thiscall cAIVehicle_GetVehicle(cAIVehicle *ai);
+int __thiscall cAIVehicle_Get1A4(cAIVehicle *ai);
+void __thiscall cAIVehicle_PlaceOnTrack(cAIVehicle *ai, int type, const vec3_t *pos, int track, int node);
+#define VEHICLE_CLASS(v) (*(int *)((byte *)(v) + 0x5e8))	/* 0 light, 1 medium, 2 heavy */
+
 /* the segment a b free of the level with a capsule of the radius (AI/NodesWorld.cpp, next round) */
 byte __thiscall CNodesWorld_TestPath(CNodesWorld *self, const vec3_t *a, const vec3_t *b, float r1, float r2,
 	int a5, int a6);

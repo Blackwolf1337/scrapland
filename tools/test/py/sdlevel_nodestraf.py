@@ -136,8 +136,17 @@ def ntrMain(t):
 				check('RandomPointAhead(%d, %d)%s' % (i, k, fmt(pos)), lambda t=t, i=i, k=k, pos=pos, d=d, a=a:
 					SDTest.Call(0x09f120, 'tviiiFffiFfFpp', t, i, k, pos, 10.0, 3000.0, 0, d, a, (0.0,) * 3, -1, -1))
 	g = ntrI(t + 8)
-	if not g:
-		return
+	if g:
+		ntrSearch(t, nt, tracks, g)
+	ntrInDoor(t, nt, tracks)
+	for i in range(nt):
+		ntrPoke(tracks + 0x24 * i + 0x1c, saved[i])
+	if SDTest.Peek(0x444d0c, 'i') == 0 and SDTest.Peek(0x444cdc, 'i') == 0:
+		check('Draw state 0', lambda t=t: SDTest.Call(0x09cfa0, 'tvi', t))
+	check('DrawTrack(NumTracks)', lambda t=t, nt=nt: SDTest.Call(0x09d040, 'tvii', t, nt))
+
+# the grid of the graph and the searches on it
+def ntrSearch(t, nt, tracks, g):
 	ntrGridCheck('traffic', g, 1)
 	# the search points: first node of each track moved a bit, the middle of the grid box, the player
 	gmax = ntrF(g + 0xc, 3)
@@ -164,11 +173,96 @@ def ntrMain(t):
 				check('RandomNode%s %d%s %s' % (fmt(p), typ, fmt(d), fmt(a)), lambda t=t, p=p, typ=typ, d=d, a=a:
 					SDTest.Call(0x09d9f0, 'tbiFiFffiFfpp', t, (0.0,) * 3, typ, p, 0.0, 40000.0, 0, d, a, -1, -1))
 	ntrFree(lst)
+
+# NodesTrafficInDoor.c on lists of its own: the sector counts and the tracks of the sectors, then an object of its own
+# (calloc, the vtable and the tracks of the graph of FZ, no constructor: that would set the frame callback)
+# with sectors made of the tracks of each type: the track test, the hidden node, the vehicle lists and the respawn
+# point for fake AIs of the three vehicle classes
+def ntrCalloc(n):
+	return SDTest.Call(0x133650, 'ii', n)[0]
+def ntrSectors(l, n):
+	r = []
+	for i in range(n):
+		s = l + 0x18 * i
+		tr = ntrI(s + 0xc)
+		r.append((ntrI(s), ntrI(s + 8), ntrI(s + 0x10), ntrB(s + 0x14), map(lambda k, tr=tr: ntrI(tr + 4 * k),
+			range(ntrI(s + 0x10)))))
+	return r
+def ntrInDoor(t, nt, tracks):
+	l = ntrCalloc(20 * 0x18)
+	cnt = ntrCalloc(4)
+	for sec in (5, 7, 5, 9, 7, 5, 11):
+		check('TrafficSectors_Add(%d)' % sec, lambda l=l, cnt=cnt, sec=sec: (SDTest.Call(0x0a1b10, 'tviiii', 0, l, cnt,
+			sec), ntrI(cnt)))
+	ntrFree(cnt)
+	check('TrafficSectors_Add sectors', lambda l=l: map(lambda i, l=l: (ntrI(l + 0x18 * i), ntrI(l + 0x18 * i + 8)),
+		range(5)))
+	# two sectors with nodes, their tracks each once
+	pairs = ((3, 0), (1, 2), (3, 5), (2, 1), (1, 7), (6, 6))
+	nodes = ntrAlloc(8 * len(pairs))
+	k = 0
+	for a, b in pairs:
+		ntrPoke(nodes + 8 * k, a)
+		ntrPoke(nodes + 8 * k + 4, b)
+		k = k + 1
+	ntrPoke(l + 4, nodes)
+	ntrPoke(l + 8, 5)
+	ntrPoke(l + 0x18 + 4, nodes + 8 * 5)
+	ntrPoke(l + 0x18 + 8, 1)
+	check('TrafficSectors_SetTracks', lambda l=l: (SDTest.Call(0x0a1b90, 'tviii', 0, l, 2), ntrSectors(l, 2)))
+	ntrFree(ntrI(l + 0xc))
+	ntrFree(ntrI(l + 0x18 + 0xc))
+	ntrFree(nodes)
+	ntrFree(l)
+	f = ntrCalloc(0xfa4)
+	ntrPoke(f, ntrI(t))
+	ntrPoke(f + 0xc, tracks)
+	ntrPoke(f + 0x24, nt)
+	ntrPoke(f + 0x3c, ntrI(t + 0x3c))
+	lists = []
+	for k in range(5):
+		m = ntrI(t + 0x28 + 4 * k)
+		if m <= 0:
+			continue
+		src = ntrI(t + 0x10 + 4 * k)
+		secs = ntrCalloc(2 * 0x18)
+		for s in range(2):
+			tr = ntrAlloc(4 * m)
+			for j in range(m):
+				ntrPoke(tr + 4 * j, ntrI(src + 4 * j))
+			ntrPoke(secs + 0x18 * s, 100 + 10 * k + s)
+			ntrPoke(secs + 0x18 * s + 8, 3 + 2 * s)
+			ntrPoke(secs + 0x18 * s + 0xc, tr)
+			ntrPoke(secs + 0x18 * s + 0x10, m - s)
+			ntrPoke(secs + 0x18 * s + 0x14, s == 0 or k % 2)
+		ntrPoke(f + 0x70 + 8 * k, secs)
+		ntrPoke(f + 0x74 + 8 * k, 2)
+		lists.append(secs)
+		check('indoor sectors %d' % k, lambda secs=secs: ntrSectors(secs, 2))
 	for i in range(nt):
-		ntrPoke(tracks + 0x24 * i + 0x1c, saved[i])
-	if SDTest.Peek(0x444d0c, 'i') == 0 and SDTest.Peek(0x444cdc, 'i') == 0:
-		check('Draw state 0', lambda t=t: SDTest.Call(0x09cfa0, 'tvi', t))
-	check('DrawTrack(NumTracks)', lambda t=t, nt=nt: SDTest.Call(0x09d040, 'tvii', t, nt))
+		check('HiddenNode(%d)' % i, lambda f=f, i=i: SDTest.Call(0x0a10b0, 'tiii', f, i)[0])
+		for typ in range(5):
+			check('SectorHasTrack(%d, %d)' % (i, typ), lambda f=f, i=i, typ=typ: SDTest.Call(0x0a1d00, 'tbiii', f, i,
+				typ)[0])
+	veh = ntrCalloc(0x600)
+	ai = ntrCalloc(0x400)
+	ntrPoke(ai + 0x190, veh)
+	for cls in (0, 1, 2):
+		ntrPoke(veh + 0x5e8, cls)
+		for sd in (1, 2, 3):
+			ntrSrand(500 + 10 * cls + sd)
+			check('GetRespawnPoint class %d %d' % (cls, sd), lambda f=f, ai=ai: SDTest.Call(0x0a1dd0, 'tbiipFpp', f, ai,
+				-1, (0.0,) * 3, -1, -1))
+		check('AddVehicle class %d' % cls, lambda f=f, ai=ai: (SDTest.Call(0x0a1c80, 'tvii', f, ai),
+			ntrI(f + 0x228), ntrI(f + 0x614), ntrI(f + 0xde8)))
+	check('AI lists', lambda f=f, ai=ai: (ntrI(f + 0x98) == ai, ntrI(f + 0x22c) == ai, ntrI(f + 0x618) == ai))
+	ntrFree(ai)
+	ntrFree(veh)
+	for secs in lists:
+		ntrFree(ntrI(secs + 0xc))
+		ntrFree(ntrI(secs + 0x18 + 0xc))
+		ntrFree(secs)
+	ntrFree(f)
 
 # a fresh graph: Init (Load with fill) is the graph of the level again; Load without fill only the dummies
 def ntrFresh(t, fill):
