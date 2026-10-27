@@ -1,13 +1,16 @@
 /*
  * The stencil shadows of the engine3d, original source Engine/stencil.cpp (include/scrap/stencil.h): the buffers,
  * the shadow light, the switch, and the frame pass that draws the shadow volumes into the stencil buffer and the
- * scene again where it is set. The volumes themselves (Stencil_Malla, the segment and triangle passes) are still
- * the exe's.
+ * scene again where it is set, and the capture of the volumes of a mesh (Stencil_Malla). The drawing of the
+ * volumes (the segment and triangle passes) is still the exe's.
  */
+#include <string.h>
+
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
 #include "scrap/fuentes.h"
 #include "scrap/luz.h"
+#include "scrap/mallad3d.h"
 #include "scrap/material.h"
 #include "scrap/modelo.h"
 #include "scrap/prof.h"
@@ -15,11 +18,11 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
 #include "scrap/stencil.h"
+#include "scrap/suelo.h"
 #include "scrap/utild3d.h"
 #include "scrap/bsp.h"
 #include "scrap/varios.h"
 
-vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);
 
 #define LUZ_DIRECCIONAL 0x138a
 
@@ -349,4 +352,198 @@ void SombrasStencil_Render(void) {
 	g_StencilInv = 0;
 	g_StencilGrupos = 0;
 	g_ShadowLight = NULL;
+}
+
+/* the capture of the volumes of one mesh list */
+#define STENCIL_MAX_SEGS 0x2000
+#define STENCIL_MAX_TRIS 0x3000
+#define g_StencilBBox GAME_DATA(int, 0x390150)	/* R_StencilBBox: the segment to the light tested */
+#define g_StencilLDir GAME_DATA(float, 0x3901c8)	/* R_StencilLDir: the distance of a directional light */
+#define g_StencilViewDisp GAME_DATA(float, 0x390198)	/* R_StencilViewDisp: the volumes moved along the view */
+#define g_StencilGruposMax GAME_DATA(int, 0x4afde4)
+#define g_TriFacing ((byte *)Game_Ptr(0x3902c0))		/* [0x10000] the triangles facing the light */
+#define PROF_STENCIL 5
+#define PROF_STENCIL_FACING 6
+#define LUZ_FOCO 0x1389
+
+/* the profiler ticks of the volumes, without the mode check of Prof_Begin */
+static void Stencil_TicksSub(int section) {
+	g_ProfTicks[section] -= __builtin_ia32_rdtsc();
+}
+
+static void Stencil_TicksAdd(int section) {
+	g_ProfTicks[section] += __builtin_ia32_rdtsc();
+}
+
+void Stencil_Malla(struct CListaVert *v, const void *tris, uint32_t nTri, struct CMallaD3D *m, struct CNodoR *r) {
+	(void)v;
+	(void)tris;
+	(void)nTri;
+	if (!g_SombrasStencil || !g_StencilCapturar || !g_ShadowLight) {
+		return;
+	}
+	CHECK(m);
+	if (m->nodo->flags >> 5 & 1) {
+		return;
+	}
+	const uint16_t *edges = m->p40;
+	const MallaTriPlane *planes = m->pSeg;
+	int nTriSeg = (int)m->nSeg;
+	const vec3_t *pos = m->pPos;
+	if (!edges || !planes || !pos) {
+		return;
+	}
+	/* the center of the list in the world, near enough to the eye */
+	vec3_t c = m->center;
+	Vec3_TransformH(&c, &c, &m->nodo->m);
+	const vec3_t *eye = Render_GetEyePos();
+	float dist = r ? ((CModelo *)r->owner)->stencilDist : 4000.0f;
+	float k = dist * g_StencilMultFrame;
+	if ((c.x - eye->x) * (c.x - eye->x) + (c.y - eye->y) * (c.y - eye->y) + (c.z - eye->z) * (c.z - eye->z) >
+		k * k) {
+		return;
+	}
+	if (r && ((CModelo *)r->owner)->visible == 2 && g_StencilBBox) {
+		/* a model seen only by its shadow: the segment from it away from the light must be seen */
+		vec3_t d, far;
+		float dx = c.x - g_ShadowLightPos.x;
+		float dy = c.y - g_ShadowLightPos.y;
+		float dz = c.z - g_ShadowLightPos.z;
+		float len = (float)__builtin_sqrt((double)(dx * dx + dy * dy + dz * dz));
+		if (len == 0.0f) {
+			d.x = 0.0f;
+			d.y = 0.0f;
+			d.z = 0.0f;
+		} else {
+			float inv = (float)(1.0 / (double)len);
+			d.x = dx * inv;
+			d.y = dy * inv;
+			d.z = dz * inv;
+		}
+		if (g_ShadowLightTipo == LUZ_DIRECCIONAL) {
+			far.x = c.x + d.x * g_StencilLDir;
+			far.y = c.y + d.y * g_StencilLDir;
+			far.z = c.z + d.z * g_StencilLDir;
+		} else {
+			far.x = d.x * g_ShadowRange + g_ShadowLightPos.x;
+			far.y = d.y * g_ShadowRange + g_ShadowLightPos.y;
+			far.z = d.z * g_ShadowRange + g_ShadowLightPos.z;
+		}
+		if (g_ShowStencil == 3) {
+			Stencil_DebugLine(&c, &far, 0xffff00);
+		}
+		if (!Frustum_SegVisible(&c, &far)) {
+			return;
+		}
+	}
+	if (g_ShowStencil == 3) {
+		Stencil_DebugLine(&c, &g_ShadowLightPos, 0xff);
+	}
+	g_TriFacing[0xffff] = 1;
+	CHECK(nTriSeg <= 0x10000);
+	CHECK(nTriSeg <= 65535);
+	matrix_t world, inv;
+	vec3_t lpos, ldir;
+	void *dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dGetTransform_t, D3DDEV_GETTRANSFORM)(dev, D3DTS_WORLD, &world);
+	CHECK(D3DX_MatrixInverse(&inv, NULL, &world));
+	Vec3_TransformH(&lpos, &g_ShadowLightPos, &inv);
+	Vec3_TransformDir0(&ldir, &g_ShadowLightDir, &inv);
+	Stencil_TicksSub(PROF_STENCIL);
+	Stencil_TicksSub(PROF_STENCIL_FACING);
+	for (int i = 0; i < nTriSeg; i++) {
+		const MallaTriPlane *p = &planes[i];
+		float s = p->n.x * lpos.x + p->n.y * lpos.y + lpos.z * p->n.z + p->d;
+		uint32_t bits;
+		memcpy(&bits, &s, sizeof(bits));
+		g_TriFacing[i] = ~(byte)(bits >> 31) & 1;
+	}
+	Stencil_TicksAdd(PROF_STENCIL_FACING);
+	int segs0 = g_StencilSegs;
+	int tris0 = g_StencilInv;
+	vec3_t *segs = g_StencilSegmentos;
+	/* the silhouette: the edges between a triangle that faces the light and one that does not */
+	for (const uint16_t *e = edges; e[0] != 0xffff; e += 4) {
+		CHECK(e[0] < 0x10000);
+		CHECK(e[1] < 0x10000);
+		byte f0 = g_TriFacing[e[0]];
+		if (g_TriFacing[e[1]] == f0) {
+			continue;
+		}
+		vec3_t a = pos[f0 ? e[2] : e[3]];
+		vec3_t b = pos[f0 ? e[3] : e[2]];
+		if (g_ShowStencil == 1) {
+			vec3_t mid;
+			mid.x = (a.x + b.x) * 0.5f;
+			mid.y = (a.y + b.y) * 0.5f;
+			mid.z = (a.z + b.z) * 0.5f;
+			Debug_DrawLineM(&world, &a, &mid, 0xff00);
+			mid.x = (a.x + b.x) * 0.5f;
+			mid.y = (a.y + b.y) * 0.5f;
+			mid.z = (a.z + b.z) * 0.5f;
+			Debug_DrawLineM(&world, &b, &mid, 0xff0000);
+		}
+		if (g_StencilSegs >= STENCIL_MAX_SEGS) {
+			g_StencilSegs = segs0;
+			goto done;
+		}
+		segs[g_StencilSegs * 2] = a;
+		segs[g_StencilSegs * 2 + 1] = b;
+		g_StencilSegs++;
+	}
+	if (g_StencilSegs != segs0) {
+		/* the caps: the triangles that do not face the light */
+		int t = 0;
+		int ntri = g_StencilInv;
+		vec3_t *out = (vec3_t *)g_StencilTriangInv + ntri * 3;
+		for (CMallaD3D *sub = m; sub; sub = sub->next) {
+			CHECK(sub->vertOrig);
+			CHECK(sub->triBase == t);
+			for (uint32_t j = 0; j < sub->nTri; j++, t++) {
+				const uint16_t *tri = sub->pTri[j];
+				CHECK(t < nTriSeg);
+				if (g_TriFacing[t]) {
+					continue;
+				}
+				if (ntri >= STENCIL_MAX_TRIS) {
+					g_StencilSegs = segs0;
+					g_StencilInv = tris0;
+					return;
+				}
+				out[0] = m->pPos[sub->vertOrig[tri[0]]];
+				out[1] = m->pPos[sub->vertOrig[tri[1]]];
+				out[2] = m->pPos[sub->vertOrig[tri[2]]];
+				out += 3;
+				g_StencilInv = ++ntri;
+			}
+		}
+		CHECK(t == nTriSeg);
+	}
+done:
+	Stencil_TicksAdd(PROF_STENCIL);
+	CHECK(g_StencilGrupos < STENCIL_MAX_GRUPOS);
+	if (g_StencilSegs == segs0) {
+		return;
+	}
+	/* a new group: the light, its position in the object and the world matrix moved along the view */
+	matrix_t view = *Render_GetBillboard();
+	vec3_t disp = { 0.0f, 0.0f, g_StencilViewDisp };
+	Vec3_TransformDir0(&disp, &disp, &view);
+	Matrix_AddPos(&world, &disp);
+	StencilBlock *bl = &g_StencilBlock[g_StencilGrupos];
+	bl->Light = g_ShadowLight;
+	bl->lightPos = g_ShadowLightPos;
+	bl->range = g_ShadowRange;
+	bl->cosCone = g_ShadowCos;
+	bl->direccional = g_ShadowLightTipo == LUZ_DIRECCIONAL;
+	bl->foco = g_ShadowLightTipo == LUZ_FOCO;
+	bl->lightPosObj = lpos;
+	bl->lightDirObj = ldir;
+	bl->world = world;
+	bl->useg = g_StencilSegs;
+	bl->utri = g_StencilInv;
+	g_StencilGrupos++;
+	if (g_StencilGruposMax <= g_StencilGrupos) {
+		g_StencilGruposMax = g_StencilGrupos;
+	}
 }

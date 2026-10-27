@@ -190,7 +190,6 @@ SD_IMPORT(Box_Transform, 0x239880)
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
 SD_IMPORT(ListaVert_InitD3D, 0x2404f0)
-SD_IMPORT(Stencil_Malla, 0x267530)
 SD_IMPORT(Matrix_Invert, 0x239560)
 SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
 SD_IMPORT(Vec3_ToAngles, 0x239150)
