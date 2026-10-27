@@ -744,3 +744,5 @@ SD_IMPORT(cVehicleMotor_ctor, 0x10bb90)
 SD_IMPORT(cAIVehicle_GetPathWidth, 0x8b0e0)
 SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
 SD_IMPORT(Vehicle_TeamColor, 0xf6b20)
+
+/* module agent: Scorer/AbstractText+Button+Circuit+Head+Mission+Monitor+Radar (imports below this line) */

@@ -4359,3 +4359,5 @@ SD_HOOK(cTargetLock_SetHookDelay, 0x11a040, 52)
 SD_HOOK(cWeaponManager_DelayFire, 0x11a080, 47)
 SD_HOOK(cWeaponManager_ClearAmmo, 0x11a0b0, 29)
 SD_HOOK(cWeaponManager_ClearWeaps, 0x11a0d0, 32)
+
+/* module agent: Scorer/AbstractText+Button+Circuit+Head+Mission+Monitor+Radar (hooks below this line) */
