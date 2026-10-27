@@ -19,8 +19,11 @@
  * that text (for the output callbacks of the engine).
  * SDTest.D3DLog(on) puts a proxy in place of the D3D device that writes its calls into that text (src/core/d3dlog.c),
  * SDTest.D3DLog(0) the device back.
+ * SDTest.HeapOk() is -1 when every heap of the process passes HeapValidate, else the index of the first bad one (to
+ * find the test call that breaks a heap).
  */
 #include <stdio.h>
+#include <windows.h>
 #include <string.h>
 
 #include "scrap/python.h"
@@ -338,6 +341,25 @@ static PyObject *SDTest_D3DLog(PyObject *self, PyObject *args) {
 	return Py_None;
 }
 
+static PyObject *SDTest_HeapOk(PyObject *self, PyObject *args) {
+	(void)self;
+	HANDLE heaps[64];
+
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	DWORD n = GetProcessHeaps(64, heaps);
+	if (n > 64) {
+		n = 64;
+	}
+	for (DWORD i = 0; i < n; i++) {
+		if (!HeapValidate(heaps[i], 0, NULL)) {
+			return Py_BuildValue("i", (int)i);
+		}
+	}
+	return Py_BuildValue("i", -1);
+}
+
 static PyMethodDef sdtest_methods[] = {
 	{ "Call", SDTest_Call, 1, NULL },
 	{ "Peek", SDTest_Peek, 1, NULL },
@@ -345,6 +367,7 @@ static PyMethodDef sdtest_methods[] = {
 	{ "OutFunc", SDTest_OutFunc, 1, NULL },
 	{ "Out", SDTest_Out, 1, NULL },
 	{ "D3DLog", SDTest_D3DLog, 1, NULL },
+	{ "HeapOk", SDTest_HeapOk, 1, NULL },
 	{ NULL, NULL, 0, NULL },
 };
 
