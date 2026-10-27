@@ -668,3 +668,11 @@ SD_IMPORT(cAIControlBishop_ctor, 0x082620)
 SD_IMPORT(cAICharGroup_FindRepos, 0x080ee0)
 
 /* module agent: AI/AICharControl.cpp (imports below this line) */
+
+/* module agent: AI/AICharGroup and the AI subclasses (imports below this line) */
+
+/* module agent: Vehicle weapons Tesla+Vulcan and WithLifeEntity (imports below this line) */
+
+/* module agent: Engine/lee_M3D.cpp and bsp_q3.cpp (imports below this line) */
+
+/* module agent: Engine NodeFX..ModelFX (imports below this line) */

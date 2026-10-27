@@ -6884,3 +6884,11 @@ SD_HOOK(cAICharControl_UpdateDir, 0x0721e0, 71)
 SD_HOOK(cAICharControl_UpdateGoTo, 0x072230, 90)
 SD_HOOK(cAICharControl_UpdateGoToDirect, 0x072290, 70)
 SD_HOOK(cAICharControl_Wait, 0x0722e0, 83)
+
+/* module agent: AI/AICharGroup and the AI subclasses (hooks below this line) */
+
+/* module agent: Vehicle weapons Tesla+Vulcan and WithLifeEntity (hooks below this line) */
+
+/* module agent: Engine/lee_M3D.cpp and bsp_q3.cpp (hooks below this line) */
+
+/* module agent: Engine NodeFX..ModelFX (hooks below this line) */
