@@ -322,7 +322,7 @@ vmopoke(vmow + 0x20, 0)
 check('cWeaponManager_Delete(1)', lambda: SDTest.Call(0x11a010, 'tiii', vmow, 1)[0] == vmow)
 
 # ---- a car of our own ----
-vmocarobj = Scrap.CreateEntity('Car', 54000.0, 50000.0, 50000.0, 'SDVmoCar')
+vmocarobj = Scrap.CreateEntity('SDVmoCar', 54000.0, 50000.0, 50000.0, 'Car')
 vmoslot = SDTest.Call(0x131f70, 'tiis', vmoworld + 4, 'SDVmoCar')[0]
 vmonode = SDTest.Call(0x131e50, 'tiisi', vmoworld + 4, 'SDVmoCar', vmoslot)[0]
 vmocar = 0

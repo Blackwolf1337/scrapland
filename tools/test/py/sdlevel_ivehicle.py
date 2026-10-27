@@ -71,9 +71,9 @@ if SDTest.Peek(0x4677e8, 'i'):
 	ivhPickT = ivhTraffic
 else:
 	ivhPickT = SDTest.Peek(0x444d2c, 'i')
-ivhCarObj = Scrap.CreateEntity('Car', 54000.0, 50000.0, 60000.0, 'SDIvhCar')
+ivhCarObj = Scrap.CreateEntity('SDIvhCar', 54000.0, 50000.0, 60000.0, 'Car')
 ivhCar = ivhFind('SDIvhCar')
-ivhCar2Obj = Scrap.CreateEntity('Car', 54000.0, 50000.0, 55000.0, 'SDIvhCar2')
+ivhCar2Obj = Scrap.CreateEntity('SDIvhCar2', 54000.0, 50000.0, 55000.0, 'Car')
 ivhCar2 = ivhFind('SDIvhCar2')
 check('SDIvhCar', lambda: (ivhCarObj is not None, ivhCar != 0, ivhCar2 != 0, ivhGroup != 0, ivhTraffic != 0,
 	ivhNodesWorld != 0))
@@ -285,7 +285,8 @@ if ivhCar and ivhCar2 and ivhGroup:
 			check('cAIVehicle_ReactGetAway' + fmt((ivhIn, ivhBoost)), lambda: (SDTest.Call(0x0870e0, 'tvi', ivhAI),
 				ivhB(ivhCtrl + 4), ivhState()))
 		ivhSetByte(ivhCtrl + 4, 0)
-	for ivhIn, ivhDist in ((4, 0.0), (9, 1000.0), (9, 6000.0), (1, 0.0), (0, 0.0)):
+	# not with the state 0: it tests a line to a target the test AI does not have (a crash in both runs)
+	for ivhIn, ivhDist in ((4, 0.0), (9, 1000.0), (9, 6000.0), (1, 0.0)):
 		for ivhBoost in (0, 1):
 			ivhPoke(ivhAI + 0x1a4, ivhIn)
 			ivhSet(ivhAI + 0x2f0, (ivhDist,))

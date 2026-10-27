@@ -239,8 +239,8 @@ for p in (wmi(wm + 0x18), wmi(wm + 0x1c), wmi(wm + 0x20), wm, wmbuf, wmname, wmo
 	wmfree(p)
 
 # ---- a vehicle of our own for the native functions ----
-wmcar = Scrap.CreateEntity('Car', 50000.0, 50000.0, 50000.0, 'SDWeapCar')
-wmcar2 = Scrap.CreateEntity('Car', 50300.0, 50000.0, 50000.0, 'SDWeapCar2')
+wmcar = Scrap.CreateEntity('SDWeapCar', 50000.0, 50000.0, 50000.0, 'Car')
+wmcar2 = Scrap.CreateEntity('SDWeapCar2', 50300.0, 50000.0, 50000.0, 'Car')
 def wmentity(name):
 	slot = SDTest.Call(0x131f70, 'tiis', wmworld + 4, name)[0]
 	node = SDTest.Call(0x131e50, 'tiisi', wmworld + 4, name, slot)[0]

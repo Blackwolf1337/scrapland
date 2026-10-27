@@ -77,7 +77,7 @@ for fxvname, fxvkind, fxvvt in fxvkinds:
 	check('FXV debris' + fmt((fxvname, fxvkind)), lambda d=fxvd, fx=fxvfx, ok=fxvok: (d != 0, fx != 0, ok))
 
 # a car of our own far away: the AI ship Parked moves, its values differ between two runs of the exe
-fxvcarobj = Scrap.CreateEntity('Car', 52000.0, 50000.0, 50000.0, 'SDFxvCar')
+fxvcarobj = Scrap.CreateEntity('SDFxvCar', 52000.0, 50000.0, 50000.0, 'Car')
 fxvslot = SDTest.Call(0x131f70, 'tiis', fxvworld + 4, 'SDFxvCar')[0]
 fxvnode = SDTest.Call(0x131e50, 'tiisi', fxvworld + 4, 'SDFxvCar', fxvslot)[0]
 fxvparked = 0

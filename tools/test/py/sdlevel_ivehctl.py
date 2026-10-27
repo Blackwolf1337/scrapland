@@ -74,9 +74,9 @@ ivcD5000 = (0, 0x40b38800)
 
 ivcGroup = SDTest.Peek(0x444b84, 'i')
 ivcNodesWorld = SDTest.Peek(0x444d34, 'i')
-ivcCarObj = Scrap.CreateEntity('Car', 56000.0, 50000.0, 60000.0, 'SDIvcCar')
+ivcCarObj = Scrap.CreateEntity('SDIvcCar', 56000.0, 50000.0, 60000.0, 'Car')
 ivcCar = ivcFind('SDIvcCar')
-ivcCar2Obj = Scrap.CreateEntity('Car', 56000.0, 50000.0, 52000.0, 'SDIvcCar2')
+ivcCar2Obj = Scrap.CreateEntity('SDIvcCar2', 56000.0, 50000.0, 52000.0, 'Car')
 ivcCar2 = ivcFind('SDIvcCar2')
 check('SDIvcCar', lambda: (ivcCarObj is not None, ivcCar != 0, ivcCar2 != 0, ivcGroup != 0, ivcNodesWorld != 0))
 if ivcCar and ivcCar2 and ivcGroup and ivcNodesWorld:
@@ -203,9 +203,9 @@ if ivcCar and ivcCar2 and ivcGroup and ivcNodesWorld:
 	ivcPoke(ivcC + 0x18c, 0)
 	check('cAIVehicleControl_Smooth', lambda: (SDTest.Call(0x095780, 'tvi', ivcC), ivcPts(), ivcF(ivcC + 0x1b0, 54)))
 	# the point search and the update of the path only where the segment to the goal is free (else a graph search)
-	ivcFree = SDTest.Call(0x090490, 'tbiFFf', ivcC, ivcP, ivcGoal, 0.0)[0]
-	check('corridor to the goal', lambda: ivcFree)
-	if ivcFree:
+	ivcClear = SDTest.Call(0x090490, 'tbiFFf', ivcC, ivcP, ivcGoal, 0.0)[0]
+	check('corridor to the goal', lambda: ivcClear)
+	if ivcClear:
 		check('cAIVehicleControl_FindPoint', lambda: (SDTest.Call(0x091c60, 'tbi', ivcC)[0], ivcCF(), ivcPts(),
 			ivcI(ivcC + 0xec)))
 	for ivcV in (0, 1):
@@ -261,7 +261,7 @@ if ivcCar and ivcCar2 and ivcGroup and ivcNodesWorld:
 			ivcCF(), ivcPts(), ivcCtls(), ivcInts(ivcAI, (0x19c, 0x1a4))))
 		check('cAIVehicleControl_UpdateDirect' + fmt((ivcDt,)), lambda d=ivcDt: (SDTest.Call(0x095f20, 'tbif', ivcC,
 			d)[0], ivcCtls()))
-		if ivcFree:
+		if ivcClear:
 			ivcSrand(58)
 			check('cAIVehicleControl_UpdatePoint' + fmt((ivcDt,)), lambda d=ivcDt: (SDTest.Call(0x095ec0, 'tbif', ivcC,
 				d)[0], ivcCF(), ivcPts(), ivcCtls()))

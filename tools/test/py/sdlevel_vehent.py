@@ -68,7 +68,7 @@ for vhet, vhetimes, vhevola, vhevolb, vhevol4 in ((0.5, 1.0, 0.8, 0.3, 0.6), (2.
 check('Vehicle_SndCrossFade no b', lambda: (SDTest.Call(0x108d50, 'vii', vhesa, 0), vhesnd(vhesa)))
 
 # ---- the vehicle of our own ----
-vhecarobj = Scrap.CreateEntity('Car', 54000.0, 50000.0, 50000.0, 'SDVheCar')
+vhecarobj = Scrap.CreateEntity('SDVheCar', 54000.0, 50000.0, 50000.0, 'Car')
 vhecar = vhefind('SDVheCar')
 check('SDVheCar', lambda: (vhecarobj is not None, vhecar != 0))
 if vhecar:
@@ -279,7 +279,7 @@ if vhecar:
 	vhefree(vhesp2)
 	vheset(vhec + 0xd4, (0.0, 0.0, 0.0))
 	# the touch of two vehicles: bounce, pushed apart (moving apart, the same place)
-	vhecar2obj = Scrap.CreateEntity('Car', 54300.0, 50000.0, 50000.0, 'SDVheCar2')
+	vhecar2obj = Scrap.CreateEntity('SDVheCar2', 54300.0, 50000.0, 50000.0, 'Car')
 	vhecar2 = vhefind('SDVheCar2')
 	check('SDVheCar2', lambda: (vhecar2obj is not None, vhecar2 != 0))
 	if vhecar2:
@@ -308,10 +308,9 @@ if vhecar:
 	# the effects
 	def vhefxstate(f):
 		return (vhebytes(f, (4, 0xc, 0x14)), vhefl(f + 8, 1), vhefl(f + 0x10, 1), vhefl(f + 0x18, 1))
+	# a running timer starts the damage effects, which read a node SPoli1 does not have (a crash in both runs)
 	for vhelife, vhemaxl, vheemi, vheburn, vheon, vhetime in ((100, 300, 0.0, 0.0, 0, 0.0),
-			(20, 300, 0.0, 0.0, 0, 0.0), (20, 300, 0.0, 0.0, 0, 0.04), (0, 300, 0.0, 0.0, 0, 0.0),
-			(250, 300, 1.0, 0.0, 1, 0.01), (250, 300, 0.0, 1.0, 1, 0.01), (250, 300, 0.6, 0.6, 0, 0.0),
-			(250, 300, 0.6, -0.5, 1, 0.0)):
+			(20, 300, 0.0, 0.0, 0, 0.0), (0, 300, 0.0, 0.0, 0, 0.0), (250, 300, 0.6, 0.6, 0, 0.0)):
 		vhepoke(vhec + 0x238, vhelife)
 		vhepoke(vhec + 0x640, vhemaxl)
 		vheset(vhec + 0x58c, (vheemi,))
@@ -353,8 +352,8 @@ if vhecar:
 				vhefl(t + 0x50, 1)))
 		vheset(vhec + 0x4e4, (0.0, 0.0, 0.0))
 	vhesrand(1357)
-	for vhename in ('VehicleDamage', 'VehicleEMI', 'VehicleFire', 'VehicleSputnikMake', 'VehicleSputnikSuck',
-			'VehicleSputnik', 'SDNoEffect', ''):
+	# the vehicle effects read a node SPoli1 does not have (a crash in both runs): only names without one
+	for vhename in ('SDNoEffect', ''):
 		check('cVehicleEffects_Start' + fmt((vhename,)), lambda f=vhefx, n=vhename: SDTest.Call(0x1022c0, 'tvis', f,
 			n))
 
