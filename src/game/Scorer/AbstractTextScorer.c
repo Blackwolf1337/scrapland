@@ -1,0 +1,549 @@
+/*
+ * AbstractTextScorer.cpp of the game (Menu/): the text items cAbstractTextScorer, cCreditsScorer, cHintScorer,
+ * cLabelScorer and cMsgScorer, the label and message texts of the scripts. See include/scrap/scoreritems.h.
+ */
+#include <string.h>
+
+#include "scrap/app.h"
+#include "scrap/net.h"
+#include "scrap/scoreritems.h"
+
+/* the strings Var returns (those of the exe) */
+#define STR_LEFT 0x3a3954
+#define STR_RIGHT 0x3a395c
+#define STR_CENTER 0x3c1bf4
+#define STR_NONE 0x3b2d30
+#define STR_OSCILE 0x3c1c04
+#define STR_SHADOW 0x3c1c0c
+#define STR_OUTLINE 0x3c1c14
+
+static const char *const s_NetStates[] = {"Connecting...", NULL, "Waiting server response", "Server timeout",
+	"Disconnected from server"};
+
+/* ---- construction ---- */
+
+cAbstractTextScorer *__fastcall cAbstractTextScorer_ctor(cAbstractTextScorer *self) {
+	cScorerItem_ctor(&self->base);
+	self->base.vftable = Game_Ptr(CABSTRACTTEXTSCORER_VFTABLE);
+	cString_ctor(&self->fontName);
+	cString_ctor(&self->text);
+	self->font = Font_Get("Horatio");
+	cString_Set(&self->fontName, "Horatio");
+	cString_Set(&self->text, "");
+	self->color = 0xffffffff;
+	self->align = TEXTSCORER_LEFT;
+	self->effect = 0;
+	return self;
+}
+
+cCreditsScorer *__fastcall cCreditsScorer_ctor(cCreditsScorer *self) {
+	cAbstractTextScorer_ctor(&self->base);
+	self->base.base.vftable = Game_Ptr(CCREDITSSCORER_VFTABLE);
+	self->font = Font_Get("ScrapMedium");
+	self->titleFont = Font_Get("Horatio");
+	self->time = 0.0f;
+	for (int i = 0; i < CREDITS_LINES; i++) {
+		self->lines[i][0] = 0;
+	}
+	g_CreditsAlpha = 0;
+	return self;
+}
+
+/* the frame sheet of the hint and the label */
+static cHintScorer *TabText_ctor(cHintScorer *self, uint32_t vftable) {
+	cAbstractTextScorer_ctor(&self->base);
+	self->base.base.vftable = Game_Ptr(vftable);
+	CPsaImage *img = operator_new(sizeof(CPsaImage));
+	self->tab = img ? CPsaImage_ctor(img, "2D/white.tga", 0x20) : NULL;
+	self->tabIndex = 0;
+	self->tabBlend = 0;
+	return self;
+}
+
+cHintScorer *__fastcall cHintScorer_ctor(cHintScorer *self) {
+	return TabText_ctor(self, CHINTSCORER_VFTABLE);
+}
+
+cLabelScorer *__fastcall cLabelScorer_ctor(cLabelScorer *self) {
+	return TabText_ctor(self, CLABELSCORER_VFTABLE);
+}
+
+cMsgScorer *__fastcall cMsgScorer_ctor(cMsgScorer *self) {
+	float dim[2];
+
+	cAbstractTextScorer_ctor(&self->base);
+	self->base.base.vftable = Game_Ptr(CMSGSCORER_VFTABLE);
+	Font_TextSize(self->base.font, NULL, dim, 0.0f, 0.0f, "W");
+	self->lineHeight = dim[1];
+	self->base.align = TEXTSCORER_CENTER;
+	self->base.color = 0xffffff00;
+	return self;
+}
+
+/* also the destructor of cMsgScorer (rva 0x15e9c0) */
+void __fastcall cAbstractTextScorer_dtor(cAbstractTextScorer *self) {
+	self->base.vftable = Game_Ptr(CABSTRACTTEXTSCORER_VFTABLE);
+	cString_dtor(&self->text);
+	cString_dtor(&self->fontName);
+	cScorerItem_dtor(&self->base);
+}
+
+void __fastcall cCreditsScorer_dtor(cCreditsScorer *self) {
+	g_CreditsAlpha = 0;
+	cAbstractTextScorer_dtor(&self->base);
+}
+
+static void TabText_dtor(cHintScorer *self, uint32_t vftable) {
+	CPsaImage *img = self->tab;
+	self->base.base.vftable = Game_Ptr(vftable);
+	if (img) {
+		CPsaImage_dtor(img);
+		operator_delete_sized(img, sizeof(CPsaImage));
+	}
+	cAbstractTextScorer_dtor(&self->base);
+}
+
+void __fastcall cHintScorer_dtor(cHintScorer *self) {
+	TabText_dtor(self, CHINTSCORER_VFTABLE);
+}
+
+void __fastcall cLabelScorer_dtor(cLabelScorer *self) {
+	TabText_dtor(self, CLABELSCORER_VFTABLE);
+}
+
+cAbstractTextScorer *__thiscall cAbstractTextScorer_Delete(cAbstractTextScorer *self, byte flags) {
+	cAbstractTextScorer_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(cAbstractTextScorer));
+	}
+	return self;
+}
+
+cCreditsScorer *__thiscall cCreditsScorer_Delete(cCreditsScorer *self, byte flags) {
+	cCreditsScorer_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(cCreditsScorer));
+	}
+	return self;
+}
+
+cHintScorer *__thiscall cHintScorer_Delete(cHintScorer *self, byte flags) {
+	cHintScorer_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(cHintScorer));
+	}
+	return self;
+}
+
+cLabelScorer *__thiscall cLabelScorer_Delete(cLabelScorer *self, byte flags) {
+	cLabelScorer_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(cLabelScorer));
+	}
+	return self;
+}
+
+cMsgScorer *__thiscall cMsgScorer_Delete(cMsgScorer *self, byte flags) {
+	cAbstractTextScorer_dtor(&self->base);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(cMsgScorer));
+	}
+	return self;
+}
+
+/* vf01 of cScorerItem, kept in this file: no parameters */
+void __thiscall cScorerItem_SetParam(cScorerItem *self, const char *name, const char *value) {
+	(void)self;
+	(void)name;
+	(void)value;
+}
+
+/* ---- Var ---- */
+
+static const char *const s_TextColors[4] = {"Red", "Green", "Blue", "Alpha"};
+static const char *const s_TabColors[4] = {"TabRed", "TabGreen", "TabBlue", "TabAlpha"};
+
+int __thiscall cAbstractTextScorer_Var(cAbstractTextScorer *self, const char *name, byte set, char **s, double *d,
+	int *i) {
+	int r;
+
+	if (s && !crt_stricmp(name, "Text")) {
+		if (set) {
+			cString_Set(&self->text, *s);
+		} else {
+			*s = self->text;
+		}
+		return 1;
+	}
+	if (i && (r = ScorerVar_Color(name, s_TextColors, &self->color, set, i))) {
+		return r;
+	}
+	if (set) {
+		if (s && !crt_stricmp(name, "Font")) {
+			CFont *font = Font_Get(*s);
+			if (!font) {
+				return 0;
+			}
+			self->font = font;
+			cString_Set(&self->fontName, *s);
+			return 1;
+		}
+		if (i) {
+			int central = !crt_stricmp(name, "CentralText");
+			if (central || !crt_stricmp(name, "GetExtens")) {
+				if (*i == 1) {
+					self->font->align = central ? TEXTSCORER_CENTER : (uint32_t)self->align;
+					Font_TextSizeAlign(self->font, &self->base.x, &self->base.w, self->base.x, self->base.y,
+						CFONT_ALIGN, "%s", self->text);
+				}
+				return 3;
+			}
+		}
+	}
+	if (s) {
+		if (!crt_stricmp(name, "Align")) {
+			if (set) {
+				if (!crt_stricmp(*s, "Left")) {
+					self->align = TEXTSCORER_LEFT;
+					return 1;
+				}
+				if (!crt_stricmp(*s, "Right")) {
+					self->align = TEXTSCORER_RIGHT;
+					return 1;
+				}
+				if (!crt_stricmp(*s, "Center")) {
+					self->align = TEXTSCORER_CENTER;
+					return 1;
+				}
+			} else if (self->align == TEXTSCORER_LEFT) {
+				*s = Game_Ptr(STR_LEFT);
+				return 1;
+			} else if (self->align == TEXTSCORER_RIGHT) {
+				*s = Game_Ptr(STR_RIGHT);
+				return 1;
+			} else if (self->align == TEXTSCORER_CENTER) {
+				*s = Game_Ptr(STR_CENTER);
+				return 1;
+			}
+			return 0;
+		}
+		if (!crt_stricmp(name, "Effect")) {
+			if (set) {
+				if (!crt_stricmp(*s, "None")) {
+					self->effect = 0;
+					return 1;
+				}
+				if (!crt_stricmp(*s, "Oscile")) {
+					self->effect = TEXTSCORER_OSCILE;
+					return 1;
+				}
+				if (!crt_stricmp(*s, "Shadow")) {
+					self->effect = TEXTSCORER_SHADOW;
+					return 1;
+				}
+				if (!crt_stricmp(*s, "Outline")) {
+					self->effect = TEXTSCORER_OUTLINE;
+					return 1;
+				}
+			} else if (self->effect == TEXTSCORER_SHADOW) {
+				*s = Game_Ptr(STR_SHADOW);
+				return 1;
+			} else if (self->effect == 0) {
+				*s = Game_Ptr(STR_NONE);
+				return 1;
+			} else if (self->effect == TEXTSCORER_OSCILE) {
+				*s = Game_Ptr(STR_OSCILE);
+				return 1;
+			} else if (self->effect == TEXTSCORER_OUTLINE) {
+				*s = Game_Ptr(STR_OUTLINE);
+				return 1;
+			}
+			return 0;
+		}
+	}
+	return cScorerItem_Var(&self->base, name, set, s, d, i);
+}
+
+int __thiscall cCreditsScorer_Var(cCreditsScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+	if (d) {
+		if (!crt_stricmp(name, "Time")) {
+			return ScorerVar_Float(&self->time, set, d);
+		}
+		if (!crt_stricmp(name, "Life")) {
+			return ScorerVar_Float(&self->life, set, d);
+		}
+		if (!crt_stricmp(name, "FadeIn")) {
+			return ScorerVar_Float(&self->fadeIn, set, d);
+		}
+		if (!crt_stricmp(name, "FadeOut")) {
+			return ScorerVar_Float(&self->fadeOut, set, d);
+		}
+	}
+	if (set && s && !crt_strncmp(name, "Text", 4)) {
+		/* Text0..Text19 */
+		int n = name[4] - '0';
+		if (name[5]) {
+			n = name[5] + (n * 5 - 0x18) * 2;
+		}
+		CHECK(n >= 0 && n < CREDITS_LINES);
+		Str_Copy(self->lines[n], *s, CREDITS_LINE_SIZE);
+		return 1;
+	}
+	return cAbstractTextScorer_Var(&self->base, name, set, s, d, i);
+}
+
+/* also cLabelScorer (rva 0x15f820) */
+int __thiscall cHintScorer_Var(cHintScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+	int r;
+
+	if (s && !crt_stricmp(name, "TabSprite") && set) {
+		if (self->tab) {
+			CPsaImage_dtor(self->tab);
+			operator_delete_sized(self->tab, sizeof(CPsaImage));
+		}
+		CPsaImage *img = operator_new(sizeof(CPsaImage));
+		img = img ? CPsaImage_ctorFlags(img, *s, 0, self->tabBlend, 0x10060) : NULL;
+		self->tab = img;
+		img->color = 0xffffffff;
+		return 1;
+	}
+	if (i) {
+		if (!crt_stricmp(name, "TabBlendingMode")) {
+			int v = *i;
+			CHECK(v >= 0 && v <= 6);
+			if (set) {
+				self->tabBlend = v;
+			}
+			return 3;
+		}
+		if (!crt_stricmp(name, "TabSpriteIndex")) {
+			return ScorerVar_Int(&self->tabIndex, set, i);
+		}
+		if ((r = ScorerVar_Color(name, s_TabColors, &self->tab->color, set, i))) {
+			return r;
+		}
+	}
+	return cAbstractTextScorer_Var(&self->base, name, set, s, d, i);
+}
+
+/* ---- drawing ---- */
+
+void __thiscall cCreditsScorer_DrawLines(cCreditsScorer *self, byte fade, uint32_t color) {
+	byte columns = self->lines[8][0];
+	float sx, sy;
+
+	for (int i = 0; i < CREDITS_LINES; i++) {
+		CFont *font;
+		float rect[2], dim[2], x, y, yoff;
+		const char *line = self->lines[i];
+
+		if (i == 0) {
+			font = self->titleFont;
+			font->efectos = TEXTSCORER_SHADOW;
+		} else {
+			font = self->font;
+			font->efectos = TEXTSCORER_OUTLINE;
+		}
+		font->color = color;
+		font->align = 0;
+		yoff = (float)(i * 25);
+		Font_TextSize(font, rect, dim, 0.0f, 0.0f, "%s", line);
+		sx = self->base.base.x;
+		sy = self->base.base.y;
+		if (fade) {
+			x = sx;
+			y = sy;
+			if (!(65.0f > (float)g_CreditsX)) {
+				x = ((float)g_CreditsSizeX - x) - dim[0];
+			}
+		} else if (columns) {
+			int col = i % 3;
+			x = sx + 320.0f;
+			y = sy + 80.0f;
+			yoff = (float)((i + 2) / 3 * 35);
+			if (i == 0 || col == 2) {
+				x -= dim[0] * 0.5f;
+			} else if (col == 1) {
+				x -= 300.0f;
+			} else {
+				x = (x + 300.0f) - dim[0];
+			}
+		} else {
+			float cx = (float)g_CreditsX;
+			if (65.0f > cx) {
+				x = sx + cx;
+				y = sy + (float)g_CreditsY;
+			} else {
+				x = ((((float)g_CreditsSizeX - sx) - dim[0]) + (sx + cx)) - sx;
+				y = sy + (float)g_CreditsY;
+			}
+		}
+		CFont_PrintfFlags(font, x, y + yoff, CFONT_ALIGN | CFONT_COLOR | CFONT_EFECTOS, "%s", line);
+	}
+}
+
+void __thiscall cCreditsScorer_Draw(cCreditsScorer *self, int player) {
+	cScorer *sc = Scorer_Get(player);
+	float old = self->time;
+	float dt = sc->frameTime;
+	float t = old + dt;
+
+	self->time = t;
+	if (self->lines[8][0]) {
+		cCreditsScorer_DrawLines(self, 0, self->base.color);
+		return;
+	}
+	if (dt >= t) {
+		g_CreditsAlpha = 0xff;
+		g_CreditsClear = 1;
+		g_CreditsPhase = 0;
+		Eng_RenderTargetBegin("Credits");
+		Eng_RenderTargetEnd();
+		return;
+	}
+	if (self->fadeIn > t) {
+		g_CreditsAlpha = 0;
+		g_CreditsClear = 1;
+		g_CreditsPhase = 0;
+		float in = self->fadeIn - 0.25f;
+		float now = self->time;
+		if (now > in) {
+			g_CreditsAlpha = 0xff - (int)((now - in) * 4.0f * 255.0f);
+			cCreditsScorer_DrawLines(self, 0, self->base.color);
+		} else {
+			g_CreditsAlpha = (int)(now / in * 255.0f);
+		}
+		if (Eng_RenderTargetBegin("Credits")) {
+			cCreditsScorer_DrawLines(self, 1, self->base.color);
+		}
+		Eng_RenderTargetEnd();
+		return;
+	}
+	if (t > self->life) {
+		if (t > self->fadeOut + self->life) {
+			g_CreditsAlpha = 0;
+			return;
+		}
+		g_CreditsClear = 0;
+		g_CreditsPhase = 1;
+		g_CreditsAlpha = (int)(255.0f - (self->time - self->life) / self->fadeOut * 255.0f);
+		if (Eng_RenderTargetBegin("Credits") && self->life >= old) {
+			cCreditsScorer_DrawLines(self, 1, self->base.color);
+		}
+		Eng_RenderTargetEnd();
+		return;
+	}
+	g_CreditsAlpha = 0;
+	cCreditsScorer_DrawLines(self, 0, self->base.color);
+}
+
+void __thiscall cHintScorer_Draw(cHintScorer *self, int player) {
+	cScorer *sc = Scorer_Get(player);
+	cScorerItem *item = cScorer_FindItem(sc, sc->actual);
+
+	if (item && cPy_Function_IsValid(&item->onAccept)) {
+		const cString *src;
+		if (cPy_Function_IsValid(&sc->onSpecialHint) && cPy_Function_Execute(&sc->onSpecialHint, 0) == 1) {
+			src = &sc->specialHint;
+		} else {
+			src = &item->hint;
+		}
+		if (strcmp(sc->hint, *src)) {
+			cString_Assign(&sc->hint, src);
+		}
+		sc->hintWidth = item->maxHintLineWidth;
+	} else if (*sc->hint) {
+		cString_Set(&sc->hint, "");
+	}
+	const char *hint = sc->hint;
+	if (!hint || !*hint || !(sc->time > sc->hintTime + g_HintAppearsTime)) {
+		return;
+	}
+	size_t len = strlen(hint);
+	CHECK(len < 0x500);
+	if (len >= 0x500) {
+		len = 0x4ff;
+	}
+	memcpy(g_HintText, hint, len);
+	g_HintText[len] = 0;
+
+	CFont *font = self->base.font;
+	float rect[2], dim[2];
+	int n = Str_WrapText(g_HintText, g_HintLines, (float)sc->hintWidth, 2, self->base.fontName);
+	Font_TextSize(font, rect, dim, self->base.base.x, self->base.base.y, "%s", g_HintText);
+	float lineH = 0.0f, maxW = 0.0f;
+	for (int k = 0; k < n; k++) {
+		Font_TextSize(font, rect, dim, self->base.base.x, self->base.base.y, "%s", g_HintLines[k]);
+		lineH = Float_MaxSS(dim[1], lineH);
+		maxW = Float_MaxSS(dim[0], maxW);
+	}
+	int row = n - 1;
+	if (self->tabIndex > 0) {
+		float w = maxW + 16.0f;
+		float h = (float)n * lineH + 8.0f;
+		Menu_DrawFrame(self->tab, self->tabIndex, self->base.base.x - w * 0.5f,
+			(self->base.base.y - (float)row * lineH) - 16.0f, w, h);
+	}
+	for (int k = 0; k < n; k++, row--) {
+		CFont_PrintfAlignColorSombra(self->base.font, self->base.base.x, self->base.base.y - (float)row * lineH,
+			TEXTSCORER_CENTER, self->base.color, "%s", g_HintLines[k]);
+	}
+}
+
+void __thiscall cLabelScorer_Draw(cLabelScorer *self, int player) {
+	const char *text;
+
+	if (!g_IsXbox) {
+		cScorer *sc = Scorer_Get(player);
+		cScorerItem *mission = sc ? cScorer_FindItem(sc, g_MissionScorerName) : NULL;
+		if (mission && mission->visible && g_MissionSolidTime >= 0.0f) {
+			return;
+		}
+	}
+	if (g_LabelText[0] && (0.0f >= g_LabelTime || g_LabelTime > Timer_GetTime(&g_pWorld->timer))) {
+		if (self->tabIndex > 0) {
+			float rect[2], dim[2];
+			Font_TextSize(self->base.font, rect, dim, self->base.base.x, self->base.base.y, "%s", g_LabelText);
+			float w = dim[0] + 12.0f;
+			float h = dim[1] + 8.0f;
+			Menu_DrawFrame(self->tab, self->tabIndex, self->base.base.x - 6.0f, self->base.base.y - 4.0f, w, h);
+		}
+		text = g_LabelText;
+	} else {
+		if (!(g_pApp->flags & APPF_CLIENT)) {
+			return;
+		}
+		uint32_t state = (uint32_t)Net_GetClient()->state;
+		if (state > NETCLIENT_DISCONNECTED || !s_NetStates[state]) {
+			return;
+		}
+		text = s_NetStates[state];
+	}
+	CFont_PrintfAlignColorSombra(self->base.font, self->base.base.x, self->base.base.y, self->base.align,
+		self->base.color, "%s", text);
+}
+
+void __thiscall cMsgScorer_Draw(cMsgScorer *self, int player) {
+	(void)player;
+	if (!(0.0f >= g_MsgTime) && !(g_MsgTime > Timer_GetTime(&g_pWorld->timer))) {
+		return;
+	}
+	for (int k = 0; k < g_MsgNumLines; k++) {
+		float lh = self->lineHeight;
+		CFont_PrintfAlignColorSombra(self->base.font, self->base.base.x,
+			(float)k * lh + (lh * 0.5f + self->base.base.y), self->base.align, self->base.color, "%s", g_MsgLines[k]);
+	}
+}
+
+/* ---- the texts of the scripts ---- */
+
+void Scorer_SetLabelText(const char *text, float time) {
+	Str_Copy(g_LabelText, text, 0xfa);
+	g_LabelTime = time;
+}
+
+void Scorer_SetMsgText(const char *text, float time, const char *font) {
+	Str_Copy(g_MsgText, text, 0xf424);
+	g_MsgNumLines = Str_WrapText(g_MsgText, g_MsgLines, 260.0f, 0xfa, font);
+	g_MsgTime = time;
+}

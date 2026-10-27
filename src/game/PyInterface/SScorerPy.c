@@ -489,7 +489,7 @@ PyObject *SScorer_SetOnSpecialHint(PyObject *self, PyObject *args) {
 		return ReturnNone();
 	}
 	cPy_Function_SetFunc(&sc->onSpecialHint, func);
-	cString_Set((cString *)sc->specialHint, hint);
+	cString_Set(&sc->specialHint, hint);
 	return Py_BuildValue("i", 1);
 }
 

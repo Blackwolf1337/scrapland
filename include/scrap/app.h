@@ -224,6 +224,9 @@ void Input_OnChar(int c);					/* rva 0x13c900 */
 void Scorer_Done(void);						/* rva 0x170ad0 */
 void Scorer_Init(void);						/* rva 0x171120 */
 void Menu_DrawFrame(void *img, int arg, float x, float y, float w, float h);	/* rva 0x184ef0 */
+/* a bar of frac (0..1) of the frame rectangle u0..v1 over the rectangle bu0..bv1, colors main and black */
+void Menu_DrawBar(void *img, float x, float y, float frac, int mode, float f, float u0, float v0, float u1, float v1,
+	float bu0, float bv0, float bu1, float bv1, uint32_t color, uint32_t black);	/* rva 0x1847f0 */
 byte Net_ClientFrame(void);					/* rva 0x18aa50 */
 byte Net_ClientReady(void);					/* rva 0x18ae50 */
 byte Net_ServerFrame(void);					/* rva 0x18b330 */

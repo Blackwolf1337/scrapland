@@ -12,10 +12,21 @@ typedef struct cNetShip {
 	char name[1];			/* 0x0c */
 } cNetShip;
 
+/* cNetClient.state */
+#define NETCLIENT_CONNECTING 0
+#define NETCLIENT_WAITING 2		/* "Waiting server response" */
+#define NETCLIENT_TIMEOUT 3
+#define NETCLIENT_DISCONNECTED 4
+
 typedef struct cNetClient {
-	byte pad_0[0x28];
+	byte pad_0[0x10];
+	int state;			/* 0x10 NETCLIENT_ */
+	byte pad_14[0x1c - 0x14];
+	int ping;			/* 0x1c */
+	byte pad_20[0x28 - 0x20];
 	cNetShip *ship;			/* 0x28 */
 } cNetClient;
+SD_OFFSET(cNetClient, state, 0x10);
 SD_OFFSET(cNetClient, ship, 0x28);
 
 byte Net_IsServer(void);

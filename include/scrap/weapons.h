@@ -76,6 +76,8 @@ void __thiscall Controls_RumbleB(byte *self, float strength, float time);
 void __thiscall cAutoAim_SetAngle(void *self, float ang);	/* rva 0xfe780 */
 void __thiscall cAutoAim_SetRange(void *self, float range);	/* rva 0xfe7b0 */
 void __thiscall cAutoAim_Update(void *self, cEntity *owner, float dt);	/* rva 0xfe1f0 */
+/* the point the aim help aims at for owner into out (rva 0xfdea0) */
+vec3_t *__thiscall cAutoAim_GetPoint(void *self, vec3_t *out, cEntity *owner);
 /* the shots of the vehicle (+0x298): on the entity of that name or a point, n more; the attacker of the vehicle
  * by name; every frame after the weapons (rva 0xf9c10, 0xf9d00, 0xf9b60, 0xf9d90) */
 void __thiscall cVehicleAttack_ShotAt(void *self, const char *name, int n);

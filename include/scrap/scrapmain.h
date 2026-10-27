@@ -71,6 +71,33 @@ SD_SIZE(D3DAdapterInfo, 0x438c);
 typedef struct CPsaImage CPsaImage;
 #define PSAIMAGE_COLOR(p) (*(uint32_t *)((byte *)(p) + 0x34))
 
+/* an image of a .psa sprite sheet (0x44 bytes): the state of the next draw */
+struct CPsaImage {
+	float x, y;			/* 0x00 */
+	float pivotX, pivotY;		/* 0x08 0..1 of the size */
+	float scaleX, scaleY;		/* 0x10 1 */
+	float f18, f1c;			/* 0x18 */
+	uint16_t s20;			/* 0x20 */
+	byte b22;			/* 0x22 */
+	byte pad_23;
+	float uv0[2];			/* 0x24 the texture rectangle of frame 0 */
+	float uv1[2];			/* 0x2c 1, 1 */
+	uint32_t color;			/* 0x34 0xAARRGGBB, 0xffffff */
+	int flip;			/* 0x38 0..3 (DrawFrameFlip) */
+	void *sprite;			/* 0x3c */
+	int frame;			/* 0x40 the frame drawn, 0 between the draws */
+};
+SD_SIZE(CPsaImage, 0x44);
+SD_OFFSET(CPsaImage, color, 0x34);
+
+/* the size in pixels of a frame of the sheet */
+byte __thiscall CPsaImage_GetFrameSize(CPsaImage *self, int frame, int *w, int *h);	/* rva 0x22d2e0 */
+/* the texture rectangle of a frame (frame 0: uv0/uv1 of the image); 0 for frame 0 */
+byte __thiscall CPsaImage_GetFrameUV(CPsaImage *self, int frame, float *uv0, float *uv1);	/* rva 0x22d320 */
+void __thiscall CPsaImage_DrawFrame(CPsaImage *self, int frame, float x, float y);		/* rva 0x22d440 */
+/* with the mirror modes 0..3 of the sprite (mode) and of the image (flip) */
+void __thiscall CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, float y, int mode, int flip);	/* rva 0x22d480 */
+
 /* the state of the engine glue */
 #define g_CamActual GAME_DATA(CGameCamera *, 0x4a8308)	/* the camera drawn */
 #define g_ViewerCamera GAME_DATA(CGameCamera *, 0x4a830c)	/* gViewerCamera, made with the engine */
