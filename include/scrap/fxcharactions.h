@@ -313,15 +313,14 @@ typedef struct cObjElementFXMessengerAttack {
 	vec3_t to;			/* 0x0d0 */
 	vec3_t dir;			/* 0x0dc */
 	CGameTrail trails[FXMESSENGER_TRAILS];	/* 0x0e8 */
-	vec3_t ray[FXMESSENGER_POINTS];	/* 0x100 from .. to, the middle ones moved at random */
-	vec3_t lines[FXMESSENGER_LINES][FXMESSENGER_POINTS];	/* 0x178 */
-	float f3d0;			/* 0x3d0 */
-	float f3d4[FXMESSENGER_LINES];	/* 0x3d4 */
+	/* 0x100 the ray from .. to (the middle points moved at random), then the 5 branches off it */
+	vec3_t lines[1 + FXMESSENGER_LINES][FXMESSENGER_POINTS];
+	float width[1 + FXMESSENGER_LINES];	/* 0x3d0 */
 	byte started;			/* 0x3e8 */
 } cObjElementFXMessengerAttack;
 SD_OFFSET(cObjElementFXMessengerAttack, trails, 0xe8);
-SD_OFFSET(cObjElementFXMessengerAttack, lines, 0x178);
-SD_OFFSET(cObjElementFXMessengerAttack, f3d4, 0x3d4);
+SD_OFFSET(cObjElementFXMessengerAttack, lines, 0x100);
+SD_OFFSET(cObjElementFXMessengerAttack, width, 0x3d0);
 SD_SIZE(cObjElementFXMessengerAttack, 0x3ec);
 
 typedef struct cObjElementFXMessengerTakeDataPack {
@@ -332,11 +331,11 @@ typedef struct cObjElementFXMessengerTakeDataPack {
 	CGameParticles particles;	/* 0x010 on Dummy01 */
 	CGameTrail trails[FXDATAPACK_TRAILS];	/* 0x0c0 */
 	vec3_t points[FXDATAPACK_TRAILS][FXDATAPACK_POINTS];	/* 0x0d0 */
-	float f160[FXDATAPACK_TRAILS];	/* 0x160 */
+	float width[FXDATAPACK_TRAILS];	/* 0x160 0.6..1 */
 	byte started;			/* 0x170 */
 } cObjElementFXMessengerTakeDataPack;
 SD_OFFSET(cObjElementFXMessengerTakeDataPack, points, 0xd0);
-SD_OFFSET(cObjElementFXMessengerTakeDataPack, f160, 0x160);
+SD_OFFSET(cObjElementFXMessengerTakeDataPack, width, 0x160);
 SD_SIZE(cObjElementFXMessengerTakeDataPack, 0x174);
 
 typedef struct cObjElementFXPoliceGearConversion {
@@ -541,6 +540,11 @@ void __thiscall cObjElementFXBankerSteal_Update(cObjElementFXBankerSteal *self, 
 void __thiscall cObjElementFXBankMasterSuction_Update(cObjElementFXBankMasterSuction *self, cDebris *d, float dt);
 /* the trails of the Functionary while it runs fast (its speed above 1) */
 void __thiscall cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFunctionarySpecialAction *self, cDebris *d,
+	float dt);
+/* the lightning: the 6 trails along the Bezier curves of the lines, flashes at their ends */
+void __thiscall cObjElementFXMessengerAttack_Update(cObjElementFXMessengerAttack *self, cDebris *d, float dt);
+/* the data pack trails from the owner to the item, the middle points following, flashes at the ends */
+void __thiscall cObjElementFXMessengerTakeDataPack_Update(cObjElementFXMessengerTakeDataPack *self, cDebris *d,
 	float dt);
 void __thiscall cObjElementFXBettyKill_Update(cObjElementFXKill *self, cDebris *d, float dt);
 void __thiscall cObjElementFXDTritusKill_Update(cObjElementFXKill *self, cDebris *d, float dt);
