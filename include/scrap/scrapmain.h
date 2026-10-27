@@ -239,8 +239,6 @@ int Video_PlayFile(const char *name, int flags);		/* rva 0x281660 */
 byte Avi_Save(const char *name);
 byte Avi_Frame(const char *name, int frame);
 byte Avi_Load(const char *name);
-int RenderTarget_Begin(const char *name);			/* rva 0x220b40 */
-int RenderTarget_End(int mode);					/* rva 0x220bd0 */
 void SombrasStencil_Set(byte on);				/* rva 0x267460 */
 CPsaImage *__thiscall CPsaImage_ctor(CPsaImage *self, const char *name, int flags);	/* rva 0x22d120 */
 void __fastcall CPsaImage_dtor(CPsaImage *self);			/* rva 0x22d160 */

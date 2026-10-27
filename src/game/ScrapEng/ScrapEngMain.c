@@ -16,6 +16,7 @@
 #include "scrap/mundo.h"
 #include "scrap/niebla.h"
 #include "scrap/render.h"
+#include "scrap/rendertarget.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/sistpart.h"
@@ -706,7 +707,7 @@ void Engine_ResetTextures(void) {
 }
 
 int Eng_RenderTargetEnd(void) {
-	return RenderTarget_End(0);
+	return RenderTarget_End(NULL);
 }
 
 byte Eng_ResetViewRect(void) {
