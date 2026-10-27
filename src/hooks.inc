@@ -1071,7 +1071,7 @@ SD_HOOK(SchedList_RemoveIter, 0x205db0, 110)
 SD_HOOK(SchedList_RemoveHead, 0x205e20, 131)
 SD_HOOK(cScheduledFunc_Set, 0x205eb0, 182)
 
-/* src/game/engine3d/Engine/ArchIO.c */
+/* src/game/ScrapEng/ScrapEngModel.c */
 SD_HOOK(CGameModel_ctor, 0x20eb10, 80)
 SD_HOOK(CCollideMesh_dtor, 0x20eb70, 150)
 SD_HOOK(CGameModel_Reset, 0x20ec10, 86)
@@ -1143,6 +1143,22 @@ SD_HOOK(CGameModel_StopAnims, 0x212490, 58)
 SD_HOOK(CGameModel_StopAnim, 0x2124d0, 56)
 SD_HOOK(CRotacion_SetEuler, 0x212510, 84)
 SD_HOOK(CAnimMat_SetFrame, 0x258090, 25)
+
+/* src/game/ScrapEng/ScrapEngCollision.c (CListaVert_GetPos in MallaTri.c) */
+SD_HOOK(CListaVert_GetPos, 0x212570, 469)
+SD_HOOK(ProfScope_End, 0x212770, 57)
+SD_HOOK(CollisionEpsilon_Set, 0x2127b0, 271)
+SD_HOOK(Collision_SegSphere, 0x2128c0, 667)
+SD_HOOK(Collision_SphereBox, 0x212b60, 1147)
+SD_HOOK(Collision_Box, 0x212fe0, 360)
+SD_HOOK(Engine_TestLine, 0x213150, 652)
+SD_HOOK(Collision_Sector, 0x2133e0, 208)
+SD_HOOK(Collision_Check, 0x2134b0, 327)
+SD_HOOK(Collision_Slide2D, 0x213600, 894)
+SD_HOOK(Collision_Slide, 0x213980, 990)
+SD_HOOK(Engine_TestSphere, 0x213d60, 1173)
+
+/* src/game/ScrapEng/ScrapEngFont.c */
 SD_HOOK(CFont_ctor, 0x219dd0, 116)
 SD_HOOK(CFont_dtor, 0x219e50, 39)
 SD_HOOK(CFont_ResetX, 0x219e80, 7)
@@ -1166,11 +1182,15 @@ SD_HOOK(CFont_ResetEfectos, 0x21a860, 22)
 SD_HOOK(CFont_MedirV, 0x21a880, 229)
 SD_HOOK(CFont_Print, 0x21a970, 135)
 SD_HOOK(CFont_PrintfV, 0x21aa00, 382)
+
+/* src/game/ScrapEng/Fonts.c */
 SD_HOOK(Font_Build, 0x21ab80, 137)
 SD_HOOK(Fonts_Unload, 0x21ac10, 279)
 SD_HOOK(Font_Get, 0x21ad30, 193)
 SD_HOOK(Fonts_Load, 0x21ae00, 948)
 SD_HOOK(Fonts_Unifont, 0x21b1c0, 24)
+
+/* src/game/engine3d/Engine/ArchIO.c */
 SD_HOOK(CArchIO_ctor, 0x21b1f0, 105)
 SD_HOOK(CArchIO_dtor, 0x21b290, 99)
 SD_HOOK(Ptr_Delete, 0x21b300, 33)

@@ -10,6 +10,7 @@
 #include "scrap/python.h"
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
+#include "scrap/scrapcollision.h"
 
 /* levelpath GetLevelPath() : Obtiene el path del nivel actual */
 PyObject *Scrap_GetLevelPath(PyObject *self, PyObject *args) {

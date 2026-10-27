@@ -557,6 +557,54 @@ vec3_t *__thiscall CListaVert_GetNormal(CListaVert *self, vec3_t *out, uint32_t 
 	}
 }
 
+/* an inline of ListaVert.h, compiled into ScrapEngCollision.cpp */
+vec3_t *__thiscall CListaVert_GetPos(CListaVert *self, vec3_t *out, uint32_t i) {
+	switch (self->frmt) {
+	case VERT_TEX1:
+		return Lista_Copy(out, CListaVert_Tex1(self, i), 0, sizeof(*out));
+	case VERT_TEX2:
+		return Lista_Copy(out, CListaVert_Tex2(self, i), 0, sizeof(*out));
+	case VERT_LTEX1:
+		return Lista_Copy(out, CListaVert_LTex1(self, i), 0, sizeof(*out));
+	case VERT_TEX1_B1:
+		return Lista_Copy(out, CListaVert_Tex1B1(self, i), 0, sizeof(*out));
+	case VERT_LTEX2N:
+		return Lista_Copy(out, CListaVert_LTex2N(self, i), 0, sizeof(*out));
+	case VERT_LTEX3:
+		return Lista_Copy(out, CListaVert_LTex3(self, i), 0, sizeof(*out));
+	case VERT_LTEX1N:
+		return Lista_Copy(out, CListaVert_LTex1N(self, i), 0, sizeof(*out));
+	case VERT_LTEX2:
+		return Lista_Copy(out, CListaVert_LTex2(self, i), 0, sizeof(*out));
+	default:
+		break;
+	}
+	if (!self->pVert || (uint32_t)self->totVert <= i) {
+		CheckFailed("pVert && (dword)i<(dword)totVert", "engine/ListaVert.h", __TIMESTAMP__, __LINE__);
+	}
+	switch (self->frmt) {
+	case VERT_POS_XBOX: {
+		float esc = self->esc;
+		vec3_t n;
+		ListaVert_UnpackNormal(&n, ((uint32_t *)self->pVert)[i]);
+		out->x = n.x * esc;
+		out->y = n.y * esc;
+		out->z = n.z * esc;
+		return out;
+	}
+	case VERT_TEX1_XBOX:
+		return Lista_Copy(out, self->pVert + i * 0x18, 0, sizeof(*out));
+	case VERT_TEX1C_XBOX:
+		return Lista_Copy(out, self->pVert + i * 0x1c, 0, sizeof(*out));
+	default:
+		CheckFailed("0", "engine/ListaVert.h", __TIMESTAMP__, __LINE__);
+		out->z = 0.0f;
+		out->y = 0.0f;
+		out->x = 0.0f;
+		return out;
+	}
+}
+
 uv_t *__thiscall CListaVert_GetUV(CListaVert *self, uv_t *out, uint32_t i) {
 	switch (self->frmt) {
 	case VERT_TEX1:

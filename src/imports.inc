@@ -247,8 +247,6 @@ SD_IMPORT(cDebrisSys_Init, 0x204d50)
 SD_IMPORT(cDebrisSys_NewElement, 0x204bd0)
 SD_IMPORT(cDebrisSys_Drop, 0x204a40)
 SD_IMPORT(EntityLists_Get, 0x1a7170)
-SD_IMPORT(Engine_TestLine, 0x213150)
-SD_IMPORT(Engine_TestSphere, 0x213d60)
 SD_IMPORT(cWorld_TestLineEntities, 0x2098f0)
 SD_IMPORT(cWorld_TestSphereEntities, 0x20a320)
 SD_IMPORT(cWorld_SphereCall, 0x20a290)
@@ -348,7 +346,6 @@ SD_IMPORT(Loading_Step, 0x2157a0)
 SD_IMPORT(Console_Execute, 0x20aaf0)
 
 /* engine3d: Engine/ListaVert.cpp and Engine/render.cpp (include/scrap/listavert.h, mallatri.h) */
-SD_IMPORT(CListaVert_GetPos, 0x212570)
 
 /* engine3d: called from Engine/luz.cpp (include/scrap/luz.h) */
 SD_IMPORT(E3D_SetShadowLight, 0x2682d0)
@@ -382,7 +379,6 @@ SD_IMPORT(NodeFX_New, 0x2b2cc0)
 
 /* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
 SD_IMPORT(CObjBase3D_SetNodo, 0x2cad70)
-SD_IMPORT(CSuelo_TraceSeg, 0x26f120)
 SD_IMPORT(SistPart_Draw, 0x2b7150)
 SD_IMPORT(SistPart_Draw2, 0x2b55d0)
 
@@ -507,3 +503,9 @@ SD_IMPORT(crt_spawnlp, 0x34f2e0)
 SD_IMPORT_STDCALL(D3DX_CheckTextureRequirements, 28, 0x0037ea)
 SD_IMPORT_STDCALL(D3DX_CreateTextureFromFileInMemoryEx, 60, 0x0062a7)
 SD_IMPORT_STDCALL(D3DX_LoadSurfaceFromSurface, 32, 0x004dbf)
+
+/* src/game/ScrapEng/ScrapEngCollision.c (called from suelo.cpp and checkbbox.cpp, include/scrap/suelo.h) */
+SD_IMPORT(CSuelo_TestSeg, 0x26ed30)
+SD_IMPORT(CSuelo_TraceSegPos, 0x26df80)
+SD_IMPORT(CSuelo_TraceSeg, 0x26f120)
+SD_IMPORT(CSuelo_CheckBBox, 0x26fb10)

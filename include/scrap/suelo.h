@@ -237,6 +237,39 @@ byte Suelo_SegPlane(const vec3_t *a, const vec3_t *b, float r, const plane_t *pl
 byte Suelo_SegEdge(const vec3_t *a, const vec3_t *b, const vec3_t *p, const vec3_t *q, float r, float *t);
 /* the point of the triangle nearest to the sphere center c, if it is within r */
 byte Suelo_SphereTri(const vec3_t *c, float r, const CCollideTri *tri, const CCollideMesh *mesh, vec3_t *res);
+/* the triangle a segment hit (CSuelo_TraceSeg): quad->pTri[tri] in the mesh of the quad */
+typedef struct CSueloHit {
+	int i0;
+	int tri;
+	CCollideQuad *quad;
+} CSueloHit;
+
+/* the query of checkbbox.cpp ("colis"): the box min/max (usar_minmax 1) or min2/max2 (2), moved by pos */
+typedef struct CColisBBox {
+	byte pad_0[0x18];
+	vec3_t pos;			/* 0x18 */
+	vec3_t min;			/* 0x24 */
+	vec3_t max;			/* 0x30 */
+	vec3_t min2;			/* 0x3c */
+	vec3_t max2;			/* 0x48 */
+	int usar_minmax;		/* 0x54 */
+	byte pad_58[0x24];
+	int calc_respuesta;		/* 0x7c must be 0 */
+} CColisBBox;
+SD_OFFSET(CColisBBox, usar_minmax, 0x54);
+SD_SIZE(CColisBBox, 0x80);
+
+/* the queries against the triangles of the floor (suelo.cpp and checkbbox.cpp, src/imports.inc); the last
+ * arguments are 0 in all callers */
+/* rva 0x26ed30: 1 if the segment from a to b hits a triangle */
+byte __thiscall CSuelo_TestSeg(CSuelo *self, const vec3_t *a, const vec3_t *b, int flags);
+/* rva 0x26df80 and 0x26f120: also the first hit point, the hit triangle */
+byte __thiscall CSuelo_TraceSegPos(CSuelo *self, const vec3_t *a, const vec3_t *b, vec3_t *hit, int flags);
+byte __thiscall CSuelo_TraceSeg(CSuelo *self, const vec3_t *a, const vec3_t *b, vec3_t *hit, CSueloHit *tri,
+	int flags);
+/* rva 0x26fb10: 1 if a triangle is in the box */
+byte __thiscall CSuelo_CheckBBox(CSuelo *self, CColisBBox *colis);
+
 /* the position where a sphere of radius r moving from a to b first touches the triangle */
 byte Suelo_SweepTri(const vec3_t *a, const vec3_t *b, float r, const CCollideTri *tri, const CCollideMesh *mesh,
 	vec3_t *res);

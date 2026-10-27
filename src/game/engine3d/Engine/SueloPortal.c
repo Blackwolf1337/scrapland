@@ -376,15 +376,6 @@ int Sector_Recorrer(int sector, const vec3_t *a, const vec3_t *b, byte front) {
 	return sector;
 }
 
-/* the minimum and maximum the way minss and maxss pick (a when it is smaller or bigger, else b) */
-static float Portal_Min(float a, float b) {
-	return a < b ? a : b;
-}
-
-static float Portal_Max(float a, float b) {
-	return a > b ? a : b;
-}
-
 void Zona_Pintar(uint32_t zona, const box_t *rect) {
 	CHECK(zona < (uint32_t)g_NumZonas);
 	CHECK(g_Zonas[zona]);
@@ -399,12 +390,12 @@ void Zona_Pintar(uint32_t zona, const box_t *rect) {
 	if (i < g_NumZonasPintar) {
 		ZonaPintar *e = &g_ZonasPintar[i];
 		CHECK(g_Zonas[zona]->Frame3D == g_FrameCount);
-		e->rect.min.x = Portal_Min(e->rect.min.x, rect->min.x);
-		e->rect.min.z = Portal_Min(e->rect.min.z, rect->min.z);
-		e->rect.min.y = Portal_Min(e->rect.min.y, rect->min.y);
-		e->rect.max.z = Portal_Max(e->rect.max.z, rect->max.z);
-		e->rect.max.x = Portal_Max(e->rect.max.x, rect->max.x);
-		e->rect.max.y = Portal_Max(e->rect.max.y, rect->max.y);
+		e->rect.min.x = Float_MinSS(e->rect.min.x, rect->min.x);
+		e->rect.min.z = Float_MinSS(e->rect.min.z, rect->min.z);
+		e->rect.min.y = Float_MinSS(e->rect.min.y, rect->min.y);
+		e->rect.max.z = Float_MaxSS(e->rect.max.z, rect->max.z);
+		e->rect.max.x = Float_MaxSS(e->rect.max.x, rect->max.x);
+		e->rect.max.y = Float_MaxSS(e->rect.max.y, rect->max.y);
 		e->veces++;
 		g_Zonas[zona]->rect = e->rect;
 	} else {
@@ -451,12 +442,12 @@ void Zona_Pintar(uint32_t zona, const box_t *rect) {
 			if (!CPortal_ClipRect(po, &r)) {
 				continue;
 			}
-			r.min.x = Portal_Max(r.min.x, rect->min.x);
-			r.min.y = Portal_Max(r.min.y, rect->min.y);
-			r.min.z = Portal_Max(r.min.z, rect->min.z);
-			r.max.y = Portal_Min(r.max.y, rect->max.y);
-			r.max.z = Portal_Min(r.max.z, rect->max.z);
-			r.max.x = Portal_Min(r.max.x, rect->max.x);
+			r.min.x = Float_MaxSS(r.min.x, rect->min.x);
+			r.min.y = Float_MaxSS(r.min.y, rect->min.y);
+			r.min.z = Float_MaxSS(r.min.z, rect->min.z);
+			r.max.y = Float_MinSS(r.max.y, rect->max.y);
+			r.max.z = Float_MinSS(r.max.z, rect->max.z);
+			r.max.x = Float_MinSS(r.max.x, rect->max.x);
 		}
 		if (!(0.0f >= r.max.x - r.min.x) && !(0.0f >= r.max.y - r.min.y)) {
 			Zona_Pintar((uint32_t)dest->id, &r);
@@ -488,12 +479,12 @@ void Portales_Cull(uint32_t sector) {
 			}
 			box_t *u = &g_PintarRect;
 			g_PintarNum = ++n;
-			u->min.x = Portal_Min(u->min.x, e->rect.min.x);
-			u->min.y = Portal_Min(u->min.y, e->rect.min.y);
-			u->min.z = Portal_Min(u->min.z, e->rect.min.z);
-			u->max.y = Portal_Max(u->max.y, e->rect.max.y);
-			u->max.z = Portal_Max(u->max.z, e->rect.max.z);
-			u->max.x = Portal_Max(u->max.x, e->rect.max.x);
+			u->min.x = Float_MinSS(u->min.x, e->rect.min.x);
+			u->min.y = Float_MinSS(u->min.y, e->rect.min.y);
+			u->min.z = Float_MinSS(u->min.z, e->rect.min.z);
+			u->max.y = Float_MaxSS(u->max.y, e->rect.max.y);
+			u->max.z = Float_MaxSS(u->max.z, e->rect.max.z);
+			u->max.x = Float_MaxSS(u->max.x, e->rect.max.x);
 		}
 	}
 	Portales_DebugDraw();

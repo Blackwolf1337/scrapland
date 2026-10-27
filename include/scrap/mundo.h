@@ -45,10 +45,19 @@ SD_SIZE(CMundo, 0xc8);
 
 #define g_Mundo GAME_DATA(CMundo *, 0x4afde8)
 
-/* the inline accessor of mundo.h */
+/* the inline accessors of mundo.h */
 static inline CMundo *Mundo_Get(void) {
-	CHECK(g_Mundo);
+	if (!g_Mundo) {
+		CheckFailed("gMundo", "Engine/Mundo.h", __TIMESTAMP__, __LINE__);
+	}
 	return g_Mundo;
+}
+
+static inline CSuelo *Mundo_Suelo(void) {
+	if (!g_Mundo || !g_Mundo->ObjSuelo) {
+		CheckFailed("gMundo && gMundo->obtSuelo()", "Engine/Mundo.h", __TIMESTAMP__, __LINE__);
+	}
+	return g_Mundo->ObjSuelo;
 }
 
 /* the engine variables of the world (Gvars) */

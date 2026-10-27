@@ -137,8 +137,6 @@ void __thiscall cDebrisSys_Drop(cDebrisSys *sys, cDebris *debris);
 
 /* entity list by name for the collision tests */
 void *EntityLists_Get(const char *name);
-byte Engine_TestLine(const vec3_t *from, const vec3_t *to, vec3_t *hit, int arg);
-byte Engine_TestSphere(const vec3_t *center, const vec3_t *center2, float radius, int a, int b);
 void __thiscall cWorld_TestLineEntities(cWorld *world, int arg, void *list, const vec3_t *from, const vec3_t *to,
 	vec3_t *hit, cEntity **target, int flag);
 void __thiscall cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, void *list, const vec3_t *center,

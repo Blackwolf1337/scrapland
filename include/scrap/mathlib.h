@@ -144,4 +144,13 @@ char *Vec3_Str(const vec3_t *v, uint32_t slot, int prec);
 /* the _matherr of the exe: a line in the file log, 0 */
 int E3D_MathErr(void *exc);
 
+/* the minimum and maximum the way minss and maxss pick: a when it is smaller (bigger), else b (also unordered) */
+static inline float Float_MinSS(float a, float b) {
+	return a < b ? a : b;
+}
+
+static inline float Float_MaxSS(float a, float b) {
+	return a > b ? a : b;
+}
+
 #endif

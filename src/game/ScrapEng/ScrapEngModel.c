@@ -162,9 +162,7 @@ void __thiscall CGameModel_Load(CGameModel *self, const char *name, const char *
 void __thiscall CGameModel_Release(CGameModel *self, byte free) {
 	CGameModel_FreeCollision(self);
 	if (free) {
-		if (!g_Mundo) {
-			CheckFailed("gMundo", __FILE__, __TIMESTAMP__, __LINE__);
-		}
+		Mundo_Get();
 		Con_Verbosef("Release model: %s\n", self->Model->name);
 		for (int i = 0; i < MAX_ANIMGRUPOS; i++) {
 			CAnimGrupo *g = CModelo_GetAnim(self->Model, i);
@@ -179,9 +177,7 @@ void __thiscall CGameModel_Release(CGameModel *self, byte free) {
 		Modelo_Destroy(&self->Model, 1);
 	}
 	if (self->Model) {
-		if (!g_Mundo) {
-			CheckFailed("gMundo", __FILE__, __TIMESTAMP__, __LINE__);
-		}
+		Mundo_Get();
 		Modelo_Destroy(&self->Model, 0);
 	}
 }
@@ -1084,13 +1080,6 @@ void __thiscall CGameModel_ClosestVertex(CGameModel *self, float x, float y, flo
 	if (total < 1) {
 		CheckFailed("nVertex > 0", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-}
-
-static CSuelo *Mundo_Suelo(void) {
-	if (!g_Mundo || !g_Mundo->ObjSuelo) {
-		CheckFailed("gMundo && gMundo->obtSuelo()", "Engine/Mundo.h", __TIMESTAMP__, __LINE__);
-	}
-	return g_Mundo->ObjSuelo;
 }
 
 void __fastcall CGameModel_FreeCollision(CGameModel *self) {

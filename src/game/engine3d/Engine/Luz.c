@@ -8,6 +8,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/luz.h"
 #include "scrap/mundo.h"
+#include "scrap/prof.h"
 #include "scrap/sueloportal.h"
 
 #define CLUZ_VFTABLE 0x3d79fc
@@ -22,8 +23,6 @@
 #define g_LucesD3D GAME_DATA(int, 0x4ac430)	/* with act_D3D */
 #define g_LucesTotal GAME_DATA(int, 0x4ac42c)
 #define g_LuzIndD3D GAME_DATA(uint32_t, 0x4ac428)	/* the next light gets index 4 + this */
-#define g_ProfMode GAME_DATA(int, 0x4a9018)	/* 5: timing with rdtsc */
-#define g_ProfTicksLuces GAME_DATA(uint64_t, 0x4b18c8)
 
 /* the engine variables of the lights (Gvars) */
 #define g_LightEnaD3D GAME_DATA(int, 0x4ac228)	/* R_LightEnaD3D: 0 always, 1 on changes, from 2 never */
@@ -240,10 +239,7 @@ byte __thiscall IObjeto3D_Write(IObjeto3D *self, CArchIO *f, void *ctx) {
 
 int Luz_Select(const vec3_t *pos, int sector, const vec3_t *center, float radius, CLuz **out, int maxOn) {
 	CHECK(g_pd3dDevice);
-	if (g_ProfMode == 5) {
-		g_ProfTicksLuces -= __builtin_ia32_rdtsc();
-		Prof_Count(PROF_LUCES, 1);
-	}
+	Prof_Begin(PROF_LUCES);
 	CHECK(radius > 0.0f);
 	int n = 0;
 	CLuz *dirSombra = NULL, *sombra = NULL;
@@ -308,9 +304,7 @@ int Luz_Select(const vec3_t *pos, int sector, const vec3_t *center, float radius
 		CHECK(l->activa);
 		Luz_EnableD3D(l, i < maxOn);
 	}
-	if (g_ProfMode == 5) {
-		g_ProfTicksLuces += __builtin_ia32_rdtsc();
-	}
+	Prof_End(PROF_LUCES);
 	return n;
 }
 

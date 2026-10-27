@@ -571,15 +571,6 @@ void __thiscall CListaVert_SetColor(CListaVert *self, uint32_t and, uint32_t or)
 	}
 }
 
-/* minss and maxss: the second operand when unordered */
-static inline float ListaVert_Min(float a, float b) {
-	return a < b ? a : b;
-}
-
-static inline float ListaVert_Max(float a, float b) {
-	return a > b ? a : b;
-}
-
 static void ListaVert_BoxInit(box_t *b) {
 	b->min.x = FLT_MAX_F;
 	b->min.y = FLT_MAX_F;
@@ -590,20 +581,20 @@ static void ListaVert_BoxInit(box_t *b) {
 }
 
 static void ListaVert_BoxAdd(box_t *b, float x, float y, float z) {
-	b->min.x = ListaVert_Min(b->min.x, x);
-	b->min.y = ListaVert_Min(b->min.y, y);
-	b->min.z = ListaVert_Min(b->min.z, z);
-	b->max.x = ListaVert_Max(b->max.x, x);
-	b->max.y = ListaVert_Max(b->max.y, y);
-	b->max.z = ListaVert_Max(b->max.z, z);
+	b->min.x = Float_MinSS(b->min.x, x);
+	b->min.y = Float_MinSS(b->min.y, y);
+	b->min.z = Float_MinSS(b->min.z, z);
+	b->max.x = Float_MaxSS(b->max.x, x);
+	b->max.y = Float_MaxSS(b->max.y, y);
+	b->max.z = Float_MaxSS(b->max.z, z);
 }
 
 static float ListaVert_BoxLow(const box_t *b) {
-	return ListaVert_Min(b->min.z, ListaVert_Min(b->min.y, b->min.x));
+	return Float_MinSS(b->min.z, Float_MinSS(b->min.y, b->min.x));
 }
 
 static float ListaVert_BoxHigh(const box_t *b) {
-	return ListaVert_Max(b->max.z, ListaVert_Max(b->max.y, b->max.x));
+	return Float_MaxSS(b->max.z, Float_MaxSS(b->max.y, b->max.x));
 }
 
 void __thiscall CListaVert_GetExtents(CListaVert *self, box_t *ext, byte reset) {

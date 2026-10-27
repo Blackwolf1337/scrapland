@@ -128,7 +128,7 @@ void __thiscall CListaVert_SetLTex1(CListaVert *self, uint32_t i, const void *v)
 void __thiscall CListaVert_SetTex1B1(CListaVert *self, uint32_t i, const void *v);
 /* vertex i of a TEX1, TEX2 or TEX1_B1 list as a TEX1 vertex (0x20 bytes) */
 void *__thiscall CListaVert_GetTex1(CListaVert *self, void *out, uint32_t i);
-/* the position of vertex i (rva 0x212570, not in this file) */
+/* the position of vertex i (rva 0x212570, in MallaTri.c) */
 vec3_t *__thiscall CListaVert_GetPos(CListaVert *self, vec3_t *out, uint32_t i);
 
 /* the diffuse colors: c & and | or */

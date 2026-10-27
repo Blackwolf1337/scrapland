@@ -16,13 +16,6 @@
 
 #define SISTPART_DEFAULT_COLOR 0xffffff
 
-/* the triangle a segment hit (CSuelo_TraceSeg): its index into the index list of the mesh */
-typedef struct SistPartHit {
-	int i0;
-	int tri;
-	byte *mesh;
-} SistPartHit;
-
 typedef int(__thiscall *partType_t)(CParticula *self);
 typedef void(__thiscall *partUpdate_t)(CParticula *self, CSistPart *sp, float dt, void *multiSpr);
 #define PARTICULA_TYPE(p) (((partType_t)(p)->vftable[PARTICULA_VF_TYPE])(p))
@@ -815,18 +808,17 @@ void __thiscall CSistPart_SetAlpha(CSistPart *self, float alpha) {
 /* a bounce on the floor of the world: the velocity mirrored at the hit triangle, halved */
 static void Particula_Bounce(CParticulaActive *a, const vec3_t *prev, float dt) {
 	vec3_t hit;
-	SistPartHit info = { 0, 0, NULL };
+	CSueloHit info = { 0, 0, NULL };
 
 	CHECK(g_Mundo);
-	void *suelo = g_Mundo->ObjSuelo;
+	CSuelo *suelo = g_Mundo->ObjSuelo;
 	if (!suelo || !CSuelo_TraceSeg(suelo, prev, &a->p.pos, &hit, &info, 0)) {
 		return;
 	}
 	a->vel.x = -a->vel.x * 0.5f;
 	a->vel.y = -a->vel.y * 0.5f;
 	a->vel.z = -a->vel.z * 0.5f;
-	uint32_t i = ((uint16_t *)*(void **)(info.mesh + 0x10))[info.tri];
-	const float *n = (const float *)(*(byte **)(*(byte **)(info.mesh + 8) + 0x30) + 4 + i * 0x1c);
+	const float *n = &info.quad->Mesh->pTri[info.quad->pTri[info.tri]].plane.n.x;
 	float d = n[1] * a->vel.y + a->vel.x * n[0] + n[2] * a->vel.z;
 	d = d + d;
 	a->vel.x = n[0] * d - a->vel.x;
