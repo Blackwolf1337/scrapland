@@ -237,7 +237,8 @@ fb1wnode = -1
 fb1nodes = 0
 fb1hasmodel = 0
 if fb1car:
-	fb1hasmodel = SDTest.Call(0x210da0, 'tbi', fb1car + 0xb8)[0]
+	fb1cm = SDTest.Call(fb1i(fb1i(fb1car) + 0x98) - 0x400000, 'tii', fb1car)[0]
+	fb1hasmodel = fb1cm != 0 and SDTest.Call(0x210da0, 'tbi', fb1cm)[0]
 # the weapon nodes of the car: our own table, node 0 (the root of the model) for the laser
 if fb1car and fb1hasmodel and fb1laser >= 0 and fb1laser < 16:
 	fb1nodes = fb1z(0x100)
@@ -376,6 +377,32 @@ if fb1walk and fb1hasmodel:
 		fb1poke(fb1fx + 4, 0)
 		check('cObjElementFXBettyAttack_Update no entity', lambda: (SDTest.Call(0x1b87a0, 'tviif', fb1fx, fb1d, 0.0),
 			fb1fl(fb1d + 0x4c, 1)))
+
+# ---- PoliceGearConversion on the player (read only: the model, the center, the actions; the waist node 0) ----
+fb1s, fb1d, fb1fx = fb1debris(fb1str(0x446fa0), 76)
+fb1n = 0
+if fb1fx and fb1i(fb1fx) == 0x400000 + 0x3cb60c:
+	fb1n = SDTest.Call(0x21d4d0, 'ii', fb1fx + 0x18)[0]
+check('FB1 gear', lambda: (fb1d != 0, fb1fx != 0, fb1n, fb1fx and fb1ints(fb1fx + 0x8ac, 3)))
+if fb1n >= 0xff:
+	fb1poke(fb1fx + 4, fb1player)
+	fb1poke(fb1fx + 0xc8, 0)
+	# a second Update hangs in the original and in the C alike (this element is not set up like the game does it)
+	for fb1t, fb1last, fb1et, fb1st, fb1delta in ((0.3, 0.25, 0.0, 0.0, 0.05),):
+		fb1set(fb1fx + 8, (0.0, fb1t, fb1last))
+		fb1set(fb1fx + 0x848, (fb1et,))
+		fb1set(fb1fx + 0xcc, (fb1st,))
+		fb1dt(fb1delta)
+		fb1srand(76)
+		check('cObjElementFXPoliceGearConversion_Update' + fmt((fb1t, fb1last, fb1et, fb1st, fb1delta)), lambda: (
+			SDTest.Call(0x1c2170, 'tviif', fb1fx, fb1d, 0.0), fb1fl(fb1fx + 8, 3), fb1fl(fb1fx + 0xcc, 1),
+			fb1ints(fb1fx + 0x844, 1), fb1fl(fb1fx + 0x848, 1), fb1fl(fb1fx + 0x1a4, 30), fb1fl(fb1fx + 0x474, 20),
+			fb1fl(fb1fx + 0x564, 20), fb1fl(fb1fx + 0x744, 10), fb1bytes(fb1fx, range(0x96c, 0x999)),
+			fb1part(fb1fx + 0x18), fb1parts(fb1fx + 0x18, 0xfe - 59, 60), fb1trail(fb1fx + 0x834),
+			fb1trail(fb1fx + 0x838), fb1rand()))
+	fb1poke(fb1fx + 4, 0)
+	check('cObjElementFXPoliceGearConversion_Update no entity', lambda: (SDTest.Call(0x1c2170, 'tviif', fb1fx, fb1d,
+		0.0), fb1fl(fb1fx + 8, 3)))
 
 # ---- the end ----
 fb1poke(fb1split, fb1savedsplit)
