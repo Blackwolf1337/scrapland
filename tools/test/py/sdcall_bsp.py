@@ -545,14 +545,18 @@ bspml = []
 for bsp_i in range(4):
 	bsp_t = bsplist()
 	bsppoke(bsp_t + 0xac, bspmats[(0, 1, 2, 1)[bsp_i]])
-	nd = bspz(0x100)
-	bsppoke(nd + 0x18, (0, 0x20000080, 0, 0x20000080)[bsp_i])
-	bsppoke(bsp_t + 0x1c4, nd)
+	bspnd_ = bspz(0x100)
+	bsppoke(bspnd_ + 0x18, (0, 0x20000080, 0, 0x20000080)[bsp_i])
+	bsppoke(bsp_t + 0x1c4, bspnd_)
 	bspbyte(bsp_t + 0x154, 1)
+	for bsp_k in range(3):
+		bsppoke(bsp_t + 0x7c + 4 * bsp_k, 0x111111 * (bsp_k + 1))
 	bspml.append(bsp_t)
 	bsppoke(bspmap + 8 + 4 * bsp_i, bsp_t)
 bsppoke(bspml[0], bsplist())
 bsppoke(bspi(bspml[0]) + 0xac, bspmats[0])
+for bsp_k in range(3):
+	bsppoke(bspi(bspml[0]) + 0x7c + 4 * bsp_k, 7)
 bsppoke(bspmap + 0x4e208, 4)
 check('CBsp_ColorSinLmap', lambda: (SDTest.Call(0x28c580, 'tvi', bspmap), map(lambda bsp_t: (bspi(bsp_t + 0xa8),
 	tpeek(bsp_t + 0x7c, 3)), bspml), tpeek(bspi(bspml[0]) + 0x7c, 3)))
@@ -665,3 +669,4 @@ if bsptexx * bsptexy >= 16:
 	check('CBsp_IniciarRegiones', lambda: (SDTest.Call(0x295ef0, 'tvi', bspone), bspwalk(bspi(bspol + 0x1bc)),
 		bspimg(bspol + 0xfc, 3)))
 check('CBsp_AjustarGamma', lambda: (SDTest.Call(0x285500, 'tvi', bspone), bspimg(bspol + 0xb0, 3), tpeek(bspol + 0x7c, 3)))
+check('BspTri_CalcGlow none', lambda: (SDTest.Call(0x2901c0, 'vi', bspol), bspi(bspol + 0xd0)))

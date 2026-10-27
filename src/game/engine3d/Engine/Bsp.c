@@ -2834,3 +2834,78 @@ void __fastcall CBsp_IniciarAreas(CBsp *self) {
 		g_BspAreasTotal[3]);
 	E3D_DebugPrintf("memoria usada: %-5d Kb\n", g_MemStats->bytes / 1024);
 }
+
+
+/* the glow of the lists and the shadows of the area lights */
+
+#define g_LightmapGlowMult GAME_DATA(float, 0x4d5cc0)	/* gvar */
+
+/* the glow map of the material sampled into luzA, squared */
+void BspTri_CalcGlow(BspTri *list) {
+	static const float cero[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	CBmp tex;
+	float tmp[3];
+
+	tex.img = NULL;
+	if (list->Mat && CMaterial_GetMapName(list->Mat, MAPA_GLOW) &&
+		!CBmp_Load(&tex, CMaterial_GetMapName(list->Mat, MAPA_GLOW), 0)) {
+		CBmpFlt_CreateFill(&list->luzA, list->lx, list->ly, cero);
+		int x0 = list->ext[0];
+		int y0 = list->ext[1];
+		for (BspTri *t = list; t; t = t->sig) {
+			for (int y = 0; y < list->mask.alto; y++) {
+				for (int x = 0; x < list->mask.ancho; x++) {
+					if ((uint32_t)x >= (uint32_t)g_MapaSombrasTexX || (uint32_t)y >= (uint32_t)g_MapaSombrasTexY) {
+						continue;
+					}
+					if (Color_SwapRB(*CBmp_Pixel(&list->mask, (uint32_t)x, (uint32_t)y)) != (uint32_t)(uintptr_t)t) {
+						continue;
+					}
+					float c[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+					if (tex.img) {
+						const float *s = Bsp_SampleTexAA(tmp, x0 + x, y + y0, list->eje,
+							g_MapaSombrasEscala * g_MapaSombrasResol, t, &tex, 4);
+						float k = g_LightmapGlowMult;
+						float r = s[0], g = s[1], b = s[2];
+						c[0] = r * r * k;
+						c[1] = g * g * k;
+						c[2] = b * b * k;
+					}
+					memcpy(CBmpFlt_Pixel(&list->luzA, (uint32_t)x, (uint32_t)y), c, sizeof(c));
+				}
+			}
+		}
+	}
+	Img_Free(&tex, 4);
+}
+
+/* the share of samples rays from the sphere of radius r at p (moved along n) to the sphere of the light at luz
+ * that the floor does not block */
+float Bsp_Oclusion(const vec3_t *p, const vec3_t *n, float r, int samples, const vec3_t *luz, CSuelo *suelo) {
+	vec3_t lp = *luz;
+	float dy = lp.y - p->y, dx = lp.x - p->x, dz = lp.z - p->z;
+	float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+	float rad = dist * 0.004638f * 4.0f;
+	int hits = 0;
+	int info[3] = { 0, 0, 0 };
+
+	if (samples > 0) {
+		float fn = Uint_ToFloat((uint32_t)samples);
+		for (int i = 0; i < samples; i++) {
+			float d[3];
+			float z = Uint_ToFloat((uint32_t)i) / fn * 2.0f - 1.0f;
+			float v = (float)((double)Uint_ToFloat(Bits_Reverse((uint32_t)i)) * 2.3283064365386963e-10);
+			Bsp_DirEsfera(d, z, v);
+			vec3_t from = { d[0] * r + (p->x + n->x * r), d[1] * r + (n->y * r + p->y), d[2] * r + (n->z * r + p->z) };
+			float s1 = (float)((double)(crt_rand() & 0x7fff) * 3.051850947599719e-05 + 0.0);
+			float z2 = (float)((double)(crt_rand() & 0x7fff) * 3.051850947599719e-05 + 0.0) * 2.0f - 1.0f;
+			Bsp_DirEsfera(d, z2, s1);
+			vec3_t to = { d[0] * rad + lp.x, d[1] * rad + lp.y, d[2] * rad + lp.z };
+			float umbral = 0.8f / (g_MapaSombrasResol * g_MapaSombrasEscala);
+			if (CSuelo_Trace(suelo, &from, &to, NULL, umbral, info)) {
+				hits++;
+			}
+		}
+	}
+	return 1.0f - (float)hits / (float)samples;
+}

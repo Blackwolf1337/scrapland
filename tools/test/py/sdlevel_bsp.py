@@ -72,3 +72,10 @@ for bspl_d in ((0.0, 0.0, 300.0), (0.0, 0.0, 3000.0), (0.0, -500.0, 10.0)):
 		(1.0, 1.0, 0.5, 1.0), 1)
 	check('BspRegion_Enlazar' + fmt(bspl_d), lambda: (SDTest.Call(0x291bd0, 'tiiiiif', bsplmap, bspla, bsplb, 0, 0.001)[0],
 		bsplacum(bspla), bsplacum(bsplb)))
+# rays from a point above the floor to a light, the random part seeded
+for bspl_l, bspl_r, bspl_n in (((0.0, 300.0, 0.0), 5.0, 16), ((0.0, -300.0, 0.0), 2.0, 8), ((200.0, 20.0, 0.0), 0.0, 4),
+		((0.0, 0.0, 0.0), 1.0, 0)):
+	SDTest.Call(0x323c50, 'vi', 0x1234)
+	check('Bsp_Oclusion' + fmt((bspl_l, bspl_r, bspl_n)), lambda: SDTest.Call(0x282a40, 'fFFfiFi', bsplp, (0.0, 1.0, 0.0),
+		bspl_r, bspl_n, (bsplp[0] + bspl_l[0], bsplp[1] + bspl_l[1], bsplp[2] + bspl_l[2]),
+		bspli(SDTest.Peek(0x4afde8, 'i') + 0xb0))[0])

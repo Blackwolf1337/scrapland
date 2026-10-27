@@ -354,6 +354,8 @@ void __fastcall CBsp_AjustarGamma(CBsp *self);
 int __thiscall BspRegion_Enlazar(CBsp *self, BspRegion *a, BspRegion *b, int enlace, float umbral);
 void __fastcall CBsp_IniciarRegiones(CBsp *self);
 void __fastcall CBsp_IniciarAreas(CBsp *self);
+void BspTri_CalcGlow(BspTri *list);
+float Bsp_Oclusion(const vec3_t *p, const vec3_t *n, float r, int samples, const vec3_t *luz, CSuelo *suelo);
 void __thiscall Bsp_FinMensaje(CBsp *self, int secs);
 
 /* the rest */
