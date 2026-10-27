@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/archio.h"
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
@@ -13,6 +14,11 @@
 #include "scrap/rendertarget.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/trails.h"
+
+/* D3DX 8, linked into the exe (the same prototype as in Engine/Textura.c) */
+int __stdcall D3DX_CreateTextureFromFileInMemoryEx(void *dev, const void *data, uint32_t size, uint32_t w, uint32_t h,
+	uint32_t levels, uint32_t usage, int fmt, int pool, uint32_t filter, uint32_t mipFilter, uint32_t colorKey,
+	void *srcInfo, void *palette, void **tex);
 
 /* IDirect3DDevice8 and IDirect3DTexture8 methods not in d3d8.h */
 #define D3DDEV_CREATEDEPTHSTENCILSURFACE 0x68
@@ -71,6 +77,24 @@ static void RT_SetTargetTexture(void *tex) {
 	RT_SetRenderTarget(surf, NULL);
 	COM_RELEASE(surf);
 }
+
+/* the device and surface methods of the caps checks */
+#define D3DDEV_CREATEIMAGESURFACE2 0x6c
+#define D3DDEV_COPYRECTS 0x70
+#define D3DDEV_BEGINSCENE 0x88
+#define D3DDEV_ENDSCENE 0x8c
+#define D3DSURF_GETDESC 0x20
+#define D3DSURF_LOCKRECT 0x24
+#define D3DLOCK_READONLY 0x10
+typedef int(__stdcall *rtCreateImageSurface_t)(void *dev, uint32_t w, uint32_t h, int fmt, void **surf);
+typedef int(__stdcall *rtCopyRects_t)(void *dev, void *src, const int *rects, uint32_t n, void *dst, const void *pts);
+typedef int(__stdcall *rtScene_t)(void *dev);
+typedef int(__stdcall *rtGetDesc_t)(void *surf, uint32_t *desc);
+typedef struct RTLockedRect {
+	int Pitch;
+	byte *pBits;
+} RTLockedRect;
+typedef int(__stdcall *rtLockRect_t)(void *surf, RTLockedRect *lr, const int *rect, uint32_t flags);
 
 static void RT_SetRS(uint32_t state, uint32_t value) {
 	void *dev = RT_Dev();
@@ -1686,6 +1710,292 @@ void Scene_Swap(void) {
 		return;
 	}
 	g_SceneNoSwap = 0;
+}
+
+void RenderTarget_DrawTexQuad(const box_t *quad, uint32_t color, void *tex) {
+	int r[4];
+	RTVert v[4];
+
+	CHECK(quad);
+	CHECK(tex);
+	RT_SetTexture(0, tex);
+	RT_TSS(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+	RT_TSS(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+	RT_TSS(0, D3DTSS_MINFILTER, 1);
+	RT_TSS(0, D3DTSS_MAGFILTER, 1);
+	Render_ClipRect(r, g_ViewportFull, quad);
+	/* the pixel centers */
+	RT_Quad(v, (float)r[0] - 0.5f, (float)r[1] - 0.5f, (float)r[2] - 0.5f, (float)r[3] - 0.5f, color, 0.0f, 0.0f, 1.0f,
+		1.0f);
+	RT_DrawQuad(v);
+	RT_SetTexture(0, NULL);
+}
+
+/*
+ * The caps checks: a test texture drawn into the scene textures (with the deformation for the DuDv one), copied to
+ * a 256 x 256 image surface and compared with the expected picture, first at eight points (exactly), then every pixel
+ * (each channel within 32); more different pixels than the engine variable fail the check.
+ */
+
+/* a texture of a DDS file of the packs (*tex, NULL when it fails); whether it was made */
+static byte RT_CapsLoad(const char *name, void **tex) {
+	void *data;
+	uint32_t size;
+
+	ArchIO_ReadAll(name, &data, &size);
+	byte ok = D3DX_CreateTextureFromFileInMemoryEx(MOTOR_DEV(g_Motor), data, size, 0, 0, 1, 0, D3DFMT_A8R8G8B8,
+		D3DPOOL_MANAGED, 1, 1, 0, NULL, NULL, tex) >= 0;
+	Ptr_Delete(&data);
+	return ok;
+}
+
+/* the test texture modulated by white without blending */
+static void RT_CapsStates(void) {
+	RT_SetRS(D3DRS_COLORWRITEENABLE, 0xf);
+	RT_TSS(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+	RT_TSS(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+	RT_TSS(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+	RT_TSS(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+	RT_TSS(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+	RT_TSS(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+	RT_SetRS(D3DRS_SRCBLEND, 2);
+	RT_SetRS(D3DRS_DESTBLEND, 2);
+	RT_TSS(0, D3DTSS_MINFILTER, 1);
+	RT_TSS(0, D3DTSS_MAGFILTER, 1);
+}
+
+/* the source and target of the scene on the scene textures, the back buffer kept */
+static void RT_CapsTargets(void) {
+	g_SceneSourceTexture = g_SceneRT1;
+	RT_GetSurfaceLevel(g_SceneRT1, &g_SceneSourceSurface);
+	g_SceneTargetTexture = g_SceneRTargetSwap ? g_SceneRT2 : g_SceneRT1;
+	RT_GetSurfaceLevel(g_SceneTargetTexture, &g_SceneTargetSurface);
+	RT_GetBackBuffer();
+}
+
+static void RT_Scene(uint32_t off) {
+	void *dev = RT_Dev();
+	D3D_METHOD(dev, rtScene_t, off)(dev);
+}
+
+/* the scene target copied to a new 256 x 256 image surface *img; 0 when that fails */
+static byte RT_CapsCopy(void **img) {
+	int rect[4];
+
+	void *dev = RT_Dev();
+	if (D3D_METHOD(dev, rtCreateImageSurface_t, D3DDEV_CREATEIMAGESURFACE2)(dev, 0x100, 0x100, D3DFMT_A8R8G8B8,
+		img) < 0) {
+		return 0;
+	}
+	rect[0] = 0;
+	rect[1] = 0;
+	rect[2] = (int)g_SceneW;
+	if (rect[2] > 0x100) {
+		rect[2] = 0x100;
+	}
+	rect[3] = (int)g_SceneH;
+	if (rect[3] > 0x100) {
+		rect[3] = 0x100;
+	}
+	dev = RT_Dev();
+	return D3D_METHOD(dev, rtCopyRects_t, D3DDEV_COPYRECTS)(dev, g_SceneTargetSurface, rect, 1, *img, NULL) >= 0;
+}
+
+/* the scene surfaces released, the back buffer on again */
+static void RT_CapsRelease(void) {
+	RT_Release(&g_SceneSourceSurface);
+	g_SceneSourceTexture = NULL;
+	RT_Release(&g_SceneTargetSurface);
+	g_SceneTargetTexture = NULL;
+	RT_SetRenderTarget(g_RTBackBuffer, g_RTZBuffer);
+	RT_Release(&g_RTBackBuffer);
+	if (g_RTZBuffer) {
+		COM_RELEASE(g_RTZBuffer);
+	}
+	g_RTBackBuffer = NULL;
+	g_RTZBuffer = NULL;
+}
+
+/* surface 0 of want against the copy img (saved as a screenshot with shot); ok and the result */
+static byte RT_CapsCompare(void *want, void *img, byte ok, byte shot, byte dudv, int maxPixels) {
+	static const byte points[8][2] = { { 0, 0 }, { 255, 0 }, { 0, 255 }, { 255, 255 },
+		{ 4, 4 }, { 251, 4 }, { 4, 251 }, { 251, 251 } };
+	uint32_t da[8], db[8];
+	RTLockedRect a, b;
+	void *surf = NULL;
+
+	if (D3D_METHOD(want, rtGetSurfaceLevel_t, D3DTEX_GETSURFACELEVEL)(want, 0, &surf) < 0) {
+		ok = 0;
+		goto done;
+	}
+	if (!ok) {
+		goto done;
+	}
+	if (shot) {
+		Surface_SaveShot(img);
+	}
+	if (D3D_METHOD(surf, rtGetDesc_t, D3DSURF_GETDESC)(surf, da) < 0) {
+		ok = 0;
+	}
+	if (D3D_METHOD(surf, rtLockRect_t, D3DSURF_LOCKRECT)(surf, &a, NULL, D3DLOCK_READONLY) < 0) {
+		ok = 0;
+	}
+	if (D3D_METHOD(img, rtGetDesc_t, D3DSURF_GETDESC)(img, db) < 0) {
+		ok = 0;
+	}
+	if (D3D_METHOD(img, rtLockRect_t, D3DSURF_LOCKRECT)(img, &b, NULL, D3DLOCK_READONLY) < 0) {
+		ok = 0;
+	}
+	/* the surfaces stay locked, the original never unlocks them before the release */
+	if (da[0] != db[0] || da[0] != D3DFMT_A8R8G8B8) {
+		ok = 0;
+		goto done;
+	}
+	if (!ok) {
+		goto done;
+	}
+	for (int k = 0; k < 8 && ok; k += 4) {
+		for (int i = k; i < k + 4; i++) {
+			if (!RenderTarget_PixelEqual(a.Pitch, a.pBits, b.Pitch, b.pBits, points[i][0], 4, points[i][1], 0)) {
+				ok = 0;
+			}
+		}
+	}
+	if (!ok) {
+		Con_Warnf(dudv ? "WARN: Checking DuDv Caps. Different Square Pixels\n" :
+			"WARN: Checking RenderTarget Caps. Different Square Pixels\n");
+		goto done;
+	}
+	int count = 0;
+	for (int y = 0; y < (int)db[7]; y++) {
+		for (int x = 0; x < (int)db[6]; x++) {
+			if (!RenderTarget_PixelEqual(a.Pitch, a.pBits, b.Pitch, b.pBits, x, 4, y, 0x20)) {
+				count++;
+			}
+		}
+	}
+	if (count > maxPixels) {
+		ok = 0;
+	}
+	Con_Warnf(dudv ? "WARN: Checking DuDv Caps. PixelCount: %d\n" : "WARN: Checking RenderTarget Caps. PixelCount: %d\n",
+		count);
+done:
+	if (surf) {
+		COM_RELEASE(surf);
+	}
+	return ok;
+}
+
+/* the states of the end of a check, mat the material set */
+static void RT_CapsEnd(CMaterial *mat) {
+	RT_SetRS(D3DRS_SRCBLEND, 2);
+	RT_SetRS(D3DRS_DESTBLEND, 5);
+	RT_TSS(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+	RT_TSS(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+	RT_TSS(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+	Render_ResetState();
+	Render_SetMaterial(mat, 0);
+	Render_ClearForced();
+}
+
+byte DuDv_CheckCaps(void) {
+	void *test = NULL, *bump = NULL, *result = NULL, *img = NULL;
+	void *surf;
+	byte ok;
+
+	CHECK(g_SceneDuDvRTarget);
+	CHECK(g_SceneDuDvBumpTarget);
+	ok = RT_CapsLoad("bmp/DuDvTest.dds", &test);
+	if (ok) {
+		ok = RT_CapsLoad("bmp/DuDvTestBump.dds", &bump);
+	}
+	if (ok) {
+		ok = RT_CapsLoad("bmp/DuDvTestResult.dds", &result);
+	}
+	box_t quad = { { 0.0f, 0.0f, 0.0f }, { 256.0f / g_SceneW, 256.0f / g_SceneH, 0.0f } };
+	if (ok) {
+		RT_CapsStates();
+	}
+	RT_CapsTargets();
+	if (ok) {
+		RT_Scene(D3DDEV_BEGINSCENE);
+		RT_SetRenderTarget(g_SceneSourceSurface, NULL);
+		Render_Clear(NULL, 1, 0, 1.0f, 0);
+		RenderTarget_DrawTexQuad(&quad, 0xffffffff, test);
+		surf = NULL;
+		RT_GetSurfaceLevel(g_SceneDuDvBumpTarget, &surf);
+		RT_SetRenderTarget(surf, NULL);
+		COM_RELEASE(surf);
+		Render_Clear(NULL, 1, 0xff8080, 1.0f, 0);
+		RenderTarget_DrawTexQuad(&quad, 0xffffffff, bump);
+		DuDv_Filter();
+		if (!g_SceneRTargetSwap) {
+			DuDv_CopyToTarget();
+		}
+		DuDv_Draw(1);
+		RT_Scene(D3DDEV_ENDSCENE);
+	}
+	RT_TSS(0, D3DTSS_MINFILTER, 1);
+	RT_TSS(0, D3DTSS_MAGFILTER, 1);
+	if (ok) {
+		ok = RT_CapsCopy(&img);
+	}
+	RT_CapsRelease();
+	ok = RT_CapsCompare(result, img, ok, g_SceneDuDvRTarget == 3, 1, g_SceneDuDvCheckPixels);
+	RT_Release(&img);
+	RT_Release(&test);
+	RT_Release(&bump);
+	RT_Release(&result);
+	RT_CapsEnd(g_SceneDuDvMatCopy);
+	return ok;
+}
+
+byte Scene_CheckCaps(void) {
+	void *test = NULL, *img = NULL;
+	uint32_t vp[6];
+	RTVert v[4];
+	byte ok;
+
+	CHECK(g_SceneRTarget);
+	ok = RT_CapsLoad("bmp/DuDvTest.dds", &test);
+	box_t quad = { { 0.0f, 0.0f, 0.0f }, { 256.0f / g_SceneW, 256.0f / g_SceneH, 0.0f } };
+	if (ok) {
+		RT_CapsStates();
+	}
+	RT_CapsTargets();
+	if (ok) {
+		RT_Scene(D3DDEV_BEGINSCENE);
+		RT_SetRenderTarget(g_SceneSourceSurface, NULL);
+		Render_Clear(NULL, 1, 0, 1.0f, 0);
+		RenderTarget_DrawTexQuad(&quad, 0xffffffff, test);
+		RT_SetRenderTarget(g_SceneTargetSurface, NULL);
+		RT_GetViewport(vp);
+		Render_SetMaterial(g_SceneMatCopy, 0);
+		RT_TSS(0, D3DTSS_TEXCOORDINDEX, 0);
+		RT_TSS(0, D3DTSS_MINFILTER, 1);
+		RT_TSS(0, D3DTSS_MAGFILTER, 1);
+		RT_TSS(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
+		RT_TSS(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
+		RT_SetTexture(0, g_SceneSourceTexture);
+		RT_Quad(v, 0.0f, 0.0f, RT_UToF(vp[2]) + 0.0f, RT_UToF(vp[3]) + 0.0f, 0xffffffff, 0.5f / g_SceneW + 0.0f,
+			0.5f / g_SceneH + 0.0f, 0.5f / g_SceneW + 1.0f, 0.5f / g_SceneH + 1.0f);
+		if (g_RTLinNonPow2) {
+			RT_QuadTexels(v, g_SceneW, g_SceneH);
+		}
+		RT_DrawQuad(v);
+		RT_Scene(D3DDEV_ENDSCENE);
+	}
+	RT_TSS(0, D3DTSS_MINFILTER, 1);
+	RT_TSS(0, D3DTSS_MAGFILTER, 1);
+	if (ok) {
+		ok = RT_CapsCopy(&img);
+	}
+	RT_CapsRelease();
+	ok = RT_CapsCompare(test, img, ok, g_SceneRTarget == 3, 0, g_SceneCheckPixels);
+	RT_Release(&img);
+	RT_Release(&test);
+	RT_CapsEnd(g_SceneMatCopy);
+	return ok;
 }
 
 byte RenderTarget_PixelEqual(int pitchA, const byte *bitsA, int pitchB, const byte *bitsB, int x, int bpp, int y,

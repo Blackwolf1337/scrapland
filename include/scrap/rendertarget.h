@@ -14,6 +14,7 @@
 
 #include "scrap/game.h"
 #include "scrap/material.h"
+#include "scrap/mathlib.h"
 
 /* the targets of RenderTarget_Begin */
 enum {
@@ -265,5 +266,10 @@ void Scene_DrawSplit(void);
  * tol when tol > 0 */
 byte RenderTarget_PixelEqual(int pitchA, const byte *bitsA, int pitchB, const byte *bitsB, int x, int bpp, int y,
 	int tol);
+/* the texture tex as the rectangle quad (0..1 of the whole viewport) in color */
+void RenderTarget_DrawTexQuad(const box_t *quad, uint32_t color, void *tex);
+
+/* other modules */
+byte Surface_SaveShot(void *surf);	/* rva 0x27fe90: the surface as the next ShotNNNN.pcx */
 
 #endif

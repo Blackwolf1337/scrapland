@@ -758,7 +758,6 @@ SD_IMPORT(cVehicleTraffic_SetOwner, 0x119970)
 /* module agent: Entities/Vehicle/VehicleMotors+MotorsEffects+Traffic.cpp (imports below this line) */
 
 /* module agent: Engine/RenderTarget.cpp (imports below this line) */
-SD_IMPORT(DuDv_CheckCaps, 0x224a00)
-SD_IMPORT(Scene_CheckCaps, 0x229640)
+SD_IMPORT(Surface_SaveShot, 0x27fe90)
 
 /* module agent: AI/NodesTraffic+NodesTrafficInDoor.cpp (imports below this line) */
