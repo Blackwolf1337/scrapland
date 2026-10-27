@@ -622,6 +622,17 @@ SD_IMPORT(cFXElementsOrbitBoyaController_ctor, 0x1d5820)
 /* module agent: World/FX/FXElements+FXElementsAB.cpp (imports below this line) */
 
 /* module agent: Entities/EmbeddedFX/EmbeddedFXChar+CharHead.cpp (imports below this line) */
+SD_IMPORT(cEmbeddedFX_dtor, 0xd68f0)
+SD_IMPORT(cEmbeddedFXBankDirector_ctor, 0xd6930)
+SD_IMPORT(cEmbeddedFXBankMaster_ctor, 0xd69a0)
+SD_IMPORT(cEmbeddedFXCrazyGambler_ctor, 0xd6a30)
+SD_IMPORT(cEmbeddedFXGear_ctor, 0xd6af0)
+SD_IMPORT(cEmbeddedFXMaintenance_ctor, 0xd6b90)
+SD_IMPORT(cEmbeddedFXMercenary_ctor, 0xd6c10)
+SD_IMPORT(cEmbeddedFXMessenger_ctor, 0xd6cb0)
+SD_IMPORT(cEmbeddedFXPolice_ctor, 0xd6d40)
+SD_IMPORT(cEmbeddedFXRusty_ctor, 0xd6df0)
+SD_IMPORT(cEmbeddedFXSentinel_ctor, 0xd6ed0)
 
 /* module agent: Entities/EmbeddedFX/EmbeddedFXVehicle.cpp+mpeg/music_fmod.cpp (imports below this line) */
 
