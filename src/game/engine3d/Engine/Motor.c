@@ -84,6 +84,11 @@ typedef void(__stdcall *initcommoncontrols_t)(void);
 #define MOTOR_MAXFRAME 0.1f
 
 /* of the 0x2a3000.. part of the engine (still the exe's) */
+void Input_KeyDown(uint32_t key, intptr_t lParam);	/* rva 0x2a37c0 */
+void Input_KeyUp(uint32_t key, intptr_t lParam);	/* rva 0x2a3870 */
+#define WM_KEYDOWN 0x100
+#define WM_KEYUP 0x101
+#define WM_COMMAND 0x111
 void *__fastcall IEntrada_ctor(void *self);		/* rva 0x2a39d0 */
 void *__fastcall MotorOverlay_ctor(void *self);		/* rva 0x2a4e90 */
 void __fastcall MotorOverlay_dtor(void *self);		/* rva 0x2a4ea0 */
@@ -435,6 +440,7 @@ void Motor_LoadIni(const char *name, const char *dir) {
 
 /* ---- the lights dialog and the scene tree ---- */
 
+#define GWL_HINSTANCE (-6)
 #define MOTOR_LIGHTSPROC 0x22dcf0
 #define MOTOR_LIGHTSDIALOG 0x99
 #define TVM_INSERTITEM 0x1100
@@ -486,8 +492,6 @@ void Escena_LogTree(CEscena *esc, CNodo3D *nodo, int indent) {
 
 /* the commands of the debug console of the engine (g_E3DCmdProc) */
 #define g_VerUniones GAME_DATA(byte, 0x4ad6f0)	/* the joints of the meshes drawn */
-#define GWL_HINSTANCE (-6)
-
 void E3D_Command(char *cmd) {
 	char *s;
 	CEscena *e;
@@ -530,6 +534,165 @@ void E3D_Command(char *cmd) {
 		return;
 	}
 	E3D_DebugPrintf(crt_rand() & 1 ? "\nque te zurzan" : "\npirate");
+}
+
+/* ---- the menu of the D3D window ---- */
+
+#define MF_GRAYED 1
+#define MF_CHECKED 8
+#define IDM_MODE0 0x9c4b
+#define IDM_MODE1 0x9c4c
+#define IDM_MODE2 0x9c4d
+#define IDM_SPECULAR 0x9c54
+#define IDM_RENDERMODE100 0x9c56
+#define IDM_9C57 0x9c57
+#define IDM_USARVB 0x9c59
+#define IDM_9C5A 0x9c5a
+#define IDM_9C5B 0x9c5b
+#define IDM_9C5C 0x9c5c
+#define IDM_9C5D 0x9c5d
+#define IDM_LIGHTS 0x9c5e
+#define IDM_SOLOB38 0x9c5f
+#define IDM_MUNDO0 0x9c62
+#define IDM_TILE 0x9c63
+#define IDM_9C64 0x9c64
+#define IDM_SHARPEN 0x9c65
+#define IDM_RELOADMATS 0x9c66
+#define IDM_CAMERA 50000		/* the cameras of the global scene from here */
+#define MOTOR_B2A5F8(m) (*(byte *)((m) + 0x2a5f8))
+#define MOTOR_B2A5FA(m) (*(byte *)((m) + 0x2a5fa))
+#define MOTOR_B2A5FB(m) (*(byte *)((m) + 0x2a5fb))
+#define MOTOR_I2A5FC(m) (*(int *)((m) + 0x2a5fc))
+#define g_Motor431bae GAME_DATA(byte, 0x431bae)
+#define g_Motor4af7d4 GAME_DATA(byte, 0x4af7d4)
+#define g_Sharpen GAME_DATA(int, 0x4b25e8)		/* [video] Sharpen of m3d.ini */
+
+static uint32_t Menu_Check(int on) {
+	return on ? MF_CHECKED : 0;
+}
+
+/* the menu items greyed and checked by the state */
+void __fastcall CMotorApp_UpdateMenu(byte *self) {
+	void *menu = MOTOR_MENU(self);
+
+	if (!menu) {
+		return;
+	}
+	exe_EnableMenuItem(menu, IDM_MODE0, g_MipmapsOn == 0);
+	exe_EnableMenuItem(MOTOR_MENU(self), IDM_MODE1, g_MipmapsOn == 0);
+	exe_EnableMenuItem(MOTOR_MENU(self), IDM_MODE2, g_MipmapsOn == 0);
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_MODE0, Menu_Check(g_MotorMode == 0));
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_MODE1, Menu_Check(g_MotorMode == 1));
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_MODE2, Menu_Check(g_MotorMode == 2));
+	exe_EnableMenuItem(MOTOR_MENU(self), IDM_9C5B, !MOTOR_B2A5FA(self) && !MOTOR_B2A5FB(self) ? MF_GRAYED : 0);
+	exe_EnableMenuItem(MOTOR_MENU(self), IDM_9C5D, MOTOR_B2A5FA(self) == 0);
+	exe_EnableMenuItem(MOTOR_MENU(self), IDM_9C5C, MOTOR_B2A5FB(self) == 0);
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_9C5B, Menu_Check(MOTOR_I2A5FC(self) == 0));
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_9C5D, Menu_Check(MOTOR_I2A5FC(self) == 1));
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_9C5C, Menu_Check(MOTOR_I2A5FC(self) == 1));
+	exe_EnableMenuItem(MOTOR_MENU(self), IDM_9C5A, MOTOR_B2A5F8(self) == 0);
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_9C5A, Menu_Check(MOTOR_B2A5F9(self) != 0));
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_SPECULAR, Menu_Check(g_VertexSpecular != 0));
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_RENDERMODE100, Menu_Check(g_RenderMode100 != 0));
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_9C57, Menu_Check(g_Motor431bae != 0));
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_USARVB, Menu_Check(g_UsarVB != 0));
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_MUNDO0, Menu_Check(*(byte *)Mundo_Get() != 0));
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_SOLOB38, Menu_Check(g_RenderSoloB38 != 0));
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_9C64, Menu_Check(g_Motor4af7d4 != 0));
+	exe_CheckMenuItem(MOTOR_MENU(self), IDM_SHARPEN, Menu_Check(g_Sharpen != 0));
+}
+
+/* MsgProc: the input first, the keys, the menu commands of the window, then the one of CD3DApplication */
+intptr_t __thiscall CMotorApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
+	if (g_Entrada) {
+		((void(__thiscall *)(void *, void *, uint32_t, uintptr_t, intptr_t))(*(void ***)g_Entrada)[7])(g_Entrada, hwnd,
+			msg, wParam, lParam);
+	}
+	if (msg == WM_KEYDOWN) {
+		Input_KeyDown((uint16_t)wParam, lParam);
+	} else if (msg == WM_KEYUP) {
+		Input_KeyUp((uint16_t)wParam, lParam);
+	} else if (msg == WM_COMMAND) {
+		uint32_t id = (uint16_t)wParam;
+
+		switch (id) {
+		case IDM_MODE0:
+		case IDM_MODE1:
+		case IDM_MODE2:
+			g_MotorMode = (int)(id - IDM_MODE0);
+			break;
+		case IDM_SPECULAR:
+			g_VertexSpecular = g_VertexSpecular == 0;
+			break;
+		case IDM_RENDERMODE100:
+			g_RenderMode100 = g_RenderMode100 == 0;
+			break;
+		case IDM_9C57:
+			g_Motor431bae = g_Motor431bae == 0;
+			break;
+		case IDM_USARVB:
+			g_UsarVB = g_UsarVB == 0;
+			break;
+		case IDM_9C5A:
+			MOTOR_B2A5F9(self) = MOTOR_B2A5F9(self) == 0;
+			break;
+		case IDM_9C5B:
+			MOTOR_I2A5FC(self) = 0;
+			break;
+		case IDM_9C5C:
+		case IDM_9C5D:
+			MOTOR_I2A5FC(self) = 1;
+			break;
+		case IDM_LIGHTS:
+			CMotorApp_LightsDialog(self, hwnd, (void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE));
+			break;
+		case IDM_SOLOB38:
+			g_RenderSoloB38 = g_RenderSoloB38 == 0;
+			break;
+		case IDM_MUNDO0: {
+			byte off = *(byte *)Mundo_GetChecked() == 0;
+
+			*(byte *)Mundo_GetChecked() = off;
+			break;
+		}
+		case IDM_TILE:
+			g_TileOn = 1;
+			break;
+		case IDM_9C64:
+			g_Motor4af7d4 = g_Motor4af7d4 == 0;
+			break;
+		case IDM_SHARPEN:
+			g_Sharpen = g_Sharpen == 0;
+			[[fallthrough]];
+		case IDM_RELOADMATS:
+			/* the textures and materials made again */
+			Textura_ReleaseAllD3D();
+			CListaMat_Release(g_ListaMat);
+			CListaMat_Prepare(g_ListaMat, MOTOR_DEV(self));
+			break;
+		default: {
+			/* a camera of the global scene into the world, the menu item checked */
+			int i = (int)id - IDM_CAMERA;
+
+			if (i >= 0 && i < MOTOR_TABLA(self)->n) {
+				CCamara **cams;
+				int k;
+
+				for (k = 0; k < MOTOR_TABLA(self)->n; k++) {
+					exe_CheckMenuItem(MOTOR_MENU(self), (uint32_t)(k + IDM_CAMERA), i == k ? MF_CHECKED : 0);
+				}
+				if (!MOTOR_TABLA(self)->p || (uint32_t)i >= (uint32_t)MOTOR_TABLA(self)->n) {
+					CHECK(0);
+				}
+				cams = MOTOR_TABLA(self)->p;
+				CMundo_SetCamara(Mundo_Get(), cams[i]);
+			}
+			break;
+		}
+		}
+		CMotorApp_UpdateMenu(self);
+	}
+	return CD3DApp_MsgProc(self, hwnd, msg, wParam, lParam);
 }
 
 /* ---- CEntradaNula: every method of the input does nothing ---- */

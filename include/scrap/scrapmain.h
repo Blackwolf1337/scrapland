@@ -271,6 +271,8 @@ void TreeView_InsertItemf(void *hwnd, void *item, const char *fmt, ...);
 void Escena_LogTree(CEscena *esc, CNodo3D *nodo, int indent);
 /* a command of the debug console of the engine: listar, listar luces, arbol <scene>, ver uniones */
 void E3D_Command(char *cmd);
+void __fastcall CMotorApp_UpdateMenu(byte *self);
+intptr_t __thiscall CMotorApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 int __thiscall CMotorApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior, int format);
 int __thiscall CMotorApp_RestoreDeviceObjects(byte *self);
 int __thiscall CMotorApp_OneTimeSceneInit(byte *self);

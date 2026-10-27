@@ -153,6 +153,9 @@ typedef int(__stdcall *bringwindowtotop_t)(void *hwnd);
 typedef int(__stdcall *getwindowplacement_t)(void *hwnd, uint32_t *wp);	/* WINDOWPLACEMENT, 0x2c bytes */
 #define exe_GetWindowPlacement GAME_DATA(getwindowplacement_t, 0x3a1364)
 #define exe_IsWindow GAME_DATA(hwndfn_t, 0x3a1360)
+typedef int(__stdcall *menuitem_t)(void *menu, uint32_t id, uint32_t flags);	/* EnableMenuItem, CheckMenuItem */
+#define exe_EnableMenuItem GAME_DATA(menuitem_t, 0x3a1350)
+#define exe_CheckMenuItem GAME_DATA(menuitem_t, 0x3a134c)
 typedef void *(__stdcall *setcursor_t)(void *cursor);
 #define exe_SetCursor GAME_DATA(setcursor_t, 0x3a135c)
 #define exe_SetWindowPos GAME_DATA(setwindowpos_t, 0x3a143c)
