@@ -34,6 +34,11 @@
 #define NET_ANG_BYTE 40.42535554534142		/* rva 0x3b38c8, 127 / pi */
 #define NET_ROT_SHORT 6.702064327658225		/* rva 0x3b38b8 */
 #define NET_ROT_BYTE 0.10471975511965977	/* rva 0x3b38b0 */
+#define NET_POS_SCALE 0.03125f			/* rva 0x3b38ac */
+#define NET_POS_MAX 32640.0f			/* rva 0x3b38f4 */
+#define NET_VEL_MAX 30000.0f			/* rva 0x3b38f0 */
+#define NET_ROT_SHORT_MAX 214466.0584850632	/* rva 0x3b38e8, 32000 * NET_ROT_SHORT */
+#define NET_ROT_BYTE_MAX 13.29940890019679	/* rva 0x3b38c0, 127 * NET_ROT_BYTE */
 
 /* the slots of the follow camera of an object and of the AI the object calls */
 typedef struct cObjCamVtbl {
@@ -1128,6 +1133,116 @@ static inline float Net_ReadRot(cAbstractFile *msg, byte full) {
 		return (float)((double)Net_ReadShort(msg) * NET_ROT_SHORT);
 	}
 	return (float)((double)Net_ReadByte(msg) * NET_ROT_BYTE);
+}
+
+static inline void Net_WriteShort(cAbstractFile *msg, int v) {
+	uint32_t t = (uint16_t)v;
+
+	msg->vftable->Write(msg, &t, 2);
+}
+
+static inline void Net_WriteByte(cAbstractFile *msg, int v) {
+	byte b = (byte)v;
+
+	msg->vftable->Write(msg, &b, 1);
+}
+
+static inline void Net_WriteFloat(cAbstractFile *msg, float f) {
+	msg->vftable->Write(msg, &f, 4);
+}
+
+/* a packed angle: the x87 product of the normalized angle (in the precision of the game) truncated */
+static inline void Net_WriteAng(cAbstractFile *msg, float ang, byte full) {
+	float a = NormAng(ang);
+
+	if (full) {
+		Net_WriteShort(msg, (int)X87_Mul(a, NET_ANG_SHORT));
+	} else {
+		Net_WriteByte(msg, (int)X87_Mul(a, NET_ANG_BYTE));
+	}
+}
+
+/* a packed rotation speed clamped to +-32000 or +-127 */
+static inline void Net_WriteRot(cAbstractFile *msg, float v, byte full) {
+	double d = v;
+
+	if (full) {
+		double r = NET_ROT_SHORT_MAX > d ? (d > -NET_ROT_SHORT_MAX ? d / NET_ROT_SHORT : -32000.0) : 32000.0;
+		Net_WriteShort(msg, (int)r);
+	} else {
+		double r = NET_ROT_BYTE_MAX > d ? (d > -NET_ROT_BYTE_MAX ? d / NET_ROT_BYTE : -127.0) : 127.0;
+		Net_WriteByte(msg, (int)r);
+	}
+}
+
+/* a packed coordinate: clamped below to -NET_POS_MAX, above by minss */
+static inline float Net_PosClamp(float v) {
+	return -NET_POS_MAX >= v ? -NET_POS_MAX : Float_MinSS(NET_POS_MAX, v);
+}
+
+void __thiscall cNetController_Write(cNetController *self, byte flags, cEntity *e, void *m, byte force) {
+	cAbstractFile *msg = m;
+	cObjEntity *o = Obj(e);
+	byte f;
+
+	if (force) {
+		self->flags = flags;
+		f = flags;
+	} else {
+		f = self->vftable->Changed(self, flags, e);
+	}
+	Net_WriteByte(msg, f);
+	byte full = f & NETC_FULL;
+	if (f & NETC_POS) {
+		if (full) {
+			Net_WriteFloat(msg, e->pos.x);
+			Net_WriteFloat(msg, e->pos.y);
+			Net_WriteFloat(msg, e->pos.z);
+		} else {
+			float x = (e->pos.x - g_NetOrigin.x) * NET_POS_SCALE;
+			float y = (e->pos.y - g_NetOrigin.y) * NET_POS_SCALE;
+			float z = (e->pos.z - g_NetOrigin.z) * NET_POS_SCALE;
+			float cx = Net_PosClamp(x);
+			float cy = Net_PosClamp(y);
+			float cz = Net_PosClamp(z);
+			Net_WriteShort(msg, (int)cx);
+			Net_WriteShort(msg, (int)cy);
+			Net_WriteShort(msg, (int)cz);
+		}
+	}
+	if (f & NETC_ANG) {
+		Net_WriteAng(msg, o->ang.x, full);
+		Net_WriteAng(msg, o->ang.y, full);
+	}
+	if (f & NETC_ANGZ) {
+		Net_WriteAng(msg, o->ang.z, full);
+	}
+	if (f & NETC_VEL) {
+		vec3_t v = o->vel;
+		if (full) {
+			Net_WriteFloat(msg, v.x);
+			Net_WriteFloat(msg, v.y);
+			Net_WriteFloat(msg, v.z);
+		} else {
+			float l = (float)__builtin_sqrt((double)(v.y * v.y + v.x * v.x + v.z * v.z));
+			float vx = v.x, vy = v.y, vz = v.z;
+			if (l > NET_VEL_MAX) {
+				float k = NET_VEL_MAX / l;
+				vz = k * v.z;
+				vx = v.x * k;
+				vy = k * v.y;
+			}
+			Net_WriteShort(msg, (int)vx);
+			Net_WriteShort(msg, (int)vy);
+			Net_WriteShort(msg, (int)vz);
+		}
+	}
+	/* the z speed also under the x and y bit, as Read takes it */
+	if (f & NETC_ROTVEL) {
+		Net_WriteRot(msg, o->rotVel.x, full);
+		Net_WriteRot(msg, o->rotVel.y, full);
+		Net_WriteRot(msg, o->rotVel.z, full);
+	}
 }
 
 void __thiscall cNetController_Read(cNetController *self, void *m) {

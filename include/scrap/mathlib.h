@@ -157,6 +157,14 @@ static inline float Float_MaxSS(float a, float b) {
 	return a > b ? a : b;
 }
 
+/* the x87 a * b of the original (fmul QWORD), in the precision the game set, stored as a double */
+static inline double X87_Mul(double a, double b) {
+	double r;
+
+	__asm__("fmull %1" : "=t"(r) : "m"(b), "0"(a));
+	return r;
+}
+
 /* the value hidden from the optimizer: keeps an operation the compiler would fold algebraically ((-a) - (-b) to
  * b - a), which changes the sign of a NaN result */
 static inline float Float_Keep(float v) {

@@ -196,6 +196,8 @@ void __thiscall cEntity_SetNetResource(cEntity *e, const char *name);
 cNetController *__fastcall cNetController_ctor(cNetController *self);
 void __thiscall cNetController_Reset(cNetController *self);
 void __thiscall cNetController_Read(cNetController *self, void *msg);
+/* flags (only the changed parts unless force) and the packed (or full) state of e into msg */
+void __thiscall cNetController_Write(cNetController *self, byte flags, cEntity *e, void *msg, byte force);
 /* the parts of flags that changed enough to be sent (the others count down) */
 byte __thiscall cNetController_Changed(cNetController *self, byte flags, cEntity *e);
 /* the received state onto e; move: the client moves e by its velocities while no new state came */

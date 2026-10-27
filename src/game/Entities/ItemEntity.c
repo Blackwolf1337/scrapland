@@ -74,13 +74,6 @@ static inline float X87_DivMul(float a, float b, float c) {
 	return r;
 }
 
-static inline double X87_Mul(double a, double b) {
-	double r;
-
-	__asm__("fmull %1" : "=t"(r) : "m"(b), "0"(a));
-	return r;
-}
-
 cEntity *__thiscall cItemEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	cItemEntity *self = mem;
 
