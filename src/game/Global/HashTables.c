@@ -1,10 +1,11 @@
 /*
  * Instances of the older HashTable.h (include/scrap/hashtable.h) of World/ and Sound/ whose values are not
- * known yet: 12 bytes in World/, 36 bytes in Sound/ (the sound descriptors by name).
+ * known yet (12 bytes in World/) and the sample table of Sound/.
  */
 #include "scrap/console.h"
 #include "scrap/hashtable.h"
 #include "scrap/cstring.h"
+#include "scrap/sound.h"
 
 typedef struct cValue12 {
 	uint32_t v[3];
@@ -17,17 +18,7 @@ typedef struct cWorldStrItem {
 } cWorldStrItem;
 SD_SIZE(cWorldStrItem, 0x14);
 
-/* an int and a cSoundDesc (its constructor is overwritten by the copy) */
-typedef struct cSoundTableValue {
-	uint32_t v[9];
-} cSoundTableValue;
-
-typedef struct cSoundStrItem {
-	cSoundTableValue value;		/* 0x00 */
-	char *key;			/* 0x24 cString */
-	struct cSoundStrItem *next;	/* 0x28 */
-} cSoundStrItem;
-SD_SIZE(cSoundStrItem, 0x2c);
+/* cSoundStrItem: the sample table of CSoundXBox (include/scrap/sound.h) */
 
 HASHTABLE_STR(WorldStrTable, cWorldStrItem)
 HASHTABLE_STR(SoundStrTable, cSoundStrItem)
