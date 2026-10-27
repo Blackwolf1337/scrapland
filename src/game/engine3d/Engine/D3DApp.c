@@ -166,6 +166,15 @@ void __fastcall CD3DApp_UpdateBackBufferDesc(byte *self) {
 
 typedef int(__stdcall *d3dReset_t)(void *dev, void *pp);
 
+/* without frame moving one frame is stepped: the timer started and stopped */
+static void D3DApp_SingleStep(byte *self) {
+	if (!MOTOR_FRAMEMOVING(self)) {
+		MOTOR_SINGLESTEP(self) = 1;
+		DXUtil_Timer(D3DAPP_TIMER_START);
+		DXUtil_Timer(D3DAPP_TIMER_STOP);
+	}
+}
+
 /* IDirect3DDevice8::Reset with the present parameters, logged when it fails; the gamma ramp set again */
 static int D3DApp_DevReset(byte *self) {
 	void *dev = MOTOR_DEV(self);
@@ -202,10 +211,155 @@ int __thiscall CD3DApp_Reset(byte *self) {
 	if (r < 0) {
 		return r;
 	}
-	if (!MOTOR_FRAMEMOVING(self)) {
-		MOTOR_SINGLESTEP(self) = 1;
-		DXUtil_Timer(D3DAPP_TIMER_START);
-		DXUtil_Timer(D3DAPP_TIMER_STOP);
+	D3DApp_SingleStep(self);
+	return 0;
+}
+
+/* the default virtual methods: nothing to do, S_OK */
+int __thiscall CD3DApp_Nop(byte *self) {
+	(void)self;
+	return 0;
+}
+
+/* vf01 ConfirmDevice: every device is fine */
+int __thiscall CD3DApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior, uint32_t fmt) {
+	(void)self;
+	(void)caps;
+	(void)behavior;
+	(void)fmt;
+	return 0;
+}
+
+/* the device released (an error in the log when something still holds it), then FinalCleanup (vtable 0x24) */
+int __thiscall CD3DApp_Cleanup(byte *self) {
+	MOTOR_ACTIVE(self) = 0;
+	MOTOR_READY(self) = 0;
+	if (MOTOR_DEV(self)) {
+		MOTOR_CALL(self, 0x1c);
+		MOTOR_CALL(self, MOTOR_VT_INVALIDATE);
+		if (COM_RELEASE(MOTOR_DEV(self))) {
+			E3D_LogBlue(g_FileLog, Game_Ptr(0x3dd3dc));	/* "A D3D object has a non-zero reference count." */
+		}
+		COM_RELEASE(MOTOR_D3D(self));
+		MOTOR_DEV(self) = NULL;
+		MOTOR_D3D(self) = NULL;
 	}
+	return MOTOR_CALL(self, MOTOR_VT_DELETE);
+}
+
+static D3DDeviceInfo *D3DApp_CurDevice(byte *self) {
+	D3DAdapterInfo *ad = MOTOR_ADAPTERINFO(self);
+	return &ad->devices[ad->dwCurrentDevice];
+}
+
+/* the device released and the environment made again; 0 and the result of the error shown on failures */
+static byte D3DApp_Recreate(byte *self, int *err) {
+	MOTOR_CALL(self, 0x1c);
+	MOTOR_CALL(self, MOTOR_VT_INVALIDATE);
+	if (COM_RELEASE(MOTOR_DEV(self))) {
+		*err = CD3DApp_DisplayErrorMsg(self, 0x8200000a, 1);	/* D3DAPPERR_NONZEROREFCOUNT */
+		return 0;
+	}
+	int r = CD3DApp_Initialize3DEnvironment(self);
+	if (r < 0) {
+		*err = CD3DApp_DisplayErrorMsg(self, r, 1);
+		return 0;
+	}
+	return 1;
+}
+
+/* windowed on the current device or the first one of all adapters that can, the environment made again */
+int __thiscall CD3DApp_ForceWindowed(byte *self) {
+	D3DDeviceInfo *dev = D3DApp_CurDevice(self);
+
+	if (!dev->bCanDoWindowed) {
+		uint32_t a, d = 0;
+		D3DAdapterInfo *ad = (D3DAdapterInfo *)MOTOR_ADAPTERS(self);
+		for (a = 0; a < MOTOR_U32(self, 0x2a37c); a++, ad++) {
+			for (d = 0; d < ad->dwNumDevices && !ad->devices[d].bCanDoWindowed; d++) {
+			}
+			if (d < ad->dwNumDevices) {
+				break;
+			}
+		}
+		if (a >= MOTOR_U32(self, 0x2a37c)) {
+			return E_FAIL;
+		}
+		MOTOR_ADAPTER(self) = (int)a;
+		ad->dwCurrentDevice = (int)d;
+		dev = &ad->devices[d];
+	}
+	dev->bWindowed = 1;
+	MOTOR_WINDOWED(self) = 1;
+	MOTOR_READY(self) = 0;
+	int err;
+	if (!D3DApp_Recreate(self, &err)) {
+		return err;
+	}
+	MOTOR_READY(self) = 1;
+	return 0;
+}
+
+int __thiscall CD3DApp_ToggleFullscreen(byte *self) {
+	D3DAdapterInfo *ad = MOTOR_ADAPTERINFO(self);
+	D3DDeviceInfo *dev = &ad->devices[ad->dwCurrentDevice];
+	D3DModeInfo *mode = &dev->modes[dev->dwCurrentMode];
+	uint32_t *pp = MOTOR_PP(self);
+
+	if (!MOTOR_WINDOWED(self) && !dev->bCanDoWindowed) {
+		return CD3DApp_ForceWindowed(self);
+	}
+	MOTOR_READY(self) = 0;
+	MOTOR_WINDOWED(self) = !MOTOR_WINDOWED(self);
+	dev->bWindowed = MOTOR_WINDOWED(self);
+	MOTOR_CALL(self, 0x00);			/* AdjustWindowForChange */
+	pp[7] = (uint32_t)dev->bWindowed;	/* Windowed */
+	pp[4] = dev->MultiSampleType;
+	pp[9] = mode->DepthStencilFormat;	/* AutoDepthStencilFormat */
+	pp[6] = (uint32_t)(uintptr_t)MOTOR_HWND(self);	/* hDeviceWindow */
+	if (MOTOR_WINDOWED(self)) {
+		/* the client rectangle of the window */
+		pp[0] = MOTOR_U32(self, 0x2a510) - MOTOR_U32(self, 0x2a508);
+		pp[1] = MOTOR_U32(self, 0x2a514) - MOTOR_U32(self, 0x2a50c);
+		pp[2] = ad->desktopMode[3];
+		pp[12] = 0;			/* FullScreen_PresentationInterval */
+	} else {
+		pp[0] = mode->Width;
+		pp[1] = mode->Height;
+		pp[2] = mode->Format;
+		pp[12] = MOTOR_VSYNC(self) ? 0 : 0x80000000;	/* D3DPRESENT_INTERVAL_IMMEDIATE without vsync */
+	}
+	if (CD3DApp_Reset(self) < 0) {
+		return CD3DApp_DisplayErrorMsg(self, 0x8200000c, 1);	/* D3DAPPERR_RESIZEFAILED */
+	}
+	if (MOTOR_WINDOWED(self)) {
+		/* the window rectangle, not topmost */
+		int x = (int)MOTOR_U32(self, 0x2a4f8), y = (int)MOTOR_U32(self, 0x2a4fc);
+		exe_SetWindowPos(MOTOR_HWND(self), (void *)-2, x, y, (int)MOTOR_U32(self, 0x2a500) - x,
+			(int)MOTOR_U32(self, 0x2a504) - y, 0x40);
+	}
+	MOTOR_READY(self) = 1;
+	return 0;
+}
+
+typedef void *(__stdcall *getmodulehandle_t)(const char *name);
+#define exe_GetModuleHandleA GAME_DATA(getmodulehandle_t, 0x3a1160)
+
+int __thiscall CD3DApp_UserSelectNewDevice(byte *self) {
+	if (!MOTOR_WINDOWED(self) && CD3DApp_ToggleFullscreen(self) < 0) {
+		CD3DApp_DisplayErrorMsg(self, 0x8200000c, 1);
+		return E_FAIL;
+	}
+	/* the device dialog (resource 0x90), SelectDeviceProc */
+	if (exe_DialogBoxParamA(exe_GetModuleHandleA(NULL), (const char *)0x90, MOTOR_HWND(self), Game_Ptr(0x275960),
+		(intptr_t)self) != 1) {
+		return 0;
+	}
+	MOTOR_WINDOWED(self) = D3DApp_CurDevice(self)->bWindowed;
+	int err;
+	if (!D3DApp_Recreate(self, &err)) {
+		return err;
+	}
+	D3DApp_SingleStep(self);
 	return 0;
 }

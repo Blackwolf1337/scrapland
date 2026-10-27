@@ -31,20 +31,25 @@ SD_SIZE(D3DModeInfo, 0x14);
 #define MAX_D3DDEVICES 5
 
 typedef struct D3DDeviceInfo {
-	byte pad_00[0xe0];		/* the type, the caps and the description */
+	byte pad_00[0xdc];		/* the type, the caps and the description */
+	int bCanDoWindowed;		/* 0xdc */
 	int dwNumModes;			/* 0xe0 */
 	D3DModeInfo modes[MAX_D3DMODES];	/* 0xe4 */
 	int dwCurrentMode;		/* 0xc9c */
-	byte pad_ca0[0xca8 - 0xca0];
+	int bWindowed;			/* 0xca0 */
+	uint32_t MultiSampleType;	/* 0xca4 */
 } D3DDeviceInfo;
 SD_OFFSET(D3DDeviceInfo, dwCurrentMode, 0xc9c);
 SD_SIZE(D3DDeviceInfo, 0xca8);
 
 typedef struct D3DAdapterInfo {
-	byte d3dAdapterIdentifier[0x440];	/* 0x0000 */
+	byte d3dAdapterIdentifier[0x42c];	/* 0x0000 */
+	uint32_t desktopMode[4];		/* 0x042c d3ddmDesktop: width, height, refresh rate, format */
+	uint32_t dwNumDevices;			/* 0x043c */
 	D3DDeviceInfo devices[MAX_D3DDEVICES];	/* 0x0440 */
 	int dwCurrentDevice;			/* 0x4388 */
 } D3DAdapterInfo;
+SD_OFFSET(D3DAdapterInfo, dwNumDevices, 0x43c);
 SD_OFFSET(D3DAdapterInfo, dwCurrentDevice, 0x4388);
 SD_SIZE(D3DAdapterInfo, 0x438c);
 
@@ -253,7 +258,7 @@ void DebugUtils_DrawTri(const vec3_t *a, const vec3_t *b, const vec3_t *c, uint3
 void Loading_Step(int percent);					/* rva 0x2157a0, -1: one step */
 void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *release, int arg);	/* rva 0x22da30 */
 void Engine3D_Shutdown(void);					/* rva 0x22dc00 */
-void __thiscall CD3DApp_Cleanup(byte *self);			/* rva 0x273d90 */
+int __thiscall CD3DApp_Cleanup(byte *self);			/* rva 0x273d90 */
 int __thiscall CD3DApp_Render(byte *self);			/* rva 0x275120 */
 int __thiscall CD3DApp_ResetDevice(byte *self);		/* rva 0x275470 */
 int __thiscall CD3DApp_Reset(byte *self);			/* rva 0x2754b0 */

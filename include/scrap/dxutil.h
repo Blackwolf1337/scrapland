@@ -62,6 +62,18 @@ int __thiscall CD3DApp_AdjustWindowForChange(byte *self);
 void __thiscall CD3DApp_Pause(byte *self, int pause);
 /* the back buffer and depth buffer descriptions and the aspect ratio, a new device id */
 void __fastcall CD3DApp_UpdateBackBufferDesc(byte *self);
-/* CD3DApp_ResetDevice and CD3DApp_Reset: scrapmain.h */
+/* the default virtual methods (seven copies), S_OK */
+int __thiscall CD3DApp_Nop(byte *self);
+int __thiscall CD3DApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior, uint32_t fmt);
+/* windowed on a device that can, the environment made again */
+int __thiscall CD3DApp_ForceWindowed(byte *self);
+int __thiscall CD3DApp_ToggleFullscreen(byte *self);
+/* the device dialog, the environment made again for the choice */
+int __thiscall CD3DApp_UserSelectNewDevice(byte *self);
+/* CD3DApp_Cleanup, CD3DApp_ResetDevice and CD3DApp_Reset: scrapmain.h */
+
+/* still the exe's (src/imports.inc): the error message box (type 1: then quit), its hr; the device created */
+int __thiscall CD3DApp_DisplayErrorMsg(byte *self, int hr, int type);
+int __thiscall CD3DApp_Initialize3DEnvironment(byte *self);
 
 #endif
