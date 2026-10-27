@@ -1,7 +1,8 @@
 /*
  * AI/NodesWorld.cpp of the game: CNodesWorld, the 3D visibility graph of a level. The base class CNodesWorldSup
  * (rva 0xb80f0 and on, another source) loads the graph: the nodes with their links (0x1a8) and the points of
- * visibility in a grid of cells (0x18c), which the searches walk ring by ring around the cell of a position.
+ * visibility (the nodes) in a grid of cells (0x18c), which the searches walk ring by ring around the cell of a
+ * position.
  * CNodesWorld adds the file names of the graph, the path and visibility queries on the points, the analysis of
  * the graph (AnalizeGraph, the "GRAFO" texts) and of the level (Analize), and the Global/DList.h instances the
  * generation of the graph uses.
@@ -100,17 +101,20 @@ typedef struct CNodesWorldVtbl {
 	CNodesWorld *(__thiscall *Delete)(CNodesWorld *self, byte flags);	/* 0x00 */
 	void *vf01_02[2];
 	byte(__thiscall *LoadGraph)(CNodesWorld *self);			/* 0x0c CNodesWorld_LoadGraph */
-	void *vf04_0a[7];
+	byte(__thiscall *Create)(CNodesWorld *self);			/* 0x10 LoadGraph, created on success */
+	void *vf05_0a[6];
 	const vec3_t *(__thiscall *GetVisPoint)(CNodesWorld *self, int i);	/* 0x2c */
 	int(__thiscall *NumVisPoints)(CNodesWorld *self);			/* 0x30 */
 	void *vf0d_0e[2];
-	void(__thiscall *SavePath)(CNodesWorld *self);				/* 0x3c CNodesWorld_SavePath */
-	void *vf10_12[3];
+	byte(__thiscall *SavePath)(CNodesWorld *self);				/* 0x3c CNodesWorld_SavePath */
+	void *vf10;
+	void(__thiscall *BuildGrid)(CNodesWorld *self);			/* 0x44 the grid of the points */
+	void *vf12;
 	/* the position of a node of the generation buffer (CHECK on the index) */
 	vec3_t *(__thiscall *BufferPos)(CNodesWorld *self, vec3_t *out, int index);	/* 0x4c */
 	void *vf14_22[15];
 	void(__thiscall *FreeGraph)(CNodesWorld *self);			/* 0x8c */
-	void *vf24;
+	void(__thiscall *MakeNodes)(CNodesWorld *self);			/* 0x90 the nodes of the generated points */
 	/* the node is one of the n nodes of list */
 	byte(__thiscall *InList)(CNodesWorld *self, struct cNWNode *const *list, int n, const struct cNWNode *node);	/* 0x94 */
 	void(__thiscall *ClearLists)(CNodesWorld *self);			/* 0x98 CNodesWorld_ClearLists */
@@ -118,7 +122,10 @@ typedef struct CNodesWorldVtbl {
 SD_OFFSET(CNodesWorldVtbl, GetVisPoint, 0x2c);
 SD_OFFSET(CNodesWorldVtbl, SavePath, 0x3c);
 SD_OFFSET(CNodesWorldVtbl, BufferPos, 0x4c);
+SD_OFFSET(CNodesWorldVtbl, Create, 0x10);
+SD_OFFSET(CNodesWorldVtbl, BuildGrid, 0x44);
 SD_OFFSET(CNodesWorldVtbl, FreeGraph, 0x8c);
+SD_OFFSET(CNodesWorldVtbl, MakeNodes, 0x90);
 SD_OFFSET(CNodesWorldVtbl, InList, 0x94);
 SD_OFFSET(CNodesWorldVtbl, ClearLists, 0x98);
 
@@ -145,7 +152,9 @@ struct CNodesWorld {
 	cNWPointList points;		/* 0x190 the points of the generation */
 	cNWNode *nodes;			/* 0x1a8 */
 	int numNodes;			/* 0x1ac */
-	byte pad_1b0[0x1f0 - 0x1b0];
+	byte pad_1b0[0x1c4 - 0x1b0];
+	int numPointLinks;		/* 0x1c4 the links of the generated points */
+	byte pad_1c8[0x1f0 - 0x1c8];
 	cNWVecList extraPoints;		/* 0x1f0 */
 	byte pad_208[0x25c - 0x208];
 	cNWVecList lists25c[2];		/* 0x25c the nodes of the debug view */
@@ -211,7 +220,7 @@ void __thiscall NWVecList_Add(cNWVecList *list, const vec3_t *v);
 void __thiscall NWTriList_Add(cNWTriList *list, const float *data);
 /* data: the 0x3c bytes from pos on */
 void __thiscall NWPointList_Add(cNWPointList *list, const void *data);
-/* in front of the iterator (at the end without one) */
+/* in front of the iterator, the head kept (Add when the iterator is the head) */
 void __thiscall NWIntList_AddBefore(cNWIntList *list, void *const *data);
 /* at the end, head stays */
 void __thiscall NWSegList_Append(cNWSegList *list, const vec3_t *seg);
@@ -229,11 +238,18 @@ void __fastcall NWBox_Init(cNWBox *box);
 
 /* ---- CNodesWorld ---- */
 
+/* the generation of the graph (not in C yet) */
+void __thiscall CNodesWorld_AddExtraPoints(CNodesWorld *self);
+byte __thiscall CNodesWorld_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
+void __thiscall CNodesWorld_AnalizeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
+
 /* CNodesWorld_ctor: ai.h */
 void __fastcall CNodesWorld_dtor(CNodesWorld *self);
 CNodesWorld *__thiscall CNodesWorld_Delete(CNodesWorld *self, byte flags);
 /* the graph file <name>/AI/PathAI of the base class */
 byte __thiscall CNodesWorld_LoadGraph(CNodesWorld *self);
+/* the points and their links into <name>/AI/PathAI.pth (writes a file) */
+byte __thiscall CNodesWorld_SavePath(CNodesWorld *self);
 /* <name>/AI/InfPathAI.pth of the base class (writes a file) */
 byte __thiscall CNodesWorld_SaveInfPath(CNodesWorld *self);
 void __thiscall CNodesWorld_ClearLists(CNodesWorld *self);
@@ -272,7 +288,8 @@ byte __thiscall CNodesWorld_BuildPath(CNodesWorld *self, cNWVecList *path, int d
 byte __thiscall CNodesWorld_HasPointVis(CNodesWorld *self, const vec3_t *pos, float radius);
 /* the point is in a sector the camera sees */
 byte __thiscall CNodesWorld_PointSeen(CNodesWorld *self, const vec3_t *pos);
-/* such a point in the cone of maxAngle around dir, from a random one on in a random direction */
+/* a random point of visibility on the floor of initial between minDist and maxDist in the cone of maxAngle
+ * around dir: from a random one on, in a random direction; arg not used */
 byte __thiscall CNodesWorld_GetRacePointDir(CNodesWorld *self, vec3_t *out, const vec3_t *initial, float minDist,
 	float maxDist, int arg, const vec3_t *dir, float maxAngle);
 /* the nearest point of visibility the segment sees, else the nearest one */

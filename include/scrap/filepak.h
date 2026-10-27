@@ -105,6 +105,7 @@ int __thiscall cFilePack_Open(cFilePack *self, const char *name, uint32_t mode);
 int __thiscall cFilePack_Exists(cFilePack *self, const char *name);
 int __thiscall cFilePack_Close(cFilePack *self);
 int __thiscall cFilePack_Read(cFilePack *self, void *dst, int size);
+int __thiscall cFilePack_Write(cFilePack *self, const void *src, int size);
 int __thiscall cFilePack_Size(cFilePack *self);
 
 /* 1 unless the file list is being recorded */

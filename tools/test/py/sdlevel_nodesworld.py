@@ -328,6 +328,18 @@ def nwoFresh(w):
 	check('fresh ClearLists', lambda m=m: (SDTest.Call(0x0a6a00, 'tvi', m), nwoI(m + 0x190), nwoI(m + 0x1f0)))
 	if w and nwoI(w + 0x1ac) > 0:
 		nwoSurface(w, m)
+	check('fresh Load(-2)', lambda m=m: (SDTest.Call(0x0ab650, 'tviisF', m, -2, '', (300.0, 400.0, 500.0))[0],
+		nwoF(m + 4, 23), nwoF(m + 0x74, 6), nwoB(m + 0x70), nwoI(m + 0x1ac)))
+	if w:
+		# the graph file of the level again: the same nodes as the graph of the level
+		nm = SDTest.Peek(w + 0x8c, '@s')
+		check('fresh Load(-1)', lambda m=m, nm=nm: (SDTest.Call(0x0ab650, 'tviisF', m, -1, nm, (0.0, 0.0, 0.0))[0],
+			nwoF(m + 4, 23), nwoF(m + 0x74, 6), SDTest.Peek(m + 0x8c, '@s') == nm, nwoB(m + 0x70), nwoI(m + 0x1ac),
+			nwoI(m + 0x18c) != 0))
+		check('fresh Load(-1) same', lambda m=m, w=w: (nwoI(m + 0x1ac) == nwoI(w + 0x1ac), nwoF(m + 4, 23) == nwoF(w + 4, 23),
+			map(lambda i, a=nwoI(m + 0x1a8), b=nwoI(w + 0x1a8): nwoF(a + 0x14 * i, 3) == nwoF(b + 0x14 * i, 3) and
+			nwoI(a + 0x14 * i + 0xc) == nwoI(b + 0x14 * i + 0xc), range(min(nwoI(m + 0x1ac), nwoI(w + 0x1ac)))) ==
+			[1] * min(nwoI(m + 0x1ac), nwoI(w + 0x1ac))))
 	check('fresh Delete', lambda m=m: SDTest.Call(0x0a2430, 'tiii', m, 1)[0] == m)
 
 nwoW = SDTest.Peek(0x444d34, 'i')

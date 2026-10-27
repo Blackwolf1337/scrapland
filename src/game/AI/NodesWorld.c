@@ -6,14 +6,18 @@
 
 #include "scrap/ai.h"
 #include "scrap/console.h"
+#include "scrap/filepak.h"
 #include "scrap/mathlib.h"
 #include "scrap/fxmisc.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
+#include "scrap/scrapworld.h"
 
 #define NW_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* the "" of the exe */
+
+int crt_chmod(const char *path, int mode);	/* rva 0x345287 */
 
 /* ---- Global/DList.h ---- */
 
@@ -240,6 +244,59 @@ byte __thiscall CNodesWorld_SaveInfPath(CNodesWorld *self) {
 		return 0;
 	}
 	return 1;
+}
+
+byte __thiscall CNodesWorld_SavePath(CNodesWorld *self) {
+	char path[0x100];
+	cFilePack f;
+	byte ok;
+
+	Con_Printf("Saving Path AI...\n");
+	NW_Path(path, self, "/AI/PathAI.pth");
+	crt_chmod(path, 0x180);
+	cFilePack_ctor(&f);
+	if (!cFilePack_Open(&f, path, 6)) {
+		Con_Bluef("ERROR AI: File Path AI no abierto.\n");
+		CHECK(!"CNodesWorld_SavePath_File_Path_Not_Open");
+		ok = 0;
+	} else {
+		int n = self->points.count;
+		cFilePack_Write(&f, &n, 4);
+		cNWPointNode *p = self->points.iter = self->points.head;
+		while (p) {
+			cFilePack_Write(&f, &p->pos, sizeof(p->pos));
+			p = self->points.iter = self->points.iter->next;
+			if (p == self->points.head) {
+				break;
+			}
+		}
+		p = self->points.iter = self->points.head;
+		while (p) {
+			int links = p->links.count;
+			cFilePack_Write(&f, &links, 4);
+			cNWIntNode *l = p->links.iter = p->links.head;
+			while (l) {
+				cFilePack_Write(&f, l->data, sizeof(vec3_t));
+				l = p->links.iter = p->links.iter->next;
+				if (l == p->links.head) {
+					break;
+				}
+			}
+			p = self->points.iter = self->points.iter->next;
+			if (p == self->points.head) {
+				break;
+			}
+		}
+		if (!cFilePack_Close(&f)) {
+			Con_Bluef("ERROR AI: File Path AI no cerrado.\n");
+			CHECK(!"CNodesWorld_SavePath_File_Path_Not_Closed");
+			ok = 0;
+		} else {
+			ok = 1;
+		}
+	}
+	cFilePack_dtor(&f);
+	return ok;
 }
 
 void __thiscall CNodesWorld_ClearLists(CNodesWorld *self) {
@@ -765,8 +822,15 @@ byte __thiscall CNodesWorld_HasPointVis(CNodesWorld *self, const vec3_t *pos, fl
 	return count > 0;
 }
 
-byte __thiscall CNodesWorld_PointSeen(CNodesWorld *self, const vec3_t *pos) {
+/* the position of the camera entity of view 0 (vtable slot 0x5c of the Cam) */
+static void NW_CamPos(float *x, float *y, float *z) {
 	typedef void(__thiscall * getCamPos_t)(cEntity * e, float *x, float *y, float *z);
+	cEntity *e = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
+
+	((getCamPos_t)((void *const *)e->vftable)[0x5c / 4])(e, x, y, z);
+}
+
+byte __thiscall CNodesWorld_PointSeen(CNodesWorld *self, const vec3_t *pos) {
 	vec3_t cam;
 
 	(void)self;
@@ -774,8 +838,7 @@ byte __thiscall CNodesWorld_PointSeen(CNodesWorld *self, const vec3_t *pos) {
 	if (sector < 0) {
 		return 1;
 	}
-	cEntity *e = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
-	((getCamPos_t)((void *const *)e->vftable)[0x5c / 4])(e, &cam.x, &cam.y, &cam.z);
+	NW_CamPos(&cam.x, &cam.y, &cam.z);
 	int camSector = Video_GetStatus();
 	int posSector = Sector_At(&cam);
 	if (camSector >= 0 && posSector >= 0 && sector != camSector && sector != posSector) {
@@ -1006,8 +1069,7 @@ static float NW_RandomPart(float len) {
 void __thiscall CNodesWorld_RandomNearNode(CNodesWorld *self, int node, float maxDist, vec3_t *out) {
 	vec3_t dir;
 	float len = NW_RandomLink(self, node, &dir);
-	int r = crt_rand() & 0x7fff;
-	float t = (float)((double)r * 0x1.0002000400080p-15 * (double)Float_MinSS(len, maxDist) + 0.0);
+	float t = NW_RandomPart(Float_MinSS(len, maxDist));
 	const vec3_t *p = &self->nodes[node].pos;
 
 	out->x = dir.x * t + p->x;
@@ -1033,6 +1095,176 @@ void __thiscall CNodesWorld_RandomAheadNode(CNodesWorld *self, int node, const v
 		return;
 	}
 	CNodesWorld_RandomNearNode(self, node, maxDist, out);
+}
+
+/* the axes and the half of nodeSize */
+static void NW_SetNodeSize(CNodesWorld *self) {
+	self->axis[0].x = self->nodeSize.x;
+	self->axis[0].y = 0.0f;
+	self->axis[0].z = 0.0f;
+	self->axis[1].y = self->nodeSize.y;
+	self->axis[1].x = 0.0f;
+	self->axis[1].z = 0.0f;
+	self->axis[2].z = self->nodeSize.z;
+	self->axis[2].x = 0.0f;
+	self->axis[2].y = 0.0f;
+	self->halfNode.x = self->nodeSize.x * 0.5f;
+	self->halfNode.y = self->nodeSize.y * 0.5f;
+	self->halfNode.z = self->nodeSize.z * 0.5f;
+}
+
+/* the top of the level outdoors: the dummy DM_Atmosphere */
+static void NW_MapTop(vec3_t *top) {
+	char buf[20];
+	float ang[3];
+	byte flag;
+
+	DummySearch_Start("DM_Atmosphere", 0);
+	if (!DummySearch_Next(buf, sizeof(buf), top, ang, &flag)) {
+		Con_Bluef("ERROR AI: Dummy DM_MapTop no encontrado.\n");
+		CHECK(!"CNodesWorld_IniNodesWorld_DM_MapTop_Not_Found");
+	}
+}
+
+void __thiscall CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, const vec3_t *pos) {
+	box_t box;
+	vec3_t top;
+
+	Con_Printf("\nCreating Nodes...\n");
+	Con_Bluef("%s", NW_EMPTY);
+	self->nodeSize = *pos;
+	NW_SetNodeSize(self);
+	self->f44.x = self->nodeSize.x * 0.1f;
+	self->f44.y = self->nodeSize.y * 0.1f;
+	self->f44.z = self->nodeSize.z * 0.1f;
+	self->margin = Float_MinSS(self->nodeSize.z, Float_MinSS(self->nodeSize.y, self->nodeSize.x)) / 100.0f;
+	World_GetCollideBox(&box);
+	self->min = box.min;
+	self->max = box.max;
+	if (*name) {
+		size_t n = strnlen(name, sizeof(self->name) - 1);
+		memcpy(self->name, name, n);
+		self->name[n] = 0;
+	}
+	self->vftable->FreeGraph(self);
+	if (arg < 0) {
+		if (arg != -1) {
+			goto end;
+		}
+		if (!self->vftable->Create(self)) {
+			Con_Warnf("NODES 3D AI LEVEL NOT LOADED.\n\n");
+			float sz = g_IsMapOutDoor ? 1400.0f : 130.0f;
+			self->nodeSize.x = sz;
+			self->nodeSize.y = sz;
+			self->nodeSize.z = sz;
+			NW_SetNodeSize(self);
+			goto end;
+		}
+		self->min.x -= self->margin;
+		self->min.y -= self->margin;
+		self->min.z -= self->margin;
+		self->max.x += self->margin;
+		self->max.y += self->margin;
+		self->max.z += self->margin;
+		if (g_IsMapOutDoor) {
+			NW_MapTop(&top);
+			if (self->max.y > top.y) {
+				self->max.y = top.y;
+			}
+		}
+		self->vftable->BuildGrid(self);
+		Con_Printf("NODES 3D AI LEVEL LOADED.\n\n");
+		Con_Bluef("%s", NW_EMPTY);
+		goto end;
+	}
+	float mn = Float_MinSS(pos->z, Float_MinSS(pos->y, pos->x));
+	if (g_IsMapOutDoor) {
+		if (!(mn > 100.0f) || !(100000.0f > Float_MaxSS(pos->z, Float_MaxSS(pos->y, pos->x)))) {
+			CHECK(!"(MinComponent(vectInterNod) > 100.0f) && (MaxComponent(vectInterNod) < 100000.0f)");
+		}
+	} else if (!(mn > 10.0f) || !(10000.0f > Float_MaxSS(pos->z, Float_MaxSS(pos->y, pos->x)))) {
+		CHECK(!"(MinComponent(vectInterNod) > 10.0f) && (MaxComponent(vectInterNod) < 10000.0f)");
+	}
+	self->created = 0;
+	if (arg == 0) {
+		char buf[20];
+		float ang[3];
+		byte flag;
+
+		DummySearch_Start("DM_NodeIniAI", 0);
+		if (!DummySearch_Next(buf, sizeof(buf), &self->nodeInit, ang, &flag)) {
+			Con_Bluef("ERROR AI: Dummy DM_NodeInitAI no encontrado.\n");
+			CHECK(!"CNodesWorld_IniNodesWorld_DM_NodeInitAI_Not_Found");
+		}
+		self->nodeInitDummy = 1;
+	} else {
+		NW_CamPos(&self->nodeInit.x, &self->nodeInit.y, &self->nodeInit.z);
+		self->nodeInitDummy = 0;
+	}
+	CHECK(self->nodeInit.x >= self->min.x && self->max.x >= self->nodeInit.x && self->nodeInit.y >= self->min.y &&
+		self->max.y >= self->nodeInit.y && self->nodeInit.z >= self->min.z && self->max.z >= self->nodeInit.z);
+	if (arg <= 0) {
+		self->min.x = (self->min.x - self->nodeSize.x) - self->margin;
+		self->min.y = (self->min.y - self->nodeSize.y) - self->margin;
+		self->min.z = (self->min.z - self->nodeSize.z) - self->margin;
+		self->max.x = (self->nodeSize.x + self->max.x) + self->margin;
+		self->max.y = (self->max.y + self->nodeSize.y) + self->margin;
+		self->max.z = (self->max.z + self->nodeSize.z) + self->margin;
+	} else {
+		float fa = (float)arg;
+		float ex = ((self->halfNode.x + self->halfNode.x) * fa + self->halfNode.x) + self->margin;
+		float ey = (self->halfNode.y + (self->halfNode.y + self->halfNode.y) * fa) + self->margin;
+		float ez = (self->halfNode.z + (self->halfNode.z + self->halfNode.z) * fa) + self->margin;
+		self->min.z = self->nodeInit.z - ez;
+		self->min.x = self->nodeInit.x - ex;
+		self->min.y = self->nodeInit.y - ey;
+		self->max.y = self->nodeInit.y + ey;
+		self->max.x = ex + self->nodeInit.x;
+		self->max.z = self->nodeInit.z + ez;
+	}
+	if (g_IsMapOutDoor) {
+		NW_MapTop(&top);
+		if (arg == 0 || self->max.y > top.y) {
+			self->max.y = top.y;
+		}
+	}
+	if (!self->analizing) {
+		Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+		if (arg == 0) {
+			CNodesWorld_AddExtraPoints(self);
+		}
+		byte made = CNodesWorld_Generate(self, &self->nodeInit, &self->min, &self->max);
+		Con_Printf("\nNUM. POINTS OF VISIBILITY GENERATED: %d\n", self->points.count - self->extraPoints.count);
+		Con_Printf("NUM. POINTS OF VISIBILITY EXTRA MAP: %d\n", self->extraPoints.count);
+		Con_Printf("NUM. POINTS OF VISIBILITY TOTAL: %d\n", self->points.count);
+		Con_Printf("NUM. LINKS BETWEEN POINTS VIS.: %d\n", self->numPointLinks);
+		Con_Bluef("%s", NW_EMPTY);
+		if (made) {
+			CNodesWorld_SaveInfPath(self);
+		}
+		self->vftable->MakeNodes(self);
+		if (self->vftable->Create(self)) {
+			if (arg == 0) {
+				self->vftable->BuildGrid(self);
+			}
+			self->created = 1;
+			Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+			Con_Printf("NODES 3D AI LEVEL LOADED.\n");
+			Con_Bluef("%s", NW_EMPTY);
+			goto end;
+		}
+	} else {
+		CNodesWorld_AnalizeMap(self, &self->nodeInit, &self->min, &self->max);
+		self->vftable->MakeNodes(self);
+		if (self->vftable->Create(self)) {
+			self->vftable->BuildGrid(self);
+			self->created = 1;
+			goto end;
+		}
+	}
+	Con_Bluef("NODES 3D AI LEVEL NOT LOADED.\n\n");
+end:
+	Con_Bluef("%s", NW_EMPTY);
 }
 
 void __thiscall CNodesWorld_Analize(CNodesWorld *self, const vec3_t *size) {
