@@ -167,6 +167,12 @@ byte __thiscall cEntity_VarF(cEntity *self, const char *name, double *d, int set
 byte __thiscall cEntity_VarS(cEntity *self, const char *name, char **s, int set);
 byte __thiscall cEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
 void *__thiscall cEntity_GetAI(cEntity *self);
+/* the inline virtual functions of Entity.h: vf09 and vf10 (no hit), vf11, vf20 (nothing) and vf21 (0) */
+byte __thiscall cEntity_TestLine(cEntity *self, const vec3_t *from, vec3_t *hit);
+byte __thiscall cEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *center, float radius, int arg);
+void __thiscall cEntity_Vf11(cEntity *self, int a, int b, int c);
+void __thiscall cEntity_Vf20(cEntity *self);
+int __thiscall cEntity_Vf21(cEntity *self, int a);
 
 /* the network game: an entity named "net..." of a client is the copy of a server one */
 byte Net_IsNetEntity(cEntity *e);

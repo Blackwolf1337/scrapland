@@ -266,6 +266,8 @@ void __thiscall cEmbeddedFXAlarm_SetOn(cEmbeddedFXAlarm *self, byte on);
 void __thiscall cEmbeddedFXAlarm_SetLights(cEmbeddedFXAlarm *self, byte on);
 void __thiscall cEmbeddedFXAlarm_Init(cEmbeddedFXAlarm *self, CGameModel *model);
 void __thiscall cEmbeddedFXAlarm_Update(cEmbeddedFXAlarm *self, float dt);
+/* the hair glow on the node of the head model (Entities/Char/Type/CrazyGambler.cpp moves it to another head) */
+void __thiscall cEmbeddedFXCrazyGambler_SetHead(cEmbeddedFXCrazyGambler *self, CGameModel *model, const char *node);
 
 /* EmbeddedFXCharHead.c: the effect of a head model or NULL */
 cEmbeddedFX *EmbeddedFXCharHead_Create(CGameModel *head);

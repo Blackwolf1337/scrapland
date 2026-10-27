@@ -16,7 +16,6 @@ SD_IMPORT(operator_delete_sized, 0x313634)
 /* engine: Logic/ and AI/ (include/scrap/logic.h) */
 SD_IMPORT(Logic_GetLocalLogic, 0x141ac0)
 SD_IMPORT(Logic_SetOnFloor, 0x151fd0)
-SD_IMPORT(Logic_Flash, 0x0c9180)
 SD_IMPORT(Taunts_UpdateEndTime, 0x151fb0)
 SD_IMPORT(ShipRegen_Set, 0x1564c0)
 SD_IMPORT(AICtrl_SendSentinelToWatch, 0x14f5f0)
@@ -27,7 +26,6 @@ SD_IMPORT(Domination_SetBatonState, 0x144d50)
 
 /* engine: World/FX/ and effects of Entities/ */
 SD_IMPORT(FX_ShipExplosion, 0x1f4d50)
-SD_IMPORT(FX_BishopSellLife, 0x0c4650)
 
 /* engine: Actions/ */
 SD_IMPORT(cActClassList_Create, 0x061f70)
@@ -189,7 +187,6 @@ SD_IMPORT(Steam_GetID, 0x134720)
 SD_IMPORT(Steam_GetTicket, 0x1345e0)
 SD_IMPORT(Gog_GetID, 0x137160)
 SD_IMPORT(Anm_Preload, 0x2051a0)
-SD_IMPORT(cWorld_GetUsrEntity, 0x0c1430)
 SD_IMPORT(Alarm_Set, 0x13fe60)
 SD_IMPORT(Alarm_SetChar, 0x13ff20)
 SD_IMPORT(Alarm_SetGrow, 0x13fd50)
@@ -406,12 +403,8 @@ SD_IMPORT(CSuelo_TraceSeg, 0x26f120)
 SD_IMPORT(CSuelo_CheckBBox, 0x26fb10)
 
 /* module agent: World/World.cpp (imports below this line) */
-SD_IMPORT(cCamPathEntity_ctor, 0x0bdb40)
 SD_IMPORT(cWalkCharEntity_ctor, 0x0d0e40)
-SD_IMPORT(cCamEntity_ctor, 0x0bd260)
-SD_IMPORT(cFollowCamEntity_ctor, 0x0beaa0)
 SD_IMPORT(cWithLifeEntity_ctor, 0x12b580)
-SD_IMPORT(cCamEntity_GetTarget, 0x0c03e0)
 SD_IMPORT(Alarm_ctor, 0x13fb10)
 SD_IMPORT(Alarm_Update, 0x13ff70)
 SD_IMPORT(Logic_ctor, 0x151900)
@@ -635,8 +628,6 @@ SD_IMPORT(Dlg_GetFloat, 0x2a5d80)
 /* module agent: World/FX/FXCharActions.cpp (imports below this line) */
 
 /* module agent: Entities/More+ObjEntity (imports below this line) */
-SD_IMPORT(cCamEntity_SetAng, 0x0bfa90)
-SD_IMPORT(cCamEntity_SetTarget, 0x0c07f0)
 SD_IMPORT(Net_GetResourceName, 0x18ea80)
 
 /* module agent: Entities/Vehicle/VehicleEffects+VehicleEntity.cpp (imports below this line) */
@@ -707,3 +698,9 @@ SD_IMPORT(cRadarScorer_DrawRadar, 0x16d570)
 SD_IMPORT(cPlayerInput_PressKey, 0x1396b0)
 SD_IMPORT(cActionSet_HoldPressed, 0x139810)
 SD_IMPORT(Scorer_SetInputState, 0x1710f0)
+SD_IMPORT(cActCtrl_GetActionName, 0x062c40)
+SD_IMPORT(cWalkCharEntity_SetEnergy, 0x0d4bc0)
+SD_IMPORT(cWalkCharControl_Reset, 0x0d0390)
+SD_IMPORT(cWalkCharControl_Update, 0x0d0410)
+SD_IMPORT(cActCtrl_PlayNew, 0x0631c0)
+SD_IMPORT(cWalkCharEntity_SetFalling, 0x0d4c60)

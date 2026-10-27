@@ -2207,121 +2207,122 @@ rva	size	source	callconv	name	signature
 000bd000	312	USER_DEFINED	__cdecl	DebugLog_Write	void __cdecl(char * text, uint color, FILE * f)
 000bd180	165	USER_DEFINED	__cdecl	DebugLog_Open	void __cdecl(char * name, FILE * * f)
 000bd230	35	ANALYSIS	__cdecl	_fprintf	int __cdecl(FILE * _File, char * _Format, ...)
-000bd260	200	DEFAULT	unknown	FUN_004bd260	
-000bd330	164	DEFAULT	unknown	FUN_004bd330	
-000bd3e0	38	ANALYSIS	__thiscall	cCamControl::vf03	undefined __thiscall(void)
-000bd410	3	ANALYSIS	__thiscall	cCamControl::vf26	undefined __thiscall(void)
-000bd420	3	ANALYSIS	__thiscall	cCamControl::vf25	undefined __thiscall(void)
-000bd430	3	ANALYSIS	__thiscall	cEntity::vf11	undefined __thiscall(void)
-000bd440	1	ANALYSIS	__thiscall	cEntity::vf20	undefined __thiscall(void)
-000bd450	430	ANALYSIS	__thiscall	cCamControl::vf17	undefined __thiscall(void)
-000bd600	37	ANALYSIS	__thiscall	cCamControl::vf23	undefined __thiscall(void)
-000bd630	5	ANALYSIS	__thiscall	cEntity::vf21	undefined __thiscall(void)
-000bd640	6	ANALYSIS	__thiscall	cCamControl::vf04	undefined __thiscall(void)
-000bd650	3	ANALYSIS	__thiscall	cCamControl::vf28	undefined __thiscall(void)
-000bd660	128	ANALYSIS	__thiscall	cCamControl::vf16	undefined __thiscall(void)
-000bd6e0	80	ANALYSIS	__thiscall	cCamControl::vf05	undefined __thiscall(void)
-000bd730	5	ANALYSIS	__thiscall	cEntity::vf09	undefined __thiscall(void)
-000bd740	176	ANALYSIS	__thiscall	cCamControl::vf27	undefined __thiscall(void)
-000bd7f0	43	ANALYSIS	__thiscall	cCamControl::vf24	undefined __thiscall(void)
-000bd820	120	DEFAULT	unknown	FUN_004bd820	
-000bd8a0	5	ANALYSIS	__thiscall	cEntity::vf10	undefined __thiscall(void)
-000bd8b0	135	ANALYSIS	__thiscall	cCamControl::vf18	undefined __thiscall(void)
-000bd940	505	ANALYSIS	__thiscall	cCamControl::vf19	undefined __thiscall(void)
-000bdb40	301	DEFAULT	unknown	FUN_004bdb40	
-000bdcf0	28	DEFAULT	unknown	FUN_004bdcf0	
-000bdd10	57	ANALYSIS	__thiscall	cCamPathEntity::vf03	undefined __thiscall(void)
-000bdd50	638	ANALYSIS	__thiscall	cCamPathEntity::vf17	undefined __thiscall(void)
-000bdfd0	96	DEFAULT	unknown	FUN_004bdfd0	
-000be030	6	ANALYSIS	__thiscall	cCamPathEntity::vf04	undefined __thiscall(void)
-000be040	374	ANALYSIS	__thiscall	cCamPathEntity::vf16	undefined __thiscall(void)
-000be1c0	75	DEFAULT	unknown	FUN_004be1c0	
-000be520	80	ANALYSIS	__thiscall	cCamPathEntity::vf05	undefined __thiscall(void)
-000be570	192	DEFAULT	unknown	FUN_004be570	
-000be630	257	ANALYSIS	__thiscall	cCamPathEntity::vf00	undefined __thiscall(void)
-000be740	293	ANALYSIS	__thiscall	cCamPathEntity::vf18	undefined __thiscall(void)
-000be870	558	ANALYSIS	__thiscall	cCamPathEntity::vf19	undefined __thiscall(void)
-000beaa0	405	DEFAULT	unknown	FUN_004beaa0	
-000bec40	99	DEFAULT	unknown	FUN_004bec40	
-000becb0	130	ANALYSIS	__thiscall	cFollowCamEntity::vf03	undefined __thiscall(void)
-000bed40	661	ANALYSIS	__thiscall	cFollowCamEntity::vf26	undefined __thiscall(void)
-000befe0	1468	ANALYSIS	__thiscall	cFollowCamEntity::vf25	undefined __thiscall(void)
-000bf5a0	1256	ANALYSIS	__thiscall	cFollowCamEntity::vf17	undefined __thiscall(void)
-000bfa90	106	USER_DEFINED	__thiscall	cCamEntity_SetAng	void __thiscall(float x, float y, float z)
-000bfb00	1967	DEFAULT	unknown	FUN_004bfb00	
-000c03e0	7	DEFAULT	unknown	FUN_004c03e0	
-000c03f0	27	ANALYSIS	__thiscall	cFollowCamEntity::vf29	undefined __thiscall(void)
-000c0410	6	ANALYSIS	__thiscall	cFollowCamEntity::vf04	undefined __thiscall(void)
-000c0420	23	ANALYSIS	__thiscall	cFollowCamEntity::vf28	undefined __thiscall(void)
-000c0440	164	ANALYSIS	__thiscall	cFollowCamEntity::vf16	undefined __thiscall(void)
-000c04f0	80	ANALYSIS	__thiscall	cFollowCamEntity::vf05	undefined __thiscall(void)
-000c0540	45	ANALYSIS	__thiscall	cFollowCamEntity::vf27	undefined __thiscall(void)
-000c0570	375	DEFAULT	unknown	FUN_004c0570	
-000c06f0	113	DEFAULT	unknown	FUN_004c06f0	
-000c0770	127	DEFAULT	unknown	FUN_004c0770	
+000bd260	200	USER_DEFINED	__thiscall	cCamEntity_ctor	void * __thiscall(char * name, float x, float y, float z)
+000bd330	164	USER_DEFINED	__fastcall	cCamControl_dtor	void __fastcall(void * self)
+000bd3e0	38	USER_DEFINED	__thiscall	cCamControl_Delete	void * __thiscall(uint flags)
+000bd410	3	USER_DEFINED	__thiscall	cCamControl_NopF	void __thiscall(float f)
+000bd420	3	USER_DEFINED	__thiscall	cCamControl_NopF	void __thiscall(float f)
+000bd430	3	USER_DEFINED	__thiscall	cEntity_Vf11	void __thiscall(int a, int b, int c)
+000bd440	1	USER_DEFINED	__thiscall	cEntity_Vf20	void __thiscall(void)
+000bd450	430	USER_DEFINED	__thiscall	cCamControl_VarF	byte __thiscall(char * name, double * d, int set)
+000bd600	37	USER_DEFINED	__thiscall	cCamControl_GetCamPos	void __thiscall(float * x, float * y, float * z)
+000bd630	5	USER_DEFINED	__thiscall	cEntity_Vf21	int __thiscall(int a)
+000bd640	6	USER_DEFINED	__thiscall	cCamControl_GetClassName	char * __thiscall(void)
+000bd650	3	USER_DEFINED	__thiscall	cCamControl_NopF	void __thiscall(float f)
+000bd660	128	USER_DEFINED	__thiscall	cCamControl_VarI	byte __thiscall(char * name, int * i, int set)
+000bd6e0	80	USER_DEFINED	__thiscall	cCamControl_IsType	int __thiscall(char * type)
+000bd730	5	USER_DEFINED	__thiscall	cEntity_TestLine	byte __thiscall(void * from, void * hit)
+000bd740	176	USER_DEFINED	__thiscall	cCamControl_SetTarget	byte __thiscall(char * name)
+000bd7f0	43	USER_DEFINED	__thiscall	cCamControl_SetCamPos	void __thiscall(float x, float y, float z)
+000bd820	120	USER_DEFINED	__thiscall	cCamControl_SetViewPos	void __thiscall(int i, float x, float y, float z)
+000bd8a0	5	USER_DEFINED	__thiscall	cEntity_TestSphere	byte __thiscall(void * exclude, void * center, float radius, int arg)
+000bd8b0	135	USER_DEFINED	__thiscall	cCamControl_VarS	byte __thiscall(char * name, char ** s, int set)
+000bd940	505	USER_DEFINED	__thiscall	cCamControl_VarV	byte __thiscall(char * name, double * x, double * y, double * z, int set)
+000bdb40	301	USER_DEFINED	__thiscall	cCamPathEntity_ctor	void * __thiscall(char * name, float x, float y, float z)
+000bdc70	125	USER_DEFINED	__fastcall	cCamPathPoint_ctor	void * __fastcall(void * self)
+000bdcf0	28	USER_DEFINED	__fastcall	cCamPathEntity_dtor	void __fastcall(void * self)
+000bdd10	57	USER_DEFINED	__thiscall	cCamPathEntity_Delete	void * __thiscall(uint flags)
+000bdd50	638	USER_DEFINED	__thiscall	cCamPathEntity_VarF	byte __thiscall(char * name, double * d, int set)
+000bdfd0	96	USER_DEFINED	__thiscall	cCamPathEntity_PointIndex	int __thiscall(char * name, char * prefix, uint len)
+000be030	6	USER_DEFINED	__thiscall	cCamPathEntity_GetClassName	char * __thiscall(void)
+000be040	374	USER_DEFINED	__thiscall	cCamPathEntity_VarI	byte __thiscall(char * name, int * i, int set)
+000be1c0	75	USER_DEFINED	__thiscall	cCamPathEntity_Interp	void __thiscall(void * next, void * cur, float f)
+000be520	80	USER_DEFINED	__thiscall	cCamPathEntity_IsType	int __thiscall(char * type)
+000be570	192	USER_DEFINED	__fastcall	cCamPathPoint_Refresh	void __fastcall(void * self)
+000be630	257	USER_DEFINED	__thiscall	cCamPathEntity_Update	void __thiscall(void)
+000be740	293	USER_DEFINED	__thiscall	cCamPathEntity_VarS	byte __thiscall(char * name, char ** s, int set)
+000be870	558	USER_DEFINED	__thiscall	cCamPathEntity_VarV	byte __thiscall(char * name, double * x, double * y, double * z, int set)
+000beaa0	405	USER_DEFINED	__thiscall	cFollowCamEntity_ctor	void * __thiscall(char * name, float x, float y, float z)
+000bec40	99	USER_DEFINED	__fastcall	cFollowCamEntity_dtor	void __fastcall(void * self)
+000becb0	130	USER_DEFINED	__thiscall	cFollowCamEntity_Delete	void * __thiscall(uint flags)
+000bed40	661	USER_DEFINED	__thiscall	cFollowCamEntity_Slot	void __thiscall(float dt)
+000befe0	1468	USER_DEFINED	__thiscall	cFollowCamEntity_Lerp	void __thiscall(float f)
+000bf5a0	1256	USER_DEFINED	__thiscall	cFollowCamEntity_VarF	byte __thiscall(char * name, double * d, int set)
+000bfa90	106	USER_DEFINED	__thiscall	cCamEntity_SetAng	void __thiscall(int ang)
+000bfb00	1967	USER_DEFINED	__fastcall	cFollowCamEntity_FreeMove	void __fastcall(void * self)
+000c03e0	7	USER_DEFINED	__fastcall	cCamEntity_GetTarget	void * __fastcall(void * cam)
+000c03f0	27	USER_DEFINED	__thiscall	cFollowCamEntity_GetAng2	void __thiscall(float * ang)
+000c0410	6	USER_DEFINED	__thiscall	cFollowCamEntity_GetClassName	char * __thiscall(void)
+000c0420	23	USER_DEFINED	__thiscall	cFollowCamEntity_UpdateOff	void __thiscall(float dt)
+000c0440	164	USER_DEFINED	__thiscall	cFollowCamEntity_VarI	byte __thiscall(char * name, int * i, int set)
+000c04f0	80	USER_DEFINED	__thiscall	cFollowCamEntity_IsType	int __thiscall(char * type)
+000c0540	45	USER_DEFINED	__thiscall	cFollowCamEntity_SetTargetName	byte __thiscall(char * name)
+000c0570	375	USER_DEFINED	__thiscall	cFollowCamEntity_Quake	void __thiscall(float dt)
+000c06f0	113	USER_DEFINED	__fastcall	cFollowCamEntity_ResetAngles	void __fastcall(void * self)
+000c0770	127	USER_DEFINED	__thiscall	cFollowCamEntity_SetFreeCam	void __thiscall(byte on)
 000c07f0	419	USER_DEFINED	__thiscall	cCamEntity_SetTarget	void __thiscall(void * target)
-000c09a0	27	ANALYSIS	__thiscall	cFollowCamEntity::vf30	undefined __thiscall(void)
-000c09c0	321	ANALYSIS	__thiscall	cFollowCamEntity::vf00	undefined __thiscall(void)
-000c0b10	489	ANALYSIS	__thiscall	cFollowCamEntity::vf18	undefined __thiscall(void)
-000c0d00	26	ANALYSIS	__thiscall	cFollowCamEntity::vf19	undefined __thiscall(void)
-000c0d20	342	DEFAULT	unknown	FUN_004c0d20	
-000c0e80	298	DEFAULT	unknown	FUN_004c0e80	
-000c0fb0	278	DEFAULT	unknown	FUN_004c0fb0	
-000c10d0	646	DEFAULT	unknown	FUN_004c10d0	
-000c1360	97	DEFAULT	unknown	FUN_004c1360	
-000c13d0	91	DEFAULT	unknown	FUN_004c13d0	
-000c1430	79	USER_DEFINED	unknown	cWorld::GetUsrEntity	undefined(void)
-000c1480	392	DEFAULT	unknown	FUN_004c1480	
-000c1610	366	DEFAULT	unknown	FUN_004c1610	
-000c1780	254	DEFAULT	unknown	FUN_004c1780	
-000c1880	217	DEFAULT	unknown	FUN_004c1880	
-000c1960	257	DEFAULT	unknown	FUN_004c1960	
-000c1a70	828	DEFAULT	unknown	FUN_004c1a70	
-000c1db0	410	DEFAULT	unknown	FUN_004c1db0	
-000c1f50	299	DEFAULT	unknown	FUN_004c1f50	
-000c2080	261	DEFAULT	unknown	FUN_004c2080	
-000c2190	254	DEFAULT	unknown	FUN_004c2190	
-000c2290	217	DEFAULT	unknown	FUN_004c2290	
-000c2370	257	DEFAULT	unknown	FUN_004c2370	
-000c2480	411	DEFAULT	unknown	FUN_004c2480	
-000c2620	362	DEFAULT	unknown	FUN_004c2620	
-000c2790	299	DEFAULT	unknown	FUN_004c2790	
-000c28c0	413	DEFAULT	unknown	FUN_004c28c0	
-000c2a60	530	DEFAULT	unknown	FUN_004c2a60	
-000c2c80	858	DEFAULT	unknown	FUN_004c2c80	
-000c2fe0	436	DEFAULT	unknown	FUN_004c2fe0	
-000c31a0	586	DEFAULT	unknown	FUN_004c31a0	
-000c33f0	337	DEFAULT	unknown	FUN_004c33f0	
-000c3550	560	DEFAULT	unknown	FUN_004c3550	
-000c3780	44	DEFAULT	unknown	FUN_004c3780	
-000c37b0	217	DEFAULT	unknown	FUN_004c37b0	
-000c3890	2906	DEFAULT	unknown	FUN_004c3890	
-000c43f0	387	DEFAULT	unknown	FUN_004c43f0	
-000c4580	197	DEFAULT	unknown	FUN_004c4580	
-000c4650	249	USER_DEFINED	unknown	FX_BishopSellLife	undefined(void)
-000c4750	577	DEFAULT	unknown	FUN_004c4750	
-000c49a0	1736	DEFAULT	unknown	FUN_004c49a0	
-000c5070	2801	DEFAULT	unknown	FUN_004c5070	
-000c5b70	331	DEFAULT	unknown	FUN_004c5b70	
-000c5cd0	1203	DEFAULT	unknown	FUN_004c5cd0	
-000c6190	593	DEFAULT	unknown	FUN_004c6190	
-000c63f0	606	DEFAULT	unknown	FUN_004c63f0	
-000c6650	351	DEFAULT	unknown	FUN_004c6650	
-000c67b0	337	DEFAULT	unknown	FUN_004c67b0	
-000c6910	554	DEFAULT	unknown	FUN_004c6910	
-000c6b40	434	DEFAULT	unknown	FUN_004c6b40	
-000c6d00	396	DEFAULT	unknown	FUN_004c6d00	
-000c6e90	387	DEFAULT	unknown	FUN_004c6e90	
-000c7020	437	DEFAULT	unknown	FUN_004c7020	
-000c71e0	616	DEFAULT	unknown	FUN_004c71e0	
-000c7450	1804	DEFAULT	unknown	FUN_004c7450	
+000c09a0	27	USER_DEFINED	__thiscall	cFollowCamEntity_SetAng2	void __thiscall(float * ang)
+000c09c0	321	USER_DEFINED	__thiscall	cFollowCamEntity_Update	void __thiscall(void)
+000c0b10	489	USER_DEFINED	__thiscall	cFollowCamEntity_VarS	byte __thiscall(char * name, char ** s, int set)
+000c0d00	26	USER_DEFINED	__thiscall	cFollowCamEntity_VarV	byte __thiscall(char * name, double * x, double * y, double * z, int set)
+000c0d20	342	USER_DEFINED	__cdecl	ChType_BankDirectorActionPress	void __cdecl(void * params)
+000c0e80	298	USER_DEFINED	__cdecl	ChType_BankDirectorActionRelease	void __cdecl(void * params)
+000c0fb0	278	USER_DEFINED	__cdecl	ChType_BankDirectorEndActionInit	void __cdecl(void * params)
+000c10d0	646	USER_DEFINED	__cdecl	ChType_BankerAttack	void __cdecl(void * params)
+000c1360	97	USER_DEFINED	__cdecl	ChType_BankerVictim	void * __cdecl(void * v)
+000c13d0	91	USER_DEFINED	__cdecl	ChType_CanRob	byte __cdecl(void * thief, void * v)
+000c1430	79	USER_DEFINED	__thiscall	cWorld_GetUsrEntity	void * __thiscall(int player)
+000c1480	392	USER_DEFINED	__cdecl	ChType_Steal	byte __cdecl(void ** thief, void ** victim, int amount, char * stat, float frac)
+000c1610	366	USER_DEFINED	__cdecl	ChType_BankMasterActionEnd	void __cdecl(void * params)
+000c1780	254	USER_DEFINED	__cdecl	ChType_BankMasterActionInit	void __cdecl(void * params)
+000c1880	217	USER_DEFINED	__cdecl	ChType_ActionPress	void __cdecl(void * params)
+000c1960	257	USER_DEFINED	__cdecl	ChType_BankMasterAttack	void __cdecl(void * params)
+000c1a70	828	USER_DEFINED	__cdecl	ChType_BankMasterSuction	void __cdecl(void * params)
+000c1db0	410	USER_DEFINED	__cdecl	ChType_BankMasterHitEvent	void __cdecl(void * params)
+000c1f50	299	USER_DEFINED	__cdecl	ChType_FXBankMasterAttack	void __cdecl(void * params)
+000c2080	261	USER_DEFINED	__cdecl	ChType_BertoActionEnd	void __cdecl(void * params)
+000c2190	254	USER_DEFINED	__cdecl	ChType_BertoActionInit	void __cdecl(void * params)
+000c2290	217	USER_DEFINED	__cdecl	ChType_ActionPress	void __cdecl(void * params)
+000c2370	257	USER_DEFINED	__cdecl	ChType_BertoAttack	void __cdecl(void * params)
+000c2480	411	USER_DEFINED	__cdecl	ChType_BertoFlashHit	void __cdecl(void * params)
+000c2620	362	USER_DEFINED	__cdecl	ChType_BertoHitEvent	void __cdecl(void * params)
+000c2790	299	USER_DEFINED	__cdecl	ChType_FXBertoAttack	void __cdecl(void * params)
+000c28c0	413	USER_DEFINED	__cdecl	ChType_BettyActionPress	void __cdecl(void * params)
+000c2a60	530	USER_DEFINED	__cdecl	ChType_BettyCameraSet	void __cdecl(void * params)
+000c2c80	858	USER_DEFINED	__cdecl	ChType_BettyKill	void __cdecl(void * params)
+000c2fe0	436	USER_DEFINED	__cdecl	ChType_BettyEndEvent	void __cdecl(void * params)
+000c31a0	586	USER_DEFINED	__cdecl	ChType_BettyHitEvent	void __cdecl(void * params)
+000c33f0	337	USER_DEFINED	__cdecl	ChType_BettyRestoreTime	void __cdecl(void * params)
+000c3550	560	USER_DEFINED	__cdecl	ChType_FXBettyAttack	void __cdecl(void * params)
+000c3780	44	USER_DEFINED	__cdecl	ChType_DirAngles	void __cdecl(void * dir, void * out)
+000c37b0	217	USER_DEFINED	__cdecl	ChType_ActionPress	void __cdecl(void * params)
+000c3890	2906	USER_DEFINED	__cdecl	ChType_BishopAttack	void __cdecl(void * params)
+000c43f0	387	USER_DEFINED	__cdecl	ChType_EndActionEnd	void __cdecl(void * params)
+000c4580	197	USER_DEFINED	__cdecl	ChType_FXBishopSellLife	void __cdecl(void * params)
+000c4650	249	USER_DEFINED	__cdecl	FX_BishopSellLife	void __cdecl(void * attacker, void * attacked)
+000c4750	577	USER_DEFINED	__cdecl	ChType_FXCrazyGamblerSetHeadModel	void __cdecl(void * params)
+000c49a0	1736	USER_DEFINED	__cdecl	ChType_DesktopActionPress	void __cdecl(void * params)
+000c5070	2801	USER_DEFINED	__cdecl	ChType_FXDesktopFallEnd	void __cdecl(void * params)
+000c5b70	331	USER_DEFINED	__cdecl	ChType_DtritusActionPress	void __cdecl(void * params)
+000c5cd0	1203	USER_DEFINED	__cdecl	ChType_DtritusKill	void __cdecl(void * params)
+000c6190	593	USER_DEFINED	__cdecl	ChType_DtritusEndEvent	void __cdecl(void * params)
+000c63f0	606	USER_DEFINED	__cdecl	ChType_DtritusHitEvent	void __cdecl(void * params)
+000c6650	351	USER_DEFINED	__cdecl	ChType_DtritusRestartEvent	void __cdecl(void * params)
+000c67b0	337	USER_DEFINED	__cdecl	ChType_FXDTritusAttack	void __cdecl(void * params)
+000c6910	554	USER_DEFINED	__cdecl	ChType_GearHitChar	void __cdecl(char * name, byte noLogic)
+000c6b40	434	USER_DEFINED	__cdecl	ChType_GearActionPress	void __cdecl(void * params)
+000c6d00	396	USER_DEFINED	__cdecl	ChType_GearEndAction	void __cdecl(void * params)
+000c6e90	387	USER_DEFINED	__cdecl	ChType_EndActionEnd	void __cdecl(void * params)
+000c7020	437	USER_DEFINED	__cdecl	ChType_GearHit	void __cdecl(void * params)
+000c71e0	616	USER_DEFINED	__cdecl	ChType_GearInitAction	void __cdecl(void * params)
+000c7450	1804	USER_DEFINED	__cdecl	ChType_GearShoot	void __cdecl(void * params)
 000c7b60	5573	DEFAULT	unknown	FUN_004c7b60	
-000c9130	70	DEFAULT	unknown	FUN_004c9130	
-000c9180	130	USER_DEFINED	__cdecl	Logic_Flash	int __cdecl(float * pos, float radius, int arg)
-000c9210	211	DEFAULT	unknown	FUN_004c9210	
-000c92f0	609	DEFAULT	unknown	FUN_004c92f0	
-000c9560	490	DEFAULT	unknown	FUN_004c9560	
-000c9750	18	DEFAULT	unknown	FUN_004c9750	
+000c9130	70	USER_DEFINED	__cdecl	ChType_GearSphereHit	void __cdecl(void * params)
+000c9180	130	USER_DEFINED	__cdecl	Logic_Flash	int __cdecl(void * pos, float radius, int arg)
+000c9210	211	USER_DEFINED	__cdecl	ChType_FlashChar	int __cdecl(void * e)
+000c92f0	609	USER_DEFINED	__cdecl	ChType_FlashHit	void __cdecl(void * params)
+000c9560	490	USER_DEFINED	__cdecl	ChType_FXMaintenanceWork	void __cdecl(void * params)
+000c9750	18	USER_DEFINED	__fastcall	cAIChar_TestFlags	byte __fastcall(void * self)
 000c9770	684	DEFAULT	unknown	FUN_004c9770	
 000c9a20	97	USER_DEFINED	__thiscall	cEntity::AddLink	void __thiscall(void * node)
 000c9a90	385	DEFAULT	unknown	FUN_004c9a90	
