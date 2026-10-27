@@ -134,7 +134,13 @@ SD_SIZE(CListaMat, 0x10);
 /* the materials of the engine */
 #define g_ListaMat ((CListaMat *)Game_Ptr(0x431d24))
 
-/* the parts of the classes outside Material.cpp (rva 0x233760.., not decompiled) */
+/* the constructors and destructors of material.h (rva 0x2336f0..0x233c20) */
+CListaMat *__thiscall CListaMat_DeleteObj(CListaMat *self, byte flags);
+void __fastcall CListaMat_dtor(CListaMat *self);
+/* the string freed if set (the destructor of the string members) */
+void __fastcall Cad_dtor(char **self);
+CMatId *__fastcall CMatId_ctor(CMatId *self);		/* rva 0x2a79e0 */
+void __fastcall CMatId_dtor(CMatId *self);		/* rva 0x2a79f0 */
 CMapa *__thiscall CMapa_ctor(CMapa *self);
 void __thiscall CMapa_dtor(CMapa *self);
 CMaterial *__thiscall CMaterial_ctor(CMaterial *self);
@@ -178,6 +184,7 @@ char *__thiscall CMapa_ResolvePath(CMapa *self, byte load, CMapa *alpha);
 void __thiscall CMapa_LoadTexture(CMapa *self, void *dev, CMapa *alpha, int flags);
 void __fastcall CMapa_Release(CMapa *self);
 byte __thiscall CMapa_GetSize(CMapa *self, int *w, int *h);
+byte __fastcall CMapa_HasAlpha(const CMapa *self);
 void *__thiscall CMapa_GetTexture(CMapa *self, byte load);
 char *__thiscall CMapa_FramePath(CMapa *self, int frame, char *buf, int size);
 /* rva 0x2a82f0: the kind of FXTextura of a map named name ("(...)" parts), 0 for none */

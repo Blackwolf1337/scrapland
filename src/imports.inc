@@ -166,10 +166,6 @@ SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 /* engine3d: called from Engine/luz.cpp (include/scrap/luz.h) */
 /* engine3d: Engine/Material.c (include/scrap/material.h), the parts of the classes outside Material.cpp and the
  * texture manager */
-SD_IMPORT(CMapa_ctor, 0x233760)
-SD_IMPORT(CMapa_dtor, 0x233a30)
-SD_IMPORT(CMaterial_ctor, 0x233830)
-SD_IMPORT(CMaterial_dtor, 0x233af0)
 SD_IMPORT(Cad_Set, 0x2a1940)
 SD_IMPORT(FXTextura_Create, 0x2a81d0)
 SD_IMPORT(CMatId_Check, 0x2a7a00)
@@ -305,8 +301,6 @@ SD_IMPORT_STDCALL(FSOUND_GetReserved, 4, 0x317a56)
 SD_IMPORT_STDCALL(FSOUND_GetCurrentSample, 4, 0x317a62)
 
 /* module agent: World/CollisionGrid+FX/FXMisc.cpp (imports below this line) */
-SD_IMPORT(CGameLensFlare_ctor, 0x232e80)
-SD_IMPORT(CGameLensFlare_dtor, 0x232f10)
 
 /* module agent: App/CApp+CWinApp (imports below this line) */
 SD_IMPORT(GogListeners_ctor, 0x136f10)
@@ -368,11 +362,6 @@ SD_IMPORT_STDCALL(FSOUND_Sample_GetName, 4, 0x3179fc)
 SD_IMPORT_STDCALL(FSOUND_GetCPUUsage, 0, 0x3179e4)
 
 /* module agent: World/FX/FXWeapons.cpp (imports below this line) */
-SD_IMPORT(CGameLensFlare_SetOn, 0x232f30)
-SD_IMPORT(CGameLensFlare_SetIntensity, 0x232f80)
-SD_IMPORT(CGameLensFlare_SetF30, 0x232fa0)
-SD_IMPORT(CGameLensFlare_SetPos, 0x232fc0)
-SD_IMPORT(CGameLensFlare_SetI1c, 0x233010)
 
 /* module agent: Entities/EmbeddedFX/EmbeddedFXMisc.cpp (imports below this line) */
 
@@ -390,7 +379,6 @@ SD_IMPORT(cObjElementFXInfernoExplosion_Explode, 0x201eb0)
 /* module agent: World/FX/FXChar.cpp (imports below this line) */
 
 /* module agent: World/FX/FXScene.cpp (imports below this line) */
-SD_IMPORT(CGameLensFlare_SetF18, 0x232ff0)
 
 /* module agent: World/FX/FXVehicle.cpp (imports below this line) */
 
@@ -543,7 +531,6 @@ SD_IMPORT(FXTextura_Tipo, 0x2a82f0)
 SD_IMPORT(Matrix_ToTransform, 0x2d6c50)
 
 /* module agent: Engine NodeFX..ModelFX (imports below this line) */
-SD_IMPORT(CMaterial_ScaleColors, 0x237020)
 
 /* module agent: Engine leftovers 0x265000..0x278000 (imports below this line) */
 SD_IMPORT(Stencil_DrawSegs, 0x265510)
@@ -575,3 +562,14 @@ SD_IMPORT_STDCALL(D3DX_MatrixTranspose, 8, 0x007a01)
 SD_IMPORT_STDCALL(D3DX_MatrixRotationX, 8, 0x0082fb)
 SD_IMPORT_STDCALL(D3DX_MatrixRotationY, 8, 0x008397)
 SD_IMPORT_STDCALL(D3DX_MatrixRotationZ, 8, 0x008434)
+SD_IMPORT(LensFlare_ctor, 0x2a5dd0)
+SD_IMPORT(LensFlare_dtor, 0x2a5e70)
+SD_IMPORT(LensFlare_SetOn, 0x2a5fa0)
+SD_IMPORT(LensFlare_SetIntensity, 0x2a7460)
+SD_IMPORT(LensFlare_SetF30, 0x2a7480)
+SD_IMPORT(LensFlare_SetPos, 0x2a74c0)
+SD_IMPORT(LensFlare_SetF18, 0x2a74e0)
+SD_IMPORT(LensFlare_SetI1c, 0x2a7500)
+SD_IMPORT(LensFlare_SetB2c, 0x2a7510)
+SD_IMPORT(CMatId_ctor, 0x2a79e0)
+SD_IMPORT(CMatId_dtor, 0x2a79f0)
