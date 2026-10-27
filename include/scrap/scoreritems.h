@@ -1193,10 +1193,6 @@ void __thiscall SpecialAction_DrawEnergyOnly(cSpecialActionScorer *self, int pla
 /* the fraction of the weapon energy above the full batteries, and their count */
 float __thiscall cWalkCharEntity_GetEnergyFrac(cEntity *e);	/* rva 0x0d3740 */
 int __thiscall cWalkCharEntity_GetBatteries(cEntity *e);	/* rva 0x0d38e0 */
-/* a target of the character's special action in reach (rva 0x0cd520) */
-byte ChType_ActionTarget(cEntity *e, int *target, byte *flag, int *out);
-/* the victim (0x53c) of a walking character, none while the alarm runs (rva 0x0cfc10) */
-cEntity *ChType_WalkCharVictim(cEntity *e);
 /* frame + 1 stretched to the width w, frame at both ends (the right one mirrored), h the y scale (rva 0x184710) */
 void Menu_DrawStretch(CPsaImage *img, int frame, float x, float y, float w, float h);
 char *crt_ltoa(long v, char *buf, int radix);			/* rva 0x34d525 */

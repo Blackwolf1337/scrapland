@@ -4604,106 +4604,111 @@ rva	size	source	callconv	name	signature
 0016e860	83	USER_DEFINED	__thiscall	cRadarScorer_FloorSide	int __thiscall(float y)
 0016e8c0	1779	USER_DEFINED	__thiscall	cRadarScorer_Var	int __thiscall(char * name, byte set, void * s, void * d, void * i)
 0016efc0	1101	USER_DEFINED	__thiscall	cRadarScorer_Draw	void __thiscall(int player)
-0016f4f0	753	DEFAULT	unknown	FUN_0056f4f0	
-0016f7f0	372	DEFAULT	unknown	FUN_0056f7f0	
-0016f970	142	DEFAULT	unknown	FUN_0056f970	
-0016fa00	104	DEFAULT	unknown	FUN_0056fa00	
-0016fa70	161	ANALYSIS	__thiscall	cScorer::vf00	undefined __thiscall(void)
-0016fb20	38	ANALYSIS	__thiscall	cScorerItem::vf03	undefined __thiscall(void)
-0016fb50	709	USER_DEFINED	unknown	cScorer::AddModel	undefined(void)
-0016fe20	111	USER_DEFINED	unknown	cScorer::Clear	undefined(void)
-0016fe90	243	DEFAULT	unknown	FUN_0056fe90	
-0016ff90	2611	DEFAULT	unknown	FUN_0056ff90	
-001709f0	212	DEFAULT	unknown	FUN_005709f0	
-00170ad0	262	DEFAULT	unknown	FUN_00570ad0	
-00170be0	193	DEFAULT	unknown	FUN_00570be0	
-00170cb0	171	USER_DEFINED	unknown	ScorerFade::Start	undefined(void)
-00170d60	86	DEFAULT	unknown	FUN_00570d60	
-00170dc0	89	USER_DEFINED	unknown	cScorer::FindItem	undefined(void)
-00170e30	87	DEFAULT	unknown	FUN_00570e30	
-00170ea0	33	USER_DEFINED	unknown	Scorer_Get	undefined(void)
-00170ed0	289	DEFAULT	unknown	FUN_00570ed0	
-00171000	6	DEFAULT	unknown	FUN_00571000	
-00171010	210	DEFAULT	unknown	FUN_00571010	
+0016f410	33	USER_DEFINED	__fastcall	ScorerCinema_ctor	void * __fastcall(void * self)
+0016f440	72	USER_DEFINED	__fastcall	ScorerFade_ctor	void * __fastcall(void * self)
+0016f490	93	USER_DEFINED	__fastcall	ScorerFx_ctor	void * __fastcall(void * self)
+0016f4f0	753	USER_DEFINED	__fastcall	cScorer_ctor	void * __fastcall(void * self)
+0016f7f0	372	USER_DEFINED	__fastcall	cScorerItem_ctor	void * __fastcall(void * self)
+0016f970	142	USER_DEFINED	__fastcall	cScorer_dtor	void __fastcall(void * self)
+0016fa00	104	USER_DEFINED	__fastcall	cScorerItem_dtor	void __fastcall(void * self)
+0016fa70	161	USER_DEFINED	__thiscall	cScorer_Delete	void * __thiscall(byte flags)
+0016fb20	38	USER_DEFINED	__thiscall	cScorerItem_Delete	void * __thiscall(byte flags)
+0016fb50	709	USER_DEFINED	__thiscall	cScorer_AddModel	void * __thiscall(char * name, char * model, char * anim, int numAnim, float radius, float height, byte head)
+0016fe20	111	USER_DEFINED	__thiscall	cScorer_Clear	void __thiscall(void)
+0016fe90	243	USER_DEFINED	__cdecl	Scorer_ColorLerp	uint __cdecl(uint a, uint b, float t)
+0016ff90	2611	USER_DEFINED	__thiscall	cScorer_UpdateCursor	void __thiscall(int player)
+001709f0	212	USER_DEFINED	__fastcall	cScorer_Free	void __fastcall(void * scorer)
+00170ad0	262	USER_DEFINED	__cdecl	Scorer_Done	void __cdecl(void)
+00170be0	193	USER_DEFINED	__cdecl	Scorer_DrawPyMemStats	void __cdecl(void)
+00170cb0	171	USER_DEFINED	__thiscall	ScorerFade_Start	void __thiscall(uint from, uint to, float time)
+00170d60	86	USER_DEFINED	__thiscall	cScorer_FindModel	void * __thiscall(char * name)
+00170dc0	89	USER_DEFINED	__thiscall	cScorer_FindItem	void * __thiscall(char * name)
+00170e20	6	USER_DEFINED	__cdecl	Scorer_GetMarker	void * __cdecl(void)
+00170e30	87	USER_DEFINED	__thiscall	cScorer_FindModelModel	void * __thiscall(char * name)
+00170e90	6	USER_DEFINED	__cdecl	Scorer_GetNoise	void * __cdecl(void)
+00170ea0	33	USER_DEFINED	__cdecl	Scorer_Get	void * __cdecl(int player)
+00170ed0	289	USER_DEFINED	__cdecl	Scorer_GetCamVarStr	void __cdecl(int player, char * buf, char * name, int size)
+00171000	6	USER_DEFINED	__cdecl	Scorer_GetWhite	void * __cdecl(void)
+00171010	210	USER_DEFINED	__cdecl	Scorer_GetCamVarInt	int __cdecl(int player, char * name)
 001710f0	38	USER_DEFINED	__cdecl	Scorer_SetInputState	void __cdecl(int state)
-00171120	830	DEFAULT	unknown	FUN_00571120	
-00171460	42	DEFAULT	unknown	FUN_00571460	
-00171490	235	DEFAULT	unknown	FUN_00571490	
-00171580	1346	ANALYSIS	__thiscall	cScorerItem::vf02	undefined __thiscall(void)
-00171ad0	2237	USER_DEFINED	unknown	cScorer::AddItem	undefined(void)
-00172390	354	DEFAULT	unknown	FUN_00572390	
-00172500	43	USER_DEFINED	unknown	Scorer_PreloadTexture	undefined(void)
-00172530	81	DEFAULT	unknown	FUN_00572530	
-00172590	277	DEFAULT	unknown	FUN_00572590	
-001726b0	235	DEFAULT	unknown	FUN_005726b0	
-001727a0	663	DEFAULT	unknown	FUN_005727a0	
-00172a40	1006	DEFAULT	unknown	FUN_00572a40	
-00172e30	427	DEFAULT	unknown	FUN_00572e30	
-00172fe0	1132	DEFAULT	unknown	FUN_00572fe0	
+00171120	830	USER_DEFINED	__cdecl	Scorer_Init	void __cdecl(void)
+00171460	42	USER_DEFINED	__thiscall	cScorer_SetParam	void __thiscall(char * name, char * value)
+00171490	235	USER_DEFINED	__thiscall	cScorer_UpdateMP	void __thiscall(float dt)
+00171580	1346	USER_DEFINED	__thiscall	cScorerItem_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
+00171ad0	2237	USER_DEFINED	__thiscall	cScorer_AddItem	void * __thiscall(char * name, char * type, byte flag)
+00172390	354	USER_DEFINED	__thiscall	cScorer_SetCursorItem	void __thiscall(int player, char * from, char * to)
+00172500	43	USER_DEFINED	__cdecl	Scorer_PreloadTexture	void __cdecl(char * name, int flag)
+00172530	81	USER_DEFINED	__thiscall	cScorer_RemoveDeleted	void __thiscall(int player)
+00172590	277	USER_DEFINED	__thiscall	ScorerCinema_Draw	void __thiscall(int player, float dt)
+001726b0	235	USER_DEFINED	__thiscall	ScorerFade_Draw	void __thiscall(int player, float dt)
+001727a0	663	USER_DEFINED	__thiscall	ScorerFx_Draw	void __thiscall(int player, float dt)
+00172a40	1006	USER_DEFINED	__thiscall	cScorer_Draw	void __thiscall(int player)
+00172e30	427	USER_DEFINED	__cdecl	Scorer_Render	byte __cdecl(void)
+00172fe0	1132	USER_DEFINED	__thiscall	cScorer_DrawClouds	void __thiscall(int player)
 00173450	1958	DEFAULT	unknown	FUN_00573450	
-00173c20	479	DEFAULT	unknown	FUN_00573c20	
-00173e00	490	DEFAULT	unknown	FUN_00573e00	
-00173ff0	162	USER_DEFINED	unknown	ScorerCinema::Set	undefined(void)
-001740a0	77	USER_DEFINED	unknown	cScorer::SetDefault	undefined(void)
-001740f0	178	USER_DEFINED	unknown	cScorer::SetMarkerSprite	undefined(void)
-001741b0	182	DEFAULT	unknown	FUN_005741b0	
-00174270	69	DEFAULT	unknown	FUN_00574270	
-001742c0	44	DEFAULT	unknown	FUN_005742c0	
+00173c20	479	USER_DEFINED	__thiscall	cScorer_DrawXboxMsgs	void __thiscall(int player)
+00173e00	490	USER_DEFINED	__thiscall	cScorer_DrawNoPadMsg	void __thiscall(int index, float y, byte big, int pad)
+00173ff0	162	USER_DEFINED	__thiscall	ScorerCinema_Set	void __thiscall(byte on, float time)
+001740a0	77	USER_DEFINED	__thiscall	cScorer_SetDefault	void __thiscall(char * name)
+001740f0	178	USER_DEFINED	__thiscall	cScorer_SetMarkerSprite	void __thiscall(char * sprite)
+001741b0	182	USER_DEFINED	__cdecl	Console_OnInput	void __cdecl(int player, char * text)
+00174270	69	USER_DEFINED	__cdecl	Console_HistoryUp	void __cdecl(void)
+001742c0	44	USER_DEFINED	__cdecl	Console_HistoryDown	void __cdecl(void)
 001742f0	1746	DEFAULT	unknown	FUN_005742f0	
-001749d0	436	USER_DEFINED	unknown	Scorer_SetConsole	undefined(void)
-00174b90	408	DEFAULT	unknown	FUN_00574b90	
-00174d30	658	DEFAULT	unknown	FUN_00574d30	
-00174fd0	171	DEFAULT	unknown	FUN_00574fd0	
-00175080	258	DEFAULT	unknown	FUN_00575080	
-00175190	38	ANALYSIS	__thiscall	cScraplandMainMenuScorer::vf03	undefined __thiscall(void)
-001751c0	38	ANALYSIS	__thiscall	cScraplandSubMenuScorer::vf03	undefined __thiscall(void)
-001751f0	785	DEFAULT	unknown	FUN_005751f0	
-00175510	341	DEFAULT	unknown	FUN_00575510	
-00175670	144	DEFAULT	unknown	FUN_00575670	
-00175700	151	DEFAULT	unknown	FUN_00575700	
-001757a0	220	DEFAULT	unknown	FUN_005757a0	
-00175880	226	DEFAULT	unknown	FUN_00575880	
-00175970	144	DEFAULT	unknown	FUN_00575970	
-00175a00	151	DEFAULT	unknown	FUN_00575a00	
-00175aa0	144	DEFAULT	unknown	FUN_00575aa0	
-00175b30	151	DEFAULT	unknown	FUN_00575b30	
-00175bd0	151	DEFAULT	unknown	FUN_00575bd0	
-00175c70	151	DEFAULT	unknown	FUN_00575c70	
-00175d10	431	ANALYSIS	__thiscall	cScraplandMainMenuScorer::vf02	undefined __thiscall(void)
-00175ec0	624	ANALYSIS	__thiscall	cScraplandSubMenuScorer::vf02	undefined __thiscall(void)
+001749d0	436	USER_DEFINED	__cdecl	Scorer_SetConsole	void __cdecl(int on)
+00174b90	408	USER_DEFINED	__fastcall	cScraplandMainMenuScorer_ctor	void * __fastcall(void * self)
+00174d30	658	USER_DEFINED	__fastcall	cScraplandSubMenuScorer_ctor	void * __fastcall(void * self)
+00174fd0	171	USER_DEFINED	__fastcall	cScraplandMainMenuScorer_dtor	void __fastcall(void * self)
+00175080	258	USER_DEFINED	__fastcall	cScraplandSubMenuScorer_dtor	void __fastcall(void * self)
+00175190	38	USER_DEFINED	__thiscall	cScraplandMainMenuScorer_Delete	void * __thiscall(byte flags)
+001751c0	38	USER_DEFINED	__thiscall	cScraplandSubMenuScorer_Delete	void * __thiscall(byte flags)
+001751f0	785	USER_DEFINED	__fastcall	cScraplandMainMenuScorer_Init	void __fastcall(void * self)
+00175510	341	USER_DEFINED	__fastcall	cScraplandSubMenuScorer_Init	void __fastcall(void * self)
+00175670	144	USER_DEFINED	__thiscall	cScraplandMainMenuScorer_SetGlow	void __thiscall(uint flags, char * file)
+00175700	151	USER_DEFINED	__thiscall	cScraplandSubMenuScorer_SetGlow	void __thiscall(uint flags, char * file)
+001757a0	220	USER_DEFINED	__thiscall	cScraplandMainMenuScorer_SetLighting	void __thiscall(uint flags, char * file)
+00175880	226	USER_DEFINED	__thiscall	cScraplandSubMenuScorer_SetLighting	void __thiscall(uint flags, char * file)
+00175970	144	USER_DEFINED	__thiscall	cScraplandMainMenuScorer_SetLogo	void __thiscall(uint flags, char * file)
+00175a00	151	USER_DEFINED	__thiscall	cScraplandSubMenuScorer_SetLogo	void __thiscall(uint flags, char * file)
+00175aa0	144	USER_DEFINED	__thiscall	cScraplandMainMenuScorer_SetNeon	void __thiscall(uint flags, char * file)
+00175b30	151	USER_DEFINED	__thiscall	cScraplandSubMenuScorer_SetRingBorder	void __thiscall(uint flags, char * file)
+00175bd0	151	USER_DEFINED	__thiscall	cScraplandSubMenuScorer_SetRingMask	void __thiscall(uint flags, char * file)
+00175c70	151	USER_DEFINED	__thiscall	cScraplandSubMenuScorer_SetRingReflection	void __thiscall(uint flags, char * file)
+00175d10	431	USER_DEFINED	__thiscall	cScraplandMainMenuScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
+00175ec0	624	USER_DEFINED	__thiscall	cScraplandSubMenuScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
 00176130	3032	ANALYSIS	__thiscall	cScraplandMainMenuScorer::vf00	undefined __thiscall(void)
 00176d10	1739	ANALYSIS	__thiscall	cScraplandSubMenuScorer::vf00	undefined __thiscall(void)
-001773e0	294	DEFAULT	unknown	FUN_005773e0	
-00177510	68	DEFAULT	unknown	FUN_00577510	
-00177560	97	ANALYSIS	__thiscall	cSliderScorer::vf03	undefined __thiscall(void)
-001775d0	148	DEFAULT	unknown	FUN_005775d0	
-00177670	1521	ANALYSIS	__thiscall	cSliderScorer::vf02	undefined __thiscall(void)
-00177c70	1057	ANALYSIS	__thiscall	cSliderScorer::vf00	undefined __thiscall(void)
-001780a0	160	DEFAULT	unknown	FUN_005780a0	
-00178140	360	DEFAULT	unknown	FUN_00578140	
-001782b0	208	DEFAULT	unknown	FUN_005782b0	
-00178380	39	DEFAULT	unknown	FUN_00578380	
-001783b0	195	DEFAULT	unknown	FUN_005783b0	
-00178480	28	DEFAULT	unknown	FUN_00578480	
-001784a0	28	DEFAULT	unknown	FUN_005784a0	
-001784c0	28	DEFAULT	unknown	FUN_005784c0	
-001784e0	218	DEFAULT	unknown	FUN_005784e0	
-001785c0	157	DEFAULT	unknown	FUN_005785c0	
-00178660	132	DEFAULT	unknown	FUN_00578660	
-001786f0	39	DEFAULT	unknown	FUN_005786f0	
-00178720	39	DEFAULT	unknown	FUN_00578720	
-00178750	28	DEFAULT	unknown	FUN_00578750	
-00178770	28	DEFAULT	unknown	FUN_00578770	
-00178790	472	DEFAULT	unknown	FUN_00578790	
-00178970	187	DEFAULT	unknown	FUN_00578970	
-00178a30	38	ANALYSIS	__thiscall	cSpecialActionScorer::vf03	undefined __thiscall(void)
-00178a60	642	DEFAULT	unknown	FUN_00578a60	
-00178cf0	233	DEFAULT	unknown	FUN_00578cf0	
-00178de0	633	DEFAULT	unknown	FUN_00578de0	
-00179060	4894	ANALYSIS	__thiscall	cSpecialActionScorer::vf02	undefined __thiscall(void)
+001773e0	294	USER_DEFINED	__fastcall	cSliderScorer_ctor	void * __fastcall(void * self)
+00177510	68	USER_DEFINED	__fastcall	cSliderScorer_dtor	void __fastcall(void * self)
+00177560	97	USER_DEFINED	__thiscall	cSliderScorer_Delete	void * __thiscall(byte flags)
+001775d0	148	USER_DEFINED	__thiscall	cSliderScorer_SetFile	void __thiscall(uint flags, char * file)
+00177670	1521	USER_DEFINED	__thiscall	cSliderScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
+00177c70	1057	USER_DEFINED	__thiscall	cSliderScorer_Draw	void __thiscall(int player)
+001780a0	160	USER_DEFINED	__thiscall	SpecialAction_DrawDefault	void __thiscall(int player)
+00178140	360	USER_DEFINED	__thiscall	SpecialAction_DrawBanker	void __thiscall(int player)
+001782b0	208	USER_DEFINED	__thiscall	SpecialAction_DrawTarget	void __thiscall(int player)
+00178380	39	USER_DEFINED	__thiscall	SpecialAction_DrawGear	void __thiscall(int player)
+001783b0	195	USER_DEFINED	__thiscall	SpecialAction_DrawVictim	void __thiscall(int player)
+00178480	28	USER_DEFINED	__thiscall	SpecialAction_DrawOn	void __thiscall(int player)
+001784a0	28	USER_DEFINED	__thiscall	SpecialAction_DrawOn	void __thiscall(int player)
+001784c0	28	USER_DEFINED	__thiscall	SpecialAction_DrawOn	void __thiscall(int player)
+001784e0	218	USER_DEFINED	__thiscall	SpecialAction_DrawLowEnergy	void __thiscall(int player)
+001785c0	157	USER_DEFINED	__thiscall	SpecialAction_DrawFunctionary	void __thiscall(int player)
+00178660	132	USER_DEFINED	__thiscall	SpecialAction_DrawEnergyOnly	void __thiscall(int player)
+001786f0	39	USER_DEFINED	__thiscall	SpecialAction_DrawGear2	void __thiscall(int player)
+00178720	39	USER_DEFINED	__thiscall	SpecialAction_DrawGear3	void __thiscall(int player)
+00178750	28	USER_DEFINED	__thiscall	SpecialAction_DrawOn	void __thiscall(int player)
+00178770	28	USER_DEFINED	__thiscall	SpecialAction_DrawOn	void __thiscall(int player)
+00178790	472	USER_DEFINED	__fastcall	cSpecialActionScorer_ctor	void * __fastcall(void * self)
+00178970	187	USER_DEFINED	__fastcall	cSpecialActionScorer_dtor	void __fastcall(void * self)
+00178a30	38	USER_DEFINED	__thiscall	cSpecialActionScorer_Delete	void * __thiscall(byte flags)
+00178a60	642	USER_DEFINED	__thiscall	cSpecialActionScorer_DrawCannon	void __thiscall(int player, float * pos, float * size, float ang, uint color)
+00178cf0	233	USER_DEFINED	__thiscall	cSpecialActionScorer_DrawCrossHair	void __thiscall(int player)
+00178de0	633	USER_DEFINED	__thiscall	cSpecialActionScorer_DrawIcon	void __thiscall(int player, int state)
+00179060	4894	USER_DEFINED	__thiscall	cSpecialActionScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
 0017a380	1463	DEFAULT	unknown	FUN_0057a380	
-0017a950	134	ANALYSIS	__thiscall	cSpecialActionScorer::vf00	undefined __thiscall(void)
-0017a9e0	680	DEFAULT	unknown	FUN_0057a9e0	
+0017a950	134	USER_DEFINED	__thiscall	cSpecialActionScorer_Draw	void __thiscall(int player)
+0017a9e0	680	USER_DEFINED	__fastcall	cSpecialActionScorer_DrawEnergy	void __fastcall(void * self)
 0017ac90	1341	DEFAULT	unknown	FUN_0057ac90	
 0017b1d0	78	DEFAULT	unknown	FUN_0057b1d0	
 0017b220	167	DEFAULT	unknown	FUN_0057b220	

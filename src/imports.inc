@@ -696,8 +696,6 @@ SD_IMPORT(Scorer_DrawConsole, 0x1742f0)
 SD_IMPORT(cSpecialActionScorer_DrawGearAim, 0x17ac90)
 SD_IMPORT(cWalkCharEntity_GetEnergyFrac, 0x0d3740)
 SD_IMPORT(cWalkCharEntity_GetBatteries, 0x0d38e0)
-SD_IMPORT(ChType_ActionTarget, 0x0cd520)
-SD_IMPORT(ChType_WalkCharVictim, 0x0cfc10)
 SD_IMPORT(Menu_DrawStretch, 0x184710)
 SD_IMPORT(crt_ltoa, 0x34d525)
 

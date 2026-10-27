@@ -373,16 +373,16 @@ void __thiscall SpecialAction_DrawBanker(cSpecialActionScorer *self, int player)
 /* 2: a target in reach or the action running */
 void __thiscall SpecialAction_DrawTarget(cSpecialActionScorer *self, int player) {
 	cEntity *e = SpecialAction_User();
-	int target;
+	cEntity *target;
 	byte flag;
-	int out;
+	void *out;
 
 	if (!e) {
 		return;
 	}
 	cSpecialActionScorer_DrawEnergy(self);
-	target = 0;
-	if (!ChType_ActionTarget(e, &target, &flag, &out) && !SpecialAction_IsActive(e, TYEN_ACTION)
+	target = NULL;
+	if (!ChType_PoliceFindListener(e, &target, &flag, &out) && !SpecialAction_IsActive(e, TYEN_ACTION)
 		&& !SpecialAction_IsActive(e, TYEN_ACTIONINIT)) {
 		cSpecialActionScorer_DrawIcon(self, player, 0);
 		return;
@@ -418,7 +418,7 @@ void __thiscall SpecialAction_DrawVictim(cSpecialActionScorer *self, int player)
 	int state;
 
 	cSpecialActionScorer_DrawEnergy(self);
-	if (!ChType_WalkCharVictim(e)) {
+	if (!ChType_SentinelTarget(e)) {
 		cSpecialActionScorer_DrawIcon(self, player, 0);
 		return;
 	}

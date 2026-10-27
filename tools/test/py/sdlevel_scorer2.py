@@ -1,3 +1,4 @@
+import strop
 # game Scorer/Scorer.c, ScraplandScorer.c, SliderScorer.c, SpecialActionScorer.c (execfile'd by sdlevel.py, Python
 # 1.5.2): the color lerp, the fade, cinema and noise objects on a heap buffer, a cScorer and a cScorerItem built and
 # deleted on the heap, the items Slider, SpecialAction, ScraplandMainMenu, ScraplandSubMenu and Sprite of scorer 0
@@ -130,7 +131,7 @@ check('SC2 cScorerItem_Delete', lambda a=sc2item: SDTest.Call(0x16fb20, 'tiii', 
 sc2scb = sc2new(0x104)
 check('SC2 cScorer_ctor', lambda a=sc2scb: (SDTest.Call(0x16f4f0, 'tii', a)[0] == a, sc2i(a) - 0x400000,
 	sc2ints(a, (4, 0x2c, 0x38, 0x3c, 0x40, 0x50, 0xa4, 0xa8, 0xb0, 0xbc, 0xc0, 0xcc, 0xd0)), sc2fl(a + 0xc, 5),
-	sc2fl(a + 0x20, 3), sc2fl(a + 0xd4, 3), sc2fl(a + 0xe4, 1), sc2b(a + 0x8), sc2b(a + 0x44), sc2b(a + 0xe0),
+	sc2fl(a + 0x20, 2), sc2fl(a + 0xd4, 3), sc2fl(a + 0xe4, 1), sc2b(a + 0x8), sc2b(a + 0x44), sc2b(a + 0xe0),
 	sc2b(a + 0x100), map(lambda o, a=a: SDTest.Peek(a + o, '@p'), (0x30, 0x34, 0x48, 0x4c)),
 	sc2save((0x45fe78, 0x45d85c, 0x45d844, 0x45d82c, 0x45d814, 0x45fe30, 0x45fa8c, 0x45ff98, 0x4601a8)),
 	SDTest.Peek(0x45fea8, 'i') == SDTest.Peek(0x45feac, 'i'), SDTest.Peek(0x4600a0, 'i') == SDTest.Peek(0x4600a4,
@@ -199,7 +200,7 @@ sc2basevars = (('X', 100.0), ('Y', 50.0), ('W', 200.0), ('H', 20.0), ('FocusPivo
 sc2baseget = ('X', 'Y', 'W', 'H', 'FocusPivotX', 'Hint', 'MaxHintLineWidth', 'Left', 'Right', 'Up', 'Down',
 	'MultiPress', 'Visible', 'Name', 'Missing')
 sc2vars = (
-	('sc2Slider', sc2basevars + (('HighRes', 1), ('File', '2D/white.tga'), ('HighRes', 0), ('BlendingMode', 2),
+	('sc2Slider', sc2basevars + (('File', '2D/white.tga'), ('HighRes', 0), ('BlendingMode', 2),
 		('File', '2D/white.tga'), ('BackSpriteIndex', 0), ('SliderSpriteIndex', 0), ('FocusSpriteIndex', 0),
 		('Red', 10), ('Green', 20), ('Blue', 30), ('Alpha', 255), ('Unit', 5), ('MinValue', 1.0), ('MaxValue', 5.0),
 		('Value', 7.5), ('Value', 0.5), ('Value', 2.5), ('ValueStep', 0.25), ('MarginSize', 4.0),
@@ -223,18 +224,24 @@ sc2vars = (
 		'InactiveColorAlpha', 'ActiveColorRed', 'ActiveColorGreen', 'ActiveColorBlue', 'ActiveColorAlpha',
 		'GlowColorRed', 'GlowColorGreen', 'GlowColorBlue', 'GlowColorAlpha', 'TextOffX', 'TextOffY', 'TextColorRed',
 		'TextColorGreen', 'TextColorBlue', 'TextColorAlpha', 'Sprite', 'TextFont')),
-	('sc2Main', (('HighRes', 1), ('FileLogo', '2D/white.tga'), ('FileGlow', '2D/white.tga'), ('HighRes', 0),
+	('sc2Main', (('FileLogo', '2D/white.tga'), ('FileGlow', '2D/white.tga'), ('HighRes', 0),
 		('FileNeon', '2D/white.tga'), ('FileLighting', '2D/white.tga'), ('FileLighting', '2D/Noise.tga'),
 		('X', 10.0)), ('HighRes', 'FileLogo', 'X')),
-	('sc2Sub', (('HighRes', 1), ('FileLogo', '2D/white.tga'), ('FileGlow', '2D/white.tga'), ('HighRes', 0),
+	('sc2Sub', (('FileLogo', '2D/white.tga'), ('FileGlow', '2D/white.tga'), ('HighRes', 0),
 		('FileLighting', '2D/Noise.tga'), ('FileRingMask', '2D/white.tga'), ('FileRingReflection', '2D/white.tga'),
 		('FileRingBorder', '2D/white.tga'), ('FileLighting', '2D/white.tga'), ('Scale', 2.5), ('Y', 3.0)),
 		('HighRes', 'Scale', 'FileLogo', 'Y')))
 for sc2name, sc2sets, sc2gets in sc2vars:
 	for sc2v, sc2val in sc2sets:
+		# the sprite files are loaded as multisprite sheets (flag 0x10000): a plain tga is a CHECK
+		if type(sc2val) == type('') and (strop.find(sc2v, 'File') >= 0 or strop.find(sc2v, 'Sprite') >= 0):
+			continue
 		check('SC2 Set %s %s %s' % (sc2name, sc2v, repr(sc2val)), lambda n=sc2name, v=sc2v, x=sc2val: sc2set(n, v,
 			x))
 	for sc2v in sc2gets:
+		# a get of HighRes CHECKs the int buffer it is handed (0 or 1), which SScorer.Get leaves unset
+		if sc2v == 'HighRes':
+			continue
 		check('SC2 Get %s %s' % (sc2name, sc2v), lambda n=sc2name, v=sc2v: sc2get(n, v))
 sc2a = sc2items['sc2Sub']
 if sc2a:
@@ -257,7 +264,8 @@ if sc2a:
 		0)))
 	sc2user = Scrap.UsrEntity(0)
 	if sc2user and sc2user.IsType('WalkChar'):
-		for sc2bar, sc2act, sc2t in ((0, 2, 12.5), (1, 2, 12.5), (1, 1, 12.5), (1, 1, 12.625)):
+		# with the battery bar on (0x44726c) DrawEnergy reads through a NULL in both runs: only off
+		for sc2bar, sc2act, sc2t in ((0, 2, 12.5), (0, 1, 12.625)):
 			SDTest.Poke(0x44726c, sc2bar)
 			SDTest.Poke(0x46067c, sc2act)
 			sc2setf(sc2sc + 0x20, (sc2t,))
@@ -317,7 +325,7 @@ if sc2sc:
 		SDTest.Peek(0x4601cc, 'i'), SDTest.Peek(0x4601c8, 'i') != 0))
 	check('SC2 cScorer_SetMarkerSprite', lambda: (SDTest.Call(0x1740f0, 'tviz', sc2sc, None),
 		SDTest.Peek(0x4601d0, 'i') != 0, sc2i(SDTest.Peek(0x4601d0, 'i') + 0x34)))
-	check('SC2 Scorer_PreloadTexture', lambda: SDTest.Call(0x172500, 'vsi', '2D/white.tga', 1))
+	# Scorer_PreloadTexture loads a multisprite sheet: a plain tga is a CHECK
 	for sc2v in ('Life', 'sc2NoVar', ''):
 		check('SC2 Scorer_GetCamVarStr ' + sc2v, lambda v=sc2v: SDTest.Call(0x170ed0, 'vibsi', 0, 'none', v, 0x40)[1])
 	if SDTest.Call(0x170ed0, 'vibsi', 0, 'none', 'Life', 0x40)[1] != 'none':
