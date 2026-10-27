@@ -2482,3 +2482,11 @@ SD_HOOK(Bmp_ToDudv, 0x27f0e0, 523)
 SD_HOOK(Bmp_ToRamp, 0x27f2f0, 682)
 SD_HOOK(Surface_FromBmp, 0x27f5a0, 328)
 SD_HOOK(D3DFmt_Name, 0x27f6f0, 398)
+
+/* module agent: World/World.cpp (hooks below this line) */
+
+/* module agent: ScrapEng/ScrapEngWorld.cpp (hooks below this line) */
+
+/* module agent: ScrapEng/ScrapEngMain.cpp (hooks below this line) */
+
+/* module agent: ScrapEng/ScrapEngCamera+Particles+Trails.cpp (hooks below this line) */

@@ -509,3 +509,11 @@ SD_IMPORT(CSuelo_TestSeg, 0x26ed30)
 SD_IMPORT(CSuelo_TraceSegPos, 0x26df80)
 SD_IMPORT(CSuelo_TraceSeg, 0x26f120)
 SD_IMPORT(CSuelo_CheckBBox, 0x26fb10)
+
+/* module agent: World/World.cpp (imports below this line) */
+
+/* module agent: ScrapEng/ScrapEngWorld.cpp (imports below this line) */
+
+/* module agent: ScrapEng/ScrapEngMain.cpp (imports below this line) */
+
+/* module agent: ScrapEng/ScrapEngCamera+Particles+Trails.cpp (imports below this line) */
