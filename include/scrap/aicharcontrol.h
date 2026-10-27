@@ -346,6 +346,22 @@ static inline float AICC_X87Mul(float a, float k) {
 	return r;
 }
 
+/* m - a */
+static inline float AICC_X87SubR(float a, float m) {
+	float r;
+
+	__asm__("fsubrs %2" : "=t"(r) : "0"(a), "m"(m));
+	return r;
+}
+
+/* a * b stored as a double */
+static inline double AICC_X87MulD(float a, float b) {
+	double r;
+
+	__asm__("fmuls %2" : "=t"(r) : "0"(a), "m"(b));
+	return r;
+}
+
 static inline float AICC_X87AddMul(float a, float b, float k) {
 	float r;
 
@@ -443,6 +459,7 @@ byte __thiscall cAICharControl2D_OnFloor(cAICharControl *self, const vec3_t *p);
 byte __thiscall cAICharControl2D_Near(cAICharControl *self, cEntity *e);
 /* dest within the distance to keep from hitEnt */
 byte __thiscall cAICharControl2D_InWay(cAICharControl *self, vec3_t dest, cEntity *hitEnt);
+byte __thiscall cAICharControl2D_FloorAhead(cAICharControl *self, const vec3_t *p);
 /* the floor below p raised by the floor distance of the character into out; 0 (out = p) without one */
 byte __thiscall cAICharControl2D_FloorAt(cAICharControl *self, const vec3_t *p, vec3_t *out);
 void __thiscall cAICharControl2D_StepGoal(cAICharControl *self, vec3_t *p);

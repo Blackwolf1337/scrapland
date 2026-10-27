@@ -541,6 +541,53 @@ byte __thiscall cAICharControl2D_InWay(cAICharControl *self, vec3_t dest, cEntit
 	return k >= d;
 }
 
+/* the floor ahead towards p (on the floor) within the reach of a step: free, or what is hit leaves a floor point
+ * before it (at most 20 back, half the way) with room for the body */
+byte __thiscall cAICharControl2D_FloorAhead(cAICharControl *self, const vec3_t *p) {
+	cEntity *me = self->ent;
+	vec3_t S, H, Q, B, out, N;
+
+	AICC_Pos(self, &S);
+	S.y = AICC_X87SubR(Obj_Vtbl(me)->GetRadius(me), S.y);
+	float dx = p->x - S.x;
+	float dz = p->z - S.z;
+	float len = (float)__builtin_sqrt((double)(dx * dx + 0.0f + dz * dz));
+	if (len == 0.0f) {
+		N.x = dx;
+		N.y = 0.0f;
+		N.z = dz;
+	} else {
+		float inv = 1.0f / len;
+		N.x = dx * inv;
+		N.y = inv * 0.0f;
+		N.z = dz * inv;
+	}
+	float r = Obj_Vtbl(me)->GetRadius(me);
+	r = r + r;
+	float q = (float)__builtin_sqrt(AICC_X87MulD(Obj_Vtbl(me)->GetRadius(me), r));
+	float m = AICC_X87AddAdd(Obj_Vtbl(me)->GetRadius(me), q, 5.0f);
+	float w = Float_MinSS(m, len);
+	Q.x = N.x * w + S.x;
+	Q.y = N.y * w + S.y;
+	Q.z = N.z * w + S.z;
+	if (!Engine_TestLine(&S, &Q, &H, NULL)) {
+		return 1;
+	}
+	float hx = S.x - H.x;
+	float hy = S.y - H.y;
+	float hz = S.z - H.z;
+	float d = (float)__builtin_sqrt((double)(hy * hy + hx * hx + hz * hz));
+	float back = 20.0f > d ? d * 0.5f : 20.0f;
+	B.x = H.x - N.x * back;
+	B.y = H.y - N.y * back;
+	B.z = H.z - N.z * back;
+	if (!AICC_Vtbl2D(self)->FloorAt(self, &B, &out)) {
+		return 0;
+	}
+	r = Obj_Vtbl(me)->GetRadius(me);
+	return Engine_TestSphere(&out, &out, r, NULL, NULL) == 0;
+}
+
 byte __thiscall cAICharControl2D_FloorAt(cAICharControl *self, const vec3_t *p, vec3_t *out) {
 	if (!NW2D_Probe(p, out)) {
 		*out = *p;
