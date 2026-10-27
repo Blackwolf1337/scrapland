@@ -233,7 +233,7 @@ def ntrInDoor(t, nt, tracks):
 			ntrPoke(secs + 0x18 * s, 100 + 10 * k + s)
 			ntrPoke(secs + 0x18 * s + 8, 3 + 2 * s)
 			ntrPoke(secs + 0x18 * s + 0xc, tr)
-			ntrPoke(secs + 0x18 * s + 0x10, m - s)
+			ntrPoke(secs + 0x18 * s + 0x10, m)
 			ntrPoke(secs + 0x18 * s + 0x14, s == 0 or k % 2)
 		ntrPoke(f + 0x70 + 8 * k, secs)
 		ntrPoke(f + 0x74 + 8 * k, 2)
