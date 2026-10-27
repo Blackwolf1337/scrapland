@@ -3203,8 +3203,8 @@ rva	size	source	callconv	name	signature
 0011a190	1309	DEFAULT	unknown	FUN_0051a190	
 0011a6c0	35	DEFAULT	unknown	FUN_0051a6c0	
 0011a6f0	45	DEFAULT	unknown	FUN_0051a6f0	
-0011a720	20	DEFAULT	unknown	FUN_0051a720	
-0011a740	19	DEFAULT	unknown	FUN_0051a740	
+0011a720	20	USER_DEFINED	__thiscall	cTargetLock_GetEntity	void * __thiscall(void)
+0011a740	19	USER_DEFINED	__thiscall	cTargetLock_GetPoint	void * __thiscall(void)
 0011a760	77	DEFAULT	unknown	FUN_0051a760	
 0011a7b0	185	DEFAULT	unknown	FUN_0051a7b0	
 0011a870	101	DEFAULT	unknown	FUN_0051a870	
@@ -5775,27 +5775,27 @@ rva	size	source	callconv	name	signature
 001c9b50	2590	ANALYSIS	__thiscall	cObjElementFXDebrisCloud::vf01	undefined __thiscall(void)
 001ca580	10031	ANALYSIS	__thiscall	cObjElementFXEMI::vf01	undefined __thiscall(void)
 001cccb0	5496	ANALYSIS	__thiscall	cObjElementFXHook::vf01	undefined __thiscall(void)
-001ce230	871	ANALYSIS	__thiscall	cObjElementFXSonicExplosion::vf01	undefined __thiscall(void)
-001ce5a0	48	DEFAULT	unknown	FUN_005ce5a0	
-001ce5d0	666	DEFAULT	unknown	FUN_005ce5d0	
-001ce870	146	DEFAULT	unknown	FUN_005ce870	
-001ce910	41	DEFAULT	unknown	FUN_005ce910	
-001ce940	171	ANALYSIS	__thiscall	cObjElementFXDebrisCloud::vf03	undefined __thiscall(void)
-001ce9f0	253	ANALYSIS	__thiscall	cObjElementFXEMI::vf03	undefined __thiscall(void)
-001ceaf0	118	ANALYSIS	__thiscall	cObjElementFXHook::vf03	undefined __thiscall(void)
-001ceb70	174	ANALYSIS	__thiscall	cObjElementFXSonicExplosion::vf03	undefined __thiscall(void)
-001cec20	18	ANALYSIS	__thiscall	cObjElementFXDebrisCloud::vf02	undefined __thiscall(void)
-001cec40	30	ANALYSIS	__thiscall	cObjElementFXEMI::vf02	undefined __thiscall(void)
-001cec60	192	ANALYSIS	__thiscall	cObjElementFXHook::vf02	undefined __thiscall(void)
-001ced20	18	ANALYSIS	__thiscall	cObjElementFXSonicExplosion::vf02	undefined __thiscall(void)
-001ced40	108	ANALYSIS	__thiscall	cObjElementFXDebrisCloud::vf04	undefined __thiscall(void)
-001cedb0	179	ANALYSIS	__thiscall	cObjElementFXEMI::vf04	undefined __thiscall(void)
-001cee70	44	ANALYSIS	__thiscall	cObjElementFXHook::vf04	undefined __thiscall(void)
-001ceea0	31	ANALYSIS	__thiscall	cObjElementFXSonicExplosion::vf04	undefined __thiscall(void)
-001ceec0	13	DEFAULT	unknown	FUN_005ceec0	
-001ceed0	13	DEFAULT	unknown	FUN_005ceed0	
-001ceee0	44	DEFAULT	unknown	FUN_005ceee0	
-001cef10	2363	DEFAULT	unknown	FUN_005cef10	
+001ce230	871	USER_DEFINED	__thiscall	cObjElementFXSonicExplosion_Update	void __thiscall(void * debris, float dt)
+001ce5a0	48	USER_DEFINED	__fastcall	cObjElementFXHook_StopTrails	void __fastcall(void * self)
+001ce5d0	666	USER_DEFINED	__thiscall	cObjElementFXHook_StartTarget	void __thiscall(void * emitter, void * target, int slot)
+001ce870	146	USER_DEFINED	__thiscall	cObjElementFXHook_StartPoint	void __thiscall(void * emitter, int slot)
+001ce910	41	USER_DEFINED	__thiscall	cWorld_GetCamPos	void * __thiscall(void * out)
+001ce940	171	USER_DEFINED	__thiscall	cObjElementFXDebrisCloud_Start	void __thiscall(void * debris)
+001ce9f0	253	USER_DEFINED	__thiscall	cObjElementFXEMI_Start	void __thiscall(void * debris)
+001ceaf0	118	USER_DEFINED	__thiscall	cObjElementFXHook_Start	void __thiscall(void * debris)
+001ceb70	174	USER_DEFINED	__thiscall	cObjElementFXSonicExplosion_Start	void __thiscall(void * debris)
+001cec20	18	USER_DEFINED	__thiscall	cObjElementFXDebrisCloud_IsAlive	byte __thiscall(void * debris, void * sys)
+001cec40	30	USER_DEFINED	__thiscall	cObjElementFXEMI_IsAlive	byte __thiscall(void * debris, void * sys)
+001cec60	192	USER_DEFINED	__thiscall	cObjElementFXHook_IsAlive	byte __thiscall(void * debris, void * sys)
+001ced20	18	USER_DEFINED	__thiscall	cObjElementFXSonicExplosion_IsAlive	byte __thiscall(void * debris, void * sys)
+001ced40	108	USER_DEFINED	__thiscall	cObjElementFXDebrisCloud_Reset	void __thiscall(void * debris)
+001cedb0	179	USER_DEFINED	__thiscall	cObjElementFXEMI_Reset	void __thiscall(void * debris)
+001cee70	44	USER_DEFINED	__thiscall	cObjElementFXHook_Reset	void __thiscall(void * debris)
+001ceea0	31	USER_DEFINED	__thiscall	cObjElementFXSonicExplosion_Reset	void __thiscall(void * debris)
+001ceec0	13	USER_DEFINED	__thiscall	cObjElementFXDebrisCloud_SetEntity	void __thiscall(void * e)
+001ceed0	13	USER_DEFINED	__thiscall	cObjElementFXEMI_SetEntity	void __thiscall(void * e)
+001ceee0	44	USER_DEFINED	__thiscall	cObjElementFXDebrisCloud_Warm	void __thiscall(void * debris)
+001cef10	2363	USER_DEFINED	__thiscall	cObjElementFXSonicExplosion_Explode	void __thiscall(float x, float y, float z)
 001cf850	96	DEFAULT	unknown	FUN_005cf850	
 001cf8b0	194	DEFAULT	unknown	FUN_005cf8b0	
 001cf980	126	DEFAULT	unknown	FUN_005cf980	
@@ -5825,33 +5825,35 @@ rva	size	source	callconv	name	signature
 001d3e00	5074	ANALYSIS	__thiscall	cFXElementsABFakeLimit::vf02	undefined __thiscall(void)
 001d51e0	1493	ANALYSIS	__thiscall	cFXElementsABFakeMeteors::vf02	undefined __thiscall(void)
 001d57c0	96	DEFAULT	unknown	FUN_005d57c0	
-001d5820	128	DEFAULT	unknown	FUN_005d5820	
+001d5820	128	USER_DEFINED	__thiscall	cFXElementsOrbitBoyaController_ctor	void * __thiscall(char * name, void * pos, void * rot)
 001d58a0	84	DEFAULT	unknown	FUN_005d58a0	
 001d5910	115	ANALYSIS	__thiscall	cFXElementsOrbitBoya::vf00	undefined __thiscall(void)
 001d5990	44	ANALYSIS	__thiscall	cFXElementsOrbitBoyaController::vf00	undefined __thiscall(void)
-001d59e0	191	ANALYSIS	__thiscall	cFXElementsOrbitBoya::vf01	undefined __thiscall(void)
-001d5aa0	8	ANALYSIS	__thiscall	cFXElementsOrbitBoyaController::vf01	undefined __thiscall(void)
-001d5ab0	929	DEFAULT	unknown	FUN_005d5ab0	
-001d5e60	115	DEFAULT	unknown	FUN_005d5e60	
-001d5ee0	23	ANALYSIS	__thiscall	cFXElementsOrbitBoya::vf02	undefined __thiscall(void)
-001d5f00	830	ANALYSIS	__thiscall	cFXElementsOrbitBoyaController::vf02	undefined __thiscall(void)
-001d6240	39	DEFAULT	unknown	FUN_005d6240	
-001d6270	111	DEFAULT	unknown	FUN_005d6270	
-001d62e0	287	DEFAULT	unknown	FUN_005d62e0	
-001d6410	108	DEFAULT	unknown	FUN_005d6410	
-001d6480	164	DEFAULT	unknown	FUN_005d6480	
-001d6530	41	ANALYSIS	__thiscall	cFXElementsMentalController::vf00	undefined __thiscall(void)
-001d6560	139	ANALYSIS	__thiscall	cFXElementsMentalControllerDamageFX::vf00	undefined __thiscall(void)
-001d65f0	38	ANALYSIS	__thiscall	cFXElementsMentalControllerMainFX::vf00	undefined __thiscall(void)
-001d6630	23	DEFAULT	unknown	FUN_005d6630	
-001d6660	93	DEFAULT	unknown	FUN_005d6660	
-001d66c0	141	ANALYSIS	__thiscall	cFXElementsMentalController::vf01	undefined __thiscall(void)
-001d6750	1589	ANALYSIS	__thiscall	cFXElementsMentalControllerDamageFX::vf01	undefined __thiscall(void)
-001d6d90	1468	ANALYSIS	__thiscall	cFXElementsMentalControllerMainFX::vf01	undefined __thiscall(void)
-001d7370	1786	DEFAULT	unknown	FUN_005d7370	
-001d7a70	100	DEFAULT	unknown	FUN_005d7a70	
-001d7ae0	298	DEFAULT	unknown	FUN_005d7ae0	
-001d7c30	236	ANALYSIS	__thiscall	cFXElementsMentalController::vf02	undefined __thiscall(void)
+001d59e0	191	USER_DEFINED	__fastcall	cFXElementsOrbitBoya_Init	byte __fastcall(void * self)
+001d5aa0	8	USER_DEFINED	__fastcall	cFXElementsOrbitBoyaController_Init	byte __fastcall(void * self)
+001d5ab0	929	USER_DEFINED	__cdecl	FXElementsOrbit_Create	void __cdecl(void)
+001d5e60	115	USER_DEFINED	__thiscall	cFXElementsOrbitBoyaController_SetBoya	void __thiscall(int type, int column, int number, void * boya)
+001d5ee0	23	USER_DEFINED	__thiscall	cFXElementsOrbitBoya_Update	void __thiscall(float dt)
+001d5f00	830	USER_DEFINED	__thiscall	cFXElementsOrbitBoyaController_Update	void __thiscall(float dt)
+001d6240	39	USER_DEFINED	__thiscall	cFXElementsMentalController_ctor	void * __thiscall(char * name, void * pos, void * rot)
+001d6270	111	USER_DEFINED	__thiscall	cFXElementsMentalControllerDamageFX_ctor	void * __thiscall(char * name, void * pos, void * rot)
+001d62e0	287	USER_DEFINED	__thiscall	cFXElementsMentalControllerMainFX_ctor	void * __thiscall(char * name, void * pos, void * rot)
+001d6400	11	USER_DEFINED	__fastcall	cFXElementsMentalController_dtor	void __fastcall(void * self)
+001d6410	108	USER_DEFINED	__fastcall	cFXElementsMentalControllerDamageFX_dtor	void __fastcall(void * self)
+001d6480	164	USER_DEFINED	__fastcall	cFXElementsMentalControllerMainFX_dtor	void __fastcall(void * self)
+001d6530	41	USER_DEFINED	__thiscall	cFXElementsMentalController_Delete	void * __thiscall(byte flags)
+001d6560	139	USER_DEFINED	__thiscall	cFXElementsMentalControllerDamageFX_Delete	void * __thiscall(byte flags)
+001d65f0	38	USER_DEFINED	__thiscall	cFXElementsMentalControllerMainFX_Delete	void * __thiscall(byte flags)
+001d6630	23	USER_DEFINED	__fastcall	cFXElementsMentalControllerDamageFX_ReleaseParticles	void __fastcall(void * self)
+001d6650	11	USER_DEFINED	__fastcall	cFXElementsMentalControllerMainFX_ReleaseFluid	void __fastcall(void * self)
+001d6660	93	USER_DEFINED	__fastcall	cFXElementsMentalControllerMainFX_Clear	void __fastcall(void * self)
+001d66c0	141	USER_DEFINED	__fastcall	cFXElementsMentalController_Init	byte __fastcall(void * self)
+001d6750	1589	USER_DEFINED	__fastcall	cFXElementsMentalControllerDamageFX_Init	byte __fastcall(void * self)
+001d6d90	1468	USER_DEFINED	__fastcall	cFXElementsMentalControllerMainFX_Init	byte __fastcall(void * self)
+001d7370	1786	USER_DEFINED	__cdecl	FXElementsPress_Create	void __cdecl(void)
+001d7a70	100	USER_DEFINED	__thiscall	cFXElementsMentalControllerMainFX_SetController	void __thiscall(int index, void * ctrl)
+001d7ae0	298	USER_DEFINED	__thiscall	cFXElementsMentalControllerMainFX_SetPhase	void __thiscall(int phase)
+001d7c30	236	USER_DEFINED	__thiscall	cFXElementsMentalController_Update	void __thiscall(float dt)
 001d7d20	3123	ANALYSIS	__thiscall	cFXElementsMentalControllerDamageFX::vf02	undefined __thiscall(void)
 001d8960	6154	ANALYSIS	__thiscall	cFXElementsMentalControllerMainFX::vf02	undefined __thiscall(void)
 001da190	106	DEFAULT	unknown	FUN_005da190	
@@ -6136,17 +6138,17 @@ rva	size	source	callconv	name	signature
 00201dc0	196	ANALYSIS	__thiscall	cObjElementFXTesla::vf04	undefined __thiscall(void)
 00201e90	16	DEFAULT	unknown	FUN_00601e90	
 00201eb0	3565	DEFAULT	unknown	FUN_00601eb0	
-00202ca0	354	DEFAULT	unknown	FUN_00602ca0	
+00202ca0	354	USER_DEFINED	__thiscall	cMapElement_ctor	void * __thiscall(char * name, void * pos, void * rot)
 00202e10	9	DEFAULT	unknown	FUN_00602e10	
-00202e20	26	DEFAULT	unknown	FUN_00602e20	
+00202e20	26	USER_DEFINED	__thiscall	cMapElement_dtor	void __thiscall(void)
 00202e40	32	DEFAULT	unknown	FUN_00602e40	
 00202e60	52	ANALYSIS	__thiscall	cMapElement::vf00	undefined __thiscall(void)
 00202ea0	338	USER_DEFINED	unknown	Elements::Call	undefined(void)
 00203000	779	USER_DEFINED	unknown	Elements::Create	undefined(void)
-00203310	3	ANALYSIS	__thiscall	cMapElement::vf01	undefined __thiscall(void)
+00203310	3	USER_DEFINED	__thiscall	cMapElement_Init	byte __thiscall(void)
 00203320	283	DEFAULT	unknown	FUN_00603320	
 00203440	223	DEFAULT	unknown	FUN_00603440	
-00203520	45	ANALYSIS	__thiscall	cMapElement::vf02	undefined __thiscall(void)
+00203520	45	USER_DEFINED	__thiscall	cMapElement_Update	void __thiscall(float dt)
 00203550	46	DEFAULT	unknown	FUN_00603550	
 00203580	1104	DEFAULT	unknown	FUN_00603580	
 00203a00	1	DEFAULT	unknown	FUN_00603a00	
@@ -6168,7 +6170,7 @@ rva	size	source	callconv	name	signature
 00204d50	128	USER_DEFINED	__thiscall	cDebrisSys::Init	void __thiscall(int n, int e)
 00204dd0	16	DEFAULT	unknown	FUN_00604dd0	
 00204de0	183	DEFAULT	unknown	FUN_00604de0	
-00204ea0	664	DEFAULT	unknown	FUN_00604ea0	
+00204ea0	664	USER_DEFINED	__thiscall	cDebris_Update	byte __thiscall(void * sys)
 00205140	91	USER_DEFINED	__cdecl	Object3D_Preload	void __cdecl(char * name, float * scale)
 002051a0	99	USER_DEFINED	unknown	Anm_Preload	undefined(void)
 00205210	387	DEFAULT	unknown	FUN_00605210	
