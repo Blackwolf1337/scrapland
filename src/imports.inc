@@ -42,7 +42,6 @@ SD_IMPORT(cAction_Var, 0x064280)
 SD_IMPORT(CNodesWorld_ctor, 0x0a21b0)
 SD_IMPORT(CNodesWorld2D_ctor, 0x0ad950)
 SD_IMPORT(CNodesTrafficInDoor_ctor, 0x0a08a0)
-SD_IMPORT(CNodesTraffic_ctor, 0x09b970)
 SD_IMPORT(CAStar_ctor, 0x099330)
 SD_IMPORT(CAStar2D_ctor, 0x09a2f0)
 SD_IMPORT(cAIVehicleGroup_ctor, 0x096bf0)
@@ -764,3 +763,4 @@ SD_IMPORT(cVehicleTraffic_SetOwner, 0x119970)
 /* module agent: Engine/RenderTarget.cpp (imports below this line) */
 
 /* module agent: AI/NodesTraffic+NodesTrafficInDoor.cpp (imports below this line) */
+SD_IMPORT(CNodesWorld_TestPath, 0x0a32f0)
