@@ -160,12 +160,12 @@ typedef struct cObjElementFXBettyAttack {
 	cEntity *ent;			/* 0x004 */
 	CGameParticles particles;	/* 0x008 on Dummy01 */
 	CGameParticles particles2;	/* 0x0b8 on "Dummy02 (+dudv_pass)" if the model has it */
-	float f168;			/* 0x168 */
-	float f16c;			/* 0x16c */
-	float f170;			/* 0x170 */
-	vec3_t pos;			/* 0x174 */
+	float t2;			/* 0x168 since the start (not read) */
+	float time;			/* 0x16c since the start */
+	float lastTime;			/* 0x170 time of the last Update */
+	vec3_t pos;			/* 0x174 the center of the attack (Emit) */
 	CGameTrail trails[2];		/* 0x180 */
-	int f188;			/* 0x188 */
+	float ring;			/* 0x188 the radius of the ring that grows */
 	CGameTrail trails2[FXBETTYATTACK_TRAILS];	/* 0x18c */
 	CGameTrail trail;		/* 0x19c */
 	void *flare;			/* 0x1a0 CGameLensFlare */
@@ -558,6 +558,9 @@ void __thiscall cObjElementFXBishopAttack_SetLine(cObjElementFXBishopAttack *sel
 	float tx, float ty, float tz);
 /* the shot of the Betty attack at x y z: a sphere of particles */
 void __thiscall cObjElementFXBettyAttack_Emit(cObjElementFXBettyAttack *self, float x, float y, float z);
+/* the attack of Betty: bolts out of the center, a ring that grows with bolts and dust on the side away from the
+ * camera, the ring line, a wave in the dudv pass and a flash */
+void __thiscall cObjElementFXBettyAttack_Update(cObjElementFXBettyAttack *self, cDebris *d, float dt);
 /* the trails from the owner to the item, 3 points each */
 void __fastcall cObjElementFXMessengerTakeDataPack_Start(cObjElementFXMessengerTakeDataPack *self);
 /* the lightning from .. to and 5 branches off its Bezier curve (stopped by the floor) */

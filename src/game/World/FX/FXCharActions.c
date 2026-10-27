@@ -94,20 +94,8 @@ static void FXA_ClearTrails(CGameTrail *t, int n) {
 }
 
 /* to - from normalized (as it is when its length is 0) */
-static vec3_t FXA_Dir(const vec3_t *from, const vec3_t *to) {
-	vec3_t d;
-
-	d.x = to->x - from->x;
-	d.y = to->y - from->y;
-	d.z = to->z - from->z;
-	float len = (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z));
-	if (len != 0.0f) {
-		float inv = 1.0f / len;
-		d.x = d.x * inv;
-		d.y = d.y * inv;
-		d.z = d.z * inv;
-	}
-	return d;
+static inline vec3_t FXA_Dir(const vec3_t *from, const vec3_t *to) {
+	return FX_Unit((vec3_t){ to->x - from->x, to->y - from->y, to->z - from->z });
 }
 
 /* a random direction (FX_RandomDir) scaled by r */
@@ -203,9 +191,9 @@ void *__thiscall cObjElementFXBettyAttack_ctor(void *self) {
 	CGameLensFlare_ctor(&s->flare);
 	s->started = 0;
 	s->ent = NULL;
-	s->f16c = 0.0f;
-	s->f168 = 0.0f;
-	s->f170 = 0.0f;
+	s->time = 0.0f;
+	s->t2 = 0.0f;
+	s->lastTime = 0.0f;
 	return s;
 }
 
@@ -732,7 +720,7 @@ void __thiscall cObjElementFXBettyAttack_Attach(cObjElementFXBettyAttack *self, 
 	CGameTrail_SetMaxTrails(&self->trail, 31);
 	CGameTrail_SetType(&self->trail, 1);
 	CHECK(self->particles.SistPart);
-	self->f188 = 0;
+	self->ring = 0.0f;
 	CGameLensFlare_SetI1c(&self->flare, 2);
 }
 
@@ -967,9 +955,9 @@ void __thiscall cObjElementFXBertoFlash_Reset(cObjElementFXBertoFlash *self, int
 
 void __thiscall cObjElementFXBettyAttack_Reset(cObjElementFXBettyAttack *self, int arg) {
 	(void)arg;
-	self->f16c = 0.0f;
-	self->f168 = 0.0f;
-	self->f170 = 0.0f;
+	self->time = 0.0f;
+	self->t2 = 0.0f;
+	self->lastTime = 0.0f;
 	FXA_ClearTrails(self->trails, 2);
 	FXA_ClearTrails(self->trails2, FXBETTYATTACK_TRAILS);
 	CGameTrail_Clear(&self->trail);
@@ -977,7 +965,7 @@ void __thiscall cObjElementFXBettyAttack_Reset(cObjElementFXBettyAttack *self, i
 	if (self->particles2.SistPart) {
 		CGameParticles_KillAll(&self->particles2);
 	}
-	self->f188 = 0;
+	self->ring = 0.0f;
 }
 
 void __thiscall cObjElementFXKill_Reset(cObjElementFXKill *self, int arg) {
@@ -1359,6 +1347,236 @@ void __thiscall cObjElementFXBettyAttack_Emit(cObjElementFXBettyAttack *self, fl
 	} while (3.14159274f > a);
 }
 
+/* the yaw of the direction from the camera (or a point) to p, the way the original compares sides */
+static float FXBetty_Yaw(const vec3_t *from, const vec3_t *to) {
+	vec3_t ang;
+	vec3_t n = FXA_Dir(from, to);
+
+	return Vec3_GetRotAng(&ang, &n)->y;
+}
+
+void __thiscall cObjElementFXBettyAttack_Update(cObjElementFXBettyAttack *self, cDebris *d, float dt) {
+	vec3_t p, rot, o, dir, ang, v;
+	float a;
+
+	(void)dt;
+	cEntity *e = self->ent;
+	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+		self->ent = NULL;
+	}
+	if (!self->ent || !self->ent->flag_4c) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	CGameModel_GetPos(m, &p);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &p);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), -87.0f, 0.0f);
+	CGameParticles *sp = &self->particles;
+	int np = CGameParticles_NumParticles(sp);
+	float delta = cTimer_GetDelta(&g_pWorld->timer);
+	self->time = self->time + delta;
+	self->t2 = self->t2 + delta;
+	vec3_t cam = g_pWorld->camPos[g_pWorld->curCam];
+	/* the side of the attack the camera sees */
+	float yaw = FXBetty_Yaw(&cam, &p);
+
+	/* the bolts out of the center */
+	if (FX_InRange(self->time, 0.0f, 0.8f, &a)) {
+		int alpha = (int)(a * 255.0f);
+		CGameTrail_Reset(&self->trails[0]);
+		CGameTrail_Reset(&self->trails[1]);
+		int pt = 0, pidx = np - 0x3d;
+		CGameTrail *tr = &self->trails[0];
+		for (int i = 0; i < 30; i++) {
+			ang = (vec3_t){ 0.0f, FXA_Rand(6.2831854820251465, 0.0), 0.0f };
+			v = (vec3_t){ FXA_Rand(1.0, 0.0), 0.0f, 0.0f };
+			Vec3_Rotate(&o, &v, &ang);
+			float k = FXA_Rand(86.0, 10.0);
+			float x = (self->pos.x + 0.0f) + o.x * k * a;
+			float y = (self->pos.y - 20.0f) + o.y * k * a;
+			float z = (self->pos.z + 0.0f) + o.z * k * a;
+			float y2 = y + FXA_Rand(70.0, 180.0);
+			float w = FXA_Rand(10.0, 35.0) * a + 10.0f;
+			int c1 = alpha + 0x20;
+			if (c1 > 0xff) {
+				c1 = 0xff;
+			}
+			CGameTrail_Add(tr, (vec3_t){ x, y, z }, w, (uint32_t)c1 << 24 | 0xffd25a);
+			CGameTrail_Add(tr, (vec3_t){ x + 0.0f, y2, z + 0.0f }, w, 0xffff500a);
+			int c2 = alpha + 0x10;
+			if (c2 > 0xff) {
+				c2 = 0xff;
+			}
+			uint32_t g = (uint32_t)(crt_rand() % 15 + 0xe1) << 8;
+			uint32_t rg = (uint32_t)(crt_rand() % 20 + 0xe6) << 16 | g;
+			uint32_t color = (uint32_t)(crt_rand() % 10 + 0x91) | (uint32_t)c2 << 24 | rg;
+			CGameParticles_SetParticle(sp, pidx, x, y, z, w * 2.5f, color, 2, 0.0f);
+			if (++pt >= 15) {
+				pt = 0;
+				tr++;
+			}
+			pidx--;
+		}
+		CGameParticles_SetParticle(sp, 0, self->pos.x, self->pos.y, self->pos.z, (1.0f - a) * 400.0f,
+			(uint32_t)(int)Float_MinSS(255.0f, a * 255.0f + 64.0f) << 24 | 0xb4b4ff, 5, 0.0f);
+	}
+
+	/* the ring that grows, its bolts and glows on the side away from the camera */
+	if (FX_InRange(self->time, 0.0f, 1.45f, &a)) {
+		int alpha = (int)(a * 255.0f);
+		int pt = 0;
+		CGameTrail *tr = &self->trails2[0];
+		for (int i = 0; i < FXBETTYATTACK_TRAILS; i++) {
+			CGameTrail_Reset(&self->trails2[i]);
+		}
+		for (int i = 0, pidx = np - 1; i < 60; i++, pidx--) {
+			ang = (vec3_t){ 0.0f, (float)i / 60.0f * 6.28318548f, 0.0f };
+			v = (vec3_t){ 1.0f, 0.0f, 0.0f };
+			Vec3_Rotate(&o, &v, &ang);
+			float q = 1.0f - a;
+			float r = (q * q) * (2.0f - q) * delta * 28.5f + self->ring;
+			self->ring = r;
+			float x = o.x * r + self->pos.x, y = o.y * r + self->pos.y, z = o.z * r + self->pos.z;
+			float y2 = self->ring * FXA_Rand(0.10000002384185791, 0.5) + 75.0f + y;
+			float x2 = x + 0.0f, z2 = z + 0.0f;
+			float w = self->ring * FXA_Rand(0.040000021457672119, 0.51999998092651367);
+			vec3_t pp = { x, y, z };
+			byte back = !(1.5f > (float)__builtin_fabs((double)(FXBetty_Yaw(&pp, &p) - yaw)));
+			if (back) {
+				uint32_t g = (uint32_t)(crt_rand() % 20 - (int)((a * 0.8f + -1.0f) * 85.0f)) << 8;
+				uint32_t bg = (uint32_t)(crt_rand() % 10 - (int)((a * 0.9f + -1.0f) * 30.0f)) | g;
+				uint32_t color = (uint32_t)(crt_rand() % 24 + 0xe6) << 16 | bg;
+				int c = alpha + 0x30;
+				if (c < 0xff) {
+					CGameTrail_Add(tr, pp, w, (uint32_t)c << 24 | (color & 0xffffff));
+					CGameTrail_Add(tr, (vec3_t){ x2, y2, z2 }, w, color | 0xff000000);
+				}
+				if (++pt >= 15) {
+					pt = 0;
+					tr++;
+				}
+			}
+			uint32_t g = (uint32_t)(crt_rand() % 20 - (int)((a * 0.8f + -1.0f) * 165.0f)) << 8;
+			uint32_t bg = (uint32_t)(crt_rand() % 10 - (int)((a * 0.9f + -1.0f) * 80.0f)) | g;
+			uint32_t color = (uint32_t)(crt_rand() % 24 + 0xe6) << 16 | bg;
+			if (back) {
+				int al = 0.6f > a ? 0 : (int)(((a - 0.5f) + (a - 0.5f)) * 255.0f);
+				al += 8;
+				if (al > 0xff) {
+					al = 0xff;
+				}
+				CGameParticles_SetParticle(sp, pidx, x2, a * 40.0f + y, z2, w * 0.7f,
+					(uint32_t)al << 24 | (color & 0xffffff), 1, 0.0f);
+			} else {
+				CGameParticles_Kill(sp, pidx);
+			}
+			if (g_SceneDuDvRTarget && self->particles2.SistPart) {
+				int n2 = CGameParticles_NumParticles(&self->particles2);
+				if (back) {
+					int ai = (int)(a * 255.0f);
+					uint32_t cc = (uint32_t)(0xff - ai);
+					CGameParticles_SetParticle(&self->particles2, n2 - i - 1, x2, a * 140.0f + y, z2, w * 0.6f,
+						(uint32_t)ai << 24 | cc << 16 | cc << 8 | cc, 1, 0.0f);
+				} else {
+					CGameParticles_Kill(&self->particles2, n2 - i - 1);
+				}
+			}
+		}
+	}
+
+	/* the ring line */
+	if (FX_InRange(self->time, 0.0f, 1.05f, &a)) {
+		int ai = (int)(a * 255.0f) + 0x20;
+		uint32_t a24 = (uint32_t)(ai > 0xff ? 0xff : ai) << 24;
+		CGameTrail_Reset(&self->trail);
+		for (int i = 0; i <= 0x1a; i++) {
+			ang = (vec3_t){ 0.0f, (float)i / 25.0f * 6.28318548f, 0.0f };
+			v = (vec3_t){ 1.0f, 0.0f, 0.0f };
+			Vec3_Rotate(&o, &v, &ang);
+			float r = self->ring;
+			vec3_t q = { (o.x * r + self->pos.x) + 0.0f, (o.y * r + self->pos.y) + 1.0f, (o.z * r + self->pos.z) + 0.0f };
+			CGameTrail_Add(&self->trail, q, 0.0f, a24 | 0xffa032);
+		}
+		vec3_t q = { self->pos.x + 0.0f, self->pos.y + 1.0f, self->pos.z + 0.0f };
+		CGameTrail_Add(&self->trail, q, 0.0f, a24 | 0xff5a10);
+	}
+
+	/* the dust on the ring, 15 times a second */
+	if (FX_InRange(self->time, 0.0f, 0.75f, &a) && (int)(self->lastTime * 15.0f) != (int)(self->time * 15.0f)) {
+		sp->birthRate = 0;
+		for (int i = 0; i <= 0x18; i++) {
+			float ay = FXA_Rand(0.10000000894069672, 0.05000000074505806);
+			ang = (vec3_t){ 0.0f, ay + (float)i / 24.0f * 6.28318548f, 0.0f };
+			v = (vec3_t){ 1.0f, 0.0f, 0.0f };
+			Vec3_Rotate(&o, &v, &ang);
+			float r = self->ring;
+			vec3_t pp = { o.x * r + self->pos.x, o.y * r + self->pos.y, o.z * r + self->pos.z };
+			if (1.0f > (float)__builtin_fabs((double)(FXBetty_Yaw(&pp, &p) - yaw))) {
+				continue;
+			}
+			float k = FXA_Rand(5.0, 0.0);
+			FX_RandomDir(&dir);
+			sp->initPosMin.x = k * dir.x + pp.x;
+			sp->initPosMin.y = dir.y * k + pp.y;
+			sp->initPosMin.z = dir.z * k + pp.z;
+			sp->initPosMax = sp->initPosMin;
+			float kv = FXA_Rand(160.0, 90.0);
+			sp->initVelMin.x = o.x * kv;
+			sp->initVelMin.y = o.y * kv;
+			sp->initVelMin.z = o.z * kv;
+			sp->initVelMax = sp->initVelMin;
+			float ka = FXA_Rand(0.050000011920928955, 0.44999998807907104);
+			sp->initAccMin.x = -sp->initVelMin.x * ka;
+			sp->initAccMin.y = -sp->initVelMin.y * ka;
+			sp->initAccMin.z = -sp->initVelMin.z * ka;
+			sp->initAccMax = sp->initAccMin;
+			sp->sizeIni = (a * 1.4f + 0.8f) * (FXA_Rand(0.19999998807907104, 0.80000001192092896) * 120.0f);
+			sp->sizeEnd = (a * 1.4f + 0.8f) * (FXA_Rand(0.19999998807907104, 0.80000001192092896) * 310.0f);
+			sp->rotIni = sp->rotEnd = FXA_Rand(6.2831854820251465, 0.0);
+			sp->rotVar = FXA_Rand(4.7123889923095703, -2.3561944961547852);
+			sp->sizeLife = 1.0f;
+			sp->spriteIni = 0x33;
+			sp->spriteEnd = 0x33;
+			sp->lifeTime = FXA_Rand(0.04999995231628418, 0.85000002384185791);
+			CGameParticles_SetColorRampOn(sp, 1);
+			CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FXA_RAMP_BETTY) + (crt_rand() & 1) * 9);
+			CGameParticles_Apply(sp);
+			CGameParticles_EmitN(sp, 1, 0);
+		}
+	}
+
+	/* the wave in the dudv pass */
+	if (g_SceneDuDvRTarget && self->particles2.SistPart && FX_InRange(self->time, 0.0f, 0.2f, &a)) {
+		float q;
+		if (0.06f > self->time) {
+			FX_InRange(self->time, 0.0f, 0.06f, &a);
+			q = (a * a) * (2.0f - a);
+		} else {
+			FX_InRange(self->time, 0.08f, 0.2f, &a);
+			q = 1.0f - (3.0f - a * 2.0f) * (a * a);
+		}
+		uint32_t c = (uint32_t)(int)(q * 255.0f);
+		uint32_t color = (((~c << 8 | c) << 8 | c) << 8) | c;
+		for (int i = 2; i < 12; i++) {
+			CGameParticles_SetParticle(&self->particles2, i, self->pos.x, self->pos.y, self->pos.z,
+				(float)(i * i) * q * 1.6f, color, 2, 0.0f);
+		}
+	}
+
+	/* the flash */
+	if (FX_InRange(self->time, 0.0f, 0.4f, &a)) {
+		CGameLensFlare_SetPos(&self->flare, self->pos);
+		CGameLensFlare_SetOn(&self->flare, 1);
+		CGameLensFlare_SetIntensity(&self->flare, 0.5f - a * 0.5f);
+		CGameLensFlare_SetF18(&self->flare, 1.0f);
+	} else {
+		CGameLensFlare_SetOn(&self->flare, 0);
+	}
+	self->lastTime = self->time;
+}
 void __fastcall cObjElementFXMessengerTakeDataPack_Start(cObjElementFXMessengerTakeDataPack *self) {
 	vec3_t ang, t1, t2, o1, o2, p0, d;
 
