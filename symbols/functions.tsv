@@ -5493,54 +5493,57 @@ rva	size	source	callconv	name	signature
 001a6620	3	DEFAULT	unknown	FUN_005a6620	
 001a66a0	3	USER_DEFINED	unknown	Steam_SetAchievement	undefined(void)
 001a66e0	1	DEFAULT	unknown	FUN_005a66e0	
-001a6720	276	DEFAULT	unknown	FUN_005a6720	
-001a6840	124	DEFAULT	unknown	FUN_005a6840	
-001a68c0	198	DEFAULT	unknown	FUN_005a68c0	
-001a6990	137	DEFAULT	unknown	FUN_005a6990	
-001a6a20	8	DEFAULT	unknown	FUN_005a6a20	
-001a6a30	344	DEFAULT	unknown	FUN_005a6a30	
-001a6b90	113	DEFAULT	unknown	FUN_005a6b90	
-001a6c10	519	DEFAULT	unknown	FUN_005a6c10	
-001a6e20	626	DEFAULT	unknown	FUN_005a6e20	
-001a70a0	196	DEFAULT	unknown	FUN_005a70a0	
+001a6700	22	USER_DEFINED	__thiscall	GridCell_ctor	void * __thiscall(void)
+001a6720	276	USER_DEFINED	__thiscall	Grid_ctor	void * __thiscall(void)
+001a6840	124	USER_DEFINED	__thiscall	Grid_dtor	void __thiscall(void)
+001a68c0	198	USER_DEFINED	__thiscall	GridCell_VecDelDtor	void * __thiscall(uint flags)
+001a6990	137	USER_DEFINED	__thiscall	Grid_GetCell	void * __thiscall(int x, int y, int z)
+001a6a20	8	USER_DEFINED	__thiscall	Grid_EndFrame	void __thiscall(void)
+001a6a30	344	USER_DEFINED	__thiscall	Grid_FirstInBox	void * __thiscall(float * min, float * max)
+001a6b90	113	USER_DEFINED	__thiscall	Grid_GetCellAt	void * __thiscall(float * pos)
+001a6c10	519	USER_DEFINED	__thiscall	Grid_FirstOnSegment	void * __thiscall(float * from, float * to, float * ext)
+001a6e20	626	USER_DEFINED	__thiscall	Grid_Draw	void __thiscall(void)
+001a70a0	196	USER_DEFINED	__thiscall	Grid_Free	void __thiscall(void)
 001a7170	92	USER_DEFINED	__cdecl	EntityLists_Get	void * __cdecl(char * name)
-001a7220	355	DEFAULT	unknown	FUN_005a7220	
-001a73d0	119	DEFAULT	unknown	FUN_005a73d0	
-001a7480	212	DEFAULT	unknown	FUN_005a7480	
-001a7560	82	DEFAULT	unknown	FUN_005a7560	
-001a75c0	323	DEFAULT	unknown	FUN_005a75c0	
-001a7710	81	USER_DEFINED	__thiscall	Grid::Set	void __thiscall(float * size)
-001a7770	83	DEFAULT	unknown	FUN_005a7770	
-001a77d0	378	DEFAULT	unknown	FUN_005a77d0	
-001a7950	161	DEFAULT	unknown	FUN_005a7950	
+001a7220	355	USER_DEFINED	__thiscall	Grid_Init	void __thiscall(float * min, float * max, float * cell)
+001a7390	51	USER_DEFINED	__thiscall	Grid_StepCell	byte __thiscall(void)
+001a73d0	119	USER_DEFINED	__thiscall	Grid_NextInBox	void * __thiscall(void)
+001a7450	39	USER_DEFINED	__thiscall	Grid_NextInCell	void * __thiscall(void)
+001a7480	212	USER_DEFINED	__thiscall	Grid_NextOnSegment	void * __thiscall(void)
+001a7560	82	USER_DEFINED	__thiscall	Grid_NewQuery	void __thiscall(void)
+001a75c0	323	USER_DEFINED	__thiscall	Grid_Add	void __thiscall(void * e)
+001a7710	81	USER_DEFINED	__thiscall	Grid_Set	void __thiscall(float * size)
+001a7770	83	USER_DEFINED	__thiscall	Grid_ClampPos	float * __thiscall(float * out, float * pos)
+001a77d0	378	USER_DEFINED	__cdecl	Dummies_Draw	void __cdecl(void)
+001a7950	161	USER_DEFINED	__cdecl	DummySearch_NextEuler	byte __cdecl(char * buf, int size, float * pos, float * ang)
 001a7a00	193	USER_DEFINED	__cdecl	DummySearch_Next	byte __cdecl(char * buf, int size, float * pos, float * ang, byte * flag)
-001a7ad0	5	USER_DEFINED	unknown	DummySearch_Start	undefined(void)
-001a7ae0	209	DEFAULT	unknown	FUN_005a7ae0	
-001a7bc0	20	USER_DEFINED	__thiscall	cEntityList::GetFirst	void * __thiscall(void)
-001a7be0	385	DEFAULT	unknown	FUN_005a7be0	
-001a7d70	408	USER_DEFINED	__thiscall	cEntityList::Var	int __thiscall(char * name, int set, char * * s, double * d, int * i)
-001a7f20	172	DEFAULT	unknown	FUN_005a7f20	
-001a7fd0	173	DEFAULT	unknown	FUN_005a7fd0	
-001a8080	160	DEFAULT	unknown	FUN_005a8080	
-001a8120	133	DEFAULT	unknown	FUN_005a8120	
-001a81b0	177	DEFAULT	unknown	FUN_005a81b0	
-001a8270	137	DEFAULT	unknown	FUN_005a8270	
-001a8300	140	DEFAULT	unknown	FUN_005a8300	
-001a8390	106	DEFAULT	unknown	FUN_005a8390	
-001a8400	95	DEFAULT	unknown	FUN_005a8400	
-001a8460	117	DEFAULT	unknown	FUN_005a8460	
-001a84e0	25	DEFAULT	unknown	FUN_005a84e0	
-001a8500	95	DEFAULT	unknown	FUN_005a8500	
-001a8560	25	DEFAULT	unknown	FUN_005a8560	
-001a8580	25	DEFAULT	unknown	FUN_005a8580	
-001a85a0	35	ANALYSIS	__thiscall	cObjElementAbstract::vf00	undefined __thiscall(void)
-001a85d0	137	ANALYSIS	__thiscall	cObjElementFXCharacterConversion::vf00	undefined __thiscall(void)
-001a8660	126	ANALYSIS	__thiscall	cObjElementFXCharacterConversor::vf00	undefined __thiscall(void)
-001a86e0	148	ANALYSIS	__thiscall	cObjElementFXCharacterDeath::vf00	undefined __thiscall(void)
-001a8780	54	ANALYSIS	__thiscall	cObjElementFXCharacterTeleport::vf00	undefined __thiscall(void)
-001a87c0	126	ANALYSIS	__thiscall	cObjElementFXMaintenanceWork::vf00	undefined __thiscall(void)
-001a8840	54	ANALYSIS	__thiscall	cObjElementFXMoneyTransfer::vf00	undefined __thiscall(void)
-001a8880	54	ANALYSIS	__thiscall	cObjElementFXSputnik::vf00	undefined __thiscall(void)
+001a7ad0	5	USER_DEFINED	__cdecl	DummySearch_Start	void __cdecl(char * name, int flag)
+001a7ae0	209	USER_DEFINED	__thiscall	cEntityList_ctor	void * __thiscall(char * name)
+001a7bc0	20	USER_DEFINED	__thiscall	cEntityList_GetFirst	void * __thiscall(void)
+001a7be0	385	USER_DEFINED	__thiscall	cEntityList_Nearest	void * __thiscall(float * pos, void * exclude, float * dist)
+001a7d70	408	USER_DEFINED	__thiscall	cEntityList_Var	int __thiscall(char * name, int set, void * s, double * d, int * i)
+001a7f20	172	USER_DEFINED	__thiscall	cObjElementFXCharacterConversion_ctor	void * __thiscall(void)
+001a7fd0	173	USER_DEFINED	__thiscall	cObjElementFXCharacterConversor_ctor	void * __thiscall(void)
+001a8080	160	USER_DEFINED	__thiscall	cObjElementFXCharacterDeath_ctor	void * __thiscall(void)
+001a8120	133	USER_DEFINED	__thiscall	cObjElementFXCharacterTeleport_ctor	void * __thiscall(void)
+001a81b0	177	USER_DEFINED	__thiscall	cObjElementFXMaintenanceWork_ctor	void * __thiscall(void)
+001a8270	137	USER_DEFINED	__thiscall	cObjElementFXMoneyTransfer_ctor	void * __thiscall(void)
+001a8300	140	USER_DEFINED	__thiscall	cObjElementFXSputnik_ctor	void * __thiscall(void)
+001a8390	106	USER_DEFINED	__thiscall	cObjElementFXCharacterConversion_dtor	void __thiscall(void)
+001a8400	95	USER_DEFINED	__thiscall	cObjElementFXCharacterConversor_dtor	void __thiscall(void)
+001a8460	117	USER_DEFINED	__thiscall	cObjElementFXCharacterDeath_dtor	void __thiscall(void)
+001a84e0	25	USER_DEFINED	__thiscall	cObjElementFXCharacterTeleport_dtor	void __thiscall(void)
+001a8500	95	USER_DEFINED	__thiscall	cObjElementFXMaintenanceWork_dtor	void __thiscall(void)
+001a8560	25	USER_DEFINED	__thiscall	cObjElementFXMoneyTransfer_dtor	void __thiscall(void)
+001a8580	25	USER_DEFINED	__thiscall	cObjElementFXSputnik_dtor	void __thiscall(void)
+001a85a0	35	USER_DEFINED	__thiscall	cObjElementAbstract_Delete	void * __thiscall(uint flags)
+001a85d0	137	USER_DEFINED	__thiscall	cObjElementFXCharacterConversion_Delete	void * __thiscall(uint flags)
+001a8660	126	USER_DEFINED	__thiscall	cObjElementFXCharacterConversor_Delete	void * __thiscall(uint flags)
+001a86e0	148	USER_DEFINED	__thiscall	cObjElementFXCharacterDeath_Delete	void * __thiscall(uint flags)
+001a8780	54	USER_DEFINED	__thiscall	cObjElementFXCharacterTeleport_Delete	void * __thiscall(uint flags)
+001a87c0	126	USER_DEFINED	__thiscall	cObjElementFXMaintenanceWork_Delete	void * __thiscall(uint flags)
+001a8840	54	USER_DEFINED	__thiscall	cObjElementFXMoneyTransfer_Delete	void * __thiscall(uint flags)
+001a8880	54	USER_DEFINED	__thiscall	cObjElementFXSputnik_Delete	void * __thiscall(uint flags)
 001a88c0	4362	ANALYSIS	__thiscall	cObjElementFXCharacterConversion::vf01	undefined __thiscall(void)
 001a99f0	10167	ANALYSIS	__thiscall	cObjElementFXCharacterConversor::vf01	undefined __thiscall(void)
 001ac1b0	7611	ANALYSIS	__thiscall	cObjElementFXCharacterDeath::vf01	undefined __thiscall(void)
@@ -5882,80 +5885,80 @@ rva	size	source	callconv	name	signature
 001da880	129	ANALYSIS	__thiscall	cObjElementFXSparks::vf00	undefined __thiscall(void)
 001da910	51	ANALYSIS	__thiscall	cObjElementFXTrail::vf00	undefined __thiscall(void)
 001da950	125	ANALYSIS	__thiscall	cObjElementFXFadeOutTrail::vf01	undefined __thiscall(void)
-001da9d0	497	ANALYSIS	__thiscall	cObjElementFXItemFade::vf01	undefined __thiscall(void)
-001dabd0	3142	ANALYSIS	__thiscall	cObjElementFXItemTake::vf01	undefined __thiscall(void)
-001db830	197	ANALYSIS	__thiscall	cObjElementFXModelFade::vf01	undefined __thiscall(void)
-001db900	180	ANALYSIS	__thiscall	cObjElementFXModelNoise::vf01	undefined __thiscall(void)
-001db9c0	35	ANALYSIS	__thiscall	cObjElementFXSistPart::vf01	undefined __thiscall(void)
-001db9f0	35	ANALYSIS	__thiscall	cObjElementFXSistPartDuDv::vf01	undefined __thiscall(void)
-001dba20	1266	ANALYSIS	__thiscall	cObjElementFXSparks::vf01	undefined __thiscall(void)
-001dbf20	414	ANALYSIS	__thiscall	cObjElementFXTrail::vf01	undefined __thiscall(void)
-001dc0c0	611	DEFAULT	unknown	FUN_005dc0c0	
-001dc330	777	DEFAULT	unknown	FUN_005dc330	
-001dc640	458	DEFAULT	unknown	FUN_005dc640	
-001dc810	365	DEFAULT	unknown	FUN_005dc810	
-001dc980	125	DEFAULT	unknown	FUN_005dc980	
-001dca00	316	DEFAULT	unknown	FUN_005dca00	
-001dcb40	223	DEFAULT	unknown	FUN_005dcb40	
-001dcc20	3	ANALYSIS	__thiscall	cObjElementFXFadeOutTrail::vf03	undefined __thiscall(void)
-001dcc30	59	ANALYSIS	__thiscall	cObjElementFXItemFade::vf03	undefined __thiscall(void)
-001dcc70	59	ANALYSIS	__thiscall	cObjElementFXItemTake::vf03	undefined __thiscall(void)
-001dccb0	10	ANALYSIS	__thiscall	cObjElementFXModelFade::vf03	undefined __thiscall(void)
-001dccc0	10	ANALYSIS	__thiscall	cObjElementFXModelNoise::vf03	undefined __thiscall(void)
-001dccd0	151	ANALYSIS	__thiscall	cObjElementFXSistPart::vf03	undefined __thiscall(void)
-001dcd70	151	ANALYSIS	__thiscall	cObjElementFXSistPartDuDv::vf03	undefined __thiscall(void)
-001dce10	209	ANALYSIS	__thiscall	cObjElementFXSparks::vf03	undefined __thiscall(void)
-001dcef0	3	ANALYSIS	__thiscall	cObjElementFXTrail::vf03	undefined __thiscall(void)
-001dcf00	41	ANALYSIS	__thiscall	cObjElementFXFadeOutTrail::vf02	undefined __thiscall(void)
-001dcf30	18	ANALYSIS	__thiscall	cObjElementFXItemFade::vf02	undefined __thiscall(void)
-001dcf50	18	ANALYSIS	__thiscall	cObjElementFXItemTake::vf02	undefined __thiscall(void)
-001dcf70	40	ANALYSIS	__thiscall	cObjElementFXModelFade::vf02	undefined __thiscall(void)
-001dcfa0	52	ANALYSIS	__thiscall	cObjElementFXModelNoise::vf02	undefined __thiscall(void)
-001dcfe0	18	ANALYSIS	__thiscall	cObjElementFXSistPart::vf02	undefined __thiscall(void)
-001dd000	18	ANALYSIS	__thiscall	cObjElementFXSistPartDuDv::vf02	undefined __thiscall(void)
-001dd020	18	ANALYSIS	__thiscall	cObjElementFXSparks::vf02	undefined __thiscall(void)
-001dd040	92	ANALYSIS	__thiscall	cObjElementFXTrail::vf02	undefined __thiscall(void)
-001dd0a0	47	ANALYSIS	__thiscall	cObjElementFXFadeOutTrail::vf04	undefined __thiscall(void)
-001dd0d0	115	ANALYSIS	__thiscall	cObjElementFXItemFade::vf04	undefined __thiscall(void)
-001dd150	125	ANALYSIS	__thiscall	cObjElementFXItemTake::vf04	undefined __thiscall(void)
-001dd1d0	10	ANALYSIS	__thiscall	cObjElementFXModelFade::vf04	undefined __thiscall(void)
-001dd1e0	10	ANALYSIS	__thiscall	cObjElementFXModelNoise::vf04	undefined __thiscall(void)
-001dd1f0	3	ANALYSIS	__thiscall	cObjElementFXSistPart::vf04	undefined __thiscall(void)
-001dd200	3	ANALYSIS	__thiscall	cObjElementFXSistPartDuDv::vf04	undefined __thiscall(void)
-001dd210	152	ANALYSIS	__thiscall	cObjElementFXSparks::vf04	undefined __thiscall(void)
-001dd2b0	11	ANALYSIS	__thiscall	cObjElementFXTrail::vf04	undefined __thiscall(void)
-001dd2c0	1750	DEFAULT	unknown	FUN_005dd2c0	
-001dd9a0	658	DEFAULT	unknown	FUN_005dd9a0	
-001ddc40	62	DEFAULT	unknown	FUN_005ddc40	
-001ddc80	17	DEFAULT	unknown	FUN_005ddc80	
-001ddca0	17	DEFAULT	unknown	FUN_005ddca0	
-001ddcc0	17	DEFAULT	unknown	FUN_005ddcc0	
-001ddce0	13	DEFAULT	unknown	FUN_005ddce0	
-001ddcf0	1340	DEFAULT	unknown	FUN_005ddcf0	
-001de230	184	DEFAULT	unknown	FUN_005de230	
-001de2f0	150	DEFAULT	unknown	FUN_005de2f0	
-001de390	192	DEFAULT	unknown	FUN_005de390	
-001de450	163	DEFAULT	unknown	FUN_005de450	
-001de500	159	DEFAULT	unknown	FUN_005de500	
-001de5a0	129	DEFAULT	unknown	FUN_005de5a0	
-001de630	136	DEFAULT	unknown	FUN_005de630	
-001de6c0	124	DEFAULT	unknown	FUN_005de6c0	
-001de740	47	DEFAULT	unknown	FUN_005de740	
-001de770	33	DEFAULT	unknown	FUN_005de770	
-001de7a0	106	DEFAULT	unknown	FUN_005de7a0	
-001de810	95	DEFAULT	unknown	FUN_005de810	
-001de870	116	DEFAULT	unknown	FUN_005de870	
-001de8f0	36	DEFAULT	unknown	FUN_005de8f0	
-001de920	36	DEFAULT	unknown	FUN_005de920	
-001de950	25	DEFAULT	unknown	FUN_005de950	
-001de970	76	ANALYSIS	__thiscall	cObjElementFXSceneBeatPickus::vf00	undefined __thiscall(void)
-001de9c0	62	ANALYSIS	__thiscall	cObjElementFXSceneBillArrives_A::vf00	undefined __thiscall(void)
-001dea00	137	ANALYSIS	__thiscall	cObjElementFXSceneBishops::vf00	undefined __thiscall(void)
-001dea90	126	ANALYSIS	__thiscall	cObjElementFXSceneDecontamination::vf00	undefined __thiscall(void)
-001deb10	147	ANALYSIS	__thiscall	cObjElementFXSceneEnterMatrix::vf00	undefined __thiscall(void)
-001debb0	65	ANALYSIS	__thiscall	cObjElementFXSceneHumanCD::vf00	undefined __thiscall(void)
-001dec00	65	ANALYSIS	__thiscall	cObjElementFXSceneTheEndB::vf00	undefined __thiscall(void)
-001dec50	54	ANALYSIS	__thiscall	cObjElementFXSceneYakuzzi::vf00	undefined __thiscall(void)
+001da9d0	497	USER_DEFINED	__thiscall	cObjElementFXItemFade_Update	void __thiscall(void * d, float dt)
+001dabd0	3142	USER_DEFINED	__thiscall	cObjElementFXItemTake_Update	void __thiscall(void * d, float dt)
+001db830	197	USER_DEFINED	__thiscall	cObjElementFXModelFade_Update	void __thiscall(void * d, float dt)
+001db900	180	USER_DEFINED	__thiscall	cObjElementFXModelNoise_Update	void __thiscall(void * d, float dt)
+001db9c0	35	USER_DEFINED	__thiscall	cObjElementFXSistPart_Update	void __thiscall(void * d, float dt)
+001db9f0	35	USER_DEFINED	__thiscall	cObjElementFXSistPartDuDv_Update	void __thiscall(void * d, float dt)
+001dba20	1266	USER_DEFINED	__thiscall	cObjElementFXSparks_Update	void __thiscall(void * d, float dt)
+001dbf20	414	USER_DEFINED	__thiscall	cObjElementFXTrail_Update	void __thiscall(void * d, float dt)
+001dc0c0	611	USER_DEFINED	__cdecl	FX_IsVisible	byte __cdecl(float x, float y, float z, float radius, float maxDist, void * cam, byte sector)
+001dc330	777	USER_DEFINED	__cdecl	FX_ItemBlink	void __cdecl(void * e)
+001dc640	458	USER_DEFINED	__cdecl	FX_ItemFade	void __cdecl(void * e, int mode, float scale, void * target)
+001dc810	365	USER_DEFINED	__cdecl	FX_Sputnik	void __cdecl(void * e, char * name)
+001dc980	125	USER_DEFINED	__cdecl	FX_InRange	byte __cdecl(float x, float from, float to, float * frac)
+001dca00	316	USER_DEFINED	__cdecl	FX_RandomVec	float * __cdecl(float * out, float * lo, float * hi)
+001dcb40	223	USER_DEFINED	__cdecl	FX_RandomDir	float * __cdecl(float * out)
+001dcc20	3	USER_DEFINED	__thiscall	cObjElementFXFadeOutTrail_Attach	void __thiscall(void * d)
+001dcc30	59	USER_DEFINED	__thiscall	cObjElementFXItemFade_Attach	void __thiscall(void * d)
+001dcc70	59	USER_DEFINED	__thiscall	cObjElementFXItemTake_Attach	void __thiscall(void * d)
+001dccb0	10	USER_DEFINED	__thiscall	cObjElementFXModelFade_Attach	void __thiscall(void * d)
+001dccc0	10	USER_DEFINED	__thiscall	cObjElementFXModelNoise_Attach	void __thiscall(void * d)
+001dccd0	151	USER_DEFINED	__thiscall	cObjElementFXSistPart_Attach	void __thiscall(void * d)
+001dcd70	151	USER_DEFINED	__thiscall	cObjElementFXSistPartDuDv_Attach	void __thiscall(void * d)
+001dce10	209	USER_DEFINED	__thiscall	cObjElementFXSparks_Attach	void __thiscall(void * d)
+001dcef0	3	USER_DEFINED	__thiscall	cObjElementFXTrail_Attach	void __thiscall(void * d)
+001dcf00	41	USER_DEFINED	__thiscall	cObjElementFXFadeOutTrail_Alive	byte __thiscall(void * d, void * sys)
+001dcf30	18	USER_DEFINED	__thiscall	cObjElementFXItemFade_Alive	byte __thiscall(void * d, void * sys)
+001dcf50	18	USER_DEFINED	__thiscall	cObjElementFXItemTake_Alive	byte __thiscall(void * d, void * sys)
+001dcf70	40	USER_DEFINED	__thiscall	cObjElementFXModelFade_Alive	byte __thiscall(void * d, void * sys)
+001dcfa0	52	USER_DEFINED	__thiscall	cObjElementFXModelNoise_Alive	byte __thiscall(void * d, void * sys)
+001dcfe0	18	USER_DEFINED	__thiscall	cObjElementFXSistPart_Alive	byte __thiscall(void * d, void * sys)
+001dd000	18	USER_DEFINED	__thiscall	cObjElementFXSistPartDuDv_Alive	byte __thiscall(void * d, void * sys)
+001dd020	18	USER_DEFINED	__thiscall	cObjElementFXSparks_Alive	byte __thiscall(void * d, void * sys)
+001dd040	92	USER_DEFINED	__thiscall	cObjElementFXTrail_Alive	byte __thiscall(void * d, void * sys)
+001dd0a0	47	USER_DEFINED	__thiscall	cObjElementFXFadeOutTrail_Reset	void __thiscall(int arg)
+001dd0d0	115	USER_DEFINED	__thiscall	cObjElementFXItemFade_Reset	void __thiscall(int arg)
+001dd150	125	USER_DEFINED	__thiscall	cObjElementFXItemTake_Reset	void __thiscall(int arg)
+001dd1d0	10	USER_DEFINED	__thiscall	cObjElementFXModelFade_Reset	void __thiscall(int arg)
+001dd1e0	10	USER_DEFINED	__thiscall	cObjElementFXModelNoise_Reset	void __thiscall(int arg)
+001dd1f0	3	USER_DEFINED	__thiscall	cObjElementFXSistPart_Reset	void __thiscall(int arg)
+001dd200	3	USER_DEFINED	__thiscall	cObjElementFXSistPartDuDv_Reset	void __thiscall(int arg)
+001dd210	152	USER_DEFINED	__thiscall	cObjElementFXSparks_Reset	void __thiscall(int arg)
+001dd2b0	11	USER_DEFINED	__thiscall	cObjElementFXTrail_Reset	void __thiscall(int arg)
+001dd2c0	1750	USER_DEFINED	__thiscall	cObjElementFXItemFade_Start	void __thiscall(void * e)
+001dd9a0	658	USER_DEFINED	__thiscall	cObjElementFXItemTake_Start	void __thiscall(void * e)
+001ddc40	62	USER_DEFINED	__thiscall	FXMisc_SetEntity	void __thiscall(void * e)
+001ddc80	17	USER_DEFINED	__thiscall	FXMisc_SetF8	void __thiscall(float v)
+001ddca0	17	USER_DEFINED	__thiscall	FXMisc_SetFC	void __thiscall(float v)
+001ddcc0	17	USER_DEFINED	__thiscall	FXMisc_SetFC2	void __thiscall(float v)
+001ddce0	13	USER_DEFINED	__thiscall	FXMisc_SetI8	void __thiscall(int v)
+001ddcf0	1340	USER_DEFINED	__thiscall	cObjElementFXSparks_Emit	void __thiscall(int n, float px, float py, float pz, float dx, float dy, float dz, float sx, float sy, float sz, float jx, float jy, float jz, float speedMin, float speedMax, float sizeMin, float sizeMax, float scaleHead, float scaleTail, float lifeMin, float lifeMax, float lmMin, float lmMax, float delayMin, float delayMax, uint color, float noiseMin, float noiseMax, float segMin, float segMax, int sprite)
+001de230	184	USER_DEFINED	__thiscall	cObjElementFXSceneBeatPickus_ctor	void * __thiscall(void)
+001de2f0	150	USER_DEFINED	__thiscall	cObjElementFXSceneBillArrives_A_ctor	void * __thiscall(void)
+001de390	192	USER_DEFINED	__thiscall	cObjElementFXSceneBishops_ctor	void * __thiscall(void)
+001de450	163	USER_DEFINED	__thiscall	cObjElementFXSceneDecontamination_ctor	void * __thiscall(void)
+001de500	159	USER_DEFINED	__thiscall	cObjElementFXSceneEnterMatrix_ctor	void * __thiscall(void)
+001de5a0	129	USER_DEFINED	__thiscall	cObjElementFXSceneHumanCD_ctor	void * __thiscall(void)
+001de630	136	USER_DEFINED	__thiscall	cObjElementFXSceneTheEndB_ctor	void * __thiscall(void)
+001de6c0	124	USER_DEFINED	__thiscall	cObjElementFXSceneYakuzzi_ctor	void * __thiscall(void)
+001de740	47	USER_DEFINED	__thiscall	cObjElementFXSceneBeatPickus_dtor	void __thiscall(void)
+001de770	33	USER_DEFINED	__thiscall	cObjElementFXSceneBillArrives_A_dtor	void __thiscall(void)
+001de7a0	106	USER_DEFINED	__thiscall	cObjElementFXSceneBishops_dtor	void __thiscall(void)
+001de810	95	USER_DEFINED	__thiscall	cObjElementFXSceneDecontamination_dtor	void __thiscall(void)
+001de870	116	USER_DEFINED	__thiscall	cObjElementFXSceneEnterMatrix_dtor	void __thiscall(void)
+001de8f0	36	USER_DEFINED	__thiscall	cObjElementFXSceneHumanCD_dtor	void __thiscall(void)
+001de920	36	USER_DEFINED	__thiscall	cObjElementFXSceneTheEndB_dtor	void __thiscall(void)
+001de950	25	USER_DEFINED	__thiscall	cObjElementFXSceneYakuzzi_dtor	void __thiscall(void)
+001de970	76	USER_DEFINED	__thiscall	cObjElementFXSceneBeatPickus_Delete	void * __thiscall(uint flags)
+001de9c0	62	USER_DEFINED	__thiscall	cObjElementFXSceneBillArrives_A_Delete	void * __thiscall(uint flags)
+001dea00	137	USER_DEFINED	__thiscall	cObjElementFXSceneBishops_Delete	void * __thiscall(uint flags)
+001dea90	126	USER_DEFINED	__thiscall	cObjElementFXSceneDecontamination_Delete	void * __thiscall(uint flags)
+001deb10	147	USER_DEFINED	__thiscall	cObjElementFXSceneEnterMatrix_Delete	void * __thiscall(uint flags)
+001debb0	65	USER_DEFINED	__thiscall	cObjElementFXSceneHumanCD_Delete	void * __thiscall(uint flags)
+001dec00	65	USER_DEFINED	__thiscall	cObjElementFXSceneTheEndB_Delete	void * __thiscall(uint flags)
+001dec50	54	USER_DEFINED	__thiscall	cObjElementFXSceneYakuzzi_Delete	void * __thiscall(uint flags)
 001dec90	8638	ANALYSIS	__thiscall	cObjElementFXSceneBeatPickus::vf01	undefined __thiscall(void)
 001e0e50	8695	ANALYSIS	__thiscall	cObjElementFXSceneBillArrives_A::vf01	undefined __thiscall(void)
 001e3050	3440	ANALYSIS	__thiscall	cObjElementFXSceneBishops::vf01	undefined __thiscall(void)
@@ -6159,14 +6162,14 @@ rva	size	source	callconv	name	signature
 00203c30	30	DEFAULT	unknown	FUN_00603c30	
 00203c50	2826	DEFAULT	unknown	FUN_00603c50	
 002048d0	112	DEFAULT	unknown	FUN_006048d0	
-00204940	7	DEFAULT	unknown	FUN_00604940	
+00204940	7	USER_DEFINED	__thiscall	cObjElement_dtor	void __thiscall(void)
 00204950	24	DEFAULT	unknown	FUN_00604950	
 00204970	208	DEFAULT	unknown	FUN_00604970	
 00204a40	229	USER_DEFINED	__thiscall	cDebrisSys::Drop	void __thiscall(void * debris)
 00204b30	69	DEFAULT	unknown	FUN_00604b30	
 00204b80	65	DEFAULT	unknown	FUN_00604b80	
 00204bd0	367	USER_DEFINED	__thiscall	cDebrisSys::NewElement	void * __thiscall(void)
-00204d40	12	DEFAULT	unknown	FUN_00604d40	
+00204d40	12	USER_DEFINED	__thiscall	cDebrisSys_GetIdle	void * __thiscall(void)
 00204d50	128	USER_DEFINED	__thiscall	cDebrisSys::Init	void __thiscall(int n, int e)
 00204dd0	16	DEFAULT	unknown	FUN_00604dd0	
 00204de0	183	DEFAULT	unknown	FUN_00604de0	
@@ -6560,7 +6563,7 @@ rva	size	source	callconv	name	signature
 00219740	32	USER_DEFINED	__cdecl	DebugUtils_DrawLineM	void __cdecl(void * m, void * a, void * b, uint color)
 00219760	24	USER_DEFINED	__cdecl	DebugUtils_DrawLine	void __cdecl(void * a, void * b, uint color)
 00219780	1435	DEFAULT	unknown	FUN_00619780	
-00219d20	41	DEFAULT	unknown	FUN_00619d20	
+00219d20	41	USER_DEFINED	__cdecl	DebugUtils_DrawSphere	void __cdecl(float * pos, float radius, uint color, int slices, int stacks)
 00219d50	60	USER_DEFINED	__cdecl	DebugUtils_DrawTriM	void __cdecl(void * m, void * a, void * b, void * c, uint color)
 00219d90	62	USER_DEFINED	__cdecl	DebugUtils_DrawTri	void __cdecl(void * a, void * b, void * c, uint color)
 00219dd0	116	DEFAULT	unknown	FUN_00619dd0	

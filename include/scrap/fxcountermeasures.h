@@ -155,8 +155,6 @@ vec3_t *__thiscall cTargetLock_GetPoint(cTargetLock *self);
 cEntity *__thiscall cTargetLock_GetEntity(cTargetLock *self);
 /* rva 0x1a26e0: item i of an array of pointers (count at +4, items at +8), NULL out of range */
 void *__thiscall PtrArray_Get(void *self, int i);
-/* rva 0x204ea0: one step of the movement of a debris, 0 when its life ended */
-byte __thiscall cDebris_Update(cDebris *self, cDebrisSys *sys);
 
 /* the engine variables */
 #define g_FXHookFadeTime GAME_DATA(float, 0x449d0c)

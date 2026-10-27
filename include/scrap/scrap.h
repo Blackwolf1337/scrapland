@@ -139,6 +139,8 @@ byte __thiscall cWorld_DeleteDebrisSys(cWorld *world, const char *name);
 void __thiscall cDebrisSys_Init(cDebrisSys *sys, int n, int e);
 cDebris *__thiscall cDebrisSys_NewElement(cDebrisSys *sys);
 void __thiscall cDebrisSys_Drop(cDebrisSys *sys, cDebris *debris);
+/* rva 0x204ea0: the move of a debris of the system, 0 when it is gone */
+byte __thiscall cDebris_Update(cDebris *self, cDebrisSys *sys);
 
 /* entity list by name for the collision tests */
 void *EntityLists_Get(const char *name);
