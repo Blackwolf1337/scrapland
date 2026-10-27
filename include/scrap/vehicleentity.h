@@ -280,11 +280,51 @@ static inline const cVehicleMotorsVtbl *Veh_MotorsVtbl(cVehicleEntity *v) {
 void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt);		/* rva 0x10a730, the flight */
 void __fastcall cVehicleMotors_ctor(void *motors);
 void __fastcall cVehicleMotors_dtor(void *motors);
-void __fastcall cVehicleO648_ctor(void *o);
-void __fastcall cVehicleO648_dtor(void *o);
-void __thiscall cVehicleO648_SetSlot(void *o, int slot);
-void __thiscall cVehicleO648_Update(void *o, float dt);
 void __thiscall cVehicleControls_Tick(void *controls, cEntity *v, float dt);
+
+/*
+ * The target selection of a player ship (o648 at 0x648 and the "Target" after it; src/game/Entities/Vehicle/
+ * Controls.c): a list of the 16 nearest enemies (the attacker of the last TgtRegenerationTime first) the controls
+ * cycle through, made new when the selected one is gone or the list is older than TgtRegenerationTime.
+ */
+#define VEH_TARGETS 16
+
+typedef struct cVehicleTargetList {
+	int count;			/* 0x000 */
+	float wait;			/* 0x004 3 s after a choice, then a new choice when the target is gone */
+	char names[VEH_TARGETS][0x80];	/* 0x008 the nearest first */
+	float time;			/* 0x808 the world time of the last choice */
+	int cur;			/* 0x80c */
+} cVehicleTargetList;
+SD_OFFSET(cVehicleTargetList, time, 0x808);
+SD_SIZE(cVehicleTargetList, 0x810);
+
+typedef struct cVehicleTargets {
+	cEntity *owner;			/* 0x00 */
+	cVehicleTargetList *list;	/* 0x04 only for the player slots */
+	char target[0x80];		/* 0x08 the "Target" of the vehicle */
+} cVehicleTargets;
+SD_SIZE(cVehicleTargets, 0x88);
+
+#define g_TgtRegenerationTime GAME_DATA(float, 0x447b74)
+
+/* the functions take the o648 bytes of the vehicle */
+void *__fastcall cVehicleO648_ctor(void *o);
+void __fastcall cVehicleO648_dtor(void *o);
+/* 1 while the target can not change: an EMIed ship (not a player one with VehicleCenterPadLock) */
+byte __fastcall cVehicleO648_IsBlocked(void *o);
+/* the list made new from the attacker and the enemies by distance, the target its first */
+void __fastcall cVehicleO648_Rebuild(void *o);
+/* the list for a player slot, none for -1 */
+void __thiscall cVehicleO648_SetSlot(void *o, int slot);
+/* the next (or previous) of the list */
+void __thiscall cVehicleO648_Cycle(void *o, byte next);
+/* the entity in the view of the owner (cos > 0.95 within 50000) */
+void __fastcall cVehicleO648_PickInView(void *o);
+/* the target dropped when it is gone, a new one after the wait */
+void __thiscall cVehicleO648_Update(void *o, float dt);
+/* 1 when the list is too old or the target is not active in it */
+byte __fastcall cVehicleO648_IsStale(void *o);
 /* the time of the life sound i set to -t */
 void __thiscall cWithLifeEntity_SetSndTime(cEntity *self, float t, int i);
 void __thiscall cWithLifeEntity_Tick(cEntity *self, float dt);

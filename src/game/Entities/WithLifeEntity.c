@@ -629,3 +629,7 @@ byte __thiscall cWithLifeEntity_IsEMIed(cEntity *self) {
 	(void)self;
 	return 0;
 }
+
+void __thiscall cWithLifeEntity_Vf48(cEntity *self) {
+	(void)self;
+}

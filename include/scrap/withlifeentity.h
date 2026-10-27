@@ -119,6 +119,8 @@ cAction *__thiscall cWithLifeEntity_GetAction(cEntity *self, const char *name);
 void __thiscall cWithLifeEntity_SetActCtrl(cEntity *self, const char *cls);
 /* vf55: 0 */
 byte __thiscall cWithLifeEntity_IsEMIed(cEntity *self);
+/* vf48: nothing (the characters unlink their listeners here) */
+void __thiscall cWithLifeEntity_Vf48(cEntity *self);
 /* the fire of the Napalm over dt: the fire sound, the hits of the burner and the life it takes (not on clients) */
 void __thiscall cWithLifeEntity_Burn(cEntity *self, float dt);
 /* the life sounds fade in and out by their times */

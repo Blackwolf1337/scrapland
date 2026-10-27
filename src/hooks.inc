@@ -7161,3 +7161,28 @@ SD_HOOK(Tabla_Get8, 0x2bc1b0, 57)
 /* module agent: Engine leftovers 0x29c000..0x2b2000 (hooks below this line) */
 
 /* module agent: Big leftovers 0x0f0000..0x110000 (hooks below this line) */
+/* src/game/Entities/MissileEntity.c */
+SD_HOOK(cMissileEntity_AddToSwarm, 0x0f26f0, 941)		/* vf64 */
+SD_HOOK(cMissileEntity_NetRead, 0x0f39b0, 349)			/* vf43 */
+SD_HOOK(cMissileEntity_NetWrite, 0x0f3b10, 299)			/* vf41 */
+SD_HOOK(cMissileEntity_Tick, 0x0f3c40, 2649)			/* vf23 */
+SD_HOOK(cMissileEntity_SetEmbeddedFX, 0x0f4790, 656)		/* vf15 */
+SD_HOOK(cMissileEntity_SetModel, 0x0f4b60, 418)			/* vf12 */
+SD_HOOK(cMissileEntity_Explode, 0x0f5650, 862)			/* vf66 */
+SD_HOOK(cMissileEntity_Swarm, 0x0f59b0, 1381)			/* vf59 */
+/* src/game/Entities/WithLifeEntity.c: a ret with int3 padding up to 0x0f46c0 */
+SD_HOOK(cWithLifeEntity_Vf48, 0x0f46b0, 16)
+/* src/game/Entities/Vehicle/Controls.c */
+SD_HOOK(Controls_TakeEnerNative, 0x0fe9b0, 390)
+SD_HOOK(Controls_TakeLifeNative, 0x0feb40, 347)
+SD_HOOK(Controls_TakeMissNative, 0x0feca0, 387)
+SD_HOOK(Controls_TakePartNative, 0x0fee30, 382)
+SD_HOOK(cVehicleO648_ctor, 0x0fefb0, 20)
+SD_HOOK(cVehicleO648_dtor, 0x0ff010, 22)
+SD_HOOK(cVehicleO648_IsBlocked, 0x0ff030, 60)
+SD_HOOK(cVehicleO648_Rebuild, 0x0ff070, 885)
+SD_HOOK(cVehicleO648_SetSlot, 0x0ff3f0, 135)
+SD_HOOK(cVehicleO648_Cycle, 0x0ff480, 364)
+SD_HOOK(cVehicleO648_PickInView, 0x0ff5f0, 169)
+SD_HOOK(cVehicleO648_Update, 0x0ff6a0, 236)
+SD_HOOK(cVehicleO648_IsStale, 0x0ff790, 257)
