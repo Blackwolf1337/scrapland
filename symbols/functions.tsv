@@ -6742,71 +6742,83 @@ rva	size	source	callconv	name	signature
 0021e4f0	37	USER_DEFINED	__thiscall	CGameTrail_SetLastPosColor	void __thiscall(float x, float y, float z, uint color)
 0021e520	11	USER_DEFINED	__thiscall	CGameTrail_SetPoint	void __thiscall(int i, float * pos, float * width, void * color)
 0021e530	34	USER_DEFINED	__thiscall	CGameTrail_Move	void __thiscall(float x, float y, float z)
-0021e5a0	259	DEFAULT	unknown	FUN_0061e5a0	
-0021e6b0	259	DEFAULT	unknown	FUN_0061e6b0	
-0021e7c0	415	DEFAULT	unknown	FUN_0061e7c0	
-0021e960	5842	DEFAULT	unknown	FUN_0061e960	
-00220040	223	DEFAULT	unknown	FUN_00620040	
-00220150	127	DEFAULT	unknown	FUN_00620150	
-002201d0	1173	DEFAULT	unknown	FUN_006201d0	
-00220670	129	DEFAULT	unknown	FUN_00620670	
-00220700	333	DEFAULT	unknown	FUN_00620700	
-00220850	207	DEFAULT	unknown	FUN_00620850	
-00220960	6	DEFAULT	__thiscall	FUN_00620960	
-00220970	188	DEFAULT	unknown	FUN_00620970	
-00220a30	38	DEFAULT	unknown	FUN_00620a30	
-00220a60	212	DEFAULT	unknown	FUN_00620a60	
-00220b40	129	DEFAULT	unknown	FUN_00620b40	
-00220bd0	141	DEFAULT	unknown	FUN_00620bd0	
-00220c60	190	USER_DEFINED	unknown	RenderTarget_ReleaseD3D	
-00220d20	68	DEFAULT	unknown	FUN_00620d20	
-00220d70	259	DEFAULT	unknown	FUN_00620d70	
-00220e80	259	DEFAULT	unknown	FUN_00620e80	
-00220f90	259	DEFAULT	unknown	FUN_00620f90	
-002210a0	259	DEFAULT	unknown	FUN_006210a0	
-002211b0	4459	DEFAULT	unknown	FUN_006211b0	
-00222320	25	DEFAULT	unknown	FUN_00622320	
-00222340	2328	DEFAULT	unknown	FUN_00622340	
-00222c60	93	DEFAULT	unknown	FUN_00622c60	
-00222cc0	179	DEFAULT	unknown	FUN_00622cc0	
-00222d80	24	DEFAULT	unknown	FUN_00622d80	
-00222da0	1748	DEFAULT	unknown	FUN_00622da0	
-00223480	259	DEFAULT	unknown	FUN_00623480	
-00223590	259	DEFAULT	unknown	FUN_00623590	
-00223730	3388	DEFAULT	unknown	FUN_00623730	
-00224470	259	DEFAULT	unknown	FUN_00624470	
-00224580	259	DEFAULT	unknown	FUN_00624580	
-00224690	259	DEFAULT	unknown	FUN_00624690	
-002247a0	291	DEFAULT	unknown	FUN_006247a0	
-002248d0	295	DEFAULT	unknown	FUN_006248d0	
-00224a00	2686	DEFAULT	unknown	FUN_00624a00	
-00225480	1252	DEFAULT	unknown	FUN_00625480	
-00225970	1096	DEFAULT	unknown	FUN_00625970	
-00225dc0	189	DEFAULT	unknown	FUN_00625dc0	
-00225e80	1112	DEFAULT	unknown	FUN_00625e80	
-002262e0	93	DEFAULT	unknown	FUN_006262e0	
-00226340	332	DEFAULT	unknown	FUN_00626340	
-00226490	24	DEFAULT	unknown	FUN_00626490	
-002264b0	1210	DEFAULT	unknown	FUN_006264b0	
-00226970	2565	DEFAULT	unknown	FUN_00626970	
-00227380	259	DEFAULT	unknown	FUN_00627380	
-00227490	259	DEFAULT	unknown	FUN_00627490	
-002275a0	2773	DEFAULT	unknown	FUN_006275a0	
-002280d0	202	DEFAULT	unknown	FUN_006280d0	
-002281d0	1765	DEFAULT	unknown	FUN_006281d0	
-002288c0	259	DEFAULT	unknown	FUN_006288c0	
-00228a40	2296	DEFAULT	unknown	FUN_00628a40	
-00229340	259	DEFAULT	unknown	FUN_00629340	
-00229450	484	DEFAULT	unknown	FUN_00629450	
-00229640	3798	DEFAULT	unknown	FUN_00629640	
-0022a520	417	DEFAULT	unknown	FUN_0062a520	
-0022a6d0	89	DEFAULT	unknown	FUN_0062a6d0	
-0022a730	839	DEFAULT	unknown	FUN_0062a730	
-0022aa80	46	DEFAULT	unknown	FUN_0062aa80	
-0022aab0	1284	DEFAULT	unknown	FUN_0062aab0	
-0022afc0	78	DEFAULT	unknown	FUN_0062afc0	
-0022b010	136	DEFAULT	unknown	FUN_0062b010	
-0022b0a0	869	DEFAULT	unknown	FUN_0062b0a0	
+0021e5a0	259	USER_DEFINED	__cdecl	RenderTarget_MakeCreditsMatBlur	void __cdecl(void)
+0021e6b0	259	USER_DEFINED	__cdecl	RenderTarget_MakeCreditsMat	void __cdecl(void)
+0021e7c0	415	USER_DEFINED	__cdecl	Credits_Begin	byte __cdecl(void)
+0021e960	5842	USER_DEFINED	__cdecl	Credits_Blur	void __cdecl(void)
+00220040	223	USER_DEFINED	__cdecl	Credits_End	void __cdecl(void)
+00220120	47	USER_DEFINED	__cdecl	Credits_Release	void __cdecl(void)
+00220150	127	USER_DEFINED	__cdecl	Credits_Init	void __cdecl(void)
+002201d0	1173	USER_DEFINED	__cdecl	Credits_Draw	void __cdecl(void)
+00220670	129	USER_DEFINED	__cdecl	RenderTarget_VideoMemory	int __cdecl(void)
+00220700	333	USER_DEFINED	__cdecl	NewsPanel_Begin	byte __cdecl(void)
+00220850	207	USER_DEFINED	__cdecl	NewsPanel_End	void __cdecl(void)
+00220920	53	USER_DEFINED	__cdecl	NewsPanel_Release	void __cdecl(void)
+00220960	6	USER_DEFINED	__cdecl	NewsPanel_GetTarget	void * __cdecl(void)
+00220970	188	USER_DEFINED	__cdecl	NewsPanel_Init	void __cdecl(void)
+00220a30	38	USER_DEFINED	__cdecl	RenderTarget_Pow2Size	int __cdecl(int n)
+00220a60	212	USER_DEFINED	__cdecl	RenderTarget_Mode	int __cdecl(char * name)
+00220b40	129	USER_DEFINED	__cdecl	RenderTarget_Begin	byte __cdecl(char * name)
+00220bd0	141	USER_DEFINED	__cdecl	RenderTarget_End	byte __cdecl(char * name)
+00220c60	190	USER_DEFINED	__cdecl	RenderTarget_ReleaseD3D	void __cdecl(void)
+00220d20	68	USER_DEFINED	__cdecl	RenderTarget_InitD3D	void __cdecl(void)
+00220d70	259	USER_DEFINED	__cdecl	RenderTarget_MakeBloomMatBlur	void __cdecl(void)
+00220e80	259	USER_DEFINED	__cdecl	RenderTarget_MakeBloomMatFilter	void __cdecl(void)
+00220f90	259	USER_DEFINED	__cdecl	RenderTarget_MakeBloomMatShow	void __cdecl(void)
+002210a0	259	USER_DEFINED	__cdecl	RenderTarget_MakeBloomMatTarget	void __cdecl(void)
+002211b0	4459	USER_DEFINED	__cdecl	Bloom_Blur	void __cdecl(void)
+00222320	25	USER_DEFINED	__cdecl	Bloom_Render	void __cdecl(void)
+00222340	2328	USER_DEFINED	__cdecl	Bloom_Filter	void __cdecl(void)
+00222c60	93	USER_DEFINED	__cdecl	Bloom_Release	void __cdecl(void)
+00222cc0	179	USER_DEFINED	__cdecl	Bloom_Init	void __cdecl(void)
+00222d80	24	USER_DEFINED	__cdecl	Bloom_IsOn	byte __cdecl(void)
+00222da0	1748	USER_DEFINED	__cdecl	Bloom_Show	void __cdecl(void)
+00223480	259	USER_DEFINED	__cdecl	RenderTarget_MakeBlurMatCopy	void __cdecl(void)
+00223590	259	USER_DEFINED	__cdecl	RenderTarget_MakeBlurMatTarget	void __cdecl(void)
+002236a0	15	USER_DEFINED	__cdecl	Blur_Render	void __cdecl(void)
+002236b0	21	USER_DEFINED	__cdecl	Blur_Release	void __cdecl(void)
+002236d0	20	USER_DEFINED	__cdecl	Blur_Init	void __cdecl(void)
+002236f0	59	USER_DEFINED	__cdecl	Blur_IsOn	byte __cdecl(void)
+00223730	3388	USER_DEFINED	__cdecl	Blur_Draw	void __cdecl(void)
+00224470	259	USER_DEFINED	__cdecl	RenderTarget_MakeDuDvMatCopy	void __cdecl(void)
+00224580	259	USER_DEFINED	__cdecl	RenderTarget_MakeDuDvMatDebug	void __cdecl(void)
+00224690	259	USER_DEFINED	__cdecl	RenderTarget_MakeDuDvMatFilter	void __cdecl(void)
+002247a0	291	USER_DEFINED	__cdecl	RenderTarget_MakeDuDvMatRTarget	void __cdecl(void)
+002248d0	295	USER_DEFINED	__cdecl	DuDv_RenderBump	void __cdecl(void)
+00224a00	2686	USER_DEFINED	__cdecl	DuDv_CheckCaps	byte __cdecl(void)
+00225480	1252	USER_DEFINED	__cdecl	DuDv_CopyToTarget	void __cdecl(void)
+00225970	1096	USER_DEFINED	__cdecl	DuDv_Debug	void __cdecl(void)
+00225dc0	189	USER_DEFINED	__cdecl	DuDv_Render	void __cdecl(void)
+00225e80	1112	USER_DEFINED	__cdecl	DuDv_Filter	void __cdecl(void)
+002262e0	93	USER_DEFINED	__cdecl	DuDv_Release	void __cdecl(void)
+00226340	332	USER_DEFINED	__cdecl	DuDv_Init	void __cdecl(void)
+00226490	24	USER_DEFINED	__cdecl	DuDv_IsOn	byte __cdecl(void)
+002264b0	1210	USER_DEFINED	__cdecl	DuDv_Copy	void __cdecl(void)
+00226970	2565	USER_DEFINED	__cdecl	DuDv_Draw	void __cdecl(byte check)
+00227380	259	USER_DEFINED	__cdecl	RenderTarget_MakeMotionBlurMatAdd	void __cdecl(void)
+00227490	259	USER_DEFINED	__cdecl	RenderTarget_MakeMotionBlurMatTarget	void __cdecl(void)
+002275a0	2773	USER_DEFINED	__cdecl	MotionBlur_Add	void __cdecl(void)
+00228080	20	USER_DEFINED	__cdecl	MotionBlur_Render	void __cdecl(void)
+002280a0	47	USER_DEFINED	__cdecl	MotionBlur_Release	void __cdecl(void)
+002280d0	202	USER_DEFINED	__cdecl	MotionBlur_Init	void __cdecl(void)
+002281a0	41	USER_DEFINED	__cdecl	MotionBlur_IsOn	byte __cdecl(void)
+002281d0	1765	USER_DEFINED	__cdecl	MotionBlur_Draw	void __cdecl(void)
+002288c0	259	USER_DEFINED	__cdecl	RenderTarget_MakeRadialBlurMat	void __cdecl(void)
+002289d0	15	USER_DEFINED	__cdecl	RadialBlur_Render	void __cdecl(void)
+002289e0	11	USER_DEFINED	__cdecl	RadialBlur_Release	void __cdecl(void)
+00228a00	50	USER_DEFINED	__cdecl	RadialBlur_IsOn	byte __cdecl(void)
+00228a40	2296	USER_DEFINED	__cdecl	RadialBlur_Draw	void __cdecl(void)
+00229340	259	USER_DEFINED	__cdecl	RenderTarget_MakeSceneMatCopy	void __cdecl(void)
+00229450	484	USER_DEFINED	__cdecl	Scene_Begin	byte __cdecl(void)
+00229640	3798	USER_DEFINED	__cdecl	Scene_CheckCaps	byte __cdecl(void)
+0022a520	417	USER_DEFINED	__cdecl	Scene_End	void __cdecl(void)
+0022a6d0	89	USER_DEFINED	__cdecl	Scene_Release	void __cdecl(void)
+0022a730	839	USER_DEFINED	__cdecl	Scene_Init	void __cdecl(void)
+0022aa80	46	USER_DEFINED	__cdecl	Scene_TargetBackBuffer	void __cdecl(void)
+0022aab0	1284	USER_DEFINED	__cdecl	Scene_DrawSplit	void __cdecl(void)
+0022afc0	78	USER_DEFINED	__cdecl	Scene_Swap	void __cdecl(void)
+0022b010	136	USER_DEFINED	__cdecl	RenderTarget_PixelEqual	byte __cdecl(int pitchA, void * bitsA, int pitchB, void * bitsB, int x, int bpp, int y, int tol)
+0022b0a0	869	USER_DEFINED	__cdecl	RenderTarget_DrawTexQuad	void __cdecl(void * quad, uint color, void * tex)
 0022b410	46	USER_DEFINED	__cdecl	Ruta_GetDrive	void __cdecl(int *drive)
 0022b450	304	USER_DEFINED	__cdecl	Ruta_MakeDir	int __cdecl(char *ruta)
 0022b590	168	USER_DEFINED	__cdecl	Wild_MatchSet	char * __cdecl(char *pattern, char *s)
@@ -7935,7 +7947,7 @@ rva	size	source	callconv	name	signature
 0027f9f0	40	DEFAULT	unknown	FUN_0067f9f0	
 0027fa20	69	DEFAULT	unknown	FUN_0067fa20	
 0027fa70	1048	DEFAULT	unknown	FUN_0067fa70	
-0027fe90	1125	DEFAULT	unknown	FUN_0067fe90	
+0027fe90	1125	USER_DEFINED	__cdecl	Surface_SaveShot	byte __cdecl(void * surf)
 00280310	186	DEFAULT	unknown	FUN_00680310	
 002803d0	140	DEFAULT	unknown	FUN_006803d0	
 00280460	329	DEFAULT	unknown	FUN_00680460	
