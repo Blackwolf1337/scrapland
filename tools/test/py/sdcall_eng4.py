@@ -354,7 +354,8 @@ en4free(en4col)
 for b in (0, 1, -1, 2):
 	check('en4 Motor_BoolStr' + fmt((b,)), lambda b=b: SDTest.Call(0x22fdb0, 'si', b)[0])
 en4mv = en4z(0x19c)
-en4set(en4mv, (3.0,) * 103)
+en4set(en4mv, (3.0,) * 64)
+en4set(en4mv + 0x100, (3.0,) * 39)
 check('en4 cMusicVoice_ctor', lambda: (SDTest.Call(0x231180, 'tii', en4mv)[0] == en4mv, en4b(en4mv), en4words(en4mv + 0x104, 3),
 	en4b(en4mv + 0x10c), en4i(en4mv + 0x10d), en4i(en4mv + 0x18c), en4words(en4mv + 0x190, 3)))
 check('en4 cMusicVoice_dtor', lambda: SDTest.Call(0x2311b0, 'tvi', en4mv)[0:0])
