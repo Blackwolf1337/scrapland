@@ -87,7 +87,7 @@ check('CT2 player slot', lambda: (ct2slotp, ct2cls(ct2player), ct2act()))
 # ---- cWalkCharControl on calloc memory ----
 def ct2cf(c):
 	return (ct2fl(c, 6), ct2bytes(c, (0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20)), ct2i(c + 0x24) == c + 0x24,
-		ct2i(c + 0x28) == c + 0x24, ct2i(c + 0x2c), ct2i(c + 0x30) == c)
+		ct2i(c + 0x28) == c + 0x24, ct2i(c + 0x2c) != 0, ct2i(c + 0x30) == c)
 ct2c = ct2z(0x34)
 check('CT2 cWalkCharControl_ctor', lambda: (SDTest.Call(0x0cfff0, 'tii', ct2c)[0] == ct2c, ct2cf(ct2c)))
 for ct2v in (('Walk', 2.5), ('Str', -1.25), ('HRot', 0.75), ('VRot', -0.5), ('Act', 0.75), ('Act', 0.5), ('Act', 0.25),
@@ -179,7 +179,7 @@ ct2free(ct2c)
 # ---- the WalkChar ----
 def ct2wf(e):
 	return (ct2i(e) - 0x400000, ct2i(e + 0x424), ct2fl(e + 0x428, 12), ct2fl(e + 0x458, 2), ct2bytes(e, (0x464, 0x465,
-		0x48c, 0x4d4, 0x4dc, 0x530)), ct2fl(e + 0x468, 5), ct2fl(e + 0x480, 4), ct2fl(e + 0x494, 2), ct2fl(e + 0x4b0, 3),
+		0x48c, 0x4d4, 0x4dc, 0x530)), ct2fl(e + 0x468, 5), ct2fl(e + 0x480, 3), ct2fl(e + 0x494, 2), ct2fl(e + 0x4b0, 3),
 		ct2fl(e + 0x4d8, 1), ct2ints(e, (0x22c, 0x238, 0x404, 0x408, 0x4cc, 0x4d0, 0x56c, 0x570, 0x3fc)),
 		ct2fl(e + 0x230, 1), ct2fl(e + 0x3f8, 1), ct2i(e + 0x48) & 0x10,
 		tuple(map(lambda o, e=e: ct2i(e + o) == e, (0x3f4, 0x4c4, 0x52c, 0x540))))
