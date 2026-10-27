@@ -293,7 +293,7 @@ void __thiscall cItemEntity_Tick(cItemEntity *self, float dt) {
 	vec3_t to, hit;
 
 	if (Net_IsNetEntity(Item_Ent(self))) {
-		cObjNet *net = self->net;
+		cNetController *net = self->net;
 		if (self->base.pos.x != net->pos.x || self->base.pos.y != net->pos.y || self->base.pos.z != net->pos.z) {
 			self->base.pos.x = net->pos.x;
 			self->base.pos.y = net->pos.y;

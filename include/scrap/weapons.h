@@ -8,12 +8,15 @@
 #ifndef SCRAP_WEAPONS_H
 #define SCRAP_WEAPONS_H
 
+#include "scrap/autoaim.h"
+#include "scrap/controls.h"
 #include "scrap/crt.h"
 #include "scrap/entity.h"
 #include "scrap/filesys.h"
 #include "scrap/fxweapons.h"
 #include "scrap/missileentity.h"
 #include "scrap/sound.h"
+#include "scrap/vehicleattack.h"
 #include "scrap/world.h"
 
 typedef cTargetLock cWeaponManager;
@@ -65,23 +68,7 @@ static inline byte Vehicle_IsEMIed(cEntity *e) {
 #define Controls_FirePrev(c) ((c)[0x20])
 #define Controls_CM(c) ((c)[0x23])			/* the ammo button (countermeasures) */
 #define Controls_CMPrev(c) ((c)[0x21])
-int __thiscall Controls_GetWeapon(byte *self);		/* rva 0xffb90 */
-/* clears both fire buttons and +0x18 when the weapon changes (rva 0xffc40) */
-void __thiscall Controls_SetWeapon(byte *self, int w);
-/* the two force feedback motors: strength and fade time (rva 0xffc60, 0xffc90) */
-void __thiscall Controls_RumbleA(byte *self, float strength, float time);
-void __thiscall Controls_RumbleB(byte *self, float strength, float time);
 
-/* the aim help of a vehicle (+0x6d0): the angle (its cosine at +4), the range */
-void __thiscall cAutoAim_SetAngle(void *self, float ang);	/* rva 0xfe780 */
-void __thiscall cAutoAim_SetRange(void *self, float range);	/* rva 0xfe7b0 */
-void __thiscall cAutoAim_Update(void *self, cEntity *owner, float dt);	/* rva 0xfe1f0 */
-/* the shots of the vehicle (+0x298): on the entity of that name or a point, n more; the attacker of the vehicle
- * by name; every frame after the weapons (rva 0xf9c10, 0xf9d00, 0xf9b60, 0xf9d90) */
-void __thiscall cVehicleAttack_ShotAt(void *self, const char *name, int n);
-void __thiscall cVehicleAttack_ShotAtPoint(void *self, const vec3_t *p, int n);
-void __thiscall cVehicleAttack_HitBy(void *self, const char *name);
-void __thiscall cVehicleAttack_Update(void *self);
 /* the debris cloud on a vehicle for time (rva 0x10a150) */
 void __thiscall cVehicleEntity_SetCloud(cEntity *self, float time, byte on);
 /* the shot effect of the weapon slot (rva 0x103500) */

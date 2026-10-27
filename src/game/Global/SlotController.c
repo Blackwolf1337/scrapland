@@ -5,20 +5,7 @@
  */
 #include "scrap/game.h"
 #include "scrap/mathlib.h"
-
-typedef struct cSlotController cSlotController;
-
-typedef struct cSlotControllerVtbl {
-	void(__thiscall *Next)(cSlotController *self);	/* 0x0 the next interval */
-} cSlotControllerVtbl;
-
-struct cSlotController {
-	const cSlotControllerVtbl *vftable;	/* 0x00 */
-	float time;				/* 0x04 left until the slot */
-	float interval;				/* 0x08 the interval running */
-	float minDiff;				/* 0x0c the fixed interval, the minimum of cRndSlotController */
-	float maxDiff;				/* 0x10 cRndSlotController only */
-};
+#include "scrap/slotcontroller.h"
 
 #define cSlotController_vftable ((const cSlotControllerVtbl *)Game_Ptr(0x3bbaac))
 #define cRndSlotController_vftable ((const cSlotControllerVtbl *)Game_Ptr(0x3bbab4))

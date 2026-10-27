@@ -31,5 +31,11 @@ float __fastcall cTimer_GetDelta(cTimer *self);
 float __thiscall Timer_GetTime(cTimer *self);
 void __thiscall Timer_SetTime(cTimer *self, float t);
 void __thiscall Timer_SetSpeed(cTimer *self, float speed);
+float __fastcall cTimer_GetSpeedTo(cTimer *self);
+float __fastcall cTimer_GetBlendTime(cTimer *self);
+void __thiscall cTimer_SetBlend(cTimer *self, float time);
+void __thiscall cTimer_SetSpeedTo(cTimer *self, float speed);
+/* the speed (CHECK >= 0) unless paused */
+void __thiscall cTimer_SetSpeedChecked(cTimer *self, float speed);
 
 #endif

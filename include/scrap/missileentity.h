@@ -8,6 +8,7 @@
 #ifndef SCRAP_MISSILEENTITY_H
 #define SCRAP_MISSILEENTITY_H
 
+#include "scrap/objentity.h"
 #include "scrap/pyfunction.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/timer.h"
@@ -84,7 +85,6 @@ SD_SIZE(cMissileEntity, CMISSILEENTITY_SIZE);
 
 /* the WithLife entities the missiles touched, by name (4 of 0x80) */
 #define g_MissileHits ((char (*)[0x80])Game_Ptr(0x4476b8))
-#define g_MissileUpdating GAME_DATA(int, 0x447a08)	/* 1 during the update of a missile */
 
 /* the base classes (not decompiled yet) */
 void __fastcall cWithLifeEntity_dtor(cEntity *self);
@@ -98,9 +98,6 @@ void __thiscall cWithLifeEntity_SetActive(cEntity *self, byte on);
 void __thiscall cWithLifeEntity_Update(cEntity *self);
 byte __thiscall cWithLifeEntity_VarS(cEntity *self, const char *name, char **s, int set);
 byte __thiscall cWithLifeEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
-/* the entity timer from the world timer */
-void __thiscall cObjEntity_UpdateTimer(cEntity *self);
-void __thiscall cObjEntity_SetAng(cEntity *self, const vec3_t *ang);
 /* a debris element: the move of dt, and back to the free ones of its system */
 void __thiscall cDebris_Step(struct cDebris *self, float dt);
 void __thiscall cDebrisSys_Release(struct cDebrisSys *sys, struct cDebris *d);

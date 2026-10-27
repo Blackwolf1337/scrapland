@@ -22,6 +22,8 @@ byte Net_IsServer(void);
 byte Net_ModifyUsrData(int arg);
 byte Net_ServerChangeLevel(const char *level);
 int Net_AddResource(const char *name);
+/* the name of network resource i, "" outside a network game */
+const char *Net_GetResourceName(int i);
 byte Net_InitServer(const char *name, int a, int b, int c);
 byte Net_CloseServer(const char *msg);
 const char *Net_GetServerName(void);

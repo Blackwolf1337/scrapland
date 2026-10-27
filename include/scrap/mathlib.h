@@ -9,6 +9,7 @@
 #define M_PI_D 3.141592653589793	/* the double constants the engine uses (rva 0x3a3700, 0x3a3718) */
 #define M_2PI_D 6.283185307179586	/* rva 0x3b45c8 */
 #define M_2PI_F 6.2831855f		/* rva 0x3a3a34 */
+#define M_PI_F 3.1415927f		/* rva 0x3a3a30 */
 #define M_1_PI_D 0.3183098861837907	/* rva 0x3d9ae0 */
 #define DEG_PER_PI 180.0
 
@@ -119,6 +120,7 @@ double Game_Acos(double x);
 double Game_Cos(double x);
 double Game_Sin(double x);
 double Game_Atan2(double y, double x);	/* _CIatan2 */
+float Game_Atan2F(double y, double x);	/* _CIatan2 stored as a float (fstp DWORD) */
 double Game_Asin(double x);
 double Game_Exp(double x);
 double Game_Log(double x);
