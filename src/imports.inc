@@ -20,13 +20,7 @@ SD_IMPORT(ShipRegen_Set, 0x1564c0)
 SD_IMPORT(FX_ShipExplosion, 0x1f4d50)
 
 /* engine: Actions/ */
-SD_IMPORT(cActClassList_Create, 0x061f70)
-SD_IMPORT(cActClassList_Get, 0x062250)
-SD_IMPORT(cActClassList_Del, 0x062440)
 SD_IMPORT(cActClass_CreateAction, 0x05fe90)
-SD_IMPORT(cActClass_GetAction, 0x060590)
-SD_IMPORT(cActClass_Var, 0x060770)
-SD_IMPORT(cAction_Var, 0x064280)
 
 /* engine: AI/ (include/scrap/ai.h) */
 SD_IMPORT(CAStar_ctor, 0x099330)
@@ -179,7 +173,6 @@ SD_IMPORT(PySys_GetObject, 0x2f4390)	/* sysmodule.c */
 SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 
 /* engine: FileSys/ (include/scrap/filesys.h) */
-SD_IMPORT(cStringList_NewNode, 0x0605f0)
 
 /* engine3d: Engine/ListaVert.cpp and Engine/render.cpp (include/scrap/listavert.h, mallatri.h) */
 
@@ -401,11 +394,8 @@ SD_IMPORT(cDebrisSys_IsIdle, 0x204dd0)
 SD_IMPORT(cDebris_Move, 0x204de0)
 SD_IMPORT(CGameLensFlare_ctor, 0x232e80)
 SD_IMPORT(CGameLensFlare_dtor, 0x232f10)
-SD_IMPORT(Vec3_Angle, 0x066ad0)
 
 /* module agent: App/CApp+CWinApp (imports below this line) */
-SD_IMPORT(ActClassList_Done, 0x062140)
-SD_IMPORT(ActClassList_Init, 0x0623a0)
 SD_IMPORT(GogListeners_ctor, 0x136f10)
 SD_IMPORT(Gog_GetLanguage, 0x137140)
 SD_IMPORT(Gog_Init, 0x137250)
@@ -493,9 +483,6 @@ SD_IMPORT(FXSwarm_Hit, 0x1ffea0)
 SD_IMPORT(cObjElementFXInfernoExplosion_Explode, 0x201eb0)
 
 /* module agent: Entities/Entity+Game/Doors.cpp (imports below this line) */
-SD_IMPORT(cActCtrl_Play, 0x063150)
-SD_IMPORT(cActCtrl_SetDefLoop, 0x063210)
-SD_IMPORT(cActCtrl_IsActive, 0x063dc0)
 SD_IMPORT(cWithLifeEntity_dtor, 0x12b780)
 SD_IMPORT(cWithLifeEntity_VarF, 0x12bb30)
 SD_IMPORT(cWithLifeEntity_UpdateOff, 0x12bf10)
@@ -513,7 +500,6 @@ SD_IMPORT(cDebrisSys_Release, 0x2053d0)
 
 /* module agent: World/FX/FXScene.cpp (imports below this line) */
 SD_IMPORT(CGameLensFlare_SetF18, 0x232ff0)
-SD_IMPORT(cActCtrl_GetLayer, 0x062c70)
 
 /* module agent: World/FX/FXVehicle.cpp (imports below this line) */
 
@@ -583,14 +569,9 @@ SD_IMPORT(cMonitorScorer_DrawMonitor, 0x168c60)
 SD_IMPORT(cRadarScorer_DrawRadar, 0x16d570)
 SD_IMPORT(cPlayerInput_PressKey, 0x1396b0)
 SD_IMPORT(cActionSet_HoldPressed, 0x139810)
-SD_IMPORT(cActCtrl_GetActionName, 0x062c40)
-SD_IMPORT(cActCtrl_PlayNew, 0x0631c0)
 SD_IMPORT(CNodesWorld2D_Generate, 0x0b2f60)
 
 /* module agent: Entities/Char/Type part 2+WalkCharControl (imports below this line) */
-SD_IMPORT(cActCtrl_PlayAction, 0x063030)
-SD_IMPORT(cActCtrl_TurnHead, 0x062dc0)
-SD_IMPORT(cActClassCam_Update, 0x0616e0)
 
 /* module agent: Logic part 1 (AlarmStatus..Domination) (imports below this line) */
 SD_IMPORT(Taunts_Play, 0x155210)
@@ -607,7 +588,6 @@ SD_IMPORT(crt_ltoa, 0x34d525)
 SD_IMPORT(Logic_RandomCar, 0x154b20)
 SD_IMPORT(PoliceAI_RestoreParams, 0x15b2f0)
 SD_IMPORT(PoliceAI_RandomParams, 0x15b3c0)
-SD_IMPORT(cActCtrl_GetDefLoopName, 0x062c80)
 SD_IMPORT(cMessengers_Think, 0x153350)
 SD_IMPORT(cRustyLocalLogic_ctor, 0x156730)
 SD_IMPORT(cSputnikJunkyardLocalLogic_ctor, 0x159220)
@@ -615,9 +595,6 @@ SD_IMPORT(cPoliceBossLocalLogic_ctor, 0x156010)
 
 /* module agent: Entities/Char/WalkCharEntity.cpp (imports below this line) */
 SD_IMPORT(cWithLifeEntity_SetEmbeddedFX, 0x12c7f0)
-SD_IMPORT(cAIBankDirector_ctor, 0x066120)
-SD_IMPORT(cAIBankMaster_ctor, 0x066560)
-SD_IMPORT(cAIBishop_ctor, 0x0669c0)
 SD_IMPORT(cAIChar_ctor, 0x0670b0)
 SD_IMPORT(cAIDesktop_ctor, 0x084310)
 SD_IMPORT(cAIGear_ctor, 0x084790)
@@ -720,6 +697,13 @@ SD_IMPORT_STDCALL(Wsock_WSACleanup, 0, 0x20da20)
 /* module agent: Logic part 4 (Nurse..Traffic) (imports below this line) */
 
 /* module agent: Actions and Events (ActClass..AIBishop) (imports below this line) */
+SD_IMPORT(cActClass_ctor, 0x05f890)
+SD_IMPORT(cAIChar_dtor, 0x067320)
+SD_IMPORT(cAIChar_SetRanges, 0x06b330)
+SD_IMPORT(cAIChar_SetStateArgs, 0x06bc20)
+SD_IMPORT(cAIControlBankDirector_ctor, 0x081af0)
+SD_IMPORT(cAIControlBankMaster_ctor, 0x081e40)
+SD_IMPORT(cAIControlBishop_ctor, 0x082620)
 
 /* module agent: AI/AIChar.cpp (imports below this line) */
 

@@ -239,6 +239,8 @@ void __thiscall cSoundPS_Update(cSoundPS *self, float dt);
 void Sound_Update(float dt);
 void Sound_UpdateMusic(float dt);
 void Sound_StopTalk(void);
+/* the talk of the character of that name ended (StopStreamingVoice) */
+void Sound_TalkDone(const char *name);
 
 /*
  * Sound/SndInterface.cpp (src/game/Sound/SndInterface.c): the sounds of an entity, set through its variables
