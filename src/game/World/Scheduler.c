@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "scrap/scheduler.h"
+#include "scrap/world.h"
 
 void __thiscall SchedList_Add(cSchedList *list, cScheduledFunc *const *f) {
 	cSchedNode *node = DList_NewNode(list, sizeof(*node));
@@ -149,11 +150,22 @@ void __thiscall Scheduler_Run(cScheduledFuncStack *self, float now) {
 	}
 }
 
-cScheduledFuncStack *__thiscall cScheduledFuncStack_Delete(cScheduledFuncStack *self, byte flags) {
+void __fastcall cScheduledFunc_dtor(cScheduledFunc *self) {
+	Py_XDECREF(self->func);
+	Py_XDECREF(self->params);
+}
+
+void __thiscall cScheduledFuncStack_dtor(void *stack) {
+	cScheduledFuncStack *self = stack;
+
 	self->vftable = Game_Ptr(CSCHEDULEDFUNCSTACK_VFTABLE);
 	Scheduler_Clear(self);
 	SchedList_Clear(&self->list);
 	DList_FreePool(&self->list, sizeof(cSchedNode));
+}
+
+cScheduledFuncStack *__thiscall cScheduledFuncStack_Delete(cScheduledFuncStack *self, byte flags) {
+	cScheduledFuncStack_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}

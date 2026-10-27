@@ -103,19 +103,11 @@ SD_IMPORT(crt_floor, 0x345130)
 /* engine: Menu/ (include/scrap/scorer.h) */
 
 /* engine: functions behind the Scrap module (include/scrap/scrap.h) */
-SD_IMPORT(Elements_Call, 0x202ea0)
-SD_IMPORT(Elements_Create, 0x203000)
-SD_IMPORT(Floor_Get, 0x203af0)
 SD_IMPORT(Achievement_Unlock, 0x137470)
 SD_IMPORT(Steam_SetAchievement, 0x1a66a0)
 SD_IMPORT(Steam_GetID, 0x134720)
 SD_IMPORT(Steam_GetTicket, 0x1345e0)
 SD_IMPORT(Gog_GetID, 0x137160)
-SD_IMPORT(Anm_Preload, 0x2051a0)
-SD_IMPORT(Object3D_Preload, 0x205140)
-SD_IMPORT(cDebrisSys_Init, 0x204d50)
-SD_IMPORT(cDebrisSys_NewElement, 0x204bd0)
-SD_IMPORT(cDebrisSys_Drop, 0x204a40)
 
 /* engine: Input/ */
 SD_IMPORT(ActionSet_IsNamed, 0x133a30)
@@ -283,19 +275,6 @@ SD_IMPORT_STDCALL(D3DX_LoadSurfaceFromSurface, 32, 0x004dbf)
 /* src/game/ScrapEng/ScrapEngCollision.c (called from suelo.cpp and checkbbox.cpp, include/scrap/suelo.h) */
 
 /* module agent: World/World.cpp (imports below this line) */
-SD_IMPORT(Elements_ctor, 0x202e10)
-SD_IMPORT(Elements_dtor, 0x202e40)
-SD_IMPORT(Elements_Update, 0x203550)
-SD_IMPORT(Floor_ctor, 0x203580)
-SD_IMPORT(Floor_dtor, 0x203a00)
-SD_IMPORT(cDebrisSys_ctor, 0x2048d0)
-SD_IMPORT(cDebrisSys_dtor, 0x204950)
-SD_IMPORT(cDebrisSys_FreeActive, 0x204b30)
-SD_IMPORT(cDebrisSys_FreeIdle, 0x204b80)
-SD_IMPORT(cDebrisSys_ShowInfo, 0x205210)
-SD_IMPORT(cDebrisSys_SetName, 0x205450)
-SD_IMPORT(cDebrisSys_Update, 0x205490)
-SD_IMPORT(cScheduledFuncStack_dtor, 0x2056f0)
 
 /* module agent: ScrapEng/ScrapEngWorld.cpp (imports below this line) */
 
@@ -339,10 +318,6 @@ SD_IMPORT_STDCALL(FSOUND_GetReserved, 4, 0x317a56)
 SD_IMPORT_STDCALL(FSOUND_GetCurrentSample, 4, 0x317a62)
 
 /* module agent: World/CollisionGrid+FX/FXMisc.cpp (imports below this line) */
-SD_IMPORT(cObjElement_dtor, 0x204940)
-SD_IMPORT(cDebrisSys_GetIdle, 0x204d40)
-SD_IMPORT(cDebrisSys_IsIdle, 0x204dd0)
-SD_IMPORT(cDebris_Move, 0x204de0)
 SD_IMPORT(CGameLensFlare_ctor, 0x232e80)
 SD_IMPORT(CGameLensFlare_dtor, 0x232f10)
 
@@ -367,11 +342,6 @@ SD_IMPORT(App_SetExceptionFilter, 0x2333b0)
 SD_IMPORT(crt_srand, 0x323c50)
 
 /* module agent: World/FX/FXCountermeasures+FXElementsOrbit+FXElementsPress.cpp (imports below this line) */
-SD_IMPORT(cDebris_Update, 0x204ea0)
-SD_IMPORT(cMapElement_ctor, 0x202ca0)
-SD_IMPORT(cMapElement_dtor, 0x202e20)
-SD_IMPORT(cMapElement_Init, 0x203310)
-SD_IMPORT(cMapElement_Update, 0x203520)
 
 /* module agent: World/FX/FXElements+FXElementsAB.cpp (imports below this line) */
 
@@ -433,8 +403,6 @@ SD_IMPORT(FXSwarm_Hit, 0x1ffea0)
 SD_IMPORT(cObjElementFXInfernoExplosion_Explode, 0x201eb0)
 
 /* module agent: Entities/Entity+Game/Doors.cpp (imports below this line) */
-SD_IMPORT(cDebris_Step, 0x204970)
-SD_IMPORT(cDebrisSys_Release, 0x2053d0)
 
 /* module agent: World/FX/FXChar.cpp (imports below this line) */
 
@@ -623,3 +591,4 @@ SD_IMPORT(crt_close, 0x358d98)
 /* module agent: Big FX leftovers 0x1eab00..0x200000 (imports below this line) */
 
 /* module agent: Engine leftovers 0x200000..0x240000 (imports below this line) */
+SD_IMPORT(cFXElementsLensFlare_ctor, 0x1cf8b0)
