@@ -41,8 +41,6 @@ SD_IMPORT(cAction_Var, 0x064280)
 /* engine: AI/ (include/scrap/ai.h) */
 SD_IMPORT(CNodesWorld_ctor, 0x0a21b0)
 SD_IMPORT(CNodesWorld2D_ctor, 0x0ad950)
-SD_IMPORT(CNodesTrafficInDoor_ctor, 0x0a08a0)
-SD_IMPORT(CNodesTraffic_ctor, 0x09b970)
 SD_IMPORT(CAStar_ctor, 0x099330)
 SD_IMPORT(CAStar2D_ctor, 0x09a2f0)
 SD_IMPORT(cAIVehicleGroup_ctor, 0x096bf0)
@@ -708,3 +706,8 @@ SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
 /* module agent: Scorer/AbstractText+Button+Circuit+Head+Mission+Monitor+Radar (imports below this line) */
 
 /* module agent: Entities/Char/Type part 1 (imports below this line) */
+SD_IMPORT(CNodesWorld_TestPath, 0x0a32f0)
+SD_IMPORT(CNodesWorld_PointSeen, 0x0ac120)
+SD_IMPORT(cAIVehicle_GetVehicle, 0x08a160)
+SD_IMPORT(cAIVehicle_Get1A4, 0x08b7a0)
+SD_IMPORT(cAIVehicle_PlaceOnTrack, 0x08d930)

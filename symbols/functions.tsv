@@ -1714,7 +1714,7 @@ rva	size	source	callconv	name	signature
 0008a110	26	ANALYSIS	__thiscall	cAIVehicle::vf08	undefined __thiscall(void)
 0008a130	7	DEFAULT	unknown	FUN_0048a130	
 0008a140	29	USER_DEFINED	__thiscall	cAIVehicle_GetFadeDists	void __thiscall(void * nearDist, void * farDist)
-0008a160	7	DEFAULT	unknown	FUN_0048a160	
+0008a160	7	USER_DEFINED	__thiscall	cAIVehicle_GetVehicle	void * __thiscall(void)
 0008a170	173	DEFAULT	unknown	FUN_0048a170	
 0008a220	36	DEFAULT	unknown	FUN_0048a220	
 0008a250	330	DEFAULT	unknown	FUN_0048a250	
@@ -1728,7 +1728,7 @@ rva	size	source	callconv	name	signature
 0008b120	1545	DEFAULT	unknown	FUN_0048b120	
 0008b740	39	USER_DEFINED	__thiscall	cAIVehicle::GetState	int __thiscall(void)
 0008b780	28	DEFAULT	unknown	FUN_0048b780	
-0008b7a0	7	DEFAULT	unknown	FUN_0048b7a0	
+0008b7a0	7	USER_DEFINED	__thiscall	cAIVehicle_Get1A4	int __thiscall(void)
 0008b7b0	409	DEFAULT	unknown	FUN_0048b7b0	
 0008b980	21	DEFAULT	unknown	FUN_0048b980	
 0008b9a0	533	DEFAULT	unknown	FUN_0048b9a0	
@@ -1766,7 +1766,7 @@ rva	size	source	callconv	name	signature
 0008d1d0	483	DEFAULT	unknown	FUN_0048d1d0	
 0008d3c0	1328	DEFAULT	unknown	FUN_0048d3c0	
 0008d8f0	58	DEFAULT	unknown	FUN_0048d8f0	
-0008d930	765	DEFAULT	unknown	FUN_0048d930	
+0008d930	765	USER_DEFINED	__thiscall	cAIVehicle_PlaceOnTrack	void __thiscall(int type, float * pos, int track, int node)
 0008dc30	233	DEFAULT	unknown	FUN_0048dc30	
 0008dd20	231	DEFAULT	unknown	FUN_0048dd20	
 0008de10	59	DEFAULT	unknown	FUN_0048de10	
@@ -1952,64 +1952,65 @@ rva	size	source	callconv	name	signature
 0009b710	77	ANALYSIS	__thiscall	CAStarSup::vf17	undefined __thiscall(void)
 0009b760	52	ANALYSIS	__thiscall	CAStarSup::vf14	undefined __thiscall(void)
 0009b7a0	123	ANALYSIS	__thiscall	CAStarSup::vf18	undefined __thiscall(void)
-0009b820	329	DEFAULT	unknown	FUN_0049b820	
-0009b970	187	USER_DEFINED	__thiscall	CNodesTraffic::CNodesTraffic	undefined __thiscall(void)
-0009ba30	60	DEFAULT	unknown	FUN_0049ba30	
-0009ba70	277	DEFAULT	unknown	FUN_0049ba70	
-0009bb90	92	ANALYSIS	__thiscall	cGridElements<InfoTrafficNode>::vf00	undefined __thiscall(void)
-0009bbf0	35	ANALYSIS	__thiscall	CNodesTraffic::vf00	undefined __thiscall(void)
-0009bc20	112	DEFAULT	unknown	FUN_0049bc20	
+0009b820	329	USER_DEFINED	__thiscall	cGridElements_ctor	void * __thiscall(float * max, float * min, int nx, int ny, int nz)
+0009b970	187	USER_DEFINED	__thiscall	CNodesTraffic_ctor	void * __thiscall(void)
+0009ba30	60	USER_DEFINED	__fastcall	cGridElements_dtor	void __fastcall(void * self)
+0009ba70	277	USER_DEFINED	__fastcall	CNodesTraffic_dtor	void __fastcall(void * self)
+0009bb90	92	USER_DEFINED	__thiscall	cGridElements_Delete	void * __thiscall(byte flags)
+0009bbf0	35	USER_DEFINED	__thiscall	CNodesTraffic_Delete	void * __thiscall(byte flags)
+0009bc20	112	USER_DEFINED	__thiscall	TrafficCell_Add	void __thiscall(int * info)
 0009bc90	4579	ANALYSIS	__thiscall	CNodesTraffic::vf16	undefined __thiscall(void)
-0009ce80	134	DEFAULT	unknown	FUN_0049ce80	
-0009cf10	134	DEFAULT	unknown	FUN_0049cf10	
-0009cfa0	158	ANALYSIS	__thiscall	CNodesTraffic::vf15	undefined __thiscall(void)
-0009d040	551	ANALYSIS	__thiscall	CNodesTraffic::vf17	undefined __thiscall(void)
-0009d280	20	ANALYSIS	__thiscall	CNodesTraffic::vf02	undefined __thiscall(void)
-0009d2a0	138	ANALYSIS	__thiscall	cGridElements<InfoTrafficNode>::vf09	undefined __thiscall(void)
-0009d330	716	ANALYSIS	__thiscall	cGridElements<InfoTrafficNode>::vf04	undefined __thiscall(void)
-0009d600	215	ANALYSIS	__thiscall	cGridElements<InfoTrafficNode>::vf05	undefined __thiscall(void)
-0009d6e0	95	ANALYSIS	__thiscall	cGridElements<InfoTrafficNode>::vf10	undefined __thiscall(void)
-0009d740	107	ANALYSIS	__thiscall	CNodesTraffic::vf14	undefined __thiscall(void)
-0009d7b0	103	ANALYSIS	__thiscall	cGridElements<InfoTrafficNode>::vf03	undefined __thiscall(void)
-0009d820	127	ANALYSIS	__thiscall	cGridElements<InfoTrafficNode>::vf02	undefined __thiscall(void)
-0009d8a0	298	ANALYSIS	__thiscall	CNodesTraffic::vf11	undefined __thiscall(void)
-0009d9d0	25	ANALYSIS	__thiscall	cGridElements<InfoTrafficNode>::vf07	undefined __thiscall(void)
-0009d9f0	580	ANALYSIS	__thiscall	CNodesTraffic::vf09	undefined __thiscall(void)
-0009dc40	645	ANALYSIS	__thiscall	CNodesTraffic::vf19	undefined __thiscall(void)
-0009ded0	3037	ANALYSIS	__thiscall	CNodesTraffic::vf21	undefined __thiscall(void)
-0009eab0	405	ANALYSIS	__thiscall	CNodesTraffic::vf20	undefined __thiscall(void)
-0009ec50	31	ANALYSIS	__thiscall	cGridElements<InfoTrafficNode>::vf06	undefined __thiscall(void)
-0009ec70	20	ANALYSIS	__thiscall	CNodesTraffic::vf05	undefined __thiscall(void)
-0009ec90	71	ANALYSIS	__thiscall	CNodesTraffic::vf04	undefined __thiscall(void)
-0009ece0	4	ANALYSIS	__thiscall	CNodesTraffic::vf03	undefined __thiscall(void)
-0009ecf0	83	ANALYSIS	__thiscall	CNodesTraffic::vf13	undefined __thiscall(void)
-0009ed50	305	ANALYSIS	__thiscall	CNodesTraffic::vf12	undefined __thiscall(void)
-0009ee90	60	ANALYSIS	__thiscall	CNodesTraffic::vf06	undefined __thiscall(void)
-0009eed0	581	ANALYSIS	__thiscall	CNodesTraffic::vf22	undefined __thiscall(void)
-0009f120	805	ANALYSIS	__thiscall	CNodesTraffic::vf23	undefined __thiscall(void)
-0009f450	716	ANALYSIS	__thiscall	CNodesTraffic::vf10	undefined __thiscall(void)
-0009f720	8	ANALYSIS	__thiscall	CNodesTraffic::vf07	undefined __thiscall(void)
-0009f730	3585	ANALYSIS	__thiscall	CNodesTraffic::vf08	undefined __thiscall(void)
-000a0540	211	ANALYSIS	__thiscall	cGridElements<InfoTrafficNode>::vf01	undefined __thiscall(void)
-000a0620	20	ANALYSIS	__thiscall	CNodesTraffic::vf01	undefined __thiscall(void)
-000a0640	80	ANALYSIS	__thiscall	cGridElements<InfoTrafficNode>::vf08	undefined __thiscall(void)
-000a0690	527	ANALYSIS	__thiscall	CNodesTraffic::vf18	undefined __thiscall(void)
-000a08a0	310	USER_DEFINED	__thiscall	CNodesTrafficInDoor::CNodesTrafficInDoor	undefined __thiscall(void)
-000a09e0	522	DEFAULT	unknown	FUN_004a09e0	
-000a0bf0	38	ANALYSIS	__thiscall	CNodesTrafficInDoor::vf00	undefined __thiscall(void)
-000a0c30	362	DEFAULT	unknown	FUN_004a0c30	
-000a0da0	765	DEFAULT	unknown	FUN_004a0da0	
+0009ce80	134	USER_DEFINED	__fastcall	TrafficErrors_Clear	void __fastcall(void * list)
+0009cf10	134	USER_DEFINED	__fastcall	TrafficCell_Clear	void __fastcall(void * cell)
+0009cfa0	158	USER_DEFINED	__thiscall	CNodesTraffic_Draw	void __thiscall(void)
+0009d040	551	USER_DEFINED	__thiscall	CNodesTraffic_DrawTrack	void __thiscall(int track)
+0009d280	20	USER_DEFINED	__thiscall	CNodesTraffic_RemoveVehicle	void __thiscall(int track)
+0009d2a0	138	USER_DEFINED	__thiscall	cGridElements_Free	void __thiscall(void)
+0009d330	716	USER_DEFINED	__thiscall	cGridElements_Draw	byte __thiscall(uint color)
+0009d600	215	USER_DEFINED	__thiscall	cGridElements_CellCoords	byte __thiscall(float * p, int * x, int * y, int * z)
+0009d6e0	95	USER_DEFINED	__thiscall	cGridElements_CellIndex	int __thiscall(float * p)
+0009d740	107	USER_DEFINED	__thiscall	CNodesTraffic_GetInfo	void * __thiscall(void * out, int track)
+0009d7b0	103	USER_DEFINED	__thiscall	cGridElements_GetCell	byte __thiscall(int * x, int * y, int * z, void * out)
+0009d820	127	USER_DEFINED	__thiscall	cGridElements_GetCellAt	byte __thiscall(float * p, void * out)
+0009d8a0	298	USER_DEFINED	__thiscall	CNodesTraffic_NextAway	byte __thiscall(float * out, int track, int node, int * outTrack, int * outNode)
+0009d9d0	25	USER_DEFINED	__thiscall	cGridElements_GetCellSize	void __thiscall(float * out)
+0009d9f0	580	USER_DEFINED	__thiscall	CNodesTraffic_RandomNode	byte __thiscall(float * out, int type, float * pos, float distMin, float distMax, int unused, float * dir, float maxAngle, int * outTrack, int * outNode)
+0009dc40	645	USER_DEFINED	__thiscall	CNodesTraffic_FindNodes	void __thiscall(float * pos, int type, int * list, int max, int * count, float radius, float distMin, float distMax, byte soft, byte vis)
+0009ded0	3037	USER_DEFINED	__thiscall	CNodesTraffic_SearchRings	void __thiscall(float * pos, int type, int * list, int max, int * count, float radius, float distMin, float distMax, byte soft, byte vis)
+0009eab0	405	USER_DEFINED	__thiscall	CNodesTraffic_CollectCell	void __thiscall(float * pos, int type, void * cell, int * list, int max, int * count, float radius, float distMin, float distMax, byte vis, byte useMax)
+0009ec50	31	USER_DEFINED	__thiscall	cGridElements_GetDivs	void __thiscall(int * nx, int * ny, int * nz)
+0009ec70	20	USER_DEFINED	__thiscall	CNodesTraffic_NumNodes	int __thiscall(int track)
+0009ec90	71	USER_DEFINED	__thiscall	CNodesTraffic_NumByType	int __thiscall(int type)
+0009ece0	4	USER_DEFINED	__thiscall	CNodesTraffic_NumTracks	int __thiscall(void)
+0009ecf0	83	USER_DEFINED	__thiscall	CNodesTraffic_GetNode	byte __thiscall(float * out, int track, int node)
+0009ed50	305	USER_DEFINED	__thiscall	CNodesTraffic_PrevAway	byte __thiscall(float * out, int track, int node, int * outTrack, int * outNode)
+0009ee90	60	USER_DEFINED	__thiscall	CNodesTraffic_GetRadius	float __thiscall(int track)
+0009eed0	581	USER_DEFINED	__thiscall	CNodesTraffic_RandomPointNear	void __thiscall(int track, int node, float maxDist, float * out, int * outTrack, int * outNode)
+0009f120	805	USER_DEFINED	__thiscall	CNodesTraffic_RandomPointAhead	void __thiscall(int track, int node, float * pos, float distMin, float distMax, int unused, float * dir, float maxAngle, float * out, int * outTrack, int * outNode)
+0009f450	716	USER_DEFINED	__thiscall	CNodesTraffic_GetDirs	byte __thiscall(float * prev, float * next, int track, int node)
+0009f720	8	USER_DEFINED	__thiscall	CNodesTraffic_Init	void __thiscall(void)
+0009f730	3585	USER_DEFINED	__thiscall	CNodesTraffic_Load	void __thiscall(byte fill)
+000a0540	211	USER_DEFINED	__thiscall	cGridElements_Add	byte __thiscall(float * p, int * info)
+000a0620	20	USER_DEFINED	__thiscall	CNodesTraffic_AddVehicle	void __thiscall(int track)
+000a0640	80	USER_DEFINED	__thiscall	cGridElements_IsInside	byte __thiscall(float * p)
+000a0690	527	USER_DEFINED	__thiscall	CNodesTraffic_BuildGrid	void __thiscall(void)
+000a08a0	310	USER_DEFINED	__thiscall	CNodesTrafficInDoor_ctor	void * __thiscall(void)
+000a09e0	522	USER_DEFINED	__fastcall	CNodesTrafficInDoor_dtor	void __fastcall(void * self)
+000a0bf0	38	USER_DEFINED	__thiscall	CNodesTrafficInDoor_Delete	void * __thiscall(byte flags)
+000a0c20	14	USER_DEFINED	__cdecl	TrafficInDoor_Frame	byte __cdecl(void)
+000a0c30	362	USER_DEFINED	__thiscall	CNodesTrafficInDoor_UpdateVehicles	void __thiscall(void)
+000a0da0	765	USER_DEFINED	__thiscall	CNodesTrafficInDoor_Respawn	void __thiscall(void * ai, int numAI, int typeA, void * sectorsA, int numA, int * seenA, int * numSeenA, int * nodesA, byte updateA, int typeB, void * sectorsB, int numB, int * seenB, int * numSeenB, int * nodesB, byte updateB, int typeC, void * sectorsC, int numC, int * seenC, int * numSeenC, int * nodesC, byte updateC)
 000a10a0	5	ANALYSIS	__thiscall	CNodesTrafficInDoor::vf15	undefined __thiscall(void)
-000a10b0	119	DEFAULT	unknown	FUN_004a10b0	
-000a1130	2481	DEFAULT	unknown	FUN_004a1130	
-000a1b10	86	DEFAULT	unknown	FUN_004a1b10	
-000a1b70	26	ANALYSIS	__thiscall	CNodesTrafficInDoor::vf07	undefined __thiscall(void)
-000a1b90	226	DEFAULT	unknown	FUN_004a1b90	
-000a1c80	113	DEFAULT	unknown	FUN_004a1c80	
-000a1d00	158	DEFAULT	unknown	FUN_004a1d00	
+000a10b0	119	USER_DEFINED	__thiscall	CNodesTrafficInDoor_HiddenNode	int __thiscall(int track)
+000a1130	2481	USER_DEFINED	__fastcall	CNodesTrafficInDoor_InitSectors	void __fastcall(void * self)
+000a1b10	86	USER_DEFINED	__stdcall	TrafficSectors_Add	void __stdcall(void * list, int * num, int sector)
+000a1b70	26	USER_DEFINED	__thiscall	CNodesTrafficInDoor_Init	void __thiscall(void)
+000a1b90	226	USER_DEFINED	__stdcall	TrafficSectors_SetTracks	void __stdcall(void * list, int num)
+000a1c80	113	USER_DEFINED	__thiscall	CNodesTrafficInDoor_AddVehicle	void __thiscall(void * ai)
+000a1d00	158	USER_DEFINED	__thiscall	CNodesTrafficInDoor_SectorHasTrack	byte __thiscall(int track, int type)
 000a1dc0	1	ANALYSIS	__thiscall	CNodesTrafficInDoor::vf18	undefined __thiscall(void)
-000a1dd0	166	DEFAULT	unknown	FUN_004a1dd0	
-000a1e80	801	DEFAULT	unknown	FUN_004a1e80	
+000a1dd0	166	USER_DEFINED	__thiscall	CNodesTrafficInDoor_GetRespawnPoint	byte __thiscall(void * ai, int * outType, float * out, int * outTrack, int * outNode)
+000a1e80	801	USER_DEFINED	__thiscall	CNodesTrafficInDoor_PickPoint	byte __thiscall(int * outType, float * out, int * outTrack, int * outNode, int typeA, void * sectorsA, int numA, int typeB, void * sectorsB, int numB, int typeC, void * sectorsC, int numC)
 000a21b0	229	USER_DEFINED	__thiscall	CNodesWorld::CNodesWorld	undefined __thiscall(void)
 000a22a0	51	DEFAULT	unknown	FUN_004a22a0	
 000a22e0	51	DEFAULT	unknown	FUN_004a22e0	
@@ -2028,7 +2029,7 @@ rva	size	source	callconv	name	signature
 000a2da0	219	USER_DEFINED	__thiscall	CNodesWorld::Analize	void __thiscall(float * size)
 000a2e80	1068	DEFAULT	unknown	FUN_004a2e80	
 000a32b0	49	DEFAULT	unknown	FUN_004a32b0	
-000a32f0	3184	DEFAULT	unknown	FUN_004a32f0	
+000a32f0	3184	USER_DEFINED	__thiscall	CNodesWorld_TestPath	byte __thiscall(float * a, float * b, float r1, float r2, int a5, int a6)
 000a3f60	5474	DEFAULT	unknown	FUN_004a3f60	
 000a54d0	783	DEFAULT	unknown	FUN_004a54d0	
 000a57e0	134	DEFAULT	unknown	FUN_004a57e0	
@@ -2063,7 +2064,7 @@ rva	size	source	callconv	name	signature
 000ab650	2090	USER_DEFINED	__thiscall	CNodesWorld::Load	void __thiscall(int arg, char * name, float * pos)
 000abe80	568	DEFAULT	unknown	FUN_004abe80	
 000ac0c0	93	DEFAULT	unknown	FUN_004ac0c0	
-000ac120	214	DEFAULT	unknown	FUN_004ac120	
+000ac120	214	USER_DEFINED	__thiscall	CNodesWorld_PointSeen	byte __thiscall(float * pos)
 000ac200	760	DEFAULT	unknown	FUN_004ac200	
 000ac500	146	ANALYSIS	__thiscall	CNodesWorld::vf03	undefined __thiscall(void)
 000ac5a0	212	DEFAULT	unknown	FUN_004ac5a0	

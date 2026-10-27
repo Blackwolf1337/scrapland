@@ -26,7 +26,7 @@
 #include "scrap/python.h"
 
 #define MAX_ARGS 16
-#define MAX_THIS_ARGS 9
+#define MAX_THIS_ARGS 11
 #define MAX_OUT 8
 #define BUF_SIZE 1024
 #define MAX_FLOATS 64
@@ -51,7 +51,11 @@ typedef float (*call_float_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, 
 	typedef ret(__thiscall *name##8_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
 		uint32_t, uint32_t); \
 	typedef ret(__thiscall *name##9_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
-		uint32_t, uint32_t, uint32_t);
+		uint32_t, uint32_t, uint32_t); \
+	typedef ret(__thiscall *name##10_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
+		uint32_t, uint32_t, uint32_t, uint32_t); \
+	typedef ret(__thiscall *name##11_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
+		uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 THIS_TYPES(this, uint32_t)
 THIS_TYPES(thisf, float)
 
@@ -76,8 +80,12 @@ THIS_TYPES(thisf, float)
 		return ((name##7_t)fn)(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]); \
 	case 9: \
 		return ((name##8_t)fn)(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]); \
-	default: \
+	case 10: \
 		return ((name##9_t)fn)(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]); \
+	case 11: \
+		return ((name##10_t)fn)(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]); \
+	default: \
+		return ((name##11_t)fn)(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11]); \
 	}
 
 static uint32_t Call_This(void *fn, const uint32_t *a, int n) {
