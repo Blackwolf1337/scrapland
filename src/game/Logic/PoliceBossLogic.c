@@ -1,0 +1,75 @@
+/*
+ * Logic/PoliceBossLogic.cpp of the game: the police boss, a cGenCharLocalLogic (include/scrap/logic.h) with its
+ * own walks and a special action instead of an attack target: every PoliceBossMinSpecialActionTime /
+ * PoliceBossMaxSpecialActionTime it tries it while a character of the second GenChar list is near and the boss can
+ * be seen.
+ */
+#include "scrap/chartype.h"
+#include "scrap/logic.h"
+#include "scrap/scrapmodel.h"
+#include "scrap/weapons.h"
+
+#define CPOLICEBOSSLOCALLOGIC_VFTABLE 0x3c0a3c
+#define g_PoliceBossMinSpecialActionTime GAME_DATA(float, 0x44d770)
+#define g_PoliceBossMaxSpecialActionTime GAME_DATA(float, 0x44d788)
+
+void *__thiscall cPoliceBossLocalLogic_ctor(void *mem, cEntity *parent) {
+	cGenCharLocalLogic *self = mem;
+
+	cGenCharLocalLogic_ctor(self, parent, 0);
+	self->base.vftable = Game_Ptr(CPOLICEBOSSLOCALLOGIC_VFTABLE);
+	return self;
+}
+
+void __fastcall cPoliceBossLocalLogic_dtor(cGenCharLocalLogic *self) {
+	self->base.vftable = Game_Ptr(CPOLICEBOSSLOCALLOGIC_VFTABLE);
+	cGenCharLocalLogic_dtor(self);
+}
+
+cGenCharLocalLogic *__thiscall cPoliceBossLocalLogic_Delete(cGenCharLocalLogic *self, byte flags) {
+	self->base.vftable = Game_Ptr(CPOLICEBOSSLOCALLOGIC_VFTABLE);
+	cGenCharLocalLogic_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(*self));
+	}
+	return self;
+}
+
+/* vf30: no target; when the search time is over the special action of the boss, near a character it can see */
+cEntity *__thiscall cPoliceBossLocalLogic_FindTarget(cGenCharLocalLogic *self) {
+	vec3_t tmp;
+
+	if (!(0.0f > self->searchTime)) {
+		return NULL;
+	}
+	cEntity *p = self->base.parent;
+	self->searchTime = g_PoliceBossMinSpecialActionTime * 0.5f;
+	if (!CGameModel_IsVisible(Obj_Vtbl(p)->GetModel(p))) {
+		return NULL;
+	}
+	cEntity *e = cEntityList_Nearest(World_CharList(WORLD_GENCHARS2), p->vftable->GetPos(p, &tmp), p, NULL);
+	if (!e || !e->vftable->IsType(e, TYEN_WALKCHAR)) {
+		return NULL;
+	}
+	float lo = g_PoliceBossMinSpecialActionTime;
+	float hi = g_PoliceBossMaxSpecialActionTime;
+	self->searchTime = (float)(Weap_Rand01() * (double)(hi - lo) + (double)lo);
+	ChType_PoliceBossTryAction(p);
+	return NULL;
+}
+
+/* vf28 and vf27: the AI walks in alert or relaxed */
+void __thiscall cPoliceBossLocalLogic_ToAlert(cGenCharLocalLogic *self, cAIChar *ai) {
+	(void)self;
+	ai->vftable->SetState(ai, 1, (double)g_GenCharAlertSpeed, 0);
+}
+
+void __thiscall cPoliceBossLocalLogic_ToRelax(cGenCharLocalLogic *self, cAIChar *ai) {
+	(void)self;
+	ai->vftable->SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
+}
+
+/* vf17 */
+void __thiscall cPoliceBossLocalLogic_Update(cGenCharLocalLogic *self, float dt) {
+	cGenCharLocalLogic_Update(self, dt);
+}

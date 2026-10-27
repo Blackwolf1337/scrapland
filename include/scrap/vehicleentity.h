@@ -237,7 +237,8 @@ typedef struct cVehicleEntityVtbl2 {
 	void *vf2d_37[11];
 	void(__thiscall *UpdateSounds)(cVehicleEntity *self, float dt);			/* 0xe0 vf56 */
 	void(__thiscall *UpdateHistory)(cVehicleEntity *self);				/* 0xe4 vf57 */
-	void *vf3a_3b[2];
+	void *vf3a;
+	byte(__thiscall *GetLaunchTaunts)(cVehicleEntity *self);				/* 0xec vf59 */
 	byte(__thiscall *SetPilot)(cVehicleEntity *self, int slot, const char *name, float sx, float sy, float sz);
 												/* 0xf0 vf60 */
 	const char *(__thiscall *GetPilot)(cVehicleEntity *self, int slot);			/* 0xf4 vf61 */

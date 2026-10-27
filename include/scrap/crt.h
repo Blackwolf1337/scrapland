@@ -96,5 +96,11 @@ double crt_floor(double x);
 double crt_ceil(double x);
 char *crt_mbsrchr(const char *s, unsigned int c);
 int crt_spawnlp(int mode, const char *cmd, const char *arg0, ...);
+int crt_atexit(void (*func)(void));
+/* the guards of the thread-safe function statics (MSVC _Init_thread_header/_Init_thread_footer); the epoch they
+ * are tested against is at +0x20 of the TLS block of the exe, its index g_TlsIndex */
+void crt_Init_thread_header(int *guard);
+void crt_Init_thread_footer(int *guard);
+#define g_TlsIndex GAME_DATA(uint32_t, 0x4e8dec)
 
 #endif

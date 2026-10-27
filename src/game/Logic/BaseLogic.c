@@ -20,25 +20,6 @@
 #define LOGIC_NURSESTATES ((const char **)Game_Ptr(0x428b68))
 #define LOGIC_GENCHARSTATES ((const char **)Game_Ptr(0x428b78))
 
-/* the AI of a character as the debug texts use it */
-typedef struct cLogicAICharVtbl {
-	void *vf00_1e[31];
-	int(__thiscall *GetState)(void *self);				/* 0x7c */
-	void *vf20_21[2];
-	void(__thiscall *GetStateName)(void *self, char *out);		/* 0x88 */
-	void *vf23;
-	void(__thiscall *GetSubStateName)(void *self, char *out);	/* 0x90 */
-	byte(__thiscall *Vf94)(void *self);				/* 0x94 */
-	void *vf26_28[3];
-	void(__thiscall *GetGoal)(void *self, void *out);		/* 0xa4 a point at +8 of out */
-} cLogicAICharVtbl;
-SD_OFFSET(cLogicAICharVtbl, GetStateName, 0x88);
-SD_OFFSET(cLogicAICharVtbl, GetGoal, 0xa4);
-
-static inline const cLogicAICharVtbl *Logic_CharAIVtbl(void *ai) {
-	return *(const cLogicAICharVtbl **)ai;
-}
-
 cBaseLocalLogic *__thiscall cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity *parent) {
 	vec3_t tmp, ang, out;
 

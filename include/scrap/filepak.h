@@ -59,6 +59,8 @@ SD_SIZE(cNameItem, 0xc);
 /* the cNameItem instance of HashTable.h (FilePak.c, also the assigned zones of Logic/Domination.c) */
 cNameItem *__thiscall NameTable_Find(HashTable *self, const char *key, uint32_t slot);
 byte __thiscall NameTable_Add(HashTable *self, const char *key, const int *v, byte warn);
+cNameItem *__thiscall NameTable_Insert(HashTable *self, const char *key, uint32_t slot, const int *v);
+byte __thiscall NameTable_Set(HashTable *self, const char *key, const int *v);
 byte __thiscall NameTable_Delete(HashTable *self, const char *key);
 void __fastcall NameTable_Clear(HashTable *self);
 

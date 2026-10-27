@@ -14,7 +14,6 @@ SD_IMPORT(operator_delete_sized, 0x313634)
 /* engine: Entities/ and the entity lists of World/ */
 
 /* engine: Logic/ and AI/ (include/scrap/logic.h) */
-SD_IMPORT(ShipRegen_Set, 0x1564c0)
 
 /* engine: World/FX/ and effects of Entities/ */
 SD_IMPORT(FX_ShipExplosion, 0x1f4d50)
@@ -121,8 +120,6 @@ SD_IMPORT(Steam_GetID, 0x134720)
 SD_IMPORT(Steam_GetTicket, 0x1345e0)
 SD_IMPORT(Gog_GetID, 0x137160)
 SD_IMPORT(Anm_Preload, 0x2051a0)
-SD_IMPORT(Parking_AddZone, 0x155700)
-SD_IMPORT(Parking_Find, 0x155bf0)
 SD_IMPORT(Object3D_Preload, 0x205140)
 SD_IMPORT(cDebrisSys_Init, 0x204d50)
 SD_IMPORT(cDebrisSys_NewElement, 0x204bd0)
@@ -590,7 +587,6 @@ SD_IMPORT(cActCtrl_TurnHead, 0x062dc0)
 SD_IMPORT(cActClassCam_Update, 0x0616e0)
 
 /* module agent: Logic part 1 (AlarmStatus..Domination) (imports below this line) */
-SD_IMPORT(Taunts_Play, 0x155210)
 
 /* module agent: Scorer part 2 (Scorer+ScraplandScorer+Slider+SpecialAction) (imports below this line) */
 SD_IMPORT(Scorer_DrawDebug, 0x173450)
@@ -601,14 +597,8 @@ SD_IMPORT(crt_ltoa, 0x34d525)
 /* module agent: AI/IVehicle.cpp (imports below this line) */
 
 /* module agent: Logic part 2 (Enemies..GenCharGroup) (imports below this line) */
-SD_IMPORT(Logic_RandomCar, 0x154b20)
-SD_IMPORT(PoliceAI_RestoreParams, 0x15b2f0)
-SD_IMPORT(PoliceAI_RandomParams, 0x15b3c0)
 SD_IMPORT(cActCtrl_GetDefLoopName, 0x062c80)
 SD_IMPORT(cMessengers_Think, 0x153350)
-SD_IMPORT(cRustyLocalLogic_ctor, 0x156730)
-SD_IMPORT(cSputnikJunkyardLocalLogic_ctor, 0x159220)
-SD_IMPORT(cPoliceBossLocalLogic_ctor, 0x156010)
 
 /* module agent: Entities/Char/WalkCharEntity.cpp (imports below this line) */
 SD_IMPORT(cWithLifeEntity_SetEmbeddedFX, 0x12c7f0)
@@ -648,27 +638,7 @@ SD_IMPORT(cTargetScorer_DrawEnemies, 0x182430)
 SD_IMPORT(cWaypointScorer_DrawTarget, 0x185e90)
 
 /* module agent: Logic part 3 (GenCharLogic..Messenger) (imports below this line) */
-SD_IMPORT(cSentinelLocalLogic_ctor, 0x158470)
-SD_IMPORT(cSentinelLocalLogic_Watch, 0x158560)
-SD_IMPORT(cSentinelLocalLogic_Return, 0x158fc0)
 SD_IMPORT(Sound_PlayVoice, 0x1a1090)
-SD_IMPORT(cNurseLocalLogic_SetState, 0x154970)
-SD_IMPORT(Parking_ctor, 0x1555e0)
-SD_IMPORT(Parking_dtor, 0x155650)
-SD_IMPORT(Parking_Update, 0x155f70)
-SD_IMPORT(ShipRegen_ctor, 0x156200)
-SD_IMPORT(ShipRegen_dtor, 0x156230)
-SD_IMPORT(ShipRegen_Update, 0x156590)
-SD_IMPORT(cShipGroup_ctor, 0x1570b0)
-SD_IMPORT(cShipGroup_dtor, 0x157230)
-SD_IMPORT(cShipGroup_Init, 0x157dc0)
-SD_IMPORT(cShipGroup_Update, 0x158160)
-SD_IMPORT(cEnemiesTraffic_ctor, 0x159760)
-SD_IMPORT(cEnemiesTraffic_dtor, 0x159860)
-SD_IMPORT(cEnemiesTraffic_Init, 0x15ad30)
-SD_IMPORT(cEnemiesTraffic_Update, 0x15b4f0)
-SD_IMPORT(Taunts_Think, 0x154e40)
-SD_IMPORT(Taunts_Warnings, 0x155000)
 
 /* module agent: AI/ICharControl+2D+3D.cpp (imports below this line) */
 SD_IMPORT(CAStar2D_FindPath, 0x09a5e0)
@@ -707,6 +677,9 @@ SD_IMPORT_STDCALL(Wsock_WSAStartup, 8, 0x20da1a)
 SD_IMPORT_STDCALL(Wsock_WSACleanup, 0, 0x20da20)
 
 /* module agent: Logic part 4 (Nurse..Traffic) (imports below this line) */
+SD_IMPORT(crt_atexit, 0x313a5c)
+SD_IMPORT(crt_Init_thread_header, 0x31409d)
+SD_IMPORT(crt_Init_thread_footer, 0x31405e)
 
 /* module agent: Actions and Events (ActClass..AIBishop) (imports below this line) */
 

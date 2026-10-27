@@ -146,4 +146,22 @@ void *PtrTable_Value(HashTable *self, const char *key);
 		P##_Clear(self); \
 	}
 
+/* the instance of World/ with a 12 byte value (a vec3_t: the lairs of Logic/Scrapyard.c) */
+typedef struct cValue12 {
+	uint32_t v[3];
+} cValue12;
+
+typedef struct cWorldStrItem {
+	cValue12 value;			/* 0x00 */
+	char *key;			/* 0x0c cString */
+	struct cWorldStrItem *next;	/* 0x10 */
+} cWorldStrItem;
+SD_SIZE(cWorldStrItem, 0x14);
+
+cWorldStrItem *__thiscall WorldStrTable_Find(HashTable *self, const char *key, uint32_t slot);
+cWorldStrItem *__thiscall WorldStrTable_Insert(HashTable *self, const char *key, uint32_t slot, const cValue12 *v);
+byte __thiscall WorldStrTable_Set(HashTable *self, const char *key, const cValue12 *v);
+byte __thiscall WorldStrTable_Delete(HashTable *self, const char *key);
+void __fastcall WorldStrTable_Clear(HashTable *self);
+
 #endif
