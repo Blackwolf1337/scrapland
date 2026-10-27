@@ -607,3 +607,5 @@ SD_IMPORT(CMapa_CopyBmp, 0x2370a0)
 /* module agent: Big FX leftovers 0x1eab00..0x200000 (imports below this line) */
 
 /* module agent: Engine leftovers 0x200000..0x240000 (imports below this line) */
+
+/* module agent: AI leftovers 0x098000..0x0b8000 (imports below this line) */
