@@ -121,10 +121,10 @@ typedef struct cObjElementFXDebrisCloud {
 	cEntity *entity;		/* 0x004 */
 	int node;			/* 0x008 Dummy01, -1 for none */
 	CGameParticles particles;	/* 0x00c */
-	int bc;				/* 0x0bc */
-	int c0;				/* 0x0c0 */
+	float emitT;			/* 0x0bc the time since the last puffs */
+	float time;			/* 0x0c0 since the start */
 	byte pad_c4[0xd0 - 0xc4];
-	float rands[FXDEBRISCLOUD_RANDS]; /* 0x0d0 random numbers in [0, 2] */
+	float rands[FXDEBRISCLOUD_RANDS]; /* 0x0d0 random numbers in [0, 2]: the phases of the cloud particles */
 	byte on;			/* 0x1f0 set by the countermeasure that drops it */
 	byte pad_1f1[3];
 } cObjElementFXDebrisCloud;
@@ -138,6 +138,7 @@ SD_SIZE(cObjElementFXDebrisCloud, 0x1f4);
 #define Entity_WeapNodes(e) (*(int **)((byte *)(e) + 0x60c))	/* render node per ammo kind and slot: [ammo * 4 + slot] */
 #define WEAPON_LASER 0x18						/* the slot of the laser in Entity_Weapons */
 #define Weapon_HookOn(w) (*(byte *)((byte *)(w) + 0x9c))
+#define Entity_PlayerCam(e) (*(void **)((byte *)(e) + 0xf0))	/* the camera data of the ship of a player, NULL else */
 
 /* a weapon of the world in a cTargetLock: the mounted slots (bit per slot), the upgrade and its ammo */
 typedef struct cWeaponSlot {
@@ -185,12 +186,16 @@ void *__thiscall PtrArray_Get(void *self, int i);
 #define g_LaserIDAmmo GAME_DATA(int, 0x449d64)
 #define g_FXHookSize GAME_DATA(float, 0x449dac)
 #define g_FXHookTensor GAME_DATA(float, 0x449e44)
+#define g_LaserHookSparksFile GAME_DATA(const char *, 0x449e2c)
 #define g_FXSonicRadius GAME_DATA(float, 0x449eac)
 #define g_SceneDuDvRTarget GAME_DATA(int, 0x4a8b34)		/* R_SceneDuDvRTarget */
 
 /* cWorld: the position of the camera of the current view into out (rva 0x1ce910) */
 vec3_t *__thiscall cWorld_GetCamPos(cWorld *self, vec3_t *out);
 
+/* the hook laser: with target a curve from the weapon node over the points pulled to the line, glows at both ends and
+ * sparks for the player; without target a straight line out of the weapon node */
+void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debris, float dt);
 void __fastcall cObjElementFXHook_StopTrails(cObjElementFXHook *self);
 void __thiscall cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *emitter, cEntity *target, int slot);
 void __thiscall cObjElementFXHook_StartPoint(cObjElementFXHook *self, cEntity *emitter, int slot);
@@ -211,6 +216,8 @@ void __thiscall cObjElementFXSonicExplosion_Reset(cObjElementFXSonicExplosion *s
 /* the rings and the particles of an explosion at x y z */
 void __thiscall cObjElementFXSonicExplosion_Explode(cObjElementFXSonicExplosion *self, float x, float y, float z);
 
+/* the cloud around the missile (the countermeasure entity): a ring of particles that pulses, puffs of debris */
+void __thiscall cObjElementFXDebrisCloud_Update(cObjElementFXDebrisCloud *self, cDebris *debris, float dt);
 byte __thiscall cObjElementFXDebrisCloud_IsAlive(cObjElementFXDebrisCloud *self, cDebris *debris, cDebrisSys *sys);
 void __thiscall cObjElementFXDebrisCloud_Start(cObjElementFXDebrisCloud *self, cDebris *debris);
 void __thiscall cObjElementFXDebrisCloud_Reset(cObjElementFXDebrisCloud *self, cDebris *debris);
@@ -229,5 +236,10 @@ void __thiscall cObjElementFXDebrisCloud_dtor(void *self);
 void __thiscall cObjElementFXEMI_dtor(void *self);
 void __thiscall cObjElementFXHook_dtor(void *self);
 void __thiscall cObjElementFXSonicExplosion_dtor(void *self);
+/* the deleting destructors (rva 0x1c99d0..0x1c9b00) */
+cObjElementFX *__thiscall cObjElementFXDebrisCloud_Delete(cObjElementFX *self, byte flags);
+cObjElementFX *__thiscall cObjElementFXEMI_Delete(cObjElementFX *self, byte flags);
+cObjElementFX *__thiscall cObjElementFXHook_Delete(cObjElementFX *self, byte flags);
+cObjElementFX *__thiscall cObjElementFXSonicExplosion_Delete(cObjElementFX *self, byte flags);
 
 #endif

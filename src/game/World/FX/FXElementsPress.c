@@ -5,8 +5,10 @@
 #include <string.h>
 
 #include "scrap/fxelements.h"
+#include "scrap/fxmisc.h"
 #include "scrap/mathlib.h"
 #include "scrap/scrap.h"
+#include "scrap/sound.h"
 
 #define g_RandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
 #define PRESS_NAME_SKIP 11			/* "DM_Element_" before the name of the element in the dummy */
@@ -188,7 +190,7 @@ byte __fastcall cFXElementsMentalControllerDamageFX_Init(cFXElementsMentalContro
 	CHECK(node > -1);
 	CGameParticles_Attach(&self->smoke, model, node);
 	CHECK(self->smoke.SistPart);
-	self->smokeTime = 0;
+	self->smokeTime = 0.0f;
 	for (int i = 0; i < FXMENTALDAMAGEEMITTERS;) {
 		i++;
 		Str_PrintfQuiet(buf, 0xff, "DF_SmokeEmitter_%02d", i);
@@ -227,7 +229,7 @@ byte __fastcall cFXElementsMentalControllerDamageFX_Init(cFXElementsMentalContro
 	CHECK(node > -1);
 	CGameParticles_Attach(&self->flash, model, node);
 	CHECK(self->flash.SistPart);
-	self->flashTime = 0;
+	self->flashTime = 0.0f;
 	for (int i = 0; i < FXMENTALDAMAGEEMITTERS;) {
 		i++;
 		Str_PrintfQuiet(buf, 0xff, "DF_FlashEmitter_%02d", i);
@@ -252,6 +254,201 @@ byte __fastcall cFXElementsMentalControllerDamageFX_Init(cFXElementsMentalContro
 		self->flashSleep[k] = (float)(r * (double)(hi - lo) + (double)lo);
 	}
 	return 1;
+}
+
+#define g_DamageFXMaxDist GAME_DATA(float, 0x4671e0)		/* FXElementsMentalControllerDamageFXMaxDist */
+#define g_DamageFXSound GAME_DATA(const char *, 0x4671b0)	/* FXElementsMentalControllerDamageSound */
+#define g_DamageFXSoundVol GAME_DATA(float, 0x4671c8)		/* FXElementsMentalControllerDamageSoundVol */
+#define DAMAGEFX_SMOKE_RAMPS 0x4309f8				/* 3 color ramps of 9 colors */
+#define DAMAGEFX_FLASH_RAMPS 0x430a68
+
+static inline uint32_t *Press_Ramp(uint32_t rva, int i) {
+	return (uint32_t *)Game_Ptr(rva) + i * 9;
+}
+
+/* one flash glow at the emitter: sizes and life random, scaled by s */
+static void DamageFX_Glow(CGameParticles *p, float s, double iniRange, double iniAdd, double endRange, double endAdd,
+	byte sprite, double lifeRange, double lifeAdd) {
+	CGameParticles_SetColorRamp(p, Press_Ramp(DAMAGEFX_FLASH_RAMPS, 0));
+	p->sizeIni = FxElem_Rand(iniRange, iniAdd) * s;
+	p->sizeEnd = FxElem_Rand(endRange, endAdd) * s;
+	float lt = FxElem_Rand(lifeRange, lifeAdd);
+	p->sizeLife = 0.15f;
+	p->spriteIni = sprite;
+	p->spriteEnd = sprite;
+	p->lifeTime = lt;
+	CGameParticles_Apply(p);
+	CGameParticles_EmitN(p, 1, 1);
+}
+
+void __thiscall cFXElementsMentalControllerDamageFX_Update(cFXElementsMentalControllerDamageFX *self, float dt) {
+	CGameModel *model = &self->base.base.Mod;
+	vec3_t tmp, vel, acc, ang, dir, out;
+
+	cMapElement_Update(&self->base.base, dt);
+	CHECK(CGameModel_IsLoaded(model));
+	if (!CGameModel_IsVisible(model)) {
+		goto far;
+	}
+	vec3_t cam = g_pWorld->camPos[g_pWorld->curCam];
+	const vec3_t *p = CGameModel_GetPos(model, &tmp);
+	float max2 = g_DamageFXMaxDist * g_DamageFXMaxDist;
+	float dy = p->y - cam.y;
+	float dx = p->x - cam.x;
+	float dz = p->z - cam.z;
+	float d2 = dy * dy + dx * dx + dz * dz;
+	if (d2 > max2) {
+		goto far;
+	}
+	if (!self->base.nearCam) {
+		self->base.nearCam = 1;
+	}
+
+	/* the smoke: more often the nearer the camera */
+	float step = ((d2 / max2) * 3.0f + 1.0f) * 0.12f;
+	float st = self->smokeTime + dt;
+	self->smokeTime = st;
+	if (st > step) {
+		CGameParticles *sm = &self->smoke;
+		sm->birthRate = 0;
+		CGameParticles_SetColorRampOn(sm, 1);
+		CGameParticles_SetColorRamp(sm, Press_Ramp(DAMAGEFX_SMOKE_RAMPS, crt_rand() % 3));
+		for (int k = 0; k < FXMENTALDAMAGEEMITTERS; k++) {
+			if (self->smokeNode[k] <= -1) {
+				break;
+			}
+			float t = 0.0f;
+			if (!(self->smokeTime > 0.0f)) {
+				continue;
+			}
+			do {
+				Vec3_Rotate(&vel, FX_RandomVec(&tmp, &self->smokeVelMin[k], &self->smokeVelMax[k]),
+					&self->smokeRot[k]);
+				FX_RandomVec(&acc, &self->smokeAccMin[k], &self->smokeAccMax[k]);
+				sm->initPosMin = self->smokePos[k];
+				sm->initPosMax = sm->initPosMin;
+				sm->initVelMin = vel;
+				sm->initVelMax = sm->initVelMin;
+				sm->initAccMin = acc;
+				sm->initAccMax = sm->initAccMin;
+				sm->sizeIni = FxElem_Rand(0.20000004768371582, 0.89999997615814209) * self->smokeSizeIni[k];
+				sm->sizeEnd = self->smokeSizeEnd[k] * FxElem_Rand(0.20000004768371582, 0.89999997615814209);
+				float lo = self->smokeLifeMin[k], hi = self->smokeLifeMax[k];
+				sm->lifeTime = FxElem_Rand((double)(hi - lo), (double)lo);
+				float r = FxElem_Rand(6.2831854820251465, 0.0);
+				sm->rotIni = r;
+				sm->rotEnd = r;
+				sm->sizeLife = 1.0f;
+				sm->rotVar = FxElem_Rand(1.2566370964050293, -0.62831854820251465);
+				byte sprite = (byte)((crt_rand() & 1) + 0x11);
+				sm->spriteIni = sprite;
+				sm->spriteEnd = sprite;
+				CGameParticles_Apply(sm);
+				CGameParticles_EmitDt(sm, 1, 0, t);
+				t = t + step;
+			} while (self->smokeTime > t);
+		}
+		self->smokeTime = 0.0f;
+	}
+
+	/* the flashes: each emitter sleeps a random time, sparks and a sound when the camera is near */
+	float ft = self->flashTime + dt;
+	self->flashTime = ft;
+	if (!(ft > 0.04f)) {
+		return;
+	}
+	CGameParticles *fl = &self->flash;
+	fl->birthRate = 0;
+	CGameParticles_SetColorRampOn(fl, 1);
+	float half = g_DamageFXMaxDist * 0.5f;
+	float half2 = half * half;
+	for (int k = 0; k < FXMENTALDAMAGEEMITTERS; k++) {
+		if (self->flashNode[k] <= -1) {
+			break;
+		}
+		float sl = self->flashSleep[k] - self->flashTime;
+		self->flashSleep[k] = sl;
+		if (!(0.0f >= sl)) {
+			continue;
+		}
+		float lo = self->flashSleepMin[k], hi = self->flashSleepMax[k];
+		self->flashSleep[k] = FxElem_Rand((double)(hi - lo), (double)lo);
+		const vec3_t *fpos = &self->flashPos[k];
+		fl->initPosMin = *fpos;
+		fl->initPosMax = fl->initPosMin;
+		fl->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		fl->initVelMax = fl->initVelMin;
+		fl->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		fl->initAccMax = fl->initAccMin;
+		lo = self->flashSizeMin[k];
+		hi = self->flashSizeMax[k];
+		float s = FxElem_Rand((double)(hi - lo), (double)lo);
+		DamageFX_Glow(fl, s, 10.0, 10.0, 15.0, 95.0, 6, 0.019999995827674866, 0.18000000715255737);
+		DamageFX_Glow(fl, s, 2.0, 4.0, 15.0, 55.0, 5, 0.02000001072883606, 0.15999999642372131);
+		if (!(half2 > d2)) {
+			continue;
+		}
+		int lo2 = self->flashSparksMin[k];
+		int n = lo2 + crt_rand() % (self->flashSparksMax[k] - lo2);
+		CGameParticles_SetSparksOn(fl, 1);
+		for (; n > 0; n--) {
+			CGameParticles_SetColorRamp(fl, Press_Ramp(DAMAGEFX_FLASH_RAMPS, crt_rand() % 3));
+			float az = FxElem_Rand(3.1415927410125732, -1.5707963705062866);
+			float ay = FxElem_Rand(3.1415927410125732, -1.5707963705062866);
+			ang.x = 0.0f;
+			ang.y = ay;
+			ang.z = az;
+			tmp = (vec3_t){ 1.0f, 0.0f, 0.0f };
+			Vec3_Rotate(&dir, &tmp, &ang);
+			dir = *Vec3_Rotate(&out, &dir, &self->flashRot[k]);
+			float r = FxElem_Rand(5.0, 3.0);
+			fl->initPosMin.x = r * dir.x + fpos->x;
+			fl->initPosMin.y = fpos->y + r * dir.y;
+			fl->initPosMin.z = r * dir.z + fpos->z;
+			fl->initPosMax = fl->initPosMin;
+			r = FxElem_Rand(670.0, 280.0);
+			fl->initVelMin.x = r * dir.x * s;
+			fl->initVelMin.y = r * dir.y * s;
+			fl->initVelMin.z = r * dir.z * s;
+			fl->initVelMax = fl->initVelMin;
+			r = FxElem_Rand(0.099999994039535522, 0.30000001192092896);
+			fl->initAccMin.x = r * -fl->initVelMin.x + 0.0f;
+			fl->initAccMin.y = r * -fl->initVelMin.y - 2950.0f;
+			fl->initAccMin.z = r * -fl->initVelMin.z + 0.0f;
+			fl->initAccMax = fl->initAccMin;
+			float e = FxElem_Rand(0.029999999329447746, 0.0);
+			float lt = FxElem_Rand(0.15000000596046448, 0.25);
+			CGameParticles_SetSparksOn(fl, 1);
+			fl->lifeTime = lt;
+			float size = FxElem_Rand(20.0, 15.0) * s;
+			fl->sizeLife = 1.0f;
+			fl->rotIni = 0.0f;
+			fl->rotEnd = 0.0f;
+			fl->rotVar = 0.0f;
+			fl->sizeIni = size;
+			fl->sizeEnd = size;
+			byte sprite = (byte)((crt_rand() & 1) + 0x41);
+			fl->spriteEnd = 0x44;
+			fl->sparkVelScale = 1.0f;
+			fl->spriteIni = sprite;
+			fl->sparkMaxSize = FxElem_Rand(0.59999996423721313, 0.80000001192092896);
+			CGameParticles_Apply(fl);
+			CGameParticles_EmitDt(fl, 1, 1, e + 0.03f);
+		}
+		CGameParticles_SetSparksOn(fl, 0);
+		if (crt_rand() & 1) {
+			CSoundSys *snd = g_pSound;
+			const char *name = g_DamageFXSound;
+			snd->vftable->PlayAt(snd, name, fpos, Snd_Volume(g_DamageFXSoundVol));
+		}
+	}
+	self->flashTime = 0.0f;
+	return;
+
+far:
+	if (self->base.nearCam) {
+		self->base.nearCam = 0;
+	}
 }
 
 /* ---- cFXElementsMentalControllerMainFX ---- */

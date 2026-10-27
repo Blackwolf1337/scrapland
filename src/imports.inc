@@ -635,3 +635,4 @@ SD_IMPORT(RenderCalcIlum_Luz, 0x2ce410)
 /* module agent: Big leftovers 0x0f0000..0x110000 (imports below this line) */
 
 /* module agent: Big FX leftovers 0x1a8000..0x1eab00 (imports below this line) */
+SD_IMPORT(CGameLensFlare_SetB2c, 0x233020)

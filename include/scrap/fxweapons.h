@@ -30,6 +30,7 @@ void __thiscall CGameLensFlare_SetF30(void *self, float v);			/* rva 0x232fa0, +
 void __thiscall CGameLensFlare_SetPos(void *self, vec3_t pos);		/* rva 0x232fc0, +0x08 */
 void __thiscall CGameLensFlare_SetF18(void *self, float v);			/* rva 0x232ff0, +0x18 */
 void __thiscall CGameLensFlare_SetI1c(void *self, int v);			/* rva 0x233010, +0x1c */
+void __thiscall CGameLensFlare_SetB2c(void *self, byte v);			/* rva 0x233020, +0x2c */
 
 /* the weapon block of a ship at 0x5f0 (the one of Entity_TargetLock): the ammo of kind i (0 out of range), whether
  * slot (0..4) of weapon kind w is mounted (rva 0x11a6c0, 0x11a9f0) */
