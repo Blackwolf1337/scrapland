@@ -173,6 +173,10 @@ byte __thiscall cEntity_VarS(cEntity *self, const char *name, char **s, int set)
 byte __thiscall cEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
 void *__thiscall cEntity_GetAI(cEntity *self);
 
+/* the network game: an entity named "net..." of a client is the copy of a server one */
+byte Net_IsNetEntity(cEntity *e);
+int Net_GetSendRate(void);
+
 /* vehicles ("Car") and characters ("WalkChar") continue the vtable of cWithLifeEntity */
 typedef struct cVehicleEntityVtbl {
 	cWithLifeEntityVtbl base;

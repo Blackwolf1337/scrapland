@@ -340,6 +340,107 @@ check('cItemEntity_NetNeedsSend far', lambda: (SDTest.Call(0x0f21a0, 'tbif', nti
 check('name of SDItem out', lambda: SDTest.Call(0x208810, 'tbis', ntworld + 4, 'SDItem')[0])
 check('cItemEntity_Delete', lambda: SDTest.Call(0x0f0be0, 'tiii', nti, 1)[0] == nti)
 
+# cMissileEntity: SDMissile made by cWorld_CreateEntity without a model; the variables, the setters, the flight math
+# (Wobble after srand), the touch list (restored), then off and deleted. Not called: Hit with too few bees (it
+# explodes), Update and LifeTick (they use the frame time).
+ntm = SDTest.Call(0x208360, 'tiisfffs', ntworld, 'SDMissile', ntpp[0], ntpp[1] + 400.0, ntpp[2], 'Missile')[0]
+def ntmfields(e):
+	return (ntname(e), ntpeek(e) == 0x7b2b24, ntfl(e + 0xac, 3), ntfl(e + 0xd4, 6), ntpeek(e + 0x48),
+		SDTest.Peek(e + 0x3e8, '@b'), ntfl(e + 0x3ec, 4), ntstr(e + 0x3fc), ntstr(e + 0x47c), ntstr(e + 0x4fc),
+		ntints(e + 0x57c, 2), map(lambda o, e=e: SDTest.Peek(e + o, '@b'), (0x584, 0x585, 0x58c, 0x7bc, 0x7bd)),
+		ntpeek(e + 0x588), ntpeek(e + 0x590), ntfl(e + 0x594, 7), ntpeek(e + 0x5b0),
+		map(lambda i, e=e: ntstr(e + 0x5b4 + 0x80 * i), range(4)), ntints(e + 0x7b4, 2), ntfl(e + 0x28c, 1))
+check('cMissileEntity_ctor', lambda: ntmfields(ntm))
+for v in ('HideMain', 'nSwarm', 'NetnSwarm', 'FallOutAtmosphere', 'HiddenSwarm', 'NoWorldHit', 'AddToSwarm', 'Bogus', ''):
+	check('cMissileEntity_VarI(%s)' % v, lambda v=v: SDTest.Call(0x0f3310, 'tbispi', ntm, v, -5, 0))
+for v in ('SwDthTime', 'RadiusGrow', 'TopRadius', 'Radius', 'SwarmSpeed', 'TurnSpeed', 'LifeTime', 'Speed', 'Bogus', ''):
+	check('cMissileEntity_VarF(%s)' % v, lambda v=v: SDTest.Call(0x0f2e90, 'tbisDi', ntm, v, -5.0, 0))
+for v in ('OnBeeDeath', 'OnHit', 'HitType', 'Type', 'Parent', 'Target', 'Name', 'Bogus', ''):
+	check('cMissileEntity_VarS(%s)' % v, lambda v=v: (lambda r: (r[0], r[0] and ntstr(r[1])))(
+		SDTest.Call(0x0f51b0, 'tbispi', ntm, v, 0, 0)))
+for v in ('Pos', 'Vel', 'Bogus', ''):
+	check('cMissileEntity_VarV(%s)' % v, lambda v=v: SDTest.Call(0x0f5f20, 'tbisDDDi', ntm, v, -1.0, -2.0, -3.0, 0))
+check('cMissileEntity_IsType', lambda: map(lambda t: SDTest.Call(0x0f36a0, 'tbis', ntm, t)[0],
+	('Missile', 'WithLife', 'Entity', 'Car', 'missile', '')))
+check('cMissileEntity getters', lambda: (SDTest.Call(0x0f32e0, 'tsi', ntm)[0], SDTest.Call(0x0f32c0, 'tii', ntm)[0]))
+for v in (('SwDthTime', 2.5, 1), ('SwDthTime', 3.5, 0), ('RadiusGrow', 7.0, 1), ('TopRadius', 1500.0, 1), ('Radius', 50.0, 1),
+		('SwarmSpeed', 20000.0, 1), ('TurnSpeed', 90.0, 1), ('TurnSpeed', -45.5, 1), ('LifeTime', 4.0, 1), ('Speed', 1000.0, 1),
+		('Speed', 0.0, 256), ('Bogus', 1.0, 1)):
+	n, f, st = v
+	check('cMissileEntity_VarF set' + fmt(v), lambda n=n, f=f, st=st: (SDTest.Call(0x0f2e90, 'tbisDi', ntm, n, f, st),
+		ntmfields(ntm)))
+for v in (('HideMain', 3), ('FallOutAtmosphere', 2), ('NoWorldHit', 1), ('HiddenSwarm', 1), ('HiddenSwarm', 0), ('nSwarm', 0),
+		('NoWorldHit', 0), ('Bogus', 1)):
+	n, i = v
+	check('cMissileEntity_VarI set' + fmt(v), lambda n=n, i=i: (SDTest.Call(0x0f3310, 'tbispi', ntm, n, i, 1)[0],
+		ntmfields(ntm)))
+def ntmvars(n, s):
+	a = ntcstr(s)
+	r = SDTest.Call(0x0f51b0, 'tbispi', ntm, n, a, 1)[0]
+	ntfree(a)
+	return r
+for n, s in (('HitType', 'inout'), ('HitType', 'Inside'), ('HitType', 'None'), ('HitType', 'Bogus'), ('HitType', 'Hit'),
+		('Type', 'cloud'), ('Type', 'Dumb'), ('Type', 'Fall'), ('Type', 'x'), ('Type', 'Linear'), ('Parent', 'Player0'),
+		('Target', 'SDEnt'), ('OnHit', '__main__.ntontake'), ('OnBeeDeath', '__main__.ntontake'), ('Bogus', 'x')):
+	check('cMissileEntity_VarS set(%s, %s)' % (n, s), lambda n=n, s=s: (ntmvars(n, s), ntmfields(ntm),
+		(lambda r: (r[0], r[0] and ntstr(r[1])))(SDTest.Call(0x0f51b0, 'tbispi', ntm, n, 0, 0))))
+for f, sig, a in ((0x0f4b30, 'tvif', 2.0), (0x0f4b50, 'tvii', 3), (0x0f4d10, 'tvii', 0), (0x0f4d20, 'tvii', 1),
+		(0x0f4d30, 'tvis', 'SDParent'), (0x0f4d50, 'tvif', 60.0), (0x0f4d70, 'tvif', 8.0), (0x0f4d90, 'tvif', 500.0),
+		(0x0f4db0, 'tvif', 1.25), (0x0f4e80, 'tvii', 0), (0x0f4780, 'tvii', 1), (0x0f4e90, 'tvif', 1234.5),
+		(0x0f4eb0, 'tvis', 'SDTarget'), (0x0f4eb0, 'tvii', 0), (0x0f4ee0, 'tvif', 900.0), (0x0f4f00, 'tvif', 0.75),
+		(0x0f4b50, 'tvii', 0), (0x0f4a20, 'tvii', 1), (0x0f4a20, 'tvii', 0), (0x0f4a50, 'tvii', 1), (0x0f4a50, 'tvii', 0)):
+	check('cMissileEntity setter %x' % f + fmt(a), lambda f=f, sig=sig, a=a: (SDTest.Call(f, sig, ntm, a), ntmfields(ntm)))
+# the flight math
+for a in ((0.0, 0.0, 0.0), (0.5, 1.0, 0.0), (-1.2, 3.0, 2.0), (7.0, -7.0, 12.0)):
+	check('cMissileEntity_SetAng' + fmt(a), lambda a=a: (SDTest.Call(0x0f4700, 'tviF', ntm, a), ntfl(ntm + 0xac, 3)))
+	check('cMissileEntity_UpdateVel' + fmt(a), lambda: (SDTest.Call(0x0f4f20, 'tvi', ntm), ntfl(ntm + 0xd4, 3)))
+for v in ((100.0, 0.0, 0.0), (0.0, -50.0, 0.0), (3.0, 4.0, -12.0), (0.0, 0.0, 0.0), (-1e5, 2e5, 3.5)):
+	check('cMissileEntity_SetVel' + fmt(v), lambda v=v: (SDTest.Call(0x0f4fd0, 'tviF', ntm, v), ntmfields(ntm)))
+ntsetfl(ntm + 0xe0, (0.25, -0.5, 1.0))
+for dt in (0.1, 0.5, 2.0):
+	check('cMissileEntity_RotStep(%s)' % fmt(dt), lambda dt=dt: (SDTest.Call(0x0f2aa0, 'tvif', ntm, dt), ntmfields(ntm)))
+	check('cMissileEntity_Fall(%s)' % fmt(dt), lambda dt=dt: (SDTest.Call(0x0f2df0, 'tvif', ntm, dt), ntmfields(ntm)))
+ntsetfl(ntm + 0xac, (0.0, 0.0, -0.5))
+check('cMissileEntity_Fall z < 0', lambda: (SDTest.Call(0x0f2df0, 'tvif', ntm, 0.25), ntfl(ntm + 0xac, 3)))
+SDTest.Call(0x323c50, 'vi', 7)
+for k in (1.0, 0.5, 4.0, -2.0):
+	check('cMissileEntity_Wobble(%s)' % fmt(k), lambda k=k: (SDTest.Call(0x0f2c30, 'tvif', ntm, k), ntmfields(ntm)))
+check('cMissileEntity_ScaleWeapon', lambda: (SDTest.Call(0x0f5130, 'tvii', ntm, 0), ntmfields(ntm)))
+# the touch list of the missiles (a global): the player goes in, the plain entity nt1 does not
+ntmhits = map(lambda i: ntstr(0x8476b8 + 0x80 * i), range(4))
+check('missile hits before', lambda: ntmhits)
+def ntmtouch(o):
+	SDTest.Call(0x0f2b10, 'tviiii', ntm, o, 0, 0)
+	return map(lambda i: ntstr(0x8476b8 + 0x80 * i), range(4))
+check('cMissileEntity_Touch(0)', lambda: ntmtouch(0))
+check('cMissileEntity_Touch(nt1)', lambda: ntmtouch(nt1))
+check('cMissileEntity_Touch(player)', lambda: ntmtouch(ntplayer))
+SDTest.Call(0x0f4d30, 'tvis', ntm, 'Player0')
+check('cMissileEntity_Touch(player) parent', lambda: ntmtouch(ntplayer))
+for i in range(4):
+	if ntmhits[i]:
+		SDTest.Call(0x22cf50, 'iisi', 0x8476b8 + 0x80 * i, ntmhits[i], len(ntmhits[i]) + 1)
+	else:
+		ntsetfl(0x8476b8 + 0x80 * i, (0.0,))
+check('missile hits restored', lambda: map(lambda i: ntstr(0x8476b8 + 0x80 * i), range(4)))
+# InOut: leaving it calls OnHit for the names the missile went through
+ntcalls = []
+SDTest.Call(0x22cf50, 'iisi', ntm + 0x5b4, 'SDHitA', 7)
+SDTest.Call(0x22cf50, 'iisi', ntm + 0x6b4, 'SDHitC', 7)
+check('cMissileEntity_SetHitType(InOut)', lambda: (SDTest.Call(0x0f4aa0, 'tvii', ntm, 2), ntpeek(ntm + 0x7b4), len(ntcalls)))
+check('cMissileEntity_SetHitType(InOut) again', lambda: (SDTest.Call(0x0f4aa0, 'tvii', ntm, 2), len(ntcalls)))
+check('cMissileEntity_SetHitType(None)', lambda: (SDTest.Call(0x0f4aa0, 'tvii', ntm, 0), ntpeek(ntm + 0x7b4), ntcalls))
+# hidden swarm bees are only counted
+SDTest.Call(0x0f4d10, 'tvii', ntm, 5)
+SDTest.Poke(ntm + 0x58c - 0x400000, 1)
+check('cMissileEntity_Hit(2) hidden', lambda: (SDTest.Call(0x0f36f0, 'tbiii', ntm, 2, 0)[0], ntmfields(ntm)))
+check('cMissileEntity_Hit(3) hidden', lambda: (SDTest.Call(0x0f36f0, 'tbiii', ntm, 3, 0)[0], ntmfields(ntm)))
+check('cMissileEntity_SetSwarm(0) hidden', lambda: (SDTest.Call(0x0f4dd0, 'tvii', ntm, 0), ntmfields(ntm)))
+check('cMissileEntity_OnDeath', lambda: (SDTest.Call(0x0f46a0, 'tvi', ntm), ntstr(ntm + 0x47c)))
+check('cMissileEntity_SetActive(0)', lambda: (SDTest.Call(0x0f46c0, 'tvii', ntm, 0), SDTest.Peek(ntm + 0x4c, '@b')))
+check('name of SDMissile out', lambda: SDTest.Call(0x208810, 'tbis', ntworld + 4, 'SDMissile')[0])
+check('cMissileEntity_Delete', lambda: SDTest.Call(0x0f2650, 'tiii', ntm, 1)[0] == ntm)
+
 # the doors: ChangeDoorState with an unknown state, AcceleratorOnEnter that stops at a type check
 def ntnative(f, params):
 	check('Scrap.SetCallFunc(%s)' % f, lambda f=f: Scrap.SetCallFunc(f))

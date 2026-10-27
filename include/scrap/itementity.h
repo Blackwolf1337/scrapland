@@ -90,10 +90,6 @@ byte __thiscall cObjEntity_VarS(cEntity *self, const char *name, char **s, int s
 byte __thiscall cObjEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
 void __thiscall cObjEntity_Tick(cEntity *self, float dt);
 
-/* the network game: an entity named "net..." of a client is the copy of a server one */
-byte Net_IsNetEntity(cEntity *e);
-int Net_GetSendRate(void);
-
 void __fastcall cItemEntity_dtor(cItemEntity *self);
 cItemEntity *__thiscall cItemEntity_Delete(cItemEntity *self, uint32_t flags);
 void __thiscall cItemEntity_Touch(cItemEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir);
