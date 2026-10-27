@@ -6,6 +6,7 @@
 
 #include "scrap/python.h"
 #include "scrap/weaps.h"
+#include "scrap/world.h"
 
 static PyObject *ReturnNone(void) {
 	Py_INCREF(Py_None);

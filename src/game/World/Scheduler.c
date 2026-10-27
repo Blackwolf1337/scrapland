@@ -5,8 +5,6 @@
 
 #include "scrap/scheduler.h"
 
-#define CSCHEDULEDFUNCSTACK_VFTABLE 0x3ce0ec
-
 void __thiscall SchedList_Add(cSchedList *list, cScheduledFunc *const *f) {
 	cSchedNode *node = DList_NewNode(list, sizeof(*node));
 	node->func = *f;

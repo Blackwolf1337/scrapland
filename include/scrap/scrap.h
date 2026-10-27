@@ -110,14 +110,19 @@ int Video_GetModes(int i, char *buf);
 
 /* debris systems (named) and the values SetDebrisValue sets for the next DropDebris */
 typedef struct cDebrisSys {
-	byte pad_00[0x14];
+	byte pad_00[0xc];
+	char *name;			/* 0x0c string object, the key in g_pWorld->debris */
+	byte pad_10[4];
 	float radiusSq;			/* 0x14 */
 	float b;			/* 0x18 */
 	float c;			/* 0x1c */
 	float d;			/* 0x20 */
 	byte flag;			/* 0x24 */
+	byte pad_25[0x34 - 0x25];
+	struct cDebrisSys *next;	/* 0x34 g_pWorld->debrisList */
 } cDebrisSys;
 SD_OFFSET(cDebrisSys, flag, 0x24);
+SD_SIZE(cDebrisSys, 0x38);
 
 typedef struct cDebris {
 	byte pad_00[0x1c];
@@ -130,16 +135,16 @@ SD_OFFSET(cDebris, speed, 0x4c);
 #define g_DebrisDefault GAME_DATA(float, 0x4674f4)
 
 cDebrisSys *__thiscall cWorld_GetDebrisSys(cWorld *world, const char *name);
-void __thiscall cWorld_DeleteDebrisSys(cWorld *world, const char *name);
+byte __thiscall cWorld_DeleteDebrisSys(cWorld *world, const char *name);
 void __thiscall cDebrisSys_Init(cDebrisSys *sys, int n, int e);
 cDebris *__thiscall cDebrisSys_NewElement(cDebrisSys *sys);
 void __thiscall cDebrisSys_Drop(cDebrisSys *sys, cDebris *debris);
 
 /* entity list by name for the collision tests */
 void *EntityLists_Get(const char *name);
-void __thiscall cWorld_TestLineEntities(cWorld *world, int arg, void *list, const vec3_t *from, const vec3_t *to,
+byte __thiscall cWorld_TestLineEntities(cWorld *world, int arg, void *list, const vec3_t *from, const vec3_t *to,
 	vec3_t *hit, cEntity **target, int flag);
-void __thiscall cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, void *list, const vec3_t *center,
+byte __thiscall cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, void *list, const vec3_t *center,
 	float radius, cEntity **target, int a, int b);
 byte __thiscall cWorld_SphereCall(cWorld *world, void *list, const vec3_t *center, float radius, const char *func,
 	int flag);

@@ -22,6 +22,12 @@ typedef struct cTimer {
 } cTimer;
 SD_SIZE(cTimer, 0x28);
 
+cTimer *__fastcall cTimer_ctor(cTimer *self);
+/* dt: real time since the last step */
+void __thiscall cTimer_Advance(cTimer *self, float dt);
+/* 0 while paused */
+float __fastcall cTimer_GetSpeed(cTimer *self);
+float __fastcall cTimer_GetDelta(cTimer *self);
 float __thiscall Timer_GetTime(cTimer *self);
 void __thiscall Timer_SetTime(cTimer *self, float t);
 void __thiscall Timer_SetSpeed(cTimer *self, float speed);
