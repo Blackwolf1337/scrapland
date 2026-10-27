@@ -229,12 +229,42 @@ void Escena_MatsUsados(CEscena *esc);
 void M3D_LeeCamara(CNodo3D *nodo, byte anim, int frame);
 void M3D_LeeLuz(CNodo3D *nodo, byte anim, int frame);
 void M3D_LeePortal(CNodo3D *nodo, byte anim);
+/* the mesh of nodo ("TipoGeom: Malla"): vertices through the pivot, Physique weights, faces with their materials,
+ * texture vertices and faces, normals (nothing with anim) */
+void M3D_LeeMalla(CNodo3D *nodo, byte anim);
 /* a texture map of mat and its sub maps (tipo: of the parent map, the "Mapa:" class sets it; idx unused) */
 void M3D_LeeMapa(CMaterial *mat, int iMat, int iSubmat, int idx, int tipo);
 /* a material into lista and the table of the file, with its maps and sub materials (iSubmat -1 for a material) */
 void M3D_LeeMaterial(CListaMat *lista, int iMat, int iSubmat);
 
+/* the matrix of the transform of the object */
+matrix_t *__thiscall M3DNodo_CalcMatrix(M3DNodo *self);
+/* Lee_NextLine in text files (0 for binary ones; the original leaves eax there) */
+int M3D_NextLine(void);
+/* the world matrices: CHECK of no scale, qLook from them, mObj their inverses */
+void Escena_MatricesObj(CEscena *esc);
+/* the positions and rotations relative to the parents, with anim also those of the animation frames */
+void Escena_AnimLocal(CEscena *esc, byte anim);
+/* the mesh of a plain child joined into the empty Biped nodes */
+void Escena_ColapsarBip(CEscena *esc);
+/* with Physique weights: all visible meshes (without skin: of their node) joined into one "SkinMesh" node */
+void Escena_SkinMesh(CEscena *esc);
+/* i48 of the nodes (those without NODO_NO_TABNODOR first), the bones of the skins to it; the AnimNodes masks */
+void Escena_TablaNodos(CEscena *esc);
+/* a LOD model: the nodes matched with those of the main LOD by name, warnings for the differences */
+void Escena_SetupLOD(CEscena *esc);
+/* the Physique weights into the skins of the meshes (version 13 on) */
+void Escena_PhysiqueSkin(CEscena *esc);
+/* the nodes reordered so that the parents come first */
+void Escena_Ordenar(CEscena *esc);
+/* the parents of an animation scene set as in the model, then reordered */
+void Escena_PadresAnim(CEscena *esc, CEscena *estatica);
+/* with OptimizeNodes: the nodes under deleted (NODO_BORRAR) parents moved up, cleaned before and after */
+void Escena_Jerarquia(CEscena *esc);
+
 /* other modules (src/imports.inc) */
+/* rva 0x2d6c50: the transform of a matrix */
+void Matrix_ToTransform(const matrix_t *m, m3dTransform_t *out);
 /* rva 0x2d6750 and 0x2d65d0: a transform as a matrix (the pivots of the meshes, the frames of the animation) */
 void __thiscall M3DTransform_ToMatrix(m3dTransform_t *self, matrix_t *out);
 matrix_t *__thiscall M3DTransform_ToMatrixAnim(m3dTransform_t *self, matrix_t *out);

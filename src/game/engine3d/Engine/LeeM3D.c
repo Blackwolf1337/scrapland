@@ -18,6 +18,7 @@
 #include "scrap/portal.h"
 #include "scrap/render.h"
 #include "scrap/sistpart.h"
+#include "scrap/utild3d.h"
 #include "scrap/varios.h"
 
 /* a binary string: its length, then the characters */
@@ -1288,6 +1289,790 @@ void M3D_LeePortal(CNodo3D *nodo, byte anim) {
 		M3D_SetOk(0);
 		E3D_LogBlue(g_FileLog, "  WARN: Portal: '%s'  Width: %f  Height: %f", nodo->name, (double)p->ancho,
 			(double)p->alto);
+	}
+}
+
+
+/* the scene after the objects are read */
+
+/* CHECK of a decomposed node matrix: no scale, no mirror */
+static void M3D_CheckSinEscala(const m3dTransform_t *da) {
+	CHECK((double)1e-5f > __builtin_fabs((double)(da->esc.x - 1.0f)) &&
+		(double)1e-5f > __builtin_fabs((double)(da->esc.y - 1.0f)) &&
+		(double)1e-5f > __builtin_fabs((double)(da->esc.z - 1.0f)));
+	CHECK(da->signo == 1.0f);
+}
+
+matrix_t *__thiscall M3DNodo_CalcMatrix(M3DNodo *self) {
+	return M3DTransform_ToMatrixAnim(&self->mt, &self->mNodo);
+}
+
+int M3D_NextLine(void) {
+	return g_M3DBinary ? 0 : Lee_NextLine();
+}
+
+void Escena_MatricesObj(CEscena *esc) {
+	m3dTransform_t da;
+	matrix_t inv;
+
+	CEscena_UpdateNodes(esc);
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		Matrix_ToTransform(&n->m, &da);
+		M3D_CheckSinEscala(&da);
+		n->qLook = da.rot;
+		CHECK(Matrix_Invert(&inv, &n->m) == 0);
+		n->mObj = inv;
+	}
+}
+
+void Escena_AnimLocal(CEscena *esc, byte anim) {
+	m3dTransform_t da;
+	matrix_t inv, tmp, loc, mp, mn;
+	vec3_t v, pos;
+	quat_t q, rot;
+
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		CNodo3D *padre = n->padre;
+		CNodo3D_SetPadre(n, NULL);
+		CNodo3D_Update(n, NULL);
+		CNodo3D_SetPadre(n, padre);
+		if (!padre) {
+			continue;
+		}
+		CHECK(Matrix_Invert(&inv, &padre->m) == 0);
+		loc = *Matrix_MulD3D(&tmp, &n->m, &inv);
+		Matrix_ToTransform(&loc, &da);
+		n->pos = da.pos;
+		n->rot = da.rot;
+		M3D_CheckSinEscala(&da);
+		CNodo3D_Update(n, NULL);
+		if (!anim) {
+			continue;
+		}
+		M3DNodo *dat = M3D_NodoDat(n);
+		CHECK(dat->AnimNodo);
+		uint32_t flags = CAnimNodo_GetFlags(dat->AnimNodo);
+		if (padre->indice >= 0) {
+			CAnimNodo_GetFlags(M3D_NodoDat(padre)->AnimNodo);
+		}
+		for (int frame = g_M3DPriFrame; frame <= g_M3DUltFrame; frame++) {
+			uint32_t i = (uint32_t)(frame - g_M3DPriFrame);
+			if (padre->indice == -1) {
+				mp = padre->m;
+			} else {
+				pos = *M3DTabla4_GetVec(&M3D_NodoDat(padre)->pista.pos, &v, i);
+				rot = *M3DTabla4_GetQuat(&M3D_NodoDat(padre)->pista.rot, &q, i);
+				Quat_ToMatrixD3D(&mp, &rot);
+				Matrix_AddPos(&mp, &pos);
+			}
+			pos = *M3DTabla4_GetVec(&dat->pista.pos, &v, i);
+			rot = *M3DTabla4_GetQuat(&dat->pista.rot, &q, i);
+			Quat_ToMatrixD3D(&mn, &rot);
+			Matrix_AddPos(&mn, &pos);
+			CHECK(Matrix_Invert(&inv, &mp) == 0);
+			loc = *Matrix_MulD3D(&tmp, &mn, &inv);
+			Matrix_ToTransform(&loc, &da);
+			if (flags & ANIM_POS) {
+				CAnimNodo *an = dat->AnimNodo;
+				int k = CAnimNodo_FrameIndex(an, frame, an->Pos, ANIM_POS);
+				an->Pos[k] = da.pos;
+			}
+			if (flags & ANIM_ROT) {
+				CAnimNodo *an = dat->AnimNodo;
+				int k = CAnimNodo_FrameIndex(an, frame, an->Rot, ANIM_ROT);
+				an->Rot[k] = da.rot;
+			}
+			M3D_CheckSinEscala(&da);
+		}
+	}
+}
+
+void Escena_ColapsarBip(CEscena *esc) {
+	matrix_t tmp, m;
+
+	CEscena_UpdateNodes(esc);
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		if (n->indice < 0 || !(n->flags & NODO_BIP) || n->obj3D) {
+			continue;
+		}
+		CHECK(CNodo3D_Clase(n) == 0);
+		CNodo3D *n2 = Escena_BuscarColapsable(esc->Nodo3D, n);
+		if (!n2) {
+			continue;
+		}
+		E3D_LogInfo(g_FileLog, "BIP: Colapsed node: %s -> %s [f:%08X]", n2->name, n->name, n2->flags);
+		CHECK(!(n->flags & 0xc30000));
+		CHECK(!(n2->flags & 0xc30000));
+		if (n2->flags & 0xfffffe8b) {
+			E3D_LogBlue(g_FileLog, "WARN: Colapsed node: %s [f:%08X]", n2->name, n2->flags);
+		}
+		CNodo3D_SetObj3D(n, n2->obj3D);
+		n->flags &= 0xfffdff77;
+		if (n2->flags & 0x20) {
+			n->flags |= 0x20;
+		} else {
+			n->flags &= ~0x20u;
+		}
+		if (n2->flags & 0x40) {
+			n->flags |= 0x40;
+		} else {
+			n->flags &= ~0x40u;
+		}
+		n2->obj3D = NULL;
+		n2->flags |= 0x420088;
+		CMallaTri *malla = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_MALLATRI);
+		if (!malla->pSkin) {
+			m = *Matrix_MulD3D(&tmp, &n2->m, &n->mObj);
+			CMallaTri_Transform(malla, &m);
+		}
+	}
+}
+
+void Escena_SkinMesh(CEscena *esc) {
+	CNodo3D *n = esc->Nodo3D;
+
+	for (; n; n = n->sig) {
+		if (n->indice >= 0 && M3D_NodoDat(n)->skin.n) {
+			break;
+		}
+	}
+	if (!n) {
+		return;
+	}
+	CMallaTri *todo = operator_new(sizeof(CMallaTri));
+	todo = todo ? CMallaTri_ctor(todo) : NULL;
+	CEscena_UpdateNodes(esc);
+	for (n = esc->Nodo3D; n; n = n->sig) {
+		if (n->flags & NODO_HIDE || CNodo3D_Clase(n) != CLASE_OBJ3D_MALLATRI) {
+			continue;
+		}
+		CMallaTri *malla = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_MALLATRI);
+		if (!malla->pSkin) {
+			CMallaTri_Transform(malla, &n->m);
+			if (!malla->pSkin) {
+				CMallaTri_AllocSkin(malla);
+				for (int i = 0; i < malla->nVert; i++) {
+					byte *s = CMallaTri_GetSkin(malla, (uint32_t)i);
+					s[0] = 1;
+					CHECK((uint32_t)n->indice < 256);
+					n->flags |= NODO_HUESO;
+					s[1] = (byte)n->indice;
+					*(float *)(s + 4) = 1.0f;
+				}
+			}
+		}
+		CHECK(malla->pTri);
+		CMallaTri_Add(todo, malla, 0, 0);
+		CNodo3D_FreeObj3D(n);
+		if (!(n->flags & NODO_HUESO)) {
+			n->flags |= 0x420008;
+		}
+	}
+	if (todo->nTri && todo->nVert) {
+		CNodo3D *nodo = operator_new(sizeof(CNodo3D));
+		nodo = nodo ? CNodo3D_ctor(nodo) : NULL;
+		Cad_Set(&nodo->name, "SkinMesh");
+		CNodo3D_SetObj3D(nodo, (IObjeto3D *)todo);
+		CEscena_AddNodo(esc, nodo);
+		return;
+	}
+	((objDelete_t)((void **)todo->vftable)[0])(todo, 1);
+}
+
+void Escena_TablaNodos(CEscena *esc) {
+	int k = 0;
+
+	CEscena_NumNodos(esc);
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		if (!(n->flags & NODO_NO_TABNODOR)) {
+			n->i48 = k++;
+		}
+	}
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		if (n->flags & NODO_NO_TABNODOR) {
+			n->i48 = k++;
+		}
+	}
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		CHECK(CNodo3D_Clase(n) != CLASE_OBJ3D_MALLAD3D);
+		if (CNodo3D_Clase(n) != CLASE_OBJ3D_MALLATRI) {
+			continue;
+		}
+		CMallaTri *malla = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_MALLATRI);
+		if (!malla->pSkin) {
+			continue;
+		}
+		for (int v = 0; v < malla->nVert; v++) {
+			byte *s = CMallaTri_GetSkin(malla, (uint32_t)v);
+			if (!s[0]) {
+				continue;
+			}
+			byte *p = s + 1;
+			do {
+				CNodo3D *bone = CEscena_NodoObjeto(esc, *p);
+				CHECK(bone && (uint32_t)bone->i48 < 256);
+				CHECK(bone->flags & NODO_HUESO);
+				*p++ = (byte)bone->i48;
+			} while ((int)(p - s - 1) < (int)s[0]);
+		}
+	}
+	if (g_EscenaAnimPadre || g_EscenaLODPadre) {
+		return;
+	}
+	CArchINI *ini = esc->ini;
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		uint32_t mask = 0xffffffff;
+		int v = ini ? CArchINI_GetInt(ini, "AnimNodes", n->name, -1) : -1;
+		if (g_OptimizeNodes & 4) {
+			if (v == 0) {
+				mask = 0;
+				E3D_LogWhite(g_FileLog, "AniMask: IniValue %d: %s (node animation discarded)", 0, n->name);
+			} else if (v > 0) {
+				E3D_LogWhite(g_FileLog, "AniMask: IniValue %d: %s (node animation NOT discarded)", v, n->name);
+			} else if ((n->flags & 0x600000) == 0x600000) {
+				mask = 0;
+				E3D_LogInfo(g_FileLog, "AniMask: BIPED+NO_TABNODOR node: %s (node animation discarded)", n->name);
+			} else if (!(n->flags & NODO_BIP)) {
+				CHECK(CNodo3D_Clase(n) != CLASE_OBJ3D_MALLAD3D);
+				if (CNodo3D_Clase(n) == CLASE_OBJ3D_MALLATRI) {
+					CMallaTri *malla = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_MALLATRI);
+					if (malla->pSkin) {
+						mask = 0;
+						if (n->flags & 0x3d1000) {
+							Con_Warnf("AniMask: skinned mesh node: %s [f:%08X] (node animation NOT discarded)\n",
+								n->name, n->flags);
+							mask = 0xffffffff;
+						} else if (n->Refs - (n->ant != NULL) - (n->sig != NULL)) {
+							E3D_LogInfo(g_FileLog, "AniMask: skinned mesh node: %s (ref-node animation NOT discarded)",
+								n->name);
+							mask = 0xffffffff;
+						} else {
+							E3D_LogWhite(g_FileLog, "AniMask: skinned mesh node: %s (node animation discarded)", n->name);
+						}
+					}
+				}
+				mask |= 0x80;
+			}
+		}
+		n->i50 = (int)~mask;
+	}
+}
+
+void Escena_SetupLOD(CEscena *esc) {
+	E3D_LogWhite(g_FileLog, "LOD Model setup: %s", Ruta_FileName(esc->name));
+	Cad_Set(&esc->mainLOD, g_EscenaLODPadre->name);
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		CNodo3D *n2 = CEscena_FindNodo(g_EscenaLODPadre, n->name);
+		CArchINI *ini = g_EscenaLODPadre->ini;
+		if (ini && CArchINI_GetInt(ini, "XRefNodes", n->name, 0)) {
+			CHECK(n2);
+			n->nodoR = n2->i48;
+		}
+		if (n->flags & NODO_FX) {
+			CHECK(n2);
+			n->nodoR = n2->i48;
+		}
+		if (n->nodoR >= 0) {
+			CHECK(n->padre);
+			CHECK(n2->padre);
+			CHECK(!(n->flags & 0x420000));
+			CHECK(!(n->padre->flags & 0x420000));
+			CHECK(!(n2->padre->flags & 0x420000));
+			E3D_LogWhite(g_FileLog, "LOD node XRef: %s [f:%08X] [c:%s]", n->name, n->flags,
+				Obj3D_ClaseName(CNodo3D_Clase(n)));
+		}
+		if (CNodo3D_Clase(n) && CNodo3D_Clase(n) != CLASE_OBJ3D_MALLATRI) {
+			Con_Bluef("ERROR: LOD node class is invalid: %s [c:%s]\n", n->name, Obj3D_ClaseName(CNodo3D_Clase(n)));
+		}
+		if (n->flags & NODO_COLISION) {
+			Con_Warnf("WARN: LOD node is invalid: %s [f:%08X]\n", n->name, n->flags);
+		}
+		if (n->flags & 0x420000) {
+			Con_Warnf("WARN: LOD node is invalid: %s [f:%08X]\n", n->name, n->flags);
+		}
+		n->indice = -1;
+		if (!n2) {
+			if (Wild_Match("*LOD[1-9]*", n->name)) {
+				E3D_LogInfo(g_FileLog, "WARN: LOD node not found in MainLOD [Node: %s]", n->name);
+			} else {
+				Con_Warnf("WARN: LOD node not found in MainLOD [Node: %s]\n", n->name);
+			}
+			continue;
+		}
+		if (CNodo3D_Clase(n2) && CNodo3D_Clase(n2) != CLASE_OBJ3D_MALLAD3D &&
+			CNodo3D_Clase(n2) != CLASE_OBJ3D_SISTPART) {
+			Con_Bluef("ERROR: LOD main-node class is invalid: %s [c:%s]\n", n2->name,
+				Obj3D_ClaseName(CNodo3D_Clase(n2)));
+		}
+		n->indice = n2->indice;
+		if (!n->padre && !n2->padre) {
+			continue;
+		}
+		if (!n->padre || !n2->padre || strcmp(n->padre->name, n2->padre->name)) {
+			Con_Warnf("WARN: LOD node parent mismatch [Node: %s]\n", n->name);
+		}
+		if (!(n2->i50 & 1) && (n->pos.x != n2->pos.x || n->pos.y != n2->pos.y || n->pos.z != n2->pos.z)) {
+			if (!((double)0.025f > __builtin_fabs((double)(n->pos.x - n2->pos.x)) &&
+				    (double)0.025f > __builtin_fabs((double)(n->pos.y - n2->pos.y)) &&
+				    (double)0.025f > __builtin_fabs((double)(n->pos.z - n2->pos.z)))) {
+				vec3_t d = { n->pos.x - n2->pos.x, n->pos.y - n2->pos.y, n->pos.z - n2->pos.z };
+				Con_Warnf("WARN: LOD node Pos mismatch [Node: %s] (%s)\n", n->name, Vec3_Str(&d, 0, 6));
+			}
+		}
+		if (!(n2->i50 & 2) && (n->rot.x != n2->rot.x || n->rot.y != n2->rot.y || n->rot.z != n2->rot.z ||
+					     n->rot.w != n2->rot.w)) {
+			double d = Quat_DotAbs(&n->rot, &n2->rot);
+			if (Game_Cos(0x1.c98710add7e36p-10) > d) {
+				Con_Warnf("WARN: LOD node QRot mismatch [Node: %s]\n", n->name);
+			}
+		}
+	}
+}
+
+void Escena_PhysiqueSkin(CEscena *esc) {
+	if (g_M3DVersion <= 12) {
+		return;
+	}
+	CEscena_UpdateNodes(esc);
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		if (n->indice < 0) {
+			continue;
+		}
+		M3DNodo *dat = M3D_NodoDat(n);
+		if (!dat->skin.n) {
+			continue;
+		}
+		CHECK(CNodo3D_Clase(n) == CLASE_OBJ3D_MALLATRI);
+		if (CNodo3D_Clase(n) != CLASE_OBJ3D_MALLATRI) {
+			continue;
+		}
+		CMallaTri *malla = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_MALLATRI);
+		CMallaTri_AllocSkin(malla);
+		for (int v = 0; v < malla->nVert; v++) {
+			TABLA_CHECK(dat->skin.p, v, dat->skin.n);
+			const M3DSkinVert *sv = (const M3DSkinVert *)dat->skin.p + v;
+			byte *s = CMallaTri_GetSkin(malla, (uint32_t)v);
+			s[0] = (byte)sv->NumBones;
+			for (int k = 0; k < sv->NumBones; k++) {
+				CNodo3D *bone = CNodo3D_Find(esc->Nodo3D, sv->bone[k], 1);
+				if (!bone) {
+					Con_FatalErrorf("\nFATAL ERROR: Check failed!\n\nError: %s\n\nExpression: %s\n\nFile: '%s'\nDate: %s\n"
+						"Line: %d", sv->bone[k], "bone && \"_bone_not_found_\"", __FILE__, __TIMESTAMP__, __LINE__);
+				}
+				CHECK(bone && (uint32_t)bone->indice < 256);
+				bone->flags |= NODO_HUESO;
+				s[k + 1] = (byte)bone->indice;
+				memcpy(s + 4 + 4 * k, &sv->peso[k], sizeof(float));
+			}
+		}
+		CMallaTri_Transform(malla, &n->m);
+	}
+}
+
+/* a node and its parent of the reordering */
+typedef struct M3DNodoPadre {
+	CNodo3D *nodo;			/* 0x0 */
+	CNodo3D *padre;			/* 0x4 */
+} M3DNodoPadre;
+
+/* tabla.h at rva 0x2bc1b0 */
+static M3DNodoPadre *M3DNodoPadre_Get(CTabla *t, uint32_t i) {
+	TABLA_CHECK(t->p, i, t->n);
+	return (M3DNodoPadre *)t->p + i;
+}
+
+/* the nodes ordered so that the parents come first, when one is not */
+static void Escena_OrdenarNodos(CEscena *esc) {
+	byte cambio = 0;
+	int k = 1;
+
+	CEscena_SetNodos54(esc, 0);
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		if (n->padre && !n->padre->i54) {
+			cambio = 1;
+		}
+		n->i54 = k++;
+	}
+	if (!cambio) {
+		return;
+	}
+	CTabla t = { 0, NULL };
+	int num = CEscena_NumNodos(esc);
+	CHECK(num > 0);
+	t.n = num;
+	t.p = New_Array((uint32_t)num, sizeof(M3DNodoPadre));
+	CHECK(t.p);
+	CNodo3D *n = esc->Nodo3D;
+	for (int i = 0; i < num; i++) {
+		CHECK(n);
+		TABLA_CHECK(t.p, i, num);
+		((M3DNodoPadre *)t.p)[i].nodo = n;
+		TABLA_CHECK(t.p, i, num);
+		((M3DNodoPadre *)t.p)[i].padre = n->padre;
+		n = n->sig;
+	}
+	M3DNodoPadre *tab = t.p;
+	do {
+		cambio = 0;
+		for (int i = 0; i < num; i++) {
+			TABLA_CHECK(t.p, i, num);
+			CNodo3D *nodo = tab[i].nodo;
+			while (tab[i].padre) {
+				int j = 0;
+				while (j < num && M3DNodoPadre_Get(&t, (uint32_t)j)->nodo != tab[i].padre) {
+					j++;
+				}
+				if (j <= i) {
+					break;
+				}
+				CHECK(M3DNodoPadre_Get(&t, (uint32_t)j)->nodo != nodo);
+				M3DNodoPadre a = *M3DNodoPadre_Get(&t, (uint32_t)i);
+				M3DNodoPadre b = *M3DNodoPadre_Get(&t, (uint32_t)j);
+				*M3DNodoPadre_Get(&t, (uint32_t)i) = b;
+				*M3DNodoPadre_Get(&t, (uint32_t)j) = a;
+				cambio = 1;
+			}
+		}
+	} while (cambio);
+	for (int i = 0; i < num; i++) {
+		TABLA_CHECK(t.p, i, num);
+		CEscena_RemoveNodo(esc, tab[i].nodo);
+	}
+	for (int i = 0; i < num; i++) {
+		TABLA_CHECK(t.p, i, num);
+		CEscena_AddNodo(esc, tab[i].nodo);
+		TABLA_CHECK(t.p, i, num);
+		TABLA_CHECK(t.p, i, num);
+		CNodo3D_SetPadre(tab[i].nodo, tab[i].padre);
+	}
+	if (t.p) {
+		operator_delete_array(t.p);
+	}
+}
+
+void Escena_Ordenar(CEscena *esc) {
+	Escena_OrdenarNodos(esc);
+}
+
+void Escena_PadresAnim(CEscena *esc, CEscena *estatica) {
+	CHECK(estatica->Nodo3D);
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		CNodo3D *n2 = CNodo3D_Find(estatica->Nodo3D, n->name, 1);
+		if (!n2) {
+			continue;
+		}
+		CNodo3D *padre = n->padre;
+		if (!n2->padre) {
+			padre = NULL;
+		} else {
+			CNodo3D *p = CNodo3D_Find(esc->Nodo3D, n2->padre->name, 1);
+			if (p) {
+				padre = p;
+			} else {
+				E3D_LogBlue(g_FileLog, "  Parent not found: '%s'  Node: '%s'  Parent: '%s'", n2->padre->name, n2->name,
+					padre ? padre->name : "(null)");
+			}
+		}
+		if (n->padre != padre) {
+			CNodo3D_SetPadre(n, padre);
+		}
+	}
+	Escena_OrdenarNodos(esc);
+}
+
+void Escena_Jerarquia(CEscena *esc) {
+	if (!g_OptimizeNodes) {
+		return;
+	}
+	Escena_Limpiar(esc, "1");
+	CTabla t = { 0, NULL };
+	Tabla_Alloc8(&t, CEscena_NumNodos(esc));
+	CNodo3D *n = esc->Nodo3D;
+	int num = t.n;
+	for (int i = 0; i < num; i++, n = n->sig) {
+		CHECK(n);
+		TABLA_CHECK(t.p, i, num);
+		((M3DNodoPadre *)t.p)[i].nodo = n;
+		TABLA_CHECK(t.p, i, num);
+		((M3DNodoPadre *)t.p)[i].padre = n->padre;
+		if (n->flags & NODO_BORRAR) {
+			continue;
+		}
+		CNodo3D *pp = n->padre;
+		if (pp) {
+			while (pp->flags & NODO_BORRAR && pp->Refs - (pp->ant != NULL) - (pp->sig != NULL) == 1 && pp->padre) {
+				pp = pp->padre;
+			}
+		}
+		if (pp != n->padre) {
+			E3D_LogInfo(g_FileLog, "HIERARCHY__: New parent for node: %s [new: %s] [prev: %s] [f:%08X]", n->name,
+				pp->name, n->padre->name, n->flags);
+			TABLA_CHECK(t.p, i, num);
+			((M3DNodoPadre *)t.p)[i].padre = pp;
+			continue;
+		}
+		CNodo3D *p1 = n->padre;
+		if (!p1 || !(p1->flags & NODO_BORRAR)) {
+			continue;
+		}
+		for (CNodo3D *a = p1->padre; a && a->indice >= 0; a = a->padre) {
+			CNodo3D *d = Nodo_BuscarDescendiente(esc->Nodo3D, a);
+			if (d) {
+				E3D_LogInfo(g_FileLog, "HIERARCHY: (disabled): new parent for node: %s [new: %s] [prev: %s] [f:%08X]",
+					n->name, d->name, p1->name, n->flags);
+				break;
+			}
+		}
+	}
+	M3DNodoPadre *tab = t.p;
+	for (int i = 0; i < num; i++) {
+		TABLA_CHECK(t.p, i, num);
+		TABLA_CHECK(t.p, i, num);
+		CNodo3D_SetPadre(tab[i].nodo, tab[i].padre);
+	}
+	Escena_Ordenar(esc);
+	Escena_Limpiar(esc, "2");
+	if (tab) {
+		operator_delete_array(tab);
+	}
+}
+
+
+/* the meshes */
+
+/* the Physique weights of the vertices: per vertex its bones (equal names add up) and weights; weights below 0.01
+ * are spread over the other bones of the vertex and the bone removed */
+static void M3D_LeePhysique(CNodo3D *nodo, M3DNodo *dat, int nVert) {
+	int version = M3D_ReadInt("Version:");
+	M3D_ReadInt("PhyVersion:");
+	int vertices = M3D_ReadInt("NumVert:");
+	CHECK(version == 0);
+	CHECK(vertices == nVert);
+	CTabla *skin = &dat->skin;
+	Tabla_New1C(skin, vertices);
+	int pesos = 0, borrados = 0;
+	for (int i = 0; i < vertices; i++) {
+		TABLA_CHECK(skin->p, i, skin->n);
+		M3DSkinVert *vskin = (M3DSkinVert *)skin->p + i;
+		M3D_ReadIndex(i);
+		int bones = M3D_ReadInt(NULL);
+		CHECK(bones > 0);
+		vskin->NumBones = 0;
+		for (int b = bones; b > 0; b--) {
+			float peso;
+			M3D_ReadString("Bone:", NULL, 0, 1);
+			Nodo_LimpiarNombre(g_M3DCad);
+			int k = 0;
+			while (k < vskin->NumBones && strcmp(g_M3DCad, vskin->bone[k])) {
+				k++;
+			}
+			M3D_ReadFloatTo(&peso);
+			int n = vskin->NumBones;
+			if (k < n) {
+				vskin->peso[k] = peso + vskin->peso[k];
+				continue;
+			}
+			if (n >= SKIN_MAX_BONES) {
+				M3D_SetOk(0);
+				E3D_LogVerbose(g_FileLog, "  physique:  objeto: '%s'  vertice: %d  pesos: %d  peso: %f", nodo->name, i,
+					bones, (double)peso);
+				CHECK(vskin->NumBones < SKIN_MAX_BONES);
+			}
+			Cad_Set(&vskin->bone[n], g_M3DCad);
+			vskin->peso[n] = peso;
+			vskin->NumBones++;
+		}
+		pesos += vskin->NumBones;
+		for (int k = 0; k < vskin->NumBones; k++) {
+			if (!(0.01 > (double)vskin->peso[k])) {
+				continue;
+			}
+			CHECK(vskin->NumBones > 1);
+			float reparto = vskin->peso[k] / (float)(vskin->NumBones - 1);
+			for (int j = 0; j < vskin->NumBones; j++) {
+				vskin->peso[j] = reparto + vskin->peso[j];
+			}
+			int ult = vskin->NumBones - 1;
+			if (k != ult) {
+				Cad_Set(&vskin->bone[k], vskin->bone[ult]);
+				memcpy(&vskin->peso[k], &vskin->peso[ult], sizeof(float));
+			}
+			k--;
+			vskin->NumBones--;
+			borrados++;
+		}
+	}
+	E3D_LogWhite(g_FileLog, "  INFO: Physique:  vertices: %4d  pesos borrados: %4d / %-4d  objeto: '%s'", vertices,
+		borrados, pesos, nodo->name);
+}
+
+/* the default material of the faces without one, from ColorMalla */
+static CMaterial *M3D_MatColorMalla(const vec3_t *c) {
+	CMaterial *mat = operator_new(sizeof(CMaterial));
+	mat = mat ? CMaterial_ctor(mat) : NULL;
+	mat->params.power = 0.2f;
+	mat->params.specLevel = 0.2f;
+	mat->params.ambient[0] = M3D_ColorByte(c->x * 0x1.23d70ap-2f);
+	mat->params.ambient[1] = M3D_ColorByte(c->y * 0x1.23d70ap-2f);
+	mat->params.ambient[2] = M3D_ColorByte(c->z * 0x1.23d70ap-2f);
+	mat->params.ambient[3] = 0;
+	*(uint32_t *)mat->params.diffuse = M3D_Color(c);
+	*(uint32_t *)mat->params.specular = 0xffffff;
+	Cad_Printf(&mat->Nombre, "color_malla [%d,%d,%d]", mat->params.diffuse[0], mat->params.diffuse[1],
+		mat->params.diffuse[2]);
+	CMaterial *found = CListaMat_Find(g_ListaMat, mat);
+	if (found) {
+		((objDelete_t)mat->vftable[0])(mat, 1);
+		return found;
+	}
+	CListaMat_Add(g_ListaMat, mat);
+	return mat;
+}
+
+/* v normalized unless its length is 0 */
+static void M3D_Normalize(vec3_t *v) {
+	float x = v->x, y = v->y, z = v->z;
+	float len = (float)__builtin_sqrt((double)(y * y + x * x + z * z));
+	if ((double)len == 0.0) {
+		return;
+	}
+	float s = (float)(1.0 / (double)len);
+	v->x = x * s;
+	v->y = y * s;
+	v->z = z * s;
+}
+
+void M3D_LeeMalla(CNodo3D *nodo, byte anim) {
+	m3dTransform_t mt;
+	matrix_t tmp, m;
+	vec3_t color, v;
+
+	if (!anim) {
+		M3D_ReadString("TipoGeom:", NULL, 0, 0);
+		if (!strcmp(g_M3DCad, "Malla")) {
+			CMallaTri *mt3 = operator_new(sizeof(CMallaTri));
+			mt3 = mt3 ? CMallaTri_ctor(mt3) : NULL;
+			CNodo3D_SetObj3D(nodo, (IObjeto3D *)mt3);
+		}
+	}
+	if (CNodo3D_Clase(nodo) != CLASE_OBJ3D_MALLATRI) {
+		return;
+	}
+	M3DNodo *dat = M3D_NodoDat(nodo);
+	CMallaTri *malla = Obj3D_Cast(nodo->obj3D, CLASE_OBJ3D_MALLATRI);
+	if (anim) {
+		return;
+	}
+	int nVert = M3D_ReadInt("NumVerts:");
+	int nTVert = M3D_ReadInt("NumTVerts:");
+	int nTri = M3D_ReadInt("NumCaras:");
+	M3D_ReadBool("DefMalla:");
+	if (!nVert || !nTri) {
+		M3D_SetOk(0);
+		E3D_LogVerbose(g_FileLog, "  objeto: '%s'  caras: %d  nVert: %d  nTVert: %d", nodo->name, nTri, nVert, nTVert);
+	}
+	CMallaTri_SetNumVert(malla, nVert, 0);
+	CMallaTri_SetNumTVert(malla, nTVert, 0);
+	CMallaTri_SetNumTri(malla, nTri, 0);
+	if (nTVert > nTri * 3 && nTVert > 5000) {
+		M3D_SetOk(0);
+		E3D_LogVerbose(g_FileLog, "  objeto: '%s'  caras: %d  nTVert: %d  (3*caras: %d)", nodo->name, nTri, nTVert,
+			nTri * 3);
+	}
+	M3D_ReadTransform("local_a_pivote", &mt);
+	M3DTransform_ToMatrix(&mt, &dat->mPivote);
+	if (g_M3DVersion < 11 || !g_UseWSM) {
+		m = *Matrix_MulD3D(&tmp, &dat->mPivote, &dat->mNodo);
+	} else {
+		m = dat->mNodo;
+	}
+	int iMat = M3D_ReadInt("Material:");
+	M3D_ReadVec3("ColorMalla:", &color, 0);
+	for (int i = 0; i < nVert; i++) {
+		M3D_ReadIndex(i);
+		M3D_ReadVec3(NULL, &v, 1);
+		Vec3_TransformH(&v, &v, &m);
+		CMallaTri_SetVert(malla, (uint32_t)i, &v);
+	}
+	if (g_M3DVersion > 12 && M3D_ReadBool("Physique:")) {
+		M3D_LeePhysique(nodo, dat, nVert);
+	}
+	CMaterial *defMat = NULL, *lastRes = NULL;
+	int lastMat = -1, lastSub = -1, degen = 0;
+	for (int i = 0; i < nTri; i++) {
+		M3D_ReadIndex(i);
+		int a = M3D_ReadInt(NULL);
+		int b = M3D_ReadInt(NULL);
+		int c = M3D_ReadInt(NULL);
+		int sub = M3D_ReadInt(NULL);
+		CHECK(sub >= 0);
+		CMaterial *mat;
+		if (iMat == lastMat && sub == lastSub) {
+			mat = lastRes;
+		} else {
+			mat = M3D_FindMat(iMat, sub);
+			M3D_MatUsado(mat);
+			lastMat = iMat;
+			lastRes = mat;
+			lastSub = sub;
+		}
+		if (!mat) {
+			if (!defMat) {
+				defMat = M3D_MatColorMalla(&color);
+			}
+			mat = defMat;
+		}
+		plane_t plano;
+		if (a == c || c == b || b == a || !Plane_Calc(&plano, &malla->pVert[a], &malla->pVert[c], &malla->pVert[b])) {
+			degen++;
+		}
+		CMallaTri_SetTriVerts(malla, (uint32_t)i, a, c, b);
+		CMallaTri_SetTriMat(malla, (uint32_t)i, mat);
+	}
+	if (degen) {
+		M3D_SetOk(0);
+		E3D_LogVerbose(g_FileLog, "  caras degeneradas: %d  caras: %d  objeto: '%s'", degen, nTri, nodo->name);
+	}
+	if (nTVert) {
+		float maxU = 0.0f, maxV = 0.0f;
+		for (int i = 0; i < nTVert; i++) {
+			uv_t uv;
+			M3D_ReadIndex(i);
+			M3D_ReadVec2(NULL, &uv.u);
+			uv.u = g_M3DPreScaleU * uv.u;
+			uv.v = g_M3DPreScaleV * (1.0f - uv.v);
+			CMallaTri_SetTVert(malla, (uint32_t)i, &uv);
+			maxU = Float_MaxSS((float)__builtin_fabs((double)uv.u), maxU);
+			maxV = Float_MaxSS((float)__builtin_fabs((double)uv.v), maxV);
+		}
+		if ((maxU > 16.0f || maxV > 16.0f) && !(nodo->flags & 0x80)) {
+			M3D_SetOk(0);
+			E3D_LogVerbose(g_FileLog, "  WARN: coord. de textura: %f %f  objeto: '%s'", (double)maxU, (double)maxV,
+				nodo->name);
+		}
+		for (int i = 0; i < nTri; i++) {
+			M3D_ReadIndex(i);
+			int a = M3D_ReadInt(NULL);
+			int b = M3D_ReadInt(NULL);
+			int c = M3D_ReadInt(NULL);
+			CMallaTri_SetTriTVerts(malla, (uint32_t)i, a, c, b);
+		}
+	}
+	for (int i = 0; i < nTri; i++) {
+		vec3_t n0, n1, n2;
+		M3D_ReadIndex(malla->pTri[i].v[0]);
+		M3D_ReadVec3(NULL, &n0, 1);
+		M3D_ReadIndex(malla->pTri[i].v[2]);
+		M3D_ReadVec3(NULL, &n2, 1);
+		M3D_ReadIndex(malla->pTri[i].v[1]);
+		M3D_ReadVec3(NULL, &n1, 1);
+		Vec3_TransformDir0(&n0, &n0, &m);
+		Vec3_TransformDir0(&n1, &n1, &m);
+		Vec3_TransformDir0(&n2, &n2, &m);
+		M3D_Normalize(&n0);
+		M3D_Normalize(&n1);
+		M3D_Normalize(&n2);
+		CMallaTri_SetTriNormals(malla, (uint32_t)i, &n0, &n1, &n2);
 	}
 }
 

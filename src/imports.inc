@@ -676,5 +676,6 @@ SD_IMPORT(RenderTransp_Add, 0x2b6cc0)
 SD_IMPORT(M3DTransform_ToMatrix, 0x2d6750)
 SD_IMPORT(M3DTransform_ToMatrixAnim, 0x2d65d0)
 SD_IMPORT(FXTextura_Tipo, 0x2a82f0)
+SD_IMPORT(Matrix_ToTransform, 0x2d6c50)
 
 /* module agent: Engine NodeFX..ModelFX (imports below this line) */

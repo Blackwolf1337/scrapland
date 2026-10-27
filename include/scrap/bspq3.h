@@ -195,5 +195,7 @@ void __fastcall CBspQ3_Build(CBspQ3 *self);
 void __fastcall CBspQ3_InitD3D(CBspQ3 *self);
 void __fastcall CBspQ3_ReleaseD3D(CBspQ3 *self);
 void __fastcall CBspQ3_Render(CBspQ3 *self);
+/* rva 0x2c8770, an uncalled thiscall that returns this */
+void *__fastcall BspQ3_Identidad(void *self);
 
 #endif

@@ -91,6 +91,10 @@ BspQ3Malla *__fastcall BspQ3Malla_ctor(BspQ3Malla *self) {
 	return self;
 }
 
+void *__fastcall BspQ3_Identidad(void *self) {
+	return self;
+}
+
 void __fastcall CBspQ3_dtor(CBspQ3 *self) {
 	self->head = NULL;
 	if (self->lump) {
