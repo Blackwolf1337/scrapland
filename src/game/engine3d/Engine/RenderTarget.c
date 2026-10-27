@@ -205,16 +205,17 @@ static void RT_Quad2(RTVert2 *v, float w, float h, uint32_t color, float w0, flo
 	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert2));
 }
 
-/* the viewport w x h from 0, 0 with four texture sets: u[cx][set] on the left and right side, t[cy][set] on the top
- * and bottom; in texels of su x sv with g_RTLinNonPow2 */
-static void RT_Quad4(float w, float h, const float u[2][4], const float t[2][4], float su, float sv) {
+/* a quad from 0, y0 to w, y1 with four texture sets: u[cx][set] on the left and right side, t[cy][set] on the top
+ * and bottom; with texels in texels of su x sv */
+static void RT_Quad4Y(float w, float y0, float y1, const float u[2][4], const float t[2][4], byte texels, float su,
+	float sv) {
 	RTVert4 v[4];
 
 	for (int i = 0; i < 4; i++) {
 		int cx = i & 1;
 		int cy = i >> 1;
 		v[i].x = cx ? w : 0.0f;
-		v[i].y = cy ? h : 0.0f;
+		v[i].y = cy ? y1 : y0;
 		v[i].z = 0.0f;
 		v[i].rhw = 1.0f;
 		v[i].diffuse = 0xffffffff;
@@ -223,7 +224,7 @@ static void RT_Quad4(float w, float h, const float u[2][4], const float t[2][4],
 			v[i].t[k][1] = t[cy][k];
 		}
 	}
-	if (g_RTLinNonPow2) {
+	if (texels) {
 		for (int i = 0; i < 4; i++) {
 			for (int k = 0; k < 4; k++) {
 				v[i].t[k][0] = v[i].t[k][0] * su;
@@ -235,6 +236,10 @@ static void RT_Quad4(float w, float h, const float u[2][4], const float t[2][4],
 	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, RT_FVF4);
 	dev = RT_Dev();
 	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert4));
+}
+
+static void RT_Quad4(float w, float h, const float u[2][4], const float t[2][4], float su, float sv) {
+	RT_Quad4Y(w, 0.0f, h, u, t, g_RTLinNonPow2, su, sv);
 }
 
 /* stages 0..3 with their own texture coordinates, filter, clamp; with setTex the texture of each */
@@ -443,6 +448,87 @@ void Credits_Init(void) {
 		RT_CreateTarget((uint32_t)g_CreditsSizeX, (uint32_t)g_CreditsSizeY, &g_CreditsTarget);
 		RenderTarget_MakeCreditsMat();
 		RenderTarget_MakeCreditsMatBlur();
+	}
+}
+
+/* the four taps of a pass of the Credits trail, one texel row or column moved by the taps o, 2 o */
+static void Credits_Taps(float *taps, float d, float b, float o, float o2) {
+	taps[0] = d + (b - o2);
+	taps[1] = d + (b - o);
+	taps[2] = d + (o + b);
+	taps[3] = d + (o2 + b);
+}
+
+void Credits_Blur(void) {
+	uint32_t vp[6];
+	float u[2][4], t[2][4];
+	float c[4];
+
+	CHECK(g_CreditsRTarget);
+	CHECK(g_CreditsTarget);
+	uint32_t now = g_TimeMs;
+	float dt = RT_UToF(now - g_CreditsBlurTime) * 0.001f;
+	if (!g_CreditsClear && World_TimeScale() * 0.04f > dt) {
+		return;
+	}
+	g_CreditsBlurTime = now;
+	Render_ClearForced();
+	RT_SetTargetTexture(g_CreditsTarget);
+	RT_GetViewport(vp);
+	float w = RT_UToF(vp[2]);
+	float h = RT_UToF(vp[3]);
+	Render_SetMaterial(g_CreditsMatBlur, 0);
+	RT_Stages4(2, 1, g_CreditsTarget);
+	c[0] = c[1] = c[2] = c[3] = 1.0f;
+	void *dev = RT_Dev();
+	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, 0, c, 1);
+	float k = (float)g_CreditsAlpha / 255.0f * 0.05f + 0.2f;
+	if (!g_CreditsPhase) {
+		k = 0.25f;
+	}
+	c[0] = c[1] = c[2] = c[3] = k;
+	dev = RT_Dev();
+	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, 1, c, 1);
+	float sx = (float)g_CreditsSizeX;
+	float sy = (float)g_CreditsSizeY;
+	float du = 0.5f / sx;
+	float dv = 0.5f / sy;
+	/* phase 0: a horizontal and a vertical pass, twice; else two vertical passes moved by half a pixel up and down */
+	float tap = g_CreditsPhase ? 1.5f : 0.75f;
+	int passes = 2 - (g_CreditsPhase != 0);
+	for (int pass = 0; pass < passes; pass++) {
+		float yoff = 0.0f;
+		int size = g_CreditsSizeX;
+		if (g_CreditsPhase) {
+			yoff = -0.5f;
+			size = g_CreditsSizeY;
+		}
+		float o = tap / (float)size;
+		float o2 = o + o;
+		float y1;
+		for (int b = 0; b < 2; b++) {
+			if (!g_CreditsPhase) {
+				Credits_Taps(u[b], du, (float)b, o, o2);
+				t[b][0] = t[b][1] = t[b][2] = t[b][3] = dv + (float)b;
+			} else {
+				u[b][0] = u[b][1] = u[b][2] = u[b][3] = du + (float)b;
+				Credits_Taps(t[b], dv, (float)b, o, o2);
+			}
+		}
+		y1 = g_CreditsPhase ? yoff + h : h;
+		RT_Quad4Y(w, yoff, y1, u, t, g_RTLinPow2, sx, sy);
+		if (g_CreditsPhase == 1) {
+			yoff = 0.5f;
+		}
+		o = tap / sy;
+		o2 = o + o;
+		for (int b = 0; b < 2; b++) {
+			u[b][0] = u[b][1] = u[b][2] = u[b][3] = du + (float)b;
+			Credits_Taps(t[b], dv, (float)b, o, o2);
+		}
+		t[0][0] = (0.0f - o2) + dv;
+		t[0][3] = (o2 + 0.0f) + dv;
+		RT_Quad4Y(w, yoff + 0.0f, yoff + h, u, t, g_RTLinPow2, sx, sy);
 	}
 }
 
