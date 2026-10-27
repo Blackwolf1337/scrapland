@@ -74,6 +74,9 @@ byte __thiscall CNodesWorld2D_SavePath(CNodesWorld2D *self);
 /* <name>/AI/InfPath2DAI.pth of the base class (writes a file) */
 byte __thiscall CNodesWorld2D_SaveInfPath(CNodesWorld2D *self);
 void __thiscall CNodesWorld2D_ClearLists(CNodesWorld2D *self);
+/* the floor below p: at p, again at p + 0, then 15 higher, each g_NW2DGroundDist down; 1 with hit set (the probes
+ * the callers inline, also AI/AICharControl2D.cpp) */
+int NW2D_Probe(const vec3_t *p, vec3_t *hit);
 /* the floor below p (three probes of g_NW2DGroundDist: at p, again, 15 higher) raised by height: 1; else hit = p,
  * 0; self not used */
 byte __thiscall CNodesWorld2D_Ground(CNodesWorld2D *self, const vec3_t *p, vec3_t *hit, float height);

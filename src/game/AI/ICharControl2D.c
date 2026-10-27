@@ -1,0 +1,648 @@
+/*
+ * The move control of a character that walks (AI/AICharControl2D.cpp, include/scrap/aicharcontrol.h): the paths on
+ * the graph CNodesWorld2D, the floor tests, the turn of the view to the goal, the walk to or away from the target,
+ * the strafe around a character in the way.
+ */
+#include <float.h>
+
+#include "scrap/aicharcontrol.h"
+#include "scrap/fxelements.h"
+#include "scrap/fxmisc.h"
+#include "scrap/nodesworld2d.h"
+#include "scrap/scrapcollision.h"
+
+/* the distance on the floor (x and z), the sum of the squares from z */
+static inline float AICC2D_FlatDist(float dx, float dz) {
+	return (float)__builtin_sqrt((double)(dz * dz + dx * dx));
+}
+
+/* the distance on the floor from the character to (tx, tz): its position read twice (x, then z) */
+static float AICC2D_DistTo(cAICharControl *self, float tx, float tz) {
+	vec3_t b1, b2;
+
+	float px = Obj_Vtbl(self->ent)->base.GetPos(self->ent, &b1)->x;
+	const vec3_t *q = Obj_Vtbl(self->ent)->base.GetPos(self->ent, &b2);
+	return AICC2D_FlatDist(px - tx, q->z - tz);
+}
+
+static inline float AICC_FloorRadius(cAICharControl *self) {
+	cActCtrlChar *ac = ((const cWithLifeEntityVtbl *)self->ent->vftable)->GetActCtrl(self->ent);
+	return ac->cls->floorRadius;
+}
+
+/* (x, 0, z) made a unit vector, the length from the squares of x and z */
+static inline vec3_t AICC2D_FlatNorm(float x, float z) {
+	vec3_t r;
+	float len = (float)__builtin_sqrt((double)(x * x + 0.0f + z * z));
+
+	if (len == 0.0f) {
+		r.x = x;
+		r.y = 0.0f;
+		r.z = z;
+	} else {
+		float inv = 1.0f / len;
+		r.x = x * inv;
+		r.y = inv * 0.0f;
+		r.z = z * inv;
+	}
+	return r;
+}
+
+/* ---- construction ---- */
+
+cAICharControl *__thiscall cAICharControl2D_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg) {
+	cAICharControl *self = cAICharControl_ctor(mem, ent, ai, arg);
+
+	self->vftable = Game_Ptr(CAICHARCONTROL2D_VFTABLE);
+	return self;
+}
+
+void __fastcall cAICharControl2D_dtor(cAICharControl *self) {
+	self->vftable = Game_Ptr(CAICHARCONTROL2D_VFTABLE);
+	cAICharControl_dtor(self);
+}
+
+cAICharControl *__thiscall cAICharControl2D_Delete(cAICharControl *self, byte flags) {
+	self->vftable = Game_Ptr(CAICHARCONTROL2D_VFTABLE);
+	cAICharControl_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, CAICHARCONTROL_SIZE);
+	}
+	return self;
+}
+
+void __thiscall cAICharControl2D_Draw(cAICharControl *self) {
+	cAICharControl_Draw(self);
+}
+
+/* ---- the tests of the way ---- */
+
+byte __thiscall cAICharControl2D_Facing(cAICharControl *self, cEntity *hitEnt, vec3_t *toE, vec3_t *toGoal) {
+	vec3_t b1, b2;
+
+	CHECK(hitEnt != NULL);
+	const vec3_t *s = AICC_Pos(self, &b1);
+	const vec3_t *e = AICC_EntPos(hitEnt, &b2);
+	float x = e->x - s->x;
+	float z = e->z - s->z;
+	toE->y = 0.0f;
+	toE->x = x;
+	toE->z = z;
+	*toE = AICC2D_FlatNorm(x, z);
+	s = AICC_Pos(self, &b1);
+	x = self->goal.x - s->x;
+	z = self->goal.z - s->z;
+	toGoal->y = 0.0f;
+	toGoal->x = x;
+	toGoal->z = z;
+	*toGoal = AICC2D_FlatNorm(x, z);
+	if (self->walkDir == 2) {
+		toGoal->x = -toGoal->x;
+		toGoal->y = -toGoal->y;
+		toGoal->z = -toGoal->z;
+	}
+	return Vec3_Angle(toE, toGoal) < 1.5707963267948966;
+}
+
+byte __thiscall cAICharControl2D_TestLine(cAICharControl *self, const vec3_t *a, const vec3_t *b) {
+	if (Engine_TestLine(a, b, NULL, NULL)) {
+		return 0;
+	}
+	return AICC_Vtbl2D(self)->FloorAhead(self, b) != 0;
+}
+
+byte __thiscall cAICharControl2D_SideBlocked(cAICharControl *self, int side) {
+	vec3_t d, p, buf;
+
+	if (side == 3 || side == 4) {
+		return 0;
+	}
+	AICC_Vtbl(self)->SideDir(self, &d, side);
+	if (d.x == 0.0f && d.y == 0.0f && d.z == 0.0f) {
+		return 0;
+	}
+	float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
+	r = r + r;
+	float ox = d.x * r;
+	float oy = d.y * r;
+	float oz = d.z * r;
+	const vec3_t *s = AICC_Pos(self, &buf);
+	p.y = s->y + oy;
+	p.z = s->z + oz;
+	p.x = s->x + ox;
+	float rr = Obj_Vtbl(self->ent)->GetRadius(self->ent);
+	return AICC_Vtbl(self)->TestPath(self, AICC_Pos(self, &buf), &p, rr) == 0;
+}
+
+byte __thiscall cAICharControl2D_UpdateFollow(cAICharControl *self) {
+	const cAICharControlVtbl *vt = AICC_Vtbl(self);
+	cEntity *te = AICC_TargetEnt(self);
+	vec3_t T, buf;
+	float f;
+
+	AICC_EntPos(te, &T);
+	if (self->direct) {
+		if (!cSlotController_Tick(AICC_Slot(&self->slotDirect), self->dt) || !cSlotController_FireReset(AICC_Slot(&self->slotDirect), &f)) {
+			return 1;
+		}
+		do {
+			float d = AICC2D_DistTo(self, T.x, T.z);
+			self->stuck = 0;
+			if (d > self->farDist || vt->Vf89(self)) {
+				float r = self->radius;
+				if (!vt->TestPathEnd(self, AICC_Pos(self, &buf), &T, r)) {
+					goto lost;
+				}
+			} else {
+				if (Engine_TestLine(AICC_Pos(self, &buf), &T, NULL, NULL)) {
+					goto lost;
+				}
+				float r = self->radius;
+				if (!vt->TestPathEnd(self, AICC_Pos(self, &buf), &T, r)) {
+					self->stuck = 1;
+				}
+			}
+			vt->DirectPath(self, &T);
+			continue;
+		lost:
+			self->direct = 0;
+			if (!vt->FindPath(self, &T)) {
+				return 0;
+			}
+			cSlotController_Restart(AICC_Slot(&self->slotNear));
+			cSlotController_Restart(AICC_Slot(&self->slotSee));
+			cSlotController_Restart(AICC_Slot(&self->slotPath));
+		} while (cSlotController_FireReset(AICC_Slot(&self->slotDirect), &f));
+		return 1;
+	}
+	if (cSlotController_Tick(AICC_Slot(&self->slotNear), self->dt) && cSlotController_FireReset(AICC_Slot(&self->slotNear), &f)) {
+		do {
+			float dx0 = self->dest.x;
+			float dz0 = self->dest.z;
+			float px = AICC_Pos(self, &buf)->x;
+			const vec3_t *q = AICC_Pos(self, &buf);
+			if (200.0f > __builtin_fabs((double)(px - dx0)) && 200.0f > __builtin_fabs((double)(q->z - dz0))) {
+				if (!vt->FindPath(self, &T)) {
+					return 0;
+				}
+				cSlotController_Restart(AICC_Slot(&self->slotPath));
+			}
+		} while (cSlotController_FireReset(AICC_Slot(&self->slotNear), &f));
+	}
+	if (cSlotController_Tick(AICC_Slot(&self->slotSee), self->dt) && cSlotController_FireReset(AICC_Slot(&self->slotSee), &f)) {
+		do {
+			float d = AICC2D_DistTo(self, T.x, T.z);
+			if (d > self->farDist || vt->Vf89(self)) {
+				float r = self->radius;
+				if (!vt->TestPathEnd(self, AICC_Pos(self, &buf), &T, r)) {
+					continue;
+				}
+			} else if (Engine_TestLine(AICC_Pos(self, &buf), &T, NULL, NULL)) {
+				continue;
+			}
+			self->direct = 1;
+			vt->DirectPath(self, &T);
+			cSlotController_Restart(AICC_Slot(&self->slotDirect));
+		} while (cSlotController_FireReset(AICC_Slot(&self->slotSee), &f));
+	}
+	if (cSlotController_Tick(AICC_Slot(&self->slotRepath), self->dt) && cSlotController_FireReset(AICC_Slot(&self->slotRepath), &f)) {
+		do {
+			if (!vt->FindPath(self, &T)) {
+				return 0;
+			}
+			cSlotController_Restart(AICC_Slot(&self->slotPath));
+			cSlotController_Restart(AICC_Slot(&self->slotNear));
+		} while (cSlotController_FireReset(AICC_Slot(&self->slotRepath), &f));
+	}
+	return 1;
+}
+
+void __thiscall cAICharControl2D_CheckArrived(cAICharControl *self) {
+	cAIChar *ai;
+	int ev;
+
+	if (self->goal.x != self->dest.x || self->goal.y != self->dest.y || self->goal.z != self->dest.z) {
+		return;
+	}
+	vec3_t b1, b2;
+	float px = AICC_Pos(self, &b1)->x;
+	const vec3_t *q = AICC_Pos(self, &b2);
+	float d = AICC2D_FlatDist(self->dest.x - px, self->dest.z - q->z);
+	if (self->arriveDist > d) {
+		ev = 2;
+	} else if (self->arriveDist * 4.0f > d) {
+		ev = 4;
+	} else {
+		goto none;
+	}
+	ai = self->ai;
+	if (AICC_OwnerVtbl(ai)->Event(ai, ev)) {
+		return;
+	}
+none:
+	ai = self->ai;
+	AICC_OwnerVtbl(ai)->Event(ai, 5);
+}
+
+void __thiscall cAICharControl2D_Turn(cAICharControl *self) {
+	vec3_t view, ang, d, rot, buf;
+
+	view = WChar(self->ent)->view;
+	Vec3_NormAng(&ang, &view);
+	if (self->avoidDir.x == 0.0f && self->avoidDir.y == 0.0f && self->avoidDir.z == 0.0f) {
+		const vec3_t *s = AICC_Pos(self, &buf);
+		d.x = s->x - self->goal.x;
+		d.z = s->z - self->goal.z;
+	} else {
+		d.x = self->avoidDir.x;
+		d.z = self->avoidDir.z;
+	}
+	d.y = 0.0f;
+	Vec3_GetRotAng(&rot, &d);
+	float a = NormAng(ang.x - rot.x);
+	self->diffX = a;
+	float t = a * self->turnGain / M_PI_F;
+	self->turnXNew = t;
+	if (__builtin_fabs((double)(t - self->turnX)) > (double)self->turnStep) {
+		self->turnXNew = t > self->turnX ? self->turnStep + self->turnX : self->turnX - self->turnStep;
+	}
+	self->turnX = self->turnXNew;
+	self->ctrl->vRot = -self->turnXNew;
+	a = NormAng(ang.y - rot.y);
+	self->diffY = a;
+	t = a * self->turnGain / M_PI_F;
+	self->turnYNew = t;
+	if (__builtin_fabs((double)(t - self->turnY)) > (double)self->turnStep) {
+		self->turnYNew = t > self->turnY ? self->turnY + self->turnStep : self->turnY - self->turnStep;
+	}
+	self->turnY = self->turnYNew;
+	self->ctrl->hRot = -self->turnYNew;
+}
+
+/* walkDir from the distance to the target: away when nearer than nearDist and the way back is free, to it when
+ * further than farDist, stopped in between */
+void __thiscall cAICharControl2D_Walk(cAICharControl *self) {
+	cEntity *te = AICC_TargetEnt(self);
+	vec3_t b1, b2;
+	float f;
+
+	float px = AICC_Pos(self, &b1)->x;
+	float pz = AICC_Pos(self, &b2)->z;
+	float tx = AICC_EntPos(te, &b1)->x;
+	const vec3_t *t = AICC_EntPos(te, &b2);
+	float d = AICC2D_FlatDist(tx - px, t->z - pz);
+	switch (self->walkDir) {
+	case 0:
+		if (d > self->farDist) {
+			self->walkDir = 1;
+			break;
+		}
+		if (!cSlotController_Tick(AICC_Slot(&self->slotWalk), self->dt) || !cSlotController_FireReset(AICC_Slot(&self->slotWalk), &f)) {
+			break;
+		}
+		do {
+			if (self->nearDist > d) {
+				cEntity *e = AICC_TargetEnt(self);
+				cEntity *me = self->ent;
+				float r = Obj_Vtbl(me)->GetRadius(me);
+				const vec3_t *tp = AICC_EntPos(e, &b1);
+				if (AICC_Vtbl(self)->TestSides(self, AICC_EntPos(me, &b2), tp, r)) {
+					self->walkDir = 2;
+				}
+			}
+		} while (cSlotController_FireReset(AICC_Slot(&self->slotWalk), &f));
+		break;
+	case 1:
+		if ((self->nearDist + self->farDist) * 0.5f > d) {
+			self->walkDir = 0;
+		}
+		break;
+	case 2:
+		if (d > (self->nearDist + self->farDist) * 0.5f) {
+			self->walkDir = 0;
+			break;
+		}
+		if (!cSlotController_Tick(AICC_Slot(&self->slotWalk), self->dt) || !cSlotController_FireReset(AICC_Slot(&self->slotWalk), &f)) {
+			break;
+		}
+		do {
+			cEntity *e = AICC_TargetEnt(self);
+			cEntity *me = self->ent;
+			float r = Obj_Vtbl(me)->GetRadius(me);
+			const vec3_t *tp = AICC_EntPos(e, &b1);
+			if (!AICC_Vtbl(self)->TestSides(self, AICC_EntPos(me, &b2), tp, r)) {
+				self->walkDir = 0;
+			}
+		} while (cSlotController_FireReset(AICC_Slot(&self->slotWalk), &f));
+		break;
+	}
+	switch (self->walkDir) {
+	case 0:
+		self->ctrl->walk = 0.0f;
+		break;
+	case 1:
+		self->ctrl->walk = self->speed;
+		break;
+	case 2:
+		self->ctrl->walk = -self->speed;
+		break;
+	}
+	if (self->blocked || self->stuck || self->i20c) {
+		self->ctrl->walk = 0.0f;
+	}
+}
+
+/* the path of pathfinding to p; the point after the start becomes the goal */
+byte __thiscall cAICharControl2D_FindPath(cAICharControl *self, const vec3_t *p) {
+	vec3_t pos;
+	byte noPath, reach;
+
+	CHECK((g_NodesWorld2D != NULL) && (g_AStar2D != NULL));
+	CHECK(NW2D_SUP(g_NodesWorld2D)->vftable->IsCreated(NW2D_SUP(g_NodesWorld2D)));
+	self->dest = *p;
+	AICC_Pos(self, &pos);
+	float fr = AICC_FloorRadius(self);
+	byte ok = CAStar2D_FindPath(g_AStar2D, &self->path, &self->dest, &pos, self->radius, self->arriveDist,
+		WChar(self->ent)->floorDist, fr, self->soft, &noPath, &reach, &self->pathRes);
+	if (!ok) {
+		if (self->soft) {
+			self->dest = *p;
+			fr = AICC_FloorRadius(self);
+			ok = CAStar2D_FindPath(g_AStar2D, &self->path, &self->dest, &pos, self->radius, self->arriveDist,
+				WChar(self->ent)->floorDist, fr, 0, &noPath, &reach, &self->pathRes);
+		}
+		if (!ok) {
+			if (!reach) {
+				AICC_OwnerVtbl(self->ai)->Event(self->ai, 1);
+				return 0;
+			}
+			if (!noPath) {
+				AICC_OwnerVtbl(self->ai)->Event(self->ai, 0);
+			}
+			return 0;
+		}
+	}
+	vec3_t *pt = NULL;
+	if (self->path.head) {
+		self->path.iter = self->path.head->prev;
+		if (self->path.iter) {
+			pt = &self->path.iter->v;
+		}
+	}
+	self->pathPoint = pt;
+	if (self->path.count == 2 && pt->x == pos.x && pt->y == pos.y && pt->z == pos.z) {
+		self->goal = self->dest;
+	} else {
+		self->goal = *pt;
+	}
+	self->newPath = 0;
+	return 1;
+}
+
+byte __thiscall cAICharControl2D_FindRoute(cAICharControl *self) {
+	vec3_t pos;
+
+	CHECK(g_NodesWorld2D != NULL);
+	CHECK(NW2D_SUP(g_NodesWorld2D)->vftable->IsCreated(NW2D_SUP(g_NodesWorld2D)));
+	AICC_Pos(self, &pos);
+	float fr = AICC_FloorRadius(self);
+	if (!CNodesWorld2D_BuildPath(g_NodesWorld2D, &self->path, g_DepthPathRouteInDoorAI, &self->routePoint, &pos,
+			self->routeA, &self->routeNode, self->radius, WChar(self->ent)->floorDist, fr, self->routeB)) {
+		AICC_OwnerVtbl(self->ai)->Event(self->ai, 0);
+		return 0;
+	}
+	self->path.iter = self->path.head;
+	vec3_t *pt = self->path.iter ? &self->path.iter->v : NULL;
+	self->dest = *pt;
+	pt = NULL;
+	if (self->path.head) {
+		self->path.iter = self->path.head->prev;
+		if (self->path.iter) {
+			pt = &self->path.iter->v;
+		}
+	}
+	self->pathPoint = pt;
+	self->goal = *pt;
+	self->newPath = 0;
+	AICC_Vtbl(self)->Vf41(self);
+	return 1;
+}
+
+float __thiscall cAICharControl2D_Dist(cAICharControl *self, const vec3_t *a, const vec3_t *b) {
+	(void)self;
+	float dz = a->z - b->z;
+	float dx = a->x - b->x;
+	return (float)__builtin_sqrt((double)(dz * dz + dx * dx));
+}
+
+float __thiscall cAICharControl2D_DistSq(cAICharControl *self, const vec3_t *a, const vec3_t *b) {
+	(void)self;
+	float dz = a->z - b->z;
+	float dx = a->x - b->x;
+	return dz * dz + dx * dx;
+}
+
+float __thiscall cAICharControl2D_KeepDist(cAICharControl *self, cEntity *hitEnt) {
+	CHECK(hitEnt != NULL);
+	float er = WChar(hitEnt)->prim.radius;
+	float shirk = g_DistShirkCharAI;
+	float t = AICC_X87AddMul(Obj_Vtbl(self->ent)->GetRadius(self->ent), er, shirk);
+	er = WChar(hitEnt)->prim.radius;
+	float c = AICC_X87AddAdd(Obj_Vtbl(self->ent)->GetRadius(self->ent), er, t);
+	float d = WChar(self->ent)->prim.radius + WChar(hitEnt)->prim.radius + t;
+	return Float_MaxSS(c, d);
+}
+
+float __thiscall cAICharControl2D_StrafeDist(cAICharControl *self, cEntity *hitEnt) {
+	vec3_t e, s;
+
+	CHECK(hitEnt != NULL);
+	AICC_EntPos(hitEnt, &e);
+	e.y = 0.0f;
+	AICC_Pos(self, &s);
+	float dx = e.x - s.x;
+	float dy = e.y - 0.0f;
+	float dz = e.z - s.z;
+	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) + g_MarginCollCharAI;
+}
+
+/* the angle between the view (the axis fwd turned by it) and the way to e on the floor below ang */
+static byte AICC2D_InCone(cAICharControl *self, cEntity *e, float ang, float fwd) {
+	vec3_t sbuf, ebuf, dir, v, rot, o;
+
+	const vec3_t *s = AICC_Pos(self, &sbuf);
+	const vec3_t *p = AICC_EntPos(e, &ebuf);
+	dir.y = 0.0f;
+	dir.x = p->x - s->x;
+	dir.z = p->z - s->z;
+	v.x = 0.0f;
+	v.y = 0.0f;
+	v.z = fwd;
+	rot = WChar(self->ent)->view;
+	Vec3_Rotate(&o, &v, &rot);
+	o.y = 0.0f;
+	return (double)ang > Vec3_Angle(&o, &dir);
+}
+
+byte __thiscall cAICharControl2D_InFront(cAICharControl *self, cEntity *e, float ang) {
+	return AICC2D_InCone(self, e, ang, 1.0f);
+}
+
+byte __thiscall cAICharControl2D_Behind(cAICharControl *self, cEntity *e, float ang) {
+	return AICC2D_InCone(self, e, ang, -1.0f);
+}
+
+byte __thiscall cAICharControl2D_GoalAhead(cAICharControl *self) {
+	vec3_t buf, a, b;
+
+	const vec3_t *s = AICC_Pos(self, &buf);
+	a.x = self->dest.x - s->x;
+	a.y = 0.0f;
+	a.z = self->dest.z - s->z;
+	const vec3_t *pp = self->pathPoint;
+	b.y = 0.0f;
+	b.x = self->dest.x - pp->x;
+	b.z = self->dest.z - pp->z;
+	return 0.39269909262657166 > Vec3_Angle(&a, &b);
+}
+
+byte __thiscall cAICharControl2D_OnFloor(cAICharControl *self, const vec3_t *p) {
+	const vec3_t *list;
+	int count = 0;
+
+	float fr = AICC_FloorRadius(self);
+	float fd = WChar(self->ent)->floorDist;
+	float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
+	CAStar2D_GetPointsVis(g_AStar2D, p, &list, 1, &count, r, fd, fr);
+	return count != 0;
+}
+
+byte __thiscall cAICharControl2D_Near(cAICharControl *self, cEntity *e) {
+	vec3_t b1, b2;
+
+	const vec3_t *p = AICC_EntPos(e, &b1);
+	const vec3_t *s = AICC_Pos(self, &b2);
+	float dx = s->x - p->x;
+	float dz = s->z - p->z;
+	float d = (float)__builtin_sqrt((double)(dx * dx + 0.0f + dz * dz));
+	float k = AICC_X87Add(AICC_Vtbl(self)->KeepDist(self, e), 1.0f);
+	return d > k;
+}
+
+byte __thiscall cAICharControl2D_InWay(cAICharControl *self, vec3_t dest, cEntity *hitEnt) {
+	vec3_t buf;
+
+	CHECK(hitEnt != NULL);
+	const vec3_t *p = AICC_EntPos(hitEnt, &buf);
+	float dx = dest.x - p->x;
+	float dz = dest.z - p->z;
+	float d = (float)__builtin_sqrt((double)(dx * dx + 0.0f + dz * dz));
+	float k = AICC_Vtbl(self)->KeepDist(self, hitEnt);
+	return k >= d;
+}
+
+byte __thiscall cAICharControl2D_FloorAt(cAICharControl *self, const vec3_t *p, vec3_t *out) {
+	if (!NW2D_Probe(p, out)) {
+		*out = *p;
+		return 0;
+	}
+	out->y = WChar(self->ent)->floorDist + out->y;
+	return 1;
+}
+
+/* p moved by a random step of at most 150 on the floor (3 tries) while the way from the point of the path and to
+ * the next one stays free */
+void __thiscall cAICharControl2D_StepGoal(cAICharControl *self, vec3_t *p) {
+	if (p->x == self->dest.x && p->y == self->dest.y && p->z == self->dest.z) {
+		return;
+	}
+	cNWVecNode *save = self->path.iter;
+	cNWVecNode *n = save->prev;
+	self->path.iter = n;
+	vec3_t *next = n == self->path.head->prev ? NULL : &n->v;
+	for (int i = 0; i < 3;) {
+		vec3_t q;
+
+		i++;
+		float k = 150.0f;
+		float nk = -k;
+		double range = (double)(k - nk);
+		double base = (double)nk;
+		float rx = FxElem_Rand(range, base);
+		float rz = FxElem_Rand(range, base);
+		q.x = p->x + rx;
+		q.y = p->y + 0.0f;
+		q.z = p->z + rz;
+		if (Engine_TestSphere(&q, &q, self->radius, NULL, NULL)) {
+			continue;
+		}
+		float fr = AICC_FloorRadius(self);
+		if (!CNodesWorld2D_TestPath(g_NodesWorld2D, &q, self->pathPoint, self->radius, self->radius,
+				WChar(self->ent)->floorDist, fr, NULL)) {
+			continue;
+		}
+		fr = AICC_FloorRadius(self);
+		if (!CNodesWorld2D_TestPath(g_NodesWorld2D, &q, next, self->radius, self->radius,
+				WChar(self->ent)->floorDist, fr, NULL)) {
+			continue;
+		}
+		*p = q;
+		break;
+	}
+	self->path.iter = save;
+}
+
+byte __thiscall cAICharControl2D_TryStrafe(cAICharControl *self, int side, cEntity *hitEnt, byte back, float keep,
+	byte fwd, float sd, byte e2) {
+	const cAICharControlVtbl *vt = AICC_Vtbl(self);
+	vec3_t b1, b2, A, B, C, D, Dc, E;
+
+	CHECK(hitEnt != NULL);
+	const vec3_t *ep = AICC_EntPos(hitEnt, &b1);
+	const vec3_t *sp = AICC_Pos(self, &b2);
+	A.x = sp->x - ep->x;
+	A.y = 0.0f;
+	A.z = sp->z - ep->z;
+	sp = AICC_Pos(self, &b1);
+	float gx = self->goal.x - sp->x;
+	float gz = self->goal.z - sp->z;
+	float R = (float)__builtin_sqrt((double)(A.x * A.x + A.y * A.y + A.z * A.z)) + WChar(hitEnt)->prim.radius;
+	vec3_t N = AICC2D_FlatNorm(gx, gz);
+	float ox = N.x * R;
+	float oz = N.z * R;
+	sp = AICC_Pos(self, &b1);
+	float px = sp->x + ox;
+	float pz = sp->z + oz;
+	ep = AICC_EntPos(hitEnt, &b2);
+	B.x = px - ep->x;
+	B.y = 0.0f;
+	B.z = pz - ep->z;
+	ep = AICC_EntPos(hitEnt, &b1);
+	C.x = self->goal.x - ep->x;
+	C.y = 0.0f;
+	C.z = self->goal.z - ep->z;
+	float lenB = (float)__builtin_sqrt((double)(B.x * B.x + 0.0f + B.z * B.z));
+	float lenC = (float)__builtin_sqrt((double)(C.x * C.x + 0.0f + C.z * C.z));
+	D = lenC > lenB ? B : C;
+	E = *AICC_EntPos(hitEnt, &b2);
+	float y;
+	if (AICC_Pos(self, &b1)->y > self->goal.y - 10.0f) {
+		y = AICC_Pos(self, &b1)->y;
+	} else {
+		y = keep * 1.5f * 0.5f + AICC_EntPos(hitEnt, &b1)->y;
+	}
+	E.y = y;
+	byte left = side == 2;
+	byte res = 1;
+	if (fwd) {
+		Dc = D;
+		byte r = vt->StrafeFwd(self, &E, &A, &Dc, sd, left, e2);
+		if (!r) {
+			return r;
+		}
+	}
+	if (back) {
+		res = vt->StrafeBack(self, &E, &A, &D, keep, left, e2) ? res : 0;
+	}
+	return res;
+}

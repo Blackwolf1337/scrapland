@@ -225,7 +225,7 @@ void __thiscall CNodesWorld2D_ClearLists(CNodesWorld2D *self) {
 }
 
 /* the floor below p: at p, again at p + 0, then 15 higher, each g_NW2DGroundDist down; 1 with hit set */
-static int NW2D_Probe(const vec3_t *p, vec3_t *hit) {
+int NW2D_Probe(const vec3_t *p, vec3_t *hit) {
 	float d = g_NW2DGroundDist;
 	vec3_t a, q;
 
