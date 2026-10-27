@@ -168,6 +168,18 @@ static inline double X87_Mul(double a, double b) {
 	return r;
 }
 
+/* v / |v| as the engine3d normalizes inline: the length of (y y + x x) + z z through double, the factor 1 / len
+ * rounded to float; unchanged for the length 0 */
+static inline void Vec3_Unit(vec3_t *v) {
+	float len = (float)__builtin_sqrt((double)(v->y * v->y + v->x * v->x + v->z * v->z));
+	if ((double)len != 0.0) {
+		float k = (float)(1.0 / (double)len);
+		v->x = v->x * k;
+		v->y = v->y * k;
+		v->z = v->z * k;
+	}
+}
+
 /* the value hidden from the optimizer: keeps an operation the compiler would fold algebraically ((-a) - (-b) to
  * b - a), which changes the sign of a NaN result */
 static inline float Float_Keep(float v) {

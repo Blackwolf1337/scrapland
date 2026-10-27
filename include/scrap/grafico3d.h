@@ -34,6 +34,9 @@ typedef struct Grafico3DVert {
 SD_SIZE(Grafico3DVert, 0x1c);
 
 CGrafico3D *__thiscall CGrafico3D_ctorTex(CGrafico3D *self, const char *tex, const vec3_t *pos, const float *size);
+/* with the texture and its opacity map (CGrafico3D_SetTexture) */
+CGrafico3D *__thiscall CGrafico3D_ctorTex2(CGrafico3D *self, const char *tex, const char *opac);
+Grafico3DVert *__fastcall Grafico3DVert_ctor(Grafico3DVert *self);
 CGrafico3D *__fastcall CGrafico3D_ctor(CGrafico3D *self);
 void __fastcall CGrafico3D_dtor(CGrafico3D *self);
 CGrafico3D *__thiscall CGrafico3D_Delete(CGrafico3D *self, byte flags);

@@ -136,6 +136,8 @@ SD_SIZE(CListaMat, 0x10);
 CMapa *__thiscall CMapa_ctor(CMapa *self);
 void __thiscall CMapa_dtor(CMapa *self);
 CMaterial *__thiscall CMaterial_ctor(CMaterial *self);
+/* rva 0x237020: the D3D colors (CMaterial_CalcColors) times k unless k is 1, the alpha of colors from diffuse[3] */
+void __thiscall CMaterial_ScaleColors(CMaterial *self, float k);
 void __thiscall CMaterial_dtor(CMaterial *self);
 /* free the old string, a Mem_Alloc copy of s (NULL stays NULL) */
 /* the animation of an animated texture (rva 0x257f70.., not decompiled yet), 0x2c bytes */

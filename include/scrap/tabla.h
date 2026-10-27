@@ -56,6 +56,9 @@ void Array_Write6(CArchIO *f, const void *p, uint32_t n);
 void Array_Write8(CArchIO *f, const void *p, uint32_t n);
 void Array_WriteC(CArchIO *f, const void *p, uint32_t n);
 void Array_Write10(CArchIO *f, const void *p, uint32_t n);
+/* element i, TABLA_CHECK */
+void *__thiscall Tabla_Get8(CTabla *t, uint32_t i);
+void *__thiscall Tabla_Get50(CTabla *t, uint32_t i);
 /* the delete[] of the elements, empty after (three copies in the exe) */
 void __fastcall Tabla_Free(CTabla *t);
 /* n pointers, the old ones kept as far as they fit; n < 1 frees */

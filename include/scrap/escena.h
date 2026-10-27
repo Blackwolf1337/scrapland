@@ -78,13 +78,14 @@ void __thiscall CEscena_PrecalcIlum(CEscena *self, byte noLuces, byte visible);
 /* rva 0x239880, the box of box through m */
 box_t *Box_Transform(box_t *out, const box_t *box, const matrix_t *m);
 /* rva 0x2b2cc0 (Engine/NodeFX.cpp), the FX object of a NODO_FX node */
-IObjeto3D *NodeFX_New(int a, CNodo3D *nodo);
+void *NodeFX_New(const char *type, CNodo3D *nodo);
 /* rva 0x2ab6f0 and 0x2ab940, the animation of a scene (0x34 bytes) */
 CAnimacion *__fastcall CAnimacion_ctor(CAnimacion *self);
 void __fastcall CAnimacion_dtor(CAnimacion *self);
-/* rva 0x2b8900 (CalcPesos.cpp), 0x2b8e80 (CalcIlum.cpp), 0x261630: per mesh, with the scene lights of esc */
-byte __thiscall CMallaD3D_CalcPesos(void *malla, CNodo3D *nodo);
-void __thiscall CMallaD3D_CalcIlum(void *malla, CNodo3D *nodo, CEscena *esc);
+/* CalcPesos.c, CalcIlum.c and rva 0x261630: per mesh, with the scene lights of esc */
+struct CMallaD3D;
+byte __thiscall CMallaD3D_CalcPesos(struct CMallaD3D *malla, CNodo3D *nodo);
+void __thiscall CMallaD3D_CalcIlum(struct CMallaD3D *malla, CNodo3D *nodo, CEscena *esc);
 void __thiscall CSuelo_CalcIlum(void *suelo, CNodo3D *nodo, CEscena *esc);
 
 #endif

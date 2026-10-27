@@ -1,9 +1,12 @@
 /*
  * Engine/portal.cpp of the engine3d: CPortal, see include/scrap/portal.h.
  */
+#include "scrap/mundo.h"
 #include "scrap/portal.h"
+#include "scrap/render.h"
 #include "scrap/sistpart.h"
 #include "scrap/suelo.h"
+#include "scrap/utild3d.h"
 #include "scrap/varios.h"
 
 CPortal *__fastcall CPortal_ctor(CPortal *self) {
@@ -87,6 +90,30 @@ void __thiscall CPortal_Render(CPortal *self, void *dev, CNodoR *r) {
 	if (g_ShowPortals) {
 		CPortal_DrawDebug(self, 0x808080);
 	}
+}
+
+/* the material of the debug drawing, a static of CPortal_DrawDebug */
+#define g_PortalMat (*(CMaterial *)Game_Ptr(0x4e1e08))
+#define g_PortalMatGuard ((int *)Game_Ptr(0x4e1eb8))
+#define PORTAL_MAT_DTOR 0x38f010		/* the atexit destructor of it */
+
+void __thiscall CPortal_DrawDebug(CPortal *self, uint32_t color) {
+	CHECK(g_ShowPortals);
+	float hw = self->ancho * 0.5f, hh = self->alto * 0.5f;
+	if (*g_PortalMatGuard > crt_InitEpoch()) {
+		crt_Init_thread_header(g_PortalMatGuard);
+		if (*g_PortalMatGuard == -1) {
+			CMaterial_ctor(&g_PortalMat);
+			crt_atexit(Game_Ptr(PORTAL_MAT_DTOR));
+			crt_Init_thread_footer(g_PortalMatGuard);
+		}
+	}
+	g_PortalMat.params.b39 = 0;
+	g_PortalMat.params.i40 = 8;
+	g_MatFX1 = &g_PortalMat;
+	vec3_t mn = { -hw, 0.0f, -hh }, mx = { hw, 0.0f, hh };
+	Debug_DrawBoxM(&self->nodo->m, &mn, &mx, color);
+	g_MatFX1 = NULL;
 }
 
 /* the signed distance of p to the cached plane */
@@ -199,4 +226,84 @@ void Portal_DrawRect(const int *vp, const float *rect, uint32_t color) {
 	Debug_Line(x1, y0, x1, y1, color, 0);
 	Debug_Line(x1, y1, x0, y1, color, 0);
 	Debug_Line(x0, y1, x0, y0, color, 0);
+}
+
+/* the screen box of the clip space points: x, y and z divided by w */
+static void Portal_Extend(box_t *b, float x, float y, float z, float w) {
+	x = x / w;
+	y = y / w;
+	z = z / w;
+	b->min.x = Float_MinSS(b->min.x, x);
+	b->min.y = Float_MinSS(b->min.y, y);
+	b->min.z = Float_MinSS(b->min.z, z);
+	b->max.x = Float_MaxSS(b->max.x, x);
+	b->max.y = Float_MaxSS(b->max.y, y);
+	b->max.z = Float_MaxSS(b->max.z, z);
+}
+
+byte __thiscall CPortal_ClipRect(CPortal *self, box_t *rect) {
+	vec3_t c[4], p[4];
+	float w[4];
+	byte back[4];
+
+	CHECK(self->nodo);
+	CPortal_UpdateCache(self, &self->nodo->m);
+	for (int i = 0; i < 4; i++) {
+		c[i] = self->cache_vert[i];
+	}
+	/* the projection to the near plane of the world camera, scaled down, and to its far plane */
+	matrix_t proj = *Render_GetProj();
+	CCamara *cam = Mundo_Get()->cam;
+	float zfar = cam->zFar;
+	float znear = cam->zNear * 0.00390625f;
+	proj.m[10] = zfar / (zfar - znear);
+	proj.m[14] = -(proj.m[10] * znear);
+	matrix_t tmp;
+	const float *m = Matrix_MulD3D(&tmp, Render_GetView(), &proj)->m;
+	box_t b = { { 3.40282347e+38f, 3.40282347e+38f, 3.40282347e+38f },
+		{ -3.40282347e+38f, -3.40282347e+38f, -3.40282347e+38f } };
+	int nback = 0, nfar = 0;
+	for (int i = 0; i < 4; i++) {
+		float x = c[i].x, y = c[i].y, z = c[i].z;
+		p[i].x = y * m[4] + x * m[0] + z * m[8] + m[12];
+		p[i].y = m[5] * y + m[1] * x + m[9] * z + m[13];
+		p[i].z = m[6] * y + m[2] * x + m[10] * z + m[14];
+		w[i] = m[7] * y + m[3] * x + m[11] * z + m[15];
+		back[i] = 0.0f >= p[i].z;
+		nback += back[i];
+	}
+	for (int i = 0; i < 4; i++) {
+		nfar += p[i].z > zfar;
+	}
+	if (nback == 4 || nfar == 4) {
+		return 0;
+	}
+	/* the corners in front, and where the edges cross the near plane */
+	for (int i = 0; i < 4; i++) {
+		int j = (i + 1) & 3;
+		const vec3_t *a = &p[i], *n = &p[j];
+		if (!back[i]) {
+			CHECK(w[i] > 0.0f);
+			Portal_Extend(&b, a->x, a->y, a->z, w[i]);
+		} else if (back[j]) {
+			continue;
+		}
+		if (back[i] == back[j]) {
+			continue;
+		}
+		float t = a->z / (a->z - n->z);
+		float x = (n->x - a->x) * t, y = (n->y - a->y) * t, z = (n->z - a->z) * t;
+		CHECK(znear > 0.0f);
+		Portal_Extend(&b, x + a->x, y + a->y, z + a->z, znear);
+	}
+	if (rect) {
+		*rect = b;
+	}
+	if (g_ShowPortals > 1) {
+		int vp[6];
+		void *dev = g_pd3dDevice;
+		D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, (uint32_t *)vp);
+		Portal_DrawRect(vp, &b.min.x, 0xff00);
+	}
+	return 1;
 }

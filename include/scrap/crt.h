@@ -104,5 +104,13 @@ int crt_atexit(void (*func)(void));
 void crt_Init_thread_header(int *guard);
 void crt_Init_thread_footer(int *guard);
 #define g_TlsIndex GAME_DATA(uint32_t, 0x4e8dec)
+/* that epoch: a static is made when its guard is above it */
+static inline int crt_InitEpochAt(uint32_t index) {
+	uint8_t **tls;
+
+	__asm__("movl %%fs:0x2c, %0" : "=r"(tls));
+	return *(int *)(tls[index] + 0x20);
+}
+#define crt_InitEpoch() crt_InitEpochAt(g_TlsIndex)
 
 #endif

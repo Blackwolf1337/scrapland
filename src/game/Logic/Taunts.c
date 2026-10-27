@@ -56,17 +56,9 @@ cEntity *Logic_RandomCar(cEntityListData *list) {
 	return Logic_AsCar(n->data);
 }
 
-/* the epoch of the thread-safe statics of the exe (its TLS slot, +0x20), as MSVC tests it before the guard */
-static inline int Taunts_InitEpoch(void) {
-	byte **tls;
-
-	__asm__("movl %%fs:0x2c, %0" : "=r"(tls));
-	return *(int *)(tls[g_TlsIndex] + 0x20);
-}
-
 /* the kind of the police taunt of the ship (3, 4, 6 by the count of its race), -1 for none now */
 int Taunts_PoliceKind(cEntity *ship) {
-	int epoch = Taunts_InitEpoch();
+	int epoch = crt_InitEpoch();
 
 	if (*s_TauntCountsGuard > epoch) {
 		crt_Init_thread_header(s_TauntCountsGuard);

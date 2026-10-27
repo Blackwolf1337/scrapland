@@ -114,6 +114,14 @@ ARRAY_WRITE(8)
 ARRAY_WRITE(C)
 ARRAY_WRITE(10)
 
+#define TABLA_GET(sz) \
+	void *__thiscall Tabla_Get##sz(CTabla *t, uint32_t i) { \
+		TABLA_CHECK(t->p, i, t->n); \
+		return (byte *)t->p + i * 0x##sz; \
+	}
+TABLA_GET(8)
+TABLA_GET(50)
+
 void __fastcall Tabla_Free(CTabla *t) {
 	if (t->p) {
 		operator_delete_array(t->p);
