@@ -32,13 +32,13 @@ typedef struct cObjElementFXSceneBeatPickus {
 	float tPrev;			/* 0x008 */
 	cEntity *ent;			/* 0x00c */
 	vec3_t dummy;			/* 0x010 DM_Scene_Beating */
-	CGameParticles parts1c;		/* 0x01c Dummy03 */
-	float fcc;			/* 0x0cc */
-	CGameParticles partsD0;		/* 0x0d0 Dummy02 */
-	float f180;			/* 0x180 */
-	CGameParticles parts184;	/* 0x184 Dummy01 */
-	float f234;			/* 0x234 */
-	float f238;			/* 0x238 */
+	CGameParticles parts1c;		/* 0x01c Dummy03: dust and smoke puffs */
+	float dustT;			/* 0x0cc */
+	CGameParticles partsD0;		/* 0x0d0 Dummy02: debris and the hits */
+	float debrisT;			/* 0x180 */
+	CGameParticles parts184;	/* 0x184 Dummy01: sparks */
+	float sparkT;			/* 0x234 */
+	float hitT;			/* 0x238 until the next hit */
 	byte started;			/* 0x23c */
 } cObjElementFXSceneBeatPickus;
 SD_OFFSET(cObjElementFXSceneBeatPickus, parts184, 0x184);
@@ -49,11 +49,11 @@ typedef struct cObjElementFXSceneBillArrives_A {
 	float t;			/* 0x04 */
 	float tPrev;			/* 0x08 */
 	cEntity *ent;			/* 0x0c */
-	float f10;			/* 0x10 */
+	cEntity *capsule;		/* 0x10 BillArrives_ACapsule, its embedded effect holds the jets */
 	void *flare;			/* 0x14 CGameLensFlare */
-	float f18;			/* 0x18 */
-	CGameParticles particles;	/* 0x1c Dummy01 */
-	float fcc;			/* 0xcc */
+	float jetT;			/* 0x18 */
+	CGameParticles particles;	/* 0x1c Dummy01: smoke and dust */
+	float smokeT;			/* 0xcc */
 	vec3_t dummy1;			/* 0xd0 DM_Effects_BillArrives_A_01 */
 	vec3_t dummy2;			/* 0xdc DM_Effects_BillArrives_A_02 */
 	byte started;			/* 0xe8 */
@@ -203,6 +203,9 @@ void __thiscall cObjElementFXSceneTheEndB_Reset(cObjElementFXSceneTheEndB *self,
 void __thiscall cObjElementFXSceneYakuzzi_Reset(cObjElementFXSceneYakuzzi *self, int arg);
 
 /* Update (vf01): the life of the debris to 0 once the entity is gone */
+void __thiscall cObjElementFXSceneBeatPickus_Update(cObjElementFXSceneBeatPickus *self, cDebris *d, float dt);
+void __thiscall cObjElementFXSceneBillArrives_A_Update(cObjElementFXSceneBillArrives_A *self, cDebris *d,
+	float dt);
 void __thiscall cObjElementFXSceneBishops_Update(cObjElementFXSceneBishops *self, cDebris *d, float dt);
 void __thiscall cObjElementFXSceneDecontamination_Update(cObjElementFXSceneDecontamination *self, cDebris *d,
 	float dt);

@@ -3739,6 +3739,8 @@ SD_HOOK(cMissileEntity_VarV, 0x0f5f20, 26)
 
 /* module agent: World/FX/FXScene.cpp (hooks below this line) */
 SD_HOOK(FXScene_Create, 0x1e8880, 1374)
+SD_HOOK(cObjElementFXSceneBeatPickus_Update, 0x1dec90, 8638)
+SD_HOOK(cObjElementFXSceneBillArrives_A_Update, 0x1e0e50, 8695)
 SD_HOOK(cObjElementFXSceneBishops_Update, 0x1e3050, 3440)
 SD_HOOK(cObjElementFXSceneDecontamination_Update, 0x1e3dc0, 3531)
 SD_HOOK(cObjElementFXSceneHumanCD_Update, 0x1e73e0, 2511)

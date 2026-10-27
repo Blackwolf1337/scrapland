@@ -340,20 +340,20 @@ void __thiscall cObjElementFXSceneBeatPickus_Reset(cObjElementFXSceneBeatPickus 
 	self->ent = NULL;
 	self->t = 0.0f;
 	self->tPrev = 0.0f;
-	self->fcc = 0.0f;
-	self->f180 = 0.0f;
-	self->f234 = 0.0f;
-	self->f238 = 0.0f;
+	self->dustT = 0.0f;
+	self->debrisT = 0.0f;
+	self->sparkT = 0.0f;
+	self->hitT = 0.0f;
 }
 
 void __thiscall cObjElementFXSceneBillArrives_A_Reset(cObjElementFXSceneBillArrives_A *self, int arg) {
 	(void)arg;
 	self->ent = NULL;
-	self->f10 = 0.0f;
+	self->capsule = NULL;
 	self->t = 0.0f;
 	self->tPrev = 0.0f;
-	self->f18 = 0.0f;
-	self->fcc = 0.0f;
+	self->jetT = 0.0f;
+	self->smokeT = 0.0f;
 }
 
 void __thiscall cObjElementFXSceneBishops_Reset(cObjElementFXSceneBishops *self, int arg) {
@@ -1002,4 +1002,815 @@ void __thiscall cObjElementFXSceneDecontamination_Update(cObjElementFXSceneDecon
 		}
 		FXS_DeconSpawn(self, i, target);
 	}
+}
+
+/* ---- BeatPickus: the beating of Pickus, dust, smoke, sparks and the hits ---- */
+
+#define FXS_RAMP_BEAT_SMOKE 0x430e20	/* [2] */
+#define FXS_RAMP_BEAT_DUST 0x430e68	/* [2] */
+#define FXS_RAMP_BEAT_SPARKS 0x430eb0	/* [2] */
+#define FXS_RAMP_BEAT_HIT 0x430ef8
+#define FXS_RAMP_BEAT_HITSPARKS 0x430f1c	/* [2] */
+
+/* the offsets of the puffs of the hits (rva 0x3cd720, 0x3cd730, 0x3cd710 in that order) */
+static const vec3_t fxs_beatPuffs[4] = {
+	{ 8.0f, 5.0f, -15.0f }, { -25.0f, 2.0f, -30.0f }, { -45.0f, -35.0f, 45.0f }, { 30.0f, 14.0f, 45.0f },
+};
+
+static inline void FXS_Pos(CGameParticles *sp, float x, float y, float z) {
+	sp->initPosMin.x = x;
+	sp->initPosMin.y = y;
+	sp->initPosMin.z = z;
+	sp->initPosMax = sp->initPosMin;
+}
+
+static inline void FXS_Vel(CGameParticles *sp, float x, float y, float z) {
+	sp->initVelMin.x = x;
+	sp->initVelMin.y = y;
+	sp->initVelMin.z = z;
+	sp->initVelMax = sp->initVelMin;
+}
+
+static inline void FXS_Acc(CGameParticles *sp, float x, float y, float z) {
+	sp->initAccMin.x = x;
+	sp->initAccMin.y = y;
+	sp->initAccMin.z = z;
+	sp->initAccMax = sp->initAccMin;
+}
+
+static inline void FXS_Sprites(CGameParticles *sp, byte ini, byte end) {
+	sp->spriteIni = ini;
+	sp->spriteEnd = end;
+}
+
+/* the dust under Pickus, 10 particles */
+static void FXS_BeatDust(cObjElementFXSceneBeatPickus *self) {
+	CGameParticles *sp = &self->parts1c;
+	vec3_t dir;
+
+	sp->birthRate = 0;
+	float py = self->dummy.y - 520.0f;
+	float px = (self->dummy.x + 0.0f) + 0.0f;
+	float pz = (self->dummy.z - 580.0f) + 0.0f;
+	for (int n = 10; n; n--) {
+		const vec3_t *r = FX_RandomDir(&dir);
+		float a = r->x, b = r->y * 0.15f, c = r->z;
+		float len = FxElem_Rand(40.0f, 25.0f);
+		a = len * a;
+		b = len * b;
+		c = len * c;
+		float ry = FxElem_Rand(130.0f, 0.0);
+		FXS_Pos(sp, a + px, b + (ry + py), c + pz);
+		float sx = (crt_rand() & 1) ? 1.0f : -1.0f;
+		float sy = (crt_rand() & 1) ? 1.0f : -1.0f;
+		float vz = FxElem_Rand(130.0f, 65.0f);
+		float vy = FxElem_Rand(120.0f, 25.0f);
+		vz = sx * vz;
+		FXS_Vel(sp, FxElem_Rand(130.0f, 65.0f) * sy, vy, vz);
+		float az = FxElem_Rand(30.0f, -15.0f);
+		float ay = FxElem_Rand(25.0f, 20.0f);
+		float ax = FxElem_Rand(30.0f, -15.0f);
+		float s = FxElem_Rand(0.08f, 0.24f);
+		FXS_Acc(sp, ax + -sp->initVelMin.x * s, ay + -sp->initVelMin.y * s, az + -sp->initVelMin.z * s);
+		sp->sizeIni = FxElem_Rand(10.0f, 30.0f);
+		sp->sizeEnd = FxElem_Rand(90.0f, 145.0f);
+		sp->sizeLife = 1.0f;
+		sp->lifeTime = FxElem_Rand(0.6f, 0.6f);
+		float rot = FxElem_Rand(6.2831855f, 0.0);
+		sp->rotIni = rot;
+		sp->rotEnd = rot;
+		sp->rotVar = FxElem_Rand(1.0471976f, -0.5235988f);
+		byte spr = (byte)((crt_rand() & 1) + 0x11);
+		FXS_Sprites(sp, spr, spr);
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(FXS_RAMP_BEAT_SMOKE, crt_rand() & 1));
+		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.05f, 0.0));
+	}
+}
+
+/* the debris flying off, 2 to 9 particles */
+static void FXS_BeatDebris(cObjElementFXSceneBeatPickus *self) {
+	CGameParticles *sp = &self->partsD0;
+	vec3_t dir;
+
+	sp->birthRate = 0;
+	float bx = self->dummy.x + 0.0f;
+	float by = self->dummy.y - 500.0f;
+	float bz = self->dummy.z - 580.0f;
+	if (crt_rand() % 8 + 2 <= 0) {
+		return;
+	}
+	bx = bx + 0.0f;
+	bz = bz + 0.0f;
+	int i = 0;
+	do {
+		const vec3_t *r = FX_RandomDir(&dir);
+		float a = r->x, b = r->y * 0.0f, c = r->z;
+		float len = FxElem_Rand(25.0f, 5.0f);
+		a = a * len;
+		b = b * len;
+		c = c * len;
+		float ry = FxElem_Rand(130.0f, 0.0);
+		FXS_Pos(sp, bx + a, (by + ry) + b, bz + c);
+		float v1 = FxElem_Rand(180.0f, -90.0f);
+		float v2 = FxElem_Rand(180.0f, -90.0f);
+		float v3 = FxElem_Rand(180.0f, -90.0f);
+		r = FX_RandomDir(&dir);
+		FXS_Vel(sp, v3 * r->x, r->y * v2, r->z * v1);
+		float az = FxElem_Rand(24.0f, -12.0f);
+		float ay = FxElem_Rand(18.0f, 12.0f);
+		float ax = FxElem_Rand(24.0f, -12.0f);
+		float s = FxElem_Rand(0.08f, 0.24f);
+		FXS_Acc(sp, ax + -sp->initVelMin.x * s, ay + -sp->initVelMin.y * s, az + -sp->initVelMin.z * s);
+		sp->sizeIni = FxElem_Rand(45.0f, 45.0f);
+		sp->sizeEnd = FxElem_Rand(20.0f, 135.0f);
+		sp->lifeTime = FxElem_Rand(0.10000001f, 0.2f);
+		sp->sizeLife = FxElem_Rand(0.10000001f, 0.2f);
+		float rot = FxElem_Rand(6.2831855f, 0.0);
+		sp->rotIni = rot;
+		sp->rotEnd = rot;
+		sp->rotVar = FxElem_Rand(3.1415927f, -1.5707964f);
+		byte spr = (byte)(crt_rand() % 3 + 0xd);
+		FXS_Sprites(sp, spr, spr);
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(FXS_RAMP_BEAT_DUST, crt_rand() & 1));
+		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.05f, 0.0));
+		i++;
+	} while (i < crt_rand() % 8 + 2);
+}
+
+/* the dir from c to p (unchanged at length 0) turned by three random angles of +-0.2 */
+static void FXS_BeatScatter(vec3_t *out, const vec3_t *p, float cx, float cy, float cz) {
+	vec3_t ang, n;
+
+	float a1 = FxElem_Rand(0.4f, -0.2f);
+	float a2 = FxElem_Rand(0.4f, -0.2f);
+	ang.x = FxElem_Rand(0.4f, -0.2f);
+	ang.y = a2;
+	ang.z = a1;
+	float dx = p->x - cx, dz = p->z - cz, dy = p->y - cy;
+	float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+	if (len == 0.0f) {
+		n.x = dx;
+		n.y = dy;
+		n.z = dz;
+	} else {
+		float inv = 1.0f / len;
+		n.x = inv * dx;
+		n.y = inv * dy;
+		n.z = inv * dz;
+	}
+	Vec3_Rotate(out, &n, &ang);
+}
+
+/* the dir turned by three random angles in -half..range - half */
+static const vec3_t *FXS_BeatTurn(vec3_t *out, const vec3_t *dir, double range, double add) {
+	vec3_t ang;
+
+	float b1 = FxElem_Rand(range, add);
+	float b2 = FxElem_Rand(range, add);
+	ang.x = FxElem_Rand(range, add);
+	ang.y = b2;
+	ang.z = b1;
+	return Vec3_Rotate(out, dir, &ang);
+}
+
+/* the sparks of a blow, 8 to 13 particles from a point near the dummy */
+static void FXS_BeatSparks(cObjElementFXSceneBeatPickus *self) {
+	CGameParticles *sp = &self->parts184;
+	vec3_t dir, rdir, p, tmp;
+
+	sp->birthRate = 0;
+	CGameParticles_SetSparksOn(sp, 1);
+	float cx = self->dummy.x + 0.0f;
+	float cy = self->dummy.y - 500.0f;
+	float cz = self->dummy.z - 580.0f;
+	float len = FxElem_Rand(20.0f, 15.0f);
+	const vec3_t *r = FX_RandomDir(&dir);
+	float px = len * r->x, py = r->y * len, pz = r->z * len;
+	float ry = FxElem_Rand(130.0f, 0.0);
+	p.x = px + (cx + 0.0f);
+	p.y = py + (ry + cy);
+	p.z = pz + (cz + 0.0f);
+	FXS_BeatScatter(&rdir, &p, cx, cy, cz);
+	if (crt_rand() % 6 + 8 <= 0) {
+		return;
+	}
+	int i = 0;
+	do {
+		FXS_Pos(sp, p.x, p.y, p.z);
+		float spd = FxElem_Rand(550.0f, 250.0f);
+		r = FXS_BeatTurn(&tmp, &rdir, 0.4f, -0.2f);
+		FXS_Vel(sp, spd * r->x, r->y * spd, r->z * spd);
+		float s = FxElem_Rand(0.060000002f, 0.62f);
+		FXS_Acc(sp, s * -sp->initVelMin.x, s * -sp->initVelMin.y, s * -sp->initVelMin.z);
+		float size = FxElem_Rand(15.0f, 5.0f);
+		sp->sizeIni = size;
+		sp->sizeEnd = size;
+		sp->sizeLife = 1.0f;
+		sp->rotIni = 0.0f;
+		sp->rotEnd = 0.0f;
+		sp->rotVar = 0.0f;
+		sp->sparkVelScale = 1.0f;
+		sp->lifeTime = FxElem_Rand(0.20000002f, 0.4f);
+		sp->sparkMaxSize = (float)(FXS_Rnd() + 2.0);
+		FXS_Sprites(sp, (byte)((crt_rand() & 1) + 0x41), 0x44);
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(FXS_RAMP_BEAT_SPARKS, crt_rand() & 1));
+		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.1f, 0.0));
+		i++;
+	} while (i < crt_rand() % 6 + 8);
+}
+
+/* a hit: two flashes and 8 to 13 sparks falling down */
+static void FXS_BeatHit(cObjElementFXSceneBeatPickus *self) {
+	CGameParticles *sp = &self->partsD0;
+	vec3_t dir, rdir, ang, tmp, p;
+
+	self->hitT = FxElem_Rand(0.59999996f, 0.3f);
+	sp->birthRate = 0;
+	CGameParticles_SetSparksOn(sp, 0);
+	float cx = self->dummy.x + 0.0f;
+	float cy = self->dummy.y - 460.0f;
+	float cz = self->dummy.z - 580.0f;
+	float len = FxElem_Rand(5.0f, 4.0f);
+	const vec3_t *r = FX_RandomDir(&dir);
+	float px = len * r->x, py = r->y * len, pz = r->z * len;
+	float j1 = FxElem_Rand(44.0f, -22.0f);
+	float j2 = FxElem_Rand(7.0f, 8.0f);
+	float j3 = FxElem_Rand(44.0f, -22.0f);
+	p.x = px + (j3 + cx);
+	p.y = py + (j2 + cy);
+	p.z = pz + (j1 + cz);
+	float a1 = FxElem_Rand(0.4f, -0.2f);
+	float a2 = FxElem_Rand(0.4f, -0.2f);
+	const vec3_t up = { 0.0f, 1.0f, 0.0f };
+	ang.x = FxElem_Rand(0.4f, -0.2f);
+	ang.y = a2;
+	ang.z = a1;
+	Vec3_Rotate(&rdir, &up, &ang);
+	FXS_Pos(sp, p.x, p.y, p.z);
+	FXS_Vel(sp, 0.0f, 0.0f, 0.0f);
+	FXS_Acc(sp, 0.0f, 0.0f, 0.0f);
+	CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FXS_RAMP_BEAT_HIT));
+	sp->sizeIni = FxElem_Rand(10.0f, 10.0f);
+	sp->sizeEnd = FxElem_Rand(15.0f, 95.0f);
+	sp->sizeLife = 0.15f;
+	FXS_Sprites(sp, 6, 6);
+	sp->lifeTime = FxElem_Rand(0.019999996f, 0.18f);
+	CGameParticles_Apply(sp);
+	CGameParticles_EmitN(sp, 1, 1);
+	CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FXS_RAMP_BEAT_HIT));
+	double rr = FXS_Rnd();
+	sp->sizeIni = (float)(rr + rr + 4.0);
+	sp->sizeEnd = FxElem_Rand(15.0f, 55.0f);
+	sp->sizeLife = 0.15f;
+	FXS_Sprites(sp, 5, 5);
+	sp->lifeTime = FxElem_Rand(0.02000001f, 0.16f);
+	CGameParticles_Apply(sp);
+	CGameParticles_EmitN(sp, 1, 1);
+	CGameParticles_SetSparksOn(sp, 1);
+	sp->birthRate = 0;
+	if (crt_rand() % 6 + 8 <= 0) {
+		return;
+	}
+	int i = 0;
+	do {
+		FXS_Pos(sp, p.x, p.y, p.z);
+		float spd = FxElem_Rand(250.0f, 150.0f);
+		r = FXS_BeatTurn(&tmp, &rdir, 0.2f, -0.1f);
+		FXS_Vel(sp, spd * r->x, r->y * spd, r->z * spd);
+		float s = FxElem_Rand(0.060000002f, 0.62f);
+		FXS_Acc(sp, -sp->initVelMin.x * s + 0.0f, -sp->initVelMin.y * s - 280.0f, -sp->initVelMin.z * s + 0.0f);
+		float size = FxElem_Rand(4.0f, 4.0f);
+		sp->sizeIni = size;
+		sp->sizeEnd = size;
+		sp->sizeLife = 1.0f;
+		sp->rotIni = 0.0f;
+		sp->rotEnd = 0.0f;
+		sp->rotVar = 0.0f;
+		sp->sparkVelScale = 1.0f;
+		sp->lifeTime = FxElem_Rand(0.20000002f, 0.4f);
+		sp->sparkMaxSize = FxElem_Rand(1.9f, 0.6f);
+		FXS_Sprites(sp, (byte)((crt_rand() & 1) + 0x41), 0x44);
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(FXS_RAMP_BEAT_HITSPARKS, crt_rand() & 1));
+		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.1f, 0.0));
+		i++;
+	} while (i < crt_rand() % 6 + 8);
+}
+
+/* the puffs of smoke at four points around Pickus, two each */
+static void FXS_BeatPuffs(cObjElementFXSceneBeatPickus *self) {
+	CGameParticles *sp = &self->parts1c;
+	vec3_t dir;
+
+	sp->birthRate = 0;
+	for (int k = 0; k < 4; k++) {
+		const vec3_t *o = &fxs_beatPuffs[k];
+		float bx = self->dummy.x + 0.0f;
+		float by = self->dummy.y - 470.0f;
+		float bz = self->dummy.z - 600.0f;
+		float X = o->x + bx, Y = o->y + by, Z = bz + o->z;
+		for (int n = 2; n; n--) {
+			double rr = FXS_Rnd();
+			float r = (float)(rr + rr + 0.0);
+			const vec3_t *d = FX_RandomDir(&dir);
+			FXS_Pos(sp, r * d->x + X, d->y * r + Y, d->z * r + Z);
+			float vz = FxElem_Rand(20.0f, -10.0f);
+			float vy = FxElem_Rand(95.0f, 25.0f);
+			FXS_Vel(sp, FxElem_Rand(20.0f, -10.0f), vy, vz);
+			float az = FxElem_Rand(6.0f, -3.0f);
+			float ay = FxElem_Rand(6.0f, 2.0f);
+			float ax = FxElem_Rand(6.0f, -3.0f);
+			float s = FxElem_Rand(0.059999987f, 0.18f);
+			FXS_Acc(sp, -sp->initVelMin.x * s + ax, -sp->initVelMin.y * s + ay, -sp->initVelMin.z * s + az);
+			rr = FXS_Rnd();
+			sp->sizeIni = (float)(rr + rr + 3.0);
+			sp->sizeEnd = FxElem_Rand(12.0f, 12.0f);
+			sp->sizeLife = 1.0f;
+			sp->lifeTime = FxElem_Rand(0.6999999f, 0.6f);
+			float rot = FxElem_Rand(6.2831855f, 0.0);
+			sp->rotIni = rot;
+			sp->rotEnd = rot;
+			sp->rotVar = FxElem_Rand(0.7853982f, -0.3926991f);
+			byte spr = (byte)((crt_rand() & 1) + 0x11);
+			FXS_Sprites(sp, spr, spr);
+			CGameParticles_Apply(sp);
+			CGameParticles_SetColorRampOn(sp, 1);
+			CGameParticles_SetColorRamp(sp, FXS_RAMP(FXS_RAMP_BEAT_SMOKE, crt_rand() & 1));
+			CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.05f, 0.0));
+		}
+	}
+}
+
+void __thiscall cObjElementFXSceneBeatPickus_Update(cObjElementFXSceneBeatPickus *self, cDebris *d, float dt) {
+	vec3_t pos, rot;
+	float q;
+
+	(void)dt;
+	if (!FXS_Alive(&self->ent)) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	float delta = FXS_Delta();
+	self->t = self->t + delta;
+	FXS_Follow(self->ent, d, -104.0f, &pos, &rot);
+	/* each part at most every 0.03 (the first frame always); a frame that skips one skips the rest too */
+	if (FX_InRange(self->t, 13.0f, 34.0f, &q)) {
+		float acc = self->dustT + delta;
+		self->dustT = acc;
+		if (0.03f > acc && self->t > delta) {
+			return;
+		}
+		self->dustT = 0.0f;
+		FXS_BeatDust(self);
+	}
+	if (FX_InRange(self->t, 13.5f, 33.0f, &q)) {
+		float acc = delta + self->debrisT;
+		self->debrisT = acc;
+		if (0.03f > acc && self->t > delta) {
+			return;
+		}
+		self->debrisT = 0.0f;
+		FXS_BeatDebris(self);
+	}
+	if (FX_InRange(self->t, 13.5f, 33.0f, &q)) {
+		self->sparkT = delta + self->sparkT;
+		float thr = FxElem_Rand(0.02f, 0.0) + 0.02f;
+		if (thr > self->sparkT && self->t > delta) {
+			return;
+		}
+		self->sparkT = 0.0f;
+		FXS_BeatSparks(self);
+	}
+	if (FX_InRange(self->t, 36.0f, 47.0f, &q)) {
+		float w = self->hitT - delta;
+		self->hitT = w;
+		if (!(0.0f < w)) {
+			FXS_BeatHit(self);
+		}
+		float c = self->dustT + delta;
+		self->dustT = c;
+		if (c > 0.025f) {
+			self->dustT = 0.0f;
+			FXS_BeatPuffs(self);
+		}
+	}
+	self->tPrev = self->t;
+}
+
+/* ---- BillArrives_A: Bill arrives in the capsule ---- */
+
+#define FXS_RAMP_BILL_SMOKE 0x430d00	/* [2] */
+#define FXS_RAMP_BILL_CAPSULE 0x430d48	/* [2] */
+#define FXS_RAMP_BILL_JETA 0x430d90	/* [2] */
+#define FXS_RAMP_BILL_JETB 0x430db4
+#define FXBILL_JETS 3
+/* the jets of the capsule: the particles of its embedded effect (3 from + 0x8) */
+#define FXS_CapsuleJet(efx, k) ((CGameParticles *)((byte *)(efx) + 0x8) + (k))
+
+static inline const vec3_t *FXS_Neg(vec3_t *out, const vec3_t *v) {
+	out->x = -v->x;
+	out->y = -v->y;
+	out->z = -v->z;
+	return out;
+}
+
+/* the jets off: no birth, all particles but the first killed */
+static void FXS_BillJetsOff(void *efx) {
+	for (int k = 0; k < FXBILL_JETS; k++) {
+		CGameParticles *sp = FXS_CapsuleJet(efx, k);
+		sp->birthRate = 0;
+		CGameParticles_Apply(sp);
+		int i = 1;
+		float f = 0.0f;
+		do {
+			CGameParticles_Kill(sp, i);
+			i++;
+			f = f + 0.41887903f;
+		} while (6.2831855f > f);
+	}
+}
+
+/* the color of a jet particle: the alpha 255 - (192..223) * fade */
+static uint32_t FXS_BillJetColor(float fade, uint32_t rgb) {
+	int a = crt_rand() % 32 + 0xc0;
+	return (uint32_t)(-1 - (int)((float)a * fade)) << 24 | rgb;
+}
+
+/* the flames of the jets: a core and a ring of particles placed by hand */
+static void FXS_BillJetsFlame(cObjElementFXSceneBillArrives_A *self, void *efx) {
+	vec3_t ang, v, out;
+	float frac = 0.0f;
+	float fade = 1.0f;
+
+	if (FX_InRange(self->t, 12.1f, 12.4f, &frac)) {
+		fade = 1.0f - frac;
+	}
+	float scale = self->t >= 10.7f ? 1.25f : 1.0f;
+	float coreY = scale * 16.0f;
+	float ringSize = scale * 50.0f;
+	for (int k = 0; k < FXBILL_JETS; k++) {
+		CGameParticles *sp = FXS_CapsuleJet(efx, k);
+		float rot = FxElem_Rand(6.2831855f, 0.0);
+		float size = FxElem_Rand(20.0f, 170.0f);
+		uint32_t c = FXS_BillJetColor(fade, 0xff460a);
+		CGameParticles_SetParticle(sp, 0, 0.0f, coreY, 0.0f, size * scale, c, 5, rot);
+		int i = 1;
+		float f = 0.0f;
+		do {
+			ang.x = 0.0f;
+			ang.z = 0.0f;
+			ang.y = FxElem_Rand(0.6f, -0.3f) + f;
+			float r = FxElem_Rand(10.0f, 0.0);
+			v.z = 0.0f;
+			v.x = FxElem_Rand(6.0f, 8.0f) * scale;
+			v.y = r * scale + 14.0f;
+			Vec3_Rotate(&out, &v, &ang);
+			c = FXS_BillJetColor(fade, 0xff2805);
+			CGameParticles_SetParticle(sp, i, out.x, out.y, out.z, ringSize, c, 2, 0.0f);
+			i++;
+			f = f + 0.41887903f;
+		} while (6.2831855f > f);
+	}
+}
+
+/* the smoke of the jets while the capsule comes down (3 < t < 10.9) */
+static void FXS_BillJetsSmoke(void *efx) {
+	vec3_t n;
+
+	for (int k = 0; k < FXBILL_JETS; k++) {
+		CGameParticles *sp = FXS_CapsuleJet(efx, k);
+		double r = FXS_Rnd();
+		FXS_Pos(sp, 0.0f, (float)(r + r + 16.0), 0.0f);
+		float vy = FxElem_Rand(110.0f, 390.0f);
+		float vxz = vy * 0.0f;
+		FXS_Vel(sp, vxz, vy, vxz);
+		float az = FxElem_Rand(90.0f, -45.0f);
+		float ax = FxElem_Rand(90.0f, -45.0f);
+		float s = FxElem_Rand(0.060000002f, 0.62f);
+		FXS_Neg(&n, &sp->initVelMin);
+		FXS_Acc(sp, ax + n.x * s, n.y * s + 0.0f, az + n.z * s);
+		sp->sizeIni = FxElem_Rand(10.0f, 35.0f);
+		sp->sizeEnd = FxElem_Rand(20.0f, 95.0f);
+		sp->sizeLife = 1.0f;
+		sp->lifeTime = FxElem_Rand(0.03999999f, 0.28f);
+		float rot = FxElem_Rand(6.2831855f, 0.0);
+		sp->rotIni = rot;
+		sp->rotEnd = rot;
+		FXS_Sprites(sp, 0x37, 0x37);
+		sp->rotVar = FxElem_Rand(1.5707964f, -0.7853982f);
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(FXS_RAMP_BILL_JETA, crt_rand() & 1));
+		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.04f, 0.0));
+	}
+}
+
+/* the blast of the jets at the landing (10.7 <= t < 10.85) */
+static void FXS_BillJetsBlast(void *efx) {
+	vec3_t n;
+
+	for (int k = 0; k < FXBILL_JETS; k++) {
+		CGameParticles *sp = FXS_CapsuleJet(efx, k);
+		float pz = FxElem_Rand(30.0f, -15.0f);
+		float py = FxElem_Rand(12.0f, 13.0f);
+		FXS_Pos(sp, FxElem_Rand(30.0f, -15.0f), py, pz);
+		float vy = FxElem_Rand(150.0f, 440.0f);
+		float vxz = vy * 0.0f;
+		FXS_Vel(sp, vxz, vy, vxz);
+		float az = FxElem_Rand(90.0f, -45.0f);
+		float ay = FxElem_Rand(45.0f, -90.0f);
+		float ax = FxElem_Rand(90.0f, -45.0f);
+		float s = FxElem_Rand(0.060000002f, 0.62f);
+		FXS_Neg(&n, &sp->initVelMin);
+		FXS_Acc(sp, ax + s * n.x, ay + s * n.y, az + s * n.z);
+		sp->sizeIni = FxElem_Rand(20.0f, 145.0f);
+		sp->sizeEnd = FxElem_Rand(20.0f, 225.0f);
+		sp->sizeLife = 1.0f;
+		sp->lifeTime = FxElem_Rand(0.02000001f, 0.38f);
+		float rot = FxElem_Rand(6.2831855f, 0.0);
+		sp->rotIni = rot;
+		sp->rotEnd = rot;
+		sp->rotVar = FxElem_Rand(1.5707964f, -0.7853982f);
+		FXS_Sprites(sp, 0x37, 0x37);
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FXS_RAMP_BILL_JETB));
+		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.035f, 0.0));
+	}
+}
+
+/* the smoke of the opening capsule, 5 particles around cp */
+static void FXS_BillCapsuleSmoke(cObjElementFXSceneBillArrives_A *self, const vec3_t *cp) {
+	CGameParticles *sp = &self->particles;
+	vec3_t dir, n;
+
+	sp->birthRate = 0;
+	for (int k = 5; k; k--) {
+		FX_RandomDir(&dir);
+		float r = FxElem_Rand(105.0f, 0.0);
+		FXS_Pos(sp, cp->x + r * dir.x, cp->y + r * dir.y, cp->z + r * dir.z);
+		float v = FxElem_Rand(60.0f, 20.0f);
+		FXS_Vel(sp, v * dir.x, v * dir.y, v * dir.z);
+		float az = FxElem_Rand(30.0f, -15.0f);
+		float ay = FxElem_Rand(30.0f, -15.0f);
+		float ax = FxElem_Rand(30.0f, -15.0f);
+		float s = FxElem_Rand(0.060000002f, 0.42f);
+		FXS_Neg(&n, &sp->initVelMin);
+		FXS_Acc(sp, ax + s * n.x, ay + s * n.y, az + s * n.z);
+		sp->sizeIni = FxElem_Rand(30.0f, 465.0f);
+		sp->sizeEnd = FxElem_Rand(30.0f, 655.0f);
+		sp->sizeLife = 1.0f;
+		sp->lifeTime = FxElem_Rand(0.05000007f, 1.3f);
+		float rot = FxElem_Rand(6.2831855f, 0.0);
+		sp->rotIni = rot;
+		sp->rotEnd = rot;
+		sp->rotVar = FxElem_Rand(1.5707964f, -0.7853982f);
+		byte spr = (byte)((crt_rand() & 1) + 0x11);
+		FXS_Sprites(sp, spr, spr);
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(FXS_RAMP_BILL_CAPSULE, crt_rand() & 1));
+		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.04f, 0.0));
+	}
+}
+
+static const vec3_t fxs_xAxis = { 1.0f, 0.0f, 0.0f };
+
+/* the start of the ring dir */
+static const vec3_t *FXS_RingDir(vec3_t *out, float f, double jitRange, double jitAdd, int jitFirst) {
+	vec3_t ang;
+
+	ang.x = 0.0f;
+	ang.z = 0.0f;
+	float j = FxElem_Rand(jitRange, jitAdd);
+	ang.y = jitFirst ? j + f : f + j;
+	return Vec3_Rotate(out, &fxs_xAxis, &ang);
+}
+
+/* the dust of the landing at the first dummy of the scene, 20 particles in a circle */
+static void FXS_BillDust(cObjElementFXSceneBillArrives_A *self) {
+	CGameParticles *sp = &self->particles;
+	vec3_t d, n;
+
+	sp->birthRate = 0;
+	vec3_t c = self->dummy1;
+	float f = 0.0f;
+	do {
+		FXS_RingDir(&d, f, 1.0, -0.5f, 1);
+		float r = FxElem_Rand(10.0f, 65.0f);
+		FXS_Pos(sp, c.x + r * d.x, c.y + r * d.y, c.z + r * d.z);
+		float v = FxElem_Rand(225.0f, 555.0f);
+		FXS_Vel(sp, v * d.x, v * d.y, v * d.z);
+		float ay = FxElem_Rand(50.0f, 215.0f);
+		float s = FxElem_Rand(0.060000002f, 0.62f);
+		FXS_Neg(&n, &sp->initVelMin);
+		FXS_Acc(sp, s * n.x + 0.0f, ay + s * n.y, s * n.z + 0.0f);
+		sp->sizeIni = FxElem_Rand(10.0f, 45.0f);
+		sp->sizeEnd = FxElem_Rand(30.0f, 265.0f);
+		sp->sizeLife = 1.0f;
+		sp->lifeTime = FxElem_Rand(0.100000024f, 0.45f);
+		float rot = FxElem_Rand(6.2831855f, 0.0);
+		sp->rotIni = rot;
+		sp->rotEnd = rot;
+		sp->rotVar = FxElem_Rand(0.7853982f, -0.3926991f);
+		byte spr = (byte)((crt_rand() & 1) + 0x11);
+		FXS_Sprites(sp, spr, spr);
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(FXS_RAMP_BILL_SMOKE, crt_rand() & 1));
+		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.05f, 0.0));
+		f = f + 0.31415927f;
+	} while (6.2831855f > f);
+}
+
+/* the steam of the opening capsule: a row of puffs from cp, blown away from the point above it */
+static void FXS_BillSteam(cObjElementFXSceneBillArrives_A *self, const vec3_t *cp) {
+	CGameParticles *sp = &self->particles;
+	vec3_t dir, n, nv;
+
+	float k = -22.0f;
+	do {
+		float Y = cp->y + 130.0f;
+		float X = k + cp->x;
+		float Z = cp->z - 75.0f;
+		float dy = Y - cp->y;
+		float dx = X - cp->x;
+		float dz = Z - cp->z;
+		float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+		if (len == 0.0f) {
+			nv.x = dx;
+			nv.y = dy;
+			nv.z = dz;
+		} else {
+			float inv = 1.0f / len;
+			nv.x = dx * inv;
+			nv.y = dy * inv;
+			nv.z = dz * inv;
+		}
+		float r = FxElem_Rand(3.0f, 0.0);
+		const vec3_t *d = FX_RandomDir(&dir);
+		FXS_Pos(sp, r * d->x + X, d->y * r + Y, d->z * r + Z);
+		float r2 = FxElem_Rand(20.0f, 0.0);
+		d = FX_RandomDir(&dir);
+		float jx = r2 * d->x, jy = d->y * r2, jz = d->z * r2;
+		float vy = FxElem_Rand(60.0f, 220.0f);
+		float w = FxElem_Rand(95.0f, 685.0f);
+		FXS_Vel(sp, jx + (w * nv.x + 0.0f), jy + (vy + w * nv.y), jz + (w * nv.z + 0.0f));
+		float ay = FxElem_Rand(20.0f, 75.0f);
+		float s = FxElem_Rand(0.060000002f, 0.62f);
+		FXS_Neg(&n, &sp->initVelMin);
+		FXS_Acc(sp, n.x * s + 0.0f, n.y * s + ay, n.z * s + 0.0f);
+		sp->sizeIni = FxElem_Rand(5.0f, 5.0f);
+		sp->sizeEnd = FxElem_Rand(5.0f, 35.0f);
+		sp->sizeLife = 1.0f;
+		sp->lifeTime = FxElem_Rand(0.049999982f, 0.4f);
+		float rot = FxElem_Rand(6.2831855f, 0.0);
+		sp->rotIni = rot;
+		sp->rotEnd = rot;
+		sp->rotVar = FxElem_Rand(0.7853982f, -0.3926991f);
+		byte spr = (byte)((crt_rand() & 1) + 0x11);
+		FXS_Sprites(sp, spr, spr);
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(FXS_RAMP_BILL_CAPSULE, crt_rand() & 1));
+		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.1f, 0.0));
+		k = k + 2.0f;
+	} while (22.0f > k);
+}
+
+/* a puff of dust at the second dummy of the scene, 10 particles in a circle */
+static void FXS_BillPuff(cObjElementFXSceneBillArrives_A *self, const vec3_t *off) {
+	CGameParticles *sp = &self->particles;
+	vec3_t d, n;
+
+	sp->birthRate = 0;
+	vec3_t c = self->dummy2;
+	float px = c.x + off->x, py = c.y + off->y, pz = c.z + off->z;
+	float f = 0.0f;
+	do {
+		FXS_RingDir(&d, f, 1.8f, -0.9f, 0);
+		float r = FxElem_Rand(3.0f, 1.0f);
+		FXS_Pos(sp, px + d.x * r, py + d.y * r, pz + d.z * r);
+		float vy = FxElem_Rand(25.0f, 20.0f);
+		float w = FxElem_Rand(35.0f, 105.0f);
+		FXS_Vel(sp, d.x * w + 0.0f, d.y * w + vy, d.z * w + 0.0f);
+		float ay = FxElem_Rand(20.0f, 75.0f);
+		float s = FxElem_Rand(0.059999943f, 0.72f);
+		FXS_Neg(&n, &sp->initVelMin);
+		FXS_Acc(sp, n.x * s + 0.0f, n.y * s + ay, n.z * s + 0.0f);
+		sp->sizeIni = FxElem_Rand(5.0f, 20.0f);
+		sp->sizeEnd = FxElem_Rand(5.0f, 40.0f);
+		sp->sizeLife = 1.0f;
+		sp->lifeTime = FxElem_Rand(0.050000012f, 0.35f);
+		float rot = FxElem_Rand(6.2831855f, 0.0);
+		sp->rotIni = rot;
+		sp->rotEnd = rot;
+		sp->rotVar = FxElem_Rand(1.0471976f, -0.5235988f);
+		byte spr = (byte)((crt_rand() & 1) + 0x11);
+		FXS_Sprites(sp, spr, spr);
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(FXS_RAMP_BILL_SMOKE, crt_rand() & 1));
+		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.1f, 0.0));
+		f = f + 0.62831855f;
+	} while (6.2831855f > f);
+}
+
+void __thiscall cObjElementFXSceneBillArrives_A_Update(cObjElementFXSceneBillArrives_A *self, cDebris *d,
+	float dt) {
+	vec3_t pos, rot, cp;
+	float f;
+
+	(void)dt;
+	if (!FXS_Alive(&self->ent)) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	if (!self->capsule) {
+		cEntity *c = World_FindEntity("BillArrives_ACapsule");
+		self->capsule = c;
+		CHECK(c && Entity_EmbeddedFX(c));
+	}
+	float delta = FXS_Delta();
+	self->t = delta + self->t;
+	FXS_Follow(self->ent, d, -102.0f, &pos, &rot);
+	void *efx = self->capsule ? Entity_EmbeddedFX(self->capsule) : NULL;
+	if (efx) {
+		float t = self->t;
+		if (!(t >= 12.4f)) {
+			FXS_BillJetsFlame(self, efx);
+			t = self->t;
+			if (t > 3.0f && 10.9f > t) {
+				float a = delta + self->jetT;
+				self->jetT = a;
+				if (a > 0.03f) {
+					self->jetT = 0.0f;
+					FXS_BillJetsSmoke(efx);
+				}
+			} else if (t >= 10.7f && 10.85f > t) {
+				float a = delta + self->jetT;
+				self->jetT = a;
+				if (a > 0.04f) {
+					self->jetT = 0.0f;
+					FXS_BillJetsBlast(efx);
+				}
+			}
+		} else if (12.4f > self->tPrev) {
+			FXS_BillJetsOff(efx);
+		}
+		CGameModel *cm = FX_Vtbl(self->capsule)->GetModel(self->capsule);
+		CGameModel_GetPos(cm, &cp);
+		CHECK(CGameModel_IsLoaded(cm));
+		if (FX_InRange(self->t, 3.0f, 4.0f, &f)) {
+			CGameLensFlare_SetPos(&self->flare, cp);
+			CGameLensFlare_SetOn(&self->flare, 1);
+			CGameLensFlare_SetIntensity(&self->flare, 0.5f - f * 0.5f);
+			CGameLensFlare_SetF18(&self->flare, 1.0f);
+		} else {
+			CGameLensFlare_SetOn(&self->flare, 0);
+		}
+		if (FX_InRange(self->t, 3.0f, 5.0f, &f)) {
+			float a = self->smokeT + delta;
+			self->smokeT = a;
+			if (a > 0.025f) {
+				self->smokeT = 0.0f;
+				FXS_BillCapsuleSmoke(self, &cp);
+			}
+		}
+	}
+	/* a frame that skips one of the next parts (at most every 0.04) skips the rest too */
+	if (FX_InRange(self->t, 11.0f, 12.3f, &f)) {
+		float a = self->smokeT + delta;
+		self->smokeT = a;
+		if (0.04f > a) {
+			return;
+		}
+		self->smokeT = 0.0f;
+		FXS_BillDust(self);
+	}
+	if (self->capsule && FX_InRange(self->t, 13.35f, 13.7f, &f)) {
+		float a = self->smokeT + delta;
+		self->smokeT = a;
+		if (0.04f > a) {
+			return;
+		}
+		self->smokeT = 0.0f;
+		self->particles.birthRate = 0;
+		cEntity *c = self->capsule;
+		CGameModel_GetPos(FX_Vtbl(c)->GetModel(c), &cp);
+		FXS_BillSteam(self, &cp);
+	}
+	float t = self->t;
+	if ((t >= 18.13f && 18.13f >= self->tPrev) || (t >= 18.23f && 18.23f >= self->tPrev)) {
+		static const vec3_t offA = { -60.0f, 0.0f, 0.0f }, offB = { 60.0f, 0.0f, -20.0f };
+		FXS_BillPuff(self, (t >= 18.13f && 18.13f >= self->tPrev) ? &offA : &offB);
+	}
+	self->tPrev = self->t;
 }
