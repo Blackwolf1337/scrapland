@@ -660,9 +660,6 @@ SD_IMPORT(crt_Init_thread_footer, 0x31405e)
 
 /* module agent: Actions and Events (ActClass..AIBishop) (imports below this line) */
 SD_IMPORT(cActClass_ctor, 0x05f890)
-SD_IMPORT(cAIChar_dtor, 0x067320)
-SD_IMPORT(cAIChar_SetRanges, 0x06b330)
-SD_IMPORT(cAIChar_SetStateArgs, 0x06bc20)
 SD_IMPORT(cAIControlBankDirector_ctor, 0x081af0)
 SD_IMPORT(cAIControlBankMaster_ctor, 0x081e40)
 SD_IMPORT(cAIControlBishop_ctor, 0x082620)

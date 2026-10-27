@@ -574,11 +574,7 @@ void __thiscall cAIBishop_SetRanges(cAIBishop *self);
 /* vf57: the shot parameters for a target with or without an AI, then the ranges */
 void __thiscall cAIBishop_SetShoot(cAIBishop *self);
 
-/* AI/AIChar.cpp (imports) */
-void __fastcall cAIChar_dtor(void *self);					/* rva 0x67320 */
-void __thiscall cAIChar_SetRanges(void *self);					/* rva 0x6b330, vf56 */
-/* the state with the arguments of SetState (rva 0x6bc20, vf26) */
-byte __thiscall cAIChar_SetStateArgs(void *self, int state, va_list ap);
+/* cAIChar_dtor, cAIChar_SetDists (vf56) and cAIChar_ChangeState (vf26): aichar.h */
 /* the move controls (AI/AIControl*.cpp, imports) */
 void *__thiscall cAIControlBankDirector_ctor(void *mem, cEntity *e, void *ai, int *arg);	/* rva 0x81af0 */
 void *__thiscall cAIControlBankMaster_ctor(void *mem, cEntity *e, void *ai, int *arg);	/* rva 0x81e40 */

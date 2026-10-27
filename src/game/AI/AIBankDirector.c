@@ -4,6 +4,7 @@
  */
 #include "scrap/actions.h"
 #include "scrap/ai.h"
+#include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
 
 #define CAIBANK_SIZE 0x384
@@ -25,12 +26,12 @@ void *__thiscall cAIBankDirector_ctor(void *mem, cEntity *e, int *arg) {
 
 void __fastcall cAIBankDirector_dtor(void *self) {
 	*(const void **)self = Game_Ptr(CAIBANKDIRECTOR_VFTABLE);
-	cAIChar_dtor(self);
+	cAIChar_dtor((cAIChar *)self);
 }
 
 void *__thiscall cAIBankDirector_Delete(void *self, byte flags) {
 	*(const void **)self = Game_Ptr(CAIBANKDIRECTOR_VFTABLE);
-	cAIChar_dtor(self);
+	cAIChar_dtor((cAIChar *)self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIBANK_SIZE);
 	}
@@ -77,7 +78,7 @@ void __thiscall cAIBankDirector_SetRanges(cAIBank *self) {
 
 	if (c->state != 3) {
 		if (c->state != 7) {
-			cAIChar_SetRanges(self);
+			cAIChar_SetDists((cAIChar *)self);
 			return;
 		}
 		c->attackMin = 0.0f;
@@ -117,7 +118,7 @@ byte cAIBank_SetState(cAIBank *self, int state, ...) {
 		AICharView_Vtbl(self)->SwitchState(self, state);
 	}
 	va_start(ap, state);
-	byte r = cAIChar_SetStateArgs(self, state, ap);
+	byte r = cAIChar_ChangeState((cAIChar *)self, state, ap);
 	va_end(ap);
 	return r;
 }
@@ -135,7 +136,7 @@ byte cAIBank_SetStateIntern(cAIBank *self, int state, ...) {
 	}
 	AICharView_Vtbl(self)->SwitchState(self, state);
 	va_start(ap, state);
-	byte r = cAIChar_SetStateArgs(self, state, ap);
+	byte r = cAIChar_ChangeState((cAIChar *)self, state, ap);
 	va_end(ap);
 	return r;
 }

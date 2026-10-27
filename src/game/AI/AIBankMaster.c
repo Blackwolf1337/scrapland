@@ -3,6 +3,7 @@
  * state changes are the ones of the director (AIBankDirector.c). See include/scrap/ai.h.
  */
 #include "scrap/ai.h"
+#include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
 
 #define CAIBANK_SIZE 0x384
@@ -24,12 +25,12 @@ void *__thiscall cAIBankMaster_ctor(void *mem, cEntity *e, int *arg) {
 
 void __fastcall cAIBankMaster_dtor(void *self) {
 	*(const void **)self = Game_Ptr(CAIBANKMASTER_VFTABLE);
-	cAIChar_dtor(self);
+	cAIChar_dtor((cAIChar *)self);
 }
 
 void *__thiscall cAIBankMaster_Delete(void *self, byte flags) {
 	*(const void **)self = Game_Ptr(CAIBANKMASTER_VFTABLE);
-	cAIChar_dtor(self);
+	cAIChar_dtor((cAIChar *)self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIBANK_SIZE);
 	}
@@ -45,7 +46,7 @@ void __thiscall cAIBankMaster_SetRanges(cAIBank *self) {
 		return;
 	}
 	if (c->state != 7) {
-		cAIChar_SetRanges(self);
+		cAIChar_SetDists((cAIChar *)self);
 		return;
 	}
 	c->rangeMin = 0.0f;

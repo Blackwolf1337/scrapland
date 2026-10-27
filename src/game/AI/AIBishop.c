@@ -5,6 +5,7 @@
  */
 #include "scrap/actions.h"
 #include "scrap/ai.h"
+#include "scrap/aichar.h"
 #include "scrap/fxmisc.h"
 #include "scrap/walkcharentity.h"
 
@@ -31,12 +32,12 @@ void *__thiscall cAIBishop_ctor(void *mem, cEntity *e, int *arg) {
 
 void __fastcall cAIBishop_dtor(void *self) {
 	*(const void **)self = Game_Ptr(CAIBISHOP_VFTABLE);
-	cAIChar_dtor(self);
+	cAIChar_dtor((cAIChar *)self);
 }
 
 void *__thiscall cAIBishop_Delete(void *self, byte flags) {
 	*(const void **)self = Game_Ptr(CAIBISHOP_VFTABLE);
-	cAIChar_dtor(self);
+	cAIChar_dtor((cAIChar *)self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIBISHOP_SIZE);
 	}
@@ -140,7 +141,7 @@ void __thiscall cAIBishop_SetRanges(cAIBishop *self) {
 	cAICharView *c = &self->base;
 
 	if (c->state != 2) {
-		cAIChar_SetRanges(self);
+		cAIChar_SetDists((cAIChar *)self);
 		return;
 	}
 	c->attackMin = 0.0f;
