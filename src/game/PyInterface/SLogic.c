@@ -7,6 +7,7 @@
 #include "scrap/global.h"
 #include "scrap/logic.h"
 #include "scrap/python.h"
+#include "scrap/vehicleentity.h"
 
 /* the four traffic lists GetNearestShip searches (pointer table at rva 0x42ddf0) */
 static const char *const shipLists[] = { "Traffic", "EnemiesTraffic", "FightingTraffic", "NormalTraffic" };

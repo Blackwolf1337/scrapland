@@ -1,0 +1,514 @@
+/*
+ * cVehicleEffects, the effects a vehicle drives itself, see include/scrap/vehicleeffects.h.
+ */
+#include <string.h>
+
+#include "scrap/crt.h"
+#include "scrap/fxmisc.h"
+#include "scrap/fxvehicle.h"
+#include "scrap/global.h"
+#include "scrap/mathlib.h"
+#include "scrap/scrapcollision.h"
+#include "scrap/vehicleentity.h"
+#include "scrap/weapons.h"
+
+#define CGAMEPARTICLES_CTOR 0x21d1b0
+#define CGAMEPARTICLES_DTOR 0x21d1c0
+#define CGAMETRAIL_CTOR 0x21ddb0
+#define CGAMETRAIL_DTOR 0x21de40
+
+#define VEFF_RAND_SCALE 3.051850947599719e-05	/* 1 / 32767 (the double at rva 0x3a3d60) */
+
+static inline cEntity *VE_Ent(cVehicleEntity *v) {
+	return &v->base;
+}
+
+static inline CGameModel *VE_Model(cVehicleEntity *v) {
+	return Veh_Vtbl(v)->GetModel(v);
+}
+
+/* the element of a new debris of the effect file with the life, made when the debris has none; noRadius: the
+ * system first gets radius 0 */
+static void *VE_Drop(const char *file, float life, byte noRadius, uint32_t size, void *(__thiscall *ctor)(void *)) {
+	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, file);
+	if (noRadius) {
+		sys->radiusSq = 0.0f;
+	}
+	cDebris *d = cDebrisSys_NewElement(sys);
+	Debris_Life(d) = life;
+	cDebrisSys_Drop(sys, d);
+	if (ctor && !Debris_Element(d)) {
+		void *mem = operator_new(size);
+		cObjElementFX *el = mem ? ctor(mem) : NULL;
+		Debris_Element(d) = el;
+		el->vftable->Start(el, d);
+	}
+	return Debris_Element(d);
+}
+
+/* ---- the escape tubes and the speed trails ---- */
+
+void __fastcall cVehicleTubes_Reset(cVehicleTubes *self) {
+	self->count = 0;
+	for (int i = 0; i < VEFF_TUBES; i++) {
+		if (self->nodes[i] != -1) {
+			CGameParticles_Release(&self->particles[i]);
+		}
+	}
+}
+
+void __fastcall cVehicleTrails_Clear(cVehicleTrails *self) {
+	for (int i = 0; i < VEFF_TRAILS; i++) {
+		CGameTrail_Clear(&self->trails[i]);
+	}
+}
+
+void __fastcall cVehicleEffects_Reset(cVehicleEffects *self) {
+	cVehicleTrails *t = self->trails;
+	if (t) {
+		t->count = 0;
+		for (int i = 0; i < VEFF_TRAILS; i++) {
+			CGameTrail_Clear(&t->trails[i]);
+		}
+	}
+	if (self->tubes) {
+		cVehicleTubes_Reset(self->tubes);
+	}
+	self->damageOn = 0;
+	self->damageTime = 0.0f;
+	self->emiOn = 0;
+	self->emiTime = 0.0f;
+	self->fireOn = 0;
+	self->fireTime = 0.0f;
+}
+
+void __fastcall cVehicleEffects_ClearDamage(void *self) {
+	cVehicleEffects *fx = self;
+	fx->damageOn = 0;
+	fx->damageTime = 0.0f;
+}
+
+void __fastcall cVehicleTubes_Init(cVehicleTubes *self) {
+	char name[256];
+
+	CHECK(self->owner);
+	self->count = 0;
+	CGameModel *model = VE_Model(self->owner);
+	if (!model) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(model));
+	if (!crt_strncmp(self->owner->typeName, "SLifeBoat", 9)) {
+		self->kind = VEFF_TUBES_LIFEBOAT;
+	} else if (!crt_strncmp(self->owner->typeName, "SMerc", 5)) {
+		self->kind = VEFF_TUBES_MERC;
+	} else {
+		self->kind = VEFF_TUBES_NONE;
+	}
+	if (self->kind == VEFF_TUBES_NONE) {
+		return;
+	}
+	for (int i = 0; i < VEFF_TUBES; i++) {
+		Str_PrintfQuiet(name, 0xff, "DF_EscapeTube_%02d", i + 1);
+		self->nodes[i] = CGameModel_FindNodoRWild(model, name);
+		if (self->nodes[i] != -1) {
+			self->count++;
+			CGameParticles_Release(&self->particles[i]);
+			CGameParticles_Attach(&self->particles[i], model, (uint32_t)self->nodes[i]);
+		}
+	}
+	self->time = 0.0f;
+}
+
+void __fastcall cVehicleTrails_Init(cVehicleTrails *self) {
+	char name[256];
+	vec3_t pos;
+
+	CHECK(self->owner);
+	self->count = 0;
+	CGameModel *model = VE_Model(self->owner);
+	if (!CGameModel_IsLoaded(model)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(model));
+	int root = CGameModel_FindNodoR(model, "DC_Root");
+	CHECK(root > -1);
+	self->root = *CGameModel_NodoPos(model, &pos, (uint32_t)root, 0);
+	for (int i = 0; i < VEFF_TRAILS; i++) {
+		CGameTrail *t = &self->trails[i];
+		CGameTrail_SetMaxTrails(t, 0x14);
+		CGameTrail_SetFade(t, 1);
+		CGameTrail_SetTexture(t, 2);
+		CGameTrail_SetSmooth(t, 0);
+		CGameTrail_SetWidth(t, 12.0f);
+		CGameTrail_SetScale(t, 1.0f, 2.0f);
+		CGameTrail_Clear(t);
+		Str_PrintfQuiet(name, 0xff, "DF_SpeedTrail_%02d", i + 1);
+		self->nodes[i] = CGameModel_FindNodoRWild(model, name);
+		if (self->nodes[i] != -1) {
+			self->count++;
+		}
+	}
+	self->color = 0xffffff;
+	self->fade = 0.0f;
+	self->dist = 0.0f;
+	self->time = 0.0f;
+	self->segment = g_FXVehicleSpeedTrailDist;
+}
+
+/* the node of the trail in the world: its offset from DC_Root (raised by 20) turned and moved with the model */
+static vec3_t *VE_TrailPoint(cVehicleTrails *self, CGameModel *model, int node, vec3_t *out) {
+	vec3_t tmp, n, rot, mp;
+
+	vec3_t *np = CGameModel_NodoPos(model, &tmp, (uint32_t)node, 0);
+	n.x = (np->x - self->root.x) + 0.0f;
+	n.y = (np->y - self->root.y) + 0.0f;
+	n.z = (np->z - self->root.z) + 20.0f;
+	vec3_t *r = Vec3_Rotate(out, &n, CGameModel_GetRot(model, &rot));
+	vec3_t *m = CGameModel_GetPos(model, &mp);
+	out->x = r->x + m->x;
+	out->y = r->y + m->y;
+	out->z = r->z + m->z;
+	return out;
+}
+
+/* rand / 32767 * range - sub in double, as the original */
+static inline float VE_RandSub(double range, double sub) {
+	return (float)((double)(crt_rand() & 0x7fff) * VEFF_RAND_SCALE * range - sub);
+}
+
+void __thiscall cVehicleTrails_Update(cVehicleTrails *self, float dt) {
+	vec3_t c, p, w;
+
+	CHECK(self->owner);
+	CGameModel *model = VE_Model(self->owner);
+	if (!CGameModel_IsLoaded(model)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(model));
+	vec3_t v = self->owner->localVel;
+	float down = 0.0f;
+	if (!(v.z > 0.0f)) {
+		down = -v.z;
+	}
+	float f = Float_MinSS(1.0f, down * 0.5f / self->owner->maxSpeed);
+	if (0.51f >= f && 0.51f >= self->fade) {
+		if (self->dist > 0.0f) {
+			int i;
+			for (i = 0; i < VEFF_TRAILS; i++) {
+				if (self->nodes[i] != -1 && CGameTrail_IsRender(&self->trails[i])) {
+					break;
+				}
+			}
+			if (i == VEFF_TRAILS) {
+				self->dist = 0.0f;
+			}
+		}
+		if (self->dist == 0.0f) {
+			return;
+		}
+	}
+	Float_Approach(&self->fade, f, dt);
+	Veh_Vtbl(self->owner)->GetCenter(self->owner, &c);
+	float seg = g_FXVehicleSpeedTrailDist;
+	Float_Approach(&self->segment, Float_MaxSS(seg * 0.25f, seg - __builtin_fabsf(v.x * 0.5f)), dt * 1500.0f);
+	float dx = c.x - self->last.x, dy = c.y - self->last.y, dz = c.z - self->last.z;
+	float d2 = dy * dy + dx * dx + dz * dz;
+	float dist;
+	if (!(self->fade >= 0.55f)) {
+		/* slow: the trails shrink every 0.05; the squared distance is kept (as in the original) */
+		dist = d2;
+		if (self->time >= 0.05f) {
+			for (int i = 0; i < VEFF_TRAILS; i++) {
+				if (self->nodes[i] != -1) {
+					CGameTrail_Shrink(&self->trails[i]);
+				}
+			}
+			self->time = 0.0f;
+		}
+	} else {
+		dist = (float)__builtin_sqrt((double)d2);
+		float fh = g_FXVehicleSpeedTrailFadeOutH;
+		float a = ((fh - Float_MinSS(fh, __builtin_fabsf(v.x))) / fh) * ((self->fade - 0.55f) * 350.0f);
+		uint32_t color = ((uint32_t)(int)(255.0f - a) << 24) | 0xffffff;
+		if (dist > self->segment) {
+			self->last = c;
+			for (int i = 0; i < VEFF_TRAILS; i++) {
+				if (self->nodes[i] == -1) {
+					continue;
+				}
+				CGameTrail *t = &self->trails[i];
+				VE_TrailPoint(self, model, self->nodes[i], &p);
+				float width = g_FXVehicleSpeedTrailSize;
+				CGameTrail_SetLast(t, NULL, &width, &color);
+				float rz = VE_RandSub(10.0, 5.0);
+				float ry = VE_RandSub(10.0, 5.0);
+				float rx = VE_RandSub(10.0, 5.0);
+				vec3_t q;
+				q.x = rx + p.x;
+				q.y = ry + p.y;
+				q.z = rz + p.z;
+				CGameTrail_Add(t, q, width * 0.2f, color);
+			}
+		} else {
+			for (int i = 0; i < VEFF_TRAILS; i++) {
+				if (self->nodes[i] == -1) {
+					continue;
+				}
+				VE_TrailPoint(self, model, self->nodes[i], &w);
+				float width = dist / self->segment * g_FXVehicleSpeedTrailSize * 0.8f + 0.2f;
+				CGameTrail_SetLast(&self->trails[i], &w, &width, &color);
+			}
+		}
+	}
+	self->dist = dist;
+	self->time = self->time + dt;
+}
+
+void __fastcall cVehicleEffects_Init(cVehicleEffects *self) {
+	CHECK(self->owner);
+	cVehicleEntity *v = self->owner;
+	if (v->typeName[0] == 'T' || !strcmp(v->typeName, "SMosquito")) {
+		cVehicleTrails *t = self->trails;
+		if (t) {
+			crt_eh_vector_dtor(t->trails, sizeof(CGameTrail), VEFF_TRAILS, Game_Ptr(CGAMETRAIL_DTOR));
+			operator_delete_sized(t, sizeof(*t));
+			self->trails = NULL;
+		}
+	} else {
+		if (!self->trails) {
+			cVehicleTrails *t = operator_new(sizeof(*t));
+			if (t) {
+				crt_eh_vector_ctor(t->trails, sizeof(CGameTrail), VEFF_TRAILS, Game_Ptr(CGAMETRAIL_CTOR),
+					Game_Ptr(CGAMETRAIL_DTOR));
+				t->owner = NULL;
+			}
+			self->trails = t;
+		}
+		cVehicleTrails_SetOwner(self->trails, VE_Ent(self->owner));
+		cVehicleTrails_Init(self->trails);
+	}
+	if (!crt_strncmp(self->owner->typeName, "SLifeBoat", 9)) {
+		if (!self->tubes) {
+			cVehicleTubes *t = operator_new(sizeof(*t));
+			if (t) {
+				crt_eh_vector_ctor(t->particles, sizeof(CGameParticles), VEFF_TUBES,
+					Game_Ptr(CGAMEPARTICLES_CTOR), Game_Ptr(CGAMEPARTICLES_DTOR));
+				t->owner = NULL;
+			}
+			self->tubes = t;
+		}
+		cVehicleTubes_SetOwner(self->tubes, VE_Ent(self->owner));
+		cVehicleTubes_Init(self->tubes);
+		return;
+	}
+	cVehicleTubes *t = self->tubes;
+	if (t) {
+		crt_eh_vector_dtor(t->particles, sizeof(CGameParticles), VEFF_TUBES, Game_Ptr(CGAMEPARTICLES_DTOR));
+		operator_delete_sized(t, sizeof(*t));
+		self->tubes = NULL;
+	}
+}
+
+void __thiscall cVehicleEffects_SetActive(cVehicleEffects *self, byte on) {
+	if (!on && self->trails && self->trails->count > 0) {
+		cVehicleTrails_Clear(self->trails);
+	}
+}
+
+/* the CHECKs of the owner setters */
+static void VE_CheckOwner(cEntity *e) {
+	CHECK(e);
+	CHECK(e->vftable->IsType(e, TYEN_VEHICLE));
+}
+
+void __thiscall cVehicleEffects_SetOwner(cVehicleEffects *self, cEntity *e) {
+	VE_CheckOwner(e);
+	self->owner = Veh(e);
+	if (self->trails) {
+		cVehicleTrails_SetOwner(self->trails, e);
+	}
+	if (self->tubes) {
+		cVehicleTubes_SetOwner(self->tubes, e);
+	}
+}
+
+void __thiscall cVehicleTubes_SetOwner(cVehicleTubes *self, cEntity *e) {
+	VE_CheckOwner(e);
+	self->owner = Veh(e);
+}
+
+void __thiscall cVehicleTrails_SetOwner(cVehicleTrails *self, cEntity *e) {
+	VE_CheckOwner(e);
+	self->owner = Veh(e);
+}
+
+/* ---- the debris effects ---- */
+
+void __thiscall cVehicleEffects_Start(cVehicleEffects *self, const char *name) {
+	if (!strcmp(name, "VehicleDamage")) {
+		if (!CGameModel_IsLoaded(VE_Model(self->owner))) {
+			return;
+		}
+		cObjElementFXVehicleDamage *el = VE_Drop(g_FXVehicleDamageFile, 1.5f, 0, 0, NULL);
+		if (el) {
+			if (!el->on) {
+				el->on = 1;
+			}
+			cObjElementFXVehicleDamage_SetEntity(el, VE_Ent(self->owner));
+		}
+		return;
+	}
+	if (!strcmp(name, "VehicleEMI")) {
+		if (!CGameModel_IsLoaded(VE_Model(self->owner))) {
+			return;
+		}
+		cObjElementFXVehicleEMI *el = VE_Drop(g_FXVehicleEMIFile, self->owner->emi, 1,
+			sizeof(cObjElementFXVehicleEMI), cObjElementFXVehicleEMI_ctor);
+		if (el) {
+			if (!el->on) {
+				el->on = 1;
+			}
+			cObjElementFXVehicleEMI_SetEntity(el, VE_Ent(self->owner));
+		}
+		return;
+	}
+	if (!crt_strncmp(name, "VehicleSputnik", 14)) {
+		if (!CGameModel_IsLoaded(VE_Model(self->owner))) {
+			return;
+		}
+		int mode = 0;
+		float life = 0.0f, c4 = 0.0f;
+		if (!strcmp(name, "VehicleSputnikMake")) {
+			mode = 1;
+			life = 3.15f;
+			c4 = 2.34f;
+		} else if (!strcmp(name, "VehicleSputnikSuck")) {
+			mode = 2;
+			life = 3.75f;
+			c4 = 3.34f;
+		}
+		cObjElementFXVehicleSputnik *el = VE_Drop(g_FXVehicleSputnikFile, life, 0, 0, NULL);
+		if (el) {
+			if (!el->on) {
+				el->on = 1;
+			}
+			cObjElementFXVehicleSputnik_SetEntity(el, VE_Ent(self->owner));
+			cObjElementFXVehicleSputnik_SetC0(el, mode);
+			cObjElementFXVehicleSputnik_SetC4(el, c4);
+		}
+		return;
+	}
+	if (!strcmp(name, "VehicleFire")) {
+		if (!CGameModel_IsLoaded(VE_Model(self->owner))) {
+			return;
+		}
+		cObjElementFXVehicleFire *el = VE_Drop(g_FXVehicleFireFile, 1.0f, 0, sizeof(cObjElementFXVehicleFire),
+			cObjElementFXVehicleFire_ctor);
+		if (el) {
+			if (!el->on) {
+				el->on = 1;
+			}
+			cObjElementFXVehicleFire_SetEntity(el, VE_Ent(self->owner));
+		}
+		return;
+	}
+	if (!strcmp(name, "VehicleSpawn")) {
+		cObjElementFXVehicleSpawn *el = VE_Drop("models/gfx/test/SpawnRays.m3d", 2.0f, 1,
+			sizeof(cObjElementFXVehicleSpawn), cObjElementFXVehicleSpawn_ctor);
+		if (el) {
+			if (!el->on) {
+				el->on = 1;
+			}
+			cObjElementFXVehicleSpawn_SetEntity(el, VE_Ent(self->owner));
+		}
+	}
+}
+
+void __thiscall cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
+	vec3_t v, out, center, from, to, hit;
+
+	CHECK(self->owner);
+	cVehicleEntity *o = self->owner;
+	int life = o->life;
+	int percent = life * 100 / o->maxLife;
+	if (!self->damageOn && life > 0 && percent < g_FXSetOnFireLifePercent) {
+		self->damageTime += dt;
+		if (self->damageTime > 0.05f && CGameModel_IsLoaded(VE_Model(o))) {
+			self->damageOn = 1;
+			cVehicleEffects_Start(self, "VehicleDamage");
+		}
+	} else if (self->damageOn && percent > g_FXSetOnFireLifePercent) {
+		self->damageOn = 0;
+		self->damageTime = 0.0f;
+	}
+	if (!self->emiOn) {
+		o = self->owner;
+		if (o->emi > 0.5f) {
+			self->emiTime = dt + self->emiTime;
+			if (self->emiTime > 0.05f && CGameModel_IsLoaded(VE_Model(o))) {
+				self->emiOn = 1;
+				cVehicleEffects_Start(self, "VehicleEMI");
+			}
+		}
+	} else if (self->owner->emi <= 0.0f) {
+		self->emiOn = 0;
+		self->emiTime = 0.0f;
+	}
+	o = self->owner;
+	float burn = o->burnTime;
+	if (!self->fireOn) {
+		if (burn > 0.5f) {
+			self->fireTime = dt + self->fireTime;
+			if (self->fireTime > 0.05f && CGameModel_IsLoaded(VE_Model(o))) {
+				self->fireOn = 1;
+				cVehicleEffects_Start(self, "VehicleFire");
+			}
+		}
+	} else if (0.0f > burn) {
+		self->fireOn = 0;
+		self->fireTime = 0.0f;
+	}
+	if (!g_WindFxSmoke || !self->owner->player || g_FreeSpaceMagnet) {
+		return;
+	}
+	float now = Timer_GetTime(&g_pWorld->timer);
+	o = self->owner;
+	v = o->localVel;
+	float down = 0.0f;
+	if (!(v.z > 0.0f)) {
+		down = -v.z;
+	}
+	if (!(o->smoothThrust > 0.5f) || !(down > g_WindFXSmokeMinVel)) {
+		return;
+	}
+	float last = g_WindFXSmokeLast;
+	if (!(last > now) && !(now - last > g_WindFXSmokeTimeStep)) {
+		return;
+	}
+	g_WindFXSmokeLast = now;
+	if (!(0.1f > Float_Keep(now) - now)) {
+		return;
+	}
+	float k = o->smoothSpeed / 28000.0f;
+	float ax = o->smoothAng.x, ay = o->smoothAng.y;
+	v.x = 0.0f;
+	v.y = 0.0f;
+	v.z = -Veh_Vtbl(o)->GetRadius(o);
+	vec3_t *r = Vec3_RotateXY(&out, &v, ax, ay);
+	vec3_t *c = Veh_Vtbl(self->owner)->GetCenter(self->owner, &center);
+	from.x = c->x + r->x;
+	from.y = c->y + r->y;
+	from.z = c->z + r->z;
+	float rnd = (float)((double)(crt_rand() & 0x7fff) * VEFF_RAND_SCALE * 0.19999998807907104 + 0.75);
+	v.x = 0.0f;
+	v.y = -(g_WindFXSmokeMaxDist * k);
+	v.z = -(rnd * g_WindFXSmokeMaxDist * k);
+	Vec3_RotateXY(&out, &v, ax, ay);
+	to.x = out.x + from.x;
+	to.y = out.y + from.y;
+	to.z = out.z + from.z;
+	if (Engine_TestLine(&from, &to, &hit, NULL)) {
+		cVehicleEffects_WindSmoke(&self->owner->effects, hit.x, hit.y, hit.z);
+	}
+}
