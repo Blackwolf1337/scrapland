@@ -184,12 +184,6 @@ SD_IMPORT(CAnimMat_Start, 0x258110)
 
 /* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/escena.h) */
 SD_IMPORT(Box_Transform, 0x239880)
-SD_IMPORT(CMallaD3D_CalcPesos, 0x2b8900)
-SD_IMPORT(CMallaD3D_CalcIlum, 0x2b8e80)
-SD_IMPORT(Cad_Read, 0x2a18a0)
-SD_IMPORT(Cad_Write, 0x2a1920)
-SD_IMPORT(CAnimacion_ctor, 0x2ab6f0)
-SD_IMPORT(CAnimacion_dtor, 0x2ab940)
 SD_IMPORT(CSuelo_CalcIlum, 0x261630)
 
 /* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
@@ -207,10 +201,6 @@ SD_IMPORT(CListaVert_EnvMapUV, 0x2418c0)
 SD_IMPORT(CAnimMat_GetFrame, 0x258060)
 SD_IMPORT(Matrix_Invert, 0x239560)
 SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
-SD_IMPORT(RenderEVA_ReleaseD3D, 0x2b4550)
-SD_IMPORT(RenderGamma_ReleaseD3D, 0x2a7980)
-SD_IMPORT(RenderGamma_Begin, 0x2a7520)
-SD_IMPORT(RenderGamma_LogShaderMask, 0x2a7cd0)
 SD_IMPORT(Vec3_ToAngles, 0x239150)
 SD_IMPORT(Matrix_RotationZ, 0x23a2b0)
 
@@ -584,11 +574,9 @@ SD_IMPORT(crt_strtok, 0x33bbc1)
 /* module agent: Engine/lee_M3D.cpp and bsp_q3.cpp (imports below this line) */
 SD_IMPORT(crt_fileno, 0x3541cc)
 SD_IMPORT(crt_filelength, 0x358bef)
-SD_IMPORT(Cad_Printf, 0x2a1970)
 SD_IMPORT(CListaVert_Optimize, 0x243090)
 SD_IMPORT(M3DTransform_ToMatrix, 0x2d6750)
 SD_IMPORT(M3DTransform_ToMatrixAnim, 0x2d65d0)
-SD_IMPORT(FXTextura_Tipo, 0x2a82f0)
 SD_IMPORT(Matrix_ToTransform, 0x2d6c50)
 
 /* module agent: Engine NodeFX..ModelFX (imports below this line) */

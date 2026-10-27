@@ -8258,7 +8258,7 @@ rva	size	source	callconv	name	signature
 002a18a0	117	DEFAULT	unknown	FUN_006a18a0	
 002a1920	17	DEFAULT	unknown	FUN_006a1920	
 002a1940	46	DEFAULT	unknown	FUN_006a1940	
-002a1970	136	DEFAULT	unknown	FUN_006a1970	
+002a1970	136	USER_DEFINED	__cdecl	Cad_Printf	void __cdecl(void * self, char * fmt, ...)
 002a1a00	86	DEFAULT	unknown	FUN_006a1a00	
 002a1a60	86	DEFAULT	unknown	FUN_006a1a60	
 002a1ac0	183	USER_DEFINED	__cdecl	Arch_AddSection	void __cdecl(void *dat, char *name, int idx)
@@ -8357,7 +8357,7 @@ rva	size	source	callconv	name	signature
 002a5950	646	DEFAULT	unknown	FUN_006a5950	
 002a5be0	104	DEFAULT	unknown	FUN_006a5be0	
 002a5c50	104	DEFAULT	unknown	FUN_006a5c50	
-002a5cc0	85	DEFAULT	unknown	FUN_006a5cc0	
+002a5cc0	85	USER_DEFINED	__cdecl	Win_SetTextf	int __cdecl(void * hwnd, char * fmt, ...)
 002a5d20	89	USER_DEFINED	__cdecl	Dlg_SetFloat	void __cdecl(void * hwnd, int id, float v, int prec)
 002a5d80	78	USER_DEFINED	__cdecl	Dlg_GetFloat	byte __cdecl(void * hwnd, int id, float * out)
 002a5dd0	131	DEFAULT	unknown	FUN_006a5dd0	

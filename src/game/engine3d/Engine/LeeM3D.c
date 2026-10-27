@@ -9,6 +9,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/escena.h"
 #include "scrap/flare.h"
+#include "scrap/fxtextura.h"
 #include "scrap/grafico3d.h"
 #include "scrap/leedatos.h"
 #include "scrap/leem3d.h"
@@ -2303,7 +2304,7 @@ void M3D_LeeMapa(CMaterial *mat, int iMat, int iSubmat, int idx, int tipo) {
 		}
 		if (mapa) {
 			mapa->f2c = cantidad;
-			mapa->fx = FXTextura_Tipo(nombre);
+			mapa->fx = FXTextura_Kind(nombre);
 		}
 		if (g_M3DVersion > 8) {
 			byte tu = M3D_ReadBool("TileU:");

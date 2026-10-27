@@ -75,6 +75,8 @@ def argsize(p):
 		return 8
 	if re.search(r'\bvec3_t\b', p):
 		return 12
+	if re.search(r'\bmatrix_t\b', p):
+		return 64
 	return 4
 
 def popped(name):

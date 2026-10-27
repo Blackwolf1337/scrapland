@@ -32,7 +32,6 @@ int __stdcall D3DX_CreateTextureFromFileInMemoryEx(void *dev, const void *data, 
 #define D3D_GETDEVICECAPS 0x34
 typedef int(__stdcall *d3dScene_t)(void *dev);
 typedef int(__stdcall *d3dPresent_t)(void *dev, const void *src, const void *dst, void *hwnd, const void *dirty);
-typedef int(__stdcall *d3dGetBackBuffer_t)(void *dev, uint32_t i, int type, void **surf);
 typedef int(__stdcall *d3dCreateImageSurface_t)(void *dev, uint32_t w, uint32_t h, int fmt, void **surf);
 typedef int(__stdcall *d3dCopyRects_t)(void *dev, void *src, const void *rects, uint32_t n, void *dst,
 	const void *points);

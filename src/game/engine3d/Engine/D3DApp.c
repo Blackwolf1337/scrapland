@@ -188,7 +188,6 @@ void __thiscall CD3DApp_Pause(byte *self, int pause) {
 	}
 }
 
-typedef int(__stdcall *d3dGetBackBuffer_t)(void *dev, uint32_t i, uint32_t type, void **surf);
 typedef int(__stdcall *d3dGetDepthStencil_t)(void *dev, void **surf);
 typedef int(__stdcall *d3dGetDesc_t)(void *surf, void *desc);
 
