@@ -86,12 +86,12 @@ SD_SIZE(cMissileEntity, CMISSILEENTITY_SIZE);
 /* the WithLife entities the missiles touched, by name (4 of 0x80) */
 #define g_MissileHits ((char (*)[0x80])Game_Ptr(0x4476b8))
 
-/* the base classes (not decompiled yet) */
+/* the base class (src/game/Entities/WithLifeEntity.c) */
 void __fastcall cWithLifeEntity_dtor(cEntity *self);
 byte __thiscall cWithLifeEntity_VarF(cEntity *self, const char *name, double *d, int set);
 void __thiscall cWithLifeEntity_UpdateOff(cEntity *self);
 byte __thiscall cWithLifeEntity_VarI(cEntity *self, const char *name, int *i, int set);
-byte __thiscall cWithLifeEntity_IsType(cEntity *self, const char *type);
+int __thiscall cWithLifeEntity_IsType(cEntity *self, const char *type);
 /* the OnDeath functions of the entity and of its list */
 void __thiscall cWithLifeEntity_OnDeath(cEntity *self);
 void __thiscall cWithLifeEntity_SetActive(cEntity *self, byte on);

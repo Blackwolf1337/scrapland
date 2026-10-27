@@ -324,25 +324,6 @@ byte Laser_Shoot(cEntity *v) {
 	return had;
 }
 
-/* the length of (x, y, z), summed like the original */
-static inline float Laser_Len(float x, float y, float z) {
-	return (float)__builtin_sqrt((double)(y * y + x * x + z * z));
-}
-
-/* (x, y, z) normalized into out unless its length is 0 */
-static void Laser_Norm(vec3_t *out, float x, float y, float z) {
-	float len = Laser_Len(x, y, z);
-	if (len == 0.0f) {
-		out->x = x;
-		out->y = y;
-		out->z = z;
-		return;
-	}
-	float inv = 1.0f / len;
-	out->x = x * inv;
-	out->y = y * inv;
-	out->z = z * inv;
-}
 
 /*
  * ship name, hit point x y z, target name: the shot effect from every mounted laser bay to the point, then (when it
@@ -386,13 +367,13 @@ void Laser_CreateNative(cAbstractFile *f) {
 		d->drop[2].z = vz;
 		float min = g_LaserMinSpeed;
 		if (min > vx && min > vy && min > vz) {
-			Laser_Norm(&n, hit.x - s.x, hit.y - s.y, hit.z - s.z);
+			Weap_Norm(&n, hit.x - s.x, hit.y - s.y, hit.z - s.z);
 			min = g_LaserMinSpeed;
 			d->drop[2].x = n.x * min;
 			d->drop[2].z = n.z * min;
 			d->drop[2].y = n.y * min;
-			float dist = Laser_Len(hit.x - s.x, hit.y - s.y, hit.z - s.z);
-			time = dist / Laser_Len(d->drop[2].x, d->drop[2].y, d->drop[2].z);
+			float dist = Weap_Len(hit.x - s.x, hit.y - s.y, hit.z - s.z);
+			time = dist / Weap_Len(d->drop[2].x, d->drop[2].y, d->drop[2].z);
 		}
 		d->drop[3].x = 0.0f;
 		d->drop[3].y = 0.0f;
@@ -416,7 +397,7 @@ void Laser_CreateNative(cAbstractFile *f) {
 			CHECK(Entity_IsType(w, TYEN_WITH_LIFE));
 			float rad = Ent_Radius(w);
 			const vec3_t *c = Weap_Vtbl(v)->GetCenter(v, &tmp);
-			Laser_Norm(&n, c->x - hit.x, c->y - hit.y, c->z - hit.z);
+			Weap_Norm(&n, c->x - hit.x, c->y - hit.y, c->z - hit.z);
 			float rr = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 0.30000001192092896 +
 				0.10000000149011612);
 			hit.x = hit.x + n.x * rad * rr;
@@ -638,27 +619,10 @@ void Laser_FireNative(cAbstractFile *f) {
 
 /* the shot pushes an entity with life that walks not, away from the ship */
 void Laser_Push(cEntity *v, cEntity *e, int n) {
-	vec3_t a, b, d, nd, ov, vel;
-
 	if (!e || !Entity_IsType(e, TYEN_WITH_LIFE) || Entity_IsType(e, TYEN_WALKCHAR)) {
 		return;
 	}
-	float mass = Ent_Mass(e);
-	const vec3_t *pv = Weap_Vtbl(v)->GetPos(v, &a);
-	const vec3_t *pe = Weap_Vtbl(e)->GetPos(e, &b);
-	d.x = pe->x - pv->x;
-	d.y = pe->y - pv->y;
-	d.z = pe->z - pv->z;
-	float k = (float)n * g_LaserHitForce / mass;
-	const vec3_t *dir = Vec3_NormalizeTo(&nd, &d);
-	float px = dir->x * k;
-	float py = dir->y * k;
-	float pz = dir->z * k;
-	const vec3_t *cur = Weap_Vtbl(e)->GetVel(e, &ov);
-	vel.y = cur->y + py;
-	vel.z = cur->z + pz;
-	vel.x = cur->x + px;
-	Weap_Vtbl(e)->SetVel(e, &vel);
+	Weap_PushAway(v, e, n, g_LaserHitForce);
 }
 
 void Laser_AimOnNative(cAbstractFile *f) {

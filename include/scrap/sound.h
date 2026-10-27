@@ -283,6 +283,23 @@ void __fastcall cSndInterface_dtor(cSndInterface *self);
 /* the looping sounds stop */
 void __thiscall cSndInterface_StopAll(cSndInterface *self, int unused);
 void __thiscall cSndInterface_Tick(cSndInterface *self, float dt);
+/* the three characters of the id ("sdd") */
+void __thiscall cSndInterface_SetId(cSndInterface *self, const char *id);
+/* 0 stops it, else it starts when it does not play */
+void __thiscall cSndItem_SetVolume(cSndItem *self, cEntity *e, float volume);
+
+/* the variable methods of the sounds (cSndInterface::vftable from slot 1) */
+typedef struct cSndInterfaceVtbl {
+	void *vf00;
+	byte(__thiscall *VarI)(cSndInterface *self, const char *name, int *i, int set);
+	byte(__thiscall *VarF)(cSndInterface *self, const char *name, double *d, int set);
+	byte(__thiscall *VarS)(cSndInterface *self, const char *name, char **s, int set);
+	byte(__thiscall *VarV)(cSndInterface *self, const char *name, double *x, double *y, double *z, int set);
+} cSndInterfaceVtbl;
+
+static inline const cSndInterfaceVtbl *Snd_Vtbl(cSndInterface *snd) {
+	return (const cSndInterfaceVtbl *)snd->vftable;
+}
 
 void Sound_UpdatePaused(void);
 
