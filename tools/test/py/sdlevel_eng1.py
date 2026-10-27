@@ -220,3 +220,88 @@ for en1rot in ((1.0, 0.0), (0.70710677, 0.70710677), (0.8, -0.6)):
 			for en1q in en1pts:
 				check('en1 Box_PointDepth' + fmt((en1m, en1h, en1q)), lambda m=en1m, h=en1h, q=en1q:
 					SDTest.Call(0x272d70, 'fFFF', m, h, q)[0])
+
+# Util/tsc.cpp: the profiler sums of section 31 and the clock poked to a fixed value (the measured one differs)
+def en1prof():
+	return (en1i(0x8b17e0 + 8 * 31), en1i(0x8b17e4 + 8 * 31), en1i(0x8b18e0 + 8 * 31), en1i(0x8b18e4 + 8 * 31),
+		en1i(0x8b19e0 + 8 * 31), en1i(0x8b19e4 + 8 * 31), SDTest.Peek(0x4b1ae0 + 31, 'b'), en1i(0x8b1b00 + 4 * 31),
+		en1i(0x8b1b80 + 4 * 31))
+en1profa = (0x8b17e0 + 8 * 31, 0x8b17e4 + 8 * 31, 0x8b18e0 + 8 * 31, 0x8b18e4 + 8 * 31, 0x8b19e0 + 8 * 31,
+	0x8b19e4 + 8 * 31, 0x8b1b00 + 4 * 31, 0x8b1b80 + 4 * 31)
+en1profs = map(en1i, en1profa)
+en1fr = en1i(0x8b1ae0 + 28)
+en1freq = en1i(0x8b1c00)
+def en1profset(v):
+	for i in range(len(en1profa)):
+		en1poke(en1profa[i], v[i])
+en1poke(0x8b1c00, 0x44fa0000)
+en1poke(0x8b1ae0 + 28, en1fr & 0xffffff)
+en1profset((0, 0, 0, 0, 0, 0, 0, 0))
+check('en1 Tsc_CpuFreq', lambda: SDTest.Call(0x272f90, 'fi', 0)[0])
+check('en1 Prof_Count', lambda: (SDTest.Call(0x273040, 'iii', 31, 5)[0], SDTest.Call(0x273040, 'iii', 31, -2)[0], en1prof()))
+check('en1 Prof_GetCount', lambda: (SDTest.Call(0x273110, 'iii', 31, 0)[0], SDTest.Call(0x273110, 'iii', 31, 1)[0],
+	SDTest.Call(0x273110, 'iii', 31, 0)[0], en1prof()))
+for en1v in ((1000, 0, 0, 0, 0, 0, 0, 0), (123456, 2, 7, 0, 99, 3, 0, 0), (-5000, -1, 0, 0, 10, 0, 0, 0),
+	(77, 0, 5, 5, -1, 0x7fffffff, 0, 0), (0x40000000, 0, 0, 0, 0x40000000, 0, 0, 0)):
+	en1profset(en1v)
+	check('en1 Prof_Avg' + fmt(en1v), lambda: (SDTest.Call(0x273220, 'iii', 31, 3)[0], en1prof(),
+		SDTest.Call(0x273220, 'iii', 31, 3)[0], SDTest.Call(0x273220, 'iii', 31, 3)[0], en1prof()))
+	en1profset(en1v)
+	check('en1 Prof_Avg32' + fmt(en1v), lambda: (SDTest.Call(0x273060, 'ii', 31)[0], en1prof()))
+	en1profset(en1v)
+	check('en1 Prof_Reset' + fmt(en1v), lambda: (SDTest.Call(0x273080, 'ii', 31)[0], en1prof()))
+	en1profset(en1v)
+	check('en1 Prof_GetTime' + fmt(en1v), lambda: (SDTest.Call(0x273150, 'fii', 31, 0)[0], SDTest.Call(0x273150, 'fii',
+		31, 1)[0], en1prof()))
+	en1profset(en1v)
+	check('en1 Prof_GetMaxTime' + fmt(en1v), lambda: (SDTest.Call(0x2731b0, 'fii', 31, 0)[0], SDTest.Call(0x2731b0, 'fii',
+		31, 1)[0], en1prof()))
+en1profset(en1profs)
+en1poke(0x8b1ae0 + 28, en1fr)
+en1poke(0x8b1c00, en1freq)
+
+# Engine/SueloPortal.cpp: the rectangle constructor, the viewport of a seen sector and the debug drawing, through the
+# D3D log (the projection and the viewport set back by Portales_SetView(NULL))
+en1zp = en1z(0x20)
+for en1k in range(8):
+	en1poke(en1zp + 4 * en1k, 0x11111111)
+check('en1 ZonaPintar_ctor', lambda: (SDTest.Call(0x26ba90, 'tii', en1zp)[0] == en1zp, map(en1i, (en1zp, en1zp + 4,
+	en1zp + 8, en1zp + 0xc, en1zp + 0x10, en1zp + 0x14, en1zp + 0x18, en1zp + 0x1c))))
+en1pv = SDTest.Peek(0x4b00f8, 'i')
+en1sp = SDTest.Peek(0x4e1de8, 'i')
+en1pad = SDTest.Peek(0x4b11a8, 'i')
+def en1lg(fn):
+	SDTest.Out()
+	SDTest.D3DLog(1)
+	r = fn()
+	SDTest.D3DLog(0)
+	return (r, SDTest.Out())
+for en1v in (0, 1):
+	SDTest.Poke(0x4b00f8, en1v)
+	for en1pd in (0, 3):
+		SDTest.Poke(0x4b11a8, en1pd)
+		for en1r in ((-1.0, -1.0, 0.0, 1.0, 1.0, 1.0), (-0.5, -0.25, 0.1, 0.5, 0.75, 0.9), (0.3, 0.3, 0.0, 0.31, 0.3, 1.0),
+			(-2.0, -3.0, 0.0, 3.0, 2.0, 1.0), (0.9, -0.95, 0.0, 1.5, -0.9, 1.0)):
+			en1poke(en1zp, 7)
+			en1set(en1zp + 4, en1r)
+			check('en1 Portales_SetView' + fmt((en1v, en1pd, en1r)), lambda: en1lg(lambda: (SDTest.Call(0x26db80,
+				'bi', en1zp)[0], SDTest.Call(0x26db80, 'bi', 0)[0])))
+SDTest.Poke(0x4b11a8, en1pad)
+SDTest.Poke(0x4b00f8, en1pv)
+en1nzp = SDTest.Peek(0x4afed0, 'i')
+en1zps = en1fl(0x8b0168, 24)
+en1set(0x8b0168, (0.0, -1.0, -1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, -0.5, -0.5, 0.0, 0.25, 0.5, 1.0, 0.0, 0.0, 0.1, 0.2,
+	0.0, 0.3, 0.4, 0.5, 0.0))
+en1poke(0x8b0168, 0)
+en1poke(0x8b0184, 1)
+en1poke(0x8b0188, 3)
+en1poke(0x8b01a4, 2)
+en1poke(0x8b01a8, 5)
+en1poke(0x8b01c4, 1)
+SDTest.Poke(0x4afed0, 3)
+for en1v in (0, 1, 2, 3):
+	SDTest.Poke(0x4e1de8, en1v)
+	check('en1 Portales_DebugDraw' + fmt((en1v,)), lambda: en1lg(lambda: (SDTest.Call(0x26d0d0, 'v'),)))
+SDTest.Poke(0x4e1de8, en1sp)
+SDTest.Poke(0x4afed0, en1nzp)
+en1set(0x8b0168, en1zps)

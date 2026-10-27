@@ -6941,6 +6941,10 @@ SD_HOOK(cWithLifeEntity_IsEMIed, 0x12cf30, 16)			/* vf55, 3 bytes and int3 */
 /* module agent: Engine NodeFX..ModelFX (hooks below this line) */
 
 /* module agent: Engine leftovers 0x265000..0x278000 (hooks below this line) */
+SD_HOOK(ZonaPintar_ctor, 0x26ba90, 60)
+SD_HOOK(Portales_DebugDraw, 0x26d0d0, 636)
+SD_HOOK(Sectores_Crear, 0x26d5a0, 1497)
+SD_HOOK(Portales_SetView, 0x26db80, 1016)
 SD_HOOK(CSuelo_TraceSegPos, 0x26df80, 1281)
 SD_HOOK(CSuelo_Trace, 0x26e490, 2200)
 SD_HOOK(CSuelo_TestSeg, 0x26ed30, 1004)
@@ -6954,3 +6958,11 @@ SD_HOOK(Box_ClipTri, 0x271b00, 604)
 SD_HOOK(BoxTri, 0x271d60, 1623)
 SD_HOOK(Poly_ClipPlane, 0x2723e0, 2436)
 SD_HOOK(Box_PointDepth, 0x272d70, 542)
+SD_HOOK(Tsc_CpuFreq, 0x272f90, 171)
+SD_HOOK(Prof_Count, 0x273040, 25)
+SD_HOOK(Prof_Avg32, 0x273060, 18)
+SD_HOOK(Prof_Reset, 0x273080, 137)
+SD_HOOK(Prof_GetCount, 0x273110, 50)
+SD_HOOK(Prof_GetTime, 0x273150, 91)
+SD_HOOK(Prof_GetMaxTime, 0x2731b0, 102)
+SD_HOOK(Prof_Avg, 0x273220, 121)

@@ -175,7 +175,6 @@ SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 
 /* engine3d: called from Engine/luz.cpp (include/scrap/luz.h) */
 SD_IMPORT(E3D_SetShadowLight, 0x2682d0)
-SD_IMPORT(Prof_Count, 0x273040)
 /* engine3d: Engine/Material.c (include/scrap/material.h), the parts of the classes outside Material.cpp and the
  * texture manager */
 SD_IMPORT(CMapa_ctor, 0x233760)
@@ -208,7 +207,6 @@ SD_IMPORT(SistPart_Draw2, 0x2b55d0)
 
 /* src/game/engine3d/Engine/SueloPortal.c (called from Engine/SueloPortal.cpp, include/scrap/sueloportal.h) */
 SD_IMPORT(CSuelo_RayoVert, 0x2ca360)
-SD_IMPORT(Portales_DebugDraw, 0x26d0d0)
 
 /* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/mundo.h) */
 SD_IMPORT(BspQ3_Free, 0x2c9d50)
@@ -216,8 +214,6 @@ SD_IMPORT(BspQ3_ReleaseD3D, 0x2c98a0)
 SD_IMPORT(BspQ3_InitD3D, 0x2c98b0)
 SD_IMPORT(BspQ3_Crear, 0x2c9d80)
 SD_IMPORT(BspQ3_Render, 0x2c9d90)
-SD_IMPORT(Sectores_Crear, 0x26d5a0)
-SD_IMPORT(Portales_SetView, 0x26db80)
 SD_IMPORT(CSuelo_FreeNodos, 0x261530)
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
