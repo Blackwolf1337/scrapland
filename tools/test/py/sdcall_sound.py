@@ -1,8 +1,8 @@
-# game Sound/Sound.c, SoundDX8.c and Wav.c (execfile'd by sdcall.py after its other checks, Python 1.5.2): the volume
-# curve, the FMOD error texts, cSoundDesc on heap memory, a private CSoundSys (constructor, listeners, the 3D volume,
-# pan and doppler, the sound names of file names), a private CSoundXBox (two .wav of the packs loaded into its table,
-# the descriptors, the play and update paths), cSound with g_pSound pointed at that CSoundXBox, and the wav header of
-# pack files. Nothing plays: S_SkipPlay is on while the play paths run, the channel updates get a channel that does
+# game Sound/Sound.c, SoundDX8.c, Wav.c, PosSound.c and SndInterface.c (execfile'd by sdcall.py after its other checks,
+# Python 1.5.2): the volume curve, the FMOD error texts, cSoundDesc on heap memory, a private CSoundSys (constructor,
+# listeners, the 3D volume, pan and doppler, the sound names of file names), a private CSoundXBox (two .wav of the packs
+# loaded into its table, the descriptors, the play and update paths), cSound, a property set and the sounds of an
+# entity (without entity) with g_pSound pointed at that CSoundXBox, and the wav header of pack files. Nothing plays: S_SkipPlay is on while the play paths run, the channel updates get a channel that does
 # not exist. Not called: the init and close of the system, StopAllSounds and DeleteAllSounds (they stop every FMOD
 # channel), the music and voice calls, SetDesc and LoadSound2 (CHECK(0)). g_pSound and the engine variables poked
 # are put back.
@@ -217,6 +217,97 @@ for pos in sndpos:
 		(0.0, 1.0, 0.0), 5)[0], sndsound(snds)))
 	check('cSound_PlayAt listener' + fmt((pos,)), lambda pos=pos: (SDTest.Call(0x1a3c10, 'tbiFi', snds, pos, -5)[0],
 		sndsound(snds)))
+
+# a property set on the heap, taken out of g_SndPSList again (its timer is random, it is not printed)
+sndhead = SDTest.Peek(0x466ba0, 'i')
+sndps = sndz(0x6c)
+def sndpsf(ps):
+	return (sndf(ps + 0x44, 5), sndi(ps + 0x58) & 0xff, sndf(ps + 0x60, 2), snddesc(ps + 4))
+check('cSoundPS_ctor', lambda: (SDTest.Call(0x19fec0, 'tii', sndps)[0] == sndps, sndi(sndps) == sndhead,
+	SDTest.Peek(0x466ba0, 'i') == sndps, sndpsf(sndps)))
+SDTest.Poke(0x466ba0, sndhead)
+check('cSoundPS_SetSound', lambda: (SDTest.Call(0x1a1c60, 'tvis', sndps, 'menuclik'), sndsound(sndps + 4)))
+for name in ('Sound', 'Loop', 'MaxInterval', 'MinInterval', 'AttenEnd', 'AttenIni', 'Doppler', 'Volume', 'Pitch', 'X',
+		'y', 'Z', 'none'):
+	check('cSoundPS_Var get' + fmt((name,)), lambda name=name: SDTest.Call(0x1a1660, 'tiisipDp', sndps, name, 0, 0,
+		-1.0, -1)[0:1] + SDTest.Call(0x1a1660, 'tiisipDp', sndps, name, 0, 0, -1.0, -1)[2:4])
+	if name != 'Sound':
+		check('cSoundPS_Var set' + fmt((name,)), lambda name=name: (SDTest.Call(0x1a1660, 'tiisipDp', sndps, name,
+			0x100 + 1, 0, 2.5, 0)[0:1], sndpsf(sndps)))
+check('cSoundPS_Var no pointers', lambda: SDTest.Call(0x1a1660, 'tiisiiii', sndps, 'Volume', 0, 0, 0, 0)[0])
+check('cSoundPS_Var Sound name', lambda: SDTest.Peek(SDTest.Call(0x1a1660, 'tiisipDp', sndps, 'Sound', 0, 0, 0.0,
+	0)[1], '@s'))
+for loop in (1, 0):
+	sndpoke(sndps + 0x58, loop)
+	sndset(sndps + 0x5c, (100.0,))
+	sndset(sndps + 0x4c, (1.0, 0.0, 2.0))
+	check('cSoundPS_Update' + fmt((loop,)), lambda: (SDTest.Call(0x19fff0, 'tvif', sndps, 0.5), sndf(sndps + 0x5c, 1),
+		sndsound(sndps + 4)))
+check('cSoundPS_dtor', lambda: (SDTest.Call(0x19ffd0, 'tvi', sndps), sndi(sndps + 0x40)))
+check('SndPS_Get none', lambda: SDTest.Call(0x1a0f70, 'is', 'sd no such set')[0])
+
+# the sounds of an entity without the entity: nothing that needs it (no volume set, no play)
+sndif = sndz(0x1c)
+check('cSndInterface_ctor', lambda: (SDTest.Call(0x1a1ef0, 'tiii', sndif, 2)[0] == sndif, sndi(sndif) == 0x7c9cfc,
+	sndi(sndif + 4), sndi(sndif + 8) != 0, SDTest.Peek(0x466bb0, 'i') == sndif, sndi(sndif + 0x10) == 0x866bb0,
+	SDTest.Peek(sndif + 0x14, '@s')))
+check('cSndInterface_SetId', lambda: (SDTest.Call(0x1a2a40, 'tvis', sndif, 'abc'), SDTest.Peek(sndif + 0x14, '@s')))
+for name in ('abc_n', 'abd_n', 'abc00_loop', 'abc01_loop', 'abc00_int0', 'abc00_int4', 'abc05_loop', 'abc0x_loop',
+		'abc00x', 'abc00'):
+	check('cSndInterface_IntVar get' + fmt((name,)), lambda name=name: SDTest.Call(0x1a2740, 'tbispi', sndif, name, -1,
+		0))
+check('cSndInterface_IntVar set n', lambda: (SDTest.Call(0x1a2740, 'tbispi', sndif, 'abc_n', 3, 1), sndi(sndif + 4)))
+for i in (0, 1, 2, 3, -1):
+	check('PtrArray_Get' + fmt((i,)), lambda i=i: SDTest.Call(0x1a26e0, 'tiii', sndif, i)[0])
+for name in ('abc00_x', 'abc12_name', 'ab', 'abc00name', 'xbc00_name', 'abc0a_x', 'abc99_name'):
+	check('cSndInterface_ParseName' + fmt((name,)), lambda name=name: (lambda r: (r[0], r[1], r[2] != 0))(
+		SDTest.Call(0x1a2650, 'tbispp', sndif, name, 0, 0)))
+def PtrArray_Get_ok(sif, i):
+	it = SDTest.Call(0x1a26e0, 'tiii', sif, i)[0]
+	if not it:
+		return 0
+	return (sndsound(it), sndf(it + 0x40, 23), sndi(it + 0x9c) & 0xff)
+check('cSndInterface_SetSound 0', lambda: (SDTest.Call(0x1a2aa0, 'tviis', sndif, 0, 'menuclik'),
+	PtrArray_Get_ok(sndif, 0)))
+check('cSndInterface_SetSound empty', lambda: (SDTest.Call(0x1a2aa0, 'tviis', sndif, 2, ''), PtrArray_Get_ok(sndif,
+	2)))
+# "menuclik" in heap memory for the string variable
+sndstr = sndz(16)
+sndpoke(sndstr, 0x756e656d)
+sndpoke(sndstr + 4, 0x6b696c63)
+check('cSndInterface_StrVar set', lambda: (SDTest.Call(0x1a2df0, 'tbispi', sndif, 'abc01_name', sndstr, 1)[0],
+	PtrArray_Get_ok(sndif, 1)))
+for name in ('abc00_name', 'abc01_name', 'abc02_name', 'abc00_nam', 'abd00_name'):
+	check('cSndInterface_StrVar get' + fmt((name,)), lambda name=name: (lambda r: (r[0], r[1] and SDTest.Peek(r[1],
+		'@s')))(SDTest.Call(0x1a2df0, 'tbispi', sndif, name, 0, 0)))
+for name in ('abc00_ini', 'abc00_end', 'abc00_dopp', 'abc00_time', 'abc00_pitch', 'abc00_vol0', 'abc00_vol4',
+		'abc00_pitch2', 'abc00_time4', 'abc00_vo', 'abc01_ini', 'abc00_int0'):
+	check('cSndInterface_FloatVar set' + fmt((name,)), lambda name=name: (SDTest.Call(0x1a21e0, 'tbisDi', sndif, name,
+		0.75, 1)[0], PtrArray_Get_ok(sndif, 0)))
+	check('cSndInterface_FloatVar get' + fmt((name,)), lambda name=name: SDTest.Call(0x1a21e0, 'tbisDi', sndif, name,
+		-1.0, 0))
+check('cSndInterface_FloatVar vol get', lambda: SDTest.Call(0x1a21e0, 'tbisDi', sndif, 'abc00_vol', -1.0, 0))
+check('cSndInterface_FloatVar vol 0', lambda: (SDTest.Call(0x1a21e0, 'tbisDi', sndif, 'abc00_vol', 0.0, 1)[0],
+	PtrArray_Get_ok(sndif, 0)))
+check('cSndInterface_IntVar set loop', lambda: (SDTest.Call(0x1a2740, 'tbispi', sndif, 'abc00_loop', 5, 1),
+	PtrArray_Get_ok(sndif, 0)))
+check('cSndInterface_IntVar set int2', lambda: (SDTest.Call(0x1a2740, 'tbispi', sndif, 'abc00_int2', 77, 1),
+	PtrArray_Get_ok(sndif, 0)))
+check('cSndInterface_Tick', lambda: (SDTest.Call(0x1a2d30, 'tvif', sndif, 0.25), PtrArray_Get_ok(sndif, 0),
+	PtrArray_Get_ok(sndif, 1)))
+check('cSndInterface_StopAll', lambda: (SDTest.Call(0x1a2700, 'tvii', sndif, 0), PtrArray_Get_ok(sndif, 0)))
+check('cSndInterface_vf04', lambda: SDTest.Call(0x1a2ec0, 'tbiiiiii', sndif, 1, 2, 3, 4, 5)[0])
+check('cSndInterface_Resize same', lambda: (SDTest.Call(0x1a2c20, 'tvii', sndif, 3), PtrArray_Get_ok(sndif, 0)))
+sndit = sndz(0xa0)
+sndset(sndit, (5.0,) * 40)
+check('cSndItem_ctor', lambda: (SDTest.Call(0x1a1ed0, 'tii', sndit)[0] == sndit, sndsound(sndit), sndf(sndit + 0x40,
+	23), sndi(sndit + 0x9c) & 0xff))
+check('cSndItem_ctorName', lambda: (SDTest.Call(0x1a1ea0, 'tiisi', sndit, 'bank-loop', 0)[0] == sndit,
+	sndsound(sndit)))
+check('cSndItem_Restart', lambda: (SDTest.Call(0x1a29c0, 'tvi', sndit), sndi(sndit + 0x9c) & 0xff, sndsound(sndit)))
+check('cSndItem_Tick quiet', lambda: (SDTest.Call(0x1a2c80, 'tviif', sndit, 0, 1.5), sndf(sndit + 0x48, 1)))
+check('cSndInterface_Destroy', lambda: (SDTest.Call(0x1a1fe0, 'tiii', sndif, 0)[0] == sndif,
+	SDTest.Peek(0x466bb0, 'i') == sndif, sndi(sndif) == 0x7c9cfc))
 SDTest.Poke(0x466bb4, sndgp)
 SDTest.Poke(0x466dc0, sndskip)
 SDTest.Poke(0x466ca0, sndauto)
@@ -251,5 +342,5 @@ for id in (0x46464952, 0, 0x12345678, 0x20746d66):
 SDTest.Call(0x12f940, 'tii', sndfp)
 SDTest.Call(0x12e5d0, 'tvi', sndfp)
 SDTest.Poke(0x466c40, sndshow)
-for p in (sndd, sndd2, sndv, snds, snds2, sndss, sndxb, sndfp, sndinfo):
+for p in (sndd, sndd2, sndv, snds, snds2, sndss, sndxb, sndfp, sndinfo, sndps, sndif, sndit, sndstr):
 	SDTest.Call(0x133550, 'vi', p)

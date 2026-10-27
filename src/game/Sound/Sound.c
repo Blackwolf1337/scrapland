@@ -32,7 +32,7 @@ void Sound_Init(void) {
 	Con_Printf("Sound system initialized\n");
 }
 
-void Sound_Close(void) {
+void Sound_Done(void) {
 	CHECK(g_pSound);
 	g_pSound->vftable->Close(g_pSound);
 	if (g_pSound) {

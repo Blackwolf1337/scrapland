@@ -249,12 +249,6 @@ SD_IMPORT(cPlayerInput_GetCursorChar, 0x139920)
 SD_IMPORT(cVirtualKeyboard_Set, 0x13a720)
 SD_IMPORT(cPad_Rumble, 0x13a820)
 
-/* engine: Sound/ */
-SD_IMPORT(SndPS_Get, 0x1a0f70)
-SD_IMPORT(SndPS_Create, 0x1a0a90)
-SD_IMPORT(SndPS_Use, 0x1a1e60)
-SD_IMPORT(cSoundPS_Var, 0x1a1660)
-
 /* engine: Math/ */
 
 /* engine: World/ (weapon and ammo tables of cWorld) */
@@ -495,8 +489,6 @@ SD_IMPORT(Logic_Update, 0x151dc0)
 SD_IMPORT(Unk2078_ctor, 0x1540f0)
 SD_IMPORT(Unk2078_Update, 0x154170)
 SD_IMPORT(Talk_IsShown, 0x1814b0)
-SD_IMPORT(Sound_Update, 0x1a00e0)
-SD_IMPORT(Sound_UpdatePaused, 0x1a2d80)
 SD_IMPORT(Grid_ctor, 0x1a6720)
 SD_IMPORT(Grid_dtor, 0x1a6840)
 SD_IMPORT(Grid_EndFrame, 0x1a6a20)
@@ -558,6 +550,8 @@ SD_IMPORT(Cmd_ReadFile, 0x280b10)
 SD_IMPORT(Matrix_RotationX, 0x23a270)
 
 /* module agent: Sound/Sound+SoundDX8+Wav.cpp (imports below this line) */
+SD_IMPORT(Sound_UpdateVoice, 0x1a0320)
+SD_IMPORT(DebugUtils_DrawSphere, 0x219d20)
 SD_IMPORT(Fmod_Init, 0x232640)
 SD_IMPORT(Fmod_Close, 0x232620)
 SD_IMPORT(Voice_GetString, 0x2327d0)

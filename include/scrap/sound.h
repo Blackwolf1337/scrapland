@@ -173,7 +173,7 @@ void __thiscall cSoundDesc_SetPos(cSoundDesc *desc, const vec3_t *pos);
 
 /* Sound/Sound.cpp (src/game/Sound/Sound.c) */
 void Sound_Init(void);
-void Sound_Close(void);
+void Sound_Done(void);
 cSound *__thiscall cSound_ctor(cSound *self, const char *name, uint32_t flags);
 cSound *__fastcall cSound_Init(cSound *self);
 /* stops it (also the destructor) */
@@ -186,6 +186,8 @@ byte __fastcall cSound_Play(cSound *self);
 /* keeps it playing or starts it again when it got loud enough, stops it when quiet; 1 while it plays */
 byte __fastcall cSound_Update(cSound *self);
 void __thiscall cSound_SetPitch(cSound *self, float semitones);
+/* the 3D volume and pan with doppler */
+void __thiscall cSound_SetPosVel(cSound *self, const vec3_t *pos, const vec3_t *vel);
 
 CSoundSys *__fastcall CSoundSys_ctor(CSoundSys *self);
 void __fastcall CSoundSys_dtor(CSoundSys *self);
@@ -195,15 +197,85 @@ void __fastcall CSoundSys_Nop(CSoundSys *self);
 void __fastcall CSoundSys_CallVf1c(CSoundSys *self);
 void Sound_Nop(void);
 
-/* Sound/PosSound.cpp, not done yet */
-typedef struct cSoundPS cSoundPS;
+/*
+ * Sound/PosSound.cpp (src/game/Sound/PosSound.c): the positional sounds by name (the "property sets" of SSound),
+ * the dynamic music of the levels (relax and action music) and the voice of the talks.
+ */
+typedef struct cSoundPS {
+	struct cSoundPS *next;		/* 0x00 g_SndPSList */
+	cSound sound;			/* 0x04 */
+	float volume;			/* 0x44 "Volume" 0..1 */
+	float pitch;			/* 0x48 "Pitch" semitones */
+	vec3_t pos;			/* 0x4c "X" "Y" "Z" */
+	byte loop;			/* 0x58 "Loop", else played again after a random interval */
+	byte pad_59[3];
+	float timer;			/* 0x5c until the next play */
+	float maxInterval;		/* 0x60 "MaxInterval" */
+	float minInterval;		/* 0x64 "MinInterval" */
+	char *name;			/* 0x68 cString, the key in g_SndPSTable */
+} cSoundPS;
+SD_SIZE(cSoundPS, 0x6c);
+SD_OFFSET(cSoundPS, loop, 0x58);
+
+#define g_SndPSTable (&GAME_DATA(HashTable, 0x43022c))	/* cPtrItem of cSoundPS by name */
+#define g_SndPSEnabled GAME_DATA(byte, 0x430238)
+#define g_SndPSList GAME_DATA(cSoundPS *, 0x466ba0)
 
 /* the property set of that name or NULL */
 cSoundPS *SndPS_Get(const char *name);
+/* NULL if the name is taken */
 cSoundPS *SndPS_Create(const char *name);
+/* stops the looping ones, then switches all on or off; 1 */
 byte SndPS_Use(byte use);
+void SndPS_StopAll(void);
+/* the engine variables back to their defaults, all property sets deleted */
+void Sound_ResetVolumes(void);
 /* like cActClass_Var: set != 0 writes *s or *d / *i, else reads all; returns 1 string, 2 double, 3 int, 0 */
 int __thiscall cSoundPS_Var(cSoundPS *ps, const char *name, int set, char **s, double *d, int *i);
+cSoundPS *__fastcall cSoundPS_ctor(cSoundPS *self);
+void __fastcall cSoundPS_dtor(cSoundPS *self);
+void __thiscall cSoundPS_Update(cSoundPS *self, float dt);
+/* the music, the property sets and the voices of a frame */
+void Sound_Update(float dt);
+void Sound_UpdateMusic(float dt);
+void Sound_StopTalk(void);
+
+/*
+ * Sound/SndInterface.cpp (src/game/Sound/SndInterface.c): the sounds of an entity, set through its variables
+ * "<id>_n" (count) and "<id><nn>_<var>" (two digits, the sound) with the vars name, loop, vol, pitch, time, ini, end,
+ * dopp and vol0..4, pitch0..4, time0..4, int0..4 (the digit is not checked).
+ */
+typedef struct cSndItem {
+	cSound sound;			/* 0x00 */
+	float volume;			/* 0x40 "vol", 0 stops it */
+	float pitch;			/* 0x44 "pitch" */
+	float time;			/* 0x48 "time", the play time */
+	float vols[5];			/* 0x4c */
+	float pitches[5];		/* 0x60 */
+	float times[5];			/* 0x74 */
+	int ints[5];			/* 0x88 */
+	byte playing;			/* 0x9c */
+	byte pad_9d[3];
+} cSndItem;
+SD_SIZE(cSndItem, 0xa0);
+SD_OFFSET(cSndItem, ints, 0x88);
+
+typedef struct cEntity cEntity;
+typedef struct cSndInterface {
+	const void *vftable;		/* 0x00 */
+	int nsnd;			/* 0x04 */
+	cSndItem **snds;		/* 0x08 Mem_Alloc */
+	struct cSndInterface *next;	/* 0x0c g_SndInterfaces */
+	struct cSndInterface **link;	/* 0x10 the next field that points here */
+	char id[4];			/* 0x14 three characters and 0 */
+	cEntity *owner;			/* 0x18 */
+} cSndInterface;
+SD_SIZE(cSndInterface, 0x1c);
+
+#define cSndInterface_vftable ((const void *)Game_Ptr(0x3c9cfc))
+#define g_SndInterfaces GAME_DATA(cSndInterface *, 0x466bb0)
+
+void Sound_UpdatePaused(void);
 
 /* Sound/SoundDX8.cpp (src/game/Sound/SoundDX8.c) */
 CSoundXBox *CSoundXBox_New(void);
