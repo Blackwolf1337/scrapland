@@ -4,6 +4,8 @@
  * small methods; CEntradaNula, the input that does nothing. The frame, the device objects, the menu, the dialogs
  * and the ini reader are still the exe's.
  */
+#include <stdarg.h>
+
 #include "scrap/dxutil.h"
 #include "scrap/e3dutil.h"
 #include "scrap/app.h"
@@ -22,6 +24,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/tabla.h"
 #include "scrap/varios.h"
+#include "scrap/win32.h"
 
 #define CMOTORAPP_VFTABLE 0x3d59e0
 #define CENTRADANULA_VFTABLE 0x3d5934
@@ -427,6 +430,57 @@ void Motor_LoadIni(const char *name, const char *dir) {
 		E3D_LogBlue(g_FileLog, "INI: %s%s", path, " <not found>");
 	}
 	Arch_Free(dat);
+}
+
+/* ---- the lights dialog and the scene tree ---- */
+
+#define MOTOR_LIGHTSPROC 0x22dcf0
+#define MOTOR_LIGHTSDIALOG 0x99
+#define TVM_INSERTITEM 0x1100
+#define MOTOR_VT_PAUSE 0x34
+
+/* the modal dialog of the lights of the global scene, the application paused meanwhile */
+void __thiscall CMotorApp_LightsDialog(byte *self, void *hwnd, void *inst) {
+	typedef void(__thiscall * pause_t)(byte *, int);
+
+	((pause_t)(*(void ***)self)[MOTOR_VT_PAUSE / 4])(self, 1);
+	exe_DialogBoxParamA(inst, (const char *)MOTOR_LIGHTSDIALOG, hwnd, Game_Ptr(MOTOR_LIGHTSPROC),
+		(intptr_t)MOTOR_ESCENA(self));
+	((pause_t)(*(void ***)self)[MOTOR_VT_PAUSE / 4])(self, 0);
+}
+
+/* a tree view item with the printf text (TVINSERTSTRUCT, its pszText at 0x18) */
+void TreeView_InsertItemf(void *hwnd, void *item, const char *fmt, ...) {
+	char buf[0x400];
+	va_list ap;
+
+	va_start(ap, fmt);
+	VBprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+	*(char **)((byte *)item + 0x18) = buf;
+	exe_SendMessageA(hwnd, TVM_INSERTITEM, 0, (intptr_t)item);
+	*(char **)((byte *)item + 0x18) = NULL;
+}
+
+/* the nodes of the scene into the log, the children indented by 4 */
+void Escena_LogTree(CEscena *esc, CNodo3D *nodo, int indent) {
+	CNodo3D *n;
+
+	if (!esc) {
+		return;
+	}
+	if (!nodo) {
+		E3D_LogPrint(g_FileLog, "escena: %*s%s", indent, "", esc->name);
+		nodo = esc->Nodo3D;
+	}
+	E3D_LogPrint(g_FileLog, "%*s%s", indent, "", nodo->name);
+	n = nodo;
+	do {
+		if (n->padre == nodo) {
+			Escena_LogTree(esc, n, indent + 4);
+		}
+		n = n->sig;
+	} while (n);
 }
 
 /* ---- CEntradaNula: every method of the input does nothing ---- */
