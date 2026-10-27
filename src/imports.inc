@@ -259,8 +259,6 @@ SD_IMPORT_STDCALL(D3DX_LoadSurfaceFromSurface, 32, 0x004dbf)
 /* module agent: ScrapEng/ScrapEngWorld.cpp (imports below this line) */
 
 /* module agent: ScrapEng/ScrapEngMain.cpp (imports below this line) */
-SD_IMPORT(Engine3D_Create, 0x22da30)
-SD_IMPORT(Engine3D_Shutdown, 0x22dc00)
 SD_IMPORT(CD3DApp_Render, 0x275120)
 SD_IMPORT(Timer_GetQPFreq, 0x276d00)
 SD_IMPORT(Video_PlayFile, 0x281660)
@@ -564,3 +562,6 @@ SD_IMPORT(LensFlare_SetI1c, 0x2a7500)
 SD_IMPORT(LensFlare_SetB2c, 0x2a7510)
 SD_IMPORT(CMatId_ctor, 0x2a79e0)
 SD_IMPORT(CMatId_dtor, 0x2a79f0)
+SD_IMPORT(Motor_LoadIni, 0x230440)
+SD_IMPORT(DbgWin_Init, 0x237ff0)
+SD_IMPORT(IEntrada_dtor, 0x2a3a40)

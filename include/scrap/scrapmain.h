@@ -260,8 +260,23 @@ void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, i
 /* other modules (src/imports.inc) */
 /* name NULL: a random loading screen; the fade and the time in ms */
 void Loading_Step(int percent);					/* rva 0x2157a0, -1: one step */
-void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *release, int arg);	/* rva 0x22da30 */
-void Engine3D_Shutdown(void);					/* rva 0x22dc00 */
+/* the CMotorApp made (arg 0) or freed (Engine/Motor.cpp, src/game/engine3d/Engine/Motor.c) */
+void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *release, int arg);
+void Engine3D_Shutdown(void);
+byte *__fastcall CMotorApp_ctor(byte *self);
+int __thiscall CMotorApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior, int format);
+int __thiscall CMotorApp_CountFrame(byte *self);
+int __thiscall CD3DApplication_Nothing(byte *self);
+char *Motor_ColorStr(const byte *c);
+const char *Motor_BoolStr(int b);
+CMundo *Mundo_GetChecked(void);
+void __fastcall Motor_ReleaseEscena(byte *self);
+void __fastcall Motor_GetEscena(byte *self);
+void *__thiscall CEntradaNula_Delete(void *self, byte flags);
+int __thiscall CEntradaNula_Nothing3(void *self, int a, int b, int c);
+int __thiscall CEntradaNula_Nothing1(void *self, int a);
+int __thiscall CEntradaNula_Nothing(void *self);
+void __thiscall CEntradaNula_Nothing4(void *self, int a, int b, int c, int d);
 int __thiscall CD3DApp_Cleanup(byte *self);			/* rva 0x273d90 */
 int __thiscall CD3DApp_Render(byte *self);			/* rva 0x275120 */
 int __thiscall CD3DApp_ResetDevice(byte *self);		/* rva 0x275470 */

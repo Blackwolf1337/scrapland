@@ -28,6 +28,8 @@ SD_SIZE(cMusicVoice, 0x19c);
 #define g_MusicVoices ((cMusicVoice *)Game_Ptr(0x4a94e0))
 
 int Fmod_Init(void);
+cMusicVoice *__fastcall cMusicVoice_ctor(cMusicVoice *self);
+void __fastcall cMusicVoice_dtor(cMusicVoice *self);
 int Fmod_Close(void);
 int Fmod_IsInit(void);
 

@@ -144,7 +144,7 @@ check('e4 Elements_Update', lambda: (SDTest.Call(0x203550, 'tvif', e4el, 0.05), 
 e4calls = []
 def e4cb(name, x, y, z, ax, ay):
 	e4calls.append((name, x, y, z, ax, ay))
-check('e4 Elements_Call', lambda: (SDTest.Call(0x202ea0, 'tvis', e4el, '__main__.e4cb'), e4calls))
+check('e4 Elements_Call', lambda: (SDTest.Call(0x202ea0, 'tvis', e4el, '__main__.e4cb'), tuple(e4calls)))
 check('e4 cMapElement_Delete', lambda: (SDTest.Call(0x202e60, 'tiii', e4me, 0)[0] == e4me, e4i(e4me) - 0x400000))
 SDTest.Call(0x313634, 'vii', e4me, 0x2c)
 e4poke(e4el, 0)
@@ -165,3 +165,6 @@ if e4tab:
 check('e4 Object3D_Preload', lambda: SDTest.Call(0x205140, 'vsF', 'Models/Weapons/Swarm/Swarm.M3D', (1.0, 1.0, 1.0))[0:0])
 check('e4 Anm_Preload', lambda: SDTest.Call(0x2051a0, 'vss', 'Models/Elements/FireAFXFireDrop/FireAFXFireDrop.m3d',
 	'Models/Elements/FireAFXFireDrop/Anm/Loop.m3d')[0:0])
+
+# ---- Motor.cpp ----
+check('e4 Mundo_GetChecked', lambda: SDTest.Call(0x230890, 'i')[0] == SDTest.Peek(0x4afde8, 'i'))

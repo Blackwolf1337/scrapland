@@ -327,3 +327,35 @@ check('en4 cMapElement_Init', lambda: SDTest.Call(0x203310, 'tbi', en4me)[0])
 check('en4 cMapElement_Delete', lambda: (SDTest.Call(0x202e60, 'tiii', en4me, 0)[0] == en4me, en4i(en4me) - 0x400000))
 SDTest.Call(0x313634, 'vii', en4me, 0x2c)
 en4free(en4el)
+
+# ---- Motor.cpp: the small methods, the null input ----
+for b in (0, 0x10, 0x30, 0xffff, 0x110, 0x8):
+	check('en4 CMotorApp_ConfirmDevice' + fmt((b,)), lambda b=b: SDTest.Call(0x22da10, 'tiiiii', 0, 0, b, 0)[0])
+en4fc = SDTest.Peek(0x4a8f78, 'i')
+check('en4 CMotorApp_CountFrame', lambda: (SDTest.Call(0x22fd50, 'tii', 0)[0], SDTest.Peek(0x4a8f78, 'i') - en4fc))
+SDTest.Poke(0x4a8f78, en4fc)
+check('en4 CD3DApplication_Nothing', lambda: SDTest.Call(0x22f420, 'tii', 0)[0])
+check('en4 CEntradaNula stubs', lambda: (SDTest.Call(0x22fe40, 'tiii', 0, 5)[0], SDTest.Call(0x22fe50, 'tiii', 0, 5)[0],
+	SDTest.Call(0x230430, 'tiiiii', 0, 1, 2, 3)[0], SDTest.Call(0x230870, 'tiii', 0, 1)[0], SDTest.Call(0x230880, 'tii', 0)[0],
+	SDTest.Call(0x231170, 'tii', 0)[0], SDTest.Call(0x22f430, 'tviiiii', 0, 1, 2, 3, 4)[0:0]))
+en4ent = en4new(0x114)
+en4entb = SDTest.Peek(0x4db428, 'i')
+check('en4 CEntradaNula_Delete', lambda: (SDTest.Call(0x22d9e0, 'tiii', en4ent, 0)[0] == en4ent, en4i(en4ent) - 0x400000,
+	SDTest.Peek(0x4db428, 'i') & 0xff))
+SDTest.Poke(0x4db428, en4entb)
+check('en4 CEntradaNula_Delete free', lambda: SDTest.Call(0x22d9e0, 'tiii', en4ent, 1)[0] == en4ent)
+SDTest.Poke(0x4db428, en4entb)
+en4col = en4z(8)
+for c in (0x01020304, -1, 0x7f00ff80):
+	en4poke(en4col, c)
+	en4set(en4col + 4, (0.75,))
+	check('en4 Motor_ColorStr' + fmt((c,)), lambda: SDTest.Call(0x22fd60, 'si', en4col)[0])
+en4free(en4col)
+for b in (0, 1, -1, 2):
+	check('en4 Motor_BoolStr' + fmt((b,)), lambda b=b: SDTest.Call(0x22fdb0, 'si', b)[0])
+en4mv = en4z(0x19c)
+en4set(en4mv, (3.0,) * 103)
+check('en4 cMusicVoice_ctor', lambda: (SDTest.Call(0x231180, 'tii', en4mv)[0] == en4mv, en4b(en4mv), en4words(en4mv + 0x104, 3),
+	en4b(en4mv + 0x10c), en4i(en4mv + 0x10d), en4i(en4mv + 0x18c), en4words(en4mv + 0x190, 3)))
+check('en4 cMusicVoice_dtor', lambda: SDTest.Call(0x2311b0, 'tvi', en4mv)[0:0])
+en4free(en4mv)
