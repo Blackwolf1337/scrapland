@@ -11,15 +11,17 @@
 #define SCRAP_WEAPS2_H
 
 #include "scrap/console.h"
+#include "scrap/doors.h"
 #include "scrap/fxweapons.h"
+#include "scrap/missileentity.h"
 #include "scrap/net.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/sound.h"
+#include "scrap/weapons.h"
 #include "scrap/weaps.h"
 #include "scrap/world.h"
 
-#define TYEN_VEHICLE TYEN_CAR
 #define TYEN_MISSILE "Missile"
 
 /* the vtable slots of the ships and missiles the weapons call */
@@ -129,15 +131,10 @@ static inline const WeapEntityVtbl *Weap_Vtbl(cEntity *e) {
 #define Item_SizeX(i) WFIELD(i, float, 0xb8)
 #define Item_SizeY(i) WFIELD(i, float, 0xbc)
 #define Item_Color(i) WFIELD(i, uint32_t, 0xc0)
-#define Scorer_Time(s) WFIELD(s, float, 0x20)
-#define Scorer_Delta(s) WFIELD(s, float, 0x28)
 
 /* engine variables (Gvars, the value at +0x10 of the variable object) */
 #define g_SwarmIDWeap GAME_DATA(int, 0x448800)
 #define g_InfernoIDWeap GAME_DATA(int, 0x44886c)
-#define g_LaserIDWeap GAME_DATA(int, 0x4487d0)
-#define g_VehicleCenterPadLock GAME_DATA(float, 0x447ba4)
-#define g_RestoreUpgradeFunc ((cPy_Function *)Game_Ptr(0x4487ac))
 #define g_InfernoEngineSoundVol GAME_DATA(float, 0x449740)
 #define g_InfernoRangeMin GAME_DATA(float, 0x449768)
 #define g_InfernoTimeDelay GAME_DATA(float, 0x449780)
@@ -226,9 +223,6 @@ static inline const WeapEntityVtbl *Weap_Vtbl(cEntity *e) {
 #define g_TeslaMinAngRangeUpg GAME_DATA(float, 0x44a778)
 #define g_TeslaMinAngRangeUpgPad GAME_DATA(float, 0x44a790)
 #define g_TeslaMinAngRange GAME_DATA(float, 0x44a810)
-#define g_CannonScorerColorRed GAME_DATA(uint32_t, 0x45d88c)
-#define g_CannonScorerColorBlue GAME_DATA(uint32_t, 0x45d8a4)
-#define g_CannonScorerColorGreen GAME_DATA(uint32_t, 0x45d8bc)
 
 /* the state of the module */
 #define g_InfernoHitName ((char *)Game_Ptr(0x449480))	/* 0x80, the entity of the sphere callback */
@@ -245,48 +239,12 @@ static inline const WeapEntityVtbl *Weap_Vtbl(cEntity *e) {
 #define g_SwarmSlotData ((int **)Game_Ptr(0x428918))	/* per slot: a pointer to the int AddBees takes */
 
 /* the exe functions of other modules */
-const char *Nto1Node_TargetName(Nto1Node *node);	/* the name of the linked entity, "" for none */
-void __thiscall cMissileEntity_SetHiddenSwarm(cEntity *m, byte on);
-void __thiscall cMissileEntity_SetVisible(cEntity *m, byte on);
-void __thiscall cMissileEntity_SetLifeTime(cEntity *m, float t);
-void __thiscall cMissileEntity_SetBeesSpeed(cEntity *m, float v);
-void __thiscall cMissileEntity_SetOwner(cEntity *m, const char *name);
-void __thiscall cMissileEntity_SetTarget(cEntity *m, const char *name);	/* NULL clears it */
-void __thiscall cMissileEntity_SetSpeed(cEntity *m, float v);
-void __thiscall cMissileEntity_SetTurnSpeed(cEntity *m, float v);
-void __thiscall cMissileEntity_SetBeeDeathTime(cEntity *m, float t);
-void __thiscall cMissileEntity_SetInnerRadius(cEntity *m, float r);
-void __thiscall cMissileEntity_SetRadius(cEntity *m, float r);
-void __thiscall cMissileEntity_SetOuterRadius(cEntity *m, float r);
-void __thiscall cMissileEntity_SetB584(cEntity *m, byte on);
-void __thiscall cMissileEntity_SetB585(cEntity *m, byte on);
-void __thiscall cMissileEntity_SetNumBees(cEntity *m, int n);
-int __thiscall cMissileEntity_GetPower(cEntity *m);
 void __thiscall cPrimitive_SetSize(void *prim, float size);
 void __thiscall cEntity_SetNetResource(cEntity *e, const char *name);
-void __thiscall VehicleAim_SetAngle(void *aim, float ang);
-void __thiscall VehicleAim_SetDist(void *aim, float dist);
-void __thiscall VehicleKick_SetA(void *kick, float v, float time);
-void __thiscall VehicleKick_SetB(void *kick, float v, float time);
-void __thiscall cHitInfo_SetEntity(void *info, const char *name, int n);
-void __thiscall cHitInfo_SetPoint(void *info, const vec3_t *pos, int n);
 const char *__thiscall cHitInfo_GetName(void *info);	/* the entity of the hit info, "" for none */
-void __thiscall Entity_SetAIHit(cEntity *e, int on);
 void __thiscall cWithLifeEntity_SetBurner(cEntity *e, cEntity *attacker);
 int Net_GetPlayerIndex(const char *name);	/* n of "net<n>", -1 for other names */
-void __thiscall VehicleEffects_Shoot(void *fx, int weap, int slot);
-/* WeaponManager.cpp: the weapon block of a ship */
-void __thiscall cTargetLock_SetFireDelay(cTargetLock *self, float t);
 void __thiscall cTargetLock_SetHookDelay(cTargetLock *self, float t);
-int __thiscall cTargetLock_NumSlots(cTargetLock *self, int weap, byte warn);
-int __thiscall cTargetLock_GetLevel(cTargetLock *self, int weap);
-float __thiscall cTargetLock_GetCharge(cTargetLock *self, int weap);
-float __thiscall cTargetLock_SetAmmo(cTargetLock *self, int ammo, float v);
-void __thiscall cTargetLock_LockName(cTargetLock *self, const char *name);	/* the entity of that name */
-void __thiscall cTargetLock_LockPoint(cTargetLock *self, const vec3_t *pos);
-byte __thiscall cTargetLock_SetLevel(cTargetLock *self, int weap, int level);
-byte __thiscall cTargetLock_SetCharge(cTargetLock *self, int weap, float v);
-void __thiscall cTargetLock_SetSound(cTargetLock *self, int snd);
 /* SndInterface.c */
 byte __thiscall cSndItem_Play(cSndItem *self, cEntity *e);
 void __thiscall cSndInterface_Resize(cSndInterface *self, int n);
@@ -302,7 +260,6 @@ void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float 
 
 #define WEAP_NATIVE(rva) ((nativefunc_t)Game_Ptr(rva))	/* a native of the exe (its C version behind the hook) */
 #define WEAP_PI 3.141592653589793			/* rva 0x3a3700 */
-#define g_WeapRandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
 #define Ent_Sounds(e) ((cSndInterface *)((byte *)(e) + 0x144))
 
 /* the shared code of the weapons, inlined in the original */

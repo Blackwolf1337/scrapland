@@ -33,20 +33,20 @@ void Hook_Aim(cEntity *v) {
 	Weap_Vtbl(v)->AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
 	if (dist + 100.0f > g_HookRange) {
 		if (!(g_pApp->flags & APPF_CLIENT)) {
-			cTargetLock_LockPoint(Veh_Weapons(v), NULL);
+			cWeaponManager_LockPoint(Veh_Weapons(v), NULL);
 		}
 		return;
 	}
 	if (target && Entity_IsType(target, TYEN_WITH_LIFE)) {
-		cTargetLock_LockName(Veh_Weapons(v), target->name);
+		cWeaponManager_LockEntity(Veh_Weapons(v), target->name);
 		return;
 	}
-	cTargetLock_LockPoint(Veh_Weapons(v), &out);
+	cWeaponManager_LockPoint(Veh_Weapons(v), &out);
 }
 
 void Hook_Unlock(cEntity *v) {
 	if (!(g_pApp->flags & APPF_CLIENT)) {
-		cTargetLock_LockPoint(Veh_Weapons(v), NULL);
+		cWeaponManager_LockPoint(Veh_Weapons(v), NULL);
 	}
 }
 
@@ -75,7 +75,7 @@ void Hook_OffNative(cAbstractFile *f) {
 	cEntity *v = Weap_FindVehicle(name);
 	if (v) {
 		if (!(g_pApp->flags & APPF_CLIENT)) {
-			cTargetLock_LockPoint(Veh_Weapons(v), NULL);
+			cWeaponManager_LockPoint(Veh_Weapons(v), NULL);
 		}
 		Hook_Silence(v);
 	}
@@ -144,7 +144,7 @@ void Hook_UpdateNative(cAbstractFile *f) {
 	}
 	byte isClient = g_pApp->flags & APPF_CLIENT;
 	cTargetLock *wm = Veh_Weapons(v);
-	int n = cTargetLock_NumSlots(wm, g_LaserIDWeap, 1);
+	int n = cWeaponManager_NumSlots(wm, g_LaserIDWeap, 1);
 	if (!n) {
 		return;
 	}
@@ -154,7 +154,7 @@ void Hook_UpdateNative(cAbstractFile *f) {
 		if (g_LaserAmmoCost > left) {
 			left = 1.0f;
 		}
-		cTargetLock_SetAmmo(wm, g_LaserIDAmmo, left);
+		cWeaponManager_SetAmmo(wm, g_LaserIDAmmo, left);
 	}
 	cTargetLock_SetHookDelay(wm, 0.05f);
 	byte start = 1;
@@ -164,7 +164,7 @@ void Hook_UpdateNative(cAbstractFile *f) {
 	}
 	if (g_LaserAmmoCost > cTargetLock_GetAmmo(wm, g_LaserIDAmmo)) {
 		if (!(g_pApp->flags & APPF_CLIENT)) {
-			cTargetLock_LockPoint(wm, NULL);
+			cWeaponManager_LockPoint(wm, NULL);
 		}
 		Hook_StopSound(v);
 		return;
@@ -236,7 +236,7 @@ void Hook_UpdateNative(cAbstractFile *f) {
 	byte pullV = Hook_Pulls(v, isClient);
 	if (pullV) {
 		vmaxV = Hook_MaxSpeed(v);
-		VehicleKick_SetB(Veh_Kick(v), 0.15f, 0.4f);
+		Controls_RumbleB(Veh_Kick(v), 0.15f, 0.4f);
 	}
 	if (pt) {
 		if (!pullV) {
@@ -316,7 +316,7 @@ void Hook_StartNative(cAbstractFile *f) {
 byte Laser_Shoot(cEntity *v) {
 	byte had = cTargetLock_GetAmmo(Veh_Weapons(v), g_LaserIDAmmo) > g_LaserAmmoCost;
 	if (cTargetLock_GetAmmo(Veh_Weapons(v), g_LaserIDAmmo) > 0.0f) {
-		cTargetLock_SetFireDelay(Veh_Weapons(v), g_LaserTimeDelay);
+		cWeaponManager_DelayFire(Veh_Weapons(v), g_LaserTimeDelay);
 		if (cTargetLock_GetAmmo(Veh_Weapons(v), g_LaserIDAmmo) > g_LaserAmmoCost * 2.0f) {
 			Weap_PlaySound(v, SND_LASER_LOW);
 		}
@@ -407,7 +407,7 @@ void Laser_CreateNative(cAbstractFile *f) {
 			}
 			cObjElementFXLaser_Shoot(fx, s.x, s.y, s.z, hit.x, hit.y, hit.z, time);
 		}
-		VehicleEffects_Shoot(Veh_Effects(v), g_LaserIDWeap, i);
+		cVehicleEffects_Shoot(Veh_Effects(v), g_LaserIDWeap, i);
 	}
 	if (FX_IsVisible(hit.x, hit.y, hit.z, 500.0f, g_LaserDistLimit, NULL, 0)) {
 		if (*targetName) {
@@ -584,7 +584,7 @@ void Laser_HudNative(cAbstractFile *f) {
 static void Laser_AimOn(cEntity *v) {
 	Veh_AimMode(v) = 1;
 	Veh_AimCone(v) = 0x1.80406ep-1f;
-	VehicleAim_SetAngle(Veh_Aim(v), 0x1.f46bbap-3f);
+	cAutoAim_SetAngle(Veh_Aim(v), 0x1.f46bbap-3f);
 	Veh_AimDist(v) = g_LaserDistLimit;
 }
 
@@ -601,7 +601,7 @@ void Laser_FireNative(cAbstractFile *f) {
 	if (!Laser_Shoot(v) || (g_pApp->flags & APPF_CLIENT)) {
 		return;
 	}
-	int n = cTargetLock_NumSlots(Veh_Weapons(v), g_LaserIDWeap, 1);
+	int n = cWeaponManager_NumSlots(Veh_Weapons(v), g_LaserIDWeap, 1);
 	if (!n) {
 		return;
 	}
@@ -615,9 +615,9 @@ void Laser_FireNative(cAbstractFile *f) {
 	byte isCar = target && Entity_IsType(target, TYEN_VEHICLE);
 	byte isLife = target && Entity_IsType(target, TYEN_WITH_LIFE);
 	if (isCar) {
-		cHitInfo_SetEntity(Veh_HitInfo(v), target->name, 1);
+		cVehicleAttack_ShotAt(Veh_HitInfo(v), target->name, 1);
 	} else {
-		cHitInfo_SetPoint(Veh_HitInfo(v), &out, 1);
+		cVehicleAttack_ShotAtPoint(Veh_HitInfo(v), &out, 1);
 	}
 	if (isLife) {
 		if (!Ent_God(target)) {
@@ -632,8 +632,8 @@ void Laser_FireNative(cAbstractFile *f) {
 	if (cost > left) {
 		left = 0.0f;
 	}
-	cTargetLock_SetAmmo(Veh_Weapons(v), g_LaserIDAmmo, left);
-	VehicleKick_SetB(Veh_Kick(v), 1.0f, 0.2f);
+	cWeaponManager_SetAmmo(Veh_Weapons(v), g_LaserIDAmmo, left);
+	Controls_RumbleB(Veh_Kick(v), 1.0f, 0.2f);
 }
 
 /* the shot pushes an entity with life that walks not, away from the ship */
@@ -690,7 +690,7 @@ void Hook_StartSound(cEntity *v) {
 		s->volume = s->vols[0];
 		s->pitch = s->pitches[0];
 		cSndItem_Play(s, v);
-		VehicleKick_SetB(Veh_Kick(v), 0.2f, 0.2f);
+		Controls_RumbleB(Veh_Kick(v), 0.2f, 0.2f);
 	}
 }
 
@@ -740,24 +740,24 @@ void Sonic_FireNative(cAbstractFile *f) {
 	if (!m) {
 		return;
 	}
-	VehicleKick_SetA(Veh_Kick(v), 0.4f, 0.2f);
-	cMissileEntity_SetSpeed(m, 0.0f);
-	cMissileEntity_SetTurnSpeed(m, 0.0f);
+	Controls_RumbleA(Veh_Kick(v), 0.4f, 0.2f);
+	cMissileEntity_SetSpeed((cMissileEntity *)m, 0.0f);
+	cMissileEntity_SetTurnSpeed((cMissileEntity *)m, 0.0f);
 	g_DebrisDrop[0] = pos;
 	g_DebrisDrop[3].x = 0x1.921fb6p+2f;
 	g_DebrisDrop[3].y = 0x1.921fb6p+2f;
 	g_DebrisDrop[3].z = 0x1.921fb6p+2f;
 	int need = g_SonicAmmoNeed;
-	cMissileEntity_SetNumBees(m, (need > ammo ? ammo : need) * 3);
+	cMissileEntity_SetCount((cMissileEntity *)m, (need > ammo ? ammo : need) * 3);
 	cPy_Function_AddParamS(g_SetUpSonicFunc, m->name);
 	cPy_Function_Execute(g_SetUpSonicFunc, 0);
 	if (!Ent_God(m)) {
 		Ent_Life(m) = g_SonicArmor;
 	}
-	cMissileEntity_SetLifeTime(m, g_SonicLifeTime - 0.2f);
+	cMissileEntity_SetLifeTime((cMissileEntity *)m, g_SonicLifeTime - 0.2f);
 	cPy_Function_SetFunc(Mis_OnHit(m), "Sonic.OnServerHit");
 	cPy_Function_SetFunc(Ent_OnDeath(m), "Sonic.OnDeath");
-	cTargetLock_SetAmmo(Veh_Weapons(v), g_SonicIDAmmo, (float)(ammo - Mis_Bees(m) / 3));
+	cWeaponManager_SetAmmo(Veh_Weapons(v), g_SonicIDAmmo, (float)(ammo - Mis_Bees(m) / 3));
 }
 
 /* the explosion of a mine at x y z (read into g_SonicHitPos) */

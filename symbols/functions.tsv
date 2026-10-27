@@ -3271,65 +3271,65 @@ rva	size	source	callconv	name	signature
 001209a0	789	USER_DEFINED	__cdecl	EMI_Fire	void __cdecl(void * params)
 00120cc0	626	USER_DEFINED	__cdecl	EMI_OnHit	void __cdecl(void * params)
 00120f40	68	USER_DEFINED	__cdecl	Inferno_ClientFireNet	void __cdecl(void * params)
-00120fa0	290	DEFAULT	unknown	FUN_00520fa0	
-001210d0	274	DEFAULT	unknown	FUN_005210d0	
-001211f0	245	USER_DEFINED	unknown	Inferno_NetCreate	undefined(void)
-001212f0	1210	DEFAULT	unknown	FUN_005212f0	
-001217b0	802	DEFAULT	unknown	FUN_005217b0	
-00121ae0	110	DEFAULT	unknown	FUN_00521ae0	
-00121b50	1409	DEFAULT	unknown	FUN_00521b50	
-001220e0	285	DEFAULT	unknown	FUN_005220e0	
-00122200	252	DEFAULT	unknown	FUN_00522200	
-00122300	193	DEFAULT	unknown	FUN_00522300	
-001223d0	257	DEFAULT	unknown	FUN_005223d0	
-001224e0	243	DEFAULT	unknown	FUN_005224e0	
-001225e0	193	DEFAULT	unknown	FUN_005225e0	
-001226b0	193	DEFAULT	unknown	FUN_005226b0	
-00122780	68	DEFAULT	unknown	FUN_00522780	
-001227d0	277	DEFAULT	unknown	FUN_005227d0	
-001228f0	68	DEFAULT	unknown	FUN_005228f0	
-00122940	1067	USER_DEFINED	unknown	Inferno_NetSetUp	undefined(void)
-00122d70	1071	DEFAULT	unknown	FUN_00522d70	
-001231a0	248	DEFAULT	unknown	FUN_005231a0	
-001232a0	32	DEFAULT	unknown	FUN_005232a0	
-001232c0	138	DEFAULT	unknown	FUN_005232c0	
-00123350	197	DEFAULT	unknown	FUN_00523350	
-00123420	2307	DEFAULT	unknown	FUN_00523420	
-00123d30	435	DEFAULT	unknown	FUN_00523d30	
-00123ef0	193	DEFAULT	unknown	FUN_00523ef0	
-00123fc0	3429	DEFAULT	unknown	FUN_00523fc0	
-00124d30	626	DEFAULT	unknown	FUN_00524d30	
-00124fb0	752	DEFAULT	unknown	FUN_00524fb0	
-001252a0	310	DEFAULT	unknown	FUN_005252a0	
-001253e0	238	DEFAULT	unknown	FUN_005253e0	
-001254d0	193	DEFAULT	unknown	FUN_005254d0	
-001255a0	48	DEFAULT	unknown	FUN_005255a0	
-001255d0	124	DEFAULT	unknown	FUN_005255d0	
+00120fa0	290	USER_DEFINED	__cdecl	Inferno_Shoot	void __cdecl(char * name)
+001210d0	274	USER_DEFINED	__cdecl	Inferno_NetCreateNative	void __cdecl(void * f)
+001211f0	245	USER_DEFINED	__cdecl	Inferno_NetCreate	void * __cdecl(char * name, float x, float y, float z, float dx, float dy, float dz)
+001212f0	1210	USER_DEFINED	__cdecl	Inferno_HudNative	void __cdecl(void * f)
+001217b0	802	USER_DEFINED	__cdecl	Inferno_FireNative	void __cdecl(void * f)
+00121ae0	110	USER_DEFINED	__cdecl	Inferno_HitNative	void __cdecl(void * f)
+00121b50	1409	USER_DEFINED	__cdecl	Inferno_Hit	void * __cdecl(char * name)
+001220e0	285	USER_DEFINED	__cdecl	Inferno_OnDamageNative	void __cdecl(void * f)
+00122200	252	USER_DEFINED	__cdecl	Inferno_OnDeathNative	void __cdecl(void * f)
+00122300	193	USER_DEFINED	__cdecl	Inferno_AimOffNative	void __cdecl(void * f)
+001223d0	257	USER_DEFINED	__cdecl	Inferno_SlowNative	void __cdecl(void * f)
+001224e0	243	USER_DEFINED	__cdecl	Inferno_AimOnNative	void __cdecl(void * f)
+001225e0	193	USER_DEFINED	__cdecl	Inferno_AimMode3Native	void __cdecl(void * f)
+001226b0	193	USER_DEFINED	__cdecl	Inferno_AimMode2Native	void __cdecl(void * f)
+00122780	68	USER_DEFINED	__cdecl	Inferno_ServerHitNative	void __cdecl(void * f)
+001227d0	277	USER_DEFINED	__cdecl	Inferno_Explode	void __cdecl(char * name)
+001228f0	68	USER_DEFINED	__cdecl	Inferno_NetSetUpNative	void __cdecl(void * f)
+00122940	1067	USER_DEFINED	__cdecl	Inferno_NetSetUp	void __cdecl(char * name)
+00122d70	1071	USER_DEFINED	__cdecl	Inferno_SphereHit	void __cdecl(void * f)
+001231a0	248	USER_DEFINED	__cdecl	Hook_Aim	void __cdecl(void * v)
+001232a0	32	USER_DEFINED	__cdecl	Hook_Unlock	void __cdecl(void * v)
+001232c0	138	USER_DEFINED	__cdecl	Hook_AimNative	void __cdecl(void * f)
+00123350	197	USER_DEFINED	__cdecl	Hook_OffNative	void __cdecl(void * f)
+00123420	2307	USER_DEFINED	__cdecl	Hook_UpdateNative	void __cdecl(void * f)
+00123d30	435	USER_DEFINED	__cdecl	Hook_StartNative	void __cdecl(void * f)
+00123ef0	193	USER_DEFINED	__cdecl	Laser_Shoot	byte __cdecl(void * v)
+00123fc0	3429	USER_DEFINED	__cdecl	Laser_CreateNative	void __cdecl(void * f)
+00124d30	626	USER_DEFINED	__cdecl	Laser_HudNative	void __cdecl(void * f)
+00124fb0	752	USER_DEFINED	__cdecl	Laser_FireNative	void __cdecl(void * f)
+001252a0	310	USER_DEFINED	__cdecl	Laser_Push	void __cdecl(void * v, void * e, int n)
+001253e0	238	USER_DEFINED	__cdecl	Laser_AimOnNative	void __cdecl(void * f)
+001254d0	193	USER_DEFINED	__cdecl	Laser_AimOffNative	void __cdecl(void * f)
+001255a0	48	USER_DEFINED	__cdecl	Hook_StopSound	void __cdecl(void * v)
+001255d0	124	USER_DEFINED	__cdecl	Hook_StartSound	void __cdecl(void * v)
 00125650	112	USER_DEFINED	__thiscall	Matrix_Identity	void __thiscall(void)
-001256c0	21	DEFAULT	unknown	FUN_005256c0	
-001256e0	860	DEFAULT	unknown	FUN_005256e0	
-00125a40	270	DEFAULT	unknown	FUN_00525a40	
-00125b50	345	DEFAULT	unknown	FUN_00525b50	
-00125cb0	659	DEFAULT	unknown	FUN_00525cb0	
-00125f50	68	DEFAULT	unknown	FUN_00525f50	
-00125fa0	274	DEFAULT	unknown	FUN_00525fa0	
-001260c0	274	DEFAULT	unknown	FUN_005260c0	
-001261e0	261	USER_DEFINED	unknown	Swarm_NetCreate	undefined(void)
-001262f0	1210	DEFAULT	unknown	FUN_005262f0	
-001267b0	750	DEFAULT	unknown	FUN_005267b0	
-00126aa0	124	DEFAULT	unknown	FUN_00526aa0	
-00126b20	852	DEFAULT	unknown	FUN_00526b20	
-00126e80	314	DEFAULT	unknown	FUN_00526e80	
-00126fc0	262	DEFAULT	unknown	FUN_00526fc0	
-001270d0	193	DEFAULT	unknown	FUN_005270d0	
-001271a0	237	DEFAULT	unknown	FUN_005271a0	
-00127290	193	DEFAULT	unknown	FUN_00527290	
-00127360	193	DEFAULT	unknown	FUN_00527360	
-00127430	145	DEFAULT	unknown	FUN_00527430	
-001274d0	1102	DEFAULT	unknown	FUN_005274d0	
-00127920	68	DEFAULT	unknown	FUN_00527920	
-00127970	1263	USER_DEFINED	unknown	Swarm_NetSetUp	undefined(void)
-00127e60	472	DEFAULT	unknown	FUN_00527e60	
+001256c0	21	USER_DEFINED	__fastcall	Vehicle_IsLocalPlayer	byte __fastcall(void * v)
+001256e0	860	USER_DEFINED	__cdecl	Sonic_FireNative	void __cdecl(void * f)
+00125a40	270	USER_DEFINED	__cdecl	Sonic_ExplodeNative	void __cdecl(void * f)
+00125b50	345	USER_DEFINED	__cdecl	Swarm_OnBeeHitNative	void __cdecl(void * f)
+00125cb0	659	USER_DEFINED	__cdecl	Swarm_BeeDeath	void __cdecl(void * sw, float x, float y, float z, byte sound)
+00125f50	68	USER_DEFINED	__cdecl	Swarm_ShootNative	void __cdecl(void * f)
+00125fa0	274	USER_DEFINED	__cdecl	Swarm_Shoot	void __cdecl(char * name)
+001260c0	274	USER_DEFINED	__cdecl	Swarm_NetCreateNative	void __cdecl(void * f)
+001261e0	261	USER_DEFINED	__cdecl	Swarm_NetCreate	void * __cdecl(char * name, float x, float y, float z, float dx, float dy, float dz)
+001262f0	1210	USER_DEFINED	__cdecl	Swarm_HudNative	void __cdecl(void * f)
+001267b0	750	USER_DEFINED	__cdecl	Swarm_FireNative	void __cdecl(void * f)
+00126aa0	124	USER_DEFINED	__cdecl	Swarm_HitFXNative	void __cdecl(void * f)
+00126b20	852	USER_DEFINED	__cdecl	Swarm_HitFX	void * __cdecl(char * name, char * ship, char * target)
+00126e80	314	USER_DEFINED	__cdecl	Swarm_OnDamageNative	void __cdecl(void * f)
+00126fc0	262	USER_DEFINED	__cdecl	Swarm_OnDeathNative	void __cdecl(void * f)
+001270d0	193	USER_DEFINED	__cdecl	Swarm_AimOffNative	void __cdecl(void * f)
+001271a0	237	USER_DEFINED	__cdecl	Swarm_AimOnNative	void __cdecl(void * f)
+00127290	193	USER_DEFINED	__cdecl	Swarm_AimMode3Native	void __cdecl(void * f)
+00127360	193	USER_DEFINED	__cdecl	Swarm_AimMode2Native	void __cdecl(void * f)
+00127430	145	USER_DEFINED	__cdecl	Swarm_ServerHitNative	void __cdecl(void * f)
+001274d0	1102	USER_DEFINED	__cdecl	Swarm_Hit	void __cdecl(char * name, char * ship, char * target)
+00127920	68	USER_DEFINED	__cdecl	Swarm_NetSetUpNative	void __cdecl(void * f)
+00127970	1263	USER_DEFINED	__cdecl	Swarm_NetSetUp	void __cdecl(char * name)
+00127e60	472	USER_DEFINED	__cdecl	Tesla_Shoot	byte __cdecl(void * v)
 00128040	674	DEFAULT	unknown	FUN_00528040	
 001282f0	743	DEFAULT	unknown	FUN_005282f0	
 001285e0	1004	DEFAULT	unknown	FUN_005285e0	

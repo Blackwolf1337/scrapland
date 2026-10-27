@@ -78,7 +78,7 @@ void Swarm_Shoot(const char *name) {
 		Veh_FireTime(v) = -g_SwarmTimeDelay;
 		for (int i = 0; i < 4; i++) {
 			if (cTargetLock_HasSlot(Veh_Weapons(v), g_SwarmIDWeap, i)) {
-				VehicleEffects_Shoot(Veh_Effects(v), g_SwarmIDWeap, i);
+				cVehicleEffects_Shoot(Veh_Effects(v), g_SwarmIDWeap, i);
 			}
 		}
 	}
@@ -99,11 +99,11 @@ cEntity *Swarm_NetCreate(const char *name, vec3_t pos, vec3_t dir) {
 	cEntity *m = cWorld_CreateEntity(g_pWorld, name, pos.x, pos.y, pos.z, TYEN_MISSILE);
 	CHECK(m);
 	CHECK(Entity_IsType(m, TYEN_MISSILE));
-	cMissileEntity_SetHiddenSwarm(m, 0);
-	cMissileEntity_SetVisible(m, 1);
+	cMissileEntity_SetHiddenSwarm((cMissileEntity *)m, 0);
+	cMissileEntity_SetHideMain((cMissileEntity *)m, 1);
 	Weap_Vtbl(m)->SetOrient(m, &dir);
-	cMissileEntity_SetBeesSpeed(m, g_SwarmBeesSpeed);
-	cMissileEntity_SetLifeTime(m, g_SwarmLifeTime);
+	cMissileEntity_SetSwarmSpeed((cMissileEntity *)m, g_SwarmBeesSpeed);
+	cMissileEntity_SetLifeTime((cMissileEntity *)m, g_SwarmLifeTime);
 	cPy_Function_SetNative(Mis_OnBeeHit(m), WEAP_NATIVE(0x125b50));
 	cPy_Function_SetNative(Mis_OnHit(m), WEAP_NATIVE(0x126aa0));
 	cEntity_SetNetResource(m, "Swarm");
@@ -134,8 +134,8 @@ void Swarm_FireNative(cAbstractFile *f) {
 	if (!m) {
 		return;
 	}
-	VehicleKick_SetA(Veh_Kick(v), 1.0f, 0.3f);
-	VehicleKick_SetB(Veh_Kick(v), 0.5f, 0.5f);
+	Controls_RumbleA(Veh_Kick(v), 1.0f, 0.3f);
+	Controls_RumbleB(Veh_Kick(v), 0.5f, 0.5f);
 	cPy_Function_SetNative(Mis_OnHit(m), WEAP_NATIVE(0x127430));
 	cPy_Function_SetNative(Ent_OnDeath(m), WEAP_NATIVE(0x126fc0));
 	cPy_Function_SetNative(Ent_OnDamage(m), WEAP_NATIVE(0x126e80));
@@ -143,8 +143,8 @@ void Swarm_FireNative(cAbstractFile *f) {
 		Ent_Life(m) = g_SwarmNumber1 * g_SwarmArmor;
 	}
 	cPrimitive_SetSize(Mis_Size(m), 50.0f);
-	cMissileEntity_SetOwner(m, name);
-	cMissileEntity_SetTarget(m, Nto1Node_TargetName(Veh_TargetLink(v)));
+	cMissileEntity_SetParent((cMissileEntity *)m, name);
+	cMissileEntity_SetTarget((cMissileEntity *)m, Nto1Node_TargetName(Veh_TargetLink(v)));
 	Swarm_NetSetUp(m->name);
 	int n = (int)ammo;
 	if (Mis_Bees(m) > n) {
@@ -154,8 +154,8 @@ void Swarm_FireNative(cAbstractFile *f) {
 	if (!Ent_God(m)) {
 		Ent_Life(m) = Mis_Bees(m) * g_SwarmArmor;
 	}
-	cMissileEntity_SetLifeTime(m, g_SwarmLifeTime - 0.2f);
-	cTargetLock_SetAmmo(Veh_Weapons(v), g_SwarmIDAmmo, (float)n - (float)Mis_Bees(m));
+	cMissileEntity_SetLifeTime((cMissileEntity *)m, g_SwarmLifeTime - 0.2f);
+	cWeaponManager_SetAmmo(Veh_Weapons(v), g_SwarmIDAmmo, (float)n - (float)Mis_Bees(m));
 }
 
 /* missile name, ship, target */
@@ -220,7 +220,7 @@ void Swarm_OnDamageNative(cAbstractFile *f) {
 		if (damage >= armor) {
 			int n = damage / armor;
 			if (n > bees) {
-				cMissileEntity_SetTarget(m, "");
+				cMissileEntity_SetTarget((cMissileEntity *)m, "");
 				Weap_Vtbl(m)->KillBees(m, Mis_Bees(m), 0);
 			} else {
 				Weap_Vtbl(m)->KillBees(m, n, 0);
@@ -248,8 +248,8 @@ void Swarm_AimOffNative(cAbstractFile *f) {
 
 void Swarm_AimOnNative(cAbstractFile *f) {
 	cEntity *v = Weap_SetAimMode(f, 2);
-	VehicleAim_SetDist(Veh_Aim(v), 40000.0f);
-	VehicleAim_SetAngle(Veh_Aim(v), 0x1.aceeap-2f);
+	cAutoAim_SetRange(Veh_Aim(v), 40000.0f);
+	cAutoAim_SetAngle(Veh_Aim(v), 0x1.aceeap-2f);
 }
 
 void Swarm_AimMode3Native(cAbstractFile *f) {
@@ -307,9 +307,9 @@ void Swarm_Hit(const char *name, const char *ship, const char *target) {
 				vel.z = ov->z - pz;
 				vel.x = ov->x - px;
 				Weap_Vtbl(owner)->SetVel(owner, &vel);
-				Entity_SetAIHit(owner, 1);
+				cVehicleEntity_SetNetFlag(owner, 1);
 			}
-			cHitInfo_SetEntity(Veh_HitInfo(owner), owner->name, 0);
+			cVehicleAttack_ShotAt(Veh_HitInfo(owner), owner->name, 0);
 		}
 	}
 	if (target && *target) {
@@ -325,7 +325,7 @@ void Swarm_Hit(const char *name, const char *ship, const char *target) {
 				Ent_Life(e) -= (Mis_Bees(sw) + 1) * mult;
 			}
 			if (ship && !*ship) {
-				cHitInfo_SetEntity(Veh_HitInfo(e), target, 0);
+				cVehicleAttack_ShotAt(Veh_HitInfo(e), target, 0);
 			}
 			float k = (float)(Mis_Bees(sw) + 1) * g_SwarmHitForce / Ent_Mass(e);
 			const vec3_t *sv = Weap_Vtbl(sw)->GetVel(sw, &t3);
@@ -338,7 +338,7 @@ void Swarm_Hit(const char *name, const char *ship, const char *target) {
 			vel.x = ov->x + px;
 			Weap_Vtbl(e)->SetVel(e, &vel);
 			if (Entity_IsType(e, TYEN_VEHICLE)) {
-				Entity_SetAIHit(e, 1);
+				cVehicleEntity_SetNetFlag(e, 1);
 			}
 		}
 	} else {
@@ -349,10 +349,10 @@ void Swarm_Hit(const char *name, const char *ship, const char *target) {
 		if (s && Entity_IsType(s, TYEN_VEHICLE)) {
 			CHECK(Entity_IsType(s, TYEN_VEHICLE));
 			if (target && *target) {
-				cHitInfo_SetEntity(Veh_HitInfo(s), target, 0);
+				cVehicleAttack_ShotAt(Veh_HitInfo(s), target, 0);
 				return;
 			}
-			cHitInfo_SetPoint(Veh_HitInfo(s), Weap_Vtbl(sw)->GetPos(sw, &t3), 0);
+			cVehicleAttack_ShotAtPoint(Veh_HitInfo(s), Weap_Vtbl(sw)->GetPos(sw, &t3), 0);
 		}
 	}
 }
@@ -372,17 +372,17 @@ void Swarm_NetSetUp(const char *name) {
 	cEntity *m = Weap_Missile(name);
 	Weap_Vtbl(m)->GetPos(m, &tmp);
 	Weap_Vtbl(m)->SetModel(m, g_SwarmMissileFile, 1.0f, 1.0f, 1.0f, 0);
-	cMissileEntity_SetInnerRadius(m, 200.0f);
-	cMissileEntity_SetRadius(m, 500.0f);
-	cMissileEntity_SetOuterRadius(m, 2000.0f);
-	cMissileEntity_SetSpeed(m, g_SwarmNormSpeed);
-	cMissileEntity_SetTurnSpeed(m, (float)(((double)g_SwarmTurnSpeed * WEAP_PI) / 180.0));
-	cMissileEntity_SetB584(m, 0);
+	cMissileEntity_SetRadius((cMissileEntity *)m, 200.0f);
+	cMissileEntity_SetTopRadius((cMissileEntity *)m, 500.0f);
+	cMissileEntity_SetRadiusGrow((cMissileEntity *)m, 2000.0f);
+	cMissileEntity_SetSpeed((cMissileEntity *)m, g_SwarmNormSpeed);
+	cMissileEntity_SetTurnSpeed((cMissileEntity *)m, (float)(((double)g_SwarmTurnSpeed * WEAP_PI) / 180.0));
+	cMissileEntity_SetFlag584((cMissileEntity *)m, 0);
 	cEntity *v = Weap_FindVehicle(Mis_Owner(m));
 	if (v) {
 		float top = g_SwarmUpTopSpeed;
 		if (Veh_Speed(v) > g_SwarmNormSpeed - top) {
-			cMissileEntity_SetSpeed(m, top + Veh_Speed(v));
+			cMissileEntity_SetSpeed((cMissileEntity *)m, top + Veh_Speed(v));
 		}
 		cTargetLock *wm = Veh_Weapons(v);
 		for (int i = 0; i < 4; i++) {
@@ -392,36 +392,36 @@ void Swarm_NetSetUp(const char *name) {
 			Weap_DropAtNode(v, Veh_WeapNodes(v)[i + g_SwarmIDAmmo * 4], &mtx, &ang, &vel);
 			Weap_Vtbl(m)->AddBees(m, *g_SwarmSlotData[i]);
 		}
-		int level = cTargetLock_GetLevel(wm, g_SwarmIDWeap);
+		int level = cWeaponManager_GetUpgrade(wm, g_SwarmIDWeap);
 		if (level) {
 			float bees = (float)Mis_Bees(m);
-			float left = cTargetLock_GetCharge(wm, g_SwarmIDWeap) - (bees + bees);
-			cTargetLock_SetCharge(wm, g_SwarmIDWeap, left);
+			float left = cWeaponManager_GetUAmmo(wm, g_SwarmIDWeap) - (bees + bees);
+			cWeaponManager_SetUAmmo(wm, g_SwarmIDWeap, left);
 			if (level == 3) {
-				cMissileEntity_SetSpeed(m, g_SwarmFastSpeed);
-				cMissileEntity_SetTurnSpeed(m, (float)(((double)(g_SwarmTurnSpeed * 1.2f) * WEAP_PI) / 180.0));
+				cMissileEntity_SetSpeed((cMissileEntity *)m, g_SwarmFastSpeed);
+				cMissileEntity_SetTurnSpeed((cMissileEntity *)m, (float)(((double)(g_SwarmTurnSpeed * 1.2f) * WEAP_PI) / 180.0));
 				Mis_Type(m) = 1;
 			} else if (level == 4) {
-				cMissileEntity_SetTurnSpeed(m, (float)(((double)g_SwarmTurnSpeedUPG * WEAP_PI) / 180.0));
+				cMissileEntity_SetTurnSpeed((cMissileEntity *)m, (float)(((double)g_SwarmTurnSpeedUPG * WEAP_PI) / 180.0));
 				Mis_Type(m) = 2;
 			}
 			if (0.0f >= left) {
 				cPy_Function_AddParamI(g_RestoreUpgradeFunc, level);
 				cPy_Function_Execute(g_RestoreUpgradeFunc, 0);
-				cTargetLock_SetLevel(wm, g_SwarmIDWeap, 0);
+				cWeaponManager_SetUpgrade(wm, g_SwarmIDWeap, 0);
 			}
 		}
 	}
-	Weap_Vtbl(m)->SetBees(m, cMissileEntity_GetPower(m));
+	Weap_Vtbl(m)->SetBees(m, cMissileEntity_GetSwarmCount((cMissileEntity *)m));
 	int n = Mis_Bees(m);
 	if (n > 0) {
-		cMissileEntity_SetBeeDeathTime(m, g_SwarmDeathTime / (float)n);
+		cMissileEntity_SetSwDthTime((cMissileEntity *)m, g_SwarmDeathTime / (float)n);
 	}
 	Weap_Vtbl(m)->SetMaxSpeed(m, 3000.0f);
 	float r = (float)Mis_Bees(m) * g_SwarmBeeRadius + g_SwarmMinRadius;
 	Mis_B7bd(m) = 1;
-	cMissileEntity_SetInnerRadius(m, r * 0.25f);
-	cMissileEntity_SetRadius(m, r);
+	cMissileEntity_SetRadius((cMissileEntity *)m, r * 0.25f);
+	cMissileEntity_SetTopRadius((cMissileEntity *)m, r);
 	Weap_EngineSound(m, g_SwarmEngineSound, g_SwarmEngineSoundVol, g_SwarmEngineSoundAttIni,
 		g_SwarmEngineSoundAttEnd, g_SwarmEngineSoundDoppler);
 }
@@ -431,8 +431,8 @@ byte Tesla_Shoot(cEntity *v) {
 	if (!(cTargetLock_GetAmmo(Veh_Weapons(v), g_TeslaIDAmmo) > 0.0f)) {
 		return 0;
 	}
-	VehicleKick_SetA(Veh_Kick(v), 1.0f, 0.2f);
-	int level = cTargetLock_GetLevel(Veh_Weapons(v), g_TeslaIDWeap);
+	Controls_RumbleA(Veh_Kick(v), 1.0f, 0.2f);
+	int level = cWeaponManager_GetUpgrade(Veh_Weapons(v), g_TeslaIDWeap);
 	float down;
 	if (g_VehicleCenterPadLock != 0.0f && cVehicleEntity_GetOwnerSlot(v) != -1) {
 		float min = level == 6 ? g_TeslaMinAngRangeUpgPad : g_TeslaMinAngRangePad;
@@ -449,8 +449,8 @@ byte Tesla_Shoot(cEntity *v) {
 	if (Veh_Seat(v) == -1) {
 		Weap_PlaySound(v, 10);
 	}
-	cTargetLock_SetSound(Veh_Weapons(v), (level == 5) + 11);
-	cTargetLock_SetFireDelay(Veh_Weapons(v),
+	cWeaponManager_SetWeapSnd(Veh_Weapons(v), (level == 5) + 11);
+	cWeaponManager_DelayFire(Veh_Weapons(v),
 		Weap_Vtbl(v)->GetAI(v) && World_IsEasySingle() ? 0.15f : 0.05f);
 	return 1;
 }
