@@ -6,6 +6,7 @@
 #ifndef SCRAP_WORLD_H
 #define SCRAP_WORLD_H
 
+#include "scrap/collisiongrid.h"
 #include "scrap/entity.h"
 #include "scrap/pyfunction.h"
 #include "scrap/scrap.h"
@@ -94,19 +95,6 @@ static inline const cWorldEntityVtbl *WEnt_Vtbl(cEntity *e) {
 #define CamEntity_Orient(e) ((vec3_t *)((byte *)(e) + 0x88))
 #define CamEntity_Slot(e) (*(int *)((byte *)(e) + 0xb8))		/* the view it shows, -1 for none */
 #define CamEntity_NoFollow(e) (*(byte *)((byte *)(e) + 0xbc))
-
-/* the entity grid at g_pWorld->grid: entities by cell for the queries, one query at a time */
-#define Grid_IsOk(grid) (*(int *)((byte *)(grid) + 0x40) != 0)
-void __thiscall Grid_ctor(void *grid);
-void __thiscall Grid_dtor(void *grid);
-void __thiscall Grid_Init(void *grid, const vec3_t *min, const vec3_t *max, const vec3_t *cell);
-void __thiscall Grid_Add(void *grid, cEntity *e);
-/* the entities near the segment, ext the margin per axis */
-cEntity *__thiscall Grid_FirstOnSegment(void *grid, const vec3_t *from, const vec3_t *to, const vec3_t *ext);
-cEntity *__thiscall Grid_NextOnSegment(void *grid);
-cEntity *__thiscall Grid_FirstInBox(void *grid, const vec3_t *min, const vec3_t *max);
-cEntity *__thiscall Grid_NextInBox(void *grid);
-void __thiscall Grid_EndFrame(void *grid);
 
 /* the objects embedded in cWorld, only known by their methods */
 void __thiscall Floor_ctor(void *floor);
