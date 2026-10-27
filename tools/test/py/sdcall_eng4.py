@@ -360,3 +360,17 @@ check('en4 cMusicVoice_ctor', lambda: (SDTest.Call(0x231180, 'tii', en4mv)[0] ==
 	en4b(en4mv + 0x10c), en4i(en4mv + 0x10d), en4i(en4mv + 0x18c), en4words(en4mv + 0x190, 3)))
 check('en4 cMusicVoice_dtor', lambda: SDTest.Call(0x2311b0, 'tvi', en4mv)[0:0])
 en4free(en4mv)
+
+# ---- varios.cpp: the debug consoles (off in the tests), the log end ----
+check('en4 Dbg state', lambda: (SDTest.Peek(0x4ab8ec, 'i'), SDTest.Peek(0x4ab91c, 'b'), SDTest.Peek(0x4ab91d, 'b'),
+	SDTest.Peek(0x4ab920, 'i')))
+check('en4 DbgStd_Printf', lambda: SDTest.Call(0x237830, 'vsi', 'x %d', 5)[0:0])
+check('en4 DbgWin_Printf', lambda: SDTest.Call(0x237950, 'vsi', 'x %d', 5)[0:0])
+check('en4 DbgStd_Open', lambda: SDTest.Call(0x2378f0, 'vi', 0)[0:0])
+check('en4 DbgWin_Open', lambda: SDTest.Call(0x237ab0, 'vi', 0)[0:0])
+for n, sz in ((3, 10), (10, 10), (12, 10), (0, 4)):
+	check('en4 DbgWin_AddLine' + fmt((n, sz)), lambda n=n, sz=sz: SDTest.Call(0x238320, 'vbii', 'abcdefghijklmnop', n, sz)[1][0:17])
+check('en4 Window_GetNormalRect NULL', lambda: SDTest.Call(0x238130, 'vii', 0, 0)[0:0])
+en4lg = en4z(8)
+check('en4 cLog_dtor', lambda: (SDTest.Call(0x2373a0, 'tvi', en4lg), en4words(en4lg, 2)))
+en4free(en4lg)
