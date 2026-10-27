@@ -404,4 +404,196 @@ byte cAIVehicle_SetState(cAIVehicle *ai, int state, ...);
 #define g_AIChaseDefault1 GAME_DATA(float, 0x444948)
 #define g_AIChaseDefault2 GAME_DATA(float, 0x444828)
 
+/* ---- cAI (AI/AI.cpp, src/game/AI/AI.c): the base of every AI (0x38 bytes), the entity, the time of the frame and
+ * of the state, and the slot of the reactions ---- */
+#define CAI_VFTABLE 0x3a3f18
+
+typedef struct cAI cAI;
+
+/* the slots of cAI::vftable (Debugf is pure there) */
+typedef struct cAIBaseVtbl {
+	cAI *(__thiscall *Delete)(cAI *self, byte flags);					/* 0x00 */
+	void(__thiscall *Update)(cAI *self, float dt);						/* 0x04 */
+	void(__thiscall *UpdateOff)(cAI *self, float dt);					/* 0x08 */
+	void(__thiscall *Draw)(cAI *self);							/* 0x0c */
+	byte(__thiscall *GetChanged)(cAI *self);						/* 0x10 */
+	byte(__thiscall *IsVisible)(cAI *self);							/* 0x14 */
+	void (*Debugf)(cAI *self, const char *fmt, ...);					/* 0x18 */
+	byte(__thiscall *VarI)(cAI *self, const char *name, int *i, byte set);			/* 0x1c */
+	byte(__thiscall *VarF)(cAI *self, const char *name, double *d, byte set);		/* 0x20 */
+	byte(__thiscall *VarS)(cAI *self, const char *name, char **s, byte set);		/* 0x24 */
+	byte(__thiscall *VarV)(cAI *self, const char *name, double *x, double *y, double *z, byte set);	/* 0x28 */
+	void(__thiscall *Print)(cAI *self, const char *text);					/* 0x2c */
+	void(__thiscall *GetEventName)(cAI *self, int ev, char *out);				/* 0x30 */
+	void(__thiscall *OnEvent)(cAI *self, int ev);						/* 0x34 */
+} cAIBaseVtbl;
+SD_OFFSET(cAIBaseVtbl, Debugf, 0x18);
+SD_OFFSET(cAIBaseVtbl, OnEvent, 0x34);
+
+/* the events of the AI (GetEventName) */
+enum {
+	AIEV_LOST_AGENT, AIEV_OBJECTIVE_NOT_FOUND, AIEV_OBJECTIVE_REACHED, AIEV_OBJECTIVE_DIED, AIEV_OBJECTIVE_NEAR,
+	AIEV_OBJECTIVE_VIS, AIEV_ORIENT_REACHED, AIEV_DONT_GO, AIEV_PROBLEM_MOV, AIEV_NO_PROBLEM, AIEV_COLLISION_AGENTS
+};
+
+struct cAI {
+	const cAIBaseVtbl *vftable;	/* 0x00 */
+	byte started;			/* 0x04 set by the first update */
+	byte pad_5[3];
+	cEntity *entity;		/* 0x08 */
+	float dt;			/* 0x0c the time of the last update */
+	byte slot[0x10];		/* 0x10 cSlotController of 0.5 s (slotcontroller.h) */
+	byte changing;			/* 0x20 */
+	byte pad_21[3];
+	int i24;			/* 0x24 */
+	byte changed;			/* 0x28 GetChanged, cleared by every update */
+	byte pad_29[3];
+	float stateTime;		/* 0x2c the time in the state */
+	float waitTime;			/* 0x30 counts while i34 is 0 */
+	int i34;			/* 0x34 */
+};
+SD_OFFSET(cAI, changed, 0x28);
+SD_SIZE(cAI, 0x38);
+
+cAI *__thiscall cAI_ctor(cAI *self, cEntity *e);
+cAI *__fastcall cAI_ctorDefault(cAI *self);
+void __fastcall cAI_dtor(cAI *self);
+cAI *__thiscall cAI_Delete(cAI *self, byte flags);
+void __thiscall cAI_Update(cAI *self, float dt);
+void __thiscall cAI_UpdateOff(cAI *self, float dt);
+void __thiscall cAI_Draw(cAI *self);
+byte __thiscall cAI_GetChanged(cAI *self);
+/* the entity is in the sector of the camera of view 0 or seen from it through the portals */
+byte __thiscall cAI_IsVisible(cAI *self);
+byte __thiscall cAI_VarI(cAI *self, const char *name, int *i, byte set);
+byte __thiscall cAI_VarF(cAI *self, const char *name, double *d, byte set);
+byte __thiscall cAI_VarS(cAI *self, const char *name, char **s, byte set);
+byte __thiscall cAI_VarV(cAI *self, const char *name, double *x, double *y, double *z, byte set);
+/* text as a format into the console */
+void __thiscall cAI_Print(cAI *self, const char *text);
+/* the name of the AIEV_ event into out, nothing for the others */
+void __thiscall cAI_GetEventName(cAI *self, int ev, char *out);
+void __thiscall cAI_OnEvent(cAI *self, int ev);
+
+/* ---- the AIs of the bank director, the bank master and the bishop (AI/AIBankDirector.cpp, AIBankMaster.cpp,
+ * AIBishop.cpp, src/game/AI/), cAIChar with their move controls (cAIControlBankDirector, cAIControlBankMaster,
+ * cAIControlBishop). The fields of cAIChar they use: ---- */
+typedef struct cAICharView {
+	byte pad_0[0x40];
+	cEntity *target;		/* 0x040 the character it deals with */
+	byte pad_44[0x198 - 0x44];
+	cEntity *own;			/* 0x198 its character (a WalkChar) */
+	void *control;			/* 0x19c cAICharControl */
+	int state;			/* 0x1a0 SAI_CHAR_ */
+	byte pad_1a4[0x1ac - 0x1a4];
+	byte *attack;			/* 0x1ac the byte at +0x18: it attacks */
+	float attackMin;		/* 0x1b0 the distance to the target of the attack */
+	float attackMax;		/* 0x1b4 */
+	float rangeMin;			/* 0x1b8 */
+	float rangeMax;			/* 0x1bc */
+	byte pad_1c0[0x354 - 0x1c0];
+	float attackTime;		/* 0x354 */
+	float blockTime;		/* 0x358 */
+	byte pad_35c[0x380 - 0x35c];
+} cAICharView;
+SD_OFFSET(cAICharView, own, 0x198);
+SD_OFFSET(cAICharView, attackMax, 0x1b4);
+SD_OFFSET(cAICharView, blockTime, 0x358);
+SD_SIZE(cAICharView, 0x380);
+
+/* the slots of the cAIChar vtable they call */
+typedef struct cAICharViewVtbl {
+	void *vf00_05[6];
+	void (*Debugf)(void *self, const char *fmt, ...);				/* 0x18 */
+	void *vf07_20[26];
+	void(__thiscall *GetStateName)(void *self, int state, char *out);		/* 0x84 0x100 bytes */
+	void *vf22_25[4];
+	byte(__thiscall *CanShoot)(void *self);						/* 0x98 vf38 */
+	void *vf27_34[14];
+	byte(__thiscall *IsGroupState)(void *self, int state);			/* 0xd4 the group limits it */
+	void *vf36_37[2];
+	void(__thiscall *SetRanges)(void *self);					/* 0xe0 vf56 */
+	void *vf57;
+	void(__thiscall *SwitchState)(void *self, int state);				/* 0xe8 vf58 */
+} cAICharViewVtbl;
+SD_OFFSET(cAICharViewVtbl, GetStateName, 0x84);
+SD_OFFSET(cAICharViewVtbl, CanShoot, 0x98);
+SD_OFFSET(cAICharViewVtbl, IsGroupState, 0xd4);
+SD_OFFSET(cAICharViewVtbl, SwitchState, 0xe8);
+
+static inline const cAICharViewVtbl *AICharView_Vtbl(const void *ai) {
+	return *(const cAICharViewVtbl *const *)ai;
+}
+
+/* a slot of the vtable of an object (the move controls, the group), called as the original does */
+static inline void *AI_VSlot(const void *obj, uint32_t off) {
+	return *(void *const *)(*(const byte *const *)obj + off);
+}
+
+#define CAIBANKDIRECTOR_VFTABLE 0x3a40a8
+#define CAIBANKMASTER_VFTABLE 0x3a42b8
+#define CAIBISHOP_VFTABLE 0x3a452c
+
+/* the director and the master (0x384 bytes) */
+typedef struct cAIBank {
+	cAICharView base;		/* 0x000 */
+	int money;			/* 0x380 the money of the character at the demand of the attack (state 2) */
+} cAIBank;
+SD_SIZE(cAIBank, 0x384);
+
+/* the bishop (0x398 bytes) */
+typedef struct cAIBishop {
+	cAICharView base;		/* 0x000 */
+	int targetLife;			/* 0x380 the life of the target at the last check */
+	byte blocked;			/* 0x384 the way to the target is not free */
+	byte pad_385[3];
+	int shootFactor;		/* 0x388 ShootBishopAI: one shot in so many */
+	float shootAng;			/* 0x38c OffsetAngShootBishopAI */
+	float shootTime;		/* 0x390 TimeShootBishopAI */
+	float shootDist;		/* 0x394 DistMaxShootBishopAI */
+} cAIBishop;
+SD_SIZE(cAIBishop, 0x398);
+
+void __fastcall cAIBankDirector_dtor(void *self);
+void *__thiscall cAIBankDirector_Delete(void *self, byte flags);
+void __fastcall cAIBankMaster_dtor(void *self);
+void *__thiscall cAIBankMaster_Delete(void *self, byte flags);
+/* vf66 of the director and the master: the attack when the character got money or the control is idle */
+void __thiscall cAIBank_CheckAttack(cAIBank *self);
+/* vf56 */
+void __thiscall cAIBankDirector_SetRanges(cAIBank *self);
+void __thiscall cAIBankMaster_SetRanges(cAIBank *self);
+/* vf27 and vf50 of both: the state from outside and from inside (ATTACK, 2, becomes 7 with the money noted) */
+byte cAIBank_SetState(cAIBank *self, int state, ...);
+byte cAIBank_SetStateIntern(cAIBank *self, int state, ...);
+void __fastcall cAIBishop_dtor(void *self);
+void *__thiscall cAIBishop_Delete(void *self, byte flags);
+/* vf66: the shot at the target in the cone of the view */
+void __thiscall cAIBishop_CheckAttack(cAIBishop *self);
+void __thiscall cAIBishop_SetRanges(cAIBishop *self);
+/* vf57: the shot parameters for a target with or without an AI, then the ranges */
+void __thiscall cAIBishop_SetShoot(cAIBishop *self);
+
+/* AI/AIChar.cpp (imports) */
+void __fastcall cAIChar_dtor(void *self);					/* rva 0x67320 */
+void __thiscall cAIChar_SetRanges(void *self);					/* rva 0x6b330, vf56 */
+/* the state with the arguments of SetState (rva 0x6bc20, vf26) */
+byte __thiscall cAIChar_SetStateArgs(void *self, int state, va_list ap);
+/* the move controls (AI/AIControl*.cpp, imports) */
+void *__thiscall cAIControlBankDirector_ctor(void *mem, cEntity *e, void *ai, int *arg);	/* rva 0x81af0 */
+void *__thiscall cAIControlBankMaster_ctor(void *mem, cEntity *e, void *ai, int *arg);	/* rva 0x81e40 */
+void *__thiscall cAIControlBishop_ctor(void *mem, cEntity *e, void *ai, int *arg);	/* rva 0x82620 */
+
+#define g_MaxHeightChaseCharAI GAME_DATA(float, 0x4442e8)
+#define g_BankMasterVacumDist GAME_DATA(float, 0x4460dc)
+/* the shot of the bishop: the value against a target without an AI, the second one (the default) with one */
+#define g_ShootBishopAI GAME_DATA(int, 0x4441bc)
+#define g_ShootBishopAIDef GAME_DATA(int, 0x4441c0)
+#define g_OffsetAngShootBishopAI GAME_DATA(float, 0x4441d4)
+#define g_OffsetAngShootBishopAIDef GAME_DATA(float, 0x4441d8)
+#define g_TimeShootBishopAI GAME_DATA(float, 0x444204)
+#define g_TimeShootBishopAIDef GAME_DATA(float, 0x444208)
+#define g_DistMaxShootBishopAI GAME_DATA(float, 0x4441ec)
+#define g_DistMaxShootBishopAIDef GAME_DATA(float, 0x4441f0)
+
 #endif
