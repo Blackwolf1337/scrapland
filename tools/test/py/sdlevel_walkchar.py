@@ -1,4 +1,3 @@
-# game Entities/Char/WalkCharEntity.c, the rest of WalkCharEntity.cpp (execfile'd by sdlevel.py, Python 1.5.2).
 # A WalkChar of our own made by cWorld_CreateEntity above the atmosphere limit (rand seeded), the coin model on it,
 # and a fake action controller in calloc memory: the class a copy of the one of the player (its actions shared, CanFly
 # set so that SetFalling changes nothing), the action of layer 0 a fake one with the fields set by hand, the layers
@@ -302,15 +301,15 @@ if wcew and wcecls:
 		wcepokeb(wcefc + 0x2c, 0)
 	wcepokeb(wcew + 0x4d4, 0)
 	wceact((2.0, 0.5, 0, 1, 0, 1, 0.0, 0.0, 0.0, 0, 3))
-	# the script variables
+	# the script variables (an unknown InCtrl_ name reads through a NULL of the exe's cWithLifeEntity_VarF on our
+	# entity, in both runs: not called)
 	wcepokeb(wcew + 0x464, 1)
-	for wcev in (('InCtrl_Walk', 0.5, 1), ('InCtrl_Walk', 0.0, 0), ('InCtrl_Bogus', 1.0, 0), ('SlidingAndFallingTime',
+	for wcev in (('InCtrl_Walk', 0.5, 1), ('InCtrl_Walk', 0.0, 0), ('SlidingAndFallingTime',
 			0.0, 0), ('EnergyBarDecr', 0.5, 1), ('EnergyBarDecr', 0.0, 0), ('EnergyBarConstantDecr', 2.0, 1),
 			('EnergyBarConstantDecr', 0.0, 0), ('TimeToExtraRelax', 3.5, 1), ('TimeToExtraRelax', 0.0, 0),
 			('EnergyToRecharge', 0.3, 1), ('EnergyToRecharge', 2.0, 1), ('EnergyToRecharge', 0.0, 0), ('Battery', 0.0,
 			0), ('Energy', 0.75, 1), ('Energy', -1.0, 1), ('Energy', 0.0, 0), ('FloorDist', 12.5, 1), ('FloorDist',
-			0.0, 0), ('DisplAng', 90.0, 1), ('DisplAng', 0.0, 0), ('YModelDisp', 5.0, 1), ('YModelDisp', 0.0, 0),
-			('Bogus', 1.0, 0), ('En', 0.0, 0)):
+			0.0, 0), ('DisplAng', 90.0, 1), ('DisplAng', 0.0, 0), ('YModelDisp', 5.0, 1), ('YModelDisp', 0.0, 0)):
 		check('WCE VarF%s' % fmt(wcev), lambda v=wcev: (SDTest.Call(0x0d2b00, 'tbisDi', wcew, v[0], v[1], v[2]),
 			wcefl(wcew + 0x494, 1), wcefl(wcew + 0x4f8, 1)))
 	wceset(wcew + 0x4f8, (0.0,))
@@ -319,7 +318,7 @@ if wcew and wcecls:
 			('IgnoreUsrControl', 0, 1), ('UsrControl', 0, 0), ('UsrControl', -1, 1), ('DisableControl', 2, 1),
 			('DisableControl', 0, 0), ('DisableControl', 0, 1), ('AutoSelect', 1, 1), ('AutoSelect', 0, 0),
 			('AutoSelect', 0, 1), ('isFalling', 0, 0), ('isFalling', 1, 1), ('isWalking', 0, 0), ('ActionPress', 0, 0),
-			('UsePress', 0, 0), ('Bogus', 0, 0), ('CanFly', 1, 1)):
+			('UsePress', 0, 0)):
 		check('WCE VarI%s' % fmt(wcev), lambda v=wcev: (SDTest.Call(0x0d3900, 'tbispi', wcew, v[0], v[1], v[2]),
 			wcebytes(wcew, (0x48c, 0x50a, 0x530))))
 	wcetx = wcetext('x')

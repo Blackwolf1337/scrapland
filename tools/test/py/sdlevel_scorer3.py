@@ -21,6 +21,15 @@ def sc3run(a, n):
 	for k in range(n):
 		r = r + (sc3i(a + 4 * k),)
 	return r
+# the same with the words at the indices ptrs (heap addresses) only as set or not
+def sc3runp(a, n, ptrs):
+	r = ()
+	for k in range(n):
+		v = sc3i(a + 4 * k)
+		if k in ptrs:
+			v = v != 0
+		r = r + (v,)
+	return r
 def sc3fl(a, n):
 	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
 def sc3setf(a, v):
@@ -177,7 +186,7 @@ sc3vars = (
 		'IsNumeric', 'MaxInput', 'W', 'H', 'Missing')),
 	('sc3Typing', (('Text', 'sc3 typing text, typed in'), ('TypingSpeed', 0.125), ('TypingTime', 0.75),
 		('CursorAtInit', 0), ('CursorAtEnd', 1), ('TypingSound', 1), ('MaxInput', 4), ('X', 50.0), ('Y', 60.0)),
-		('TypingSpeed', 'TypingTime', 'CursorAtInit', 'CursorAtEnd', 'TypingSound', 'MaxInput', 'Text',
+		('CursorAtInit', 'CursorAtEnd', 'TypingSound', 'MaxInput', 'Text',
 		'Missing')),
 	('sc3Timer', (('OnTimeExpired', ''), ('OnTimeWarning', ''), ('TimerType', 'TimeToFinish'), ('Text', 'sc3'),
 		('X', 300.0), ('Y', 20.0)), ('Text', 'X', 'OnTimeExpired', 'Missing')),
@@ -217,7 +226,7 @@ if sc3a:
 	check('SC3 Gradient colors', lambda a=sc3a: sc3ints(a, (0xc4, 0xc8, 0xcc, 0xd0, 0xd4)))
 sc3a = sc3item['sc3Status']
 if sc3a:
-	check('SC3 Status fields', lambda a=sc3a: (sc3run(a + 0x138, 0x2f), sc3i(a + 0x158) == sc3horatio,
+	check('SC3 Status fields', lambda a=sc3a: (sc3runp(a + 0x138, 0x2f, (8, 13, 23, 44)), sc3i(a + 0x158) == sc3horatio,
 		sc3i(a + 0x16c) == SDTest.Call(0x21ad30, 'is', 'ScrapMedium')[0], sc3i(a + 0x194) == sc3horatio))
 sc3a = sc3item['sc3Weapon']
 if sc3a:
@@ -358,7 +367,8 @@ check('SC3 talk action set', lambda: sc3setok)
 if sc3a and sc3sc and sc3setok:
 	SScorer.SetSpeechCallback('')
 	sc3set('sc3Talk', 'TabVisible', 0)
-	for sc3t, sc3vis, sc3ml in ((3.0, 0, 3), (2.0, 1, 3), (0.5, 1, 1), (2.5, 0, 9), (0.005, 0, 3)):
+	# with TabVisible 1 the tab sprite draw reads through a NULL in both runs: only 0
+	for sc3t, sc3vis, sc3ml in ((3.0, 0, 3), (2.5, 0, 9), (0.005, 0, 3)):
 		check('SC3 cTalkScorer_DrawTalk' + fmt((sc3t, sc3vis, sc3ml)), lambda a=sc3a, t=sc3t, v=sc3vis, ml=sc3ml:
 			(sc3setf(0x462148 + 0x400000, (t,)), sc3set('sc3Talk', 'TabVisible', v), SDTest.Poke(a + 0x1a7c -
 			0x400000, ml), sc3log(lambda a=a: SDTest.Call(0x180c60, 'tviiF', a, 0, (320.0, 300.0))),

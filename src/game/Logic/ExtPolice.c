@@ -157,7 +157,7 @@ void __fastcall cExtPolice_Think(cExtPolice *self) {
 				continue;
 			}
 		} else if (alarm) {
-			if (cAIVehicle_TargetSeen(ai) && Logic_AIVtbl(ai)->GetTarget(ai) == usr) {
+			if (cAIVehicle_ControlFlag(ai) && Logic_AIVtbl(ai)->GetTarget(ai) == usr) {
 				Alarm_Set(g_pWorld->alarm, 1.0f);
 				self->raised = 1;
 			}

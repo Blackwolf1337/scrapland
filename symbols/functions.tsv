@@ -2381,66 +2381,66 @@ rva	size	source	callconv	name	signature
 000d18e0	169	USER_DEFINED	__thiscall	cWalkCharEntity_UpdateViewLock	void __thiscall(float dt)
 000d1990	115	USER_DEFINED	__thiscall	cWalkCharEntity_CanActOnVictim	byte __thiscall(byte checkClass)
 000d1a10	70	USER_DEFINED	__fastcall	cWalkCharEntity_Unlink3e8	void __fastcall(void * self)
-000d1a60	256	ANALYSIS	__thiscall	cWalkCharEntity::vf11	undefined __thiscall(void)
-000d1b60	1917	DEFAULT	unknown	FUN_004d1b60	
-000d22e0	211	ANALYSIS	__thiscall	cWalkCharEntity::vf58	undefined __thiscall(void)
-000d23c0	147	DEFAULT	unknown	FUN_004d23c0	
-000d2460	243	DEFAULT	unknown	FUN_004d2460	
-000d2560	1426	ANALYSIS	__thiscall	cWalkCharEntity::vf56	undefined __thiscall(void)
-000d2b00	1393	ANALYSIS	__thiscall	cWalkCharEntity::vf17	undefined __thiscall(void)
-000d3080	643	ANALYSIS	__thiscall	cWalkCharEntity::vf60	undefined __thiscall(void)
-000d3310	1045	ANALYSIS	__thiscall	cWalkCharEntity::vf64	undefined __thiscall(void)
-000d3730	7	USER_DEFINED	__thiscall	cWithLifeEntity::GetActCtrl	void * __thiscall(void)
-000d3740	47	DEFAULT	unknown	FUN_004d3740	
-000d3770	31	ANALYSIS	__thiscall	cWalkCharEntity::vf27	undefined __thiscall(void)
-000d3790	92	ANALYSIS	__thiscall	cWalkCharEntity::vf28	undefined __thiscall(void)
-000d37f0	74	DEFAULT	unknown	FUN_004d37f0	
-000d3840	93	ANALYSIS	__thiscall	cWalkCharEntity::vf39	undefined __thiscall(void)
-000d38a0	6	ANALYSIS	__thiscall	cWalkCharEntity::vf04	undefined __thiscall(void)
-000d38b0	7	USER_DEFINED	__thiscall	cWalkCharEntity::GetOwnerSlot	int __thiscall(void)
-000d38c0	27	ANALYSIS	__thiscall	cWalkCharEntity::vf40	undefined __thiscall(void)
-000d38e0	21	DEFAULT	unknown	FUN_004d38e0	
-000d3900	1463	ANALYSIS	__thiscall	cWalkCharEntity::vf16	undefined __thiscall(void)
-000d3ec0	80	ANALYSIS	__thiscall	cWalkCharEntity::vf05	undefined __thiscall(void)
-000d3f10	15	ANALYSIS	__thiscall	cWithLifeEntity::vf09	undefined __thiscall(void)
-000d3f20	3	ANALYSIS	__thiscall	cObjEntity::vf43	undefined __thiscall(void)
-000d3f30	3	ANALYSIS	__thiscall	cObjEntity::vf41	undefined __thiscall(void)
-000d3f40	324	ANALYSIS	__thiscall	cWalkCharEntity::vf23	undefined __thiscall(void)
-000d4090	84	ANALYSIS	__thiscall	cWalkCharEntity::vf48	undefined __thiscall(void)
+000d1a60	256	USER_DEFINED	__thiscall	cWalkCharEntity_Touch	void __thiscall(void * e, void * point, void * normal)
+000d1b60	1917	USER_DEFINED	__thiscall	cWalkCharEntity_Walk	void __thiscall(float dt)
+000d22e0	211	USER_DEFINED	__thiscall	cWalkCharEntity_Turn	void __thiscall(float dt)
+000d23c0	147	USER_DEFINED	__thiscall	cWalkCharEntity_PlayWalk	void __thiscall(char * init, char * loop, char * end)
+000d2460	243	USER_DEFINED	__thiscall	cWalkCharEntity_UpdateHitFlash	void __thiscall(float dt)
+000d2560	1426	USER_DEFINED	__thiscall	cWalkCharEntity_EnableAI	void __thiscall(byte on, int * arg)
+000d2b00	1393	USER_DEFINED	__thiscall	cWalkCharEntity_VarF	byte __thiscall(char * name, double * d, int set)
+000d3080	643	USER_DEFINED	__thiscall	cWalkCharEntity_Fall	void __thiscall(float dt)
+000d3310	1045	USER_DEFINED	__thiscall	cWalkCharEntity_Fly	void __thiscall(float dt)
+000d3730	7	USER_DEFINED	__thiscall	cWithLifeEntity_GetActCtrl	void * __thiscall(void)
+000d3740	47	USER_DEFINED	__thiscall	cWalkCharEntity_GetEnergyFrac	float __thiscall(void)
+000d3770	31	USER_DEFINED	__thiscall	cWalkCharEntity_GetRenderAng	void * __thiscall(void * out)
+000d3790	92	USER_DEFINED	__thiscall	cWalkCharEntity_GetSndAng	void * __thiscall(void * out)
+000d37f0	74	USER_DEFINED	__fastcall	cWalkCharEntity_RelaxName	char * __fastcall(void * self)
+000d3840	93	USER_DEFINED	__thiscall	cWalkCharEntity_GetCamera	void __thiscall(void * pos, void * ang)
+000d38a0	6	USER_DEFINED	__thiscall	cWalkCharEntity_GetClassName	char * __thiscall(void)
+000d38b0	7	USER_DEFINED	__thiscall	cWalkCharEntity_GetOwnerSlot	int __thiscall(void)
+000d38c0	27	USER_DEFINED	__thiscall	cWalkCharEntity_GetRadius	float __thiscall(void)
+000d38e0	21	USER_DEFINED	__thiscall	cWalkCharEntity_GetBatteries	int __thiscall(void)
+000d3900	1463	USER_DEFINED	__thiscall	cWalkCharEntity_VarI	byte __thiscall(char * name, int * i, int set)
+000d3ec0	80	USER_DEFINED	__thiscall	cWalkCharEntity_IsType	byte __thiscall(char * type)
+000d3f10	15	USER_DEFINED	__thiscall	cWithLifeEntity_TestLine	byte __thiscall(void * from, void * hit)
+000d3f20	3	USER_DEFINED	__thiscall	cObjEntity_Vf43	void __thiscall(int a, int b)
+000d3f30	3	USER_DEFINED	__thiscall	cObjEntity_Vf41	void __thiscall(int a, int b, int c)
+000d3f40	324	USER_DEFINED	__thiscall	cWalkCharEntity_Tick	void __thiscall(float dt)
+000d4090	84	USER_DEFINED	__thiscall	cWalkCharEntity_UnlinkListen	void __thiscall(void)
 000d40f0	115	USER_DEFINED	__fastcall	Nto1Head::UnlinkAll	void __fastcall(void * head)
-000d4170	63	DEFAULT	unknown	FUN_004d4170	
-000d41b0	1899	ANALYSIS	__thiscall	cWalkCharEntity::vf59	undefined __thiscall(void)
-000d4920	565	ANALYSIS	__thiscall	cWalkCharEntity::vf57	undefined __thiscall(void)
-000d4b60	63	ANALYSIS	__thiscall	cWalkCharEntity::vf08	undefined __thiscall(void)
-000d4ba0	32	ANALYSIS	__thiscall	cWalkCharEntity::vf33	undefined __thiscall(void)
-000d4bc0	54	DEFAULT	unknown	FUN_004d4bc0	
-000d4c00	43	DEFAULT	unknown	FUN_004d4c00	
-000d4c30	33	ANALYSIS	__thiscall	cWalkCharEntity::vf15	undefined __thiscall(void)
-000d4c60	395	DEFAULT	unknown	FUN_004d4c60	
-000d4df0	63	ANALYSIS	__thiscall	cWithLifeEntity::vf51	undefined __thiscall(void)
-000d4e30	275	ANALYSIS	__thiscall	cWalkCharEntity::vf12	undefined __thiscall(void)
-000d4f50	141	DEFAULT	unknown	FUN_004d4f50	
-000d4fe0	71	DEFAULT	unknown	FUN_004d4fe0	
-000d5030	130	DEFAULT	unknown	FUN_004d5030	
-000d50c0	145	DEFAULT	unknown	FUN_004d50c0	
-000d5160	54	ANALYSIS	__thiscall	cWalkCharEntity::vf35	undefined __thiscall(void)
-000d51a0	149	ANALYSIS	__thiscall	cWalkCharEntity::vf67	undefined __thiscall(void)
-000d5240	103	DEFAULT	unknown	FUN_004d5240	
-000d52b0	74	ANALYSIS	__thiscall	cWalkCharEntity::vf68	undefined __thiscall(void)
-000d5300	584	ANALYSIS	__thiscall	cWalkCharEntity::vf61	undefined __thiscall(void)
-000d5550	604	ANALYSIS	__thiscall	cWalkCharEntity::vf00	undefined __thiscall(void)
-000d57b0	206	ANALYSIS	__thiscall	cWalkCharEntity::vf65	undefined __thiscall(void)
-000d5880	189	ANALYSIS	__thiscall	cWalkCharEntity::vf66	undefined __thiscall(void)
-000d5940	38	ANALYSIS	__thiscall	cWithLifeEntity::vf10	undefined __thiscall(void)
-000d5970	624	ANALYSIS	__thiscall	cWalkCharEntity::vf18	undefined __thiscall(void)
-000d5be0	5	ANALYSIS	__thiscall	cObjEntity::vf42	undefined __thiscall(void)
-000d5bf0	566	ANALYSIS	__thiscall	cWalkCharEntity::vf19	undefined __thiscall(void)
-000d5e30	2346	ANALYSIS	__thiscall	cWalkCharEntity::vf62	undefined __thiscall(void)
-000d6780	117	DEFAULT	unknown	FUN_004d6780	
-000d6800	62	DEFAULT	unknown	FUN_004d6800	
-000d6840	68	DEFAULT	unknown	FUN_004d6840	
-000d6890	84	DEFAULT	unknown	FUN_004d6890	
-000d68f0	7	USER_DEFINED	__thiscall	cEmbeddedFX_dtor	void __thiscall(void)
+000d4170	63	USER_DEFINED	__fastcall	Nto1Node_UnlinkChecked	void __fastcall(void * node)
+000d41b0	1899	USER_DEFINED	__thiscall	cWalkCharEntity_Idle	void __thiscall(float dt)
+000d4920	565	USER_DEFINED	__thiscall	cWalkCharEntity_UpdateSelect	void __thiscall(float dt)
+000d4b60	63	USER_DEFINED	__thiscall	cWalkCharEntity_SetActive	void __thiscall(byte on)
+000d4ba0	32	USER_DEFINED	__thiscall	cWalkCharEntity_SetAng	void __thiscall(void * ang)
+000d4bc0	54	USER_DEFINED	__thiscall	cWalkCharEntity_SetEnergy	void __thiscall(float energy)
+000d4c00	43	USER_DEFINED	__thiscall	cWalkCharEntity_SetEnergyUsed	void __thiscall(float used)
+000d4c30	33	USER_DEFINED	__thiscall	cWalkCharEntity_SetEmbeddedFX	void __thiscall(char * fxType)
+000d4c60	395	USER_DEFINED	__thiscall	cWalkCharEntity_SetFalling	void __thiscall(byte on)
+000d4df0	63	USER_DEFINED	__thiscall	cWithLifeEntity_SetMass	void __thiscall(float mass)
+000d4e30	275	USER_DEFINED	__thiscall	cWalkCharEntity_SetModel	void __thiscall(char * file, float sx, float sy, float sz, int flag)
+000d4f50	141	USER_DEFINED	__thiscall	cWalkCharEntity_UpdateSlotRate	void __thiscall(float dt)
+000d4fe0	71	USER_DEFINED	__thiscall	cWalkCharEntity_SetPush	byte __thiscall(void * push)
+000d5030	130	USER_DEFINED	__thiscall	cWalkCharEntity_ApplyPush	void __thiscall(float dt)
+000d50c0	145	USER_DEFINED	__thiscall	cWalkCharEntity_SetUsrControl	void __thiscall(int slot)
+000d5160	54	USER_DEFINED	__thiscall	cWalkCharEntity_SetVel	void __thiscall(void * vel)
+000d51a0	149	USER_DEFINED	__thiscall	cWalkCharEntity_SetViewAng	void __thiscall(void * ang)
+000d5240	103	USER_DEFINED	__thiscall	cWalkCharEntity_SetViewFrom	void __thiscall(void * pos)
+000d52b0	74	USER_DEFINED	__thiscall	cWalkCharEntity_SetYModelDisp	void __thiscall(float y)
+000d5300	584	USER_DEFINED	__thiscall	cWalkCharEntity_Accel	void __thiscall(float dt)
+000d5550	604	USER_DEFINED	__thiscall	cWalkCharEntity_Update	void __thiscall(void)
+000d57b0	206	USER_DEFINED	__thiscall	cWalkCharEntity_FlySound	void __thiscall(float dt)
+000d5880	189	USER_DEFINED	__thiscall	cWalkCharEntity_WalkSound	void __thiscall(float dt)
+000d5940	38	USER_DEFINED	__thiscall	cWithLifeEntity_TestSphere	byte __thiscall(void * exclude, void * center, float radius, void * prev)
+000d5970	624	USER_DEFINED	__thiscall	cWalkCharEntity_VarS	byte __thiscall(char * name, char ** s, int set)
+000d5be0	5	USER_DEFINED	__thiscall	cObjEntity_Vf42	byte __thiscall(int a)
+000d5bf0	566	USER_DEFINED	__thiscall	cWalkCharEntity_VarV	byte __thiscall(char * name, double * x, double * y, double * z, int set)
+000d5e30	2346	USER_DEFINED	__thiscall	cWalkCharEntity_WalkAnim	void __thiscall(float dt)
+000d6780	117	USER_DEFINED	__fastcall	cWalkCharEntity_IsMoveAnim	byte __fastcall(void * self)
+000d6800	62	USER_DEFINED	__fastcall	cWalkCharEntity_IsBackOrMoveAnim	byte __fastcall(void * self)
+000d6840	68	USER_DEFINED	__fastcall	cWalkCharEntity_IsAlarm	byte __fastcall(void * self)
+000d6890	84	USER_DEFINED	__fastcall	cWalkCharEntity_IsStrafeAnim	byte __fastcall(void * self)
+000d68f0	7	USER_DEFINED	__fastcall	cEmbeddedFX_dtor	void __fastcall(void * self)
 000d6900	36	ANALYSIS	__thiscall	std::_Facet_base::`scalar_deleting_destructor'	void * __thiscall(uint param_1)
 000d6930	107	USER_DEFINED	__thiscall	cEmbeddedFXBankDirector_ctor	void * __thiscall(void)
 000d69a0	129	USER_DEFINED	__thiscall	cEmbeddedFXBankMaster_ctor	void * __thiscall(void)
@@ -3992,140 +3992,150 @@ rva	size	source	callconv	name	signature
 00145ac0	105	USER_DEFINED	__thiscall	cDominationLogic_Delete	void * __thiscall(byte flags)
 00145b30	216	USER_DEFINED	__thiscall	cDominationLogic_NearestZone	int __thiscall(void * pos)
 00145c10	273	USER_DEFINED	__fastcall	HashTable<cNameItem>::Clear	void __fastcall(void * self)
-00145d30	706	DEFAULT	unknown	FUN_00545d30	
-00146000	7	ANALYSIS	__thiscall	cDominationEnemiesLogic::vf03	undefined __thiscall(void)
-00146010	80	DEFAULT	unknown	FUN_00546010	
-00146060	3	ANALYSIS	__thiscall	cDominationEnemiesLogic::vf04	undefined __thiscall(void)
-00146070	68	ANALYSIS	__thiscall	cDominationEnemiesLogic::vf01	undefined __thiscall(void)
-001460c0	160	DEFAULT	unknown	FUN_005460c0	
-00146160	166	DEFAULT	unknown	FUN_00546160	
-00146210	50	ANALYSIS	__thiscall	cDominationEnemiesLogic::vf02	undefined __thiscall(void)
-00146250	195	DEFAULT	unknown	FUN_00546250	
-00146320	108	DEFAULT	unknown	FUN_00546320	
-00146390	129	ANALYSIS	__thiscall	cDominationFriendsLogic::vf00	undefined __thiscall(void)
-00146420	234	DEFAULT	unknown	FUN_00546420	
-00146510	7	ANALYSIS	__thiscall	cDominationFriendsLogic::vf03	undefined __thiscall(void)
-00146520	6	ANALYSIS	__thiscall	cDominationFriendsLogic::vf04	undefined __thiscall(void)
-00146530	175	DEFAULT	unknown	FUN_00546530	
-001465e0	68	ANALYSIS	__thiscall	cDominationFriendsLogic::vf01	undefined __thiscall(void)
-00146630	160	DEFAULT	unknown	FUN_00546630	
-001466d0	166	DEFAULT	unknown	FUN_005466d0	
-00146780	50	ANALYSIS	__thiscall	cDominationFriendsLogic::vf02	undefined __thiscall(void)
-001467c0	33	DEFAULT	unknown	FUN_005467c0	
-00146800	1	DEFAULT	unknown	FUN_00546800	
-00146810	41	ANALYSIS	__thiscall	cEnemiesLocalLogic::vf00	undefined __thiscall(void)
-00146840	687	DEFAULT	unknown	FUN_00546840	
-00146af0	180	DEFAULT	unknown	FUN_00546af0	
-00146bc0	67	DEFAULT	unknown	FUN_00546bc0	
-00146c10	123	ANALYSIS	__thiscall	cEnemiesLocalLogic::vf03	undefined __thiscall(void)
-00146c90	186	DEFAULT	unknown	FUN_00546c90	
-00146d50	63	DEFAULT	unknown	FUN_00546d50	
-00146d90	106	DEFAULT	unknown	FUN_00546d90	
-00146e00	70	DEFAULT	unknown	FUN_00546e00	
-00146e50	1	DEFAULT	unknown	FUN_00546e50	
-00146e60	348	DEFAULT	unknown	FUN_00546e60	
-00146fc0	486	DEFAULT	unknown	FUN_00546fc0	
-001471b0	1124	DEFAULT	unknown	FUN_005471b0	
-00147620	53	DEFAULT	unknown	FUN_00547620	
-00147660	123	DEFAULT	unknown	FUN_00547660	
-001476e0	100	DEFAULT	unknown	FUN_005476e0	
-00147750	100	DEFAULT	unknown	FUN_00547750	
-001477c0	56	DEFAULT	unknown	FUN_005477c0	
-00147800	16	DEFAULT	unknown	FUN_00547800	
-00147810	1	DEFAULT	unknown	FUN_00547810	
-00147820	664	DEFAULT	unknown	FUN_00547820	
-00147ac0	76	DEFAULT	unknown	FUN_00547ac0	
-00147b10	79	DEFAULT	unknown	FUN_00547b10	
-00147b70	53	DEFAULT	unknown	FUN_00547b70	
-00147bb0	44	DEFAULT	unknown	FUN_00547bb0	
-00147be0	520	DEFAULT	unknown	FUN_00547be0	
-00147df0	133	DEFAULT	unknown	FUN_00547df0	
-00147e80	161	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf00	undefined __thiscall(void)
-00147f30	175	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf26	undefined __thiscall(void)
-00147fe0	141	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf40	undefined __thiscall(void)
-00148070	258	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf02	undefined __thiscall(void)
-00148180	65	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf33	undefined __thiscall(void)
-001481d0	3	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf31	undefined __thiscall(void)
-001481e0	133	DEFAULT	unknown	FUN_005481e0	
-00148270	106	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf41	undefined __thiscall(void)
-001482e0	3	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf30	undefined __thiscall(void)
-001482f0	1241	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf32	undefined __thiscall(void)
-001487d0	7	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf39	undefined __thiscall(void)
-001487e0	986	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf04	undefined __thiscall(void)
-00148bc0	163	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf37	undefined __thiscall(void)
-00148c70	1112	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf03	undefined __thiscall(void)
-001490d0	124	DEFAULT	unknown	FUN_005490d0	
-00149150	115	DEFAULT	unknown	FUN_00549150	
-001491d0	615	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf17	undefined __thiscall(void)
-00149440	35	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf12	undefined __thiscall(void)
-00149470	130	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf18	undefined __thiscall(void)
-00149500	18	DEFAULT	unknown	FUN_00549500	
-00149520	50	DEFAULT	unknown	FUN_00549520	
-00149560	52	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf20	undefined __thiscall(void)
-001495a0	945	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf19	undefined __thiscall(void)
-00149960	46	DEFAULT	unknown	FUN_00549960	
-00149990	291	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf05	undefined __thiscall(void)
-00149ac0	63	DEFAULT	unknown	FUN_00549ac0	
-00149b00	206	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf36	undefined __thiscall(void)
-00149bd0	11	DEFAULT	unknown	FUN_00549bd0	
-00149be0	77	ANALYSIS	__thiscall	cFunctionaryLocalLogic::vf38	undefined __thiscall(void)
-00149c30	9	DEFAULT	unknown	FUN_00549c30	
-00149c40	1	DEFAULT	unknown	FUN_00549c40	
-00149c60	57	DEFAULT	unknown	FUN_00549c60	
-00149ca0	31	DEFAULT	unknown	FUN_00549ca0	
-00149cc0	44	DEFAULT	unknown	FUN_00549cc0	
-00149cf0	101	DEFAULT	unknown	FUN_00549cf0	
-00149d60	100	DEFAULT	unknown	FUN_00549d60	
-00149de0	41	ANALYSIS	__thiscall	cGateKeeperLocalLogic::vf00	undefined __thiscall(void)
-00149e40	5	ANALYSIS	__thiscall	cGateKeeperLocalLogic::vf09	undefined __thiscall(void)
-00149e50	23	ANALYSIS	__thiscall	cGateKeeperLocalLogic::vf16	undefined __thiscall(void)
-00149e80	553	ANALYSIS	__thiscall	cGateKeeperLocalLogic::vf17	undefined __thiscall(void)
-0014a0b0	24	ANALYSIS	__thiscall	cGateKeeperLocalLogic::vf12	undefined __thiscall(void)
-0014a0d0	12	ANALYSIS	__thiscall	cGateKeeperLocalLogic::vf10	undefined __thiscall(void)
-0014a0e0	75	ANALYSIS	__thiscall	cGateKeeperLocalLogic::vf14	undefined __thiscall(void)
-0014a130	24	ANALYSIS	__thiscall	cGateKeeperLocalLogic::vf11	undefined __thiscall(void)
-0014a150	31	ANALYSIS	__thiscall	cGateKeeperLocalLogic::vf24	undefined __thiscall(void)
-0014a170	438	ANALYSIS	__thiscall	cGateKeeperLocalLogic::vf19	undefined __thiscall(void)
-0014a330	184	DEFAULT	unknown	FUN_0054a330	
-0014a3f0	25	DEFAULT	unknown	FUN_0054a3f0	
-0014a410	51	ANALYSIS	__thiscall	cGearLocalLogic::vf00	undefined __thiscall(void)
-0014a450	77	DEFAULT	unknown	FUN_0054a450	
-0014a4a0	5	ANALYSIS	__thiscall	cGearLocalLogic::vf09	undefined __thiscall(void)
-0014a4b0	23	ANALYSIS	__thiscall	cGearLocalLogic::vf16	undefined __thiscall(void)
-0014a4f0	170	ANALYSIS	__thiscall	cGearLocalLogic::vf03	undefined __thiscall(void)
-0014a5a0	1692	ANALYSIS	__thiscall	cGearLocalLogic::vf17	undefined __thiscall(void)
-0014ac50	114	ANALYSIS	__thiscall	cGearLocalLogic::vf12	undefined __thiscall(void)
-0014acd0	217	ANALYSIS	__thiscall	cGearLocalLogic::vf10	undefined __thiscall(void)
-0014adb0	187	ANALYSIS	__thiscall	cGearLocalLogic::vf14	undefined __thiscall(void)
-0014ae70	43	ANALYSIS	__thiscall	cGearLocalLogic::vf18	undefined __thiscall(void)
-0014aea0	187	ANALYSIS	__thiscall	cGearLocalLogic::vf11	undefined __thiscall(void)
-0014af60	189	ANALYSIS	__thiscall	cGearLocalLogic::vf15	undefined __thiscall(void)
-0014b020	500	DEFAULT	unknown	FUN_0054b020	
-0014b230	75	DEFAULT	unknown	FUN_0054b230	
-0014b280	74	ANALYSIS	__thiscall	cGearLocalLogic::vf24	undefined __thiscall(void)
-0014b2d0	61	DEFAULT	unknown	FUN_0054b2d0	
-0014b310	12	DEFAULT	unknown	FUN_0054b310	
-0014b320	566	ANALYSIS	__thiscall	cGearLocalLogic::vf19	undefined __thiscall(void)
-0014b570	133	ANALYSIS	__thiscall	cGearLocalLogic::vf05	undefined __thiscall(void)
-0014b600	144	DEFAULT	unknown	FUN_0054b600	
-0014b690	28	DEFAULT	unknown	FUN_0054b690	
-0014b6b0	18	DEFAULT	unknown	FUN_0054b6b0	
-0014b6d0	190	DEFAULT	unknown	FUN_0054b6d0	
-0014b790	4	DEFAULT	unknown	FUN_0054b790	
-0014b7a0	90	DEFAULT	unknown	FUN_0054b7a0	
-0014b800	18	DEFAULT	unknown	FUN_0054b800	
-0014b820	53	DEFAULT	unknown	FUN_0054b820	
-0014b860	2108	DEFAULT	unknown	FUN_0054b860	
-0014c0a0	258	DEFAULT	unknown	FUN_0054c0a0	
-0014c1b0	25	DEFAULT	unknown	FUN_0054c1b0	
-0014c1d0	51	ANALYSIS	__thiscall	cGenCharLocalLogic::vf00	undefined __thiscall(void)
-0014c210	282	ANALYSIS	__thiscall	cGenCharLocalLogic::vf26	undefined __thiscall(void)
-0014c330	181	DEFAULT	unknown	FUN_0054c330	
-0014c3f0	5	ANALYSIS	__thiscall	cGenCharLocalLogic::vf09	undefined __thiscall(void)
-0014c400	13	DEFAULT	unknown	FUN_0054c400	
-0014c410	18	ANALYSIS	__thiscall	cGenCharLocalLogic::vf16	undefined __thiscall(void)
-0014c450	78	ANALYSIS	__thiscall	cGenCharLocalLogic::vf28	undefined __thiscall(void)
-0014c4a0	78	ANALYSIS	__thiscall	cGenCharLocalLogic::vf27	undefined __thiscall(void)
+00145d30	706	USER_DEFINED	__fastcall	cDominationSide_Think	void __fastcall(void * self)
+00146000	7	USER_DEFINED	__thiscall	cDominationEnemiesLogic_GetList	void * __thiscall(void)
+00146010	80	USER_DEFINED	__thiscall	cDominationEnemiesLogic_GetLeader	void * __thiscall(void)
+00146060	3	USER_DEFINED	__thiscall	cDominationEnemiesLogic_GetTeam	int __thiscall(void)
+00146070	68	USER_DEFINED	__thiscall	cDominationEnemiesLogic_Init	void __thiscall(void)
+001460c0	160	USER_DEFINED	__cdecl	DominationEnemies_OnDeath	void __cdecl(void * params)
+00146160	166	USER_DEFINED	__thiscall	cDominationEnemiesLogic_ReleaseZone	void * __thiscall(char * name)
+00146210	50	USER_DEFINED	__thiscall	cDominationEnemiesLogic_Update	void __thiscall(float dt)
+00146250	195	USER_DEFINED	__fastcall	cDominationFriendsLogic_ctor	void * __fastcall(void * self)
+00146320	108	USER_DEFINED	__fastcall	cDominationFriendsLogic_dtor	void __fastcall(void * self)
+00146390	129	USER_DEFINED	__thiscall	cDominationFriendsLogic_Delete	void * __thiscall(byte flags)
+00146420	234	USER_DEFINED	__fastcall	cDominationFriendsSide_Think	void __fastcall(void * self)
+00146510	7	USER_DEFINED	__thiscall	cDominationFriendsLogic_GetList	void * __thiscall(void)
+00146520	6	USER_DEFINED	__thiscall	cDominationFriendsLogic_GetTeam	int __thiscall(void)
+00146530	175	USER_DEFINED	__thiscall	cDominationFriendsLogic_FindShipOfZone	void * __thiscall(void * zone)
+001465e0	68	USER_DEFINED	__thiscall	cDominationFriendsLogic_Init	void __thiscall(void)
+00146630	160	USER_DEFINED	__cdecl	DominationFriends_OnDeath	void __cdecl(void * params)
+001466d0	166	USER_DEFINED	__thiscall	cDominationFriendsLogic_ReleaseZone	void * __thiscall(char * name)
+00146780	50	USER_DEFINED	__thiscall	cDominationFriendsLogic_Update	void __thiscall(float dt)
+001467c0	33	USER_DEFINED	__fastcall	cEnemies_ctor	void * __fastcall(void * self)
+001467f0	16	USER_DEFINED	__fastcall	cEnemiesLocalLogic_dtor	void __fastcall(void * self)
+00146800	1	USER_DEFINED	__fastcall	Logic_NopDtor	void __fastcall(void * self)
+00146810	41	USER_DEFINED	__thiscall	cEnemiesLocalLogic_Delete	void * __thiscall(byte flags)
+00146840	687	USER_DEFINED	__thiscall	cEnemies_Attack	void __thiscall(void * usr)
+00146af0	180	USER_DEFINED	__fastcall	cEnemies_Think	void __fastcall(void * self)
+00146bb0	16	USER_DEFINED	__cdecl	Logic_NativeNop	void __cdecl(void * params)
+00146bc0	67	USER_DEFINED	__fastcall	cEnemies_Init	void __fastcall(void * self)
+00146c10	123	USER_DEFINED	__thiscall	cEnemiesLocalLogic_VarI	byte __thiscall(char * name, int * i, byte set)
+00146c90	186	USER_DEFINED	__fastcall	cEnemies_Relax	void __fastcall(void * self)
+00146d50	63	USER_DEFINED	__thiscall	cEnemies_Update	void __thiscall(float dt)
+00146d90	106	USER_DEFINED	__cdecl	Enemies_MakeLogic	void * __cdecl(void * e)
+00146e00	70	USER_DEFINED	__fastcall	cExtPolice_ctor	void * __fastcall(void * self)
+00146e50	1	USER_DEFINED	__fastcall	Logic_NopDtor	void __fastcall(void * self)
+00146e60	348	USER_DEFINED	__cdecl	ExtPolice_CallCop	void * __cdecl(void * e)
+00146fc0	486	USER_DEFINED	__cdecl	ExtPolice_CopDamage	void __cdecl(char * name, char * attacker, byte died)
+001471b0	1124	USER_DEFINED	__fastcall	cExtPolice_Think	void __fastcall(void * self)
+00147620	53	USER_DEFINED	__fastcall	cExtPolice_Init	void __fastcall(void * self)
+00147660	123	USER_DEFINED	__cdecl	ExtPolice_IsChased	byte __cdecl(void * e)
+001476e0	100	USER_DEFINED	__cdecl	ExtPolice_OnDamage	void __cdecl(void * params)
+00147750	100	USER_DEFINED	__cdecl	ExtPolice_OnDeath	void __cdecl(void * params)
+001477c0	56	USER_DEFINED	__thiscall	cExtPolice_Update	void __thiscall(float dt)
+00147800	16	USER_DEFINED	__fastcall	cFriends_ctor	void * __fastcall(void * self)
+00147810	1	USER_DEFINED	__fastcall	Logic_NopDtor	void __fastcall(void * self)
+00147820	664	USER_DEFINED	__thiscall	cFriends_Attack	void __thiscall(void * usr)
+00147ac0	76	USER_DEFINED	__stdcall	Friends_IsEnemyTarget	byte __stdcall(void * v, void * t)
+00147b10	79	USER_DEFINED	__fastcall	cFriends_Think	void __fastcall(void * self)
+00147b60	16	USER_DEFINED	__cdecl	Logic_NativeNop	void __cdecl(void * params)
+00147b70	53	USER_DEFINED	__fastcall	cFriends_Init	void __fastcall(void * self)
+00147bb0	44	USER_DEFINED	__thiscall	cFriends_Update	void __thiscall(float dt)
+00147be0	520	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_ctor	void * __thiscall(void * parent)
+00147df0	133	USER_DEFINED	__fastcall	cFunctionaryLocalLogic_dtor	void __fastcall(void * self)
+00147e80	161	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_Delete	void * __thiscall(byte flags)
+00147f30	175	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_UpdateView	void __thiscall(void)
+00147fe0	141	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_AssignDesktop	void __thiscall(float maxDist)
+00148070	258	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_Vf02	byte __thiscall(void)
+00148180	65	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_Vf33	void __thiscall(byte restart)
+001481d0	3	USER_DEFINED	__thiscall	Logic_True	byte __thiscall(void)
+001481e0	133	USER_DEFINED	__fastcall	cFunctionaryLocalLogic_FreeDesktop	void __fastcall(void * self)
+00148270	106	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_ReleaseDesktop	void __thiscall(void)
+001482e0	3	USER_DEFINED	__thiscall	Logic_NoTarget	void * __thiscall(void)
+001482f0	1241	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_Work	void __thiscall(float dt)
+001487d0	7	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_FastEscape	byte __thiscall(void)
+001487e0	986	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_VarF	byte __thiscall(char * name, double * d, byte set)
+00148bc0	163	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_StopWork	void __thiscall(byte restart)
+00148c70	1112	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_VarI	byte __thiscall(char * name, int * i, byte set)
+001490d0	124	USER_DEFINED	__cdecl	Functionary_WorkRelax	void __cdecl(void * e)
+00149150	115	USER_DEFINED	__cdecl	Functionary_FastEffect	void __cdecl(void * e)
+001491d0	615	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_Update	void __thiscall(float dt)
+00149440	35	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_OnRobbery	void __thiscall(void * e, float amount)
+00149470	130	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_SetOriginFrom	void __thiscall(void * e)
+00149500	18	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_FastEffect	void __thiscall(void * e)
+00149520	50	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_SlowEffect	void __thiscall(void * e)
+00149560	52	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_SetIdle	void __thiscall(byte idle)
+001495a0	945	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_SetState	int __thiscall(int state, void * target)
+00149960	46	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_SetKeepWorking	void __thiscall(byte on)
+00149990	291	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_VarS	byte __thiscall(char * name, char ** s, byte set)
+00149ac0	63	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_NormalSpeed	void __thiscall(void * e)
+00149b00	206	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_CanTalk	byte __thiscall(void)
+00149bd0	11	USER_DEFINED	__fastcall	cFunctionaryLocalLogic_GetDesktop	void * __fastcall(void * self)
+00149be0	77	USER_DEFINED	__thiscall	cFunctionaryLocalLogic_GetWorkAng	void * __thiscall(void * out)
+00149c30	9	USER_DEFINED	__fastcall	cGateKeepers_ctor	void * __fastcall(void * self)
+00149c40	1	USER_DEFINED	__fastcall	Logic_NopDtor	void __fastcall(void * self)
+00149c50	16	USER_DEFINED	__thiscall	Logic_True1	byte __thiscall(int arg)
+00149c60	57	USER_DEFINED	__fastcall	cGateKeepers_Think	void __fastcall(void * self)
+00149ca0	31	USER_DEFINED	__fastcall	cGateKeepers_Init	void __fastcall(void * self)
+00149cc0	44	USER_DEFINED	__thiscall	cGateKeepers_Update	void __thiscall(float dt)
+00149cf0	101	USER_DEFINED	__cdecl	GateKeepers_MakeLogic	void * __cdecl(void * e)
+00149d60	100	USER_DEFINED	__thiscall	cGateKeeperLocalLogic_ctor	void * __thiscall(void * parent)
+00149dd0	16	USER_DEFINED	__fastcall	cGateKeeperLocalLogic_dtor	void __fastcall(void * self)
+00149de0	41	USER_DEFINED	__thiscall	cGateKeeperLocalLogic_Delete	void * __thiscall(byte flags)
+00149e10	45	USER_DEFINED	__thiscall	cGateKeeperLocalLogic_UpdateView	void __thiscall(void)
+00149e40	5	USER_DEFINED	__thiscall	Logic_False1	byte __thiscall(int arg)
+00149e50	23	USER_DEFINED	__thiscall	cGateKeeperLocalLogic_Vf16	void __thiscall(int arg)
+00149e80	553	USER_DEFINED	__thiscall	cGateKeeperLocalLogic_Update	void __thiscall(float dt)
+0014a0b0	24	USER_DEFINED	__thiscall	cGateKeeperLocalLogic_OnRobbery	void __thiscall(void * e, float amount)
+0014a0d0	12	USER_DEFINED	__thiscall	cGateKeeperLocalLogic_OnHit	void __thiscall(void * attacker)
+0014a0e0	75	USER_DEFINED	__thiscall	cGateKeeperLocalLogic_Vf14	void __thiscall(void * e)
+0014a130	24	USER_DEFINED	__thiscall	cGateKeeperLocalLogic_Vf11	void __thiscall(void * e)
+0014a150	31	USER_DEFINED	__thiscall	cGateKeeperLocalLogic_RestartState	void __thiscall(void)
+0014a170	438	USER_DEFINED	__thiscall	cGateKeeperLocalLogic_SetState	byte __thiscall(int state, void * target)
+0014a330	184	USER_DEFINED	__thiscall	cGearLocalLogic_ctor	void * __thiscall(void * parent)
+0014a3f0	25	USER_DEFINED	__fastcall	cGearLocalLogic_dtor	void __fastcall(void * self)
+0014a410	51	USER_DEFINED	__thiscall	cGearLocalLogic_Delete	void * __thiscall(byte flags)
+0014a450	77	USER_DEFINED	__fastcall	cGearLocalLogic_Relax	void __fastcall(void * self)
+0014a4a0	5	USER_DEFINED	__thiscall	Logic_False1	byte __thiscall(int arg)
+0014a4b0	23	USER_DEFINED	__thiscall	cGearLocalLogic_Vf16	void __thiscall(int arg)
+0014a4d0	16	USER_DEFINED	__thiscall	cGearLocalLogic_GetDefaultState	int __thiscall(void)
+0014a4e0	16	USER_DEFINED	__thiscall	cGearLocalLogic_GetDefaultTarget	char * __thiscall(void)
+0014a4f0	170	USER_DEFINED	__thiscall	cGearLocalLogic_VarI	byte __thiscall(char * name, int * i, byte set)
+0014a5a0	1692	USER_DEFINED	__thiscall	cGearLocalLogic_Update	void __thiscall(float dt)
+0014ac50	114	USER_DEFINED	__thiscall	cGearLocalLogic_OnRobbery	void __thiscall(void * e, float amount)
+0014acd0	217	USER_DEFINED	__thiscall	cGearLocalLogic_OnHit	void __thiscall(void * attacker)
+0014adb0	187	USER_DEFINED	__thiscall	cGearLocalLogic_Vf14	void __thiscall(void * e)
+0014ae70	43	USER_DEFINED	__thiscall	cGearLocalLogic_ToPolice	void __thiscall(void * e)
+0014aea0	187	USER_DEFINED	__thiscall	cGearLocalLogic_Vf14	void __thiscall(void * e)
+0014af60	189	USER_DEFINED	__thiscall	cGearLocalLogic_Vf15	byte __thiscall(void * e)
+0014b020	500	USER_DEFINED	__thiscall	cGearLocalLogic_UpdateAnim	void __thiscall(void * p, float dt)
+0014b230	75	USER_DEFINED	__thiscall	cGearLocalLogic_Call	byte __thiscall(void * e)
+0014b280	74	USER_DEFINED	__thiscall	cGearLocalLogic_RestartState	void __thiscall(void)
+0014b2d0	61	USER_DEFINED	__thiscall	cGearLocalLogic_SetDefaultState	void __thiscall(int v)
+0014b310	12	USER_DEFINED	__thiscall	cGearLocalLogic_SetDefaultTarget	void __thiscall(char * name)
+0014b320	566	USER_DEFINED	__thiscall	cGearLocalLogic_SetState	byte __thiscall(int state, void * target)
+0014b570	133	USER_DEFINED	__thiscall	cGearLocalLogic_VarS	byte __thiscall(char * name, char ** s, byte set)
+0014b600	144	USER_DEFINED	__fastcall	cGenCharGroup_ctor	void * __fastcall(void * self)
+0014b690	28	USER_DEFINED	__fastcall	cGenCharGroup_dtor	void __fastcall(void * self)
+0014b6b0	18	USER_DEFINED	__fastcall	cGenCharGroup_TakeAttack	byte __fastcall(void * self)
+0014b6d0	190	USER_DEFINED	__fastcall	cGenCharGroup_Think	void __fastcall(void * self)
+0014b790	4	USER_DEFINED	__fastcall	cGenCharGroup_GetLevel	int __fastcall(void * self)
+0014b7a0	90	USER_DEFINED	__fastcall	cGenCharGroup_Init	void __fastcall(void * self)
+0014b800	18	USER_DEFINED	__thiscall	cGenCharGroup_RaiseLevel	void __thiscall(int level)
+0014b820	53	USER_DEFINED	__thiscall	cGenCharGroup_Update	void __thiscall(float dt)
+0014b860	2108	USER_DEFINED	__cdecl	GenCharGroup_MakeLogic	void * __cdecl(void * e)
+0014c0a0	258	USER_DEFINED	__thiscall	cGenCharLocalLogic_ctor	void * __thiscall(void * parent, int arg)
+0014c1b0	25	USER_DEFINED	__fastcall	cGenCharLocalLogic_dtor	void __fastcall(void * self)
+0014c1d0	51	USER_DEFINED	__thiscall	cGenCharLocalLogic_Delete	void * __thiscall(byte flags)
+0014c210	282	USER_DEFINED	__thiscall	cGenCharLocalLogic_UpdateView	void __thiscall(void)
+0014c330	181	USER_DEFINED	__thiscall	cGenCharLocalLogic_CanDiscover	byte __thiscall(void * e)
+0014c3f0	5	USER_DEFINED	__thiscall	Logic_True1	byte __thiscall(int arg)
+0014c400	13	USER_DEFINED	__thiscall	cGenCharLocalLogic_SetB58	void __thiscall(byte v)
+0014c410	18	USER_DEFINED	__thiscall	cGenCharLocalLogic_OnAlarm	void __thiscall(void * e)
+0014c430	16	USER_DEFINED	__thiscall	cGenCharLocalLogic_GetI50	int __thiscall(void)
+0014c440	16	USER_DEFINED	__thiscall	cGenCharLocalLogic_GetS54	char * __thiscall(void)
+0014c450	78	USER_DEFINED	__thiscall	cGenCharLocalLogic_ToAlert	void __thiscall(void * ai)
+0014c4a0	78	USER_DEFINED	__thiscall	cGenCharLocalLogic_ToRelax	void __thiscall(void * ai)
 0014c4f0	172	ANALYSIS	__thiscall	cGenCharLocalLogic::vf03	undefined __thiscall(void)
 0014c5a0	278	DEFAULT	unknown	FUN_0054c5a0	
 0014c6c0	17	ANALYSIS	__thiscall	cGenCharLocalLogic::vf29	undefined __thiscall(void)
@@ -4710,97 +4720,97 @@ rva	size	source	callconv	name	signature
 0017a950	134	USER_DEFINED	__thiscall	cSpecialActionScorer_Draw	void __thiscall(int player)
 0017a9e0	680	USER_DEFINED	__fastcall	cSpecialActionScorer_DrawEnergy	void __fastcall(void * self)
 0017ac90	1341	DEFAULT	unknown	FUN_0057ac90	
-0017b1d0	78	DEFAULT	unknown	FUN_0057b1d0	
-0017b220	167	DEFAULT	unknown	FUN_0057b220	
-0017b2d0	68	DEFAULT	unknown	FUN_0057b2d0	
-0017b320	68	DEFAULT	unknown	FUN_0057b320	
-0017b370	97	ANALYSIS	__thiscall	cGradientScorer::vf03	undefined __thiscall(void)
-0017b3e0	97	ANALYSIS	__thiscall	cSpriteScorer::vf03	undefined __thiscall(void)
-0017b450	169	DEFAULT	unknown	FUN_0057b450	
-0017b500	477	ANALYSIS	__thiscall	cGradientScorer::vf02	undefined __thiscall(void)
-0017b6e0	1655	ANALYSIS	__thiscall	cSpriteScorer::vf02	undefined __thiscall(void)
-0017bd60	132	ANALYSIS	__thiscall	cGradientScorer::vf00	undefined __thiscall(void)
-0017bdf0	241	ANALYSIS	__thiscall	cSpriteScorer::vf00	undefined __thiscall(void)
+0017b1d0	78	USER_DEFINED	__fastcall	cGradientScorer_ctor	void * __fastcall(void * self)
+0017b220	167	USER_DEFINED	__fastcall	cSpriteScorer_ctor	void * __fastcall(void * self)
+0017b2d0	68	USER_DEFINED	__fastcall	cGradientScorer_dtor	void __fastcall(void * self)
+0017b320	68	USER_DEFINED	__fastcall	cSpriteScorer_dtor	void __fastcall(void * self)
+0017b370	97	USER_DEFINED	__thiscall	cGradientScorer_Delete	void * __thiscall(byte flags)
+0017b3e0	97	USER_DEFINED	__thiscall	cSpriteScorer_Delete	void * __thiscall(byte flags)
+0017b450	169	USER_DEFINED	__thiscall	cSpriteScorer_SetFile	void __thiscall(uint flags, char * name)
+0017b500	477	USER_DEFINED	__thiscall	cGradientScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
+0017b6e0	1655	USER_DEFINED	__thiscall	cSpriteScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
+0017bd60	132	USER_DEFINED	__thiscall	cGradientScorer_Draw	void __thiscall(int player)
+0017bdf0	241	USER_DEFINED	__thiscall	cSpriteScorer_Draw	void __thiscall(int player)
 0017bee1	26	DEFAULT	unknown	FUN_0057bee1	
-0017bf00	16	ANALYSIS	__thiscall	cSpriteScorer::vf04	undefined __thiscall(void)
-0017bf10	550	DEFAULT	unknown	FUN_0057bf10	
-0017c140	125	DEFAULT	unknown	FUN_0057c140	
-0017c1c0	38	ANALYSIS	__thiscall	cStatusScorer::vf03	undefined __thiscall(void)
-0017c1f0	5140	ANALYSIS	__thiscall	cStatusScorer::vf02	undefined __thiscall(void)
+0017bf00	16	USER_DEFINED	__thiscall	cSpriteScorer_SetMultiSprite	void __thiscall(byte on)
+0017bf10	550	USER_DEFINED	__fastcall	cStatusScorer_ctor	void * __fastcall(void * self)
+0017c140	125	USER_DEFINED	__fastcall	cStatusScorer_dtor	void __fastcall(void * self)
+0017c1c0	38	USER_DEFINED	__thiscall	cStatusScorer_Delete	void * __thiscall(byte flags)
+0017c1f0	5140	USER_DEFINED	__thiscall	cStatusScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
 0017d610	3717	ANALYSIS	__thiscall	cStatusScorer::vf00	undefined __thiscall(void)
-0017e4a0	344	DEFAULT	unknown	FUN_0057e4a0	
-0017e600	57	DEFAULT	unknown	FUN_0057e600	
-0017e640	86	ANALYSIS	__thiscall	cTabScorer::vf03	undefined __thiscall(void)
-0017e6a0	148	DEFAULT	unknown	FUN_0057e6a0	
-0017e740	1527	ANALYSIS	__thiscall	cTabScorer::vf02	undefined __thiscall(void)
-0017ed40	4605	ANALYSIS	__thiscall	cTabScorer::vf00	undefined __thiscall(void)
-0017ff40	344	DEFAULT	unknown	FUN_0057ff40	
-001800a0	476	DEFAULT	unknown	FUN_005800a0	
-00180280	194	DEFAULT	unknown	FUN_00580280	
-00180350	507	DEFAULT	unknown	FUN_00580350	
-00180550	75	DEFAULT	unknown	FUN_00580550	
-001805a0	104	ANALYSIS	__thiscall	cTalkScorer::vf03	undefined __thiscall(void)
-00180610	200	DEFAULT	unknown	FUN_00580610	
-001806e0	1335	ANALYSIS	__thiscall	cTalkScorer::vf02	undefined __thiscall(void)
-00180c20	56	ANALYSIS	__thiscall	cTalkScorer::vf00	undefined __thiscall(void)
-00180c60	789	ANALYSIS	__thiscall	cTalkScorer::vf04	undefined __thiscall(void)
-00180f80	933	ANALYSIS	__thiscall	cTalkScorer::vf05	undefined __thiscall(void)
-00181330	18	USER_DEFINED	unknown	Scorer_CancelSpeech	undefined(void)
-00181350	43	USER_DEFINED	unknown	Scorer_SetSpeechCallback	undefined(void)
-00181380	150	DEFAULT	unknown	FUN_00581380	
-00181420	142	USER_DEFINED	unknown	Scorer_SetSpeechText	undefined(void)
-001814b0	21	DEFAULT	unknown	FUN_005814b0	
-001814d0	168	DEFAULT	unknown	FUN_005814d0	
-00181580	47	DEFAULT	unknown	FUN_00581580	
-001815b0	76	ANALYSIS	__thiscall	cTargetScorer::vf03	undefined __thiscall(void)
-00181600	3629	DEFAULT	unknown	FUN_00581600	
-00182430	897	DEFAULT	unknown	FUN_00582430	
-001827c0	512	ANALYSIS	__thiscall	cTargetScorer::vf02	undefined __thiscall(void)
-001829c0	206	ANALYSIS	__thiscall	cTargetScorer::vf00	undefined __thiscall(void)
-00182a90	177	DEFAULT	unknown	FUN_00582a90	
-00182b50	84	DEFAULT	unknown	FUN_00582b50	
-00182bb0	58	DEFAULT	unknown	FUN_00582bb0	
-00182bf0	58	DEFAULT	unknown	FUN_00582bf0	
-00182c30	87	ANALYSIS	__thiscall	cTextScorer::vf03	undefined __thiscall(void)
-00182c90	87	ANALYSIS	__thiscall	cTextTypingScorer::vf03	undefined __thiscall(void)
-00182cf0	104	DEFAULT	unknown	FUN_00582cf0	
-00182d60	49	DEFAULT	unknown	FUN_00582d60	
-00182da0	631	ANALYSIS	__thiscall	cTextScorer::vf02	undefined __thiscall(void)
-00183020	433	ANALYSIS	__thiscall	cTextTypingScorer::vf02	undefined __thiscall(void)
-001831e0	889	ANALYSIS	__thiscall	cTextScorer::vf00	undefined __thiscall(void)
-00183560	738	ANALYSIS	__thiscall	cTextTypingScorer::vf00	undefined __thiscall(void)
+0017e4a0	344	USER_DEFINED	__fastcall	cTabScorer_ctor	void * __fastcall(void * self)
+0017e600	57	USER_DEFINED	__fastcall	cTabScorer_dtor	void __fastcall(void * self)
+0017e640	86	USER_DEFINED	__thiscall	cTabScorer_Delete	void * __thiscall(byte flags)
+0017e6a0	148	USER_DEFINED	__thiscall	cTabScorer_SetFile	void __thiscall(uint flags, char * name)
+0017e740	1527	USER_DEFINED	__thiscall	cTabScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
+0017ed40	4605	USER_DEFINED	__thiscall	cTabScorer_Draw	void __thiscall(int player)
+0017ff40	344	USER_DEFINED	__thiscall	cTabScorer_DrawRect	void __thiscall(void * img, int x0, int y0, int x1, int y1, int frame)
+001800a0	476	USER_DEFINED	__thiscall	cTabScorer_DrawCell	void __thiscall(void * img, int x, int y, int frame, int rot, int flip)
+00180280	194	USER_DEFINED	__fastcall	cTabScorer_UpdateSize	void __fastcall(void * self)
+00180350	507	USER_DEFINED	__fastcall	cTalkScorer_ctor	void * __fastcall(void * self)
+00180550	75	USER_DEFINED	__fastcall	cTalkScorer_dtor	void __fastcall(void * self)
+001805a0	104	USER_DEFINED	__thiscall	cTalkScorer_Delete	void * __thiscall(byte flags)
+00180610	200	USER_DEFINED	__stdcall	Talk_GetUseTarget	void * __stdcall(int player)
+001806e0	1335	USER_DEFINED	__thiscall	cTalkScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
+00180c20	56	USER_DEFINED	__thiscall	cTalkScorer_Draw	void __thiscall(int player)
+00180c60	789	USER_DEFINED	__thiscall	cTalkScorer_DrawTalk	void __thiscall(int player, float * pos)
+00180f80	933	USER_DEFINED	__thiscall	cTalkScorer_DrawUse	void __thiscall(int player, float * pos)
+00181330	18	USER_DEFINED	__cdecl	Scorer_CancelSpeech	void __cdecl(float time)
+00181350	43	USER_DEFINED	__cdecl	Scorer_SetSpeechCallback	void __cdecl(char * func, void * arg)
+00181380	150	USER_DEFINED	__cdecl	Talk_AddCallbackParams	void __cdecl(void * list)
+00181420	142	USER_DEFINED	__cdecl	Scorer_SetSpeechText	void __cdecl(char * text, float time, int a, int b, int c)
+001814b0	21	USER_DEFINED	__cdecl	Talk_IsShown	int __cdecl(void)
+001814d0	168	USER_DEFINED	__fastcall	cTargetScorer_ctor	void * __fastcall(void * self)
+00181580	47	USER_DEFINED	__fastcall	cTargetScorer_dtor	void __fastcall(void * self)
+001815b0	76	USER_DEFINED	__thiscall	cTargetScorer_Delete	void * __thiscall(byte flags)
+00181600	3629	USER_DEFINED	__thiscall	cTargetScorer_DrawTarget	void __thiscall(void * ship)
+00182430	897	USER_DEFINED	__thiscall	cTargetScorer_DrawEnemies	void __thiscall(void * ship)
+001827c0	512	USER_DEFINED	__thiscall	cTargetScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
+001829c0	206	USER_DEFINED	__thiscall	cTargetScorer_Draw	void __thiscall(int player)
+00182a90	177	USER_DEFINED	__fastcall	cTextScorer_ctor	void * __fastcall(void * self)
+00182b50	84	USER_DEFINED	__fastcall	cTextTypingScorer_ctor	void * __fastcall(void * self)
+00182bb0	58	USER_DEFINED	__fastcall	cTextScorer_dtor	void __fastcall(void * self)
+00182bf0	58	USER_DEFINED	__fastcall	cTextTypingScorer_dtor	void __fastcall(void * self)
+00182c30	87	USER_DEFINED	__thiscall	cTextScorer_Delete	void * __thiscall(byte flags)
+00182c90	87	USER_DEFINED	__thiscall	cTextTypingScorer_Delete	void * __thiscall(byte flags)
+00182cf0	104	USER_DEFINED	__cdecl	TextEdit_End	void __cdecl(int player)
+00182d60	49	USER_DEFINED	__cdecl	TextEdit_Done	void __cdecl(int player, char * text)
+00182da0	631	USER_DEFINED	__thiscall	cTextScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
+00183020	433	USER_DEFINED	__thiscall	cTextTypingScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
+001831e0	889	USER_DEFINED	__thiscall	cTextScorer_Draw	void __thiscall(int player)
+00183560	738	USER_DEFINED	__thiscall	cTextTypingScorer_Draw	void __thiscall(int player)
 00183860	2225	ANALYSIS	__thiscall	cTextScorer::vf04	undefined __thiscall(void)
-00184120	460	DEFAULT	unknown	FUN_00584120	
-001842f0	113	DEFAULT	unknown	FUN_005842f0	
-00184370	39	DEFAULT	unknown	FUN_00584370	
-001843a0	68	ANALYSIS	__thiscall	cTimerScorer::vf03	undefined __thiscall(void)
-001843f0	364	ANALYSIS	__thiscall	cTimerScorer::vf02	undefined __thiscall(void)
-00184560	428	ANALYSIS	__thiscall	cTimerScorer::vf00	undefined __thiscall(void)
-00184710	214	DEFAULT	unknown	FUN_00584710	
-001847f0	1767	DEFAULT	unknown	FUN_005847f0	
-00184ef0	619	DEFAULT	unknown	FUN_00584ef0	
-00185160	392	DEFAULT	unknown	FUN_00585160	
-001852f0	239	DEFAULT	unknown	FUN_005852f0	
-001853e0	233	DEFAULT	unknown	FUN_005853e0	
-001854d0	264	DEFAULT	unknown	FUN_005854d0	
-001855e0	250	DEFAULT	unknown	FUN_005855e0	
-001856e0	160	DEFAULT	unknown	FUN_005856e0	
-00185780	462	DEFAULT	unknown	FUN_00585780	
-00185950	158	DEFAULT	unknown	FUN_00585950	
-001859f0	47	DEFAULT	unknown	FUN_005859f0	
-00185a20	76	ANALYSIS	__thiscall	cWaypointScorer::vf03	undefined __thiscall(void)
-00185a70	512	ANALYSIS	__thiscall	cWaypointScorer::vf02	undefined __thiscall(void)
-00185c70	529	ANALYSIS	__thiscall	cWaypointScorer::vf00	undefined __thiscall(void)
-00185e90	2161	DEFAULT	unknown	FUN_00585e90	
-00186710	351	DEFAULT	unknown	FUN_00586710	
-00186870	103	DEFAULT	unknown	FUN_00586870	
-001868e0	38	ANALYSIS	__thiscall	cWeaponScorer::vf03	undefined __thiscall(void)
-00186910	5952	ANALYSIS	__thiscall	cWeaponScorer::vf02	undefined __thiscall(void)
+00184120	460	USER_DEFINED	__cdecl	TextEdit_Start	void __cdecl(void * params)
+001842f0	113	USER_DEFINED	__fastcall	cTimerScorer_ctor	void * __fastcall(void * self)
+00184370	39	USER_DEFINED	__fastcall	cTimerScorer_dtor	void __fastcall(void * self)
+001843a0	68	USER_DEFINED	__thiscall	cTimerScorer_Delete	void * __thiscall(byte flags)
+001843f0	364	USER_DEFINED	__thiscall	cTimerScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
+00184560	428	USER_DEFINED	__thiscall	cTimerScorer_Draw	void __thiscall(int player)
+00184710	214	USER_DEFINED	__cdecl	Menu_DrawStretch	void __cdecl(void * img, int frame, float x, float y, float w, float h)
+001847f0	1767	USER_DEFINED	__cdecl	Menu_DrawBar	void __cdecl(void * img, float x, float y, float frac, int mode, float f, float u0, float v0, float u1, float v1, float bu0, float bv0, float bu1, float bv1, uint color, uint black)
+00184ef0	619	USER_DEFINED	__cdecl	Menu_DrawFrame	void __cdecl(void * img, int arg, float x, float y, float w, float h)
+00185160	392	USER_DEFINED	__cdecl	Scorer_MetroUsrHere	void __cdecl(void * params)
+001852f0	239	USER_DEFINED	__cdecl	Scorer_SpriteFadeIn	void __cdecl(void * params)
+001853e0	233	USER_DEFINED	__cdecl	Scorer_SpriteFadeOut	void __cdecl(void * params)
+001854d0	264	USER_DEFINED	__cdecl	Scorer_SpriteFadeOutFinal	void __cdecl(void * params)
+001855e0	250	USER_DEFINED	__cdecl	Scorer_SpriteFlash	void __cdecl(void * params)
+001856e0	160	USER_DEFINED	__cdecl	Scorer_SpriteGlow	void __cdecl(void * params)
+00185780	462	USER_DEFINED	__cdecl	Scorer_BoostScorer	void __cdecl(void * params)
+00185950	158	USER_DEFINED	__fastcall	cWaypointScorer_ctor	void * __fastcall(void * self)
+001859f0	47	USER_DEFINED	__fastcall	cWaypointScorer_dtor	void __fastcall(void * self)
+00185a20	76	USER_DEFINED	__thiscall	cWaypointScorer_Delete	void * __thiscall(byte flags)
+00185a70	512	USER_DEFINED	__thiscall	cWaypointScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
+00185c70	529	USER_DEFINED	__thiscall	cWaypointScorer_Draw	void __thiscall(int player)
+00185e90	2161	USER_DEFINED	__thiscall	cWaypointScorer_DrawTarget	void __thiscall(void * e, byte current)
+00186710	351	USER_DEFINED	__fastcall	cWeaponScorer_ctor	void * __fastcall(void * self)
+00186870	103	USER_DEFINED	__fastcall	cWeaponScorer_dtor	void __fastcall(void * self)
+001868e0	38	USER_DEFINED	__thiscall	cWeaponScorer_Delete	void * __thiscall(byte flags)
+00186910	5952	USER_DEFINED	__thiscall	cWeaponScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
 00188050	3252	ANALYSIS	__thiscall	cWeaponScorer::vf00	undefined __thiscall(void)
-00188d10	213	DEFAULT	unknown	FUN_00588d10	
-00188df0	58	DEFAULT	unknown	FUN_00588df0	
-00188e30	87	ANALYSIS	__thiscall	cWindFxScorer::vf03	undefined __thiscall(void)
-00188e90	9	ANALYSIS	__thiscall	cWindFxScorer::vf02	undefined __thiscall(void)
+00188d10	213	USER_DEFINED	__fastcall	cWindFxScorer_ctor	void * __fastcall(void * self)
+00188df0	58	USER_DEFINED	__fastcall	cWindFxScorer_dtor	void __fastcall(void * self)
+00188e30	87	USER_DEFINED	__thiscall	cWindFxScorer_Delete	void * __thiscall(byte flags)
+00188e90	9	USER_DEFINED	__thiscall	cWindFxScorer_Var	int __thiscall(char * name, byte set, char ** s, double * d, int * i)
 00188ea0	2595	ANALYSIS	__thiscall	cWindFxScorer::vf00	undefined __thiscall(void)
 001898d0	41	DEFAULT	unknown	FUN_005898d0	
 00189900	97	DEFAULT	unknown	FUN_00589900	
@@ -6867,7 +6877,7 @@ rva	size	source	callconv	name	signature
 0022d150	12	DEFAULT	unknown	FUN_0062d150	
 0022d160	132	DEFAULT	unknown	FUN_0062d160	
 0022d1f0	140	DEFAULT	unknown	FUN_0062d1f0	
-0022d280	91	DEFAULT	unknown	FUN_0062d280	
+0022d280	91	USER_DEFINED	__thiscall	CPsaImage_GetNumFrames	int __thiscall(void)
 0022d2e0	62	DEFAULT	unknown	FUN_0062d2e0	
 0022d320	148	DEFAULT	unknown	FUN_0062d320	
 0022d3c0	41	DEFAULT	unknown	FUN_0062d3c0	

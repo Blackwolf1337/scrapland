@@ -581,7 +581,7 @@ SD_SIZE(cExtPolice, 0x18);
 void PoliceAI_RestoreParams(cAIVehicle *ai);
 void PoliceAI_RandomParams(cAIVehicle *ai);
 /* a flag of the attack part of the AI (+0x194, its +0x174), rva 0x8bef0 */
-byte __thiscall cAIVehicle_TargetSeen(cAIVehicle *ai);
+byte __thiscall cAIVehicle_ControlFlag(cAIVehicle *ai);
 
 cExtPolice *__fastcall cExtPolice_ctor(cExtPolice *self);
 cEntity *ExtPolice_CallCop(cEntity *e);
