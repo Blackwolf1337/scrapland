@@ -5612,183 +5612,184 @@ rva	size	source	callconv	name	signature
 001b45d0	20	USER_DEFINED	__thiscall	FXSputnik_SetB	void __thiscall(float v)
 001b45f0	20	USER_DEFINED	__thiscall	FXSputnik_SetA	void __thiscall(float v)
 001b4610	3341	USER_DEFINED	__fastcall	cObjElementFXCharacterConversion_Emit	void __fastcall(void * self)
-001b5320	150	DEFAULT	unknown	FUN_005b5320	
-001b53c0	142	DEFAULT	unknown	FUN_005b53c0	
-001b5450	147	DEFAULT	unknown	FUN_005b5450	
-001b54f0	120	DEFAULT	unknown	FUN_005b54f0	
-001b5570	157	DEFAULT	unknown	FUN_005b5570	
-001b5610	235	DEFAULT	unknown	FUN_005b5610	
-001b5700	150	DEFAULT	unknown	FUN_005b5700	
-001b57a0	174	DEFAULT	unknown	FUN_005b57a0	
-001b5850	142	DEFAULT	unknown	FUN_005b5850	
-001b58e0	150	DEFAULT	unknown	FUN_005b58e0	
-001b5980	150	DEFAULT	unknown	FUN_005b5980	
-001b5a20	150	DEFAULT	unknown	FUN_005b5a20	
-001b5ac0	200	DEFAULT	unknown	FUN_005b5ac0	
-001b5b90	120	DEFAULT	unknown	FUN_005b5b90	
-001b5c10	144	DEFAULT	unknown	FUN_005b5c10	
-001b5ca0	137	DEFAULT	unknown	FUN_005b5ca0	
-001b5d30	189	DEFAULT	unknown	FUN_005b5d30	
-001b5df0	137	DEFAULT	unknown	FUN_005b5df0	
-001b5e80	150	DEFAULT	unknown	FUN_005b5e80	
-001b5f20	47	DEFAULT	unknown	FUN_005b5f20	
-001b5f50	36	DEFAULT	unknown	FUN_005b5f50	
-001b5f80	25	DEFAULT	unknown	FUN_005b5f80	
-001b5fa0	25	DEFAULT	unknown	FUN_005b5fa0	
-001b5fc0	95	DEFAULT	unknown	FUN_005b5fc0	
-001b6020	149	DEFAULT	unknown	FUN_005b6020	
-001b60c0	95	DEFAULT	unknown	FUN_005b60c0	
-001b6120	69	DEFAULT	unknown	FUN_005b6120	
-001b6170	36	DEFAULT	unknown	FUN_005b6170	
-001b61a0	95	DEFAULT	unknown	FUN_005b61a0	
-001b6200	95	DEFAULT	unknown	FUN_005b6200	
-001b6260	95	DEFAULT	unknown	FUN_005b6260	
-001b62c0	117	DEFAULT	unknown	FUN_005b62c0	
-001b6340	25	DEFAULT	unknown	FUN_005b6340	
-001b6360	95	DEFAULT	unknown	FUN_005b6360	
-001b63c0	95	DEFAULT	unknown	FUN_005b63c0	
-001b6420	127	DEFAULT	unknown	FUN_005b6420	
-001b64a0	25	DEFAULT	unknown	FUN_005b64a0	
-001b64c0	95	DEFAULT	unknown	FUN_005b64c0	
-001b6520	76	ANALYSIS	__thiscall	cObjElementFXBankMasterAttack::vf00	undefined __thiscall(void)
-001b6570	65	ANALYSIS	__thiscall	cObjElementFXBankMasterSuction::vf00	undefined __thiscall(void)
-001b65c0	54	ANALYSIS	__thiscall	cObjElementFXBankerSteal::vf00	undefined __thiscall(void)
-001b6600	54	ANALYSIS	__thiscall	cObjElementFXBertoAttack::vf00	undefined __thiscall(void)
-001b6640	126	ANALYSIS	__thiscall	cObjElementFXBertoFlash::vf00	undefined __thiscall(void)
-001b66c0	38	ANALYSIS	__thiscall	cObjElementFXBettyAttack::vf00	undefined __thiscall(void)
-001b66f0	126	ANALYSIS	__thiscall	cObjElementFXBettyKill::vf00	undefined __thiscall(void)
-001b6770	98	ANALYSIS	__thiscall	cObjElementFXBishopAttack::vf00	undefined __thiscall(void)
-001b67e0	65	ANALYSIS	__thiscall	cObjElementFXBishopSellLife::vf00	undefined __thiscall(void)
-001b6830	126	ANALYSIS	__thiscall	cObjElementFXDTritusAttack::vf00	undefined __thiscall(void)
-001b68b0	126	ANALYSIS	__thiscall	cObjElementFXDTritusKill::vf00	undefined __thiscall(void)
-001b6930	126	ANALYSIS	__thiscall	cObjElementFXFunctionarySpecialAction::vf00	undefined __thiscall(void)
-001b69b0	148	ANALYSIS	__thiscall	cObjElementFXGearMissile::vf00	undefined __thiscall(void)
-001b6a50	54	ANALYSIS	__thiscall	cObjElementFXMercenaryDrink::vf00	undefined __thiscall(void)
-001b6a90	126	ANALYSIS	__thiscall	cObjElementFXMessengerAttack::vf00	undefined __thiscall(void)
-001b6b10	126	ANALYSIS	__thiscall	cObjElementFXMessengerTakeDataPack::vf00	undefined __thiscall(void)
-001b6b90	158	ANALYSIS	__thiscall	cObjElementFXPoliceGearConversion::vf00	undefined __thiscall(void)
-001b6c30	54	ANALYSIS	__thiscall	cObjElementFXPoliceSteal::vf00	undefined __thiscall(void)
-001b6c70	126	ANALYSIS	__thiscall	cObjElementFXSebastianFlash::vf00	undefined __thiscall(void)
-001b6cf0	980	ANALYSIS	__thiscall	cObjElementFXBankMasterAttack::vf01	undefined __thiscall(void)
-001b70d0	1584	ANALYSIS	__thiscall	cObjElementFXBankMasterSuction::vf01	undefined __thiscall(void)
-001b7700	1824	ANALYSIS	__thiscall	cObjElementFXBankerSteal::vf01	undefined __thiscall(void)
-001b7e20	1028	ANALYSIS	__thiscall	cObjElementFXBertoAttack::vf01	undefined __thiscall(void)
-001b8230	1392	ANALYSIS	__thiscall	cObjElementFXBertoFlash::vf01	undefined __thiscall(void)
+001b5320	150	USER_DEFINED	__thiscall	cObjElementFXBankMasterAttack_ctor	void * __thiscall(void)
+001b53c0	142	USER_DEFINED	__thiscall	cObjElementFXBankMasterSuction_ctor	void * __thiscall(void)
+001b5450	147	USER_DEFINED	__thiscall	cObjElementFXBankerSteal_ctor	void * __thiscall(void)
+001b54f0	120	USER_DEFINED	__thiscall	cObjElementFXBertoAttack_ctor	void * __thiscall(void)
+001b5570	157	USER_DEFINED	__thiscall	cObjElementFXBertoFlash_ctor	void * __thiscall(void)
+001b5610	235	USER_DEFINED	__thiscall	cObjElementFXBettyAttack_ctor	void * __thiscall(void)
+001b5700	150	USER_DEFINED	__thiscall	cObjElementFXBettyKill_ctor	void * __thiscall(void)
+001b57a0	174	USER_DEFINED	__thiscall	cObjElementFXBishopAttack_ctor	void * __thiscall(void)
+001b5850	142	USER_DEFINED	__thiscall	cObjElementFXBishopSellLife_ctor	void * __thiscall(void)
+001b58e0	150	USER_DEFINED	__thiscall	cObjElementFXDTritusAttack_ctor	void * __thiscall(void)
+001b5980	150	USER_DEFINED	__thiscall	cObjElementFXDTritusKill_ctor	void * __thiscall(void)
+001b5a20	150	USER_DEFINED	__thiscall	cObjElementFXFunctionarySpecialAction_ctor	void * __thiscall(void)
+001b5ac0	200	USER_DEFINED	__thiscall	cObjElementFXGearMissile_ctor	void * __thiscall(void)
+001b5b90	120	USER_DEFINED	__thiscall	cObjElementFXMercenaryDrink_ctor	void * __thiscall(void)
+001b5c10	144	USER_DEFINED	__thiscall	cObjElementFXMessengerAttack_ctor	void * __thiscall(void)
+001b5ca0	137	USER_DEFINED	__thiscall	cObjElementFXMessengerTakeDataPack_ctor	void * __thiscall(void)
+001b5d30	189	USER_DEFINED	__thiscall	cObjElementFXPoliceGearConversion_ctor	void * __thiscall(void)
+001b5df0	137	USER_DEFINED	__thiscall	cObjElementFXPoliceSteal_ctor	void * __thiscall(void)
+001b5e80	150	USER_DEFINED	__thiscall	cObjElementFXSebastianFlash_ctor	void * __thiscall(void)
+001b5f20	47	USER_DEFINED	__thiscall	cObjElementFXBankMasterAttack_dtor	void __thiscall(void)
+001b5f50	36	USER_DEFINED	__thiscall	cObjElementFXBankMasterSuction_dtor	void __thiscall(void)
+001b5f80	25	USER_DEFINED	__thiscall	cObjElementFXBankerSteal_dtor	void __thiscall(void)
+001b5fa0	25	USER_DEFINED	__thiscall	cObjElementFXBertoAttack_dtor	void __thiscall(void)
+001b5fc0	95	USER_DEFINED	__thiscall	cObjElementFXBertoFlash_dtor	void __thiscall(void)
+001b6020	149	USER_DEFINED	__thiscall	cObjElementFXBettyAttack_dtor	void __thiscall(void)
+001b60c0	95	USER_DEFINED	__thiscall	cObjElementFXBettyKill_dtor	void __thiscall(void)
+001b6120	69	USER_DEFINED	__thiscall	cObjElementFXBishopAttack_dtor	void __thiscall(void)
+001b6170	36	USER_DEFINED	__thiscall	cObjElementFXBishopSellLife_dtor	void __thiscall(void)
+001b61a0	95	USER_DEFINED	__thiscall	cObjElementFXDTritusAttack_dtor	void __thiscall(void)
+001b6200	95	USER_DEFINED	__thiscall	cObjElementFXDTritusKill_dtor	void __thiscall(void)
+001b6260	95	USER_DEFINED	__thiscall	cObjElementFXFunctionarySpecialAction_dtor	void __thiscall(void)
+001b62c0	117	USER_DEFINED	__thiscall	cObjElementFXGearMissile_dtor	void __thiscall(void)
+001b6340	25	USER_DEFINED	__thiscall	cObjElementFXMercenaryDrink_dtor	void __thiscall(void)
+001b6360	95	USER_DEFINED	__thiscall	cObjElementFXMessengerAttack_dtor	void __thiscall(void)
+001b63c0	95	USER_DEFINED	__thiscall	cObjElementFXMessengerTakeDataPack_dtor	void __thiscall(void)
+001b6420	127	USER_DEFINED	__thiscall	cObjElementFXPoliceGearConversion_dtor	void __thiscall(void)
+001b64a0	25	USER_DEFINED	__thiscall	cObjElementFXPoliceSteal_dtor	void __thiscall(void)
+001b64c0	95	USER_DEFINED	__thiscall	cObjElementFXSebastianFlash_dtor	void __thiscall(void)
+001b6520	76	USER_DEFINED	__thiscall	cObjElementFXBankMasterAttack_Delete	void * __thiscall(uint flags)
+001b6570	65	USER_DEFINED	__thiscall	cObjElementFXBankMasterSuction_Delete	void * __thiscall(uint flags)
+001b65c0	54	USER_DEFINED	__thiscall	cObjElementFXBankerSteal_Delete	void * __thiscall(uint flags)
+001b6600	54	USER_DEFINED	__thiscall	cObjElementFXBertoAttack_Delete	void * __thiscall(uint flags)
+001b6640	126	USER_DEFINED	__thiscall	cObjElementFXBertoFlash_Delete	void * __thiscall(uint flags)
+001b66c0	38	USER_DEFINED	__thiscall	cObjElementFXBettyAttack_Delete	void * __thiscall(uint flags)
+001b66f0	126	USER_DEFINED	__thiscall	cObjElementFXBettyKill_Delete	void * __thiscall(uint flags)
+001b6770	98	USER_DEFINED	__thiscall	cObjElementFXBishopAttack_Delete	void * __thiscall(uint flags)
+001b67e0	65	USER_DEFINED	__thiscall	cObjElementFXBishopSellLife_Delete	void * __thiscall(uint flags)
+001b6830	126	USER_DEFINED	__thiscall	cObjElementFXDTritusAttack_Delete	void * __thiscall(uint flags)
+001b68b0	126	USER_DEFINED	__thiscall	cObjElementFXDTritusKill_Delete	void * __thiscall(uint flags)
+001b6930	126	USER_DEFINED	__thiscall	cObjElementFXFunctionarySpecialAction_Delete	void * __thiscall(uint flags)
+001b69b0	148	USER_DEFINED	__thiscall	cObjElementFXGearMissile_Delete	void * __thiscall(uint flags)
+001b6a50	54	USER_DEFINED	__thiscall	cObjElementFXMercenaryDrink_Delete	void * __thiscall(uint flags)
+001b6a90	126	USER_DEFINED	__thiscall	cObjElementFXMessengerAttack_Delete	void * __thiscall(uint flags)
+001b6b10	126	USER_DEFINED	__thiscall	cObjElementFXMessengerTakeDataPack_Delete	void * __thiscall(uint flags)
+001b6b90	158	USER_DEFINED	__thiscall	cObjElementFXPoliceGearConversion_Delete	void * __thiscall(uint flags)
+001b6c30	54	USER_DEFINED	__thiscall	cObjElementFXPoliceSteal_Delete	void * __thiscall(uint flags)
+001b6c70	126	USER_DEFINED	__thiscall	cObjElementFXSebastianFlash_Delete	void * __thiscall(uint flags)
+001b6cf0	980	USER_DEFINED	__thiscall	cObjElementFXBankMasterAttack_Update	void __thiscall(void * d, float dt)
+001b70d0	1584	USER_DEFINED	__thiscall	cObjElementFXBankMasterSuction_Update	void __thiscall(void * d, float dt)
+001b7700	1824	USER_DEFINED	__thiscall	cObjElementFXBankerSteal_Update	void __thiscall(void * d, float dt)
+001b7e20	1028	USER_DEFINED	__thiscall	cObjElementFXBertoAttack_Update	void __thiscall(void * d, float dt)
+001b8230	1392	USER_DEFINED	__thiscall	cObjElementFXBertoFlash_Update	void __thiscall(void * d, float dt)
 001b87a0	6291	ANALYSIS	__thiscall	cObjElementFXBettyAttack::vf01	undefined __thiscall(void)
-001ba040	1083	ANALYSIS	__thiscall	cObjElementFXBettyKill::vf01	undefined __thiscall(void)
-001ba480	3370	ANALYSIS	__thiscall	cObjElementFXBishopAttack::vf01	undefined __thiscall(void)
-001bb1b0	5399	ANALYSIS	__thiscall	cObjElementFXBishopSellLife::vf01	undefined __thiscall(void)
-001bc6d0	1081	ANALYSIS	__thiscall	cObjElementFXDTritusAttack::vf01	undefined __thiscall(void)
-001bcb10	1083	ANALYSIS	__thiscall	cObjElementFXDTritusKill::vf01	undefined __thiscall(void)
-001bcf50	2027	ANALYSIS	__thiscall	cObjElementFXFunctionarySpecialAction::vf01	undefined __thiscall(void)
+001ba040	1083	USER_DEFINED	__thiscall	cObjElementFXBettyKill_Update	void __thiscall(void * d, float dt)
+001ba480	3370	USER_DEFINED	__thiscall	cObjElementFXBishopAttack_Update	void __thiscall(void * d, float dt)
+001bb1b0	5399	USER_DEFINED	__thiscall	cObjElementFXBishopSellLife_Update	void __thiscall(void * d, float dt)
+001bc6d0	1081	USER_DEFINED	__thiscall	cObjElementFXDTritusAttack_Update	void __thiscall(void * d, float dt)
+001bcb10	1083	USER_DEFINED	__thiscall	cObjElementFXDTritusKill_Update	void __thiscall(void * d, float dt)
+001bcf50	2027	USER_DEFINED	__thiscall	cObjElementFXFunctionarySpecialAction_Update	void __thiscall(void * d, float dt)
 001bd740	11409	ANALYSIS	__thiscall	cObjElementFXGearMissile::vf01	undefined __thiscall(void)
-001c03e0	2907	ANALYSIS	__thiscall	cObjElementFXMercenaryDrink::vf01	undefined __thiscall(void)
-001c0f40	2177	ANALYSIS	__thiscall	cObjElementFXMessengerAttack::vf01	undefined __thiscall(void)
-001c17d0	2454	ANALYSIS	__thiscall	cObjElementFXMessengerTakeDataPack::vf01	undefined __thiscall(void)
+001c03e0	2907	USER_DEFINED	__thiscall	cObjElementFXMercenaryDrink_Update	void __thiscall(void * d, float dt)
+001c0f40	2177	USER_DEFINED	__thiscall	cObjElementFXMessengerAttack_Update	void __thiscall(void * d, float dt)
+001c17d0	2454	USER_DEFINED	__thiscall	cObjElementFXMessengerTakeDataPack_Update	void __thiscall(void * d, float dt)
 001c2170	6631	ANALYSIS	__thiscall	cObjElementFXPoliceGearConversion::vf01	undefined __thiscall(void)
-001c3b70	1209	ANALYSIS	__thiscall	cObjElementFXPoliceSteal::vf01	undefined __thiscall(void)
-001c4030	1597	ANALYSIS	__thiscall	cObjElementFXSebastianFlash::vf01	undefined __thiscall(void)
-001c4670	285	DEFAULT	unknown	FUN_005c4670	
-001c4790	321	DEFAULT	unknown	FUN_005c4790	
-001c48e0	258	DEFAULT	unknown	FUN_005c48e0	
-001c49f0	239	ANALYSIS	__thiscall	cObjElementFXBankMasterAttack::vf03	undefined __thiscall(void)
-001c4ae0	171	ANALYSIS	__thiscall	cObjElementFXBankMasterSuction::vf03	undefined __thiscall(void)
-001c4b90	114	ANALYSIS	__thiscall	cObjElementFXBankerSteal::vf03	undefined __thiscall(void)
-001c4c10	151	ANALYSIS	__thiscall	cObjElementFXBertoAttack::vf03	undefined __thiscall(void)
-001c4cb0	196	ANALYSIS	__thiscall	cObjElementFXBertoFlash::vf03	undefined __thiscall(void)
-001c4d80	321	ANALYSIS	__thiscall	cObjElementFXBettyAttack::vf03	undefined __thiscall(void)
-001c4ed0	196	ANALYSIS	__thiscall	cObjElementFXBettyKill::vf03	undefined __thiscall(void)
-001c4fa0	442	ANALYSIS	__thiscall	cObjElementFXBishopAttack::vf03	undefined __thiscall(void)
-001c5160	248	ANALYSIS	__thiscall	cObjElementFXBishopSellLife::vf03	undefined __thiscall(void)
-001c5260	196	ANALYSIS	__thiscall	cObjElementFXDTritusAttack::vf03	undefined __thiscall(void)
-001c5330	196	ANALYSIS	__thiscall	cObjElementFXDTritusKill::vf03	undefined __thiscall(void)
-001c5400	236	ANALYSIS	__thiscall	cObjElementFXFunctionarySpecialAction::vf03	undefined __thiscall(void)
-001c54f0	463	ANALYSIS	__thiscall	cObjElementFXGearMissile::vf03	undefined __thiscall(void)
-001c56c0	151	ANALYSIS	__thiscall	cObjElementFXMercenaryDrink::vf03	undefined __thiscall(void)
-001c5760	269	ANALYSIS	__thiscall	cObjElementFXMessengerAttack::vf03	undefined __thiscall(void)
-001c5870	275	ANALYSIS	__thiscall	cObjElementFXMessengerTakeDataPack::vf03	undefined __thiscall(void)
-001c5990	1562	ANALYSIS	__thiscall	cObjElementFXPoliceGearConversion::vf03	undefined __thiscall(void)
-001c5fb0	114	ANALYSIS	__thiscall	cObjElementFXPoliceSteal::vf03	undefined __thiscall(void)
-001c6030	196	ANALYSIS	__thiscall	cObjElementFXSebastianFlash::vf03	undefined __thiscall(void)
-001c6100	106	ANALYSIS	__thiscall	cObjElementFXBankMasterAttack::vf02	undefined __thiscall(void)
-001c6170	18	ANALYSIS	__thiscall	cObjElementFXBankMasterSuction::vf02	undefined __thiscall(void)
-001c6190	18	ANALYSIS	__thiscall	cObjElementFXBankerSteal::vf02	undefined __thiscall(void)
-001c61b0	106	ANALYSIS	__thiscall	cObjElementFXBertoAttack::vf02	undefined __thiscall(void)
-001c6220	18	ANALYSIS	__thiscall	cObjElementFXBertoFlash::vf02	undefined __thiscall(void)
-001c6240	18	ANALYSIS	__thiscall	cObjElementFXBettyAttack::vf02	undefined __thiscall(void)
-001c6260	18	ANALYSIS	__thiscall	cObjElementFXBettyKill::vf02	undefined __thiscall(void)
-001c6280	18	ANALYSIS	__thiscall	cObjElementFXBishopAttack::vf02	undefined __thiscall(void)
-001c62a0	18	ANALYSIS	__thiscall	cObjElementFXBishopSellLife::vf02	undefined __thiscall(void)
-001c62c0	18	ANALYSIS	__thiscall	cObjElementFXDTritusAttack::vf02	undefined __thiscall(void)
-001c62e0	18	ANALYSIS	__thiscall	cObjElementFXDTritusKill::vf02	undefined __thiscall(void)
-001c6300	349	ANALYSIS	__thiscall	cObjElementFXFunctionarySpecialAction::vf02	undefined __thiscall(void)
-001c6460	18	ANALYSIS	__thiscall	cObjElementFXGearMissile::vf02	undefined __thiscall(void)
-001c6480	18	ANALYSIS	__thiscall	cObjElementFXMercenaryDrink::vf02	undefined __thiscall(void)
-001c64a0	18	ANALYSIS	__thiscall	cObjElementFXMessengerAttack::vf02	undefined __thiscall(void)
-001c64c0	18	ANALYSIS	__thiscall	cObjElementFXMessengerTakeDataPack::vf02	undefined __thiscall(void)
-001c64e0	63	ANALYSIS	__thiscall	cObjElementFXPoliceGearConversion::vf02	undefined __thiscall(void)
-001c6520	18	ANALYSIS	__thiscall	cObjElementFXPoliceSteal::vf02	undefined __thiscall(void)
-001c6540	18	ANALYSIS	__thiscall	cObjElementFXSebastianFlash::vf02	undefined __thiscall(void)
-001c6560	59	ANALYSIS	__thiscall	cObjElementFXBankMasterAttack::vf04	undefined __thiscall(void)
-001c65a0	43	ANALYSIS	__thiscall	cObjElementFXBankMasterSuction::vf04	undefined __thiscall(void)
-001c65d0	27	ANALYSIS	__thiscall	cObjElementFXBankerSteal::vf04	undefined __thiscall(void)
-001c65f0	31	ANALYSIS	__thiscall	cObjElementFXBertoAttack::vf04	undefined __thiscall(void)
-001c6610	65	ANALYSIS	__thiscall	cObjElementFXBertoFlash::vf04	undefined __thiscall(void)
-001c6660	149	ANALYSIS	__thiscall	cObjElementFXBettyAttack::vf04	undefined __thiscall(void)
-001c6700	65	ANALYSIS	__thiscall	cObjElementFXBettyKill::vf04	undefined __thiscall(void)
-001c6750	73	ANALYSIS	__thiscall	cObjElementFXBishopAttack::vf04	undefined __thiscall(void)
-001c67a0	60	ANALYSIS	__thiscall	cObjElementFXBishopSellLife::vf04	undefined __thiscall(void)
-001c67e0	65	ANALYSIS	__thiscall	cObjElementFXDTritusAttack::vf04	undefined __thiscall(void)
-001c6830	65	ANALYSIS	__thiscall	cObjElementFXDTritusKill::vf04	undefined __thiscall(void)
-001c6880	75	ANALYSIS	__thiscall	cObjElementFXFunctionarySpecialAction::vf04	undefined __thiscall(void)
-001c68d0	101	ANALYSIS	__thiscall	cObjElementFXGearMissile::vf04	undefined __thiscall(void)
-001c6940	23	ANALYSIS	__thiscall	cObjElementFXMercenaryDrink::vf04	undefined __thiscall(void)
-001c6960	57	ANALYSIS	__thiscall	cObjElementFXMessengerAttack::vf04	undefined __thiscall(void)
-001c69a0	52	ANALYSIS	__thiscall	cObjElementFXMessengerTakeDataPack::vf04	undefined __thiscall(void)
-001c69e0	126	ANALYSIS	__thiscall	cObjElementFXPoliceGearConversion::vf04	undefined __thiscall(void)
-001c6a60	27	ANALYSIS	__thiscall	cObjElementFXPoliceSteal::vf04	undefined __thiscall(void)
-001c6a80	65	ANALYSIS	__thiscall	cObjElementFXSebastianFlash::vf04	undefined __thiscall(void)
-001c6ad0	86	DEFAULT	unknown	FUN_005c6ad0	
+001c3b70	1209	USER_DEFINED	__thiscall	cObjElementFXPoliceSteal_Update	void __thiscall(void * d, float dt)
+001c4030	1597	USER_DEFINED	__thiscall	cObjElementFXSebastianFlash_Update	void __thiscall(void * d, float dt)
+001c4670	285	USER_DEFINED	__fastcall	cObjElementFXBankMasterSuction_RandomPoints	void __fastcall(void * self)
+001c4790	321	USER_DEFINED	__fastcall	cObjElementFXBertoFlash_RandomPoints	void __fastcall(void * self)
+001c48e0	258	USER_DEFINED	__fastcall	cObjElementFXSebastianFlash_RandomPoints	void __fastcall(void * self)
+001c49f0	239	USER_DEFINED	__thiscall	cObjElementFXBankMasterAttack_Attach	void __thiscall(void * d)
+001c4ae0	171	USER_DEFINED	__thiscall	cObjElementFXBankMasterSuction_Attach	void __thiscall(void * d)
+001c4b90	114	USER_DEFINED	__thiscall	cObjElementFXBankerSteal_Attach	void __thiscall(void * d)
+001c4c10	151	USER_DEFINED	__thiscall	cObjElementFXBertoAttack_Attach	void __thiscall(void * d)
+001c4cb0	196	USER_DEFINED	__thiscall	cObjElementFXBertoFlash_Attach	void __thiscall(void * d)
+001c4d80	321	USER_DEFINED	__thiscall	cObjElementFXBettyAttack_Attach	void __thiscall(void * d)
+001c4ed0	196	USER_DEFINED	__thiscall	cObjElementFXBettyKill_Attach	void __thiscall(void * d)
+001c4fa0	442	USER_DEFINED	__thiscall	cObjElementFXBishopAttack_Attach	void __thiscall(void * d)
+001c5160	248	USER_DEFINED	__thiscall	cObjElementFXBishopSellLife_Attach	void __thiscall(void * d)
+001c5260	196	USER_DEFINED	__thiscall	cObjElementFXDTritusAttack_Attach	void __thiscall(void * d)
+001c5330	196	USER_DEFINED	__thiscall	cObjElementFXDTritusKill_Attach	void __thiscall(void * d)
+001c5400	236	USER_DEFINED	__thiscall	cObjElementFXFunctionarySpecialAction_Attach	void __thiscall(void * d)
+001c54f0	463	USER_DEFINED	__thiscall	cObjElementFXGearMissile_Attach	void __thiscall(void * d)
+001c56c0	151	USER_DEFINED	__thiscall	cObjElementFXMercenaryDrink_Attach	void __thiscall(void * d)
+001c5760	269	USER_DEFINED	__thiscall	cObjElementFXMessengerAttack_Attach	void __thiscall(void * d)
+001c5870	275	USER_DEFINED	__thiscall	cObjElementFXMessengerTakeDataPack_Attach	void __thiscall(void * d)
+001c5990	1562	USER_DEFINED	__thiscall	cObjElementFXPoliceGearConversion_Attach	void __thiscall(void * d)
+001c5fb0	114	USER_DEFINED	__thiscall	cObjElementFXPoliceSteal_Attach	void __thiscall(void * d)
+001c6030	196	USER_DEFINED	__thiscall	cObjElementFXSebastianFlash_Attach	void __thiscall(void * d)
+001c6100	106	USER_DEFINED	__thiscall	cObjElementFXBankMasterAttack_Alive	byte __thiscall(void * d, void * sys)
+001c6170	18	USER_DEFINED	__thiscall	cObjElementFXBankMasterSuction_Alive	byte __thiscall(void * d, void * sys)
+001c6190	18	USER_DEFINED	__thiscall	cObjElementFXBankerSteal_Alive	byte __thiscall(void * d, void * sys)
+001c61b0	106	USER_DEFINED	__thiscall	cObjElementFXBertoAttack_Alive	byte __thiscall(void * d, void * sys)
+001c6220	18	USER_DEFINED	__thiscall	cObjElementFXBertoFlash_Alive	byte __thiscall(void * d, void * sys)
+001c6240	18	USER_DEFINED	__thiscall	cObjElementFXBettyAttack_Alive	byte __thiscall(void * d, void * sys)
+001c6260	18	USER_DEFINED	__thiscall	cObjElementFXBettyKill_Alive	byte __thiscall(void * d, void * sys)
+001c6280	18	USER_DEFINED	__thiscall	cObjElementFXBishopAttack_Alive	byte __thiscall(void * d, void * sys)
+001c62a0	18	USER_DEFINED	__thiscall	cObjElementFXBishopSellLife_Alive	byte __thiscall(void * d, void * sys)
+001c62c0	18	USER_DEFINED	__thiscall	cObjElementFXDTritusAttack_Alive	byte __thiscall(void * d, void * sys)
+001c62e0	18	USER_DEFINED	__thiscall	cObjElementFXDTritusKill_Alive	byte __thiscall(void * d, void * sys)
+001c6300	349	USER_DEFINED	__thiscall	cObjElementFXFunctionarySpecialAction_Alive	byte __thiscall(void * d, void * sys)
+001c6460	18	USER_DEFINED	__thiscall	cObjElementFXGearMissile_Alive	byte __thiscall(void * d, void * sys)
+001c6480	18	USER_DEFINED	__thiscall	cObjElementFXMercenaryDrink_Alive	byte __thiscall(void * d, void * sys)
+001c64a0	18	USER_DEFINED	__thiscall	cObjElementFXMessengerAttack_Alive	byte __thiscall(void * d, void * sys)
+001c64c0	18	USER_DEFINED	__thiscall	cObjElementFXMessengerTakeDataPack_Alive	byte __thiscall(void * d, void * sys)
+001c64e0	63	USER_DEFINED	__thiscall	cObjElementFXPoliceGearConversion_Alive	byte __thiscall(void * d, void * sys)
+001c6520	18	USER_DEFINED	__thiscall	cObjElementFXPoliceSteal_Alive	byte __thiscall(void * d, void * sys)
+001c6540	18	USER_DEFINED	__thiscall	cObjElementFXSebastianFlash_Alive	byte __thiscall(void * d, void * sys)
+001c6560	59	USER_DEFINED	__thiscall	cObjElementFXBankMasterAttack_Reset	void __thiscall(int arg)
+001c65a0	43	USER_DEFINED	__thiscall	cObjElementFXBankMasterSuction_Reset	void __thiscall(int arg)
+001c65d0	27	USER_DEFINED	__thiscall	cObjElementFXBankerSteal_Reset	void __thiscall(int arg)
+001c65f0	31	USER_DEFINED	__thiscall	cObjElementFXBertoAttack_Reset	void __thiscall(int arg)
+001c6610	65	USER_DEFINED	__thiscall	cObjElementFXBertoFlash_Reset	void __thiscall(int arg)
+001c6660	149	USER_DEFINED	__thiscall	cObjElementFXBettyAttack_Reset	void __thiscall(int arg)
+001c6700	65	USER_DEFINED	__thiscall	cObjElementFXBettyKill_Reset	void __thiscall(int arg)
+001c6750	73	USER_DEFINED	__thiscall	cObjElementFXBishopAttack_Reset	void __thiscall(int arg)
+001c67a0	60	USER_DEFINED	__thiscall	cObjElementFXBishopSellLife_Reset	void __thiscall(int arg)
+001c67e0	65	USER_DEFINED	__thiscall	cObjElementFXDTritusAttack_Reset	void __thiscall(int arg)
+001c6830	65	USER_DEFINED	__thiscall	cObjElementFXDTritusKill_Reset	void __thiscall(int arg)
+001c6880	75	USER_DEFINED	__thiscall	cObjElementFXFunctionarySpecialAction_Reset	void __thiscall(int arg)
+001c68d0	101	USER_DEFINED	__thiscall	cObjElementFXGearMissile_Reset	void __thiscall(int arg)
+001c6940	23	USER_DEFINED	__thiscall	cObjElementFXMercenaryDrink_Reset	void __thiscall(int arg)
+001c6960	57	USER_DEFINED	__thiscall	cObjElementFXMessengerAttack_Reset	void __thiscall(int arg)
+001c69a0	52	USER_DEFINED	__thiscall	cObjElementFXMessengerTakeDataPack_Reset	void __thiscall(int arg)
+001c69e0	126	USER_DEFINED	__thiscall	cObjElementFXPoliceGearConversion_Reset	void __thiscall(int arg)
+001c6a60	27	USER_DEFINED	__thiscall	cObjElementFXPoliceSteal_Reset	void __thiscall(int arg)
+001c6a80	65	USER_DEFINED	__thiscall	cObjElementFXSebastianFlash_Reset	void __thiscall(int arg)
+001c6ad0	86	USER_DEFINED	__thiscall	cObjElementFXBankerSteal_SetEntity	void __thiscall(void * e)
 001c6b30	633	USER_DEFINED	__thiscall	cObjElementFXFunctionarySpecialAction_Start	void __thiscall(void * e)
-001c6db0	62	DEFAULT	unknown	FUN_005c6db0	
-001c6df0	66	DEFAULT	unknown	FUN_005c6df0	
-001c6e40	178	DEFAULT	unknown	FUN_005c6e40	
-001c6f00	13	DEFAULT	unknown	FUN_005c6f00	
-001c6f10	62	DEFAULT	unknown	FUN_005c6f10	
-001c6f50	96	DEFAULT	unknown	FUN_005c6f50	
-001c6fb0	13	DEFAULT	unknown	FUN_005c6fb0	
-001c6fc0	46	DEFAULT	unknown	FUN_005c6fc0	
-001c6ff0	118	DEFAULT	unknown	FUN_005c6ff0	
-001c7070	62	DEFAULT	unknown	FUN_005c7070	
-001c70b0	119	DEFAULT	unknown	FUN_005c70b0	
-001c7130	62	DEFAULT	unknown	FUN_005c7130	
-001c7170	62	DEFAULT	unknown	FUN_005c7170	
-001c71b0	750	DEFAULT	unknown	FUN_005c71b0	
-001c74a0	62	DEFAULT	unknown	FUN_005c74a0	
-001c74e0	804	DEFAULT	unknown	FUN_005c74e0	
-001c7810	750	DEFAULT	unknown	FUN_005c7810	
-001c7b00	86	DEFAULT	unknown	FUN_005c7b00	
-001c7b60	62	DEFAULT	unknown	FUN_005c7b60	
-001c7ba0	96	DEFAULT	unknown	FUN_005c7ba0	
-001c7c00	2186	DEFAULT	unknown	FUN_005c7c00	
-001c8490	62	DEFAULT	unknown	FUN_005c8490	
-001c84d0	62	DEFAULT	unknown	FUN_005c84d0	
-001c8510	62	DEFAULT	unknown	FUN_005c8510	
-001c8550	46	DEFAULT	unknown	FUN_005c8550	
-001c8580	46	DEFAULT	unknown	FUN_005c8580	
-001c85b0	1008	DEFAULT	unknown	FUN_005c85b0	
-001c89a0	383	DEFAULT	unknown	FUN_005c89a0	
-001c8b20	44	DEFAULT	unknown	FUN_005c8b20	
-001c8b50	1814	DEFAULT	unknown	FUN_005c8b50	
-001c9270	924	DEFAULT	unknown	FUN_005c9270	
-001c9630	120	DEFAULT	unknown	FUN_005c9630	
-001c96b0	248	DEFAULT	unknown	FUN_005c96b0	
-001c97b0	154	DEFAULT	unknown	FUN_005c97b0	
-001c9850	128	DEFAULT	unknown	FUN_005c9850	
-001c98d0	25	DEFAULT	unknown	FUN_005c98d0	
-001c98f0	116	DEFAULT	unknown	FUN_005c98f0	
-001c9970	44	DEFAULT	unknown	FUN_005c9970	
-001c99a0	36	DEFAULT	unknown	FUN_005c99a0	
+001c6db0	62	USER_DEFINED	__thiscall	cObjElementFXPoliceSteal_SetEntity	void __thiscall(void * e)
+001c6df0	66	USER_DEFINED	__thiscall	cObjElementFXBishopSellLife_SetAttacked	void __thiscall(void * e)
+001c6e40	178	USER_DEFINED	__thiscall	cObjElementFXBishopSellLife_SetAttacker	void __thiscall(void * e)
+001c6f00	13	USER_DEFINED	__thiscall	cObjElementFXBankerSteal_SetTarget	void __thiscall(int v)
+001c6f10	62	USER_DEFINED	__thiscall	cObjElementFXPoliceSteal_SetTarget	void __thiscall(void * e)
+001c6f50	96	USER_DEFINED	__thiscall	cObjElementFXMessengerTakeDataPack_SetItem	void __thiscall(void * e)
+001c6fb0	13	USER_DEFINED	__thiscall	cObjElementFXGearMissile_SetI4	void __thiscall(int v)
+001c6fc0	46	USER_DEFINED	__thiscall	cObjElementFXMercenaryDrink_SetC0	void __thiscall(float a, float b, float c)
+001c6ff0	118	USER_DEFINED	__thiscall	cObjElementFXBankMasterAttack_Start	void __thiscall(void * e)
+001c7070	62	USER_DEFINED	__thiscall	cObjElementFXBankMasterSuction_SetEntity	void __thiscall(void * e)
+001c70b0	119	USER_DEFINED	__thiscall	cObjElementFXBertoAttack_Start	void __thiscall(void * e)
+001c7130	62	USER_DEFINED	__thiscall	cObjElementFXBertoFlash_SetEntity	void __thiscall(void * e)
+001c7170	62	USER_DEFINED	__thiscall	cObjElementFXBettyAttack_SetEntity	void __thiscall(void * e)
+001c71b0	750	USER_DEFINED	__thiscall	cObjElementFXBettyKill_Start	void __thiscall(void * e)
+001c74a0	62	USER_DEFINED	__thiscall	cObjElementFXBishopAttack_SetEntity	void __thiscall(void * e)
+001c74e0	804	USER_DEFINED	__thiscall	cObjElementFXDTritusAttack_Start	void __thiscall(void * e)
+001c7810	750	USER_DEFINED	__thiscall	cObjElementFXDTritusKill_Start	void __thiscall(void * e)
+001c7b00	86	USER_DEFINED	__thiscall	cObjElementFXMercenaryDrink_Start	void __thiscall(void * e)
+001c7b60	62	USER_DEFINED	__thiscall	cObjElementFXMessengerAttack_SetEntity	void __thiscall(void * e)
+001c7ba0	96	USER_DEFINED	__thiscall	cObjElementFXMessengerTakeDataPack_SetOwner	void __thiscall(void * e)
+001c7c00	2186	USER_DEFINED	__thiscall	cObjElementFXPoliceGearConversion_Start	void __thiscall(void * e)
+001c8490	62	USER_DEFINED	__thiscall	cObjElementFXSebastianFlash_SetEntity	void __thiscall(void * e)
+001c84d0	62	USER_DEFINED	__thiscall	cObjElementFXBankMasterSuction_SetTarget	void __thiscall(void * e)
+001c8510	62	USER_DEFINED	__thiscall	cObjElementFXBertoFlash_SetTarget	void __thiscall(void * e)
+001c8550	46	USER_DEFINED	__thiscall	cObjElementFXBettyKill_SetAngles	void __thiscall(float x, float y, float z)
+001c8580	46	USER_DEFINED	__thiscall	cObjElementFXDTritusKill_SetAngles	void __thiscall(float x, float y, float z)
+001c85b0	1008	USER_DEFINED	__thiscall	cObjElementFXBettyAttack_Emit	void __thiscall(float x, float y, float z)
+001c89a0	383	USER_DEFINED	__thiscall	cObjElementFXBishopAttack_SetLine	void __thiscall(float fx, float fy, float fz, float tx, float ty, float tz)
+001c8b20	44	USER_DEFINED	__thiscall	cObjElementFXGearMissile_Run	void __thiscall(void * d)
+001c8b50	1814	USER_DEFINED	__thiscall	cObjElementFXMessengerAttack_SetLine	void __thiscall(float fx, float fy, float fz, float tx, float ty, float tz)
+001c9270	924	USER_DEFINED	__fastcall	cObjElementFXMessengerTakeDataPack_Start	void __fastcall(void * self)
+001c9610	22	USER_DEFINED	__thiscall	FXCountermeasures_NodeCtor	void * __thiscall(void)
+001c9630	120	USER_DEFINED	__thiscall	cObjElementFXDebrisCloud_ctor	void * __thiscall(void)
+001c96b0	248	USER_DEFINED	__thiscall	cObjElementFXEMI_ctor	void * __thiscall(void)
+001c97b0	154	USER_DEFINED	__thiscall	cObjElementFXHook_ctor	void * __thiscall(void)
+001c9850	128	USER_DEFINED	__thiscall	cObjElementFXSonicExplosion_ctor	void * __thiscall(void)
+001c98d0	25	USER_DEFINED	__thiscall	cObjElementFXDebrisCloud_dtor	void __thiscall(void)
+001c98f0	116	USER_DEFINED	__thiscall	cObjElementFXEMI_dtor	void __thiscall(void)
+001c9970	44	USER_DEFINED	__thiscall	cObjElementFXHook_dtor	void __thiscall(void)
+001c99a0	36	USER_DEFINED	__thiscall	cObjElementFXSonicExplosion_dtor	void __thiscall(void)
 001c99d0	54	ANALYSIS	__thiscall	cObjElementFXDebrisCloud::vf00	undefined __thiscall(void)
 001c9a10	147	ANALYSIS	__thiscall	cObjElementFXEMI::vf00	undefined __thiscall(void)
 001c9ab0	73	ANALYSIS	__thiscall	cObjElementFXHook::vf00	undefined __thiscall(void)
