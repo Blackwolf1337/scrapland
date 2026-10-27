@@ -7952,141 +7952,142 @@ rva	size	source	callconv	name	signature
 002815d0	142	DEFAULT	unknown	FUN_006815d0	
 00281660	219	DEFAULT	unknown	FUN_00681660	
 00281740	423	DEFAULT	unknown	FUN_00681740	
-00281900	563	DEFAULT	unknown	FUN_00681900	
-00281b40	270	DEFAULT	unknown	FUN_00681b40	
-00281c50	235	DEFAULT	unknown	FUN_00681c50	
-00281d40	478	DEFAULT	unknown	FUN_00681d40	
-00281f70	34	DEFAULT	unknown	FUN_00681f70	
-00281fa0	34	DEFAULT	unknown	FUN_00681fa0	
-00281fe0	123	DEFAULT	unknown	FUN_00681fe0	
-00282060	34	DEFAULT	unknown	FUN_00682060	
-00282090	427	DEFAULT	unknown	FUN_00682090	
-00282240	43	DEFAULT	unknown	FUN_00682240	
-00282270	43	DEFAULT	unknown	FUN_00682270	
-002822a0	152	DEFAULT	unknown	FUN_006822a0	
-00282340	83	DEFAULT	unknown	FUN_00682340	
-002823a0	147	DEFAULT	unknown	FUN_006823a0	
-00282440	107	DEFAULT	unknown	FUN_00682440	
-002824b0	197	DEFAULT	unknown	FUN_006824b0	
-00282580	840	DEFAULT	unknown	FUN_00682580	
-002828d0	54	DEFAULT	unknown	FUN_006828d0	
-00282910	61	DEFAULT	unknown	FUN_00682910	
-00282950	61	DEFAULT	unknown	FUN_00682950	
-00282990	161	DEFAULT	unknown	FUN_00682990	
-00282a40	1004	DEFAULT	unknown	FUN_00682a40	
-00282e60	819	DEFAULT	unknown	FUN_00682e60	
-002831a0	150	DEFAULT	unknown	FUN_006831a0	
-00283240	88	DEFAULT	unknown	FUN_00683240	
-002832a0	220	DEFAULT	unknown	FUN_006832a0	
-00283380	41	DEFAULT	unknown	FUN_00683380	
-002833b0	423	DEFAULT	unknown	FUN_006833b0	
-00283560	404	DEFAULT	unknown	FUN_00683560	
-00283700	178	DEFAULT	unknown	FUN_00683700	
-002837c0	419	DEFAULT	unknown	FUN_006837c0	
-00283970	36	DEFAULT	unknown	FUN_00683970	
-002839a0	241	DEFAULT	unknown	FUN_006839a0	
-00283aa0	146	DEFAULT	unknown	FUN_00683aa0	
-00283b40	1016	DEFAULT	unknown	FUN_00683b40	
-00283f50	139	DEFAULT	unknown	FUN_00683f50	
-00283fe0	155	DEFAULT	unknown	FUN_00683fe0	
-00284080	576	DEFAULT	unknown	FUN_00684080	
-002842c0	286	DEFAULT	unknown	FUN_006842c0	
-002843e0	114	DEFAULT	unknown	FUN_006843e0	
-00284460	160	DEFAULT	unknown	FUN_00684460	
-00284500	831	DEFAULT	unknown	FUN_00684500	
-00284840	41	DEFAULT	unknown	FUN_00684840	
-00284870	190	DEFAULT	unknown	FUN_00684870	
-00284930	185	DEFAULT	unknown	FUN_00684930	
-002849f0	784	DEFAULT	unknown	FUN_006849f0	
+00281900	563	USER_DEFINED	__thiscall	CBsp_ctor	void * __thiscall(char * nombre, void * escala)
+00281b40	270	USER_DEFINED	__thiscall	BspTxf_ctor	void * __thiscall(char * mapa, char * name, int n, int on)
+00281c50	235	USER_DEFINED	__fastcall	BspZona_ctor	void * __fastcall(void * self)
+00281d40	478	USER_DEFINED	__fastcall	BspTri_ctor	void * __fastcall(void * self)
+00281f70	34	USER_DEFINED	__fastcall	Tabla_Free	void __fastcall(void * t)
+00281fa0	34	USER_DEFINED	__fastcall	Tabla_Free	void __fastcall(void * t)
+00281fe0	123	USER_DEFINED	__fastcall	Tabla_FreeB4	void __fastcall(void * t)
+00282060	34	USER_DEFINED	__fastcall	Tabla_Free	void __fastcall(void * t)
+00282090	427	USER_DEFINED	__fastcall	CBsp_dtor	void __fastcall(void * self)
+00282240	43	USER_DEFINED	__fastcall	CBmpFlt2_dtor	void __fastcall(void * self)
+00282270	43	USER_DEFINED	__fastcall	CBmpFlt_dtor	void __fastcall(void * self)
+002822a0	152	USER_DEFINED	__fastcall	BspNodo_dtor	void __fastcall(void * self)
+00282340	83	USER_DEFINED	__fastcall	BspTxf_dtor	void __fastcall(void * self)
+002823a0	147	USER_DEFINED	__fastcall	BspLMap_dtor	void __fastcall(void * self)
+00282440	107	USER_DEFINED	__fastcall	BspNombre_dtor	void __fastcall(void * self)
+002824b0	197	USER_DEFINED	__fastcall	BspZona_dtor	void __fastcall(void * self)
+00282580	840	USER_DEFINED	__fastcall	BspTri_dtor	void __fastcall(void * self)
+002828d0	54	USER_DEFINED	__fastcall	BspVB_Unwind	void __fastcall(void * self)
+00282910	61	USER_DEFINED	__thiscall	CBmp_Assign	void __thiscall(void * orig)
+00282950	61	USER_DEFINED	__thiscall	CBmpFlt2_Assign	void __thiscall(void * orig)
+00282990	161	USER_DEFINED	__thiscall	BspZona_Delete	void * __thiscall(uint flags)
+00282a40	1004	USER_DEFINED	__cdecl	Bsp_Oclusion	float __cdecl(void * p, void * n, float r, int samples, void * luz, void * suelo)
+00282e60	819	USER_DEFINED	__stdcall	Bsp_DlgProc	int __stdcall(void * hwnd, uint msg, uint wparam, int lparam)
+002831a0	150	USER_DEFINED	__cdecl	Bsp_DlgEnable	void __cdecl(void * hwnd)
+00283240	88	USER_DEFINED	__thiscall	BspZona_GetVB	void * __thiscall(int frmt)
+002832a0	220	USER_DEFINED	__cdecl	Bsp_Hammersley	float * __cdecl(float * out, uint i, uint n)
+00283380	41	USER_DEFINED	__thiscall	BspTxf_SetName	void __thiscall(int i)
+002833b0	423	USER_DEFINED	__thiscall	BspTxf_Check	byte __thiscall(int i, byte def, byte nl)
+00283560	404	USER_DEFINED	__fastcall	BspTxf_Info	void __fastcall(void * self)
+00283700	178	USER_DEFINED	__cdecl	Bsp_MatInfo	void __cdecl(void * m)
+002837c0	419	USER_DEFINED	__cdecl	BspRegion_Debug	int __cdecl(void * r)
+00283970	36	USER_DEFINED	__cdecl	Bsp_RenderPortales	void __cdecl(void)
+002839a0	241	USER_DEFINED	__thiscall	Bsp_FinMensaje	void __thiscall(int secs)
+00283aa0	146	USER_DEFINED	__cdecl	Bsp_DirEsfera	float * __cdecl(float * out, float z, float u)
+00283b40	1016	USER_DEFINED	__thiscall	BspTxf_Cargar	void __thiscall(void * listas, int n, int cual)
+00283f50	139	USER_DEFINED	__fastcall	CBsp_Render	void __fastcall(void * self)
+00283fe0	155	USER_DEFINED	__stdcall	BspTri_Draw	void __stdcall(void * tri)
+00284080	576	USER_DEFINED	__thiscall	CBsp_DrawTri	void __thiscall(void * tri, byte pass)
+002842c0	286	USER_DEFINED	__fastcall	CBsp_DrawWire	void __fastcall(void * self)
+002843e0	114	USER_DEFINED	__fastcall	CBsp_DrawFX	void __fastcall(void * self)
+00284460	160	USER_DEFINED	__thiscall	CBsp_DrawZona	void __thiscall(int sector, byte pass)
+00284500	831	USER_DEFINED	__thiscall	CBsp_DrawPass	void __thiscall(byte pass)
+00284840	41	USER_DEFINED	__cdecl	BspLMap_GetMat	void * __cdecl(void * lmap)
+00284870	190	USER_DEFINED	__cdecl	Bsp_ColorIntens	void __cdecl(uint * out, float * rgb)
+00284930	185	USER_DEFINED	__thiscall	BspTxf_Guardar	void __thiscall(void * bmp)
+002849f0	784	USER_DEFINED	__cdecl	BspLMap_Insertar	byte __cdecl(void * list, void * lmap, int w, int h)
 00284d00	2039	DEFAULT	unknown	FUN_00684d00	
-00285500	795	DEFAULT	unknown	FUN_00685500	
-00285820	955	DEFAULT	unknown	FUN_00685820	
-00285be0	413	DEFAULT	unknown	FUN_00685be0	
+00285500	795	USER_DEFINED	__fastcall	CBsp_AjustarGamma	void __fastcall(void * self)
+00285820	955	USER_DEFINED	__cdecl	CBmpFlt_Rellenar	void __cdecl(void * img, void * mask)
+00285be0	413	USER_DEFINED	__fastcall	CBsp_CrearZonas	void __fastcall(void * self)
 00285d80	2835	DEFAULT	unknown	FUN_00685d80	
-002868a0	915	DEFAULT	unknown	FUN_006868a0	
-00286c40	55	DEFAULT	unknown	FUN_00686c40	
-00286c80	47	USER_DEFINED	unknown	Bsp_ReleaseD3D	
-00286cb0	104	USER_DEFINED	unknown	Bsp_InitD3D	
-00286d20	652	DEFAULT	unknown	FUN_00686d20	
-00286fb0	414	USER_DEFINED	__cdecl	Plane_Calc	byte __cdecl(float * plane, float * v1, float * v2, float * v3)
-00287150	916	DEFAULT	unknown	FUN_00687150	
-002874f0	522	DEFAULT	unknown	FUN_006874f0	
-00287700	559	DEFAULT	unknown	FUN_00687700	
-00287930	385	DEFAULT	unknown	FUN_00687930	
-00287ac0	302	DEFAULT	unknown	FUN_00687ac0	
-00287bf0	241	DEFAULT	unknown	FUN_00687bf0	
-00287cf0	108	DEFAULT	unknown	FUN_00687cf0	
-00287d60	339	DEFAULT	unknown	FUN_00687d60	
-00287ec0	1743	DEFAULT	unknown	FUN_00687ec0	
-002885a0	351	DEFAULT	unknown	FUN_006885a0	
-00288700	324	DEFAULT	unknown	FUN_00688700	
-00288850	112	DEFAULT	unknown	FUN_00688850	
+002868a0	915	USER_DEFINED	__cdecl	BspLMap_Copiar	void __cdecl(void * dst, int dx, int dy, void * orig, void * mask, uint ox, uint oy, int w, int h)
+00286c40	55	USER_DEFINED	__cdecl	Bsp_NodoMarcar	void __cdecl(void * nodo, byte liberar)
+00286c80	47	USER_DEFINED	__cdecl	Bsp_ReleaseD3D	void __cdecl(void)
+00286cb0	104	USER_DEFINED	__cdecl	Bsp_InitD3D	void __cdecl(void)
+00286d20	652	USER_DEFINED	__cdecl	BspLMap_Buscar	byte __cdecl(void * bmp, int w, int h, int * rx, int * ry)
+00286fb0	414	USER_DEFINED	__cdecl	Plane_Calc	byte __cdecl(void * plane, void * v1, void * v2, void * v3)
+00287150	916	USER_DEFINED	__cdecl	BspTri_AreasLod	void __cdecl(void * dst, void * src, int w, int h, int dim)
+002874f0	522	USER_DEFINED	__cdecl	BspTri_CalcCentro	void __cdecl(void * tri)
+00287700	559	USER_DEFINED	__cdecl	Bsp_PortalInfo	void __cdecl(byte info)
+00287930	385	USER_DEFINED	__cdecl	BspTri_ListBox	void * __cdecl(void * out, void * list)
+00287ac0	302	USER_DEFINED	__cdecl	Bsp_TexelBox	void __cdecl(void * box, int axis, float scale, int * x0, int * y0, int * x1, int * y1)
+00287bf0	241	USER_DEFINED	__cdecl	BspTri_CalcPlanos	void __cdecl(void * list)
+00287cf0	108	USER_DEFINED	__cdecl	BspTri_Lado	int __cdecl(void * tri)
+00287d60	339	USER_DEFINED	__cdecl	Bsp_TexelToWorld	void __cdecl(float * out, float u, float v, int axis, float scale, float * plane)
+00287ec0	1743	USER_DEFINED	__cdecl	BspTri_Muestra	float * __cdecl(float * out, int x, int y, int axis, float scale, void * tri, void * list, float * peso)
+002885a0	351	USER_DEFINED	__cdecl	Bsp_SampleTex	float * __cdecl(float * out, float u, float v, int axis, float scale, void * tri, void * tex)
+00288700	324	USER_DEFINED	__cdecl	Bsp_SampleTexAA	float * __cdecl(float * out, int x, int y, int axis, float scale, void * tri, void * tex, int n)
+00288850	112	USER_DEFINED	__cdecl	Bsp_WorldToTexel	void __cdecl(float * out, float * v, int axis, float scale)
 002888c0	8093	DEFAULT	unknown	FUN_006888c0	
-0028a860	7329	DEFAULT	unknown	FUN_0068a860	
-0028c580	200	DEFAULT	unknown	FUN_0068c580	
-0028c650	2306	DEFAULT	unknown	FUN_0068c650	
-0028cf60	538	DEFAULT	unknown	FUN_0068cf60	
-0028d180	25	DEFAULT	unknown	FUN_0068d180	
-0028d1a0	424	DEFAULT	unknown	FUN_0068d1a0	
-0028d350	455	DEFAULT	unknown	FUN_0068d350	
+0028a860	7329	USER_DEFINED	__fastcall	CBsp_Calcular	void __fastcall(void * self)
+0028c580	200	USER_DEFINED	__fastcall	CBsp_ColorSinLmap	void __fastcall(void * self)
+0028c650	2306	USER_DEFINED	__fastcall	CBsp_LeerEMI	int __fastcall(void * self)
+0028cf60	538	USER_DEFINED	__cdecl	BspTri_VertIgual	byte __cdecl(void * act, uint nv, void * tri)
+0028d180	25	USER_DEFINED	__cdecl	BspTri_Count	int __cdecl(void * list)
+0028d1a0	424	USER_DEFINED	__thiscall	CBmp_Rotate	void __thiscall(void * orig)
+0028d350	455	USER_DEFINED	__thiscall	CBmpFlt2_Rotate	void __thiscall(void * orig)
 0028d520	2122	DEFAULT	unknown	FUN_0068d520	
-0028dd70	270	DEFAULT	unknown	FUN_0068dd70	
-0028de80	469	DEFAULT	unknown	FUN_0068de80	
-0028e060	361	DEFAULT	unknown	FUN_0068e060	
-0028e1d0	256	DEFAULT	unknown	FUN_0068e1d0	
-0028e2d0	452	DEFAULT	unknown	FUN_0068e2d0	
-0028e4a0	128	DEFAULT	unknown	FUN_0068e4a0	
-0028e520	300	DEFAULT	unknown	FUN_0068e520	
-0028e650	17	DEFAULT	unknown	FUN_0068e650	
-0028e670	300	DEFAULT	unknown	FUN_0068e670	
-0028e7a0	818	DEFAULT	unknown	FUN_0068e7a0	
+0028dd70	270	USER_DEFINED	__thiscall	BspLMap_CrearMat	void __thiscall(char * name, byte nivel)
+0028de80	469	USER_DEFINED	__cdecl	BspRegion_New	void * __cdecl(int x, int y, int lx, int ly, void * padre, void * areas)
+0028e060	361	USER_DEFINED	__cdecl	BspTri_AddBox	void * __cdecl(void * out, void * in, void * tri)
+0028e1d0	256	USER_DEFINED	__cdecl	Bsp_MismoTam	byte __cdecl(void * a, int axis, float scale, void * b)
+0028e2d0	452	USER_DEFINED	__fastcall	CBsp_ReleaseD3D	void __fastcall(void * self)
+0028e4a0	128	USER_DEFINED	__cdecl	BspTri_CmpMat	int __cdecl(void * a, void * b)
+0028e520	300	USER_DEFINED	__cdecl	BspTri_CmpZona	int __cdecl(void * a, void * b)
+0028e650	17	USER_DEFINED	__cdecl	BspTri_CmpId	int __cdecl(void * a, void * b)
+0028e670	300	USER_DEFINED	__cdecl	Bsp_FormFactor	float __cdecl(void * pa, void * na, void * pb, void * nb, float area)
+0028e7a0	818	USER_DEFINED	__fastcall	CBsp_GuardarIni	void __fastcall(void * self)
 0028eae0	1135	DEFAULT	unknown	FUN_0068eae0	
-0028ef50	142	DEFAULT	unknown	FUN_0068ef50	
-0028efe0	1831	DEFAULT	unknown	FUN_0068efe0	
-0028f710	1441	DEFAULT	unknown	FUN_0068f710	
+0028ef50	142	USER_DEFINED	__cdecl	BspLMap_Guardar	void __cdecl(char * copia, void * bmp, char * ruta, int n, char * ext)
+0028efe0	1831	USER_DEFINED	__fastcall	CBsp_Preparar	void __fastcall(void * self)
+0028f710	1441	USER_DEFINED	__fastcall	CBsp_InitD3D	void __fastcall(void * self)
 0028fcc0	112	USER_DEFINED	__thiscall	Tabla_Alloc14_2	void __thiscall(int num)
 0028fd30	115	USER_DEFINED	__thiscall	Tabla_Alloc18	void __thiscall(int num)
 0028fdb0	226	USER_DEFINED	__thiscall	Tabla_NewB4	void __thiscall(int num)
 0028fea0	115	USER_DEFINED	__thiscall	Tabla_Alloc2C	void __thiscall(int num)
-0028ff20	101	DEFAULT	unknown	FUN_0068ff20	
-0028ff90	101	DEFAULT	unknown	FUN_0068ff90	
-00290000	101	DEFAULT	unknown	FUN_00690000	
-00290070	91	DEFAULT	unknown	FUN_00690070	
-002900d0	230	DEFAULT	unknown	FUN_006900d0	
-002901c0	851	DEFAULT	unknown	FUN_006901c0	
-00290520	53	USER_DEFINED	unknown	Bsp_Free	
-00290560	226	DEFAULT	unknown	FUN_00690560	
-00290650	34	DEFAULT	unknown	FUN_00690650	
-00290680	33	DEFAULT	unknown	FUN_00690680	
+0028ff20	101	USER_DEFINED	__thiscall	CBmp_CreateFill	void __thiscall(int ancho, int alto, uint color)
+0028ff90	101	USER_DEFINED	__thiscall	CBmpFlt2_CreateFill	void __thiscall(int ancho, int alto, float * color)
+00290000	101	USER_DEFINED	__thiscall	CBmpFlt_CreateFill	void __thiscall(int ancho, int alto, float * color)
+00290070	91	USER_DEFINED	__thiscall	BspLMap_Init	void __thiscall(int ancho, int alto)
+002900d0	230	USER_DEFINED	__cdecl	BspTri_SetExt	void __cdecl(void * tri, int x0, int y0, int x1, int y1, byte avisar)
+002901c0	851	USER_DEFINED	__cdecl	BspTri_CalcGlow	void __cdecl(void * list)
+00290520	53	USER_DEFINED	__cdecl	Bsp_Free	void __cdecl(void)
+00290560	226	USER_DEFINED	__fastcall	CBsp_QuitarLuces	void __fastcall(void * self)
+00290650	34	USER_DEFINED	__cdecl	BspTri_Zona	int __cdecl(void * nodo)
+00290680	33	USER_DEFINED	__cdecl	BspTri_ZonaName	char * __cdecl(void * tri)
 002906b0	127	USER_DEFINED	__thiscall	CBmpFlt2_Pixel	float * __thiscall(uint x, uint y)
 00290730	124	USER_DEFINED	__thiscall	CBmpFlt_Pixel	float * __thiscall(uint x, uint y)
-002907b0	52	DEFAULT	unknown	FUN_006907b0	
-002907f0	127	DEFAULT	unknown	FUN_006907f0	
-00290870	52	DEFAULT	unknown	FUN_00690870	
-002908b0	97	DEFAULT	unknown	FUN_006908b0	
+002907b0	52	USER_DEFINED	__cdecl	BspTri_GetExt	void __cdecl(void * tri, int * x0, int * y0, int * x1, int * y1)
+002907f0	127	USER_DEFINED	__thiscall	BspTri_TexelOf	byte __thiscall(void * p, int * x, int * y)
+00290870	52	USER_DEFINED	__cdecl	BspTri_GetExt2	void __cdecl(void * tri, int * x0, int * y0, int * x1, int * y1)
+002908b0	97	USER_DEFINED	__cdecl	BspTri_EsTexel	byte __cdecl(int x0, int y0, int x, int y, uint color, void * tri)
 00290930	1735	DEFAULT	unknown	FUN_00690930	
-00291000	1757	USER_DEFINED	unknown	Bsp_Crear	
-002916e0	500	DEFAULT	unknown	FUN_006916e0	
-002918e0	721	DEFAULT	unknown	FUN_006918e0	
-00291bd0	1154	DEFAULT	unknown	FUN_00691bd0	
+00291000	1757	USER_DEFINED	__cdecl	Bsp_Crear	void __cdecl(void)
+002916e0	500	USER_DEFINED	__fastcall	CBsp_AreasGlow	void __fastcall(void * self)
+002918e0	721	USER_DEFINED	__fastcall	CBsp_AreasMax	void __fastcall(void * self)
+00291bd0	1154	USER_DEFINED	__thiscall	BspRegion_Enlazar	int __thiscall(void * a, void * b, int enlace, float umbral)
 00292060	6782	DEFAULT	unknown	FUN_00692060	
 00293af0	7340	DEFAULT	unknown	FUN_00693af0	
-002957a0	269	DEFAULT	unknown	FUN_006957a0	
-002958b0	1586	DEFAULT	unknown	FUN_006958b0	
-00295ef0	907	DEFAULT	unknown	FUN_00695ef0	
-00296290	248	DEFAULT	unknown	FUN_00696290	
-00296390	140	DEFAULT	unknown	FUN_00696390	
-00296420	159	DEFAULT	unknown	FUN_00696420	
-002964c0	242	DEFAULT	unknown	FUN_006964c0	
-002965c0	1063	DEFAULT	unknown	FUN_006965c0	
-002969f0	297	DEFAULT	unknown	FUN_006969f0	
-00296b20	318	DEFAULT	unknown	FUN_00696b20	
-00296c60	98	DEFAULT	unknown	FUN_00696c60	
-00296cd0	98	USER_DEFINED	unknown	Bsp_Render	
-00296dc0	541	DEFAULT	unknown	FUN_00696dc0	
-00296fe0	199	DEFAULT	unknown	FUN_00696fe0	
-002970b0	485	DEFAULT	unknown	FUN_006970b0	
-00297710	1201	DEFAULT	unknown	FUN_00697710	
+002957a0	269	USER_DEFINED	__thiscall	CBsp_IlumRegiones	void __thiscall(int n)
+002958b0	1586	USER_DEFINED	__fastcall	CBsp_IniciarAreas	void __fastcall(void * self)
+00295ef0	907	USER_DEFINED	__fastcall	CBsp_IniciarRegiones	void __fastcall(void * self)
+00296290	248	USER_DEFINED	__cdecl	BspTri_GetAreas	void * __cdecl(void * tri, float dist, byte grande)
+00296390	140	USER_DEFINED	__thiscall	Tabla_Resize14	void __thiscall(int n)
+00296420	159	USER_DEFINED	__thiscall	Tabla_Resize2C	void __thiscall(int n)
+002964c0	242	USER_DEFINED	__cdecl	BspRegion_Acumular	void __cdecl(void * r, float * add)
+002965c0	1063	USER_DEFINED	__cdecl	BspRegion_Color	float * __cdecl(float * out, void * r, void * tri, uint color)
+002969f0	297	USER_DEFINED	__cdecl	BspRegion_Dividir	void __cdecl(void * r, void * areas)
+00296b20	318	USER_DEFINED	__cdecl	BspRegion_FormFactor	float __cdecl(void * a, void * b)
+00296c60	98	USER_DEFINED	__cdecl	Bsp_RenderTransp	void __cdecl(void)
+00296cd0	98	USER_DEFINED	__cdecl	Bsp_Render	void __cdecl(void)
+00296d40	116	USER_DEFINED	__cdecl	Bsp_RenderStencil	void __cdecl(void)
+00296dc0	541	USER_DEFINED	__cdecl	BspTri_Rotar	void __cdecl(void * list)
+00296fe0	199	USER_DEFINED	__cdecl	BspTri_SumTexel	void __cdecl(void * tri, uint x, uint y, float * acc, int * n)
+002970b0	485	USER_DEFINED	__cdecl	BspTri_Media	float * __cdecl(float * out, void * tri, int x, int y)
+00297710	1201	USER_DEFINED	__cdecl	BspTri_Interp	void __cdecl(void * tri, void * p, void * n, float * uv, byte lmap)
 00297bd0	180	DEFAULT	unknown	FUN_00697bd0	
 00297c90	137	DEFAULT	unknown	FUN_00697c90	
 00297d20	121	DEFAULT	unknown	FUN_00697d20	
@@ -8303,8 +8304,8 @@ rva	size	source	callconv	name	signature
 002a5be0	104	DEFAULT	unknown	FUN_006a5be0	
 002a5c50	104	DEFAULT	unknown	FUN_006a5c50	
 002a5cc0	85	DEFAULT	unknown	FUN_006a5cc0	
-002a5d20	89	DEFAULT	unknown	FUN_006a5d20	
-002a5d80	78	DEFAULT	unknown	FUN_006a5d80	
+002a5d20	89	USER_DEFINED	__cdecl	Dlg_SetFloat	void __cdecl(void * hwnd, int id, float v, int prec)
+002a5d80	78	USER_DEFINED	__cdecl	Dlg_GetFloat	byte __cdecl(void * hwnd, int id, float * out)
 002a5dd0	131	DEFAULT	unknown	FUN_006a5dd0	
 002a5e70	66	DEFAULT	unknown	FUN_006a5e70	
 002a5ec0	223	DEFAULT	unknown	FUN_006a5ec0	
@@ -8770,11 +8771,11 @@ rva	size	source	callconv	name	signature
 002d0b70	174	USER_DEFINED	__thiscall	CTablaHash_GetList	int __thiscall(void **elems, int *num)
 002d0c20	109	USER_DEFINED	__thiscall	CTablaHash_Slot	uint __thiscall(char *key)
 002d1250	41	DEFAULT	unknown	FUN_006d1250	
-002d1290	37	DEFAULT	unknown	FUN_006d1290	
+002d1290	37	USER_DEFINED	__fastcall	BspLuces_dtor	void __fastcall(void * self)
 002d12c0	101	DEFAULT	unknown	FUN_006d12c0	
 002d1330	73	DEFAULT	unknown	FUN_006d1330	
 002d1380	1240	DEFAULT	unknown	FUN_006d1380	
-002d1860	50	DEFAULT	unknown	FUN_006d1860	
+002d1860	50	USER_DEFINED	__fastcall	BspLuces_Render	void __fastcall(void * self)
 002d18a0	407	DEFAULT	unknown	FUN_006d18a0	
 002d1a40	58	DEFAULT	unknown	FUN_006d1a40	
 002d1a80	943	DEFAULT	unknown	FUN_006d1a80	
@@ -8790,9 +8791,9 @@ rva	size	source	callconv	name	signature
 002d2710	36	DEFAULT	unknown	FUN_006d2710	
 002d2740	89	DEFAULT	unknown	FUN_006d2740	
 002d27a0	379	DEFAULT	unknown	FUN_006d27a0	
-002d2920	182	DEFAULT	unknown	FUN_006d2920	
+002d2920	182	USER_DEFINED	__thiscall	BspRegion_ctor	void * __thiscall(int x, int y, int lx, int ly, void * padre)
 002d2a20	160	DEFAULT	unknown	FUN_006d2a20	
-002d2ac0	197	DEFAULT	unknown	FUN_006d2ac0	
+002d2ac0	197	USER_DEFINED	__fastcall	BspRegion_dtor	void __fastcall(void * self)
 002d2b90	62	DEFAULT	unknown	FUN_006d2b90	
 002d2bd0	115	DEFAULT	unknown	FUN_006d2bd0	
 002d2c50	33	DEFAULT	unknown	FUN_006d2c50	

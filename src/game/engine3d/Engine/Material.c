@@ -929,14 +929,6 @@ CMaterial *__thiscall CListaMat_Extract(CListaMat *self, CMaterial *mat, byte su
 	return m;
 }
 
-/* with an opacity: transparent flag or map 1 without b3b */
-static byte Mat_IsTransp(const CMaterial *m) {
-	if (m->params.atrib & 0x20) {
-		return 0;
-	}
-	return m->params.transp || (m->mapa[1] && !m->params.b3b);
-}
-
 int Mat_Compare(const CMaterial *a, const CMaterial *b) {
 	CHECK(a && b);
 	if (a == b) {
