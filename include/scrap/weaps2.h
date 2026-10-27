@@ -93,6 +93,8 @@ static inline const WeapEntityVtbl *Weap_Vtbl(cEntity *e) {
 #define Veh_HitInfo(v) ((void *)((byte *)(v) + 0x298))	/* the last entity or point the ship hit */
 #define Veh_Kick(v) ((void *)((byte *)(v) + 0x414))	/* the recoil of the shots */
 #define Veh_Speed(v) WFIELD(v, float, 0x46c)
+#define Veh_PushTime(v) WFIELD(v, float, 0x470)	/* the push of the Tesla upgrade 5 against the flight */
+#define Veh_Push(v) WFIELD(v, vec3_t, 0x474)
 #define Veh_AI(v) WFIELD(v, byte *, 0x4fc)		/* its int at +0x64 is set to 2 by a hit */
 #define Veh_EMITime(v) WFIELD(v, float, 0x58c)	/* the electromagnetic interference of the Hook */
 #define Veh_Weapons(v) ((cTargetLock *)((byte *)(v) + 0x5f0))
@@ -102,6 +104,7 @@ static inline const WeapEntityVtbl *Weap_Vtbl(cEntity *e) {
 #define Veh_WeapNodes(v) WFIELD(v, uint32_t *, 0x60c)	/* render node per ammo kind and slot: [ammo * 4 + slot] */
 #define Veh_Player(v) WFIELD(v, int, 0x410)		/* 0..3 for the ship of a local player */
 #define Veh_Aim(v) ((void *)((byte *)(v) + 0x6d0))
+#define Veh_AimLimit(v) WFIELD(v, float, 0x6d8)	/* +0x8 of the aim, "AngLimit" */
 #define Veh_AimAng(v) WFIELD(v, float, 0x6dc)		/* the aim angles x, y */
 #define Veh_AimAngY(v) WFIELD(v, float, 0x6e0)
 #define Veh_TargetLink(v) ((Nto1Node *)((byte *)(v) + 0x6e4))	/* the target entity of the ship */
@@ -224,6 +227,38 @@ static inline const WeapEntityVtbl *Weap_Vtbl(cEntity *e) {
 #define g_TeslaMinAngRangeUpg GAME_DATA(float, 0x44a778)
 #define g_TeslaMinAngRangeUpgPad GAME_DATA(float, 0x44a790)
 #define g_TeslaMinAngRange GAME_DATA(float, 0x44a810)
+#define g_TeslaTrackForce GAME_DATA(float, 0x44a698)
+#define g_TeslaShootFile GAME_DATA(const char *, 0x44a6c0)
+#define g_TeslaMaxAngRangePad GAME_DATA(float, 0x44a718)
+#define g_TeslaUpRangeTime GAME_DATA(float, 0x44a7b8)
+#define g_TeslaRange GAME_DATA(float, 0x44a7d0)
+#define g_TeslaHitForce GAME_DATA(float, 0x44a7f8)
+#define g_TeslaAmmoCost GAME_DATA(float, 0x44a858)
+#define g_TeslaDistLimit GAME_DATA(float, 0x44a870)
+#define g_TeslaMaxAngRange GAME_DATA(float, 0x44a888)
+#define g_VulcanIDWeap GAME_DATA(int, 0x448818)
+#define g_VulcanIDAmmo GAME_DATA(int, 0x44a8b0)
+#define g_FXVulcanHitDistance GAME_DATA(float, 0x44a8c8)
+#define g_VulcanTimeDelay GAME_DATA(float, 0x44a900)
+#define g_VulcanRic2Sound GAME_DATA(const char *, 0x44a918)
+#define g_VulcanRicSoundAttIni GAME_DATA(float, 0x44a930)
+#define g_VulcanDistLimitUPG GAME_DATA(float, 0x44a948)
+#define g_VulcanTimeDelayUPG GAME_DATA(float, 0x44a960)
+#define g_VulcanHitForce GAME_DATA(float, 0x44a978)
+#define g_VulcanDamageEasy GAME_DATA(int, 0x44a9b0)
+#define g_VulcanDistLimit GAME_DATA(float, 0x44a9c8)
+#define g_VulcanHitFile GAME_DATA(const char *, 0x44a9e0)
+#define g_VulcanRic1Sound GAME_DATA(const char *, 0x44a9f8)
+#define g_VulcanRic0Sound GAME_DATA(const char *, 0x44aa10)
+#define g_VulcanAmmoCost GAME_DATA(float, 0x44aa28)
+#define g_VulcanBulletFile GAME_DATA(const char *, 0x44aa40)
+#define g_VulcanDamage GAME_DATA(int, 0x44aa68)
+#define g_VulcanHitUseNormal GAME_DATA(int, 0x44aa80)
+#define g_VulcanRic0SoundVol GAME_DATA(float, 0x44aa98)
+#define g_VulcanRic2SoundVol GAME_DATA(float, 0x44aab0)
+#define g_VulcanRic1SoundVol GAME_DATA(float, 0x44aac8)
+#define g_VulcanRange GAME_DATA(float, 0x44aae0)
+#define g_VulcanRicSoundAttEnd GAME_DATA(float, 0x44aaf8)
 
 /* the state of the module */
 #define g_InfernoHitName ((char *)Game_Ptr(0x449480))	/* 0x80, the entity of the sphere callback */
@@ -346,6 +381,61 @@ static inline void Weap_EngineSound(cEntity *m, const char *file, float vol, flo
 
 void Weap_UpdateHud(cAbstractFile *f, char (*targets)[0x80], float *times, int levelRot, int levelSize);
 
+/* the length of (x, y, z), summed like the original */
+static inline float Weap_Len(float x, float y, float z) {
+	return (float)__builtin_sqrt((double)(y * y + x * x + z * z));
+}
+
+/* (x, y, z) normalized into out unless its length is 0 */
+static inline void Weap_Norm(vec3_t *out, float x, float y, float z) {
+	float len = Weap_Len(x, y, z);
+	if (len == 0.0f) {
+		out->x = x;
+		out->y = y;
+		out->z = z;
+		return;
+	}
+	float inv = 1.0f / len;
+	out->x = x * inv;
+	out->y = y * inv;
+	out->z = z * inv;
+}
+
+/* the push of a shot of n bays with force on e (an entity with life that walks not), away from the ship v */
+static inline void Weap_PushAway(cEntity *v, cEntity *e, int n, float force) {
+	vec3_t a, b, d, nd, ov, vel;
+
+	float mass = Ent_Mass(e);
+	const vec3_t *pv = Weap_Vtbl(v)->GetPos(v, &a);
+	const vec3_t *pe = Weap_Vtbl(e)->GetPos(e, &b);
+	d.x = pe->x - pv->x;
+	d.y = pe->y - pv->y;
+	d.z = pe->z - pv->z;
+	float k = (float)n * force / mass;
+	const vec3_t *dir = Vec3_NormalizeTo(&nd, &d);
+	float px = dir->x * k;
+	float py = dir->y * k;
+	float pz = dir->z * k;
+	const vec3_t *cur = Weap_Vtbl(e)->GetVel(e, &ov);
+	vel.y = cur->y + py;
+	vel.z = cur->z + pz;
+	vel.x = cur->x + px;
+	Weap_Vtbl(e)->SetVel(e, &vel);
+}
+
+/* the HUD item of a weapon that does not fire turns back to the angle 0 by d */
+static inline void Weap_HudSpinDown(cScorerItem *item, float d) {
+	float a = NormAng(Item_Rot(item));
+	Item_Rot(item) = a;
+	float s = a + d;
+	if (0.0f > s) {
+		Item_Rot(item) = s;
+		return;
+	}
+	float t = a - d;
+	Item_Rot(item) = t > 0.0f ? t : 0.0f;
+}
+
 /* Inferno.c; the natives with their names in the registry of C functions ("!name" for cPy_Function_SetFunc),
  * the missile callbacks without a name are set by the fire natives */
 void Inferno_Shoot(const char *name);
@@ -406,5 +496,24 @@ void Swarm_ServerHitNative(cAbstractFile *f);	/* "SwarmServerHit" */
 void Swarm_Hit(const char *name, const char *ship, const char *target);
 void Swarm_NetSetUpNative(cAbstractFile *f);	/* "SwarmSetUp" */
 byte Tesla_Shoot(cEntity *v);
+
+/* Tesla.c */
+void Tesla_CreateNative(cAbstractFile *f);	/* "TeslaCreate" */
+void Tesla_HudNative(cAbstractFile *f);		/* "TeslaFX" */
+void Tesla_FireNative(cAbstractFile *f);	/* "TeslaFire" */
+void Tesla_Push(cEntity *v, cEntity *e, int n);
+void Tesla_AimOnNative(cAbstractFile *f);	/* "TeslaPress" */
+void Tesla_AimOffNative(cAbstractFile *f);	/* "TeslaRelease" */
+void Tesla_AimOn(cEntity *v);
+
+/* Vulcan.c */
+void Vulcan_Shoot(cEntity *v);
+void Vulcan_CreateNative(cAbstractFile *f);	/* "VulcanCreate" */
+void Vulcan_HudNative(cAbstractFile *f);	/* "VulcanFX" */
+void Vulcan_FireNative(cAbstractFile *f);	/* "VulcanFire" */
+void Vulcan_Push(cEntity *v, cEntity *e, int n);
+void Vulcan_AimOnNative(cAbstractFile *f);	/* "VulcanPress" */
+void Vulcan_AimOffNative(cAbstractFile *f);	/* "VulcanRelease" */
+void Vulcan_AimOn(cEntity *v);
 
 #endif

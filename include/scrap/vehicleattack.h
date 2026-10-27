@@ -38,6 +38,8 @@ SD_SIZE(cVehicleAttack, 0x7c);
 #define g_VehicleAttackReset GAME_DATA(float, 0x4479c0)	/* the time the shots on a target are kept */
 
 cVehicleAttack *__fastcall cVehicleAttack_ctor(cVehicleAttack *self);
+/* in WithLifeEntity.c (rva 0x12b8a0) */
+void __fastcall cVehicleAttack_dtor(cVehicleAttack *self);
 /* drops the target after its reset time */
 void __fastcall cVehicleAttack_Expire(cVehicleAttack *self);
 /* the entity of the hit info, "" for none */

@@ -56,15 +56,6 @@ typedef struct cObjAIVtbl {
 	void(__thiscall *UpdateOff)(void *ai, float dt);		/* 0x08 */
 } cObjAIVtbl;
 
-/* the variable methods of the sounds (cSndInterface::vftable from slot 1) */
-typedef struct cObjSndVtbl {
-	void *vf00;
-	byte(__thiscall *VarI)(cSndInterface *self, const char *name, int *i, int set);
-	byte(__thiscall *VarF)(cSndInterface *self, const char *name, double *d, int set);
-	byte(__thiscall *VarS)(cSndInterface *self, const char *name, char **s, int set);
-	byte(__thiscall *VarV)(cSndInterface *self, const char *name, double *x, double *y, double *z, int set);
-} cObjSndVtbl;
-
 static inline cObjEntity *Obj(cEntity *e) {
 	return (cObjEntity *)e;
 }
@@ -75,10 +66,6 @@ static inline const cObjCamVtbl *Cam_Vtbl(cEntity *cam) {
 
 static inline const cObjAIVtbl *AI_Vtbl(void *ai) {
 	return *(const cObjAIVtbl **)ai;
-}
-
-static inline const cObjSndVtbl *Snd_Vtbl(cSndInterface *snd) {
-	return (const cObjSndVtbl *)snd->vftable;
 }
 
 static inline uint32_t Float_Bits(float f) {

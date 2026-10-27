@@ -6888,6 +6888,53 @@ SD_HOOK(cAICharControl_Wait, 0x0722e0, 83)
 /* module agent: AI/AICharGroup and the AI subclasses (hooks below this line) */
 
 /* module agent: Vehicle weapons Tesla+Vulcan and WithLifeEntity (hooks below this line) */
+SD_HOOK(Tesla_CreateNative, 0x128040, 674)
+SD_HOOK(Tesla_HudNative, 0x1282f0, 743)
+SD_HOOK(Tesla_FireNative, 0x1285e0, 1004)
+SD_HOOK(Tesla_Push, 0x1289d0, 497)
+SD_HOOK(Tesla_AimOnNative, 0x128bd0, 205)
+SD_HOOK(Tesla_AimOffNative, 0x128ca0, 216)
+SD_HOOK(Tesla_AimOn, 0x128d80, 203)
+SD_HOOK(Vulcan_Shoot, 0x128e50, 351)
+SD_HOOK(Vulcan_CreateNative, 0x128fb0, 7244)
+SD_HOOK(Vulcan_HudNative, 0x12ac00, 545)
+SD_HOOK(Vulcan_FireNative, 0x12ae30, 868)
+SD_HOOK(Vulcan_Push, 0x12b1a0, 310)
+SD_HOOK(Vulcan_AimOnNative, 0x12b2e0, 192)
+SD_HOOK(Vulcan_AimOffNative, 0x12b3a0, 193)
+SD_HOOK(Vulcan_AimOn, 0x12b470, 272)
+SD_HOOK(cWithLifeEntity_ctor, 0x12b580, 507)
+SD_HOOK(cWithLifeEntity_dtor, 0x12b780, 280)
+SD_HOOK(cVehicleAttack_dtor, 0x12b8a0, 272)
+SD_HOOK(cWithLifeEntity_Delete, 0x12b9b0, 38)			/* vf03 */
+SD_HOOK(cWithLifeEntity_SetSndTime, 0x12b9e0, 42)
+SD_HOOK(cWithLifeEntity_Burn, 0x12ba10, 281)
+SD_HOOK(cWithLifeEntity_VarF, 0x12bb30, 641)			/* vf17 */
+SD_HOOK(cWithLifeEntity_GetAction, 0x12bdc0, 34)		/* vf52 */
+SD_HOOK(cWithLifeEntity_GetNodeSlot, 0x12bdf0, 24)		/* vf25 */
+SD_HOOK(cWithLifeEntity_GetBurner, 0x12be10, 7)
+SD_HOOK(cWithLifeEntity_GetSndPos, 0x12be20, 197)		/* vf31 */
+SD_HOOK(cWithLifeEntity_GetClassName, 0x12bef0, 6)		/* vf04 */
+SD_HOOK(cWithLifeEntity_GetRadius, 0x12bf00, 7)		/* vf40 */
+SD_HOOK(cWithLifeEntity_UpdateOff, 0x12bf10, 153)		/* vf02 */
+SD_HOOK(cWithLifeEntity_VarI, 0x12bfb0, 639)			/* vf16 */
+SD_HOOK(cWithLifeEntity_IsType, 0x12c230, 80)			/* vf05 */
+SD_HOOK(cWithLifeEntity_CheckLife, 0x12c280, 183)		/* vf47 */
+SD_HOOK(cWithLifeEntity_FadeSounds, 0x12c340, 244)
+SD_HOOK(cWithLifeEntity_Tick, 0x12c440, 91)			/* vf23 */
+SD_HOOK(cWithLifeEntity_OnDamage, 0x12c4a0, 139)		/* vf50 */
+SD_HOOK(cWithLifeEntity_OnDeath, 0x12c530, 109)		/* vf49 */
+SD_HOOK(cWithLifeEntity_RenderNow, 0x12c5a0, 97)		/* vf46 */
+SD_HOOK(cWithLifeEntity_SetActCtrl, 0x12c610, 345)		/* vf54 */
+SD_HOOK(cWithLifeEntity_SetActive, 0x12c770, 74)		/* vf08 */
+SD_HOOK(cWithLifeEntity_SetUsrName, 0x12c7c0, 47)
+SD_HOOK(cWithLifeEntity_SetEmbeddedFX, 0x12c7f0, 54)		/* vf15 */
+SD_HOOK(cWithLifeEntity_SetPos, 0x12c830, 37)			/* vf07 */
+SD_HOOK(cWithLifeEntity_SetBurner, 0x12c860, 102)
+SD_HOOK(cWithLifeEntity_Update, 0x12c8d0, 132)			/* vf00 */
+SD_HOOK(cWithLifeEntity_VarS, 0x12c960, 1043)			/* vf18 */
+SD_HOOK(cWithLifeEntity_VarV, 0x12cd80, 419)			/* vf19 */
+SD_HOOK(cWithLifeEntity_IsEMIed, 0x12cf30, 16)			/* vf55, 3 bytes and int3 */
 
 /* module agent: Engine/lee_M3D.cpp and bsp_q3.cpp (hooks below this line) */
 
