@@ -14,6 +14,7 @@
 #include "scrap/render.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapmodel.h"
+#include "scrap/scrapworld.h"
 #include "scrap/varios.h"
 
 #define GM_CHECK(self) \
@@ -687,7 +688,7 @@ matrix_t *__thiscall CGameModel_NodoMatrix(CGameModel *self, matrix_t *out, uint
 	matrix_t m;
 
 	GM_CHECK(self);
-	Matrix_Copy(out, CModelo_GetNodeMatrix(self->Model, &m, i, anim, slot, visible, NULL));
+	Matrix_Copy(out, Matrix_Self(CModelo_GetNodeMatrix(self->Model, &m, i, anim, slot, visible, NULL)));
 	return out;
 }
 
