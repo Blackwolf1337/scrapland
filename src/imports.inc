@@ -716,3 +716,5 @@ SD_IMPORT(Dlg_GetFloat, 0x2a5d80)
 /* module agent: Entities/More+ObjEntity (imports below this line) */
 
 /* module agent: Entities/Vehicle/VehicleEffects+VehicleEntity.cpp (imports below this line) */
+
+/* module agent: Entities/Vehicle/VehicleMotors+MotorsEffects+Traffic.cpp (imports below this line) */

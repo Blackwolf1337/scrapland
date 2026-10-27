@@ -4032,3 +4032,5 @@ SD_HOOK(BspTri_Interp, 0x297710, 1201)
 /* module agent: Entities/More+ObjEntity (hooks below this line) */
 
 /* module agent: Entities/Vehicle/VehicleEffects+VehicleEntity.cpp (hooks below this line) */
+
+/* module agent: Entities/Vehicle/VehicleMotors+MotorsEffects+Traffic.cpp (hooks below this line) */
