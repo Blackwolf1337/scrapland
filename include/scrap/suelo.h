@@ -155,6 +155,8 @@ void __thiscall CCollideQuad_Write(CCollideQuad *self, CArchIO *f);
 /* the largest vertical gap between the triangles into gapTop and gapBottom */
 void __fastcall CCollideQuad_CalcGap(CCollideQuad *self);
 
+/* the quads of cell x z, NULL outside the grid (tabla.h) */
+CCollideQuad *__thiscall CAlturas_GetCell(CAlturas *self, uint32_t x, uint32_t z);
 CAlturas *__fastcall CAlturas_ctor(CAlturas *self);
 void __fastcall CAlturas_dtor(CAlturas *self);
 /* the Param of all meshes of the quads */
@@ -198,6 +200,14 @@ byte __thiscall CSuelo_SphereContact(CSuelo *self, const vec3_t *a, const vec3_t
 byte __thiscall CSuelo_SweepSphere(CSuelo *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out,
 	vec3_t *hit, vec3_t *n);
 struct CMallaTri;
+
+/* Engine/gety.cpp (Gety.c): the highest triangle point below maxY at x, z, -FLT_MAX for none; all: also the
+ * triangles and meshes without collisions */
+float __thiscall CSuelo_GetY(CSuelo *self, float x, float z, float maxY, byte all);
+/* the same between minY and maxY, of the triangles whose normal has a y of 0.6 or more */
+float __thiscall CSuelo_GetYRange(CSuelo *self, float x, float z, float maxY, float minY, byte all);
+/* the highest point below maxY of all triangles of the cell into out (may be NULL); 0 for none */
+byte __thiscall CSuelo_GetYBelow(CSuelo *self, float x, float z, float maxY, float *out);
 
 /* the triangles of tm added to mesh (a mesh added at run time: outID and outIni get its MeshID and first triangle),
  * then into the quads */

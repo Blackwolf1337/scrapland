@@ -10,6 +10,20 @@
 /* frames closer than this to the first one are the same */
 #define ANIMVERT_EPS 1e-4
 
+CEVA *__thiscall CEVA_ctor(CEVA *self) {
+	self->nV = 0;
+	self->AnimV = NULL;
+	return self;
+}
+
+CAnimVert *__fastcall CAnimVert_ctor(CAnimVert *self) {
+	self->nTr = 0;
+	self->Tr = NULL;
+	self->esc = 0.0f;
+	self->Tr2 = NULL;
+	return self;
+}
+
 void __fastcall CAnimVert_FreeTr(CAnimVert *self) {
 	if (!self->Tr) {
 		return;

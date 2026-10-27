@@ -198,10 +198,11 @@ SD_IMPORT(CAnimacion_dtor, 0x2ab940)
 SD_IMPORT(CSuelo_CalcIlum, 0x261630)
 
 /* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
+SD_IMPORT(SistPart_Draw, 0x2b7150)
+SD_IMPORT(SistPart_Draw2, 0x2b55d0)
 SD_IMPORT(CObjBase3D_SetNodo, 0x2cad70)
 
 /* src/game/engine3d/Engine/SueloPortal.c (called from Engine/SueloPortal.cpp, include/scrap/sueloportal.h) */
-SD_IMPORT(CSuelo_RayoVert, 0x2ca360)
 SD_IMPORT(Portales_DebugDraw, 0x26d0d0)
 
 /* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/mundo.h) */
@@ -241,6 +242,7 @@ SD_IMPORT(Debug_Line, 0x27cb80)
 
 
 /* module agent: Engine/MallaD3D (imports below this line) */
+SD_IMPORT(MallaD3D_Render, 0x2b67a0)
 SD_IMPORT(CMallaD3D_CalcSegmentos, 0x2d5350)
 
 /* module agent: Engine/Suelo (imports below this line) */
@@ -279,7 +281,6 @@ SD_IMPORT(CNodoR_UpdateNodo, 0x23f5d0)
 SD_IMPORT(CNodoR_ApplyFX, 0x23f540)
 
 /* module agent: Engine/Animacion (imports below this line) */
-SD_IMPORT(CEVA_ctor, 0x2d33e0)
 
 /* module agent: Engine/AnimGrupo (imports below this line) */
 SD_IMPORT(CAnimCtrl_dtor, 0x250f10)
@@ -465,10 +466,6 @@ SD_IMPORT(CGameLensFlare_SetF18, 0x232ff0)
 
 /* module agent: Engine/bsp.cpp (imports below this line) */
 SD_IMPORT(CBsp_InitD3D, 0x28f710)
-SD_IMPORT(BspRegion_ctor, 0x2d2920)
-SD_IMPORT(BspRegion_dtor, 0x2d2ac0)
-SD_IMPORT(BspLuces_dtor, 0x2d1290)
-SD_IMPORT(BspLuces_Render, 0x2d1860)
 SD_IMPORT(CBsp_LeerEMI, 0x28c650)
 SD_IMPORT(CBsp_Calcular, 0x28a860)
 SD_IMPORT(CBsp_Preparar, 0x28efe0)
@@ -629,6 +626,9 @@ SD_IMPORT(RenderCalcIlum_Luz, 0x2ce410)
 /* module agent: Engine leftovers 0x265000..0x278000 (imports below this line) */
 
 /* module agent: Engine leftovers 0x2c9d90..0x2d6010 (imports below this line) */
+SD_IMPORT(crt_open, 0x359882)
+SD_IMPORT(crt_read, 0x35a234)
+SD_IMPORT(crt_close, 0x358d98)
 
 /* module agent: Engine leftovers 0x29c000..0x2b2000 (imports below this line) */
 

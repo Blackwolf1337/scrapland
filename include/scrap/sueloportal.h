@@ -112,17 +112,28 @@ int Sector_Num(void);
 int Sector_OfZonaNodo(CNodo3D *nodo);
 void Sectores_Free(void);
 
-/* other modules (src/imports.inc) */
-/* rva 0x2ca360: the vertical ray of the floor at x, z; res: SueloRayo */
+/* the query of Engine/gety.cpp (src/game/engine3d/Engine/Gety.c): the highest floor point below y at x, z */
+#define GETY_INFO_MINY 0x1		/* minY given, else -FLT_MAX */
+#define GETY_INFO_MAXY 0x2		/* y given, else FLT_MAX */
+#define GETY_INFO_MINB 0x4		/* the y of the normal at least minB, else -1 */
+#define GETY_INFO_MAXB 0x8		/* at most maxB, else 1 */
+#define GETY_INFO_NOCOL 0x100		/* also the triangles without collisions */
+#define GETY_INFO_SECTOR 0x200		/* not the meshes added at run time */
 typedef struct SueloRayo {
-	uint32_t flags;			/* 0x00 in: 0x202 */
-	int i4;
-	float y;			/* 0x08 in: the height it starts at */
-	byte pad_c[8];
+	uint32_t flags;			/* 0x00 GETY_INFO_ */
+	float minY;			/* 0x04 */
+	float y;			/* 0x08 the height it starts at */
+	float minB;			/* 0x0c */
+	float maxB;			/* 0x10 */
 	float hitY;			/* 0x14 out */
-	int i18;
+	struct CCollideTri *tri;	/* 0x18 out, NULL for the top of a sector */
 	int sector;			/* 0x1c out, -1 none */
 } SueloRayo;
+SD_SIZE(SueloRayo, 0x20);
+/* GETY_INFO_MAXY|GETY_INFO_SECTOR only; with g_RayoVertSectors the top of the sector the ray starts in */
 byte __thiscall CSuelo_RayoVert(void *suelo, float x, float z, SueloRayo *res);
+/* the highest triangle point between minY and y with the flags of info; 1 when found */
+byte __thiscall CSuelo_GetYInfo(void *suelo, float x, float z, SueloRayo *info);
+#define g_RayoVertSectors GAME_DATA(int, 0x4e6e10)
 
 #endif

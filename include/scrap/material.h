@@ -30,6 +30,8 @@ enum {
 #define MAT_SHADER 0x200		/* the name holds "(+shader: name)" */
 #define MAT_NAMED 0x300			/* materials only shared with the same name */
 #define MAT_NOSHARE 0x8
+#define MAT_SOMBRA 0x20			/* casts shadows in the light maps also when transparent (bsp2.cpp) */
+#define MAT_AREALIGHT 0x100		/* the name holds "(+area_light: name)" of a radiosity light (radiosidad.cpp) */
 #define MAT_1000 0x1000		/* transparent, but the alpha constant of the pixel shaders stays */
 
 /* a texture of the texture manager: the reference (hint) and its device texture */

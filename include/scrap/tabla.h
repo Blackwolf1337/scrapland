@@ -65,5 +65,6 @@ void __fastcall Tabla_Free(CTabla *t);
 void __thiscall Tabla_Resize4(CTabla *t, int n);
 void __thiscall Tabla_Resize14(CTabla *t, int n);
 void __thiscall Tabla_Resize2C(CTabla *t, int n);
+void __thiscall Tabla_Resize38(CTabla *t, int n);
 
 #endif
