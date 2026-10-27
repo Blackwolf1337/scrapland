@@ -670,3 +670,10 @@ if bsptexx * bsptexy >= 16:
 		bspimg(bspol + 0xfc, 3)))
 check('CBsp_AjustarGamma', lambda: (SDTest.Call(0x285500, 'tvi', bspone), bspimg(bspol + 0xb0, 3), tpeek(bspol + 0x7c, 3)))
 check('BspTri_CalcGlow none', lambda: (SDTest.Call(0x2901c0, 'vi', bspol), bspi(bspol + 0xd0)))
+# the texels of no list filled from their neighbours
+bspfi = bspz(12)
+SDTest.Call(0x2cf500, 'tviii', bspfi, 5, 4)
+bspset(bspi(bspfi + 8), bsprnds(80, -1.0, 2.0))
+bspfm = bspbmp(5, 4, (1, 0, 0, 7, 0, 0, 0, 0, 0, 0, 9, 0, 3, 0, 5, 0, 0, 0, 0, 2))
+check('CBmpFlt_Rellenar', lambda: (SDTest.Call(0x285820, 'vii', bspfi, bspfm), bspimg(bspfi, 4)))
+check('CBmpFlt_Rellenar none', lambda: SDTest.Call(0x285820, 'vii', bspz(12), bspfm))

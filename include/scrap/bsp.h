@@ -356,6 +356,8 @@ void __fastcall CBsp_IniciarRegiones(CBsp *self);
 void __fastcall CBsp_IniciarAreas(CBsp *self);
 void BspTri_CalcGlow(BspTri *list);
 float Bsp_Oclusion(const vec3_t *p, const vec3_t *n, float r, int samples, const vec3_t *luz, CSuelo *suelo);
+void CBmpFlt_Rellenar(CBmpFlt *img, const CBmp *mask);
+void __fastcall CBsp_GuardarIni(CBsp *self);
 void __thiscall Bsp_FinMensaje(CBsp *self, int secs);
 
 /* the rest */

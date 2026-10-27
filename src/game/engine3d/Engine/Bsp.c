@@ -2909,3 +2909,92 @@ float Bsp_Oclusion(const vec3_t *p, const vec3_t *n, float r, int samples, const
 	}
 	return 1.0f - (float)hits / (float)samples;
 }
+
+
+/* the texels of no list (mask 0) take the weighted average of the neighbours of a list (sides 16, corners 1);
+ * without any they are marked (4, 0, 4, 0) */
+void CBmpFlt_Rellenar(CBmpFlt *img, const CBmp *mask) {
+	static const int dx[8] = { -1, 0, 1, -1, 1, -1, 0, 1 };
+	static const int dy[8] = { -1, -1, -1, 0, 0, 1, 1, 1 };
+	static const int peso[8] = { 1, 16, 1, 16, 16, 1, 16, 1 };
+
+	if (!img->img) {
+		return;
+	}
+	uint32_t w = (uint32_t)img->ancho;
+	int h = img->alto;
+	for (int y = 0; y < h; y++) {
+		const uint32_t *pm = CBmp_Pixel(mask, 0, (uint32_t)y);
+		float *pf = CBmpFlt_Pixel(img, 0, (uint32_t)y);
+		for (int x = 0; x < (int)w; x++, pm++, pf += 4) {
+			if (*pm) {
+				continue;
+			}
+			float sw = 0.0f, sr = 0.0f, sg = 0.0f, sb = 0.0f, sa = 0.0f;
+			for (int k = 0; k < 8; k++) {
+				uint32_t xx = (uint32_t)(dx[k] + x);
+				uint32_t yy = (uint32_t)(dy[k] + y);
+				if (xx >= w || yy >= (uint32_t)h || !*CBmp_Pixel(mask, xx, yy)) {
+					continue;
+				}
+				const float *p = CBmpFlt_Pixel(img, xx, yy);
+				float f = (float)peso[k];
+				float p0 = p[0], p1 = p[1], p2 = p[2], p3 = p[3];
+				sr = f * p0 + sr;
+				sg = f * p1 + sg;
+				sb = f * p2 + sb;
+				sw = f + sw;
+				sa = p3 * f + sa;
+			}
+			if (sw > 0.0f) {
+				pf[0] = sr / sw;
+				pf[1] = sg / sw;
+				pf[2] = sb / sw;
+				pf[3] = sa / sw;
+			} else {
+				pf[0] = 4.0f;
+				pf[1] = 0.0f;
+				pf[2] = 4.0f;
+				pf[3] = 0.0f;
+			}
+		}
+	}
+}
+
+
+/* the light map settings back into "<map>.ini" when one changed (a backup of the old file first) */
+void __fastcall CBsp_GuardarIni(CBsp *self) {
+	char name[0x104];
+	CArchINI ini;
+	const char *s = "mapa_sombras";
+
+	if (!g_LmapGuardarIni) {
+		return;
+	}
+	Ruta_Merge(name, ".ini", self->nombre);
+	CArchINI_ctorLoad(&ini, name, NULL);
+	int n = CArchINI_SetFloat(&ini, s, "escala", g_MapaSombrasEscala, 3);
+	n += CArchINI_SetFloat(&ini, s, "resolucion", g_MapaSombrasResol, 3);
+	n += CArchINI_SetFloat(&ini, s, "gamma", GAME_DATA(float, 0x432960), 2);
+	n += CArchINI_SetFloat(&ini, s, "brillo", GAME_DATA(float, 0x432964), 2);
+	n += CArchINI_SetBool(&ini, s, "sombras_suaves", GAME_DATA(int, 0x4b2b04));
+	n += CArchINI_SetInt(&ini, s, "text_tam_x", g_MapaSombrasTexX);
+	n += CArchINI_SetInt(&ini, s, "text_tam_y", g_MapaSombrasTexY);
+	n += CArchINI_SetBool(&ini, s, "radiosidad", g_MapaSombrasRadiosidad);
+	n += CArchINI_SetBool(&ini, s, "ilum_global", GAME_DATA(int, 0x4b2b14));
+	n += CArchINI_SetBool(&ini, s, "no_luz_amb", GAME_DATA(int, 0x4b2b18));
+	n += CArchINI_SetBool(&ini, s, "modulate4x", g_MapaSombrasModulate4x);
+	n += CArchINI_SetFloat(&ini, s, "modulate_coef", g_MapaSombrasModulate4x ? 0.25f : 1.0f, 3);
+	n += CArchINI_SetFloat(&ini, s, "modulate_max", g_MapaSombrasModulate4x ? 1.0f : 1.2f, 3);
+	n += CArchINI_SetInt(&ini, s, "rebotes", GAME_DATA(int, 0x432968));
+	n += CArchINI_SetFloat(&ini, s, "coef_rad", GAME_DATA(float, 0x43296c), 3);
+	n += CArchINI_SetBool(&ini, s, "calc_lmap2", g_CalcLmap2);
+	n += CArchINI_SetBool(&ini, s, "usar_txf", g_MapaSombrasUsarTxf);
+	if (n) {
+		File_Backup(name, 0);
+		if (CArchINI_Save(&ini, name, NULL, 0)) {
+			Err_Report(*crt_errno(), 0, "\n'%s'", name);
+		}
+	}
+	CArchINI_dtor(&ini);
+}
