@@ -56,6 +56,12 @@ typedef struct cNameItem {
 } cNameItem;
 SD_SIZE(cNameItem, 0xc);
 
+/* the cNameItem instance of HashTable.h (FilePak.c, also the assigned zones of Logic/Domination.c) */
+cNameItem *__thiscall NameTable_Find(HashTable *self, const char *key, uint32_t slot);
+byte __thiscall NameTable_Add(HashTable *self, const char *key, const int *v, byte warn);
+byte __thiscall NameTable_Delete(HashTable *self, const char *key);
+void __fastcall NameTable_Clear(HashTable *self);
+
 /* an entry of the build list: name, then offset and size in the new pack */
 typedef struct cPackEntry {
 	char name[0x104];		/* 0x000 */

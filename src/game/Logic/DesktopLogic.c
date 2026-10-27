@@ -1,0 +1,20 @@
+/*
+ * Logic/DesktopLogic.cpp of the game: the desktop (Betty's and Berto's chair), a generic character without a
+ * target and vf09 0 (include/scrap/logic.h).
+ */
+#include "scrap/logic.h"
+
+cGenCharLocalLogic *__thiscall cDesktopLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent) {
+	cGenCharLocalLogic_ctor(self, parent, 0);
+	self->base.vftable = Game_Ptr(CDESKTOPLOCALLOGIC_VFTABLE);
+	return self;
+}
+
+cGenCharLocalLogic *__thiscall cDesktopLocalLogic_Delete(cGenCharLocalLogic *self, byte flags) {
+	self->base.vftable = Game_Ptr(CDESKTOPLOCALLOGIC_VFTABLE);
+	cGenCharLocalLogic_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(*self));
+	}
+	return self;
+}
