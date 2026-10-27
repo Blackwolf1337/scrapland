@@ -1584,7 +1584,7 @@ static void FXS_BillCapsuleSmoke(cObjElementFXSceneBillArrives_A *self, const ve
 
 static const vec3_t fxs_xAxis = { 1.0f, 0.0f, 0.0f };
 
-/* the start of the ring dir */
+/* the direction of a particle of a ring: the x axis turned around y by f plus a jitter (added in the order of the original) */
 static const vec3_t *FXS_RingDir(vec3_t *out, float f, double jitRange, double jitAdd, int jitFirst) {
 	vec3_t ang;
 
