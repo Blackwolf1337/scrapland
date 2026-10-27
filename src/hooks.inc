@@ -4560,3 +4560,5 @@ SD_HOOK(CNodesTrafficInDoor_AddVehicle, 0x0a1c80, 113)
 SD_HOOK(CNodesTrafficInDoor_SectorHasTrack, 0x0a1d00, 158)
 SD_HOOK(CNodesTrafficInDoor_GetRespawnPoint, 0x0a1dd0, 166)
 SD_HOOK(CNodesTrafficInDoor_PickPoint, 0x0a1e80, 801)
+
+/* module agent: AI/NodesWorld.cpp (hooks below this line) */
