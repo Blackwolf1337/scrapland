@@ -701,3 +701,11 @@ SD_IMPORT(cWithLifeEntity_VarS, 0x12c960)
 SD_IMPORT(cWithLifeEntity_VarV, 0x12cd80)
 SD_IMPORT(cDebris_Step, 0x204970)
 SD_IMPORT(cDebrisSys_Release, 0x2053d0)
+
+/* module agent: World/FX/FXChar.cpp (imports below this line) */
+
+/* module agent: World/FX/FXScene.cpp (imports below this line) */
+
+/* module agent: World/FX/FXVehicle.cpp (imports below this line) */
+
+/* module agent: Engine/bsp.cpp (imports below this line) */

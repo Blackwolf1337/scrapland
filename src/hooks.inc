@@ -3734,3 +3734,11 @@ SD_HOOK(cMissileEntity_Update, 0x0f50a0, 136)
 SD_HOOK(cMissileEntity_ScaleWeapon, 0x0f5130, 125)
 SD_HOOK(cMissileEntity_VarS, 0x0f51b0, 1143)
 SD_HOOK(cMissileEntity_VarV, 0x0f5f20, 26)
+
+/* module agent: World/FX/FXChar.cpp (hooks below this line) */
+
+/* module agent: World/FX/FXScene.cpp (hooks below this line) */
+
+/* module agent: World/FX/FXVehicle.cpp (hooks below this line) */
+
+/* module agent: Engine/bsp.cpp (hooks below this line) */
