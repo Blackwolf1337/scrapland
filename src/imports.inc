@@ -700,3 +700,9 @@ SD_IMPORT(Menu_DrawStretch, 0x184710)
 SD_IMPORT(crt_ltoa, 0x34d525)
 
 /* module agent: AI/IVehicle.cpp (imports below this line) */
+
+/* module agent: Logic part 2 (Enemies..GenCharGroup) (imports below this line) */
+
+/* module agent: Entities/Char/WalkCharEntity.cpp (imports below this line) */
+
+/* module agent: Scorer part 3 (Gradient+Sprite+Tab) (imports below this line) */

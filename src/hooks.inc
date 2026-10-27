@@ -5527,3 +5527,9 @@ SD_HOOK(cSpecialActionScorer_DrawEnergy, 0x17a9e0, 680)
 SD_HOOK(cSpecialActionScorer_DrawCannon, 0x178a60, 642)
 
 /* module agent: AI/IVehicle.cpp (hooks below this line) */
+
+/* module agent: Logic part 2 (Enemies..GenCharGroup) (hooks below this line) */
+
+/* module agent: Entities/Char/WalkCharEntity.cpp (hooks below this line) */
+
+/* module agent: Scorer part 3 (Gradient+Sprite+Tab) (hooks below this line) */
