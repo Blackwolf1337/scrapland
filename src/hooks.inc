@@ -4611,3 +4611,18 @@ SD_HOOK(ChType_DtritusEndEvent, 0x0c6190, 593)
 SD_HOOK(ChType_DtritusHitEvent, 0x0c63f0, 606)
 SD_HOOK(ChType_DtritusRestartEvent, 0x0c6650, 351)
 SD_HOOK(ChType_FXDTritusAttack, 0x0c67b0, 337)
+/* src/game/Entities/Char/Type/Gear.c */
+SD_HOOK(ChType_GearHitChar, 0x0c6910, 554)
+SD_HOOK(ChType_GearActionPress, 0x0c6b40, 434)
+SD_HOOK(ChType_GearEndAction, 0x0c6d00, 396)
+SD_HOOK(ChType_EndActionEnd, 0x0c6e90, 387)		/* GearEndActionEnd */
+SD_HOOK(ChType_GearHit, 0x0c7020, 437)
+SD_HOOK(ChType_GearInitAction, 0x0c71e0, 616)
+SD_HOOK(ChType_GearShoot, 0x0c7450, 1804)
+SD_HOOK(ChType_GearSphereHit, 0x0c9130, 70)
+SD_HOOK(Logic_Flash, 0x0c9180, 130)
+SD_HOOK(ChType_FlashChar, 0x0c9210, 211)
+SD_HOOK(ChType_FlashHit, 0x0c92f0, 609)
+/* src/game/Entities/Char/Type/Maintenance.c */
+SD_HOOK(ChType_FXMaintenanceWork, 0x0c9560, 490)
+SD_HOOK(cAIChar_TestFlags, 0x0c9750, 18)

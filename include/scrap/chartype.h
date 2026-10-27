@@ -31,6 +31,7 @@
 #define WChar_God(e) (*(byte *)((byte *)(e) + 0x23c))			/* no damage */
 #define WChar_Attack(e) ((void *)((byte *)(e) + 0x298))		/* who hit it last (cVehicleAttack) */
 #define WChar_Shadow(e) ((void *)((byte *)(e) + 0x39c))		/* cPrimitive */
+#define WChar_B381(e) (*(byte *)((byte *)(e) + 0x381))		/* cleared by the flash */
 #define WChar_OwnerSlot(e) (*(int *)((byte *)(e) + 0x424))		/* "UsrControl", -1 for an AI */
 #define WChar_Ang(e) ((vec3_t *)((byte *)(e) + 0x428))
 #define WChar_Falling(e) (*(byte *)((byte *)(e) + 0x464))
@@ -47,9 +48,12 @@
 
 /* the slots of the character vtables the types call (after the ones of cObjEntityVtbl) */
 typedef struct cChTypeVtbl {
-	void *vf00_42[67];
+	void *vf00_33[52];
+	void *(__thiscall *FindAction)(cEntity *self, const char *name);	/* 0xd0 the action of its class or NULL */
+	void *vf35_42[14];
 	void(__thiscall *SetViewAng)(cEntity *self, const vec3_t *ang);	/* 0x10c */
 } cChTypeVtbl;
+SD_OFFSET(cChTypeVtbl, FindAction, 0xd0);
 SD_OFFSET(cChTypeVtbl, SetViewAng, 0x10c);
 
 static inline const cChTypeVtbl *ChType_Vtbl(cEntity *e) {
@@ -64,6 +68,10 @@ static inline void *ChType_ActCtrl(cEntity *e) {
 static inline byte *ChType_ActClass(void *ctrl) {
 	return *(byte **)((byte *)ctrl + 8);
 }
+
+/* a layer of the controller (cActCtrl_GetLayer): its action and the time in it */
+#define ChType_LayerAction(l) (*(void **)((byte *)(l) + 4))
+#define ChType_LayerTime(l) (*(float *)((byte *)(l) + 8))
 
 /* the action of layer 0 of the controller has a priority (another one runs) */
 static inline int ChType_ActPriority(void *ctrl) {
@@ -94,6 +102,9 @@ static inline const cChTypeLogicVtbl *ChLogic_Vtbl(cLocalLogic *l) {
 #define CHTYPE_BERTOFLASHHIT 0x0c2480
 #define CHTYPE_BETTYKILL 0x0c2c80
 #define CHTYPE_DTRITUSKILL 0x0c5cd0
+#define CHTYPE_GEARHIT 0x0c7020
+#define CHTYPE_GEARSPHEREHIT 0x0c9130
+#define CHTYPE_FLASHHIT 0x0c92f0
 
 /* engine variables (Gvars) */
 #define g_FXBankerStealFile GAME_DATA(char *, 0x446018)
@@ -124,19 +135,51 @@ static inline const cChTypeLogicVtbl *ChLogic_Vtbl(cLocalLogic *l) {
 #define g_FXDTritusAttackFile GAME_DATA(char *, 0x4466c8)
 #define g_DTritusHitTimeSpeed GAME_DATA(float, 0x4466e0)
 #define g_FXDTritusKillFile GAME_DATA(char *, 0x4466f8)
+#define g_GearMissileSoundVol GAME_DATA(float, 0x44686c)
+#define g_GearLoadWeaponSound GAME_DATA(char *, 0x446894)
+#define g_GearShootDamage GAME_DATA(int, 0x4468bc)
+#define g_GearMissileSound GAME_DATA(char *, 0x446904)
+#define g_GearShootPosX GAME_DATA(float, 0x44691c)
+#define g_GearShootDistance GAME_DATA(float, 0x446934)
+#define g_GearLoadWeaponSoundVol GAME_DATA(float, 0x44694c)
+#define g_GearHitSound GAME_DATA(char *, 0x446994)
+#define g_GearHitSoundVol GAME_DATA(float, 0x4469ac)
+#define g_GearShootPosZ GAME_DATA(float, 0x4469c4)
+#define g_GearShootFailAlarm GAME_DATA(float, 0x4469dc)
+#define g_GearShootHitAlarm GAME_DATA(float, 0x4469f4)
+#define g_GearMissileSpeed GAME_DATA(float, 0x446a24)
+#define g_GearShootSound GAME_DATA(char *, 0x446a54)
+#define g_GearShootSoundVol GAME_DATA(float, 0x446a6c)
+#define g_GearShootPosY GAME_DATA(float, 0x446a84)
+#define g_GearXplodeRadius GAME_DATA(float, 0x446a9c)
 #define g_GearLowWeaponEnergy GAME_DATA(float, 0x446ac0)
+#define g_FXMaintenanceWorkFile GAME_DATA(char *, 0x446b8c)
+#define g_GearTargetName GAME_DATA(char *, 0x460664)	/* GearTargetName: the target of the missile of the player */
 
 /* the characters of the running actions (the "MeEnt" CHECKs) */
 #define g_BankMasterEnt GAME_DATA(cEntity *, 0x4460a0)
 #define g_BertoEnt GAME_DATA(cEntity *, 0x4461ac)
 #define g_BettyEnt GAME_DATA(cEntity *, 0x4462a0)
 #define g_DtritusEnt GAME_DATA(cEntity *, 0x44665c)
+/* the gear natives: the name of the shooting gear (also the one the ball does not hurt), the missile, its point */
+#define g_GearTarget ((char *)Game_Ptr(0x446758))		/* [0x80] */
+#define g_GearSwName ((char *)Game_Ptr(0x4467d8))		/* [0x80] */
+#define g_GearSw GAME_DATA(cEntity *, 0x446858)
+#define g_GearXplodePos GAME_DATA(vec3_t, 0x446aa4)
+/* Logic_Flash: the point, the most characters to flash (-1 all), the count and the result */
+#define g_FlashPos GAME_DATA(vec3_t, 0x446ae8)
+#define g_FlashResult GAME_DATA(int, 0x446b18)
+#define g_FlashMax GAME_DATA(int, 0x446b1c)
+#define g_FlashCount GAME_DATA(int, 0x446b20)
+#define FLASH_ANGLE 1.5707963705062866		/* rva 0x3aeb90 */
 
 /* engine side */
 /* the name of the action of layer i, "" when it does not run (rva 0x62c40) */
 const char *__thiscall cActCtrl_GetActionName(void *ctrl, int i);
 /* the weapon energy of a character, 0 or more (rva 0xd4bc0) */
 void __thiscall cWalkCharEntity_SetEnergy(cEntity *self, float energy);
+/* the action, unless it runs already in its layer; 0 then or without it (rva 0x631c0) */
+byte __thiscall cActCtrl_PlayNew(void *ctrl, const char *action, int arg, float speed);
 /* the control of a character (rva 0xd0390, 0xd0410) */
 void __thiscall cWalkCharControl_Reset(void *ctrl, byte on);
 void __thiscall cWalkCharControl_Update(void *ctrl, cEntity *wle, float dt);
@@ -208,6 +251,22 @@ void ChType_DtritusEndEvent(cAbstractFile *params);
 void ChType_DtritusHitEvent(cAbstractFile *params);
 void ChType_DtritusRestartEvent(cAbstractFile *params);
 void ChType_FXDTritusAttack(cAbstractFile *params);
+
+/* Gear.c */
+void ChType_GearHitChar(const char *name, byte noLogic);
+void ChType_GearActionPress(cAbstractFile *params);
+void ChType_GearEndAction(cAbstractFile *params);
+void ChType_GearSphereHit(cAbstractFile *params);
+void ChType_GearHit(cAbstractFile *params);
+void ChType_GearInitAction(cAbstractFile *params);
+void ChType_GearShoot(cAbstractFile *params);
+int ChType_FlashChar(cEntity *e);
+void ChType_FlashHit(cAbstractFile *params);
+
+/* Maintenance.c */
+void ChType_FXMaintenanceWork(cAbstractFile *params);
+/* an inline of the character AI (rva 0xc9750): the bytes at +0x28 or +0x2a set */
+byte __fastcall cAIChar_TestFlags(const void *self);
 
 /* the shared steps of the natives (Banker.c) */
 /* the parameters: the name, an event name and a float (unused) */
