@@ -119,6 +119,17 @@ static inline CCollideQuad *Alturas_Cell(CAlturas *alt, uint32_t x, uint32_t z) 
 
 /* rva 0x261530: the floor nodes freed (with the shadow maps they are not needed) */
 void __fastcall CSuelo_FreeNodos(CSuelo *self);
+/* a vertex of the debug view of the collision meshes (FVF XYZ | DIFFUSE | TEX1) */
+typedef struct CollideVert {
+	vec3_t pos;			/* 0x00 */
+	uint32_t color;			/* 0x0c */
+	float u, v;			/* 0x10 */
+} CollideVert;
+SD_SIZE(CollideVert, 0x18);
+/* the three vertices of a triangle, shaded by its normal with the texture projected along its main axis in the
+ * solid view (ShowMapSolid) */
+void Collide_TriVerts(CollideVert *out, const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color);
+void CCollideMesh_DrawDebug(CCollideMesh *self, int nested);
 /* rva 0x261580: in / |in| into out (the length through double, 1 / len rounded to float), a copy for length 0 */
 vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);
 

@@ -7612,6 +7612,11 @@ SD_HOOK(cObjElementFXFadeOutTrail_Update, 0x1da950, 125)
 /* module agent: Rest A, game leftovers below 0x1a8000 (hooks below this line) */
 
 /* module agent: Rest B, game leftovers from 0x240000 (hooks below this line) */
+SD_HOOK(Collide_TriVerts, 0x258fc0, 1267)
+SD_HOOK(CCollideMesh_DrawDebug, 0x25a030, 550)
+SD_HOOK(CModelo_Render, 0x253610, 3241)
+SD_HOOK(CModelo_UpdateLOD, 0x2542c0, 985)
+SD_HOOK(CModelo_Visibility, 0x254940, 643)
 SD_HOOK(Video_WaitKeysUp, 0x280d10, 70)
 SD_HOOK(Video_PadPressed, 0x280d60, 112)
 SD_HOOK(Video_OpenStream, 0x280dd0, 386)

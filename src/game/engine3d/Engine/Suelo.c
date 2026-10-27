@@ -5,15 +5,19 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/bsp.h"
+#include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/escena.h"
 #include "scrap/mallatri.h"
 #include "scrap/material.h"
 #include "scrap/mundo.h"
+#include "scrap/render.h"
 #include "scrap/rendersuelo.h"
 #include "scrap/suelo.h"
 #include "scrap/sueloportal.h"
 #include "scrap/utild3d.h"
+#include "scrap/scrapmain.h"
 #include "scrap/win32.h"
 
 #define CSUELO_VFTABLE 0x3db13c
@@ -1944,4 +1948,161 @@ void __thiscall CSuelo_CalcIlum(void *suelo, CNodo3D *nodo, CEscena *esc) {
 			CMallaD3D_CalcIlum(Obj3D_Cast(self->nodos[i].obj3D, CLASE_OBJ3D_MALLAD3D), nodo, esc);
 		}
 	}
+}
+
+/* the debug view of the collision meshes (c_show and ShowMapSolid) */
+#define g_ShowMapSolid GAME_DATA(int, 0x4af850)		/* 0 wireframe, 1 solid, 2 solid with fog */
+#define g_CollideAddColor ((float *)Game_Ptr(0x432420))	/* added to the shaded colors, rgba */
+#define g_CollideVerts ((CollideVert *)Game_Ptr(0x4af8b0))	/* the triangle drawn */
+#define g_SectorColors ((const uint32_t *)Game_Ptr(0x432a34))
+
+/* the shading of the solid view: (0 < s) ? min(1, s) : 0 the way the original branches (NaN to the minss) */
+static float Collide_Clamp01(float s) {
+	return 0.0f >= s ? 0.0f : Float_MinSS(1.0f, s);
+}
+
+void Collide_TriVerts(CollideVert *out, const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color) {
+	if (g_ShowMapSolid) {
+		float e2x = c->x - a->x, e2y = c->y - a->y, e2z = c->z - a->z;
+		float e1y = b->y - a->y, e1z = b->z - a->z, e1x = b->x - a->x;
+		vec3_t n;
+		n.x = e1y * e2z - e1z * e2y;
+		n.y = e1z * e2x - e1x * e2z;
+		n.z = e1x * e2y - e1y * e2x;
+		float len = (float)__builtin_sqrt((double)(n.y * n.y + n.x * n.x + n.z * n.z));
+		if ((double)len != 0.0) {
+			float k = (float)(1.0 / (double)len);
+			n.x = k * n.x;
+			n.y = k * n.y;
+			n.z = k * n.z;
+		}
+		/* the axis of the largest normal component: the texture is projected along it */
+		float ax = __builtin_fabsf(n.x), ay = __builtin_fabsf(n.y), az = __builtin_fabsf(n.z);
+		int axis = 2;
+		if (ax >= ay && ax >= az) {
+			axis = 0;
+		} else if (ay >= ax && ay >= az) {
+			axis = 1;
+		}
+		const float k255 = 0.003921568859368563f;
+		float r = (float)(int)(color >> 16 & 0xff) * k255;
+		float g = (float)(int)(color >> 8 & 0xff) * k255;
+		float bl = (float)(int)(color & 0xff) * k255;
+		/* three directional lights */
+		float l1 = Collide_Clamp01((n.x * 0.2f + n.y + n.z * 0.4f) * 0.4f);
+		r = l1 + r;
+		g = l1 * 0.5f + g;
+		bl = l1 * Float_Keep(0.0f) + bl;
+		float l2 = Collide_Clamp01((n.z * -0.2f - (n.y * 0.4f + n.x * 0.6f)) * 0.5f);
+		r = l2 * 0.5f + r;
+		g = l2 * 0.5f + g;
+		bl = l2 * 1.2f + bl;
+		float l3 = Collide_Clamp01((n.y * Float_Keep(0.0f) + n.x * 0.5f - n.z * 0.5f) * 0.1f);
+		float rgba[4];
+		rgba[0] = l3 + r + 0.01f + g_CollideAddColor[0];
+		rgba[1] = l3 + g + 0.01f + g_CollideAddColor[1];
+		rgba[2] = l3 + bl + 0.01f + g_CollideAddColor[2];
+		rgba[3] = l3 + (l2 + (l1 + k255)) + 1.0f + g_CollideAddColor[3];
+		color = Color_FromFloat(rgba);
+		float s = g_MapaSombrasEscala * g_MapaSombrasResol / 10.0f;
+		const vec3_t *v[3] = { a, b, c };
+		for (int i = 0; i < 3; i++) {
+			float u, t;
+			if (axis == 0) {
+				t = v[i]->z;
+				u = v[i]->y;
+			} else {
+				t = axis == 1 ? v[i]->z : v[i]->y;
+				u = v[i]->x;
+			}
+			out[i].u = u * s;
+			out[i].v = t * s;
+		}
+	}
+	out[0].pos = *a;
+	out[1].pos = *b;
+	out[2].pos = *c;
+	out[0].color = color;
+	out[1].color = color;
+	out[2].color = color;
+}
+
+/* the triangles of the mesh by their flags (g_ShowCollision 1: the marked ones, 3: those with flag 4 only, 4: the
+ * marks ignored, 5: by sector), the marks cleared; top: the wireframe or the solid view with the back faces in red */
+void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
+	void *dev = g_pd3dDevice;
+
+	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, 0x142);	/* XYZ | DIFFUSE | TEX1 */
+	int mode = g_ShowCollision;
+	for (int i = 0; i < self->nTri; i++) {
+		CCollideTri *t = &self->pTri[i];
+		const vec3_t *v = self->pVert;
+		const vec3_t *a = &v[t->v[0]], *b = &v[t->v[1]], *c = &v[t->v[2]];
+		uint32_t f = t->flags;
+		uint32_t color;
+		if (mode == 1) {
+			if (!(f & 0xf000)) {
+				continue;
+			}
+		} else if (mode == 3) {
+			if (!(f & 4)) {
+				continue;
+			}
+		} else if (mode == 4) {
+			f &= 0xffff0fff;
+		}
+		if (f & 0x2000) {
+			f &= 4;
+			color = (f | 0x60202) << 3;
+		} else if (f & 0x1000) {
+			f &= 4;
+			color = f ? 0x103030 : 0x303010;
+		} else if (!(f & 1) && !(self->flags & 1)) {
+			f &= 4;
+			color = f ? 0x81010 : 0x101008;
+		} else {
+			f &= 4;
+			color = f ? 0x103010 : 0x101030;
+		}
+		if (mode == 5) {
+			if (f) {
+				color = 0;
+			} else if (!self->sector) {
+				color = 0xffffff;
+			} else {
+				color = g_SectorColors[self->sector % 14];
+			}
+		}
+		Collide_TriVerts(g_CollideVerts, a, b, c, color);
+		dev = g_pd3dDevice;
+		D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, 4, 1, g_CollideVerts, sizeof(CollideVert));
+		t->flags &= 0xfff;
+		mode = g_ShowCollision;
+	}
+	if (nested) {
+		return;
+	}
+	if (!g_ShowMapSolid) {
+		dev = g_pd3dDevice;
+		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FILLMODE, 2);
+		CCollideMesh_DrawDebug(self, 1);
+		dev = g_pd3dDevice;
+		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FILLMODE, 3);
+		if (!g_ShowMapSolid) {
+			return;
+		}
+	}
+	dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_CULLMODE, 2);
+	g_CollideAddColor[0] = 1.0f;
+	g_CollideAddColor[1] = 0.0f;
+	g_CollideAddColor[2] = 0.0f;
+	g_CollideAddColor[3] = 1.0f;
+	CCollideMesh_DrawDebug(self, 1);
+	g_CollideAddColor[0] = 0.0f;
+	g_CollideAddColor[1] = 0.0f;
+	g_CollideAddColor[2] = 0.0f;
+	g_CollideAddColor[3] = 1.0f;
+	dev = g_pd3dDevice;
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_CULLMODE, 3);
 }

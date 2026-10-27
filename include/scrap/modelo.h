@@ -177,6 +177,12 @@ void __thiscall CModelo_SetLod(CModelo *self, uint32_t i, CModelo *model);
 /* the morph entry with the tag for the animation of the slot; 0 if there is none */
 byte __thiscall CModelo_SetMorphSubset(CModelo *self, uint32_t slot, const char *tag);
 int __fastcall CModelo_GetSector(CModelo *self);
+/* the model drawn with its scene: the visibility (sector, box, portals), the LOD, the lights of the level */
+void __fastcall CModelo_Render(CModelo *self);
+/* a LOD drawn instead (then 1); 0 without LODs or the main model near enough */
+byte __fastcall CModelo_UpdateLOD(CModelo *self);
+/* 0 not seen, 2 only the stencil shadow, 3 seen; the value of the last frame in the passes that keep it */
+byte __thiscall CModelo_Visibility(CModelo *self, const matrix_t *m);
 /* a new animation of the model from the animation scene, warns about a second one with the same name */
 CAnimGrupo *__thiscall CModelo_AddAnim(CModelo *self, CEscena *anim, const char *nombre);
 /* events at the frames start and end (negative: the first and the last frame) of the named animation */
@@ -298,7 +304,6 @@ void __thiscall CNodoR_SetNodo(CNodoR *self, CNodo3D *nodo);		/* rva 0x23f890 */
 void __thiscall RenderCtx_Init(NodoAnimCtx *self, CModelo *m, const vec3_t *scale);
 void __thiscall RenderCtx_SetCanal(NodoAnimChannel *self, CAnimSlot *slot);	/* rva 0x23fb10 */
 /* the play state of an animation group */
-void __fastcall CModelo_Render(CModelo *self);				/* rva 0x253610 */
 CEscena *Escena_Load(const char *name, int arg, const char *name2);	/* rva 0x2c2d60 */
 
 #endif

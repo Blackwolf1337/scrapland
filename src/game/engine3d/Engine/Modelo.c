@@ -1,14 +1,22 @@
 /*
- * Models of the engine3d, original source Engine/Modelo.cpp (include/scrap/modelo.h). Not here: the drawing
- * (rva 0x253610), the choice of the LOD (0x2542c0) and the visibility test (0x254940), they go through the
- * profiler, the debug texts and the visibility code of the renderer; and 0x255d00 (CHECK(0), no callers).
+ * Models of the engine3d, original source Engine/Modelo.cpp (include/scrap/modelo.h), with the drawing, the choice
+ * of the LOD and the visibility test (through the profiler, the debug texts and the sector visibility of the
+ * renderer). Not here: 0x255d00 (CHECK(0), no callers).
  */
 #include <string.h>
 
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
+#include "scrap/escena.h"
+#include "scrap/fuentes.h"
+#include "scrap/luz.h"
 #include "scrap/material.h"
 #include "scrap/modelo.h"
+#include "scrap/prof.h"
+#include "scrap/render.h"
+#include "scrap/stencil.h"
+#include "scrap/sueloportal.h"
+#include "scrap/utild3d.h"
 #include "scrap/varios.h"
 
 #define CLOD_DTOR 0x252d80
@@ -844,4 +852,361 @@ const char *__fastcall CLuz_TipoNombre(const CLuz *l) {
 	/* luz.h */
 	CHECK(0);
 	return NULL;
+}
+
+/* the render variables of the models */
+#define g_UseMLOD GAME_DATA(int, 0x4ae6e0)		/* R_UseMLOD */
+#define g_DistMLOD1 GAME_DATA(float, 0x4ae608)		/* R_DistMLOD1, the distance of LOD i is i times it */
+#define g_DrawMLODMask GAME_DATA(uint32_t, 0x4ae680)	/* R_DrawMLODMask: the LODs drawn as the main model */
+#define g_DrawMLODMin GAME_DATA(int, 0x4ae6c8)		/* R_DrawMLODMin */
+#define g_DrawMLODPart GAME_DATA(int, 0x4ae5f0)		/* R_DrawMLODPart: the particles of the main model with a LOD */
+#define g_ModelFastIsVis GAME_DATA(int, 0x4ae620)	/* R_ModelFastIsVis */
+#define g_ModelPortalVis GAME_DATA(int, 0x4ae6b0)	/* R_ModelPortalVis */
+#define g_SphereVisMult GAME_DATA(float, 0x4ae698)	/* R_SphereVisMult */
+#define g_DistMStencil GAME_DATA(float, 0x4ae758)	/* R_DistMStencil */
+#define g_SkipUpdateVis GAME_DATA(int, 0x4ae740)	/* R_SkipUpdateVis */
+#define g_ShowModelSector GAME_DATA(int, 0x4ae728)	/* R_ShowModelSector */
+#define g_LightLimit GAME_DATA(int, 0x4ae710)		/* R_LightLimit, -1: no lights chosen */
+#define g_ShowModelLights GAME_DATA(int, 0x4ae6f8)	/* R_ShowModelLights */
+#define g_ShowModelBox GAME_DATA(int, 0x4ae668)		/* R_ShowModelBox */
+#define g_ShowModelPos GAME_DATA(int, 0x4ae650)		/* R_ShowModelPos */
+#define PROF_MODELVIS 0x1e
+
+/* the passes that draw only the models seen in the last frame */
+static int Modelo_PassKeepsVis(int pass) {
+	return (pass > 1 && pass < 10) || (uint32_t)(pass - 12) <= 7;
+}
+
+/* the squared distance of pos to the eye: (y y + x x) + z z */
+static float Modelo_EyeDist2(const vec3_t *pos) {
+	const vec3_t *eye = Render_GetEyePos();
+	float dy = pos->y - eye->y;
+	float dx = pos->x - eye->x;
+	float dz = pos->z - eye->z;
+	return dy * dy + dx * dx + dz * dz;
+}
+
+/* the box of the scene through m: its center and half its diagonal */
+static float Modelo_Sphere(CModelo *self, const matrix_t *m, vec3_t *c) {
+	box_t b;
+
+	Box_Transform(&b, &self->escena->box, m);
+	float dx = b.max.x - b.min.x;
+	float dy = b.max.y - b.min.y;
+	float dz = b.max.z - b.min.z;
+	c->x = (b.max.x + b.min.x) * 0.5f;
+	c->y = (b.min.y + b.max.y) * 0.5f;
+	c->z = (b.min.z + b.max.z) * 0.5f;
+	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) * 0.5f;
+}
+
+byte __thiscall CModelo_Visibility(CModelo *self, const matrix_t *m) {
+	int pass = g_RenderPass;
+	int sec = PROF_MODELVIS;
+	vec3_t c;
+
+	if (Modelo_PassKeepsVis(pass)) {
+		return self->visible;
+	}
+	if (self->alwaysVisible) {
+		return 3;
+	}
+	Prof_Begin(PROF_MODELVIS);
+	if (g_ModelFastIsVis == 2 && !SectorVis_Check(&self->sector, &self->pos, self->name)) {
+		goto hidden;
+	}
+	byte r = 3;
+	if (!Box_IsVisible(m, &self->escena->box, self->name, g_SphereVisMult)) {
+		/* the stencil shadow of a mesh near enough is still drawn */
+		pass = g_RenderPass;
+		if ((pass != 1 && pass != 11) || !self->hasMesh) {
+			goto hidden;
+		}
+		if (Modelo_EyeDist2(&self->pos) > g_DistMStencil * g_DistMStencil) {
+			goto hidden;
+		}
+		r = 2;
+	}
+	if (g_ModelPortalVis) {
+		float radius = Modelo_Sphere(self, m, &c);
+		if (!SectorVis_Sphere(&self->sector, &self->pos, &c, radius, self->name)) {
+			goto hidden;
+		}
+	}
+	ProfScope_End(&sec);
+	return r;
+hidden:
+	ProfScope_End(&sec);
+	return 0;
+}
+
+byte __fastcall CModelo_UpdateLOD(CModelo *self) {
+	int i;
+	CLod *l = NULL;
+
+	if (!g_UseMLOD || !self->lods.p) {
+		return 0;
+	}
+	for (i = self->lods.n; i > 0; i--) {
+		l = Modelo_Lod(self, (uint32_t)(i - 1));
+		CHECK(l->model);
+		float d2 = Modelo_EyeDist2(&self->pos);
+		float r = (float)i * g_DistMLOD1 * self->lodDist;
+		if (g_DrawMLODMin >= i) {
+			r = -1.0f;
+		}
+		if (d2 > r * r) {
+			goto found;
+		}
+	}
+	return (byte)(g_DrawMLODMask & 1);
+found:
+	if (g_DrawMLODMask & (1u << i)) {
+		return 1;
+	}
+	CModelo *m = l->model;
+	CHECK(!m->enable);
+	Modelo_SetEnable(m, 1);
+	m->pos = self->pos;
+	m->rot = self->rot;
+	m->pivot = self->pivot;
+	m->rot2 = self->rot2;
+	m->dynLight = self->dynLight;
+	m->alwaysVisible = self->alwaysVisible;
+	m->visible = self->visible;
+	m->f10c = self->f10c;
+	m->f110 = self->f110;
+	/* the first two animation slots */
+	memcpy(m->slots.p, self->slots.p, 2 * sizeof(CAnimSlot));
+	CModelo_Render(m);
+	if (m->visible && g_DrawMLODPart) {
+		int n = m->nodosR->n;
+		for (int j = 0; j < n; j++) {
+			CNodo3D *nodo = Modelo_NodoR(m->nodosR, (uint32_t)j)->nodo;
+			if (nodo->nodoR < 0) {
+				continue;
+			}
+			CHECK(!(nodo->flags & NODO_NO_TABNODOR));
+			CNodoR *mainR = Modelo_NodoR(self->nodosR, (uint32_t)nodo->nodoR);
+			CNodo3D *mn = mainR->nodo;
+			CHECK(mainR->frame == g_FrameCount);
+			if (CNodo3D_Clase(mn) == CLASE_OBJ3D_SISTPART) {
+				CNodo3D_Render(mn, g_pd3dDevice, mainR);
+			}
+		}
+	}
+	self->mRender = m->mRender;
+	self->visible = m->visible;
+	Modelo_SetEnable(m, 0);
+	return 1;
+}
+
+/* R_ShowModelLights 2 to 4: a text and a line to each light chosen for the model */
+static void Modelo_ShowLights(CModelo *self, CLuz **luces, int n, int limit) {
+	const vec3_t *pos = &self->pos;
+
+	for (int i = 0; i < n; i++) {
+		CLuz *l = luces[i];
+		float dy = l->d3d.Position.y - pos->y;
+		float dx = l->d3d.Position.x - pos->x;
+		float dz = l->d3d.Position.z - pos->z;
+		float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+		if (g_ShowModelLights == 3) {
+			Debug_Text3D(g_FntComic14, -200.0f, (float)i * 16.0f - 80.0f, pos, i >= limit ? 0x800000 : 0x8000,
+				"%s [%.2f] [%.2f] [%s] [%.2f] [%.2f]", l->nodo->name, (double)d, (double)l->peso,
+				CLuz_TipoNombre(l), (double)l->intensidad, (double)l->mult);
+		}
+		if (g_ShowModelLights == 4) {
+			float y = (float)i * 16.0f;
+			Debug_Text3D(g_FntTerm8, -200.0f, y - 90.0f, pos, 0xff, "%s", l->nodo->escena->name);
+			l = luces[i];
+			Debug_Text3D(g_FntTerm8, -200.0f, y - 80.0f, pos, i >= limit ? 0xff0000 : 0xff00,
+				"%s [%.2f] [%.2f] [%s] [%.2f] [%.2f]", l->nodo->name, (double)d, (double)l->peso,
+				CLuz_TipoNombre(l), (double)l->intensidad, (double)l->mult);
+		}
+		vec3_t lp = luces[i]->d3d.Position;
+		Debug_DrawLine(pos, &lp, i >= limit ? 0x808000 : 0x800080);
+	}
+}
+
+/* R_ShowModelBox 3: the animation slots */
+static void Modelo_ShowSlots(CModelo *self) {
+	float x = 40.0f, y = -80.0f;
+
+	for (uint32_t i = 0; i < MAX_ANIM_CHANNEL; i++) {
+		CAnimSlot *s = Modelo_Slot(self, i);
+		CAnimGrupo *a = s->anim, *b = s->prev;
+		if (!a && !b) {
+			continue;
+		}
+		uint32_t color = i != 1 ? 0xffffff : 0xff00;
+		if (i == 2) {
+			color = 0xff;
+		} else if (i == 3) {
+			color = 0xff0000;
+		}
+		Debug_Text3D(g_FntComic14, x, y, &self->pos, color, "%d %d %.2f %d %d", i, a->morphCount, (double)s->blend,
+			s->prevSubset, s->subset);
+		Debug_Text3D(g_FntComic14, x, y + 16.0f, &self->pos, color, "%s %.2f", a->name, (double)a->ctrl.frame);
+		Debug_Text3D(g_FntComic14, x, y + 32.0f, &self->pos, color, "%s %.2f", b ? b->name : "[none]",
+			b ? (double)b->ctrl.frame : 0.0);
+		x = x + 10.0f;
+		y = y + 56.0f;
+	}
+}
+
+void __fastcall CModelo_Render(CModelo *self) {
+	NodoAnimCtx ctx;
+	CLuz *luces[MAX_LUCES_OBJ];
+	vec3_t c;
+
+	if (self->callback) {
+		self->callback(self, 0, self->cbArg, self->cbArg2);
+	}
+	if (!self->enable) {
+		self->visible = 0;
+		return;
+	}
+	int pass = g_RenderPass;
+	if (!(self->visible & 1) && Modelo_PassKeepsVis(pass)) {
+		return;
+	}
+	if (pass == 100 && !self->hasShadow) {
+		return;
+	}
+	CHECK(self->escena);
+	if (!self->alwaysVisible && g_ModelFastIsVis == 1) {
+		byte seen = SectorVis_Check(&self->sector, &self->pos, self->name);
+		if (!seen && !g_SkipUpdateVis) {
+			self->visible = seen;
+			if (g_ShowModelSector == 2) {
+				SectorVis_Draw(&self->sector, &self->pos, 0, 1, self->name);
+			}
+			return;
+		}
+	}
+	if (g_RenderPass == 2) {
+		/* the shadow pass: only the lit models near enough */
+		if (!self->dynLight) {
+			return;
+		}
+		float d2 = Modelo_EyeDist2(&self->pos);
+		float r = self->stencilDist * g_StencilMultFrame * 0.9f;
+		if (d2 > r * r) {
+			return;
+		}
+	}
+	if (CModelo_UpdateLOD(self)) {
+		return;
+	}
+	for (int i = 0; i < MAX_ANIM_CHANNEL; i++) {
+		RenderCtx_SetCanal(&ctx.chan[i], NULL);
+	}
+	CModelo_SetupRender(self, &ctx);
+	if (!g_SkipUpdateVis) {
+		self->visible = CModelo_Visibility(self, &ctx.m);
+	}
+	if (!self->visible) {
+		self->mRender = ctx.m;
+		if (g_ShowModelSector == 2) {
+			SectorVis_Draw(&self->sector, &self->pos, 0, 0, self->name);
+		}
+		return;
+	}
+	int limit = g_LightLimit;
+	int nLuces = 0;
+	if (limit != -1) {
+		E3D_FlushBatch();
+		E3D_SetShadowLight(NULL, 0);
+		if (self->dynLight) {
+			CHECK(self->nodosR);
+			/* the box through the matrix of the last frame */
+			float radius = Modelo_Sphere(self, &self->mRender, &c);
+			int sector = CModelo_GetSector(self);
+			nLuces = Luz_Select(&self->pos, sector, &c, radius, luces, limit);
+		}
+	}
+	CEscena_Update(self->escena, &ctx);
+	if (self->f10c) {
+		ModelFX_Render(self, &ctx);
+	} else {
+		CEscena_Render(self->escena, &ctx);
+	}
+	if (limit != -1) {
+		E3D_FlushBatch();
+		E3D_SetShadowLight(NULL, 0);
+		if (self->nodosR && g_ShowModelLights) {
+			uint32_t color = nLuces > limit ? 0xff0000 : self->dynLight ? 0xff00 : 0x808080;
+			Debug_Text3D(g_FntComic14, 0.0f, -100.0f, &self->pos, color, "%d", nLuces);
+		}
+	}
+	if (self->dynLight && g_ShowModelLights > 1 && nLuces > 0) {
+		Modelo_ShowLights(self, luces, nLuces, limit);
+	}
+	self->mRender = ctx.m;
+	int showPos;
+	if (self->showBox || g_ShowModelBox || g_ShowModelPos == 1) {
+		CEscena *e = self->escena;
+		vec3_t mn, mx, v;
+		Debug_DrawBoxM(&self->mRender, &e->box.min, &e->box.max, 0x800000);
+		e = self->escena;
+		mx.x = e->box.max.x + self->pos.x;
+		mx.y = e->box.max.y + self->pos.y;
+		mx.z = e->box.max.z + self->pos.z;
+		mn.x = self->pos.x + e->box.min.x;
+		mn.y = e->box.min.y + self->pos.y;
+		mn.z = e->box.min.z + self->pos.z;
+		Debug_DrawBox(&mn, &mx, 0x80);
+		Debug_DrawPoint(&self->pos, 20.0f, 0xff);
+		v.x = 0.0f;
+		v.y = 0.0f;
+		v.z = 0.0f;
+		Debug_DrawPointM(&self->mRender, &v, 20.0f, 0xff00);
+		v.x = -self->pivot.x;
+		v.y = -self->pivot.y;
+		v.z = -self->pivot.z;
+		Debug_DrawPointM(&self->mRender, &v, 20.0f, 0xff0000);
+		if (g_ShowModelBox > 1) {
+			Debug_Text3D(g_FntTerm8, 4.0f, -12.0f, &self->pos, 0xc0c0c0, "%s", self->name);
+		}
+		if (g_ShowModelPos) {
+			Debug_Text3D(g_FntTerm8, 4.0f, -12.0f, &self->pos, 0xff00, "%s", self->name);
+			Debug_Text3D(g_FntTerm8, 20.0f, 0.0f, &self->pos, 0xc0c0c0, "%s", Vec3_Str(&self->pos, 0, 6));
+			Debug_Text3D(g_FntTerm8, 20.0f, 12.0f, &self->pos, 0xc0c0c0, "%s", Vec3_StrDeg(&self->rot, 0, 2));
+		}
+	}
+	showPos = g_ShowModelPos;
+	if (showPos > 1) {
+		int draw = 1;
+		if (showPos <= 2 && !self->dynLight) {
+			const box_t *b = &self->escena->box;
+			float dy = b->max.y - b->min.y;
+			float dx = b->max.x - b->min.x;
+			float dz = b->max.z - b->min.z;
+			float radius = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) * 0.5f;
+			draw = radius != 0.0f;
+		}
+		if (draw) {
+			uint32_t color = 0xff00;
+			if (Wild_MatchLower("*.lod1.*", self->name)) {
+				color = 0xff;
+			}
+			if (Wild_MatchLower("*.lod2.*", self->name)) {
+				color = 0xff0000;
+			}
+			if (Wild_MatchLower("*.lod3.*", self->name)) {
+				color = 0xffff00;
+			}
+			Debug_Text3D(g_FntTerm8, 4.0f, -12.0f, &self->pos, color, "%s", self->name);
+		}
+	}
+	if (g_ShowModelBox > 2) {
+		Modelo_ShowSlots(self);
+	}
+	if (g_ShowModelSector) {
+		SectorVis_Draw(&self->sector, &self->pos, 1, 0, self->name);
+	}
+	if (self->callback) {
+		self->callback(self, 1, self->cbArg, self->cbArg2);
+	}
 }

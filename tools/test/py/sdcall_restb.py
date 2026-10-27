@@ -150,3 +150,78 @@ for rsbn in ('sdrsb2.txt', 'sdrsb3.txt', 'sdnofile.txt'):
 		SDTest.Peek(0x4e7334, 'i'), SDTest.Peek(0x4e6e24, 'i')))
 call('Lex_SetOut', 0x2cda80, 'vi', SDTest.OutFunc())
 rsbfree(rsbv)
+
+# timers (only what does not depend on the clock), the capture without a surface or a file, the video player on
+# missing files, the GDI line on the window
+check('Timer_GetQPFreq', lambda: SDTest.Call(0x276d00, 'iD', 0.0)[0])
+check('Timer_CountTicks 0', lambda: SDTest.Call(0x276ba0, 'ii', 0)[0])
+check('Timer_MeasureQP 0', lambda: SDTest.Call(0x276e40, 'ii', 0)[0] >= 0)
+check('Tsc_CpuFreq', lambda: SDTest.Call(0x272f90, 'fi', 0)[0] != 0.0)
+check('Debug_Line', lambda: SDTest.Call(0x27cb80, 'viiiiii', 1, 2, 30, 40, 0x123456, 1))
+check('Avi_Frame', lambda: (SDTest.Peek(0x4b29a0, 'i'), SDTest.Call(0x27f9f0, 'bsi', 'sdrsb.avi', 5)[0]))
+check('Avi_Load', lambda: SDTest.Call(0x27f9b0, 'bs', 'sdrsb.avi')[0])
+check('Avi_Save', lambda: SDTest.Call(0x27fa20, 'bs', 'sdrsb.avi')[0])
+check('Avi_Write close', lambda: SDTest.Call(0x27fa70, 'viiiii', 0, 0, 0, 0, 0))
+check('Surface_SaveShot NULL', lambda: SDTest.Call(0x27fe90, 'bi', 0)[0])
+check('Surface_ShotCopy NULL', lambda: SDTest.Call(0x280310, 'bi', 0)[0])
+check('Video_WaitKeysUp 0', lambda: SDTest.Call(0x280d10, 'vi', 0))
+check('Video_PadPressed', lambda: SDTest.Call(0x280d60, 'b')[0])
+for rsbn in ('sdnovideo.avi', 'sdnoa.avi|  sdnob.avi', 'Video/sdno.avi'):
+	check('Video_PlayFile' + fmt((rsbn,)), lambda: SDTest.Call(0x281660, 'isz', rsbn, None)[0])
+	check('Video_PlayPath' + fmt((rsbn,)), lambda: SDTest.Call(0x281740, 'iszi', rsbn, 'Bin/', 0)[0])
+
+# the debug view of the collision meshes: the vertices of one triangle (wireframe and solid view), a mesh made here
+# drawn in the modes of c_show (outside a scene the draws fail, the marks of the triangles are cleared)
+def rsbcv(a):
+	r = []
+	for rsbj in range(3):
+		f = rsbfl(a + rsbj * 0x18, 6)
+		r.append((f[0:3], rsbi(a + rsbj * 0x18 + 0xc), f[4:6]))
+	return r
+rsbsolid = SDTest.Peek(0x4af850, 'i')
+rsbshow = SDTest.Peek(0x4a8f70, 'i')
+rsbo = rsbz(0x48)
+for rsbs in (0, 1, 2):
+	SDTest.Poke(0x4af850, rsbs)
+	for rsbt in (((0.0, 0.0, 0.0), (10.0, 0.0, 0.0), (0.0, 0.0, 10.0), 0x123456),
+			((1.0, 2.0, 3.0), (4.0, 8.0, -3.0), (-5.0, 2.5, 7.0), 0xffffffff),
+			((0.0, 0.0, 0.0), (0.0, 10.0, 0.0), (10.0, 0.0, 0.0), 0x80ff00),
+			((0.0, 0.0, 0.0), (0.0, 0.0, 10.0), (0.0, 10.0, 0.0), 0),
+			((1.0, 1.0, 1.0), (1.0, 1.0, 1.0), (1.0, 1.0, 1.0), 0x10203),
+			((100.0, -50.0, 3.0), (100.5, -49.0, 3.5), (99.0, -50.0, 2.0), 0x7f7f7f)):
+		check('Collide_TriVerts' + fmt((rsbs,) + rsbt), lambda: (SDTest.Call(0x258fc0, 'viFFFi', rsbo,
+			rsbt[0], rsbt[1], rsbt[2], rsbt[3]), rsbcv(rsbo)))
+SDTest.Poke(0x4af850, rsbsolid)
+rsbmesh = rsbz(0x34)
+rsbvt = rsbz(12 * 6)
+rsbset(rsbvt, (0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 10.0, 5.0, 5.0, 5.0, -3.0, 2.0, 1.0, 4.0, 4.0, -4.0))
+rsbtri = rsbz(0x1c * 6)
+rsbtris = ((0, 1, 2, 0x0000), (1, 2, 3, 0x1004), (2, 3, 4, 0x2000), (3, 4, 5, 0x2005), (0, 2, 4, 0x0001),
+	(1, 3, 5, 0xf004))
+def rsbmeshset(flags, sector):
+	SDTest.Poke(rsbmesh + 4 - 0x400000, flags | sector << 16)
+	SDTest.Poke(rsbmesh + 0x28 - 0x400000, rsbvt)
+	SDTest.Poke(rsbmesh + 0x2c - 0x400000, len(rsbtris))
+	SDTest.Poke(rsbmesh + 0x30 - 0x400000, rsbtri)
+	for rsbj in range(len(rsbtris)):
+		rsbta, rsbtb, rsbtc, rsbtf = rsbtris[rsbj]
+		SDTest.Poke(rsbtri + rsbj * 0x1c + 0x14 - 0x400000, rsbta | rsbtb << 16)
+		SDTest.Poke(rsbtri + rsbj * 0x1c + 0x18 - 0x400000, rsbtc | rsbtf << 16)
+def rsbmeshflags():
+	r = []
+	for rsbj in range(len(rsbtris)):
+		r.append(rsbi(rsbtri + rsbj * 0x1c + 0x18) >> 16)
+	return r
+for rsbmode, rsbs, rsbmf, rsbsec in ((0, 0, 0, 0), (1, 0, 0, 0), (3, 0, 0, 0), (4, 1, 1, 0), (5, 0, 0, 0),
+		(5, 2, 0, 3), (5, 0, 0, 16)):
+	rsbmeshset(rsbmf, rsbsec)
+	SDTest.Poke(0x4a8f70, rsbmode)
+	SDTest.Poke(0x4af850, rsbs)
+	check('CCollideMesh_DrawDebug' + fmt((rsbmode, rsbs, rsbmf, rsbsec)), lambda: (SDTest.Call(0x25a030, 'vii',
+		rsbmesh, 0), rsbmeshflags(), rsbcv(0x4af8b0 + 0x400000), rsbfl(0x432420 + 0x400000, 4)))
+SDTest.Poke(0x4a8f70, rsbshow)
+SDTest.Poke(0x4af850, rsbsolid)
+rsbfree(rsbo)
+rsbfree(rsbmesh)
+rsbfree(rsbvt)
+rsbfree(rsbtri)
