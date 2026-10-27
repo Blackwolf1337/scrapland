@@ -104,21 +104,9 @@ void __thiscall cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *
 	CHECK(self->particles.SistPart);
 }
 
-/* the inline normalize of the original: d as it is for length 0 */
-static vec3_t FXHook_Dir(const vec3_t *a, const vec3_t *b) {
-	vec3_t d;
-
-	d.x = b->x - a->x;
-	d.y = b->y - a->y;
-	d.z = b->z - a->z;
-	float len = (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z));
-	if (len != 0.0f) {
-		float inv = 1.0f / len;
-		d.x = d.x * inv;
-		d.y = d.y * inv;
-		d.z = d.z * inv;
-	}
-	return d;
+/* the direction from a to b, the inline normalize of the original */
+static inline vec3_t FXHook_Dir(const vec3_t *a, const vec3_t *b) {
+	return FX_Unit((vec3_t){ b->x - a->x, b->y - a->y, b->z - a->z });
 }
 
 static inline uint32_t FXHook_Alpha(int v) {

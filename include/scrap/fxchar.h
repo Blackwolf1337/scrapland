@@ -121,11 +121,11 @@ typedef struct cObjElementFXCharacterTeleport {
 	cEntity *character;		/* 0x08 */
 	CGameParticles particles;	/* 0x0c on Dummy01 */
 	int mode;			/* 0xbc 1 up, 2 down */
-	float fc0;			/* 0xc0 */
-	float fc4;			/* 0xc4 */
-	float fc8;			/* 0xc8 */
-	float fcc;			/* 0xcc */
-	float fd0;			/* 0xd0 */
+	float duration;			/* 0xc0 */
+	float timeIn;			/* 0xc4 the fade of the character at the start (mode 1) */
+	float timeOut;			/* 0xc8 the fade at the end (mode 2) */
+	float t;			/* 0xcc since the start */
+	float emitT;			/* 0xd0 since the last particles */
 	byte started;			/* 0xd4 */
 } cObjElementFXCharacterTeleport;
 SD_OFFSET(cObjElementFXCharacterTeleport, mode, 0xbc);
@@ -202,6 +202,8 @@ void __thiscall cObjElementFXCharacterConversor_SetConversor(cObjElementFXCharac
 void __thiscall cObjElementFXCharacterDeath_Attach(cObjElementFXCharacterDeath *self, cDebris *d);
 void __thiscall cObjElementFXCharacterDeath_Reset(cObjElementFXCharacterDeath *self, int arg);
 void __thiscall cObjElementFXCharacterDeath_SetEntity(cObjElementFXCharacterDeath *self, cEntity *e);
+/* the light column and the fade of the character, glows over its vertices, sparks and smoke */
+void __thiscall cObjElementFXCharacterTeleport_Update(cObjElementFXCharacterTeleport *self, cDebris *d, float dt);
 byte __thiscall cObjElementFXCharacterTeleport_Alive(cObjElementFXCharacterTeleport *self, cDebris *d,
 	cDebrisSys *sys);
 void __thiscall cObjElementFXCharacterTeleport_Attach(cObjElementFXCharacterTeleport *self, cDebris *d);

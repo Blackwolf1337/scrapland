@@ -10,6 +10,7 @@
 #ifndef SCRAP_FXMISC_H
 #define SCRAP_FXMISC_H
 
+#include "scrap/crt.h"
 #include "scrap/entity.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcamera.h"
@@ -48,6 +49,24 @@ SD_OFFSET(FXEntityVtbl, SetFXParam, 0xb4);
 
 static inline const FXEntityVtbl *FX_Vtbl(cEntity *e) {
 	return (const FXEntityVtbl *)e->vftable;
+}
+
+/* the inline normalize of the effects: the length of (y y + x x) + z z, 1 / len in float; d as it is for length 0 */
+static inline vec3_t FX_Unit(vec3_t d) {
+	float len = (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z));
+
+	if (len != 0.0f) {
+		float k = 1.0f / len;
+		d.x = d.x * k;
+		d.y = d.y * k;
+		d.z = d.z * k;
+	}
+	return d;
+}
+
+/* rand() & 0x7fff of the exe as 0..1 times range, plus add (all in double), the way the effects pick values */
+static inline float FX_Rand(double range, double add) {
+	return (float)((double)(crt_rand() & 0x7fff) * (1.0 / 32767.0) * range + add);
 }
 
 /* an entity that is deleted (the int at 0x20) or off: the effect lets it go */
