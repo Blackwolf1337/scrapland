@@ -81,7 +81,8 @@ def ntrFind(t, lst, p, typ, mx, radius, dmin, dmax, soft, vis):
 
 def ntrMain(t):
 	nt = SDTest.Call(0x09ece0, 'tii', t)[0]
-	check('NumTracks', lambda t=t, nt=nt: (nt, ntrI(t + 0x3c), ntrF(t + 4, 1), ntrF(t + 0x40, 6)))
+	# the floats at +0x40 are written only for a level with tracks (FZ has none)
+	check('NumTracks', lambda t=t, nt=nt: (nt, ntrI(t + 0x3c), ntrF(t + 4, 1), nt and ntrF(t + 0x40, 6)))
 	for i in range(6):
 		check('NumByType(%d)' % i, lambda t=t, i=i: SDTest.Call(0x09ec90, 'tiii', t, i)[0])
 	for i in range(5):

@@ -27,7 +27,6 @@ void Batch_AddMalla(void *malla, void *dev);
 void Batch_Flush(void *dev);
 /* qsort order of g_BatchOrden: texture, material, then z ascending */
 int Batch_Compare(const void *a, const void *b);
-/* rva 0x2b6cc0: a mesh with its matrix into the list of the transparent meshes */
-int RenderTransp_Add(CMallaD3D *malla, const matrix_t *m, int a, int b);
+/* RenderMallaD3D_AddTransp (a mesh into the list of the transparent meshes): render.h */
 
 #endif

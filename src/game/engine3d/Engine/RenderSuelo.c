@@ -24,7 +24,7 @@ void Batch_AddMalla(void *malla, void *dev) {
 		}
 		CMaterial *mat = m->mat;
 		if (mat && Mat_IsTransp(mat)) {
-			RenderTransp_Add(m, g_MatIdentity, 0, 0);
+			RenderMallaD3D_AddTransp(m, g_MatIdentity, 0, NULL);
 			continue;
 		}
 		uint32_t i = g_BatchUsados;

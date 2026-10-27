@@ -8620,119 +8620,125 @@ rva	size	source	callconv	name	signature
 002bb9b0	51	USER_DEFINED	__thiscall	CAnimEvent_Delete	void * __thiscall(byte flags)
 002bb9f0	123	USER_DEFINED	__thiscall	CAnimEvent_Insert	void __thiscall(void ** list)
 002bba70	19	USER_DEFINED	__thiscall	AnimEventos_Add	void * __thiscall(void * ev)
-002bba90	30	DEFAULT	unknown	FUN_006bba90	
-002bbac0	199	DEFAULT	unknown	FUN_006bbac0	
-002bbb90	298	DEFAULT	unknown	FUN_006bbb90	
-002bbcc0	40	DEFAULT	unknown	FUN_006bbcc0	
+002bba90	30	USER_DEFINED	__fastcall	M3DTabla_ctor	void * __fastcall(void * self)
+002bbab0	9	USER_DEFINED	__fastcall	Cad_ctor	char ** __fastcall(char ** self)
+002bbac0	199	USER_DEFINED	__fastcall	M3DPista_ctor	void * __fastcall(void * self)
+002bbb90	298	USER_DEFINED	__fastcall	M3DNodo_ctor	void * __fastcall(void * self)
+002bbcc0	40	USER_DEFINED	__fastcall	M3DSkinVert_ctor	void * __fastcall(void * self)
 002bbcf0	34	USER_DEFINED	__fastcall	Tabla_Free	void __fastcall(void * t)
 002bbd20	34	USER_DEFINED	__fastcall	Tabla_Free	void __fastcall(void * t)
-002bbd50	64	DEFAULT	unknown	FUN_006bbd50	
-002bbd90	183	DEFAULT	unknown	FUN_006bbd90	
-002bbe50	184	DEFAULT	unknown	FUN_006bbe50	
-002bbf10	445	DEFAULT	unknown	FUN_006bbf10	
-002bc0d0	129	DEFAULT	unknown	FUN_006bc0d0	
-002bc160	67	ANALYSIS	__thiscall	Concurrency::details::SubAllocator::~SubAllocator	void __thiscall(void)
+002bbd50	64	USER_DEFINED	__fastcall	M3DTabla4_dtor	void __fastcall(void * self)
+002bbd90	183	USER_DEFINED	__fastcall	M3DPista_dtor	void __fastcall(void * self)
+002bbe50	184	USER_DEFINED	__fastcall	M3DTabla6_dtor	void __fastcall(void * self)
+002bbf10	445	USER_DEFINED	__fastcall	M3DNodo_dtor	void __fastcall(void * self)
+002bc0d0	129	USER_DEFINED	__fastcall	M3DSkin_Free	void __fastcall(void * self)
+002bc160	67	USER_DEFINED	__fastcall	M3DSkinVert_dtor	void __fastcall(void * self)
 002bc1b0	57	USER_DEFINED	__thiscall	Tabla_Get8	void * __thiscall(uint i)
-002bc1f0	161	DEFAULT	unknown	FUN_006bc1f0	
-002bc2a0	184	DEFAULT	unknown	FUN_006bc2a0	
-002bc360	593	DEFAULT	unknown	FUN_006bc360	
-002bc5c0	641	DEFAULT	unknown	FUN_006bc5c0	
-002bc850	204	USER_DEFINED	__cdecl	M3D_Label	void __cdecl(char *name)
-002bc920	259	DEFAULT	unknown	FUN_006bc920	
-002bca30	36	DEFAULT	unknown	FUN_006bca30	
-002bca60	325	USER_DEFINED	__cdecl	M3D_ReadTransform	void __cdecl(char *name, void *mt)
-002bcbb0	445	USER_DEFINED	__cdecl	M3D_ReadQuat	void __cdecl(char *tok, float *q, byte swapYZ)
-002bcd70	18	DEFAULT	unknown	FUN_006bcd70	
-002bcd90	166	USER_DEFINED	__cdecl	M3D_ReadVec2	void __cdecl(char *tok, float *v)
-002bce40	25	DEFAULT	unknown	FUN_006bce40	
-002bce60	21	DEFAULT	unknown	FUN_006bce60	
-002bce80	293	USER_DEFINED	__cdecl	M3D_ReadVec3	void __cdecl(char *tok, float *v, byte swapYZ)
-002bcfb0	176	USER_DEFINED	__cdecl	M3D_ReadBool	byte __cdecl(char *tok)
-002bd060	24	DEFAULT	unknown	FUN_006bd060	
-002bd080	196	USER_DEFINED	__cdecl	M3D_ReadString	char * __cdecl(char *tok, char *dest, int size, byte quoted)
-002bd150	736	DEFAULT	unknown	FUN_006bd150	
-002bd430	117	USER_DEFINED	__cdecl	M3D_ReadFloat	float __cdecl(char *tok)
-002bd4b0	5425	DEFAULT	unknown	FUN_006bd4b0	
+002bc1f0	161	USER_DEFINED	__thiscall	M3DNodo_Delete	void * __thiscall(uint flags)
+002bc2a0	184	USER_DEFINED	__thiscall	M3DSkinVert_Delete	void * __thiscall(uint flags)
+002bc360	593	USER_DEFINED	__cdecl	CM3_Load	void * __cdecl(char * name)
+002bc5c0	641	USER_DEFINED	__cdecl	SM3_Load	void * __cdecl(char * name)
+002bc850	204	USER_DEFINED	__cdecl	M3D_Label	void __cdecl(char * name)
+002bc920	259	USER_DEFINED	__cdecl	M3D_FindMat	void * __cdecl(int iMat, int iSubmat)
+002bca30	36	USER_DEFINED	__cdecl	M3D_ReadMatrix	void __cdecl(char * name, void * out)
+002bca60	325	USER_DEFINED	__cdecl	M3D_ReadTransform	void __cdecl(char * name, void * mt)
+002bcbb0	445	USER_DEFINED	__cdecl	M3D_ReadQuat	void __cdecl(char * tok, void * q, byte swapYZ)
+002bcd70	18	USER_DEFINED	__cdecl	M3D_ReadVec2Next	void __cdecl(float * v)
+002bcd90	166	USER_DEFINED	__cdecl	M3D_ReadVec2	void __cdecl(char * tok, float * v)
+002bce40	25	USER_DEFINED	__cdecl	M3D_ReadVec3Ret	void * __cdecl(void * v, char * tok, byte swapYZ)
+002bce60	21	USER_DEFINED	__cdecl	M3D_ReadVec3Next	void __cdecl(void * v, byte swapYZ)
+002bce80	293	USER_DEFINED	__cdecl	M3D_ReadVec3	void __cdecl(char * tok, void * v, byte swapYZ)
+002bcfb0	176	USER_DEFINED	__cdecl	M3D_ReadBool	byte __cdecl(char * tok)
+002bd060	24	USER_DEFINED	__cdecl	M3D_ReadQString	char * __cdecl(char * tok, char * dest, int size)
+002bd080	196	USER_DEFINED	__cdecl	M3D_ReadString	char * __cdecl(char * tok, char * dest, int size, byte quoted)
+002bd150	736	USER_DEFINED	__cdecl	M3D_LeeCamara	void __cdecl(void * nodo, byte anim, int frame)
+002bd430	117	USER_DEFINED	__cdecl	M3D_ReadFloat	float __cdecl(char * tok)
+002bd4b0	5425	USER_DEFINED	__cdecl	M3D_LeeMalla	void __cdecl(void * nodo, byte anim)
 002be9f0	116	USER_DEFINED	__cdecl	M3D_ReadIndex	void __cdecl(int expected)
-002bea70	170	USER_DEFINED	__cdecl	M3D_ReadInt	int __cdecl(char *tok)
-002beb20	1687	DEFAULT	unknown	FUN_006beb20	
-002bf1c0	2703	DEFAULT	unknown	FUN_006bf1c0	
-002bfc50	2672	DEFAULT	unknown	FUN_006bfc50	
-002c06d0	450	DEFAULT	unknown	FUN_006c06d0	
-002c08b0	912	DEFAULT	unknown	FUN_006c08b0	
-002c0c40	59	DEFAULT	unknown	FUN_006c0c40	
-002c0c80	446	DEFAULT	unknown	FUN_006c0c80	
-002c0e40	451	DEFAULT	unknown	FUN_006c0e40	
-002c1010	130	DEFAULT	unknown	FUN_006c1010	
-002c10a0	473	DEFAULT	unknown	FUN_006c10a0	
-002c1280	250	DEFAULT	unknown	FUN_006c1280	
-002c1380	60	DEFAULT	unknown	FUN_006c1380	
-002c13c0	205	DEFAULT	unknown	FUN_006c13c0	
-002c14a0	327	DEFAULT	unknown	FUN_006c14a0	
-002c15f0	1797	DEFAULT	unknown	FUN_006c15f0	
-002c1d00	94	DEFAULT	unknown	FUN_006c1d00	
-002c1d60	491	DEFAULT	unknown	FUN_006c1d60	
-002c1f50	653	DEFAULT	unknown	FUN_006c1f50	
-002c21e0	215	DEFAULT	unknown	FUN_006c21e0	
-002c22c0	105	DEFAULT	unknown	FUN_006c22c0	
-002c2330	379	DEFAULT	unknown	FUN_006c2330	
-002c24b0	406	DEFAULT	unknown	FUN_006c24b0	
-002c2650	540	DEFAULT	unknown	FUN_006c2650	
-002c2870	73	DEFAULT	unknown	FUN_006c2870	
-002c28c0	105	DEFAULT	unknown	FUN_006c28c0	
-002c2930	101	DEFAULT	unknown	FUN_006c2930	
-002c29a0	201	DEFAULT	unknown	FUN_006c29a0	
-002c2a70	154	DEFAULT	unknown	FUN_006c2a70	
+002bea70	170	USER_DEFINED	__cdecl	M3D_ReadInt	int __cdecl(char * tok)
+002beb20	1687	USER_DEFINED	__cdecl	M3D_LeeLuz	void __cdecl(void * nodo, byte anim, int frame)
+002bf1c0	2703	USER_DEFINED	__cdecl	M3D_LeeMapa	void __cdecl(void * mat, int iMat, int iSubmat, int idx, int tipo)
+002bfc50	2672	USER_DEFINED	__cdecl	M3D_LeeMaterial	void __cdecl(void * lista, int iMat, int iSubmat)
+002c06d0	450	USER_DEFINED	__cdecl	M3D_ReadColores	void __cdecl(void * mat)
+002c08a0	14	USER_DEFINED	__cdecl	M3D_NextLine	int __cdecl(void)
+002c08b0	912	USER_DEFINED	__cdecl	M3D_LeePortal	void __cdecl(void * nodo, byte anim)
+002c0c40	59	USER_DEFINED	__cdecl	M3D_SetOk	void __cdecl(byte ok)
+002c0c80	446	USER_DEFINED	__cdecl	CM3_Save	void __cdecl(char * name, void * esc)
+002c0e40	451	USER_DEFINED	__cdecl	SM3_Save	void __cdecl(char * name, void * esc)
+002c1010	130	USER_DEFINED	__cdecl	M3D_MapaActivo	byte __cdecl(void * mat, int idmapa)
+002c10a0	473	USER_DEFINED	__cdecl	Escena_MatsUsados	void __cdecl(void * esc)
+002c1280	250	USER_DEFINED	__thiscall	M3DTabla4_RotToQuat	void __thiscall(uint i)
+002c1380	60	USER_DEFINED	__cdecl	Nodo_LimpiarNombre	void __cdecl(char * name)
+002c13c0	205	USER_DEFINED	__thiscall	M3DNodo_FrameMatrix	void * __thiscall(void * out, uint frame)
+002c1490	10	USER_DEFINED	__thiscall	M3DNodo_CalcMatrix	void * __thiscall(void)
+002c14a0	327	USER_DEFINED	__cdecl	Escena_MatricesObj	void __cdecl(void * esc)
+002c15f0	1797	USER_DEFINED	__cdecl	Escena_AnimLocal	void __cdecl(void * esc, byte anim)
+002c1d00	94	USER_DEFINED	__cdecl	Nodo_FlagNombre	void __cdecl(void * nodo, char * on, char * off, uint flag)
+002c1d60	491	USER_DEFINED	__cdecl	Escena_ColapsarBip	void __cdecl(void * esc)
+002c1f50	653	USER_DEFINED	__cdecl	Escena_SkinMesh	void __cdecl(void * esc)
+002c21e0	215	USER_DEFINED	__cdecl	Escena_CheckDuplicados	void __cdecl(void * esc, void * nodo)
+002c22c0	105	USER_DEFINED	__cdecl	Nodo_MarcarBip	void __cdecl(void * nodo)
+002c2330	379	USER_DEFINED	__cdecl	Escena_Flares	void __cdecl(void * esc)
+002c24b0	406	USER_DEFINED	__cdecl	Escena_Sprites	void __cdecl(void * esc)
+002c2650	540	USER_DEFINED	__cdecl	Escena_Particles	void __cdecl(void * esc)
+002c2870	73	USER_DEFINED	__cdecl	Escena_Limpiar	void __cdecl(void * esc, char * pass)
+002c28c0	105	USER_DEFINED	__cdecl	Float_CasiIgual	byte __cdecl(float a, float b)
+002c2930	101	USER_DEFINED	__cdecl	Nodo_EsAntecesor	byte __cdecl(void * nodo, void * ant, byte cruzar)
+002c29a0	201	USER_DEFINED	__cdecl	Nodo_EsDeJuego	byte __cdecl(void * nodo)
+002c2a70	154	USER_DEFINED	__thiscall	M3DTabla4_SetVec	void __thiscall(uint i, void * v)
 002c2b10	112	USER_DEFINED	__thiscall	Tabla_Alloc4_2	void __thiscall(int num)
 002c2b80	112	USER_DEFINED	__thiscall	Tabla_Alloc4_3	void __thiscall(int num)
 002c2bf0	112	USER_DEFINED	__thiscall	Tabla_Alloc8	void __thiscall(int num)
 002c2c60	223	USER_DEFINED	__thiscall	Tabla_New1C	void __thiscall(int num)
 002c2d60	11315	DEFAULT	unknown	FUN_006c2d60	
-002c59d0	667	DEFAULT	unknown	FUN_006c59d0	
-002c5c70	828	DEFAULT	unknown	FUN_006c5c70	
-002c5fb0	146	DEFAULT	unknown	FUN_006c5fb0	
-002c6050	253	DEFAULT	unknown	FUN_006c6050	
-002c6150	846	DEFAULT	unknown	FUN_006c6150	
-002c64a0	654	DEFAULT	unknown	FUN_006c64a0	
-002c6730	89	DEFAULT	unknown	FUN_006c6730	
-002c6790	191	DEFAULT	unknown	FUN_006c6790	
-002c6850	232	DEFAULT	unknown	FUN_006c6850	
-002c6940	176	DEFAULT	unknown	FUN_006c6940	
-002c69f0	98	DEFAULT	unknown	FUN_006c69f0	
-002c6a60	210	DEFAULT	unknown	FUN_006c6a60	
-002c6b40	846	DEFAULT	unknown	FUN_006c6b40	
-002c6e90	1136	DEFAULT	unknown	FUN_006c6e90	
-002c7300	586	DEFAULT	unknown	FUN_006c7300	
-002c7550	180	DEFAULT	unknown	FUN_006c7550	
-002c7610	790	DEFAULT	unknown	FUN_006c7610	
-002c7930	878	DEFAULT	unknown	FUN_006c7930	
-002c7ca0	105	DEFAULT	unknown	FUN_006c7ca0	
-002c7d10	133	DEFAULT	unknown	FUN_006c7d10	
-002c7da0	1070	DEFAULT	unknown	FUN_006c7da0	
-002c81d0	494	DEFAULT	unknown	FUN_006c81d0	
-002c83c0	342	DEFAULT	unknown	FUN_006c83c0	
-002c8520	56	DEFAULT	unknown	FUN_006c8520	
-002c8560	390	DEFAULT	unknown	FUN_006c8560	
-002c8720	66	DEFAULT	unknown	FUN_006c8720	
-002c8780	183	DEFAULT	unknown	FUN_006c8780	
-002c8840	61	DEFAULT	unknown	FUN_006c8840	
-002c8880	154	DEFAULT	unknown	FUN_006c8880	
-002c8920	31	DEFAULT	unknown	FUN_006c8920	
-002c89c0	153	DEFAULT	unknown	FUN_006c89c0	
-002c8a60	1185	DEFAULT	unknown	FUN_006c8a60	
-002c8f10	913	DEFAULT	unknown	FUN_006c8f10	
-002c92b0	149	DEFAULT	unknown	FUN_006c92b0	
-002c9350	146	DEFAULT	unknown	FUN_006c9350	
-002c93f0	179	DEFAULT	unknown	FUN_006c93f0	
-002c94b0	651	DEFAULT	unknown	FUN_006c94b0	
-002c9740	345	DEFAULT	unknown	FUN_006c9740	
-002c98a0	129	USER_DEFINED	unknown	BspQ3_ReleaseD3D	
-002c98b0	15	USER_DEFINED	unknown	BspQ3_InitD3D	
-002c98c0	117	DEFAULT	unknown	FUN_006c98c0	
-002c9940	246	DEFAULT	unknown	FUN_006c9940	
-002c9a40	770	DEFAULT	unknown	FUN_006c9a40	
-002c9d50	41	USER_DEFINED	unknown	BspQ3_Free	
-002c9d80	1	USER_DEFINED	unknown	BspQ3_Crear	
+002c59d0	667	USER_DEFINED	__thiscall	M3DTabla_ReadInt	void __thiscall(char * nombre)
+002c5c70	828	USER_DEFINED	__thiscall	M3DTabla_ReadFloat	void __thiscall(char * nombre)
+002c5fb0	146	USER_DEFINED	__thiscall	M3DTabla4_Read	void __thiscall(char * n1, char * n2, char * n3, char * n4, byte inv23)
+002c6050	253	USER_DEFINED	__thiscall	M3DPista_Read	void __thiscall(void)
+002c6150	846	USER_DEFINED	__cdecl	Escena_FlagsNombres	void __cdecl(void * esc)
+002c64a0	654	USER_DEFINED	__cdecl	Escena_FlagsIni	void __cdecl(void * esc)
+002c6730	89	USER_DEFINED	__cdecl	M3D_MatUsado	void __cdecl(void * mat)
+002c6790	191	USER_DEFINED	__cdecl	Nodo_ParamInt	byte __cdecl(char * name, char * key, int * out)
+002c6850	232	USER_DEFINED	__thiscall	M3DTabla4_GetQuat	void * __thiscall(void * out, uint i)
+002c6940	176	USER_DEFINED	__thiscall	M3DTabla4_GetVec	void * __thiscall(void * out, uint i)
+002c69f0	98	USER_DEFINED	__cdecl	M3D_NodoDat	void * __cdecl(void * nodo)
+002c6a60	210	USER_DEFINED	__cdecl	M3D_CompartirMats	void __cdecl(void * lista)
+002c6b40	846	USER_DEFINED	__cdecl	Escena_TablaNodos	void __cdecl(void * esc)
+002c6e90	1136	USER_DEFINED	__cdecl	Escena_SetupLOD	void __cdecl(void * esc)
+002c7300	586	USER_DEFINED	__cdecl	Escena_PhysiqueSkin	void __cdecl(void * esc)
+002c7550	180	USER_DEFINED	__cdecl	Escena_BuscarColapsable	void * __cdecl(void * nodo, void * padre)
+002c7610	790	USER_DEFINED	__cdecl	Escena_Jerarquia	void __cdecl(void * esc)
+002c7930	878	USER_DEFINED	__cdecl	Escena_Ordenar	void __cdecl(void * esc)
+002c7ca0	105	USER_DEFINED	__cdecl	Nodo_BuscarDescendiente	void * __cdecl(void * nodo, void * antecesor)
+002c7d10	133	USER_DEFINED	__cdecl	Nodo_BuscarDescendienteAnt	void * __cdecl(void * nodo, void * antecesor)
+002c7da0	1070	USER_DEFINED	__cdecl	Escena_PadresAnim	void __cdecl(void * esc, void * estatica)
+002c81d0	494	USER_DEFINED	__cdecl	Batch_AddMalla	void __cdecl(void * malla, void * dev)
+002c83c0	342	USER_DEFINED	__cdecl	Batch_Flush	void __cdecl(void * dev)
+002c8520	56	USER_DEFINED	__cdecl	Batch_Compare	int __cdecl(void * a, void * b)
+002c8560	390	USER_DEFINED	__thiscall	CBspQ3_ctor	void * __thiscall(char * name)
+002c86f0	33	USER_DEFINED	__fastcall	BspQ3Mallas_ctor	void * __fastcall(void * self)
+002c8720	66	USER_DEFINED	__fastcall	BspQ3Malla_ctor	void * __fastcall(void * self)
+002c8770	16	USER_DEFINED	__fastcall	BspQ3_Identidad	void * __fastcall(void * self)
+002c8780	183	USER_DEFINED	__fastcall	CBspQ3_dtor	void __fastcall(void * self)
+002c8840	61	USER_DEFINED	__fastcall	BspQ3Mallas_Free	void __fastcall(void * self)
+002c8880	154	USER_DEFINED	__fastcall	BspQ3Malla_dtor	void __fastcall(void * self)
+002c8920	31	USER_DEFINED	__cdecl	Vec3_DotX87	float __cdecl(float * a, float * b)
+002c8940	114	USER_DEFINED	__fastcall	CBspQ3_ReleaseD3D	void __fastcall(void * self)
+002c89c0	153	USER_DEFINED	__fastcall	CBspQ3_InitD3D	void __fastcall(void * self)
+002c8a60	1185	USER_DEFINED	__fastcall	CBspQ3_ReadFaces	void __fastcall(void * self)
+002c8f10	913	USER_DEFINED	__fastcall	CBspQ3_ReadLMaps	void __fastcall(void * self)
+002c92b0	149	USER_DEFINED	__fastcall	CBspQ3_ReadShaders	void __fastcall(void * self)
+002c9350	146	USER_DEFINED	__fastcall	CBspQ3_ReadVerts	void __fastcall(void * self)
+002c93f0	179	USER_DEFINED	__thiscall	CBspQ3_ReadLump	int __thiscall(int id, void ** out, int elem)
+002c94b0	651	USER_DEFINED	__fastcall	CBspQ3_Render	void __fastcall(void * self)
+002c9740	345	USER_DEFINED	__thiscall	BspQ3Mallas_AddTri	void __thiscall(void * a, void * b, void * c, void * face)
+002c98a0	129	USER_DEFINED	__cdecl	BspQ3_ReleaseD3D	void __cdecl(void)
+002c98b0	15	USER_DEFINED	__cdecl	BspQ3_InitD3D	void __cdecl(void)
+002c98c0	117	USER_DEFINED	__thiscall	BspQ3Mallas_Find	void * __thiscall(void * face)
+002c9940	246	USER_DEFINED	__thiscall	BspQ3Mallas_Count	void __thiscall(void * face, int ntri)
+002c9a40	770	USER_DEFINED	__fastcall	CBspQ3_Build	void __fastcall(void * self)
+002c9d50	41	USER_DEFINED	__cdecl	BspQ3_Free	void __cdecl(void)
+002c9d80	1	USER_DEFINED	__cdecl	BspQ3_Crear	void __cdecl(void)
 002c9d90	15	USER_DEFINED	unknown	BspQ3_Render	
 002c9da0	590	DEFAULT	unknown	FUN_006c9da0	
 002c9ff0	874	DEFAULT	unknown	FUN_006c9ff0	

@@ -15,6 +15,7 @@
 #include "scrap/luz.h"
 #include "scrap/mallatri.h"
 #include "scrap/material.h"
+#include "scrap/nodefx.h"
 #include "scrap/portal.h"
 #include "scrap/render.h"
 #include "scrap/sistpart.h"
@@ -1113,7 +1114,7 @@ void Escena_FlagsNombres(CEscena *esc) {
 		}
 		n->flags |= NODO_FX;
 		if (!g_EscenaLODPadre) {
-			n->obj58 = NodeFX_New((int)(uintptr_t)tipo, n);
+			n->obj58 = NodeFX_New(tipo, n);
 		} else {
 			E3D_LogWhite(g_FileLog, "INFO: LOD Node effect skipped in node: %s", n->name);
 		}
@@ -1806,8 +1807,7 @@ typedef struct M3DNodoPadre {
 
 /* tabla.h at rva 0x2bc1b0 */
 static M3DNodoPadre *M3DNodoPadre_Get(CTabla *t, uint32_t i) {
-	TABLA_CHECK(t->p, i, t->n);
-	return (M3DNodoPadre *)t->p + i;
+	return Tabla_Get8(t, i);
 }
 
 /* the nodes ordered so that the parents come first, when one is not */

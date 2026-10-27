@@ -12,6 +12,7 @@
 #include "scrap/luz.h"
 #include "scrap/mallad3d.h"
 #include "scrap/mallatri.h"
+#include "scrap/nodefx.h"
 #include "scrap/portal.h"
 #include "scrap/material.h"
 #include "scrap/modelo.h"
