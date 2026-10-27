@@ -6941,3 +6941,5 @@ SD_HOOK(cWithLifeEntity_IsEMIed, 0x12cf30, 16)			/* vf55, 3 bytes and int3 */
 /* module agent: Engine NodeFX..ModelFX (hooks below this line) */
 
 /* module agent: Engine leftovers 0x265000..0x278000 (hooks below this line) */
+
+/* module agent: Engine leftovers 0x2c9d90..0x2d6010 (hooks below this line) */
