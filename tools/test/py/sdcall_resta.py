@@ -151,3 +151,97 @@ rsawi(rsatab + 4, 0)
 check('AmmoTable_Init', lambda: (SDTest.Call(0x19fc60, 'tvii', rsatab, 2), rsai(rsatab), rsai(rsatab + 4) != 0))
 check('cAmmoInfo_Delete 3', lambda: SDTest.Call(0x19fac0, 'tiii', rsai(rsatab + 4), 3)[0] == rsai(rsatab + 4) - 4)
 rsafree(rsatab)
+
+# the MSVC std::string of the GOG code on strings of our own (0x18 bytes: the small buffer or the pointer, size,
+# capacity): assign, insert, erase, the parts of itself, operator+ with a moved string, to_string, the digits
+def rsastr(s):
+	cap = rsai(s + 0x14)
+	if cap >= 16:
+		p = SDTest.Peek(s, '@p')
+	else:
+		p = SDTest.Peek(s, '@s')
+	return (p, rsai(s + 0x10), cap)
+def rsanew():
+	s = rsaz(0x18)
+	rsawi(s + 0x14, 15)
+	return s
+def rsadel(s):
+	SDTest.Call(0x136f40, 'vi', s)
+	rsafree(s)
+rsas = rsanew()
+for rsav in ('hello', 'a string longer than fifteen', '', 'exactly15chars!', 'sixteen chars ab'):
+	check('MsvcString_Assign' + fmt((rsav,)), lambda rsav=rsav: (SDTest.Call(0x137ae0, 'tiisi', rsas, rsav, len(rsav))[0] == rsas,
+		rsastr(rsas)))
+SDTest.Call(0x137ae0, 'tiisi', rsas, 'abcdef', 6)
+for rsav in ((0, 'XY'), (3, '12345678901234567890'), (6, '!'), (2, '')):
+	check('MsvcString_Insert' + fmt(rsav), lambda rsav=rsav: (SDTest.Call(0x137ed0, 'tiiisi', rsas, rsav[0], rsav[1],
+		len(rsav[1]))[0] == rsas, rsastr(rsas)))
+for rsav in ((0, 2), (5, 3), (10, 100), (3, 0)):
+	check('MsvcString_Erase' + fmt(rsav), lambda rsav=rsav: (SDTest.Call(0x137c90, 'tiiii', rsas, rsav[0], rsav[1])[0] == rsas,
+		rsastr(rsas)))
+rsas2 = rsanew()
+SDTest.Call(0x137ae0, 'tiisi', rsas2, 'the source string here', 22)
+for rsav in ((0, 3), (4, 6), (10, 100), (22, 5)):
+	check('MsvcString_AssignSub' + fmt(rsav), lambda rsav=rsav: (SDTest.Call(0x1379b0, 'tiiiii', rsas, rsas2, rsav[0],
+		rsav[1])[0] == rsas, rsastr(rsas)))
+for rsav in ((0, 0, 4), (3, 2, 50), (5, 0, 0)):
+	check('MsvcString_InsertSub' + fmt(rsav), lambda rsav=rsav: (SDTest.Call(0x137d30, 'tiiiiii', rsas, rsav[0], rsas2,
+		rsav[1], rsav[2])[0] == rsas, rsastr(rsas)))
+# a part of itself
+SDTest.Call(0x137ae0, 'tiisi', rsas, 'selfcopy', 8)
+check('MsvcString_AssignSub self', lambda: (SDTest.Call(0x1379b0, 'tiiiii', rsas, rsas, 2, 4)[0] == rsas, rsastr(rsas)))
+SDTest.Call(0x137ae0, 'tiisi', rsas, 'abcdefgh', 8)
+for rsav in ((2, 2, 3), (2, 4, 2), (5, 1, 2)):
+	SDTest.Call(0x137ae0, 'tiisi', rsas, 'abcdefgh', 8)
+	check('MsvcString_InsertSub self' + fmt(rsav), lambda rsav=rsav: (SDTest.Call(0x137d30, 'tiiiiii', rsas, rsav[0], rsas,
+		rsav[1], rsav[2])[0] == rsas, rsastr(rsas)))
+# operator+ and the move
+rsas3 = rsanew()
+for rsav in (('ACHIEVEMENT_', '12'), ('', 'long enough to be on the heap'), ('x', '')):
+	SDTest.Call(0x137ae0, 'tiisi', rsas2, rsav[1], len(rsav[1]))
+	check('MsvcString_PrependMove' + fmt(rsav), lambda rsav=rsav: (SDTest.Call(0x136b60, 'iisi', rsas3, rsav[0], rsas2)[0] ==
+		rsas3, rsastr(rsas3), rsastr(rsas2)))
+	SDTest.Call(0x136f40, 'vi', rsas3)
+check('MsvcString_ctorMove', lambda: (SDTest.Call(0x137ae0, 'tiisi', rsas2, 'moved string text here', 22) and 0,
+	SDTest.Call(0x137580, 'tvii', rsas3, rsas2), rsastr(rsas3), rsastr(rsas2)))
+SDTest.Call(0x136f40, 'vi', rsas3)
+for rsav in (0, 7, -7, 2147483647, -2147483647 - 1, 1000000):
+	check('MsvcString_ToString' + fmt((rsav,)), lambda rsav=rsav: (SDTest.Call(0x138050, 'iii', rsas3, rsav)[0] == rsas3,
+		rsastr(rsas3)))
+	SDTest.Call(0x136f40, 'vi', rsas3)
+for rsav in ((0, 0), (12345, 0), (-1, 0), (-1, -1), (0x2a, 0x100000), (999999999, 1)):
+	check('MsvcString_ToStringU64' + fmt(rsav), lambda rsav=rsav: (SDTest.Call(0x138070, 'iiii', rsas3, rsav[0],
+		rsav[1])[0] == rsas3, rsastr(rsas3)))
+	SDTest.Call(0x136f40, 'vi', rsas3)
+check('MsvcString_Tidy', lambda: (SDTest.Call(0x136f40, 'vi', rsas), rsastr(rsas)))
+rsadel(rsas)
+rsadel(rsas2)
+rsadel(rsas3)
+# the allocator: a small and a big block back
+for rsav in (0, 16, 0x1000, 0x2345):
+	rsap = SDTest.Call(0x1378e0, 'tiii', 0, rsav)[0]
+	check('MsvcAlloc_Allocate' + fmt((rsav,)), lambda rsap=rsap, rsav=rsav: (rsap != 0, rsav >= 0x1000 and (rsap & 0x1f)))
+	if rsap:
+		SDTest.Call(0x137be0, 'tviii', 0, rsap, rsav)
+for rsav in (0, 4, 0x400, 0x1000):
+	rsap = SDTest.Call(0x137940, 'tiii', 0, rsav)[0]
+	check('PtrVector_Allocate' + fmt((rsav,)), lambda rsap=rsap, rsav=rsav: (rsap != 0, rsav >= 0x400 and (rsap & 0x1f)))
+	if rsap:
+		SDTest.Call(0x137c30, 'tviii', 0, rsap, rsav)
+# the listener vector and the GOG state (not signed in in the tests)
+rsavec = rsaz(0x10)
+check('GogListeners_ctor', lambda: (SDTest.Call(0x136f10, 'tii', rsavec)[0] == rsavec, rsaints(rsavec, 3)))
+rsafree(rsavec)
+check('Gog_GetID', lambda: (SDTest.Peek(0x44c108, 'b'), SDTest.Call(0x137160, 'i')[0] == 0))
+rsavec = rsaz(8)
+rsawi(rsavec, 0x400000 + 0x3bbc24)
+check('IGalaxyListener_dtor', lambda: (SDTest.Call(0x136f90, 'vi', rsavec), rsai(rsavec) - 0x400000))
+check('IGalaxyListener_Delete', lambda: (SDTest.Call(0x136fb0, 'tiii', rsavec, 0)[0] == rsavec, rsai(rsavec) - 0x400000))
+rsafree(rsavec)
+# the moves of unique_ptrs
+rsavec = rsaz(0x20)
+for rsai2 in range(4):
+	rsawi(rsavec + 4 * rsai2, 0x100 + rsai2)
+check('PtrVector_UninitMove', lambda: (SDTest.Call(0x136da0, 'iiii', rsavec, rsavec + 12, rsavec + 16)[0] - rsavec,
+	rsaints(rsavec, 8)))
+rsafree(rsavec)

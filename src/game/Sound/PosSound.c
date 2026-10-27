@@ -6,11 +6,15 @@
 #include <string.h>
 
 #include "scrap/ai.h"
+#include "scrap/arrowindicator.h"
 #include "scrap/console.h"
 #include "scrap/cstring.h"
 #include "scrap/hashtable.h"
+#include "scrap/logic.h"
 #include "scrap/scrapfont.h"
 #include "scrap/sound.h"
+#include "scrap/walkcharentity.h"
+#include "scrap/withlifeentity.h"
 #include "scrap/world.h"
 
 /* engine variables of the music and the voices (value, default) */
@@ -47,7 +51,15 @@
 
 #define TALK_VOICE 2
 
-/* the voice volume by the distance to the speaker, of voice 0..2 (rva 0x1a0320) */
+#define g_MinVoiceVolumeChat GAME_DATA(float, 0x466b78)	/* MinVoiceVolumeChat */
+#define VOICE_END 0.001f		/* rva 0x3a3d58: the talk ends with less left */
+#define VOICE_PAN -0.5f			/* rva 0x3b61f4 */
+#define VOICE_MIN_SPEED 0.8f		/* rva 0x3b0844: no voices in slow motion */
+#define g_VoicePlayDelay GAME_DATA(float, 0x466a58)	/* VoicePlayDelay */
+#define g_StreamPath GAME_DATA(const char *, 0x466bf8)	/* StreamPath "Sounds/Stream/" */
+#define g_VoicePath GAME_DATA(const char *, 0x466c28)	/* VoicePath "Sounds/Voices/" */
+#define g_VoiceCount GAME_DATA(uint32_t, 0x466ba4)	/* the voices played, picks the variant */
+
 void Sound_UpdateVoice(int voice);
 /* the debug sphere of DebugUtils.cpp */
 void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
@@ -335,6 +347,163 @@ void Sound_TalkDone(const char *name) {
 		return;
 	}
 	Sound_StopTalk();
+}
+
+/* the volume of voice 0..2 by the distance of its speaker to the player (a "WalkChar"): the chat voices fade out
+ * between ArrowActiveRadius and ArrowDeactivationRadius of the gap, the talk voice (2) fades over
+ * MaxPoliceWarnDist, is panned by the side the speaker is on and stops at its end; MinVoiceVolumeChat is always
+ * heard. Without the speaker the voice stops. */
+void Sound_UpdateVoice(int voice) {
+	char name[0x80];
+	vec3_t tmp1, tmp2, d, rot;
+	float remain, vol;
+
+	g_pSound->vftable->GetVoiceString(g_pSound, voice, name, sizeof(name));
+	if (!name[0]) {
+		return;
+	}
+	cEntity *user = g_pWorld->owners[0];
+	if (user) {
+		CHECK(Entity_IsType(user, TYEN_WITH_LIFE));
+	}
+	user = g_pWorld->owners[0];
+	if (!user || !user->vftable->IsType(user, TYEN_WALKCHAR)) {
+		return;
+	}
+	cEntity *sp = World_FindEntity(name);
+	if (!sp || !sp->vftable->IsType(sp, TYEN_WALKCHAR) || !((cWithLifeEntity *)sp)->life) {
+		if (voice == TALK_VOICE && g_TalkDelay > 0.0f) {
+			return;
+		}
+		g_pSound->vftable->StopVoice(g_pSound, voice);
+		return;
+	}
+	vol = 1.0f;
+	const cObjEntityVtbl *uv = (const cObjEntityVtbl *)user->vftable;
+	const cObjEntityVtbl *sv = (const cObjEntityVtbl *)sp->vftable;
+	if (voice != TALK_VOICE) {
+		const vec3_t *pu = uv->GetViewPos(user, &tmp1);
+		const vec3_t *ps = sv->GetViewPos(sp, &tmp2);
+		float dx = ps->x - pu->x;
+		float dy = ps->y - pu->y;
+		float dz = ps->z - pu->z;
+		float gap = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) - ((cWithLifeEntity *)user)->prim.radius -
+			((cWithLifeEntity *)sp)->prim.radius;
+		if (gap > g_ArrowMaxDist) {
+			if (gap > g_ArrowDeactivationRadius) {
+				vol = 0.0f;
+			} else {
+				vol = 1.0f - (gap - g_ArrowMaxDist) / (g_ArrowDeactivationRadius - g_ArrowMaxDist);
+			}
+		}
+	} else {
+		if (g_TalkDelay > 0.0f) {
+			return;
+		}
+		const vec3_t *pu = uv->GetViewPos(user, &tmp1);
+		const vec3_t *ps = sv->GetViewPos(sp, &tmp2);
+		d.x = ps->x - pu->x;
+		d.y = ps->y - pu->y;
+		d.z = ps->z - pu->z;
+		float f = (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z)) / g_MaxPoliceWarnDist;
+		float k = 0.0f;
+		if (!(f > 1.0f)) {
+			k = 1.0f;
+			if (!(0.0f > f)) {
+				k = 1.0f - f;
+			}
+		}
+		vol = g_WarnVoiceVolume * k;
+		g_pSound->vftable->VoiceRemain(g_pSound, TALK_VOICE, &remain);
+		if (VOICE_END >= remain || vol == 0.0f) {
+			g_pSound->vftable->StopVoice(g_pSound, TALK_VOICE);
+			return;
+		}
+		rot = ((cWalkCharEntity *)user)->view;
+		vec3_t r = *Vec3_RotateInv(&tmp1, &d, &rot);
+		float xz[2] = { r.x, r.z };
+		float n[2];
+		Vec2_Normalize(n, xz);
+		g_pSound->vftable->SetVoiceParam(g_pSound, TALK_VOICE, n[0] * VOICE_PAN);
+	}
+	g_pSound->vftable->SetVoiceVolume(g_pSound, voice, (1.0f - g_MinVoiceVolumeChat) * vol + g_MinVoiceVolumeChat);
+}
+
+/* the talk voice of the character name for event (in an alarm, or "AnmStr" and "Abort" always): the file arg (in
+ * VoicePath with force, else StreamPath) or a warning of its type (Gear, Police, the generic ones) picked by the count;
+ * not while another one talks, in slow motion, for the player itself (but "AnmStr") or too far away. 1 if it opens */
+byte Sound_PlayVoice(const char *name, const char *event, int arg, int force) {
+	char file[0x80], buf[0x80];
+	vec3_t t1, t2;
+
+	if (g_RemainTalkTime > 0.0f || g_TalkDelay > 0.0f) {
+		return 0;
+	}
+	if (VOICE_MIN_SPEED > cTimer_GetSpeed(&g_pWorld->timer)) {
+		return 0;
+	}
+	byte anm = !strcmp(event, "AnmStr");
+	byte abort = !strcmp(event, "Abort");
+	if (!abort && !anm && !g_pWorld->alarmOn) {
+		return 0;
+	}
+	g_pSound->vftable->GetVoiceString(g_pSound, TALK_VOICE, buf, sizeof(buf));
+	if (buf[0]) {
+		return 0;
+	}
+	cEntity *user = cWorld_GetUsrEntity(g_pWorld, 0);
+	if (!user || !user->vftable->IsType(user, TYEN_WALKCHAR)) {
+		return 0;
+	}
+	cEntity *sp = World_FindEntity(name);
+	if (!sp || (!anm && sp == cWorld_GetUsrEntity(g_pWorld, 0)) || !sp->vftable->IsType(sp, TYEN_WALKCHAR)) {
+		return 0;
+	}
+	float r = (float)((double)(crt_rand() & 0x7fff) * 0x1.0002000400080p-15 * 4.0 - 3.0);
+	if (0.0f > r && !strcmp(event, "Acuse")) {
+		return 0;
+	}
+	const vec3_t *pu = ((const cObjEntityVtbl *)user->vftable)->GetViewPos(user, &t1);
+	const vec3_t *ps = ((const cObjEntityVtbl *)sp->vftable)->GetViewPos(sp, &t2);
+	float dx = ps->x - pu->x;
+	float dy = ps->y - pu->y;
+	float dz = ps->z - pu->z;
+	if ((float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) >= g_MaxPoliceWarnDist) {
+		return 0;
+	}
+	g_VoiceCount++;
+	const char *type = Logic_TypeName(sp);
+	if (arg) {
+		crt_sprintf(file, "%s%s.mp3", (byte)force ? g_VoicePath : g_StreamPath, (const char *)(uintptr_t)arg);
+	} else {
+		if (!strcmp(type, "Boss")) {
+			return 0;
+		}
+		uint32_t n = g_VoiceCount;
+		if (abort) {
+			crt_sprintf(file, "%sGenerics_GearWarning_%d.mp3", g_VoicePath, (n & 1) + 7);
+		} else if (!strcmp(type, "Gear")) {
+			if (!strcmp(event, "Fire")) {
+				crt_sprintf(file, "%sGenerics_GearShooting_%d.mp3", g_VoicePath, n % 5 + 1);
+			} else {
+				uint32_t m = n % 9;
+				crt_sprintf(file, "%sGenerics_GearWarning_%d.mp3", g_VoicePath, m <= 5 ? m + 1 : m + 3);
+			}
+		} else if (!strcmp(type, "Police") || !strcmp(type, "PoliceBoss")) {
+			if (n % 3 == 2) {
+				crt_sprintf(file, "%sGenerics_GearWarning_9.mp3", g_VoicePath);
+			} else {
+				crt_sprintf(file, "%sGenerics_PoliceWarning_%d.mp3", g_VoicePath, n % 3 + 12);
+			}
+		} else {
+			crt_sprintf(file, "%sGenerics_%s_Warning_%d.mp3", g_VoicePath, type, n % 3 + 1);
+		}
+	}
+	g_pSound->vftable->OpenVoice(g_pSound, file, TALK_VOICE, (byte)force || !arg ? 1 : 0);
+	g_pSound->vftable->SetVoiceString(g_pSound, TALK_VOICE, sp->name);
+	g_TalkDelay = g_VoicePlayDelay;
+	g_TalkStop = 0;
+	return 1;
 }
 
 void Sound_Update(float dt) {

@@ -102,9 +102,7 @@ SD_IMPORT(crt_floor, 0x345130)
 SD_IMPORT(Elements_Call, 0x202ea0)
 SD_IMPORT(Elements_Create, 0x203000)
 SD_IMPORT(Floor_Get, 0x203af0)
-SD_IMPORT(Achievement_Unlock, 0x137470)
 SD_IMPORT(Steam_SetAchievement, 0x1a66a0)
-SD_IMPORT(Gog_GetID, 0x137160)
 SD_IMPORT(Anm_Preload, 0x2051a0)
 SD_IMPORT(Object3D_Preload, 0x205140)
 SD_IMPORT(cDebrisSys_Init, 0x204d50)
@@ -295,7 +293,6 @@ SD_IMPORT(Cmd_ReadFile, 0x280b10)
 SD_IMPORT(Matrix_RotationX, 0x23a270)
 
 /* module agent: Sound/Sound+SoundDX8+Wav.cpp (imports below this line) */
-SD_IMPORT(Sound_UpdateVoice, 0x1a0320)
 SD_IMPORT(DebugUtils_DrawSphere, 0x219d20)
 SD_IMPORT_STDCALL(FSOUND_GetError, 0, 0x3179c6)
 SD_IMPORT_STDCALL(FSOUND_GetMaxChannels, 0, 0x3179cc)
@@ -324,12 +321,8 @@ SD_IMPORT(CGameLensFlare_ctor, 0x232e80)
 SD_IMPORT(CGameLensFlare_dtor, 0x232f10)
 
 /* module agent: App/CApp+CWinApp (imports below this line) */
-SD_IMPORT(GogListeners_ctor, 0x136f10)
-SD_IMPORT(Gog_GetLanguage, 0x137140)
 SD_IMPORT(Gog_Init, 0x137250)
 SD_IMPORT(Gog_Done, 0x137430)
-SD_IMPORT(Gog_ProcessData, 0x137570)
-SD_IMPORT(PtrVector_Deallocate, 0x137c30)
 SD_IMPORT(InputMaps_Done, 0x139900)
 SD_IMPORT(Steam_Done, 0x1a64d0)	/* Sound agent range */
 SD_IMPORT(Steam_GetLanguage, 0x1a65f0)	/* Sound agent range */
@@ -487,7 +480,6 @@ SD_IMPORT(cTargetScorer_DrawTarget, 0x181600)
 SD_IMPORT(cWaypointScorer_DrawTarget, 0x185e90)
 
 /* module agent: Logic part 3 (GenCharLogic..Messenger) (imports below this line) */
-SD_IMPORT(Sound_PlayVoice, 0x1a1090)
 
 /* module agent: AI/ICharControl+2D+3D.cpp (imports below this line) */
 SD_IMPORT(CAStar2D_FindPath, 0x09a5e0)
@@ -581,3 +573,14 @@ SD_IMPORT(CGameLensFlare_SetB2c, 0x233020)
 /* module agent: Rest A, game leftovers below 0x1a8000 (imports below this line) */
 SD_IMPORT(crt_ui64toa, 0x34d6d5)
 SD_IMPORT(crt_stdio_common_vsscanf, 0x344793)
+SD_IMPORT_STDCALL(FSOUND_GetNumHWChannels, 12, 0x3179d8)
+SD_IMPORT_STDCALL(FSOUND_GetChannelsPlaying, 0, 0x3179de)
+SD_IMPORT_STDCALL(FSOUND_GetSFXMasterVolume, 0, 0x3179d2)
+SD_IMPORT_STDCALL(FSOUND_GetPriority, 4, 0x317a50)
+SD_IMPORT_STDCALL(FSOUND_GetLoopMode, 4, 0x317a5c)
+SD_IMPORT(crt_Xlength_error, 0x317912)
+SD_IMPORT(crt_Xout_of_range, 0x317932)
+SD_IMPORT(crt_invalid_parameter_noinfo_noreturn, 0x34e614)
+SD_IMPORT(crt_Throw_bad_array_new_length, 0x3178b8)
+SD_IMPORT(MsvcString_ReallocFor, 0x1375f0)
+SD_IMPORT(PtrVector_Reallocate, 0x137790)
