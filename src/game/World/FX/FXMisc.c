@@ -234,7 +234,7 @@ void FX_ItemFade(cEntity *e, int mode, float scale, cEntity *target) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (sc) {
-		ScorerFade_Start((byte *)sc + 0xb0, 0x40c0c0ff, 0x2020ff, 0.22f);
+		ScorerFade_Start(&sc->fade, 0x40c0c0ff, 0x2020ff, 0.22f);
 	}
 }
 

@@ -172,7 +172,7 @@ void Str_TrimBlanks(char *s);
 #define g_FreeSpaceMagnetDef GAME_DATA(int, 0x447f0c)
 #define g_FXVehicleFloatingFactor GAME_DATA(float, 0x447ff8)
 #define g_FXVehicleFloatingFactorDef GAME_DATA(float, 0x447ffc)
-#define g_SceneMotionBlurValue GAME_DATA(int, 0x4a8c44)	/* R_SceneMotionBlurValue */
+#define g_SceneMotionBlurValue GAME_DATA(float, 0x4a8c44)	/* R_SceneMotionBlurValue */
 #define g_NotShootAI GAME_DATA(int, 0x4441a4)
 #define g_NotShootAIDef GAME_DATA(int, 0x4441a8)
 #define g_RemainTalkTime GAME_DATA(float, 0x462148)

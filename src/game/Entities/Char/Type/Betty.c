@@ -216,7 +216,7 @@ void ChType_FXBettyAttack(cAbstractFile *params) {
 		cam->quakeTime = 0.150000006f;
 		cScorer *sc = Scorer_Get(0);
 		if (sc) {
-			ScorerFade_Start(sc->fade, 0xffffffff, 0x00ffffff, 0.5f);
+			ScorerFade_Start(&sc->fade, 0xffffffff, 0x00ffffff, 0.5f);
 		}
 	}
 	cObjElementFXBettyAttack *el = FX_DropNew(g_FXBettyAttackFile, 1.89999998f);

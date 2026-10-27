@@ -11,6 +11,8 @@
 #include "scrap/input.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapmain.h"
+#include "scrap/scrapmodel.h"
+#include "scrap/sound.h"
 
 /* the vtables of the exe */
 #define CABSTRACTTEXTSCORER_VFTABLE 0x3c1b4c
@@ -854,5 +856,349 @@ byte __thiscall cRadarScorer_OnPrevFloor(cRadarScorer *self, float y);
 int __thiscall cRadarScorer_FloorSide(cRadarScorer *self, float y);
 int __thiscall cRadarScorer_Var(cRadarScorer *self, const char *name, byte set, char **s, double *d, int *i);
 void __thiscall cRadarScorer_Draw(cRadarScorer *self, int player);
+
+
+/* ---- Scorer.cpp (src/game/Scorer/Scorer.c) ---- */
+
+#define SCORER_MAX_HEAD_ANIMS 8
+
+/* the flags and the default of an engine variable by its value (cGVar of include/scrap/scrap.h) */
+#define GVAR_FLAGS(v) (*((byte *)&(v) - 4))
+#define GVAR_DEF(type, v) (*(type *)((byte *)&(v) + 4))
+
+#define g_Scorers GAME_DATA(cScorer *, 0x4601d4)		/* new cScorer[4] */
+#define g_ScorerWhite GAME_DATA(CPsaImage *, 0x4601c8)	/* 2D/white.tga */
+#define g_ScorerNoise GAME_DATA(CPsaImage *, 0x4601cc)	/* 2D/Noise.tga */
+#define g_ScorerMarker GAME_DATA(CPsaImage *, 0x4601d0)	/* the focus marker (SScorer.SetMarkerSprite) */
+#define g_ScorerTabs GAME_DATA(CPsaImage *, 0x45fe94)	/* 2D/Menu/Tabs.alpha.tga */
+#define g_NewsPanel GAME_DATA(cNewsPanel *, 0x45fe90)
+/* the engine variables of Scorer.cpp */
+#define g_RadarMMSelect GAME_DATA(int, 0x45fe78)		/* RadarMMSelect */
+#define g_NumEnemiesInRadar GAME_DATA(int, 0x45fe30)
+#define g_CinemaBlackBandHeight GAME_DATA(float, 0x45fea8)	/* CinemaBlackBandHeight */
+#define g_NoiseFactor GAME_DATA(int, 0x45ff98)		/* NoiseFactor */
+#define g_NoiseFactorBegin GAME_DATA(int, 0x460058)	/* NoiseFactorBegin */
+#define g_NoiseTime GAME_DATA(float, 0x45fff8)		/* NoiseTime */
+#define g_NoiseEndTime GAME_DATA(float, 0x45ff80)		/* NoiseEndTime */
+#define g_MotionBlurFactorBegin GAME_DATA(float, 0x45fec0)	/* MotionBlurFactorBegin */
+#define g_MotionBlurFactorEnd GAME_DATA(float, 0x460118)	/* MotionBlurFactorEnd */
+#define g_MotionBlurTime GAME_DATA(float, 0x460088)	/* MotionBlurTime */
+#define g_MotionBlurEndTime GAME_DATA(float, 0x45ffb0)	/* MotionBlurEndTime */
+#define g_MotionBlurOffVar GAME_DATA(float, 0x4601a8)	/* MotionBlurOffVar */
+#define g_FullScreenConsoleCallback (&GAME_DATA(cPy_Function, 0x4601e8))	/* FullScreenConsoleCallback */
+#define g_CurrentWaypointName GAME_DATA(char *, 0x462428)	/* CurrentWaypointName */
+#define g_CurrentWaypointName2 GAME_DATA(char *, 0x462410)	/* CurrentWaypointName2 */
+#define g_CameraCloudDistance GAME_DATA(float, 0x45ff68)	/* CameraCloudDistance */
+#define g_CameraCloudPlaneSize GAME_DATA(float, 0x45fef0)	/* CameraCloudPlaneSize */
+#define g_CameraCloudThickness GAME_DATA(float, 0x460130)	/* CameraCloudThickness */
+#define g_CameraCloudAlpha GAME_DATA(int, 0x460178)	/* CameraCloudAlpha */
+#define g_CameraCloudRed GAME_DATA(int, 0x45ff08)		/* CameraCloudRed */
+#define g_CameraCloudGreen GAME_DATA(int, 0x460010)	/* CameraCloudGreen */
+#define g_CameraCloudBlue GAME_DATA(int, 0x460100)		/* CameraCloudBlue */
+#define g_OnAcceptSound GAME_DATA(char *, 0x45ffc8)	/* OnAcceptSound */
+#define g_OnAcceptSoundVol GAME_DATA(float, 0x45fed8)	/* OnAcceptSoundVol */
+#define g_OnFocusSound GAME_DATA(char *, 0x4600e8)		/* OnFocusSound */
+#define g_OnFocusSoundVol GAME_DATA(float, 0x45ff50)	/* OnFocusSoundVol */
+#define g_ScorerMarkerOn GAME_DATA(int, 0x460070)		/* ScorerMarker */
+#define g_ScorerMarkerColor GAME_DATA(uint32_t, 0x460190)	/* ScorerMarkerColor */
+#define g_ScorerMarkerSpeed GAME_DATA(float, 0x4600b8)	/* ScorerMarkerSpeed */
+#define g_CShow GAME_DATA(int, 0x4601c0)			/* CShow */
+#define g_XboxNoPadMsg GAME_DATA(int, 0x460160)		/* XboxNoPadMsg */
+#define g_XboxNoPadMsgP GAME_DATA(int, 0x45ff38)		/* XboxNoPadMsgP */
+#define g_XboxNoPadMsgPBig GAME_DATA(int, 0x45ffe0)	/* XboxNoPadMsgPBig */
+#define g_XboxSavingMsg GAME_DATA(float, 0x460028)		/* XboxSavingMsg */
+#define g_XboxSavingMsgStr GAME_DATA(char *, 0x45ff20)	/* XboxSavingMsgStr */
+#define g_ShowConsoleLog GAME_DATA(int, 0x460418)		/* ShowConsoleLog */
+#define g_ScorerRandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
+
+/* a bool variable of an item: 1 or 0 */
+static inline int ScorerVar_Bool(byte *v, byte set, int *i) {
+	if (set) {
+		*v = *i != 0;
+	} else {
+		*i = *v != 0;
+	}
+	return 3;
+}
+
+/* the sound of an engine variable at its volume */
+static inline void Scorer_PlaySound(const char *snd, float vol) {
+	CSoundSys *s = g_pSound;
+	s->vftable->Play(s, snd, Snd_Volume(vol), 0);
+}
+
+ScorerCinema *__fastcall ScorerCinema_ctor(ScorerCinema *self);
+ScorerFade *__fastcall ScorerFade_ctor(ScorerFade *self);
+void *__fastcall ScorerFx_ctor(void *self);
+cScorer *__fastcall cScorer_ctor(cScorer *self);
+void __fastcall cScorer_dtor(cScorer *self);
+cScorer *__thiscall cScorer_Delete(cScorer *self, byte flags);
+cScorerItem *__thiscall cScorerItem_Delete(cScorerItem *self, byte flags);
+/* the scorer model of that name: its game model, NULL if none */
+CGameModel *__thiscall cScorer_FindModelModel(cScorer *scorer, const char *name);
+void __fastcall cScorer_Free(cScorer *scorer);
+void __thiscall cScorer_SetParam(cScorer *scorer, const char *name, const char *value);
+void __thiscall cScorer_RemoveDeleted(cScorer *scorer, int player);
+void __thiscall cScorer_SetCursorItem(cScorer *scorer, int player, const char *from, const char *to);
+void Scorer_SetInputState(int state);
+CPsaImage *Scorer_GetWhite(void);
+CPsaImage *Scorer_GetMarker(void);
+CPsaImage *Scorer_GetNoise(void);
+void Scorer_GetCamVarStr(int player, char *buf, const char *name, int size);
+int Scorer_GetCamVarInt(int player, const char *name);
+void Scorer_DrawPyMemStats(void);
+uint32_t Scorer_ColorLerp(uint32_t a, uint32_t b, float t);
+void __thiscall ScorerFade_Draw(ScorerFade *fade, int player, float dt);
+void __thiscall ScorerCinema_Draw(ScorerCinema *cinema, int player, float dt);
+void __thiscall ScorerFx_Draw(void *fx, int player, float dt);
+void __thiscall cScorer_UpdateMP(cScorer *scorer, float dt);
+void __thiscall cScorer_UpdateCursor(cScorer *scorer, int player);
+void __thiscall cScorer_Draw(cScorer *scorer, int player);
+void __thiscall cScorer_DrawClouds(cScorer *scorer, int player);
+/* the big message: the start text; else the pad text of player index (pad the player number in split screen) */
+void __thiscall cScorer_DrawNoPadMsg(cScorer *scorer, int index, float y, byte big, int pad);
+void __thiscall cScorer_DrawXboxMsgs(cScorer *scorer, int player);
+byte Scorer_Render(void);
+/* the full screen console: 1 while it is shown (instead of the scorer); rva 0x1742f0, not decompiled */
+byte Scorer_DrawConsole(void);
+/* CShow and the AI debug drawings (rva 0x173450, not decompiled) */
+void Scorer_DrawDebug(void);
+void Console_OnInput(int player, const char *text);
+void Console_HistoryUp(void);
+void Console_HistoryDown(void);
+
+/* the image slots of the items below: the old image deleted, the new one made with flags, color white */
+static inline CPsaImage *ScorerImg_Replace(CPsaImage *old, const char *name, int blend, uint32_t flags) {
+	if (old) {
+		CPsaImage_dtor(old);
+		operator_delete_sized(old, sizeof(CPsaImage));
+	}
+	CPsaImage *img = operator_new(sizeof(CPsaImage));
+	img = img ? CPsaImage_ctorFlags(img, name, 0, blend, (int)flags) : NULL;
+	img->color = 0xffffffff;
+	return img;
+}
+
+/* the same with CPsaImage_ctor (blend from the flags) */
+static inline CPsaImage *ScorerImg_ReplaceSimple(CPsaImage *old, const char *name, uint32_t flags) {
+	if (old) {
+		CPsaImage_dtor(old);
+		operator_delete_sized(old, sizeof(CPsaImage));
+	}
+	CPsaImage *img = operator_new(sizeof(CPsaImage));
+	img = img ? CPsaImage_ctor(img, name, (int)flags) : NULL;
+	img->color = 0xffffffff;
+	return img;
+}
+
+static inline void ScorerImg_Free(CPsaImage *img) {
+	if (img) {
+		CPsaImage_dtor(img);
+		operator_delete_sized(img, sizeof(CPsaImage));
+	}
+}
+
+/* ---- ScraplandScorer.cpp: the animated logos of the main menu and of the sub menus ---- */
+
+#define CSCRAPLANDMAINMENUSCORER_VFTABLE 0x3c3ff4
+#define CSCRAPLANDSUBMENUSCORER_VFTABLE 0x3c4008
+
+/* the logo of the main menu with its glow, neon and lighting (200 bytes); the animation state is global */
+typedef struct cScraplandMainMenuScorer {
+	cScorerItem base;		/* 0x00 */
+	float time;			/* 0xac the game time of the last draw */
+	float now;			/* 0xb0 */
+	int highRes;			/* 0xb4 HighRes 0 or 1: the files get the flag 0x10000 */
+	CPsaImage *logo;		/* 0xb8 FileLogo */
+	CPsaImage *glow;		/* 0xbc FileGlow */
+	CPsaImage *neon;		/* 0xc0 FileNeon */
+	CPsaImage *lighting;		/* 0xc4 FileLighting */
+} cScraplandMainMenuScorer;
+SD_SIZE(cScraplandMainMenuScorer, 0xc8);
+
+/* the logo of a sub menu with its rings (0xd8 bytes) */
+typedef struct cScraplandSubMenuScorer {
+	cScorerItem base;		/* 0x00 */
+	float time;			/* 0xac */
+	float now;			/* 0xb0 */
+	char *file;			/* 0xb4 cString, the last file set */
+	int highRes;			/* 0xb8 */
+	CPsaImage *logo;		/* 0xbc FileLogo */
+	CPsaImage *glow;		/* 0xc0 FileGlow */
+	CPsaImage *lighting;		/* 0xc4 FileLighting */
+	CPsaImage *ringMask;		/* 0xc8 FileRingMask */
+	CPsaImage *ringReflection;	/* 0xcc FileRingReflection */
+	CPsaImage *ringBorder;		/* 0xd0 FileRingBorder */
+	float scale;			/* 0xd4 Scale 1 */
+} cScraplandSubMenuScorer;
+SD_SIZE(cScraplandSubMenuScorer, 0xd8);
+
+/* the global animation state, set up once by the first constructor (random times) */
+#define g_MainMenuAnimInit GAME_DATA(byte, 0x460428)
+#define g_SubMenuAnimInit GAME_DATA(byte, 0x460429)
+#define g_MainMenuWait ((float *)Game_Ptr(0x46042c))		/* [9] */
+#define g_MainMenuTime ((float *)Game_Ptr(0x460450))		/* [9] */
+#define g_MainMenuLength ((float *)Game_Ptr(0x460474))	/* [9] */
+#define g_MainMenuSparkDir ((byte *)Game_Ptr(0x4604e4))	/* [19] */
+#define g_MainMenuSparkWait ((float *)Game_Ptr(0x460498))	/* [19] */
+#define g_MainMenuSparkTime ((float *)Game_Ptr(0x4604f8))	/* [19] */
+#define g_MainMenuSparkLength ((float *)Game_Ptr(0x460548))	/* [19] */
+#define g_MainMenuSparkFrame ((int *)Game_Ptr(0x4605a0))	/* [19] */
+#define g_MainMenuNeonNext GAME_DATA(float, 0x460544)
+#define g_MainMenuNeonGroup ((float *)Game_Ptr(0x460594))	/* [3] */
+#define g_MainMenuNeonWait ((float *)Game_Ptr(0x4605f0))	/* [21] */
+#define g_SubMenuWait GAME_DATA(float, 0x4605ec)
+#define g_SubMenuRingTime GAME_DATA(float, 0x460644)
+#define g_SubMenuRingWait GAME_DATA(float, 0x460648)
+
+cScraplandMainMenuScorer *__fastcall cScraplandMainMenuScorer_ctor(cScraplandMainMenuScorer *self);
+cScraplandSubMenuScorer *__fastcall cScraplandSubMenuScorer_ctor(cScraplandSubMenuScorer *self);
+void __fastcall cScraplandMainMenuScorer_dtor(cScraplandMainMenuScorer *self);
+void __fastcall cScraplandSubMenuScorer_dtor(cScraplandSubMenuScorer *self);
+cScraplandMainMenuScorer *__thiscall cScraplandMainMenuScorer_Delete(cScraplandMainMenuScorer *self, byte flags);
+cScraplandSubMenuScorer *__thiscall cScraplandSubMenuScorer_Delete(cScraplandSubMenuScorer *self, byte flags);
+/* the time of the item and, once, the random animation state */
+void __fastcall cScraplandMainMenuScorer_Init(cScraplandMainMenuScorer *self);
+void __fastcall cScraplandSubMenuScorer_Init(cScraplandSubMenuScorer *self);
+/* the image setters (flags, file) */
+void __thiscall cScraplandMainMenuScorer_SetGlow(cScraplandMainMenuScorer *self, uint32_t flags, const char *file);
+void __thiscall cScraplandSubMenuScorer_SetGlow(cScraplandSubMenuScorer *self, uint32_t flags, const char *file);
+/* 2D/white.tga loads without the flag 0x40, any other file with it */
+void __thiscall cScraplandMainMenuScorer_SetLighting(cScraplandMainMenuScorer *self, uint32_t flags,
+	const char *file);
+void __thiscall cScraplandSubMenuScorer_SetLighting(cScraplandSubMenuScorer *self, uint32_t flags, const char *file);
+void __thiscall cScraplandMainMenuScorer_SetLogo(cScraplandMainMenuScorer *self, uint32_t flags, const char *file);
+void __thiscall cScraplandSubMenuScorer_SetLogo(cScraplandSubMenuScorer *self, uint32_t flags, const char *file);
+void __thiscall cScraplandMainMenuScorer_SetNeon(cScraplandMainMenuScorer *self, uint32_t flags, const char *file);
+void __thiscall cScraplandSubMenuScorer_SetRingBorder(cScraplandSubMenuScorer *self, uint32_t flags,
+	const char *file);
+void __thiscall cScraplandSubMenuScorer_SetRingMask(cScraplandSubMenuScorer *self, uint32_t flags, const char *file);
+void __thiscall cScraplandSubMenuScorer_SetRingReflection(cScraplandSubMenuScorer *self, uint32_t flags,
+	const char *file);
+/* HighRes; set only: FileLogo, FileGlow, FileNeon, FileLighting */
+int __thiscall cScraplandMainMenuScorer_Var(cScraplandMainMenuScorer *self, const char *name, byte set, char **s,
+	double *d, int *i);
+/* set only: FileLogo, FileGlow, FileLighting, FileRingMask, FileRingReflection, FileRingBorder; HighRes, Scale */
+int __thiscall cScraplandSubMenuScorer_Var(cScraplandSubMenuScorer *self, const char *name, byte set, char **s,
+	double *d, int *i);
+
+/* ---- SliderScorer.cpp ---- */
+
+#define CSLIDERSCORER_VFTABLE 0x3c4140
+
+/* a slider of a sprite sheet: the back frame and the knob moved by the cursor (0xf8 bytes) */
+typedef struct cSliderScorer {
+	cScorerItem base;		/* 0x00 */
+	int highRes;			/* 0xac HighRes: half sizes, File with the flag 0x10000 */
+	int blend;			/* 0xb0 BlendingMode 0..6, 3 */
+	int backIndex;			/* 0xb4 BackSpriteIndex, not set by the constructor */
+	int sliderIndex;		/* 0xb8 SliderSpriteIndex, not set by the constructor */
+	int focusIndex;			/* 0xbc FocusSpriteIndex, the knob over it while the item is the cursor */
+	float value;			/* 0xc0 Value, MinValue..MaxValue */
+	float lastValue;		/* 0xc4 */
+	float valueStep;		/* 0xc8 ValueStep */
+	float minValue;			/* 0xcc MinValue */
+	float maxValue;			/* 0xd0 MaxValue */
+	float marginSize;		/* 0xd4 MarginSize at both ends */
+	float maxValueForced;		/* 0xd8 MaxValueForced: the drag stops there if > 0 */
+	byte accept;			/* 0xdc the accept of this frame */
+	byte lastAccept;		/* 0xdd */
+	byte dragging;			/* 0xde */
+	byte pad_df;
+	cPy_Function onChange;		/* 0xe0 OnChange (player, name) */
+	CPsaImage *img;			/* 0xf4 File, its color by Red, Green, Blue, Alpha; Unit its b22 */
+} cSliderScorer;
+SD_SIZE(cSliderScorer, 0xf8);
+
+cSliderScorer *__fastcall cSliderScorer_ctor(cSliderScorer *self);
+void __fastcall cSliderScorer_dtor(cSliderScorer *self);
+cSliderScorer *__thiscall cSliderScorer_Delete(cSliderScorer *self, byte flags);
+void __thiscall cSliderScorer_SetFile(cSliderScorer *self, uint32_t flags, const char *file);
+int __thiscall cSliderScorer_Var(cSliderScorer *self, const char *name, byte set, char **s, double *d, int *i);
+void __thiscall cSliderScorer_Draw(cSliderScorer *self, int player);
+
+/* ---- SpecialActionScorer.cpp ---- */
+
+#define CSPECIALACTIONSCORER_VFTABLE 0x3c42d4
+#define SPECIALACTION_MAX_ACTIONS 15
+
+/* the special action of the character: its icon, energy and battery bars, the cannon aim (0x138 bytes) */
+typedef struct cSpecialActionScorer {
+	cScorerItem base;		/* 0x000 */
+	int charAction;			/* 0x0ac CharAction: the draw handler 0..14 */
+	int backIndex;			/* 0x0b0 BackIndex */
+	float backOffX, backOffY;	/* 0x0b4 BackOffX, BackOffY */
+	CPsaImage *sprite;		/* 0x0bc Sprite */
+	int energyBackIndex;		/* 0x0c0 EnergyBackIndex */
+	float energyBackOffX, energyBackOffY;	/* 0x0c4 */
+	int energyBarIndex;		/* 0x0cc EnergyBarIndex */
+	float energyBarOffX, energyBarOffY;	/* 0x0d0 */
+	int batteryBarIndex;		/* 0x0d8 BatteryBarIndex */
+	float batteryBarOffX, batteryBarOffY;	/* 0x0dc */
+	float textOffX, textOffY;	/* 0x0e4 TextOffX, TextOffY */
+	uint32_t textColor;		/* 0x0ec TextColorRed..Alpha, not set by the constructor */
+	CFont *textFont;		/* 0x0f0 TextFont, Horatio */
+	CPsaImage *cannon;		/* 0x0f4 CannonSprite */
+	int cannonIndex;		/* 0x0f8 CannonIndex */
+	int crossHairIndex;		/* 0x0fc CrossHairIndex */
+	CPsaImage *icon[2];		/* 0x100 IconSprite1, IconSprite2 */
+	CPsaImage *iconGlow[2];		/* 0x108 the same files, blend 2 */
+	int iconIndexSprite0;		/* 0x110 IconIndexSprite0 */
+	float iconOffX, iconOffY;	/* 0x114 IconOffX, IconOffY */
+	int iconIndex;			/* 0x11c IconIndex */
+	int glowIconIndex;		/* 0x120 GlowIconIndex */
+	uint32_t inactiveColor;		/* 0x124 InactiveColorRed..Alpha */
+	uint32_t activeColor;		/* 0x128 ActiveColorRed..Alpha */
+	uint32_t glowColor;		/* 0x12c GlowColorRed..Alpha */
+	uint32_t energyBackColor;	/* 0x130 0x5cffcc00 */
+	uint32_t batteryColor;		/* 0x134 0xffffffff */
+} cSpecialActionScorer;
+SD_SIZE(cSpecialActionScorer, 0x138);
+SD_OFFSET(cSpecialActionScorer, textFont, 0xf0);
+SD_OFFSET(cSpecialActionScorer, iconIndex, 0x11c);
+SD_OFFSET(cSpecialActionScorer, energyBackColor, 0x130);
+
+#define g_SpecialActionActive GAME_DATA(int, 0x46067c)	/* SpecialActionActive 0 off, 1 blink, 2 on */
+
+cSpecialActionScorer *__fastcall cSpecialActionScorer_ctor(cSpecialActionScorer *self);
+void __fastcall cSpecialActionScorer_dtor(cSpecialActionScorer *self);
+cSpecialActionScorer *__thiscall cSpecialActionScorer_Delete(cSpecialActionScorer *self, byte flags);
+/* TextFont returns 0 when the font exists (and 1 when not), the original does so */
+int __thiscall cSpecialActionScorer_Var(cSpecialActionScorer *self, const char *name, byte set, char **s, double *d,
+	int *i);
+void __thiscall cSpecialActionScorer_Draw(cSpecialActionScorer *self, int player);
+void __thiscall cSpecialActionScorer_DrawIcon(cSpecialActionScorer *self, int player, int state);
+void __fastcall cSpecialActionScorer_DrawEnergy(cSpecialActionScorer *self);
+void __thiscall cSpecialActionScorer_DrawCrossHair(cSpecialActionScorer *self, int player);
+void __thiscall cSpecialActionScorer_DrawCannon(cSpecialActionScorer *self, int player, const float *pos,
+	const float *size, float ang, uint32_t color);
+/* the target search of the gear and its aim (rva 0x17ac90, not decompiled) */
+void __thiscall cSpecialActionScorer_DrawGearAim(cSpecialActionScorer *self, int player);
+void __thiscall SpecialAction_DrawDefault(cSpecialActionScorer *self, int player);
+void __thiscall SpecialAction_DrawBanker(cSpecialActionScorer *self, int player);
+void __thiscall SpecialAction_DrawTarget(cSpecialActionScorer *self, int player);
+void __thiscall SpecialAction_DrawGear(cSpecialActionScorer *self, int player);
+void __thiscall SpecialAction_DrawGear2(cSpecialActionScorer *self, int player);
+void __thiscall SpecialAction_DrawGear3(cSpecialActionScorer *self, int player);
+void __thiscall SpecialAction_DrawVictim(cSpecialActionScorer *self, int player);
+void __thiscall SpecialAction_DrawOn(cSpecialActionScorer *self, int player);
+void __thiscall SpecialAction_DrawLowEnergy(cSpecialActionScorer *self, int player);
+void __thiscall SpecialAction_DrawFunctionary(cSpecialActionScorer *self, int player);
+void __thiscall SpecialAction_DrawEnergyOnly(cSpecialActionScorer *self, int player);
+
+#define g_EnergyBarActive GAME_DATA(int, 0x44726c)		/* EnergyBarActive */
+#define g_FunctionarySpecialActionLow GAME_DATA(float, 0x446738)	/* FunctionarySpecialActionLow */
+
+/* the exe functions the special action draws use (other modules) */
+/* the fraction of the weapon energy above the full batteries, and their count */
+float __thiscall cWalkCharEntity_GetEnergyFrac(cEntity *e);	/* rva 0x0d3740 */
+int __thiscall cWalkCharEntity_GetBatteries(cEntity *e);	/* rva 0x0d38e0 */
+/* a target of the character's special action in reach (rva 0x0cd520) */
+byte ChType_ActionTarget(cEntity *e, int *target, byte *flag, int *out);
+/* the victim (0x53c) of a walking character, none while the alarm runs (rva 0x0cfc10) */
+cEntity *ChType_WalkCharVictim(cEntity *e);
+/* frame + 1 stretched to the width w, frame at both ends (the right one mirrored), h the y scale (rva 0x184710) */
+void Menu_DrawStretch(CPsaImage *img, int frame, float x, float y, float w, float h);
+char *crt_ltoa(long v, char *buf, int radix);			/* rva 0x34d525 */
 
 #endif
