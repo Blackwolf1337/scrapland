@@ -63,6 +63,5 @@ CCamara *__fastcall CGameCamera_Update(CGameCamera *self);
 vec3_t *__thiscall CGameCamera_ToLocal(const CGameCamera *self, vec3_t *out, const vec3_t *in);
 
 /* rva 0x215c00 (ScrapEngMain.cpp): the camera the world is drawn with */
-CGameCamera *ScrapEng_GetActiveCamera(void);
 
 #endif

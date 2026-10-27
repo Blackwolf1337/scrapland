@@ -103,6 +103,6 @@ void Nodo_LimpiarNombre(char *name);
 /* map idmapa of the material used by the switches of the ini of the model and the video (MAT_SHADER: all) */
 byte M3D_MapaActivo(const CMaterial *mat, int idmapa);
 /* rva 0x216960 (ScrapEngMain.cpp): the node tree of the scene in the log */
-void Escena_ShowTree(CEscena *esc, int a, int b);
+void Escena_ShowTree(CEscena *esc, CNodo3D *padre, int indent);
 
 #endif

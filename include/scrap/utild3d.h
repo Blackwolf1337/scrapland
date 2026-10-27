@@ -19,6 +19,8 @@ void Debug_DrawBox(const vec3_t *mn, const vec3_t *mx, uint32_t color);
 void Debug_DrawConeM(const matrix_t *m, float len, float ang);
 /* the axes x, y, z (red, green, blue) of length size to both sides of pos */
 void Debug_DrawAxes(const matrix_t *m, const vec3_t *pos, float size);
+/* the lines from pos - size to pos + size along x, y and z in color[0..2], without a world matrix */
+void Debug_CrossLines(const vec3_t *pos, float size, const uint32_t color[3]);
 /* a cross of size to both sides of pos */
 void Debug_DrawPointM(const matrix_t *m, const vec3_t *pos, float size, uint32_t color);
 void Debug_DrawPoint(const vec3_t *pos, float size, uint32_t color);

@@ -6,6 +6,7 @@
 
 #include "scrap/animacion.h"
 #include "scrap/scrapcamera.h"
+#include "scrap/scrapmain.h"
 #include "scrap/scrapfont.h"
 #include "scrap/varios.h"
 
@@ -40,7 +41,7 @@ CGameCamera *__fastcall CGameCamera_ctor(CGameCamera *self) {
 
 void __fastcall CGameCamera_dtor(CGameCamera *self) {
 	NodoR_Unref(&self->Node);
-	if (ScrapEng_GetActiveCamera() == self) {
+	if (Camera_GetActual() == self) {
 		CheckFailed("GetActiveCamera() != this", __FILE__, __TIMESTAMP__, __LINE__);
 	}
 	CAM_CHECK(self);

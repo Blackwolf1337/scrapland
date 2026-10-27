@@ -39,7 +39,7 @@ SD_OFFSET(WorldNodeInfo, dummy, 0x8c);
 #define RENDERMODE_SHADOWS 0x103	/* toggles the stencil shadows */
 #define g_RenderMode100 GAME_DATA(byte, 0x4a8efd)
 #define g_VertexSpecular GAME_DATA(byte, 0x4a8efc)
-#define g_StencilShadows GAME_DATA(int, 0x4afdb0)
+#define g_SombrasStencil GAME_DATA(int, 0x4afdb0)	/* [sombras_stencil] usar */
 
 /* the splash screens and the loading bar */
 #define g_SplashOn GAME_DATA(int, 0x4a85c8)
@@ -112,10 +112,7 @@ void Loading_DrawBack2(void);
 
 /* other modules (src/imports.inc) */
 /* rva 0x2178e0 (ScrapEngMain.cpp): the splash screen name of the level */
-void Splash_LevelName(char *dest, int size);
 /* rva 0x267460: the stencil shadows on or off */
-void Shadows_SetStencil(byte on);
 /* rva 0x20d290: the window of the application */
-void *App_GetHwnd(void);
 
 #endif

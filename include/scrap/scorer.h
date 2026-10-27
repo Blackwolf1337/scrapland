@@ -83,6 +83,6 @@ void Scorer_SetMsgText(const char *text, float time, const char *font);
 void Scorer_SetLabelText(const char *text, float time);
 void Scorer_PreloadTexture(const char *name, int flag);
 /* screen position of a world point into out[2], 0 off the screen; last argument 0 here */
-byte Engine_WorldToScreen(const vec3_t *pos, float *out, int arg);
+byte Engine_WorldToScreen(const vec3_t *pos, float *out, float *depth);
 
 #endif

@@ -83,6 +83,5 @@ void __thiscall CGameParticles_EmitDt(CGameParticles *self, int n, byte force, f
 void __thiscall CGameParticles_Emit(CGameParticles *self, int n, byte force, float dt, const matrix_t *m);
 
 /* rva 0x216ad0 (ScrapEngMain.cpp): returns m, the matrix of the game as the matrix of the engine */
-const matrix_t *ScrapEng_MatrixD3D(const matrix_t *m);
 
 #endif

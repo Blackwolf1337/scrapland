@@ -11,6 +11,7 @@
 #include "scrap/render.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapmodel.h"
+#include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
 #include "scrap/sueloportal.h"
 #include "scrap/utild3d.h"
@@ -279,9 +280,9 @@ int RenderMode(int mode, int value, byte set) {
 		return g_TexFilter;
 	case RENDERMODE_SHADOWS:
 		if (set) {
-			Shadows_SetStencil(g_StencilShadows == 0);
+			SombrasStencil_Set(g_SombrasStencil == 0);
 		}
-		return g_StencilShadows;
+		return g_SombrasStencil;
 	default:
 		Con_Warnf("%sRenderMode(): Invalid RenderMode\n", set ? "Set" : "Get");
 		return 0;
@@ -336,7 +337,7 @@ void Video_CheckCaps(void) {
 			Str_Append(text, sizeof(text), id.Description);
 		}
 		exe_MessageBoxA(NULL, text, "Warning", 0x11030);
-		exe_BringWindowToTop(App_GetHwnd());
+		exe_BringWindowToTop(App_GetHWnd());
 	}
 	COM_RELEASE(d3d);
 }
@@ -441,7 +442,7 @@ void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 		return;
 	}
 	if (!name) {
-		Splash_LevelName(path, sizeof(path));
+		Loading_RandomName(path, sizeof(path));
 	} else {
 		Str_PrintfQuiet(path, sizeof(path), "%s", *name ? name : g_SplashLast);
 	}

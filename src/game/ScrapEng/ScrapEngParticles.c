@@ -2,6 +2,7 @@
  * ScrapEngParticles.cpp of the game: CGameParticles, see include/scrap/scrapparticles.h.
  */
 #include "scrap/scrapparticles.h"
+#include "scrap/scrapmain.h"
 #include "scrap/textura.h"
 
 #define SP_CHECK(self) \
@@ -278,7 +279,7 @@ void __thiscall CGameParticles_EmitN(CGameParticles *self, int n, byte force) {
 }
 
 void __thiscall CGameParticles_EmitM(CGameParticles *self, int n, byte force, const matrix_t *m) {
-	const matrix_t *d3d = ScrapEng_MatrixD3D(m);
+	const matrix_t *d3d = Eng_Identity(m);
 	CSistPart_EmitM(self->SistPart, n, force, d3d);
 }
 
@@ -287,6 +288,6 @@ void __thiscall CGameParticles_EmitDt(CGameParticles *self, int n, byte force, f
 }
 
 void __thiscall CGameParticles_Emit(CGameParticles *self, int n, byte force, float dt, const matrix_t *m) {
-	const matrix_t *d3d = ScrapEng_MatrixD3D(m);
+	const matrix_t *d3d = Eng_Identity(m);
 	CSistPart_Emit(self->SistPart, n, force, dt, d3d);
 }
