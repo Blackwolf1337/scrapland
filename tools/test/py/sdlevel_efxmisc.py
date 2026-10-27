@@ -70,7 +70,14 @@ def efmtrail(t):
 		efmints(c, (0x10,)), efmfl(c + 0x14, 3), efmfl(c + 0x2c, 4), efmfl(c + 0x40, 5), tuple(pts))
 def efmtrails(a, n):
 	return tuple(map(lambda i, a=a: efmtrail(a + 4 * i), range(n)))
-# render node name of the CGameModel gm with a particle system (flags & 2, obj3D of class 0xa5000020)
+# the particles the effects place by index in the systems of these nodes (more is a CHECK)
+efmmin = {'DOB_DataCube_Glow': 8, 'DOB_Interfono_Calling': 3, 'DF_Light': 2, 'DOB_MeetingPoint_Flares': 4,
+	'DF_Light_02': 6, 'DOB_ExtraLife_Glow': 40, 'DOB_FlapCTF_Glow': 10, 'Dummy01': 255,
+	'DOB_Conversor-Mandos_Glow': 10, 'DOB_Batery_Glow': 12, 'DOB_Treasure_Glow': 12, 'DC_Motion': 2,
+	'DOB_Coin1_Glow': 2, 'DOB_Coin2_Glow': 2, 'DOB_Coin3_Glow': 2, 'DOB_Coin4_Glow': 2, 'DOB_Dollar_Glow': 2,
+	'DOB_Coin1B_Glow': 2, 'DOB_Coin2B_Glow': 2, 'DOB_Coin3B_Glow': 2}
+# render node name of the CGameModel gm with a particle system (flags & 2, obj3D of class 0xa5000020) of enough
+# particles (nParticulas at 0xc)
 def efmsist(gm, name):
 	i = SDTest.Call(0x20f7d0, 'tiis', gm, name)[0]
 	if i < 0:
@@ -80,7 +87,7 @@ def efmsist(gm, name):
 		return 0
 	r = efmi(t + 4) + 0xa8 * i
 	o = efmi(r + 0x9c)
-	return (efmb(r + 4) & 2) and o != 0 and efmi(o + 4) == -0x5affffe0
+	return (efmb(r + 4) & 2) and o != 0 and efmi(o + 4) == -0x5affffe0 and efmi(o + 0xc) >= efmmin.get(name, 0)
 def efmnode(gm, name):
 	return SDTest.Call(0x20f7d0, 'tiis', gm, name)[0] >= 0
 
