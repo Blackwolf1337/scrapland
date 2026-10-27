@@ -705,6 +705,9 @@ SD_IMPORT(cDebrisSys_Release, 0x2053d0)
 /* module agent: World/FX/FXChar.cpp (imports below this line) */
 
 /* module agent: World/FX/FXScene.cpp (imports below this line) */
+SD_IMPORT(cObjElementFXSceneDecontamination_SetTarget, 0x1ea000)	/* FXVehicle range */
+SD_IMPORT(CGameLensFlare_SetF18, 0x232ff0)
+SD_IMPORT(cActCtrl_GetLayer, 0x062c70)
 
 /* module agent: World/FX/FXVehicle.cpp (imports below this line) */
 

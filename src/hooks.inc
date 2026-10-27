@@ -3738,6 +3738,44 @@ SD_HOOK(cMissileEntity_VarV, 0x0f5f20, 26)
 /* module agent: World/FX/FXChar.cpp (hooks below this line) */
 
 /* module agent: World/FX/FXScene.cpp (hooks below this line) */
+SD_HOOK(FXScene_Create, 0x1e8880, 1374)
+SD_HOOK(cObjElementFXSceneBishops_Update, 0x1e3050, 3440)
+SD_HOOK(cObjElementFXSceneDecontamination_Update, 0x1e3dc0, 3531)
+SD_HOOK(cObjElementFXSceneHumanCD_Update, 0x1e73e0, 2511)
+SD_HOOK(cObjElementFXSceneTheEndB_Update, 0x1e7dc0, 1209)
+SD_HOOK(cObjElementFXSceneYakuzzi_Update, 0x1e8280, 1527)
+SD_HOOK(FXMisc_Alive, 0x1e9740, 18)		/* BeatPickus */
+SD_HOOK(FXMisc_Alive, 0x1e9760, 18)		/* BillArrives_A */
+SD_HOOK(FXMisc_Alive, 0x1e9780, 18)		/* Bishops */
+SD_HOOK(FXMisc_Alive, 0x1e97a0, 18)		/* Decontamination */
+SD_HOOK(FXMisc_Alive, 0x1e97c0, 18)		/* EnterMatrix */
+SD_HOOK(FXMisc_Alive, 0x1e97e0, 18)		/* HumanCD */
+SD_HOOK(FXMisc_Alive, 0x1e9800, 18)		/* TheEndB */
+SD_HOOK(FXMisc_Alive, 0x1e9820, 18)		/* Yakuzzi */
+SD_HOOK(cObjElementFXSceneBeatPickus_Attach, 0x1e8de0, 358)
+SD_HOOK(cObjElementFXSceneBillArrives_A_Attach, 0x1e8f50, 352)
+SD_HOOK(cObjElementFXSceneBishops_Attach, 0x1e90b0, 357)
+SD_HOOK(cObjElementFXSceneDecontamination_Attach, 0x1e9220, 292)
+SD_HOOK(cObjElementFXSceneEnterMatrix_Attach, 0x1e9350, 255)
+SD_HOOK(cObjElementFXSceneHumanCD_Attach, 0x1e9450, 356)
+SD_HOOK(cObjElementFXSceneTheEndB_Attach, 0x1e95c0, 114)
+SD_HOOK(cObjElementFXSceneYakuzzi_Attach, 0x1e9640, 247)
+SD_HOOK(cObjElementFXSceneBeatPickus_Reset, 0x1e9840, 64)
+SD_HOOK(cObjElementFXSceneBillArrives_A_Reset, 0x1e9880, 48)
+SD_HOOK(cObjElementFXSceneBishops_Reset, 0x1e98b0, 104)
+SD_HOOK(cObjElementFXSceneDecontamination_Reset, 0x1e9920, 156)
+SD_HOOK(cObjElementFXSceneEnterMatrix_Reset, 0x1e99c0, 115)
+SD_HOOK(cObjElementFXSceneHumanCD_Reset, 0x1e9a40, 45)
+SD_HOOK(cObjElementFXSceneTheEndB_Reset, 0x1e9a70, 31)
+SD_HOOK(cObjElementFXSceneYakuzzi_Reset, 0x1e9a90, 34)
+SD_HOOK(cObjElementFXSceneBeatPickus_SetEntity, 0x1e9ac0, 146)
+SD_HOOK(cObjElementFXSceneBillArrives_A_SetEntity, 0x1e9b60, 146)
+SD_HOOK(cObjElementFXSceneBishops_SetEntity, 0x1e9c00, 146)
+SD_HOOK(cObjElementFXSceneDecontamination_SetEntity, 0x1e9ca0, 149)
+SD_HOOK(cObjElementFXSceneEnterMatrix_SetEntity, 0x1e9d40, 146)
+SD_HOOK(cObjElementFXSceneHumanCD_SetEntity, 0x1e9de0, 213)
+SD_HOOK(cObjElementFXSceneTheEndB_SetEntity, 0x1e9ec0, 146)
+SD_HOOK(cObjElementFXSceneYakuzzi_SetEntity, 0x1e9f60, 146)
 
 /* module agent: World/FX/FXVehicle.cpp (hooks below this line) */
 
