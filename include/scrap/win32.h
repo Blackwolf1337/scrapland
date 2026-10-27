@@ -40,6 +40,8 @@ typedef uint32_t(__stdcall *getfileattributes_t)(const char *name);
 typedef int(__stdcall *setfileattributes_t)(const char *name, uint32_t attr);
 
 #define exe_GetFileAttributesA GAME_DATA(getfileattributes_t, 0x3a1284)
+typedef uint64_t(__stdcall *gettickcount64_t)(void);
+#define exe_GetTickCount64 GAME_DATA(gettickcount64_t, 0x3a1154)
 #define exe_SetFileAttributesA GAME_DATA(setfileattributes_t, 0x3a1288)
 typedef int(__stdcall *lstrlen_t)(const char *s);
 #define exe_lstrlenA GAME_DATA(lstrlen_t, 0x3a12b8)

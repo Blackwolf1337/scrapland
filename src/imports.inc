@@ -113,34 +113,6 @@ SD_IMPORT(crt_fpclass, 0x34e765)
 SD_IMPORT(crt_floor, 0x345130)
 
 /* engine: Net/ (include/scrap/net.h) */
-SD_IMPORT(Net_IsServer, 0x18b280)
-SD_IMPORT(Net_ModifyUsrData, 0x190830)
-SD_IMPORT(Net_ServerChangeLevel, 0x18b2d0)
-SD_IMPORT(Net_AddResource, 0x18e780)
-SD_IMPORT(Net_InitServer, 0x18b070)
-SD_IMPORT(Net_CloseServer, 0x18af10)
-SD_IMPORT(Net_GetServerName, 0x18b040)
-SD_IMPORT(Net_GetServerMap, 0x18b050)
-SD_IMPORT(Net_GetServerPort, 0x18b060)
-SD_IMPORT(Net_GetBotName, 0x18e960)
-SD_IMPORT(Net_GetObjName, 0x18ea10)
-SD_IMPORT(Net_Kick, 0x18b290)
-SD_IMPORT(Net_InitBrowser, 0x18f900)
-SD_IMPORT(Net_DoneBrowser, 0x18f8e0)
-SD_IMPORT(Net_IsClient, 0x18ae40)
-SD_IMPORT(Net_GetClient, 0x18ac60)
-SD_IMPORT(Net_InitClient, 0x18ac70)
-SD_IMPORT(Net_CloseClientMsg, 0x18aba0)
-SD_IMPORT(Net_CloseClient, 0x18a8f0)
-SD_IMPORT(Net_GetClientName, 0x18ac40)
-SD_IMPORT(Net_GetClientPort, 0x18ac50)
-SD_IMPORT(Net_SendUsrString, 0x18f4d0)
-SD_IMPORT(Net_SendChatString, 0x18f210)
-SD_IMPORT(Net_SendCtrlString, 0x18f230)
-SD_IMPORT(Net_SendMasterString, 0x191b80)
-SD_IMPORT(Net_IsMaster, 0x191d00)
-SD_IMPORT(Net_PingInetSvrs, 0x191600)
-SD_IMPORT(Net_GetPing, 0x18eab0)
 
 /* engine: Menu/ (include/scrap/scorer.h) */
 
@@ -453,12 +425,6 @@ SD_IMPORT(Gog_Done, 0x137430)
 SD_IMPORT(Gog_ProcessData, 0x137570)
 SD_IMPORT(PtrVector_Deallocate, 0x137c30)
 SD_IMPORT(InputMaps_Done, 0x139900)
-SD_IMPORT(Net_ClientFrame, 0x18aa50)
-SD_IMPORT(Net_ClientReady, 0x18ae50)
-SD_IMPORT(Net_ServerFrame, 0x18b330)
-SD_IMPORT(Net_Done, 0x18e920)
-SD_IMPORT(Net_Init, 0x18eb60)
-SD_IMPORT(Net_Update, 0x18f950)
 SD_IMPORT(Steam_Done, 0x1a64d0)	/* Sound agent range */
 SD_IMPORT(Steam_GetLanguage, 0x1a65f0)	/* Sound agent range */
 SD_IMPORT(Steam_Init, 0x1a6620)	/* Sound agent range */
@@ -531,11 +497,9 @@ SD_IMPORT(CGameLensFlare_SetI1c, 0x233010)
 /* module agent: Entities/Vehicle/WeaponManager+Weaps/ATPC+Devastator.cpp (imports below this line) */
 SD_IMPORT(cVehicleEffects_Shoot, 0x103500)
 SD_IMPORT(cObjElementFXATPC_Shoot, 0x1fde50)
-SD_IMPORT(Net_IsNetEntity, 0x18f840)
 
 /* module agent: Entities/Vehicle/Weaps/Inferno+Laser+Swarm.cpp (imports below this line) */
 SD_IMPORT(cWithLifeEntity_SetBurner, 0x12c860)
-SD_IMPORT(Net_GetPlayerIndex, 0x18e9d0)
 SD_IMPORT(FXSwarm_BeeDeath, 0x1ff190)
 SD_IMPORT(FXSwarm_Hit, 0x1ffea0)
 SD_IMPORT(cObjElementFXInfernoExplosion_Explode, 0x201eb0)
@@ -544,7 +508,6 @@ SD_IMPORT(cObjElementFXInfernoExplosion_Explode, 0x201eb0)
 SD_IMPORT(cActCtrl_Play, 0x063150)
 SD_IMPORT(cActCtrl_SetDefLoop, 0x063210)
 SD_IMPORT(cActCtrl_IsActive, 0x063dc0)
-SD_IMPORT(Net_GetSendRate, 0x190d60)
 SD_IMPORT(cWithLifeEntity_dtor, 0x12b780)
 SD_IMPORT(cWithLifeEntity_VarF, 0x12bb30)
 SD_IMPORT(cWithLifeEntity_UpdateOff, 0x12bf10)
@@ -581,7 +544,6 @@ SD_IMPORT(Dlg_GetFloat, 0x2a5d80)
 /* module agent: World/FX/FXCharActions.cpp (imports below this line) */
 
 /* module agent: Entities/More+ObjEntity (imports below this line) */
-SD_IMPORT(Net_GetResourceName, 0x18ea80)
 
 /* module agent: Entities/Vehicle/VehicleEffects+VehicleEntity.cpp (imports below this line) */
 SD_IMPORT(cVehicleEffects_dtor, 0x100b60)
@@ -763,3 +725,27 @@ SD_IMPORT(cWaypointScorer_DrawTarget, 0x185e90)
 /* module agent: AI/IVehicleControl+IVehicleShootControl.cpp (imports below this line) */
 
 /* module agent: net (GameServer..transport) (imports below this line) */
+/* the All-Seeing Eye SDK */
+SD_IMPORT(Ase_Shutdown, 0x002070)
+SD_IMPORT(Ase_Initialize, 0x002410)
+SD_IMPORT(Ase_ServerStatus, 0x002480)
+SD_IMPORT(Ase_AddRule, 0x002700)
+SD_IMPORT(Ase_AddPlayer, 0x002770)
+SD_IMPORT(Ase_Check, 0x0028f0)
+SD_IMPORT(cWithLifeEntity_SetUsrName, 0x12c7c0)
+/* wsock32 by ordinal through the jump thunks of the exe */
+SD_IMPORT_STDCALL(Wsock_bind, 12, 0x20d9cc)
+SD_IMPORT_STDCALL(Wsock_closesocket, 4, 0x20d9d2)
+SD_IMPORT_STDCALL(Wsock_ioctlsocket, 12, 0x20d9d8)
+SD_IMPORT_STDCALL(Wsock_htonl, 4, 0x20d9de)
+SD_IMPORT_STDCALL(Wsock_htons, 4, 0x20d9e4)
+SD_IMPORT_STDCALL(Wsock_ntohs, 4, 0x20d9ea)
+SD_IMPORT_STDCALL(Wsock_recvfrom, 24, 0x20d9f0)
+SD_IMPORT_STDCALL(Wsock_select, 20, 0x20d9f6)
+SD_IMPORT_STDCALL(Wsock_sendto, 24, 0x20d9fc)
+SD_IMPORT_STDCALL(Wsock_setsockopt, 20, 0x20da02)
+SD_IMPORT_STDCALL(Wsock_socket, 12, 0x20da08)
+SD_IMPORT_STDCALL(Wsock_gethostbyaddr, 12, 0x20da0e)
+SD_IMPORT_STDCALL(Wsock_gethostbyname, 4, 0x20da14)
+SD_IMPORT_STDCALL(Wsock_WSAStartup, 8, 0x20da1a)
+SD_IMPORT_STDCALL(Wsock_WSACleanup, 0, 0x20da20)
