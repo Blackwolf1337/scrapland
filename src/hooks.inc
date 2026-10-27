@@ -3736,6 +3736,7 @@ SD_HOOK(cMissileEntity_VarS, 0x0f51b0, 1143)
 SD_HOOK(cMissileEntity_VarV, 0x0f5f20, 26)
 
 /* module agent: World/FX/FXChar.cpp (hooks below this line) */
+SD_HOOK(cObjElementFXCharacterConversion_Update, 0x1a88c0, 4362)
 SD_HOOK(cObjElementFXMaintenanceWork_Update, 0x1b02f0, 3197)
 SD_HOOK(cObjElementFXMoneyTransfer_Update, 0x1b0f70, 1024)
 SD_HOOK(cObjElementFXSputnik_Update, 0x1b1370, 2508)

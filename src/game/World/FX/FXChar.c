@@ -169,19 +169,23 @@ void __thiscall FXSputnik_SetA(cObjElementFXSputnik *self, float v) {
 
 /* ---- Attach (vf03) and Reset (vf04) ---- */
 
-/* the random points of the conversion trails */
-static void FXConversion_RandomPoints(cObjElementFXCharacterConversion *self) {
+/* a new random point of the conversion trails */
+static void FXConversion_NewPoint(cObjElementFXCharacterConversion *self, int i) {
 	vec3_t tmp;
 
+	float r = FXC_Rand(0.699999988079071, 0.30000001192092896);
+	const vec3_t *p = FX_RandomDir(&tmp);
+	self->dir[i].x = r * p->x;
+	self->dir[i].y = p->y * r;
+	self->dir[i].z = p->z * r;
+	self->speed[i] = FXC_Rand(12.0, 12.0);
+	self->scale[i] = FXC_Rand(0.800000011920929, 0.699999988079071);
+}
+
+static void FXConversion_RandomPoints(cObjElementFXCharacterConversion *self) {
 	for (int i = 0; i < FXCONVERSION_POINTS; i++) {
 		self->phase[i] = (float)(FXC_Rnd() + 0.0);
-		float r = FXC_Rand(0.699999988079071, 0.30000001192092896);
-		const vec3_t *p = FX_RandomDir(&tmp);
-		self->dir[i].x = r * p->x;
-		self->dir[i].y = p->y * r;
-		self->dir[i].z = p->z * r;
-		self->speed[i] = FXC_Rand(12.0, 12.0);
-		self->scale[i] = FXC_Rand(0.800000011920929, 0.699999988079071);
+		FXConversion_NewPoint(self, i);
 	}
 	self->f178 = 0.0f;
 }
@@ -210,8 +214,8 @@ void __thiscall cObjElementFXCharacterConversion_Attach(cObjElementFXCharacterCo
 
 void __thiscall cObjElementFXCharacterConversion_Reset(cObjElementFXCharacterConversion *self, int arg) {
 	(void)arg;
-	self->f16c = 0.0f;
-	self->f170 = 0.0f;
+	self->time = 0.0f;
+	self->emitT = 0.0f;
 	self->attacker = NULL;
 	self->attacked = NULL;
 	for (int k = 0; k < FXCONVERSION_TRAILS; k++) {
@@ -483,6 +487,198 @@ void __thiscall cObjElementFXMoneyTransfer_Update(cObjElementFXMoneyTransfer *se
 	CGameParticles_SetColorRampOn(sp, 1);
 	CGameParticles_SetColorRamp(sp, Game_Ptr(FXC_RAMP_MONEY));
 	CGameParticles_EmitN(sp, 1, 0);
+}
+
+/* the vertical speed of the sparks of the conversion: up or down by the height band of the emitter */
+static float FXConversion_SparkVel(const CGameParticles *sp, float q) {
+	if ((int)(sp->initPosMin.y / 10.0f) & 1) {
+		return -(FXC_Rand(25.0, 300.0) * q);
+	}
+	return FXC_Rand(25.0, 300.0) * q;
+}
+
+/* the sparks at a vertex v of the attacked: a still velocity up or down and the acceleration against it */
+static void FXConversion_Spark(CGameParticles *sp, const vec3_t *v, double range, double add, float q, double accAdd) {
+	vec3_t tmp;
+
+	float r = FXC_Rand(range, add);
+	const vec3_t *p = FX_RandomDir(&tmp);
+	sp->initPosMin.x = r * p->x + v->x;
+	sp->initPosMin.y = p->y * r + v->y;
+	sp->initPosMin.z = p->z * r + v->z;
+	sp->initPosMax = sp->initPosMin;
+	float vy = FXConversion_SparkVel(sp, q);
+	sp->initVelMin.z = 0.0f;
+	sp->initVelMin.y = vy;
+	sp->initVelMin.x = 0.0f;
+	sp->initVelMax = sp->initVelMin;
+	float s = FXC_Rand(0.20000004768371582, accAdd);
+	sp->initAccMin.x = -sp->initVelMin.x * s;
+	sp->initAccMin.y = -sp->initVelMin.y * s;
+	sp->initAccMin.z = -sp->initVelMin.z * s;
+	sp->initAccMax = sp->initAccMin;
+	sp->lifeTime = FXC_Rand(0.040000081062316895, 1.1799999475479126) * 0.18000000715255737f;
+}
+
+#define FXCONVERSION_SPARK_T 0.005000000353902578f
+#define FXCONVERSION_SPARK_VERTS 12
+
+void __thiscall cObjElementFXCharacterConversion_Update(cObjElementFXCharacterConversion *self, cDebris *d, float dt) {
+	vec3_t tmp, tmp2, pa, pb, D, nOut, verts[FXCONVERSION_SPARK_VERTS];
+	float fr;
+
+	(void)dt;
+	self->attacker = FXC_Keep(self->attacker);
+	if (!self->attacker || !self->attacker->flag_4c) {
+		return;
+	}
+	self->attacked = FXC_Keep(self->attacked);
+	if (!self->attacked || !self->attacked->flag_4c) {
+		return;
+	}
+	tmp = FXC_CamPos();
+	CGameModel_SetPos(Debris_Model(d), &tmp);
+	CGameModel_SetSortZ(Debris_Model(d), -63.0f, 0.0f);
+	float delta = FXC_Delta();
+	self->time = self->time + delta;
+	self->emitT = self->emitT + delta;
+	CGameModel *ma = FX_Vtbl(self->attacker)->GetModel(self->attacker);
+	if (!ma || !CGameModel_IsLoaded(ma)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(ma));
+	CGameModel *mb = FX_Vtbl(self->attacked)->GetModel(self->attacked);
+	if (!mb || !CGameModel_IsLoaded(mb)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(mb));
+	/* the attacker fades into the effect */
+	FX_InRange(self->time, 0.01f, 0.05f, &fr);
+	CGameModel_SetSortZ(ma, -62.9f, 0.0f);
+	CGameModel_SetEffect(ma, 2);
+	float f = fr * fr * (2.0f - fr);
+	uint32_t bits;
+	memcpy(&bits, &f, sizeof(bits));
+	CGameModel_SetEffectParam(ma, 0, bits);
+	float ra = FX_Vtbl(self->attacker)->GetRadius(self->attacker);
+	float rb = FX_Vtbl(self->attacked)->GetRadius(self->attacked);
+	if (FX_InRange(self->time, 0.0f, 0.2f, &fr)) {
+		/* the trails from the attacker to the attacked */
+		const vec3_t *b = CGameModel_GetPos(mb, &pb);
+		const vec3_t *a = CGameModel_GetPos(ma, &pa);
+		float dx = a->x - b->x, dy = a->y - b->y, dz = a->z - b->z;
+		float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+		int alpha = (int)(fr * fr * (2.0f - fr) * 255.0f);
+		for (int k = 0; k < FXCONVERSION_TRAILS; k++) {
+			CGameTrail_Reset(&self->trails[k]);
+			FX_InRange(self->time, 0.1f, 0.2f, &fr);
+			CGameTrail_SetTransp(&self->trails[k], (byte)alpha);
+		}
+		float distK = dist * 0.0005000000237487257f;
+		int trail = 0, point = 0;
+		for (int i = 0, idx = 254; i < FXCONVERSION_POINTS; i++, idx--) {
+			float ph = self->phase[i];
+			if (0.0f > ph || ph > 1.0f) {
+				self->phase[i] = 0.0f;
+				FXConversion_NewPoint(self, i);
+			}
+			self->phase[i] = (self->scale[i] * self->emitT) / distK + self->phase[i];
+			const vec3_t *dir = &self->dir[i];
+			float ox = ra * dir->x * 0.5f, oy = dir->y * ra * 0.5f, oz = ra * dir->z * 0.5f;
+			const vec3_t *c = FX_Vtbl(self->attacker)->GetCenter(self->attacker, &tmp);
+			vec3_t A = { ox + c->x, c->y + oy, c->z + oz };
+			float bx = rb * dir->x * 0.5f, by = dir->y * rb * 0.5f, bz = rb * dir->z * 0.5f;
+			const vec3_t *pB = self->attacked->vftable->GetPos(self->attacked, &tmp2);
+			D.x = (bx + pB->x) - A.x;
+			D.y = (pB->y + by) - A.y;
+			D.z = (pB->z + bz) - A.z;
+			Vec3_NormalizeTo(&nOut, &D);
+			vec3_t n = nOut;
+			float sp = self->speed[i];
+			ph = self->phase[i];
+			vec3_t P;
+			P.x = (D.x - n.x * sp * 2.0f) * ph + A.x;
+			P.y = (D.y - n.y * sp * 2.0f) * ph + A.y;
+			P.z = (D.z - n.z * sp * 2.0f) * ph + A.z;
+			int alphaP = 0;
+			if (0.1f > ph) {
+				alphaP = (int)((1.0f - ph / 0.1f) * 255.0f);
+			} else if (ph > 0.699999988079071f) {
+				alphaP = (int)(((ph - 0.699999988079071f) / 0.699999988079071f) * 255.0f);
+			}
+			uint32_t top = (uint32_t)alphaP << 24;
+			sp = self->speed[i];
+			vec3_t T = { P.x - n.x * sp, P.y - n.y * sp, P.z - n.z * sp };
+			CGameTrail_Add(&self->trails[trail], T, 6.0f, top | 0x204020);
+			sp = self->speed[i];
+			vec3_t Q = { n.x * sp + P.x, n.y * sp + P.y, n.z * sp + P.z };
+			CGameTrail_Add(&self->trails[trail], Q, 12.0f, top | 0x80f580);
+			int a2 = alphaP + alpha;
+			if (a2 > 255) {
+				a2 = 255;
+			}
+			sp = self->speed[i];
+			Q.x = n.x * sp + P.x;
+			Q.y = n.y * sp + P.y;
+			Q.z = n.z * sp + P.z;
+			int sprite = crt_rand() % 8 + 1;
+			CGameParticles_SetParticle(&self->particles2, idx, Q.x, Q.y, Q.z, 7.0f,
+				((uint32_t)a2 << 24) | 0xc4ffc4, sprite, 0.0f);
+			if (++point >= 15) {
+				trail++;
+				point = 0;
+			}
+		}
+	}
+	/* the sparks on the attacked */
+	if (FXCONVERSION_SPARK_T > self->emitT) {
+		return;
+	}
+	float t = self->time - self->emitT;
+	if (!(self->time > t)) {
+		return;
+	}
+	do {
+		self->emitT = 0.0f;
+		if (FX_InRange(t, 0.075f, 0.12f, &fr)) {
+			CGameModel_Vertices(mb, verts, NULL, NULL, FXCONVERSION_SPARK_VERTS, -1, NULL, 0xffffffffu, NULL);
+			float q = rb / 80.0f;
+			CGameParticles *sp2 = &self->particles2;
+			CGameParticles *sp = &self->particles;
+			for (int j = 0; j < FXCONVERSION_SPARK_VERTS; j++) {
+				sp2->birthRate = 0;
+				FXConversion_Spark(sp2, &verts[j], 2.0, 1.0, q, 1.5);
+				sp2->sizeIni = FXC_Rand(0.09999999403953552, 0.3199999928474426) * rb * 0.3199999928474426f;
+				sp2->sizeLife = 1.0f;
+				sp2->rotIni = 0.0f;
+				sp2->rotEnd = 0.0f;
+				sp2->rotVar = 0.0f;
+				sp2->sizeEnd = FXC_Rand(0.09999999403953552, 0.3199999928474426) * rb * 0.3199999928474426f;
+				byte sprite = (byte)(crt_rand() % 8 + 1);
+				sp2->spriteIni = sprite;
+				sp2->spriteEnd = sprite;
+				CGameParticles_Apply(sp2);
+				CGameParticles_SetColorRampOn(sp2, 1);
+				CGameParticles_SetColorRamp(sp2, Game_Ptr(0x430464));
+				CGameParticles_EmitDt(sp2, 1, 0, FXC_Rand(0.10000000149011612, 0.0));
+				sp->birthRate = 0;
+				FXConversion_Spark(sp, &verts[j], 4.0, 2.0, q, 1.2999999523162842);
+				sp->sizeIni = FXC_Rand(0.09999999403953552, 0.3199999928474426) * rb * 1.2000000476837158f;
+				sp->sizeLife = 0.3f;
+				sp->sizeEnd = FXC_Rand(0.09999999403953552, 0.3199999928474426) * rb * 1.899999976158142f;
+				sp->rotIni = sp->rotEnd = FXC_Rand(6.2831854820251465, 0.0);
+				sp->rotVar = (float)(FXC_Rnd() * 1.5707963705062866 - 0.7853981852531433);
+				sprite = (crt_rand() & 1) ? 5 : 9;
+				sp->spriteIni = sprite;
+				sp->spriteEnd = sprite;
+				CGameParticles_Apply(sp);
+				CGameParticles_SetColorRampOn(sp, 1);
+				CGameParticles_SetColorRamp(sp, Game_Ptr(0x4303f8 + (crt_rand() & 1) * 0x24));
+				CGameParticles_EmitDt(sp, 1, 0, FXC_Rand(0.10000000149011612, 0.0));
+			}
+		}
+		t = t + FXCONVERSION_SPARK_T;
+	} while (self->time > t);
 }
 
 /* the alpha a plus add (at most 255) in the top byte of rgb */

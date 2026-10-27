@@ -52,9 +52,9 @@ typedef struct cObjElementFXCharacterConversion {
 	cEntity *attacked;		/* 0x008 */
 	CGameParticles particles;	/* 0x00c on Dummy01 */
 	CGameParticles particles2;	/* 0x0bc on Dummy02 */
-	float f16c;			/* 0x16c */
-	float f170;			/* 0x170 */
-	float f174;			/* 0x174 */
+	float time;			/* 0x16c since the start */
+	float emitT;			/* 0x170 since the last sparks */
+	byte pad_174[4];
 	float f178;			/* 0x178 */
 	CGameTrail trails[FXCONVERSION_TRAILS];	/* 0x17c */
 	vec3_t dir[FXCONVERSION_POINTS];	/* 0x190 random directions of length 0.3..1 */
