@@ -20,6 +20,7 @@
 #include "scrap/input.h"
 #include "scrap/logic.h"
 #include "scrap/sound.h"
+#include "scrap/walkcharcontrol.h"
 #include "scrap/world.h"
 
 /* the fields of the characters (cWalkCharEntity) the types use */
@@ -43,10 +44,13 @@
 #define WChar_EnergyBarDecr(e) (*(float *)((byte *)(e) + 0x4b0))	/* the energy an action needs */
 #define WChar_Money(e) (*(int *)((byte *)(e) + 0x4cc))		/* "Money" */
 #define WChar_MoneyReward(e) (*(int *)((byte *)(e) + 0x4d0))		/* "MoneyReward" */
-#define WChar_Control(e) ((void *)((byte *)(e) + 0x4ec))		/* Entities/Char/WalkCharControl.cpp */
+#define WChar_Control(e) ((cWalkCharControl *)((byte *)(e) + 0x4ec))	/* Entities/Char/WalkCharControl.cpp */
 #define WChar_ControlF4f8(e) (*(float *)((byte *)(e) + 0x4f8))	/* the walk of the control (x, z) */
 #define WChar_ControlF4fc(e) (*(float *)((byte *)(e) + 0x4fc))
 #define WChar_ActionPress(e) (*(byte *)((byte *)(e) + 0x504))		/* the action button is down */
+#define WChar_ListenNode(e) ((Nto1Node *)((byte *)(e) + 0x520))	/* to the character it listens to */
+#define WChar_Listen(e) (*(cEntity **)((byte *)(e) + 0x528))		/* its target: the mayor, the police */
+#define WChar_ListenOn(e) (*(byte *)((byte *)(e) + 0x530))		/* the player still talks to it */
 #define WChar_Victim(e) (*(cEntity **)((byte *)(e) + 0x53c))		/* the character the banker robs */
 
 /* the slots of the character vtables the types call (after the ones of cObjEntityVtbl) */
@@ -83,14 +87,36 @@ static inline int ChType_ActPriority(void *ctrl) {
 
 /* the slots of the local logic of a character the types call */
 typedef struct cChTypeLogicVtbl {
-	void *vf00_09[10];
+	void *vf00_08[9];
+	byte(__thiscall *Listens)(cLocalLogic *self, cEntity *talker);			/* 0x24 vf09 the mayor */
 	void(__thiscall *OnHit)(cLocalLogic *self, cEntity *attacker);			/* 0x28 */
-	void *vf0b;
+	void(__thiscall *OnSeen)(cLocalLogic *self, cEntity *sentinel);		/* 0x2c vf11 the sentinel */
 	void(__thiscall *OnAttack)(cLocalLogic *self, cEntity *attacker, float value);	/* 0x30 */
 	void(__thiscall *OnShot)(cLocalLogic *self, cEntity *attacker);		/* 0x34 */
+	void(__thiscall *OnHammer)(cLocalLogic *self, cEntity *nurse);			/* 0x38 vf14 */
+	byte(__thiscall *GivesMoney)(cLocalLogic *self, cEntity *police);		/* 0x3c vf15 */
+	void *vf10_12[3];
+	void(__thiscall *SetState)(cLocalLogic *self, int state, cEntity *target);	/* 0x4c vf19 */
+	void(__thiscall *SetPaused)(cLocalLogic *self, byte on);			/* 0x50 vf20 */
+	void *vf15_17[3];
+	void(__thiscall *Resume)(cLocalLogic *self);					/* 0x60 vf24 the state again */
 } cChTypeLogicVtbl;
+SD_OFFSET(cChTypeLogicVtbl, Listens, 0x24);
 SD_OFFSET(cChTypeLogicVtbl, OnHit, 0x28);
 SD_OFFSET(cChTypeLogicVtbl, OnShot, 0x34);
+SD_OFFSET(cChTypeLogicVtbl, GivesMoney, 0x3c);
+SD_OFFSET(cChTypeLogicVtbl, SetState, 0x4c);
+SD_OFFSET(cChTypeLogicVtbl, SetPaused, 0x50);
+SD_OFFSET(cChTypeLogicVtbl, Resume, 0x60);
+
+/* the fields of the local logic of a character (cBaseLocalLogic, Logic/BaseLogic.cpp) */
+#define ChLogic_Target(l) (*(cEntity **)((byte *)(l) + 0x10))		/* of the state */
+#define ChLogic_Paused(l) (*(byte *)((byte *)(l) + 0x28))
+#define ChLogic_B2a(l) (*(byte *)((byte *)(l) + 0x2a))
+#define ChLogic_I74(l) (*(int *)((byte *)(l) + 0x74))
+
+/* the action of layer 0 of the controller */
+#define ChType_Action0(ctrl) (*(void **)((byte *)(ctrl) + 0x14))
 
 static inline const cChTypeLogicVtbl *ChLogic_Vtbl(cLocalLogic *l) {
 	return (const cChTypeLogicVtbl *)l->vftable;
@@ -203,9 +229,6 @@ void __thiscall cWalkCharEntity_SetEnergy(cEntity *self, float energy);
 byte __thiscall cActCtrl_PlayNew(void *ctrl, const char *action, int arg, float speed);
 /* the falling state of a character (0x464), with what goes with it (rva 0xd4c60) */
 void __thiscall cWalkCharEntity_SetFalling(cEntity *self, byte on);
-/* the control of a character (rva 0xd0390, 0xd0410) */
-void __thiscall cWalkCharControl_Reset(void *ctrl, byte on);
-void __thiscall cWalkCharControl_Update(void *ctrl, cEntity *wle, float dt);
 
 /* Banker.c: the shared parts */
 /* World.h, inlined: the entity of player slot 0 with the CHECK of a set one (cWorld_GetUsrEntity of scrap.h is the
@@ -293,7 +316,7 @@ void ChType_FlashHit(cAbstractFile *params);
 
 /* Maintenance.c */
 void ChType_FXMaintenanceWork(cAbstractFile *params);
-/* an inline of the character AI (rva 0xc9750): the bytes at +0x28 or +0x2a set */
+/* an inline of the local logic of a character (rva 0xc9750): it is paused (+0x28) or +0x2a is set */
 byte __fastcall cAIChar_TestFlags(const void *self);
 
 /* the shared steps of the natives (Banker.c) */
@@ -309,5 +332,134 @@ void ChType_ActionPress(cAbstractFile *params);
 void ChType_Attack(cAbstractFile *params, float cost);
 /* the action sound (sound 0) silent, its loop flag; stopped too */
 void ChType_ActionSound(cEntity *v, byte loop, byte stop);
+
+/* ---- part 2: Mayor .. Sentinel ---- */
+
+/* the class name of the action class of a character */
+static inline const char *ChType_ClassName(cEntity *e) {
+	return *(const char **)(ChType_ActClass(ChType_ActCtrl(e)) + 4);
+}
+
+#define WChar_DisplOn(e) (*(byte *)((byte *)(e) + 0x48c))		/* the displacement angle 0x468 applies */
+/* a flag of the AI controller of the world (aiCtrl + 0x31): with the alarm on the sentinels call no others */
+#define World_AlarmChase(w) (*(byte *)((byte *)(w) + 0x21f9))
+
+/* the natives one native binds to a sphere test or an OnTake (rva, the same pointer as the original) */
+#define CHTYPE_MAYORSPHEREHIT 0x0c9c20
+#define CHTYPE_MESSENGERTAKEDATAPACK 0x0caa80
+#define CHTYPE_NURSESPHEREHIT 0x0caec0
+#define CHTYPE_POLICEBOSSBRUPBOUNCE 0x0ce470
+#define CHTYPE_POLICEBOSSSPHEREHIT 0x0ce820
+
+/* engine variables (Gvars) */
+#define g_MayorBlabliblaRadius GAME_DATA(float, 0x446c10)
+#define g_MayorListenPercent GAME_DATA(float, 0x446be0)
+#define g_MayorSleepPercent GAME_DATA(float, 0x446bf8)
+#define g_FXMercenaryDrinkFile GAME_DATA(char *, 0x446c58)
+#define g_MercenaryDrinkPosX GAME_DATA(float, 0x446c80)
+#define g_MercenaryDrinkPosY GAME_DATA(float, 0x446c40)
+#define g_MercenaryDrinkPosZ GAME_DATA(float, 0x446c98)
+#define g_FXMessengerAttackFile GAME_DATA(char *, 0x446d08)
+#define g_FXMessengerTakeDataPackFile GAME_DATA(char *, 0x446d48)
+#define g_MessengerAmmoCost GAME_DATA(float, 0x446cd8)
+#define g_MessengerAttackPosX GAME_DATA(float, 0x446cf0)
+#define g_MessengerAttackPosY GAME_DATA(float, 0x446d60)
+#define g_MessengerAttackPosZ GAME_DATA(float, 0x446cb0)
+#define g_MessengerShootSound GAME_DATA(char *, 0x446d90)
+#define g_MessengerShootSoundVol GAME_DATA(float, 0x446d78)
+#define g_MessengerTakeDataPackSound GAME_DATA(char *, 0x446d30)
+#define g_MessengerTakeDataPackSoundVol GAME_DATA(float, 0x446da8)
+#define g_MessengerTakenCallback ((cPy_Function *)Game_Ptr(0x44d4bc))	/* "MessengerTakenCallback" */
+#define g_MessengerDataPack GAME_DATA(char *, 0x44d54c)	/* "MessengerDataPack": the name of the data pack */
+#define g_FXHammerHitFile GAME_DATA(char *, 0x446f18)
+#define g_NurseAlarmHit GAME_DATA(float, 0x446e98)
+#define g_NurseDispDist GAME_DATA(float, 0x446eb0)
+#define g_NurseDispRad GAME_DATA(float, 0x446f30)
+#define g_OnSleep ((cPy_Function *)Game_Ptr(0x446e74))		/* "OnSleep" */
+#define g_FXPoliceGearConversionFile GAME_DATA(char *, 0x446fa0)
+#define g_FXPoliceStealFile GAME_DATA(char *, 0x446f88)
+#define g_PoliceAlarmStepSTM GAME_DATA(float, 0x446fc8)
+#define g_PoliceStealQuanto GAME_DATA(int, 0x446ff0)
+#define g_PoliceBossActionRadius GAME_DATA(float, 0x44708c)
+#define g_PoliceBossBrupBaseFile GAME_DATA(char *, 0x44700c)
+#define g_PoliceBossBrupBounce1Sound GAME_DATA(char *, 0x44705c)
+#define g_PoliceBossBrupBounce2Sound GAME_DATA(char *, 0x4470ec)
+#define g_PoliceBossBrupBounceSoundVol GAME_DATA(float, 0x4470d4)
+#define g_PoliceBossBrupDebrisMax GAME_DATA(int, 0x447024)
+#define g_PoliceBossBrupDebrisMin GAME_DATA(int, 0x44711c)
+#define g_PoliceBossBrupDirRand GAME_DATA(float, 0x447074)
+#define g_PoliceBossBrupPosX GAME_DATA(float, 0x4470bc)
+#define g_PoliceBossBrupPosY GAME_DATA(float, 0x4470a4)
+#define g_PoliceBossBrupPosZ GAME_DATA(float, 0x447104)
+#define g_FXSebastianFlashFile GAME_DATA(char *, 0x4471c4)
+
+/* the characters of the running actions (the "MeEnt" CHECKs), the nurse by name and the character it hits */
+#define g_MayorEnt GAME_DATA(cEntity *, 0x446bac)
+#define g_PoliceBossEnt GAME_DATA(cEntity *, 0x446ff8)
+#define g_NurseName ((char *)Game_Ptr(0x446dd0))		/* [0x80] */
+#define g_NurseTarget GAME_DATA(cEntity *, 0x446e50)
+
+/* engine side */
+/* the action of the controller (not when it runs already in its layer and one of priority runs); 0 if not */
+byte __thiscall cActCtrl_PlayAction(void *ctrl, void *action, int arg, int set, float speed);
+/* the name of the listener into the mayor logic (NULL clears it, rva 0x153010) */
+void __thiscall cMayorLocalLogic_SetListener(cLocalLogic *self, cEntity *e);
+/* the view of a character set to the direction from pos to it (rva 0xd5240) */
+void __thiscall cWalkCharEntity_SetViewFrom(cEntity *self, const vec3_t *pos);
+/* the gears called on target, the sentinels set to chase it (rva 0x14f960, 0x14fba0) */
+void __thiscall AICtrl_CallGears(void *aiCtrl, cEntity *target);
+void __thiscall AICtrl_SentinelsChase(void *aiCtrl, cEntity *target);
+
+/* Mayor.c */
+void ChType_ListeningMayor(cAbstractFile *params);
+void ChType_MayorEndAction(cAbstractFile *params);
+void ChType_MayorSphereHit(cAbstractFile *params);
+
+/* Mercenary.c */
+void ChType_FXMercenaryDrink(cAbstractFile *params);
+
+/* Messenger.c (MessengerActionPress is ChType_ActionPress, MessengerEndActionEnd ChType_EndActionEnd) */
+void ChType_MessengerAttack(cAbstractFile *params);
+void ChType_MessengerTakeDataPack(cAbstractFile *params);
+
+/* Nurse.c */
+void ChType_NurseSphereHit(cAbstractFile *params);
+/* the hammer hit effect at the nurse v: sparks and stars (rva 0xcafe0) */
+void Nurse_HammerFX(cEntity *v);
+void ChType_NurseActionPress(cAbstractFile *params);
+void ChType_NurseActionRelease(cAbstractFile *params);
+void ChType_NurseHit(void);
+void ChType_NurseBackHitControl(cAbstractFile *params);
+void ChType_NurseDoHammerHit(cAbstractFile *params);
+void ChType_NurseInitHammerLoop(cAbstractFile *params);
+void ChType_NurseTryHammerAgain(cAbstractFile *params);
+
+/* Police.c */
+void ChType_FXPoliceGearConversion(cAbstractFile *params);
+void ChType_FXPoliceSteal(cAbstractFile *params);
+void FX_PoliceSteal(cEntity *attacker, cEntity *attacked);
+void ChType_ListeningPolice(cAbstractFile *params);
+byte ChType_PoliceFindListener(cEntity *v, cEntity **victim, byte *usr, void **action);
+void ChType_PoliceActionPress(cAbstractFile *params);
+void ChType_PoliceEndActionMoney(cAbstractFile *params);
+void ChType_PoliceRestoreFreeTurn(cAbstractFile *params);
+
+/* PoliceBoss.c */
+void ChType_FXPoliceBossBrup(cAbstractFile *params);
+void ChType_PoliceBossBrupBounce(cDebris *d, const byte *hit);
+void ChType_PoliceBossAction(cAbstractFile *params);
+void ChType_PoliceBossTryAction(cEntity *v);
+void ChType_PoliceBossBrup(cAbstractFile *params);
+void ChType_PoliceBossSphereHit(cAbstractFile *params);
+
+/* Sebastian.c */
+void ChType_FXSebastianFlash(cAbstractFile *params);
+
+/* Sentinel.c */
+void ChType_SentinelActionPress(cAbstractFile *params);
+void ChType_SentinelActionRelease(cAbstractFile *params);
+cEntity *ChType_SentinelTarget(cEntity *e);
+byte ChType_SentinelCanCall(void);
+void ChType_SentinelPoint(cAbstractFile *params);
 
 #endif

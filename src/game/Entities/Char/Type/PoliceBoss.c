@@ -1,0 +1,184 @@
+/*
+ * Entities/Char/Type/PoliceBoss.cpp of the game: the police boss, whose burp throws debris around and makes the
+ * police near him laugh (include/scrap/chartype.h).
+ */
+#include <string.h>
+
+#include "scrap/chartype.h"
+#include "scrap/fxelements.h"
+
+#define PB_SYSTEMS 5		/* the debris systems <PoliceBossBrupBaseFile>A.M3D .. E.M3D */
+#define DebrisSys_OnHit(s) (*(void **)((byte *)(s) + 0x28))	/* called on a bounce (debris, hit) */
+#define PB_Started(el) (*(byte *)((byte *)(el) + 0x10))
+
+/* params: the boss, an event and the life factor of the debris: PoliceBossBrupDebrisMin..Max debris out of the
+ * mouth in random directions */
+void ChType_FXPoliceBossBrup(cAbstractFile *params) {
+	char name[0x80], event[0x80], file[0x100];
+	cDebrisSys *sys[PB_SYSTEMS];
+	vec3_t pos, ang, down, rot, dir, one, rot2, t1, off, t2;
+	float scale;
+
+	cAbstractFile_ReadString(params, name, 0x80);
+	cAbstractFile_ReadString(params, event, 0x80);
+	params->vftable->Read(params, &scale, 4);
+	cEntity *v = World_FindEntity(name);
+	CHECK(v);
+	CHECK(Entity_IsType(v, TYEN_WITH_LIFE));
+	Obj_Vtbl(v)->GetViewPos(v, &pos);
+	Obj_Vtbl(v)->GetViewAng(v, &ang);
+	for (int i = 0; i < PB_SYSTEMS; i++) {
+		Str_Printf(file, 0xff, "%s%c.M3D", g_PoliceBossBrupBaseFile, i + 'A');
+		cDebrisSys *s = cWorld_GetDebrisSys(g_pWorld, file);
+		sys[i] = s;
+		s->radiusSq = 100000000.0f;
+		s->flag = 1;
+		s->d = 980.0f;
+		s->b = 0.75f;
+		DebrisSys_OnHit(s) = (void *)Game_Ptr(CHTYPE_POLICEBOSSBRUPBOUNCE);
+	}
+	int r = crt_rand();
+	int n = g_PoliceBossBrupDebrisMin + r % (g_PoliceBossBrupDebrisMax - g_PoliceBossBrupDebrisMin);
+	for (; n > 0; n--) {
+		cDebrisSys *s = sys[crt_rand() % PB_SYSTEMS];
+		cDebris *d = cDebrisSys_NewElement(s);
+		Debris_Life(d) = FxElem_Rand(0.3500000238418579, 0.75) * scale;
+		cDebrisSys_Drop(s, d);
+		/* the direction: down along the view turned by up to DirRand half turns */
+		float f = FxElem_Rand(0.05000000074505806, -0.02500000037252903) + g_PoliceBossBrupDirRand;
+		float hi = (float)((double)f * 3.141592653589793);
+		float lo = (float)((double)f * -3.141592653589793);
+		double range = (double)(hi - lo);
+		double base = (double)lo;
+		float az = FxElem_Rand(range, base);
+		float ay = FxElem_Rand(range, base);
+		float ax = FxElem_Rand(range, base);
+		down.x = 0.0f;
+		down.y = 0.0f;
+		down.z = -1.0f;
+		rot.x = ang.x + ax;
+		rot.y = ang.y + ay;
+		rot.z = ang.z + az;
+		Vec3_Rotate(&dir, &down, &rot);
+		/* the start: off the mouth by up to 8 in a random direction */
+		float len = FxElem_Rand(8.0, 0.0);
+		float bz = FxElem_Rand(6.2831854820251465, 0.0);
+		float by = FxElem_Rand(6.2831854820251465, 0.0);
+		float bx = FxElem_Rand(6.2831854820251465, 0.0);
+		one.x = 1.0f;
+		one.y = 1.0f;
+		one.z = 1.0f;
+		rot2.x = bx;
+		rot2.y = by;
+		rot2.z = bz;
+		const vec3_t *rv = Vec3_Rotate(&t1, &one, &rot2);
+		float ox = len * rv->x;
+		float oy = rv->y * len;
+		float oz = rv->z * len;
+		off.x = g_PoliceBossBrupPosX;
+		off.y = g_PoliceBossBrupPosY;
+		off.z = g_PoliceBossBrupPosZ;
+		const vec3_t *ro = Vec3_Rotate(&t2, &off, &ang);
+		d->drop[0].x = ro->x + pos.x + ox;
+		d->drop[0].y = ro->y + pos.y + oy;
+		d->drop[0].z = ro->z + pos.z + oz;
+		float sp = FxElem_Rand(650.0, 100.0);
+		d->drop[2].x = sp * dir.x;
+		d->drop[2].y = sp * dir.y;
+		d->drop[2].z = sp * dir.z;
+		float qz = FxElem_Rand(12.566370964050293, -6.2831854820251465);
+		float qy = FxElem_Rand(12.566370964050293, -6.2831854820251465);
+		d->drop[1].x = FxElem_Rand(12.566370964050293, -6.2831854820251465);
+		d->drop[1].y = qy;
+		d->drop[1].z = qz;
+		float m = FxElem_Rand(0.5, 0.10000000149011612);
+		float pz = FxElem_Rand(12.566370964050293, -6.2831854820251465);
+		float py = FxElem_Rand(12.566370964050293, -6.2831854820251465);
+		d->drop[3].y = py * m;
+		d->drop[3].z = pz * m;
+		d->drop[3].x = FxElem_Rand(12.566370964050293, -6.2831854820251465) * m;
+		void *el = Debris_Element(d);
+		if (el) {
+			if (!PB_Started(el)) {
+				PB_Started(el) = 1;
+			}
+			FXMisc_SetF8(el, 0.0500000007f);
+			FXMisc_SetFC(el, 0.25f);
+		}
+	}
+}
+
+/* the bounce of a debris of the burp on hit (its normal at 0x24): slower, the spin turned, the life short once it
+ * is slow, a random bounce sound */
+void ChType_PoliceBossBrupBounce(cDebris *d, const byte *hit) {
+	float k = FxElem_Rand(0.15000003576278687, 0.6499999761581421);
+	vec3_t *vel = &d->drop[2];
+	float vx = -vel->x;
+	float vz = -vel->z;
+	float vy = -vel->y;
+	vel->y = k * vy;
+	vel->x = k * vx;
+	vel->z = k * vz;
+	d->drop[1].x = -d->drop[1].x;
+	d->drop[1].y = -d->drop[1].y;
+	d->drop[1].z = -d->drop[1].z;
+	Vec3_Reflect((const vec3_t *)(hit + 0x24), vel, vel);
+	if (Debris_Life(d) > 0.25f && 10000.0f > vel->x * vel->x + vel->y * vel->y + vel->z * vel->z) {
+		Debris_Life(d) = 0.25f;
+	}
+	if (!(0.0f >= g_PoliceBossBrupBounceSoundVol)) {
+		int r = crt_rand();
+		CSoundSys *snd = g_pSound;
+		const char *s = (r & 1) ? g_PoliceBossBrupBounce1Sound : g_PoliceBossBrupBounce2Sound;
+		int vol = Snd_Volume(g_PoliceBossBrupBounceSoundVol);
+		snd->vftable->PlayAt(g_pSound, s, &d->drop[0], vol);
+	}
+}
+
+/* params: the boss: Action when it does not fall and no action of priority runs */
+void ChType_PoliceBossAction(cAbstractFile *params) {
+	char name[0x80];
+
+	cAbstractFile_ReadString(params, name, 0x80);
+	g_PoliceBossEnt = World_FindEntity(name);
+	CHECK(g_PoliceBossEnt);
+	CHECK(Entity_IsType(g_PoliceBossEnt, TYEN_WALKCHAR));
+	ChType_PoliceBossTryAction(g_PoliceBossEnt);
+}
+
+void ChType_PoliceBossTryAction(cEntity *v) {
+	if (!WChar_Falling(v) && !ChType_ActPriority(ChType_ActCtrl(v))) {
+		cActCtrl_Play(ChType_ActCtrl(v), "Action", 0, 1.0f);
+	}
+}
+
+/* params: the boss, an event, a float: ChType_PoliceBossSphereHit in PoliceBossActionRadius */
+void ChType_PoliceBossBrup(cAbstractFile *params) {
+	char name[0x80], event[0x80];
+	vec3_t tmp;
+
+	ChType_ReadParams(params, name, event);
+	g_PoliceBossEnt = World_FindEntity(name);
+	CHECK(g_PoliceBossEnt);
+	CHECK(Entity_IsType(g_PoliceBossEnt, TYEN_WALKCHAR));
+	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)Game_Ptr(CHTYPE_POLICEBOSSSPHEREHIT));
+	cWorld_SphereCallF(g_pWorld, 0x10, g_PoliceBossEnt->vftable->GetPos(g_PoliceBossEnt, &tmp),
+		g_PoliceBossActionRadius, g_ChTypeSphereFunc, 0);
+}
+
+/* the sphere test of the burp: params a character. A police with a logic that runs no action of priority laughs
+ * at the boss */
+void ChType_PoliceBossSphereHit(cAbstractFile *params) {
+	char name[0x80];
+
+	CHECK(g_PoliceBossEnt);
+	cAbstractFile_ReadString(params, name, 0x80);
+	cEntity *e = World_FindEntity(name);
+	CHECK(g_PoliceBossEnt);
+	CHECK(Entity_IsType(g_PoliceBossEnt, TYEN_WALKCHAR));
+	if (e && !strcmp(ChType_ClassName(e), "Police") && !ChType_ActPriority(ChType_ActCtrl(e)) &&
+		Logic_GetLocalLogic(e)) {
+		cActCtrl_Play(ChType_ActCtrl(e), "Laugh", 0, 1.0f);
+		cEntity_AddLink(g_PoliceBossEnt, WChar_ListenNode(e));
+	}
+}

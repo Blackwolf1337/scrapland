@@ -400,7 +400,6 @@ SD_IMPORT(CSuelo_TraceSeg, 0x26f120)
 SD_IMPORT(CSuelo_CheckBBox, 0x26fb10)
 
 /* module agent: World/World.cpp (imports below this line) */
-SD_IMPORT(cWalkCharEntity_ctor, 0x0d0e40)
 SD_IMPORT(cWithLifeEntity_ctor, 0x12b580)
 SD_IMPORT(Alarm_ctor, 0x13fb10)
 SD_IMPORT(Alarm_Update, 0x13ff70)
@@ -693,13 +692,19 @@ SD_IMPORT(cActionSet_HoldPressed, 0x139810)
 SD_IMPORT(Scorer_SetInputState, 0x1710f0)
 SD_IMPORT(cActCtrl_GetActionName, 0x062c40)
 SD_IMPORT(cWalkCharEntity_SetEnergy, 0x0d4bc0)
-SD_IMPORT(cWalkCharControl_Reset, 0x0d0390)
-SD_IMPORT(cWalkCharControl_Update, 0x0d0410)
 SD_IMPORT(cActCtrl_PlayNew, 0x0631c0)
 SD_IMPORT(cWalkCharEntity_SetFalling, 0x0d4c60)
 SD_IMPORT(CNodesWorld2D_Generate, 0x0b2f60)
 
 /* module agent: Entities/Char/Type part 2+WalkCharControl (imports below this line) */
+SD_IMPORT(cActCtrl_PlayAction, 0x063030)
+SD_IMPORT(cMayorLocalLogic_SetListener, 0x153010)
+SD_IMPORT(Nurse_HammerFX, 0x0cafe0)
+SD_IMPORT(cWalkCharEntity_SetViewFrom, 0x0d5240)
+SD_IMPORT(AICtrl_CallGears, 0x14f960)
+SD_IMPORT(AICtrl_SentinelsChase, 0x14fba0)
+SD_IMPORT(cActCtrl_TurnHead, 0x062dc0)
+SD_IMPORT(cActClassCam_Update, 0x0616e0)
 
 /* module agent: Logic part 1 (AlarmStatus..Domination) (imports below this line) */
 
