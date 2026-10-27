@@ -2,7 +2,9 @@
  * FXCountermeasures.cpp of the game: the effects of the hook laser and the countermeasures, see
  * include/scrap/fxcountermeasures.h.
  */
+#include "scrap/crt.h"
 #include "scrap/fxcountermeasures.h"
+#include "scrap/fxmisc.h"
 #include "scrap/mathlib.h"
 #include "scrap/timer.h"
 #include "scrap/world.h"
@@ -471,4 +473,120 @@ void __thiscall cObjElementFXDebrisCloud_Warm(cObjElementFXDebrisCloud *self, cD
 	for (int i = 0; i < 4; i++) {
 		self->base.vftable->Update(&self->base, debris, 0.0f);
 	}
+}
+
+/* ---- the constructors and destructors ---- */
+
+#define FXCM_TRAIL_CTOR 0x21ddb0
+#define FXCM_TRAIL_DTOR 0x21de40
+#define FXCM_NODE_CTOR 0x1c9610
+#define FXCM_NODE_DTOR 0x0d1190		/* the same code as Nto1Node_dtor */
+
+static inline void FXCM_SetVtbl(void *self, uint32_t vt) {
+	*(void **)self = NULL;
+	*(void **)self = Game_Ptr(vt);
+}
+
+Nto1Node *__thiscall FXCountermeasures_NodeCtor(Nto1Node *self) {
+	self->target = NULL;
+	self->data = NULL;
+	self->next = self;
+	self->prev = self;
+	return self;
+}
+
+void *__thiscall cObjElementFXDebrisCloud_ctor(void *self) {
+	cObjElementFXDebrisCloud *s = self;
+
+	FXCM_SetVtbl(s, COBJELEMENTFXDEBRISCLOUD_VFTABLE);
+	CGameParticles_ctor(&s->particles);
+	s->on = 0;
+	s->entity = NULL;
+	s->bc = 0;
+	s->c0 = 0;
+	return s;
+}
+
+void *__thiscall cObjElementFXEMI_ctor(void *self) {
+	cObjElementFXEMI *s = self;
+
+	FXCM_SetVtbl(s, COBJELEMENTFXEMI_VFTABLE);
+	CGameParticles_ctor(&s->particles);
+	crt_eh_vector_ctor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, Game_Ptr(FXCM_TRAIL_CTOR),
+		Game_Ptr(FXCM_TRAIL_DTOR));
+	crt_eh_vector_ctor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, Game_Ptr(FXCM_NODE_CTOR), Game_Ptr(FXCM_NODE_DTOR));
+	s->on = 0;
+	s->entity = NULL;
+	s->bc = 0;
+	s->c0 = 0.6f;
+	s->c4 = 0;
+	s->d14 = 6;
+	for (int i = 0; i < FXEMI_TRAILS; i++) {
+		s->links[i].data = s;
+	}
+	return s;
+}
+
+void *__thiscall cObjElementFXHook_ctor(void *self) {
+	cObjElementFXHook *s = self;
+
+	FXCM_SetVtbl(s, COBJELEMENTFXHOOK_VFTABLE);
+	CGameTrail_ctor(&s->trail[0]);
+	CGameTrail_ctor(&s->trail[1]);
+	CGameParticles_ctor(&s->particles);
+	s->on = 0;
+	s->emitter = NULL;
+	s->target = NULL;
+	s->numPoints = 3;
+	s->flash = 0.0f;
+	return s;
+}
+
+void *__thiscall cObjElementFXSonicExplosion_ctor(void *self) {
+	cObjElementFXSonicExplosion *s = self;
+
+	FXCM_SetVtbl(s, COBJELEMENTFXSONICEXPLOSION_VFTABLE);
+	CGameParticles_ctor(&s->particles);
+	CGameParticles_ctor(&s->rings);
+	s->on = 0;
+	s->time = 0.0f;
+	s->time2 = 0.0f;
+	return s;
+}
+
+void __thiscall cObjElementFXDebrisCloud_dtor(void *self) {
+	cObjElementFXDebrisCloud *s = self;
+
+	*(void **)s = Game_Ptr(COBJELEMENTFXDEBRISCLOUD_VFTABLE);
+	CGameParticles_Release(&s->particles);
+	cObjElement_dtor(s);
+}
+
+void __thiscall cObjElementFXEMI_dtor(void *self) {
+	cObjElementFXEMI *s = self;
+
+	*(void **)s = Game_Ptr(COBJELEMENTFXEMI_VFTABLE);
+	crt_eh_vector_dtor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, Game_Ptr(FXCM_NODE_DTOR));
+	crt_eh_vector_dtor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, Game_Ptr(FXCM_TRAIL_DTOR));
+	CGameParticles_Release(&s->particles);
+	cObjElement_dtor(s);
+}
+
+void __thiscall cObjElementFXHook_dtor(void *self) {
+	cObjElementFXHook *s = self;
+
+	*(void **)s = Game_Ptr(COBJELEMENTFXHOOK_VFTABLE);
+	CGameParticles_Release(&s->particles);
+	CGameTrail_dtor(&s->trail[1]);
+	CGameTrail_dtor(&s->trail[0]);
+	cObjElement_dtor(s);
+}
+
+void __thiscall cObjElementFXSonicExplosion_dtor(void *self) {
+	cObjElementFXSonicExplosion *s = self;
+
+	*(void **)s = Game_Ptr(COBJELEMENTFXSONICEXPLOSION_VFTABLE);
+	CGameParticles_Release(&s->rings);
+	CGameParticles_Release(&s->particles);
+	cObjElement_dtor(s);
 }

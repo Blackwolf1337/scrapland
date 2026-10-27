@@ -1,0 +1,3102 @@
+/*
+ * World/FX/FXCharActions.cpp of the game: the effects of the special actions of the characters, see
+ * include/scrap/fxcharactions.h.
+ */
+#include <string.h>
+
+#include "scrap/crt.h"
+#include "scrap/doors.h"
+#include "scrap/fxcharactions.h"
+#include "scrap/fxcountermeasures.h"
+#include "scrap/fxweapons.h"
+#include "scrap/global.h"
+#include "scrap/mathlib.h"
+#include "scrap/scrapcollision.h"
+#include "scrap/sound.h"
+#include "scrap/weapons.h"
+#include "scrap/world.h"
+
+/* the trail array members: CGameTrail by new[] style construction (rva) */
+#define CGAMETRAIL_CTOR 0x21ddb0
+#define CGAMETRAIL_DTOR 0x21de40
+/* CGameModel as array member: its default constructor (CGameModel_ctor with NULL, rva 0x105e60) and CGameModel_Reset */
+#define CGAMEMODEL_CTOR0 0x105e60
+#define CGAMEMODEL_RESET 0x20ec10
+
+/* rand() & 0x7fff as 0..1 (double) */
+static inline double FXA_Rnd(void) {
+	return (double)(crt_rand() & 0x7fff) * (1.0 / 32767.0);
+}
+
+/* rand in [0, 1] times range, plus add (all in double) */
+static inline float FXA_Rand(double range, double add) {
+	return (float)(FXA_Rnd() * range + add);
+}
+
+/* the same helpers as the constructors of FXMisc.c (kept local, FXMisc.c has them static) */
+static inline void FXA_SetVtbl(void *self, uint32_t vt) {
+	*(void **)self = NULL;
+	*(void **)self = Game_Ptr(vt);
+}
+
+static inline void FXA_TrailsCtor(CGameTrail *t, uint32_t n) {
+	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, Game_Ptr(CGAMETRAIL_CTOR), Game_Ptr(CGAMETRAIL_DTOR));
+}
+
+static inline void FXA_TrailsDtor(CGameTrail *t, uint32_t n) {
+	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, Game_Ptr(CGAMETRAIL_DTOR));
+}
+
+static inline void *FXA_Delete(void *self, uint32_t flags, uint32_t size) {
+	if (flags & 1) {
+		operator_delete_sized(self, size);
+	}
+	return self;
+}
+
+/* the model of the entity, CHECKed */
+static CGameModel *FXA_Model(cEntity *e) {
+	CGameModel *m = FX_Vtbl(e)->GetModel(e);
+
+	CHECK(CGameModel_IsLoaded(m));
+	return m;
+}
+
+/* the particles to the node name of the model of the debris, the node CHECKed */
+static void FXA_AttachNode(CGameParticles *sp, CGameModel *m, const char *name) {
+	int i = CGameModel_FindNodoR(m, name);
+
+	CHECK(i > -1);
+	CGameParticles_Attach(sp, m, i);
+}
+
+/* the start of most Attaches: the particles on Dummy01 of the model of the debris */
+static void FXA_AttachDummy01(CGameParticles *sp, cDebris *d) {
+	CGameModel *m = Debris_Model(d);
+
+	CHECK(CGameModel_IsLoaded(m));
+	FXA_AttachNode(sp, m, "Dummy01");
+}
+
+/* n trails: segments, texture, type */
+static void FXA_Trails(CGameTrail *t, int n, byte segments, int texture, byte type) {
+	for (int i = 0; i < n; i++) {
+		CGameTrail_SetMaxTrails(&t[i], segments);
+		CGameTrail_SetTexture(&t[i], texture);
+		CGameTrail_SetType(&t[i], type);
+	}
+}
+
+static void FXA_ClearTrails(CGameTrail *t, int n) {
+	for (int i = 0; i < n; i++) {
+		CGameTrail_Clear(&t[i]);
+	}
+}
+
+/* to - from normalized (as it is when its length is 0) */
+static vec3_t FXA_Dir(const vec3_t *from, const vec3_t *to) {
+	vec3_t d;
+
+	d.x = to->x - from->x;
+	d.y = to->y - from->y;
+	d.z = to->z - from->z;
+	float len = (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z));
+	if (len != 0.0f) {
+		float inv = 1.0f / len;
+		d.x = d.x * inv;
+		d.y = d.y * inv;
+		d.z = d.z * inv;
+	}
+	return d;
+}
+
+/* a random direction (FX_RandomDir) scaled by r */
+static void FXA_RandomDirScaled(vec3_t *out, float r) {
+	vec3_t tmp;
+	const vec3_t *p = FX_RandomDir(&tmp);
+
+	out->x = p->x * r;
+	out->y = p->y * r;
+	out->z = p->z * r;
+}
+
+/* ---- constructors ---- */
+
+void *__thiscall cObjElementFXBankMasterAttack_ctor(void *self) {
+	cObjElementFXBankMasterAttack *s = self;
+
+	FXA_SetVtbl(s, VT_FXBANKMASTERATTACK);
+	CGameParticles_ctor(&s->particles);
+	CGameTrail_ctor(&s->trail);
+	CGameTrail_ctor(&s->trail2);
+	s->started = 0;
+	s->ent = NULL;
+	s->fbc = 0.0f;
+	s->fb8 = 0.0f;
+	return s;
+}
+
+void *__thiscall cObjElementFXBankMasterSuction_ctor(void *self) {
+	cObjElementFXBankMasterSuction *s = self;
+
+	FXA_SetVtbl(s, VT_FXBANKMASTERSUCTION);
+	CGameParticles_ctor(&s->particles);
+	CGameTrail_ctor(&s->trail);
+	s->started = 0;
+	s->ent = NULL;
+	s->target = NULL;
+	s->fc0 = 0.0f;
+	s->fbc = 0.0f;
+	return s;
+}
+
+void *__thiscall cObjElementFXBankerSteal_ctor(void *self) {
+	cObjElementFXBankerSteal *s = self;
+
+	FXA_SetVtbl(s, VT_FXBANKERSTEAL);
+	CGameParticles_ctor(&s->particles);
+	s->started = 0;
+	s->ent = NULL;
+	s->target = NULL;
+	s->time = 0.0f;
+	s->toggle = 0;
+	s->lastSound = -1;
+	s->node = -1;
+	return s;
+}
+
+void *__thiscall cObjElementFXBertoAttack_ctor(void *self) {
+	cObjElementFXBertoAttack *s = self;
+
+	FXA_SetVtbl(s, VT_FXBERTOATTACK);
+	CGameParticles_ctor(&s->particles);
+	s->started = 0;
+	s->ent = NULL;
+	s->fbc = 0.0f;
+	s->fb8 = 0.0f;
+	return s;
+}
+
+void *__thiscall cObjElementFXBertoFlash_ctor(void *self) {
+	cObjElementFXBertoFlash *s = self;
+
+	FXA_SetVtbl(s, VT_FXBERTOFLASH);
+	CGameParticles_ctor(&s->particles);
+	FXA_TrailsCtor(s->trails, FXBERTOFLASH_TRAILS);
+	s->started = 0;
+	s->ent = NULL;
+	s->target = NULL;
+	s->fc0 = 0.0f;
+	s->fbc = 0.0f;
+	return s;
+}
+
+void *__thiscall cObjElementFXBettyAttack_ctor(void *self) {
+	cObjElementFXBettyAttack *s = self;
+
+	FXA_SetVtbl(s, VT_FXBETTYATTACK);
+	CGameParticles_ctor(&s->particles);
+	CGameParticles_ctor(&s->particles2);
+	FXA_TrailsCtor(s->trails, 2);
+	FXA_TrailsCtor(s->trails2, FXBETTYATTACK_TRAILS);
+	CGameTrail_ctor(&s->trail);
+	CGameLensFlare_ctor(&s->flare);
+	s->started = 0;
+	s->ent = NULL;
+	s->f16c = 0.0f;
+	s->f168 = 0.0f;
+	s->f170 = 0.0f;
+	return s;
+}
+
+static void FXKill_Ctor(cObjElementFXKill *s, uint32_t vt) {
+	FXA_SetVtbl(s, vt);
+	CGameParticles_ctor(&s->particles);
+	FXA_TrailsCtor(s->trails, FXKILL_TRAILS);
+	s->started = 0;
+	s->ent = NULL;
+	s->fbc = 0.0f;
+	s->fb8 = 0.0f;
+}
+
+void *__thiscall cObjElementFXBettyKill_ctor(void *self) {
+	FXKill_Ctor(self, VT_FXBETTYKILL);
+	return self;
+}
+
+void *__thiscall cObjElementFXBishopAttack_ctor(void *self) {
+	cObjElementFXBishopAttack *s = self;
+
+	FXA_SetVtbl(s, VT_FXBISHOPATTACK);
+	CGameParticles_ctor(&s->particles);
+	for (int i = 0; i < FXBISHOPATTACK_TRAILS; i++) {
+		CGameTrail_ctor(&s->trails[i]);
+	}
+	s->started = 0;
+	s->ent = NULL;
+	s->f10 = 0.0f;
+	s->fc = 0.0f;
+	return s;
+}
+
+void *__thiscall cObjElementFXBishopSellLife_ctor(void *self) {
+	cObjElementFXBishopSellLife *s = self;
+
+	FXA_SetVtbl(s, VT_FXBISHOPSELLLIFE);
+	CGameParticles_ctor(&s->glow);
+	CGameParticles_ctor(&s->dataCodec);
+	s->started = 0;
+	s->f16c = 0.0f;
+	s->f170 = 0.0f;
+	s->attacker = NULL;
+	s->attacked = NULL;
+	return s;
+}
+
+void *__thiscall cObjElementFXDTritusAttack_ctor(void *self) {
+	cObjElementFXDTritusAttack *s = self;
+
+	FXA_SetVtbl(s, VT_FXDTRITUSATTACK);
+	CGameParticles_ctor(&s->particles);
+	FXA_TrailsCtor(s->trails, FXDTRITUSATTACK_TRAILS);
+	s->started = 0;
+	s->ent = NULL;
+	s->fbc = 0.0f;
+	s->fb8 = 0.0f;
+	return s;
+}
+
+void *__thiscall cObjElementFXDTritusKill_ctor(void *self) {
+	FXKill_Ctor(self, VT_FXDTRITUSKILL);
+	return self;
+}
+
+void *__thiscall cObjElementFXFunctionarySpecialAction_ctor(void *self) {
+	cObjElementFXFunctionarySpecialAction *s = self;
+
+	FXA_SetVtbl(s, VT_FXFUNCTIONARYSPECIALACTION);
+	CGameParticles_ctor(&s->particles);
+	FXA_TrailsCtor(s->trails, FXFUNCTIONARY_TRAILS);
+	s->started = 0;
+	s->ent = NULL;
+	s->fbc = 0.0f;
+	s->fb8 = 0.0f;
+	return s;
+}
+
+void *__thiscall cObjElementFXGearMissile_ctor(void *self) {
+	cObjElementFXGearMissile *s = self;
+
+	FXA_SetVtbl(s, VT_FXGEARMISSILE);
+	CGameParticles_ctor(&s->particles);
+	CGameParticles_ctor(&s->sparks);
+	CGameTrail_ctor(&s->trail);
+	FXA_TrailsCtor(s->trails, FXGEARMISSILE_TRAILS);
+	s->started = 0;
+	s->i4 = 0;
+	s->f170 = 0.0f;
+	s->f174 = 0.5f;
+	s->f178 = 0.0f;
+	s->f18c = 0;
+	return s;
+}
+
+void *__thiscall cObjElementFXMercenaryDrink_ctor(void *self) {
+	cObjElementFXMercenaryDrink *s = self;
+
+	FXA_SetVtbl(s, VT_FXMERCENARYDRINK);
+	CGameParticles_ctor(&s->particles);
+	s->started = 0;
+	s->ent = NULL;
+	s->fbc = 0.0f;
+	s->fb8 = 0.0f;
+	return s;
+}
+
+void *__thiscall cObjElementFXMessengerAttack_ctor(void *self) {
+	cObjElementFXMessengerAttack *s = self;
+
+	FXA_SetVtbl(s, VT_FXMESSENGERATTACK);
+	CGameParticles_ctor(&s->particles);
+	FXA_TrailsCtor(s->trails, FXMESSENGER_TRAILS);
+	s->started = 0;
+	s->ent = NULL;
+	s->f10 = 0.0f;
+	s->fc = 0.0f;
+	return s;
+}
+
+void *__thiscall cObjElementFXMessengerTakeDataPack_ctor(void *self) {
+	cObjElementFXMessengerTakeDataPack *s = self;
+
+	FXA_SetVtbl(s, VT_FXMESSENGERTAKEDATAPACK);
+	CGameParticles_ctor(&s->particles);
+	FXA_TrailsCtor(s->trails, FXDATAPACK_TRAILS);
+	s->started = 0;
+	s->owner = NULL;
+	s->fc = 0.0f;
+	return s;
+}
+
+void *__thiscall cObjElementFXPoliceGearConversion_ctor(void *self) {
+	cObjElementFXPoliceGearConversion *s = self;
+
+	FXA_SetVtbl(s, VT_FXPOLICEGEARCONVERSION);
+	CGameParticles_ctor(&s->particles);
+	CGameParticles_ctor(&s->particles2);
+	FXA_TrailsCtor(s->trails, FXGEAR_TRAILS);
+	crt_eh_vector_ctor(s->armor, sizeof(CGameModel), FXGEAR_ARMORS, Game_Ptr(CGAMEMODEL_CTOR0),
+		Game_Ptr(CGAMEMODEL_RESET));
+	s->started = 0;
+	s->ent = NULL;
+	s->fc = 0.0f;
+	s->i8 = 0;
+	return s;
+}
+
+void *__thiscall cObjElementFXPoliceSteal_ctor(void *self) {
+	cObjElementFXPoliceSteal *s = self;
+
+	FXA_SetVtbl(s, VT_FXPOLICESTEAL);
+	CGameParticles_ctor(&s->particles);
+	s->started = 0;
+	s->ent = NULL;
+	s->target = NULL;
+	s->fbc = 0.0f;
+	s->fc0 = 0;
+	s->fc4 = -1;
+	return s;
+}
+
+void *__thiscall cObjElementFXSebastianFlash_ctor(void *self) {
+	cObjElementFXSebastianFlash *s = self;
+
+	FXA_SetVtbl(s, VT_FXSEBASTIANFLASH);
+	CGameParticles_ctor(&s->particles);
+	FXA_TrailsCtor(s->trails, FXSEBASTIAN_TRAILS);
+	s->started = 0;
+	s->ent = NULL;
+	s->fbc = 0.0f;
+	s->fb8 = 0.0f;
+	return s;
+}
+
+/* ---- destructors ---- */
+
+void __thiscall cObjElementFXBankMasterAttack_dtor(void *self) {
+	cObjElementFXBankMasterAttack *s = self;
+
+	*(void **)s = Game_Ptr(VT_FXBANKMASTERATTACK);
+	CGameTrail_dtor(&s->trail2);
+	CGameTrail_dtor(&s->trail);
+	CGameParticles_Release(&s->particles);
+	cObjElement_dtor(s);
+}
+
+void __thiscall cObjElementFXBankMasterSuction_dtor(void *self) {
+	cObjElementFXBankMasterSuction *s = self;
+
+	*(void **)s = Game_Ptr(VT_FXBANKMASTERSUCTION);
+	CGameTrail_dtor(&s->trail);
+	CGameParticles_Release(&s->particles);
+	cObjElement_dtor(s);
+}
+
+/* the classes with only the particles at off */
+static void FXA_DtorParts(void *self, uint32_t vt, uint32_t off) {
+	*(void **)self = Game_Ptr(vt);
+	CGameParticles_Release((CGameParticles *)((byte *)self + off));
+	cObjElement_dtor(self);
+}
+
+void __thiscall cObjElementFXBankerSteal_dtor(void *self) {
+	FXA_DtorParts(self, VT_FXBANKERSTEAL, 0xc);
+}
+
+void __thiscall cObjElementFXBertoAttack_dtor(void *self) {
+	FXA_DtorParts(self, VT_FXBERTOATTACK, 0x8);
+}
+
+/* the classes with the particles at poff and n trails at toff */
+static void FXA_DtorTrails(void *self, uint32_t vt, uint32_t poff, uint32_t toff, uint32_t n) {
+	*(void **)self = Game_Ptr(vt);
+	FXA_TrailsDtor((CGameTrail *)((byte *)self + toff), n);
+	CGameParticles_Release((CGameParticles *)((byte *)self + poff));
+	cObjElement_dtor(self);
+}
+
+void __thiscall cObjElementFXBertoFlash_dtor(void *self) {
+	FXA_DtorTrails(self, VT_FXBERTOFLASH, 0xc, 0x664, FXBERTOFLASH_TRAILS);
+}
+
+void __thiscall cObjElementFXBettyAttack_dtor(void *self) {
+	cObjElementFXBettyAttack *s = self;
+
+	*(void **)s = Game_Ptr(VT_FXBETTYATTACK);
+	CGameLensFlare_dtor(&s->flare);
+	CGameTrail_dtor(&s->trail);
+	FXA_TrailsDtor(s->trails2, FXBETTYATTACK_TRAILS);
+	FXA_TrailsDtor(s->trails, 2);
+	CGameParticles_Release(&s->particles2);
+	CGameParticles_Release(&s->particles);
+	cObjElement_dtor(s);
+}
+
+void __thiscall cObjElementFXBettyKill_dtor(void *self) {
+	FXA_DtorTrails(self, VT_FXBETTYKILL, 0x8, 0x8f4, FXKILL_TRAILS);
+}
+
+void __thiscall cObjElementFXBishopAttack_dtor(void *self) {
+	cObjElementFXBishopAttack *s = self;
+
+	*(void **)s = Game_Ptr(VT_FXBISHOPATTACK);
+	for (int i = FXBISHOPATTACK_TRAILS - 1; i >= 0; i--) {
+		CGameTrail_dtor(&s->trails[i]);
+	}
+	CGameParticles_Release(&s->particles);
+	cObjElement_dtor(s);
+}
+
+void __thiscall cObjElementFXBishopSellLife_dtor(void *self) {
+	cObjElementFXBishopSellLife *s = self;
+
+	*(void **)s = Game_Ptr(VT_FXBISHOPSELLLIFE);
+	CGameParticles_Release(&s->dataCodec);
+	CGameParticles_Release(&s->glow);
+	cObjElement_dtor(s);
+}
+
+void __thiscall cObjElementFXDTritusAttack_dtor(void *self) {
+	FXA_DtorTrails(self, VT_FXDTRITUSATTACK, 0x8, 0x112c, FXDTRITUSATTACK_TRAILS);
+}
+
+void __thiscall cObjElementFXDTritusKill_dtor(void *self) {
+	FXA_DtorTrails(self, VT_FXDTRITUSKILL, 0x8, 0x8f4, FXKILL_TRAILS);
+}
+
+void __thiscall cObjElementFXFunctionarySpecialAction_dtor(void *self) {
+	FXA_DtorTrails(self, VT_FXFUNCTIONARYSPECIALACTION, 0x8, 0xc4, FXFUNCTIONARY_TRAILS);
+}
+
+void __thiscall cObjElementFXGearMissile_dtor(void *self) {
+	cObjElementFXGearMissile *s = self;
+
+	*(void **)s = Game_Ptr(VT_FXGEARMISSILE);
+	FXA_TrailsDtor(s->trails, FXGEARMISSILE_TRAILS);
+	CGameTrail_dtor(&s->trail);
+	CGameParticles_Release(&s->sparks);
+	CGameParticles_Release(&s->particles);
+	cObjElement_dtor(s);
+}
+
+void __thiscall cObjElementFXMercenaryDrink_dtor(void *self) {
+	FXA_DtorParts(self, VT_FXMERCENARYDRINK, 0x8);
+}
+
+void __thiscall cObjElementFXMessengerAttack_dtor(void *self) {
+	FXA_DtorTrails(self, VT_FXMESSENGERATTACK, 0x14, 0xe8, FXMESSENGER_TRAILS);
+}
+
+void __thiscall cObjElementFXMessengerTakeDataPack_dtor(void *self) {
+	FXA_DtorTrails(self, VT_FXMESSENGERTAKEDATAPACK, 0x10, 0xc0, FXDATAPACK_TRAILS);
+}
+
+void __thiscall cObjElementFXPoliceGearConversion_dtor(void *self) {
+	cObjElementFXPoliceGearConversion *s = self;
+
+	*(void **)s = Game_Ptr(VT_FXPOLICEGEARCONVERSION);
+	crt_eh_vector_dtor(s->armor, sizeof(CGameModel), FXGEAR_ARMORS, Game_Ptr(CGAMEMODEL_RESET));
+	FXA_TrailsDtor(s->trails, FXGEAR_TRAILS);
+	CGameParticles_Release(&s->particles2);
+	CGameParticles_Release(&s->particles);
+	cObjElement_dtor(s);
+}
+
+void __thiscall cObjElementFXPoliceSteal_dtor(void *self) {
+	FXA_DtorParts(self, VT_FXPOLICESTEAL, 0xc);
+}
+
+void __thiscall cObjElementFXSebastianFlash_dtor(void *self) {
+	FXA_DtorTrails(self, VT_FXSEBASTIANFLASH, 0x8, 0x7c8, FXSEBASTIAN_TRAILS);
+}
+
+/* ---- deleting destructors (vf00) ---- */
+
+void *__thiscall cObjElementFXBankMasterAttack_Delete(void *self, uint32_t flags) {
+	cObjElementFXBankMasterAttack_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXBankMasterAttack));
+}
+
+void *__thiscall cObjElementFXBankMasterSuction_Delete(void *self, uint32_t flags) {
+	cObjElementFXBankMasterSuction_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXBankMasterSuction));
+}
+
+void *__thiscall cObjElementFXBankerSteal_Delete(void *self, uint32_t flags) {
+	cObjElementFXBankerSteal_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXBankerSteal));
+}
+
+void *__thiscall cObjElementFXBertoAttack_Delete(void *self, uint32_t flags) {
+	cObjElementFXBertoAttack_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXBertoAttack));
+}
+
+void *__thiscall cObjElementFXBertoFlash_Delete(void *self, uint32_t flags) {
+	cObjElementFXBertoFlash_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXBertoFlash));
+}
+
+void *__thiscall cObjElementFXBettyAttack_Delete(void *self, uint32_t flags) {
+	cObjElementFXBettyAttack_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXBettyAttack));
+}
+
+void *__thiscall cObjElementFXBettyKill_Delete(void *self, uint32_t flags) {
+	cObjElementFXBettyKill_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXKill));
+}
+
+void *__thiscall cObjElementFXBishopAttack_Delete(void *self, uint32_t flags) {
+	cObjElementFXBishopAttack_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXBishopAttack));
+}
+
+void *__thiscall cObjElementFXBishopSellLife_Delete(void *self, uint32_t flags) {
+	cObjElementFXBishopSellLife_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXBishopSellLife));
+}
+
+void *__thiscall cObjElementFXDTritusAttack_Delete(void *self, uint32_t flags) {
+	cObjElementFXDTritusAttack_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXDTritusAttack));
+}
+
+void *__thiscall cObjElementFXDTritusKill_Delete(void *self, uint32_t flags) {
+	cObjElementFXDTritusKill_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXKill));
+}
+
+void *__thiscall cObjElementFXFunctionarySpecialAction_Delete(void *self, uint32_t flags) {
+	cObjElementFXFunctionarySpecialAction_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXFunctionarySpecialAction));
+}
+
+void *__thiscall cObjElementFXGearMissile_Delete(void *self, uint32_t flags) {
+	cObjElementFXGearMissile_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXGearMissile));
+}
+
+void *__thiscall cObjElementFXMercenaryDrink_Delete(void *self, uint32_t flags) {
+	cObjElementFXMercenaryDrink_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXMercenaryDrink));
+}
+
+void *__thiscall cObjElementFXMessengerAttack_Delete(void *self, uint32_t flags) {
+	cObjElementFXMessengerAttack_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXMessengerAttack));
+}
+
+void *__thiscall cObjElementFXMessengerTakeDataPack_Delete(void *self, uint32_t flags) {
+	cObjElementFXMessengerTakeDataPack_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXMessengerTakeDataPack));
+}
+
+void *__thiscall cObjElementFXPoliceGearConversion_Delete(void *self, uint32_t flags) {
+	cObjElementFXPoliceGearConversion_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXPoliceGearConversion));
+}
+
+void *__thiscall cObjElementFXPoliceSteal_Delete(void *self, uint32_t flags) {
+	cObjElementFXPoliceSteal_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXPoliceSteal));
+}
+
+void *__thiscall cObjElementFXSebastianFlash_Delete(void *self, uint32_t flags) {
+	cObjElementFXSebastianFlash_dtor(self);
+	return FXA_Delete(self, flags, sizeof(cObjElementFXSebastianFlash));
+}
+
+/* ---- Alive (vf02) ---- */
+
+byte __thiscall FXCharActions_AliveAction(void *self, cDebris *d, cDebrisSys *sys) {
+	cEntity *e = *(cEntity **)((byte *)self + 4);
+
+	if (e && WithLife_Vtbl(e)->GetActCtrl(e)) {
+		e = *(cEntity **)((byte *)self + 4);
+		if (cActCtrl_IsActive(WithLife_Vtbl(e)->GetActCtrl(e), "Action")) {
+			Debris_Life(d) = 1.0f;
+		} else {
+			e = *(cEntity **)((byte *)self + 4);
+			if (cActCtrl_IsActive(WithLife_Vtbl(e)->GetActCtrl(e), "ActionInit")) {
+				Debris_Life(d) = 1.0f;
+			}
+		}
+	}
+	return cDebris_Update(d, sys);
+}
+
+/* the effect of the model of the character off */
+static void FXA_EffectOff(CGameModel *m) {
+	CHECK(CGameModel_IsLoaded(m));
+	CGameModel_SetEffect(m, 0);
+	CGameModel_SetEffectParam(m, 0, 0);
+}
+
+byte __thiscall cObjElementFXFunctionarySpecialAction_Alive(cObjElementFXFunctionarySpecialAction *self, cDebris *d,
+	cDebrisSys *sys) {
+	CGameModel *m;
+
+	if (!cDebris_Update(d, sys)) {
+		if (self->ent) {
+			m = FX_Vtbl(self->ent)->GetModel(self->ent);
+			if (CGameModel_IsLoaded(m)) {
+				FXA_EffectOff(m);
+			}
+		}
+		return 0;
+	}
+	if (Debris_Life(d) > 0.4f && !self->ent) {
+		Debris_Life(d) = 0.4f;
+	}
+	if (self->ent && cTimer_GetSpeed(Entity_Timer(self->ent)) == 1.0f
+		&& cTimer_GetSpeedTo(Entity_Timer(self->ent)) == 1.0f && 0.4f >= Debris_Life(d)) {
+		m = FX_Vtbl(self->ent)->GetModel(self->ent);
+		if (!CGameModel_IsLoaded(m)) {
+			return 0;
+		}
+		FXA_EffectOff(m);
+	}
+	return 1;
+}
+
+byte __thiscall cObjElementFXPoliceGearConversion_Alive(cObjElementFXPoliceGearConversion *self, cDebris *d,
+	cDebrisSys *sys) {
+	if (cDebris_Update(d, sys)) {
+		return 1;
+	}
+	for (int i = 0; i < FXGEAR_ARMORS; i++) {
+		CGameModel_Disable(&self->armor[i]);
+	}
+	return 0;
+}
+
+/* ---- Attach (vf03) ---- */
+
+void __thiscall cObjElementFXBankMasterAttack_Attach(cObjElementFXBankMasterAttack *self, cDebris *d) {
+	FXA_AttachDummy01(&self->particles, d);
+	CHECK(self->particles.SistPart);
+	CGameTrail_SetMaxTrails(&self->trail, 20);
+	CGameTrail_SetType(&self->trail, 1);
+	CGameTrail_SetTexture(&self->trail, 0);
+	CGameTrail_SetMaxTrails(&self->trail2, 16);
+	CGameTrail_SetType(&self->trail2, 0);
+	CGameTrail_SetTexture(&self->trail2, 0);
+	self->t = 0.0f;
+}
+
+void __thiscall cObjElementFXBankMasterSuction_Attach(cObjElementFXBankMasterSuction *self, cDebris *d) {
+	FXA_AttachDummy01(&self->particles, d);
+	CHECK(self->particles.SistPart);
+	self->lastSound = 0;
+	self->count = 0;
+}
+
+void __thiscall FXCharActions_AttachC(void *self, cDebris *d) {
+	FXA_AttachDummy01((CGameParticles *)((byte *)self + 0xc), d);
+}
+
+void __thiscall FXCharActions_Attach8(void *self, cDebris *d) {
+	CGameParticles *sp = (CGameParticles *)((byte *)self + 8);
+
+	FXA_AttachDummy01(sp, d);
+	CHECK(sp->SistPart);
+}
+
+void __thiscall cObjElementFXBertoFlash_Attach(cObjElementFXBertoFlash *self, cDebris *d) {
+	FXA_AttachDummy01(&self->particles, d);
+	FXA_Trails(self->trails, FXBERTOFLASH_TRAILS, 31, 2, 3);
+	CHECK(self->particles.SistPart);
+}
+
+void __thiscall cObjElementFXBettyAttack_Attach(cObjElementFXBettyAttack *self, cDebris *d) {
+	CGameModel *m = Debris_Model(d);
+
+	FXA_AttachDummy01(&self->particles, d);
+	int i = CGameModel_FindNodoR(m, "Dummy02 (+dudv_pass)");
+	if (i > -1) {
+		CGameParticles_Attach(&self->particles2, m, i);
+	}
+	FXA_Trails(self->trails, 2, 31, 0, 3);
+	FXA_Trails(self->trails2, FXBETTYATTACK_TRAILS, 31, 10, 3);
+	CGameTrail_SetMaxTrails(&self->trail, 31);
+	CGameTrail_SetType(&self->trail, 1);
+	CHECK(self->particles.SistPart);
+	self->f188 = 0;
+	CGameLensFlare_SetI1c(&self->flare, 2);
+}
+
+void __thiscall cObjElementFXKill_Attach(cObjElementFXKill *self, cDebris *d) {
+	FXA_AttachDummy01(&self->particles, d);
+	FXA_Trails(self->trails, FXKILL_TRAILS, 31, 10, 3);
+	CHECK(self->particles.SistPart);
+}
+
+/* a trail of the Bishop attack: segments, type 3, texture, no fade, premultiplied */
+static void FXBishop_Trail(CGameTrail *t, byte segments, int texture, const float *uv) {
+	CGameTrail_SetMaxTrails(t, segments);
+	CGameTrail_SetType(t, 3);
+	CGameTrail_SetTexture(t, texture);
+	if (uv) {
+		CGameTrail_SetUVScale(t, uv[0], uv[1]);
+	}
+	CGameTrail_SetFade(t, 0);
+	CGameTrail_SetPremul(t, 1);
+}
+
+void __thiscall cObjElementFXBishopAttack_Attach(cObjElementFXBishopAttack *self, cDebris *d) {
+	static const float uv0[2] = { 4.0f, 1.0f };
+	static const float uv1[2] = { 16.0f, 0.5f };
+
+	FXA_AttachDummy01(&self->particles, d);
+	CHECK(self->particles.SistPart);
+	FXBishop_Trail(&self->trails[0], 3, 4, uv0);
+	FXBishop_Trail(&self->trails[1], 31, 14, uv1);
+	FXBishop_Trail(&self->trails[2], 31, 4, NULL);
+	FXBishop_Trail(&self->trails[3], 31, 4, NULL);
+}
+
+void __thiscall cObjElementFXBishopSellLife_Attach(cObjElementFXBishopSellLife *self, cDebris *d) {
+	FXA_AttachDummy01(&self->glow, d);
+	CHECK(self->glow.SistPart);
+	FXA_AttachNode(&self->dataCodec, Debris_Model(d), "Dummy02");
+	CHECK(self->dataCodec.SistPart);
+}
+
+void __thiscall cObjElementFXDTritusAttack_Attach(cObjElementFXDTritusAttack *self, cDebris *d) {
+	FXA_AttachDummy01(&self->particles, d);
+	FXA_Trails(self->trails, FXDTRITUSATTACK_TRAILS, 31, 10, 3);
+	CHECK(self->particles.SistPart);
+}
+
+void __thiscall cObjElementFXFunctionarySpecialAction_Attach(cObjElementFXFunctionarySpecialAction *self, cDebris *d) {
+	FXA_AttachDummy01(&self->particles, d);
+	for (int i = 0; i < FXFUNCTIONARY_TRAILS; i++) {
+		CGameTrail *t = &self->trails[i];
+		CGameTrail_SetMaxTrails(t, 8);
+		CGameTrail_SetTexture(t, 2);
+		CGameTrail_SetSmooth(t, 1);
+		CGameTrail_SetFade(t, 1);
+		CGameTrail_SetOrient(t, (vec3_t){ 0.0f, 1.0f, 0.0f }, 2);
+	}
+	self->alpha = 0.0f;
+}
+
+void __thiscall cObjElementFXGearMissile_Attach(cObjElementFXGearMissile *self, cDebris *d) {
+	CGameModel *m = Debris_Model(d);
+
+	CHECK(CGameModel_IsLoaded(m));
+	self->node = CGameModel_FindNodoR(m, "Dummy01");
+	CHECK(self->node > -1);
+	CGameParticles_Attach(&self->particles, m, self->node);
+	CHECK(self->particles.SistPart);
+	self->nodeSparks = CGameModel_FindNodoR(m, "Dummy02");
+	CHECK(self->nodeSparks > -1);
+	CGameParticles_Attach(&self->sparks, m, self->nodeSparks);
+	CHECK(self->sparks.SistPart);
+	for (int i = 0; i < FXGEARMISSILE_TRAILS; i++) {
+		CGameTrail *t = &self->trails[i];
+		CGameTrail_SetMaxTrails(t, 14);
+		CGameTrail_SetSmooth(t, 1);
+		CGameTrail_SetColor(t, 0xc0c0ff);
+		CGameTrail_SetTexture(t, 9);
+		CGameTrail_SetULen(t, 4.0f, 1.0f);
+		CGameTrail_SetPremul(t, 1);
+		self->f690[i] = 0.5f;
+		self->f190[i] = -1.0f;
+	}
+	CGameTrail_SetMaxTrails(&self->trail, 10);
+	CGameTrail_SetSmooth(&self->trail, 0);
+	CGameTrail_SetFade(&self->trail, 1);
+	CGameTrail_SetScale(&self->trail, 1.0f, 0.4f);
+	CGameTrail_SetTexture(&self->trail, 3);
+}
+
+/* the lightning trails of the Messenger: texture 8 (u length 4) for the main ones, else 9 (6) */
+static void FXMessenger_Trail(CGameTrail *t, byte segments, byte main) {
+	CGameTrail_SetMaxTrails(t, segments);
+	CGameTrail_SetPremul(t, 1);
+	CGameTrail_SetSmooth(t, 1);
+	if (main) {
+		CGameTrail_SetTexture(t, 8);
+		CGameTrail_SetULen(t, 4.0f, 1.0f);
+	} else {
+		CGameTrail_SetTexture(t, 9);
+		CGameTrail_SetULen(t, 6.0f, 1.0f);
+	}
+}
+
+void __thiscall cObjElementFXMessengerAttack_Attach(cObjElementFXMessengerAttack *self, cDebris *d) {
+	FXA_AttachDummy01(&self->particles, d);
+	CHECK(self->particles.SistPart);
+	for (int i = 0; i < FXMESSENGER_TRAILS; i++) {
+		FXMessenger_Trail(&self->trails[i], 31, i == 0);
+	}
+}
+
+void __thiscall cObjElementFXMessengerTakeDataPack_Attach(cObjElementFXMessengerTakeDataPack *self, cDebris *d) {
+	FXA_AttachDummy01(&self->particles, d);
+	CHECK(self->particles.SistPart);
+	for (int i = 0; i < FXDATAPACK_TRAILS; i++) {
+		FXMessenger_Trail(&self->trails[i], 12, i & 1);
+	}
+}
+
+/* the pieces of the Gear armors: armor, node name, the offset of its time in the element and the time */
+typedef struct FXGearPiece {
+	int armor;
+	const char *name;
+	uint32_t off;
+	float time;
+} FXGearPiece;
+
+static const FXGearPiece fxa_gearPieces[] = {
+	{ 0, "OB_PiezasGear_08", 0x99c, 2.9f }, { 0, "OB_PiezasGear_09", 0x9a0, 2.9f },
+	{ 0, "OB_PiezasGear_10", 0x9a4, 2.83f }, { 0, "OB_PiezasGear_11", 0x9a8, 3.2f },
+	{ 0, "OB_PiezasGear_12", 0x9ac, 2.96f }, { 0, "OB_PiezasGear_13", 0x9b0, 3.03f },
+	{ 0, "OB_PiezasGear_14", 0x9b4, 3.16f }, { 0, "OB_PiezasGear_17", 0x9b8, 3.1f },
+	{ 1, "OB_PiezasGear_15", 0x9d8, 3.3f }, { 1, "OB_PiezasGear_16", 0x9dc, 3.36f },
+	{ 1, "OB_PiezasGear_18", 0x9e0, 3.13f }, { 1, "OB_PiezasGear_19", 0x9e4, 3.13f },
+	{ 1, "OB_PiezasGear_20", 0x9e8, 3.26f }, { 1, "OB_PiezasGear_21", 0x9ec, 3.33f },
+	{ 1, "OB_PiezasGear_22", 0x9f0, 3.4f }, { 1, "OB_PiezasGear_23", 0x9f4, 3.66f },
+	{ 1, "OB_PiezasGear_24", 0x9f8, 3.26f }, { 1, "OB_PiezasGear_38", 0x9fc, 3.43f },
+	{ 1, "OB_PiezasGear_39", 0xa00, 3.33f }, { 1, "OB_PiezasGear_40", 0xa04, 3.26f },
+	{ 2, "OB_PiezasGear_01", 0xa18, 3.66f }, { 2, "OB_PiezasGear_25", 0xa1c, 3.26f },
+	{ 2, "OB_PiezasGear_26", 0xa20, 3.33f }, { 2, "OB_PiezasGear_27", 0xa24, 3.46f },
+	{ 2, "OB_PiezasGear_28", 0xa28, 3.46f }, { 2, "OB_PiezasGear_29", 0xa2c, 3.53f },
+	{ 2, "OB_PiezasGear_30", 0xa30, 3.53f }, { 2, "OB_PiezasGear_31", 0xa34, 3.6f },
+	{ 2, "OB_PiezasGear_32", 0xa38, 3.6f }, { 2, "OB_PiezasGear_37", 0xa3c, 3.53f },
+};
+static const int fxa_gearNumPieces[FXGEAR_ARMORS] = { 8, 12, 10 };
+
+void __thiscall cObjElementFXPoliceGearConversion_Attach(cObjElementFXPoliceGearConversion *self, cDebris *d) {
+	char buf[256];
+	int i, k;
+
+	FXA_AttachDummy01(&self->particles, d);
+	CHECK(self->particles.SistPart);
+	for (i = 0; i < FXGEAR_ARMORS; i++) {
+		CGameModel *m = &self->armor[i];
+		vec3_t scale = { 1.0f, 1.0f, 1.0f };
+
+		Str_PrintfQuiet(buf, 0xff, "Models/Chars/Gear/Gear_Armor%d.M3D", i + 1);
+		CGameModel_LoadScaled(m, buf, &scale);
+		CGameModel_Disable(m);
+		CGameModel_SetPivotNodo(m, "DC_Root");
+		Str_PrintfQuiet(buf, 0xff, "Models/Chars/Gear/Anm/Gear_ArmorFusion%d.M3D", i + 1);
+		self->anim[i] = CGameModel_AddAnim(m, buf);
+		for (k = 0; k < FXGEAR_PIECES; k++) {
+			self->pieceOff[i][k] = 0;
+		}
+	}
+	const FXGearPiece *p = fxa_gearPieces;
+	for (i = 0; i < FXGEAR_ARMORS; i++) {
+		self->numPieces[i] = fxa_gearNumPieces[i];
+		for (k = 0; k < fxa_gearNumPieces[i]; k++, p++) {
+			self->piece[i][k] = CGameModel_FindNodoRWild(&self->armor[i], p->name);
+			*(float *)((byte *)self + p->off) = p->time;
+		}
+		for (; k < FXGEAR_PIECES; k++) {
+			self->piece[i][k] = -1;
+		}
+	}
+	FXA_Trails(self->trails, FXGEAR_TRAILS, 31, 10, 3);
+	self->f844 = 0;
+	self->fc = 0.0f;
+	self->f10 = 0.0f;
+	self->f848 = 0;
+	self->fcc = 0;
+}
+
+void __thiscall cObjElementFXSebastianFlash_Attach(cObjElementFXSebastianFlash *self, cDebris *d) {
+	FXA_AttachDummy01(&self->particles, d);
+	FXA_Trails(self->trails, FXSEBASTIAN_TRAILS, 31, 2, 3);
+	CHECK(self->particles.SistPart);
+}
+
+/* ---- Reset (vf04) ---- */
+
+void __thiscall cObjElementFXBankMasterAttack_Reset(cObjElementFXBankMasterAttack *self, int arg) {
+	(void)arg;
+	self->fbc = 0.0f;
+	self->fb8 = 0.0f;
+	CGameTrail_Clear(&self->trail);
+	CGameTrail_Clear(&self->trail2);
+	self->t = 0.0f;
+}
+
+void __thiscall cObjElementFXBankMasterSuction_Reset(cObjElementFXBankMasterSuction *self, int arg) {
+	(void)arg;
+	self->fc0 = 0.0f;
+	self->fbc = 0.0f;
+	self->count = 0;
+	self->lastSound = 0;
+}
+
+void __thiscall cObjElementFXBankerSteal_Reset(cObjElementFXBankerSteal *self, int arg) {
+	(void)arg;
+	self->ent = NULL;
+	self->target = NULL;
+	self->time = 0.0f;
+}
+
+void __thiscall cObjElementFXBertoAttack_Reset(cObjElementFXBertoAttack *self, int arg) {
+	(void)arg;
+	self->fbc = 0.0f;
+	self->fb8 = 0.0f;
+	CGameParticles_KillAll(&self->particles);
+}
+
+void __thiscall cObjElementFXBertoFlash_Reset(cObjElementFXBertoFlash *self, int arg) {
+	(void)arg;
+	self->fc0 = 0.0f;
+	self->fbc = 0.0f;
+	FXA_ClearTrails(self->trails, FXBERTOFLASH_TRAILS);
+	CGameParticles_KillAll(&self->particles);
+}
+
+void __thiscall cObjElementFXBettyAttack_Reset(cObjElementFXBettyAttack *self, int arg) {
+	(void)arg;
+	self->f16c = 0.0f;
+	self->f168 = 0.0f;
+	self->f170 = 0.0f;
+	FXA_ClearTrails(self->trails, 2);
+	FXA_ClearTrails(self->trails2, FXBETTYATTACK_TRAILS);
+	CGameTrail_Clear(&self->trail);
+	CGameParticles_KillAll(&self->particles);
+	if (self->particles2.SistPart) {
+		CGameParticles_KillAll(&self->particles2);
+	}
+	self->f188 = 0;
+}
+
+void __thiscall cObjElementFXKill_Reset(cObjElementFXKill *self, int arg) {
+	(void)arg;
+	self->fbc = 0.0f;
+	self->fb8 = 0.0f;
+	FXA_ClearTrails(self->trails, FXKILL_TRAILS);
+	CGameParticles_KillAll(&self->particles);
+}
+
+void __thiscall cObjElementFXBishopAttack_Reset(cObjElementFXBishopAttack *self, int arg) {
+	(void)arg;
+	self->f10 = 0.0f;
+	self->fc = 0.0f;
+	CGameParticles_KillAll(&self->particles);
+	FXA_ClearTrails(self->trails, FXBISHOPATTACK_TRAILS);
+}
+
+void __thiscall cObjElementFXBishopSellLife_Reset(cObjElementFXBishopSellLife *self, int arg) {
+	(void)arg;
+	self->f16c = 0.0f;
+	self->f170 = 0.0f;
+	self->attacker = NULL;
+	self->attacked = NULL;
+	CGameParticles_KillAll(&self->glow);
+	CGameParticles_KillAll(&self->dataCodec);
+}
+
+void __thiscall cObjElementFXDTritusAttack_Reset(cObjElementFXDTritusAttack *self, int arg) {
+	(void)arg;
+	self->fbc = 0.0f;
+	self->fb8 = 0.0f;
+	FXA_ClearTrails(self->trails, FXDTRITUSATTACK_TRAILS);
+	CGameParticles_KillAll(&self->particles);
+}
+
+void __thiscall cObjElementFXFunctionarySpecialAction_Reset(cObjElementFXFunctionarySpecialAction *self, int arg) {
+	(void)arg;
+	self->fbc = 0.0f;
+	self->fb8 = 0.0f;
+	CGameParticles_KillAll(&self->particles);
+	FXA_ClearTrails(self->trails, FXFUNCTIONARY_TRAILS);
+	self->alpha = 0.0f;
+}
+
+void __thiscall cObjElementFXGearMissile_Reset(cObjElementFXGearMissile *self, int arg) {
+	(void)arg;
+	self->i4 = 0;
+	self->f170 = 0.0f;
+	self->f178 = 0.0f;
+	for (int i = 0; i < FXGEARMISSILE_TRAILS; i++) {
+		CGameTrail_Clear(&self->trails[i]);
+		self->f190[i] = -1.0f;
+	}
+	self->f18c = 0;
+	CGameTrail_Clear(&self->trail);
+	CGameParticles_KillAll(&self->particles);
+}
+
+void __thiscall cObjElementFXMercenaryDrink_Reset(cObjElementFXMercenaryDrink *self, int arg) {
+	(void)arg;
+	self->fbc = 0.0f;
+	self->fb8 = 0.0f;
+}
+
+void __thiscall cObjElementFXMessengerAttack_Reset(cObjElementFXMessengerAttack *self, int arg) {
+	(void)arg;
+	self->f10 = 0.0f;
+	self->fc = 0.0f;
+	CGameParticles_KillAll(&self->particles);
+	FXA_ClearTrails(self->trails, FXMESSENGER_TRAILS);
+}
+
+void __thiscall cObjElementFXMessengerTakeDataPack_Reset(cObjElementFXMessengerTakeDataPack *self, int arg) {
+	(void)arg;
+	self->fc = 0.0f;
+	CGameParticles_KillAll(&self->particles);
+	FXA_ClearTrails(self->trails, FXDATAPACK_TRAILS);
+}
+
+void __thiscall cObjElementFXPoliceGearConversion_Reset(cObjElementFXPoliceGearConversion *self, int arg) {
+	(void)arg;
+	self->fc = 0.0f;
+	self->f10 = 0.0f;
+	self->i8 = 0;
+	/* the 45 piece flags, 0x96c..0x998 (the last 0x2d bytes, the movups of the original) */
+	for (int i = 0; i < FXGEAR_ARMORS; i++) {
+		for (int k = 0; k < FXGEAR_PIECES; k++) {
+			self->pieceOff[i][k] = 0;
+		}
+	}
+	CGameParticles_KillAll(&self->particles);
+	FXA_ClearTrails(self->trails, FXGEAR_TRAILS);
+	self->f844 = 0;
+	self->f848 = 0;
+	self->fcc = 0;
+}
+
+void __thiscall cObjElementFXPoliceSteal_Reset(cObjElementFXPoliceSteal *self, int arg) {
+	(void)arg;
+	self->ent = NULL;
+	self->target = NULL;
+	self->fbc = 0.0f;
+}
+
+void __thiscall cObjElementFXSebastianFlash_Reset(cObjElementFXSebastianFlash *self, int arg) {
+	(void)arg;
+	self->fbc = 0.0f;
+	self->fb8 = 0.0f;
+	FXA_ClearTrails(self->trails, FXSEBASTIAN_TRAILS);
+	CGameParticles_KillAll(&self->particles);
+}
+
+/* ---- the setters and starts ---- */
+
+void __thiscall FXCharActions_SetEntity8(void *self, cEntity *e) {
+	*(cEntity **)((byte *)self + 8) = e;
+	FXA_Model(e);
+}
+
+void __thiscall cObjElementFXBankerSteal_SetEntity(cObjElementFXBankerSteal *self, cEntity *e) {
+	self->ent = e;
+	self->node = CGameModel_FindNodoR(FXA_Model(e), "DF_BankerSteal");
+}
+
+void __thiscall cObjElementFXBishopSellLife_SetAttacked(cObjElementFXBishopSellLife *self, cEntity *e) {
+	self->attacked = e;
+	if (e) {
+		FXA_Model(e);
+	}
+}
+
+void __thiscall cObjElementFXBishopSellLife_SetAttacker(cObjElementFXBishopSellLife *self, cEntity *e) {
+	self->attacker = e;
+	if (!e) {
+		return;
+	}
+	CGameModel *m = FXA_Model(e);
+	self->nodeHand[0] = CGameModel_FindNodoR(m, "R_Bishop_Mano_Izq");
+	CHECK(self->nodeHand[0] > -1);
+	self->nodeHand[1] = CGameModel_FindNodoR(m, "R_Bishop_Mano_Der");
+	CHECK(self->nodeHand[1] > -1);
+}
+
+void __thiscall cObjElementFXMessengerTakeDataPack_SetItem(cObjElementFXMessengerTakeDataPack *self, cEntity *e) {
+	self->item = e;
+	CHECK(e);
+	CHECK(self->item->vftable->IsType(self->item, "Obj"));
+}
+
+void __thiscall cObjElementFXMessengerTakeDataPack_SetOwner(cObjElementFXMessengerTakeDataPack *self, cEntity *e) {
+	self->owner = e;
+	CHECK(e);
+	CHECK(self->owner->vftable->IsType(self->owner, TYEN_WALKCHAR));
+}
+
+void __thiscall cObjElementFXMercenaryDrink_SetC0(cObjElementFXMercenaryDrink *self, float a, float b, float c) {
+	self->offset.x = a;
+	self->offset.y = b;
+	self->offset.z = c;
+}
+
+void __thiscall cObjElementFXMercenaryDrink_Start(cObjElementFXMercenaryDrink *self, cEntity *e) {
+	self->ent = e;
+	self->nodeJar = CGameModel_FindNodoR(FXA_Model(e), "OB_JarraMercurio_MercA");
+}
+
+void __thiscall cObjElementFXBankMasterAttack_Start(cObjElementFXBankMasterAttack *self, cEntity *e) {
+	self->ent = e;
+	self->nodeBaton = CGameModel_FindNodoR(FXA_Model(e), "DF_Batton");
+	CHECK(self->nodeBaton >= 0);
+}
+
+void __thiscall cObjElementFXBertoAttack_Start(cObjElementFXBertoAttack *self, cEntity *e) {
+	self->ent = e;
+	self->nodeCristal = CGameModel_FindNodoR(FXA_Model(e), "R_Berto_TroncoInf-cristal");
+	CHECK(self->nodeCristal > -1);
+}
+
+void __thiscall cObjElementFXKill_SetAngles(cObjElementFXKill *self, float x, float y, float z) {
+	self->angles.x = x;
+	self->angles.y = y;
+	self->angles.z = z;
+}
+
+void __thiscall cObjElementFXBishopAttack_SetLine(cObjElementFXBishopAttack *self, float fx, float fy, float fz,
+	float tx, float ty, float tz) {
+	self->from = (vec3_t){ fx, fy, fz };
+	self->to = (vec3_t){ tx, ty, tz };
+	self->dir = FXA_Dir(&self->from, &self->to);
+}
+
+void __thiscall cObjElementFXGearMissile_Run(void *self, cDebris *d) {
+	cObjElementFX *fx = self;
+
+	for (int i = 0; i < 8; i++) {
+		fx->vftable->Update(fx, d, 0.0f);
+	}
+}
+
+void __fastcall cObjElementFXBankMasterSuction_RandomPoints(cObjElementFXBankMasterSuction *self) {
+	vec3_t a, b;
+
+	self->ent->vftable->GetPos(self->ent, &a);
+	self->target->vftable->GetPos(self->target, &b);
+	for (int i = 0; i < FXBMSUCTION_POINTS; i++) {
+		self->phase[i] = (float)(FXA_Rnd() * (double)0.9f - (double)0.9f);
+		FXA_RandomDirScaled(&self->dir[i], FXA_Rand(0.75, 0.25));
+		self->angle[i] = FXA_Rand((double)6.28318548f, 0.0);
+	}
+}
+
+void __fastcall cObjElementFXBertoFlash_RandomPoints(cObjElementFXBertoFlash *self) {
+	for (int i = 0; i < FXBERTOFLASH_POINTS; i++) {
+		FXA_RandomDirScaled(&self->dir[i], FXA_Rand(4.0, 10.0));
+		float lo = FX_Vtbl(self->target)->GetRadius(self->target) * 0.65f;
+		float hi = FX_Vtbl(self->target)->GetRadius(self->target) * 0.85f;
+		FXA_RandomDirScaled(&self->dir2[i], (float)(FXA_Rnd() * (double)(hi - lo) + (double)lo));
+	}
+}
+
+void __fastcall cObjElementFXSebastianFlash_RandomPoints(cObjElementFXSebastianFlash *self) {
+	for (int i = 0; i < FXSEBASTIAN_POINTS; i++) {
+		FXA_RandomDirScaled(&self->dir[i], FXA_Rand(3.0, 0.0));
+		FXA_RandomDirScaled(&self->dir2[i], FXA_Rand(65.0, 15.0));
+	}
+}
+
+/* the sines and cosines of the negated angles of rot, for Vec3_RotateSC */
+static void FXA_InvRotSC(const vec3_t *rot, vec3_t *c, vec3_t *s) {
+	X87_SinCos(-rot->x, &s->x, &c->x);
+	X87_SinCos(-rot->y, &s->y, &c->y);
+	X87_SinCos(-rot->z, &s->z, &c->z);
+}
+
+void __thiscall cObjElementFXKill_Start(cObjElementFXKill *self, cEntity *e) {
+	vec3_t center, rot, c, s, tmp, rel;
+	vec3_t pts[FXKILL_POINTS];
+
+	self->ent = e;
+	CGameModel *m = FXA_Model(e);
+	CGameModel_GetPos(m, &center);
+	CGameModel_GetRot(m, &rot);
+	float scale = FX_Vtbl(self->ent)->GetRadius(self->ent) / 90.0f;
+	CGameModel_Vertices(m, pts, NULL, NULL, FXKILL_POINTS, -1, self->vertex, 0xffffffffu, NULL);
+	FXA_InvRotSC(&rot, &c, &s);
+	for (int i = 0; i < FXKILL_POINTS; i++) {
+		rel.x = pts[i].x - center.x;
+		rel.y = pts[i].y - center.y;
+		rel.z = pts[i].z - center.z;
+		self->point[i] = *Vec3_RotateSC(&tmp, &rel, &c, &s);
+		self->scale[i] = FXA_Rand(15.0, 60.0) * scale;
+		self->f7c8[i] = FXA_Rand(100.0, 525.0);
+		self->f69c[i] = FXA_Rand(30.0, 105.0);
+	}
+}
+
+void __thiscall cObjElementFXDTritusAttack_Start(cObjElementFXDTritusAttack *self, cEntity *e) {
+	vec3_t center, rot, c, s, tmp, rel;
+	vec3_t pts[FXDTRITUSATTACK_POINTS];
+
+	self->ent = e;
+	CGameModel *m = FXA_Model(e);
+	CGameModel_GetPos(m, &center);
+	CGameModel_GetRot(m, &rot);
+	self->nodeMaster = CGameModel_FindNodoR(m, "R_Detritus_Tronco");
+	CHECK(self->nodeMaster > -1);
+	CGameModel_Vertices(m, &center, NULL, NULL, 1, 0, NULL, (uint32_t)self->nodeMaster, NULL);
+	CGameModel_Vertices(m, pts, NULL, NULL, FXDTRITUSATTACK_POINTS, -1, self->vertex, 0xffffffffu, NULL);
+	FXA_InvRotSC(&rot, &c, &s);
+	for (int i = 0; i < FXDTRITUSATTACK_POINTS; i++) {
+		rel.x = pts[i].x - center.x;
+		rel.y = pts[i].y - center.y;
+		rel.z = pts[i].z - center.z;
+		self->point[i] = *Vec3_RotateSC(&tmp, &rel, &c, &s);
+		self->fa24[i] = FXA_Rand(15.0, 40.0);
+		self->fed4[i] = FXA_Rand(50.0, 375.0);
+		self->fc7c[i] = FXA_Rand(10.0, 25.0);
+	}
+}
+
+void __thiscall cObjElementFXFunctionarySpecialAction_Start(void *self, cEntity *e) {
+	cObjElementFXFunctionarySpecialAction *s = self;
+	vec3_t v, rot, out, pos;
+
+	s->ent = e;
+	CHECK(s->ent);
+	CHECK(s->ent->vftable->IsType(s->ent, TYEN_WALKCHAR));
+	CGameModel *m = FX_Vtbl(s->ent)->GetModel(s->ent);
+	CHECK(CGameModel_IsLoaded(m));
+	if (!g_FXFunctionaryInit) {
+		g_FXFunctionaryInit = 1;
+		float r = CGameModel_Radius(m) * 0.8f;
+		float step = (r + r) * 0.0625f;
+		float up = r * 0.1f;
+		for (int i = 0; i < FXFUNCTIONARY_TRAILS; i++) {
+			float side = (i & 1) ? -20.0f : 20.0f;
+			v.x = ((crt_rand() & 1) ? 1.0f : 1.5f) * side;
+			v.y = (float)(i & ~1) * step - r;
+			v.z = up;
+			const vec3_t *p = Vec3_Rotate(&out, &v, CGameModel_GetRot(m, &rot));
+			const vec3_t *q = CGameModel_GetPos(m, &pos);
+			CGameModel_ClosestVertex(m, p->x + q->x, q->y + p->y, q->z + p->z, &s->pos[i],
+				&g_FXFunctionaryVertex[i], 0xffffffffu);
+		}
+	}
+	for (int i = 0; i < FXFUNCTIONARY_TRAILS; i++) {
+		uint32_t g = (uint32_t)(crt_rand() % 24 + 0x92) << 8;
+		uint32_t r = (uint32_t)(crt_rand() % 24 + 0x92) << 16;
+		g_FXFunctionaryColor[i] = (uint32_t)(crt_rand() % 24 + 0x92) | r | g;
+		CGameModel_Vertices(m, &s->pos[i], NULL, NULL, 1, g_FXFunctionaryVertex[i], NULL, 0xffffffffu, NULL);
+	}
+}
+
+/* the ramps of the particles (9 colors each) */
+#define FXA_RAMP_BETTY 0x4307d0
+#define FXA_RAMP_GEAR 0x4305d8		/* [3] */
+
+/* p moved by a random direction (FX_RandomDir) times r */
+static void FXA_Jitter(vec3_t *p, float r) {
+	vec3_t tmp;
+	const vec3_t *d = FX_RandomDir(&tmp);
+
+	p->x = r * d->x + p->x;
+	p->y = p->y + d->y * r;
+	p->z = p->z + d->z * r;
+}
+
+void __thiscall cObjElementFXBettyAttack_Emit(cObjElementFXBettyAttack *self, float x, float y, float z) {
+	CGameParticles *sp = &self->particles;
+	vec3_t v, ang, out;
+
+	CHECK(self->ent);
+	self->pos.x = x;
+	self->pos.y = y;
+	self->pos.z = z;
+	sp->birthRate = 0;
+	CGameParticles_Apply(sp);
+	sp->rotIni = 0.0f;
+	sp->rotEnd = 0.0f;
+	sp->rotVar = 0.0f;
+	float life = FXA_Rand((double)0.04000002f, (double)0.7f);
+	sp->sizeLife = 1.0f;
+	sp->spriteIni = 5;
+	sp->spriteEnd = 5;
+	sp->lifeTime = life;
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, Game_Ptr(FXA_RAMP_BETTY));
+	float a = -3.14159274f;
+	do {
+		float b = -3.14159274f;
+		do {
+			ang = (vec3_t){ a, b, 0.0f };
+			v = (vec3_t){ 0.0f, -1.0f, 0.0f };
+			Vec3_Rotate(&out, &v, &ang);
+			float r1 = (float)(FXA_Rnd() * 4.0 - 2.0);
+			float r2 = (float)(FXA_Rnd() * 4.0 - 2.0);
+			float r3 = (float)(FXA_Rnd() * 4.0 - 2.0);
+			sp->initPosMin.z = r1 + (out.z * 15.0f + self->pos.z);
+			sp->initPosMin.x = r3 + (self->pos.x + out.x * 15.0f);
+			sp->initPosMin.y = r2 + (out.y * 15.0f + self->pos.y);
+			sp->initPosMax = sp->initPosMin;
+			sp->initVelMin.x = out.x * 150.0f;
+			sp->initVelMin.y = out.y * 150.0f;
+			sp->initVelMin.z = out.z * 150.0f;
+			sp->initVelMax = sp->initVelMin;
+			float k = FXA_Rand((double)0.050000012f, (double)0.45f);
+			sp->initAccMin.x = k * -sp->initVelMin.x;
+			sp->initAccMin.y = k * -sp->initVelMin.y;
+			sp->initAccMin.z = k * -sp->initVelMin.z;
+			sp->initAccMax = sp->initAccMin;
+			sp->sizeIni = FXA_Rand((double)0.099999964f, (double)0.8f) * 190.0f;
+			sp->sizeEnd = FXA_Rand((double)0.099999964f, (double)0.8f) * 265.0f;
+			CGameParticles_Apply(sp);
+			CGameParticles_EmitN(sp, 1, 0);
+			b = b + 1.04719758f;
+		} while (3.14159274f > b);
+		a = a + 1.04719758f;
+	} while (3.14159274f > a);
+}
+
+void __fastcall cObjElementFXMessengerTakeDataPack_Start(cObjElementFXMessengerTakeDataPack *self) {
+	vec3_t ang, t1, t2, o1, o2, p0, d;
+
+	CHECK(CGameModel_IsLoaded(FX_Vtbl(self->owner)->GetModel(self->owner)));
+	CHECK(CGameModel_IsLoaded(FX_Vtbl(self->item)->GetModel(self->item)));
+	for (int i = 0; i < FXDATAPACK_TRAILS; i++) {
+		ang = (vec3_t){ 0.0f, (float)i * 26.0f - 50.0f, 0.0f };
+		const vec3_t *a = Vec3_Rotate(&o1, &ang, FX_Vtbl(self->owner)->GetAngles(self->owner, &t1));
+		const vec3_t *c = FX_Vtbl(self->owner)->GetCenter(self->owner, &t2);
+		p0.x = c->x + a->x;
+		p0.y = c->y + a->y;
+		p0.z = c->z + a->z;
+		ang = (vec3_t){ 0.0f, (float)i * 33.0f - 50.0f, 0.0f };
+		const vec3_t *b = Vec3_Rotate(&o2, &ang, FX_Vtbl(self->item)->GetAngles(self->item, &t1));
+		c = FX_Vtbl(self->item)->GetCenter(self->item, &t2);
+		d.x = (b->x + c->x) - p0.x;
+		d.y = (c->y + b->y) - p0.y;
+		d.z = (c->z + b->z) - p0.z;
+		self->width[i] = FXA_Rand((double)0.6f, 1.0);
+		d.x = d.x * 0.5f;
+		d.y = d.y * 0.5f;
+		d.z = d.z * 0.5f;
+		for (int k = 0; k < FXDATAPACK_POINTS; k++) {
+			vec3_t *p = &self->points[i][k];
+			p->x = d.x * (float)k + p0.x;
+			p->y = d.y * (float)k + p0.y;
+			p->z = d.z * (float)k + p0.z;
+			if (k == 1) {
+				FXA_Jitter(p, FXA_Rand(20.0, 25.0));
+				if (crt_rand() % 4 == 0) {
+					FXA_Jitter(p, FXA_Rand(50.0, 35.0));
+				}
+			}
+		}
+	}
+}
+
+void __thiscall cObjElementFXMessengerAttack_SetLine(cObjElementFXMessengerAttack *self, float fx, float fy, float fz,
+	float tx, float ty, float tz) {
+	vec3_t coefs[FXMESSENGER_POINTS];
+	vec3_t p, q, d;
+	CColisTri tri;
+	int i, k;
+
+	self->from = (vec3_t){ fx, fy, fz };
+	self->to = (vec3_t){ tx, ty, tz };
+	self->dir = FXA_Dir(&self->from, &self->to);
+	d.x = self->to.x - self->from.x;
+	d.y = self->to.y - self->from.y;
+	d.z = self->to.z - self->from.z;
+	self->width[0] = FXA_Rand((double)0.5999999f, (double)2.2f);
+	d.x = d.x * 0.111111112f;
+	d.y = d.y * 0.111111112f;
+	d.z = d.z * 0.111111112f;
+	for (k = 0; k < FXMESSENGER_POINTS; k++) {
+		vec3_t *r = &self->lines[0][k];
+		r->x = d.x * (float)k + self->from.x;
+		r->y = d.y * (float)k + self->from.y;
+		r->z = d.z * (float)k + self->from.z;
+		if ((unsigned)(k - 1) <= 7) {
+			FXA_Jitter(r, FXA_Rand(20.0, 25.0));
+			if (crt_rand() % 4 == 0) {
+				FXA_Jitter(r, FXA_Rand(80.0, 45.0));
+			}
+		}
+	}
+	CGameTrail_BezierCoefs(&self->trails[0], FXMESSENGER_POINTS, self->lines[0], coefs);
+	for (i = 0; i < FXMESSENGER_LINES; i++) {
+		self->width[1 + i] = FXA_Rand((double)0.39999998f, (double)1.1f);
+		CGameTrail_BezierPoint(&self->trails[0], FXMESSENGER_POINTS, coefs, &p,
+			FXA_Rand((double)0.84999996f, (double)0.1f));
+		float r = FXA_Rand(180.0, 175.0);
+		vec3_t tmp;
+		const vec3_t *dir = FX_RandomDir(&tmp);
+		q.x = p.x + r * dir->x;
+		q.y = p.y + dir->y * r;
+		q.z = p.z + dir->z * r;
+		Engine_TestLine(&p, &q, &q, &tri);
+		d.x = (q.x - p.x) * 0.111111112f;
+		d.y = (q.y - p.y) * 0.111111112f;
+		d.z = (q.z - p.z) * 0.111111112f;
+		for (k = 0; k < FXMESSENGER_POINTS; k++) {
+			vec3_t *l = &self->lines[1 + i][k];
+			l->x = p.x + d.x * (float)k;
+			l->y = p.y + d.y * (float)k;
+			l->z = p.z + d.z * (float)k;
+			if ((unsigned)(k - 1) <= 7) {
+				FXA_Jitter(l, FXA_Rand(10.0, 15.0));
+				if (crt_rand() % 4 == 0) {
+					FXA_Jitter(l, FXA_Rand(80.0, 65.0));
+				}
+			}
+		}
+	}
+}
+
+void __thiscall cObjElementFXPoliceGearConversion_Start(cObjElementFXPoliceGearConversion *self, cEntity *e) {
+	CGameParticles *sp = &self->particles;
+	vec3_t t, v, ang, out, base;
+	int i;
+
+	self->ent = e;
+	CGameModel *m = FXA_Model(e);
+	self->nodeRoot = CGameModel_FindNodoR(m, "R_Police-NoArmr_tronco-inferior");
+	CHECK(self->nodeRoot > -1);
+	for (i = 0; i < FXGEAR_ARMORS; i++) {
+		CGameModel *a = &self->armor[i];
+		CGameModel_SetPos(a, CGameModel_GetPos(FX_Vtbl(self->ent)->GetModel(self->ent), &t));
+		CGameModel_SetRot(a, CGameModel_GetRot(FX_Vtbl(self->ent)->GetModel(self->ent), &t));
+		CGameModel_SetSortZ(a, (float)(FXGEAR_ARMORS - i) / 10.0f - 76.0f, 0.0f);
+		CGameModel_Enable(a);
+		CGameModel_SetAnimSpeed(a, self->anim[i], 0.0f);
+		CGameModel_SetAnimLoop(a, self->anim[i], 0);
+		CGameModel_SetAnimFactor(a, self->anim[i], 1.0f);
+		CGameModel_SetAnim(a, self->anim[i], 0, 0);
+		CGameModel_SetEffect(a, 3);
+		CGameModel_SetEffectParam(a, 0, 0x3f800000);
+	}
+	if (!CGameModel_IsVisible(m)) {
+		return;
+	}
+	float h = Entity_F45C(self->ent);
+	const vec3_t *c = FX_Vtbl(self->ent)->GetCenter(self->ent, &t);
+	base.x = (c->x - 0.0f) + 0.0f;
+	base.y = (c->y - h) + 15.0f;
+	base.z = (c->z - 0.0f) + 0.0f;
+	/* the smoke ring */
+	for (i = 0; i < 6; i++) {
+		ang = (vec3_t){ 0.0f, FXA_Rand((double)6.28318548f, 0.0), 0.0f };
+		v = (vec3_t){ 1.0f, 0.0f, 0.0f };
+		Vec3_Rotate(&out, &v, &ang);
+		float r = FXA_Rand(35.0, 10.0);
+		sp->initPosMin.x = base.x + out.x * r;
+		sp->initPosMin.y = base.y + out.y * r;
+		sp->initPosMin.z = base.z + out.z * r;
+		sp->initPosMax = sp->initPosMin;
+		sp->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		sp->initVelMax = sp->initVelMin;
+		sp->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		sp->initAccMax = sp->initAccMin;
+		sp->sizeIni = FXA_Rand(20.0, 45.0);
+		sp->sizeEnd = FXA_Rand(110.0, 325.0);
+		float life = FXA_Rand((double)0.050000012f, 0.25);
+		sp->sizeLife = 0.2f;
+		sp->lifeTime = life;
+		sp->rotIni = sp->rotEnd = FXA_Rand((double)6.28318548f, 0.0);
+		float rv = (float)(FXA_Rnd() * (double)0.5235988f - (double)0.2617994f);
+		sp->spriteIni = 6;
+		sp->spriteEnd = 6;
+		sp->rotVar = rv;
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FXA_RAMP_GEAR) + crt_rand() % 3 * 9);
+		CGameParticles_EmitDt(sp, 1, 1, FXA_Rand((double)0.02f, 0.0) + 0.6f);
+	}
+	/* the sparks around */
+	float a = 0.0f;
+	do {
+		ang = (vec3_t){ 0.0f, a, 0.0f };
+		v = (vec3_t){ 1.0f, 0.0f, 0.0f };
+		Vec3_Rotate(&out, &v, &ang);
+		float r = FXA_Rand(10.0, 10.0);
+		sp->initPosMin.x = base.x + out.x * r;
+		sp->initPosMin.y = base.y + out.y * r;
+		sp->initPosMin.z = base.z + out.z * r;
+		sp->initPosMax = sp->initPosMin;
+		float s = FXA_Rand(50.0, 725.0);
+		sp->initVelMin.x = out.x * s;
+		sp->initVelMin.y = out.y * s;
+		sp->initVelMin.z = out.z * s;
+		sp->initVelMax = sp->initVelMin;
+		float up = FXA_Rand(60.0, 125.0);
+		float k = FXA_Rand((double)0.019999996f, (double)0.2f);
+		sp->initAccMin.y = -sp->initVelMin.y * k + up;
+		sp->initAccMin.x = -sp->initVelMin.x * k + 0.0f;
+		sp->initAccMin.z = -sp->initVelMin.z * k + 0.0f;
+		sp->initAccMax = sp->initAccMin;
+		sp->sizeIni = FXA_Rand(10.0, 35.0);
+		sp->sizeEnd = FXA_Rand(10.0, 345.0);
+		float life = FXA_Rand((double)0.030000031f, (double)0.53f);
+		sp->sizeLife = 1.0f;
+		sp->lifeTime = life;
+		sp->rotIni = sp->rotEnd = FXA_Rand((double)6.28318548f, 0.0);
+		float rv = (float)(FXA_Rnd() * (double)0.5235988f - (double)0.2617994f);
+		sp->spriteIni = 2;
+		sp->spriteEnd = 2;
+		sp->rotVar = rv;
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FXA_RAMP_GEAR) + (crt_rand() & 1) * 9);
+		CGameParticles_EmitDt(sp, 1, 1, FXA_Rand((double)0.01f, (double)0.01f) + 0.6f);
+		a = a + 0.157079637f;
+	} while (6.28318548f > a);
+}
+
+/* ---- Update (vf01) ---- */
+
+static inline float FXA_Delta(void) {
+	return cTimer_GetDelta(&g_pWorld->timer);
+}
+
+/* an entity that is deleted or off is let go */
+static inline void FXA_Keep(cEntity **e) {
+	if (*e && (Entity_Removed(*e) || !(*e)->flag_4c)) {
+		*e = NULL;
+	}
+}
+
+/* the debris at the model of the character, seen when it is */
+static void FXA_FollowModel(cDebris *d, CGameModel *m, vec3_t *pos, vec3_t *rot, float sortBias) {
+	CGameModel_GetPos(m, pos);
+	CGameModel_GetRot(m, rot);
+	CGameModel_SetPos(Debris_Model(d), pos);
+	CGameModel_SetRot(Debris_Model(d), rot);
+	CGameModel_SetSortZ(Debris_Model(d), sortBias, 0.0f);
+	if (CGameModel_IsVisible(m)) {
+		CGameModel_Enable(Debris_Model(d));
+	} else {
+		CGameModel_Disable(Debris_Model(d));
+	}
+}
+
+/* the beams of BettyKill, DTritusKill and DTritusAttack: n points of the model (in its space, turned by rot and moved
+ * to pos), each a beam of length len (moving to lenTarget plus a random -75..75 by step) turned by beamRot, 15 beams a
+ * trail; the alpha fades in over 0..fadeIn of the time, or out at the start (0..fadeOut) */
+typedef struct FXBeams {
+	CGameParticles *sp;
+	CGameTrail *trails;
+	int numTrails;
+	int n;
+	const vec3_t *point;
+	float *len;
+	const float *lenTarget;
+	const float *width;
+	const vec3_t *beamRot;
+	float step;
+	float fadeIn;
+	float fadeOut;
+	uint32_t inner;
+	uint32_t outer;
+	uint32_t rgb;
+} FXBeams;
+
+static void FXBeams_Draw(const FXBeams *b, float time, float dt, const vec3_t *pos, const vec3_t *rot) {
+	vec3_t o1, o2, v, w, q;
+	float f1, f2;
+
+	FX_InRange(time, 0.0f, b->fadeIn, &f1);
+	float s = (3.0f - f1 * 2.0f) * (f1 * f1);
+	int alpha = (int)((3.0f - (s + s)) * (s * s) * 255.0f);
+	if (FX_InRange(time, 0.0f, b->fadeOut, &f2)) {
+		alpha = 0xff - (int)(f2 * 255.0f);
+	}
+	for (int k = 0; k < b->numTrails; k++) {
+		CGameTrail_Reset(&b->trails[k]);
+		CGameTrail_SetTransp(&b->trails[k], (byte)alpha);
+	}
+	CGameParticles *sp = b->sp;
+	sp->birthRate = 0;
+	CGameParticles_Apply(sp);
+	int t = 0, cnt = 0;
+	for (int i = 0; i < b->n; i++) {
+		if (t >= b->numTrails) {
+			continue;
+		}
+		float r = (float)(FXA_Rnd() * 150.0 - 75.0);
+		Float_Approach(&b->len[i], b->lenTarget[i] + r, dt * b->step);
+		const vec3_t *a = Vec3_Rotate(&o1, &b->point[i], rot);
+		w.x = a->x + pos->x;
+		w.y = a->y + pos->y;
+		w.z = a->z + pos->z;
+		v = (vec3_t){ 0.0f, 0.0f, b->len[i] };
+		const vec3_t *e = Vec3_Rotate(&o2, &v, b->beamRot ? b->beamRot : rot);
+		q.x = e->x + w.x;
+		q.y = e->y + w.y;
+		q.z = e->z + w.z;
+		float width = b->width[i];
+		CGameTrail_Add(&b->trails[t], w, width, b->inner);
+		CGameTrail_Add(&b->trails[t], q, width, b->outer);
+		CGameParticles_SetParticle(sp, i, w.x, w.y, w.z, width * 1.5f, (uint32_t)alpha << 24 | b->rgb, 2, 0.0f);
+		if (++cnt >= 15) {
+			cnt = 0;
+			t++;
+		}
+	}
+}
+
+/* BettyKill and DTritusKill: the sort bias, the end of the fade out and the colors */
+static void FXKill_Update(cObjElementFXKill *self, cDebris *d, float sortBias, float fadeOut, uint32_t inner,
+	uint32_t outer, uint32_t rgb) {
+	vec3_t pos, rot;
+
+	FXA_Keep(&self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	FXA_FollowModel(d, m, &pos, &rot, sortBias);
+	float dt = FXA_Delta();
+	self->fbc = self->fbc + dt;
+	self->fb8 = self->fb8 + dt;
+	FXBeams b = { &self->particles, self->trails, FXKILL_TRAILS, FXKILL_POINTS, self->point, self->f69c, self->f7c8,
+		self->scale, &self->angles, 12000.0f, 0.84f, fadeOut, inner, outer, rgb };
+	FXBeams_Draw(&b, self->fbc, dt, &pos, &rot);
+}
+
+void __thiscall cObjElementFXBettyKill_Update(cObjElementFXKill *self, cDebris *d, float dt) {
+	(void)dt;
+	FXKill_Update(self, d, -88.0f, 0.28f, 0x40f54019, 0xffe1190a, 0xf54019);
+}
+
+void __thiscall cObjElementFXDTritusKill_Update(cObjElementFXKill *self, cDebris *d, float dt) {
+	(void)dt;
+	FXKill_Update(self, d, -77.0f, 0.02f, 0x401940f5, 0xff0a19e1, 0x1940f5);
+}
+
+void __thiscall cObjElementFXBankMasterAttack_Update(cObjElementFXBankMasterAttack *self, cDebris *d, float dt) {
+	vec3_t pos, rot, base, v, ang, o1, o2, p;
+	matrix_t mtx;
+
+	FXA_Keep(&self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	const matrix_t *mm = CGameModel_NodoMatrix(m, &mtx, (uint32_t)self->nodeBaton, 1, NULL, 0);
+	base.x = mm->m[12];
+	base.y = mm->m[13];
+	base.z = mm->m[14];
+	CGameModel_SetPos(Debris_Model(d), &base);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	float delta = FXA_Delta();
+	self->fbc = delta + self->fbc;
+	self->fb8 = delta + self->fb8;
+	float layer = 0.0f;
+	void *ctrl = WithLife_Vtbl(self->ent)->GetActCtrl(self->ent);
+	byte action = 0;
+	if (ctrl) {
+		action = cActCtrl_IsActive(ctrl, "Action");
+		layer = *cActCtrl_GetLayer(ctrl, 0) / 1.33f;
+	}
+	if (!action) {
+		self->t = dt + self->t;
+	}
+	if (self->t > 0.5f) {
+		CGameTrail_Clear(&self->trail);
+		CGameTrail_Clear(&self->trail2);
+		return;
+	}
+	float f = 1.0f - (self->t + self->t);
+	uint32_t c = (uint32_t)(int)(f * 255.0f);
+	uint32_t blue = (uint32_t)(int)(f * 106.0f);
+	uint32_t rgb = ((c << 8 | c) << 8 | blue) & 0xffffff;
+	uint32_t color = rgb | 0x5c000000;
+	CGameTrail_Reset(&self->trail);
+	CGameTrail_Add(&self->trail, base, 1.0f, color);
+	CGameTrail_Reset(&self->trail2);
+	layer = layer * 25.1327419f;
+	for (int i = 0; i < 14; i++) {
+		float q = (float)i / 13.0f;
+		ang = (vec3_t){ 0.0f, 0.0f, q * 2.51327419f - layer };
+		v = (vec3_t){ 0.0f, 67.0f, 0.0f };
+		const vec3_t *r = Vec3_Rotate(&o2, Vec3_Rotate(&o1, &v, &ang), &rot);
+		p.x = r->x + base.x;
+		p.y = r->y + base.y;
+		p.z = r->z + base.z;
+		uint32_t pc = (uint32_t)(0x20 - (int)(q * -223.0f)) << 24 | rgb;
+		CGameTrail_Add(&self->trail, p, 1.0f, pc);
+		CGameTrail_Add(&self->trail2, p, 6.0f, pc);
+	}
+	CGameTrail_Add(&self->trail, base, 1.0f, color);
+}
+
+void __thiscall cObjElementFXBertoAttack_Update(cObjElementFXBertoAttack *self, cDebris *d, float dt) {
+	vec3_t pos, rot, avg;
+	vec3_t pts[32];
+	float f;
+
+	FXA_Keep(&self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), -81.0f, 0.0f);
+	float delta = FXA_Delta();
+	self->fbc = delta + self->fbc;
+	self->fb8 = delta + self->fb8;
+	int alpha = 0;
+	if (FX_InRange(self->fbc, 0.0f, 0.6f, &f)) {
+		alpha = 0xff - (int)(f * 255.0f);
+	}
+	if (0.95f > Debris_Life(d)) {
+		FX_InRange(Debris_Life(d) - dt, 0.0f, 1.0f, &f);
+		alpha = 0xff - (int)(f * 255.0f);
+	}
+	CGameParticles *sp = &self->particles;
+	sp->birthRate = 0;
+	CGameParticles_Apply(sp);
+	CGameModel_Vertices(m, pts, NULL, NULL, 32, -1, NULL, (uint32_t)self->nodeCristal, NULL);
+	uint32_t color = (uint32_t)alpha << 24 | 0xc08040;
+	avg = pts[0];
+	for (int i = 0; i < 32; i++) {
+		CGameParticles_SetParticle(sp, i, pts[i].x, pts[i].y, pts[i].z, FXA_Rand(10.0, 35.0) * 1.5f, color, 2, 0.0f);
+		avg.z = (pts[i].z - avg.z) * 0.5f + avg.z;
+		avg.x = (pts[i].x - avg.x) * 0.5f + avg.x;
+		avg.y = (pts[i].y - avg.y) * 0.5f + avg.y;
+	}
+	CGameParticles_SetParticle(sp, 32, avg.x, avg.y, avg.z, FXA_Rand(100.0, 250.0), color, 5, 0.0f);
+	CGameParticles_SetParticle(sp, 33, avg.x, avg.y, avg.z, FXA_Rand(50.0, 150.0), color, 2, 0.0f);
+}
+
+void __thiscall cObjElementFXDTritusAttack_Update(cObjElementFXDTritusAttack *self, cDebris *d, float dt) {
+	vec3_t pos, rot;
+
+	(void)dt;
+	FXA_Keep(&self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), -78.0f, 0.0f);
+	float delta = FXA_Delta();
+	self->fbc = delta + self->fbc;
+	self->fb8 = delta + self->fb8;
+	CGameModel_Vertices(m, &pos, NULL, NULL, 1, 0, NULL, (uint32_t)self->nodeMaster, NULL);
+	FXBeams b = { &self->particles, self->trails, FXDTRITUSATTACK_TRAILS, FXDTRITUSATTACK_POINTS, self->point,
+		self->fc7c, self->fed4, self->fa24, NULL, 2000.0f, 0.72f, 0.1f, 0x40f54019, 0xffe1190a, 0xf54019 };
+	FXBeams_Draw(&b, self->fbc, delta, &pos, &rot);
+}
+
+#define FXA_RAMP_POLICESTEAL 0x4307ac
+
+void __thiscall cObjElementFXPoliceSteal_Update(cObjElementFXPoliceSteal *self, cDebris *d, float dt) {
+	vec3_t tmp, a, b, v, ang, dir;
+
+	(void)dt;
+	FXA_Keep(&self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		return;
+	}
+	FXA_Keep(&self->target);
+	if (!self->target || !self->target->flag_4c) {
+		return;
+	}
+	if (0.65f > Debris_Life(d)) {
+		return;
+	}
+	CGameModel_SetPos(Debris_Model(d), FX_Vtbl(self->ent)->GetCenter(self->ent, &tmp));
+	CGameModel_SetRot(Debris_Model(d), FX_Vtbl(self->ent)->GetAngles(self->ent, &tmp));
+	float t = self->fbc + FXA_Delta();
+	self->fbc = t;
+	if (0.04f > t) {
+		return;
+	}
+	self->fbc = 0.0f;
+	FX_Vtbl(self->target)->GetCenter(self->target, &b);
+	FX_Vtbl(self->ent)->GetCenter(self->ent, &a);
+	float az = FXA_Rand((double)6.28318548f, 0.0);
+	float ay = FXA_Rand((double)6.28318548f, 0.0);
+	v = (vec3_t){ 1.0f, 1.0f, 1.0f };
+	ang.x = FXA_Rand((double)6.28318548f, 0.0);
+	ang.y = ay;
+	ang.z = az;
+	Vec3_Rotate(&dir, &v, &ang);
+	float life = FXA_Rand((double)0.19999999f, (double)0.45f);
+	CGameParticles *sp = &self->particles;
+	CGameParticles_SetSparksOn(sp, 0);
+	sp->birthRate = 0;
+	float hi = FX_Vtbl(self->target)->GetRadius(self->target) * 0.5f;
+	float lo = FX_Vtbl(self->target)->GetRadius(self->target) * 0.25f;
+	float r = Rand_FloatRange(lo, hi);
+	sp->initPosMin.x = b.x + dir.x * r;
+	sp->initPosMin.y = b.y + dir.y * r;
+	sp->initPosMin.z = b.z + dir.z * r;
+	sp->initPosMax = sp->initPosMin;
+	hi = FX_Vtbl(self->ent)->GetRadius(self->ent) * 0.5f;
+	lo = FX_Vtbl(self->ent)->GetRadius(self->ent) * 0.25f;
+	r = Rand_FloatRange(lo, hi);
+	float inv = 1.0f / life;
+	sp->initVelMin.x = ((a.x + dir.x * r) - sp->initPosMin.x) * inv;
+	sp->initVelMin.y = ((a.y + dir.y * r) - sp->initPosMin.y) * inv;
+	sp->initVelMin.z = ((a.z + dir.z * r) - sp->initPosMin.z) * inv;
+	sp->initVelMax = sp->initVelMin;
+	sp->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	sp->initAccMax = sp->initAccMin;
+	sp->lifeTime = life;
+	sp->sizeLife = 1.0f;
+	sp->sizeIni = sp->sizeEnd = FXA_Rand(5.0, 35.0);
+	sp->rotIni = sp->rotEnd = FXA_Rand((double)6.28318548f, 0.0);
+	sp->rotVar = (float)(FXA_Rnd() * (double)0.785398185f - (double)0.392699093f);
+	byte sprite = (byte)(crt_rand() % 7 + 1);
+	sp->spriteIni = sprite;
+	sp->spriteEnd = sprite + 8;
+	CGameParticles_Apply(sp);
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, Game_Ptr(FXA_RAMP_POLICESTEAL));
+	CGameParticles_EmitN(sp, 1, 0);
+}
+
+void __thiscall cObjElementFXSebastianFlash_Update(cObjElementFXSebastianFlash *self, cDebris *d, float dt) {
+	vec3_t pos, rot, tmp, D, p1, p2, e, base;
+	float f;
+	int alpha;
+
+	(void)dt;
+	FXA_Keep(&self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), -82.0f, 0.0f);
+	float delta = FXA_Delta();
+	float time = delta + self->fbc;
+	self->fb8 = delta + self->fb8;
+	self->fbc = time;
+	if (0.1f > time) {
+		FX_InRange(time, 0.0f, 0.1f, &f);
+		float g = 1.0f - f;
+		alpha = (int)(g * g * (2.0f - g) * 255.0f);
+	} else if (1.3f > time) {
+		alpha = 0;
+	} else if (1.5f > time) {
+		FX_InRange(time, 1.3f, 1.5f, &f);
+		alpha = (int)((3.0f - f * 2.0f) * (f * f) * 255.0f);
+	} else {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	for (int k = 0; k < FXSEBASTIAN_TRAILS; k++) {
+		CGameTrail_Reset(&self->trails[k]);
+		CGameTrail_SetTransp(&self->trails[k], (byte)alpha);
+	}
+	CGameParticles *sp = &self->particles;
+	sp->birthRate = 0;
+	CGameParticles_Apply(sp);
+	const vec3_t *c = FX_Vtbl(self->ent)->GetCenter(self->ent, &tmp);
+	base.x = c->x + 0.0f;
+	base.y = c->y + 18.0f;
+	base.z = c->z + 0.0f;
+	int t = 0, cnt = 0;
+	for (int i = 0; i < FXSEBASTIAN_POINTS; i++) {
+		if (t >= FXSEBASTIAN_TRAILS) {
+			continue;
+		}
+		D = *FX_RandomDir(&tmp);
+		float r1 = (float)(FXA_Rnd() + 0.0);
+		p1.x = (self->dir[i].x + base.x) + r1 * D.x;
+		p1.y = (self->dir[i].y + base.y) + r1 * D.y;
+		p1.z = (base.z + self->dir[i].z) + r1 * D.z;
+		double rr = FXA_Rnd();
+		float r2 = (float)(rr + rr + 0.0);
+		e.x = r2 * D.x;
+		e.y = r2 * D.y;
+		e.z = r2 * D.z;
+		float up = FXA_Rand(80.0, 140.0);
+		p2.y = self->dir2[i].y + (up + base.y) + e.y;
+		p2.x = self->dir2[i].x + (base.x + 0.0f) + e.x;
+		p2.z = self->dir2[i].z + (base.z + 0.0f) + e.z;
+		uint32_t a = (uint32_t)(crt_rand() % 32 + 0xc4);
+		rr = FXA_Rnd();
+		float w = (float)(rr + rr - 1.0) + 12.0f;
+		uint32_t g = (uint32_t)(crt_rand() % 20 + 0x7d) << 8;
+		uint32_t rb = (uint32_t)(crt_rand() % 10 + 0x96) << 16 | g;
+		CGameTrail_Add(&self->trails[t], p1, w, (uint32_t)(crt_rand() % 30 + 0x3c) | a << 24 | rb);
+		uint32_t r = ((uint32_t)(crt_rand() % 10 - 0x6a) | 0xffffff00u) << 16;
+		r = (uint32_t)(crt_rand() % 20 + 0x7d) << 8 | r;
+		CGameTrail_Add(&self->trails[t], p2, w * 4.0f, (uint32_t)(crt_rand() % 30 + 0x3c) | r);
+		if (++cnt >= 15) {
+			cnt = 0;
+			t++;
+		}
+	}
+	uint32_t color = (uint32_t)alpha << 24 | 0xc08040;
+	CGameParticles_SetParticle(sp, 0, base.x, base.y, base.z, FXA_Rand(50.0, 250.0), color, 5, 0.0f);
+	CGameParticles_SetParticle(sp, 1, base.x, base.y, base.z, FXA_Rand(50.0, 100.0), color, 2, 0.0f);
+}
+
+void __thiscall cObjElementFXBertoFlash_Update(cObjElementFXBertoFlash *self, cDebris *d, float dt) {
+	vec3_t pos, rot, tmp, tmp2, D, p1, p2, e, base;
+	float f, v;
+
+	(void)dt;
+	FXA_Keep(&self->ent);
+	if (!self->ent) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	FXA_Keep(&self->target);
+	if (!self->target) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), -82.0f, 0.0f);
+	float delta = FXA_Delta();
+	self->fc0 = self->fc0 + delta;
+	self->fbc = self->fbc + delta;
+	if (FX_InRange(self->fc0, 0.0f, 0.2f, &f)) {
+		float g = 1.0f - f;
+		v = g * g * (2.0f - g);
+	} else if (FX_InRange(self->fc0, 0.2f, 0.7f, &f)) {
+		v = (3.0f - f * 2.0f) * (f * f);
+	} else {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	int alpha = (int)(v * 255.0f);
+	for (int k = 0; k < FXBERTOFLASH_TRAILS; k++) {
+		CGameTrail_Reset(&self->trails[k]);
+		CGameTrail_SetTransp(&self->trails[k], (byte)alpha);
+	}
+	CGameParticles *sp = &self->particles;
+	sp->birthRate = 0;
+	CGameParticles_Apply(sp);
+	const vec3_t *c = FX_Vtbl(self->ent)->GetCenter(self->ent, &tmp);
+	base.x = c->x - 0.0f;
+	base.y = c->y - 15.0f;
+	base.z = c->z - 0.0f;
+	int t = 0, cnt = 0;
+	for (int i = 0; i < FXBERTOFLASH_POINTS; i++) {
+		if (t >= FXBERTOFLASH_TRAILS) {
+			continue;
+		}
+		D = *FX_RandomDir(&tmp);
+		float r = FXA_Rand(3.0, 3.0);
+		p1.x = (self->dir[i].x + base.x) + r * D.x;
+		p1.y = (self->dir[i].y + base.y) + r * D.y;
+		p1.z = (base.z + self->dir[i].z) + r * D.z;
+		float r2 = FXA_Rand(4.0, 4.0);
+		e.x = r2 * D.x;
+		e.y = r2 * D.y;
+		e.z = r2 * D.z;
+		const vec3_t *c2 = FX_Vtbl(self->target)->GetCenter(self->target, &tmp2);
+		p2.x = (self->dir2[i].x + c2->x) + e.x;
+		p2.y = (c2->y + self->dir2[i].y) + e.y;
+		p2.z = (c2->z + self->dir2[i].z) + e.z;
+		uint32_t a = (uint32_t)(crt_rand() % 64 + 0x20);
+		float w = (float)(FXA_Rnd() * 6.0 - 3.0) + 30.0f;
+		CGameTrail_Add(&self->trails[t], p1, w, a << 24 | 0xc08040);
+		CGameTrail_Add(&self->trails[t], p2, w + w, 0xffc08040);
+		if (++cnt >= 15) {
+			cnt = 0;
+			t++;
+		}
+	}
+	uint32_t color = (uint32_t)alpha << 24 | 0xc08040;
+	CGameParticles_SetParticle(sp, 0, base.x, base.y, base.z, FXA_Rand(50.0, 450.0), color, 5, 0.0f);
+	CGameParticles_SetParticle(sp, 1, base.x, base.y, base.z, FXA_Rand(50.0, 300.0), color, 2, 0.0f);
+}
+
+
+/* one of the three steal sounds other than the last one at the position of m (at without m); the new last one */
+static int FXA_StealSound(int last, CGameModel *m, const vec3_t *at) {
+	vec3_t pos;
+	const char *name;
+
+	int s = crt_rand() % 3;
+	if (s == last) {
+		s = (s + 1) % 3;
+	}
+	switch (s) {
+	case 0:
+		name = g_BankerSteal1Sound;
+		break;
+	case 1:
+		name = g_BankerSteal2Sound;
+		break;
+	case 2:
+		name = g_BankerSteal3Sound;
+		break;
+	default:
+		return s;
+	}
+	const CSoundSysVtbl *vt = g_pSound->vftable;
+	int vol = Snd_Volume(g_BankerStealSoundVol);
+	vt->PlayAt(g_pSound, name, m ? CGameModel_GetPos(m, &pos) : at, vol);
+	return s;
+}
+
+void __thiscall cObjElementFXBankerSteal_Update(cObjElementFXBankerSteal *self, cDebris *d, float dt) {
+	vec3_t tmp, a, b, off, src, tp, v, ang, dir;
+	matrix_t mtx;
+
+	(void)dt;
+	FXA_Keep(&self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		return;
+	}
+	FXA_Keep(&self->target);
+	if (!self->target || !self->target->flag_4c) {
+		return;
+	}
+	if (0.65f > Debris_Life(d)) {
+		return;
+	}
+	CGameModel *m = FX_Vtbl(self->ent)->GetModel(self->ent);
+	if (!CGameModel_IsLoaded(m)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(m));
+	CGameModel *mt = FX_Vtbl(self->target)->GetModel(self->target);
+	if (!CGameModel_IsLoaded(mt)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(mt));
+	CGameModel_SetPos(Debris_Model(d), CGameModel_GetPos(m, &tmp));
+	CGameModel_SetRot(Debris_Model(d), CGameModel_GetRot(m, &tmp));
+	self->time = self->time + FXA_Delta();
+	const vec3_t *pa = CGameModel_GetPos(mt, &a);
+	const vec3_t *pb = CGameModel_GetPos(m, &b);
+	float dy = pb->y - pa->y;
+	float dx = pb->x - pa->x;
+	float dz = pb->z - pa->z;
+	float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+	float x = (500.0f - dist) / 3000.0f;
+	float wait = 0.04f > x ? 0.04f : Float_MinSS(0.15f, x);
+	if (wait > self->time) {
+		return;
+	}
+	self->time = 0.0f;
+	off.x = g_BankerStealPosX;
+	off.y = g_BankerStealPosY;
+	off.z = g_BankerStealPosZ;
+	const vec3_t *r = Vec3_Rotate(&v, &off, CGameModel_GetRot(m, &tmp));
+	const vec3_t *p = CGameModel_GetPos(m, &b);
+	src.x = r->x + p->x;
+	src.y = p->y + r->y;
+	src.z = p->z + r->z;
+	CGameModel_GetPos(mt, &tp);
+	if (self->node != -1) {
+		const matrix_t *mm = CGameModel_NodoMatrix(m, &mtx, (uint32_t)self->node, 1, NULL, 0);
+		src.x = mm->m[12];
+		src.y = mm->m[13];
+		src.z = mm->m[14];
+	}
+	float az = FXA_Rand((double)6.28318548f, 0.0);
+	float ay = FXA_Rand((double)6.28318548f, 0.0);
+	ang.x = FXA_Rand((double)6.28318548f, 0.0);
+	ang.y = ay;
+	ang.z = az;
+	v = (vec3_t){ 1.0f, 1.0f, 1.0f };
+	Vec3_Rotate(&dir, &v, &ang);
+	float life = FXA_Rand((double)0.19999999f, (double)0.45f);
+	CGameParticles *sp = &self->particles;
+	CGameParticles_SetSparksOn(sp, 0);
+	sp->birthRate = 0;
+	float hi = FX_Vtbl(self->target)->GetRadius(self->target) * 0.5f;
+	float lo = FX_Vtbl(self->target)->GetRadius(self->target) * 0.25f;
+	float rr = Rand_FloatRange(lo, hi);
+	sp->initPosMin.x = tp.x + dir.x * rr;
+	sp->initPosMin.z = tp.z + dir.z * rr;
+	sp->initPosMin.y = tp.y + dir.y * rr;
+	sp->initPosMax = sp->initPosMin;
+	float inv = 1.0f / life;
+	sp->initVelMin.x = (src.x - sp->initPosMin.x) * inv;
+	sp->initVelMin.y = (src.y - sp->initPosMin.y) * inv;
+	sp->initVelMin.z = (src.z - sp->initPosMin.z) * inv;
+	sp->initVelMax = sp->initVelMin;
+	sp->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	sp->initAccMax = sp->initAccMin;
+	sp->lifeTime = life;
+	sp->sizeLife = 1.0f;
+	sp->sizeIni = sp->sizeEnd = FXA_Rand(5.0, 35.0);
+	sp->rotIni = sp->rotEnd = FXA_Rand((double)6.28318548f, 0.0);
+	sp->rotVar = (float)(FXA_Rnd() * (double)0.785398185f - (double)0.392699093f);
+	byte sprite = (byte)(crt_rand() % 7 + 1);
+	sp->spriteIni = sprite;
+	sp->spriteEnd = sprite + 8;
+	CGameParticles_Apply(sp);
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, Game_Ptr(FXA_RAMP_POLICESTEAL));
+	CGameParticles_EmitN(sp, 1, 0);
+	self->toggle ^= 1;
+	if (self->toggle) {
+		self->lastSound = FXA_StealSound(self->lastSound, mt, NULL);
+	}
+}
+
+void __thiscall cObjElementFXBankMasterSuction_Update(cObjElementFXBankMasterSuction *self, cDebris *d, float dt) {
+	vec3_t pos, rot, off, o, a, t, in, p, b;
+	vec3_t pts[4], coefs[4];
+
+	(void)dt;
+	FXA_Keep(&self->ent);
+	if (!self->ent) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	FXA_Keep(&self->target);
+	if (!self->target) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	float delta = FXA_Delta();
+	self->fc0 = self->fc0 + delta;
+	self->fbc = self->fbc + delta;
+	float radius = FX_Vtbl(self->target)->GetRadius(self->target) * 0.5f;
+	FX_Vtbl(self->target)->GetCenter(self->target, &t);
+	off.x = g_BankMasterBatonPosX;
+	off.y = g_BankMasterBatonPosY;
+	off.z = g_BankMasterBatonPosZ;
+	const vec3_t *r = Vec3_Rotate(&o, &off, &rot);
+	a.x = pos.x + r->x;
+	a.y = r->y + pos.y;
+	a.z = r->z + pos.z;
+	float dx = a.x - t.x;
+	float dy = a.y - t.y;
+	float dz = a.z - t.z;
+	float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+	pts[0] = t;
+	in = (vec3_t){ 0.0f, 0.0f, dist * 0.5f };
+	r = Vec3_Rotate(&o, &in, &rot);
+	pts[1].x = a.x - r->x;
+	pts[1].y = a.y - r->y;
+	pts[1].z = a.z - r->z;
+	in = (vec3_t){ 0.0f, 0.0f, dist * 0.25f };
+	r = Vec3_Rotate(&o, &in, &rot);
+	pts[2].x = a.x - r->x;
+	pts[2].y = a.y - r->y;
+	pts[2].z = a.z - r->z;
+	pts[3] = a;
+	CGameTrail_BezierCoefs(&self->trail, 4, pts, coefs);
+	float step = delta * 2.0f;
+	CGameParticles *sp = &self->particles;
+	for (int i = 0; i < FXBMSUCTION_POINTS; i++) {
+		float old = self->phase[i];
+		float v = step + old;
+		self->phase[i] = v;
+		if (v > 0.0f && 0.0f >= old) {
+			int k = self->count;
+			self->count = k + 1;
+			if (k > 6) {
+				self->count = 0;
+				self->lastSound = FXA_StealSound(self->lastSound, NULL, &pos);
+			}
+		}
+		v = self->phase[i];
+		if (0.0f > v || v >= 1.0f) {
+			CGameParticles_Kill(sp, i);
+			continue;
+		}
+		int alpha = 0;
+		if (0.1f >= v) {
+			alpha = 0xff - (int)(v * 10.0f * 255.0f);
+		} else if (v >= 0.8f) {
+			alpha = (int)((v - 0.8f) * 5.0f * 255.0f);
+		}
+		float size = (45.0f - radius) * v + radius;
+		CGameTrail_BezierPoint(&self->trail, 4, coefs, &b, v);
+		uint32_t c = (uint32_t)(0xff - alpha);
+		p.x = b.x + self->dir[i].x * size;
+		p.y = b.y + self->dir[i].y * size;
+		p.z = b.z + size * self->dir[i].z;
+		int sprite = 1 - (int)(self->phase[i] * -16.0f);
+		CGameParticles_SetParticle(sp, i, p.x, p.y, p.z, 40.0f, (c << 8 | c << 16) | (uint32_t)alpha << 24 | c, sprite,
+			self->angle[i]);
+	}
+}
+
+/* a player character: its controller at 0xf0 */
+#define FXA_Player(e) (*(int *)((byte *)(e) + 0xf0))
+
+static inline uint32_t FXA_Bits(float f) {
+	uint32_t u;
+
+	memcpy(&u, &f, sizeof(u));
+	return u;
+}
+
+void __thiscall cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFunctionarySpecialAction *self, cDebris *d,
+	float dt) {
+	vec3_t pos, rot;
+	vec3_t pts[FXFUNCTIONARY_TRAILS];
+	float target;
+
+	FXA_Keep(&self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		return;
+	}
+	CGameModel *m = FX_Vtbl(self->ent)->GetModel(self->ent);
+	if (!CGameModel_IsLoaded(m)) {
+		self->ent = NULL;
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(m));
+	float delta = FXA_Delta();
+	self->fbc = self->fbc + delta;
+	self->fb8 = self->fb8 + delta;
+	if (Entity_LifeI(self->ent) <= 0) {
+		if (Debris_Life(d) > 0.4f) {
+			Debris_Life(d) = 0.4f;
+		}
+		return;
+	}
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), -74.0f, 0.0f);
+	FX_Vtbl(self->ent)->GetRadius(self->ent);
+	float speed = cTimer_GetSpeed(Entity_Timer(self->ent));
+	cTimer_GetSpeedTo(Entity_Timer(self->ent));
+	byte run = 0;
+	if (WithLife_Vtbl(self->ent)->GetActCtrl(self->ent)) {
+		if (cActCtrl_IsActive(WithLife_Vtbl(self->ent)->GetActCtrl(self->ent), "Run") && speed > 1.0f) {
+			run = 1;
+		}
+	}
+	if (self->ent && FXA_Player(self->ent) && speed == 1.0f && Debris_Life(d) > 0.4f) {
+		Debris_Life(d) = 0.4f;
+	}
+	target = (speed - 1.0f) / 3.0f;
+	if (0.4f > Debris_Life(d)) {
+		FX_InRange(Debris_Life(d) - dt, 0.0f, 0.4f, &target);
+	} else {
+		FX_InRange(target, 0.0f, 1.0f, &target);
+	}
+	Float_Approach(&self->alpha, target, delta * 4.0f);
+	if (0.0f >= self->alpha) {
+		CGameModel_SetEffect(m, 0);
+		CGameModel_SetEffectParam(m, 0, 0);
+	} else {
+		CGameModel_SetEffect(m, 2);
+		CGameModel_SetEffectParam(m, 0, FXA_Bits(self->alpha * 0.5f));
+	}
+	CGameModel_Vertices(m, pts, NULL, NULL, FXFUNCTIONARY_TRAILS, -1, NULL, 0xffffffffu, g_FXFunctionaryVertex);
+	CGameParticles *sp = &self->particles;
+	for (int i = 0; i < FXFUNCTIONARY_TRAILS; i++) {
+		CGameTrail *t = &self->trails[i];
+		vec3_t *p = &self->pos[i];
+
+		CGameTrail_SetTransp(t, (byte)(0xff - (int)(self->alpha * 255.0f)));
+		CGameParticles_SetAlpha(sp, self->alpha);
+		CGameParticles_SetParticle(sp, i, pts[i].x, pts[i].y, pts[i].z, 55.0f, (g_FXFunctionaryColor[i] & 0xffffff) |
+			0xa4000000, 2, 0.0f);
+		float dx = p->x - pts[i].x;
+		float dy = p->y - pts[i].y;
+		float dz = p->z - pts[i].z;
+		if (dy * dy + dx * dx + dz * dz > 3600.0f) {
+			*p = pts[i];
+			self->fb8 = 0.0f;
+			if (!run) {
+				continue;
+			}
+			CGameTrail_Add(t, pts[i], 50.0f, (g_FXFunctionaryColor[i] & 0xffffff) | 0xc4000000);
+			sp->birthRate = 0;
+			sp->lifeTime = FXA_Rand((double)0.019999996f, (double)0.24f);
+			sp->sizeIni = FXA_Rand(20.0, 45.0);
+			sp->sizeEnd = FXA_Rand(10.0, 105.0);
+			sp->sizeLife = FXA_Rand((double)0.02000001f, (double)0.34f);
+			sp->rotIni = sp->rotEnd = FXA_Rand((double)6.28318548f, 0.0);
+			float rv = (float)(FXA_Rnd() * (double)0.785398185f - (double)0.392699093f);
+			sp->spriteIni = 0x2b;
+			sp->spriteEnd = 0x2b;
+			sp->rotVar = rv;
+			CGameParticles_SetColorRampOn(sp, 0);
+			sp->colorIni = (g_FXFunctionaryColor[i] & 0xffffff) | 0xc4000000;
+			sp->colorEnd = g_FXFunctionaryColor[i] | 0xff000000;
+			sp->initPosMin.x = pts[i].x + (pts[i].x - p->x) * 0.5f;
+			sp->initPosMin.y = pts[i].y + (pts[i].y - p->y) * 0.5f;
+			sp->initPosMin.z = pts[i].z + (pts[i].z - p->z) * 0.5f;
+			sp->initPosMax = sp->initPosMin;
+			sp->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			sp->initVelMax = sp->initVelMin;
+			sp->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			sp->initAccMax = sp->initAccMin;
+			CGameParticles_Apply(sp);
+			CGameParticles_EmitN(sp, 1, 0);
+		} else {
+			CGameTrail_SetLastPos(t, pts[i]);
+			if (self->fb8 > 0.01f && 1.0f >= speed && self->fb8 > 0.0f) {
+				float k = 0.0f;
+				do {
+					CGameTrail_Shrink(t);
+					k = k + 0.01f;
+				} while (self->fb8 > k);
+			}
+		}
+	}
+	if (self->fb8 > 0.01f) {
+		self->fb8 = 0.0f;
+	}
+}
+
+static inline int FXA_Min255(int v) {
+	return v > 0xff ? 0xff : v;
+}
+
+void __thiscall cObjElementFXMessengerAttack_Update(cObjElementFXMessengerAttack *self, cDebris *d, float dt) {
+	vec3_t pos, rot, q, tmp;
+	vec3_t coefs[FXMESSENGER_POINTS];
+	float f, a;
+
+	(void)dt;
+	FXA_Keep(&self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), -84.0f, 0.0f);
+	float delta = FXA_Delta();
+	self->fc = delta + self->fc;
+	float t = delta + self->f10;
+	self->f10 = t;
+	if (0.08f > t) {
+		FX_InRange(t, 0.0f, 0.08f, &f);
+		a = f;
+	} else if (0.12f > t) {
+		a = 1.0f;
+	} else if (FX_InRange(t, 0.12f, 0.38f, &f)) {
+		a = 1.0f - f;
+	} else {
+		a = 0.0f;
+	}
+	int alpha = (int)((1.0f - a * a * (2.0f - a)) * 255.0f);
+	CGameParticles *sp = &self->particles;
+	for (int k = 0; k <= FXMESSENGER_LINES; k++) {
+		CGameTrail *tr = &self->trails[k];
+		const vec3_t *pts = self->lines[k];
+		int base = 2 + 6 * k;
+
+		int n = CGameTrail_GetMaxTrails(tr);
+		int a2 = alpha;
+		if (k > 0) {
+			a2 = FXA_Min255(alpha + 0x40);
+		}
+		CGameTrail_SetTransp(tr, (byte)a2);
+		CGameTrail_Reset(tr);
+		CGameTrail_BezierCoefs(tr, FXMESSENGER_POINTS, pts, coefs);
+		float dx = pts[0].x - pts[9].x;
+		float dy = pts[0].y - pts[9].y;
+		float dz = pts[0].z - pts[9].z;
+		float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+		int segs = (int)(len / 1000.0f * (float)n);
+		if (segs > n) {
+			segs = n;
+		}
+		CGameTrail_SetSegments(tr, (byte)segs);
+		for (int j = 0; j < segs - 1; j++) {
+			float w;
+
+			CGameTrail_BezierPoint(tr, FXMESSENGER_POINTS, coefs, &q, (float)j / (float)(segs - 2));
+			if (j > 0 && j < segs - 2) {
+				double r0 = FXA_Rnd();
+				if (k > 0) {
+					float r = (float)(r0 * 5.0 + 3.0);
+					const vec3_t *dd = FX_RandomDir(&tmp);
+					q.x = q.x + r * dd->x;
+					q.y = q.y + dd->y * r;
+					q.z = q.z + dd->z * r;
+				} else {
+					float r = (float)(r0 + r0 + 0.0);
+					const vec3_t *dd = FX_RandomDir(&tmp);
+					q.x = r * dd->x + q.x;
+					q.y = dd->y * r + q.y;
+					q.z = dd->z * r + q.z;
+				}
+				w = FXA_Rand(7.0, 8.0);
+			} else {
+				w = FXA_Rand(5.0, 20.0);
+			}
+			double rg = FXA_Rnd();
+			float g = k > 0 ? (float)(rg * 8.0 + 14.0) : (float)(rg * 6.0 + 10.0);
+			float h1 = FXA_Rand(15.0, 60.0);
+			float h2 = FXA_Rand(15.0, 60.0);
+			float b = FXA_Rand(15.0, 240.0);
+			uint32_t color = ((((uint32_t)(int)g << 8 | (uint32_t)(int)h1) << 8 | (uint32_t)(int)h2) << 8) |
+				(uint32_t)(int)b;
+			CGameTrail_Add(tr, q, self->width[k] * w, color);
+		}
+		int e1 = FXA_Min255(a2 + 4);
+		int e2 = FXA_Min255(a2 + 0x20);
+		int e3 = FXA_Min255(a2 + 0xa4);
+		const vec3_t *p0 = &pts[0];
+		const vec3_t *p9 = &pts[9];
+		CGameParticles_SetParticle(sp, base - 2, p0->x, p0->y, p0->z, self->width[k] * 20.0f,
+			(uint32_t)e1 << 24 | 0xc4c4ff, 1, 0.0f);
+		CGameParticles_SetParticle(sp, base - 1, p0->x, p0->y, p0->z, self->width[k] * 65.0f,
+			(uint32_t)e2 << 24 | 0x8080ff, 2, 0.0f);
+		CGameParticles_SetParticle(sp, base, p0->x, p0->y, p0->z, self->width[k] * 120.0f,
+			(uint32_t)e3 << 24 | 0x4040ff, 2, 0.0f);
+		CGameParticles_SetParticle(sp, base + 1, p9->x, p9->y, p9->z, self->width[k] * 20.0f,
+			(uint32_t)e1 << 24 | 0xc4c4ff, 1, 0.0f);
+		CGameParticles_SetParticle(sp, base + 2, p9->x, p9->y, p9->z, self->width[k] * 65.0f,
+			(uint32_t)e2 << 24 | 0x8080ff, 2, 0.0f);
+		CGameParticles_SetParticle(sp, base + 3, p9->x, p9->y, p9->z, self->width[k] * 120.0f,
+			(uint32_t)e3 << 24 | 0x4040ff, 2, 0.0f);
+	}
+	if (!(0.02f > self->fc)) {
+		self->fc = 0.0f;
+	}
+}
+
+void __thiscall cObjElementFXMessengerTakeDataPack_Update(cObjElementFXMessengerTakeDataPack *self, cDebris *d,
+	float dt) {
+	vec3_t pos, rot, ang, t1, t2, o1, o2, q, tmp;
+	vec3_t coefs[FXDATAPACK_POINTS];
+	float f, a;
+
+	(void)dt;
+	FXA_Keep(&self->owner);
+	if (!self->owner || !self->owner->flag_4c) {
+		return;
+	}
+	CGameModel *m = FXA_Model(self->owner);
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), -85.0f, 0.0f);
+	float delta = FXA_Delta();
+	float t = delta + self->fc;
+	self->fc = t;
+	if (0.05f > t) {
+		FX_InRange(t, 0.0f, 0.05f, &f);
+		a = f;
+	} else if (0.15f > t) {
+		a = 1.0f;
+	} else if (FX_InRange(t, 0.15f, 0.65f, &f)) {
+		a = 1.0f - f;
+	} else {
+		a = 0.0f;
+	}
+	int alpha = (int)((1.0f - a * a * (2.0f - a)) * 255.0f);
+	CGameParticles *sp = &self->particles;
+	for (int i = 0; i < FXDATAPACK_TRAILS; i++) {
+		vec3_t *p = self->points[i];
+		CGameTrail *tr = &self->trails[i];
+		int base = 2 + 6 * i;
+
+		ang = (vec3_t){ 0.0f, (float)i * 26.0f - 50.0f, 0.0f };
+		const vec3_t *r = Vec3_Rotate(&o1, &ang, FX_Vtbl(self->owner)->GetAngles(self->owner, &t1));
+		const vec3_t *c = FX_Vtbl(self->owner)->GetCenter(self->owner, &t2);
+		p[0].x = c->x + r->x;
+		p[0].y = c->y + r->y;
+		p[0].z = c->z + r->z;
+		ang = (vec3_t){ 0.0f, (float)i * 37.0f - 50.0f, 0.0f };
+		r = Vec3_Rotate(&o2, &ang, FX_Vtbl(self->item)->GetAngles(self->item, &t1));
+		c = FX_Vtbl(self->item)->GetCenter(self->item, &t2);
+		p[2].x = r->x + c->x;
+		p[2].y = c->y + r->y;
+		p[2].z = c->z + r->z;
+		p[1].x = (((p[2].x - p[0].x) * 0.5f + p[0].x) - p[1].x) * 0.5f * delta * 20.0f + p[1].x;
+		p[1].y = (((p[2].y - p[0].y) * 0.5f + p[0].y) - p[1].y) * 0.5f * delta * 20.0f + p[1].y;
+		p[1].z = (((p[2].z - p[0].z) * 0.5f + p[0].z) - p[1].z) * 0.5f * delta * 20.0f + p[1].z;
+		int n = CGameTrail_GetMaxTrails(tr);
+		CGameTrail_SetTransp(tr, (byte)alpha);
+		CGameTrail_Reset(tr);
+		CGameTrail_BezierCoefs(tr, FXDATAPACK_POINTS, p, coefs);
+		float dx = p[0].x - p[2].x;
+		float dy = p[0].y - p[2].y;
+		float dz = p[0].z - p[2].z;
+		float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+		int segs = (int)(len / 100.0f * (float)n);
+		if (segs > n) {
+			segs = n;
+		}
+		CGameTrail_SetSegments(tr, (byte)segs);
+		for (int j = 0; j < segs - 1; j++) {
+			float w;
+
+			CGameTrail_BezierPoint(tr, FXDATAPACK_POINTS, coefs, &q, (float)j / (float)(segs - 2));
+			if (j > 0 && j < segs - 2) {
+				double r0 = FXA_Rnd();
+				float rr = (float)(r0 + r0 + 2.0);
+				const vec3_t *dd = FX_RandomDir(&tmp);
+				q.x = q.x + rr * dd->x;
+				q.y = q.y + dd->y * rr;
+				q.z = q.z + dd->z * rr;
+				w = FXA_Rand(7.0, 8.0);
+			} else {
+				w = FXA_Rand(5.0, 20.0);
+			}
+			int g = (int)FXA_Rand(8.0, 14.0);
+			float h1 = FXA_Rand(15.0, 60.0);
+			float h2 = FXA_Rand(15.0, 60.0);
+			float b = FXA_Rand(15.0, 240.0);
+			uint32_t color = ((((uint32_t)g << 8 | (uint32_t)(int)h1) << 8 | (uint32_t)(int)h2) << 8) |
+				(uint32_t)(int)b;
+			CGameTrail_Add(tr, q, self->width[i] * w, color);
+		}
+		uint32_t e1 = (uint32_t)FXA_Min255(alpha + 4) << 24;
+		uint32_t e2 = (uint32_t)FXA_Min255(alpha + 0x20) << 24;
+		uint32_t e3 = (uint32_t)FXA_Min255(alpha + 0xa4) << 24;
+		CGameParticles_SetParticle(sp, base - 2, p[0].x, p[0].y, p[0].z, self->width[i] * 15.0f, e1 | 0xc4c4ff, 1,
+			0.0f);
+		CGameParticles_SetParticle(sp, base - 1, p[0].x, p[0].y, p[0].z, self->width[i] * 60.0f, e2 | 0x6060ff, 2,
+			0.0f);
+		CGameParticles_SetParticle(sp, base, p[0].x, p[0].y, p[0].z, self->width[i] * 130.0f, e3 | 0x3030ff, 5, 0.0f);
+		CGameParticles_SetParticle(sp, base + 1, p[2].x, p[2].y, p[2].z, self->width[i] * 15.0f, e1 | 0xc4c4ff, 1,
+			0.0f);
+		CGameParticles_SetParticle(sp, base + 2, p[2].x, p[2].y, p[2].z, self->width[i] * 60.0f, e2 | 0x6060ff, 2,
+			0.0f);
+		CGameParticles_SetParticle(sp, base + 3, p[2].x, p[2].y, p[2].z, self->width[i] * 130.0f, e3 | 0x3030ff, 5,
+			0.0f);
+	}
+}
+
+#define FXA_RAMP_MERCURY 0x430668		/* [2] */
+
+/* a drop of mercury: the sprite and size, the rotation, the ramp and the emission */
+static void FXMercenary_Drop(CGameParticles *sp, float life, byte second) {
+	sp->lifeTime = life;
+	sp->sizeLife = 1.0f;
+	sp->rotIni = sp->rotEnd = FXA_Rand((double)6.28318548f, 0.0);
+	sp->rotVar = (float)(FXA_Rnd() * (double)1.57079637f - (double)0.785398185f);
+	switch (crt_rand() % 3) {
+	case 0:
+		sp->spriteIni = 0x48;
+		sp->sizeIni = FXA_Rand(2.5, 2.5);
+		break;
+	case 1:
+		sp->spriteIni = 9;
+		sp->sizeIni = FXA_Rand(2.5, 2.5);
+		break;
+	case 2:
+		sp->spriteIni = 2;
+		sp->sizeIni = FXA_Rand(5.5, 2.5);
+		break;
+	}
+	sp->spriteEnd = sp->spriteIni;
+	if (second) {
+		float s = sp->sizeIni * FXA_Rand((double)0.19999999f, (double)0.6f);
+		sp->sizeIni = s;
+		sp->sizeEnd = s;
+	} else {
+		sp->sizeEnd = sp->sizeIni;
+	}
+	CGameParticles_Apply(sp);
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FXA_RAMP_MERCURY) + (crt_rand() & 1) * 9);
+	CGameParticles_EmitDt(sp, 1, 0, FXA_Rand((double)0.05f, 0.0));
+}
+
+void __thiscall cObjElementFXMercenaryDrink_Update(cObjElementFXMercenaryDrink *self, cDebris *d, float dt) {
+	vec3_t pos, rot, o, o2, dir, mouth, v, e, tmp;
+	vec3_t pts[2];
+	int idx[2] = { 1, 2 };
+	float f;
+
+	(void)dt;
+	FXA_Keep(&self->ent);
+	if (!self->ent) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), -91.0f, 0.0f);
+	float delta = FXA_Delta();
+	self->fbc = self->fbc + delta;
+	float t = self->fb8 + delta;
+	self->fb8 = t;
+	if (!(t > 0.03f)) {
+		return;
+	}
+	self->fb8 = 0.0f;
+	Vec3_Rotate(&o, &self->offset, &rot);
+	CGameModel_Vertices(m, pts, NULL, NULL, 2, -1, NULL, (uint32_t)self->nodeJar, idx);
+	dir.x = pts[0].x - pts[1].x;
+	dir.y = pts[0].y - pts[1].y;
+	dir.z = pts[0].z - pts[1].z;
+	rot = *Vec3_GetRotAng(&o, &dir);
+	const vec3_t *r = Vec3_Rotate(&o, &self->offset, &rot);
+	mouth.x = pts[0].x + r->x;
+	mouth.y = r->y + pts[0].y;
+	mouth.z = r->z + pts[0].z;
+	if (!FX_InRange(self->fbc, 0.5f, 1.3f, &f)) {
+		return;
+	}
+	float scale = 1.0f;
+	if (strcmp(CGameModel_Name(m), "MercenaryC.M3D") == 0) {
+		scale = 1.5f;
+	}
+	CGameParticles *sp = &self->particles;
+	for (int i = 0; i < 18; i++) {
+		sp->birthRate = 0;
+		float life = FXA_Rand((double)0.019999996f, (double)0.22f) * scale;
+		float rr = FXA_Rand(3.0, (double)0.2f);
+		const vec3_t *dd = FX_RandomDir(&tmp);
+		sp->initPosMin.x = dd->x * rr + mouth.x;
+		sp->initPosMin.y = dd->y * rr + mouth.y;
+		sp->initPosMin.z = dd->z * rr + mouth.z;
+		sp->initPosMax = sp->initPosMin;
+		float s = FXA_Rand(80.0, 60.0);
+		float c = FXA_Rand((double)0.19999999f, (double)0.3f);
+		float b = (float)(FXA_Rnd() * (double)1.2f - 1.0);
+		v.x = (float)(FXA_Rnd() * (double)0.14f - (double)0.07f);
+		v.y = b;
+		v.z = c;
+		const vec3_t *ov = Vec3_Rotate(&o, &v, &rot);
+		sp->initVelMin.x = ov->x * s;
+		sp->initVelMin.y = ov->y * s;
+		sp->initVelMin.z = ov->z * s;
+		sp->initVelMax = sp->initVelMin;
+		float g = FXA_Rand(20.0, 40.0);
+		v = (vec3_t){ 0.0f, 0.0f, -1.0f };
+		const vec3_t *og = Vec3_Rotate(&o2, &v, &rot);
+		sp->initAccMin.z = og->z * g + 0.0f;
+		sp->initAccMin.x = og->x * g + 0.0f;
+		sp->initAccMin.y = og->y * g - 980.0f;
+		sp->initAccMax = sp->initAccMin;
+		FXMercenary_Drop(sp, life, 0);
+	}
+	for (int i = 0; i < 6; i++) {
+		sp->birthRate = 0;
+		float life = FXA_Rand((double)0.01999998f, (double)0.36f);
+		float rr = FXA_Rand(3.0, (double)0.2f);
+		const vec3_t *dd = FX_RandomDir(&tmp);
+		e.x = dd->x * rr;
+		e.y = dd->y * rr;
+		e.z = dd->z * rr;
+		float zz = FXA_Rand(3.0, 8.0);
+		v.x = 0.0f;
+		v.y = (float)(-28.0 - FXA_Rnd() * 4.0) * scale;
+		v.z = zz;
+		const vec3_t *ov = Vec3_Rotate(&o, &v, &rot);
+		sp->initPosMin.x = (ov->x + mouth.x) + e.x;
+		sp->initPosMin.y = (ov->y + mouth.y) + e.y;
+		sp->initPosMin.z = (ov->z + mouth.z) + e.z;
+		sp->initPosMax = sp->initPosMin;
+		float s = FXA_Rand(50.0, 70.0);
+		float vz = (float)(FXA_Rnd() * (double)1.6f - (double)0.8f);
+		float vy = FXA_Rand((double)0.6f, (double)1.3f);
+		float vx = (float)(FXA_Rnd() * (double)1.6f - (double)0.8f);
+		sp->initVelMin.y = vy * s;
+		sp->initVelMin.z = vz * s;
+		sp->initVelMin.x = vx * s;
+		sp->initVelMax = sp->initVelMin;
+		sp->initAccMin = (vec3_t){ 0.0f, -980.0f, 0.0f };
+		sp->initAccMax = sp->initAccMin;
+		FXMercenary_Drop(sp, life, 1);
+	}
+}
+
+/* the 15 sparks of an end of the Bishop ray: spread by up to 60 degrees around dir times len (out of the end with
+ * sign 1, into it with -1) */
+static void FXBishop_Sparks(CGameTrail *tr, const vec3_t *end, const vec3_t *dir, float len, float sign, uint32_t c,
+	uint32_t c2) {
+	vec3_t ang, o, tmp;
+
+	for (int i = 0; i < 15; i++) {
+		float az = (float)(FXA_Rnd() * (double)2.09439516f - (double)1.04719758f);
+		float ay = (float)(FXA_Rnd() * (double)2.09439516f - (double)1.04719758f);
+		ang.x = (float)(FXA_Rnd() * (double)2.09439516f - (double)1.04719758f);
+		ang.y = ay;
+		ang.z = az;
+		const vec3_t *r = Vec3_Rotate(&o, dir, &ang);
+		float ox = r->x * len;
+		float oy = r->y * len;
+		float oz = r->z * len;
+		float w = FXA_Rand(20.0, 50.0);
+		float rr = FXA_Rand(10.0, 0.0);
+		const vec3_t *dd = FX_RandomDir(&tmp);
+		vec3_t pa, pb;
+		if (sign > 0.0f) {
+			pa.x = dd->x * rr + end->x;
+			pa.y = end->y + dd->y * rr;
+			pa.z = end->z + dd->z * rr;
+			pb.x = ox + end->x;
+			pb.y = oy + end->y;
+			pb.z = oz + end->z;
+		} else {
+			pa.x = end->x + dd->x * rr;
+			pa.y = end->y + dd->y * rr;
+			pa.z = end->z + dd->z * rr;
+			pb.x = end->x - ox;
+			pb.y = end->y - oy;
+			pb.z = end->z - oz;
+		}
+		CGameTrail_Add(tr, pa, w, c);
+		CGameTrail_Add(tr, pb, w * 2.5f, c2);
+	}
+}
+
+/* the flashes at an end of the Bishop ray: three at the end, eight spread around it along dir times k */
+static void FXBishop_Flashes(CGameParticles *sp, int first, const vec3_t *end, const vec3_t *dir, float k, float spread,
+	const float *sizes, float size8, int alpha) {
+	vec3_t tmp;
+
+	CGameParticles_SetParticle(sp, first, end->x, end->y, end->z, sizes[0],
+		(uint32_t)FXA_Min255(alpha + 4) << 24 | 0xc0ffc0, 1, 0.0f);
+	CGameParticles_SetParticle(sp, first + 1, end->x, end->y, end->z, sizes[1],
+		(uint32_t)FXA_Min255(alpha + 0x10) << 24 | 0x80ff80, 5, 0.0f);
+	CGameParticles_SetParticle(sp, first + 2, end->x, end->y, end->z, sizes[2],
+		(uint32_t)FXA_Min255(alpha + 0xc0) << 24 | 0x40ff40, 2, 0.0f);
+	for (int i = 0; i < 8; i++) {
+		uint32_t e = (uint32_t)FXA_Min255(alpha + 0x40) << 24 | 0xc0ffc0;
+		const vec3_t *dd = FX_RandomDir(&tmp);
+		float x = (end->x + dir->x * k) + dd->x * spread;
+		float y = (end->y + dir->y * k) + dd->y * spread;
+		float z = (end->z + dir->z * k) + dd->z * spread;
+		CGameParticles_SetParticle(sp, first + 3 + i, x, y, z, size8, e, 2, 0.0f);
+	}
+}
+
+void __thiscall cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self, cDebris *d, float dt) {
+	vec3_t pos, rot, tmp;
+	float f, a;
+	static const float fromSizes[3] = { 100.0f, 240.0f, 300.0f };
+	static const float toSizes[3] = { 120.0f, 260.0f, 320.0f };
+
+	(void)dt;
+	FXA_Keep(&self->ent);
+	if (!self->ent || !self->ent->flag_4c) {
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), -80.0f, 0.0f);
+	float delta = FXA_Delta();
+	self->fc = delta + self->fc;
+	float t = delta + self->f10;
+	self->f10 = t;
+	if (0.06f > t) {
+		FX_InRange(t, 0.0f, 0.06f, &f);
+		a = f;
+	} else if (0.1f > t) {
+		a = 1.0f;
+	} else if (FX_InRange(t, 0.1f, 0.35f, &f)) {
+		a = 1.0f - f;
+	} else {
+		a = 0.0f;
+	}
+	float width = (3.0f - a * 2.0f) * (a * a) * 42.0f + 36.0f;
+	int alpha = (int)((1.0f - (2.0f - a) * (a * a)) * 255.0f);
+	uint32_t c = (uint32_t)FXA_Min255(alpha + 0x18) << 24 | 0x30ff30;
+	CGameTrail_Reset(&self->trails[0]);
+	CGameTrail_Add(&self->trails[0], self->from, width, c);
+	CGameTrail_Add(&self->trails[0], self->to, width, c);
+	CGameTrail_Reset(&self->trails[1]);
+	for (int i = 0; i < 4; i++) {
+		uint32_t a1 = (uint32_t)FXA_Min255(alpha + 4);
+		float r = FXA_Rand(13.0, 1.0);
+		const vec3_t *dd = FX_RandomDir(&tmp);
+		float ex = dd->x * r;
+		float ey = dd->y * r;
+		float ez = dd->z * r;
+		uint32_t col = (uint32_t)(0x80 - crt_rand() % 64) << 8;
+		col = (uint32_t)(crt_rand() % 32 + 0x18) << 16 | col;
+		col = (uint32_t)(crt_rand() % 32 + 0x18) | a1 << 24 | col;
+		double rr = FXA_Rnd();
+		float w = (float)(rr + rr + 11.0);
+		vec3_t p = { ex + self->from.x, self->from.y + ey, self->from.z + ez };
+		CGameTrail_Add(&self->trails[1], p, w, col);
+		p = (vec3_t){ self->to.x + ex, self->to.y + ey, self->to.z + ez };
+		CGameTrail_Add(&self->trails[1], p, w, col);
+	}
+	CGameTrail_SetUV(&self->trails[1], self->f10 * -8.0f, 0.0f);
+	CGameTrail_Reset(&self->trails[2]);
+	uint32_t c4 = (uint32_t)FXA_Min255(alpha + 8) << 24 | 0x3040c0;
+	FXBishop_Sparks(&self->trails[2], &self->from, &self->dir, 150.0f, 1.0f, c4, c4 | 0xff000000);
+	CGameParticles *sp = &self->particles;
+	FXBishop_Flashes(sp, 0, &self->from, &self->dir, 35.0f, 18.0f, fromSizes, 95.0f, alpha);
+	CGameTrail_Reset(&self->trails[3]);
+	FXBishop_Sparks(&self->trails[3], &self->to, &self->dir, 160.0f, -1.0f, c4, c4 | 0xff000000);
+	FXBishop_Flashes(sp, 0xc, &self->to, &self->dir, -15.0f, 20.0f, toSizes, 115.0f, alpha);
+	if (!(0.02f > self->fc)) {
+		self->fc = 0.0f;
+	}
+}
+
+#define FXA_RAMP_SELLLIFE 0x430818		/* [3] */
+#define FXA_RAMP_SELLLIFE2 0x43083c		/* [2] */
+
+/* the glow of the Bishop: rotation, the ramp and one particle */
+static void FXSellLife_Glow(CGameParticles *sp) {
+	sp->rotIni = sp->rotEnd = FXA_Rand((double)6.28318548f, 0.0);
+	sp->rotVar = (float)(FXA_Rnd() * (double)1.57079637f - (double)0.785398185f);
+	byte sprite = (crt_rand() & 1) ? 2 : 5;
+	sp->spriteIni = sprite;
+	sp->spriteEnd = sprite;
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, Game_Ptr(FXA_RAMP_SELLLIFE));
+	CGameParticles_Apply(sp);
+	CGameParticles_EmitN(sp, 1, 0);
+}
+
+/* a data code of the Bishop: no rotation, one of 8 sprites, one of the three ramps and one particle */
+static void FXSellLife_Code(CGameParticles *sp) {
+	sp->rotIni = 0.0f;
+	sp->rotEnd = 0.0f;
+	sp->rotVar = 0.0f;
+	sp->sizeLife = FXA_Rand((double)0.019999996f, (double)0.22f);
+	byte sprite = (byte)(crt_rand() % 8 + 1);
+	sp->spriteIni = sprite;
+	sp->spriteEnd = sprite;
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FXA_RAMP_SELLLIFE) + crt_rand() % 3 * 9);
+	CGameParticles_Apply(sp);
+	CGameParticles_EmitN(sp, 1, 0);
+}
+
+static inline void FXA_Still(CGameParticles *sp) {
+	sp->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	sp->initAccMax = sp->initAccMin;
+}
+
+void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *self, cDebris *d, float dt) {
+	vec3_t hand[2], pts4[4], tmp, mid, cam, v, n, off, pos;
+	vec3_t pts[256];
+	float f;
+
+	(void)dt;
+	FXA_Keep(&self->attacker);
+	FXA_Keep(&self->attacked);
+	if (!self->attacked || !self->attacked->flag_4c) {
+		return;
+	}
+	CGameModel_SetSortZ(Debris_Model(d), -79.0f, 0.0f);
+	float delta = FXA_Delta();
+	self->f16c = self->f16c + delta;
+	float t = self->f170 + delta;
+	self->f170 = t;
+	if (0.02f > t) {
+		return;
+	}
+	CGameModel *ma = FX_Vtbl(self->attacked)->GetModel(self->attacked);
+	if (!ma || !CGameModel_IsLoaded(ma)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(ma));
+	CGameParticles *glow = &self->glow;
+	CGameParticles *code = &self->dataCodec;
+	if (self->attacker) {
+		CGameModel *mb = FX_Vtbl(self->attacker)->GetModel(self->attacker);
+		if (!mb || !CGameModel_IsLoaded(mb)) {
+			return;
+		}
+		CHECK(CGameModel_IsLoaded(mb));
+		for (int k = 0; k < 2; k++) {
+			CGameModel_Vertices(mb, &hand[k], NULL, NULL, 1, 0, NULL, (uint32_t)self->nodeHand[k], NULL);
+		}
+		if (FX_InRange(self->f16c, 0.2f, 4.5f, &f)) {
+			for (int k = 0; k < 2; k++) {
+				const vec3_t *h = &hand[k];
+				glow->birthRate = 0;
+				float r = FXA_Rand(25.0, 0.0);
+				const vec3_t *dd = FX_RandomDir(&tmp);
+				glow->initPosMin.x = r * dd->x + h->x;
+				glow->initPosMin.y = dd->y * r + h->y;
+				glow->initPosMin.z = dd->z * r + h->z;
+				glow->initPosMax = glow->initPosMin;
+				r = FXA_Rand(25.0, 0.0);
+				dd = FX_RandomDir(&tmp);
+				glow->initVelMin.x = dd->x * r;
+				glow->initVelMin.y = dd->y * r;
+				glow->initVelMin.z = dd->z * r;
+				glow->initVelMax = glow->initVelMin;
+				FXA_Still(glow);
+				glow->lifeTime = FXA_Rand((double)0.050000012f, (double)0.35f);
+				glow->sizeIni = FXA_Rand(10.0, 25.0);
+				glow->sizeEnd = FXA_Rand(15.0, 80.0);
+				glow->sizeLife = FXA_Rand((double)0.050000012f, (double)0.35f);
+				FXSellLife_Glow(glow);
+				code->birthRate = 0;
+				r = FXA_Rand(25.0, 0.0);
+				dd = FX_RandomDir(&tmp);
+				code->initPosMin.x = dd->x * r + h->x;
+				code->initPosMin.y = dd->y * r + h->y;
+				code->initPosMin.z = dd->z * r + h->z;
+				code->initPosMax = code->initPosMin;
+				r = FXA_Rand(25.0, 0.0);
+				dd = FX_RandomDir(&tmp);
+				code->initVelMin.x = r * dd->x;
+				code->initVelMin.y = dd->y * r;
+				code->initVelMin.z = dd->z * r;
+				code->initVelMax = code->initVelMin;
+				FXA_Still(code);
+				code->lifeTime = FXA_Rand((double)0.050000012f, (double)0.35f);
+				code->sizeIni = (float)(FXA_Rnd() + 6.0);
+				code->sizeEnd = (float)(FXA_Rnd() + 9.0);
+				FXSellLife_Code(code);
+			}
+		}
+		if (FX_InRange(self->f16c, 3.9f, 5.0f, &f)) {
+			mid.x = hand[0].x + (hand[1].x - hand[0].x) * 0.5f;
+			mid.y = hand[0].y + (hand[1].y - hand[0].y) * 0.5f;
+			mid.z = hand[0].z + (hand[1].z - hand[0].z) * 0.5f;
+			CGameModel_Vertices(ma, pts4, NULL, NULL, 4, -1, NULL, 0xffffffffu, NULL);
+			for (int k = 0; k < 4; k++) {
+				const vec3_t *p = &pts4[k];
+				float life = FXA_Rand((double)0.050000012f, (double)0.35f);
+				glow->birthRate = 0;
+				float r = FXA_Rand(15.0, 0.0);
+				const vec3_t *dd = FX_RandomDir(&tmp);
+				glow->initPosMin.x = r * dd->x + mid.x;
+				glow->initPosMin.y = dd->y * r + mid.y;
+				glow->initPosMin.z = dd->z * r + mid.z;
+				float inv = 1.0f / life;
+				glow->initPosMax = glow->initPosMin;
+				glow->initVelMin.x = (p->x - glow->initPosMin.x) * inv;
+				glow->initVelMin.y = (p->y - glow->initPosMin.y) * inv;
+				glow->initVelMin.z = (p->z - glow->initPosMin.z) * inv;
+				glow->initVelMax = glow->initVelMin;
+				FXA_Still(glow);
+				glow->lifeTime = life;
+				glow->sizeIni = FXA_Rand(10.0, 25.0);
+				glow->sizeEnd = FXA_Rand(15.0, 80.0);
+				glow->sizeLife = FXA_Rand((double)0.050000012f, (double)0.35f);
+				FXSellLife_Glow(glow);
+				code->birthRate = 0;
+				r = FXA_Rand(15.0, 0.0);
+				dd = FX_RandomDir(&tmp);
+				code->initPosMin.x = dd->x * r + mid.x;
+				code->initPosMin.y = dd->y * r + mid.y;
+				code->initPosMin.z = dd->z * r + mid.z;
+				code->initPosMax = code->initPosMin;
+				code->initVelMin.x = (p->x - code->initPosMin.x) * inv;
+				code->initVelMin.y = (p->y - code->initPosMin.y) * inv;
+				code->initVelMin.z = (p->z - code->initPosMin.z) * inv;
+				code->initVelMax = code->initVelMin;
+				FXA_Still(code);
+				code->lifeTime = FXA_Rand((double)0.050000012f, (double)0.35f);
+				code->sizeIni = (float)(FXA_Rnd() + 7.0);
+				code->sizeEnd = (float)(FXA_Rnd() + 10.0);
+				FXSellLife_Code(code);
+			}
+		}
+	}
+	float lo = self->attacker ? 4.0f : 0.0f;
+	float hi = self->attacker ? 5.5f : 1.5f;
+	if (FX_InRange(self->f16c, lo, hi, &f)) {
+		cWorld *w = g_pWorld;
+		cam = w->camPos[w->curCam];
+		const vec3_t *c = FX_Vtbl(self->attacked)->GetCenter(self->attacked, &tmp);
+		v.x = cam.x - c->x;
+		v.y = cam.y - c->y;
+		v.z = cam.z - c->z;
+		Vec3_NormalizeTo(&n, &v);
+		float radius = FX_Vtbl(self->attacked)->GetRadius(self->attacked);
+		off.x = n.x * radius * 0.3f;
+		off.y = n.y * radius * 0.3f;
+		off.z = n.z * radius * 0.3f;
+		CGameModel_Vertices(ma, pts, NULL, NULL, 256, -1, NULL, 0xffffffffu, NULL);
+		float k = self->attacker ? 1.8f : 1.2f;
+		float r2 = FX_Vtbl(self->attacked)->GetRadius(self->attacked) * k;
+		float h = (1.0f - f * 2.0f) * r2;
+		float s = FX_Vtbl(self->attacked)->GetRadius(self->attacked) / 70.0f;
+		CGameModel_GetPos(ma, &pos);
+		float thr = s * 8.0f;
+		int count = 0;
+		for (int i = 0; i < 256; i++) {
+			float y = pts[i].y;
+			if (!(thr > __builtin_fabsf(y - (pos.y + h)))) {
+				continue;
+			}
+			glow->birthRate = 0;
+			glow->initPosMin.x = off.x + pts[i].x;
+			glow->initPosMin.z = off.z + pts[i].z;
+			glow->initPosMin.y = y + off.y;
+			glow->initPosMax = glow->initPosMin;
+			glow->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			glow->initVelMax = glow->initVelMin;
+			FXA_Still(glow);
+			glow->lifeTime = FXA_Rand((double)0.120000035f, (double)0.42f);
+			double rr = FXA_Rnd();
+			glow->sizeIni = (float)(rr + rr + 8.0) * s;
+			glow->sizeEnd = FXA_Rand(5.0, 40.0) * s;
+			glow->sizeLife = FXA_Rand((double)0.10000001f, (double)0.2f);
+			glow->rotIni = glow->rotEnd = FXA_Rand((double)6.28318548f, 0.0);
+			float rv = (float)(FXA_Rnd() * (double)1.57079637f - (double)0.785398185f);
+			glow->spriteIni = 5;
+			glow->spriteEnd = 5;
+			glow->rotVar = rv;
+			CGameParticles_SetColorRampOn(glow, 1);
+			CGameParticles_SetColorRamp(glow, Game_Ptr(FXA_RAMP_SELLLIFE));
+			CGameParticles_Apply(glow);
+			CGameParticles_EmitN(glow, 1, 0);
+			code->birthRate = 0;
+			float up = (float)(FXA_Rnd() * 40.0 - 20.0) * s;
+			code->initPosMin.x = pts[i].x + off.x;
+			code->initPosMin.y = ((pos.y + h) + up) + off.y;
+			code->initPosMin.z = pts[i].z + off.z;
+			code->initPosMax = code->initPosMin;
+			code->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			code->initVelMax = code->initVelMin;
+			float z0 = s * 0.0f;
+			code->initAccMin.x = z0;
+			code->initAccMin.y = s * 1500.0f;
+			code->initAccMin.z = z0;
+			code->initAccMax = code->initAccMin;
+			code->lifeTime = FXA_Rand((double)0.03999999f, (double)0.28f);
+			code->sizeIni = (float)(FXA_Rnd() + 4.0) * s;
+			code->sizeEnd = (float)(FXA_Rnd() + 7.0) * s;
+			code->rotIni = 0.0f;
+			code->rotEnd = 0.0f;
+			code->rotVar = 0.0f;
+			code->sizeLife = FXA_Rand((double)0.02000001f, (double)0.32f);
+			byte sprite = (byte)(crt_rand() % 8);
+			code->spriteIni = sprite;
+			code->spriteEnd = sprite;
+			CGameParticles_SetColorRampOn(code, 1);
+			CGameParticles_SetColorRamp(code, (uint32_t *)Game_Ptr(FXA_RAMP_SELLLIFE2) + (crt_rand() & 1) * 9);
+			CGameParticles_Apply(code);
+			CGameParticles_EmitN(code, 1, 0);
+			if (++count > 5) {
+				break;
+			}
+		}
+	}
+	self->f170 = 0.0f;
+}
