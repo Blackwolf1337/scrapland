@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/fxelements.h"
 #include "scrap/primitive.h"
 
 /* the AI of the nurse: whether it has a target and which */
@@ -33,6 +34,222 @@ void ChType_NurseSphereHit(cAbstractFile *params) {
 	CHECK(Entity_IsType(e, TYEN_WALKCHAR));
 	if (e != cWorld_GetUsrEntity(g_pWorld, 0)) {
 		g_NurseTarget = e;
+	}
+}
+
+#define NURSE_RAMP_GLOW ((uint32_t *)Game_Ptr(0x428198))	/* [9] */
+#define NURSE_RAMPS_STARS ((uint32_t *)Game_Ptr(0x428108))	/* [2][9] */
+#define NURSE_RAMPS_SPARKS ((uint32_t *)Game_Ptr(0x428150))	/* [2][9] */
+#define NURSE_TWO_PI 6.2831854820251465
+
+static void Nurse_PosMin(CGameParticles *p, float x, float y, float z) {
+	p->initPosMin.x = x;
+	p->initPosMin.y = y;
+	p->initPosMin.z = z;
+	p->initPosMax = p->initPosMin;
+}
+
+/* the start of a ring particle of the glow and of the stars (rotation, sprites, the ramp on) */
+static void Nurse_Start(CGameParticles *p, float rotVar, uint16_t sprites) {
+	float r = FxElem_Rand(NURSE_TWO_PI, 0.0);
+
+	p->rotVar = rotVar;
+	*(uint16_t *)&p->spriteIni = sprites;
+	p->rotIni = r;
+	p->rotEnd = r;
+	CGameParticles_Apply(p);
+	CGameParticles_SetColorRampOn(p, 1);
+}
+
+void Nurse_HammerFX(cEntity *v) {
+	vec3_t off, mr, t, pos, up, one, rot, dir, x1, t2, cam;
+
+	CHECK(v);
+	CHECK(Entity_IsType(v, TYEN_WALKCHAR));
+	CGameModel *model = Obj_Vtbl(v)->GetModel(v);
+	if (!model || !CGameModel_IsLoaded(model) || !ChType_ActCtrl(v)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(model));
+	byte block = cActCtrl_IsActive(ChType_ActCtrl(v), "ActionBlock");
+	off.x = 0.0f;
+	float ang = 0.0f;
+	if (block) {
+		/* the hammer held up: the point higher, the ring turned with the model */
+		off.y = -20.0f;
+		off.z = -140.0f;
+		const vec3_t *r = Vec3_Rotate(&t, &off, CGameModel_GetRot(model, &mr));
+		const vec3_t *p = CGameModel_GetPos(model, &pos);
+		float px = p->x + r->x;
+		float py = p->y + r->y;
+		pos.z = p->z + r->z;
+		off.x = 0.5f;
+		off.y = 1.0f;
+		pos.x = px;
+		pos.y = py;
+		off.z = 0.5f;
+		up = *Vec3_Rotate(&t, &off, CGameModel_GetRot(model, &mr));
+	} else {
+		off.y = -60.0f;
+		off.z = -110.0f;
+		const vec3_t *r = Vec3_Rotate(&t, &off, CGameModel_GetRot(model, &mr));
+		const vec3_t *p = CGameModel_GetPos(model, &pos);
+		float px = r->x + p->x;
+		float py = p->y + r->y;
+		float pz = p->z + r->z;
+		up.x = 0.0f;
+		up.y = 1.0f;
+		up.z = 0.0f;
+		pos.x = px;
+		pos.y = py;
+		pos.z = pz;
+	}
+	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXHammerHitFile);
+	cDebris *d = cDebrisSys_NewElement(sys);
+	cam = g_pWorld->camPos[g_pWorld->curCam];
+	CGameModel_SetPos(Debris_Model(d), &cam);
+	Debris_Life(d) = 1.5f;
+	cDebrisSys_Drop(sys, d);
+	cObjElementFXSistPart *el = Debris_Element(d);
+	if (!el) {
+		return;
+	}
+	CGameParticles *p = &el->particles;
+	if (!el->on) {
+		el->move = 0;
+		el->on = 1;
+	}
+	CGameParticles_SetSparksOn(p, 0);
+	p->birthRate = 0;
+	/* the glow: 6 particles around the point */
+	for (int i = 6; i; i--) {
+		float az = FxElem_Rand(NURSE_TWO_PI, 0.0);
+		float ay = FxElem_Rand(NURSE_TWO_PI, 0.0);
+		one.x = 1.0f;
+		one.y = 1.0f;
+		one.z = 1.0f;
+		rot.x = FxElem_Rand(NURSE_TWO_PI, 0.0);
+		rot.y = ay;
+		rot.z = az;
+		Vec3_Rotate(&dir, &one, &rot);
+		float s = FxElem_Rand(10.0, 10.0);
+		Nurse_PosMin(p, dir.x * s + pos.x, dir.y * s + pos.y, dir.z * s + pos.z);
+		p->initVelMin.x = 0.0f;
+		p->initVelMin.y = 0.0f;
+		p->initVelMin.z = 0.0f;
+		p->initVelMax = p->initVelMin;
+		p->initAccMin.x = 0.0f;
+		p->initAccMin.y = 0.0f;
+		p->initAccMin.z = 0.0f;
+		p->initAccMax = p->initAccMin;
+		p->sizeIni = FxElem_Rand(50.0, 100.0);
+		p->sizeEnd = FxElem_Rand(50.0, 350.0);
+		p->sizeLife = 0.200000003f;
+		p->lifeTime = FxElem_Rand(0.04999998211860657, 0.4000000059604645);
+		Nurse_Start(p, 0.0f, 0x202);
+		CGameParticles_SetColorRamp(p, NURSE_RAMP_GLOW);
+		CGameParticles_EmitN(p, 1, 1);
+	}
+	/* the ring around up, every second step a fast one too */
+	byte odd = 0;
+	do {
+		rot.x = 0.0f;
+		rot.y = ang;
+		rot.z = 0.0f;
+		x1.x = 1.0f;
+		x1.y = 0.0f;
+		x1.z = 0.0f;
+		dir = *Vec3_Rotate(&dir, Vec3_Rotate(&t2, &x1, &rot), &up);
+		odd ^= 1;
+		if (odd) {
+			Nurse_PosMin(p, dir.x * 4.0f + pos.x, dir.y * 4.0f + pos.y, dir.z * 4.0f + pos.z);
+			float s = FxElem_Rand(250.0, 1250.0);
+			p->initVelMin.y = dir.y * s;
+			p->initVelMin.z = dir.z * s;
+			p->initVelMin.x = dir.x * s;
+			p->initVelMax = p->initVelMin;
+			float vx = -p->initVelMin.x;
+			float vy = -p->initVelMin.y;
+			float vz = -p->initVelMin.z;
+			p->initAccMin.x = vx * 0.699999988f;
+			p->initAccMin.y = vy * 0.699999988f;
+			p->initAccMin.z = vz * 0.699999988f;
+			p->initAccMax = p->initAccMin;
+			p->sizeIni = FxElem_Rand(25.0, 150.0);
+			p->sizeEnd = FxElem_Rand(50.0, 400.0);
+			p->sizeLife = 1.0f;
+			p->lifeTime = FxElem_Rand(0.09999999403953552, 0.30000001192092896);
+			Nurse_Start(p, 0.0f, 0x202);
+			CGameParticles_SetColorRamp(p, NURSE_RAMP_GLOW);
+			CGameParticles_EmitDt(p, 1, 1, FxElem_Rand(0.03999999910593033, 0.009999999776482582));
+		}
+		float s = FxElem_Rand(90.0, 30.0);
+		Nurse_PosMin(p, s * dir.x + pos.x, s * dir.y + pos.y, s * dir.z + pos.z);
+		float sv = FxElem_Rand(75.0, 300.0);
+		p->initVelMin.x = sv * dir.x;
+		p->initVelMin.y = sv * dir.y;
+		p->initVelMin.z = sv * dir.z;
+		p->initVelMax = p->initVelMin;
+		float vy = -p->initVelMin.y;
+		float vz = -p->initVelMin.z;
+		float k = FxElem_Rand(0.10000002384185791, 0.5);
+		float vx = -p->initVelMin.x;
+		p->initAccMin.x = k * vx;
+		p->initAccMin.y = k * vy;
+		p->initAccMin.z = k * vz;
+		p->initAccMax = p->initAccMin;
+		p->sizeIni = FxElem_Rand(25.0, 125.0);
+		p->sizeEnd = FxElem_Rand(50.0, 275.0);
+		p->sizeLife = 1.0f;
+		p->lifeTime = FxElem_Rand(0.40000003576278687, 0.800000011920929);
+		Nurse_Start(p, 0.2617993950843811f, 0x1212);
+		CGameParticles_SetColorRamp(p, NURSE_RAMPS_STARS + (crt_rand() & 1) * 9);
+		CGameParticles_EmitDt(p, 1, 1, FxElem_Rand(0.20000000298023224, 0.0));
+		ang = ang + 0.10471975803375244f;
+	} while ((float)NURSE_TWO_PI > ang);
+	/* the sparks: 32 falling ones */
+	Nurse_PosMin(p, pos.x, pos.y, pos.z);
+	p->initAccMin.x = 0.0f;
+	p->initAccMin.y = -750.0f;
+	p->initAccMin.z = 0.0f;
+	p->initAccMax.x = 0.0f;
+	p->initAccMax.y = -750.0f;
+	p->initAccMax.z = 0.0f;
+	CGameParticles_SetSparksOn(p, 1);
+	CGameParticles_SetColorRampOn(p, 1);
+	p->sparkMaxSize = 1.0f;
+	p->sparkVelScale = 1.0f;
+	p->rotIni = 0.0f;
+	p->rotEnd = 0.0f;
+	p->rotVar = 0.0f;
+	for (int i = 32; i; i--) {
+		float az = FxElem_Rand(NURSE_TWO_PI, 0.0);
+		float ay = FxElem_Rand(NURSE_TWO_PI, 0.0);
+		one.x = 1.0f;
+		one.y = 1.0f;
+		one.z = 1.0f;
+		rot.x = FxElem_Rand(NURSE_TWO_PI, 0.0);
+		rot.y = ay;
+		rot.z = az;
+		Vec3_Rotate(&dir, &one, &rot);
+		float s = FxElem_Rand(300.0, 250.0);
+		p->initVelMin.x = s * dir.x;
+		p->initVelMin.y = s * dir.y;
+		p->initVelMin.z = s * dir.z;
+		p->initVelMax = p->initVelMin;
+		float e = FxElem_Rand(0.009999999776482582, 0.009999999776482582);
+		float lt = FxElem_Rand(0.19999998807907104, 0.5);
+		CGameParticles_SetColorRamp(p, NURSE_RAMPS_SPARKS + (crt_rand() & 1) * 9);
+		p->lifeTime = lt;
+		p->sizeLife = 1.0f;
+		float sz = FxElem_Rand(25.0, 35.0);
+		p->sizeIni = sz;
+		p->sizeEnd = sz;
+		int r = crt_rand();
+		p->spriteEnd = 0x44;
+		p->spriteIni = (byte)((r & 1) + 0x41);
+		CGameParticles_Apply(p);
+		CGameParticles_EmitDt(p, 1, 0, e);
 	}
 }
 

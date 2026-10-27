@@ -699,7 +699,6 @@ SD_IMPORT(CNodesWorld2D_Generate, 0x0b2f60)
 /* module agent: Entities/Char/Type part 2+WalkCharControl (imports below this line) */
 SD_IMPORT(cActCtrl_PlayAction, 0x063030)
 SD_IMPORT(cMayorLocalLogic_SetListener, 0x153010)
-SD_IMPORT(Nurse_HammerFX, 0x0cafe0)
 SD_IMPORT(cWalkCharEntity_SetViewFrom, 0x0d5240)
 SD_IMPORT(AICtrl_CallGears, 0x14f960)
 SD_IMPORT(AICtrl_SentinelsChase, 0x14fba0)

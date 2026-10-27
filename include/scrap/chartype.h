@@ -391,6 +391,10 @@ static inline const char *ChType_ClassName(cEntity *e) {
 #define g_PoliceBossBrupPosX GAME_DATA(float, 0x4470bc)
 #define g_PoliceBossBrupPosY GAME_DATA(float, 0x4470a4)
 #define g_PoliceBossBrupPosZ GAME_DATA(float, 0x447104)
+#define g_FXRustyHitFile GAME_DATA(char *, 0x44719c)
+#define g_RustyHitPosX GAME_DATA(float, 0x447144)
+#define g_RustyHitPosY GAME_DATA(float, 0x447184)
+#define g_RustyHitPosZ GAME_DATA(float, 0x44715c)
 #define g_FXSebastianFlashFile GAME_DATA(char *, 0x4471c4)
 
 /* the characters of the running actions (the "MeEnt" CHECKs), the nurse by name and the character it hits */
@@ -424,7 +428,7 @@ void ChType_MessengerTakeDataPack(cAbstractFile *params);
 
 /* Nurse.c */
 void ChType_NurseSphereHit(cAbstractFile *params);
-/* the hammer hit effect at the nurse v: sparks and stars (rva 0xcafe0) */
+/* the hammer hit effect at the nurse v: a glow, a ring of stars and sparks (the debris at the camera) */
 void Nurse_HammerFX(cEntity *v);
 void ChType_NurseActionPress(cAbstractFile *params);
 void ChType_NurseActionRelease(cAbstractFile *params);
@@ -451,6 +455,9 @@ void ChType_PoliceBossAction(cAbstractFile *params);
 void ChType_PoliceBossTryAction(cEntity *v);
 void ChType_PoliceBossBrup(cAbstractFile *params);
 void ChType_PoliceBossSphereHit(cAbstractFile *params);
+
+/* Rusty.c */
+void ChType_FXRustyHit(cAbstractFile *params);
 
 /* Sebastian.c */
 void ChType_FXSebastianFlash(cAbstractFile *params);
