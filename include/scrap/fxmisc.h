@@ -184,10 +184,6 @@ SD_OFFSET(cObjElementFXFadeOutTrail, on, 0x11);
 /* ScrapEngLensFlares.cpp: the lens flare holder of the scene elements */
 void *__thiscall CGameLensFlare_ctor(void *self);
 void __thiscall CGameLensFlare_dtor(void *self);
-/* the Sputnik element of World/FX (rva 0x1b4210..) */
-void __thiscall FXSputnik_Start(void *self, cEntity *e);
-void __thiscall FXSputnik_SetA(void *self, float v);
-void __thiscall FXSputnik_SetB(void *self, float v);
 
 /* Math (rva 0x066ad0, 0x072340): the angle between two vectors (radians); in normalized into out */
 double Vec3_Angle(const vec3_t *a, const vec3_t *b);
@@ -236,6 +232,11 @@ void __thiscall FXMisc_SetFC(void *self, float v);
 void __thiscall FXMisc_SetI8(void *self, int v);
 
 /* the free functions */
+/* the particles to "Dummy01" of the model, to the node index of the pointer itself without a model (as the
+ * original does) */
+void FX_AttachDummy(CGameParticles *sp, CGameModel *m);
+/* a new debris of the system of file, life set, dropped; its element */
+void *FX_DropNew(const char *file, float life);
 /* the sphere x y z (radius) seen by the camera (the actual one for NULL) nearer than maxDist (0 any), in its view
  * cone and with sector in a visible sector; 1 always in split screen */
 byte FX_IsVisible(float x, float y, float z, float radius, float maxDist, const CGameCamera *cam, byte sector);

@@ -27,10 +27,7 @@ SD_IMPORT(Domination_SetBatonState, 0x144d50)
 
 /* engine: World/FX/ and effects of Entities/ */
 SD_IMPORT(FX_ShipExplosion, 0x1f4d50)
-SD_IMPORT(FX_CharacterConversor, 0x1b2b00)
-SD_IMPORT(FX_CharacterConversion, 0x1b2920)
 SD_IMPORT(FX_BishopSellLife, 0x0c4650)
-SD_IMPORT(FX_MoneyTransfer, 0x1b3470)
 
 /* engine: Actions/ */
 SD_IMPORT(cActClassList_Create, 0x061f70)
@@ -532,9 +529,6 @@ SD_IMPORT(cDebrisSys_IsIdle, 0x204dd0)
 SD_IMPORT(cDebris_Move, 0x204de0)
 SD_IMPORT(CGameLensFlare_ctor, 0x232e80)
 SD_IMPORT(CGameLensFlare_dtor, 0x232f10)
-SD_IMPORT(FXSputnik_Start, 0x1b4210)
-SD_IMPORT(FXSputnik_SetB, 0x1b45d0)
-SD_IMPORT(FXSputnik_SetA, 0x1b45f0)
 SD_IMPORT(Vec3_Angle, 0x066ad0)
 SD_IMPORT(Vec3_NormalizeTo, 0x072340)
 
@@ -703,6 +697,7 @@ SD_IMPORT(cDebris_Step, 0x204970)
 SD_IMPORT(cDebrisSys_Release, 0x2053d0)
 
 /* module agent: World/FX/FXChar.cpp (imports below this line) */
+SD_IMPORT(cObjElementFXFunctionarySpecialAction_Start, 0x1c6b30)
 
 /* module agent: World/FX/FXScene.cpp (imports below this line) */
 

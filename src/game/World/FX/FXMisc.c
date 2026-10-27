@@ -5,6 +5,7 @@
 
 #include "scrap/ai.h"
 #include "scrap/crt.h"
+#include "scrap/fxchar.h"
 #include "scrap/fxmisc.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapmain.h"
@@ -56,9 +57,7 @@ static void FX_EndFade(CGameModel *m, int mode) {
 	}
 }
 
-/* the particles to "Dummy01" of the model, to the node index of the pointer itself without a model (as the
- * original does) */
-static void FX_AttachDummy(CGameParticles *sp, CGameModel *m) {
+void FX_AttachDummy(CGameParticles *sp, CGameModel *m) {
 	uint32_t i = CGameModel_IsLoaded(m) ? (uint32_t)CGameModel_FindNodoR(m, "Dummy01") : (uint32_t)(uintptr_t)m;
 
 	if (i != 0xffffffffu) {
@@ -75,8 +74,7 @@ static int FX_NameEq(const char *a, const char *b) {
 	return wa == wb && !strcmp(a + 2, b + 2);
 }
 
-/* a new debris of the system of file, life set, dropped; its element */
-static void *FX_DropNew(const char *file, float life) {
+void *FX_DropNew(const char *file, float life) {
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, file);
 	cDebris *d = cDebrisSys_NewElement(sys);
 
@@ -245,12 +243,12 @@ void FX_Sputnik(cEntity *e, const char *name) {
 		if (!CGameModel_IsLoaded(FX_Vtbl(e)->GetModel(e)) || strcmp(name, "CharacterSputnikSceneMecanicFinal")) {
 			return;
 		}
-		byte *el = FX_DropNew(g_FXCharacterSputnikFile, 4.0f);
+		cObjElementFXSputnik *el = FX_DropNew(g_FXCharacterSputnikFile, 4.0f);
 		if (!el) {
 			return;
 		}
-		if (!el[0xdc]) {
-			el[0xdc] = 1;
+		if (!el->started) {
+			el->started = 1;
 		}
 		FXSputnik_Start(el, e);
 		FXSputnik_SetA(el, 3.0f);

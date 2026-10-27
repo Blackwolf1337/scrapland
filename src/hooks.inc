@@ -3736,6 +3736,47 @@ SD_HOOK(cMissileEntity_VarS, 0x0f51b0, 1143)
 SD_HOOK(cMissileEntity_VarV, 0x0f5f20, 26)
 
 /* module agent: World/FX/FXChar.cpp (hooks below this line) */
+SD_HOOK(cObjElementFXMoneyTransfer_Update, 0x1b0f70, 1024)
+SD_HOOK(cObjElementFXMaintenanceWork_Start, 0x1b1d40, 319)
+SD_HOOK(FX_Character, 0x1b1e80, 1089)
+SD_HOOK(FX_CharacterConversion, 0x1b2920, 471)
+SD_HOOK(FX_CharacterConversor, 0x1b2b00, 266)
+SD_HOOK(FX_MoneyTransfer, 0x1b3470, 89)
+SD_HOOK(cObjElementFXCharacterConversion_Attach, 0x1b34d0, 533)
+SD_HOOK(cObjElementFXCharacterConversor_Attach, 0x1b36f0, 205)
+SD_HOOK(cObjElementFXCharacterDeath_Attach, 0x1b37c0, 332)
+SD_HOOK(cObjElementFXCharacterTeleport_Attach, 0x1b3910, 59)
+SD_HOOK(cObjElementFXMaintenanceWork_Attach, 0x1b3950, 223)
+SD_HOOK(cObjElementFXMoneyTransfer_Attach, 0x1b3a30, 114)
+SD_HOOK(cObjElementFXSputnik_Attach, 0x1b3ab0, 69)
+SD_HOOK(cObjElementFXCharacterConversion_Alive, 0x1b3b00, 147)
+SD_HOOK(cObjElementFXCharacterConversor_Alive, 0x1b3ba0, 230)
+SD_HOOK(FXMisc_Alive, 0x1b3c90, 18)		/* CharacterDeath */
+SD_HOOK(cObjElementFXCharacterTeleport_Alive, 0x1b3cb0, 134)
+SD_HOOK(cObjElementFXMaintenanceWork_Alive, 0x1b3d40, 67)
+SD_HOOK(FXMisc_Alive, 0x1b3d90, 18)		/* MoneyTransfer */
+SD_HOOK(cObjElementFXSputnik_Alive, 0x1b3db0, 46)
+SD_HOOK(cObjElementFXCharacterConversion_Reset, 0x1b3de0, 389)
+SD_HOOK(cObjElementFXCharacterConversor_Reset, 0x1b3f70, 176)
+SD_HOOK(cObjElementFXCharacterDeath_Reset, 0x1b4020, 87)
+SD_HOOK(cObjElementFXCharacterTeleport_Reset, 0x1b4080, 33)
+SD_HOOK(cObjElementFXMaintenanceWork_Reset, 0x1b40b0, 77)
+SD_HOOK(cObjElementFXMoneyTransfer_Reset, 0x1b4100, 27)
+SD_HOOK(cObjElementFXSputnik_Reset, 0x1b4120, 55)
+SD_HOOK(cObjElementFXMoneyTransfer_SetEntities, 0x1b4160, 111)
+SD_HOOK(cObjElementFXCharacterDeath_SetEntity, 0x1b41d0, 62)
+SD_HOOK(FXSputnik_Start, 0x1b4210, 123)
+SD_HOOK(cObjElementFXCharacterConversion_SetAttacked, 0x1b4290, 66)
+SD_HOOK(cObjElementFXCharacterConversion_SetAttacker, 0x1b42e0, 78)
+SD_HOOK(cObjElementFXCharacterConversor_SetCharacter, 0x1b4330, 142)
+SD_HOOK(FXMisc_SetI8, 0x1b43c0, 13)		/* not called */
+SD_HOOK(cObjElementFXCharacterConversor_SetConversor, 0x1b43d0, 296)
+SD_HOOK(FXChar_SetI4, 0x1b4500, 13)		/* not called */
+SD_HOOK(cObjElementFXMaintenanceWork_SetMaintenance, 0x1b4510, 119)
+SD_HOOK(cObjElementFXMaintenanceWork_SetShip, 0x1b4590, 62)
+SD_HOOK(FXSputnik_SetB, 0x1b45d0, 20)
+SD_HOOK(FXSputnik_SetA, 0x1b45f0, 20)
+SD_HOOK(cObjElementFXCharacterConversion_Emit, 0x1b4610, 3341)
 
 /* module agent: World/FX/FXScene.cpp (hooks below this line) */
 
