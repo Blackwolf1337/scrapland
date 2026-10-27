@@ -237,15 +237,6 @@ SD_IMPORT(cPlayerInput_GetCursorChar, 0x139920)
 SD_IMPORT(cVirtualKeyboard_Set, 0x13a720)
 SD_IMPORT(cPad_Rumble, 0x13a820)
 
-/* engine: Sound/ */
-SD_IMPORT(Snd_Volume, 0x1a45d0)
-SD_IMPORT(cSoundDesc_Init, 0x1a3230)
-SD_IMPORT(cSoundDesc_SetPos, 0x1a3f40)
-SD_IMPORT(SndPS_Get, 0x1a0f70)
-SD_IMPORT(SndPS_Create, 0x1a0a90)
-SD_IMPORT(SndPS_Use, 0x1a1e60)
-SD_IMPORT(cSoundPS_Var, 0x1a1660)
-
 /* engine: Math/ */
 
 /* engine: World/ (weapon and ammo tables of cWorld) */
@@ -484,8 +475,6 @@ SD_IMPORT(Logic_Update, 0x151dc0)
 SD_IMPORT(Unk2078_ctor, 0x1540f0)
 SD_IMPORT(Unk2078_Update, 0x154170)
 SD_IMPORT(Talk_IsShown, 0x1814b0)
-SD_IMPORT(Sound_Update, 0x1a00e0)
-SD_IMPORT(Sound_UpdatePaused, 0x1a2d80)
 SD_IMPORT(Elements_ctor, 0x202e10)
 SD_IMPORT(Elements_dtor, 0x202e40)
 SD_IMPORT(Elements_Update, 0x203550)
@@ -535,9 +524,38 @@ SD_IMPORT(Cmd_ReadFile, 0x280b10)
 SD_IMPORT(Matrix_RotationX, 0x23a270)
 
 /* module agent: Sound/Sound+SoundDX8+Wav.cpp (imports below this line) */
+SD_IMPORT(Sound_UpdateVoice, 0x1a0320)
+SD_IMPORT(DebugUtils_DrawSphere, 0x219d20)
+SD_IMPORT(Fmod_Init, 0x232640)
+SD_IMPORT(Fmod_Close, 0x232620)
+SD_IMPORT(Voice_GetString, 0x2327d0)
+SD_IMPORT(Voice_Unused, 0x232840)
+SD_IMPORT(Voice_Open, 0x2328e0)
+SD_IMPORT(Voice_SetParam, 0x232a80)
+SD_IMPORT(Voice_Play, 0x232b40)
+SD_IMPORT(Voice_Remain, 0x232c60)
+SD_IMPORT(Voice_SetString, 0x232d10)
+SD_IMPORT(Voice_Stop, 0x232d80)
+SD_IMPORT(Voice_SetVolume, 0x232dd0)
+SD_IMPORT_STDCALL(FSOUND_GetError, 0, 0x3179c6)
+SD_IMPORT_STDCALL(FSOUND_GetMaxChannels, 0, 0x3179cc)
+SD_IMPORT_STDCALL(FSOUND_GetMemoryStats, 8, 0x3179ea)
+SD_IMPORT_STDCALL(FSOUND_Sample_Load, 20, 0x3179f0)
+SD_IMPORT_STDCALL(FSOUND_Sample_Free, 4, 0x3179f6)
+SD_IMPORT_STDCALL(FSOUND_Sample_GetDefaults, 20, 0x317a02)
+SD_IMPORT_STDCALL(FSOUND_Sample_GetMode, 4, 0x317a08)
+SD_IMPORT_STDCALL(FSOUND_PlaySoundEx, 16, 0x317a0e)
+SD_IMPORT_STDCALL(FSOUND_StopSound, 4, 0x317a14)
+SD_IMPORT_STDCALL(FSOUND_SetFrequency, 8, 0x317a1a)
+SD_IMPORT_STDCALL(FSOUND_SetVolume, 8, 0x317a20)
+SD_IMPORT_STDCALL(FSOUND_SetPan, 8, 0x317a26)
+SD_IMPORT_STDCALL(FSOUND_SetPaused, 8, 0x317a2c)
+SD_IMPORT_STDCALL(FSOUND_SetLoopMode, 8, 0x317a32)
+SD_IMPORT_STDCALL(FSOUND_IsPlaying, 4, 0x317a38)
+SD_IMPORT_STDCALL(FSOUND_GetReserved, 4, 0x317a56)
+SD_IMPORT_STDCALL(FSOUND_GetCurrentSample, 4, 0x317a62)
 
 /* module agent: World/CollisionGrid+FX/FXMisc.cpp (imports below this line) */
-SD_IMPORT(DebugUtils_DrawSphere, 0x219d20)
 SD_IMPORT(cObjElement_dtor, 0x204940)
 SD_IMPORT(cDebrisSys_GetIdle, 0x204d40)
 SD_IMPORT(cDebrisSys_IsIdle, 0x204dd0)
@@ -578,9 +596,6 @@ SD_IMPORT(Net_ServerFrame, 0x18b330)
 SD_IMPORT(Net_Done, 0x18e920)
 SD_IMPORT(Net_Init, 0x18eb60)
 SD_IMPORT(Net_Update, 0x18f950)
-SD_IMPORT(Sound_ResetVolumes, 0x1a2060)	/* Sound agent range */
-SD_IMPORT(Sound_Done, 0x1a3150)	/* Sound agent range */
-SD_IMPORT(Sound_Init, 0x1a3260)	/* Sound agent range */
 SD_IMPORT(Steam_Done, 0x1a64d0)	/* Sound agent range */
 SD_IMPORT(Steam_GetLanguage, 0x1a65f0)	/* Sound agent range */
 SD_IMPORT(Steam_Init, 0x1a6620)	/* Sound agent range */
@@ -597,7 +612,6 @@ SD_IMPORT(crt_srand, 0x323c50)
 /* module agent: World/FX/FXCountermeasures+FXElementsOrbit+FXElementsPress.cpp (imports below this line) */
 SD_IMPORT(cTargetLock_GetPoint, 0x11a740)
 SD_IMPORT(cTargetLock_GetEntity, 0x11a720)
-SD_IMPORT(PtrArray_Get, 0x1a26e0)
 SD_IMPORT(cDebris_Update, 0x204ea0)
 SD_IMPORT(cMapElement_ctor, 0x202ca0)
 SD_IMPORT(cMapElement_dtor, 0x202e20)

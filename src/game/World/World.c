@@ -23,10 +23,8 @@
 typedef TABLE(cAmmoInfo) cAmmoTable;
 typedef TABLE(cWeapInfo) cWeapTable;
 
-/* the listener of a view: position, orientation and velocity (CSoundSys vtable slot 0x5c) */
-typedef void(__thiscall *SetListener_t)(cSndInterface *self, int view, const vec3_t *pos, const vec3_t *orient,
-	const vec3_t *vel);
-#define Snd_SetListener(vt) ((SetListener_t)(vt)->vf0e_18[(0x5c - 0x38) / 4])
+/* the listener of a view: position, orientation and velocity */
+#define Snd_SetListener(vt) ((vt)->SetListener)
 
 static cEntity *World_Lookup(cWorld *w, const char *name) {
 	cPtrItem *it = PtrTable_Find(&w->entities, name, HashTable_Slot(&w->entities, name));
@@ -1045,7 +1043,7 @@ void __thiscall cWorld_UpdateListeners(cWorld *self, float dt) {
 		}
 		if (WEnt_Vtbl(cam)->IsType(cam, "FCam") && cCamEntity_GetTarget(cam) && !CamEntity_NoFollow(cam)) {
 			cEntity *t = cCamEntity_GetTarget(cam);
-			const cSndInterfaceVtbl *svt = g_pSound->vftable;
+			const CSoundSysVtbl *svt = g_pSound->vftable;
 			vec3_t vel, pos;
 			vec3_t *pv = WEnt_Vtbl(t)->GetVel(t, &vel);
 			vec3_t *pp = WEnt_Vtbl(t)->GetCenter(t, &pos);

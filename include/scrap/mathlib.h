@@ -121,6 +121,7 @@ double Game_Sin(double x);
 double Game_Atan2(double y, double x);	/* _CIatan2 */
 double Game_Asin(double x);
 double Game_Exp(double x);
+double Game_Log(double x);
 double Game_Pow(double x, double y);
 int64_t X87_Fistp(double x);	/* round to nearest */
 void X87_SinCos(float a, float *s, float *c);	/* fsincos, both rounded to float */

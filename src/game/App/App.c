@@ -50,12 +50,6 @@ static void App_CopyStr(char *dst, const char *src, size_t size) {
 	dst[n] = 0;
 }
 
-/* the Sound interface slots 0x58 and 0x6c (no names yet) */
-static void App_SoundCall(int off) {
-	cSndInterface *s = g_pSound;
-	((void(__thiscall *)(cSndInterface *))((void *const *)s->vftable)[off / 4])(s);
-}
-
 CApp *__thiscall CApp_ctor(CApp *self, const char *cmdLine) {
 	self->vftable = g_CAppVftable;
 	cString_ctor(&self->levelPath);
@@ -397,11 +391,11 @@ void __thiscall CApp_LoadLevelNow(CApp *self, const char *level) {
 	self->vftable->DoneGame(self);
 	Sound_ResetVolumes();
 	g_pSound->vftable->StopAllSounds(g_pSound);
-	App_SoundCall(0x58);
+	g_pSound->vftable->ResetListeners(g_pSound);
 	if (!cString_ICmpStr(&self->levelPath, level) && !g_ForceReload) {
 		Loading_Begin();
 	} else {
-		App_SoundCall(0x6c);
+		g_pSound->vftable->StopMusic(g_pSound);
 		g_pSound->vftable->DeleteAllSounds(g_pSound);
 		Engine_LevelEnd();
 		one = app_one;

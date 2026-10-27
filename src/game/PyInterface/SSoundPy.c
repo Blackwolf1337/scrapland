@@ -63,6 +63,7 @@ PyObject *SSound_PlaySound(PyObject *self, PyObject *args) {
 	double x, y, z, volume, p1 = 0.0, p2 = 0.0, p3 = 1.0;
 	char *name;
 	cSoundDesc desc;
+	vec3_t pos;
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "(ddd)sd|ddd", &x, &y, &z, &name, &volume, &p1, &p2, &p3)) {
@@ -72,10 +73,10 @@ PyObject *SSound_PlaySound(PyObject *self, PyObject *args) {
 	desc.param1 = (float)p1;
 	desc.param2 = (float)p2;
 	desc.param3 = (float)p3;
-	desc.pos.x = (float)x;
-	desc.pos.y = (float)y;
-	desc.pos.z = (float)z;
-	cSoundDesc_SetPos(&desc, &desc.pos);
+	pos.x = (float)x;
+	pos.y = (float)y;
+	pos.z = (float)z;
+	cSoundDesc_SetPos(&desc, &pos);
 	desc.volume += Snd_Volume((float)volume);
 	g_pSound->vftable->PlaySound(g_pSound, name, &desc, 0);
 	return ReturnNone();

@@ -13,6 +13,7 @@
 #define LIBM_SSE2_EXP 0x34e950
 #define LIBM_SSE2_ASIN 0x350150
 #define LIBM_SSE2_POW 0x321440
+#define LIBM_SSE2_LOG 0x34ec30
 #define CI_ATAN2 0x329f3a
 #define LIBM_VEC_EXP2 0x314a00
 #define LIBM_VEC_COS2 0x314930
@@ -50,6 +51,11 @@ double Game_Asin(double x) {
 
 double Game_Exp(double x) {
 	return Libm_Sse2(LIBM_SSE2_EXP, x);
+}
+
+/* natural logarithm */
+double Game_Log(double x) {
+	return Libm_Sse2(LIBM_SSE2_LOG, x);
 }
 
 /* the exponent in xmm1 */

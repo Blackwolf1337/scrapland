@@ -1,0 +1,376 @@
+/*
+ * Sound/SoundDX8.cpp of the game: CSoundXBox, the FMOD 3 backend of CSoundSys. The samples are loaded from the
+ * packs as .wav into a table by sound name; every play takes a free FMOD channel. See include/scrap/sound.h.
+ */
+#include <string.h>
+
+#include "scrap/console.h"
+#include "scrap/filepak.h"
+#include "scrap/fmod.h"
+#include "scrap/scrapmain.h"
+#include "scrap/sound.h"
+
+#define SOUND_TABLE_SLOTS 0x1c9
+#define SOUND_VOL_MIN (-6400)	/* at or below nothing plays */
+
+void Sound_Nop(void);
+
+CSoundXBox *__fastcall CSoundXBox_ctor(CSoundXBox *self) {
+	CSoundSys_ctor(&self->sys);
+	self->sys.vftable = CSoundXBox_vftable;
+	self->sounds.numSlots = SOUND_TABLE_SLOTS;
+	self->sounds.slots = operator_new_array(SOUND_TABLE_SLOTS * 4);
+	memset(self->sounds.slots, 0, SOUND_TABLE_SLOTS * 4);
+	self->sounds.locked = 0;
+	self->volume = 0;
+	self->swapPan = 0;
+	self->sounds.caseSensitive = 0;
+	return self;
+}
+
+void __fastcall CSoundXBox_dtor(CSoundXBox *self) {
+	self->sys.vftable = CSoundXBox_vftable;
+	SoundStrTable_Clear(&self->sounds);
+	CSoundSys_dtor(&self->sys);
+}
+
+CSoundXBox *__thiscall CSoundXBox_Destroy(CSoundXBox *self, byte flags) {
+	CSoundXBox_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(CSoundXBox));
+	}
+	return self;
+}
+
+CSoundXBox *CSoundXBox_New(void) {
+	CSoundXBox *p = operator_new(sizeof(CSoundXBox));
+
+	return p ? CSoundXBox_ctor(p) : NULL;
+}
+
+static cSoundStrItem *CSoundXBox_Find(CSoundXBox *self, const char *name) {
+	return SoundStrTable_Find(&self->sounds, name, HashTable_Slot(&self->sounds, name));
+}
+
+/* the table value of name with the parameters of d applied: volumes and pans added, frequencies multiplied */
+byte __thiscall CSoundXBox_GetPlayDesc(CSoundXBox *self, const char *name, const cSoundDesc *d, cSoundTableValue *out) {
+	cSoundStrItem *it = CSoundXBox_Find(self, name);
+
+	if (!it) {
+		Con_Warnf("Sound not found: %s\n", name);
+		return 0;
+	}
+	*out = it->value;
+	out->desc.volume += self->volume + d->volume;
+	int pan = d->pan + out->desc.pan;
+	out->desc.pan = pan;
+	out->desc.freq = d->freq * out->desc.freq;
+	out->desc.loop = d->loop;
+	out->desc.prio = d->prio;
+	if (self->swapPan) {
+		out->desc.pan = -pan;
+	}
+	return 1;
+}
+
+void __fastcall CSoundXBox_Init(CSoundXBox *self) {
+	if (g_SoundInit) {
+		self->swapPan = g_SoundSwapChannels != 0;
+		CSoundSys_InitFmod(&self->sys);
+		self->sys.vftable->Update(&self->sys);
+	}
+}
+
+void __fastcall CSoundXBox_Close(CSoundXBox *self) {
+	CSoundSys_Close(&self->sys);
+	self->sys.vftable->DeleteAllSounds(&self->sys);
+}
+
+/* the volume offset follows SoundMainVolume (at a change everything stops), the pitch the timer */
+void __fastcall CSoundXBox_Update(CSoundXBox *self) {
+	CSoundSys_Nop(&self->sys);
+	int mult = 1;
+	if (g_TimerFreqMult > mult) {
+		mult = g_TimerFreqMult;
+	}
+	g_SndFreqScale = g_S_PitchScale / (float)mult;
+	int v = (int)((float)Snd_Volume(g_SoundMainVolume) / 0x1.333334p-1f);
+	if (self->volume != v) {
+		self->volume = v;
+		self->sys.vftable->StopAllSounds(&self->sys);
+	}
+}
+
+/* name is a file name; loads <name without its extension>.wav once under its sound name */
+void __thiscall CSoundXBox_Load(CSoundXBox *self, const char *name, int unused) {
+	char sndname[SOUND_NAME_MAX_LEN];
+	char path[0x100 + 5];
+	cSoundTableValue v;
+	cFilePack f;
+	uint32_t mem0, mem1, memMax;
+
+	(void)unused;
+	self->sys.vftable->GetSoundName(&self->sys, name, sndname, sizeof(sndname));
+	cSoundDesc_Init(&v.desc);
+	if (CSoundXBox_Find(self, sndname)) {
+		return;
+	}
+	Con_Debugf("Loading sound: %s\n", name);
+	v.sample = NULL;
+	v.freq = 44100;
+	cSoundDesc_Init(&v.desc);
+	cFilePack_ctor(&f);
+	Str_Printf(path, 0x100, "%.*s", (int)strlen(name) - 4, name);
+	memcpy(path + strlen(path), ".wav", 5);
+	cFilePack_Open(&f, path, 1);
+	int size = cFilePack_Size(&f);
+	void *data = operator_new_array(size);
+	CHECK(cFilePack_Read(&f, data, size) == size);
+	CHECK(cFilePack_Close(&f));
+	FSOUND_GetMemoryStats(&mem0, &memMax);
+	v.sample = FSOUND_Sample_Load(FSOUND_UNMANAGED, data, 0x88000, 0, size);
+	if (!v.sample) {
+		Con_Bluef("SOUND ERROR: %s: %s\n", Fmod_ErrorString(FSOUND_GetError()), path);
+	}
+	if (FSOUND_Sample_GetMode(v.sample) & FSOUND_STEREO) {
+		v.desc.volume = Snd_Volume(0.5f);
+	}
+	FSOUND_Sample_GetDefaults(v.sample, &v.freq, NULL, NULL, NULL);
+	FSOUND_GetMemoryStats(&mem1, &memMax);
+	Con_Verbosef("SOUND MEMORY: %d (%+d) %s, %d Hz\n", (int)(mem1 >> 10), (int)(mem1 - mem0) / 1024, path, v.freq);
+	if (data) {
+		operator_delete_sized(data, 0);
+	}
+	cFilePack_dtor(&f);
+	CHECK(!self->sounds.locked);
+	uint32_t slot = HashTable_Slot(&self->sounds, sndname);
+	if (!SoundStrTable_Find(&self->sounds, sndname, slot)) {
+		SoundStrTable_Insert(&self->sounds, sndname, slot, &v);
+	} else {
+		CheckFailed("SoundTable.Add( sndname, sound )", __FILE__, __TIMESTAMP__, __LINE__);
+	}
+}
+
+/* vtable slot 0x10, not available here */
+void __thiscall CSoundXBox_LoadSound2(CSoundXBox *self, const char *name) {
+	(void)self;
+	(void)name;
+	CheckFailed("0", __FILE__, __TIMESTAMP__, __LINE__);
+}
+
+void __thiscall CSoundXBox_LoadSound(CSoundXBox *self, const char *name) {
+	CSoundXBox_Load(self, name, 1);
+}
+
+void __thiscall CSoundXBox_DeleteSound(CSoundXBox *self, const char *name) {
+	cSoundDesc tmp;
+
+	cSoundDesc_Init(&tmp);
+	cSoundStrItem *it = CSoundXBox_Find(self, name);
+	if (it) {
+		FSOUND_Sample_Free(it->value.sample);
+		CHECK(SoundStrTable_Delete(&self->sounds, name));
+	}
+}
+
+void __fastcall CSoundXBox_StopAllSounds(CSoundXBox *self) {
+	(void)self;
+	Sound_Nop();
+	int n = FSOUND_GetMaxChannels();
+	for (int i = 0; i < n; i++) {
+		if (!FSOUND_GetReserved(i)) {
+			FSOUND_StopSound(i);
+		}
+	}
+}
+
+void __fastcall CSoundXBox_DeleteAllSounds(CSoundXBox *self) {
+	HashTable *t = &self->sounds;
+
+	self->sys.vftable->StopAllSounds(&self->sys);
+	CSoundSys_CallVf1c(&self->sys);
+	for (;;) {
+		int i = 0;
+		if ((int)t->numSlots < 1) {
+			return;
+		}
+		while (!t->slots[i]) {
+			if (++i >= (int)t->numSlots) {
+				return;
+			}
+		}
+		cSoundStrItem *it = (cSoundStrItem *)t->slots[i];
+		FSOUND_Sample_Free(it->value.sample);
+		CHECK(SoundStrTable_Delete(t, it->key));
+	}
+}
+
+byte __thiscall CSoundXBox_GetDesc(CSoundXBox *self, const char *name, cSoundDesc *out) {
+	cSoundDesc tmp;
+
+	cSoundDesc_Init(&tmp);
+	cSoundStrItem *it = CSoundXBox_Find(self, name);
+	if (it) {
+		*out = it->value.desc;
+		return 1;
+	}
+	Con_Warnf("Sound not found: %s\n", name);
+	return 0;
+}
+
+/* vtable slot 0x28, not available here */
+byte __thiscall CSoundXBox_SetDesc(CSoundXBox *self, const char *name, const cSoundDesc *d) {
+	(void)self;
+	(void)name;
+	(void)d;
+	CheckFailed("0", __FILE__, __TIMESTAMP__, __LINE__);
+	return 1;
+}
+
+/* the channel or 0 */
+int __thiscall CSoundXBox_PlayDesc(CSoundXBox *self, const char *name, const cSoundDesc *d) {
+	cSoundTableValue v;
+
+	if (self->volume <= SOUND_VOL_MIN || d->volume <= SOUND_VOL_MIN) {
+		return 0;
+	}
+	cSoundDesc_Init(&v.desc);
+	if (!CSoundXBox_GetPlayDesc(self, name, d, &v)) {
+		return 0;
+	}
+	return Fmod_Play(v.sample, &v.desc, name);
+}
+
+int __thiscall CSoundXBox_PlayVPF(CSoundXBox *self, const char *name, int volume, int pan, float freq) {
+	cSoundTableValue v;
+	cSoundDesc d;
+
+	if (self->volume <= SOUND_VOL_MIN || volume <= SOUND_VOL_MIN) {
+		return 0;
+	}
+	cSoundDesc_Init(&v.desc);
+	cSoundStrItem *it = CSoundXBox_Find(self, name);
+	if (!it) {
+		Con_Warnf("Sound not found: %s\n", name);
+		return 0;
+	}
+	v = it->value;
+	cSoundDesc_Init(&d);
+	d.volume = v.desc.volume + volume + self->volume;
+	d.freq = v.desc.freq * freq;
+	d.pan = pan + v.desc.pan;
+	d.loop = v.desc.loop;
+	d.prio = v.desc.prio;
+	if (self->swapPan) {
+		d.pan = -d.pan;
+	}
+	return Fmod_Play(v.sample, &d, name);
+}
+
+int __thiscall CSoundXBox_PlaySound(CSoundXBox *self, const char *name, const cSoundDesc *d, int *handle) {
+	int ch = CSoundXBox_PlayDesc(self, name, d);
+
+	if (handle) {
+		*handle = ch;
+	}
+	return ch != 0;
+}
+
+int __thiscall CSoundXBox_PlayName(CSoundXBox *self, const char *name) {
+	return CSoundXBox_PlayVPF(self, name, 0, 0, 1.0f);
+}
+
+int __thiscall CSoundXBox_Play(CSoundXBox *self, const char *name, int volume, int pan) {
+	return CSoundXBox_PlayVPF(self, name, volume, pan, 1.0f);
+}
+
+int __thiscall CSoundXBox_PlayAt(CSoundXBox *self, const char *name, const vec3_t *pos, int volume) {
+	cSoundDesc d;
+
+	cSoundDesc_Init(&d);
+	cSoundDesc_SetPos(&d, pos);
+	d.volume += volume;
+	return CSoundXBox_PlayVPF(self, name, d.volume, d.pan, 1.0f);
+}
+
+byte __thiscall CSoundXBox_UpdateSound(CSoundXBox *self, const char *name, const cSoundDesc *d, int handle) {
+	cSoundTableValue v;
+
+	if (g_S_SkipUpdates) {
+		return 1;
+	}
+	cSoundDesc_Init(&v.desc);
+	if (!CSoundXBox_GetPlayDesc(self, name, d, &v)) {
+		return 0;
+	}
+	return Fmod_SetChannel(handle, &v.desc);
+}
+
+/* a tail jump to FSOUND_StopSound in the original */
+int __thiscall CSoundXBox_StopSound(CSoundXBox *self, int handle) {
+	(void)self;
+	return FSOUND_StopSound(handle);
+}
+
+/* the FMOD channel functions */
+
+const char *Fmod_ErrorString(int err) {
+	static const uint32_t texts[] = {
+		0x3ca3c8, 0x3ca3d8, 0x3ca420, 0x3ca474, 0x3ca498, 0x3ca458, 0x3ca4d8, 0x3ca534, 0x3ca564, 0x3ca58c,
+		0x3ca59c, 0x3ca5b0, 0x3ca5c4, 0x3ca5d8, 0x3ca610, 0x3ca648, 0x3ca68c, 0x3ca6b0, 0x3ca6d8,
+	};
+
+	if ((uint32_t)err >= sizeof(texts) / sizeof(texts[0])) {
+		return Game_Ptr(0x3ca704);	/* "Unknown error" */
+	}
+	return Game_Ptr(texts[err]);
+}
+
+byte Fmod_SetChannel(int channel, const cSoundDesc *d) {
+	int deffreq;
+
+	g_SoundAutoplayVolume = -48.0f;
+	if (!FSOUND_IsPlaying(channel)) {
+		return 0;
+	}
+	FSOUND_Sample_GetDefaults(FSOUND_GetCurrentSample(channel), &deffreq, NULL, NULL, NULL);
+	float f = d->freq * g_SndFreqScale;
+	int freq = deffreq;
+	if (f != 1.0f) {
+		freq = (int)((double)((float)deffreq * f) + 0.5);
+	}
+	float v = (float)Game_Pow(2.0, (double)d->volume * 0.6 / 600.0);
+	float vol = 0.0f >= v ? 0.0f : Float_MinSS(1.0f, v);
+	FSOUND_SetVolume(channel, (int)(vol * 255.0f));
+	int pan = d->pan / 20 + 128;
+	if (pan <= 0) {
+		pan = 0;
+	} else if (pan >= 255) {
+		pan = 255;
+	}
+	if (!g_isDolby) {
+		FSOUND_SetPan(channel, pan);
+	}
+	if (freq <= 200) {
+		freq = 200;
+	} else if (freq >= 100000) {
+		freq = 100000;
+	}
+	FSOUND_SetFrequency(channel, freq);
+	return 1;
+}
+
+int Fmod_Play(void *sample, const cSoundDesc *d, const char *name) {
+	(void)name;
+	if (!sample || g_S_SkipPlay) {
+		return 0;
+	}
+	int ch = FSOUND_PlaySoundEx(FSOUND_FREE, sample, NULL, 1);
+	if (ch == -1) {
+		return 0;
+	}
+	Fmod_SetChannel(ch, d);
+	FSOUND_SetLoopMode(ch, (d->loop != 0) + 1);
+	FSOUND_SetPaused(ch, 0);
+	return ch;
+}
