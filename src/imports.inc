@@ -626,3 +626,10 @@ SD_IMPORT(cFXElementsOrbitBoyaController_ctor, 0x1d5820)
 /* module agent: Entities/EmbeddedFX/EmbeddedFXVehicle.cpp+mpeg/music_fmod.cpp (imports below this line) */
 
 /* module agent: World/FX/FXWeapons.cpp (imports below this line) */
+SD_IMPORT(cTargetLock_GetAmmo, 0x11a6c0)
+SD_IMPORT(cTargetLock_HasSlot, 0x11a9f0)
+SD_IMPORT(CGameLensFlare_SetOn, 0x232f30)
+SD_IMPORT(CGameLensFlare_SetIntensity, 0x232f80)
+SD_IMPORT(CGameLensFlare_SetF30, 0x232fa0)
+SD_IMPORT(CGameLensFlare_SetPos, 0x232fc0)
+SD_IMPORT(CGameLensFlare_SetI1c, 0x233010)
