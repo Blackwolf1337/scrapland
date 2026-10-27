@@ -548,6 +548,9 @@ void __thiscall cObjElementFXMessengerTakeDataPack_Update(cObjElementFXMessenger
 void __thiscall cObjElementFXMercenaryDrink_Update(cObjElementFXMercenaryDrink *self, cDebris *d, float dt);
 /* the green ray of the Bishop from .. to with sparks at both ends */
 void __thiscall cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self, cDebris *d, float dt);
+/* the life sold by the Bishop: glows and data codes from the hands of the attacker into the attacked and a ring
+ * of them at the attacked facing the camera */
+void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *self, cDebris *d, float dt);
 void __thiscall cObjElementFXBettyKill_Update(cObjElementFXKill *self, cDebris *d, float dt);
 void __thiscall cObjElementFXDTritusKill_Update(cObjElementFXKill *self, cDebris *d, float dt);
 void __thiscall cObjElementFXDTritusAttack_Start(cObjElementFXDTritusAttack *self, cEntity *e);

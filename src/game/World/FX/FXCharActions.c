@@ -2858,3 +2858,245 @@ void __thiscall cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self
 		self->fc = 0.0f;
 	}
 }
+
+#define FXA_RAMP_SELLLIFE 0x430818		/* [3] */
+#define FXA_RAMP_SELLLIFE2 0x43083c		/* [2] */
+
+/* the glow of the Bishop: rotation, the ramp and one particle */
+static void FXSellLife_Glow(CGameParticles *sp) {
+	sp->rotIni = sp->rotEnd = FXA_Rand((double)6.28318548f, 0.0);
+	sp->rotVar = (float)(FXA_Rnd() * (double)1.57079637f - (double)0.785398185f);
+	byte sprite = (crt_rand() & 1) ? 2 : 5;
+	sp->spriteIni = sprite;
+	sp->spriteEnd = sprite;
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, Game_Ptr(FXA_RAMP_SELLLIFE));
+	CGameParticles_Apply(sp);
+	CGameParticles_EmitN(sp, 1, 0);
+}
+
+/* a data code of the Bishop: no rotation, one of 8 sprites, one of the three ramps and one particle */
+static void FXSellLife_Code(CGameParticles *sp) {
+	sp->rotIni = 0.0f;
+	sp->rotEnd = 0.0f;
+	sp->rotVar = 0.0f;
+	sp->sizeLife = FXA_Rand((double)0.019999996f, (double)0.22f);
+	byte sprite = (byte)(crt_rand() % 8 + 1);
+	sp->spriteIni = sprite;
+	sp->spriteEnd = sprite;
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FXA_RAMP_SELLLIFE) + crt_rand() % 3 * 9);
+	CGameParticles_Apply(sp);
+	CGameParticles_EmitN(sp, 1, 0);
+}
+
+static inline void FXA_Still(CGameParticles *sp) {
+	sp->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	sp->initAccMax = sp->initAccMin;
+}
+
+void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *self, cDebris *d, float dt) {
+	vec3_t hand[2], pts4[4], tmp, mid, cam, v, n, off, pos;
+	vec3_t pts[256];
+	float f;
+
+	(void)dt;
+	FXA_Keep(&self->attacker);
+	FXA_Keep(&self->attacked);
+	if (!self->attacked || !self->attacked->flag_4c) {
+		return;
+	}
+	CGameModel_SetSortZ(Debris_Model(d), -79.0f, 0.0f);
+	float delta = FXA_Delta();
+	self->f16c = self->f16c + delta;
+	float t = self->f170 + delta;
+	self->f170 = t;
+	if (0.02f > t) {
+		return;
+	}
+	CGameModel *ma = FX_Vtbl(self->attacked)->GetModel(self->attacked);
+	if (!ma || !CGameModel_IsLoaded(ma)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(ma));
+	CGameParticles *glow = &self->glow;
+	CGameParticles *code = &self->dataCodec;
+	if (self->attacker) {
+		CGameModel *mb = FX_Vtbl(self->attacker)->GetModel(self->attacker);
+		if (!mb || !CGameModel_IsLoaded(mb)) {
+			return;
+		}
+		CHECK(CGameModel_IsLoaded(mb));
+		for (int k = 0; k < 2; k++) {
+			CGameModel_Vertices(mb, &hand[k], NULL, NULL, 1, 0, NULL, (uint32_t)self->nodeHand[k], NULL);
+		}
+		if (FX_InRange(self->f16c, 0.2f, 4.5f, &f)) {
+			for (int k = 0; k < 2; k++) {
+				const vec3_t *h = &hand[k];
+				glow->birthRate = 0;
+				float r = FXA_Rand(25.0, 0.0);
+				const vec3_t *dd = FX_RandomDir(&tmp);
+				glow->initPosMin.x = r * dd->x + h->x;
+				glow->initPosMin.y = dd->y * r + h->y;
+				glow->initPosMin.z = dd->z * r + h->z;
+				glow->initPosMax = glow->initPosMin;
+				r = FXA_Rand(25.0, 0.0);
+				dd = FX_RandomDir(&tmp);
+				glow->initVelMin.x = dd->x * r;
+				glow->initVelMin.y = dd->y * r;
+				glow->initVelMin.z = dd->z * r;
+				glow->initVelMax = glow->initVelMin;
+				FXA_Still(glow);
+				glow->lifeTime = FXA_Rand((double)0.050000012f, (double)0.35f);
+				glow->sizeIni = FXA_Rand(10.0, 25.0);
+				glow->sizeEnd = FXA_Rand(15.0, 80.0);
+				glow->sizeLife = FXA_Rand((double)0.050000012f, (double)0.35f);
+				FXSellLife_Glow(glow);
+				code->birthRate = 0;
+				r = FXA_Rand(25.0, 0.0);
+				dd = FX_RandomDir(&tmp);
+				code->initPosMin.x = dd->x * r + h->x;
+				code->initPosMin.y = dd->y * r + h->y;
+				code->initPosMin.z = dd->z * r + h->z;
+				code->initPosMax = code->initPosMin;
+				r = FXA_Rand(25.0, 0.0);
+				dd = FX_RandomDir(&tmp);
+				code->initVelMin.x = r * dd->x;
+				code->initVelMin.y = dd->y * r;
+				code->initVelMin.z = dd->z * r;
+				code->initVelMax = code->initVelMin;
+				FXA_Still(code);
+				code->lifeTime = FXA_Rand((double)0.050000012f, (double)0.35f);
+				code->sizeIni = (float)(FXA_Rnd() + 6.0);
+				code->sizeEnd = (float)(FXA_Rnd() + 9.0);
+				FXSellLife_Code(code);
+			}
+		}
+		if (FX_InRange(self->f16c, 3.9f, 5.0f, &f)) {
+			mid.x = hand[0].x + (hand[1].x - hand[0].x) * 0.5f;
+			mid.y = hand[0].y + (hand[1].y - hand[0].y) * 0.5f;
+			mid.z = hand[0].z + (hand[1].z - hand[0].z) * 0.5f;
+			CGameModel_Vertices(ma, pts4, NULL, NULL, 4, -1, NULL, 0xffffffffu, NULL);
+			for (int k = 0; k < 4; k++) {
+				const vec3_t *p = &pts4[k];
+				float life = FXA_Rand((double)0.050000012f, (double)0.35f);
+				glow->birthRate = 0;
+				float r = FXA_Rand(15.0, 0.0);
+				const vec3_t *dd = FX_RandomDir(&tmp);
+				glow->initPosMin.x = r * dd->x + mid.x;
+				glow->initPosMin.y = dd->y * r + mid.y;
+				glow->initPosMin.z = dd->z * r + mid.z;
+				float inv = 1.0f / life;
+				glow->initPosMax = glow->initPosMin;
+				glow->initVelMin.x = (p->x - glow->initPosMin.x) * inv;
+				glow->initVelMin.y = (p->y - glow->initPosMin.y) * inv;
+				glow->initVelMin.z = (p->z - glow->initPosMin.z) * inv;
+				glow->initVelMax = glow->initVelMin;
+				FXA_Still(glow);
+				glow->lifeTime = life;
+				glow->sizeIni = FXA_Rand(10.0, 25.0);
+				glow->sizeEnd = FXA_Rand(15.0, 80.0);
+				glow->sizeLife = FXA_Rand((double)0.050000012f, (double)0.35f);
+				FXSellLife_Glow(glow);
+				code->birthRate = 0;
+				r = FXA_Rand(15.0, 0.0);
+				dd = FX_RandomDir(&tmp);
+				code->initPosMin.x = dd->x * r + mid.x;
+				code->initPosMin.y = dd->y * r + mid.y;
+				code->initPosMin.z = dd->z * r + mid.z;
+				code->initPosMax = code->initPosMin;
+				code->initVelMin.x = (p->x - code->initPosMin.x) * inv;
+				code->initVelMin.y = (p->y - code->initPosMin.y) * inv;
+				code->initVelMin.z = (p->z - code->initPosMin.z) * inv;
+				code->initVelMax = code->initVelMin;
+				FXA_Still(code);
+				code->lifeTime = FXA_Rand((double)0.050000012f, (double)0.35f);
+				code->sizeIni = (float)(FXA_Rnd() + 7.0);
+				code->sizeEnd = (float)(FXA_Rnd() + 10.0);
+				FXSellLife_Code(code);
+			}
+		}
+	}
+	float lo = self->attacker ? 4.0f : 0.0f;
+	float hi = self->attacker ? 5.5f : 1.5f;
+	if (FX_InRange(self->f16c, lo, hi, &f)) {
+		cWorld *w = g_pWorld;
+		cam = w->camPos[w->curCam];
+		const vec3_t *c = FX_Vtbl(self->attacked)->GetCenter(self->attacked, &tmp);
+		v.x = cam.x - c->x;
+		v.y = cam.y - c->y;
+		v.z = cam.z - c->z;
+		Vec3_NormalizeTo(&n, &v);
+		float radius = FX_Vtbl(self->attacked)->GetRadius(self->attacked);
+		off.x = n.x * radius * 0.3f;
+		off.y = n.y * radius * 0.3f;
+		off.z = n.z * radius * 0.3f;
+		CGameModel_Vertices(ma, pts, NULL, NULL, 256, -1, NULL, 0xffffffffu, NULL);
+		float k = self->attacker ? 1.8f : 1.2f;
+		float r2 = FX_Vtbl(self->attacked)->GetRadius(self->attacked) * k;
+		float h = (1.0f - f * 2.0f) * r2;
+		float s = FX_Vtbl(self->attacked)->GetRadius(self->attacked) / 70.0f;
+		CGameModel_GetPos(ma, &pos);
+		float thr = s * 8.0f;
+		int count = 0;
+		for (int i = 0; i < 256; i++) {
+			float y = pts[i].y;
+			if (!(thr > __builtin_fabsf(y - (pos.y + h)))) {
+				continue;
+			}
+			glow->birthRate = 0;
+			glow->initPosMin.x = off.x + pts[i].x;
+			glow->initPosMin.z = off.z + pts[i].z;
+			glow->initPosMin.y = y + off.y;
+			glow->initPosMax = glow->initPosMin;
+			glow->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			glow->initVelMax = glow->initVelMin;
+			FXA_Still(glow);
+			glow->lifeTime = FXA_Rand((double)0.120000035f, (double)0.42f);
+			double rr = FXA_Rnd();
+			glow->sizeIni = (float)(rr + rr + 8.0) * s;
+			glow->sizeEnd = FXA_Rand(5.0, 40.0) * s;
+			glow->sizeLife = FXA_Rand((double)0.10000001f, (double)0.2f);
+			glow->rotIni = glow->rotEnd = FXA_Rand((double)6.28318548f, 0.0);
+			float rv = (float)(FXA_Rnd() * (double)1.57079637f - (double)0.785398185f);
+			glow->spriteIni = 5;
+			glow->spriteEnd = 5;
+			glow->rotVar = rv;
+			CGameParticles_SetColorRampOn(glow, 1);
+			CGameParticles_SetColorRamp(glow, Game_Ptr(FXA_RAMP_SELLLIFE));
+			CGameParticles_Apply(glow);
+			CGameParticles_EmitN(glow, 1, 0);
+			code->birthRate = 0;
+			float up = (float)(FXA_Rnd() * 40.0 - 20.0) * s;
+			code->initPosMin.x = pts[i].x + off.x;
+			code->initPosMin.y = ((pos.y + h) + up) + off.y;
+			code->initPosMin.z = pts[i].z + off.z;
+			code->initPosMax = code->initPosMin;
+			code->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			code->initVelMax = code->initVelMin;
+			float z0 = s * 0.0f;
+			code->initAccMin.x = z0;
+			code->initAccMin.y = s * 1500.0f;
+			code->initAccMin.z = z0;
+			code->initAccMax = code->initAccMin;
+			code->lifeTime = FXA_Rand((double)0.03999999f, (double)0.28f);
+			code->sizeIni = (float)(FXA_Rnd() + 4.0) * s;
+			code->sizeEnd = (float)(FXA_Rnd() + 7.0) * s;
+			code->rotIni = 0.0f;
+			code->rotEnd = 0.0f;
+			code->rotVar = 0.0f;
+			code->sizeLife = FXA_Rand((double)0.02000001f, (double)0.32f);
+			byte sprite = (byte)(crt_rand() % 8);
+			code->spriteIni = sprite;
+			code->spriteEnd = sprite;
+			CGameParticles_SetColorRampOn(code, 1);
+			CGameParticles_SetColorRamp(code, (uint32_t *)Game_Ptr(FXA_RAMP_SELLLIFE2) + (crt_rand() & 1) * 9);
+			CGameParticles_Apply(code);
+			CGameParticles_EmitN(code, 1, 0);
+			if (++count > 5) {
+				break;
+			}
+		}
+	}
+	self->f170 = 0.0f;
+}
