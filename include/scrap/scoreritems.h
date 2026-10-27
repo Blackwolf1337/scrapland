@@ -699,4 +699,90 @@ void __thiscall cMonitorScorer_SetAnim(cMonitorScorer *self, int anim);
 /* the message FirstPhotoMessage again when the message text ended */
 void Monitor_RepeatPhotoMessage(void);
 
+/* ---- NetStatsScorer.cpp ---- */
+
+#define CNETSTATSSCORER_VFTABLE 0x3c2f7c
+#define NETSTATS_SLOTS 16
+
+/* the ping and the bars of the net traffic of the client (0x230 bytes) */
+typedef struct cNetStatsScorer {
+	cScorerItem base;		/* 0x000 */
+	float sent[NETSTATS_SLOTS];	/* 0x0ac the bar heights, going down */
+	float recv[NETSTATS_SLOTS];	/* 0x0ec */
+	float start[NETSTATS_SLOTS];	/* 0x12c the game time of the send before */
+	float end[NETSTATS_SLOTS];	/* 0x16c of the last send */
+	int sentBytes[NETSTATS_SLOTS];	/* 0x1ac */
+	int recvBytes[NETSTATS_SLOTS];	/* 0x1ec */
+	CPsaImage *img;			/* 0x22c white */
+} cNetStatsScorer;
+SD_SIZE(cNetStatsScorer, 0x230);
+
+#define g_ClientPingX GAME_DATA(float, 0x45fc80)	/* ClientPingX */
+#define g_ClientPingY GAME_DATA(float, 0x45fc68)	/* ClientPingY */
+#define g_ShowClientPing GAME_DATA(int, 0x45fc50)	/* ShowClientPing */
+#define g_ShowNetStatus GAME_DATA(int, 0x45fc38)	/* ShowNetStatus */
+/* the counters of the net (Net/) for the stats: bytes and slot of the last send and receive */
+#define g_NetStatSent GAME_DATA(int, 0x465558)
+#define g_NetStatSentSlot GAME_DATA(int, 0x465554)
+#define g_NetStatRecv GAME_DATA(int, 0x465550)
+#define g_NetStatRecvSlot GAME_DATA(int, 0x46554c)
+
+cNetStatsScorer *__fastcall cNetStatsScorer_ctor(cNetStatsScorer *self);
+void __fastcall cNetStatsScorer_dtor(cNetStatsScorer *self);
+cNetStatsScorer *__thiscall cNetStatsScorer_Delete(cNetStatsScorer *self, byte flags);
+/* only the base variables */
+int __thiscall cNetStatsScorer_Var(cNetStatsScorer *self, const char *name, byte set, char **s, double *d, int *i);
+void __thiscall cNetStatsScorer_Draw(cNetStatsScorer *self, int player);
+
+/* ---- the news panel of the scorer (between NetStatsScorer.cpp and RadarScorer.cpp, no CHECK) ---- */
+
+/* the news panel rendered into the texture "NewsPanel": the news head between the background and the logo, or
+ * the watched entities while the alarm is on */
+typedef struct cNewsPanel {
+	int motorInits;			/* 0x00 g_MotorInits of the last frame: the texture is drawn again after a reset */
+	vec3_t camPos;			/* 0x04 of the entity view */
+	CGameCamera *cam;		/* 0x10 */
+	char *head;			/* 0x14 cString, NewsHead in use */
+	char *logo;			/* 0x18 cString, NewsLogoBmp in use */
+	char *back;			/* 0x1c cString, BackNewsBmp in use */
+	CGameModel *model;		/* 0x20 of the head (a scorer model or an entity) */
+	CPsaImage *logoImg;		/* 0x24 */
+	CPsaImage *backImg;		/* 0x28 */
+	float lastTime;			/* 0x2c the scorer time of the last update */
+	float open;			/* 0x30 0..1 */
+	byte closedDrawn;		/* 0x34 the closed panel is in the texture */
+	byte pad_35[3];
+} cNewsPanel;
+
+#define g_NewsPanelActive GAME_DATA(int, 0x45fdb8)		/* NewsPanelActive */
+#define g_NewsPanelActiveDef GAME_DATA(int, 0x45fdbc)	/* its default */
+#define g_NewsPanelShowHead GAME_DATA(int, 0x45fcc8)	/* NewsPanelShowHead */
+#define g_NewsPanelShowHeadDef GAME_DATA(int, 0x45fccc)
+#define g_NewsPanelOpenSpeed GAME_DATA(float, 0x45fd10)	/* NewsPanelOpenSpeed */
+#define g_NewsPanelCloseSpeed GAME_DATA(float, 0x45fc98)	/* NewsPanelCloseSpeed */
+#define g_NewsHead (&GAME_DATA(char *, 0x45fda0))		/* NewsHead, a string variable */
+#define g_NewsLogoBmp (&GAME_DATA(char *, 0x45fcb0))		/* NewsLogoBmp */
+#define g_BackNewsBmp (&GAME_DATA(char *, 0x45fd58))		/* BackNewsBmp */
+#define g_NewsPanelAspect GAME_DATA(float, 0x45fde8)	/* NewsPanelAspect */
+#define g_NewsPanelMove GAME_DATA(float, 0x45fdd0)		/* NewsPanelMove */
+#define g_NewsPanelDisplacement GAME_DATA(float, 0x45fd28)	/* NewsPanelDisplacement */
+#define g_NewsPanelDistance GAME_DATA(float, 0x45fd88)	/* NewsPanelDistance */
+#define g_NewsPanelW GAME_DATA(float, 0x45fce0)		/* NewsPanelW */
+#define g_NewsPanelH GAME_DATA(float, 0x45fd40)		/* NewsPanelH */
+#define g_NewsPanelX GAME_DATA(float, 0x45fcf8)		/* NewsPanelX */
+#define g_NewsPanelY GAME_DATA(float, 0x45fd70)		/* NewsPanelY */
+
+cNewsPanel *__fastcall cNewsPanel_ctor(cNewsPanel *self);
+void __fastcall cNewsPanel_dtor(cNewsPanel *self);
+/* the first entity of the watched list 0, 1 or 2 of the world */
+cEntity *__thiscall cNewsPanel_GetWatched(cNewsPanel *self, int list);
+/* the switches back to their defaults, the images and the head dropped */
+void __fastcall cNewsPanel_Reset(cNewsPanel *self);
+/* the texture of the frame, when the scorer time moved */
+void __fastcall cNewsPanel_Update(cNewsPanel *self);
+/* the view of an entity from a point around it */
+void __thiscall cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e);
+/* the news: the head opening between the background and the logo */
+void __thiscall cNewsPanel_DrawNews(cNewsPanel *self, float dt);
+
 #endif
