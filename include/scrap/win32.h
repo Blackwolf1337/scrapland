@@ -45,6 +45,11 @@ typedef uint64_t(__stdcall *gettickcount64_t)(void);
 #define exe_SetFileAttributesA GAME_DATA(setfileattributes_t, 0x3a1288)
 typedef int(__stdcall *lstrlen_t)(const char *s);
 #define exe_lstrlenA GAME_DATA(lstrlen_t, 0x3a12b8)
+typedef int(__stdcall *multibytetowidechar_t)(uint32_t cp, uint32_t flags, const char *s, int n, uint16_t *w, int wn);
+typedef int(__stdcall *widechartomultibyte_t)(uint32_t cp, uint32_t flags, const uint16_t *w, int wn, char *s, int n,
+	const char *defChar, int *usedDef);
+#define exe_MultiByteToWideChar GAME_DATA(multibytetowidechar_t, 0x3a12b0)
+#define exe_WideCharToMultiByte GAME_DATA(widechartomultibyte_t, 0x3a12b4)
 
 /* winmm */
 typedef uint32_t(__stdcall *timegettime_t)(void);

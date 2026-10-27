@@ -358,3 +358,65 @@ check('en1 Stencil_Free Init', lambda: en1lg(lambda: (SDTest.Call(0x2684f0, 'v')
 for en1k in range(len(en1sg)):
 	en1poke(en1sg[en1k], en1ss[en1k])
 en1poke(0x8ad4ec, (SDTest.Peek(0x4ad4ec, 'i') & 0xffffff00) | en1s4ec)
+
+# the DX8 SDK helpers: the order of display modes, the string conversions, the GUID strings and the depth format
+# check of the adapter of g_Motor
+en1dm = en1z(0x20)
+for en1a, en1b in (((640, 480, 60, 22), (800, 600, 60, 22)), ((800, 600, 60, 22), (640, 480, 60, 22)),
+	((800, 480, 60, 22), (800, 600, 60, 22)), ((800, 600, 60, 22), (800, 480, 60, 22)), ((800, 600, 75, 22),
+	(800, 600, 60, 23)), ((800, 600, 60, 23), (800, 600, 60, 22)), ((800, 600, 60, 22), (800, 600, 85, 22)),
+	((0x80000000, 1, 0, -1), (5, 1, 0, 3)), ((7, 7, 0, -5), (7, 7, 0, 2))):
+	for en1k in range(4):
+		en1poke(en1dm + 4 * en1k, en1a[en1k])
+		en1poke(en1dm + 16 + 4 * en1k, en1b[en1k])
+	check('en1 D3DApp_SortModes' + fmt((en1a, en1b)), lambda: SDTest.Call(0x276090, 'iii', en1dm, en1dm + 16)[0])
+en1wb = en1z(0x80)
+def en1wfill(a, n, v):
+	for k in range(n):
+		en1poke(a + 4 * k, v)
+def en1ints(a, n):
+	r = []
+	for k in range(n):
+		r.append(en1i(a + 4 * k))
+	return r
+for en1s in ('', 'abc', 'Hello World 123', 'x'):
+	for en1c in (-1, 1, 4, 0, 30):
+		for en1fn in (0x2764c0, 0x2765b0):
+			check('en1 DXUtil_AnsiToGeneric' + fmt((en1fn, en1s, en1c)), lambda fn=en1fn, s=en1s, c=en1c:
+				SDTest.Call(fn, 'vbsi', 'qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq', s, c)[1])
+		for en1fn in (0x276510, 0x276600):
+			def en1aw(fn=en1fn, s=en1s, c=en1c):
+				en1wfill(en1wb + 4, 30, 0x41414141)
+				SDTest.Call(fn, 'visi', en1wb + 4, s, c)
+				return en1ints(en1wb, 16)
+			check('en1 DXUtil_AnsiToWide' + fmt((en1fn, en1s, en1c)), en1aw)
+		for en1fn in (0x276700, 0x276760):
+			def en1wa(fn=en1fn, s=en1s, c=en1c):
+				en1wfill(en1wb, 32, 0)
+				for k in range(len(s)):
+					en1poke(en1wb + 2 * k, (en1i(en1wb + 2 * k) & ~0xffff) | ord(s[k]))
+				return SDTest.Call(fn, 'vbii', 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz', en1wb, c)[1]
+			check('en1 DXUtil_WideToAnsi' + fmt((en1fn, en1s, en1c)), en1wa)
+en1guid = en1z(0x10)
+for en1g in ((0x12345678, 0x9abcdef0, 0x01234567, 0x89abcdef), (0, 0, 0, 0), (-1, -1, -1, -1), (0x00ff00ff, 0x0f0f0f0f,
+	0x7f, 0x80000000)):
+	for en1k in range(4):
+		en1poke(en1guid + 4 * en1k, en1g[en1k])
+	check('en1 DXUtil_GUIDToString' + fmt(en1g), lambda: SDTest.Call(0x276560, 'vib', en1guid,
+		'wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww')[1])
+for en1s in ('{12345678-9ABC-DEF0-1234-56789ABCDEF0}', '{12345678-9abc-def0-1234-56789abcdef0}', 'abc', '',
+	'{1234-5678}', '{FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF}', '{1-2-3-4567-89ABCDEF0123}'):
+	def en1sg(s=en1s):
+		en1wfill(en1guid, 4, 0x11111111)
+		return (SDTest.Call(0x276630, 'isi', s, en1guid)[0], en1ints(en1guid, 4))
+	check('en1 DXUtil_StringToGUID' + fmt((en1s,)), en1sg)
+en1motor = SDTest.Peek(0x4b1c04, 'i')
+en1d3d = 0
+if en1motor:
+	en1d3d = en1i(en1motor + 0x2a3d4)
+check('en1 d3d', lambda: en1d3d != 0)
+if en1d3d:
+	for en1f in (22, 23, 21):
+		for en1ds in (80, 77, 75, 79, 71, 0):
+			check('en1 D3DApp_DepthFormatOk' + fmt((en1f, en1ds)), lambda f=en1f, ds=en1ds: SDTest.Call(0x276470,
+				'biiiii', en1d3d, 0, 1, f, ds)[0])
