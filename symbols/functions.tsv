@@ -2438,40 +2438,40 @@ rva	size	source	callconv	name	signature
 000d6800	62	DEFAULT	unknown	FUN_004d6800	
 000d6840	68	DEFAULT	unknown	FUN_004d6840	
 000d6890	84	DEFAULT	unknown	FUN_004d6890	
-000d68f0	7	DEFAULT	unknown	FUN_004d68f0	
+000d68f0	7	USER_DEFINED	__thiscall	cEmbeddedFX_dtor	void __thiscall(void)
 000d6900	36	ANALYSIS	__thiscall	std::_Facet_base::`scalar_deleting_destructor'	void * __thiscall(uint param_1)
-000d6930	107	DEFAULT	unknown	FUN_004d6930	
-000d69a0	129	DEFAULT	unknown	FUN_004d69a0	
-000d6a30	184	DEFAULT	unknown	FUN_004d6a30	
-000d6af0	159	DEFAULT	unknown	FUN_004d6af0	
-000d6b90	113	DEFAULT	unknown	FUN_004d6b90	
-000d6c10	158	DEFAULT	unknown	FUN_004d6c10	
-000d6cb0	141	DEFAULT	unknown	FUN_004d6cb0	
-000d6d40	119	DEFAULT	unknown	FUN_004d6d40	
-000d6dc0	41	DEFAULT	unknown	FUN_004d6dc0	
-000d6df0	209	DEFAULT	unknown	FUN_004d6df0	
-000d6ed0	276	DEFAULT	unknown	FUN_004d6ed0	
-000d6ff0	25	DEFAULT	unknown	FUN_004d6ff0	
-000d7010	36	DEFAULT	unknown	FUN_004d7010	
-000d7040	95	DEFAULT	unknown	FUN_004d7040	
-000d70a0	47	DEFAULT	unknown	FUN_004d70a0	
-000d70d0	25	DEFAULT	unknown	FUN_004d70d0	
-000d70f0	47	DEFAULT	unknown	FUN_004d70f0	
-000d7120	95	DEFAULT	unknown	FUN_004d7120	
-000d7180	25	DEFAULT	unknown	FUN_004d7180	
-000d71a0	8	DEFAULT	unknown	FUN_004d71a0	
-000d71b0	128	DEFAULT	unknown	FUN_004d71b0	
-000d7230	159	DEFAULT	unknown	FUN_004d7230	
-000d72d0	54	ANALYSIS	__thiscall	cEmbeddedFXBankDirector::vf00	undefined __thiscall(void)
-000d7310	65	ANALYSIS	__thiscall	cEmbeddedFXBankMaster::vf00	undefined __thiscall(void)
-000d7360	126	ANALYSIS	__thiscall	cEmbeddedFXCrazyGambler::vf00	undefined __thiscall(void)
-000d73e0	76	ANALYSIS	__thiscall	cEmbeddedFXGear::vf00	undefined __thiscall(void)
-000d7430	54	ANALYSIS	__thiscall	cEmbeddedFXMaintenance::vf00	undefined __thiscall(void)
-000d7470	76	ANALYSIS	__thiscall	cEmbeddedFXMercenary::vf00	undefined __thiscall(void)
-000d74c0	126	ANALYSIS	__thiscall	cEmbeddedFXMessenger::vf00	undefined __thiscall(void)
-000d7540	54	ANALYSIS	__thiscall	cEmbeddedFXPolice::vf00	undefined __thiscall(void)
-000d7580	159	ANALYSIS	__thiscall	cEmbeddedFXRusty::vf00	undefined __thiscall(void)
-000d7620	38	ANALYSIS	__thiscall	cEmbeddedFXSentinel::vf00	undefined __thiscall(void)
+000d6930	107	USER_DEFINED	__thiscall	cEmbeddedFXBankDirector_ctor	void * __thiscall(void)
+000d69a0	129	USER_DEFINED	__thiscall	cEmbeddedFXBankMaster_ctor	void * __thiscall(void)
+000d6a30	184	USER_DEFINED	__thiscall	cEmbeddedFXCrazyGambler_ctor	void * __thiscall(void)
+000d6af0	159	USER_DEFINED	__thiscall	cEmbeddedFXGear_ctor	void * __thiscall(void)
+000d6b90	113	USER_DEFINED	__thiscall	cEmbeddedFXMaintenance_ctor	void * __thiscall(void)
+000d6c10	158	USER_DEFINED	__thiscall	cEmbeddedFXMercenary_ctor	void * __thiscall(void)
+000d6cb0	141	USER_DEFINED	__thiscall	cEmbeddedFXMessenger_ctor	void * __thiscall(void)
+000d6d40	119	USER_DEFINED	__thiscall	cEmbeddedFXPolice_ctor	void * __thiscall(void)
+000d6dc0	41	USER_DEFINED	__thiscall	cEmbeddedFXAlarm_ctor	void * __thiscall(void)
+000d6df0	209	USER_DEFINED	__thiscall	cEmbeddedFXRusty_ctor	void * __thiscall(void)
+000d6ed0	276	USER_DEFINED	__thiscall	cEmbeddedFXSentinel_ctor	void * __thiscall(void)
+000d6ff0	25	USER_DEFINED	__thiscall	cEmbeddedFXBankDirector_dtor	void __thiscall(void)
+000d7010	36	USER_DEFINED	__thiscall	cEmbeddedFXBankMaster_dtor	void __thiscall(void)
+000d7040	95	USER_DEFINED	__thiscall	cEmbeddedFXCrazyGambler_dtor	void __thiscall(void)
+000d70a0	47	USER_DEFINED	__thiscall	cEmbeddedFXGear_dtor	void __thiscall(void)
+000d70d0	25	USER_DEFINED	__thiscall	cEmbeddedFXMaintenance_dtor	void __thiscall(void)
+000d70f0	47	USER_DEFINED	__thiscall	cEmbeddedFXMercenary_dtor	void __thiscall(void)
+000d7120	95	USER_DEFINED	__thiscall	cEmbeddedFXMessenger_dtor	void __thiscall(void)
+000d7180	25	USER_DEFINED	__thiscall	cEmbeddedFXPolice_dtor	void __thiscall(void)
+000d71a0	8	USER_DEFINED	__thiscall	cEmbeddedFXAlarm_dtor	void __thiscall(void)
+000d71b0	128	USER_DEFINED	__thiscall	cEmbeddedFXRusty_dtor	void __thiscall(void)
+000d7230	159	USER_DEFINED	__thiscall	cEmbeddedFXSentinel_dtor	void __thiscall(void)
+000d72d0	54	USER_DEFINED	__thiscall	cEmbeddedFXBankDirector_Delete	void * __thiscall(byte flags)
+000d7310	65	USER_DEFINED	__thiscall	cEmbeddedFXBankMaster_Delete	void * __thiscall(byte flags)
+000d7360	126	USER_DEFINED	__thiscall	cEmbeddedFXCrazyGambler_Delete	void * __thiscall(byte flags)
+000d73e0	76	USER_DEFINED	__thiscall	cEmbeddedFXGear_Delete	void * __thiscall(byte flags)
+000d7430	54	USER_DEFINED	__thiscall	cEmbeddedFXMaintenance_Delete	void * __thiscall(byte flags)
+000d7470	76	USER_DEFINED	__thiscall	cEmbeddedFXMercenary_Delete	void * __thiscall(byte flags)
+000d74c0	126	USER_DEFINED	__thiscall	cEmbeddedFXMessenger_Delete	void * __thiscall(byte flags)
+000d7540	54	USER_DEFINED	__thiscall	cEmbeddedFXPolice_Delete	void * __thiscall(byte flags)
+000d7580	159	USER_DEFINED	__thiscall	cEmbeddedFXRusty_Delete	void * __thiscall(byte flags)
+000d7620	38	USER_DEFINED	__thiscall	cEmbeddedFXSentinel_Delete	void * __thiscall(byte flags)
 000d7650	1	ANALYSIS	__thiscall	cEmbeddedFXBankDirector::vf04	undefined __thiscall(void)
 000d7660	1	ANALYSIS	__thiscall	cEmbeddedFXBankMaster::vf04	undefined __thiscall(void)
 000d7670	1	ANALYSIS	__thiscall	cEmbeddedFXCrazyGambler::vf04	undefined __thiscall(void)
@@ -2482,80 +2482,83 @@ rva	size	source	callconv	name	signature
 000d76c0	1	ANALYSIS	__thiscall	cEmbeddedFXPolice::vf04	undefined __thiscall(void)
 000d76d0	1	ANALYSIS	__thiscall	cEmbeddedFXRusty::vf04	undefined __thiscall(void)
 000d76e0	1	ANALYSIS	__thiscall	cEmbeddedFXSentinel::vf04	undefined __thiscall(void)
-000d76f0	15	ANALYSIS	__thiscall	cEmbeddedFXBankDirector::vf02	undefined __thiscall(void)
-000d7700	40	ANALYSIS	__thiscall	cEmbeddedFXBankMaster::vf02	undefined __thiscall(void)
-000d7730	136	ANALYSIS	__thiscall	cEmbeddedFXCrazyGambler::vf02	undefined __thiscall(void)
-000d77c0	40	ANALYSIS	__thiscall	cEmbeddedFXGear::vf02	undefined __thiscall(void)
-000d77f0	8	ANALYSIS	__thiscall	cEmbeddedFXMaintenance::vf02	undefined __thiscall(void)
-000d7800	40	ANALYSIS	__thiscall	cEmbeddedFXMercenary::vf02	undefined __thiscall(void)
-000d7830	68	ANALYSIS	__thiscall	cEmbeddedFXMessenger::vf02	undefined __thiscall(void)
-000d7880	15	ANALYSIS	__thiscall	cEmbeddedFXPolice::vf02	undefined __thiscall(void)
-000d78a0	61	ANALYSIS	__thiscall	cEmbeddedFXRusty::vf02	undefined __thiscall(void)
-000d78e0	99	ANALYSIS	__thiscall	cEmbeddedFXSentinel::vf02	undefined __thiscall(void)
-000d7950	102	DEFAULT	unknown	FUN_004d7950	
-000d79d0	102	DEFAULT	unknown	FUN_004d79d0	
-000d7a40	45	DEFAULT	unknown	FUN_004d7a40	
-000d7a70	69	DEFAULT	unknown	FUN_004d7a70	
-000d7ac0	1249	DEFAULT	unknown	FUN_004d7ac0	
-000d7fb0	109	DEFAULT	unknown	FUN_004d7fb0	
-000d8020	109	DEFAULT	unknown	FUN_004d8020	
-000d8090	276	DEFAULT	unknown	FUN_004d8090	
+000d76f0	15	USER_DEFINED	__thiscall	cEmbeddedFXBankDirector_Release	void __thiscall(void)
+000d7700	40	USER_DEFINED	__thiscall	cEmbeddedFXBankMaster_Release	void __thiscall(void)
+000d7730	136	USER_DEFINED	__thiscall	cEmbeddedFXCrazyGambler_Release	void __thiscall(void)
+000d77c0	40	USER_DEFINED	__thiscall	cEmbeddedFXGear_Release	void __thiscall(void)
+000d77f0	8	USER_DEFINED	__thiscall	cEmbeddedFXMaintenance_Release	void __thiscall(void)
+000d7800	40	USER_DEFINED	__thiscall	cEmbeddedFXMercenary_Release	void __thiscall(void)
+000d7830	68	USER_DEFINED	__thiscall	cEmbeddedFXMessenger_Release	void __thiscall(void)
+000d7880	15	USER_DEFINED	__thiscall	cEmbeddedFXPolice_Release	void __thiscall(void)
+000d7890	15	USER_DEFINED	__thiscall	cEmbeddedFXAlarm_Release	void __thiscall(void)
+000d78a0	61	USER_DEFINED	__thiscall	cEmbeddedFXRusty_Release	void __thiscall(void)
+000d78e0	99	USER_DEFINED	__thiscall	cEmbeddedFXSentinel_Release	void __thiscall(void)
+000d7950	102	USER_DEFINED	__thiscall	cEmbeddedFXCrazyGambler_Clear	void __thiscall(void)
+000d79d0	102	USER_DEFINED	__thiscall	cEmbeddedFXMessenger_Clear	void __thiscall(void)
+000d7a40	45	USER_DEFINED	__thiscall	cEmbeddedFXRusty_Clear	void __thiscall(void)
+000d7a70	69	USER_DEFINED	__thiscall	cEmbeddedFXSentinel_Clear	void __thiscall(void)
+000d7ac0	1249	USER_DEFINED	__cdecl	EmbeddedFXChar_Create	void __cdecl(void * withLife, char * model, void * fx)
+000d7fb0	109	USER_DEFINED	__cdecl	EmbeddedFXChar_AlarmOff	void __cdecl(void * file)
+000d8020	109	USER_DEFINED	__cdecl	EmbeddedFXChar_AlarmOn	void __cdecl(void * file)
+000d8090	276	USER_DEFINED	__cdecl	EmbeddedFXChar_SetAlarm	void __cdecl(char * name, byte on)
 000d81b0	3	ANALYSIS	__thiscall	cEmbeddedFXBankDirector::vf01	undefined __thiscall(void)
 000d81c0	3	ANALYSIS	__thiscall	cEmbeddedFXBankMaster::vf01	undefined __thiscall(void)
-000d81d0	177	ANALYSIS	__thiscall	cEmbeddedFXCrazyGambler::vf01	undefined __thiscall(void)
-000d8290	49	ANALYSIS	__thiscall	cEmbeddedFXGear::vf01	undefined __thiscall(void)
+000d81d0	177	USER_DEFINED	__thiscall	cEmbeddedFXCrazyGambler_Reset	byte __thiscall(void)
+000d8290	49	USER_DEFINED	__thiscall	cEmbeddedFXGear_Reset	byte __thiscall(void)
 000d82d0	3	ANALYSIS	__thiscall	cEmbeddedFXMaintenance::vf01	undefined __thiscall(void)
-000d82e0	10	ANALYSIS	__thiscall	cEmbeddedFXMercenary::vf01	undefined __thiscall(void)
-000d82f0	172	ANALYSIS	__thiscall	cEmbeddedFXMessenger::vf01	undefined __thiscall(void)
-000d83a0	49	ANALYSIS	__thiscall	cEmbeddedFXPolice::vf01	undefined __thiscall(void)
-000d8420	109	ANALYSIS	__thiscall	cEmbeddedFXRusty::vf01	undefined __thiscall(void)
-000d8490	477	ANALYSIS	__thiscall	cEmbeddedFXSentinel::vf01	undefined __thiscall(void)
+000d82e0	10	USER_DEFINED	__thiscall	cEmbeddedFXMercenary_Reset	byte __thiscall(void)
+000d82f0	172	USER_DEFINED	__thiscall	cEmbeddedFXMessenger_Reset	byte __thiscall(void)
+000d83a0	49	USER_DEFINED	__thiscall	cEmbeddedFXPolice_Reset	byte __thiscall(void)
+000d83e0	49	USER_DEFINED	__thiscall	cEmbeddedFXAlarm_Reset	byte __thiscall(void)
+000d8420	109	USER_DEFINED	__thiscall	cEmbeddedFXRusty_Reset	byte __thiscall(void)
+000d8490	477	USER_DEFINED	__thiscall	cEmbeddedFXSentinel_Reset	byte __thiscall(void)
 000d8670	3	ANALYSIS	__thiscall	cEmbeddedFXBankDirector::vf05	undefined __thiscall(void)
 000d8680	3	ANALYSIS	__thiscall	cEmbeddedFXBankMaster::vf05	undefined __thiscall(void)
-000d8690	18	ANALYSIS	__thiscall	cEmbeddedFXCrazyGambler::vf05	undefined __thiscall(void)
+000d8690	18	USER_DEFINED	__thiscall	cEmbeddedFXCrazyGambler_Stop	void __thiscall(byte keep)
 000d86b0	3	ANALYSIS	__thiscall	cEmbeddedFXGear::vf05	undefined __thiscall(void)
 000d86c0	3	ANALYSIS	__thiscall	cEmbeddedFXMaintenance::vf05	undefined __thiscall(void)
 000d86d0	3	ANALYSIS	__thiscall	cEmbeddedFXMercenary::vf05	undefined __thiscall(void)
-000d86e0	18	ANALYSIS	__thiscall	cEmbeddedFXMessenger::vf05	undefined __thiscall(void)
+000d86e0	18	USER_DEFINED	__thiscall	cEmbeddedFXMessenger_Stop	void __thiscall(byte keep)
 000d8700	3	ANALYSIS	__thiscall	cEmbeddedFXPolice::vf05	undefined __thiscall(void)
-000d8710	65	ANALYSIS	__thiscall	cEmbeddedFXRusty::vf05	undefined __thiscall(void)
-000d8760	32	ANALYSIS	__thiscall	cEmbeddedFXSentinel::vf05	undefined __thiscall(void)
-000d8780	29	DEFAULT	unknown	FUN_004d8780	
-000d87a0	29	DEFAULT	unknown	FUN_004d87a0	
-000d87c0	29	DEFAULT	unknown	FUN_004d87c0	
-000d87e0	182	DEFAULT	unknown	FUN_004d87e0	
-000d88a0	387	DEFAULT	unknown	FUN_004d88a0	
-000d8a30	228	DEFAULT	unknown	FUN_004d8a30	
-000d8b20	173	DEFAULT	unknown	FUN_004d8b20	
-000d8bd0	127	DEFAULT	unknown	FUN_004d8bd0	
-000d8c50	701	DEFAULT	unknown	FUN_004d8c50	
-000d8f10	397	DEFAULT	unknown	FUN_004d8f10	
-000d90a0	77	DEFAULT	unknown	FUN_004d90a0	
-000d90f0	851	DEFAULT	unknown	FUN_004d90f0	
-000d9460	324	DEFAULT	unknown	FUN_004d9460	
-000d95b0	16	DEFAULT	unknown	FUN_004d95b0	
-000d95c0	143	DEFAULT	unknown	FUN_004d95c0	
-000d9650	298	DEFAULT	unknown	FUN_004d9650	
-000d9780	1144	ANALYSIS	__thiscall	cEmbeddedFXBankDirector::vf03	undefined __thiscall(void)
-000d9c00	1236	ANALYSIS	__thiscall	cEmbeddedFXBankMaster::vf03	undefined __thiscall(void)
+000d8710	65	USER_DEFINED	__thiscall	cEmbeddedFXRusty_Stop	void __thiscall(byte keep)
+000d8760	32	USER_DEFINED	__thiscall	cEmbeddedFXSentinel_Stop	void __thiscall(byte keep)
+000d8780	29	USER_DEFINED	__thiscall	cEmbeddedFXGear_SetAlarm	void __thiscall(byte on)
+000d87a0	29	USER_DEFINED	__thiscall	cEmbeddedFXPolice_SetAlarm	void __thiscall(byte on)
+000d87c0	29	USER_DEFINED	__thiscall	cEmbeddedFXAlarm_SetOn	void __thiscall(byte on)
+000d87e0	182	USER_DEFINED	__thiscall	cEmbeddedFXBankDirector_Init	void __thiscall(void * ent)
+000d88a0	387	USER_DEFINED	__thiscall	cEmbeddedFXBankMaster_Init	void __thiscall(void * ent)
+000d8a30	228	USER_DEFINED	__thiscall	cEmbeddedFXCrazyGambler_Init	void __thiscall(void * ent)
+000d8b20	173	USER_DEFINED	__thiscall	cEmbeddedFXGear_Init	void __thiscall(void * ent)
+000d8bd0	127	USER_DEFINED	__thiscall	cEmbeddedFXMaintenance_Init	void __thiscall(void * ent)
+000d8c50	701	USER_DEFINED	__thiscall	cEmbeddedFXMercenary_Init	void __thiscall(void * ent)
+000d8f10	397	USER_DEFINED	__thiscall	cEmbeddedFXMessenger_Init	void __thiscall(void * ent)
+000d90a0	77	USER_DEFINED	__thiscall	cEmbeddedFXPolice_Init	void __thiscall(void * ent)
+000d90f0	851	USER_DEFINED	__thiscall	cEmbeddedFXRusty_Init	void __thiscall(void * ent)
+000d9460	324	USER_DEFINED	__thiscall	cEmbeddedFXSentinel_Init	void __thiscall(void * ent)
+000d95b0	16	USER_DEFINED	__thiscall	cEmbeddedFXAlarm_SetLights	void __thiscall(byte on)
+000d95c0	143	USER_DEFINED	__thiscall	cEmbeddedFXCrazyGambler_SetHead	void __thiscall(void * model, char * node)
+000d9650	298	USER_DEFINED	__thiscall	cEmbeddedFXAlarm_Init	void __thiscall(void * model)
+000d9780	1144	USER_DEFINED	__thiscall	cEmbeddedFXBankDirector_Update	void __thiscall(float dt)
+000d9c00	1236	USER_DEFINED	__thiscall	cEmbeddedFXBankMaster_Update	void __thiscall(float dt)
 000da0e0	3507	ANALYSIS	__thiscall	cEmbeddedFXCrazyGambler::vf03	undefined __thiscall(void)
-000daea0	26	ANALYSIS	__thiscall	cEmbeddedFXGear::vf03	undefined __thiscall(void)
-000daec0	778	ANALYSIS	__thiscall	cEmbeddedFXMaintenance::vf03	undefined __thiscall(void)
+000daea0	26	USER_DEFINED	__thiscall	cEmbeddedFXGear_Update	void __thiscall(float dt)
+000daec0	778	USER_DEFINED	__thiscall	cEmbeddedFXMaintenance_Update	void __thiscall(float dt)
 000db1d0	4087	ANALYSIS	__thiscall	cEmbeddedFXMercenary::vf03	undefined __thiscall(void)
 000dc1d0	3515	ANALYSIS	__thiscall	cEmbeddedFXMessenger::vf03	undefined __thiscall(void)
-000dcf90	26	ANALYSIS	__thiscall	cEmbeddedFXPolice::vf03	undefined __thiscall(void)
-000dcfc0	1942	DEFAULT	unknown	FUN_004dcfc0	
+000dcf90	26	USER_DEFINED	__thiscall	cEmbeddedFXPolice_Update	void __thiscall(float dt)
+000dcfc0	1942	USER_DEFINED	__thiscall	cEmbeddedFXAlarm_Update	void __thiscall(float dt)
 000dd760	5812	ANALYSIS	__thiscall	cEmbeddedFXRusty::vf03	undefined __thiscall(void)
 000dee20	2579	ANALYSIS	__thiscall	cEmbeddedFXSentinel::vf03	undefined __thiscall(void)
-000df850	120	DEFAULT	unknown	FUN_004df850	
-000df8d0	25	DEFAULT	unknown	FUN_004df8d0	
-000df8f0	54	ANALYSIS	__thiscall	cEmbeddedFXHeadCrazyGambler::vf00	undefined __thiscall(void)
-000df930	341	ANALYSIS	__thiscall	cEmbeddedFXHeadCrazyGambler::vf04	undefined __thiscall(void)
-000dfa90	8	ANALYSIS	__thiscall	cEmbeddedFXHeadCrazyGambler::vf02	undefined __thiscall(void)
-000dfab0	345	DEFAULT	unknown	FUN_004dfab0	
+000df850	120	USER_DEFINED	__thiscall	cEmbeddedFXHeadCrazyGambler_ctor	void * __thiscall(void)
+000df8d0	25	USER_DEFINED	__thiscall	cEmbeddedFXHeadCrazyGambler_dtor	void __thiscall(void)
+000df8f0	54	USER_DEFINED	__thiscall	cEmbeddedFXHeadCrazyGambler_Delete	void * __thiscall(byte flags)
+000df930	341	USER_DEFINED	__thiscall	cEmbeddedFXHeadCrazyGambler_Tick	void __thiscall(void)
+000dfa90	8	USER_DEFINED	__thiscall	cEmbeddedFXHeadCrazyGambler_Release	void __thiscall(void)
+000dfaa0	8	USER_DEFINED	__thiscall	cEmbeddedFXHeadCrazyGambler_Clear	void __thiscall(void)
+000dfab0	345	USER_DEFINED	__cdecl	EmbeddedFXCharHead_Create	void * __cdecl(void * head)
 000dfc10	3	ANALYSIS	__thiscall	cEmbeddedFXHeadCrazyGambler::vf01	undefined __thiscall(void)
 000dfc20	3	ANALYSIS	__thiscall	cEmbeddedFXHeadCrazyGambler::vf05	undefined __thiscall(void)
-000dfc30	191	DEFAULT	unknown	FUN_004dfc30	
+000dfc30	191	USER_DEFINED	__thiscall	cEmbeddedFXHeadCrazyGambler_Init	void __thiscall(void * owner, char * glow)
 000dfcf0	3	ANALYSIS	__thiscall	cEmbeddedFXHeadCrazyGambler::vf03	undefined __thiscall(void)
 000dfd00	118	DEFAULT	unknown	FUN_004dfd00	
 000dfd80	123	DEFAULT	unknown	FUN_004dfd80	

@@ -312,8 +312,8 @@ for c in efcchars:
 			efcafter(name, fx)))
 		check('%s Stop(0)' % name, lambda c=c, fx=fx, name=name: (SDTest.Call(c[7], 'tvii', fx, 0),
 			efcafter(name, fx)))
-	check('%s Release' % name, lambda c=c, fx=fx, name=name, e=e: (SDTest.Call(c[5], 'tvi', fx),
-		efcfields(name, fx, e), efcafter(name, fx)))
+	# after Release the particle systems may be gone: reading them is a CHECK (SistPart)
+	check('%s Release' % name, lambda c=c, fx=fx: SDTest.Call(c[5], 'tvi', fx))
 	n = name
 	if n[:9] == 'Mercenary':
 		n = 'Mercenary'
