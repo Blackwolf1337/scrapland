@@ -699,7 +699,7 @@ byte Render_Clear(const box_t *rect, uint32_t flags, uint32_t color, float z, ui
 	}
 	int r[4];
 	if (rect) {
-		Render_ClipRect(r, g_Viewport, rect);
+		Render_ClipRect(r, g_ViewportFull, rect);
 	}
 	void *dev = g_pd3dDevice;
 	return D3D_METHOD(dev, d3dClear_t, D3DDEV_CLEAR)(dev, rect != NULL, rect ? r : NULL, flags, color, z, stencil) == 0;

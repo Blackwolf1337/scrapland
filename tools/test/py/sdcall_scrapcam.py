@@ -277,7 +277,7 @@ check('CGameTrail_SetPoint', lambda: (SDTest.Call(0x21e520, 'tviiFFp', T, 1, (-0
 	sctr(T)))
 scstep('CGameTrail_Move', T, 0x21e530, 'tvifff', 0.5, -1.5, 2.5)
 scstep('CGameTrail_Shrink', T, 0x21e180, 'tvi')
-scstep('CGameTrail_Copy', T2, 0x21e120, 'tvii', T)
+check('CGameTrail_Copy', lambda: (SDTest.Call(0x21e120, 'tvii', T2, T)[0], sctr(T2), sclist()))
 scstep('CGameTrail_Reset', T, 0x21e190, 'tvi')
 scstep('CGameTrail_Clear', T2, 0x21e110, 'tvi')
 for a, b in (((0.0, 0.0, 0.0), (7.0, -14.0, 21.0)), ((1.5, 2.5, -3.5), (1.5, 2.5, -3.5)), ((-1e3, 0.1, 3.0),
@@ -302,15 +302,7 @@ for n in (1, 2, 3, 4, 6):
 	SDTest.Call(0x21e190, 'tvi', T)
 	check('CGameTrail_AddBezier' + fmt((n,)), lambda n=n, pts=pts: (SDTest.Call(0x21de60, 'tviiFi', T, n, pts,
 		0x10203040)[1], sctr(T)))
-# fewer points in the trail: 3 and 2 (2 divides by 0 in the line step, after its only point)
-for m in (3, 2):
-	SDTest.Call(0x21e290, 'tvii', T, m)
-	check('CGameTrail_AddLine max' + fmt((m,)), lambda: (SDTest.Call(0x21e3d0, 'tviffffff', T, 0.0, 1.0, 2.0, 3.0, 4.0,
-		5.0), sctr(T)))
-	# with 2 the curve parameter is 0 / 0
-	if m > 2:
-		check('CGameTrail_AddBezier max' + fmt((m,)), lambda: (SDTest.Call(0x21de60, 'tviiFi', T, 3,
-			scflat(scpts[0:3]), 0x11111111)[1], sctr(T)))
+# SetMaxTrails on a trail with points is a CHECK (!m_pTrails): no tests with fewer points
 check('CGameTrail_dtor', lambda: (SDTest.Call(0x21de40, 'tvi', T), sclist()))
 check('CGameTrail_dtor 2', lambda: (SDTest.Call(0x21de40, 'tvi', T2), sclist()))
 scfree(T)
