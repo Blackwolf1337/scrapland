@@ -595,7 +595,6 @@ SD_IMPORT(cEmbeddedFXRusty_ctor, 0xd6df0)
 SD_IMPORT(cEmbeddedFXSentinel_ctor, 0xd6ed0)
 
 /* module agent: Entities/EmbeddedFX/EmbeddedFXVehicle.cpp+mpeg/music_fmod.cpp (imports below this line) */
-SD_IMPORT(FXVehicle_RenderAttached, 0x1f9050)
 SD_IMPORT(cAIVehicle_GetFadeDists, 0x8a140)
 SD_IMPORT_STDCALL(FSOUND_Stream_GetSample, 4, 0x317ada)
 SD_IMPORT_STDCALL(FSOUND_Stream_GetOpenState, 4, 0x317ad4)
@@ -702,5 +701,6 @@ SD_IMPORT(cObjElementFXFunctionarySpecialAction_Start, 0x1c6b30)
 /* module agent: World/FX/FXScene.cpp (imports below this line) */
 
 /* module agent: World/FX/FXVehicle.cpp (imports below this line) */
+SD_IMPORT(cVehicleEffects_ClearDamage, 0x101d30)
 
 /* module agent: Engine/bsp.cpp (imports below this line) */
