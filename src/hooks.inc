@@ -4599,6 +4599,7 @@ SD_HOOK(ChType_FXBettyAttack, 0x0c3550, 560)
 SD_HOOK(ChType_DirAngles, 0x0c3780, 44)
 /* src/game/Entities/Char/Type/Bishop.c */
 SD_HOOK(ChType_ActionPress, 0x0c37b0, 217)		/* BishopActionPress */
+SD_HOOK(ChType_BishopAttack, 0x0c3890, 2906)
 SD_HOOK(ChType_EndActionEnd, 0x0c43f0, 387)		/* BishopEndActionEnd */
 SD_HOOK(ChType_FXBishopSellLife, 0x0c4580, 197)
 SD_HOOK(FX_BishopSellLife, 0x0c4650, 249)

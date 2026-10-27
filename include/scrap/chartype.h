@@ -130,7 +130,19 @@ static inline const cChTypeLogicVtbl *ChLogic_Vtbl(cLocalLogic *l) {
 #define g_BettyHitPosX GAME_DATA(float, 0x4463d4)
 #define g_BettyHitTimeSpeed GAME_DATA(float, 0x4463ec)
 #define g_BettyHitPosZ GAME_DATA(float, 0x446404)
+#define g_BishopHitSound GAME_DATA(char *, 0x44641c)
+#define g_BishopAngleVariation GAME_DATA(float, 0x446434)
+#define g_BishopHitSoundVol GAME_DATA(float, 0x44645c)
+#define g_BishopWeaponDamage GAME_DATA(int, 0x446474)
+#define g_BishopAttackPosZ GAME_DATA(float, 0x44648c)
 #define g_FXBishopSellLifeFile GAME_DATA(char *, 0x4464a4)
+#define g_FXBishopAttackFile GAME_DATA(char *, 0x4464dc)
+#define g_BishopAttackPosX GAME_DATA(float, 0x4464f4)
+#define g_BishopAttackPosY GAME_DATA(float, 0x44650c)
+#define g_BishopAmmoCost GAME_DATA(float, 0x446554)
+#define g_BishopAttackRandOff GAME_DATA(float, 0x44656c)
+#define g_BishopShootSoundVol GAME_DATA(float, 0x446584)
+#define g_BishopShootSound GAME_DATA(char *, 0x4465ac)
 #define g_DTritusHitTimeFader GAME_DATA(float, 0x446670)
 #define g_FXDTritusAttackFile GAME_DATA(char *, 0x4466c8)
 #define g_DTritusHitTimeSpeed GAME_DATA(float, 0x4466e0)
@@ -240,6 +252,7 @@ void ChType_FXBettyAttack(cAbstractFile *params);
  * lasts, always for an AI */
 void ChType_EndActionEnd(cAbstractFile *params);
 void ChType_FXBishopSellLife(cAbstractFile *params);
+void ChType_BishopAttack(cAbstractFile *params);
 
 /* CrazyGambler.c */
 void ChType_FXCrazyGamblerSetHeadModel(cAbstractFile *params);
