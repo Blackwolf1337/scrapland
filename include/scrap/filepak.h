@@ -110,6 +110,8 @@ int __thiscall cFilePack_Size(cFilePack *self);
 /* 1 unless the file list is being recorded */
 int PackLog_Closed(void);
 byte Pack_FileExists(const char *name);	/* in the index of the packs */
+/* the pack name (0x40), offset and size of a file in the packs; 0 if not there or while a list is recorded */
+byte Pack_GetFileInfo(const char *name, char *packName, int *offset, int *size);
 int PackLog_Add(const char *name);
 /* mounts name.packed (src/game/FileSys/FilePak.c) */
 byte Pack_Open(const char *name, const char *dir, size_t bufSize);

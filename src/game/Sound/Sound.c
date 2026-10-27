@@ -6,21 +6,9 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/musicfmod.h"
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
-
-/* the voice and music channels of ScrapEngMain.cpp (FMOD streams), byte results passed on in eax */
-int Fmod_Init(void);						/* rva 0x232640 */
-int Fmod_Close(void);						/* rva 0x232620 */
-int Voice_GetString(int voice, char *buf, int size);		/* rva 0x2327d0 */
-int Voice_Unused(int voice);					/* rva 0x232840, CHECK(0) */
-int Voice_Open(const char *name, int voice, int arg);		/* rva 0x2328e0 */
-int Voice_SetParam(int voice, float v);				/* rva 0x232a80 */
-int Voice_Play(int voice);					/* rva 0x232b40 */
-int Voice_Remain(int voice, float *remain);			/* rva 0x232c60 */
-int Voice_SetString(int voice, const char *text);		/* rva 0x232d10 */
-int Voice_Stop(int voice);					/* rva 0x232d80 */
-int Voice_SetVolume(int voice, float volume);			/* rva 0x232dd0 */
 
 /* the start and the end of the sound system */
 

@@ -11,6 +11,7 @@
 #include "scrap/camara.h"
 #include "scrap/e3dutil.h"
 #include "scrap/modelo.h"
+#include "scrap/musicfmod.h"
 #include "scrap/nodo3d.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcamera.h"
@@ -234,13 +235,6 @@ void *App_GetHWnd(void);					/* rva 0x20d290 */
 int Timer_GetFreq(int64_t *out);				/* rva 0x276cb0 */
 int Timer_GetQPFreq(int64_t *out);				/* rva 0x276d00 */
 int Video_PlayFile(const char *name, int flags);		/* rva 0x281660 */
-byte Music_PlayFile(const char *name, const char *dir);	/* rva 0x232240 */
-byte Music_Pause(void);						/* rva 0x232210 */
-byte Music_Stop(void);						/* rva 0x232360 */
-byte Music_SetVolume(float v);					/* rva 0x2324e0 */
-byte Music_SetMainVolume(float v);				/* rva 0x2321c0 */
-byte Music_FadeOut(float a, float vol);				/* rva 0x232480 */
-byte Music_Update(void);					/* rva 0x232600 */
 /* AVI capture of DVF_Process (rva 0x27fa20, 0x27f9f0, 0x27f9b0) */
 byte Avi_Save(const char *name);
 byte Avi_Frame(const char *name, int frame);
