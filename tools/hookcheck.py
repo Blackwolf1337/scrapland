@@ -59,7 +59,8 @@ for e in json.load(open(os.path.join(root, 'build', 'compile_commands.json'))):
 	out = os.path.join(work, os.path.basename(e['file']) + '.i')
 	subprocess.run(args + ['-E', '-P', '-o', out], cwd=e['directory'], check=True)
 	src = re.sub(r'__attribute__\(\(__(\w+)__\)\)', r'__\1', open(out).read())
-	for m in re.finditer(r'^([^\n;{}()#]*?)\b(\w+)\s*\(([^;{}]*?)\)\s*\{', src, re.M):
+	# definitions start in column 0; an indented match is a call with a compound literal ((vec3_t){...})
+	for m in re.finditer(r'^([^\s;{}()#][^\n;{}()#]*?)\b(\w+)\s*\(([^;{}]*?)\)\s*\{', src, re.M):
 		i, depth = m.end(), 1
 		while depth and i < len(src):
 			depth += {'{': 1, '}': -1}.get(src[i], 0)

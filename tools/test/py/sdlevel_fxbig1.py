@@ -394,6 +394,9 @@ if fb1n >= 0xff:
 		fb1set(fb1fx + 0xcc, (fb1st,))
 		fb1dt(fb1delta)
 		fb1srand(76)
+		# the bubble and piece arrays are written only in the later phases: cleared, not heap garbage
+		for fb1a, fb1n in ((0x1a4, 30), (0x474, 20), (0x564, 20), (0x744, 10)):
+			fb1set(fb1fx + fb1a, (0.0,) * fb1n)
 		check('cObjElementFXPoliceGearConversion_Update' + fmt((fb1t, fb1last, fb1et, fb1st, fb1delta)), lambda: (
 			SDTest.Call(0x1c2170, 'tviif', fb1fx, fb1d, 0.0), fb1fl(fb1fx + 8, 3), fb1fl(fb1fx + 0xcc, 1),
 			fb1ints(fb1fx + 0x844, 1), fb1fl(fb1fx + 0x848, 1), fb1fl(fb1fx + 0x1a4, 30), fb1fl(fb1fx + 0x474, 20),
