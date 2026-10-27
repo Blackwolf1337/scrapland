@@ -203,7 +203,8 @@ void __thiscall cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, 
 	cAIVehicle_SetState(ai, 3, NULL, 5.0, 2.0);
 }
 
-cDominationLogic *__fastcall cDominationEnemiesLogic_ctor(cDominationLogic *self) {
+/* the base part of the constructors of the sides (inlined in the original) */
+void cDominationLogic_ctor(cDominationLogic *self) {
 	self->vftable = Game_Ptr(CDOMINATIONLOGIC_VFTABLE);
 	self->assigned.numSlots = 4;
 	self->assigned.slots = operator_new_array(4 * sizeof(HashNode *));
@@ -211,13 +212,17 @@ cDominationLogic *__fastcall cDominationEnemiesLogic_ctor(cDominationLogic *self
 	self->assigned.locked = 0;
 	self->assigned.caseSensitive = 1;
 	g_DominNumZones = 0;
+}
+
+cDominationLogic *__fastcall cDominationEnemiesLogic_ctor(cDominationLogic *self) {
+	cDominationLogic_ctor(self);
 	self->vftable = Game_Ptr(CDOMINATIONENEMIESLOGIC_VFTABLE);
 	cDominationSide *s = operator_new(sizeof(*s));
 	if (s) {
 		s->owner = self;
 		s->list = NULL;
-		s->ic = 0;
-		s->i8 = -1;
+		s->timer = 0.0f;
+		s->zone = -1;
 		self->side = s;
 		return self;
 	}

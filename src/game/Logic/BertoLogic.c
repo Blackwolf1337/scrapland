@@ -57,8 +57,8 @@ void __thiscall cBertoLocalLogic_Update(cFunctionaryLocalLogic *self, float dt) 
 	cFunctionaryLocalLogic_Update(self, dt);
 }
 
-/* vf38: the angles at the desktop, turned by a quarter */
-void __thiscall cBertoLocalLogic_GetWorkAng(cFunctionaryLocalLogic *self, vec3_t *out) {
+/* vf38 (the callers use the returned out): the angles at the desktop, turned by a quarter */
+vec3_t *__thiscall cBertoLocalLogic_GetWorkAng(cFunctionaryLocalLogic *self, vec3_t *out) {
 	vec3_t tmp;
 
 	CHECK(cFunctionaryLocalLogic_GetDesktop(self));
@@ -67,4 +67,5 @@ void __thiscall cBertoLocalLogic_GetWorkAng(cFunctionaryLocalLogic *self, vec3_t
 	out->x = a->x - 0.0f;
 	out->y = a->y - 1.57079637f;
 	out->z = a->z - 0.0f;
+	return out;
 }

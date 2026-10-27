@@ -29,8 +29,8 @@ void __thiscall cBettyLocalLogic_AssignDesktop(cFunctionaryLocalLogic *self, int
 	Logic_LinkDesktop(self, "BettyDesktop");
 }
 
-/* vf38: the angles at the desktop, turned by a quarter the other way */
-void __thiscall cBettyLocalLogic_GetWorkAng(cFunctionaryLocalLogic *self, vec3_t *out) {
+/* vf38 (the callers use the returned out): the angles at the desktop, turned by a quarter the other way */
+vec3_t *__thiscall cBettyLocalLogic_GetWorkAng(cFunctionaryLocalLogic *self, vec3_t *out) {
 	vec3_t tmp;
 
 	CHECK(cFunctionaryLocalLogic_GetDesktop(self));
@@ -39,4 +39,5 @@ void __thiscall cBettyLocalLogic_GetWorkAng(cFunctionaryLocalLogic *self, vec3_t
 	out->x = a->x + 0.0f;
 	out->y = a->y + 1.57079637f;
 	out->z = a->z + 0.0f;
+	return out;
 }

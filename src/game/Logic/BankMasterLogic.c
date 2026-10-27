@@ -7,7 +7,7 @@
 cGenCharLocalLogic *__thiscall cBankMasterLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	self->base.vftable = Game_Ptr(CBANKMASTERLOCALLOGIC_VFTABLE);
-	self->b5a = 1;
+	self->ignoreAlarm = 1;
 	return self;
 }
 

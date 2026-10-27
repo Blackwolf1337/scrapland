@@ -85,10 +85,24 @@ typedef struct cLocalLogicVtbl {
 	void(__thiscall *SetOrigin)(void *self, float x, float y, float z);			/* 0x58 */
 	void(__thiscall *SetOriginAng)(void *self, float x, float y, float z);		/* 0x5c */
 	void(__thiscall *RestartState)(void *self);						/* 0x60 */
-	void *vf25_39[15];
-	void(__thiscall *AssignDesktop)(void *self, int arg);					/* 0xa0 vf40 */
+	void *vf25;
+	void(__thiscall *UpdateView)(void *self);			/* 0x68 vf26 the view flag (+0x381) and the team */
+	void(__thiscall *ToRelax)(void *self, void *ai);			/* 0x6c vf27 the AI to its zone, relaxed */
+	void(__thiscall *ToAlert)(void *self, void *ai);			/* 0x70 vf28 the same in alert */
+	void *vf29_31[3];
+	void(__thiscall *Work)(void *self, float dt);				/* 0x80 vf32 functionaries */
+	void(__thiscall *Vf33)(void *self, byte restart);			/* 0x84 */
+	void *vf34_35[2];
+	byte(__thiscall *CanTalk)(void *self);				/* 0x90 vf36 */
+	void(__thiscall *StopWork)(void *self, byte restart);			/* 0x94 vf37 */
+	vec3_t *(__thiscall *GetWorkAng)(void *self, vec3_t *out);		/* 0x98 vf38 */
+	byte(__thiscall *FastEscape)(void *self);				/* 0x9c vf39 */
+	void(__thiscall *AssignDesktop)(void *self, float maxDist);				/* 0xa0 vf40 */
 	void(__thiscall *ReleaseDesktop)(void *self);					/* 0xa4 vf41 */
 } cLocalLogicVtbl;
+SD_OFFSET(cLocalLogicVtbl, UpdateView, 0x68);
+SD_OFFSET(cLocalLogicVtbl, Work, 0x80);
+SD_OFFSET(cLocalLogicVtbl, FastEscape, 0x9c);
 SD_OFFSET(cLocalLogicVtbl, Update, 0x44);
 SD_OFFSET(cLocalLogicVtbl, SetState, 0x4c);
 SD_OFFSET(cLocalLogicVtbl, RestartState, 0x60);
@@ -126,9 +140,13 @@ SD_SIZE(cBaseLocalLogic, 0x48);
 /* GenCharLogic.cpp, 0x68 bytes */
 typedef struct cGenCharLocalLogic {
 	cBaseLocalLogic base;		/* 0x00 */
-	byte pad_48[0x59 - 0x48];
+	int i48;			/* 0x48 */
+	int i4c;			/* 0x4c */
+	int i50;			/* 0x50 */
+	char *s54;			/* 0x54 cString */
+	byte b58;			/* 0x58 1 */
 	byte specialOn;			/* 0x59 the special action time runs */
-	byte b5a;			/* 0x5a set by the bank logics */
+	byte ignoreAlarm;		/* 0x5a "IgnoreAlarm", set by the bank logics */
 	byte pad_5b;
 	float specialTime;		/* 0x5c GenCharSpecialActionTime */
 	float searchTime;		/* 0x60 the next target search when below 0 */
@@ -138,14 +156,42 @@ SD_OFFSET(cGenCharLocalLogic, specialOn, 0x59);
 SD_OFFSET(cGenCharLocalLogic, alarmState, 0x64);
 SD_SIZE(cGenCharLocalLogic, 0x68);
 
-/* FunctionaryLogic.cpp, 0xbc bytes (Berto, Betty) */
+/* FunctionaryLogic.cpp, 0xb8 bytes; Berto and Betty add isDefault (0xbc) */
 typedef struct cFunctionaryLocalLogic {
 	cGenCharLocalLogic base;	/* 0x00 */
 	Nto1Node desktop;		/* 0x68 the desktop of the type ("BertoDesktop"), data the logic */
-	byte pad_78[0xb8 - 0x78];
-	byte isDefault;			/* 0xb8 the character is "Berto_Default" / "Betty_Default" */
+	cEntity *forced;		/* 0x78 "ForcedDesktopAssigned", before the linked one */
+	float sitTime;			/* 0x7c "TimeToSitDown" */
+	float workTime;			/* 0x80 "TimeToStopWorking" */
+	float relaxTime;		/* 0x84 half of the work time: the relax at the desktop */
+	float playTime;			/* 0x88 three times the work time, the time when not working */
+	float transTime;		/* 0x8c of the special action states */
+	float specialTime;		/* 0x90 of the special action */
+	float probWorking;		/* 0x94 "ProbTalkWhenWorking" */
+	float probPlaying;		/* 0x98 "ProbTalkWhenPlaying" */
+	float probWalking;		/* 0x9c "ProbTalkWhenWalking" */
+	float escapeRadiusSqr;		/* 0xa0 "EscapeRadiusSqr" */
+	float goToWorkSpeed;		/* 0xa4 "GoToWorkSpeed" */
+	byte relaxed;			/* 0xa8 the relax at the desktop played */
+	byte working;			/* 0xa9 always 1 */
+	byte keepWorking;		/* 0xaa "KeepWorking" */
+	byte special;			/* 0xab the special action runs */
+	byte fast;			/* 0xac the fast part of the special action */
+	byte fastEscape;		/* 0xad "FastEscape" */
+	byte escapeInRadius;		/* 0xae "EscapeWithinRadius" */
+	byte forceSpecial;		/* 0xaf "ForceSpecialBehaviour" */
+	byte forceCancel;		/* 0xb0 "ForceCancelSpecialBehaviour" */
+	byte ignoreBanker;		/* 0xb1 "IgnoreBankerAttack" */
+	byte stopInRelax;		/* 0xb2 "StopInRelax" */
+	byte pad_b3;
+	int prevState;			/* 0xb4 the state before the special action */
+	byte isDefault;			/* 0xb8 Berto and Betty: the character is "Berto_Default" / "Betty_Default" */
 	byte pad_b9[3];
 } cFunctionaryLocalLogic;
+SD_OFFSET(cFunctionaryLocalLogic, forced, 0x78);
+SD_OFFSET(cFunctionaryLocalLogic, goToWorkSpeed, 0xa4);
+SD_OFFSET(cFunctionaryLocalLogic, stopInRelax, 0xb2);
+SD_OFFSET(cFunctionaryLocalLogic, prevState, 0xb4);
 SD_OFFSET(cFunctionaryLocalLogic, desktop, 0x68);
 SD_OFFSET(cFunctionaryLocalLogic, isDefault, 0xb8);
 SD_SIZE(cFunctionaryLocalLogic, 0xbc);
@@ -171,6 +217,10 @@ SD_SIZE(cBossLocalLogic, 0x80);
 #define CCRAZYDEALERLOCALLOGIC_VFTABLE 0x3bda0c
 #define CCTFENEMIESLOCALLOGIC_VFTABLE 0x3bdb54
 #define CDESKTOPLOCALLOGIC_VFTABLE 0x3bdccc
+#define CFUNCTIONARYLOCALLOGIC_VFTABLE 0x3be748
+#define CGATEKEEPERLOCALLOGIC_VFTABLE 0x3bec3c
+#define CGEARLOCALLOGIC_VFTABLE 0x3beeec
+#define CGENCHARLOCALLOGIC_VFTABLE 0x3bf5ec
 
 /* the character lists of the world the logics search (of cLogicControl at g_pWorld->taunts) */
 #define World_CharList(off) (*(cEntityListData **)((byte *)g_pWorld + (off)))
@@ -250,6 +300,11 @@ cEntity *Logic_FindInView(cEntity *viewer, cEntityListData *list, float dist, fl
 	byte (*filter)(cEntity *));
 byte __thiscall cBaseLocalLogic_UpdateBusy(cBaseLocalLogic *self);
 int __thiscall cBaseLocalLogic_SetState(cBaseLocalLogic *self, int state, cEntity *target);
+byte __thiscall cBaseLocalLogic_VarF(cBaseLocalLogic *self, const char *name, double *d, byte set);
+byte __thiscall cBaseLocalLogic_VarI(cBaseLocalLogic *self, const char *name, int *i, byte set);
+byte __thiscall cBaseLocalLogic_VarS(cBaseLocalLogic *self, const char *name, char **s, byte set);
+void __thiscall cBaseLocalLogic_Update(cBaseLocalLogic *self, float dt);
+void __thiscall cBaseLocalLogic_SetIdle(cBaseLocalLogic *self, byte idle);
 /* the debug texts of ShowAI (a character node of a list with the state names, the ships) */
 void Logic_ShowChar(Nto1Node *node, const char **names);
 void Logic_ShowChars(Nto1Node *node, const char **names, byte visible);
@@ -283,6 +338,18 @@ void __thiscall cFunctionaryLocalLogic_Update(cFunctionaryLocalLogic *self, floa
 cEntity *__fastcall cFunctionaryLocalLogic_GetDesktop(cFunctionaryLocalLogic *self);
 /* the desktop leaves its work action */
 void __fastcall cFunctionaryLocalLogic_FreeDesktop(cFunctionaryLocalLogic *self);
+void __thiscall cFunctionaryLocalLogic_ReleaseDesktop(cFunctionaryLocalLogic *self);
+void __thiscall cFunctionaryLocalLogic_SetKeepWorking(cFunctionaryLocalLogic *self, byte on);
+void __thiscall cFunctionaryLocalLogic_NormalSpeed(cFunctionaryLocalLogic *self, cEntity *e);
+void __thiscall cFunctionaryLocalLogic_SlowEffect(cFunctionaryLocalLogic *self, cEntity *e);
+void Functionary_FastEffect(cEntity *e);
+void Functionary_WorkRelax(cEntity *e);
+/* GenCharLogic.cpp (imports): the variables, vf12 (a robbery seen) */
+byte __thiscall cGenCharLocalLogic_VarI(cGenCharLocalLogic *self, const char *name, int *i, byte set);
+byte __thiscall cGenCharLocalLogic_VarS(cGenCharLocalLogic *self, const char *name, char **s, byte set);
+void __thiscall cGenCharLocalLogic_OnRobbery(cGenCharLocalLogic *self, cEntity *e, float amount);
+/* the name of the default loop of the action controller, "" without one (rva 0x62c80) */
+const char *__thiscall cActCtrl_GetDefLoopName(void *ctrl);
 
 /* ---- the multiplayer modes (of cLogicControl) ---- */
 /* the AI vehicle slots the modes use */
@@ -400,20 +467,27 @@ typedef struct cDominationLogic cDominationLogic;
 
 typedef struct cDominationLogicVtbl {
 	cDominationLogic *(__thiscall *Delete)(cDominationLogic *self, byte flags);	/* 0x00 */
-	void *vf01;
-	void *vf02;
+	void(__thiscall *Init)(cDominationLogic *self);				/* 0x04 makes the list */
+	void(__thiscall *Update)(cDominationLogic *self, float dt);			/* 0x08 */
 	cEntityListData *(__thiscall *GetList)(cDominationLogic *self);		/* 0x0c the list of the side */
 	int(__thiscall *GetTeam)(cDominationLogic *self);				/* 0x10 0 enemies, 1 friends */
 } cDominationLogicVtbl;
 
-/* the data of a side (0x10 bytes) */
+/* the data of a side: the enemies (0x10 bytes) keep the zone of their leader, the friends (0xc) only the timer */
 typedef struct cDominationSide {
 	cDominationLogic *owner;	/* 0x0 */
-	cEntityListData *list;		/* 0x4 */
-	int i8;				/* 0x8 -1 */
-	int ic;				/* 0xc */
+	cEntityListData *list;		/* 0x4 "DominationEnemies" */
+	int zone;			/* 0x8 the zone the leader goes to, -1 none */
+	float timer;			/* 0xc Think every 0.5 s */
 } cDominationSide;
 SD_SIZE(cDominationSide, 0x10);
+
+typedef struct cDominationFriendsSide {
+	cDominationLogic *owner;	/* 0x0 */
+	cEntityListData *list;		/* 0x4 "DominationFriends" */
+	float timer;			/* 0x8 */
+} cDominationFriendsSide;
+SD_SIZE(cDominationFriendsSide, 0xc);
 
 /* cDominationLogic is 0x10 bytes, cDominationEnemiesLogic and cDominationFriendsLogic 0x14 */
 struct cDominationLogic {
@@ -425,6 +499,11 @@ SD_OFFSET(cDominationLogic, side, 0x10);
 
 #define CDOMINATIONLOGIC_VFTABLE 0x3be14c
 #define CDOMINATIONENEMIESLOGIC_VFTABLE 0x3be164
+#define CDOMINATIONFRIENDSLOGIC_VFTABLE 0x3be1ec
+/* the engine variable LeaderName (the leader ship of the enemies) and the death callbacks of the sides */
+#define g_DominLeaderName GAME_DATA(char *, 0x44ce48)
+#define g_OnDominEnemyDeath ((cPy_Function *)Game_Ptr(0x44ce24))
+#define g_OnDominFriendDeath ((cPy_Function *)Game_Ptr(0x44ce60))
 #define World_DominFriends() ((cDominationLogic *)((byte *)g_pWorld + 0x21a0))
 #define World_DominEnemies() ((cDominationLogic *)((byte *)g_pWorld + 0x21b4))
 
@@ -436,8 +515,193 @@ cEntity *__thiscall cDominationLogic_FindEnemy(cDominationLogic *self, const vec
 	float maxDist);
 void __thiscall cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, cEntity *target, cEntity *baton);
 int __thiscall cDominationLogic_NearestZone(cDominationLogic *self, const vec3_t *pos);
+void cDominationLogic_ctor(cDominationLogic *self);
 cDominationLogic *__fastcall cDominationEnemiesLogic_ctor(cDominationLogic *self);
 void __fastcall cDominationEnemiesLogic_dtor(cDominationLogic *self);
 void __fastcall cDominationLogic_dtor(cDominationLogic *self);
+/* DominationEnemies.cpp and DominationFriends.cpp */
+cEntity *__thiscall cDominationEnemiesLogic_GetLeader(cDominationLogic *self);
+void __fastcall cDominationSide_Think(cDominationSide *self);
+void __fastcall cDominationFriendsSide_Think(cDominationFriendsSide *self);
+/* the zone of the ship of that name taken from the table (a zone on the way of the side is free again) */
+cEntity *__thiscall cDominationEnemiesLogic_ReleaseZone(cDominationLogic *self, const char *name);
+cEntity *__thiscall cDominationFriendsLogic_ReleaseZone(cDominationLogic *self, const char *name);
+cEntity *Domination_ReleaseZone(cDominationLogic *self, const char *name, int going, int held);
+void Domination_OnDeath(cAbstractFile *params, cDominationLogic *side,
+	cEntity *(__thiscall *release)(cDominationLogic *, const char *), cPy_Function *cb);
+/* the ship of the side that goes to zone, NULL for none */
+cEntity *__thiscall cDominationFriendsLogic_FindShipOfZone(cDominationLogic *self, cEntity *zone);
+
+/* ---- the ships of the outdoor missions (of cLogicControl) ---- */
+/* the empty destructors of the mode objects and the empty natives of their lists */
+void __fastcall Logic_NopDtor(void *self);
+void Logic_NativeNop(cAbstractFile *params);
+/* a random car of the list (rva 0x154b20), NULL for none */
+cEntity *Logic_RandomCar(cEntityListData *list);
+
+/* Enemies.cpp: g_pWorld + 0x2170, the ships of the list "Enemies" attack the player */
+typedef struct cEnemies {
+	cEntity *usr;			/* 0x0 the car of the player they went for */
+	byte ignoreFriends;		/* 0x4 "IgnoreFriends" of the logic of a ship */
+	byte attacking;			/* 0x5 since the player had a car */
+	byte relax;			/* 0x6 1 */
+	byte pad_7;
+	float timer;			/* 0x8 Think every 0.5 s */
+	cEntityListData *list;		/* 0xc "Enemies" */
+} cEnemies;
+SD_SIZE(cEnemies, 0x10);
+
+#define World_Enemies() ((cEnemies *)((byte *)g_pWorld + 0x2170))
+#define CENEMIESLOCALLOGIC_VFTABLE 0x3be240
+
+cEnemies *__fastcall cEnemies_ctor(cEnemies *self);
+void __thiscall cEnemies_Attack(cEnemies *self, cEntity *usr);
+void __fastcall cEnemies_Think(cEnemies *self);
+void __fastcall cEnemies_Relax(cEnemies *self);
+
+/* ExtPolice.cpp: g_pWorld + 0x2158, the police cars of the outdoor maps ("OutCop") */
+typedef struct cExtPolice {
+	float retarget;			/* 0x00 5 s: while the alarm stays on, the cars go for the player again */
+	byte alarm;			/* 0x04 the alarm at the last think */
+	byte pad_5[3];
+	cEntity *usr;			/* 0x08 the player at the last think */
+	float timer;			/* 0x0c Think every 0.5 s */
+	int raised;			/* 0x10 1 when the last think set the alarm, else -1 */
+	cEntityListData *list;		/* 0x14 "OutCop" */
+} cExtPolice;
+SD_SIZE(cExtPolice, 0x18);
+
+#define World_ExtPolice() ((cExtPolice *)((byte *)g_pWorld + 0x2158))
+#define g_ExtPoliceChasing GAME_DATA(int, 0x44cea8)		/* the cars were sent after the player */
+#define g_PoliceWaveEliminated ((cPy_Function *)Game_Ptr(0x44ce84))	/* no police car left */
+#define g_TrafficFightingMaxDist GAME_DATA(float, 0x44dc40)
+#define Vehicle_B383(e) (*(byte *)((byte *)(e) + 0x383))
+
+/* the AI parameters of a police car back to the defaults or random (rva 0x15b2f0, 0x15b3c0) */
+void PoliceAI_RestoreParams(cAIVehicle *ai);
+void PoliceAI_RandomParams(cAIVehicle *ai);
+/* a flag of the attack part of the AI (+0x194, its +0x174), rva 0x8bef0 */
+byte __thiscall cAIVehicle_TargetSeen(cAIVehicle *ai);
+
+cExtPolice *__fastcall cExtPolice_ctor(cExtPolice *self);
+cEntity *ExtPolice_CallCop(cEntity *e);
+void ExtPolice_CopDamage(const char *name, const char *attacker, byte died);
+void __fastcall cExtPolice_Think(cExtPolice *self);
+byte ExtPolice_IsChased(cEntity *e);
+
+/* Friends.cpp: g_pWorld + 0x2180, the friend ships of the outdoor missions ("Friends") */
+typedef struct cFriends {
+	float timer;			/* 0x0 Think every 1.5 s */
+	cEntityListData *list;		/* 0x4 "Friends" */
+} cFriends;
+SD_SIZE(cFriends, 8);
+
+#define World_Friends() ((cFriends *)((byte *)g_pWorld + 0x2180))
+
+cFriends *__fastcall cFriends_ctor(cFriends *self);
+void __thiscall cFriends_Attack(cFriends *self, cEntity *usr);
+void __fastcall cFriends_Think(cFriends *self);
+
+/* GateKeeperLogic.cpp: the gatekeepers ("GateKeeper", g_pWorld + 0x2254), every sqrt(2) s their logics update */
+typedef struct cGateKeepers {
+	float timer;			/* 0x0 */
+	cEntityListData *list;		/* 0x4 "GateKeeper" */
+} cGateKeepers;
+SD_SIZE(cGateKeepers, 8);
+
+/* the logic of a gatekeeper (0x4c bytes): states 0 relaxed, 1 hidden in its shell */
+typedef struct cGateKeeperLocalLogic {
+	cBaseLocalLogic base;		/* 0x00 */
+	float hiddenTime;		/* 0x48 GateKeeperHiddenTime when it hides */
+} cGateKeeperLocalLogic;
+SD_SIZE(cGateKeeperLocalLogic, 0x4c);
+
+#define g_GateKeeperStdFar GAME_DATA(float, 0x44cfc0)
+#define g_GateKeeperStdFovY GAME_DATA(float, 0x44cfd8)
+#define g_GateKeeperStdFovX GAME_DATA(float, 0x44d008)
+#define g_GateKeeperHiddenTime GAME_DATA(float, 0x44cff0)
+
+/* the slot of the logics with one argument that returns 1 */
+byte __thiscall Logic_True1(void *self, int arg);
+cGateKeeperLocalLogic *__thiscall cGateKeeperLocalLogic_ctor(cGateKeeperLocalLogic *self, cEntity *parent);
+byte __thiscall cGateKeeperLocalLogic_SetState(cGateKeeperLocalLogic *self, int state, cEntity *target);
+
+/* GearLogic.cpp: the gears (0x5c bytes); states 0 relax (patrol), 1 chase (called), 2 attack, 3 stay in place,
+ * 4 escort */
+#define GEAR_RELAX 0
+#define GEAR_STAY_IN_PLACE 3
+#define GEAR_SCORT 4
+
+typedef struct cGearLocalLogic {
+	cBaseLocalLogic base;		/* 0x00 */
+	float sirenTime;		/* 0x48 with the alarm: the next siren */
+	float lostTime;			/* 0x4c since the target was lost */
+	byte called;			/* 0x50 sent by the AI control */
+	byte pad_51[3];
+	int defaultState;		/* 0x54 "DefaultState" */
+	char *defaultTarget;		/* 0x58 cString "DefaultTarget" */
+} cGearLocalLogic;
+SD_SIZE(cGearLocalLogic, 0x5c);
+
+#define World_Alarm() ((cAlarm *)g_pWorld->alarm)
+#define World_AICtrlI4() (*(int *)((byte *)g_pWorld + 0x21cc))	/* of g_pWorld->aiCtrl */
+/* the view of the AI of a character */
+#define WChar_ViewMode(e) (*(int *)((byte *)(e) + 0x38c))
+#define WChar_ViewFovY(e) (*(float *)((byte *)(e) + 0x390))
+#define WChar_ViewFar(e) (*(float *)((byte *)(e) + 0x394))
+
+/* the AI control: level to at least level (rva 0x14fb00), the gear becomes a police (rva 0x14eb50) */
+void __thiscall AICtrl_RaiseLevel(void *aiCtrl, int level);
+void __thiscall AICtrl_GearToPolice(void *aiCtrl, cEntity *gear);
+
+byte __thiscall cGearLocalLogic_SetState(cGearLocalLogic *self, int state, cEntity *target);
+
+/* GenCharGroup.cpp: g_pWorld + 0x2238, the lists of the generic characters and the maker of their logics */
+typedef struct cGenCharGroup {
+	int attackers;			/* 0x00 counted from 0 every update, two may attack */
+	int level;			/* 0x04 the highest level the logics report in a round, -1 */
+	float timer;			/* 0x08 Think every 0.13 s */
+	cEntityListData *genChars;	/* 0x0c "GenChars" (WORLD_GENCHARS1) */
+	cEntityListData *police;	/* 0x10 "PoliceSmall" */
+	cEntityListData *bishops;	/* 0x14 "Bishop" */
+	void *messengers;		/* 0x18 cMessengers (MessengerLogic.cpp, 0x14 bytes), its list at +0x10 */
+} cGenCharGroup;
+SD_SIZE(cGenCharGroup, 0x1c);
+
+#define World_GenCharGroup() ((cGenCharGroup *)((byte *)g_pWorld + 0x2238))
+
+/* MessengerLogic.cpp (imports) */
+void *__thiscall cMessengers_ctor(void *self);
+void __fastcall cMessengers_dtor(void *self);
+void __fastcall cMessengers_Init(void *self);
+void __fastcall cMessengers_Think(void *self);
+
+/* the constructors of the logics of the other types (later sources of Logic/, imports) */
+void *__thiscall cPoliceLocalLogic_ctor(void *self, cEntity *parent);
+void *__thiscall cMayorLocalLogic_ctor(void *self, cEntity *parent);
+void *__thiscall cRustyLocalLogic_ctor(void *self, cEntity *parent);
+void *__thiscall cSputnikJunkyardLocalLogic_ctor(void *self, cEntity *parent);
+void *__thiscall cMaintenanceLocalLogic_ctor(void *self, cEntity *parent);
+void *__thiscall cPoliceBossLocalLogic_ctor(void *self, cEntity *parent);
+void *__thiscall cMessengerLocalLogic_ctor(void *self, cEntity *parent);
+void *__thiscall cMercenaryLocalLogic_ctor(void *self, cEntity *parent);
+void *__thiscall cHumphreyLocalLogic_ctor(void *self, cEntity *parent);
+void *__thiscall cHumanLocalLogic_ctor(void *self, cEntity *parent);
+/* the logics of part 1 */
+cGenCharLocalLogic *__thiscall cBankDirectorLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent);
+cGenCharLocalLogic *__thiscall cBankMasterLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent);
+cGenCharLocalLogic *__thiscall cDesktopLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent);
+cFunctionaryLocalLogic *__thiscall cBertoLocalLogic_ctor(cFunctionaryLocalLogic *self, cEntity *parent);
+cFunctionaryLocalLogic *__thiscall cBettyLocalLogic_ctor(cFunctionaryLocalLogic *self, cEntity *parent);
+cGenCharLocalLogic *__thiscall cBishopLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent);
+cGenCharLocalLogic *__thiscall cCrazyDealerLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent);
+cBossLocalLogic *__thiscall cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity *parent);
+
+/* GenCharLogic.cpp */
+#define g_GenCharMaxSpecialActionTime GAME_DATA(float, 0x44d2e4)
+#define g_GenCharAlertSpeed GAME_DATA(float, 0x44d194)
+/* the type of the player draws the attention of a generic character (rva 0x14c5a0) */
+byte Logic_IsSuspectType(const char *type);
+void __thiscall cGenCharLocalLogic_RestartState(cGenCharLocalLogic *self);
 
 #endif
