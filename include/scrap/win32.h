@@ -155,6 +155,11 @@ typedef int(__stdcall *getwindowplacement_t)(void *hwnd, uint32_t *wp);	/* WINDO
 #define exe_IsWindow GAME_DATA(hwndfn_t, 0x3a1360)
 typedef int(__stdcall *menuitem_t)(void *menu, uint32_t id, uint32_t flags);	/* EnableMenuItem, CheckMenuItem */
 #define exe_EnableMenuItem GAME_DATA(menuitem_t, 0x3a1350)
+typedef void *(__stdcall *getmenu_t)(void *hwnd);
+typedef void *(__stdcall *getsubmenu_t)(void *menu, int pos);
+#define exe_GetMenu GAME_DATA(getmenu_t, 0x3a1348)
+#define exe_GetSubMenu GAME_DATA(getsubmenu_t, 0x3a1354)
+#define exe_DeleteMenu GAME_DATA(menuitem_t, 0x3a1358)
 #define exe_CheckMenuItem GAME_DATA(menuitem_t, 0x3a134c)
 typedef void *(__stdcall *setcursor_t)(void *cursor);
 #define exe_SetCursor GAME_DATA(setcursor_t, 0x3a135c)

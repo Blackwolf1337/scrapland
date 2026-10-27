@@ -5,8 +5,10 @@
  * and the ini reader are still the exe's.
  */
 #include <stdarg.h>
+#include <string.h>
 
 #include "scrap/dxutil.h"
+#include "scrap/escena.h"
 #include "scrap/e3dutil.h"
 #include "scrap/app.h"
 #include "scrap/crt.h"
@@ -97,6 +99,8 @@ int LensFlares_ReleaseD3D(void);			/* rva 0x2a6050, 0 */
 void LensFlares_Off(void);				/* rva 0x2a5fe0 */
 void LensFlares_FreeSprite(void);			/* rva 0x2a56f0 */
 int LensFlares_Init(void);				/* rva 0x2a6140 */
+int LensFlares_InitD3D(void);				/* rva 0x2a6060, the material of the flares */
+void LensFlares_ResetD3D(void);				/* rva 0x2a5520 */
 /* the base class of the inputs (rva 0x2a3a40) */
 void __fastcall IEntrada_dtor(void *self);
 
@@ -566,6 +570,7 @@ void E3D_Command(char *cmd) {
 #define g_Motor431bae GAME_DATA(byte, 0x431bae)
 #define g_Motor4af7d4 GAME_DATA(byte, 0x4af7d4)
 #define g_Sharpen GAME_DATA(int, 0x4b25e8)		/* [video] Sharpen of m3d.ini */
+#define g_RatonExcl GAME_DATA(int, 0x431cfc)		/* [dinput] raton_excl */
 
 static uint32_t Menu_Check(int on) {
 	return on ? MF_CHECKED : 0;
@@ -600,6 +605,88 @@ void __fastcall CMotorApp_UpdateMenu(byte *self) {
 	exe_CheckMenuItem(MOTOR_MENU(self), IDM_SOLOB38, Menu_Check(g_RenderSoloB38 != 0));
 	exe_CheckMenuItem(MOTOR_MENU(self), IDM_9C64, Menu_Check(g_Motor4af7d4 != 0));
 	exe_CheckMenuItem(MOTOR_MENU(self), IDM_SHARPEN, Menu_Check(g_Sharpen != 0));
+}
+
+#define MOTOR_SUBMENU(m) (*(void **)((m) + 0x2a5e0))	/* the cameras of the global scene */
+#define MOTOR_MAXCAMERAS 0x14
+#define MF_BYPOSITION 0x400
+#define D3DRS_88 0x88
+#define D3DRS_89 0x89
+#define DEV_VT_SETRENDERSTATE 0xc8
+#define ENGINE_BUILD 0x15f8
+
+/* InitDeviceObjects: the device objects of the engine, the cameras menu, the title, the input on the window */
+int __thiscall CMotorApp_InitDeviceObjects(byte *self) {
+	typedef int(__stdcall * setrenderstate_t)(void *, uint32_t, uint32_t);
+	void *dev = MOTOR_DEV(self);
+	char title[0x100];
+	int hr;
+
+	g_MotorInits++;
+	MOTOR_B2A5F8(self) = (byte)(MOTOR_RASTERCAPS(self) >> 18) & 1;
+	Render_IniD3D();
+	CMundo_InitD3D(Mundo_Get());
+	UtilEscena_InitD3D();
+	Stencil_Init();
+	Trails_Init();
+	LensFlares_InitD3D();
+	LensFlares_ResetD3D();
+	CListaMat_Prepare(g_ListaMat, dev);
+	Render_SetCamara(Mundo_Get()->cam);
+	Render_SetWorldMatrix(g_MatIdentity, 0);
+	CEscena_FindClase(MOTOR_ESCENA(self), NULL, CLASE_OBJ3D_LUZ);
+	((setrenderstate_t)(*(void ***)dev)[DEV_VT_SETRENDERSTATE / 4])(dev, D3DRS_88, 1);
+	((setrenderstate_t)(*(void ***)dev)[DEV_VT_SETRENDERSTATE / 4])(dev, D3DRS_89, 1);
+	MOTOR_MENU(self) = exe_GetMenu(MOTOR_HWND(self));
+	CMotorApp_UpdateMenu(self);
+	CHECK(!MOTOR_TABLA(self)->p);
+	MOTOR_TABLA(self)->n = MOTOR_MAXCAMERAS;
+	MOTOR_TABLA(self)->p = operator_new_array(MOTOR_MAXCAMERAS * sizeof(void *));
+	CHECK(MOTOR_TABLA(self)->p);
+	CHECK(MOTOR_TABLA(self)->p);
+	memset(MOTOR_TABLA(self)->p, 0, (uint32_t)MOTOR_TABLA(self)->n * sizeof(void *));
+	MOTOR_SUBMENU(self) = exe_GetSubMenu(MOTOR_MENU(self), 2);
+	if (MOTOR_SUBMENU(self)) {
+		CNodo3D *n;
+		uint32_t i = 0;
+
+		while (exe_DeleteMenu(MOTOR_SUBMENU(self), 0, MF_BYPOSITION)) {
+		}
+		for (n = CEscena_FindClase(MOTOR_ESCENA(self), NULL, CLASE_OBJ3D_CAMARA); n;
+			n = CEscena_FindClase(MOTOR_ESCENA(self), n, CLASE_OBJ3D_CAMARA)) {
+			CCamara *cam;
+
+			if (i == (uint32_t)MOTOR_TABLA(self)->n) {
+				exe_AppendMenuA(MOTOR_SUBMENU(self), 0, i + IDM_CAMERA, "...");
+				break;
+			}
+			cam = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_CAMARA);
+			if (!MOTOR_TABLA(self)->p || i >= (uint32_t)MOTOR_TABLA(self)->n) {
+				CHECK(0);
+			}
+			((CCamara **)MOTOR_TABLA(self)->p)[i] = cam;
+			exe_AppendMenuA(MOTOR_SUBMENU(self), 0, i + IDM_CAMERA, n->name);
+			i++;
+		}
+	}
+	Bprintf(title, sizeof(title), "%s (%d)%s - [%s]", MOTOR_TITLE(self), ENGINE_BUILD, "", MOTOR_ESCENA(self)->name);
+	if (!MOTOR_WINDOWED(self)) {
+		Bprintf(title, sizeof(title), "Scrapland (%d)%s", ENGINE_BUILD, "");
+	}
+	exe_SetWindowTextA(MOTOR_HWND(self), title);
+	{
+		typedef int(__thiscall * create_t)(void *, void *, void *, int);
+		void **vt = *(void ***)g_Entrada;
+		int excl = g_RatonExcl != 0;
+
+		hr = ((create_t)vt[1])(g_Entrada, MOTOR_HWND(self),
+			(void *)exe_GetWindowLongA(MOTOR_HWND(self), GWL_HINSTANCE), excl);
+	}
+	if (hr < 0) {
+		return hr;
+	}
+	((void(__thiscall *)(void *, int))(*(void ***)g_Entrada)[5])(g_Entrada, 1);
+	return 0;
 }
 
 /* MsgProc: the input first, the keys, the menu commands of the window, then the one of CD3DApplication */
