@@ -3785,6 +3785,8 @@ SD_HOOK(FXSputnik_SetA, 0x1b45f0, 20)
 SD_HOOK(cObjElementFXCharacterConversion_Emit, 0x1b4610, 3341)
 
 /* module agent: World/FX/FXScene.cpp (hooks below this line) */
+SD_HOOK(cObjElementFXSceneDecontamination_SetNames, 0x1ea000, 65)
+SD_HOOK(cObjElementFXSceneDecontamination_SetFC, 0x1ea050, 20)
 SD_HOOK(FXScene_Create, 0x1e8880, 1374)
 SD_HOOK(cObjElementFXSceneBeatPickus_Update, 0x1dec90, 8638)
 SD_HOOK(cObjElementFXSceneBillArrives_A_Update, 0x1e0e50, 8695)
@@ -3829,8 +3831,6 @@ SD_HOOK(cObjElementFXSceneYakuzzi_SetEntity, 0x1e9f60, 146)
 
 /* module agent: World/FX/FXVehicle.cpp (hooks below this line) */
 /* src/game/World/FX/FXVehicle.c */
-SD_HOOK(cObjElementFXSceneDecontamination_SetNames, 0x1ea000, 65)
-SD_HOOK(cObjElementFXSceneDecontamination_SetFC, 0x1ea050, 20)
 SD_HOOK(cObjElementFXFiredDebris_ctor, 0x1ea070, 93)
 SD_HOOK(cObjElementFXFiredEntity_ctor, 0x1ea0d0, 100)
 SD_HOOK(cObjElementFXSmokeDebris_ctor, 0x1ea140, 93)

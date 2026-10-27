@@ -173,9 +173,11 @@ typedef struct cObjElementFXSceneYakuzzi {
 SD_OFFSET(cObjElementFXSceneYakuzzi, dummy, 0xc4);
 SD_OFFSET(cObjElementFXSceneYakuzzi, started, 0xd0);
 
-/* World/FX/FXVehicle.cpp range (rva 0x1ea000): the target entity name and its action of the rays */
-void __thiscall cObjElementFXSceneDecontamination_SetTarget(cObjElementFXSceneDecontamination *self,
+/* at the start of the FXVehicle.cpp code (rva 0x1ea000, 0x1ea050): the target entity name and its action of the
+ * rays (31 characters at most), the height */
+void __thiscall cObjElementFXSceneDecontamination_SetNames(cObjElementFXSceneDecontamination *self,
 	const char *target, const char *action);
+void __thiscall cObjElementFXSceneDecontamination_SetFC(cObjElementFXSceneDecontamination *self, float v);
 
 /* the scene effect of the model of e (none for other models) */
 void FXScene_Create(cEntity *e, const char *model);

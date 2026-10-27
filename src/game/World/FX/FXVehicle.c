@@ -1146,14 +1146,3 @@ void __fastcall FXVehicle_RenderAttached(void *element) {
 	CGameParticles_SetVisible(&self->parts2, 0);
 	CGameParticles_SetVisible(&self->parts1, 1);
 }
-
-/* ---- World/FX/FXScene.cpp ---- */
-
-void __thiscall cObjElementFXSceneDecontamination_SetNames(void *self, const char *a, const char *b) {
-	Str_Copy((char *)self + 0xbc, a, 0x20);
-	Str_Copy((char *)self + 0xdc, b, 0x20);
-}
-
-void __thiscall cObjElementFXSceneDecontamination_SetFC(void *self, float v) {
-	*(float *)((byte *)self + 0xfc) = v;
-}

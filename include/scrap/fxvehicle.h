@@ -339,9 +339,4 @@ void __thiscall cObjElementFXVehicleAccelerator_SetOwner(cObjElementFXVehicleAcc
 void __thiscall cObjElementFXVehicleAccelerator_SetAccelerator(cObjElementFXVehicleAccelerator *self, void *a);
 /* FXVehicle_RenderAttached (rva 0x1f9050, the damage effect drawn with its ship) is in embeddedfxvehicle.h */
 
-/* World/FX/FXScene.cpp, the end of it in this range: the two names (31 characters at most) and the float at
- * 0xfc of cObjElementFXSceneDecontamination */
-void __thiscall cObjElementFXSceneDecontamination_SetNames(void *self, const char *a, const char *b);
-void __thiscall cObjElementFXSceneDecontamination_SetFC(void *self, float v);
-
 #endif

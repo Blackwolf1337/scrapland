@@ -105,7 +105,7 @@ void FXScene_Create(cEntity *e, const char *model) {
 			el->started = 1;
 		}
 		cObjElementFXSceneDecontamination_SetEntity(el, e);
-		cObjElementFXSceneDecontamination_SetTarget(el, "DecontaminationDtritus", "Decon");
+		cObjElementFXSceneDecontamination_SetNames(el, "DecontaminationDtritus", "Decon");
 		el->height = 145.0f;
 		return;
 	}
@@ -143,7 +143,7 @@ void FXScene_Create(cEntity *e, const char *model) {
 			el->started = 1;
 		}
 		cObjElementFXSceneDecontamination_SetEntity(el, e);
-		cObjElementFXSceneDecontamination_SetTarget(el, "BillArrives_CHuman", "Descontamination");
+		cObjElementFXSceneDecontamination_SetNames(el, "BillArrives_CHuman", "Descontamination");
 		el->height = 80.0f;
 		return;
 	}
@@ -309,7 +309,7 @@ void __thiscall cObjElementFXSceneEnterMatrix_Attach(cObjElementFXSceneEnterMatr
 		CGameTrail_SetTexture(t, (~crt_rand() & 1) | 8);
 		CGameTrail_SetPremul(t, 1);
 		self->life[i] = -1.0f;
-		self->wait[i] = FxElem_Rand(0.45f, 0.15f);
+		self->wait[i] = FxElem_Rand(0.45000002f, 0.15f);
 	}
 	self->lastKind = -1;
 }
@@ -395,7 +395,7 @@ void __thiscall cObjElementFXSceneEnterMatrix_Reset(cObjElementFXSceneEnterMatri
 	for (int i = 0; i < FXMATRIX_TRAILS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
 		self->life[i] = -1.0f;
-		self->wait[i] = FxElem_Rand(0.45f, 0.15f);
+		self->wait[i] = FxElem_Rand(0.45000002f, 0.15f);
 	}
 }
 
@@ -2203,4 +2203,14 @@ void __thiscall cObjElementFXSceneEnterMatrix_Update(cObjElementFXSceneEnterMatr
 	CGameLensFlare_SetF18(&self->flare, 1.0f);
 	CGameLensFlare_SetI1c(&self->flare, 2);
 	self->tPrev = self->t;
+}
+
+void __thiscall cObjElementFXSceneDecontamination_SetNames(cObjElementFXSceneDecontamination *self,
+	const char *target, const char *action) {
+	Str_Copy(self->targetName, target, sizeof(self->targetName));
+	Str_Copy(self->action, action, sizeof(self->action));
+}
+
+void __thiscall cObjElementFXSceneDecontamination_SetFC(cObjElementFXSceneDecontamination *self, float v) {
+	self->height = v;
 }
