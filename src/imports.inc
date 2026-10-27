@@ -463,7 +463,6 @@ SD_IMPORT(CNodesWorld2D_Generate, 0x0b2f60)
 /* module agent: Scorer part 2 (Scorer+ScraplandScorer+Slider+SpecialAction) (imports below this line) */
 SD_IMPORT(Scorer_DrawDebug, 0x173450)
 SD_IMPORT(Scorer_DrawConsole, 0x1742f0)
-SD_IMPORT(cSpecialActionScorer_DrawGearAim, 0x17ac90)
 SD_IMPORT(crt_ltoa, 0x34d525)
 
 /* module agent: AI/IVehicle.cpp (imports below this line) */

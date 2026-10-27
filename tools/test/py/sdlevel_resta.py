@@ -133,5 +133,47 @@ if rsaCar and rsaGroup and rsaTraffic:
 		rsaPoke(rsaGroup + (0x5c, 0x60, 0x64, 0x68, 0x6c, 0x70)[rsaK], rsaGroupSave[rsaK])
 	for rsaK in range(4):
 		rsaPoke(rsaCar + (0x420, 0x424, 0x428, 0x5e8)[rsaK], rsaCarSave[rsaK])
+
+# ---- the network controller of a vehicle on the car: the constructor, Changed (an active car always sends its
+# position), Reset ----
+if rsaCar:
+	rsaNV = SDTest.Call(0x133650, 'ii', 0x78)[0]
+	def rsanv(n):
+		return (rsaF(n + 4, 13), rsaB(n + 0x38), rsaInts(n, (0x3c, 0x40, 0x44, 0x48, 0x4c, 0x50, 0x5c, 0x64, 0x68,
+			0x6c, 0x70)), rsaB(n + 0x54), rsaB(n + 0x59), rsaB(n + 0x60))
+	check('cNetVController_ctor', lambda: (SDTest.Call(0x1186b0, 'tiii', rsaNV, rsaCar)[0] == rsaNV,
+		rsaI(rsaNV) - 0x400000, rsaI(rsaNV + 0x5c) == rsaCar, rsanv(rsaNV)[0:2]))
+	rsaActive = rsaI(rsaCar + 0x4c)
+	for rsav in ((0x7e, 1), (0x7e, 0), (0x00, 1), (0x01, 0), (0x7f, 1)):
+		rsaPoke(rsaCar + 0x4c, (rsaActive & ~0xff) | rsav[1])
+		check('cNetVController_Changed' + fmt(rsav), lambda rsav=rsav: (SDTest.Call(0x1186f0, 'tbiii', rsaNV, rsav[0],
+			rsaCar)[0], rsaB(rsaNV + 0x38), rsaInts(rsaNV, (0x3c, 0x40, 0x44, 0x48, 0x4c, 0x50))))
+	rsaPoke(rsaCar + 0x4c, rsaActive)
+	check('cNetVController_Reset', lambda: (SDTest.Call(0x119840, 'tvi', rsaNV), rsaB(rsaNV + 0x54), rsaB(rsaNV + 0x59)))
+	rsaFree(rsaNV)
 if rsaCarObj:
 	check('SDRsaCar Del', lambda: rsaCarObj.Del())
+
+# ---- the early returns of the voices, the sound debug view, the messenger drop and the gear aim search ----
+rsaRemain = SDTest.Peek(0x462148, 'i')
+SDTest.Call(0x3197d0, 'iiFi', 0x400000 + 0x462148, (1.5,), 4)
+check('Sound_PlayVoice talk', lambda: SDTest.Call(0x1a1090, 'bssii', 'Nobody', 'AnmStr', 0, 1)[0])
+SDTest.Poke(0x462148, rsaRemain)
+check('Sound_PlayVoice no alarm', lambda: SDTest.Call(0x1a1090, 'bssii', 'Nobody', 'Fire', 0, 0)[0])
+check('Sound_UpdateVoice', lambda: SDTest.Call(0x1a0320, 'vi', 1))
+rsaShow = SDTest.Peek(0x466d90, 'i')
+SDTest.Poke(0x466d90, 0)
+check('CSoundXBox_DebugDraw off', lambda: SDTest.Call(0x1a5880, 'tviii', SDTest.Peek(0x466bb4, 'i'), 10, 20))
+SDTest.Poke(0x466d90, rsaShow)
+check('Messenger_Deliver none', lambda: SDTest.Call(0x153940, 'biii', 0, 0, 0)[0])
+# the sphere callback with the name of no entity in a memory file
+rsaFBuf = rsaAlloc(0x100)
+rsaFM = rsaAlloc(0x20)
+SDTest.Call(0x12e050, 'tiiiii', rsaFM, rsaFBuf, 0x100, 0)
+SDTest.Call(0x12e1b0, 'tiisi', rsaFM, '', 4)
+SDTest.Call(0x12d250, 'tiis', rsaFM, 'SDRsaNoSuchEntity')
+SDTest.Call(0x12e1b0, 'tiisi', rsaFM, '', 0)
+rsaTgt = SDTest.Peek(0x4606b4, 'i')
+check('GearAim_SphereFunc unknown', lambda: (SDTest.Call(0x17a380, 'vi', rsaFM), SDTest.Peek(0x4606b4, 'i') == rsaTgt))
+rsaFree(rsaFM)
+rsaFree(rsaFBuf)

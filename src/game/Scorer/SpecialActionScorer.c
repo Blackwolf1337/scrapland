@@ -1,11 +1,14 @@
 /*
  * SpecialActionScorer.cpp of the game (Menu/): cSpecialActionScorer, the special action of the character in the
- * HUD with the draw handler of each character action (the table at rva 0x428cb8). The target search of the gear
- * (rva 0x17ac90) and its sphere callback (rva 0x17a380) are not decompiled. See include/scrap/scoreritems.h.
+ * HUD with the draw handler of each character action (the table at rva 0x428cb8) and the target search of the gear.
+ * See include/scrap/scoreritems.h.
  */
 #include "scrap/chartype.h"
 #include "scrap/scoreritems.h"
+#include "scrap/scrapcollision.h"
 #include "scrap/scrapfont.h"
+#include "scrap/timer.h"
+#include "scrap/weapons.h"
 
 /* the draw handler of each character action: thiscall (item, player) */
 #define g_SpecialActionDraw ((void(__thiscall **)(cSpecialActionScorer *, int))Game_Ptr(0x428cb8))
@@ -169,6 +172,26 @@ void __thiscall cSpecialActionScorer_Draw(cSpecialActionScorer *self, int player
 #define g_GearAimSpreadX GAME_DATA(float, 0x428d10)	/* the aim cone of the gear target search */
 #define g_GearAimSpreadY GAME_DATA(float, 0x428d14)
 #define g_GearAimMode GAME_DATA(int, 0x4606c8)		/* 1..3: which targets the search takes */
+/* the state of the gear aim: the target and its score, its screen position, the aim cross that moves from the
+ * center to it (offset, lock time) and the blink of the cross while the energy is low */
+#define g_GearAimTarget GAME_DATA(cEntity *, 0x4606b4)
+#define g_GearAimBest GAME_DATA(float, 0x428cfc)	/* the lowest score of the search, FLT_MAX at its start */
+#define g_GearAimPos ((float *)Game_Ptr(0x428d00))	/* [2] */
+#define g_GearAimCenter ((float *)Game_Ptr(0x428d08))	/* [2] where the cross starts, 320 240 */
+#define g_GearAimOff ((float *)Game_Ptr(0x4606c0))	/* [2] Pos - Center */
+#define g_GearAimLocked GAME_DATA(byte, 0x4606b8)
+#define g_GearAimLockTime GAME_DATA(float, 0x4606bc)
+#define g_GearTargetCrossBlinkTime GAME_DATA(float, 0x460698)
+#define g_GearAimBlink GAME_DATA(float, 0x460694)
+#define g_GearTargetSphereRadius GAME_DATA(float, 0x4606ac)
+#define g_GearStdFar GAME_DATA(float, 0x44d068)
+#define GEARAIM_SPHEREFUNC 0x17a380
+#define GEARAIM_LOCK_TIME 0.3f		/* rva 0x3b083c */
+#define GEARAIM_SCREEN_X 320.0f
+#define GEARAIM_SCREEN_Y 240.0f
+#define GEARAIM_SCORE_ALARM -100.0f	/* rva 0x3af490: a gear, a bishop or a radar target in the alarm */
+#define GEARAIM_SCORE_MESSENGER -200.0f	/* rva 0x3b61a8 */
+#define GEARAIM_SCORE_SENTINEL -50.0f	/* rva 0x3b6198 */
 #define SPECIALACTION_FADE 0.2f
 #define TYEN_ACTION "Action"
 #define TYEN_ACTIONINIT "ActionInit"
@@ -524,4 +547,218 @@ void __thiscall cSpecialActionScorer_DrawCannon(cSpecialActionScorer *self, int 
 		img->y = q[1] + pos[1];
 		CPsaImage_DrawPoly(self->cannon, p, uv, NULL, 4, 6);
 	}
+}
+
+/* the sphere callback of the gear target search (params: the entity name): the score of each character the player
+ * sees (or that is free to the line of sight with a kind): the squared screen distance to the center, or for the
+ * kinds (the messenger of mode 3, in the alarm a radar target, a gear, a sentinel, a bishop when they attack) a
+ * negative value by the distance (the messenger with the data pack counts three times); the lowest wins */
+void GearAim_SphereFunc(cAbstractFile *params) {
+	char name[0x80];
+	vec3_t p, tmp;
+	float lt[3];		/* the line test position; its y and z are the screen position (one stack slot) */
+	int kind = 0;
+
+	cAbstractFile_ReadString(params, name, sizeof(name));
+	cEntity *e = World_FindEntity(name);
+	if (!e) {
+		return;
+	}
+	cEntity *user = SpecialAction_User();
+	if (!user || user == e) {
+		return;
+	}
+	const cObjEntityVtbl *ev = (const cObjEntityVtbl *)e->vftable;
+	ev->GetViewPos(e, &p);
+	if (g_WalkCameraCenter > 0.0f && g_GearAimMode > 0) {
+		if (g_GearAimMode > 2) {
+			if (g_GearAimMode != 3) {
+				goto view;
+			}
+			if (!strcmp(Logic_TypeName(e), "Messenger")) {
+				kind = 3;
+			}
+		}
+		if (g_pWorld->alarmOn) {
+			if (Logic_RadarShow(e) == 1) {
+				kind = 5;
+			} else if (!strcmp(Logic_TypeName(e), "Gear")) {
+				kind = 1;
+			} else if (!strcmp(Logic_TypeName(e), "Sentinel")) {
+				kind = 4;
+			} else if (g_BishopAttackOnAlarm && !strcmp(Logic_TypeName(e), "Bishop")) {
+				kind = 2;
+			}
+		}
+		if (kind && !Engine_TestLine(user->vftable->GetPos(user, (vec3_t *)lt), &p, NULL, NULL)) {
+			goto score;
+		}
+	}
+view:
+	if (!Logic_InView(user, &p, g_GearStdFar, g_GearAimSpreadY, g_GearAimSpreadX, 1)) {
+		return;
+	}
+score:;
+	float sc = 0.0f;
+	float c = 0.0f;
+	switch (kind) {
+	case 1:
+	case 2:
+	case 5:
+		c = GEARAIM_SCORE_ALARM;
+		break;
+	case 3:
+		c = GEARAIM_SCORE_MESSENGER;
+		break;
+	case 4:
+		c = GEARAIM_SCORE_SENTINEL;
+		break;
+	}
+	if (kind >= 1 && kind <= 5) {
+		const vec3_t *u = user->vftable->GetPos(user, &tmp);
+		float d2 = (u->y - p.y) * (u->y - p.y) + (u->x - p.x) * (u->x - p.x) + (u->z - p.z) * (u->z - p.z);
+		sc = d2;
+		if (d2 > 1.0f) {
+			sc = c / d2;
+			if (kind == 3) {
+				cEntity *pack = World_FindEntity(g_MessengerDataPack);
+				if (pack && pack->vftable->IsType(pack, "item") && ((cObjEntity *)pack)->mod.link.target == e) {
+					sc = sc * 3.0f;
+				}
+			}
+		}
+	}
+	if (!(0.0f > sc) && !Engine_WorldToScreen(&p, &lt[1], NULL)) {
+		return;
+	}
+	float x = lt[1];
+	float y = lt[2];
+	if (sc == 0.0f) {
+		sc = (y - GEARAIM_SCREEN_Y) * (y - GEARAIM_SCREEN_Y) + (x - GEARAIM_SCREEN_X) * (x - GEARAIM_SCREEN_X);
+	}
+	if (g_GearAimBest > sc) {
+		g_GearAimPos[0] = x;
+		g_GearAimTarget = e;
+		g_GearAimPos[1] = y;
+		g_GearAimBest = sc;
+		g_GearAimOff[0] = x - g_GearAimCenter[0];
+		g_GearAimOff[1] = y - g_GearAimCenter[1];
+	}
+}
+
+/* the special action of the gear: the target search around the player in a sphere, the aim cross that moves from the
+ * last place to the target in 0.3 s (and grows on the way) and locks on it, red and blinking while the energy is low;
+ * a locked view keeps its target */
+void __thiscall cSpecialActionScorer_DrawGearAim(cSpecialActionScorer *self, int player) {
+	vec3_t tmp;
+	float pos[2], size[2];
+
+	cEntity *user = SpecialAction_User();
+	if (!user) {
+		return;
+	}
+	cWalkCharEntity *w = (cWalkCharEntity *)user;
+	float energy = 1.0f - w->energyUsed;
+	if (!g_EnergyBarActive) {
+		cSpecialActionScorer_DrawIcon(self, player, g_GearLowWeaponEnergy >= energy ? 0 : 1);
+		return;
+	}
+	cSpecialActionScorer_DrawEnergy(self);
+	if (!w->control.lock && !(g_WalkCameraCenter == 0.0f)) {
+		cSpecialActionScorer_DrawIcon(self, player, g_GearLowWeaponEnergy >= energy ? 0 : 1);
+		return;
+	}
+	cEntity *prev = g_GearAimTarget;
+	g_GearAimTarget = NULL;
+	g_GearAimBest = 3.40282347e+38f;
+	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)Game_Ptr(GEARAIM_SPHEREFUNC));
+	cWorld_SphereCallF(g_pWorld, 0x10, user->vftable->GetPos(user, &tmp), g_GearTargetSphereRadius,
+		g_ChTypeSphereFunc, 1);
+	if (!w->control.lock || !w->control.target.target) {
+		cWalkCharControl_SetTarget(&w->control, g_GearAimTarget);
+	}
+	if (w->control.lock) {
+		cEntity *t = w->control.target.target;
+		if (!t) {
+			cWalkCharControl_SetTarget(&w->control, g_GearAimTarget);
+		} else if (t->vftable->IsType(t, TYEN_WALKCHAR)) {
+			g_GearAimTarget = w->control.target.target;
+			Engine_WorldToScreen(((const cObjEntityVtbl *)g_GearAimTarget->vftable)->GetViewPos(g_GearAimTarget, &tmp),
+				g_GearAimPos, NULL);
+			g_GearAimOff[0] = g_GearAimPos[0] - g_GearAimCenter[0];
+			g_GearAimOff[1] = g_GearAimPos[1] - g_GearAimCenter[1];
+		}
+	}
+	if (!g_GearAimTarget || (prev && prev != g_GearAimTarget)) {
+		if (!g_GearAimTarget) {
+			float ox = GEARAIM_SCREEN_X - g_GearAimCenter[0];
+			float oy = GEARAIM_SCREEN_Y - g_GearAimCenter[1];
+			g_GearAimPos[0] = GEARAIM_SCREEN_X;
+			g_GearAimPos[1] = GEARAIM_SCREEN_Y;
+			g_GearAimOff[0] = ox;
+			g_GearAimOff[1] = oy;
+		}
+		g_GearAimLocked = 0;
+		if (g_GearTargetName && *g_GearTargetName) {
+			cString_Set(&g_GearTargetName, NULL);
+		}
+	}
+	uint32_t color = (((g_CannonScorerColorRed | 0xffffff00u) << 8 | g_CannonScorerColorGreen) << 8) |
+		g_CannonScorerColorBlue;
+	byte hide = 0;
+	int state;
+	if (!(g_GearLowWeaponEnergy >= energy)) {
+		state = SpecialAction_IsActive(user, TYEN_ACTION) ? 2 : 1;
+	} else {
+		float t;
+		if (0.0f > g_GearAimBlink) {
+			t = g_GearTargetCrossBlinkTime + g_GearAimBlink;
+			g_GearAimBlink = t;
+		} else {
+			g_GearAimBlink = g_GearAimBlink - cTimer_GetDelta(&g_pWorld->timer);
+			t = g_GearAimBlink;
+		}
+		hide = g_GearTargetCrossBlinkTime * 0.5f > t;
+		color = 0xffff2020;
+		state = 0;
+	}
+	cSpecialActionScorer_DrawIcon(self, player, state);
+	cSpecialActionScorer_DrawCrossHair(self, player);
+	if (g_GearAimLocked) {
+		g_GearAimCenter[0] = g_GearAimPos[0];
+		g_GearAimCenter[1] = g_GearAimPos[1];
+		if (!hide) {
+			size[1] = 20.0f;
+			size[0] = 20.0f;
+			cSpecialActionScorer_DrawCannon(self, player, g_GearAimPos, size, 0.0f, (color & 0xffffff) | 0xc0000000);
+		}
+		return;
+	}
+	g_GearAimLockTime = cTimer_GetDelta(&g_pWorld->timer) + g_GearAimLockTime;
+	float f = Float_MinSS(1.0f, g_GearAimLockTime / GEARAIM_LOCK_TIME);
+	float k = (3.0f - (f + f)) * (f * f);
+	pos[0] = g_GearAimOff[0] * k + g_GearAimCenter[0];
+	pos[1] = g_GearAimOff[1] * k + g_GearAimCenter[1];
+	if (g_GearAimLockTime >= GEARAIM_LOCK_TIME) {
+		g_GearAimCenter[1] = g_GearAimPos[1];
+		pos[1] = g_GearAimPos[1];
+		g_GearAimLockTime = 0.0f;
+		g_GearAimLocked = 1;
+		g_GearAimCenter[0] = g_GearAimPos[0];
+		pos[0] = g_GearAimPos[0];
+		if (g_GearAimTarget && cString_CmpStr(&g_GearTargetName, g_GearAimTarget->name)) {
+			cString_Set(&g_GearTargetName, g_GearAimTarget->name);
+		}
+	}
+	float a = 0.0f;
+	if (g_GearAimTarget && !g_GearAimLocked && GEARAIM_LOCK_TIME >= g_GearAimLockTime) {
+		a = 1.0f - g_GearAimLockTime / GEARAIM_LOCK_TIME;
+	}
+	if (hide) {
+		return;
+	}
+	size[0] = (a * 4.0f + 1.0f) * 20.0f;
+	size[1] = size[0];
+	uint32_t alpha = (uint32_t)(-0x40 - (int)(a * 164.0f)) << 24;
+	cSpecialActionScorer_DrawCannon(self, player, pos, size, a * -3.1415927f, alpha | (color & 0xffffff));
 }

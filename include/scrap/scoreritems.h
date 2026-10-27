@@ -1173,8 +1173,9 @@ void __fastcall cSpecialActionScorer_DrawEnergy(cSpecialActionScorer *self);
 void __thiscall cSpecialActionScorer_DrawCrossHair(cSpecialActionScorer *self, int player);
 void __thiscall cSpecialActionScorer_DrawCannon(cSpecialActionScorer *self, int player, const float *pos,
 	const float *size, float ang, uint32_t color);
-/* the target search of the gear and its aim (rva 0x17ac90, not decompiled) */
+/* the target search of the gear and its aim, the sphere callback of the search */
 void __thiscall cSpecialActionScorer_DrawGearAim(cSpecialActionScorer *self, int player);
+void GearAim_SphereFunc(cAbstractFile *params);
 void __thiscall SpecialAction_DrawDefault(cSpecialActionScorer *self, int player);
 void __thiscall SpecialAction_DrawBanker(cSpecialActionScorer *self, int player);
 void __thiscall SpecialAction_DrawTarget(cSpecialActionScorer *self, int player);
