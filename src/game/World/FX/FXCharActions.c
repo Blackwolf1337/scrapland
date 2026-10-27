@@ -1135,9 +1135,9 @@ void __thiscall cObjElementFXMessengerTakeDataPack_SetOwner(cObjElementFXMesseng
 }
 
 void __thiscall cObjElementFXMercenaryDrink_SetC0(cObjElementFXMercenaryDrink *self, float a, float b, float c) {
-	self->fc0 = a;
-	self->fc4 = b;
-	self->fc8 = c;
+	self->offset.x = a;
+	self->offset.y = b;
+	self->offset.z = c;
 }
 
 void __thiscall cObjElementFXMercenaryDrink_Start(cObjElementFXMercenaryDrink *self, cEntity *e) {
@@ -2586,5 +2586,145 @@ void __thiscall cObjElementFXMessengerTakeDataPack_Update(cObjElementFXMessenger
 			0.0f);
 		CGameParticles_SetParticle(sp, base + 3, p[2].x, p[2].y, p[2].z, self->width[i] * 130.0f, e3 | 0x3030ff, 5,
 			0.0f);
+	}
+}
+
+#define FXA_RAMP_MERCURY 0x430668		/* [2] */
+
+/* a drop of mercury: the sprite and size, the rotation, the ramp and the emission */
+static void FXMercenary_Drop(CGameParticles *sp, float life, byte second) {
+	sp->lifeTime = life;
+	sp->sizeLife = 1.0f;
+	sp->rotIni = sp->rotEnd = FXA_Rand((double)6.28318548f, 0.0);
+	sp->rotVar = (float)(FXA_Rnd() * (double)1.57079637f - (double)0.785398185f);
+	switch (crt_rand() % 3) {
+	case 0:
+		sp->spriteIni = 0x48;
+		sp->sizeIni = FXA_Rand(2.5, 2.5);
+		break;
+	case 1:
+		sp->spriteIni = 9;
+		sp->sizeIni = FXA_Rand(2.5, 2.5);
+		break;
+	case 2:
+		sp->spriteIni = 2;
+		sp->sizeIni = FXA_Rand(5.5, 2.5);
+		break;
+	}
+	sp->spriteEnd = sp->spriteIni;
+	if (second) {
+		float s = sp->sizeIni * FXA_Rand((double)0.19999999f, (double)0.6f);
+		sp->sizeIni = s;
+		sp->sizeEnd = s;
+	} else {
+		sp->sizeEnd = sp->sizeIni;
+	}
+	CGameParticles_Apply(sp);
+	CGameParticles_SetColorRampOn(sp, 1);
+	CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FXA_RAMP_MERCURY) + (crt_rand() & 1) * 9);
+	CGameParticles_EmitDt(sp, 1, 0, FXA_Rand((double)0.05f, 0.0));
+}
+
+void __thiscall cObjElementFXMercenaryDrink_Update(cObjElementFXMercenaryDrink *self, cDebris *d, float dt) {
+	vec3_t pos, rot, o, o2, dir, mouth, v, e, tmp;
+	vec3_t pts[2];
+	int idx[2] = { 1, 2 };
+	float f;
+
+	(void)dt;
+	FXA_Keep(&self->ent);
+	if (!self->ent) {
+		Debris_Life(d) = 0.0f;
+		return;
+	}
+	CGameModel *m = FXA_Model(self->ent);
+	CGameModel_GetPos(m, &pos);
+	CGameModel_GetRot(m, &rot);
+	CGameModel_SetPos(Debris_Model(d), &pos);
+	CGameModel_SetRot(Debris_Model(d), &rot);
+	CGameModel_SetSortZ(Debris_Model(d), -91.0f, 0.0f);
+	float delta = FXA_Delta();
+	self->fbc = self->fbc + delta;
+	float t = self->fb8 + delta;
+	self->fb8 = t;
+	if (!(t > 0.03f)) {
+		return;
+	}
+	self->fb8 = 0.0f;
+	Vec3_Rotate(&o, &self->offset, &rot);
+	CGameModel_Vertices(m, pts, NULL, NULL, 2, -1, NULL, (uint32_t)self->nodeJar, idx);
+	dir.x = pts[0].x - pts[1].x;
+	dir.y = pts[0].y - pts[1].y;
+	dir.z = pts[0].z - pts[1].z;
+	rot = *Vec3_GetRotAng(&o, &dir);
+	const vec3_t *r = Vec3_Rotate(&o, &self->offset, &rot);
+	mouth.x = pts[0].x + r->x;
+	mouth.y = r->y + pts[0].y;
+	mouth.z = r->z + pts[0].z;
+	if (!FX_InRange(self->fbc, 0.5f, 1.3f, &f)) {
+		return;
+	}
+	float scale = 1.0f;
+	if (strcmp(CGameModel_Name(m), "MercenaryC.M3D") == 0) {
+		scale = 1.5f;
+	}
+	CGameParticles *sp = &self->particles;
+	for (int i = 0; i < 18; i++) {
+		sp->birthRate = 0;
+		float life = FXA_Rand((double)0.019999996f, (double)0.22f) * scale;
+		float rr = FXA_Rand(3.0, (double)0.2f);
+		const vec3_t *dd = FX_RandomDir(&tmp);
+		sp->initPosMin.x = dd->x * rr + mouth.x;
+		sp->initPosMin.y = dd->y * rr + mouth.y;
+		sp->initPosMin.z = dd->z * rr + mouth.z;
+		sp->initPosMax = sp->initPosMin;
+		float s = FXA_Rand(80.0, 60.0);
+		float c = FXA_Rand((double)0.19999999f, (double)0.3f);
+		float b = (float)(FXA_Rnd() * (double)1.2f - 1.0);
+		v.x = (float)(FXA_Rnd() * (double)0.14f - (double)0.07f);
+		v.y = b;
+		v.z = c;
+		const vec3_t *ov = Vec3_Rotate(&o, &v, &rot);
+		sp->initVelMin.x = ov->x * s;
+		sp->initVelMin.y = ov->y * s;
+		sp->initVelMin.z = ov->z * s;
+		sp->initVelMax = sp->initVelMin;
+		float g = FXA_Rand(20.0, 40.0);
+		v = (vec3_t){ 0.0f, 0.0f, -1.0f };
+		const vec3_t *og = Vec3_Rotate(&o2, &v, &rot);
+		sp->initAccMin.z = og->z * g + 0.0f;
+		sp->initAccMin.x = og->x * g + 0.0f;
+		sp->initAccMin.y = og->y * g - 980.0f;
+		sp->initAccMax = sp->initAccMin;
+		FXMercenary_Drop(sp, life, 0);
+	}
+	for (int i = 0; i < 6; i++) {
+		sp->birthRate = 0;
+		float life = FXA_Rand((double)0.01999998f, (double)0.36f);
+		float rr = FXA_Rand(3.0, (double)0.2f);
+		const vec3_t *dd = FX_RandomDir(&tmp);
+		e.x = dd->x * rr;
+		e.y = dd->y * rr;
+		e.z = dd->z * rr;
+		float zz = FXA_Rand(3.0, 8.0);
+		v.x = 0.0f;
+		v.y = (float)(-28.0 - FXA_Rnd() * 4.0) * scale;
+		v.z = zz;
+		const vec3_t *ov = Vec3_Rotate(&o, &v, &rot);
+		sp->initPosMin.x = (ov->x + mouth.x) + e.x;
+		sp->initPosMin.y = (ov->y + mouth.y) + e.y;
+		sp->initPosMin.z = (ov->z + mouth.z) + e.z;
+		sp->initPosMax = sp->initPosMin;
+		float s = FXA_Rand(50.0, 70.0);
+		float vz = (float)(FXA_Rnd() * (double)1.6f - (double)0.8f);
+		float vy = FXA_Rand((double)0.6f, (double)1.3f);
+		float vx = (float)(FXA_Rnd() * (double)1.6f - (double)0.8f);
+		sp->initVelMin.y = vy * s;
+		sp->initVelMin.z = vz * s;
+		sp->initVelMin.x = vx * s;
+		sp->initVelMax = sp->initVelMin;
+		sp->initAccMin = (vec3_t){ 0.0f, -980.0f, 0.0f };
+		sp->initAccMax = sp->initAccMin;
+		FXMercenary_Drop(sp, life, 1);
 	}
 }

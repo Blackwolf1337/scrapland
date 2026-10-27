@@ -293,9 +293,7 @@ typedef struct cObjElementFXMercenaryDrink {
 	CGameParticles particles;	/* 0x08 on Dummy01 */
 	float fb8;			/* 0xb8 */
 	float fbc;			/* 0xbc */
-	float fc0;			/* 0xc0 */
-	float fc4;			/* 0xc4 */
-	float fc8;			/* 0xc8 */
+	vec3_t offset;			/* 0xc0 from the mouth of the jar, in its frame */
 	int nodeJar;			/* 0xcc OB_JarraMercurio_MercA */
 	byte started;			/* 0xd0 */
 } cObjElementFXMercenaryDrink;
@@ -546,6 +544,8 @@ void __thiscall cObjElementFXMessengerAttack_Update(cObjElementFXMessengerAttack
 /* the data pack trails from the owner to the item, the middle points following, flashes at the ends */
 void __thiscall cObjElementFXMessengerTakeDataPack_Update(cObjElementFXMessengerTakeDataPack *self, cDebris *d,
 	float dt);
+/* the mercury drops out of the jar of the Mercenary from 0.5 to 1.3 s */
+void __thiscall cObjElementFXMercenaryDrink_Update(cObjElementFXMercenaryDrink *self, cDebris *d, float dt);
 void __thiscall cObjElementFXBettyKill_Update(cObjElementFXKill *self, cDebris *d, float dt);
 void __thiscall cObjElementFXDTritusKill_Update(cObjElementFXKill *self, cDebris *d, float dt);
 void __thiscall cObjElementFXDTritusAttack_Start(cObjElementFXDTritusAttack *self, cEntity *e);
