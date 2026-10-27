@@ -32,6 +32,16 @@ static inline void Nto1Node_Unlink(Nto1Node *node) {
 	node->next = node;
 }
 
+/* puts node into the ring of head, behind the head (CHECK line 0x40: "NewNode.Root==NULL") */
+static inline void Nto1Node_LinkTo(Nto1Node *head, Nto1Node *node) {
+	CHECK(node->target == NULL);
+	node->target = head->target;
+	node->next = head->next;
+	node->prev = head;
+	head->next->prev = node;
+	head->next = node;
+}
+
 /* unlinks every node of the head (rva 0xd40f0, ecx = head) */
 void __fastcall Nto1Head_UnlinkAll(Nto1Node *head);
 

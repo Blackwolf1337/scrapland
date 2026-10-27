@@ -1,0 +1,660 @@
+/*
+ * cItemEntity, the pickups of the levels, see include/scrap/itementity.h.
+ */
+#include <string.h>
+
+#include "scrap/ai.h"
+#include "scrap/console.h"
+#include "scrap/fxmisc.h"
+#include "scrap/itementity.h"
+#include "scrap/scrapcollision.h"
+#include "scrap/sound.h"
+
+#define ITEM_CLASSNAME ((const char *)Game_Ptr(0x3af3f8))	/* "item" */
+
+/* the "Obj" vtable slots used here */
+typedef struct cItemEntityVtbl {
+	void *vf00_05[6];
+	vec3_t *(__thiscall *GetPos)(cItemEntity *self, vec3_t *out);		/* 0x18 */
+	void(__thiscall *SetPos)(cItemEntity *self, const vec3_t *pos);	/* 0x1c */
+	void *vf08_21[26];
+	vec3_t *(__thiscall *GetVel)(cItemEntity *self, vec3_t *out);		/* 0x88 */
+	void(__thiscall *SetVel)(cItemEntity *self, const vec3_t *vel);	/* 0x8c */
+	void *vf24_27[4];
+	float(__thiscall *GetRadius)(cItemEntity *self);			/* 0xa0 */
+} cItemEntityVtbl;
+SD_OFFSET(cItemEntityVtbl, GetVel, 0x88);
+SD_OFFSET(cItemEntityVtbl, GetRadius, 0xa0);
+
+/* the entity callback of the sphere test: other touched self at point */
+typedef void(__thiscall *touchfn_t)(cEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir);
+
+int Vec3_Differ(const float *a, const float *b);
+
+static inline const cItemEntityVtbl *Item_Vtbl(cItemEntity *e) {
+	return (const cItemEntityVtbl *)e->base.vftable;
+}
+
+static inline cEntity *Item_Ent(cItemEntity *e) {
+	return &e->base;
+}
+
+/* World.h: the entity of local player 0 */
+static cEntity *Item_Usr0(void) {
+	cWorld *w = g_pWorld;
+	cEntity *pl = w->owners[0];
+
+	if (pl && !pl->vftable->IsType(pl, TYEN_WITH_LIFE)) {
+		CheckFailed("UsrEntities[i]->IsType(\"WithLife\")", "World.h", __TIMESTAMP__, __LINE__);
+	}
+	return w->owners[0];
+}
+
+/* the reset to the origin with OnReset */
+static void Item_Reset(cItemEntity *self) {
+	Item_Vtbl(self)->SetPos(self, &self->origin);
+	cPy_Function_AddParamS(&self->onReset, self->base.name);
+	cPy_Function_Execute(&self->onReset, 0);
+}
+
+/* the fade effects only when the sphere of the item is in view */
+static byte Item_FxVisible(cItemEntity *self) {
+	vec3_t tmp;
+	const vec3_t *p = Item_Vtbl(self)->GetPos(self, &tmp);
+	float r = Item_Vtbl(self)->GetRadius(self);
+
+	return FX_IsVisible(p->x, p->y, p->z, r + r, g_ItemFxDist, NULL, 0);
+}
+
+/* the x87 a / b * c of the original (fdivr, fmul), in the precision the game set */
+static inline float X87_DivMul(float a, float b, float c) {
+	float r;
+
+	__asm__("fdivrs %1\n\tfmuls %2" : "=t"(r) : "m"(a), "m"(c), "0"(b));
+	return r;
+}
+
+static inline double X87_Mul(double a, double b) {
+	double r;
+
+	__asm__("fmull %1" : "=t"(r) : "m"(b), "0"(a));
+	return r;
+}
+
+cEntity *__thiscall cItemEntity_ctor(void *mem, const char *name, float x, float y, float z) {
+	cItemEntity *self = mem;
+
+	cObjEntity_ctor(mem, name, x, y, z);
+	self->base.vftable = Game_Ptr(CITEMENTITY_VFTABLE);
+	Nto1Node_Init(&self->taker);
+	cPy_Function_ctor(&self->onTake);
+	cPy_Function_ctor(&self->onReset);
+	self->base.mask |= 4;
+	self->radius = 1000.0f;
+	self->respawn = 0.0f;
+	*(float *)(self->obj140 + 0xc) = 0.05f;
+	self->syncTicks = 5;
+	self->owner[0] = 0;
+	self->origin.x = x;
+	self->origin.y = y;
+	self->origin.z = z;
+	self->backTime = 0.0f;
+	self->appearsIfFree = 0;
+	self->autoFace = 0;
+	self->takeSoundVol = 0.0f;
+	self->takeSound[0] = 0;
+	self->typeMask = 0xffff;
+	self->onlyUser = 0;
+	self->noFx = 1;
+	self->blink = 0;
+	self->fadeIn = 1;
+	self->fadeOut = 1;
+	self->taker.data = self;
+	return &self->base;
+}
+
+void __fastcall cItemEntity_dtor(cItemEntity *self) {
+	self->base.vftable = Game_Ptr(CITEMENTITY_VFTABLE);
+	cPy_Function_dtor(&self->onReset);
+	cPy_Function_dtor(&self->onTake);
+	Nto1Node_Done(&self->taker);
+	cObjEntity_dtor(&self->base);
+}
+
+cItemEntity *__thiscall cItemEntity_Delete(cItemEntity *self, uint32_t flags) {
+	cItemEntity_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, CITEMENTITY_SIZE);
+	}
+	return self;
+}
+
+void __thiscall cItemEntity_Touch(cItemEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir) {
+	cEntity *pl = Item_Usr0();
+
+	(void)point;
+	(void)dir;
+	if (self->onlyUser && (!pl || pl != other)) {
+		return;
+	}
+	if (self->typeMask != 0xffff && (!other->vftable->IsType(other, TYEN_WITH_LIFE) ||
+		!(self->typeMask & (1u << (Entity_Team(other) & 31))))) {
+		return;
+	}
+	if (self->base.deadNode.target || !(other->mask & 0x11) || !(byte)cPy_Function_IsValid(&self->onTake)) {
+		return;
+	}
+	if (self->taker.target) {
+		CHECK(self->taker.data);
+		Nto1Node_Unlink(&self->taker);
+	}
+	cEntity_AddLink(other, &self->taker);
+	cPy_Function_AddParamS(&self->onTake, self->base.name);
+	cPy_Function_AddParamS(&self->onTake, other->name);
+	cPy_Function_Execute(&self->onTake, 0);
+}
+
+byte __thiscall cItemEntity_VarF(cItemEntity *self, const char *name, double *d, int set) {
+	if (!*name) {
+		return 0;
+	}
+	if (!strcmp(name, "TakeSoundVol")) {
+		if ((byte)set) {
+			self->takeSoundVol = (float)*d;
+		} else {
+			*d = self->takeSoundVol;
+		}
+		return 1;
+	}
+	if (!strcmp(name, "Radius")) {
+		if ((byte)set) {
+			self->radius = (float)*d;
+		} else {
+			*d = self->radius;
+		}
+		return 1;
+	}
+	if (!strcmp(name, "rTime")) {
+		if ((byte)set) {
+			cItemEntity_SetRespawn(self, (float)*d);
+		} else {
+			*d = self->respawn;
+		}
+		return 1;
+	}
+	if (!strcmp(name, "BackTime")) {
+		if ((byte)set) {
+			cItemEntity_SetBackTime(self, (float)*d);
+		} else {
+			*d = self->backTime;
+		}
+		return 1;
+	}
+	return cObjEntity_VarF(&self->base, name, d, set);
+}
+
+vec3_t *__thiscall cItemEntity_GetOrigin(cItemEntity *self, vec3_t *out) {
+	*out = self->origin;
+	return out;
+}
+
+char *__fastcall cItemEntity_GetOwner(cItemEntity *self) {
+	return self->owner;
+}
+
+float __fastcall cItemEntity_GetBackTime(cItemEntity *self) {
+	return self->backTime;
+}
+
+const char *__thiscall cItemEntity_GetClassName(cItemEntity *self) {
+	(void)self;
+	return ITEM_CLASSNAME;
+}
+
+float __thiscall cItemEntity_GetRadius(cItemEntity *self) {
+	return self->radius;
+}
+
+/* a flag of the item from the int variable */
+static inline void Item_VarFlag(byte *flag, int *i, int set) {
+	if ((byte)set) {
+		*flag = *i != 0;
+	} else {
+		*i = *flag != 0;
+	}
+}
+
+byte __thiscall cItemEntity_VarI(cItemEntity *self, const char *name, int *i, int set) {
+	if (!*name) {
+		return 0;
+	}
+	if (!strcmp(name, "FadeInEffect")) {
+		if ((byte)set) {
+			self->fadeIn = *i;
+		} else {
+			*i = self->fadeIn;
+		}
+		return 1;
+	}
+	if (!strcmp(name, "FadeOutEffect")) {
+		if ((byte)set) {
+			self->fadeOut = *i;
+		} else {
+			*i = self->fadeOut;
+		}
+		return 1;
+	}
+	if (!strcmp(name, "Blink")) {
+		Item_VarFlag(&self->blink, i, set);
+		return 1;
+	}
+	if (!strcmp(name, "AutoFace")) {
+		Item_VarFlag(&self->autoFace, i, set);
+		return 1;
+	}
+	if (!strcmp(name, "AppearsIfFree")) {
+		Item_VarFlag(&self->appearsIfFree, i, set);
+		return 1;
+	}
+	if (!strcmp(name, "OnlyUser")) {
+		Item_VarFlag(&self->onlyUser, i, set);
+		return 1;
+	}
+	return cObjEntity_VarI(&self->base, name, i, set);
+}
+
+byte __thiscall cItemEntity_IsType(cItemEntity *self, const char *type) {
+	if (!strcmp(type, ITEM_CLASSNAME)) {
+		return 1;
+	}
+	return cObjEntity_IsType(&self->base, type);
+}
+
+void __thiscall cItemEntity_NetRead(cItemEntity *self, void *msg, int unused) {
+	(void)unused;
+	self->net->vftable->Read(self->net, msg);
+	if (self->net->flags & 1) {
+		cItemEntity_SetRespawn(self, 0.0f);
+	} else {
+		cItemEntity_SetRespawn(self, 3600.0f);
+	}
+}
+
+void __thiscall cItemEntity_NetWrite(cItemEntity *self, int unused, void *msg, byte full) {
+	(void)unused;
+	byte all = (0.0f >= (float)self->syncTicks) | full;
+	self->net->vftable->Write(self->net, (0.0f >= self->respawn) + 2, Item_Ent(self), msg, all);
+	if (self->syncTicks > 0) {
+		self->syncTicks--;
+	}
+}
+
+void __thiscall cItemEntity_Tick(cItemEntity *self, float dt) {
+	vec3_t to, hit;
+
+	if (Net_IsNetEntity(Item_Ent(self))) {
+		cObjNet *net = self->net;
+		if (self->base.pos.x != net->pos.x || self->base.pos.y != net->pos.y || self->base.pos.z != net->pos.z) {
+			self->base.pos.x = net->pos.x;
+			self->base.pos.y = net->pos.y;
+			self->base.pos.z = net->pos.z;
+			self->syncTicks = Net_GetSendRate() * 5;
+		}
+	} else if (self->owner[0]) {
+		/* an owner that is gone frees the item */
+		cEntity *o = World_FindEntity(self->owner);
+		if (o && !o->flag_4c) {
+			self->owner[0] = 0;
+		}
+	} else {
+		if (!(self->backTime > 0.0f)) {
+			self->vel.x = 0.0f;
+			self->vel.y = 0.0f;
+			self->vel.z = 0.0f;
+		} else if (self->vel.x != 0.0f || self->vel.y != 0.0f || self->vel.z != 0.0f) {
+			/* pushed: slowed down and moved as a sphere */
+			float f = dt * 0.5f;
+			float mx = self->vel.x * f;
+			float my = self->vel.y * f;
+			float mz = self->vel.z * f;
+			self->vel.x = self->vel.x - mx;
+			self->vel.y = self->vel.y - my;
+			self->vel.z = self->vel.z - mz;
+			to.x = self->vel.x + self->base.pos.x;
+			to.y = self->base.pos.y + self->vel.y;
+			to.z = self->base.pos.z + self->vel.z;
+			self->syncTicks = Net_GetSendRate() * 5;
+			Engine_TestSphere(&self->base.pos, &to, self->radius, &hit, NULL);
+			if ((byte)Vec3_Differ(&to.x, &hit.x)) {
+				self->vel.x = 0.0f;
+				self->vel.y = 0.0f;
+				self->vel.z = 0.0f;
+			} else {
+				self->base.pos.x = hit.x;
+				self->base.pos.y = hit.y;
+				self->base.pos.z = hit.z;
+				if (200.0f > self->vel.x * self->vel.x + self->vel.y * self->vel.y + self->vel.z * self->vel.z) {
+					self->vel.x = 0.0f;
+					self->vel.y = 0.0f;
+					self->vel.z = 0.0f;
+				}
+			}
+		}
+		float bt = self->backTime;
+		float left = bt - dt;
+		if (left > 0.0f) {
+			self->backTime = left;
+		} else {
+			if (bt > 0.0f) {
+				Item_Reset(self);
+			}
+			self->backTime = 0.0f;
+		}
+		if (self->respawn <= 0.0f) {
+			cWorld_TestSphereEntities(g_pWorld, Item_Ent(self), (void *)0x11, &self->base.pos, self->radius, NULL, 0,
+				0);
+		} else {
+			float t = self->respawn - dt;
+			if (self->appearsIfFree && t <= 0.0f &&
+				cWorld_TestSphereEntities(g_pWorld, Item_Ent(self), (void *)0x11, &self->base.pos, self->radius, NULL,
+					1, 0)) {
+				/* somebody is on it: one second more */
+				cItemEntity_SetRespawn(self, 1.0f);
+			} else {
+				cItemEntity_SetRespawn(self, t);
+			}
+		}
+	}
+	Grid_Add(g_pWorld->grid, Item_Ent(self));
+	cObjEntity_Tick(Item_Ent(self), dt);
+	self->noFx = 0;
+}
+
+void __thiscall cItemEntity_SetOrigin(cItemEntity *self, const vec3_t *v) {
+	self->origin.x = v->x;
+	self->origin.y = v->y;
+	self->origin.z = v->z;
+}
+
+void __thiscall cItemEntity_SetOwner(cItemEntity *self, const char *name) {
+	Str_Copy(self->owner, name, 0x80);
+	if (self->respawn <= 0.0f) {
+		cItemEntity_SetRespawn(self, 1.0f);
+	}
+}
+
+void __thiscall cItemEntity_SetPos(cItemEntity *self, const vec3_t *pos) {
+	self->syncTicks = Net_GetSendRate() * 5;
+	cObjEntity_SetPos(Item_Ent(self), pos);
+}
+
+void __thiscall cItemEntity_SetBackTime(cItemEntity *self, float t) {
+	if (t > 0.0f) {
+		self->backTime = t;
+		return;
+	}
+	if (self->backTime > 0.0f) {
+		Item_Reset(self);
+	}
+	self->backTime = 0.0f;
+}
+
+void __thiscall cItemEntity_SetRespawn(cItemEntity *self, float t) {
+	vec3_t tmp;
+
+	if (t > 0.0f) {
+		if (self->respawn <= 0.0f) {
+			self->syncTicks = Net_GetSendRate() * 5;
+			if (CGameModel_IsLoaded(&self->model)) {
+				byte hide = 1;
+				if (self->fadeOut && !self->noFx && (CGameModel_IsVisible(&self->model) || self->blink) &&
+					Item_FxVisible(self)) {
+					/* the take effect towards the player that took it */
+					cEntity *taker = self->taker.target;
+					if (!g_SplitScreenGame && cWorld_GetUsrEntity(g_pWorld, 0) != taker) {
+						taker = NULL;
+					}
+					hide = 0;
+					if (self->fadeOut == 1) {
+						FX_ItemFade(Item_Ent(self), 1, g_IsMapOutDoor ? 8.0f : 1.0f, taker);
+					} else if (self->fadeOut == 2) {
+						FX_ItemBlink(Item_Ent(self));
+						hide = 1;
+					}
+				}
+				if (hide) {
+					CGameModel_Disable(&self->model);
+				}
+			}
+			if (self->takeSoundVol > 0.0f && self->takeSound[0]) {
+				const CSoundSysVtbl *vt = g_pSound->vftable;
+				int vol = Snd_Volume(self->takeSoundVol);
+				vt->PlayAt(g_pSound, self->takeSound, Item_Vtbl(self)->GetPos(self, &tmp), vol);
+			}
+		}
+		self->respawn = t;
+	} else {
+		if (self->respawn > 0.0f) {
+			self->syncTicks = Net_GetSendRate() * 5;
+			if (CGameModel_IsLoaded(&self->model)) {
+				byte show = 1;
+				if (self->fadeIn && !self->noFx && Item_FxVisible(self)) {
+					show = 0;
+					if (self->fadeIn == 1) {
+						FX_ItemFade(Item_Ent(self), 2, g_IsMapOutDoor ? 8.0f : 1.0f, NULL);
+					} else if (self->fadeIn == 2) {
+						FX_ItemBlink(Item_Ent(self));
+						show = 1;
+					}
+				}
+				if (show) {
+					CGameModel_Enable(&self->model);
+				}
+			}
+		}
+		self->respawn = 0.0f;
+	}
+	if (self->taker.target) {
+		CHECK(self->taker.data);
+		Nto1Node_Unlink(&self->taker);
+	}
+}
+
+void __thiscall cItemEntity_SetTypeMarker(cItemEntity *self, const char *types) {
+	if (!*types) {
+		self->typeMask = 0xffff;
+		return;
+	}
+	self->typeMask = 0;
+	for (const char *p = types; *p; p++) {
+		switch (*p) {
+		case 'R':
+		case 'r':
+			self->typeMask |= 1;
+			break;
+		case 'B':
+		case 'b':
+			self->typeMask |= 2;
+			break;
+		case 'G':
+		case 'g':
+			self->typeMask |= 4;
+			break;
+		case 'N':
+		case 'n':
+			self->typeMask |= 8;
+			break;
+		case 'K':
+		case 'k':
+			self->typeMask |= 0x10;
+			break;
+		default:
+			Con_Warnf("Warning : SetTgTypeMarker, some types are erroneus at '%s'.\n", types);
+			break;
+		}
+	}
+}
+
+void __thiscall cItemEntity_Update(cItemEntity *self) {
+	vec3_t tmp, ang;
+
+	cObjEntity_Update(Item_Ent(self));
+	if (self->autoFace) {
+		cWorld *w = g_pWorld;
+		vec3_t cam = w->camPos[w->curCam];
+		const vec3_t *p = Item_Vtbl(self)->GetPos(self, &tmp);
+		double dx = (double)(p->x - cam.x);
+		double dz = (double)(p->z - cam.z);
+		ang.x = 0.0f;
+		ang.y = (float)Game_Atan2(dx, dz);
+		ang.z = 0.0f;
+		CGameModel_SetRot(&self->model, &ang);
+	}
+	if (self->blink && self->respawn == 0.0f) {
+		float t = Timer_GetTime(&g_pWorld->timer);
+		float s = cTimer_GetSpeed(&g_pWorld->timer);
+		/* five blink phases a second of game time */
+		int phase = (int)X87_DivMul(t, s, 5.0f);
+		if (phase & 1) {
+			if (!CGameModel_IsEnabled(&self->model)) {
+				CGameModel_Enable(&self->model);
+			}
+		} else if (CGameModel_IsEnabled(&self->model)) {
+			if (CGameModel_IsVisible(&self->model)) {
+				FX_ItemBlink(Item_Ent(self));
+			}
+			CGameModel_Disable(&self->model);
+		}
+	}
+}
+
+byte __thiscall cItemEntity_TestSphere(cItemEntity *self, cEntity *other, const vec3_t *center, float radius,
+	int arg) {
+	vec3_t tmp, dir, point;
+
+	(void)arg;
+	const vec3_t *p = Item_Vtbl(self)->GetPos(self, &tmp);
+	float r = radius + self->radius;
+	float dy = center->y - p->y;
+	float dx = center->x - p->x;
+	float dz = center->z - p->z;
+	if (!(r * r >= dy * dy + dx * dx + dz * dz)) {
+		return 0;
+	}
+	if (!g_pWorld->testing && other) {
+		p = Item_Vtbl(self)->GetPos(self, &tmp);
+		dx = center->x - p->x;
+		dy = center->y - p->y;
+		dz = center->z - p->z;
+		float l2 = dx * dx + dy * dy + dz * dz;
+		if (!(1.0f >= l2)) {
+			float inv = 1.0f / (float)__builtin_sqrt((double)l2);
+			dir.x = dx * inv;
+			dir.y = dy * inv;
+			dir.z = dz * inv;
+		} else {
+			dir.x = 0.0f;
+			dir.y = 1.0f;
+			dir.z = 0.0f;
+		}
+		float ox = dir.x * self->radius;
+		float oy = dir.y * self->radius;
+		float oz = dir.z * self->radius;
+		p = Item_Vtbl(self)->GetPos(self, &tmp);
+		point.x = p->x + ox;
+		point.y = p->y + oy;
+		point.z = p->z + oz;
+		/* slot 11 of the other entity: touched by the item */
+		((touchfn_t)WEnt_Vtbl(other)->vf0b_15[0])(other, Item_Ent(self), &point, &dir);
+	}
+	return 1;
+}
+
+byte __thiscall cItemEntity_VarS(cItemEntity *self, const char *name, char **s, int set) {
+	if (!*name) {
+		return 0;
+	}
+	if (!strcmp(name, "TakeSound")) {
+		if ((byte)set) {
+			Str_Copy(self->takeSound, *s, 0x80);
+		} else {
+			*s = self->takeSound;
+		}
+		return 1;
+	}
+	if ((byte)set) {
+		if (!strcmp(name, "OnReset")) {
+			cPy_Function_SetFunc(&self->onReset, *s);
+			return 1;
+		}
+		if (!strcmp(name, "OnTake")) {
+			cPy_Function_SetFunc(&self->onTake, *s);
+			return 1;
+		}
+	}
+	if (!strcmp(name, "Owner")) {
+		if ((byte)set) {
+			cItemEntity_SetOwner(self, *s);
+		} else {
+			*s = self->owner;
+		}
+		return 1;
+	}
+	if ((byte)set && !strcmp(name, "TgTypeMarker")) {
+		cItemEntity_SetTypeMarker(self, *s);
+		return 1;
+	}
+	return cObjEntity_VarS(Item_Ent(self), name, s, set);
+}
+
+byte __thiscall cItemEntity_NetNeedsSend(cItemEntity *self, float dist2) {
+	if (self->syncTicks > 0) {
+		return 1;
+	}
+	if (g_ItemSyncDist * g_ItemSyncDist > dist2) {
+		/* near ones now and then: the count and ten ticks a second of game time */
+		double t = X87_Mul(g_pApp->vftable->GetGameTime(g_pApp), 10.0);
+		uint32_t n = g_ItemSyncCount++;
+		if ((int)((double)n + t) & 1) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+byte __thiscall cItemEntity_VarV(cItemEntity *self, const char *name, double *x, double *y, double *z, int set) {
+	vec3_t v;
+
+	if (!*name) {
+		return 0;
+	}
+	if (!strcmp(name, "Origin")) {
+		if ((byte)set) {
+			double vy = *y, vz = *z;
+			self->origin.x = (float)*x;
+			self->origin.y = (float)vy;
+			self->origin.z = (float)vz;
+		} else {
+			v = self->origin;
+			*x = v.x;
+			*y = v.y;
+			*z = v.z;
+		}
+		return 1;
+	}
+	if (!strcmp(name, "Vel")) {
+		if ((byte)set) {
+			v.x = (float)*x;
+			v.y = (float)*y;
+			v.z = (float)*z;
+			Item_Vtbl(self)->SetVel(self, &v);
+		} else {
+			Item_Vtbl(self)->GetVel(self, &v);
+			*x = v.x;
+			*y = v.y;
+			*z = v.z;
+		}
+		return 1;
+	}
+	return cObjEntity_VarV(Item_Ent(self), name, x, y, z, set);
+}
