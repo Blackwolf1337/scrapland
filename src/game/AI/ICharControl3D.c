@@ -523,7 +523,7 @@ byte __thiscall cAICharControl3D_FindRoute(cAICharControl *self) {
 	self->pathPoint = pt;
 	self->goal = *pt;
 	self->newPath = 0;
-	AICC_Vtbl(self)->Vf41(self);
+	AICC_Vtbl(self)->NextGoal(self);
 	return 1;
 }
 
