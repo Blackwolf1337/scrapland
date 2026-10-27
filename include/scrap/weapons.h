@@ -12,6 +12,7 @@
 #include "scrap/entity.h"
 #include "scrap/filesys.h"
 #include "scrap/fxweapons.h"
+#include "scrap/missileentity.h"
 #include "scrap/sound.h"
 #include "scrap/world.h"
 
@@ -83,15 +84,6 @@ void __thiscall cVehicleAttack_HitBy(void *self, const char *name);
 void __thiscall cVehicleAttack_Update(void *self);
 /* the debris cloud on a vehicle for time (rva 0x10a150) */
 void __thiscall cVehicleEntity_SetCloud(cEntity *self, float time, byte on);
-/* the setters of the missiles (cMissileEntity, rva 0xf4b30, 0xf4b50, 0xf4d10, 0xf4d90 (also calls slot 0xf8), 0xf4e90,
- * 0xf4eb0, 0xf4f00) */
-void __thiscall cMissileEntity_SetLifeTime(cEntity *self, float t);	/* +0x3f0 */
-void __thiscall cMissileEntity_SetMode(cEntity *self, int mode);	/* +0x57c */
-void __thiscall cMissileEntity_SetAmmo(cEntity *self, int ammo);	/* +0x588 */
-void __thiscall cMissileEntity_SetF3f4(cEntity *self, float v);
-void __thiscall cMissileEntity_SetF594(cEntity *self, float v);
-void __thiscall cMissileEntity_SetHitName(cEntity *self, const char *name);	/* +0x47c, 0x80 bytes */
-void __thiscall cMissileEntity_SetF3f8(cEntity *self, float v);
 /* the shot effect of the weapon slot (rva 0x103500) */
 void __thiscall cVehicleEffects_Shoot(void *self, int weap, int slot);
 /* World/FX/FXWeapons.cpp: the ATPC shot of the vehicle from origin to hit (rva 0x1fde50) */
@@ -102,10 +94,6 @@ float Rand_FloatRange(float lo, float hi);
 /* Weaps/Inferno.cpp: the shot of a net client (rva 0x120fa0) */
 void Inferno_ClientFire(const char *name);
 
-/* the entity is the copy of a vehicle of a net server on this client ("net..." names, rva 0x18f840) */
-byte Net_IsNetEntity(cEntity *e);
-/* links node to the entity of that name, or only unlinks it (rva 0xef6e0) */
-void Nto1Node_LinkByName(Nto1Node *node, const char *name);
 /* the AI of a vehicle takes the new weapon list (rva 0x8fd20) */
 void __thiscall cAIVehicle_WeapListChanged(void *ai);
 

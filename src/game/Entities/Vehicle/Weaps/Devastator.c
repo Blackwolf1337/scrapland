@@ -311,13 +311,13 @@ void EMI_Fire(cAbstractFile *params) {
 		return;
 	}
 	Controls_RumbleA(Vehicle_Controls(v), 0.4f, 0.2f);
-	cMissileEntity_SetF3f4(emi, 0.0f);
-	cMissileEntity_SetF3f8(emi, 0.0f);
+	cMissileEntity_SetSpeed((cMissileEntity *)emi, 0.0f);
+	cMissileEntity_SetTurnSpeed((cMissileEntity *)emi, 0.0f);
 	ammo = (int)fammo;
-	cMissileEntity_SetAmmo(emi, g_EMIAmmoNeed <= ammo ? g_EMIAmmoNeed : ammo);
+	cMissileEntity_SetCount((cMissileEntity *)emi, g_EMIAmmoNeed <= ammo ? g_EMIAmmoNeed : ammo);
 	cPy_Function_AddParamS(g_SetUpEMIFunc, emi->name);
 	cPy_Function_Execute(g_SetUpEMIFunc, 0);
-	cMissileEntity_SetLifeTime(emi, g_EMILifeTime - 0.2f);
+	cMissileEntity_SetLifeTime((cMissileEntity *)emi, g_EMILifeTime - 0.2f);
 	cPy_Function_SetFunc(Missile_OnHit(emi), "!EMIOnHit");
 	cWeaponManager_SetAmmo(wm, g_EMIIDAmmo, (float)(ammo - Missile_Ammo(emi)));
 }
@@ -363,8 +363,8 @@ void EMI_OnHit(cAbstractFile *params) {
 		return;
 	}
 	if (Entity_IsType(e, "Missile") && r >= d) {
-		cMissileEntity_SetMode(e, 1);
-		cMissileEntity_SetHitName(e, (const char *)Game_Ptr(0x3a3228));
+		cMissileEntity_SetType((cMissileEntity *)e, 1);
+		cMissileEntity_SetTarget((cMissileEntity *)e, (const char *)Game_Ptr(0x3a3228));
 	}
 }
 

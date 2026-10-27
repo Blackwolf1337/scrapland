@@ -1782,7 +1782,7 @@ rva	size	source	callconv	name	signature
 0008fa10	635	DEFAULT	unknown	FUN_0048fa10	
 0008fcd0	26	ANALYSIS	__thiscall	cAIVehicle::vf09	undefined __thiscall(void)
 0008fd00	26	ANALYSIS	__thiscall	cAIVehicle::vf10	undefined __thiscall(void)
-0008fd20	11	DEFAULT	unknown	FUN_0048fd20	
+0008fd20	11	USER_DEFINED	__thiscall	cAIVehicle_WeapListChanged	void __thiscall(void)
 0008fd30	1716	DEFAULT	unknown	FUN_0048fd30	
 000903f0	66	DEFAULT	unknown	FUN_004903f0	
 00090440	38	ANALYSIS	__thiscall	cAIVehicleControl::vf00	undefined __thiscall(void)
@@ -2963,10 +2963,10 @@ rva	size	source	callconv	name	signature
 000f9ab0	131	DEFAULT	unknown	FUN_004f9ab0	
 000f9b40	4	DEFAULT	unknown	FUN_004f9b40	
 000f9b50	5	DEFAULT	unknown	FUN_004f9b50	
-000f9b60	171	DEFAULT	unknown	FUN_004f9b60	
-000f9c10	226	DEFAULT	unknown	FUN_004f9c10	
-000f9d00	139	DEFAULT	unknown	FUN_004f9d00	
-000f9d90	644	DEFAULT	unknown	FUN_004f9d90	
+000f9b60	171	USER_DEFINED	__thiscall	cVehicleAttack_HitBy	void __thiscall(char * name)
+000f9c10	226	USER_DEFINED	__thiscall	cVehicleAttack_ShotAt	void __thiscall(char * name, int n)
+000f9d00	139	USER_DEFINED	__thiscall	cVehicleAttack_ShotAtPoint	void __thiscall(float * p, int n)
+000f9d90	644	USER_DEFINED	__thiscall	cVehicleAttack_Update	void __thiscall(void)
 000fa020	158	DEFAULT	unknown	FUN_004fa020	
 000fa0c0	215	DEFAULT	unknown	FUN_004fa0c0	
 000fa1a0	46	DEFAULT	unknown	FUN_004fa1a0	
@@ -3025,9 +3025,9 @@ rva	size	source	callconv	name	signature
 000fdb20	815	DEFAULT	unknown	FUN_004fdb20	
 000fde50	71	DEFAULT	unknown	FUN_004fde50	
 000fdea0	837	DEFAULT	unknown	FUN_004fdea0	
-000fe1f0	1391	DEFAULT	unknown	FUN_004fe1f0	
-000fe780	38	DEFAULT	unknown	FUN_004fe780	
-000fe7b0	17	DEFAULT	unknown	FUN_004fe7b0	
+000fe1f0	1391	USER_DEFINED	__thiscall	cAutoAim_Update	void __thiscall(void * owner, float dt)
+000fe780	38	USER_DEFINED	__thiscall	cAutoAim_SetAngle	void __thiscall(float ang)
+000fe7b0	17	USER_DEFINED	__thiscall	cAutoAim_SetRange	void __thiscall(float range)
 000fe7d0	460	DEFAULT	unknown	FUN_004fe7d0	
 000fe9b0	390	DEFAULT	unknown	FUN_004fe9b0	
 000feb40	347	DEFAULT	unknown	FUN_004feb40	
@@ -3045,11 +3045,11 @@ rva	size	source	callconv	name	signature
 000ff8a0	18	DEFAULT	unknown	FUN_004ff8a0	
 000ff8c0	122	DEFAULT	unknown	FUN_004ff8c0	
 000ff940	582	DEFAULT	unknown	FUN_004ff940	
-000ffb90	3	DEFAULT	unknown	FUN_004ffb90	
+000ffb90	3	USER_DEFINED	__thiscall	Controls_GetWeapon	int __thiscall(void)
 000ffba0	154	DEFAULT	unknown	FUN_004ffba0	
-000ffc40	29	DEFAULT	unknown	FUN_004ffc40	
-000ffc60	39	DEFAULT	unknown	FUN_004ffc60	
-000ffc90	39	DEFAULT	unknown	FUN_004ffc90	
+000ffc40	29	USER_DEFINED	__thiscall	Controls_SetWeapon	void __thiscall(int w)
+000ffc60	39	USER_DEFINED	__thiscall	Controls_RumbleA	void __thiscall(float strength, float time)
+000ffc90	39	USER_DEFINED	__thiscall	Controls_RumbleB	void __thiscall(float strength, float time)
 000ffcc0	3551	DEFAULT	unknown	FUN_004ffcc0	
 00100ab0	56	DEFAULT	unknown	FUN_00500ab0	
 00100af0	49	DEFAULT	unknown	FUN_00500af0	
@@ -3072,7 +3072,7 @@ rva	size	source	callconv	name	signature
 001028e0	96	DEFAULT	unknown	FUN_005028e0	
 00102940	1869	DEFAULT	unknown	FUN_00502940	
 00103090	1123	DEFAULT	unknown	FUN_00503090	
-00103500	9002	DEFAULT	unknown	FUN_00503500	
+00103500	9002	USER_DEFINED	__thiscall	cVehicleEffects_Shoot	void __thiscall(int weap, int slot)
 00105830	1137	DEFAULT	unknown	FUN_00505830	
 00105cb0	304	DEFAULT	unknown	FUN_00505cb0	
 00105de0	114	DEFAULT	unknown	FUN_00505de0	
@@ -3121,7 +3121,7 @@ rva	size	source	callconv	name	signature
 00109d30	44	DEFAULT	unknown	FUN_00509d30	
 00109d60	70	ANALYSIS	__thiscall	cVehicleEntity::vf51	undefined __thiscall(void)
 00109db0	919	ANALYSIS	__thiscall	cVehicleEntity::vf12	undefined __thiscall(void)
-0010a150	29	DEFAULT	unknown	FUN_0050a150	
+0010a150	29	USER_DEFINED	__thiscall	cVehicleEntity_SetCloud	void __thiscall(float time, byte on)
 0010a170	456	ANALYSIS	__thiscall	cVehicleEntity::vf60	undefined __thiscall(void)
 0010a340	282	ANALYSIS	__thiscall	cVehicleEntity::vf62	undefined __thiscall(void)
 0010a460	63	ANALYSIS	__thiscall	cVehicleEntity::vf44	undefined __thiscall(void)
@@ -3182,7 +3182,7 @@ rva	size	source	callconv	name	signature
 0010e130	57	DEFAULT	unknown	FUN_0050e130	
 0010e170	70	DEFAULT	unknown	FUN_0050e170	
 0010e1c0	1834	DEFAULT	unknown	FUN_0050e1c0	
-0010e8f0	71	DEFAULT	unknown	FUN_0050e8f0	
+0010e8f0	71	USER_DEFINED	__cdecl	Rand_FloatRange	float __cdecl(float lo, float hi)
 0010e940	635	DEFAULT	unknown	FUN_0050e940	
 0010ebc0	247	DEFAULT	unknown	FUN_0050ebc0	
 0010ed30	683	DEFAULT	unknown	FUN_0050ed30	
@@ -3214,63 +3214,63 @@ rva	size	source	callconv	name	signature
 00119fe0	30	DEFAULT	unknown	FUN_00519fe0	
 0011a010	35	ANALYSIS	__thiscall	cWeaponManager::vf00	undefined __thiscall(void)
 0011a040	52	DEFAULT	unknown	FUN_0051a040	
-0011a080	47	DEFAULT	unknown	FUN_0051a080	
+0011a080	47	USER_DEFINED	__thiscall	cWeaponManager_DelayFire	void __thiscall(float t)
 0011a0b0	29	DEFAULT	unknown	FUN_0051a0b0	
 0011a0d0	32	DEFAULT	unknown	FUN_0051a0d0	
-0011a0f0	143	DEFAULT	unknown	FUN_0051a0f0	
-0011a190	1309	DEFAULT	unknown	FUN_0051a190	
+0011a0f0	143	USER_DEFINED	__thiscall	cWeaponManager_HasMinAmmo	int __thiscall(uint w)
+0011a190	1309	USER_DEFINED	__thiscall	cWeaponManager_VarF	byte __thiscall(char * name, double * v, byte set)
 0011a6c0	35	USER_DEFINED	__thiscall	cTargetLock_GetAmmo	float __thiscall(int ammo)
-0011a6f0	45	DEFAULT	unknown	FUN_0051a6f0	
-0011a720	20	USER_DEFINED	__thiscall	cTargetLock_GetEntity	void * __thiscall(void)
-0011a740	19	USER_DEFINED	__thiscall	cTargetLock_GetPoint	void * __thiscall(void)
-0011a760	77	DEFAULT	unknown	FUN_0051a760	
-0011a7b0	185	DEFAULT	unknown	FUN_0051a7b0	
-0011a870	101	DEFAULT	unknown	FUN_0051a870	
-0011a8f0	43	DEFAULT	unknown	FUN_0051a8f0	
-0011a920	200	DEFAULT	unknown	FUN_0051a920	
+0011a6f0	45	USER_DEFINED	__cdecl	cWeaponManager_FixWeapon	int __cdecl(int w)
+0011a720	20	USER_DEFINED	__thiscall	cTargetLock_GetEntity	char * __thiscall(void)
+0011a740	19	USER_DEFINED	__thiscall	cTargetLock_GetPoint	float * __thiscall(void)
+0011a760	77	USER_DEFINED	__thiscall	cWeaponManager_NumAmmoSlots	int __thiscall(int ammo)
+0011a7b0	185	USER_DEFINED	__thiscall	cWeaponManager_NumSlots	int __thiscall(int w, byte warn)
+0011a870	101	USER_DEFINED	__thiscall	cWeaponManager_GetWeapAmmo	float __thiscall(uint w)
+0011a8f0	43	USER_DEFINED	__thiscall	cWeaponManager_GetSlots	uint __thiscall(int w)
+0011a920	200	USER_DEFINED	__thiscall	cWeaponManager_GetWeapList	char * __thiscall(void)
 0011a9f0	61	USER_DEFINED	__thiscall	cTargetLock_HasSlot	byte __thiscall(int weap, int slot)
-0011aa30	72	DEFAULT	unknown	FUN_0051aa30	
-0011aa80	70	DEFAULT	unknown	FUN_0051aa80	
-0011aad0	287	DEFAULT	unknown	FUN_0051aad0	
-0011abf0	1454	DEFAULT	unknown	FUN_0051abf0	
-0011b1a0	106	DEFAULT	unknown	FUN_0051b1a0	
-0011b210	106	DEFAULT	unknown	FUN_0051b210	
-0011b280	45	DEFAULT	unknown	FUN_0051b280	
-0011b2b0	44	DEFAULT	unknown	FUN_0051b2b0	
-0011b2e0	114	DEFAULT	unknown	FUN_0051b2e0	
-0011b360	13	DEFAULT	unknown	FUN_0051b360	
-0011b370	191	DEFAULT	unknown	FUN_0051b370	
-0011b430	254	DEFAULT	unknown	FUN_0051b430	
-0011b530	140	DEFAULT	unknown	FUN_0051b530	
-0011b5c0	141	DEFAULT	unknown	FUN_0051b5c0	
-0011b650	126	DEFAULT	unknown	FUN_0051b650	
-0011b6d0	203	DEFAULT	unknown	FUN_0051b6d0	
-0011b7b0	1905	DEFAULT	unknown	FUN_0051b7b0	
-0011bf60	197	DEFAULT	unknown	FUN_0051bf60	
-0011c030	144	DEFAULT	unknown	FUN_0051c030	
-0011c0c0	322	DEFAULT	unknown	FUN_0051c0c0	
-0011c210	67	DEFAULT	unknown	FUN_0051c210	
-0011c260	166	DEFAULT	unknown	FUN_0051c260	
-0011c310	198	DEFAULT	unknown	FUN_0051c310	
-0011c3e0	2748	DEFAULT	unknown	FUN_0051c3e0	
-0011cea0	664	DEFAULT	unknown	FUN_0051cea0	
-0011d140	1440	DEFAULT	unknown	FUN_0051d140	
-0011d6e0	193	DEFAULT	unknown	FUN_0051d6e0	
-0011d7b0	280	DEFAULT	unknown	FUN_0051d7b0	
-0011d8d0	1044	DEFAULT	unknown	FUN_0051d8d0	
-0011dcf0	768	DEFAULT	unknown	FUN_0051dcf0	
-0011dff0	340	DEFAULT	unknown	FUN_0051dff0	
-0011e150	251	DEFAULT	unknown	FUN_0051e150	
+0011aa30	72	USER_DEFINED	__thiscall	cWeaponManager_GetUpgrade	int __thiscall(int w)
+0011aa80	70	USER_DEFINED	__thiscall	cWeaponManager_GetUAmmo	float __thiscall(int w)
+0011aad0	287	USER_DEFINED	__thiscall	cWeaponManager_Init	void __thiscall(void * owner)
+0011abf0	1454	USER_DEFINED	__thiscall	cWeaponManager_VarI	byte __thiscall(char * name, int * v, byte set)
+0011b1a0	106	USER_DEFINED	__thiscall	cWeaponManager_NextWeap	int __thiscall(uint w)
+0011b210	106	USER_DEFINED	__thiscall	cWeaponManager_PrevWeap	int __thiscall(uint w)
+0011b280	45	USER_DEFINED	__thiscall	cWeaponManager_SetAmmo	float __thiscall(int ammo, float v)
+0011b2b0	44	USER_DEFINED	__thiscall	cWeaponManager_LockEntity	void __thiscall(char * name)
+0011b2e0	114	USER_DEFINED	__thiscall	cWeaponManager_LockPoint	void __thiscall(float * p)
+0011b360	13	USER_DEFINED	__thiscall	cWeaponManager_SetFlag46	void __thiscall(byte v)
+0011b370	191	USER_DEFINED	__thiscall	cWeaponManager_SetSlots	uint __thiscall(int w, int mask)
+0011b430	254	USER_DEFINED	__thiscall	cWeaponManager_SetWeapList	void __thiscall(char * list)
+0011b530	140	USER_DEFINED	__thiscall	cWeaponManager_SetSlot	byte __thiscall(int w, int slot, byte on)
+0011b5c0	141	USER_DEFINED	__thiscall	cWeaponManager_SetUpgrade	byte __thiscall(int w, int upgrade)
+0011b650	126	USER_DEFINED	__thiscall	cWeaponManager_SetUAmmo	byte __thiscall(int w, float v)
+0011b6d0	203	USER_DEFINED	__thiscall	cWeaponManager_SetWeapSnd	void __thiscall(int snd)
+0011b7b0	1905	USER_DEFINED	__thiscall	cWeaponManager_Update	void __thiscall(float dt)
+0011bf60	197	USER_DEFINED	__thiscall	cWeaponManager_NextWeapSnd	void __thiscall(int unused)
+0011c030	144	USER_DEFINED	__thiscall	cWeaponManager_VarS	byte __thiscall(char * name, void * v, byte set)
+0011c0c0	322	USER_DEFINED	__thiscall	cWeaponManager_VarV	byte __thiscall(char * name, double * x, double * y, double * z, byte set)
+0011c210	67	USER_DEFINED	__thiscall	cWeaponManager_PlayStartSnd	void __thiscall(void)
+0011c260	166	USER_DEFINED	__thiscall	cWeaponManager_WeaponNeed	int __thiscall(void)
+0011c310	198	USER_DEFINED	__cdecl	ATPC_SetRecharge	void __cdecl(void * v)
+0011c3e0	2748	USER_DEFINED	__cdecl	ATPC_Create	void __cdecl(void * params)
+0011cea0	664	USER_DEFINED	__cdecl	ATPC_FX	void __cdecl(void * params)
+0011d140	1440	USER_DEFINED	__cdecl	ATPC_Fire	void __cdecl(void * params)
+0011d6e0	193	USER_DEFINED	__cdecl	ATPC_OnEnd	void __cdecl(void * params)
+0011d7b0	280	USER_DEFINED	__cdecl	ATPC_OnStart	void __cdecl(void * params)
+0011d8d0	1044	USER_DEFINED	__cdecl	ATPC_XplosionCall	void __cdecl(void * params)
+0011dcf0	768	USER_DEFINED	__cdecl	Cloud_Fire	void __cdecl(void * params)
+0011dff0	340	USER_DEFINED	__cdecl	Cloud_OnHit	void __cdecl(void * params)
+0011e150	251	USER_DEFINED	__cdecl	Devastator_Start	void __cdecl(void * v)
 0011e250	6652	DEFAULT	unknown	FUN_0051e250	
-0011fc50	727	DEFAULT	unknown	FUN_0051fc50	
-0011ff30	1145	DEFAULT	unknown	FUN_0051ff30	
-001203b0	192	DEFAULT	unknown	FUN_005203b0	
-00120470	193	DEFAULT	unknown	FUN_00520470	
-00120540	128	DEFAULT	unknown	FUN_00520540	
-001205c0	989	DEFAULT	unknown	FUN_005205c0	
-001209a0	789	DEFAULT	unknown	FUN_005209a0	
-00120cc0	626	DEFAULT	unknown	FUN_00520cc0	
-00120f40	68	DEFAULT	unknown	FUN_00520f40	
+0011fc50	727	USER_DEFINED	__cdecl	Devastator_FX	void __cdecl(void * params)
+0011ff30	1145	USER_DEFINED	__cdecl	Devastator_Fire	void __cdecl(void * params)
+001203b0	192	USER_DEFINED	__cdecl	Devastator_Press	void __cdecl(void * params)
+00120470	193	USER_DEFINED	__cdecl	Devastator_Release	void __cdecl(void * params)
+00120540	128	USER_DEFINED	__cdecl	Devastator_SetUp	void __cdecl(void * v)
+001205c0	989	USER_DEFINED	__cdecl	Devastator_XplosionCall	void __cdecl(void * params)
+001209a0	789	USER_DEFINED	__cdecl	EMI_Fire	void __cdecl(void * params)
+00120cc0	626	USER_DEFINED	__cdecl	EMI_OnHit	void __cdecl(void * params)
+00120f40	68	USER_DEFINED	__cdecl	Inferno_ClientFireNet	void __cdecl(void * params)
 00120fa0	290	DEFAULT	unknown	FUN_00520fa0	
 001210d0	274	DEFAULT	unknown	FUN_005210d0	
 001211f0	245	USER_DEFINED	unknown	Inferno_NetCreate	undefined(void)

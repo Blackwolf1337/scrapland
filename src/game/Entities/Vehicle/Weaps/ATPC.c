@@ -501,13 +501,13 @@ void Cloud_Fire(cAbstractFile *params) {
 	if (!cloud) {
 		return;
 	}
-	cMissileEntity_SetF3f4(cloud, 0.0f);
-	cMissileEntity_SetF3f8(cloud, 0.0f);
+	cMissileEntity_SetSpeed((cMissileEntity *)cloud, 0.0f);
+	cMissileEntity_SetTurnSpeed((cMissileEntity *)cloud, 0.0f);
 	Controls_RumbleA(Vehicle_Controls(v), 0.4f, 0.2f);
-	cMissileEntity_SetAmmo(cloud, g_CloudAmmoNeed <= ammo ? g_CloudAmmoNeed : ammo);
+	cMissileEntity_SetCount((cMissileEntity *)cloud, g_CloudAmmoNeed <= ammo ? g_CloudAmmoNeed : ammo);
 	cPy_Function_AddParamS(g_SetUpCloudFunc, cloud->name);
 	cPy_Function_Execute(g_SetUpCloudFunc, 0);
-	cMissileEntity_SetLifeTime(cloud, g_CloudLifeTime - 0.2f);
+	cMissileEntity_SetLifeTime((cMissileEntity *)cloud, g_CloudLifeTime - 0.2f);
 	cPy_Function_SetFunc(Missile_OnHit(cloud), "!CloudOnHit");
 	cWeaponManager_SetAmmo(Vehicle_WeapMgr(v), g_CloudIDAmmo, (float)(ammo - Missile_Ammo(cloud)));
 }
@@ -530,7 +530,7 @@ void Cloud_OnHit(cAbstractFile *params) {
 		return;
 	}
 	if (Entity_IsType(e, "Missile") && strong) {
-		cMissileEntity_SetMode(e, 3);
-		cMissileEntity_SetF594(e, Missile_F594(e) / 5.0f);
+		cMissileEntity_SetType((cMissileEntity *)e, 3);
+		cMissileEntity_SetSwarmSpeed((cMissileEntity *)e, Missile_F594(e) / 5.0f);
 	}
 }
