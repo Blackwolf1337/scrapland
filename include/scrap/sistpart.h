@@ -45,6 +45,8 @@ typedef struct CParticula {
 	float uv1[2];			/* 0x2c */
 } CParticula;
 SD_SIZE(CParticula, 0x34);
+typedef int(__thiscall *partType_t)(CParticula *self);
+#define PARTICULA_TYPE(p) (((partType_t)(p)->vftable[PARTICULA_VF_TYPE])(p))
 typedef CParticula CParticulaStatic;
 
 typedef struct CParticulaActive {

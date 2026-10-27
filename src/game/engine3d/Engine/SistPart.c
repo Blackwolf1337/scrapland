@@ -16,9 +16,7 @@
 
 #define SISTPART_DEFAULT_COLOR 0xffffff
 
-typedef int(__thiscall *partType_t)(CParticula *self);
 typedef void(__thiscall *partUpdate_t)(CParticula *self, CSistPart *sp, float dt, void *multiSpr);
-#define PARTICULA_TYPE(p) (((partType_t)(p)->vftable[PARTICULA_VF_TYPE])(p))
 #define PARTICULA_UPDATE(p, sp, dt, ms) (((partUpdate_t)(p)->vftable[PARTICULA_VF_UPDATE])((p), (sp), (dt), (ms)))
 
 /* a random value between a and b, the way the exe computes it */

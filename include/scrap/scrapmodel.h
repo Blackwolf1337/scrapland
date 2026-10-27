@@ -6,6 +6,7 @@
 #ifndef SCRAP_SCRAPMODEL_H
 #define SCRAP_SCRAPMODEL_H
 
+#include "scrap/material.h"
 #include "scrap/modelo.h"
 #include "scrap/suelo.h"
 
@@ -103,6 +104,13 @@ byte __thiscall CGameModel_AnimDelta(CGameModel *self, uint32_t chan, float t, v
 int __thiscall CGameModel_FindNodoR(CGameModel *self, const char *name);
 int __thiscall CGameModel_FindNodoRWild(CGameModel *self, const char *name);
 CNodoR *__thiscall CGameModel_NodoRRef(CGameModel *self, uint32_t i);
+/* a reference of CGameModel_NodoRRef dropped (the count at 0x0, nothing is freed), *slot cleared */
+static inline void NodoR_Unref(CNodoR **slot) {
+	if (*slot) {
+		(*(int *)*slot)--;
+		*slot = NULL;
+	}
+}
 vec3_t *__thiscall CGameModel_NodoPos(CGameModel *self, vec3_t *out, uint32_t i, byte animated);
 matrix_t *__thiscall CGameModel_NodoMatrix(CGameModel *self, matrix_t *out, uint32_t i, byte anim, byte *visible,
 	uint32_t slot);

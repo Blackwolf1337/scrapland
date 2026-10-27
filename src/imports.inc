@@ -517,3 +517,6 @@ SD_IMPORT(CSuelo_CheckBBox, 0x26fb10)
 /* module agent: ScrapEng/ScrapEngMain.cpp (imports below this line) */
 
 /* module agent: ScrapEng/ScrapEngCamera+Particles+Trails.cpp (imports below this line) */
+SD_IMPORT(ScrapEng_GetActiveCamera, 0x215c00)
+SD_IMPORT(ScrapEng_MatrixD3D, 0x216ad0)
+SD_IMPORT(Matrix_RotationX, 0x23a270)
