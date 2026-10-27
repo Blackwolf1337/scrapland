@@ -64,6 +64,8 @@ int crt_feof(void *f);
 char *crt_fgets(char *buf, int size, void *f);
 int crt_setvbuf(void *f, char *buf, int mode, size_t size);
 int crt_access(const char *name, int mode);
+int crt_fileno(void *f);
+long crt_filelength(int fd);
 int crt_stat32(const char *name, void *st);
 [[noreturn]] void crt_exit(int code);
 intptr_t crt_findfirst32(const char *spec, crt_finddata32 *fd);

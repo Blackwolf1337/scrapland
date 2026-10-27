@@ -9,6 +9,7 @@
 #include "scrap/mallatri.h"
 #include "scrap/material.h"
 #include "scrap/mundo.h"
+#include "scrap/rendersuelo.h"
 #include "scrap/suelo.h"
 #include "scrap/sueloportal.h"
 #include "scrap/utild3d.h"
@@ -42,9 +43,6 @@ byte BoxTri(const vec3_t *bmin, const vec3_t *bmax, const CCollideTri *tri, cons
 /* the CTabla resize of tabla.h for vec3_t and CCollideTri */
 void __thiscall Tabla_ResizeC(CTabla *t, int n);
 void __thiscall Tabla_Resize1C(CTabla *t, int n);
-/* the drawing of render.cpp: the batches of vertex buffer meshes */
-void Batch_AddMalla(void *malla, void *dev);
-void Batch_Flush(void *dev);
 void __fastcall CSuelo_DrawDebug(CSuelo *self);
 
 static void *Suelo_Obj(const CSuelo *self, uint32_t i) {
