@@ -326,11 +326,7 @@ SD_IMPORT(CSuelo_RayoVert, 0x2ca360)
 SD_IMPORT(Portales_DebugDraw, 0x26d0d0)
 
 /* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/mundo.h) */
-SD_IMPORT(Bsp_Free, 0x290520)
-SD_IMPORT(Bsp_ReleaseD3D, 0x286c80)
-SD_IMPORT(Bsp_InitD3D, 0x286cb0)
 SD_IMPORT(Bsp_Crear, 0x291000)
-SD_IMPORT(Bsp_Render, 0x296cd0)
 SD_IMPORT(BspQ3_Free, 0x2c9d50)
 SD_IMPORT(BspQ3_ReleaseD3D, 0x2c98a0)
 SD_IMPORT(BspQ3_InitD3D, 0x2c98b0)
@@ -383,7 +379,6 @@ SD_IMPORT(Debug_Line, 0x27cb80)
 
 
 /* module agent: Engine/MallaD3D (imports below this line) */
-SD_IMPORT(Plane_Calc, 0x286fb0)
 SD_IMPORT(MallaD3D_Render, 0x2b67a0)
 SD_IMPORT(CMallaD3D_CalcSegmentos, 0x2d5350)
 
@@ -709,3 +704,8 @@ SD_IMPORT(cDebrisSys_Release, 0x2053d0)
 /* module agent: World/FX/FXVehicle.cpp (imports below this line) */
 
 /* module agent: Engine/bsp.cpp (imports below this line) */
+SD_IMPORT(CBsp_InitD3D, 0x28f710)
+SD_IMPORT(BspRegion_ctor, 0x2d2920)
+SD_IMPORT(BspRegion_dtor, 0x2d2ac0)
+SD_IMPORT(BspLuces_dtor, 0x2d1290)
+SD_IMPORT(BspLuces_Render, 0x2d1860)

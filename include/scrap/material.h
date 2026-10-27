@@ -223,6 +223,13 @@ byte Mat_CompareNames(const CMaterial *a, const CMaterial *b);
 const char *Mat_Str(const CMaterial *m);
 /* sort order for drawing */
 int Mat_Compare(const CMaterial *a, const CMaterial *b);
+/* with an opacity: transparent flag or map 1 without b3b (inline in the exe) */
+static inline byte Mat_IsTransp(const CMaterial *m) {
+	if (m->params.atrib & 0x20) {
+		return 0;
+	}
+	return m->params.transp || (m->mapa[1] && !m->params.b3b);
+}
 void DDS_Hide(const char *name, uint32_t attr);
 void DDS_Unhide(const char *name, uint32_t attr);
 /* an extension: a Ruta_Format format, "<x>" for &x; without one "&u&d&n." is put before it */
