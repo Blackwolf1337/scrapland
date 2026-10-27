@@ -124,11 +124,11 @@ typedef struct cEmbeddedFXDTritusDesktop {
 	cEmbeddedFX base;
 	byte visible;			/* 0x08 */
 	byte pad_09[3];
-	int i0c;			/* 0x0c */
+	float t;			/* 0x0c the blink of the calling light */
 	int dummyGlow;			/* 0x10 DOB_Interfono_Calling */
 	CGameParticles glow;		/* 0x14 */
 	int dummyRoot;			/* 0xc4 OB_Interfono_Base */
-	int i0c8;			/* 0xc8 */
+	float arcT;			/* 0xc8 0..1 */
 	CGameTrail trail;		/* 0xcc */
 } cEmbeddedFXDTritusDesktop;
 SD_OFFSET(cEmbeddedFXDTritusDesktop, trail, 0xcc);
@@ -147,9 +147,9 @@ typedef struct cEmbeddedFXDataPack {
 	cEmbeddedFX base;
 	byte visible;			/* 0x008 */
 	byte on;			/* 0x009 the laser (the global DataPack switch) */
-	byte b0a;			/* 0x00a */
+	byte shown;			/* 0x00a the state level last reached */
 	byte pad_0b;
-	int i0c;			/* 0x00c */
+	float level;			/* 0x00c 0..1 the laser faded in */
 	int dummyRoot;			/* 0x010 DC_Root */
 	vec3_t rootPos;			/* 0x014 */
 	int dummyGlow;			/* 0x020 DOB_DataPack_Glow */
@@ -172,9 +172,9 @@ typedef struct cEmbeddedFXExtraLife {
 	CGameParticles glow;		/* 0x10 */
 	int dummyRoot;			/* 0xc0 DC_Root */
 	int dummyBarra;			/* 0xc4 OB_ExtraLife_Barra_01 */
-	CGameTrail trail;		/* 0xc8 */
-	float fcc;			/* 0xcc */
-	float fd0;			/* 0xd0 */
+	CGameTrail trail;		/* 0xc8 the rays */
+	float scale;			/* 0xcc */
+	float t;			/* 0xd0 the pulse of the bar glows */
 } cEmbeddedFXExtraLife;
 SD_OFFSET(cEmbeddedFXExtraLife, trail, 0xc8);
 SD_SIZE(cEmbeddedFXExtraLife, 0xd4);
@@ -202,12 +202,14 @@ typedef struct cEmbeddedFXMatrix {
 	int dummyFlares;		/* 0x0c0 DOB_Matrix_Flares */
 	CGameParticles flares;		/* 0x0c4 */
 	int dummyRoot;			/* 0x174 DC_Root */
-	vec3_t v178;			/* 0x178 */
-	byte pad_184[0x1b4 - 0x184];
+	float timer[3];			/* 0x178 of the three rays */
+	float dur[3];			/* 0x184 */
+	vec3_t off[3];			/* 0x190 the random ends of the rays */
 	CGameTrail trail;		/* 0x1b4 */
 	float scale;			/* 0x1b8 1, MatrixExt 6 */
 } cEmbeddedFXMatrix;
 SD_OFFSET(cEmbeddedFXMatrix, flares, 0xc4);
+SD_OFFSET(cEmbeddedFXMatrix, off, 0x190);
 SD_OFFSET(cEmbeddedFXMatrix, trail, 0x1b4);
 SD_SIZE(cEmbeddedFXMatrix, 0x1bc);
 
@@ -217,7 +219,7 @@ typedef struct cEmbeddedFXMeetingPoint {
 	byte pad_09[3];
 	int dummy;			/* 0x00c DF_Light */
 	CGameParticles light;		/* 0x010 */
-	int i0c0;			/* 0x0c0 */
+	float t;			/* 0x0c0 the flash of the light */
 	CGameParticles flares;		/* 0x0c4 DOB_MeetingPoint_Flares */
 	float countT;			/* 0x174 -1: no count down */
 	CGameParticles countDown;	/* 0x178 DF_Light_02 */
@@ -258,14 +260,17 @@ typedef struct cEmbeddedFXTreasure {
 	int dummyGlow;			/* 0x0c DOB_Treasure_Glow */
 	CGameParticles glow;		/* 0x10 */
 	int dummyRoot;			/* 0xc0 DC_Root */
-	float fc4;			/* 0xc4 */
-	float fc8;			/* 0xc8 */
-	float fcc;			/* 0xcc */
-	byte pad_d0[0xe4 - 0xd0];
+	float timer;			/* 0xc4 to the next spark */
+	float dur;			/* 0xc8 of the spark */
+	float life;			/* 0xcc of the spark */
+	vec3_t spark;			/* 0xd0 the position of the spark */
+	float rot;			/* 0xdc */
+	float rotSpeed;			/* 0xe0 */
 	CGameTrail trail;		/* 0xe4 */
 	int type;			/* 0xe8 1 A, 2 B, 3 C */
 	float scale;			/* 0xec */
 } cEmbeddedFXTreasure;
+SD_OFFSET(cEmbeddedFXTreasure, rotSpeed, 0xe0);
 SD_OFFSET(cEmbeddedFXTreasure, trail, 0xe4);
 SD_SIZE(cEmbeddedFXTreasure, 0xf0);
 

@@ -2,6 +2,8 @@
  * Entities/EmbeddedFX/EmbeddedFXMisc.cpp of the game: the effects embedded in the object entities, see
  * include/scrap/embeddedfxmisc.h.
  */
+#include <string.h>
+
 #include "scrap/crt.h"
 #include "scrap/embeddedfxmisc.h"
 #include "scrap/filesys.h"
@@ -107,8 +109,8 @@ cEmbeddedFXDTritusDesktop *__fastcall cEmbeddedFXDTritusDesktop_ctor(cEmbeddedFX
 	CGameParticles_ctor(&self->glow);
 	CGameTrail_ctor(&self->trail);
 	self->base.ent = NULL;
-	self->i0c = 0;
-	self->i0c8 = 0;
+	self->t = 0.0f;
+	self->arcT = 0.0f;
 	return self;
 }
 
@@ -128,8 +130,8 @@ cEmbeddedFXDataPack *__fastcall cEmbeddedFXDataPack_ctor(cEmbeddedFXDataPack *se
 	CGameTrail_ctor(&self->trail);
 	self->base.ent = NULL;
 	self->on = 0;
-	self->b0a = 0;
-	self->i0c = 0;
+	self->shown = 0;
+	self->level = 0.0f;
 	return self;
 }
 
@@ -170,7 +172,7 @@ cEmbeddedFXMeetingPoint *__fastcall cEmbeddedFXMeetingPoint_ctor(cEmbeddedFXMeet
 	CGameParticles_ctor(&self->flares);
 	CGameParticles_ctor(&self->countDown);
 	self->base.ent = NULL;
-	self->i0c0 = 0;
+	self->t = 0.0f;
 	self->countT = -1.0f;
 	self->countA = 1.9f;
 	self->countB = 0.0f;
@@ -462,8 +464,8 @@ byte __fastcall cEmbeddedFXDataPack_Reset(cEmbeddedFXDataPack *self) {
 byte __fastcall cEmbeddedFXExtraLife_Reset(cEmbeddedFXExtraLife *self) {
 	EFXM_TrailStyle(&self->trail, 31, 3, 9);
 	CGameTrail_SetPremul(&self->trail, 1);
-	self->fcc = 1.0f;
-	self->fd0 = 0.0f;
+	self->scale = 1.0f;
+	self->t = 0.0f;
 	return 1;
 }
 
@@ -476,9 +478,9 @@ byte __fastcall cEmbeddedFXItem_Reset(cEmbeddedFXItem *self) {
 byte __fastcall cEmbeddedFXMatrix_Reset(cEmbeddedFXMatrix *self) {
 	EFXM_TrailStyle(&self->trail, 7, 3, 9);
 	CGameTrail_SetPremul(&self->trail, 1);
-	self->v178.x = 0.0f;
-	self->v178.y = 0.0f;
-	self->v178.z = 0.0f;
+	self->timer[0] = 0.0f;
+	self->timer[1] = 0.0f;
+	self->timer[2] = 0.0f;
 	self->scale = 1.0f;
 	return 1;
 }
@@ -494,9 +496,9 @@ byte __fastcall cEmbeddedFXMoto_Reset(cEmbeddedFXMoto *self) {
 }
 
 byte __fastcall cEmbeddedFXTreasure_Reset(cEmbeddedFXTreasure *self) {
-	self->fc4 = 0.0f;
-	self->fc8 = 0.0f;
-	self->fcc = 0.0f;
+	self->timer = 0.0f;
+	self->dur = 0.0f;
+	self->life = 0.0f;
 	EFXM_TrailStyle(&self->trail, 31, 3, 0);
 	return 1;
 }
@@ -582,9 +584,9 @@ void __fastcall cEmbeddedFXTreasure_Release(cEmbeddedFXTreasure *self) {
 	self->dummyGlow = -1;
 	CGameParticles_Release(&self->glow);
 	CGameTrail_Clear(&self->trail);
-	self->fc4 = 0.0f;
-	self->fc8 = 0.0f;
-	self->fcc = 0.0f;
+	self->timer = 0.0f;
+	self->dur = 0.0f;
+	self->life = 0.0f;
 }
 
 /* ---- the trails cleared (vf05 with keep 0) ---- */
@@ -683,8 +685,8 @@ void __thiscall cEmbeddedFXCoin_SetColor(cEmbeddedFXCoin *self, uint32_t color) 
 	self->color = color;
 }
 
-void __thiscall cEmbeddedFXExtraLife_SetFcc(cEmbeddedFXExtraLife *self, float v) {
-	self->fcc = v;
+void __thiscall cEmbeddedFXExtraLife_SetScale(cEmbeddedFXExtraLife *self, float scale) {
+	self->scale = scale;
 }
 
 void __thiscall cEmbeddedFXMatrix_SetScale(cEmbeddedFXMatrix *self, float scale) {
@@ -1167,4 +1169,770 @@ void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f) {
 	cEmbeddedFXMeetingPoint *fx = (cEmbeddedFXMeetingPoint *)EFXM_ObjFX(name);
 	CHECK(fx);
 	cEmbeddedFXMeetingPoint_SetCountDown(fx, a, (float)count * 220.0f);
+}
+
+/* ---- vf03: Update ---- */
+
+/* the DataPack engine variables */
+#define g_DataPackInterTime GAME_DATA(float, 0x4473ac)
+#define g_DataPackLaserLong GAME_DATA(float, 0x4473d4)
+#define g_DataPackLaserSize GAME_DATA(float, 0x44742c)
+
+/*
+ * The model if it is loaded, visible and without a model effect (*visible set), else NULL (*visible cleared, the
+ * trail too if given).
+ */
+static CGameModel *EFXM_Shown(cEmbeddedFX *self, byte *visible, CGameTrail *trail) {
+	CGameModel *model = FX_Vtbl(self->ent)->GetModel(self->ent);
+
+	if (!CGameModel_IsLoaded(model)) {
+		return NULL;
+	}
+	CHECK(CGameModel_IsLoaded(model));
+	byte vis = CGameModel_IsVisible(model);
+	if (vis && !CGameModel_GetEffect(model, NULL)) {
+		*visible = vis;
+		return model;
+	}
+	if (*visible) {
+		if (trail) {
+			CGameTrail_Clear(trail);
+		}
+		*visible = 0;
+	}
+	return NULL;
+}
+
+/* the model if it is loaded and visible (*visible set); else NULL, the trail cleared when it was visible */
+static CGameModel *EFXM_ShownTrail(cEmbeddedFX *self, byte *visible, CGameTrail *trail) {
+	CGameModel *model = FX_Vtbl(self->ent)->GetModel(self->ent);
+
+	if (!CGameModel_IsLoaded(model)) {
+		return NULL;
+	}
+	CHECK(CGameModel_IsLoaded(model));
+	byte vis = CGameModel_IsVisible(model);
+	if (!vis) {
+		if (*visible != vis) {
+			if (trail) {
+				CGameTrail_Clear(trail);
+			}
+			*visible = 0;
+		}
+		return NULL;
+	}
+	*visible = vis;
+	return model;
+}
+
+static inline uint32_t EFXM_Alpha(uint32_t color, int a) {
+	return (color & 0xffffff) | ((uint32_t)a << 24);
+}
+
+/* the alpha of a flash at frac (0..1): 0xff + 255 * (2 (1 - f) - 3) (1 - f)^2 */
+static int EFXM_FlashAlpha(float frac) {
+	float f1 = 1.0f - frac;
+	float e = (f1 + f1 - 3.0f) * (f1 * f1) * -255.0f;
+	return 0xff - (int)e;
+}
+
+static inline int EFXM_Min255(int a) {
+	return a > 0xff ? 0xff : a;
+}
+
+
+void __thiscall cEmbeddedFXCoin_Update(cEmbeddedFXCoin *self, float dt) {
+	CGameParticles *p = &self->glow;
+
+	(void)dt;
+	if (!EFXM_Shown(&self->base, &self->visible, NULL)) {
+		return;
+	}
+	int n = CGameParticles_NumParticles(p);
+	int r = crt_rand() % 16;
+	CGameParticles_SetParticle(p, 0, 0.0f, 0.0f, 0.0f, self->scale * 160.0f, EFXM_Alpha(self->color, r - 0x60), 5,
+		0.0f);
+	r = crt_rand() % 8;
+	CGameParticles_SetParticle(p, 1, 0.0f, 0.0f, 0.0f, self->scale * 55.0f, EFXM_Alpha(self->color, r - 0x1a), 2,
+		0.0f);
+	if (n < 4) {
+		return;
+	}
+	r = crt_rand() % 8;
+	CGameParticles_SetParticle(p, 2, -25.0f, 0.0f, 0.0f, self->scale * 55.0f, EFXM_Alpha(self->color, r - 0x1f), 2,
+		0.0f);
+	r = crt_rand() % 8;
+	CGameParticles_SetParticle(p, 3, 25.0f, 0.0f, 0.0f, self->scale * 55.0f, EFXM_Alpha(self->color, r - 0x1a), 2,
+		0.0f);
+}
+
+/* the glow pulses with the world time, the phase differs per item */
+void __thiscall cEmbeddedFXItem_Update(cEmbeddedFXItem *self, float dt) {
+	cEmbeddedFXCoin *c = &self->coin;
+	CGameParticles *p = &c->glow;
+
+	(void)dt;
+	if (!EFXM_Shown(&c->base, &c->visible, NULL)) {
+		return;
+	}
+	float t = Timer_GetTime(&g_pWorld->timer);
+	int k = (self->phase - (int)(t * -650.0f)) % 511 - 0xff;
+	float f = (float)(k < 0 ? -k : k) / 255.0f;
+	CGameParticles_SetAlpha(p, f * 0.8f + 0.2f);
+	int r = crt_rand() % 8;
+	f = f * 250.0f;
+	CGameParticles_SetParticle(p, 0, 0.0f, 0.0f, 0.0f, (f + 2150.0f) * c->scale, EFXM_Alpha(c->color, r + 0x2a), 2,
+		0.0f);
+	float rot = (float)(EFXM_Rnd() * 6.2831854820251465 + 0.0);
+	r = crt_rand() % 32;
+	CGameParticles_SetParticle(p, 1, 0.0f, 0.0f, 0.0f, (f + 2100.0f) * c->scale, EFXM_Alpha(c->color, r - 0x7c), 1,
+		rot);
+}
+
+/* a pulse in the middle and 9 glows on a sphere around it */
+void __thiscall cEmbeddedFXConversor_Update(cEmbeddedFXConversor *self, float dt) {
+	CGameParticles *p = &self->glow;
+	vec3_t out;
+
+	if (!EFXM_Shown(&self->base, &self->visible, NULL)) {
+		return;
+	}
+	CGameParticles_NumParticles(p);
+	float t = dt * 3.0f + self->t;
+	self->t = t;
+	float c = (float)Game_Cos((double)t);
+	float a = (float)__builtin_fabs((double)c);
+	int r = crt_rand() % 24;
+	CGameParticles_SetParticle(p, 0, 0.0f, 0.0f, 0.0f, 180.0f,
+		((uint32_t)(r - (int)(a * -60.0f) + 0x50) << 24) | 0x2337ff, 5, 0.0f);
+	int k = (int)(a * -80.0f);
+	float size = a * 10.0f + 70.0f;
+	int n = 1;
+	float ax = 0.0f;
+	do {
+		float az = 0.0f;
+		do {
+			vec3_t rot = { ax, 0.0f, az };
+			vec3_t up = { 0.0f, 1.0f, 0.0f };
+			Vec3_Rotate(&out, &up, &rot);
+			float x = out.x * 26.0f;
+			float y = out.y * 26.0f;
+			float z = out.z * 26.0f;
+			r = crt_rand() % 12;
+			CGameParticles_SetParticle(p, n, x, y, z, size, ((uint32_t)(r - k - 0x74) << 24) | 0x1840ff, 2, 0.0f);
+			n++;
+			az += 2.0943952f;
+		} while (6.2831855f > az);
+		ax += 2.0943952f;
+	} while (6.2831855f > ax);
+}
+
+/* the alpha of segment i of the electric arcs at t (0..1) */
+static int EFXM_ArcAlpha(int i, float t) {
+	if (i == 0) {
+		return 0xff - (int)(t * 239.0f);
+	}
+	if (i == 2) {
+		return 0x10 - (int)(t * -239.0f);
+	}
+	return 0x10;
+}
+
+/* the two points of an arc segment: base + a * d, -/+ b * kb * w, width w * kw */
+static void EFXM_ArcAdd(CGameTrail *trail, const vec3_t *a, const vec3_t *b, const vec3_t *base, float d, float w,
+	float kb, float kw, uint32_t color) {
+	vec3_t p = { a->x * d + base->x, a->y * d + base->y, a->z * d + base->z };
+	vec3_t q;
+
+	q.x = p.x - b->x * kb * w;
+	q.y = p.y - b->y * kb * w;
+	q.z = p.z - b->z * kb * w;
+	float width = w * kw;
+	CGameTrail_Add(trail, q, width, color);
+	q.x = b->x * kb * w + p.x;
+	q.y = b->y * kb * w + p.y;
+	q.z = b->z * kb * w + p.z;
+	CGameTrail_Add(trail, q, width, color);
+}
+
+/* the axes z and x turned by rot and then by the angles ang into a and b */
+static void EFXM_ArcAxes(vec3_t *a, vec3_t *b, const vec3_t *rot, const vec3_t *ang) {
+	vec3_t dir, tmp;
+
+	dir.x = 0.0f;
+	dir.y = 0.0f;
+	dir.z = 1.0f;
+	Vec3_Rotate(a, Vec3_Rotate(&tmp, &dir, rot), ang);
+	dir.x = 1.0f;
+	dir.y = 0.0f;
+	dir.z = 0.0f;
+	Vec3_Rotate(b, Vec3_Rotate(&tmp, &dir, rot), ang);
+}
+
+/* the trail started at pos (the angles of the matrix into ang, the arc time advanced) */
+static void EFXM_ArcStart(CGameTrail *trail, const matrix_t *m, vec3_t pos, vec3_t *ang, float *t, float dt) {
+	Matrix_GetEuler(m, ang);
+	CGameTrail_Reset(trail);
+	CGameTrail_SetOrient(trail, pos, 1);
+	float v = dt * 4.0f + *t;
+	*t = v;
+	if (v >= 1.0f) {
+		*t = 0.0f;
+	}
+}
+
+/* four arcs of three segments around the body */
+void __thiscall cEmbeddedFXAmplifier_Update(cEmbeddedFXAmplifier *self, float dt) {
+	matrix_t m;
+	vec3_t ang, pos, a, b;
+
+	CGameModel *model = EFXM_ShownTrail(&self->base, &self->visible, &self->trail);
+	if (!model) {
+		return;
+	}
+	CGameModel_NodoMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
+	pos.x = m.m[12];
+	pos.y = m.m[13];
+	pos.z = m.m[14];
+	EFXM_ArcStart(&self->trail, &m, pos, &ang, &self->t, dt);
+	for (int j = 0; j < 4; j++) {
+		vec3_t rot = { 0.0f, (float)j * 1.5707964f, 0.0f };
+		EFXM_ArcAxes(&a, &b, &rot, &ang);
+		for (int i = 0; i < 3; i++) {
+			float t = self->t;
+			float s = (float)i + t;
+			float w = s * 0.5f + 0.8f;
+			float d = s * 180.0f + 200.0f;
+			uint32_t color = ((uint32_t)EFXM_ArcAlpha(i, t) << 24) | 0xff1405;
+			EFXM_ArcAdd(&self->trail, &a, &b, &pos, d, w, 180.0f, 360.0f, color);
+		}
+	}
+}
+
+/* the calling light blinks while the owner calls; the arc while the animation DTritusDesktop_Calling plays */
+void __thiscall cEmbeddedFXDTritusDesktop_Update(cEmbeddedFXDTritusDesktop *self, float dt) {
+	matrix_t m;
+	vec3_t ang, rot, pos, a, b;
+	int anim;
+
+	CGameModel *model = EFXM_ShownTrail(&self->base, &self->visible, &self->trail);
+	if (!model) {
+		return;
+	}
+	self->t = dt + self->t;
+	cEntity *e = self->base.ent;
+	byte on = 0;
+	if (e && e->vftable->IsType(e, TYEN_WITH_LIFE) && *((byte *)self->base.ent + 0x383)) {
+		on = (byte)((int)(self->t * 3.0f) & 1);
+	}
+	CGameParticles_SetVisible(&self->glow, on);
+	anim = -1;
+	CGameModel_ChanInfo(model, 0, NULL, &anim);
+	if (anim > -1 && !strcmp(CGameModel_AnimName(model, anim), "DTritusDesktop_Calling")) {
+		CGameModel_NodoMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
+		vec3_t off = { -60.0f, 35.0f, -35.0f };
+		vec3_t tmp;
+		Vec3_Rotate(&tmp, &off, CGameModel_GetRot(model, &rot));
+		pos.x = tmp.x + m.m[12];
+		pos.y = tmp.y + m.m[13];
+		pos.z = tmp.z + m.m[14];
+		EFXM_ArcStart(&self->trail, &m, pos, &ang, &self->arcT, dt);
+		vec3_t r2 = { 0.0f, 2.7015622f, 0.0f };
+		EFXM_ArcAxes(&a, &b, &r2, &ang);
+		for (int i = 0; i < 3; i++) {
+			float t = self->arcT;
+			float s = (float)i + t;
+			float w = s * 0.5f + 0.8f;
+			float d = s * 15.0f;
+			uint32_t color = ((uint32_t)EFXM_ArcAlpha(i, t) << 24) | 0x1840c0;
+			EFXM_ArcAdd(&self->trail, &a, &b, &pos, d, w, 18.0f, 18.0f, color);
+		}
+		return;
+	}
+	if (CGameTrail_IsRender(&self->trail)) {
+		CGameTrail_Clear(&self->trail);
+	}
+}
+
+/* the laser along -y of the model; the glow and the letters fade with the global switch */
+void __thiscall cEmbeddedFXDataPack_Update(cEmbeddedFXDataPack *self, float dt) {
+	vec3_t rot, d, base, q, tmp;
+
+	CGameModel *model = EFXM_ShownTrail(&self->base, &self->visible, &self->trail);
+	if (!model) {
+		return;
+	}
+	vec3_t down = { 0.0f, -1.0f, 0.0f };
+	Vec3_Rotate(&d, &down, CGameModel_GetRot(model, &rot));
+	float kx = d.x * 50.0f;
+	float ky = d.y * 50.0f;
+	float kz = d.z * 50.0f;
+	vec3_t *p = CGameModel_GetPos(model, &tmp);
+	base.x = p->x - kx;
+	base.y = p->y - ky;
+	base.z = p->z - kz;
+	CGameTrail_Reset(&self->trail);
+	CGameTrail_Add(&self->trail, base, g_DataPackLaserSize, 0x10ff1818);
+	float len = g_DataPackLaserLong;
+	q.x = d.x * len * 0.5f + base.x;
+	q.y = d.y * len * 0.5f + base.y;
+	q.z = d.z * len * 0.5f + base.z;
+	CGameTrail_Add(&self->trail, q, g_DataPackLaserSize, 0x10ff1818);
+	len = g_DataPackLaserLong;
+	q.x = d.x * len + base.x;
+	q.y = d.y * len + base.y;
+	q.z = d.z * len + base.z;
+	CGameTrail_Add(&self->trail, q, g_DataPackLaserSize * 0.5f, 0x20ff1010);
+	byte on = self->on;
+	if (self->shown == on) {
+		return;
+	}
+	Float_Approach(&self->level, on ? 1.0f : 0.0f, dt / g_DataPackInterTime);
+	float v = self->level;
+	if (v == 0.0f || v == 1.0f) {
+		self->shown = self->on;
+	}
+	byte show = v > 0.0f;
+	CGameParticles_SetVisible(&self->glow, show);
+	CGameParticles_SetAlpha(&self->glow, self->level);
+	CGameParticles_SetVisible(&self->codec, show);
+	CGameParticles_SetAlpha(&self->codec, self->level);
+	if (show) {
+		CGameTrail_SetTransp(&self->trail, (byte)(0xff - (int)(self->level * 255.0f)));
+		return;
+	}
+	CGameTrail_Clear(&self->trail);
+}
+
+/* three glows around the pole, bigger with the distance to the camera; a flash at the top every 0.5 s */
+void __thiscall cEmbeddedFXFlag_Update(cEmbeddedFXFlag *self, float dt) {
+	CGameParticles *p = &self->particles;
+	vec3_t tmp, out;
+	float frac;
+
+	CGameModel *model = EFXM_ShownTrail(&self->base, &self->visible, NULL);
+	if (!model) {
+		return;
+	}
+	cWorld *w = g_pWorld;
+	vec3_t cam = w->camPos[w->curCam];
+	vec3_t *pos = CGameModel_GetPos(model, &tmp);
+	float dy = pos->y - cam.y;
+	float dx = pos->x - cam.x;
+	float dz = pos->z - cam.z;
+	float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) / 6500.0f;
+	if (2.3f > d) {
+		d = 2.3f;
+	} else if (!(8.5f > d)) {
+		d = 8.5f;
+	}
+	float scale = self->scale;
+	int n = 0;
+	float sd = scale * d;
+	float m = scale == 0.37f ? -160.0f : -180.0f;
+	vec3_t off = { scale * -130.0f, m * scale, scale * 60.0f };
+	for (int j = 0; j < 3; j++) {
+		vec3_t rot = { 0.0f, (float)j * 2.0943952f, 0.0f };
+		Vec3_Rotate(&out, &off, &rot);
+		CGameParticles_SetParticle(p, n, out.x, out.y, out.z, self->scale * 180.0f,
+			(self->color & 0xffffff) | 0x20000000, 2, 0.0f);
+		n++;
+		int r = crt_rand() & 0x7fff;
+		float size = (float)((double)r * (1.0 / 32767.0) * 25.0 + 720.0) * self->scale;
+		CGameParticles_SetParticle(p, n, out.x, out.y, out.z, size, (self->color2 & 0xffffff) | 0x80000000, 5, 0.0f);
+		n++;
+	}
+	float t = self->t + dt;
+	self->t = t;
+	if (t > 0.5f) {
+		self->t = 0.0f;
+	}
+	if (!FX_InRange(self->t, 0.0f, 0.2f, &frac)) {
+		return;
+	}
+	float h = frac * 0.5f;
+	int a = EFXM_FlashAlpha(frac);
+	/* the flash at the top and at the glows */
+	for (int k = 0; k < 2; k++) {
+		scale = self->scale;
+		float x = scale * 0.0f;
+		float y = k ? scale * (scale == 0.37f ? -160.0f : -180.0f) : scale * 1335.0f;
+		CGameParticles_SetParticle(p, n, x, y, x, (1.0f - h) * sd * 150.0f, EFXM_Alpha(self->color, EFXM_Min255(a + 8)),
+			2, 0.0f);
+		n++;
+		CGameParticles_SetParticle(p, n, x, y, x, (1.0f - h) * sd * 850.0f,
+			EFXM_Alpha(self->color2, EFXM_Min255(a + 0x10)), 5, 0.0f);
+		n++;
+	}
+}
+/* the light flashes every 0.8 s; the count down shows three lights one after the other */
+void __thiscall cEmbeddedFXMeetingPoint_Update(cEmbeddedFXMeetingPoint *self, float dt) {
+	static const uint32_t colorsA[3] = { 0xffffa4a4, 0xffffffa4, 0xffa4ffa4 };
+	static const uint32_t colorsB[3] = { 0xffff0808, 0xffffff08, 0xff08ff08 };
+	vec3_t tmp;
+	float frac;
+
+	CGameModel *model = EFXM_ShownTrail(&self->base, &self->visible, NULL);
+	if (!model) {
+		return;
+	}
+	float t = self->t + dt;
+	self->t = t;
+	if (t > 0.8f) {
+		self->t = 0.0f;
+	}
+	if (FX_InRange(self->t, 0.0f, 0.4f, &frac)) {
+		cWorld *w = g_pWorld;
+		vec3_t cam = w->camPos[w->curCam];
+		vec3_t *pos = CGameModel_GetPos(model, &tmp);
+		float dy = pos->y - cam.y;
+		float dx = pos->x - cam.x;
+		float dz = pos->z - cam.z;
+		float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) / 4000.0f;
+		if (2.0f > d) {
+			d = 2.0f;
+		} else if (!(8.0f > d)) {
+			d = 8.0f;
+		}
+		float h = frac * 0.5f;
+		int a = EFXM_FlashAlpha(frac);
+		CGameParticles_SetParticle(&self->light, 0, 0.0f, 0.0f, 0.0f, (1.0f - h) * d * 250.0f,
+			((uint32_t)EFXM_Min255(a + 8) << 24) | 0xffe140, 2, 0.0f);
+		CGameParticles_SetParticle(&self->light, 1, 0.0f, 0.0f, 0.0f, (1.0f - frac * 0.5f) * d * 950.0f,
+			((uint32_t)EFXM_Min255(a + 0x10) << 24) | 0xff2004, 5, 0.0f);
+	}
+	float ct = self->countT;
+	if (!(ct >= 0.0f) || !(self->countA * 3.0f > ct)) {
+		return;
+	}
+	self->countT = ct + dt;
+	int n = 0;
+	for (int i = 0, ang = -180; ang < 360; i++, ang += 180, n += 2) {
+		float len = self->countA;
+		float from = (float)i * len;
+		if (!FX_InRange(self->countT, from, from + (len + 0.3f), &frac)) {
+			continue;
+		}
+		float g;
+		if (0.05f > frac) {
+			g = frac * 20.0f;
+		} else if (frac > 0.8f) {
+			g = 1.0f - (frac - 0.8f) * 5.0f;
+		} else {
+			g = 1.0f;
+		}
+		float e = (g + g - 3.0f) * (g * g) * -255.0f;
+		int a = 0xff - (int)e;
+		float size = g * 0.1f + 0.9f;
+		float x = (float)ang;
+		float z = self->countB;
+		if (g > 0.0f) {
+			CGameParticles_SetParticle(&self->countDown, n, x, -30.0f, z, size * 950.0f,
+				EFXM_Alpha(colorsA[i], EFXM_Min255(a + 4)), 2, 0.0f);
+			CGameParticles_SetParticle(&self->countDown, n + 1, x, -30.0f, z, size * 2850.0f,
+				EFXM_Alpha(colorsB[i], EFXM_Min255(a + 0x18)), 5, 0.0f);
+		} else {
+			CGameParticles_Kill(&self->countDown, n);
+			CGameParticles_Kill(&self->countDown, n + 1);
+		}
+	}
+}
+
+/* rays from the two ends of the bar along the angles of the root, glows on the bar */
+void __thiscall cEmbeddedFXExtraLife_Update(cEmbeddedFXExtraLife *self, float dt) {
+	CGameParticles *p = &self->glow;
+	matrix_t m, mb;
+	vec3_t pos, rot, ang, tmp, w, a;
+
+	CGameModel *model = EFXM_Shown(&self->base, &self->visible, &self->trail);
+	if (!model) {
+		return;
+	}
+	CGameModel_GetPos(model, &pos);
+	CGameModel_GetRot(model, &rot);
+	CGameModel_NodoMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
+	float rx = m.m[12];
+	float ry = m.m[13];
+	float rz = m.m[14];
+	Matrix_GetEuler(&m, &ang);
+	vec3_t down = { 0.0f, -1.0f, 0.0f };
+	Vec3_Rotate(&tmp, &down, &ang);
+	CGameParticles_NumParticles(p);
+	matrix_t *bar = CGameModel_NodoMatrix(model, &mb, self->dummyBarra, 1, NULL, 0);
+	float dy = pos.y - bar->m[13];
+	float dx = pos.x - bar->m[12];
+	float dz = pos.z - bar->m[14];
+	float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+	CGameTrail_Reset(&self->trail);
+	int n = 0;
+	for (int k = 0; k < 2; k++) {
+		vec3_t v = { 0.0f, k ? 50.0f : -54.0f, 0.0f };
+		Vec3_Rotate(&w, &v, &ang);
+		vec3_t q = { w.x + rx, w.y + ry, w.z + rz };
+		for (int j = 0; j < 6; j++) {
+			int alpha = crt_rand() % 48 + 0x10;
+			vec3_t r = { 0.0f, (float)j * 1.0471976f + 0.5235988f, 0.0f };
+			vec3_t dir = { 0.0f, 0.0f, 1.0f };
+			Vec3_Rotate(&a, Vec3_Rotate(&tmp, &dir, &r), &ang);
+			vec3_t s = { a.x * dist + q.x, a.y * dist + q.y, a.z * dist + q.z };
+			CGameTrail_SetUV(&self->trail, (float)(EFXM_Rnd() + 0.0), 0.0f);
+			uint32_t color = ((uint32_t)alpha << 24) | 0x400d37;
+			CGameTrail_Add(&self->trail, q, self->scale * 6.0f, color);
+			CGameTrail_Add(&self->trail, s, self->scale * 6.0f, color);
+			int r2 = crt_rand() % 16;
+			CGameParticles_SetParticle(p, n, s.x, s.y, s.z, self->scale * 8.0f,
+				((uint32_t)(r2 + 0x10) << 24) | 0xffc0f8, 1, 0.0f);
+			n++;
+			float f = (float)(EFXM_Rnd() * 0.17000001668930054 + 0.949999988079071);
+			r2 = crt_rand() % 64;
+			CGameParticles_SetParticle(p, n, s.x, s.y, s.z, f * 28.0f * self->scale,
+				((uint32_t)(r2 + 0x20) << 24) | 0xff67f6, 5, 0.0f);
+			n++;
+		}
+	}
+	float t = dt * 1.25f + self->t;
+	self->t = t;
+	float c = (float)Game_Cos((double)t);
+	float pulse = (float)__builtin_fabs((double)c);
+	n = 24;
+	for (int i = 0; i < 8; i++) {
+		vec3_t v = { 0.0f, (float)i * 12.0f - 48.0f, 0.0f };
+		Vec3_Rotate(&w, &v, &ang);
+		vec3_t q = { rx + w.x, w.y + ry, w.z + rz };
+		int r = crt_rand() % 48;
+		CGameParticles_SetParticle(p, n, q.x, q.y, q.z, self->scale * 70.0f, ((uint32_t)(r - 0x4c) << 24) | 0xff7af8,
+			2, 0.0f);
+		n++;
+		float spin = (float)(EFXM_Rnd() * 6.2831854820251465 + 0.0);
+		r = crt_rand() % 24;
+		int al = -1 - (int)((float)(r + 0x52) * pulse);
+		CGameParticles_SetParticle(p, n, q.x, q.y, q.z, self->scale * 210.0f, ((uint32_t)al << 24) | 0xff7af8, 5,
+			spin);
+		n++;
+	}
+}
+
+/* three rays between two points of the root that move at random; Matrix.m3d only while Matrix_Visible plays */
+void __thiscall cEmbeddedFXMatrix_Update(cEmbeddedFXMatrix *self, float dt) {
+	matrix_t m;
+	vec3_t rot, d, ang, t1, t2, pp;
+	int anim;
+
+	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	if (!CGameModel_IsLoaded(model)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(model));
+	byte vis = CGameModel_IsVisible(model);
+	if (self->isMatrix) {
+		anim = -1;
+		CGameModel_ChanInfo(model, 0, NULL, &anim);
+		if (!strcmp(CGameModel_AnimName(model, anim), "Matrix_Visible")) {
+			CGameModel_Enable(model);
+			vis = 1;
+		} else {
+			CGameModel_Disable(model);
+			vis = 0;
+		}
+	}
+	if (!vis) {
+		if (self->visible) {
+			CGameTrail_Clear(&self->trail);
+			self->visible = 0;
+		}
+		return;
+	}
+	self->visible = vis;
+	vec3_t down = { 0.0f, -1.0f, 0.0f };
+	Vec3_Rotate(&d, &down, CGameModel_GetRot(model, &rot));
+	CGameModel_NodoMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
+	Matrix_GetEuler(&m, &ang);
+	if (self->isMatrix) {
+		ang.z = ang.z + 1.5707964f;
+	}
+	vec3_t v = { self->scale * -3.0f, 0.0f, 0.0f };
+	float rx = m.m[12];
+	float ry = m.m[13];
+	float rz = m.m[14];
+	vec3_t *r = Vec3_Rotate(&t1, &v, &ang);
+	vec3_t a = { rx + r->x, r->y + ry, r->z + rz };
+	v.x = self->scale * 56.0f;
+	v.y = 0.0f;
+	v.z = 0.0f;
+	r = Vec3_Rotate(&t1, &v, &ang);
+	vec3_t b = { r->x + a.x, r->y + a.y, r->z + a.z };
+	CGameTrail_Reset(&self->trail);
+	int n = CGameParticles_NumParticles(&self->glow);
+	for (int i = 0; i < 3; i++) {
+		float tm = self->timer[i] - dt;
+		self->timer[i] = tm;
+		if (0.0f >= tm) {
+			float dur = (float)(EFXM_Rnd() * 0.29999998211860657 + 0.15000000596046448);
+			self->dur[i] = dur;
+			self->timer[i] = dur;
+			float r1 = (float)(EFXM_Rnd() * 8.0 - 4.0);
+			float r2 = (float)(EFXM_Rnd() * 8.0 - 4.0);
+			float scale = self->scale;
+			self->off[i].x = scale * 0.0f;
+			self->off[i].y = r2 * scale;
+			self->off[i].z = r1 * scale;
+		}
+		int al = 0xff - (int)(self->timer[i] / self->dur[i] * 192.0f);
+		vec3_t *o = &self->off[i];
+		r = Vec3_Rotate(&t1, o, &ang);
+		vec3_t p1 = { r->x + a.x, r->y + a.y, r->z + a.z };
+		r = Vec3_Rotate(&t2, o, &ang);
+		vec3_t p2 = { r->x + b.x, r->y + b.y, r->z + b.z };
+		CGameTrail_SetUV(&self->trail, (float)(EFXM_Rnd() + 0.0), 0.0f);
+		uint32_t color = ((uint32_t)al << 24) | 0x803c6e;
+		CGameTrail_Add(&self->trail, p1, self->scale * 4.0f, color);
+		CGameTrail_Add(&self->trail, p2, self->scale * 4.0f, color);
+		color = ((uint32_t)al << 24) | 0xff78e6;
+		n--;
+		int rr = crt_rand() & 0x7fff;
+		float y = self->scale * -26.5f + o->y;
+		float x = o->x + 0.0f;
+		float z = o->z + 0.0f;
+		float size = (float)((double)rr * (1.0 / 32767.0) * 2.0 + 10.0);
+		CGameParticles_SetParticle(&self->glow, n, x, y, z, size, color, 5, 0.0f);
+		n--;
+		rr = crt_rand() & 0x7fff;
+		x = o->x + 0.0f;
+		y = self->scale * 26.5f + o->y;
+		z = o->z + 0.0f;
+		size = (float)((double)rr * (1.0 / 32767.0) * 2.0 + 10.0);
+		CGameParticles_SetParticle(&self->glow, n, x, y, z, size, color, 5, 0.0f);
+	}
+	for (int i = 0; i < CGameParticles_NumParticles(&self->flares); i++) {
+		CGameParticles_GetParticle(&self->flares, i, &pp, NULL, NULL, NULL, NULL);
+		float size = (float)(EFXM_Rnd() * 8.0 + 10.0);
+		int rr = crt_rand() % 92;
+		CGameParticles_SetParticle(&self->flares, i, pp.x, pp.y, pp.z, size, ((uint32_t)(rr + 8) << 24) | 0xff78e6, 5,
+			0.0f);
+	}
+}
+
+/* glows in the color of the type, a spark now and then, rays up from the root */
+void __thiscall cEmbeddedFXTreasure_Update(cEmbeddedFXTreasure *self, float dt) {
+	CGameParticles *p = &self->glow;
+	matrix_t m;
+	vec3_t ang, w;
+
+	CGameModel *model = EFXM_ShownTrail(&self->base, &self->visible, &self->trail);
+	if (!model) {
+		return;
+	}
+	uint32_t rgb = 0xff4aff;
+	switch (self->type) {
+	case 1:
+		rgb = 0xff4aff;
+		break;
+	case 2:
+		rgb = 0x7eff5a;
+		break;
+	case 3:
+		rgb = 0x5c18ff;
+		break;
+	}
+	int n = 0;
+	for (int k = 0; k < 4; k++) {
+		float x = (float)(k - 2) * 28.0f + 10.0f;
+		for (int j = 0; j < 2; j++) {
+			float size = (float)(EFXM_Rnd() * 8.0 + 110.0);
+			float y = (float)j * 38.0f;
+			float z = (float)(EFXM_Rnd() * 6.0 - 2.0);
+			float scale = self->scale;
+			float px = x * scale;
+			float py = (y - 20.0f) * scale;
+			float pz = (z + 28.0f) * scale;
+			int r = crt_rand() % 14;
+			CGameParticles_SetParticle(p, n, px, py, pz, size * self->scale, ((uint32_t)(r - 0x46) << 24) | rgb, 5,
+				0.0f);
+			n++;
+		}
+	}
+	float t = self->timer - dt;
+	self->timer = t;
+	if (0.0f >= t) {
+		float life = self->life;
+		if (0.0f >= life) {
+			/* a new spark */
+			self->timer = (float)(EFXM_Rnd() * 1.0999999046325684 + 0.30000001192092896);
+			float dur = (float)(EFXM_Rnd() * 0.09999996423721313 + 0.800000011920929);
+			self->dur = dur;
+			self->life = dur;
+			self->rot = (float)(EFXM_Rnd() * 6.2831854820251465 + 0.0);
+			float speed = (float)(EFXM_Rnd() + 1.0);
+			self->rotSpeed = (float)((crt_rand() & 1) * 2 - 1) * speed;
+			double a;
+			float b, y;
+			if (self->type == 3) {
+				a = EFXM_Rnd();
+				b = (float)(EFXM_Rnd() * 56.0 - 28.0);
+				y = (float)((crt_rand() & 1) ? -10 : 10);
+				a = a + a + 0.0;
+			} else {
+				a = EFXM_Rnd();
+				float b1 = (float)(EFXM_Rnd() * 0.30000001192092896 - 0.15000000596046448);
+				b = (float)(EFXM_Rnd() * 56.0 - 28.0);
+				y = (float)((crt_rand() & 1) ? -10 : 10) + b1;
+				a = a + a + 8.0;
+			}
+			self->spark.x = b + 10.0f;
+			self->spark.y = y - 20.0f;
+			self->spark.z = (float)a + 28.0f;
+		} else {
+			life = life - dt;
+			self->life = life;
+			float f = 1.0f - life / self->dur;
+			int al = 0x10 - (int)(f * -239.0f);
+			float sz = f * 160.0f;
+			float scale = self->scale;
+			self->rot = self->rotSpeed * dt + self->rot;
+			float px = self->spark.x * scale;
+			float py = self->spark.y * scale;
+			float pz = self->spark.z * scale;
+			if (life > 0.0f) {
+				CGameParticles_SetParticle(p, n, px, py, pz, scale * 25.0f, ((uint32_t)al << 24) | 0xffffff, 1, 0.0f);
+				CGameParticles_SetParticle(p, n + 1, px, py, pz, sz * self->scale * 0.3f, ((uint32_t)al << 24) | rgb,
+					1, 0.0f);
+				CGameParticles_SetParticle(p, n + 2, px, py, pz, sz * self->scale * 0.7f,
+					((uint32_t)EFXM_Min255(al + 0x10) << 24) | rgb, 2, 0.0f);
+				CGameParticles_SetParticle(p, n + 3, px, py, pz, sz * self->scale,
+					((uint32_t)EFXM_Min255(al + 0x20) << 24) | rgb, 10, self->rot);
+			} else {
+				CGameParticles_KillRange(p, n, n + 4);
+			}
+		}
+	}
+	CGameTrail_Reset(&self->trail);
+	CGameModel_NodoMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
+	float rx = m.m[12];
+	float ry = m.m[13];
+	float rz = m.m[14];
+	Matrix_GetEuler(&m, &ang);
+	uint32_t top = rgb | 0xff000000;
+	for (int k = 0; k < 4; k++) {
+		float z = (float)(k - 2) * 20.0f + 10.0f;
+		for (int j = 0; j < 2; j++) {
+			vec3_t v;
+			v.y = (float)(EFXM_Rnd() * 4.0 - 16.0);
+			v.x = (float)j * 32.0f - 16.0f;
+			v.z = z;
+			float scale = self->scale;
+			Vec3_Rotate(&w, &v, &ang);
+			float sx = scale * w.x;
+			float sy = w.y * scale;
+			float sz = w.z * scale;
+			vec3_t q = { sx + rx, sy + ry, sz + rz };
+			int r = crt_rand() % 8;
+			CGameTrail_Add(&self->trail, q, self->scale * 85.0f, ((uint32_t)(r - 0x2a) << 24) | rgb);
+			float f = (float)(EFXM_Rnd() * 40.0 + 185.0);
+			scale = self->scale;
+			q.x = (rx + sx * 1.9f) + scale * 0.0f;
+			q.y = (ry + sy * 1.9f) + scale * f;
+			q.z = (rz + sz * 1.9f) + scale * 0.0f;
+			CGameTrail_Add(&self->trail, q, scale * 105.0f, top);
+		}
+	}
 }
