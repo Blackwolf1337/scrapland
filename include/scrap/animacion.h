@@ -47,8 +47,8 @@ typedef struct CAnimBlock {
 SD_SIZE(CAnimBlock, 0xc);
 
 typedef struct CAnimacion {
-	const char *name;		/* 0x00 */
-	int pad_4;
+	char *name;			/* 0x00 Cad_Set */
+	int Refs;			/* 0x04 objref.h, 0 at the destructor */
 	float fps;			/* 0x08 */
 	int primer_frame;		/* 0x0c */
 	int num_frames;			/* 0x10 */
@@ -144,6 +144,19 @@ void __thiscall CAnimacion_SwapNodos(CAnimacion *self, uint32_t i, uint32_t j);
 /* before writing, with OptimizeAnims: pos, rot and fov tracks that do not change become one value, those that change
  * only in the middle a stream of the middle keys */
 void __fastcall CAnimNodo_Optimize(CAnimNodo *self);
+
+/* the constructors and destructors (inline in the headers of the original) */
+CAnimNodo *__fastcall CAnimNodo_ctor(CAnimNodo *self);
+/* with pos and rot tracks of nframes */
+CAnimNodo *__thiscall CAnimNodo_ctorFrames(CAnimNodo *self, uint32_t nframes, uint32_t first);
+void __fastcall CAnimNodo_dtor(CAnimNodo *self);
+/* the vector deleting destructor (flags 2: an array of the count before it) */
+CAnimNodo *__thiscall CAnimNodo_Delete(CAnimNodo *self, uint32_t flags);
+CAnimacion *__fastcall CAnimacion_ctor(CAnimacion *self);
+void __fastcall CAnimacion_dtor(CAnimacion *self);
+void __fastcall AnimStream_dtor(CAnimStream *self);
+/* CHECK(!MemBlock) */
+void __fastcall AnimBlock_dtor(CAnimBlock *self);
 
 /* the code of the exe this module calls */
 /* the euler angles of a rotation matrix (rva 0x2392d0, not in C) */

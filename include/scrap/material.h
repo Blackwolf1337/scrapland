@@ -99,11 +99,16 @@ typedef struct CMatParams {
 } CMatParams;
 SD_SIZE(CMatParams, 0x34);
 
+/* the shader mode of a material for the renderer (Engine/RenderShader.cpp) */
 typedef struct CMatId {
-	int id;				/* 0x0 -1 until registered */
-	int i4;
-	int gen;			/* 0x8 */
+	int id;				/* 0x0 the shader mode, -1 until registered */
+	byte alphaTest;			/* 0x4 the low byte of the flags of the mode */
+	byte blend;			/* 0x5 the next byte */
+	byte alpha;			/* 0x6 the diffuse map has an alpha (and the mask flag, see CMatId_Register) */
+	byte pad_7;
+	int gen;			/* 0x8 the shader mode mask it was registered with */
 } CMatId;
+SD_SIZE(CMatId, 0xc);
 
 typedef struct CListaMat CListaMat;
 
@@ -163,6 +168,8 @@ void Cad_Printf(char **self, const char *fmt, ...);
 /* rva 0x2a18a0 and 0x2a1920: the string as a CArchIO string (empty is NULL) */
 void __thiscall Cad_Read(char **self, CArchIO *f);
 void __thiscall Cad_Write(char **self, CArchIO *f);
+/* rva 0x2a1970: a VBprintf (1 KB) copy, NULL for a NULL fmt */
+void Cad_Printf(char **self, const char *fmt, ...);
 
 void __fastcall CObjRef_dtor(int *Refs);
 void __fastcall CTextEst_dtor(CTextEst *self);
@@ -179,6 +186,9 @@ void __thiscall CMapa_LoadTexture(CMapa *self, void *dev, CMapa *alpha, int flag
 void __fastcall CMapa_Release(CMapa *self);
 byte __thiscall CMapa_GetSize(CMapa *self, int *w, int *h);
 void *__thiscall CMapa_GetTexture(CMapa *self, byte load);
+struct CImagen;
+/* rva 0x2370a0, not in C: the w x h pixels of bmp at (sx, sy) into the texture at (dx, dy); 0 when not done */
+byte __thiscall CMapa_CopyBmp(CMapa *self, int dx, int dy, const struct CImagen *bmp, int sx, int sy, int w, int h);
 char *__thiscall CMapa_FramePath(CMapa *self, int frame, char *buf, int size);
 /* rva 0x2a82f0: the kind of FXTextura of a map named name ("(...)" parts), 0 for none */
 byte FXTextura_Tipo(const char *name);
@@ -190,6 +200,13 @@ void *__thiscall CMaterial_GetMultiSprite(CMaterial *self, uint32_t idmapa);
 int __thiscall CMaterial_Read(CMaterial *self, CArchIO *f);
 int __thiscall CMaterial_Write(CMaterial *self, CArchIO *f);
 int __thiscall CMaterial_GetId(CMaterial *self, CMatId **out);
+/* src/game/engine3d/Engine/RenderShader.c: id -1 */
+CMatId *__fastcall CMatId_ctor(CMatId *self);
+void __fastcall CMatId_dtor(CMatId *self);
+/* 1 when the mode is up to date, else registered again (deferred for an unregistered one) and 0 */
+byte __thiscall CMatId_Check(CMatId *self, CMaterial *mat);
+/* the mode of the maps and flags of mat, CHECK(id == -1) */
+void __thiscall CMatId_Register(CMatId *self, CMaterial *mat);
 int __fastcall CMaterial_Id(CMaterial *self);
 char *__thiscall CMaterial_GetShaderName(CMaterial *self, char *str, uint32_t nbytes);
 void __thiscall CMaterial_Prepare(CMaterial *self, void *dev);

@@ -87,6 +87,10 @@ void Img_Free(CImagen *b, int bytes) {
 	}
 }
 
+void __fastcall CBmp_dtor(CBmp *self) {
+	Img_Free(self, BMP_PIXEL);
+}
+
 void Img_Create(CImagen *b, int ancho, int alto, int bytes) {
 	Img_Free(b, bytes);
 	b->ancho = ancho;

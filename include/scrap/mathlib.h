@@ -35,6 +35,8 @@ enum { FPCLASS_NN = 0x8, FPCLASS_NZ = 0x20, FPCLASS_PZ = 0x40, FPCLASS_PN = 0x10
 
 /* Math/MathUtils.cpp (src/game/Math/MathUtils.c) */
 vec3_t *__thiscall Box_GetCorner(const box_t *self, vec3_t *out, int i);
+/* the box constructor of two corners (rva 0x2a4830, src/game/engine3d/Engine/RenderLock.c) */
+box_t *__thiscall Box_Set(box_t *self, const vec3_t *min, const vec3_t *max);
 void Box_Merge(box_t *box, const box_t *other, byte first);
 float *Float_Approach(float *v, float target, float step);
 vec3_t *Vec3_Approach(vec3_t *v, const vec3_t *target, float step);

@@ -20,6 +20,12 @@ typedef uint32_t(__stdcall *d3dRelease_t)(void *obj);
 #define D3DDEV_CREATEVB 0x5c
 #define D3DDEV_CREATEIB 0x60
 #define D3DDEV_CREATEIMAGESURFACE 0x6c
+#define D3DDEV_GETBACKBUFFER 0x40
+#define D3DDEV_SETGAMMARAMP 0x48
+#define D3DDEV_COPYRECTS 0x70
+#define D3DDEV_SETRENDERTARGET 0x7c
+#define D3DDEV_GETRENDERTARGET 0x80
+#define D3DDEV_GETDEPTHSTENCILSURFACE 0x84
 #define D3DDEV_CLEAR 0x90
 #define D3DDEV_SETTRANSFORM 0x94
 #define D3DDEV_GETTRANSFORM 0x98
@@ -59,6 +65,14 @@ typedef int(__stdcall *d3dDrawIndexedPrimitiveUP_t)(void *dev, int type, uint32_
 	uint32_t primCount, const void *idx, int idxFmt, const void *data, uint32_t stride);
 typedef int(__stdcall *d3dSetRenderState_t)(void *dev, uint32_t state, uint32_t value);
 typedef int(__stdcall *d3dGetRenderState_t)(void *dev, uint32_t state, uint32_t *value);
+typedef int(__stdcall *d3dSetGammaRamp_t)(void *dev, uint32_t flags, const void *ramp);
+typedef int(__stdcall *d3dCopyRects_t)(void *dev, void *src, const void *rects, uint32_t n, void *dst,
+	const void *points);
+typedef int(__stdcall *d3dSetRenderTarget_t)(void *dev, void *rt, void *zs);
+typedef int(__stdcall *d3dGetSurface_t)(void *dev, void **surf);
+typedef int(__stdcall *d3dGetBackBuffer_t)(void *dev, uint32_t i, int type, void **surf);
+typedef int(__stdcall *d3dCreateTexture_t)(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint32_t usage,
+	int fmt, int pool, void **tex);
 typedef int(__stdcall *d3dSetTextureStageState_t)(void *dev, uint32_t stage, uint32_t type, uint32_t value);
 typedef int(__stdcall *d3dSetPixelShader_t)(void *dev, uint32_t handle);
 typedef int(__stdcall *d3dCreatePixelShader_t)(void *dev, const void *code, uint32_t *handle);
@@ -71,6 +85,14 @@ typedef int(__stdcall *d3dDrawPrimitiveUP_t)(void *dev, int type, uint32_t count
 typedef int(__stdcall *d3dSetVertexShader_t)(void *dev, uint32_t fvf);
 typedef int(__stdcall *d3dSetStreamSource_t)(void *dev, uint32_t stream, void *vb, uint32_t stride);
 typedef int(__stdcall *d3dSetIndices_t)(void *dev, void *ib, uint32_t baseVertex);
+
+/* IDirect3DTexture8 */
+#define D3DTEX_GETSURFACELEVEL 0x3c
+#define D3DTEX_LOCKRECT 0x40
+#define D3DTEX_UNLOCKRECT 0x44
+typedef int(__stdcall *d3dGetSurfaceLevel_t)(void *tex, uint32_t level, void **surf);
+typedef int(__stdcall *d3dLockRect_t)(void *tex, uint32_t level, void *locked, const void *rect, uint32_t flags);
+typedef int(__stdcall *d3dUnlockRect_t)(void *tex, uint32_t level);
 
 /* IDirect3DVertexBuffer8, IDirect3DIndexBuffer8 */
 #define D3DBUF_LOCK 0x2c
@@ -89,6 +111,20 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DTS_WORLD 256
 #define D3DRS_ZENABLE 7
 #define D3DRS_FILLMODE 8
+#define D3DFILL_WIREFRAME 2
+#define D3DRS_STENCILENABLE 52
+#define D3DRS_STENCILFAIL 53
+#define D3DRS_STENCILZFAIL 54
+#define D3DRS_STENCILPASS 55
+#define D3DRS_STENCILFUNC 56
+#define D3DRS_STENCILREF 57
+#define D3DRS_STENCILMASK 58
+#define D3DRS_STENCILWRITEMASK 59
+#define D3DSTENCILOP_KEEP 1
+#define D3DSTENCILOP_INCR 7
+#define D3DCMP_LESSEQUAL 4
+#define D3DCMP_NOTEQUAL 6
+#define D3DCMP_ALWAYS 8
 #define D3DRS_ZWRITEENABLE 14
 #define D3DRS_ALPHATESTENABLE 15
 #define D3DRS_SRCBLEND 19
@@ -148,6 +184,7 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DTOP_BLENDCURRENTALPHA 16
 #define D3DTOP_MODULATEALPHA_ADDCOLOR 18
 #define D3DTOP_BUMPENVMAP 22
+#define D3DUSAGE_RENDERTARGET 1
 #define D3DUSAGE_WRITEONLY 8
 #define D3DPOOL_DEFAULT 0
 #define D3DPOOL_SYSTEMMEM 2

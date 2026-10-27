@@ -78,9 +78,7 @@ void __thiscall CEscena_PrecalcIlum(CEscena *self, byte noLuces, byte visible);
 /* rva 0x239880, the box of box through m */
 box_t *Box_Transform(box_t *out, const box_t *box, const matrix_t *m);
 /* NodeFX_New (the FX object of a NODO_FX node): nodefx.h */
-/* rva 0x2ab6f0 and 0x2ab940, the animation of a scene (0x34 bytes) */
-CAnimacion *__fastcall CAnimacion_ctor(CAnimacion *self);
-void __fastcall CAnimacion_dtor(CAnimacion *self);
+/* CAnimacion_ctor, CAnimacion_dtor: animacion.h */
 /* CalcPesos.c, CalcIlum.c and rva 0x261630: per mesh, with the scene lights of esc */
 struct CMallaD3D;
 byte __thiscall CMallaD3D_CalcPesos(struct CMallaD3D *malla, CNodo3D *nodo);

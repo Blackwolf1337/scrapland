@@ -178,16 +178,14 @@ SD_IMPORT(CMapa_ctor, 0x233760)
 SD_IMPORT(CMapa_dtor, 0x233a30)
 SD_IMPORT(CMaterial_ctor, 0x233830)
 SD_IMPORT(CMaterial_dtor, 0x233af0)
-SD_IMPORT(Cad_Set, 0x2a1940)
-SD_IMPORT(FXTextura_Create, 0x2a81d0)
-SD_IMPORT(CMatId_Check, 0x2a7a00)
-SD_IMPORT(CMatId_Register, 0x2a7ae0)
 SD_IMPORT(CAnimMat_ctor, 0x257f70)
 SD_IMPORT(CAnimMat_dtor, 0x257fb0)
 SD_IMPORT(CAnimMat_Start, 0x258110)
 
 /* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/escena.h) */
 SD_IMPORT(Box_Transform, 0x239880)
+SD_IMPORT(CMallaD3D_CalcPesos, 0x2b8900)
+SD_IMPORT(CMallaD3D_CalcIlum, 0x2b8e80)
 SD_IMPORT(Cad_Read, 0x2a18a0)
 SD_IMPORT(Cad_Write, 0x2a1920)
 SD_IMPORT(CAnimacion_ctor, 0x2ab6f0)
@@ -203,14 +201,13 @@ SD_IMPORT(BspQ3_Render, 0x2c9d90)
 SD_IMPORT(CSuelo_FreeNodos, 0x261530)
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
-SD_IMPORT(RenderLock_InitD3D, 0x2a48f0)
 SD_IMPORT(ListaVert_InitD3D, 0x2404f0)
 SD_IMPORT(Stencil_Malla, 0x267530)
 SD_IMPORT(CListaVert_EnvMapUV, 0x2418c0)
 SD_IMPORT(CAnimMat_GetFrame, 0x258060)
 SD_IMPORT(Matrix_Invert, 0x239560)
-SD_IMPORT(RenderLock_ReleaseD3D, 0x2a4860)
 SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
+SD_IMPORT(RenderEVA_ReleaseD3D, 0x2b4550)
 SD_IMPORT(RenderGamma_ReleaseD3D, 0x2a7980)
 SD_IMPORT(RenderGamma_Begin, 0x2a7520)
 SD_IMPORT(RenderGamma_LogShaderMask, 0x2a7cd0)
@@ -448,8 +445,6 @@ SD_IMPORT(CBsp_InitD3D, 0x28f710)
 SD_IMPORT(CBsp_LeerEMI, 0x28c650)
 SD_IMPORT(CBsp_Calcular, 0x28a860)
 SD_IMPORT(CBsp_Preparar, 0x28efe0)
-SD_IMPORT(Dlg_SetFloat, 0x2a5d20)
-SD_IMPORT(Dlg_GetFloat, 0x2a5d80)
 
 /* module agent: World/FX/FXCharActions.cpp (imports below this line) */
 
@@ -615,6 +610,7 @@ SD_IMPORT(crt_read, 0x35a234)
 SD_IMPORT(crt_close, 0x358d98)
 
 /* module agent: Engine leftovers 0x29c000..0x2b2000 (imports below this line) */
+SD_IMPORT(CMapa_CopyBmp, 0x2370a0)
 
 /* module agent: Big leftovers 0x0f0000..0x110000 (imports below this line) */
 

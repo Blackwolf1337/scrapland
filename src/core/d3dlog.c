@@ -114,6 +114,22 @@ void D3DLog_Record(uint32_t slot, const uint32_t *a) {
 	case D3DDEV_SETRENDERSTATE / 4:
 		Log_Printf("SetRenderState(%u, %x", a[0], a[1]);
 		break;
+	case D3DDEV_GETRENDERSTATE / 4:
+		Log_Printf("GetRenderState(%u", a[0]);
+		break;
+	case D3DDEV_SETGAMMARAMP / 4: {
+		/* the 3 x 256 words as a hash and every 32nd word */
+		const uint16_t *r = (const uint16_t *)(uintptr_t)a[1];
+		uint32_t h = 2166136261u;
+		for (int i = 0; i < 768; i++) {
+			h = (h ^ r[i]) * 16777619u;
+		}
+		Log_Printf("SetGammaRamp(%u, %x,", a[0], h);
+		for (int i = 0; i < 768; i += 32) {
+			Log_Printf(" %x", r[i]);
+		}
+		break;
+	}
 	case 61:
 		Log_Printf("SetTexture(%u, %d", a[0], a[1] != 0);
 		break;

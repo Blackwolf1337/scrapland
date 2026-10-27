@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "scrap/camara.h"
+#include "scrap/scrapcamera.h"
 
 #define CCAMARA_VFTABLE 0x3e1c98
 #define IOBJETO3D_VFTABLE 0x3d79dc
@@ -244,4 +245,33 @@ void __thiscall CCamara_Strafe(CCamara *self, float side, float rise) {
 	self->pos.x = self->pos.x + self->up.x * rise;
 	self->pos.y = self->pos.y + self->up.y * rise;
 	self->pos.z = self->pos.z + self->up.z * rise;
+}
+
+/* OBJ3D_VF_UPDATE: with CamaraNodos the fov and the position from the animated node */
+void __thiscall CCamara_Update(CCamara *self, CNodoR *r) {
+	(void)r;
+	if (!g_CamaraNodos || !self->nodo || !CNodo3D_Track((CNodo3D *)self->nodo, 0)) {
+		return;
+	}
+	CNodo3D_AnimFloat((CNodo3D *)self->nodo, &self->fov);
+	const CNodo3D *n = (const CNodo3D *)self->nodo;
+	self->pos = (vec3_t){ n->m.m[12], n->m.m[13], n->m.m[14] };
+	CCamara_UpdateVectors(self);
+}
+
+/* OBJ3D_VF_RENDER, OBJ3D_VF_INITD3D and OBJ3D_VF_RELEASED3D do nothing */
+void __thiscall CCamara_Render(CCamara *self, void *arg, CNodoR *r) {
+	(void)self;
+	(void)arg;
+	(void)r;
+}
+
+void __thiscall CCamara_InitD3D(CCamara *self, void *dev) {
+	(void)self;
+	(void)dev;
+}
+
+void __thiscall CCamara_ReleaseD3D(CCamara *self, void *dev) {
+	(void)self;
+	(void)dev;
 }

@@ -6,9 +6,11 @@
 #include <string.h>
 
 #include "scrap/archio.h"
+#include "scrap/bsp.h"
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
 #include "scrap/filepak.h"
+#include "scrap/win32.h"
 
 #define LOG_LINE 0x400
 #define LOG_NAME "engine.log"
@@ -305,4 +307,33 @@ float RSqrt(float x) {
 
 	y = (3.0f - y * y * x) * y * 0.5f;
 	return (3.0f - y * y * x) * y * 0.5f;
+}
+
+/* the window helpers between efec_malla.cpp and LensFlare.cpp (their source is not known) */
+typedef int(__stdcall *setdlgitemtext_t)(void *hdlg, int id, const char *text);
+#define exe_SetDlgItemTextA GAME_DATA(setdlgitemtext_t, 0x3a1344)
+
+int Win_SetTextf(void *hwnd, const char *fmt, ...) {
+	char buf[0x400];
+	va_list ap;
+
+	va_start(ap, fmt);
+	VBprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+	return exe_SetWindowTextA(hwnd, buf) != 0;
+}
+
+byte Dlg_SetFloat(void *hwnd, int id, float v, int prec) {
+	char buf[0x40];
+
+	Bprintf(buf, sizeof(buf), "%.*f", prec, (double)v);
+	exe_SetDlgItemTextA(hwnd, id, buf);
+	return 1;
+}
+
+byte Dlg_GetFloat(void *hwnd, int id, float *out) {
+	char buf[0x40];
+
+	exe_GetDlgItemTextA(hwnd, id, buf, sizeof(buf));
+	return crt_sscanf(buf, "%g", out) == 1;
 }

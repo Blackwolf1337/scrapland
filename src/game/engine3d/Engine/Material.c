@@ -7,6 +7,7 @@
 #include "scrap/bmp.h"
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
+#include "scrap/fxtextura.h"
 #include "scrap/material.h"
 #include "scrap/textura.h"
 #include "scrap/win32.h"
@@ -14,11 +15,6 @@
 #define TEXTEST_CTOR 0x233990
 #define TEXTEST_DTOR 0x233c70
 
-/* the effect object of a map (Engine/FXTextura) */
-void *FXTextura_Create(int kind, CMapa *mapa);
-/* the id of a material for the renderer */
-byte __thiscall CMatId_Check(CMatId *self, CMaterial *mat);
-void __thiscall CMatId_Register(CMatId *self, CMaterial *mat);
 int Vec3_Differ(const float *a, const float *b);
 
 typedef void *(__thiscall *deleteObj_t)(void *self, int flags);
