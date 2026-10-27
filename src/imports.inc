@@ -364,7 +364,6 @@ SD_IMPORT(cObjElementFXATPC_Shoot, 0x1fde50)
 /* module agent: Entities/Vehicle/Weaps/Inferno+Laser+Swarm.cpp (imports below this line) */
 SD_IMPORT(FXSwarm_BeeDeath, 0x1ff190)
 SD_IMPORT(FXSwarm_Hit, 0x1ffea0)
-SD_IMPORT(cObjElementFXInfernoExplosion_Explode, 0x201eb0)
 
 /* module agent: Entities/Entity+Game/Doors.cpp (imports below this line) */
 

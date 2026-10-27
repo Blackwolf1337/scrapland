@@ -84,6 +84,13 @@ byte __thiscall cTargetLock_HasSlot(cTargetLock *self, int weap, int slot);
 #define g_FXInfernoExplosionTime GAME_DATA(float, 0x449898)
 #define g_FXInfernoExplosionFadeTime GAME_DATA(float, 0x449a18)
 #define g_FXInfernoRayMinSize GAME_DATA(float, 0x449b60)
+#define g_FXInfernoRayInitSizeMin GAME_DATA(float, 0x449a60)
+#define g_FXInfernoRayInitSizeMax GAME_DATA(float, 0x4497c0)
+#define g_FXInfernoRaySpeedMin GAME_DATA(float, 0x449988)
+#define g_FXInfernoRaySpeedMax GAME_DATA(float, 0x449b90)
+#define g_FXInfernoRayAccMin GAME_DATA(float, 0x449900)
+#define g_FXInfernoRayAccMax GAME_DATA(float, 0x449b38)
+#define g_FXInfernoRamp ((uint32_t *)Game_Ptr(0x4317e8))	/* the colour ramp of the explosion particles */
 
 /* the ATPC shot (0x1e8 bytes, constructor rva 0x1f9690) */
 typedef struct cObjElementFXATPC {
@@ -134,7 +141,10 @@ typedef struct cObjElementFXInfernoExplosion {
 	float time;			/* 0x0164 */
 	float stepTime;			/* 0x0168 since the last step (steps of 0.01 at least) */
 	vec3_t pos;			/* 0x016c */
-	byte pad_178[0x184 - 0x178];
+	float range;			/* 0x0178 the length of the rays tested against the floor */
+	int bees;			/* 0x017c the bays of the Inferno, a bigger explosion */
+	byte flag;			/* 0x0180 */
+	byte pad_181[3];
 	vec3_t rayBase[FXINFERNO_RAYS];	/* 0x0184 */
 	vec3_t rayDir[FXINFERNO_RAYS];	/* 0x0c04 */
 	float rayLen[FXINFERNO_RAYS];	/* 0x1684 */
