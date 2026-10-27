@@ -32,6 +32,7 @@ typedef struct cScheduledFuncStack {
 	cSchedList list;		/* 0x04 */
 } cScheduledFuncStack;
 SD_SIZE(cScheduledFuncStack, 0x1c);
+#define CSCHEDULEDFUNCSTACK_VFTABLE 0x3ce0ec
 
 cScheduledFuncStack *__thiscall cScheduledFuncStack_Delete(cScheduledFuncStack *self, byte flags);
 void __thiscall Scheduler_Add(cScheduledFuncStack *self, float time, PyObject *func, PyObject *params, const char *name);

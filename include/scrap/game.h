@@ -10,6 +10,7 @@
 
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
+#include "scrap/nto1links.h"
 #include "scrap/timer.h"
 
 #define GAME_TIMESTAMP 0x61b304cc	/* PE link time of Scrap.exe 1.6.1 (2021-12-10 07:42:04 UTC) */
@@ -26,16 +27,9 @@ static inline void *Game_Ptr(uint32_t rva) {
 
 int Game_Init(void);
 
-/* weapon and ammo descriptors of the world tables; methods get/set fields by name ("MinAmmo", "OnFire", ...) */
-typedef struct cWeapInfo {
-	byte data[0xb0];
-} cWeapInfo;
-SD_SIZE(cWeapInfo, 0xb0);
-
-typedef struct cAmmoInfo {
-	byte data[0x5c];
-} cAmmoInfo;
-SD_SIZE(cAmmoInfo, 0x5c);
+/* weapon and ammo descriptors of the world tables (defined in include/scrap/world.h) */
+typedef struct cWeapInfo cWeapInfo;
+typedef struct cAmmoInfo cAmmoInfo;
 
 /* Global/Table.h: fixed size array made once with Init (new T[count]) */
 #define TABLE(type) \
@@ -79,12 +73,22 @@ struct cItemList {
 typedef struct cWorld {
 	void *vftable;			/* 0x0000 cWorld::vftable */
 	HashTable entities;		/* 0x0004 every entity by name (cEntity *) */
-	byte pad_0010[0x0034 - 0x0010];
+	Nto1Node entityList;		/* 0x0010 head of the entities (their node at +8), target the world */
+	Nto1Node deadList;		/* 0x0020 entities to delete after the frame */
+	int nameCount;			/* 0x0030 suffix of the next generated name */
 	byte scheduler[0x0050 - 0x0034]; /* 0x0034 scheduled Python functions (Scrap.AddScheduledFunc) */
 	int curCam;			/* 0x0050 index into camPos */
-	byte pad_0054[0x0254 - 0x0054];
-	vec3_t camPos[9];		/* 0x0254 camera positions (Scrap.GetNearestParked) */
-	byte pad_02c0[0x02c8 - 0x02c0];
+	char camName[4][0x80];		/* 0x0054 camera entity of each view, "" for none */
+	vec3_t camPos[4];		/* 0x0254 camera positions (Scrap.GetNearestParked) */
+	byte testing;			/* 0x0284 set by the entity queries */
+	byte pad_0285[3];
+	struct cEntity *owners[4];	/* 0x0288 the entity of each player slot, found every frame */
+	HashTable debris;		/* 0x0298 debris systems by name */
+	struct cDebrisSys *debrisList;	/* 0x02a4 the same, newest first */
+	struct cEntity *ignore[4];	/* 0x02a8 skipped by the next line and sphere test */
+	HashTable lists;		/* 0x02b8 entity lists by name */
+	byte checkInput;		/* 0x02c4 the input events are called every frame */
+	byte pad_02c5[3];
 	cTimer timer;			/* 0x02c8 world time (Scrap.GetTime, GetTimeSpeed) */
 	byte floor[0x1bb4 - 0x02f0];	/* 0x02f0 Scrap.GetFloor */
 	byte elements[0x1bb8 - 0x1bb4]; /* 0x1bb4 map elements (Scrap.CreateElements, CallElements) */
@@ -96,7 +100,8 @@ typedef struct cWorld {
 	float alarmLevel;		/* 0x1c6c */
 	byte alarmOn;			/* 0x1c70 */
 	char alarmChars[0x1e71 - 0x1c71]; /* 0x1c71 Scrap.GetAlarmChars */
-	char alarmChars2[0x2090 - 0x1e71]; /* 0x1e71 */
+	char alarmChars2[0x2078 - 0x1e71]; /* 0x1e71 */
+	byte unk2078[0x2090 - 0x2078];	/* 0x2078 updated every frame (rva 0x154170) */
 	int money;			/* 0x2090 Scrap.GetMoney */
 	/* embedded objects of unknown size, only their addresses are used so far */
 	byte taunts[0x20ac - 0x2094];	/* 0x2094 SLogic.UpdateTauntEndTime */
@@ -108,8 +113,17 @@ typedef struct cWorld {
 } cWorld;
 SD_OFFSET(cWorld, entities, 0x0004);
 SD_OFFSET(cWorld, scheduler, 0x0034);
+SD_OFFSET(cWorld, entityList, 0x0010);
+SD_OFFSET(cWorld, nameCount, 0x0030);
 SD_OFFSET(cWorld, curCam, 0x0050);
+SD_OFFSET(cWorld, camName, 0x0054);
 SD_OFFSET(cWorld, camPos, 0x0254);
+SD_OFFSET(cWorld, testing, 0x0284);
+SD_OFFSET(cWorld, debris, 0x0298);
+SD_OFFSET(cWorld, ignore, 0x02a8);
+SD_OFFSET(cWorld, lists, 0x02b8);
+SD_OFFSET(cWorld, checkInput, 0x02c4);
+SD_OFFSET(cWorld, unk2078, 0x2078);
 SD_OFFSET(cWorld, timer, 0x02c8);
 SD_OFFSET(cWorld, floor, 0x02f0);
 SD_OFFSET(cWorld, elements, 0x1bb4);
