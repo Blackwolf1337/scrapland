@@ -11,28 +11,6 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/timer.h"
 
-/* the mode objects of the next sources of Logic/ (imports) */
-void *__thiscall Parking_ctor(void *self);
-void __thiscall Parking_dtor(void *self);
-void __thiscall Parking_Update(void *self, float dt);
-void *__thiscall ShipRegen_ctor(void *self);
-void __thiscall ShipRegen_dtor(void *self);
-void __thiscall ShipRegen_Update(void *self, float dt);
-/* a group of ships of the list of that name ("Mosquitos", "MadHunters") */
-void *__thiscall cShipGroup_ctor(void *self, const char *list);
-void __thiscall cShipGroup_dtor(void *self);
-void __thiscall cShipGroup_Init(void *self);
-void __thiscall cShipGroup_Update(void *self, float dt);
-/* the ships of the list "EnemiesTraffic" */
-void *__thiscall cEnemiesTraffic_ctor(void *self);
-void __thiscall cEnemiesTraffic_dtor(void *self);
-void __thiscall cEnemiesTraffic_Init(void *self);
-void __thiscall cEnemiesTraffic_Update(void *self, float dt);
-/* the taunts of the outdoor maps, the warnings (1 when one played) */
-void Taunts_Think(float dt);
-byte Taunts_Warnings(float dt);
-
-
 #define LOGIC_SETORIGINFUNC 0x151ce0
 #define g_NotCleanableByGearDef ((cString *)Game_Ptr(0x44cba4))
 #define Car_B43a(e) (*(byte *)((byte *)(e) + 0x43a))
@@ -54,9 +32,9 @@ void *__thiscall Logic_ctor(void *logic) {
 	self->timer = 0.0f;
 	self->tauntTime = 0.0f;
 	self->talkEnd = 0.0f;
-	Parking_ctor(self->parking);
+	Parking_ctor(&self->parking);
 	cInfItem_ctor(&self->items);
-	ShipRegen_ctor(self->shipRegen);
+	ShipRegen_ctor(&self->shipRegen);
 	cExtPolice_ctor(&self->extPolice);
 	cEnemies_ctor(&self->enemies);
 	cFriends_ctor(&self->friends);
@@ -68,7 +46,7 @@ void *__thiscall Logic_ctor(void *logic) {
 	cDominationFriendsLogic_ctor(&self->dominFriends);
 	cDominationEnemiesLogic_ctor(&self->dominEnemies);
 	AICtrl_ctor(&self->aiCtrl);
-	cEnemiesTraffic_ctor(self->unk170);
+	cEnemiesTraffic_ctor(&self->enemiesTraffic);
 	cNurses_ctor(&self->nurses);
 	cGenCharGroup_ctor(&self->genChars);
 	cGateKeepers_ctor(&self->gateKeepers);
@@ -84,7 +62,7 @@ void __thiscall Logic_dtor(void *logic) {
 	Logic_NopDtor(&self->gateKeepers);
 	cGenCharGroup_dtor(&self->genChars);
 	Logic_NopDtor(&self->nurses);
-	cEnemiesTraffic_dtor(self->unk170);
+	cEnemiesTraffic_dtor(&self->enemiesTraffic);
 	AICtrl_dtor(&self->aiCtrl);
 	cDominationEnemiesLogic_dtor(&self->dominEnemies);
 	cDominationFriendsLogic_dtor(&self->dominFriends);
@@ -96,9 +74,9 @@ void __thiscall Logic_dtor(void *logic) {
 	Logic_NopDtor(&self->friends);
 	Logic_NopDtor(&self->enemies);
 	Logic_NopDtor(&self->extPolice);
-	ShipRegen_dtor(self->shipRegen);
+	ShipRegen_dtor(&self->shipRegen);
 	cInfItem_dtor(&self->items);
-	Parking_dtor(self->parking);
+	Parking_dtor(&self->parking);
 }
 
 cLogicControl *__thiscall Logic_Delete(cLogicControl *self, byte flags) {
@@ -161,7 +139,7 @@ void __thiscall Logic_Reset(void *logic) {
 	cShipGroup_Init(&self->mosquitos);
 	cShipGroup_Init(&self->madHunters);
 	AICtrl_Init(&self->aiCtrl);
-	cEnemiesTraffic_Init(self->unk170);
+	cEnemiesTraffic_Init(&self->enemiesTraffic);
 	cDeathMatch_Init(&self->deathMatch);
 	cCTFFriends_Init(&self->ctfFriends);
 	cCTFEnemies_Init(&self->ctfEnemies);
@@ -176,8 +154,8 @@ void __thiscall Logic_Update(void *logic, float dt) {
 	cLogicControl *self = logic;
 	int level = -1;
 
-	Parking_Update(self->parking, dt);
-	ShipRegen_Update(self->shipRegen, dt);
+	Parking_Update(&self->parking, dt);
+	ShipRegen_Update(&self->shipRegen, dt);
 	cExtPolice_Update(&self->extPolice, dt);
 	cEnemies_Update(&self->enemies, dt);
 	cFriends_Update(&self->friends, dt);
@@ -190,7 +168,7 @@ void __thiscall Logic_Update(void *logic, float dt) {
 	self->dominFriends.vftable->Update(&self->dominFriends, dt);
 	AICtrl_Update(&self->aiCtrl, dt);
 	cNurses_Update(&self->nurses, dt);
-	cEnemiesTraffic_Update(self->unk170, dt);
+	cEnemiesTraffic_Update(&self->enemiesTraffic, dt);
 	cGenCharGroup_Update(&self->genChars, dt);
 	cGateKeepers_Update(&self->gateKeepers, dt);
 	if (self->aiCtrl.level > level) {

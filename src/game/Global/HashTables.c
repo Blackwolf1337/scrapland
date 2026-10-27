@@ -1,22 +1,11 @@
 /*
- * Instances of the older HashTable.h (include/scrap/hashtable.h) of World/ and Sound/ whose values are not
- * known yet (12 bytes in World/) and the sample table of Sound/.
+ * Instances of the older HashTable.h (include/scrap/hashtable.h) of World/ and Sound/: the 12 byte values of
+ * World/ (the lairs of the ship groups of Logic/Scrapyard.c) and the sample table of Sound/.
  */
 #include "scrap/console.h"
 #include "scrap/hashtable.h"
 #include "scrap/cstring.h"
 #include "scrap/sound.h"
-
-typedef struct cValue12 {
-	uint32_t v[3];
-} cValue12;
-
-typedef struct cWorldStrItem {
-	cValue12 value;			/* 0x00 */
-	char *key;			/* 0x0c cString */
-	struct cWorldStrItem *next;	/* 0x10 */
-} cWorldStrItem;
-SD_SIZE(cWorldStrItem, 0x14);
 
 /* cSoundStrItem: the sample table of CSoundXBox (include/scrap/sound.h) */
 

@@ -2,8 +2,8 @@
  * Logic/NurseLogic.cpp of the game, the first part: the nurses (cNurses of cLogicControl, the list "Nurse") and
  * their logic cNurseLocalLogic (include/scrap/logic.h). Every 0.73 s the nurse nearest to a dazed character goes to
  * it (state 3, the next one when the nearest is idle out of its relax); a nurse relaxes (0) or walks in alert (1)
- * with the alarm and gets away from a robbery or a hit (2). The SetState of the logic and the rest of the source
- * follow at rva 0x154970.
+ * with the alarm and gets away from a robbery or a hit (2). The SetState of the logic is the second part (rva
+ * 0x154970).
  */
 #include <string.h>
 
@@ -193,4 +193,43 @@ byte __thiscall cNurseLocalLogic_GivesMoney(cNurseLocalLogic *self, cEntity *pol
 /* vf24 */
 byte __thiscall cNurseLocalLogic_RestartState(cNurseLocalLogic *self) {
 	return NURSE_VT(self)->SetState(self, 0, NULL);
+}
+
+/* ---- part 2 (rva 0x154970) ---- */
+
+/* vf19: the AI of the state: the walk around the origin (relaxed or in alert), the escape from target (2) or the
+ * walk to the dazed character (3); always 1 */
+byte __thiscall cNurseLocalLogic_SetState(cNurseLocalLogic *self, int state, cEntity *target) {
+	cBaseLocalLogic *b = &self->base;
+	byte ok = (byte)cBaseLocalLogic_SetState(b, state, target);
+	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
+
+	if (ok) {
+		WChar_B381(b->parent) = !b->busy && !g_pWorld->alarmOn && b->state != 3 && b->state != 2;
+	}
+	switch (b->state) {
+	case 0:
+		if (ok) {
+			ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_NurseRelaxSpeed, 1);
+		}
+		return 1;
+	case 1:
+		if (ok) {
+			ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_NurseAlertSpeed, 0);
+		}
+		return 1;
+	case 2:
+		if (ok) {
+			ai->vftable->SetState(ai, 5, target, 1.0);
+		}
+		self->time = 0.0f;
+		return 1;
+	case 3:
+		if (ok) {
+			ai->vftable->SetState(ai, 2, b->target.target, 1.0);
+			self->time = 0.0f;
+		}
+		return 1;
+	}
+	return 1;
 }
