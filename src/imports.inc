@@ -460,3 +460,5 @@ SD_IMPORT(Tsc_CpuFreq, 0x272f90)
 /* module agent: Final FX Starts (ShipExplosion, VehicleDamage, GearMissile, EMI, MentalController) (imports below this line) */
 
 /* module agent: BSP light map compiler (imports below this line) */
+
+/* module agent: Exhaust (imports below this line) */

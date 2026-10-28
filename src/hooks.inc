@@ -8088,3 +8088,5 @@ SD_HOOK(cObjElementFXVehicleDamage_Update, 0x1ed9c0, 12368)
 SD_HOOK(FX_ShipExplosion, 0x1f4d50, 13631)
 
 /* module agent: BSP light map compiler (hooks below this line) */
+
+/* module agent: Exhaust (hooks below this line) */
