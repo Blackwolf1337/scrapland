@@ -70,6 +70,10 @@ run() {
 	wait "$pid" 2> /dev/null
 	cp "$game/Bin/scrapdecomp.log" "$out/scrapdecomp-$tag.log" 2> /dev/null
 	cp "$game/log.html" "$out/log-$tag.html" 2> /dev/null
+	# a crash after the last check leaves the output complete: only the game's log shows it
+	if grep -q "Unhandled exception" "$out/log-$tag.html" 2> /dev/null; then
+		echo "$tag: unhandled exception in the game log, see $out/log-$tag.html" >&2
+	fi
 	cp "$result" "$out/$tag.out" 2> /dev/null
 	if ! tail -n 1 "$result" 2> /dev/null | tr -d '\r' | grep -qx 'done'; then
 		echo "$tag: output incomplete, last lines in $out/$tag.out" >&2
