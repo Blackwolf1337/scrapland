@@ -19,6 +19,7 @@
 #define g_CallFunc ((cPy_Function *)Game_Ptr(0x466a04))
 #define g_PackName ((cString *)Game_Ptr(0x44ab6c))	/* string object, the open pack */
 #define g_IsSteam GAME_DATA(byte, 0x467b9c)
+#define g_SuperDealAvaliable GAME_DATA(int, 0x45fe48)	/* SuperDealAvaliable, all three crazy deals done */
 
 void __thiscall Elements_Call(void *elements, const char *name);
 void __thiscall Elements_Create(void *elements);

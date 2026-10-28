@@ -33,10 +33,9 @@ SD_SIZE(cSaveGameInfo, 0x48);
 #define g_SaveVars GAME_DATA(cSaveVar *, 0x44bb88)
 #define g_SaveVarCount GAME_DATA(int, 0x44bbec)
 #define g_SaveDesc ((cString *)Game_Ptr(0x44bbc0))	/* the description of the save loaded last */
-/* called when the number of finished crazy deals changes: one deal, and all three (with g_AllDealsDone) */
+/* called when the number of finished crazy deals changes: one deal, and all three (with g_SuperDealAvaliable) */
 #define g_OnCrazyDeal ((cPy_Function *)Game_Ptr(0x44bbd8))
 #define g_OnAllCrazyDeals ((cPy_Function *)Game_Ptr(0x44bb9c))
-#define g_AllDealsDone GAME_DATA(byte, 0x45fe48)
 
 cSaveVar *__thiscall cSaveVar_ctor(cSaveVar *self, const char *name, const char *value) {
 	cString_ctor(&self->name);
@@ -171,7 +170,7 @@ int SaveVar_Inc(const char *name, int n) {
 			cPy_Function_Execute(g_OnCrazyDeal, 0);
 		}
 		if (now > 2 && cPy_Function_IsValid(g_OnAllCrazyDeals)) {
-			g_AllDealsDone = 1;
+			*(byte *)&g_SuperDealAvaliable = 1;	/* a byte store in the original */
 			cPy_Function_Execute(g_OnAllCrazyDeals, 1);
 		}
 	}

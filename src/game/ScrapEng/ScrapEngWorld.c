@@ -403,18 +403,18 @@ void Splash_Black(void) {
 
 void Splash_Promos(void) {
 	Splash_Show("2D/Loading/00Black.dds", 0, 0, 0);
-	if (g_ShowPromos) {
+	if (g_IsDemo) {
 		Splash_Show("2D/Loading/00Promo01.dds", 1, 6000, 1);
-		if (g_ShowPromos) {
+		if (g_IsDemo) {
 			Splash_Show("2D/Loading/00Promo02.dds", 1, 20000, 1);
 		}
 	}
 }
 
 void Splash_Logos(void) {
-	if (g_ShowPromos) {
+	if (g_IsDemo) {
 		Splash_Show("2D/Loading/00LogoEnlight.dds", 1, 4000, 1);
-		if (g_ShowPromos) {
+		if (g_IsDemo) {
 			Splash_Show("2D/Loading/00LogoMSE.dds", 1, 4000, 1);
 		}
 	}

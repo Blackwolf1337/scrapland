@@ -46,7 +46,6 @@ SD_OFFSET(WorldNodeInfo, dummy, 0x8c);
 #define g_SplashFade GAME_DATA(uint32_t, 0x4a8648)	/* ms */
 #define g_SplashTime GAME_DATA(uint32_t, 0x4a8904)	/* timeGetTime at the end of the last one */
 #define g_SplashLast ((char *)Game_Ptr(0x4a8800))	/* 0x104, the last one shown */
-#define g_ShowPromos GAME_DATA(int, 0x467ad4)
 #define g_LoadingOn GAME_DATA(byte, 0x4a8324)
 #define g_LoadingBar GAME_DATA(int, 0x4a8598)
 #define g_LoadingCount GAME_DATA(int, 0x4a8328)		/* the steps of Loading_Step(-1) */

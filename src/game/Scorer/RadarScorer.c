@@ -435,7 +435,6 @@ void __thiscall cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntit
 
 /* ---- the radar ---- */
 
-#define g_SuperDealAvaliable GAME_DATA(int, 0x45fe48)	/* SuperDealAvaliable */
 #define g_RadarShowAll GAME_DATA(int, 0x45fe00)		/* RadarShowAll: the neutral vehicles and characters too */
 #define g_IsSecondMission GAME_DATA(int, 0x4678d8)	/* IsSecondMission */
 #define Radar_Floor(i) (&((MapFloors *)((byte *)g_pWorld + 0x2f0))->levels[i])
