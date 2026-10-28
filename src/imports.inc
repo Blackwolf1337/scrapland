@@ -324,7 +324,6 @@ SD_IMPORT(CBsp_Calcular, 0x28a860)
 SD_IMPORT(crt_chmod, 0x345287)
 
 /* module agent: AI/NodesWorld2D+NodesWorldSup.cpp (imports below this line) */
-SD_IMPORT(cMonitorScorer_DrawMonitor, 0x168c60)
 
 /* module agent: Entities/Char/Type part 2+WalkCharControl (imports below this line) */
 

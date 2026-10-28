@@ -114,7 +114,8 @@ if scdSc:
 scdGvars = (0x467644, 0x4624f4, 0x467584)
 scdGsaved = map(lambda a: SDTest.Peek(a, 'i'), scdGvars)
 scdTypes = (('scdWind', 'WindFx'), ('scdWeap', 'Weapon'), ('scdStat', 'Status'), ('scdTarg', 'Target'),
-	('scdMain', 'ScraplandMainMenu'), ('scdCur', 'Sprite'), ('scdRad', 'Radar'))
+	('scdMain', 'ScraplandMainMenu'), ('scdCur', 'Sprite'), ('scdRad', 'Radar'),
+	('scdMon', 'Monitor'))
 scdItems = {}
 scdSrand(1717)
 for scdName, scdType in scdTypes:
@@ -578,6 +579,133 @@ if scdA and scdOk and scdRadOk:
 	for scdN2, scdT2, scdP2 in scdRadEnts:
 		if scdRadE[scdN2]:
 			check('SCD radar entity Del ' + scdN2, lambda e=scdRadE[scdN2]: e.Del())
+
+
+# ---- the monitor on the HUD sheets of the game: the view of what the target of the camera looks at (the target of
+# a ship, the lock of the player), the mark of a mission ship, the life and the weapon, the text typed in, the noise
+# and NO SIGNAL, the static band, the opening; the head of a scorer model of our own (the descriptor model of the
+# looked ship); the objective mark of the player. The game time is set for each call ----
+scdA = scdItems['scdMon']
+if scdA and scdOk:
+	scdSetVars('scdMon', (('X', 500.0), ('Y', 360.0), ('PanelSprite', '2D/Monitor/Monitor.alpha.tga'),
+		('PanelIndex', 1), ('FrameSprite', '2D/Monitor/Monitor.alpha.tga'), ('FrameIndex', 2),
+		('MaskSprite', '2D/Monitor/Monitor.alpha.tga'), ('MaskIndex', 3), ('StaticSprite',
+		'2D/Monitor/Monitor.alpha.tga'), ('StaticIndex', 4), ('ObjetiveSprite', '2D/Monitor/Monitor.alpha.tga'),
+		('ObjetiveIndex', 5), ('ObjetiveChargeIndex', 6), ('ObjetiveWhiteIndex', 7), ('ObjetiveBlackIndex', 8),
+		('CanPossessIndex', 8), ('CanPossessGlowIndex', 9), ('WeaponOffX', 82.0), ('WeaponOffY', 6.0),
+		('WeaponSprite', '2D/HUD/WeaponIcons3D.alpha.tga'), ('WeaponIconScale', 0.65), ('WeaponIconAc', 6),
+		('WeaponIconIndex', 0), ('WeaponIconAc', 0), ('WeaponIconIndex', 1), ('WeaponIconAc', 3),
+		('WeaponIconIndex', 4), ('WeaponIconAc', 2), ('WeaponIconIndex', 7), ('WeaponIconAc', 4),
+		('WeaponIconIndex', 10), ('WeaponIconAc', 1), ('WeaponIconIndex', 13), ('WeaponIconAc', 5),
+		('WeaponIconIndex', 16), ('UpgradeIconAc', 0), ('UpgradeIconIndex', 0), ('UpgradeIconAc', 1),
+		('UpgradeIconIndex', 2), ('UpgradeIconAc', 2), ('UpgradeIconIndex', 3), ('UpgradeIconAc', 7),
+		('UpgradeIconIndex', 5), ('UpgradeIconAc', 8), ('UpgradeIconIndex', 6), ('UpgradeIconAc', 5),
+		('UpgradeIconIndex', 9), ('UpgradeIconAc', 6), ('UpgradeIconIndex', 8), ('UpgradeIconAc', 9),
+		('UpgradeIconIndex', 11), ('UpgradeIconAc', 10), ('UpgradeIconIndex', 12), ('UpgradeIconAc', 3),
+		('UpgradeIconIndex', 14), ('UpgradeIconAc', 4), ('UpgradeIconIndex', 15), ('UpgradeIconAc', 11),
+		('UpgradeIconIndex', 17), ('UpgradeIconAc', 12), ('UpgradeIconIndex', 18)))
+	scdMonOk = 1
+	for scdK in (0x310, 0x318, 0x320, 0x328, 0x330, 0x2ac, 0x34c, 0x350):
+		if not scdI(scdI(scdA + scdK) + 0x3c):
+			scdMonOk = 0
+	check('SCD Monitor sheets', lambda: (scdMonOk, scdI(scdA + 0xb4) != 0))
+	# a head model of our own in the scorer, the descriptor model of the second car names it
+	scdHeadOk = SScorer.AddModel(0, 'SDScdHead', 'Models/Heads/HeadRusty/HeadRusty', '', 3, 25.0, 10.0)
+	scdHead = SDTest.Call(0x170d60, 'tiis', scdSc, 'SDScdHead')[0]
+	check('SCD head model', lambda: (scdHeadOk, scdHead != 0, scdHead and scdI(scdSc + 0xa8) == scdHead))
+if scdA and scdOk and scdMonOk:
+	scdApp = SDTest.Peek(0x467ba0, 'i')
+	scdTime = scdInts(scdApp + 0x20, 2)
+	scdHM = SDTest.Peek(0x45fb10, 'i')
+	scdWCC = SDTest.Peek(0x4472b4, 'i')
+	scdHeadName = scdNew(0x20)
+	scdStr(scdHeadName, 'SDScdHead')
+	scdCar2M = (scdI(scdCar2 + 0x3e0), scdI(scdCar2 + 0x388), scdI(scdCar2 + 0x13c), scdI(scdCar2 + 0x398),
+		scdI(scdCar2 + 0x238))
+	scdPl = scdFind('Player0')
+	scdPlM = (scdI(scdPl + 0x50c), scdI(scdPl + 0x518))
+	scdTgtName = scdKeep(scdCar + 0x650, 0x80)
+	scdEmi = scdF(scdCar + 0x58c, 1)
+	scdStr(scdCar + 0x650, 'SDScdCar2')
+	# target: 1 the car, 2 the player; lock: the player looks at the second car; head: its descriptor model;
+	# st: textTime, noise, last (the second car seen before), textShown, targetView, text; obj: the mark before
+	def scdMon(a, target, lock, head, team, show, photo, st, obj, emi, t, time):
+		scdPoke(scdCar2 + 0x3e0, (0, scdHeadName)[head])
+		scdPoke(scdCar2 + 0x388, team)
+		scdPoke(scdCar2 + 0x13c, show)
+		scdPokeByte(scdCar2 + 0x398, photo)
+		scdPoke(scdCar2 + 0x238, 77)
+		scdPokeByte(scdPl + 0x50c, lock)
+		scdPoke(scdPl + 0x518, (0, scdCar2)[lock])
+		SDTest.Poke(0x4472b4, (0, 0x3f800000)[lock])
+		scdPokeByte(0x85fb10, 0)
+		scdSet(a + 0xac, (st[0], st[1]))
+		scdPoke(a + 0xb8, (0, scdCar2)[st[2]])
+		scdStr(a + 0xbc, st[5])
+		scdSet(a + 0x1fc, (st[3],))
+		scdPoke(a + 0x208, 0)
+		scdPoke(a + 0x20c, 0)
+		scdPokeByte(a + 0x210, st[4])
+		scdSet(a + 0x214, obj[0])
+		scdStr(a + 0x224, obj[1])
+		scdSet(a + 0x2a4, (obj[2],))
+		scdPokeByte(a + 0x2a8, obj[3])
+		scdSet(scdCar + 0x58c, (emi,))
+		scdPoke(scdApp + 0x20, 0)
+		scdPoke(scdApp + 0x24, t)
+		scdSet(scdSc + 0x20, (time,))
+		scdSrand(31)
+		d = scdLog(lambda a=a, e=(0, scdCar, scdPl)[target]: SDTest.Call(0x168c60, 'tviii', a, 0, e))
+		return (d, scdF(a + 0xac, 2), scdI(a + 0xb8) == scdCar2, SDTest.Peek(a + 0xbc, '@s'), scdF(a + 0x1fc, 1),
+			scdI(a + 0x208) == scdHead, scdI(a + 0x20c), scdF(a + 0x214, 4), SDTest.Peek(a + 0x224, '@s'),
+			scdF(a + 0x2a4, 1), scdB(a + 0x2a8), scdF(scdI(a + 0xb4), 13))
+	scdObj0 = ((0.0, 0.0, 0.0, 0.0), '', 1.0, 0)
+	scdObj1 = ((200.0, 100.0, 300.0, 150.0), 'SDScdCar2', 0.4, 1)
+	scdText = 'SD scd monitor text, typed in'
+	# 0x40590000: game time 100.0, 0x40591000: 100.25, 0x40592000: 100.5
+	for scdV in ((1, 0, 0, 1, 0, 0, (1.0, 0.0, 0, 0.0, 1, ''), scdObj0, 0.0, 0x40590000, 12.5),
+			(1, 0, 0, 1, 0, 0, (1.0, 0.5, 1, 0.3, 0, scdText), scdObj0, 0.0, 0x40590000, 12.5),
+			(1, 0, 0, 2, 1, 0, (1.0, 1.5, 1, 2.0, 0, scdText), scdObj0, 0.0, 0x40592000, 12.55),
+			(1, 0, 0, 2, 2, 0, (1.0, 1.5, 1, 0.1, 0, scdText), scdObj0, 0.0, 0x40591000, 12.6),
+			(1, 0, 0, 1, 1, 0, (0.4, 2.5, 1, 0.0, 0, scdText), scdObj0, 0.0, 0x40590000, 12.5),
+			(1, 0, 0, 1, 0, 0, (0.2, 2.5, 1, 0.0, 1, scdText), scdObj0, 0.0, 0x40590000, 12.5),
+			(1, 0, 0, 1, 0, 0, (1.0, 0.0, 1, 0.0, 0, scdText), scdObj0, 5.0, 0x40590000, 12.5),
+			(2, 1, 0, 1, 0, 1, (1.0, 0.0, 0, 0.0, 0, ''), scdObj0, 0.0, 0x40590000, 12.5),
+			(2, 1, 0, 2, 1, 1, (1.0, 0.0, 1, 0.5, 0, scdText), scdObj1, 0.0, 0x40591000, 12.55),
+			(2, 0, 0, 1, 0, 0, (0.3, 0.0, 0, 0.0, 0, scdText), scdObj1, 0.0, 0x40590000, 12.5),
+			(2, 0, 0, 1, 0, 0, (0.0, 0.0, 0, 0.0, 0, ''), scdObj0, 0.0, 0x40590000, 12.5),
+			(1, 0, 1, 1, 0, 0, (0.0, 0.0, 0, 0.0, 0, ''), scdObj0, 0.0, 0x40590000, 12.5),
+			(1, 0, 1, 1, 0, 0, (1.0, 0.0, 0, 0.5, 0, scdText), scdObj0, 0.0, 0x40592000, 12.5)):
+		check('SCD cMonitorScorer_DrawMonitor' + fmt(scdV), lambda a=scdA, v=scdV: scdMon(a, v[0], v[1], v[2],
+			v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10]))
+	scdPoke(scdApp + 0x20, scdTime[0])
+	scdPoke(scdApp + 0x24, scdTime[1])
+	SDTest.Poke(0x45fb10, scdHM)
+	SDTest.Poke(0x4472b4, scdWCC)
+	scdPoke(scdCar2 + 0x3e0, scdCar2M[0])
+	scdPoke(scdCar2 + 0x388, scdCar2M[1])
+	scdPoke(scdCar2 + 0x13c, scdCar2M[2])
+	scdPoke(scdCar2 + 0x398, scdCar2M[3])
+	scdPoke(scdCar2 + 0x238, scdCar2M[4])
+	scdPoke(scdPl + 0x50c, scdPlM[0])
+	scdPoke(scdPl + 0x518, scdPlM[1])
+	scdPutback(scdTgtName)
+	scdSet(scdCar + 0x58c, scdEmi)
+	scdSet(scdSc + 0x20, (12.5,))
+	# the item off its head and its view
+	scdPoke(scdA + 0x208, 0)
+	scdPoke(scdA + 0xb8, 0)
+	scdFree(scdHeadName)
+# the head model out of the scorer again (as cScorer_Free does)
+if scdA and scdOk and scdHead and scdI(scdSc + 0xa8) == scdHead:
+	scdPoke(scdSc + 0xa8, scdI(scdHead + 0x60))
+	scdFx = scdI(scdHead + 0x6c)
+	if scdFx:
+		SDTest.Call(scdI(scdI(scdFx) + 8) - 0x400000, 'tvi', scdFx)
+		SDTest.Call(scdI(scdI(scdFx)) - 0x400000, 'tiii', scdFx, 1)
+	SDTest.Call(0x20ec10, 'tvi', scdHead + 0x20)
+	SDTest.Call(0x313634, 'vii', scdHead, 0x70)
+	check('SCD head model gone', lambda: SDTest.Call(0x170d60, 'tiis', scdSc, 'SDScdHead')[0])
 
 
 # ---- put back, the items marked DelMe, the cars deleted ----
