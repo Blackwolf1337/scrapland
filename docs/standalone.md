@@ -513,6 +513,94 @@ entity in `sdlevel_efxchar.py` uses it.
 On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios, and so does the hook DLL
 difftest.
 
+### Stage 3b2: the data usage map (done)
+
+`tools/standalone/datamap.txt` is the map of the data of the original: every built-in byte of stage 3a and the bss, in
+rows of rva, size, section, used by and kind. `tools/standalone/datamap.py` writes it from a static scan and the logs
+of the data probe. datagen.py builds in only the rows with a user (rounded out to 4 bytes, the room's sections align
+to 4), the rest of the room stays zero.
+
+The probe: `[general] dataprobe=1` or `2` (`DIFFTEST_DATAPROBE=1|2` with `DIFFTEST_STANDALONE=1`; ScrapC.exe only, the
+hook DLL logs that it ignores it) in `src/standalone/dataprobe.c`. Right before `Crt_Main` it makes the pages of the
+original's data PAGE_NOACCESS: all the data of stage 3a (`ROOM_PROBE` of room.h, also what the map leaves out), but
+for the resources (Wine reads some of them on the unix side of a system call, where a closed page is an error of the
+call, not an exception) and the page of the import address table. A vectored handler logs the first read and the
+first write of each 4 byte unit with the eip, opens the page, single steps the access with the trap flag and closes
+the page again. For an eip outside ScrapC.exe it logs the module and the first return address into ScrapC.exe on the
+stack (one right after a call), the C function that called the UCRT or the DLL. `dataprobe=1` logs only the first
+access of each page and leaves it open. With `dataprobe=2` a page that faulted `dataprobebudget` times (default 20000)
+stays open from then on and is logged as retired. The log is `game/Bin/dataprobe.log`, the difftest copies it to
+`build/difftest/dataprobe-<scenario>-c.log`. Not seen: an access of another thread while a page is open for a step,
+and the accesses of a page after it retired.
+
+The difftest runs take about 20 s per scenario. With `dataprobe=2` sdtest took 25 s, sdcall 30 s and sdlevel 39 s,
+11 pages retired (3a3000, 3a9000, 3aa000, 3ac000, 3ba000, 3db000, 3dd000, 428000, 431000, 432000 and 444000: vtables,
+engine variables, the strings of the hot classes). With a budget of 2000000 sdcall took 110 s and sdlevel did not end
+in its 240 s.
+
+The static side of `datamap.py`:
+
+- the rvas in the code of ScrapC.exe: game_base plus an immediate in the data (`GAME_DATA`, `Game_Ptr`), from
+  `objdump -d` and the .reloc of ScrapC.exe (a relocated immediate is an address of ScrapC.exe), with the width of the
+  access; `lea`, `add $rva` and indexed accesses have an unknown extent
+- the rvas in the named data of ScrapC.exe (tables of rvas such as `motorIni` or `s_PathData`) where the original or
+  the code of ScrapC.exe points too; the 16 bit tables of the shader assembler and a few byte tables are left out
+- the numbers of the test scripts that lie in the data, 4 bytes each
+- the import directory with its names and the import address table (main.c), the resources (found by id at run time)
+  and the import thunks of the game
+- the C objects of SD_AT (C already)
+- everything a pointer (.reloc) of used data leads to, but the 11 pointers into the original's Python (datagen.py
+  sets the real symbols) and the pointers before a vtable to its complete object locator, unless the C or the probe
+  read them
+
+The data is cut into pieces at every target of a pointer of the original (from its code or data), every rva of the C
+and the tests and the end of an access of known width, the end of each string the original points to (its NUL and the
+zeros up to 4), each GUID of the GUID tables of uuid.lib and dxguid.lib, and the edges of the sections and the C
+objects. The margins: a piece with a used byte is used as a whole, so is a page the probe retired. An access of
+unknown extent also uses the pieces after it, up to a pointer target from the data, a GUID, a C object, the end of the
+section or a piece that only other functions of the original pointed to (the original reached the fields of a struct
+or the elements of an array one by one, which cut it at its own targets). A string ends with its NUL unless the access
+is indexed (`Game_Ptr(0x3bcbc8 + 8 * index)`, the names "Pad1" .. "Pad4").
+
+The kind of a piece: bss, code, resource, import, rtti (type descriptors, complete object locators, class
+hierarchies), guid, library (only the code of the original's CRT, Python or D3DX8 or only their data points to it),
+else by its bytes (string, float, double, pointer table, int table, zero, unknown for ints mixed with pointers).
+Neighbours of the same kind and user are one row.
+
+Regenerate the map with `datamap.py` (it takes `build/ScrapC.exe`, `build/standalone/objects.txt` and the logs of
+probe runs of that same ScrapC.exe, `--why <rva>` prints the chain of pointers that keeps a piece). Without logs it
+keeps the rows the probe used in the map before. After the link of ScrapC.exe the build runs `datamap.py --check`: an
+rva of the C or the tests in data the map leaves out stops the build. A new C function that reads data the map
+dropped needs a new map.
+
+The result on 2026-10-28 (sdtest, sdcall and sdlevel with the default budget, sdtest and sdcall with 2000000):
+
+- room.bin went from 871291 to 402774 bytes, the non-zero bytes from 670 KB to 351016. Built in per section (before
+  in parentheses): .text 4580 (4580), .rdata 142226 (532510) besides the 20332 bytes of the C vtables, .data 45400
+  (115200), .gfids 4 (1272), _RDATA 4 (4832), .tls and .data1 nothing (65 and 2272), .rsrc 210560 (210560). Without
+  the resources 192 KB of the original's data are left.
+- used per kind (of all bytes of that kind): strings 119984 of 237354 in .rdata and all 24531 in .data, most of them
+  names and texts of the engine variables (`Init_GVar_*`); int tables 11197 of 20656, floats and doubles 2524 of 8548,
+  pointer tables 5634 of 24402, imports 9863, the dinput8 formats in .text 4208, zero 1291 of 2305, unknown 3299 of
+  43533, GUIDs 192 of 20912; of the library data the CRT 7294 of 119476 (the initializer table of `Crt_Main`), the
+  Python 1672 of 70392 (hot pages only), D3DX8 4 of 36065, the RTTI 140 of 36690.
+- the static scan alone keeps 397676 bytes, the map 422736 (both with the resources and the C objects). 22 KB of the
+  difference is the margin of the 11 retired pages, 3 KB are units the probe saw and what the pointers in them lead to
+  (strings the UCRT copies, the engine globals of `Render_Shader`).
+
+The type objects of the engine at 0x428e18 and 0x428f78, behind 2 of the 11 fixed pointers, are used by the C
+(`PyEntity_New`, `ScorerItem_PyNew` and the Python library through them) and stay. The module table at 0x428d58 with
+the other 9 has no user (`src/python/config.c` is the module table now), it stays only because its page 0x428000 is
+hot. Of the original's Python data only what lies on the hot pages 0x428000 and 0x432000 stays (with the bytes of
+`PyString_Type` and `PyList_Type`, whose pointers lead to the real symbols). The RTTI is dead but for the type
+descriptor of galaxy::api::IError that `Gog_CatchError` matches a thrown object against. Of the CRT data only the
+table of the initializers (`Crt_Main`) is used, of D3DX8 4 bytes.
+
+On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios with the reduced room, and
+so does the hook DLL difftest. The game logs (log.html) of ScrapC.exe are the same with the whole and the reduced room,
+but for the lines after the end of the script (the game is stopped at a varying point). The probe runs of a reduced
+ScrapC.exe log no access to the data the map leaves out.
+
 ## Stage 4: English names
 
 The Spanish names of the original stay until the C is complete, then everything is translated.

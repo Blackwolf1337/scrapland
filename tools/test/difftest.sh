@@ -18,6 +18,9 @@
 #                          are int3 too ([general] wipelow)
 #        DIFFTEST_WIPEINIT=1  with DIFFTEST_STANDALONE=1: the dynamic initializers of the game and their atexit
 #                          destructors are int3 too ([general] wipeinit)
+#        DIFFTEST_DATAPROBE=1|2  with DIFFTEST_STANDALONE=1: the data probe of src/standalone/dataprobe.c, per page or
+#                          per unit ([general] dataprobe; DIFFTEST_DATAPROBEBUDGET for dataprobebudget), its log goes
+#                          to build/difftest/dataprobe-<scenario>-c.log
 root=$(cd "$(dirname "$0")/../.." && pwd)
 game=$root/game
 ini=$game/Bin/scrapdecomp.ini
@@ -48,9 +51,12 @@ run() {
 	local arg
 	[ "$2" = 1 ] && [ "${DIFFTEST_STANDALONE:-0}" = 1 ] && exe=ScrapC.exe
 	arg="-PythonExecute:execfile($(python3 -I -c "print('+'.join('chr(%d)' % ord(c) for c in '$name.py'))"))"
-	printf '[general]\nhooks=%s\ntestmod=1\nwipe=%s\nwipepy=%s\nwipecrt=%s\nwipelow=%s\nwipeinit=%s\n' "$2" \
+	printf '[general]\nhooks=%s\ntestmod=1\nwipe=%s\nwipepy=%s\nwipecrt=%s\nwipelow=%s\nwipeinit=%s\ndataprobe=%s\n' "$2" \
 		"$(($2 ? ${DIFFTEST_WIPE:-0} : 0))" "$(($2 ? ${DIFFTEST_WIPEPY:-0} : 0))" "$(($2 ? ${DIFFTEST_WIPECRT:-0} : 0))" \
-		"$(($2 ? ${DIFFTEST_WIPELOW:-0} : 0))" "$(($2 ? ${DIFFTEST_WIPEINIT:-0} : 0))" > "$ini"
+		"$(($2 ? ${DIFFTEST_WIPELOW:-0} : 0))" "$(($2 ? ${DIFFTEST_WIPEINIT:-0} : 0))" \
+		"$(($2 ? ${DIFFTEST_DATAPROBE:-0} : 0))" > "$ini"
+	[ -n "$DIFFTEST_DATAPROBEBUDGET" ] && printf 'dataprobebudget=%s\n' "$DIFFTEST_DATAPROBEBUDGET" >> "$ini"
+	rm -f "$game/Bin/dataprobe.log" "$out/dataprobe-$tag.log"
 	# so the second run does not find the files of the first
 	rm -f "$result"
 	rm_written
@@ -71,6 +77,7 @@ run() {
 	cp "$game/Bin/scrapdecomp.log" "$out/scrapdecomp-$tag.log" 2> /dev/null
 	cp "$game/log.html" "$out/log-$tag.html" 2> /dev/null
 	cp "$result" "$out/$tag.out" 2> /dev/null
+	[ -f "$game/Bin/dataprobe.log" ] && cp "$game/Bin/dataprobe.log" "$out/dataprobe-$tag.log"
 	if ! tail -n 1 "$result" 2> /dev/null | tr -d '\r' | grep -qx 'done'; then
 		echo "$tag: output incomplete, last lines in $out/$tag.out" >&2
 		return 1

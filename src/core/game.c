@@ -79,6 +79,11 @@ int Game_Start(uintptr_t base, const char *dir) {
 			GetPrivateProfileIntA("general", "wipepy", 0, ini_path),
 			GetPrivateProfileIntA("general", "wipelow", 0, ini_path));
 	}
+#ifndef SD_STANDALONE
+	if (Game_Option("dataprobe")) {
+		Com_Printf("dataprobe: only in ScrapC.exe, the data of the exe is not watched\n");
+	}
+#endif
 	return hooks;
 }
 
