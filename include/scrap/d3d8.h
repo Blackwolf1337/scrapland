@@ -274,5 +274,15 @@ matrix_t *__stdcall D3DX_MatrixInverse(matrix_t *out, float *det, const matrix_t
 int __stdcall D3DX_AssembleShader(const void *src, uint32_t len, uint32_t flags, void **constants, void **code,
 	void **errors);
 #define D3DXBUF_GETPOINTER 0xc
+
+/* the D3DX texture functions (stdcall; src/lib/d3dx8/D3dxTex.c, DDS files only) */
+int __stdcall D3DX_CheckTextureRequirements(void *dev, uint32_t *w, uint32_t *h, uint32_t *levels, uint32_t usage,
+	int *fmt, int pool);
+int __stdcall D3DX_CreateTextureFromFileInMemoryEx(void *dev, const void *data, uint32_t size, uint32_t w, uint32_t h,
+	uint32_t levels, uint32_t usage, int fmt, int pool, uint32_t filter, uint32_t mipFilter, uint32_t colorKey,
+	void *srcInfo, void *palette, void **tex);
+/* the rectangles are RECTs, NULL for the whole surface */
+int __stdcall D3DX_LoadSurfaceFromSurface(void *dst, const void *dstPal, const void *dstRect, void *src,
+	const void *srcPal, const void *srcRect, uint32_t filter, uint32_t colorKey);
 typedef void *(__stdcall *d3dxGetPointer_t)(void *buf);
 #endif

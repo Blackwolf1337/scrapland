@@ -15,11 +15,6 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/trails.h"
 
-/* D3DX 8, linked into the exe (the same prototype as in Engine/Textura.c) */
-int __stdcall D3DX_CreateTextureFromFileInMemoryEx(void *dev, const void *data, uint32_t size, uint32_t w, uint32_t h,
-	uint32_t levels, uint32_t usage, int fmt, int pool, uint32_t filter, uint32_t mipFilter, uint32_t colorKey,
-	void *srcInfo, void *palette, void **tex);
-
 /* IDirect3DDevice8, IDirect3DTexture8 and IDirect3DSurface8 methods not in d3d8.h */
 #define D3DDEV_CREATEDEPTHSTENCILSURFACE 0x68
 #define D3DDEV_BEGINSCENE 0x88

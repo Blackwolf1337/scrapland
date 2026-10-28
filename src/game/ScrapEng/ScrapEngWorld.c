@@ -18,11 +18,6 @@
 #include "scrap/varios.h"
 #include "scrap/win32.h"
 
-/* D3DX 8, linked into the exe (the same prototype as in Engine/Textura.c) */
-int __stdcall D3DX_CreateTextureFromFileInMemoryEx(void *dev, const void *data, uint32_t size, uint32_t w, uint32_t h,
-	uint32_t levels, uint32_t usage, int fmt, int pool, uint32_t filter, uint32_t mipFilter, uint32_t colorKey,
-	void *srcInfo, void *palette, void **tex);
-
 /* the methods of IDirect3DDevice8, IDirect3DSurface8 and IDirect3D8 only this file calls */
 #define D3DDEV_PRESENT 0x3c
 #define D3DDEV_BEGINSCENE 0x88

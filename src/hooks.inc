@@ -8290,3 +8290,12 @@ SD_HOOK(Matrix_ToTransform, 0x2d6c50, 355)
 /* module agent: Standalone 2b2, the MSVC math from ucrtbase and the C startup (hooks below this line) */
 
 /* module agent: Standalone 2c2, D3DX8 textures and the ASE SDK in own C (hooks below this line) */
+SD_HOOK(D3DX_CheckTextureRequirements, 0x0037ea, 40)
+SD_HOOK(D3DX_LoadSurfaceFromSurface, 0x004dbf, 422)
+SD_HOOK(D3DX_CreateTextureFromFileInMemoryEx, 0x0062a7, 64)
+SD_HOOK(Ase_Shutdown, 0x002070, 31)
+SD_HOOK(Ase_Initialize, 0x002410, 32)
+SD_HOOK(Ase_ServerStatus, 0x002480, 633)
+SD_HOOK(Ase_AddRule, 0x002700, 112)
+SD_HOOK(Ase_AddPlayer, 0x002770, 379)
+SD_HOOK(Ase_Check, 0x0028f0, 1462)

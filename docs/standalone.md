@@ -260,11 +260,33 @@ Done in C, as hooks in both builds:
 - descomp_afin.cpp (`src/game/engine3d/Engine/DescompAfin.c`): Shoemake's polar decomposition of Graphics Gems IV
   and the two transform matrices.
 
-Still from the copy: the ASE SDK and the texture functions of D3DX (`D3DXCreateTextureFromFileInMemoryEx`,
-`D3DXCheckTextureRequirements`, `D3DXLoadSurfaceFromSurface`). The game data loads DDS through D3DX (DXT1, DXT3,
-DXT5, A8R8G8B8, R5G6B5, A4R4G4B4, X1R5G5B5; many with one level where the texture wants mipmaps, so D3DX makes them,
-for DXT with its own compressor) and BMP and TGA through its own code, then D3DXLoadSurfaceFromSurface. No PNG or JPG
-is in the packs.
+Stage 2c2 wrote the rest from scratch, from the documented behavior and the observed results, not from the code of
+the copy. These are tested by what they do, not bit for bit:
+
+- the texture functions of D3DX (`src/lib/d3dx8/D3dxTex.c`): `D3DXCheckTextureRequirements`,
+  `D3DXCreateTextureFromFileInMemoryEx` and `D3DXLoadSurfaceFromSurface`. The game loads DDS through D3DX (DXT1,
+  DXT3, DXT5, A8R8G8B8, R5G6B5, A4R4G4B4, X1R5G5B5) and one TGA, `bmp/norm1.alpha.psa` (its extension is not one the
+  game's own reader takes). BMP and TGA go through the game's code, then `D3DXLoadSurfaceFromSurface`. No PNG or JPG
+  is in the packs, so the loader reads DDS and TGA.
+- The closest format follows the D3DX rules (missing channels weigh most, then fewer bits, then extra channels, then
+  more bits; the smaller pixel on a tie). P8 asked for a texture becomes X8R8G8B8, as D3DX did on this device.
+- The levels of a file are its mip count, with or without the flag of the count (as D3DX). A level the file has is
+  copied in the same format, else converted; the missing ones are box filtered from the level above in the format
+  of the texture, DXT through our own encoder (a range fit on the bounding box of the block).
+- Pixels move as float RGBA. The conversions between the uncompressed formats give the bytes of D3DX, also the
+  signed ones: s = 2x - 1 stored as trunc(s * 2^(n-1) + 0.5), so 255 wraps to the lowest value as in D3DX.
+- What differs: the DXT blocks D3DX encodes, the DXT levels below 4 pixels (D3DX encodes them again, ours copies the
+  file's blocks), the made levels (D3DX rounds them in other steps, its signed levels drift), dithering
+  (`D3DX_FILTER_DITHER` is ignored) and the scaling filters, which the game never needs (no size changes on this
+  device).
+- `tools/test/py/sdcall_d3dxtex.py` (prefix `dxt`) checks the requirements, the conversions and the color key
+  exactly, and 14 DDS files and the TGA with the requests of the game through `CTextura_CreateD3D`: format, size and
+  levels exactly, the file's levels as a checksum, the converted and made levels by their average color within a
+  tolerance. The device calls of a texture are the same in the D3D log.
+- the ASE SDK (`src/lib/ase/Ase.c`): a UDP socket on the game port + 123 (the next free one of 64) answers the
+  All-Seeing Eye queries 's' (status, rules, players from the game's callbacks), 'g' and the master's 'p'. The
+  masters are gone and resolving them would block, so there is no heartbeat and no 'v'.
+  `tools/test/py/sdlevel_ase.py` (prefix `ase`) queries it on the loopback in the level and compares the answers.
 
 ## Stage 3: data in C
 
