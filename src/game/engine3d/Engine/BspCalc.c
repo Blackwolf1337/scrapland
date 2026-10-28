@@ -12,6 +12,7 @@
 #include "scrap/luz.h"
 #include "scrap/mathlib.h"
 #include "scrap/nodo3d.h"
+#include "scrap/prof.h"
 #include "scrap/scrapmain.h"
 #include "scrap/suelo.h"
 #include "scrap/sueloportal.h"
@@ -620,4 +621,577 @@ int __fastcall CBsp_GuardarEMI(CBsp *self) {
 	CArchIO_dtor(f);
 	operator_delete_sized(f, sizeof(CArchIO));
 	return -1;
+}
+
+
+/* the radiosity */
+
+/* the area light of the material of a list, read into the list (0x134..0x153) */
+static inline RadAreaLuz *BspTri_AreaLuz(BspTri *t) {
+	return (RadAreaLuz *)&t->nombres;
+}
+
+/* the world point of the texel x, y of t in list: the center for the large lists, else the samples of t */
+static void BspTri_RadPunto(vec3_t *p, const BspTri *list, const BspTri *t, int x, int y) {
+	vec3_t tmp;
+	float sc = g_MapaSombrasEscala * g_MapaSombrasResol;
+
+	if (list->grande) {
+		Bsp_TexelToWorld(p, (float)x + 0.5f, (float)y + 0.5f, list->eje, sc, &t->plano);
+	} else {
+		*p = *BspTri_Muestra(&tmp, x, y, list->eje, sc, t, list, NULL);
+	}
+}
+
+/* the side of q of the plane of s; a q behind it (below k) is moved to k in front into e */
+static float BspTri_RadMover(vec3_t *e, const BspTri *s, const vec3_t *q, float k) {
+	float dist = s->plano.n.y * q->y + q->x * s->plano.n.x + s->plano.n.z * q->z + s->plano.d;
+
+	if (k > dist) {
+		float m = k - dist;
+		e->x = q->x + s->plano.n.x * m;
+		e->y = q->y + s->plano.n.y * m;
+		e->z = q->z + s->plano.n.z * m;
+	} else {
+		*e = *q;
+	}
+	return dist;
+}
+
+/* a corner of s is in front of the plane n, dn of the texel (above lim) */
+static byte BspTri_RadDelante(const BspTri *s, const vec3_t *n, float dn, float lim) {
+	return !(lim >= s->v[0].y * n->y + n->x * s->v[0].x + s->v[0].z * n->z + dn &&
+		lim >= s->v[1].y * n->y + n->x * s->v[1].x + s->v[1].z * n->z + dn &&
+		lim >= s->v[2].y * n->y + n->x * s->v[2].x + s->v[2].z * n->z + dn);
+}
+
+/* the distance of e to the sphere of s, at least dist */
+static float BspTri_RadLejos(const BspTri *s, const vec3_t *e, float dist) {
+	float cx = e->x - s->centro.x;
+	float cy = e->y - s->centro.y;
+	float cz = e->z - s->centro.z;
+	float dc = (float)__builtin_sqrt((double)(cx * cx + cy * cy + cz * cz));
+
+	return Float_MaxSS(dc - s->radio, dist);
+}
+
+/* the light path from an area at pos to the texel point e, d = e - pos: the cosines at the texel (normal n) and at the
+ * area (the plane of s), the squared length and the falloff with distance; 0 when one side faces away */
+typedef struct BspRadRayo {
+	vec3_t d;
+	float ca, cb, d2, k, den;
+} BspRadRayo;
+
+static int BspRad_Rayo(BspRadRayo *r, const vec3_t *e, const vec3_t *pos, const vec3_t *n, const BspTri *s) {
+	r->d.x = e->x - pos->x;
+	r->d.y = e->y - pos->y;
+	r->d.z = e->z - pos->z;
+	r->ca = -(n->x * r->d.x + n->y * r->d.y + n->z * r->d.z);
+	if (0.001 > (double)r->ca) {
+		return 1;
+	}
+	r->cb = s->plano.n.y * r->d.y + s->plano.n.x * r->d.x + s->plano.n.z * r->d.z;
+	if (0.001 > (double)r->cb) {
+		return 2;
+	}
+	r->d2 = r->d.x * r->d.x + r->d.y * r->d.y + r->d.z * r->d.z;
+	r->k = Float_MaxSS(g_BspRadMinD2, r->d2) * 0.2f * (g_MapaSombrasEscala * g_MapaSombrasEscala);
+	r->den = r->k * r->d2;
+	return 0;
+}
+
+/* the segment of the path of r from near the texel point e (b) to just off the area at pos (a) */
+static void BspRad_Segmento(vec3_t *a, vec3_t *b, const BspRadRayo *r, const vec3_t *e, const vec3_t *pos) {
+	vec3_t u;
+	float len = (float)__builtin_sqrt((double)r->d2);
+
+	if ((double)len != 0.0) {
+		float inv = (float)(1.0 / (double)len);
+		u.x = inv * r->d.x;
+		u.y = inv * r->d.y;
+		u.z = inv * r->d.z;
+	} else {
+		u = r->d;
+	}
+	float k3 = 0.3f / g_MapaSombrasEscala;
+	a->x = u.x * k3 * 0.01f + pos->x;
+	a->y = u.y * k3 * 0.01f + pos->y;
+	a->z = u.z * k3 * 0.01f + pos->z;
+	b->x = e->x - u.x * k3;
+	b->y = e->y - u.y * k3;
+	b->z = e->z - u.z * k3;
+}
+
+/* the floor hides the segment */
+static inline byte BspRad_Oculto(CSuelo *suelo, const vec3_t *a, const vec3_t *b) {
+	return CSuelo_Trace(suelo, b, a, NULL, 0.8f / (g_MapaSombrasEscala * g_MapaSombrasResol), NULL);
+}
+
+/* the start of a list of the radiosity passes: the count and %, then the TXF check */
+static byte BspRad_Lista(BspTxf *txf, const char *fmt, int pass, int i, int n, int *nAreas, const BspTri *list) {
+	*nAreas += list->numAreas;
+	if (pass < 0) {
+		E3D_DebugPrintf(fmt, i + 1, n);
+	} else {
+		E3D_DebugPrintf(fmt, pass, i + 1, n);
+	}
+	E3D_DebugPrintf("areas: %-5d   ", list->numAreas);
+	E3D_DebugPrintf("%.1f %%   ", (double)*nAreas * 100.0 / (double)g_BspAreasTotal[0]);
+	if (!BspTxf_Check(txf, i, 1, 1)) {
+		return 0;
+	}
+	E3D_DebugPrintf("\n");
+	return 1;
+}
+
+static const float bspMagenta[3] = { 1.0f, 0.0f, 1.0f };
+
+/* the global light: per bounce, every texel of the lists gathers the light of the areas of all other lists (rad2, the
+ * last bounce) in front of it that the floor (and the portals) do not hide; the result into rad, with the TXF cache.
+ * At the end the statistics and rad added to the light maps (luz) */
+void __fastcall CBsp_RadGlobal(CBsp *self) {
+	CSuelo *suelo = Mundo_Suelo();
+	float mc[17];
+	vec3_t p, n, e, a, b;
+	BspRadRayo r;
+	BspTxf txf;
+	int64_t sumAreas = 0, sumSel = 0;
+	int nNoArea = 0, nDetras = 0, nNo = 0, nSombra = 0, nSector = 0, nComp = 0;
+
+	if (g_MapaSombrasIlumGlobal) {
+		for (int bounce = 0; bounce < g_MapaSombrasRebotes; bounce++) {
+			E3D_DebugPrintf("total areas: %d %d %d %d\n", g_BspAreasTotal[0], g_BspAreasTotal[1], g_BspAreasTotal[2],
+				g_BspAreasTotal[3]);
+			E3D_DebugPrintf("memoria usada: %-5d Kb\n", g_MemStats->bytes / 1024);
+			/* rad2 is the light the areas send: the direct light, then the last bounce */
+			for (int i = 0; i < self->num_listas; i++) {
+				BspTri *tri = self->listas[i];
+				CBmpFlt2_Blend(&tri->luz, 0, 0, &tri->rad, 0, 0, tri->luz.ancho, tri->luz.alto, 0x100, 0x100);
+				CBmpFlt2_Blend(&tri->rad2, 0, 0, &tri->rad, 0, 0, tri->rad2.ancho, tri->rad2.alto, 0x100,
+					bounce ? 0 : 0x100);
+			}
+			CBsp_AreasGlow(self);
+			CBsp_AreasMax(self);
+			g_ProfTicks[13] -= __builtin_ia32_rdtsc();
+			BspTxf_ctor(&txf, self->nombre, "rad", bounce, 1);
+			int nAreas = 0;
+			while (txf.rebuild) {
+				txf.rebuild = 0;
+				for (int i = 0; i < self->num_listas; i++) {
+					BspTri *list = self->listas[i];
+					if (g_TxfMode) {
+						E3D_DebugPrintf("Check TXF active, skipping...   \n");
+						break;
+					}
+					if (!BspRad_Lista(&txf, "global (%d): %d / %d   ", bounce, i, self->num_listas, &nAreas, list)) {
+						continue;
+					}
+					int zona = list->zona;
+					CMaterial_CalcColors(list->Mat, mc);
+					CBmpFlt2_Fill(&list->rad, bspMagenta);
+					int lx0 = list->ext[0];
+					int ly0 = list->ext[1];
+					int count = BspTri_Count(list);
+					int k = 0;
+					for (BspTri *t = list; t; t = t->sig) {
+						k++;
+						E3D_DebugPrintf("tri: %d / %d   ", k, count);
+						E3D_DebugPrintf("areas: %d  \r", t->areas[0].n);
+						CHECK(!(t->flags & BSPTRI_NOLMAP));
+						for (int y = t->ext2[1]; y <= t->ext2[3]; y++) {
+							for (int x = t->ext2[0]; x <= t->ext2[2]; x++) {
+								uint32_t tx = (uint32_t)(x - lx0);
+								uint32_t ty = (uint32_t)(y - ly0);
+								float sr = 0.0f, sg = 0.0f, sb = 0.0f;
+								if (tx >= (uint32_t)g_MapaSombrasTexX || ty >= (uint32_t)g_MapaSombrasTexY) {
+									continue;
+								}
+								if (Color_SwapRB(*CBmp_Pixel(&list->mask, tx, ty)) != (uint32_t)(uintptr_t)t) {
+									continue;
+								}
+								BspTri_RadPunto(&p, list, t, x, y);
+								BspTri_Interp(t, &p, &n, NULL, 0);
+								float dn = -(n.y * p.y + n.x * p.x + n.z * p.z);
+								for (int j = 0; j < self->num_listas && !list->radluz_ok; j++) {
+									BspTri *L = self->listas[j];
+									if (L->radluz_ok) {
+										continue;
+									}
+									CHECK(!(L->flags & BSPTRI_NOLMAP));
+									int lzona = L->zona;
+									if (g_RadSkipBySectors && lzona != zona) {
+										continue;
+									}
+									for (BspTri *S = L; S; S = S->sig) {
+										if (S == t || !S->areas[0].n || S->f178 == 0.0f) {
+											continue;
+										}
+										float lod = g_BspLodLevel;
+										float dist = BspTri_RadMover(&e, S, &p, lod * 0.25f);
+										if (-lod > dist || !BspTri_RadDelante(S, &n, dn, lod * 0.02f)) {
+											continue;
+										}
+										g_ProfTicks[14] -= __builtin_ia32_rdtsc();
+										CTabla *sel = BspTri_GetAreas(S, BspTri_RadLejos(S, &e, dist), 1);
+										sumAreas += S->areas[0].n;
+										sumSel += sel->n;
+										for (int ia = 0; ia < sel->n; ia++) {
+											TABLA_CHECK(sel->p, ia, sel->n);
+											BspArea *ar = &((BspArea *)sel->p)[ia];
+											int no = BspRad_Rayo(&r, &e, &ar->pos, &n, S);
+											if (no) {
+												if (no == 1) {
+													nNoArea++;
+												} else {
+													nDetras++;
+												}
+												continue;
+											}
+											float cc = r.cb * r.ca;
+											if (!((double)(ar->f14 * cc) > (double)r.den * 1.25e-06)) {
+												nNo++;
+												continue;
+											}
+											nComp++;
+											/* the segment from near the texel to just off the area */
+											g_ProfTicks[11] -= __builtin_ia32_rdtsc();
+											BspRad_Segmento(&a, &b, &r, &e, &ar->pos);
+											if (g_RadiosityPortals && lzona != zona && zona >= 0 && lzona >= 0 &&
+												Sector_Recorrer(zona, &b, &a, 0) != lzona) {
+												g_ProfTicks[11] += __builtin_ia32_rdtsc();
+												nSombra++;
+												nSector++;
+												continue;
+											}
+											if (BspRad_Oculto(suelo, &a, &b)) {
+												g_ProfTicks[11] += __builtin_ia32_rdtsc();
+												nSombra++;
+												continue;
+											}
+											g_ProfTicks[11] += __builtin_ia32_rdtsc();
+											const float *px = CBmpFlt2_Pixel(&L->rad2, ar->x, ar->y);
+											float f = ar->peso * cc / r.den * g_MapaSombrasCoefRad;
+											sr = mc[0] * px[0] * f + sr;
+											sg = mc[1] * px[1] * f + sg;
+											sb = mc[2] * px[2] * f + sb;
+										}
+										g_ProfTicks[14] += __builtin_ia32_rdtsc();
+									}
+								}
+								float *dst = CBmpFlt2_Pixel(&list->rad, tx, ty);
+								dst[0] = sr;
+								dst[1] = sg;
+								dst[2] = sb;
+							}
+						}
+					}
+					BspTxf_Guardar(&txf, &list->rad);
+				}
+				BspTxf_Cargar(&txf, self->listas, self->num_listas, 3);
+			}
+			g_ProfTicks[13] += __builtin_ia32_rdtsc();
+			BspTxf_dtor(&txf);
+		}
+	}
+	g_ProfTicks[10] += __builtin_ia32_rdtsc();
+	E3D_DebugPrintf("\ntotal areas: %d %d %d %d", g_BspAreasTotal[0], g_BspAreasTotal[1], g_BspAreasTotal[2],
+		g_BspAreasTotal[3]);
+	E3D_DebugPrintf("\nmemoria usada: %-5d Kb", g_MemStats->bytes / 1024);
+	E3D_DebugPrintf("\nradiosidad, tsc(10): %.2f  (local+global)", (double)(uint64_t)Prof_Reset(10) / 450000.0);
+	E3D_DebugPrintf("\nradiosidad, tsc(11): %.2f  (sombras global)", (double)(uint64_t)Prof_Reset(11) / 450000.0);
+	E3D_DebugPrintf("\nradiosidad, tsc(12): %.2f  (buscar_CTriLMap)", (double)(uint64_t)Prof_Reset(12) / 450000.0);
+	E3D_DebugPrintf("\nradiosidad, tsc(13): %.2f  (global)", (double)(uint64_t)Prof_Reset(13) / 450000.0);
+	E3D_DebugPrintf("\nradiosidad, tsc(14): %.2f  (global)", (double)(uint64_t)Prof_Reset(14) / 450000.0);
+	double pot = (double)(uint64_t)sumAreas;
+	E3D_DebugPrintf("\npotenciales: %.1f  descartados: %d %d %d %d %d %d", pot, 0, nNoArea, nDetras, nNo, nSombra,
+		nSector);
+	double pot2 = (double)(uint64_t)sumSel;
+	E3D_DebugPrintf("\npotenciales2: %.1f (%.1f%%)", pot2, pot2 * 100.0 / pot);
+	E3D_DebugPrintf("\nselec_rad_area: %d %d %d %d", g_BspLodCount[0], g_BspLodCount[1], g_BspLodCount[2],
+		g_BspLodCount[3]);
+	E3D_DebugPrintf("\nesc: %.3f  res: %.3f  umbral (x1e6): %.3f  gamma: %.3f", (double)g_MapaSombrasEscala,
+		(double)g_MapaSombrasResol, 1.25, (double)g_MapaSombrasGamma);
+	E3D_DebugPrintf("\nareas2:   2x2 -> %.1f/%.1f   4x4 -> %.1f/%.1f   8x8 -> %.1f/%.1f", (double)g_BspLodDist[0],
+		(double)g_BspLodDist[1], (double)g_BspLodDist[2], (double)g_BspLodDist[3], (double)g_BspLodDist[4],
+		(double)g_BspLodDist[5]);
+	E3D_DebugPrintf("\nilum. global:  { comp: %d  ->  vis: %d  no: %d }  no: %d", nComp, nComp - nSombra, nSombra,
+		nNo);
+	E3D_DebugPrintf("\n");
+	if (g_TxfMode && g_TxfMode != 3) {
+		E3D_LogPrint(g_FileLog, "TFX checking finished");
+		Err_Printf(0, "TFX checking finished");
+		crt_exit(-1);
+	}
+	for (int i = 0; i < self->num_listas; i++) {
+		BspTri *tri = self->listas[i];
+		CBmpFlt2_Blend(&tri->luz, 0, 0, &tri->rad, 0, 0, tri->luz.ancho, tri->luz.alto, 0x100, 0x100);
+		Img_Free(&tri->rad, 0xc);
+		Img_Free(&tri->rad2, 0xc);
+	}
+}
+
+/* the color and intensity of the m3d.ini line "r g b i" (CHECKed) into c */
+static void BspRad_LeerColor(const char *buf, byte *c, float *intens) {
+	CHECK(Proc_Scan(buf, "&b&b&b&f", &c[0], &c[1], &c[2], intens) == 4);
+}
+
+/* the light of the area lights: the lists with an area light ("(+area_light: name)" materials, or the sections
+ * mats_luces_rad and maps_luces_rad of the ini of the scene) and the lists with a glow map (lglow, scaled by the
+ * lglow_mult of the ini) light the texels of all lists in front of them that the floor does not hide; into rad, with
+ * the TXF cache. The area lights themselves get twice their color */
+void __fastcall CBsp_RadAreas(CBsp *self) {
+	CSuelo *suelo = Mundo_Suelo();
+	char buf[0x80];
+	float mc[17];
+	vec3_t p, n, e, a, b;
+	BspRadRayo r;
+	BspTxf txf;
+	CRadiosidad rad;
+	uint32_t num;
+	byte glowDef[4] = { 0xff, 0xff, 0xff, 0 };
+	float glowDefInt = 1.0f;
+
+	Rad_Normales(&num);
+	Con_Verbosef("**** materials:\n");
+	CEscena *esc = self->modelo->escena;
+	for (int i = 0; i < esc->mats.n; i++) {
+		TABLA_CHECK(esc->mats.p, i, esc->mats.n);
+		Bsp_MatInfo(((CMaterial **)esc->mats.p)[i]);
+	}
+	CRadiosidad_ctor(&rad, self->nombre);
+	E3D_DebugPrintf("\ninic. atrib. materiales\n");
+	Con_Verbosef("\ninic. atrib. materiales\n");
+	int nArea = 0, nGlow = 0;
+	if (esc->ini) {
+		memset(buf, 0, sizeof(buf));
+		if (CArchINI_GetText(esc->ini, "lglow_mult", "_default_", buf, sizeof(buf), NULL)) {
+			BspRad_LeerColor(buf, glowDef, &glowDefInt);
+			Con_Verbosef("default lglow mult: (rgbi = %d %d %d %.2f)\n", glowDef[0], glowDef[1], glowDef[2],
+				(double)glowDefInt);
+		}
+	}
+	for (int i = 0; i < self->num_listas; i++) {
+		static const float cero[3] = { 0.0f, 0.0f, 0.0f };
+		BspTri *list = self->listas[i];
+		RadAreaLuz *al = BspTri_AreaLuz(list);
+		list->b155 = 0;
+		list->radluz_ok = CRadiosidad_ReadMatWarn(&rad, list->Mat, al);
+		Img_Create(&list->rad, list->luz.ancho, list->luz.alto, 0xc);
+		CBmpFlt2_Fill(&list->rad, cero);
+		if (esc->ini) {
+			const char *m0 = CMaterial_GetMapName(list->Mat, 0);
+			const char *m4 = CMaterial_GetMapName(list->Mat, 4);
+			memset(buf, 0, sizeof(buf));
+			CArchINI_GetText(esc->ini, "mats_luces_rad", list->Mat->Nombre, buf, sizeof(buf), NULL);
+			if (m0) {
+				CArchINI_GetText(esc->ini, "maps_luces_rad", m0, buf, sizeof(buf), NULL);
+			}
+			if (m4) {
+				CArchINI_GetText(esc->ini, "maps_luces_rad", m4, buf, sizeof(buf), NULL);
+			}
+			if (buf[0]) {
+				if (list->radluz_ok) {
+					Con_Warnf("  area light color from rad was (rgbi = %d %d %d %.2f)\n", al->rgbi[0], al->rgbi[1],
+						al->rgbi[2], (double)al->intensidad);
+				}
+				BspRad_LeerColor(buf, al->rgbi, &al->intensidad);
+				Con_Verbosef("  area light from ini (rgbi = %d %d %d %.2f)\n", al->rgbi[0], al->rgbi[1], al->rgbi[2],
+					(double)al->intensidad);
+				Bsp_MatInfo(list->Mat);
+				list->radluz_ok = 1;
+			}
+		}
+		/* the glow map scaled by its lglow_mult */
+		byte glow[4];
+		memcpy(glow, glowDef, sizeof(glow));
+		float glowInt = glowDefInt;
+		if (esc->ini) {
+			const char *m4 = CMaterial_GetMapName(list->Mat, 4);
+			memset(buf, 0, sizeof(buf));
+			if (m4) {
+				CArchINI_GetText(esc->ini, "lglow_mult", m4, buf, sizeof(buf), NULL);
+			}
+			if (buf[0]) {
+				BspRad_LeerColor(buf, glow, &glowInt);
+				Con_Verbosef("  lglow mult (rgbi = %d %d %d %.2f) [%s]\n", glow[0], glow[1], glow[2], (double)glowInt,
+					m4);
+			}
+		}
+		if (list->luzA.img) {
+			float *px = list->luzA.img;
+			for (int k = 0; k < list->luzA.alto * list->luzA.ancho; k++, px += 4) {
+				float s = glowInt * BSP_INV255;
+				float sr = (float)glow[0] * s;
+				float sg = s * (float)glow[1];
+				float sb = s * (float)glow[2];
+				float v[4] = { px[0] * sr, sg * px[1], sb * px[2], 0.0f };
+				memcpy(px, v, sizeof(v));
+			}
+			CBmpFlt avg;
+			avg.ancho = 1;
+			avg.alto = 1;
+			avg.img = New_Array(1, 0x10);
+			CBmpFlt_Resample(&avg, &list->luzA, 0xf);
+			float v[4];
+			memcpy(v, CBmpFlt_Pixel(&avg, 0, 0), sizeof(v));
+			const char *m4 = CMaterial_GetMapName(list->Mat, 4);
+			Con_Verbosef("  lglow (average): %f %f %f [%s] [%s]\n", (double)v[0], (double)v[1], (double)v[2],
+				list->Mat->Nombre, m4);
+			list->b155 = Float_MaxSS(v[2], Float_MaxSS(v[1], v[0])) > 0.0f;
+			if (!list->b155) {
+				Con_Warnf("  lglow disabled (average is black) [%s]\n", list->Mat->Nombre);
+			}
+			if (list->radluz_ok) {
+				Con_Warnf("  area light with lglow [%s]\n", list->Mat->Nombre);
+			}
+			Img_Free(&avg, 0x10);
+		}
+		nArea += list->radluz_ok != 0;
+		nGlow += list->b155 != 0;
+		if (list->radluz_ok) {
+			Con_Verbosef(" area light: %s (rgbi = %d %d %d %.2f)\n", list->Mat->Nombre, al->rgbi[0], al->rgbi[1],
+				al->rgbi[2], (double)al->intensidad);
+		}
+		if (list->b155) {
+			Con_Verbosef(" lglow light: %s [%s] (%dx%d)\n", list->Mat->Nombre, CMaterial_GetMapName(list->Mat, 4),
+				list->luzA.ancho, list->luzA.alto);
+		}
+	}
+	CBsp_IniciarAreas(self);
+	E3D_DebugPrintf("area lights: %d  glow lights: %d\n", nArea, nGlow);
+	Con_Verbosef("area lights: %d  glow lights: %d\n", nArea, nGlow);
+	g_ProfTicks[10] -= __builtin_ia32_rdtsc();
+	if (nArea || nGlow) {
+		BspTxf_ctor(&txf, self->nombre, "loc", 0, 1);
+		int nPot = 0;
+		int nAreas = 0;
+		while (txf.rebuild) {
+			txf.rebuild = 0;
+			for (int i = 0; i < self->num_listas; i++) {
+				BspTri *list = self->listas[i];
+				if (g_TxfMode) {
+					E3D_DebugPrintf("Check TXF active, skipping...   \n");
+					break;
+				}
+				if (!BspRad_Lista(&txf, "local: %d / %d   ", -1, i, self->num_listas, &nAreas, list)) {
+					continue;
+				}
+				CHECK(!(list->flags & BSPTRI_NOLMAP));
+				int zona = list->zona;
+				CMaterial_CalcColors(list->Mat, mc);
+				CBmpFlt2_Fill(&list->rad, bspMagenta);
+				int lx0 = list->ext[0];
+				int ly0 = list->ext[1];
+				int count = BspTri_Count(list);
+				int k = 0;
+				for (BspTri *t = list; t; t = t->sig) {
+					k++;
+					E3D_DebugPrintf("tri: %d / %d   ", k, count);
+					E3D_DebugPrintf("areas: %d  \r", t->areas[0].n);
+					for (int y = t->ext2[1]; y <= t->ext2[3]; y++) {
+						for (int x = t->ext2[0]; x <= t->ext2[2]; x++) {
+							uint32_t tx = (uint32_t)(x - lx0);
+							uint32_t ty = (uint32_t)(y - ly0);
+							float sr = 0.0f, sg = 0.0f, sb = 0.0f;
+							if (tx >= (uint32_t)g_MapaSombrasTexX || ty >= (uint32_t)g_MapaSombrasTexY) {
+								continue;
+							}
+							if (Color_SwapRB(*CBmp_Pixel(&list->mask, tx, ty)) != (uint32_t)(uintptr_t)t) {
+								continue;
+							}
+							BspTri_RadPunto(&p, list, t, x, y);
+							BspTri_Interp(t, &p, &n, NULL, 0);
+							float dn = -(n.y * p.y + n.x * p.x + n.z * p.z);
+							for (int j = 0; j < self->num_listas; j++) {
+								BspTri *L = self->listas[j];
+								if (!L->radluz_ok && !L->b155) {
+									continue;
+								}
+								if (g_RadSkipBySectors && L->zona != zona) {
+									continue;
+								}
+								const RadAreaLuz *lal = BspTri_AreaLuz(L);
+								for (BspTri *S = L; S; S = S->sig) {
+									if (S == t || !S->areas[0].n) {
+										continue;
+									}
+									float lod = g_BspLodLevel;
+									float dist = BspTri_RadMover(&e, S, &p, lod * 0.1f);
+									if (-lod > dist || !BspTri_RadDelante(S, &n, dn, lod * 0.02f)) {
+										continue;
+									}
+									CTabla *sel = BspTri_GetAreas(S, BspTri_RadLejos(S, &e, dist), 0);
+									for (int ia = 0; ia < sel->n; ia++) {
+										TABLA_CHECK(sel->p, ia, sel->n);
+										BspArea *ar = &((BspArea *)sel->p)[ia];
+										nPot++;
+										if (BspRad_Rayo(&r, &e, &ar->pos, &n, S)) {
+											continue;
+										}
+										float cc = r.cb * r.ca;
+										/* the light of the area: its area light and its glow */
+										float c[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+										if (L->radluz_ok) {
+											float s = lal->intensidad * BSP_INV255;
+											c[0] = (float)lal->rgbi[0] * s + 0.0f;
+											c[1] = (float)lal->rgbi[1] * s + 0.0f;
+											c[2] = (float)lal->rgbi[2] * s + 0.0f;
+											c[3] = (float)lal->rgbi[3] * s + 0.0f;
+										}
+										if (L->b155) {
+											const float *g = CBmpFlt_Pixel(&L->luzA, ar->x, ar->y);
+											c[3] = c[3] + 1.0f;
+											c[0] = c[0] + g[0];
+											c[1] = g[1] + c[1];
+											c[2] = g[2] + c[2];
+										}
+										float m = Float_MaxSS(c[2], Float_MaxSS(c[1], c[0]));
+										if (!((double)(m * cc) > (double)r.den * 1.25e-06)) {
+											continue;
+										}
+										BspRad_Segmento(&a, &b, &r, &e, &ar->pos);
+										if (BspRad_Oculto(suelo, &a, &b)) {
+											continue;
+										}
+										c[0] = c[0] * mc[0];
+										c[1] = mc[1] * c[1];
+										c[2] = mc[2] * c[2];
+										c[3] = mc[3] * c[3];
+										float den = r.den;
+										if (lal->falloff != 1.0f) {
+											float len = (float)__builtin_sqrt((double)r.d2);
+											float pw = (float)Game_Pow((double)(r.ca / len), (double)lal->falloff);
+											cc = pw * r.cb;
+											den = len * r.k;
+										}
+										float f = ar->peso * cc / den;
+										f = f + f;
+										sr = sr + f * c[0];
+										sg = sg + f * c[1];
+										sb = sb + f * c[2];
+									}
+								}
+							}
+							if (list->radluz_ok) {
+								const RadAreaLuz *own = BspTri_AreaLuz(list);
+								float s = own->intensidad * BSP_INV255;
+								sr = (float)own->rgbi[0] * s * 2.0f;
+								sg = (float)own->rgbi[1] * s * 2.0f;
+								sb = (float)own->rgbi[2] * s * 2.0f;
+							}
+							float *dst = CBmpFlt2_Pixel(&list->rad, tx, ty);
+							dst[0] = sr;
+							dst[1] = sg;
+							dst[2] = sb;
+						}
+					}
+				}
+				BspTxf_Guardar(&txf, &list->rad);
+			}
+			BspTxf_Cargar(&txf, self->listas, self->num_listas, 3);
+			E3D_DebugPrintf("\npot. local: %d\n", nPot);
+		}
+		BspTxf_dtor(&txf);
+	}
+	CRadiosidad_dtor(&rad);
 }

@@ -2621,7 +2621,6 @@ intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intpt
 /* the radiosity: the areas and region trees of the lists, the links between regions */
 
 #define g_LightmapDebugTex GAME_DATA(int, 0x4d5d38)	/* gvar */
-#define g_BspAreasTotal ((int *)Game_Ptr(0x4d5d78))	/* the areas of all lists by level */
 #define g_BspEnlaces GAME_DATA(int, 0x4e73ac)		/* the region links (radiosity code) */
 
 /* exe functions of other files with their prototypes there */

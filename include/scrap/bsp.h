@@ -297,6 +297,14 @@ SD_SIZE(BspLuz, 0x118);
 #define g_MapaSombrasAten GAME_DATA(float, 0x4b2b0c)
 #define g_MapaSombrasIlumGlobal GAME_DATA(int, 0x4b2b14)
 #define g_MapaSombrasNoLuzAmb GAME_DATA(int, 0x4b2b18)
+#define g_MapaSombrasGamma GAME_DATA(float, 0x432960)
+#define g_MapaSombrasRebotes GAME_DATA(int, 0x432968)
+#define g_MapaSombrasCoefRad GAME_DATA(float, 0x43296c)
+/* the radiosity */
+#define g_BspAreasTotal ((int *)Game_Ptr(0x4d5d78))	/* the areas of all lists by level */
+#define g_BspRadMinD2 GAME_DATA(float, 0x4b2b60)	/* the smallest squared distance of a form factor */
+#define g_RadSkipBySectors GAME_DATA(int, 0x4d5cf0)	/* gvar: only the lists of the same sector */
+#define g_RadiosityPortals GAME_DATA(int, 0x4d5d08)	/* gvar: other sectors only through the portals */
 
 /* engine3d/engine/bmp*.h instanced here */
 void __fastcall CBmpFlt2_dtor(CBmpFlt2 *self);
@@ -461,6 +469,10 @@ void __fastcall CBsp_CrearBuffers(CBsp *self);
 void __fastcall CBsp_LuzDirecta(CBsp *self);
 /* the .EMI file written: 0, -1 on a write error */
 int __fastcall CBsp_GuardarEMI(CBsp *self);
+/* the global light of the radiosity (ilum_global, rebotes bounces) added to the light maps */
+void __fastcall CBsp_RadGlobal(CBsp *self);
+/* the light of the area lights and glow maps (radiosidad) into rad */
+void __fastcall CBsp_RadAreas(CBsp *self);
 
 /* exe functions of this file still the exe's */
 void __fastcall CBsp_Calcular(CBsp *self);		/* rva 0x28a860, the light maps computed */
