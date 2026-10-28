@@ -28,6 +28,8 @@
 int Game_Dir(char *dir, size_t size);
 int Game_IsBuild(const IMAGE_NT_HEADERS32 *nt);
 int Game_Start(uintptr_t base, const char *dir);
+[[noreturn]] void Crt_Main(void);
+int Game_Option(const char *key);
 void Log_Open(const char *dir);
 
 #define ORIG_STR(x) ORIG_STR2(x)
@@ -257,6 +259,11 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
 	VirtualFree(file, 0, MEM_RELEASE);
 	Game_Start((uintptr_t)base, dir);
 
+	/* crtstart=1: the start of src/standalone/crtinit.c, without the original's CRT; the default is its entry,
+	 * whose CRT init the math functions still need (docs/standalone.md, stage 2b) */
+	if (Game_Option("crtstart")) {
+		Crt_Main();
+	}
 	Com_Printf("standalone: entry of the original at rva %06lx\n", entry);
 	((void (*)(void))(base + entry))();
 	return 0;
