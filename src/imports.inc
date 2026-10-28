@@ -195,9 +195,6 @@ SD_IMPORT_CRT(crt_ceil, 0x345010)
 /* module agent: Engine/Textura (imports below this line) */
 SD_IMPORT_CRT(crt_mbsrchr, 0x3508c4)
 SD_IMPORT_CRT(crt_spawnlp, 0x34f2e0)
-SD_IMPORT_STDCALL(D3DX_CheckTextureRequirements, 28, 0x0037ea)
-SD_IMPORT_STDCALL(D3DX_CreateTextureFromFileInMemoryEx, 60, 0x0062a7)
-SD_IMPORT_STDCALL(D3DX_LoadSurfaceFromSurface, 32, 0x004dbf)
 
 /* src/game/ScrapEng/ScrapEngCollision.c (called from suelo.cpp and checkbbox.cpp, include/scrap/suelo.h) */
 
@@ -331,13 +328,6 @@ SD_IMPORT_PY(PyFloat_AsDouble, 0x2dfa30)	/* floatobject.c */
 /* module agent: AI/IVehicleControl+IVehicleShootControl.cpp (imports below this line) */
 
 /* module agent: net (GameServer..transport) (imports below this line) */
-/* the All-Seeing Eye SDK */
-SD_IMPORT(Ase_Shutdown, 0x002070)
-SD_IMPORT(Ase_Initialize, 0x002410)
-SD_IMPORT(Ase_ServerStatus, 0x002480)
-SD_IMPORT(Ase_AddRule, 0x002700)
-SD_IMPORT(Ase_AddPlayer, 0x002770)
-SD_IMPORT(Ase_Check, 0x0028f0)
 /* wsock32 by ordinal through the jump thunks of the exe */
 
 /* module agent: Logic part 4 (Nurse..Traffic) (imports below this line) */

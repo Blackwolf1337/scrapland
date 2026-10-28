@@ -380,7 +380,7 @@ void *__stdcall Wsock_gethostbyname(const char *name);
 int __stdcall Wsock_WSAStartup(uint16_t version, void *data);
 int __stdcall Wsock_WSACleanup(void);
 
-/* the All-Seeing Eye SDK linked into the exe (ASEQuery_*, cdecl) */
+/* the All-Seeing Eye server (cdecl; src/lib/ase/Ase.c, hooks on the SDK linked into the exe at rva 0x002070) */
 #define g_AseInit GAME_DATA(int, 0x462584)
 #define g_AseError GAME_DATA(const char *, 0x43d030)	/* the text of the last error */
 #define g_Fraglimit GAME_DATA(int, 0x4676a4)

@@ -78,15 +78,6 @@ typedef int(__stdcall *surfGetDesc_t)(void *surf, d3dSurfaceDesc_t *desc);
 typedef int(__stdcall *surfLockRect_t)(void *surf, d3dLockedRect_t *r, const void *rect, uint32_t flags);
 typedef int(__stdcall *surfUnlockRect_t)(void *surf);
 
-/* D3DX 8, linked into the exe */
-int __stdcall D3DX_CheckTextureRequirements(void *dev, uint32_t *w, uint32_t *h, uint32_t *levels, uint32_t usage,
-	int *fmt, int pool);
-int __stdcall D3DX_CreateTextureFromFileInMemoryEx(void *dev, const void *data, uint32_t size, uint32_t w, uint32_t h,
-	uint32_t levels, uint32_t usage, int fmt, int pool, uint32_t filter, uint32_t mipFilter, uint32_t colorKey,
-	void *srcInfo, void *palette, void **tex);
-int __stdcall D3DX_LoadSurfaceFromSurface(void *dst, const void *dstPal, const void *dstRect, void *src,
-	const void *srcPal, const void *srcRect, uint32_t filter, uint32_t colorKey);
-
 static void Tex_ReleaseD3D(CTextura *t) {
 	if (t->tex) {
 		COM_RELEASE(t->tex);
