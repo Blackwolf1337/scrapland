@@ -1,8 +1,7 @@
 /*
- * Engine/bsp.cpp of the engine3d: the light maps of the floor, see include/scrap/bsp.h. Still the exe's: the large
- * passes of the map compiler (the lists made from the model and their light, rva 0x28a860 and 0x2888c0, the light
- * map filters 0x285d80, 0x28d520, 0x292060, 0x293af0, the pages grouped and saved 0x284d00, the lights 0x290930),
- * the .EMI reader and writer (0x28c650, 0x28eae0), the materials and vertex buffers (0x28efe0, 0x28f710).
+ * Engine/bsp.cpp of the engine3d: the light maps of the floor, see include/scrap/bsp.h. The lights, texels, vertex
+ * lists and direct light of the map compiler are in BspCalc.c. Still the exe's: the compiler itself (CBsp_Calcular,
+ * rva 0x28a860), the .EMI writer (0x28eae0) and the two radiosity passes (0x292060 global, 0x293af0 the area lights).
  */
 #include <string.h>
 
@@ -1515,6 +1514,82 @@ byte BspLMap_Insertar(BspTri *list, BspLMap *lm, int w, int h) {
 		}
 	}
 	return 1;
+}
+
+
+void __fastcall CBsp_AgruparMapas(CBsp *self) {
+	char nombre1[0x104], nombre2[0x104];
+	CEscena *esc = self->modelo->escena;
+
+	CHECK(esc);
+	BspLMap *old = g_BspLMaps;
+	if (old) {
+		BspLMap_dtor(old);
+		operator_delete_sized(old, sizeof(BspLMap));
+		g_BspLMaps = NULL;
+	}
+	g_BspLMaps = BspLMap_New();
+	BspLMap_Init(g_BspLMaps, g_MapaSombrasTexX, g_MapaSombrasTexY);
+	BspLMap *cur = g_BspLMaps;
+	while (self->num_nolmap) {
+		CHECK(self->num_listas < BSP_MAX_LISTAS);
+		self->num_nolmap--;
+		self->listas[self->num_listas++] = self->nolmap[self->num_nolmap];
+	}
+	crt_qsort(self->listas, (size_t)self->num_listas, sizeof(BspTri *),
+		(int (*)(const void *, const void *))Game_Ptr(0x28e520));
+	for (int i = 0; i < self->num_listas; i++) {
+		BspTri *list = self->listas[i];
+		E3D_DebugPrintf("agrupar mapas:  %d / %d   mem: %d Kb  \r", i + 1, self->num_listas, g_MemStats->bytes / 1024);
+		if (list->flags & BSPTRI_NOLMAP) {
+			CHECK(list->LMap == NULL);
+			Img_Free(&list->luz, 0xc);
+			Img_Free(&list->luz2, 0xc);
+			continue;
+		}
+		BspTri_Rotar(list);
+		int w = list->lx, h = list->ly;
+		/* another material or sector starts on the last page */
+		if (i > 0) {
+			const BspTri *prev = self->listas[i - 1];
+			if (prev->Mat != list->Mat || prev->zona != list->zona) {
+				while (cur->sig) {
+					cur = cur->sig;
+				}
+			}
+		}
+		for (BspLMap *lm = cur; lm; lm = lm->sig) {
+			if (BspLMap_Insertar(list, lm, w, h)) {
+				break;
+			}
+			if (!lm->sig) {
+				lm->sig = BspLMap_New();
+				BspLMap_Init(lm->sig, g_MapaSombrasTexX, g_MapaSombrasTexY);
+			}
+		}
+	}
+	E3D_DebugPrintf("\n");
+	int k = 0;
+	for (BspLMap *lm = g_BspLMaps; lm; lm = lm->sig) {
+		BspLMap *l2 = lm->lmap2;
+		lm->id = ++k;
+		l2->id = k;
+		BspLMap_Guardar(nombre1, &lm->bmp, esc->name, k, ".LMAP1.tga");
+		BspLMap_Guardar(nombre2, &l2->bmp, esc->name, k, ".LMAP2.tga");
+		if (lm->info.img) {
+			CBmp_Fill(&l2->info, Color_SwapRB(g_BspColores[1 + (k - 1) % 15]));
+			BspLMap_Guardar(NULL, &lm->info, esc->name, k, ".LMAP1.INFO.tga");
+			BspLMap_Guardar(NULL, &l2->info, esc->name, k, ".LMAP2.INFO.tga");
+		}
+		Img_Free(&lm->bmp, 4);
+		Img_Free(&l2->bmp, 4);
+		Img_Free(&lm->info, 4);
+		Img_Free(&l2->info, 4);
+		BspLMap_CrearMat(lm, nombre1, 1);
+		BspLMap_CrearMat(l2, nombre2, 2);
+	}
+	crt_qsort(self->listas, (size_t)self->num_listas, sizeof(BspTri *),
+		(int (*)(const void *, const void *))Game_Ptr(0x28e520));
 }
 
 

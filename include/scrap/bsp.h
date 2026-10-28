@@ -359,6 +359,9 @@ void BspLMap_Copiar(CBmp *dst, int dx, int dy, const CBmpFlt2 *orig, const CBmp 
 	int w, int h);
 /* the light maps of list into the page lm (and its secondary page), the light map uv moved there */
 byte BspLMap_Insertar(BspTri *list, BspLMap *lm, int w, int h);
+/* the light maps of the lists (with the ones without) into new pages by material and sector, the pages saved as
+ * "<scene>.%04d.LMAP1.tga" (LMAP2 the secondary ones, .INFO the debug colors) and their materials made from them */
+void __fastcall CBsp_AgruparMapas(CBsp *self);
 
 /* the light map computation helpers */
 float *Bsp_DirEsfera(float *out, float z, float u);

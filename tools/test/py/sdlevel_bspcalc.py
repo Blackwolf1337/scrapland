@@ -451,3 +451,74 @@ SDTest.Call(0x323c50, 'vi', 0x4321)
 check('CBsp_LuzDirecta soft', lambda: (SDTest.Call(0x2888c0, 'tvi', bscdmap), bscdlight()[1]))
 for bsc_i in range(len(bscgl)):
 	SDTest.Poke(bscgl[bsc_i], bscglsaved[bsc_i])
+
+# the pages: the two lists of the direct light and one without light map grouped onto small pages, saved as
+# sdbscpg.*.tga in the game folder (the pages of the level are put back after)
+bscpgg = (0x4b2b3c, 0x432958, 0x43295c, 0x4b2b5c, 0x432990)
+bscpgsaved = []
+for bsc_a in bscpgg:
+	bscpgsaved.append(SDTest.Peek(bsc_a, 'i'))
+SDTest.Poke(0x4b2b3c, 0)
+SDTest.Poke(0x432958, 32)
+SDTest.Poke(0x43295c, 32)
+SDTest.Poke(0x4b2b5c, 1)
+SDTest.Poke(0x432990, 1)
+bscpoke(bscesc2 + 4, bscstr('sdbscpg.sm3'))
+bscpoke(bscdl2 + 0xac, bscmatb)
+bscnl = bsctri(bscq)
+bscpoke(bscnl + 0xa8, 1)
+bscpoke(bscnl + 0xac, bscmata)
+bscpgtris = [bscda, bscdb, bscdc, bscnl]
+bscpoke(bscdmap + 8, bscdl1)
+bscpoke(bscdmap + 12, bscdl2)
+bscpoke(bscdmap + 0x4e208, 2)
+bscpoke(bscdmap + 0x4e20c, bscnl)
+bscpoke(bscdmap + 0x61a8c, 1)
+def bscpgidx(t):
+	for i in range(len(bscpgtris)):
+		if bscpgtris[i] == t:
+			return i
+	if t:
+		return 'ptr'
+	return None
+def bscfile(n):
+	try:
+		d = open(n, 'rb').read()
+	except IOError:
+		return None
+	s = 0
+	for c in d:
+		s = (s * 31 + ord(c)) % 1000003
+	return (len(d), s)
+def bscpages():
+	r = []
+	lm = SDTest.Peek(0x4b2b3c, 'i')
+	pgs = []
+	while lm and len(pgs) < 20:
+		pgs.append(lm)
+		l2 = bsci(lm + 0x2c)
+		r.append((bsci(lm + 0x28), bsci(lm + 0x20), bsci(lm + 0x24), bsci(lm + 0xc), bsci(lm + 0x18), bscmat(bsci(lm + 0x1c)),
+			l2 != 0, bsci(l2 + 0x28), bsci(l2 + 0xc), bsci(l2 + 0x18), bscmat(bsci(l2 + 0x1c))))
+		lm = bsci(lm)
+	n = bsci(bscdmap + 0x4e208)
+	ls = [n, bsci(bscdmap + 0x61a8c)]
+	for i in range(n):
+		t = bsci(bscdmap + 8 + 4 * i)
+		pg = None
+		for k in range(len(pgs)):
+			if pgs[k] == bsci(t + 0x1c0):
+				pg = k
+		uv = ()
+		c = t
+		while c:
+			uv = uv + bscfl(c + 0x64, 6)
+			c = bsci(c)
+		ls.append((bscpgidx(t), pg, bsci(t + 0xd4), bsci(t + 0xd8), bsci(t + 0xb8), bsci(t + 0xc4), uv))
+	f = []
+	for k in range(len(pgs)):
+		for e in ('LMAP1', 'LMAP2', 'LMAP1.INFO', 'LMAP2.INFO'):
+			f.append(bscfile('sdbscpg.%04d.%s.tga' % (k + 1, e)))
+	return (tuple(r), tuple(ls), tuple(f))
+check('CBsp_AgruparMapas', lambda: (SDTest.Call(0x284d00, 'tvi', bscdmap), bscpages()))
+for bsc_i in range(len(bscpgg)):
+	SDTest.Poke(bscpgg[bsc_i], bscpgsaved[bsc_i])
