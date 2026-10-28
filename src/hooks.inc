@@ -8301,3 +8301,5 @@ SD_HOOK(Ase_AddPlayer, 0x002770, 379)
 SD_HOOK(Ase_Check, 0x0028f0, 1462)
 
 /* module agent: Standalone 2d, the dynamic initializers (hooks below this line) */
+
+/* module agent: Standalone 3a, the data built in (hooks below this line) */
