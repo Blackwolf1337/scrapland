@@ -2374,20 +2374,10 @@ void __thiscall Bsp_FinMensaje(CBsp *self, int secs) {
 
 typedef int(__stdcall *isdlgbuttonchecked_t)(void *hwnd, int id);
 typedef int(__stdcall *checkdlgbutton_t)(void *hwnd, int id, unsigned check);
-typedef int(__stdcall *setdlgitemtext_t)(void *hwnd, int id, const char *s);
-typedef int(__stdcall *enddialog_t)(void *hwnd, intptr_t res);
-typedef void *(__stdcall *getdlgitem_t)(void *hwnd, int id);
 typedef int(__stdcall *enablewindow_t)(void *hwnd, int enable);
-typedef intptr_t(__stdcall *getwindowlong_t)(void *hwnd, int index);
-typedef intptr_t(__stdcall *dialogboxparam_t)(void *inst, const char *tmpl, void *parent, void *proc, intptr_t param);
 #define exe_IsDlgButtonChecked GAME_DATA(isdlgbuttonchecked_t, 0x3a13ac)
 #define exe_CheckDlgButton GAME_DATA(checkdlgbutton_t, 0x3a13a8)
-#define exe_SetDlgItemTextA GAME_DATA(setdlgitemtext_t, 0x3a1344)
-#define exe_EndDialog GAME_DATA(enddialog_t, 0x3a1444)
-#define exe_GetDlgItem GAME_DATA(getdlgitem_t, 0x3a1340)
 #define exe_EnableWindow GAME_DATA(enablewindow_t, 0x3a1374)
-#define exe_GetWindowLongA GAME_DATA(getwindowlong_t, 0x3a1460)
-#define exe_DialogBoxParamA GAME_DATA(dialogboxparam_t, 0x3a1440)
 
 /* the obj3D of a node as its class (the inline cast of objeto3D.h, NULL with a failed CHECK) */
 static void *Obj3D_As(CNodo3D *n, uint32_t clase) {

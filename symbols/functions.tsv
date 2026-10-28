@@ -6636,7 +6636,7 @@ rva	size	source	callconv	name	signature
 00217f70	94	USER_DEFINED	__cdecl	Timer_GetQPFreq64	int __cdecl(void * out)
 00217fd0	49	USER_DEFINED	__cdecl	Engine_ToggleOption	int __cdecl(int opt)
 00218010	103	USER_DEFINED	__cdecl	Video_Play	byte __cdecl(char * name, char * cmd, float arg)
-00218080	1582	DEFAULT	unknown	FUN_00618080	
+00218080	1582	USER_DEFINED	__cdecl	ViewerCamera_Move	void __cdecl(void * cam)
 00218700	58	USER_DEFINED	__cdecl	Wild_MatchCase	byte __cdecl(char * pattern, char * name, byte ignoreCase)
 00218740	125	USER_DEFINED	__cdecl	Ini_GetColor	void __cdecl(char * sect, char * key, void * color, void * ini)
 002187c0	141	USER_DEFINED	__cdecl	Ini_GetPath	int __cdecl(char * sect, char * key, char * dest, int size, char * base, void * ini)
@@ -6932,8 +6932,8 @@ rva	size	source	callconv	name	signature
 0022db70	143	USER_DEFINED	__thiscall	CMotorApp_DeleteDeviceObjects	int __thiscall(void)
 0022dc00	169	USER_DEFINED	__cdecl	Engine3D_Shutdown	void __cdecl(void)
 0022dcb0	55	USER_DEFINED	__thiscall	CMotorApp_LightsDialog	void __thiscall(void * hwnd, void * inst)
-0022dcf0	3251	DEFAULT	unknown	FUN_0062dcf0	
-0022e9b0	716	DEFAULT	unknown	FUN_0062e9b0	
+0022dcf0	3251	USER_DEFINED	__stdcall	Motor_SceneDlgProc	int __stdcall(void * hwnd, uint msg, int wParam, int lParam)
+0022e9b0	716	USER_DEFINED	__cdecl	Motor_DrawFpsGraph	void __cdecl(float y)
 0022ec80	284	USER_DEFINED	__thiscall	CMotorApp_FinalCleanup	int __thiscall(void)
 0022eda0	389	USER_DEFINED	__cdecl	E3D_Command	void __cdecl(char * cmd)
 0022ef30	318	USER_DEFINED	__thiscall	CMotorApp_FrameMove	int __thiscall(void)
@@ -6959,7 +6959,7 @@ rva	size	source	callconv	name	signature
 00230870	5	USER_DEFINED	__thiscall	CEntradaNula_Nothing1	int __thiscall(int a)
 00230880	3	USER_DEFINED	__thiscall	CEntradaNula_Nothing	int __thiscall(void)
 00230890	40	USER_DEFINED	__cdecl	Mundo_GetChecked	void * __cdecl(void)
-002308c0	2223	DEFAULT	unknown	FUN_006308c0	
+002308c0	2223	USER_DEFINED	__cdecl	Motor_DrawStats	void __cdecl(void)
 00231170	3	USER_DEFINED	__thiscall	CEntradaNula_Nothing	int __thiscall(void)
 00231180	43	USER_DEFINED	__fastcall	cMusicVoice_ctor	void * __fastcall(void * self)
 002311b0	1	USER_DEFINED	__fastcall	cMusicVoice_dtor	void __fastcall(void * self)
@@ -7094,9 +7094,9 @@ rva	size	source	callconv	name	signature
 00236f00	126	USER_DEFINED	__thiscall	CListaMat_Delete	void __thiscall(void *mat)
 00236f80	147	USER_DEFINED	__cdecl	Tex_TryFormat	byte __cdecl(char *frmt, char *name, char *out, int alpha)
 00237020	128	USER_DEFINED	__thiscall	CMaterial_ScaleColors	void __thiscall(float k)
-002370a0	742	DEFAULT	unknown	FUN_006370a0	
+002370a0	742	USER_DEFINED	__thiscall	CMapa_CopyBmp	byte __thiscall(int dx, int dy, void * bmp, int sx, int sy, int w, int h)
 002373a0	46	USER_DEFINED	__fastcall	cLog_dtor	void __fastcall(void * self)
-002373d0	790	DEFAULT	unknown	FUN_006373d0	
+002373d0	790	USER_DEFINED	__stdcall	DbgWin_DlgProc	int __stdcall(void * hwnd, uint msg, int wParam, int lParam)
 002376f0	53	USER_DEFINED	__cdecl	Window_MoveRel	int __cdecl(void * hwnd, int * rect, int x, int y, int w, int h)
 00237730	209	USER_DEFINED	__fastcall	cLog_Open	void __fastcall(void *self)
 00237810	26	USER_DEFINED	__fastcall	cLog_Close	void __fastcall(void *self)
@@ -7134,7 +7134,7 @@ rva	size	source	callconv	name	signature
 00238b10	105	USER_DEFINED	__cdecl	RSqrt_InitTable	void __cdecl(void)
 00238b80	57	USER_DEFINED	__cdecl	Ang_Wrap	float __cdecl(float a)
 00238bc0	277	USER_DEFINED	__cdecl	Vec3_Rotate2	float * __cdecl(float *out, float *in, float *rot)
-00238ce0	1125	DEFAULT	unknown	FUN_00638ce0	
+00238ce0	1125	USER_DEFINED	__cdecl	Matrix3_RotFromTo	float * __cdecl(void * from, void * to, float * m)
 00239150	147	USER_DEFINED	__cdecl	Vec3_GetRotAng	void * __cdecl(void * out, void * dir)
 002391f0	22	USER_DEFINED	__cdecl	Matrix_MulD3D	void * __cdecl(void * out, void * a, void * b)
 00239210	185	USER_DEFINED	__cdecl	Matrix_PostScale	void * __cdecl(void * m, void * s)
@@ -7171,7 +7171,7 @@ rva	size	source	callconv	name	signature
 0023b8a0	399	USER_DEFINED	__thiscall	CLuz_Read	byte __thiscall(void *f, void *ctx)
 0023ba30	5	USER_DEFINED	__thiscall	IObjeto3D_Read	byte __thiscall(void *f, void *ctx)
 0023ba40	289	USER_DEFINED	__cdecl	Luz_List	void __cdecl(void)
-0023bb70	1650	ANALYSIS	__thiscall	CLuz::vf02	undefined __thiscall(void)
+0023bb70	1650	USER_DEFINED	__thiscall	CLuz_Render	void __thiscall(void * dev, void * r)
 0023c1f0	359	USER_DEFINED	__thiscall	CLuz_Write	byte __thiscall(void *f, void *ctx)
 0023c360	5	USER_DEFINED	__thiscall	IObjeto3D_Write	byte __thiscall(void *f, void *ctx)
 0023c370	579	USER_DEFINED	__thiscall	CLuz_Update	void __thiscall(int arg)
@@ -8725,7 +8725,7 @@ rva	size	source	callconv	name	signature
 002c2b80	112	USER_DEFINED	__thiscall	Tabla_Alloc4_3	void __thiscall(int num)
 002c2bf0	112	USER_DEFINED	__thiscall	Tabla_Alloc8	void __thiscall(int num)
 002c2c60	223	USER_DEFINED	__thiscall	Tabla_New1C	void __thiscall(int num)
-002c2d60	11315	DEFAULT	unknown	FUN_006c2d60	
+002c2d60	11315	USER_DEFINED	__cdecl	Escena_Load	void * __cdecl(char * name, int arg, char * name2)
 002c59d0	667	USER_DEFINED	__thiscall	M3DTabla_ReadInt	void __thiscall(char * nombre)
 002c5c70	828	USER_DEFINED	__thiscall	M3DTabla_ReadFloat	void __thiscall(char * nombre)
 002c5fb0	146	USER_DEFINED	__thiscall	M3DTabla4_Read	void __thiscall(char * n1, char * n2, char * n3, char * n4, byte inv23)
