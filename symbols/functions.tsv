@@ -8086,11 +8086,11 @@ rva	size	source	callconv	name	signature
 00284870	190	USER_DEFINED	__cdecl	Bsp_ColorIntens	void __cdecl(uint * out, float * rgb)
 00284930	185	USER_DEFINED	__thiscall	BspTxf_Guardar	void __thiscall(void * bmp)
 002849f0	784	USER_DEFINED	__cdecl	BspLMap_Insertar	byte __cdecl(void * list, void * lmap, int w, int h)
-00284d00	2039	DEFAULT	unknown	FUN_00684d00	
+00284d00	2039	USER_DEFINED	__fastcall	CBsp_AgruparMapas	void __fastcall(void * self)
 00285500	795	USER_DEFINED	__fastcall	CBsp_AjustarGamma	void __fastcall(void * self)
 00285820	955	USER_DEFINED	__cdecl	CBmpFlt_Rellenar	void __cdecl(void * img, void * mask)
 00285be0	413	USER_DEFINED	__fastcall	CBsp_CrearZonas	void __fastcall(void * self)
-00285d80	2835	DEFAULT	unknown	FUN_00685d80	
+00285d80	2835	USER_DEFINED	__cdecl	BspTri_Mascara	void __cdecl(void * list, void * cob)
 002868a0	915	USER_DEFINED	__cdecl	BspLMap_Copiar	void __cdecl(void * dst, int dx, int dy, void * orig, void * mask, uint ox, uint oy, int w, int h)
 00286c40	55	USER_DEFINED	__cdecl	Bsp_NodoMarcar	void __cdecl(void * nodo, byte liberar)
 00286c80	47	USER_DEFINED	__cdecl	Bsp_ReleaseD3D	void __cdecl(void)
@@ -8109,7 +8109,7 @@ rva	size	source	callconv	name	signature
 002885a0	351	USER_DEFINED	__cdecl	Bsp_SampleTex	float * __cdecl(float * out, float u, float v, int axis, float scale, void * tri, void * tex)
 00288700	324	USER_DEFINED	__cdecl	Bsp_SampleTexAA	float * __cdecl(float * out, int x, int y, int axis, float scale, void * tri, void * tex, int n)
 00288850	112	USER_DEFINED	__cdecl	Bsp_WorldToTexel	void __cdecl(float * out, float * v, int axis, float scale)
-002888c0	8093	DEFAULT	unknown	FUN_006888c0	
+002888c0	8093	USER_DEFINED	__fastcall	CBsp_LuzDirecta	void __fastcall(void * self)
 0028a860	7329	USER_DEFINED	__fastcall	CBsp_Calcular	void __fastcall(void * self)
 0028c580	200	USER_DEFINED	__fastcall	CBsp_ColorSinLmap	void __fastcall(void * self)
 0028c650	2306	USER_DEFINED	__fastcall	CBsp_LeerEMI	int __fastcall(void * self)
@@ -8117,7 +8117,7 @@ rva	size	source	callconv	name	signature
 0028d180	25	USER_DEFINED	__cdecl	BspTri_Count	int __cdecl(void * list)
 0028d1a0	424	USER_DEFINED	__thiscall	CBmp_Rotate	void __thiscall(void * orig)
 0028d350	455	USER_DEFINED	__thiscall	CBmpFlt2_Rotate	void __thiscall(void * orig)
-0028d520	2122	DEFAULT	unknown	FUN_0068d520	
+0028d520	2122	USER_DEFINED	__fastcall	CBsp_CrearBuffers	void __fastcall(void * self)
 0028dd70	270	USER_DEFINED	__thiscall	BspLMap_CrearMat	void __thiscall(char * name, byte nivel)
 0028de80	469	USER_DEFINED	__cdecl	BspRegion_New	void * __cdecl(int x, int y, int lx, int ly, void * padre, void * areas)
 0028e060	361	USER_DEFINED	__cdecl	BspTri_AddBox	void * __cdecl(void * out, void * in, void * tri)
@@ -8152,7 +8152,7 @@ rva	size	source	callconv	name	signature
 002907f0	127	USER_DEFINED	__thiscall	BspTri_TexelOf	byte __thiscall(void * p, int * x, int * y)
 00290870	52	USER_DEFINED	__cdecl	BspTri_GetExt2	void __cdecl(void * tri, int * x0, int * y0, int * x1, int * y1)
 002908b0	97	USER_DEFINED	__cdecl	BspTri_EsTexel	byte __cdecl(int x0, int y0, int x, int y, uint color, void * tri)
-00290930	1735	DEFAULT	unknown	FUN_00690930	
+00290930	1735	USER_DEFINED	__cdecl	Bsp_TomarLuces	void __cdecl(void * esc)
 00291000	1757	USER_DEFINED	__cdecl	Bsp_Crear	void __cdecl(void)
 002916e0	500	USER_DEFINED	__fastcall	CBsp_AreasGlow	void __fastcall(void * self)
 002918e0	721	USER_DEFINED	__fastcall	CBsp_AreasMax	void __fastcall(void * self)
