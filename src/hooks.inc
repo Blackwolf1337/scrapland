@@ -8140,3 +8140,5 @@ SD_HOOK(Devastator_Create, 0x11e250, 6652)
 SD_HOOK(CBsp_RadGlobal, 0x292060, 6782)
 SD_HOOK(CBsp_RadAreas, 0x293af0, 7340)
 SD_HOOK(CBsp_Calcular, 0x28a860, 7329)	/* not reached by the tests */
+
+/* module agent: Standalone 1b, the last game code for wipe=2 (hooks below this line) */

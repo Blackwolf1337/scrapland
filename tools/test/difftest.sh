@@ -8,7 +8,8 @@
 #
 # usage: tools/test/difftest.sh [scenario ...]   (sdtest, sdcall, sdlevel; default all; builds nothing: run cmake first)
 #        DIFFTEST_TIMEOUT  seconds per run, default 240
-#        DIFFTEST_WIPE=1   the hooked run also fills the rest of every hooked original with int3 ([general] wipe)
+#        DIFFTEST_WIPE=1   the hooked run also fills the rest of every hooked original with int3 ([general] wipe),
+#                          2 the whole game code but for the hooks
 #        DIFFTEST_STANDALONE=1  the hooked run starts ScrapC.exe, the standalone loader (docs/standalone.md)
 root=$(cd "$(dirname "$0")/../.." && pwd)
 game=$root/game
@@ -40,7 +41,7 @@ run() {
 	local arg
 	[ "$2" = 1 ] && [ "${DIFFTEST_STANDALONE:-0}" = 1 ] && exe=ScrapC.exe
 	arg="-PythonExecute:execfile($(python3 -I -c "print('+'.join('chr(%d)' % ord(c) for c in '$name.py'))"))"
-	printf '[general]\nhooks=%s\ntestmod=1\nwipe=%s\n' "$2" "$(($2 && ${DIFFTEST_WIPE:-0}))" > "$ini"
+	printf '[general]\nhooks=%s\ntestmod=1\nwipe=%s\n' "$2" "$(($2 ? ${DIFFTEST_WIPE:-0} : 0))" > "$ini"
 	# so the second run does not find the files of the first
 	rm -f "$result"
 	rm_written
