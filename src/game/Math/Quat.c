@@ -2,12 +2,9 @@
  * Quaternions (x, y, z, w) of the engine, next to Math/Matrix.cpp in the exe (include/scrap/mathlib.h). The engine3d
  * has its own copies in Engine/cuaternio.cpp, some identical (the same C function), and a few more.
  */
+#include "scrap/d3d8.h"
 #include "scrap/game.h"
 
-/* the D3DX math of the exe: a pointer set to the implementation for the CPU on the first call (index 1 of the
- * dispatcher at rva 0x17f06), taken to be D3DXMatrixRotationQuaternion */
-typedef matrix_t *(__stdcall *d3dxQuatMatrix_t)(matrix_t *out, const quat_t *q);
-#define g_D3DXQuatMatrix GAME_DATA(d3dxQuatMatrix_t, 0x43daa0)
 
 quat_t *Quat_Mul(quat_t *out, const quat_t *a, const quat_t *b) {
 	out->x = a->x * b->w + b->z * a->y - b->y * a->z + b->x * a->w;
@@ -177,5 +174,5 @@ float Quat_DotAbs(const quat_t *a, const quat_t *b) {
 matrix_t *Quat_ToMatrixD3D(matrix_t *out, const quat_t *q) {
 	quat_t c = { q->x, q->y, q->z, -q->w };
 
-	return g_D3DXQuatMatrix(out, &c);
+	return D3DX_MatrixRotationQuaternion(out, &c);
 }

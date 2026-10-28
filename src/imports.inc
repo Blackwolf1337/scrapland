@@ -181,10 +181,6 @@ SD_IMPORT_PY(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 SD_IMPORT(crt_ceil, 0x345010)
 
 /* module agent: Engine/Trails (imports below this line) */
-SD_IMPORT_STDCALL(D3DX_Vec3Normalize, 8, 0x006d3b)
-SD_IMPORT_STDCALL(D3DX_Vec3Transform, 12, 0x007086)
-SD_IMPORT_STDCALL(D3DX_MatrixRotationYPR, 16, 0x008701)
-SD_IMPORT_STDCALL(D3DX_MatrixInverse, 12, 0x007cea)
 SD_IMPORT_STDCALL(D3DX_AssembleShader, 24, 0x00b2c2)
 
 /* module agent: Engine/Modelo (imports below this line) */
@@ -384,11 +380,6 @@ SD_IMPORT(crt_close, 0x358d98)
 /* module agent: Big FX leftovers 0x1eab00..0x200000 (imports below this line) */
 
 /* module agent: Engine leftovers 0x200000..0x240000 (imports below this line) */
-SD_IMPORT_STDCALL(D3DX_MatrixMultiply, 12, 0x0077b8)
-SD_IMPORT_STDCALL(D3DX_MatrixTranspose, 8, 0x007a01)
-SD_IMPORT_STDCALL(D3DX_MatrixRotationX, 8, 0x0082fb)
-SD_IMPORT_STDCALL(D3DX_MatrixRotationY, 8, 0x008397)
-SD_IMPORT_STDCALL(D3DX_MatrixRotationZ, 8, 0x008434)
 
 /* module agent: AI leftovers 0x098000..0x0b8000 (imports below this line) */
 SD_IMPORT(crt_difftime32, 0x345bb1)

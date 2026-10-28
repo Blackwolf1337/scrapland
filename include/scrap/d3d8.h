@@ -257,7 +257,7 @@ typedef struct D3DAdapterId {
 } D3DAdapterId;
 SD_SIZE(D3DAdapterId, 0x42c);
 
-/* the D3DX math of the exe through its dispatcher stubs (stdcall) */
+/* the D3DX math of the exe (stdcall; src/lib/d3dx8/D3dxMath.c, hooks on its dispatcher stubs) */
 vec3_t *__stdcall D3DX_Vec3Normalize(vec3_t *out, const vec3_t *v);
 vec3_t *__stdcall D3DX_Vec3Transform(vec3_t *out, const vec3_t *v, const matrix_t *m);
 matrix_t *__stdcall D3DX_MatrixRotationYPR(matrix_t *out, float yaw, float pitch, float roll);
@@ -266,6 +266,8 @@ matrix_t *__stdcall D3DX_MatrixTranspose(matrix_t *out, const matrix_t *m);
 matrix_t *__stdcall D3DX_MatrixRotationX(matrix_t *out, float ang);
 matrix_t *__stdcall D3DX_MatrixRotationY(matrix_t *out, float ang);
 matrix_t *__stdcall D3DX_MatrixRotationZ(matrix_t *out, float ang);
+matrix_t *__stdcall D3DX_MatrixRotationQuaternion(matrix_t *out, const quat_t *q);
+quat_t *__stdcall D3DX_QuaternionRotationYPR(quat_t *out, float yaw, float pitch, float roll);
 /* NULL when m has no inverse */
 matrix_t *__stdcall D3DX_MatrixInverse(matrix_t *out, float *det, const matrix_t *m);
 /* ID3DXBuffer objects for the code and the errors */

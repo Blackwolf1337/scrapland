@@ -7,7 +7,8 @@
  * wipe=2 fills the whole game and engine code with int3 first. wipe=3 is the same with a probe: each trap logs its
  * rva and caller, copies the piece of original code there back and goes on, so one run lists every piece of game
  * code without a C version that the run reaches. wipepy=1 (ScrapC.exe only, it runs the real Python of src/python)
- * also fills the code of the original's Python with int3, the probe of wipe=3 then covers it too.
+ * also fills the code of the original's Python with int3, the probe of wipe=3 then covers it too. wipelow=1 (ScrapC.exe
+ * only) does the same for the libraries below the game code (ASE, D3DX8) and the M3D math above it.
  */
 #include <string.h>
 #include <windows.h>
@@ -57,12 +58,21 @@ static int Hook_Write(byte *at, const void *target, uint32_t wipe) {
 	return 1;
 }
 
-/* the game and engine code (below zlib, libpng, libjpeg and the ASE SDK; above Python 1.5.2, the CRT and D3DX8) */
+/* the game and engine code (below it the dynamic initializers of the game and the libraries; above it the M3D math,
+ * Python 1.5.2 and the CRT) */
 #define GAME_CODE_START 0x05f6d8
 #define GAME_CODE_END 0x2d6010
 
-/* the end of the code the probe covers: the game code, with wipepy up to the end of the Python */
-static uint32_t probe_end = GAME_CODE_END;
+/* wipelow: the libraries at the start of the code (the ASE SDK, D3DX8 with its zlib, libpng and libjpeg; before them
+ * the data formats of dinput8.lib, after them the dynamic initializers of the game from rva 0x03e800 up to the game
+ * code) and the M3D math between the game code and the Python, which ScrapC.exe has in C */
+#define LIB_CODE_START 0x002070
+#define LIB_CODE_END 0x03e800
+#define M3D_CODE_END 0x2da770
+
+/* the code the probe covers: the game code, with wipelow from the libraries up to the end of the M3D math, with
+ * wipepy up to the end of the Python */
+static uint32_t probe_start = GAME_CODE_START, probe_end = GAME_CODE_END;
 
 static void Hook_Wipe(uint32_t start, uint32_t end) {
 	byte *code = (byte *)(game_base + start);
@@ -82,8 +92,8 @@ static byte *probe_orig, *probe_mark;
 
 /* int3 padding of the original: up to the next 16 byte boundary or more of it */
 static int Probe_Pad(uint32_t x) {
-	return probe_orig[x - GAME_CODE_START] == 0xcc
-		&& ((x + 1) % 16 == 0 || x + 1 >= probe_end || probe_orig[x + 1 - GAME_CODE_START] == 0xcc);
+	return probe_orig[x - probe_start] == 0xcc
+		&& ((x + 1) % 16 == 0 || x + 1 >= probe_end || probe_orig[x + 1 - probe_start] == 0xcc);
 }
 
 /* the piece of original code around the trap (up to padding or the edge of a hook) is copied back and run */
@@ -92,22 +102,23 @@ static LONG CALLBACK Hook_Probe(EXCEPTION_POINTERS *e) {
 	uint32_t rva = (uint32_t)(at - game_base), lo, hi;
 	DWORD old;
 
-	if (e->ExceptionRecord->ExceptionCode != EXCEPTION_BREAKPOINT || rva < GAME_CODE_START || rva >= probe_end
-		|| probe_orig[rva - GAME_CODE_START] == 0xcc) {
+	if (e->ExceptionRecord->ExceptionCode != EXCEPTION_BREAKPOINT || rva < probe_start || rva >= probe_end
+		|| probe_orig[rva - probe_start] == 0xcc) {
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
-	byte m = probe_mark[rva - GAME_CODE_START];
-	for (lo = rva; lo > GAME_CODE_START && probe_mark[lo - 1 - GAME_CODE_START] == m && !Probe_Pad(lo - 1); lo--) {
+	byte m = probe_mark[rva - probe_start];
+	for (lo = rva; lo > probe_start && probe_mark[lo - 1 - probe_start] == m && !Probe_Pad(lo - 1); lo--) {
 	}
-	for (hi = rva; hi < probe_end && probe_mark[hi - GAME_CODE_START] == m && !Probe_Pad(hi); hi++) {
+	for (hi = rva; hi < probe_end && probe_mark[hi - probe_start] == m && !Probe_Pad(hi); hi++) {
 	}
 	/* the return address when the trap is the first byte of a called function */
 	uint32_t ret = *(uint32_t *)e->ContextRecord->Esp;
 	Com_Printf("probe: rva %06x%s, piece %06x..%06x, [esp] %06x\n", (unsigned)rva,
-		m ? " in a hook" : rva >= ORIG_PY_CODE_START ? " in the Python" : "",
+		m ? " in a hook" : rva >= ORIG_PY_CODE_START ? " in the Python"
+		: rva < GAME_CODE_START || rva >= GAME_CODE_END ? " in a library" : "",
 		(unsigned)lo, (unsigned)hi, (unsigned)(ret - game_base));
 	VirtualProtect((byte *)game_base + lo, hi - lo, PAGE_EXECUTE_READWRITE, &old);
-	memcpy((byte *)game_base + lo, probe_orig + lo - GAME_CODE_START, hi - lo);
+	memcpy((byte *)game_base + lo, probe_orig + lo - probe_start, hi - lo);
 	VirtualProtect((byte *)game_base + lo, hi - lo, old, &old);
 	FlushInstructionCache(GetCurrentProcess(), (byte *)game_base + lo, hi - lo);
 	e->ContextRecord->Eip = (DWORD)at;
@@ -115,18 +126,18 @@ static LONG CALLBACK Hook_Probe(EXCEPTION_POINTERS *e) {
 }
 
 static void Hook_ProbeInit(void) {
-	probe_orig = VirtualAlloc(NULL, probe_end - GAME_CODE_START, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	probe_mark = VirtualAlloc(NULL, probe_end - GAME_CODE_START, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	probe_orig = VirtualAlloc(NULL, probe_end - probe_start, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	probe_mark = VirtualAlloc(NULL, probe_end - probe_start, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	if (!probe_orig || !probe_mark) {
 		Com_Printf("probe: no memory\n");
 		return;
 	}
-	memcpy(probe_orig, (byte *)game_base + GAME_CODE_START, probe_end - GAME_CODE_START);
+	memcpy(probe_orig, (byte *)game_base + probe_start, probe_end - probe_start);
 	for (size_t i = 0; i < sizeof(hooks) / sizeof(hooks[0]); i++) {
 		uint32_t r = hooks[i].rva, n = hooks[i].size;
-		if (n >= 5 && r >= GAME_CODE_START && r + n <= GAME_CODE_END) {
-			memset(probe_mark + r - GAME_CODE_START, PROBE_HOOK, n);
-			memset(probe_mark + r - GAME_CODE_START, PROBE_JUMP, 5);
+		if (n >= 5 && r >= probe_start && r + n <= probe_end) {
+			memset(probe_mark + r - probe_start, PROBE_HOOK, n);
+			memset(probe_mark + r - probe_start, PROBE_JUMP, 5);
 		}
 	}
 	AddVectoredExceptionHandler(1, Hook_Probe);
@@ -141,7 +152,25 @@ static LONG CALLBACK Hook_Trap(EXCEPTION_POINTERS *e) {
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
-void Hook_InstallAll(int wipe, int wipepy) {
+/* wipelow=1: only ScrapC.exe has the D3DX8 functions the game calls in C, the hook DLL calls the exe's */
+static int Hook_WipeLowRange(int wipelow) {
+#ifdef SD_STANDALONE
+	if (wipelow) {
+		probe_start = LIB_CODE_START;
+		if (probe_end < M3D_CODE_END) {
+			probe_end = M3D_CODE_END;
+		}
+	}
+	return wipelow;
+#else
+	if (wipelow) {
+		Com_Printf("wipelow: only in ScrapC.exe, the hook DLL runs the D3DX8 of the exe\n");
+	}
+	return 0;
+#endif
+}
+
+void Hook_InstallAll(int wipe, int wipepy, int wipelow) {
 	int installed = 0, off = 0;
 
 #ifdef SD_STANDALONE
@@ -154,6 +183,7 @@ void Hook_InstallAll(int wipe, int wipepy) {
 		wipepy = 0;
 	}
 #endif
+	wipelow = Hook_WipeLowRange(wipelow);
 	if (wipe >= 3) {
 		Hook_ProbeInit();
 	}
@@ -162,6 +192,10 @@ void Hook_InstallAll(int wipe, int wipepy) {
 	}
 	if (wipepy) {
 		Hook_Wipe(ORIG_PY_CODE_START, ORIG_PY_CODE_END);
+	}
+	if (wipelow) {
+		Hook_Wipe(LIB_CODE_START, LIB_CODE_END);
+		Hook_Wipe(GAME_CODE_END, M3D_CODE_END);
 	}
 	for (size_t i = 0; i < sizeof(hooks) / sizeof(hooks[0]); i++) {
 		const hook_t *h = &hooks[i];
@@ -181,7 +215,7 @@ void Hook_InstallAll(int wipe, int wipepy) {
 	}
 	Com_Printf("%d of %d hooks installed, %d switched off in scrapdecomp.ini\n", installed,
 		(int)(sizeof(hooks) / sizeof(hooks[0])), off);
-	if (wipe || wipepy) {
+	if (wipe || wipepy || wipelow) {
 		AddVectoredExceptionHandler(1, Hook_Trap);
 	}
 	if (wipe) {
@@ -191,5 +225,9 @@ void Hook_InstallAll(int wipe, int wipepy) {
 	if (wipepy) {
 		Com_Printf("wipepy: the code of the original's Python (rva %06x..%06x) is int3\n", ORIG_PY_CODE_START,
 			ORIG_PY_CODE_END);
+	}
+	if (wipelow) {
+		Com_Printf("wipelow: the code of the libraries (rva %06x..%06x) and the M3D math (rva %06x..%06x) is int3\n",
+			LIB_CODE_START, LIB_CODE_END, GAME_CODE_END, M3D_CODE_END);
 	}
 }
