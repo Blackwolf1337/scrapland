@@ -54,6 +54,11 @@ void __fastcall cLog_dtor(cLog *self) {
 	}
 }
 
+/* the atexit destructor of g_FileLog (rva 0x38ece0, the destructor inlined) */
+void Varios_FiniFileLog(void) {
+	cLog_dtor(g_FileLog);
+}
+
 void __fastcall cLog_Close(cLog *self) {
 	if (self->f) {
 		crt_fclose(self->f);
@@ -307,6 +312,13 @@ char *Cad_Unquote(char *dest, const char *src) {
 
 char *E3D_GetExePath(void) {
 	return g_ExePath;
+}
+
+/* the static initializer (rva 0x05b3b0): the path of the exe, g_E3DDir from its directory and "../" */
+void Varios_InitE3DDir(void) {
+	exe_GetModuleFileNameA(NULL, g_ExePath, 0x103);
+	Ruta_Part(g_E3DDir, g_ExePath, RUTA_DRIVE | RUTA_DIR);
+	Ruta_Normalize(g_E3DDir, Game_Ptr(0x3baec4), -1);	/* "../" */
 }
 
 /* the bits 15..22 (rounded) of 1 / sqrt of the 128 mantissa steps of the exponents 0x7f (0..63) and 0x7e */

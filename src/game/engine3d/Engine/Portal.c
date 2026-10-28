@@ -96,7 +96,11 @@ void __thiscall CPortal_Render(CPortal *self, void *dev, CNodoR *r) {
 /* the material of the debug drawing, a static of CPortal_DrawDebug */
 #define g_PortalMat (*(CMaterial *)Game_Ptr(0x4e1e08))
 #define g_PortalMatGuard ((int *)Game_Ptr(0x4e1eb8))
-#define PORTAL_MAT_DTOR 0x38f010		/* the atexit destructor of it */
+
+/* the atexit destructor of it (rva 0x38f010) */
+void Portal_FiniMat(void) {
+	CMaterial_dtor(&g_PortalMat);
+}
 
 void __thiscall CPortal_DrawDebug(CPortal *self, uint32_t color) {
 	CHECK(g_ShowPortals);
@@ -105,7 +109,7 @@ void __thiscall CPortal_DrawDebug(CPortal *self, uint32_t color) {
 		crt_Init_thread_header(g_PortalMatGuard);
 		if (*g_PortalMatGuard == -1) {
 			CMaterial_ctor(&g_PortalMat);
-			crt_atexit(Game_Ptr(PORTAL_MAT_DTOR));
+			crt_atexit(Portal_FiniMat);
 			crt_Init_thread_footer(g_PortalMatGuard);
 		}
 	}

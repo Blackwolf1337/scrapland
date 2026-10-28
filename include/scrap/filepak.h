@@ -63,6 +63,7 @@ cNameItem *__thiscall NameTable_Insert(HashTable *self, const char *key, uint32_
 byte __thiscall NameTable_Set(HashTable *self, const char *key, const int *v);
 byte __thiscall NameTable_Delete(HashTable *self, const char *key);
 void __fastcall NameTable_Clear(HashTable *self);
+void __fastcall NameTable_Clear(HashTable *self);
 
 /* an entry of the build list: name, then offset and size in the new pack */
 typedef struct cPackEntry {
@@ -107,6 +108,10 @@ typedef DLIST(cStringNode) cStringList;
 #define g_PackNameStr GAME_DATA(char *, 0x44ab6c)	/* chars of g_PackName, the prefix of the open pack */
 #define g_PackBuildAsk GAME_DATA(int, 0x44ab84)	/* ask before quitting after Pack_Build */
 
+cFile2 *__fastcall cFile2_ctor(cFile2 *self);
+void __fastcall cFile2_dtor(cFile2 *self);
+void __fastcall PackEntries_Clear(cPackEntryList *list);
+void __fastcall PackIndexTable_Clear(HashTable *self);
 cFilePack *__thiscall cFilePack_ctor(cFilePack *self);
 void __thiscall cFilePack_dtor(cFilePack *self);
 int __thiscall cFilePack_Open(cFilePack *self, const char *name, uint32_t mode);

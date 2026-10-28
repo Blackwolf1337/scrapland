@@ -6,6 +6,7 @@
 
 #include "scrap/console.h"
 #include "scrap/hashtable.h"
+#include "scrap/pyfunction.h"
 #include "scrap/scrap.h"
 
 void Str_TrimBlanks(char *s);
@@ -30,6 +31,39 @@ cGVar *GVar_InitInt(cGVar *v, const char *name, byte flags, const char *descript
 	v->value.i = value;
 	v->def.i = value;
 	v->type = GVAR_INT;
+	return v;
+}
+
+/* the other variable classes of the static initializers (src/game/Global/StaticInit.c), in their order of writes */
+cGVar *GVar_InitFloat(cGVar *v, const char *name, byte flags, const char *description, float value) {
+	cGVar_ctor(v, name, flags, description);
+	v->value.f = value;
+	v->def.f = value;
+	v->type = GVAR_FLOAT;
+	return v;
+}
+
+cGVar *GVar_InitString(cGVar *v, const char *name, byte flags, const char *description, const char *value) {
+	cGVar_ctor(v, name, flags, description);
+	cString_ctor(&v->value.s);
+	cString_ctor(&v->def.s);
+	cString_Set(&v->value.s, value);
+	cString_Set(&v->def.s, value);
+	v->type = GVAR_STRING;
+	return v;
+}
+
+/* the default first */
+void GVar_FiniString(cGVar *v) {
+	cString_dtor(&v->def.s);
+	cString_dtor(&v->value.s);
+}
+
+cGVar *GVar_InitFunction(cGVar *v, const char *name, byte flags, const char *description, const char *func) {
+	cGVar_ctor(v, name, flags, description);
+	cPy_Function_ctor(GVar_Function(v));
+	cPy_Function_SetFunc(GVar_Function(v), func);
+	v->type = GVAR_SCRIPT_FUNCTION;
 	return v;
 }
 

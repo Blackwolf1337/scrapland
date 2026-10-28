@@ -254,7 +254,8 @@ the startup info.
 `[general] wipecrt=1` (`DIFFTEST_WIPECRT=1`, ScrapC.exe only) fills the code of the original's CRT with int3,
 `include/scrap/origcrt.h`: rva 0x313634 (operator delete, after the Python) up to the C++ unwind funclets of the game at
 0x37b3d0, but for the import thunks of the game in it (fmod, avifil32, msvfw32 and ddraw at 0x3179c6..0x317b2e,
-wsock32 and d3d8 at 0x3761d0..0x3761dc). The atexit destructors of the game's globals from 0x38cda0 stay. With
+wsock32 and d3d8 at 0x3761d0..0x3761dc). The atexit destructors of the game's globals from 0x38c720 are game code
+(stage 2d). With
 `wipe=3` the probe covers it. With the original's entry (`crtstart=0`) the CRT init itself runs, so `wipecrt=1` needs
 the default start.
 
@@ -333,6 +334,51 @@ All of these are hooks in both builds; the hook DLL difftest matches with them. 
 DIFFTEST_STANDALONE=1`) logged no trap, and `DIFFTEST_WIPE=2 DIFFTEST_WIPEPY=1 DIFFTEST_WIPELOW=1
 DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios. The dynamic initializers at
 0x03e800..0x05f6d8 are game code and stay outside wipelow.
+
+### Stage 2d: the dynamic initializers (done)
+
+The 1784 functions at rva 0x03e800..0x05f6d8 are the dynamic initializers of the game's globals, which the CRT calls
+from its `__xc` table (0x3a15bc..0x3a31bc, 1791 entries, the first is the CRT's; 6 more initializers lie in the game
+code from 0x05f6e0 and were done in stage 1b). They register 347 atexit destructors, which lie at the end of the code,
+rva 0x38c720..0x38f097, together with the destructors of 6 function statics that game code registers (353 in all).
+Every one of them is C now and a hook. Crt_Main still walks the table of the original, so the initializers run in its
+order through the hook jumps, and the destructors are registered with `crt_atexit` in the same order.
+
+`tools/standalone/initpat.py` disassembles them (capstone) and matches them against templates with the addresses and
+immediates as parameters, with checks of the offsets and jump targets. A match gives the object, strings, values,
+constructor and destructor. With `-w` it writes `src/game/Global/StaticInit.inc` (one macro line per function, in the
+order of the table, each destructor before the initializer that registers it), the SD_HOOK lines below the 2d marker
+of `src/hooks.inc` (the block is rewritten) and the rows of `symbols/functions.tsv` (USER_DEFINED,
+`void __cdecl(void)`). `src/game/Global/StaticInit.c` has the macros, which call the C constructors and destructors;
+the names come from the variable names (`Init_GVar_<name>`, `Init_NativeFunc_<name>`), the names of the globals in the
+C or the class and the address. The patterns:
+
+- engine variables: 1237 with a constant int or float, 7 with a float from the data (also times a factor over a
+  divisor, or plus a term), 242 strings (two cString, freed by the destructor), 60 script functions (a cPy_Function)
+- 175 entries of the registry of C functions for the scripts (`cPy_NativeFunc_ctor`, no destructor)
+- objects with a constructor of the C and a destructor (20), the vector constructor iterator (6), a constructor in a
+  loop (2), a constructor without destructor (8), the slots of a HashTable (4), a vector of three floats (2), only
+  the destructor (11)
+- destructors: a call of the C destructor (90), two (243, mostly the strings), the vector destructor iterator (7), a
+  CTabla freed (6), a DList cleared with its free list (2)
+
+The 10 initializers and 5 destructors that fit no pattern, and 9 destructors that belong to C written by hand (their
+initializer or the function of their static), are C by hand in the files of their classes (the HAND table of the
+tool): the costs of the Swarm, the Steam ticket callback,
+the four pads, the chat lines, the cPy_Function of the sphere tests, the paths of the exe and the engine, the shader
+switch and the identity and bias matrices, the box of `g_PintarTodas`, the faces of CheckBBox, the trace caches of the
+lights, and the destructors of g_ActionSets, g_ListaMat, g_FileLog, g_TexList and the function statics.
+
+`[general] wipeinit=1` (`DIFFTEST_WIPEINIT=1`, ScrapC.exe only; the exe of the hook DLL ran its initializers before
+the hooks) fills both ranges with int3, and the probe of `wipe=3` covers them. The hook DLL installs the hooks too,
+there only the destructors run, at the exit. ScrapC.exe logs the number of atexit functions at the exit
+("crt: exit(0), 349 atexit functions" when the game is quit from a script; all of them ran with every switch on).
+
+On 2026-10-28 the probe run (`DIFFTEST_WIPE=3 DIFFTEST_WIPEPY=1 DIFFTEST_WIPECRT=1 DIFFTEST_WIPELOW=1
+DIFFTEST_WIPEINIT=1 DIFFTEST_STANDALONE=1`) logged no trap, and `DIFFTEST_WIPE=2 DIFFTEST_WIPEPY=1 DIFFTEST_WIPECRT=1
+DIFFTEST_WIPELOW=1 DIFFTEST_WIPEINIT=1 DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios,
+and so does the hook DLL difftest. The difftest ends the game with `wineserver -k`, so it does not run the
+destructors.
 
 ## Stage 3: data in C
 

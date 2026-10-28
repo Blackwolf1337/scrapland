@@ -158,6 +158,11 @@ cPlayerInput *__fastcall cPlayerInput_ctor(cPlayerInput *in) {
 	return in;
 }
 
+/* the atexit destructor of g_ActionSets (rva 0x38d950, the Free inlined) */
+void ActionSet_FiniActionSets(void) {
+	ActionSetTable_Free(&g_ActionSets);
+}
+
 /* the Global/Table.h Free of the sets */
 void __fastcall ActionSetTable_Free(cActionSetTable *t) {
 	if (t->items) {

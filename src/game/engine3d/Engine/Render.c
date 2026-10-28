@@ -1333,6 +1333,23 @@ static void Render_LoadPS(int i) {
 	}
 }
 
+/* the identity and the bias matrix */
+static void Render_SetMatrices(void) {
+	Matrix_LoadIdentity((matrix_t *)g_MatIdentity);
+	Matrix_LoadIdentity(&g_MatBias);
+	g_MatBias.m[0] = 1.0f / 2048;
+	g_MatBias.m[5] = 1.0f / 2048;
+	g_MatBias.m[10] = 1.0f / 2048;
+}
+
+/* the static initializer (rva 0x05bdc0): the shaders on with the hardware environment maps, and the two matrices */
+void Render_InitMatrices(void) {
+	if (g_UsarHWEnvMap) {
+		g_UsarShaders = 1;
+	}
+	Render_SetMatrices();
+}
+
 void Render_IniD3D(void) {
 	static const struct {
 		const char *name, *file;
@@ -1371,11 +1388,7 @@ void Render_IniD3D(void) {
 	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, g_ViewportFull);
 	g_UsarShaders2 = 0;
 	g_UsarShaders = 1;
-	Matrix_LoadIdentity((matrix_t *)g_MatIdentity);
-	Matrix_LoadIdentity(&g_MatBias);
-	g_MatBias.m[0] = 1.0f / 2048;
-	g_MatBias.m[5] = 1.0f / 2048;
-	g_MatBias.m[10] = 1.0f / 2048;
+	Render_SetMatrices();
 	uint32_t tc = caps[D3DCAPS_TEXTURECAPS];
 	g_MipmapsOn = (tc & D3DPTEXTURECAPS_MIPMAP) != 0;
 	g_TexRepeat = (tc & D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE) != 0;

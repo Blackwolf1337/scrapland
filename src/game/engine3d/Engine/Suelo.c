@@ -2113,7 +2113,12 @@ void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 /* the material of the debug view, a static of CSuelo_DrawDebug */
 #define g_CollideMat (*(CMaterial *)Game_Ptr(0x4af8f8))
 #define g_CollideMatGuard ((int *)Game_Ptr(0x4af9a8))
-#define COLLIDE_MAT_DTOR 0x38edb0		/* the atexit destructor of it */
+
+/* the atexit destructor of it (rva 0x38edb0) */
+void Suelo_FiniCollideMat(void) {
+	CMaterial_dtor(&g_CollideMat);
+}
+
 #define g_QuadColors ((const uint32_t *)Game_Ptr(0x432a34))
 
 /* the box of a quad with its cell from x z of the grid */
@@ -2266,7 +2271,7 @@ void __fastcall CSuelo_DrawDebug(CSuelo *self) {
 		crt_Init_thread_header(g_CollideMatGuard);
 		if (*g_CollideMatGuard == -1) {
 			CMaterial_ctor(&g_CollideMat);
-			crt_atexit(Game_Ptr(COLLIDE_MAT_DTOR));
+			crt_atexit(Suelo_FiniCollideMat);
 			crt_Init_thread_footer(g_CollideMatGuard);
 		}
 	}

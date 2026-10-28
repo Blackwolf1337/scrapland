@@ -1035,3 +1035,13 @@ const char *D3DFmt_Name(int fmt) {
 	}
 	return "(invalid D3DFMT)";
 }
+
+/* the atexit destructor of g_TexList (rva 0x38ee70): the first texture of the list deleted */
+void Textura_FiniTexList(void) {
+	CTextura *t = g_TexList;
+
+	if (t) {
+		CTextura_dtor(t);
+		operator_delete_sized(t, sizeof(CTextura));
+	}
+}

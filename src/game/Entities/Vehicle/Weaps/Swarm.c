@@ -454,3 +454,13 @@ byte Tesla_Shoot(cEntity *v) {
 		Weap_Vtbl(v)->GetAI(v) && World_IsEasySingle() ? 0.15f : 0.05f);
 	return 1;
 }
+
+/* the static initializer (rva 0x04b8b0): the table of the costs from the variables, which are made before it */
+void Swarm_InitAmmoCosts(void) {
+	g_SwarmAmmoCosts[0] = g_SwarmAmmoCost1;
+	g_SwarmAmmoCosts[1] = g_SwarmAmmoCost2;
+	g_SwarmAmmoCosts[2] = g_SwarmAmmoCost3;
+	g_SwarmAmmoCosts[3] = g_SwarmAmmoCost4;
+	g_SwarmAmmoCosts[4] = 0;
+	g_SwarmAmmoCosts[5] = 0;
+}

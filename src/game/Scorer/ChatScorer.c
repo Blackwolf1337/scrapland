@@ -38,6 +38,14 @@ cChatScorer *__thiscall cChatScorer_Delete(cChatScorer *self, byte flags) {
 	return self;
 }
 
+/* the static initializer (rva 0x051be0): the lines empty and white */
+void ChatScorer_InitMsgs(void) {
+	for (int i = 0; i < CHAT_MSGS; i++) {
+		g_ChatMsgs[i].text[0] = 0;
+		g_ChatMsgs[i].color = 0xffffff;
+	}
+}
+
 /* the lines one up, text the newest */
 static void Chat_Scroll(const char *text) {
 	g_ChatTime = Timer_GetTime(&g_pWorld->timer);

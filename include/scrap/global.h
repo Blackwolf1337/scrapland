@@ -50,6 +50,8 @@ void Delete_Objects(void *p, uint32_t size, uint32_t dtor);
 /* the array part of a vector deleting destructor (flags 2): the dtor on each object, the block freed with flags 1;
  * returns the block */
 void *Delete_VectorPart(void *p, uint32_t flags, uint32_t size, uint32_t dtor);
+/* the shared stub of the empty constructors (src/game/Global/Stubs.c) */
+void *__thiscall Stub_ReturnSelf(void *self);
 /* new[] of count items as the compiler makes it: a size that overflows is -1, which the allocator refuses */
 static inline void *New_Array(uint32_t count, uint32_t size) {
 	uint64_t bytes = (uint64_t)count * size;
