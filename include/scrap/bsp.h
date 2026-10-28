@@ -459,6 +459,8 @@ void BspTri_Mascara(BspTri *list, CBmp *cob);
 void __fastcall CBsp_CrearBuffers(CBsp *self);
 /* the light maps luz, luz2 and rad2 of each list from the lights (shadows by tracing the floor), with the TXF caches */
 void __fastcall CBsp_LuzDirecta(CBsp *self);
+/* the .EMI file written: 0, -1 on a write error */
+int __fastcall CBsp_GuardarEMI(CBsp *self);
 
 /* exe functions of this file still the exe's */
 void __fastcall CBsp_Calcular(CBsp *self);		/* rva 0x28a860, the light maps computed */

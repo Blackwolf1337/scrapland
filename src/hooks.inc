@@ -8128,3 +8128,5 @@ SD_HOOK(cAICharControl3D_StrafeFwd, 0x07fd50, 2582)
 /* module agent: Scorer draws (Monitor, Radar, MainMenu, Status, Target, Weapon, WindFx) (hooks below this line) */
 
 /* module agent: Final untested (DevastatorCreate, BSP compiler, EMI writer, radiosity) (hooks below this line) */
+SD_HOOK(CBsp_GuardarEMI, 0x28eae0, 1135)	/* not reached by the tests */
+SD_HOOK(Devastator_Create, 0x11e250, 6652)

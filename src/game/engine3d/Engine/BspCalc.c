@@ -5,13 +5,16 @@
 #include <float.h>
 #include <string.h>
 
+#include "scrap/archio.h"
 #include "scrap/bsp.h"
 #include "scrap/console.h"
+#include "scrap/e3dutil.h"
 #include "scrap/luz.h"
 #include "scrap/mathlib.h"
 #include "scrap/nodo3d.h"
 #include "scrap/scrapmain.h"
 #include "scrap/suelo.h"
+#include "scrap/sueloportal.h"
 #include "scrap/varios.h"
 
 /* 1/255 of the color bytes (0x3b808081) */
@@ -534,4 +537,87 @@ void __fastcall CBsp_LuzDirecta(CBsp *self) {
 	BspTxf_dtor(&txf[2]);
 	BspTxf_dtor(&txf[1]);
 	BspTxf_dtor(&txf[0]);
+}
+
+
+/* the .EMI file of the map, the counterpart of CBsp_LeerEMI (version 105) */
+
+int __fastcall CBsp_GuardarEMI(CBsp *self) {
+	char ruta[0x104], buf[0x104];
+	CTablaHash tabMat;
+	CTablaHashNodo **elems;
+	int num;
+
+	Ruta_Merge(ruta, ".emi", self->nombre);
+	CArchIO *mem = operator_new(sizeof(CArchIO));
+	CArchIO *f = mem ? CArchIO_ctor(mem, ruta, "wb") : NULL;
+	if (!f->error) {
+		CArchIO_BeginBlockWrite(f, "EMI");
+		CArchIO_WriteInt(f, 105);
+		/* the materials once each, the key is the pointer */
+		CTablaHash_ctor(&tabMat, 0x1f);
+		for (int i = 0; i < self->num_listas; i++) {
+			CMaterial *mat = self->listas[i]->Mat;
+			CTablaHash_AddInt(&tabMat, (int)(intptr_t)mat, mat, 0);
+		}
+		CTablaHash_GetList(&tabMat, &elems, &num);
+		CArchIO_WriteInt(f, num);
+		for (int i = 0; i < num; i++) {
+			CMaterial *mat = elems[i]->value;
+			CArchIO_WriteInt(f, (int32_t)(intptr_t)mat);
+			CMaterial_Write(mat, f);
+		}
+		CTablaHash_FreeList(&tabMat, &elems);
+		CTablaHash_dtor(&tabMat);
+		/* the pages: key, file name, 1 and the file name of the secondary page */
+		for (BspLMap *lm = g_BspLMaps; lm; lm = lm->sig) {
+			CArchIO_WriteInt(f, (int32_t)(intptr_t)lm);
+			CMapa *mapa = lm->Mat->mapa[0];
+			CHECK(mapa && mapa->Nombre);
+			Ruta_Part(buf, mapa->Nombre, 0xc);
+			CArchIO_WriteString(f, buf);
+			CArchIO_WriteInt(f, 1);
+			mapa = lm->lmap2->Mat->mapa[0];
+			CHECK(mapa && mapa->Nombre);
+			Ruta_Part(buf, mapa->Nombre, 0xc);
+			CArchIO_WriteString(f, buf);
+		}
+		CArchIO_WriteInt(f, 0);
+		CArchIO_WriteInt(f, self->num_listas);
+		for (int i = 0; i < self->num_listas; i++) {
+			BspTri *tri = self->listas[i];
+			const char *sector;
+			CArchIO_BeginBlockWrite(f, "TRI");
+			CArchIO_WriteInt(f, (int32_t)tri->flags);
+			CArchIO_WriteString(f, tri->nodo->name);
+			CArchIO_WriteInt(f, tri->zona);
+			CHECK(tri->zona == BspTri_Zona(tri->nodo));
+			if (!Sector_Num()) {
+				sector = "_noportals_";
+			} else if (tri->nodo->flags >> 28 & 1) {
+				sector = "_nosector_";
+			} else {
+				sector = BspTri_ZonaName(tri);
+			}
+			CArchIO_WriteString(f, sector);
+			CArchIO_WriteInt(f, (int32_t)(intptr_t)tri->Mat);
+			CArchIO_WriteInt(f, (int32_t)(intptr_t)tri->LMap);
+			CHECK(tri->pTri);
+			CArchIO_WriteInt(f, tri->numTri);
+			CArchIO_Write(f, tri->pTri, tri->numTri * 6);
+			CListaVert_Write(&tri->lv, f);
+			CListaVert_Write(&tri->lv2, f);
+			CArchIO_EndBlockWrite(f, "TRI");
+		}
+		CArchIO_EndBlockWrite(f, "EMI");
+		if (!f->error) {
+			CArchIO_dtor(f);
+			operator_delete_sized(f, sizeof(CArchIO));
+			return 0;
+		}
+	}
+	Err_Report(f->err, 0, "\n'%s'", ruta);
+	CArchIO_dtor(f);
+	operator_delete_sized(f, sizeof(CArchIO));
+	return -1;
 }

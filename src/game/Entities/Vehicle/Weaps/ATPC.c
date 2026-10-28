@@ -38,7 +38,7 @@ void ATPC_SetRecharge(cEntity *v) {
 }
 
 /* the sound at pos with the attenuation and volume of a sound variable */
-static void ATPC_PlaySound(const char *name, const vec3_t *pos, float attIni, float attEnd, float vol) {
+void ATPC_PlaySound(const char *name, const vec3_t *pos, float attIni, float attEnd, float vol) {
 	cSoundDesc desc;
 
 	cSoundDesc_Init(&desc);

@@ -208,6 +208,8 @@ int __thiscall cWeaponManager_WeaponNeed(cWeaponManager *self);
 #define g_CloudRechargeTime GAME_DATA(float, 0x448f08)
 #define g_SetUpCloudFunc ((cPy_Function *)Game_Ptr(0x448f20))
 
+/* a sound at pos with its attenuation and volume */
+void ATPC_PlaySound(const char *name, const vec3_t *pos, float attIni, float attEnd, float vol);
 void ATPC_SetRecharge(cEntity *v);
 void ATPC_Create(cAbstractFile *params);
 void ATPC_FX(cAbstractFile *params);
@@ -231,6 +233,19 @@ void Cloud_OnHit(cAbstractFile *params);
 #define g_DevastatorDistLimit GAME_DATA(float, 0x449210)
 #define g_DevCenter ((vec3_t *)Game_Ptr(0x449258))		/* the explosion */
 #define g_DevastatorAmmoCost GAME_DATA(float, 0x44928c)
+#define g_DevastatorBulletFile GAME_DATA(const char *, 0x449058)
+#define g_DevastatorHitFile GAME_DATA(const char *, 0x449228)
+#define g_DevastatorShootFile GAME_DATA(const char *, 0x449130)
+#define g_DevastatorSparksFile GAME_DATA(const char *, 0x4491c0)
+#define g_DevastatorBoomSound GAME_DATA(const char *, 0x449250)
+#define g_DevastatorBoomSoundAttEnd GAME_DATA(float, 0x4491e8)
+#define g_DevastatorBoomSoundAttIni GAME_DATA(float, 0x4492a4)
+#define g_DevastatorBoomSoundVol GAME_DATA(float, 0x449148)
+#define g_FXDevastatorDistance GAME_DATA(float, 0x449070)
+#define g_FXDevastatorRadius GAME_DATA(float, 0x449190)
+#define g_FXDevastatorScale GAME_DATA(float, 0x449274)
+#define g_DevXplosionNative GAME_DATA(nativefunc_t, 0x449114)	/* the function of "!DevastatorXplosionCall" */
+#define g_DevColorRamps ((uint32_t *)Game_Ptr(0x428888))	/* three color ramps of 9 words */
 #define g_CreateEMIFunc ((cPy_Function *)Game_Ptr(0x4492bc))
 #define g_EMIRechargeTime GAME_DATA(float, 0x4492f8)
 #define g_EMIAmmoNeed GAME_DATA(int, 0x449328)
@@ -250,6 +265,7 @@ void __fastcall cWeaponManager_ClearAmmo(cWeaponManager *self);
 void __fastcall cWeaponManager_ClearWeaps(cWeaponManager *self);
 
 void Devastator_Start(cEntity *v);
+void Devastator_Create(cAbstractFile *params);
 void Devastator_FX(cAbstractFile *params);
 void Devastator_Fire(cAbstractFile *params);
 void Devastator_Press(cAbstractFile *params);

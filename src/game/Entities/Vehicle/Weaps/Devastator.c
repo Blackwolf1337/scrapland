@@ -2,7 +2,6 @@
  * Entities/Vehicle/Weaps/Devastator.cpp of the game: the native functions of the Devastator (a spread shot that
  * explodes at the hit, "!DevastatorXplosionCall") and of the EMI, see include/scrap/weapons.h. Also the native
  * "!InfernoClientFire" that hands the name to Weaps/Inferno.cpp.
- * Not here: DevastatorCreate (rva 0x11e250, the shot effects, hits and sounds of a shot).
  */
 #include "scrap/ai.h"
 #include "scrap/fxmisc.h"
@@ -39,6 +38,342 @@ void Devastator_Start(cEntity *v) {
 			it->times[0] = t;
 		}
 	}
+}
+
+/* entity vtable slot 0x78: the angles of the object (the rotation of Vec3_Rotate) */
+static inline vec3_t *Dev_GetRot(cEntity *e, vec3_t *out) {
+	return ENT_VF(e, 0x78, vec3_t * (__thiscall *)(cEntity *, vec3_t *))(e, out);
+}
+
+/* the sizes and the life of the explosion particles: rand01 * a + b as a float */
+static inline float Dev_Rand(double a, double b) {
+	return (float)(Weap_Rand01() * a + b);
+}
+
+/* a random float between -r and r */
+static inline float Dev_RandSym(float r) {
+	float lo = -r;
+	return (float)(Weap_Rand01() * (double)(r - lo) + (double)lo);
+}
+
+/* "!DevastatorCreate" (vehicle, hit point into g_DevCenter, entity hit, shot number): the shot of the next mounted
+ * slot (a bullet for a player), then where the effects are visible the explosion particles on the floor at the hit,
+ * the shot trail and the sparks, the damage of the sphere around the hit (not on a net client) and the boom */
+void Devastator_Create(cAbstractFile *params) {
+	vec3_t c, r, in, rot, a, b, hit, n, p, origin, cam, d, u, q, e, mid;
+	matrix_t mat;
+	CColisTri tri;
+	int shot;
+
+	cAbstractFile_ReadString(params, g_DevShooter, 0x80);
+	params->vftable->Read(params, &g_DevCenter->x, 4);
+	params->vftable->Read(params, &g_DevCenter->y, 4);
+	params->vftable->Read(params, &g_DevCenter->z, 4);
+	cAbstractFile_ReadString(params, g_DevVictim, 0x80);
+	params->vftable->Read(params, &shot, 4);
+	cEntity *v = Weap_GetVehicle(g_DevShooter);
+	byte *shake = Entity_Shake(v);
+	cWeaponManager *wm = Vehicle_WeapMgr(v);
+	int num = cWeaponManager_NumSlots(wm, g_DevastatorIDWeap, 1);
+	if (!num) {
+		return;
+	}
+	float q0 = Weap_X87Div(cTargetLock_GetAmmo(wm, g_DevastatorIDAmmo), g_DevastatorAmmoCost);
+	int k = (int)((float)shot + q0) % num;
+	/* the k-th mounted slot fires (the original keeps stack garbage as the origin without one) */
+	origin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	for (int i = 0; i < 4; i++) {
+		if (!cTargetLock_HasSlot(wm, g_DevastatorIDWeap, i)) {
+			continue;
+		}
+		if (k) {
+			k--;
+			continue;
+		}
+		int node = wm->nodes[g_DevastatorIDAmmo][i];
+		const matrix_t *m = CGameModel_NodoMatrix(WEnt_Vtbl(v)->GetObjData(v), &mat, node, 0, NULL, 0);
+		p.x = m->m[12];
+		p.y = m->m[13];
+		p.z = m->m[14];
+		if (shake) {
+			cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_DevastatorBulletFile);
+			cDebris *bullet = cDebrisSys_NewElement(sys);
+			bullet->drop[0] = p;
+			bullet->drop[1] = *Dev_GetRot(v, &rot);
+			float rz = Dev_Rand(14.0, -7.0);
+			float ry = Dev_Rand(2000.0, 0.0);
+			float rx = Dev_Rand(200.0, -100.0);
+			const vec3_t *pc = WEnt_Vtbl(v)->GetCenter(v, &rot);
+			float dx = (bullet->drop[0].x - pc->x) * 10.0f;
+			float dy = (bullet->drop[0].y - pc->y) * 10.0f;
+			float dz = (bullet->drop[0].z - pc->z) * 10.0f;
+			const vec3_t *vel = WEnt_Vtbl(v)->GetVel(v, &c);
+			bullet->drop[2].x = dx + vel->x * 0.5f + rx;
+			bullet->drop[2].z = dz + vel->z * 0.5f + rz;
+			bullet->drop[2].y = dy + vel->y * 0.5f + ry;
+			float sz = Dev_Rand(14.0, -7.0);
+			float sy = Dev_Rand(14.0, -7.0);
+			bullet->drop[3].x = Dev_Rand(14.0, -7.0);
+			bullet->drop[3].y = sy;
+			bullet->drop[3].z = sz;
+			bullet->speed = 0.4f;
+			cDebrisSys_Drop(sys, bullet);
+		}
+		cVehicleEffects_Shoot(Vehicle_Effects(v), g_DevastatorIDWeap, i);
+		origin = p;
+		break;
+	}
+
+	vec3_t *C = g_DevCenter;
+	float dy = origin.y - C->y;
+	float dx = origin.x - C->x;
+	float dz = origin.z - C->z;
+	mid.y = dy * 0.5f + origin.y;
+	mid.z = dz * 0.5f + origin.z;
+	mid.x = dx * 0.5f + origin.x;
+	float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+	if (FX_IsVisible(mid.x, mid.y, mid.z, len + g_DevastatorExplosionRadius * 1.5f, g_FXDevastatorDistance, NULL,
+		0)) {
+		if (g_DevVictim[0]) {
+			/* the hit moves to the side of the target the shooter sees */
+			cEntity *w = World_FindEntity(g_DevVictim);
+			CHECK(w);
+			CHECK(Entity_IsType(w, TYEN_WITH_LIFE));
+			float rad = Entity_Radius(w);
+			const vec3_t *pc = WEnt_Vtbl(v)->GetCenter(v, &c);
+			float cy = pc->y - C->y;
+			float cx = pc->x - C->x;
+			float cz = pc->z - C->z;
+			float l = (float)__builtin_sqrt((double)(cy * cy + cx * cx + cz * cz));
+			if (l != 0.0f) {
+				float inv = 1.0f / l;
+				d.x = inv * cx;
+				d.y = inv * cy;
+				d.z = inv * cz;
+			} else {
+				d.x = cx;
+				d.y = cy;
+				d.z = cz;
+			}
+			float f = Dev_Rand(0x1.333334p-2, 0x1.99999ap-3);
+			C->x = C->x + f * (d.x * rad);
+			C->z = C->z + f * (d.z * rad);
+			C->y = C->y + f * (d.y * rad);
+		}
+		cWorld *world = g_pWorld;
+		cam = world->camPos[world->curCam];
+		float ey = cam.y - C->y;
+		float ex = cam.x - C->x;
+		float ez = cam.z - C->z;
+		float camDist = (float)__builtin_sqrt((double)(ey * ey + ex * ex + ez * ez));
+		if (g_SplitScreenGame) {
+			camDist = g_FXDevastatorDistance * 0.5f;
+		}
+
+		/* the explosion on the floor */
+		cDebrisSys *sys = cWorld_GetDebrisSys(world, g_DevastatorHitFile);
+		cDebris *dhit = cDebrisSys_GetIdle(sys);
+		cam = g_pWorld->camPos[g_pWorld->curCam];
+		CGameModel_SetPos(Debris_Mod(dhit), &cam);
+		dhit->speed = 1.2f;
+		if (!cDebrisSys_IsIdle(sys, dhit)) {
+			cDebrisSys_Drop(sys, dhit);
+		}
+		cObjElementFXSistPart *fx = Debris_Element(dhit);
+		if (!fx) {
+			goto sphere;
+		}
+		if (!fx->on) {
+			fx->move = 0;
+			fx->on = 1;
+			CGameModel_SetSortZ(Debris_Mod(dhit), -0.03f, 0.0f);
+		}
+		CGameParticles *pt = &fx->particles;
+		/* the floor normal at the hit, else the up of the shooter */
+		in = (vec3_t){ 0.0f, 0.0f, 25.0f };
+		const vec3_t *ro = Vec3_Rotate(&r, &in, Dev_GetRot(v, &rot));
+		a.x = C->x + ro->x;
+		a.z = ro->z + C->z;
+		a.y = ro->y + C->y;
+		in = (vec3_t){ 0.0f, 0.0f, -25.0f };
+		ro = Vec3_Rotate(&r, &in, Dev_GetRot(v, &rot));
+		b.z = ro->z + C->z;
+		b.x = ro->x + C->x;
+		b.y = ro->y + C->y;
+		if (Engine_TestLine(&a, &b, &hit, &tri)) {
+			n = tri.plane.n;
+		} else {
+			in = (vec3_t){ 0.0f, 0.0f, 1.0f };
+			n = *Vec3_Rotate(&r, &in, Dev_GetRot(v, &rot));
+		}
+		int up = cWeaponManager_GetUpgrade(wm, g_DevastatorIDWeap);
+		float t = 1.0f - camDist / g_FXDevastatorDistance;
+		float scale = Float_MaxSS(1.0f, t * t * (camDist / 4000.0f));
+		if (up == 7) {
+			scale = scale * 1.5f;
+		}
+		if (g_DevVictim[0]) {
+			/* larger and a shake when the player is hit */
+			cEntity *w = World_FindEntity(g_DevVictim);
+			if (w && w == cWorld_GetUsrEntity(g_pWorld, 0) && Entity_IsType(w, TYEN_WITH_LIFE) && Entity_Shake(w)) {
+				byte *ws = Entity_Shake(w);
+				scale = scale + scale;
+				*(float *)(ws + 0x224) = 0x1.015bf8p-5f;
+				*(float *)(ws + 0x220) = 0.2f;
+			}
+		}
+		float R = g_FXDevastatorRadius;
+		p.x = R * n.x * 0.5f * scale + C->x;
+		p.y = R * n.y * 0.5f * scale + C->y;
+		p.z = R * n.z * 0.5f * scale + C->z;
+		CGameParticles_SetColorRampOn(pt, 1);
+		pt->birthRate = 0;
+		CGameParticles_SetColorRamp(pt, g_DevColorRamps + (crt_rand() & 1) * 9);
+		pt->initPosMin = p;
+		pt->initPosMax = p;
+		pt->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		pt->initVelMax = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		pt->sizeIni = Dev_Rand(40.0, 220.0) * g_FXDevastatorScale * scale;
+		pt->sizeEnd = Dev_Rand(40.0, 460.0) * g_FXDevastatorScale * scale;
+		pt->spriteIni = 0x72;
+		pt->spriteEnd = 0x72;
+		pt->lifeTime = Dev_Rand(0x1.47ae1p-5, 0x1.70a3d8p-3);
+		pt->sizeLife = Dev_Rand(0x1.47ae1p-5, 0x1.99999ap-3);
+		pt->rotVar = 0.0f;
+		float ang = Dev_Rand(0x1.921fb6p+2, 0.0);
+		pt->rotIni = ang;
+		pt->rotEnd = ang;
+		CGameParticles_Apply(pt);
+		CGameParticles_EmitN(pt, 1, 1);
+		for (int i = 6; i; i--) {
+			CGameParticles_SetColorRamp(pt, g_DevColorRamps + crt_rand() % 3 * 9);
+			float a1 = Dev_RandSym(g_FXDevastatorRadius);
+			float a2 = Dev_RandSym(g_FXDevastatorRadius);
+			float a3 = Dev_RandSym(g_FXDevastatorRadius);
+			pt->initPosMin.x = a3 * scale * 0.3f + p.x;
+			pt->initPosMin.y = a2 * scale * 0.3f + p.y;
+			pt->initPosMin.z = a1 * scale * 0.3f + p.z;
+			pt->initPosMax = pt->initPosMin;
+			pt->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			pt->initVelMax = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			pt->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			pt->initAccMax = (vec3_t){ 0.0f, 0.0f, 0.0f };
+			pt->lifeTime = Dev_Rand(0x1.99999p-4, 0x1.19999ap-1);
+			pt->sizeIni = Dev_Rand(100.0, 150.0) * g_FXDevastatorScale * scale;
+			pt->sizeEnd = Dev_Rand(150.0, 450.0) * g_FXDevastatorScale * scale;
+			pt->sizeLife = Dev_Rand(0x1.33333p-3, 0x1.333334p-1);
+			pt->rotVar = 0.0f;
+			ang = Dev_Rand(0x1.921fb6p+2, 0.0);
+			pt->rotIni = ang;
+			pt->rotEnd = ang;
+			if (crt_rand() & 1) {
+				pt->spriteIni = 0x31;
+				pt->spriteEnd = 0x41;
+			} else {
+				pt->spriteIni = 0x41;
+				pt->spriteEnd = 0x51;
+			}
+			CGameParticles_Apply(pt);
+			CGameParticles_EmitDt(pt, 1, 1, Dev_Rand(0x1.47ae14p-6, 0x1.47ae14p-6));
+		}
+
+		/* the shot trail from the slot to the explosion */
+		sys = cWorld_GetDebrisSys(g_pWorld, g_DevastatorShootFile);
+		cDebris *dshot = cDebrisSys_NewElement(sys);
+		dshot->speed = 0.05f;
+		cDebrisSys_Drop(sys, dshot);
+		cObjElementFXDevastatorShoot *sfx = Debris_Element(dshot);
+		if (sfx) {
+			CGameTrail *trail = &sfx->trail;
+			if (!sfx->on) {
+				sfx->on = 1;
+			}
+			sfx->duration = 0.075f;
+			sfx->base.vftable->Reset(&sfx->base, dshot);
+			CGameTrail_GetMaxTrails(trail);
+			float sy = p.y - origin.y;
+			float sx = p.x - origin.x;
+			float sz = p.z - origin.z;
+			float l = (float)__builtin_sqrt((double)(sy * sy + sx * sx + sz * sz));
+			if (l != 0.0f) {
+				float inv = 1.0f / l;
+				u.x = inv * sx;
+				u.y = inv * sy;
+				u.z = inv * sz;
+			} else {
+				u.x = sx;
+				u.y = sy;
+				u.z = sz;
+			}
+			float m = 2500.0f;
+			if (2500.0f > l) {
+				m = l;
+			}
+			float mx = m * u.x;
+			float my = m * u.y;
+			float mz = m * u.z;
+			q.x = mx * 0.68f + origin.x;
+			q.z = mz * 0.68f + origin.z;
+			q.y = my * 0.68f + origin.y;
+			e.x = ((p.x - mx * 0.3f) - q.x) * 0.5f;
+			e.y = ((p.y - my * 0.3f) - q.y) * 0.5f;
+			e.z = ((p.z - mz * 0.3f) - q.z) * 0.5f;
+			CGameTrail_Reset(trail);
+			CGameTrail_Add(trail, origin, 250.0f, 0xff804110);
+			CGameTrail_Add(trail, q, 250.0f, 0x60ff4110);
+			CGameTrail_Add(trail, (vec3_t){ e.x + q.x, e.y + q.y, e.z + q.z }, 250.0f, 0x60ff4110);
+			CGameTrail_Add(trail, (vec3_t){ p.x - mx * 0.28f, p.y - my * 0.28f, p.z - mz * 0.28f }, 250.0f,
+				0x40ff4110);
+			CGameTrail_Add(trail, p, 250.0f, 0x40ff5f20);
+		}
+
+		/* the sparks */
+		sys = cWorld_GetDebrisSys(g_pWorld, g_DevastatorSparksFile);
+		sys->radiusSq = 0.0f;
+		cDebris *dsp = cDebrisSys_GetIdle(sys);
+		cam = g_pWorld->camPos[g_pWorld->curCam];
+		CGameModel_SetPos(Debris_Mod(dsp), &cam);
+		dsp->speed = 1.0f;
+		if (!cDebrisSys_IsIdle(sys, dsp)) {
+			cDebrisSys_Drop(sys, dsp);
+		}
+		cObjElementFXSparks *spk = Debris_Element(dsp);
+		if (!spk) {
+			goto sphere;
+		}
+		if (!spk->on) {
+			spk->on = 1;
+		}
+		float t2 = 1.0f - camDist / g_FXDevastatorDistance;
+		float f2 = 1.0f;
+		if (!(t2 > 1.0f)) {
+			f2 = t2 * t2;
+		}
+		float f22 = f2 + f2;
+		int ns = (int)(float)(Weap_Rand01() * (double)(f2 * 5.0f - f22) + (double)f22);
+		if (ns <= 0) {
+			goto sphere;
+		}
+		float sizeMin = scale * 75.0f;
+		float sizeMax = scale * 125.0f;
+		float jy = g_DebrisDefault * -4.0f;
+		uint32_t color = (uint32_t)(crt_rand() % 60 + 0x78) << 8 | 0x10ff0000;
+		cObjElementFXSparks_Emit(spk, ns, C->x, C->y, C->z, n.x, n.y, n.z, 0.942477822f, 0.942477822f, 0.942477822f,
+			0.0f, jy, 0.0f, 1250.0f, 4500.0f, sizeMin, sizeMax, 1.0f, 0.0f, 0.35f, 0.55f, 0.15f, 0.2f, 0.0f, 0.05f,
+			color, 550.0f, 1550.0f, 10.0f, 12.0f, 2);
+	}
+sphere:
+	if (!(g_pApp->flags & APPF_CLIENT)) {
+		cPy_Function_SetNative(g_InfernoSphereFunc, g_DevXplosionNative);
+		int up = cWeaponManager_GetUpgrade(wm, g_DevastatorIDWeap);
+		float rad = g_DevastatorExplosionRadius;
+		if (up == 7) {
+			rad = rad * 1.5f;
+		}
+		cWorld_SphereCallF(g_pWorld, 8, g_DevCenter, rad, g_InfernoSphereFunc, 1);
+	}
+	ATPC_PlaySound(g_DevastatorBoomSound, g_DevCenter, g_DevastatorBoomSoundAttIni, g_DevastatorBoomSoundAttEnd,
+		g_DevastatorBoomSoundVol);
 }
 
 /* "!DevastatorFX" (vehicle, player, item): the HUD item turns while the vehicle fires (the upgrade 8 keeps turning),
