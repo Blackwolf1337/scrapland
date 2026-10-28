@@ -13,13 +13,15 @@
 /* the steam_api imports of the exe (cdecl) */
 typedef int (*SteamHandle_t)(void);
 typedef void *(*SteamCreateInterface_t)(const char *version);
-#define g_SteamAPI_GetHSteamUser GAME_DATA(SteamHandle_t, 0x3a159c)
-#define g_SteamInternal_CreateInterface GAME_DATA(SteamCreateInterface_t, 0x3a15a8)
-#define g_SteamAPI_GetHSteamPipe GAME_DATA(SteamHandle_t, 0x3a15b0)
+#define g_SteamAPI_GetHSteamUser GAME_IMPORT_CDECL(SteamHandle_t, SteamAPI_GetHSteamUser, 0x3a159c)
+#define g_SteamInternal_CreateInterface \
+	GAME_IMPORT_CDECL(SteamCreateInterface_t, SteamInternal_CreateInterface, 0x3a15a8)
+#define g_SteamAPI_GetHSteamPipe GAME_IMPORT_CDECL(SteamHandle_t, SteamAPI_GetHSteamPipe, 0x3a15b0)
 typedef void (*SteamRegisterCallback_t)(void *cb, int id);
 typedef void (*SteamUnregisterCallback_t)(void *cb);
-#define g_SteamAPI_RegisterCallback GAME_DATA(SteamRegisterCallback_t, 0x3a15a0)
-#define g_SteamAPI_UnregisterCallback GAME_DATA(SteamUnregisterCallback_t, 0x3a15ac)
+#define g_SteamAPI_RegisterCallback GAME_IMPORT_CDECL(SteamRegisterCallback_t, SteamAPI_RegisterCallback, 0x3a15a0)
+#define g_SteamAPI_UnregisterCallback \
+	GAME_IMPORT_CDECL(SteamUnregisterCallback_t, SteamAPI_UnregisterCallback, 0x3a15ac)
 
 /* the auth ticket: requested once, then hex in g_SteamTicket when the callback (rva 0x1347a0) has it */
 #define g_SteamTicketCb (GAME_ARRAY(cSteamTicketCallback, g_SteamTicketCb, 0x428a90))

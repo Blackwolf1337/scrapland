@@ -1,7 +1,7 @@
 /*
  * The data probe of ScrapC.exe, [general] dataprobe (docs/standalone.md, stage 3b2): which data of the original the
- * run reads and writes. The pages of the original's data in the room (ROOM_PROBE of room.h: no code, no resources,
- * not the page of the import address table) are PAGE_NOACCESS. A vectored handler logs the first read and the first
+ * run reads and writes. The pages of the original's data in the room (ROOM_PROBE of room.h: no code, no resources)
+ * are PAGE_NOACCESS. A vectored handler logs the first read and the first
  * write of each 4 byte unit with the eip, then lets the access through: the page open again, one single step with the
  * trap flag, the page closed again. For an eip outside ScrapC.exe (the UCRT, a system DLL) it also logs the first
  * return address into the code of ScrapC.exe on the stack, the C function that called it.
@@ -265,8 +265,7 @@ void DataProbe_Start(const char *dir) {
 	AddVectoredExceptionHandler(1, Probe_Handler);
 	for (size_t i = 0; i < sizeof(watch) / sizeof(watch[0]); i++) {
 		for (uint32_t page = watch[i].lo >> 12; page << 12 < watch[i].hi; page++) {
-			if (page == ROOM_IAT_RVA >> 12 || page == (ROOM_IAT_RVA + ROOM_IAT_SIZE - 1) >> 12
-				|| probe_page[page] != PAGE_FREE) {
+			if (probe_page[page] != PAGE_FREE) {
 				continue;
 			}
 			probe_page[page] = PAGE_WATCHED;

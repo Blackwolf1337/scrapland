@@ -174,24 +174,15 @@ static LONG CALLBACK Hook_Trap(EXCEPTION_POINTERS *e) {
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
-/* wipecrt=1: the code of the original's C runtime int3 but for the import thunks of the game in it */
+/* wipecrt=1: the code of the original's C runtime int3, with the import thunks of the game in it (stage 3c1a) */
 static int Hook_WipeCrt(void) {
 #ifdef SD_STANDALONE
-	static const struct {
-		uint32_t lo, hi;
-	} keep[] = ORIG_CRT_THUNKS;
-	uint32_t at = ORIG_CRT_CODE_START;
-
 	if (!Game_Option("wipecrt")) {
 		return 0;
 	}
-	for (size_t i = 0; i < sizeof(keep) / sizeof(keep[0]); i++) {
-		Hook_Wipe(at, keep[i].lo);
-		at = keep[i].hi;
-	}
-	Hook_Wipe(at, ORIG_CRT_CODE_END);
-	Com_Printf("wipecrt: the code of the original's CRT (rva %06x..%06x) is int3 but for the game's import thunks\n",
-		ORIG_CRT_CODE_START, ORIG_CRT_CODE_END);
+	Hook_Wipe(ORIG_CRT_CODE_START, ORIG_CRT_CODE_END);
+	Com_Printf("wipecrt: the code of the original's CRT (rva %06x..%06x) is int3\n", ORIG_CRT_CODE_START,
+		ORIG_CRT_CODE_END);
 	return 1;
 #else
 	if (Game_Option("wipecrt")) {

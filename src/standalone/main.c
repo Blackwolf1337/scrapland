@@ -7,8 +7,9 @@
  * This exe has the base 0x400000 of the original, so the rvas of GAME_DATA stay valid, no relocation. Under Wine the
  * low memory is full of mappings when the exe is elsewhere, so the room must be part of the exe. The headers stay
  * the exe's own. The resources (the game loads its dialogs, icons and menus from its instance, which is this module)
- * are the exe's own too, src/standalone/scrap.rc of stage 3b3. The import table of the original is filled with
- * GetProcAddress.
+ * are the exe's own too, src/standalone/scrap.rc of stage 3b3. The DLLs of the original are imports of this exe
+ * (stage 3c1a, GAME_IMPORT of game.h), which the loader binds before the start, as it did for the original; only
+ * dinput8 is loaded here, from the system folder.
  *
  * Stage 2a: the Python is the real library of src/python, linked into this exe; datagen.py turns the pointers of
  * the room into the original's Python into the real symbols. Stage 2b: the CRT functions are the UCRT of this exe or
@@ -22,6 +23,7 @@
 #include <windows.h>
 
 #include "scrap/game.h"
+#include "scrap/win32.h"
 #include "room.h"
 
 int Game_Dir(char *dir, size_t size);
@@ -49,7 +51,7 @@ static void Fatal(const char *fmt, ...) {
 	ExitProcess(1);
 }
 
-/* the room writable and executable (the import table, the hooks), the code that is not built in int3 */
+/* the room writable and executable (the hooks), the code that is not built in int3 */
 static void Orig_Room(byte *base) {
 	static const struct {
 		uint32_t lo, hi;
@@ -68,43 +70,26 @@ static void Orig_Room(byte *base) {
 	FlushInstructionCache(GetCurrentProcess(), base, GAME_SIZEOFIMAGE);
 }
 
-/* dinput8 from the system folder: the dinput8.dll in game/Bin is the hook DLL, which would write the log again */
-static HMODULE Orig_LoadDll(const char *dll) {
+dinput8create_t sd_DirectInput8Create;
+
+/*
+ * DirectInput8Create of the dinput8 in the system folder: the dinput8.dll in game/Bin is the hook DLL, which would
+ * write the log again. The original imported it, so it is loaded before anything of the game runs.
+ */
+static void Orig_DInput8(void) {
 	char sys[MAX_PATH], path[MAX_PATH];
 
-	if (_stricmp(dll, "dinput8.dll")) {
-		return LoadLibraryA(dll);
-	}
 	UINT n = GetSystemDirectoryA(sys, sizeof(sys));
-	if (n == 0 || n >= sizeof(sys) || snprintf(path, sizeof(path), "%s\\%s", sys, dll) >= (int)sizeof(path)) {
-		return NULL;
+	if (n == 0 || n >= sizeof(sys) || snprintf(path, sizeof(path), "%s\\dinput8.dll", sys) >= (int)sizeof(path)) {
+		Fatal("no path of the system dinput8.dll");
 	}
-	return LoadLibraryA(path);
-}
-
-static void Orig_Imports(byte *base) {
-	for (const IMAGE_IMPORT_DESCRIPTOR *imp = (const void *)(base + ROOM_IMPORT_RVA); imp->Name; imp++) {
-		const char *dll = (const char *)base + imp->Name;
-		HMODULE m = Orig_LoadDll(dll);
-		if (!m) {
-			Fatal("cannot load %s (%lu)", dll, GetLastError());
-		}
-		const IMAGE_THUNK_DATA32 *names = (const void *)(base + (imp->OriginalFirstThunk ? imp->OriginalFirstThunk
-			: imp->FirstThunk));
-		IMAGE_THUNK_DATA32 *iat = (void *)(base + imp->FirstThunk);
-		for (; names->u1.AddressOfData; names++, iat++) {
-			int ord = IMAGE_SNAP_BY_ORDINAL32(names->u1.Ordinal);
-			const char *what = ord ? (const char *)(uintptr_t)IMAGE_ORDINAL32(names->u1.Ordinal)
-				: (const char *)((const IMAGE_IMPORT_BY_NAME *)(base + names->u1.AddressOfData))->Name;
-			FARPROC fn = GetProcAddress(m, what);
-			if (!fn) {
-				if (ord) {
-					Fatal("%s: no ordinal %u", dll, (unsigned)IMAGE_ORDINAL32(names->u1.Ordinal));
-				}
-				Fatal("%s: no %s", dll, what);
-			}
-			iat->u1.Function = (DWORD)(uintptr_t)fn;
-		}
+	HMODULE m = LoadLibraryA(path);
+	if (!m) {
+		Fatal("cannot load %s (%lu)", path, GetLastError());
+	}
+	sd_DirectInput8Create = (dinput8create_t)(void *)GetProcAddress(m, "DirectInput8Create");
+	if (!sd_DirectInput8Create) {
+		Fatal("%s: no DirectInput8Create", path);
 	}
 }
 
@@ -118,7 +103,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
 	}
 	Log_Open(dir);
 	Orig_Room(base);
-	Orig_Imports(base);
+	Orig_DInput8();
 	game_base = (uintptr_t)base;
 	const char *missing = Crt_MathInit(dir);
 	if (missing) {

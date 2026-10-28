@@ -235,7 +235,7 @@ void __thiscall Alarm_SetLock(void *alarm, int lock);
 
 /* steam_api: SteamInternal_ContextInit through the import table of the exe, context data at rva 0x428a30 */
 typedef void *(__cdecl *SteamContextInit_t)(void *ctx);
-#define g_SteamInternal_ContextInit GAME_DATA(SteamContextInit_t, 0x3a15a4)
+#define g_SteamInternal_ContextInit GAME_IMPORT_CDECL(SteamContextInit_t, SteamInternal_ContextInit, 0x3a15a4)
 #define g_SteamFriendsContext ((void *)GAME_PTR(g_SteamFriendsContext, 0, 0x428a30))
 void Loading_Init(void);
 void Loading_End(void);

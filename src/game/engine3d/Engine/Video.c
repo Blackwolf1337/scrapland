@@ -20,11 +20,11 @@ typedef int(__stdcall *coInitialize_t)(void *reserved);
 typedef void(__stdcall *coUninitialize_t)(void);
 typedef int(__stdcall *directDrawCreate_t)(void *guid, void **dd, void *outer);
 typedef uint32_t(__stdcall *xinputGetState_t)(uint32_t user, void *state);
-#define exe_CoCreateInstance GAME_DATA(coCreateInstance_t, 0x3a158c)
-#define exe_CoInitialize GAME_DATA(coInitialize_t, 0x3a1594)
-#define exe_CoUninitialize GAME_DATA(coUninitialize_t, 0x3a1590)
-#define exe_DirectDrawCreate GAME_DATA(directDrawCreate_t, 0x3a105c)
-#define exe_XInputGetState GAME_DATA(xinputGetState_t, 0x3a14bc)
+#define exe_CoCreateInstance GAME_IMPORT(coCreateInstance_t, CoCreateInstance, 20, 0x3a158c)
+#define exe_CoInitialize GAME_IMPORT(coInitialize_t, CoInitialize, 4, 0x3a1594)
+#define exe_CoUninitialize GAME_IMPORT(coUninitialize_t, CoUninitialize, 0, 0x3a1590)
+#define exe_DirectDrawCreate GAME_IMPORT(directDrawCreate_t, DirectDrawCreate, 12, 0x3a105c)
+#define exe_XInputGetState GAME_IMPORT(xinputGetState_t, XInputGetState, 8, 0x3a14bc)
 
 /* the GUIDs of the exe */
 #define CLSID_AMMultiMediaStream GAME_PTR(CLSID_AMMultiMediaStream, 0, 0x3f7b80)

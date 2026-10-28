@@ -110,15 +110,11 @@ def ranges(text, name):
 		re.findall(r'\{ (0x[0-9a-f]+), (0x[0-9a-f]+) \}', text[text.index('#define ' + name):].split('\n\n')[0])]
 
 
-game_h, crt_h, py_h = header('game.h'), header('origcrt.h'), header('origpython.h')
+game_h, py_h = header('game.h'), header('origpython.h')
 TIMESTAMP, SIZEOFIMAGE = define(game_h, 'GAME_TIMESTAMP'), define(game_h, 'GAME_SIZEOFIMAGE')
 PY_CODE = (define(py_h, 'ORIG_PY_CODE_START'), define(py_h, 'ORIG_PY_CODE_END'))
 PY_DATA = ranges(py_h, 'ORIG_PY_DATA')
 
-# the pieces of .text that are built in: the import thunks of the game in the CRT, called through imports; the rest
-# of it is int3 at start (until stage 3c1b also the data formats of dinput8.lib at 0x001000..0x002070, which
-# ScrapC.exe takes from mingw's libdinput8 now)
-TEXT_KEEP = ranges(crt_h, 'ORIG_CRT_THUNKS')
 
 # what pointers outside the original's Python point to in it, and the real symbol for each (pymap.py -c makes this
 # table): the type objects of the engine (ob_type), the module table of the exe and the code of the copy hold these
@@ -149,10 +145,11 @@ def in_python(rva):
 
 
 def room_pieces(x):
-	"""the parts of the original with bytes that the room can hold: the kept parts of .text and every section with
-	bytes but .text, .reloc and .rsrc (the resources are src/standalone/scrap.rc since stage 3b3), sorted"""
-	text_va, text_n, _, _ = x.secs['.text']
-	pieces = [(lo, hi or text_va + text_n) for lo, hi in TEXT_KEEP]
+	"""the parts of the original with bytes that the room can hold: every section with bytes but .text, .reloc and
+	.rsrc (the resources are src/standalone/scrap.rc since stage 3b3), sorted. Of .text nothing is built in since
+	stage 3c1b (until then the data formats of dinput8.lib at 0x001000..0x002070, which ScrapC.exe takes from mingw's
+	libdinput8 now, and until stage 3c1a the import thunks of the game in the CRT), it is int3 at start"""
+	pieces = []
 	for name, (va, n, ptr, vsize) in sorted(x.secs.items(), key=lambda s: s[1][0]):
 		if name not in ('.text', '.reloc', '.rsrc') and n:
 			pieces.append((va, va + n))

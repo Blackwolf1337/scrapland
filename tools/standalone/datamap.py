@@ -20,7 +20,8 @@
 #     the access, and the rvas in its named data (tables of rvas) that the original or the code points to too; the C
 #     objects of SD_AT (C already)
 #   - the numbers in the test scripts (tools/test/py) that lie in the data, 4 bytes each
-#   - the import directory, its name tables and the import address table (main.c), the resources (found by id)
+#   - the resources (found by id); the import directory, its name tables and the import address table are kind import,
+#     which nothing of ScrapC.exe uses since stage 3c1a (it has its own imports)
 #   - each unit the probe logged, and every page it retired as a whole (it was hot, its later accesses are not seen)
 #   - everything a pointer (.reloc) in used data leads to, but for the pointers datagen.py sets to the real Python
 #     and the pointers before a vtable to its RTTI, unless the C or the probe read them
@@ -35,7 +36,7 @@
 import bisect, collections, os, re, struct, subprocess, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from sdexe import BASE, PY_DATA, PY_SYMBOLS, ROOT, TEXT_KEEP, Exe, ExeError, coff_sd, room_pieces
+from sdexe import BASE, PY_DATA, PY_SYMBOLS, ROOT, Exe, ExeError, coff_sd, room_pieces
 
 OBJDUMP = os.environ.get('OBJDUMP', 'i686-w64-mingw32-objdump')
 NM = os.environ.get('NM', 'i686-w64-mingw32-nm')
@@ -94,8 +95,7 @@ class Map:
 	def __init__(self, x):
 		self.regions = []
 		for lo, hi in room_pieces(x):
-			what = 'code' if (lo, hi) in TEXT_KEEP else 'data'
-			self.regions.append((lo, hi, x.section(lo), what))
+			self.regions.append((lo, hi, x.section(lo), 'data'))
 		for name, (va, n, ptr, vsize) in x.secs.items():
 			if name not in ('.text', '.reloc') and vsize > n:
 				self.regions.append((va + n, va + vsize, name, 'bss'))
@@ -266,7 +266,7 @@ def scan_tests(m):
 
 
 def scan_imports(x):
-	"""what main.c reads and writes of the imports: the directory, the names and the import address table"""
+	"""the imports of the original: the directory, the names and the import address table (kind import)"""
 	out = []
 	lo, size = x.dirs[1]
 	out.append((lo, lo + size))
@@ -792,9 +792,10 @@ def read_map(path):
 
 
 # what the map may drop when no user was seen: data of the original's libraries, whose code is gone, the RTTI and the
-# C++ exception tables (eh), which only the C++ runtime read. The game's own data stays even without a user: the three test scenarios do not
-# reach everything the game reads in play, until stage 3b turns it into C
-DROPPABLE = ('library', 'rtti', 'eh')
+# C++ exception tables (eh), which only the C++ runtime read, and the imports of the original (import, stage 3c1a). The
+# game's own data stays even without a user: the three test scenarios do not reach everything the game reads in play,
+# until stage 3b turns it into C
+DROPPABLE = ('library', 'rtti', 'eh', 'import')
 LIBRARY = LibraryData(MAP)
 
 
@@ -1041,10 +1042,8 @@ def main():
 	except (OSError, ExeError) as e:
 		fail(str(e))
 	cobjs.sort(key=lambda o: o.lo)
-	seeds += [(lo, hi - lo, 'static: imports (main.c)') for lo, hi in scan_imports(x)]
 	rs = x.secs['.rsrc']
 	seeds.append((rs[0], rs[1], 'static: resources'))
-	seeds += [(lo, hi - lo, 'static: import thunks of the game') for lo, hi in TEXT_KEEP]
 	probe_units, hot = read_probe(logs, syms)
 	probe_rows = []
 	if not logs and os.path.exists(out):

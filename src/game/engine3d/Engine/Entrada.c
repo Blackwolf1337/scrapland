@@ -7,13 +7,11 @@
 #include "scrap/entrada.h"
 #include "scrap/win32.h"
 
-/* dinput8 and the cursor through the import table of the exe */
-typedef int(__stdcall *dinputcreate_t)(void *hinst, uint32_t version, const void *iid, void **out, void *outer);
+/* the cursor through the import table of the exe (dinput8 in win32.h) */
 typedef int(__stdcall *cursorpos_t)(int32_t *pt);
 typedef int(__stdcall *setcursorpos_t)(int x, int y);
-#define exe_DirectInput8Create GAME_DATA(dinputcreate_t, 0x3a1064)
-#define exe_GetCursorPos GAME_DATA(cursorpos_t, 0x3a1384)
-#define exe_SetCursorPos GAME_DATA(setcursorpos_t, 0x3a13b0)
+#define exe_GetCursorPos GAME_IMPORT(cursorpos_t, GetCursorPos, 4, 0x3a1384)
+#define exe_SetCursorPos GAME_IMPORT(setcursorpos_t, SetCursorPos, 8, 0x3a13b0)
 
 #define IID_IDirectInput8A GAME_PTR(IID_IDIRECTINPUT8A, 0, 0x3d116c)
 #define GUID_SysMouse GAME_PTR(GUID_SYSMOUSE, 0, 0x3d100c)

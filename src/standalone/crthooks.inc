@@ -11,12 +11,14 @@
 #define SD_IMPORT_PY(name, rva)
 #define SD_IMPORT_CRT(name, rva) SD_HOOK(name, rva, 5)
 #define SD_IMPORT_CRT_STDCALL(name, argbytes, rva) SD_HOOK(name, rva, 5)
+#define SD_IMPORT_DLL_STDCALL(name, argbytes, rva)
 #include "imports.inc"
 #undef SD_IMPORT
 #undef SD_IMPORT_STDCALL
 #undef SD_IMPORT_PY
 #undef SD_IMPORT_CRT
 #undef SD_IMPORT_CRT_STDCALL
+#undef SD_IMPORT_DLL_STDCALL
 
 SD_HOOK(crt_eh_vector_ctor, 0x313a71, 5)	/* jmp to 0x313a76 */
 SD_HOOK(crt_eh_vector_dtor, 0x313adf, 5)	/* jmp to 0x313ae4 */

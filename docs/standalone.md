@@ -16,7 +16,7 @@ uninitialized section `.orig` at rva 0x1000, as large as the original image, and
 the low memory is full of mappings, so the room must be part of the exe). At start it reads the user's Scrap.exe
 1.6.1 from game/Bin, copies its sections to their rvas (the rvas of `GAME_DATA` stay valid, no relocation), points
 its own resource directory to the original's, fills the import table with GetProcAddress (dinput8 from the system
-folder), gives the original its TLS block (the MSVC thread init epoch), installs the hooks and runs the entry point
+folder; until stage 3c1a), gives the original its TLS block (the MSVC thread init epoch), installs the hooks and runs the entry point
 of the original. Library code (zlib, libpng, libjpeg and the ASE SDK below rva 0x05f6d8; the M3D math library at
 0x2d6010..0x2da770, still called by the C through imports; Python 1.5.2 at 0x2da770..0x313634; the MSVC CRT from
 its operator delete at 0x313634, and D3DX8) still runs from the copy. Since stage 3a the data is built into
@@ -427,7 +427,7 @@ uninitialized, .reloc is left out (fixed base).
 Of .text only the pieces that are still read or run are built in:
 
 - the data formats of dinput8.lib at 0x001000..0x002070 (the `c_dfDIKeyboard` and `c_dfDIMouse` in .rdata point there)
-- the import thunks of the game in the CRT (`ORIG_CRT_THUNKS` of `origcrt.h`)
+- the import thunks of the game in the CRT (`ORIG_CRT_THUNKS` of `origcrt.h`, until stage 3c1a)
 
 Until stage 2d the dynamic initializers at 0x03e800..0x05f6d8 and, from 0x37b3d0 to the end of .text, the C++ unwind
 funclets and the atexit destructors were built in too. The C reads no other data in .text: its `Game_Ptr` and
@@ -438,7 +438,7 @@ initialized ones where there are bytes, uninitialized ones without file data for
 .data, .reloc). That is 890 KB of data of the original in the exe, 690 KB of it non-zero.
 
 At start `main.c` fills the rest of .text with int3 (`ROOM_INT3` of `room.h`), fills the import table of the
-original with GetProcAddress from its import directory and points its own resource directory to the original's
+original with GetProcAddress from its import directory (until stage 3c1a) and points its own resource directory to the original's
 (until stage 3b3).
 The TLS directory of the original is built in with .rdata and .tls, but nothing reads it any more (`crtinit.c` keeps
 the epoch of the thread-safe statics). `Orig_Read`, the section copy and `Orig_PyPointers` are gone.
@@ -910,11 +910,98 @@ The log of datagen.py:
 On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios (sdtest 1487 checks, sdcall
 29078, sdlevel 19095), and so does the hook DLL difftest.
 
+### Stage 3c1a: the imports of ScrapC.exe (done)
+
+ScrapC.exe calls the DLLs of the game through imports of its own. The import directory, the import names and the import
+address table of the original (10058 bytes with the padding between the names) are no longer built in, and `main.c` no
+longer fills them (`Orig_Imports` is gone).
+
+The 176 defines of DLL functions (`exe_MessageBoxA`, `g_GalaxyInit`, `g_SteamAPI_GetHSteamUser` ...) use the forms of
+`include/scrap/game.h`:
+
+- `GAME_IMPORT(type, name, argbytes, rva)`: a stdcall function, `#define exe_MessageBoxA GAME_IMPORT(messagebox_t,
+  MessageBoxA, 16, 0x3a142c)`
+- `GAME_IMPORT_CDECL(type, name, rva)`: a cdecl function (steam_api, `wsprintfA`)
+- `GAME_IMPORT_SYM(type, name, sym, rva)`: any other symbol, the C++ names of Galaxy.dll
+  (`"?Init@api@galaxy@@YAXABUInitOptions@12@@Z"`)
+
+In ScrapC.exe each one is the cell of its own import address table: an extern with the label `__imp_<symbol>` of the
+import library, declared in the macro (quoted for the assembler, which takes no `?` in a bare name). The call is
+`call *__imp__MessageBoxA@16`, through an import slot as in the original. In the hook DLL the form is the slot of the
+exe at rva, as before. The types stay the game's own (win32.h needs no windows.h). A wrong argbytes is an undefined
+symbol at the link.
+
+The import libraries: mingw-w64 for kernel32, user32, gdi32, winmm, advapi32, shell32, ole32, comctl32, comdlg32, ddraw,
+d3d8, wsock32, msvfw32, avifil32 and xinput9_1_0. For fmod.dll, Galaxy.dll and steam_api.dll, which mingw-w64 has not,
+`src/standalone/fmod.def`, `Galaxy.def` and `steam_api.def` list the functions the original imports from them, and
+dlltool makes the libraries in build/implib. fmod.dll exports the stdcall names with their underscore
+(`_FSOUND_Init@12`), so its .def lines are `FSOUND_Init@12 == _FSOUND_Init@12`: the C symbol and the import name are the
+same. The original imports wsock32 (15 functions), msvfw32 (`VideoForWindowsVersion`) and comctl32
+(`InitCommonControls`) by ordinal, ScrapC.exe by name, the same functions.
+
+The 47 FSOUND functions of `src/imports.inc` pointed at the jump thunks of the exe (0x3179c6..0x317b2e). They are
+`SD_IMPORT_DLL_STDCALL` now: a thunk in the hook DLL as before, nothing in ScrapC.exe, where `_FSOUND_Init@12` is the
+function of the import library. Nothing jumps to the thunks of the original any more, so `ORIG_CRT_THUNKS` is gone: the
+pieces of .text that datagen.py builds in are the dinput8 data formats only, and `wipecrt=1` fills the whole range of
+the CRT.
+
+What stays as it was:
+
+- dinput8 is no import. ScrapC.exe runs in game/Bin, where dinput8.dll is the hook DLL. `Orig_DInput8` of `main.c`
+  loads the one of the system folder at the start of WinMain, before anything of the game runs, and sets
+  `sd_DirectInput8Create`, which is `exe_DirectInput8Create` in ScrapC.exe (win32.h, one define for IDevice.c and
+  Entrada.c).
+- fmod.dll, Galaxy.dll and steam_api.dll are found in game/Bin, the directory of the exe, first in the search order, as
+  for the original.
+- The original has no delay load (its delay import directory is empty), neither has ScrapC.exe.
+- The order of the loads. The loader binds the imports of ScrapC.exe before its start, as it did for the original
+  (before this stage `main.c` loaded them in WinMain). ld sorts the import directory by the path of the import library,
+  so the libraries of the game's DLLs are linked as `build/implib/<n>-lib<name>.a` (dlltool output or a link to the
+  mingw-w64 library), numbered in the order of the original: XINPUT9_1_0, WINMM, WSOCK32, Galaxy, steam_api, fmod,
+  MSVFW32, AVIFIL32, DDRAW, COMCTL32, d3d8. kernel32, user32, gdi32, advapi32, shell32, comdlg32 and ole32 are default
+  libraries of the toolchain and come before them, with the UCRT (a second path of one of them would split its import
+  descriptor). In the original kernel32 .. shell32 came after steam_api, comdlg32 and ole32 last, and dinput8 third.
+
+The map: the kind `import` is droppable (`datamap.py`), the import rows have no user any more, the 195 bytes of zeros
+between the import names (only `Orig_Imports` read them, in words) are kind `import` too, and the rows of the jump
+thunks in .text are gone. The scan no longer seeds the imports. `dataprobe.c` watches the page of the import address
+table like the others (0x3a1000, the initializer table of the CRT starts on it). datagen.py no longer writes
+`ROOM_IMPORT_RVA` and `ROOM_IAT_*` into room.h and no longer refuses C objects on the import directory or the import
+address table.
+
+The test of the resources (`sdcall_rsrc.py`) called the Win32 functions through the import table of the exe (a Peek of
+the slot). It takes them from `SDTest.Proc(dll, name)` now (`src/core/testmod.c`): the address of a function of a
+loaded DLL as an rva for `Call`, the same in both runs. The 10 `exe_` names left `testsyms.inc`.
+
+What is left of the original, room.bin went from 23998 to 13568 bytes:
+
+- .text: the data formats of dinput8.lib (4208 bytes)
+- .rdata: the initializer table of `Crt_Main` (7292), the Python of the original on the hot pages (200), D3DX8 (4), the
+  pointers to the RTTI before the vtables that are used (232)
+- .data: the Python of the original (1472, with the 16 bytes at 0x432b50), the RTTI (140, the type descriptor of
+  galaxy::api::IError that `Gog_CatchError` reads)
+- _RDATA: 4 bytes of the CRT
+
+The log of datagen.py:
+
+    datagen.py: 10 sections, 13568 bytes of data, 11 pointers into the Python lead to the real one, 14374 C objects
+    datagen.py:   .text       4208 bytes of the original (1829 non-zero), 0 in 0 C objects
+    datagen.py:   .bss_ste       0 bytes of the original (0 non-zero), 66240 in 22 C objects (66240 of them bss in 22)
+    datagen.py:   .rdata      7728 bytes of the original (5604 non-zero), 293552 in 11104 C objects
+    datagen.py:   .data       1628 bytes of the original (992 non-zero), 711420 in 3245 C objects (667320 of them bss in 2617)
+    datagen.py:   .gfids         0 bytes of the original (0 non-zero), 1272 in 3 C objects
+    datagen.py:   _RDATA         4 bytes of the original (3 non-zero), 0 in 0 C objects
+
+On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios (sdtest 9965 checks, sdcall
+29078, sdlevel 19095), and so does the hook DLL difftest. `ScrapC.exe -dedicated` starts the server (port 28086, the
+level loads) with the same log.html as `Scrap.exe -dedicated` but for the time in its head line: ScrapC.exe writes it an
+hour earlier, as the build before this stage did.
+
 ### Stage 3c1b: the last data of the original (done)
 
-Of the 24 KB that stayed bytes after stage 3b5, only the import part is left (stage 3c1a): the import directory, the
-import address table, the names and the import thunks of the game. Everything else is C or no longer read, and the C of
-ScrapC.exe computes no address from an rva of the original. The hook DLL works by rva as before: every form below is
+Of the 24 KB that stayed bytes after stage 3b5, stage 3c1a took the import part, and this stage the rest: nothing of the
+original is built in any more (room.bin is empty), every byte the room holds is a C object. The C of ScrapC.exe computes
+no address from an rva of the original. The hook DLL works by rva as before: every form below is
 `Game_Ptr(rva)` there.
 
 The initializer table. `tools/standalone/xctable.py -w` writes `src/standalone/crtxc.inc` from the `__xc` table of the
@@ -927,14 +1014,14 @@ The dinput8 data formats. The game passes `c_dfDIKeyboard` and `c_dfDIMouse` to 
 libdinput8 hold the same objects as the original's (its 4.2 KB at 0x001000..0x002070 in .text): the same header, and
 for all 256 and 7 objects the same GUID, offset, type and flags. ScrapC.exe links them (`-ldinput8 -ldxguid`, written
 as flags: `dinput8` alone is the target of the hook DLL), `GAME_DF_KEYBOARD` and `GAME_DF_MOUSE` of game.h are those in
-ScrapC.exe and the exe's in the hook DLL. `TEXT_KEEP` of sdexe.py has only the import thunks now, datagen.py starts the
-room with an uninitialized section when the first piece lies behind rva 0x1000.
+ScrapC.exe and the exe's in the hook DLL. `TEXT_KEEP` of sdexe.py is gone (no piece of .text is built in), datagen.py
+starts the room with an uninitialized section when the first C object lies behind rva 0x1000.
 
 The IError type descriptor is a C copy in `Gog.c` for both builds: `Msvc_CatchAs` compares the descriptor pointer and
 the decorated name, the descriptors of Galaxy.dll are its own, so only the name counts.
 
 The rest was read by nobody. `datamap.py --relabel` now also drops the users that are gone (`relabel_3c1b`, idempotent,
-the map gives the same result from the one of stage 3b5):
+the same result from the map of stage 3b5 or 3c1a):
 
 - the rows of `GONE_3C1B`: `Crt_Main` in the initializer table, the data formats (kind `library dinput8` now, also the
   two DIDATAFORMAT at 0x3cfbec and 0x3cfdf4; the rest of the old row at 0x3cfc04 is game data without a user), and
@@ -950,7 +1037,7 @@ the map gives the same result from the one of stage 3b5):
 - then, to a fixpoint, the `ptr` users from data that is no longer kept (the strings and type objects behind the module
   table and `PyString_Type` of the original's Python, `type_info::vftable` behind the type descriptors)
 
-datagen.py stops the build when it would build in a byte of the original that is no C object and not the import part.
+datagen.py stops the build when it would build in a byte of the original that is no C object.
 
 The address uses of the C:
 
@@ -983,8 +1070,8 @@ stores into `g_CircuitPaths`). A pointer of the original into data that stays by
 `SD_ORIG` is gone.
 
 The checks. In ScrapC.exe (game.h), `Game_Ptr` exists only where `SD_GAME_RVA` is defined (the rva lookup of
-testmod.c, which stage 3c switches), and `GAME_DATA` has a `static_assert` that its rva is a constant in the import
-address table (stage 3c1a removes those uses); any other use does not compile. `tools/standalone/rvacheck.py` runs after
+testmod.c, which stage 3c switches), and `GAME_DATA` not at all (after stage 3c1a only the hook DLL branches of
+python.h and win32.h use it); any other use does not compile. `tools/standalone/rvacheck.py` runs after
 the link of ScrapC.exe: every `GAME_FUNC` and `INIT_NATIVE_FUNC` names the C function of the hook at its rva,
 `game_base` appears only in the hook installer, testmod.c, game.c, the room code of main.c and dataprobe.c, and
 `SD_ORIG` nowhere.
@@ -993,17 +1080,16 @@ Five checks of the tests compared a stored function pointer with the address of 
 `sdlevel_scorer3.py`, `sdlevel_net.py`, `sdcall_input.py`, `sdcall_restb.py`). ScrapC.exe stores the C function now,
 so they use `isfn` of sdlib.py; their lines print 1 in place of the address.
 
-The log of datagen.py:
+The log of datagen.py, with stage 3c1a:
 
-    datagen.py: 15 sections, 10430 bytes of data, 2 pointers into the Python lead to the real one, 14482 C objects
-    datagen.py:   .text        372 bytes of the original (309 non-zero), 0 in 0 C objects
+    datagen.py: 12 sections, 0 bytes of data, 2 pointers into the Python lead to the real one, 14435 C objects
     datagen.py:   .bss_ste       0 bytes of the original (0 non-zero), 66240 in 22 C objects (66240 of them bss in 22)
-    datagen.py:   .rdata     10058 bytes of the original (8272 non-zero), 293504 in 11119 C objects
-    datagen.py:   .data          0 bytes of the original (0 non-zero), 711420 in 3338 C objects (667320 of them bss in 2674)
+    datagen.py:   .rdata         0 bytes of the original (0 non-zero), 293504 in 11119 C objects
+    datagen.py:   .data          0 bytes of the original (0 non-zero), 711420 in 3291 C objects (667320 of them bss in 2628)
     datagen.py:   .gfids         0 bytes of the original (0 non-zero), 1272 in 3 C objects
 
-(before: .text 4580, .rdata 17786, .data 1628, _RDATA 4; the 2 pointers into the Python lie in C objects). The .rdata
-bytes are the import directory, the import address table and the names, the .text bytes the import thunks.
+(after stage 3c1a: .text 4208, .rdata 7728, .data 1628, _RDATA 4). The 2 pointers into the Python lie in C objects (the
+`ob_type` of `cPyEntity_Type` and `cPyMenuEntity_Type`), which hold the real symbols.
 
 On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios (sdtest 9965 checks, sdcall
 29078, sdlevel 19095), and so does the hook DLL difftest.

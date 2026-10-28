@@ -21,17 +21,9 @@ extern uintptr_t game_base;	/* load address of Scrap.exe, 0 until Game_Init foun
 #ifdef SD_STANDALONE
 /*
  * ScrapC.exe computes no address from an rva (docs/standalone.md, stage 3c1b): Game_Ptr is there only for the rva
- * lookup of the test module (SD_GAME_RVA, src/core/testmod.c), GAME_DATA only for the slots of the import address
- * table of the original, which main.c fills (stage 3c1a removes them). Any other use stops the build.
+ * lookup of the test module (SD_GAME_RVA, src/core/testmod.c), and GAME_DATA not at all, so any other use does not
+ * compile.
  */
-#define GAME_IAT_RVA 0x3a1000
-#define GAME_IAT_SIZE 0x5b8
-#define GAME_DATA(type, rva) \
-	(*(type *)({ \
-		static_assert((uint32_t)(rva) - GAME_IAT_RVA < GAME_IAT_SIZE, \
-			"GAME_DATA of ScrapC.exe reaches only the import address table"); \
-		(void *)(game_base + (rva)); \
-	}))
 #ifdef SD_GAME_RVA
 static inline void *Game_Ptr(uint32_t rva) {
 	return (void *)(game_base + rva);
@@ -133,6 +125,31 @@ extern const byte c_dfDIKeyboard[], c_dfDIMouse[];
 #else
 #define GAME_DF_KEYBOARD ((const void *)Game_Ptr(0x3cfbec))
 #define GAME_DF_MOUSE ((const void *)Game_Ptr(0x3cfdf4))
+#endif
+
+/*
+ * A function of a DLL the game imports, as a pointer of type (an lvalue that is read only): in ScrapC.exe the cell of
+ * its own import address table, which the import library names __imp_<symbol> (the mingw-w64 ones, and for fmod,
+ * Galaxy and steam_api the ones of the .def files in src/standalone), in the hook DLL the slot of the exe's import
+ * address table at rva. So the call goes through an import slot in both, as in the original.
+ *	GAME_IMPORT(type, name, argbytes, rva)	a __stdcall function, the symbol _name@argbytes
+ *	GAME_IMPORT_CDECL(type, name, rva)	a __cdecl function, the symbol _name
+ *	GAME_IMPORT_SYM(type, name, sym, rva)	another symbol (the C++ names of Galaxy.dll), name only for the C
+ * The names are pasted, never expanded. The symbol is quoted for the assembler, which takes no ? in a bare name.
+ */
+#ifdef SD_STANDALONE
+#define SD_IMP_(type, id, sym) \
+	(*({ \
+		extern typeof(type) const id __asm__("\"__imp_" sym "\""); \
+		&id; \
+	}))
+#define GAME_IMPORT(type, name, argbytes, rva) SD_IMP_(type, sd_imp_##name, "_" #name "@" #argbytes)
+#define GAME_IMPORT_CDECL(type, name, rva) SD_IMP_(type, sd_imp_##name, "_" #name)
+#define GAME_IMPORT_SYM(type, name, sym, rva) SD_IMP_(type, sd_imp_##name, sym)
+#else
+#define GAME_IMPORT(type, name, argbytes, rva) (*(typeof(type) const *)Game_Ptr(rva))
+#define GAME_IMPORT_CDECL(type, name, rva) (*(typeof(type) const *)Game_Ptr(rva))
+#define GAME_IMPORT_SYM(type, name, sym, rva) (*(typeof(type) const *)Game_Ptr(rva))
 #endif
 
 int Game_Init(void);

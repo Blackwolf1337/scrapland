@@ -7,8 +7,8 @@
 # object), the objects of the dynamic initializers (src/game/Global/StaticInit.inc: the engine variables, native
 # functions, vectors, hash tables) and the method tables of SD_PY_MODULE. The rest of the game's data in the map
 # (tools/standalone/datamap.txt) becomes objects typed by its kind there, named after the first C function that uses
-# it, or data_<rva>. Left out: the import directory, the import address table and the import names (main.c fills the
-# table), the data of the libraries, the RTTI (with the pointers to it before the vtables), the data of the
+# it, or data_<rva>. Left out: the import directory, the import address table and the import names (ScrapC.exe has
+# its own imports since stage 3c1a), the data of the libraries, the RTTI (with the pointers to it before the vtables), the data of the
 # original's Python and what strings.py and vtables.py made C already. The map drops the C++ exception tables.
 #
 # One owner per byte: claims are sorted by rva, the larger first; a claim inside an earlier object (a field of a

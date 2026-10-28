@@ -3,7 +3,8 @@
  * a slot holding the RVA, Imports_Resolve adds the load address. The stack and the registers stay untouched, so
  * the calling convention of the caller's prototype goes through as it is. The Python functions (SD_IMPORT_PY) get
  * no thunk in ScrapC.exe (SD_STANDALONE), it links the real Python library; neither do the CRT functions
- * (SD_IMPORT_CRT), which are src/standalone/crt.c there.
+ * (SD_IMPORT_CRT), which are src/standalone/crt.c there, and the DLL functions (SD_IMPORT_DLL_STDCALL), which are
+ * imports of ScrapC.exe itself.
  *
  * This file must not see the real prototypes (the thunks are plain labels), so it includes no game header.
  */
@@ -13,10 +14,12 @@
 #define SD_IMPORT_PY(name, rva)
 #define SD_IMPORT_CRT(name, rva)
 #define SD_IMPORT_CRT_STDCALL(name, argbytes, rva)
+#define SD_IMPORT_DLL_STDCALL(name, argbytes, rva)
 #else
 #define SD_IMPORT_PY(name, rva) SD_IMPORT(name, rva)
 #define SD_IMPORT_CRT(name, rva) SD_IMPORT(name, rva)
 #define SD_IMPORT_CRT_STDCALL(name, argbytes, rva) SD_IMPORT_STDCALL(name, argbytes, rva)
+#define SD_IMPORT_DLL_STDCALL(name, argbytes, rva) SD_IMPORT_STDCALL(name, argbytes, rva)
 #endif
 
 #define SD_THUNK(sym, name, rva) \

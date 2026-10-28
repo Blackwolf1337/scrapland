@@ -396,7 +396,7 @@ int __thiscall CD3DApp_ToggleFullscreen(byte *self) {
 }
 
 typedef void *(__stdcall *getmodulehandle_t)(const char *name);
-#define exe_GetModuleHandleA GAME_DATA(getmodulehandle_t, 0x3a1160)
+#define exe_GetModuleHandleA GAME_IMPORT(getmodulehandle_t, GetModuleHandleA, 4, 0x3a1160)
 
 int __thiscall CD3DApp_UserSelectNewDevice(byte *self) {
 	if (!MOTOR_WINDOWED(self) && CD3DApp_ToggleFullscreen(self) < 0) {
@@ -490,15 +490,15 @@ typedef void(__stdcall *postquitmessage_t)(int code);
 typedef int(__stdcall *getcursorpos_t)(exe_point *pt);
 typedef int(__stdcall *screentoclient_t)(void *hwnd, exe_point *pt);
 typedef int(__stdcall *enablewindow_t)(void *hwnd, int on);
-#define exe_Direct3DCreate8 GAME_DATA(direct3dcreate8_t, 0x3a14c4)
-#define exe_AdjustWindowRect GAME_DATA(adjustwindowrect_t, 0x3a1380)
-#define exe_LoadMenuA GAME_DATA(loadmenu_t, 0x3a13c4)
-#define exe_SetRect GAME_DATA(setrect_t, 0x3a138c)
-#define exe_DestroyMenu GAME_DATA(destroymenu_t, 0x3a137c)
-#define exe_PostQuitMessage GAME_DATA(postquitmessage_t, 0x3a1370)
-#define exe_GetCursorPos GAME_DATA(getcursorpos_t, 0x3a1384)
-#define exe_ScreenToClient GAME_DATA(screentoclient_t, 0x3a1388)
-#define exe_EnableWindow GAME_DATA(enablewindow_t, 0x3a1374)
+#define exe_Direct3DCreate8 GAME_IMPORT(direct3dcreate8_t, Direct3DCreate8, 4, 0x3a14c4)
+#define exe_AdjustWindowRect GAME_IMPORT(adjustwindowrect_t, AdjustWindowRect, 12, 0x3a1380)
+#define exe_LoadMenuA GAME_IMPORT(loadmenu_t, LoadMenuA, 8, 0x3a13c4)
+#define exe_SetRect GAME_IMPORT(setrect_t, SetRect, 20, 0x3a138c)
+#define exe_DestroyMenu GAME_IMPORT(destroymenu_t, DestroyMenu, 4, 0x3a137c)
+#define exe_PostQuitMessage GAME_IMPORT(postquitmessage_t, PostQuitMessage, 4, 0x3a1370)
+#define exe_GetCursorPos GAME_IMPORT(getcursorpos_t, GetCursorPos, 4, 0x3a1384)
+#define exe_ScreenToClient GAME_IMPORT(screentoclient_t, ScreenToClient, 8, 0x3a1388)
+#define exe_EnableWindow GAME_IMPORT(enablewindow_t, EnableWindow, 8, 0x3a1374)
 
 /* IDirect3D8 and IDirect3DDevice8 */
 typedef uint32_t(__stdcall *d3dGetAdapterCount_t)(void *d3d);
@@ -1338,7 +1338,7 @@ failed:
 #define g_SelMultiSample GAME_GLOBAL(uint32_t, g_SelMultiSample, 0x4b1c30)
 
 typedef int(__cdecl *wsprintf_t)(char *buf, const char *fmt, ...);
-#define exe_wsprintfA GAME_DATA(wsprintf_t, 0x3a1368)
+#define exe_wsprintfA GAME_IMPORT_CDECL(wsprintf_t, wsprintfA, 0x3a1368)
 
 #define IDC_ADAPTER_COMBO 0x3ea
 #define IDC_DEVICE_COMBO 0x3e8

@@ -25,7 +25,7 @@
 #include "scrap/win32.h"
 
 typedef uint32_t(__stdcall *getenvvar_t)(const char *name, char *buf, uint32_t size);
-#define exe_GetEnvironmentVariableA GAME_DATA(getenvvar_t, 0x3a12c0)
+#define exe_GetEnvironmentVariableA GAME_IMPORT(getenvvar_t, GetEnvironmentVariableA, 12, 0x3a12c0)
 
 /* the "uint as double" conversions of the original: the int plus 2^32 for a set top bit */
 static inline float Uint_ToFloat(uint32_t u) {
@@ -2359,9 +2359,9 @@ void __thiscall Bsp_FinMensaje(CBsp *self, int secs) {
 typedef int(__stdcall *isdlgbuttonchecked_t)(void *hwnd, int id);
 typedef int(__stdcall *checkdlgbutton_t)(void *hwnd, int id, unsigned check);
 typedef int(__stdcall *enablewindow_t)(void *hwnd, int enable);
-#define exe_IsDlgButtonChecked GAME_DATA(isdlgbuttonchecked_t, 0x3a13ac)
-#define exe_CheckDlgButton GAME_DATA(checkdlgbutton_t, 0x3a13a8)
-#define exe_EnableWindow GAME_DATA(enablewindow_t, 0x3a1374)
+#define exe_IsDlgButtonChecked GAME_IMPORT(isdlgbuttonchecked_t, IsDlgButtonChecked, 8, 0x3a13ac)
+#define exe_CheckDlgButton GAME_IMPORT(checkdlgbutton_t, CheckDlgButton, 12, 0x3a13a8)
+#define exe_EnableWindow GAME_IMPORT(enablewindow_t, EnableWindow, 8, 0x3a1374)
 
 /* the obj3D of a node as its class (the inline cast of objeto3D.h, NULL with a failed CHECK) */
 static void *Obj3D_As(CNodo3D *n, uint32_t clase) {

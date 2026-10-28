@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # rvacheck.py: the C of ScrapC.exe computes no address from an rva of the original (docs/standalone.md, stage 3c1b).
 # Run by the build after the link of ScrapC.exe. What the compiler checks itself (include/scrap/game.h): Game_Ptr
-# exists in ScrapC.exe only for the test module (SD_GAME_RVA), GAME_DATA only for the slots of the import address
-# table. This tool checks the rest in the sources:
+# exists in ScrapC.exe only for the test module (SD_GAME_RVA), GAME_DATA not at all. This tool checks the rest in the
+# sources:
 #   - every GAME_FUNC(name, rva) names the C function that the hook at rva jumps to (src/hooks.inc, the CRT entries)
 #   - game_base, the load address, appears only in the allowed places: the hook installer, the test module's rva
 #     lookup, the room code of main.c and dataprobe.c (stage 3c removes it), Game_Init and game.h

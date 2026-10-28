@@ -7,23 +7,21 @@
 #             are still read or run, uninitialized in between)
 #   room.ld   the sections .orig0, .orig1 ... of the room at rva 0x1000..SizeOfImage, included by cmake/ScrapC.ld:
 #             the pieces of room.c and the C objects at their rvas
-#   room.h    what main.c needs of the headers (the import directory), the code ranges it fills with int3 and the
-#             data the probe of dataprobe.c watches
+#   room.h    the code ranges main.c fills with int3 and the data the probe of dataprobe.c watches
 # objects.txt lists the object files of scrapcode_sa (one per line). Their sections .sd.<rva> are the C objects of
 # SD_AT (include/scrap/shared.h, stage 3b): each one is placed at its rva and the bytes of the original there are left
-# out. They must lie in the data, must not overlap each other or the import table, and must hold what the original
+# out. They must lie in the data, must not overlap each other, and must hold what the original
 # holds there: the same bytes, a pointer where the original has one, to the C function its hook jumps to (src/hooks.inc,
 # the CRT entries), to the real symbol of the Python or to another C object at the original target.
 # A pointer of the copy into the original's Python (from .reloc) becomes the real symbol of src/python, resolved by
 # the linker; a target without a real symbol stops the build. .reloc itself is not built in (fixed base).
 # Of the data only the rows of tools/standalone/datamap.txt with a user are built in (stage 3b2), the rest of the room
-# stays zero. Since stage 3c1b that may only be the import part (the import directory, the import address table, the
-# names and the import thunks of the game): any other byte of the original the map keeps must be a C object, else
-# the build stops.
+# stays zero. Since stages 3c1a and 3c1b nothing of it is: every byte of the original the map keeps must be a C
+# object, else the build stops, and the room holds only the C objects and uninitialized space.
 import bisect, hashlib, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from sdexe import (BASE, PY_SYMBOLS, SIZEOFIMAGE, TEXT_KEEP, TIMESTAMP, Exe, ExeError, c_names, coff_sd, in_python,
+from sdexe import (BASE, PY_SYMBOLS, SIZEOFIMAGE, TIMESTAMP, Exe, ExeError, c_names, coff_sd, in_python,
 	room_pieces)
 from datamap import MAP, kept, read_map
 
@@ -56,8 +54,9 @@ if x.base != BASE:
 	fail('%s: image base not 0x%x' % (exe, BASE))
 secs = x.secs
 
-# the pieces: the kept parts of .text and every section with bytes but .text and .reloc, of the data only what the
-# map of stage 3b2 (tools/standalone/datamap.txt) keeps
+# the pieces: of the parts of .text and the sections with bytes (room_pieces) only what the map of stage 3b2
+# (tools/standalone/datamap.txt) keeps. The import directory, its names and the import address table are not among
+# them (stage 3c1a: ScrapC.exe has its own imports)
 text_va, text_n, _, _ = secs['.text']
 whole = room_pieces(x)
 try:
@@ -66,9 +65,6 @@ except (OSError, ValueError, IndexError) as e:
 	fail('cannot read %s (%s)' % (MAP, e))
 pieces = []
 for lo, hi in whole:
-	if (lo, hi) in TEXT_KEEP:
-		pieces.append((lo, hi))
-		continue
 	for a, z in keep:
 		if a < hi and z > lo:
 			pieces.append((max(a, lo), min(z, hi)))
@@ -117,10 +113,6 @@ for o in cobjs:
 	va, n, ptr, vsize = secs.get(sec, (0, 0, 0, 0))
 	if sec is None or sec in NO_C_SECTIONS or o.hi > va + max(n, vsize):
 		fail('%s: rva %06x..%06x is not in the data of the original (%s)' % (o.where(), o.lo, o.hi, sec or 'no section'))
-	for d, what in ((1, 'import directory'), (12, 'import address table')):
-		lo, size = x.dirs[d]
-		if lo < o.hi and o.lo < lo + size:
-			fail('%s: rva %06x..%06x overlaps the %s, which main.c fills' % (o.where(), o.lo, o.hi, what))
 for a, z in zip(cobjs, cobjs[1:]):
 	if a.hi > z.lo:
 		fail('%s at rva %06x..%06x and %s at rva %06x..%06x overlap' % (a.where(), a.lo, a.hi, z.where(), z.lo, z.hi))
@@ -178,21 +170,11 @@ for lo, hi in pieces:
 units += [(o.lo, o.hi, o) for o in cobjs]
 units.sort(key=lambda u: u[0])
 
-# since stage 3c1b only the import part of the original is built in (the import thunks of TEXT_KEEP, the import
-# directory, the import address table and the names, with the zeros between them; stage 3c1a removes it): any other
-# byte of the original the map keeps must be a C object
-imports = [[lo, hi] for lo, hi in TEXT_KEEP]
-for lo, hi, sec, users, kind in sorted(read_map(MAP)):
-	if kind == 'import' or (kind == 'zero' and imports and imports[-1][1] == lo):
-		if imports and imports[-1][1] >= lo & ~3:
-			imports[-1][1] = max(imports[-1][1], hi)
-		else:
-			imports.append([lo, hi])
-imports = [(lo & ~3, (hi + 3) & ~3) for lo, hi in imports]
+# since stages 3c1a and 3c1b no byte of the original is built in: every byte the map keeps must be a C object
 for lo, hi, o in units:
-	if o is None and not any(a <= lo and hi <= z for a, z in imports):
-		fail('rva %06x..%06x of the original would be built in, which is no C object and not the import part: make '
-			'it C or drop its users from %s (docs/standalone.md, stage 3c1b)' % (lo, hi, os.path.relpath(MAP)))
+	if o is None:
+		fail('rva %06x..%06x of the original would be built in, which is no C object: make it C or drop its users from '
+			'%s (docs/standalone.md, stage 3c1b)' % (lo, hi, os.path.relpath(MAP)))
 for at in fix:
 	if not any(lo <= at and at + 4 <= hi for lo, hi, o in units):
 		fail('the pointer at rva %06x crosses the edge of a C object' % at)
@@ -218,7 +200,7 @@ for u in units:
 	groups.append([u])
 sections = []	# (start, end, units or None)
 if groups[0][0][0] & ~0xfff > ROOM:
-	# the code before the first piece (since stage 3c1b nothing of the original's .text before its CRT is built in)
+	# the space before the first C object (since stage 3c1b nothing of the original's .text is built in)
 	sections.append((ROOM, groups[0][0][0] & ~0xfff, None))
 for i, g in enumerate(groups):
 	start = g[0][0] & ~0xfff
@@ -288,10 +270,10 @@ for lo, hi in whole:
 if at < text_va + text_n:
 	int3.append((at, text_va + text_n))
 
-# the data of the probe (dataprobe.c): the pieces but for the code of the CRT thunks and the resources, which other
-# DLLs read (Wine reads some of them outside the reach of a vectored handler)
+# the data of the probe (dataprobe.c): the pieces but for the resources, which other DLLs read (Wine reads some of
+# them outside the reach of a vectored handler)
 rsrc = secs['.rsrc']
-probe = [(lo, hi) for lo, hi in whole if (lo, hi) not in TEXT_KEEP and lo != rsrc[0]]
+probe = [(lo, hi) for lo, hi in whole if lo != rsrc[0]]
 
 gen = 'generated by tools/standalone/datagen.py from Scrap.exe 1.6.1, do not edit'
 files = {
@@ -301,11 +283,10 @@ files = {
 		''.join('\t"%s\\n"\n' % l.replace('"', '\\"') for l in asm))).encode(),
 	'room.ld': ('/* %s: the room of Scrap.exe at its rvas, with the C objects of SD_AT */\n%s' % (gen, ''.join(ld)))
 		.encode(),
-	'room.h': ('/* %s */\n#define ROOM_IMPORT_RVA 0x%06x\n#define ROOM_IAT_RVA 0x%06x\n#define ROOM_IAT_SIZE 0x%x\n/* the code of the original that is not built in, '
+	'room.h': ('/* %s */\n/* the code of the original that is not built in, '
 		'int3 at start */\n#define ROOM_INT3 \\\n\t{ %s }\n/* the data of the original that dataprobe.c watches */\n'
 		'#define ROOM_PROBE \\\n\t{ %s }\n'
-		% (gen, x.dirs[1][0], x.dirs[12][0], x.dirs[12][1],
-			', '.join('{ 0x%06x, 0x%06x }' % r for r in int3), ', '.join('{ 0x%06x, 0x%06x }' % r for r in probe))).encode(),
+		% (gen, ', '.join('{ 0x%06x, 0x%06x }' % r for r in int3), ', '.join('{ 0x%06x, 0x%06x }' % r for r in probe))).encode(),
 }
 # always written: outputs older than the objects would make every build run this again (room.c of the same text is a
 # ccache hit)

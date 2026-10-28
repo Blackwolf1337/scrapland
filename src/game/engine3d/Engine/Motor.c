@@ -77,7 +77,7 @@
 #define g_ColorStr (GAME_ARRAY(char, g_ColorStr, 0x4a9050))	/* 0x40 */
 
 typedef void(__stdcall *initcommoncontrols_t)(void);
-#define exe_InitCommonControls GAME_DATA(initcommoncontrols_t, 0x3a104c)
+#define exe_InitCommonControls GAME_IMPORT(initcommoncontrols_t, InitCommonControls, 0, 0x3a104c)
 
 /* the console command handler of the engine (E3D_Command) */
 #define MOTOR_CMDPROC 0x22eda0
