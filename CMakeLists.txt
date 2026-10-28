@@ -59,6 +59,7 @@ add_library(python152 STATIC
 	src/python/dictobject.c
 	src/python/getpathp.c
 	src/python/import.c
+	src/python/intobject.c
 	src/python/listobject.c
 	src/python/pythonrun.c
 	src/python/stringobject.c
@@ -79,7 +80,6 @@ add_library(python152 STATIC
 	${PY152}/Objects/floatobject.c
 	${PY152}/Objects/frameobject.c
 	${PY152}/Objects/funcobject.c
-	${PY152}/Objects/intobject.c
 	${PY152}/Objects/longobject.c
 	${PY152}/Objects/methodobject.c
 	${PY152}/Objects/moduleobject.c
@@ -124,8 +124,10 @@ add_library(python152 STATIC
 set_target_properties(python152 PROPERTIES C_STANDARD 90 C_EXTENSIONS ON) # gnu89
 target_compile_definitions(python152 PRIVATE NDEBUG) # a release build in the exe: no assert of longobject.c and regexpr.c
 target_include_directories(python152 PRIVATE src/python ${PY152}/Include ${PY152} ${PY152}/Python include)
+# -fwrapv: the overflow checks of 1.5.2 (i_divmod of INT_MIN, int_mul ...) rely on signed overflow wrapping, as MSVC
+# does; without it gcc may drop them
 target_compile_options(python152 PRIVATE -include ${CMAKE_SOURCE_DIR}/src/python/pyshim.h -O2 -g
-	-fno-strict-aliasing -msse2 -mfpmath=sse -ffp-contract=off -fno-builtin)
+	-fno-strict-aliasing -fwrapv -msse2 -mfpmath=sse -ffp-contract=off -fno-builtin)
 # sys.version of the exe: "1.5.2 (#0, Nov 24 2021, 15:23:52) [MSC 32 bit (Intel)]"
 set_source_files_properties(${PY152}/Modules/getbuildinfo.c PROPERTIES
 	COMPILE_DEFINITIONS "DATE=\"Nov 24 2021\";TIME=\"15:23:52\"")
