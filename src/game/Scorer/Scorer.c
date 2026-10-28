@@ -6,11 +6,13 @@
 #include <string.h>
 
 #include "scrap/app.h"
+#include "scrap/astar.h"
 #include "scrap/camcontrol.h"
 #include "scrap/console.h"
 #include "scrap/embeddedfxchar.h"
 #include "scrap/fuentes.h"
 #include "scrap/nodesworld.h"
+#include "scrap/nodesworld2d.h"
 #include "scrap/pymempool.h"
 #include "scrap/rendertarget.h"
 #include "scrap/scoreritems.h"
@@ -1640,12 +1642,6 @@ byte Scorer_DrawConsole(void) {
 
 /* ---- CShow and the AI debug drawings ---- */
 
-/* the AI drawings of NWAnalizeOn (AI functions, imported) */
-void __fastcall CNodesWorld_DrawAnalize(CNodesWorld *self);
-void __fastcall CNodesWorld2D_DrawAnalize(CNodesWorld2D *self);
-void __fastcall cAStar_Draw(void *self);
-void __fastcall cAStar2D_Draw(void *self);
-
 enum {
 	CSHOW_GRID = 1, CSHOW_ENTITIES, CSHOW_SOUNDS, CSHOW_AI_HIDDEN, CSHOW_PYMEM, CSHOW_AI, CSHOW_SHIPS
 };
@@ -1795,10 +1791,10 @@ void Scorer_DrawDebug(void) {
 		return;
 	}
 	if (g_NodesWorld) {
-		CNodesWorld_DrawAnalize(g_NodesWorld);
+		CNodesWorld_Draw(g_NodesWorld);
 	}
 	if (g_NodesWorld2D) {
-		CNodesWorld2D_DrawAnalize(g_NodesWorld2D);
+		CNodesWorld2D_Draw(g_NodesWorld2D);
 	}
 	if (g_NodesTraffic) {
 		DBG_VF(g_NodesTraffic, 0x3c)(g_NodesTraffic);
@@ -1810,10 +1806,10 @@ void Scorer_DrawDebug(void) {
 		cAIVehicleGroup_Draw(g_VehicleGroup);
 	}
 	if (g_AStar) {
-		cAStar_Draw(g_AStar);
+		CAStar_DrawDebug((CAStar *)g_AStar);
 	}
 	if (g_AStar2D) {
-		cAStar2D_Draw(g_AStar2D);
+		CAStar2D_DrawDebug((CAStar *)g_AStar2D);
 	}
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 		if (e->flag_4c) {

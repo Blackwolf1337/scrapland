@@ -94,20 +94,7 @@ SD_IMPORT(crt_floor, 0x345130)
 /* engine: Menu/ (include/scrap/scorer.h) */
 
 /* engine: functions behind the Scrap module (include/scrap/scrap.h) */
-SD_IMPORT(Elements_Call, 0x202ea0)
-SD_IMPORT(Elements_Create, 0x203000)
-SD_IMPORT(Floor_Get, 0x203af0)
 SD_IMPORT(Steam_SetAchievement, 0x1a66a0)
-SD_IMPORT(Anm_Preload, 0x2051a0)
-SD_IMPORT(Object3D_Preload, 0x205140)
-SD_IMPORT(cDebrisSys_Init, 0x204d50)
-SD_IMPORT(cDebrisSys_NewElement, 0x204bd0)
-SD_IMPORT(cDebrisSys_Drop, 0x204a40)
-SD_IMPORT(Achievement_Unlock, 0x137470)
-SD_IMPORT(Steam_SetAchievement, 0x1a66a0)
-SD_IMPORT(Steam_GetID, 0x134720)
-SD_IMPORT(Steam_GetTicket, 0x1345e0)
-SD_IMPORT(Gog_GetID, 0x137160)
 
 /* engine: Input/ */
 SD_IMPORT(ActionSet_IsNamed, 0x133a30)
@@ -233,8 +220,6 @@ SD_IMPORT(ViewerCamera_Move, 0x218080)
 /* module agent: ScrapEng/ScrapEngCamera+Particles+Trails.cpp (imports below this line) */
 
 /* module agent: Sound/Sound+SoundDX8+Wav.cpp (imports below this line) */
-SD_IMPORT(DebugUtils_DrawSphere, 0x219d20)
-SD_IMPORT(Sound_UpdateVoice, 0x1a0320)
 SD_IMPORT_STDCALL(FSOUND_GetError, 0, 0x3179c6)
 SD_IMPORT_STDCALL(FSOUND_GetMaxChannels, 0, 0x3179cc)
 SD_IMPORT_STDCALL(FSOUND_GetMemoryStats, 8, 0x3179ea)
@@ -325,18 +310,6 @@ SD_IMPORT(CBsp_Preparar, 0x28efe0)
 /* module agent: Entities/More+ObjEntity (imports below this line) */
 
 /* module agent: Entities/Vehicle/VehicleEffects+VehicleEntity.cpp (imports below this line) */
-SD_IMPORT(cVehicleEffects_dtor, 0x100b60)
-SD_IMPORT(cVehicleEffects_WindSmoke, 0x102940)
-SD_IMPORT(cVehicleEntity_Step, 0x10a730)
-SD_IMPORT(cVehicleMotors_dtor, 0x10bd10)
-SD_IMPORT(cVehicleO648_dtor, 0x0ff010)
-SD_IMPORT(cVehicleO648_SetSlot, 0x0ff3f0)
-SD_IMPORT(cVehicleO648_Update, 0x0ff6a0)
-SD_IMPORT(cVehicleControls_Tick, 0x0ffcc0)
-SD_IMPORT(cVehicleO648_ctor, 0x0fefb0)
-SD_IMPORT(cVehicleMotors_ctor, 0x10bc20)
-SD_IMPORT(cVehicleEffects_ctor, 0x100ab0)
-SD_IMPORT(cNetVController_ctor, 0x1186b0)
 
 /* module agent: Entities/Vehicle/VehicleMotors+MotorsEffects+Traffic.cpp (imports below this line) */
 
@@ -352,18 +325,11 @@ SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
 /* module agent: AI/NodesWorld.cpp (imports below this line) */
 
 /* module agent: Input/ActionSet+IDevice+PcKeyboard+PcMouse+PcPad.cpp (imports below this line) */
-SD_IMPORT(CNodesWorld_AddExtraPoints, 0x0a93d0)
-SD_IMPORT(CNodesWorld_Generate, 0x0a7a00)
-SD_IMPORT(CNodesWorld_AnalizeMap, 0x0a2e80)
-SD_IMPORT(CNodesWorldSup_SaveInfPath, 0x0bba70)
 SD_IMPORT(crt_chmod, 0x345287)
 
 /* module agent: AI/NodesWorld2D+NodesWorldSup.cpp (imports below this line) */
 SD_IMPORT(cMonitorScorer_DrawMonitor, 0x168c60)
 SD_IMPORT(cRadarScorer_DrawRadar, 0x16d570)
-SD_IMPORT(CNodesWorld2D_Generate, 0x0b2f60)
-SD_IMPORT(cPlayerInput_PressKey, 0x1396b0)
-SD_IMPORT(cActionSet_HoldPressed, 0x139810)
 
 /* module agent: Entities/Char/Type part 2+WalkCharControl (imports below this line) */
 
@@ -482,10 +448,6 @@ SD_IMPORT(crt_invalid_parameter_noinfo_noreturn, 0x34e614)
 SD_IMPORT(crt_Throw_bad_array_new_length, 0x3178b8)
 SD_IMPORT(MsvcString_ReallocFor, 0x1375f0)
 SD_IMPORT(PtrVector_Reallocate, 0x137790)
-SD_IMPORT(CNodesWorld_DrawAnalize, 0x0a5b10)
-SD_IMPORT(CNodesWorld2D_DrawAnalize, 0x0b1210)
-SD_IMPORT(cAStar_Draw, 0x099820)
-SD_IMPORT(cAStar2D_Draw, 0x09a560)
 
 /* module agent: Rest B, game leftovers from 0x240000 (imports below this line) */
 /* busy waits of the original (the project forbids blocking waits in C): left to the exe */
