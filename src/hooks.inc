@@ -8265,3 +8265,7 @@ SD_HOOK(Video_WaitKeysUp, 0x280d10, 70)
 /* module agent: Standalone 2a, the real Python 1.5.2 (hooks below this line) */
 
 /* module agent: Standalone, the other Sleep calls (hooks below this line) */
+
+/* module agent: Standalone 2b, the CRT (hooks below this line) */
+
+/* module agent: Standalone 2c, D3DX8, ASE and the M3D math (hooks below this line) */

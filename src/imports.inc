@@ -468,3 +468,7 @@ SD_IMPORT(crt_sinh, 0x351ce0)
 SD_IMPORT(crt_sqrt, 0x3524c4)
 SD_IMPORT(crt_tan, 0x352570)
 SD_IMPORT(crt_tanh, 0x351cf1)
+
+/* module agent: Standalone 2b, the CRT (imports below this line) */
+
+/* module agent: Standalone 2c, D3DX8, ASE and the M3D math (imports below this line) */
