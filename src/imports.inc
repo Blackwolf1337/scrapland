@@ -325,7 +325,6 @@ SD_IMPORT(crt_chmod, 0x345287)
 
 /* module agent: AI/NodesWorld2D+NodesWorldSup.cpp (imports below this line) */
 SD_IMPORT(cMonitorScorer_DrawMonitor, 0x168c60)
-SD_IMPORT(cRadarScorer_DrawRadar, 0x16d570)
 
 /* module agent: Entities/Char/Type part 2+WalkCharControl (imports below this line) */
 
@@ -343,7 +342,6 @@ SD_IMPORT(crt_ltoa, 0x34d525)
 /* module agent: Scorer part 3 (Gradient+Sprite+Tab) (imports below this line) */
 SD_IMPORT(crt_strtime, 0x33bb73)
 SD_IMPORT(PyFloat_AsDouble, 0x2dfa30)	/* floatobject.c */
-SD_IMPORT(cTargetScorer_DrawTarget, 0x181600)
 
 /* module agent: Logic part 3 (GenCharLogic..Messenger) (imports below this line) */
 

@@ -93,43 +93,12 @@ static float Waypoint_SplitY(int player, float y) {
 
 /* the four corners of the rectangle around a waypoint in sight, each a turned copy of the corner frame */
 static void Waypoint_DrawRect(cWaypointScorer *self, cEntity *e, const float *scr, float depth) {
-	float uv0[2], uv1[2], uv[14], pos[8];
-	CPsaImage *img = self->img;
-
 	float d = X87_MulMulF(((const cObjEntityVtbl *)e->vftable)->GetRadius(e),
 		g_SplitScreenGame ? WAYPOINT_RECT_SIZE * 0.5f : WAYPOINT_RECT_SIZE, depth);
 	if (WAYPOINT_RECT_MIN > d) {
 		d = WAYPOINT_RECT_MIN;
 	}
-	CPsaImage_GetFrameUV(img, self->rectIndex, uv0, uv1);
-	float u0 = uv0[0], v0 = uv0[1], u1 = uv1[0], v1 = uv1[1];
-	/* the texture coordinates of the four turns, overlapping: (u0 v0) (u1 v0) (u1 v1) (u0 v1) from 0, 2, 4 and 6 */
-	const float t[14] = {u0, v0, u1, v0, u1, v1, u0, v1, u0, v0, u1, v0, u1, v1};
-	for (int k = 0; k < 14; k++) {
-		uv[k] = t[k];
-	}
-	pos[0] = u0 - u0;
-	pos[1] = v0 - v0;
-	pos[2] = u1 - u0;
-	pos[3] = v0 - v0;
-	pos[4] = u1 - u0;
-	pos[5] = v1 - v0;
-	pos[6] = u0 - u0;
-	pos[7] = v1 - v0;
-	img->pivotX = (u1 - u0) * 0.5f;
-	img->pivotY = (v1 - v0) * 0.5f;
-	img->x = scr[0] - d;
-	img->y = scr[1] - d;
-	CPsaImage_DrawPoly(img, pos, &uv[2], NULL, 4, 6);
-	img->x = scr[0] - d;
-	img->y = scr[1] + d;
-	CPsaImage_DrawPoly(img, pos, &uv[4], NULL, 4, 6);
-	img->x = scr[0] + d;
-	img->y = scr[1] + d;
-	CPsaImage_DrawPoly(img, pos, &uv[6], NULL, 4, 6);
-	img->x = scr[0] + d;
-	img->y = scr[1] - d;
-	CPsaImage_DrawPoly(img, pos, &uv[0], NULL, 4, 6);
+	ScorerHud_DrawCorners(self->img, self->rectIndex, scr, d);
 }
 
 /* the blinking dot on a waypoint in sight that is not the current one, while the camera sees it */
@@ -163,16 +132,13 @@ static void Waypoint_DrawDot(cWaypointScorer *self, cEntity *e, cEntity *cam, co
 
 /* the arrow from the middle of the screen towards a waypoint out of sight */
 static void Waypoint_DrawArrow(cWaypointScorer *self, const vec3_t *p, byte current) {
-	float scr[2], uv0[2], uv1[2], in[2], r[2];
-	float pos[4][2], uv[4][2];
+	float scr[2];
 	CPsaImage *img = self->img;
 
 	((byte *)&img->color)[3] = 0xff;
 	Engine_WorldToScreen(p, scr, NULL);
 	float sx = scr[0], sy = scr[1];
-	double dx = ((double)sx - (double)WAYPOINT_HALF_W) * (double)WAYPOINT_HALF_H / (double)WAYPOINT_HALF_W;
-	double dy = (double)sy - (double)WAYPOINT_HALF_H;
-	float a = -(float)(Game_Atan2(dx, dy) + 3.141592653589793);
+	float a = ScorerHud_ArrowAngle(sx, sy);
 	float ex = sx - WAYPOINT_HALF_W, ey = sy - WAYPOINT_HALF_H;
 	if (g_SplitScreenGame) {
 		ex = ex * WAYPOINT_ARROW_SPLIT;
@@ -183,46 +149,10 @@ static void Waypoint_DrawArrow(cWaypointScorer *self, const vec3_t *p, byte curr
 	}
 	float x = ex + WAYPOINT_HALF_W;
 	float y = Waypoint_SplitY(self->base.player, ey + WAYPOINT_HALF_H);
-	CPsaImage_GetFrameUV(img, self->arrowIndex, uv0, uv1);
-	float hv = (uv1[1] - uv0[1]) * 0.5f;
-	float hu = (uv1[0] - uv0[0]) * 0.5f;
-	uv[0][0] = uv0[0];
-	uv[0][1] = uv0[1];
-	uv[1][0] = uv1[0];
-	uv[1][1] = uv0[1];
-	uv[2][0] = uv1[0];
-	uv[2][1] = uv1[1];
-	uv[3][0] = uv0[0];
-	uv[3][1] = uv1[1];
-	float nu = 0.0f - hu, nv = 0.0f - hv;
-	in[0] = nu;
-	in[1] = nv;
-	Vec2_Rotate(r, in, a);
-	pos[0][0] = r[0];
-	pos[0][1] = r[1];
-	in[0] = uv1[0] - uv0[0] - hu;
-	in[1] = nv;
-	Vec2_Rotate(r, in, a);
-	pos[1][0] = r[0];
-	pos[1][1] = r[1];
-	in[1] = uv1[1] - uv0[1] - hv;
-	in[0] = uv1[0] - uv0[0] - hu;
-	Vec2_Rotate(r, in, a);
-	pos[2][0] = r[0];
-	pos[2][1] = r[1];
-	in[0] = nu;
-	in[1] = uv1[1] - uv0[1] - hv;
-	Vec2_Rotate(r, in, a);
-	pos[3][0] = r[0];
-	pos[3][1] = r[1];
-	img->pivotX = 0.0f;
-	img->pivotY = 0.0f;
-	img->x = x;
-	img->y = y;
 	float sc = current ? 1.0f : WAYPOINT_ARROW_SPLIT;
 	img->scaleX = sc;
 	img->scaleY = sc;
-	CPsaImage_DrawPoly(img, &pos[0][0], &uv[0][0], NULL, 4, 6);
+	ScorerHud_DrawArrow(img, self->arrowIndex, a, x, y, 0);
 }
 
 void __thiscall cWaypointScorer_DrawTarget(cWaypointScorer *self, cEntity *e, byte current) {

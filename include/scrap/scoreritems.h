@@ -853,7 +853,8 @@ cActionSet *__thiscall ActionSetTable_At(void *table, uint32_t i);
 cRadarScorer *__thiscall cRadarScorer_Delete(cRadarScorer *self, byte flags);
 /* the floor of height y; the fade starts when it changed */
 void __thiscall cRadarScorer_UpdateFloor(cRadarScorer *self, float y);
-/* the radar and the entities on it (rva 0x16d570, not decompiled) */
+/* the radar: its map, the view cones, the places, doors, characters and vehicles, the target and the mission
+ * objects */
 void __thiscall cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity *cam);
 /* the view of the radar at the target and its map (the start of DrawRadar) */
 void __thiscall cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntity *cam);
@@ -1081,6 +1082,8 @@ void __fastcall cScraplandSubMenuScorer_Init(cScraplandSubMenuScorer *self);
 void __thiscall cScraplandMainMenuScorer_SetGlow(cScraplandMainMenuScorer *self, uint32_t flags, const char *file);
 void __thiscall cScraplandSubMenuScorer_SetGlow(cScraplandSubMenuScorer *self, uint32_t flags, const char *file);
 void __thiscall cScraplandSubMenuScorer_Draw(cScraplandSubMenuScorer *self, int player);
+/* vf00: the logo, the neon tubes, the letters with their lighting, the sparks and "Remastered" */
+void __thiscall cScraplandMainMenuScorer_Draw(cScraplandMainMenuScorer *self, int player);
 /* 2D/white.tga loads without the flag 0x40, any other file with it */
 void __thiscall cScraplandMainMenuScorer_SetLighting(cScraplandMainMenuScorer *self, uint32_t flags,
 	const char *file);

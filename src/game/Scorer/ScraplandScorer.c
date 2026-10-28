@@ -1,6 +1,6 @@
 /*
  * ScraplandScorer.cpp of the game (Menu/): cScraplandMainMenuScorer and cScraplandSubMenuScorer, the animated
- * logos of the menus. The draw of the main menu (rva 0x176130) is not decompiled. See include/scrap/scoreritems.h.
+ * logos of the menus. See include/scrap/scoreritems.h.
  */
 #include <string.h>
 
@@ -418,4 +418,228 @@ void __thiscall cScraplandSubMenuScorer_Draw(cScraplandSubMenuScorer *self, int 
 	g_SubMenuRingTime = v;
 	g_SubMenuRingDir = crt_rand() & 1;
 	g_SubMenuRingFrame = crt_rand() % SUBMENU_RING_FRAMES;
+}
+
+/* the main menu logo: the screen positions of the lighting frames and of the sparks */
+#define g_MainMenuLightPos ((const float (*)[2])Game_Ptr(0x428bf8))	/* [5] */
+#define g_MainMenuSparkPos ((const float (*)[2])Game_Ptr(0x428c20))	/* [MAINMENU_SPARKS] */
+
+#define MAINMENU_MAX_DT 0.2f
+#define MAINMENU_NEONS 21		/* the neon frames 18.. */
+#define MAINMENU_NEON_FIRST 18
+#define MAINMENU_LETTERS 9		/* the letters, neon frames 1..9 */
+#define MAINMENU_SPARKS 19
+#define MAINMENU_SHEET 256.0f		/* the neon sheet: the half size of the logo, the frame offsets of 512 */
+#define MAINMENU_ACCEPT_ACTION 10	/* of the menu action set: held on the "play" button flickers letter 0 */
+
+/* the lighting frames of a letter while it runs: base - (int)(time / length * scale) when it is in
+ * lo..lo + num - 1, at the position pos */
+typedef struct MainMenuLight {
+	int letter;
+	int base;
+	float scale;
+	int lo, num;
+	int pos;
+} MainMenuLight;
+
+static const MainMenuLight MainMenu_Lights[] = {
+	{7, 1, -8.0f, 1, 8, 0},
+	{8, 8, 8.0f, 1, 8, 0},
+	{2, 9, -7.0f, 9, 7, 1},
+	{2, 34, 10.0f, 25, 10, 3},
+	{4, 17, -8.0f, 17, 8, 2},
+	{5, 24, 8.0f, 17, 8, 2},
+	{1, 25, -10.0f, 25, 10, 3},
+	{5, 37, -4.0f, 37, 5, 4},
+	{6, 41, 4.0f, 37, 5, 4},
+};
+
+/* the remainder of the original's signed rand() % 2^n */
+static int MainMenu_RandMod(int n) {
+	return crt_rand() % n;
+}
+
+/* a frame of the neon sheet at its place in the logo */
+static void MainMenu_DrawNeon(cScraplandMainMenuScorer *self, int frame) {
+	float uv0[2], uv1[2];
+
+	CPsaImage_GetFrameUV(self->neon, frame, uv0, uv1);
+	CPsaImage_DrawFrame(self->neon, frame, self->base.x - MAINMENU_SHEET + uv0[0] * (MAINMENU_SHEET * 2.0f),
+		self->base.y + 0.0f + uv0[1] * MAINMENU_SHEET);
+}
+
+/* the neon tubes: each flickers while its wait runs, else it is nearly full on */
+static void MainMenu_Neons(cScraplandMainMenuScorer *self, float dt) {
+	for (int k = 0; k < MAINMENU_NEONS; k++) {
+		float *w = &g_MainMenuNeonWait[k];
+		int alpha;
+		if (*w > 0.0f) {
+			if (MainMenu_RandMod(4) == 0) {
+				alpha = MainMenu_RandMod(32) + 0x80;
+			} else {
+				alpha = MainMenu_RandMod(64) + 0x20;
+			}
+			*w = *w - dt;
+		} else {
+			alpha = MainMenu_RandMod(35) + 220;
+		}
+		self->neon->color = (uint32_t)alpha << 24 | 0xffffff;
+		MainMenu_DrawNeon(self, MAINMENU_NEON_FIRST + k);
+	}
+	if (g_MainMenuNeonNext > 0.0f) {
+		g_MainMenuNeonNext = g_MainMenuNeonNext - dt;
+	} else {
+		g_MainMenuNeonNext = ScraplandScorer_Rand(K(0x3b11a0), K(0x3afd68));
+		int k = crt_rand() % MAINMENU_NEONS;
+		g_MainMenuNeonWait[k] = ScraplandScorer_Rand(K(0x3c40c8), K(0x3aeb38));
+	}
+	/* the three groups of tubes flicker together */
+	static const int groups[3][2] = {{0, 7}, {8, 12}, {13, 20}};
+	for (int g = 0; g < 3; g++) {
+		if (g_MainMenuNeonGroup[g] > 0.0f) {
+			g_MainMenuNeonGroup[g] = g_MainMenuNeonGroup[g] - dt;
+			continue;
+		}
+		g_MainMenuNeonGroup[g] = ScraplandScorer_Rand(K(0x3aeba8), 0.0);
+		for (int k = groups[g][0]; k <= groups[g][1]; k++) {
+			g_MainMenuNeonWait[k] = ScraplandScorer_Rand(K(0x3ae218), K(0x3ae228));
+		}
+	}
+}
+
+/* the lighting of a letter after its random wait, the alpha of the letter */
+static int MainMenu_Letter(cScraplandMainMenuScorer *self, int k, float dt) {
+	if (!(g_MainMenuTime[k] > 0.0f)) {
+		float w = g_MainMenuWait[k] - dt;
+		g_MainMenuWait[k] = w;
+		if (0.0f >= w) {
+			g_MainMenuWait[k] = ScraplandScorer_Rand(K(0x3c4118), K(0x3c4108));
+			float len = ScraplandScorer_Rand(K(0x3c40c0), K(0x3aeb68));
+			g_MainMenuLength[k] = len;
+			switch (k) {
+			case 7:
+			case 8:
+			case 4:
+				g_MainMenuLength[k] = len * 1.6f;
+				break;
+			case 2:
+				g_MainMenuLength[k] = len * 1.4f;
+				break;
+			case 1:
+				g_MainMenuLength[k] = len * 1.9f;
+				break;
+			case 5:
+			case 6:
+				g_MainMenuLength[k] = len;
+				break;
+			}
+			g_MainMenuTime[k] = g_MainMenuLength[k];
+		}
+		return crt_rand() % 55 + 200;
+	}
+	g_MainMenuTime[k] = g_MainMenuTime[k] - dt;
+	int alpha = (crt_rand() % 5 + 2) << 5;
+	CPsaImage *img = self->lighting;
+	img->color = 0xffffffff;
+	img->pivotX = 0.0f;
+	img->pivotY = 0.0f;
+	for (int i = 0; i < (int)(sizeof(MainMenu_Lights) / sizeof(MainMenu_Lights[0])); i++) {
+		const MainMenuLight *l = &MainMenu_Lights[i];
+		if (l->letter != k) {
+			continue;
+		}
+		int n = l->base - (int)(g_MainMenuTime[k] / g_MainMenuLength[k] * l->scale);
+		if ((uint32_t)(n - l->lo) <= (uint32_t)(l->num - 1)) {
+			CPsaImage_DrawFrame(self->lighting, n, g_MainMenuLightPos[l->pos][0], g_MainMenuLightPos[l->pos][1]);
+		}
+	}
+	return alpha;
+}
+
+/* the sparks: each one runs its frames after a random wait */
+static void MainMenu_Sparks(cScraplandMainMenuScorer *self, float dt) {
+	for (int k = 0; k < MAINMENU_SPARKS; k++) {
+		if (!(g_MainMenuSparkTime[k] > 0.0f)) {
+			float w = g_MainMenuSparkWait[k] - dt;
+			g_MainMenuSparkWait[k] = w;
+			if (0.0f >= w) {
+				g_MainMenuSparkWait[k] = ScraplandScorer_Rand(K(0x3c4110), K(0x3c40f8));
+				int r = crt_rand() & 0x7fff;
+				/* the original reads the letter lengths by the spark index, past them for k >= 9 */
+				g_MainMenuSparkTime[k] = g_MainMenuLength[k];
+				g_MainMenuSparkLength[k] = (float)((double)r * g_ScorerRandScale * K(0x3b9748) + K(0x3c40e8));
+				g_MainMenuSparkFrame[k] = crt_rand() % 14;
+				g_MainMenuSparkDir[k] = (byte)crt_rand() & 1;
+			}
+			crt_rand();
+			continue;
+		}
+		g_MainMenuSparkTime[k] = g_MainMenuSparkTime[k] - dt;
+		int r = MainMenu_RandMod(4);
+		float x = g_MainMenuSparkPos[k][0], y = g_MainMenuSparkPos[k][1];
+		CPsaImage *img = self->lighting;
+		img->color = (img->color & 0xffffff) | (uint32_t)((r + 12) << 4) << 24;
+		img->pivotX = 0.5f;
+		img->pivotY = 0.5f;
+		int n = g_MainMenuSparkFrame[k] - (int)(g_MainMenuSparkTime[k] / g_MainMenuSparkLength[k] * -14.0f);
+		int m = n > 14 ? n - 14 : n;
+		if ((uint32_t)m <= 14) {
+			CPsaImage_DrawFrame(self->lighting, g_MainMenuSparkDir[k] ? 0x4f - m : m + 0x41, x, y);
+		}
+	}
+}
+
+/* vf00: the logo and its glow, the flickering neon tubes, the letters with their lighting, the sparks and the
+ * pulsing "Remastered" */
+void __thiscall cScraplandMainMenuScorer_Draw(cScraplandMainMenuScorer *self, int player) {
+	static const char remastered[] = "Remastered";
+	float pos[2], dim[2];
+
+	float t = (float)g_pApp->vftable->GetGameTime(g_pApp);
+	self->now = t;
+	float d = t - self->time;
+	self->time = t;
+	self->logo->pivotX = 0.5f;
+	self->logo->pivotY = 0.0f;
+	float dt = Float_MinSS(MAINMENU_MAX_DT, d);
+	float off = 0.0f;
+	CPsaImage_Draw(self->logo, self->base.x, self->base.y);
+	self->glow->color = 0xffffffff;
+	self->glow->pivotX = 0.5f;
+	self->glow->pivotY = 0.0f;
+	CPsaImage_Draw(self->glow, self->base.x, self->base.y);
+	MainMenu_Neons(self, dt);
+	byte accept = 0;
+	cScorer *sc = Scorer_Get(player);
+	if (sc && sc->cursor) {
+		float cx = sc->cursor->x, cy = sc->cursor->y;
+		if (cx >= 102.0f && 108.0f >= cx && cy >= 167.0f && 173.0f >= cy) {
+			cActionSet *set = TABLE_AT(g_ActionSets, 0);
+			accept = TABLE_AT(set->actions, MAINMENU_ACCEPT_ACTION)->value[player] > 0.5f;
+		}
+	}
+	for (int k = 0; k < MAINMENU_LETTERS; k++) {
+		int alpha = MainMenu_Letter(self, k, dt);
+		if (accept && k == 0) {
+			if (MainMenu_RandMod(4) == 0) {
+				alpha = MainMenu_RandMod(16) + 0x5c;
+			} else {
+				alpha = MainMenu_RandMod(32) + 0x20;
+			}
+		}
+		self->neon->color = (self->neon->color & 0xffffff) | (uint32_t)alpha << 24;
+		MainMenu_DrawNeon(self, k + 1);
+	}
+	MainMenu_Sparks(self, dt);
+	CFont *font = g_FontScrapMedium;
+	for (int i = 0; i < 10; i++) {
+		float r = ScraplandScorer_Rand(K(0x3ae270), 0.0);
+		double s = Game_Sin((double)(self->now * 8.0f - (float)i)) + 1.0;
+		font->efectos = 0x40000;
+		font->align = 0;
+		font->color = (uint32_t)(int)(s * 90.0 + (double)r) << 24 | 0xb1eaff;
+		Font_TextSize(font, pos, dim, 0.0f, 0.0f, "%c", remastered[i]);
+		CFont_PrintfFlags(font, self->base.x + 110.0f + off, self->base.y + 170.0f, 0xb, "%c", remastered[i]);
+		off = dim[0] + off;
+	}
 }

@@ -1,6 +1,5 @@
 /*
- * RadarScorer.cpp of the game (Menu/): cRadarScorer, the radar of the ship and the map of the menu. The radar
- * itself (cRadarScorer_DrawRadar) is still the exe's; its helpers DrawMap and DrawIcon are here.
+ * RadarScorer.cpp of the game (Menu/): cRadarScorer, the radar of the ship and the map of the menu.
  * See include/scrap/scoreritems.h.
  */
 #include <stdio.h>
@@ -11,8 +10,11 @@
 #include "scrap/weapons.h"
 #include "scrap/crt.h"
 #include "scrap/mathlib.h"
+#include "scrap/objentity.h"
+#include "scrap/scrap.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/withlifeentity.h"
+#include "scrap/world.h"
 
 /* the turn of the camera of the radar (FCam) */
 #define CamEntity_AngY(e) (*(float *)((byte *)(e) + 0x8c))
@@ -429,6 +431,295 @@ void __thiscall cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntit
 		Radar_DrawMapImage(self, self->floorMaps[self->prevFloor], RADAR_MAP_ALPHA - alpha, &verts[0][0], &uv[0][0]);
 	}
 	Radar_DrawMapImage(self, img, alpha, &verts[0][0], &uv[0][0]);
+}
+
+/* ---- the radar ---- */
+
+#define g_SuperDealAvaliable GAME_DATA(int, 0x45fe48)	/* SuperDealAvaliable */
+#define g_RadarShowAll GAME_DATA(int, 0x45fe00)		/* RadarShowAll: the neutral vehicles and characters too */
+#define g_IsSecondMission GAME_DATA(int, 0x4678d8)	/* IsSecondMission */
+#define Radar_Floor(i) (&((MapFloors *)((byte *)g_pWorld + 0x2f0))->levels[i])
+
+#define RADAR_PI 3.14159274f
+#define RADAR_TEAM_NEUTRAL 3		/* arrow.tgType */
+#define RADAR_TEAM_NONE 4
+
+/* the blinking of an icon waiting for the player: the alpha |time * 1024 % 511 - 255| */
+static uint32_t Radar_Pulse(cRadarScorer *self) {
+	int a = (int)(Scorer_Get(self->base.player)->time * 1024.0f) % 511 - 255;
+	return (uint32_t)(a < 0 ? -a : a) << 24 | 0xffffff;
+}
+
+/* the icon of e at its view position */
+static void Radar_Icon(cRadarScorer *self, cEntity *e, int icon, float ang, int outIcon, uint32_t flags,
+	uint32_t color, uint32_t outColor, byte always) {
+	vec3_t p;
+
+	cRadarScorer_DrawIcon(self, Obj_Vtbl(e)->GetViewPos(e, &p), icon, ang, outIcon, flags, color, outColor, always);
+}
+
+/* the class name of the action controller of e starts with cls (n letters; 0: the whole name) */
+static byte Radar_ActIs(cEntity *e, const char *cls, size_t n) {
+	const cWithLifeEntityVtblFull *vt = (const cWithLifeEntityVtblFull *)e->vftable;
+	if (!vt->GetActCtrl(e)) {
+		return 0;
+	}
+	const char *name = vt->GetActCtrl(e)->cls->name;
+	return n ? !crt_strncmp(name, cls, n) : !strcmp(name, cls);
+}
+
+/* the view cones of the characters with life around */
+static void Radar_DrawCones(cRadarScorer *self, cEntity *target) {
+	vec3_t a, p;
+
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+		if (e == target || !e->flag_4c || !Entity_IsType(e, TYEN_WITH_LIFE)) {
+			continue;
+		}
+		cArrowIndicator *ar = &WLife(e)->arrow;
+		int mode = ar->coneStatus;
+		if (!mode) {
+			continue;
+		}
+		float c = (float)Game_Cos((double)(ar->coneFov * 0.5f));
+		float range = ar->coneDist / c;
+		float ang = g_RadarAngle - Obj_Vtbl(e)->GetSndAng(e, &a)->y + RADAR_PI;
+		cRadarScorer_DrawCone(self, Obj_Vtbl(e)->GetViewPos(e, &p), ang, ar->coneFov, range, mode);
+	}
+}
+
+/* the icon of an entity of the world: the places of the level, the doors, the characters and vehicles by team
+ * (enemies counted in g_NumEnemiesInRadar) */
+static void Radar_DrawEntity(cRadarScorer *self, cEntity *target, cEntity *e, byte isCar, cEntity *scrapyard,
+	uint32_t friendColor, uint32_t enemyColor) {
+	vec3_t a, p;
+	float ang = g_RadarAngle;
+
+	if (isCar && !strcmp(e->vftable->GetClassName(e), "Obj")) {
+		if (!crt_strncmp(e->name, "DM_AreaToPark_", 14)) {
+			cRadarScorer_DrawIcon(self, e->vftable->GetPos(e, &p), 15, ang, 15, 0x11, 0xffffffff, 0xffffffff, 0);
+		}
+		return;
+	}
+	if (Entity_IsType(e, "item")) {
+		if (!strcmp(e->name, "ParkParking_Junkyard")) {
+			const char *bp = SaveVar_Get("NewBluePrintAvaliable");
+			uint32_t c = !bp || *bp == '0' ? 0xffffffff : Radar_Pulse(self);
+			Radar_Icon(self, e, 20, g_RadarAngle, 20, 0, c, c, 0);
+		}
+		if (scrapyard && !strcmp(e->name, "DM_OutLink_Outskirts")) {
+			uint32_t c = g_SuperDealAvaliable && !g_IsDemo ? Radar_Pulse(self) : 0xffffffff;
+			Radar_Icon(self, e, 21, g_RadarAngle, 21, 0, c, c, 0);
+		}
+		return;
+	}
+	if (!Entity_IsType(e, TYEN_WITH_LIFE)) {
+		return;
+	}
+	if (!strcmp(e->name, "DM_Door_Elevator_GamblinDen")) {
+		uint32_t c = g_SuperDealAvaliable ? Radar_Pulse(self) : 0xffffffff;
+		Radar_Icon(self, e, 21, g_RadarAngle, 21, 0, c, c, 0);
+		return;
+	}
+	if (Radar_ActIs(e, "DoorMetro", 9)) {
+		Radar_Icon(self, e, 19, g_RadarAngle, 19, 0, 0xffffffff, 0xffffffff, 0);
+		return;
+	}
+	if (Radar_ActIs(e, "DoorTeleporter", 14)) {
+		Radar_Icon(self, e, 16, g_RadarAngle, 16, 0x11, 0xffffffff, 0xffffffff, 0);
+		return;
+	}
+	if (Radar_ActIs(e, "Conversor", 0)) {
+		Radar_Icon(self, e, 18, Obj_Vtbl(e)->GetViewAng(e, &a)->y, 18, 0x11, 0xffffffff, 0xffffffff, 0);
+		return;
+	}
+	if (self->menuMap) {
+		return;
+	}
+	int team = WLife(e)->arrow.tgType;
+	if (team == RADAR_TEAM_NEUTRAL) {
+		if (!g_RadarShowAll) {
+			return;
+		}
+		if (Entity_IsType(e, TYEN_WALKCHAR) || Entity_IsType(e, TYEN_CAR)) {
+			Radar_Icon(self, e, 5, Obj_Vtbl(e)->GetViewAng(e, &a)->y, 4, 5, 0xffffffff, 0xffffffff, 0);
+		} else {
+			Radar_Icon(self, e, 4, Obj_Vtbl(e)->GetViewAng(e, &a)->y, 4, 5, 0xffffffff, 0xffffffff, 0);
+		}
+		return;
+	}
+	if (team == WLife(target)->arrow.tgType && team != RADAR_TEAM_NONE) {
+		Radar_Icon(self, e, 5, Obj_Vtbl(e)->GetViewAng(e, &a)->y, 4, 5, friendColor, friendColor, 0);
+		return;
+	}
+	Radar_Icon(self, e, 5, Obj_Vtbl(e)->GetViewAng(e, &a)->y, 4, 5, enemyColor, enemyColor, 0);
+	g_NumEnemiesInRadar++;
+}
+
+/* the way up (up) or down to the floor of the mission object from the floor of the radar, nearest to the target:
+ * its point and angle */
+static float Radar_FloorWay(cRadarScorer *self, cEntity *target, byte up, vec3_t *p) {
+	vec3_t t;
+
+	const vec3_t *tp = target->vftable->GetPos(target, &t);
+	if (up) {
+		const MapLevel *l = Radar_Floor(self->floor);
+		int k = MapLevel_NearestUp(l, tp);
+		l = Radar_Floor(self->floor);
+		*p = l->up[k];
+		return l->upAng[k];
+	}
+	const MapLevel *l = Radar_Floor(self->floor + 1);
+	int k = MapLevel_NearestDown(l, tp);
+	l = Radar_Floor(self->floor + 1);
+	*p = l->down[k];
+	return l->downAng[k];
+}
+
+/* the mark of a mission object (RadarShow 1 the main missions, 2 and 3 the others): on another floor the way
+ * there, blinking while its RadarShow changed; flags 9 for the nearest main mission */
+static void Radar_DrawMission(cRadarScorer *self, cEntity *target, cEntity *e, cEntity *nearest) {
+	vec3_t p, a;
+	cObjEntity *o = (cObjEntity *)e;
+
+	Obj_Vtbl(e)->GetViewPos(e, &p);
+	float ang = g_RadarAngle;
+	int outIcon = 8, icon = 6;
+	int kind = o->radarShow;
+	if (kind && o->radarTime > 0.0f && ((int)(o->radarTime * 10.0f) & 1)) {
+		return;
+	}
+	if (kind == 1) {
+		byte isNearest = !nearest || nearest == e;
+		const MapLevel *l = Radar_Floor(self->floor);
+		if (l->y > p.y) {
+			ang = Radar_FloorWay(self, target, 1, &p) + RADAR_PI;
+			outIcon = 22;
+			icon = 9;
+		} else if (self->floor + 1 < World_NumFloors() && !(Radar_Floor(self->floor + 1)->y >= p.y)) {
+			ang = Radar_FloorWay(self, target, 0, &p) + RADAR_PI;
+			outIcon = 22;
+			icon = 9;
+		} else if (!crt_strncmp(e->name, "DM_OutLink_", 11)) {
+			p = *Obj_Vtbl(e)->GetViewPos(e, &a);
+			ang = Obj_Vtbl(e)->GetViewAng(e, &a)->y;
+			outIcon = 22;
+			icon = 9;
+		} else {
+			outIcon = 8;
+			icon = 12;
+		}
+		uint32_t c = g_IsSecondMission ? 0x80ffff00 : 0xffffff00;
+		icon = (int)(Scorer_Get(self->base.player)->time * 8.0f) % 2 + icon;
+		cRadarScorer_DrawIcon(self, &p, icon, ang, outIcon, isNearest ? 9 : 1, c, c, 0);
+		return;
+	}
+	if (kind != 2 && kind != 3) {
+		return;
+	}
+	switch (cRadarScorer_FloorSide(self, p.y)) {
+	case -1:
+		ang = Radar_FloorWay(self, target, 1, &p) + RADAR_PI;
+		icon = 9;
+		outIcon = 22;
+		break;
+	case 0:
+		icon = 12;
+		outIcon = 8;
+		break;
+	case 1:
+		ang = Radar_FloorWay(self, target, 0, &p) + RADAR_PI;
+		icon = 9;
+		outIcon = 22;
+		break;
+	}
+	uint32_t c = o->radarShow == 2 ? 0xff00ffff : 0xffff0000;
+	icon = (int)(Scorer_Get(self->base.player)->time * 8.0f) % 3 + icon;
+	cRadarScorer_DrawIcon(self, &p, icon, ang, outIcon, 1, c, c, 0);
+}
+
+void __thiscall cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity *cam) {
+	vec3_t t, a;
+
+	byte isCar = Entity_IsType(target, TYEN_CAR);
+	cRadarScorer_UpdateFloor(self, Obj_Vtbl(target)->GetViewPos(target, &t)->y);
+	float h = self->halfH + self->halfH;
+	float w = self->halfW + self->halfW;
+	Render_ClearRect(self->base.x, self->base.y, w, h, 0, 0);
+	Eng_SetViewRect(self->base.x, self->base.y, w, h);
+	if (!self->menuMap) {
+		self->mask->color = 0xffffffff;
+		CPsaImage_DrawFrame(self->mask, self->maskIndex, self->base.x - 1.5f, self->base.y - 7.0f);
+	}
+	cRadarScorer_DrawMap(self, target, cam);
+	if (!self->menuMap) {
+		Radar_DrawCones(self, target);
+	}
+	Eng_ResetViewRect();
+	if (!self->menuMap) {
+		self->radar->color = 0xffffffff;
+		CPsaImage_DrawFrame(self->radar, self->radarIndex, self->base.x - 9.0f, self->base.y - 7.0f);
+	}
+	if (Radar_IsEMIed(target) && !self->menuMap) {
+		return;
+	}
+	/* the own team in red and the others in green for the team 0 of a network game, else the other way round */
+	uint32_t friendColor, enemyColor;
+	if (WLife(target)->arrow.tgType == 0 && (g_pApp->flags & (APPF_CLIENT | APPF_SERVER))) {
+		friendColor = 0xffff0000;
+		enemyColor = 0xff00ff00;
+	} else {
+		enemyColor = 0xffff0000;
+		friendColor = 0xff00ff00;
+	}
+	cEntity *scrapyard = World_FindEntity("DM_OutLink_Scrapyard");
+	g_NumEnemiesInRadar = 0;
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+		if (e != target && e->flag_4c) {
+			Radar_DrawEntity(self, target, e, isCar, scrapyard, friendColor, enemyColor);
+		}
+	}
+	/* the target of the ship */
+	if (isCar && Veh(target)->target[0]) {
+		cEntity *e = World_FindEntity(Veh(target)->target);
+		if (e && Entity_IsType(e, TYEN_WITH_LIFE)) {
+			uint32_t c = cVehicleO648_IsStale(Veh(target)->o648) ? 0xffffff00 : 0xffc0c000;
+			Radar_Icon(self, e, 1, g_RadarAngle, 3, 1, c, c, 1);
+		}
+	}
+	/* the nearest main mission object over the floors */
+	cEntity *nearest = NULL;
+	if (g_RadarMMSelect) {
+		float best = 3.40282347e+38f;
+		for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+			if (e == target || !e->flag_4c || !Entity_IsType(e, "Obj") || ((cObjEntity *)e)->radarShow != 1) {
+				continue;
+			}
+			const vec3_t *tp = target->vftable->GetPos(target, &t);
+			const vec3_t *ep = e->vftable->GetPos(e, &a);
+			float d = Floor_Dist((byte *)g_pWorld + 0x2f0, *ep, *tp);
+			if (best > d) {
+				nearest = e;
+				best = d;
+			}
+		}
+	}
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+		if (e != target && e->flag_4c && Entity_IsType(e, "Obj")) {
+			Radar_DrawMission(self, target, e, nearest);
+		}
+	}
+	/* the target itself in the middle, pulsing in the menu map */
+	if (!self->menuMap) {
+		float y = Obj_Vtbl(target)->GetViewAng(target, &a)->y;
+		cRadarScorer_DrawIcon(self, Obj_Vtbl(target)->GetViewPos(target, &t), 0, y, 0, 8, 0xffffffff, 0x80ff0000, 1);
+		return;
+	}
+	double s = Game_Sin((double)(Scorer_Get(self->base.player)->time * 8.0f));
+	uint32_t v = (uint32_t)(int)((float)((s + 1.0) * 0.5) * 255.0f);
+	uint32_t c = (v << 8 | v) << 8 | 0xff0000ff;
+	float y = Obj_Vtbl(target)->GetViewAng(target, &a)->y;
+	cRadarScorer_DrawIcon(self, Obj_Vtbl(target)->GetViewPos(target, &t), 5, y, 4, 8, c, c, 1);
 }
 
 byte __thiscall cRadarScorer_OnPrevFloor(cRadarScorer *self, float y) {

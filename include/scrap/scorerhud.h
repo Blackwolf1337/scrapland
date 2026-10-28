@@ -53,22 +53,119 @@ static inline int ScorerVar_Font(CFont **font, const char *name) {
 	return 0;
 }
 
-/* the ship of the camera of player (a "Car" followed by an "FCam"), NULL without a camera entity; 0 when the draw
- * has to stop (the camera is no FCam, it follows nothing or no ship) */
-static inline byte ScorerHud_CamShip(int player, cEntity **ship) {
+/* the target of the camera of player (an entity of the type followed by an "FCam"), NULL without a camera entity;
+ * 0 when the draw has to stop (the camera is no FCam, it follows nothing or nothing of the type) */
+static inline byte ScorerHud_CamTarget(int player, const char *type, cEntity **target) {
 	cEntity *cam = World_FindEntity(cWorld_GetCamName(g_pWorld, player));
 
-	*ship = NULL;
+	*target = NULL;
 	if (cam) {
 		if (!cam->vftable->IsType(cam, "FCam")) {
 			return 0;
 		}
-		*ship = cCamEntity_GetTarget(cam);
-		if (!*ship || !(*ship)->vftable->IsType(*ship, TYEN_CAR)) {
+		*target = cCamEntity_GetTarget(cam);
+		if (!*target || !(*target)->vftable->IsType(*target, type)) {
 			return 0;
 		}
 	}
 	return 1;
+}
+
+/* the ship of the camera of player (a "Car") */
+static inline byte ScorerHud_CamShip(int player, cEntity **ship) {
+	return ScorerHud_CamTarget(player, TYEN_CAR, ship);
+}
+
+/* the rectangle mark around a screen point: the corner frame of img four times, turned, d away from scr */
+static inline void ScorerHud_DrawCorners(CPsaImage *img, int frame, const float *scr, float d) {
+	float uv0[2], uv1[2], uv[14], pos[8];
+
+	CPsaImage_GetFrameUV(img, frame, uv0, uv1);
+	float u0 = uv0[0], v0 = uv0[1], u1 = uv1[0], v1 = uv1[1];
+	/* the texture coordinates of the four turns, overlapping: (u0 v0) (u1 v0) (u1 v1) (u0 v1) from 0, 2, 4 and 6 */
+	const float t[14] = {u0, v0, u1, v0, u1, v1, u0, v1, u0, v0, u1, v0, u1, v1};
+	for (int k = 0; k < 14; k++) {
+		uv[k] = t[k];
+	}
+	pos[0] = u0 - u0;
+	pos[1] = v0 - v0;
+	pos[2] = u1 - u0;
+	pos[3] = v0 - v0;
+	pos[4] = u1 - u0;
+	pos[5] = v1 - v0;
+	pos[6] = u0 - u0;
+	pos[7] = v1 - v0;
+	img->pivotX = (u1 - u0) * 0.5f;
+	img->pivotY = (v1 - v0) * 0.5f;
+	img->x = scr[0] - d;
+	img->y = scr[1] - d;
+	CPsaImage_DrawPoly(img, pos, &uv[2], NULL, 4, 6);
+	img->x = scr[0] - d;
+	img->y = scr[1] + d;
+	CPsaImage_DrawPoly(img, pos, &uv[4], NULL, 4, 6);
+	img->x = scr[0] + d;
+	img->y = scr[1] + d;
+	CPsaImage_DrawPoly(img, pos, &uv[6], NULL, 4, 6);
+	img->x = scr[0] + d;
+	img->y = scr[1] - d;
+	CPsaImage_DrawPoly(img, pos, &uv[0], NULL, 4, 6);
+}
+
+/* the arrow frame of img turned by a around its middle at x, y (flip: the frame upside down) */
+static inline void ScorerHud_DrawArrow(CPsaImage *img, int frame, float a, float x, float y, byte flip) {
+	float uv0[2], uv1[2], in[2], r[2];
+	float pos[4][2], uv[4][2];
+
+	CPsaImage_GetFrameUV(img, frame, uv0, uv1);
+	float hv = (uv1[1] - uv0[1]) * 0.5f;
+	float hu = (uv1[0] - uv0[0]) * 0.5f;
+	float vt = flip ? uv1[1] : uv0[1], vb = flip ? uv0[1] : uv1[1];
+	uv[0][0] = uv0[0];
+	uv[0][1] = vt;
+	uv[1][0] = uv1[0];
+	uv[1][1] = vt;
+	uv[2][0] = uv1[0];
+	uv[2][1] = vb;
+	uv[3][0] = uv0[0];
+	uv[3][1] = vb;
+	float nu = 0.0f - hu, nv = 0.0f - hv;
+	in[0] = nu;
+	in[1] = nv;
+	Vec2_Rotate(r, in, a);
+	pos[0][0] = r[0];
+	pos[0][1] = r[1];
+	in[0] = uv1[0] - uv0[0] - hu;
+	in[1] = nv;
+	Vec2_Rotate(r, in, a);
+	pos[1][0] = r[0];
+	pos[1][1] = r[1];
+	in[1] = uv1[1] - uv0[1] - hv;
+	in[0] = uv1[0] - uv0[0] - hu;
+	Vec2_Rotate(r, in, a);
+	pos[2][0] = r[0];
+	pos[2][1] = r[1];
+	in[0] = nu;
+	in[1] = uv1[1] - uv0[1] - hv;
+	Vec2_Rotate(r, in, a);
+	pos[3][0] = r[0];
+	pos[3][1] = r[1];
+	img->pivotX = 0.0f;
+	img->pivotY = 0.0f;
+	img->x = x;
+	img->y = y;
+	CPsaImage_DrawPoly(img, &pos[0][0], &uv[0][0], NULL, 4, 6);
+}
+
+/* the atan2 of the screen point sx, sy seen from the middle of the 640x480 screen (x scaled to a square) */
+static inline double ScorerHud_ScreenAtan2(float sx, float sy) {
+	double dx = ((double)sx - 320.0) * 240.0 / 320.0;
+	double dy = (double)sy - 240.0;
+	return Game_Atan2(dx, dy);
+}
+
+/* the angle of an arrow frame pointing up from the middle of the screen towards the screen point sx, sy */
+static inline float ScorerHud_ArrowAngle(float sx, float sy) {
+	return -(float)(ScorerHud_ScreenAtan2(sx, sy) + 3.141592653589793);
 }
 
 /* ---- SpriteScorer.cpp ---- */
@@ -157,6 +254,8 @@ void __fastcall cStatusScorer_dtor(cStatusScorer *self);
 cStatusScorer *__thiscall cStatusScorer_Delete(cStatusScorer *self, byte flags);
 /* BoostOnRender sets the OnRender function of the item */
 int __thiscall cStatusScorer_Var(cStatusScorer *self, const char *name, byte set, char **s, double *d, int *i);
+/* vf00: the life, lives, money, hull and boost of the target of the camera, the low life and regeneration sounds */
+void __thiscall cStatusScorer_Draw(cStatusScorer *self, int player);
 
 /* ---- TabScorer.cpp ---- */
 
@@ -269,8 +368,8 @@ SD_SIZE(cTargetScorer, 0x148);
 cTargetScorer *__fastcall cTargetScorer_ctor(cTargetScorer *self);
 void __fastcall cTargetScorer_dtor(cTargetScorer *self);
 cTargetScorer *__thiscall cTargetScorer_Delete(cTargetScorer *self, byte flags);
-/* the target of the ship (rva 0x181600, not decompiled) and the marks of the enemies and friends around it; ship
- * may be NULL for DrawTarget */
+/* the mark of the target of the ship and the arrow to its last attacker; the marks of the enemies and friends
+ * around it */
 void __thiscall cTargetScorer_DrawTarget(cTargetScorer *self, cEntity *ship);
 void __thiscall cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship);
 int __thiscall cTargetScorer_Var(cTargetScorer *self, const char *name, byte set, char **s, double *d, int *i);
@@ -459,6 +558,8 @@ cWeaponScorer *__fastcall cWeaponScorer_ctor(cWeaponScorer *self);
 void __fastcall cWeaponScorer_dtor(cWeaponScorer *self);
 cWeaponScorer *__thiscall cWeaponScorer_Delete(cWeaponScorer *self, byte flags);
 int __thiscall cWeaponScorer_Var(cWeaponScorer *self, const char *name, byte set, char **s, double *d, int *i);
+/* vf00: the weapon of the ship of the camera, its ammo and slots, the row of the weapons after a change */
+void __thiscall cWeaponScorer_Draw(cWeaponScorer *self, int player);
 
 /* ---- WindFxScorer.cpp ---- */
 
@@ -476,5 +577,8 @@ SD_SIZE(cWindFxScorer, 0x100);
 cWindFxScorer *__fastcall cWindFxScorer_ctor(cWindFxScorer *self);
 void __fastcall cWindFxScorer_dtor(cWindFxScorer *self);
 cWindFxScorer *__thiscall cWindFxScorer_Delete(cWindFxScorer *self, byte flags);
+/* vf00: the volume, pan and pitch of the wind by the free space around the ship of the camera; the debug bars with
+ * WindFxScorerShow */
+void __thiscall cWindFxScorer_Draw(cWindFxScorer *self, int player);
 
 #endif
