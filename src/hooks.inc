@@ -8284,3 +8284,5 @@ SD_HOOK(D3DX_AssembleShader, 0x00b2c2, 100)
 SD_HOOK(M3DTransform_ToMatrixAnim, 0x2d65d0, 376)
 SD_HOOK(M3DTransform_ToMatrix, 0x2d6750, 580)
 SD_HOOK(Matrix_ToTransform, 0x2d6c50, 355)
+
+/* module agent: Standalone, GOG sign-in and video without blocking (hooks below this line) */
