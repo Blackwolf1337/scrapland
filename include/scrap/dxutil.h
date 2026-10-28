@@ -75,6 +75,8 @@ int __thiscall CD3DApp_ForceWindowed(byte *self);
 int __thiscall CD3DApp_ToggleFullscreen(byte *self);
 /* the device dialog, the environment made again for the choice */
 int __thiscall CD3DApp_UserSelectNewDevice(byte *self);
+/* the window messages of the framework (rva 0x274b60) */
+intptr_t __thiscall CD3DApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 /* CD3DApp_Cleanup, CD3DApp_ResetDevice and CD3DApp_Reset: scrapmain.h */
 
 /* still the exe's (src/imports.inc): the error message box (type 1: then quit), its hr; the device created */

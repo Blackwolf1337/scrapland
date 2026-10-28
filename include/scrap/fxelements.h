@@ -45,6 +45,7 @@ static inline void MapElement_Add(cMapElement *e) {
 /* rva 0x202ca0: the model of the element name at pos and rot (radians), 0x202e20 the destructor */
 cMapElement *__thiscall cMapElement_ctor(cMapElement *self, const char *name, const vec3_t *pos, const vec3_t *rot);
 void __thiscall cMapElement_dtor(cMapElement *self);
+cMapElement *__thiscall cMapElement_Delete(cMapElement *self, byte flags);
 /* rva 0x203310 (1), 0x203520 (the animation of the visible model) */
 byte __thiscall cMapElement_Init(cMapElement *self);
 void __thiscall cMapElement_Update(cMapElement *self, float dt);
@@ -360,6 +361,9 @@ cFXElementsFireDrop *__thiscall cFXElementsFireDrop_ctor(cFXElementsFireDrop *se
 cFXElementsLensFlare *__thiscall cFXElementsLensFlare_ctor(cFXElementsLensFlare *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
 cFXElementsLighting *__thiscall cFXElementsLighting_ctor(cFXElementsLighting *self, const char *name,
+	const vec3_t *pos, const vec3_t *rot);
+/* rva 0x1cf8b0, Elements_Create passes no name */
+cFXElementsLensFlare *__thiscall cFXElementsLensFlare_ctor(cFXElementsLensFlare *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
 void __fastcall cFXElementsFireDrop_dtor(cFXElementsFireDrop *self);
 void __fastcall cFXElementsLensFlare_dtor(cFXElementsLensFlare *self);

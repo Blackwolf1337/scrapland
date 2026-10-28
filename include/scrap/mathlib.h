@@ -93,15 +93,25 @@ void __thiscall Matrix_RotZ(matrix_t *self, float ang);
 void __thiscall Matrix_RotAxis(matrix_t *self, const vec3_t *axis, float ang);
 const vec3_t *__thiscall Matrix_Translate(matrix_t *self, const vec3_t *v);	/* returns v */
 byte Matrix_TransformProject(vec3_t *out, const vec3_t *v, const matrix_t *m);
-/* the math of the engine3d still in the exe */
+/* the math of the engine3d (matriz.h: src/game/engine3d/Engine/Calculo3d.c and Math/Matrix.c), D3DX through
+ * the stubs of the exe */
 matrix_t *Matrix_LoadIdentity(matrix_t *m);			/* src/game/ScrapEng/ScrapEngWorld.c */
-void Matrix_PostScale(matrix_t *m, const vec3_t *s);		/* rva 0x239210 */
+const vec3_t *Matrix_PostScale(matrix_t *m, const vec3_t *s);	/* rva 0x239210, Matrix_Scale, returns s */
 void Matrix_PostRotate(matrix_t *m, const vec3_t *rot);		/* rva 0x23a100, yaw y pitch x roll z */
 matrix_t *Matrix_RotationX(matrix_t *out, float ang);		/* rva 0x23a270, D3DXMatrixRotationX */
+matrix_t *Matrix_RotationY(matrix_t *out, float ang);		/* rva 0x23a290, D3DXMatrixRotationY */
 matrix_t *Matrix_RotationZ(matrix_t *out, float ang);		/* rva 0x23a2b0, D3DXMatrixRotationZ */
-vec3_t *Vec3_ToAngles(vec3_t *out, const vec3_t *dir);		/* rva 0x239150, x pitch, y yaw, z 0 */
-int Matrix_Invert(matrix_t *out, const matrix_t *m);		/* rva 0x239560 (matriz.h), 0 S_OK */
+/* rva 0x23a2d0: Matrix_RotAxis returning out */
+matrix_t *Matrix_RotationAxis(matrix_t *out, const vec3_t *axis, float ang);
+/* rva 0x239150 is a copy of Vec3_GetRotAng: x pitch, y yaw, z 0 */
+#define Vec3_ToAngles Vec3_GetRotAng
+int Matrix_Invert(matrix_t *out, const matrix_t *m);		/* rva 0x239560, Matrix_InvertAffine, 0 S_OK */
+int Matrix_PerspectiveD3D(matrix_t *out, float fov, float aspect, float zNear, float zFar);	/* rva 0x23a190 */
 matrix_t *Matrix_MulD3D(matrix_t *out, const matrix_t *a, const matrix_t *b);	/* rva 0x2391f0, out = a * b */
+/* rva 0x239820: out = a * b through a copy, out may be a or b */
+void Matrix_MulTo(matrix_t *out, const matrix_t *a, const matrix_t *b);
+/* the euler angles of a rotation matrix (rva 0x2392d0) */
+vec3_t *Matrix_ToEuler(vec3_t *out, const matrix_t *m);
 vec3_t *Matrix_TransformDir(vec3_t *out, const vec3_t *v, const matrix_t *m);
 const matrix_t *Matrix_TransformParts(float *x, float *y, float *z, float *w, const vec3_t *v, const matrix_t *m);	/* m */
 

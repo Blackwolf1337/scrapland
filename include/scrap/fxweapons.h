@@ -32,6 +32,38 @@ void __thiscall CGameLensFlare_SetPos(void *self, vec3_t pos);		/* rva 0x232fc0,
 void __thiscall CGameLensFlare_SetF18(void *self, float v);			/* rva 0x232ff0, +0x18 */
 void __thiscall CGameLensFlare_SetI1c(void *self, int v);			/* rva 0x233010, +0x1c */
 void __thiscall CGameLensFlare_SetB2c(void *self, byte v);			/* rva 0x233020, +0x2c */
+float __thiscall CGameLensFlare_GetIntensity(const void *self);		/* rva 0x232f40 */
+float __thiscall CGameLensFlare_GetF30(const void *self);			/* rva 0x232f50 */
+float __thiscall CGameLensFlare_GetF18(const void *self);			/* rva 0x232f60 */
+int __thiscall CGameLensFlare_GetI1c(const void *self);			/* rva 0x232f70 */
+
+/* the lens flare object of the engine glue (0x50 bytes, no vtable; ScrapEngLensFlares.cpp, rva 0x2a5dd0..) */
+typedef struct LensFlare {
+	byte on;			/* 0x00 */
+	byte pad_01[3];
+	int i04;			/* 0x04 -1 */
+	vec3_t pos;			/* 0x08 */
+	float intensity;		/* 0x14 1 */
+	float f18;			/* 0x18 1 */
+	int i1c;			/* 0x1c */
+	float f20;			/* 0x20 0.2 */
+	byte pad_24[8];
+	byte b2c;			/* 0x2c */
+	byte pad_2d[3];
+	float f30;			/* 0x30 */
+	byte pad_34[0x50 - 0x34];
+} LensFlare;
+SD_OFFSET(LensFlare, f30, 0x30);
+SD_SIZE(LensFlare, 0x50);
+LensFlare *__thiscall LensFlare_ctor(LensFlare *self);
+void __thiscall LensFlare_dtor(LensFlare *self);
+void __thiscall LensFlare_SetOn(LensFlare *self, byte on);
+void __thiscall LensFlare_SetIntensity(LensFlare *self, float v);
+void __thiscall LensFlare_SetF30(LensFlare *self, float v);
+void __thiscall LensFlare_SetPos(LensFlare *self, vec3_t pos);
+void __thiscall LensFlare_SetF18(LensFlare *self, float v);
+void __thiscall LensFlare_SetI1c(LensFlare *self, int v);
+void __thiscall LensFlare_SetB2c(LensFlare *self, byte v);
 
 /* the weapon block of a ship at 0x5f0 (the one of Entity_TargetLock): the ammo of kind i (0 out of range), whether
  * slot (0..4) of weapon kind w is mounted (rva 0x11a6c0, 0x11a9f0) */
@@ -53,6 +85,13 @@ byte __thiscall cTargetLock_HasSlot(cTargetLock *self, int weap, int slot);
 #define g_FXInfernoExplosionTime GAME_DATA(float, 0x449898)
 #define g_FXInfernoExplosionFadeTime GAME_DATA(float, 0x449a18)
 #define g_FXInfernoRayMinSize GAME_DATA(float, 0x449b60)
+#define g_FXInfernoRayInitSizeMin GAME_DATA(float, 0x449a60)
+#define g_FXInfernoRayInitSizeMax GAME_DATA(float, 0x4497c0)
+#define g_FXInfernoRaySpeedMin GAME_DATA(float, 0x449988)
+#define g_FXInfernoRaySpeedMax GAME_DATA(float, 0x449b90)
+#define g_FXInfernoRayAccMin GAME_DATA(float, 0x449900)
+#define g_FXInfernoRayAccMax GAME_DATA(float, 0x449b38)
+#define g_FXInfernoRamp ((uint32_t *)Game_Ptr(0x4317e8))	/* the colour ramp of the explosion particles */
 
 /* the ATPC shot: the beam from the shooter to the hit, its rings and glow (0x1e8 bytes, constructor rva 0x1f9690) */
 #define FXATPC_SLOTS 4
@@ -112,7 +151,10 @@ typedef struct cObjElementFXInfernoExplosion {
 	float time;			/* 0x0164 */
 	float stepTime;			/* 0x0168 since the last step (steps of 0.01 at least) */
 	vec3_t pos;			/* 0x016c */
-	byte pad_178[0x184 - 0x178];
+	float range;			/* 0x0178 the length of the rays tested against the floor */
+	int bees;			/* 0x017c the bays of the Inferno, a bigger explosion */
+	byte flag;			/* 0x0180 */
+	byte pad_181[3];
 	vec3_t rayBase[FXINFERNO_RAYS];	/* 0x0184 */
 	vec3_t rayDir[FXINFERNO_RAYS];	/* 0x0c04 */
 	float rayLen[FXINFERNO_RAYS];	/* 0x1684 */

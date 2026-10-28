@@ -1,12 +1,12 @@
 /*
  * World/FX/FXWeapons.cpp of the game: the effects of the weapon shots, see include/scrap/fxweapons.h.
- * Not here (too large): the emitter at 0x201eb0.
  */
 #include <string.h>
 
 #include "scrap/fxvehicle.h"
 #include "scrap/fxweapons.h"
 #include "scrap/mathlib.h"
+#include "scrap/scrapcollision.h"
 #include "scrap/timer.h"
 #include "scrap/weapons.h"
 #include "scrap/weaps2.h"
@@ -921,6 +921,160 @@ void __thiscall cObjElementFXInfernoExplosion_Reset(cObjElementFXInfernoExplosio
 		CGameTrail_Clear(&self->trails[i]);
 	}
 	self->numRays = 0;
+}
+
+/* a random direction: the unit vector (1, 1, 1) turned by three random angles (0..2 pi, the first rand is z) */
+static void FXW_RandDir(vec3_t *out) {
+	static const vec3_t one = { 1.0f, 1.0f, 1.0f };
+	vec3_t rot;
+
+	rot.z = FXW_Rand((double)M_2PI_F, 0.0);
+	rot.y = FXW_Rand((double)M_2PI_F, 0.0);
+	rot.x = FXW_Rand((double)M_2PI_F, 0.0);
+	Vec3_Rotate(out, &one, &rot);
+}
+
+/* the rays (up to the floor within range) and the core particles of an explosion at x y z; bees widens it */
+void __thiscall cObjElementFXInfernoExplosion_Explode(cObjElementFXInfernoExplosion *self, float x, float y, float z,
+	float range, int bees, byte flag) {
+	static const vec3_t one = { 1.0f, 1.0f, 1.0f };
+	CGameParticles *p = &self->particles;
+	float k, ax, ay;
+	int i, c;
+
+	self->pos.x = x;
+	self->pos.y = y;
+	self->pos.z = z;
+	self->bees = bees;
+	self->flag = flag;
+	self->range = range;
+	k = ((float)bees * g_InfernoRangeBay + g_InfernoRangeMin) / g_InfernoRangeMin;
+	self->numRays = 0;
+	k = k * 0.3f;
+	for (i = 0; i < FXINFERNO_RAYS; i++) {
+		vec3_t dir, base, to, hit;
+		float lo, hi, t;
+		int n;
+
+		if (self->numRays >= FXINFERNO_RAYS) {
+			break;
+		}
+		FXW_RandDir(&dir);
+		FXW_RandDir(&base);
+		hi = g_FXInfernoCoreSize * 0.25f;
+		lo = g_FXInfernoCoreSize * 0.05f;
+		t = FXW_Rand((double)(hi - lo), (double)lo);
+		n = self->numRays;
+		self->rayBase[n].x = base.x * t * k + self->pos.x;
+		self->rayBase[n].y = self->pos.y + base.y * t * k;
+		self->rayBase[n].z = self->pos.z + base.z * t * k;
+		self->rayDir[n] = dir;
+		self->rayLen[n] = FXW_Rand((double)(g_FXInfernoRayInitSizeMax - g_FXInfernoRayInitSizeMin),
+			(double)g_FXInfernoRayInitSizeMin);
+		self->raySpeed[n] = FXW_Rand((double)(g_FXInfernoRaySpeedMax - g_FXInfernoRaySpeedMin),
+			(double)g_FXInfernoRaySpeedMin) * k;
+		self->rayAcc[n] = -(FXW_Rand((double)(g_FXInfernoRayAccMax - g_FXInfernoRayAccMin),
+			(double)g_FXInfernoRayAccMin) * k);
+		self->rayMax[n] = 3.4028235e38f;
+		to.x = self->range * self->rayDir[n].x + self->rayBase[n].x;
+		to.y = self->rayBase[n].y + self->rayDir[n].y * self->range;
+		to.z = self->rayBase[n].z + self->rayDir[n].z * self->range;
+		if (Engine_TestLine(&self->rayBase[n], &to, &hit, NULL)) {
+			float dy = hit.y - self->rayBase[n].y, dx = hit.x - self->rayBase[n].x, dz = hit.z - self->rayBase[n].z;
+
+			self->rayMax[n] = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+			self->rayMax[n] = self->rayMax[n] - self->rayMax[n] * g_FXInfernoRayRadius;
+		}
+		if (self->rayMax[n] >= g_FXInfernoRayMinSize) {
+			self->numRays++;
+		}
+	}
+	/* three big particles around the center */
+	p->birthRate = 0;
+	for (c = 3; c; c--) {
+		vec3_t dir;
+		float b1, b2, b3, lo, hi, t;
+
+		FXW_RandDir(&dir);
+		b1 = FXW_Rand(30.0, -15.0);
+		b2 = FXW_Rand(30.0, -15.0);
+		b3 = FXW_Rand(30.0, -15.0) * k;
+		b2 = b2 * k;
+		b1 = b1 * k;
+		hi = g_FXInfernoCoreSize * 0.5f;
+		lo = g_FXInfernoCoreSize * 0.1f;
+		t = FXW_Rand((double)(hi - lo), (double)lo);
+		p->initPosMin.x = dir.x * t + self->pos.x + b3;
+		p->initPosMin.y = dir.y * t + self->pos.y + b2;
+		p->initPosMin.z = dir.z * t + self->pos.z + b1;
+		p->initPosMax = p->initPosMin;
+		p->initVelMin.x = 0.0f;
+		p->initVelMin.y = 0.0f;
+		p->initVelMin.z = 0.0f;
+		p->initVelMax = p->initVelMin;
+		p->initAccMin.x = 0.0f;
+		p->initAccMin.y = 0.0f;
+		p->initAccMin.z = 0.0f;
+		p->initAccMax = p->initAccMin;
+		p->rotIni = 0.0f;
+		p->rotEnd = 0.0f;
+		p->rotVar = 0.0f;
+		t = FXW_Rand(0x1.999998p-4, 0x1.99999ap-2) * g_FXInfernoExplosionTime;
+		p->sizeLife = 0.25f;
+		p->spriteIni = 2;
+		p->spriteEnd = 2;
+		p->lifeTime = t;
+		p->sizeIni = FXW_Rand(0x1.99999p-4, 0x1.99999ap-1) * g_FXInfernoCoreSize * k;
+		p->sizeEnd = FXW_Rand(0.5, 7.5) * g_FXInfernoCoreSize * k;
+		CGameParticles_SetColorRampOn(p, 1);
+		CGameParticles_SetColorRamp(p, g_FXInfernoRamp);
+		CGameParticles_Apply(p);
+		CGameParticles_EmitN(p, 1, 1);
+	}
+	/* a shell of particles every 45 degrees, moving out */
+	p->birthRate = 0;
+	p->rotIni = 0.0f;
+	p->rotEnd = 0.0f;
+	p->rotVar = 0.0f;
+	{
+		float t = FXW_Rand(0x1.99999p-4, 0x1.333334p-1) * g_FXInfernoExplosionTime;
+
+		p->sizeLife = 0.2f;
+		p->spriteIni = 2;
+		p->spriteEnd = 2;
+		p->lifeTime = t;
+	}
+	CGameParticles_SetColorRampOn(p, 1);
+	CGameParticles_SetColorRamp(p, g_FXInfernoRamp);
+	for (ax = 0.0f; M_2PI_D > (double)ax; ax = ax + 0.7853982f) {
+		for (ay = 0.0f; M_2PI_D > (double)ay; ay = ay + 0.7853982f) {
+			vec3_t rot = { ax, ay, 0.0f }, d;
+			float b1, b2, b3;
+
+			Vec3_Rotate(&d, &one, &rot);
+			b1 = FXW_Rand(30.0, -15.0);
+			b2 = FXW_Rand(30.0, -15.0);
+			b3 = FXW_Rand(30.0, -15.0) * k;
+			b2 = b2 * k;
+			b1 = b1 * k;
+			p->initPosMin.y = self->pos.y + d.y * g_FXInfernoCoreSize * 0.5f + b2;
+			p->initPosMin.x = d.x * g_FXInfernoCoreSize * 0.5f + self->pos.x + b3;
+			p->initPosMin.z = self->pos.z + d.z * g_FXInfernoCoreSize * 0.5f + b1;
+			p->initPosMax = p->initPosMin;
+			p->initVelMin.x = d.x * g_FXInfernoCoreSize * 0.5f * k;
+			p->initVelMin.y = d.y * g_FXInfernoCoreSize * 0.5f * k;
+			p->initVelMin.z = d.z * g_FXInfernoCoreSize * 0.5f * k;
+			p->initVelMax = p->initVelMin;
+			p->initAccMin.x = 0.0f;
+			p->initAccMin.y = 0.0f;
+			p->initAccMin.z = 0.0f;
+			p->initAccMax = p->initAccMin;
+			p->sizeIni = FXW_Rand(0x1.99999p-4, 0x1.99999ap-1) * g_FXInfernoCoreSize * k;
+			p->sizeEnd = FXW_Rand(0.5, 2.5) * g_FXInfernoCoreSize * k;
+			CGameParticles_Apply(p);
+			CGameParticles_EmitDt(p, 1, 1, 0.05f);
+		}
+	}
 }
 
 /* ---- cObjElementFXInfernoMissile ---- */

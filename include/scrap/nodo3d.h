@@ -290,6 +290,9 @@ quat_t *__thiscall CRotacion_GetQuat(CRotacion *self, quat_t *out);
 /* other modules, called from Nodo3D.cpp (src/imports.inc) */
 void __thiscall CRotacion_SetEuler(CRotacion *self, const vec3_t *ang);	/* rva 0x212510 */
 void *CSistPart_Cast(IObjeto3D *obj);	/* rva 0x23f310, CHECK of the class */
+/* Engine/NodoR.cpp (src/game/engine3d/Engine/NodoR.c, the rest in modelo.h and scrapmodel.h) */
+NodoLook *__fastcall NodoLook_ctor(NodoLook *self);
+CNodoR *__fastcall CNodoR_ctor(CNodoR *self);
 byte __thiscall CNodo3D_DebugDraw(CNodo3D *self, CNodoR *r);	/* rva 0x23d9d0, R_ShowLocalBox; 0: not drawn */
 void __thiscall CNodoR_UpdateNodo(CNodoR *self);	/* rva 0x23f5d0 */
 int __thiscall CNodoR_ApplyFX(CNodoR *self, matrix_t *m);	/* rva 0x23f540 */

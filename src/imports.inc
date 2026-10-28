@@ -47,8 +47,6 @@ SD_IMPORT(crt_fputc, 0x350b30)
 SD_IMPORT(crt_setlocale, 0x34ff2c)
 SD_IMPORT(crt_remove, 0x3588ca)
 SD_IMPORT(crt_rename, 0x350089)
-SD_IMPORT(DbgWin_Printf, 0x237950)
-SD_IMPORT(DbgStd_Printf, 0x237830)
 SD_IMPORT_STDCALL(crt_eh_vector_ctor, 20, 0x313a76)
 SD_IMPORT_STDCALL(crt_eh_vector_dtor, 16, 0x313ae4)
 SD_IMPORT(crt_fseek, 0x347c87)
@@ -103,19 +101,11 @@ SD_IMPORT(crt_floor, 0x345130)
 /* engine: Menu/ (include/scrap/scorer.h) */
 
 /* engine: functions behind the Scrap module (include/scrap/scrap.h) */
-SD_IMPORT(Elements_Call, 0x202ea0)
-SD_IMPORT(Elements_Create, 0x203000)
-SD_IMPORT(Floor_Get, 0x203af0)
 SD_IMPORT(Achievement_Unlock, 0x137470)
 SD_IMPORT(Steam_SetAchievement, 0x1a66a0)
 SD_IMPORT(Steam_GetID, 0x134720)
 SD_IMPORT(Steam_GetTicket, 0x1345e0)
 SD_IMPORT(Gog_GetID, 0x137160)
-SD_IMPORT(Anm_Preload, 0x2051a0)
-SD_IMPORT(Object3D_Preload, 0x205140)
-SD_IMPORT(cDebrisSys_Init, 0x204d50)
-SD_IMPORT(cDebrisSys_NewElement, 0x204bd0)
-SD_IMPORT(cDebrisSys_Drop, 0x204a40)
 
 /* engine: Input/ */
 SD_IMPORT(ActionSet_IsNamed, 0x133a30)
@@ -174,6 +164,10 @@ SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 /* engine3d: called from Engine/luz.cpp (include/scrap/luz.h) */
 /* engine3d: Engine/Material.c (include/scrap/material.h), the parts of the classes outside Material.cpp and the
  * texture manager */
+SD_IMPORT(Cad_Set, 0x2a1940)
+SD_IMPORT(FXTextura_Create, 0x2a81d0)
+SD_IMPORT(CMatId_Check, 0x2a7a00)
+SD_IMPORT(CMatId_Register, 0x2a7ae0)
 SD_IMPORT(CMapa_ctor, 0x233760)
 SD_IMPORT(CMapa_dtor, 0x233a30)
 SD_IMPORT(CMaterial_ctor, 0x233830)
@@ -183,6 +177,10 @@ SD_IMPORT(CAnimMat_dtor, 0x257fb0)
 SD_IMPORT(CAnimMat_Start, 0x258110)
 
 /* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/escena.h) */
+SD_IMPORT(Cad_Read, 0x2a18a0)
+SD_IMPORT(Cad_Write, 0x2a1920)
+SD_IMPORT(CAnimacion_ctor, 0x2ab6f0)
+SD_IMPORT(CAnimacion_dtor, 0x2ab940)
 SD_IMPORT(Box_Transform, 0x239880)
 SD_IMPORT(CSuelo_CalcIlum, 0x261630)
 
@@ -199,6 +197,11 @@ SD_IMPORT(ListaVert_InitD3D, 0x2404f0)
 SD_IMPORT(Stencil_Malla, 0x267530)
 SD_IMPORT(CListaVert_EnvMapUV, 0x2418c0)
 SD_IMPORT(CAnimMat_GetFrame, 0x258060)
+SD_IMPORT(RenderLock_ReleaseD3D, 0x2a4860)
+SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
+SD_IMPORT(RenderGamma_ReleaseD3D, 0x2a7980)
+SD_IMPORT(RenderGamma_Begin, 0x2a7520)
+SD_IMPORT(RenderGamma_LogShaderMask, 0x2a7cd0)
 SD_IMPORT(Matrix_Invert, 0x239560)
 SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
 SD_IMPORT(Vec3_ToAngles, 0x239150)
@@ -236,24 +239,12 @@ SD_IMPORT_STDCALL(D3DX_MatrixInverse, 12, 0x007cea)
 SD_IMPORT_STDCALL(D3DX_AssembleShader, 24, 0x00b2c2)
 
 /* module agent: Engine/Modelo (imports below this line) */
-SD_IMPORT(Matrix_PostScale, 0x239210)
-SD_IMPORT(Matrix_PostRotate, 0x23a100)
-SD_IMPORT(CNodoR_dtor, 0x23f450)
-SD_IMPORT(CNodoR_SetNodo, 0x23f890)
-SD_IMPORT(RenderCtx_Init, 0x23fac0)
-SD_IMPORT(RenderCtx_SetCanal, 0x23fb10)
 SD_IMPORT(CEscena_Shared, 0x24ecb0)
 SD_IMPORT(CModelo_Render, 0x253610)
 SD_IMPORT(Escena_Load, 0x2c2d60)
-SD_IMPORT(CNodoR_SetLook, 0x23f7f0)
 
 /* module agent: Engine/Nodo3D (imports below this line) */
-SD_IMPORT(Matrix_MulD3D, 0x2391f0)
-SD_IMPORT(Matrix_ToEuler, 0x2392d0)
-SD_IMPORT(CSistPart_Cast, 0x23f310)
 SD_IMPORT(CNodo3D_DebugDraw, 0x23d9d0)
-SD_IMPORT(CNodoR_UpdateNodo, 0x23f5d0)
-SD_IMPORT(CNodoR_ApplyFX, 0x23f540)
 
 /* module agent: Engine/Animacion (imports below this line) */
 
@@ -270,43 +261,23 @@ SD_IMPORT_STDCALL(D3DX_LoadSurfaceFromSurface, 32, 0x004dbf)
 /* src/game/ScrapEng/ScrapEngCollision.c (called from suelo.cpp and checkbbox.cpp, include/scrap/suelo.h) */
 
 /* module agent: World/World.cpp (imports below this line) */
-SD_IMPORT(Elements_ctor, 0x202e10)
-SD_IMPORT(Elements_dtor, 0x202e40)
-SD_IMPORT(Elements_Update, 0x203550)
-SD_IMPORT(Floor_ctor, 0x203580)
-SD_IMPORT(Floor_dtor, 0x203a00)
-SD_IMPORT(cDebrisSys_ctor, 0x2048d0)
-SD_IMPORT(cDebrisSys_dtor, 0x204950)
-SD_IMPORT(cDebrisSys_FreeActive, 0x204b30)
-SD_IMPORT(cDebrisSys_FreeIdle, 0x204b80)
-SD_IMPORT(cDebrisSys_ShowInfo, 0x205210)
-SD_IMPORT(cDebrisSys_SetName, 0x205450)
-SD_IMPORT(cDebrisSys_Update, 0x205490)
-SD_IMPORT(cScheduledFuncStack_dtor, 0x2056f0)
 
 /* module agent: ScrapEng/ScrapEngWorld.cpp (imports below this line) */
 
 /* module agent: ScrapEng/ScrapEngMain.cpp (imports below this line) */
-SD_IMPORT(Engine3D_Create, 0x22da30)
-SD_IMPORT(Engine3D_Shutdown, 0x22dc00)
 SD_IMPORT(CD3DApp_Render, 0x275120)
 SD_IMPORT(Timer_GetQPFreq, 0x276d00)
 SD_IMPORT(Video_PlayFile, 0x281660)
 SD_IMPORT(Avi_Save, 0x27fa20)
 SD_IMPORT(Avi_Frame, 0x27f9f0)
 SD_IMPORT(Avi_Load, 0x27f9b0)
-SD_IMPORT(CPsaImage_ctor, 0x22d120)
-SD_IMPORT(CPsaImage_dtor, 0x22d160)
-SD_IMPORT(CPsaImage_Draw, 0x22d3c0)
 SD_IMPORT(ViewerCamera_Move, 0x218080)
 SD_IMPORT(Cmd_ReadFile, 0x280b10)
 
 /* module agent: ScrapEng/ScrapEngCamera+Particles+Trails.cpp (imports below this line) */
-SD_IMPORT(Matrix_RotationX, 0x23a270)
 
 /* module agent: Sound/Sound+SoundDX8+Wav.cpp (imports below this line) */
 SD_IMPORT(Sound_UpdateVoice, 0x1a0320)
-SD_IMPORT(DebugUtils_DrawSphere, 0x219d20)
 SD_IMPORT_STDCALL(FSOUND_GetError, 0, 0x3179c6)
 SD_IMPORT_STDCALL(FSOUND_GetMaxChannels, 0, 0x3179cc)
 SD_IMPORT_STDCALL(FSOUND_GetMemoryStats, 8, 0x3179ea)
@@ -326,12 +297,6 @@ SD_IMPORT_STDCALL(FSOUND_GetReserved, 4, 0x317a56)
 SD_IMPORT_STDCALL(FSOUND_GetCurrentSample, 4, 0x317a62)
 
 /* module agent: World/CollisionGrid+FX/FXMisc.cpp (imports below this line) */
-SD_IMPORT(cObjElement_dtor, 0x204940)
-SD_IMPORT(cDebrisSys_GetIdle, 0x204d40)
-SD_IMPORT(cDebrisSys_IsIdle, 0x204dd0)
-SD_IMPORT(cDebris_Move, 0x204de0)
-SD_IMPORT(CGameLensFlare_ctor, 0x232e80)
-SD_IMPORT(CGameLensFlare_dtor, 0x232f10)
 
 /* module agent: App/CApp+CWinApp (imports below this line) */
 SD_IMPORT(GogListeners_ctor, 0x136f10)
@@ -345,20 +310,9 @@ SD_IMPORT(Steam_Done, 0x1a64d0)	/* Sound agent range */
 SD_IMPORT(Steam_GetLanguage, 0x1a65f0)	/* Sound agent range */
 SD_IMPORT(Steam_Init, 0x1a6620)	/* Sound agent range */
 SD_IMPORT(Steam_RunCallbacks, 0x1a66e0)	/* Sound agent range */
-SD_IMPORT(Font_SetLanguage, 0x21b1e0)
-SD_IMPORT(CPsaImage_ctorTex, 0x22d0c0)
-SD_IMPORT(CPsaImage_ctorFlags, 0x22d0f0)
-SD_IMPORT(CPsaImage_DrawPoly, 0x22d520)
-SD_IMPORT(D3DApp_MsgProc, 0x233030)
-SD_IMPORT(App_SetExceptionFilter, 0x2333b0)
 SD_IMPORT(crt_srand, 0x323c50)
 
 /* module agent: World/FX/FXCountermeasures+FXElementsOrbit+FXElementsPress.cpp (imports below this line) */
-SD_IMPORT(cDebris_Update, 0x204ea0)
-SD_IMPORT(cMapElement_ctor, 0x202ca0)
-SD_IMPORT(cMapElement_dtor, 0x202e20)
-SD_IMPORT(cMapElement_Init, 0x203310)
-SD_IMPORT(cMapElement_Update, 0x203520)
 
 /* module agent: World/FX/FXElements+FXElementsAB.cpp (imports below this line) */
 
@@ -402,27 +356,21 @@ SD_IMPORT_STDCALL(FSOUND_Sample_GetName, 4, 0x3179fc)
 SD_IMPORT_STDCALL(FSOUND_GetCPUUsage, 0, 0x3179e4)
 
 /* module agent: World/FX/FXWeapons.cpp (imports below this line) */
-SD_IMPORT(CGameLensFlare_SetOn, 0x232f30)
-SD_IMPORT(CGameLensFlare_SetIntensity, 0x232f80)
-SD_IMPORT(CGameLensFlare_SetF30, 0x232fa0)
-SD_IMPORT(CGameLensFlare_SetPos, 0x232fc0)
-SD_IMPORT(CGameLensFlare_SetI1c, 0x233010)
 
 /* module agent: Entities/EmbeddedFX/EmbeddedFXMisc.cpp (imports below this line) */
 
 /* module agent: Entities/Vehicle/WeaponManager+Weaps/ATPC+Devastator.cpp (imports below this line) */
 
 /* module agent: Entities/Vehicle/Weaps/Inferno+Laser+Swarm.cpp (imports below this line) */
+SD_IMPORT(FXSwarm_BeeDeath, 0x1ff190)
+SD_IMPORT(FXSwarm_Hit, 0x1ffea0)
 SD_IMPORT(cObjElementFXInfernoExplosion_Explode, 0x201eb0)
 
 /* module agent: Entities/Entity+Game/Doors.cpp (imports below this line) */
-SD_IMPORT(cDebris_Step, 0x204970)
-SD_IMPORT(cDebrisSys_Release, 0x2053d0)
 
 /* module agent: World/FX/FXChar.cpp (imports below this line) */
 
 /* module agent: World/FX/FXScene.cpp (imports below this line) */
-SD_IMPORT(CGameLensFlare_SetF18, 0x232ff0)
 
 /* module agent: World/FX/FXVehicle.cpp (imports below this line) */
 
@@ -461,10 +409,6 @@ SD_IMPORT(CNodesWorld_AnalizeMap, 0x0a2e80)
 SD_IMPORT(crt_chmod, 0x345287)
 
 /* module agent: AI/NodesWorld2D+NodesWorldSup.cpp (imports below this line) */
-SD_IMPORT(CPsaImage_GetFrameSize, 0x22d2e0)
-SD_IMPORT(CPsaImage_GetFrameUV, 0x22d320)
-SD_IMPORT(CPsaImage_DrawFrame, 0x22d440)
-SD_IMPORT(CPsaImage_DrawFrameFlip, 0x22d480)
 SD_IMPORT(cMonitorScorer_DrawMonitor, 0x168c60)
 SD_IMPORT(cRadarScorer_DrawRadar, 0x16d570)
 SD_IMPORT(cPlayerInput_PressKey, 0x1396b0)
@@ -496,7 +440,6 @@ SD_IMPORT(cAIVehicle_TestHookPoint, 0x08ab20)
 SD_IMPORT(cAIVehicle_TrackPointRandom, 0x08b120)
 SD_IMPORT(cAIVehicle_ReposTraffic, 0x08d3c0)
 SD_IMPORT(crt_strtime, 0x33bb73)
-SD_IMPORT(CPsaImage_GetNumFrames, 0x22d280)
 SD_IMPORT(PyFloat_AsDouble, 0x2dfa30)	/* floatobject.c */
 SD_IMPORT(cTargetScorer_DrawTarget, 0x181600)
 SD_IMPORT(cTargetScorer_DrawEnemies, 0x182430)
@@ -564,9 +507,6 @@ SD_IMPORT(M3DTransform_ToMatrixAnim, 0x2d65d0)
 SD_IMPORT(Matrix_ToTransform, 0x2d6c50)
 
 /* module agent: Engine NodeFX..ModelFX (imports below this line) */
-SD_IMPORT(Ang_Wrap, 0x238b80)
-SD_IMPORT(Matrix_Transpose, 0x239860)
-SD_IMPORT(CMaterial_ScaleColors, 0x237020)
 
 /* module agent: Engine leftovers 0x265000..0x278000 (imports below this line) */
 SD_IMPORT(Stencil_DrawSegs, 0x265510)
@@ -592,6 +532,39 @@ SD_IMPORT(CGameLensFlare_SetB2c, 0x233020)
 /* module agent: Big FX leftovers 0x1eab00..0x200000 (imports below this line) */
 
 /* module agent: Engine leftovers 0x200000..0x240000 (imports below this line) */
+SD_IMPORT(cFXElementsLensFlare_ctor, 0x1cf8b0)
+SD_IMPORT(BlendMode_GetDst, 0x2a1a00)
+SD_IMPORT(BlendMode_GetSrc, 0x2a1a60)
+SD_IMPORT_STDCALL(D3DX_MatrixMultiply, 12, 0x0077b8)
+SD_IMPORT_STDCALL(D3DX_MatrixTranspose, 8, 0x007a01)
+SD_IMPORT_STDCALL(D3DX_MatrixRotationX, 8, 0x0082fb)
+SD_IMPORT_STDCALL(D3DX_MatrixRotationY, 8, 0x008397)
+SD_IMPORT_STDCALL(D3DX_MatrixRotationZ, 8, 0x008434)
+SD_IMPORT(LensFlare_ctor, 0x2a5dd0)
+SD_IMPORT(LensFlare_dtor, 0x2a5e70)
+SD_IMPORT(LensFlare_SetOn, 0x2a5fa0)
+SD_IMPORT(LensFlare_SetIntensity, 0x2a7460)
+SD_IMPORT(LensFlare_SetF30, 0x2a7480)
+SD_IMPORT(LensFlare_SetPos, 0x2a74c0)
+SD_IMPORT(LensFlare_SetF18, 0x2a74e0)
+SD_IMPORT(LensFlare_SetI1c, 0x2a7500)
+SD_IMPORT(LensFlare_SetB2c, 0x2a7510)
+SD_IMPORT(CMatId_ctor, 0x2a79e0)
+SD_IMPORT(CMatId_dtor, 0x2a79f0)
+SD_IMPORT(IEntrada_dtor, 0x2a3a40)
+SD_IMPORT(IEntrada_ctor, 0x2a39d0)
+SD_IMPORT(MotorOverlay_ctor, 0x2a4e90)
+SD_IMPORT(MotorOverlay_dtor, 0x2a4ea0)
+SD_IMPORT(Window_SetTextf, 0x2a5cc0)
+SD_IMPORT(LensFlares_ReleaseD3D, 0x2a6050)
+SD_IMPORT(LensFlares_Off, 0x2a5fe0)
+SD_IMPORT(LensFlares_FreeSprite, 0x2a56f0)
+SD_IMPORT(LensFlares_Init, 0x2a6140)
+SD_IMPORT(CD3DApp_MsgProc, 0x274b60)
+SD_IMPORT(Input_KeyDown, 0x2a37c0)
+SD_IMPORT(Input_KeyUp, 0x2a3870)
+SD_IMPORT(LensFlares_InitD3D, 0x2a6060)
+SD_IMPORT(LensFlares_ResetD3D, 0x2a5520)
 
 /* module agent: AI leftovers 0x098000..0x0b8000 (imports below this line) */
 

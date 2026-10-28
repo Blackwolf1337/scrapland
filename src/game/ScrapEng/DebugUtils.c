@@ -1,7 +1,7 @@
 /*
  * DebugUtils.cpp of the game: a copy of the debug lines of Engine/util_d3d.cpp with its own identity matrix and
  * brighter axes. The copies of Debug_DrawPointM, Debug_DrawBoxM, Debug_DrawLineM and Debug_DrawTriM are hooked to
- * the engine's C functions (src/hooks.inc); the sphere (rva 0x219780, 0x219d20) is still the exe's.
+ * the engine's C functions (src/hooks.inc); the sphere has its own axes at the center and divH 0 for divV.
  */
 #include "scrap/render.h"
 #include "scrap/scrapmain.h"
@@ -29,4 +29,15 @@ void DebugUtils_DrawLine(const vec3_t *a, const vec3_t *b, uint32_t color) {
 
 void DebugUtils_DrawTri(const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color) {
 	Debug_DrawTriM(g_DebugIdentity, a, b, c, color);
+}
+
+void DebugUtils_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int divH) {
+	if (0.0f >= r) {
+		return;
+	}
+	Debug_SphereLines(m, c, r, color, divV, divH ? divH : divV, DebugUtils_DrawAxes);
+}
+
+void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH) {
+	DebugUtils_DrawSphereM(g_DebugIdentity, c, r, color, divV, divH);
 }

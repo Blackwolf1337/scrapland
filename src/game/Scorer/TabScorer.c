@@ -121,7 +121,7 @@ int __thiscall cTabScorer_Var(cTabScorer *self, const char *name, byte set, char
 			return r;
 		}
 		if (!crt_stricmp(name, "Unit")) {
-			return ScorerVar_Bool(&self->img->b22, set, i);
+			return ScorerVar_Bool(&self->img->unit, set, i);
 		}
 	}
 	if (d) {

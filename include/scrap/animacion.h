@@ -159,7 +159,5 @@ void __fastcall AnimStream_dtor(CAnimStream *self);
 void __fastcall AnimBlock_dtor(CAnimBlock *self);
 
 /* the code of the exe this module calls */
-/* the euler angles of a rotation matrix (rva 0x2392d0, not in C) */
-vec3_t *Matrix_ToEuler(vec3_t *out, const matrix_t *m);
 
 #endif

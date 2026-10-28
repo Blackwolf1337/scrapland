@@ -62,6 +62,20 @@ static int Time_Since(uint32_t since) {
 	return (int)((d ^ m) - m);
 }
 
+/* the voices of the static array */
+cMusicVoice *__fastcall cMusicVoice_ctor(cMusicVoice *self) {
+	self->name[0] = 0;
+	self->stream = NULL;
+	self->channel = -1;
+	self->text[0] = 0;
+	self->voiceover = 0;
+	return self;
+}
+
+void __fastcall cMusicVoice_dtor(cMusicVoice *self) {
+	(void)self;
+}
+
 /* the FMOD start */
 
 int Fmod_Init(void) {

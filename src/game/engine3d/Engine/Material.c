@@ -1166,3 +1166,162 @@ void __thiscall CListaMat_Delete(CListaMat *self, CMaterial *mat) {
 	((deleteObj_t)mat->vftable[0])(mat, 1);
 	g_TexDeleteUnused = 0;
 }
+
+/* ---- the constructors and destructors of material.h and objref.h (rva 0x2336f0..) ---- */
+
+CListaMat *__thiscall CListaMat_DeleteObj(CListaMat *self, byte flags) {
+	CListaMat_dtor(self);
+	if (flags & 1) {
+		operator_delete_sized(self, sizeof(*self));
+	}
+	return self;
+}
+
+CMapa *__thiscall CMapa_ctor(CMapa *self) {
+	self->Nombre = NULL;
+	self->ruta = NULL;
+	self->est.tex = NULL;
+	self->est.Hint = NULL;
+	self->rutaAni = NULL;
+	self->f10[0] = 0.0f;
+	self->f10[1] = 0.0f;
+	self->f18[0] = 1.0f;
+	self->f18[1] = 1.0f;
+	self->v20[0] = 0.0f;
+	self->v20[1] = 0.0f;
+	self->v20[2] = 0.0f;
+	self->b8 = 1;
+	self->lightmap = 0;
+	self->ba = 0;
+	self->bb = 0;
+	self->bc = 3;
+	self->bd = 0;
+	self->fx = 0;
+	self->f2c = 1.0f;
+	self->cur = NULL;
+	self->animated = 0;
+	self->frames = 0;
+	self->TextAni = NULL;
+	self->AnimMat = NULL;
+	self->FXTextura = NULL;
+	self->hasAlpha = 0;
+	self->b55 = 0;
+	self->state = 0;
+	self->MultiSprite = NULL;
+	return self;
+}
+
+CMaterial *__thiscall CMaterial_ctor(CMaterial *self) {
+	CMatParams *p = &self->params;
+	int i;
+
+	self->Nombre = NULL;
+	self->Refs = 0;
+	self->vftable = Game_Ptr(CMATERIAL_VFTABLE);
+	CMatId_ctor(&self->id);
+	p->ambient[0] = p->ambient[1] = p->ambient[2] = 0xff;
+	p->ambient[3] = 0;
+	p->diffuse[0] = p->diffuse[1] = p->diffuse[2] = 0xff;
+	p->diffuse[3] = 0;
+	p->color[0] = p->color[1] = p->color[2] = 0xff;
+	p->color[3] = 0;
+	memset(p->specular, 0, sizeof(p->specular));
+	self->sig = NULL;
+	self->ant = NULL;
+	self->sub = NULL;
+	memset(p->emissive, 0, sizeof(p->emissive));
+	p->power = 0.0f;
+	p->specLevel = 0.0f;
+	p->i2c = 0;
+	p->srcBlend = 5;
+	p->dstBlend = 6;
+	p->b38 = 0;
+	p->b39 = 1;
+	p->transp = 0;
+	p->b3b = 0;
+	p->atrib = 0;
+	p->w3e = 0x100;
+	p->i40 = 4;
+	for (i = 0; i < MAPA_TOTAL; i++) {
+		self->mapa[i] = NULL;
+	}
+	CMaterial_CalcColors(self, self->colors);
+	return self;
+}
+
+/* a CBmp of the stack freed (the pixels with the sized delete of one pixel) */
+void __fastcall CBmp_dtor(CBmp *self) {
+	Img_Free(self, sizeof(uint32_t));
+}
+
+void __fastcall CListaMat_dtor(CListaMat *self) {
+	self->vftable = Game_Ptr(CLISTAMAT_VFTABLE);
+	CListaMat_DeleteAll(self);
+	if (self->Nombre) {
+		Cad_Set(&self->Nombre, NULL);
+	}
+}
+
+void __thiscall CMapa_dtor(CMapa *self) {
+	CMapa_Release(self);
+	if (self->rutaAni) {
+		Cad_Set(&self->rutaAni, NULL);
+	}
+	CTextEst_dtor(&self->est);
+	if (self->ruta) {
+		Cad_Set(&self->ruta, NULL);
+	}
+	if (self->Nombre) {
+		Cad_Set(&self->Nombre, NULL);
+	}
+}
+
+void __thiscall CMaterial_dtor(CMaterial *self) {
+	int i;
+
+	self->vftable = Game_Ptr(CMATERIAL_VFTABLE);
+	if (self->ant) {
+		self->ant->sig = self->sig;
+	}
+	if (self->sig) {
+		self->sig->ant = self->ant;
+	}
+	for (i = 0; i < MAPA_TOTAL; i++) {
+		Mat_DeleteMapa(&self->mapa[i]);
+	}
+	if (self->sub) {
+		((deleteObj_t)self->sub->vftable[0])(self->sub, 1);
+		self->sub = NULL;
+	}
+	CMatId_dtor(&self->id);
+	CObjRef_dtor(&self->Refs);
+	if (self->Nombre) {
+		Cad_Set(&self->Nombre, NULL);
+	}
+}
+
+void __fastcall Cad_dtor(char **self) {
+	if (*self) {
+		Cad_Set(self, NULL);
+	}
+}
+
+byte __fastcall CMapa_HasAlpha(const CMapa *self) {
+	return self->hasAlpha;
+}
+
+void __thiscall CMaterial_ScaleColors(CMaterial *self, float k) {
+	int i;
+
+	CMaterial_CalcColors(self, self->colors);
+	if (k != 1.0f) {
+		/* diffuse, ambient and emissive; the specular and the power stay */
+		for (i = 0; i < 8; i++) {
+			self->colors[i] = self->colors[i] * k;
+		}
+		for (i = 12; i < 16; i++) {
+			self->colors[i] = self->colors[i] * k;
+		}
+		self->colors[3] = (float)self->params.diffuse[3] / 255.0f;
+	}
+}

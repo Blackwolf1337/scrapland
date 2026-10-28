@@ -96,12 +96,44 @@ static inline const cWorldEntityVtbl *WEnt_Vtbl(cEntity *e) {
 #define CamEntity_Slot(e) (*(int *)((byte *)(e) + 0xb8))		/* the view it shows, -1 for none */
 #define CamEntity_NoFollow(e) (*(byte *)((byte *)(e) + 0xbc))
 
-/* the objects embedded in cWorld, only known by their methods */
-void __thiscall Floor_ctor(void *floor);
+/* World/MapFloors.cpp: the floors of the 2D map (cWorld floor) */
+#define MAX_2D_MAPS 16
+#define MAX_2D_LINKS 8
+typedef struct MapLevel {
+	float y;			/* 0x000 the height where the floor starts, the first one -FLT_MAX */
+	int nUp;			/* 0x004 */
+	vec3_t up[MAX_2D_LINKS];	/* 0x008 the ways to the next floor up, y + 1 */
+	float upAng[MAX_2D_LINKS];	/* 0x068 the angle y of the dummy */
+	int nDown;			/* 0x088 */
+	vec3_t down[MAX_2D_LINKS];	/* 0x08c y - 1 */
+	float downAng[MAX_2D_LINKS];	/* 0x0ec */
+	char name[0x80];		/* 0x10c behind DM_2DMapSwitch */
+} MapLevel;
+SD_OFFSET(MapLevel, nDown, 0x88);
+SD_OFFSET(MapLevel, name, 0x10c);
+SD_SIZE(MapLevel, 0x18c);
+
+typedef struct MapFloors {
+	int count;			/* 0x000 */
+	MapLevel levels[MAX_2D_MAPS];	/* 0x004 sorted by y */
+} MapFloors;
+SD_SIZE(MapFloors, 0x18c4);
+
+void *__thiscall Floor_ctor(void *floor);
 void __thiscall Floor_dtor(void *floor);
-void __thiscall Elements_ctor(void *elements);
+float __thiscall Floor_Dist(void *floor, vec3_t a, vec3_t b);
+int __thiscall MapLevel_NearestDown(const MapLevel *self, const vec3_t *p);
+int __thiscall MapLevel_NearestUp(const MapLevel *self, const vec3_t *p);
+int MapLevel_CompareY(const void *a, const void *b);
+
+/* the objects embedded in cWorld, only known by their methods */
+void *__thiscall Elements_ctor(void *elements);
 void __thiscall Elements_dtor(void *elements);
 void __thiscall Elements_Update(void *elements, float dt);
+/* World/MapElements.cpp: the first element of the model name within maxDist of pos, NULL */
+struct cMapElement *__thiscall Elements_Find(void *elements, const char *name, vec3_t pos, float maxDist);
+/* an element of a saved game: name, position, radius of the search, on or off */
+void Elements_Load(cAbstractFile *f);
 void *__thiscall Alarm_ctor(void *alarm);
 void __thiscall Alarm_Update(void *alarm, float dt);
 void *__thiscall cStrMoney_ctor(void *obj);
@@ -115,10 +147,15 @@ void __thiscall cScheduledFuncStack_dtor(void *stack);
 cDebrisSys *__thiscall cDebrisSys_ctor(void *mem);
 void __thiscall cDebrisSys_dtor(cDebrisSys *sys);
 void __thiscall cDebrisSys_SetName(cDebrisSys *sys, const char *name);
-/* the elements of the active list (at 0x0) and of the idle list (at 0x4) deleted */
+/* the debris of the list at 0x0 (the free ones, the count cleared) and of the list at 0x4 (the dropped ones)
+ * deleted; the names are older than the knowledge of the lists */
 void __thiscall cDebrisSys_FreeActive(cDebrisSys *sys);
 void __thiscall cDebrisSys_FreeIdle(cDebrisSys *sys);
 void __thiscall cDebrisSys_Update(cDebrisSys *sys, float dt);
+/* World/ObjPool.cpp, the rest (src/game/World/ObjPool.c; more in fxmisc.h and missileentity.h) */
+byte cDebris_SetFX(int type, cDebris *d);
+byte __thiscall cDebris_IsAlive(cDebris *d, cDebrisSys *sys);
+void __thiscall cDebrisSys_SetMaxIdle(cDebrisSys *sys, int n);
 /* the debug text of the object pool (O_Show) at x, y; *line goes on to the next line */
 void __thiscall cDebrisSys_ShowInfo(cDebrisSys *sys, int x, int y, float *line);
 

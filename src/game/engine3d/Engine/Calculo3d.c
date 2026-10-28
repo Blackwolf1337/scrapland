@@ -2,11 +2,94 @@
  * 3D helpers of the engine3d, original source Engine/calculo3d.cpp (include/scrap/mathlib.h).
  */
 #include "scrap/archio.h"
+#include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
+#include "scrap/escena.h"
+#include "scrap/nodefx.h"
 
 #define VEC3_STR 0x40
 #define g_Vec3StrDeg ((char *)Game_Ptr(0x4ac018))	/* 4 x VEC3_STR */
 #define g_Vec3Str ((char *)Game_Ptr(0x4ac118))
+
+/* ---- matriz.h: the D3DX wrappers and the box of the corners ---- */
+
+matrix_t *Matrix_MulD3D(matrix_t *out, const matrix_t *a, const matrix_t *b) {
+	D3DX_MatrixMultiply(out, a, b);
+	return out;
+}
+
+const vec3_t *Matrix_PostScale(matrix_t *m, const vec3_t *s) {
+	return Matrix_Scale(m, s);
+}
+
+void Matrix_MulTo(matrix_t *out, const matrix_t *a, const matrix_t *b) {
+	matrix_t t;
+
+	D3DX_MatrixMultiply(&t, a, b);
+	*out = t;
+}
+
+matrix_t *Matrix_Transpose(matrix_t *out, const matrix_t *m) {
+	D3DX_MatrixTranspose(out, m);
+	return out;
+}
+
+/* the box of the 8 corners of box transformed by m (with the divide by w) */
+box_t *Box_Transform(box_t *out, const box_t *box, const matrix_t *m) {
+	const float *a = m->m;
+	vec3_t p[8];
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		float x = i & 4 ? box->max.x : box->min.x;
+		float y = i & 2 ? box->max.y : box->min.y;
+		float z = i & 1 ? box->max.z : box->min.z;
+		float w = a[3] * x + a[7] * y + a[11] * z + a[15];
+
+		p[i].x = (a[0] * x + a[4] * y + a[8] * z + a[12]) / w;
+		p[i].y = (a[1] * x + a[5] * y + a[9] * z + a[13]) / w;
+		p[i].z = (a[2] * x + a[6] * y + a[10] * z + a[14]) / w;
+	}
+	out->min.x = out->min.y = out->min.z = 3.4028235e38f;
+	out->max.x = out->max.y = out->max.z = -3.4028235e38f;
+	for (i = 0; i < 8; i++) {
+		out->min.x = Float_MinSS(out->min.x, p[i].x);
+		out->min.y = Float_MinSS(out->min.y, p[i].y);
+		out->min.z = Float_MinSS(out->min.z, p[i].z);
+		out->max.x = Float_MaxSS(out->max.x, p[i].x);
+		out->max.y = Float_MaxSS(out->max.y, p[i].y);
+		out->max.z = Float_MaxSS(out->max.z, p[i].z);
+	}
+	return out;
+}
+
+/* m = m * the rotation of yaw rot y, pitch rot x, roll rot z */
+void Matrix_PostRotate(matrix_t *m, const vec3_t *rot) {
+	matrix_t r, t;
+
+	D3DX_MatrixRotationYPR(&r, rot->y, rot->x, rot->z);
+	D3DX_MatrixMultiply(&t, m, &r);
+	*m = t;
+}
+
+matrix_t *Matrix_RotationX(matrix_t *out, float ang) {
+	return D3DX_MatrixRotationX(out, ang);
+}
+
+matrix_t *Matrix_RotationY(matrix_t *out, float ang) {
+	return D3DX_MatrixRotationY(out, ang);
+}
+
+matrix_t *Matrix_RotationZ(matrix_t *out, float ang) {
+	return D3DX_MatrixRotationZ(out, ang);
+}
+
+matrix_t *Matrix_RotationAxis(matrix_t *out, const vec3_t *axis, float ang) {
+	Matrix_RotAxis(out, axis, ang);
+	return out;
+}
+
+/* ---- calculo3d.cpp ---- */
 
 void Matrix_AddPos(matrix_t *m, const vec3_t *v) {
 	m->m[12] = v->x + m->m[12];

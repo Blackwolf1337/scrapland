@@ -114,28 +114,43 @@ const char *__thiscall Parking_Find(void *parking, int flag, const vec3_t *pos, 
 int __thiscall cEntityList_Var(void *list, const char *name, int set, char **s, double *d, int *i);
 int Video_GetModes(int i, char *buf);
 
-/* debris systems (named) and the values SetDebrisValue sets for the next DropDebris */
+/* debris systems (named) and the values SetDebrisValue sets for the next DropDebris: World/ObjPool.cpp, a pool of
+ * debris (models with a move, or the carrier of an effect cObjElementFX) */
+typedef struct cDebris cDebris;
+/* the hit of a debris on the floor, instead of the bounce */
+typedef void (*DebrisHit_t)(cDebris *debris, void *tri);
+
 typedef struct cDebrisSys {
-	byte pad_00[0xc];
-	char *name;			/* 0x0c string object, the key in g_pWorld->debris */
-	byte pad_10[4];
-	float radiusSq;			/* 0x14 */
-	float b;			/* 0x18 */
-	float c;			/* 0x1c */
-	float d;			/* 0x20 */
-	byte flag;			/* 0x24 */
-	byte pad_25[0x34 - 0x25];
+	cDebris *idle;			/* 0x00 the free debris */
+	cDebris *active;		/* 0x04 the dropped ones */
+	int idleCount;			/* 0x08 */
+	char *name;			/* 0x0c string object, the key in g_pWorld->debris; the model */
+	float time;			/* 0x10 the time left of the 0.05 s steps */
+	float radiusSq;			/* 0x14 the debris further from the cameras are not moved, 0 for all */
+	float b;			/* 0x18 the friction of the move */
+	float c;			/* 0x1c the scale of the model */
+	float d;			/* 0x20 the gravity */
+	byte flag;			/* 0x24 collisions with the floor */
+	byte pad_25[3];
+	DebrisHit_t onHit;		/* 0x28 */
+	int maxIdle;			/* 0x2c 0x100 */
+	int fxType;			/* 0x30 the cObjElementFX of each debris (cDebris_SetFX), 0 for none */
 	struct cDebrisSys *next;	/* 0x34 g_pWorld->debrisList */
 } cDebrisSys;
 SD_OFFSET(cDebrisSys, flag, 0x24);
+SD_OFFSET(cDebrisSys, maxIdle, 0x2c);
 SD_SIZE(cDebrisSys, 0x38);
 
-typedef struct cDebris {
-	byte pad_00[0x1c];
+struct cDebris {
+	byte Mod[0x1c];			/* 0x00 CGameModel (scrapmodel.h) */
 	vec3_t drop[4];			/* 0x1c copy of g_DebrisDrop */
-	float speed;			/* 0x4c */
-} cDebris;
+	float speed;			/* 0x4c the life time left */
+	cDebris *next;			/* 0x50 in the idle or active list */
+	struct cObjElementFX *fx;	/* 0x54 */
+};
 SD_OFFSET(cDebris, speed, 0x4c);
+SD_SIZE(cDebris, 0x58);
+#define Debris_Mod(d) ((CGameModel *)(d)->Mod)
 
 #define g_DebrisDrop ((vec3_t *)Game_Ptr(0x467408))	/* [4]: position, angles (rad), velocity, angle speed (rad) */
 #define g_DebrisDefault GAME_DATA(float, 0x4674f4)

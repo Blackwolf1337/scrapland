@@ -88,7 +88,7 @@ int __thiscall cSliderScorer_Var(cSliderScorer *self, const char *name, byte set
 			return r;
 		}
 		if (!crt_stricmp(name, "Unit")) {
-			return ScorerVar_Bool(&self->img->b22, set, i);
+			return ScorerVar_Bool(&self->img->unit, set, i);
 		}
 	}
 	if (d) {

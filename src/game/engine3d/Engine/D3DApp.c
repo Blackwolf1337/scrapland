@@ -18,8 +18,6 @@
 
 #define g_AppPausedCount GAME_DATA(int, 0x4b1c3c)
 
-typedef void *(__stdcall *setcursor_t)(void *cursor);
-#define exe_SetCursor GAME_DATA(setcursor_t, 0x3a135c)
 
 int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b) {
 	if (a->Width < b->Width) {

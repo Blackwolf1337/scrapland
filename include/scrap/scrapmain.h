@@ -81,9 +81,10 @@ struct CPsaImage {
 	float x, y;			/* 0x00 */
 	float pivotX, pivotY;		/* 0x08 0..1 of the size */
 	float scaleX, scaleY;		/* 0x10 1 */
-	float f18, f1c;			/* 0x18 */
-	uint16_t s20;			/* 0x20 */
-	byte b22;			/* 0x22 */
+	float f18, f1c;			/* 0x18 the second scale of the CGrafico2D (g_Sprite2DScale) */
+	byte pantalla;			/* 0x20 SPR2D 1: the position in pixels (the CGrafico2D gets the inverse) */
+	byte tamPantalla;		/* 0x21 SPR2D 2 */
+	byte unit;			/* 0x22 SPR2D 4, the scorer "Unit": sizes of 1 (no texture size, no second scale) */
 	byte pad_23;
 	float uv0[2];			/* 0x24 the texture rectangle of frame 0 */
 	float uv1[2];			/* 0x2c 1, 1 */
@@ -252,12 +253,44 @@ void DebugUtils_DrawPoint(const vec3_t *pos, float size, uint32_t color);
 void DebugUtils_DrawBox(const vec3_t *mn, const vec3_t *mx, uint32_t color);
 void DebugUtils_DrawLine(const vec3_t *a, const vec3_t *b, uint32_t color);
 void DebugUtils_DrawTri(const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color);
+/* divV meridians, divH (0: divV) parts of each, the axes at the center */
+void DebugUtils_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int divH);
+void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
 
 /* other modules (src/imports.inc) */
 /* name NULL: a random loading screen; the fade and the time in ms */
 void Loading_Step(int percent);					/* rva 0x2157a0, -1: one step */
-void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *release, int arg);	/* rva 0x22da30 */
-void Engine3D_Shutdown(void);					/* rva 0x22dc00 */
+/* the CMotorApp made (arg 0) or freed (Engine/Motor.cpp, src/game/engine3d/Engine/Motor.c) */
+void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *release, int arg);
+void Engine3D_Shutdown(void);
+byte *__fastcall CMotorApp_ctor(byte *self);
+/* the ini name (in dir, NULL for the game directory) into the variables of the engine */
+void Motor_LoadIni(const char *name, const char *dir);
+void __thiscall CMotorApp_LightsDialog(byte *self, void *hwnd, void *inst);
+intptr_t TreeView_InsertItemf(void *hwnd, void *item, const char *fmt, ...);
+void Escena_LogTree(CEscena *esc, CNodo3D *nodo, int indent);
+/* a command of the debug console of the engine: listar, listar luces, arbol <scene>, ver uniones */
+void E3D_Command(char *cmd);
+void __fastcall CMotorApp_UpdateMenu(byte *self);
+int __thiscall CMotorApp_InitDeviceObjects(byte *self);
+intptr_t __thiscall CMotorApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
+int __thiscall CMotorApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior, int format);
+int __thiscall CMotorApp_RestoreDeviceObjects(byte *self);
+int __thiscall CMotorApp_OneTimeSceneInit(byte *self);
+int __thiscall CMotorApp_FrameMove(byte *self);
+int __thiscall CMotorApp_DeleteDeviceObjects(byte *self);
+int __thiscall CMotorApp_FinalCleanup(byte *self);
+int __thiscall CD3DApplication_Nothing(byte *self);
+char *Motor_ColorStr(const byte *c);
+const char *Motor_BoolStr(int b);
+CMundo *Mundo_GetChecked(void);
+void __fastcall Motor_ReleaseEscena(byte *self);
+void __fastcall Motor_GetEscena(byte *self);
+void *__thiscall CEntradaNula_Delete(void *self, byte flags);
+int __thiscall CEntradaNula_Nothing3(void *self, int a, int b, int c);
+int __thiscall CEntradaNula_Nothing1(void *self, int a);
+int __thiscall CEntradaNula_Nothing(void *self);
+void __thiscall CEntradaNula_Nothing4(void *self, int a, int b, int c, int d);
 int __thiscall CD3DApp_Cleanup(byte *self);			/* rva 0x273d90 */
 int __thiscall CD3DApp_Render(byte *self);			/* rva 0x275120 */
 int __thiscall CD3DApp_ResetDevice(byte *self);		/* rva 0x275470 */
@@ -275,6 +308,17 @@ void SombrasStencil_Set(byte on);				/* rva 0x267460 */
 CPsaImage *__thiscall CPsaImage_ctor(CPsaImage *self, const char *name, int flags);	/* rva 0x22d120 */
 void __fastcall CPsaImage_dtor(CPsaImage *self);			/* rva 0x22d160 */
 void __thiscall CPsaImage_Draw(CPsaImage *self, float x, float y);	/* rva 0x22d3c0 */
+/* ScrapEngSprite2D.cpp, the rest (src/game/ScrapEng/ScrapEngSprite2D.c) */
+void __fastcall CPsaImage_Init(CPsaImage *self);
+CPsaImage *__fastcall CPsaImage_ctorEmpty(CPsaImage *self);
+void __thiscall CPsaImage_DrawScaled(CPsaImage *self, float x, float y, float scale);
+/* the CGrafico2D of the sheet name (opac: the opacity map) with a blend mode (BlendMode_*) and the SPR2D flags */
+void __thiscall CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int blend, uint32_t flags);
+void __thiscall CPsaImage_LoadOpac(CPsaImage *self, const char *name, const char *opac, uint32_t flags);
+void __thiscall CPsaImage_LoadName(CPsaImage *self, const char *name, uint32_t flags);
+/* ScrapEngMaterial.cpp: the source and destination blend of a blend mode (CHECK mode < 7) */
+int BlendMode_GetSrc(int mode);		/* rva 0x2a1a60 */
+int BlendMode_GetDst(int mode);		/* rva 0x2a1a00 */
 /* the camera of ScrapEngCamera.cpp (rva 0x21c6c0, 0x21c7c0, 0x21c980, 0x21ce80, 0x21ccf0) */
 /* the viewer camera moved by the keys of the second action set (rva 0x218080, this file, still the exe's) */
 void ViewerCamera_Move(CGameCamera *cam);
