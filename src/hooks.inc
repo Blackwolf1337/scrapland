@@ -8286,3 +8286,7 @@ SD_HOOK(M3DTransform_ToMatrix, 0x2d6750, 580)
 SD_HOOK(Matrix_ToTransform, 0x2d6c50, 355)
 
 /* module agent: Standalone, GOG sign-in and video without blocking (hooks below this line) */
+
+/* module agent: Standalone 2b2, the MSVC math from ucrtbase and the C startup (hooks below this line) */
+
+/* module agent: Standalone 2c2, D3DX8 textures and the ASE SDK in own C (hooks below this line) */
