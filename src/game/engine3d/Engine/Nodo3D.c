@@ -37,7 +37,6 @@
 #define g_ShowLBoxMin GAME_DATA(int, 0x4ad610)	/* the nodes with an indice from .. to (0: no limit) */
 #define g_ShowLBoxMax GAME_DATA(int, 0x4ad518)
 #define g_ShowLBoxName GAME_DATA(const char *, 0x4ad5dc)	/* a wildcard of the names, "" for all */
-#define g_DebugColors ((const uint32_t *)Game_Ptr(0x432a30))	/* 16, the colors of the Bsp debug views */
 #define g_SkipAnim GAME_DATA(int, 0x4ad500)
 #define g_SkipAnimVis GAME_DATA(int, 0x4ad5c4)
 #define g_SkipNodeFX GAME_DATA(int, 0x4ad57c)

@@ -110,6 +110,8 @@ int Luz_SetDefault(byte on);
 void __thiscall CLuz_Update(CLuz *self, int arg);
 void __thiscall CLuz_Reset(CLuz *self, int arg);
 void __thiscall CLuz_Hide(CLuz *self, int arg);
+/* the virtual Render: the debug drawing of the light (R_ShowLights) */
+void __thiscall CLuz_Render(CLuz *self, void *dev, CNodoR *r);
 /* a directional light without position into device light idx */
 void Luz_SetDirLight(uint32_t idx, const color4_t *color, const vec3_t *dir);
 void __thiscall CLuz_EnableD3D(CLuz *self, byte enable);

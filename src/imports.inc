@@ -214,7 +214,6 @@ SD_IMPORT_STDCALL(D3DX_LoadSurfaceFromSurface, 32, 0x004dbf)
 /* module agent: ScrapEng/ScrapEngWorld.cpp (imports below this line) */
 
 /* module agent: ScrapEng/ScrapEngMain.cpp (imports below this line) */
-SD_IMPORT(ViewerCamera_Move, 0x218080)
 
 /* module agent: ScrapEng/ScrapEngCamera+Particles+Trails.cpp (imports below this line) */
 
