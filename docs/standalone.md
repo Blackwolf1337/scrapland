@@ -194,6 +194,22 @@ print only written memory now (`Tabla_New` at rva 0x2c2c60, the trail points aft
 
 What still differs from the exe: `sys.executable` names ScrapC.exe.
 
+`tools/test/py/sdpy.py` (prefix `spy`) runs at the end of sdtest.py and compares the interpreter itself with the exe's:
+int, long and float arithmetic at the edges (overflow checks, shifts, division, pow), `int()`, `long()` and `float()`
+of strings, float formatting with all the % formats and str/repr (inf, nan, denormals, 1e16..1e22), strings and the
+strop module, string formatting with width and precision, `hash()` and the key order of dicts, list.sort with compare
+functions, cmp of mixed types, marshal bytes and round trips, the regex module, the math functions at their edges,
+string.py of the packs, exception messages, eval and exec, and compile errors with their line numbers. Only the
+ScrapC.exe run (`DIFFTEST_STANDALONE=1`) compares it; in the hook DLL both sides run the Python of the exe. What it
+found in the Python itself is fixed in wrappers of `src/python` that include the vendored file. `intobject.c` uses the
+exe's integer division also for the final modulo of `pow(x, y, z)` (the exe calls its i_divmod at rva 0x2de700, which
+MSVC folded into one idiv, so `pow(-2147483648, 1, 7)` is 5 and not 2). `floatobject.c` and `complexobject.c` do on
+the x87 stack what the exe does there: the product of the frexp result with 2**31 in float_hash and complex_hash, and
+the quotient `1./powu()` of float_pow for a negative integer exponent. Direct3D sets the x87 precision to 24 bits when
+it creates the device, so these are single precision in the game: `hash(0.1)` is 1717888640 and `10.0 ** -3` is
+0.0010000000474974513. The x87 helpers are in `src/python/pyx87.h`. The other differences came from Wine's ucrtbase,
+see stage 2b.
+
 ### Stage 2b: the C runtime
 
 The `crt_*` functions of `include/scrap/crt.h` are `SD_IMPORT_CRT` (and `SD_IMPORT_CRT_STDCALL`) in `src/imports.inc`:
@@ -214,6 +230,16 @@ The math comes from Microsoft's ucrtbase.dll, the same code as the static UCRT o
 its folder when it is there, otherwise the system `ucrtbase.dll`, which on Windows is Microsoft's and the one the exe
 links. `tools/test/getucrt.sh` puts `ucrtbase_ms.dll` into game/Bin for the Wine tests (a Microsoft binary, never in
 git). There is no Wine DLL override.
+
+The pure string functions of the number formatting and parsing come from the same loaded DLL as the math
+(`src/standalone/crtmath.c` loads them, `src/standalone/crt.c` calls them): the printf and scanf cores
+`__stdio_common_vsprintf` and `__stdio_common_vsscanf`, `strtod`, `atof` and `strerror`. fprintf formats there into a
+buffer and writes it to the FILE of the linked UCRT. The errno that strtod and atof set is copied into the errno of
+ScrapC.exe, like the one of the math. Calls with a locale object stay with the linked UCRT. Wine's own versions print
+denormals rounded wrong, read them wrong (`float('1e-310')`), take "1d5" as a number but not "nan(ind)", give
+"-nan(ind)" for `float('-nan')` where the original gives "-nan", print `'%#g' % 0.0` as 0.00000 and `'%#.0e'` of inf as
+"inf" (Microsoft's gives 'i.nf'), and have other error texts ("Numerical result out of range" for "Result too
+large"). sdpy.py found these.
 
 Each entry is a jmp through a slot that holds the export, so the SSE2 entries (xmm0, xmm1) and the `_CI` intrinsics
 (x87 stack) keep their conventions. The entries:
