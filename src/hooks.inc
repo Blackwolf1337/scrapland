@@ -10456,3 +10456,5 @@ SD_HOOK(Radiosidad_FiniNormales, 0x38f070, 39)
 /* module agent: Standalone 3c1a, the imports of ScrapC.exe (hooks below this line) */
 
 /* module agent: Standalone 3c1b, the last data of the original (hooks below this line) */
+
+/* module agent: Standalone 3c2, ScrapC.exe without the room (hooks below this line) */
