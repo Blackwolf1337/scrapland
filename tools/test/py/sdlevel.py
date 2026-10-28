@@ -552,7 +552,12 @@ nbvars = (0x4b1cb8, 0x4b1ce8, 0x4b1cd0, 0x4b1ca0)
 nbvarsaved = []
 for a in nbvars:
 	nbvarsaved.append(SDTest.Peek(a, 'i'))
-check('CNiebla', lambda: nbsaved)
+# the CNiebla at the start of the world without the 3 bytes after activa (heap memory nobody writes)
+def nbints(a):
+	r = mwints(a, 9)
+	r[0] = r[0] & 0xff
+	return r
+check('CNiebla', lambda: nbints(mundo))
 check('CNiebla_Apply', lambda: nblog(lambda: SDTest.Call(0x278420, 'tvi', mundo)))
 # activa, tabla, capsW, capsTabla, fuente, modo; then R_FogEnable, R_FogColor, R_FogAbsDist, R_FogDensity
 for flags in ((1, 0, 0, 0, 0, 3), (1, 1, 0, 1, 0, 3), (1, 1, 1, 1, 1, 1), (1, 1, 0, 1, 1, 2), (0, 1, 0, 1, 1, 3),
@@ -565,7 +570,7 @@ for flags in ((1, 0, 0, 0, 0, 3), (1, 1, 0, 1, 0, 3), (1, 1, 1, 1, 1, 1), (1, 1,
 		for i in range(4):
 			SDTest.Poke(nbvars[i], fv[i])
 		check('CNiebla_Apply' + fmt((flags, fv)), lambda: (nblog(lambda: SDTest.Call(0x278420, 'tvi', mundo)),
-			mwints(mundo, 9)))
+			nbints(mundo)))
 		for i in range(9):
 			SDTest.Poke(mundo + 4 * i - 0x400000, nbsaved[i])
 for i in range(4):
