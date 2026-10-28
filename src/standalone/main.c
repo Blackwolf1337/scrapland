@@ -6,8 +6,9 @@
  *
  * This exe has the base 0x400000 of the original, so the rvas of GAME_DATA stay valid, no relocation. Under Wine the
  * low memory is full of mappings when the exe is elsewhere, so the room must be part of the exe. The headers stay
- * the exe's own, only the resource directory points to the one of the original (the game loads its dialogs and
- * icons from its instance, which is this module). The import table of the original is filled with GetProcAddress.
+ * the exe's own. The resources (the game loads its dialogs, icons and menus from its instance, which is this module)
+ * are the exe's own too, src/standalone/scrap.rc of stage 3b3. The import table of the original is filled with
+ * GetProcAddress.
  *
  * Stage 2a: the Python is the real library of src/python, linked into this exe; datagen.py turns the pointers of
  * the room into the original's Python into the real symbols. Stage 2b: the CRT functions are the UCRT of this exe or
@@ -63,9 +64,6 @@ static void Orig_Room(byte *base) {
 		memset(base + int3[i].lo, 0xcc, int3[i].hi - int3[i].lo);
 	}
 	FlushInstructionCache(GetCurrentProcess(), base, GAME_SIZEOFIMAGE);
-	IMAGE_NT_HEADERS32 *own = (IMAGE_NT_HEADERS32 *)(base + ((IMAGE_DOS_HEADER *)base)->e_lfanew);
-	own->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE].VirtualAddress = ROOM_RESOURCE_RVA;
-	own->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE].Size = ROOM_RESOURCE_SIZE;
 }
 
 /* dinput8 from the system folder: the dinput8.dll in game/Bin is the hook DLL, which would write the log again */

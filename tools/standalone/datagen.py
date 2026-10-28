@@ -7,7 +7,7 @@
 #             are still read or run, uninitialized in between)
 #   room.ld   the sections .orig0, .orig1 ... of the room at rva 0x1000..SizeOfImage, included by cmake/ScrapC.ld:
 #             the pieces of room.c and the C objects at their rvas
-#   room.h    what main.c needs of the headers (import and resource directory) and the code ranges it fills with int3
+#   room.h    what main.c needs of the headers (the import directory) and the code ranges it fills with int3
 # objects.txt lists the object files of scrapcode_sa (one per line). Their sections .sd.<rva> are the C objects of
 # SD_AT (include/scrap/shared.h, stage 3b): each one is placed at its rva and the bytes of the original there are left
 # out. They must lie in the data, must not overlap each other or the import table, and must hold what the original
@@ -70,9 +70,14 @@ PY_SYMBOLS = {
 	0x4e7af8: 'Py_VerboseFlag',
 }
 
-# the sections of the original a C object may not lie in: the code, the resources (main.c points the resource
-# directory there) and the relocations
+# the sections of the original a C object may not lie in: the code, the resources and the relocations
 NO_C_SECTIONS = ('.text', '.rsrc', '.reloc')
+
+
+def built_in(name):
+	"""the sections of the original built in whole: all but .text (only TEXT_KEEP), .reloc (fixed base) and .rsrc
+	(the resources of ScrapC.exe are its own, src/standalone/scrap.rc of stage 3b3)"""
+	return name not in ('.text', '.reloc', '.rsrc')
 
 
 def fail(msg):
@@ -201,11 +206,11 @@ if x.base != BASE:
 	fail('%s: image base not 0x%x' % (exe, BASE))
 secs = x.secs
 
-# the pieces: the kept parts of .text and every section with bytes but .text and .reloc
+# the pieces: the kept parts of .text and every section with bytes that is built in
 text_va, text_n, _, _ = secs['.text']
 pieces = [(lo, hi or text_va + text_n) for lo, hi in TEXT_KEEP]
 for name, (va, n, ptr, vsize) in sorted(secs.items(), key=lambda s: s[1][0]):
-	if name not in ('.text', '.reloc') and n:
+	if built_in(name) and n:
 		pieces.append((va, va + n))
 pieces.sort()
 for (lo, hi), (lo2, hi2) in zip(pieces, pieces[1:]):
@@ -386,9 +391,9 @@ files = {
 		''.join('\t"%s\\n"\n' % l.replace('"', '\\"') for l in asm))).encode(),
 	'room.ld': ('/* %s: the room of Scrap.exe at its rvas, with the C objects of SD_AT */\n%s' % (gen, ''.join(ld)))
 		.encode(),
-	'room.h': ('/* %s */\n#define ROOM_IMPORT_RVA 0x%06x\n#define ROOM_RESOURCE_RVA 0x%06x\n#define ROOM_RESOURCE_SIZE '
-		'0x%x\n/* the code of the original that is not built in, int3 at start */\n#define ROOM_INT3 \\\n\t{ %s }\n'
-		% (gen, x.dirs[1][0], x.dirs[2][0], x.dirs[2][1], ', '.join('{ 0x%06x, 0x%06x }' % r for r in int3))).encode(),
+	'room.h': ('/* %s */\n#define ROOM_IMPORT_RVA 0x%06x\n/* the code of the original that is not built in, int3 at '
+		'start */\n#define ROOM_INT3 \\\n\t{ %s }\n'
+		% (gen, x.dirs[1][0], ', '.join('{ 0x%06x, 0x%06x }' % r for r in int3))).encode(),
 }
 # always written: outputs older than the objects would make every build run this again (room.c of the same text is a
 # ccache hit)

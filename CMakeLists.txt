@@ -151,10 +151,22 @@ add_custom_command(OUTPUT ${ROOM_DIR}/room.c ${ROOM_DIR}/room.h ${ROOM_DIR}/room
 		include/scrap/origcrt.h include/scrap/origpython.h src/hooks.inc src/imports.inc src/standalone/crthooks.inc
 		${ROOM_DIR}/objects.txt $<TARGET_OBJECTS:scrapcode_sa>
 	COMMENT "Data of Scrap.exe for ScrapC.exe")
+# the resources of ScrapC.exe (stage 3b3): src/standalone/scrap.rc and its files in res/, made by
+# tools/standalone/rsrc.py from the original's .rsrc. An object library of its own, so the C options of scrapcode_sa
+# do not reach windres. rsrccheck.py compares them with the original's after the link.
+enable_language(RC)
+file(GLOB RES_FILES CONFIGURE_DEPENDS src/standalone/res/*)
+add_library(scrapres OBJECT src/standalone/scrap.rc)
+target_include_directories(scrapres PRIVATE src/standalone) # windres finds the res/ files from the include path
+set_source_files_properties(src/standalone/scrap.rc PROPERTIES OBJECT_DEPENDS "${RES_FILES}")
 add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtinit.c
-	src/standalone/crtmath.c src/standalone/crtvec.c ${ROOM_DIR}/room.c ${ROOM_DIR}/room.h)
+	src/standalone/crtmath.c src/standalone/crtvec.c ${ROOM_DIR}/room.c ${ROOM_DIR}/room.h
+	$<TARGET_OBJECTS:scrapres>)
 target_include_directories(ScrapC PRIVATE ${ROOM_DIR})
 target_link_libraries(ScrapC PRIVATE scrapcode_sa python152)
 target_link_options(ScrapC PRIVATE -Wl,--image-base,0x400000 -Wl,--disable-dynamicbase
 	-Wl,-T,${CMAKE_SOURCE_DIR}/cmake/ScrapC.ld -L${ROOM_DIR})
 set_target_properties(ScrapC PROPERTIES LINK_DEPENDS "${CMAKE_SOURCE_DIR}/cmake/ScrapC.ld;${ROOM_DIR}/room.ld")
+add_custom_command(TARGET ScrapC POST_BUILD
+	COMMAND ${PYTHON3} -I ${CMAKE_SOURCE_DIR}/tools/standalone/rsrccheck.py ${SCRAP_EXE} $<TARGET_FILE:ScrapC>
+	COMMENT "Resources of ScrapC.exe against Scrap.exe")

@@ -395,7 +395,7 @@ ScrapC.exe itself needs only the game files, it no longer opens the original exe
 
 `tools/standalone/datagen.py` checks the timestamp and SizeOfImage like `Game_IsBuild` and writes `room.c`, `room.ld`,
 `room.h` and `room.bin` into `build/standalone` (generated, not in the repository). Built in at their rvas are .rdata,
-.data, .gfids, .tls, _RDATA, .data1 and .rsrc. The zero tail of .data, .bss_ste and the code range stay
+.data, .gfids, .tls, _RDATA, .data1 and .rsrc (until stage 3b3). The zero tail of .data, .bss_ste and the code range stay
 uninitialized, .reloc is left out (fixed base).
 
 Of .text only the pieces that are still read or run are built in:
@@ -412,7 +412,8 @@ initialized ones where there are bytes, uninitialized ones without file data for
 .data, .reloc). That is 890 KB of data of the original in the exe, 690 KB of it non-zero.
 
 At start `main.c` fills the rest of .text with int3 (`ROOM_INT3` of `room.h`), fills the import table of the
-original with GetProcAddress from its import directory and points its own resource directory to the original's.
+original with GetProcAddress from its import directory and points its own resource directory to the original's
+(until stage 3b3).
 The TLS directory of the original is built in with .rdata and .tls, but nothing reads it any more (`crtinit.c` keeps
 the epoch of the thread-safe statics). `Orig_Read`, the section copy and `Orig_PyPointers` are gone.
 
@@ -509,6 +510,41 @@ hook DLL behaves as before, only those helpers add the load address at the calle
 A test that compares a vtable slot with an rva of the original sees the C function in ScrapC.exe. `isfn(p, rva)` of
 `tools/test/py/sdlib.py` accepts both (the C function is the target of the hook jump at the rva); the check of the fake
 entity in `sdlevel_efxchar.py` uses it.
+
+On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios, and so does the hook DLL
+difftest.
+
+### Stage 3b3: the resources as .rc (done)
+
+The game loads its dialogs, menus, accelerators and icons from its own module (`LoadAcceleratorsA` of table 200 in
+`App_WinMain`, `LoadIconA` 101, `CreateDialogParamA` 153 of the scene dialog ...). ScrapC.exe has them as its own
+resources now: `src/standalone/scrap.rc`, compiled by windres (object library `scrapres`, so the C options of
+`scrapcode_sa` do not reach windres), with the binary ones in `src/standalone/res` (two .ico, one .bmp, the
+manifest). `main.c` no longer touches the resource directory, and `datagen.py` leaves .rsrc out (`built_in`), so its
+range of the room is uninitialized: room.bin went from 871291 to 660731 bytes.
+
+`tools/standalone/rsrc.py -w` writes them from the .rsrc of the original; without `-w` it checks that the files in the
+repository are what it would write. The original has 23 resources: one bitmap, 6 icon images in 2 groups, 3 menus,
+7 dialogs (all DIALOG, none DIALOGEX), 3 accelerator tables and the manifest, in English (US) and Spanish (modern
+sort). No string table, no version info, no cursor. The .rc keeps their types, ids and languages. Dialogs, menus and
+accelerators are written out, the styles as the names of their bits (`WS_`, `DS_`, `BS_` and so on, `NOT` for the
+`WS_CHILD | WS_VISIBLE` that windres adds to a `CONTROL` where the original lacks it). The predefined control
+classes are numbers (`0x80 /* Button */`): windres writes a class name as a string, the original has the ordinal.
+windres numbers the icon images 1, 2 ... in the order of the `ICON` lines, which are the ids of the original;
+rsrc.py stops when that would not hold, or on anything it does not write exactly (DIALOGEX, MENUEX, creation data of
+a control, named resources).
+
+`tools/standalone/rsrccheck.py <Scrap.exe> <ScrapC.exe>` runs after each link of ScrapC.exe and compares the
+resources by type, id and language. 22 are the same bytes; dialog 153 differs only in the class name of its tree
+control, which windres writes in capitals (`SYSTREEVIEW32`, window classes are found without case), so it is compared
+as a parsed template.
+
+`tools/test/py/sdcall_rsrc.py` finds each resource with `FindResourceA` (size and a sum of its bytes), loads the
+menus, accelerators and icons and creates each dialog with `CreateDialogParamA`, with its caption and the texts of its
+controls. `CreateDialogParamA` of dialog 163 (a `RICHEDIT` control) returns NULL in both exes, the class is not
+registered at that point. The sum goes over halves of words: `-2147483648 % 65521` gives another result in the real Python of
+ScrapC.exe than in the original's, where the `-xi` of `i_divmod` in intobject.c overflows (MSVC wraps, GCC does
+not have to).
 
 On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios, and so does the hook DLL
 difftest.
