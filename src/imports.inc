@@ -490,3 +490,5 @@ SD_IMPORT(Timer_MeasureQP, 0x276e40)
 SD_IMPORT(Tsc_CpuFreq, 0x272f90)
 
 /* module agent: Final FX Starts (ShipExplosion, VehicleDamage, GearMissile, EMI, MentalController) (imports below this line) */
+
+/* module agent: BSP light map compiler (imports below this line) */
