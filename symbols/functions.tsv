@@ -1,10 +1,11 @@
 rva	size	source	callconv	name	signature
+00002070	31	USER_DEFINED	__cdecl	Ase_Shutdown	void __cdecl(void)
 00002090	889	DEFAULT	unknown	FUN_00402090	
-00002410	32	DEFAULT	unknown	FUN_00402410	
-00002480	633	DEFAULT	unknown	FUN_00402480	
-00002700	112	DEFAULT	unknown	FUN_00402700	
-00002770	379	DEFAULT	unknown	FUN_00402770	
-000028f0	1462	DEFAULT	unknown	FUN_004028f0	
+00002410	32	USER_DEFINED	__cdecl	Ase_Initialize	int __cdecl(int port, int internet, char * address)
+00002480	633	USER_DEFINED	__cdecl	Ase_ServerStatus	void __cdecl(char * name, char * type, char * map, char * version, int password, int numPlayers, int maxPlayers)
+00002700	112	USER_DEFINED	__cdecl	Ase_AddRule	void __cdecl(char * key, char * value)
+00002770	379	USER_DEFINED	__cdecl	Ase_AddPlayer	void __cdecl(char * name, char * team, char * skin, char * score, char * ping, char * time)
+000028f0	1462	USER_DEFINED	__cdecl	Ase_Check	int __cdecl(void)
 00002eb0	36	DEFAULT	unknown	FUN_00402eb0	
 00002ed4	117	DEFAULT	unknown	FUN_00402ed4	
 00002f49	110	DEFAULT	unknown	FUN_00402f49	
@@ -20,7 +21,7 @@ rva	size	source	callconv	name	signature
 00003480	32	DEFAULT	unknown	FUN_00403480	
 000034a0	32	ANALYSIS	unknown	RFX_Text_Bulk	undefined(void)
 000034c0	810	DEFAULT	unknown	FUN_004034c0	
-000037ea	40	DEFAULT	unknown	FUN_004037ea	
+000037ea	40	USER_DEFINED	__stdcall	D3DX_CheckTextureRequirements	int __stdcall(void * dev, uint * w, uint * h, uint * levels, uint usage, int * fmt, int pool)
 00003812	40	DEFAULT	unknown	FUN_00403812	
 0000383a	41	DEFAULT	unknown	FUN_0040383a	
 00003863	102	DEFAULT	unknown	FUN_00403863	
@@ -35,7 +36,7 @@ rva	size	source	callconv	name	signature
 00004c7f	68	DEFAULT	unknown	FUN_00404c7f	
 00004cc3	68	DEFAULT	unknown	FUN_00404cc3	
 00004d07	184	DEFAULT	unknown	FUN_00404d07	
-00004dbf	422	DEFAULT	unknown	FUN_00404dbf	
+00004dbf	422	USER_DEFINED	__stdcall	D3DX_LoadSurfaceFromSurface	int __stdcall(void * dst, void * dstPal, void * dstRect, void * src, void * srcPal, void * srcRect, uint filter, uint colorKey)
 00004f65	188	DEFAULT	unknown	FUN_00404f65	
 00005021	134	DEFAULT	unknown	FUN_00405021	
 000050a7	960	DEFAULT	unknown	FUN_004050a7	
@@ -49,7 +50,7 @@ rva	size	source	callconv	name	signature
 00005b88	86	DEFAULT	unknown	FUN_00405b88	
 00005bde	86	DEFAULT	unknown	FUN_00405bde	
 00005c34	1651	DEFAULT	unknown	FUN_00405c34	
-000062a7	64	DEFAULT	unknown	FUN_004062a7	
+000062a7	64	USER_DEFINED	__stdcall	D3DX_CreateTextureFromFileInMemoryEx	int __stdcall(void * dev, void * data, uint size, uint w, uint h, uint levels, uint usage, int fmt, int pool, uint filter, uint mipFilter, uint colorKey, void * srcInfo, void * palette, void ** tex)
 000062e7	64	DEFAULT	unknown	FUN_004062e7	
 00006327	65	DEFAULT	unknown	FUN_00406327	
 00006368	99	DEFAULT	unknown	FUN_00406368	
