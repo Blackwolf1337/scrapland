@@ -8091,3 +8091,5 @@ SD_HOOK(FX_ShipExplosion, 0x1f4d50, 13631)
 
 /* module agent: Exhaust (hooks below this line) */
 SD_HOOK(cVehicleMotorsEffects_Exhaust, 0x10f210, 34801)
+
+/* module agent: Engine leftovers (Escena_Load, stencil draws, debug and dialogs) (hooks below this line) */
