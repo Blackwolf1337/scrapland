@@ -65,14 +65,45 @@ after `PlayVoice`, and `Voice_Wait` is empty. `Music_Stop` closes a stream that 
 once while the app is inactive, instead of Sleep(250), so the PeekMessage loop then runs at full CPU. `CD3DApp_Run`
 uses PeekMessageA instead of GetMessageA while inactive. `CEntradaDInput_ReadKeys` tries Acquire once per call
 instead of spinning. `win32.h` no longer has `exe_Sleep`. `tools/test/py/sdcall_nosleep2.py` checks the voice and
-music paths. Three places still block, each with a plan:
+music paths.
 
-- the GOG sign-in wait in `CWinApp_Init` (`while (!g_GogReady)`). Plan: finish the init from `CWinApp_Frame` once
-  signed in.
-- `Transport_Wait`, a select with a 1 s timeout that throttles the dedicated server. Plan: timeout 0 plus a frame
-  gate, waiting for the user's decision.
-- the video playback in `Video_RenderStream` (synchronous sample Update, DDBLT_WAIT). Plan: SSUPDATE_ASYNC, polled
-  once per frame.
+The three other blocking places run from the message loop now. `Transport_Wait` polls the select with a zero timeout,
+and the rest of the dedicated server's frame runs from the PeekMessage loop of `App_WinMain` (`CApp_FrameResume`)
+once a packet came or 1 s passed.
+
+The GOG sign-in: `CWinApp_Init` calls `Gog_ProcessData` once. When not signed in yet, it returns 1 and the message
+loop calls `Gog_ProcessData` once per pass (`CWinApp_InitStep`), then runs the rest of the init (`CApp_Init`, the
+player names, the console window). In the test prefix the sign-in takes about 2.7 million passes, so the difftest
+runs this path. Closing the window before the sign-in ends the start like a failed Init (`App_WinMain` returns 0, as
+the original did when Init returned 0). A failed `CApp_Init` run from the loop does the same.
+
+The videos: `Video_RenderStream` sets up and starts the stream and returns. `Video_Step` plays it, once per pass of
+the message loop: the sample Update with SSUPDATE_ASYNC and `CompletionStatus` polled without waiting, the Blts
+without DDBLT_WAIT and tried again on the next pass while the surface is busy (DDERR_WASSTILLDRAWING). A key or the
+pad stops it (a pending Update is ended with COMPSTAT_ABORT). At the end of the stream `Video_Step` runs the rest of
+`Video_PlayPath` and plays the second name of an "a|b" list. `Video_PlayFile` and `Video_PlayPath` return
+`VIDEO_PENDING` (-1) while a video plays, `Video_Result` has the result afterwards.
+
+The callers go on from the loop in the order of the original. The videos of `Engine_Init` are steps
+(`Engine_InitVideos`), after them come the rest of `CApp_Init` (`CApp_InitResume`) and of `CWinApp_Init`. After the
+start video of `Engine_LevelEnd` come the rest of the level load and of the frame (`CApp_FrameResume`). After the
+video of `Video_PlayStart` the start video name is cleared. `Engine_VideoWait` and `Engine_VideoResume` hold this in
+ScrapEngMain.c.
+
+While the app waits (the GOG sign-in, a video, the rest after a video), `App_WinMain` takes only the messages outside
+the keyboard and mouse ranges, so the window can be moved or closed, but the input comes after the wait as in the
+original (it handled no message then). A WM_QUIT during a video is kept until the wait is over, a line entered in the
+console window runs after it, and WM_PAINT does not Present over a video.
+
+One place still blocks: `Scrap.VideoPlayer` (`Video_Play` calls `Video_PlayFileWait`, which plays with the
+synchronous Update and DDBLT_WAIT of the original), because the Python script goes on after the video. The game's own
+scripts never call it (no hit in the packs). Plan: return at once (whether the file is found is known before the
+video starts, so the result stays the same), and the rest of the script and of the frame then run before the video
+instead of after it; or a callback argument for the script. Waiting for the user's decision.
+
+`tools/test/py/sdcall_nowait.py` checks the paths that end at once: in the test prefix the stream of Video/MSE.vds
+does not open (no XviD decoder, OpenFile fails in both runs). The stream itself (`Video_Step` with a real video) is
+not tested in the difftest.
 
 ## Stage 2: real libraries
 

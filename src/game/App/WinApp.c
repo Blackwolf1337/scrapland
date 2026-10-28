@@ -14,6 +14,7 @@
 #include "scrap/filesys.h"
 #include "scrap/mathlib.h"
 #include "scrap/scrapmain.h"
+#include "scrap/video.h"
 #include "scrap/win32.h"
 
 #define WM_CREATE 0x0001
@@ -27,12 +28,16 @@
 #define WM_HELP 0x0053
 #define WM_CONTEXTMENU 0x007b
 #define WM_NCHITTEST 0x0084
+#define WM_KEYFIRST 0x0100
 #define WM_KEYDOWN 0x0100
 #define WM_CHAR 0x0102
 #define WM_SYSKEYDOWN 0x0104
+#define WM_KEYLAST 0x0109
 #define WM_INITDIALOG 0x0110
 #define WM_COMMAND 0x0111
 #define WM_SYSCOMMAND 0x0112
+#define WM_MOUSEFIRST 0x0200
+#define WM_MOUSELAST 0x020e
 #define WM_ENTERMENULOOP 0x0211
 #define WM_EXITMENULOOP 0x0212
 #define WM_SIZING 0x0214
@@ -386,6 +391,66 @@ void *App_GetHWnd(void) {
 	return g_pApp->hwnd;
 }
 
+/* the part of CWinApp_Init that waits, driven by the message loop (CWinApp_InitStep) */
+enum {
+	APPINIT_DONE,
+	APPINIT_GOG,			/* for the GOG sign-in */
+	APPINIT_VIDEOS,			/* for the videos of Engine_Init in CApp_Init */
+};
+static int app_init;
+
+/* the end of the init: the player name of GOG or Steam, the console window */
+static void CWinApp_InitEnd(CWinApp *self) {
+	if (Gog_GetID()) {
+		/* IFriends::GetPersonaName */
+		void *friends = exe_GalaxyFriends();
+		const char *name = ((const char *(__thiscall *)(void *))(*(void ***)friends)[0x14 / 4])(friends);
+		cString_Set(g_PlayerName, Str_FromUTF8(name));
+	}
+	if (g_IsSteam) {
+		/* ISteamFriends::GetPersonaName of the context the exe keeps */
+		void **ctx = g_SteamInternal_ContextInit(g_SteamFriendsContext);
+		void *friends = ctx[2];
+		const char *name = ((const char *(__thiscall *)(void *))(*(void ***)friends)[0])(friends);
+		cString_Set(g_PlayerName, Str_FromUTF8(name));
+	}
+	ConsoleWin_Show((byte)Engine_IsFullScreen() == 0);
+	exe_SetForegroundWindow(self->hwnd);
+	Con_Print(0, "Scrap engine initialized!\n\n", 0);
+}
+
+/* the init after the GOG sign-in: CApp_Init, which may leave its videos to the message loop, then CWinApp_InitEnd;
+ * 0 when CApp_Init failed */
+static byte CWinApp_InitRest(CWinApp *self) {
+	if (!CApp_Init(self)) {
+		return 0;
+	}
+	if (Engine_VideoWait()) {
+		app_init = APPINIT_VIDEOS;
+		return 1;
+	}
+	CWinApp_InitEnd(self);
+	return 1;
+}
+
+/* one pass of the message loop while the init waits; 0 when it failed (App_WinMain then returns 0 as after a failed
+ * Init) */
+static byte CWinApp_InitStep(CWinApp *self) {
+	if (app_init == APPINIT_GOG) {
+		Gog_ProcessData(&self->gog);
+		if (!g_GogReady) {
+			return 1;
+		}
+		app_init = APPINIT_DONE;
+		return CWinApp_InitRest(self);
+	}
+	if (CApp_InitResume(self)) {
+		app_init = APPINIT_DONE;
+		CWinApp_InitEnd(self);
+	}
+	return 1;
+}
+
 /* vf04: the window, the language, the console window, Steam and GOG, then CApp_Init */
 byte __thiscall CWinApp_Init(CWinApp *self) {
 	App_SetExceptionFilter(1);
@@ -425,29 +490,13 @@ byte __thiscall CWinApp_Init(CWinApp *self) {
 	cString_Set(g_LangName, Gog_GetLanguage());
 	Font_SetLanguage(*g_LangName);
 	Gog_ProcessData(&self->gog);
-	while (!g_GogReady) {
-		Gog_ProcessData(&self->gog);
+	/* differs from the original on purpose (no blocking waits): the original called Gog_ProcessData in a loop until
+	 * the sign-in; now the message loop calls it once per pass and then runs the rest (CWinApp_InitStep) */
+	if (!g_GogReady) {
+		app_init = APPINIT_GOG;
+		return 1;
 	}
-	if (!CApp_Init(self)) {
-		return 0;
-	}
-	if (Gog_GetID()) {
-		/* IFriends::GetPersonaName */
-		void *friends = exe_GalaxyFriends();
-		const char *name = ((const char *(__thiscall *)(void *))(*(void ***)friends)[0x14 / 4])(friends);
-		cString_Set(g_PlayerName, Str_FromUTF8(name));
-	}
-	if (g_IsSteam) {
-		/* ISteamFriends::GetPersonaName of the context the exe keeps */
-		void **ctx = g_SteamInternal_ContextInit(g_SteamFriendsContext);
-		void *friends = ctx[2];
-		const char *name = ((const char *(__thiscall *)(void *))(*(void ***)friends)[0])(friends);
-		cString_Set(g_PlayerName, Str_FromUTF8(name));
-	}
-	ConsoleWin_Show((byte)Engine_IsFullScreen() == 0);
-	exe_SetForegroundWindow(self->hwnd);
-	Con_Print(0, "Scrap engine initialized!\n\n", 0);
-	return 1;
+	return CWinApp_InitRest(self);
 }
 
 /* vf05: GOG and Steam callbacks, then CApp_Frame */
@@ -539,9 +588,33 @@ byte __thiscall CWinApp_IsDedicatedWin(CWinApp *self) {
 	return self->dedicatedWin;
 }
 
+/* the init, a video or the rest of Engine_LevelEnd waits (the original blocked in them) */
+static byte App_Waiting(void) {
+	return app_init != APPINIT_DONE || Video_Busy() || Engine_VideoWait();
+}
+
+/* a line entered in the console window while the app waits, run once the wait is over */
+static byte app_conEnterLater;
+
+/*
+ * differs from the original on purpose (no blocking waits): while the app waits, the keyboard and mouse input stays
+ * in the queue (the original handled no message while it waited, so the input came after the wait); the other
+ * messages are handled, so the window answers and can be moved or closed
+ */
+static int App_PeekMessage(exe_msg *msg, byte waiting) {
+	if (!waiting) {
+		return exe_PeekMessageA(msg, NULL, 0, 0, 1);
+	}
+	return exe_PeekMessageA(msg, NULL, 0, WM_KEYFIRST - 1, 1)
+		|| exe_PeekMessageA(msg, NULL, WM_KEYLAST + 1, WM_MOUSEFIRST - 1, 1)
+		|| exe_PeekMessageA(msg, NULL, WM_MOUSELAST + 1, 0xffffffffu, 1);
+}
+
 /* the message loop: a frame whenever no message waits */
 int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow) {
 	exe_msg msg;
+	byte quitLater = 0;
+	uintptr_t quitCode = 0;
 
 	void *acc = exe_LoadAcceleratorsA(NULL, (const char *)0xc8);
 	CWinApp *app = operator_new(sizeof(CWinApp));
@@ -550,7 +623,31 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 		return 0;
 	}
 	for (;;) {
-		if (!exe_PeekMessageA(&msg, NULL, 0, 0, 1)) {
+		byte waiting = App_Waiting();
+		if (!App_PeekMessage(&msg, waiting)) {
+			if (waiting) {
+				/* differs from the original on purpose (no blocking waits): one pass of what the original waited
+				 * for: the video, the GOG sign-in, the rest of the init or of the level load after a video */
+				if (Video_Busy()) {
+					Video_Step();
+				} else if (app_init != APPINIT_DONE) {
+					if (!CWinApp_InitStep(g_pApp)) {
+						return 0;
+					}
+				} else {
+					CApp_FrameResume();
+				}
+				continue;
+			}
+			if (app_conEnterLater) {
+				app_conEnterLater = 0;
+				ConsoleWin_Enter();
+				continue;
+			}
+			if (quitLater) {
+				msg.wParam = quitCode;
+				break;
+			}
 			/* the rest of a dedicated server frame that waits for a packet (the original blocked in Transport_Wait) */
 			if (CApp_FrameResume()) {
 				continue;
@@ -563,7 +660,17 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 			continue;
 		}
 		if (msg.message == WM_QUIT) {
-			break;
+			if (!waiting) {
+				break;
+			}
+			/* closed while it waits: before the GOG sign-in the start ends like a failed Init, else the quit comes
+			 * after the wait */
+			if (app_init == APPINIT_GOG) {
+				return 0;
+			}
+			quitLater = 1;
+			quitCode = msg.wParam;
+			continue;
 		}
 		if (!exe_TranslateAcceleratorA(g_pApp->hwnd, acc, &msg)) {
 			exe_TranslateMessage(&msg);
@@ -912,6 +1019,12 @@ int ConsoleWin_Show(byte show) {
 
 /* the edit line into the history (the older lines one down) and to Console_Execute */
 void ConsoleWin_Enter(void) {
+	/* differs from the original on purpose (no blocking waits): the original handled no message while it waited for
+	 * the GOG sign-in or a video, so the line runs after the wait (App_WinMain) */
+	if (App_Waiting()) {
+		app_conEnterLater = 1;
+		return;
+	}
 	for (int i = CONWIN_HISTORY - 2; i >= 0; i--) {
 		const char *src = g_ConHistory[i];
 		char *dst = g_ConHistory[i + 1];

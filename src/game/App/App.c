@@ -276,6 +276,24 @@ float World_TimeScale(void) {
 	return 1.0f;
 }
 
+/* the start time of the level load of CApp_Init, for CApp_InitEnd */
+static double app_initT0;
+
+/* the rest of CApp_Init after the videos of Engine_Init: the sound and the first level */
+static byte CApp_InitEnd(CApp *self) {
+	Engine_SetCallback(APP_CB_WORLDFRAME, 1);
+	if (g_IsXbox) {
+		Engine_SetCallback(APP_CB_LOADINGXBOX, 3);
+	}
+	Sound_Init();
+	Sound_ResetVolumes();
+	self->vftable->InitGame(self, *g_iMap);
+	Loading_Fade();
+	double t1 = self->vftable->GetTime(self);
+	Con_Printf("Level loaded in %.2f seconds\n", t1 - app_initT0);
+	return 1;
+}
+
 /* vf04: the debug logs, Scrap.cfg, the command line, the packs, the input, the engine and the first level */
 byte __thiscall CApp_Init(CApp *self) {
 	vec3_t one;
@@ -310,7 +328,7 @@ byte __thiscall CApp_Init(CApp *self) {
 		}
 		cString_dtor(&lang);
 	}
-	double t0 = self->vftable->GetTime(self);
+	app_initT0 = self->vftable->GetTime(self);
 	Lang_Set(NULL, 1);
 	self->flags = (self->dedicated ? APPF_DEDICATED : 0) | (self->flags & ~APPF_DEDICATED);
 	self->vftable->ShowConsole(self, (byte)Engine_IsFullScreen() == 0);
@@ -320,16 +338,19 @@ byte __thiscall CApp_Init(CApp *self) {
 	one = app_one;
 	Engine_SetSuelo(*g_iMap, "Map/Map3D.m3d", &one);
 	Engine_Init();
-	Engine_SetCallback(APP_CB_WORLDFRAME, 1);
-	if (g_IsXbox) {
-		Engine_SetCallback(APP_CB_LOADINGXBOX, 3);
+	/* differs from the original on purpose (no blocking waits): while the videos of Engine_Init play from the message
+	 * loop, the rest is CApp_InitResume */
+	if (Engine_VideoWait()) {
+		return 1;
 	}
-	Sound_Init();
-	Sound_ResetVolumes();
-	self->vftable->InitGame(self, *g_iMap);
-	Loading_Fade();
-	double t1 = self->vftable->GetTime(self);
-	Con_Printf("Level loaded in %.2f seconds\n", t1 - t0);
+	return CApp_InitEnd(self);
+}
+
+byte CApp_InitResume(CApp *self) {
+	if (!Engine_VideoResume()) {
+		return 0;
+	}
+	CApp_InitEnd(self);
 	return 1;
 }
 
@@ -381,23 +402,19 @@ void __fastcall Loading_Start(void *unused) {
 	g_XLoadIcon = NULL;
 }
 
-/* vf07: closes the level and loads level (only the logic again for the same level without ForceReload) */
-void __thiscall CApp_LoadLevelNow(CApp *self, const char *level) {
+/* the level load that waits for the start video of Engine_LevelEnd (CApp_FrameResume finishes it and the frame) */
+static struct {
+	byte wait;
+	CApp *self;
+	const char *level;
+	double t0;
+} app_load;
+
+/* the rest of CApp_LoadLevelNow after Engine_LevelEnd: the new world, then the game */
+static void CApp_LoadLevelEnd(CApp *self, const char *level, double t0, byte reload) {
 	vec3_t one;
 
-	double t0 = self->vftable->GetTime(self);
-	Con_Printf("Loading level at '%s'...\n", level);
-	Engine_SetCallback(NULL, 4);
-	self->vftable->DoneGame(self);
-	Sound_ResetVolumes();
-	g_pSound->vftable->StopAllSounds(g_pSound);
-	g_pSound->vftable->ResetListeners(g_pSound);
-	if (!cString_ICmpStr(&self->levelPath, level) && !g_ForceReload) {
-		Loading_Begin();
-	} else {
-		g_pSound->vftable->StopMusic(g_pSound);
-		g_pSound->vftable->DeleteAllSounds(g_pSound);
-		Engine_LevelEnd();
+	if (reload) {
 		one = app_one;
 		Engine_SetSuelo(level, "Map/Map3D.m3d", &one);
 		Engine_LevelInit();
@@ -419,6 +436,35 @@ void __thiscall CApp_LoadLevelNow(CApp *self, const char *level) {
 		Loading_Stop();
 	}
 	g_DrawNextFrame = 0;
+}
+
+/* vf07: closes the level and loads level (only the logic again for the same level without ForceReload) */
+void __thiscall CApp_LoadLevelNow(CApp *self, const char *level) {
+	double t0 = self->vftable->GetTime(self);
+	Con_Printf("Loading level at '%s'...\n", level);
+	Engine_SetCallback(NULL, 4);
+	self->vftable->DoneGame(self);
+	Sound_ResetVolumes();
+	g_pSound->vftable->StopAllSounds(g_pSound);
+	g_pSound->vftable->ResetListeners(g_pSound);
+	if (!cString_ICmpStr(&self->levelPath, level) && !g_ForceReload) {
+		Loading_Begin();
+		CApp_LoadLevelEnd(self, level, t0, 0);
+		return;
+	}
+	g_pSound->vftable->StopMusic(g_pSound);
+	g_pSound->vftable->DeleteAllSounds(g_pSound);
+	Engine_LevelEnd();
+	/* differs from the original on purpose (no blocking waits): while the start video of Engine_LevelEnd plays from
+	 * the message loop, the rest of the load (and of the frame) waits for CApp_FrameResume */
+	if (Engine_VideoWait()) {
+		app_load.wait = 1;
+		app_load.self = self;
+		app_load.level = level;
+		app_load.t0 = t0;
+		return;
+	}
+	CApp_LoadLevelEnd(self, level, t0, 1);
 }
 
 /* engine callback 3 with isXbox: the loading tip in a frame */
@@ -538,11 +584,8 @@ static void CApp_FrameNet(void) {
 	Net_Update();
 }
 
-/* vf05: one frame; 0 when the time did not go on (or the app waits in the background) */
-byte __thiscall CApp_Frame(CApp *self) {
-	if (self->loadPending) {
-		self->vftable->LoadLevelNow(self, self->newLevelPath);
-	}
+/* the frame after the level load */
+static byte CApp_FrameRun(CApp *self) {
 	double t = self->vftable->GetTime(self);
 	uint32_t flags = self->flags;
 	self->time = t;
@@ -596,8 +639,33 @@ byte __thiscall CApp_Frame(CApp *self) {
 	return 1;
 }
 
-/* the rest of the dedicated server's frame, when it waits in Transport_Wait; 0 while there is none */
+/* vf05: one frame; 0 when the time did not go on (or the app waits in the background) */
+byte __thiscall CApp_Frame(CApp *self) {
+	if (self->loadPending) {
+		self->vftable->LoadLevelNow(self, self->newLevelPath);
+		/* the rest of the frame after the start video, from CApp_FrameResume */
+		if (app_load.wait) {
+			return 0;
+		}
+	}
+	return CApp_FrameRun(self);
+}
+
+/* the rest of a frame that waits: the level load and the frame after the start video, a video of
+ * Video_PlayStart, the dedicated server's wait in Transport_Wait; 0 while there is none */
 int CApp_FrameResume(void) {
+	if (app_load.wait) {
+		if (Engine_VideoResume()) {
+			app_load.wait = 0;
+			CApp_LoadLevelEnd(app_load.self, app_load.level, app_load.t0, 1);
+			CApp_FrameRun(app_load.self);
+		}
+		return 1;
+	}
+	if (Engine_VideoWait()) {
+		Engine_VideoResume();
+		return 1;
+	}
 	if (!g_AppNetPending) {
 		return 0;
 	}

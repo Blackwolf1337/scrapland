@@ -192,6 +192,10 @@ byte Engine_OneTimeInit(void);
 byte Engine_FrameMove(void);
 byte Engine_FinalCleanup(void);
 void Engine_Init(void);
+/* 1 while Engine_Init, Engine_LevelEnd or Video_PlayStart waits for its video (the message loop plays it) */
+int Engine_VideoWait(void);
+/* the rest of the one that waits, once its video has ended: 1 when that is done, 0 while a video plays (again) */
+int Engine_VideoResume(void);
 int Engine_IsFullScreen(void);
 void Engine_LevelInit(void);
 void Engine_LevelLoaded(void);

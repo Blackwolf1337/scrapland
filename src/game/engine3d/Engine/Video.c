@@ -42,6 +42,7 @@ typedef uint32_t(__stdcall *xinputGetState_t)(uint32_t user, void *state);
 #define AMMS_OPENFILE 0x40
 #define DDMS_CREATESAMPLE 0x34
 #define SAMPLE_UPDATE 0x18
+#define SAMPLE_COMPLETIONSTATUS 0x1c
 #define SAMPLE_GETSURFACE 0x20
 #define DD_CREATESURFACE 0x18
 #define DD_GETDISPLAYMODE 0x30
@@ -60,6 +61,7 @@ typedef int(__stdcall *ammsSetState_t)(void *obj, int state);
 typedef int(__stdcall *ddmsCreateSample_t)(void *obj, void *surf, const void *rect, uint32_t flags, void **out);
 typedef int(__stdcall *sampleGetSurface_t)(void *obj, void **surf, exe_rect *rect);
 typedef int(__stdcall *sampleUpdate_t)(void *obj, uint32_t flags, void *event, void *apc, uintptr_t ctx);
+typedef int(__stdcall *sampleCompletionStatus_t)(void *obj, uint32_t flags, uint32_t ms);
 typedef int(__stdcall *ddGetDesc_t)(void *obj, void *ddsd);
 typedef int(__stdcall *ddCreateSurface_t)(void *obj, void *ddsd, void **surf, void *outer);
 typedef int(__stdcall *ddSetCoop_t)(void *obj, void *hwnd, uint32_t flags);
@@ -80,6 +82,10 @@ typedef int(__stdcall *ddsReleaseDC_t)(void *obj, void *dc);
 #define DDSCL_NORMAL 8
 #define DDBLT_DDFX 0x800
 #define DDBLT_WAIT 0x1000000
+#define DDERR_WASSTILLDRAWING ((int)0x8876021c)
+#define SSUPDATE_ASYNC 1
+#define COMPSTAT_ABORT 4
+#define MS_S_PENDING 0x40001
 
 /* DDSURFACEDESC */
 typedef struct VideoDDSD {
@@ -206,14 +212,46 @@ static void Video_Release(void **obj) {
 	}
 }
 
+/* the objects of Video_RenderStream released in the order of the original */
+static void Video_ReleaseStream(void **sec, void **surf, void **sample, void **dds, void *vid) {
+	Video_Release(sec);
+	Video_Release(surf);
+	Video_Release(sample);
+	Video_Release(dds);
+	if (vid) {
+		COM_RELEASE(vid);
+	}
+}
+
+/* the playback that the message loop drives (Video_Step): the frames of the stream Video_RenderStream started, then
+ * the rest of its Video_PlayPath and the second name of a Video_PlayFile list */
+static struct {
+	byte busy;			/* a video plays, Video_Step goes on with it */
+	byte stream;			/* the frames of the stream run */
+	byte wait;			/* Video_PlayFileWait: Update and Blt wait as in the original */
+	byte update;			/* an SSUPDATE_ASYNC Update is out */
+	byte frame;			/* a new frame in surf, not yet blitted */
+	byte secDone;			/* the blit into sec is done, the one onto primary not yet */
+	byte played;			/* the played of Video_PlayPath */
+	byte *playedOut;
+	void *primary, *ms, *vid, *dds, *sample, *surf, *sec;
+	exe_rect src, dst;
+	uint32_t fx[25];		/* DDBLTFX */
+	uint32_t bltFlags;
+	void *pathDD, *pathMS;		/* of Video_PlayPath, released after the stream */
+	const char *rest;		/* the name after the '|' of Video_PlayFile, played after the first one */
+	const char *restDir;
+	int result;			/* of the Video_PlayFile that ended last */
+} video;
+
 int Video_RenderStream(void *dd, void *primary, void *ms, byte *played) {
 	VideoDDSD ddsd;
 	exe_rect src, dst;
-	uint32_t fx[25];
 	void *vid = NULL, *dds = NULL, *sample = NULL, *surf = NULL, *sec = NULL;
 	const char *what;
 	int hr;
 
+	CHECK(!video.stream);
 	E3D_LogDebug(g_FileLog, "RenderStreamToSurface():");
 	*played = 0;
 	hr = COM_CALL(ms, ammsGetMediaStream_t, AMMS_GETMEDIASTREAM)(ms, MSPID_PrimaryVideo, &vid);
@@ -303,45 +341,113 @@ int Video_RenderStream(void *dd, void *primary, void *ms, byte *played) {
 		goto failed;
 	}
 	/* DDBLTFX with the mirror flags */
-	memset(fx, 0, sizeof(fx));
-	fx[0] = sizeof(fx);
-	fx[1] = (g_VideoMirror & 1) << 2 | (g_VideoMirror & 2);
-	uint32_t bltFlags = g_VideoMirror ? DDBLT_DDFX : 0;
-	for (;;) {
-		/* differs from the original on purpose (no blocking waits): the keys still held do not skip the video */
-		if (!Video_KeysHeld() && (exe_GetAsyncKeyState(VK_ESCAPE) || exe_GetAsyncKeyState(VK_SPACE)
-			|| exe_GetAsyncKeyState(VK_RETURN))) {
-			break;
-		}
-		if (Video_PadPressed()) {
-			break;
-		}
-		if (COM_CALL(sample, sampleUpdate_t, SAMPLE_UPDATE)(sample, 0, NULL, NULL, 0)) {
-			goto stop;
-		}
-		if (!primary) {
-			Video_BltToWindow(MOTOR_HWND(g_Motor), &dst, surf, &src);
-		} else {
-			COM_CALL(sec, ddsBlt_t, DDS_BLT)(sec, &src, surf, &src, bltFlags | DDBLT_WAIT, fx);
-			COM_CALL(primary, ddsBlt_t, DDS_BLT)(primary, &dst, sec, &src, DDBLT_WAIT, NULL);
-		}
-	}
-	*played = 1;
-stop:
-	Video_WaitKeysUp(1000);
-	COM_CALL(ms, ammsSetState_t, AMMS_SETSTATE)(ms, 0);
-	goto done;
+	memset(video.fx, 0, sizeof(video.fx));
+	video.fx[0] = sizeof(video.fx);
+	video.fx[1] = (g_VideoMirror & 1) << 2 | (g_VideoMirror & 2);
+	video.bltFlags = g_VideoMirror ? DDBLT_DDFX : 0;
+	/* differs from the original on purpose (no blocking waits): the loop over the frames is Video_Step, once per pass
+	 * of the message loop of App_WinMain, which also runs the end of the stream (Video_StreamStop) */
+	video.primary = primary;
+	video.ms = ms;
+	video.vid = vid;
+	video.dds = dds;
+	video.sample = sample;
+	video.surf = surf;
+	video.sec = sec;
+	video.src = src;
+	video.dst = dst;
+	video.playedOut = played;
+	video.update = 0;
+	video.frame = 0;
+	video.secDone = 0;
+	video.stream = 1;
+	video.busy = 1;
+	return hr;
 failed:
 	E3D_LogBlue(g_FileLog, "%s  failed with HRESULT(0x%8.8X)", what, hr);
-done:
-	Video_Release(&sec);
-	Video_Release(&surf);
-	Video_Release(&sample);
-	Video_Release(&dds);
-	if (vid) {
-		COM_RELEASE(vid);
-	}
+	Video_ReleaseStream(&sec, &surf, &sample, &dds, vid);
 	return hr;
+}
+
+/* the end of the stream: played 1 when a key or the pad stopped it, the hold of the keys, the stream stopped and its
+ * objects released */
+static void Video_StreamStop(byte skipped) {
+	if (skipped) {
+		*video.playedOut = 1;
+	}
+	if (video.update) {
+		/* the frame asked for is not waited for */
+		COM_CALL(video.sample, sampleCompletionStatus_t, SAMPLE_COMPLETIONSTATUS)(video.sample, COMPSTAT_ABORT, 0);
+		video.update = 0;
+	}
+	Video_WaitKeysUp(1000);
+	COM_CALL(video.ms, ammsSetState_t, AMMS_SETSTATE)(video.ms, 0);
+	video.stream = 0;
+	Video_ReleaseStream(&video.sec, &video.surf, &video.sample, &video.dds, video.vid);
+	video.vid = NULL;
+}
+
+/* one turn of the frame loop of the original: the keys and the pad, the next frame of the stream, the blits. Without
+ * the wait of Video_PlayFileWait the Update is SSUPDATE_ASYNC and polled, the Blts are tried again on the next pass
+ * while the surface is busy. */
+static void Video_StreamStep(void) {
+	int hr;
+
+	/* differs from the original on purpose (no blocking waits): the keys still held do not skip the video */
+	if (!Video_KeysHeld() && (exe_GetAsyncKeyState(VK_ESCAPE) || exe_GetAsyncKeyState(VK_SPACE)
+		|| exe_GetAsyncKeyState(VK_RETURN))) {
+		Video_StreamStop(1);
+		return;
+	}
+	if (Video_PadPressed()) {
+		Video_StreamStop(1);
+		return;
+	}
+	if (!video.frame) {
+		if (!video.update) {
+			hr = COM_CALL(video.sample, sampleUpdate_t, SAMPLE_UPDATE)(video.sample, video.wait ? 0 : SSUPDATE_ASYNC,
+				NULL, NULL, 0);
+			if (hr == MS_S_PENDING && !video.wait) {
+				video.update = 1;
+			} else if (hr) {
+				Video_StreamStop(0);
+				return;
+			} else {
+				video.frame = 1;
+			}
+		}
+		if (video.update) {
+			hr = COM_CALL(video.sample, sampleCompletionStatus_t, SAMPLE_COMPLETIONSTATUS)(video.sample, 0, 0);
+			if (hr == MS_S_PENDING) {
+				return;
+			}
+			video.update = 0;
+			if (hr) {
+				Video_StreamStop(0);
+				return;
+			}
+			video.frame = 1;
+		}
+	}
+	if (!video.primary) {
+		Video_BltToWindow(MOTOR_HWND(g_Motor), &video.dst, video.surf, &video.src);
+	} else {
+		uint32_t wait = video.wait ? DDBLT_WAIT : 0;
+		if (!video.secDone) {
+			hr = COM_CALL(video.sec, ddsBlt_t, DDS_BLT)(video.sec, &video.src, video.surf, &video.src,
+				video.bltFlags | wait, video.fx);
+			if (hr == DDERR_WASSTILLDRAWING && !video.wait) {
+				return;
+			}
+			video.secDone = 1;
+		}
+		hr = COM_CALL(video.primary, ddsBlt_t, DDS_BLT)(video.primary, &video.dst, video.sec, &video.src, wait, NULL);
+		if (hr == DDERR_WASSTILLDRAWING && !video.wait) {
+			return;
+		}
+		video.secDone = 0;
+	}
+	video.frame = 0;
 }
 
 void Video_BltToWindow(void *hwnd, const exe_rect *dst, void *surf, const exe_rect *src) {
@@ -360,19 +466,10 @@ void Video_BltToWindow(void *hwnd, const exe_rect *dst, void *surf, const exe_re
 	COM_CALL(surf, ddsReleaseDC_t, DDS_RELEASEDC)(surf, sdc);
 }
 
-int Video_PlayFile(const char *name, const char *dir) {
+/* name in the language directory of dir, else as it is (with the warning when neither is found) */
+static int Video_PlayName(const char *name, const char *dir) {
 	char buf[MAX_RUTA];
 
-	/* "a|b": a first, then b */
-	if (strchr(name, '|')) {
-		Bprintf(buf, sizeof(buf), "%s", name);
-		*strchr(buf, '|') = 0;
-		Video_PlayFile(buf, dir);
-		name = strchr(name, '|') + 1;
-		while (*name && *name == ' ') {
-			name++;
-		}
-	}
 	Bprintf(buf, sizeof(buf), "&U&D%s/&N&E", *g_LangName);
 	Ruta_Format(buf, name, buf);
 	int r = Video_PlayPath(buf, dir, 0);
@@ -382,10 +479,42 @@ int Video_PlayFile(const char *name, const char *dir) {
 	return r;
 }
 
+int Video_PlayFile(const char *name, const char *dir) {
+	char buf[MAX_RUTA];
+
+	CHECK(!video.busy);
+	/* "a|b": a first, then b */
+	if (strchr(name, '|')) {
+		Bprintf(buf, sizeof(buf), "%s", name);
+		*strchr(buf, '|') = 0;
+		int r = Video_PlayFile(buf, dir);
+		name = strchr(name, '|') + 1;
+		while (*name && *name == ' ') {
+			name++;
+		}
+		if (r == VIDEO_PENDING) {
+			/* differs from the original on purpose (no blocking waits): b plays after the video of a, from
+			 * Video_Step */
+			video.rest = name;
+			video.restDir = dir;
+			return VIDEO_PENDING;
+		}
+	}
+	return Video_PlayName(name, dir);
+}
+
+/* the end of Video_PlayPath: DirectDraw released (dd NULL when it was not created), COM closed */
+static int Video_PlayPathEnd(void *dd) {
+	if (dd && COM_RELEASE(dd)) {
+		E3D_LogBlue(g_FileLog, "ERROR: A DirectDraw object has a non-zero reference count");
+	}
+	exe_CoUninitialize();
+	return video.played ? 2 : 1;
+}
+
 int Video_PlayPath(const char *name, const char *dir, byte warn) {
 	char path[MAX_RUTA];
 	void *dd, *ms;
-	byte played;
 
 	Bprintf(path, sizeof(path), "%s%s", dir ? dir : "", name);
 	if (File_Access(path, 0)) {
@@ -398,22 +527,78 @@ int Video_PlayPath(const char *name, const char *dir, byte warn) {
 		}
 	}
 	E3D_LogPrint(g_FileLog, "VIDEO: %s", path);
-	played = 0;
+	video.played = 0;
 	exe_CoInitialize(NULL);
 	if (exe_DirectDrawCreate(NULL, &dd, NULL) < 0) {
 		E3D_LogBlue(g_FileLog, "ERROR: Could not open DirectDraw - check it is installed");
+		dd = NULL;
 	} else {
 		int hr = COM_CALL(dd, ddSetCoop_t, DD_SETCOOPERATIVELEVEL)(dd, MOTOR_HWND(g_Motor), DDSCL_NORMAL);
 		if (hr < 0) {
 			E3D_LogBlue(g_FileLog, "ERROR: SetCooperativeLevel(): 0x%08X", hr);
 		} else if (Video_OpenStream(path, dd, &ms) >= 0) {
-			Video_RenderStream(dd, NULL, ms, &played);
+			Video_RenderStream(dd, NULL, ms, &video.played);
+			if (video.stream) {
+				/* differs from the original on purpose (no blocking waits): the video plays on from Video_Step,
+				 * which then releases the stream and DirectDraw */
+				video.pathDD = dd;
+				video.pathMS = ms;
+				return VIDEO_PENDING;
+			}
 			COM_RELEASE(ms);
 		}
-		if (COM_RELEASE(dd)) {
-			E3D_LogBlue(g_FileLog, "ERROR: A DirectDraw object has a non-zero reference count");
+	}
+	return Video_PlayPathEnd(dd);
+}
+
+void Video_Step(void) {
+	if (!video.busy) {
+		return;
+	}
+	if (video.stream) {
+		Video_StreamStep();
+		if (video.stream) {
+			return;
 		}
 	}
-	exe_CoUninitialize();
-	return played ? 2 : 1;
+	int r = video.played ? 2 : 1;
+	if (video.pathDD) {
+		void *dd = video.pathDD;
+		COM_RELEASE(video.pathMS);
+		video.pathDD = NULL;
+		video.pathMS = NULL;
+		r = Video_PlayPathEnd(dd);
+	}
+	if (video.rest) {
+		const char *name = video.rest;
+		video.rest = NULL;
+		r = Video_PlayName(name, video.restDir);
+		if (r == VIDEO_PENDING) {
+			return;
+		}
+	}
+	video.result = r;
+	video.busy = 0;
+}
+
+byte Video_Busy(void) {
+	return video.busy;
+}
+
+int Video_Result(void) {
+	return video.result;
+}
+
+int Video_PlayFileWait(const char *name, const char *dir) {
+	video.wait = 1;
+	int r = Video_PlayFile(name, dir);
+	/* still a blocking wait, as in the original: the caller goes on only after the video (see video.h) */
+	while (r == VIDEO_PENDING) {
+		Video_Step();
+		if (!video.busy) {
+			r = video.result;
+		}
+	}
+	video.wait = 0;
+	return r;
 }
