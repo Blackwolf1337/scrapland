@@ -6,6 +6,7 @@
 
 #include "scrap/bmp.h"
 #include "scrap/console.h"
+#include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/fxtextura.h"
 #include "scrap/material.h"
@@ -1320,4 +1321,60 @@ void __thiscall CMaterial_ScaleColors(CMaterial *self, float k) {
 		}
 		self->colors[3] = (float)self->params.diffuse[3] / 255.0f;
 	}
+}
+
+/* only managed textures in R5G6B5, A8R8G8B8 or X8R8G8B8; the 32 bit formats get an alpha of 0 */
+byte __thiscall CMapa_CopyBmp(CMapa *self, int dx, int dy, const CImagen *bmp, int sx, int sy, int w, int h) {
+	void *tex = self->est.tex;
+	d3dSurfaceDesc_t desc;
+	d3dLockedRect_t lr;
+	const byte *src;
+	int x, y;
+
+	if (!tex || !bmp || !bmp->img || sx < 0 || sy < 0 || dx < 0 || dy < 0) {
+		return 0;
+	}
+	if (D3D_METHOD(tex, d3dGetLevelDesc_t, D3DTEX_GETLEVELDESC)(tex, 0, &desc) < 0 || desc.Pool != D3DPOOL_MANAGED) {
+		return 0;
+	}
+	/* D3DFMT_R5G6B5, D3DFMT_A8R8G8B8, D3DFMT_X8R8G8B8 */
+	if (desc.Format != 0x17 && desc.Format != 0x15 && desc.Format != 0x16) {
+		return 0;
+	}
+	if (w >= bmp->ancho - sx) {
+		w = bmp->ancho - sx;
+	}
+	if (h >= bmp->alto - sy) {
+		h = bmp->alto - sy;
+	}
+	if (w >= (int)desc.Width - dx) {
+		w = (int)desc.Width - dx;
+	}
+	if (h >= (int)desc.Height - dy) {
+		h = (int)desc.Height - dy;
+	}
+	if (w <= 0 || h <= 0 || D3D_METHOD(tex, d3dLockRect_t, D3DTEX_LOCKRECT)(tex, 0, &lr, NULL, 0) < 0) {
+		return 0;
+	}
+	if (desc.Format == 0x17) {
+		for (y = 0; y < h; y++) {
+			uint16_t *dst = (uint16_t *)((byte *)lr.pBits + (dy + y) * lr.Pitch + dx * 2);
+
+			src = (const byte *)CBmp_Pixel(bmp, (uint32_t)sx, (uint32_t)(y + sy));
+			for (x = 0; x < w; x++, src += 4) {
+				dst[x] = (uint16_t)(((src[0] & 0xf8) << 8) | ((src[1] & 0xfc) << 3) | (src[2] >> 3));
+			}
+		}
+	} else {
+		for (y = 0; y < h; y++) {
+			uint32_t *dst = (uint32_t *)((byte *)lr.pBits + (dy + y) * lr.Pitch + dx * 4);
+
+			src = (const byte *)CBmp_Pixel(bmp, (uint32_t)sx, (uint32_t)(y + sy));
+			for (x = 0; x < w; x++, src += 4) {
+				dst[x] = ((uint32_t)src[0] << 16) | ((uint32_t)src[1] << 8) | src[2];
+			}
+		}
+	}
+	D3D_METHOD(tex, d3dUnlockRect_t, D3DTEX_UNLOCKRECT)(tex, 0);
+	return 1;
 }

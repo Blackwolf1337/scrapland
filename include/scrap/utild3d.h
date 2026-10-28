@@ -10,6 +10,8 @@
 #include "scrap/mathlib.h"
 
 #define MAX_DIVY_ESFERA 32
+/* 16 colors of the debug views (g_BspColores of bsp.h, the same table) */
+#define g_DebugColors ((const uint32_t *)Game_Ptr(0x432a30))
 
 /* r, g, b, a (0..1, clamped) to 0xAARRGGBB */
 uint32_t Color_FromFloat(const float *c);

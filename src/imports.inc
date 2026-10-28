@@ -191,10 +191,8 @@ SD_IMPORT_STDCALL(D3DX_AssembleShader, 24, 0x00b2c2)
 
 /* module agent: Engine/Modelo (imports below this line) */
 SD_IMPORT(CEscena_Shared, 0x24ecb0)
-SD_IMPORT(Escena_Load, 0x2c2d60)
 
 /* module agent: Engine/Nodo3D (imports below this line) */
-SD_IMPORT(CNodo3D_DebugDraw, 0x23d9d0)
 
 /* module agent: Engine/Animacion (imports below this line) */
 
@@ -215,7 +213,6 @@ SD_IMPORT_STDCALL(D3DX_LoadSurfaceFromSurface, 32, 0x004dbf)
 /* module agent: ScrapEng/ScrapEngWorld.cpp (imports below this line) */
 
 /* module agent: ScrapEng/ScrapEngMain.cpp (imports below this line) */
-SD_IMPORT(ViewerCamera_Move, 0x218080)
 
 /* module agent: ScrapEng/ScrapEngCamera+Particles+Trails.cpp (imports below this line) */
 
@@ -402,8 +399,6 @@ SD_IMPORT(Matrix_ToTransform, 0x2d6c50)
 /* module agent: Engine NodeFX..ModelFX (imports below this line) */
 
 /* module agent: Engine leftovers 0x265000..0x278000 (imports below this line) */
-SD_IMPORT(Stencil_DrawSegs, 0x265510)
-SD_IMPORT(Stencil_DrawTris, 0x2661b0)
 
 /* module agent: Engine leftovers 0x2c9d90..0x2d6010 (imports below this line) */
 SD_IMPORT(crt_open, 0x359882)
@@ -411,7 +406,6 @@ SD_IMPORT(crt_read, 0x35a234)
 SD_IMPORT(crt_close, 0x358d98)
 
 /* module agent: Engine leftovers 0x29c000..0x2b2000 (imports below this line) */
-SD_IMPORT(CMapa_CopyBmp, 0x2370a0)
 
 /* module agent: Big leftovers 0x0f0000..0x110000 (imports below this line) */
 

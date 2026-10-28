@@ -27,6 +27,8 @@
 #define g_MotorDev MOTOR_DEV(g_Motor)
 /* the frames drawn by the engine3d */
 #define g_FrameCount GAME_DATA(int, 0x4a8ec8)
+/* the time of the last frame (the clock of the engine, also g_FrameDelta of Motor.c) */
+#define g_FrameMs GAME_DATA(float, 0x4a8ed4)
 /* the time of the engine in ms */
 #define g_TimeMs GAME_DATA(uint32_t, 0x4a8ef0)
 /* video var DiffuseMod4x: colors divided by 4 */

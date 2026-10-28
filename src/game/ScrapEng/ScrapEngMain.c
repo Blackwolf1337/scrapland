@@ -7,6 +7,7 @@
 #include "scrap/cmd.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
+#include "scrap/e3dutil.h"
 #include "scrap/filesys.h"
 #include "scrap/grafico2d.h"
 #include "scrap/input.h"
@@ -616,6 +617,114 @@ void Engine_Render(void) {
 
 static byte DebugAction(uint32_t i) {
 	return cInputAction_Pressed(TABLE_AT(TABLE_AT(g_ActionSets, 1)->actions, i), 0);
+}
+
+/* the value of an action of the debug set for player 0 */
+static float DebugValue(uint32_t i) {
+	return TABLE_AT(TABLE_AT(g_ActionSets, 1)->actions, i)->value[0];
+}
+
+/* the free camera of the viewer (Gvars) */
+#define g_ViewerClipNear GAME_DATA(float, 0x4a87b0)
+#define g_ViewerClipFar GAME_DATA(float, 0x4a87c8)
+#define g_ViewerFOV GAME_DATA(float, 0x4a8610)	/* degrees, 0: the camera keeps its own */
+#define g_ViewerCameraTgt GAME_DATA(int, 0x4a8660)	/* orbits around the target */
+#define g_ViewerCameraVel GAME_DATA(float, 0x4a86f0)
+#define g_ViewerCameraInv GAME_DATA(int, 0x4a85b0)	/* the pitch not inverted */
+#define g_ViewerSpeed GAME_DATA(float, 0x431b04)	/* doubled and halved by the debug keys */
+#define VIEWER_MIN_DIST 20.0f
+/* the actions of the debug set */
+#define DBG_VIEWER_TGT 23
+#define DBG_VIEWER_FASTER 14
+#define DBG_VIEWER_SLOWER 15
+#define DBG_VIEWER_UP 2
+#define DBG_VIEWER_DOWN 3
+#define DBG_VIEWER_LEFT 4
+#define DBG_VIEWER_RIGHT 5
+#define DBG_VIEWER_FWD 16
+#define DBG_VIEWER_BACK 9
+#define DBG_VIEWER_PAN 18
+
+/* the viewer camera by the debug actions: turned (or panned with the pan action) in free mode, orbiting the
+ * target (or moved up and down with the pan action) in target mode */
+void ViewerCamera_Move(CGameCamera *cam) {
+	vec3_t old = cam->pos, d;
+	float speed, fwd, side, mv, r, len, k, a, b;
+	byte pan;
+
+	cam->zNear = g_ViewerClipNear;
+	cam->zFar = g_ViewerClipFar;
+	if (g_ViewerFOV > 0.0f) {
+		cam->fov = (float)((double)g_ViewerFOV * 3.141592653589793 / 180.0);
+	}
+	CGameCamera_SetLookAt(cam, g_ViewerCameraTgt != 0);
+	if (DebugAction(DBG_VIEWER_TGT)) {
+		g_ViewerCameraTgt = g_ViewerCameraTgt == 0;
+	}
+	if (DebugAction(DBG_VIEWER_FASTER)) {
+		g_ViewerSpeed = (float)((double)g_ViewerSpeed + (double)g_ViewerSpeed);
+		Texto_Mensaje(250, "velocity: x%g", (double)g_ViewerSpeed);
+	}
+	if (DebugAction(DBG_VIEWER_SLOWER)) {
+		g_ViewerSpeed = (float)((double)g_ViewerSpeed * 0.5);
+		Texto_Mensaje(250, "velocity: x%g", (double)g_ViewerSpeed);
+	}
+	speed = g_ViewerCameraVel * 100.0f * g_FrameMs * g_ViewerSpeed;
+	a = DebugValue(DBG_VIEWER_UP);
+	b = DebugValue(DBG_VIEWER_DOWN);
+	fwd = a - b;
+	a = DebugValue(DBG_VIEWER_RIGHT);
+	b = DebugValue(DBG_VIEWER_LEFT);
+	side = a - b;
+	a = DebugValue(DBG_VIEWER_FWD);
+	b = DebugValue(DBG_VIEWER_BACK);
+	mv = (a - b) * speed;
+	CGameCamera_Move(cam, mv);
+	pan = DebugValue(DBG_VIEWER_PAN) > 0.5f;
+	if (!g_ViewerCameraTgt) {
+		if (pan) {
+			CGameCamera_Strafe(cam, side * speed, fwd * speed);
+			return;
+		}
+		cam->rot.x = (float)(g_ViewerCameraInv != 0 ? 1 : -1) * (g_FrameMs * fwd) + cam->rot.x;
+		cam->rot.y = g_FrameMs * side + cam->rot.y;
+		return;
+	}
+	if (pan) {
+		Debug_DrawAxes(g_MatIdentity, &cam->target, 100.0f);
+		mv = fwd * speed;
+		cam->target.y = mv + cam->target.y;
+		cam->pos.y = mv + cam->pos.y;
+		return;
+	}
+	/* the distance kept, at least VIEWER_MIN_DIST; a move through the target is taken back */
+	d.x = cam->pos.x - cam->target.x;
+	d.y = cam->pos.y - cam->target.y;
+	d.z = cam->pos.z - cam->target.z;
+	r = (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z));
+	if (0.0f > (cam->pos.y - cam->target.y) * (old.y - cam->target.y) +
+			(cam->pos.x - cam->target.x) * (old.x - cam->target.x) +
+			(cam->pos.z - cam->target.z) * (old.z - cam->target.z)) {
+		cam->pos = old;
+		r = VIEWER_MIN_DIST;
+	} else if (!(r > VIEWER_MIN_DIST)) {
+		r = VIEWER_MIN_DIST;
+	}
+	k = g_FrameMs * r;
+	CGameCamera_Strafe(cam, k * side, k * fwd);
+	d.y = cam->pos.y - cam->target.y;
+	d.x = cam->pos.x - cam->target.x;
+	d.z = cam->pos.z - cam->target.z;
+	len = (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z));
+	if ((double)len != 0.0) {
+		k = (float)(1.0 / (double)len);
+		d.x = d.x * k;
+		d.y = d.y * k;
+		d.z = d.z * k;
+	}
+	cam->pos.x = d.x * r + cam->target.x;
+	cam->pos.z = cam->target.z + d.z * r;
+	cam->pos.y = cam->target.y + d.y * r;
 }
 
 byte Engine_DebugKeys(void) {

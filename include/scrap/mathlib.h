@@ -61,6 +61,8 @@ float NormAng(float ang);	/* folded into (-pi, pi] */
 float *Vec2_Rotate(float *out, const float *in, float ang);
 vec3_t *Vec3_Rotate(vec3_t *out, const vec3_t *in, const vec3_t *rot);	/* around z, then x, then y */
 vec3_t *Vec3_RotateXY(vec3_t *out, const vec3_t *in, float ax, float ay);
+/* the 3x3 rotation (row major) that turns the unit vector from into to; m */
+float *Matrix3_RotFromTo(const vec3_t *from, const vec3_t *to, float *m);
 
 /* row vectors: v * M, translation in m[12..14]. Like the original the functions return a pointer (mostly the output),
  * callers in the exe use it */
@@ -185,6 +187,14 @@ static inline double X87_Mul(double a, double b) {
 	double r;
 
 	__asm__("fmull %1" : "=t"(r) : "m"(b), "0"(a));
+	return r;
+}
+
+/* the x87 a / b of the original (fdiv QWORD), in the precision the game set, stored as a double */
+static inline double X87_Div(double a, double b) {
+	double r;
+
+	__asm__("fdivl %1" : "=t"(r) : "m"(b), "0"(a));
 	return r;
 }
 

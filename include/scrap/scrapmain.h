@@ -291,6 +291,12 @@ int __thiscall CD3DApplication_Nothing(byte *self);
 char *Motor_ColorStr(const byte *c);
 const char *Motor_BoolStr(int b);
 CMundo *Mundo_GetChecked(void);
+/* the statistics on the screen by R_Profiler: 1 fps, 2 camera and lights, 3 memory, 4 frame time graph, 5 profiler */
+void Motor_DrawStats(void);
+/* the frame time graph at the bottom, the fps text at y */
+void Motor_DrawFpsGraph(float y);
+/* the modal dialog of the global scene: its counts and a tree of the nodes, the node selected in the tree */
+intptr_t __stdcall Motor_SceneDlgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 void __fastcall Motor_ReleaseEscena(byte *self);
 void __fastcall Motor_GetEscena(byte *self);
 void *__thiscall CEntradaNula_Delete(void *self, byte flags);

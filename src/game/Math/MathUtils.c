@@ -369,6 +369,73 @@ vec3_t *Vec3_Rotate(vec3_t *out, const vec3_t *in, const vec3_t *rot) {
 	return out;
 }
 
+/* the 3x3 rotation (row major, m * from = to) that turns the unit vector from into the unit vector to (Moller and
+ * Hughes): the identity for nearly equal vectors, a half turn around an axis normal to from for nearly opposite ones */
+float *Matrix3_RotFromTo(const vec3_t *from, const vec3_t *to, float *m) {
+	float a0 = from->x, a1 = from->y, a2 = from->z;
+	float b0 = to->x, b1 = to->y, b2 = to->z;
+	float v0 = b2 * a1 - b1 * a2;
+	float v1 = b0 * a2 - a0 * b2;
+	float v2 = a0 * b1 - b0 * a1;
+	float e = a0 * b0 + b1 * a1 + a2 * b2;
+
+	if ((double)e > 0.999999) {
+		m[0] = 1.0f;
+		m[1] = 0.0f;
+		m[2] = 0.0f;
+		m[3] = 0.0f;
+		m[4] = 1.0f;
+		m[5] = 0.0f;
+		m[6] = 0.0f;
+		m[7] = 0.0f;
+		m[8] = 1.0f;
+		return m;
+	}
+	if (-0.999999 > (double)e) {
+		/* the axis: (0, z, -y) of from, or (-z, 0, x) when that is too short */
+		float px = 0.0f, py = a2, pz = -a1;
+
+		if (1e-06 > (double)(a2 * a2 + 0.0f + pz * pz)) {
+			px = -a2;
+			py = 0.0f;
+			pz = a0;
+		}
+		float k = (float)(1.0 / __builtin_sqrt((double)(py * py + px * px + pz * pz)));
+		float q0 = px * k, q1 = py * k, q2 = pz * k;
+		float c0 = a2 * q1 - a1 * q2;
+		float c1 = a0 * q2 - a2 * q0;
+		float c2 = a1 * q0 - a0 * q1;
+		float m01 = c1 * c0 + -(a0 * a1) + -(q1 * q0);
+		float m02 = c2 * c0 + -(a0 * a2) + -(q2 * q0);
+		float m12 = c2 * c1 + -(a2 * a1) + -(q2 * q1);
+
+		m[0] = -(a0 * a0) + c0 * c0 + -(q0 * q0);
+		m[1] = m01;
+		m[3] = m01;
+		m[2] = m02;
+		m[6] = m02;
+		m[4] = c1 * c1 + -(a1 * a1) + -(q1 * q1);
+		m[5] = m12;
+		m[7] = m12;
+		m[8] = c2 * c2 + -(a2 * a2) + -(q2 * q2);
+		return m;
+	}
+	float h = (float)((1.0 - (double)e) / (double)(v1 * v1 + v0 * v0 + v2 * v2));
+	float hv0 = h * v0, hv2 = v2 * h;
+	float p01 = v1 * hv0, p02 = v2 * hv0, p12 = v1 * hv2;
+
+	m[0] = hv0 * v0 + e;
+	m[1] = p01 - v2;
+	m[2] = v1 + p02;
+	m[3] = v2 + p01;
+	m[6] = p02 - v1;
+	m[8] = v2 * hv2 + e;
+	m[4] = v1 * h * v1 + e;
+	m[5] = p12 - v0;
+	m[7] = p12 + v0;
+	return m;
+}
+
 /* around x by ax, then around y by ay */
 vec3_t *Vec3_RotateXY(vec3_t *out, const vec3_t *in, float ax, float ay) {
 	float s0, c0, s1, c1;

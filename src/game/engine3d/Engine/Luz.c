@@ -1,15 +1,18 @@
 /*
- * Lights of the engine3d, original source Engine/luz.cpp (include/scrap/luz.h). The debug drawing of a light
- * (CLuz::vf02, rva 0x23bb70) is not here: it goes through the render path of the debug lines and texts.
+ * Lights of the engine3d, original source Engine/luz.cpp (include/scrap/luz.h).
  */
 #include <string.h>
 
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
+#include "scrap/fuentes.h"
 #include "scrap/luz.h"
+#include "scrap/material.h"
 #include "scrap/mundo.h"
 #include "scrap/prof.h"
+#include "scrap/render.h"
 #include "scrap/sueloportal.h"
+#include "scrap/utild3d.h"
 
 #define CLUZ_VFTABLE 0x3d79fc
 #define IOBJETO3D_VFTABLE 0x3d79dc
@@ -116,20 +119,6 @@ static void Luz_Remove(CLuz *self) {
 	self->activa = 0;
 	self->ind_lista = -1;
 	CLuz_UpdateD3D(self, 0);
-}
-
-/* the inline CLuz::tipoStr of luz.h */
-static const char *Luz_TipoStr(int tipo) {
-	switch (tipo) {
-	case LUZ_OMNI:
-		return "omni";
-	case LUZ_FOCO:
-		return "foco";
-	case LUZ_DIREC:
-		return "direc";
-	}
-	CHECK(0);
-	return NULL;
 }
 
 /* the color bytes times the intensity */
@@ -353,6 +342,110 @@ void __thiscall CLuz_Reset(CLuz *self, int arg) {
 	CLuz_FillD3D(self, &self->d3d);
 	CLuz_UpdateD3D(self, 0);
 	((luzUpdate_t)((void **)self->vftable)[1])(self, 0);
+}
+
+/* R_ShowLights and the material of the debug drawing, a static of CLuz_Render */
+#define g_ShowLights GAME_DATA(int, 0x4ac288)
+#define g_LuzMat (*(CMaterial *)Game_Ptr(0x4ad438))
+#define g_LuzMatGuard ((int *)Game_Ptr(0x4ad4e8))
+#define LUZ_MAT_DTOR 0x38ed20		/* the atexit destructor of it */
+#define D3DFVF_XYZ_DIFFUSE 0x42
+
+typedef struct LuzVert {
+	vec3_t pos;
+	uint32_t color;
+} LuzVert;
+
+/* the virtual Render (dev, r not used): a light drawn only with mostrar or R_ShowLights: a corner of the diffuse
+ * color sized by the distance to the eye; from 2 the texts, from 3 the range sphere, the axes and the cone of a
+ * spot light */
+void __thiscall CLuz_Render(CLuz *self, void *dev, CNodoR *r) {
+	LuzVert v[5];
+	matrix_t m;
+	vec3_t p, a, b;
+	const vec3_t *eye;
+	const char *tipo;
+	uint32_t color;
+	float s, len, k, rad;
+
+	(void)r;
+	if (!self->mostrar && !g_ShowLights) {
+		return;
+	}
+	if (*g_LuzMatGuard > crt_InitEpoch()) {
+		crt_Init_thread_header(g_LuzMatGuard);
+		if (*g_LuzMatGuard == -1) {
+			CMaterial_ctor(&g_LuzMat);
+			crt_atexit(Game_Ptr(LUZ_MAT_DTOR));
+			crt_Init_thread_footer(g_LuzMatGuard);
+		}
+	}
+	Render_SetWorld();
+	g_LuzMat.params.b39 = 0;
+	Render_SetMaterial(&g_LuzMat, 0);
+	color = Color_FromFloat(&self->d3d.Diffuse.r);
+	Render_GetWorld(&m);
+	p.x = m.m[12];
+	p.y = m.m[13];
+	p.z = m.m[14];
+	eye = Render_GetEyePos();
+	s = (float)__builtin_sqrt((double)((eye->y - p.y) * (eye->y - p.y) + (eye->x - p.x) * (eye->x - p.x) +
+		(eye->z - p.z) * (eye->z - p.z))) * 0.01f;
+	memset(v, 0, sizeof(v));
+	v[1].pos.x = s;
+	v[2].pos.y = s;
+	v[3].pos.z = s;
+	v[4].pos.x = s;
+	v[0].color = color;
+	v[1].color = color;
+	v[2].color = color;
+	v[3].color = color;
+	v[4].color = color;
+	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_XYZ_DIFFUSE);
+	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 3, v, sizeof(v[0]));
+	g_RenderTris += 3;
+	g_RenderVerts += 5;
+	if (g_ShowLights > 1) {
+		tipo = Luz_TipoStr(self->tipo);
+		a = self->d3d.Position;
+		Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &a, 0xffffff, "%s [%s,%d] [%f]", self->nodo->name, tipo, self->sector,
+			(double)self->rango);
+		a = self->d3d.Position;
+		Debug_Text3D(g_FntTerm8, 0.0f, 12.0f, &a, color, "%.1f %.1f %.1f", (double)self->d3d.Diffuse.r,
+			(double)self->d3d.Diffuse.g, (double)self->d3d.Diffuse.b);
+	}
+	if (g_ShowLights > 2) {
+		a.x = 0.0f;
+		a.y = 0.0f;
+		a.z = 0.0f;
+		Debug_DrawSphereM(&m, &a, self->rango, g_DebugColors[self->ind_lista & 0xf], 10, 10);
+	}
+	if (self->rango != 0.0f) {
+		rad = self->rango;
+		if (self->tipo == LUZ_FOCO) {
+			rad = rad * 0.1f;
+		}
+		a.x = 0.0f;
+		a.y = 0.0f;
+		a.z = 0.0f;
+		Debug_DrawAxes(&m, &a, rad);
+	}
+	if (self->tipo == LUZ_FOCO) {
+		b = self->d3d.Direction;
+		len = (float)__builtin_sqrt((double)(b.y * b.y + b.x * b.x + b.z * b.z));
+		if ((double)len != 0.0) {
+			k = (float)(1.0 / (double)len);
+			b.x = self->d3d.Direction.x * k;
+			b.y = self->d3d.Direction.y * k;
+			b.z = self->d3d.Direction.z * k;
+		}
+		b.x = self->d3d.Position.x + b.x * self->rango;
+		b.y = self->d3d.Position.y + b.y * self->rango;
+		b.z = self->d3d.Position.z + b.z * self->rango;
+		a = self->d3d.Position;
+		Debug_DrawLine(&a, &b, 0xffff00);
+		Debug_DrawConeM(&m, self->rango, Luz_DegToRad(self->phi));
+	}
 }
 
 void Luz_SetDirLight(uint32_t idx, const color4_t *color, const vec3_t *dir) {

@@ -1,10 +1,12 @@
 /*
- * The value reader of the M3D files, original source Engine/lee_M3D.cpp (include/scrap/leem3d.h).
+ * The reader of the M3D files and its value readers, original source Engine/lee_M3D.cpp (include/scrap/leem3d.h).
  */
 #include <string.h>
 
 #include "scrap/camara.h"
 #include "scrap/console.h"
+#include "scrap/animgrupo.h"
+#include "scrap/animvert.h"
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
 #include "scrap/escena.h"
@@ -2514,4 +2516,806 @@ void M3D_LeeMaterial(CListaMat *lista, int iMat, int iSubmat) {
 	if (!g_UsarTexturas && !texsi && mat->mapa[MAPA_DIFFUSE] && mat->mapa[MAPA_DIFFUSE]->b8 == 1) {
 		CMaterial_MapToColor(mat);
 	}
+}
+
+
+/* the reader of the M3D files */
+
+#define M3DNODO_CTOR 0x2bbb90
+#define M3D_HDR 0x20			/* the header "[M3D,BIN,ETIQ:si]" */
+#define M3D_NOMBRE 0x100
+/* the node flags the reader sets (NODO_*) */
+#define NODO_RAIZ 0x1
+#define NODO_GRUPO 0x2
+#define NODO_SELEC 0x4
+#define NODO_HVISIBLE 0x10
+#define NODO_NO_CASTSHADOWS 0x20
+#define NODO_NO_RCVSHADOWS 0x40
+#define NODO_NO_RENDER 0x80
+#define NODO_BOXMODE 0x100
+#define NODO_BONE (1u << 20)
+#define NODO_EFECTO (1u << 19)
+#define NODO_NO_TRANS_TAB (NODO_NOUPDATE | NODO_NO_TABNODOR)
+/* the kinds of objects ("Tipo:") */
+enum { M3D_GEOMETRIA = 1, M3D_CAMARA, M3D_LUZ, M3D_OBJETIVO, M3D_DUMMY, M3D_PORTAL };
+
+/* the bits of the animation of a node (CAnimNodo_Init flags) */
+#define ANIM_POS 0x1
+#define ANIM_ROT 0x2
+#define ANIM_FOV 0x4
+#define ANIM_COLOR 0x8
+#define ANIM_INTENS 0x10
+#define ANIM_VIS 0x80
+
+static const matrix_t g_M3DIdentidad = { { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+	0.0f, 0.0f, 1.0f } };
+
+/* the vertex animation of a morph node: the vertices of each frame through the pivot */
+static void M3D_LeeEVA(CNodo3D *nodo, M3DNodo *dat) {
+	m3dTransform_t mt;
+	M3DTabla4 t;
+	matrix_t piv, m, tmp, res;
+	CAnimVert *av;
+	vec3_t v;
+	int nv, i, f, antes, despues;
+
+	if (g_M3DVersion > 9) {
+		M3D_ReadTransform("local_a_pivote", &mt);
+		M3DTransform_ToMatrix(&mt, &piv);
+	} else {
+		piv = dat->mPivote;
+	}
+	if (g_M3DVersion >= 11 && g_UseWSM) {
+		Matrix_LoadIdentity(&piv);
+	}
+	nv = M3D_ReadInt("NumVerts:");
+	CAnimNodo_SetEVA(dat->AnimNodo, nv);
+	m = *Matrix_MulD3D(&res, &piv, M3DNodo_FrameMatrix(dat, &tmp, 0));
+	for (i = 0; i < nv; i++) {
+		CHECK(M3D_ReadInt("Vertice:") == i);
+		crt_eh_vector_ctor(t.t, sizeof(M3DTabla), 4, Game_Ptr(M3DTABLA_CTOR), Game_Ptr(M3DTABLA_DTOR));
+		M3DTabla_ReadFloat(&t.t[0], "EVA_X");
+		M3DTabla_ReadFloat(&t.t[2], "EVA_Y");
+		M3DTabla_ReadFloat(&t.t[1], "EVA_Z");
+		av = CAnimNodo_GetVert(dat->AnimNodo, (uint32_t)i);
+		CHECK(av);
+		CAnimVert_AllocTr(av, g_M3DFrames);
+		for (f = 0; f < g_M3DFrames; f++) {
+			M3DTabla4_GetVec(&t, &v, (uint32_t)f);
+			Vec3_TransformH(&v, &v, &m);
+			*CAnimVert_Frame(av, (uint32_t)f) = v;
+		}
+		crt_eh_vector_dtor(t.t, sizeof(M3DTabla), 4, Game_Ptr(M3DTABLA_DTOR));
+	}
+	antes = CEVA_MemSize(dat->AnimNodo->EVA);
+	CAnimNodo_OptimizeEVA(dat->AnimNodo);
+	despues = dat->AnimNodo->EVA ? CEVA_MemSize(dat->AnimNodo->EVA) : 0;
+	E3D_DebugPrintf("\noptimizar EVA: '%s'  %d -> %d  (%.2f %%)", nodo->name, antes, despues,
+		(double)despues * 100.0 / (double)antes);
+}
+
+/* the animation tables of an object: its tracks and visibility, the values of its kind; the mask of the channels
+ * that stay */
+static uint32_t M3D_LeeAnimNodo(CEscena *esc, CNodo3D *nodo, M3DNodo *dat, int k, int tipo, byte exportado,
+	byte bEstatica) {
+	CNodo3D *m;
+	uint32_t mask, extra, base;
+
+	CHECK(esc->AnimM3D);
+	dat->AnimNodo = CAnimacion_GetNodo(esc->AnimM3D, (uint32_t)k);
+	CHECK(dat->AnimNodo);
+	Bprintf(g_AnimNodoName, 0x100, "%s", nodo->name);
+	if (g_M3DVersion >= 11 && g_UseWSM) {
+		M3DPista_Read(&dat->pista2);
+		M3DPista_Read(&dat->pista);
+	} else {
+		M3DPista_Read(&dat->pista);
+		M3DPista_Read(&dat->pista2);
+	}
+	M3DTabla_ReadFloat(&dat->t2a4[0], "NodoVis");
+	if (exportado) {
+		switch (tipo) {
+		case M3D_GEOMETRIA:
+		case M3D_OBJETIVO:
+		case M3D_DUMMY:
+		case M3D_PORTAL:
+			break;
+		case M3D_CAMARA:
+			M3DTabla_ReadFloat(&dat->t2a4[5], "FOV");
+			break;
+		case M3D_LUZ:
+			M3DTabla_ReadInt(&dat->t2a4[1], "LuzR");
+			M3DTabla_ReadInt(&dat->t2a4[2], "LuzG");
+			M3DTabla_ReadInt(&dat->t2a4[3], "LuzB");
+			M3DTabla_ReadFloat(&dat->t2a4[4], "LuzI");
+			break;
+		default:
+			CHECK(0);
+		}
+	}
+	/* position and rotation; the field of view of a camera, the color and intensity of a light; the visibility
+	 * when it changes */
+	extra = tipo == M3D_LUZ ? ANIM_COLOR | ANIM_INTENS : 0;
+	base = (tipo == M3D_CAMARA) * ANIM_FOV + (ANIM_POS | ANIM_ROT);
+	mask = (dat->t2a4[0].fija ? 0 : ANIM_VIS) | base | extra;
+	TABLA_CHECK(dat->t2a4[0].p, 0, dat->t2a4[0].n);
+	if (*(float *)dat->t2a4[0].p != 1.0f) {
+		mask = base | extra | ANIM_VIS;
+	}
+	if (!exportado) {
+		mask = 0;
+		E3D_LogWhite(g_FileLog, "Animation node hidden: %s (node animation discarded)", nodo->name);
+	} else if (mask && !bEstatica && g_EscenaAnimPadre) {
+		m = CNodo3D_Find(g_EscenaAnimPadre->Nodo3D, nodo->name, 1);
+		if (!m) {
+			E3D_LogWhite(g_FileLog, "Animation node not found in Model: %s (node animation discarded)", nodo->name);
+			if (mask & ANIM_VIS) {
+				Con_Warnf("Visibility animation discarded: %s\n", nodo->name);
+			}
+			mask = 0;
+		} else {
+			uint32_t v = ~(uint32_t)m->i50 & mask;
+
+			if (v != mask) {
+				E3D_LogWhite(g_FileLog, "Animation node masked: %s (node animation discarded)", nodo->name);
+			}
+			mask = v;
+		}
+	}
+	CAnimNodo_Init(dat->AnimNodo, (uint32_t)g_M3DFrames, (uint32_t)g_M3DPriFrame, mask);
+	if (g_M3DVersion > 8 && M3D_ReadBool("DefMalla:")) {
+		CHECK(exportado);
+		if (!Wild_MatchLower("*morph*", g_M3DBaseName)) {
+			Con_Warnf("WARN: Animation with morphing: %s\n", g_M3DName);
+		}
+		mask = 0;
+		CAnimNodo_Init(dat->AnimNodo, (uint32_t)g_M3DFrames, (uint32_t)g_M3DPriFrame, 0);
+		E3D_LogWhite(g_FileLog, "Animation node for EVA mesh: %s (node animation discarded)", nodo->name);
+		CHECK(g_EscenaAnimPadre);
+		CHECK(CNodo3D_Find(g_EscenaAnimPadre->Nodo3D, nodo->name, 1));
+		M3D_LeeEVA(nodo, dat);
+	}
+	return mask;
+}
+
+/* the frames of the channels of mask into the animation node */
+static void M3D_FramesAnimNodo(CNodo3D *nodo, uint32_t mask) {
+	M3DNodo *dat = M3D_NodoDat(nodo);
+	CAnimNodo *an;
+	vec3_t v;
+	quat_t q;
+	uint32_t idx, c;
+	int f, i, b;
+	float x;
+
+	CHECK(dat->AnimNodo);
+	for (f = g_M3DPriFrame; f <= g_M3DUltFrame; f++) {
+		idx = (uint32_t)(f - g_M3DPriFrame);
+		if (mask & ANIM_POS) {
+			M3DTabla4_GetVec(&dat->pista.pos, &v, idx);
+			an = dat->AnimNodo;
+			i = CAnimNodo_FrameIndex(an, f, an->Pos, ANIM_POS);
+			an->Pos[i] = v;
+		}
+		if (mask & ANIM_ROT) {
+			M3DTabla4_GetQuat(&dat->pista.rot, &q, idx);
+			an = dat->AnimNodo;
+			i = CAnimNodo_FrameIndex(an, f, an->Rot, ANIM_ROT);
+			an->Rot[i] = q;
+		}
+		if (mask & ANIM_VIS) {
+			TABLA_CHECK(dat->t2a4[0].p, idx, dat->t2a4[0].n);
+			b = (int)((double)(((float *)dat->t2a4[0].p)[idx] * 255.0f) + 0.5);
+			if (b <= 0) {
+				b = 0;
+			} else if (b >= 0xff) {
+				b = 0xff;
+			}
+			an = dat->AnimNodo;
+			i = CAnimNodo_FrameIndex(an, f, an->Visible, ANIM_VIS);
+			an->Visible[i] = (byte)b;
+		}
+		if (mask & ANIM_COLOR) {
+			TABLA_CHECK(dat->t2a4[3].p, idx, dat->t2a4[3].n);
+			const int *pb = (const int *)dat->t2a4[3].p + idx;
+			TABLA_CHECK(dat->t2a4[2].p, idx, dat->t2a4[2].n);
+			const int *pg = (const int *)dat->t2a4[2].p + idx;
+			TABLA_CHECK(dat->t2a4[1].p, idx, dat->t2a4[1].n);
+			const int *pr = (const int *)dat->t2a4[1].p + idx;
+			c = (uint32_t)(byte)*pr | (uint32_t)(byte)*pg << 8 | (uint32_t)(byte)*pb << 16;
+			an = dat->AnimNodo;
+			i = CAnimNodo_FrameIndex(an, f, an->Color, ANIM_COLOR);
+			((uint32_t *)an->Color)[i] = c;
+		}
+		if (mask & ANIM_INTENS) {
+			TABLA_CHECK(dat->t2a4[4].p, idx, dat->t2a4[4].n);
+			an = dat->AnimNodo;
+			x = ((float *)dat->t2a4[4].p)[idx];
+			i = CAnimNodo_FrameIndex(an, f, an->Intens, ANIM_INTENS);
+			an->Intens[i] = x;
+		}
+		if (mask & ANIM_FOV) {
+			TABLA_CHECK(dat->t2a4[5].p, idx, dat->t2a4[5].n);
+			an = dat->AnimNodo;
+			x = ((float *)dat->t2a4[5].p)[idx];
+			i = CAnimNodo_FrameIndex(an, f, an->FOV, ANIM_FOV);
+			an->FOV[i] = x;
+		}
+	}
+}
+
+/* the kind of object of "Tipo:", 0 (reported) for an unknown one */
+static int M3D_LeeTipo(void) {
+	M3D_ReadString("Tipo:", g_M3DCad, M3D_CAD, 0);
+	if (!strcmp(g_M3DCad, "Geometria")) {
+		return M3D_GEOMETRIA;
+	}
+	if (!strcmp(g_M3DCad, "Camara")) {
+		return M3D_CAMARA;
+	}
+	if (!strcmp(g_M3DCad, "Luz")) {
+		return M3D_LUZ;
+	}
+	if (!strcmp(g_M3DCad, "Objetivo")) {
+		return M3D_OBJETIVO;
+	}
+	if (!strcmp(g_M3DCad, "Dummy")) {
+		return M3D_DUMMY;
+	}
+	if (!strcmp(g_M3DCad, "Portal")) {
+		return M3D_PORTAL;
+	}
+	Err_Printf(1, "Tipo de nodo no v\xe1lido: '%s'", g_M3DCad);
+	return 0;
+}
+
+static void Nodo_SetFlag(CNodo3D *nodo, uint32_t flag, byte on) {
+	if (on) {
+		nodo->flags |= flag;
+	} else {
+		nodo->flags &= ~flag;
+	}
+}
+
+/* object k of the file: the node, its flags and user properties, transform and object, its animation */
+static void M3D_LeeObjeto(CEscena *esc, int k, byte bEstatica, byte bAnim, byte castShadows, byte rcvShadows) {
+	char buf[M3D_NOMBRE];
+	CNodo3D *nodo;
+	M3DNodo *dat;
+	void *p;
+	float vis;
+	uint32_t mask;
+	int tipo = 0, lines;
+	byte exportado;
+
+	p = operator_new(sizeof(CNodo3D));
+	nodo = p ? CNodo3D_ctor(p) : NULL;
+	nodo->indice = k;
+	CEscena_AddNodo(esc, nodo);
+	dat = M3D_NodoDat(nodo);
+	dat->AnimNodo = NULL;
+	dat->mPivote = g_M3DIdentidad;
+	M3D_ReadString("Objeto:", buf, sizeof(buf), 1);
+	Nodo_LimpiarNombre(buf);
+	Cad_Set(&nodo->name, buf);
+	CHECK(strlen(buf) > 0);
+	M3D_ReadString("Padre:", buf, sizeof(buf), 1);
+	Nodo_LimpiarNombre(buf);
+	CNodo3D_SetPadreName(nodo, buf);
+	CHECK(nodo->padre);
+	exportado = M3D_ReadBool("Exportado:");
+	Nodo_SetFlag(nodo, NODO_GRUPO, M3D_ReadBool("Grupo:"));
+	Nodo_SetFlag(nodo, NODO_SELEC, M3D_ReadBool("Seleccionado:"));
+	Nodo_SetFlag(nodo, NODO_BORRAR, M3D_ReadBool("Oculto:"));
+	Nodo_SetFlag(nodo, NODO_HVISIBLE, M3D_ReadBool("HeredarVisible:"));
+	if (g_M3DVersion > 11) {
+		Nodo_SetFlag(nodo, NODO_NO_CASTSHADOWS, !M3D_ReadBool("CastShadows:"));
+		Nodo_SetFlag(nodo, NODO_NO_RCVSHADOWS, !M3D_ReadBool("RcvShadows:"));
+		Nodo_SetFlag(nodo, NODO_NO_RENDER, !M3D_ReadBool("Renderable:"));
+		Nodo_SetFlag(nodo, NODO_BOXMODE, M3D_ReadBool("BoxMode:"));
+	}
+	if (!castShadows) {
+		nodo->flags |= NODO_NO_CASTSHADOWS;
+	}
+	if (!rcvShadows) {
+		nodo->flags |= NODO_NO_RCVSHADOWS;
+	}
+	Escena_CheckDuplicados(esc, nodo);
+	if (!crt_strncmp(nodo->name, "Bip ", 4) || !crt_strncmp(nodo->name, "Bip_", 4) ||
+		!crt_strncmp(nodo->name, "BipB", 4) || !crt_strncmp(nodo->name, "Bone", 4)) {
+		nodo->flags |= NODO_BIP;
+	}
+	if (g_M3DVersion > 13) {
+		lines = M3D_ReadInt("UserPropBufferLines:");
+		if (lines > 0) {
+			p = operator_new(sizeof(CArchINI));
+			nodo->ini = p ? CArchINI_ctor(p) : NULL;
+			for (; lines > 0; lines--) {
+				M3D_ReadString("Line:", g_M3DCad, M3D_CAD, 1);
+				CArchINI_AddLine(nodo->ini, g_M3DCad, -1);
+			}
+		}
+		if (g_EscenaAnimPadre && nodo->ini) {
+			CArchINI *ini = nodo->ini;
+
+			CArchINI_dtor(ini);
+			operator_delete_sized(ini, sizeof(CArchINI));
+			nodo->ini = NULL;
+		}
+	}
+	if (exportado) {
+		tipo = M3D_LeeTipo();
+	}
+	if (bEstatica) {
+		if (g_M3DVersion < 11) {
+			M3D_ReadTransform("pivote_a_mundo", &dat->mt);
+			M3D_ReadTransform("pivote_a_padre", &dat->mt2);
+		} else {
+			M3D_ReadTransform("pivote_a_mundo", g_UseWSM ? &dat->mt2 : &dat->mt);
+			M3D_ReadTransform("ObjTMAfterWSM", g_UseWSM ? &dat->mt : &dat->mt2);
+		}
+		M3DTransform_ToMatrixAnim(&dat->mt, &dat->mNodo);
+		nodo->pos = dat->mt.pos;
+		nodo->rot = dat->mt.rot;
+		nodo->escala = dat->mt.esc;
+		M3D_Label("Visible:");
+		M3D_ReadFloatTo(&vis);
+		nodo->visible = vis;
+		if (exportado) {
+			switch (tipo) {
+			case M3D_GEOMETRIA:
+				M3D_LeeMalla(nodo, 0);
+				break;
+			case M3D_CAMARA:
+				M3D_LeeCamara(nodo, 0, 0);
+				break;
+			case M3D_LUZ:
+				M3D_LeeLuz(nodo, 0, 0);
+				break;
+			case M3D_OBJETIVO:
+			case M3D_DUMMY:
+				break;
+			case M3D_PORTAL:
+				M3D_LeePortal(nodo, 0);
+				break;
+			default:
+				CHECK(0);
+			}
+		}
+	}
+	if (bAnim) {
+		mask = M3D_LeeAnimNodo(esc, nodo, dat, k, tipo, exportado, bEstatica);
+		M3D_FramesAnimNodo(nodo, mask);
+	}
+}
+
+/* the root of a game model: the node named name2 or the one with MakeRootNode Enable in its user properties, under
+ * the scene root, the other children of the scene root moved below it; NULL without one */
+static CNodo3D *M3D_RaizModelo(CEscena *esc, const char *name2) {
+	char initPos[0x80];
+	CNodo3D *n, *root = NULL, *padre;
+
+	memset(initPos, 0, sizeof(initPos));
+	for (n = esc->Nodo3D; n; n = n->sig) {
+		if (name2 && *name2) {
+			if (!crt_stricmp(n->name, name2)) {
+				root = n;
+				break;
+			}
+		} else if (n->ini && CArchINI_GetBool(n->ini, "MakeRootNode", "Enable", 0)) {
+			CArchINI_GetText(n->ini, "MakeRootNode", "InitPos", initPos, sizeof(initPos), NULL);
+			root = n;
+			break;
+		}
+	}
+	if (root) {
+		if (strcmp(root->name, "DC_Root")) {
+			Con_Warnf("WARN: RootNode: %s\n", root->name);
+		}
+		E3D_LogWhite(g_FileLog, "RootNode: %s", root->name);
+		Cad_Set(&esc->nodo, root->name);
+		padre = CNodo3D_FindPrev(root, "_raiz_escena");
+		CHECK(padre);
+		CNodo3D_SetPadre(root, padre);
+	}
+	for (n = esc->Nodo3D; n; n = n->sig) {
+		if (root && n != root && n->padre && !crt_stricmp(n->padre->name, "_raiz_escena")) {
+			CNodo3D_SetPadre(n, root);
+		}
+	}
+	return root;
+}
+
+/* the zones of the portals and the targets of the cameras and lights */
+static void M3D_Objetivos(CEscena *esc) {
+	CNodo3D *n, *t;
+	M3DNodo *dat;
+
+	for (n = esc->Nodo3D; n; n = n->sig) {
+		if (n->indice < 0) {
+			continue;
+		}
+		dat = M3D_NodoDat(n);
+		if (CNodo3D_Clase(n) == CLASE_OBJ3D_PORTAL) {
+			CPortal *portal = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_PORTAL);
+
+			CPortal_SetZona(portal, 0, CNodo3D_Find(esc->Nodo3D, dat->objetivo, 1));
+			CPortal_SetZona(portal, 1, CNodo3D_Find(esc->Nodo3D, dat->lado2, 1));
+			continue;
+		}
+		if (!dat->objetivo) {
+			continue;
+		}
+		t = CNodo3D_Find(esc->Nodo3D, dat->objetivo, 1);
+		CHECK(t);
+		if (CNodo3D_Find(t, dat->objetivo, 0)) {
+			E3D_LogBlue(g_FileLog, "ERROR: Duplicated target node: %s", t->name);
+		}
+		if (CNodo3D_Clase(n) == CLASE_OBJ3D_CAMARA) {
+			CCamara *cam = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_CAMARA);
+
+			cam->target = t->pos;
+			t->flags |= NODO_BORRAR;
+		} else if (CNodo3D_Clase(n) == CLASE_OBJ3D_LUZ) {
+			Obj3D_Cast(n->obj3D, CLASE_OBJ3D_LUZ);
+			t->flags |= NODO_BORRAR;
+		} else {
+			CHECK(0);
+		}
+	}
+}
+
+/* the nodes without their own transform taken out of the render tables (OptimizeNodes 1) */
+static void M3D_OptimizarNodos(CEscena *esc) {
+	CNodo3D *n, *c;
+	int pass, cnt;
+	byte cambio;
+
+	for (n = esc->Nodo3D; n; n = n->sig) {
+		if (n->flags & NODO_BONE) {
+			CHECK(!(n->flags & NODO_NOUPDATE));
+			CHECK(!(n->flags & NODO_NO_TABNODOR));
+		}
+		if (n->indice < 0) {
+			continue;
+		}
+		if (n->obj3D) {
+			if ((n->flags & NODO_BIP) && !(n->flags & NODO_NO_RENDER)) {
+				E3D_LogBlue(g_FileLog, "WARN: BIP node with NO_RENDER not set: %s", n->name);
+			}
+			if (n->flags & NODO_NO_RENDER) {
+				if (n->flags & NODO_BIP) {
+					CHECK(CNodo3D_Clase(n) == CLASE_OBJ3D_MALLATRI);
+					CNodo3D_FreeObj3D(n);
+				} else {
+					E3D_LogInfo(g_FileLog, "NOT deleted object from node: %s", n->name);
+				}
+			}
+			if (n->obj3D) {
+				continue;
+			}
+		}
+		n->flags |= NODO_NO_RENDER;
+		if (!(n->flags & NODO_BONE) && n->Refs - (n->ant != NULL) - (n->sig != NULL) == 0) {
+			if (n->flags & NODO_EFECTO) {
+				Con_Warnf("WARN: NODO_NO_TRANS+NODO_EFFECT: %s\n", n->name);
+			}
+			n->flags |= NODO_NO_TRANS_TAB;
+			if (!Nodo_EsDeJuego(n)) {
+				E3D_LogInfo(g_FileLog, "NODO_NO_TRANS -> hidden: %s", n->name);
+				n->flags |= NODO_BORRAR;
+			} else {
+				E3D_LogWhite(g_FileLog, "NODO_NO_TRANS: %s", n->name);
+			}
+		}
+	}
+	/* then the empty nodes whose children all left the tables, until none is left */
+	pass = 1;
+	do {
+		cambio = 0;
+		for (n = esc->Nodo3D; n; n = n->sig) {
+			uint32_t flags = n->flags;
+
+			if (n->indice < 0 || n->obj3D || (flags & (NODO_BONE | NODO_NO_TABNODOR))) {
+				continue;
+			}
+			cnt = n->Refs - (n->ant != NULL) - (n->sig != NULL);
+			for (c = esc->Nodo3D; c; c = c->sig) {
+				if (c->padre == n && (c->flags & NODO_NO_TABNODOR)) {
+					cnt--;
+				}
+			}
+			if (cnt) {
+				continue;
+			}
+			CHECK(flags & NODO_NO_RENDER);
+			n->flags |= NODO_NO_TRANS_TAB;
+			cambio = 1;
+			E3D_LogInfo(g_FileLog, "NODO_NO_TRANS__%d -> hidden: %s", pass, n->name);
+			n->flags |= NODO_BORRAR;
+		}
+		pass++;
+	} while (cambio);
+	if (g_OptimizeNodes & 2) {
+		Escena_ColapsarBip(esc);
+	}
+}
+
+/* the color of "LuzAmbiente:" or "ColorFondo:" with the intensity 1 */
+static void M3D_LeeColorEscena(const char *tok, ColorIntens *c) {
+	vec3_t v;
+
+	M3D_ReadVec3(tok, &v, 0);
+	c->rgba = M3D_Color(&v);
+	c->intens = 1.0f;
+}
+
+/* the M3D file name (the model or, with g_EscenaAnimPadre set, an animation of it; the .CM3 of an animation first),
+ * name2 the node of a game model to make its root; arg is not used */
+CEscena *Escena_Load(const char *name, int arg, const char *name2) {
+	char hdr[M3D_HDR], tipo[0x10];
+	CEscena *esc, *cm3;
+	CListaMat *lm;
+	CNodo3D *nodo, *root;
+	void *p;
+	int etiq, nObj, nMat, fps = 0, i;
+	byte castShadows, rcvShadows, bEstatica, bAnim;
+
+	(void)arg;
+	Cad_Copy(g_M3DName, name, MAX_RUTA);
+	Ruta_Part(g_M3DDir, g_M3DName, 3);
+	Ruta_Part(g_M3DBaseName, g_M3DName, 4);
+	Cad_Copy(g_M3DTexturePath, g_M3DDir, MAX_RUTA);
+	g_M3DOk = 1;
+	if (g_EscenaAnimPadre && g_CM3UseScenes == 1 && (cm3 = CM3_Load(g_M3DName)) != NULL) {
+		return cm3;
+	}
+	E3D_LogDebug(g_FileLog, "M3D: %s", g_M3DName);
+	castShadows = 1;
+	rcvShadows = 1;
+	CHECK(!g_M3DFileINI);
+	p = operator_new(sizeof(CArchINI));
+	g_M3DFileINI = p ? CArchINI_ctor(p) : NULL;
+	if (!CArchINI_Load(g_M3DFileINI, g_M3DName, ".ini", 0)) {
+		E3D_LogDebug(g_FileLog, "INI: %s.ini", g_M3DBaseName);
+		castShadows = CArchINI_GetBool(g_M3DFileINI, "Model", "CastShadows", 1);
+		rcvShadows = CArchINI_GetBool(g_M3DFileINI, "Model", "RcvShadows", 1);
+		CArchINI_GetText(g_M3DFileINI, "Model", "TexturePath", g_M3DTexturePath, MAX_RUTA, NULL);
+	} else if (g_M3DFileINI) {
+		CArchINI *ini = g_M3DFileINI;
+
+		CArchINI_dtor(ini);
+		operator_delete_sized(ini, sizeof(CArchINI));
+		g_M3DFileINI = NULL;
+	}
+	g_M3DUseOpacity = 1;
+	g_M3DUseEnvmap = 1;
+	g_M3DUseBumpmap = 1;
+	g_M3DUseGlowmap = 1;
+	g_M3DPreScaleU = 1.0f;
+	g_M3DPreScaleV = 1.0f;
+	if (g_M3DFileINI) {
+		g_M3DUseOpacity = CArchINI_GetBool(g_M3DFileINI, "Model", "UseOpacity", 1);
+		g_M3DUseEnvmap = CArchINI_GetBool(g_M3DFileINI, "Model", "UseEnvmap", 1);
+		g_M3DUseBumpmap = CArchINI_GetBool(g_M3DFileINI, "Model", "UseBumpmap", 1);
+		g_M3DUseGlowmap = CArchINI_GetBool(g_M3DFileINI, "Model", "UseGlowmap", 1);
+		g_M3DPreScaleU = CArchINI_GetFloat(g_M3DFileINI, "Model", "PreScaleU", 1.0f);
+		g_M3DPreScaleV = CArchINI_GetFloat(g_M3DFileINI, "Model", "PreScaleV", 1.0f);
+	}
+	/* the header "[M3D,BIN,ETIQ:si]", read as binary */
+	Lee_Open(NULL, g_M3DName, 1);
+	i = 0;
+	do {
+		int c = Lee_Byte();
+
+		hdr[i++] = (char)c;
+		if (c == ']') {
+			break;
+		}
+	} while (i < M3D_HDR - 1);
+	hdr[i] = '\0';
+	if (Proc_Scan(hdr, "[M3D,&.*t,ETIQ:&(tipo_si_no)l]", sizeof(tipo) - 1, tipo, &etiq) != 2) {
+		Err_Report(g_ErrPcxFormat, 1, "\narchivo: '%s'", g_M3DName);
+	}
+	if (strcmp(tipo, "TXT")) {
+		CHECK(!strcmp(tipo, "BIN"));
+	}
+	g_M3DBinary = !strcmp(tipo, "BIN");
+	g_M3DLabels = etiq != 0;
+	if (!g_M3DBinary) {
+		/* a text file again from the start, after the header */
+		Lee_Close();
+		Lee_Open(NULL, g_M3DName, 0);
+		while (Lee_Byte() != ']') {
+		}
+	}
+	if (!g_M3DBinary || g_M3DLabels) {
+		Err_Printf(0, "File exported in text mode:\nM3D: %s\ncab: %s", g_M3DName, hdr);
+	}
+	g_M3DNumMat = 0;
+	g_M3DNodos = NULL;
+	M3D_ReadString("Formato:", g_M3DCad, M3D_CAD, 0);
+	CHECK(!strcmp(g_M3DCad, "M3D"));
+	g_M3DVersion = M3D_ReadInt("Version:");
+	CHECK(g_M3DVersion >= 5 && g_M3DVersion <= 14);
+	M3D_ReadString("Generado:", g_M3DCad, M3D_CAD, 0);
+	M3D_ReadString("Fecha:", g_M3DCad, M3D_CAD, 0);
+	M3D_ReadString("Hora:", g_M3DCad, M3D_CAD, 0);
+	M3D_ReadString("Escena:", g_M3DEscenaMax, MAX_RUTA, 0);
+	bEstatica = M3D_ReadBool("Estatica:");
+	if (bEstatica) {
+		M3D_ReadInt("Frame:");
+	}
+	bAnim = M3D_ReadBool("Animacion:");
+	if (bAnim) {
+		g_M3DPriFrame = M3D_ReadInt("Primer_frame:");
+		g_M3DUltFrame = M3D_ReadInt("Ultimo_frame:");
+		fps = M3D_ReadInt("Frames_por_segundo:");
+		CHECK(g_M3DPriFrame <= g_M3DUltFrame);
+		g_M3DFrames = g_M3DUltFrame - g_M3DPriFrame + 1;
+	}
+	nObj = M3D_ReadInt("Num_objetos:");
+	CHECK(nObj > 0);
+	if (g_EscenaAnimPadre) {
+		if (bEstatica) {
+			Err_Printf(0, "Animation file with model information:\nM3D: %s\nMAX: %s", g_M3DName, g_M3DEscenaMax);
+		}
+		if (!bAnim) {
+			Err_Printf(0, "Animation file without animation information:\nM3D: %s\nMAX: %s", g_M3DName,
+				g_M3DEscenaMax);
+		}
+	} else if (!bEstatica) {
+		Err_Printf(0, "Model file without model information:\nM3D: %s\nMAX: %s", g_M3DName, g_M3DEscenaMax);
+	}
+	p = operator_new(sizeof(CEscena));
+	esc = p ? CEscena_ctor(p) : NULL;
+	Cad_Set(&esc->name, g_M3DName);
+	esc->ini = g_M3DFileINI;
+	g_M3DFileINI = NULL;
+	if (bAnim) {
+		M3DTabla *t = operator_new(6 * sizeof(M3DTabla));
+
+		if (t) {
+			for (i = 0; i < 6; i++) {
+				t[i].n = 0;
+				t[i].p = NULL;
+				t[i].fija = 0;
+			}
+		}
+		g_M3DTablasEscena = t;
+		p = operator_new(sizeof(CAnimacion));
+		esc->AnimM3D = p ? CAnimacion_ctor(p) : NULL;
+		Cad_Set(&esc->AnimM3D->name, g_M3DBaseName);
+		CAnimacion_Init(esc->AnimM3D, nObj, g_M3DFrames, g_M3DPriFrame);
+		esc->AnimM3D->fps = (float)fps;
+	}
+	g_M3DNodos = New_Objects((uint32_t)nObj, sizeof(M3DNodo), M3DNODO_CTOR, M3DNODO_DTOR);
+	if (bEstatica) {
+		M3D_LeeColorEscena("LuzAmbiente:", &esc->ambiente);
+	}
+	if (bAnim) {
+		M3DTabla_ReadInt(&g_M3DTablasEscena[0], "LuzR");
+		M3DTabla_ReadInt(&g_M3DTablasEscena[1], "LuzG");
+		M3DTabla_ReadInt(&g_M3DTablasEscena[2], "LuzB");
+	}
+	if (g_M3DVersion > 5) {
+		CHECK(!M3D_ReadBool("MapaEntorno:"));
+		if (bEstatica) {
+			M3D_LeeColorEscena("ColorFondo:", &esc->niebla);
+		}
+		if (bAnim) {
+			M3DTabla_ReadInt(&g_M3DTablasEscena[3], "LuzR");
+			M3DTabla_ReadInt(&g_M3DTablasEscena[4], "LuzG");
+			M3DTabla_ReadInt(&g_M3DTablasEscena[5], "LuzB");
+		}
+	}
+	CHECK(!g_M3DLMat);
+	lm = operator_new(sizeof(CListaMat));
+	if (lm) {
+		lm->Nombre = NULL;
+		lm->vftable = Game_Ptr(CLISTAMAT_VFTABLE);
+		lm->ult = NULL;
+		lm->pri = NULL;
+	}
+	g_M3DLMat = lm;
+	nMat = M3D_ReadInt("Materiales:");
+	for (i = 0; i < nMat; i++) {
+		M3D_LeeMaterial(g_M3DLMat, i, -1);
+	}
+	if (!bEstatica) {
+		if (g_M3DLMat) {
+			((CListaMat *(__thiscall *)(CListaMat *, byte))g_M3DLMat->vftable[0])(g_M3DLMat, 1);
+			g_M3DLMat = NULL;
+		}
+		g_M3DNumMat = 0;
+	}
+	M3D_CompartirMats(g_M3DLMat);
+	p = operator_new(sizeof(CNodo3D));
+	nodo = p ? CNodo3D_ctor(p) : NULL;
+	Cad_Set(&nodo->name, "_raiz_escena");
+	nodo->flags |= NODO_RAIZ;
+	CEscena_AddNodo(esc, nodo);
+	for (i = 0; i < nObj; i++) {
+		M3D_LeeObjeto(esc, i, bEstatica, bAnim, castShadows, rcvShadows);
+	}
+	M3D_NextLine();
+	M3D_ReadString(NULL, g_M3DCad, M3D_CAD, 0);
+	CHECK(!strcmp(g_M3DCad, "Fin"));
+	Lee_Close();
+	Escena_MatsUsados(esc);
+	Escena_FlagsNombres(esc);
+	if (!g_EscenaAnimPadre) {
+		Escena_FlagsIni(esc);
+		Escena_Jerarquia(esc);
+	} else {
+		Escena_PadresAnim(esc, g_EscenaAnimPadre);
+	}
+	root = NULL;
+	if (!g_EscenaAnimPadre) {
+		root = M3D_RaizModelo(esc, name2);
+	}
+	Escena_Ordenar(esc);
+	Escena_AnimLocal(esc, bAnim);
+	if (root) {
+		root->flags |= NODO_POSFIJA;
+		root->pos.x = 0.0f;
+		root->pos.y = 0.0f;
+		root->pos.z = 0.0f;
+	}
+	M3D_Objetivos(esc);
+	Escena_MatricesObj(esc);
+	Escena_PhysiqueSkin(esc);
+	if (g_M3DNodos) {
+		Delete_Objects(g_M3DNodos, sizeof(M3DNodo), M3DNODO_DTOR);
+		g_M3DNodos = NULL;
+	}
+	if (g_M3DTablasEscena) {
+		M3DTabla *t = g_M3DTablasEscena;
+
+		M3DTabla6_dtor(t);
+		operator_delete_sized(t, 6 * sizeof(M3DTabla));
+		g_M3DTablasEscena = NULL;
+	}
+	E3D_LogWhite(g_FileLog, "cleaning nodes (pass %s):", "3");
+	CEscena_DeleteEmpty(esc, 0, 0, 1);
+	if (g_ShowNodesTree && !g_EscenaAnimPadre) {
+		Escena_ShowTree(esc, NULL, 0);
+	}
+	if (bEstatica && !g_EscenaAnimPadre) {
+		Escena_Sprites(esc);
+		Escena_Flares(esc);
+		Escena_Particles(esc);
+	}
+	if ((g_OptimizeNodes & 1) && !g_EscenaAnimPadre) {
+		M3D_OptimizarNodos(esc);
+	}
+	for (nodo = esc->Nodo3D; nodo; nodo = nodo->sig) {
+		Escena_CheckDuplicados(esc, nodo);
+	}
+	CEscena_Join(esc, 0, "(+merge_nodes)");
+	E3D_LogWhite(g_FileLog, "cleaning nodes (pass %s):", "4");
+	CEscena_DeleteEmpty(esc, 0, 0, 1);
+	if (g_ShowNodesTree && !g_EscenaAnimPadre) {
+		Escena_ShowTree(esc, NULL, 0);
+	}
+	if (g_EscenaAnimPadre) {
+		AnimGrupo_Compact(esc);
+		AnimGrupo_AlignNode(g_EscenaAnimPadre, esc, g_EscenaAnimPadre->nodo);
+		AnimGrupo_MapNodes(g_EscenaAnimPadre, esc);
+		CEscena_DeleteNodes(esc);
+	} else if (bAnim) {
+		CHECK(bEstatica);
+		AnimGrupo_MapNodes(esc, esc);
+		E3D_LogVerbose(g_FileLog, "INFO: Model with embedded animation: %s", esc->name);
+	}
+	Escena_TablaNodos(esc);
+	if (g_EscenaLODPadre) {
+		CHECK(!g_EscenaAnimPadre);
+		CHECK(bEstatica && !bAnim);
+		Escena_SetupLOD(esc);
+	}
+	if (g_EscenaAnimPadre && g_CM3UseScenes) {
+		CM3_Save(g_M3DName, esc);
+	}
+	return esc;
 }

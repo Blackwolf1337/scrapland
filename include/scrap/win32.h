@@ -36,6 +36,7 @@ typedef int(__stdcall *setbkmode_t)(void *dc, int mode);
 typedef int(__stdcall *exttextout_t)(void *dc, int x, int y, unsigned options, const exe_rect *rect, const char *s,
 	unsigned n, const int *dx);
 #define exe_SetTextColor GAME_DATA(settextcolor_t, 0x3a1070)
+#define exe_SetBkColor GAME_DATA(settextcolor_t, 0x3a1074)
 #define exe_SetBkMode GAME_DATA(setbkmode_t, 0x3a106c)
 #define exe_ExtTextOutA GAME_DATA(exttextout_t, 0x3a1094)
 typedef int(__stdcall *clienttoscreen_t)(void *hwnd, exe_point *pt);
@@ -187,6 +188,10 @@ typedef void *(__stdcall *setcursor_t)(void *cursor);
 #define exe_DialogBoxParamA GAME_DATA(dialogboxparam_t, 0x3a1440)
 #define exe_EndDialog GAME_DATA(enddialog_t, 0x3a1444)
 #define exe_GetDlgItemTextA GAME_DATA(getdlgitemtext_t, 0x3a1448)
+typedef void *(__stdcall *getdlgitem_t)(void *hdlg, int id);
+typedef int(__stdcall *setdlgitemtext_t)(void *hdlg, int id, const char *text);
+#define exe_SetDlgItemTextA GAME_DATA(setdlgitemtext_t, 0x3a1344)
+#define exe_GetDlgItem GAME_DATA(getdlgitem_t, 0x3a1340)
 #define exe_GetSystemMetrics GAME_DATA(getsystemmetrics_t, 0x3a1450)
 #define exe_GetSystemMenu GAME_DATA(getsystemmenu_t, 0x3a13e4)
 #define exe_AppendMenuA GAME_DATA(appendmenu_t, 0x3a13e0)
@@ -223,6 +228,8 @@ typedef int(__stdcall *writefile_t)(void *h, const void *buf, uint32_t n, uint32
 #define exe_CreateFileA GAME_DATA(createfile_t, 0x3a1268)
 #define exe_WriteFile GAME_DATA(writefile_t, 0x3a126c)
 #define exe_CloseHandle GAME_DATA(handlefn_t, 0x3a1270)
+typedef int(__stdcall *globalmemorystatusex_t)(void *status);	/* MEMORYSTATUSEX, 0x40 bytes */
+#define exe_GlobalMemoryStatusEx GAME_DATA(globalmemorystatusex_t, 0x3a127c)
 
 /* advapi32, shell32, comdlg32 */
 typedef int32_t(__stdcall *regopenkey_t)(uintptr_t key, const char *sub, void **out);

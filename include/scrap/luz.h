@@ -18,6 +18,20 @@ enum { LUZ_OMNI = 5000, LUZ_FOCO = 5001, LUZ_DIREC = 5002 };
 /* D3DLIGHTTYPE */
 enum { D3DLIGHT_POINT = 1, D3DLIGHT_SPOT = 2, D3DLIGHT_DIRECTIONAL = 3 };
 
+/* the inline CLuz::tipoStr of luz.h */
+static inline const char *Luz_TipoStr(int tipo) {
+	switch (tipo) {
+	case LUZ_OMNI:
+		return "omni";
+	case LUZ_FOCO:
+		return "foco";
+	case LUZ_DIREC:
+		return "direc";
+	}
+	CHECK(0);
+	return NULL;
+}
+
 typedef struct {
 	float r, g, b, a;
 } color4_t;
@@ -110,6 +124,8 @@ int Luz_SetDefault(byte on);
 void __thiscall CLuz_Update(CLuz *self, int arg);
 void __thiscall CLuz_Reset(CLuz *self, int arg);
 void __thiscall CLuz_Hide(CLuz *self, int arg);
+/* the virtual Render: the debug drawing of the light (R_ShowLights) */
+void __thiscall CLuz_Render(CLuz *self, void *dev, CNodoR *r);
 /* a directional light without position into device light idx */
 void Luz_SetDirLight(uint32_t idx, const color4_t *color, const vec3_t *dir);
 void __thiscall CLuz_EnableD3D(CLuz *self, byte enable);

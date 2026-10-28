@@ -1,19 +1,21 @@
 /*
  * The scene graph nodes of the engine3d, original source Engine/Nodo3D.cpp (include/scrap/nodo3d.h), with the inline
- * helpers of RenderCtx.h and objeto3d.h compiled into its range. The debug drawing of R_ShowLocalBox
- * (CNodo3D_DebugDraw, rva 0x23d9d0) is not here: it goes through the render path of the debug lines and texts.
+ * helpers of RenderCtx.h and objeto3d.h compiled into its range.
  */
 #include <string.h>
 
 #include "scrap/camara.h"
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
+#include "scrap/fuentes.h"
 #include "scrap/luz.h"
+#include "scrap/mallad3d.h"
 #include "scrap/mallatri.h"
 #include "scrap/material.h"
 #include "scrap/nodo3d.h"
 #include "scrap/render.h"
 #include "scrap/sistpart.h"
+#include "scrap/utild3d.h"
 #include "scrap/suelo.h"
 #include "scrap/varios.h"
 
@@ -32,6 +34,9 @@
 /* the engine variables of the nodes (Gvars) */
 #define g_NodeSlerp2 GAME_DATA(int, 0x4ad560)	/* R_NodeSlerp2 0/1/2 */
 #define g_ShowLocalBox GAME_DATA(int, 0x4ad530)
+#define g_ShowLBoxMin GAME_DATA(int, 0x4ad610)	/* the nodes with an indice from .. to (0: no limit) */
+#define g_ShowLBoxMax GAME_DATA(int, 0x4ad518)
+#define g_ShowLBoxName GAME_DATA(const char *, 0x4ad5dc)	/* a wildcard of the names, "" for all */
 #define g_SkipAnim GAME_DATA(int, 0x4ad500)
 #define g_SkipAnimVis GAME_DATA(int, 0x4ad5c4)
 #define g_SkipNodeFX GAME_DATA(int, 0x4ad57c)
@@ -231,6 +236,105 @@ byte __thiscall CNodo3D_AnimChannel(CNodo3D *self, NodoAnimChannel *c, vec3_t *p
 		return 1;
 	}
 	Quat_Slerp(rot, rot, &q2, w);
+	return 1;
+}
+
+/* R_ShowLocalBox: the line to the parent and the axes; from 2 the box (blue with a skin, other colors for a render
+ * node with its own object), 3 the name and class, 4 the name in the middle of the box, from 5 the kinds of the
+ * position and rotation tracks (and the camera track) of the animation, from 6 the name too */
+byte __thiscall CNodo3D_DebugDraw(CNodo3D *self, CNodoR *r) {
+	static const uint32_t kindColors[5] = { 0xff0000, 0xff, 0xffff00, 0x808080, 0x8000 };
+	NodoAnimChannel *c;
+	vec3_t a, b;
+	matrix_t m;
+	box_t box;
+	void *track;
+	uint32_t clase;
+	int kPos, kRot, kCam, k;
+	float t;
+	byte skin;
+
+	if ((g_ShowLBoxMin && self->indice < g_ShowLBoxMin) || (g_ShowLBoxMax && self->indice > g_ShowLBoxMax)) {
+		return 0;
+	}
+	if (*g_ShowLBoxName && !Wild_MatchLower(g_ShowLBoxName, self->name)) {
+		return 0;
+	}
+	if (self->padre) {
+		b = *(vec3_t *)&self->padre->m.m[12];
+		a = *(vec3_t *)&self->m.m[12];
+		Debug_DrawLine(&a, &b, self->padre->padre ? 0xffff00 : 0x808080);
+	}
+	if (r && r->look && *(int *)r->look) {
+		Box_Zero(&box);
+		a.x = 0.0f;
+		a.y = 0.0f;
+		a.z = 0.0f;
+		Debug_DrawAxes(&self->m, &a, 16.0f);
+		a.x = 0.0f;
+		a.y = 0.0f;
+		a.z = 0.0f;
+		Debug_DrawPointM(&self->m, &a, 8.0f, 0xff00ff);
+		if (CNodo3D_GetBBox(self, &m, &box, 0)) {
+			Debug_DrawBoxM(&m, &box.min, &box.max, 0xff00);
+		}
+	}
+	a.x = 0.0f;
+	a.y = 0.0f;
+	a.z = 0.0f;
+	Debug_DrawAxes(&self->m, &a, 5.0f);
+	if (g_ShowLocalBox == 3) {
+		clase = self->obj3D ? self->obj3D->clase : 0;
+		a = *(vec3_t *)&self->m.m[12];
+		Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &a, 0xffffff, "%s [%04X]", self->name, clase & 0xffffff);
+	}
+	if (g_ShowLocalBox > 1) {
+		memset(&box, 0, sizeof(box));
+		if (CNodo3D_GetBBox(self, &m, &box, 0)) {
+			skin = self->obj3D && self->obj3D->clase == CLASE_OBJ3D_MALLAD3D &&
+				((CMallaD3D *)self->obj3D)->pSkin != NULL;
+			Debug_DrawBoxM(&m, &box.min, &box.max, g_DebugColors[(r && r->obj3D2 ? 8 : 0) + 2 + skin]);
+			if (g_ShowLocalBox == 4) {
+				clase = self->obj3D ? self->obj3D->clase : 0;
+				a.x = (box.min.x + box.max.x) * 0.5f;
+				a.y = (box.max.y + box.min.y) * 0.5f;
+				a.z = (box.max.z + box.min.z) * 0.5f;
+				Vec3_TransformH(&b, &a, &m);
+				Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &b, clase == CLASE_OBJ3D_MALLAD3D ? 0xff0000 : 0xff00ff, "%s",
+					self->name);
+			}
+		}
+	}
+	if (g_ShowLocalBox <= 4) {
+		return 1;
+	}
+	kPos = 0;
+	kRot = 0;
+	kCam = 0;
+	if ((c = CNodo3D_Channel0(self)) &&
+		(track = CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[0]), (uint32_t)self->indice))) {
+		/* the float t goes as the unused int */
+		t = c->t;
+		memcpy(&k, &t, sizeof(k));
+		kPos = CAnimNodo_TrackKind(track, c->frame, k, 1);
+		kRot = CAnimNodo_TrackKind(track, c->frame, k, 2);
+		kCam = CAnimNodo_TrackKind(track, c->frame, k, 4);
+	}
+	a = *(vec3_t *)&self->m.m[12];
+	Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &a, kindColors[kPos % 5], "%d", kPos);
+	a = *(vec3_t *)&self->m.m[12];
+	Debug_Text3D(g_FntTerm8, 10.0f, 0.0f, &a, kindColors[kRot % 5], "%d", kRot);
+	if (self->obj3D && self->obj3D->clase == CLASE_OBJ3D_CAMARA) {
+		a = *(vec3_t *)&self->m.m[12];
+		Debug_Text3D(g_FntTerm8, 20.0f, 0.0f, &a, kindColors[kCam % 5], "%d", kCam);
+	}
+	if (kPos < kRot) {
+		kRot = kPos;
+	}
+	if (g_ShowLocalBox > 5) {
+		a = *(vec3_t *)&self->m.m[12];
+		Debug_Text3D(g_FntTerm8, 30.0f, 0.0f, &a, kindColors[(uint32_t)kRot % 5], "%s", self->name);
+	}
 	return 1;
 }
 

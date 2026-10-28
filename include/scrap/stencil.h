@@ -9,6 +9,7 @@
 #ifndef SCRAP_STENCIL_H
 #define SCRAP_STENCIL_H
 
+#include "scrap/e3dutil.h"
 #include "scrap/luz.h"
 #include "scrap/material.h"
 #include "scrap/render.h"
@@ -63,7 +64,6 @@ SD_SIZE(StencilBlock, 0x80);
 #define g_StencilSelf GAME_DATA(int, 0x3901b0)	/* R_StencilSelf */
 #define g_StencilTog GAME_DATA(int, 0x390180)	/* R_StencilTog: switched once */
 
-#define g_FrameMs GAME_DATA(float, 0x4a8ed4)	/* the time of the last frame in ms */
 #define g_KeyV GAME_DATA(byte, 0x4db2ef)	/* with X held: the shadows switched */
 
 /* the lights of all groups on or off */
@@ -80,7 +80,7 @@ void Stencil_Init(void);
 /* the frame pass of the shadows */
 void SombrasStencil_Render(void);
 
-/* still the exe's (src/imports.inc): the volumes of the segments and of the triangles, pass 0 front faces */
+/* the volumes of the segments and of the triangles, pass 0 (the front faces) fills the vertex buffers */
 void Stencil_DrawSegs(int pass);
 void Stencil_DrawTris(int pass);
 

@@ -8101,6 +8101,18 @@ SD_HOOK(CBsp_AgruparMapas, 0x284d00, 2039)
 SD_HOOK(cVehicleMotorsEffects_Exhaust, 0x10f210, 34801)
 
 /* module agent: Engine leftovers (Escena_Load, stencil draws, debug and dialogs) (hooks below this line) */
+SD_HOOK(CMapa_CopyBmp, 0x2370a0, 742)
+SD_HOOK(DbgWin_DlgProc, 0x2373d0, 790)
+SD_HOOK(Motor_DrawFpsGraph, 0x22e9b0, 716)
+SD_HOOK(Motor_DrawStats, 0x2308c0, 2223)
+SD_HOOK(Matrix3_RotFromTo, 0x238ce0, 1125)
+SD_HOOK(CNodo3D_DebugDraw, 0x23d9d0, 1548)
+SD_HOOK(ViewerCamera_Move, 0x218080, 1582)
+SD_HOOK(CLuz_Render, 0x23bb70, 1650)
+SD_HOOK(Stencil_DrawSegs, 0x265510, 3229)
+SD_HOOK(Stencil_DrawTris, 0x2661b0, 4765)
+SD_HOOK(Motor_SceneDlgProc, 0x22dcf0, 3251)
+SD_HOOK(Escena_Load, 0x2c2d60, 11315)
 
 /* module agent: Leftovers C, EmbeddedFX vf03, AICharControl3D, Gear, Devastator (hooks below this line) */
 SD_HOOK(cEmbeddedFXCrazyGambler_Update, 0x0da0e0, 3507)

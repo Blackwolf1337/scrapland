@@ -210,7 +210,7 @@ typedef struct CNodo3D {
 	uint32_t flags;			/* 0x18 NODO_* */
 	vec3_t pos;			/* 0x1c */
 	quat_t rot;			/* 0x28 */
-	int pad_38;
+	float visible;			/* 0x38 "Visible:" of the M3D, kept in the caches */
 	IObjeto3D *obj3D;		/* 0x3c owned */
 	CEscena *escena;		/* 0x40 */
 	int indice;			/* 0x44 the track of the node in the animations, -1: none */
@@ -293,7 +293,7 @@ void *CSistPart_Cast(IObjeto3D *obj);	/* rva 0x23f310, CHECK of the class */
 /* Engine/NodoR.cpp (src/game/engine3d/Engine/NodoR.c, the rest in modelo.h and scrapmodel.h) */
 NodoLook *__fastcall NodoLook_ctor(NodoLook *self);
 CNodoR *__fastcall CNodoR_ctor(CNodoR *self);
-byte __thiscall CNodo3D_DebugDraw(CNodo3D *self, CNodoR *r);	/* rva 0x23d9d0, R_ShowLocalBox; 0: not drawn */
+byte __thiscall CNodo3D_DebugDraw(CNodo3D *self, CNodoR *r);	/* R_ShowLocalBox; 0: filtered out, not drawn */
 void __thiscall CNodoR_UpdateNodo(CNodoR *self);	/* rva 0x23f5d0 */
 int __thiscall CNodoR_ApplyFX(CNodoR *self, matrix_t *m);	/* rva 0x23f540 */
 
