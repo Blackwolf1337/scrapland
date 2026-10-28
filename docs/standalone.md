@@ -19,7 +19,8 @@ its own resource directory to the original's, fills the import table with GetPro
 folder), gives the original its TLS block (the MSVC thread init epoch), installs the hooks and runs the entry point
 of the original. Library code (zlib, libpng, libjpeg and the ASE SDK below rva 0x05f6d8; the M3D math library at
 0x2d6010..0x2da770, still called by the C through imports; Python 1.5.2 at 0x2da770..0x313634; the MSVC CRT from
-its operator delete at 0x313634, and D3DX8) still runs from the copy.
+its operator delete at 0x313634, and D3DX8) still runs from the copy. Since stage 3a the data is built into
+ScrapC.exe and the original exe is no longer read (below).
 
 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` runs the hooked side as ScrapC.exe. Since 2026-10-28 all three
 scenarios match.
@@ -170,7 +171,8 @@ objects, `_Py_NoneStruct`, `Py_VerboseFlag`, `PyImport_Inittab`, `g_PyPackImport
 
 The copy of the original still holds pointers into the Python code and data: the `ob_type` of the two engine type
 objects at rva 0x428e18 and 0x428f78, the init functions in the module table of the exe, and the game code that is
-C now (mostly `Py_None`). `Orig_PyPointers` in `src/standalone/main.c` walks the .reloc of the original at start.
+C now (mostly `Py_None`). `Orig_PyPointers` in `src/standalone/main.c` walked the .reloc of the original at start
+(since stage 3a `tools/standalone/datagen.py` does it at build time).
 Every pointer outside the Python (data, game code, CRT and library code) that leads into the Python code or data is
 set to the real symbol (371 pointers, 18 targets). A target without a real symbol stops the start. This was chosen
 over defining these objects in C: the scan finds every such pointer, also ones nobody listed, and the type objects
@@ -245,7 +247,7 @@ convention (argument in xmm0, result in eax or xmm0):
   table of `CFXTexLava`) match bit for bit all the same, so none compares a rounded value
 
 ScrapC.exe starts in `Crt_Main` of `crtinit.c`, the entry point of the original is not called (`[general]
-crtstart=0`, `DIFFTEST_CRTSTART=0` still runs it). Crt_Main sets what the CRT initializers of the `__xi` table set
+crtstart=0`, `DIFFTEST_CRTSTART=0` ran it until stage 3a removed it). Crt_Main sets what the CRT initializers of the `__xi` table set
 (x87 precision 53 bits, the option words of the inline printf and scanf, the game's matherr for the UCRT the exe
 links), runs the 1790 dynamic initializers of the game from the `__xc` table in order (the first entry is the CRT's)
 and calls `App_WinMain` with the module, the command line of `_get_narrow_winmain_command_line` and the show mode of
@@ -336,8 +338,55 @@ DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios. Th
 
 ## Stage 3: data in C
 
-The data sections move into C: vtables, tables, strings, then the globals with their types. After that the
-original exe is no longer read.
+The data sections move into C: vtables, tables, strings, then the globals with their types. Stage 3a builds the data
+of the original into ScrapC.exe at its rvas, so the original exe is no longer read at run time. Stage 3b gives it
+typed C definitions at the same addresses, region by region, stage 3c normal C linkage without fixed addresses.
+
+### Stage 3a: the data built in
+
+The build of ScrapC.exe needs Scrap.exe 1.6.1 (CMake cache path `SCRAP_EXE`, default `game/Bin/Scrap.exe`).
+ScrapC.exe itself needs only the game files, it no longer opens the original exe.
+
+`tools/standalone/datagen.py` checks the timestamp and SizeOfImage like `Game_IsBuild` and writes `room.c`, `room.ld`,
+`room.h` and `room.bin` into `build/standalone` (generated, not in the repository). Built in at their rvas are .rdata,
+.data, .gfids, .tls, _RDATA, .data1 and .rsrc. The zero tail of .data, .bss_ste and the code range stay
+uninitialized, .reloc is left out (fixed base).
+
+Of .text only the pieces that are still read or run are built in:
+
+- the data formats of dinput8.lib at 0x001000..0x002070 (the `c_dfDIKeyboard` and `c_dfDIMouse` in .rdata point there)
+- the dynamic initializers of the game at 0x03e800..0x05f6d8, until stage 2d makes them C
+- the import thunks of the game in the CRT (`ORIG_CRT_THUNKS` of `origcrt.h`)
+- from 0x37b3d0 to the end of .text the C++ unwind funclets and the atexit destructors the initializers register
+
+The C reads no other data in .text: its `Game_Ptr` and `GAME_DATA` rvas below 0x3a1000 are hooked functions, atexit
+destructors of the last piece or .bss_ste.
+
+`cmake/ScrapC.ld` includes `room.ld`, which puts the sections `.orig0` to `.orig11` from rva 0x1000 to 0x55e000:
+initialized ones where there are bytes, uninitialized ones without file data for the gaps (the code, the tail of
+.data, .reloc). That is 1.1 MB of data of the original in the exe.
+
+At start `main.c` fills the rest of .text with int3 (`ROOM_INT3` of `room.h`), fills the import table of the
+original with GetProcAddress from its import directory and points its own resource directory to the original's.
+The TLS directory of the original is built in with .rdata and .tls, but nothing reads it any more (`crtinit.c` keeps
+the epoch of the thread-safe statics). `Orig_Read`, the section copy and `Orig_PyPointers` are gone.
+
+The pointers of the built-in data into the original's Python are symbol references in `room.c`, which the linker
+sets: `datagen.py` holds the table of real symbols (`pymap.py -c` prints it), a target without one stops the build.
+11 pointers are left (the init functions in the module table at 0x428d58 and the `ob_type` of the two engine type
+objects), the others of stage 2a were in game code that is int3 now.
+
+ScrapC.exe now runs as with `wipe=2`, `wipepy=1`, `wipecrt=1` and `wipelow=1` in any case. The switches still run and
+log, they find int3 there already. The handler that logs "original code reached" is always on in ScrapC.exe. With
+`wipe=3` the probe has no original code to copy back in ScrapC.exe, so it stops at the first trap: probe runs work
+in the hook DLL only. `crtstart=0` is gone, the CRT of the original is not built in. `hooks=0` or a hook switched off
+in scrapdecomp.ini leaves int3 in ScrapC.exe.
+
+On 2026-10-28 `DIFFTEST_WIPE=2 DIFFTEST_WIPEPY=1 DIFFTEST_WIPECRT=1 DIFFTEST_WIPELOW=1 DIFFTEST_STANDALONE=1
+tools/test/difftest.sh` matches in all three scenarios with no "original code reached" line, and so does the hook
+DLL difftest. A run of ScrapC.exe in each scenario with `game/Bin/Scrap.exe` renamed gives the output of the
+original but for the checks of that file itself (`Scrap.FileExist(Bin/Scrap.exe)`, `File_Access` and `File_Stat` of
+it).
 
 ## Stage 4: English names
 

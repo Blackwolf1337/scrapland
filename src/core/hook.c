@@ -209,6 +209,15 @@ static int Hook_WipeLowRange(int wipelow) {
 #endif
 }
 
+/* ScrapC.exe has no code of the original but the pieces of stage 3a, the rest is int3 from the start */
+static int Hook_CodeGone(void) {
+#ifdef SD_STANDALONE
+	return 1;
+#else
+	return 0;
+#endif
+}
+
 void Hook_InstallAll(int wipe, int wipepy, int wipelow) {
 	int installed = 0, off = 0, wipecrt;
 
@@ -258,7 +267,7 @@ void Hook_InstallAll(int wipe, int wipepy, int wipelow) {
 	}
 	Com_Printf("%d of %d hooks installed, %d switched off in scrapdecomp.ini\n", installed,
 		(int)(sizeof(hooks) / sizeof(hooks[0])), off);
-	if (wipe || wipepy || wipecrt || wipelow) {
+	if (wipe || wipepy || wipecrt || wipelow || Hook_CodeGone()) {
 		AddVectoredExceptionHandler(1, Hook_Trap);
 	}
 	if (wipe) {

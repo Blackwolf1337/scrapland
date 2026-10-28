@@ -135,11 +135,21 @@ add_library(dinput8 SHARED src/loader/dinput8.c src/loader/dinput8.def)
 target_link_libraries(dinput8 PRIVATE scrapcode)
 set_target_properties(dinput8 PROPERTIES PREFIX "" OUTPUT_NAME dinput8)
 
-# ScrapC.exe: the standalone loader (docs/standalone.md), next to Scrap.exe in game/Bin. Fixed base 0x400000; the
-# linker script puts an empty section the size of the original first, the loader copies the original into it.
+# ScrapC.exe: the standalone exe (docs/standalone.md), in game/Bin. Fixed base 0x400000; the linker script puts the
+# room of the original first: its data at their rvas, read from Scrap.exe 1.6.1 at build time by datagen.py (stage
+# 3a). The build needs the original exe, ScrapC.exe does not.
+set(SCRAP_EXE ${CMAKE_SOURCE_DIR}/game/Bin/Scrap.exe CACHE FILEPATH "Scrap.exe 1.6.1, whose data ScrapC.exe builds in")
+find_program(PYTHON3 python3 REQUIRED)
+set(ROOM_DIR ${CMAKE_CURRENT_BINARY_DIR}/standalone)
+add_custom_command(OUTPUT ${ROOM_DIR}/room.c ${ROOM_DIR}/room.h ${ROOM_DIR}/room.ld ${ROOM_DIR}/room.bin
+	COMMAND ${PYTHON3} -I ${CMAKE_SOURCE_DIR}/tools/standalone/datagen.py ${SCRAP_EXE} ${ROOM_DIR}
+	DEPENDS tools/standalone/datagen.py ${SCRAP_EXE} include/scrap/game.h include/scrap/origcrt.h
+		include/scrap/origpython.h
+	COMMENT "Data of Scrap.exe for ScrapC.exe")
 add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtinit.c
-	src/standalone/crtmath.c src/standalone/crtvec.c)
+	src/standalone/crtmath.c src/standalone/crtvec.c ${ROOM_DIR}/room.c ${ROOM_DIR}/room.h)
+target_include_directories(ScrapC PRIVATE ${ROOM_DIR})
 target_link_libraries(ScrapC PRIVATE scrapcode_sa python152)
 target_link_options(ScrapC PRIVATE -Wl,--image-base,0x400000 -Wl,--disable-dynamicbase
-	-Wl,-T,${CMAKE_SOURCE_DIR}/cmake/ScrapC.ld)
-set_target_properties(ScrapC PROPERTIES LINK_DEPENDS ${CMAKE_SOURCE_DIR}/cmake/ScrapC.ld)
+	-Wl,-T,${CMAKE_SOURCE_DIR}/cmake/ScrapC.ld -L${ROOM_DIR})
+set_target_properties(ScrapC PROPERTIES LINK_DEPENDS "${CMAKE_SOURCE_DIR}/cmake/ScrapC.ld;${ROOM_DIR}/room.ld")

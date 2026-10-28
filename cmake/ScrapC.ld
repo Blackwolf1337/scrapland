@@ -11,12 +11,12 @@ SECTIONS
      lower than the target page size. */
   . = SIZEOF_HEADERS;
   . = ALIGN(__section_alignment__);
-  /* ScrapC.exe: the room of the mapped Scrap.exe 1.6.1 (rva 0x1000 .. its SizeOfImage), uninitialized, before
-     the own code (docs/standalone.md) */
-  .orig  __image_base__ + ( __section_alignment__ < 0x1000 ? . : __section_alignment__ ) :
-  {
-    *(.orig)
-  }
+  /* ScrapC.exe: the room of Scrap.exe 1.6.1 (rva 0x1000 .. its SizeOfImage) before the own code
+     (docs/standalone.md, stage 3a). tools/standalone/datagen.py writes its sections .orig0, .orig1 ... at the build
+     and room.ld with their places: initialized where the original has data or code that still runs, uninitialized
+     in between, so the zero parts take no room in the file. */
+  INCLUDE room.ld
+  ASSERT (. == __image_base__ + 0x55e000, "the room of Scrap.exe must end at its SizeOfImage")
   .text ALIGN(__section_alignment__) :
   {
     KEEP (*(SORT_NONE(.init)))

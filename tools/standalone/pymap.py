@@ -8,8 +8,9 @@
 #   tp_name        type object (ob_type &PyType_Type), by its name string and the definitions in the sources
 #   ob_type        object of a type with one instance (_Py_NoneStruct, _Py_EllipsisObject)
 #   xref           global found next to a string in the code that uses it (flags of Py_Initialize, ...)
-# -c prints instead the table of src/standalone/main.c: every rva of the Python that a pointer outside the Python
-# (from .reloc) holds, with its real symbol; it stops with an error for a target without a name.
+# -c prints instead the table PY_SYMBOLS of tools/standalone/datagen.py: every rva of the Python that a pointer
+# outside the Python (from .reloc) holds, with its real symbol; it stops with an error for a target without a name.
+# It counts the pointers of the whole exe, datagen.py fixes those in the data it builds in.
 import collections, os, re, struct, sys
 
 args = [a for a in sys.argv[1:] if not a.startswith('-')]
@@ -235,5 +236,5 @@ for t in sorted(ext):
 		bad = 1
 		continue
 	n = names[t][0]
-	print('\t{ 0x%06x, %s%s },\t/* %d */' % (t, '' if in_code(t) else '&', n, ext[t]))
+	print('\t0x%06x: \'%s\',\t# %d' % (t, n, ext[t]))
 sys.exit(bad)
