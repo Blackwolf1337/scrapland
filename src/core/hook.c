@@ -191,7 +191,7 @@ static int Hook_WipeCrt(void) {
 #endif
 }
 
-/* wipelow=1: only ScrapC.exe has the D3DX8 functions the game calls in C, the hook DLL calls the exe's */
+/* wipelow=1: ScrapC.exe only; the hook DLL has the same C for what the game calls, but its exe still runs the rest */
 static int Hook_WipeLowRange(int wipelow) {
 #ifdef SD_STANDALONE
 	if (wipelow) {

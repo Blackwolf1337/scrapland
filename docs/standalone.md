@@ -235,7 +235,7 @@ destructors (`delete`, `delete[]`, the vector destructor iterator, `fclose`), th
 `floor`, `atoi`, ctype, `setlocale`, `strncpy`, `_strdup`, `calloc`, `_snprintf`, `_vsnprintf`, `exit`) and the ASE
 SDK. Of these only `__libm_sse2_sqrt_precise`, `_CIacos` and `_CIpow` are math and still the copy's.
 
-### Stage 2c: D3DX8, ASE and the M3D math (in progress)
+### Stage 2c: D3DX8, ASE and the M3D math (done)
 
 The start of the code of the original is not all library code: rva 0x001000..0x002070 holds the data formats of
 dinput8.lib (`c_dfDIKeyboard` and friends, data in `.text`), rva 0x002070..0x03e800 the libraries (the ASE SDK,
@@ -287,6 +287,12 @@ the copy. These are tested by what they do, not bit for bit:
   All-Seeing Eye queries 's' (status, rules, players from the game's callbacks), 'g' and the master's 'p'. The
   masters are gone and resolving them would block, so there is no heartbeat and no 'v'.
   `tools/test/py/sdlevel_ase.py` (prefix `ase`) queries it on the loopback in the level and compares the answers.
+
+All of these are hooks in both builds; the hook DLL difftest matches with them. In ScrapC.exe no code of the range
+0x002070..0x03e800 runs now: on 2026-10-28 the probe (`DIFFTEST_WIPE=3 DIFFTEST_WIPEPY=1 DIFFTEST_WIPELOW=1
+DIFFTEST_STANDALONE=1`) logged no trap, and `DIFFTEST_WIPE=2 DIFFTEST_WIPEPY=1 DIFFTEST_WIPELOW=1
+DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios. The dynamic initializers at
+0x03e800..0x05f6d8 are game code and stay outside wipelow.
 
 ## Stage 3: data in C
 
