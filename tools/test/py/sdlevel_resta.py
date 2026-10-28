@@ -1,8 +1,10 @@
 # game leftovers below rva 0x1a8000, "Rest A" (execfile'd by sdlevel.py, Python 1.5.2). The vehicle AI (an AI of our
-# own on the Car "SDRsaCar" made as in sdlevel_ivehicle.py): the track points of every kind of track on a traffic graph
-# of our own (FZ has no tracks), the random track offsets after a fixed srand and the line tests of the hook points. The repositioning (Repos, ReposTraffic,
-# GraphTraffic) is not called: it picks nodes near the camera by the traffic of the level, which differs between the
-# runs.
+# own on the Car "SDRsaCar" made as in sdlevel_ivehicle.py): the track points of every kind of track on a traffic
+# graph of our own (FZ has no tracks), the random track offsets after a fixed srand and the line tests of the hook
+# points. The repositioning (Repos, ReposTraffic, GraphTraffic) is not called: it picks nodes near the camera by the
+# traffic of the level, which differs between the runs. The network controller of a vehicle reading and writing
+# crafted messages; on a second car the radar map and icons and the waypoint marks; the console, the debug draws,
+# the sub menu logo and the virtual keyboard. The draws go through the D3D log with the viewport set.
 def rsaI(a):
 	return SDTest.Peek(a, '@i')
 def rsaB(a):
@@ -24,6 +26,23 @@ def rsaInts(a, offs):
 	for o in offs:
 		r = r + (rsaI(a + o),)
 	return r
+# a call with the D3D device replaced by the logging proxy: (its result, the D3D calls); the 2D draws CHECK the
+# viewport, set to 640 x 480 for the call
+def rsalog(fn):
+	vp = (SDTest.Peek(0x4ad7e8, 'i'), SDTest.Peek(0x4ad7ec, 'i'))
+	SDTest.Poke(0x4ad7e8, 640)
+	SDTest.Poke(0x4ad7ec, 480)
+	SDTest.Out()
+	SDTest.D3DLog(1)
+	r = fn()
+	SDTest.D3DLog(0)
+	SDTest.Poke(0x4ad7e8, vp[0])
+	SDTest.Poke(0x4ad7ec, vp[1])
+	return (r, SDTest.Out())
+# the same with only the length of the log (the long logs of the font and debug draws)
+def rsaloglen(fn):
+	r = rsalog(fn)
+	return (r[0], len(r[1]))
 def rsaFind(name):
 	w = SDTest.Peek(0x467450, 'i')
 	slot = SDTest.Call(0x131f70, 'tiis', w + 4, name)[0]
@@ -222,26 +241,33 @@ if rsaCar:
 	rsaFree(rsaMsgB)
 	rsaFree(rsaNV)
 
-# ---- the radar map and icons on a cRadarScorer of our own, the car as target, a fake camera (its turn at 0x8c):
+# a second car for the draws below: the network tests left the first one dead and switched off
+rsaCar2Obj = Scrap.CreateEntity('SDRsaCar2', 54000.0, 50000.0, 61000.0, 'Car')
+rsaCar2 = rsaFind('SDRsaCar2')
+check('SDRsaCar2', lambda: (rsaCar2Obj is not None, rsaCar2 != 0))
+
+# ---- the radar map and icons on a Radar item, the car as target, a fake camera (its turn at 0x8c): the D3D calls,
 # the view globals, the image states and the icon colors ----
-if rsaCar and rsaI(SDTest.Peek(0x467450, 'i') + 0x2f0) > 0:
-	# the constructor would load the floor maps of FileNameMap2D: all images are the white image of the scorer
-	rsaRad = rsaAlloc(0x94c)
-	rsaWhite = SDTest.Call(0x171000, 'i')[0]
-	rsaWhiteSave = rsaInts(rsaWhite, range(0, 0x44, 4))
-	for rsaK in range(0, 0x94c, 4):
-		rsaPoke(rsaRad + rsaK, 0)
-	for rsaK in (0xbc, 0xc4, 0xcc, 0x8c4, 0x8c8):
-		rsaPoke(rsaRad + rsaK, rsaWhite)
-	for rsaK in range(16):
-		rsaPoke(rsaRad + 0x8dc + 4 * rsaK, rsaWhite)
-	rsaSet(rsaRad + 0x91c, (512.0, 0.01, 20000.0, 16000.0, 40000.0, 50000.0))
-	rsaPoke(rsaRad + 0x8d8, 100)
-	rsaPoke(rsaRad + 0x8d0, 1)
+rsaRad = 0
+if rsaCar2 and rsaI(SDTest.Peek(0x467450, 'i') + 0x2f0) > 0 and SDTest.Call(0x170ea0, 'ii', 0)[0]:
+	# a Radar item of the scorer of player 0 (the exe's constructor), marked DelMe after; the draws go to the D3D log
+	rsaSc = SDTest.Call(0x170ea0, 'ii', 0)[0]
+	rsaRadView = rsaF(0x400000 + 0x45fe80, 4)
+	SScorer.Add(0, 'SDRsaRadar', 'Radar')
+	rsaRad = SDTest.Call(0x170dc0, 'tiis', rsaSc, 'SDRsaRadar')[0]
+	check('cRadarScorer item', lambda: rsaRad != 0)
+
+if rsaRad and not (rsaI(rsaI(rsaRad + 0x8c8) + 0x3c) and rsaI(rsaI(rsaRad + 0xcc) + 0x3c)):
+	rsaPoke(rsaRad + 0x28, rsaI(rsaRad + 0x28) | 1)
+	rsaRad = 0
+if rsaRad:
 	rsaCam = rsaAlloc(0x100)
 	rsaSet(rsaCam + 0x8c, (0.7,))
 	rsaSet(rsaRad + 0x10, (100.0, 50.0))
 	rsaSet(rsaRad + 0xac, (55.0, 55.0, 56.25, 56.25))
+	# the last colors of the icons are not set by the constructor
+	rsaPoke(rsaRad + 0x4cc + 4 * 3, 0)
+	rsaPoke(rsaRad + 0x4cc + 4 * 5, 0)
 	rsaPos = rsaAlloc(0x10)
 	def rsaimg(p):
 		return rsaF(p, 2), rsaI(p + 0x34)
@@ -252,8 +278,15 @@ if rsaCar and rsaI(SDTest.Peek(0x467450, 'i') + 0x2f0) > 0:
 			r = r + (rsaI(rsaRad + 0x4cc + 4 * k),)
 		return r
 	def rsamap():
-		SDTest.Call(0x16d090, 'tviii', rsaRad, rsaCar, rsaCam)
-		return rsarad()
+		return rsalog(lambda: SDTest.Call(0x16d090, 'tviii', rsaRad, rsaCar2, rsaCam)), rsarad()
+	# a sprite less image fails the CHECK of CPsaImage_DrawPoly: the floor maps of FZ and the noise are missing,
+	# so the view cone image stands in for them (put back before the item is deleted)
+	rsaRadImgs = rsaInts(rsaRad, (0x8c4,) + tuple(range(0x8dc, 0x91c, 4)))
+	rsaCone = rsaI(rsaRad + 0x8c8)
+	check('cRadarScorer sprites', lambda: (rsaI(rsaCone + 0x3c) != 0, rsaI(rsaI(rsaRad + 0xcc) + 0x3c) != 0))
+	rsaPoke(rsaRad + 0x8c4, rsaCone)
+	for rsaK in range(16):
+		rsaPoke(rsaRad + 0x8dc + 4 * rsaK, rsaCone)
 	rsaSet(rsaRad + 0x8d4, (1.0,))
 	check('cRadarScorer_DrawMap', lambda: rsamap())
 	rsaSet(rsaRad + 0x8d4, (0.4,))
@@ -263,18 +296,18 @@ if rsaCar and rsaI(SDTest.Peek(0x467450, 'i') + 0x2f0) > 0:
 	check('cRadarScorer_DrawMap menu', lambda: rsamap())
 	rsaPoke(rsaRad + 0x934, 0)
 	rsaSet(rsaRad + 0x944, (0.0, 0.0))
-	rsaEmi = rsaF(rsaCar + 0x58c, 1)
-	rsaSet(rsaCar + 0x58c, (5.0,))
+	rsaEmi = rsaF(rsaCar2 + 0x58c, 1)
+	rsaSet(rsaCar2 + 0x58c, (5.0,))
 	rsaSrand(17)
 	check('cRadarScorer_DrawMap EMI', lambda: rsamap())
-	rsaSet(rsaCar + 0x58c, rsaEmi)
-	SDTest.Call(0x16d090, 'tviii', rsaRad, rsaCar, rsaCam)
+	rsaSet(rsaCar2 + 0x58c, rsaEmi)
+	rsalog(lambda: SDTest.Call(0x16d090, 'tviii', rsaRad, rsaCar2, rsaCam))
 	rsaPoke(rsaRad + 0xd4 + 4 * 3, 0)
 	rsaPoke(rsaRad + 0xd4 + 4 * 5, 0)
 	def rsaicon(pos, ang, flags, always):
 		rsaSet(rsaPos, pos)
-		SDTest.Call(0x16ca80, 'tviiifiiiii', rsaRad, rsaPos, 3, ang, 5, flags, 0xc0ff8040, 0x80ffffff, always)
-		return rsarad()
+		return rsalog(lambda ang=ang, flags=flags, always=always: SDTest.Call(0x16ca80, 'tviiifiiiii', rsaRad, rsaPos,
+			3, ang, 5, flags, 0xc0ff8040, 0x80ffffff, always)), rsarad()
 	for rsaFade in (1.0, 0.25):
 		rsaSet(rsaRad + 0x8d4, (rsaFade,))
 		for rsaMenu in (0, 1):
@@ -286,14 +319,16 @@ if rsaCar and rsaI(SDTest.Peek(0x467450, 'i') + 0x2f0) > 0:
 					((14000.0, 50000.0, 81000.0), 0.3, 0x0f, 1), ((54000.0, 50000.0, 151000.0), -2.0, 0x04, 0)):
 				check('cRadarScorer_DrawIcon' + fmt((rsaFade, rsaMenu) + rsav), lambda rsav=rsav: rsaicon(rsav[0],
 					rsav[1], rsav[2], rsav[3]))
-	for rsaK in range(len(rsaWhiteSave)):
-		rsaPoke(rsaWhite + 4 * rsaK, rsaWhiteSave[rsaK])
-	rsaFree(rsaRad)
+	rsaPoke(rsaRad + 0x8c4, rsaRadImgs[0])
+	for rsaK in range(16):
+		rsaPoke(rsaRad + 0x8dc + 4 * rsaK, rsaRadImgs[1 + rsaK])
+	rsaPoke(rsaRad + 0x28, rsaI(rsaRad + 0x28) | 1)
+	rsaSet(0x400000 + 0x45fe80, rsaRadView)
 	rsaFree(rsaCam)
 	rsaFree(rsaPos)
 # ---- the waypoint mark of the car on a cWaypointScorer of our own: current or not, split screen, players 0 and 1
 # (the camera of player 1 does not exist: early return); where the car is on the screen decides the branch ----
-if rsaCar:
+if rsaCar2:
 	rsaWp = rsaAlloc(0xc4)
 	SDTest.Call(0x185950, 'tii', rsaWp)
 	# only frame 0 of the white sheet: the rectangle, arrow and dot frames
@@ -305,9 +340,9 @@ if rsaCar:
 		SDTest.Poke(0x467584, split)
 		rsaPoke(rsaWp + 0x30, player)
 		rsaSet(rsaWp + 0xac, (0.0,))
-		SDTest.Call(0x185e90, 'tviii', rsaWp, rsaCar, current)
+		d3d = rsalog(lambda current=current: SDTest.Call(0x185e90, 'tviii', rsaWp, rsaCar2, current))
 		img = rsaI(rsaWp + 0xc0)
-		return rsaF(rsaWp + 0xac, 1), rsaB(rsaWp + 0xb0), rsaF(img, 6), rsaI(img + 0x34)
+		return d3d, rsaF(rsaWp + 0xac, 1), rsaB(rsaWp + 0xb0), rsaF(img, 6), rsaI(img + 0x34)
 	for rsav in ((0, 0, 0), (1, 0, 0), (0, 1, 0), (1, 1, 0), (1, 0, 1), (0, 1, 1)):
 		check('cWaypointScorer_DrawTarget' + fmt(rsav), lambda rsav=rsav: rsawp(rsav[0], rsav[1], rsav[2]))
 	SDTest.Poke(0x467584, rsaSplit)
@@ -315,6 +350,8 @@ if rsaCar:
 	rsaFree(rsaWp)
 if rsaCarObj:
 	check('SDRsaCar Del', lambda: rsaCarObj.Del())
+if rsaCar2Obj:
+	check('SDRsaCar2 Del', lambda: rsaCar2Obj.Del())
 
 # ---- the early returns of the voices, the sound debug view, the messenger drop and the gear aim search ----
 rsaRemain = SDTest.Peek(0x462148, 'i')
@@ -357,19 +394,20 @@ def rsacon():
 		r = r + (rsaF(w, 2), rsaF(w + 0x10, 2), rsaI(w + 0x34))
 	return r
 rsaShowLog = SDTest.Peek(0x460418, 'i')
-SDTest.Poke(0x460418, 1)
-check('Scorer_DrawConsole log', lambda: (SDTest.Call(0x1742f0, 'b')[0], rsacon()))
+if SDTest.Peek(0x4601c8, 'i'):
+	SDTest.Poke(0x460418, 1)
+	check('Scorer_DrawConsole log', lambda: (rsaloglen(lambda: SDTest.Call(0x1742f0, 'b')[0]), rsacon()))
 SDTest.Poke(0x460418, rsaShowLog)
-check('Scorer_DrawConsole off', lambda: (SDTest.Call(0x1742f0, 'b')[0], rsacon()))
+check('Scorer_DrawConsole off', lambda: (rsaloglen(lambda: SDTest.Call(0x1742f0, 'b')[0]), rsacon()))
 SDTest.Call(0x1749d0, 'vi', 1)
 if SDTest.Peek(0x4601fc, 'i') & 0xff:
 	rsaSet(0x400000 + 0x460420, (-1.0e9,))
 	SDTest.Call(0x13a8a0, 'tvis', 0x400000 + 0x44c130, ':ShowConsoleL\t')
-	check('Scorer_DrawConsole open', lambda: (SDTest.Call(0x1742f0, 'b')[0], rsacon()))
-	check('Scorer_DrawConsole open 2', lambda: (SDTest.Call(0x1742f0, 'b')[0], rsacon()))
+	check('Scorer_DrawConsole open', lambda: (rsaloglen(lambda: SDTest.Call(0x1742f0, 'b')[0]), rsacon()))
+	check('Scorer_DrawConsole open 2', lambda: (rsaloglen(lambda: SDTest.Call(0x1742f0, 'b')[0]), rsacon()))
 	rsaConFlags = SDTest.Peek(0x4601fc, 'i')
 	SDTest.Poke(0x4601fc, rsaConFlags | 0x10000)
-	check('Scorer_DrawConsole closing', lambda: (SDTest.Call(0x1742f0, 'b')[0], rsacon()))
+	check('Scorer_DrawConsole closing', lambda: (rsaloglen(lambda: SDTest.Call(0x1742f0, 'b')[0]), rsacon()))
 SDTest.Call(0x1749d0, 'vi', 0)
 SDTest.Poke(0x4601fc, SDTest.Peek(0x4601fc, 'i') & ~0xff0000)
 
@@ -378,10 +416,10 @@ rsaCShow = SDTest.Peek(0x4601c0, 'i')
 rsaAnalize = SDTest.Peek(0x44418c, 'i')
 for rsav in (1, 2, 3, 5, 7, 0, 9):
 	SDTest.Poke(0x4601c0, rsav)
-	check('Scorer_DrawDebug' + fmt((rsav,)), lambda: (SDTest.Call(0x173450, 'v'), SDTest.Peek(0x445a44, 'i')))
+	check('Scorer_DrawDebug' + fmt((rsav,)), lambda: (rsaloglen(lambda: SDTest.Call(0x173450, 'v')), SDTest.Peek(0x445a44, 'i')))
 SDTest.Poke(0x4601c0, 0)
 SDTest.Poke(0x44418c, 1)
-check('Scorer_DrawDebug NWAnalizeOn', lambda: (SDTest.Call(0x173450, 'v'), SDTest.Peek(0x445a44, 'i')))
+check('Scorer_DrawDebug NWAnalizeOn', lambda: (rsaloglen(lambda: SDTest.Call(0x173450, 'v')), SDTest.Peek(0x445a44, 'i')))
 SDTest.Poke(0x44418c, rsaAnalize)
 SDTest.Poke(0x4601c0, rsaCShow)
 
@@ -398,8 +436,8 @@ def rsasub(ring, wait, ringWait, dir, frame, seed):
 	rsaPoke(0x400000 + 0x46064c, dir)
 	rsaPoke(0x400000 + 0x460650, frame)
 	rsaSrand(seed)
-	SDTest.Call(0x176d10, 'tvii', rsaSub, 0)
-	r = (rsaF(0x400000 + 0x4605ec, 1), rsaF(0x400000 + 0x460644, 2), rsaI(0x400000 + 0x46064c),
+	d3d = rsalog(lambda: SDTest.Call(0x176d10, 'tvii', rsaSub, 0))
+	r = (d3d, rsaF(0x400000 + 0x4605ec, 1), rsaF(0x400000 + 0x460644, 2), rsaI(0x400000 + 0x46064c),
 		rsaI(0x400000 + 0x460650))
 	for o in (0xbc, 0xc0, 0xc4, 0xc8, 0xcc, 0xd0):
 		img = rsaI(rsaSub + o)
@@ -444,8 +482,8 @@ if rsaFont and rsaScorer0:
 		rsaPoke(0x400000 + 0x44c1e0, (rsaInSave[2] & ~0xff) | active)
 		rsaPoke(rsaTx + 0xd0, (rsaI(rsaTx + 0xd0) & ~0xff00) | (center << 8))
 		rsaSet(rsaScorer0 + 0x20, (t,))
-		SDTest.Call(0x183860, 'tvii', rsaTx, 0)
-		return (rsaInts(rsaFont, (0x10, 0x14, 0x20)), rsaF(rsaFont, 2), rsaI(rsaI(0x400000 + 0x45fe94) + 0x34),
+		d3d = rsaloglen(lambda: SDTest.Call(0x183860, 'tvii', rsaTx, 0))
+		return (d3d, rsaInts(rsaFont, (0x10, 0x14, 0x20)), rsaF(rsaFont, 2), rsaI(rsaI(0x400000 + 0x45fe94) + 0x34),
 			rsaI(rsaI(rsaTx + 0xc4) + 0x34), rsaF(rsaCur + 0x10, 2), rsaB(0x400000 + 0x44c1e0))
 	for rsav in ((0, 0, 0.1), (0, 1, 0.3), (1, 0, 0.1), (1, 1, 0.3), (1, 0, 0.45)):
 		check('cTextScorer_DrawKeyboard' + fmt(rsav), lambda rsav=rsav: rsakeys(rsav[0], rsav[1], rsav[2]))
