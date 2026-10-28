@@ -7612,6 +7612,7 @@ SD_HOOK(cObjElementFXFadeOutTrail_Update, 0x1da950, 125)
 /* module agent: Rest A, game leftovers below 0x1a8000 (hooks below this line) */
 
 /* module agent: Rest B, game leftovers from 0x240000 (hooks below this line) */
+SD_HOOK(CSuelo_DrawDebug, 0x25a260, 2507)
 SD_HOOK(Stencil_Malla, 0x267530, 3410)
 SD_HOOK(CD3DApp_BuildDeviceList, 0x273470, 2332)
 SD_HOOK(CD3DApp_Create, 0x273e20, 528)

@@ -130,6 +130,8 @@ SD_SIZE(CollideVert, 0x18);
  * solid view (ShowMapSolid) */
 void Collide_TriVerts(CollideVert *out, const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color);
 void CCollideMesh_DrawDebug(CCollideMesh *self, int nested);
+/* the debug view of the collision (c_show, ShowMapQuads, AnalizeQuads) */
+void __fastcall CSuelo_DrawDebug(CSuelo *self);
 /* rva 0x261580: in / |in| into out (the length through double, 1 / len rounded to float), a copy for length 0 */
 vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);
 

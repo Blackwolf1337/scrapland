@@ -107,3 +107,59 @@ if len(rsblms) and SDTest.Peek(0x4afddc, 'i') and SDTest.Peek(0x4afdcc, 'i') and
 	SDTest.Call(0x133550, 'vi', rsblluz)
 for rsblk in range(len(rsblvars)):
 	SDTest.Poke(rsblvars[rsblk], rsblsave[rsblk])
+
+# CSuelo_DrawDebug with the device calls logged: the quad boxes of the floor near the camera (ShowMapQDist), the
+# quad analysis, and the mesh view on an empty floor made here (the floor of the level has too many triangles)
+def rsbllog(fn):
+	SDTest.Out()
+	SDTest.D3DLog(1)
+	r = fn()
+	SDTest.D3DLog(0)
+	return (r, SDTest.Out())
+rsbldvars = (0x4a8f70, 0x4af850, 0x4af880, 0x4af820, 0x4af808)
+rsbldsave = map(lambda a: SDTest.Peek(a, 'i'), rsbldvars)
+rsblsuelo = rsbli(SDTest.Peek(0x4afde8, 'i') + 0xb0)
+check('suelo', lambda: rsblsuelo != 0)
+# a 2 x 2 grid of quads (one cell with a second quad) next to the camera on a floor made here
+rsblcam = rsblfl(rsbli(SDTest.Peek(0x4afde8, 'i') + 0xa4) + 0x14, 3)
+rsblgrid = SDTest.Call(0x133650, 'ii', 0x3524)[0]
+rsblq = SDTest.Call(0x133650, 'ii', 0x24 * 5)[0]
+SDTest.Poke(rsblgrid + 0x3500 - 0x400000, 4)
+SDTest.Poke(rsblgrid + 0x3504 - 0x400000, rsblq)
+SDTest.Poke(rsblgrid + 0x3508 - 0x400000, 2)
+SDTest.Poke(rsblgrid + 0x350c - 0x400000, 2)
+SDTest.Call(0x3197d0, 'iiFi', rsblgrid + 0x3510, (100.0, 80.0), 8)
+SDTest.Call(0x3197d0, 'iiFi', rsblgrid + 0x34dc, (rsblcam[0] - 100.0, rsblcam[1] - 50.0, rsblcam[2] - 30.0), 12)
+for rsblk in range(5):
+	SDTest.Call(0x3197d0, 'iiFi', rsblq + rsblk * 0x24, (rsblcam[1] + 10.0 * rsblk, rsblcam[1] - 5.0 * rsblk), 8)
+	SDTest.Call(0x3197d0, 'iiFi', rsblq + rsblk * 0x24 + 0x14, (rsblcam[1] + 20.0 + rsblk, rsblcam[1] - 20.0), 8)
+	SDTest.Poke(rsblq + rsblk * 0x24 + 0xc - 0x400000, (0x50, 0x150, 0x3ff, 0x400, 0x777)[rsblk])
+SDTest.Poke(rsblq + 0x20 - 0x400000, rsblq + 4 * 0x24)
+for rsblqd in (0.0, 120.0):
+	for rsblqm in (1, 2, 3, 4, 5, 6, 7):
+		SDTest.Poke(0x4a8f70, 0)
+		SDTest.Poke(0x4af880, rsblqm)
+		rsblsetf(0x4af820, rsblqd)
+		check('CSuelo_DrawDebug quads' + fmt((rsblqm, rsblqd)), lambda: rsbllog(lambda: SDTest.Call(0x25a260, 'tvi',
+			rsblgrid)))
+SDTest.Poke(0x4af880, 0)
+SDTest.Poke(0x4af808, 1)
+for rsblk in range(5):
+	SDTest.Poke(rsblq + rsblk * 0x24 + 0xc - 0x400000, 0)
+check('CSuelo_DrawDebug analize grid', lambda: rsbllog(lambda: (SDTest.Call(0x25a260, 'tvi', rsblgrid),
+	SDTest.Peek(0x4af808, 'i'))))
+SDTest.Call(0x133550, 'vi', rsblq)
+SDTest.Call(0x133550, 'vi', rsblgrid)
+SDTest.Poke(0x4af880, 0)
+SDTest.Poke(0x4af808, 1)
+check('CSuelo_DrawDebug analize', lambda: rsbllog(lambda: (SDTest.Call(0x25a260, 'tvi', rsblsuelo),
+	SDTest.Peek(0x4af808, 'i'))))
+rsblfake = SDTest.Call(0x133650, 'ii', 0x3524)[0]
+for rsblshow in (0, 1, 6, 3):
+	SDTest.Poke(0x4a8f70, rsblshow)
+	SDTest.Poke(0x4af850, 0)
+	check('CSuelo_DrawDebug empty' + fmt((rsblshow,)), lambda: rsbllog(lambda: (SDTest.Call(0x25a260, 'tvi',
+		rsblfake), SDTest.Peek(0x4af850, 'i'))))
+SDTest.Call(0x133550, 'vi', rsblfake)
+for rsblk in range(len(rsbldvars)):
+	SDTest.Poke(rsbldvars[rsblk], rsbldsave[rsblk])

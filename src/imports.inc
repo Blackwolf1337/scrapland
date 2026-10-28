@@ -212,7 +212,6 @@ SD_IMPORT(Matrix_RotationZ, 0x23a2b0)
 
 /* module agent: Engine/Suelo (imports below this line) */
 SD_IMPORT(crt_ceil, 0x345010)
-SD_IMPORT(CSuelo_DrawDebug, 0x25a260)
 
 /* module agent: Engine/Trails (imports below this line) */
 SD_IMPORT_STDCALL(D3DX_Vec3Normalize, 8, 0x006d3b)

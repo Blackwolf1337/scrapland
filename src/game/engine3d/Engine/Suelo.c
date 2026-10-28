@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/crt.h"
 #include "scrap/bsp.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
@@ -42,7 +43,6 @@
 typedef void(__thiscall *objCall_t)(void *self, void *arg);
 
 double crt_ceil(double x);
-void __fastcall CSuelo_DrawDebug(CSuelo *self);
 
 static void *Suelo_Obj(const CSuelo *self, uint32_t i) {
 	TABLA_CHECK(self->nodos, i, self->nNodos);
@@ -2105,4 +2105,201 @@ void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 	g_CollideAddColor[3] = 1.0f;
 	dev = g_pd3dDevice;
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_CULLMODE, 3);
+}
+
+#define g_ShowMapQuads GAME_DATA(int, 0x4af880)		/* ShowMapQuads: the boxes of the quads, 2..6 by kind */
+#define g_ShowMapQDist GAME_DATA(float, 0x4af820)	/* ShowMapQDist: only the quads this near the camera, 0 all */
+#define g_AnalizeQuads GAME_DATA(int, 0x4af808)		/* AnalizeQuads: 1 the quads checked once */
+/* the material of the debug view, a static of CSuelo_DrawDebug */
+#define g_CollideMat (*(CMaterial *)Game_Ptr(0x4af8f8))
+#define g_CollideMatGuard ((int *)Game_Ptr(0x4af9a8))
+#define COLLIDE_MAT_DTOR 0x38edb0		/* the atexit destructor of it */
+#define g_QuadColors ((const uint32_t *)Game_Ptr(0x432a34))
+
+/* the box of a quad with its cell from x z of the grid */
+static void Suelo_QuadBox(const CAlturas *alt, const CCollideQuad *q, float x0, float x1, float z0, float z1,
+	vec3_t *mn, vec3_t *mx) {
+	mn->x = x0 * alt->sizeX + alt->ext.min.x;
+	mx->x = x1 * alt->sizeX + alt->ext.min.x;
+	mn->y = q->minY;
+	mx->y = q->maxY;
+	mn->z = z0 * alt->sizeZ + alt->ext.min.z;
+	mx->z = z1 * alt->sizeZ + alt->ext.min.z;
+}
+
+/* ShowMapQuads: the boxes of the quads of the cells */
+static void Suelo_ShowQuads(CSuelo *self) {
+	CAlturas *alt = &self->alturas;
+	vec3_t eye = Mundo_Get()->cam->pos;
+	float maxDist = g_ShowMapQDist;
+
+	for (int z = 0; z < alt->nz; z++) {
+		for (int x = 0; x < alt->nx; x++) {
+			CCollideQuad *q = Alturas_Cell(alt, (uint32_t)x, (uint32_t)z);
+			int idx = 8;
+			for (; q; q = q->next) {
+				int mode = g_ShowMapQuads;
+				vec3_t mn, mx;
+				Suelo_QuadBox(alt, q, (float)x, (float)(x + 1), (float)z, (float)(z + 1), &mn, &mx);
+				if (maxDist != 0.0f) {
+					float mxm = (mx.x + mn.x) * 0.5f;
+					float mym = (mx.y + mn.y) * 0.5f;
+					float mzm = (mx.z + mn.z) * 0.5f;
+					float dx = eye.x - mxm;
+					float dy = (eye.y - mym) * Float_Keep(0.0f);
+					float dz = eye.z - mzm;
+					if ((float)__builtin_sqrt((double)(dx * dx + dy * dy + dz * dz)) > maxDist) {
+						continue;
+					}
+				}
+				uint32_t color = g_QuadColors[idx % 15];
+				if (mode == 2) {
+					float e = g_CollisionEpsilon * -10.0f;
+					mn.x = mn.x - e;
+					mn.y = mn.y - e;
+					mn.z = mn.z - e;
+					mx.x = mx.x + e;
+					mx.y = e + mx.y;
+					mx.z = mx.z + e;
+				} else if (mode == 3) {
+					int c = q->nTri;
+					color = c < 0x100 ? (uint32_t)c << 8 : ((uint32_t)c & ~0x1fu) << 11 | 0x80;
+				} else if (mode == 4) {
+					int c = q->nTri;
+					if (c < 0x100) {
+						continue;
+					}
+					color = c < 0x400 ? ((uint32_t)c & ~3u) << 14 | 0xff : (((uint32_t)c & ~0x1fu) | 0x1fe000) << 3;
+				} else if (mode == 5) {
+					int c = q->nTri;
+					if (c < 0x100) {
+						continue;
+					}
+					color = c < 0x400 ? 0xffff00 : 0xff0000;
+				} else if (mode >= 6) {
+					/* the free gap of the quad */
+					float e = g_CollisionEpsilon * -10.0f;
+					vec3_t gmn, gmx;
+					gmn.x = mn.x - e;
+					gmn.y = q->gapBottom;
+					gmn.z = mn.z - e;
+					gmx.x = mx.x + e;
+					gmx.y = q->gapTop;
+					gmx.z = mx.z + e;
+					if (mode == 6) {
+						Debug_DrawBox(&gmn, &gmx, color);
+					}
+					idx++;
+					continue;
+				}
+				Debug_DrawBox(&mn, &mx, color);
+				idx++;
+			}
+		}
+	}
+}
+
+/* AnalizeQuads: the triangles of a quad crossing its free gap reported */
+static void Suelo_AnalizeQuads(CSuelo *self) {
+	CAlturas *alt = &self->alturas;
+	int bad = 0;
+
+	for (int z = 0; z < alt->nz; z++) {
+		for (int x = 0; x < alt->nx; x++) {
+			for (CCollideQuad *q = Alturas_Cell(alt, (uint32_t)x, (uint32_t)z); q; q = q->next) {
+				for (int i = 0; i < q->nTri; i++) {
+					CCollideMesh *mesh = q->Mesh;
+					const CCollideTri *t = &mesh->pTri[q->pTri[i]];
+					if (t->flags & 1) {
+						continue;
+					}
+					const vec3_t *v = mesh->pVert;
+					float mnY = Float_MinSS(v[t->v[0]].y, v[t->v[1]].y);
+					if (!(v[t->v[2]].y > mnY)) {
+						mnY = v[t->v[2]].y;
+					}
+					float mxY = Float_MaxSS(v[t->v[0]].y, v[t->v[1]].y);
+					if (!(mxY > v[t->v[2]].y)) {
+						mxY = v[t->v[2]].y;
+					}
+					if (q->gapBottom >= mxY || mnY >= q->gapTop) {
+						continue;
+					}
+					bad++;
+					Con_Bluef("SECTOR INCORRECTO: X: %d Z: %d\n", x, z);
+				}
+			}
+		}
+	}
+	if (bad > 0) {
+		Con_Bluef("\nNUMERO SECTORES INCORRECTOS: %d\n", bad);
+	} else {
+		Con_Printf("SECTORES CORRECTOS\n");
+	}
+	g_AnalizeQuads = 0;
+}
+
+/* the debug view of the collision: the mode of c_show (6, 7 the solid views, 7 with a blinking background), the
+ * quads, the analysis, then the meshes of the sectors seen and the meshes added at run time once each */
+void __fastcall CSuelo_DrawDebug(CSuelo *self) {
+	int show = g_ShowCollision;
+
+	if (show == 0) {
+		g_ShowMapSolid = 0;
+	} else if (show == 6) {
+		g_ShowMapSolid = 1;
+	} else if (show == 7 || g_ShowMapSolid == 2) {
+		g_ShowMapSolid = 2;
+		Render_Clear(NULL, 1, ((exe_timeGetTime() & 0x3fc) | 0x20000) >> 2, 1.0f, 0);
+	}
+	if (g_ShowMapQuads) {
+		Suelo_ShowQuads(self);
+	}
+	if (g_AnalizeQuads && g_AnalizeQuads == 1) {
+		Suelo_AnalizeQuads(self);
+	}
+	if (!g_ShowCollision) {
+		return;
+	}
+	Render_SetWorldMatrix(g_MatIdentity, 0);
+	if (*g_CollideMatGuard > crt_InitEpoch()) {
+		crt_Init_thread_header(g_CollideMatGuard);
+		if (*g_CollideMatGuard == -1) {
+			CMaterial_ctor(&g_CollideMat);
+			crt_atexit(Game_Ptr(COLLIDE_MAT_DTOR));
+			crt_Init_thread_footer(g_CollideMatGuard);
+		}
+	}
+	CMatParams *p = &g_CollideMat.params;
+	p->srcBlend = 2;
+	p->dstBlend = 2;
+	p->b39 = 0;
+	p->transp = 1;
+	((byte *)&p->w3e)[1] = 0;
+	p->atrib = 0x800;
+	Render_SetMaterial(&g_CollideMat, 0);
+	if (g_ShowMapSolid) {
+		Render_SetMaterial(g_MatSuelo, 0);
+	}
+	CAlturas *alt = &self->alturas;
+	CCollideMesh_DrawDebug(&alt->CollideMesh1, 0);
+	CCollideMesh_DrawDebug(&alt->CollideMesh2, 0);
+	for (int s = 0; s < MAX_COLLIDE_SECTORS; s++) {
+		if (!g_ShowMapSolid || s <= 0 || Sector_Num() < s || Sector_IsVisible(s - 1)) {
+			CCollideMesh_DrawDebug(&alt->_CollideMesh1[s], 0);
+			CCollideMesh_DrawDebug(&alt->_CollideMesh2[s], 0);
+		}
+	}
+	CAlturas_SetParam(alt, 0);
+	for (int i = 0; i < alt->nCuads; i++) {
+		TABLA_CHECK(alt->cuads, i, alt->nCuads);
+		for (CCollideQuad *q = &alt->cuads[i]; q; q = q->next) {
+			CCollideMesh *mesh = q->Mesh;
+			if (mesh->MeshID && !mesh->Param) {
+				mesh->Param = 1;
+				CCollideMesh_DrawDebug(q->Mesh, 0);
+			}
+		}
+	}
+	Debug_DrawBox(&self->CollideExt.min, &self->CollideExt.max, 0xff00);
 }
