@@ -3292,7 +3292,7 @@ rva	size	source	callconv	name	signature
 0011dcf0	768	USER_DEFINED	__cdecl	Cloud_Fire	void __cdecl(void * params)
 0011dff0	340	USER_DEFINED	__cdecl	Cloud_OnHit	void __cdecl(void * params)
 0011e150	251	USER_DEFINED	__cdecl	Devastator_Start	void __cdecl(void * v)
-0011e250	6652	DEFAULT	unknown	FUN_0051e250	
+0011e250	6652	USER_DEFINED	__cdecl	Devastator_Create	void __cdecl(void * params)
 0011fc50	727	USER_DEFINED	__cdecl	Devastator_FX	void __cdecl(void * params)
 0011ff30	1145	USER_DEFINED	__cdecl	Devastator_Fire	void __cdecl(void * params)
 001203b0	192	USER_DEFINED	__cdecl	Devastator_Press	void __cdecl(void * params)
@@ -8128,7 +8128,7 @@ rva	size	source	callconv	name	signature
 0028e650	17	USER_DEFINED	__cdecl	BspTri_CmpId	int __cdecl(void * a, void * b)
 0028e670	300	USER_DEFINED	__cdecl	Bsp_FormFactor	float __cdecl(void * pa, void * na, void * pb, void * nb, float area)
 0028e7a0	818	USER_DEFINED	__fastcall	CBsp_GuardarIni	void __fastcall(void * self)
-0028eae0	1135	DEFAULT	unknown	FUN_0068eae0	
+0028eae0	1135	USER_DEFINED	__fastcall	CBsp_GuardarEMI	int __fastcall(void * self)
 0028ef50	142	USER_DEFINED	__cdecl	BspLMap_Guardar	void __cdecl(char * copia, void * bmp, char * ruta, int n, char * ext)
 0028efe0	1831	USER_DEFINED	__fastcall	CBsp_Preparar	void __fastcall(void * self)
 0028f710	1441	USER_DEFINED	__fastcall	CBsp_InitD3D	void __fastcall(void * self)
@@ -8157,8 +8157,8 @@ rva	size	source	callconv	name	signature
 002916e0	500	USER_DEFINED	__fastcall	CBsp_AreasGlow	void __fastcall(void * self)
 002918e0	721	USER_DEFINED	__fastcall	CBsp_AreasMax	void __fastcall(void * self)
 00291bd0	1154	USER_DEFINED	__thiscall	BspRegion_Enlazar	int __thiscall(void * a, void * b, int enlace, float umbral)
-00292060	6782	DEFAULT	unknown	FUN_00692060	
-00293af0	7340	DEFAULT	unknown	FUN_00693af0	
+00292060	6782	USER_DEFINED	__fastcall	CBsp_RadGlobal	void __fastcall(void * self)
+00293af0	7340	USER_DEFINED	__fastcall	CBsp_RadAreas	void __fastcall(void * self)
 002957a0	269	USER_DEFINED	__thiscall	CBsp_IlumRegiones	void __thiscall(int n)
 002958b0	1586	USER_DEFINED	__fastcall	CBsp_IniciarAreas	void __fastcall(void * self)
 00295ef0	907	USER_DEFINED	__fastcall	CBsp_IniciarRegiones	void __fastcall(void * self)
