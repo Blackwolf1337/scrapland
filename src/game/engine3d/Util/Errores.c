@@ -10,11 +10,11 @@
 #define ERR_FIRST_FREE 50
 #define ERR_CUSTOM -2	/* Err_Printf: no text of its own (g_ErrCustom) */
 
-#define g_ErrTable ((const char **)Game_Ptr(0x432618))
+#define g_ErrTable (GAME_ARRAY(const char *, g_ErrTable, 0x432618))
 #define g_ErrUnknown GAME_STR(str_432608, 0x432608)	/* "Unknown error" */
-#define g_ErrCustom ((const char *)Game_Ptr(0x4b25e4))
-#define g_ErrLastCode GAME_DATA(int, 0x4b25dc)
-#define g_ErrLastFatal GAME_DATA(int, 0x4b25e0)
+#define g_ErrCustom (GAME_ARRAY(const char, g_ErrCustom, 0x4b25e4))
+#define g_ErrLastCode GAME_GLOBAL(int, g_ErrLastCode, 0x4b25dc)
+#define g_ErrLastFatal GAME_GLOBAL(int, g_ErrLastFatal, 0x4b25e0)
 
 /* color 0xRRGGBB, the GDI wants 0xBBGGRR */
 static void Dbg_Rect(int x, int y, int w, int h, uint32_t color, rectbrush_t draw) {

@@ -85,17 +85,17 @@ typedef struct CUnifont {
 } CUnifont;
 SD_SIZE(CUnifont, 0x10);
 
-#define g_Unifont (*(CUnifont *)Game_Ptr(0x4d6de0))
-#define g_FontsDir GAME_DATA(const char *, 0x431b50)	/* "2d/fonts-drm/" */
-#define g_FntComic14 GAME_DATA(CFuente3 *, 0x4d6dc8)
-#define g_FntTerm8 GAME_DATA(CFuente3 *, 0x4d6dcc)
+#define g_Unifont (GAME_GLOBAL(CUnifont, g_Unifont, 0x4d6de0))
+#define g_FontsDir GAME_GLOBAL(const char *, g_FontsDir, 0x431b50)	/* "2d/fonts-drm/" */
+#define g_FntComic14 GAME_GLOBAL(CFuente3 *, g_FntComic14, 0x4d6dc8)
+#define g_FntTerm8 GAME_GLOBAL(CFuente3 *, g_FntTerm8, 0x4d6dcc)
 /* the materials of the outline of CFuente3_PrintContorno (the font and the unicode font), made again after each start
  * of the device (g_MotorInits) or for another texture */
-#define g_FntMatContorno GAME_DATA(CMaterial *, 0x4d6dd0)
-#define g_FntMatContornoInit GAME_DATA(int, 0x4d6dd4)
-#define g_FntMatContornoUni GAME_DATA(CMaterial *, 0x4d6dd8)
-#define g_FntMatContornoUniInit GAME_DATA(int, 0x4d6ddc)
-#define g_MotorInits GAME_DATA(int, 0x4a8f74)	/* the starts of the device objects of the engine */
+#define g_FntMatContorno GAME_GLOBAL(CMaterial *, g_FntMatContorno, 0x4d6dd0)
+#define g_FntMatContornoInit GAME_GLOBAL(int, g_FntMatContornoInit, 0x4d6dd4)
+#define g_FntMatContornoUni GAME_GLOBAL(CMaterial *, g_FntMatContornoUni, 0x4d6dd8)
+#define g_FntMatContornoUniInit GAME_GLOBAL(int, g_FntMatContornoUniInit, 0x4d6ddc)
+#define g_MotorInits GAME_GLOBAL(int, g_MotorInits, 0x4a8f74)	/* the starts of the device objects of the engine */
 
 CFuenteGrid *__thiscall CFuenteGrid_ctor(CFuenteGrid *self, const char *tex, const char *opac, byte pri, byte ult,
 	int celdaAncho, int celdaAlto, float espacio);

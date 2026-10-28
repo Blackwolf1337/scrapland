@@ -155,14 +155,14 @@ void __thiscall Controls_RumbleB(byte *self, float strength, float time) {
 /* ---- the items a ship takes (native functions "TakeEner", "TakeLife", "TakeMiss", "TakePart") ---- */
 
 /* the engine variables of the items: the ammo or life they add and the time until they come back */
-#define g_ItemEnerAdds GAME_DATA(int, 0x447b04)
-#define g_ItemEnerRespawnTime GAME_DATA(float, 0x447a60)
-#define g_ItemLifeAdds GAME_DATA(int, 0x447b5c)
-#define g_ItemLifeRespawnTime GAME_DATA(float, 0x447aa0)
-#define g_ItemMissAdds GAME_DATA(int, 0x447a78)
-#define g_ItemMissRespawnTime GAME_DATA(float, 0x447b1c)
-#define g_ItemPartAdds GAME_DATA(int, 0x447b44)
-#define g_ItemPartRespawnTime GAME_DATA(float, 0x447ac8)
+#define g_ItemEnerAdds GAME_GLOBAL_IN(int, GVar_ItemEnerAdds, 16, 0x447b04)
+#define g_ItemEnerRespawnTime GAME_GLOBAL_IN(float, GVar_ItemEnerRespawnTime, 16, 0x447a60)
+#define g_ItemLifeAdds GAME_GLOBAL_IN(int, GVar_ItemLifeAdds, 16, 0x447b5c)
+#define g_ItemLifeRespawnTime GAME_GLOBAL_IN(float, GVar_ItemLifeRespawnTime, 16, 0x447aa0)
+#define g_ItemMissAdds GAME_GLOBAL_IN(int, GVar_ItemMissAdds, 16, 0x447a78)
+#define g_ItemMissRespawnTime GAME_GLOBAL_IN(float, GVar_ItemMissRespawnTime, 16, 0x447b1c)
+#define g_ItemPartAdds GAME_GLOBAL_IN(int, GVar_ItemPartAdds, 16, 0x447b44)
+#define g_ItemPartRespawnTime GAME_GLOBAL_IN(float, GVar_ItemPartRespawnTime, 16, 0x447ac8)
 
 /* the arguments: the item and the ship that took it; the ship or NULL when it is no "Car" */
 static cEntity *Ctl_TakeArgs(cAbstractFile *f, char *item, char *name) {
@@ -489,13 +489,13 @@ byte __fastcall cVehicleO648_IsStale(void *o) {
 
 /* ---- the controls of a player ship from the input actions (rva 0xffcc0) ---- */
 
-#define g_VehicleBlockSwitchAdvance GAME_DATA(int, 0x447bd4)
-#define g_VehicleCenterPadBounce GAME_DATA(float, 0x447c04)
-#define g_VehicleAttackModeMinDist GAME_DATA(float, 0x447bbc)
-#define g_VehicleAttackModeMaxDist GAME_DATA(float, 0x447c34)
-#define g_TimeWSwitchNo GAME_DATA(float, 0x447bec)
-#define g_XtrTimeWSwitchNo GAME_DATA(float, 0x447c1c)
-#define g_AttackerMarkTime GAME_DATA(float, 0x447b8c)
+#define g_VehicleBlockSwitchAdvance GAME_GLOBAL_IN(int, GVar_VehicleBlockSwitchAdvance, 16, 0x447bd4)
+#define g_VehicleCenterPadBounce GAME_GLOBAL_IN(float, GVar_VehicleCenterPadBounce, 16, 0x447c04)
+#define g_VehicleAttackModeMinDist GAME_GLOBAL_IN(float, GVar_VehicleAttackModeMinDist, 16, 0x447bbc)
+#define g_VehicleAttackModeMaxDist GAME_GLOBAL_IN(float, GVar_VehicleAttackModeMaxDist, 16, 0x447c34)
+#define g_TimeWSwitchNo GAME_GLOBAL_IN(float, GVar_TimeWSwitchNo, 16, 0x447bec)
+#define g_XtrTimeWSwitchNo GAME_GLOBAL_IN(float, GVar_XtrTimeWSwitchNo, 16, 0x447c1c)
+#define g_AttackerMarkTime GAME_GLOBAL_IN(float, GVar_AttackerMarkTime, 16, 0x447b8c)
 
 /* the actions of the vehicle action set */
 #define CTL_LOOK_UP 2

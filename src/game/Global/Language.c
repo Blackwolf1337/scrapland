@@ -21,11 +21,11 @@ typedef struct cLangItem {
 } cLangItem;
 SD_SIZE(cLangItem, 0x10);
 
-#define g_LangTable (&GAME_DATA(HashTable, 0x428a20))	/* 457 slots, case-insensitive */
-#define g_LangName ((cString *)Game_Ptr(0x44b618))		/* the language asked for */
-#define g_LangDefault GAME_DATA(const char *, 0x44b61c)	/* the language when that file is missing */
-#define g_LangBuffer GAME_DATA(char *, 0x44b620)
-#define g_IdLang GAME_DATA(char *, 0x44b624)		/* the language loaded */
+#define g_LangTable (&GAME_GLOBAL(HashTable, g_LangTable, 0x428a20))	/* 457 slots, case-insensitive */
+#define g_LangName (GAME_ARRAY_IN(cString, GVar_SelectedLanguage, 16, 0x44b618))		/* the language asked for */
+#define g_LangDefault GAME_GLOBAL_IN(const char *, GVar_SelectedLanguage, 20, 0x44b61c)	/* the language when that file is missing */
+#define g_LangBuffer GAME_GLOBAL(char *, g_LangBuffer, 0x44b620)
+#define g_IdLang GAME_GLOBAL(char *, g_IdLang, 0x44b624)		/* the language loaded */
 
 cLangItem *__thiscall LangTable_Find(HashTable *self, const char *key, uint32_t slot) {
 	for (cLangItem *it = (cLangItem *)self->slots[slot]; it; it = it->next) {

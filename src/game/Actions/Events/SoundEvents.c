@@ -13,8 +13,8 @@
 #define EVENT_STR 0x80
 
 /* the engine variables WarnVoiceVolume and MaxPoliceWarnDist (Sound/PosSound.cpp) */
-#define g_WarnVoiceVolume GAME_DATA(float, 0x466b30)
-#define g_MaxPoliceWarnDist GAME_DATA(float, 0x466a70)
+#define g_WarnVoiceVolume GAME_GLOBAL_IN(float, GVar_WarnVoiceVolume, 16, 0x466b30)
+#define g_MaxPoliceWarnDist GAME_GLOBAL_IN(float, GVar_MaxPoliceWarnDist, 16, 0x466a70)
 
 /* the entity name, the value string and the time of the event */
 static void Event_Read(cAbstractFile *params, char *name, char *str, float *t) {

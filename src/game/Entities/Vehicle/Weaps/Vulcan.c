@@ -10,7 +10,7 @@
 #define VULCAN_UPG_WIDE 2
 #define VULCAN_SND_SHOT 5		/* the shot sounds 5..7 of the ship */
 
-#define g_VulcanRamps ((uint32_t (*)[9])Game_Ptr(0x428928))	/* the color ramps of the hit particles */
+#define g_VulcanRamps (GAME_ARRAY(uint32_t[9], g_VulcanRamps, 0x428928))	/* the color ramps of the hit particles */
 
 /* a random float of the effects: rand() in [0, 1] times mul plus add, in double */
 static inline float Vul_Rand(double mul, double add) {

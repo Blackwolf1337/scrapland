@@ -14,7 +14,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
 
-#define g_MaxDistReposAI GAME_DATA(float, 0x444858)
+#define g_MaxDistReposAI GAME_GLOBAL_IN(float, GVar_MaxDistReposAI, 16, 0x444858)
 
 cExtPolice *__fastcall cExtPolice_ctor(cExtPolice *self) {
 	self->list = NULL;

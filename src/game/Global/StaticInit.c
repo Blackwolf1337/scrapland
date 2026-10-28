@@ -35,13 +35,17 @@
 #include "scrap/tabla.h"
 #include "scrap/varios.h"
 
-#define SI_GVAR(rva) ((cGVar *)Game_Ptr(rva))
+/* the objects of the data at the rvas of the lines: in ScrapC.exe the C objects of src/game/Global/Globals*.c through
+ * GlobalsAt.h (GAME_PTR_AT), in the hook DLL the exe's own */
+#define SI_OBJ(rva) GAME_PTR_AT(rva)
+#define SI_GVAR(rva) ((cGVar *)SI_OBJ(rva))
 #ifdef SD_STANDALONE
+#include "GlobalsAt.h"
 #include "StringsAt.h"
 #endif
 
 #define SI_STR(rva) GAME_STR_AT(rva)
-#define SI_FLOAT(rva) GAME_DATA(float, rva)
+#define SI_FLOAT(rva) (*(float *)SI_OBJ(rva))
 
 /* ---- engine variables (cGVar): name, flags, description and the value ---- */
 
@@ -91,7 +95,7 @@
 
 #define INIT_NATIVE_FUNC(rva, fn, obj, name, func) \
 	void fn(void) { \
-		cPy_NativeFunc_ctor(Game_Ptr(obj), SI_STR(name), (nativefunc_t)Game_Ptr(func)); \
+		cPy_NativeFunc_ctor(SI_OBJ(obj), SI_STR(name), (nativefunc_t)Game_Ptr(func)); \
 	}
 
 /* ---- objects with a constructor of the C ---- */
@@ -105,23 +109,23 @@
 #define INIT_OBJECT(rva, fn, fini, obj, ctor) \
 	void fini(void); \
 	void fn(void) { \
-		ctor(Game_Ptr(obj)); \
+		ctor(SI_OBJ(obj)); \
 		crt_atexit(fini); \
 	}
 #define INIT_OBJECT_ARGS(rva, fn, fini, obj, ctor, ...) \
 	void fini(void); \
 	void fn(void) { \
-		ctor(Game_Ptr(obj), __VA_ARGS__); \
+		ctor(SI_OBJ(obj), __VA_ARGS__); \
 		crt_atexit(fini); \
 	}
 /* without destructor */
 #define INIT_CALL(rva, fn, obj, ctor) \
 	void fn(void) { \
-		ctor(Game_Ptr(obj)); \
+		ctor(SI_OBJ(obj)); \
 	}
 #define INIT_CALL_ARGS(rva, fn, obj, ctor, ...) \
 	void fn(void) { \
-		ctor(Game_Ptr(obj), __VA_ARGS__); \
+		ctor(SI_OBJ(obj), __VA_ARGS__); \
 	}
 #define INIT_JUMP(rva, fn, func) \
 	void fn(void) { \
@@ -131,19 +135,19 @@
 #define INIT_VECTOR(rva, fn, fini, obj, size, count, ctor, dtor) \
 	void fini(void); \
 	void fn(void) { \
-		crt_eh_vector_ctor(Game_Ptr(obj), size, count, (void *)ctor, (void *)dtor); \
+		crt_eh_vector_ctor(SI_OBJ(obj), size, count, (void *)ctor, (void *)dtor); \
 		crt_atexit(fini); \
 	}
 /* an array, the constructor in a loop of the initializer */
 #define INIT_ARRAY(rva, fn, obj, size, count, ctor) \
 	void fn(void) { \
 		for (int i = 0; i < (count); i++) { \
-			ctor((void *)((byte *)Game_Ptr(obj) + i * (size))); \
+			ctor((void *)((byte *)SI_OBJ(obj) + i * (size))); \
 		} \
 	}
 #define INIT_VECTOR3(rva, fn, obj, vx, vy, vz) \
 	void fn(void) { \
-		vec3_t *v = Game_Ptr(obj); \
+		vec3_t *v = SI_OBJ(obj); \
 		v->x = vx; \
 		v->y = vy; \
 		v->z = vz; \
@@ -152,7 +156,7 @@
 #define INIT_HASHTABLE(rva, fn, fini, table, count, size, clear, lock, cs) \
 	void fini(void); \
 	void fn(void) { \
-		HashTable *t = Game_Ptr(table); \
+		HashTable *t = SI_OBJ(table); \
 		t->slots = New_Array(count, size); \
 		memset(t->slots, 0, clear); \
 		t->locked = lock; \
@@ -164,26 +168,26 @@
 
 #define FINI_CALL(rva, fn, obj, dtor) \
 	void fn(void) { \
-		dtor(Game_Ptr(obj)); \
+		dtor(SI_OBJ(obj)); \
 	}
 #define FINI_CALL2(rva, fn, obj1, dtor1, obj2, dtor2) \
 	void fn(void) { \
-		dtor1(Game_Ptr(obj1)); \
-		dtor2(Game_Ptr(obj2)); \
+		dtor1(SI_OBJ(obj1)); \
+		dtor2(SI_OBJ(obj2)); \
 	}
 #define FINI_VECTOR(rva, fn, obj, size, count, dtor) \
 	void fn(void) { \
-		crt_eh_vector_dtor(Game_Ptr(obj), size, count, (void *)dtor); \
+		crt_eh_vector_dtor(SI_OBJ(obj), size, count, (void *)dtor); \
 	}
 /* a DList: its nodes by its own function, then the free list */
 #define FINI_DLIST(rva, fn, obj, clear, size) \
 	void fn(void) { \
-		clear(Game_Ptr(obj)); \
-		DList_FreePool(Game_Ptr(obj), size); \
+		clear(SI_OBJ(obj)); \
+		DList_FreePool(SI_OBJ(obj), size); \
 	}
 #define FINI_TABLA(rva, fn, obj) \
 	void fn(void) { \
-		Tabla_Free(Game_Ptr(obj)); \
+		Tabla_Free(SI_OBJ(obj)); \
 	}
 
 #include "StaticInit.inc"

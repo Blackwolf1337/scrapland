@@ -27,11 +27,11 @@ typedef uint32_t(__stdcall *xinputGetState_t)(uint32_t user, void *state);
 #define exe_XInputGetState GAME_DATA(xinputGetState_t, 0x3a14bc)
 
 /* the GUIDs of the exe */
-#define CLSID_AMMultiMediaStream Game_Ptr(0x3f7b80)
-#define IID_IAMMultiMediaStream Game_Ptr(0x3f7c00)
-#define IID_IDirectDrawMediaStream Game_Ptr(0x3f7b30)
-#define MSPID_PrimaryVideo Game_Ptr(0x3f5ee0)
-#define MSPID_PrimaryAudio Game_Ptr(0x3f5ed0)
+#define CLSID_AMMultiMediaStream GAME_PTR(CLSID_AMMultiMediaStream, 0, 0x3f7b80)
+#define IID_IAMMultiMediaStream GAME_PTR(IID_IAMMultiMediaStream, 0, 0x3f7c00)
+#define IID_IDirectDrawMediaStream GAME_PTR(IID_IDirectDrawMediaStream, 0, 0x3f7b30)
+#define MSPID_PrimaryVideo GAME_PTR(MSPID_PrimaryVideo, 0, 0x3f5ee0)
+#define MSPID_PrimaryAudio GAME_PTR(MSPID_PrimaryAudio, 0, 0x3f5ed0)
 
 /* COM methods by their vtable offset (IAMMultiMediaStream, IMediaStream, IDirectDrawMediaStream,
  * IDirectDrawStreamSample, IDirectDraw, IDirectDrawSurface) */
@@ -99,8 +99,8 @@ typedef struct VideoDDSD {
 } VideoDDSD;
 SD_SIZE(VideoDDSD, 0x6c);
 
-#define g_VideoPadHeld GAME_DATA(int, 0x4b2af4)
-#define g_VideoMirror GAME_DATA(uint32_t, 0x4b2aec)	/* 1: up-down, 2: left-right */
+#define g_VideoPadHeld GAME_GLOBAL(int, g_VideoPadHeld, 0x4b2af4)
+#define g_VideoMirror GAME_GLOBAL_IN(uint32_t, GVar_PlayVideoFX, 16, 0x4b2aec)	/* 1: up-down, 2: left-right */
 
 byte Video_PadPressed(void) {
 	uint32_t state[4] = { 0, 0, 0, 0 };

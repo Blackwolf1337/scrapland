@@ -40,17 +40,17 @@ typedef struct CColisTri {
 SD_SIZE(CColisTri, 0x44);
 
 /* the engine variables of the collisions (Gvars) */
-#define g_CollisionSchk GAME_DATA(int, 0x4a810c)	/* c_schk: a sphere that does not move is a check */
-#define g_CollisionCaps GAME_DATA(int, 0x4a81cc)	/* c_caps: a vertical test is one sweep */
-#define g_CollisionIter GAME_DATA(int, 0x4a8154)	/* c_iter: from 2 the test steps do not sweep */
-#define g_CollisionHold GAME_DATA(int, 0x4a81e4)	/* c_hold: the tests keep the sphere at its start */
-#define g_CollisionSld2 GAME_DATA(int, 0x4a816c)	/* c_sld2: the iterations of a slide 2D step */
-#define g_CollisionSldi GAME_DATA(int, 0x4a8184)	/* c_sldi: the iterations of a slide step */
-#define g_CollisionScts GAME_DATA(int, 0x4a819c)	/* c_scts: the check sweeps (else contact) */
-#define g_CollisionSbox GAME_DATA(int, 0x4a813c)	/* c_sbox: the box cache */
-#define g_CollisionSboxShow GAME_DATA(int, 0x4a81b4)	/* c_sboxshow: debug points of the box cache */
-#define g_CollisionSboxMult GAME_DATA(float, 0x4a8124)	/* c_sboxmult: the box reaches this many moves ahead */
-#define g_LastCollisionEpsilon GAME_DATA(float, 0x4a81ec)
+#define g_CollisionSchk GAME_GLOBAL_IN(int, GVar_c_schk, 16, 0x4a810c)	/* c_schk: a sphere that does not move is a check */
+#define g_CollisionCaps GAME_GLOBAL_IN(int, GVar_c_caps, 16, 0x4a81cc)	/* c_caps: a vertical test is one sweep */
+#define g_CollisionIter GAME_GLOBAL_IN(int, GVar_c_iter, 16, 0x4a8154)	/* c_iter: from 2 the test steps do not sweep */
+#define g_CollisionHold GAME_GLOBAL_IN(int, GVar_c_hold, 16, 0x4a81e4)	/* c_hold: the tests keep the sphere at its start */
+#define g_CollisionSld2 GAME_GLOBAL_IN(int, GVar_c_sld2, 16, 0x4a816c)	/* c_sld2: the iterations of a slide 2D step */
+#define g_CollisionSldi GAME_GLOBAL_IN(int, GVar_c_sldi, 16, 0x4a8184)	/* c_sldi: the iterations of a slide step */
+#define g_CollisionScts GAME_GLOBAL_IN(int, GVar_c_scts, 16, 0x4a819c)	/* c_scts: the check sweeps (else contact) */
+#define g_CollisionSbox GAME_GLOBAL_IN(int, GVar_c_sbox, 16, 0x4a813c)	/* c_sbox: the box cache */
+#define g_CollisionSboxShow GAME_GLOBAL_IN(int, GVar_c_sboxshow, 16, 0x4a81b4)	/* c_sboxshow: debug points of the box cache */
+#define g_CollisionSboxMult GAME_GLOBAL_IN(float, GVar_c_sboxmult, 16, 0x4a8124)	/* c_sboxmult: the box reaches this many moves ahead */
+#define g_LastCollisionEpsilon GAME_GLOBAL(float, g_LastCollisionEpsilon, 0x4a81ec)
 
 /* the collision epsilon divided by 8 for fine queries, with restore back */
 void CollisionEpsilon_Set(byte restore);

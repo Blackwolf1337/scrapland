@@ -372,15 +372,15 @@ def slots(rva):
 def restore(rva, saved):
 	for i in range(10):
 		SDTest.Call('Str_Copy', 'sisi', rva + 0x400000 + i * 0x104, saved[i], 0x104)
-paths = slots(0x4aa398)
-extens = slots(0x4aadc0)
+paths = slots(sym('g_RutasTexturas'))
+extens = slots(sym('g_ExtensTexturas'))
 call('Tex_ClearPaths', sym('Tex_ClearPaths'), 'v')
 call('Tex_ClearExtensions', sym('Tex_ClearExtensions'), 'v')
-check('Tex cleared', lambda: (slots(0x4aa398), slots(0x4aadc0)))
+check('Tex cleared', lambda: (slots(sym('g_RutasTexturas')), slots(sym('g_ExtensTexturas'))))
 for p in (None, '', 'sdnone/', 'models/elements/templeyakuzzi/'):
-	check('Tex_AddPath' + fmt((p,)), lambda p=p: (SDTest.Call('Tex_AddPath', 'vz', p), slots(0x4aa398)))
+	check('Tex_AddPath' + fmt((p,)), lambda p=p: (SDTest.Call('Tex_AddPath', 'vz', p), slots(sym('g_RutasTexturas'))))
 for e in (None, '', 'tga', 'a&b', '<U><D>sdx/<N>.dds', '<D>&<N>'):
-	check('Tex_AddExtension' + fmt((e,)), lambda e=e: (SDTest.Call('Tex_AddExtension', 'vz', e), slots(0x4aadc0)))
+	check('Tex_AddExtension' + fmt((e,)), lambda e=e: (SDTest.Call('Tex_AddExtension', 'vz', e), slots(sym('g_ExtensTexturas'))))
 for n in (img, 'aceite-r.bmp', 'templeyakuzzi/aceite-r.bmp', 'sdnone.bmp', 'x/2d/white.tga'):
 	call('Tex_FindInPaths', sym('Tex_FindInPaths'), 'isb', n, '')
 	for a in (0, 1):
@@ -421,9 +421,9 @@ if mkok:
 	mpoke(rp + 8, 0)
 SDTest.Call('CMapa_dtor', 'tvi', rp)
 mfree(rp)
-restore(0x4aa398, paths)
-restore(0x4aadc0, extens)
-check('Tex restored', lambda: (slots(0x4aa398) == paths, slots(0x4aadc0) == extens))
+restore(sym('g_RutasTexturas'), paths)
+restore(sym('g_ExtensTexturas'), extens)
+check('Tex restored', lambda: (slots(sym('g_RutasTexturas')) == paths, slots(sym('g_ExtensTexturas')) == extens))
 
 # the average color of map 0 as the diffuse color
 m6 = matnew('sdmat6')

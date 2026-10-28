@@ -332,7 +332,7 @@ void __fastcall CBsp_CrearBuffers(CBsp *self) {
 
 /* the direct light of the lights of g_BspLuces */
 
-#define g_LightmapLinealAtten GAME_DATA(int, 0x4d5d20)	/* gvar */
+#define g_LightmapLinealAtten GAME_GLOBAL_IN(int, GVar_LightmapLinealAtten, 16, 0x4d5d20)	/* gvar */
 
 /* the segment from c (moved back along the light direction d) to the light at dest blocked by the floor */
 static byte Bsp_Sombra(CSuelo *suelo, const vec3_t *c, const vec3_t *d, const vec3_t *dest, vec3_t *hit, int *cache) {
@@ -1376,8 +1376,8 @@ static void Bsp_TomarTriangulos(CEscena *esc, byte allow) {
 				CMallaTri_GetTriVert(malla, &vm[0], (uint32_t)i, 0);
 				CMallaTri_GetTriVert(malla, &vm[1], (uint32_t)i, pass ? 2 : 1);
 				CMallaTri_GetTriVert(malla, &vm[2], (uint32_t)i, pass ? 1 : 2);
-				if (Vec3_Equal(&vm[0].pos, &vm[1].pos) || Vec3_Equal(&vm[1].pos, &vm[2].pos) ||
-					Vec3_Equal(&vm[2].pos, &vm[0].pos)) {
+				if (Bsp_Vec3Equal(&vm[0].pos, &vm[1].pos) || Bsp_Vec3Equal(&vm[1].pos, &vm[2].pos) ||
+					Bsp_Vec3Equal(&vm[2].pos, &vm[0].pos)) {
 					E3D_LogBlue(g_FileLog, "Invalid triangle #%d in object: %s", i, n->name);
 					continue;
 				}

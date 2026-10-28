@@ -16,7 +16,7 @@ typedef struct BlendModeEntry {
 } BlendModeEntry;
 SD_SIZE(BlendModeEntry, 0xc);
 
-#define g_BlendModeTable ((const BlendModeEntry *)Game_Ptr(0x4329b0))
+#define g_BlendModeTable (GAME_ARRAY(const BlendModeEntry, g_BlendModeTable, 0x4329b0))
 
 uint32_t BlendMode_GetDst(uint32_t mode);
 uint32_t BlendMode_GetSrc(uint32_t mode);

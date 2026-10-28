@@ -101,7 +101,7 @@ def gbgm(m):
 			r = r + (gbgfl(m + o, strop.atoi(k[1:])),)
 	return r
 def gbghitnames():
-	return map(lambda i: gbgs(0x8476b8 + 0x80 * i), range(4))
+	return map(lambda i: gbgs(symva('g_MissileHits') + 0x80 * i), range(4))
 def gbgmhits(m):
 	return map(lambda i, m=m: gbgs(m + 0x5b4 + 0x80 * i), range(4))
 # the bees: position, angles, velocity, angle speed, speed
@@ -123,7 +123,7 @@ def gbgvars(m, n, s):
 	return r
 
 gbgsaved = gbgz(0x200)
-SDTest.Call('crt_memcpy', 'iiii', gbgsaved, 0x8476b8, 0x200)
+SDTest.Call('crt_memcpy', 'iiii', gbgsaved, symva('g_MissileHits'), 0x200)
 gbgdrop = gbgfl(symva('g_DebrisDrop'), 12)
 gbgatm = gbgfl(symva('g_AtmosphereLimit'), 1)[0]
 check('GBG atmosphere', lambda: gbgatm)
@@ -375,7 +375,7 @@ if gbgsw and gbgistype(gbgsw, 'Missile'):
 	gbgset(m + 0xd4, (0.0, 0.0, 0.0))
 	check('cWithLifeEntity_Vf48', lambda m=m: (SDTest.Call('cWithLifeEntity_Vf48', 'tvi', m), gbgm(m)))
 	check('GBG SDGbgSw Del', lambda: Scrap.GetEntity('SDGbgSw').Del())
-SDTest.Call('crt_memcpy', 'iiii', 0x8476b8, gbgsaved, 0x200)
+SDTest.Call('crt_memcpy', 'iiii', symva('g_MissileHits'), gbgsaved, 0x200)
 gbgfree(gbgsaved)
 gbgset(symva('g_DebrisDrop'), gbgdrop)
 check('GBG missile hits restored', lambda: gbghitnames())

@@ -15,11 +15,11 @@ typedef int(__stdcall *setcursorpos_t)(int x, int y);
 #define exe_GetCursorPos GAME_DATA(cursorpos_t, 0x3a1384)
 #define exe_SetCursorPos GAME_DATA(setcursorpos_t, 0x3a13b0)
 
-#define IID_IDirectInput8A Game_Ptr(0x3d116c)
-#define GUID_SysMouse Game_Ptr(0x3d100c)
-#define GUID_SysKeyboard Game_Ptr(0x3d0ffc)
-#define c_dfDIMouse Game_Ptr(0x3cfdf4)
-#define c_dfDIKeyboard Game_Ptr(0x3cfbec)
+#define IID_IDirectInput8A GAME_PTR(IID_IDIRECTINPUT8A, 0, 0x3d116c)
+#define GUID_SysMouse GAME_PTR(GUID_SYSMOUSE, 0, 0x3d100c)
+#define GUID_SysKeyboard GAME_PTR(GUID_SYSKEYBOARD, 0, 0x3d0ffc)
+#define c_dfDIMouse GAME_PTR(C_DFDIMOUSE, 0, 0x3cfdf4)
+#define c_dfDIKeyboard GAME_PTR(C_DFDIKEYBOARD, 0, 0x3cfbec)
 #define DIRECTINPUT_VERSION 0x800
 #define DISCL_EXCLUSIVE_FOREGROUND 5
 #define DISCL_NONEXCLUSIVE_FOREGROUND 6

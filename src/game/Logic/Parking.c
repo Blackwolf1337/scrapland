@@ -15,14 +15,14 @@
 #include "scrap/world.h"
 #include "scrap/weapons.h"
 
-#define g_ParkingCheckRadius GAME_DATA(float, 0x44d6d8)
-#define g_ParkingCharCheckDistance GAME_DATA(float, 0x44d738)
-#define g_ParkingVehiCheckDistance GAME_DATA(float, 0x44d750)
-#define g_OnParkedOut ((cPy_Function *)Game_Ptr(0x44d6f0))
-#define g_OnParkingOccupied ((cPy_Function *)Game_Ptr(0x44d714))
+#define g_ParkingCheckRadius GAME_GLOBAL_IN(float, GVar_ParkingCheckRadius, 16, 0x44d6d8)
+#define g_ParkingCharCheckDistance GAME_GLOBAL_IN(float, GVar_ParkingCharCheckDistance, 16, 0x44d738)
+#define g_ParkingVehiCheckDistance GAME_GLOBAL_IN(float, GVar_ParkingVehiCheckDistance, 16, 0x44d750)
+#define g_OnParkedOut (GAME_ARRAY_IN(cPy_Function, GVar_OnParkedOut, 16, 0x44d6f0))
+#define g_OnParkingOccupied (GAME_ARRAY_IN(cPy_Function, GVar_OnParkingOccupied, 16, 0x44d714))
 /* what the sphere native found: a ship, else the last other entity */
-#define g_ParkingShip GAME_DATA(cEntity *, 0x44d758)
-#define g_ParkingOther GAME_DATA(cEntity *, 0x44d75c)
+#define g_ParkingShip GAME_GLOBAL(cEntity *, g_ParkingShip, 0x44d758)
+#define g_ParkingOther GAME_GLOBAL(cEntity *, g_ParkingOther, 0x44d75c)
 #define PARKING_NATIVE 0x155ed0
 #define PARKING_FARTHER 0x155e90
 #define PARKING_NEARER 0x155eb0

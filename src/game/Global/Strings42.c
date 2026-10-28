@@ -9,7 +9,6 @@
 
 #ifdef SD_STANDALONE
 
-const char str_424aac[] SD_AT(0x424aac) = "@";
 char str_PyDoc_SAct_CreateClass[] SD_AT(0x428fe8) = "CreateClass(classname) : Crea una clase de objeto animado";
 char str_PyDoc_SAct_DelClass[] SD_AT(0x429024) = "DelClass(classname) : Crea una clase de objeto animado";
 char str_PyDoc_SAct_GetClass[] SD_AT(0x42905c) = "GetClass(classname) : Activa una clase de objeto animado";

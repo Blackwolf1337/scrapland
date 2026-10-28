@@ -23,11 +23,11 @@
 #define OBJ_SLOT_JUMP2 9000000.0f		/* rva 0x3b38f8: a jump of more than 3000 since the slot */
 
 /* the smoothing of the position of a network client: no smoothing nearer than min or farther than max */
-#define g_NetSmoothMin GAME_DATA(float, 0x4479f0)
-#define g_NetSmoothMax GAME_DATA(float, 0x4479d8)
-#define g_NetSmoothFactor GAME_DATA(float, 0x447a38)
+#define g_NetSmoothMin GAME_GLOBAL_IN(float, GVar_ErrorMin, 16, 0x4479f0)
+#define g_NetSmoothMax GAME_GLOBAL_IN(float, GVar_ErrorMax, 16, 0x4479d8)
+#define g_NetSmoothFactor GAME_GLOBAL_IN(float, GVar_ErrorFix, 16, 0x447a38)
 /* the origin of the packed positions of the network messages (32 units a step) */
-#define g_NetOrigin GAME_DATA(vec3_t, 0x463ef4)
+#define g_NetOrigin GAME_GLOBAL(vec3_t, g_NetOrigin, 0x463ef4)
 
 #define NET_POS_STEP 32.0f			/* rva 0x3b1f74 */
 #define NET_ANG_SHORT 10185.916357881302	/* rva 0x3b38d8, 32000 / pi */

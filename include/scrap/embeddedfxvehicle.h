@@ -119,21 +119,21 @@ SD_SIZE(cEmbeddedFXVehicleVote, 0x2e0);
 #define Vehicle_FollowName(e) ((char *)((byte *)(e) + 0x650))	/* the car of a player */
 
 /* the shared siren model and particles */
-#define g_SirenModel ((CGameModel *)Game_Ptr(0x447478))
-#define g_SirenRefs GAME_DATA(int, 0x44750c)
-#define g_SirenParticles ((CGameParticles *)Game_Ptr(0x447510))
+#define g_SirenModel (GAME_ARRAY(CGameModel, g_SirenModel, 0x447478))
+#define g_SirenRefs GAME_GLOBAL(int, g_SirenRefs, 0x44750c)
+#define g_SirenParticles (GAME_ARRAY(CGameParticles, g_SirenParticles, 0x447510))
 
 /* engine variables */
-#define g_FXVehicleEmbeddedFile GAME_DATA(const char *, 0x4474a4)	/* the string of the cString */
-#define g_FXTrafficEmbeddedFile GAME_DATA(const char *, 0x4474ec)
-#define g_FXVehicleSirenDistGrow GAME_DATA(float, 0x447470)
-#define g_FXVehicleSirenSizeMin GAME_DATA(float, 0x4474d4)
-#define g_FXVehicleSirenSizeMax GAME_DATA(float, 0x4475d0)
-#define g_FXVehicleProbeLightDistGrow GAME_DATA(float, 0x4475e8)
-#define g_FXVehicleProbeLightSizeMin GAME_DATA(float, 0x4474bc)
-#define g_FXVehicleProbeLightSizeMax GAME_DATA(float, 0x447504)
-#define g_MinDistReposAI GAME_DATA(float, 0x444900)
-#define g_MaxDistReposAI GAME_DATA(float, 0x444858)
+#define g_FXVehicleEmbeddedFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleEmbeddedFile, 16, 0x4474a4)	/* the string of the cString */
+#define g_FXTrafficEmbeddedFile GAME_GLOBAL_IN(const char *, GVar_FXTrafficEmbeddedFile, 16, 0x4474ec)
+#define g_FXVehicleSirenDistGrow GAME_GLOBAL_IN(float, GVar_FXVehicleSiren_DistGrow, 16, 0x447470)
+#define g_FXVehicleSirenSizeMin GAME_GLOBAL_IN(float, GVar_FXVehicleSiren_SizeMin, 16, 0x4474d4)
+#define g_FXVehicleSirenSizeMax GAME_GLOBAL_IN(float, GVar_FXVehicleSiren_SizeMax, 16, 0x4475d0)
+#define g_FXVehicleProbeLightDistGrow GAME_GLOBAL_IN(float, GVar_FXVehicleProbeLight_DistGrow, 16, 0x4475e8)
+#define g_FXVehicleProbeLightSizeMin GAME_GLOBAL_IN(float, GVar_FXVehicleProbeLight_SizeMin, 16, 0x4474bc)
+#define g_FXVehicleProbeLightSizeMax GAME_GLOBAL_IN(float, GVar_FXVehicleProbeLight_SizeMax, 16, 0x447504)
+#define g_MinDistReposAI GAME_GLOBAL_IN(float, GVar_MinDistReposAI, 16, 0x444900)
+#define g_MaxDistReposAI GAME_GLOBAL_IN(float, GVar_MaxDistReposAI, 16, 0x444858)
 
 /* World/FX/FXVehicle.cpp (rva 0x1f9050): an element drawn with the followed vehicle */
 void __fastcall FXVehicle_RenderAttached(void *element);

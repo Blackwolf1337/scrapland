@@ -1170,9 +1170,9 @@ void __thiscall cObjElementFXGearMissile_Run(void *self, cDebris *d) {
 
 /* ---- cObjElementFXGearMissile_Update ---- */
 
-#define g_GearMissileThunder1Sound GAME_DATA(const char *, 0x4468ec)
-#define g_GearMissileThunder2Sound GAME_DATA(const char *, 0x4468d4)
-#define g_GearMissileThunderSoundVol GAME_DATA(float, 0x446a0c)
+#define g_GearMissileThunder1Sound GAME_GLOBAL_IN(const char *, GVar_GearMissileThunder1Sound, 16, 0x4468ec)
+#define g_GearMissileThunder2Sound GAME_GLOBAL_IN(const char *, GVar_GearMissileThunder2Sound, 16, 0x4468d4)
+#define g_GearMissileThunderSoundVol GAME_GLOBAL_IN(float, GVar_GearMissileThunderSoundVol, 16, 0x446a0c)
 #define FXGEAR_RAMP_BALL 0x4306b0
 #define FXGEAR_RAMPS 0x4306d4		/* 3 color ramps of 9 colors */
 #define FXGEAR_RAMP_PUFF 0x4306f8

@@ -13,11 +13,11 @@
 #include "scrap/scrapmain.h"
 #include "scrap/weapons.h"
 
-#define GUID_SYSMOUSE ((const void *)Game_Ptr(0x3d100c))
-#define C_DFDIMOUSE ((const void *)Game_Ptr(0x3cfdf4))
+#define GUID_SYSMOUSE ((const void *)GAME_PTR(GUID_SYSMOUSE, 0, 0x3d100c))
+#define C_DFDIMOUSE ((const void *)GAME_PTR(C_DFDIMOUSE, 0, 0x3cfdf4))
 #define MOUSE_NAME GAME_STR(str_3bca74, 0x3bca74)	/* "Mouse" */
-#define g_MouseLabelBuf ((char *)Game_Ptr(0x44c904))	/* 0x20 bytes */
-#define g_MouseNameBuf ((char *)Game_Ptr(0x44c924))	/* 0x20 bytes */
+#define g_MouseLabelBuf (GAME_ARRAY(char, g_MouseLabelBuf, 0x44c904))	/* 0x20 bytes */
+#define g_MouseNameBuf (GAME_ARRAY(char, g_MouseNameBuf, 0x44c924))	/* 0x20 bytes */
 
 static const char *const mouse_names[6] = { "Right", "Left", "Down", "Up", "WheelUp", "WheelDown" };
 static const char *const mouse_labels[6] = { "PC_Mouse_Right", "PC_Mouse_Left", "PC_Mouse_Down", "PC_Mouse_Up",

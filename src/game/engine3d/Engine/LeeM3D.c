@@ -3323,8 +3323,8 @@ CEscena *Escena_Load(const char *name, int arg, const char *name2) {
 
 /* ---- the static initializers (rva 0x05f6e0, 0x05f720); name and description are the strings of the exe ---- */
 
-#define g_ShowNodesTreeVar ((cGVar *)Game_Ptr(0x4e1ee0))
-#define g_UseWSMVar ((cGVar *)Game_Ptr(0x4e1f70))
+#define g_ShowNodesTreeVar (GAME_ARRAY(cGVar, g_ShowNodesTreeVar, 0x4e1ee0))
+#define g_UseWSMVar (GAME_ARRAY(cGVar, g_UseWSMVar, 0x4e1f70))
 
 void LeeM3D_InitShowNodesTree(void) {
 	/* "ShowNodesTree", "Show nodes tree at model M3D loading time (0/1)" */

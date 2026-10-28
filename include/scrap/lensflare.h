@@ -44,11 +44,11 @@ typedef struct VertLensFlare {
 } VertLensFlare;
 SD_SIZE(VertLensFlare, 0x1c);
 
-#define g_LensFlareMat GAME_DATA(CMaterial *, 0x4db7c4)
-#define g_LensFlares GAME_DATA(int, 0x4db7d8)		/* the engine variable that draws them */
-#define g_LensFlareRender ((CLensFlare **)Game_Ptr(0x4db7e0))	/* MAX_LENSFLARE_RENDER */
-#define g_nLensFlareRender GAME_DATA(int, 0x4db800)
-#define g_LensFlareVerts ((VertLensFlare *)Game_Ptr(0x4db808))	/* 4 */
+#define g_LensFlareMat GAME_GLOBAL(CMaterial *, g_LensFlareMat, 0x4db7c4)
+#define g_LensFlares GAME_GLOBAL_IN(int, GVar_R_LensFlare, 16, 0x4db7d8)		/* the engine variable that draws them */
+#define g_LensFlareRender (GAME_ARRAY(CLensFlare *, g_LensFlareRender, 0x4db7e0))	/* MAX_LENSFLARE_RENDER */
+#define g_nLensFlareRender GAME_GLOBAL(int, g_nLensFlareRender, 0x4db800)
+#define g_LensFlareVerts (GAME_ARRAY(VertLensFlare, g_LensFlareVerts, 0x4db808))	/* 4 */
 
 CLensFlare *__fastcall CLensFlare_ctor(CLensFlare *self);
 void __fastcall CLensFlare_dtor(CLensFlare *self);

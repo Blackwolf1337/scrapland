@@ -29,17 +29,17 @@
 #define TRAFFIC_DAMAGE_NATIVE 0x15af10
 #define TRAFFIC_DEATH_NATIVE 0x15b160
 #define TRAFFIC_ONAIEND 0x15ae60
-#define g_MaxTrafficEnemy GAME_DATA(int, 0x44dbb0)
-#define g_OnNeedMoreTraffic ((cPy_Function *)Game_Ptr(0x44dbc8))
-#define g_MaxFightingTrafficSize GAME_DATA(float, 0x44dbec)
-#define g_OnPlayerHelpedPolice ((cPy_Function *)Game_Ptr(0x44dc1c))
-#define g_ProbTrafficFighting GAME_DATA(float, 0x44dc58)
-#define g_TrafficRemovalDist GAME_DATA(float, 0x44dc70)
-#define g_TrafficDamageTolerance GAME_DATA(int, 0x44dc88)
-#define g_MaxTrafficEnemyTime GAME_DATA(float, 0x44dca0)
-#define g_MinTrafficEnemyTime GAME_DATA(float, 0x44dcb8)
-#define g_OnNeedMoreChasingTraffic ((cPy_Function *)Game_Ptr(0x44dce8))
-#define g_iTrafficNumber GAME_DATA(int, 0x44dd0c)
+#define g_MaxTrafficEnemy GAME_GLOBAL_IN(int, GVar_MaxTrafficEnemy, 16, 0x44dbb0)
+#define g_OnNeedMoreTraffic (GAME_ARRAY_IN(cPy_Function, GVar_OnNeedMoreTraffic, 16, 0x44dbc8))
+#define g_MaxFightingTrafficSize GAME_GLOBAL_IN(float, GVar_MaxFightingTrafficSize, 16, 0x44dbec)
+#define g_OnPlayerHelpedPolice (GAME_ARRAY_IN(cPy_Function, GVar_OnPlayerHelpedPolice, 16, 0x44dc1c))
+#define g_ProbTrafficFighting GAME_GLOBAL_IN(float, GVar_ProbTrafficFighting, 16, 0x44dc58)
+#define g_TrafficRemovalDist GAME_GLOBAL_IN(float, GVar_TrafficRemovalDist, 16, 0x44dc70)
+#define g_TrafficDamageTolerance GAME_GLOBAL_IN(int, GVar_TrafficDamageTolerance, 16, 0x44dc88)
+#define g_MaxTrafficEnemyTime GAME_GLOBAL_IN(float, GVar_MaxTrafficEnemyTime, 16, 0x44dca0)
+#define g_MinTrafficEnemyTime GAME_GLOBAL_IN(float, GVar_MinTrafficEnemyTime, 16, 0x44dcb8)
+#define g_OnNeedMoreChasingTraffic (GAME_ARRAY_IN(cPy_Function, GVar_OnNeedMoreChasingTraffic, 16, 0x44dce8))
+#define g_iTrafficNumber GAME_GLOBAL_IN(int, GVar_iTrafficNumber, 16, 0x44dd0c)
 /* the callback of the AI when the move ends (rva 0x15c of the AI) */
 #define AIV_OnEnd(ai) (*(void **)((byte *)(ai) + 0x15c))
 

@@ -94,8 +94,8 @@ void __thiscall CPortal_Render(CPortal *self, void *dev, CNodoR *r) {
 }
 
 /* the material of the debug drawing, a static of CPortal_DrawDebug */
-#define g_PortalMat (*(CMaterial *)Game_Ptr(0x4e1e08))
-#define g_PortalMatGuard ((int *)Game_Ptr(0x4e1eb8))
+#define g_PortalMat (GAME_GLOBAL(CMaterial, g_PortalMat, 0x4e1e08))
+#define g_PortalMatGuard (GAME_ARRAY(int, g_PortalMatGuard, 0x4e1eb8))
 
 /* the atexit destructor of it (rva 0x38f010) */
 void Portal_FiniMat(void) {

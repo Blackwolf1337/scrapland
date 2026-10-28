@@ -1413,18 +1413,18 @@ byte Scorer_Render(void) {
 
 /* ---- the full screen console ---- */
 
-#define g_ConsoleOn GAME_DATA(byte, 0x4601fc)
-#define g_ConsoleCheckInput GAME_DATA(byte, 0x4601fd)	/* g_pWorld->checkInput while the console is open */
-#define g_ConsoleClosing GAME_DATA(byte, 0x4601fe)
-#define g_ConsoleBusy GAME_DATA(byte, 0x4601ff)
-#define g_ConsoleSavedKeyboard ((cVirtualKeyboard *)Game_Ptr(0x460200))
-#define g_ConsoleSavedSet GAME_DATA(uint32_t, 0x46030c)
-#define g_ConsoleSavedInput ((cPlayerInput *)Game_Ptr(0x460310))
-#define g_ConsoleWhite GAME_DATA(CPsaImage *, 0x4603c4)
-#define g_ConsoleHistory ((char **)Game_Ptr(0x4603c8))	/* cStrings: 0 the line typed, 1.. the commands */
+#define g_ConsoleOn GAME_GLOBAL_IN(byte, group_4601fc, 0, 0x4601fc)
+#define g_ConsoleCheckInput GAME_GLOBAL_IN(byte, group_4601fc, 1, 0x4601fd)	/* g_pWorld->checkInput while the console is open */
+#define g_ConsoleClosing GAME_GLOBAL_IN(byte, group_4601fc, 2, 0x4601fe)
+#define g_ConsoleBusy GAME_GLOBAL_IN(byte, group_4601fc, 3, 0x4601ff)
+#define g_ConsoleSavedKeyboard (GAME_ARRAY(cVirtualKeyboard, g_ConsoleSavedKeyboard, 0x460200))
+#define g_ConsoleSavedSet GAME_GLOBAL(uint32_t, g_ConsoleSavedSet, 0x46030c)
+#define g_ConsoleSavedInput (GAME_ARRAY(cPlayerInput, g_ConsoleSavedInput, 0x460310))
+#define g_ConsoleWhite GAME_GLOBAL(CPsaImage *, g_ConsoleWhite, 0x4603c4)
+#define g_ConsoleHistory (GAME_ARRAY(char *, g_ConsoleHistory, 0x4603c8))	/* cStrings: 0 the line typed, 1.. the commands */
 #define CONSOLE_HISTORY 16
-#define g_ConsoleTime GAME_DATA(float, 0x460420)		/* the game time of the open or the close */
-#define g_ConsoleHistoryPos GAME_DATA(int, 0x460424)
+#define g_ConsoleTime GAME_GLOBAL(float, g_ConsoleTime, 0x460420)		/* the game time of the open or the close */
+#define g_ConsoleHistoryPos GAME_GLOBAL(int, g_ConsoleHistoryPos, 0x460424)
 #define CONSOLE_KEYBOARD_SIZE 0x10c
 #define CONSOLE_ONINPUT 0x1741b0			/* Console_OnInput as the exe stores it */
 

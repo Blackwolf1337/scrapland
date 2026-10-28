@@ -492,7 +492,7 @@ if ivhCar and ivhCar2 and ivhGroup:
 		check('cAIVehicle_UpdateOff', lambda: (SDTest.Call('cAIVehicle_UpdateOff', 'tvif', ivhAI, 0.05), ivhState()))
 	ivhPoke(ivhAI + 0x19c, 0)
 	# CheckTarget without a target (only when OnObjectiveNullAI has no function: the callback runs level scripts)
-	if SDTest.Peek(0x4447dc, 'i') == 0:
+	if SDTest.Peek(sym('GVar_OnObjectiveNullAI') + 0x18, 'i') == 0:
 		check('cAIVehicle_CheckTarget', lambda: (SDTest.Call('cAIVehicle_CheckTarget', 'tbi', ivhAI)[0], ivhState()))
 		check('cAIVehicle_ThinkHook', lambda: (SDTest.Call('cAIVehicle_ThinkHook', 'tvi', ivhAI), ivhState(), ivhF(ivhAI + 0x330, 1)))
 

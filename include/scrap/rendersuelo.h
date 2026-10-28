@@ -18,9 +18,9 @@ typedef struct BatchMalla {
 } BatchMalla;
 SD_SIZE(BatchMalla, 0xc);
 
-#define g_BatchTab ((CTabla *)Game_Ptr(0x4e42e8))		/* BATCH_MAX BatchMalla, made on the first use */
-#define g_BatchOrden ((BatchMalla **)Game_Ptr(0x4e42f0))	/* [BATCH_MAX] */
-#define g_BatchUsados GAME_DATA(uint32_t, 0x4e4af0)
+#define g_BatchTab (GAME_ARRAY(CTabla, g_BatchTab, 0x4e42e8))		/* BATCH_MAX BatchMalla, made on the first use */
+#define g_BatchOrden (GAME_ARRAY(BatchMalla *, g_BatchOrden, 0x4e42f0))	/* [BATCH_MAX] */
+#define g_BatchUsados GAME_GLOBAL(uint32_t, g_BatchUsados, 0x4e4af0)
 
 /* the meshes of the list malla (up to the first without vertices); dev is only passed on */
 void Batch_AddMalla(void *malla, void *dev);

@@ -15,7 +15,7 @@
 
 #define EXE_EMPTY GAME_STR(str_Empty, 0x3a3228)		/* "" of the exe */
 #define DEV_NODE_SIZE sizeof(cInputDevNode)
-#define IID_IDIRECTINPUT8A ((const void *)Game_Ptr(0x3d116c))
+#define IID_IDIRECTINPUT8A ((const void *)GAME_PTR(IID_IDIRECTINPUT8A, 0, 0x3d116c))
 
 /* the scorer state the definition of a key switches to (rva 0x1710f0, Scorer/) */
 void Scorer_SetInputState(int state);

@@ -54,12 +54,12 @@ typedef struct Vert2D {
 SD_SIZE(Vert2D, 0x20);
 
 /* the 2D screen size and its inverses */
-#define g_Pantalla2DW GAME_DATA(int, 0x432598)
-#define g_Pantalla2DH GAME_DATA(int, 0x43259c)
-#define g_Pantalla2DInvW GAME_DATA(double, 0x4325a0)
-#define g_Pantalla2DInvH GAME_DATA(double, 0x4325a8)
-#define g_SpriteScaleWidth GAME_DATA(float, 0x4b1d0c)
-#define g_Verts2D ((Vert2D *)Game_Ptr(0x4b1d18))	/* MAX_VERT_2D, the polygon of the last draw */
+#define g_Pantalla2DW GAME_GLOBAL(int, g_Pantalla2DW, 0x432598)
+#define g_Pantalla2DH GAME_GLOBAL(int, g_Pantalla2DH, 0x43259c)
+#define g_Pantalla2DInvW GAME_GLOBAL(double, g_Pantalla2DInvW, 0x4325a0)
+#define g_Pantalla2DInvH GAME_GLOBAL(double, g_Pantalla2DInvH, 0x4325a8)
+#define g_SpriteScaleWidth GAME_GLOBAL_IN(float, GVar_SpriteScaleWidth, 16, 0x4b1d0c)
+#define g_Verts2D (GAME_ARRAY(Vert2D, g_Verts2D, 0x4b1d18))	/* MAX_VERT_2D, the polygon of the last draw */
 
 CGrafico2D *__thiscall CGrafico2D_ctorTex(CGrafico2D *self, const char *tex, const char *opac, uint32_t flags);
 CGrafico2D *__fastcall CGrafico2D_ctor(CGrafico2D *self);

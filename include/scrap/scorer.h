@@ -155,7 +155,7 @@ typedef struct cPyMenuEntity {
 } cPyMenuEntity;
 SD_SIZE(cPyMenuEntity, 0x10);
 
-#define cPyMenuEntity_Type GAME_DATA(PyTypeObject, 0x428f78)
+#define cPyMenuEntity_Type GAME_GLOBAL(PyTypeObject, cPyMenuEntity_Type, 0x428f78)
 
 /* the handle of a scorer item, NULL (no Python error) if there is no such item */
 PyObject *ScorerItem_PyNew(int player, const char *name);

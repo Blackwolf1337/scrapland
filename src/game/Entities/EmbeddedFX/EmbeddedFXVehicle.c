@@ -11,7 +11,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/world.h"
 
-#define g_RandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
+#define g_RandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_DTOR 0x21d1c0
 #define CGAMETRAIL_CTOR 0x21ddb0

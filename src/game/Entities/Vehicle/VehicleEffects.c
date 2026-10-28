@@ -518,7 +518,7 @@ void __thiscall cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
 /* ---- the parts before the range of the file: constructors, destructor, Update and the escape tubes ---- */
 
 #define VEFF_TUBE_STEP 0.025f			/* between two emissions */
-#define g_VehicleSmokeRamps ((uint32_t *)Game_Ptr(0x428670))	/* 3 color ramps of 9 colors */
+#define g_VehicleSmokeRamps (GAME_ARRAY(uint32_t, g_VehicleSmokeRamps, 0x428670))	/* 3 color ramps of 9 colors */
 
 cVehicleEffects *__fastcall cVehicleEffects_ctor(cVehicleEffects *self) {
 	self->owner = NULL;
@@ -707,7 +707,7 @@ void __thiscall cVehicleTubes_Update(cVehicleTubes *self, float dt) {
 
 /* ---- the wind smoke ---- */
 
-#define g_WindSmokeRamps ((uint32_t *)Game_Ptr(0x428798))	/* 2 color ramps of 9 colors */
+#define g_WindSmokeRamps (GAME_ARRAY(uint32_t, g_WindSmokeRamps, 0x428798))	/* 2 color ramps of 9 colors */
 
 /* rand / 32767 * range + add with a float range, as the original */
 static inline float VE_RandAddF(float range, float add) {
@@ -829,15 +829,15 @@ void __thiscall cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float 
 /* ---- the shoot effects (rva 0x103500): the particles of m_FollowSistPart2 of the embedded FX at the weapon ---- */
 
 /* the color ramps of the shots (9 colors each) */
-#define VS_RAMP_FIRE ((uint32_t *)Game_Ptr(0x428704))	/* 2 ramps */
-#define VS_RAMP_FIRE2 ((uint32_t *)Game_Ptr(0x428728))
-#define VS_RAMP_SMOKE ((uint32_t *)Game_Ptr(0x4286e0))
-#define VS_RAMP_ATPC ((uint32_t *)Game_Ptr(0x42874c))
+#define VS_RAMP_FIRE (GAME_ARRAY(uint32_t, VS_RAMP_FIRE, 0x428704))	/* 2 ramps */
+#define VS_RAMP_FIRE2 (GAME_ARRAY(uint32_t, VS_RAMP_FIRE2, 0x428728))
+#define VS_RAMP_SMOKE (GAME_ARRAY(uint32_t, VS_RAMP_SMOKE, 0x4286e0))
+#define VS_RAMP_ATPC (GAME_ARRAY(uint32_t, VS_RAMP_ATPC, 0x42874c))
 
-#define g_FXVulcanFireScale GAME_DATA(float, 0x447d9c)
-#define g_FXVulcanFireTime GAME_DATA(float, 0x447d84)
-#define g_FXDevastatorFireScale GAME_DATA(float, 0x447db4)
-#define g_FXDevastatorFireTime GAME_DATA(float, 0x447c64)
+#define g_FXVulcanFireScale GAME_GLOBAL_IN(float, GVar_FXVulcanFireScale, 16, 0x447d9c)
+#define g_FXVulcanFireTime GAME_GLOBAL_IN(float, GVar_FXVulcanFireTime, 16, 0x447d84)
+#define g_FXDevastatorFireScale GAME_GLOBAL_IN(float, GVar_FXDevastatorFireScale, 16, 0x447db4)
+#define g_FXDevastatorFireTime GAME_GLOBAL_IN(float, GVar_FXDevastatorFireTime, 16, 0x447c64)
 
 #define VS_PI_2 0x1.921fb6p+0f
 #define VS_2PI 0x1.921fb60000000p+2

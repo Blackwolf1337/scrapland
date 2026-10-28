@@ -22,11 +22,11 @@
 #define MAX_ZONAS 0x80
 
 /* the sector counts by their name tags (the sky ones are g_PortalUnion) */
-#define g_NumEndSectors GAME_DATA(int, 0x4b00e0)
-#define g_NumOutSectors GAME_DATA(int, 0x4b00e4)
+#define g_NumEndSectors GAME_GLOBAL_IN(int, g_Zonas, 520, 0x4b00e0)
+#define g_NumOutSectors GAME_GLOBAL_IN(int, g_Zonas, 524, 0x4b00e4)
 /* the projection and the viewport narrowed to the rectangle of each seen sector */
-#define g_PortalClip GAME_DATA(int, 0x4b00f8)
-#define g_PortalBand GAME_DATA(int, 0x4b11a8)	/* pixels added around it */
+#define g_PortalClip GAME_GLOBAL_IN(int, GVar_R_PortalClip, 16, 0x4b00f8)
+#define g_PortalBand GAME_GLOBAL_IN(int, GVar_R_PortalBand, 16, 0x4b11a8)	/* pixels added around it */
 
 
 CZona *__fastcall CZona_ctor(CZona *self) {

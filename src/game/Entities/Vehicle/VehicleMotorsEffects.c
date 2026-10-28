@@ -9,7 +9,7 @@
 
 #include "scrap/vehiclemotors.h"
 
-#define g_RandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
+#define g_RandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
 
 /* (rand() & 0x7fff) / 32767 * mul + add, the double expression of the original */
 static inline double VME_Rand(double mul, double add) {

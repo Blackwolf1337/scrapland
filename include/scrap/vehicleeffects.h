@@ -74,20 +74,20 @@ SD_OFFSET(cVehicleEffects, trails, 0x1c);
 SD_SIZE(cVehicleEffects, 0x24);
 
 /* the engine variables of the effects */
-#define g_FXVehicleDamageFile GAME_DATA(const char *, 0x447d24)
-#define g_FXVehicleEMIFile GAME_DATA(const char *, 0x447de4)
-#define g_FXVehicleSputnikFile GAME_DATA(const char *, 0x447c94)
-#define g_FXVehicleFireFile GAME_DATA(const char *, 0x447cdc)
-#define g_FXVehicleSpeedTrailDist GAME_DATA(float, 0x447c4c)
-#define g_FXVehicleSpeedTrailFadeOutH GAME_DATA(float, 0x447d3c)
-#define g_FXVehicleSpeedTrailSize GAME_DATA(float, 0x447d54)
-#define g_WindFxSmoke GAME_DATA(int, 0x447cc4)
-#define g_WindFxSmokeFile GAME_DATA(const char *, 0x447d0c)
-#define g_WindFXSmokeMaxDist GAME_DATA(float, 0x447dcc)
-#define g_WindFXSmokeMinVel GAME_DATA(float, 0x447cf4)
-#define g_WindFXSmokeTimeStep GAME_DATA(float, 0x447cac)
-#define g_WindFXSmokeSizeDiv GAME_DATA(float, 0x447c7c)
-#define g_WindFXSmokeLast GAME_DATA(float, 0x447e04)	/* the world time of the last wind smoke */
+#define g_FXVehicleDamageFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleDamageFile, 16, 0x447d24)
+#define g_FXVehicleEMIFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleEMIFile, 16, 0x447de4)
+#define g_FXVehicleSputnikFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleSputnikFile, 16, 0x447c94)
+#define g_FXVehicleFireFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleFireFile, 16, 0x447cdc)
+#define g_FXVehicleSpeedTrailDist GAME_GLOBAL_IN(float, GVar_FXVehicleSpeedTrailDist, 16, 0x447c4c)
+#define g_FXVehicleSpeedTrailFadeOutH GAME_GLOBAL_IN(float, GVar_FXVehicleSpeedTrailFadeOutH, 16, 0x447d3c)
+#define g_FXVehicleSpeedTrailSize GAME_GLOBAL_IN(float, GVar_FXVehicleSpeedTrailSize, 16, 0x447d54)
+#define g_WindFxSmoke GAME_GLOBAL_IN(int, GVar_WindFxSmoke, 16, 0x447cc4)
+#define g_WindFxSmokeFile GAME_GLOBAL_IN(const char *, GVar_WindFxSmokeFile, 16, 0x447d0c)
+#define g_WindFXSmokeMaxDist GAME_GLOBAL_IN(float, GVar_WindFXSmokeMaxDist, 16, 0x447dcc)
+#define g_WindFXSmokeMinVel GAME_GLOBAL_IN(float, GVar_WindFXSmokeMinVel, 16, 0x447cf4)
+#define g_WindFXSmokeTimeStep GAME_GLOBAL_IN(float, GVar_WindFXSmokeTimeStep, 16, 0x447cac)
+#define g_WindFXSmokeSizeDiv GAME_GLOBAL_IN(float, GVar_WindFXSmokeSizeDiv, 16, 0x447c7c)
+#define g_WindFXSmokeLast GAME_GLOBAL(float, g_WindFXSmokeLast, 0x447e04)	/* the world time of the last wind smoke */
 
 /* the parts before the range of the file in the exe (rva 0x100ab0..0x100c60) */
 cVehicleEffects *__fastcall cVehicleEffects_ctor(cVehicleEffects *self);

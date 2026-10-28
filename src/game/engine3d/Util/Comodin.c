@@ -8,7 +8,7 @@
 
 enum { CRT_ENOENT = 2, CRT_ENOMEM = 12, CRT_EACCES = 13 };
 /* added to 2 for the errno of a path that does not exist */
-#define g_RutaErrBase GAME_DATA(int, 0x3de07c)
+#define g_RutaErrBase GAME_GLOBAL(int, g_ErrPcxFormat, 0x3de07c)
 
 #define IS_SEP(c) ((c) == '\\' || (c) == '/')
 

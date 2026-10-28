@@ -12,14 +12,14 @@
 #include "scrap/fxmisc.h"
 
 /* the engine variables (Gvars): the debris system files of the scenes */
-#define g_FXSceneBeatingFile GAME_DATA(const char *, 0x4672e8)
-#define g_FXSceneBillArrivesAFile GAME_DATA(const char *, 0x4672d0)
-#define g_FXSceneDecontaminationFile GAME_DATA(const char *, 0x4672b8)	/* also BillArrives_C */
-#define g_FXSceneBishopsFile GAME_DATA(const char *, 0x467318)
-#define g_FXSceneEnterMatrixFile GAME_DATA(const char *, 0x467288)
-#define g_FXSceneHumanCDFile GAME_DATA(const char *, 0x467270)
-#define g_FXSceneTheEndBFile GAME_DATA(const char *, 0x467300)
-#define g_FXSceneYakuzziFile GAME_DATA(const char *, 0x4672a0)
+#define g_FXSceneBeatingFile GAME_GLOBAL_IN(const char *, GVar_FXSceneBeatPickusFile, 16, 0x4672e8)
+#define g_FXSceneBillArrivesAFile GAME_GLOBAL_IN(const char *, GVar_FXSceneBillArrives_AFile, 16, 0x4672d0)
+#define g_FXSceneDecontaminationFile GAME_GLOBAL_IN(const char *, GVar_FXSceneDecontaminationFile, 16, 0x4672b8)	/* also BillArrives_C */
+#define g_FXSceneBishopsFile GAME_GLOBAL_IN(const char *, GVar_FXSceneBishopsFile, 16, 0x467318)
+#define g_FXSceneEnterMatrixFile GAME_GLOBAL_IN(const char *, GVar_FXSceneEnterMatrixFile, 16, 0x467288)
+#define g_FXSceneHumanCDFile GAME_GLOBAL_IN(const char *, GVar_FXSceneHumanCDFile, 16, 0x467270)
+#define g_FXSceneTheEndBFile GAME_GLOBAL_IN(const char *, GVar_FXSceneTheEndBFile, 16, 0x467300)
+#define g_FXSceneYakuzziFile GAME_GLOBAL_IN(const char *, GVar_FXSceneYakuzziFile, 16, 0x4672a0)
 
 #define FXBISHOPS_TRAILS 12
 #define FXDECON_RAYS 40

@@ -135,17 +135,17 @@ static inline const cCamControlVtbl *CamCtl_Vtbl(cEntity *e) {
 }
 
 /* engine variables */
-#define g_FreeCameraCollide GAME_DATA(int, 0x445ef0)	/* FreeCameraCollide */
-#define g_FullCameraTest GAME_DATA(int, 0x445ea8)	/* FullCameraTest */
-#define g_WalkCameraCenter GAME_DATA(float, 0x4472b4)	/* WalkCameraCenter */
-#define g_VehicleCamDist GAME_DATA(float, 0x445f08)
-#define g_VehicleCamDist2 GAME_DATA(float, 0x445ed8)	/* VehicleCamDist2, of player 1 */
-#define g_VehicleCamNear GAME_DATA(float, 0x445f20)
-#define g_VehicleCamFar GAME_DATA(float, 0x445ec0)
-#define g_WalkCamNear GAME_DATA(float, 0x445f80)
-#define g_WalkCamFar GAME_DATA(float, 0x445f38)
-#define g_OutWalkCamNear GAME_DATA(float, 0x445f68)
-#define g_OutWalkCamFar GAME_DATA(float, 0x445f50)
+#define g_FreeCameraCollide GAME_GLOBAL_IN(int, GVar_FreeCameraCollide, 16, 0x445ef0)	/* FreeCameraCollide */
+#define g_FullCameraTest GAME_GLOBAL_IN(int, GVar_FullCameraTest, 16, 0x445ea8)	/* FullCameraTest */
+#define g_WalkCameraCenter GAME_GLOBAL_IN(float, GVar_WalkCameraCenter, 16, 0x4472b4)	/* WalkCameraCenter */
+#define g_VehicleCamDist GAME_GLOBAL_IN(float, GVar_VehicleCamDist, 16, 0x445f08)
+#define g_VehicleCamDist2 GAME_GLOBAL_IN(float, GVar_VehicleCamDist2, 16, 0x445ed8)	/* VehicleCamDist2, of player 1 */
+#define g_VehicleCamNear GAME_GLOBAL_IN(float, GVar_VehicleCamNear, 16, 0x445f20)
+#define g_VehicleCamFar GAME_GLOBAL_IN(float, GVar_VehicleCamFar, 16, 0x445ec0)
+#define g_WalkCamNear GAME_GLOBAL_IN(float, GVar_WalkCamNear, 16, 0x445f80)
+#define g_WalkCamFar GAME_GLOBAL_IN(float, GVar_WalkCamFar, 16, 0x445f38)
+#define g_OutWalkCamNear GAME_GLOBAL_IN(float, GVar_OutWalkCamNear, 16, 0x445f68)
+#define g_OutWalkCamFar GAME_GLOBAL_IN(float, GVar_OutWalkCamFar, 16, 0x445f50)
 
 /* the degrees of the script variables */
 static inline float Cam_Deg2Rad(double v) {

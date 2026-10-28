@@ -338,10 +338,10 @@ void Event_StopStreamingVoice(cAbstractFile *params);
 void Event_StreamingVoice(cAbstractFile *params);	/* "text:volume[:dist]" */
 void Event_WarningPolice(cAbstractFile *params);
 
-#define g_pActClassList GAME_DATA(cActClassList *, 0x444080)
-#define g_pAuxActClass GAME_DATA(cActClass *, 0x444084)	/* SAct's current class */
-#define g_pAuxAction GAME_DATA(cAction *, 0x444088)	/* SAct's current action */
-#define g_LogActEvents GAME_DATA(int, 0x44409c)		/* LogActEvents: the events into the console */
-#define g_DefInterpTime GAME_DATA(float, 0x4440b4)	/* DefInterpTime of new actions */
+#define g_pActClassList GAME_GLOBAL(cActClassList *, g_pActClassList, 0x444080)
+#define g_pAuxActClass GAME_GLOBAL(cActClass *, g_pAuxActClass, 0x444084)	/* SAct's current class */
+#define g_pAuxAction GAME_GLOBAL(cAction *, g_pAuxAction, 0x444088)	/* SAct's current action */
+#define g_LogActEvents GAME_GLOBAL_IN(int, GVar_LogActEvents, 16, 0x44409c)		/* LogActEvents: the events into the console */
+#define g_DefInterpTime GAME_GLOBAL_IN(float, GVar_DefInterpTime, 16, 0x4440b4)	/* DefInterpTime of new actions */
 
 #endif

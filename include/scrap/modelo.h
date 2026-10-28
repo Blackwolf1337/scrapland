@@ -18,7 +18,7 @@
 
 #define CMODELO_VFTABLE GAME_VFTABLE(CModelo_vftable, 0x3da6a0)
 #define MAX_MODELOS_RENDER 1024
-#define g_ModelosOn GAME_DATA(byte, 0x432418)	/* RenderModels: the models are drawn */
+#define g_ModelosOn GAME_GLOBAL(byte, g_ModelosOn, 0x432418)	/* RenderModels: the models are drawn */
 
 /* creation flags of the scenes and models (crear_modelo, crear_escena) */
 enum {
@@ -141,11 +141,11 @@ static inline void Escena_Unref(CEscena **slot) {
 	*slot = NULL;
 }
 
-#define g_ListaModelos GAME_DATA(CListaModelo *, 0x4ae778)
-#define g_ListaEscenas GAME_DATA(CListaEscena *, 0x4ae77c)
-#define g_ModelosRender ((CListaModelo **)Game_Ptr(0x4ae7c8))
-#define g_NumModelosRender GAME_DATA(int, 0x4af7c8)
-#define g_MaxModelosRender GAME_DATA(int, 0x4af7cc)	/* the most there were */
+#define g_ListaModelos GAME_GLOBAL(CListaModelo *, g_ListaModelos, 0x4ae778)
+#define g_ListaEscenas GAME_GLOBAL(CListaEscena *, g_ListaEscenas, 0x4ae77c)
+#define g_ModelosRender (GAME_ARRAY(CListaModelo *, g_ModelosRender, 0x4ae7c8))
+#define g_NumModelosRender GAME_GLOBAL_IN(int, g_ModelosRender, 4096, 0x4af7c8)
+#define g_MaxModelosRender GAME_GLOBAL_IN(int, g_ModelosRender, 4100, 0x4af7cc)	/* the most there were */
 
 /* Engine/Modelo.cpp (src/game/engine3d/Engine/Modelo.c) */
 CModelo *__fastcall CModelo_ctor(CModelo *self);
@@ -274,13 +274,13 @@ int ListaModelo_CompareKey(const void *a, const void *b);	/* qsort, larger sortK
  * MODEL_EFFECT_LAST), the float in f110 its parameter. Drawn in the passes 0, 3 and 13 as several draws of the scene
  * with g_MatFX1 or g_MatForzado; 6..8 need the pixel shaders. */
 struct CGrafico2D;
-#define g_FXMat (*(CMaterial *)Game_Ptr(0x4e1c68))	/* the colors and blends of the effects */
-#define g_FXGrfNoise1 (*(struct CGrafico2D *)Game_Ptr(0x4e1c20))	/* bmp/noise.tga */
-#define g_FXGrfStatic (*(struct CGrafico2D *)Game_Ptr(0x4e1d18))	/* bmp/noise_static.alpha.tga, the scan lines */
-#define g_FXGrfNoise2 (*(struct CGrafico2D *)Game_Ptr(0x4e1d60))	/* bmp/noise2.tga */
-#define g_MatElectric GAME_DATA(CMaterial *, 0x4e1c64)	/* fx_Electric (+shader:Electric) */
-#define g_MatFire GAME_DATA(CMaterial *, 0x4e1d5c)		/* fx_Fire (+shader:Fire) */
-#define g_MatNoise GAME_DATA(CMaterial *, 0x4e1da4)		/* fx_Noise (+shader:Noise) */
+#define g_FXMat (GAME_GLOBAL(CMaterial, g_FXMat, 0x4e1c68))	/* the colors and blends of the effects */
+#define g_FXGrfNoise1 (GAME_GLOBAL(struct CGrafico2D, g_FXGrfNoise1, 0x4e1c20))	/* bmp/noise.tga */
+#define g_FXGrfStatic (GAME_GLOBAL(struct CGrafico2D, g_FXGrfStatic, 0x4e1d18))	/* bmp/noise_static.alpha.tga, the scan lines */
+#define g_FXGrfNoise2 (GAME_GLOBAL(struct CGrafico2D, g_FXGrfNoise2, 0x4e1d60))	/* bmp/noise2.tga */
+#define g_MatElectric GAME_GLOBAL(CMaterial *, g_MatElectric, 0x4e1c64)	/* fx_Electric (+shader:Electric) */
+#define g_MatFire GAME_GLOBAL(CMaterial *, g_MatFire, 0x4e1d5c)		/* fx_Fire (+shader:Fire) */
+#define g_MatNoise GAME_GLOBAL(CMaterial *, g_MatNoise, 0x4e1da4)		/* fx_Noise (+shader:Noise) */
 void __thiscall ModelFX_Render(CModelo *self, NodoAnimCtx *ctx);
 /* 1: a TV picture with static, 2 and 3: faded out (2 over a gray pass), 4: 1 in wire frame, 5: green glow, 6:
  * electric, 7: fire, 8: noise */

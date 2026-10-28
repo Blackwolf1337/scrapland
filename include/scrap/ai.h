@@ -352,16 +352,16 @@ typedef struct cAIVehicleParams3 {
 } cAIVehicleParams3;
 SD_SIZE(cAIVehicleParams3, 0x1c);
 
-#define g_IsMapOutDoor GAME_DATA(int, 0x4677e8)	/* value of the engine variable IsMapOutDoor */
-#define g_NodesWorld GAME_DATA(CNodesWorld *, 0x444d34)
-#define g_NodesWorld2D GAME_DATA(CNodesWorld2D *, 0x444dc8)
-#define g_NodesTrafficInDoor GAME_DATA(cNodesTraffic *, 0x444d2c)
-#define g_NodesTraffic GAME_DATA(cNodesTraffic *, 0x444c98)
-#define g_AStar GAME_DATA(void *, 0x444c78)
-#define g_AStar2D GAME_DATA(void *, 0x444c7c)
-#define g_VehicleGroup GAME_DATA(cAIVehicleGroup *, 0x444b84)
-#define g_CharGroup GAME_DATA(cAICharGroup *, 0x4445b8)
-#define g_TrafficState GAME_DATA(int, 0x444d0c)	/* 3 after SAI.AnalizeTraffic */
+#define g_IsMapOutDoor GAME_GLOBAL_IN(int, GVar_IsMapOutDoor, 16, 0x4677e8)	/* value of the engine variable IsMapOutDoor */
+#define g_NodesWorld GAME_GLOBAL(CNodesWorld *, g_NodesWorld, 0x444d34)
+#define g_NodesWorld2D GAME_GLOBAL(CNodesWorld2D *, g_NodesWorld2D, 0x444dc8)
+#define g_NodesTrafficInDoor GAME_GLOBAL(cNodesTraffic *, g_NodesTrafficInDoor, 0x444d2c)
+#define g_NodesTraffic GAME_GLOBAL(cNodesTraffic *, g_NodesTraffic, 0x444c98)
+#define g_AStar GAME_GLOBAL(void *, g_AStar, 0x444c78)
+#define g_AStar2D GAME_GLOBAL(void *, g_AStar2D, 0x444c7c)
+#define g_VehicleGroup GAME_GLOBAL(cAIVehicleGroup *, g_VehicleGroup, 0x444b84)
+#define g_CharGroup GAME_GLOBAL(cAICharGroup *, g_CharGroup, 0x4445b8)
+#define g_TrafficState GAME_GLOBAL_IN(int, GVar_ShowTrafficAI, 16, 0x444d0c)	/* 3 after SAI.AnalizeTraffic */
 
 /* constructors (thiscall on the memory from operator_new) */
 CNodesWorld *__thiscall CNodesWorld_ctor(void *mem);
@@ -406,8 +406,8 @@ int __thiscall cWalkCharEntity_GetOwnerSlot(cEntity *e);
 byte cAIVehicle_SetState(cAIVehicle *ai, int state, ...);
 
 /* default values of SAI.SetStateVehicle CHASE (state 7) */
-#define g_AIChaseDefault1 GAME_DATA(float, 0x444948)
-#define g_AIChaseDefault2 GAME_DATA(float, 0x444828)
+#define g_AIChaseDefault1 GAME_GLOBAL_IN(float, GVar_MinDistChaseAI, 16, 0x444948)
+#define g_AIChaseDefault2 GAME_GLOBAL_IN(float, GVar_MaxDistChaseAI, 16, 0x444828)
 
 /* ---- cAI (AI/AI.cpp, src/game/AI/AI.c): the base of every AI (0x38 bytes), the entity, the time of the frame and
  * of the state, and the slot of the reactions ---- */
@@ -520,7 +520,7 @@ SD_OFFSET(cAIEntityGroup, num, 0x54);
 SD_OFFSET(cAIEntityGroup, changeTime, 0x5c);
 SD_SIZE(cAIEntityGroup, CAIENTITYGROUP_SIZE);
 
-#define g_TimeBetwChangeStateAI GAME_DATA(float, 0x444698)	/* "TimeBetwChangeStateAI" */
+#define g_TimeBetwChangeStateAI GAME_GLOBAL_IN(float, GVar_TimeBetwChangeStateAI, 16, 0x444698)	/* "TimeBetwChangeStateAI" */
 
 /* ctor and dtor are fastcall on the memory of the subclasses */
 void *__fastcall cAIEntityGroup_ctor(void *self);
@@ -674,27 +674,27 @@ void __thiscall cAISentinel_SetDists(cAIChar *self);
 /* cAIChar_dtor, cAIChar_SetDists (vf56) and cAIChar_ChangeState (vf26): aichar.h; the move controls:
  * aicharcontrol.h */
 
-#define g_MaxHeightChaseCharAI GAME_DATA(float, 0x4442e8)
-#define g_BankMasterVacumDist GAME_DATA(float, 0x4460dc)
+#define g_MaxHeightChaseCharAI GAME_GLOBAL_IN(float, GVar_MaxHeightChaseCharAI, 16, 0x4442e8)
+#define g_BankMasterVacumDist GAME_GLOBAL_IN(float, GVar_BankMasterVacumDist, 16, 0x4460dc)
 /* the shot of the bishop: the value against a target without an AI, the second one (the default) with one */
-#define g_ShootBishopAI GAME_DATA(int, 0x4441bc)
-#define g_ShootBishopAIDef GAME_DATA(int, 0x4441c0)
-#define g_OffsetAngShootBishopAI GAME_DATA(float, 0x4441d4)
-#define g_OffsetAngShootBishopAIDef GAME_DATA(float, 0x4441d8)
-#define g_TimeShootBishopAI GAME_DATA(float, 0x444204)
-#define g_TimeShootBishopAIDef GAME_DATA(float, 0x444208)
-#define g_DistMaxShootBishopAI GAME_DATA(float, 0x4441ec)
-#define g_DistMaxShootBishopAIDef GAME_DATA(float, 0x4441f0)
+#define g_ShootBishopAI GAME_GLOBAL_IN(int, GVar_ShootBishopAI, 16, 0x4441bc)
+#define g_ShootBishopAIDef GAME_GLOBAL_IN(int, GVar_ShootBishopAI, 20, 0x4441c0)
+#define g_OffsetAngShootBishopAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootBishopAI, 16, 0x4441d4)
+#define g_OffsetAngShootBishopAIDef GAME_GLOBAL_IN(float, GVar_OffsetAngShootBishopAI, 20, 0x4441d8)
+#define g_TimeShootBishopAI GAME_GLOBAL_IN(float, GVar_TimeShootBishopAI, 16, 0x444204)
+#define g_TimeShootBishopAIDef GAME_GLOBAL_IN(float, GVar_TimeShootBishopAI, 20, 0x444208)
+#define g_DistMaxShootBishopAI GAME_GLOBAL_IN(float, GVar_DistMaxShootBishopAI, 16, 0x4441ec)
+#define g_DistMaxShootBishopAIDef GAME_GLOBAL_IN(float, GVar_DistMaxShootBishopAI, 20, 0x4441f0)
 /* the same pairs of the gear */
-#define g_ShootGearAI GAME_DATA(int, 0x4446b0)
-#define g_ShootGearAIDef GAME_DATA(int, 0x4446b4)
-#define g_OffsetAngShootGearAI GAME_DATA(float, 0x4446c8)
-#define g_OffsetAngShootGearAIDef GAME_DATA(float, 0x4446cc)
-#define g_ShootMessengerAI GAME_DATA(int, 0x4446f8)
-#define g_OffsetAngShootMessengerAI GAME_DATA(float, 0x4446e0)
-#define g_TimeShootMessengerAI GAME_DATA(float, 0x444710)
-#define g_DistMaxShootMessengerAI GAME_DATA(float, 0x444728)
-#define g_DistActionNurseAI GAME_DATA(float, 0x44475c)
-#define g_OffsetMoveNurseAI GAME_DATA(float, 0x444774)
+#define g_ShootGearAI GAME_GLOBAL_IN(int, GVar_ShootGearAI, 16, 0x4446b0)
+#define g_ShootGearAIDef GAME_GLOBAL_IN(int, GVar_ShootGearAI, 20, 0x4446b4)
+#define g_OffsetAngShootGearAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootGearAI, 16, 0x4446c8)
+#define g_OffsetAngShootGearAIDef GAME_GLOBAL_IN(float, GVar_OffsetAngShootGearAI, 20, 0x4446cc)
+#define g_ShootMessengerAI GAME_GLOBAL_IN(int, GVar_ShootMessengerAI, 16, 0x4446f8)
+#define g_OffsetAngShootMessengerAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootMessengerAI, 16, 0x4446e0)
+#define g_TimeShootMessengerAI GAME_GLOBAL_IN(float, GVar_TimeShootMessengerAI, 16, 0x444710)
+#define g_DistMaxShootMessengerAI GAME_GLOBAL_IN(float, GVar_DistMaxShootMessengerAI, 16, 0x444728)
+#define g_DistActionNurseAI GAME_GLOBAL_IN(float, GVar_DistActionNurseAI, 16, 0x44475c)
+#define g_OffsetMoveNurseAI GAME_GLOBAL_IN(float, GVar_OffsetMoveNurseAI, 16, 0x444774)
 
 #endif

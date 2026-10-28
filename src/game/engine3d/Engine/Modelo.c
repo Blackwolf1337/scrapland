@@ -27,9 +27,9 @@
 #define MORPH_SPEED_MAX 0.08f
 #define STENCIL_DIST 4000.0f
 
-#define g_AnimPausa GAME_DATA(int, 0x4ae638)	/* the animations stand still */
-#define g_AnimSpeed GAME_DATA(float, 0x4ae770)	/* the speed of all animations */
-#define g_FrameTime GAME_DATA(float, 0x4a8ed4)	/* the time of the frame */
+#define g_AnimPausa GAME_GLOBAL_IN(int, GVar_R_SkipAnimInterp, 16, 0x4ae638)	/* the animations stand still */
+#define g_AnimSpeed GAME_GLOBAL_IN(float, GVar_R_AnimInterpMult, 16, 0x4ae770)	/* the speed of all animations */
+#define g_FrameTime GAME_GLOBAL(float, g_FrameMs, 0x4a8ed4)	/* the time of the frame */
 
 static CAnimSlot *Modelo_Slot(CModelo *self, uint32_t i) {
 	CHECK(self->slots.p && i < (uint32_t)self->slots.n);
@@ -861,21 +861,21 @@ const char *__fastcall CLuz_TipoNombre(const CLuz *l) {
 }
 
 /* the render variables of the models */
-#define g_UseMLOD GAME_DATA(int, 0x4ae6e0)		/* R_UseMLOD */
-#define g_DistMLOD1 GAME_DATA(float, 0x4ae608)		/* R_DistMLOD1, the distance of LOD i is i times it */
-#define g_DrawMLODMask GAME_DATA(uint32_t, 0x4ae680)	/* R_DrawMLODMask: the LODs drawn as the main model */
-#define g_DrawMLODMin GAME_DATA(int, 0x4ae6c8)		/* R_DrawMLODMin */
-#define g_DrawMLODPart GAME_DATA(int, 0x4ae5f0)		/* R_DrawMLODPart: the particles of the main model with a LOD */
-#define g_ModelFastIsVis GAME_DATA(int, 0x4ae620)	/* R_ModelFastIsVis */
-#define g_ModelPortalVis GAME_DATA(int, 0x4ae6b0)	/* R_ModelPortalVis */
-#define g_SphereVisMult GAME_DATA(float, 0x4ae698)	/* R_SphereVisMult */
-#define g_DistMStencil GAME_DATA(float, 0x4ae758)	/* R_DistMStencil */
-#define g_SkipUpdateVis GAME_DATA(int, 0x4ae740)	/* R_SkipUpdateVis */
-#define g_ShowModelSector GAME_DATA(int, 0x4ae728)	/* R_ShowModelSector */
-#define g_LightLimit GAME_DATA(int, 0x4ae710)		/* R_LightLimit, -1: no lights chosen */
-#define g_ShowModelLights GAME_DATA(int, 0x4ae6f8)	/* R_ShowModelLights */
-#define g_ShowModelBox GAME_DATA(int, 0x4ae668)		/* R_ShowModelBox */
-#define g_ShowModelPos GAME_DATA(int, 0x4ae650)		/* R_ShowModelPos */
+#define g_UseMLOD GAME_GLOBAL_IN(int, GVar_R_UseMLOD, 16, 0x4ae6e0)		/* R_UseMLOD */
+#define g_DistMLOD1 GAME_GLOBAL_IN(float, GVar_R_DistMLOD1, 16, 0x4ae608)		/* R_DistMLOD1, the distance of LOD i is i times it */
+#define g_DrawMLODMask GAME_GLOBAL_IN(uint32_t, GVar_R_DrawMLODMask, 16, 0x4ae680)	/* R_DrawMLODMask: the LODs drawn as the main model */
+#define g_DrawMLODMin GAME_GLOBAL_IN(int, GVar_R_DrawMLODMin, 16, 0x4ae6c8)		/* R_DrawMLODMin */
+#define g_DrawMLODPart GAME_GLOBAL_IN(int, GVar_R_DrawMLODPart, 16, 0x4ae5f0)		/* R_DrawMLODPart: the particles of the main model with a LOD */
+#define g_ModelFastIsVis GAME_GLOBAL_IN(int, GVar_R_ModelFastIsVis, 16, 0x4ae620)	/* R_ModelFastIsVis */
+#define g_ModelPortalVis GAME_GLOBAL_IN(int, GVar_R_ModelPortalVis, 16, 0x4ae6b0)	/* R_ModelPortalVis */
+#define g_SphereVisMult GAME_GLOBAL_IN(float, GVar_R_SphereVisMult, 16, 0x4ae698)	/* R_SphereVisMult */
+#define g_DistMStencil GAME_GLOBAL_IN(float, GVar_R_DistMStencil, 16, 0x4ae758)	/* R_DistMStencil */
+#define g_SkipUpdateVis GAME_GLOBAL_IN(int, GVar_R_SkipUpdateVis, 16, 0x4ae740)	/* R_SkipUpdateVis */
+#define g_ShowModelSector GAME_GLOBAL_IN(int, GVar_R_ShowModelSector, 16, 0x4ae728)	/* R_ShowModelSector */
+#define g_LightLimit GAME_GLOBAL_IN(int, GVar_R_LightLimit, 16, 0x4ae710)		/* R_LightLimit, -1: no lights chosen */
+#define g_ShowModelLights GAME_GLOBAL_IN(int, GVar_R_ShowModelLights, 16, 0x4ae6f8)	/* R_ShowModelLights */
+#define g_ShowModelBox GAME_GLOBAL_IN(int, GVar_R_ShowModelBox, 16, 0x4ae668)		/* R_ShowModelBox */
+#define g_ShowModelPos GAME_GLOBAL_IN(int, GVar_R_ShowModelPos, 16, 0x4ae650)		/* R_ShowModelPos */
 #define PROF_MODELVIS 0x1e
 
 /* the passes that draw only the models seen in the last frame */

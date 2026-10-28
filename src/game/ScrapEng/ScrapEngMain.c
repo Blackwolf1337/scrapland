@@ -30,7 +30,7 @@
 #include "scrap/video.h"
 #include "scrap/win32.h"
 
-#define g_IsViewer GAME_DATA(int, 0x467b34)
+#define g_IsViewer GAME_GLOBAL_IN(int, GVar_Viewer, 16, 0x467b34)
 #define D3DFMT_A8R8G8B8 21
 #define D3DFMT_X8R8G8B8 22
 #define D3DFMT_R5G6B5 23
@@ -717,13 +717,13 @@ static float DebugValue(uint32_t i) {
 }
 
 /* the free camera of the viewer (Gvars) */
-#define g_ViewerClipNear GAME_DATA(float, 0x4a87b0)
-#define g_ViewerClipFar GAME_DATA(float, 0x4a87c8)
-#define g_ViewerFOV GAME_DATA(float, 0x4a8610)	/* degrees, 0: the camera keeps its own */
-#define g_ViewerCameraTgt GAME_DATA(int, 0x4a8660)	/* orbits around the target */
-#define g_ViewerCameraVel GAME_DATA(float, 0x4a86f0)
-#define g_ViewerCameraInv GAME_DATA(int, 0x4a85b0)	/* the pitch not inverted */
-#define g_ViewerSpeed GAME_DATA(float, 0x431b04)	/* doubled and halved by the debug keys */
+#define g_ViewerClipNear GAME_GLOBAL_IN(float, GVar_ViewerClipNear, 16, 0x4a87b0)
+#define g_ViewerClipFar GAME_GLOBAL_IN(float, GVar_ViewerClipFar, 16, 0x4a87c8)
+#define g_ViewerFOV GAME_GLOBAL_IN(float, GVar_ViewerFOV, 16, 0x4a8610)	/* degrees, 0: the camera keeps its own */
+#define g_ViewerCameraTgt GAME_GLOBAL_IN(int, GVar_ViewerCameraTgt, 16, 0x4a8660)	/* orbits around the target */
+#define g_ViewerCameraVel GAME_GLOBAL_IN(float, GVar_ViewerCameraVel, 16, 0x4a86f0)
+#define g_ViewerCameraInv GAME_GLOBAL_IN(int, GVar_ViewerCameraInv, 16, 0x4a85b0)	/* the pitch not inverted */
+#define g_ViewerSpeed GAME_GLOBAL(float, g_ViewerSpeed, 0x431b04)	/* doubled and halved by the debug keys */
 #define VIEWER_MIN_DIST 20.0f
 /* the actions of the debug set */
 #define DBG_VIEWER_TGT 23
@@ -1188,31 +1188,31 @@ int Ini_GetPath(const char *sect, const char *key, char *dest, int size, const c
 }
 
 /* the globals of m3d.ini without a better home */
-#define g_MapaSombrasMultitext GAME_DATA(int, 0x4b2b00)
-#define g_MapaSombrasSuaves GAME_DATA(int, 0x4b2b04)
-#define g_MapaSombrasEscrTemp GAME_DATA(int, 0x4b2b08)
-#define g_MapaSombrasAten GAME_DATA(float, 0x4b2b0c)
-#define g_MapaSombrasEscala GAME_DATA(float, 0x432950)
-#define g_MapaSombrasResol GAME_DATA(float, 0x432954)
-#define g_MapaSombrasTexX GAME_DATA(int, 0x432958)
-#define g_MapaSombrasTexY GAME_DATA(int, 0x43295c)
-#define g_MapaSombrasGamma GAME_DATA(float, 0x432960)
-#define g_MapaSombrasBrillo GAME_DATA(float, 0x432964)
-#define g_MapaSombrasRadiosidad GAME_DATA(int, 0x4b2b10)
-#define g_MapaSombrasIlumGlobal GAME_DATA(int, 0x4b2b14)
-#define g_MapaSombrasNoLuzAmb GAME_DATA(int, 0x4b2b18)
-#define g_MapaSombrasModulate4x GAME_DATA(int, 0x4b2b1c)
-#define g_MapaSombrasRebotes GAME_DATA(int, 0x432968)
-#define g_MapaSombrasCoefRad GAME_DATA(float, 0x43296c)
-#define g_MapaSombrasUsarTxf GAME_DATA(int, 0x4b2b24)
-#define g_SombrasDestAlpha GAME_DATA(int, 0x4afdb4)
-#define g_FlaresTamDef GAME_DATA(float, 0x432998)
-#define g_FlaresAtenDist GAME_DATA(int, 0x4d6d90)
-#define g_FlaresAtenIni GAME_DATA(float, 0x43299c)
-#define g_FlaresAtenFin GAME_DATA(float, 0x4329a0)
-#define g_FlaresFundidoEnt GAME_DATA(float, 0x4329a4)
-#define g_FlaresFundidoSal GAME_DATA(float, 0x4329a8)
-#define g_FlaresVerInfo GAME_DATA(int, 0x4d6d94)
+#define g_MapaSombrasMultitext GAME_GLOBAL(int, g_MapaSombrasMultitext, 0x4b2b00)
+#define g_MapaSombrasSuaves GAME_GLOBAL(int, g_MapaSombrasSuaves, 0x4b2b04)
+#define g_MapaSombrasEscrTemp GAME_GLOBAL(int, g_MapaSombrasEscrTemp, 0x4b2b08)
+#define g_MapaSombrasAten GAME_GLOBAL(float, g_MapaSombrasAten, 0x4b2b0c)
+#define g_MapaSombrasEscala GAME_GLOBAL(float, g_MapaSombrasEscala, 0x432950)
+#define g_MapaSombrasResol GAME_GLOBAL(float, g_MapaSombrasResol, 0x432954)
+#define g_MapaSombrasTexX GAME_GLOBAL(int, g_MapaSombrasTexX, 0x432958)
+#define g_MapaSombrasTexY GAME_GLOBAL(int, g_MapaSombrasTexY, 0x43295c)
+#define g_MapaSombrasGamma GAME_GLOBAL(float, g_MapaSombrasGamma, 0x432960)
+#define g_MapaSombrasBrillo GAME_GLOBAL(float, g_MapaSombrasBrillo, 0x432964)
+#define g_MapaSombrasRadiosidad GAME_GLOBAL(int, g_MapaSombrasRadiosidad, 0x4b2b10)
+#define g_MapaSombrasIlumGlobal GAME_GLOBAL(int, g_MapaSombrasIlumGlobal, 0x4b2b14)
+#define g_MapaSombrasNoLuzAmb GAME_GLOBAL(int, g_MapaSombrasNoLuzAmb, 0x4b2b18)
+#define g_MapaSombrasModulate4x GAME_GLOBAL(int, g_MapaSombrasModulate4x, 0x4b2b1c)
+#define g_MapaSombrasRebotes GAME_GLOBAL(int, g_MapaSombrasRebotes, 0x432968)
+#define g_MapaSombrasCoefRad GAME_GLOBAL(float, g_MapaSombrasCoefRad, 0x43296c)
+#define g_MapaSombrasUsarTxf GAME_GLOBAL(int, g_MapaSombrasUsarTxf, 0x4b2b24)
+#define g_SombrasDestAlpha GAME_GLOBAL(int, g_SombrasDestAlpha, 0x4afdb4)
+#define g_FlaresTamDef GAME_GLOBAL(float, g_FlareTam, 0x432998)
+#define g_FlaresAtenDist GAME_GLOBAL(int, g_FlareAtenDist, 0x4d6d90)
+#define g_FlaresAtenIni GAME_GLOBAL(float, g_FlareAtenDistIni, 0x43299c)
+#define g_FlaresAtenFin GAME_GLOBAL(float, g_FlareAtenDistFin, 0x4329a0)
+#define g_FlaresFundidoEnt GAME_GLOBAL(float, g_FlareFundidoEnt, 0x4329a4)
+#define g_FlaresFundidoSal GAME_GLOBAL(float, g_FlareFundidoSal, 0x4329a8)
+#define g_FlaresVerInfo GAME_GLOBAL(int, g_FlareVerInfo, 0x4d6d94)
 
 void Engine_LoadIni(const char *name, const char *dir) {
 	static const char *const rutas[4] = { "ruta1", "ruta2", "ruta3", "ruta4" };

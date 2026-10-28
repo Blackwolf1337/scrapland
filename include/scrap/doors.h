@@ -19,13 +19,13 @@
 #define DOOR_USR 0x8		/* open for player 0 on either side */
 
 /* the state of the last sphere test of Doors_Slot */
-#define g_DoorFront GAME_DATA(byte, 0x447600)		/* an entity in front of the door */
-#define g_DoorBack GAME_DATA(byte, 0x447601)
-#define g_DoorUsrFront GAME_DATA(byte, 0x447602)	/* player 0 in front */
-#define g_DoorUsrBack GAME_DATA(byte, 0x447603)
-#define g_DoorAngY GAME_DATA(float, 0x447604)		/* the y angle of the door */
-#define g_DoorPos GAME_DATA(vec3_t, 0x447658)
-#define g_DoorSphereFunc (&GAME_DATA(cPy_Function, 0x46679c))	/* Doors_SphereEntity for the sphere test */
+#define g_DoorFront GAME_GLOBAL_IN(byte, group_447600, 0, 0x447600)		/* an entity in front of the door */
+#define g_DoorBack GAME_GLOBAL_IN(byte, group_447600, 1, 0x447601)
+#define g_DoorUsrFront GAME_GLOBAL_IN(byte, group_447600, 2, 0x447602)	/* player 0 in front */
+#define g_DoorUsrBack GAME_GLOBAL_IN(byte, group_447600, 3, 0x447603)
+#define g_DoorAngY GAME_GLOBAL(float, g_DoorAngY, 0x447604)		/* the y angle of the door */
+#define g_DoorPos GAME_GLOBAL(vec3_t, g_DoorPos, 0x447658)
+#define g_DoorSphereFunc (&GAME_GLOBAL(cPy_Function, g_ChTypeSphereFunc, 0x46679c))	/* Doors_SphereEntity for the sphere test */
 #define DOORS_SPHEREENTITY 0x0f0570
 
 /* the entity vtable slots used here (Obj, Car) */

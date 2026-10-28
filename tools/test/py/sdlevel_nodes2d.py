@@ -138,7 +138,7 @@ def n2dSupW(w, n, nodes):
 
 # the bodies and the floor of the 2D graph at points of FZ
 def n2dGround(w, n, nodes):
-	check('n2d globals', lambda: (n2dF(0x844d98, 12), n2dF(symva('g_NW2DGroundDist'), 1), n2dF(symva('g_NW2DHeight'), 1),
+	check('n2d globals', lambda: (n2dF(symva('g_NW2DBodies'), 12), n2dF(symva('g_NW2DGroundDist'), 1), n2dF(symva('g_NW2DHeight'), 1),
 		SDTest.Peek('g_NWDebugSegs', 'i'), SDTest.Peek('g_NW2DDrawMode', 'i')))
 	pts = [(pp[0], pp[1], pp[2]), n2dAdd((pp[0], pp[1], pp[2]), (0.0, 150.0, 0.0)),
 		n2dAdd((pp[0], pp[1], pp[2]), (300.0, 40.0, -250.0))]
@@ -386,7 +386,7 @@ def n2dFiles():
 		n2dI(m + 0x258)))
 	check('n2d ClearLists 2D', lambda m=m: (SDTest.Call('CNodesWorld2D_ClearLists', 'tvi', m), n2dI(m + 0x190), n2dI(m + 0x1f0)))
 	check('n2d Load(-2)', lambda m=m: (SDTest.Call('CNodesWorld2D_Load', 'tviisF', m, -2, '', (300.0, 400.0, 500.0))[0],
-		n2dF(m + 4, 23), n2dF(m + 0x74, 6), n2dB(m + 0x70), n2dI(m + 0x1a8), n2dF(0x844d98, 12)))
+		n2dF(m + 4, 23), n2dF(m + 0x74, 6), n2dB(m + 0x70), n2dI(m + 0x1a8), n2dF(symva('g_NW2DBodies'), 12)))
 	# Load(-1) builds the grid in the collision box of FZ: only when the nodes of the file are inside it
 	box = SDTest.Call('World_GetCollideBox', 'iF', (0.0,) * 6)[1]
 	m2 = n2dFresh2D()

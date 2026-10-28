@@ -64,12 +64,12 @@ for o in (0x10, 0x100, 0x101):
 SDTest.Poke('g_ProfMode', smopt[0])
 SDTest.Poke('g_VertexSpecular', smopt[1])
 
-smcb = smints(0x4a8314, 4)
+smcb = smints(sym('g_EngCallbacks'), 4)
 for i in range(4):
 	check('Engine_SetCallback' + fmt((i + 1,)), lambda i=i: (SDTest.Call('Engine_SetCallback', 'vii', 0, i + 1),
-		smints(0x4a8314, 4) == smcb, SDTest.Peek(0x4a8314 + 4 * i, 'i'), SDTest.Call('Engine_SetCallback', 'vii', smcb[i], i + 1),
-		smints(0x4a8314, 4) == smcb))
-smpoke(0x4a8314, smcb)
+		smints(sym('g_EngCallbacks'), 4) == smcb, SDTest.Peek(sym('g_EngCallbacks') + 4 * i, 'i'), SDTest.Call('Engine_SetCallback', 'vii', smcb[i], i + 1),
+		smints(sym('g_EngCallbacks'), 4) == smcb))
+smpoke(sym('g_EngCallbacks'), smcb)
 
 # R_EnvMap through its variable object
 smenv = SDTest.Peek('g_EnvMap', 'i')
@@ -190,7 +190,7 @@ smpoke(sym('g_ViewportFull'), smvp[3])
 def smsetup():
 	return (SDTest.Peek('g_ShowCollision', 'i'), SDTest.Peek('g_WireFrame', 'i'), SDTest.Peek('g_LightmapMode2', 'i'), SDTest.Peek('g_LightmapOff', 'i'),
 		SDTest.Peek('g_ModelosOn', 'b'), SDTest.Peek('g_UsarVB', 'b'), SDTest.Peek('g_AmbientD3D', 'i'), smfl(symva('g_CollisionEpsilon'), 1))
-if SDTest.Peek(0x4a8318, 'i') == 0 or SDTest.Peek('g_CallbacksOn', 'b') == 0:
+if SDTest.Peek('Engine_FrameSetup_4a8318', 'i') == 0 or SDTest.Peek('g_CallbacksOn', 'b') == 0:
 	check('Engine_FrameSetup', lambda: (smlog(lambda: SDTest.Call('Engine_FrameSetup', 'b')[0]), smsetup()))
 
 # DebugUtils.cpp: the lines through the D3D log

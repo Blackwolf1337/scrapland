@@ -196,42 +196,42 @@ void __thiscall cPy_Function_Clear(cPy_Function *self);
 void Str_TrimBlanks(char *s);
 
 /* engine variables (Gvars) */
-#define g_MaxRadObj GAME_DATA(float, 0x467758)		/* Max_Rad_Obj, the margin of the grid queries */
-#define g_GridScaleX GAME_DATA(float, 0x467704)
-#define g_GridScaleY GAME_DATA(float, 0x4675f0)
-#define g_GridScaleZ GAME_DATA(float, 0x46762c)
-#define g_SplitScreenGame GAME_DATA(int, 0x467584)		/* SplitScreen */
-#define g_GameSkill GAME_DATA(int, 0x467674)
-#define g_GameSkillDef GAME_DATA(int, 0x467678)
-#define g_VehicleEditingMode GAME_DATA(int, 0x447ea8)
-#define g_MaxChasingShips GAME_DATA(int, 0x44dc04)
-#define g_MaxChasingShipsDef GAME_DATA(int, 0x44dc08)
-#define g_PitchScale GAME_DATA(float, 0x466d48)		/* S_PitchScale */
-#define g_FreeSpaceMagnet GAME_DATA(int, 0x447f08)
-#define g_FreeSpaceMagnetDef GAME_DATA(int, 0x447f0c)
-#define g_FXVehicleFloatingFactor GAME_DATA(float, 0x447ff8)
-#define g_FXVehicleFloatingFactorDef GAME_DATA(float, 0x447ffc)
-#define g_SceneMotionBlurValue GAME_DATA(float, 0x4a8c44)	/* R_SceneMotionBlurValue */
-#define g_NotShootAI GAME_DATA(int, 0x4441a4)
-#define g_NotShootAIDef GAME_DATA(int, 0x4441a8)
-#define g_RemainTalkTime GAME_DATA(float, 0x462148)
-#define g_PriorityWeapon ((cString *)Game_Ptr(0x467448))	/* PriorityWeapon, its default at +4 */
-#define g_SplitScreenCamera GAME_DATA(int, 0x4a8a8c)		/* R_SplitScreenCamera */
-#define g_SplitScreenUpdate GAME_DATA(int, 0x4a8c74)		/* R_SplitScreenUpdate */
-#define g_UniqueName ((char *)Game_Ptr(0x4678f8))		/* 0x80 bytes, the result of cWorld_UniqueName */
+#define g_MaxRadObj GAME_GLOBAL_IN(float, GVar_Max_Rad_Obj, 16, 0x467758)		/* Max_Rad_Obj, the margin of the grid queries */
+#define g_GridScaleX GAME_GLOBAL_IN(float, GVar_GridScaleX, 16, 0x467704)
+#define g_GridScaleY GAME_GLOBAL_IN(float, GVar_GridScaleY, 16, 0x4675f0)
+#define g_GridScaleZ GAME_GLOBAL_IN(float, GVar_GridScaleZ, 16, 0x46762c)
+#define g_SplitScreenGame GAME_GLOBAL_IN(int, GVar_SplitScreen, 16, 0x467584)		/* SplitScreen */
+#define g_GameSkill GAME_GLOBAL_IN(int, GVar_GameSkill, 16, 0x467674)
+#define g_GameSkillDef GAME_GLOBAL_IN(int, GVar_GameSkill, 20, 0x467678)
+#define g_VehicleEditingMode GAME_GLOBAL_IN(int, GVar_VehicleEditingMode, 16, 0x447ea8)
+#define g_MaxChasingShips GAME_GLOBAL_IN(int, GVar_MaxChasingShips, 16, 0x44dc04)
+#define g_MaxChasingShipsDef GAME_GLOBAL_IN(int, GVar_MaxChasingShips, 20, 0x44dc08)
+#define g_PitchScale GAME_GLOBAL_IN(float, GVar_S_PitchScale, 16, 0x466d48)		/* S_PitchScale */
+#define g_FreeSpaceMagnet GAME_GLOBAL_IN(int, GVar_FreeSpaceMagnet, 16, 0x447f08)
+#define g_FreeSpaceMagnetDef GAME_GLOBAL_IN(int, GVar_FreeSpaceMagnet, 20, 0x447f0c)
+#define g_FXVehicleFloatingFactor GAME_GLOBAL_IN(float, GVar_FXVehicleFloatingFactor, 16, 0x447ff8)
+#define g_FXVehicleFloatingFactorDef GAME_GLOBAL_IN(float, GVar_FXVehicleFloatingFactor, 20, 0x447ffc)
+#define g_SceneMotionBlurValue GAME_GLOBAL_IN(float, GVar_R_SceneMotionBlurValue, 16, 0x4a8c44)	/* R_SceneMotionBlurValue */
+#define g_NotShootAI GAME_GLOBAL_IN(int, GVar_NotShootAI, 16, 0x4441a4)
+#define g_NotShootAIDef GAME_GLOBAL_IN(int, GVar_NotShootAI, 20, 0x4441a8)
+#define g_RemainTalkTime GAME_GLOBAL_IN(float, GVar_RemainTalkTime, 16, 0x462148)
+#define g_PriorityWeapon (GAME_ARRAY_IN(cString, GVar_PriorityWeapon, 16, 0x467448))	/* PriorityWeapon, its default at +4 */
+#define g_SplitScreenCamera GAME_GLOBAL_IN(int, GVar_R_SplitScreenCamera, 16, 0x4a8a8c)		/* R_SplitScreenCamera */
+#define g_SplitScreenUpdate GAME_GLOBAL_IN(int, GVar_R_SplitScreenUpdate, 16, 0x4a8c74)		/* R_SplitScreenUpdate */
+#define g_UniqueName (GAME_ARRAY(char, g_UniqueName, 0x4678f8))		/* 0x80 bytes, the result of cWorld_UniqueName */
 /* script callbacks (cPy_Function of the GVAR_SCRIPT_FUNCTION variables) */
-#define g_OnSleep ((cPy_Function *)Game_Ptr(0x446e74))
-#define g_OnLifeItemTaken ((cPy_Function *)Game_Ptr(0x447ae0))
-#define g_OnGeneralDamage ((cPy_Function *)Game_Ptr(0x44ab10))
-#define g_MainMissionEvent ((cPy_Function *)Game_Ptr(0x467560))
-#define g_EscapeEvent ((cPy_Function *)Game_Ptr(0x4674b8))
-#define g_ChatEvent ((cPy_Function *)Game_Ptr(0x467824))
-#define g_QChatEvent1 ((cPy_Function *)Game_Ptr(0x467734))
-#define g_QChatEvent2 ((cPy_Function *)Game_Ptr(0x467494))
-#define g_QChatEvent3 ((cPy_Function *)Game_Ptr(0x46750c))
-#define g_QChatEvent4 ((cPy_Function *)Game_Ptr(0x467800))
-#define g_QChatEvent5 ((cPy_Function *)Game_Ptr(0x467608))
-#define g_QChatEvent6 ((cPy_Function *)Game_Ptr(0x4675b4))
+#define g_OnSleep (GAME_ARRAY_IN(cPy_Function, GVar_OnSleep, 16, 0x446e74))
+#define g_OnLifeItemTaken (GAME_ARRAY_IN(cPy_Function, GVar_OnLifeItemTaken, 16, 0x447ae0))
+#define g_OnGeneralDamage (GAME_ARRAY_IN(cPy_Function, GVar_OnGeneralDamage, 16, 0x44ab10))
+#define g_MainMissionEvent (GAME_ARRAY_IN(cPy_Function, GVar_MainMissionEvent, 16, 0x467560))
+#define g_EscapeEvent (GAME_ARRAY_IN(cPy_Function, GVar_EscapeEvent, 16, 0x4674b8))
+#define g_ChatEvent (GAME_ARRAY_IN(cPy_Function, GVar_ChatEvent, 16, 0x467824))
+#define g_QChatEvent1 (GAME_ARRAY_IN(cPy_Function, GVar_QChatEvent1, 16, 0x467734))
+#define g_QChatEvent2 (GAME_ARRAY_IN(cPy_Function, GVar_QChatEvent2, 16, 0x467494))
+#define g_QChatEvent3 (GAME_ARRAY_IN(cPy_Function, GVar_QChatEvent3, 16, 0x46750c))
+#define g_QChatEvent4 (GAME_ARRAY_IN(cPy_Function, GVar_QChatEvent4, 16, 0x467800))
+#define g_QChatEvent5 (GAME_ARRAY_IN(cPy_Function, GVar_QChatEvent5, 16, 0x467608))
+#define g_QChatEvent6 (GAME_ARRAY_IN(cPy_Function, GVar_QChatEvent6, 16, 0x4675b4))
 
 /* World/World.cpp (the rest is in scrap.h, entity.h and game.h) */
 float Vec3_DotViewDir(const vec3_t *v, float ax, float ay);

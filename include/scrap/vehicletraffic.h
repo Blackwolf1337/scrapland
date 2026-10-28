@@ -27,11 +27,11 @@ SD_OFFSET(cVehicleTraffic, off, 0x28);
 SD_SIZE(cVehicleTraffic, 0x2c);
 
 /* the engine variables */
-#define g_UseTrafficCollisionSkip GAME_DATA(int, 0x4486ec)
-#define g_TrafficSpeed GAME_DATA(float, 0x448704)
-#define g_HTrafficCapsule GAME_DATA(float, 0x448734)
-#define g_NTrafficCapsule GAME_DATA(float, 0x448764)
-#define g_MTrafficCapsule GAME_DATA(float, 0x448794)
+#define g_UseTrafficCollisionSkip GAME_GLOBAL_IN(int, GVar_UseTrafficCollisionSkip, 16, 0x4486ec)
+#define g_TrafficSpeed GAME_GLOBAL_IN(float, GVar_TrafficSpeed, 16, 0x448704)
+#define g_HTrafficCapsule GAME_GLOBAL_IN(float, GVar_HTrafficCapsule, 16, 0x448734)
+#define g_NTrafficCapsule GAME_GLOBAL_IN(float, GVar_NTrafficCapsule, 16, 0x448764)
+#define g_MTrafficCapsule GAME_GLOBAL_IN(float, GVar_MTrafficCapsule, 16, 0x448794)
 
 /* AI of another module (rva 0x8b0e0): the width of the traffic path of an AI in the traffic states 4 and 9, else 0;
  * the value of the x87 stack, not rounded */

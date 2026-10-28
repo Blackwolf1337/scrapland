@@ -12,51 +12,7 @@
 #define BMP_PIXEL 4
 #define CRT_EEXIST 17
 /* errno for a bad file (also TXF) */
-#define g_ImgBadFormat GAME_DATA(int, 0x3de07c)
-
-typedef struct __attribute__((packed)) {
-	uint16_t type;			/* 0x0 "BM" */
-	uint32_t size;			/* 0x2 */
-	uint32_t reserved;		/* 0x6 */
-	uint32_t offBits;		/* 0xa */
-} bmpFileCab_t;
-SD_SIZE(bmpFileCab_t, 0xe);
-
-typedef struct {
-	uint32_t size;			/* 0x00 */
-	int32_t ancho;			/* 0x04 */
-	int32_t alto;			/* 0x08 bottom up */
-	uint16_t planes;		/* 0x0c */
-	uint16_t bits;			/* 0x0e */
-	uint32_t compression;		/* 0x10 */
-	uint32_t sizeImage;		/* 0x14 */
-	int32_t xPels;			/* 0x18 */
-	int32_t yPels;			/* 0x1c */
-	uint32_t clrUsed;		/* 0x20 */
-	uint32_t clrImportant;		/* 0x24 */
-} bmpInfoCab_t;
-SD_SIZE(bmpInfoCab_t, 0x28);
-
-typedef struct {
-	uint32_t magic;			/* 0x00 "TEX\x1a" */
-	int32_t version;		/* 0x04 1 */
-	int32_t ancho;			/* 0x08 */
-	int32_t alto;			/* 0x0c */
-	uint32_t pad[4];		/* 0x10 */
-} texCab_t;
-SD_SIZE(texCab_t, 0x20);
-
-typedef struct __attribute__((packed)) {
-	byte idLength;			/* 0x00 */
-	byte cmapType;			/* 0x01 */
-	byte type;			/* 0x02 2 true color, 10 RLE */
-	byte cmap[5];			/* 0x03 */
-	uint16_t x, y;			/* 0x08 */
-	uint16_t ancho, alto;		/* 0x0c */
-	byte bits;			/* 0x10 */
-	byte desc;			/* 0x11 0x20 top down */
-} tgaCab_t;
-SD_SIZE(tgaCab_t, 0x12);
+#define g_ImgBadFormat GAME_GLOBAL(int, g_ErrPcxFormat, 0x3de07c)
 
 #define TEX_MAGIC 0x1a584554
 #define BMP_TYPE 0x4d42
@@ -66,10 +22,10 @@ SD_SIZE(tgaCab_t, 0x12);
 #define TGA_RUN 0x80		/* packet header: a run, else raw pixels */
 #define TGA_PACKET_MAX 128
 
-#define g_BmpFileCab (&GAME_DATA(bmpFileCab_t, 0x4dbf08))
-#define g_BmpInfoCab (&GAME_DATA(bmpInfoCab_t, 0x4dbf18))
-#define g_TexCab (&GAME_DATA(texCab_t, 0x4dbf40))
-#define g_TgaCab (&GAME_DATA(tgaCab_t, 0x4dbf60))
+#define g_BmpFileCab (&GAME_GLOBAL(bmpFileCab_t, g_BmpFileCab, 0x4dbf08))
+#define g_BmpInfoCab (&GAME_GLOBAL(bmpInfoCab_t, g_BmpInfoCab, 0x4dbf18))
+#define g_TexCab (&GAME_GLOBAL(texCab_t, g_TexCab, 0x4dbf40))
+#define g_TgaCab (&GAME_GLOBAL(tgaCab_t, g_TgaCab, 0x4dbf60))
 
 void *Img_Pixel(const CImagen *b, uint32_t x, uint32_t y, int bytes) {
 	CHECK(b->img);

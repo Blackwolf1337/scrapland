@@ -22,20 +22,20 @@
 #include "scrap/vehicleentity.h"
 
 /* the engine variables */
-#define g_ShowPathAI GAME_DATA(int, 0x444744)
-#define g_DepthPathRouteOutDoorAI GAME_DATA(int, 0x444960)
-#define g_ShowVehAI (&GAME_DATA(cString, 0x444abc))
-#define g_LimVelTurnObjectiveAI GAME_DATA(float, 0x444aa4)
-#define g_DistBoostAI GAME_DATA(float, 0x444ad4)
-#define g_DepthSearchPosGoAI GAME_DATA(int, 0x444aec)
-#define g_TimeReactTurnAI GAME_DATA(float, 0x444b04)
-#define g_DistBrakeObjAI GAME_DATA(float, 0x444b1c)
-#define g_MinAngleSearchPointAI GAME_DATA(float, 0x444b34)
-#define g_TimeMaxReachBoostAI GAME_DATA(float, 0x444b4c)
-#define g_VelTurnAI GAME_DATA(float, 0x444b64)
-#define g_DecVelBrakeAI GAME_DATA(float, 0x444b7c)
-#define g_ShowStopShipAI GAME_DATA(int, 0x444b98)
-#define g_MinTimeReposAI GAME_DATA(float, 0x444bb0)
+#define g_ShowPathAI GAME_GLOBAL_IN(int, GVar_ShowPathAI, 16, 0x444744)
+#define g_DepthPathRouteOutDoorAI GAME_GLOBAL_IN(int, GVar_DepthPathRouteOutDoorAI, 16, 0x444960)
+#define g_ShowVehAI (&GAME_GLOBAL_IN(cString, GVar_ShowVehAI, 16, 0x444abc))
+#define g_LimVelTurnObjectiveAI GAME_GLOBAL_IN(float, GVar_LimVelTurnObjectiveAI, 16, 0x444aa4)
+#define g_DistBoostAI GAME_GLOBAL_IN(float, GVar_DistBoostAI, 16, 0x444ad4)
+#define g_DepthSearchPosGoAI GAME_GLOBAL_IN(int, GVar_DepthSearchPosGoAI, 16, 0x444aec)
+#define g_TimeReactTurnAI GAME_GLOBAL_IN(float, GVar_TimeReactTurnAI, 16, 0x444b04)
+#define g_DistBrakeObjAI GAME_GLOBAL_IN(float, GVar_DistBrakeObjAI, 16, 0x444b1c)
+#define g_MinAngleSearchPointAI GAME_GLOBAL_IN(float, GVar_MinAngleSearchPointAI, 16, 0x444b34)
+#define g_TimeMaxReachBoostAI GAME_GLOBAL_IN(float, GVar_TimeMaxReachBoostAI, 16, 0x444b4c)
+#define g_VelTurnAI GAME_GLOBAL_IN(float, GVar_VelTurnAI, 16, 0x444b64)
+#define g_DecVelBrakeAI GAME_GLOBAL_IN(float, GVar_DecVelBrakeAI, 16, 0x444b7c)
+#define g_ShowStopShipAI GAME_GLOBAL_IN(int, GVar_ShowStopShipAI, 16, 0x444b98)
+#define g_MinTimeReposAI GAME_GLOBAL_IN(float, GVar_MinTimeReposAI, 16, 0x444bb0)
 
 #define AIVC_MAX_FREE 50		/* the free nodes the path keeps (rva 0x3a9a2c) */
 #define AIVC_MAX_LEN 10000.0f		/* the corridor tested ahead at most (rva 0x3a5ac0) */

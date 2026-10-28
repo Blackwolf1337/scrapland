@@ -19,11 +19,11 @@
 #include "scrap/vehicletraffic.h"
 #include "scrap/weapons.h"
 
-#define g_RadiusObjectiveTraffic GAME_DATA(float, 0x4448e8)		/* RADIUS_OBJECTIVE_TRAFFIC */
-#define g_RadiusObjectiveTrafficInDoor GAME_DATA(float, 0x444918)	/* RADIUS_OBJECTIVE_TRAFFIC_INDOOR */
-#define g_RadiusObjectiveInRoute GAME_DATA(float, 0x444d60)		/* RADIUS_OBJECTIVE_IN_ROUTE */
-#define g_VelTrafficLightRotAI GAME_DATA(float, 0x444a14)
-#define g_MaxDistAroundReposAI GAME_DATA(float, 0x444930)
+#define g_RadiusObjectiveTraffic GAME_GLOBAL_IN(float, GVar_RADIUS_OBJECTIVE_TRAFFIC, 16, 0x4448e8)		/* RADIUS_OBJECTIVE_TRAFFIC */
+#define g_RadiusObjectiveTrafficInDoor GAME_GLOBAL_IN(float, GVar_RADIUS_OBJECTIVE_TRAFFIC_INDOOR, 16, 0x444918)	/* RADIUS_OBJECTIVE_TRAFFIC_INDOOR */
+#define g_RadiusObjectiveInRoute GAME_GLOBAL_IN(float, GVar_RADIUS_OBJECTIVE_IN_ROUTE, 16, 0x444d60)		/* RADIUS_OBJECTIVE_IN_ROUTE */
+#define g_VelTrafficLightRotAI GAME_GLOBAL_IN(float, GVar_VelTrafficLightRotAI, 16, 0x444a14)
+#define g_MaxDistAroundReposAI GAME_GLOBAL_IN(float, GVar_MaxDistAroundReposAI, 16, 0x444930)
 #define AIV_NEAR_DIST2 225000000.0f		/* 15000 squared (rva 0x3a8e58) */
 #define AIV_ROT_SPEED_A 8334.0f			/* rva 0x3a8e4c */
 #define AIV_ROT_SPEED_B 4167.0f			/* rva 0x3a8e48 */
@@ -1429,7 +1429,7 @@ vec3_t *__thiscall cAIVehicle_TrackPointRandom(cAIVehicle *self, vec3_t *out, co
 	return out;
 }
 
-#define g_VelReposBackAI GAME_DATA(float, 0x444978)	/* VelReposBackAI */
+#define g_VelReposBackAI GAME_GLOBAL_IN(float, GVar_VelReposBackAI, 16, 0x444978)	/* VelReposBackAI */
 #define AIV_REPOS_HALF 0.5f			/* rva 0x3a3a04 */
 #define AIV_REPOS_FOV 1.5f			/* rva 0x3a5a9c */
 #define AIV_REPOS_SPHERE 3.0f			/* rva 0x3a3710 */
@@ -1911,9 +1911,9 @@ done:
 
 }
 
-#define g_RadiusShipGraph GAME_DATA(float, 0x444d30)			/* RADIUS_SHIP_GRAPH */
-#define g_DepthPathRouteOutDoorAI GAME_DATA(int, 0x444960)
-#define g_DepthPathRouteOutDoorAIInit GAME_DATA(int, 0x444964)	/* its default */
+#define g_RadiusShipGraph GAME_GLOBAL(float, g_NWNodeRadius, 0x444d30)			/* RADIUS_SHIP_GRAPH */
+#define g_DepthPathRouteOutDoorAI GAME_GLOBAL_IN(int, GVar_DepthPathRouteOutDoorAI, 16, 0x444960)
+#define g_DepthPathRouteOutDoorAIInit GAME_GLOBAL_IN(int, GVar_DepthPathRouteOutDoorAI, 20, 0x444964)	/* its default */
 #define AIV_LOST_SPEED 600.0				/* rva 0x3a8e40 */
 
 /* the name of the target into the pending state (the original copies without a bound) */
@@ -2414,11 +2414,11 @@ void __thiscall cAIVehicle_FindAmmo(cAIVehicle *self, cEntity *exclude) {
 
 /* ---- the reactions, the hook and the items of the states ---- */
 
-#define g_DistNotGetAwayAI GAME_DATA(float, 0x4447bc)
-#define g_DistGetAwayBoostAI GAME_DATA(float, 0x444a2c)
-#define g_MaxDistElevatorAI GAME_DATA(float, 0x4448b8)
-#define g_MinDistChaseElevatorAI GAME_DATA(float, 0x4449fc)
-#define g_MaxDistChaseElevatorAI GAME_DATA(float, 0x4448a0)
+#define g_DistNotGetAwayAI GAME_GLOBAL_IN(float, GVar_DistNotGetAwayAI, 16, 0x4447bc)
+#define g_DistGetAwayBoostAI GAME_GLOBAL_IN(float, GVar_DistGetAwayBoostAI, 16, 0x444a2c)
+#define g_MaxDistElevatorAI GAME_GLOBAL_IN(float, GVar_MaxDistElevatorAI, 16, 0x4448b8)
+#define g_MinDistChaseElevatorAI GAME_GLOBAL_IN(float, GVar_MinDistChaseElevatorAI, 16, 0x4449fc)
+#define g_MaxDistChaseElevatorAI GAME_GLOBAL_IN(float, GVar_MaxDistChaseElevatorAI, 16, 0x4448a0)
 #define AIV_LOST_TIME 15.0f			/* rva 0x3a7728 */
 #define AIV_ITEM_NEAR 10000.0f			/* rva 0x3a5ac0 */
 
@@ -3128,9 +3128,9 @@ void __thiscall cAIVehicle_FightingAfterItem(cAIVehicle *self) {
 	AIV_GoToItem(self, AIVI_FINISHING_LINE_AMMO, e);
 }
 
-#define g_VelReposStopAI GAME_DATA(float, 0x4447f8)	/* VelReposStopAI */
-#define g_MaxDistReposStopAI GAME_DATA(float, 0x444a5c)	/* MaxDistReposStopAI */
-#define g_MinDistReposStopAI GAME_DATA(float, 0x444870)	/* MinDistReposStopAI */
+#define g_VelReposStopAI GAME_GLOBAL_IN(float, GVar_VelReposStopAI, 16, 0x4447f8)	/* VelReposStopAI */
+#define g_MaxDistReposStopAI GAME_GLOBAL_IN(float, GVar_MaxDistReposStopAI, 16, 0x444a5c)	/* MaxDistReposStopAI */
+#define g_MinDistReposStopAI GAME_GLOBAL_IN(float, GVar_MinDistReposStopAI, 16, 0x444870)	/* MinDistReposStopAI */
 
 /* the repositioning on a traffic track in view, once the vehicle is placed, again when it got too far from the camera
  * (closer when the camera follows a slow ship) */

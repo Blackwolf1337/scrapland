@@ -16,10 +16,10 @@
 #include "scrap/scrapmain.h"
 
 /* the characters near the control (CharsNear, FindAvoid): the sphere test collects them here */
-#define g_AICCNear ((cEntity **)Game_Ptr(0x444350))	/* 20 */
-#define g_AICCNumNear GAME_DATA(int, 0x4443a0)
-#define g_AICCNearSelf GAME_DATA(cEntity *, 0x4443a4)	/* the character itself, left out */
-#define g_AICCNearFunc ((cPy_Function *)Game_Ptr(0x46679c))
+#define g_AICCNear (GAME_ARRAY(cEntity *, g_AICCNear, 0x444350))	/* 20 */
+#define g_AICCNumNear GAME_GLOBAL(int, g_AICCNumNear, 0x4443a0)
+#define g_AICCNearSelf GAME_GLOBAL(cEntity *, g_AICCNearSelf, 0x4443a4)	/* the character itself, left out */
+#define g_AICCNearFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0, 0x46679c))
 #define AICC_NEAR_NATIVE ((nativefunc_t)Game_Ptr(0x06fbf0))	/* AICC_NearChar (its C version behind the hook) */
 #define AICC_MAX_NEAR 20
 

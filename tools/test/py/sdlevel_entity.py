@@ -407,11 +407,11 @@ for k in (1.0, 0.5, 4.0, -2.0):
 	check('cMissileEntity_Wobble(%s)' % fmt(k), lambda k=k: (SDTest.Call('cMissileEntity_Wobble', 'tvif', ntm, k), ntmfields(ntm)))
 check('cMissileEntity_ScaleWeapon', lambda: (SDTest.Call('cMissileEntity_ScaleWeapon', 'tvii', ntm, 0), ntmfields(ntm)))
 # the touch list of the missiles (a global): the player goes in, the plain entity nt1 does not
-ntmhits = map(lambda i: ntstr(0x8476b8 + 0x80 * i), range(4))
+ntmhits = map(lambda i: ntstr(symva('g_MissileHits') + 0x80 * i), range(4))
 check('missile hits before', lambda: ntmhits)
 def ntmtouch(o):
 	SDTest.Call('cMissileEntity_Touch', 'tviiii', ntm, o, 0, 0)
-	return map(lambda i: ntstr(0x8476b8 + 0x80 * i), range(4))
+	return map(lambda i: ntstr(symva('g_MissileHits') + 0x80 * i), range(4))
 check('cMissileEntity_Touch(0)', lambda: ntmtouch(0))
 check('cMissileEntity_Touch(nt1)', lambda: ntmtouch(nt1))
 check('cMissileEntity_Touch(player)', lambda: ntmtouch(ntplayer))
@@ -419,10 +419,10 @@ SDTest.Call('cMissileEntity_SetParent', 'tvis', ntm, 'Player0')
 check('cMissileEntity_Touch(player) parent', lambda: ntmtouch(ntplayer))
 for i in range(4):
 	if ntmhits[i]:
-		SDTest.Call('Cad_Copy', 'iisi', 0x8476b8 + 0x80 * i, ntmhits[i], len(ntmhits[i]) + 1)
+		SDTest.Call('Cad_Copy', 'iisi', symva('g_MissileHits') + 0x80 * i, ntmhits[i], len(ntmhits[i]) + 1)
 	else:
-		ntsetfl(0x8476b8 + 0x80 * i, (0.0,))
-check('missile hits restored', lambda: map(lambda i: ntstr(0x8476b8 + 0x80 * i), range(4)))
+		ntsetfl(symva('g_MissileHits') + 0x80 * i, (0.0,))
+check('missile hits restored', lambda: map(lambda i: ntstr(symva('g_MissileHits') + 0x80 * i), range(4)))
 # InOut: leaving it calls OnHit for the names the missile went through
 ntcalls = []
 SDTest.Call('Cad_Copy', 'iisi', ntm + 0x5b4, 'SDHitA', 7)

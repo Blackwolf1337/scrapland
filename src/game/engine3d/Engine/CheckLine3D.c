@@ -8,16 +8,7 @@
 
 #define TRACE_FLT_MAX 3.4028234663852886e+38f
 
-/* the walk state of CSuelo_Trace */
-typedef struct {
-	float invDX;			/* 0x00 1 / (from.x - to.x) */
-	float invDZ;			/* 0x04 */
-	int x;				/* 0x08 the cell */
-	int z;				/* 0x0c */
-	vec3_t from;			/* 0x10 */
-	vec3_t to;			/* 0x1c */
-} traceCell_t;
-#define g_TraceCell GAME_DATA(traceCell_t, 0x4b11b0)
+#define g_TraceCell GAME_GLOBAL(traceCell_t, g_TraceCell, 0x4b11b0)
 
 byte Alturas_CellStep(CAlturas *alt, int *x, int *z, const vec3_t *a, const vec3_t *b, float *t) {
 	float x1 = (float)(*x + 1) * alt->sizeX + alt->ext.min.x;

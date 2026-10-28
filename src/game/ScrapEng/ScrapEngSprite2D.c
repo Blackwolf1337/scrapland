@@ -12,9 +12,9 @@
 #include "scrap/textura.h"
 
 /* the scale of the images, of SPR2D 0x10000 and of SPR2D 0x20000 (two floats each) */
-#define g_Sprite2DScale ((float *)Game_Ptr(0x431b8c))
-#define g_Sprite2DScaleA ((float *)Game_Ptr(0x431b94))
-#define g_Sprite2DScaleB ((float *)Game_Ptr(0x431b9c))
+#define g_Sprite2DScale (GAME_ARRAY(float, g_Sprite2DScale, 0x431b8c))
+#define g_Sprite2DScaleA (GAME_ARRAY(float, g_Sprite2DScaleA, 0x431b94))
+#define g_Sprite2DScaleB (GAME_ARRAY(float, g_Sprite2DScaleB, 0x431b9c))
 
 #define Sprite_Graf(p) ((CGrafico2D *)(p)->sprite)
 

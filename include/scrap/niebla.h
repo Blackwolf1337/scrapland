@@ -31,10 +31,10 @@ typedef struct CNiebla {
 SD_SIZE(CNiebla, 0x24);
 
 /* the engine variables of the fog (Gvars) */
-#define g_FogEnable GAME_DATA(int, 0x4b1cb8)
-#define g_FogColor GAME_DATA(int, 0x4b1ce8)	/* 0xRRGGBB forced, -1 none */
-#define g_FogAbsDist GAME_DATA(int, 0x4b1cd0)
-#define g_FogDensity GAME_DATA(float, 0x4b1ca0)	/* forced, 0 none */
+#define g_FogEnable GAME_GLOBAL_IN(int, GVar_R_FogEnable, 16, 0x4b1cb8)
+#define g_FogColor GAME_GLOBAL_IN(int, GVar_R_FogColor, 16, 0x4b1ce8)	/* 0xRRGGBB forced, -1 none */
+#define g_FogAbsDist GAME_GLOBAL_IN(int, GVar_R_FogAbsDist, 16, 0x4b1cd0)
+#define g_FogDensity GAME_GLOBAL_IN(float, GVar_R_FogDensity, 16, 0x4b1ca0)	/* forced, 0 none */
 
 CNiebla *__fastcall CNiebla_ctor(CNiebla *self);
 /* rva 0x278390, empty */

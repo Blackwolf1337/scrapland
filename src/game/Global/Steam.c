@@ -22,10 +22,10 @@ typedef void (*SteamUnregisterCallback_t)(void *cb);
 #define g_SteamAPI_UnregisterCallback GAME_DATA(SteamUnregisterCallback_t, 0x3a15ac)
 
 /* the auth ticket: requested once, then hex in g_SteamTicket when the callback (rva 0x1347a0) has it */
-#define g_SteamTicketCb ((cSteamTicketCallback *)Game_Ptr(0x428a90))
-#define g_SteamTicket ((char *)Game_Ptr(0x44b748))	/* [0x400] */
-#define g_SteamIdStr ((char *)Game_Ptr(0x44bb48))
-#define g_HexDigits ((const char *)Game_Ptr(0x3bb788))	/* "0123456789abcdef" */
+#define g_SteamTicketCb (GAME_ARRAY(cSteamTicketCallback, g_SteamTicketCb, 0x428a90))
+#define g_SteamTicket (GAME_ARRAY(char, g_SteamTicket, 0x44b748))	/* [0x400] */
+#define g_SteamIdStr (GAME_ARRAY(char, g_SteamIdStr, 0x44bb48))
+#define g_HexDigits (GAME_ARRAY(const char, g_HexDigits, 0x3bb788))	/* "0123456789abcdef" */
 #define STEAM_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" */
 
 #define STEAM_TICKET_SIZE 0x400
@@ -61,21 +61,6 @@ typedef struct cSteamAPIContext {
 	SteamIface *parentalSettings;	/* 0x54 */
 } cSteamAPIContext;
 SD_SIZE(cSteamAPIContext, 0x58);
-
-/* CCallback<cGetAuthSessionTicketResponseExt, GetAuthSessionTicketResponse_t> with the object after it */
-typedef struct cSteamTicketCallback {
-	const void *vftable;		/* 0x00 */
-	byte flags;			/* 0x04 */
-	byte pad_05[3];
-	int callback;			/* 0x08 the callback id */
-	void *obj;			/* 0x0c */
-	void(__thiscall *func)(void *obj, void *param);	/* 0x10 */
-	uint32_t ticket;		/* 0x14 HAuthTicket of the request */
-	byte ready;			/* 0x18 the hex is in g_SteamTicket */
-	byte pending;			/* 0x19 */
-	byte pad_1a[2];
-} cSteamTicketCallback;
-SD_OFFSET(cSteamTicketCallback, ticket, 0x14);
 
 /* the static initializer (rva 0x04d8c0) and the atexit destructor (rva 0x38d860) of g_SteamTicketCb: the rest of the
  * object is data; the destructor sets the vftable of the base class and unregisters it when steam_api registered it */

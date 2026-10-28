@@ -61,41 +61,41 @@
 #define MOTOR_W2A5F0(m) ((int *)((m) + 0x2a5f0))
 #define MOTOR_B2A5F9(m) (*(byte *)((m) + 0x2a5f9))
 
-#define g_Motor3D GAME_DATA(byte *, 0x4a9038)
+#define g_Motor3D GAME_GLOBAL(byte *, g_Motor3D, 0x4a9038)
 /* the callbacks of Engine3D_Create: once after the device, each frame, at the end */
-#define g_MotorInit GAME_DATA(void *, 0x4a8f90)
-#define g_MotorFrame GAME_DATA(void *, 0x4a8f94)
-#define g_MotorRelease GAME_DATA(void *, 0x4a8f98)
-#define g_MotorFrameCount GAME_DATA(int, 0x4a8f78)
+#define g_MotorInit GAME_GLOBAL(void *, g_MotorInit, 0x4a8f90)
+#define g_MotorFrame GAME_GLOBAL(void *, g_MotorFrame, 0x4a8f94)
+#define g_MotorRelease GAME_GLOBAL(void *, g_MotorRelease, 0x4a8f98)
+#define g_MotorFrameCount GAME_GLOBAL(int, g_MotorFrameCount, 0x4a8f78)
 /* the values m3d.ini gave (Motor_LoadIni) */
-#define g_MotorIni7c GAME_DATA(int, 0x4a8f7c)
-#define g_MotorIni80 GAME_DATA(int, 0x4a8f80)
-#define g_MotorIni84 GAME_DATA(int, 0x4a8f84)
-#define g_MotorIni88 GAME_DATA(int, 0x4a8f88)
-#define g_MotorDef1cf4 GAME_DATA(int, 0x431cf4)
-#define g_MotorMode GAME_DATA(int, 0x431d70)		/* 1 or 2 */
-#define g_ColorStr ((char *)Game_Ptr(0x4a9050))	/* 0x40 */
+#define g_MotorIni7c GAME_GLOBAL(int, g_MotorIni7c, 0x4a8f7c)
+#define g_MotorIni80 GAME_GLOBAL(int, g_MotorIni80, 0x4a8f80)
+#define g_MotorIni84 GAME_GLOBAL(int, g_MotorIni84, 0x4a8f84)
+#define g_MotorIni88 GAME_GLOBAL(int, g_MotorIni88, 0x4a8f88)
+#define g_MotorDef1cf4 GAME_GLOBAL(int, g_MotorDef1cf4, 0x431cf4)
+#define g_MotorMode GAME_GLOBAL_IN(int, g_FiltroMip, 0, 0x431d70)		/* 1 or 2 */
+#define g_ColorStr (GAME_ARRAY(char, g_ColorStr, 0x4a9050))	/* 0x40 */
 
 typedef void(__stdcall *initcommoncontrols_t)(void);
 #define exe_InitCommonControls GAME_DATA(initcommoncontrols_t, 0x3a104c)
 
 /* the console command handler of the engine (E3D_Command) */
 #define MOTOR_CMDPROC 0x22eda0
-#define g_Entrada GAME_DATA(void *, 0x4db418)	/* the input of the engine, a CEntradaNula */
+#define g_Entrada GAME_GLOBAL(void *, g_Entrada, 0x4db418)	/* the input of the engine, a CEntradaNula */
 #define MOTOR_OVERLAY(m) (*(void **)((m) + 0x2a5f0))	/* 8 bytes with a CGrafico2D */
 #define MOTOR_OBJ2A5F4(m) (*(void ***)((m) + 0x2a5f4))
 #define MOTOR_TIME(m) (*(float *)((m) + 0x2a518))	/* s */
 #define MOTOR_ELAPSED(m) (*(float *)((m) + 0x2a51c))
 /* the clock of the engine */
-#define g_FrameDelta GAME_DATA(float, 0x4a8ed4)
-#define g_RealFrameSecs GAME_DATA(float, 0x4a8ee4)
-#define g_TimeD GAME_DATA(double, 0x4a8ed8)
-#define g_TimeMsInt GAME_DATA(int, 0x4a8ee0)
-#define g_GameTimeD GAME_DATA(double, 0x4a8ee8)
-#define g_LastTime GAME_DATA(float, 0x4a903c)
-#define g_FpsTime GAME_DATA(float, 0x4a9040)
-#define g_FpsFrames GAME_DATA(int, 0x4a9044)
-#define g_Fps GAME_DATA(float, 0x431ba8)
+#define g_FrameDelta GAME_GLOBAL(float, g_FrameMs, 0x4a8ed4)
+#define g_RealFrameSecs GAME_GLOBAL(float, g_RealFrameSecs, 0x4a8ee4)
+#define g_TimeD GAME_GLOBAL(double, g_TimeD, 0x4a8ed8)
+#define g_TimeMsInt GAME_GLOBAL(int, g_TimeMsInt, 0x4a8ee0)
+#define g_GameTimeD GAME_GLOBAL(double, g_GameTimeD, 0x4a8ee8)
+#define g_LastTime GAME_GLOBAL(float, g_LastTime, 0x4a903c)
+#define g_FpsTime GAME_GLOBAL(float, g_FpsTime, 0x4a9040)
+#define g_FpsFrames GAME_GLOBAL(int, g_FpsFrames, 0x4a9044)
+#define g_Fps GAME_GLOBAL(float, g_Fps, 0x431ba8)
 #define MOTOR_MAXFRAME 0.1f
 
 #define WM_KEYDOWN 0x100
@@ -234,24 +234,24 @@ int __thiscall CMotorApp_FrameMove(byte *self) {
 }
 
 #define MOTOR_B2A5F8(m) (*(byte *)((m) + 0x2a5f8))
-#define g_RenderCounts ((int *)Game_Ptr(0x4a8f00))	/* 8, g_RenderTris and g_RenderVerts first; the frame clears 10 */
-#define g_Motor431bae GAME_DATA(byte, 0x431bae)
-#define g_Tramas GAME_DATA(int, 0x431bd4)		/* [video] Tramas: dithering */
+#define g_RenderCounts (GAME_ARRAY(int, g_RenderCounts, 0x4a8f00))	/* 8, g_RenderTris and g_RenderVerts first; the frame clears 10 */
+#define g_Motor431bae GAME_GLOBAL_IN(byte, group_431bac, 2, 0x431bae)
+#define g_Tramas GAME_GLOBAL(int, g_Tramas, 0x431bd4)		/* [video] Tramas: dithering */
 /* the frame limiter: [video] limitaFPS of m3d.ini and the console variable R_LimitFPS, the larger counts */
-#define g_LimitaFps GAME_DATA(float, 0x4a8f8c)
-#define g_RLimitFps GAME_DATA(float, 0x4a8fe8)
-#define g_LimitNext GAME_DATA(uint32_t, 0x4a9048)	/* the start of the next frame, timeGetTime * 3 (0: none yet) */
-#define g_RForceFps GAME_DATA(float, 0x4a8fd0)		/* R_ForceFPS: frames of a fixed length (Timer_FixedStep) */
-#define g_TiempoMult GAME_DATA(int, 0x431bec)
-#define g_TiempoScaled GAME_DATA(int, 0x4a8ecc)	/* Tiempo_Get() * g_TiempoMult / 1000 */
-#define g_AutoShot GAME_DATA(int, 0x4a9030)		/* the console variable AutoScreenShot */
-#define g_StencilClear GAME_DATA(uint32_t, 0x390138)
-#define g_ResetDev GAME_DATA(byte, 0x4a8efe)		/* the device objects made again at the next frame */
-#define g_ResetDevOnly GAME_DATA(byte, 0x431baf)	/* 1: without the world, 0: the game callbacks too */
+#define g_LimitaFps GAME_GLOBAL(float, g_LimitaFps, 0x4a8f8c)
+#define g_RLimitFps GAME_GLOBAL_IN(float, GVar_R_LimitFPS, 16, 0x4a8fe8)
+#define g_LimitNext GAME_GLOBAL(uint32_t, g_LimitNext, 0x4a9048)	/* the start of the next frame, timeGetTime * 3 (0: none yet) */
+#define g_RForceFps GAME_GLOBAL_IN(float, GVar_R_ForceFPS, 16, 0x4a8fd0)		/* R_ForceFPS: frames of a fixed length (Timer_FixedStep) */
+#define g_TiempoMult GAME_GLOBAL(int, g_TiempoMult, 0x431bec)
+#define g_TiempoScaled GAME_GLOBAL(int, g_TiempoScaled, 0x4a8ecc)	/* Tiempo_Get() * g_TiempoMult / 1000 */
+#define g_AutoShot GAME_GLOBAL_IN(int, GVar_AutoScreenShot, 16, 0x4a9030)		/* the console variable AutoScreenShot */
+#define g_StencilClear GAME_GLOBAL_IN(uint32_t, GVar_R_StencilRefClear, 16, 0x390138)
+#define g_ResetDev GAME_GLOBAL_IN(byte, group_4a8efc, 2, 0x4a8efe)		/* the device objects made again at the next frame */
+#define g_ResetDevOnly GAME_GLOBAL_IN(byte, group_431bac, 3, 0x431baf)	/* 1: without the world, 0: the game callbacks too */
 /* the callbacks of the game the reset puts in place */
-#define g_MotorInitNext GAME_DATA(void *, 0x4a8f9c)
-#define g_MotorFrameNext GAME_DATA(void *, 0x4a8fa0)
-#define g_MotorReleaseNext GAME_DATA(void *, 0x4a8fa4)
+#define g_MotorInitNext GAME_GLOBAL(void *, g_MotorInitNext, 0x4a8f9c)
+#define g_MotorFrameNext GAME_GLOBAL(void *, g_MotorFrameNext, 0x4a8fa0)
+#define g_MotorReleaseNext GAME_GLOBAL(void *, g_MotorReleaseNext, 0x4a8fa4)
 #define D3DDEV_BEGINSCENE 0x88
 #define D3DDEV_ENDSCENE 0x8c
 #define D3DRS_SHADEMODE 9
@@ -517,15 +517,15 @@ CMundo *Mundo_GetChecked(void) {
 }
 
 /* the statistics of R_Profiler */
-#define g_ProfResetTime GAME_DATA(float, 0x4a94a0)
-#define g_ProfNoReset GAME_DATA(int, 0x4a8fb8)	/* 0: the counters taken every frame, else once a second */
-#define g_CollisionCacheHit GAME_DATA(uint32_t, 0x4af7e0)
-#define g_CollisionCacheMiss GAME_DATA(uint32_t, 0x4af7e4)
-#define g_TexturePool GAME_DATA(int, 0x4b2670)
-#define g_TexCreated GAME_DATA(int, 0x4b25f0)
-#define g_TexCached GAME_DATA(int, 0x4b25f4)
-#define g_TexUsed GAME_DATA(int, 0x4b25f8)
-#define g_TexUsedPixels GAME_DATA(int, 0x4b25fc)
+#define g_ProfResetTime GAME_GLOBAL(float, g_ProfResetTime, 0x4a94a0)
+#define g_ProfNoReset GAME_GLOBAL_IN(int, GVar_ShowTSCMode, 16, 0x4a8fb8)	/* 0: the counters taken every frame, else once a second */
+#define g_CollisionCacheHit GAME_GLOBAL_IN(uint32_t, g_BspCacheStats, 0, 0x4af7e0)
+#define g_CollisionCacheMiss GAME_GLOBAL_IN(uint32_t, g_BspCacheStats, 4, 0x4af7e4)
+#define g_TexturePool GAME_GLOBAL_IN(int, GVar_TexturePool, 16, 0x4b2670)
+#define g_TexCreated GAME_GLOBAL(int, g_TexCreated, 0x4b25f0)
+#define g_TexCached GAME_GLOBAL(int, g_TexCached, 0x4b25f4)
+#define g_TexUsed GAME_GLOBAL(int, g_TexUsed, 0x4b25f8)
+#define g_TexUsedPixels GAME_GLOBAL(int, g_TexUsedPixels, 0x4b25fc)
 #define PROF_FRAME3D 31
 #define D3DDEV_GETAVAILABLETEXTUREMEM 0x10
 typedef uint32_t(__stdcall *d3dGetAvailableTextureMem_t)(void *dev);
@@ -1004,13 +1004,13 @@ intptr_t __stdcall Motor_SceneDlgProc(void *hwnd, uint32_t msg, uintptr_t wParam
 }
 
 /* the frame time graph of R_Profiler 4 (Motor_DrawStats) */
-#define g_FpsText ((char *)Game_Ptr(0x4a9090))	/* 0x40, "frame: fps fps  ms" when the fps jumped */
-#define g_FpsTextTime GAME_DATA(float, 0x4a90d0)
-#define g_FpsGraph ((float *)Game_Ptr(0x4a90d8))	/* FPS_GRAPH bars of 2 vertices (x, 0) (x, frame ms) */
-#define g_FpsGraphPeak ((float *)Game_Ptr(0x4a92b8))	/* the same with the falling peak */
-#define g_FpsGraphPos GAME_DATA(int, 0x4a9498)
-#define g_FpsScaleTime GAME_DATA(float, 0x4a949c)
-#define g_FpsScale GAME_DATA(float, 0x431d00)	/* the height of the graph: 200 ms per 200 fps */
+#define g_FpsText (GAME_ARRAY(char, g_FpsText, 0x4a9090))	/* 0x40, "frame: fps fps  ms" when the fps jumped */
+#define g_FpsTextTime GAME_GLOBAL(float, g_FpsTextTime, 0x4a90d0)
+#define g_FpsGraph (GAME_ARRAY(float, g_FpsGraph, 0x4a90d8))	/* FPS_GRAPH bars of 2 vertices (x, 0) (x, frame ms) */
+#define g_FpsGraphPeak (GAME_ARRAY(float, g_FpsGraphPeak, 0x4a92b8))	/* the same with the falling peak */
+#define g_FpsGraphPos GAME_GLOBAL_IN(int, g_FpsGraphPeak, 480, 0x4a9498)
+#define g_FpsScaleTime GAME_GLOBAL_IN(float, g_FpsGraphPeak, 484, 0x4a949c)
+#define g_FpsScale GAME_GLOBAL(float, g_FpsScale, 0x431d00)	/* the height of the graph: 200 ms per 200 fps */
 #define FPS_GRAPH 30
 
 void Motor_DrawFpsGraph(float y) {
@@ -1097,7 +1097,7 @@ void Escena_LogTree(CEscena *esc, CNodo3D *nodo, int indent) {
 }
 
 /* the commands of the debug console of the engine (g_E3DCmdProc) */
-#define g_VerUniones GAME_DATA(byte, 0x4ad6f0)	/* the joints of the meshes drawn */
+#define g_VerUniones GAME_GLOBAL_IN(byte, group_4ad6f0, 0, 0x4ad6f0)	/* the joints of the meshes drawn */
 void E3D_Command(char *cmd) {
 	char *s;
 	CEscena *e;
@@ -1168,9 +1168,9 @@ void E3D_Command(char *cmd) {
 #define MOTOR_B2A5FA(m) (*(byte *)((m) + 0x2a5fa))
 #define MOTOR_B2A5FB(m) (*(byte *)((m) + 0x2a5fb))
 #define MOTOR_I2A5FC(m) (*(int *)((m) + 0x2a5fc))
-#define g_Motor4af7d4 GAME_DATA(byte, 0x4af7d4)
-#define g_Sharpen GAME_DATA(int, 0x4b25e8)		/* [video] Sharpen of m3d.ini */
-#define g_RatonExcl GAME_DATA(int, 0x431cfc)		/* [dinput] raton_excl */
+#define g_Motor4af7d4 GAME_GLOBAL(byte, g_Motor4af7d4, 0x4af7d4)
+#define g_Sharpen GAME_GLOBAL(int, g_Sharpen, 0x4b25e8)		/* [video] Sharpen of m3d.ini */
+#define g_RatonExcl GAME_GLOBAL(int, g_RatonExcl, 0x431cfc)		/* [dinput] raton_excl */
 
 static uint32_t Menu_Check(int on) {
 	return on ? MF_CHECKED : 0;

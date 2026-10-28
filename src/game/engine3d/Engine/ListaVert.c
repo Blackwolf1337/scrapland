@@ -15,7 +15,7 @@
 #define LISTAVERT_VER 1
 #define FLT_MAX_F 3.4028234663852886e+38f	/* rva 0x3a3a38 */
 /* the 15 colors of the strips (rva 0x432a34) */
-#define g_StripColors ((const uint32_t *)Game_Ptr(0x432a34))
+#define g_StripColors (GAME_ARRAY(const uint32_t, g_QuadColors, 0x432a34))
 #define STRIP_COLORS 15
 #define TRI_USED 0x8000
 #define TRI_FREE 0xffff

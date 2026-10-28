@@ -679,10 +679,10 @@ typedef struct DebugPunto {
 } DebugPunto;
 SD_SIZE(DebugPunto, 0x14);
 
-#define g_Puntos (*(CTabla *)Game_Ptr(0x4afec4))	/* DebugPunto[], grown by a quarter */
-#define g_NumPuntos GAME_DATA(int, 0x4afecc)
-#define g_PuntosOn GAME_DATA(byte, 0x4a8efa)	/* set by the first point */
-#define g_MaxPuntos GAME_DATA(int, 0x432584)	/* 4000: all cleared at that count, 0 no limit */
+#define g_Puntos (GAME_GLOBAL(CTabla, g_Puntos, 0x4afec4))	/* DebugPunto[], grown by a quarter */
+#define g_NumPuntos GAME_GLOBAL(int, g_NumPuntos, 0x4afecc)
+#define g_PuntosOn GAME_GLOBAL_IN(byte, group_4a8ef8, 2, 0x4a8efa)	/* set by the first point */
+#define g_MaxPuntos GAME_GLOBAL(int, g_MaxPuntos, 0x432584)	/* 4000: all cleared at that count, 0 no limit */
 
 static DebugPunto *Punto(int i) {
 	TABLA_CHECK(g_Puntos.p, i, g_Puntos.n);

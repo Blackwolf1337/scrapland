@@ -7,7 +7,7 @@
 #include "scrap/app.h"
 #include "scrap/scoreritems.h"
 
-#define g_CircuitRandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
+#define g_CircuitRandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
 
 /* the stores of InitPaths: 16 bytes of the exe's tables (copy 1) or a dword, in the original order */
 static const struct {

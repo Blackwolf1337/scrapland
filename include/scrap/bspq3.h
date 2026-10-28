@@ -162,13 +162,13 @@ SD_OFFSET(CBspQ3, verts, 0x40);
 SD_OFFSET(CBspQ3, MallaD3D, 0x60);
 SD_SIZE(CBspQ3, 0x6c);
 
-#define g_BspQ3 GAME_DATA(CBspQ3 *, 0x4e5bf8)
+#define g_BspQ3 GAME_GLOBAL(CBspQ3 *, g_BspQ3, 0x4e5bf8)
 /* the corners of the face being cut into triangles: for the CMallaTri and for the vertex lists */
-#define g_BspQ3Vert ((CVertMalla *)Game_Ptr(0x4e6600))	/* [BSPQ3_MAX_VERT] */
-#define g_BspQ3VertL ((byte *)Game_Ptr(0x4e4af8))	/* [BSPQ3_MAX_VERT] of 0x28 bytes */
+#define g_BspQ3Vert (GAME_ARRAY(CVertMalla, g_BspQ3Vert, 0x4e6600))	/* [BSPQ3_MAX_VERT] */
+#define g_BspQ3VertL (GAME_ARRAY(byte, g_BspQ3VertL, 0x4e4af8))	/* [BSPQ3_MAX_VERT] of 0x28 bytes */
 /* D3DXATTRIBUTERANGE of pMesh, 0x14 bytes each */
-#define g_BspQ3Attrib ((uint32_t *)Game_Ptr(0x4e5c00))	/* [BSPQ3_TAM_ATTRIBTABLE * 5] */
-#define g_KeyL GAME_DATA(byte, 0x4db2e6)
+#define g_BspQ3Attrib (GAME_ARRAY(uint32_t, g_BspQ3Attrib, 0x4e5c00))	/* [BSPQ3_TAM_ATTRIBTABLE * 5] */
+#define g_KeyL GAME_GLOBAL_IN(byte, g_TecladoKeys, 22, 0x4db2e6)
 
 /* the map loaded: shaders, vertices, faces, light maps, then the meshes */
 CBspQ3 *__thiscall CBspQ3_ctor(CBspQ3 *self, const char *name);

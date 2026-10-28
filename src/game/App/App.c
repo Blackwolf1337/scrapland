@@ -20,7 +20,7 @@
 #include "scrap/world.h"
 
 #define APP_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" of the exe */
-#define APP_RANDSCALE GAME_DATA(double, 0x3a3d60)	/* 1 / 32767 */
+#define APP_RANDSCALE GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1 / 32767 */
 
 /* the engine callbacks of the exe (Engine_SetCallback) */
 #define APP_CB_WORLDFRAME ((void (*)(void))Game_Ptr(0x172e30))

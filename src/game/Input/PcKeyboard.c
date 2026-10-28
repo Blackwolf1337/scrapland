@@ -11,12 +11,12 @@
 #include "scrap/scrapmain.h"
 #include "scrap/video.h"
 
-#define GUID_SYSKEYBOARD ((const void *)Game_Ptr(0x3d0ffc))
-#define C_DFDIKEYBOARD ((const void *)Game_Ptr(0x3cfbec))
+#define GUID_SYSKEYBOARD ((const void *)GAME_PTR(GUID_SYSKEYBOARD, 0, 0x3d0ffc))
+#define C_DFDIKEYBOARD ((const void *)GAME_PTR(C_DFDIKEYBOARD, 0, 0x3cfbec))
 #define KB_NAME GAME_STR(str_3bc588, 0x3bc588)	/* "Kb" */
 /* DIDEVICEOBJECTINSTANCEA of the last label, its tszName at 0x20 */
-#define g_KeyObjInfo ((byte *)Game_Ptr(0x44c738))
-#define g_KeyNameBuf ((char *)Game_Ptr(0x44c874))	/* 0x28 bytes */
+#define g_KeyObjInfo (GAME_ARRAY(byte, g_KeyObjInfo, 0x44c738))
+#define g_KeyNameBuf (GAME_ARRAY(char, g_KeyNameBuf, 0x44c874))	/* 0x28 bytes */
 
 /* the DIK_ names of the config file (the jump table of the original) */
 static const char *const kb_names[0xee] = {

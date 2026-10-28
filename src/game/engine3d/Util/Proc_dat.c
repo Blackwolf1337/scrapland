@@ -11,27 +11,14 @@
 
 #include "scrap/e3dutil.h"
 
-/* converts the identifier name of a type into the text of its number */
-typedef int (*proctype_t)(char *dest, const char *name, const void *data, int size);
-
-typedef struct cProcType {
-	const char *name;		/* 0x0 */
-	const void *data;		/* 0x4 the "IDENT value" list of Proc_TypeLookup */
-	proctype_t convert;		/* 0x8 NULL: Proc_TypeLookup */
-} cProcType;
-SD_SIZE(cProcType, 0xc);
-
 #define PROC_TYPES 16
-#define g_ProcTypes ((cProcType *)Game_Ptr(0x4324b8))	/* tipo_si_no, tipo_bucle, tipo_nota, ... */
-#define g_ProcBuf ((char *)Game_Ptr(0x4af9b0))	/* 0x400, the number of an identifier */
+#define g_ProcTypes (GAME_ARRAY(cProcType, g_ProcTypes, 0x4324b8))	/* tipo_si_no, tipo_bucle, tipo_nota, ... */
+#define g_ProcBuf (GAME_ARRAY(char, g_ProcBuf, 0x4af9b0))	/* 0x400, the number of an identifier */
 
-typedef struct procrange_t {
-	int lo, hi;
-} procrange_t;
-#define g_ProcRangeChar GAME_DATA(procrange_t, 0x432430)
-#define g_ProcRangeByte GAME_DATA(procrange_t, 0x432438)
-#define g_ProcRangeShort GAME_DATA(procrange_t, 0x432440)
-#define g_ProcRangeWord GAME_DATA(procrange_t, 0x432448)
+#define g_ProcRangeChar GAME_GLOBAL(procrange_t, g_ProcRangeChar, 0x432430)
+#define g_ProcRangeByte GAME_GLOBAL(procrange_t, g_ProcRangeByte, 0x432438)
+#define g_ProcRangeShort GAME_GLOBAL(procrange_t, g_ProcRangeShort, 0x432440)
+#define g_ProcRangeWord GAME_GLOBAL(procrange_t, g_ProcRangeWord, 0x432448)
 
 #define IS_BLANK(c) ((c) == '\t' || (c) == ' ')
 

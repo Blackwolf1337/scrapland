@@ -30,13 +30,13 @@
 #define SUELO_FLT_MAX 3.4028234663852886e+38f
 
 /* the statistics of the queries, cleared with the query number */
-#define g_CollisionStats ((uint32_t *)Game_Ptr(0x4af888))	/* 6 */
-#define g_CollisionStats2 GAME_DATA(uint32_t, 0x4af8a0)
-#define g_CollisionCache GAME_DATA(uint32_t, 0x4af7d0)
-#define g_CollisionCache2 ((uint32_t *)Game_Ptr(0x4af7e0))	/* 2 */
+#define g_CollisionStats (GAME_ARRAY(uint32_t, g_CollisionStats, 0x4af888))	/* 6 */
+#define g_CollisionStats2 GAME_GLOBAL(uint32_t, g_CollisionStats2, 0x4af8a0)
+#define g_CollisionCache GAME_GLOBAL(uint32_t, g_CollisionCache, 0x4af7d0)
+#define g_CollisionCache2 (GAME_ARRAY_IN(uint32_t, g_BspCacheStats, 0, 0x4af7e0))	/* 2 */
 /* while a .amc file is read: the meshes by their Param (256), while one is written the next Param */
-#define g_LoadMeshList GAME_DATA(CCollideMesh **, 0x4af8a8)
-#define g_SaveCollideMeshParam GAME_DATA(int, 0x4af8a4)
+#define g_LoadMeshList GAME_GLOBAL(CCollideMesh **, g_LoadMeshList, 0x4af8a8)
+#define g_SaveCollideMeshParam GAME_GLOBAL(int, g_SaveCollideMeshParam, 0x4af8a4)
 
 /* the accessor of tabla.h */
 
@@ -1734,7 +1734,7 @@ void Suelo_DrawDebug(void) {
 #define MAT_B3B 0x3b
 #define MAT_A0 0xa0
 /* the triangles per floor node */
-#define g_SueloTrisPerNode GAME_DATA(int, 0x431bc0)
+#define g_SueloTrisPerNode GAME_GLOBAL(int, g_SueloTrisPerNode, 0x431bc0)
 
 #define Suelo_Field(p, off, type) (*(type *)((byte *)(p) + (off)))
 
@@ -1951,10 +1951,10 @@ void __thiscall CSuelo_CalcIlum(void *suelo, CNodo3D *nodo, CEscena *esc) {
 }
 
 /* the debug view of the collision meshes (c_show and ShowMapSolid) */
-#define g_ShowMapSolid GAME_DATA(int, 0x4af850)		/* 0 wireframe, 1 solid, 2 solid with fog */
-#define g_CollideAddColor ((float *)Game_Ptr(0x432420))	/* added to the shaded colors, rgba */
-#define g_CollideVerts ((CollideVert *)Game_Ptr(0x4af8b0))	/* the triangle drawn */
-#define g_SectorColors ((const uint32_t *)Game_Ptr(0x432a34))
+#define g_ShowMapSolid GAME_GLOBAL_IN(int, GVar_ShowMapSolid, 16, 0x4af850)		/* 0 wireframe, 1 solid, 2 solid with fog */
+#define g_CollideAddColor (GAME_ARRAY(float, g_CollideAddColor, 0x432420))	/* added to the shaded colors, rgba */
+#define g_CollideVerts (GAME_ARRAY(CollideVert, g_CollideVerts, 0x4af8b0))	/* the triangle drawn */
+#define g_SectorColors (GAME_ARRAY(const uint32_t, g_QuadColors, 0x432a34))
 
 /* the shading of the solid view: (0 < s) ? min(1, s) : 0 the way the original branches (NaN to the minss) */
 static float Collide_Clamp01(float s) {
@@ -2107,19 +2107,19 @@ void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_CULLMODE, 3);
 }
 
-#define g_ShowMapQuads GAME_DATA(int, 0x4af880)		/* ShowMapQuads: the boxes of the quads, 2..6 by kind */
-#define g_ShowMapQDist GAME_DATA(float, 0x4af820)	/* ShowMapQDist: only the quads this near the camera, 0 all */
-#define g_AnalizeQuads GAME_DATA(int, 0x4af808)		/* AnalizeQuads: 1 the quads checked once */
+#define g_ShowMapQuads GAME_GLOBAL_IN(int, GVar_ShowMapQuads, 16, 0x4af880)		/* ShowMapQuads: the boxes of the quads, 2..6 by kind */
+#define g_ShowMapQDist GAME_GLOBAL_IN(float, GVar_ShowMapQDist, 16, 0x4af820)	/* ShowMapQDist: only the quads this near the camera, 0 all */
+#define g_AnalizeQuads GAME_GLOBAL_IN(int, GVar_AnalizeQuads, 16, 0x4af808)		/* AnalizeQuads: 1 the quads checked once */
 /* the material of the debug view, a static of CSuelo_DrawDebug */
-#define g_CollideMat (*(CMaterial *)Game_Ptr(0x4af8f8))
-#define g_CollideMatGuard ((int *)Game_Ptr(0x4af9a8))
+#define g_CollideMat (GAME_GLOBAL(CMaterial, g_CollideMat, 0x4af8f8))
+#define g_CollideMatGuard (GAME_ARRAY(int, g_CollideMatGuard, 0x4af9a8))
 
 /* the atexit destructor of it (rva 0x38edb0) */
 void Suelo_FiniCollideMat(void) {
 	CMaterial_dtor(&g_CollideMat);
 }
 
-#define g_QuadColors ((const uint32_t *)Game_Ptr(0x432a34))
+#define g_QuadColors (GAME_ARRAY(const uint32_t, g_QuadColors, 0x432a34))
 
 /* the box of a quad with its cell from x z of the grid */
 static void Suelo_QuadBox(const CAlturas *alt, const CCollideQuad *q, float x0, float x1, float z0, float z1,

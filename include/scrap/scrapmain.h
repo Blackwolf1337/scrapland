@@ -109,82 +109,82 @@ void __thiscall CPsaImage_DrawFrame(CPsaImage *self, int frame, float x, float y
 void __thiscall CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, float y, int mode, int flip);	/* rva 0x22d480 */
 
 /* the state of the engine glue */
-#define g_CamActual GAME_DATA(CGameCamera *, 0x4a8308)	/* the camera drawn */
-#define g_ViewerCamera GAME_DATA(CGameCamera *, 0x4a830c)	/* gViewerCamera, made with the engine */
-#define g_Watermark GAME_DATA(CPsaImage *, 0x4a8310)
+#define g_CamActual GAME_GLOBAL(CGameCamera *, g_CamActual, 0x4a8308)	/* the camera drawn */
+#define g_ViewerCamera GAME_GLOBAL(CGameCamera *, g_ViewerCamera, 0x4a830c)	/* gViewerCamera, made with the engine */
+#define g_Watermark GAME_GLOBAL(CPsaImage *, g_Watermark, 0x4a8310)
 /* the callbacks of Engine_SetCallback (1..4): before each frame, after the frame setup, two more */
-#define g_EngCallbacks ((void (**)(void))Game_Ptr(0x4a8314))
-#define g_DrawProgressBar GAME_DATA(byte, 0x4a8324)
-#define g_ResetPending GAME_DATA(byte, 0x4a8325)	/* Video_SetCurrentMode: reset the device at the next frame */
-#define g_ProgressBarCount GAME_DATA(int, 0x4a8328)
-#define g_MapTextDataFile GAME_DATA(void *, 0x4a832c)	/* FILE of the exe's CRT */
-#define g_MapTextSaving GAME_DATA(int, 0x4b2604)
-#define g_VideoBufferSize GAME_DATA(int, 0x4b2600)
-#define g_CallbacksOn GAME_DATA(byte, 0x431ae4)
-#define g_ScreenshotName ((char *)Game_Ptr(0x4b2740))	/* 0x100 */
-#define g_DVFName ((char *)Game_Ptr(0x4b2840))		/* 0x100 */
-#define g_VideoStatus GAME_DATA(int, 0x4b2b34)
-#define g_LoadingScreen GAME_DATA(int, 0x431b08)	/* the last random loading screen */
+#define g_EngCallbacks (GAME_ARRAY(void (*)(void), g_EngCallbacks, 0x4a8314))
+#define g_DrawProgressBar GAME_GLOBAL_IN(byte, group_4a8324, 0, 0x4a8324)
+#define g_ResetPending GAME_GLOBAL_IN(byte, group_4a8324, 1, 0x4a8325)	/* Video_SetCurrentMode: reset the device at the next frame */
+#define g_ProgressBarCount GAME_GLOBAL(int, g_LoadingCount, 0x4a8328)
+#define g_MapTextDataFile GAME_GLOBAL(void *, g_MapTextDataFile, 0x4a832c)	/* FILE of the exe's CRT */
+#define g_MapTextSaving GAME_GLOBAL(int, g_MapTextSaving, 0x4b2604)
+#define g_VideoBufferSize GAME_GLOBAL(int, g_VideoBufferSize, 0x4b2600)
+#define g_CallbacksOn GAME_GLOBAL(byte, g_CallbacksOn, 0x431ae4)
+#define g_ScreenshotName (GAME_ARRAY(char, g_ScreenshotName, 0x4b2740))	/* 0x100 */
+#define g_DVFName (GAME_ARRAY(char, g_DVFName, 0x4b2840))		/* 0x100 */
+#define g_VideoStatus GAME_GLOBAL(int, g_BspSecVisto, 0x4b2b34)
+#define g_LoadingScreen GAME_GLOBAL(int, g_LoadingScreen, 0x431b08)	/* the last random loading screen */
 #define g_M3dIni GAME_STR(str_431bf0, 0x431bf0)		/* "m3d.ini" */
 /* the video to play at the start and after a level ("" when played, unless bit 0 of its flags) */
-#define g_StartVideo ((cString *)Game_Ptr(0x4a8708))
-#define g_StartVideoFlags GAME_DATA(uint32_t, 0x4a8704)
-#define g_IsDemo GAME_DATA(int, 0x467ad4)
-#define g_IsXbox GAME_DATA(int, 0x467aec)
-#define g_EngineVersion GAME_DATA(int, 0x3d5838)
+#define g_StartVideo (GAME_ARRAY_IN(cString, GVar_PlayVideo, 16, 0x4a8708))
+#define g_StartVideoFlags GAME_GLOBAL_IN(uint32_t, GVar_PlayVideo, 12, 0x4a8704)
+#define g_IsDemo GAME_GLOBAL_IN(int, GVar_isDemo, 16, 0x467ad4)
+#define g_IsXbox GAME_GLOBAL_IN(int, GVar_isXbox, 16, 0x467aec)
+#define g_EngineVersion GAME_GLOBAL(int, g_EngineVersion, 0x3d5838)
 
 /* m3d.ini of the level (Engine_LoadIni) */
-#define g_SueloPath ((char *)Game_Ptr(0x4a8440))	/* [suelo] ruta_m3d, 0x104 */
-#define g_SueloEscala ((vec3_t *)Game_Ptr(0x431af8))
-#define g_ModelAmbientIni ((ColorIntens *)Game_Ptr(0x4a8630))	/* [suelo] model_ambient */
-#define g_ClipNear GAME_DATA(float, 0x4a8330)		/* [camara] forzar_clipNear */
-#define g_ClipFar GAME_DATA(float, 0x4a8334)
-#define g_CieloPath ((char *)Game_Ptr(0x4a8338))	/* [cielo], 0x104 */
-#define g_CieloPosScale GAME_DATA(float, 0x4a843c)
-#define g_CieloRotation GAME_DATA(float, 0x4a8544)
-#define g_NieblaActiva GAME_DATA(int, 0x4a8548)	/* [niebla] */
-#define g_NieblaModoTabla GAME_DATA(int, 0x4a854c)
-#define g_NieblaLineal GAME_DATA(int, 0x431ae8)
-#define g_NieblaRangoIni GAME_DATA(float, 0x431aec)
-#define g_NieblaRangoFin GAME_DATA(float, 0x431af0)
-#define g_NieblaDensidad GAME_DATA(float, 0x431af4)
-#define g_NieblaColor ((ColorIntens *)Game_Ptr(0x4a8568))
-#define g_SueloTrisPerNode GAME_DATA(int, 0x431bc0)
+#define g_SueloPath (GAME_ARRAY(char, g_SueloPath, 0x4a8440))	/* [suelo] ruta_m3d, 0x104 */
+#define g_SueloEscala (GAME_ARRAY(vec3_t, g_SueloEscala, 0x431af8))
+#define g_ModelAmbientIni (GAME_ARRAY(ColorIntens, g_ModelAmbientIni, 0x4a8630))	/* [suelo] model_ambient */
+#define g_ClipNear GAME_GLOBAL(float, g_ClipNear, 0x4a8330)		/* [camara] forzar_clipNear */
+#define g_ClipFar GAME_GLOBAL(float, g_ClipFar, 0x4a8334)
+#define g_CieloPath (GAME_ARRAY(char, g_CieloPath, 0x4a8338))	/* [cielo], 0x104 */
+#define g_CieloPosScale GAME_GLOBAL(float, g_CieloPosScale, 0x4a843c)
+#define g_CieloRotation GAME_GLOBAL(float, g_CieloRotation, 0x4a8544)
+#define g_NieblaActiva GAME_GLOBAL(int, g_NieblaActiva, 0x4a8548)	/* [niebla] */
+#define g_NieblaModoTabla GAME_GLOBAL(int, g_NieblaModoTabla, 0x4a854c)
+#define g_NieblaLineal GAME_GLOBAL(int, g_NieblaLineal, 0x431ae8)
+#define g_NieblaRangoIni GAME_GLOBAL(float, g_NieblaRangoIni, 0x431aec)
+#define g_NieblaRangoFin GAME_GLOBAL(float, g_NieblaRangoFin, 0x431af0)
+#define g_NieblaDensidad GAME_GLOBAL(float, g_NieblaDensidad, 0x431af4)
+#define g_NieblaColor (GAME_ARRAY(ColorIntens, g_NieblaColor, 0x4a8568))
+#define g_SueloTrisPerNode GAME_GLOBAL(int, g_SueloTrisPerNode, 0x431bc0)
 
 /* the engine variables (Gvars) */
-#define g_RenderLightmap GAME_DATA(int, 0x4a8690)
-#define g_GvCollisionEpsilon GAME_DATA(float, 0x4a8780)	/* CollisionEpsilon */
-#define g_FullScreen GAME_DATA(int, 0x4a87f8)
-#define g_ComputeMapTextSaving GAME_DATA(int, 0x4a86a8)
-#define g_ViewerCameraAnim GAME_DATA(int, 0x4a8798)
-#define g_ShowMapCollision GAME_DATA(int, 0x4a87e0)
-#define g_ShowMapWireFrame GAME_DATA(int, 0x4a85f8)
-#define g_RenderUseVB GAME_DATA(int, 0x4a8560)
-#define g_RenderModels GAME_DATA(int, 0x4a86c0)
-#define g_ModelAmbient GAME_DATA(uint32_t, 0x4a85e0)	/* D3D color, 0: the one of m3d.ini */
-#define g_TimerFreqMult GAME_DATA(int, 0x4a8628)
-#define g_VideoWidth GAME_DATA(int, 0x4a8750)
-#define g_VideoHeight GAME_DATA(int, 0x4a8738)
-#define g_VideoBPP GAME_DATA(int, 0x4a8768)
-#define g_VSync GAME_DATA(int, 0x4a9000)
-#define g_ShowSplashScreen GAME_DATA(int, 0x4a85c8)
-#define g_ProgressBar GAME_DATA(int, 0x4a86d8)
-#define g_StencilShadows GAME_DATA(int, 0x3902a8)	/* R_StencilShadows */
-#define g_GvEnvMap ((cGVar *)Game_Ptr(0x4add90))	/* R_EnvMap, R_EnvBump and R_GlowMap as variables */
-#define g_GvEnvBump ((cGVar *)Game_Ptr(0x4ad828))
-#define g_GvGlowMap ((cGVar *)Game_Ptr(0x4adaa0))
+#define g_RenderLightmap GAME_GLOBAL_IN(int, GVar_RenderLightmap, 16, 0x4a8690)
+#define g_GvCollisionEpsilon GAME_GLOBAL_IN(float, GVar_CollisionEpsilon, 16, 0x4a8780)	/* CollisionEpsilon */
+#define g_FullScreen GAME_GLOBAL_IN(int, GVar_FullScreen, 16, 0x4a87f8)
+#define g_ComputeMapTextSaving GAME_GLOBAL_IN(int, GVar_ComputeMapTextSaving, 16, 0x4a86a8)
+#define g_ViewerCameraAnim GAME_GLOBAL_IN(int, GVar_ViewerCameraAnim, 16, 0x4a8798)
+#define g_ShowMapCollision GAME_GLOBAL_IN(int, GVar_ShowMapCollision, 16, 0x4a87e0)
+#define g_ShowMapWireFrame GAME_GLOBAL_IN(int, GVar_ShowMapWireFrame, 16, 0x4a85f8)
+#define g_RenderUseVB GAME_GLOBAL_IN(int, GVar_RenderUseVB, 16, 0x4a8560)
+#define g_RenderModels GAME_GLOBAL_IN(int, GVar_RenderModels, 16, 0x4a86c0)
+#define g_ModelAmbient GAME_GLOBAL_IN(uint32_t, GVar_ModelAmbient, 16, 0x4a85e0)	/* D3D color, 0: the one of m3d.ini */
+#define g_TimerFreqMult GAME_GLOBAL_IN(int, GVar_TimerFreqMult, 16, 0x4a8628)
+#define g_VideoWidth GAME_GLOBAL_IN(int, GVar_VideoWidth, 16, 0x4a8750)
+#define g_VideoHeight GAME_GLOBAL_IN(int, GVar_VideoHeight, 16, 0x4a8738)
+#define g_VideoBPP GAME_GLOBAL_IN(int, GVar_VideoBPP, 16, 0x4a8768)
+#define g_VSync GAME_GLOBAL_IN(int, GVar_VSync, 16, 0x4a9000)
+#define g_ShowSplashScreen GAME_GLOBAL_IN(int, GVar_ShowSplashScreen, 16, 0x4a85c8)
+#define g_ProgressBar GAME_GLOBAL_IN(int, GVar_ProgressBar, 16, 0x4a86d8)
+#define g_StencilShadows GAME_GLOBAL_IN(int, GVar_R_StencilShadows, 16, 0x3902a8)	/* R_StencilShadows */
+#define g_GvEnvMap (GAME_ARRAY(cGVar, g_GvEnvMap, 0x4add90))	/* R_EnvMap, R_EnvBump and R_GlowMap as variables */
+#define g_GvEnvBump (GAME_ARRAY(cGVar, g_GvEnvBump, 0x4ad828))
+#define g_GvGlowMap (GAME_ARRAY(cGVar, g_GvGlowMap, 0x4adaa0))
 /* what the frame setup takes from the variables */
-#define g_ShowCollision GAME_DATA(int, 0x4a8f70)
-#define g_WireFrame GAME_DATA(int, 0x4b2b30)
-#define g_LightmapMode2 GAME_DATA(int, 0x4b2b28)
-#define g_LightmapOff GAME_DATA(int, 0x4b2b2c)
-#define g_CalcLmap2 GAME_DATA(int, 0x4b2b20)		/* [mapa_sombras] calc_lmap2 */
-#define g_MaxLightmap GAME_DATA(int, 0x432970)
-#define g_TimerQPMult GAME_DATA(int, 0x432588)
-#define g_MapTextSavingOn GAME_DATA(byte, 0x4b2608)
-#define g_VertexSpecular GAME_DATA(byte, 0x4a8efc)
-#define g_RenderFlag6e0 GAME_DATA(int, 0x4ae6e0)	/* taken from 0x4ae6e4 at the start */
-#define g_RenderFlag6e4 GAME_DATA(int, 0x4ae6e4)
+#define g_ShowCollision GAME_GLOBAL(int, g_ShowCollision, 0x4a8f70)
+#define g_WireFrame GAME_GLOBAL(int, g_WireFrame, 0x4b2b30)
+#define g_LightmapMode2 GAME_GLOBAL(int, g_LightmapMode2, 0x4b2b28)
+#define g_LightmapOff GAME_GLOBAL(int, g_LightmapOff, 0x4b2b2c)
+#define g_CalcLmap2 GAME_GLOBAL(int, g_CalcLmap2, 0x4b2b20)		/* [mapa_sombras] calc_lmap2 */
+#define g_MaxLightmap GAME_GLOBAL(int, g_MaxLightmap, 0x432970)
+#define g_TimerQPMult GAME_GLOBAL(int, g_TimerQPMult, 0x432588)
+#define g_MapTextSavingOn GAME_GLOBAL(byte, g_MapTextSavingOn, 0x4b2608)
+#define g_VertexSpecular GAME_GLOBAL_IN(byte, group_4a8efc, 0, 0x4a8efc)
+#define g_RenderFlag6e0 GAME_GLOBAL_IN(int, GVar_R_UseMLOD, 16, 0x4ae6e0)	/* taken from 0x4ae6e4 at the start */
+#define g_RenderFlag6e4 GAME_GLOBAL_IN(int, GVar_R_UseMLOD, 20, 0x4ae6e4)
 
 void Engine_Close(void);
 /* the three callbacks of the engine: once after the device, each frame, at the end */
@@ -344,8 +344,8 @@ void __thiscall CPsaImage_Load(CPsaImage *self, const char *name, const char *op
 void __thiscall CPsaImage_LoadOpac(CPsaImage *self, const char *name, const char *opac, uint32_t flags);
 void __thiscall CPsaImage_LoadName(CPsaImage *self, const char *name, uint32_t flags);
 /* ScrapEngMaterial.cpp: the source and destination blend of a blend mode (CHECK mode < 7) */
-int BlendMode_GetSrc(int mode);		/* rva 0x2a1a60 */
-int BlendMode_GetDst(int mode);		/* rva 0x2a1a00 */
+uint32_t BlendMode_GetSrc(uint32_t mode);	/* rva 0x2a1a60 */
+uint32_t BlendMode_GetDst(uint32_t mode);	/* rva 0x2a1a00 */
 /* the camera of ScrapEngCamera.cpp (rva 0x21c6c0, 0x21c7c0, 0x21c980, 0x21ce80, 0x21ccf0) */
 /* the viewer camera moved by the keys of the second action set (rva 0x218080, this file, still the exe's) */
 void ViewerCamera_Move(CGameCamera *cam);

@@ -795,6 +795,121 @@ code writes (the `Get` after a `Set` of 7 returns text bytes). It holds what the
 on the text of the scripts: with the old `sdlevel_scorer2.py` and `sdlevel_scorer3.py` and all other scripts rewritten,
 the 4 SC3 lines are the old ones again.
 
+### Stage 3b5: the globals and tables (done)
+
+`tools/standalone/globals.py -w` writes `src/game/Global/Globals39.c` .. `Globals4e.c` (one file per 64 KB of rvas, 18
+files) and `src/game/Global/GlobalsAt.h`, and rewrites the defines of the C. Without `-w` it prints what it would write
+and its counts. It reads the C objects of strings.py and vtables.py and the symbols of the C functions from the build
+(`-b`, default `build`), so the order after a change is: strings.py -w, build, globals.py -w, build. It is idempotent:
+a second run writes the same files and rewrites nothing. After a merge that brings new `GAME_DATA` defines it is run
+again. `tools/standalone/ctypeinfo.py` gives it the C types: it compiles one probe file with all headers of
+`include/scrap` like scrapcode_sa (mingw-w64 i686, `-g`, `-fno-merge-debug-strings`) and reads the DWARF back from
+`objdump --dwarf=info`: sizes, the members of structs and unions with offsets, bit fields, array lengths, the encoding
+of base types. The same probe evaluates the counts in the comments of the arrays (`/* [9] */`, `/* 256, ... */`,
+`/* MAX_RUTA */`, `/* 3 bodies */` after an `&GAME_DATA`).
+
+What it reads are the claims of the C, 4883 of them: the defines of `GAME_DATA(type, rva)` (2614 defines of 2470 rvas,
+20 of them of the form `(*(T *)Game_Ptr(rva))`), the pointer casts `((T *)Game_Ptr(rva))` (an array of what the cast
+points to, 380 defines), the bare `Game_Ptr(rva)` of a GUID or data format (an address of unknown type), the objects
+that the dynamic initializers of `StaticInit.inc` construct (1721 engine variables as `cGVar`, the native functions as
+`cPy_NativeFunc`, the hash tables, vectors and arrays by the class of their constructor), the method tables of
+`SD_PY_MODULE` (named `<module>_methods`), the uses of a define `M(rva) GAME_DATA(type, rva)` in its own file (the
+doubles `K(rva)` of ScraplandScorer.c) and the `GAME_DATA` and `Game_Ptr` with a literal rva in the code. An array of
+unknown length runs to the next claim it cannot hold as an element (a scalar of the element size is an element), the
+next C object of the build, data that stays bytes, the end of its section or kept data, or a row of the map that no C
+function of its first row uses. It never runs out of an object that holds it.
+
+Each byte has one owner. The claims are sorted by rva, the larger first, then by source (a define in a header, a define
+in a .c, the static initializers, the method tables, the rest). A claim inside an earlier object is a view of it: a
+field of a struct (the value of an engine variable at +0x10 of its `cGVar`, the width of the viewport in `g_Viewport`),
+an element of a table, a second type at the same rva. No claim overlaps the end of another one (the script function
+variables needed their own type for that: `cGVarFunction` in scrap.h, a `cGVar` with its `cPy_Function` at +0x10, 0x24
+bytes). Objects that would share a word (each SD_AT section covers whole words) become one group struct with the
+objects as members and the bytes between them as filler members. There are 16 groups, all of byte flags such as
+`g_UsarVB` and `g_MallaD3DOn` at 0x431bac. The name of an object is the macro of the best claim at its start with its
+type, else the name of an address the C takes there, else the first C function of the "used by" column of the map with
+the rva (`cScraplandMainMenuScorer_Draw_3b11a0`), else `data_<rva>`. A name already used by C gets the rva appended.
+That makes 3659 objects: 2874 of claims, 816 of rows of the map and 16 groups. 587 are `data_<rva>`, mostly constants
+of the code of the original in .rdata that no C reads.
+
+The data that no claim covers becomes objects per row of the map, word by word, typed by the kind of the rows:
+`float`, `double`, `D3DGuid` for the GUIDs, `char` for text, `void *` for pointer tables, else `uint32_t`.
+
+Every object gets its initializer from the bytes of the original, walked along its type: designated initializers for
+structs and unions (the union member that holds the bytes), bit fields, char arrays as literals, floats and doubles as
+literals that give the same bits (NaNs with their payload through `__builtin_nanf`), ints in decimal or hex. A pointer
+of the original (.reloc) becomes the C object, C function or Python symbol at its target, through a char array alias
+`sd_<name>` that `SD_SYM(name)` of shared.h declares (`SD_SYM_AS(name, label)` for a stdcall or fastcall name), so the
+generated files need no prototypes: `.tp_dealloc = (void *)sd_PyEntity_Dealloc`,
+`.ml_name = (void *)sd_str_PyMethod_SAct_CreateClass`. A pointer into data that stays bytes is `SD_ORIG(rva)`, the
+fixed address in the room (ScrapC.exe has the base 0x400000). Only the two dinput8 data formats `c_dfDIKeyboard` and
+`c_dfDIMouse` point there, to their object tables in .text. The tool stops on a nonzero byte in no member (padding) or
+a pointer in no pointer field. There is none. Objects in the bss of the original (the zero tail of .data, .bss_ste)
+have no initializer and use `SD_BSS(rva)` of shared.h instead of `SD_AT`. GCC gives a named section the flags of
+initialized data, so the section name of `SD_BSS` ends the directive with the gas flags "bw" and comments out the ones
+GCC appends. Their sections are uninitialized and take no room in ScrapC.exe.
+
+The C forms in `include/scrap/game.h` are, in ScrapC.exe, the C object and, in the hook DLL, the data of the exe at the
+rva as before:
+
+- `GAME_GLOBAL(type, name, rva)`: the object (an lvalue, declared in the macro with its type)
+- `GAME_ARRAY(type, name, rva)`: its first element (`type *`)
+- `GAME_GLOBAL_IN(type, owner, off, rva)` and `GAME_ARRAY_IN`: a view at `off` in an object
+- `GAME_PTR(owner, off, rva)`: an address (`void *`), and `GAME_PTR_AT(rva)` from the rva alone
+
+The names are pasted, never macro expanded (they are the names of the defines that use them). The uses stay as they
+were: `#define g_pWorld GAME_DATA(cWorld *, 0x467450)` became `#define g_pWorld GAME_GLOBAL(cWorld *, g_pWorld,
+0x467450)`, `#define g_ViewportW GAME_DATA(int, 0x4ad7e8)` became `GAME_GLOBAL_IN(int, g_Viewport, 8, 0x4ad7e8)` and
+`((uint32_t *)Game_Ptr(0x4ad7e0))` became `(GAME_ARRAY(uint32_t, g_Viewport, 0x4ad7e0))`. After the rewrite there are
+834 `GAME_GLOBAL`, 1593 `GAME_GLOBAL_IN`, 293 `GAME_ARRAY`, 87 `GAME_ARRAY_IN` and 18 `GAME_PTR` defines. 187 defines
+stay `GAME_DATA`: the 179 slots of the import address table (main.c fills it), the 9 of the Python of the original in
+the hook DLL branch of python.h and `GOG_IERROR_TYPE` (RTTI). StaticInit.c reads its objects through `SI_OBJ(rva)`,
+which is `GAME_PTR_AT`: GlobalsAt.h defines `SD_DATA_<rva>` for the 1840 rvas of StaticInit.inc. `SD_PY_MODULE`
+registers `<module>_methods`.
+
+Around it, the types of ten objects moved from their .c files into headers (the BMP, TGA and TEX headers of Bmp.c into
+bmp.h, `AviBih` into rendertarget.h, `traceCell_t` into suelo.h, `procrange_t` and `cProcType` into e3dutil.h,
+`cSaveVar` and `cSteamTicketCallback` into scrap.h). `g_LastError` is a `uint32_t` instead of DWORD, `BlendMode_GetSrc`
+and `GetDst` have one prototype type in scrapmain.h and scrapmaterial.h, and the inline of bsp.h is `Bsp_Vec3Equal` (it
+had the name of the C function `Vec3_Equal` of ICharControl.c). datagen.py accepts pointers with an offset into another
+object and stdcall and fastcall names of C functions. It puts the C objects of `SD_BSS` into uninitialized sections of
+their own (a unit joins the group before it when it starts in its last page, else data with data below MERGE, bss with
+bss). strings.py no longer reads the generated globals as uses (it would see their rvas) and knows the new forms.
+
+`datamap.py --relabel` changes the map for this: it gives the rows in the C++ exception tables of MSVC (each FuncInfo
+with its unwind map, try block map, handler arrays and ES type list, found by its magic number 0x1993052x) the kind
+`eh` and the pointers to the RTTI before the vtables (the complete object locators) the kind `rtti`, and leaves the rest
+as it was. A full run would see the strings and globals as C objects, which strings.py and globals.py read as the data
+they make. A full run classifies them the same way (`eh_ranges`, `kinds`). `eh` is droppable like the libraries and the
+RTTI, because only the code of the original read it, and that is int3: 63448 bytes in 2249 rows, none used. Five
+"strings" of stage 3b4 were ints of those tables ("@" and a tab), so Strings41.c is gone.
+
+What stays bytes of the original (room.bin went from 142962 to 23998 bytes):
+
+- .text: the data formats of dinput8.lib (4208 bytes) and the import thunks of the game in the CRT (372)
+- .rdata: the import directory, the import address table and the import names (9863 bytes, with 195 bytes of padding
+  between the names in words shared with them), the data of the CRT that the C still uses (7292, the initializer table
+  of `Crt_Main`), the Python of the original on the hot pages (200), D3DX8 (4), the pointers to the RTTI before the
+  vtables that are used (232)
+- .data: the Python of the original (1472, with the 16 bytes at 0x432b50 in its range of origpython.h), the RTTI (140,
+  the type descriptor of galaxy::api::IError that `Gog_CatchError` reads)
+- _RDATA: 4 bytes of the CRT
+
+The log of datagen.py:
+
+    datagen.py: 14 sections, 23998 bytes of data, 11 pointers into the Python lead to the real one, 14374 C objects
+    datagen.py:   .text       4580 bytes of the original (2138 non-zero), 0 in 0 C objects
+    datagen.py:   .bss_ste       0 bytes of the original (0 non-zero), 66240 in 22 C objects (66240 of them bss in 22)
+    datagen.py:   .rdata     17786 bytes of the original (13876 non-zero), 293552 in 11104 C objects
+    datagen.py:   .data       1628 bytes of the original (992 non-zero), 711420 in 3245 C objects (667320 of them bss in 2617)
+    datagen.py:   .gfids         0 bytes of the original (0 non-zero), 1272 in 3 C objects
+    datagen.py:   _RDATA         4 bytes of the original (3 non-zero), 0 in 0 C objects
+
+(before: .rdata 116118 bytes of the original, .data 20988, no C object in .bss_ste, the bss and .gfids).
+
+On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios (sdtest 1487 checks, sdcall
+29078, sdlevel 19095), and so does the hook DLL difftest.
+
 ## Stage 4: English names
 
 The Spanish names of the original stay until the C is complete, then everything is translated.

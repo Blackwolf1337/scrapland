@@ -17,8 +17,8 @@
 #include "scrap/scrap.h"
 #include "scrap/scrapmodel.h"
 
-#define g_AICRadiusInRoute GAME_DATA(float, 0x444d60)	/* RADIUS_OBJECTIVE_IN_ROUTE */
-#define g_AICRandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
+#define g_AICRadiusInRoute GAME_GLOBAL_IN(float, GVar_RADIUS_OBJECTIVE_IN_ROUTE, 16, 0x444d60)	/* RADIUS_OBJECTIVE_IN_ROUTE */
+#define g_AICRandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
 #define AIC_ANG45 ((double)0.785398185f)		/* pi / 4 as a float (rva 0x3a5108) */
 #define AIC_ANG90 1.5707963267948966			/* pi / 2 (rva 0x3a5110) */
 #define AIC_LOST_TIME 15.0f				/* LOST_PATH gives up (rva 0x3a7728) */

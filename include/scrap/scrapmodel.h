@@ -28,16 +28,16 @@ SD_SIZE(CGameModel, 0x1c);
 #define MAT_SINVERTICES 0x4000		/* the meshes of the material give no vertices to the effects */
 
 /* the engine variables (Gvars) */
-#define g_GetModelVertex GAME_DATA(int, 0x4a80c4)		/* R_GetModelVertex, else the model position */
-#define g_ForcePreRenderTransform GAME_DATA(int, 0x4a8034)	/* R_ForcePreRenderTransform */
-#define g_SplitScreen GAME_DATA(int, 0x4a8c8c)		/* R_SplitScreen: every model visible */
-#define g_CoefMLODShips GAME_DATA(float, 0x4a80f4)
-#define g_CoefMLODPilots GAME_DATA(float, 0x4a80dc)
-#define g_CoefMLODEngines GAME_DATA(float, 0x4a8064)
-#define g_CoefMLODTraffic GAME_DATA(float, 0x4a804c)
-#define g_CoefMLODCharacters GAME_DATA(float, 0x4a80ac)
-#define g_CoefMLODOutElement GAME_DATA(float, 0x4a807c)
-#define g_CoefMLODMenuElement GAME_DATA(float, 0x4a8094)
+#define g_GetModelVertex GAME_GLOBAL_IN(int, GVar_R_GetModelVertex, 16, 0x4a80c4)		/* R_GetModelVertex, else the model position */
+#define g_ForcePreRenderTransform GAME_GLOBAL_IN(int, GVar_R_ForcePreRenderTransform, 16, 0x4a8034)	/* R_ForcePreRenderTransform */
+#define g_SplitScreen GAME_GLOBAL_IN(int, GVar_R_SplitScreen, 16, 0x4a8c8c)		/* R_SplitScreen: every model visible */
+#define g_CoefMLODShips GAME_GLOBAL_IN(float, GVar_R_CoefMLODShips, 16, 0x4a80f4)
+#define g_CoefMLODPilots GAME_GLOBAL_IN(float, GVar_R_CoefMLODPilots, 16, 0x4a80dc)
+#define g_CoefMLODEngines GAME_GLOBAL_IN(float, GVar_R_CoefMLODEngines, 16, 0x4a8064)
+#define g_CoefMLODTraffic GAME_GLOBAL_IN(float, GVar_R_CoefMLODTraffic, 16, 0x4a804c)
+#define g_CoefMLODCharacters GAME_GLOBAL_IN(float, GVar_R_CoefMLODCharacters, 16, 0x4a80ac)
+#define g_CoefMLODOutElement GAME_GLOBAL_IN(float, GVar_R_CoefMLODOutElement, 16, 0x4a807c)
+#define g_CoefMLODMenuElement GAME_GLOBAL_IN(float, GVar_R_CoefMLODMenuElement, 16, 0x4a8094)
 
 CGameModel *__thiscall CGameModel_ctor(CGameModel *self, const char *name);
 /* the default constructor for the arrays (rva 0x105e60): without a model */

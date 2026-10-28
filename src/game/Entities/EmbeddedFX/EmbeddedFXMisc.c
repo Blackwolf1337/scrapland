@@ -19,7 +19,7 @@
 #define CGAMETRAIL_DTOR 0x21de40
 
 /* the switch of the DataPack lasers (a Gvar) */
-#define g_DataPackOn GAME_DATA(int, 0x44d48c)
+#define g_DataPackOn GAME_GLOBAL_IN(int, GVar_MessengerTubeState, 16, 0x44d48c)
 /* "" of the original, the glow node of a coin name that matches none */
 #define EFXM_EMPTY GAME_STR(str_Empty, 0x3a3228)
 
@@ -1175,9 +1175,9 @@ void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f) {
 /* ---- vf03: Update ---- */
 
 /* the DataPack engine variables */
-#define g_DataPackInterTime GAME_DATA(float, 0x4473ac)
-#define g_DataPackLaserLong GAME_DATA(float, 0x4473d4)
-#define g_DataPackLaserSize GAME_DATA(float, 0x44742c)
+#define g_DataPackInterTime GAME_GLOBAL_IN(float, GVar_DataPackInterTime, 16, 0x4473ac)
+#define g_DataPackLaserLong GAME_GLOBAL_IN(float, GVar_DataPackLaserLong, 16, 0x4473d4)
+#define g_DataPackLaserSize GAME_GLOBAL_IN(float, GVar_DataPackLaserSize, 16, 0x44742c)
 
 /*
  * The model if it is loaded, visible and without a model effect (*visible set), else NULL (*visible cleared, the
@@ -1939,9 +1939,9 @@ void __thiscall cEmbeddedFXTreasure_Update(cEmbeddedFXTreasure *self, float dt) 
 }
 
 /* the BossShield engine variables */
-#define g_FXBossShieldAspect GAME_DATA(float, 0x447404)
-#define g_FXBossShieldRadius GAME_DATA(float, 0x447454)
-#define g_FXBossShieldScale GAME_DATA(float, 0x4473ec)
+#define g_FXBossShieldAspect GAME_GLOBAL_IN(float, GVar_FXBossShieldAspect, 16, 0x447404)
+#define g_FXBossShieldRadius GAME_GLOBAL_IN(float, GVar_FXBossShieldRadius, 16, 0x447454)
+#define g_FXBossShieldScale GAME_GLOBAL_IN(float, GVar_FXBossShieldScale, 16, 0x4473ec)
 
 /* a random point on the shield */
 static void EFXM_ShieldDir(vec3_t *out) {
@@ -2317,7 +2317,7 @@ void __thiscall cEmbeddedFXBattery_Update(cEmbeddedFXBattery *self, float dt) {
 /* ---- vf03: the Update of the Moto ---- */
 
 /* the color ramps of the flames and the smoke of the engines (9 colors each) */
-#define g_RampMoto ((uint32_t *)Game_Ptr(0x4284c0))
+#define g_RampMoto (GAME_ARRAY(uint32_t, g_RampMoto, 0x4284c0))
 
 /* the 6 flames along the way of an engine: the distance, the add of the size, the alpha (rand % mod - sub) and the
  * color of the main engine and of the two others */

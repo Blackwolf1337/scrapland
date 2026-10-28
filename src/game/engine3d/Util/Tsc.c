@@ -12,11 +12,11 @@
 
 #define PROF_SECTIONS 32
 
-#define g_ProfAvg ((int64_t *)Game_Ptr(0x4b18e0))	/* the ticks of the last frame or the average */
-#define g_ProfMax ((int64_t *)Game_Ptr(0x4b19e0))
-#define g_ProfFrames ((byte *)Game_Ptr(0x4b1ae0))	/* the frames summed into g_ProfTicks */
-#define g_ProfCounts ((int *)Game_Ptr(0x4b1b00))	/* Prof_Count */
-#define g_ProfLastCounts ((int *)Game_Ptr(0x4b1b80))
+#define g_ProfAvg (GAME_ARRAY(int64_t, g_ProfAvg, 0x4b18e0))	/* the ticks of the last frame or the average */
+#define g_ProfMax (GAME_ARRAY(int64_t, g_ProfMax, 0x4b19e0))
+#define g_ProfFrames (GAME_ARRAY(byte, g_ProfFrames, 0x4b1ae0))	/* the frames summed into g_ProfTicks */
+#define g_ProfCounts (GAME_ARRAY(int, g_ProfCounts, 0x4b1b00))	/* Prof_Count */
+#define g_ProfLastCounts (GAME_ARRAY(int, g_ProfLastCounts, 0x4b1b80))
 
 /* the x87 division of the original (fdivr QWORD) in the precision the game set, stored as a float */
 static float X87_DivToFloat(double num, float den) {
@@ -90,7 +90,7 @@ float Prof_GetMaxTime(int section, int reset) {
 }
 
 /* the rdtsc ticks per second, measured once or again with recalc */
-#define g_CpuFreq GAME_DATA(float, 0x4b1c00)
+#define g_CpuFreq GAME_GLOBAL(float, g_CpuFreq, 0x4b1c00)
 
 /* the measurement under way: rdtsc and the performance counter at its start, the value given until it ends */
 static uint64_t tsc_start;

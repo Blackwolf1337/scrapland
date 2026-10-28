@@ -10,6 +10,10 @@
 #   datamap.py --check [-e Scrap.exe] [-c ScrapC.exe] [-o datamap.txt]
 #       the check of the build after the link of ScrapC.exe: every rva the C and the tests use lies in data the map
 #       keeps (datagen.py builds in only that data)
+#   datamap.py --relabel [-e Scrap.exe] [-o datamap.txt]
+#       gives the rows of the map that lie in the C++ exception tables the kind eh, the pointers to the RTTI (before
+#       each vtable) the kind rtti and writes it again, the rest as it was (stage 3b5: a run of the scan would see the strings and globals of stages 3b4 and 3b5 as C objects, which
+#       strings.py and globals.py read as the data they make)
 #
 # What counts as used:
 #   - the rvas in the code of ScrapC.exe (game_base plus an immediate, from GAME_DATA and Game_Ptr) with the width of
@@ -345,6 +349,56 @@ def guid_runs(x, lo, hi):
 	return out
 
 
+# the magic numbers of the FuncInfo of MSVC and their sizes (version 1, 2 with the ES type list, 3 with the flags)
+EH_MAGIC = {0x19930520: 0x1c, 0x19930521: 0x20, 0x19930522: 0x24}
+
+
+def eh_ranges(x):
+	"""the C++ exception tables of MSVC in .rdata: each FuncInfo (the frame handler of a function with destructors or
+	a try block points to it) with its unwind map, try block map, handler arrays, IP to state map and ES type list.
+	Only the code of the original reads them (__CxxFrameHandler3): [(lo, hi)] sorted"""
+	va, n, _, _ = x.secs['.rdata']
+	b = x.bytes(va, va + n)
+	rel = x.relocs()
+
+	def u32(a):
+		return struct.unpack_from('<I', b, a - va)[0] if va <= a <= va + n - 4 else 0
+
+	def ptr(a):
+		return x.u32(a) - BASE if a in rel else None
+
+	out = []
+	for o in range(0, n - 0x24, 4):
+		f = va + o
+		size = EH_MAGIC.get(u32(f))
+		if not size:
+			continue
+		states, ntry, nip = u32(f + 4), u32(f + 12), u32(f + 20)
+		um, tb, ip = ptr(f + 8), ptr(f + 16), ptr(f + 24)
+		if states > 0x10000 or ntry > 0x1000 or nip > 0x10000 or (states and um is None) or (ntry and tb is None):
+			continue
+		parts = [(f, f + size)]
+		if states:
+			parts.append((um, um + 8 * states))
+		for k in range(ntry):
+			e = tb + 20 * k
+			ncatch, ha = u32(e + 12), ptr(e + 16)
+			if ncatch and ha is not None and ncatch < 0x100:
+				parts.append((ha, ha + 16 * ncatch))
+		if ntry:
+			parts.append((tb, tb + 20 * ntry))
+		if nip and ip is not None:
+			parts.append((ip, ip + 8 * nip))
+		if size >= 0x20 and ptr(f + 28) is not None:
+			es = ptr(f + 28)
+			parts.append((es, es + 8))
+			nes, arr = u32(es), ptr(es + 4)
+			if nes and arr is not None and nes < 0x100:
+				parts.append((arr, arr + 16 * nes))
+		out += parts
+	return sorted(out)
+
+
 def is_strings(b):
 	"""bytes that are NUL terminated text, zero padded"""
 	t = b.rstrip(b'\0')
@@ -549,6 +603,23 @@ def kinds(x, objs, code_targets, data_targets, guids):
 	starts = [o.lo for o in objs]
 	gstarts = [g[0] for g in guids]
 
+	eh = eh_ranges(x)
+	eh_starts = [e[0] for e in eh]
+
+	def to_rtti(o):
+		"""pointers to the RTTI only (before each vtable the one to its complete object locator)"""
+		if o.lo % 4 or (o.hi - o.lo) % 4 or o.section not in ('.rdata', '.data'):
+			return False
+		for a in range(o.lo, o.hi, 4):
+			t = ptr(a)
+			if t is None or find(t) not in rtti:
+				return False
+		return True
+
+	def in_eh(o):
+		i = bisect.bisect_right(eh_starts, o.lo) - 1
+		return i >= 0 and o.hi <= eh[i][1]
+
 	def in_guids(o):
 		i = bisect.bisect_right(gstarts, o.lo) - 1
 		return i >= 0 and o.hi <= guids[i][1]
@@ -608,10 +679,12 @@ def kinds(x, objs, code_targets, data_targets, guids):
 			o.kind = 'resource'
 		elif i in imports:
 			o.kind = 'import'
-		elif i in rtti:
+		elif i in rtti or to_rtti(o):
 			o.kind = 'rtti'
 		elif in_guids(o):
 			o.kind = 'guid'
+		elif in_eh(o):
+			o.kind = 'eh'
 		else:
 			o.owners = set(code_targets.get(o.lo, ()))
 			if any(lo <= o.lo < hi for lo, hi in PY_DATA):
@@ -702,10 +775,10 @@ def read_map(path):
 	return rows
 
 
-# what the map may drop when no user was seen: data of the original's libraries, whose code is gone, and the RTTI,
-# which only the C++ runtime read. The game's own data stays even without a user: the three test scenarios do not
+# what the map may drop when no user was seen: data of the original's libraries, whose code is gone, the RTTI and the
+# C++ exception tables (eh), which only the C++ runtime read. The game's own data stays even without a user: the three test scenarios do not
 # reach everything the game reads in play, until stage 3b turns it into C
-DROPPABLE = ('library', 'rtti')
+DROPPABLE = ('library', 'rtti', 'eh')
 
 
 def kept(rows):
@@ -729,12 +802,15 @@ def main():
 	objects = os.path.join(ROOT, 'build', 'standalone', 'objects.txt')
 	out = MAP
 	check = False
+	relabel = False
 	logs = []
 	why = []
 	while args:
 		a = args.pop(0)
 		if a == '--check':
 			check = True
+		elif a == '--relabel':
+			relabel = True
 		elif a == '--why' and args:
 			why.append(int(args.pop(0), 16))
 		elif a in ('-e', '-c', '-s', '-o') and args:
@@ -756,6 +832,60 @@ def main():
 		x = Exe(exe)
 	except ExeError as e:
 		fail(str(e))
+	if relabel:
+		try:
+			rows = [list(r) for r in read_map(out)]
+			head = [l for l in open(out).read().split('\n')[:4] if l.startswith('#')]
+		except (OSError, ValueError, IndexError) as e:
+			fail('cannot read %s (%s)' % (out, e))
+		eh = []
+		for lo, hi in eh_ranges(x):
+			if eh and lo <= eh[-1][1]:
+				eh[-1][1] = max(eh[-1][1], hi)
+			else:
+				eh.append([lo, hi])
+		starts = [e[0] for e in eh]
+		n = 0
+		for r in rows:
+			if r[4] not in ('unknown', 'pointer table', 'int table', 'zero', 'float', 'double', 'string'):
+				continue
+			# in the tables, or in them but for zeros (the padding after one)
+			i = max(0, bisect.bisect_right(starts, r[0]) - 1)
+			b = x.bytes(r[0], r[1])
+			inside = bytearray(r[1] - r[0])
+			while i < len(eh) and eh[i][0] < r[1]:
+				for a in range(max(r[0], eh[i][0]), min(r[1], eh[i][1])):
+					inside[a - r[0]] = 1
+				i += 1
+			if any(inside) and all(inside[k] or not b[k] for k in range(len(b))):
+				r[4] = 'eh'
+				n += 1
+		# the pointers to the RTTI the map took for data: before each vtable the one to its complete object locator
+		rtti = [(lo, hi) for lo, hi, sec, users, kind in rows if kind == 'rtti']
+		rstarts = [q[0] for q in rtti]
+
+		def to_rtti(at):
+			if at not in x.relocs():
+				return False
+			t = x.u32(at) - BASE
+			i = bisect.bisect_right(rstarts, t) - 1
+			return i >= 0 and t < rtti[i][1]
+
+		m = 0
+		for r in rows:
+			if r[4] in ('pointer table', 'unknown') and r[0] % 4 == 0 and (r[1] - r[0]) % 4 == 0 and \
+					all(to_rtti(a) for a in range(r[0], r[1], 4)):
+				r[4] = 'rtti'
+				m += 1
+		merged = []
+		for r in rows:
+			if merged and merged[-1][1] == r[0] and merged[-1][2:] == r[2:]:
+				merged[-1][1] = r[1]
+			else:
+				merged.append(r)
+		write_map(x, merged, out, head)
+		print('datamap.py: %d rows are C++ exception tables now, %d pointers to the RTTI' % (n, m))
+		return
 	m = Map(x)
 	syms = Symbols(cpath)
 	seeds = scan_c(m, cpath, syms) + scan_tests(m)
@@ -813,8 +943,18 @@ def main():
 				rva = int(p.first[4:], 16)
 		return
 	rows = rows_of(pieces)
+	write_map(x, rows, out, ['# tools/standalone/datamap.py: the data of Scrap.exe 1.6.1 that ScrapC.exe uses '
+		'(docs/standalone.md, stage 3b2), from', '# the static scan and %s. datagen.py builds in the rows with a user (4 '
+		'aligned) but bss and code.' % ('%d probe logs' % len(logs) if logs else 'the probe rows of the map before'),
+		'# columns: rva, size (hex), section, used by (C functions, test scripts, probe, ptr <rva of the pointer>,',
+		'# static), kind'])
+	keep = kept(rows)
+	print('datamap.py: %d rows, %d pieces, %d bytes of the data kept of %d' % (len(rows), len(pieces),
+		sum(hi - lo for lo, hi in keep), sum(p.hi - p.lo for p in pieces if p.what == 'data')))
 
-	# the summary per section and kind: all bytes and the used ones
+
+def write_map(x, rows, out, head):
+	"""writes the rows with the head lines and the summary per section and kind"""
 	total = collections.Counter()
 	used = collections.Counter()
 	for lo, hi, sec, users, kind in rows:
@@ -824,11 +964,7 @@ def main():
 		total[sec, k] += hi - lo
 		if users != '-':
 			used[sec, k] += hi - lo
-	lines = ['# tools/standalone/datamap.py: the data of Scrap.exe 1.6.1 that ScrapC.exe uses (docs/standalone.md, stage '
-		'3b2), from', '# the static scan and %s. datagen.py builds in the rows with a user (4 aligned) but bss and code.'
-		% ('%d probe logs' % len(logs) if logs else 'the probe rows of the map before'),
-		'# columns: rva, size (hex), section, used by (C functions, test scripts, probe, ptr <rva of the pointer>,',
-		'# static), kind', '#']
+	lines = list(head) + ['#']
 	for sec in sorted({s for s, k in total}, key=lambda s: x.secs[s][0]):
 		for k in sorted(k for s, k in total if s == sec):
 			lines.append('# %-8s %-24s %7d bytes, %7d used' % (sec, k, total[sec, k], used[sec, k]))
@@ -836,9 +972,6 @@ def main():
 	for lo, hi, sec, users, kind in rows:
 		lines.append('%06x\t%x\t%s\t%s\t%s' % (lo, hi - lo, sec, users, kind))
 	open(out, 'w').write('\n'.join(lines) + '\n')
-	keep = kept(rows)
-	print('datamap.py: %d rows, %d pieces, %d bytes of the data kept of %d' % (len(rows), len(pieces),
-		sum(hi - lo for lo, hi in keep), sum(p.hi - p.lo for p in pieces if p.what == 'data')))
 
 
 if __name__ == '__main__':

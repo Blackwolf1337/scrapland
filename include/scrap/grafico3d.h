@@ -9,7 +9,7 @@
 #include "scrap/sueloportal.h"
 
 #define CGRAFICO3D_VFTABLE GAME_VFTABLE(CGrafico3D_vftable, 0x3e45b8)
-#define g_ShowSprites GAME_DATA(int, 0x4e1dd0)	/* 1: visibility, 2: drawn, 3: with the name */
+#define g_ShowSprites GAME_GLOBAL_IN(int, GVar_R_SpriteSector, 16, 0x4e1dd0)	/* 1: visibility, 2: drawn, 3: with the name */
 
 typedef struct CGrafico3D {
 	void **vftable;			/* 0x00 OBJ3D_VF_* */

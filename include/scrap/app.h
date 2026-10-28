@@ -18,84 +18,84 @@ typedef CWinApp CApp;
 #define g_CWinAppVftable ((const CWinAppVtbl *)GAME_VFTABLE(CWinApp_vftable, 0x3cf7d4))
 
 /* engine variables (Gvars) */
-#define g_LoadMsgIndex GAME_DATA(int, 0x4679c0)		/* iLoadMsgString: the next loading tip */
-#define g_iMap ((cString *)Game_Ptr(0x4679d8))		/* iMap: the first level */
-#define g_iMapDefault ((cString *)Game_Ptr(0x4679dc))	/* its default value */
-#define g_ReRunAtExitParams ((cString *)Game_Ptr(0x4679f0))	/* RunApp of the game with them at the end */
-#define g_AfterDrawCallback ((cPy_Function *)Game_Ptr(0x467a08))
-#define g_DrawNextFrame GAME_DATA(int, 0x467a2c)
-#define g_DefaultMaxPlayers GAME_DATA(int, 0x467a44)	/* DefaultMaxPlayersOnServer */
-#define g_ModFileName GAME_DATA(const char *, 0x467a5c)	/* a pack opened after Pack1 */
-#define g_DisableSkipSlot GAME_DATA(int, 0x467aa4)	/* frames longer than 0.1 s are not cut */
-#define g_DisableSkipSlotDefault GAME_DATA(int, 0x467aa8)
-#define g_ForceReload GAME_DATA(int, 0x467abc)		/* reload the floor of the same level */
-#define g_ModPathName GAME_DATA(const char *, 0x467b04)	/* a directory of packs after "mods" */
-#define g_LoadMsgString ((cString *)Game_Ptr(0x467b4c))	/* the loading tip */
-#define g_DefaultServerPort GAME_DATA(uint16_t, 0x467b64)
-#define g_InactiveBackgroundApp GAME_DATA(int, 0x467bb4)	/* the frames go on without the focus */
-#define g_ServerMapList ((cString *)Game_Ptr(0x46759c))
-#define g_PlayerName ((cString *)Game_Ptr(0x448148))
-#define g_SoundInit GAME_DATA(int, 0x466d78)
-#define g_LoadTextures GAME_DATA(int, 0x4aa348)
-#define g_GVarMasterServerAddress ((cGVar *)Game_Ptr(0x463c9c))
-#define g_GVarMasterServerPort ((cGVar *)Game_Ptr(0x463d98))
-#define g_LangName ((cString *)Game_Ptr(0x44b618))		/* the language asked for */
-#define g_LangDefault GAME_DATA(const char *, 0x44b61c)	/* the language when that file is missing */
-#define g_LogName GAME_DATA(const char *, 0x445a5c)
-#define g_GogReady GAME_DATA(byte, 0x44c108)		/* set by the GOG sign in listener */
+#define g_LoadMsgIndex GAME_GLOBAL_IN(int, GVar_iLoadMsgString, 16, 0x4679c0)		/* iLoadMsgString: the next loading tip */
+#define g_iMap (GAME_ARRAY_IN(cString, GVar_iMap, 16, 0x4679d8))		/* iMap: the first level */
+#define g_iMapDefault (GAME_ARRAY_IN(cString, GVar_iMap, 20, 0x4679dc))	/* its default value */
+#define g_ReRunAtExitParams (GAME_ARRAY_IN(cString, GVar_ReRunAtExitParams, 16, 0x4679f0))	/* RunApp of the game with them at the end */
+#define g_AfterDrawCallback (GAME_ARRAY_IN(cPy_Function, GVar_AfterDrawCallback, 16, 0x467a08))
+#define g_DrawNextFrame GAME_GLOBAL_IN(int, GVar_DrawNextFrame, 16, 0x467a2c)
+#define g_DefaultMaxPlayers GAME_GLOBAL_IN(int, GVar_DefaultMaxPlayersOnServer, 16, 0x467a44)	/* DefaultMaxPlayersOnServer */
+#define g_ModFileName GAME_GLOBAL_IN(const char *, GVar_ModFileName, 16, 0x467a5c)	/* a pack opened after Pack1 */
+#define g_DisableSkipSlot GAME_GLOBAL_IN(int, GVar_DisableSkipSlot, 16, 0x467aa4)	/* frames longer than 0.1 s are not cut */
+#define g_DisableSkipSlotDefault GAME_GLOBAL_IN(int, GVar_DisableSkipSlot, 20, 0x467aa8)
+#define g_ForceReload GAME_GLOBAL_IN(int, GVar_ForceReload, 16, 0x467abc)		/* reload the floor of the same level */
+#define g_ModPathName GAME_GLOBAL_IN(const char *, GVar_ModPathName, 16, 0x467b04)	/* a directory of packs after "mods" */
+#define g_LoadMsgString (GAME_ARRAY_IN(cString, GVar_LoadMsgString, 16, 0x467b4c))	/* the loading tip */
+#define g_DefaultServerPort GAME_GLOBAL_IN(uint16_t, GVar_DefaultServerPort, 16, 0x467b64)
+#define g_InactiveBackgroundApp GAME_GLOBAL_IN(int, GVar_InactiveBackgroundApp, 16, 0x467bb4)	/* the frames go on without the focus */
+#define g_ServerMapList (GAME_ARRAY_IN(cString, GVar_ServerMapList, 16, 0x46759c))
+#define g_PlayerName (GAME_ARRAY_IN(cString, GVar_PlayerName, 16, 0x448148))
+#define g_SoundInit GAME_GLOBAL_IN(int, GVar_SoundInit, 16, 0x466d78)
+#define g_LoadTextures GAME_GLOBAL_IN(int, GVar_LoadTextures, 16, 0x4aa348)
+#define g_GVarMasterServerAddress (GAME_ARRAY(cGVar, g_GVarMasterServerAddress, 0x463c9c))
+#define g_GVarMasterServerPort (GAME_ARRAY(cGVar, g_GVarMasterServerPort, 0x463d98))
+#define g_LangName (GAME_ARRAY_IN(cString, GVar_SelectedLanguage, 16, 0x44b618))		/* the language asked for */
+#define g_LangDefault GAME_GLOBAL_IN(const char *, GVar_SelectedLanguage, 20, 0x44b61c)	/* the language when that file is missing */
+#define g_LogName GAME_GLOBAL_IN(const char *, GVar_LogFile, 16, 0x445a5c)
+#define g_GogReady GAME_GLOBAL(byte, g_GogReady, 0x44c108)		/* set by the GOG sign in listener */
 
 /* App.cpp state */
-#define g_AppBlock GAME_DATA(int *, 0x467978)		/* 16 bytes of VirtualAlloc, [3] = 0x16 */
-#define g_AppPyOne GAME_DATA(void *, 0x46797c)		/* Py_BuildValue("i", 1) of each level */
+#define g_AppBlock GAME_GLOBAL(int *, g_AppBlock, 0x467978)		/* 16 bytes of VirtualAlloc, [3] = 0x16 */
+#define g_AppPyOne GAME_GLOBAL(void *, g_AppPyOne, 0x46797c)		/* Py_BuildValue("i", 1) of each level */
 /* the Xbox loading screen (Loading_Init, isXbox) */
-#define g_XLoadIcon GAME_DATA(void *, 0x467b84)	/* CPsaImage (0x44 bytes) */
-#define g_XLoadFrames GAME_DATA(int, 0x467b88)
-#define g_XLoadIconFrame GAME_DATA(int, 0x467b8c)
-#define g_XLoadStart GAME_DATA(float, 0x467b90)
-#define g_XLoadLastStep GAME_DATA(float, 0x467b94)
-#define g_XLoadOn GAME_DATA(byte, 0x467b98)
+#define g_XLoadIcon GAME_GLOBAL(void *, g_XLoadIcon, 0x467b84)	/* CPsaImage (0x44 bytes) */
+#define g_XLoadFrames GAME_GLOBAL(int, g_XLoadFrames, 0x467b88)
+#define g_XLoadIconFrame GAME_GLOBAL(int, g_XLoadIconFrame, 0x467b8c)
+#define g_XLoadStart GAME_GLOBAL(float, g_XLoadStart, 0x467b90)
+#define g_XLoadLastStep GAME_GLOBAL(float, g_XLoadLastStep, 0x467b94)
+#define g_XLoadOn GAME_GLOBAL(byte, g_XLoadOn, 0x467b98)
 
 /* WinMain.cpp state */
-#define g_TimeQPPause GAME_DATA(uint32_t, 0x467bbc)	/* subtracted from the counter of GetTime */
-#define g_TimeMsPause GAME_DATA(uint32_t, 0x467bc0)	/* the same for timeGetTime */
-#define g_RegValue ((char *)Game_Ptr(0x467bc8))		/* 0x200, App_RegGetString */
-#define g_TimeInit GAME_DATA(byte, 0x467dc8)
-#define g_TimeUseQP GAME_DATA(int, 0x467dcc)
-#define g_TimeQPFreq GAME_DATA(int64_t, 0x467dd0)
-#define g_TimeQPStart GAME_DATA(int64_t, 0x467dd8)
-#define g_TimeMsStart GAME_DATA(uint32_t, 0x467de0)
-#define g_WinWidth GAME_DATA(int, 0x431ab0)
-#define g_WinHeight GAME_DATA(int, 0x431ab4)
-#define g_WideWinWidth GAME_DATA(int, 0x431ab8)
-#define g_WideWinHeight GAME_DATA(int, 0x431abc)
+#define g_TimeQPPause GAME_GLOBAL(uint32_t, g_TimeQPPause, 0x467bbc)	/* subtracted from the counter of GetTime */
+#define g_TimeMsPause GAME_GLOBAL(uint32_t, g_TimeMsPause, 0x467bc0)	/* the same for timeGetTime */
+#define g_RegValue (GAME_ARRAY(char, g_RegValue, 0x467bc8))		/* 0x200, App_RegGetString */
+#define g_TimeInit GAME_GLOBAL(byte, g_TimeInit, 0x467dc8)
+#define g_TimeUseQP GAME_GLOBAL(int, g_TimeUseQP, 0x467dcc)
+#define g_TimeQPFreq GAME_GLOBAL(int64_t, g_TimeQPFreq, 0x467dd0)
+#define g_TimeQPStart GAME_GLOBAL(int64_t, g_TimeQPStart, 0x467dd8)
+#define g_TimeMsStart GAME_GLOBAL(uint32_t, g_TimeMsStart, 0x467de0)
+#define g_WinWidth GAME_GLOBAL(int, g_WinWidth, 0x431ab0)
+#define g_WinHeight GAME_GLOBAL(int, g_WinHeight, 0x431ab4)
+#define g_WideWinWidth GAME_GLOBAL(int, g_WideWinWidth, 0x431ab8)
+#define g_WideWinHeight GAME_GLOBAL(int, g_WideWinHeight, 0x431abc)
 #define g_ScrapTitle GAME_STR(str_431a98, 0x431a98)	/* "Scrapland" */
 #define g_ScrapClass GAME_STR(str_431aa4, 0x431aa4)	/* "ScrapClass" */
 
 /* the console window (RichEdit output, edit line, four buttons, 64 lines of history) */
 #define CONWIN_HISTORY 64
 #define CONWIN_LINE 0x1000
-#define g_ConInput ((char *)Game_Ptr(0x467de8))		/* 0x200, the text of the input dialog */
+#define g_ConInput (GAME_ARRAY(char, g_ConInput, 0x467de8))		/* 0x200, the text of the input dialog */
 typedef void (*conexec_t)(const char *cmd);
-#define g_ConExec GAME_DATA(conexec_t, 0x467fe8)	/* Console_Execute */
-#define g_ConInst GAME_DATA(void *, 0x467fec)
-#define g_ConHwnd GAME_DATA(void *, 0x467ff0)
-#define g_ConParent GAME_DATA(void *, 0x467ff4)
-#define g_ConRich GAME_DATA(void *, 0x467ff8)
-#define g_ConEdit GAME_DATA(void *, 0x467ffc)
-#define g_ConBtnPlus GAME_DATA(void *, 0x468000)
-#define g_ConBtnMinus GAME_DATA(void *, 0x468004)
-#define g_ConBtnBang GAME_DATA(void *, 0x468008)
-#define g_ConBtnGo GAME_DATA(void *, 0x46800c)
-#define g_ConFont GAME_DATA(void *, 0x468010)
-#define g_ConEditProc GAME_DATA(void *, 0x468014)	/* the window procedure of the edit before the subclass */
-#define g_ConHistory ((char (*)[CONWIN_LINE])Game_Ptr(0x468018))	/* [0] the last entered line */
-#define g_ConHistPos GAME_DATA(int, 0x4a8018)
-#define g_ConOpen GAME_DATA(int, 0x4a801c)
-#define g_ConRichLib GAME_DATA(void *, 0x4a8020)
-#define g_ConDlgPrompt GAME_DATA(const char *, 0x431ac0)
+#define g_ConExec GAME_GLOBAL(conexec_t, g_ConExec, 0x467fe8)	/* Console_Execute */
+#define g_ConInst GAME_GLOBAL(void *, g_ConInst, 0x467fec)
+#define g_ConHwnd GAME_GLOBAL(void *, g_ConHwnd, 0x467ff0)
+#define g_ConParent GAME_GLOBAL(void *, g_ConParent, 0x467ff4)
+#define g_ConRich GAME_GLOBAL(void *, g_ConRich, 0x467ff8)
+#define g_ConEdit GAME_GLOBAL(void *, g_ConEdit, 0x467ffc)
+#define g_ConBtnPlus GAME_GLOBAL(void *, g_ConBtnPlus, 0x468000)
+#define g_ConBtnMinus GAME_GLOBAL(void *, g_ConBtnMinus, 0x468004)
+#define g_ConBtnBang GAME_GLOBAL(void *, g_ConBtnBang, 0x468008)
+#define g_ConBtnGo GAME_GLOBAL(void *, g_ConBtnGo, 0x46800c)
+#define g_ConFont GAME_GLOBAL(void *, g_ConFont, 0x468010)
+#define g_ConEditProc GAME_GLOBAL(void *, g_ConEditProc, 0x468014)	/* the window procedure of the edit before the subclass */
+#define g_ConHistory (GAME_ARRAY(char[CONWIN_LINE], g_ConHistory, 0x468018))	/* [0] the last entered line */
+#define g_ConHistPos GAME_GLOBAL(int, g_ConHistPos, 0x4a8018)
+#define g_ConOpen GAME_GLOBAL(int, g_ConOpen, 0x4a801c)
+#define g_ConRichLib GAME_GLOBAL(void *, g_ConRichLib, 0x4a8020)
+#define g_ConDlgPrompt GAME_GLOBAL(const char *, g_ConDlgPrompt, 0x431ac0)
 #define g_ConTitle GAME_STR(str_431ac4, 0x431ac4)		/* "Console" */
 #define g_ConClass GAME_STR(str_431acc, 0x431acc)		/* "ScrapConsoleClass" */
-#define g_ConInputH GAME_DATA(int, 0x431ae0)		/* 20, or 200 for the big input */
+#define g_ConInputH GAME_GLOBAL(int, g_ConInputH, 0x431ae0)		/* 20, or 200 for the big input */
 
 /* App.c */
 CApp *__thiscall CApp_ctor(CApp *self, const char *cmdLine);

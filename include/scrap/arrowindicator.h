@@ -74,18 +74,18 @@ SD_SIZE(cArrowIndicator, 0x88);
 #define Ent_ArrowRadius(e) (*(float *)((byte *)(e) + 0x3a0))
 
 /* the globals of ArrowIndicator.cpp */
-#define g_ArrowPool GAME_DATA(cArrowModel *, 0x4479a8)
-#define g_ArrowPoolCount GAME_DATA(int, 0x4479ac)
-#define g_ArrowMaxDist GAME_DATA(float, 0x4479a0)	/* of the selection */
-#define g_ArrowNearDist GAME_DATA(float, 0x4478c8)	/* shown nearer */
-#define g_ArrowYMargin GAME_DATA(float, 0x4478e0)	/* the height difference allowed over both radii */
-#define g_MissionArrowOn (&GAME_DATA(cString, 0x4478f8))	/* the models of MissionArrows_Switch */
-#define g_MissionArrowOff (&GAME_DATA(cString, 0x447940))
-#define g_ArrowUseModel GAME_DATA(char *, 0x447910)
-#define g_ArrowGlowDist GAME_DATA(float, 0x447970)
-#define g_ArrowGlowMin GAME_DATA(float, 0x447988)
-#define g_ArrowGlowMax GAME_DATA(float, 0x447958)
-#define g_ArrowGlowRamps ((uint32_t(*)[9])Game_Ptr(0x428628))
+#define g_ArrowPool GAME_GLOBAL(cArrowModel *, g_ArrowPool, 0x4479a8)
+#define g_ArrowPoolCount GAME_GLOBAL(int, g_ArrowPoolCount, 0x4479ac)
+#define g_ArrowMaxDist GAME_GLOBAL_IN(float, GVar_ArrowActiveRadius, 16, 0x4479a0)	/* of the selection */
+#define g_ArrowNearDist GAME_GLOBAL_IN(float, GVar_ArrowViewRadius, 16, 0x4478c8)	/* shown nearer */
+#define g_ArrowYMargin GAME_GLOBAL_IN(float, GVar_ArrowActiveHorizontal, 16, 0x4478e0)	/* the height difference allowed over both radii */
+#define g_MissionArrowOn (&GAME_GLOBAL_IN(cString, GVar_ArrowMissionFile, 16, 0x4478f8))	/* the models of MissionArrows_Switch */
+#define g_MissionArrowOff (&GAME_GLOBAL_IN(cString, GVar_ArrowTargetFile, 16, 0x447940))
+#define g_ArrowUseModel GAME_GLOBAL_IN(char *, GVar_ArrowUseFile, 16, 0x447910)
+#define g_ArrowGlowDist GAME_GLOBAL_IN(float, GVar_FXArrowIndicatorFlash_DistGrow, 16, 0x447970)
+#define g_ArrowGlowMin GAME_GLOBAL_IN(float, GVar_FXArrowIndicatorFlash_SizeMin, 16, 0x447988)
+#define g_ArrowGlowMax GAME_GLOBAL_IN(float, GVar_FXArrowIndicatorFlash_SizeMax, 16, 0x447958)
+#define g_ArrowGlowRamps (GAME_ARRAY(uint32_t[9], g_ArrowGlowRamps, 0x428628))
 
 /* in / |in| (in itself for a length 0), returns out */
 float *Vec2_Normalize(float *out, const float *in);

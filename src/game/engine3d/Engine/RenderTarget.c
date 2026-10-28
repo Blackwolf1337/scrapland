@@ -1253,7 +1253,7 @@ void MotionBlur_Render(void) {
 	Render_ClearForced();
 }
 
-#define g_MotionBlurTime GAME_DATA(uint32_t, 0x4a8eac)
+#define g_MotionBlurTime GAME_GLOBAL(uint32_t, g_MotionBlurTime, 0x4a8eac)
 
 /* the source added to the motion blur target through four taps, about every 1/25 s of game time; the shader
  * constants: the fade of the time passed since then, a quarter for each tap */

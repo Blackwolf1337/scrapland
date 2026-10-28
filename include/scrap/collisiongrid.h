@@ -42,9 +42,9 @@ SD_SIZE(cCollisionGrid, 0x9c);
 #define Entity_GridNode(e) ((Nto1Node *)((byte *)(e) + 0x34))	/* target the cell, data the entity */
 
 /* the engine variables (Gvars) */
-#define g_GridUseTopLimit GAME_DATA(int, 0x466df0)
-#define g_TopLimit GAME_DATA(float, 0x4675d8)
-#define g_ShowDummy GAME_DATA(const char *, 0x466e08)	/* the dummies drawn (a wildcard pattern), "" for none */
+#define g_GridUseTopLimit GAME_GLOBAL_IN(int, GVar_GridUseTopLimit, 16, 0x466df0)
+#define g_TopLimit GAME_GLOBAL_IN(float, GVar_TopLimit, 16, 0x4675d8)
+#define g_ShowDummy GAME_GLOBAL_IN(const char *, GVar_ShowDummy, 16, 0x466e08)	/* the dummies drawn (a wildcard pattern), "" for none */
 
 /* the destructor of a cell (Nto1Links.h, rva) for the new[] of the cells */
 #define NTO1NODE_DTOR 0x0eeb90

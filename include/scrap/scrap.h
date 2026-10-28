@@ -16,10 +16,10 @@
 #include "scrap/scorer.h"
 
 /* the function of Scrap.SetCallFunc with its parameters (AddParamX) for Scrap.Execute (rva 0x466a04) */
-#define g_CallFunc ((cPy_Function *)Game_Ptr(0x466a04))
-#define g_PackName ((cString *)Game_Ptr(0x44ab6c))	/* string object, the open pack */
-#define g_IsSteam GAME_DATA(byte, 0x467b9c)
-#define g_SuperDealAvaliable GAME_DATA(int, 0x45fe48)	/* SuperDealAvaliable, all three crazy deals done */
+#define g_CallFunc (GAME_ARRAY(cPy_Function, g_CallFunc, 0x466a04))
+#define g_PackName (GAME_ARRAY_IN(cString, GVar_PathInPackFile, 16, 0x44ab6c))	/* string object, the open pack */
+#define g_IsSteam GAME_GLOBAL(byte, g_IsSteam, 0x467b9c)
+#define g_SuperDealAvaliable GAME_GLOBAL_IN(int, GVar_SuperDealAvaliable, 16, 0x45fe48)	/* SuperDealAvaliable, all three crazy deals done */
 
 void __thiscall Elements_Call(void *elements, const char *name);
 void __thiscall Elements_Create(void *elements);
@@ -82,8 +82,21 @@ typedef struct cGVarListVtbl {
 #define GVar_ListObj(v) ((void *)((byte *)(v) - 4))
 #define GVar_ListVtbl(v) (*(const cGVarListVtbl **)GVar_ListObj(v))
 
-#define g_GVars GAME_DATA(cGVar *, 0x44b5f8)		/* every variable, newest first */
-#define g_GVarTable GAME_DATA(HashTable *, 0x44b5fc)	/* by name after GVars_Init */
+/* the object of a GVAR_SCRIPT_FUNCTION variable (INIT_GVAR_FUNCTION of StaticInit.inc): its function in place of value
+ * and def */
+typedef struct cGVarFunction {
+	union {
+		cGVar var;
+		struct {
+			byte head[0x10];
+			cPy_Function func;	/* 0x10 */
+		};
+	};
+} cGVarFunction;
+SD_SIZE(cGVarFunction, 0x24);
+
+#define g_GVars GAME_GLOBAL(cGVar *, g_GVars, 0x44b5f8)		/* every variable, newest first */
+#define g_GVarTable GAME_GLOBAL(HashTable *, g_GVarTable, 0x44b5fc)	/* by name after GVars_Init */
 
 void Achievement_Unlock(int n);
 byte Steam_SetAchievement(int n, int on);
@@ -165,8 +178,8 @@ SD_OFFSET(cDebris, speed, 0x4c);
 SD_SIZE(cDebris, 0x58);
 #define Debris_Mod(d) ((CGameModel *)(d)->Mod)
 
-#define g_DebrisDrop ((vec3_t *)Game_Ptr(0x467408))	/* [4]: position, angles (rad), velocity, angle speed (rad) */
-#define g_DebrisDefault GAME_DATA(float, 0x4674f4)
+#define g_DebrisDrop (GAME_ARRAY(vec3_t, g_DebrisDrop, 0x467408))	/* [4]: position, angles (rad), velocity, angle speed (rad) */
+#define g_DebrisDefault GAME_GLOBAL_IN(float, GVar_Gravity, 16, 0x4674f4)
 
 cDebrisSys *__thiscall cWorld_GetDebrisSys(cWorld *world, const char *name);
 byte __thiscall cWorld_DeleteDebrisSys(cWorld *world, const char *name);
@@ -223,10 +236,32 @@ void __thiscall Alarm_SetLock(void *alarm, int lock);
 /* steam_api: SteamInternal_ContextInit through the import table of the exe, context data at rva 0x428a30 */
 typedef void *(__cdecl *SteamContextInit_t)(void *ctx);
 #define g_SteamInternal_ContextInit GAME_DATA(SteamContextInit_t, 0x3a15a4)
-#define g_SteamFriendsContext ((void *)Game_Ptr(0x428a30))
+#define g_SteamFriendsContext ((void *)GAME_PTR(g_SteamFriendsContext, 0, 0x428a30))
 void Loading_Init(void);
 void Loading_End(void);
 int Video_GetCurrentMode(void);
 void Models_List(void);
+
+/* CCallback<cGetAuthSessionTicketResponseExt, GetAuthSessionTicketResponse_t> with the object after it */
+typedef struct cSteamTicketCallback {
+	const void *vftable;		/* 0x00 */
+	byte flags;			/* 0x04 */
+	byte pad_05[3];
+	int callback;			/* 0x08 the callback id */
+	void *obj;			/* 0x0c */
+	void(__thiscall *func)(void *obj, void *param);	/* 0x10 */
+	uint32_t ticket;		/* 0x14 HAuthTicket of the request */
+	byte ready;			/* 0x18 the hex is in g_SteamTicket */
+	byte pending;			/* 0x19 */
+	byte pad_1a[2];
+} cSteamTicketCallback;
+SD_OFFSET(cSteamTicketCallback, ticket, 0x14);
+
+typedef struct cSaveVar {
+	char *name;			/* 0x0 cString */
+	char *value;			/* 0x4 cString */
+	struct cSaveVar *next;		/* 0x8 g_SaveVars */
+} cSaveVar;
+SD_SIZE(cSaveVar, 0xc);
 
 #endif

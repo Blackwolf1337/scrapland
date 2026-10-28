@@ -12,17 +12,17 @@
 
 #define CFLARE_VFTABLE GAME_VFTABLE(CFlare_vftable, 0x3e1958)
 
-#define g_FlareTam GAME_DATA(float, 0x432998)		/* tam_def */
-#define g_FlareAtenDist GAME_DATA(int, 0x4d6d90)	/* aten_dist */
-#define g_FlareAtenDistIni GAME_DATA(float, 0x43299c)	/* aten_dist_ini */
-#define g_FlareAtenDistFin GAME_DATA(float, 0x4329a0)	/* aten_dist_fin */
-#define g_FlareFundidoEnt GAME_DATA(float, 0x4329a4)	/* fundido_ent */
-#define g_FlareFundidoSal GAME_DATA(float, 0x4329a8)	/* fundido_sal */
-#define g_FlareVerInfo GAME_DATA(int, 0x4d6d94)		/* ver_info */
-#define g_SkipFlares GAME_DATA(int, 0x4d6dc0)		/* R_SkipFlares */
-#define g_ShowFlaresInfo GAME_DATA(int, 0x4d6da8)	/* R_ShowFlaresInfo */
-#define g_Sobredib GAME_DATA(int, 0x4a8f2c)		/* video sobredib, the overdraw view */
-#define g_TimeMsF GAME_DATA(float, 0x4a8ed0)		/* the time of the engine in ms */
+#define g_FlareTam GAME_GLOBAL(float, g_FlareTam, 0x432998)		/* tam_def */
+#define g_FlareAtenDist GAME_GLOBAL(int, g_FlareAtenDist, 0x4d6d90)	/* aten_dist */
+#define g_FlareAtenDistIni GAME_GLOBAL(float, g_FlareAtenDistIni, 0x43299c)	/* aten_dist_ini */
+#define g_FlareAtenDistFin GAME_GLOBAL(float, g_FlareAtenDistFin, 0x4329a0)	/* aten_dist_fin */
+#define g_FlareFundidoEnt GAME_GLOBAL(float, g_FlareFundidoEnt, 0x4329a4)	/* fundido_ent */
+#define g_FlareFundidoSal GAME_GLOBAL(float, g_FlareFundidoSal, 0x4329a8)	/* fundido_sal */
+#define g_FlareVerInfo GAME_GLOBAL(int, g_FlareVerInfo, 0x4d6d94)		/* ver_info */
+#define g_SkipFlares GAME_GLOBAL_IN(int, GVar_R_SkipFlares, 16, 0x4d6dc0)		/* R_SkipFlares */
+#define g_ShowFlaresInfo GAME_GLOBAL_IN(int, GVar_R_ShowFlaresInfo, 16, 0x4d6da8)	/* R_ShowFlaresInfo */
+#define g_Sobredib GAME_GLOBAL(int, g_Sobredib, 0x4a8f2c)		/* video sobredib, the overdraw view */
+#define g_TimeMsF GAME_GLOBAL(float, g_TimeMsF, 0x4a8ed0)		/* the time of the engine in ms */
 
 typedef struct CFlare {
 	void **vftable;			/* 0x00 OBJ3D_VF_* */

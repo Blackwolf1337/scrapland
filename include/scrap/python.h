@@ -28,10 +28,11 @@ void *PyPool_Malloc(size_t size);
 void *PyPool_Realloc(void *p, size_t size);
 void PyPool_Free(void *p);
 
-/* init<name> of an engine module: registers the method table of the exe at rva (PYTHON_API_VERSION 1007) */
+/* init<name> of an engine module: registers the method table of the exe at rva (PYTHON_API_VERSION 1007), in
+ * ScrapC.exe the C object <name>_methods (src/game/Global/Globals*.c) */
 #define SD_PY_MODULE(name, rva) \
 	void init##name(void) { \
-		Py_InitModule(#name, &GAME_DATA(PyMethodDef, rva)); \
+		Py_InitModule(#name, GAME_ARRAY(PyMethodDef, name##_methods, rva)); \
 	}
 
 #ifdef SD_STANDALONE

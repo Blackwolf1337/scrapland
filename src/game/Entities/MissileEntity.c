@@ -22,10 +22,10 @@
 #define Debris_Next(d) (*(cDebris **)((byte *)(d) + 0x50))
 
 /* the debris systems of the fire effects (SetEmbeddedFX) */
-#define g_MissileFXDumbMotor GAME_DATA(const char *, 0x448478)
-#define g_MissileFXGearMissile GAME_DATA(const char *, 0x446a3c)
-#define g_MissileFXCloud GAME_DATA(const char *, 0x448e74)
-#define g_MissileFXEMI GAME_DATA(const char *, 0x449310)
+#define g_MissileFXDumbMotor GAME_GLOBAL_IN(const char *, GVar_FXDumbMotorFile, 16, 0x448478)
+#define g_MissileFXGearMissile GAME_GLOBAL_IN(const char *, GVar_FXGearMissileFile, 16, 0x446a3c)
+#define g_MissileFXCloud GAME_GLOBAL_IN(const char *, GVar_CloudFile, 16, 0x448e74)
+#define g_MissileFXEMI GAME_GLOBAL_IN(const char *, GVar_EMIFile, 16, 0x449310)
 
 #define MISSILE_ENTLIST 8			/* the entity lists the missiles hit */
 #define MISSILE_NET_NONE 0xffff			/* no parent or target in the network state */

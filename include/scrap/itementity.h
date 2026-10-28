@@ -59,9 +59,9 @@ SD_OFFSET(cItemEntity, radius, 0x360);
 SD_OFFSET(cItemEntity, onTake, 0x370);
 SD_SIZE(cItemEntity, CITEMENTITY_SIZE);
 
-#define g_ItemFxDist GAME_DATA(float, 0x447694)		/* the fade effects only nearer (60000) */
-#define g_ItemSyncDist GAME_DATA(float, 0x4476ac)
-#define g_ItemSyncCount GAME_DATA(uint32_t, 0x4476b4)
+#define g_ItemFxDist GAME_GLOBAL_IN(float, GVar_FXItemFadeMaxDist, 16, 0x447694)		/* the fade effects only nearer (60000) */
+#define g_ItemSyncDist GAME_GLOBAL_IN(float, GVar_NetItemDistAct, 16, 0x4476ac)
+#define g_ItemSyncCount GAME_GLOBAL(uint32_t, g_ItemSyncCount, 0x4476b4)
 
 void __fastcall cItemEntity_dtor(cItemEntity *self);
 cItemEntity *__thiscall cItemEntity_Delete(cItemEntity *self, uint32_t flags);

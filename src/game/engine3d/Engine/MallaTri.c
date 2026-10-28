@@ -15,7 +15,7 @@
 #define MALLATRI_FLT_MAX 3.4028234663852886e+38f
 
 /* draw the meshes through their D3D mesh */
-#define g_MallaD3DOn GAME_DATA(byte, 0x431bad)
+#define g_MallaD3DOn GAME_GLOBAL_IN(byte, group_431bac, 1, 0x431bad)
 /* statistics of the frame */
 
 typedef void(__thiscall *mallaD3DDelete_t)(CMallaD3D *self, int flags);

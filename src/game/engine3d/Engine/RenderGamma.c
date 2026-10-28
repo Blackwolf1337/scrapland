@@ -10,18 +10,18 @@
 #include "scrap/varios.h"
 
 #define GAMMA_RAMP 256
-#define g_VideoGammaRGB GAME_DATA(float, 0x4db88c)
-#define g_VideoScaleRGB GAME_DATA(float, 0x4db8d4)
-#define g_VideoScaleRed GAME_DATA(float, 0x4db8bc)
-#define g_VideoScaleGreen GAME_DATA(float, 0x4db8ec)
-#define g_VideoScaleBlue GAME_DATA(float, 0x4db8a4)
+#define g_VideoGammaRGB GAME_GLOBAL_IN(float, GVar_VideoGammaRGB, 16, 0x4db88c)
+#define g_VideoScaleRGB GAME_GLOBAL_IN(float, GVar_VideoScaleRGB, 16, 0x4db8d4)
+#define g_VideoScaleRed GAME_GLOBAL_IN(float, GVar_VideoScaleRed, 16, 0x4db8bc)
+#define g_VideoScaleGreen GAME_GLOBAL_IN(float, GVar_VideoScaleGreen, 16, 0x4db8ec)
+#define g_VideoScaleBlue GAME_GLOBAL_IN(float, GVar_VideoScaleBlue, 16, 0x4db8a4)
 /* the values of the ramp set last */
-#define g_GammaLast2x GAME_DATA(int, 0x4db8f4)
-#define g_GammaLastRGB GAME_DATA(float, 0x432a18)
-#define g_GammaLastScale GAME_DATA(float, 0x432a1c)
-#define g_GammaLastRed GAME_DATA(float, 0x432a20)
-#define g_GammaLastGreen GAME_DATA(float, 0x432a24)
-#define g_GammaLastBlue GAME_DATA(float, 0x432a28)
+#define g_GammaLast2x GAME_GLOBAL(int, g_GammaLast2x, 0x4db8f4)
+#define g_GammaLastRGB GAME_GLOBAL(float, g_GammaLastRGB, 0x432a18)
+#define g_GammaLastScale GAME_GLOBAL(float, g_GammaLastScale, 0x432a1c)
+#define g_GammaLastRed GAME_GLOBAL(float, g_GammaLastRed, 0x432a20)
+#define g_GammaLastGreen GAME_GLOBAL(float, g_GammaLastGreen, 0x432a24)
+#define g_GammaLastBlue GAME_GLOBAL(float, g_GammaLastBlue, 0x432a28)
 
 /* one channel through the curve, limited to 0..65535 */
 static uint16_t Gamma_Channel(uint16_t w, float expo, float mult, float scale) {

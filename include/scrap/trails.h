@@ -80,16 +80,16 @@ SD_OFFSET(CTrail, m_pTrails, 0x28);
 SD_OFFSET(CTrail, orientVec, 0x40);
 
 /* the lists of the active trails and the shared buffers (IDirect3DVertexBuffer8, IDirect3DIndexBuffer8) */
-#define g_TrailsMat ((struct CMaterial **)Game_Ptr(0x4d6e08))	/* [MAX_TRAILS_TEXTURES] */
-#define g_TrailsOn GAME_DATA(int, 0x4d6e5c)
-#define g_TrailsVB GAME_DATA(void *, 0x4d6e64)
-#define g_TrailsIB GAME_DATA(void *, 0x4d6e68)
-#define g_TrailsVertex GAME_DATA(int, 0x4d6e6c)	/* vertices, primitives and indices in the buffers */
-#define g_TrailsPrims GAME_DATA(int, 0x4d6e70)
-#define g_TrailsIndex GAME_DATA(int, 0x4d6e74)
-#define g_TrailsRender ((CTrail *(*)[MAX_TRAILS_RENDER])Game_Ptr(0x4d6e78))
-#define g_nTrails GAME_DATA(int, 0x4db278)
-#define g_nTrailsRender ((int *)Game_Ptr(0x4db280))	/* [MAX_TRAILS_TEXTURES] */
+#define g_TrailsMat (GAME_ARRAY(struct CMaterial *, g_TrailsMat, 0x4d6e08))	/* [MAX_TRAILS_TEXTURES] */
+#define g_TrailsOn GAME_GLOBAL_IN(int, GVar_R_Trails, 16, 0x4d6e5c)
+#define g_TrailsVB GAME_GLOBAL(void *, g_TrailsVB, 0x4d6e64)
+#define g_TrailsIB GAME_GLOBAL(void *, g_TrailsIB, 0x4d6e68)
+#define g_TrailsVertex GAME_GLOBAL(int, g_TrailsVertex, 0x4d6e6c)	/* vertices, primitives and indices in the buffers */
+#define g_TrailsPrims GAME_GLOBAL(int, g_TrailsPrims, 0x4d6e70)
+#define g_TrailsIndex GAME_GLOBAL(int, g_TrailsIndex, 0x4d6e74)
+#define g_TrailsRender (GAME_ARRAY(CTrail *[MAX_TRAILS_RENDER], g_TrailsRender, 0x4d6e78))
+#define g_nTrails GAME_GLOBAL(int, g_nTrails, 0x4db278)
+#define g_nTrailsRender (GAME_ARRAY(int, g_nTrailsRender, 0x4db280))	/* [MAX_TRAILS_TEXTURES] */
 
 CTrail *__fastcall CTrail_ctor(CTrail *self);
 void __fastcall CTrail_dtor(CTrail *self);

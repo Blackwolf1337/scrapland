@@ -278,7 +278,7 @@ void ChType_GearShoot(cAbstractFile *params) {
 }
 
 /* the color ramps of the shot of the gear (9 colors each): 0..3 sparks and flashes, 2 also the core */
-#define g_RampGearShoot ((uint32_t *)Game_Ptr(0x428078))
+#define g_RampGearShoot (GAME_ARRAY(uint32_t, g_RampGearShoot, 0x428078))
 
 /* rand() & 0x7fff as 0..1 (double), unscaled */
 static inline double Gear_Rnd(void) {

@@ -210,19 +210,19 @@ SD_SIZE(CNodesTraffic, 0x70);
 #define CNODESTRAFFIC_VFTABLE GAME_VFTABLE(CNodesTraffic_vftable, 0x3a9c40)
 
 /* the engine variables */
-#define g_DistGetPVisTrafficAI GAME_DATA(float, 0x444cc4)	/* the searches end at this distance */
-#define g_TrafficSearchDist GAME_DATA(float, 0x428000)		/* the copy of it the searches use */
-#define g_MinDistNodeTrafficAI GAME_DATA(float, 0x444cac)	/* the step of the nodes Load fills in */
-#define g_MaxNumTrackLowDensityAI GAME_DATA(int, 0x444cf4)
-#define g_MaxNumTrackNormalDensityAI GAME_DATA(int, 0x444d24)
-#define g_ShowNumTrafficAI GAME_DATA(int, 0x444cdc)		/* the track drawn, 0 for none */
-#define g_MaxDistAroundReposAI GAME_DATA(float, 0x444930)
+#define g_DistGetPVisTrafficAI GAME_GLOBAL_IN(float, GVar_DistGetPVisTrafficAI, 16, 0x444cc4)	/* the searches end at this distance */
+#define g_TrafficSearchDist GAME_GLOBAL(float, g_TrafficSearchDist, 0x428000)		/* the copy of it the searches use */
+#define g_MinDistNodeTrafficAI GAME_GLOBAL_IN(float, GVar_MinDistNodeTrafficAI, 16, 0x444cac)	/* the step of the nodes Load fills in */
+#define g_MaxNumTrackLowDensityAI GAME_GLOBAL_IN(int, GVar_MaxNumTrackLowDensityAI, 16, 0x444cf4)
+#define g_MaxNumTrackNormalDensityAI GAME_GLOBAL_IN(int, GVar_MaxNumTrackNormalDensityAI, 16, 0x444d24)
+#define g_ShowNumTrafficAI GAME_GLOBAL_IN(int, GVar_ShowNumTrafficAI, 16, 0x444cdc)		/* the track drawn, 0 for none */
+#define g_MaxDistAroundReposAI GAME_GLOBAL_IN(float, GVar_MaxDistAroundReposAI, 16, 0x444930)
 /* the default radius of the tracks by type */
-#define g_HTrafficCapsule GAME_DATA(float, 0x448734)
-#define g_MTrafficCapsule GAME_DATA(float, 0x448794)
-#define g_NTrafficCapsule GAME_DATA(float, 0x448764)
-#define g_HNTrafficCapsule GAME_DATA(float, 0x44877c)
-#define g_MNTrafficCapsule GAME_DATA(float, 0x44874c)
+#define g_HTrafficCapsule GAME_GLOBAL_IN(float, GVar_HTrafficCapsule, 16, 0x448734)
+#define g_MTrafficCapsule GAME_GLOBAL_IN(float, GVar_MTrafficCapsule, 16, 0x448794)
+#define g_NTrafficCapsule GAME_GLOBAL_IN(float, GVar_NTrafficCapsule, 16, 0x448764)
+#define g_HNTrafficCapsule GAME_GLOBAL_IN(float, GVar_HNTrafficCapsule, 16, 0x44877c)
+#define g_MNTrafficCapsule GAME_GLOBAL_IN(float, GVar_MNTrafficCapsule, 16, 0x44874c)
 
 /* CNodesTraffic_ctor and CNodesTrafficInDoor_ctor: ai.h */
 void __fastcall CNodesTraffic_dtor(CNodesTraffic *self);

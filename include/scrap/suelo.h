@@ -135,14 +135,14 @@ void __fastcall CSuelo_DrawDebug(CSuelo *self);
 /* rva 0x261580: in / |in| into out (the length through double, 1 / len rounded to float), a copy for length 0 */
 vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);
 
-#define g_CollisionEpsilon GAME_DATA(float, 0x43241c)
-#define g_CollisionBalance GAME_DATA(float, 0x4af868)
-#define g_QuadTriCacheID GAME_DATA(int, 0x4af7d8)
-#define g_CollisionNComp GAME_DATA(uint32_t, 0x4af7dc)
-#define g_CollisionTestsMax GAME_DATA(uint32_t, 0x4af7e8)
-#define g_CollisionTests GAME_DATA(uint32_t, 0x4af7ec)
-#define g_CollisionTestsTotal GAME_DATA(uint32_t, 0x4af7f0)
-#define g_CollisionQuadCount GAME_DATA(int, 0x4af7f4)
+#define g_CollisionEpsilon GAME_GLOBAL(float, g_CollisionEpsilon, 0x43241c)
+#define g_CollisionBalance GAME_GLOBAL_IN(float, GVar_MapCollisionBalance, 16, 0x4af868)
+#define g_QuadTriCacheID GAME_GLOBAL(int, g_QuadTriCacheID, 0x4af7d8)
+#define g_CollisionNComp GAME_GLOBAL(uint32_t, g_CollisionNComp, 0x4af7dc)
+#define g_CollisionTestsMax GAME_GLOBAL(uint32_t, g_CollisionTestsMax, 0x4af7e8)
+#define g_CollisionTests GAME_GLOBAL(uint32_t, g_CollisionTests, 0x4af7ec)
+#define g_CollisionTestsTotal GAME_GLOBAL(uint32_t, g_CollisionTestsTotal, 0x4af7f0)
+#define g_CollisionQuadCount GAME_GLOBAL(int, g_CollisionQuadCount, 0x4af7f4)
 
 /* the triangle not tested yet in this query: marked as tested (counted in g_CollisionTests) */
 static inline int CCollideTri_Mark(CCollideTri *tri) {
@@ -348,5 +348,15 @@ byte Suelo_PointInTriIn(const vec3_t *p, const vec3_t *a, const vec3_t *b, const
 /* the position where a sphere of radius r moving from a to b first touches the triangle */
 byte Suelo_SweepTri(const vec3_t *a, const vec3_t *b, float r, const CCollideTri *tri, const CCollideMesh *mesh,
 	vec3_t *res);
+
+/* the walk state of CSuelo_Trace */
+typedef struct {
+	float invDX;			/* 0x00 1 / (from.x - to.x) */
+	float invDZ;			/* 0x04 */
+	int x;				/* 0x08 the cell */
+	int z;				/* 0x0c */
+	vec3_t from;			/* 0x10 */
+	vec3_t to;			/* 0x1c */
+} traceCell_t;
 
 #endif

@@ -214,14 +214,14 @@ static inline const cWalkCharVtbl *WChar_Vtbl(const cEntity *e) {
 }
 
 /* engine variables (Gvars) */
-#define g_CharUsrPushSpeed GAME_DATA(float, 0x44729c)		/* the push of an AI the player runs into */
-#define g_TimeToAbortSelectChar GAME_DATA(float, 0x4472fc)
-#define g_AbortSelectDistance GAME_DATA(float, 0x447224)
-#define g_CharProcessReduction GAME_DATA(float, 0x447254)	/* nearer to a camera the AI slots are faster */
-#define g_SndLoopCharNPCMul GAME_DATA(float, 0x447284)
-#define g_CharGrav GAME_DATA(float, 0x4472cc)
-#define g_ArrowDeactivationRadius GAME_DATA(float, 0x447928)
-#define g_ActiveExtrapolation GAME_DATA(int, 0x447a08)		/* the view is extrapolated by its velocity */
+#define g_CharUsrPushSpeed GAME_GLOBAL_IN(float, GVar_CharUsrPushSpeed, 16, 0x44729c)		/* the push of an AI the player runs into */
+#define g_TimeToAbortSelectChar GAME_GLOBAL_IN(float, GVar_TimeToAbortSelectChar, 16, 0x4472fc)
+#define g_AbortSelectDistance GAME_GLOBAL_IN(float, GVar_AbortSelectDistance, 16, 0x447224)
+#define g_CharProcessReduction GAME_GLOBAL_IN(float, GVar_CharProcessReduction, 16, 0x447254)	/* nearer to a camera the AI slots are faster */
+#define g_SndLoopCharNPCMul GAME_GLOBAL_IN(float, GVar_SndLoopCharNPCMul, 16, 0x447284)
+#define g_CharGrav GAME_GLOBAL_IN(float, GVar_CharGrav, 16, 0x4472cc)
+#define g_ArrowDeactivationRadius GAME_GLOBAL_IN(float, GVar_ArrowDeactivationRadius, 16, 0x447928)
+#define g_ActiveExtrapolation GAME_GLOBAL_IN(int, GVar_ActiveExtrapolation, 16, 0x447a08)		/* the view is extrapolated by its velocity */
 
 /* the AI of the character classes (AI/, rva 0x066120..0x086100); operator new of the size, then the constructor */
 void *__thiscall cAISentinel_ctor(void *mem, cEntity *e, int *arg);	/* 0x380 bytes */

@@ -13,18 +13,18 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 
-#define g_DesktopsList GAME_DATA(cEntityListData *, 0x44ceb0)	/* the list of the desktops, once found */
-#define g_DesktopsListName GAME_DATA(char *, 0x44cf60)	/* DesktopsFunctionaryListName */
-#define g_FunctionaryAssignWorkDistance GAME_DATA(float, 0x44cedc)
-#define g_OnFunctionaryStartsWorking ((cPy_Function *)Game_Ptr(0x44cef4))
-#define g_FunctionarySpecialActionStatesTransitionTime GAME_DATA(float, 0x44cf18)
-#define g_FunctionaryMinTimeToSitDown GAME_DATA(float, 0x44cfa8)
-#define g_FunctionaryMaxTimeToSitDown GAME_DATA(float, 0x44cf90)
-#define g_FunctionaryMinTimeToStopWorking GAME_DATA(float, 0x44cec4)
-#define g_FunctionaryMaxTimeToStopWorking GAME_DATA(float, 0x44cf78)
-#define g_FunctionaryEffectFastSound GAME_DATA(char *, 0x446720)
-#define g_FunctionaryEffectFastSoundVol GAME_DATA(float, 0x446750)
-#define g_CharProcessReduction GAME_DATA(float, 0x447254)
+#define g_DesktopsList GAME_GLOBAL(cEntityListData *, g_DesktopsList, 0x44ceb0)	/* the list of the desktops, once found */
+#define g_DesktopsListName GAME_GLOBAL_IN(char *, GVar_DesktopsFunctionaryListName, 16, 0x44cf60)	/* DesktopsFunctionaryListName */
+#define g_FunctionaryAssignWorkDistance GAME_GLOBAL_IN(float, GVar_FunctionaryAssignWorkDistance, 16, 0x44cedc)
+#define g_OnFunctionaryStartsWorking (GAME_ARRAY_IN(cPy_Function, GVar_OnFunctionaryStartsWorking, 16, 0x44cef4))
+#define g_FunctionarySpecialActionStatesTransitionTime GAME_GLOBAL_IN(float, GVar_FunctionarySpecialActionStatesTransitionTime, 16, 0x44cf18)
+#define g_FunctionaryMinTimeToSitDown GAME_GLOBAL_IN(float, GVar_FunctionaryMinTimeToSitDown, 16, 0x44cfa8)
+#define g_FunctionaryMaxTimeToSitDown GAME_GLOBAL_IN(float, GVar_FunctionaryMaxTimeToSitDown, 16, 0x44cf90)
+#define g_FunctionaryMinTimeToStopWorking GAME_GLOBAL_IN(float, GVar_FunctionaryMintimeToStopWorking, 16, 0x44cec4)
+#define g_FunctionaryMaxTimeToStopWorking GAME_GLOBAL_IN(float, GVar_FunctionaryMaxtimeToStopWorking, 16, 0x44cf78)
+#define g_FunctionaryEffectFastSound GAME_GLOBAL_IN(char *, GVar_FunctionaryEffectFastSound, 16, 0x446720)
+#define g_FunctionaryEffectFastSoundVol GAME_GLOBAL_IN(float, GVar_FunctionaryEffectFastSoundVol, 16, 0x446750)
+#define g_CharProcessReduction GAME_GLOBAL_IN(float, GVar_CharProcessReduction, 16, 0x447254)
 
 #define Func_Vtbl(self) ((self)->base.base.vftable)
 #define Func_Parent(self) ((self)->base.base.parent)

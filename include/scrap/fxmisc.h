@@ -73,14 +73,14 @@ static inline float FX_Rand(double range, double add) {
 #define Entity_Removed(e) (*(int *)((byte *)(e) + 0x20))
 
 /* the engine variables (Gvars): the files of the debris systems of the effects */
-#define g_FXItemBlinkFile GAME_DATA(const char *, 0x467240)
-#define g_FXItemFadeFile GAME_DATA(const char *, 0x467228)
-#define g_FXItemTakeFile GAME_DATA(const char *, 0x467210)
-#define g_FXCharacterSputnikFile GAME_DATA(const char *, 0x466e38)
-#define g_FXShipEditBuildFile GAME_DATA(const char *, 0x467258)
-#define g_FXSmokeDebrisFile GAME_DATA(const char *, 0x4673c0)
-#define g_FXFiredDebrisFile GAME_DATA(const char *, 0x4673a8)
-#define g_FXShipExplosionFile GAME_DATA(const char *, 0x467348)
+#define g_FXItemBlinkFile GAME_GLOBAL_IN(const char *, GVar_FXItemBlinkFile, 16, 0x467240)
+#define g_FXItemFadeFile GAME_GLOBAL_IN(const char *, GVar_FXItemFadeFile, 16, 0x467228)
+#define g_FXItemTakeFile GAME_GLOBAL_IN(const char *, GVar_FXItemTakeFile, 16, 0x467210)
+#define g_FXCharacterSputnikFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterSputnikFile, 16, 0x466e38)
+#define g_FXShipEditBuildFile GAME_GLOBAL_IN(const char *, GVar_FXShipEditBuildFile, 16, 0x467258)
+#define g_FXSmokeDebrisFile GAME_GLOBAL_IN(const char *, GVar_FXSmokeDebrisFile, 16, 0x4673c0)
+#define g_FXFiredDebrisFile GAME_GLOBAL_IN(const char *, GVar_FXFiredDebrisFile, 16, 0x4673a8)
+#define g_FXShipExplosionFile GAME_GLOBAL_IN(const char *, GVar_FXShipExplosionFile, 16, 0x467348)
 
 /* the color ramps (9 colors) of the particles */
 #define FX_RAMP_BLINK 0x430b44

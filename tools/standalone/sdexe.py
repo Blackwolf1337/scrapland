@@ -176,10 +176,11 @@ class CObj:
 
 
 def coff_sd(path, sd_symbols):
-	"""the .sd.<rva> sections of a COFF object file, with their relocations as {offset: (symbol, target)}: target is
-	the rva of a target in a .sd section of the file (symbol value plus the addend in place), None for a global
-	symbol of another section or file (a C function, the Python, an SD_AT object of another file). The global symbols
-	of the .sd sections go into sd_symbols with their rvas."""
+	"""the .sd.<rva> sections of a COFF object file, with their relocations as {offset: (symbol, target, addend)}:
+	target is the rva of a target in a .sd section of the file (symbol value plus the addend in place), None for a
+	global symbol of another section or file (a C function, the Python, an SD_AT object of another file) with the
+	addend in place. The global symbols of the .sd sections go into sd_symbols with their rvas. A section of
+	SD_BSS (uninitialized) is bss."""
 	try:
 		f = open(path, 'rb')
 	except OSError as e:
@@ -249,13 +250,11 @@ def coff_sd(path, sd_symbols):
 				sname, value, secnum, sclass, _ = symbol(symidx)
 				inplace = struct.unpack_from('<I', data, at)[0]
 				if secnum in sd:
-					relocs[at] = (sname, sd[secnum] + value + inplace)
+					relocs[at] = (sname, sd[secnum] + value + inplace, 0)
 				elif sclass != 2:
 					raise ExeError('%s: %s: the pointer at +%x leads to %s, static C that has no rva of the original'
 						% (path, name, at, sname))
-				elif inplace:
-					raise ExeError('%s: %s: the pointer at +%x has an offset to %s' % (path, name, at, sname))
 				else:
-					relocs[at] = (sname, None)
+					relocs[at] = (sname, None, inplace)
 			out.append(CObj(path, name, sd[i + 1], size, bss, alignment, data, relocs))
 		return out

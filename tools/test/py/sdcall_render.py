@@ -312,7 +312,7 @@ for ntri, strip, base, start, lim in ((20, 0, 2, 5, -1), (20, 0, 0, 0, 7), (0, 1
 	check('Render_DrawMallaD3D' + fmt((ntri, strip, base, start, lim)), lambda: rdlog(lambda: SDTest.Call('Render_DrawMallaD3D', 'ii', md)))
 	SDTest.Poke('g_VBIBTriLimit', rdlim)
 vm = (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 5.0, -3.0, 2.0, 1.0)
-check('Render_SetView', lambda: (rdlog(lambda: SDTest.Call('Render_SetView', 'iF', vm)), rdints(sym('g_DeviceStr') + 0x200, 16), rdints(0x4adda8, 3)))
+check('Render_SetView', lambda: (rdlog(lambda: SDTest.Call('Render_SetView', 'iF', vm)), rdints(sym('g_DeviceStr') + 0x200, 16), rdints(sym('g_EyePos'), 3)))
 def rdfl(v):
 	r = SDTest.Call('operator_new', 'ii', 64)[0]
 	for i in range(16):

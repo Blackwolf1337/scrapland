@@ -20,8 +20,8 @@ typedef struct cLeePila {
 } cLeePila;
 SD_SIZE(cLeePila, 0x514);
 
-#define g_LeeCad GAME_DATA(char *, 0x4e73b8)
-#define g_LeePila GAME_DATA(cLeePila *, 0x4e73bc)
+#define g_LeeCad GAME_GLOBAL(char *, g_LeeCad, 0x4e73b8)
+#define g_LeePila GAME_GLOBAL(cLeePila *, g_LeePila, 0x4e73bc)
 
 /* dir (may be NULL) and name, binary "rb" else "rt" */
 void Lee_Open(const char *dir, const char *name, int binary);

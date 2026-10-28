@@ -6,20 +6,21 @@
 # .text    unknown                     4208 bytes,    4208 used
 # .rdata   C object                   20332 bytes,   20332 used
 # .rdata   double                       912 bytes,     152 used
+# .rdata   eh                         63528 bytes,       0 used
 # .rdata   float                       6516 bytes,    1252 used
 # .rdata   guid                       20912 bytes,     192 used
 # .rdata   import                      9863 bytes,    9863 used
-# .rdata   int table                  11552 bytes,    2101 used
+# .rdata   int table                   5892 bytes,    2101 used
 # .rdata   library crt               112216 bytes,    7290 used
 # .rdata   library crt+d3dx8              8 bytes,       0 used
 # .rdata   library crt+python           136 bytes,       0 used
 # .rdata   library d3dx8              18264 bytes,       4 used
 # .rdata   library d3dx8+python           8 bytes,       0 used
 # .rdata   library python             28096 bytes,     200 used
-# .rdata   pointer table              18887 bytes,     135 used
-# .rdata   rtti                       25782 bytes,       0 used
-# .rdata   string                    237354 bytes,  119984 used
-# .rdata   unknown                    40818 bytes,     584 used
+# .rdata   pointer table                135 bytes,       7 used
+# .rdata   rtti                       26874 bytes,     128 used
+# .rdata   string                    237278 bytes,  119984 used
+# .rdata   unknown                      686 bytes,     584 used
 # .rdata   zero                        1186 bytes,     464 used
 # .data    float                       1120 bytes,    1120 used
 # .data    int table                   9104 bytes,    9096 used
@@ -271,7 +272,7 @@
 3a3858	28	.rdata	Init_GVar_LogActEvents	string
 3a3880	10	.rdata	Init_GVar_LogActEvents, probe HashTable_Slot	string
 3a3890	c	.rdata	cWithLifeEntity_GetClassName, cWithLifeEntity_IsType, probe cWithLifeEntity_IsType via ucrtbase.dll	string
-3a389c	4	.rdata	probe hot page 3a3000	pointer table
+3a389c	4	.rdata	probe hot page 3a3000	rtti
 3a38a0	14	.rdata	cActCtrl_vftable	C object
 3a38b4	c	.rdata	cWalkCharEntity_GetClassName, cWalkCharEntity_Walk	string
 3a38c0	5c	.rdata	probe hot page 3a3000	string
@@ -315,7 +316,7 @@
 3a3a3c	4	.rdata	probe hot page 3a3000	float
 3a3a40	20	.rdata	Init_GVar_DefInterpTime	string
 3a3a60	10	.rdata	Init_GVar_DefInterpTime, probe HashTable_Slot	string
-3a3a70	4	.rdata	probe hot page 3a3000	pointer table
+3a3a70	4	.rdata	probe hot page 3a3000	rtti
 3a3a74	4	.rdata	cActionMove_vftable	C object
 3a3a78	24	.rdata	probe hot page 3a3000	string
 3a3a9c	2	.rdata	probe hot page 3a3000	int table
@@ -352,7 +353,7 @@
 3a3ee0	8	.rdata	Init_GVar_ShowAI, probe HashTable_Slot	string
 3a3ee8	20	.rdata	Init_GVar_NotShootAI	string
 3a3f08	c	.rdata	Init_GVar_NotShootAI, probe HashTable_Slot	string
-3a3f14	4	.rdata	probe hot page 3a3000	pointer table
+3a3f14	4	.rdata	probe hot page 3a3000	rtti
 3a3f18	38	.rdata	cAI_vftable	C object
 3a3f50	54	.rdata	probe hot page 3a3000	string
 3a3fa4	a	.rdata	probe hot page 3a3000	int table
@@ -385,10 +386,10 @@
 3a4038	10	.rdata	-	int table
 3a4048	4	.rdata	-	zero
 3a404c	58	.rdata	-	string
-3a40a4	4	.rdata	-	pointer table
+3a40a4	4	.rdata	-	rtti
 3a40a8	18c	.rdata	cAIBankDirector_vftable	C object
 3a4234	80	.rdata	-	string
-3a42b4	4	.rdata	-	pointer table
+3a42b4	4	.rdata	-	rtti
 3a42b8	18c	.rdata	cAIBankMaster_vftable	C object
 3a4444	1c	.rdata	-	string
 3a4460	18	.rdata	Init_GVar_ShootBishopAI	string
@@ -399,7 +400,7 @@
 3a44dc	14	.rdata	Init_GVar_TimeShootBishopAI, probe HashTable_Slot	string
 3a44f0	20	.rdata	Init_GVar_DistMaxShootBishopAI	string
 3a4510	18	.rdata	Init_GVar_DistMaxShootBishopAI, probe HashTable_Slot	string
-3a4528	4	.rdata	-	pointer table
+3a4528	4	.rdata	-	rtti
 3a452c	18c	.rdata	cAIBishop_vftable	C object
 3a46b8	18	.rdata	-	string
 3a46d0	4	.rdata	-	float
@@ -429,7 +430,7 @@
 3a4960	14	.rdata	Init_GVar_MinNumTalksCharAI, probe HashTable_Slot	string
 3a4974	2c	.rdata	Init_GVar_MinTalkCharAI	string
 3a49a0	10	.rdata	Init_GVar_MinTalkCharAI, probe HashTable_Slot	string
-3a49b0	4	.rdata	-	pointer table
+3a49b0	4	.rdata	-	rtti
 3a49b4	18c	.rdata	cAIChar_vftable	C object
 3a4b40	1a4	.rdata	-	string
 3a4ce4	8	.rdata	-	double
@@ -576,7 +577,7 @@
 3a5678	28	.rdata	Init_GVar_TimeStrafeLostObjCharAI	string
 3a56a0	18	.rdata	Init_GVar_TimeStrafeLostObjCharAI, probe HashTable_Slot	string
 3a56b8	70	.rdata	-	string
-3a5728	4	.rdata	-	pointer table
+3a5728	4	.rdata	-	rtti
 3a572c	190	.rdata	cAICharControl_vftable	C object
 3a58bc	1ac	.rdata	-	string
 3a5a68	2	.rdata	-	int table
@@ -592,19 +593,19 @@
 3a5d10	8	.rdata	-	pointer table
 3a5d18	194	.rdata	cAICharControl3D_vftable	C object
 3a5eac	74	.rdata	-	string
-3a5f20	4	.rdata	-	pointer table
+3a5f20	4	.rdata	-	rtti
 3a5f24	24	.rdata	cAICharGroup_vftable	C object
 3a5f48	e	.rdata	-	int table
 3a5f56	2	.rdata	-	zero
 3a5f58	a4	.rdata	-	string
-3a5ffc	4	.rdata	-	pointer table
+3a5ffc	4	.rdata	-	rtti
 3a6000	19c	.rdata	cAIControlBankDirector_vftable	C object
-3a619c	4	.rdata	-	pointer table
+3a619c	4	.rdata	-	rtti
 3a61a0	19c	.rdata	cAIControlBankMaster_vftable	C object
 3a633c	30	.rdata	Init_GVar_AngleStrafeUnderAttackBishopAI, Init_GVar_AngleStrafeUnderAttackGearAI, Init_GVar_AngleStrafeUnderAttackSentinelAI +2	string
 3a636c	20	.rdata	Init_GVar_AngleStrafeUnderAttackBishopAI, probe HashTable_Slot	string
 3a638c	20	.rdata	Init_GVar_TimeStrafeUnderAttackBishopAI, probe HashTable_Slot	string
-3a63ac	4	.rdata	-	pointer table
+3a63ac	4	.rdata	-	rtti
 3a63b0	19c	.rdata	cAIControlBishop_vftable	C object
 3a654c	2	.rdata	-	int table
 3a654e	6	.rdata	-	string
@@ -614,41 +615,41 @@
 3a6564	4	.rdata	-	float
 3a6568	20	.rdata	Init_GVar_AngleStrafeUnderAttackGearAI, probe HashTable_Slot	string
 3a6588	1c	.rdata	Init_GVar_TimeStrafeUnderAttackGearAI, probe HashTable_Slot	string
-3a65a4	4	.rdata	-	pointer table
+3a65a4	4	.rdata	-	rtti
 3a65a8	19c	.rdata	cAIControlGear_vftable	C object
 3a6744	c	.rdata	-	string
 3a6750	20	.rdata	Init_GVar_VelRotDinamicMessengerAI	string
 3a6770	1c	.rdata	Init_GVar_VelRotDinamicMessengerAI, probe HashTable_Slot	string
 3a678c	24	.rdata	Init_GVar_LimVelRotDinamicMessengerAI	string
 3a67b0	1c	.rdata	Init_GVar_LimVelRotDinamicMessengerAI, probe HashTable_Slot	string
-3a67cc	4	.rdata	-	pointer table
+3a67cc	4	.rdata	-	rtti
 3a67d0	194	.rdata	cAIControlMessenger_vftable	C object
-3a6964	4	.rdata	-	pointer table
+3a6964	4	.rdata	-	rtti
 3a6968	194	.rdata	cAIControlNurse_vftable	C object
 3a6afc	38	.rdata	Init_GVar_TimeStrafeUnderAttackSentinelAI	string
 3a6b34	20	.rdata	Init_GVar_TimeStrafeUnderAttackSentinelAI, probe HashTable_Slot	string
 3a6b54	24	.rdata	Init_GVar_AngleStrafeUnderAttackSentinelAI, probe HashTable_Slot	string
-3a6b78	4	.rdata	-	pointer table
+3a6b78	4	.rdata	-	rtti
 3a6b7c	194	.rdata	cAIControlSentinel_vftable	C object
-3a6d10	4	.rdata	-	pointer table
+3a6d10	4	.rdata	-	rtti
 3a6d14	18c	.rdata	cAIDesktop_vftable	C object
 3a6ea0	8	.rdata	probe PyString_FromString via ucrtbase.dll, typeStr.0	string
 3a6ea8	38	.rdata	-	string
 3a6ee0	1c	.rdata	Init_GVar_TimeBetwChangeStateAI	string
 3a6efc	18	.rdata	Init_GVar_TimeBetwChangeStateAI, probe HashTable_Slot	string
-3a6f14	4	.rdata	-	pointer table
+3a6f14	4	.rdata	-	rtti
 3a6f18	24	.rdata	cAIEntityGroup_vftable	C object
 3a6f3c	40	.rdata	-	string
 3a6f7c	14	.rdata	Init_GVar_ShootGearAI	string
 3a6f90	c	.rdata	Init_GVar_ShootGearAI, probe HashTable_Slot	string
 3a6f9c	24	.rdata	Init_GVar_OffsetAngShootGearAI	string
 3a6fc0	18	.rdata	Init_GVar_OffsetAngShootGearAI, probe HashTable_Slot	string
-3a6fd8	4	.rdata	-	pointer table
+3a6fd8	4	.rdata	-	rtti
 3a6fdc	18c	.rdata	cAIGear_vftable	C object
 3a7168	14	.rdata	-	string
-3a717c	4	.rdata	-	pointer table
+3a717c	4	.rdata	-	rtti
 3a7180	18c	.rdata	cAIHuman_vftable	C object
-3a730c	4	.rdata	-	pointer table
+3a730c	4	.rdata	-	rtti
 3a7310	18c	.rdata	cAIMayor_vftable	C object
 3a749c	1c	.rdata	Init_GVar_ShootMessengerAI	string
 3a74b8	14	.rdata	Init_GVar_ShootMessengerAI, probe HashTable_Slot	string
@@ -658,13 +659,13 @@
 3a752c	18	.rdata	Init_GVar_TimeShootMessengerAI, probe HashTable_Slot	string
 3a7544	20	.rdata	Init_GVar_DistMaxShootMessengerAI	string
 3a7564	18	.rdata	Init_GVar_DistMaxShootMessengerAI, probe HashTable_Slot	string
-3a757c	4	.rdata	-	pointer table
+3a757c	4	.rdata	-	rtti
 3a7580	18c	.rdata	cAIMessenger_vftable	C object
 3a770c	1c	.rdata	-	string
 3a7728	4	.rdata	-	float
 3a772c	18	.rdata	Init_GVar_ShowPathAI	string
 3a7744	c	.rdata	Init_GVar_ShowPathAI, probe HashTable_Slot	string
-3a7750	4	.rdata	-	pointer table
+3a7750	4	.rdata	-	rtti
 3a7754	64	.rdata	cAIMove_vftable	C object
 3a77b8	4	.rdata	cVehicleEntity_GetClassName, probe PyString_FromString via ucrtbase.dll	string
 3a77bc	3c	.rdata	-	string
@@ -674,10 +675,10 @@
 3a7820	14	.rdata	Init_GVar_DistActionNurseAI, probe HashTable_Slot	string
 3a7834	18	.rdata	Init_GVar_OffsetMoveNurseAI	string
 3a784c	14	.rdata	Init_GVar_OffsetMoveNurseAI, probe HashTable_Slot	string
-3a7860	4	.rdata	-	pointer table
+3a7860	4	.rdata	-	rtti
 3a7864	18c	.rdata	cAINurse_vftable	C object
 3a79f0	20	.rdata	-	string
-3a7a10	4	.rdata	-	pointer table
+3a7a10	4	.rdata	-	rtti
 3a7a14	18c	.rdata	cAIPolice_vftable	C object
 3a7ba0	8	.rdata	-	pointer table
 3a7ba8	18c	.rdata	cAISentinel_vftable	C object
@@ -742,7 +743,7 @@
 3a83f0	10	.rdata	Init_GVar_OnItemTakenAI, probe HashTable_Slot	string
 3a8400	30	.rdata	Init_GVar_OnObjectiveNullAI	string
 3a8430	14	.rdata	Init_GVar_OnObjectiveNullAI, probe HashTable_Slot	string
-3a8444	4	.rdata	-	pointer table
+3a8444	4	.rdata	-	rtti
 3a8448	64	.rdata	cAIVehicle_vftable	C object
 3a84ac	28	.rdata	-	string
 3a84d4	4	.rdata	-	zero
@@ -850,7 +851,7 @@
 3a904c	18	.rdata	Init_GVar_MinAngleSearchPointAI, probe HashTable_Slot	string
 3a9064	1c	.rdata	Init_GVar_DecVelBrakeAI	string
 3a9080	10	.rdata	Init_GVar_DecVelBrakeAI, probe HashTable_Slot	string
-3a9090	4	.rdata	probe hot page 3a9000	pointer table
+3a9090	4	.rdata	probe hot page 3a9000	rtti
 3a9094	4	.rdata	cAIVehicleControl_vftable	C object
 3a9098	14c	.rdata	probe hot page 3a9000	string
 3a91e4	c	.rdata	probe hot page 3a9000	float
@@ -860,7 +861,7 @@
 3a924c	10	.rdata	Init_GVar_MinTimeReposAI, probe HashTable_Slot	string
 3a925c	18	.rdata	Init_GVar_ShowStopShipAI	string
 3a9274	10	.rdata	Init_GVar_ShowStopShipAI, probe HashTable_Slot	string
-3a9284	4	.rdata	probe hot page 3a9000	pointer table
+3a9284	4	.rdata	probe hot page 3a9000	rtti
 3a9288	24	.rdata	cAIVehicleGroup_vftable	C object
 3a92ac	b0	.rdata	probe hot page 3a9000	string
 3a935c	12	.rdata	probe hot page 3a9000	int table
@@ -883,7 +884,7 @@
 3a94bc	14	.rdata	Init_GVar_TimeChangeWeapAI, probe HashTable_Slot	string
 3a94d0	1c	.rdata	Init_GVar_TimeChangeWeapCMAI	string
 3a94ec	14	.rdata	Init_GVar_TimeChangeWeapCMAI, probe HashTable_Slot	string
-3a9500	4	.rdata	probe hot page 3a9000	pointer table
+3a9500	4	.rdata	probe hot page 3a9000	rtti
 3a9504	4	.rdata	cAIVehicleShootControl_vftable	C object
 3a9508	ac	.rdata	probe hot page 3a9000	string
 3a95b4	4	.rdata	probe hot page 3a9000	zero
@@ -909,20 +910,20 @@
 3a9764	4	.rdata	probe hot page 3a9000	string
 3a9768	4	.rdata	probe hot page 3a9000	float
 3a976c	4	.rdata	probe hot page 3a9000	zero
-3a9770	4	.rdata	probe hot page 3a9000	pointer table
+3a9770	4	.rdata	probe hot page 3a9000	rtti
 3a9774	4c	.rdata	CAStar_vftable	C object
-3a97c0	4	.rdata	probe hot page 3a9000	pointer table
+3a97c0	4	.rdata	probe hot page 3a9000	rtti
 3a97c4	30	.rdata	cBinaryHeap_ElemAStar_vftable	C object
 3a97f4	150	.rdata	probe hot page 3a9000	string
 3a9944	4	.rdata	probe hot page 3a9000	zero
 3a9948	7c	.rdata	probe hot page 3a9000	string
-3a99c4	4	.rdata	probe hot page 3a9000	pointer table
+3a99c4	4	.rdata	probe hot page 3a9000	rtti
 3a99c8	4c	.rdata	CAStar2D_vftable	C object
 3a9a14	18	.rdata	probe hot page 3a9000	string
 3a9a2c	4	.rdata	cAICharControl_ctor, probe cAICharControl_ctor	string
 3a9a30	14	.rdata	Init_GVar_ShowAStarAI	string
 3a9a44	c	.rdata	Init_GVar_ShowAStarAI, probe HashTable_Slot	string
-3a9a50	4	.rdata	probe hot page 3a9000	pointer table
+3a9a50	4	.rdata	probe hot page 3a9000	rtti
 3a9a54	4c	.rdata	CAStarSup_vftable	C object
 3a9aa0	30	.rdata	probe hot page 3a9000	string
 3a9ad0	14	.rdata	Init_GVar_ShowTrafficAI	string
@@ -937,9 +938,9 @@
 3a9be4	1c	.rdata	Init_GVar_MaxNumTrackNormalDensityAI, probe HashTable_Slot	string
 3a9c00	24	.rdata	Init_GVar_DistGetPVisTrafficAI	string
 3a9c24	18	.rdata	Init_GVar_DistGetPVisTrafficAI, probe HashTable_Slot	string
-3a9c3c	4	.rdata	probe hot page 3a9000	pointer table
+3a9c3c	4	.rdata	probe hot page 3a9000	rtti
 3a9c40	60	.rdata	CNodesTraffic_vftable	C object
-3a9ca0	4	.rdata	probe hot page 3a9000	pointer table
+3a9ca0	4	.rdata	probe hot page 3a9000	rtti
 3a9ca4	2c	.rdata	cGridElements_InfoTrafficNode_vftable	C object
 3a9cd0	5c	.rdata	probe hot page 3a9000	string
 3a9d2c	8	.rdata	probe hot page 3a9000	int table
@@ -999,7 +1000,7 @@
 3aab74	14	.rdata	Init_GVar_BatchBuildGraph3DAI, probe HashTable_Slot	string
 3aab88	20	.rdata	Init_GVar_ViewerIniAI	string
 3aaba8	c	.rdata	Init_GVar_ViewerIniAI, probe HashTable_Slot	string
-3aabb4	4	.rdata	probe hot page 3aa000	pointer table
+3aabb4	4	.rdata	probe hot page 3aa000	rtti
 3aabb8	a0	.rdata	CNodesWorld_vftable	C object
 3aac58	19c	.rdata	probe hot page 3aa000	string
 3aadf4	4	.rdata	probe hot page 3aa000	zero
@@ -1051,7 +1052,7 @@
 3abca0	14	.rdata	Init_GVar_BatchBuildGraph2DAI, probe HashTable_Slot	string
 3abcb4	20	.rdata	Init_GVar_AltPerpFloorAI	string
 3abcd4	10	.rdata	Init_GVar_AltPerpFloorAI, probe HashTable_Slot	string
-3abce4	4	.rdata	-	pointer table
+3abce4	4	.rdata	-	rtti
 3abce8	a0	.rdata	CNodesWorld2D_vftable	C object
 3abd88	198	.rdata	-	string
 3abf20	8	.rdata	-	int table
@@ -1078,11 +1079,11 @@
 3ac218	10	.rdata	Init_GVar_ShowInfoRegAI, probe HashTable_Slot	string
 3ac228	28	.rdata	Init_GVar_ShowTestCanGoAI	string
 3ac250	10	.rdata	Init_GVar_ShowTestCanGoAI, probe HashTable_Slot	string
-3ac260	4	.rdata	probe hot page 3ac000	pointer table
+3ac260	4	.rdata	probe hot page 3ac000	rtti
 3ac264	a0	.rdata	CNodesWorldSup_vftable	C object
 3ac304	4	.rdata	probe hot page 3ac000	zero
 3ac308	48	.rdata	probe hot page 3ac000	string
-3ac350	4	.rdata	probe hot page 3ac000	pointer table
+3ac350	4	.rdata	probe hot page 3ac000	rtti
 3ac354	2c	.rdata	cGridElements_InfPointVis_vftable	C object
 3ac380	b8	.rdata	probe hot page 3ac000	string
 3ac438	4	.rdata	probe hot page 3ac000	int table
@@ -1107,7 +1108,7 @@
 3acbcc	4	.rdata	probe hot page 3ac000	zero
 3acbd0	4	.rdata	probe hot page 3ac000	int table
 3acbd4	4	.rdata	probe hot page 3ac000	string
-3acbd8	4	.rdata	probe hot page 3ac000	pointer table
+3acbd8	4	.rdata	probe hot page 3ac000	rtti
 3acbdc	74	.rdata	cCamControl_vftable	C object
 3acc50	2	.rdata	cObjEntity_GetClassName, probe PyString_FromString via ucrtbase.dll	int table
 3acc52	2	.rdata	cObjEntity_GetClassName, probe PyString_FromString via ucrtbase.dll	string
@@ -1126,7 +1127,7 @@
 3acc8a	6	.rdata	probe hot page 3ac000	string
 3acc90	2	.rdata	probe hot page 3ac000	int table
 3acc92	6	.rdata	probe hot page 3ac000	string
-3acc98	4	.rdata	probe hot page 3ac000	pointer table
+3acc98	4	.rdata	probe hot page 3ac000	rtti
 3acc9c	74	.rdata	cCamPathEntity_vftable	C object
 3acd10	8	.rdata	cCamPathEntity_GetClassName	string
 3acd18	10	.rdata	probe hot page 3ac000	string
@@ -1157,7 +1158,7 @@
 3acf54	10	.rdata	Init_GVar_OutWalkCamFar, probe HashTable_Slot	string
 3acf64	28	.rdata	Init_GVar_FullCameraTest	string
 3acf8c	10	.rdata	Init_GVar_FullCameraTest, probe HashTable_Slot	string
-3acf9c	4	.rdata	probe hot page 3ac000	pointer table
+3acf9c	4	.rdata	probe hot page 3ac000	rtti
 3acfa0	7c	.rdata	cFollowCamEntity_vftable	C object
 3ad01c	2	.rdata	-	int table
 3ad01e	6	.rdata	-	string
@@ -1677,7 +1678,7 @@
 3b0350	14	.rdata	Init_GVar_SndLoopCharNPCMul, probe HashTable_Slot	string
 3b0364	4	.rdata	-	zero
 3b0368	50	.rdata	-	string
-3b03b8	4	.rdata	-	pointer table
+3b03b8	4	.rdata	-	rtti
 3b03bc	114	.rdata	cWalkCharEntity_vftable	C object
 3b04d0	154	.rdata	-	string
 3b0624	2	.rdata	-	int table
@@ -1754,25 +1755,25 @@
 3b09a4	18	.rdata	Init_GVar_SentinelLaserScanerDist, probe HashTable_Slot	string
 3b09bc	14	.rdata	Init_NativeFunc_FXPoliceAlarmInit, probe cPy_NativeFunc_Insert via ucrtbase.dll	string
 3b09d0	14	.rdata	Init_NativeFunc_FXPoliceAlarmEnd, probe cPy_NativeFunc_Insert via ucrtbase.dll	string
-3b09e4	4	.rdata	-	pointer table
+3b09e4	4	.rdata	-	rtti
 3b09e8	18	.rdata	cEmbeddedFXSentinel_vftable	C object
-3b0a00	4	.rdata	-	pointer table
+3b0a00	4	.rdata	-	rtti
 3b0a04	18	.rdata	cEmbeddedFXGear_vftable	C object
-3b0a1c	4	.rdata	-	pointer table
+3b0a1c	4	.rdata	-	rtti
 3b0a20	18	.rdata	cEmbeddedFXPolice_vftable	C object
-3b0a38	4	.rdata	-	pointer table
+3b0a38	4	.rdata	-	rtti
 3b0a3c	18	.rdata	cEmbeddedFXBankDirector_vftable	C object
-3b0a54	4	.rdata	-	pointer table
+3b0a54	4	.rdata	-	rtti
 3b0a58	18	.rdata	cEmbeddedFXBankMaster_vftable	C object
-3b0a70	4	.rdata	-	pointer table
+3b0a70	4	.rdata	-	rtti
 3b0a74	18	.rdata	cEmbeddedFXCrazyGambler_vftable	C object
-3b0a8c	4	.rdata	-	pointer table
+3b0a8c	4	.rdata	-	rtti
 3b0a90	18	.rdata	cEmbeddedFXRusty_vftable	C object
-3b0aa8	4	.rdata	-	pointer table
+3b0aa8	4	.rdata	-	rtti
 3b0aac	18	.rdata	cEmbeddedFXMessenger_vftable	C object
-3b0ac4	4	.rdata	-	pointer table
+3b0ac4	4	.rdata	-	rtti
 3b0ac8	18	.rdata	cEmbeddedFXMaintenance_vftable	C object
-3b0ae0	4	.rdata	-	pointer table
+3b0ae0	4	.rdata	-	rtti
 3b0ae4	18	.rdata	cEmbeddedFXMercenary_vftable	C object
 3b0afc	e0	.rdata	-	string
 3b0bdc	2	.rdata	-	int table
@@ -1813,37 +1814,37 @@
 3b1478	14	.rdata	Init_GVar_FXBossShieldRadius, probe HashTable_Slot	string
 3b148c	14	.rdata	Init_GVar_FXBossShieldScale, probe HashTable_Slot	string
 3b14a0	14	.rdata	Init_GVar_FXBossShieldAspect, probe HashTable_Slot	string
-3b14b4	4	.rdata	-	pointer table
+3b14b4	4	.rdata	-	rtti
 3b14b8	18	.rdata	cEmbeddedFXDataPack_vftable	C object
-3b14d0	4	.rdata	-	pointer table
+3b14d0	4	.rdata	-	rtti
 3b14d4	18	.rdata	cEmbeddedFXDataCube_vftable	C object
-3b14ec	4	.rdata	-	pointer table
+3b14ec	4	.rdata	-	rtti
 3b14f0	18	.rdata	cEmbeddedFXCapsule_vftable	C object
-3b1508	4	.rdata	-	pointer table
+3b1508	4	.rdata	-	rtti
 3b150c	18	.rdata	cEmbeddedFXMatrix_vftable	C object
-3b1524	4	.rdata	-	pointer table
+3b1524	4	.rdata	-	rtti
 3b1528	18	.rdata	cEmbeddedFXAmplifier_vftable	C object
-3b1540	4	.rdata	-	pointer table
+3b1540	4	.rdata	-	rtti
 3b1544	18	.rdata	cEmbeddedFXMeetingPoint_vftable	C object
-3b155c	4	.rdata	-	pointer table
+3b155c	4	.rdata	-	rtti
 3b1560	18	.rdata	cEmbeddedFXExtraLife_vftable	C object
-3b1578	4	.rdata	-	pointer table
+3b1578	4	.rdata	-	rtti
 3b157c	18	.rdata	cEmbeddedFXBattery_vftable	C object
-3b1594	4	.rdata	-	pointer table
+3b1594	4	.rdata	-	rtti
 3b1598	18	.rdata	cEmbeddedFXTreasure_vftable	C object
-3b15b0	4	.rdata	-	pointer table
+3b15b0	4	.rdata	-	rtti
 3b15b4	18	.rdata	cEmbeddedFXFlag_vftable	C object
-3b15cc	4	.rdata	-	pointer table
+3b15cc	4	.rdata	-	rtti
 3b15d0	18	.rdata	cEmbeddedFXDTritusDesktop_vftable	C object
-3b15e8	4	.rdata	-	pointer table
+3b15e8	4	.rdata	-	rtti
 3b15ec	18	.rdata	cEmbeddedFXMoto_vftable	C object
-3b1604	4	.rdata	-	pointer table
+3b1604	4	.rdata	-	rtti
 3b1608	18	.rdata	cEmbeddedFXBossShield_vftable	C object
-3b1620	4	.rdata	-	pointer table
+3b1620	4	.rdata	-	rtti
 3b1624	18	.rdata	cEmbeddedFXConversor_vftable	C object
-3b163c	4	.rdata	-	pointer table
+3b163c	4	.rdata	-	rtti
 3b1640	18	.rdata	cEmbeddedFXCoin_vftable	C object
-3b1658	4	.rdata	-	pointer table
+3b1658	4	.rdata	-	rtti
 3b165c	18	.rdata	cEmbeddedFXItem_vftable	C object
 3b1674	550	.rdata	-	string
 3b1bc4	2	.rdata	-	int table
@@ -1882,11 +1883,11 @@
 3b21a0	20	.rdata	Init_GVar_FXVehicleProbeLight_DistGrow, probe HashTable_Slot	string
 3b21c0	1c	.rdata	Init_GVar_FXVehicleProbeLight_SizeMin, probe HashTable_Slot	string
 3b21dc	1c	.rdata	Init_GVar_FXVehicleProbeLight_SizeMax, probe HashTable_Slot	string
-3b21f8	4	.rdata	-	pointer table
+3b21f8	4	.rdata	-	rtti
 3b21fc	18	.rdata	cEmbeddedFXVehicleProbe_vftable	C object
-3b2214	4	.rdata	-	pointer table
+3b2214	4	.rdata	-	rtti
 3b2218	18	.rdata	cEmbeddedFXVehicleVote_vftable	C object
-3b2230	4	.rdata	-	pointer table
+3b2230	4	.rdata	-	rtti
 3b2234	18	.rdata	cEmbeddedFXVehicle_vftable	C object
 3b224c	170	.rdata	-	string
 3b23bc	2	.rdata	-	int table
@@ -1931,7 +1932,7 @@
 3b28f8	14	.rdata	Init_GVar_FXItemFadeMaxDist, probe HashTable_Slot	string
 3b290c	2c	.rdata	Init_GVar_NetItemDistAct	string
 3b2938	10	.rdata	Init_GVar_NetItemDistAct, probe HashTable_Slot	string
-3b2948	4	.rdata	-	pointer table
+3b2948	4	.rdata	-	rtti
 3b294c	bc	.rdata	cItemEntity_vftable	C object
 3b2a08	40	.rdata	-	string
 3b2a48	2	.rdata	-	int table
@@ -2120,9 +2121,9 @@
 3b35f8	14	.rdata	Init_GVar_MssnRadarBlinkTime, probe HashTable_Slot	string
 3b360c	40	.rdata	Init_GVar_ActiveExtrapolation	string
 3b364c	14	.rdata	Init_GVar_ActiveExtrapolation, probe HashTable_Slot	string
-3b3660	4	.rdata	-	pointer table
+3b3660	4	.rdata	-	rtti
 3b3664	14	.rdata	cNetController_vftable	C object
-3b3678	4	.rdata	-	pointer table
+3b3678	4	.rdata	-	rtti
 3b367c	bc	.rdata	cObjEntity_vftable	C object
 3b3738	34	.rdata	-	string
 3b376c	2	.rdata	-	int table
@@ -2409,7 +2410,7 @@
 3b5270	14	.rdata	Init_GVar_VehicleCrashAccHev, probe HashTable_Slot	string
 3b5284	20	.rdata	Init_GVar_VehicleCrashMinTime	string
 3b52a4	14	.rdata	Init_GVar_VehicleCrashMinTime, probe HashTable_Slot	string
-3b52b8	4	.rdata	-	pointer table
+3b52b8	4	.rdata	-	rtti
 3b52bc	108	.rdata	cVehicleEntity_vftable	C object
 3b53c4	24	.rdata	-	string
 3b53e8	2	.rdata	-	int table
@@ -2483,7 +2484,7 @@
 3b5698	28	.rdata	Init_GVar_EnginePathFmt	string
 3b56c0	24	.rdata	Init_GVar_EnginePathFmt, probe cString_Set via ucrtbase.dll	string
 3b56e4	10	.rdata	Init_GVar_EnginePathFmt, probe HashTable_Slot	string
-3b56f4	4	.rdata	-	pointer table
+3b56f4	4	.rdata	-	rtti
 3b56f8	10	.rdata	cVehicleMotors_vftable	C object
 3b5708	8	.rdata	-	int table
 3b5710	4	.rdata	-	float
@@ -2619,7 +2620,7 @@
 3b6604	c	.rdata	Init_GVar_SwarmIDWeap, probe HashTable_Slot	string
 3b6610	28	.rdata	Init_GVar_InfernoIDWeap	string
 3b6638	10	.rdata	Init_GVar_InfernoIDWeap, probe HashTable_Slot	string
-3b6648	4	.rdata	-	pointer table
+3b6648	4	.rdata	-	rtti
 3b664c	4	.rdata	cWeaponManager_vftable	C object
 3b6650	d4	.rdata	-	string
 3b6724	4	.rdata	-	zero
@@ -3224,7 +3225,7 @@
 3ba22c	c	.rdata	Init_GVar_StdMaxLife, probe HashTable_Slot	string
 3ba238	30	.rdata	Init_GVar_OnGeneralDamage	string
 3ba268	10	.rdata	Init_GVar_OnGeneralDamage, probe HashTable_Slot	string
-3ba278	4	.rdata	probe hot page 3ba000	pointer table
+3ba278	4	.rdata	probe hot page 3ba000	rtti
 3ba27c	e0	.rdata	cWithLifeEntity_vftable	C object
 3ba35c	3c	.rdata	probe hot page 3ba000	string
 3ba398	30	.rdata	cWithLifeEntity_SetActCtrl	string
@@ -3256,15 +3257,15 @@
 3ba45e	16	.rdata	probe hot page 3ba000	string
 3ba474	2	.rdata	probe hot page 3ba000	int table
 3ba476	e	.rdata	probe hot page 3ba000	string
-3ba484	4	.rdata	probe hot page 3ba000	pointer table
+3ba484	4	.rdata	probe hot page 3ba000	rtti
 3ba488	24	.rdata	cAbstractFile_vftable	C object
 3ba4ac	6c	.rdata	probe hot page 3ba000	string
-3ba518	4	.rdata	probe hot page 3ba000	pointer table
+3ba518	4	.rdata	probe hot page 3ba000	rtti
 3ba51c	24	.rdata	cFile_vftable	C object
 3ba540	28	.rdata	probe hot page 3ba000	string
 3ba568	4	.rdata	cStrMoney_GetStr	string
 3ba56c	168	.rdata	probe hot page 3ba000	string
-3ba6d4	4	.rdata	probe hot page 3ba000	pointer table
+3ba6d4	4	.rdata	probe hot page 3ba000	rtti
 3ba6d8	24	.rdata	cFileMem_vftable	C object
 3ba6fc	3c	.rdata	probe hot page 3ba000	string
 3ba738	38	.rdata	Init_GVar_PathInPackFile	string
@@ -3276,9 +3277,9 @@
 3ba7f8	1c	.rdata	Init_GVar_BuildPackPrompt	string
 3ba814	10	.rdata	Init_GVar_BuildPackPrompt, probe HashTable_Slot	string
 3ba824	40	.rdata	probe hot page 3ba000	string
-3ba864	4	.rdata	probe hot page 3ba000	pointer table
+3ba864	4	.rdata	probe hot page 3ba000	rtti
 3ba868	24	.rdata	cFile2_vftable	C object
-3ba88c	4	.rdata	probe hot page 3ba000	pointer table
+3ba88c	4	.rdata	probe hot page 3ba000	rtti
 3ba890	24	.rdata	cFilePack_vftable	C object
 3ba8b4	2f0	.rdata	probe hot page 3ba000	string
 3baba4	10	.rdata	Init_GVar_StreamPath, probe cString_Set via ucrtbase.dll	string
@@ -3304,11 +3305,11 @@
 3bb32c	c8	.rdata	-	string
 3bb3f4	4	.rdata	-	zero
 3bb3f8	cc	.rdata	-	string
-3bb4c4	4	.rdata	-	pointer table
+3bb4c4	4	.rdata	-	rtti
 3bb4c8	c	.rdata	CCallbackBase_vftable	C object
-3bb4d4	4	.rdata	-	pointer table
+3bb4d4	4	.rdata	-	rtti
 3bb4d8	c	.rdata	CCallbackImpl_8_vftable	C object
-3bb4e4	4	.rdata	-	pointer table
+3bb4e4	4	.rdata	-	rtti
 3bb4e8	c	.rdata	CCallback_cGetAuthSessionTicketResponseExt_vftable	C object
 3bb4f4	294	.rdata	-	string
 3bb788	10	.rdata	Steam_GetTicket	int table
@@ -3335,20 +3336,20 @@
 3bb9a0	54	.rdata	-	string
 3bb9f4	4	.rdata	-	zero
 3bb9f8	b0	.rdata	-	string
-3bbaa8	4	.rdata	-	pointer table
+3bbaa8	4	.rdata	-	rtti
 3bbaac	4	.rdata	cSlotController_vftable	C object
-3bbab0	4	.rdata	-	pointer table
+3bbab0	4	.rdata	-	rtti
 3bbab4	4	.rdata	cRndSlotController_vftable	C object
 3bbab8	144	.rdata	-	string
-3bbbfc	4	.rdata	-	pointer table
+3bbbfc	4	.rdata	-	rtti
 3bbc00	4	.rdata	galaxy_api_IGalaxyListener_vftable	C object
-3bbc04	4	.rdata	-	pointer table
+3bbc04	4	.rdata	-	rtti
 3bbc08	4	.rdata	galaxy_api_GalaxyTypeAwareListener_7_vftable	C object
-3bbc0c	4	.rdata	-	pointer table
+3bbc0c	4	.rdata	-	rtti
 3bbc10	10	.rdata	galaxy_api_IAuthListener_vftable	C object
-3bbc20	4	.rdata	-	pointer table
+3bbc20	4	.rdata	-	rtti
 3bbc24	10	.rdata	galaxy_api_SelfRegisteringListener_IAuthListener_vftable	C object
-3bbc34	4	.rdata	-	pointer table
+3bbc34	4	.rdata	-	rtti
 3bbc38	10	.rdata	gog_GoGScrap_AuthListener_vftable	C object
 3bbc48	14	.rdata	probe galaxy.dll, ptr 428ab8	string
 3bbc5c	4	.rdata	-	zero
@@ -3379,16 +3380,16 @@
 3bc27c	14	.rdata	Init_GVar_CheckInactivityTime, probe HashTable_Slot	string
 3bc290	20	.rdata	Init_GVar_PauseInactivityTime	string
 3bc2b0	14	.rdata	Init_GVar_PauseInactivityTime, probe HashTable_Slot	string
-3bc2c4	4	.rdata	-	pointer table
+3bc2c4	4	.rdata	-	rtti
 3bc2c8	8	.rdata	cFuncGvar_vftable	C object
-3bc2d0	4	.rdata	-	pointer table
+3bc2d0	4	.rdata	-	rtti
 3bc2d4	8	.rdata	cFuncGvarDevices_vftable	C object
-3bc2dc	4	.rdata	-	pointer table
+3bc2dc	4	.rdata	-	rtti
 3bc2e0	24	.rdata	cAbstractIDevice_vftable	C object
 3bc304	1b0	.rdata	-	string
 3bc4b4	18	.rdata	cFuncGvarDevices_ctor	string
 3bc4cc	3c	.rdata	-	string
-3bc508	4	.rdata	-	pointer table
+3bc508	4	.rdata	-	rtti
 3bc50c	24	.rdata	cPcKeyboard_vftable	C object
 3bc530	58	.rdata	-	string
 3bc588	4	.rdata	Keyboard_Init, cPcKeyboard_GetName, probe HashTable_Slot	string
@@ -3405,7 +3406,7 @@
 3bc9d4	14	.rdata	Init_GVar_MouseSensitivityV, probe HashTable_Slot	string
 3bc9e8	28	.rdata	Init_GVar_InvertMouse	string
 3bca10	c	.rdata	Init_GVar_InvertMouse, probe HashTable_Slot	string
-3bca1c	4	.rdata	-	pointer table
+3bca1c	4	.rdata	-	rtti
 3bca20	24	.rdata	cPcMouse_vftable	C object
 3bca44	30	.rdata	-	string
 3bca74	8	.rdata	Mouse_Init, cPcMouse_GetName, probe HashTable_Slot	string
@@ -3421,7 +3422,7 @@
 3bcb74	c	.rdata	Init_GVar_MainPcPad, probe HashTable_Slot	string
 3bcb80	10	.rdata	Init_GVar_IsUsingMouse, probe HashTable_Slot	string
 3bcb90	10	.rdata	Init_GVar_PCPadForeground, probe HashTable_Slot	string
-3bcba0	4	.rdata	-	pointer table
+3bcba0	4	.rdata	-	rtti
 3bcba4	24	.rdata	cPcPad_vftable	C object
 3bcbc8	20	.rdata	Pad_Init, cPcPad_GetName, probe HashTable_Slot	string
 3bcbe8	20	.rdata	Pad_Init, cPcPad_GetName	string
@@ -3447,9 +3448,9 @@
 3bce90	4c	.rdata	-	string
 3bcedc	34	.rdata	Init_GVar_BankDirectorAgressive	string
 3bcf10	18	.rdata	Init_GVar_BankDirectorAgressive, probe HashTable_Slot	string
-3bcf28	4	.rdata	-	pointer table
+3bcf28	4	.rdata	-	rtti
 3bcf2c	90	.rdata	cBankDirectorLocalLogic_vftable	C object
-3bcfbc	4	.rdata	-	pointer table
+3bcfbc	4	.rdata	-	rtti
 3bcfc0	90	.rdata	cBankMasterLocalLogic_vftable	C object
 3bd050	14	.rdata	ptr 428b30	string
 3bd064	14	.rdata	ptr 428b34	string
@@ -3488,9 +3489,9 @@
 3bd2f8	10	.rdata	Init_GVar_DefActionRadius, probe HashTable_Slot	string
 3bd308	20	.rdata	Init_GVar_NotCleanableByGear	string
 3bd328	14	.rdata	Init_GVar_NotCleanableByGear, probe HashTable_Slot	string
-3bd33c	4	.rdata	-	pointer table
+3bd33c	4	.rdata	-	rtti
 3bd340	1c	.rdata	cLocalLogic_vftable	C object
-3bd35c	4	.rdata	-	pointer table
+3bd35c	4	.rdata	-	rtti
 3bd360	64	.rdata	cBaseLocalLogic_vftable	C object
 3bd3c4	10	.rdata	-	string
 3bd3d4	c	.rdata	Init_GVar_ServerType, probe cString_Set via ucrtbase.dll	string
@@ -3520,7 +3521,7 @@
 3bd578	b4	.rdata	cBertoLocalLogic_vftable	C object
 3bd62c	2	.rdata	-	int table
 3bd62e	4e	.rdata	-	string
-3bd67c	4	.rdata	-	pointer table
+3bd67c	4	.rdata	-	rtti
 3bd680	a8	.rdata	cBettyLocalLogic_vftable	C object
 3bd728	2	.rdata	-	int table
 3bd72a	3a	.rdata	-	string
@@ -3528,7 +3529,7 @@
 3bd780	18	.rdata	Init_GVar_BishopSpecialActionTime, probe HashTable_Slot	string
 3bd798	34	.rdata	Init_GVar_BishopAttackOnAlarm	string
 3bd7cc	14	.rdata	Init_GVar_BishopAttackOnAlarm, probe HashTable_Slot	string
-3bd7e0	4	.rdata	-	pointer table
+3bd7e0	4	.rdata	-	rtti
 3bd7e4	90	.rdata	cBishopLocalLogic_vftable	C object
 3bd874	c	.rdata	-	string
 3bd880	1c	.rdata	Init_GVar_BossWorkPlace	string
@@ -3537,12 +3538,12 @@
 3bd8c0	10	.rdata	Init_GVar_BossWorkingTime, probe HashTable_Slot	string
 3bd8d0	14	.rdata	Init_GVar_BossWalkingTime	string
 3bd8e4	10	.rdata	Init_GVar_BossWalkingTime, probe HashTable_Slot	string
-3bd8f4	4	.rdata	-	pointer table
+3bd8f4	4	.rdata	-	rtti
 3bd8f8	90	.rdata	cBossLocalLogic_vftable	C object
 3bd988	1c	.rdata	-	string
 3bd9a4	4	.rdata	-	zero
 3bd9a8	60	.rdata	-	string
-3bda08	4	.rdata	-	pointer table
+3bda08	4	.rdata	-	rtti
 3bda0c	90	.rdata	cCrazyDealerLocalLogic_vftable	C object
 3bda9c	24	.rdata	Init_GVar_PlayerCTFTeamIsWinning	string
 3bdac0	18	.rdata	Init_GVar_PlayerCTFTeamIsWinning, probe HashTable_Slot	string
@@ -3550,7 +3551,7 @@
 3bdb14	24	.rdata	Init_GVar_PercEnemiesAttackPlayerWhenWinning, probe HashTable_Slot	string
 3bdb38	c	.rdata	Init_GVar_LeaderFlag	string
 3bdb44	c	.rdata	Init_GVar_LeaderFlag, probe HashTable_Slot	string
-3bdb50	4	.rdata	-	pointer table
+3bdb50	4	.rdata	-	rtti
 3bdb54	1c	.rdata	cCTFEnemiesLocalLogic_vftable	C object
 3bdb70	2	.rdata	-	int table
 3bdb72	ae	.rdata	-	string
@@ -3558,7 +3559,7 @@
 3bdc30	3c	.rdata	Init_GVar_PercFriendsAttackLeaderWhenWinning	string
 3bdc6c	24	.rdata	Init_GVar_PercFriendsAttackLeaderWhenWinning, probe HashTable_Slot	string
 3bdc90	38	.rdata	-	string
-3bdcc8	4	.rdata	-	pointer table
+3bdcc8	4	.rdata	-	rtti
 3bdccc	90	.rdata	cDesktopLocalLogic_vftable	C object
 3bdd5c	34	.rdata	Init_GVar_MinDominDistChase	string
 3bdd90	14	.rdata	Init_GVar_MinDominDistChase, probe HashTable_Slot	string
@@ -3581,18 +3582,18 @@
 3be11c	14	.rdata	Init_GVar_OnDominEnemyDeath, probe HashTable_Slot	string
 3be130	c	.rdata	Init_GVar_LeaderName	string
 3be13c	c	.rdata	Init_GVar_LeaderName, probe HashTable_Slot	string
-3be148	4	.rdata	-	pointer table
+3be148	4	.rdata	-	rtti
 3be14c	14	.rdata	cDominationLogic_vftable	C object
-3be160	4	.rdata	-	pointer table
+3be160	4	.rdata	-	rtti
 3be164	14	.rdata	cDominationEnemiesLogic_vftable	C object
 3be178	38	.rdata	-	string
 3be1b0	8	.rdata	-	float
 3be1b8	1c	.rdata	Init_GVar_OnDominFriendDeath	string
 3be1d4	14	.rdata	Init_GVar_OnDominFriendDeath, probe HashTable_Slot	string
-3be1e8	4	.rdata	-	pointer table
+3be1e8	4	.rdata	-	rtti
 3be1ec	14	.rdata	cDominationFriendsLogic_vftable	C object
 3be200	3c	.rdata	-	string
-3be23c	4	.rdata	-	pointer table
+3be23c	4	.rdata	-	rtti
 3be240	1c	.rdata	cEnemiesLocalLogic_vftable	C object
 3be25c	2	.rdata	-	int table
 3be25e	4a	.rdata	-	string
@@ -3624,7 +3625,7 @@
 3be6dc	4	.rdata	-	zero
 3be6e0	48	.rdata	Init_GVar_OnFunctionaryStartsWorking	string
 3be728	1c	.rdata	Init_GVar_OnFunctionaryStartsWorking, probe HashTable_Slot	string
-3be744	4	.rdata	-	pointer table
+3be744	4	.rdata	-	rtti
 3be748	a8	.rdata	cFunctionaryLocalLogic_vftable	C object
 3be7f0	fc	.rdata	-	string
 3be8ec	2	.rdata	-	int table
@@ -3671,7 +3672,7 @@
 3bebe8	14	.rdata	Init_GVar_GateKeeperStdFovY, probe HashTable_Slot	string
 3bebfc	28	.rdata	Init_GVar_GateKeeperStdFar	string
 3bec24	14	.rdata	Init_GVar_GateKeeperStdFar, probe HashTable_Slot	string
-3bec38	4	.rdata	-	pointer table
+3bec38	4	.rdata	-	rtti
 3bec3c	64	.rdata	cGateKeeperLocalLogic_vftable	C object
 3beca0	8	.rdata	probe PyString_FromString via ucrtbase.dll, ptr 42ecb8	string
 3beca8	8	.rdata	-	string
@@ -3698,7 +3699,7 @@
 3bee8c	18	.rdata	Init_GVar_GearRobberyDetection, probe HashTable_Slot	string
 3beea4	30	.rdata	Init_GVar_Gear2PoliceAlways	string
 3beed4	14	.rdata	Init_GVar_Gear2PoliceAlways, probe HashTable_Slot	string
-3beee8	4	.rdata	-	pointer table
+3beee8	4	.rdata	-	rtti
 3beeec	64	.rdata	cGearLocalLogic_vftable	C object
 3bef50	4c	.rdata	-	string
 3bef9c	4	.rdata	-	zero
@@ -3759,7 +3760,7 @@
 3bf548	2c	.rdata	Init_GVar_GenCharAcuseTime	string
 3bf574	14	.rdata	Init_GVar_GenCharAcuseTime, probe HashTable_Slot	string
 3bf588	60	.rdata	Init_GVar_GenCharAcuseAgainTime	string
-3bf5e8	4	.rdata	-	pointer table
+3bf5e8	4	.rdata	-	rtti
 3bf5ec	90	.rdata	cGenCharLocalLogic_vftable	C object
 3bf67c	20	.rdata	-	string
 3bf69c	4	.rdata	-	zero
@@ -3767,14 +3768,14 @@
 3bf71c	14	.rdata	-	float
 3bf730	14	.rdata	Init_GVar_GetAwayHumanDist	string
 3bf744	14	.rdata	Init_GVar_GetAwayHumanDist, probe HashTable_Slot	string
-3bf758	4	.rdata	-	pointer table
+3bf758	4	.rdata	-	rtti
 3bf75c	64	.rdata	cHumanLocalLogic_vftable	C object
 3bf7c0	1c	.rdata	-	string
-3bf7dc	4	.rdata	-	pointer table
+3bf7dc	4	.rdata	-	rtti
 3bf7e0	a8	.rdata	cHumphreyLocalLogic_vftable	C object
 3bf888	2	.rdata	-	int table
 3bf88a	42	.rdata	-	string
-3bf8cc	4	.rdata	-	pointer table
+3bf8cc	4	.rdata	-	rtti
 3bf8d0	1c	.rdata	cInfItem_vftable	C object
 3bf8ec	a4	.rdata	-	string
 3bf990	10	.rdata	Init_NativeFunc_Police2GearEnd, probe cPy_NativeFunc_Insert via ucrtbase.dll	string
@@ -3796,7 +3797,7 @@
 3bfbf0	28	.rdata	Init_GVar_LittlePoliceStopAcusingMaxDistFromUser, probe HashTable_Slot	string
 3bfc18	1c	.rdata	Init_GVar_LittlePoliceChasingTime	string
 3bfc34	18	.rdata	Init_GVar_LittlePoliceChasingTime, probe HashTable_Slot	string
-3bfc4c	4	.rdata	-	pointer table
+3bfc4c	4	.rdata	-	rtti
 3bfc50	94	.rdata	cLittlePoliceLocalLogic_vftable	C object
 3bfce4	3c	.rdata	-	string
 3bfd20	8	.rdata	-	int table
@@ -3810,7 +3811,7 @@
 3bfdd0	14	.rdata	Init_GVar_PrimaryMissionDesc, probe HashTable_Slot	string
 3bfde4	20	.rdata	Init_GVar_SecondaryMissionDesc	string
 3bfe04	18	.rdata	Init_GVar_SecondaryMissionDesc, probe HashTable_Slot	string
-3bfe1c	4	.rdata	-	pointer table
+3bfe1c	4	.rdata	-	rtti
 3bfe20	4	.rdata	cLogicControl_vftable	C object
 3bfe24	4	.rdata	-	zero
 3bfe28	44	.rdata	-	string
@@ -3820,7 +3821,7 @@
 3bfee8	1c	.rdata	Init_GVar_MaintenanceTimeToNextPos, probe HashTable_Slot	string
 3bff04	24	.rdata	Init_GVar_MaintenanceSphereRadiusFactor	string
 3bff28	20	.rdata	Init_GVar_MaintenanceSphereRadiusFactor, probe HashTable_Slot	string
-3bff48	4	.rdata	-	pointer table
+3bff48	4	.rdata	-	rtti
 3bff4c	90	.rdata	cMaintenanceLocalLogic_vftable	C object
 3bffdc	6c	.rdata	-	string
 3c0048	2	.rdata	-	int table
@@ -3828,7 +3829,7 @@
 3c0058	8	.rdata	-	zero
 3c0060	14	.rdata	-	unknown
 3c0074	90	.rdata	cMayorLocalLogic_vftable	C object
-3c0104	4	.rdata	-	pointer table
+3c0104	4	.rdata	-	rtti
 3c0108	90	.rdata	cMercenaryLocalLogic_vftable	C object
 3c0198	3c	.rdata	Init_GVar_MessengerDataPackMissionArrow	string
 3c01d4	20	.rdata	Init_GVar_MessengerDataPackMissionArrow, probe HashTable_Slot	string
@@ -3850,7 +3851,7 @@
 3c03e4	14	.rdata	Init_GVar_MessengerDataPack, probe cString_Set via ucrtbase.dll	string
 3c03f8	30	.rdata	Init_GVar_MessengerGotoSpeed	string
 3c0428	14	.rdata	Init_GVar_MessengerGotoSpeed, probe HashTable_Slot	string
-3c043c	4	.rdata	-	pointer table
+3c043c	4	.rdata	-	rtti
 3c0440	90	.rdata	cMessengerLocalLogic_vftable	C object
 3c04d0	20	.rdata	Init_GVar_StrMoneyUpdate	string
 3c04f0	10	.rdata	Init_GVar_StrMoneyUpdate, probe HashTable_Slot	string
@@ -3870,7 +3871,7 @@
 3c066c	14	.rdata	Init_GVar_NurseBankerDetect, probe HashTable_Slot	string
 3c0680	3c	.rdata	Init_GVar_NursePoliceRefuse	string
 3c06bc	14	.rdata	Init_GVar_NursePoliceRefuse, probe HashTable_Slot	string
-3c06d0	4	.rdata	-	pointer table
+3c06d0	4	.rdata	-	rtti
 3c06d4	64	.rdata	cNurseLocalLogic_vftable	C object
 3c0738	8	.rdata	Init_GVar_OnTaunt, probe HashTable_Slot	string
 3c0740	20	.rdata	Init_GVar_TimeBetweeenTaunts	string
@@ -3903,7 +3904,7 @@
 3c09d4	20	.rdata	Init_GVar_PoliceBossMinSpecialActionTime, probe HashTable_Slot	string
 3c09f4	24	.rdata	Init_GVar_PoliceBossMaxSpecialActionTime	string
 3c0a18	20	.rdata	Init_GVar_PoliceBossMaxSpecialActionTime, probe HashTable_Slot	string
-3c0a38	4	.rdata	-	pointer table
+3c0a38	4	.rdata	-	rtti
 3c0a3c	90	.rdata	cPoliceBossLocalLogic_vftable	C object
 3c0acc	34	.rdata	Init_GVar_RegenerationStartTime	string
 3c0b00	18	.rdata	Init_GVar_RegenerationStartTime, probe HashTable_Slot	string
@@ -3927,7 +3928,7 @@
 3c0d18	18	.rdata	Init_GVar_PlatformRadiusSqr	string
 3c0d30	14	.rdata	Init_GVar_PlatformRadiusSqr, probe HashTable_Slot	string
 3c0d44	10	.rdata	Init_NativeFunc_IncrementHits, probe cPy_NativeFunc_Insert via ucrtbase.dll	string
-3c0d54	4	.rdata	-	pointer table
+3c0d54	4	.rdata	-	rtti
 3c0d58	90	.rdata	cRustyLocalLogic_vftable	C object
 3c0de8	1c	.rdata	-	string
 3c0e04	4	.rdata	-	zero
@@ -3954,7 +3955,7 @@
 3c1078	1c	.rdata	Init_GVar_MosquitosTriggeredShipName, probe HashTable_Slot	string
 3c1094	30	.rdata	Init_GVar_MadHuntersTriggeredShipName	string
 3c10c4	1c	.rdata	Init_GVar_MadHuntersTriggeredShipName, probe HashTable_Slot	string
-3c10e0	4	.rdata	-	pointer table
+3c10e0	4	.rdata	-	rtti
 3c10e4	1c	.rdata	cScrapyardLocalLogic_vftable	C object
 3c1100	2	.rdata	-	int table
 3c1102	42	.rdata	-	string
@@ -3993,13 +3994,13 @@
 3c14f8	18	.rdata	Init_GVar_SentinelBankerDetect, probe HashTable_Slot	string
 3c1510	40	.rdata	Init_GVar_SentinelBankerNPCDetect	string
 3c1550	18	.rdata	Init_GVar_SentinelBankerNPCDetect, probe HashTable_Slot	string
-3c1568	4	.rdata	-	pointer table
+3c1568	4	.rdata	-	rtti
 3c156c	6c	.rdata	cSentinelLocalLogic_vftable	C object
 3c15d8	70	.rdata	-	string
 3c1648	24	.rdata	Init_GVar_SputnikJunyardTimeToPissPlayer	string
 3c166c	20	.rdata	Init_GVar_SputnikJunyardTimeToPissPlayer, probe HashTable_Slot	string
 3c168c	c	.rdata	Init_NativeFunc_EndOfLaugh, probe cPy_NativeFunc_Insert via ucrtbase.dll	string
-3c1698	4	.rdata	-	pointer table
+3c1698	4	.rdata	-	rtti
 3c169c	90	.rdata	cSputnikJunkyardLocalLogic_vftable	C object
 3c172c	4	.rdata	-	zero
 3c1730	10	.rdata	-	float
@@ -4043,15 +4044,15 @@
 3c1b14	c	.rdata	Init_GVar_TimeToMsg, probe HashTable_Slot	string
 3c1b20	14	.rdata	Init_GVar_MissionScorerName	string
 3c1b34	14	.rdata	Init_GVar_MissionScorerName, probe HashTable_Slot	string
-3c1b48	4	.rdata	-	pointer table
+3c1b48	4	.rdata	-	rtti
 3c1b4c	10	.rdata	cAbstractTextScorer_vftable	C object
-3c1b5c	4	.rdata	-	pointer table
+3c1b5c	4	.rdata	-	rtti
 3c1b60	10	.rdata	cMsgScorer_vftable	C object
-3c1b70	4	.rdata	-	pointer table
+3c1b70	4	.rdata	-	rtti
 3c1b74	10	.rdata	cLabelScorer_vftable	C object
-3c1b84	4	.rdata	-	pointer table
+3c1b84	4	.rdata	-	rtti
 3c1b88	10	.rdata	cHintScorer_vftable	C object
-3c1b98	4	.rdata	-	pointer table
+3c1b98	4	.rdata	-	rtti
 3c1b9c	10	.rdata	cCreditsScorer_vftable	C object
 3c1bac	48	.rdata	-	string
 3c1bf4	8	.rdata	cAbstractTextScorer_Var	string
@@ -4067,10 +4068,10 @@
 3c1da4	14	.rdata	Init_GVar_AutoUpdateStopValue, probe HashTable_Slot	string
 3c1db8	18	.rdata	Init_GVar_AutoUpdateSpeedFactor, probe HashTable_Slot	string
 3c1dd0	10	.rdata	Init_GVar_IsAutoUpdatable, probe HashTable_Slot	string
-3c1de0	4	.rdata	-	pointer table
+3c1de0	4	.rdata	-	rtti
 3c1de4	14	.rdata	cBarScorer_vftable	C object
 3c1df8	c0	.rdata	-	string
-3c1eb8	4	.rdata	-	pointer table
+3c1eb8	4	.rdata	-	rtti
 3c1ebc	14	.rdata	cButtonScorer_vftable	C object
 3c1ed0	2f8	.rdata	-	string
 3c21c8	8	.rdata	-	float
@@ -4086,7 +4087,7 @@
 3c22dc	18	.rdata	Init_GVar_CannonScorerColorGreen, probe HashTable_Slot	string
 3c22f4	14	.rdata	Init_GVar_CannonScorerColorBlue	string
 3c2308	18	.rdata	Init_GVar_CannonScorerColorBlue, probe HashTable_Slot	string
-3c2320	4	.rdata	-	pointer table
+3c2320	4	.rdata	-	rtti
 3c2324	14	.rdata	cCannonScorer_vftable	C object
 3c2338	8c	.rdata	-	string
 3c23c4	2c	.rdata	-	float
@@ -4106,10 +4107,10 @@
 3c24e8	14	.rdata	Init_GVar_QuickMessageString1, probe HashTable_Slot	string
 3c24fc	2c	.rdata	Init_GVar_ChatMsgPersistence	string
 3c2528	14	.rdata	Init_GVar_ChatMsgPersistence, probe HashTable_Slot	string
-3c253c	4	.rdata	-	pointer table
+3c253c	4	.rdata	-	rtti
 3c2540	10	.rdata	cChatScorer_vftable	C object
 3c2550	8	.rdata	-	string
-3c2558	4	.rdata	-	pointer table
+3c2558	4	.rdata	-	rtti
 3c255c	10	.rdata	cCircuitScorer_vftable	C object
 3c256c	98	.rdata	-	string
 3c2604	4	.rdata	-	float
@@ -4119,7 +4120,7 @@
 3c2860	14	.rdata	probe CircuitScorer_InitPaths, s_PathData	unknown
 3c2874	10	.rdata	cCopMeterScorer_vftable	C object
 3c2884	60	.rdata	-	string
-3c28e4	4	.rdata	-	pointer table
+3c28e4	4	.rdata	-	rtti
 3c28e8	14	.rdata	cHangarShipScorer_vftable	C object
 3c28fc	64	.rdata	-	string
 3c2960	8	.rdata	-	pointer table
@@ -4134,7 +4135,7 @@
 3c2b04	20	.rdata	Init_GVar_NextMissionFirstLineOffsetXBox, probe HashTable_Slot	string
 3c2b24	28	.rdata	Init_GVar_NextMissionSecondLineOffsetXBox	string
 3c2b4c	20	.rdata	Init_GVar_NextMissionSecondLineOffsetXBox, probe HashTable_Slot	string
-3c2b6c	4	.rdata	-	pointer table
+3c2b6c	4	.rdata	-	rtti
 3c2b70	14	.rdata	cMissionScorer_vftable	C object
 3c2b84	90	.rdata	-	string
 3c2c14	8	.rdata	-	int table
@@ -4142,7 +4143,7 @@
 3c2c20	40	.rdata	-	string
 3c2c60	3c	.rdata	Init_GVar_FirstPhotoMessage	string
 3c2c9c	14	.rdata	Init_GVar_FirstPhotoMessage, probe HashTable_Slot	string
-3c2cb0	4	.rdata	-	pointer table
+3c2cb0	4	.rdata	-	rtti
 3c2cb4	18	.rdata	cMonitorScorer_vftable	C object
 3c2ccc	110	.rdata	-	string
 3c2ddc	8	.rdata	probe Shader_Find via ucrtbase.dll, ptr 431f74, ptr 432274	string
@@ -4156,7 +4157,7 @@
 3c2f30	10	.rdata	Init_GVar_ShowClientPing, probe HashTable_Slot	string
 3c2f40	28	.rdata	Init_GVar_ShowNetStatus	string
 3c2f68	10	.rdata	Init_GVar_ShowNetStatus, probe HashTable_Slot	string
-3c2f78	4	.rdata	-	pointer table
+3c2f78	4	.rdata	-	rtti
 3c2f7c	10	.rdata	cNetStatsScorer_vftable	C object
 3c2f8c	14	.rdata	-	string
 3c2fa0	28	.rdata	Init_GVar_NewsPanelActive	string
@@ -4205,7 +4206,7 @@
 3c338c	14	.rdata	Init_GVar_FileNameMap2D	string
 3c33a0	10	.rdata	Init_GVar_FileNameMap2D, probe cString_Set via ucrtbase.dll	string
 3c33b0	10	.rdata	Init_GVar_FileNameMap2D, probe HashTable_Slot	string
-3c33c0	4	.rdata	-	pointer table
+3c33c0	4	.rdata	-	rtti
 3c33c4	10	.rdata	cRadarScorer_vftable	C object
 3c33d4	44	.rdata	-	string
 3c3418	2	.rdata	-	int table
@@ -4284,9 +4285,9 @@
 3c3b64	10	.rdata	Init_GVar_MotionBlurTime, probe HashTable_Slot	string
 3c3b74	14	.rdata	Init_GVar_MotionBlurEndTime, probe HashTable_Slot	string
 3c3b88	14	.rdata	Init_GVar_MotionBlurOffVar, probe HashTable_Slot	string
-3c3b9c	4	.rdata	-	pointer table
+3c3b9c	4	.rdata	-	rtti
 3c3ba0	10	.rdata	cScorerItem_vftable	C object
-3c3bb0	4	.rdata	-	pointer table
+3c3bb0	4	.rdata	-	rtti
 3c3bb4	4	.rdata	cScorer_vftable	C object
 3c3bb8	7	.rdata	Init_GVar_iMap, probe cString_Set via ucrtbase.dll	int table
 3c3bbf	5	.rdata	probe cString_Set via ucrtbase.dll	string
@@ -4300,7 +4301,7 @@
 3c3fe8	4	.rdata	-	float
 3c3fec	8	.rdata	-	pointer table
 3c3ff4	10	.rdata	cScraplandMainMenuScorer_vftable	C object
-3c4004	4	.rdata	-	pointer table
+3c4004	4	.rdata	-	rtti
 3c4008	10	.rdata	cScraplandSubMenuScorer_vftable	C object
 3c4018	9c	.rdata	-	string
 3c40b4	4	.rdata	-	zero
@@ -4328,12 +4329,12 @@
 3c4274	10	.rdata	Init_GVar_GearTargetName, probe HashTable_Slot	string
 3c4284	38	.rdata	Init_GVar_SpecialActionActive	string
 3c42bc	14	.rdata	Init_GVar_SpecialActionActive, probe HashTable_Slot	string
-3c42d0	4	.rdata	-	pointer table
+3c42d0	4	.rdata	-	rtti
 3c42d4	10	.rdata	cSpecialActionScorer_vftable	C object
 3c42e4	248	.rdata	-	string
 3c452c	8	.rdata	-	pointer table
 3c4534	14	.rdata	cSpriteScorer_vftable	C object
-3c4548	4	.rdata	-	pointer table
+3c4548	4	.rdata	-	rtti
 3c454c	14	.rdata	cGradientScorer_vftable	C object
 3c4560	cc	.rdata	-	string
 3c462c	28	.rdata	Init_GVar_WarningLifeLevel	string
@@ -4364,7 +4365,7 @@
 3c48e4	18	.rdata	Init_GVar_EndRegenerationSound, probe HashTable_Slot	string
 3c48fc	28	.rdata	Init_GVar_EndRegenerationSoundVol	string
 3c4924	18	.rdata	Init_GVar_EndRegenerationSoundVol, probe HashTable_Slot	string
-3c493c	4	.rdata	-	pointer table
+3c493c	4	.rdata	-	rtti
 3c4940	10	.rdata	cStatusScorer_vftable	C object
 3c4950	2f8	.rdata	-	string
 3c4c48	8	.rdata	-	pointer table
@@ -4383,7 +4384,7 @@
 3c4de4	2c	.rdata	Init_GVar_FullTalkTime, Init_GVar_RemainTalkTime	string
 3c4e10	10	.rdata	Init_GVar_RemainTalkTime, probe HashTable_Slot	string
 3c4e20	10	.rdata	Init_GVar_FullTalkTime, probe HashTable_Slot	string
-3c4e30	4	.rdata	-	pointer table
+3c4e30	4	.rdata	-	rtti
 3c4e34	18	.rdata	cTalkScorer_vftable	C object
 3c4e4c	5c	.rdata	-	string
 3c4ea8	20	.rdata	Init_GVar_TargetScorerSwitchSound	string
@@ -4395,7 +4396,7 @@
 3c4f6c	18	.rdata	Init_GVar_LittlePointingArrowSize, probe HashTable_Slot	string
 3c4f84	20	.rdata	Init_GVar_EnemyFireSize	string
 3c4fa4	10	.rdata	Init_GVar_EnemyFireSize, probe HashTable_Slot	string
-3c4fb4	4	.rdata	-	pointer table
+3c4fb4	4	.rdata	-	rtti
 3c4fb8	10	.rdata	cTargetScorer_vftable	C object
 3c4fc8	34	.rdata	-	string
 3c4ffc	24	.rdata	-	float
@@ -4407,9 +4408,9 @@
 3c507c	14	.rdata	Init_GVar_TextTypingSoundVol, probe HashTable_Slot	string
 3c5090	c	.rdata	Init_NativeFunc_EditText, probe cPy_Function_SetFunc via ucrtbase.dll, probe cPy_NativeFunc_Insert via ucrtbase.dll	string
 3c509c	58	.rdata	-	string
-3c50f4	4	.rdata	-	pointer table
+3c50f4	4	.rdata	-	rtti
 3c50f8	14	.rdata	cTextScorer_vftable	C object
-3c510c	4	.rdata	-	pointer table
+3c510c	4	.rdata	-	rtti
 3c5110	14	.rdata	cTextTypingScorer_vftable	C object
 3c5124	8	.rdata	-	int table
 3c512c	18	.rdata	-	string
@@ -4428,7 +4429,7 @@
 3c5394	1c	.rdata	Init_GVar_TimeToFinishCurrentMission, probe HashTable_Slot	string
 3c53b0	68	.rdata	Init_GVar_CounterType	string
 3c5418	c	.rdata	Init_GVar_CounterType, probe HashTable_Slot	string
-3c5424	4	.rdata	-	pointer table
+3c5424	4	.rdata	-	rtti
 3c5428	10	.rdata	cTimerScorer_vftable	C object
 3c5438	c8	.rdata	-	string
 3c5500	14	.rdata	Init_GVar_FadeOutFinalTime	string
@@ -4445,7 +4446,7 @@
 3c55e4	14	.rdata	Init_GVar_CurrentWaypointName, probe HashTable_Slot	string
 3c55f8	40	.rdata	Init_GVar_CurrentWaypointName2	string
 3c5638	18	.rdata	Init_GVar_CurrentWaypointName2, probe HashTable_Slot	string
-3c5650	4	.rdata	-	pointer table
+3c5650	4	.rdata	-	rtti
 3c5654	10	.rdata	cWaypointScorer_vftable	C object
 3c5664	3c	.rdata	-	string
 3c56a0	4	.rdata	-	float
@@ -4454,7 +4455,7 @@
 3c56d4	18	.rdata	Init_GVar_WeaponChangeShowTime, probe HashTable_Slot	string
 3c56ec	2c	.rdata	Init_GVar_WeaponChangeFadeTime	string
 3c5718	18	.rdata	Init_GVar_WeaponChangeFadeTime, probe HashTable_Slot	string
-3c5730	4	.rdata	-	pointer table
+3c5730	4	.rdata	-	rtti
 3c5734	10	.rdata	cWeaponScorer_vftable	C object
 3c5744	250	.rdata	-	string
 3c5994	10	.rdata	-	float
@@ -4477,7 +4478,7 @@
 3c5b3c	14	.rdata	Init_GVar_WindFxScorerFwAngle, probe HashTable_Slot	string
 3c5b50	14	.rdata	Init_GVar_WindFxScorerShow	string
 3c5b64	14	.rdata	Init_GVar_WindFxScorerShow, probe HashTable_Slot	string
-3c5b78	4	.rdata	-	pointer table
+3c5b78	4	.rdata	-	rtti
 3c5b7c	10	.rdata	cWindFxScorer_vftable	C object
 3c5b8c	28	.rdata	Init_GVar_ASEPublic	string
 3c5bb4	c	.rdata	Init_GVar_ASEPublic, probe HashTable_Slot	string
@@ -4488,18 +4489,18 @@
 3c5ca4	144	.rdata	-	string
 3c5de8	28	.rdata	Init_GVar_LogNetData	string
 3c5e10	c	.rdata	Init_GVar_LogNetData, probe HashTable_Slot	string
-3c5e1c	4	.rdata	-	pointer table
+3c5e1c	4	.rdata	-	rtti
 3c5e20	14	.rdata	cServerNetManager_vftable	C object
 3c5e34	c4	.rdata	-	string
 3c5ef8	8	.rdata	-	float
 3c5f00	40	.rdata	Init_GVar_NetMaxResourcesSend	string
 3c5f40	14	.rdata	Init_GVar_NetMaxResourcesSend, probe HashTable_Slot	string
-3c5f54	4	.rdata	-	pointer table
+3c5f54	4	.rdata	-	rtti
 3c5f58	10	.rdata	cClientNetManager_vftable	C object
 3c5f68	168	.rdata	-	string
 3c60d0	20	.rdata	Init_GVar_NetTimeOut	string
 3c60f0	c	.rdata	Init_GVar_NetTimeOut, probe HashTable_Slot	string
-3c60fc	4	.rdata	-	pointer table
+3c60fc	4	.rdata	-	rtti
 3c6100	10	.rdata	cUserNetManager_vftable	C object
 3c6110	90	.rdata	-	string
 3c61a0	40	.rdata	Init_GVar_NetMaxPlayersInitSend	string
@@ -4967,7 +4968,7 @@
 3c9b90	20	.rdata	-	string
 3c9bb0	2	.rdata	-	int table
 3c9bb2	146	.rdata	-	string
-3c9cf8	4	.rdata	-	pointer table
+3c9cf8	4	.rdata	-	rtti
 3c9cfc	14	.rdata	cSndInterface_vftable	C object
 3c9d10	48	.rdata	-	string
 3c9d58	2	.rdata	-	int table
@@ -5002,7 +5003,7 @@
 3c9efc	10	.rdata	Init_GVar_MusicMainVolume, probe HashTable_Slot	string
 3c9f0c	1c	.rdata	Init_GVar_VoiceMainVolume	string
 3c9f28	10	.rdata	Init_GVar_VoiceMainVolume, probe HashTable_Slot	string
-3c9f38	4	.rdata	-	pointer table
+3c9f38	4	.rdata	-	rtti
 3c9f3c	a4	.rdata	CSoundSys_vftable	C object
 3c9fe0	17c	.rdata	-	string
 3ca15c	c	.rdata	-	float
@@ -5042,7 +5043,7 @@
 3ca644	4	.rdata	-	zero
 3ca648	bc	.rdata	probe PyString_FromString via ucrtbase.dll, texts.0	string
 3ca704	10	.rdata	CSoundXBox_Load, Fmod_ErrorString, probe PyString_FromString via ucrtbase.dll +5	string
-3ca714	4	.rdata	-	pointer table
+3ca714	4	.rdata	-	rtti
 3ca718	a4	.rdata	CSoundXBox_vftable	C object
 3ca7bc	2c	.rdata	-	string
 3ca7e8	4	.rdata	-	int table
@@ -5108,21 +5109,21 @@
 3cb07c	2c	.rdata	Init_GVar_FXCharacterDeathFile	string
 3cb0a8	20	.rdata	Init_GVar_FXCharacterDeathFile, probe cString_Set via ucrtbase.dll	string
 3cb0c8	18	.rdata	Init_GVar_FXCharacterDeathFile, probe HashTable_Slot	string
-3cb0e0	4	.rdata	-	pointer table
+3cb0e0	4	.rdata	-	rtti
 3cb0e4	14	.rdata	cObjElementAbstract_vftable	C object
-3cb0f8	4	.rdata	-	pointer table
+3cb0f8	4	.rdata	-	rtti
 3cb0fc	14	.rdata	cObjElementFXMoneyTransfer_vftable	C object
-3cb110	4	.rdata	-	pointer table
+3cb110	4	.rdata	-	rtti
 3cb114	14	.rdata	cObjElementFXCharacterTeleport_vftable	C object
-3cb128	4	.rdata	-	pointer table
+3cb128	4	.rdata	-	rtti
 3cb12c	14	.rdata	cObjElementFXCharacterConversor_vftable	C object
-3cb140	4	.rdata	-	pointer table
+3cb140	4	.rdata	-	rtti
 3cb144	14	.rdata	cObjElementFXCharacterDeath_vftable	C object
-3cb158	4	.rdata	-	pointer table
+3cb158	4	.rdata	-	rtti
 3cb15c	14	.rdata	cObjElementFXSputnik_vftable	C object
-3cb170	4	.rdata	-	pointer table
+3cb170	4	.rdata	-	rtti
 3cb174	14	.rdata	cObjElementFXCharacterConversion_vftable	C object
-3cb188	4	.rdata	-	pointer table
+3cb188	4	.rdata	-	rtti
 3cb18c	14	.rdata	cObjElementFXMaintenanceWork_vftable	C object
 3cb1a0	14	.rdata	-	string
 3cb1b4	2	.rdata	-	int table
@@ -5152,43 +5153,43 @@
 3cb538	2c	.rdata	Init_GVar_FXCharacterPoliceGearConversionFile	string
 3cb564	20	.rdata	Init_GVar_FXCharacterPoliceGearConversionFile, probe cString_Set via ucrtbase.dll	string
 3cb584	24	.rdata	Init_GVar_FXCharacterPoliceGearConversionFile, probe HashTable_Slot	string
-3cb5a8	4	.rdata	-	pointer table
+3cb5a8	4	.rdata	-	rtti
 3cb5ac	14	.rdata	cObjElementFXGearMissile_vftable	C object
-3cb5c0	4	.rdata	-	pointer table
+3cb5c0	4	.rdata	-	rtti
 3cb5c4	14	.rdata	cObjElementFXBankerSteal_vftable	C object
-3cb5d8	4	.rdata	-	pointer table
+3cb5d8	4	.rdata	-	rtti
 3cb5dc	14	.rdata	cObjElementFXPoliceSteal_vftable	C object
-3cb5f0	4	.rdata	-	pointer table
+3cb5f0	4	.rdata	-	rtti
 3cb5f4	14	.rdata	cObjElementFXFunctionarySpecialAction_vftable	C object
-3cb608	4	.rdata	-	pointer table
+3cb608	4	.rdata	-	rtti
 3cb60c	14	.rdata	cObjElementFXPoliceGearConversion_vftable	C object
-3cb620	4	.rdata	-	pointer table
+3cb620	4	.rdata	-	rtti
 3cb624	14	.rdata	cObjElementFXDTritusAttack_vftable	C object
-3cb638	4	.rdata	-	pointer table
+3cb638	4	.rdata	-	rtti
 3cb63c	14	.rdata	cObjElementFXDTritusKill_vftable	C object
-3cb650	4	.rdata	-	pointer table
+3cb650	4	.rdata	-	rtti
 3cb654	14	.rdata	cObjElementFXBishopSellLife_vftable	C object
-3cb668	4	.rdata	-	pointer table
+3cb668	4	.rdata	-	rtti
 3cb66c	14	.rdata	cObjElementFXBishopAttack_vftable	C object
-3cb680	4	.rdata	-	pointer table
+3cb680	4	.rdata	-	rtti
 3cb684	14	.rdata	cObjElementFXBertoAttack_vftable	C object
-3cb698	4	.rdata	-	pointer table
+3cb698	4	.rdata	-	rtti
 3cb69c	14	.rdata	cObjElementFXBertoFlash_vftable	C object
-3cb6b0	4	.rdata	-	pointer table
+3cb6b0	4	.rdata	-	rtti
 3cb6b4	14	.rdata	cObjElementFXMessengerAttack_vftable	C object
-3cb6c8	4	.rdata	-	pointer table
+3cb6c8	4	.rdata	-	rtti
 3cb6cc	14	.rdata	cObjElementFXMessengerTakeDataPack_vftable	C object
-3cb6e0	4	.rdata	-	pointer table
+3cb6e0	4	.rdata	-	rtti
 3cb6e4	14	.rdata	cObjElementFXSebastianFlash_vftable	C object
-3cb6f8	4	.rdata	-	pointer table
+3cb6f8	4	.rdata	-	rtti
 3cb6fc	14	.rdata	cObjElementFXBettyAttack_vftable	C object
-3cb710	4	.rdata	-	pointer table
+3cb710	4	.rdata	-	rtti
 3cb714	14	.rdata	cObjElementFXBettyKill_vftable	C object
-3cb728	4	.rdata	-	pointer table
+3cb728	4	.rdata	-	rtti
 3cb72c	14	.rdata	cObjElementFXBankMasterAttack_vftable	C object
-3cb740	4	.rdata	-	pointer table
+3cb740	4	.rdata	-	rtti
 3cb744	14	.rdata	cObjElementFXBankMasterSuction_vftable	C object
-3cb758	4	.rdata	-	pointer table
+3cb758	4	.rdata	-	rtti
 3cb75c	14	.rdata	cObjElementFXMercenaryDrink_vftable	C object
 3cb770	558	.rdata	-	string
 3cbcc8	10	.rdata	-	float
@@ -5202,11 +5203,11 @@
 3cbd50	bc	.rdata	-	float
 3cbe0c	8	.rdata	-	pointer table
 3cbe14	14	.rdata	cObjElementFXHook_vftable	C object
-3cbe28	4	.rdata	-	pointer table
+3cbe28	4	.rdata	-	rtti
 3cbe2c	14	.rdata	cObjElementFXEMI_vftable	C object
-3cbe40	4	.rdata	-	pointer table
+3cbe40	4	.rdata	-	rtti
 3cbe44	14	.rdata	cObjElementFXSonicExplosion_vftable	C object
-3cbe58	4	.rdata	-	pointer table
+3cbe58	4	.rdata	-	rtti
 3cbe5c	14	.rdata	cObjElementFXDebrisCloud_vftable	C object
 3cbe70	68	.rdata	-	string
 3cbed8	18	.rdata	-	float
@@ -5230,11 +5231,11 @@
 3cc090	20	.rdata	Init_GVar_FXElementsFireDropSoundAttIni, probe HashTable_Slot	string
 3cc0b0	28	.rdata	Init_GVar_FXElementsFireDropSoundAttEnd	string
 3cc0d8	20	.rdata	Init_GVar_FXElementsFireDropSoundAttEnd, probe HashTable_Slot	string
-3cc0f8	4	.rdata	-	pointer table
+3cc0f8	4	.rdata	-	rtti
 3cc0fc	c	.rdata	cFXElementsLighting_vftable	C object
-3cc108	4	.rdata	-	pointer table
+3cc108	4	.rdata	-	rtti
 3cc10c	c	.rdata	cFXElementsFireDrop_vftable	C object
-3cc118	4	.rdata	-	pointer table
+3cc118	4	.rdata	-	rtti
 3cc11c	c	.rdata	cFXElementsLensFlare_vftable	C object
 3cc128	190	.rdata	-	string
 3cc2b8	20	.rdata	-	float
@@ -5248,9 +5249,9 @@
 3cc368	1c	.rdata	Init_GVar_FXABFakeLimitSegmentStep, probe HashTable_Slot	string
 3cc384	1c	.rdata	Init_GVar_FXABFakeLimitQuakeFactor, probe HashTable_Slot	string
 3cc3a0	18	.rdata	Init_GVar_FXABFakeLimitQuakeTime, probe HashTable_Slot	string
-3cc3b8	4	.rdata	-	pointer table
+3cc3b8	4	.rdata	-	rtti
 3cc3bc	c	.rdata	cFXElementsABFakeMeteors_vftable	C object
-3cc3c8	4	.rdata	-	pointer table
+3cc3c8	4	.rdata	-	rtti
 3cc3cc	c	.rdata	cFXElementsABFakeLimit_vftable	C object
 3cc3d8	f8	.rdata	-	string
 3cc4d0	18	.rdata	-	float
@@ -5258,7 +5259,7 @@
 3cc4f0	70	.rdata	-	float
 3cc560	14	.rdata	-	unknown
 3cc574	c	.rdata	cFXElementsOrbitBoya_vftable	C object
-3cc580	4	.rdata	-	pointer table
+3cc580	4	.rdata	-	rtti
 3cc584	c	.rdata	cFXElementsOrbitBoyaController_vftable	C object
 3cc590	5c	.rdata	-	string
 3cc5ec	2	.rdata	-	int table
@@ -5273,11 +5274,11 @@
 3cc760	2c	.rdata	Init_GVar_FXElementsMentalControllerDamageFXMaxDist, probe HashTable_Slot	string
 3cc78c	40	.rdata	Init_GVar_FXElementsMentalControllerMaxDist	string
 3cc7cc	24	.rdata	Init_GVar_FXElementsMentalControllerMaxDist, probe HashTable_Slot	string
-3cc7f0	4	.rdata	-	pointer table
+3cc7f0	4	.rdata	-	rtti
 3cc7f4	c	.rdata	cFXElementsMentalController_vftable	C object
-3cc800	4	.rdata	-	pointer table
+3cc800	4	.rdata	-	rtti
 3cc804	c	.rdata	cFXElementsMentalControllerDamageFX_vftable	C object
-3cc810	4	.rdata	-	pointer table
+3cc810	4	.rdata	-	rtti
 3cc814	c	.rdata	cFXElementsMentalControllerMainFX_vftable	C object
 3cc820	28	.rdata	-	string
 3cc848	2	.rdata	-	int table
@@ -5306,23 +5307,23 @@
 3ccc48	2c	.rdata	Init_GVar_FXShipEditBuildFile	string
 3ccc74	28	.rdata	Init_GVar_FXShipEditBuildFile, probe cString_Set via ucrtbase.dll	string
 3ccc9c	14	.rdata	Init_GVar_FXShipEditBuildFile, probe HashTable_Slot	string
-3cccb0	4	.rdata	-	pointer table
+3cccb0	4	.rdata	-	rtti
 3cccb4	14	.rdata	cObjElementFXSistPart_vftable	C object
-3cccc8	4	.rdata	-	pointer table
+3cccc8	4	.rdata	-	rtti
 3ccccc	14	.rdata	cObjElementFXTrail_vftable	C object
-3ccce0	4	.rdata	-	pointer table
+3ccce0	4	.rdata	-	rtti
 3ccce4	14	.rdata	cObjElementFXFadeOutTrail_vftable	C object
-3cccf8	4	.rdata	-	pointer table
+3cccf8	4	.rdata	-	rtti
 3cccfc	14	.rdata	cObjElementFXItemTake_vftable	C object
-3ccd10	4	.rdata	-	pointer table
+3ccd10	4	.rdata	-	rtti
 3ccd14	14	.rdata	cObjElementFXItemFade_vftable	C object
-3ccd28	4	.rdata	-	pointer table
+3ccd28	4	.rdata	-	rtti
 3ccd2c	14	.rdata	cObjElementFXSparks_vftable	C object
-3ccd40	4	.rdata	-	pointer table
+3ccd40	4	.rdata	-	rtti
 3ccd44	14	.rdata	cObjElementFXModelFade_vftable	C object
-3ccd58	4	.rdata	-	pointer table
+3ccd58	4	.rdata	-	rtti
 3ccd5c	14	.rdata	cObjElementFXModelNoise_vftable	C object
-3ccd70	4	.rdata	-	pointer table
+3ccd70	4	.rdata	-	rtti
 3ccd74	14	.rdata	cObjElementFXSistPartDuDv_vftable	C object
 3ccd88	28	.rdata	-	string
 3ccdb0	2	.rdata	-	int table
@@ -5352,21 +5353,21 @@
 3cd1b8	28	.rdata	Init_GVar_FXSceneYakuzziFile	string
 3cd1e0	20	.rdata	Init_GVar_FXSceneYakuzziFile, probe cString_Set via ucrtbase.dll	string
 3cd200	14	.rdata	Init_GVar_FXSceneYakuzziFile, probe HashTable_Slot	string
-3cd214	4	.rdata	-	pointer table
+3cd214	4	.rdata	-	rtti
 3cd218	14	.rdata	cObjElementFXSceneDecontamination_vftable	C object
-3cd22c	4	.rdata	-	pointer table
+3cd22c	4	.rdata	-	rtti
 3cd230	14	.rdata	cObjElementFXSceneBishops_vftable	C object
-3cd244	4	.rdata	-	pointer table
+3cd244	4	.rdata	-	rtti
 3cd248	14	.rdata	cObjElementFXSceneBillArrives_A_vftable	C object
-3cd25c	4	.rdata	-	pointer table
+3cd25c	4	.rdata	-	rtti
 3cd260	14	.rdata	cObjElementFXSceneYakuzzi_vftable	C object
-3cd274	4	.rdata	-	pointer table
+3cd274	4	.rdata	-	rtti
 3cd278	14	.rdata	cObjElementFXSceneBeatPickus_vftable	C object
-3cd28c	4	.rdata	-	pointer table
+3cd28c	4	.rdata	-	rtti
 3cd290	14	.rdata	cObjElementFXSceneHumanCD_vftable	C object
-3cd2a4	4	.rdata	-	pointer table
+3cd2a4	4	.rdata	-	rtti
 3cd2a8	14	.rdata	cObjElementFXSceneEnterMatrix_vftable	C object
-3cd2bc	4	.rdata	-	pointer table
+3cd2bc	4	.rdata	-	rtti
 3cd2c0	14	.rdata	cObjElementFXSceneTheEndB_vftable	C object
 3cd2d4	2	.rdata	-	int table
 3cd2d6	32	.rdata	-	string
@@ -5419,25 +5420,25 @@
 3cd92c	18	.rdata	Init_GVar_ShipExplosionMaxDist, probe HashTable_Slot	string
 3cd944	20	.rdata	Init_GVar_FXFiredEntitySmokeStep	string
 3cd964	18	.rdata	Init_GVar_FXFiredEntitySmokeStep, probe HashTable_Slot	string
-3cd97c	4	.rdata	-	pointer table
+3cd97c	4	.rdata	-	rtti
 3cd980	14	.rdata	cObjElementFXVehicleDamage_vftable	C object
-3cd994	4	.rdata	-	pointer table
+3cd994	4	.rdata	-	rtti
 3cd998	14	.rdata	cObjElementFXVehicleFire_vftable	C object
-3cd9ac	4	.rdata	-	pointer table
+3cd9ac	4	.rdata	-	rtti
 3cd9b0	14	.rdata	cObjElementFXFiredEntity_vftable	C object
-3cd9c4	4	.rdata	-	pointer table
+3cd9c4	4	.rdata	-	rtti
 3cd9c8	14	.rdata	cObjElementFXVehicleEMI_vftable	C object
-3cd9dc	4	.rdata	-	pointer table
+3cd9dc	4	.rdata	-	rtti
 3cd9e0	14	.rdata	cObjElementFXFiredDebris_vftable	C object
-3cd9f4	4	.rdata	-	pointer table
+3cd9f4	4	.rdata	-	rtti
 3cd9f8	14	.rdata	cObjElementFXSmokeDebris_vftable	C object
-3cda0c	4	.rdata	-	pointer table
+3cda0c	4	.rdata	-	rtti
 3cda10	14	.rdata	cObjElementFXVehicleDeathTrail_vftable	C object
-3cda24	4	.rdata	-	pointer table
+3cda24	4	.rdata	-	rtti
 3cda28	14	.rdata	cObjElementFXVehicleSputnik_vftable	C object
-3cda3c	4	.rdata	-	pointer table
+3cda3c	4	.rdata	-	rtti
 3cda40	14	.rdata	cObjElementFXVehicleSpawn_vftable	C object
-3cda54	4	.rdata	-	pointer table
+3cda54	4	.rdata	-	rtti
 3cda58	14	.rdata	cObjElementFXVehicleAccelerator_vftable	C object
 3cda6c	120	.rdata	-	string
 3cdb8c	4c	.rdata	-	float
@@ -5447,17 +5448,17 @@
 3cdc00	48	.rdata	-	float
 3cdc48	8	.rdata	-	pointer table
 3cdc50	14	.rdata	cObjElementFXSwarmMissile_vftable	C object
-3cdc64	4	.rdata	-	pointer table
+3cdc64	4	.rdata	-	rtti
 3cdc68	14	.rdata	cObjElementFXLaser_vftable	C object
-3cdc7c	4	.rdata	-	pointer table
+3cdc7c	4	.rdata	-	rtti
 3cdc80	14	.rdata	cObjElementFXDevastatorShoot_vftable	C object
-3cdc94	4	.rdata	-	pointer table
+3cdc94	4	.rdata	-	rtti
 3cdc98	14	.rdata	cObjElementFXTesla_vftable	C object
-3cdcac	4	.rdata	-	pointer table
+3cdcac	4	.rdata	-	rtti
 3cdcb0	14	.rdata	cObjElementFXATPC_vftable	C object
-3cdcc4	4	.rdata	-	pointer table
+3cdcc4	4	.rdata	-	rtti
 3cdcc8	14	.rdata	cObjElementFXInfernoMissile_vftable	C object
-3cdcdc	4	.rdata	-	pointer table
+3cdcdc	4	.rdata	-	rtti
 3cdce0	14	.rdata	cObjElementFXInfernoExplosion_vftable	C object
 3cdcf4	64	.rdata	-	string
 3cdd58	18	.rdata	-	float
@@ -5469,7 +5470,7 @@
 3cde0c	14	.rdata	Init_GVar_ElementModelPath, probe HashTable_Slot	string
 3cde20	30	.rdata	-	string
 3cde50	14	.rdata	Init_NativeFunc_MapElementsActivate, probe cPy_NativeFunc_Insert via ucrtbase.dll	string
-3cde64	4	.rdata	-	pointer table
+3cde64	4	.rdata	-	rtti
 3cde68	c	.rdata	cMapElement_vftable	C object
 3cde74	d8	.rdata	-	string
 3cdf4c	e	.rdata	-	int table
@@ -5580,7 +5581,7 @@
 3cec58	c	.rdata	Init_GVar_ShowCredits, probe HashTable_Slot	string
 3cec64	10	.rdata	Init_GVar_SplitScreen	string
 3cec74	c	.rdata	Init_GVar_SplitScreen, probe HashTable_Slot	string
-3cec80	4	.rdata	-	pointer table
+3cec80	4	.rdata	-	rtti
 3cec84	4	.rdata	cWorld_vftable	C object
 3cec88	d0	.rdata	-	string
 3ced58	18	.rdata	Init_GVar_ModFileName	string
@@ -5625,13 +5626,13 @@
 3cf13c	8	.rdata	Init_GVar_isDemo, probe HashTable_Slot	string
 3cf144	34	.rdata	Init_GVar_ReRunAtExitParams	string
 3cf178	14	.rdata	Init_GVar_ReRunAtExitParams, probe HashTable_Slot	string
-3cf18c	4	.rdata	-	pointer table
+3cf18c	4	.rdata	-	rtti
 3cf190	54	.rdata	CApp_vftable	C object
 3cf1e4	5a0	.rdata	-	string
 3cf784	c	.rdata	-	float
 3cf790	28	.rdata	Init_GVar_InactiveBackgroundApp	string
 3cf7b8	18	.rdata	Init_GVar_InactiveBackgroundApp, probe HashTable_Slot	string
-3cf7d0	4	.rdata	-	pointer table
+3cf7d0	4	.rdata	-	rtti
 3cf7d4	54	.rdata	CWinApp_vftable	C object
 3cf828	c	.rdata	-	int table
 3cf834	4	.rdata	-	string
@@ -5892,12 +5893,12 @@
 3d58fc	c	.rdata	Init_GVar_ShowTSCMode, probe HashTable_Slot	string
 3d5908	20	.rdata	Init_GVar_VSync	string
 3d5928	8	.rdata	Init_GVar_VSync, probe HashTable_Slot	string
-3d5930	4	.rdata	-	pointer table
+3d5930	4	.rdata	-	rtti
 3d5934	20	.rdata	CEntradaNula_vftable	C object
 3d5954	38	.rdata	-	string
 3d598c	18	.rdata	CLuz_TipoNombre, probe PyString_FromString via ucrtbase.dll	string
 3d59a4	38	.rdata	-	string
-3d59dc	4	.rdata	-	pointer table
+3d59dc	4	.rdata	-	rtti
 3d59e0	38	.rdata	CMotorApp_vftable	C object
 3d5a18	38c	.rdata	-	string
 3d5da4	8	.rdata	Sectores_Crear	string
@@ -5931,10 +5932,10 @@
 3d6cfc	c	.rdata	Init_GVar_MatEmissive, probe HashTable_Slot	string
 3d6d08	2c	.rdata	Init_GVar_LoadTextures	string
 3d6d34	10	.rdata	Init_GVar_LoadTextures, probe HashTable_Slot	string
-3d6d44	4	.rdata	-	pointer table
+3d6d44	4	.rdata	-	rtti
 3d6d48	4	.rdata	CListaMat_vftable	C object
 3d6d4c	6c	.rdata	-	string
-3d6db8	4	.rdata	-	pointer table
+3d6db8	4	.rdata	-	rtti
 3d6dbc	4	.rdata	CMaterial_vftable	C object
 3d6dc0	224	.rdata	-	string
 3d6fe4	4	.rdata	-	int table
@@ -5989,9 +5990,9 @@
 3d7990	24	.rdata	Init_GVar_R_SpotlightClamp	string
 3d79b4	14	.rdata	Init_GVar_R_SpotlightClamp, probe HashTable_Slot	string
 3d79c8	10	.rdata	Init_GVar_R_SpotlightMult, probe HashTable_Slot	string
-3d79d8	4	.rdata	-	pointer table
+3d79d8	4	.rdata	-	rtti
 3d79dc	1c	.rdata	IObjeto3D_vftable	C object
-3d79f8	4	.rdata	-	pointer table
+3d79f8	4	.rdata	-	rtti
 3d79fc	1c	.rdata	CLuz_vftable	C object
 3d7a18	1c4	.rdata	-	string
 3d7bdc	4	.rdata	-	float
@@ -6022,7 +6023,7 @@
 3d7e44	10	.rdata	Init_GVar_R_NodeSlerp2, probe HashTable_Slot	string
 3d7e54	10	.rdata	Init_GVar_R_Nodo3D_Count	string
 3d7e64	10	.rdata	Init_GVar_R_Nodo3D_Count, probe HashTable_Slot	string
-3d7e74	4	.rdata	-	pointer table
+3d7e74	4	.rdata	-	rtti
 3d7e78	4	.rdata	CNodo3D_vftable	C object
 3d7e7c	210	.rdata	-	string
 3d808c	4	.rdata	-	zero
@@ -6227,7 +6228,7 @@
 3da62c	10	.rdata	Init_GVar_R_ShowModelPos, probe HashTable_Slot	string
 3da63c	1c	.rdata	Init_GVar_R_ShowModelLights	string
 3da658	44	.rdata	-	string
-3da69c	4	.rdata	-	pointer table
+3da69c	4	.rdata	-	rtti
 3da6a0	4	.rdata	CModelo_vftable	C object
 3da6a4	468	.rdata	-	string
 3dab0c	18	.rdata	Init_GVar_R_SortModels	string
@@ -6252,7 +6253,7 @@
 3db088	1c	.rdata	Init_GVar_AnalizeQuads	string
 3db0a4	10	.rdata	Init_GVar_AnalizeQuads, probe HashTable_Slot	string
 3db0b4	84	.rdata	probe hot page 3db000	string
-3db138	4	.rdata	probe hot page 3db000	pointer table
+3db138	4	.rdata	probe hot page 3db000	rtti
 3db13c	1c	.rdata	CSuelo_vftable	C object
 3db158	8b4	.rdata	probe hot page 3db000	string
 3dba0c	4	.rdata	probe hot page 3db000	zero
@@ -6262,7 +6263,7 @@
 3dbbe8	8	.rdata	probe hot page 3db000	string
 3dbbf0	10	.rdata	probe hot page 3db000	float
 3dbc00	ec	.rdata	probe hot page 3db000	string
-3dbcec	4	.rdata	probe hot page 3db000	pointer table
+3dbcec	4	.rdata	probe hot page 3db000	rtti
 3dbcf0	1c	.rdata	CMallaTri_vftable	C object
 3dbd0c	188	.rdata	probe hot page 3db000	string
 3dbe94	8	.rdata	probe Proc_TypeLookup via ucrtbase.dll, probe ucrtbase.dll, ptr 432450 +1	string
@@ -6368,7 +6369,7 @@
 3dd0ec	c	.rdata	SectorVis_Draw	string
 3dd0f8	4	.rdata	probe hot page 3dd000	float
 3dd0fc	108	.rdata	probe hot page 3dd000	string
-3dd204	4	.rdata	probe hot page 3dd000	pointer table
+3dd204	4	.rdata	probe hot page 3dd000	rtti
 3dd208	38	.rdata	CD3DApplication_vftable	C object
 3dd240	10	.rdata	CD3DApp_ctor	string
 3dd250	14	.rdata	probe hot page 3dd000	string
@@ -6436,15 +6437,15 @@
 3ddbd4	14	.rdata	Init_GVar_R_ParticlesCount, probe HashTable_Slot	string
 3ddbe8	24	.rdata	Init_GVar_R_Particles	string
 3ddc0c	c	.rdata	Init_GVar_R_Particles, probe HashTable_Slot	string
-3ddc18	4	.rdata	probe hot page 3dd000	pointer table
+3ddc18	4	.rdata	probe hot page 3dd000	rtti
 3ddc1c	1c	.rdata	CObjBase3D_vftable	C object
-3ddc38	4	.rdata	probe hot page 3dd000	pointer table
+3ddc38	4	.rdata	probe hot page 3dd000	rtti
 3ddc3c	c	.rdata	CParticulaBase_vftable	C object
-3ddc48	4	.rdata	probe hot page 3dd000	pointer table
+3ddc48	4	.rdata	probe hot page 3dd000	rtti
 3ddc4c	c	.rdata	CParticulaStatic_vftable	C object
-3ddc58	4	.rdata	probe hot page 3dd000	pointer table
+3ddc58	4	.rdata	probe hot page 3dd000	rtti
 3ddc5c	c	.rdata	CParticulaActive_vftable	C object
-3ddc68	4	.rdata	probe hot page 3dd000	pointer table
+3ddc68	4	.rdata	probe hot page 3dd000	rtti
 3ddc6c	1c	.rdata	CSistPart_vftable	C object
 3ddc88	380	.rdata	probe hot page 3dd000	string
 3de008	70	.rdata	-	string
@@ -6681,7 +6682,7 @@
 3e1910	10	.rdata	Init_GVar_R_SkipFlares, probe HashTable_Slot	string
 3e1920	20	.rdata	Init_GVar_R_ShowFlaresInfo	string
 3e1940	14	.rdata	Init_GVar_R_ShowFlaresInfo, probe HashTable_Slot	string
-3e1954	4	.rdata	-	pointer table
+3e1954	4	.rdata	-	rtti
 3e1958	1c	.rdata	CFlare_vftable	C object
 3e1974	34	.rdata	-	string
 3e19a8	8	.rdata	-	double
@@ -6692,7 +6693,7 @@
 3e1c7c	4	.rdata	-	string
 3e1c80	10	.rdata	-	int table
 3e1c90	4	.rdata	-	string
-3e1c94	4	.rdata	-	pointer table
+3e1c94	4	.rdata	-	rtti
 3e1c98	1c	.rdata	CCamara_vftable	C object
 3e1cb4	6c	.rdata	-	string
 3e1d20	2c	.rdata	Init_GVar_BuildMST	string
@@ -6701,11 +6702,11 @@
 3e1fa8	14	.rdata	Init_GVar_R_Trails	string
 3e1fbc	c	.rdata	Init_GVar_R_Trails, probe HashTable_Slot	string
 3e1fc8	620	.rdata	-	string
-3e25e8	4	.rdata	-	pointer table
+3e25e8	4	.rdata	-	rtti
 3e25ec	20	.rdata	IEntrada_vftable	C object
-3e260c	4	.rdata	-	pointer table
+3e260c	4	.rdata	-	rtti
 3e2610	20	.rdata	CEntradaDInput_vftable	C object
-3e2630	4	.rdata	-	pointer table
+3e2630	4	.rdata	-	rtti
 3e2634	20	.rdata	CEntradaWindows_vftable	C object
 3e2654	48	.rdata	-	string
 3e269c	4	.rdata	-	zero
@@ -6740,13 +6741,13 @@
 3e2b40	10	.rdata	-	float
 3e2b50	10	.rdata	-	int table
 3e2b60	e0	.rdata	-	string
-3e2c40	4	.rdata	-	pointer table
+3e2c40	4	.rdata	-	rtti
 3e2c44	c	.rdata	IFXTextura_vftable	C object
-3e2c50	4	.rdata	-	pointer table
+3e2c50	4	.rdata	-	rtti
 3e2c54	c	.rdata	CFXTexLava_vftable	C object
-3e2c60	4	.rdata	-	pointer table
+3e2c60	4	.rdata	-	rtti
 3e2c64	c	.rdata	CFXTexScroll_vftable	C object
-3e2c70	4	.rdata	-	pointer table
+3e2c70	4	.rdata	-	rtti
 3e2c74	c	.rdata	CFXNewsPanel_vftable	C object
 3e2c80	90	.rdata	-	string
 3e2d10	8	.rdata	-	float
@@ -6798,11 +6799,11 @@
 3e3b50	14	.rdata	Init_GVar_NodeFXSpringShow, probe HashTable_Slot	string
 3e3b64	20	.rdata	Init_GVar_NodeFXSpringDebug	string
 3e3b84	14	.rdata	Init_GVar_NodeFXSpringDebug, probe HashTable_Slot	string
-3e3b98	4	.rdata	-	pointer table
+3e3b98	4	.rdata	-	rtti
 3e3b9c	c	.rdata	INodeFX_vftable	C object
-3e3ba8	4	.rdata	-	pointer table
+3e3ba8	4	.rdata	-	rtti
 3e3bac	c	.rdata	CNodeFX_Wheel_vftable	C object
-3e3bb8	4	.rdata	-	pointer table
+3e3bb8	4	.rdata	-	rtti
 3e3bbc	c	.rdata	CNodeFX_Spring_vftable	C object
 3e3bc8	c	.rdata	probe Arch_FindSection via ucrtbase.dll, ptr 432a74	string
 3e3bd4	1f0	.rdata	-	string
@@ -6852,14 +6853,14 @@
 3e4534	4c	.rdata	-	string
 3e4580	24	.rdata	Init_GVar_R_SpriteSector	string
 3e45a4	10	.rdata	Init_GVar_R_SpriteSector, probe HashTable_Slot	string
-3e45b4	4	.rdata	-	pointer table
+3e45b4	4	.rdata	-	rtti
 3e45b8	1c	.rdata	CGrafico3D_vftable	C object
 3e45d4	9c	.rdata	-	string
 3e4670	18	.rdata	Init_GVar_R_ShowPortals	string
 3e4688	10	.rdata	Init_GVar_R_ShowPortals, probe HashTable_Slot	string
 3e4698	14	.rdata	Init_GVar_R_UsePortals	string
 3e46ac	10	.rdata	Init_GVar_R_UsePortals, probe HashTable_Slot	string
-3e46bc	4	.rdata	-	pointer table
+3e46bc	4	.rdata	-	rtti
 3e46c0	1c	.rdata	CPortal_vftable	C object
 3e46dc	40	.rdata	-	string
 3e471c	4	.rdata	-	zero
@@ -7011,2259 +7012,11 @@
 410066	a	.rdata	-	unknown
 410070	553c	.rdata	-	rtti
 4155ac	c	.rdata	-	library crt
-4155b8	24	.rdata	-	int table
-4155dc	8	.rdata	-	pointer table
-4155e4	24	.rdata	-	unknown
-415608	8	.rdata	-	pointer table
-415610	24	.rdata	-	unknown
-415634	8	.rdata	-	pointer table
-41563c	24	.rdata	-	unknown
-415660	8	.rdata	-	pointer table
-415668	48	.rdata	-	unknown
-4156b0	60	.rdata	-	pointer table
-415710	24	.rdata	-	unknown
-415734	8	.rdata	-	pointer table
-41573c	24	.rdata	-	unknown
-415760	8	.rdata	-	pointer table
-415768	24	.rdata	-	unknown
-41578c	24	.rdata	-	int table
-4157b0	8	.rdata	-	pointer table
-4157b8	24	.rdata	-	unknown
-4157dc	8	.rdata	-	pointer table
-4157e4	24	.rdata	-	unknown
-415808	8	.rdata	-	pointer table
-415810	24	.rdata	-	unknown
-415834	8	.rdata	-	pointer table
-41583c	24	.rdata	-	unknown
-415860	8	.rdata	-	pointer table
-415868	24	.rdata	-	unknown
-41588c	8	.rdata	-	pointer table
-415894	24	.rdata	-	unknown
-4158b8	24	.rdata	-	int table
-4158dc	8	.rdata	-	pointer table
-4158e4	24	.rdata	-	unknown
-415908	10	.rdata	-	pointer table
-415918	48	.rdata	-	unknown
-415960	38	.rdata	-	pointer table
-415998	24	.rdata	-	unknown
-4159bc	24	.rdata	-	int table
-4159e0	10	.rdata	-	pointer table
-4159f0	24	.rdata	-	unknown
-415a14	10	.rdata	-	pointer table
-415a24	24	.rdata	-	unknown
-415a48	10	.rdata	-	pointer table
-415a58	24	.rdata	-	unknown
-415a7c	18	.rdata	-	pointer table
-415a94	24	.rdata	-	unknown
-415ab8	24	.rdata	-	int table
-415adc	8	.rdata	-	pointer table
-415ae4	24	.rdata	-	unknown
-415b08	24	.rdata	-	int table
-415b2c	24	.rdata	-	unknown
-415b50	30	.rdata	-	pointer table
-415b80	24	.rdata	-	unknown
-415ba4	10	.rdata	-	pointer table
-415bb4	24	.rdata	-	unknown
-415bd8	10	.rdata	-	pointer table
-415be8	24	.rdata	-	unknown
-415c0c	8	.rdata	-	pointer table
-415c14	24	.rdata	-	unknown
-415c38	8	.rdata	-	pointer table
-415c40	24	.rdata	-	unknown
-415c64	8	.rdata	-	pointer table
-415c6c	24	.rdata	-	unknown
-415c90	10	.rdata	-	string
-415ca0	24	.rdata	-	unknown
-415cc4	18	.rdata	-	pointer table
-415cdc	24	.rdata	-	unknown
-415d00	8	.rdata	-	pointer table
-415d08	24	.rdata	-	unknown
-415d2c	8	.rdata	-	pointer table
-415d34	24	.rdata	-	unknown
-415d58	8	.rdata	-	pointer table
-415d60	24	.rdata	-	unknown
-415d84	10	.rdata	-	pointer table
-415d94	24	.rdata	-	unknown
-415db8	10	.rdata	-	pointer table
-415dc8	24	.rdata	-	unknown
-415dec	10	.rdata	-	pointer table
-415dfc	24	.rdata	-	unknown
-415e20	8	.rdata	-	pointer table
-415e28	24	.rdata	-	unknown
-415e4c	8	.rdata	-	pointer table
-415e54	24	.rdata	-	unknown
-415e78	10	.rdata	-	pointer table
-415e88	24	.rdata	-	unknown
-415eac	10	.rdata	-	pointer table
-415ebc	48	.rdata	-	unknown
-415f04	40	.rdata	-	pointer table
-415f44	24	.rdata	-	int table
-415f68	8	.rdata	-	pointer table
-415f70	24	.rdata	-	unknown
-415f94	8	.rdata	-	pointer table
-415f9c	24	.rdata	-	unknown
-415fc0	8	.rdata	-	pointer table
-415fc8	24	.rdata	-	unknown
-415fec	8	.rdata	-	pointer table
-415ff4	24	.rdata	-	unknown
-416018	8	.rdata	-	pointer table
-416020	24	.rdata	-	unknown
-416044	10	.rdata	-	pointer table
-416054	24	.rdata	-	unknown
-416078	8	.rdata	-	pointer table
-416080	24	.rdata	-	unknown
-4160a4	10	.rdata	-	pointer table
-4160b4	24	.rdata	-	unknown
-4160d8	10	.rdata	-	pointer table
-4160e8	24	.rdata	-	unknown
-41610c	24	.rdata	-	int table
-416130	8	.rdata	-	pointer table
-416138	24	.rdata	-	unknown
-41615c	8	.rdata	-	pointer table
-416164	24	.rdata	-	unknown
-416188	8	.rdata	-	pointer table
-416190	24	.rdata	-	unknown
-4161b4	24	.rdata	-	int table
-4161d8	8	.rdata	-	pointer table
-4161e0	24	.rdata	-	unknown
-416204	10	.rdata	-	pointer table
-416214	24	.rdata	-	unknown
-416238	24	.rdata	-	int table
-41625c	8	.rdata	-	pointer table
-416264	24	.rdata	-	unknown
-416288	8	.rdata	-	pointer table
-416290	24	.rdata	-	unknown
-4162b4	8	.rdata	-	pointer table
-4162bc	24	.rdata	-	unknown
-4162e0	8	.rdata	-	pointer table
-4162e8	24	.rdata	-	unknown
-41630c	48	.rdata	-	int table
-416354	8	.rdata	-	pointer table
-41635c	24	.rdata	-	unknown
-416380	24	.rdata	-	int table
-4163a4	8	.rdata	-	pointer table
-4163ac	24	.rdata	-	unknown
-4163d0	8	.rdata	-	pointer table
-4163d8	24	.rdata	-	unknown
-4163fc	48	.rdata	-	int table
-416444	8	.rdata	-	pointer table
-41644c	24	.rdata	-	unknown
-416470	8	.rdata	-	pointer table
-416478	24	.rdata	-	unknown
-41649c	10	.rdata	-	pointer table
-4164ac	24	.rdata	-	unknown
-4164d0	8	.rdata	-	pointer table
-4164d8	24	.rdata	-	unknown
-4164fc	10	.rdata	-	pointer table
-41650c	24	.rdata	-	unknown
-416530	10	.rdata	-	pointer table
-416540	24	.rdata	-	unknown
-416564	8	.rdata	-	pointer table
-41656c	24	.rdata	-	unknown
-416590	24	.rdata	-	int table
-4165b4	8	.rdata	-	pointer table
-4165bc	24	.rdata	-	unknown
-4165e0	8	.rdata	-	pointer table
-4165e8	24	.rdata	-	unknown
-41660c	18	.rdata	-	pointer table
-416624	24	.rdata	-	unknown
-416648	8	.rdata	-	pointer table
-416650	24	.rdata	-	unknown
-416674	10	.rdata	-	pointer table
-416684	24	.rdata	-	unknown
-4166a8	10	.rdata	-	pointer table
-4166b8	24	.rdata	-	unknown
-4166dc	8	.rdata	-	pointer table
-4166e4	24	.rdata	-	unknown
-416708	8	.rdata	-	pointer table
-416710	24	.rdata	-	unknown
-416734	10	.rdata	-	pointer table
-416744	24	.rdata	-	unknown
-416768	8	.rdata	-	pointer table
-416770	24	.rdata	-	unknown
-416794	10	.rdata	-	pointer table
-4167a4	24	.rdata	-	unknown
-4167c8	10	.rdata	-	pointer table
-4167d8	24	.rdata	-	unknown
-4167fc	8	.rdata	-	pointer table
-416804	24	.rdata	-	unknown
-416828	24	.rdata	-	int table
-41684c	8	.rdata	-	pointer table
-416854	24	.rdata	-	unknown
-416878	10	.rdata	-	pointer table
-416888	24	.rdata	-	unknown
-4168ac	24	.rdata	-	int table
-4168d0	8	.rdata	-	pointer table
-4168d8	24	.rdata	-	unknown
-4168fc	8	.rdata	-	pointer table
-416904	24	.rdata	-	unknown
-416928	8	.rdata	-	pointer table
-416930	24	.rdata	-	unknown
-416954	24	.rdata	-	int table
-416978	8	.rdata	-	pointer table
-416980	24	.rdata	-	unknown
-4169a4	10	.rdata	-	pointer table
-4169b4	24	.rdata	-	unknown
-4169d8	10	.rdata	-	pointer table
-4169e8	24	.rdata	-	unknown
-416a0c	10	.rdata	-	pointer table
-416a1c	24	.rdata	-	unknown
-416a40	10	.rdata	-	pointer table
-416a50	24	.rdata	-	unknown
-416a74	10	.rdata	-	pointer table
-416a84	24	.rdata	-	unknown
-416aa8	10	.rdata	-	pointer table
-416ab8	24	.rdata	-	unknown
-416adc	10	.rdata	-	pointer table
-416aec	24	.rdata	-	unknown
-416b10	10	.rdata	-	pointer table
-416b20	24	.rdata	-	unknown
-416b44	10	.rdata	-	pointer table
-416b54	24	.rdata	-	unknown
-416b78	10	.rdata	-	pointer table
-416b88	24	.rdata	-	unknown
-416bac	10	.rdata	-	pointer table
-416bbc	24	.rdata	-	unknown
-416be0	10	.rdata	-	pointer table
-416bf0	24	.rdata	-	unknown
-416c14	10	.rdata	-	pointer table
-416c24	24	.rdata	-	unknown
-416c48	10	.rdata	-	pointer table
-416c58	24	.rdata	-	unknown
-416c7c	10	.rdata	-	pointer table
-416c8c	24	.rdata	-	unknown
-416cb0	10	.rdata	-	pointer table
-416cc0	24	.rdata	-	unknown
-416ce4	10	.rdata	-	pointer table
-416cf4	24	.rdata	-	unknown
-416d18	10	.rdata	-	pointer table
-416d28	24	.rdata	-	unknown
-416d4c	10	.rdata	-	pointer table
-416d5c	24	.rdata	-	unknown
-416d80	10	.rdata	-	pointer table
-416d90	24	.rdata	-	unknown
-416db4	10	.rdata	-	pointer table
-416dc4	24	.rdata	-	unknown
-416de8	10	.rdata	-	pointer table
-416df8	24	.rdata	-	unknown
-416e1c	10	.rdata	-	pointer table
-416e2c	24	.rdata	-	unknown
-416e50	10	.rdata	-	pointer table
-416e60	24	.rdata	-	unknown
-416e84	10	.rdata	-	pointer table
-416e94	24	.rdata	-	unknown
-416eb8	10	.rdata	-	pointer table
-416ec8	24	.rdata	-	unknown
-416eec	8	.rdata	-	pointer table
-416ef4	24	.rdata	-	unknown
-416f18	10	.rdata	-	pointer table
-416f28	24	.rdata	-	unknown
-416f4c	10	.rdata	-	pointer table
-416f5c	24	.rdata	-	unknown
-416f80	10	.rdata	-	pointer table
-416f90	24	.rdata	-	unknown
-416fb4	10	.rdata	-	pointer table
-416fc4	24	.rdata	-	unknown
-416fe8	10	.rdata	-	pointer table
-416ff8	24	.rdata	-	unknown
-41701c	10	.rdata	-	pointer table
-41702c	24	.rdata	-	unknown
-417050	10	.rdata	-	pointer table
-417060	24	.rdata	-	unknown
-417084	10	.rdata	-	pointer table
-417094	24	.rdata	-	unknown
-4170b8	8	.rdata	-	pointer table
-4170c0	24	.rdata	-	unknown
-4170e4	10	.rdata	-	pointer table
-4170f4	24	.rdata	-	unknown
-417118	10	.rdata	-	pointer table
-417128	24	.rdata	-	unknown
-41714c	10	.rdata	-	pointer table
-41715c	24	.rdata	-	unknown
-417180	10	.rdata	-	pointer table
-417190	24	.rdata	-	unknown
-4171b4	10	.rdata	-	pointer table
-4171c4	24	.rdata	-	unknown
-4171e8	10	.rdata	-	pointer table
-4171f8	24	.rdata	-	unknown
-41721c	10	.rdata	-	pointer table
-41722c	24	.rdata	-	unknown
-417250	10	.rdata	-	pointer table
-417260	24	.rdata	-	unknown
-417284	48	.rdata	-	int table
-4172cc	8	.rdata	-	pointer table
-4172d4	48	.rdata	-	unknown
-41731c	60	.rdata	-	pointer table
-41737c	24	.rdata	-	unknown
-4173a0	28	.rdata	-	pointer table
-4173c8	24	.rdata	-	unknown
-4173ec	40	.rdata	-	pointer table
-41742c	24	.rdata	-	unknown
-417450	50	.rdata	-	pointer table
-4174a0	24	.rdata	-	unknown
-4174c4	30	.rdata	-	pointer table
-4174f4	24	.rdata	-	int table
-417518	18	.rdata	-	pointer table
-417530	24	.rdata	-	unknown
-417554	8	.rdata	-	pointer table
-41755c	24	.rdata	-	unknown
-417580	8	.rdata	-	pointer table
-417588	24	.rdata	-	unknown
-4175ac	10	.rdata	-	pointer table
-4175bc	24	.rdata	-	unknown
-4175e0	10	.rdata	-	pointer table
-4175f0	24	.rdata	-	unknown
-417614	24	.rdata	-	int table
-417638	8	.rdata	-	pointer table
-417640	48	.rdata	-	unknown
-417688	28	.rdata	-	pointer table
-4176b0	24	.rdata	-	int table
-4176d4	8	.rdata	-	pointer table
-4176dc	24	.rdata	-	unknown
-417700	10	.rdata	-	pointer table
-417710	24	.rdata	-	unknown
-417734	24	.rdata	-	int table
-417758	8	.rdata	-	pointer table
-417760	24	.rdata	-	unknown
-417784	8	.rdata	-	pointer table
-41778c	24	.rdata	-	unknown
-4177b0	18	.rdata	-	pointer table
-4177c8	24	.rdata	-	unknown
-4177ec	10	.rdata	-	pointer table
-4177fc	24	.rdata	-	unknown
-417820	10	.rdata	-	pointer table
-417830	24	.rdata	-	unknown
-417854	8	.rdata	-	pointer table
-41785c	48	.rdata	-	unknown
-4178a4	a8	.rdata	-	pointer table
-41794c	24	.rdata	-	unknown
-417970	10	.rdata	-	pointer table
-417980	24	.rdata	-	unknown
-4179a4	8	.rdata	-	pointer table
-4179ac	24	.rdata	-	unknown
-4179d0	24	.rdata	-	int table
-4179f4	8	.rdata	-	pointer table
-4179fc	24	.rdata	-	unknown
-417a20	18	.rdata	-	pointer table
-417a38	24	.rdata	-	unknown
-417a5c	10	.rdata	-	pointer table
-417a6c	24	.rdata	-	unknown
-417a90	18	.rdata	-	pointer table
-417aa8	24	.rdata	-	unknown
-417acc	10	.rdata	-	pointer table
-417adc	24	.rdata	-	unknown
-417b00	10	.rdata	-	pointer table
-417b10	24	.rdata	-	unknown
-417b34	24	.rdata	-	int table
-417b58	8	.rdata	-	pointer table
-417b60	24	.rdata	-	unknown
-417b84	10	.rdata	-	pointer table
-417b94	24	.rdata	-	unknown
-417bb8	8	.rdata	-	pointer table
-417bc0	24	.rdata	-	unknown
-417be4	10	.rdata	-	pointer table
-417bf4	24	.rdata	-	unknown
-417c18	18	.rdata	-	pointer table
-417c30	24	.rdata	-	unknown
-417c54	24	.rdata	-	int table
-417c78	8	.rdata	-	pointer table
-417c80	24	.rdata	-	unknown
-417ca4	10	.rdata	-	pointer table
-417cb4	24	.rdata	-	unknown
-417cd8	24	.rdata	-	int table
-417cfc	8	.rdata	-	pointer table
-417d04	24	.rdata	-	unknown
-417d28	8	.rdata	-	pointer table
-417d30	24	.rdata	-	unknown
-417d54	8	.rdata	-	pointer table
-417d5c	24	.rdata	-	unknown
-417d80	8	.rdata	-	pointer table
-417d88	24	.rdata	-	unknown
-417dac	20	.rdata	-	pointer table
-417dcc	24	.rdata	-	unknown
-417df0	24	.rdata	-	int table
-417e14	20	.rdata	-	pointer table
-417e34	24	.rdata	-	unknown
-417e58	24	.rdata	-	int table
-417e7c	8	.rdata	-	pointer table
-417e84	24	.rdata	-	unknown
-417ea8	18	.rdata	-	pointer table
-417ec0	24	.rdata	-	unknown
-417ee4	24	.rdata	-	int table
-417f08	20	.rdata	-	pointer table
-417f28	24	.rdata	-	unknown
-417f4c	10	.rdata	-	pointer table
-417f5c	24	.rdata	-	unknown
-417f80	10	.rdata	-	pointer table
-417f90	24	.rdata	-	unknown
-417fb4	48	.rdata	-	int table
-417ffc	8	.rdata	-	pointer table
-418004	48	.rdata	-	unknown
-41804c	50	.rdata	-	pointer table
-41809c	24	.rdata	-	unknown
-4180c0	8	.rdata	-	pointer table
-4180c8	24	.rdata	-	unknown
-4180ec	8	.rdata	-	pointer table
-4180f4	24	.rdata	-	unknown
-418118	18	.rdata	-	pointer table
-418130	24	.rdata	-	unknown
-418154	24	.rdata	-	int table
-418178	10	.rdata	-	pointer table
-418188	24	.rdata	-	unknown
-4181ac	8	.rdata	-	pointer table
-4181b4	24	.rdata	-	unknown
-4181d8	18	.rdata	-	pointer table
-4181f0	24	.rdata	-	unknown
-418214	24	.rdata	-	int table
-418238	10	.rdata	-	pointer table
-418248	24	.rdata	-	unknown
-41826c	10	.rdata	-	pointer table
-41827c	24	.rdata	-	unknown
-4182a0	10	.rdata	-	pointer table
-4182b0	24	.rdata	-	unknown
-4182d4	10	.rdata	-	pointer table
-4182e4	24	.rdata	-	unknown
-418308	8	.rdata	-	pointer table
-418310	24	.rdata	-	unknown
-418334	10	.rdata	-	pointer table
-418344	24	.rdata	-	unknown
-418368	24	.rdata	-	int table
-41838c	8	.rdata	-	pointer table
-418394	48	.rdata	-	unknown
-4183dc	40	.rdata	-	pointer table
-41841c	24	.rdata	-	unknown
-418440	10	.rdata	-	pointer table
-418450	24	.rdata	-	unknown
-418474	20	.rdata	-	pointer table
-418494	24	.rdata	-	unknown
-4184b8	18	.rdata	-	pointer table
-4184d0	24	.rdata	-	unknown
-4184f4	10	.rdata	-	pointer table
-418504	24	.rdata	-	unknown
-418528	10	.rdata	-	pointer table
-418538	24	.rdata	-	unknown
-41855c	10	.rdata	-	pointer table
-41856c	24	.rdata	-	unknown
-418590	10	.rdata	-	pointer table
-4185a0	24	.rdata	-	unknown
-4185c4	10	.rdata	-	pointer table
-4185d4	24	.rdata	-	unknown
-4185f8	8	.rdata	-	pointer table
-418600	24	.rdata	-	unknown
-418624	8	.rdata	-	pointer table
-41862c	48	.rdata	-	unknown
-418674	48	.rdata	-	pointer table
-4186bc	24	.rdata	-	unknown
-4186e0	8	.rdata	-	pointer table
-4186e8	24	.rdata	-	unknown
-41870c	8	.rdata	-	pointer table
-418714	24	.rdata	-	unknown
-418738	8	.rdata	-	pointer table
-418740	24	.rdata	-	unknown
-418764	10	.rdata	-	pointer table
-418774	24	.rdata	-	unknown
-418798	10	.rdata	-	pointer table
-4187a8	24	.rdata	-	unknown
-4187cc	10	.rdata	-	pointer table
-4187dc	24	.rdata	-	unknown
-418800	10	.rdata	-	pointer table
-418810	24	.rdata	-	unknown
-418834	10	.rdata	-	pointer table
-418844	24	.rdata	-	unknown
-418868	10	.rdata	-	pointer table
-418878	24	.rdata	-	unknown
-41889c	10	.rdata	-	pointer table
-4188ac	24	.rdata	-	unknown
-4188d0	10	.rdata	-	pointer table
-4188e0	24	.rdata	-	unknown
-418904	10	.rdata	-	pointer table
-418914	24	.rdata	-	unknown
-418938	10	.rdata	-	pointer table
-418948	24	.rdata	-	unknown
-41896c	10	.rdata	-	pointer table
-41897c	24	.rdata	-	unknown
-4189a0	10	.rdata	-	pointer table
-4189b0	24	.rdata	-	unknown
-4189d4	10	.rdata	-	pointer table
-4189e4	24	.rdata	-	unknown
-418a08	10	.rdata	-	pointer table
-418a18	24	.rdata	-	unknown
-418a3c	10	.rdata	-	pointer table
-418a4c	24	.rdata	-	unknown
-418a70	10	.rdata	-	pointer table
-418a80	24	.rdata	-	unknown
-418aa4	10	.rdata	-	pointer table
-418ab4	24	.rdata	-	unknown
-418ad8	10	.rdata	-	pointer table
-418ae8	24	.rdata	-	unknown
-418b0c	10	.rdata	-	pointer table
-418b1c	24	.rdata	-	unknown
-418b40	8	.rdata	-	pointer table
-418b48	24	.rdata	-	unknown
-418b6c	24	.rdata	-	int table
-418b90	8	.rdata	-	pointer table
-418b98	24	.rdata	-	unknown
-418bbc	8	.rdata	-	pointer table
-418bc4	24	.rdata	-	unknown
-418be8	8	.rdata	-	pointer table
-418bf0	24	.rdata	-	unknown
-418c14	10	.rdata	-	pointer table
-418c24	24	.rdata	-	unknown
-418c48	24	.rdata	-	int table
-418c6c	18	.rdata	-	pointer table
-418c84	24	.rdata	-	unknown
-418ca8	10	.rdata	-	pointer table
-418cb8	24	.rdata	-	unknown
-418cdc	10	.rdata	-	pointer table
-418cec	24	.rdata	-	unknown
-418d10	10	.rdata	-	pointer table
-418d20	24	.rdata	-	unknown
-418d44	10	.rdata	-	pointer table
-418d54	24	.rdata	-	unknown
-418d78	8	.rdata	-	pointer table
-418d80	24	.rdata	-	unknown
-418da4	8	.rdata	-	pointer table
-418dac	24	.rdata	-	unknown
-418dd0	8	.rdata	-	pointer table
-418dd8	24	.rdata	-	unknown
-418dfc	10	.rdata	-	pointer table
-418e0c	24	.rdata	-	unknown
-418e30	10	.rdata	-	pointer table
-418e40	24	.rdata	-	unknown
-418e64	10	.rdata	-	pointer table
-418e74	24	.rdata	-	unknown
-418e98	10	.rdata	-	pointer table
-418ea8	24	.rdata	-	unknown
-418ecc	8	.rdata	-	pointer table
-418ed4	24	.rdata	-	unknown
-418ef8	8	.rdata	-	pointer table
-418f00	24	.rdata	-	unknown
-418f24	10	.rdata	-	pointer table
-418f34	24	.rdata	-	unknown
-418f58	10	.rdata	-	pointer table
-418f68	24	.rdata	-	unknown
-418f8c	10	.rdata	-	pointer table
-418f9c	24	.rdata	-	unknown
-418fc0	10	.rdata	-	pointer table
-418fd0	24	.rdata	-	unknown
-418ff4	10	.rdata	-	pointer table
-419004	24	.rdata	-	unknown
-419028	10	.rdata	-	pointer table
-419038	24	.rdata	-	unknown
-41905c	8	.rdata	-	pointer table
-419064	24	.rdata	-	unknown
-419088	8	.rdata	-	pointer table
-419090	24	.rdata	-	unknown
-4190b4	10	.rdata	-	pointer table
-4190c4	24	.rdata	-	unknown
-4190e8	10	.rdata	-	pointer table
-4190f8	24	.rdata	-	unknown
-41911c	10	.rdata	-	pointer table
-41912c	24	.rdata	-	unknown
-419150	10	.rdata	-	pointer table
-419160	24	.rdata	-	unknown
-419184	10	.rdata	-	pointer table
-419194	24	.rdata	-	unknown
-4191b8	10	.rdata	-	pointer table
-4191c8	24	.rdata	-	unknown
-4191ec	10	.rdata	-	pointer table
-4191fc	24	.rdata	-	unknown
-419220	10	.rdata	-	pointer table
-419230	24	.rdata	-	unknown
-419254	10	.rdata	-	pointer table
-419264	24	.rdata	-	unknown
-419288	10	.rdata	-	pointer table
-419298	24	.rdata	-	unknown
-4192bc	10	.rdata	-	pointer table
-4192cc	24	.rdata	-	unknown
-4192f0	10	.rdata	-	pointer table
-419300	24	.rdata	-	unknown
-419324	8	.rdata	-	pointer table
-41932c	24	.rdata	-	unknown
-419350	8	.rdata	-	pointer table
-419358	24	.rdata	-	unknown
-41937c	10	.rdata	-	pointer table
-41938c	24	.rdata	-	unknown
-4193b0	10	.rdata	-	pointer table
-4193c0	24	.rdata	-	unknown
-4193e4	10	.rdata	-	pointer table
-4193f4	24	.rdata	-	unknown
-419418	10	.rdata	-	pointer table
-419428	24	.rdata	-	unknown
-41944c	10	.rdata	-	pointer table
-41945c	24	.rdata	-	unknown
-419480	10	.rdata	-	pointer table
-419490	24	.rdata	-	unknown
-4194b4	10	.rdata	-	pointer table
-4194c4	24	.rdata	-	unknown
-4194e8	10	.rdata	-	pointer table
-4194f8	24	.rdata	-	unknown
-41951c	10	.rdata	-	pointer table
-41952c	24	.rdata	-	unknown
-419550	10	.rdata	-	pointer table
-419560	24	.rdata	-	unknown
-419584	10	.rdata	-	pointer table
-419594	24	.rdata	-	unknown
-4195b8	10	.rdata	-	pointer table
-4195c8	24	.rdata	-	unknown
-4195ec	10	.rdata	-	pointer table
-4195fc	24	.rdata	-	unknown
-419620	20	.rdata	-	pointer table
-419640	24	.rdata	-	unknown
-419664	10	.rdata	-	pointer table
-419674	48	.rdata	-	unknown
-4196bc	60	.rdata	-	pointer table
-41971c	24	.rdata	-	unknown
-419740	8	.rdata	-	pointer table
-419748	24	.rdata	-	unknown
-41976c	24	.rdata	-	int table
-419790	8	.rdata	-	pointer table
-419798	24	.rdata	-	unknown
-4197bc	24	.rdata	-	int table
-4197e0	8	.rdata	-	pointer table
-4197e8	24	.rdata	-	unknown
-41980c	24	.rdata	-	int table
-419830	8	.rdata	-	pointer table
-419838	24	.rdata	-	unknown
-41985c	8	.rdata	-	pointer table
-419864	24	.rdata	-	unknown
-419888	8	.rdata	-	pointer table
-419890	24	.rdata	-	unknown
-4198b4	8	.rdata	-	pointer table
-4198bc	24	.rdata	-	unknown
-4198e0	10	.rdata	-	pointer table
-4198f0	24	.rdata	-	unknown
-419914	10	.rdata	-	pointer table
-419924	24	.rdata	-	unknown
-419948	10	.rdata	-	pointer table
-419958	24	.rdata	-	unknown
-41997c	10	.rdata	-	pointer table
-41998c	24	.rdata	-	unknown
-4199b0	24	.rdata	-	int table
-4199d4	8	.rdata	-	pointer table
-4199dc	24	.rdata	-	unknown
-419a00	10	.rdata	-	pointer table
-419a10	24	.rdata	-	unknown
-419a34	8	.rdata	-	pointer table
-419a3c	24	.rdata	-	unknown
-419a60	24	.rdata	-	int table
-419a84	8	.rdata	-	pointer table
-419a8c	24	.rdata	-	unknown
-419ab0	10	.rdata	-	pointer table
-419ac0	24	.rdata	-	unknown
-419ae4	48	.rdata	-	int table
-419b2c	8	.rdata	-	pointer table
-419b34	24	.rdata	-	unknown
-419b58	8	.rdata	-	pointer table
-419b60	24	.rdata	-	unknown
-419b84	24	.rdata	-	int table
-419ba8	8	.rdata	-	pointer table
-419bb0	24	.rdata	-	unknown
-419bd4	8	.rdata	-	pointer table
-419bdc	24	.rdata	-	unknown
-419c00	8	.rdata	-	pointer table
-419c08	24	.rdata	-	unknown
-419c2c	10	.rdata	-	pointer table
-419c3c	24	.rdata	-	unknown
-419c60	24	.rdata	-	int table
-419c84	8	.rdata	-	pointer table
-419c8c	24	.rdata	-	unknown
-419cb0	8	.rdata	-	pointer table
-419cb8	24	.rdata	-	unknown
-419cdc	8	.rdata	-	pointer table
-419ce4	24	.rdata	-	unknown
-419d08	8	.rdata	-	pointer table
-419d10	24	.rdata	-	unknown
-419d34	10	.rdata	-	pointer table
-419d44	24	.rdata	-	unknown
-419d68	24	.rdata	-	int table
-419d8c	8	.rdata	-	pointer table
-419d94	24	.rdata	-	unknown
-419db8	8	.rdata	-	pointer table
-419dc0	24	.rdata	-	unknown
-419de4	8	.rdata	-	pointer table
-419dec	24	.rdata	-	unknown
-419e10	18	.rdata	-	pointer table
-419e28	24	.rdata	-	unknown
-419e4c	10	.rdata	-	pointer table
-419e5c	24	.rdata	-	unknown
-419e80	10	.rdata	-	pointer table
-419e90	24	.rdata	-	unknown
-419eb4	24	.rdata	-	int table
-419ed8	8	.rdata	-	pointer table
-419ee0	24	.rdata	-	unknown
-419f04	8	.rdata	-	pointer table
-419f0c	24	.rdata	-	unknown
-419f30	8	.rdata	-	pointer table
-419f38	24	.rdata	-	unknown
-419f5c	8	.rdata	-	pointer table
-419f64	24	.rdata	-	unknown
-419f88	8	.rdata	-	pointer table
-419f90	24	.rdata	-	unknown
-419fb4	8	.rdata	-	pointer table
-419fbc	24	.rdata	-	unknown
-419fe0	8	.rdata	-	pointer table
-419fe8	24	.rdata	-	unknown
-41a00c	24	.rdata	-	int table
-41a030	4	.rdata	-	string
-41a034	c	.rdata	-	unknown
-41a040	4	.rdata	-	string
-41a044	c	.rdata	-	unknown
-41a050	20	.rdata	-	int table
-41a070	4c	.rdata	-	unknown
-41a0bc	10	.rdata	-	pointer table
-41a0cc	24	.rdata	-	unknown
-41a0f0	8	.rdata	-	pointer table
-41a0f8	24	.rdata	-	unknown
-41a11c	4	.rdata	-	string
-41a120	c	.rdata	-	pointer table
-41a12c	50	.rdata	-	unknown
-41a17c	8	.rdata	-	pointer table
-41a184	24	.rdata	-	unknown
-41a1a8	8	.rdata	-	pointer table
-41a1b0	24	.rdata	-	unknown
-41a1d4	8	.rdata	-	pointer table
-41a1dc	24	.rdata	-	unknown
-41a200	8	.rdata	-	pointer table
-41a208	24	.rdata	-	unknown
-41a22c	4	.rdata	-	string
-41a230	c	.rdata	-	unknown
-41a23c	10	.rdata	-	int table
-41a24c	38	.rdata	-	unknown
-41a284	10	.rdata	-	pointer table
-41a294	24	.rdata	-	unknown
-41a2b8	8	.rdata	-	pointer table
-41a2c0	24	.rdata	-	unknown
-41a2e4	24	.rdata	-	int table
-41a308	8	.rdata	-	pointer table
-41a310	24	.rdata	-	unknown
-41a334	8	.rdata	-	pointer table
-41a33c	c8	.rdata	-	unknown
-41a404	8	.rdata	-	pointer table
-41a40c	24	.rdata	-	unknown
-41a430	8	.rdata	-	pointer table
-41a438	60	.rdata	-	unknown
-41a498	24	.rdata	-	int table
-41a4bc	8	.rdata	-	pointer table
-41a4c4	24	.rdata	-	unknown
-41a4e8	8	.rdata	-	pointer table
-41a4f0	24	.rdata	-	unknown
-41a514	10	.rdata	-	pointer table
-41a524	24	.rdata	-	unknown
-41a548	10	.rdata	-	pointer table
-41a558	24	.rdata	-	unknown
-41a57c	10	.rdata	-	pointer table
-41a58c	48	.rdata	-	unknown
-41a5d4	60	.rdata	-	pointer table
-41a634	24	.rdata	-	unknown
-41a658	10	.rdata	-	pointer table
-41a668	24	.rdata	-	unknown
-41a68c	10	.rdata	-	pointer table
-41a69c	24	.rdata	-	unknown
-41a6c0	10	.rdata	-	pointer table
-41a6d0	24	.rdata	-	unknown
-41a6f4	10	.rdata	-	pointer table
-41a704	24	.rdata	-	unknown
-41a728	8	.rdata	-	pointer table
-41a730	24	.rdata	-	unknown
-41a754	8	.rdata	-	pointer table
-41a75c	24	.rdata	-	unknown
-41a780	10	.rdata	-	pointer table
-41a790	24	.rdata	-	unknown
-41a7b4	8	.rdata	-	pointer table
-41a7bc	24	.rdata	-	unknown
-41a7e0	10	.rdata	-	pointer table
-41a7f0	24	.rdata	-	unknown
-41a814	10	.rdata	-	pointer table
-41a824	24	.rdata	-	unknown
-41a848	10	.rdata	-	pointer table
-41a858	24	.rdata	-	unknown
-41a87c	10	.rdata	-	pointer table
-41a88c	24	.rdata	-	unknown
-41a8b0	48	.rdata	-	int table
-41a8f8	8	.rdata	-	pointer table
-41a900	24	.rdata	-	unknown
-41a924	8	.rdata	-	pointer table
-41a92c	24	.rdata	-	unknown
-41a950	8	.rdata	-	pointer table
-41a958	24	.rdata	-	unknown
-41a97c	8	.rdata	-	pointer table
-41a984	24	.rdata	-	unknown
-41a9a8	8	.rdata	-	pointer table
-41a9b0	24	.rdata	-	unknown
-41a9d4	8	.rdata	-	pointer table
-41a9dc	24	.rdata	-	unknown
-41aa00	8	.rdata	-	pointer table
-41aa08	24	.rdata	-	unknown
-41aa2c	10	.rdata	-	pointer table
-41aa3c	24	.rdata	-	unknown
-41aa60	8	.rdata	-	pointer table
-41aa68	24	.rdata	-	unknown
-41aa8c	8	.rdata	-	pointer table
-41aa94	24	.rdata	-	unknown
-41aab8	8	.rdata	-	pointer table
-41aac0	24	.rdata	-	unknown
-41aae4	8	.rdata	-	pointer table
-41aaec	24	.rdata	-	unknown
-41ab10	8	.rdata	-	pointer table
-41ab18	24	.rdata	-	unknown
-41ab3c	10	.rdata	-	pointer table
-41ab4c	24	.rdata	-	unknown
-41ab70	8	.rdata	-	pointer table
-41ab78	24	.rdata	-	unknown
-41ab9c	10	.rdata	-	pointer table
-41abac	24	.rdata	-	unknown
-41abd0	10	.rdata	-	pointer table
-41abe0	24	.rdata	-	unknown
-41ac04	10	.rdata	-	pointer table
-41ac14	24	.rdata	-	unknown
-41ac38	8	.rdata	-	pointer table
-41ac40	24	.rdata	-	unknown
-41ac64	8	.rdata	-	pointer table
-41ac6c	24	.rdata	-	unknown
-41ac90	8	.rdata	-	pointer table
-41ac98	24	.rdata	-	unknown
-41acbc	10	.rdata	-	pointer table
-41accc	24	.rdata	-	unknown
-41acf0	8	.rdata	-	pointer table
-41acf8	48	.rdata	-	unknown
-41ad40	a8	.rdata	-	pointer table
-41ade8	24	.rdata	-	unknown
-41ae0c	8	.rdata	-	pointer table
-41ae14	24	.rdata	-	unknown
-41ae38	10	.rdata	-	pointer table
-41ae48	24	.rdata	-	unknown
-41ae6c	8	.rdata	-	pointer table
-41ae74	24	.rdata	-	unknown
-41ae98	8	.rdata	-	pointer table
-41aea0	24	.rdata	-	unknown
-41aec4	8	.rdata	-	pointer table
-41aecc	24	.rdata	-	unknown
-41aef0	8	.rdata	-	pointer table
-41aef8	24	.rdata	-	unknown
-41af1c	8	.rdata	-	pointer table
-41af24	24	.rdata	-	unknown
-41af48	8	.rdata	-	pointer table
-41af50	24	.rdata	-	unknown
-41af74	8	.rdata	-	pointer table
-41af7c	24	.rdata	-	unknown
-41afa0	8	.rdata	-	pointer table
-41afa8	48	.rdata	-	unknown
-41aff0	a0	.rdata	-	pointer table
-41b090	24	.rdata	-	unknown
-41b0b4	10	.rdata	-	pointer table
-41b0c4	24	.rdata	-	unknown
-41b0e8	8	.rdata	-	pointer table
-41b0f0	24	.rdata	-	unknown
-41b114	8	.rdata	-	pointer table
-41b11c	24	.rdata	-	unknown
-41b140	8	.rdata	-	pointer table
-41b148	24	.rdata	-	unknown
-41b16c	8	.rdata	-	pointer table
-41b174	24	.rdata	-	unknown
-41b198	10	.rdata	-	pointer table
-41b1a8	24	.rdata	-	unknown
-41b1cc	8	.rdata	-	pointer table
-41b1d4	24	.rdata	-	unknown
-41b1f8	8	.rdata	-	pointer table
-41b200	24	.rdata	-	unknown
-41b224	8	.rdata	-	pointer table
-41b22c	24	.rdata	-	unknown
-41b250	8	.rdata	-	pointer table
-41b258	24	.rdata	-	unknown
-41b27c	10	.rdata	-	pointer table
-41b28c	24	.rdata	-	unknown
-41b2b0	8	.rdata	-	pointer table
-41b2b8	24	.rdata	-	unknown
-41b2dc	8	.rdata	-	pointer table
-41b2e4	24	.rdata	-	unknown
-41b308	8	.rdata	-	pointer table
-41b310	24	.rdata	-	unknown
-41b334	8	.rdata	-	pointer table
-41b33c	24	.rdata	-	unknown
-41b360	8	.rdata	-	pointer table
-41b368	24	.rdata	-	unknown
-41b38c	10	.rdata	-	pointer table
-41b39c	24	.rdata	-	unknown
-41b3c0	8	.rdata	-	pointer table
-41b3c8	24	.rdata	-	unknown
-41b3ec	8	.rdata	-	pointer table
-41b3f4	24	.rdata	-	unknown
-41b418	10	.rdata	-	pointer table
-41b428	24	.rdata	-	unknown
-41b44c	8	.rdata	-	pointer table
-41b454	24	.rdata	-	unknown
-41b478	8	.rdata	-	pointer table
-41b480	24	.rdata	-	unknown
-41b4a4	10	.rdata	-	pointer table
-41b4b4	24	.rdata	-	unknown
-41b4d8	10	.rdata	-	pointer table
-41b4e8	24	.rdata	-	unknown
-41b50c	24	.rdata	-	int table
-41b530	8	.rdata	-	pointer table
-41b538	24	.rdata	-	unknown
-41b55c	10	.rdata	-	pointer table
-41b56c	24	.rdata	-	unknown
-41b590	10	.rdata	-	pointer table
-41b5a0	24	.rdata	-	unknown
-41b5c4	24	.rdata	-	int table
-41b5e8	8	.rdata	-	pointer table
-41b5f0	24	.rdata	-	unknown
-41b614	8	.rdata	-	pointer table
-41b61c	24	.rdata	-	unknown
-41b640	24	.rdata	-	int table
-41b664	8	.rdata	-	pointer table
-41b66c	24	.rdata	-	unknown
-41b690	10	.rdata	-	pointer table
-41b6a0	24	.rdata	-	unknown
-41b6c4	8	.rdata	-	pointer table
-41b6cc	24	.rdata	-	unknown
-41b6f0	8	.rdata	-	pointer table
-41b6f8	24	.rdata	-	unknown
-41b71c	8	.rdata	-	pointer table
-41b724	24	.rdata	-	unknown
-41b748	8	.rdata	-	pointer table
-41b750	24	.rdata	-	unknown
-41b774	8	.rdata	-	pointer table
-41b77c	24	.rdata	-	unknown
-41b7a0	24	.rdata	-	int table
-41b7c4	18	.rdata	-	pointer table
-41b7dc	24	.rdata	-	unknown
-41b800	8	.rdata	-	pointer table
-41b808	24	.rdata	-	unknown
-41b82c	10	.rdata	-	pointer table
-41b83c	24	.rdata	-	unknown
-41b860	8	.rdata	-	pointer table
-41b868	24	.rdata	-	unknown
-41b88c	10	.rdata	-	pointer table
-41b89c	24	.rdata	-	unknown
-41b8c0	8	.rdata	-	pointer table
-41b8c8	24	.rdata	-	unknown
-41b8ec	8	.rdata	-	pointer table
-41b8f4	24	.rdata	-	unknown
-41b918	10	.rdata	-	pointer table
-41b928	24	.rdata	-	unknown
-41b94c	8	.rdata	-	pointer table
-41b954	24	.rdata	-	unknown
-41b978	24	.rdata	-	int table
-41b99c	8	.rdata	-	pointer table
-41b9a4	24	.rdata	-	unknown
-41b9c8	8	.rdata	-	pointer table
-41b9d0	24	.rdata	-	unknown
-41b9f4	8	.rdata	-	pointer table
-41b9fc	24	.rdata	-	unknown
-41ba20	8	.rdata	-	pointer table
-41ba28	48	.rdata	-	unknown
-41ba70	30	.rdata	-	pointer table
-41baa0	24	.rdata	-	unknown
-41bac4	8	.rdata	-	pointer table
-41bacc	24	.rdata	-	unknown
-41baf0	10	.rdata	-	pointer table
-41bb00	24	.rdata	-	unknown
-41bb24	8	.rdata	-	pointer table
-41bb2c	24	.rdata	-	unknown
-41bb50	10	.rdata	-	pointer table
-41bb60	24	.rdata	-	unknown
-41bb84	10	.rdata	-	pointer table
-41bb94	24	.rdata	-	unknown
-41bbb8	10	.rdata	-	pointer table
-41bbc8	24	.rdata	-	unknown
-41bbec	10	.rdata	-	pointer table
-41bbfc	24	.rdata	-	unknown
-41bc20	10	.rdata	-	pointer table
-41bc30	24	.rdata	-	unknown
-41bc54	10	.rdata	-	pointer table
-41bc64	24	.rdata	-	unknown
-41bc88	10	.rdata	-	pointer table
-41bc98	24	.rdata	-	unknown
-41bcbc	10	.rdata	-	pointer table
-41bccc	24	.rdata	-	unknown
-41bcf0	8	.rdata	-	pointer table
-41bcf8	24	.rdata	-	unknown
-41bd1c	8	.rdata	-	pointer table
-41bd24	24	.rdata	-	unknown
-41bd48	10	.rdata	-	pointer table
-41bd58	24	.rdata	-	unknown
-41bd7c	18	.rdata	-	pointer table
-41bd94	24	.rdata	-	unknown
-41bdb8	10	.rdata	-	pointer table
-41bdc8	24	.rdata	-	unknown
-41bdec	18	.rdata	-	pointer table
-41be04	24	.rdata	-	unknown
-41be28	8	.rdata	-	pointer table
-41be30	24	.rdata	-	unknown
-41be54	10	.rdata	-	pointer table
-41be64	24	.rdata	-	unknown
-41be88	18	.rdata	-	pointer table
-41bea0	24	.rdata	-	unknown
-41bec4	8	.rdata	-	pointer table
-41becc	48	.rdata	-	unknown
-41bf14	50	.rdata	-	pointer table
-41bf64	24	.rdata	-	unknown
-41bf88	48	.rdata	-	pointer table
-41bfd0	24	.rdata	-	unknown
-41bff4	10	.rdata	-	pointer table
-41c004	24	.rdata	-	unknown
-41c028	10	.rdata	-	pointer table
-41c038	24	.rdata	-	unknown
-41c05c	20	.rdata	-	pointer table
-41c07c	24	.rdata	-	unknown
-41c0a0	10	.rdata	-	pointer table
-41c0b0	24	.rdata	-	unknown
-41c0d4	10	.rdata	-	pointer table
-41c0e4	24	.rdata	-	unknown
-41c108	10	.rdata	-	pointer table
-41c118	48	.rdata	-	unknown
-41c160	58	.rdata	-	pointer table
-41c1b8	24	.rdata	-	unknown
-41c1dc	10	.rdata	-	pointer table
-41c1ec	48	.rdata	-	unknown
-41c234	60	.rdata	-	pointer table
-41c294	48	.rdata	-	unknown
-41c2dc	48	.rdata	-	pointer table
-41c324	24	.rdata	-	int table
-41c348	24	.rdata	-	unknown
-41c36c	108	.rdata	-	pointer table
-41c474	24	.rdata	-	unknown
-41c498	24	.rdata	-	int table
-41c4bc	24	.rdata	-	unknown
-41c4e0	40	.rdata	-	pointer table
-41c520	24	.rdata	-	unknown
-41c544	10	.rdata	-	pointer table
-41c554	24	.rdata	-	unknown
-41c578	10	.rdata	-	pointer table
-41c588	24	.rdata	-	unknown
-41c5ac	8	.rdata	-	pointer table
-41c5b4	24	.rdata	-	unknown
-41c5d8	8	.rdata	-	pointer table
-41c5e0	24	.rdata	-	unknown
-41c604	8	.rdata	-	pointer table
-41c60c	24	.rdata	-	unknown
-41c630	8	.rdata	-	pointer table
-41c638	24	.rdata	-	unknown
-41c65c	8	.rdata	-	pointer table
-41c664	24	.rdata	-	unknown
-41c688	8	.rdata	-	pointer table
-41c690	24	.rdata	-	unknown
-41c6b4	20	.rdata	-	pointer table
-41c6d4	24	.rdata	-	unknown
-41c6f8	8	.rdata	-	pointer table
-41c700	24	.rdata	-	unknown
-41c724	8	.rdata	-	pointer table
-41c72c	24	.rdata	-	unknown
-41c750	8	.rdata	-	pointer table
-41c758	24	.rdata	-	unknown
-41c77c	8	.rdata	-	pointer table
-41c784	24	.rdata	-	unknown
-41c7a8	8	.rdata	-	pointer table
-41c7b0	24	.rdata	-	unknown
-41c7d4	8	.rdata	-	pointer table
-41c7dc	48	.rdata	-	unknown
-41c824	40	.rdata	-	pointer table
-41c864	24	.rdata	-	unknown
-41c888	18	.rdata	-	pointer table
-41c8a0	48	.rdata	-	unknown
-41c8e8	38	.rdata	-	pointer table
-41c920	24	.rdata	-	unknown
-41c944	40	.rdata	-	pointer table
-41c984	24	.rdata	-	unknown
-41c9a8	8	.rdata	-	pointer table
-41c9b0	24	.rdata	-	unknown
-41c9d4	10	.rdata	-	pointer table
-41c9e4	48	.rdata	-	unknown
-41ca2c	48	.rdata	-	pointer table
-41ca74	24	.rdata	-	unknown
-41ca98	10	.rdata	-	pointer table
-41caa8	24	.rdata	-	unknown
-41cacc	10	.rdata	-	pointer table
-41cadc	24	.rdata	-	unknown
-41cb00	10	.rdata	-	pointer table
-41cb10	24	.rdata	-	unknown
-41cb34	10	.rdata	-	pointer table
-41cb44	24	.rdata	-	unknown
-41cb68	8	.rdata	-	pointer table
-41cb70	24	.rdata	-	unknown
-41cb94	10	.rdata	-	pointer table
-41cba4	24	.rdata	-	unknown
-41cbc8	10	.rdata	-	pointer table
-41cbd8	24	.rdata	-	unknown
-41cbfc	10	.rdata	-	pointer table
-41cc0c	24	.rdata	-	unknown
-41cc30	10	.rdata	-	pointer table
-41cc40	24	.rdata	-	unknown
-41cc64	10	.rdata	-	pointer table
-41cc74	24	.rdata	-	unknown
-41cc98	8	.rdata	-	pointer table
-41cca0	24	.rdata	-	unknown
-41ccc4	10	.rdata	-	pointer table
-41ccd4	24	.rdata	-	unknown
-41ccf8	18	.rdata	-	pointer table
-41cd10	24	.rdata	-	unknown
-41cd34	10	.rdata	-	pointer table
-41cd44	24	.rdata	-	unknown
-41cd68	10	.rdata	-	pointer table
-41cd78	24	.rdata	-	unknown
-41cd9c	10	.rdata	-	pointer table
-41cdac	24	.rdata	-	unknown
-41cdd0	8	.rdata	-	pointer table
-41cdd8	24	.rdata	-	unknown
-41cdfc	10	.rdata	-	pointer table
-41ce0c	24	.rdata	-	unknown
-41ce30	10	.rdata	-	pointer table
-41ce40	24	.rdata	-	unknown
-41ce64	20	.rdata	-	pointer table
-41ce84	24	.rdata	-	unknown
-41cea8	18	.rdata	-	pointer table
-41cec0	24	.rdata	-	unknown
-41cee4	18	.rdata	-	pointer table
-41cefc	24	.rdata	-	unknown
-41cf20	10	.rdata	-	pointer table
-41cf30	24	.rdata	-	unknown
-41cf54	24	.rdata	-	int table
-41cf78	8	.rdata	-	pointer table
-41cf80	24	.rdata	-	unknown
-41cfa4	8	.rdata	-	pointer table
-41cfac	24	.rdata	-	unknown
-41cfd0	8	.rdata	-	pointer table
-41cfd8	24	.rdata	-	unknown
-41cffc	10	.rdata	-	pointer table
-41d00c	24	.rdata	-	unknown
-41d030	8	.rdata	-	pointer table
-41d038	24	.rdata	-	unknown
-41d05c	24	.rdata	-	int table
-41d080	8	.rdata	-	pointer table
-41d088	24	.rdata	-	unknown
-41d0ac	8	.rdata	-	pointer table
-41d0b4	24	.rdata	-	unknown
-41d0d8	48	.rdata	-	int table
-41d120	8	.rdata	-	pointer table
-41d128	24	.rdata	-	unknown
-41d14c	8	.rdata	-	pointer table
-41d154	24	.rdata	-	unknown
-41d178	8	.rdata	-	pointer table
-41d180	24	.rdata	-	unknown
-41d1a4	8	.rdata	-	pointer table
-41d1ac	24	.rdata	-	unknown
-41d1d0	8	.rdata	-	pointer table
-41d1d8	24	.rdata	-	unknown
-41d1fc	8	.rdata	-	pointer table
-41d204	24	.rdata	-	unknown
-41d228	10	.rdata	-	pointer table
-41d238	24	.rdata	-	unknown
-41d25c	10	.rdata	-	pointer table
-41d26c	24	.rdata	-	unknown
-41d290	10	.rdata	-	pointer table
-41d2a0	24	.rdata	-	unknown
-41d2c4	10	.rdata	-	pointer table
-41d2d4	24	.rdata	-	unknown
-41d2f8	10	.rdata	-	pointer table
-41d308	24	.rdata	-	unknown
-41d32c	8	.rdata	-	pointer table
-41d334	24	.rdata	-	unknown
-41d358	8	.rdata	-	pointer table
-41d360	24	.rdata	-	unknown
-41d384	8	.rdata	-	pointer table
-41d38c	24	.rdata	-	unknown
-41d3b0	10	.rdata	-	pointer table
-41d3c0	24	.rdata	-	unknown
-41d3e4	8	.rdata	-	pointer table
-41d3ec	24	.rdata	-	unknown
-41d410	8	.rdata	-	pointer table
-41d418	24	.rdata	-	unknown
-41d43c	8	.rdata	-	pointer table
-41d444	24	.rdata	-	unknown
-41d468	10	.rdata	-	pointer table
-41d478	24	.rdata	-	unknown
-41d49c	8	.rdata	-	pointer table
-41d4a4	24	.rdata	-	unknown
-41d4c8	8	.rdata	-	pointer table
-41d4d0	24	.rdata	-	unknown
-41d4f4	8	.rdata	-	pointer table
-41d4fc	24	.rdata	-	unknown
-41d520	8	.rdata	-	pointer table
-41d528	24	.rdata	-	unknown
-41d54c	10	.rdata	-	pointer table
-41d55c	24	.rdata	-	unknown
-41d580	24	.rdata	-	int table
-41d5a4	8	.rdata	-	pointer table
-41d5ac	24	.rdata	-	unknown
-41d5d0	8	.rdata	-	pointer table
-41d5d8	24	.rdata	-	unknown
-41d5fc	24	.rdata	-	int table
-41d620	8	.rdata	-	pointer table
-41d628	24	.rdata	-	unknown
-41d64c	8	.rdata	-	pointer table
-41d654	24	.rdata	-	unknown
-41d678	8	.rdata	-	pointer table
-41d680	24	.rdata	-	unknown
-41d6a4	8	.rdata	-	pointer table
-41d6ac	24	.rdata	-	unknown
-41d6d0	10	.rdata	-	pointer table
-41d6e0	48	.rdata	-	unknown
-41d728	48	.rdata	-	pointer table
-41d770	24	.rdata	-	unknown
-41d794	8	.rdata	-	pointer table
-41d79c	24	.rdata	-	unknown
-41d7c0	10	.rdata	-	pointer table
-41d7d0	24	.rdata	-	unknown
-41d7f4	48	.rdata	-	int table
-41d83c	8	.rdata	-	pointer table
-41d844	24	.rdata	-	unknown
-41d868	8	.rdata	-	pointer table
-41d870	24	.rdata	-	unknown
-41d894	8	.rdata	-	pointer table
-41d89c	24	.rdata	-	unknown
-41d8c0	8	.rdata	-	pointer table
-41d8c8	24	.rdata	-	unknown
-41d8ec	10	.rdata	-	pointer table
-41d8fc	24	.rdata	-	unknown
-41d920	10	.rdata	-	pointer table
-41d930	24	.rdata	-	unknown
-41d954	24	.rdata	-	int table
-41d978	8	.rdata	-	pointer table
-41d980	24	.rdata	-	unknown
-41d9a4	8	.rdata	-	pointer table
-41d9ac	24	.rdata	-	unknown
-41d9d0	8	.rdata	-	pointer table
-41d9d8	24	.rdata	-	unknown
-41d9fc	8	.rdata	-	pointer table
-41da04	24	.rdata	-	unknown
-41da28	24	.rdata	-	int table
-41da4c	8	.rdata	-	pointer table
-41da54	24	.rdata	-	unknown
-41da78	8	.rdata	-	pointer table
-41da80	24	.rdata	-	unknown
-41daa4	24	.rdata	-	int table
-41dac8	10	.rdata	-	pointer table
-41dad8	24	.rdata	-	unknown
-41dafc	10	.rdata	-	pointer table
-41db0c	24	.rdata	-	unknown
-41db30	8	.rdata	-	pointer table
-41db38	24	.rdata	-	unknown
-41db5c	10	.rdata	-	pointer table
-41db6c	24	.rdata	-	unknown
-41db90	8	.rdata	-	pointer table
-41db98	24	.rdata	-	unknown
-41dbbc	8	.rdata	-	pointer table
-41dbc4	24	.rdata	-	unknown
-41dbe8	8	.rdata	-	pointer table
-41dbf0	24	.rdata	-	unknown
-41dc14	24	.rdata	-	int table
-41dc38	8	.rdata	-	pointer table
-41dc40	24	.rdata	-	unknown
-41dc64	10	.rdata	-	pointer table
-41dc74	24	.rdata	-	unknown
-41dc98	8	.rdata	-	pointer table
-41dca0	24	.rdata	-	unknown
-41dcc4	8	.rdata	-	pointer table
-41dccc	24	.rdata	-	unknown
-41dcf0	24	.rdata	-	int table
-41dd14	8	.rdata	-	pointer table
-41dd1c	24	.rdata	-	unknown
-41dd40	10	.rdata	-	string
-41dd50	24	.rdata	-	unknown
-41dd74	8	.rdata	-	pointer table
-41dd7c	24	.rdata	-	unknown
-41dda0	8	.rdata	-	pointer table
-41dda8	24	.rdata	-	unknown
-41ddcc	10	.rdata	-	pointer table
-41dddc	24	.rdata	-	unknown
-41de00	20	.rdata	-	pointer table
-41de20	24	.rdata	-	unknown
-41de44	8	.rdata	-	pointer table
-41de4c	24	.rdata	-	unknown
-41de70	8	.rdata	-	pointer table
-41de78	24	.rdata	-	unknown
-41de9c	10	.rdata	-	pointer table
-41deac	24	.rdata	-	unknown
-41ded0	24	.rdata	-	int table
-41def4	8	.rdata	-	pointer table
-41defc	24	.rdata	-	unknown
-41df20	20	.rdata	-	pointer table
-41df40	24	.rdata	-	unknown
-41df64	24	.rdata	-	int table
-41df88	8	.rdata	-	pointer table
-41df90	24	.rdata	-	unknown
-41dfb4	8	.rdata	-	pointer table
-41dfbc	24	.rdata	-	unknown
-41dfe0	18	.rdata	-	pointer table
-41dff8	24	.rdata	-	unknown
-41e01c	24	.rdata	-	int table
-41e040	8	.rdata	-	pointer table
-41e048	24	.rdata	-	unknown
-41e06c	10	.rdata	-	pointer table
-41e07c	24	.rdata	-	unknown
-41e0a0	24	.rdata	-	int table
-41e0c4	8	.rdata	-	pointer table
-41e0cc	24	.rdata	-	unknown
-41e0f0	10	.rdata	-	pointer table
-41e100	24	.rdata	-	unknown
-41e124	10	.rdata	-	pointer table
-41e134	24	.rdata	-	unknown
-41e158	10	.rdata	-	pointer table
-41e168	24	.rdata	-	unknown
-41e18c	10	.rdata	-	pointer table
-41e19c	24	.rdata	-	unknown
-41e1c0	10	.rdata	-	pointer table
-41e1d0	24	.rdata	-	unknown
-41e1f4	10	.rdata	-	pointer table
-41e204	24	.rdata	-	unknown
-41e228	10	.rdata	-	pointer table
-41e238	24	.rdata	-	unknown
-41e25c	10	.rdata	-	pointer table
-41e26c	24	.rdata	-	unknown
-41e290	10	.rdata	-	pointer table
-41e2a0	24	.rdata	-	unknown
-41e2c4	10	.rdata	-	pointer table
-41e2d4	24	.rdata	-	unknown
-41e2f8	10	.rdata	-	pointer table
-41e308	24	.rdata	-	unknown
-41e32c	10	.rdata	-	pointer table
-41e33c	24	.rdata	-	unknown
-41e360	20	.rdata	-	pointer table
-41e380	24	.rdata	-	unknown
-41e3a4	24	.rdata	-	int table
-41e3c8	8	.rdata	-	pointer table
-41e3d0	24	.rdata	-	unknown
-41e3f4	8	.rdata	-	pointer table
-41e3fc	24	.rdata	-	unknown
-41e420	8	.rdata	-	pointer table
-41e428	24	.rdata	-	unknown
-41e44c	10	.rdata	-	pointer table
-41e45c	24	.rdata	-	unknown
-41e480	24	.rdata	-	int table
-41e4a4	8	.rdata	-	pointer table
-41e4ac	24	.rdata	-	unknown
-41e4d0	20	.rdata	-	pointer table
-41e4f0	24	.rdata	-	unknown
-41e514	24	.rdata	-	int table
-41e538	8	.rdata	-	pointer table
-41e540	24	.rdata	-	unknown
-41e564	10	.rdata	-	pointer table
-41e574	24	.rdata	-	unknown
-41e598	24	.rdata	-	int table
-41e5bc	8	.rdata	-	pointer table
-41e5c4	24	.rdata	-	unknown
-41e5e8	10	.rdata	-	pointer table
-41e5f8	24	.rdata	-	unknown
-41e61c	24	.rdata	-	int table
-41e640	8	.rdata	-	pointer table
-41e648	24	.rdata	-	unknown
-41e66c	10	.rdata	-	pointer table
-41e67c	48	.rdata	-	unknown
-41e6c4	30	.rdata	-	pointer table
-41e6f4	24	.rdata	-	unknown
-41e718	10	.rdata	-	pointer table
-41e728	24	.rdata	-	unknown
-41e74c	24	.rdata	-	int table
-41e770	8	.rdata	-	pointer table
-41e778	24	.rdata	-	unknown
-41e79c	10	.rdata	-	pointer table
-41e7ac	24	.rdata	-	unknown
-41e7d0	24	.rdata	-	int table
-41e7f4	8	.rdata	-	pointer table
-41e7fc	24	.rdata	-	unknown
-41e820	10	.rdata	-	pointer table
-41e830	24	.rdata	-	unknown
-41e854	24	.rdata	-	int table
-41e878	8	.rdata	-	pointer table
-41e880	24	.rdata	-	unknown
-41e8a4	10	.rdata	-	pointer table
-41e8b4	24	.rdata	-	unknown
-41e8d8	24	.rdata	-	int table
-41e8fc	8	.rdata	-	pointer table
-41e904	48	.rdata	-	unknown
-41e94c	30	.rdata	-	pointer table
-41e97c	24	.rdata	-	int table
-41e9a0	10	.rdata	-	pointer table
-41e9b0	24	.rdata	-	unknown
-41e9d4	24	.rdata	-	int table
-41e9f8	8	.rdata	-	pointer table
-41ea00	24	.rdata	-	unknown
-41ea24	18	.rdata	-	pointer table
-41ea3c	24	.rdata	-	unknown
-41ea60	10	.rdata	-	pointer table
-41ea70	24	.rdata	-	unknown
-41ea94	8	.rdata	-	pointer table
-41ea9c	24	.rdata	-	unknown
-41eac0	10	.rdata	-	pointer table
-41ead0	24	.rdata	-	unknown
-41eaf4	10	.rdata	-	pointer table
-41eb04	24	.rdata	-	unknown
-41eb28	18	.rdata	-	pointer table
-41eb40	24	.rdata	-	unknown
-41eb64	18	.rdata	-	pointer table
-41eb7c	24	.rdata	-	unknown
-41eba0	24	.rdata	-	int table
-41ebc4	8	.rdata	-	pointer table
-41ebcc	24	.rdata	-	unknown
-41ebf0	10	.rdata	-	pointer table
-41ec00	24	.rdata	-	unknown
-41ec24	8	.rdata	-	pointer table
-41ec2c	24	.rdata	-	unknown
-41ec50	10	.rdata	-	pointer table
-41ec60	24	.rdata	-	unknown
-41ec84	24	.rdata	-	int table
-41eca8	8	.rdata	-	pointer table
-41ecb0	24	.rdata	-	unknown
-41ecd4	24	.rdata	-	int table
-41ecf8	8	.rdata	-	pointer table
-41ed00	24	.rdata	-	unknown
-41ed24	10	.rdata	-	pointer table
-41ed34	24	.rdata	-	unknown
-41ed58	10	.rdata	-	pointer table
-41ed68	24	.rdata	-	unknown
-41ed8c	10	.rdata	-	pointer table
-41ed9c	24	.rdata	-	unknown
-41edc0	24	.rdata	-	int table
-41ede4	8	.rdata	-	pointer table
-41edec	24	.rdata	-	unknown
-41ee10	20	.rdata	-	pointer table
-41ee30	24	.rdata	-	unknown
-41ee54	24	.rdata	-	int table
-41ee78	8	.rdata	-	pointer table
-41ee80	48	.rdata	-	unknown
-41eec8	48	.rdata	-	pointer table
-41ef10	24	.rdata	-	unknown
-41ef34	24	.rdata	-	int table
-41ef58	8	.rdata	-	pointer table
-41ef60	24	.rdata	-	unknown
-41ef84	18	.rdata	-	pointer table
-41ef9c	24	.rdata	-	unknown
-41efc0	10	.rdata	-	pointer table
-41efd0	24	.rdata	-	unknown
-41eff4	24	.rdata	-	int table
-41f018	8	.rdata	-	pointer table
-41f020	48	.rdata	-	unknown
-41f068	28	.rdata	-	pointer table
-41f090	24	.rdata	-	int table
-41f0b4	24	.rdata	-	unknown
-41f0d8	50	.rdata	-	pointer table
-41f128	24	.rdata	-	unknown
-41f14c	8	.rdata	-	pointer table
-41f154	24	.rdata	-	unknown
-41f178	8	.rdata	-	pointer table
-41f180	24	.rdata	-	unknown
-41f1a4	8	.rdata	-	pointer table
-41f1ac	24	.rdata	-	unknown
-41f1d0	10	.rdata	-	pointer table
-41f1e0	24	.rdata	-	unknown
-41f204	8	.rdata	-	pointer table
-41f20c	24	.rdata	-	unknown
-41f230	10	.rdata	-	pointer table
-41f240	24	.rdata	-	unknown
-41f264	24	.rdata	-	int table
-41f288	8	.rdata	-	pointer table
-41f290	24	.rdata	-	unknown
-41f2b4	8	.rdata	-	pointer table
-41f2bc	24	.rdata	-	unknown
-41f2e0	10	.rdata	-	pointer table
-41f2f0	24	.rdata	-	unknown
-41f314	10	.rdata	-	pointer table
-41f324	24	.rdata	-	unknown
-41f348	10	.rdata	-	pointer table
-41f358	24	.rdata	-	unknown
-41f37c	10	.rdata	-	pointer table
-41f38c	24	.rdata	-	unknown
-41f3b0	10	.rdata	-	pointer table
-41f3c0	24	.rdata	-	unknown
-41f3e4	24	.rdata	-	int table
-41f408	8	.rdata	-	pointer table
-41f410	24	.rdata	-	unknown
-41f434	18	.rdata	-	pointer table
-41f44c	24	.rdata	-	unknown
-41f470	24	.rdata	-	int table
-41f494	8	.rdata	-	pointer table
-41f49c	24	.rdata	-	unknown
-41f4c0	10	.rdata	-	pointer table
-41f4d0	24	.rdata	-	unknown
-41f4f4	8	.rdata	-	pointer table
-41f4fc	24	.rdata	-	unknown
-41f520	18	.rdata	-	pointer table
-41f538	24	.rdata	-	unknown
-41f55c	10	.rdata	-	pointer table
-41f56c	24	.rdata	-	unknown
-41f590	18	.rdata	-	pointer table
-41f5a8	24	.rdata	-	unknown
-41f5cc	24	.rdata	-	int table
-41f5f0	8	.rdata	-	pointer table
-41f5f8	24	.rdata	-	unknown
-41f61c	10	.rdata	-	pointer table
-41f62c	24	.rdata	-	unknown
-41f650	10	.rdata	-	pointer table
-41f660	24	.rdata	-	unknown
-41f684	10	.rdata	-	pointer table
-41f694	24	.rdata	-	unknown
-41f6b8	10	.rdata	-	pointer table
-41f6c8	24	.rdata	-	unknown
-41f6ec	10	.rdata	-	pointer table
-41f6fc	24	.rdata	-	unknown
-41f720	10	.rdata	-	pointer table
-41f730	24	.rdata	-	unknown
-41f754	10	.rdata	-	pointer table
-41f764	24	.rdata	-	unknown
-41f788	10	.rdata	-	pointer table
-41f798	24	.rdata	-	unknown
-41f7bc	10	.rdata	-	pointer table
-41f7cc	24	.rdata	-	unknown
-41f7f0	18	.rdata	-	pointer table
-41f808	24	.rdata	-	unknown
-41f82c	10	.rdata	-	pointer table
-41f83c	24	.rdata	-	unknown
-41f860	8	.rdata	-	pointer table
-41f868	24	.rdata	-	unknown
-41f88c	10	.rdata	-	pointer table
-41f89c	24	.rdata	-	unknown
-41f8c0	24	.rdata	-	int table
-41f8e4	8	.rdata	-	pointer table
-41f8ec	24	.rdata	-	unknown
-41f910	8	.rdata	-	pointer table
-41f918	24	.rdata	-	unknown
-41f93c	8	.rdata	-	pointer table
-41f944	24	.rdata	-	unknown
-41f968	8	.rdata	-	pointer table
-41f970	24	.rdata	-	unknown
-41f994	10	.rdata	-	pointer table
-41f9a4	24	.rdata	-	unknown
-41f9c8	24	.rdata	-	int table
-41f9ec	8	.rdata	-	pointer table
-41f9f4	24	.rdata	-	unknown
-41fa18	10	.rdata	-	pointer table
-41fa28	24	.rdata	-	unknown
-41fa4c	24	.rdata	-	int table
-41fa70	8	.rdata	-	pointer table
-41fa78	24	.rdata	-	unknown
-41fa9c	10	.rdata	-	pointer table
-41faac	24	.rdata	-	unknown
-41fad0	24	.rdata	-	int table
-41faf4	8	.rdata	-	pointer table
-41fafc	24	.rdata	-	unknown
-41fb20	10	.rdata	-	pointer table
-41fb30	24	.rdata	-	unknown
-41fb54	10	.rdata	-	pointer table
-41fb64	24	.rdata	-	unknown
-41fb88	10	.rdata	-	pointer table
-41fb98	24	.rdata	-	unknown
-41fbbc	10	.rdata	-	pointer table
-41fbcc	24	.rdata	-	unknown
-41fbf0	10	.rdata	-	pointer table
-41fc00	24	.rdata	-	unknown
-41fc24	10	.rdata	-	pointer table
-41fc34	24	.rdata	-	unknown
-41fc58	8	.rdata	-	pointer table
-41fc60	24	.rdata	-	unknown
-41fc84	10	.rdata	-	pointer table
-41fc94	24	.rdata	-	unknown
-41fcb8	24	.rdata	-	int table
-41fcdc	8	.rdata	-	pointer table
-41fce4	48	.rdata	-	unknown
-41fd2c	50	.rdata	-	pointer table
-41fd7c	24	.rdata	-	unknown
-41fda0	18	.rdata	-	pointer table
-41fdb8	24	.rdata	-	unknown
-41fddc	24	.rdata	-	int table
-41fe00	8	.rdata	-	pointer table
-41fe08	24	.rdata	-	unknown
-41fe2c	10	.rdata	-	pointer table
-41fe3c	24	.rdata	-	unknown
-41fe60	20	.rdata	-	pointer table
-41fe80	24	.rdata	-	unknown
-41fea4	8	.rdata	-	pointer table
-41feac	24	.rdata	-	unknown
-41fed0	10	.rdata	-	pointer table
-41fee0	48	.rdata	-	unknown
-41ff28	200	.rdata	-	pointer table
-420128	24	.rdata	-	unknown
-42014c	8	.rdata	-	pointer table
-420154	24	.rdata	-	unknown
-420178	8	.rdata	-	pointer table
-420180	24	.rdata	-	unknown
-4201a4	24	.rdata	-	int table
-4201c8	8	.rdata	-	pointer table
-4201d0	24	.rdata	-	unknown
-4201f4	8	.rdata	-	pointer table
-4201fc	24	.rdata	-	unknown
-420220	8	.rdata	-	pointer table
-420228	24	.rdata	-	unknown
-42024c	24	.rdata	-	int table
-420270	8	.rdata	-	pointer table
-420278	48	.rdata	-	unknown
-4202c0	58	.rdata	-	pointer table
-420318	24	.rdata	-	unknown
-42033c	10	.rdata	-	pointer table
-42034c	24	.rdata	-	unknown
-420370	24	.rdata	-	int table
-420394	8	.rdata	-	pointer table
-42039c	24	.rdata	-	unknown
-4203c0	8	.rdata	-	pointer table
-4203c8	24	.rdata	-	unknown
-4203ec	24	.rdata	-	int table
-420410	8	.rdata	-	pointer table
-420418	24	.rdata	-	unknown
-42043c	8	.rdata	-	pointer table
-420444	24	.rdata	-	unknown
-420468	8	.rdata	-	pointer table
-420470	24	.rdata	-	unknown
-420494	24	.rdata	-	int table
-4204b8	8	.rdata	-	pointer table
-4204c0	24	.rdata	-	unknown
-4204e4	8	.rdata	-	pointer table
-4204ec	24	.rdata	-	unknown
-420510	8	.rdata	-	pointer table
-420518	24	.rdata	-	unknown
-42053c	8	.rdata	-	pointer table
-420544	24	.rdata	-	unknown
-420568	8	.rdata	-	pointer table
-420570	48	.rdata	-	unknown
-4205b8	60	.rdata	-	pointer table
-420618	24	.rdata	-	unknown
-42063c	40	.rdata	-	pointer table
-42067c	24	.rdata	-	unknown
-4206a0	8	.rdata	-	pointer table
-4206a8	48	.rdata	-	unknown
-4206f0	58	.rdata	-	pointer table
-420748	24	.rdata	-	unknown
-42076c	8	.rdata	-	pointer table
-420774	24	.rdata	-	unknown
-420798	8	.rdata	-	pointer table
-4207a0	24	.rdata	-	unknown
-4207c4	8	.rdata	-	pointer table
-4207cc	24	.rdata	-	unknown
-4207f0	8	.rdata	-	pointer table
-4207f8	24	.rdata	-	unknown
-42081c	8	.rdata	-	pointer table
-420824	24	.rdata	-	unknown
-420848	8	.rdata	-	pointer table
-420850	24	.rdata	-	unknown
-420874	8	.rdata	-	pointer table
-42087c	24	.rdata	-	unknown
-4208a0	8	.rdata	-	pointer table
-4208a8	24	.rdata	-	unknown
-4208cc	8	.rdata	-	pointer table
-4208d4	24	.rdata	-	unknown
-4208f8	8	.rdata	-	pointer table
-420900	24	.rdata	-	unknown
-420924	8	.rdata	-	pointer table
-42092c	24	.rdata	-	unknown
-420950	10	.rdata	-	pointer table
-420960	24	.rdata	-	unknown
-420984	10	.rdata	-	pointer table
-420994	24	.rdata	-	unknown
-4209b8	10	.rdata	-	pointer table
-4209c8	24	.rdata	-	unknown
-4209ec	10	.rdata	-	pointer table
-4209fc	24	.rdata	-	unknown
-420a20	10	.rdata	-	pointer table
-420a30	24	.rdata	-	unknown
-420a54	10	.rdata	-	pointer table
-420a64	24	.rdata	-	unknown
-420a88	10	.rdata	-	pointer table
-420a98	24	.rdata	-	unknown
-420abc	10	.rdata	-	pointer table
-420acc	24	.rdata	-	unknown
-420af0	10	.rdata	-	pointer table
-420b00	24	.rdata	-	unknown
-420b24	10	.rdata	-	pointer table
-420b34	24	.rdata	-	unknown
-420b58	10	.rdata	-	pointer table
-420b68	24	.rdata	-	unknown
-420b8c	8	.rdata	-	pointer table
-420b94	24	.rdata	-	unknown
-420bb8	8	.rdata	-	pointer table
-420bc0	24	.rdata	-	unknown
-420be4	10	.rdata	-	pointer table
-420bf4	24	.rdata	-	unknown
-420c18	24	.rdata	-	int table
-420c3c	8	.rdata	-	pointer table
-420c44	24	.rdata	-	unknown
-420c68	10	.rdata	-	pointer table
-420c78	24	.rdata	-	unknown
-420c9c	10	.rdata	-	pointer table
-420cac	24	.rdata	-	unknown
-420cd0	10	.rdata	-	pointer table
-420ce0	24	.rdata	-	unknown
-420d04	8	.rdata	-	pointer table
-420d0c	24	.rdata	-	unknown
-420d30	10	.rdata	-	pointer table
-420d40	24	.rdata	-	unknown
-420d64	10	.rdata	-	pointer table
-420d74	24	.rdata	-	unknown
-420d98	10	.rdata	-	pointer table
-420da8	24	.rdata	-	unknown
-420dcc	8	.rdata	-	pointer table
-420dd4	24	.rdata	-	unknown
-420df8	8	.rdata	-	pointer table
-420e00	24	.rdata	-	unknown
-420e24	10	.rdata	-	pointer table
-420e34	24	.rdata	-	unknown
-420e58	10	.rdata	-	pointer table
-420e68	24	.rdata	-	unknown
-420e8c	8	.rdata	-	pointer table
-420e94	24	.rdata	-	unknown
-420eb8	24	.rdata	-	int table
-420edc	18	.rdata	-	pointer table
-420ef4	24	.rdata	-	unknown
-420f18	8	.rdata	-	pointer table
-420f20	24	.rdata	-	unknown
-420f44	8	.rdata	-	pointer table
-420f4c	24	.rdata	-	unknown
-420f70	8	.rdata	-	pointer table
-420f78	24	.rdata	-	unknown
-420f9c	8	.rdata	-	pointer table
-420fa4	24	.rdata	-	unknown
-420fc8	8	.rdata	-	pointer table
-420fd0	24	.rdata	-	unknown
-420ff4	8	.rdata	-	pointer table
-420ffc	24	.rdata	-	unknown
-421020	8	.rdata	-	pointer table
-421028	24	.rdata	-	unknown
-42104c	10	.rdata	-	pointer table
-42105c	24	.rdata	-	unknown
-421080	10	.rdata	-	pointer table
-421090	24	.rdata	-	unknown
-4210b4	10	.rdata	-	pointer table
-4210c4	24	.rdata	-	unknown
-4210e8	18	.rdata	-	pointer table
-421100	24	.rdata	-	unknown
-421124	8	.rdata	-	pointer table
-42112c	24	.rdata	-	unknown
-421150	8	.rdata	-	pointer table
-421158	24	.rdata	-	unknown
-42117c	8	.rdata	-	pointer table
-421184	24	.rdata	-	unknown
-4211a8	8	.rdata	-	pointer table
-4211b0	24	.rdata	-	unknown
-4211d4	8	.rdata	-	pointer table
-4211dc	24	.rdata	-	unknown
-421200	8	.rdata	-	pointer table
-421208	24	.rdata	-	unknown
-42122c	10	.rdata	-	pointer table
-42123c	24	.rdata	-	unknown
-421260	10	.rdata	-	pointer table
-421270	24	.rdata	-	unknown
-421294	18	.rdata	-	pointer table
-4212ac	48	.rdata	-	unknown
-4212f4	48	.rdata	-	pointer table
-42133c	24	.rdata	-	unknown
-421360	24	.rdata	-	int table
-421384	10	.rdata	-	pointer table
-421394	24	.rdata	-	unknown
-4213b8	8	.rdata	-	pointer table
-4213c0	24	.rdata	-	unknown
-4213e4	24	.rdata	-	int table
-421408	8	.rdata	-	pointer table
-421410	24	.rdata	-	unknown
-421434	8	.rdata	-	pointer table
-42143c	24	.rdata	-	unknown
-421460	8	.rdata	-	pointer table
-421468	24	.rdata	-	unknown
-42148c	8	.rdata	-	pointer table
-421494	24	.rdata	-	unknown
-4214b8	8	.rdata	-	pointer table
-4214c0	24	.rdata	-	unknown
-4214e4	8	.rdata	-	pointer table
-4214ec	24	.rdata	-	unknown
-421510	8	.rdata	-	pointer table
-421518	24	.rdata	-	unknown
-42153c	8	.rdata	-	pointer table
-421544	24	.rdata	-	unknown
-421568	8	.rdata	-	pointer table
-421570	24	.rdata	-	unknown
-421594	8	.rdata	-	pointer table
-42159c	24	.rdata	-	unknown
-4215c0	8	.rdata	-	pointer table
-4215c8	24	.rdata	-	unknown
-4215ec	8	.rdata	-	pointer table
-4215f4	24	.rdata	-	unknown
-421618	8	.rdata	-	pointer table
-421620	24	.rdata	-	unknown
-421644	8	.rdata	-	pointer table
-42164c	24	.rdata	-	unknown
-421670	8	.rdata	-	pointer table
-421678	24	.rdata	-	unknown
-42169c	8	.rdata	-	pointer table
-4216a4	24	.rdata	-	unknown
-4216c8	8	.rdata	-	pointer table
-4216d0	24	.rdata	-	unknown
-4216f4	24	.rdata	-	int table
-421718	8	.rdata	-	pointer table
-421720	24	.rdata	-	unknown
-421744	8	.rdata	-	pointer table
-42174c	24	.rdata	-	unknown
-421770	8	.rdata	-	string
-421778	24	.rdata	-	unknown
-42179c	10	.rdata	-	pointer table
-4217ac	24	.rdata	-	unknown
-4217d0	10	.rdata	-	pointer table
-4217e0	24	.rdata	-	unknown
-421804	8	.rdata	-	pointer table
-42180c	24	.rdata	-	unknown
-421830	8	.rdata	-	pointer table
-421838	24	.rdata	-	unknown
-42185c	48	.rdata	-	int table
-4218a4	8	.rdata	-	pointer table
-4218ac	24	.rdata	-	unknown
-4218d0	10	.rdata	-	pointer table
-4218e0	24	.rdata	-	unknown
-421904	18	.rdata	-	pointer table
-42191c	24	.rdata	-	unknown
-421940	10	.rdata	-	pointer table
-421950	58	.rdata	-	unknown
-4219a8	10	.rdata	-	pointer table
-4219b8	24	.rdata	-	unknown
-4219dc	24	.rdata	-	int table
-421a00	8	.rdata	-	pointer table
-421a08	24	.rdata	-	unknown
-421a2c	20	.rdata	-	pointer table
-421a4c	24	.rdata	-	unknown
-421a70	18	.rdata	-	pointer table
-421a88	58	.rdata	-	unknown
-421ae0	8	.rdata	-	pointer table
-421ae8	24	.rdata	-	unknown
-421b0c	10	.rdata	-	pointer table
-421b1c	24	.rdata	-	unknown
-421b40	8	.rdata	-	pointer table
-421b48	24	.rdata	-	unknown
-421b6c	8	.rdata	-	pointer table
-421b74	24	.rdata	-	unknown
-421b98	24	.rdata	-	int table
-421bbc	8	.rdata	-	pointer table
-421bc4	24	.rdata	-	unknown
-421be8	10	.rdata	-	pointer table
-421bf8	24	.rdata	-	unknown
-421c1c	10	.rdata	-	pointer table
-421c2c	24	.rdata	-	unknown
-421c50	8	.rdata	-	pointer table
-421c58	24	.rdata	-	unknown
-421c7c	10	.rdata	-	pointer table
-421c8c	24	.rdata	-	unknown
-421cb0	8	.rdata	-	pointer table
-421cb8	24	.rdata	-	unknown
-421cdc	10	.rdata	-	pointer table
-421cec	24	.rdata	-	unknown
-421d10	24	.rdata	-	int table
-421d34	10	.rdata	-	pointer table
-421d44	24	.rdata	-	unknown
-421d68	10	.rdata	-	pointer table
-421d78	48	.rdata	-	unknown
-421dc0	40	.rdata	-	pointer table
-421e00	24	.rdata	-	unknown
-421e24	20	.rdata	-	pointer table
-421e44	24	.rdata	-	unknown
-421e68	10	.rdata	-	pointer table
-421e78	24	.rdata	-	unknown
-421e9c	8	.rdata	-	pointer table
-421ea4	48	.rdata	-	unknown
-421eec	60	.rdata	-	pointer table
-421f4c	24	.rdata	-	unknown
-421f70	8	.rdata	-	pointer table
-421f78	24	.rdata	-	unknown
-421f9c	20	.rdata	-	pointer table
-421fbc	24	.rdata	-	unknown
-421fe0	48	.rdata	-	int table
-422028	8	.rdata	-	pointer table
-422030	58	.rdata	-	unknown
-422088	8	.rdata	-	pointer table
-422090	24	.rdata	-	unknown
-4220b4	20	.rdata	-	pointer table
-4220d4	60	.rdata	-	unknown
-422134	8	.rdata	-	pointer table
-42213c	24	.rdata	-	unknown
-422160	10	.rdata	-	pointer table
-422170	24	.rdata	-	unknown
-422194	8	.rdata	-	pointer table
-42219c	24	.rdata	-	unknown
-4221c0	8	.rdata	-	pointer table
-4221c8	24	.rdata	-	unknown
-4221ec	10	.rdata	-	pointer table
-4221fc	24	.rdata	-	unknown
-422220	10	.rdata	-	pointer table
-422230	24	.rdata	-	unknown
-422254	10	.rdata	-	pointer table
-422264	24	.rdata	-	unknown
-422288	10	.rdata	-	pointer table
-422298	24	.rdata	-	unknown
-4222bc	10	.rdata	-	pointer table
-4222cc	24	.rdata	-	unknown
-4222f0	10	.rdata	-	pointer table
-422300	24	.rdata	-	unknown
-422324	10	.rdata	-	pointer table
-422334	24	.rdata	-	unknown
-422358	24	.rdata	-	int table
-42237c	8	.rdata	-	pointer table
-422384	24	.rdata	-	unknown
-4223a8	24	.rdata	-	int table
-4223cc	8	.rdata	-	pointer table
-4223d4	24	.rdata	-	unknown
-4223f8	8	.rdata	-	pointer table
-422400	24	.rdata	-	unknown
-422424	20	.rdata	-	pointer table
-422444	24	.rdata	-	unknown
-422468	18	.rdata	-	pointer table
-422480	24	.rdata	-	unknown
-4224a4	8	.rdata	-	pointer table
-4224ac	24	.rdata	-	unknown
-4224d0	8	.rdata	-	pointer table
-4224d8	24	.rdata	-	unknown
-4224fc	8	.rdata	-	pointer table
-422504	24	.rdata	-	unknown
-422528	10	.rdata	-	pointer table
-422538	24	.rdata	-	unknown
-42255c	8	.rdata	-	pointer table
-422564	24	.rdata	-	unknown
-422588	8	.rdata	-	pointer table
-422590	24	.rdata	-	unknown
-4225b4	24	.rdata	-	int table
-4225d8	8	.rdata	-	pointer table
-4225e0	24	.rdata	-	unknown
-422604	8	.rdata	-	pointer table
-42260c	24	.rdata	-	unknown
-422630	8	.rdata	-	pointer table
-422638	24	.rdata	-	unknown
-42265c	10	.rdata	-	pointer table
-42266c	24	.rdata	-	unknown
-422690	24	.rdata	-	int table
-4226b4	8	.rdata	-	pointer table
-4226bc	24	.rdata	-	unknown
-4226e0	10	.rdata	-	pointer table
-4226f0	24	.rdata	-	unknown
-422714	8	.rdata	-	pointer table
-42271c	24	.rdata	-	unknown
-422740	8	.rdata	-	pointer table
-422748	24	.rdata	-	unknown
-42276c	8	.rdata	-	pointer table
-422774	24	.rdata	-	unknown
-422798	8	.rdata	-	pointer table
-4227a0	24	.rdata	-	unknown
-4227c4	10	.rdata	-	pointer table
-4227d4	24	.rdata	-	unknown
-4227f8	8	.rdata	-	pointer table
-422800	24	.rdata	-	unknown
-422824	8	.rdata	-	pointer table
-42282c	24	.rdata	-	unknown
-422850	10	.rdata	-	pointer table
-422860	24	.rdata	-	unknown
-422884	48	.rdata	-	int table
-4228cc	18	.rdata	-	pointer table
-4228e4	24	.rdata	-	unknown
-422908	24	.rdata	-	int table
-42292c	8	.rdata	-	pointer table
-422934	24	.rdata	-	unknown
-422958	10	.rdata	-	pointer table
-422968	24	.rdata	-	unknown
-42298c	10	.rdata	-	pointer table
-42299c	24	.rdata	-	unknown
-4229c0	10	.rdata	-	pointer table
-4229d0	24	.rdata	-	unknown
-4229f4	8	.rdata	-	pointer table
-4229fc	24	.rdata	-	unknown
-422a20	8	.rdata	-	pointer table
-422a28	24	.rdata	-	unknown
-422a4c	8	.rdata	-	pointer table
-422a54	24	.rdata	-	unknown
-422a78	8	.rdata	-	pointer table
-422a80	24	.rdata	-	unknown
-422aa4	8	.rdata	-	pointer table
-422aac	24	.rdata	-	unknown
-422ad0	8	.rdata	-	pointer table
-422ad8	24	.rdata	-	unknown
-422afc	10	.rdata	-	pointer table
-422b0c	24	.rdata	-	unknown
-422b30	8	.rdata	-	pointer table
-422b38	24	.rdata	-	unknown
-422b5c	8	.rdata	-	pointer table
-422b64	24	.rdata	-	unknown
-422b88	24	.rdata	-	int table
-422bac	10	.rdata	-	pointer table
-422bbc	24	.rdata	-	unknown
-422be0	8	.rdata	-	pointer table
-422be8	24	.rdata	-	unknown
-422c0c	24	.rdata	-	int table
-422c30	8	.rdata	-	pointer table
-422c38	24	.rdata	-	unknown
-422c5c	8	.rdata	-	pointer table
-422c64	24	.rdata	-	unknown
-422c88	10	.rdata	-	pointer table
-422c98	24	.rdata	-	unknown
-422cbc	10	.rdata	-	pointer table
-422ccc	48	.rdata	-	unknown
-422d14	40	.rdata	-	pointer table
-422d54	24	.rdata	-	unknown
-422d78	48	.rdata	-	pointer table
-422dc0	24	.rdata	-	int table
-422de4	8	.rdata	-	pointer table
-422dec	24	.rdata	-	unknown
-422e10	8	.rdata	-	pointer table
-422e18	24	.rdata	-	unknown
-422e3c	10	.rdata	-	pointer table
-422e4c	24	.rdata	-	unknown
-422e70	10	.rdata	-	pointer table
-422e80	24	.rdata	-	unknown
-422ea4	20	.rdata	-	pointer table
-422ec4	48	.rdata	-	unknown
-422f0c	38	.rdata	-	pointer table
-422f44	24	.rdata	-	unknown
-422f68	8	.rdata	-	pointer table
-422f70	24	.rdata	-	unknown
-422f94	10	.rdata	-	pointer table
-422fa4	48	.rdata	-	unknown
-422fec	30	.rdata	-	pointer table
-42301c	24	.rdata	-	unknown
-423040	8	.rdata	-	pointer table
-423048	24	.rdata	-	unknown
-42306c	20	.rdata	-	pointer table
-42308c	24	.rdata	-	unknown
-4230b0	10	.rdata	-	pointer table
-4230c0	24	.rdata	-	unknown
-4230e4	8	.rdata	-	pointer table
-4230ec	24	.rdata	-	unknown
-423110	8	.rdata	-	pointer table
-423118	24	.rdata	-	unknown
-42313c	8	.rdata	-	pointer table
-423144	48	.rdata	-	unknown
-42318c	78	.rdata	-	pointer table
-423204	24	.rdata	-	unknown
-423228	48	.rdata	-	int table
-423270	8	.rdata	-	pointer table
-423278	24	.rdata	-	unknown
-42329c	10	.rdata	-	pointer table
-4232ac	24	.rdata	-	unknown
-4232d0	8	.rdata	-	pointer table
-4232d8	24	.rdata	-	unknown
-4232fc	8	.rdata	-	pointer table
-423304	24	.rdata	-	unknown
-423328	8	.rdata	-	pointer table
-423330	24	.rdata	-	unknown
-423354	8	.rdata	-	pointer table
-42335c	24	.rdata	-	unknown
-423380	8	.rdata	-	pointer table
-423388	24	.rdata	-	unknown
-4233ac	8	.rdata	-	pointer table
-4233b4	48	.rdata	-	unknown
-4233fc	38	.rdata	-	pointer table
-423434	24	.rdata	-	unknown
-423458	10	.rdata	-	pointer table
-423468	24	.rdata	-	unknown
-42348c	8	.rdata	-	pointer table
-423494	24	.rdata	-	unknown
-4234b8	24	.rdata	-	int table
-4234dc	8	.rdata	-	pointer table
-4234e4	24	.rdata	-	unknown
-423508	24	.rdata	-	int table
-42352c	18	.rdata	-	pointer table
-423544	24	.rdata	-	unknown
-423568	8	.rdata	-	pointer table
-423570	24	.rdata	-	unknown
-423594	8	.rdata	-	pointer table
-42359c	24	.rdata	-	unknown
-4235c0	24	.rdata	-	int table
-4235e4	8	.rdata	-	pointer table
-4235ec	24	.rdata	-	unknown
-423610	8	.rdata	-	pointer table
-423618	24	.rdata	-	unknown
-42363c	10	.rdata	-	pointer table
-42364c	24	.rdata	-	unknown
-423670	8	.rdata	-	pointer table
-423678	24	.rdata	-	unknown
-42369c	48	.rdata	-	int table
-4236e4	8	.rdata	-	pointer table
-4236ec	24	.rdata	-	unknown
-423710	8	.rdata	-	pointer table
-423718	24	.rdata	-	unknown
-42373c	10	.rdata	-	pointer table
-42374c	24	.rdata	-	unknown
-423770	8	.rdata	-	pointer table
-423778	24	.rdata	-	unknown
-42379c	8	.rdata	-	pointer table
-4237a4	24	.rdata	-	unknown
-4237c8	24	.rdata	-	int table
-4237ec	10	.rdata	-	pointer table
-4237fc	24	.rdata	-	unknown
-423820	18	.rdata	-	pointer table
-423838	24	.rdata	-	unknown
-42385c	18	.rdata	-	pointer table
-423874	24	.rdata	-	unknown
-423898	8	.rdata	-	pointer table
-4238a0	24	.rdata	-	unknown
-4238c4	8	.rdata	-	pointer table
-4238cc	24	.rdata	-	unknown
-4238f0	48	.rdata	-	int table
-423938	8	.rdata	-	pointer table
-423940	24	.rdata	-	unknown
-423964	8	.rdata	-	pointer table
-42396c	48	.rdata	-	unknown
-4239b4	38	.rdata	-	pointer table
-4239ec	108	.rdata	-	unknown
-423af4	10	.rdata	-	pointer table
-423b04	70	.rdata	-	unknown
-423b74	24	.rdata	-	int table
-423b98	8	.rdata	-	pointer table
-423ba0	24	.rdata	-	unknown
-423bc4	10	.rdata	-	pointer table
-423bd4	24	.rdata	-	unknown
-423bf8	24	.rdata	-	int table
-423c1c	8	.rdata	-	pointer table
-423c24	24	.rdata	-	unknown
-423c48	8	.rdata	-	pointer table
-423c50	48	.rdata	-	unknown
-423c98	38	.rdata	-	pointer table
-423cd0	24	.rdata	-	unknown
-423cf4	8	.rdata	-	pointer table
-423cfc	24	.rdata	-	unknown
-423d20	8	.rdata	-	pointer table
-423d28	24	.rdata	-	unknown
-423d4c	8	.rdata	-	pointer table
-423d54	24	.rdata	-	unknown
-423d78	18	.rdata	-	pointer table
-423d90	24	.rdata	-	unknown
-423db4	10	.rdata	-	pointer table
-423dc4	24	.rdata	-	unknown
-423de8	8	.rdata	-	pointer table
-423df0	24	.rdata	-	unknown
-423e14	8	.rdata	-	pointer table
-423e1c	24	.rdata	-	unknown
-423e40	18	.rdata	-	pointer table
-423e58	24	.rdata	-	unknown
-423e7c	8	.rdata	-	pointer table
-423e84	24	.rdata	-	unknown
-423ea8	8	.rdata	-	pointer table
-423eb0	48	.rdata	-	unknown
-423ef8	60	.rdata	-	pointer table
-423f58	24	.rdata	-	unknown
-423f7c	8	.rdata	-	pointer table
-423f84	24	.rdata	-	unknown
-423fa8	10	.rdata	-	pointer table
-423fb8	24	.rdata	-	unknown
-423fdc	24	.rdata	-	int table
-424000	20	.rdata	-	pointer table
-424020	24	.rdata	-	unknown
-424044	20	.rdata	-	pointer table
-424064	24	.rdata	-	unknown
-424088	24	.rdata	-	int table
-4240ac	8	.rdata	-	pointer table
-4240b4	24	.rdata	-	unknown
-4240d8	8	.rdata	-	pointer table
-4240e0	24	.rdata	-	unknown
-424104	10	.rdata	-	string
-424114	24	.rdata	-	unknown
-424138	20	.rdata	-	pointer table
-424158	68	.rdata	-	unknown
-4241c0	24	.rdata	-	int table
-4241e4	8	.rdata	-	pointer table
-4241ec	24	.rdata	-	unknown
-424210	8	.rdata	-	pointer table
-424218	24	.rdata	-	unknown
-42423c	8	.rdata	-	pointer table
-424244	24	.rdata	-	unknown
-424268	10	.rdata	-	pointer table
-424278	24	.rdata	-	unknown
-42429c	8	.rdata	-	pointer table
-4242a4	24	.rdata	-	unknown
-4242c8	8	.rdata	-	pointer table
-4242d0	24	.rdata	-	unknown
-4242f4	8	.rdata	-	pointer table
-4242fc	24	.rdata	-	unknown
-424320	8	.rdata	-	pointer table
-424328	24	.rdata	-	unknown
-42434c	8	.rdata	-	pointer table
-424354	24	.rdata	-	unknown
-424378	8	.rdata	-	pointer table
-424380	24	.rdata	-	unknown
-4243a4	10	.rdata	-	pointer table
-4243b4	24	.rdata	-	unknown
-4243d8	8	.rdata	-	pointer table
-4243e0	24	.rdata	-	unknown
-424404	10	.rdata	-	pointer table
-424414	24	.rdata	-	unknown
-424438	8	.rdata	-	pointer table
-424440	24	.rdata	-	unknown
-424464	24	.rdata	-	int table
-424488	8	.rdata	-	pointer table
-424490	24	.rdata	-	unknown
-4244b4	8	.rdata	-	pointer table
-4244bc	24	.rdata	-	unknown
-4244e0	8	.rdata	-	pointer table
-4244e8	24	.rdata	-	unknown
-42450c	10	.rdata	-	pointer table
-42451c	24	.rdata	-	unknown
-424540	10	.rdata	-	pointer table
-424550	24	.rdata	-	unknown
-424574	10	.rdata	-	pointer table
-424584	24	.rdata	-	unknown
-4245a8	24	.rdata	-	int table
-4245cc	8	.rdata	-	pointer table
-4245d4	24	.rdata	-	unknown
-4245f8	8	.rdata	-	pointer table
-424600	24	.rdata	-	unknown
-424624	10	.rdata	-	pointer table
-424634	24	.rdata	-	unknown
-424658	8	.rdata	-	pointer table
-424660	24	.rdata	-	unknown
-424684	6c	.rdata	-	int table
-4246f0	8	.rdata	-	pointer table
-4246f8	24	.rdata	-	unknown
-42471c	8	.rdata	-	pointer table
-424724	24	.rdata	-	unknown
-424748	8	.rdata	-	pointer table
-424750	28	.rdata	-	unknown
+4155b8	f1c0	.rdata	-	eh
 424778	334	.rdata	-	library crt
-424aac	4	.rdata	-	string
-424ab0	c	.rdata	-	unknown
-424abc	10	.rdata	-	int table
-424acc	3c	.rdata	-	unknown
+424aac	5c	.rdata	-	eh
 424b08	bec	.rdata	-	library crt
-4256f4	10	.rdata	-	pointer table
-425704	1c	.rdata	-	unknown
-425720	10	.rdata	-	pointer table
-425730	1c	.rdata	-	unknown
-42574c	28	.rdata	-	pointer table
-425774	1c	.rdata	-	unknown
-425790	8	.rdata	-	pointer table
-425798	1c	.rdata	-	unknown
-4257b4	10	.rdata	-	pointer table
-4257c4	1c	.rdata	-	unknown
-4257e0	18	.rdata	-	pointer table
-4257f8	1c	.rdata	-	unknown
-425814	8	.rdata	-	pointer table
-42581c	1c	.rdata	-	unknown
-425838	10	.rdata	-	pointer table
-425848	1c	.rdata	-	unknown
-425864	10	.rdata	-	pointer table
-425874	1c	.rdata	-	unknown
-425890	18	.rdata	-	pointer table
-4258a8	1c	.rdata	-	unknown
-4258c4	18	.rdata	-	pointer table
-4258dc	1c	.rdata	-	unknown
-4258f8	10	.rdata	-	pointer table
-425908	1c	.rdata	-	unknown
-425924	10	.rdata	-	pointer table
-425934	1c	.rdata	-	unknown
-425950	18	.rdata	-	pointer table
-425968	1c	.rdata	-	unknown
-425984	8	.rdata	-	pointer table
-42598c	1c	.rdata	-	unknown
-4259a8	8	.rdata	-	pointer table
-4259b0	1c	.rdata	-	unknown
-4259cc	8	.rdata	-	pointer table
-4259d4	1c	.rdata	-	unknown
-4259f0	10	.rdata	-	pointer table
-425a00	1c	.rdata	-	unknown
-425a1c	8	.rdata	-	pointer table
-425a24	1c	.rdata	-	unknown
-425a40	8	.rdata	-	pointer table
-425a48	1c	.rdata	-	unknown
-425a64	128	.rdata	-	pointer table
-425b8c	1c	.rdata	-	unknown
-425ba8	10	.rdata	-	int table
-425bb8	40	.rdata	-	unknown
-425bf8	40	.rdata	-	pointer table
-425c38	1c	.rdata	-	unknown
-425c54	40	.rdata	-	pointer table
-425c94	1c	.rdata	-	unknown
-425cb0	10	.rdata	-	pointer table
-425cc0	1c	.rdata	-	unknown
-425cdc	8	.rdata	-	pointer table
-425ce4	1c	.rdata	-	unknown
+4256f4	60c	.rdata	-	eh
 425d00	f8	.rdata	-	library crt
 425df8	759	.rdata	WinMain, static: imports (main.c)	import
 426551	1	.rdata	WinMain	zero

@@ -48,13 +48,13 @@ void __fastcall CFondo2D_Render(CFondo2D *self);
 
 /* the background sprite: the name set, a new sprite when it changes */
 #define FONDO2D_NAME 0x108
-#define g_FondoPendiente GAME_DATA(byte, 0x4db490)
-#define g_FondoFrame GAME_DATA(int, 0x4db494)		/* uframe3d, the frame of the last draw */
-#define g_FondoGrf GAME_DATA(CGrafico2D *, 0x4db498)
-#define g_FondoActual ((char *)Game_Ptr(0x4db4a0))	/* FONDO2D_NAME */
-#define g_FondoNuevo ((char *)Game_Ptr(0x4db5a8))	/* FONDO2D_NAME */
-#define g_FondoColor GAME_DATA(uint32_t, 0x432a10)
-#define g_FondoColorNuevo GAME_DATA(uint32_t, 0x432a14)
+#define g_FondoPendiente GAME_GLOBAL(byte, g_FondoPendiente, 0x4db490)
+#define g_FondoFrame GAME_GLOBAL(int, g_FondoFrame, 0x4db494)		/* uframe3d, the frame of the last draw */
+#define g_FondoGrf GAME_GLOBAL(CGrafico2D *, g_FondoGrf, 0x4db498)
+#define g_FondoActual (GAME_ARRAY(char, g_FondoActual, 0x4db4a0))	/* FONDO2D_NAME */
+#define g_FondoNuevo (GAME_ARRAY(char, g_FondoNuevo, 0x4db5a8))	/* FONDO2D_NAME */
+#define g_FondoColor GAME_GLOBAL(uint32_t, g_FondoColor, 0x432a10)
+#define g_FondoColorNuevo GAME_GLOBAL(uint32_t, g_FondoColorNuevo, 0x432a14)
 
 void Fondo2D_Reset(void);
 /* the sprite of the new name (once a frame, CHECK) */

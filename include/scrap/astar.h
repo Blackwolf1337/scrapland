@@ -156,7 +156,7 @@ struct CAStar {
 SD_OFFSET(CAStar, nodes, 0x44);
 SD_SIZE(CAStar, 0x50);
 
-#define g_AStarDrawMode GAME_DATA(int, 0x444c90)	/* 1 closed, 2 open, 3 both */
+#define g_AStarDrawMode GAME_GLOBAL_IN(int, GVar_ShowAStarAI, 16, 0x444c90)	/* 1 closed, 2 open, 3 both */
 
 /* the table of 1009 slots of the search (Global/HashTable.h with int keys) */
 HashTable *__thiscall AStarTable_ctor(HashTable *self, int size);

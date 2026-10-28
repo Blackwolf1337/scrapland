@@ -45,21 +45,6 @@ typedef int(__stdcall *setrect_t)(exe_rect *r, int left, int top, int right, int
 #define STREAMTYPE_VIDEO 0x73646976	/* "vids" */
 #define AVIIF_KEYFRAME 0x10
 
-/* BITMAPINFOHEADER */
-typedef struct AviBih {
-	uint32_t biSize;
-	int biWidth;
-	int biHeight;
-	uint32_t biPlanesBits;		/* 1 plane, 24 bits */
-	uint32_t biCompression;
-	uint32_t biSizeImage;
-	int biXPelsPerMeter;
-	int biYPelsPerMeter;
-	uint32_t biClrUsed;
-	uint32_t biClrImportant;
-} AviBih;
-SD_SIZE(AviBih, 0x28);
-
 /* AVISTREAMINFOA */
 typedef struct AviStreamInfo {
 	uint32_t fccType;
@@ -83,14 +68,14 @@ typedef struct AviStreamInfo {
 } AviStreamInfo;
 SD_SIZE(AviStreamInfo, 0x8c);
 
-#define g_AviFrames GAME_DATA(int, 0x4b29a0)		/* the frames written, -1 without a file */
-#define g_AviFile GAME_DATA(void *, 0x4b29a4)
-#define g_AviStream GAME_DATA(void *, 0x4b29a8)
-#define g_AviCompressed GAME_DATA(void *, 0x4b29ac)
-#define g_AviBih GAME_DATA(AviBih, 0x4b29b0)
-#define g_AviRate GAME_DATA(uint32_t, 0x4b2950)		/* the frames per second */
-#define g_ShotPath ((char *)Game_Ptr(0x4b29d8))	/* MAX_RUTA */
-#define g_ShotNum GAME_DATA(int, 0x432948)
+#define g_AviFrames GAME_GLOBAL(int, g_AviFrames, 0x4b29a0)		/* the frames written, -1 without a file */
+#define g_AviFile GAME_GLOBAL(void *, g_AviFile, 0x4b29a4)
+#define g_AviStream GAME_GLOBAL(void *, g_AviStream, 0x4b29a8)
+#define g_AviCompressed GAME_GLOBAL(void *, g_AviCompressed, 0x4b29ac)
+#define g_AviBih GAME_GLOBAL(AviBih, g_AviBih, 0x4b29b0)
+#define g_AviRate GAME_GLOBAL_IN(uint32_t, GVar_MovieFramerate, 16, 0x4b2950)		/* the frames per second */
+#define g_ShotPath (GAME_ARRAY(char, g_ShotPath, 0x4b29d8))	/* MAX_RUTA */
+#define g_ShotNum GAME_GLOBAL(int, g_ShotNum, 0x432948)
 
 /* IDirect3DSurface8 and IDirect3DDevice8 */
 #define D3DSURF_GETDEVICE 0xc

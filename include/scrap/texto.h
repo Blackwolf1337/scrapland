@@ -15,9 +15,9 @@ typedef struct TextoMsg {
 } TextoMsg;
 SD_SIZE(TextoMsg, 0x10c);
 
-#define g_TextoX GAME_DATA(int, 0x4b1cf0)
-#define g_TextoY GAME_DATA(int, 0x4b1cf4)
-#define g_TextoPila GAME_DATA(TextoMsg *, 0x4b1cf8)
+#define g_TextoX GAME_GLOBAL(int, g_TextoX, 0x4b1cf0)
+#define g_TextoY GAME_GLOBAL(int, g_TextoY, 0x4b1cf4)
+#define g_TextoPila GAME_GLOBAL(TextoMsg *, g_TextoPila, 0x4b1cf8)
 
 void Texto_Draw(int x, int y, const char *s);
 /* the first message for its time, then the next ones under it */

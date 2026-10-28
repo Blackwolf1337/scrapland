@@ -157,15 +157,15 @@ SD_OFFSET(CSistPart, params, 0x0c);
 SD_OFFSET(CSistPart, Particles, 0x11c);
 
 /* the switches of the particle systems */
-#define g_SistPartOn GAME_DATA(int, 0x4b2528)
-#define g_SistPartFlags GAME_DATA(int, 0x4b2570)	/* -1, else the flags of all systems */
-#define g_SistPartDebug GAME_DATA(int, 0x4b25a0)	/* 1: visibility, 2: drawn, 3: with the name */
-#define g_SistPartCount GAME_DATA(int, 0x4b2588)	/* the particles of all systems */
-#define g_SistPartIni ((CArchINI *)Game_Ptr(0x4b25d8))	/* the particle ini */
-#define g_SistPartPosScale GAME_DATA(float, 0x4b2558)
-#define g_SistPartSizeScale GAME_DATA(float, 0x4b2540)
-#define g_SistPartLifeScale GAME_DATA(float, 0x4b25d0)
-#define g_SistPartBirthAdd GAME_DATA(int, 0x4b25b8)
+#define g_SistPartOn GAME_GLOBAL_IN(int, GVar_R_Particles, 16, 0x4b2528)
+#define g_SistPartFlags GAME_GLOBAL_IN(int, GVar_R_ParticleFlags, 16, 0x4b2570)	/* -1, else the flags of all systems */
+#define g_SistPartDebug GAME_GLOBAL_IN(int, GVar_R_ParticleSector, 16, 0x4b25a0)	/* 1: visibility, 2: drawn, 3: with the name */
+#define g_SistPartCount GAME_GLOBAL_IN(int, GVar_R_ParticlesCount, 16, 0x4b2588)	/* the particles of all systems */
+#define g_SistPartIni (GAME_ARRAY(CArchINI, g_SistPartIni, 0x4b25d8))	/* the particle ini */
+#define g_SistPartPosScale GAME_GLOBAL_IN(float, GVar_R_ParticleVelScale, 16, 0x4b2558)
+#define g_SistPartSizeScale GAME_GLOBAL_IN(float, GVar_R_ParticleScale, 16, 0x4b2540)
+#define g_SistPartLifeScale GAME_GLOBAL_IN(float, GVar_R_ParticleLife, 16, 0x4b25d0)
+#define g_SistPartBirthAdd GAME_GLOBAL_IN(int, GVar_R_ParticleRate, 16, 0x4b25b8)
 
 CParticula *__fastcall CParticulaActive_ctor(CParticula *self);
 CParticula *__fastcall CParticulaStatic_ctor(CParticula *self);

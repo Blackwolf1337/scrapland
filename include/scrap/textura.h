@@ -42,7 +42,7 @@ typedef struct CMultiSprite {
 SD_SIZE(CMultiSprite, 0x10);
 
 #define MST_VER 100
-#define g_BuildMST GAME_DATA(int, 0x4d6e00)	/* BuildMST: load the .mst files */
+#define g_BuildMST GAME_GLOBAL_IN(int, GVar_BuildMST, 16, 0x4d6e00)	/* BuildMST: load the .mst files */
 
 typedef struct CTextura {
 	int Refs;			/* 0x000 */
@@ -79,7 +79,7 @@ SD_OFFSET(CTextura, tex, 0x228);
 SD_OFFSET(CTextura, mipmap, 0x23c);
 SD_OFFSET(CTextura, multi, 0x248);
 
-#define g_TexList GAME_DATA(CTextura *, 0x4b2610)
+#define g_TexList GAME_GLOBAL(CTextura *, g_TexList, 0x4b2610)
 
 CMultiSprite *__fastcall CMultiSprite_ctor(CMultiSprite *self);
 void __fastcall CMultiSprite_dtor(CMultiSprite *self);

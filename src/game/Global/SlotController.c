@@ -9,8 +9,8 @@
 
 #define cSlotController_vftable ((const cSlotControllerVtbl *)GAME_VFTABLE(cSlotController_vftable, 0x3bbaac))
 #define cRndSlotController_vftable ((const cSlotControllerVtbl *)GAME_VFTABLE(cRndSlotController_vftable, 0x3bbab4))
-#define g_RandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
-#define g_SlotEpsilon GAME_DATA(float, 0x3a3d58)	/* 0.001 */
+#define g_RandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
+#define g_SlotEpsilon GAME_GLOBAL(float, g_SlotEpsilon, 0x3a3d58)	/* 0.001 */
 
 /* rand() of the exe as a double in [0, 1] times range */
 static double RandRange(double range) {

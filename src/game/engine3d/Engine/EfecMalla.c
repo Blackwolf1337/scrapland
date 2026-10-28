@@ -18,14 +18,14 @@
 #define TECLA_M 0x32
 #define TECLA_CTRL 0x1d
 
-#define g_EfecMallaOn GAME_DATA(int, 0x4db6b0)
-#define g_EfecMallaStencil GAME_DATA(int, 0x4db6b4)
-#define g_NumPantallas GAME_DATA(int, 0x4db6b8)
-#define g_NumModelos GAME_DATA(int, 0x4db6bc)
-#define g_EfecMallaMat ((CMaterial *)Game_Ptr(0x4db6c0))	/* a static object of the file */
-#define g_Pantallas ((CModelo **)Game_Ptr(0x4db770))
-#define g_Modelos ((CModelo **)Game_Ptr(0x4db798))
-#define g_EfecMallaMatInic GAME_DATA(byte, 0x4db7c0)
+#define g_EfecMallaOn GAME_GLOBAL(int, g_EfecMallaOn, 0x4db6b0)
+#define g_EfecMallaStencil GAME_GLOBAL(int, g_EfecMallaStencil, 0x4db6b4)
+#define g_NumPantallas GAME_GLOBAL(int, g_NumPantallas, 0x4db6b8)
+#define g_NumModelos GAME_GLOBAL(int, g_NumModelos, 0x4db6bc)
+#define g_EfecMallaMat (GAME_ARRAY(CMaterial, g_EfecMallaMat, 0x4db6c0))	/* a static object of the file */
+#define g_Pantallas (GAME_ARRAY(CModelo *, g_Pantallas, 0x4db770))
+#define g_Modelos (GAME_ARRAY(CModelo *, g_Modelos, 0x4db798))
+#define g_EfecMallaMatInic GAME_GLOBAL(byte, g_EfecMallaMatInic, 0x4db7c0)
 
 void EfecMalla_AddPantalla(CModelo *m) {
 	CHECK(g_NumPantallas < MAX_PANTALLAS);

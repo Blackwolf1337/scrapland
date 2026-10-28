@@ -18,37 +18,37 @@
 #define IOBJETO3D_VFTABLE GAME_VFTABLE(IObjeto3D_vftable, 0x3d79dc)
 #define LUZ_INV255 (1.0f / 255.0f)
 /* "no limit" for the range of the device light and the start of the nearest search, a float constant of the exe */
-#define LUZ_RANGO_INF GAME_DATA(const float, 0x3d7be0)
+#define LUZ_RANGO_INF GAME_GLOBAL(const float, LUZ_RANGO_INF, 0x3d7be0)
 #define PROF_LUCES 0x1d		/* the profiler section of Luz_Select */
 
-#define g_Luces ((CLuz **)Game_Ptr(0x4ac438))	/* MAX_LUCES, the active lights */
-#define g_nLuces GAME_DATA(int, 0x4ac434)
-#define g_LucesD3D GAME_DATA(int, 0x4ac430)	/* with act_D3D */
-#define g_LucesTotal GAME_DATA(int, 0x4ac42c)
-#define g_LuzIndD3D GAME_DATA(uint32_t, 0x4ac428)	/* the next light gets index 4 + this */
+#define g_Luces (GAME_ARRAY(CLuz *, g_Luces, 0x4ac438))	/* MAX_LUCES, the active lights */
+#define g_nLuces GAME_GLOBAL(int, g_nLuces, 0x4ac434)
+#define g_LucesD3D GAME_GLOBAL(int, g_LucesD3D, 0x4ac430)	/* with act_D3D */
+#define g_LucesTotal GAME_GLOBAL(int, g_LucesTotal, 0x4ac42c)
+#define g_LuzIndD3D GAME_GLOBAL(uint32_t, g_LuzIndD3D, 0x4ac428)	/* the next light gets index 4 + this */
 
 /* the engine variables of the lights (Gvars) */
-#define g_LightEnaD3D GAME_DATA(int, 0x4ac228)	/* R_LightEnaD3D: 0 always, 1 on changes, from 2 never */
-#define g_LightAmbient GAME_DATA(float, 0x4ac240)
-#define g_LightMult GAME_DATA(float, 0x4ac258)
-#define g_SpotlightClamp GAME_DATA(float, 0x4ac270)
-#define g_LightDesat GAME_DATA(float, 0x4ac2a0)
-#define g_MonitorAmbient GAME_DATA(uint32_t, 0x4ac2b8)
-#define g_LightTrace GAME_DATA(int, 0x4ac2d0)
-#define g_SpotlightAdjust GAME_DATA(int, 0x4ac2e8)
-#define g_LightAtten GAME_DATA(float, 0x4ac300)
-#define g_LightGamma GAME_DATA(float, 0x4ac318)
-#define g_SpotlightMult GAME_DATA(float, 0x4ac330)
-#define g_LightSortI GAME_DATA(float, 0x4ac348)
-#define g_LightAtten2 GAME_DATA(int, 0x4ac360)
-#define g_SpotlightAng GAME_DATA(int, 0x4ac378)
-#define g_SpotlightAtten GAME_DATA(float, 0x4ac390)
-#define g_LightMult2 GAME_DATA(float, 0x4ac3a8)
-#define g_LightTarget GAME_DATA(int, 0x4ac3c0)
-#define g_LightDefer GAME_DATA(int, 0x4ac3d8)
-#define g_LightSector GAME_DATA(int, 0x4ac3f0)
-#define g_LightSort GAME_DATA(int, 0x4ac408)
-#define g_LightMultName GAME_DATA(const char *, 0x4ac420)
+#define g_LightEnaD3D GAME_GLOBAL_IN(int, GVar_R_LightEnaD3D, 16, 0x4ac228)	/* R_LightEnaD3D: 0 always, 1 on changes, from 2 never */
+#define g_LightAmbient GAME_GLOBAL_IN(float, GVar_R_LightAmbient, 16, 0x4ac240)
+#define g_LightMult GAME_GLOBAL_IN(float, GVar_R_LightMult, 16, 0x4ac258)
+#define g_SpotlightClamp GAME_GLOBAL_IN(float, GVar_R_SpotlightClamp, 16, 0x4ac270)
+#define g_LightDesat GAME_GLOBAL_IN(float, GVar_R_LightDesat, 16, 0x4ac2a0)
+#define g_MonitorAmbient GAME_GLOBAL_IN(uint32_t, GVar_MonitorAmbient, 16, 0x4ac2b8)
+#define g_LightTrace GAME_GLOBAL_IN(int, GVar_R_LightTrace, 16, 0x4ac2d0)
+#define g_SpotlightAdjust GAME_GLOBAL_IN(int, GVar_R_SpotlightAdjust, 16, 0x4ac2e8)
+#define g_LightAtten GAME_GLOBAL_IN(float, GVar_R_LightAtten, 16, 0x4ac300)
+#define g_LightGamma GAME_GLOBAL_IN(float, GVar_R_LightGamma, 16, 0x4ac318)
+#define g_SpotlightMult GAME_GLOBAL_IN(float, GVar_R_SpotlightMult, 16, 0x4ac330)
+#define g_LightSortI GAME_GLOBAL_IN(float, GVar_R_LightSortI, 16, 0x4ac348)
+#define g_LightAtten2 GAME_GLOBAL_IN(int, GVar_R_LightAtten2, 16, 0x4ac360)
+#define g_SpotlightAng GAME_GLOBAL_IN(int, GVar_R_SpotlightAng, 16, 0x4ac378)
+#define g_SpotlightAtten GAME_GLOBAL_IN(float, GVar_R_SpotlightAtten, 16, 0x4ac390)
+#define g_LightMult2 GAME_GLOBAL_IN(float, GVar_R_LightMult2, 16, 0x4ac3a8)
+#define g_LightTarget GAME_GLOBAL_IN(int, GVar_R_LightTarget, 16, 0x4ac3c0)
+#define g_LightDefer GAME_GLOBAL_IN(int, GVar_R_LightDefer, 16, 0x4ac3d8)
+#define g_LightSector GAME_GLOBAL_IN(int, GVar_R_LightSector, 16, 0x4ac3f0)
+#define g_LightSort GAME_GLOBAL_IN(int, GVar_R_LightSort, 16, 0x4ac408)
+#define g_LightMultName GAME_GLOBAL_IN(const char *, GVar_R_LightMultName, 16, 0x4ac420)
 
 typedef int(__stdcall *d3dSetLight_t)(void *dev, uint32_t idx, const D3DLight *l);
 typedef int(__stdcall *d3dLightEnable_t)(void *dev, uint32_t idx, int enable);
@@ -345,9 +345,9 @@ void __thiscall CLuz_Reset(CLuz *self, int arg) {
 }
 
 /* R_ShowLights and the material of the debug drawing, a static of CLuz_Render */
-#define g_ShowLights GAME_DATA(int, 0x4ac288)
-#define g_LuzMat (*(CMaterial *)Game_Ptr(0x4ad438))
-#define g_LuzMatGuard ((int *)Game_Ptr(0x4ad4e8))
+#define g_ShowLights GAME_GLOBAL_IN(int, GVar_R_ShowLights, 16, 0x4ac288)
+#define g_LuzMat (GAME_GLOBAL(CMaterial, g_LuzMat, 0x4ad438))
+#define g_LuzMatGuard (GAME_ARRAY(int, g_LuzMatGuard, 0x4ad4e8))
 
 /* the atexit destructor of it (rva 0x38ed20) */
 void Luz_FiniMat(void) {

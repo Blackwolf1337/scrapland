@@ -192,7 +192,7 @@ void crt_Init_thread_footer(int *guard);
 extern int crt_init_epoch;
 #define crt_InitEpoch() crt_init_epoch
 #else
-#define g_TlsIndex GAME_DATA(uint32_t, 0x4e8dec)
+#define g_TlsIndex GAME_GLOBAL(uint32_t, g_TlsIndex, 0x4e8dec)
 /* that epoch: a static is made when its guard is above it */
 static inline int crt_InitEpochAt(uint32_t index) {
 	uint8_t **tls;

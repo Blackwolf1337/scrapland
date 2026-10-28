@@ -43,8 +43,8 @@
 #define FXVeh_Effects(e) ((void *)((byte *)(e) + 0x7f0))		/* Entities/Vehicle/VehicleEffects.cpp */
 
 /* the engine variables */
-#define g_StdMaxLife GAME_DATA(int, 0x44ab34)			/* StdMaxLife */
-#define g_FXSetOnFireLifePercent GAME_DATA(int, 0x447d6c)	/* FXSetOnFireLifePercent */
+#define g_StdMaxLife GAME_GLOBAL_IN(int, GVar_StdMaxLife, 16, 0x44ab34)			/* StdMaxLife */
+#define g_FXSetOnFireLifePercent GAME_GLOBAL_IN(int, GVar_FXSetOnFireLifePercent, 16, 0x447d6c)	/* FXSetOnFireLifePercent */
 
 /* VehicleEffects.cpp (rva 0x101d30): the damage effect of the vehicle stopped (flag +4 and element +8 cleared) */
 void __fastcall cVehicleEffects_ClearDamage(void *self);

@@ -12,7 +12,7 @@
 #include "scrap/timer.h"
 
 #define LOGIC_SETORIGINFUNC 0x151ce0
-#define g_NotCleanableByGearDef ((cString *)Game_Ptr(0x44cba4))
+#define g_NotCleanableByGearDef (GAME_ARRAY_IN(cString, GVar_NotCleanableByGear, 20, 0x44cba4))
 #define Car_B43a(e) (*(byte *)((byte *)(e) + 0x43a))
 #define Car_Radius(e) (*(float *)((byte *)(e) + 0x3a0))
 

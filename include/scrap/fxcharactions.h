@@ -59,21 +59,21 @@
 #define FXSEBASTIAN_TRAILS 5
 
 /* the vertices of the Functionary model the special action starts from, found once (rva 0x466fc0..) */
-#define g_FXFunctionaryInit GAME_DATA(byte, 0x466fc0)
-#define g_FXFunctionaryVertex ((int *)Game_Ptr(0x466fc4))		/* [14] */
-#define g_FXFunctionaryColor ((uint32_t *)Game_Ptr(0x466ffc))		/* [14] */
+#define g_FXFunctionaryInit GAME_GLOBAL(byte, g_FXFunctionaryInit, 0x466fc0)
+#define g_FXFunctionaryVertex (GAME_ARRAY(int, g_FXFunctionaryVertex, 0x466fc4))		/* [14] */
+#define g_FXFunctionaryColor (GAME_ARRAY(uint32_t, g_FXFunctionaryColor, 0x466ffc))		/* [14] */
 
 /* the engine variables (Gvars) */
-#define g_BankerSteal1Sound GAME_DATA(const char *, 0x446098)
-#define g_BankerSteal2Sound GAME_DATA(const char *, 0x446000)
-#define g_BankerSteal3Sound GAME_DATA(const char *, 0x446030)
-#define g_BankerStealSoundVol GAME_DATA(float, 0x445f98)
-#define g_BankerStealPosX GAME_DATA(float, 0x445fd8)
-#define g_BankerStealPosY GAME_DATA(float, 0x446080)
-#define g_BankerStealPosZ GAME_DATA(float, 0x445fc0)
-#define g_BankMasterBatonPosX GAME_DATA(float, 0x446164)
-#define g_BankMasterBatonPosY GAME_DATA(float, 0x44614c)
-#define g_BankMasterBatonPosZ GAME_DATA(float, 0x4460f4)
+#define g_BankerSteal1Sound GAME_GLOBAL_IN(const char *, GVar_BankerSteal1Sound, 16, 0x446098)
+#define g_BankerSteal2Sound GAME_GLOBAL_IN(const char *, GVar_BankerSteal2Sound, 16, 0x446000)
+#define g_BankerSteal3Sound GAME_GLOBAL_IN(const char *, GVar_BankerSteal3Sound, 16, 0x446030)
+#define g_BankerStealSoundVol GAME_GLOBAL_IN(float, GVar_BankerStealSoundVol, 16, 0x445f98)
+#define g_BankerStealPosX GAME_GLOBAL_IN(float, GVar_BankerStealPosX, 16, 0x445fd8)
+#define g_BankerStealPosY GAME_GLOBAL_IN(float, GVar_BankerStealPosY, 16, 0x446080)
+#define g_BankerStealPosZ GAME_GLOBAL_IN(float, GVar_BankerStealPosZ, 16, 0x445fc0)
+#define g_BankMasterBatonPosX GAME_GLOBAL_IN(float, GVar_BankMasterBatonPosX, 16, 0x446164)
+#define g_BankMasterBatonPosY GAME_GLOBAL_IN(float, GVar_BankMasterBatonPosY, 16, 0x44614c)
+#define g_BankMasterBatonPosZ GAME_GLOBAL_IN(float, GVar_BankMasterBatonPosZ, 16, 0x4460f4)
 
 /* the timer of a character (cWalkChar + 0x110) */
 #define Entity_Timer(e) ((cTimer *)((byte *)(e) + 0x110))

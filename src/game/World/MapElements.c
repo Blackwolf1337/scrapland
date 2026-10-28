@@ -14,7 +14,7 @@
 #define CMAPELEMENT_VFTABLE GAME_VFTABLE(cMapElement_vftable, 0x3cde68)
 
 /* ElementModelPath, the folder of the element models (a cString, "Models/Elements/") */
-#define g_ElementModelPath GAME_DATA(char *, 0x4673d8)
+#define g_ElementModelPath GAME_GLOBAL_IN(char *, GVar_ElementModelPath, 16, 0x4673d8)
 
 /* ---- cMapElement ---- */
 

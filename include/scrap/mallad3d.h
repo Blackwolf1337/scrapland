@@ -155,12 +155,12 @@ typedef struct MallaD3DGrupo {
 SD_SIZE(MallaD3DGrupo, 0x10);
 
 #define MAX_D3D_OBJ 0x200
-#define g_D3DObj ((MallaD3DObj *)Game_Ptr(0x4dc128))
-#define g_NumD3DObj GAME_DATA(int, 0x4de928)
+#define g_D3DObj (GAME_ARRAY(MallaD3DObj, g_D3DObj, 0x4dc128))
+#define g_NumD3DObj GAME_GLOBAL(int, g_NumD3DObj, 0x4de928)
 /* the vertices MallaD3D_CompareVertIdx sorts */
-#define g_WeldVert GAME_DATA(MallaD3DVert *, 0x4de92c)
+#define g_WeldVert GAME_GLOBAL(MallaD3DVert *, g_WeldVert, 0x4de92c)
 /* the triangles of a group, 0x800 */
-#define g_MaxTriGrupo GAME_DATA(int, 0x432a70)
+#define g_MaxTriGrupo GAME_GLOBAL(int, g_MaxTriGrupo, 0x432a70)
 
 /* the deleting destructor */
 CMallaD3D *__thiscall CMallaD3D_Delete(CMallaD3D *self, byte flags);

@@ -141,8 +141,8 @@ static inline const cObjEntityVtbl *Obj_Vtbl(const cEntity *e) {
 }
 
 /* 1 while a missile updates: cObjEntity_Update then moves the render state on by the velocity of one slot */
-#define g_MissileUpdating GAME_DATA(int, 0x447a08)
-#define g_RadarShowTime GAME_DATA(float, 0x447a20)	/* radarTime after a change of RadarShow */
+#define g_MissileUpdating GAME_GLOBAL_IN(int, GVar_ActiveExtrapolation, 16, 0x447a08)
+#define g_RadarShowTime GAME_GLOBAL_IN(float, GVar_MssnRadarBlinkTime, 16, 0x447a20)	/* radarTime after a change of RadarShow */
 
 /* the cObjEntity functions take a cEntity like the callers of the derived classes */
 void __fastcall cObjEntity_dtor(cEntity *self);

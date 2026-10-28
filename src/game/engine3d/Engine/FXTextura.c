@@ -10,7 +10,7 @@
 #include "scrap/rendertarget.h"
 #include "scrap/varios.h"
 
-#define g_TimeMsInt GAME_DATA(int, 0x4a8ee0)	/* the engine time in ms as an int */
+#define g_TimeMsInt GAME_GLOBAL(int, g_TimeMsInt, 0x4a8ee0)	/* the engine time in ms as an int */
 #define FXTEX_MASK (FXTEX_SIZE - 1)
 
 static float Float_FromBits(uint32_t bits) {

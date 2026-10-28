@@ -307,8 +307,8 @@ char *Cad_Unquote(char *dest, const char *src) {
 	return dest;
 }
 
-#define g_RSqrtTable ((const byte *)Game_Ptr(0x4abf88))
-#define g_ExePath ((char *)Game_Ptr(0x4abd78))	/* GetModuleFileName at the start, 0x103 */
+#define g_RSqrtTable (GAME_ARRAY(const byte, g_RSqrtTable, 0x4abf88))
+#define g_ExePath (GAME_ARRAY(char, g_ExePath, 0x4abd78))	/* GetModuleFileName at the start, 0x103 */
 
 char *E3D_GetExePath(void) {
 	return g_ExePath;
@@ -394,20 +394,20 @@ byte Dlg_GetFloat(void *hwnd, int id, float *out) {
 
 /* ---- the debug consoles: a list box in a dialog and a text console ---- */
 
-#define g_DbgStdOpen GAME_DATA(byte, 0x4ab91c)
-#define g_DbgWinOpen GAME_DATA(byte, 0x4ab91d)
-#define g_DbgWnd GAME_DATA(void *, 0x4ab920)
-#define g_DbgList GAME_DATA(void *, 0x4ab924)	/* the list box of the dialog */
-#define g_DbgEdit GAME_DATA(void *, 0x4ab928)	/* the command line */
-#define g_DbgButton GAME_DATA(void *, 0x4ab92c)
-#define g_DbgClient ((int32_t *)Game_Ptr(0x4ab930))	/* the client rectangle at WM_INITDIALOG */
-#define g_DbgListRect ((int32_t *)Game_Ptr(0x4ab940))	/* the normal rectangles of the three controls */
-#define g_DbgEditRect ((int32_t *)Game_Ptr(0x4ab950))
-#define g_DbgButtonRect ((int32_t *)Game_Ptr(0x4ab960))
-#define g_DbgLine ((char *)Game_Ptr(0x4ab970))	/* 0x400, the line being written */
-#define g_DbgLinePos GAME_DATA(int, 0x4abd70)
-#define g_DbgLineLen GAME_DATA(int, 0x4abd74)
-#define g_DbgCharMap ((const char *)Game_Ptr(0x431c70))	/* the characters from 0xe1 for the console */
+#define g_DbgStdOpen GAME_GLOBAL_IN(byte, group_4ab91c, 0, 0x4ab91c)
+#define g_DbgWinOpen GAME_GLOBAL_IN(byte, group_4ab91c, 1, 0x4ab91d)
+#define g_DbgWnd GAME_GLOBAL(void *, g_DbgWnd, 0x4ab920)
+#define g_DbgList GAME_GLOBAL(void *, g_DbgList, 0x4ab924)	/* the list box of the dialog */
+#define g_DbgEdit GAME_GLOBAL(void *, g_DbgEdit, 0x4ab928)	/* the command line */
+#define g_DbgButton GAME_GLOBAL(void *, g_DbgButton, 0x4ab92c)
+#define g_DbgClient (GAME_ARRAY(int32_t, g_DbgClient, 0x4ab930))	/* the client rectangle at WM_INITDIALOG */
+#define g_DbgListRect (GAME_ARRAY(int32_t, g_DbgListRect, 0x4ab940))	/* the normal rectangles of the three controls */
+#define g_DbgEditRect (GAME_ARRAY(int32_t, g_DbgEditRect, 0x4ab950))
+#define g_DbgButtonRect (GAME_ARRAY(int32_t, g_DbgButtonRect, 0x4ab960))
+#define g_DbgLine (GAME_ARRAY(char, g_DbgLine, 0x4ab970))	/* 0x400, the line being written */
+#define g_DbgLinePos GAME_GLOBAL(int, g_DbgLinePos, 0x4abd70)
+#define g_DbgLineLen GAME_GLOBAL(int, g_DbgLineLen, 0x4abd74)
+#define g_DbgCharMap (GAME_ARRAY(const char, g_DbgCharMap, 0x431c70))	/* the characters from 0xe1 for the console */
 #define DBGWIN_DIALOG 0x9a
 #define DBGWIN_PROC 0x2373d0	/* DbgWin_DlgProc */
 #define DBGWIN_LINE 0x400

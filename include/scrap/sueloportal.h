@@ -39,15 +39,15 @@ typedef struct SectorVis {
 #define SECTORVIS_VALID 1
 #define SECTORVIS_CACHED 2		/* pos was the same as the last time */
 
-#define g_Zonas ((CZona **)Game_Ptr(0x4afed8))
-#define g_NumZonas GAME_DATA(int, 0x4b00d8)
-#define g_SectorCache GAME_DATA(int, 0x4b0128)	/* the cached sector is used when the position is the same */
-#define g_PortalesOn GAME_DATA(int, 0x4e1e00)	/* 0: everything is seen */
-#define g_PortalTest GAME_DATA(int, 0x4b1178)	/* the screen rectangle test; 2: drawn */
-#define g_PortalFront GAME_DATA(int, 0x4b0110)	/* portals the camera is in front of beyond the near distance are skipped */
-#define g_PortalExterior GAME_DATA(int, 0x4b1190)	/* exterior sectors do not look into interior ones */
-#define g_PortalNear GAME_DATA(float, 0x4b0140)	/* the near distance of the portals, times zNear / 256 * 128 */
-#define g_PortalUnion GAME_DATA(int, 0x4b00dc)	/* the rectangle of all seen sectors with b139 is kept */
+#define g_Zonas (GAME_ARRAY(CZona *, g_Zonas, 0x4afed8))
+#define g_NumZonas GAME_GLOBAL_IN(int, g_Zonas, 512, 0x4b00d8)
+#define g_SectorCache GAME_GLOBAL_IN(int, GVar_R_PortalPos, 16, 0x4b0128)	/* the cached sector is used when the position is the same */
+#define g_PortalesOn GAME_GLOBAL_IN(int, GVar_R_UsePortals, 16, 0x4e1e00)	/* 0: everything is seen */
+#define g_PortalTest GAME_GLOBAL_IN(int, GVar_R_PortalExt, 16, 0x4b1178)	/* the screen rectangle test; 2: drawn */
+#define g_PortalFront GAME_GLOBAL_IN(int, GVar_R_PortalNorm, 16, 0x4b0110)	/* portals the camera is in front of beyond the near distance are skipped */
+#define g_PortalExterior GAME_GLOBAL_IN(int, GVar_R_PortalEnd, 16, 0x4b1190)	/* exterior sectors do not look into interior ones */
+#define g_PortalNear GAME_GLOBAL_IN(float, GVar_R_PortalDist, 16, 0x4b0140)	/* the near distance of the portals, times zNear / 256 * 128 */
+#define g_PortalUnion GAME_GLOBAL_IN(int, g_Zonas, 516, 0x4b00dc)	/* the rectangle of all seen sectors with b139 is kept */
 
 /* the sectors seen this frame (zonas a pintar) and their screen rectangles */
 #define MAX_ZONAS_PINTAR 0x80
@@ -57,13 +57,13 @@ typedef struct ZonaPintar {
 	int veces;			/* 0x1c how many portals it was seen through */
 } ZonaPintar;
 SD_SIZE(ZonaPintar, 0x20);
-#define g_ZonasPintar ((ZonaPintar *)Game_Ptr(0x4b0168))
-#define g_NumZonasPintar GAME_DATA(int, 0x4afed0)
+#define g_ZonasPintar (GAME_ARRAY(ZonaPintar, g_ZonasPintar, 0x4b0168))
+#define g_NumZonasPintar GAME_GLOBAL(int, g_NumZonasPintar, 0x4afed0)
 /* the union of the rectangles of the seen sectors with b139 */
-#define g_PintarI148 GAME_DATA(int, 0x4b0148)
-#define g_PintarRect (*(box_t *)Game_Ptr(0x4b014c))
-#define g_PintarNum GAME_DATA(int, 0x4b0164)
-#define g_PintarTodas ((ZonaPintar *)Game_Ptr(0x4b0148))	/* the same three as one */
+#define g_PintarI148 GAME_GLOBAL_IN(int, g_PintarTodas, 0, 0x4b0148)
+#define g_PintarRect (GAME_GLOBAL_IN(box_t, g_PintarTodas, 4, 0x4b014c))
+#define g_PintarNum GAME_GLOBAL_IN(int, g_PintarTodas, 28, 0x4b0164)
+#define g_PintarTodas (GAME_ARRAY(ZonaPintar, g_PintarTodas, 0x4b0148))	/* the same three as one */
 
 
 CZona *__fastcall CZona_ctor(CZona *self);
@@ -137,6 +137,6 @@ SD_SIZE(SueloRayo, 0x20);
 byte __thiscall CSuelo_RayoVert(void *suelo, float x, float z, SueloRayo *res);
 /* the highest triangle point between minY and y with the flags of info; 1 when found */
 byte __thiscall CSuelo_GetYInfo(void *suelo, float x, float z, SueloRayo *info);
-#define g_RayoVertSectors GAME_DATA(int, 0x4e6e10)
+#define g_RayoVertSectors GAME_GLOBAL_IN(int, g_FastGetYSectorVar, 16, 0x4e6e10)
 
 #endif

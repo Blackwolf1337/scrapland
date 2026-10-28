@@ -12,7 +12,7 @@
 #define TRAILS_FVF 0x1c2
 #define TRAILS_PI4 0.78539819f		/* 0x3f490fdb */
 
-#define g_TrailsDrawn GAME_DATA(int, 0x4a8f1c)	/* statistics of the frame */
+#define g_TrailsDrawn GAME_GLOBAL_IN(int, g_RenderCounts, 28, 0x4a8f1c)	/* statistics of the frame */
 
 CTrail *__fastcall CTrail_ctor(CTrail *self) {
 	self->u0 = 0.0f;

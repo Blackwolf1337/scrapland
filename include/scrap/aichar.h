@@ -171,15 +171,15 @@ static inline void AIChar_DebugState(cAIChar *c, const char *fmt, int state) {
 }
 
 /* the engine variables of the character AI */
-#define g_DistMaxCheckPauseAI GAME_DATA(float, 0x4442b8)	/* "DistMaxCheckPauseAI" */
-#define g_DistMinCheckPauseAI GAME_DATA(float, 0x444228)	/* "DistMinCheckPauseAI" */
-#define g_DistRadPauseCharAI GAME_DATA(float, 0x444240)		/* "DistRadPauseCharAI" */
-#define g_DistMaxCheckReposAI GAME_DATA(float, 0x444348)	/* "DistMaxCheckReposAI" */
-#define g_DistMinCheckReposAI GAME_DATA(float, 0x444330)	/* "DistMinCheckReposAI" */
-#define g_MinTalkCharAI GAME_DATA(float, 0x4442a0)		/* "MinTalkCharAI": the height difference */
-#define g_MinNumTalksCharAI GAME_DATA(int, 0x444258)		/* "MinNumTalksCharAI" */
-#define g_MinTimeStoppedCharAI GAME_DATA(float, 0x444270)	/* "MinTimeStoppedCharAI" */
-#define g_MinTimeStopTempCharAI GAME_DATA(float, 0x444318)	/* "MinTimeStopTempCharAI" */
+#define g_DistMaxCheckPauseAI GAME_GLOBAL_IN(float, GVar_DistMaxCheckPauseAI, 16, 0x4442b8)	/* "DistMaxCheckPauseAI" */
+#define g_DistMinCheckPauseAI GAME_GLOBAL_IN(float, GVar_DistMinCheckPauseAI, 16, 0x444228)	/* "DistMinCheckPauseAI" */
+#define g_DistRadPauseCharAI GAME_GLOBAL_IN(float, GVar_DistRadPauseCharAI, 16, 0x444240)		/* "DistRadPauseCharAI" */
+#define g_DistMaxCheckReposAI GAME_GLOBAL_IN(float, GVar_DistMaxCheckReposAI, 16, 0x444348)	/* "DistMaxCheckReposAI" */
+#define g_DistMinCheckReposAI GAME_GLOBAL_IN(float, GVar_DistMinCheckReposAI, 16, 0x444330)	/* "DistMinCheckReposAI" */
+#define g_MinTalkCharAI GAME_GLOBAL_IN(float, GVar_MinTalkCharAI, 16, 0x4442a0)		/* "MinTalkCharAI": the height difference */
+#define g_MinNumTalksCharAI GAME_GLOBAL_IN(int, GVar_MinNumTalksCharAI, 16, 0x444258)		/* "MinNumTalksCharAI" */
+#define g_MinTimeStoppedCharAI GAME_GLOBAL_IN(float, GVar_MinTimeStoppedCharAI, 16, 0x444270)	/* "MinTimeStoppedCharAI" */
+#define g_MinTimeStopTempCharAI GAME_GLOBAL_IN(float, GVar_MinTimeStopTempCharAI, 16, 0x444318)	/* "MinTimeStopTempCharAI" */
 
 /* ---- AI/AIChar.cpp (src/game/AI/IChar.c); the constructor is declared in walkcharentity.h, GetControl in
  * aicharcontrol.h ---- */

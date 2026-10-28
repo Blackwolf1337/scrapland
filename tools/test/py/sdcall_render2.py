@@ -111,7 +111,7 @@ rn2pf(rn2po + 0xc, (4.0, 2.0))
 rn2sp = SDTest.Peek('g_ShowPortals', 'i')
 SDTest.Poke('g_ShowPortals', 1)
 check('CPortal_DrawDebug', lambda: (rn2log(lambda: SDTest.Call('CPortal_DrawDebug', 'tvii', rn2po, 0x123456)), SDTest.Peek('g_MatFX1', 'i'),
-	(SDTest.Peek(0x4e1e40, 'i') >> 8) & 0xff, SDTest.Peek(0x4e1e48, 'i')))
+	(SDTest.Peek(sym('g_PortalMat') + 0x38, 'i') >> 8) & 0xff, SDTest.Peek(sym('g_PortalMat') + 0x40, 'i')))
 SDTest.Poke('g_ShowPortals', rn2sp)
 
 # the corners of particles: static and active ones, turned, sparks, moved to the camera, faded
@@ -245,4 +245,4 @@ def rn2mat(m):
 		SDTest.Call('CMaterial_GetMapName', 'tsii', m, 0)[0], SDTest.Call('CMaterial_GetMapName', 'tsii', m, 3)[0], SDTest.Call('CMaterial_GetMapName', 'tsii', m, 4)[0])
 check('ModelFX_InitD3D', lambda: (SDTest.Call('ModelFX_InitD3D', 'v'), rn2mat(SDTest.Peek('g_MatElectric', 'i')),
 	rn2mat(SDTest.Peek('g_MatFire', 'i')), rn2mat(SDTest.Peek('g_MatNoise', 'i')), rn2i(SDTest.Peek('g_MatNoise', 'i') + 0x9c) != 0,
-	SDTest.Peek(0x4e1d38, 'i'), SDTest.Peek(0x4e1c40, 'i'), SDTest.Peek(0x4e1d80, 'i')))
+	SDTest.Peek(sym('g_FXGrfStatic') + 0x20, 'i'), SDTest.Peek(sym('g_FXGrfNoise1') + 0x20, 'i'), SDTest.Peek(sym('g_FXGrfNoise2') + 0x20, 'i')))

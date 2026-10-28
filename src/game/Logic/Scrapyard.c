@@ -23,19 +23,19 @@
 #define SHIPGROUP_ONAIEND 0x157e60
 #define SHIPGROUP_MAX_FOUND 10
 
-#define g_MaxMosquitosDist GAME_DATA(float, 0x44d914)
-#define g_MaxMosquitos GAME_DATA(int, 0x44d974)
-#define g_MinPercMosquitosAttackingIntruder GAME_DATA(float, 0x44d98c)
-#define g_MosquitosTriggeredShipName GAME_DATA(char *, 0x44d8e4)
-#define g_MaxMadHuntersDist GAME_DATA(float, 0x44d8fc)
-#define g_MaxMadHunters GAME_DATA(int, 0x44d95c)
-#define g_MinPercMadHuntersAttackingIntruder GAME_DATA(float, 0x44d8cc)
-#define g_MadHuntersTriggeredShipName GAME_DATA(char *, 0x44d92c)
-#define g_OnMosquitoDeathMoney GAME_DATA(int, 0x44d8b4)
-#define g_OnMadHunterDeathMoney GAME_DATA(int, 0x44d944)
+#define g_MaxMosquitosDist GAME_GLOBAL_IN(float, GVar_MaxMosquitosDist, 16, 0x44d914)
+#define g_MaxMosquitos GAME_GLOBAL_IN(int, GVar_MaxMosquitos, 16, 0x44d974)
+#define g_MinPercMosquitosAttackingIntruder GAME_GLOBAL_IN(float, GVar_MinPercMosquitosAttackingIntruder, 16, 0x44d98c)
+#define g_MosquitosTriggeredShipName GAME_GLOBAL_IN(char *, GVar_MosquitosTriggeredShipName, 16, 0x44d8e4)
+#define g_MaxMadHuntersDist GAME_GLOBAL_IN(float, GVar_MaxMadHuntersDist, 16, 0x44d8fc)
+#define g_MaxMadHunters GAME_GLOBAL_IN(int, GVar_MaxMadHunters, 16, 0x44d95c)
+#define g_MinPercMadHuntersAttackingIntruder GAME_GLOBAL_IN(float, GVar_MinPercMadHuntersAttackingIntruder, 16, 0x44d8cc)
+#define g_MadHuntersTriggeredShipName GAME_GLOBAL_IN(char *, GVar_MadHuntersTriggeredShipName, 16, 0x44d92c)
+#define g_OnMosquitoDeathMoney GAME_GLOBAL_IN(int, GVar_OnMosquitoDeathMoney, 16, 0x44d8b4)
+#define g_OnMadHunterDeathMoney GAME_GLOBAL_IN(int, GVar_OnMadHunterDeathMoney, 16, 0x44d944)
 /* the ships the sphere native found around a lair */
-#define g_ShipGroupFound GAME_DATA(int, 0x44d994)
-#define g_ShipGroupShips ((cEntity **)Game_Ptr(0x44d998))	/* [SHIPGROUP_MAX_FOUND] */
+#define g_ShipGroupFound GAME_GLOBAL(int, g_ShipGroupFound, 0x44d994)
+#define g_ShipGroupShips (GAME_ARRAY(cEntity *, g_ShipGroupShips, 0x44d998))	/* [SHIPGROUP_MAX_FOUND] */
 /* the callback of the AI when the move ends (rva 0x15c of the AI) */
 #define AIV_OnEnd(ai) (*(void **)((byte *)(ai) + 0x15c))
 

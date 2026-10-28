@@ -25,6 +25,46 @@ static inline void *Game_Ptr(uint32_t rva) {
 /* lvalue of a global of the exe */
 #define GAME_DATA(type, rva) (*(type *)Game_Ptr(rva))
 
+/*
+ * The globals and tables of the exe that are C objects in ScrapC.exe (src/game/Global/Globals*.c, written by
+ * tools/standalone/globals.py with these defines): in ScrapC.exe the C object name (declared in the macro, so no
+ * header lists them), in the hook DLL the exe's own data at rva.
+ *	GAME_GLOBAL(type, name, rva)		the object name of type (an lvalue)
+ *	GAME_ARRAY(type, name, rva)		the first element of the array name of type (type *)
+ *	GAME_GLOBAL_IN(type, owner, off, rva)	a view of type at off in the object owner: a field of a struct, an
+ *						element of a table, another type at the same place (an lvalue)
+ *	GAME_ARRAY_IN(type, owner, off, rva)	the same as a pointer (type *)
+ *	GAME_PTR(owner, off, rva)		the address off in the object owner (void *)
+ *	GAME_PTR_AT(rva)			the same from the rva alone (src/game/Global/GlobalsAt.h)
+ * The names are pasted, never expanded (they are the names of the defines that use them).
+ */
+#ifdef SD_STANDALONE
+#define SD_REF_(id, label) \
+	({ \
+		extern char id[] __asm__(label); \
+		(void *)id; \
+	})
+#define GAME_GLOBAL(type, name, rva) \
+	(*({ \
+		extern typeof(type) sd_obj_##name __asm__("_" #name); \
+		&sd_obj_##name; \
+	}))
+#define GAME_ARRAY(type, name, rva) ((typeof(type) *)SD_REF_(sd_##name, "_" #name))
+#define GAME_GLOBAL_IN(type, owner, off, rva) (*(typeof(type) *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
+#define GAME_ARRAY_IN(type, owner, off, rva) ((typeof(type) *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
+#define GAME_PTR(owner, off, rva) ((void *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
+/* the same for the generated tables that know only the rva (src/game/Global/StaticInit.inc), from
+ * src/game/Global/GlobalsAt.h */
+#define GAME_PTR_AT(rva) SD_DATA_##rva
+#else
+#define GAME_GLOBAL(type, name, rva) (*(typeof(type) *)Game_Ptr(rva))
+#define GAME_ARRAY(type, name, rva) ((typeof(type) *)Game_Ptr(rva))
+#define GAME_GLOBAL_IN(type, owner, off, rva) (*(typeof(type) *)Game_Ptr(rva))
+#define GAME_ARRAY_IN(type, owner, off, rva) ((typeof(type) *)Game_Ptr(rva))
+#define GAME_PTR(owner, off, rva) Game_Ptr(rva)
+#define GAME_PTR_AT(rva) Game_Ptr(rva)
+#endif
+
 /* a vtable of a game class (void *): in ScrapC.exe the C object of src/game/Global/Vtables.c (at the same rva,
  * tools/standalone/vtables.py checks that name and rva agree), in the hook DLL the exe's own */
 #ifdef SD_STANDALONE
@@ -285,7 +325,7 @@ SD_OFFSET(CWinApp, hwnd, 0x7c);
 SD_OFFSET(CWinApp, gog, 0x84);
 SD_SIZE(CWinApp, 0x90);
 
-#define g_pWorld GAME_DATA(cWorld *, 0x467450)
-#define g_pApp GAME_DATA(CWinApp *, 0x467ba0)
+#define g_pWorld GAME_GLOBAL(cWorld *, g_pWorld, 0x467450)
+#define g_pApp GAME_GLOBAL(CWinApp *, g_pApp, 0x467ba0)
 
 #endif

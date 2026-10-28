@@ -1162,16 +1162,16 @@ byte BspTri_VertIgual(const BspTri *act, uint32_t nv, const BspTri *tri) {
 		ind = 1;
 	} else if (id == tri->vid[2]) {
 		ind = 2;
-	} else if (Vec3_Equal(&act->v[nv], &tri->v[0])) {
+	} else if (Bsp_Vec3Equal(&act->v[nv], &tri->v[0])) {
 		ind = 0;
-	} else if (Vec3_Equal(&act->v[nv], &tri->v[1])) {
+	} else if (Bsp_Vec3Equal(&act->v[nv], &tri->v[1])) {
 		ind = 1;
-	} else if (Vec3_Equal(&act->v[nv], &tri->v[2])) {
+	} else if (Bsp_Vec3Equal(&act->v[nv], &tri->v[2])) {
 		ind = 2;
 	} else {
 		return 0;
 	}
-	CHECK(Vec3_Equal(&act->v[nv], &tri->v[ind]));
+	CHECK(Bsp_Vec3Equal(&act->v[nv], &tri->v[ind]));
 	return __builtin_fabs((double)(act->n[nv].x - tri->n[ind].x)) < BSP_EPS_NORMAL &&
 		__builtin_fabs((double)(act->n[nv].y - tri->n[ind].y)) < BSP_EPS_NORMAL &&
 		__builtin_fabs((double)(act->n[nv].z - tri->n[ind].z)) < BSP_EPS_NORMAL;
@@ -1957,10 +1957,10 @@ int BspTri_CmpZona(const void *pa, const void *pb) {
 
 /* the map compiler: debug output, the TXF cache, the area sums */
 
-#define g_BspDebugCnt GAME_DATA(int, 0x4d5d74)
-#define g_BspDebugSel GAME_DATA(int, 0x432994)		/* the region drawn without links */
+#define g_BspDebugCnt GAME_GLOBAL(int, g_BspDebugCnt, 0x4d5d74)
+#define g_BspDebugSel GAME_GLOBAL(int, g_BspDebugSel, 0x432994)		/* the region drawn without links */
 /* the collision cache counters of suelo.cpp: hit, miss, peak */
-#define g_BspCacheStats ((const int *)Game_Ptr(0x4af7e0))
+#define g_BspCacheStats (GAME_ARRAY(const int, g_BspCacheStats, 0x4af7e0))
 
 void Bsp_MatInfo(CMaterial *m) {
 	uint32_t atrib = m->params.atrib;
@@ -2353,7 +2353,7 @@ void __thiscall Bsp_FinMensaje(CBsp *self, int secs) {
 
 /* the map: made from the floor of the world */
 
-#define g_LmapGuardarIni GAME_DATA(int, 0x43298c)	/* the settings back into the .ini of the map */
+#define g_LmapGuardarIni GAME_GLOBAL_IN(int, g_BspLodDist, 24, 0x43298c)	/* the settings back into the .ini of the map */
 #define g_MapaSombrasDlgCalc ((void *)Game_Ptr(0x282e60))	/* Bsp_DlgProc */
 
 typedef int(__stdcall *isdlgbuttonchecked_t)(void *hwnd, int id);
@@ -2604,8 +2604,8 @@ intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intpt
 
 /* the radiosity: the areas and region trees of the lists, the links between regions */
 
-#define g_LightmapDebugTex GAME_DATA(int, 0x4d5d38)	/* gvar */
-#define g_BspEnlaces GAME_DATA(int, 0x4e73ac)		/* the region links (radiosity code) */
+#define g_LightmapDebugTex GAME_GLOBAL_IN(int, GVar_LightmapDebugTex, 16, 0x4d5d38)	/* gvar */
+#define g_BspEnlaces GAME_GLOBAL(int, g_BspNumEnlaces, 0x4e73ac)		/* the region links (radiosity code) */
 
 /* exe functions of other files with their prototypes there */
 double crt_ceil(double x);				/* rva 0x345010 */
@@ -2866,7 +2866,7 @@ void __fastcall CBsp_IniciarAreas(CBsp *self) {
 
 /* the glow of the lists and the shadows of the area lights */
 
-#define g_LightmapGlowMult GAME_DATA(float, 0x4d5cc0)	/* gvar */
+#define g_LightmapGlowMult GAME_GLOBAL_IN(float, GVar_LightmapGlowMult, 16, 0x4d5cc0)	/* gvar */
 
 /* the glow map of the material sampled into luzA, squared */
 void BspTri_CalcGlow(BspTri *list) {

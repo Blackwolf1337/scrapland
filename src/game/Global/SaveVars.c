@@ -11,13 +11,6 @@
 
 void App_GetConfigDir(char *buf, int size);
 
-typedef struct cSaveVar {
-	char *name;			/* 0x0 cString */
-	char *value;			/* 0x4 cString */
-	struct cSaveVar *next;		/* 0x8 g_SaveVars */
-} cSaveVar;
-SD_SIZE(cSaveVar, 0xc);
-
 /* an entry of the save list of SaveGames_GetList */
 typedef struct cSaveGameInfo {
 	char desc[0x40];		/* 0x00 */
@@ -29,13 +22,13 @@ SD_SIZE(cSaveGameInfo, 0x48);
 #define SAVE_MAGIC "Scrapland savegame"
 #define SAVE_SLOTS 7
 
-#define g_SaveVarTable (&GAME_DATA(HashTable, 0x428aac))	/* of cPtrItem, 457 slots */
-#define g_SaveVars GAME_DATA(cSaveVar *, 0x44bb88)
-#define g_SaveVarCount GAME_DATA(int, 0x44bbec)
-#define g_SaveDesc ((cString *)Game_Ptr(0x44bbc0))	/* the description of the save loaded last */
+#define g_SaveVarTable (&GAME_GLOBAL(HashTable, g_SaveVarTable, 0x428aac))	/* of cPtrItem, 457 slots */
+#define g_SaveVars GAME_GLOBAL(cSaveVar *, g_SaveVars, 0x44bb88)
+#define g_SaveVarCount GAME_GLOBAL(int, g_SaveVarCount, 0x44bbec)
+#define g_SaveDesc (GAME_ARRAY_IN(cString, GVar_LastSaveGameName, 16, 0x44bbc0))	/* the description of the save loaded last */
 /* called when the number of finished crazy deals changes: one deal, and all three (with g_SuperDealAvaliable) */
-#define g_OnCrazyDeal ((cPy_Function *)Game_Ptr(0x44bbd8))
-#define g_OnAllCrazyDeals ((cPy_Function *)Game_Ptr(0x44bb9c))
+#define g_OnCrazyDeal (GAME_ARRAY_IN(cPy_Function, GVar_OnCrazyDealTarget, 16, 0x44bbd8))
+#define g_OnAllCrazyDeals (GAME_ARRAY_IN(cPy_Function, GVar_OnCrazyDealFinished, 16, 0x44bb9c))
 
 cSaveVar *__thiscall cSaveVar_ctor(cSaveVar *self, const char *name, const char *value) {
 	cString_ctor(&self->name);

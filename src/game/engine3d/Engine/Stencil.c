@@ -67,9 +67,9 @@ void Stencil_DebugLine(const vec3_t *a, const vec3_t *b, uint32_t color) {
 
 #define STENCIL_MAX_SEGS 0x2000
 #define STENCIL_MAX_TRIS 0x3000
-#define g_StencilLDir GAME_DATA(float, 0x3901c8)	/* R_StencilLDir: the distance of a directional light */
-#define g_StencilFisq GAME_DATA(int, 0x390064)	/* R_StencilFisq: RSqrt_Estimate instead of sqrt */
-#define g_StencilDraw GAME_DATA(int, 0x390168)	/* R_StencilDraw */
+#define g_StencilLDir GAME_GLOBAL_IN(float, GVar_R_StencilLDir, 16, 0x3901c8)	/* R_StencilLDir: the distance of a directional light */
+#define g_StencilFisq GAME_GLOBAL_IN(int, GVar_R_StencilFisq, 16, 0x390064)	/* R_StencilFisq: RSqrt_Estimate instead of sqrt */
+#define g_StencilDraw GAME_GLOBAL_IN(int, GVar_R_StencilDraw, 16, 0x390168)	/* R_StencilDraw */
 
 /* the far end of the volume edge from p (in the space of the mesh): R_StencilLDir along the light of a directional
  * light, else to the range of the light, p itself outside the range or the cone of a spot light, the light position
@@ -526,10 +526,10 @@ void SombrasStencil_Render(void) {
 }
 
 /* the capture of the volumes of one mesh list */
-#define g_StencilBBox GAME_DATA(int, 0x390150)	/* R_StencilBBox: the segment to the light tested */
-#define g_StencilViewDisp GAME_DATA(float, 0x390198)	/* R_StencilViewDisp: the volumes moved along the view */
-#define g_StencilGruposMax GAME_DATA(int, 0x4afde4)
-#define g_TriFacing ((byte *)Game_Ptr(0x3902c0))		/* [0x10000] the triangles facing the light */
+#define g_StencilBBox GAME_GLOBAL_IN(int, GVar_R_StencilBBox, 16, 0x390150)	/* R_StencilBBox: the segment to the light tested */
+#define g_StencilViewDisp GAME_GLOBAL_IN(float, GVar_R_StencilViewDisp, 16, 0x390198)	/* R_StencilViewDisp: the volumes moved along the view */
+#define g_StencilGruposMax GAME_GLOBAL(int, g_StencilGruposMax, 0x4afde4)
+#define g_TriFacing (GAME_ARRAY(byte, g_TriFacing, 0x3902c0))		/* [0x10000] the triangles facing the light */
 #define PROF_STENCIL 5
 #define PROF_STENCIL_FACING 6
 #define LUZ_FOCO 0x1389

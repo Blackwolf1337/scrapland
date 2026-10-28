@@ -17,7 +17,7 @@
 #include "scrap/win32.h"
 
 #define PAD_ERROR GAME_STR(str_3bcc00, 0x3bcc00)	/* "ERROR" */
-#define g_PadLabelBuf ((char *)Game_Ptr(0x44ca74))	/* 0x20 bytes */
+#define g_PadLabelBuf (GAME_ARRAY(char, g_PadLabelBuf, 0x44ca74))	/* 0x20 bytes */
 
 typedef uint32_t(__stdcall *xinputgetstate_t)(uint32_t index, exe_xinput_state *state);
 #define exe_XInputGetState GAME_DATA(xinputgetstate_t, 0x3a14bc)

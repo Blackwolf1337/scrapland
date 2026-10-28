@@ -12,7 +12,7 @@
 #include "scrap/weaps2.h"
 #include "scrap/world.h"
 
-#define g_RandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
+#define g_RandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
 #define FX_PI 3.1415927f				/* 0x40490fdb */
 
 /* rand() in [0, 1] times range, plus add (all in double) */
@@ -257,7 +257,7 @@ void *__thiscall cObjElementFXTesla_Delete(void *self, uint32_t flags) {
 
 /* ---- cObjElementFXATPC ---- */
 
-#define g_ATPCShootSize GAME_DATA(float, 0x448c8c)
+#define g_ATPCShootSize GAME_GLOBAL_IN(float, GVar_ATPCShootSize, 16, 0x448c8c)
 #define FXATPC_RAMP_CORE 0x4317a0	/* [-16..0], by the time */
 #define FXATPC_RAMP_GLOW 0x431758	/* [2] */
 #define FXATPC_RAMP_RING 0x43177c
@@ -1429,9 +1429,9 @@ void __thiscall cObjElementFXSwarmMissile_Reset(cObjElementFXSwarmMissile *self,
 
 /* ---- cObjElementFXTesla ---- */
 
-#define g_TeslaRange GAME_DATA(float, 0x44a7d0)
-#define g_FXTeslaStepTime GAME_DATA(float, 0x44a760)
-#define g_FXTeslaRandRadius GAME_DATA(float, 0x44a840)
+#define g_TeslaRange GAME_GLOBAL_IN(float, GVar_TeslaRange, 16, 0x44a7d0)
+#define g_FXTeslaStepTime GAME_GLOBAL_IN(float, GVar_FXTeslaStepTime, 16, 0x44a760)
+#define g_FXTeslaRandRadius GAME_GLOBAL_IN(float, GVar_FXTeslaRandRadius, 16, 0x44a840)
 #define FXTESLA_RAMP_SPARK 0x431930		/* [2] */
 #define Entity_TeslaAng(e) ((float *)((byte *)(e) + 0x6dc))	/* the aim angles x and y */
 #define Entity_HitInfo(e) ((cVehicleAttack *)((byte *)(e) + 0x298))
@@ -1881,8 +1881,8 @@ void __thiscall cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity 
 
 /* ---- the Swarm emitters ---- */
 
-#define g_SwarmBeeExplosionFile GAME_DATA(const char *, 0x44a5c0)
-#define g_SwarmExplosionFile GAME_DATA(const char *, 0x44a520)
+#define g_SwarmBeeExplosionFile GAME_GLOBAL_IN(const char *, GVar_SwarmBeeExplosionFile, 16, 0x44a5c0)
+#define g_SwarmExplosionFile GAME_GLOBAL_IN(const char *, GVar_SwarmExplosionFile, 16, 0x44a520)
 #define FXSWARM_RAMP_BEE 0x431978
 #define FXSWARM_RAMP_FLASH 0x431a2c		/* [2] */
 #define FXSWARM_RAMP_SMOKE 0x4319c0		/* [3] */

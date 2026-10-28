@@ -16,7 +16,7 @@
 #define DEBRIS_STEP 0.05f
 #define DEBRIS_MAXSTEP 0.1f
 
-#define g_OShow GAME_DATA(int, 0x467400)	/* O_Show, the debug text of the pools */
+#define g_OShow GAME_GLOBAL_IN(int, GVar_O_Show, 16, 0x467400)	/* O_Show, the debug text of the pools */
 
 /* the effects of cDebris_SetFX by type: the size and the constructor (thiscall, returns the object) of the class */
 typedef cObjElementFX *(__thiscall *ObjElementFXCtor_t)(void *mem);

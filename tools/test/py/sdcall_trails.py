@@ -32,7 +32,7 @@ def trwhere(t):
 	ind = SDTest.Peek(t + 4, '@i')
 	if ind < 0 or ind >= 256 or tex < 0 or tex >= 17:
 		return (tex, ind)
-	return (tex, ind, SDTest.Peek(0x4d6e78 + 4 * (256 * tex + ind), 'i') == t)
+	return (tex, ind, SDTest.Peek(sym('g_TrailsRender') + 4 * (256 * tex + ind), 'i') == t)
 def trstate(t, n):
 	return (trget(t), trpts(t, n), trwhere(t), trlist())
 def trstep(name, t, n, rva, sig, *args):

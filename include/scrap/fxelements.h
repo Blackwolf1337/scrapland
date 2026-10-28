@@ -217,8 +217,8 @@ SD_OFFSET(cFXElementsMentalControllerMainFX, glowColor, 0x41f8);
 SD_SIZE(cFXElementsMentalControllerMainFX, 0x4278);
 
 /* the main controller of the level, NULL before the Press elements are made */
-#define g_MentalMainFX GAME_DATA(cFXElementsMentalControllerMainFX *, 0x46719c)
-#define g_MentalControllerMaxDist GAME_DATA(float, 0x4671f8)	/* FXElementsMentalControllerMaxDist */
+#define g_MentalMainFX GAME_GLOBAL(cFXElementsMentalControllerMainFX *, g_MentalMainFX, 0x46719c)
+#define g_MentalControllerMaxDist GAME_GLOBAL_IN(float, GVar_FXElementsMentalControllerMaxDist, 16, 0x4671f8)	/* FXElementsMentalControllerMaxDist */
 
 cFXElementsMentalController *__thiscall cFXElementsMentalController_ctor(cFXElementsMentalController *self,
 	const char *name, const vec3_t *pos, const vec3_t *rot);
@@ -258,7 +258,7 @@ void __thiscall cFXElementsMentalControllerMainFX_Update(cFXElementsMentalContro
 void FXElementsPress_Create(void);
 
 /* rand() of the exe in [0, 1] times range, plus add (all in double), the way the effects pick their values */
-#define g_FxRandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
+#define g_FxRandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
 static inline float FxElem_Rand(double range, double add) {
 	return (float)((double)(crt_rand() & 0x7fff) * g_FxRandScale * range + add);
 }
@@ -365,12 +365,12 @@ SD_OFFSET(cFXElementsLighting, trails, 0x9ac);
 SD_OFFSET(cFXElementsLighting, numPts, 0xe84);
 SD_SIZE(cFXElementsLighting, 0xe88);
 
-#define g_FireDropMaxDist GAME_DATA(float, 0x467074)	/* FXElementsFireDropMaxDist */
-#define g_FireDropRateAtt GAME_DATA(float, 0x4670d4)	/* FXElementsFireDropRateAtt */
-#define g_FireDropSoundAttIni GAME_DATA(float, 0x46708c)	/* FXElementsFireDropSoundAttIni */
-#define g_FireDropSoundAttEnd GAME_DATA(float, 0x4670bc)	/* FXElementsFireDropSoundAttEnd */
-#define g_FireDropSoundVol GAME_DATA(float, 0x4670a4)	/* FXElementsFireDropSoundVol */
-#define g_FireDropSound GAME_DATA(char *, 0x4670ec)	/* FXElementsFireDropSound, a cString */
+#define g_FireDropMaxDist GAME_GLOBAL_IN(float, GVar_FXElementsFireDropMaxDist, 16, 0x467074)	/* FXElementsFireDropMaxDist */
+#define g_FireDropRateAtt GAME_GLOBAL_IN(float, GVar_FXElementsFireDropRateAtt, 16, 0x4670d4)	/* FXElementsFireDropRateAtt */
+#define g_FireDropSoundAttIni GAME_GLOBAL_IN(float, GVar_FXElementsFireDropSoundAttIni, 16, 0x46708c)	/* FXElementsFireDropSoundAttIni */
+#define g_FireDropSoundAttEnd GAME_GLOBAL_IN(float, GVar_FXElementsFireDropSoundAttEnd, 16, 0x4670bc)	/* FXElementsFireDropSoundAttEnd */
+#define g_FireDropSoundVol GAME_GLOBAL_IN(float, GVar_FXElementsFireDropSoundVol, 16, 0x4670a4)	/* FXElementsFireDropSoundVol */
+#define g_FireDropSound GAME_GLOBAL_IN(char *, GVar_FXElementsFireDropSound, 16, 0x4670ec)	/* FXElementsFireDropSound, a cString */
 
 cFXElementsFireDrop *__thiscall cFXElementsFireDrop_ctor(cFXElementsFireDrop *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
@@ -458,13 +458,13 @@ SD_OFFSET(cFXElementsABFakeMeteors, curve, 0x577c);
 SD_SIZE(cFXElementsABFakeMeteors, 0x5780);
 
 /* the engine variables FXABFakeLimit* */
-#define g_ABLimitRingRotSpeed GAME_DATA(float, 0x46711c)	/* RingRotSpeed */
-#define g_ABLimitSegmentStep GAME_DATA(float, 0x467104)	/* SegmentStep */
-#define g_ABLimitSegmentSize GAME_DATA(float, 0x467164)	/* SegmentSize */
-#define g_ABLimitRadius GAME_DATA(float, 0x467134)		/* Radius */
-#define g_ABLimitDistLighting GAME_DATA(float, 0x46714c)	/* DistLighting */
-#define g_ABLimitQuakeFactor GAME_DATA(float, 0x46717c)	/* QuakeFactor */
-#define g_ABLimitQuakeTime GAME_DATA(float, 0x467194)		/* QuakeTime */
+#define g_ABLimitRingRotSpeed GAME_GLOBAL_IN(float, GVar_FXABFakeLimitRingRotSpeed, 16, 0x46711c)	/* RingRotSpeed */
+#define g_ABLimitSegmentStep GAME_GLOBAL_IN(float, GVar_FXABFakeLimitSegmentStep, 16, 0x467104)	/* SegmentStep */
+#define g_ABLimitSegmentSize GAME_GLOBAL_IN(float, GVar_FXABFakeLimitSegmentSize, 16, 0x467164)	/* SegmentSize */
+#define g_ABLimitRadius GAME_GLOBAL_IN(float, GVar_FXABFakeLimitRadius, 16, 0x467134)		/* Radius */
+#define g_ABLimitDistLighting GAME_GLOBAL_IN(float, GVar_FXABFakeLimitDistLighting, 16, 0x46714c)	/* DistLighting */
+#define g_ABLimitQuakeFactor GAME_GLOBAL_IN(float, GVar_FXABFakeLimitQuakeFactor, 16, 0x46717c)	/* QuakeFactor */
+#define g_ABLimitQuakeTime GAME_GLOBAL_IN(float, GVar_FXABFakeLimitQuakeTime, 16, 0x467194)		/* QuakeTime */
 
 cFXElementsABFakeLimit *__thiscall cFXElementsABFakeLimit_ctor(cFXElementsABFakeLimit *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);

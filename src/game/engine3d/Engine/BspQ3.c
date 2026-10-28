@@ -16,7 +16,7 @@
 #include "scrap/varios.h"
 
 /* 1 in the exe: the light map materials keep the blend of CMaterial_Prepare */
-#define g_BspQ3LMapNoBlend GAME_DATA(byte, 0x432a7d)
+#define g_BspQ3LMapNoBlend GAME_GLOBAL_IN(byte, group_432a7c, 1, 0x432a7d)
 
 typedef CMallaD3D *(__thiscall *bspQ3MallaD3DDelete_t)(CMallaD3D *self, byte flags);
 typedef int(__thiscall *bspQ3MallaD3DDev_t)(CMallaD3D *self, void *dev);
@@ -548,7 +548,7 @@ void BspQ3_Render(void) {
 
 /* the static initializer (rva 0x05f770) of a vertex array after g_BspQ3VertL that no code reads */
 #define BSPQ3_VERTG 0x40
-#define g_BspQ3VertG ((Grafico3DVert *)Game_Ptr(0x4e54f8))	/* [BSPQ3_VERTG] */
+#define g_BspQ3VertG (GAME_ARRAY(Grafico3DVert, g_BspQ3VertG, 0x4e54f8))	/* [BSPQ3_VERTG] */
 
 void BspQ3_InitVertG(void) {
 	for (int i = 0; i < BSPQ3_VERTG; i++) {

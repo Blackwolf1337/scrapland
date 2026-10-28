@@ -270,8 +270,8 @@ static inline const cVehicleMotorsVtbl *Veh_MotorsVtbl(cVehicleEntity *v) {
 }
 
 /* the engine variables */
-#define g_AtmosphereLimit GAME_DATA(float, 0x467644)	/* above it the ships fall back */
-#define g_SpaceLimit GAME_DATA(float, 0x4675d8)
+#define g_AtmosphereLimit GAME_GLOBAL_IN(float, GVar_AtmosphereLimit, 16, 0x467644)	/* above it the ships fall back */
+#define g_SpaceLimit GAME_GLOBAL_IN(float, GVar_TopLimit, 16, 0x4675d8)
 
 /* the parts of other files (not decompiled yet; VehicleMotors, VehicleTraffic and WeaponManager in their headers);
  * the objects inside the vehicle by their offset */
@@ -308,7 +308,7 @@ typedef struct cVehicleTargets {
 } cVehicleTargets;
 SD_SIZE(cVehicleTargets, 0x88);
 
-#define g_TgtRegenerationTime GAME_DATA(float, 0x447b74)
+#define g_TgtRegenerationTime GAME_GLOBAL_IN(float, GVar_TgtRegenerationTime, 16, 0x447b74)
 
 /* the functions take the o648 bytes of the vehicle */
 void *__fastcall cVehicleO648_ctor(void *o);

@@ -14,7 +14,7 @@
 #include "scrap/material.h"
 #include "scrap/utild3d.h"
 
-#define g_ShowPreIllumVtx GAME_DATA(int, 0x4e1db8)	/* R_ShowPreIllumVtx: 1 no light colors, 2 no emissive ones */
+#define g_ShowPreIllumVtx GAME_GLOBAL_IN(int, GVar_R_ShowPreIllumVtx, 16, 0x4e1db8)	/* R_ShowPreIllumVtx: 1 no light colors, 2 no emissive ones */
 
 /* a vertex of VERT_LTEX1N */
 typedef struct VertLTex1N {

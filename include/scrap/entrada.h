@@ -11,14 +11,14 @@
 
 /* teclado.cpp */
 #define TECLADO_BUF 32
-#define g_TecladoKeys ((byte *)Game_Ptr(0x4db2d0))		/* 256, 1 while held */
-#define g_TecladoBuf ((uint16_t *)Game_Ptr(0x4db3d0))	/* TECLADO_BUF characters */
-#define g_TecladoBufStart GAME_DATA(int, 0x4db410)
-#define g_TecladoBufCount GAME_DATA(int, 0x4db414)
+#define g_TecladoKeys (GAME_ARRAY(byte, g_TecladoKeys, 0x4db2d0))		/* 256, 1 while held */
+#define g_TecladoBuf (GAME_ARRAY(uint16_t, g_TecladoBuf, 0x4db3d0))	/* TECLADO_BUF characters */
+#define g_TecladoBufStart GAME_GLOBAL(int, g_TecladoBufStart, 0x4db410)
+#define g_TecladoBufCount GAME_GLOBAL(int, g_TecladoBufCount, 0x4db414)
 /* the time of the engine without the pauses (next to teclado.cpp, its source is not known) */
-#define g_TiempoPausado GAME_DATA(uint32_t, 0x4db2c4)	/* the sum of the pauses */
-#define g_TiempoReanudado GAME_DATA(int, 0x4db2c8)	/* set when a pause ended */
-#define g_TiempoPausa GAME_DATA(uint32_t, 0x4db2cc)	/* timeGetTime at the start of the pause, 0 without */
+#define g_TiempoPausado GAME_GLOBAL(uint32_t, g_TiempoPausado, 0x4db2c4)	/* the sum of the pauses */
+#define g_TiempoReanudado GAME_GLOBAL(int, g_TiempoReanudado, 0x4db2c8)	/* set when a pause ended */
+#define g_TiempoPausa GAME_GLOBAL(uint32_t, g_TiempoPausa, 0x4db2cc)	/* timeGetTime at the start of the pause, 0 without */
 
 uint32_t Tiempo_Get(void);
 /* on: the pause starts (once), off: it ends */
@@ -35,13 +35,13 @@ void Teclado_KeyUp(uint32_t wparam, uint32_t lparam);
 #define IENTRADA_VFTABLE GAME_VFTABLE(IEntrada_vftable, 0x3e25ec)
 #define CENTRADADINPUT_VFTABLE GAME_VFTABLE(CEntradaDInput_vftable, 0x3e2610)
 #define CENTRADAWINDOWS_VFTABLE GAME_VFTABLE(CEntradaWindows_vftable, 0x3e2634)
-#define g_EntradaInic GAME_DATA(byte, 0x4db428)
+#define g_EntradaInic GAME_GLOBAL(byte, g_EntradaInic, 0x4db428)
 /* the mouse axes inverted */
-#define g_EntradaInvX GAME_DATA(int, 0x4db41c)
-#define g_EntradaInvY GAME_DATA(int, 0x4db420)
-#define g_EntradaInvZ GAME_DATA(int, 0x4db424)
+#define g_EntradaInvX GAME_GLOBAL(int, g_EntradaInvX, 0x4db41c)
+#define g_EntradaInvY GAME_GLOBAL(int, g_EntradaInvY, 0x4db420)
+#define g_EntradaInvZ GAME_GLOBAL(int, g_EntradaInvZ, 0x4db424)
 /* the cursor position while CEntradaWindows holds the mouse */
-#define g_EntradaCursor ((int32_t *)Game_Ptr(0x432a08))
+#define g_EntradaCursor (GAME_ARRAY(int32_t, g_EntradaCursor, 0x432a08))
 #define ENTRADA_CURSOR_CENTER 100
 
 /* the vftable of IEntrada */

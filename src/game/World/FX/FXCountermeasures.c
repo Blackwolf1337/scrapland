@@ -14,7 +14,7 @@
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 
-#define g_RandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
+#define g_RandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
 #define FX_PI 3.1415927f				/* rva 0x3a3a30 */
 #define FX_PI_3 1.0471976f				/* rva 0x3b084c */
 
@@ -480,14 +480,14 @@ void __thiscall cObjElementFXEMI_SetEntity(cObjElementFXEMI *self, cEntity *e) {
 	self->entity = e;
 }
 
-#define g_FXEMIFollowTime GAME_DATA(float, 0x4492e0)
-#define g_FXEMIRandRadius GAME_DATA(float, 0x449474)
-#define g_FXEMIStepTime GAME_DATA(float, 0x449368)
-#define g_EMIThunder1Sound GAME_DATA(const char *, 0x449404)
-#define g_EMIThunder2Sound GAME_DATA(const char *, 0x4493d4)
-#define g_EMIThunderSoundAttIni GAME_DATA(float, 0x449380)
-#define g_EMIThunderSoundAttEnd GAME_DATA(float, 0x4493ec)
-#define g_EMIThunderSoundVol GAME_DATA(float, 0x44942c)
+#define g_FXEMIFollowTime GAME_GLOBAL_IN(float, GVar_FXEMIFollowTime, 16, 0x4492e0)
+#define g_FXEMIRandRadius GAME_GLOBAL_IN(float, GVar_FXEMIRandRadius, 16, 0x449474)
+#define g_FXEMIStepTime GAME_GLOBAL_IN(float, GVar_FXEMIStepTime, 16, 0x449368)
+#define g_EMIThunder1Sound GAME_GLOBAL_IN(const char *, GVar_EMIThunder1Sound, 16, 0x449404)
+#define g_EMIThunder2Sound GAME_GLOBAL_IN(const char *, GVar_EMIThunder2Sound, 16, 0x4493d4)
+#define g_EMIThunderSoundAttIni GAME_GLOBAL_IN(float, GVar_EMIThunderSoundAttIni, 16, 0x449380)
+#define g_EMIThunderSoundAttEnd GAME_GLOBAL_IN(float, GVar_EMIThunderSoundAttEnd, 16, 0x4493ec)
+#define g_EMIThunderSoundVol GAME_GLOBAL_IN(float, GVar_EMIThunderSoundVol, 16, 0x44942c)
 #define FXEMI_RAMPS 0x430888		/* 3 color ramps of 9 colors: 0..1 for most, 1..2 for the last glow */
 #define FXEMI_ENTITIES 0x13		/* the entity lists the bolts hit */
 

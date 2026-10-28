@@ -268,7 +268,7 @@ byte __thiscall CSuelo_GetYBelow(CSuelo *self, float x, float z, float maxY, flo
 }
 
 /* the static initializer (rva 0x05f7a0): "FastGetYSector", "Fast GetYSector (0/1)", on */
-#define g_FastGetYSectorVar ((cGVar *)Game_Ptr(0x4e6e00))
+#define g_FastGetYSectorVar (GAME_ARRAY(cGVar, g_FastGetYSectorVar, 0x4e6e00))
 
 void Gety_InitFastGetYSector(void) {
 	GVar_InitInt(g_FastGetYSectorVar, GAME_STR(str_3e6efc, 0x3e6efc), 0, GAME_STR(str_3e6ee4, 0x3e6ee4), 1);

@@ -36,12 +36,12 @@
 #define LASER_COLOR 0x800000
 
 /* the color ramps of the alarm and maintenance particles (9 colors) */
-#define g_RampAlarmA ((uint32_t *)Game_Ptr(0x428354))
-#define g_RampAlarmB ((uint32_t *)Game_Ptr(0x428330))
-#define g_RampAlarmC ((uint32_t *)Game_Ptr(0x42839c))
-#define g_RampAlarmD ((uint32_t *)Game_Ptr(0x428378))
-#define g_RampMaintenance ((uint32_t *)Game_Ptr(0x42842c))
-#define g_RampMaintenanceEnd ((uint32_t *)Game_Ptr(0x428408))
+#define g_RampAlarmA (GAME_ARRAY(uint32_t, g_RampAlarmA, 0x428354))
+#define g_RampAlarmB (GAME_ARRAY(uint32_t, g_RampAlarmB, 0x428330))
+#define g_RampAlarmC (GAME_ARRAY(uint32_t, g_RampAlarmC, 0x42839c))
+#define g_RampAlarmD (GAME_ARRAY(uint32_t, g_RampAlarmD, 0x428378))
+#define g_RampMaintenance (GAME_ARRAY(uint32_t, g_RampMaintenance, 0x42842c))
+#define g_RampMaintenanceEnd (GAME_ARRAY(uint32_t, g_RampMaintenanceEnd, 0x428408))
 
 /* rand() & 0x7fff as 0..1 (double) */
 static inline double EFX_Rnd(void) {
@@ -1170,10 +1170,10 @@ void __thiscall cEmbeddedFXMaintenance_Update(cEmbeddedFXMaintenance *self, floa
 }
 
 
-#define g_SentinelLaserScanerDist GAME_DATA(float, 0x447344)	/* "SentinelLaserScanerDist" */
-#define g_SentinelStdFar GAME_DATA(float, 0x44dad8)
-#define g_SentinelStdFovY GAME_DATA(float, 0x44daf0)
-#define g_SentinelStdFovX GAME_DATA(float, 0x44db68)
+#define g_SentinelLaserScanerDist GAME_GLOBAL_IN(float, GVar_SentinelLaserScanerDist, 16, 0x447344)	/* "SentinelLaserScanerDist" */
+#define g_SentinelStdFar GAME_GLOBAL_IN(float, GVar_SentinelStdFar, 16, 0x44dad8)
+#define g_SentinelStdFovY GAME_GLOBAL_IN(float, GVar_SentinelStdFovY, 16, 0x44daf0)
+#define g_SentinelStdFovX GAME_GLOBAL_IN(float, GVar_SentinelStdFovX, 16, 0x44db68)
 
 static void EFX_SentinelClear(cEmbeddedFXSentinel *self) {
 	for (int i = 0; i < self->numLasers; i++) {
@@ -1536,7 +1536,7 @@ void __thiscall cEmbeddedFXCrazyGambler_Update(cEmbeddedFXCrazyGambler *self, fl
 	}
 }
 
-#define g_MessengerLightingDist GAME_DATA(float, 0x447394)	/* "MessengerLightingDist" */
+#define g_MessengerLightingDist GAME_GLOBAL_IN(float, GVar_MessengerLightingDist, 16, 0x447394)	/* "MessengerLightingDist" */
 
 /* the flag of vertex v of ray r (v may be -1: the byte before the ray) */
 static inline byte *EFX_MessengerUsed(cEmbeddedFXMessenger *self, int r, int v) {
@@ -1695,10 +1695,10 @@ void __thiscall cEmbeddedFXMessenger_Update(cEmbeddedFXMessenger *self, float dt
 	}
 }
 
-#define g_FXMercenaryDrinkSmokeFile GAME_DATA(const char *, 0x446c28)	/* "FXMercenaryDrinkSmokeFile" */
+#define g_FXMercenaryDrinkSmokeFile GAME_GLOBAL_IN(const char *, GVar_FXMercenaryDrinkSmokeFile, 16, 0x446c28)	/* "FXMercenaryDrinkSmokeFile" */
 /* the color ramps of the bubbles and of the smoke, two of 9 colors each */
-#define g_RampMercenaryBubbles ((uint32_t *)Game_Ptr(0x428230))
-#define g_RampMercenarySmoke ((uint32_t *)Game_Ptr(0x428278))
+#define g_RampMercenaryBubbles (GAME_ARRAY(uint32_t, g_RampMercenaryBubbles, 0x428230))
+#define g_RampMercenarySmoke (GAME_ARRAY(uint32_t, g_RampMercenarySmoke, 0x428278))
 
 static inline byte EFX_MercSprite(void) {
 	return (crt_rand() & 1) ? 0x09 : 0x48;
@@ -1882,10 +1882,10 @@ void __thiscall cEmbeddedFXMercenary_Update(cEmbeddedFXMercenary *self, float dt
 	EFX_MercSmoke(self, model);
 }
 
-#define g_FXRustyChispasSound GAME_DATA(const char *, 0x44736c)	/* "FXRustyChispasSound" */
-#define g_FXRustyChispasSoundVol GAME_DATA(float, 0x44732c)	/* "FXRustyChispasSoundVol" */
+#define g_FXRustyChispasSound GAME_GLOBAL_IN(const char *, GVar_FXRustyChispasSound, 16, 0x44736c)	/* "FXRustyChispasSound" */
+#define g_FXRustyChispasSoundVol GAME_GLOBAL_IN(float, GVar_FXRustyChispasSoundVol, 16, 0x44732c)	/* "FXRustyChispasSoundVol" */
 /* the color ramps of the sparks of the pigtail (9 colors each) */
-#define g_RampRustySparks ((uint32_t *)Game_Ptr(0x4282c0))
+#define g_RampRustySparks (GAME_ARRAY(uint32_t, g_RampRustySparks, 0x4282c0))
 
 static inline void EFX_RustyStill(CGameParticles *p) {
 	p->initPosMin.x = 0.0f;

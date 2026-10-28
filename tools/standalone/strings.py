@@ -32,6 +32,7 @@ from datamap import MAP, read_map
 
 OUT_DIR = 'src/game/Global'
 AT_H = 'src/game/Global/StringsAt.h'
+GLOBALS_AT_H = 'src/game/Global/GlobalsAt.h'
 STATIC_INIT = 'src/game/Global/StaticInit.inc'
 
 # the kinds of the map a string may lie in
@@ -215,15 +216,16 @@ def c_literal(b):
 
 
 def c_sources():
-	"""the C of src/ and include/ but the vendored Python and what this tool writes"""
+	"""the C of src/ and include/ but the vendored Python, what this tool writes and the globals of globals.py (stage
+	3b5, made after the strings)"""
 	for top in ('src', 'include'):
 		for d, _, fs in os.walk(os.path.join(ROOT, top)):
 			if os.path.relpath(d, ROOT).startswith('src/python'):
 				continue
 			for f in sorted(fs):
 				path = os.path.join(d, f)
-				if f.endswith(('.c', '.h', '.inc')) and not re.match(r'^Strings[0-9a-f]{2}\.c$', f) \
-						and os.path.relpath(path, ROOT) != AT_H:
+				if f.endswith(('.c', '.h', '.inc')) and not re.match(r'^(Strings|Globals)[0-9a-f]{2}\.c$', f) \
+						and os.path.relpath(path, ROOT) not in (AT_H, GLOBALS_AT_H):
 					yield path
 
 
@@ -255,8 +257,10 @@ def static_init():
 	return out
 
 
-# the forms of the C that read something else there: GAME_DATA or a pointer cast of a type that is no char or void
-OTHER_USE = re.compile(r'GAME_DATA\(\s*([^,()]+?)\s*,\s*(0x[0-9a-fA-F]+)\s*\)'
+# the forms of the C that read something else there: GAME_DATA, the globals of stage 3b5 (GAME_GLOBAL, GAME_ARRAY and
+# their _IN views) or a pointer cast of a type that is no char or void
+OTHER_USE = re.compile(r'GAME_(?:DATA|GLOBAL|ARRAY|GLOBAL_IN|ARRAY_IN)\(\s*([^,()]+?)\s*,(?:\s*\w+\s*,){0,2}'
+	r'\s*(0x[0-9a-fA-F]+)\s*\)'
 	r'|\(\s*((?:const\s+)?\w+)\s*\*\s*\)\s*Game_Ptr\(\s*(0x[0-9a-fA-F]+)\s*\)')
 
 
@@ -288,7 +292,8 @@ def method_tables():
 		t = open(path, encoding='utf-8').read()
 		out += [(n, int(v, 16)) for n, v in re.findall(r'^SD_PY_MODULE\((\w+), (0x[0-9a-fA-F]+)\)', t, re.M)]
 		out += [(n, int(v, 16)) for n, v in
-			re.findall(r'#define (\w+)_methods \(&GAME_DATA\(PyMethodDef, (0x[0-9a-fA-F]+)\)\)', t)]
+			re.findall(r'#define (\w+)_methods \(&GAME_(?:DATA|GLOBAL|GLOBAL_IN)\(PyMethodDef, (?:\w+, ){0,2}'
+				r'(0x[0-9a-fA-F]+)\)\)', t)]
 	return sorted(set(out))
 
 

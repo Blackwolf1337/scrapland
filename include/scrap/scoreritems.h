@@ -168,26 +168,26 @@ typedef struct cMsgScorer {
 SD_SIZE(cMsgScorer, 0xc8);
 
 /* the engine variables of the credits render target */
-#define g_CreditsX GAME_DATA(int, 0x4a8b7c)		/* R_CreditsX */
-#define g_CreditsSizeX GAME_DATA(int, 0x4a8be4)		/* R_CreditsSizeX */
-#define g_CreditsY GAME_DATA(int, 0x4a8c2c)		/* R_CreditsY */
-#define g_CreditsAlpha GAME_DATA(int, 0x4a8d54)		/* R_CreditsAlpha */
-#define g_CreditsClear GAME_DATA(int, 0x4a8d04)		/* R_CreditsClear */
-#define g_CreditsPhase GAME_DATA(int, 0x4a8aa4)		/* R_CreditsPhase */
-#define g_HintAppearsTime GAME_DATA(float, 0x4600d0)	/* HintAppearsTime */
-#define g_MissionScorerName GAME_DATA(char *, 0x45d2a0)	/* MissionScorerName, the item hiding the label */
-#define g_MissionSolidTime GAME_DATA(float, 0x45fa8c)	/* cMissionScorer SolidTime */
+#define g_CreditsX GAME_GLOBAL_IN(int, GVar_R_CreditsX, 16, 0x4a8b7c)		/* R_CreditsX */
+#define g_CreditsSizeX GAME_GLOBAL_IN(int, GVar_R_CreditsSizeX, 16, 0x4a8be4)		/* R_CreditsSizeX */
+#define g_CreditsY GAME_GLOBAL_IN(int, GVar_R_CreditsY, 16, 0x4a8c2c)		/* R_CreditsY */
+#define g_CreditsAlpha GAME_GLOBAL_IN(int, GVar_R_CreditsAlpha, 16, 0x4a8d54)		/* R_CreditsAlpha */
+#define g_CreditsClear GAME_GLOBAL_IN(int, GVar_R_CreditsClear, 16, 0x4a8d04)		/* R_CreditsClear */
+#define g_CreditsPhase GAME_GLOBAL_IN(int, GVar_R_CreditsPhase, 16, 0x4a8aa4)		/* R_CreditsPhase */
+#define g_HintAppearsTime GAME_GLOBAL_IN(float, GVar_HintAppearsTime, 16, 0x4600d0)	/* HintAppearsTime */
+#define g_MissionScorerName GAME_GLOBAL_IN(char *, GVar_MissionScorerName, 16, 0x45d2a0)	/* MissionScorerName, the item hiding the label */
+#define g_MissionSolidTime GAME_GLOBAL(float, g_MissionSolidTime, 0x45fa8c)	/* cMissionScorer SolidTime */
 /* the label (Scorer_SetLabelText) */
-#define g_LabelText ((char *)Game_Ptr(0x45d190))	/* 0xfa */
-#define g_LabelTime GAME_DATA(float, 0x45d28c)		/* shown until this world time, always if <= 0 */
+#define g_LabelText (GAME_ARRAY(char, g_LabelText, 0x45d190))	/* 0xfa */
+#define g_LabelTime GAME_GLOBAL(float, g_LabelTime, 0x45d28c)		/* shown until this world time, always if <= 0 */
 /* the message (Scorer_SetMsgText): the text and its lines */
-#define g_MsgText ((char *)Game_Ptr(0x44dd18))		/* 0xf424 */
-#define g_MsgNumLines GAME_DATA(int, 0x45d13c)
-#define g_MsgLines ((char **)Game_Ptr(0x45d140))		/* 0xfa lines */
-#define g_MsgTime GAME_DATA(float, 0x45d2b8)
+#define g_MsgText (GAME_ARRAY(char, g_MsgText, 0x44dd18))		/* 0xf424 */
+#define g_MsgNumLines GAME_GLOBAL(int, g_MsgNumLines, 0x45d13c)
+#define g_MsgLines (GAME_ARRAY(char *, g_MsgLines, 0x45d140))		/* 0xfa lines */
+#define g_MsgTime GAME_GLOBAL_IN(float, GVar_TimeToMsg, 16, 0x45d2b8)
 /* the hint text and its two lines */
-#define g_HintLines ((char **)Game_Ptr(0x45d2c0))
-#define g_HintText ((char *)Game_Ptr(0x45d2c8))		/* 0x500 */
+#define g_HintLines (GAME_ARRAY(char *, g_HintLines, 0x45d2c0))
+#define g_HintText (GAME_ARRAY(char, g_HintText, 0x45d2c8))		/* 0x500 */
 
 cAbstractTextScorer *__fastcall cAbstractTextScorer_ctor(cAbstractTextScorer *self);
 cCreditsScorer *__fastcall cCreditsScorer_ctor(cCreditsScorer *self);
@@ -241,12 +241,12 @@ typedef struct cBarScorer {
 SD_SIZE(cBarScorer, 0x108);
 
 /* IsAutoUpdatable: 1 down to AutoUpdateStopValue, 2 up to the maximum, by the frame time and the speed */
-#define g_BarValue GAME_DATA(float, 0x45d85c)		/* BarValue */
-#define g_BarStopValue GAME_DATA(float, 0x45d844)	/* AutoUpdateStopValue */
-#define g_BarSpeedFactor GAME_DATA(float, 0x45d82c)	/* AutoUpdateSpeedFactor */
-#define g_BarAutoUpdate GAME_DATA(int, 0x45d814)	/* IsAutoUpdatable */
-#define g_BarBlinkTime GAME_DATA(float, 0x45d7fc)	/* BlinkTime */
-#define g_BarOnFinish (&GAME_DATA(cPy_Function, 0x45d7d8))	/* OnFinishAutoUpdate */
+#define g_BarValue GAME_GLOBAL_IN(float, GVar_BarValue, 16, 0x45d85c)		/* BarValue */
+#define g_BarStopValue GAME_GLOBAL_IN(float, GVar_AutoUpdateStopValue, 16, 0x45d844)	/* AutoUpdateStopValue */
+#define g_BarSpeedFactor GAME_GLOBAL_IN(float, GVar_AutoUpdateSpeedFactor, 16, 0x45d82c)	/* AutoUpdateSpeedFactor */
+#define g_BarAutoUpdate GAME_GLOBAL_IN(int, GVar_IsAutoUpdatable, 16, 0x45d814)	/* IsAutoUpdatable */
+#define g_BarBlinkTime GAME_GLOBAL_IN(float, GVar_BlinkTime, 16, 0x45d7fc)	/* BlinkTime */
+#define g_BarOnFinish (&GAME_GLOBAL_IN(cPy_Function, GVar_OnFinishAutoUpdate, 16, 0x45d7d8))	/* OnFinishAutoUpdate */
 
 cBarScorer *__fastcall cBarScorer_ctor(cBarScorer *self);
 void __fastcall cBarScorer_dtor(cBarScorer *self);
@@ -358,9 +358,9 @@ typedef struct cCannonScorer {
 } cCannonScorer;
 SD_SIZE(cCannonScorer, 0xec);
 
-#define g_CannonNoAmmoSound GAME_DATA(char *, 0x45d874)	/* CannonScorerNoAmmoSound */
-#define g_CannonNoAmmoSoundVol GAME_DATA(float, 0x45d8d4)	/* CannonScorerNoAmmoSoundVol */
-#define g_WarningLifeLevel GAME_DATA(int, 0x4607b4)	/* WarningLifeLevel, percent */
+#define g_CannonNoAmmoSound GAME_GLOBAL_IN(char *, GVar_CannonScorerNoAmmoSound, 16, 0x45d874)	/* CannonScorerNoAmmoSound */
+#define g_CannonNoAmmoSoundVol GAME_GLOBAL_IN(float, GVar_CannonScorerNoAmmoSoundVol, 16, 0x45d8d4)	/* CannonScorerNoAmmoSoundVol */
+#define g_WarningLifeLevel GAME_GLOBAL_IN(int, GVar_WarningLifeLevel, 16, 0x4607b4)	/* WarningLifeLevel, percent */
 
 cCannonScorer *__fastcall cCannonScorer_ctor(cCannonScorer *self);
 void __fastcall cCannonScorer_dtor(cCannonScorer *self);
@@ -400,9 +400,9 @@ typedef struct cChatMsg {
 } cChatMsg;
 SD_SIZE(cChatMsg, 0x54);
 
-#define g_ChatMsgs ((cChatMsg *)Game_Ptr(0x45d940))	/* CHAT_MSGS */
-#define g_ChatTime GAME_DATA(float, 0x45dec8)		/* of the last scroll */
-#define g_ChatScrollTime GAME_DATA(float, 0x45d908)	/* an empty line comes in after this */
+#define g_ChatMsgs (GAME_ARRAY(cChatMsg, g_ChatMsgs, 0x45d940))	/* CHAT_MSGS */
+#define g_ChatTime GAME_GLOBAL(float, g_ChatTime, 0x45dec8)		/* of the last scroll */
+#define g_ChatScrollTime GAME_GLOBAL_IN(float, GVar_ChatMsgPersistence, 16, 0x45d908)	/* an empty line comes in after this */
 
 cChatScorer *__fastcall cChatScorer_ctor(cChatScorer *self);
 void __fastcall cChatScorer_dtor(cChatScorer *self);
@@ -454,9 +454,9 @@ typedef struct cCircuitFlare {
 } cCircuitFlare;
 SD_SIZE(cCircuitFlare, 0x18);
 
-#define g_CircuitFlares ((cCircuitFlare *)Game_Ptr(0x45ded4))	/* CIRCUIT_FLARES */
-#define g_CircuitInit GAME_DATA(byte, 0x45df30)
-#define g_CircuitPaths ((cCircuitPath *)Game_Ptr(0x45df38))	/* CIRCUIT_PATHS */
+#define g_CircuitFlares (GAME_ARRAY(cCircuitFlare, g_CircuitFlares, 0x45ded4))	/* CIRCUIT_FLARES */
+#define g_CircuitInit GAME_GLOBAL(byte, g_CircuitInit, 0x45df30)
+#define g_CircuitPaths (GAME_ARRAY(cCircuitPath, g_CircuitPaths, 0x45df38))	/* CIRCUIT_PATHS */
 
 /* the constructor of a path in the static array: nothing */
 cCircuitPath *__fastcall cCircuitPath_ctor(cCircuitPath *self);
@@ -605,19 +605,19 @@ typedef struct cMissionScorer {
 } cMissionScorer;
 SD_SIZE(cMissionScorer, 0xec);
 
-#define g_MissionBlinkOn GAME_DATA(int, 0x45fa80)
-#define g_MissionBlinkTime GAME_DATA(float, 0x45fa84)	/* BlinkTime: the icons blink until 0 */
-#define g_MissionBlinkLast GAME_DATA(float, 0x45fa88)	/* the blink time of the last toggle */
-#define g_MissionStatus ((int *)Game_Ptr(0x45fa90))		/* Status0..2 */
-#define g_MissionStatusTime ((float *)Game_Ptr(0x45fa9c))	/* the scorer time each was set */
-#define g_MissionMapName GAME_DATA(const char *, 0x45faa8)	/* the language text of the station */
-#define g_ScorerMarginH GAME_DATA(int, 0x460040)		/* ScorerMarginH */
-#define g_NextMissionLine1XBox GAME_DATA(float, 0x45faec)	/* NextMissionFirstLineOffsetXBox */
-#define g_NextMissionLine2XBox GAME_DATA(float, 0x45fabc)	/* NextMissionSecondLineOffsetXBox */
-#define g_NextMissionLine1PC GAME_DATA(float, 0x45fb04)	/* NextMissionFirstLineOffsetPC */
-#define g_NextMissionLine2PC GAME_DATA(float, 0x45fad4)	/* NextMissionSecondLineOffsetPC */
-#define g_MissionStatusColors ((const uint32_t *)Game_Ptr(0x428bd0))
-#define g_MissionStatusOfs ((const float (*)[2])Game_Ptr(0x428bdc))
+#define g_MissionBlinkOn GAME_GLOBAL(int, g_MissionBlinkOn, 0x45fa80)
+#define g_MissionBlinkTime GAME_GLOBAL(float, g_MissionBlinkTime, 0x45fa84)	/* BlinkTime: the icons blink until 0 */
+#define g_MissionBlinkLast GAME_GLOBAL(float, g_MissionBlinkLast, 0x45fa88)	/* the blink time of the last toggle */
+#define g_MissionStatus (GAME_ARRAY(int, g_MissionStatus, 0x45fa90))		/* Status0..2 */
+#define g_MissionStatusTime (GAME_ARRAY(float, g_MissionStatusTime, 0x45fa9c))	/* the scorer time each was set */
+#define g_MissionMapName GAME_GLOBAL_IN(const char *, g_MissionStatusTime, 12, 0x45faa8)	/* the language text of the station */
+#define g_ScorerMarginH GAME_GLOBAL_IN(int, GVar_ScorerMarginH, 16, 0x460040)		/* ScorerMarginH */
+#define g_NextMissionLine1XBox GAME_GLOBAL_IN(float, GVar_NextMissionFirstLineOffsetXBox, 16, 0x45faec)	/* NextMissionFirstLineOffsetXBox */
+#define g_NextMissionLine2XBox GAME_GLOBAL_IN(float, GVar_NextMissionSecondLineOffsetXBox, 16, 0x45fabc)	/* NextMissionSecondLineOffsetXBox */
+#define g_NextMissionLine1PC GAME_GLOBAL_IN(float, GVar_NextMissionFirstLineOffsetPC, 16, 0x45fb04)	/* NextMissionFirstLineOffsetPC */
+#define g_NextMissionLine2PC GAME_GLOBAL_IN(float, GVar_NextMissionSecondLineOffsetPC, 16, 0x45fad4)	/* NextMissionSecondLineOffsetPC */
+#define g_MissionStatusColors (GAME_ARRAY(const uint32_t, g_MissionStatusColors, 0x428bd0))
+#define g_MissionStatusOfs (GAME_ARRAY(const float[2], g_MissionStatusOfs, 0x428bdc))
 
 cMissionScorer *__fastcall cMissionScorer_ctor(cMissionScorer *self);
 void __fastcall cMissionScorer_dtor(cMissionScorer *self);
@@ -686,10 +686,10 @@ SD_OFFSET(cMonitorScorer, objWas, 0x2a8);
 SD_OFFSET(cMonitorScorer, weapon, 0x2ac);
 
 /* the head and text of Scorer_SetHeadMonitor */
-#define g_HeadMonitorName ((char *)Game_Ptr(0x45fb10))	/* 0x80, the scorer model */
-#define g_HeadMonitorText ((char *)Game_Ptr(0x45fb90))	/* 0x80 */
-#define g_HeadMonitorAnim GAME_DATA(int, 0x428bf4)	/* the animation, negative: with noise */
-#define g_FirstPhotoMessage GAME_DATA(char *, 0x45fc20)	/* FirstPhotoMessage */
+#define g_HeadMonitorName (GAME_ARRAY(char, g_HeadMonitorName, 0x45fb10))	/* 0x80, the scorer model */
+#define g_HeadMonitorText (GAME_ARRAY(char, g_HeadMonitorText, 0x45fb90))	/* 0x80 */
+#define g_HeadMonitorAnim GAME_GLOBAL(int, g_HeadMonitorAnim, 0x428bf4)	/* the animation, negative: with noise */
+#define g_FirstPhotoMessage GAME_GLOBAL_IN(char *, GVar_FirstPhotoMessage, 16, 0x45fc20)	/* FirstPhotoMessage */
 
 cMonitorScorer *__fastcall cMonitorScorer_ctor(cMonitorScorer *self);
 void __fastcall cMonitorScorer_dtor(cMonitorScorer *self);
@@ -724,15 +724,15 @@ typedef struct cNetStatsScorer {
 } cNetStatsScorer;
 SD_SIZE(cNetStatsScorer, 0x230);
 
-#define g_ClientPingX GAME_DATA(float, 0x45fc80)	/* ClientPingX */
-#define g_ClientPingY GAME_DATA(float, 0x45fc68)	/* ClientPingY */
-#define g_ShowClientPing GAME_DATA(int, 0x45fc50)	/* ShowClientPing */
-#define g_ShowNetStatus GAME_DATA(int, 0x45fc38)	/* ShowNetStatus */
+#define g_ClientPingX GAME_GLOBAL_IN(float, GVar_ClientPingX, 16, 0x45fc80)	/* ClientPingX */
+#define g_ClientPingY GAME_GLOBAL_IN(float, GVar_ClientPingY, 16, 0x45fc68)	/* ClientPingY */
+#define g_ShowClientPing GAME_GLOBAL_IN(int, GVar_ShowClientPing, 16, 0x45fc50)	/* ShowClientPing */
+#define g_ShowNetStatus GAME_GLOBAL_IN(int, GVar_ShowNetStatus, 16, 0x45fc38)	/* ShowNetStatus */
 /* the counters of the net (Net/) for the stats: bytes and slot of the last send and receive */
-#define g_NetStatSent GAME_DATA(int, 0x465558)
-#define g_NetStatSentSlot GAME_DATA(int, 0x465554)
-#define g_NetStatRecv GAME_DATA(int, 0x465550)
-#define g_NetStatRecvSlot GAME_DATA(int, 0x46554c)
+#define g_NetStatSent GAME_GLOBAL(int, g_NetStatSent, 0x465558)
+#define g_NetStatSentSlot GAME_GLOBAL(int, g_NetStatSentSlot, 0x465554)
+#define g_NetStatRecv GAME_GLOBAL(int, g_NetStatRecv, 0x465550)
+#define g_NetStatRecvSlot GAME_GLOBAL(int, g_NetStatRecvSlot, 0x46554c)
 
 cNetStatsScorer *__fastcall cNetStatsScorer_ctor(cNetStatsScorer *self);
 void __fastcall cNetStatsScorer_dtor(cNetStatsScorer *self);
@@ -761,23 +761,23 @@ typedef struct cNewsPanel {
 	byte pad_35[3];
 } cNewsPanel;
 
-#define g_NewsPanelActive GAME_DATA(int, 0x45fdb8)		/* NewsPanelActive */
-#define g_NewsPanelActiveDef GAME_DATA(int, 0x45fdbc)	/* its default */
-#define g_NewsPanelShowHead GAME_DATA(int, 0x45fcc8)	/* NewsPanelShowHead */
-#define g_NewsPanelShowHeadDef GAME_DATA(int, 0x45fccc)
-#define g_NewsPanelOpenSpeed GAME_DATA(float, 0x45fd10)	/* NewsPanelOpenSpeed */
-#define g_NewsPanelCloseSpeed GAME_DATA(float, 0x45fc98)	/* NewsPanelCloseSpeed */
-#define g_NewsHead (&GAME_DATA(char *, 0x45fda0))		/* NewsHead, a string variable */
-#define g_NewsLogoBmp (&GAME_DATA(char *, 0x45fcb0))		/* NewsLogoBmp */
-#define g_BackNewsBmp (&GAME_DATA(char *, 0x45fd58))		/* BackNewsBmp */
-#define g_NewsPanelAspect GAME_DATA(float, 0x45fde8)	/* NewsPanelAspect */
-#define g_NewsPanelMove GAME_DATA(float, 0x45fdd0)		/* NewsPanelMove */
-#define g_NewsPanelDisplacement GAME_DATA(float, 0x45fd28)	/* NewsPanelDisplacement */
-#define g_NewsPanelDistance GAME_DATA(float, 0x45fd88)	/* NewsPanelDistance */
-#define g_NewsPanelW GAME_DATA(float, 0x45fce0)		/* NewsPanelW */
-#define g_NewsPanelH GAME_DATA(float, 0x45fd40)		/* NewsPanelH */
-#define g_NewsPanelX GAME_DATA(float, 0x45fcf8)		/* NewsPanelX */
-#define g_NewsPanelY GAME_DATA(float, 0x45fd70)		/* NewsPanelY */
+#define g_NewsPanelActive GAME_GLOBAL_IN(int, GVar_NewsPanelActive, 16, 0x45fdb8)		/* NewsPanelActive */
+#define g_NewsPanelActiveDef GAME_GLOBAL_IN(int, GVar_NewsPanelActive, 20, 0x45fdbc)	/* its default */
+#define g_NewsPanelShowHead GAME_GLOBAL_IN(int, GVar_NewsPanelShowHead, 16, 0x45fcc8)	/* NewsPanelShowHead */
+#define g_NewsPanelShowHeadDef GAME_GLOBAL_IN(int, GVar_NewsPanelShowHead, 20, 0x45fccc)
+#define g_NewsPanelOpenSpeed GAME_GLOBAL_IN(float, GVar_NewsPanelOpenSpeed, 16, 0x45fd10)	/* NewsPanelOpenSpeed */
+#define g_NewsPanelCloseSpeed GAME_GLOBAL_IN(float, GVar_NewsPanelCloseSpeed, 16, 0x45fc98)	/* NewsPanelCloseSpeed */
+#define g_NewsHead (&GAME_GLOBAL_IN(char *, GVar_NewsHead, 16, 0x45fda0))		/* NewsHead, a string variable */
+#define g_NewsLogoBmp (&GAME_GLOBAL_IN(char *, GVar_NewsLogoBmp, 16, 0x45fcb0))		/* NewsLogoBmp */
+#define g_BackNewsBmp (&GAME_GLOBAL_IN(char *, GVar_BackNewsBmp, 16, 0x45fd58))		/* BackNewsBmp */
+#define g_NewsPanelAspect GAME_GLOBAL_IN(float, GVar_NewsPanelAspect, 16, 0x45fde8)	/* NewsPanelAspect */
+#define g_NewsPanelMove GAME_GLOBAL_IN(float, GVar_NewsPanelMove, 16, 0x45fdd0)		/* NewsPanelMove */
+#define g_NewsPanelDisplacement GAME_GLOBAL_IN(float, GVar_NewsPanelDisplacement, 16, 0x45fd28)	/* NewsPanelDisplacement */
+#define g_NewsPanelDistance GAME_GLOBAL_IN(float, GVar_NewsPanelDistance, 16, 0x45fd88)	/* NewsPanelDistance */
+#define g_NewsPanelW GAME_GLOBAL_IN(float, GVar_NewsPanelW, 16, 0x45fce0)		/* NewsPanelW */
+#define g_NewsPanelH GAME_GLOBAL_IN(float, GVar_NewsPanelH, 16, 0x45fd40)		/* NewsPanelH */
+#define g_NewsPanelX GAME_GLOBAL_IN(float, GVar_NewsPanelX, 16, 0x45fcf8)		/* NewsPanelX */
+#define g_NewsPanelY GAME_GLOBAL_IN(float, GVar_NewsPanelY, 16, 0x45fd70)		/* NewsPanelY */
 
 cNewsPanel *__fastcall cNewsPanel_ctor(cNewsPanel *self);
 void __fastcall cNewsPanel_dtor(cNewsPanel *self);
@@ -842,11 +842,11 @@ SD_OFFSET(cRadarScorer, map2dScale, 0x91c);
 #define World_NumFloors() (*(int *)((byte *)g_pWorld + 0x2f0))
 #define World_FloorHeight(i) (*(float *)((byte *)g_pWorld + 0x2f4 + (i) * 0x18c))
 /* the view of the radar: the turn and center of the map, its scale */
-#define g_RadarAngle GAME_DATA(float, 0x45fe84)
-#define g_RadarCenterX GAME_DATA(float, 0x45fe88)
-#define g_RadarCenterZ GAME_DATA(float, 0x45fe8c)
-#define g_RadarScale GAME_DATA(float, 0x45fe80)
-#define g_FileNameMap2D GAME_DATA(char *, 0x45fe60)	/* FileNameMap2D, a printf format of the floor */
+#define g_RadarAngle GAME_GLOBAL(float, g_RadarAngle, 0x45fe84)
+#define g_RadarCenterX GAME_GLOBAL(float, g_RadarCenterX, 0x45fe88)
+#define g_RadarCenterZ GAME_GLOBAL(float, g_RadarCenterZ, 0x45fe8c)
+#define g_RadarScale GAME_GLOBAL(float, g_RadarScale, 0x45fe80)
+#define g_FileNameMap2D GAME_GLOBAL_IN(char *, GVar_FileNameMap2D, 16, 0x45fe60)	/* FileNameMap2D, a printf format of the floor */
 
 cRadarScorer *__fastcall cRadarScorer_ctor(cRadarScorer *self);
 void __fastcall cRadarScorer_dtor(cRadarScorer *self);
@@ -883,50 +883,50 @@ void __thiscall cRadarScorer_Draw(cRadarScorer *self, int player);
 #define GVAR_FLAGS(v) (*((byte *)&(v) - 4))
 #define GVAR_DEF(type, v) (*(type *)((byte *)&(v) + 4))
 
-#define g_Scorers GAME_DATA(cScorer *, 0x4601d4)		/* new cScorer[4] */
-#define g_ScorerWhite GAME_DATA(CPsaImage *, 0x4601c8)	/* 2D/white.tga */
-#define g_ScorerNoise GAME_DATA(CPsaImage *, 0x4601cc)	/* 2D/Noise.tga */
-#define g_ScorerMarker GAME_DATA(CPsaImage *, 0x4601d0)	/* the focus marker (SScorer.SetMarkerSprite) */
-#define g_ScorerTabs GAME_DATA(CPsaImage *, 0x45fe94)	/* 2D/Menu/Tabs.alpha.tga */
-#define g_NewsPanel GAME_DATA(cNewsPanel *, 0x45fe90)
+#define g_Scorers GAME_GLOBAL(cScorer *, g_Scorers, 0x4601d4)		/* new cScorer[4] */
+#define g_ScorerWhite GAME_GLOBAL(CPsaImage *, g_ScorerWhite, 0x4601c8)	/* 2D/white.tga */
+#define g_ScorerNoise GAME_GLOBAL(CPsaImage *, g_ScorerNoise, 0x4601cc)	/* 2D/Noise.tga */
+#define g_ScorerMarker GAME_GLOBAL(CPsaImage *, g_ScorerMarker, 0x4601d0)	/* the focus marker (SScorer.SetMarkerSprite) */
+#define g_ScorerTabs GAME_GLOBAL(CPsaImage *, g_ScorerTabs, 0x45fe94)	/* 2D/Menu/Tabs.alpha.tga */
+#define g_NewsPanel GAME_GLOBAL(cNewsPanel *, g_NewsPanel, 0x45fe90)
 /* the engine variables of Scorer.cpp */
-#define g_RadarMMSelect GAME_DATA(int, 0x45fe78)		/* RadarMMSelect */
-#define g_NumEnemiesInRadar GAME_DATA(int, 0x45fe30)
-#define g_CinemaBlackBandHeight GAME_DATA(float, 0x45fea8)	/* CinemaBlackBandHeight */
-#define g_NoiseFactor GAME_DATA(int, 0x45ff98)		/* NoiseFactor */
-#define g_NoiseFactorBegin GAME_DATA(int, 0x460058)	/* NoiseFactorBegin */
-#define g_NoiseTime GAME_DATA(float, 0x45fff8)		/* NoiseTime */
-#define g_NoiseEndTime GAME_DATA(float, 0x45ff80)		/* NoiseEndTime */
-#define g_MotionBlurFactorBegin GAME_DATA(float, 0x45fec0)	/* MotionBlurFactorBegin */
-#define g_MotionBlurFactorEnd GAME_DATA(float, 0x460118)	/* MotionBlurFactorEnd */
-#define g_MotionBlurTime GAME_DATA(float, 0x460088)	/* MotionBlurTime */
-#define g_MotionBlurEndTime GAME_DATA(float, 0x45ffb0)	/* MotionBlurEndTime */
-#define g_MotionBlurOffVar GAME_DATA(float, 0x4601a8)	/* MotionBlurOffVar */
-#define g_FullScreenConsoleCallback (&GAME_DATA(cPy_Function, 0x4601e8))	/* FullScreenConsoleCallback */
-#define g_CurrentWaypointName GAME_DATA(char *, 0x462428)	/* CurrentWaypointName */
-#define g_CurrentWaypointName2 GAME_DATA(char *, 0x462410)	/* CurrentWaypointName2 */
-#define g_CameraCloudDistance GAME_DATA(float, 0x45ff68)	/* CameraCloudDistance */
-#define g_CameraCloudPlaneSize GAME_DATA(float, 0x45fef0)	/* CameraCloudPlaneSize */
-#define g_CameraCloudThickness GAME_DATA(float, 0x460130)	/* CameraCloudThickness */
-#define g_CameraCloudAlpha GAME_DATA(int, 0x460178)	/* CameraCloudAlpha */
-#define g_CameraCloudRed GAME_DATA(int, 0x45ff08)		/* CameraCloudRed */
-#define g_CameraCloudGreen GAME_DATA(int, 0x460010)	/* CameraCloudGreen */
-#define g_CameraCloudBlue GAME_DATA(int, 0x460100)		/* CameraCloudBlue */
-#define g_OnAcceptSound GAME_DATA(char *, 0x45ffc8)	/* OnAcceptSound */
-#define g_OnAcceptSoundVol GAME_DATA(float, 0x45fed8)	/* OnAcceptSoundVol */
-#define g_OnFocusSound GAME_DATA(char *, 0x4600e8)		/* OnFocusSound */
-#define g_OnFocusSoundVol GAME_DATA(float, 0x45ff50)	/* OnFocusSoundVol */
-#define g_ScorerMarkerOn GAME_DATA(int, 0x460070)		/* ScorerMarker */
-#define g_ScorerMarkerColor GAME_DATA(uint32_t, 0x460190)	/* ScorerMarkerColor */
-#define g_ScorerMarkerSpeed GAME_DATA(float, 0x4600b8)	/* ScorerMarkerSpeed */
-#define g_CShow GAME_DATA(int, 0x4601c0)			/* CShow */
-#define g_XboxNoPadMsg GAME_DATA(int, 0x460160)		/* XboxNoPadMsg */
-#define g_XboxNoPadMsgP GAME_DATA(int, 0x45ff38)		/* XboxNoPadMsgP */
-#define g_XboxNoPadMsgPBig GAME_DATA(int, 0x45ffe0)	/* XboxNoPadMsgPBig */
-#define g_XboxSavingMsg GAME_DATA(float, 0x460028)		/* XboxSavingMsg */
-#define g_XboxSavingMsgStr GAME_DATA(char *, 0x45ff20)	/* XboxSavingMsgStr */
-#define g_ShowConsoleLog GAME_DATA(int, 0x460418)		/* ShowConsoleLog */
-#define g_ScorerRandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
+#define g_RadarMMSelect GAME_GLOBAL_IN(int, GVar_RadarMMSelect, 16, 0x45fe78)		/* RadarMMSelect */
+#define g_NumEnemiesInRadar GAME_GLOBAL_IN(int, GVar_NumEnemiesInRadar, 16, 0x45fe30)
+#define g_CinemaBlackBandHeight GAME_GLOBAL_IN(float, GVar_CinemaBlackBandHeight, 16, 0x45fea8)	/* CinemaBlackBandHeight */
+#define g_NoiseFactor GAME_GLOBAL_IN(int, GVar_NoiseFactor, 16, 0x45ff98)		/* NoiseFactor */
+#define g_NoiseFactorBegin GAME_GLOBAL_IN(int, GVar_NoiseFactorBegin, 16, 0x460058)	/* NoiseFactorBegin */
+#define g_NoiseTime GAME_GLOBAL_IN(float, GVar_NoiseTime, 16, 0x45fff8)		/* NoiseTime */
+#define g_NoiseEndTime GAME_GLOBAL_IN(float, GVar_NoiseEndTime, 16, 0x45ff80)		/* NoiseEndTime */
+#define g_MotionBlurFactorBegin GAME_GLOBAL_IN(float, GVar_MotionBlurFactorBegin, 16, 0x45fec0)	/* MotionBlurFactorBegin */
+#define g_MotionBlurFactorEnd GAME_GLOBAL_IN(float, GVar_MotionBlurFactorEnd, 16, 0x460118)	/* MotionBlurFactorEnd */
+#define g_MotionBlurTime GAME_GLOBAL_IN(float, GVar_MotionBlurTime, 16, 0x460088)	/* MotionBlurTime */
+#define g_MotionBlurEndTime GAME_GLOBAL_IN(float, GVar_MotionBlurEndTime, 16, 0x45ffb0)	/* MotionBlurEndTime */
+#define g_MotionBlurOffVar GAME_GLOBAL_IN(float, GVar_MotionBlurOffVar, 16, 0x4601a8)	/* MotionBlurOffVar */
+#define g_FullScreenConsoleCallback (&GAME_GLOBAL_IN(cPy_Function, GVar_FullScreenConsoleCallback, 16, 0x4601e8))	/* FullScreenConsoleCallback */
+#define g_CurrentWaypointName GAME_GLOBAL_IN(char *, GVar_CurrentWaypointName, 16, 0x462428)	/* CurrentWaypointName */
+#define g_CurrentWaypointName2 GAME_GLOBAL_IN(char *, GVar_CurrentWaypointName2, 16, 0x462410)	/* CurrentWaypointName2 */
+#define g_CameraCloudDistance GAME_GLOBAL_IN(float, GVar_CameraCloudDistance, 16, 0x45ff68)	/* CameraCloudDistance */
+#define g_CameraCloudPlaneSize GAME_GLOBAL_IN(float, GVar_CameraCloudPlaneSize, 16, 0x45fef0)	/* CameraCloudPlaneSize */
+#define g_CameraCloudThickness GAME_GLOBAL_IN(float, GVar_CameraCloudThickness, 16, 0x460130)	/* CameraCloudThickness */
+#define g_CameraCloudAlpha GAME_GLOBAL_IN(int, GVar_CameraCloudAlpha, 16, 0x460178)	/* CameraCloudAlpha */
+#define g_CameraCloudRed GAME_GLOBAL_IN(int, GVar_CameraCloudRed, 16, 0x45ff08)		/* CameraCloudRed */
+#define g_CameraCloudGreen GAME_GLOBAL_IN(int, GVar_CameraCloudGreen, 16, 0x460010)	/* CameraCloudGreen */
+#define g_CameraCloudBlue GAME_GLOBAL_IN(int, GVar_CameraCloudBlue, 16, 0x460100)		/* CameraCloudBlue */
+#define g_OnAcceptSound GAME_GLOBAL_IN(char *, GVar_OnAcceptSound, 16, 0x45ffc8)	/* OnAcceptSound */
+#define g_OnAcceptSoundVol GAME_GLOBAL_IN(float, GVar_OnAcceptSoundVol, 16, 0x45fed8)	/* OnAcceptSoundVol */
+#define g_OnFocusSound GAME_GLOBAL_IN(char *, GVar_OnFocusSound, 16, 0x4600e8)		/* OnFocusSound */
+#define g_OnFocusSoundVol GAME_GLOBAL_IN(float, GVar_OnFocusSoundVol, 16, 0x45ff50)	/* OnFocusSoundVol */
+#define g_ScorerMarkerOn GAME_GLOBAL_IN(int, GVar_ScorerMarker, 16, 0x460070)		/* ScorerMarker */
+#define g_ScorerMarkerColor GAME_GLOBAL_IN(uint32_t, GVar_ScorerMarkerColor, 16, 0x460190)	/* ScorerMarkerColor */
+#define g_ScorerMarkerSpeed GAME_GLOBAL_IN(float, GVar_ScorerMarkerSpeed, 16, 0x4600b8)	/* ScorerMarkerSpeed */
+#define g_CShow GAME_GLOBAL_IN(int, GVar_CShow, 16, 0x4601c0)			/* CShow */
+#define g_XboxNoPadMsg GAME_GLOBAL_IN(int, GVar_XboxNoPadMsg, 16, 0x460160)		/* XboxNoPadMsg */
+#define g_XboxNoPadMsgP GAME_GLOBAL_IN(int, GVar_XboxNoPadMsgP, 16, 0x45ff38)		/* XboxNoPadMsgP */
+#define g_XboxNoPadMsgPBig GAME_GLOBAL_IN(int, GVar_XboxNoPadMsgPBig, 16, 0x45ffe0)	/* XboxNoPadMsgPBig */
+#define g_XboxSavingMsg GAME_GLOBAL_IN(float, GVar_XboxSavingMsg, 16, 0x460028)		/* XboxSavingMsg */
+#define g_XboxSavingMsgStr GAME_GLOBAL_IN(char *, GVar_XboxSavingMsgStr, 16, 0x45ff20)	/* XboxSavingMsgStr */
+#define g_ShowConsoleLog GAME_GLOBAL_IN(int, GVar_ShowConsoleLog, 16, 0x460418)		/* ShowConsoleLog */
+#define g_ScorerRandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
 
 /* a bool variable of an item: 1 or 0 */
 static inline int ScorerVar_Bool(byte *v, byte set, int *i) {
@@ -1053,24 +1053,24 @@ typedef struct cScraplandSubMenuScorer {
 SD_SIZE(cScraplandSubMenuScorer, 0xd8);
 
 /* the global animation state, set up once by the first constructor (random times) */
-#define g_MainMenuAnimInit GAME_DATA(byte, 0x460428)
-#define g_SubMenuAnimInit GAME_DATA(byte, 0x460429)
-#define g_MainMenuWait ((float *)Game_Ptr(0x46042c))		/* [9] */
-#define g_MainMenuTime ((float *)Game_Ptr(0x460450))		/* [9] */
-#define g_MainMenuLength ((float *)Game_Ptr(0x460474))	/* [9] */
-#define g_MainMenuSparkDir ((byte *)Game_Ptr(0x4604e4))	/* [19] */
-#define g_MainMenuSparkWait ((float *)Game_Ptr(0x460498))	/* [19] */
-#define g_MainMenuSparkTime ((float *)Game_Ptr(0x4604f8))	/* [19] */
-#define g_MainMenuSparkLength ((float *)Game_Ptr(0x460548))	/* [19] */
-#define g_MainMenuSparkFrame ((int *)Game_Ptr(0x4605a0))	/* [19] */
-#define g_MainMenuNeonNext GAME_DATA(float, 0x460544)
-#define g_MainMenuNeonGroup ((float *)Game_Ptr(0x460594))	/* [3] */
-#define g_MainMenuNeonWait ((float *)Game_Ptr(0x4605f0))	/* [21] */
-#define g_SubMenuWait GAME_DATA(float, 0x4605ec)
-#define g_SubMenuRingTime GAME_DATA(float, 0x460644)
-#define g_SubMenuRingWait GAME_DATA(float, 0x460648)
-#define g_SubMenuRingDir GAME_DATA(int, 0x46064c)		/* 1: the ring frames run backwards */
-#define g_SubMenuRingFrame GAME_DATA(int, 0x460650)	/* the first frame of the ring */
+#define g_MainMenuAnimInit GAME_GLOBAL_IN(byte, group_460428, 0, 0x460428)
+#define g_SubMenuAnimInit GAME_GLOBAL_IN(byte, group_460428, 1, 0x460429)
+#define g_MainMenuWait (GAME_ARRAY(float, g_MainMenuWait, 0x46042c))		/* [9] */
+#define g_MainMenuTime (GAME_ARRAY(float, g_MainMenuTime, 0x460450))		/* [9] */
+#define g_MainMenuLength (GAME_ARRAY(float, g_MainMenuLength, 0x460474))	/* [9] */
+#define g_MainMenuSparkDir (GAME_ARRAY(byte, g_MainMenuSparkDir, 0x4604e4))	/* [19] */
+#define g_MainMenuSparkWait (GAME_ARRAY(float, g_MainMenuSparkWait, 0x460498))	/* [19] */
+#define g_MainMenuSparkTime (GAME_ARRAY(float, g_MainMenuSparkTime, 0x4604f8))	/* [19] */
+#define g_MainMenuSparkLength (GAME_ARRAY(float, g_MainMenuSparkLength, 0x460548))	/* [19] */
+#define g_MainMenuSparkFrame (GAME_ARRAY(int, g_MainMenuSparkFrame, 0x4605a0))	/* [19] */
+#define g_MainMenuNeonNext GAME_GLOBAL(float, g_MainMenuNeonNext, 0x460544)
+#define g_MainMenuNeonGroup (GAME_ARRAY(float, g_MainMenuNeonGroup, 0x460594))	/* [3] */
+#define g_MainMenuNeonWait (GAME_ARRAY(float, g_MainMenuNeonWait, 0x4605f0))	/* [21] */
+#define g_SubMenuWait GAME_GLOBAL(float, g_SubMenuWait, 0x4605ec)
+#define g_SubMenuRingTime GAME_GLOBAL(float, g_SubMenuRingTime, 0x460644)
+#define g_SubMenuRingWait GAME_GLOBAL(float, g_SubMenuRingWait, 0x460648)
+#define g_SubMenuRingDir GAME_GLOBAL(int, g_SubMenuRingDir, 0x46064c)		/* 1: the ring frames run backwards */
+#define g_SubMenuRingFrame GAME_GLOBAL(int, g_SubMenuRingFrame, 0x460650)	/* the first frame of the ring */
 
 cScraplandMainMenuScorer *__fastcall cScraplandMainMenuScorer_ctor(cScraplandMainMenuScorer *self);
 cScraplandSubMenuScorer *__fastcall cScraplandSubMenuScorer_ctor(cScraplandSubMenuScorer *self);
@@ -1182,7 +1182,7 @@ SD_OFFSET(cSpecialActionScorer, textFont, 0xf0);
 SD_OFFSET(cSpecialActionScorer, iconIndex, 0x11c);
 SD_OFFSET(cSpecialActionScorer, energyBackColor, 0x130);
 
-#define g_SpecialActionActive GAME_DATA(int, 0x46067c)	/* SpecialActionActive 0 off, 1 blink, 2 on */
+#define g_SpecialActionActive GAME_GLOBAL_IN(int, GVar_SpecialActionActive, 16, 0x46067c)	/* SpecialActionActive 0 off, 1 blink, 2 on */
 
 cSpecialActionScorer *__fastcall cSpecialActionScorer_ctor(cSpecialActionScorer *self);
 void __fastcall cSpecialActionScorer_dtor(cSpecialActionScorer *self);
@@ -1211,8 +1211,8 @@ void __thiscall SpecialAction_DrawLowEnergy(cSpecialActionScorer *self, int play
 void __thiscall SpecialAction_DrawFunctionary(cSpecialActionScorer *self, int player);
 void __thiscall SpecialAction_DrawEnergyOnly(cSpecialActionScorer *self, int player);
 
-#define g_EnergyBarActive GAME_DATA(int, 0x44726c)		/* EnergyBarActive */
-#define g_FunctionarySpecialActionLow GAME_DATA(float, 0x446738)	/* FunctionarySpecialActionLow */
+#define g_EnergyBarActive GAME_GLOBAL_IN(int, GVar_EnergyBarActive, 16, 0x44726c)		/* EnergyBarActive */
+#define g_FunctionarySpecialActionLow GAME_GLOBAL_IN(float, GVar_FunctionarySpecialActionLow, 16, 0x446738)	/* FunctionarySpecialActionLow */
 
 /* the exe functions the special action draws use (other modules) */
 /* the fraction of the weapon energy above the full batteries, and their count */

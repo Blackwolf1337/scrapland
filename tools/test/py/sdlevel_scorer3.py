@@ -73,7 +73,7 @@ sc3world = SDTest.Peek('g_pWorld', 'i')
 check('SC3 scorer', lambda: (sc3sc != 0, sc3world != 0))
 # engine variables: the talk, the timers, the menu natives, the viewport
 sc3gvars = (sym('g_RemainTalkTime'), sym('g_TalkTime'), sym('g_TalkNumLines'), sym('g_TalkColor'), sym('g_TalkColor') + 0x4, sym('g_TalkColor') + 0x8, sym('g_TimeToCancel'), sym('g_TimeToFinish'), sym('g_TimeInactive'), sym('g_TimeSpecialUse'),
-	sym('g_TimerMode'), sym('g_TimerWarning'), 0x462364, sym('g_MetroRing'), sym('g_FadeOutFinalAcc'), sym('g_FadeOutFinalTime'), sym('g_ViewportW'), sym('g_ViewportH'), sym('g_TextEditItem'), sym('g_TextEditCursor'))
+	sym('g_TimerMode'), sym('g_TimerWarning'), sym('GVar_TimeWarning') + 0xc, sym('g_MetroRing'), sym('g_FadeOutFinalAcc'), sym('g_FadeOutFinalTime'), sym('g_ViewportW'), sym('g_ViewportH'), sym('g_TextEditItem'), sym('g_TextEditCursor'))
 sc3gsaved = sc3save(sc3gvars)
 SDTest.Poke('g_ViewportW', 640)
 SDTest.Poke('g_ViewportH', 480)
@@ -384,10 +384,10 @@ check('SC3 Scorer_CancelSpeech', lambda: (SDTest.Call('Scorer_CancelSpeech', 'vf
 sc3a = sc3item['sc3Ring0']
 if sc3a and sc3sc:
 	check('SC3 Scorer_SetSpeechCallback', lambda a=sc3a: (SScorer.SetSpeechCallback('!ScorerSpriteGlow', [0,
-		'sc3Ring0', 2.5, None]), SDTest.Call('cPy_Function_IsValid', 'tbi', 0x462168 + 0x400000)[0], sc3i(0x462168 + 0x400000 +
-		0xc) != 0, SDTest.Call('cPy_Function_Execute', 'tiii', 0x462168 + 0x400000, 0)[0], sc3i(sc3i(a + 0xbc) + 0x34)))
+		'sc3Ring0', 2.5, None]), SDTest.Call('cPy_Function_IsValid', 'tbi', sym('g_TalkCallback') + 0x400000)[0], sc3i(sym('g_TalkCallback') + 0x400000 +
+		0xc) != 0, SDTest.Call('cPy_Function_Execute', 'tiii', sym('g_TalkCallback') + 0x400000, 0)[0], sc3i(sc3i(a + 0xbc) + 0x34)))
 	check('SC3 Scorer_SetSpeechCallback none', lambda: (SScorer.SetSpeechCallback(''), SDTest.Call('cPy_Function_IsValid',
-		'tbi', 0x462168 + 0x400000)[0]))
+		'tbi', sym('g_TalkCallback') + 0x400000)[0]))
 sc3putback(sc3text)
 sc3putback(sc3lines)
 sc3restore(sc3gvars, sc3gsaved)
@@ -508,7 +508,7 @@ if sc3a and sc3world:
 		check('SC3 cTimerScorer_Draw' + fmt((sc3type, sc3mode, sc3time, sc3warn, sc3flags)), lambda a=sc3a,
 			t=sc3type, m=sc3mode, tm=sc3time, w=sc3warn, f=sc3flags: (SDTest.Poke(a + 0xc4 - 0x400000, t),
 			SDTest.Poke('g_TimerMode', m), sc3setf((sym('g_TimeToCancel'), sym('g_TimeToFinish'), sym('g_TimeInactive'), sym('g_TimeSpecialUse'))[t] + 0x400000, (tm,)),
-			sc3setf(sym('g_TimerWarning') + 0x400000, (w,)), SDTest.Poke(0x462364, (SDTest.Peek(0x462364, 'i') & ~1) | f),
+			sc3setf(sym('g_TimerWarning') + 0x400000, (w,)), SDTest.Poke(sym('GVar_TimeWarning') + 0xc, (SDTest.Peek(sym('GVar_TimeWarning') + 0xc, 'i') & ~1) | f),
 			sc3log(lambda a=a: SDTest.Call('cTimerScorer_Draw', 'tvii', a, 0)), sc3fl((sym('g_TimeToCancel'), sym('g_TimeToFinish'), sym('g_TimeInactive'),
 			sym('g_TimeSpecialUse'))[t] + 0x400000, 1), sc3fl(sym('g_TimerWarning') + 0x400000, 1)))
 	SDTest.Poke(sc3delta - 0x400000, sc3deltasaved)

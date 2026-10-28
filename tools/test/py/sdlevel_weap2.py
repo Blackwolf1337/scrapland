@@ -107,7 +107,7 @@ if w2ammoarr and w2laserammo >= 0 and w2laserammo < w2i(w2world + 0x1bc4):
 				'SDW2Cannon')), w2ints(item, hud)))
 		# the target the ship shows stays (copied in before), the time over 0: the cursor turns and shrinks
 		target = SDTest.Call('Nto1Node_TargetName', 'si', p + 0x6e4)[0]
-		for nat, names, times in (('InfernoFX', 0x849510, symva('g_InfernoHudTime')), ('SwarmFX', 0x849fa8, symva('g_SwarmHudTime'))):
+		for nat, names, times in (('InfernoFX', symva('g_InfernoHudTarget'), symva('g_InfernoHudTime')), ('SwarmFX', symva('g_SwarmHudTarget'), symva('g_SwarmHudTime'))):
 			savedname = SDTest.Peek(names, '@s')
 			savedt = w2i(times)
 			w2str(names, target)

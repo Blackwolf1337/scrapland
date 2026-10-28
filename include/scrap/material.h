@@ -137,7 +137,7 @@ struct CListaMat {
 SD_SIZE(CListaMat, 0x10);
 
 /* the materials of the engine */
-#define g_ListaMat ((CListaMat *)Game_Ptr(0x431d24))
+#define g_ListaMat (GAME_ARRAY(CListaMat, g_ListaMat, 0x431d24))
 
 /* the constructors and destructors of material.h (rva 0x2336f0..0x233c20) */
 CListaMat *__thiscall CListaMat_DeleteObj(CListaMat *self, byte flags);

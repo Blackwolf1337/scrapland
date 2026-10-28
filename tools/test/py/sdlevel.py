@@ -519,10 +519,10 @@ sdon = SDTest.Peek('g_PuntosOn', 'i')
 sdmax = SDTest.Peek('g_MaxPuntos', 'i')
 def mwpuntos():
 	n = SDTest.Peek('g_NumPuntos', 'i')
-	p = SDTest.Peek(0x4afec8, 'i')
+	p = SDTest.Peek(sym('g_Puntos') + 0x4, 'i')
 	if p:
-		return (n, SDTest.Peek(0x4afec4, 'i'), mwints(p, 5 * n))
-	return (n, SDTest.Peek(0x4afec4, 'i'))
+		return (n, SDTest.Peek('g_Puntos', 'i'), mwints(p, 5 * n))
+	return (n, SDTest.Peek('g_Puntos', 'i'))
 SDTest.Call('Debug_PuntosClear', 'v')
 check('Debug_Punto', lambda: (SDTest.Call('Debug_Punto', 'iFif', (1.0, 2.0, 3.0), 0xff0000, 0.5)[0], mwpuntos()))
 check('Debug_PuntoLinea', lambda: (SDTest.Call('Debug_PuntoLinea', 'iFFii', (0.0, 0.0, 0.0), (4.0, 5.0, 6.0), 0xff, 0xff00)[0],

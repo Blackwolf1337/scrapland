@@ -18,7 +18,7 @@
 # the linker; a target without a real symbol stops the build. .reloc itself is not built in (fixed base).
 # Of the data only the rows of tools/standalone/datamap.txt with a user are built in (stage 3b2), the rest of the room
 # stays zero.
-import bisect, hashlib, os, sys
+import bisect, hashlib, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from sdexe import (BASE, PY_SYMBOLS, SIZEOFIMAGE, TEXT_KEEP, TIMESTAMP, Exe, ExeError, c_names, coff_sd, in_python,
@@ -124,6 +124,12 @@ for a, z in zip(cobjs, cobjs[1:]):
 		fail('%s at rva %06x..%06x and %s at rva %06x..%06x overlap' % (a.where(), a.lo, a.hi, z.where(), z.lo, z.hi))
 
 
+def c_name(sym):
+	"""the C name of an assembler symbol: _name (cdecl, thiscall, data), _name@n (stdcall), @name@n (fastcall)"""
+	m = re.match(r'^[_@](\w+?)(@\d+)?$', sym)
+	return m.group(1) if m else None
+
+
 def check(o):
 	"""the C object holds what the original holds at its place"""
 	orig = x.bytes(o.lo, o.hi)
@@ -131,17 +137,20 @@ def check(o):
 	while at < o.size:
 		rva = o.lo + at
 		if at in o.relocs:
-			sym, target = o.relocs[at]
+			sym, target, addend = o.relocs[at]
 			if rva not in x.relocs():
 				fail('%s: a pointer to %s at rva %06x, where the original has none' % (o.where(), sym, rva))
 			t = x.u32(rva) - BASE
+			if target is None and sym in sd_symbols:
+				target = sd_symbols[sym] + addend
 			if target is not None:
 				if target != t:
 					fail('%s: the pointer at rva %06x leads to rva %06x, the original\'s to %06x'
 						% (o.where(), rva, target, t))
-			elif sd_symbols.get(sym, t + 1) != t and (sym[1:] not in (hooks.get(t), PY_SYMBOLS.get(t)) or sym[0] != '_'):
-				fail('%s: the pointer at rva %06x is %s, the original\'s leads to rva %06x (%s)'
-					% (o.where(), rva, sym, t, hooks.get(t) or PY_SYMBOLS.get(t) or 'no C function'))
+			elif addend or c_name(sym) not in (hooks.get(t), PY_SYMBOLS.get(t)):
+				fail('%s: the pointer at rva %06x is %s%s, the original\'s leads to rva %06x (%s)'
+					% (o.where(), rva, sym, ' + %d' % addend if addend else '', t,
+					hooks.get(t) or PY_SYMBOLS.get(t) or 'no C function'))
 			at += 4
 			continue
 		if o.data[at] != orig[at]:
@@ -170,13 +179,25 @@ for at in fix:
 	if not any(lo <= at and at + 4 <= hi for lo, hi, o in units):
 		fail('the pointer at rva %06x crosses the edge of a C object' % at)
 
-# groups of units become initialized sections, the space between them uninitialized ones
+# groups of units become sections: initialized ones for the bytes of the original and the C objects with data,
+# uninitialized ones for the C objects of SD_BSS (bss) and the space between the groups. A unit joins the group
+# before it when it starts in the group's last page, else when both hold data and the gap is below MERGE or both
+# are bss
+
+
+def bss_unit(u):
+	return u[2] is not None and u[2].bss
+
+
 groups = []
 for u in units:
-	if groups and u[0] - groups[-1][-1][1] < MERGE:
-		groups[-1].append(u)
-	else:
-		groups.append([u])
+	if groups:
+		g = groups[-1]
+		gbss = all(bss_unit(v) for v in g)
+		if u[0] < align(g[-1][1]) or (bss_unit(u) == gbss and (gbss or u[0] - g[-1][1] < MERGE)):
+			g.append(u)
+			continue
+	groups.append([u])
 if groups[0][0][0] != ROOM:
 	fail('the first piece does not start at rva 0x%x' % ROOM)
 sections = []	# (start, end, units or None)
@@ -280,5 +301,7 @@ for name, (va, n, ptr, vsize) in sorted(secs.items(), key=lambda s: s[1][0]):
 	orig = sum(hi - lo for lo, hi in kept)
 	nonzero = sum(len(x.bytes(lo, hi).replace(b'\0', b'')) for lo, hi in kept)
 	inc = [o for o in cobjs if va <= o.lo < end]
-	print('datagen.py:   %-8s %7d bytes of the original (%d non-zero), %d in %d C objects'
-		% (name, orig, nonzero, sum(o.size for o in inc), len(inc)))
+	bss = [o for o in inc if o.bss]
+	print('datagen.py:   %-8s %7d bytes of the original (%d non-zero), %d in %d C objects%s'
+		% (name, orig, nonzero, sum(o.size for o in inc), len(inc),
+		' (%d of them bss in %d)' % (sum(o.size for o in bss), len(bss)) if bss else ''))

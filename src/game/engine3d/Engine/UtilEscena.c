@@ -12,9 +12,9 @@
 #include "scrap/modelo.h"
 #include "scrap/varios.h"
 
-#define g_SortModels GAME_DATA(int, 0x4ae790)	/* R_SortModels */
-#define g_SortShow GAME_DATA(int, 0x4ae7a8)	/* R_SortShow */
-#define g_SortInvert GAME_DATA(int, 0x4ae7c0)	/* R_SortInvert */
+#define g_SortModels GAME_GLOBAL_IN(int, GVar_R_SortModels, 16, 0x4ae790)	/* R_SortModels */
+#define g_SortShow GAME_GLOBAL_IN(int, GVar_R_SortShow, 16, 0x4ae7a8)	/* R_SortShow */
+#define g_SortInvert GAME_GLOBAL_IN(int, GVar_R_SortInvert, 16, 0x4ae7c0)	/* R_SortInvert */
 
 #define SORT_TEXT_X 200.0f
 #define SORT_TEXT_Y 10.0f

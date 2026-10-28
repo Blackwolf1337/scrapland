@@ -14,7 +14,7 @@
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 
-#define g_RandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
+#define g_RandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
 
 /* the ship of an effect */
 #define FXV_Veh(e) ((const cVehicleEntity *)(e))
@@ -671,7 +671,7 @@ void __thiscall cObjElementFXVehicleSpawn_Update(cObjElementFXVehicleSpawn *self
 
 /* ---- FiredEntity ---- */
 
-#define g_FXFiredEntitySmokeStep GAME_DATA(float, 0x467390)
+#define g_FXFiredEntitySmokeStep GAME_GLOBAL_IN(float, GVar_FXFiredEntitySmokeStep, 16, 0x467390)
 #define FXV_RAMP_FIREDENT_SMOKE 0x4315e8	/* [2] */
 #define FXV_RAMP_FIREDENT_FIRE 0x431630		/* [5] */
 
@@ -1403,7 +1403,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 
 /* ---- Damage ---- */
 
-#define g_FXVehicleDamageSmokeStep GAME_DATA(float, 0x467360)	/* FXVehicleDamageSmokeStep */
+#define g_FXVehicleDamageSmokeStep GAME_GLOBAL_IN(float, GVar_FXVehicleDamageSmokeStep, 16, 0x467360)	/* FXVehicleDamageSmokeStep */
 #define FXV_RAMP_TRAIL 0x4311e8		/* [2] */
 #define FXV_RAMP_DEBRIS 0x431254
 #define FXV_RAMP_FLAME 0x431278		/* [3] */
@@ -1927,7 +1927,7 @@ trail:
 
 /* ---- FX_ShipExplosion ---- */
 
-#define g_ShipExplosionMaxDist GAME_DATA(float, 0x467330)	/* ShipExplosionMaxDist */
+#define g_ShipExplosionMaxDist GAME_GLOBAL_IN(float, GVar_ShipExplosionMaxDist, 16, 0x467330)	/* ShipExplosionMaxDist */
 #define FXV_RAMP_XFLAME 0x4313a0	/* [2] */
 #define FXV_RAMP_XSPARK 0x4313e8
 #define FXV_RAMP_XSMOKE 0x43140c

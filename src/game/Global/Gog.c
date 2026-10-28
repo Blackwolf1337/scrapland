@@ -61,8 +61,8 @@ SD_OFFSET(GalaxyInitOptions, port, 0x1c);
 
 typedef void (*GalaxyInit_t)(const GalaxyInitOptions *opts);
 #define g_GalaxyInit GAME_DATA(GalaxyInit_t, 0x3a10bc)
-#define g_GogClientID GAME_DATA(const char *, 0x428ab8)
-#define g_GogClientSecret GAME_DATA(const char *, 0x428abc)
+#define g_GogClientID GAME_GLOBAL(const char *, g_GogClientID, 0x428ab8)
+#define g_GogClientSecret GAME_GLOBAL(const char *, g_GogClientSecret, 0x428abc)
 #define GOG_CONFIG_PATH GAME_STR(str_3bbcb4, 0x3bbcb4)	/* "." */
 #define GOG_AUTH_FAILED GAME_STR(str_3bbcb8, 0x3bbcb8)	/* "Failed to Auth: %s" */
 #define GOG_IERROR_TYPE ((const MsvcTypeDescriptor *)Game_Ptr(0x442264))	/* galaxy::api::IError */
@@ -75,7 +75,7 @@ typedef void (*GalaxyInit_t)(const GalaxyInitOptions *opts);
 #define VT_AUTHLISTENER GAME_VFTABLE(gog_GoGScrap_AuthListener_vftable, 0x3bbc38)
 
 /* the authorization has come (the stats may be used) */
-#define g_GogSignedIn GAME_DATA(byte, 0x44c108)
+#define g_GogSignedIn GAME_GLOBAL(byte, g_GogReady, 0x44c108)
 #define GOG_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" */
 
 /* gog::GoGScrap::AuthListener, a SelfRegisteringListener<IAuthListener> */

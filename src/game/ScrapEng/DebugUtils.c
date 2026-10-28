@@ -7,7 +7,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/utild3d.h"
 
-#define g_DebugIdentity ((const matrix_t *)Game_Ptr(0x431b10))
+#define g_DebugIdentity (GAME_ARRAY(const matrix_t, g_DebugIdentity, 0x431b10))
 
 void DebugUtils_DrawAxes(const matrix_t *m, const vec3_t *pos, float size) {
 	static const uint32_t colors[3] = { 0xff0000, 0xff00, 0xff };

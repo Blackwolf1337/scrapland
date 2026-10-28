@@ -10,7 +10,7 @@
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
 
-#define g_RandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
+#define g_RandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
 #define PRESS_NAME_SKIP 11			/* "DM_Element_" before the name of the element in the dummy */
 #define CGAMETRAIL_CTOR 0x21ddb0
 #define CGAMETRAIL_DTOR 0x21de40
@@ -256,9 +256,9 @@ byte __fastcall cFXElementsMentalControllerDamageFX_Init(cFXElementsMentalContro
 	return 1;
 }
 
-#define g_DamageFXMaxDist GAME_DATA(float, 0x4671e0)		/* FXElementsMentalControllerDamageFXMaxDist */
-#define g_DamageFXSound GAME_DATA(const char *, 0x4671b0)	/* FXElementsMentalControllerDamageSound */
-#define g_DamageFXSoundVol GAME_DATA(float, 0x4671c8)		/* FXElementsMentalControllerDamageSoundVol */
+#define g_DamageFXMaxDist GAME_GLOBAL_IN(float, GVar_FXElementsMentalControllerDamageFXMaxDist, 16, 0x4671e0)		/* FXElementsMentalControllerDamageFXMaxDist */
+#define g_DamageFXSound GAME_GLOBAL_IN(const char *, GVar_FXElementsMentalControllerDamageSound, 16, 0x4671b0)	/* FXElementsMentalControllerDamageSound */
+#define g_DamageFXSoundVol GAME_GLOBAL_IN(float, GVar_FXElementsMentalControllerDamageSoundVol, 16, 0x4671c8)		/* FXElementsMentalControllerDamageSoundVol */
 #define DAMAGEFX_SMOKE_RAMPS 0x4309f8				/* 3 color ramps of 9 colors */
 #define DAMAGEFX_FLASH_RAMPS 0x430a68
 

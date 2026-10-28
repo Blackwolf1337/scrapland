@@ -83,7 +83,7 @@ SD_OFFSET(cMissileEntity, onHit, 0x7d4);
 SD_SIZE(cMissileEntity, CMISSILEENTITY_SIZE);
 
 /* the WithLife entities the missiles touched, by name (4 of 0x80) */
-#define g_MissileHits ((char (*)[0x80])Game_Ptr(0x4476b8))
+#define g_MissileHits (GAME_ARRAY(char[0x80], g_MissileHits, 0x4476b8))
 
 /* the base class (src/game/Entities/WithLifeEntity.c) */
 void __fastcall cWithLifeEntity_dtor(cEntity *self);

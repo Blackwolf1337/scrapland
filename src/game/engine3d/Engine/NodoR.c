@@ -16,7 +16,7 @@
 #define RNODE_UNIQUE 2
 #define NODOR_ROT_NULO 0
 
-#define g_NodoRCount GAME_DATA(int, 0x4ad628)
+#define g_NodoRCount GAME_GLOBAL_IN(int, GVar_R_NodoR_Count, 16, 0x4ad628)
 
 void *CSistPart_Cast(IObjeto3D *obj) {
 	CHECK(obj->clase == CLASE_OBJ3D_SISTPART);

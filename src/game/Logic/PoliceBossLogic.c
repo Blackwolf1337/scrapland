@@ -10,8 +10,8 @@
 #include "scrap/weapons.h"
 
 #define CPOLICEBOSSLOCALLOGIC_VFTABLE GAME_VFTABLE(cPoliceBossLocalLogic_vftable, 0x3c0a3c)
-#define g_PoliceBossMinSpecialActionTime GAME_DATA(float, 0x44d770)
-#define g_PoliceBossMaxSpecialActionTime GAME_DATA(float, 0x44d788)
+#define g_PoliceBossMinSpecialActionTime GAME_GLOBAL_IN(float, GVar_PoliceBossMinSpecialActionTime, 16, 0x44d770)
+#define g_PoliceBossMaxSpecialActionTime GAME_GLOBAL_IN(float, GVar_PoliceBossMaxSpecialActionTime, 16, 0x44d788)
 
 void *__thiscall cPoliceBossLocalLogic_ctor(void *mem, cEntity *parent) {
 	cGenCharLocalLogic *self = mem;

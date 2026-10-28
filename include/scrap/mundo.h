@@ -43,7 +43,7 @@ SD_OFFSET(CMundo, camara, 0x2c);
 SD_OFFSET(CMundo, dummies, 0xc4);
 SD_SIZE(CMundo, 0xc8);
 
-#define g_Mundo GAME_DATA(CMundo *, 0x4afde8)
+#define g_Mundo GAME_GLOBAL(CMundo *, g_Mundo, 0x4afde8)
 
 /* the inline accessors of mundo.h */
 static inline CMundo *Mundo_Get(void) {
@@ -61,19 +61,19 @@ static inline CSuelo *Mundo_Suelo(void) {
 }
 
 /* the engine variables of the world (Gvars) */
-#define g_RenderWorld GAME_DATA(int, 0x4afdfc)
-#define g_RenderSky GAME_DATA(int, 0x4afe14)
-#define g_WorldPreIllum GAME_DATA(int, 0x4afe2c)	/* 0 skip, 1 normal, 2 self illumination */
-#define g_SkyRotation GAME_DATA(float, 0x4afe44)	/* degrees */
-#define g_SkyZBuffer GAME_DATA(int, 0x4afe5c)
-#define g_SkyPosScale GAME_DATA(float, 0x4afe74)
-#define g_SkyTubeTest GAME_DATA(float, 0x4afe8c)	/* the far plane of the sky tube */
-#define g_ShowWorldDummies GAME_DATA(const char *, 0x4afea4)	/* a pattern of the names */
-#define g_SkyInit GAME_DATA(int, 0x4afebc)
+#define g_RenderWorld GAME_GLOBAL_IN(int, GVar_RenderWorld, 16, 0x4afdfc)
+#define g_RenderSky GAME_GLOBAL_IN(int, GVar_RenderSky, 16, 0x4afe14)
+#define g_WorldPreIllum GAME_GLOBAL_IN(int, GVar_WorldPreIllum, 16, 0x4afe2c)	/* 0 skip, 1 normal, 2 self illumination */
+#define g_SkyRotation GAME_GLOBAL_IN(float, GVar_SkyRotation, 16, 0x4afe44)	/* degrees */
+#define g_SkyZBuffer GAME_GLOBAL_IN(int, GVar_SkyZBuffer, 16, 0x4afe5c)
+#define g_SkyPosScale GAME_GLOBAL_IN(float, GVar_SkyPosScale, 16, 0x4afe74)
+#define g_SkyTubeTest GAME_GLOBAL_IN(float, GVar_SkyTubeTest, 16, 0x4afe8c)	/* the far plane of the sky tube */
+#define g_ShowWorldDummies GAME_GLOBAL_IN(const char *, GVar_ShowWorldDummies, 16, 0x4afea4)	/* a pattern of the names */
+#define g_SkyInit GAME_GLOBAL_IN(int, GVar_SkyInit, 16, 0x4afebc)
 /* [mapa_sombras] of the ini: the shadow maps of bsp.cpp */
-#define g_MapaSombrasUsar GAME_DATA(int, 0x4b2af8)
-#define g_MapaSombrasCalcular GAME_DATA(int, 0x4b2afc)
-#define g_MapaSombrasDlg GAME_DATA(int, 0x43294c)
+#define g_MapaSombrasUsar GAME_GLOBAL(int, g_MapaSombrasUsar, 0x4b2af8)
+#define g_MapaSombrasCalcular GAME_GLOBAL(int, g_MapaSombrasCalcular, 0x4b2afc)
+#define g_MapaSombrasDlg GAME_GLOBAL(int, g_MapaSombrasDlg, 0x43294c)
 
 CMundo *__fastcall CMundo_ctor(CMundo *self);
 void __fastcall CMundo_dtor(CMundo *self);

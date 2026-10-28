@@ -13,13 +13,13 @@
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 
-#define g_RegenerationStartTime GAME_DATA(float, 0x44d7a0)
-#define g_RegenerationTimeRate GAME_DATA(float, 0x44d7b8)
-#define g_RegenerationCharStartTime GAME_DATA(float, 0x44d7f4)
-#define g_RegenerationCharTimeRate GAME_DATA(float, 0x44d824)
-#define g_RegenerationItem GAME_DATA(char *, 0x44d80c)
-#define g_LifeToLaunchCallback GAME_DATA(int, 0x44d83c)
-#define g_LifeReachedCallback ((cPy_Function *)Game_Ptr(0x44d7d0))
+#define g_RegenerationStartTime GAME_GLOBAL_IN(float, GVar_RegenerationStartTime, 16, 0x44d7a0)
+#define g_RegenerationTimeRate GAME_GLOBAL_IN(float, GVar_RegenerationTimeRate, 16, 0x44d7b8)
+#define g_RegenerationCharStartTime GAME_GLOBAL_IN(float, GVar_RegenerationCharStartTime, 16, 0x44d7f4)
+#define g_RegenerationCharTimeRate GAME_GLOBAL_IN(float, GVar_RegenerationCharTimeRate, 16, 0x44d824)
+#define g_RegenerationItem GAME_GLOBAL_IN(char *, GVar_RegenerationItem, 16, 0x44d80c)
+#define g_LifeToLaunchCallback GAME_GLOBAL_IN(int, GVar_LifeToLaunchCallback, 16, 0x44d83c)
+#define g_LifeReachedCallback (GAME_ARRAY_IN(cPy_Function, GVar_LifeReachedCallback, 16, 0x44d7d0))
 
 cShipRegen *__fastcall ShipRegen_ctor(cShipRegen *self) {
 	self->b0 = 0;

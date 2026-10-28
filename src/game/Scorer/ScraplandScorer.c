@@ -421,8 +421,8 @@ void __thiscall cScraplandSubMenuScorer_Draw(cScraplandSubMenuScorer *self, int 
 }
 
 /* the main menu logo: the screen positions of the lighting frames and of the sparks */
-#define g_MainMenuLightPos ((const float (*)[2])Game_Ptr(0x428bf8))	/* [5] */
-#define g_MainMenuSparkPos ((const float (*)[2])Game_Ptr(0x428c20))	/* [MAINMENU_SPARKS] */
+#define g_MainMenuLightPos (GAME_ARRAY(const float[2], g_MainMenuLightPos, 0x428bf8))	/* [5] */
+#define g_MainMenuSparkPos (GAME_ARRAY(const float[2], g_MainMenuSparkPos, 0x428c20))	/* [MAINMENU_SPARKS] */
 
 #define MAINMENU_MAX_DT 0.2f
 #define MAINMENU_NEONS 21		/* the neon frames 18.. */

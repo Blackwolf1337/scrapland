@@ -163,7 +163,7 @@ static inline void Box_AddTri(box_t *box, const BspTri *tri) {
 	}
 }
 
-static inline byte Vec3_Equal(const vec3_t *a, const vec3_t *b) {
+static inline byte Bsp_Vec3Equal(const vec3_t *a, const vec3_t *b) {
 	return a->x == b->x && a->y == b->y && a->z == b->z;
 }
 
@@ -247,72 +247,72 @@ SD_OFFSET(BspLuz, ilum, 0x20);
 SD_OFFSET(BspLuz, nombre, 0x98);
 SD_SIZE(BspLuz, 0x118);
 
-#define g_Bsp GAME_DATA(CBsp *, 0x4b2b38)
-#define g_BspLMaps GAME_DATA(BspLMap *, 0x4b2b3c)	/* the pages */
-#define g_BspTriTmp GAME_DATA(BspTri *, 0x4b2b40)
-#define g_pBSP_VB GAME_DATA(void *, 0x4d5d70)
-#define g_BspNumLuces GAME_DATA(int, 0x4b2b44)
-#define g_BspLuces ((BspLuz *)Game_Ptr(0x4b2c20))	/* [BSP_MAX_LUCES] */
-#define g_LmapInfo GAME_DATA(int, 0x4b2b5c)		/* the .INFO maps */
-#define g_LmapInfo2 GAME_DATA(int, 0x432990)
-#define g_TxfMode GAME_DATA(int, 0x4b2b74)		/* the TXF loading of an .EMI (2 deletes) */
-#define g_R_ForceLMap GAME_DATA(int, 0x4d5c78)	/* gvar R_ForceLMap, -1 */
-#define g_LmapSecond GAME_DATA(int, 0x4b2b80)		/* the secondary maps (stencil pass 2) */
-#define g_RenderMap GAME_DATA(int, 0x4d5ca8)		/* gvar RenderMap */
-#define g_LightmapPackMode GAME_DATA(int, 0x4b2bf4)	/* gvar */
-#define g_LightmapDxtPadding GAME_DATA(int, 0x4d5c30)	/* gvar */
-#define g_LightmapLimitUV GAME_DATA(int, 0x4d5d68)	/* gvar */
-#define g_MapDrawBySector GAME_DATA(int, 0x4d5c60)	/* gvar */
-#define g_MapDrawSector GAME_DATA(int, 0x4b2bdc)	/* gvar, -2 all */
-#define g_MapRenderMap GAME_DATA(const char *, 0x4b2c0c)	/* gvar, a wildcard of map names */
-#define g_MapRenderMat GAME_DATA(const char *, 0x4d5c90)	/* gvar, a wildcard of material names */
-#define g_MapSortByShader GAME_DATA(int, 0x4d5cd8)	/* gvar */
-#define g_RenderSectors GAME_DATA(int, 0x4b2bc4)	/* gvar */
-#define g_TXF_Helper GAME_DATA(int, 0x4b2b94)		/* gvar */
-#define g_ShowInfoOnSectorError GAME_DATA(int, 0x4d5c48)	/* gvar */
-#define g_Gamma2x GAME_DATA(int, 0x4db878)		/* the gamma2x of the video settings */
+#define g_Bsp GAME_GLOBAL(CBsp *, g_Bsp, 0x4b2b38)
+#define g_BspLMaps GAME_GLOBAL(BspLMap *, g_BspLMaps, 0x4b2b3c)	/* the pages */
+#define g_BspTriTmp GAME_GLOBAL(BspTri *, g_BspTriTmp, 0x4b2b40)
+#define g_pBSP_VB GAME_GLOBAL(void *, g_pBSP_VB, 0x4d5d70)
+#define g_BspNumLuces GAME_GLOBAL(int, g_BspNumLuces, 0x4b2b44)
+#define g_BspLuces (GAME_ARRAY(BspLuz, g_BspLuces, 0x4b2c20))	/* [BSP_MAX_LUCES] */
+#define g_LmapInfo GAME_GLOBAL(int, g_LmapInfo, 0x4b2b5c)		/* the .INFO maps */
+#define g_LmapInfo2 GAME_GLOBAL(int, g_LmapInfo2, 0x432990)
+#define g_TxfMode GAME_GLOBAL(int, g_TxfMode, 0x4b2b74)		/* the TXF loading of an .EMI (2 deletes) */
+#define g_R_ForceLMap GAME_GLOBAL_IN(int, GVar_R_ForceLMap, 16, 0x4d5c78)	/* gvar R_ForceLMap, -1 */
+#define g_LmapSecond GAME_GLOBAL(int, g_LmapSecond, 0x4b2b80)		/* the secondary maps (stencil pass 2) */
+#define g_RenderMap GAME_GLOBAL_IN(int, GVar_RenderMap, 16, 0x4d5ca8)		/* gvar RenderMap */
+#define g_LightmapPackMode GAME_GLOBAL_IN(int, GVar_LightmapPackMode, 16, 0x4b2bf4)	/* gvar */
+#define g_LightmapDxtPadding GAME_GLOBAL_IN(int, GVar_LightmapDxtPadding, 16, 0x4d5c30)	/* gvar */
+#define g_LightmapLimitUV GAME_GLOBAL_IN(int, GVar_LightmapLimitUV, 16, 0x4d5d68)	/* gvar */
+#define g_MapDrawBySector GAME_GLOBAL_IN(int, GVar_MapDrawBySector, 16, 0x4d5c60)	/* gvar */
+#define g_MapDrawSector GAME_GLOBAL_IN(int, GVar_MapDrawSector, 16, 0x4b2bdc)	/* gvar, -2 all */
+#define g_MapRenderMap GAME_GLOBAL_IN(const char *, GVar_MapRenderMap, 16, 0x4b2c0c)	/* gvar, a wildcard of map names */
+#define g_MapRenderMat GAME_GLOBAL_IN(const char *, GVar_MapRenderMat, 16, 0x4d5c90)	/* gvar, a wildcard of material names */
+#define g_MapSortByShader GAME_GLOBAL_IN(int, GVar_MapSortByShader, 16, 0x4d5cd8)	/* gvar */
+#define g_RenderSectors GAME_GLOBAL_IN(int, GVar_RenderSectors, 16, 0x4b2bc4)	/* gvar */
+#define g_TXF_Helper GAME_GLOBAL_IN(int, GVar_TXF_Helper, 16, 0x4b2b94)		/* gvar */
+#define g_ShowInfoOnSectorError GAME_GLOBAL_IN(int, GVar_ShowInfoOnSectorError, 16, 0x4d5c48)	/* gvar */
+#define g_Gamma2x GAME_GLOBAL(int, g_Gamma2x, 0x4db878)		/* the gamma2x of the video settings */
 /* the keys that switch the wire frame: F8 (cleared) with X held */
-#define g_KeyF8 GAME_DATA(byte, 0x4db302)
-#define g_KeyX GAME_DATA(byte, 0x4db2ed)
-#define g_StencilRender GAME_DATA(void *, 0x4afdbc)	/* the floor drawn again by the stencil shadows */
-#define g_BspTris GAME_DATA(int, 0x4b2b78)		/* drawn this frame */
-#define g_BspVerts GAME_DATA(int, 0x4b2b7c)
-#define g_ListaTri ((BspTri **)Game_Ptr(0x4d5d90))	/* [BSP_MAX_LISTATRI] the lists of a pass to sort */
+#define g_KeyF8 GAME_GLOBAL_IN(byte, g_TecladoKeys, 50, 0x4db302)
+#define g_KeyX GAME_GLOBAL_IN(byte, g_TecladoKeys, 29, 0x4db2ed)
+#define g_StencilRender GAME_GLOBAL(void *, g_StencilRender, 0x4afdbc)	/* the floor drawn again by the stencil shadows */
+#define g_BspTris GAME_GLOBAL(int, g_BspTris, 0x4b2b78)		/* drawn this frame */
+#define g_BspVerts GAME_GLOBAL(int, g_BspVerts, 0x4b2b7c)
+#define g_ListaTri (GAME_ARRAY(BspTri *, g_ListaTri, 0x4d5d90))	/* [BSP_MAX_LISTATRI] the lists of a pass to sort */
 /* the sector of the eye: found this frame, the sector, the frames without one, the eye of the last frame */
-#define g_BspSecOk GAME_DATA(byte, 0x4d5d88)
-#define g_BspSecVisto GAME_DATA(int, 0x4b2b34)
-#define g_BspSecErrores GAME_DATA(int, 0x4d5d8c)
-#define g_BspOjoAnt GAME_DATA(vec3_t, 0x4b2c14)
-#define g_BspLodLevel GAME_DATA(float, 0x4b2b64)
+#define g_BspSecOk GAME_GLOBAL(byte, g_BspSecOk, 0x4d5d88)
+#define g_BspSecVisto GAME_GLOBAL(int, g_BspSecVisto, 0x4b2b34)
+#define g_BspSecErrores GAME_GLOBAL(int, g_BspSecErrores, 0x4d5d8c)
+#define g_BspOjoAnt GAME_GLOBAL(vec3_t, g_BspOjoAnt, 0x4b2c14)
+#define g_BspLodLevel GAME_GLOBAL(float, g_BspLodLevel, 0x4b2b64)
 /* the distances of the level of detail of the areas (rva 0x432974..0x432988), plain and for large lists */
-#define g_BspLodDist ((const float *)Game_Ptr(0x432974))
-#define g_BspLodCount ((int *)Game_Ptr(0x4b2b48))
-#define g_BspColores ((const uint32_t *)Game_Ptr(0x432a30))	/* 16 debug colors */
+#define g_BspLodDist (GAME_ARRAY(const float, g_BspLodDist, 0x432974))
+#define g_BspLodCount (GAME_ARRAY(int, g_BspLodCount, 0x4b2b48))
+#define g_BspColores (GAME_ARRAY(const uint32_t, g_BspColores, 0x432a30))	/* 16 debug colors */
 /* the globals of m3d.ini ([mapa_sombras], read in ScrapEngMain.c, the same definitions) */
-#define g_MapaSombrasMultitext GAME_DATA(int, 0x4b2b00)
-#define g_MapaSombrasEscala GAME_DATA(float, 0x432950)
-#define g_MapaSombrasResol GAME_DATA(float, 0x432954)
-#define g_MapaSombrasTexX GAME_DATA(int, 0x432958)
-#define g_MapaSombrasTexY GAME_DATA(int, 0x43295c)
-#define g_MapaSombrasRadiosidad GAME_DATA(int, 0x4b2b10)
-#define g_MapaSombrasModulate4x GAME_DATA(int, 0x4b2b1c)
-#define g_MapaSombrasUsarTxf GAME_DATA(int, 0x4b2b24)
-#define g_MapaSombrasSuaves GAME_DATA(int, 0x4b2b04)
-#define g_MapaSombrasAten GAME_DATA(float, 0x4b2b0c)
-#define g_MapaSombrasIlumGlobal GAME_DATA(int, 0x4b2b14)
-#define g_MapaSombrasNoLuzAmb GAME_DATA(int, 0x4b2b18)
-#define g_MapaSombrasGamma GAME_DATA(float, 0x432960)
-#define g_MapaSombrasRebotes GAME_DATA(int, 0x432968)
-#define g_MapaSombrasCoefRad GAME_DATA(float, 0x43296c)
+#define g_MapaSombrasMultitext GAME_GLOBAL(int, g_MapaSombrasMultitext, 0x4b2b00)
+#define g_MapaSombrasEscala GAME_GLOBAL(float, g_MapaSombrasEscala, 0x432950)
+#define g_MapaSombrasResol GAME_GLOBAL(float, g_MapaSombrasResol, 0x432954)
+#define g_MapaSombrasTexX GAME_GLOBAL(int, g_MapaSombrasTexX, 0x432958)
+#define g_MapaSombrasTexY GAME_GLOBAL(int, g_MapaSombrasTexY, 0x43295c)
+#define g_MapaSombrasRadiosidad GAME_GLOBAL(int, g_MapaSombrasRadiosidad, 0x4b2b10)
+#define g_MapaSombrasModulate4x GAME_GLOBAL(int, g_MapaSombrasModulate4x, 0x4b2b1c)
+#define g_MapaSombrasUsarTxf GAME_GLOBAL(int, g_MapaSombrasUsarTxf, 0x4b2b24)
+#define g_MapaSombrasSuaves GAME_GLOBAL(int, g_MapaSombrasSuaves, 0x4b2b04)
+#define g_MapaSombrasAten GAME_GLOBAL(float, g_MapaSombrasAten, 0x4b2b0c)
+#define g_MapaSombrasIlumGlobal GAME_GLOBAL(int, g_MapaSombrasIlumGlobal, 0x4b2b14)
+#define g_MapaSombrasNoLuzAmb GAME_GLOBAL(int, g_MapaSombrasNoLuzAmb, 0x4b2b18)
+#define g_MapaSombrasGamma GAME_GLOBAL(float, g_MapaSombrasGamma, 0x432960)
+#define g_MapaSombrasRebotes GAME_GLOBAL(int, g_MapaSombrasRebotes, 0x432968)
+#define g_MapaSombrasCoefRad GAME_GLOBAL(float, g_MapaSombrasCoefRad, 0x43296c)
 /* the radiosity */
-#define g_BspAreasTotal ((int *)Game_Ptr(0x4d5d78))	/* the areas of all lists by level */
-#define g_BspRadMinD2 GAME_DATA(float, 0x4b2b60)	/* the smallest squared distance of a form factor */
-#define g_RadSkipBySectors GAME_DATA(int, 0x4d5cf0)	/* gvar: only the lists of the same sector */
-#define g_RadiosityPortals GAME_DATA(int, 0x4d5d08)	/* gvar: other sectors only through the portals */
-#define g_RadiosityMinDist GAME_DATA(float, 0x4d5d50)	/* gvar: g_BspRadMinD2 in texels */
+#define g_BspAreasTotal (GAME_ARRAY(int, g_BspAreasTotal, 0x4d5d78))	/* the areas of all lists by level */
+#define g_BspRadMinD2 GAME_GLOBAL(float, g_BspRadMinD2, 0x4b2b60)	/* the smallest squared distance of a form factor */
+#define g_RadSkipBySectors GAME_GLOBAL_IN(int, GVar_RadSkipBySectors, 16, 0x4d5cf0)	/* gvar: only the lists of the same sector */
+#define g_RadiosityPortals GAME_GLOBAL_IN(int, GVar_RadiosityPortals, 16, 0x4d5d08)	/* gvar: other sectors only through the portals */
+#define g_RadiosityMinDist GAME_GLOBAL_IN(float, GVar_RadiosityMinDist, 16, 0x4d5d50)	/* gvar: g_BspRadMinD2 in texels */
 /* the compiler */
-#define g_LmapOpcion58 GAME_DATA(int, 0x4b2b58)		/* a switch of the dialog (0x40d): only the nodes with flag 4 */
-#define g_TxfCheckFiles GAME_DATA(int, 0x4b2bac)	/* gvar TXF_CheckFiles: the TXF mode asked for */
+#define g_LmapOpcion58 GAME_GLOBAL(int, g_LmapOpcion58, 0x4b2b58)		/* a switch of the dialog (0x40d): only the nodes with flag 4 */
+#define g_TxfCheckFiles GAME_GLOBAL_IN(int, GVar_TXF_CheckFiles, 16, 0x4b2bac)	/* gvar TXF_CheckFiles: the TXF mode asked for */
 
 /* engine3d/engine/bmp*.h instanced here */
 void __fastcall CBmpFlt2_dtor(CBmpFlt2 *self);
@@ -513,13 +513,13 @@ typedef struct BspLuces {
 } BspLuces;
 
 /* the statistics of the line checks */
-#define g_Bsp2NTriCmp GAME_DATA(int, 0x4e738c)
-#define g_Bsp2NComp GAME_DATA(int, 0x4e7390)
-#define g_Bsp2Hits GAME_DATA(int, 0x4e7394)
-#define g_Bsp2Misses GAME_DATA(int, 0x4e7398)
+#define g_Bsp2NTriCmp GAME_GLOBAL(int, g_Bsp2NTriCmp, 0x4e738c)
+#define g_Bsp2NComp GAME_GLOBAL(int, g_Bsp2NComp, 0x4e7390)
+#define g_Bsp2Hits GAME_GLOBAL(int, g_Bsp2Hits, 0x4e7394)
+#define g_Bsp2Misses GAME_GLOBAL(int, g_Bsp2Misses, 0x4e7398)
 /* the eye of the debug drawing and the color index of the next leaf */
-#define g_Bsp2Eye GAME_DATA(vec3_t, 0x4e739c)
-#define g_Bsp2Color GAME_DATA(int, 0x4e73a8)
+#define g_Bsp2Eye GAME_GLOBAL(vec3_t, g_Bsp2Eye, 0x4e739c)
+#define g_Bsp2Color GAME_GLOBAL(int, g_Bsp2Color, 0x4e73a8)
 
 Bsp2Nodo *__fastcall Bsp2Nodo_ctor(Bsp2Nodo *self);
 void __fastcall Bsp2Nodo_dtor(Bsp2Nodo *self);
@@ -572,9 +572,9 @@ typedef struct CRadiosidad {
 SD_SIZE(CRadiosidad, 0xc);
 
 /* the links alive */
-#define g_BspNumEnlaces GAME_DATA(int, 0x4e73ac)
+#define g_BspNumEnlaces GAME_GLOBAL(int, g_BspNumEnlaces, 0x4e73ac)
 /* the unit normals of bmp\normales.rad, read once */
-#define g_RadNormales GAME_DATA(CTabla, 0x4e73b0)
+#define g_RadNormales GAME_GLOBAL(CTabla, g_RadNormales, 0x4e73b0)
 
 BspEnlace *__thiscall BspEnlace_ctor(BspEnlace *self, BspEnlace *sig, BspRegion *region, float ff);
 /* the next links deleted */

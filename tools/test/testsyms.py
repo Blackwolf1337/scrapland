@@ -107,12 +107,17 @@ def c_objects():
 
 
 def defines():
-	"""the names of the data in the C: #define name GAME_DATA(type, rva) and #define name ((type *)Game_Ptr(rva)),
+	"""the names of the data in the C: #define name GAME_DATA(type, rva), #define name ((type *)Game_Ptr(rva)) and the
+	GAME_GLOBAL forms of stage 3b5,
 	by rva. Several names of one rva: the first that is not all capitals, in the order of the paths"""
 	found = collections.defaultdict(list)
 	gd = re.compile(r'^[ \t]*#[ \t]*define[ \t]+(\w+)[ \t]+GAME_DATA\(([^\n]*?), *(0x[0-9a-fA-F]+)\)[ \t]*(?:/\*.*)?$', re.M)
 	gp = re.compile(r'^[ \t]*#[ \t]*define[ \t]+(\w+)[ \t]+\(\(([\w ]+?\**)[ \t]*\)[ \t]*Game_Ptr\((0x[0-9a-fA-F]+)\)\)', re.M)
 	fp = re.compile(r'\btypedef\b[^;{}]*?\(\s*(?:__\w+\s+|WINAPI\s+)?\*\s*(\w+)\s*\)\s*\(')
+	# the forms of stage 3b5: GAME_GLOBAL(type, name, rva), GAME_GLOBAL_IN(type, owner, off, rva), GAME_ARRAY(...),
+	# GAME_ARRAY_IN(...) and GAME_PTR(owner, off, rva); the last argument is the rva
+	gg = re.compile(r'^[ \t]*#[ \t]*define[ \t]+(\w+)[ \t]+\(?GAME_(GLOBAL|GLOBAL_IN|ARRAY|ARRAY_IN|PTR)\(([^\n]*?), *'
+		r'(0x[0-9a-fA-F]+)\)\)?[ \t]*(?:/\*.*)?$', re.M)
 	paths = sorted(glob.glob(os.path.join(ROOT, 'include', '**', '*.h'), recursive=True) +
 		glob.glob(os.path.join(ROOT, 'src', '**', '*.[ch]'), recursive=True))
 	texts = [read(path) for path in paths]
@@ -120,8 +125,13 @@ def defines():
 	for s in texts:
 		fnptrs.update(fp.findall(s))
 	for s in texts:
-		if 'GAME_DATA' not in s and 'Game_Ptr' not in s:
+		if 'GAME_DATA' not in s and 'Game_Ptr' not in s and 'GAME_' not in s:
 			continue
+		for name, form, args, rva in gg.findall(s):
+			if name.startswith('SD_'):
+				continue	# SD_DATA_<rva> and the other aliases of GlobalsAt.h and StringsAt.h
+			size = type_size(args.split(',')[0].strip(), fnptrs) if form in ('GLOBAL', 'GLOBAL_IN') else None
+			found[int(rva, 16)].append((name, size))
 		for name, t, rva in gd.findall(s):
 			found[int(rva, 16)].append((name, type_size(t, fnptrs)))
 		for name, t, rva in gp.findall(s):
@@ -160,7 +170,14 @@ class Names:
 		self.funcs = functions()
 		data = ghidra_globals()
 		data.update(defines())
-		data.update(c_objects())
+		# a C object takes the rva, but where a define names the same rva the tests keep the define's name (what the
+		# C calls it; the object may be a generated group or data_ object) and the table gets the object's C name
+		for rva, obj in c_objects().items():
+			d = data.get(rva)
+			if d is not None and not d.ghidra:
+				data[rva] = Sym(d.key, obj.cname, rva, obj.kind, obj.size if obj.size is not None else d.size)
+			else:
+				data[rva] = obj
 		self.data = data
 		self.starts = sorted(data)
 		self.by_key = {}

@@ -25,24 +25,24 @@
 #define A6000080_ALPHA 0x28
 #define SISTPART_VISIBLE 0x140
 
-#define g_Nodo3DCount GAME_DATA(int, 0x4ad548)	/* R_Nodo3D_Count */
-#define g_RenderOff GAME_DATA(byte, 0x4a8ef8)
-#define g_NodesRendered GAME_DATA(int, 0x4a8f10)
-#define g_NodesUpdated GAME_DATA(int, 0x4a8f14)
+#define g_Nodo3DCount GAME_GLOBAL_IN(int, GVar_R_Nodo3D_Count, 16, 0x4ad548)	/* R_Nodo3D_Count */
+#define g_RenderOff GAME_GLOBAL_IN(byte, group_4a8ef8, 0, 0x4a8ef8)
+#define g_NodesRendered GAME_GLOBAL_IN(int, g_RenderCounts, 16, 0x4a8f10)
+#define g_NodesUpdated GAME_GLOBAL_IN(int, g_RenderCounts, 20, 0x4a8f14)
 /* the pass of the renderer and its filters of the nodes */
 
 /* the engine variables of the nodes (Gvars) */
-#define g_NodeSlerp2 GAME_DATA(int, 0x4ad560)	/* R_NodeSlerp2 0/1/2 */
-#define g_ShowLocalBox GAME_DATA(int, 0x4ad530)
-#define g_ShowLBoxMin GAME_DATA(int, 0x4ad610)	/* the nodes with an indice from .. to (0: no limit) */
-#define g_ShowLBoxMax GAME_DATA(int, 0x4ad518)
-#define g_ShowLBoxName GAME_DATA(const char *, 0x4ad5dc)	/* a wildcard of the names, "" for all */
-#define g_SkipAnim GAME_DATA(int, 0x4ad500)
-#define g_SkipAnimVis GAME_DATA(int, 0x4ad5c4)
-#define g_SkipNodeFX GAME_DATA(int, 0x4ad57c)
-#define g_SkipNodes GAME_DATA(int, 0x4ad594)
-#define g_SkipTrans2 GAME_DATA(int, 0x4ad5f4)	/* in the passes 2..9 and 12..19 */
-#define g_SkipTrans GAME_DATA(int, 0x4ad5ac)
+#define g_NodeSlerp2 GAME_GLOBAL_IN(int, GVar_R_NodeSlerp2, 16, 0x4ad560)	/* R_NodeSlerp2 0/1/2 */
+#define g_ShowLocalBox GAME_GLOBAL_IN(int, GVar_R_ShowLocalBox, 16, 0x4ad530)
+#define g_ShowLBoxMin GAME_GLOBAL_IN(int, GVar_R_ShowLBoxMin, 16, 0x4ad610)	/* the nodes with an indice from .. to (0: no limit) */
+#define g_ShowLBoxMax GAME_GLOBAL_IN(int, GVar_R_ShowLBoxMax, 16, 0x4ad518)
+#define g_ShowLBoxName GAME_GLOBAL_IN(const char *, GVar_R_ShowLBoxName, 16, 0x4ad5dc)	/* a wildcard of the names, "" for all */
+#define g_SkipAnim GAME_GLOBAL_IN(int, GVar_R_SkipAnim, 16, 0x4ad500)
+#define g_SkipAnimVis GAME_GLOBAL_IN(int, GVar_R_SkipAnimVis, 16, 0x4ad5c4)
+#define g_SkipNodeFX GAME_GLOBAL_IN(int, GVar_R_SkipNodeFX, 16, 0x4ad57c)
+#define g_SkipNodes GAME_GLOBAL_IN(int, GVar_R_SkipNodes, 16, 0x4ad594)
+#define g_SkipTrans2 GAME_GLOBAL_IN(int, GVar_R_SkipTrans2, 16, 0x4ad5f4)	/* in the passes 2..9 and 12..19 */
+#define g_SkipTrans GAME_GLOBAL_IN(int, GVar_R_SkipTrans, 16, 0x4ad5ac)
 
 /* the check of Nodo3D.cpp that ends the game, with the name of the node */
 #define NODO_FATAL(self, expr) \

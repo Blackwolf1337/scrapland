@@ -20,7 +20,7 @@
 #define D3DAPP_TIMER_START 1
 #define D3DAPP_TIMER_STOP 2
 
-#define g_AppPausedCount GAME_DATA(int, 0x4b1c3c)
+#define g_AppPausedCount GAME_GLOBAL(int, g_AppPausedCount, 0x4b1c3c)
 
 
 int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b) {
@@ -478,8 +478,8 @@ typedef void(__thiscall *d3dappPause_t)(byte *self, int pause);
 #define MOTOR_NUMADAPTERS(m) MOTOR_U32(m, 0x2a37c)
 #define D3DAPP_STATS 90
 
-#define g_D3DAppFrames GAME_DATA(uint32_t, 0x4b1c38)
-#define g_D3DAppLastTime GAME_DATA(float, 0x4b1c34)
+#define g_D3DAppFrames GAME_GLOBAL(uint32_t, g_D3DAppFrames, 0x4b1c38)
+#define g_D3DAppLastTime GAME_GLOBAL(float, g_D3DAppLastTime, 0x4b1c34)
 
 typedef void *(__stdcall *direct3dcreate8_t)(uint32_t version);
 typedef int(__stdcall *adjustwindowrect_t)(exe_rect *r, uint32_t style, int menu);
@@ -1325,17 +1325,17 @@ failed:
 }
 
 /* the choice of the device dialog: the original values and those selected */
-#define g_SelApp GAME_DATA(byte *, 0x4b1c08)
-#define g_OrigAdapter GAME_DATA(uint32_t, 0x4b1c0c)
-#define g_SelAdapter GAME_DATA(uint32_t, 0x4b1c10)
-#define g_OrigDevice GAME_DATA(uint32_t, 0x4b1c14)
-#define g_SelDevice GAME_DATA(uint32_t, 0x4b1c18)
-#define g_OrigMode GAME_DATA(uint32_t, 0x4b1c1c)
-#define g_SelMode GAME_DATA(uint32_t, 0x4b1c20)
-#define g_OrigWindowed GAME_DATA(int, 0x4b1c24)
-#define g_SelWindowed GAME_DATA(int, 0x4b1c28)
-#define g_OrigMultiSample GAME_DATA(uint32_t, 0x4b1c2c)
-#define g_SelMultiSample GAME_DATA(uint32_t, 0x4b1c30)
+#define g_SelApp GAME_GLOBAL(byte *, g_SelApp, 0x4b1c08)
+#define g_OrigAdapter GAME_GLOBAL(uint32_t, g_OrigAdapter, 0x4b1c0c)
+#define g_SelAdapter GAME_GLOBAL(uint32_t, g_SelAdapter, 0x4b1c10)
+#define g_OrigDevice GAME_GLOBAL(uint32_t, g_OrigDevice, 0x4b1c14)
+#define g_SelDevice GAME_GLOBAL(uint32_t, g_SelDevice, 0x4b1c18)
+#define g_OrigMode GAME_GLOBAL(uint32_t, g_OrigMode, 0x4b1c1c)
+#define g_SelMode GAME_GLOBAL(uint32_t, g_SelMode, 0x4b1c20)
+#define g_OrigWindowed GAME_GLOBAL(int, g_OrigWindowed, 0x4b1c24)
+#define g_SelWindowed GAME_GLOBAL(int, g_SelWindowed, 0x4b1c28)
+#define g_OrigMultiSample GAME_GLOBAL(uint32_t, g_OrigMultiSample, 0x4b1c2c)
+#define g_SelMultiSample GAME_GLOBAL(uint32_t, g_SelMultiSample, 0x4b1c30)
 
 typedef int(__cdecl *wsprintf_t)(char *buf, const char *fmt, ...);
 #define exe_wsprintfA GAME_DATA(wsprintf_t, 0x3a1368)

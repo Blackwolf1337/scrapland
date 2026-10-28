@@ -381,7 +381,7 @@ int Fmod_Play(void *sample, const cSoundDesc *d, const char *name) {
 	return ch;
 }
 
-#define g_S_Show GAME_DATA(int, 0x466d90)		/* S_Show: 1 the channels, 3 the memory */
+#define g_S_Show GAME_GLOBAL_IN(int, GVar_S_Show, 16, 0x466d90)		/* S_Show: 1 the channels, 3 the memory */
 
 /* vf31 (DebugDraw): S_Show 3 the memory of FMOD, 1 the software and hardware channels with their state and the
  * sample, volume, pan and frequency of each hardware channel in two columns */
