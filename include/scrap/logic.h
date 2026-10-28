@@ -1142,6 +1142,8 @@ typedef struct cStrMoney {
 	int money;			/* 0x18 cWorld.money */
 } cStrMoney;
 SD_OFFSET(cStrMoney, money, 0x18);
+/* the digits from the first one not "0", "0" for none */
+const char *__fastcall cStrMoney_GetStr(cStrMoney *self);
 
 #define g_OnMoneyReachCallback ((cPy_Function *)Game_Ptr(0x44d57c))
 #define g_OnMoneyReachValue GAME_DATA(int, 0x44d5a0)

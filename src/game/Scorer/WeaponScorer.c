@@ -3,6 +3,8 @@
  * upgrades and the weapon slots. See include/scrap/scorerhud.h.
  */
 #include "scrap/scorerhud.h"
+#include "scrap/vehicleentity.h"
+#include "scrap/weapons.h"
 
 static CPsaImage *Weapon_NewWhite(byte color) {
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
@@ -175,4 +177,259 @@ int __thiscall cWeaponScorer_Var(cWeaponScorer *self, const char *name, byte set
 		}
 	}
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
+}
+
+#define g_WeaponChangeFadeTime GAME_DATA(float, 0x462440)	/* WeaponChangeFadeTime */
+#define g_WeaponChangeShowTime GAME_DATA(float, 0x462458)	/* WeaponChangeShowTime: the slots after a change */
+/* the slot row of the weapons, shared by all items: per weapon 0 none, 1 with ammo, 2 without; its place in the row */
+#define g_WeaponSlotState ((int *)Game_Ptr(0x462460))		/* [WEAPONSCORER_WEAPONS] */
+#define g_WeaponSlotPlace ((int *)Game_Ptr(0x46247c))		/* [WEAPONSCORER_WEAPONS] */
+#define g_WeaponSlotCount GAME_DATA(int, 0x462498)
+
+#define WEAPON_UAMMO_MAX 200.0f		/* the ammo of an upgrade */
+#define WEAPON_AMMO_CHARGED 3		/* the ammo kind with a bar of its charge instead of a number */
+#define WEAPON_LASER_WEAPON 6		/* drawn from the 2D sheet, not the 3D one */
+#define WEAPON_SLOT_SIZE 38		/* the slot row: the size of a slot, centred at x 339 */
+#define WEAPON_SLOT_X 0x153
+#define WEAPON_CHANGE_TIME 0.2f
+
+/* the icon of weapon w with upgrade u, the upgrade icon when it has one */
+static int Weapon_Icon(cWeaponScorer *self, int w, int u) {
+	return u > 0 ? self->upgradeIcons[u] : self->weaponIcons[w];
+}
+
+static void Weapon_DrawAt(CPsaImage *img, int frame, float x, float y) {
+	if (frame > 0) {
+		CPsaImage_DrawFrame(img, frame, x, y);
+	}
+}
+
+/* the charge of the charged ammo: the icon and a bar, colored from yellow (empty) to white */
+static void Weapon_DrawCharge(cWeaponScorer *self, cWeaponManager *wm, int w) {
+	float uv0[2], uv1[2];
+	CPsaImage *img = self->img;
+	float x = self->base.x, y = self->base.y;
+
+	cAmmoInfo *a = TABLE_AT(g_pWorld->ammo, WEAPON_AMMO_CHARGED);
+	cAmmoInfo *b = TABLE_AT(g_pWorld->ammo, WEAPON_AMMO_CHARGED);
+	float left = Weap_X87Sub(a->max, cWeaponManager_GetWeapAmmo(wm, (uint32_t)w));
+	float f = left / b->max;
+	if (self->ammoIcons[WEAPON_AMMO_CHARGED]) {
+		float e = 1.0f - f;
+		img->color = ((uint32_t)(int)(e * 241.0f) | 0xffff00) << 8 | (uint32_t)(int)(e * 171.0f);
+		CPsaImage_DrawFrame(img, self->ammoIcons[WEAPON_AMMO_CHARGED], self->ammoIconOffX + x + 4.5f,
+			self->ammoIconOffY + y + 1.0f);
+	}
+	CPsaImage_GetFrameUV(img, self->ammoBarIndex, uv0, uv1);
+	float e = 1.0f - f;
+	img->color = ((uint32_t)(int)(e * 241.0f) | 0xc0ff00) << 8 | (uint32_t)(int)(e * 171.0f);
+	Menu_DrawBar(img, self->ammoBarOffX + x, self->ammoBarOffY + y, f, 5, 0.0f, uv0[0], uv0[1], uv1[0], uv1[1],
+		0.0f, 0.0f, 0.0f, 0.0f, 0, 0);
+	img->color = 0xffffffff;
+}
+
+/* the ammo icon and the ammo count (blinking at 0) */
+static void Weapon_DrawAmmo(cWeaponScorer *self, cWeaponManager *wm, int w, int kind, float time) {
+	CPsaImage *img = self->img;
+	float x = self->base.x, y = self->base.y;
+
+	if (self->ammoIcons[kind]) {
+		img->color = 0xffffffff;
+		CPsaImage_DrawFrame(img, self->ammoIcons[kind], self->ammoIconOffX + x, self->ammoIconOffY + y);
+	}
+	if (self->fontBackIndex) {
+		img->color = self->backColor;
+		CPsaImage_DrawFrameFlip(img, self->fontBackIndex, self->fontBackOffX + x, self->fontBackOffY + y, 0, 1);
+	}
+	img->flip = 0;
+	float am = cWeaponManager_GetWeapAmmo(wm, (uint32_t)w);
+	int n = (int)am;
+	if (n > 0 || ((int)(time * 10.0f) & 1)) {
+		img->color = self->textBackColor;
+		Menu_DrawStretch(img, 0x20, self->ammoTextOffX + x - 4.0f, self->ammoTextOffY + y + 1.0f, 50.0f, 1.0f);
+		CFont_PrintfAlignColor(self->ammoFont, self->ammoTextOffX + self->base.x, self->ammoTextOffY + self->base.y,
+			0, self->ammoTextColor, "%d", n);
+	}
+}
+
+/* the row of the weapon slots after a change: the weapons of the ship in their order, the selected one framed */
+static void Weapon_DrawSlots(cWeaponScorer *self, cWeaponManager *wm, int player, int sel, float frameTime) {
+	float t = self->slotsTime - frameTime;
+	if (t >= 0.0f) {
+		self->slotsTime = t;
+	} else {
+		self->slotsTime = 0.0f;
+	}
+	float a = self->slotsTime;
+	float fade = g_WeaponChangeFadeTime;
+	if (a > fade) {
+		a = 1.0f;
+	} else {
+		a = a / fade;
+	}
+	int alpha = (int)(a * 192.0f);
+	float x0 = (float)(WEAPON_SLOT_X - g_WeaponSlotCount * WEAPON_SLOT_SIZE / 2);
+	float y0 = 300.0f;
+	if (g_SplitScreenGame) {
+		y0 = player == 0 ? 180.0f : 420.0f;
+	}
+	for (int i = 0; i < WEAPONSCORER_WEAPONS; i++) {
+		int st = g_WeaponSlotState[i];
+		if (st <= 0) {
+			continue;
+		}
+		float y = y0 + 0.0f;
+		uint32_t a24 = (uint32_t)alpha << 24;
+		float x = (float)(g_WeaponSlotPlace[i] * WEAPON_SLOT_SIZE) + x0;
+		uint32_t color = a24 | (st == 1 ? 0xffffff : 0x404040);
+		if (i == sel) {
+			self->tab->color = (self->tab->color & 0xffffff) | a24;
+			Menu_DrawFrame(self->tab, self->tabSpriteIndex, x - 19.0f, y - 19.0f, 38.0f, 38.0f);
+		}
+		CPsaImage *img;
+		if (i == WEAPON_LASER_WEAPON) {
+			img = self->img;
+			img->color = color;
+			img->scaleX = 0.75f;
+			img->scaleY = 0.75f;
+			img->pivotX = 0.5f;
+			img->pivotY = 0.5f;
+			Weapon_DrawAt(img, self->weaponIcons[WEAPON_LASER_WEAPON], x, y);
+		} else {
+			int u = cWeaponManager_GetUpgrade(wm, i);
+			img = self->img3D;
+			img->color = color;
+			img->scaleX = 0.75f;
+			img->scaleY = 0.75f;
+			img->pivotX = 0.5f;
+			img->pivotY = 0.5f;
+			Weapon_DrawAt(img, Weapon_Icon(self, i, u), x, y);
+		}
+		img->scaleX = 1.0f;
+		img->scaleY = 1.0f;
+		img->pivotY = 0.0f;
+		img->pivotX = 0.0f;
+	}
+}
+
+/* vf00: the weapon of the ship of the camera with its upgrade bar, its ammo, the slots mounted, the row of the
+ * weapons after a change and the fade between the old and the new weapon icon */
+void __thiscall cWeaponScorer_Draw(cWeaponScorer *self, int player) {
+	float uv0[2], uv1[2], sv0[2], sv1[2];
+	cEntity *ship;
+
+	float time = Scorer_Get(player)->time;
+	float frameTime = Scorer_Get(player)->frameTime;
+	if (!ScorerHud_CamShip(player, &ship)) {
+		return;
+	}
+	cVehicleEntity *v = Veh(ship);
+	cWeaponManager *wm = Entity_TargetLock(ship);
+	int w = wm->curWeap;
+	int kind = TABLE_AT(g_pWorld->weapons, w)->ammo;
+	int upg = cWeaponManager_GetUpgrade(wm, w);
+	int sel = Controls_GetWeapon(v->controls);
+	if (self->lastWeapon == -100) {
+		self->lastWeapon = w;
+		self->lastUpgrade = upg;
+	}
+	CPsaImage *img = self->img;
+	img->color = 0xffffffff;
+	CPsaImage_DrawFrame(img, self->backIndex, self->backOffX + self->base.x, self->backOffY + self->base.y);
+	if (upg) {
+		float f = Weap_X87Div(cWeaponManager_GetUAmmo(wm, w), WEAPON_UAMMO_MAX);
+		CPsaImage_GetFrameUV(img, self->upgradeBarIndex, uv0, uv1);
+		img->color = self->upgradeBarColor;
+		Menu_DrawBar(img, self->upgradeBarOffX + self->base.x, self->upgradeBarOffY + self->base.y, f, 5, 0.0f, uv0[0],
+			uv0[1], uv1[0], uv1[1], 0.99f, 0.99f, 0.99f, 0.99f, 0, 0);
+	}
+	if (self->ammoBackIndex) {
+		img->color = self->backColor;
+		CPsaImage_DrawFrame(img, self->ammoBackIndex, self->ammoBackOffX + self->base.x,
+			self->ammoBackOffY + self->base.y);
+	}
+	if (kind == WEAPON_AMMO_CHARGED) {
+		Weapon_DrawCharge(self, wm, w);
+	} else {
+		Weapon_DrawAmmo(self, wm, w, kind, time);
+	}
+	img->color = 0xffffffff;
+	/* the slots of the weapon mounted, a bar of quarters */
+	int n = 0;
+	for (int s = 0; s < 4; s++) {
+		if (cTargetLock_HasSlot(wm, w, s)) {
+			n++;
+		}
+	}
+	float f = (float)n * 0.25f;
+	if (f > 0.0f && 1.0f > f) {
+		f = f - 0.05f;
+	}
+	CPsaImage_GetFrameUV(img, self->slotsIndex[1], uv0, uv1);
+	CPsaImage_GetFrameUV(img, self->slotsIndex[0], sv0, sv1);
+	Menu_DrawBar(img, self->slotsOffX + self->base.x, self->slotsOffY + self->base.y, f, 0, 0.0f, uv0[0], uv0[1], uv1[0],
+		uv1[1], sv0[0], sv0[1], sv1[0], sv1[1], 0, 0);
+	/* the row of the slots shows again after a change of the weapon or of the selection */
+	float show = g_WeaponChangeShowTime;
+	if ((v->life > 0 && show > 0.0f && w != sel) || w != self->lastWeapon) {
+		self->slotsTime = show;
+		g_WeaponSlotCount = 0;
+		int k = WEAPON_LASER_WEAPON;
+		for (int i = 0; i < WEAPONSCORER_WEAPONS; i++) {
+			g_WeaponSlotPlace[k] = g_WeaponSlotCount;
+			if (!cWeaponManager_GetSlots(wm, k)) {
+				g_WeaponSlotState[k] = 0;
+			} else {
+				g_WeaponSlotCount++;
+				g_WeaponSlotState[k] = (byte)cWeaponManager_HasMinAmmo(wm, (uint32_t)k) ? 1 : 2;
+			}
+			k = TABLE_AT(g_pWorld->weapons, k)->next;
+		}
+	}
+	if (self->slotsTime > 0.0f) {
+		Weapon_DrawSlots(self, wm, player, sel, frameTime);
+	}
+	/* the old icon fades out, the new one in */
+	int fadeOld = 0, fadeNew = 0xff;
+	if (w != self->lastWeapon || upg != self->lastUpgrade) {
+		float c = self->changeTime, k = 0.0f;
+		if (c > 0.0f) {
+			k = c / WEAPON_CHANGE_TIME;
+			self->changeTime = c - frameTime;
+		} else {
+			self->changeTime = WEAPON_CHANGE_TIME;
+			self->lastWeapon = w;
+			self->lastUpgrade = upg;
+		}
+		fadeOld = (int)(k * 255.0f);
+		fadeNew = (int)((1.0f - k) * 255.0f);
+	}
+	if (w != 2 && w != 4 && w != WEAPON_LASER_WEAPON) {
+		/* the shadow */
+		self->img3D->color = ((uint32_t)fadeNew & ~1u) << 23 | 0x80d40;
+		Weapon_DrawAt(self->img3D, Weapon_Icon(self, w, upg), self->base.x + 3.0f + self->weaponIconOffX,
+			self->base.y + 3.0f + self->weaponIconOffY);
+	}
+	if (fadeOld > 0) {
+		uint32_t c = (uint32_t)fadeOld << 24 | 0xffffff;
+		if (self->lastWeapon == WEAPON_LASER_WEAPON) {
+			self->img->color = c;
+			Weapon_DrawAt(self->img, self->weaponIcons[self->lastWeapon], self->weaponIconOffX + self->base.x,
+				self->weaponIconOffY + self->base.y);
+		} else {
+			self->img3D->color = c;
+			Weapon_DrawAt(self->img3D, Weapon_Icon(self, self->lastWeapon, self->lastUpgrade),
+				self->weaponIconOffX + self->base.x, self->weaponIconOffY + self->base.y);
+		}
+	}
+	uint32_t c = (uint32_t)fadeNew << 24 | 0xffffff;
+	if (w == WEAPON_LASER_WEAPON) {
+		self->img->color = c;
+		Weapon_DrawAt(self->img, self->weaponIcons[WEAPON_LASER_WEAPON], self->weaponIconOffX + self->base.x,
+			self->weaponIconOffY + self->base.y);
+	} else {
+		self->img3D->color = c;
+		Weapon_DrawAt(self->img3D, Weapon_Icon(self, w, upg), self->weaponIconOffX + self->base.x,
+			self->weaponIconOffY + self->base.y);
+	}
 }

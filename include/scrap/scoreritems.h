@@ -640,20 +640,20 @@ typedef struct cMonitorScorer {
 	float textTime;			/* 0x0ac */
 	float noise;			/* 0x0b0 4 */
 	CGameCamera *cam;		/* 0x0b4 */
-	float fb8;			/* 0x0b8 */
+	cEntity *lastTarget;		/* 0x0b8 the entity seen last, its descriptor is the text */
 	char text[0x140];		/* 0x0bc */
-	int textPos;			/* 0x1fc the characters shown */
+	float textShown;		/* 0x1fc the time the text shows, 20 letters a second */
 	CFont *smallFont;		/* 0x200 Terminal8 */
 	CFont *bigFont;			/* 0x204 Horatio */
 	cScorerModel *model;		/* 0x208 the head */
 	int anim;			/* 0x20c 1 */
 	byte targetView;		/* 0x210 */
 	byte pad_211[3];
-	int i214, i218, i21c, i220;	/* 0x214 */
-	byte b224;			/* 0x224 */
-	byte pad_225[0x2a4 - 0x225];
-	float f2a4;			/* 0x2a4 1 */
-	byte b2a8;			/* 0x2a8 */
+	float objFrom[2];		/* 0x214 the objective mark moves from there */
+	float objPos[2];		/* 0x21c to the screen position of the entity to photograph */
+	char objName[0x80];		/* 0x224 the name of that entity */
+	float objBlend;			/* 0x2a4 1 */
+	byte objWas;			/* 0x2a8 the mark was on an entity before */
 	byte pad_2a9[3];
 	CPsaImage *weapon;		/* 0x2ac the weapon icons */
 	float weaponOffX, weaponOffY;	/* 0x2b0 */
@@ -681,6 +681,8 @@ typedef struct cMonitorScorer {
 } cMonitorScorer;
 SD_SIZE(cMonitorScorer, 0x354);
 SD_OFFSET(cMonitorScorer, model, 0x208);
+SD_OFFSET(cMonitorScorer, objName, 0x224);
+SD_OFFSET(cMonitorScorer, objWas, 0x2a8);
 SD_OFFSET(cMonitorScorer, weapon, 0x2ac);
 
 /* the head and text of Scorer_SetHeadMonitor */
@@ -692,7 +694,8 @@ SD_OFFSET(cMonitorScorer, weapon, 0x2ac);
 cMonitorScorer *__fastcall cMonitorScorer_ctor(cMonitorScorer *self);
 void __fastcall cMonitorScorer_dtor(cMonitorScorer *self);
 cMonitorScorer *__thiscall cMonitorScorer_Delete(cMonitorScorer *self, byte flags);
-/* the monitor of the entity of the camera of player (rva 0x168c60, not decompiled) */
+/* the monitor of the target of the camera of player: the head of the talk or the view of the entity it looks at
+ * with its text, the noise, the objective mark of a character */
 void __thiscall cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEntity *target);
 /* vf01: TargetView=1 */
 void __thiscall cMonitorScorer_SetParam(cMonitorScorer *self, const char *name, const char *value);
@@ -853,7 +856,8 @@ cActionSet *__thiscall ActionSetTable_At(void *table, uint32_t i);
 cRadarScorer *__thiscall cRadarScorer_Delete(cRadarScorer *self, byte flags);
 /* the floor of height y; the fade starts when it changed */
 void __thiscall cRadarScorer_UpdateFloor(cRadarScorer *self, float y);
-/* the radar and the entities on it (rva 0x16d570, not decompiled) */
+/* the radar: its map, the view cones, the places, doors, characters and vehicles, the target and the mission
+ * objects */
 void __thiscall cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity *cam);
 /* the view of the radar at the target and its map (the start of DrawRadar) */
 void __thiscall cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntity *cam);
@@ -1081,6 +1085,8 @@ void __fastcall cScraplandSubMenuScorer_Init(cScraplandSubMenuScorer *self);
 void __thiscall cScraplandMainMenuScorer_SetGlow(cScraplandMainMenuScorer *self, uint32_t flags, const char *file);
 void __thiscall cScraplandSubMenuScorer_SetGlow(cScraplandSubMenuScorer *self, uint32_t flags, const char *file);
 void __thiscall cScraplandSubMenuScorer_Draw(cScraplandSubMenuScorer *self, int player);
+/* vf00: the logo, the neon tubes, the letters with their lighting, the sparks and "Remastered" */
+void __thiscall cScraplandMainMenuScorer_Draw(cScraplandMainMenuScorer *self, int player);
 /* 2D/white.tga loads without the flag 0x40, any other file with it */
 void __thiscall cScraplandMainMenuScorer_SetLighting(cScraplandMainMenuScorer *self, uint32_t flags,
 	const char *file);

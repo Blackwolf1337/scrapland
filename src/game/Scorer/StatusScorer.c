@@ -2,8 +2,13 @@
  * StatusScorer.cpp of the game (Menu/): cStatusScorer, the life, lives, money and boost of the ship of the camera.
  * See include/scrap/scorerhud.h.
  */
+#include "scrap/crt.h"
+#include "scrap/logic.h"
 #include "scrap/scorerhud.h"
+#include "scrap/scrap.h"
 #include "scrap/sound.h"
+#include "scrap/vehicleentity.h"
+#include "scrap/withlifeentity.h"
 
 /* a byte of the ship regeneration state of the world (SLogic.SetShipToRegenerate): the siren plays while set */
 #define World_RegenOn() (*((byte *)g_pWorld + 0x2150))
@@ -178,4 +183,290 @@ int __thiscall cStatusScorer_Var(cStatusScorer *self, const char *name, byte set
 		return r;
 	}
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
+}
+
+/* the life engine variables */
+#define g_StdMaxLife GAME_DATA(int, 0x44ab34)			/* the max life of what is no ship */
+#define g_DangerLifeLevel GAME_DATA(int, 0x46079c)		/* percent: the life blinks red below it */
+#define g_WarningLifeLevel GAME_DATA(int, 0x4607b4)		/* percent: the low life sound fades in below it */
+#define g_DangerLifeSoundVol GAME_DATA(float, 0x4606f4)
+#define g_RegenerationSoundVol GAME_DATA(float, 0x4606dc)
+#define g_RegenerationSoundPitchMax GAME_DATA(float, 0x46073c)
+#define g_RegenerationSoundPitchMin GAME_DATA(float, 0x4607e4)
+#define g_InitRegenerationSound GAME_DATA(const char *, 0x460784)
+#define g_InitRegenerationSoundVol GAME_DATA(float, 0x4607cc)
+#define g_EndRegenerationSound GAME_DATA(const char *, 0x460754)
+#define g_EndRegenerationSoundVol GAME_DATA(float, 0x46070c)
+
+#define STATUS_SEGMENTS 7		/* the boost segments over the life icon */
+#define STATUS_LOW_COLOR 0xffff2020	/* the texts at 0 */
+
+/* the y of the boost segment j (7 the top) over the life icon from y */
+static float Status_SegmentY(cStatusScorer *self, float y, int off, int j) {
+	return y + 4.0f + self->lifeIconOffY + (float)off + (float)(j * j) * 0.3f;
+}
+
+/* the boost segments: filling up while the boost runs (0xff), else the part left */
+static void Status_DrawBoost(cStatusScorer *self, float frameTime) {
+	CPsaImage *img = self->img;
+	int bs = self->boostStatus;
+
+	if (bs == 0xff) {
+		self->boostTime = frameTime + frameTime + self->boostTime;
+	} else {
+		self->boostTime = 0.0f;
+	}
+	uint32_t rgb = bs != 0x80 ? 0xff1003 : 0x808080;
+	if (bs == 0xff) {
+		float k = 0.0f;
+		if (1.0f > self->boostTime) {
+			k = 1.0f - self->boostTime;
+		}
+		int lim = STATUS_SEGMENTS - (int)(k * 7.0f);
+		int a = 0x20, i = 0, j = STATUS_SEGMENTS;
+		for (int off = 0x1c; off > 0; off -= 4) {
+			img->color = (uint32_t)a << 24 | (i < lim ? 0x3eaff : rgb);
+			CPsaImage_DrawFrame(img, self->lifeIconIndex, self->base.x + self->lifeIconOffX,
+				Status_SegmentY(self, self->base.y, off, j));
+			a += 0x17;
+			i++;
+			j--;
+		}
+		return;
+	}
+	float f = (1.0f - self->boostRemaining) * 7.0f;
+	int n = (int)f;
+	float frac = f - (float)n;
+	if (n < 0) {
+		return;
+	}
+	int ai = 0, j = STATUS_SEGMENTS, off = 0x1c;
+	uint32_t a = 0x20000000;
+	for (int i = 0; i <= n; i++) {
+		if (i == n) {
+			img->color = (uint32_t)((int)((float)ai * frac) + 0x20) << 24 | rgb;
+		} else {
+			img->color = rgb | a;
+		}
+		CPsaImage_DrawFrame(img, self->lifeIconIndex, self->base.x + self->lifeIconOffX,
+			Status_SegmentY(self, self->base.y, off, j));
+		ai += 0x17;
+		a += 0x17000000;
+		off -= 4;
+		j--;
+	}
+}
+
+/* the money (blinking after a change) and the lives */
+static void Status_DrawMoney(cStatusScorer *self, float time, float frameTime) {
+	CPsaImage *img = self->img;
+
+	int m = g_pWorld->money;
+	self->money = m;
+	if (m != self->lastMoney) {
+		self->moneyBlink = 0.5f;
+	} else if (self->moneyBlink > 0.0f) {
+		self->moneyBlink = self->moneyBlink - frameTime;
+	}
+	if (self->moneyBackIndex) {
+		img->color = self->backColor;
+		CPsaImage_DrawFrame(img, self->moneyBackIndex, self->moneyBackOffX + self->base.x,
+			self->moneyBackOffY + self->base.y);
+	}
+	float b = self->moneyBlink;
+	if (0.0f >= b || (b > 0.0f && ((int)(time * 10.0f) & 1))) {
+		img->color = self->textBackColor;
+		Menu_DrawStretch(img, 0x22, self->moneyTextOffX + self->base.x - 86.0f + 10.0f,
+			self->base.y + self->moneyTextOffY + 1.0f, 86.0f, 1.0f);
+		img->color = self->moneyTextColor;
+		CPsaImage_DrawFrame(img, self->moneyIconIndex, self->moneyIconOffX + self->base.x,
+			self->moneyIconOffY + self->base.y);
+		const char *s = cStrMoney_GetStr((cStrMoney *)g_pWorld->strMoney);
+		CFont_PrintfAlignColor(self->moneyFont, self->moneyTextOffX + self->base.x, self->base.y + self->moneyTextOffY,
+			1, self->moneyTextColor, s);
+	}
+	self->lastMoney = self->money;
+	if (!self->moneyIconIndex) {
+		return;
+	}
+	const char *lives = SaveVar_Get("Player.NumLives");
+	if (lives) {
+		self->numLives = crt_atoi(lives);
+	}
+	if (self->livesBackIndex) {
+		img->color = self->backColor;
+		CPsaImage_DrawFrame(img, self->livesBackIndex, self->livesBackOffX + self->base.x,
+			self->livesBackOffY + self->base.y);
+	}
+	img->color = self->textBackColor;
+	Menu_DrawStretch(img, 0x22, self->base.x + self->livesTextOffX - 4.0f, self->base.y + self->livesTextOffY + 1.0f,
+		29.0f, 1.0f);
+	uint32_t c = self->numLives > 0 ? self->livesTextColor : STATUS_LOW_COLOR;
+	CFont_PrintfAlignColor(self->livesFont, self->base.x + self->livesTextOffX + 11.0f,
+		self->base.y + self->livesTextOffY + 12.0f, 4, c, "%d", self->numLives);
+}
+
+/* the glow of the boost icon: used up (0x40) it shows the part left, while it runs (0xff) the filling and the
+ * blinking turbo */
+static void Status_DrawBoostIcon(cStatusScorer *self) {
+	CPsaImage *glow = self->glow;
+	float x = self->base.x, y = self->base.y;
+
+	if (self->boostStatus == 0x40) {
+		float f = (1.0f - self->boostRemaining) * 7.0f;
+		int n = (int)f;
+		int j = STATUS_SEGMENTS - n;
+		glow->color = (uint32_t)(int)((f - (float)n) * 128.0f) << 24 | 0xff1002;
+		CPsaImage_DrawFrame(glow, self->boostIconIndex, x - 2.0f + self->lifeIconOffX,
+			y - 2.0f + 4.0f + self->lifeIconOffY + (float)(j * 4) + (float)(j * j) * 0.3f);
+		return;
+	}
+	if (self->boostStatus != 0xff) {
+		return;
+	}
+	if (1.0f > self->boostTime) {
+		float g = 1.0f - self->boostTime;
+		int n = (int)(g * 7.0f);
+		glow->color = (uint32_t)(int)((g - (float)n) * 128.0f) << 24 | 0x3eaff;
+		CPsaImage_DrawFrame(glow, self->boostIconIndex, x - 3.0f + self->lifeIconOffX,
+			y - 3.0f + 4.0f + self->lifeIconOffY + (float)(n * 4) + (float)(n * n) * 0.3f);
+	}
+	float b = self->boostTime;
+	float fr = b - (float)(int)b;
+	float a;
+	if (fr > 0.5f) {
+		float h = fr - 0.5f;
+		a = 1.0f - (h + h);
+	} else {
+		a = fr + fr;
+	}
+	glow->color = (uint32_t)(int)(a * 255.0f) << 24 | 0x3eaff;
+	CPsaImage_DrawFrame(glow, self->boostTurboIndex, self->base.x - 2.0f + self->lifeIconOffX,
+		self->base.y + 12.0f + self->lifeIconOffY);
+}
+
+/* vf00: the life of the target of the camera (blinking when in danger), the boost segments, the money and lives,
+ * the team flag, the hull of a ship; the low life warning and the regeneration siren */
+void __thiscall cStatusScorer_Draw(cStatusScorer *self, int player) {
+	cEntity *e;
+
+	float time = Scorer_Get(player)->time;
+	float frameTime = Scorer_Get(player)->frameTime;
+	if (!ScorerHud_CamTarget(player, "Obj", &e)) {
+		return;
+	}
+	byte isCar = 0;
+	int life = 0, pct = 100;
+	float hull = 1.0f;
+	if (e) {
+		int stdMax = g_StdMaxLife;
+		byte withLife = Entity_IsType(e, TYEN_WITH_LIFE);
+		isCar = Entity_IsType(e, TYEN_CAR);
+		int lv = 0;
+		if (withLife) {
+			life = ((cWithLifeEntity *)e)->life;
+			lv = life;
+		}
+		int lo = stdMax, hi = stdMax;
+		if (isCar) {
+			lo = Veh(e)->minLife;
+			hi = Veh(e)->maxLife;
+		}
+		pct = lv * 100 / hi;
+		if (isCar) {
+			if (life < lo) {
+				hull = 0.0f;
+			} else if (life <= hi && hi > lo) {
+				hull = (float)(life - lo) / (float)(hi - lo);
+			}
+		}
+	}
+	CPsaImage *img = self->img;
+	img->color = 0xffffffff;
+	CPsaImage_DrawFrame(img, self->backIndex, self->backOffX + self->base.x, self->backOffY + self->base.y);
+	if (isCar && self->lifeIconIndex) {
+		Status_DrawBoost(self, frameTime);
+	}
+	if (self->moneyIconIndex) {
+		Status_DrawMoney(self, time, frameTime);
+	}
+	if (!self->moneyIconIndex && e && isCar) {
+		int t = ((cWithLifeEntity *)e)->arrow.tgType;
+		if (t == 0 || t == 2) {
+			CPsaImage_DrawFrame(self->flag, t == 0 ? 2 : 1, self->flagOffX + self->base.x,
+				self->flagOffY + self->base.y);
+		}
+	}
+	/* the color of the life and the volume of the warning */
+	uint32_t lifeColor;
+	float lowVol;
+	int danger = g_DangerLifeLevel;
+	if (pct <= danger) {
+		int k = (int)(time * 1024.0f) % 512;
+		int d = 0xff - k;
+		lifeColor = ((uint32_t)(d < 0 ? -d : d) | 0xffffff00) << 8;
+		lowVol = g_DangerLifeSoundVol;
+	} else if (pct <= g_WarningLifeLevel) {
+		int warn = g_WarningLifeLevel;
+		lifeColor = 0xffffff00;
+		lowVol = (float)(warn - pct) * g_DangerLifeSoundVol / (float)(warn - danger);
+	} else {
+		lifeColor = self->lifeTextColor;
+		lowVol = 0.0f;
+	}
+	if (self->lifeIconIndex) {
+		img->color = self->livesTextColor;
+		CPsaImage_DrawFrame(img, self->lifeIconIndex, self->lifeIconOffX + self->base.x,
+			self->lifeIconOffY + self->base.y);
+	}
+	if (self->fontBackIndex) {
+		img->color = self->backColor;
+		CPsaImage_DrawFrame(img, self->fontBackIndex, self->fontBackOffX + self->base.x,
+			self->fontBackOffY + self->base.y);
+	}
+	danger = g_DangerLifeLevel;
+	if (pct > danger || pct <= 0 || ((int)(((float)danger * 0.5f / (float)pct + 4.0f) * time) & 1)) {
+		img->color = self->textBackColor;
+		Menu_DrawStretch(img, 0x20, self->lifeTextOffX + self->base.x - 45.0f + 4.0f,
+			self->base.y + self->lifeTextOffY + 1.0f, 45.0f, 1.0f);
+		CFont_PrintfAlignColor(self->lifeFont, self->lifeTextOffX + self->base.x, self->base.y + self->lifeTextOffY, 1,
+			life > 0 ? lifeColor : STATUS_LOW_COLOR, "%d", life);
+	}
+	if (!isCar) {
+		return;
+	}
+	if (self->hullIconIndex) {
+		img->color = (uint32_t)(int)(hull * 255.0f) << 24 | 0xff00ff;
+		CPsaImage_DrawFrame(img, self->hullIconIndex, self->hullIconOffX + self->base.x,
+			self->hullIconOffY + self->base.y);
+	}
+	if (!g_pApp->flags && !g_SplitScreenGame && lowVol != 0.0f && !World_RegenOn()) {
+		self->lowLife.desc.volume = Snd_Volume(lowVol);
+		self->lowLife.desc.pan = 0;
+		cSound_Update(&self->lowLife);
+	} else {
+		cSound_Stop(&self->lowLife);
+	}
+	if (World_RegenOn()) {
+		self->alarm.desc.volume = Snd_Volume(g_RegenerationSoundVol);
+		self->alarm.desc.pan = 0;
+		float p = (g_RegenerationSoundPitchMax - g_RegenerationSoundPitchMin) * (float)pct / 100.0f +
+			g_RegenerationSoundPitchMin;
+		self->alarm.desc.freq = 1.0f;
+		cSound_SetPitch(&self->alarm, p);
+		cSound_Update(&self->alarm);
+	} else {
+		cSound_Stop(&self->alarm);
+	}
+	if (self->alarmOn != World_RegenOn()) {
+		if (World_RegenOn()) {
+			Scorer_PlaySound(g_InitRegenerationSound, g_InitRegenerationSoundVol);
+		} else {
+			Scorer_PlaySound(g_EndRegenerationSound, g_EndRegenerationSoundVol);
+		}
+		self->alarmOn = World_RegenOn();
+	}
+	if (self->boostIconIndex) {
+		Status_DrawBoostIcon(self);
+	}
 }

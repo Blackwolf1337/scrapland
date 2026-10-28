@@ -8126,6 +8126,13 @@ SD_HOOK(cAICharControl3D_StrafeBack, 0x07f250, 2805)
 SD_HOOK(cAICharControl3D_StrafeFwd, 0x07fd50, 2582)
 
 /* module agent: Scorer draws (Monitor, Radar, MainMenu, Status, Target, Weapon, WindFx) (hooks below this line) */
+SD_HOOK(cWindFxScorer_Draw, 0x188ea0, 2595)
+SD_HOOK(cScraplandMainMenuScorer_Draw, 0x176130, 3032)
+SD_HOOK(cWeaponScorer_Draw, 0x188050, 3260)
+SD_HOOK(cStatusScorer_Draw, 0x17d610, 3717)
+SD_HOOK(cTargetScorer_DrawTarget, 0x181600, 3629)
+SD_HOOK(cRadarScorer_DrawRadar, 0x16d570, 4014)
+SD_HOOK(cMonitorScorer_DrawMonitor, 0x168c60, 5943)
 
 /* module agent: Final untested (DevastatorCreate, BSP compiler, EMI writer, radiosity) (hooks below this line) */
 SD_HOOK(CBsp_GuardarEMI, 0x28eae0, 1135)	/* not reached by the tests */
