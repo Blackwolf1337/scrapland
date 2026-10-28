@@ -8,6 +8,7 @@
  *
  * This file must not see the real prototypes (the thunks are plain labels), so it includes no game header.
  */
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef SD_STANDALONE
@@ -37,13 +38,16 @@ static uint32_t *const imp_slots[] = {
 #include "imports.inc"
 #undef SD_IMPORT
 #undef SD_IMPORT_STDCALL
+	NULL	/* the end; ScrapC.exe has no thunks at all */
 };
 
 int Imports_Resolve(uintptr_t base);
 
 int Imports_Resolve(uintptr_t base) {
-	for (size_t i = 0; i < sizeof(imp_slots) / sizeof(imp_slots[0]); i++) {
-		*imp_slots[i] += (uint32_t)base;
+	int n = 0;
+
+	for (uint32_t *const *p = imp_slots; *p; p++, n++) {
+		**p += (uint32_t)base;
 	}
-	return (int)(sizeof(imp_slots) / sizeof(imp_slots[0]));
+	return n;
 }
