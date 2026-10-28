@@ -8101,3 +8101,5 @@ SD_HOOK(CBsp_AgruparMapas, 0x284d00, 2039)
 SD_HOOK(cVehicleMotorsEffects_Exhaust, 0x10f210, 34801)
 
 /* module agent: Engine leftovers (Escena_Load, stencil draws, debug and dialogs) (hooks below this line) */
+
+/* module agent: Leftovers C, EmbeddedFX vf03, AICharControl3D, Gear, Devastator (hooks below this line) */
