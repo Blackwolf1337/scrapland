@@ -294,6 +294,8 @@ cNetVController *__thiscall cNetVController_ctor(void *mem, cEntity *v);
 /* NetVController.c */
 byte __thiscall cNetVController_Changed(cNetVController *self, byte flags, cEntity *e);
 void __thiscall cNetVController_Reset(cNetVController *self);
+void __thiscall cNetVController_Read(cNetVController *self, void *msg);
+void __thiscall cNetVController_Write(cNetVController *self, byte flags, cEntity *e, void *msg, byte force);
 
 /* VehicleEntity.c; the constructor (rva 0x105830) is declared in world.h */
 void __fastcall cVehicleEntity_dtor(cVehicleEntity *self);

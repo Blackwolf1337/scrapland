@@ -10,6 +10,19 @@
 #define CON_COLOR_ERROR 0x8f
 #define CON_COLOR_DEBUG 0x606060
 
+/* the ring of the last console lines (src/game/Global/Console.c; drawn by Scorer_DrawConsole) */
+#define CON_LINES 23
+#define CON_LINE_LEN 0x80
+
+typedef struct cConLine {
+	char text[CON_LINE_LEN];	/* 0x00 */
+	uint32_t color;			/* 0x80 0xBBGGRR, set when the line ends */
+} cConLine;
+SD_SIZE(cConLine, 0x84);
+
+#define g_ConLines ((cConLine *)Game_Ptr(0x444e68))	/* CON_LINES */
+#define g_ConLine GAME_DATA(int, 0x445a44)		/* the line written now */
+
 /* prints text in a color; flag set: only into the second log (rva 0xbca50) */
 void Con_Print(int color, const char *text, int flag);
 /* printf in the error color (rva 0xbc580) */

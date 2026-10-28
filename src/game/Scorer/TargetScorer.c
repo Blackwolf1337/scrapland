@@ -15,14 +15,6 @@
 #define TS_MARK_HEIGHT 380.0f		/* rva 0x3c5010 */
 #define TS_HALF_SCREEN 240.0f		/* rva 0x3c23c8 */
 
-/* the x87 a * b * c of the original (a on the stack from a call), rounded by the control word, then to float */
-static inline float TS_X87MulMul(long double a, float b, float c) {
-	long double r;
-
-	__asm__("fmuls %2\n\tfmuls %3" : "=t"(r) : "0"(a), "m"(b), "m"(c));
-	return (float)r;
-}
-
 cTargetScorer *__fastcall cTargetScorer_ctor(cTargetScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = Game_Ptr(CTARGETSCORER_VFTABLE);
@@ -145,7 +137,7 @@ void __thiscall cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
 		if (!w->arrow.b71) {
 			continue;
 		}
-		float h = TS_X87MulMul(vt->GetRadius(e), TS_MARK_HEIGHT, depth);
+		float h = X87_MulMulF(vt->GetRadius(e), TS_MARK_HEIGHT, depth);
 		self->img->color = enemy ? enemyColor : friendColor;
 		self->img->x = scr[0];
 		self->img->y = scr[1] - h;

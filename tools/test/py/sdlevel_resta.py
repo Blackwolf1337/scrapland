@@ -150,7 +150,169 @@ if rsaCar:
 			rsaCar)[0], rsaB(rsaNV + 0x38), rsaInts(rsaNV, (0x3c, 0x40, 0x44, 0x48, 0x4c, 0x50))))
 	rsaPoke(rsaCar + 0x4c, rsaActive)
 	check('cNetVController_Reset', lambda: (SDTest.Call(0x119840, 'tvi', rsaNV), rsaB(rsaNV + 0x54), rsaB(rsaNV + 0x59)))
+	# Read of crafted messages through a cFileMem: two client states (a lock point, fire, cloud, EMI, a shot at
+	# "net5", a hit by "net7", upgrades; then a lock on "net9" and a shot at a point) and the controls on a server
+	rsaWorld = SDTest.Peek(0x467450, 'i')
+	rsaNWeap = rsaI(rsaWorld + 0x1bb8)
+	rsaNAmmo = rsaI(rsaWorld + 0x1bc4)
+	rsaWS = rsaI(rsaCar + 0x5f0 + 0x18)
+	rsaAm = rsaI(rsaCar + 0x5f0 + 0x20)
+	def rsanvr():
+		r = (rsaI(rsaNV + 0x74) & 0xffff, rsaF(rsaNV + 0x70, 1), rsaB(rsaNV + 0x38), rsaB(rsaNV + 0x60),
+			rsaInts(rsaNV, (0x64, 0x68)), rsaF(rsaNV + 4, 9), rsaF(rsaCar + 0x290, 2), rsaF(rsaCar + 0x58c, 2),
+			rsaB(rsaCar + 0x594), rsaInts(rsaCar, (0x238, 0x5fc)), rsaB(rsaCar + 0x5f0 + 0x44),
+			rsaF(rsaCar + 0x5f0 + 0x38, 3), rsaB(rsaCar + 0x298 + 0x5c), rsaI(rsaCar + 0x298 + 0x40),
+			rsaB(rsaCar + 0x298 + 0x74), rsaF(rsaCar + 0x298 + 0x30, 3), rsaB(rsaCar + 0x650), rsaB(rsaCar + 0x653))
+		for k in range(rsaNAmmo):
+			r = r + (rsaF(rsaAm + 4 * k, 1),)
+		for k in range(rsaNWeap):
+			r = r + (rsaI(rsaWS + 12 * k + 4), rsaF(rsaWS + 12 * k + 8, 1))
+		return r
+	def rsaword(l, k):
+		return l[k] | (l[k + 1] << 8) | (l[k + 2] << 16) | (l[k + 3] << 24)
+	rsaMsgF = rsaAlloc(0x20)
+	rsaMsgB = rsaAlloc(0x100)
+	SDTest.Call(0x12e050, 'tiiiii', rsaMsgF, rsaMsgB, 0x100, 0)
+	def rsamsg(l):
+		l = list(l)
+		n = len(l)
+		l = l + [0, 0, 0, 0]
+		k = 0
+		while k < n:
+			rsaPoke(rsaMsgB + k, rsaword(l, k))
+			k = k + 4
+		SDTest.Call(0x12e240, 'tviiiii', rsaMsgF, rsaMsgB, 0x100, 0, n)
+		SDTest.Call(0x12e1b0, 'tiisi', rsaMsgF, '', 1)
+		return SDTest.Call(0x118720, 'tvii', rsaNV, rsaMsgF), SDTest.Call(0x12e1a0, 'tii', rsaMsgF)[0], rsanvr()
+	rsaW = rsaI(rsaCar + 0x5fc) & 0xff
+	rsaHits = (rsaB(rsaCar + 0x298 + 0x74) + 1) & 0xff
+	if rsaWS and rsaAm and rsaNWeap > 0:
+		rsaSet(rsaCar + 0x5f0 + 0x38, (0.0, 0.0, 0.0))
+		rsaPoke(rsaCar + 0x650, 0)
+		check('cNetVController_Read before', lambda: rsanvr())
+		check('cNetVController_Read client', lambda: rsamsg((0xf8, 0x40, 0x01, 1, 0, 0xfe, 0xff, 3, 0, 50, 0x30, 0,
+			rsaW, 0x81, 5, 0, rsaHits, 7, 0, 0x05, 0x80, 0x03, 0, 4, 0x80, 0x21)))
+		check('cNetVController_Read client 2', lambda: rsamsg((0x08, 0x20, 0x00, 9, 0, 0, 0, rsaW, 0x02, 2, 0, 0, 0,
+			0xff, 0xff, rsaHits, 7, 0, 0, 0, 0x00)))
+		rsaApp = SDTest.Peek(0x467ba0, 'i')
+		rsaAppFlags = rsaI(rsaApp + 0x30)
+		rsaPoke(rsaApp + 0x30, rsaAppFlags | 2)
+		check('cNetVController_Read server', lambda: rsamsg((0x01, 0x00, rsaW, 0, 0, 0xc0, 0x3f, 3, 0, 0x00)))
+		rsaPoke(rsaApp + 0x30, rsaAppFlags)
+		# Write into the cFileMem: the state for the clients (fire, a too small fire delay, the hit counters at
+		# 2). The controls of a "net" vehicle need the client flag, then the base Write does not return
+		def rsawr(flags, force):
+			SDTest.Call(0x12e240, 'tviiiii', rsaMsgF, rsaMsgB, 0x100, 0, 0)
+			SDTest.Call(0x12e1b0, 'tiisi', rsaMsgF, '', 6)
+			SDTest.Call(0x118f20, 'tviiiii', rsaNV, flags, rsaCar, rsaMsgF, force)
+			n = SDTest.Call(0x12e2a0, 'tii', rsaMsgF)[0]
+			r = ()
+			for k in range(n):
+				r = r + (rsaB(rsaMsgB + k),)
+			return r, rsanvr()
+		rsaSet(rsaCar + 0x290, (0.5, 3.0))
+		check('cNetVController_Write', lambda: rsawr(0x80, 0))
+		rsaPoke(rsaNV + 0x64, 2)
+		rsaPoke(rsaNV + 0x68, 2)
+		rsaPoke(rsaNV + 0x6c, 1)
+		rsaSet(rsaCar + 0x290, (0.005, 3.0))
+		check('cNetVController_Write hits', lambda: rsawr(0xff, 1))
+		check('cNetVController_Write no flags', lambda: rsawr(0x00, 0))
+	rsaFree(rsaMsgF)
+	rsaFree(rsaMsgB)
 	rsaFree(rsaNV)
+
+# ---- the radar map and icons on a cRadarScorer of our own, the car as target, a fake camera (its turn at 0x8c):
+# the view globals, the image states and the icon colors ----
+if rsaCar and rsaI(SDTest.Peek(0x467450, 'i') + 0x2f0) > 0:
+	# the constructor would load the floor maps of FileNameMap2D: all images are the white image of the scorer
+	rsaRad = rsaAlloc(0x94c)
+	rsaWhite = SDTest.Call(0x171000, 'i')[0]
+	rsaWhiteSave = rsaInts(rsaWhite, range(0, 0x44, 4))
+	for rsaK in range(0, 0x94c, 4):
+		rsaPoke(rsaRad + rsaK, 0)
+	for rsaK in (0xbc, 0xc4, 0xcc, 0x8c4, 0x8c8):
+		rsaPoke(rsaRad + rsaK, rsaWhite)
+	for rsaK in range(16):
+		rsaPoke(rsaRad + 0x8dc + 4 * rsaK, rsaWhite)
+	rsaSet(rsaRad + 0x91c, (512.0, 0.01, 20000.0, 16000.0, 40000.0, 50000.0))
+	rsaPoke(rsaRad + 0x8d8, 100)
+	rsaPoke(rsaRad + 0x8d0, 1)
+	rsaCam = rsaAlloc(0x100)
+	rsaSet(rsaCam + 0x8c, (0.7,))
+	rsaSet(rsaRad + 0x10, (100.0, 50.0))
+	rsaSet(rsaRad + 0xac, (55.0, 55.0, 56.25, 56.25))
+	rsaPos = rsaAlloc(0x10)
+	def rsaimg(p):
+		return rsaF(p, 2), rsaI(p + 0x34)
+	def rsarad():
+		r = (rsaF(0x400000 + 0x45fe80, 4), rsaimg(rsaI(rsaRad + 0x8c4)), rsaimg(rsaI(rsaRad + 0x8dc)),
+			rsaimg(rsaI(rsaRad + 0xcc)))
+		for k in (3, 5):
+			r = r + (rsaI(rsaRad + 0x4cc + 4 * k),)
+		return r
+	def rsamap():
+		SDTest.Call(0x16d090, 'tviii', rsaRad, rsaCar, rsaCam)
+		return rsarad()
+	rsaSet(rsaRad + 0x8d4, (1.0,))
+	check('cRadarScorer_DrawMap', lambda: rsamap())
+	rsaSet(rsaRad + 0x8d4, (0.4,))
+	check('cRadarScorer_DrawMap fade', lambda: rsamap())
+	rsaPoke(rsaRad + 0x934, 1)
+	rsaSet(rsaRad + 0x944, (300.0, -200.0))
+	check('cRadarScorer_DrawMap menu', lambda: rsamap())
+	rsaPoke(rsaRad + 0x934, 0)
+	rsaSet(rsaRad + 0x944, (0.0, 0.0))
+	rsaEmi = rsaF(rsaCar + 0x58c, 1)
+	rsaSet(rsaCar + 0x58c, (5.0,))
+	rsaSrand(17)
+	check('cRadarScorer_DrawMap EMI', lambda: rsamap())
+	rsaSet(rsaCar + 0x58c, rsaEmi)
+	SDTest.Call(0x16d090, 'tviii', rsaRad, rsaCar, rsaCam)
+	rsaPoke(rsaRad + 0xd4 + 4 * 3, 0)
+	rsaPoke(rsaRad + 0xd4 + 4 * 5, 0)
+	def rsaicon(pos, ang, flags, always):
+		rsaSet(rsaPos, pos)
+		SDTest.Call(0x16ca80, 'tviiifiiiii', rsaRad, rsaPos, 3, ang, 5, flags, 0xc0ff8040, 0x80ffffff, always)
+		return rsarad()
+	for rsaFade in (1.0, 0.25):
+		rsaSet(rsaRad + 0x8d4, (rsaFade,))
+		for rsaMenu in (0, 1):
+			rsaPoke(rsaRad + 0x934, rsaMenu)
+			for rsav in (((54100.0, 50000.0, 61200.0), 0.3, 0, 0), ((54100.0, 50000.0, 61200.0), 0.3, 0, 1),
+					((54100.0, 1.0e6, 61200.0), 0.3, 0, 0), ((54100.0, -1.0e6, 61200.0), 0.3, 0, 1),
+					((94000.0, 50000.0, 91000.0), 0.3, 0x10, 0), ((94000.0, 50000.0, 91000.0), 0.3, 0x01, 0),
+					((24000.0, 50000.0, 21000.0), 1.2, 0x02, 1), ((94000.0, 50000.0, 21000.0), 0.3, 0x0c, 0),
+					((14000.0, 50000.0, 81000.0), 0.3, 0x0f, 1), ((54000.0, 50000.0, 151000.0), -2.0, 0x04, 0)):
+				check('cRadarScorer_DrawIcon' + fmt((rsaFade, rsaMenu) + rsav), lambda rsav=rsav: rsaicon(rsav[0],
+					rsav[1], rsav[2], rsav[3]))
+	for rsaK in range(len(rsaWhiteSave)):
+		rsaPoke(rsaWhite + 4 * rsaK, rsaWhiteSave[rsaK])
+	rsaFree(rsaRad)
+	rsaFree(rsaCam)
+	rsaFree(rsaPos)
+# ---- the waypoint mark of the car on a cWaypointScorer of our own: current or not, split screen, players 0 and 1
+# (the camera of player 1 does not exist: early return); where the car is on the screen decides the branch ----
+if rsaCar:
+	rsaWp = rsaAlloc(0xc4)
+	SDTest.Call(0x185950, 'tii', rsaWp)
+	# only frame 0 of the white sheet: the rectangle, arrow and dot frames
+	rsaPoke(rsaWp + 0xb4, 0)
+	rsaPoke(rsaWp + 0xb8, 0)
+	rsaPoke(rsaWp + 0xbc, 0)
+	rsaSplit = SDTest.Peek(0x467584, 'i')
+	def rsawp(current, split, player):
+		SDTest.Poke(0x467584, split)
+		rsaPoke(rsaWp + 0x30, player)
+		rsaSet(rsaWp + 0xac, (0.0,))
+		SDTest.Call(0x185e90, 'tviii', rsaWp, rsaCar, current)
+		img = rsaI(rsaWp + 0xc0)
+		return rsaF(rsaWp + 0xac, 1), rsaB(rsaWp + 0xb0), rsaF(img, 6), rsaI(img + 0x34)
+	for rsav in ((0, 0, 0), (1, 0, 0), (0, 1, 0), (1, 1, 0), (1, 0, 1), (0, 1, 1)):
+		check('cWaypointScorer_DrawTarget' + fmt(rsav), lambda rsav=rsav: rsawp(rsav[0], rsav[1], rsav[2]))
+	SDTest.Poke(0x467584, rsaSplit)
+	SDTest.Call(0x1859f0, 'tvi', rsaWp)
+	rsaFree(rsaWp)
 if rsaCarObj:
 	check('SDRsaCar Del', lambda: rsaCarObj.Del())
 
@@ -177,3 +339,126 @@ rsaTgt = SDTest.Peek(0x4606b4, 'i')
 check('GearAim_SphereFunc unknown', lambda: (SDTest.Call(0x17a380, 'vi', rsaFM), SDTest.Peek(0x4606b4, 'i') == rsaTgt))
 rsaFree(rsaFM)
 rsaFree(rsaFBuf)
+
+# ---- the full screen console: the console log of ShowConsoleLog, the console open (its time far back so it
+# stands still) with a ":name<tab>" completion, the close once the slide is over ----
+def rsastr(a):
+	r = ''
+	for k in range(0x40):
+		c = rsaB(a + k)
+		if not c:
+			break
+		r = r + chr(c)
+	return r
+def rsacon():
+	w = rsaI(0x400000 + 0x4603c4)
+	r = (rsaI(0x400000 + 0x4601fc), rsastr(0x400000 + 0x44c138))
+	if w:
+		r = r + (rsaF(w, 2), rsaF(w + 0x10, 2), rsaI(w + 0x34))
+	return r
+rsaShowLog = SDTest.Peek(0x460418, 'i')
+SDTest.Poke(0x460418, 1)
+check('Scorer_DrawConsole log', lambda: (SDTest.Call(0x1742f0, 'b')[0], rsacon()))
+SDTest.Poke(0x460418, rsaShowLog)
+check('Scorer_DrawConsole off', lambda: (SDTest.Call(0x1742f0, 'b')[0], rsacon()))
+SDTest.Call(0x1749d0, 'vi', 1)
+if SDTest.Peek(0x4601fc, 'i') & 0xff:
+	rsaSet(0x400000 + 0x460420, (-1.0e9,))
+	SDTest.Call(0x13a8a0, 'tvis', 0x400000 + 0x44c130, ':ShowConsoleL\t')
+	check('Scorer_DrawConsole open', lambda: (SDTest.Call(0x1742f0, 'b')[0], rsacon()))
+	check('Scorer_DrawConsole open 2', lambda: (SDTest.Call(0x1742f0, 'b')[0], rsacon()))
+	rsaConFlags = SDTest.Peek(0x4601fc, 'i')
+	SDTest.Poke(0x4601fc, rsaConFlags | 0x10000)
+	check('Scorer_DrawConsole closing', lambda: (SDTest.Call(0x1742f0, 'b')[0], rsacon()))
+SDTest.Call(0x1749d0, 'vi', 0)
+SDTest.Poke(0x4601fc, SDTest.Peek(0x4601fc, 'i') & ~0xff0000)
+
+# ---- the debug drawings of CShow (not the AI views 4 and 6, they change the AI) and of NWAnalizeOn ----
+rsaCShow = SDTest.Peek(0x4601c0, 'i')
+rsaAnalize = SDTest.Peek(0x44418c, 'i')
+for rsav in (1, 2, 3, 5, 7, 0, 9):
+	SDTest.Poke(0x4601c0, rsav)
+	check('Scorer_DrawDebug' + fmt((rsav,)), lambda: (SDTest.Call(0x173450, 'v'), SDTest.Peek(0x445a44, 'i')))
+SDTest.Poke(0x4601c0, 0)
+SDTest.Poke(0x44418c, 1)
+check('Scorer_DrawDebug NWAnalizeOn', lambda: (SDTest.Call(0x173450, 'v'), SDTest.Peek(0x445a44, 'i')))
+SDTest.Poke(0x44418c, rsaAnalize)
+SDTest.Poke(0x4601c0, rsaCShow)
+
+# ---- the sub menu logo on a cScraplandSubMenuScorer of our own: its time far back (frame time 0.2), the ring
+# state poked, rand seeded; the game time itself (the turn of the reflection) is not shown ----
+rsaSub = rsaAlloc(0xd8)
+SDTest.Call(0x174d30, 'tii', rsaSub)
+rsaSubSave = rsaF(0x400000 + 0x4605ec, 1) + rsaF(0x400000 + 0x460644, 2)
+rsaSubSaveI = (rsaI(0x400000 + 0x46064c), rsaI(0x400000 + 0x460650))
+def rsasub(ring, wait, ringWait, dir, frame, seed):
+	rsaSet(rsaSub + 0xac, (-1.0e9,))
+	rsaSet(0x400000 + 0x4605ec, (wait,))
+	rsaSet(0x400000 + 0x460644, (ring, ringWait))
+	rsaPoke(0x400000 + 0x46064c, dir)
+	rsaPoke(0x400000 + 0x460650, frame)
+	rsaSrand(seed)
+	SDTest.Call(0x176d10, 'tvii', rsaSub, 0)
+	r = (rsaF(0x400000 + 0x4605ec, 1), rsaF(0x400000 + 0x460644, 2), rsaI(0x400000 + 0x46064c),
+		rsaI(0x400000 + 0x460650))
+	for o in (0xbc, 0xc0, 0xc4, 0xc8, 0xcc, 0xd0):
+		img = rsaI(rsaSub + o)
+		r = r + ((rsaF(img, 6), rsaI(img + 0x34)),)
+	return r
+rsaSet(rsaSub + 0xd4, (1.5,))
+# the lightning frames 1..9 do not exist on the white sheet: the ring cases end on frames out of 1..9 (the ring
+# time runs out in this frame, so the frame is the start frame)
+for rsav in ((0.2, 1.0, 1.0, 0, 9, 1), (0.2, 1.0, 1.0, 1, 9, 2), (0.2, 1.0, 0.5, 0, -1, 3), (0.2, 1.0, 1.0, 1, -1, 4),
+		(0.0, 0.1, 1.0, 0, 0, 5), (0.0, 0.1, 1.0, 1, 4, 6), (0.0, 5.0, 1.0, 0, 0, 7), (-1.0, -1.0, 1.0, 0, 0, 8)):
+	check('cScraplandSubMenuScorer_Draw' + fmt(rsav), lambda rsav=rsav: rsasub(rsav[0], rsav[1], rsav[2], rsav[3],
+		rsav[4], rsav[5]))
+rsaSet(0x400000 + 0x4605ec, rsaSubSave[0:1])
+rsaSet(0x400000 + 0x460644, rsaSubSave[1:3])
+rsaPoke(0x400000 + 0x46064c, rsaSubSaveI[0])
+rsaPoke(0x400000 + 0x460650, rsaSubSaveI[1])
+SDTest.Call(0x175080, 'tvi', rsaSub)
+rsaFree(rsaSub)
+
+# ---- the text edit draw (vf04) on a cTextScorer of our own: the scorer time poked (the cursor blink), a virtual
+# keyboard of 3 x 2 keys with the cursor on 'e', the edit cursor item an own buffer; all put back after ----
+rsaTx = rsaAlloc(0xdc)
+SDTest.Call(0x182a90, 'tii', rsaTx)
+rsaFont = rsaI(rsaTx + 0xb8)
+rsaScorer0 = SDTest.Peek(0x4601d4, 'i')
+if rsaFont and rsaScorer0:
+	rsaSet(rsaTx + 0x10, (100.0, 50.0, 200.0, 20.0))
+	rsaKbSave = (rsaI(0x400000 + 0x44c400), rsaI(0x400000 + 0x44c404), rsaI(0x400000 + 0x44c500),
+		rsaI(0x400000 + 0x44c504), rsaI(0x400000 + 0x44c508))
+	rsaInSave = (rsaI(0x400000 + 0x44c1bc), rsaI(0x400000 + 0x44c1c0), rsaI(0x400000 + 0x44c1e0))
+	rsaTimeSave = rsaI(rsaScorer0 + 0x20)
+	rsaCurSave = rsaI(0x400000 + 0x4622d0)
+	rsaCur = rsaAlloc(0xac)
+	rsaPoke(0x400000 + 0x4622d0, rsaCur)
+	rsaPoke(0x400000 + 0x44c400, 0x64636261)
+	rsaPoke(0x400000 + 0x44c404, 0x6665)
+	rsaPoke(0x400000 + 0x44c500, 3)
+	rsaPoke(0x400000 + 0x44c504, 2)
+	rsaPoke(0x400000 + 0x44c508, 6)
+	rsaSet(0x400000 + 0x44c1bc, (1.0, 1.0))
+	def rsakeys(active, center, t):
+		rsaPoke(0x400000 + 0x44c1e0, (rsaInSave[2] & ~0xff) | active)
+		rsaPoke(rsaTx + 0xd0, (rsaI(rsaTx + 0xd0) & ~0xff00) | (center << 8))
+		rsaSet(rsaScorer0 + 0x20, (t,))
+		SDTest.Call(0x183860, 'tvii', rsaTx, 0)
+		return (rsaInts(rsaFont, (0x10, 0x14, 0x20)), rsaF(rsaFont, 2), rsaI(rsaI(0x400000 + 0x45fe94) + 0x34),
+			rsaI(rsaI(rsaTx + 0xc4) + 0x34), rsaF(rsaCur + 0x10, 2), rsaB(0x400000 + 0x44c1e0))
+	for rsav in ((0, 0, 0.1), (0, 1, 0.3), (1, 0, 0.1), (1, 1, 0.3), (1, 0, 0.45)):
+		check('cTextScorer_DrawKeyboard' + fmt(rsav), lambda rsav=rsav: rsakeys(rsav[0], rsav[1], rsav[2]))
+	rsaPoke(0x400000 + 0x44c400, rsaKbSave[0])
+	rsaPoke(0x400000 + 0x44c404, rsaKbSave[1])
+	rsaPoke(0x400000 + 0x44c500, rsaKbSave[2])
+	rsaPoke(0x400000 + 0x44c504, rsaKbSave[3])
+	rsaPoke(0x400000 + 0x44c508, rsaKbSave[4])
+	rsaPoke(0x400000 + 0x44c1bc, rsaInSave[0])
+	rsaPoke(0x400000 + 0x44c1c0, rsaInSave[1])
+	rsaPoke(0x400000 + 0x44c1e0, rsaInSave[2])
+	rsaPoke(rsaScorer0 + 0x20, rsaTimeSave)
+	rsaPoke(0x400000 + 0x4622d0, rsaCurSave)
+	rsaFree(rsaCur)
+SDTest.Call(0x182bb0, 'tvi', rsaTx)
+rsaFree(rsaTx)

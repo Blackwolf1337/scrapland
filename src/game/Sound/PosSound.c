@@ -12,6 +12,7 @@
 #include "scrap/hashtable.h"
 #include "scrap/logic.h"
 #include "scrap/scrapfont.h"
+#include "scrap/scrapmain.h"
 #include "scrap/sound.h"
 #include "scrap/walkcharentity.h"
 #include "scrap/withlifeentity.h"
@@ -61,8 +62,6 @@
 #define g_VoiceCount GAME_DATA(uint32_t, 0x466ba4)	/* the voices played, picks the variant */
 
 void Sound_UpdateVoice(int voice);
-/* the debug sphere of DebugUtils.cpp */
-void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
 
 cSoundPS *__fastcall cSoundPS_ctor(cSoundPS *self) {
 	cSound_Init(&self->sound);

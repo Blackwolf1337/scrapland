@@ -793,6 +793,13 @@ void __thiscall cNewsPanel_DrawNews(cNewsPanel *self, float dt);
 
 #define CRADARSCORER_VFTABLE 0x3c33c4
 #define RADAR_FLOORS 16
+#define RADAR_ICONS 254		/* the icon frames, then their colors */
+/* the flags of cRadarScorer_DrawIcon for an entity out of the radar */
+#define RADAR_ICON_OUT_POINT 0x01	/* the icon points to the entity */
+#define RADAR_ICON_OUT_ANG 0x02		/* turned like in the radar */
+#define RADAR_ICON_OUT_FADE 0x04	/* fades with the distance (OutAlphaFactor) */
+#define RADAR_ICON_OUT_BIG 0x08		/* twice the size */
+#define RADAR_ICON_OUT_HIDE 0x10	/* not drawn */
 
 /* the radar of the ship of the camera, in the menu (MenuMap) the scrolling map of the floors (0x94c bytes) */
 typedef struct cRadarScorer {
@@ -805,7 +812,7 @@ typedef struct cRadarScorer {
 	int maskIndex;			/* 0x0c8 */
 	CPsaImage *icons;		/* 0x0cc */
 	int iconAc;			/* 0x0d0 the icon of IconIndex */
-	int iconIndex[(0x8c4 - 0xd4) / 4];	/* 0x0d4 */
+	int iconIndex[(0x8c4 - 0xd4) / 4];	/* 0x0d4 the frames of the icons, from 0x4cc (RADAR_ICONS on) their last colors */
 	CPsaImage *noise;		/* 0x8c4 */
 	CPsaImage *cone;		/* 0x8c8 white, the view cones */
 	int floor;			/* 0x8cc the floor of the ship */
@@ -846,8 +853,13 @@ cActionSet *__thiscall ActionSetTable_At(void *table, uint32_t i);
 cRadarScorer *__thiscall cRadarScorer_Delete(cRadarScorer *self, byte flags);
 /* the floor of height y; the fade starts when it changed */
 void __thiscall cRadarScorer_UpdateFloor(cRadarScorer *self, float y);
-/* the radar and the entities on it (rva 0x16d570 and its helpers 0x16ca80, 0x16d090, not decompiled) */
+/* the radar and the entities on it (rva 0x16d570, not decompiled) */
 void __thiscall cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity *cam);
+/* the view of the radar at the target and its map (the start of DrawRadar) */
+void __thiscall cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntity *cam);
+/* the icon of an entity at pos (flags RADAR_ICON_OUT_*) */
+void __thiscall cRadarScorer_DrawIcon(cRadarScorer *self, const vec3_t *pos, int icon, float ang, int outIcon,
+	uint32_t flags, uint32_t color, uint32_t outColor, byte always);
 /* a view cone at pos to the angle, spread wide, range long, mode 1..3 the color */
 void __thiscall cRadarScorer_DrawCone(cRadarScorer *self, const vec3_t *pos, float ang, float spread, float range,
 	int mode);
@@ -960,9 +972,11 @@ void __thiscall cScorer_DrawClouds(cScorer *scorer, int player);
 void __thiscall cScorer_DrawNoPadMsg(cScorer *scorer, int index, float y, byte big, int pad);
 void __thiscall cScorer_DrawXboxMsgs(cScorer *scorer, int player);
 byte Scorer_Render(void);
-/* the full screen console: 1 while it is shown (instead of the scorer); rva 0x1742f0, not decompiled */
+/* the full screen console (the ring of the console lines sliding in and out, the input line), else the console
+ * log of ShowConsoleLog and the console key: 1 while it is shown (instead of the scorer) */
 byte Scorer_DrawConsole(void);
-/* CShow and the AI debug drawings (rva 0x173450, not decompiled) */
+/* CShow (1 the grid, 2 the entities, 3 the sounds, 4 and 6 the AI, 5 the Python memory, 7 the ships), the dummies
+ * and the AI drawings of NWAnalizeOn */
 void Scorer_DrawDebug(void);
 void Console_OnInput(int player, const char *text);
 void Console_HistoryUp(void);
@@ -1051,6 +1065,8 @@ SD_SIZE(cScraplandSubMenuScorer, 0xd8);
 #define g_SubMenuWait GAME_DATA(float, 0x4605ec)
 #define g_SubMenuRingTime GAME_DATA(float, 0x460644)
 #define g_SubMenuRingWait GAME_DATA(float, 0x460648)
+#define g_SubMenuRingDir GAME_DATA(int, 0x46064c)		/* 1: the ring frames run backwards */
+#define g_SubMenuRingFrame GAME_DATA(int, 0x460650)	/* the first frame of the ring */
 
 cScraplandMainMenuScorer *__fastcall cScraplandMainMenuScorer_ctor(cScraplandMainMenuScorer *self);
 cScraplandSubMenuScorer *__fastcall cScraplandSubMenuScorer_ctor(cScraplandSubMenuScorer *self);
@@ -1064,6 +1080,7 @@ void __fastcall cScraplandSubMenuScorer_Init(cScraplandSubMenuScorer *self);
 /* the image setters (flags, file) */
 void __thiscall cScraplandMainMenuScorer_SetGlow(cScraplandMainMenuScorer *self, uint32_t flags, const char *file);
 void __thiscall cScraplandSubMenuScorer_SetGlow(cScraplandSubMenuScorer *self, uint32_t flags, const char *file);
+void __thiscall cScraplandSubMenuScorer_Draw(cScraplandSubMenuScorer *self, int player);
 /* 2D/white.tga loads without the flag 0x40, any other file with it */
 void __thiscall cScraplandMainMenuScorer_SetLighting(cScraplandMainMenuScorer *self, uint32_t flags,
 	const char *file);

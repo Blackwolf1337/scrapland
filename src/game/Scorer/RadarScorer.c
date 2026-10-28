@@ -1,6 +1,7 @@
 /*
  * RadarScorer.cpp of the game (Menu/): cRadarScorer, the radar of the ship and the map of the menu. The radar
- * itself (cRadarScorer_DrawRadar and its helpers) is still the exe's. See include/scrap/scoreritems.h.
+ * itself (cRadarScorer_DrawRadar) is still the exe's; its helpers DrawMap and DrawIcon are here.
+ * See include/scrap/scoreritems.h.
  */
 #include <stdio.h>
 #include <string.h>
@@ -8,6 +9,10 @@
 #include "scrap/scoreritems.h"
 #include "scrap/scrapworld.h"
 #include "scrap/weapons.h"
+#include "scrap/crt.h"
+#include "scrap/mathlib.h"
+#include "scrap/vehicleentity.h"
+#include "scrap/withlifeentity.h"
 
 /* the turn of the camera of the radar (FCam) */
 #define CamEntity_AngY(e) (*(float *)((byte *)(e) + 0x8c))
@@ -198,6 +203,232 @@ void __thiscall cRadarScorer_DrawCone(cRadarScorer *self, const vec3_t *pos, flo
 	colors[1] = colors[0] & 0xffffff;
 	colors[2] = colors[0] & 0xffffff;
 	CPsaImage_DrawPoly(self->cone, &verts[0][0], NULL, colors, 3, 6);
+}
+
+#define RADAR_ICON_HALF 9.0f		/* the half size of an icon in pixels */
+#define RADAR_ICON_MIN_ALPHA 10
+#define RADAR_ICON_BIG 2.0f		/* the size factor of RADAR_ICON_OUT_BIG */
+/* the color an icon was last drawn with, after the icon indices */
+#define Radar_IconColor(self, i) (*(uint32_t *)&(self)->iconIndex[RADAR_ICONS + (i)])
+
+/* the corner (x, y) of an icon turned by ang and scaled by size around the center c */
+static void Radar_IconCorner(float *out, float x, float y, float ang, float size, const float *c) {
+	float in[2] = {x, y};
+	float r[2];
+
+	Vec2_Rotate(r, in, ang);
+	out[0] = r[0] * size + c[0];
+	out[1] = r[1] * size + c[1];
+}
+
+/* the icon of an entity at pos turned by ang. In the radar (a square on the menu map, a circle else) icon with color;
+ * out of it, flags RADAR_ICON_OUT_HIDE aside, outIcon with outColor on the border: turned to the center
+ * (RADAR_ICON_OUT_POINT), by ang (RADAR_ICON_OUT_ANG) or not, doubled (RADAR_ICON_OUT_BIG), fading with the
+ * distance (RADAR_ICON_OUT_FADE). An entity on another floor fades like the floors unless always */
+void __thiscall cRadarScorer_DrawIcon(cRadarScorer *self, const vec3_t *pos, int icon, float ang, int outIcon,
+	uint32_t flags, uint32_t color, uint32_t outColor, byte always) {
+	float c[2], uv0[2], uv1[2], uv[4][2], verts[4][2];
+	float y = pos->y;
+	float a, dist, size;
+	int side;
+
+	if (World_FloorHeight(self->floor) > y) {
+		side = -1;
+	} else if (self->floor + 1 >= World_NumFloors()) {
+		side = 0;
+	} else {
+		side = World_FloorHeight(self->floor + 1) < y;
+	}
+	if (!always && side) {
+		if (self->floorFade >= 1.0f) {
+			return;
+		}
+		if (!cRadarScorer_OnPrevFloor(self, y)) {
+			return;
+		}
+	}
+	vec3_t p = *pos;
+	float dz = p.z - g_RadarCenterZ;
+	float dx = p.x - g_RadarCenterX;
+	float s, co;
+	X87_SinCos(g_RadarAngle, &s, &co);
+	float rx = co * dx - s * dz;
+	size = 1.0f;
+	float ry = co * dz + s * dx;
+	rx = rx / g_RadarScale;
+	ry = ry / g_RadarScale;
+	rx = -rx;
+	float hw = self->halfW2;
+	byte out;
+	if (self->menuMap) {
+		float ax = __builtin_fabsf(rx), ay = __builtin_fabsf(ry);
+		dist = Float_MaxSS(ax, ay);
+		out = ax > hw || ay > self->halfH2;
+	} else {
+		dist = (float)__builtin_sqrt((double)(ry * ry + rx * rx));
+		out = dist > hw;
+	}
+	uint32_t col;
+	int idx;
+	if (!out) {
+		a = ang - g_RadarAngle;
+		idx = icon;
+		col = color;
+	} else {
+		if (flags & RADAR_ICON_OUT_HIDE) {
+			return;
+		}
+		if (self->menuMap) {
+			float hh = self->halfH2;
+			rx = Float_MaxSS(-hw, Float_MinSS(hw, rx));
+			ry = Float_MaxSS(-hh, Float_MinSS(hh, ry));
+		} else {
+			float k = hw / dist;
+			rx = k * rx;
+			ry = k * ry;
+		}
+		if (flags & RADAR_ICON_OUT_POINT) {
+			a = (float)-Game_Atan2((double)rx, (double)ry);
+		} else if (flags & RADAR_ICON_OUT_ANG) {
+			a = ang - g_RadarAngle;
+		} else {
+			a = 0.0f;
+		}
+		if (flags & RADAR_ICON_OUT_BIG) {
+			size = RADAR_ICON_BIG;
+		}
+		idx = outIcon;
+		if (flags & RADAR_ICON_OUT_FADE) {
+			int f = self->outAlphaFactor;
+			col = (uint32_t)((int)(outColor >> 24) * f / ((int)(dist - hw) + f)) << 24 | (outColor & 0xffffff);
+		} else {
+			col = outColor;
+		}
+	}
+	Radar_IconColor(self, idx) = col;
+	if ((byte)(Radar_IconColor(self, idx) >> 24) < RADAR_ICON_MIN_ALPHA) {
+		return;
+	}
+	c[0] = self->halfW + self->base.x + rx;
+	c[1] = self->halfH + self->base.y + ry;
+	CPsaImage_GetFrameUV(self->icons, self->iconIndex[idx], uv0, uv1);
+	uv[0][0] = uv0[0];
+	uv[0][1] = uv0[1];
+	uv[1][0] = uv1[0];
+	uv[1][1] = uv0[1];
+	uv[2][0] = uv1[0];
+	uv[2][1] = uv1[1];
+	uv[3][0] = uv0[0];
+	uv[3][1] = uv1[1];
+	Radar_IconCorner(verts[0], -RADAR_ICON_HALF, -RADAR_ICON_HALF, a, size, c);
+	Radar_IconCorner(verts[1], RADAR_ICON_HALF, -RADAR_ICON_HALF, a, size, c);
+	Radar_IconCorner(verts[2], RADAR_ICON_HALF, RADAR_ICON_HALF, a, size, c);
+	Radar_IconCorner(verts[3], -RADAR_ICON_HALF, RADAR_ICON_HALF, a, size, c);
+	if (!always) {
+		uint32_t ic = Radar_IconColor(self, idx);
+		float al = (float)(int)(ic >> 24);
+		al = side == 0 ? al * self->floorFade : al * (1.0f - self->floorFade);
+		Radar_IconColor(self, idx) = (uint32_t)(int)al << 24 | (ic & 0xffffff);
+	}
+	self->icons->color = Radar_IconColor(self, idx);
+	CPsaImage_DrawPoly(self->icons, &verts[0][0], &uv[0][0], NULL, 4, 6);
+}
+
+#define RADAR_MAP_ALPHA 0xa4
+#define RADAR_MAP_UV_SCALE 1.4142135f	/* the map square turns inside the radar */
+#define RADAR_MAP_UV_ANG0 2.3561945f	/* 3/4 pi and 5/4 pi: the corners of the turned map square */
+#define RADAR_MAP_UV_ANG1 3.926991f
+
+static inline byte Radar_IsEMIed(cEntity *e) {
+	return ((const cWithLifeEntityVtblFull *)e->vftable)->IsEMIed(e);
+}
+
+/* the map image of a floor at the center of the radar with the alpha, turned by the texture coordinates */
+static void Radar_DrawMapImage(cRadarScorer *self, CPsaImage *img, uint32_t alpha, const float *verts,
+	const float *uv) {
+	img->x = self->halfW + self->base.x;
+	img->y = self->base.y + self->halfH;
+	img->color = alpha << 24 | 0xffffff;
+	CPsaImage_DrawPoly(img, verts, uv, NULL, 4, 6);
+}
+
+/* the view of the radar (scale by the speed of a car, the turn of the camera, the center at the target) and its
+ * map: the floor map of the target fading in over the one before; the noise at random coordinates while the target
+ * is EMIed */
+void __thiscall cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntity *cam) {
+	vec3_t c;
+	float verts[4][2], uv[4][2];
+	float cu, cv;
+
+	byte car = target->vftable->IsType(target, "Car");
+	float scale = self->map2dScale;
+	g_RadarScale = scale;
+	if (car) {
+		g_RadarScale = self->map2dScaleFactor * ((cVehicleEntity *)target)->smoothSpeed + scale;
+	}
+	Entity_GetCenter(target, &c);
+	if (self->menuMap) {
+		g_RadarAngle = 0.0f;
+	} else {
+		g_RadarAngle = CamEntity_AngY(cam) + M_PI_F;
+	}
+	g_RadarCenterX = self->scrollX + c.x;
+	g_RadarCenterZ = self->scrollY + c.z;
+	float w = -self->halfW, h = -self->halfH;
+	verts[0][0] = w;
+	verts[0][1] = h;
+	verts[1][0] = -w;
+	verts[1][1] = h;
+	verts[2][0] = -w;
+	verts[2][1] = -h;
+	verts[3][0] = w;
+	verts[3][1] = -h;
+	if (Radar_IsEMIed(target) && !self->menuMap) {
+		double r0 = (double)(crt_rand() & 0x7fff) * g_ScorerRandScale;
+		double r1 = (double)(crt_rand() & 0x7fff) * g_ScorerRandScale;
+		cu = (float)(r1 + r1 - 1.0);
+		cv = (float)(r0 + r0 - 1.0);
+	} else {
+		cu = (g_RadarCenterX - self->mapX0) / self->mapW;
+		cv = (g_RadarCenterZ - self->mapZ0) / self->mapH;
+	}
+	float k = g_RadarScale * RADAR_MAP_UV_SCALE;
+	float su = self->halfW / self->mapW * k;
+	float sv = self->halfH / self->mapH * k;
+	if (Radar_IsEMIed(target) && !self->menuMap) {
+		uv[0][0] = cu + 0.0f;
+		uv[0][1] = cv + 0.0f;
+		uv[1][0] = cu + 0.0f;
+		uv[1][1] = cv + 1.0f;
+		uv[2][0] = cu + 1.0f;
+		uv[2][1] = cv + 1.0f;
+		uv[3][0] = cu + 1.0f;
+		uv[3][1] = cv + 0.0f;
+	} else {
+		float s0, c0, s1, c1;
+		X87_SinCos(g_RadarAngle + RADAR_MAP_UV_ANG0, &s0, &c0);
+		X87_SinCos(g_RadarAngle + RADAR_MAP_UV_ANG1, &s1, &c1);
+		uv[0][0] = s0 * su + cu;
+		uv[0][1] = c0 * sv + cv;
+		uv[1][0] = s1 * su + cu;
+		uv[1][1] = c1 * sv + cv;
+		uv[2][0] = cu + -s0 * su;
+		uv[2][1] = cv + -c0 * sv;
+		uv[3][0] = cu + -s1 * su;
+		uv[3][1] = cv + -c1 * sv;
+	}
+	if (Radar_IsEMIed(target) && !self->menuMap) {
+		Radar_DrawMapImage(self, self->noise, RADAR_MAP_ALPHA, &verts[0][0], &uv[0][0]);
+		return;
+	}
+	CPsaImage *img = self->floorMaps[self->floor];
+	float fade = self->floorFade;
+	uint32_t alpha = RADAR_MAP_ALPHA;
+	if (1.0f > fade) {
+		alpha = (uint32_t)(int)(fade * (float)RADAR_MAP_ALPHA);
+		Radar_DrawMapImage(self, self->floorMaps[self->prevFloor], RADAR_MAP_ALPHA - alpha, &verts[0][0], &uv[0][0]);
+	}
+	Radar_DrawMapImage(self, img, alpha, &verts[0][0], &uv[0][0]);
 }
 
 byte __thiscall cRadarScorer_OnPrevFloor(cRadarScorer *self, float y) {

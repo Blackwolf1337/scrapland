@@ -12,19 +12,8 @@
 #include "scrap/game.h"
 #include "scrap/win32.h"
 
-#define CON_LINES 23
-#define CON_LINE_LEN 0x80
-
-typedef struct cConLine {
-	char text[CON_LINE_LEN];	/* 0x00 */
-	uint32_t color;			/* 0x80 set when the line ends */
-} cConLine;
-SD_SIZE(cConLine, 0x84);
-
 #define g_LogFile GAME_DATA(void *, 0x444e60)
 #define g_LogAIFile GAME_DATA(void *, 0x444e64)
-#define g_ConLines ((cConLine *)Game_Ptr(0x444e68))	/* CON_LINES */
-#define g_ConLine GAME_DATA(int, 0x445a44)
 #define g_ConCol GAME_DATA(int, 0x445a48)
 #define g_LogName GAME_DATA(const char *, 0x445a5c)
 #define g_DebugLevel GAME_DATA(int, 0x445a74)

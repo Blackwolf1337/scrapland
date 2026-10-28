@@ -18,6 +18,17 @@
 #include "scrap/sound.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/world.h"
+#include "scrap/global.h"
+#include "scrap/win32.h"
+#include "scrap/actions.h"
+#include "scrap/ai.h"
+#include "scrap/aivehiclecontrol.h"
+#include "scrap/collisiongrid.h"
+#include "scrap/logic.h"
+#include "scrap/objentity.h"
+#include "scrap/scrap.h"
+#include "scrap/utild3d.h"
+#include "scrap/weapons.h"
 
 #define CSCORER_VFTABLE 0x3c3bb4
 #define CSCORERITEM_VFTABLE 0x3c3ba0
@@ -1495,4 +1506,321 @@ void Scorer_SetConsole(int on) {
 		memcpy(&g_VirtualKeyboard, g_ConsoleSavedKeyboard, CONSOLE_KEYBOARD_SIZE);
 	}
 	g_ConsoleBusy = 0;
+}
+
+#define CONSOLE_SPEED 500.0f		/* pixels per second of the slide */
+#define CONSOLE_HEIGHT 234.0f
+#define CONSOLE_FADE 192.0f		/* the background is opaque below this slide */
+#define CONSOLE_BG 0xc0c0c0
+#define CONSOLE_W 640.0f
+#define CONSOLE_LINES_H 208.0f		/* the line part, the input line below */
+#define CONSOLE_INPUT_BG 0xc0000000
+#define CONSOLE_INPUT_H 27.0f
+#define CONSOLE_INPUT_Y 217.0f
+#define CONSOLE_MARGIN 10.0f
+#define CONSOLE_LINE_STEP 9
+#define CONSOLE_LOG_H 211.0f		/* ShowConsoleLog */
+#define CONSOLE_LOG_BG 0x80ffffff
+#define CONSOLE_BLINK 511		/* the cursor blinks every 511/1024 s */
+/* the actions of the input sets: 1 the console key, 2 and 3 the history */
+#define CONSOLE_ACT_KEY 1
+#define CONSOLE_ACT_UP 2
+#define CONSOLE_ACT_DOWN 3
+#define CONSOLE_VK_CONTROL 0x11
+
+static cInputAction *Console_Action(int set, int k) {
+	return InputActionTable_At(&ActionSetTable_At(&g_ActionSets, set)->actions, k);
+}
+
+/* the 0xBBGGRR color of a console line as 0x00RRGGBB */
+static uint32_t Console_LineColor(uint32_t c) {
+	return ((c >> 16) & 0xff) | (c & 0xff) << 16 | (c & 0xff00);
+}
+
+static const cConLine *Console_Line(int i) {
+	return &g_ConLines[(g_ConLine + 1 + i) % CON_LINES];
+}
+
+/* ":name<tab>" in the console: the help of the variable, then its completion */
+static void Console_Complete(void) {
+	char buf[0x80];
+	const char *text = g_PlayerInput[0].text;
+
+	if (text[0] != ':' || !strchr(text, '\t')) {
+		return;
+	}
+	Str_Copy(buf, text, sizeof(buf));
+	buf[0] = '?';
+	*strchr(buf, '\t') = 0;
+	Console_Execute(buf);
+	buf[0] = ':';
+	if (GVar_Complete(buf + 1)) {
+		Str_PrintfQuiet(buf, sizeof(buf), ":%s", GVar_Complete(buf + 1));
+	}
+	cPlayerInput_SetString(&g_PlayerInput[0], buf);
+}
+
+byte Scorer_DrawConsole(void) {
+	float h;
+
+	if (!g_ConsoleOn) {
+		if ((Input_GetActionSet() == 0 && cInputAction_Released(Console_Action(0, CONSOLE_ACT_KEY), 0))
+			|| (Input_GetActionSet() == 3 && cInputAction_Released(Console_Action(3, CONSOLE_ACT_KEY), 0))
+			|| (Input_GetActionSet() == 1 && cInputAction_Released(Console_Action(1, CONSOLE_ACT_KEY), 0))) {
+			if (exe_GetAsyncKeyState(CONSOLE_VK_CONTROL) < 0) {
+				Scorer_SetConsole(1);
+			}
+		}
+		if (g_ShowConsoleLog) {
+			Scorer_GetWhite()->color = CONSOLE_LOG_BG;
+			CPsaImage *w = Scorer_GetWhite();
+			w->scaleX = CONSOLE_W;
+			w->scaleY = CONSOLE_LOG_H;
+			CPsaImage_Draw(Scorer_GetWhite(), 0.0f, 0.0f);
+			for (int i = 0, y = 0; y < CON_LINES * CONSOLE_LINE_STEP; i++, y += CONSOLE_LINE_STEP) {
+				const cConLine *l = Console_Line(i);
+				CFont_PrintfColor(g_FontTerminal8, CONSOLE_MARGIN, (float)y + CONSOLE_MARGIN,
+					Console_LineColor(l->color), "%s", l->text);
+			}
+		}
+		return g_ConsoleOn;
+	}
+	Console_Complete();
+	if (g_ConsoleClosing) {
+		double t = g_pApp->vftable->GetGameTime(g_pApp);
+		h = (float)(t - (double)g_ConsoleTime) * CONSOLE_SPEED;
+		if (h > CONSOLE_HEIGHT) {
+			Scorer_SetConsole(0);
+			return 0;
+		}
+	} else {
+		double t0 = (double)g_ConsoleTime;
+		double t = g_pApp->vftable->GetGameTime(g_pApp);
+		h = Float_MaxSS(0.0f, (float)(t0 - t) * CONSOLE_SPEED + CONSOLE_HEIGHT);
+		if (cInputAction_Pressed(Console_Action(2, CONSOLE_ACT_UP), 0)) {
+			Console_HistoryUp();
+		}
+		if (cInputAction_Pressed(Console_Action(2, CONSOLE_ACT_DOWN), 0)) {
+			Console_HistoryDown();
+		}
+	}
+	CPsaImage *img = g_ConsoleWhite;
+	if (CONSOLE_FADE > h) {
+		img->color = (uint32_t)(0xc0 - (int)h) << 24 | CONSOLE_BG;
+	} else {
+		img->color = CONSOLE_BG;
+	}
+	img->scaleX = CONSOLE_W - (h + h);
+	img->scaleY = CONSOLE_LINES_H - h;
+	CPsaImage_Draw(img, h + 0.0f, h * 0.5f + 0.0f);
+	float off = h * 5.0f;
+	img = g_ConsoleWhite;
+	img->color = CONSOLE_INPUT_BG;
+	img->scaleX = CONSOLE_W;
+	img->scaleY = CONSOLE_INPUT_H;
+	CPsaImage_Draw(img, off + 0.0f, CONSOLE_LINES_H);
+	/* the lines fly apart left and right while the console slides */
+	for (int i = 0, y = 0; y < CON_LINES * CONSOLE_LINE_STEP; i++, y += CONSOLE_LINE_STEP) {
+		const cConLine *l = Console_Line(i);
+		float sx = (i & 1) ? h : -h;
+		CFont_PrintfColor(g_FontTerminal8, CONSOLE_MARGIN - sx * 5.0f,
+			(float)(i - 11) * h / 5.0f + CONSOLE_MARGIN + (float)y, Console_LineColor(l->color), "%s", l->text);
+	}
+	int ms = (int)X87_Mul(g_pApp->vftable->GetGameTime(g_pApp), 1024.0);
+	int blink = ms % CONSOLE_BLINK - 255;
+	CFont_PrintfXY(g_FontTerminal8, off + CONSOLE_MARGIN, CONSOLE_INPUT_Y, (blink < 0 ? -blink : blink) > 128 ? "%s"
+		: "%s_", g_PlayerInput[0].text);
+	g_PlayerInput[0].active = 0;
+	if (!g_ConsoleClosing && cInputAction_Released(Console_Action(2, CONSOLE_ACT_KEY), 0) && h == 0.0f) {
+		g_ConsoleClosing = 1;
+		g_ConsoleTime = (float)g_pApp->vftable->GetGameTime(g_pApp);
+	}
+	return g_ConsoleOn;
+}
+
+/* ---- CShow and the AI debug drawings ---- */
+
+/* the AI drawings of NWAnalizeOn (AI functions, imported) */
+void __fastcall CNodesWorld_DrawAnalize(CNodesWorld *self);
+void __fastcall CNodesWorld2D_DrawAnalize(CNodesWorld2D *self);
+void __fastcall cAStar_Draw(void *self);
+void __fastcall cAStar2D_Draw(void *self);
+
+enum {
+	CSHOW_GRID = 1, CSHOW_ENTITIES, CSHOW_SOUNDS, CSHOW_AI_HIDDEN, CSHOW_PYMEM, CSHOW_AI, CSHOW_SHIPS
+};
+
+/* slot off of the vftable of any object, called without arguments */
+#define DBG_VF(p, off) ((void(__thiscall *)(void *))(*(void *const *const *)(p))[(off) / 4])
+#define DBG_LIFE_RADIUS(e) (*(float *)((byte *)(e) + 0x3a0))	/* cWithLifeEntity prim.radius */
+#define DBG_MISSILE_RADIUS(e) (*(float *)((byte *)(e) + 0x5a4))
+#define DBG_ITEM_RADIUS(e) (*(float *)((byte *)(e) + 0x360))
+#define DBG_FCAM_POS(e) ((vec3_t *)((byte *)(e) + 0x1f4))	/* the point a "FCam" follows */
+#define DBG_FCAM_DIST(e) (*(float *)((byte *)(e) + 0xa0))
+#define DBG_FCAM_SCALE 1.65f
+#define DBG_FLOOR_DIST(e) (*(float *)((byte *)(e) + 0x45c))	/* cWalkCharEntity floorDist */
+#define DBG_SPHERE_DIV 10
+#define DBG_ARROW_Y 5.0f
+
+static cActClass *Dbg_ActClass(cEntity *e) {
+	return ((cActCtrl *)((const cWithLifeEntityVtbl *)e->vftable)->GetActCtrl(e))->cls;
+}
+
+/* a flat arrow over the feet of a walking character turned like the angles ang */
+static void Dbg_DrawArrow(cEntity *e, float angY, float y, float len, float w, uint32_t color) {
+	matrix_t m;
+	vec3_t p, t, a, b, c;
+
+	Matrix_RotY(&m, angY);
+	const vec3_t *pos = e->vftable->GetPos(e, &t);
+	p.x = pos->x + 0.0f;
+	p.y = pos->y + y;
+	p.z = pos->z + 0.0f;
+	Matrix_Translate(&m, &p);
+	a.x = 0.0f;
+	a.y = 0.0f;
+	a.z = -len;
+	b.x = w;
+	b.y = 0.0f;
+	b.z = w;
+	c.x = -w;
+	c.y = 0.0f;
+	c.z = w;
+	Debug_DrawTriM(&m, &a, &b, &c, color);
+}
+
+/* the boxes of the body and of the step of a walking character, its view and render arrows, its walk radius */
+static void Dbg_DrawWalkChar(cEntity *e) {
+	const cObjEntityVtbl *vt = (const cObjEntityVtbl *)e->vftable;
+	vec3_t mn, mx, t;
+	const vec3_t *p;
+
+	float r = Dbg_ActClass(e)->sRadius;
+	float fall = Dbg_ActClass(e)->minFallDist;
+	p = e->vftable->GetPos(e, &t);
+	mx.x = r + p->x;
+	mx.y = p->y + 0.0f;
+	mx.z = p->z + r;
+	float nr = -r;
+	float ny = -DBG_FLOOR_DIST(e);
+	p = e->vftable->GetPos(e, &t);
+	mn.x = nr + p->x;
+	mn.y = p->y + ny;
+	mn.z = p->z + nr;
+	DebugUtils_DrawBox(&mn, &mx, 0xffff00);
+	float lo = -DBG_FLOOR_DIST(e) - fall;
+	p = e->vftable->GetPos(e, &t);
+	mx.x = p->x + r;
+	mx.y = p->y + lo;
+	mx.z = p->z + r;
+	ny = -DBG_FLOOR_DIST(e);
+	p = e->vftable->GetPos(e, &t);
+	mn.x = nr + p->x;
+	mn.y = p->y + ny;
+	mn.z = p->z + nr;
+	DebugUtils_DrawBox(&mn, &mx, 0xff0000);
+	float ang = vt->GetViewAng(e, &t)->y;
+	if (!Dbg_ActClass(e)->canFly) {
+		Dbg_DrawArrow(e, ang, DBG_ARROW_Y - DBG_FLOOR_DIST(e), 100.0f, 50.0f, 0xff);
+	} else {
+		Dbg_DrawArrow(e, ang, DBG_ARROW_Y - DBG_LIFE_RADIUS(e), 100.0f, 50.0f, 0xff);
+	}
+	ang = vt->GetRenderAng(e, &t)->y;
+	Dbg_DrawArrow(e, ang, DBG_ARROW_Y - DBG_FLOOR_DIST(e), 50.0f, 25.0f, 0xff00);
+	float wr = Dbg_ActClass(e)->wRadius;
+	DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), wr, 0xc0c0c0, DBG_SPHERE_DIV, 0);
+}
+
+/* the spheres of the active entities by type, the walking characters in detail, then their own debug drawing */
+static void Dbg_DrawEntities(void) {
+	vec3_t t, a, b;
+
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+		if (!e->flag_4c) {
+			continue;
+		}
+		const cObjEntityVtbl *vt = (const cObjEntityVtbl *)e->vftable;
+		if (e->vftable->IsType(e, "WithLife")) {
+			DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), DBG_LIFE_RADIUS(e), 0xff, DBG_SPHERE_DIV, 0);
+		}
+		if (e->vftable->IsType(e, "Car")) {
+			float r = vt->GetRadius(e);
+			DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), r, 0xc0c0c0, DBG_SPHERE_DIV, 0);
+			vt->GetCamera(e, &a, &b);
+			DebugUtils_DrawLine(&a, vt->GetViewPos(e, &t), 0xffff00);
+		}
+		if (e->vftable->IsType(e, "Missile")) {
+			DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), DBG_MISSILE_RADIUS(e), 0xffff00, DBG_SPHERE_DIV, 0);
+		}
+		if (e->vftable->IsType(e, "item")) {
+			DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), DBG_ITEM_RADIUS(e), 0xff00, DBG_SPHERE_DIV, 0);
+		}
+		if (e->vftable->IsType(e, "FCam")) {
+			vec3_t c = *DBG_FCAM_POS(e);
+			DebugUtils_DrawSphere(&c, DBG_FCAM_DIST(e) * DBG_FCAM_SCALE, 0xffff, DBG_SPHERE_DIV, 0);
+		}
+		if (e->vftable->IsType(e, "WalkChar")) {
+			Dbg_DrawWalkChar(e);
+		}
+		DBG_VF(e, 0x50)(e);
+	}
+}
+
+void Scorer_DrawDebug(void) {
+	switch (g_CShow) {
+	case CSHOW_GRID:
+		Grid_Draw(g_pWorld->grid);
+		break;
+	case CSHOW_ENTITIES:
+		Dbg_DrawEntities();
+		break;
+	case CSHOW_SOUNDS:
+		SndPS_DrawAll();
+		break;
+	case CSHOW_AI_HIDDEN:
+		Logic_ShowAI(0);
+		break;
+	case CSHOW_PYMEM:
+		Scorer_DrawPyMemStats();
+		break;
+	case CSHOW_AI:
+		Logic_ShowAI(1);
+		break;
+	case CSHOW_SHIPS:
+		Logic_ShowShips();
+		break;
+	}
+	Dummies_Draw();
+	if (!g_NWAnalizeOn) {
+		return;
+	}
+	if (g_NodesWorld) {
+		CNodesWorld_DrawAnalize(g_NodesWorld);
+	}
+	if (g_NodesWorld2D) {
+		CNodesWorld2D_DrawAnalize(g_NodesWorld2D);
+	}
+	if (g_NodesTraffic) {
+		DBG_VF(g_NodesTraffic, 0x3c)(g_NodesTraffic);
+	}
+	if (g_NodesTrafficInDoor) {
+		DBG_VF(g_NodesTrafficInDoor, 0x3c)(g_NodesTrafficInDoor);
+	}
+	if (g_VehicleGroup) {
+		cAIVehicleGroup_Draw(g_VehicleGroup);
+	}
+	if (g_AStar) {
+		cAStar_Draw(g_AStar);
+	}
+	if (g_AStar2D) {
+		cAStar2D_Draw(g_AStar2D);
+	}
+	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
+		if (e->flag_4c) {
+			void *ai = e->vftable->GetAI(e);
+			if (ai) {
+				DBG_VF(ai, 0x0c)(ai);
+			}
+		}
+	}
 }

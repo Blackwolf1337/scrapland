@@ -234,6 +234,8 @@ void Sound_ResetVolumes(void);
 int __thiscall cSoundPS_Var(cSoundPS *ps, const char *name, int set, char **s, double *d, int *i);
 cSoundPS *__fastcall cSoundPS_ctor(cSoundPS *self);
 void __fastcall cSoundPS_dtor(cSoundPS *self);
+/* CShow 3: the spheres of the positional sounds */
+void SndPS_DrawAll(void);
 void __thiscall cSoundPS_Update(cSoundPS *self, float dt);
 /* the music, the property sets and the voices of a frame */
 void Sound_Update(float dt);

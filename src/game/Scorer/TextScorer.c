@@ -9,6 +9,10 @@
 #include "scrap/input.h"
 #include "scrap/scorerhud.h"
 #include "scrap/sound.h"
+#include "scrap/app.h"
+#include "scrap/global.h"
+#include "scrap/scoreritems.h"
+#include "scrap/scrap.h"
 
 /* the OnAccept of the item is the native edit start */
 static byte Text_IsEdit(cTextScorer *self) {
@@ -205,6 +209,105 @@ int __thiscall cTextTypingScorer_Var(cTextTypingScorer *self, const char *name, 
 		}
 	}
 	return cTextScorer_Var(&self->base, name, set, s, d, i);
+}
+
+#define KEYS_COLOR 0xaee5fb
+#define KEYS_FRAME_COLOR 0xc05b6e80
+#define KEYS_EDIT_COLOR 0xa4ffffd6
+#define KEYS_CURSOR_COLOR 0x32a4a4ff
+#define KEYS_KEY_COLOR 0x401e242a
+#define KEYS_BLINK 511			/* the cursor blinks every 511/1024 s */
+#define KEYS_CENTER 4			/* the align of the keys and the centered text */
+#define KEYS_HINT_SIZE 0x80
+
+/* vf04: the text being typed with a blinking cursor; with the virtual keyboard active the grid of its keys (the one
+ * under the cursor lit), the button hints and the cursor item on the key */
+void __thiscall cTextScorer_DrawKeyboard(cTextScorer *self, int player) {
+	cAbstractTextScorer *t = &self->base;
+	cScorerItem *it = &t->base;
+	cPlayerInput *in = &g_PlayerInput[player];
+	CPsaImage *tabs = g_ScorerTabs;
+	char buf[0x300], hint[0x100], key[2];
+
+	int v = (int)(Scorer_Get(player)->time * 1024.0f) % KEYS_BLINK - 255;
+	int blink = v < 0 ? -v : v;
+	if (in->active) {
+		float cell = self->cellSize;
+		float half = (it->w - (float)g_VirtualKeyboard.a * cell) * 0.5f;
+		float w = (float)g_VirtualKeyboard.a * self->cellSize + 6.0f;
+		float h = (float)g_VirtualKeyboard.b * self->cellSize + 4.0f;
+		tabs->color = KEYS_FRAME_COLOR;
+		Menu_DrawFrame(g_ScorerTabs, 1, it->x + half - 3.0f, it->y + (cell + 3.0f) - 2.0f, w, h);
+	}
+	g_ScorerTabs->color = KEYS_EDIT_COLOR;
+	Menu_DrawFrame(g_ScorerTabs, 1, it->x - 3.0f, it->y - 1.0f, it->w + 6.0f, it->h + 2.0f);
+	Str_Copy(buf, in->text, sizeof(buf));
+	CFont *font = t->font;
+	font->efectos = 0x20000;
+	font->color = KEYS_COLOR;
+	if (self->centerEdit) {
+		font->align = KEYS_CENTER;
+		CFont_PrintfFlags(font, it->w * 0.5f + it->x, it->h * 0.5f + it->y, 0xb, "%s", buf);
+	} else {
+		font->align = 0;
+		CFont_PrintfFlags(font, it->x, it->y, 0xb, "%s", buf);
+	}
+	if (blink > 128) {
+		font->align = 0;
+		CFont_PrintfFlags(font, font->x, it->y, 0xb, "_");
+	}
+	if (in->active) {
+		float cell = self->cellSize;
+		float ox = (it->w - (float)g_VirtualKeyboard.a * cell) * 0.5f;
+		float oy = cell + 3.0f;
+		for (int col = 0; col < g_VirtualKeyboard.a; col++) {
+			for (int row = 0; row < g_VirtualKeyboard.b; row++) {
+				key[0] = g_VirtualKeyboard.text[g_VirtualKeyboard.a * row + col];
+				key[1] = 0;
+				cell = self->cellSize;
+				if (cPlayerInput_GetCursorChar(in) == key[0]) {
+					CPsaImage *img = self->img;
+					img->scaleX = cell;
+					img->scaleY = cell;
+					img->color = KEYS_CURSOR_COLOR;
+					CPsaImage_Draw(img, (float)col * cell + it->x + ox, (float)row * cell + (oy + it->y));
+					g_ScorerTabs->color = (uint32_t)(blink / 2) << 24 | 0x52527f;
+					cell = self->cellSize;
+					Menu_DrawFrame(g_ScorerTabs, 1, cell * (float)col + it->x + ox - 2.0f,
+						cell * (float)row + (oy + it->y) - 2.0f, cell + 4.0f, cell + 4.0f);
+					font->align = KEYS_CENTER;
+					font->color = (((uint32_t)blink | 0xffffff00) << 8 | (uint32_t)blink) << 8
+						| (uint32_t)(int)((float)blink * 0.8f);
+					font->efectos = 0x40000;
+					cell = self->cellSize;
+					CFont_PrintfFlags(font, cell * (float)col + it->x + cell * 0.5f + ox,
+						cell * (float)row + (oy + it->y) + cell * 0.5f, 0xb, "%s", key);
+				} else {
+					g_ScorerTabs->color = KEYS_KEY_COLOR;
+					Menu_DrawFrame(g_ScorerTabs, 1, cell * (float)col + it->x + ox - 2.0f,
+						cell * (float)row + (oy + it->y) - 2.0f, cell + 4.0f, cell + 4.0f);
+					cell = self->cellSize;
+					CFont_PrintfAlignColor(font, cell * (float)col + it->x + cell * 0.5f + ox,
+						cell * (float)row + (oy + it->y) + cell * 0.5f, KEYS_CENTER, KEYS_COLOR, "%s", key);
+				}
+			}
+		}
+		g_ScorerTabs->color = KEYS_FRAME_COLOR;
+		Menu_DrawFrame(g_ScorerTabs, 1, 60.0f, 415.0f, 520.0f, 34.0f);
+		/* the button glyphs of the font */
+		int n = Str_PrintfQuiet(hint, KEYS_HINT_SIZE, Lang_GetStr("XBox_Text_Input_Hint_0"), "\x14", "\x15");
+		if (n > 0 && !hint[n]) {
+			hint[n] = ' ';
+		}
+		Str_PrintfQuiet(hint + 1 + n, KEYS_HINT_SIZE, Lang_GetStr("XBox_Text_Input_Hint_1"), "\x16", "\x17");
+		CFont_PrintfAlignColorSombra(font, 320.0f, 430.0f, KEYS_CENTER, KEYS_COLOR, "%s", hint);
+		cScorerItem *c = g_TextEditCursor[player];
+		c->x = in->cursorX * self->cellSize + it->x;
+		c->y = it->y + (in->cursorY + 1.0f) * self->cellSize;
+	}
+	if (cInputAction_Pressed(InputActionTable_At(&ActionSetTable_At(&g_ActionSets, 0)->actions, 0), player)) {
+		TextEdit_End(player);
+	}
 }
 
 void __thiscall cTextScorer_Draw(cTextScorer *self, int player) {

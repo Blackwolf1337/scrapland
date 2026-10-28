@@ -326,6 +326,8 @@ int __thiscall cTextScorer_Var(cTextScorer *self, const char *name, byte set, ch
 int __thiscall cTextTypingScorer_Var(cTextTypingScorer *self, const char *name, byte set, char **s, double *d,
 	int *i);
 void __thiscall cTextScorer_Draw(cTextScorer *self, int player);
+/* vf04: the text being typed and the virtual keyboard */
+void __thiscall cTextScorer_DrawKeyboard(cTextScorer *self, int player);
 void __thiscall cTextTypingScorer_Draw(cTextTypingScorer *self, int player);
 /* the edit of the text item of player ends: the cursor item back, the hint of the item */
 void TextEdit_End(int player);
@@ -395,8 +397,8 @@ cWaypointScorer *__fastcall cWaypointScorer_ctor(cWaypointScorer *self);
 void __fastcall cWaypointScorer_dtor(cWaypointScorer *self);
 cWaypointScorer *__thiscall cWaypointScorer_Delete(cWaypointScorer *self, byte flags);
 int __thiscall cWaypointScorer_Var(cWaypointScorer *self, const char *name, byte set, char **s, double *d, int *i);
-/* the mark of the waypoint object: the rectangle around it in sight (named: the current one), else the arrow at the
- * edge (rva 0x185e90, not decompiled) */
+/* the mark of the waypoint object: the rectangle around it in sight (named: the current one), the blinking dot on
+ * another one in sight, else the arrow towards it */
 void __thiscall cWaypointScorer_DrawTarget(cWaypointScorer *self, cEntity *e, byte current);
 /* the current waypoint (CurrentWaypointName, CurrentWaypointName2 for player 1), else the nearest one */
 void __thiscall cWaypointScorer_Draw(cWaypointScorer *self, int player);

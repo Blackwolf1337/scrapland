@@ -461,8 +461,6 @@ SD_IMPORT(CNodesWorld2D_Generate, 0x0b2f60)
 /* module agent: Logic part 1 (AlarmStatus..Domination) (imports below this line) */
 
 /* module agent: Scorer part 2 (Scorer+ScraplandScorer+Slider+SpecialAction) (imports below this line) */
-SD_IMPORT(Scorer_DrawDebug, 0x173450)
-SD_IMPORT(Scorer_DrawConsole, 0x1742f0)
 SD_IMPORT(crt_ltoa, 0x34d525)
 
 /* module agent: AI/IVehicle.cpp (imports below this line) */
@@ -476,7 +474,6 @@ SD_IMPORT(crt_strtime, 0x33bb73)
 SD_IMPORT(CPsaImage_GetNumFrames, 0x22d280)
 SD_IMPORT(PyFloat_AsDouble, 0x2dfa30)	/* floatobject.c */
 SD_IMPORT(cTargetScorer_DrawTarget, 0x181600)
-SD_IMPORT(cWaypointScorer_DrawTarget, 0x185e90)
 
 /* module agent: Logic part 3 (GenCharLogic..Messenger) (imports below this line) */
 
@@ -583,3 +580,7 @@ SD_IMPORT(crt_invalid_parameter_noinfo_noreturn, 0x34e614)
 SD_IMPORT(crt_Throw_bad_array_new_length, 0x3178b8)
 SD_IMPORT(MsvcString_ReallocFor, 0x1375f0)
 SD_IMPORT(PtrVector_Reallocate, 0x137790)
+SD_IMPORT(CNodesWorld_DrawAnalize, 0x0a5b10)
+SD_IMPORT(CNodesWorld2D_DrawAnalize, 0x0b1210)
+SD_IMPORT(cAStar_Draw, 0x099820)
+SD_IMPORT(cAStar2D_Draw, 0x09a560)
