@@ -246,8 +246,13 @@ T = scz(4)
 T2 = scz(4)
 check('CGameTrail_ctor', lambda: (SDTest.Call(0x21ddb0, 'tii', T)[0] == T, sci(T) != 0, sctr(T)))
 check('CGameTrail_ctor 2', lambda: (SDTest.Call(0x21ddb0, 'tii', T2)[0] == T2, sci(T2) != 0))
-scstep('CGameTrail_SetMaxTrails', T, 0x21e290, 'tvii', 8)
-SDTest.Call(0x21e290, 'tvii', T2, 8)
+# the new points of SetMaxTrails are what new[] left (heap of earlier objects): cleared before they are printed
+def scmaxtrails(g, n):
+	r = SDTest.Call(0x21e290, 'tvii', g, n)[0]
+	scset(sci(sci(g) + 0x28), (0.0,) * (5 * n))
+	return r
+check('CGameTrail_SetMaxTrails' + fmt((8,)), lambda: (scmaxtrails(T, 8), sctr(T), sclist()))
+scmaxtrails(T2, 8)
 check('CGameTrail_GetMaxTrails', lambda: SDTest.Call(0x21e1b0, 'tii', T)[0])
 scstep('CGameTrail_SetTransp', T, 0x21e260, 'tvii', 40)
 check('CGameTrail_GetTransp', lambda: SDTest.Call(0x21e1a0, 'tii', T)[0])

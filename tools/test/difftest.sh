@@ -12,6 +12,7 @@
 #                          2 the whole game code but for the hooks, 3 that with a probe that logs each trap and
 #                          goes on with the original code (src/core/hook.c)
 #        DIFFTEST_STANDALONE=1  the hooked run starts ScrapC.exe, the standalone loader (docs/standalone.md)
+#        DIFFTEST_WIPEPY=1  with DIFFTEST_STANDALONE=1: the code of the original's Python is int3 too ([general] wipepy)
 root=$(cd "$(dirname "$0")/../.." && pwd)
 game=$root/game
 ini=$game/Bin/scrapdecomp.ini
@@ -42,7 +43,8 @@ run() {
 	local arg
 	[ "$2" = 1 ] && [ "${DIFFTEST_STANDALONE:-0}" = 1 ] && exe=ScrapC.exe
 	arg="-PythonExecute:execfile($(python3 -I -c "print('+'.join('chr(%d)' % ord(c) for c in '$name.py'))"))"
-	printf '[general]\nhooks=%s\ntestmod=1\nwipe=%s\n' "$2" "$(($2 ? ${DIFFTEST_WIPE:-0} : 0))" > "$ini"
+	printf '[general]\nhooks=%s\ntestmod=1\nwipe=%s\nwipepy=%s\n' "$2" "$(($2 ? ${DIFFTEST_WIPE:-0} : 0))" \
+		"$(($2 ? ${DIFFTEST_WIPEPY:-0} : 0))" > "$ini"
 	# so the second run does not find the files of the first
 	rm -f "$result"
 	rm_written

@@ -6,7 +6,8 @@
  * replaced code stops the game with its rva in the log (a check for the standalone build, docs/standalone.md).
  * wipe=2 fills the whole game and engine code with int3 first. wipe=3 is the same with a probe: each trap logs its
  * rva and caller, copies the piece of original code there back and goes on, so one run lists every piece of game
- * code without a C version that the run reaches.
+ * code without a C version that the run reaches. wipepy=1 (ScrapC.exe only, it runs the real Python of src/python)
+ * also fills the code of the original's Python with int3, the probe of wipe=3 then covers it too.
  */
 #include <string.h>
 #include <windows.h>
@@ -16,6 +17,7 @@
  * the plain declarations below. Fastcall and stdcall names get their decoration through --enable-stdcall-fixup.
  */
 #include "scrap/shared.h"
+#include "scrap/origpython.h"
 
 extern uintptr_t game_base;
 
@@ -59,14 +61,17 @@ static int Hook_Write(byte *at, const void *target, uint32_t wipe) {
 #define GAME_CODE_START 0x05f6d8
 #define GAME_CODE_END 0x2d6010
 
-static void Hook_WipeGame(void) {
-	byte *code = (byte *)(game_base + GAME_CODE_START);
+/* the end of the code the probe covers: the game code, with wipepy up to the end of the Python */
+static uint32_t probe_end = GAME_CODE_END;
+
+static void Hook_Wipe(uint32_t start, uint32_t end) {
+	byte *code = (byte *)(game_base + start);
 	DWORD old;
 
-	VirtualProtect(code, GAME_CODE_END - GAME_CODE_START, PAGE_EXECUTE_READWRITE, &old);
-	memset(code, 0xcc, GAME_CODE_END - GAME_CODE_START);
-	VirtualProtect(code, GAME_CODE_END - GAME_CODE_START, old, &old);
-	FlushInstructionCache(GetCurrentProcess(), code, GAME_CODE_END - GAME_CODE_START);
+	VirtualProtect(code, end - start, PAGE_EXECUTE_READWRITE, &old);
+	memset(code, 0xcc, end - start);
+	VirtualProtect(code, end - start, old, &old);
+	FlushInstructionCache(GetCurrentProcess(), code, end - start);
 }
 
 /* wipe=3: a copy of the original code, and per byte whether it is in a hook (1, its jump 3) */
@@ -78,7 +83,7 @@ static byte *probe_orig, *probe_mark;
 /* int3 padding of the original: up to the next 16 byte boundary or more of it */
 static int Probe_Pad(uint32_t x) {
 	return probe_orig[x - GAME_CODE_START] == 0xcc
-		&& ((x + 1) % 16 == 0 || x + 1 >= GAME_CODE_END || probe_orig[x + 1 - GAME_CODE_START] == 0xcc);
+		&& ((x + 1) % 16 == 0 || x + 1 >= probe_end || probe_orig[x + 1 - GAME_CODE_START] == 0xcc);
 }
 
 /* the piece of original code around the trap (up to padding or the edge of a hook) is copied back and run */
@@ -87,18 +92,19 @@ static LONG CALLBACK Hook_Probe(EXCEPTION_POINTERS *e) {
 	uint32_t rva = (uint32_t)(at - game_base), lo, hi;
 	DWORD old;
 
-	if (e->ExceptionRecord->ExceptionCode != EXCEPTION_BREAKPOINT || rva < GAME_CODE_START || rva >= GAME_CODE_END
+	if (e->ExceptionRecord->ExceptionCode != EXCEPTION_BREAKPOINT || rva < GAME_CODE_START || rva >= probe_end
 		|| probe_orig[rva - GAME_CODE_START] == 0xcc) {
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
 	byte m = probe_mark[rva - GAME_CODE_START];
 	for (lo = rva; lo > GAME_CODE_START && probe_mark[lo - 1 - GAME_CODE_START] == m && !Probe_Pad(lo - 1); lo--) {
 	}
-	for (hi = rva; hi < GAME_CODE_END && probe_mark[hi - GAME_CODE_START] == m && !Probe_Pad(hi); hi++) {
+	for (hi = rva; hi < probe_end && probe_mark[hi - GAME_CODE_START] == m && !Probe_Pad(hi); hi++) {
 	}
 	/* the return address when the trap is the first byte of a called function */
 	uint32_t ret = *(uint32_t *)e->ContextRecord->Esp;
-	Com_Printf("probe: rva %06x%s, piece %06x..%06x, [esp] %06x\n", (unsigned)rva, m ? " in a hook" : "",
+	Com_Printf("probe: rva %06x%s, piece %06x..%06x, [esp] %06x\n", (unsigned)rva,
+		m ? " in a hook" : rva >= ORIG_PY_CODE_START ? " in the Python" : "",
 		(unsigned)lo, (unsigned)hi, (unsigned)(ret - game_base));
 	VirtualProtect((byte *)game_base + lo, hi - lo, PAGE_EXECUTE_READWRITE, &old);
 	memcpy((byte *)game_base + lo, probe_orig + lo - GAME_CODE_START, hi - lo);
@@ -109,13 +115,13 @@ static LONG CALLBACK Hook_Probe(EXCEPTION_POINTERS *e) {
 }
 
 static void Hook_ProbeInit(void) {
-	probe_orig = VirtualAlloc(NULL, GAME_CODE_END - GAME_CODE_START, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	probe_mark = VirtualAlloc(NULL, GAME_CODE_END - GAME_CODE_START, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	probe_orig = VirtualAlloc(NULL, probe_end - GAME_CODE_START, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	probe_mark = VirtualAlloc(NULL, probe_end - GAME_CODE_START, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	if (!probe_orig || !probe_mark) {
 		Com_Printf("probe: no memory\n");
 		return;
 	}
-	memcpy(probe_orig, (byte *)game_base + GAME_CODE_START, GAME_CODE_END - GAME_CODE_START);
+	memcpy(probe_orig, (byte *)game_base + GAME_CODE_START, probe_end - GAME_CODE_START);
 	for (size_t i = 0; i < sizeof(hooks) / sizeof(hooks[0]); i++) {
 		uint32_t r = hooks[i].rva, n = hooks[i].size;
 		if (n >= 5 && r >= GAME_CODE_START && r + n <= GAME_CODE_END) {
@@ -135,14 +141,27 @@ static LONG CALLBACK Hook_Trap(EXCEPTION_POINTERS *e) {
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
-void Hook_InstallAll(int wipe) {
+void Hook_InstallAll(int wipe, int wipepy) {
 	int installed = 0, off = 0;
 
+#ifdef SD_STANDALONE
+	if (wipepy) {
+		probe_end = ORIG_PY_CODE_END;
+	}
+#else
+	if (wipepy) {
+		Com_Printf("wipepy: only in ScrapC.exe, the hook DLL runs the Python of the exe\n");
+		wipepy = 0;
+	}
+#endif
 	if (wipe >= 3) {
 		Hook_ProbeInit();
 	}
 	if (wipe >= 2) {
-		Hook_WipeGame();
+		Hook_Wipe(GAME_CODE_START, GAME_CODE_END);
+	}
+	if (wipepy) {
+		Hook_Wipe(ORIG_PY_CODE_START, ORIG_PY_CODE_END);
 	}
 	for (size_t i = 0; i < sizeof(hooks) / sizeof(hooks[0]); i++) {
 		const hook_t *h = &hooks[i];
@@ -162,9 +181,15 @@ void Hook_InstallAll(int wipe) {
 	}
 	Com_Printf("%d of %d hooks installed, %d switched off in scrapdecomp.ini\n", installed,
 		(int)(sizeof(hooks) / sizeof(hooks[0])), off);
-	if (wipe) {
+	if (wipe || wipepy) {
 		AddVectoredExceptionHandler(1, Hook_Trap);
+	}
+	if (wipe) {
 		Com_Printf(wipe >= 2 ? "wipe: the game code is int3 but for the hooks\n"
 			: "wipe: the rest of every hooked original is int3\n");
+	}
+	if (wipepy) {
+		Com_Printf("wipepy: the code of the original's Python (rva %06x..%06x) is int3\n", ORIG_PY_CODE_START,
+			ORIG_PY_CODE_END);
 	}
 }
