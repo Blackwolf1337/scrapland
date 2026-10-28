@@ -13,7 +13,8 @@
  * Stage 2a: the Python is the real library of src/python, linked into this exe; datagen.py turns the pointers of
  * the room into the original's Python into the real symbols. Stage 2b: the CRT functions are the UCRT of this exe or
  * C (src/standalone/crt.c and crtinit.c), the MSVC math is Microsoft's ucrtbase (crtmath.c, crtvec.c); the entries
- * of the original's CRT jump there. The process starts in Crt_Main of crtinit.c.
+ * of the original's CRT jump there. The process starts in Crt_Main of crtinit.c. With [general] dataprobe the probe
+ * of dataprobe.c watches the data of the original from there on (stage 3b2).
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -29,6 +30,7 @@ int Game_Start(uintptr_t base, const char *dir);
 const char *Crt_MathInit(const char *dir);
 int Game_Option(const char *key);
 void Log_Open(const char *dir);
+void DataProbe_Start(const char *dir);
 
 /* the start of the room, rva 0x1000 (room.c) */
 extern byte orig_room[];
@@ -126,5 +128,6 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
 	if (Game_Option("wipe") >= 3) {
 		Com_Printf("probe: ScrapC.exe has no code of the original to run, wipe=3 stops at the first trap\n");
 	}
+	DataProbe_Start(dir);
 	Crt_Main();
 }

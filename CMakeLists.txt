@@ -149,7 +149,8 @@ file(GENERATE OUTPUT ${ROOM_DIR}/objects.txt CONTENT "$<JOIN:$<TARGET_OBJECTS:sc
 add_custom_command(OUTPUT ${ROOM_DIR}/room.c ${ROOM_DIR}/room.h ${ROOM_DIR}/room.ld ${ROOM_DIR}/room.bin
 	COMMAND ${PYTHON3} -I ${CMAKE_SOURCE_DIR}/tools/standalone/datagen.py ${SCRAP_EXE} ${ROOM_DIR}
 		${ROOM_DIR}/objects.txt
-	DEPENDS tools/standalone/datagen.py tools/standalone/sdexe.py ${SCRAP_EXE} include/scrap/game.h
+	DEPENDS tools/standalone/datagen.py tools/standalone/sdexe.py tools/standalone/datamap.py
+		tools/standalone/datamap.txt ${SCRAP_EXE} include/scrap/game.h
 		include/scrap/origcrt.h include/scrap/origpython.h src/hooks.inc src/imports.inc src/standalone/crthooks.inc
 		${ROOM_DIR}/objects.txt $<TARGET_OBJECTS:scrapcode_sa>
 	COMMENT "Data of Scrap.exe for ScrapC.exe")
@@ -162,7 +163,7 @@ add_library(scrapres OBJECT src/standalone/scrap.rc)
 target_include_directories(scrapres PRIVATE src/standalone) # windres finds the res/ files from the include path
 set_source_files_properties(src/standalone/scrap.rc PROPERTIES OBJECT_DEPENDS "${RES_FILES}")
 add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtinit.c
-	src/standalone/crtmath.c src/standalone/crtvec.c ${ROOM_DIR}/room.c ${ROOM_DIR}/room.h
+	src/standalone/crtmath.c src/standalone/crtvec.c src/standalone/dataprobe.c ${ROOM_DIR}/room.c ${ROOM_DIR}/room.h
 	$<TARGET_OBJECTS:scrapres>)
 target_include_directories(ScrapC PRIVATE ${ROOM_DIR})
 target_link_libraries(ScrapC PRIVATE scrapcode_sa python152)
@@ -172,3 +173,7 @@ set_target_properties(ScrapC PROPERTIES LINK_DEPENDS "${CMAKE_SOURCE_DIR}/cmake/
 add_custom_command(TARGET ScrapC POST_BUILD
 	COMMAND ${PYTHON3} -I ${CMAKE_SOURCE_DIR}/tools/standalone/rsrccheck.py ${SCRAP_EXE} $<TARGET_FILE:ScrapC>
 	COMMENT "Resources of ScrapC.exe against Scrap.exe")
+# stage 3b2: every rva of the C and the tests lies in the data that datagen.py builds in (tools/standalone/datamap.txt)
+add_custom_command(TARGET ScrapC POST_BUILD
+	COMMAND ${PYTHON3} -I ${CMAKE_SOURCE_DIR}/tools/standalone/datamap.py --check -e ${SCRAP_EXE} -c $<TARGET_FILE:ScrapC>
+	COMMENT "Check the rvas of ScrapC.exe against the data map")

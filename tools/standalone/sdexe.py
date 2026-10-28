@@ -1,4 +1,5 @@
-# sdexe.py: what datagen.py and vtables.py read of Scrap.exe 1.6.1 and of the hook lists (docs/standalone.md, stage 3).
+# sdexe.py: what datagen.py, datamap.py and vtables.py read of Scrap.exe 1.6.1 and of the hook lists
+# (docs/standalone.md, stage 3).
 import os, re, struct
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
@@ -94,3 +95,167 @@ def c_names():
 		for name, rva in pat.findall(open(os.path.join(ROOT, f)).read()):
 			names.setdefault(int(rva, 16), name)
 	return names
+
+
+def header(name):
+	return open(os.path.join(ROOT, 'include', 'scrap', name)).read()
+
+
+def define(text, name):
+	return int(re.search(r'#define %s (0x[0-9a-fA-F]+)' % name, text).group(1), 16)
+
+
+def ranges(text, name):
+	return [(int(lo, 16), int(hi, 16)) for lo, hi in
+		re.findall(r'\{ (0x[0-9a-f]+), (0x[0-9a-f]+) \}', text[text.index('#define ' + name):].split('\n\n')[0])]
+
+
+game_h, crt_h, py_h = header('game.h'), header('origcrt.h'), header('origpython.h')
+TIMESTAMP, SIZEOFIMAGE = define(game_h, 'GAME_TIMESTAMP'), define(game_h, 'GAME_SIZEOFIMAGE')
+PY_CODE = (define(py_h, 'ORIG_PY_CODE_START'), define(py_h, 'ORIG_PY_CODE_END'))
+PY_DATA = ranges(py_h, 'ORIG_PY_DATA')
+
+# the pieces of .text that are built in; the rest of it is int3 at start
+TEXT_KEEP = [
+	(0x001000, 0x002070),	# the data formats of dinput8.lib (c_dfDIKeyboard and friends point here)
+] + ranges(crt_h, 'ORIG_CRT_THUNKS')	# the import thunks of the game in the CRT, called through imports
+
+# what pointers outside the original's Python point to in it, and the real symbol for each (pymap.py -c makes this
+# table): the type objects of the engine (ob_type), the module table of the exe and the code of the copy hold these
+PY_SYMBOLS = {
+	0x2e3ab0: 'initimp',
+	0x2e45d0: 'initerrno',
+	0x2e5340: 'initmath',
+	0x2e5910: 'initnew',
+	0x2e6350: 'initregex',
+	0x2e6da0: 'initsignal',
+	0x2e8840: 'initstrop',
+	0x2e97d0: 'init_locale',
+	0x2e9ba0: 'PyMarshal_Init',
+	0x432b90: 'PyString_Type',
+	0x432ff0: 'PyList_Type',
+	0x433128: 'PyInt_Type',
+	0x433288: 'PyFloat_Type',
+	0x435f3c: '_Py_NoneStruct',
+	0x435f50: 'PyType_Type',
+	0x437150: 'PyCode_Type',
+	0x4e79cc: 'g_PyPackImport',
+	0x4e7af8: 'Py_VerboseFlag',
+}
+
+
+def in_python(rva):
+	return PY_CODE[0] <= rva < PY_CODE[1] or any(lo <= rva < hi for lo, hi in PY_DATA)
+
+
+def room_pieces(x):
+	"""the parts of the original with bytes that the room can hold: the kept parts of .text and every section with
+	bytes but .text, .reloc and .rsrc (the resources are src/standalone/scrap.rc since stage 3b3), sorted"""
+	text_va, text_n, _, _ = x.secs['.text']
+	pieces = [(lo, hi or text_va + text_n) for lo, hi in TEXT_KEEP]
+	for name, (va, n, ptr, vsize) in sorted(x.secs.items(), key=lambda s: s[1][0]):
+		if name not in ('.text', '.reloc', '.rsrc') and n:
+			pieces.append((va, va + n))
+	pieces.sort()
+	for (lo, hi), (lo2, hi2) in zip(pieces, pieces[1:]):
+		if hi > lo2:
+			raise ExeError('pieces %06x..%06x and %06x..%06x overlap' % (lo, hi, lo2, hi2))
+	return pieces
+
+
+class CObj:
+	"""a section .sd.<rva> of an object file: one C object of SD_AT"""
+
+	def __init__(self, path, name, rva, size, bss, alignment, data, relocs):
+		self.path, self.name, self.rva, self.size, self.bss = path, name, rva, size, bss
+		self.alignment, self.data, self.relocs = alignment, data, relocs
+		self.lo, self.hi = rva, rva + size
+
+	def where(self):
+		return '%s (%s)' % (self.name, os.path.relpath(self.path))
+
+
+def coff_sd(path, sd_symbols):
+	"""the .sd.<rva> sections of a COFF object file, with their relocations as {offset: (symbol, target)}: target is
+	the rva of a target in a .sd section of the file (symbol value plus the addend in place), None for a global
+	symbol of another section or file (a C function, the Python, an SD_AT object of another file). The global symbols
+	of the .sd sections go into sd_symbols with their rvas."""
+	try:
+		f = open(path, 'rb')
+	except OSError as e:
+		raise ExeError('cannot read %s (%s)' % (path, e.strerror))
+	with f:
+		hdr = f.read(20)
+		if len(hdr) < 20:
+			raise ExeError('%s: no COFF object' % path)
+		machine, nsec, _, symptr, nsym, optsz, _ = struct.unpack('<HHIIIHH', hdr)
+		if machine != 0x14c:
+			raise ExeError('%s: not an i386 COFF object (machine %04x)' % (path, machine))
+		f.seek(20 + optsz)
+		table = f.read(40 * nsec)
+		f.seek(symptr)
+		syms = f.read(18 * nsym)
+		strtab = f.read()
+
+		def string(o):
+			return strtab[o:strtab.index(b'\0', o)].decode()
+
+		secs = []
+		for i in range(nsec):
+			raw = table[40 * i:40 * i + 8]
+			name = string(int(raw[1:].rstrip(b'\0'))) if raw.startswith(b'/') else raw.rstrip(b'\0').decode()
+			size, ptr, relptr, _, nrel, _, flags = struct.unpack_from('<IIIIHHI', table, 40 * i + 16)
+			secs.append((name, size, ptr, relptr, nrel, flags))
+		sd = {}
+		for i, (name, size, ptr, relptr, nrel, flags) in enumerate(secs):
+			if name.startswith('.sd.'):
+				try:
+					sd[i + 1] = int(name[4:], 0)
+				except ValueError:
+					raise ExeError('%s: section %s: SD_AT needs an rva number' % (path, name))
+		if not sd:
+			return []
+
+		def symbol(k):
+			raw = syms[18 * k:18 * k + 8]
+			name = string(struct.unpack_from('<I', raw, 4)[0]) if raw[:4] == b'\0\0\0\0' else raw.rstrip(b'\0').decode()
+			value, secnum, _, sclass, naux = struct.unpack_from('<IhHBB', syms, 18 * k + 8)
+			return name, value, secnum, sclass, naux
+
+		k = 0
+		while k < nsym:
+			name, value, secnum, sclass, naux = symbol(k)
+			if sclass == 2 and secnum in sd:	# IMAGE_SYM_CLASS_EXTERNAL
+				sd_symbols[name] = sd[secnum] + value
+			k += 1 + naux
+
+		out = []
+		for i, (name, size, ptr, relptr, nrel, flags) in enumerate(secs):
+			if i + 1 not in sd:
+				continue
+			bss = bool(flags & 0x80)
+			data = b'\0' * size
+			if not bss:
+				f.seek(ptr)
+				data = f.read(size)
+			alignment = 1 << ((flags >> 20 & 0xf) - 1) if flags >> 20 & 0xf else 16
+			f.seek(relptr)
+			rel = f.read(10 * nrel)
+			relocs = {}
+			for k in range(nrel):
+				at, symidx, typ = struct.unpack_from('<IIH', rel, 10 * k)
+				if typ != 6:	# IMAGE_REL_I386_DIR32
+					raise ExeError('%s: %s: relocation type %d at +%x, only absolute pointers are placed' % (path, name, typ, at))
+				sname, value, secnum, sclass, _ = symbol(symidx)
+				inplace = struct.unpack_from('<I', data, at)[0]
+				if secnum in sd:
+					relocs[at] = (sname, sd[secnum] + value + inplace)
+				elif sclass != 2:
+					raise ExeError('%s: %s: the pointer at +%x leads to %s, static C that has no rva of the original'
+						% (path, name, at, sname))
+				elif inplace:
+					raise ExeError('%s: %s: the pointer at +%x has an offset to %s' % (path, name, at, sname))
+				else:
+					relocs[at] = (sname, None)
+			out.append(CObj(path, name, sd[i + 1], size, bss, alignment, data, relocs))
+		return out
