@@ -166,7 +166,38 @@ add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/stand
 	src/standalone/crtmath.c src/standalone/crtvec.c src/standalone/dataprobe.c ${ROOM_DIR}/room.c ${ROOM_DIR}/room.h
 	$<TARGET_OBJECTS:scrapres>)
 target_include_directories(ScrapC PRIVATE ${ROOM_DIR})
-target_link_libraries(ScrapC PRIVATE scrapcode_sa python152)
+# stage 3c1a: the DLLs of the original are imports of ScrapC.exe itself (GAME_IMPORT of include/scrap/game.h). fmod,
+# Galaxy and steam_api (in game/Bin, next to ScrapC.exe) through import libraries made from the .def files of
+# src/standalone, the others through the ones of mingw-w64; dinput8 is no import (main.c loads the system one).
+# ld sorts the import directory by the path of the import library, so the libraries of the game's DLLs are linked as
+# build/implib/<n>-lib<name>.a (dlltool output or a link to the mingw-w64 one), numbered in the order of the
+# original's import directory. kernel32, user32, gdi32, advapi32, shell32, comdlg32 and ole32 are in the default
+# libraries of the toolchain, so they keep their place in ld's order (a second path of one of them would split its
+# import descriptor).
+set(IMPLIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/implib)
+file(MAKE_DIRECTORY ${IMPLIB_DIR})
+set(IMPLIBS)
+set(n 10)
+foreach(dll xinput9_1_0 winmm wsock32 Galaxy steam_api fmod msvfw32 avifil32 ddraw comctl32 d3d8)
+	string(TOLOWER ${dll} lib)
+	set(implib ${IMPLIB_DIR}/${n}-lib${lib}.a)
+	if(EXISTS ${CMAKE_SOURCE_DIR}/src/standalone/${dll}.def)
+		add_custom_command(OUTPUT ${implib}
+			COMMAND ${CMAKE_DLLTOOL} -d ${CMAKE_SOURCE_DIR}/src/standalone/${dll}.def -l ${n}-lib${lib}.a
+			WORKING_DIRECTORY ${IMPLIB_DIR}
+			DEPENDS src/standalone/${dll}.def
+			COMMENT "Import library of ${dll}.dll")
+	else()
+		find_library(IMPLIB_${lib} ${lib} REQUIRED)
+		file(CREATE_LINK ${IMPLIB_${lib}} ${implib} SYMBOLIC)
+	endif()
+	list(APPEND IMPLIBS ${implib})
+	math(EXPR n "${n} + 1")
+endforeach()
+add_custom_target(implibs DEPENDS ${IMPLIBS})
+add_dependencies(ScrapC implibs)
+target_link_libraries(ScrapC PRIVATE scrapcode_sa python152 ${IMPLIBS} kernel32 user32 gdi32 advapi32 shell32 comdlg32
+	ole32)
 target_link_options(ScrapC PRIVATE -Wl,--image-base,0x400000 -Wl,--disable-dynamicbase
 	-Wl,-T,${CMAKE_SOURCE_DIR}/cmake/ScrapC.ld -L${ROOM_DIR})
 set_target_properties(ScrapC PROPERTIES LINK_DEPENDS "${CMAKE_SOURCE_DIR}/cmake/ScrapC.ld;${ROOM_DIR}/room.ld")

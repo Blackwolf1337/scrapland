@@ -1,0 +1,10 @@
+; The import library of steam_api.dll for ScrapC.exe (docs/standalone.md, stage 3c1a): the functions Scrap.exe 1.6.1
+; imports from it (cdecl). CMakeLists.txt makes libsteam_api.a from this file with dlltool.
+LIBRARY "steam_api.dll"
+EXPORTS
+SteamAPI_GetHSteamPipe
+SteamAPI_GetHSteamUser
+SteamAPI_RegisterCallback
+SteamAPI_UnregisterCallback
+SteamInternal_ContextInit
+SteamInternal_CreateInterface

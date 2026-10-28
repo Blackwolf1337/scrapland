@@ -27,19 +27,19 @@ typedef int(__stdcall *aviStreamSetFormat_t)(void *stream, int pos, void *fmt, i
 typedef int(__stdcall *aviStreamWrite_t)(void *stream, int start, int n, const void *buf, int size, uint32_t flags,
 	int *written, int *bytes);
 typedef int(__stdcall *setrect_t)(exe_rect *r, int left, int top, int right, int bottom);
-#define exe_VideoForWindowsVersion GAME_DATA(vfwVersion_t, 0x3a132c)
-#define exe_AVIFileInit GAME_DATA(aviFileInit_t, 0x3a1030)
-#define exe_AVIFileExit GAME_DATA(aviFileInit_t, 0x3a102c)
-#define exe_AVIFileRelease GAME_DATA(aviRelease_t, 0x3a1028)
-#define exe_AVIFileOpenA GAME_DATA(aviFileOpen_t, 0x3a1040)
-#define exe_AVIFileCreateStreamA GAME_DATA(aviFileCreateStream_t, 0x3a1020)
-#define exe_AVIStreamRelease GAME_DATA(aviRelease_t, 0x3a101c)
-#define exe_AVIStreamSetFormat GAME_DATA(aviStreamSetFormat_t, 0x3a1044)
-#define exe_AVIStreamWrite GAME_DATA(aviStreamWrite_t, 0x3a1024)
-#define exe_AVIMakeCompressedStream GAME_DATA(aviMakeCompressedStream_t, 0x3a1034)
-#define exe_AVISaveOptions GAME_DATA(aviSaveOptions_t, 0x3a1038)
-#define exe_AVISaveOptionsFree GAME_DATA(aviSaveOptionsFree_t, 0x3a103c)
-#define exe_SetRect GAME_DATA(setrect_t, 0x3a138c)
+#define exe_VideoForWindowsVersion GAME_IMPORT(vfwVersion_t, VideoForWindowsVersion, 0, 0x3a132c)
+#define exe_AVIFileInit GAME_IMPORT(aviFileInit_t, AVIFileInit, 0, 0x3a1030)
+#define exe_AVIFileExit GAME_IMPORT(aviFileInit_t, AVIFileExit, 0, 0x3a102c)
+#define exe_AVIFileRelease GAME_IMPORT(aviRelease_t, AVIFileRelease, 4, 0x3a1028)
+#define exe_AVIFileOpenA GAME_IMPORT(aviFileOpen_t, AVIFileOpenA, 16, 0x3a1040)
+#define exe_AVIFileCreateStreamA GAME_IMPORT(aviFileCreateStream_t, AVIFileCreateStreamA, 12, 0x3a1020)
+#define exe_AVIStreamRelease GAME_IMPORT(aviRelease_t, AVIStreamRelease, 4, 0x3a101c)
+#define exe_AVIStreamSetFormat GAME_IMPORT(aviStreamSetFormat_t, AVIStreamSetFormat, 16, 0x3a1044)
+#define exe_AVIStreamWrite GAME_IMPORT(aviStreamWrite_t, AVIStreamWrite, 32, 0x3a1024)
+#define exe_AVIMakeCompressedStream GAME_IMPORT(aviMakeCompressedStream_t, AVIMakeCompressedStream, 16, 0x3a1034)
+#define exe_AVISaveOptions GAME_IMPORT(aviSaveOptions_t, AVISaveOptions, 20, 0x3a1038)
+#define exe_AVISaveOptionsFree GAME_IMPORT(aviSaveOptionsFree_t, AVISaveOptionsFree, 8, 0x3a103c)
+#define exe_SetRect GAME_IMPORT(setrect_t, SetRect, 20, 0x3a138c)
 
 #define OF_WRITE_CREATE 0x1001
 #define STREAMTYPE_VIDEO 0x73646976	/* "vids" */

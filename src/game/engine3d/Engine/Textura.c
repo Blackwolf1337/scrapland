@@ -63,7 +63,7 @@
 
 /* kernel32 of the exe: the names compare in the user's locale */
 typedef int(__stdcall *lstrcmpi_t)(const char *a, const char *b);
-#define exe_lstrcmpiA GAME_DATA(lstrcmpi_t, 0x3a12bc)
+#define exe_lstrcmpiA GAME_IMPORT(lstrcmpi_t, lstrcmpiA, 8, 0x3a12bc)
 
 /* the texture and surface methods */
 typedef int(__stdcall *texGetDevice_t)(void *tex, void **dev);

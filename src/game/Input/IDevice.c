@@ -11,6 +11,7 @@
 #include "scrap/input.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapmain.h"
+#include "scrap/win32.h"
 #include "scrap/world.h"
 
 #define EXE_EMPTY GAME_STR(str_Empty, 0x3a3228)		/* "" of the exe */
@@ -19,9 +20,6 @@
 
 /* the scorer state the definition of a key switches to (rva 0x1710f0, Scorer/) */
 void Scorer_SetInputState(int state);
-
-typedef int32_t(__stdcall *dinput8create_t)(void *hinst, uint32_t version, const void *iid, void **out, void *outer);
-#define exe_DirectInput8Create GAME_DATA(dinput8create_t, 0x3a1064)
 
 /*
  * The walk over the device ring with the iterator of the list, as the exe: the iterator is a global, every step

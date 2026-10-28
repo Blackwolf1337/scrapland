@@ -19,6 +19,8 @@
  * SDTest.Peek(rva, kind) reads a global of the exe: i int, b byte, d double, s the characters at rva, p the string a
  * pointer at rva points to (None for NULL); with '@' before the kind rva is an address (from a returned pointer).
  * SDTest.Poke(rva, value) writes an int.
+ * SDTest.Proc(dll, name) is the function name of the loaded DLL dll as an rva for Call (its address minus the load
+ * address of the exe), None when there is none: the Win32 functions for a test, in both runs the same.
  * SDTest.ConvU(rva, lo, hi, isdouble) calls a function that takes a float (isdouble 0, bits in lo) or double (bits in
  * lo and hi) in xmm0 and returns an unsigned int in eax, for the __ftoui3 and __dtoui3 conversions.
  * SDTest.OutFunc() is the address of a cdecl void(const char *) that collects text, SDTest.Out() returns and clears
@@ -415,6 +417,22 @@ static PyObject *SDTest_Sym(PyObject *self, PyObject *args) {
 	return PyInt_FromLong(rva);
 }
 
+static PyObject *SDTest_Proc(PyObject *self, PyObject *args) {
+	(void)self;
+	const char *dll, *name;
+
+	if (!PyArg_ParseTuple(args, "ss", &dll, &name)) {
+		return NULL;
+	}
+	HMODULE m = GetModuleHandleA(dll);
+	FARPROC fn = m ? GetProcAddress(m, name) : NULL;
+	if (!fn) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	return PyInt_FromLong((long)((uintptr_t)fn - game_base));
+}
+
 static void SDTest_Collect(const char *s) {
 	size_t n = strlen(s);
 	if (n > sizeof(out) - 1 - outLen) {
@@ -479,6 +497,7 @@ static PyMethodDef sdtest_methods[] = {
 	{ "Poke", SDTest_Poke, 1, NULL },
 	{ "ConvU", SDTest_ConvU, 1, NULL },
 	{ "Sym", SDTest_Sym, 1, NULL },
+	{ "Proc", SDTest_Proc, 1, NULL },
 	{ "OutFunc", SDTest_OutFunc, 1, NULL },
 	{ "Out", SDTest_Out, 1, NULL },
 	{ "D3DLog", SDTest_D3DLog, 1, NULL },

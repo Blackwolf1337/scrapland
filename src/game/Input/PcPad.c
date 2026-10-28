@@ -20,7 +20,7 @@
 #define g_PadLabelBuf (GAME_ARRAY(char, g_PadLabelBuf, 0x44ca74))	/* 0x20 bytes */
 
 typedef uint32_t(__stdcall *xinputgetstate_t)(uint32_t index, exe_xinput_state *state);
-#define exe_XInputGetState GAME_DATA(xinputgetstate_t, 0x3a14bc)
+#define exe_XInputGetState GAME_IMPORT(xinputgetstate_t, XInputGetState, 8, 0x3a14bc)
 
 static const char *const pad_labels[0x34] = {
 	[0x00] = "A", [0x01] = "B", [0x02] = "X", [0x03] = "Y", [0x04] = "BLACK", [0x05] = "WHITE", [0x06] = "BACK",

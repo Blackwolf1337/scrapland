@@ -110,7 +110,7 @@ def ranges(text, name):
 		re.findall(r'\{ (0x[0-9a-f]+), (0x[0-9a-f]+) \}', text[text.index('#define ' + name):].split('\n\n')[0])]
 
 
-game_h, crt_h, py_h = header('game.h'), header('origcrt.h'), header('origpython.h')
+game_h, py_h = header('game.h'), header('origpython.h')
 TIMESTAMP, SIZEOFIMAGE = define(game_h, 'GAME_TIMESTAMP'), define(game_h, 'GAME_SIZEOFIMAGE')
 PY_CODE = (define(py_h, 'ORIG_PY_CODE_START'), define(py_h, 'ORIG_PY_CODE_END'))
 PY_DATA = ranges(py_h, 'ORIG_PY_DATA')
@@ -118,7 +118,7 @@ PY_DATA = ranges(py_h, 'ORIG_PY_DATA')
 # the pieces of .text that are built in; the rest of it is int3 at start
 TEXT_KEEP = [
 	(0x001000, 0x002070),	# the data formats of dinput8.lib (c_dfDIKeyboard and friends point here)
-] + ranges(crt_h, 'ORIG_CRT_THUNKS')	# the import thunks of the game in the CRT, called through imports
+]
 
 # what pointers outside the original's Python point to in it, and the real symbol for each (pymap.py -c makes this
 # table): the type objects of the engine (ob_type), the module table of the exe and the code of the copy hold these

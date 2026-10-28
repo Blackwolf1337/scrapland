@@ -39,12 +39,16 @@ typedef struct GalaxyIface {
 
 typedef GalaxyIface *(*GalaxyGetIface_t)(void);
 typedef void (*GalaxyProcessData_t)(void);
-#define g_GalaxyStats GAME_DATA(GalaxyGetIface_t, 0x3a10b8)
-#define g_GalaxyUser GAME_DATA(GalaxyGetIface_t, 0x3a10c0)
-#define g_GalaxyApps GAME_DATA(GalaxyGetIface_t, 0x3a10c4)
-#define g_GalaxyProcessData GAME_DATA(GalaxyProcessData_t, 0x3a10cc)
-#define g_GalaxyListenerRegistrar GAME_DATA(GalaxyGetIface_t, 0x3a10d4)
-#define g_GalaxyLogger GAME_DATA(GalaxyGetIface_t, 0x3a10c8)
+#define g_GalaxyStats GAME_IMPORT_SYM(GalaxyGetIface_t, GalaxyStats, "?Stats@api@galaxy@@YAPAVIStats@12@XZ", 0x3a10b8)
+#define g_GalaxyUser GAME_IMPORT_SYM(GalaxyGetIface_t, GalaxyUser, "?User@api@galaxy@@YAPAVIUser@12@XZ", 0x3a10c0)
+#define g_GalaxyApps GAME_IMPORT_SYM(GalaxyGetIface_t, GalaxyApps, "?Apps@api@galaxy@@YAPAVIApps@12@XZ", 0x3a10c4)
+#define g_GalaxyProcessData \
+	GAME_IMPORT_SYM(GalaxyProcessData_t, GalaxyProcessData, "?ProcessData@api@galaxy@@YAXXZ", 0x3a10cc)
+#define g_GalaxyListenerRegistrar \
+	GAME_IMPORT_SYM(GalaxyGetIface_t, GalaxyListenerRegistrar, \
+		"?ListenerRegistrar@api@galaxy@@YAPAVIListenerRegistrar@12@XZ", 0x3a10d4)
+#define g_GalaxyLogger \
+	GAME_IMPORT_SYM(GalaxyGetIface_t, GalaxyLogger, "?Logger@api@galaxy@@YAPAVILogger@12@XZ", 0x3a10c8)
 
 /* galaxy::api::InitOptions */
 typedef struct GalaxyInitOptions {
@@ -60,7 +64,7 @@ typedef struct GalaxyInitOptions {
 SD_OFFSET(GalaxyInitOptions, port, 0x1c);
 
 typedef void (*GalaxyInit_t)(const GalaxyInitOptions *opts);
-#define g_GalaxyInit GAME_DATA(GalaxyInit_t, 0x3a10bc)
+#define g_GalaxyInit GAME_IMPORT_SYM(GalaxyInit_t, GalaxyInit, "?Init@api@galaxy@@YAXABUInitOptions@12@@Z", 0x3a10bc)
 #define g_GogClientID GAME_GLOBAL(const char *, g_GogClientID, 0x428ab8)
 #define g_GogClientSecret GAME_GLOBAL(const char *, g_GogClientSecret, 0x428abc)
 #define GOG_CONFIG_PATH GAME_STR(str_3bbcb4, 0x3bbcb4)	/* "." */
