@@ -6953,14 +6953,14 @@ rva	size	source	callconv	name	signature
 0022f430	3	USER_DEFINED	__thiscall	CEntradaNula_Nothing4	void __thiscall(int a, int b, int c, int d)
 0022f440	826	USER_DEFINED	__thiscall	CMotorApp_MsgProc	int __thiscall(void * hwnd, uint msg, int wParam, int lParam)
 0022f7f0	323	USER_DEFINED	__thiscall	CMotorApp_OneTimeSceneInit	int __thiscall(void)
-0022f940	1039	ANALYSIS	__thiscall	CMotorApp::vf06	undefined __thiscall(void)
+0022f940	1039	USER_DEFINED	__thiscall	CMotorApp_Render	int __thiscall(void)
 0022fd50	9	USER_DEFINED	__thiscall	CMotorApp_RestoreDeviceObjects	int __thiscall(void)
 0022fd60	68	USER_DEFINED	__cdecl	Motor_ColorStr	char * __cdecl(byte * c)
 0022fdb0	22	USER_DEFINED	__cdecl	Motor_BoolStr	char * __cdecl(int b)
 0022fdd0	101	USER_DEFINED	__cdecl	TreeView_InsertItemf	int __cdecl(void * hwnd, void * item, char * fmt, int arg)
 0022fe40	5	USER_DEFINED	__thiscall	CEntradaNula_Nothing1	int __thiscall(int a)
 0022fe50	5	USER_DEFINED	__thiscall	CEntradaNula_Nothing1	int __thiscall(int a)
-0022fe60	381	DEFAULT	unknown	FUN_0062fe60	
+0022fe60	381	USER_DEFINED	__fastcall	CMotorApp_ResetDevice	int __fastcall(void * self)
 0022ffe0	116	USER_DEFINED	__cdecl	Escena_LogTree	void __cdecl(void * esc, void * nodo, int indent)
 00230060	673	USER_DEFINED	__fastcall	CMotorApp_UpdateMenu	void __fastcall(byte * self)
 00230310	87	USER_DEFINED	__fastcall	Motor_ReleaseEscena	void __fastcall(byte * self)
@@ -7887,11 +7887,11 @@ rva	size	source	callconv	name	signature
 00276700	81	USER_DEFINED	__cdecl	DXUtil_WideToAnsi	void __cdecl(char * dst, ushort * src, int cch)
 00276760	41	USER_DEFINED	__cdecl	DXUtil_WideToGeneric	void __cdecl(char * dst, ushort * src, int cch)
 00276790	1037	USER_DEFINED	__stdcall	DXUtil_Timer	float __stdcall(int cmd)
-00276ba0	55	DEFAULT	unknown	FUN_00676ba0	
+00276ba0	55	USER_DEFINED	__cdecl	Timer_CountTicks	int __cdecl(int ms)
 00276be0	207	USER_DEFINED	__cdecl	Timer_FixedStep	int __cdecl(float fps)
 00276cb0	67	USER_DEFINED	__cdecl	Timer_GetFreq	int __cdecl(void * out)
-00276d00	320	DEFAULT	unknown	FUN_00676d00	
-00276e40	72	DEFAULT	unknown	FUN_00676e40	
+00276d00	320	USER_DEFINED	__cdecl	Timer_GetQPFreq	int __cdecl(void * out)
+00276e40	72	USER_DEFINED	__cdecl	Timer_MeasureQP	int __cdecl(int ms)
 00276e90	249	USER_DEFINED	__cdecl	Color_FromFloat	uint __cdecl(float * c)
 00276f90	796	USER_DEFINED	__cdecl	Debug_DrawBoxM	void __cdecl(void * m, void * mn, void * mx, uint color)
 002772b0	798	USER_DEFINED	__cdecl	Debug_DrawBox	void __cdecl(void * mn, void * mx, uint color)
@@ -8048,7 +8048,7 @@ rva	size	source	callconv	name	signature
 00280ac0	48	USER_DEFINED	__cdecl	Cmd_NextInt	int __cdecl(void)
 00280af0	21	USER_DEFINED	__cdecl	Cmd_Out	void __cdecl(char * text)
 00280b10	508	USER_DEFINED	__cdecl	Cmd_ReadFile	void __cdecl(char * name)
-00280d10	70	DEFAULT	unknown	FUN_00680d10	
+00280d10	70	USER_DEFINED	__cdecl	Video_WaitKeysUp	void __cdecl(int ms)
 00280d60	112	USER_DEFINED	__cdecl	Video_PadPressed	byte __cdecl(void)
 00280dd0	386	USER_DEFINED	__cdecl	Video_OpenStream	int __cdecl(char * name, void * dd, void ** out)
 00280f60	1643	USER_DEFINED	__cdecl	Video_RenderStream	int __cdecl(void * dd, void * primary, void * ms, byte * played)
