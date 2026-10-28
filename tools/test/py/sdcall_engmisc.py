@@ -1,6 +1,6 @@
 # engine3d leftovers (execfile'd at the end of sdcall.py, Python 1.5.2): Matrix3_RotFromTo on fixed vectors, the
 # window procedure of the debug dialog with messages that need no dialog (no WM_INITDIALOG: it moves the focus),
-# CMapa_CopyBmp into the texture of a background with the pixels read back, the frame time graph through the D3D
+# CMapa_CopyBmp into textures made here with the pixels read back, the frame time graph through the D3D
 # log, the statistics pages (their state only, the texts hold memory and timer values), and ViewerCamera_Move with
 # the debug actions set here. Every engine variable that is changed is put back; pointers only as == or != 0.
 def emcnew(n):
@@ -71,66 +71,67 @@ if emcdbgs[0] == 0 and emcdbgs[1] == 0 and emcdbgs[2] == 0 and emcdbgs[3] == 0:
 	check('emc DbgWin_DlgProc close', lambda: (emcproc(0x10, 0, 0), emcgi(0x4ab920)))
 emcrestore(emcdbg, emcdbgs)
 
-# ---- CMapa_CopyBmp (rva 0x2370a0) into the texture of a background, read back through LockRect ----
+# ---- CMapa_CopyBmp (rva 0x2370a0) into textures made here through the device, read back through LockRect ----
 emcvp = emcsave((0x4ad7e8, 0x4ad7ec))
 SDTest.Poke(0x4ad7e8, 640)
 SDTest.Poke(0x4ad7ec, 480)
-emcf = emcnew(0x18)
-SDTest.Call(0x2a5110, 'tii', emcf)
-emcmat = emcri(emcf + 0x14)
-emcmapa = 0
-if emcmat:
-	emcmapa = emcri(emcmat + 0x9c)
-emctex = 0
-if emcmapa:
-	emctex = emcri(emcmapa + 0x34)
-	if not emctex:
-		SDTest.Call(0x235dc0, 'tvii', emcmat, emcgi(0x4ad6f4))
-		emctex = emcri(emcmapa + 0x34)
-check('emc CMapa_CopyBmp texture', lambda: (emcmat != 0, emcmapa != 0, emctex != 0))
+def emccom(obj, off):
+	return emcri(emcri(obj) + off) - 0x400000
+emcdev = emcgi(0x4ad6f4)
 emcbmp = emcnew(0xc)
 SDTest.Call(0x27cfe0, 'tiiii', emcbmp, 5, 3)
 for emcy in range(3):
 	for emcx in range(5):
 		emcwi(emcri(emcbmp + 8) + (emcy * 5 + emcx) * 4, (emcx * 0x3b + emcy * 0x51) | ((emcx * 0x29 + 7) << 8) |
 			((emcy * 0x47 + emcx * 0x13) << 16) | (0x5a << 24))
-emclr = emcnew(0x20)
-emcbpp = 4
-if emctex:
-	if SDTest.Call(emcri(emcri(emctex) + 0x38) - 0x400000, 'tiiiii', 0, emctex, 0, emclr)[0] == 0:
-		check('emc CMapa_CopyBmp desc', lambda: emcints(emclr, 8))
-		if emcri(emclr) == 0x17:
-			emcbpp = 2
-def emctexread(x, y, n):
-	vt = emcri(emctex)
-	hr = SDTest.Call(emcri(vt + 0x40) - 0x400000, 'tiiiiiii', 0, emctex, 0, emclr, 0, 0)[0]
+emclr = emcnew(8)
+emcmapa = SDTest.Call(0x133650, 'ii', 0x60)[0]
+def emctexread(tex, bpp, x, y, n):
+	hr = SDTest.Call(emccom(tex, 0x40), 'tiiiiiii', 0, tex, 0, emclr, 0, 0)[0]
 	r = (hr,)
 	if hr == 0:
 		pitch = emcri(emclr)
 		bits = emcri(emclr + 4)
 		for j in range(n):
-			v = emcri(bits + y * pitch + (x + j) * emcbpp)
-			if emcbpp == 2:
+			v = emcri(bits + y * pitch + (x + j) * bpp)
+			if bpp == 2:
 				v = v & 0xffff
 			r = r + (v,)
-		SDTest.Call(emcri(vt + 0x44) - 0x400000, 'tiiii', 0, emctex, 0)
+		SDTest.Call(emccom(tex, 0x44), 'tiiii', 0, tex, 0)
 	return r
-def emcclamp(v):
-	return max(0, min(v, 250))
-if emctex:
-	for emcc in ((0, 0, 0, 0, 5, 3), (10, 4, 1, 1, 3, 2), (250, 254, 0, 0, 10, 10), (3, 1, 4, 2, 9, 9),
-			(-1, 0, 0, 0, 2, 2), (0, 0, -1, 0, 2, 2), (0, 0, 0, 0, 0, 2), (0, 0, 5, 0, 2, 2), (300, 0, 0, 0, 2, 2)):
-		check('emc CMapa_CopyBmp' + fmt(emcc), lambda c=emcc: (SDTest.Call(0x2370a0, 'tbiiiiiiii', emcmapa, c[0], c[1],
-			emcbmp, c[2], c[3], c[4], c[5])[0], emctexread(emcclamp(c[0]), emcclamp(c[1]), 3),
-			emctexread(emcclamp(c[0]), emcclamp(c[1]) + 1, 2)))
-	check('emc CMapa_CopyBmp no image', lambda: SDTest.Call(0x2370a0, 'tbiiiiiiii', emcmapa, 0, 0, 0, 0, 0, 2, 2)[0])
+def emctexclear(tex, h):
+	hr = SDTest.Call(emccom(tex, 0x40), 'tiiiiiii', 0, tex, 0, emclr, 0, 0)[0]
+	if hr == 0:
+		pitch = emcri(emclr)
+		bits = emcri(emclr + 4)
+		for j in range(h * pitch / 4):
+			emcwi(bits + j * 4, 0x11223344)
+		SDTest.Call(emccom(tex, 0x44), 'tiiii', 0, tex, 0)
+# (format, pool, bytes a pixel): A8R8G8B8, X8R8G8B8, R5G6B5 managed; A1R5G5B5 and system memory are refused
+for emct in ((21, 1, 4), (22, 1, 4), (23, 1, 2), (25, 1, 2), (21, 2, 4)):
+	emctex = 0
+	if emcdev:
+		emcr = SDTest.Call(emccom(emcdev, 0x50), 'tiiiiiiiiip', 0, emcdev, 32, 16, 1, 0, emct[0], emct[1], 0)
+		emctex = emcr[1]
+		if emcr[0] < 0:
+			emctex = 0
+	check('emc CMapa_CopyBmp texture' + fmt(emct), lambda: emctex != 0)
+	if emctex:
+		emctexclear(emctex, 16)
+		emcwi(emcmapa + 0x34, emctex)
+		for emcc in ((0, 0, 0, 0, 5, 3), (10, 4, 1, 1, 3, 2), (28, 14, 0, 0, 10, 10), (3, 1, 4, 2, 9, 9), (-1, 0, 0, 0, 2, 2),
+				(0, 0, -1, 0, 2, 2), (0, 0, 0, 0, 0, 2), (0, 0, 5, 0, 2, 2), (40, 0, 0, 0, 2, 2), (0, 16, 0, 0, 2, 2)):
+			check('emc CMapa_CopyBmp' + fmt((emct, emcc)), lambda c=emcc, t=emctex, b=emct[2]: (SDTest.Call(0x2370a0,
+				'tbiiiiiiii', emcmapa, c[0], c[1], emcbmp, c[2], c[3], c[4], c[5])[0],
+				emctexread(t, b, min(max(c[0], 0), 28), min(max(c[1], 0), 14), 4),
+				emctexread(t, b, min(max(c[0], 0), 28), min(max(c[1], 0), 14) + 1, 3)))
+		check('emc CMapa_CopyBmp no image', lambda: SDTest.Call(0x2370a0, 'tbiiiiiiii', emcmapa, 0, 0, 0, 0, 0, 2, 2)[0])
+		SDTest.Call(emccom(emctex, 8), 'tiii', 0, emctex)
+emcwi(emcmapa + 0x34, 0)
+check('emc CMapa_CopyBmp no texture', lambda: SDTest.Call(0x2370a0, 'tbiiiiiiii', emcmapa, 0, 0, emcbmp, 0, 0, 2, 2)[0])
+SDTest.Call(0x133550, 'vi', emcmapa)
 SDTest.Call(0x27d2f0, 'tiii', emcbmp, 1)
 emcdel(emclr)
-emcz = SDTest.Call(0x133650, 'ii', 0x60)[0]
-check('emc CMapa_CopyBmp no texture', lambda: SDTest.Call(0x2370a0, 'tbiiiiiiii', emcz, 0, 0, emcbmp, 0, 0, 2, 2)[0])
-SDTest.Call(0x133550, 'vi', emcz)
-SDTest.Call(0x2a5160, 'tvi', emcf)
-emcdel(emcf)
 
 # ---- Motor_DrawFpsGraph (rva 0x22e9b0) through the D3D log, the clock set here ----
 emcclock = (0x4a8ed4, 0x431ba8, 0x4a8ed0)

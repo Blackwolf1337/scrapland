@@ -243,7 +243,7 @@ void __thiscall CEscena_Read(CEscena *self, CArchIO *f, byte bAnim) {
 			CNodo3D_SetPadreName(nodo, buf[0] ? buf : NULL);
 			CArchIO_Read(f, &nodo->pos, 0xc);
 			CArchIO_Read(f, &nodo->rot, 0x10);
-			CArchIO_Read(f, &nodo->pad_38, 4);
+			CArchIO_Read(f, &nodo->visible, 4);
 			CArchIO_Read(f, &nodo->m, 0x40);
 			CArchIO_Read(f, &nodo->mObj, 0x40);
 			CArchIO_Read(f, &nodo->qLook, 0x10);
@@ -311,7 +311,7 @@ void __thiscall CEscena_Write(CEscena *self, CArchIO *f, byte bAnim) {
 		CArchIO_WriteString(f, n->padre ? n->padre->name : NULL);
 		CArchIO_Write(f, &n->pos, 0xc);
 		CArchIO_Write(f, &n->rot, 0x10);
-		CArchIO_Write(f, &n->pad_38, 4);
+		CArchIO_Write(f, &n->visible, 4);
 		CArchIO_Write(f, &n->m, 0x40);
 		CArchIO_Write(f, &n->mObj, 0x40);
 		CArchIO_Write(f, &n->qLook, 0x10);

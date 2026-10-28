@@ -191,7 +191,6 @@ SD_IMPORT_STDCALL(D3DX_AssembleShader, 24, 0x00b2c2)
 
 /* module agent: Engine/Modelo (imports below this line) */
 SD_IMPORT(CEscena_Shared, 0x24ecb0)
-SD_IMPORT(Escena_Load, 0x2c2d60)
 
 /* module agent: Engine/Nodo3D (imports below this line) */
 

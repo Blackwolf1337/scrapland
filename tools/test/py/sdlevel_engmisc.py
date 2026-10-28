@@ -40,8 +40,6 @@ def emcstr(s):
 		for j in range(4):
 			if i + j < len(s):
 				v = v | (ord(s[i + j]) << (8 * j))
-		if v & 0x80000000:
-			v = v - 0x100000000
 		emcwi(p + i, v)
 		i = i + 4
 	return p
@@ -192,8 +190,10 @@ SDTest.Poke(0x4ad518, 0)
 # a mesh node of the first models of the level with its render node (boxes, modes 2 to 4)
 emcmesh = []
 emck = 0
-while emck < SDTest.Peek(0x4ae7c4, 'i') and emck < 40 and len(emcmesh) < 2:
+while emck < SDTest.Peek(0x4af7c8, 'i') and emck < 40 and len(emcmesh) < 2:
 	emcmo = emcgi(0x4ae7c8 + emck * 4)
+	if emcmo:
+		emcmo = emcri(emcmo)
 	emck = emck + 1
 	if not emcmo or not emcri(emcmo + 0xac):
 		continue

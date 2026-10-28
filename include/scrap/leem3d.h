@@ -5,8 +5,7 @@
  * each following byte while bit 7 is set.
  *
  * The game data has no M3D files, only their binary caches (.CM3, .SM3, read through CEscena_Read), so the reader of
- * the M3D files themselves (Escena_Load, rva 0x2c2d60, and the parts it calls) is still the exe's: it only runs in
- * the tools.
+ * the M3D files themselves (Escena_Load, modelo.h) only gets past the .CM3 of an animation in the tools.
  */
 #ifndef SCRAP_LEEM3D_H
 #define SCRAP_LEEM3D_H
@@ -23,6 +22,11 @@
 #define g_M3DLabels GAME_DATA(byte, 0x4e1fa5)	/* text: lines start with the label; binary: labels stored */
 #define g_M3DCad ((char *)Game_Ptr(0x4e1fc0))	/* M3D_CAD bytes, strings without a destination */
 #define g_M3DName ((char *)Game_Ptr(0x4e23c0))	/* the file being read, for messages */
+#define g_M3DDir ((char *)Game_Ptr(0x4e24c8))	/* MAX_RUTA, its directory */
+#define g_M3DBaseName ((char *)Game_Ptr(0x4e25d0))	/* MAX_RUTA, its name without the extension */
+#define g_M3DEscenaMax ((char *)Game_Ptr(0x4e26d8))	/* MAX_RUTA, "Escena:" (the scene of the editor) */
+#define g_M3DFileINI GAME_DATA(CArchINI *, 0x4e26d4)	/* the .ini of the file, until the scene takes it */
+#define g_M3DTablasEscena GAME_DATA(M3DTabla *, 0x4e28e4)	/* 6: the animated ambient and background colors */
 /* the scene of the model while an animation of it (lee_M3D_Estatica) or a LOD model of it is read */
 #define g_EscenaAnimPadre GAME_DATA(CEscena *, 0x4e1ec0)
 #define g_EscenaLODPadre GAME_DATA(CEscena *, 0x4e1ec4)
