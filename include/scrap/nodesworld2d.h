@@ -48,6 +48,7 @@ SD_SIZE(cNW2DBody, 0x10);
 
 #define g_NW2DBodies (&GAME_DATA(cNW2DBody, 0x444d98))	/* 3 bodies */
 #define g_NW2DDrawMode GAME_DATA(int, 0x444ddc)	/* what the debug view of the graph draws */
+#define g_NW2DShowNode GAME_DATA(int, 0x444e54)	/* the node the debug view shows, -1 none */
 #define g_NW2DGroundDist GAME_DATA(float, 0x444df4)	/* the length of the floor probes */
 #define g_NW2DHeight GAME_DATA(float, 0x444e24)	/* the height of the points over the floor */
 #define g_NW2DDebugSegs GAME_DATA(int, 0x444e3c)	/* the path tests keep their segments in the list they get */
@@ -107,8 +108,27 @@ byte __thiscall CNodesWorld2D_TestPath(CNodesWorld2D *self, const vec3_t *a, con
  * turned up and down (not flat: the other side); r2 and h2 not used, debug as in CNodesWorld_TestPath */
 byte __thiscall CNodesWorld2D_TestCorner(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, const vec3_t *c,
 	float r, float r2, float h, float h2, byte flat, cNWSegList *debug);
-/* the generation of the graph (not in C yet) */
+/* the generation of the graph (NWSup_Generate): the bodies walk at the start */
 byte __thiscall CNodesWorld2D_Generate(CNodesWorld2D *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
+/* the debug view of g_NW2DDrawMode, then the node g_NW2DShowNode with the cells of its region */
+void __fastcall CNodesWorld2D_Draw(CNodesWorld2D *self);
+/* not called in the exe: Unreachable over the links whose point the bodies walk from to the center of the cell */
+byte __thiscall CNodesWorld2D_UnreachableFree(CNodesWorld2D *self, const vec3_t *from, const vec3_t *to, int index);
+/* the cell to link the pair of points through (NWSup_FindLinkBox, NWSup_FindLinkCell); Free: the cells of tmp1c8
+ * whose center sees both points on the floor and walks to them */
+byte __thiscall CNodesWorld2D_FindLinkBox(CNodesWorld2D *self, const vec3_t *const *pair, const cNWBox *box,
+	int *out);
+byte __thiscall CNodesWorld2D_FindLinkCell(CNodesWorld2D *self, const vec3_t *const *pair, int *out);
+byte __thiscall CNodesWorld2D_FindLinkFree(CNodesWorld2D *self, const vec3_t *const *pair, int *out);
+/* the next start of the generation (NWSup_NextInit), the floor points see each other and the bodies walk */
+byte __thiscall CNodesWorld2D_NextInit(CNodesWorld2D *self, vec3_t *out);
+/* the buffer of the box (NWSup_IniBuffer): the cells the bodies walk to on the floor */
+byte __thiscall CNodesWorld2D_IniBuffer(CNodesWorld2D *self, const vec3_t *init, const vec3_t *min,
+	const vec3_t *max);
+/* the region of the new point of visibility (NWSup_CreateRegion): the cells the bodies walk to */
+void __thiscall CNodesWorld2D_CreateRegion(CNodesWorld2D *self, const vec3_t *start);
+/* the points of visibility between the regions (NWSup_InterRegion) */
+void __fastcall CNodesWorld2D_InterRegion(CNodesWorld2D *self);
 /* the pairs of points nearer than 2 * f40 that are not linked, into list sorted by the distance on the floor */
 void __thiscall CNodesWorld2D_GetPairs(CNodesWorld2D *self, cNWPairList *list);
 /* the extra points into the points, linked to the points they walk to */

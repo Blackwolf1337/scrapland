@@ -5,12 +5,14 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/crt.h"
 #include "scrap/e3dutil.h"
 #include "scrap/fxelements.h"
 #include "scrap/fxmisc.h"
 #include "scrap/mathlib.h"
 #include "scrap/nodestraffic.h"
 #include "scrap/scrap.h"
+#include "scrap/scrapcollision.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
@@ -1118,4 +1120,120 @@ void __thiscall CNodesTraffic_RandomPointAhead(CNodesTraffic *self, int track, i
 	} else {
 		*outNode = node;
 	}
+}
+
+/* ---- the analysis of the tracks (writes <level>/AI/AnalisisTraffic.txt) ---- */
+
+#define NT_POINTFMT "TRACK: %d NODO: %d - TRACK: %d NODO: %d -> Point: %.3f %.3f %.3f\n"
+#define NT_OVERLAPFMT "SEGMENTOS TRACK SUPERPUESTOS -> SEGMENTO 1: TRACK: %d NODO: %d - TRACK: %d NODO: %d -- " \
+	"SEGMENTO 2: TRACK: %d NODO: %d - TRACK: %d NODO: %d\n"
+
+static void NT_Write(void *f, const char *text) {
+	crt_fwrite(text, 1, strlen(text), f);
+}
+
+/* the point of a track in the level into the errors and the file (in meters, y and z swapped) */
+static void NT_Error(cTrafficErrorList *errors, vec3_t *hit, float radius, void *f, int id, int a, int b) {
+	char buf[0xc8];
+	cTrafficErrorNode *n = DList_NewNode(errors, sizeof(*n));
+
+	n->pos = *hit;
+	n->radius = radius;
+	DList_LinkFirst(errors, n);
+	float z = hit->y / 100.0f;
+	float y = hit->z / 100.0f;
+	float x = hit->x / 100.0f;
+	hit->z = z;
+	hit->x = x;
+	hit->y = y;
+	Bprintf(buf, sizeof(buf), NT_POINTFMT, id, a, id, b, (double)x, (double)y, (double)z);
+	NT_Write(f, buf);
+}
+
+/* the node b of the track lies on the segment back to a: both directions from b the same */
+static int NT_Overlap(const vec3_t *a, const vec3_t *b, const vec3_t *c) {
+	vec3_t u, w, r;
+
+	NW_Normalize(&u, a->x - b->x, a->y - b->y, a->z - b->z);
+	NW_Normalize(&w, c->x - b->x, c->y - b->y, c->z - b->z);
+	NW_Normalize(&r, u.x - w.x, u.y - w.y, u.z - w.z);
+	return (double)0.1f > __builtin_fabs((double)(r.x - 0.0f)) && (double)0.1f > __builtin_fabs((double)(r.y - 0.0f)) &&
+		(double)0.1f > __builtin_fabs((double)(r.z - 0.0f));
+}
+
+void __thiscall CNodesTraffic_Analize(CNodesTraffic *self) {
+	char path[0x100], buf[0xc8];
+	vec3_t bmin, bmax, hit;
+	byte bad = 0;
+	int numBad = 0;
+
+	self->vftable->Load(self, 0);
+	size_t n = strnlen(g_pApp->levelPath, sizeof(path) - 0x18);
+	memcpy(path, g_pApp->levelPath, n);
+	memcpy(path + n, "/AI/AnalisisTraffic.txt", sizeof("/AI/AnalisisTraffic.txt"));
+	void *f = crt_fopen(path, "wt");
+	if (!f) {
+		Con_Bluef("ERROR: Fichero AnalisisTraffic no abierto.\n");
+		CHECK(!"CNodesWorld_AnalizeTraffic_File_AnalisisTraffic_Not_Open");
+	}
+	cTrafficErrorList *errors = &self->errors;
+	TrafficErrors_Clear(errors);
+	NT_Write(f, "SEGMENTOS TRAFICO COLISIONANDO CON ESCENARIO\n\n");
+	g_NodesWorld->vftable->GetBox(g_NodesWorld, &bmin, &bmax);
+	for (int i = 0; i < self->numTracks; i++) {
+		cTrafficTrack *tr = &self->tracks[i];
+		for (int j = 0; j < tr->numNodes - 1; j++) {
+			float radius = tr->radius;
+			if (g_IsMapOutDoor && tr->nodes[j].y + tr->radius >= bmax.y) {
+				hit = tr->nodes[j];
+				NT_Error(errors, &hit, radius, f, tr->id, j, j + 1);
+				bad = 1;
+				numBad++;
+			}
+			if (Engine_TestSphere(&tr->nodes[j], &tr->nodes[j + 1], tr->radius, &hit, NULL)) {
+				NT_Error(errors, &hit, radius, f, tr->id, j, j + 1);
+				bad = 1;
+				numBad++;
+			}
+			if (j > 0 && j < tr->numNodes - 1 && NT_Overlap(&tr->nodes[j - 1], &tr->nodes[j], &tr->nodes[j + 1])) {
+				Bprintf(buf, sizeof(buf), NT_OVERLAPFMT, tr->id, j - 1, tr->id, j, tr->id, j, tr->id, j + 1);
+				NT_Write(f, buf);
+			}
+		}
+		int last = tr->numNodes;
+		float radius = tr->radius;
+		if (g_IsMapOutDoor && tr->nodes[last - 1].y + tr->radius >= bmax.y) {
+			hit = tr->nodes[last - 1];
+			NT_Error(errors, &hit, radius, f, tr->id, last - 1, last);
+			bad = 1;
+			numBad++;
+		}
+		if (tr->loop) {
+			if (Engine_TestSphere(&tr->nodes[0], &tr->nodes[last - 1], tr->radius, &hit, NULL)) {
+				NT_Error(errors, &hit, tr->radius, f, tr->id, 0, tr->numNodes - 1);
+				bad = 1;
+				numBad++;
+			}
+			if (NT_Overlap(&tr->nodes[tr->numNodes - 1], &tr->nodes[0], &tr->nodes[1])) {
+				Bprintf(buf, sizeof(buf), NT_OVERLAPFMT, tr->id, last - 2, tr->id, last - 1, tr->id, last - 1, tr->id,
+					last);
+				NT_Write(f, buf);
+			}
+		}
+	}
+	if (bad) {
+		NT_Write(f, "\n\nTRAFICO ERRONEO\n");
+		Con_Bluef("%s", "\n\nTRAFICO ERRONEO\n");
+		Bprintf(buf, sizeof(buf), "NUM. PUNTOS TRAFICO ERRONEOS: %d\n", numBad);
+		NT_Write(f, buf);
+		Con_Bluef("%s", buf);
+	} else {
+		NT_Write(f, "\n\nTRAFICO CORRECTO\n");
+		Con_Printf("%s", "\n\nTRAFICO CORRECTO\n");
+	}
+	if (crt_fclose(f)) {
+		Con_Bluef("ERROR: Fichero AnalisisTraffic no cerrado.\n");
+		CHECK(!"CNodesWorld_AnalizeTraffic_File_AnalisisTraffic_Not_Closed");
+	}
+	self->vftable->Load(self, 1);
 }

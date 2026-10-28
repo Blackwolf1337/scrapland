@@ -22,8 +22,6 @@ SD_IMPORT(FX_ShipExplosion, 0x1f4d50)
 SD_IMPORT(cActClass_CreateAction, 0x05fe90)
 
 /* engine: AI/ (include/scrap/ai.h) */
-SD_IMPORT(CAStar_ctor, 0x099330)
-SD_IMPORT(CAStar2D_ctor, 0x09a2f0)
 
 /* MSVC 2015 static CRT (cdecl) */
 SD_IMPORT(crt_rand, 0x323c2f)
@@ -379,9 +377,6 @@ SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
 
 /* module agent: Input/ActionSet+IDevice+PcKeyboard+PcMouse+PcPad.cpp (imports below this line) */
 SD_IMPORT(CNodesWorldSup_SaveInfPath, 0x0bba70)
-SD_IMPORT(CNodesWorld_AddExtraPoints, 0x0a93d0)
-SD_IMPORT(CNodesWorld_Generate, 0x0a7a00)
-SD_IMPORT(CNodesWorld_AnalizeMap, 0x0a2e80)
 SD_IMPORT(crt_chmod, 0x345287)
 
 /* module agent: AI/NodesWorld2D+NodesWorldSup.cpp (imports below this line) */
@@ -389,7 +384,6 @@ SD_IMPORT(cMonitorScorer_DrawMonitor, 0x168c60)
 SD_IMPORT(cRadarScorer_DrawRadar, 0x16d570)
 SD_IMPORT(cPlayerInput_PressKey, 0x1396b0)
 SD_IMPORT(cActionSet_HoldPressed, 0x139810)
-SD_IMPORT(CNodesWorld2D_Generate, 0x0b2f60)
 
 /* module agent: Entities/Char/Type part 2+WalkCharControl (imports below this line) */
 
@@ -425,10 +419,6 @@ SD_IMPORT(cWaypointScorer_DrawTarget, 0x185e90)
 SD_IMPORT(Sound_PlayVoice, 0x1a1090)
 
 /* module agent: AI/ICharControl+2D+3D.cpp (imports below this line) */
-SD_IMPORT(CAStar2D_FindPath, 0x09a5e0)
-SD_IMPORT(CAStar2D_GetPointsVis, 0x09a6e0)
-SD_IMPORT(CAStar_FindPath, 0x099b30)
-SD_IMPORT(CAStar_GetPointsVis, 0x099bf0)
 
 /* module agent: AI/IVehicleControl+IVehicleShootControl.cpp (imports below this line) */
 
@@ -515,6 +505,8 @@ SD_IMPORT_STDCALL(D3DX_MatrixRotationZ, 8, 0x008434)
 SD_IMPORT(CD3DApp_MsgProc, 0x274b60)
 
 /* module agent: AI leftovers 0x098000..0x0b8000 (imports below this line) */
+SD_IMPORT(crt_difftime32, 0x345bb1)
+SD_IMPORT(crt_ctime32, 0x345734)
 
 /* module agent: Rest A, game leftovers below 0x1a8000 (imports below this line) */
 

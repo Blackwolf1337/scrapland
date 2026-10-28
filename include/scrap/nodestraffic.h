@@ -251,6 +251,10 @@ byte __thiscall CNodesTraffic_PrevAway(CNodesTraffic *self, vec3_t *out, int tra
 byte __thiscall CNodesTraffic_GetNode(CNodesTraffic *self, vec3_t *out, int track, int node);
 cTrafficTrackInfo *__thiscall CNodesTraffic_GetInfo(CNodesTraffic *self, cTrafficTrackInfo *out, int track);
 void __thiscall CNodesTraffic_Draw(CNodesTraffic *self);
+/* vtable slot 0x40: the tracks loaded without nodes between the dummies, their points above the graph (outdoors) or
+ * in the level into errors and <level>/AI/AnalisisTraffic.txt (writes a file), with the folded tracks; then loaded
+ * again with the nodes */
+void __thiscall CNodesTraffic_Analize(CNodesTraffic *self);
 void __thiscall CNodesTraffic_DrawTrack(CNodesTraffic *self, int track);
 void __thiscall CNodesTraffic_BuildGrid(CNodesTraffic *self);
 /* the nodes of the type between distMin and distMax from pos: the cell of pos, then the rings around it; soft goes
@@ -337,6 +341,8 @@ int __thiscall CNodesTrafficInDoor_HiddenNode(CNodesTrafficInDoor *self, int tra
 void __fastcall CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self);
 void __stdcall TrafficSectors_Add(cTrafficSector *list, int *num, int sector);
 void __thiscall CNodesTrafficInDoor_Init(CNodesTrafficInDoor *self);
+/* vtable slot 0x48, empty (the slot 0x3c is CNodesTraffic_Draw) */
+void __thiscall CNodesTrafficInDoor_BuildGrid(CNodesTrafficInDoor *self);
 void __stdcall TrafficSectors_SetTracks(cTrafficSector *list, int num);
 /* the traffic vehicle into the list of the class of its vehicle */
 void __thiscall CNodesTrafficInDoor_AddVehicle(CNodesTrafficInDoor *self, cAIVehicle *ai);

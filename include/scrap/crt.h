@@ -32,6 +32,8 @@ int crt_fprintf(void *file, const char *fmt, ...);
 int crt_fflush(void *f);
 int32_t crt_time32(int32_t *t);
 void *crt_gmtime32(const int32_t *t);
+double crt_difftime32(int32_t t1, int32_t t0);
+char *crt_ctime32(const int32_t *t);
 size_t crt_strftime(char *buf, size_t size, const char *fmt, const void *tm);
 [[noreturn]] void crt_exit_now(int code);
 [[noreturn]] void crt_report_rangecheckfailure(void);

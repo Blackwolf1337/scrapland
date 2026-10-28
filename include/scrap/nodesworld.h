@@ -65,6 +65,24 @@ typedef struct cNWTriNode {
 SD_SIZE(cNWTriNode, 0x44);
 typedef DLIST(cNWTriNode) cNWTriList;
 
+/* three words: a pair of points with their distance (InsertPair), a word and a pair (HasPair) */
+typedef union cNWPair {
+	int w[3];
+	struct {
+		int a, b;
+		float dist;
+	};
+} cNWPair;
+SD_SIZE(cNWPair, 0xc);
+
+typedef struct cNWPairNode {
+	struct cNWPairNode *next;	/* 0x00 */
+	struct cNWPairNode *prev;	/* 0x04 */
+	cNWPair p;			/* 0x08 */
+} cNWPairNode;
+SD_SIZE(cNWPairNode, 0x14);
+typedef DLIST(cNWPairNode) cNWPairList;
+
 /* the box the generation fills (FLT_MAX first, -FLT_MAX after) */
 typedef struct cNWBox {
 	vec3_t a, b;
@@ -224,7 +242,7 @@ struct CNodesWorld {
 	int numFiles;			/* 0x258 */
 	cNWVecList lists25c[2];		/* 0x25c the nodes of the debug view */
 	cNWVecList lists28c[5];		/* 0x28c the buffer cells by state (GetInfoNodes) */
-	vec3_t v304;			/* 0x304 */
+	vec3_t openPos;			/* 0x304 the cell where the region of the generation left the box */
 	cNWVecList errCollide;		/* 0x310 AnalizeGraph: the links through the level, 3 points each */
 	cNWVecList errUnlinked;		/* 0x328 the nodes without links */
 	cNWVecList errOneWay;		/* 0x340 the links without the link back, 2 points each */
@@ -236,7 +254,8 @@ struct CNodesWorld {
 	byte pad_361[3];
 	void *file;			/* 0x364 AnalisisMap.txt */
 	byte open;			/* 0x368 the level is open */
-	byte pad_369[0x3b0 - 0x369];
+	byte pad_369[3];
+	byte firstTri[0x44];		/* 0x36c the first triangle the analysis found (a CColisTri) */
 	byte b3b0;			/* 0x3b0 */
 	byte pad_3b1[3];
 	vec3_t analizeSize;		/* 0x3b4 */
@@ -252,7 +271,7 @@ SD_OFFSET(CNodesWorld, buffer, 0x1b0);
 SD_OFFSET(CNodesWorld, sets, 0x1e8);
 SD_OFFSET(CNodesWorld, extraPoints, 0x1f0);
 SD_OFFSET(CNodesWorld, numFiles, 0x258);
-SD_OFFSET(CNodesWorld, v304, 0x304);
+SD_OFFSET(CNodesWorld, openPos, 0x304);
 SD_OFFSET(CNodesWorld, errCollide, 0x310);
 SD_OFFSET(CNodesWorld, analizing, 0x360);
 SD_OFFSET(CNodesWorld, hitFrom, 0x3c0);
@@ -307,10 +326,45 @@ void __fastcall NWBox_Init(cNWBox *box);
 
 /* ---- CNodesWorld ---- */
 
-/* the generation of the graph (not in C yet) */
+/* the generation of the graph */
+/* the dummies DM_PointGraph3DAI* into extraPoints (a fatal error for one in the level) */
 void __thiscall CNodesWorld_AddExtraPoints(CNodesWorld *self);
+/* the pairs of points nearer than 2 * f40 that are not linked, into list sorted by the distance */
+void __thiscall CNodesWorld_GetPairs(CNodesWorld *self, cNWPairList *list);
+/* the extra points into the points, linked to the points free of the level within linkDist */
+void __thiscall CNodesWorld_LinkExtra(CNodesWorld *self);
+/* the distance from pos to the nearest point of the set of its buffer cell, FLT_MAX without one */
+float __thiscall CNodesWorld_NearestVisDist(CNodesWorld *self, const vec3_t *pos);
+/* the cell to link the pair of points through: NWSup_FindLinkBox, NWSup_FindLinkCell; Free: the cells of tmp1c8 whose
+ * center sees both points free of the level (the distance on the floor plane) */
+byte __thiscall CNodesWorld_FindLinkBox(CNodesWorld *self, const vec3_t *const *pair, const cNWBox *box, int *out);
+byte __thiscall CNodesWorld_FindLinkCell(CNodesWorld *self, const vec3_t *const *pair, int *out);
+byte __thiscall CNodesWorld_FindLinkFree(CNodesWorld *self, const vec3_t *const *pair, int *out);
+/* the next start of the generation (NWSup_NextInit), the way to the cell free of the level */
+byte __thiscall CNodesWorld_NextInit(CNodesWorld *self, vec3_t *out);
+/* the buffer of the box min max: the cells reached from init free of the level (NWSup_IniBuffer); with the
+ * analysis also the cells outside the sectors and the triangles around them (LogTri) */
+byte __thiscall CNodesWorld_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
+/* the triangle tri hit around p into tris and the file of the analysis (not twice, at most 1000); hit is changed
+ * into meters with y and z swapped */
+void __thiscall CNodesWorld_LogTri(CNodesWorld *self, const vec3_t *p, vec3_t *hit, const struct CColisTri *tri);
+/* the region of the new point of visibility (NWSup_CreateRegion): the cells nearer than f40 that a sphere reaches */
+void __thiscall CNodesWorld_CreateRegion(CNodesWorld *self, const vec3_t *start);
+/* the points of visibility between the regions (NWSup_InterRegion) */
+void __fastcall CNodesWorld_InterRegion(CNodesWorld *self);
+/* NWSup_Generate: the start free of the level */
 byte __thiscall CNodesWorld_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
-void __thiscall CNodesWorld_AnalizeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
+/* the debug view of g_NWDrawMode */
+void __fastcall CNodesWorld_Draw(CNodesWorld *self);
+/* not called in the exe: the link test of a and b as spheres and a line (red with a hit, counted in i358), the box
+ * of the cell at p (red in the level) */
+void __thiscall CNodesWorld_DrawLinkTest(CNodesWorld *self, const vec3_t *a, const vec3_t *b);
+void __thiscall CNodesWorld_DrawCell(CNodesWorld *self, const vec3_t *p);
+/* not called in the exe: Unreachable over the links whose point the sphere leaves free to the center of the cell */
+byte __thiscall CNodesWorld_UnreachableFree(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index);
+/* the analysis of the level into <name>/AI/AnalisisMap.txt (writes a file): the buffer from init with the triangles
+ * around its cells, whether the region is open; 0 for a start in the level or outside the box */
+byte __thiscall CNodesWorld_AnalizeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 
 /* the name of the level with file after it, in a buffer of 0x100 like the original */
 void NW_LevelPath(char *path, const CNodesWorld *self, const char *file);
