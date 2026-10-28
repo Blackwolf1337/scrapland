@@ -118,7 +118,7 @@ writefile('sdcmd.txt', 'Load "file" 12 -7 +3 0x10 010 09 1.5 -2.5 3 name ; \n'
 	'block { a { b } c } after\n'
 	'x , y ) z\n')
 
-call('Lex_SetOut', 0x2cda80, 'vi', SDTest.OutFunc())
+check('Lex_SetOut(out)', lambda: SDTest.Call(0x2cda80, 'vi', SDTest.OutFunc()))
 call('Lex_SetDir', 0x2cda90, 'vs', 'sdlex.txt')
 call('Lex_Print', 0x2cd0c0, 'vss', '[%s]', 'x')
 check('Lex out', SDTest.Out)
@@ -1232,6 +1232,12 @@ def camget(c):
 	return tpeek(c, 30)
 def camstep(name, c, rva, sig, *args):
 	check(name + fmt(args), lambda c=c, rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig, c) + args), camget(c)))
+# the getters return the address of the matrix passed in, which differs between the processes
+def camget16(name, c, rva):
+	def f(c=c, rva=rva):
+		r = SDTest.Call(rva, 'tiiF', c, (0.0,) * 16)
+		return ((r[0] != 0, r[1]), camget(c))
+	check(name + fmt(((0.0,) * 16,)), f)
 cam = SDTest.Call(0x133650, 'ii', 0x78)[0]
 cam2 = SDTest.Call(0x133650, 'ii', 0x78)[0]
 nod = SDTest.Call(0x133650, 'ii', 16)[0]
@@ -1247,9 +1253,9 @@ for i in range(12):
 	else:
 		SDTest.Poke(cam + 0x48 - 0x400000, 0x463)
 	camstep('CCamara_ViewMatrix', cam, 0x29c7e0, 'tviF', (0.0,) * 16)
-	camstep('CCamara_GetView', cam, 0x29c5f0, 'tiiF', (0.0,) * 16)
+	camget16('CCamara_GetView', cam, 0x29c5f0)
 	camstep('CCamara_ProjMatrix', cam, 0x29ca80, 'tbiF', (0.0,) * 16)
-	camstep('CCamara_GetProj', cam, 0x29c5d0, 'tiiF', (0.0,) * 16)
+	camget16('CCamara_GetProj', cam, 0x29c5d0)
 	camstep('CCamara_Move', cam, 0x29cc10, 'tvif', rnd())
 	camstep('CCamara_Strafe', cam, 0x29cc60, 'tviff', rnd(), rnd())
 	camstep('CCamara_UpdateVectors', cam, 0x29ce10, 'tvi')

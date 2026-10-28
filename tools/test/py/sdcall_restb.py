@@ -113,7 +113,7 @@ writefile('sdrsb3.txt', '/* only a comment */\n')
 rsbv = rsbz(0x10)
 def rsbvec():
 	return rsbfl(rsbv, 3)
-call('Lex_SetOut', 0x2cda80, 'vi', SDTest.OutFunc())
+check('Lex_SetOut(out)', lambda: SDTest.Call(0x2cda80, 'vi', SDTest.OutFunc()))
 call('Lex_Open', 0x2cd5f0, 'isi', 'sdrsb.txt', 1)
 SDTest.Poke(0x4e733c, 0)
 rsbst('CmdLex_Next', 0x2ce270, 'v')
@@ -148,7 +148,7 @@ call('Cmd_Out', 0x280af0, 'vs', 'rsb out text')
 for rsbn in ('sdrsb2.txt', 'sdrsb3.txt', 'sdnofile.txt'):
 	check('Cmd_ReadFile' + fmt((rsbn,)), lambda: (SDTest.Call(0x280b10, 'vs', rsbn), rsbcl(),
 		SDTest.Peek(0x4e7334, 'i'), SDTest.Peek(0x4e6e24, 'i')))
-call('Lex_SetOut', 0x2cda80, 'vi', SDTest.OutFunc())
+check('Lex_SetOut(out)', lambda: SDTest.Call(0x2cda80, 'vi', SDTest.OutFunc()))
 rsbfree(rsbv)
 
 # the capture without a surface or a file, the video player on

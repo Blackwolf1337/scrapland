@@ -9,6 +9,7 @@
 # usage: tools/test/difftest.sh [scenario ...]   (sdtest, sdcall, sdlevel; default all; builds nothing: run cmake first)
 #        DIFFTEST_TIMEOUT  seconds per run, default 240
 #        DIFFTEST_WIPE=1   the hooked run also fills the rest of every hooked original with int3 ([general] wipe)
+#        DIFFTEST_STANDALONE=1  the hooked run starts ScrapC.exe, the standalone loader (docs/standalone.md)
 root=$(cd "$(dirname "$0")/../.." && pwd)
 game=$root/game
 ini=$game/Bin/scrapdecomp.ini
@@ -35,8 +36,9 @@ rm_written() {
 
 # run <scenario> <hooks 1|0> <tag>
 run() {
-	local name=$1 result=$game/$1.out tag=$1-$3
+	local name=$1 result=$game/$1.out tag=$1-$3 exe=Scrap.exe
 	local arg
+	[ "$2" = 1 ] && [ "${DIFFTEST_STANDALONE:-0}" = 1 ] && exe=ScrapC.exe
 	arg="-PythonExecute:execfile($(python3 -I -c "print('+'.join('chr(%d)' % ord(c) for c in '$name.py'))"))"
 	printf '[general]\nhooks=%s\ntestmod=1\nwipe=%s\n' "$2" "$(($2 && ${DIFFTEST_WIPE:-0}))" > "$ini"
 	# so the second run does not find the files of the first
@@ -44,7 +46,7 @@ run() {
 	rm_written
 	# shellcheck disable=SC2086 # extra arguments of the scenario, word split on purpose
 	HEADLESS_TIMEOUT=${DIFFTEST_TIMEOUT:-240} WINEDLLOVERRIDES="dinput8=n,b" WINE_LOG="$out/wine-$tag.log" \
-		"$root/tools/test/wine.sh" Scrap.exe -fullscreen:0 ${extra[$name]} "$arg" &
+		"$root/tools/test/wine.sh" "$exe" -fullscreen:0 ${extra[$name]} "$arg" &
 	local pid=$!
 	# the script writes "done" as its last line (CRLF, Python runs on Windows); then the game is stopped
 	# (Scrap.Exit() from the startup script did not quit reliably)

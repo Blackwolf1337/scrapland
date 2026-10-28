@@ -4,7 +4,13 @@
 # variable. Not called: everything that makes windows, loads levels or runs the frame (the message loop runs them
 # all the time anyway).
 app = SDTest.Peek(0x467ba0, 'i')
-check('App_GetPath', lambda: SDTest.Call(0x20d100, 'vbi', '', 0x104)[1])
+# the folder only: the standalone run is ScrapC.exe
+def appdir(p):
+	i = len(p) - 1
+	while i >= 0 and p[i] != '\\':
+		i = i - 1
+	return p[:i]
+check('App_GetPath', lambda: appdir(SDTest.Call(0x20d100, 'vbi', '', 0x104)[1]))
 check('App_GetConfigDir', lambda: SDTest.Call(0x20d570, 'vbi', '', 0x200)[1])
 for name in ('pythonexecute', 'console', 'dedicated', 'widewindow', 'txf_helper', 'python', 'execute', ''):
 	check('CWinApp_HasArg' + fmt((name,)), lambda name=name: SDTest.Call(0x20d030, 'tbis', app, name)[0])
