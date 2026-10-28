@@ -189,6 +189,8 @@ typedef void *(__stdcall *setcursor_t)(void *cursor);
 #define exe_EndDialog GAME_DATA(enddialog_t, 0x3a1444)
 #define exe_GetDlgItemTextA GAME_DATA(getdlgitemtext_t, 0x3a1448)
 typedef void *(__stdcall *getdlgitem_t)(void *hdlg, int id);
+typedef int(__stdcall *setdlgitemtext_t)(void *hdlg, int id, const char *text);
+#define exe_SetDlgItemTextA GAME_DATA(setdlgitemtext_t, 0x3a1344)
 #define exe_GetDlgItem GAME_DATA(getdlgitem_t, 0x3a1340)
 #define exe_GetSystemMetrics GAME_DATA(getsystemmetrics_t, 0x3a1450)
 #define exe_GetSystemMenu GAME_DATA(getsystemmenu_t, 0x3a13e4)

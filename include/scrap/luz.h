@@ -18,6 +18,20 @@ enum { LUZ_OMNI = 5000, LUZ_FOCO = 5001, LUZ_DIREC = 5002 };
 /* D3DLIGHTTYPE */
 enum { D3DLIGHT_POINT = 1, D3DLIGHT_SPOT = 2, D3DLIGHT_DIRECTIONAL = 3 };
 
+/* the inline CLuz::tipoStr of luz.h */
+static inline const char *Luz_TipoStr(int tipo) {
+	switch (tipo) {
+	case LUZ_OMNI:
+		return "omni";
+	case LUZ_FOCO:
+		return "foco";
+	case LUZ_DIREC:
+		return "direc";
+	}
+	CHECK(0);
+	return NULL;
+}
+
 typedef struct {
 	float r, g, b, a;
 } color4_t;

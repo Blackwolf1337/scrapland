@@ -121,20 +121,6 @@ static void Luz_Remove(CLuz *self) {
 	CLuz_UpdateD3D(self, 0);
 }
 
-/* the inline CLuz::tipoStr of luz.h */
-static const char *Luz_TipoStr(int tipo) {
-	switch (tipo) {
-	case LUZ_OMNI:
-		return "omni";
-	case LUZ_FOCO:
-		return "foco";
-	case LUZ_DIREC:
-		return "direc";
-	}
-	CHECK(0);
-	return NULL;
-}
-
 /* the color bytes times the intensity */
 static color4_t Luz_Color(const CLuz *self) {
 	float k = self->intensidad * LUZ_INV255;

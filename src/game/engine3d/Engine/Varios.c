@@ -354,8 +354,6 @@ float RSqrt(float x) {
 }
 
 /* the window helpers between efec_malla.cpp and LensFlare.cpp (their source is not known) */
-typedef int(__stdcall *setdlgitemtext_t)(void *hdlg, int id, const char *text);
-#define exe_SetDlgItemTextA GAME_DATA(setdlgitemtext_t, 0x3a1344)
 
 int Win_SetTextf(void *hwnd, const char *fmt, ...) {
 	char buf[0x400];
