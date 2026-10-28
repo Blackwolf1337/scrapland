@@ -19,21 +19,26 @@
 #include "scrap/luz.h"
 #include "scrap/mallad3d.h"
 #include "scrap/archio.h"
+#include "scrap/bsp.h"
 #include "scrap/flare.h"
 #include "scrap/fuentes.h"
 #include "scrap/grafico2d.h"
 #include "scrap/material.h"
 #include "scrap/nodefx.h"
 #include "scrap/render.h"
+#include "scrap/rendertarget.h"
 #include "scrap/stencil.h"
 #include "scrap/textura.h"
 #include "scrap/trails.h"
 #include "scrap/utild3d.h"
 #include "scrap/modelo.h"
 #include "scrap/mundo.h"
+#include "scrap/niebla.h"
 #include "scrap/nodo3d.h"
 #include "scrap/prof.h"
 #include "scrap/scrapmain.h"
+#include "scrap/scrapworld.h"
+#include "scrap/suelo.h"
 #include "scrap/tabla.h"
 #include "scrap/texto.h"
 #include "scrap/varios.h"
@@ -228,6 +233,202 @@ int __thiscall CMotorApp_FrameMove(byte *self) {
 	return 0;
 }
 
+#define MOTOR_B2A5F8(m) (*(byte *)((m) + 0x2a5f8))
+#define g_RenderCounts ((int *)Game_Ptr(0x4a8f00))	/* 8, g_RenderTris and g_RenderVerts first; the frame clears 10 */
+#define g_Motor431bae GAME_DATA(byte, 0x431bae)
+#define g_Tramas GAME_DATA(int, 0x431bd4)		/* [video] Tramas: dithering */
+/* the frame limiter: [video] limitaFPS of m3d.ini and the console variable R_LimitFPS, the larger counts */
+#define g_LimitaFps GAME_DATA(float, 0x4a8f8c)
+#define g_RLimitFps GAME_DATA(float, 0x4a8fe8)
+#define g_LimitNext GAME_DATA(uint32_t, 0x4a9048)	/* the start of the next frame, timeGetTime * 3 (0: none yet) */
+#define g_RForceFps GAME_DATA(float, 0x4a8fd0)		/* R_ForceFPS: frames of a fixed length (Timer_FixedStep) */
+#define g_TiempoMult GAME_DATA(int, 0x431bec)
+#define g_TiempoScaled GAME_DATA(int, 0x4a8ecc)	/* Tiempo_Get() * g_TiempoMult / 1000 */
+#define g_AutoShot GAME_DATA(int, 0x4a9030)		/* the console variable AutoScreenShot */
+#define g_StencilClear GAME_DATA(uint32_t, 0x390138)
+#define g_ResetDev GAME_DATA(byte, 0x4a8efe)		/* the device objects made again at the next frame */
+#define g_ResetDevOnly GAME_DATA(byte, 0x431baf)	/* 1: without the world, 0: the game callbacks too */
+/* the callbacks of the game the reset puts in place */
+#define g_MotorInitNext GAME_DATA(void *, 0x4a8f9c)
+#define g_MotorFrameNext GAME_DATA(void *, 0x4a8fa0)
+#define g_MotorReleaseNext GAME_DATA(void *, 0x4a8fa4)
+#define D3DDEV_BEGINSCENE 0x88
+#define D3DDEV_ENDSCENE 0x8c
+#define D3DRS_SHADEMODE 9
+#define D3DRS_DITHERENABLE 0x1a
+#define D3DRS_SPECULARENABLE 0x1d
+#define D3DSWAPEFFECT_COPY_VSYNC 4
+#define D3DPRESENT_INTERVAL_IMMEDIATE 0x80000000
+typedef int(__stdcall *d3dScene_t)(void *dev);
+
+/* Present waits for the vertical retrace: full screen with an interval other than immediate, windowed only with
+ * the swap effect COPY_VSYNC (D3DPRESENT_PARAMETERS: 5 SwapEffect, 7 Windowed, 12 FullScreen_PresentationInterval) */
+static byte Motor_PresentVSync(byte *self) {
+	const uint32_t *pp = MOTOR_PP(self);
+
+	return pp[7] ? pp[5] == D3DSWAPEFFECT_COPY_VSYNC : pp[12] != D3DPRESENT_INTERVAL_IMMEDIATE;
+}
+
+/* differs from the original on purpose (no sleeps): the original slept at the end of the frame until its time had
+ * passed, the C checks before the next one: App_WinMain (also CD3DApp_Render and CD3DApp_Run) skips the frame while
+ * this is 0 and its PeekMessage loop asks again; with vsync there is no own limiter */
+byte Motor_FrameDue(byte *self) {
+	if (!g_LimitNext) {
+		return 1;
+	}
+	float fps = Float_MaxSS(g_LimitaFps, g_RLimitFps);
+	if (!((double)fps > 0.1) || Motor_PresentVSync(self)) {
+		return 1;
+	}
+	return exe_timeGetTime() * 3 >= g_LimitNext;
+}
+
+/* a pending reset of the device objects (g_ResetDev): with g_ResetDevOnly 0 also the world through the release
+ * and init callbacks of the game; the HRESULT */
+int __fastcall CMotorApp_ResetDevice(byte *self) {
+	if (!g_ResetDev) {
+		return 0;
+	}
+	g_ResetDev = 0;
+	CHECK(MOTOR_DEV(self));
+	/* differs from the original on purpose (no sleeps): no Sleep(250) before the reset */
+	int hr;
+	if (!g_ResetDevOnly) {
+		hr = MOTOR_CALL(self, MOTOR_VT_INVALIDATE);
+		if (hr < 0) {
+			return hr;
+		}
+		Motor_ReleaseEscena(self);
+		if (g_MotorRelease && !((byte(*)(void))g_MotorRelease)()) {
+			return E_FAIL;
+		}
+		CHECK(!g_Mundo);
+		g_MotorFrame = g_MotorFrameNext;
+		g_MotorInit = g_MotorInitNext;
+		g_MotorRelease = g_MotorReleaseNext;
+		if (g_MotorInit && !((byte(*)(void))g_MotorInit)()) {
+			return E_FAIL;
+		}
+		CHECK(g_Mundo);
+		Motor_GetEscena(self);
+		hr = MOTOR_CALL(self, MOTOR_VT_RESTORE2);
+		return hr < 0 ? hr : 0;
+	}
+	hr = MOTOR_CALL(self, MOTOR_VT_INVALIDATE);
+	if (hr < 0) {
+		return hr;
+	}
+	hr = MOTOR_CALL(self, MOTOR_VT_DELETE);
+	if (hr < 0) {
+		return hr;
+	}
+	g_MotorInit = g_MotorInitNext;
+	g_MotorFrame = g_MotorFrameNext;
+	g_MotorRelease = g_MotorReleaseNext;
+	Teclado_Clear();
+	void *dev = MOTOR_DEV(self);
+	MOTOR_DEV(self) = NULL;
+	hr = MOTOR_CALL(self, MOTOR_VT_RESTORE);
+	if (hr < 0) {
+		return hr;
+	}
+	MOTOR_DEV(self) = dev;
+	hr = MOTOR_CALL(self, MOTOR_VT_RESTORE2);
+	return hr < 0 ? hr : 0;
+}
+
+/* Render (vtable 0x18): the scene into the target "Scene", the 2D and the frame callback of the game on top, the
+ * screenshot of AutoScreenShot, the frame limiter; 1 when the game callback asks to quit or the reset failed */
+int __thiscall CMotorApp_Render(byte *self) {
+	if (!Motor_FrameDue(self)) {
+		return 0;
+	}
+	if (CMotorApp_ResetDevice(self)) {
+		return 1;
+	}
+	void *dev = MOTOR_DEV(self);
+	g_FrameCount++;
+	int quit = 0;
+	g_TiempoScaled = (int)((int64_t)g_TiempoMult * (int64_t)Tiempo_Get() / 1000);
+	for (int i = 0; i < 10; i++) {
+		g_RenderCounts[i] = 0;
+	}
+	RenderTarget_Begin("Scene");
+	Render_Clear(NULL, 3, Color_ToD3D(&MOTOR_ESCENA(self)->niebla), 1.0f, g_StencilClear);
+	g_ZEnable = MOTOR_B2A5F9(self) && MOTOR_B2A5F8(self) ? 2 : 1;
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZENABLE, g_ZEnable);
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZWRITEENABLE, 1);
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FILLMODE, (g_RenderMode100 == 0) + 2);
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_SHADEMODE, (g_Motor431bae != 0) + 1);
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_SPECULARENABLE, g_VertexSpecular);
+	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_DITHERENABLE, g_Tramas);
+	g_AmbientD3D = Color_ToD3D(&MOTOR_ESCENA(self)->ambiente);
+	if (D3D_METHOD(dev, d3dScene_t, D3DDEV_BEGINSCENE)(dev) >= 0) {
+		Render_SetCamara(Mundo_Get()->cam);
+		Render_BeginFrame();
+		SombrasStencil_Capturar(1);
+		Bsp_RenderPortales();
+		Engine_FrameSetup();
+		CMundo_Render(Mundo_Get());
+		Modelos_Render();
+		E3D_FlushBatch();
+		SombrasStencil_Render();
+		Bsp_RenderTransp();
+		Suelo_DrawDebug();
+		EfecMalla_Render();
+		Trails_Render(-1);
+		LensFlare_RenderAll();
+		CListaGrf2D_Render((CListaGrf2D *)MOTOR_OVERLAY(self));
+		RenderTarget_End("Scene");
+		E3D_FlushBatch();
+		Fondo2D_Render();
+		if (g_MotorFrame) {
+			quit = !((byte(*)(void))g_MotorFrame)();
+		}
+		E3D_FlushBatch();
+		Debug_PuntosDraw();
+		Texto_DrawPila();
+		Motor_DrawStats();
+		Render_EndView();
+		RenderLock_Frame();
+		D3D_METHOD(dev, d3dScene_t, D3DDEV_ENDSCENE)(dev);
+	}
+	if (g_TileOn) {
+		void *bb, *d = MOTOR_DEV(self);
+
+		D3D_METHOD(d, d3dGetBackBuffer_t, D3DDEV_GETBACKBUFFER)(d, 0, 0, &bb);
+		Surface_ShotCopy(bb);
+		COM_RELEASE(bb);
+		g_TileOn = g_AutoShot != 0;
+	}
+	float fps = Float_MaxSS(g_LimitaFps, g_RLimitFps);
+	if ((double)fps > 0.1) {
+		if (Motor_PresentVSync(self)) {
+			/* differs from the original on purpose (no sleeps): with vsync no own limiter, started again without */
+			g_LimitNext = 0;
+		} else {
+			int frame = (int)(3000.0 / (double)fps);
+
+			if (!g_LimitNext) {
+				g_LimitNext = exe_timeGetTime() * 3;
+			}
+			if (exe_timeGetTime() * 3 >= g_LimitNext + frame) {
+				E3D_LogVerbose(g_FileLog, "WARN: LimitFPS: Framerate below fps limit by %d ms",
+					(exe_timeGetTime() * 3 - g_LimitNext - frame) / 3);
+			}
+			if (exe_timeGetTime() * 3 - g_LimitNext > 15000) {
+				g_LimitNext = exe_timeGetTime() * 3;
+				E3D_LogBlue(g_FileLog, "ERROR: LimitFPS: Out of sync (frame exceeded 5 sec)");
+			}
+			/* differs from the original on purpose (no sleeps): the wait for g_LimitNext is Motor_FrameDue */
+			g_LimitNext += frame;
+		}
+	}
+	Timer_FixedStep(g_RForceFps);
+	return quit;
+}
+
 /* DeleteDeviceObjects: the device objects of the input, the textures, materials, shadows, trails and the world */
 int __thiscall CMotorApp_DeleteDeviceObjects(byte *self) {
 	((void(__thiscall *)(void *))(*(void ***)g_Entrada)[2])(g_Entrada);
@@ -316,7 +517,6 @@ CMundo *Mundo_GetChecked(void) {
 }
 
 /* the statistics of R_Profiler */
-#define g_RenderCounts ((int *)Game_Ptr(0x4a8f00))	/* 8, g_RenderTris and g_RenderVerts first */
 #define g_ProfResetTime GAME_DATA(float, 0x4a94a0)
 #define g_ProfNoReset GAME_DATA(int, 0x4a8fb8)	/* 0: the counters taken every frame, else once a second */
 #define g_CollisionCacheHit GAME_DATA(uint32_t, 0x4af7e0)
@@ -965,11 +1165,9 @@ void E3D_Command(char *cmd) {
 #define IDM_SHARPEN 0x9c65
 #define IDM_RELOADMATS 0x9c66
 #define IDM_CAMERA 50000		/* the cameras of the global scene from here */
-#define MOTOR_B2A5F8(m) (*(byte *)((m) + 0x2a5f8))
 #define MOTOR_B2A5FA(m) (*(byte *)((m) + 0x2a5fa))
 #define MOTOR_B2A5FB(m) (*(byte *)((m) + 0x2a5fb))
 #define MOTOR_I2A5FC(m) (*(int *)((m) + 0x2a5fc))
-#define g_Motor431bae GAME_DATA(byte, 0x431bae)
 #define g_Motor4af7d4 GAME_DATA(byte, 0x4af7d4)
 #define g_Sharpen GAME_DATA(int, 0x4b25e8)		/* [video] Sharpen of m3d.ini */
 #define g_RatonExcl GAME_DATA(int, 0x431cfc)		/* [dinput] raton_excl */

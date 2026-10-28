@@ -72,6 +72,10 @@ typedef int(__stdcall *ddsReleaseDC_t)(void *obj, void *dc);
 #define VK_ESCAPE 0x1b
 #define VK_SPACE 0x20
 #define VK_RETURN 0xd
+#define DIK_ESCAPE 0x01
+#define DIK_RETURN 0x1c
+#define DIK_SPACE 0x39
+#define DIK_NUMPADENTER 0x9c
 #define XINPUT_GAMEPAD_A_B 0x3000
 #define DDSCL_NORMAL 8
 #define DDBLT_DDFX 0x800
@@ -110,6 +114,34 @@ byte Video_PadPressed(void) {
 		return 1;
 	}
 	return 0;
+}
+
+/* the hold of Video_WaitKeysUp: on until its end (timeGetTime) or until Escape, Space and Enter are all up */
+static byte video_hold;
+static uint32_t video_holdEnd;
+
+byte Video_KeysHeld(void) {
+	if (video_hold && (exe_timeGetTime() >= video_holdEnd || (exe_GetAsyncKeyState(VK_ESCAPE) >= 0
+		&& exe_GetAsyncKeyState(VK_SPACE) >= 0 && exe_GetAsyncKeyState(VK_RETURN) >= 0))) {
+		video_hold = 0;
+	}
+	return video_hold;
+}
+
+/* differs from the original on purpose (no blocking waits): it starts the hold instead of waiting it out */
+void Video_WaitKeysUp(int ms) {
+	video_holdEnd = exe_timeGetTime() + (uint32_t)ms;
+	video_hold = 1;
+	Video_KeysHeld();
+}
+
+void Video_MaskHeldKeys(char *keys) {
+	if (Video_KeysHeld()) {
+		keys[DIK_ESCAPE] = 0;
+		keys[DIK_RETURN] = 0;
+		keys[DIK_SPACE] = 0;
+		keys[DIK_NUMPADENTER] = 0;
+	}
 }
 
 int Video_OpenStream(const char *name, void *dd, void **out) {
@@ -275,8 +307,13 @@ int Video_RenderStream(void *dd, void *primary, void *ms, byte *played) {
 	fx[0] = sizeof(fx);
 	fx[1] = (g_VideoMirror & 1) << 2 | (g_VideoMirror & 2);
 	uint32_t bltFlags = g_VideoMirror ? DDBLT_DDFX : 0;
-	while (!exe_GetAsyncKeyState(VK_ESCAPE)) {
-		if (exe_GetAsyncKeyState(VK_SPACE) || exe_GetAsyncKeyState(VK_RETURN) || Video_PadPressed()) {
+	for (;;) {
+		/* differs from the original on purpose (no blocking waits): the keys still held do not skip the video */
+		if (!Video_KeysHeld() && (exe_GetAsyncKeyState(VK_ESCAPE) || exe_GetAsyncKeyState(VK_SPACE)
+			|| exe_GetAsyncKeyState(VK_RETURN))) {
+			break;
+		}
+		if (Video_PadPressed()) {
 			break;
 		}
 		if (COM_CALL(sample, sampleUpdate_t, SAMPLE_UPDATE)(sample, 0, NULL, NULL, 0)) {

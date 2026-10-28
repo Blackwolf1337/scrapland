@@ -9,6 +9,7 @@
 #include "scrap/global.h"
 #include "scrap/input.h"
 #include "scrap/scrapmain.h"
+#include "scrap/video.h"
 
 #define GUID_SYSKEYBOARD ((const void *)Game_Ptr(0x3d0ffc))
 #define C_DFDIKEYBOARD ((const void *)Game_Ptr(0x3cfbec))
@@ -223,7 +224,13 @@ int32_t Keyboard_Poll(void) {
 		}
 		d = g_KeyboardDev;
 	} while (hr == DIERR_INPUTLOST);
-	return hr < 0 ? hr : 0;
+	if (hr < 0) {
+		return hr;
+	}
+	/* differs from the original on purpose (no blocking waits): the keys of a video are ignored here, not waited out
+	 * in Video_WaitKeysUp */
+	Video_MaskHeldKeys(g_KeyState);
+	return 0;
 }
 
 /* ESCAPE, GRAVE, F1 and APPS */

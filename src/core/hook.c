@@ -4,7 +4,7 @@
  *
  * With [general] wipe=1 the rest of each hooked original is filled with int3, so a jump into the middle of
  * replaced code stops the game with its rva in the log (a check for the standalone build, docs/standalone.md).
- * wipe=2 fills the whole game and engine code with int3 first, except the functions that stay in the exe.
+ * wipe=2 fills the whole game and engine code with int3 first.
  */
 #include <string.h>
 #include <windows.h>
@@ -57,32 +57,12 @@ static int Hook_Write(byte *at, const void *target, uint32_t wipe) {
 #define GAME_CODE_START 0x05f6d8
 #define GAME_CODE_END 0x2d6010
 
-/* still the exe's: Sleep and busy waits (docs/standalone.md) */
-static const struct {
-	uint32_t rva, size;
-} keep[] = {
-	{ 0x22f940, 1039 },	/* CMotorApp vf06, the frame with its limiter */
-	{ 0x22fe60, 381 },	/* the device reset with Sleep(250) */
-	{ 0x272f90, 171 },	/* Tsc_CpuFreq */
-	{ 0x276ba0, 55 },	/* Timer_CountTicks */
-	{ 0x276d00, 320 },	/* Timer_GetQPFreq */
-	{ 0x276e40, 72 },	/* Timer_MeasureQP */
-	{ 0x280d10, 70 },	/* Video_WaitKeysUp */
-};
-
 static void Hook_WipeGame(void) {
 	byte *code = (byte *)(game_base + GAME_CODE_START);
 	DWORD old;
 
 	VirtualProtect(code, GAME_CODE_END - GAME_CODE_START, PAGE_EXECUTE_READWRITE, &old);
-	uint32_t at = GAME_CODE_START;
-	for (size_t i = 0; i <= sizeof(keep) / sizeof(keep[0]); i++) {
-		uint32_t end = i < sizeof(keep) / sizeof(keep[0]) ? keep[i].rva : GAME_CODE_END;
-		memset((byte *)game_base + at, 0xcc, end - at);
-		if (i < sizeof(keep) / sizeof(keep[0])) {
-			at = keep[i].rva + keep[i].size;
-		}
-	}
+	memset(code, 0xcc, GAME_CODE_END - GAME_CODE_START);
 	VirtualProtect(code, GAME_CODE_END - GAME_CODE_START, old, &old);
 	FlushInstructionCache(GetCurrentProcess(), code, GAME_CODE_END - GAME_CODE_START);
 }
@@ -122,7 +102,7 @@ void Hook_InstallAll(int wipe) {
 		(int)(sizeof(hooks) / sizeof(hooks[0])), off);
 	if (wipe) {
 		AddVectoredExceptionHandler(1, Hook_Trap);
-		Com_Printf(wipe >= 2 ? "wipe: the game code is int3 but for the hooks and %d functions\n"
-			: "wipe: the rest of every hooked original is int3\n", (int)(sizeof(keep) / sizeof(keep[0])));
+		Com_Printf(wipe >= 2 ? "wipe: the game code is int3 but for the hooks\n"
+			: "wipe: the rest of every hooked original is int3\n");
 	}
 }

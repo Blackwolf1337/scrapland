@@ -1173,6 +1173,10 @@ static void D3DApp_FrameStats(byte *self) {
 int __thiscall CD3DApp_Render(byte *self) {
 	int hr = 0;
 
+	/* differs from the original on purpose (no sleeps): no frame while the frame limiter holds it back */
+	if (!(g_pApp->flags & APPF_DEDICATED) && !Motor_FrameDue(self)) {
+		return 0;
+	}
 	if (!(g_pApp->flags & APPF_DEDICATED)) {
 		void *d = MOTOR_DEV(self);
 		hr = D3D_METHOD(d, devTestCooperativeLevel_t, D3DDEV_TESTCOOPERATIVELEVEL)(d);
@@ -1246,6 +1250,11 @@ int __thiscall CD3DApp_Run(byte *self) {
 			continue;
 		}
 		if (!MOTOR_ACTIVE(self) || !MOTOR_READY(self)) {
+			continue;
+		}
+		/* differs from the original on purpose (no sleeps): the frame limiter of CMotorApp_Render holds the frame
+		 * back here, before the clock and FrameMove, instead of sleeping inside Render */
+		if (!(g_pApp->flags & APPF_DEDICATED) && !Motor_FrameDue(self)) {
 			continue;
 		}
 		int r = 0;

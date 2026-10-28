@@ -285,6 +285,12 @@ int __thiscall CMotorApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior
 int __thiscall CMotorApp_RestoreDeviceObjects(byte *self);
 int __thiscall CMotorApp_OneTimeSceneInit(byte *self);
 int __thiscall CMotorApp_FrameMove(byte *self);
+/* Render (vtable 0x18): the frame, 1 to quit; at once 0 while Motor_FrameDue is 0 */
+int __thiscall CMotorApp_Render(byte *self);
+/* the reset of the device objects that g_ResetDev asks for, the HRESULT */
+int __fastcall CMotorApp_ResetDevice(byte *self);
+/* 0 while the frame limiter (limitaFPS, R_LimitFPS; none with vsync) holds the next frame back */
+byte Motor_FrameDue(byte *self);
 int __thiscall CMotorApp_DeleteDeviceObjects(byte *self);
 int __thiscall CMotorApp_FinalCleanup(byte *self);
 int __thiscall CD3DApplication_Nothing(byte *self);

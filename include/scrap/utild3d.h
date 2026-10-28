@@ -2,7 +2,7 @@
  * Engine/util_d3d.cpp of the engine3d: debug lines in the world (boxes, crosses, axes, a cone, a sphere, triangles),
  * drawn at once through Render_Line in the space of a matrix (the identity without one), the D3D color of a float
  * color and the names of the object classes. Colors are 0xRRGGBB. The timer functions before it in the exe (rva
- * 0x276ba0..0x276e40, busy waits for the calibration) are still the exe's.
+ * 0x276ba0..0x276e40) are in DXUtil.c, without the busy waits of their calibration.
  */
 #ifndef SCRAP_UTILD3D_H
 #define SCRAP_UTILD3D_H

@@ -27,7 +27,15 @@ scenarios match.
 
 - code pointers in the data sections (vtables, method tables) that point to game code without a C version
   (tiny stubs under 5 bytes, never hooked)
-- the `SD_IMPORT`s of game code: Winsock thunks, Steam and GOG stubs, the timers with busy waits
+- the `SD_IMPORT`s of game code: Winsock thunks, Steam and GOG stubs
+
+The seven functions with Sleep or busy waits are C too, with intended behavior changes (each marked in the code
+with a comment): the frame (`CMotorApp_Render`) has no Sleep loop as its frame limiter, `Motor_FrameDue` holds the
+next frame back in the PeekMessage loop of `App_WinMain` (no own limiter with vsync); the device reset has no
+Sleep(250); `Timer_GetQPFreq`, `Timer_MeasureQP` and `Timer_CountTicks` take QueryPerformanceFrequency instead of
+measuring; `Tsc_CpuFreq` measures rdtsc against the performance counter between two calls; `Video_WaitKeysUp`
+starts a hold under which the video loop and `Keyboard_Poll` ignore Escape, Space and Enter until they are up or
+the time is over. `tools/test/py/sdcall_nosleep.py` checks them (some only in the hooked run).
 
 ## Stage 2: real libraries
 

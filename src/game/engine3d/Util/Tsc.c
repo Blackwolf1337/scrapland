@@ -1,7 +1,7 @@
 /*
  * The rdtsc timers of the engine3d profiler, original source Util/tsc.cpp (include/scrap/prof.h): per section the
  * ticks of the frame, their average over n frames and the maximum, in milliseconds, and the measurement of the
- * processor clock (Tsc_CpuFreq, 200 ms of busy waiting).
+ * processor clock (Tsc_CpuFreq, against the performance counter without the 200 ms busy wait of the original).
  */
 #include "scrap/crt.h"
 #include "scrap/game.h"
@@ -89,6 +89,48 @@ float Prof_GetMaxTime(int section, int reset) {
 	return X87_DivToFloat(ms, Tsc_CpuFreq(0));
 }
 
-/* the rdtsc ticks per second (those of 200 ms of busy waiting times 5), measured once or again with recalc */
+/* the rdtsc ticks per second, measured once or again with recalc */
 #define g_CpuFreq GAME_DATA(float, 0x4b1c00)
+
+/* the measurement under way: rdtsc and the performance counter at its start, the value given until it ends */
+static uint64_t tsc_start;
+static int64_t tsc_qpcStart;
+static float tsc_interim;	/* 0: no measurement under way */
+
+/*
+ * Differs from the original on purpose (no busy waits): the original counted rdtsc over 200 ms of busy waiting on
+ * timeGetTime. Here the first call (and each recalc) starts the measurement and answers with the frequency of the
+ * performance counter, the first call 200 ms or more later sets the rdtsc ticks per second of that time measured
+ * with the performance counter. QPF alone is not the rate of rdtsc (10 MHz on current Windows and Wine), and a value
+ * read once like the ~MHz of the registry is the nominal or (Wine) the boost clock; the measurement between two
+ * calls needs no wait and is as exact as the original. The value only feeds the profiler statistics.
+ */
+float Tsc_CpuFreq(int recalc) {
+	int64_t freq, now;
+
+	if (g_CpuFreq == 0.0f || recalc) {
+		tsc_start = __builtin_ia32_rdtsc();
+		exe_QueryPerformanceCounter(&tsc_qpcStart);
+		exe_QueryPerformanceFrequency(&freq);
+		g_CpuFreq = (float)freq;
+		tsc_interim = g_CpuFreq;
+		CHECK(g_CpuFreq != 0.0f);
+	} else if (tsc_interim != 0.0f) {
+		if (g_CpuFreq != tsc_interim) {
+			/* set by someone else in between */
+			tsc_interim = 0.0f;
+		} else {
+			uint64_t ticks = __builtin_ia32_rdtsc() - tsc_start;
+			exe_QueryPerformanceCounter(&now);
+			exe_QueryPerformanceFrequency(&freq);
+			now -= tsc_qpcStart;
+			if (now >= freq / 5) {
+				g_CpuFreq = (float)((double)ticks * (double)freq / (double)now);
+				tsc_interim = 0.0f;
+				CHECK(g_CpuFreq != 0.0f);
+			}
+		}
+	}
+	return g_CpuFreq;
+}
 
