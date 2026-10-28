@@ -632,6 +632,8 @@ if gbgc4:
 	# the escape tubes on a tubes object of our own: the particles are copies of the particles of a wind smoke element
 	# (attached to its own system)
 	gbgsp = gbgwel and gbgwel + 4
+	# MaxSpeed of our car is 3500 or 5600 from run to run (in the original too), the tubes scale with it: fixed here
+	gbgset(c + 0x498, (3500.0,))
 	check('GBG tube particles', lambda: (gbgsp != 0, gbgsp and gbgi(gbgsp + 0xac) != 0, gbgfl(c + 0x498, 1)))
 	if gbgsp and gbgi(gbgsp + 0xac) and gbgi(c + 0x224):
 		gbgtu = gbgnew(0x17c)
