@@ -300,10 +300,7 @@ SD_IMPORT_STDCALL(FSOUND_GetCPUUsage, 0, 0x3179e4)
 /* module agent: World/FX/FXVehicle.cpp (imports below this line) */
 
 /* module agent: Engine/bsp.cpp (imports below this line) */
-SD_IMPORT(CBsp_InitD3D, 0x28f710)
-SD_IMPORT(CBsp_LeerEMI, 0x28c650)
 SD_IMPORT(CBsp_Calcular, 0x28a860)
-SD_IMPORT(CBsp_Preparar, 0x28efe0)
 
 /* module agent: World/FX/FXCharActions.cpp (imports below this line) */
 

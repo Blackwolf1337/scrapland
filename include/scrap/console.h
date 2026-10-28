@@ -22,6 +22,7 @@ SD_SIZE(cConLine, 0x84);
 
 #define g_ConLines ((cConLine *)Game_Ptr(0x444e68))	/* CON_LINES */
 #define g_ConLine GAME_DATA(int, 0x445a44)		/* the line written now */
+#define g_DebugLevel GAME_DATA(int, 0x445a74)
 
 /* prints text in a color; flag set: only into the second log (rva 0xbca50) */
 void Con_Print(int color, const char *text, int flag);
