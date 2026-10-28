@@ -8,6 +8,9 @@
  * rva and caller, copies the piece of original code there back and goes on, so one run lists every piece of game
  * code without a C version that the run reaches. wipepy=1 (ScrapC.exe only, it runs the real Python of src/python)
  * also fills the code of the original's Python with int3, the probe of wipe=3 then covers it too.
+ *
+ * ScrapC.exe also points the entries of the original's C runtime to the C of src/standalone (crthooks.inc), and
+ * wipecrt=1 fills the rest of that runtime with int3 (the probe covers it too).
  */
 #include <string.h>
 #include <windows.h>
@@ -17,6 +20,7 @@
  * the plain declarations below. Fastcall and stdcall names get their decoration through --enable-stdcall-fixup.
  */
 #include "scrap/shared.h"
+#include "scrap/origcrt.h"
 #include "scrap/origpython.h"
 
 extern uintptr_t game_base;
@@ -24,6 +28,9 @@ extern uintptr_t game_base;
 /* only the addresses are needed here, the real prototypes live in the implementing files */
 #define SD_HOOK(name, rva, size) extern void name(void);
 #include "hooks.inc"
+#ifdef SD_STANDALONE
+#include "standalone/crthooks.inc"
+#endif
 #undef SD_HOOK
 
 typedef struct {
@@ -36,8 +43,13 @@ typedef struct {
 static const hook_t hooks[] = {
 #define SD_HOOK(name, rva, size) { #name, (rva), (size), (void *)name },
 #include "hooks.inc"
+#ifdef SD_STANDALONE
+#include "standalone/crthooks.inc"
+#endif
 #undef SD_HOOK
 };
+
+int Game_Option(const char *key);
 
 int Hook_Enabled(const char *name);
 
@@ -61,7 +73,8 @@ static int Hook_Write(byte *at, const void *target, uint32_t wipe) {
 #define GAME_CODE_START 0x05f6d8
 #define GAME_CODE_END 0x2d6010
 
-/* the end of the code the probe covers: the game code, with wipepy up to the end of the Python */
+/* the end of the code the probe covers: the game code, with wipepy up to the end of the Python, with wipecrt up to
+ * the end of the CRT */
 static uint32_t probe_end = GAME_CODE_END;
 
 static void Hook_Wipe(uint32_t start, uint32_t end) {
@@ -104,7 +117,7 @@ static LONG CALLBACK Hook_Probe(EXCEPTION_POINTERS *e) {
 	/* the return address when the trap is the first byte of a called function */
 	uint32_t ret = *(uint32_t *)e->ContextRecord->Esp;
 	Com_Printf("probe: rva %06x%s, piece %06x..%06x, [esp] %06x\n", (unsigned)rva,
-		m ? " in a hook" : rva >= ORIG_PY_CODE_START ? " in the Python" : "",
+		m ? " in a hook" : rva >= ORIG_CRT_CODE_START ? " in the CRT" : rva >= ORIG_PY_CODE_START ? " in the Python" : "",
 		(unsigned)lo, (unsigned)hi, (unsigned)(ret - game_base));
 	VirtualProtect((byte *)game_base + lo, hi - lo, PAGE_EXECUTE_READWRITE, &old);
 	memcpy((byte *)game_base + lo, probe_orig + lo - GAME_CODE_START, hi - lo);
@@ -124,7 +137,7 @@ static void Hook_ProbeInit(void) {
 	memcpy(probe_orig, (byte *)game_base + GAME_CODE_START, probe_end - GAME_CODE_START);
 	for (size_t i = 0; i < sizeof(hooks) / sizeof(hooks[0]); i++) {
 		uint32_t r = hooks[i].rva, n = hooks[i].size;
-		if (n >= 5 && r >= GAME_CODE_START && r + n <= GAME_CODE_END) {
+		if (n >= 5 && r >= GAME_CODE_START && r + n <= probe_end) {
 			memset(probe_mark + r - GAME_CODE_START, PROBE_HOOK, n);
 			memset(probe_mark + r - GAME_CODE_START, PROBE_JUMP, 5);
 		}
@@ -141,12 +154,42 @@ static LONG CALLBACK Hook_Trap(EXCEPTION_POINTERS *e) {
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
+/* wipecrt=1: the code of the original's C runtime int3 but for the import thunks of the game in it */
+static int Hook_WipeCrt(void) {
+#ifdef SD_STANDALONE
+	static const struct {
+		uint32_t lo, hi;
+	} keep[] = ORIG_CRT_THUNKS;
+	uint32_t at = ORIG_CRT_CODE_START;
+
+	if (!Game_Option("wipecrt")) {
+		return 0;
+	}
+	for (size_t i = 0; i < sizeof(keep) / sizeof(keep[0]); i++) {
+		Hook_Wipe(at, keep[i].lo);
+		at = keep[i].hi;
+	}
+	Hook_Wipe(at, ORIG_CRT_CODE_END);
+	Com_Printf("wipecrt: the code of the original's CRT (rva %06x..%06x) is int3 but for the game's import thunks\n",
+		ORIG_CRT_CODE_START, ORIG_CRT_CODE_END);
+	return 1;
+#else
+	if (Game_Option("wipecrt")) {
+		Com_Printf("wipecrt: only in ScrapC.exe, the hook DLL runs the CRT of the exe\n");
+	}
+	return 0;
+#endif
+}
+
 void Hook_InstallAll(int wipe, int wipepy) {
-	int installed = 0, off = 0;
+	int installed = 0, off = 0, wipecrt;
 
 #ifdef SD_STANDALONE
 	if (wipepy) {
 		probe_end = ORIG_PY_CODE_END;
+	}
+	if (Game_Option("wipecrt")) {
+		probe_end = ORIG_CRT_CODE_END;
 	}
 #else
 	if (wipepy) {
@@ -163,6 +206,7 @@ void Hook_InstallAll(int wipe, int wipepy) {
 	if (wipepy) {
 		Hook_Wipe(ORIG_PY_CODE_START, ORIG_PY_CODE_END);
 	}
+	wipecrt = Hook_WipeCrt();
 	for (size_t i = 0; i < sizeof(hooks) / sizeof(hooks[0]); i++) {
 		const hook_t *h = &hooks[i];
 		if (h->size < 5) {
@@ -181,7 +225,7 @@ void Hook_InstallAll(int wipe, int wipepy) {
 	}
 	Com_Printf("%d of %d hooks installed, %d switched off in scrapdecomp.ini\n", installed,
 		(int)(sizeof(hooks) / sizeof(hooks[0])), off);
-	if (wipe || wipepy) {
+	if (wipe || wipepy || wipecrt) {
 		AddVectoredExceptionHandler(1, Hook_Trap);
 	}
 	if (wipe) {

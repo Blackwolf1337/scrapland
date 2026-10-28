@@ -1,9 +1,8 @@
 /*
  * ScrapC.exe, stage 1 of docs/standalone.md: copies the sections of the user's Scrap.exe 1.6.1 (next to this exe
- * in game/Bin) to their rvas in this module, fills their import table, gives them their TLS block, installs the
- * hooks of the C code (Game_Start, as the hook DLL does) and runs the entry point of the original. The C code
- * replaces the game and engine; the libraries linked into the original (Python 1.5.2, the MSVC CRT ...) still run
- * from the copy.
+ * in game/Bin) to their rvas in this module, fills their import table, installs the hooks of the C code
+ * (Game_Start, as the hook DLL does) and runs the entry point of the original. The C code replaces the game and
+ * engine; the libraries linked into the original (D3DX8, zlib, libpng ...) still run from the copy.
  *
  * This exe has the base 0x400000 of the original, so its code needs no relocation. cmake/ScrapC.ld puts the
  * uninitialized section .orig (orig_room below) at rva 0x1000, as large as the original image; the own code
@@ -13,6 +12,9 @@
  *
  * Stage 2a: the Python is the real library of src/python, linked into this exe. Orig_PyPointers points the pointers
  * of the copy that lead into the original's Python to the real objects, so none of its code or data is used.
+ *
+ * Stage 2b: the CRT functions are the UCRT of this exe or C (src/standalone/crt.c and crtinit.c), the entries of the
+ * original's CRT jump there; its thread-safe statics no longer need the TLS block of the original.
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -26,16 +28,14 @@
 int Game_Dir(char *dir, size_t size);
 int Game_IsBuild(const IMAGE_NT_HEADERS32 *nt);
 int Game_Start(uintptr_t base, const char *dir);
+[[noreturn]] void Crt_Main(void);
+int Game_Option(const char *key);
 void Log_Open(const char *dir);
 
 #define ORIG_STR(x) ORIG_STR2(x)
 #define ORIG_STR2(x) #x
 __asm__(".section .orig,\"bw\"\n\t.globl _orig_room\n_orig_room:\n\t.space " ORIG_STR(GAME_SIZEOFIMAGE) " - 0x1000\n\t.text");
 extern byte orig_room[];
-
-/* mingw's TLS index of this exe; its TLS block is unused (gcc's __thread is emutls on mingw), so it is given to the
- * original */
-extern ULONG _tls_index;
 
 static void Fatal(const char *fmt, ...) __attribute__((format(printf, 1, 2), noreturn));
 
@@ -141,28 +141,6 @@ static void Orig_Imports(byte *base, const IMAGE_NT_HEADERS32 *nt) {
 			iat->u1.Function = (DWORD)(uintptr_t)fn;
 		}
 	}
-}
-
-/* the TLS block of the original for this thread (the only one that runs its code), a copy of its template */
-static void Orig_Tls(const IMAGE_NT_HEADERS32 *nt) {
-	const IMAGE_DATA_DIRECTORY *d = &nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS];
-	if (!d->VirtualAddress) {
-		return;
-	}
-	const IMAGE_TLS_DIRECTORY32 *tls = Game_Ptr(d->VirtualAddress);
-	DWORD n = tls->EndAddressOfRawData - tls->StartAddressOfRawData;
-	byte *block = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, n + tls->SizeOfZeroFill);
-	if (!block) {
-		Fatal("no memory for the TLS block");
-	}
-	memcpy(block, (const void *)(uintptr_t)tls->StartAddressOfRawData, n);
-	void **slots;
-	__asm__("movl %%fs:0x2c, %0" : "=r"(slots));
-	if (!slots) {
-		Fatal("this exe has no TLS array");
-	}
-	slots[_tls_index] = block;
-	*(ULONG *)(uintptr_t)tls->AddressOfIndex = _tls_index;
 }
 
 /* the init functions of the standard built-in modules (src/python/config.c) */
@@ -277,11 +255,15 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
 	DWORD entry = nt->OptionalHeader.AddressOfEntryPoint;
 	Orig_Imports(base, nt);
 	game_base = (uintptr_t)base;
-	Orig_Tls(nt);
 	Orig_PyPointers(base, nt);
 	VirtualFree(file, 0, MEM_RELEASE);
 	Game_Start((uintptr_t)base, dir);
 
+	/* crtstart=1: the start of src/standalone/crtinit.c, without the original's CRT; the default is its entry,
+	 * whose CRT init the math functions still need (docs/standalone.md, stage 2b) */
+	if (Game_Option("crtstart")) {
+		Crt_Main();
+	}
 	Com_Printf("standalone: entry of the original at rva %06lx\n", entry);
 	((void (*)(void))(base + entry))();
 	return 0;

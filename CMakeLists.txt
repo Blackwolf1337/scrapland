@@ -134,7 +134,7 @@ set_target_properties(dinput8 PROPERTIES PREFIX "" OUTPUT_NAME dinput8)
 
 # ScrapC.exe: the standalone loader (docs/standalone.md), next to Scrap.exe in game/Bin. Fixed base 0x400000; the
 # linker script puts an empty section the size of the original first, the loader copies the original into it.
-add_executable(ScrapC WIN32 src/standalone/main.c)
+add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtinit.c)
 target_link_libraries(ScrapC PRIVATE scrapcode_sa python152)
 target_link_options(ScrapC PRIVATE -Wl,--image-base,0x400000 -Wl,--disable-dynamicbase
 	-Wl,-T,${CMAKE_SOURCE_DIR}/cmake/ScrapC.ld)

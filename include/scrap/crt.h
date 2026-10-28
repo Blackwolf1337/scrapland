@@ -1,7 +1,7 @@
 /*
  * The C runtime of Scrap.exe (statically linked UCRT), called through src/imports.inc. Used where the C code has
  * to share state with the exe (FILE objects, errno, locale, the current drive) or must behave like it bit for bit;
- * plain string work uses the CRT of the DLL.
+ * plain string work uses the CRT of the DLL. In ScrapC.exe these are src/standalone/crt.c and crtinit.c.
  */
 #ifndef SCRAP_CRT_H
 #define SCRAP_CRT_H
@@ -162,6 +162,11 @@ double crt_tanh(double x);
  * are tested against is at +0x20 of the TLS block of the exe, its index g_TlsIndex */
 void crt_Init_thread_header(int *guard);
 void crt_Init_thread_footer(int *guard);
+#ifdef SD_STANDALONE
+/* ScrapC.exe: the epoch of src/standalone/crtinit.c, a static is made when its guard is above it */
+extern int crt_init_epoch;
+#define crt_InitEpoch() crt_init_epoch
+#else
 #define g_TlsIndex GAME_DATA(uint32_t, 0x4e8dec)
 /* that epoch: a static is made when its guard is above it */
 static inline int crt_InitEpochAt(uint32_t index) {
@@ -171,5 +176,6 @@ static inline int crt_InitEpochAt(uint32_t index) {
 	return *(int *)(tls[index] + 0x20);
 }
 #define crt_InitEpoch() crt_InitEpochAt(g_TlsIndex)
+#endif
 
 #endif

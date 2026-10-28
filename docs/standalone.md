@@ -76,10 +76,10 @@ music paths. Three places still block, each with a plan:
 
 ## Stage 2: real libraries
 
-Python 1.5.2 from source (python.org py152.tgz, done in stage 2a), UCRT for the `crt_*` imports, zlib 1.1.3,
+Python 1.5.2 from source (python.org py152.tgz, done in stage 2a), UCRT for the `crt_*` imports (stage 2b), zlib 1.1.3,
 libpng 1.0.5, IJG libjpeg, D3DX8. The `GAME_DATA` addresses of library data (`include/scrap/python.h`:
 `PyString_Type`, `Py_None` ...) switch to the real symbols. Then the whole `.text` of the original is int3. Except
-for Python, all of this is still to do.
+for Python and most of the CRT, all of this is still to do.
 
 ### Stage 2a: the real Python
 
@@ -156,6 +156,53 @@ memory as `new[]` left it, which holds the address of the string type object of 
 print only written memory now (`Tabla_New` at rva 0x2c2c60, the trail points after `SetMaxTrails`).
 
 What still differs from the exe: `sys.executable` names ScrapC.exe.
+
+### Stage 2b: the C runtime (partly done)
+
+The `crt_*` functions of `include/scrap/crt.h` are `SD_IMPORT_CRT` (and `SD_IMPORT_CRT_STDCALL`) in `src/imports.inc`:
+a thunk in the hook DLL; in ScrapC.exe the C of `src/standalone/crt.c` and `crtinit.c`, mostly a pass-through to the
+UCRT that mingw links (the same runtime family as the original's static CRT). `src/core/hook.c` also points the
+entries of the original's CRT there (`src/standalone/crthooks.inc`: the `SD_IMPORT_CRT` rvas and the entries that
+only the code of the copy and the tests reach, such as memcpy, memset, `_alloca_probe`, `_EH_prolog`, `_setjmp3`), so
+the C, the Python library, the copy and the tests share one heap (the process heap, which the static CRT used too),
+one set of FILE objects, errno, locale and rand state. What differs from a plain UCRT call is C:
+
+- `_chdir` sets the variable `=X:` of the environment like MSVC (Wine's does not), so `_chdrive` comes back to it
+- atexit and exit (the game's atexit functions, last registered first, then the UCRT exit), the thread-safe statics
+  (one epoch in C, ScrapC.exe no longer gives the original its TLS block), the vector constructor and destructor
+  iterators, the STL error helpers
+
+The inexact math functions (sin, cos, atan, atan2, acos, asin, exp, log, pow, log10, tan, sinh, cosh, tanh, hypot,
+the SSE2 entries of `src/core/libm.c` and `__ftoui3`/`__dtoui3`) still run from the copy. Their results must stay bit
+for bit the MSVC ones, which the UCRT DLL does not give (Wine's libm differs in the last bits). Replacing them needs an
+implementation of its own that matches them; this is what is left of stage 2b.
+
+The start without the original's entry point is `Crt_Main` in `crtinit.c` (`[general] crtstart=1`,
+`DIFFTEST_CRTSTART=1`): it sets what the CRT initializers of the `__xi` table set (x87 precision 53 bits, the option
+words of the inline printf and scanf, the game's matherr, the SSE2 switch of the math code), runs the 1790 dynamic
+initializers of the game from the `__xc` table in order (the first entry is the CRT's) and calls `App_WinMain` with
+the module, the command line of `_get_narrow_winmain_command_line` and the show mode of the startup info. sdtest
+matches with it. It is not the default yet: the error path of the math functions of the copy (a domain error,
+`__startOneArgErrorHandling` at rva 0x3693c7 and its helper at 0x37213c) needs the initialized CRT and crashes
+without it (sdcall at `Quat_SlerpFlip any`, sdlevel at the vehicle motors).
+
+`[general] wipecrt=1` (`DIFFTEST_WIPECRT=1`, ScrapC.exe only) fills the code of the original's CRT with int3,
+`include/scrap/origcrt.h`: rva 0x313634 (operator delete, after the Python) up to the C++ unwind funclets of the game at
+0x37b3d0, but for the import thunks of the game in it (fmod, avifil32, msvfw32 and ddraw at 0x3179c6..0x317b2e,
+wsock32 and d3d8 at 0x3761d0..0x3761dc). The atexit destructors of the game's globals from 0x38cda0 stay. With
+`wipe=3` the probe covers it. The probe run (`wipe=3`, `wipepy=1`, `wipecrt=1`, `crtstart=1`) lists only the math
+functions in sdtest and sdlevel: the entries called by `libm.c` (0x329f3a, 0x34ec30, 0x347370, 0x329f50, 0x346fe0,
+0x32201a, 0x3471a0, 0x321440, 0x314310) with what they call (0x35aff0..0x35bf7f, 0x354666..0x357bef) and the error
+path (0x37213c, 0x365a0a..0x368b3b, guard_check_icall 0x316970). Nothing else of the CRT is reached; with the
+original's entry the CRT init itself of course runs, so `wipecrt=1` goes together with `crtstart=1` only.
+
+Code of the copy that calls the CRT itself (static scan, `src/standalone/crthooks.inc` points all of these to C):
+the dynamic initializers (`_atexit` from 347 places, `new[]`, `memset`, the vector constructor iterator), the atexit
+destructors (`delete`, `delete[]`, the vector destructor iterator, `fclose`), the M3D library
+(`__security_check_cookie`, `__libm_sse2_sqrt_precise`), D3DX8 with libpng, libjpeg and zlib (`malloc`, `free`,
+`_alloca_probe`, `_EH_prolog` from 26 places, `_setjmp3` and `longjmp`, `_ftol`, `_aullshr`, `_CIacos`, `_CIpow`,
+`floor`, `atoi`, ctype, `setlocale`, `strncpy`, `_strdup`, `calloc`, `_snprintf`, `_vsnprintf`, `exit`) and the ASE
+SDK. Of these only `__libm_sse2_sqrt_precise`, `_CIacos` and `_CIpow` are math and still the copy's.
 
 ## Stage 3: data in C
 
