@@ -65,24 +65,6 @@
 typedef int(__stdcall *lstrcmpi_t)(const char *a, const char *b);
 #define exe_lstrcmpiA GAME_DATA(lstrcmpi_t, 0x3a12bc)
 
-/* Direct3D 8: D3DSURFACE_DESC and D3DLOCKED_RECT */
-typedef struct {
-	int Format;			/* 0x00 */
-	int Type;			/* 0x04 */
-	uint32_t Usage;			/* 0x08 */
-	int Pool;			/* 0x0c */
-	uint32_t Size;			/* 0x10 */
-	int MultiSampleType;		/* 0x14 */
-	uint32_t Width;			/* 0x18 */
-	uint32_t Height;		/* 0x1c */
-} d3dSurfaceDesc_t;
-SD_SIZE(d3dSurfaceDesc_t, 0x20);
-
-typedef struct {
-	int Pitch;			/* 0x0 */
-	void *pBits;			/* 0x4 */
-} d3dLockedRect_t;
-
 /* the texture and surface methods */
 typedef int(__stdcall *texGetDevice_t)(void *tex, void **dev);
 typedef uint32_t(__stdcall *texSetLOD_t)(void *tex, uint32_t lod);

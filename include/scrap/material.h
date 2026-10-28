@@ -215,7 +215,7 @@ byte __thiscall CMapa_GetSize(CMapa *self, int *w, int *h);
 byte __fastcall CMapa_HasAlpha(const CMapa *self);
 void *__thiscall CMapa_GetTexture(CMapa *self, byte load);
 struct CImagen;
-/* rva 0x2370a0, not in C: the w x h pixels of bmp at (sx, sy) into the texture at (dx, dy); 0 when not done */
+/* the w x h pixels of bmp at (sx, sy) into the texture at (dx, dy); 0 when not done */
 byte __thiscall CMapa_CopyBmp(CMapa *self, int dx, int dy, const struct CImagen *bmp, int sx, int sy, int w, int h);
 char *__thiscall CMapa_FramePath(CMapa *self, int frame, char *buf, int size);
 /* FXTextura_Kind (the kind of FXTextura of a map name): fxtextura.h */

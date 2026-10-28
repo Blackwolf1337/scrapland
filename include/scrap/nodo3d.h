@@ -293,7 +293,7 @@ void *CSistPart_Cast(IObjeto3D *obj);	/* rva 0x23f310, CHECK of the class */
 /* Engine/NodoR.cpp (src/game/engine3d/Engine/NodoR.c, the rest in modelo.h and scrapmodel.h) */
 NodoLook *__fastcall NodoLook_ctor(NodoLook *self);
 CNodoR *__fastcall CNodoR_ctor(CNodoR *self);
-byte __thiscall CNodo3D_DebugDraw(CNodo3D *self, CNodoR *r);	/* rva 0x23d9d0, R_ShowLocalBox; 0: not drawn */
+byte __thiscall CNodo3D_DebugDraw(CNodo3D *self, CNodoR *r);	/* R_ShowLocalBox; 0: filtered out, not drawn */
 void __thiscall CNodoR_UpdateNodo(CNodoR *self);	/* rva 0x23f5d0 */
 int __thiscall CNodoR_ApplyFX(CNodoR *self, matrix_t *m);	/* rva 0x23f540 */
 

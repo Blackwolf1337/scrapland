@@ -388,18 +388,36 @@ byte Dlg_GetFloat(void *hwnd, int id, float *out) {
 #define g_DbgWinOpen GAME_DATA(byte, 0x4ab91d)
 #define g_DbgWnd GAME_DATA(void *, 0x4ab920)
 #define g_DbgList GAME_DATA(void *, 0x4ab924)	/* the list box of the dialog */
+#define g_DbgEdit GAME_DATA(void *, 0x4ab928)	/* the command line */
+#define g_DbgButton GAME_DATA(void *, 0x4ab92c)
+#define g_DbgClient ((int32_t *)Game_Ptr(0x4ab930))	/* the client rectangle at WM_INITDIALOG */
+#define g_DbgListRect ((int32_t *)Game_Ptr(0x4ab940))	/* the normal rectangles of the three controls */
+#define g_DbgEditRect ((int32_t *)Game_Ptr(0x4ab950))
+#define g_DbgButtonRect ((int32_t *)Game_Ptr(0x4ab960))
 #define g_DbgLine ((char *)Game_Ptr(0x4ab970))	/* 0x400, the line being written */
 #define g_DbgLinePos GAME_DATA(int, 0x4abd70)
 #define g_DbgLineLen GAME_DATA(int, 0x4abd74)
 #define g_DbgCharMap ((const char *)Game_Ptr(0x431c70))	/* the characters from 0xe1 for the console */
 #define DBGWIN_DIALOG 0x9a
-#define DBGWIN_PROC 0x2373d0
+#define DBGWIN_PROC 0x2373d0	/* DbgWin_DlgProc */
 #define DBGWIN_LINE 0x400
 #define LB_ADDSTRING 0x180
 #define LB_DELETESTRING 0x182
 #define LB_SETCURSEL 0x186
 #define LB_GETCOUNT 0x18b
 #define GWL_HINSTANCE (-6)
+#define IDC_DBG_LIST 0x3fe
+#define IDC_DBG_EDIT 0x406
+#define IDC_DBG_BUTTON 0x407
+#define DBGWIN_ENTER 0x5010406	/* the WM_COMMAND of the command line (notification 0x501) */
+#define WM_SIZE 0x5
+#define WM_CLOSE 0x10
+#define WM_INITDIALOG 0x110
+#define WM_COMMAND 0x111
+#define WM_CTLCOLOREDIT 0x133
+#define WM_CTLCOLORLISTBOX 0x134
+#define SWP_NOSIZE_NOZORDER_NOACTIVATE 0x15
+#define LTGRAY_BRUSH 1
 
 /* the window moved to x, y and sized w, h relative to rect (left, top, right, bottom) */
 int Window_MoveRel(void *hwnd, const int32_t *rect, int x, int y, int w, int h) {
@@ -547,4 +565,64 @@ void Window_GetNormalRect(void *hwnd, int32_t *rect) {
 		exe_GetWindowPlacement(hwnd, wp);
 		memcpy(rect, &wp[7], 16);
 	}
+}
+
+intptr_t __stdcall DbgWin_DlgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
+	char buf[0x100];
+	int dw, dh;
+
+	switch (msg) {
+	case WM_INITDIALOG:
+		Bprintf(buf, sizeof(buf), "%s", E3D_GetExePath());
+		exe_SetWindowTextA(hwnd, buf);
+		exe_SetWindowPos(hwnd, NULL, 50, 50, 0, 0, SWP_NOSIZE_NOZORDER_NOACTIVATE);
+		g_DbgList = exe_GetDlgItem(hwnd, IDC_DBG_LIST);
+		g_DbgEdit = exe_GetDlgItem(hwnd, IDC_DBG_EDIT);
+		g_DbgButton = exe_GetDlgItem(hwnd, IDC_DBG_BUTTON);
+		exe_GetClientRect(hwnd, (exe_rect *)g_DbgClient);
+		Window_GetNormalRect(g_DbgList, g_DbgListRect);
+		Window_GetNormalRect(g_DbgEdit, g_DbgEditRect);
+		Window_GetNormalRect(g_DbgButton, g_DbgButtonRect);
+		exe_SetFocus(exe_GetDlgItem(hwnd, IDC_DBG_EDIT));
+		return 0;
+	case WM_SIZE:
+		/* the list grows, the command line and the button move with the bottom */
+		dw = (int)((uint32_t)lParam & 0xffff) - g_DbgClient[2];
+		dh = (int)((uint32_t)lParam >> 16) - g_DbgClient[3];
+		Window_MoveRel(g_DbgList, g_DbgListRect, 0, 0, dw, dh);
+		Window_MoveRel(g_DbgEdit, g_DbgEditRect, 0, dh, dw, 0);
+		Window_MoveRel(g_DbgButton, g_DbgButtonRect, 0, dh, 0, 0);
+		return 1;
+	case WM_CLOSE:
+		g_DbgWnd = NULL;
+		exe_DestroyWindow(hwnd);
+		return 1;
+	case WM_COMMAND:
+		if (!wParam) {
+			return 0;
+		}
+		if (wParam <= 2) {
+			/* IDOK, IDCANCEL */
+			exe_PostMessageA(hwnd, WM_CLOSE, 0, 0);
+			return 1;
+		}
+		if (wParam != DBGWIN_ENTER) {
+			return 0;
+		}
+		exe_GetWindowTextA(g_DbgEdit, buf, sizeof(buf));
+		exe_SetWindowTextA(g_DbgEdit, "");
+		if (g_E3DCmdProc) {
+			((void (*)(char *))g_E3DCmdProc)(buf);
+		}
+		return 1;
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORLISTBOX:
+		if ((void *)lParam != g_DbgList && (void *)lParam != g_DbgEdit) {
+			return 0;
+		}
+		exe_SetTextColor((void *)wParam, 0);
+		exe_SetBkColor((void *)wParam, 0xc0c0c0);
+		return (intptr_t)exe_GetStockObject(LTGRAY_BRUSH);
+	}
+	return 0;
 }

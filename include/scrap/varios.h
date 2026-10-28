@@ -36,6 +36,8 @@ enum {
 #define g_DbgCon GAME_DATA(int, 0x4ab8ec)
 #define g_DbgConWindow GAME_DATA(int, 0x4ab8f0)
 #define g_DbgConStd GAME_DATA(int, 0x4ab8f4)
+/* the handler of the lines typed into the debug dialog (E3D_Command), cdecl void(char *line) */
+#define g_E3DCmdProc GAME_DATA(void *, 0x4ab8f8)
 
 void __fastcall cLog_Open(cLog *self);
 void __fastcall cLog_Close(cLog *self);
@@ -61,6 +63,8 @@ void DbgWin_Init(void *hwnd);
 void __fastcall cLog_dtor(cLog *self);
 int Window_MoveRel(void *hwnd, const int32_t *rect, int x, int y, int w, int h);
 void Window_GetNormalRect(void *hwnd, int32_t *rect);
+/* the window procedure of the debug dialog: a list box, a command line and its button, resized with the dialog */
+intptr_t __stdcall DbgWin_DlgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 
 /* where the relative paths start: the game directory with a "\\" at the end */
 #define g_E3DDir ((char *)Game_Ptr(0x4abe80))

@@ -8093,3 +8093,9 @@ SD_HOOK(FX_ShipExplosion, 0x1f4d50, 13631)
 SD_HOOK(cVehicleMotorsEffects_Exhaust, 0x10f210, 34801)
 
 /* module agent: Engine leftovers (Escena_Load, stencil draws, debug and dialogs) (hooks below this line) */
+SD_HOOK(CMapa_CopyBmp, 0x2370a0, 742)
+SD_HOOK(DbgWin_DlgProc, 0x2373d0, 790)
+SD_HOOK(Motor_DrawFpsGraph, 0x22e9b0, 716)
+SD_HOOK(Motor_DrawStats, 0x2308c0, 2223)
+SD_HOOK(Matrix3_RotFromTo, 0x238ce0, 1125)
+SD_HOOK(CNodo3D_DebugDraw, 0x23d9d0, 1548)

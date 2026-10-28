@@ -490,7 +490,6 @@ typedef void(__stdcall *postquitmessage_t)(int code);
 typedef int(__stdcall *getcursorpos_t)(exe_point *pt);
 typedef int(__stdcall *screentoclient_t)(void *hwnd, exe_point *pt);
 typedef int(__stdcall *getmessage_t)(exe_msg *msg, void *hwnd, uint32_t min, uint32_t max);
-typedef void *(__stdcall *getdlgitem_t)(void *hdlg, int id);
 typedef int(__stdcall *enablewindow_t)(void *hwnd, int on);
 #define exe_Direct3DCreate8 GAME_DATA(direct3dcreate8_t, 0x3a14c4)
 #define exe_AdjustWindowRect GAME_DATA(adjustwindowrect_t, 0x3a1380)
@@ -501,7 +500,6 @@ typedef int(__stdcall *enablewindow_t)(void *hwnd, int on);
 #define exe_GetCursorPos GAME_DATA(getcursorpos_t, 0x3a1384)
 #define exe_ScreenToClient GAME_DATA(screentoclient_t, 0x3a1388)
 #define exe_GetMessageA GAME_DATA(getmessage_t, 0x3a136c)
-#define exe_GetDlgItem GAME_DATA(getdlgitem_t, 0x3a1340)
 #define exe_EnableWindow GAME_DATA(enablewindow_t, 0x3a1374)
 
 /* IDirect3D8 and IDirect3DDevice8 */

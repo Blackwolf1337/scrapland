@@ -90,10 +90,30 @@ typedef int(__stdcall *d3dSetVertexShader_t)(void *dev, uint32_t fvf);
 typedef int(__stdcall *d3dSetStreamSource_t)(void *dev, uint32_t stream, void *vb, uint32_t stride);
 typedef int(__stdcall *d3dSetIndices_t)(void *dev, void *ib, uint32_t baseVertex);
 
+/* Direct3D 8: D3DSURFACE_DESC and D3DLOCKED_RECT */
+typedef struct {
+	int Format;			/* 0x00 */
+	int Type;			/* 0x04 */
+	uint32_t Usage;			/* 0x08 */
+	int Pool;			/* 0x0c */
+	uint32_t Size;			/* 0x10 */
+	int MultiSampleType;		/* 0x14 */
+	uint32_t Width;			/* 0x18 */
+	uint32_t Height;		/* 0x1c */
+} d3dSurfaceDesc_t;
+SD_SIZE(d3dSurfaceDesc_t, 0x20);
+
+typedef struct {
+	int Pitch;			/* 0x0 */
+	void *pBits;			/* 0x4 */
+} d3dLockedRect_t;
+
 /* IDirect3DTexture8 */
+#define D3DTEX_GETLEVELDESC 0x38
 #define D3DTEX_GETSURFACELEVEL 0x3c
 #define D3DTEX_LOCKRECT 0x40
 #define D3DTEX_UNLOCKRECT 0x44
+typedef int(__stdcall *d3dGetLevelDesc_t)(void *tex, uint32_t level, d3dSurfaceDesc_t *desc);
 typedef int(__stdcall *d3dGetSurfaceLevel_t)(void *tex, uint32_t level, void **surf);
 typedef int(__stdcall *d3dLockRect_t)(void *tex, uint32_t level, void *locked, const void *rect, uint32_t flags);
 typedef int(__stdcall *d3dUnlockRect_t)(void *tex, uint32_t level);

@@ -194,7 +194,6 @@ SD_IMPORT(CEscena_Shared, 0x24ecb0)
 SD_IMPORT(Escena_Load, 0x2c2d60)
 
 /* module agent: Engine/Nodo3D (imports below this line) */
-SD_IMPORT(CNodo3D_DebugDraw, 0x23d9d0)
 
 /* module agent: Engine/Animacion (imports below this line) */
 
@@ -414,7 +413,6 @@ SD_IMPORT(crt_read, 0x35a234)
 SD_IMPORT(crt_close, 0x358d98)
 
 /* module agent: Engine leftovers 0x29c000..0x2b2000 (imports below this line) */
-SD_IMPORT(CMapa_CopyBmp, 0x2370a0)
 
 /* module agent: Big leftovers 0x0f0000..0x110000 (imports below this line) */
 

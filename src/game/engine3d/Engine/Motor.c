@@ -13,12 +13,14 @@
 #include "scrap/e3dutil.h"
 #include "scrap/app.h"
 #include "scrap/crt.h"
+#include "scrap/d3d8.h"
 #include "scrap/fondo2d.h"
 #include "scrap/lensflare.h"
 #include "scrap/luz.h"
 #include "scrap/archio.h"
 #include "scrap/flare.h"
 #include "scrap/fuentes.h"
+#include "scrap/grafico2d.h"
 #include "scrap/material.h"
 #include "scrap/nodefx.h"
 #include "scrap/render.h"
@@ -28,8 +30,10 @@
 #include "scrap/modelo.h"
 #include "scrap/mundo.h"
 #include "scrap/nodo3d.h"
+#include "scrap/prof.h"
 #include "scrap/scrapmain.h"
 #include "scrap/tabla.h"
+#include "scrap/texto.h"
 #include "scrap/varios.h"
 #include "scrap/win32.h"
 
@@ -70,7 +74,6 @@ typedef void(__stdcall *initcommoncontrols_t)(void);
 
 /* the console command handler of the engine (E3D_Command) */
 #define MOTOR_CMDPROC 0x22eda0
-#define g_E3DCmdProc GAME_DATA(void *, 0x4ab8f8)
 #define g_Entrada GAME_DATA(void *, 0x4db418)	/* the input of the engine, a CEntradaNula */
 #define MOTOR_OVERLAY(m) (*(void **)((m) + 0x2a5f0))	/* 8 bytes with a CGrafico2D */
 #define MOTOR_OBJ2A5F4(m) (*(void ***)((m) + 0x2a5f4))
@@ -310,6 +313,128 @@ CMundo *Mundo_GetChecked(void) {
 	return Mundo_Get();
 }
 
+/* the statistics of R_Profiler */
+#define g_RenderCounts ((int *)Game_Ptr(0x4a8f00))	/* 8, g_RenderTris and g_RenderVerts first */
+#define g_ProfResetTime GAME_DATA(float, 0x4a94a0)
+#define g_ProfNoReset GAME_DATA(int, 0x4a8fb8)	/* 0: the counters taken every frame, else once a second */
+#define g_CollisionCacheHit GAME_DATA(uint32_t, 0x4af7e0)
+#define g_CollisionCacheMiss GAME_DATA(uint32_t, 0x4af7e4)
+#define g_TexturePool GAME_DATA(int, 0x4b2670)
+#define g_TexCreated GAME_DATA(int, 0x4b25f0)
+#define g_TexCached GAME_DATA(int, 0x4b25f4)
+#define g_TexUsed GAME_DATA(int, 0x4b25f8)
+#define g_TexUsedPixels GAME_DATA(int, 0x4b25fc)
+#define PROF_FRAME3D 31
+#define D3DDEV_GETAVAILABLETEXTUREMEM 0x10
+typedef uint32_t(__stdcall *d3dGetAvailableTextureMem_t)(void *dev);
+
+/* the sections of the profiler page (mode 5) */
+static const struct {
+	int section;
+	float y;
+	const char *fmt;
+} g_ProfLines[] = {
+	{ 0x1f, 128.0f, "frame3d_31: %.2f %.2f %d" },
+	{ 0x10, 144.0f, "SphSli3D_16: %.2f %.2f %d" },
+	{ 0x11, 160.0f, "SphSli2D_17: %.2f %.2f %d" },
+	{ 0x12, 176.0f, "SphTest_18: %.2f %.2f %d" },
+	{ 0x13, 192.0f, "LineTest_19: %.2f %.2f %d" },
+	{ 0x14, 208.0f, "BoxTest_20: %.2f %.2f %d" },
+	{ 0x15, 224.0f, "LineSphe_21: %.2f %.2f %d" },
+	{ 0x16, 240.0f, "SphCheck_22: %.2f %.2f %d" },
+	{ 0x17, 256.0f, "LinePort_23: %.2f %.2f %d" },
+	{ 0x1e, 272.0f, "TestVis__30: %.2f %.2f %d" },
+	{ 0x1d, 288.0f, "EnLightR_29: %.2f %.2f %d" },
+};
+
+void Motor_DrawStats(void) {
+	CCamara *cam;
+	uint32_t ms[16];		/* MEMORYSTATUSEX */
+	uint64_t used;
+	float tm, mx;
+	int i, cnt, d3d, act, tot, mode;
+	byte now, reset;
+
+	mode = g_ProfMode;
+	if (mode == 1) {
+		Eng_Printf(1, 16.0f, 10.0f, 1, 0xffffff, "%.2f", (double)g_Fps);
+		mode = g_ProfMode;
+	}
+	if (mode > 1) {
+		Font_SetColor(g_FntComic14, 0xffffff);
+		Font_Printf(g_FntComic14, 10.0f, 16.0f, 2, "tri: %d %d %d %d %d %d %d %d", g_RenderCounts[0], g_RenderCounts[1],
+			g_RenderCounts[2], g_RenderCounts[3], g_RenderCounts[4], g_RenderCounts[5], g_RenderCounts[6],
+			g_RenderCounts[7]);
+		Font_Printf(g_FntComic14, 10.0f, 0.0f, 2, "fps: %.2f (%.2f ms)", (double)g_Fps, 1000.0 / (double)g_Fps);
+		Font_Printf(g_FntComic14, 10.0f, 64.0f, 2, "mem: %d %d %d %d", g_MemStats->bytes, g_MemStats->allocs,
+			g_MotorFrameCount, g_MotorInits);
+		mode = g_ProfMode;
+	}
+	if (mode == 2) {
+		Font_SetColor(g_FntComic14, 0xffffff);
+		cam = Mundo_Get()->cam;
+		Font_Printf(g_FntComic14, 10.0f, 32.0f, 2, "cam: %s  %.2f %.2f  %.2f", Vec3_StrDeg(&cam->rot, 0, 2),
+			(double)cam->zNear, (double)cam->zFar, (double)cam->fov * 180.0 / 3.141592653589793);
+		d3d = Luz_NumD3D();
+		act = Luz_NumActivas();
+		tot = Luz_NumTotal();
+		Font_Printf(g_FntComic14, 10.0f, 48.0f, 2, "luz: %d %d %d", tot, act, d3d);
+		cam = Mundo_Get()->cam;
+		Font_Printf(g_FntComic14, 10.0f, 80.0f, 2, "poscam: %.1f %.1f %.1f", (double)cam->pos.x, (double)cam->pos.y,
+			(double)cam->pos.z);
+		mode = g_ProfMode;
+	}
+	if (mode == 3) {
+		Font_Printf(g_FntComic14, 10.0f, 32.0f, 2, "FreeTextMem: %d Mb (pool %d)",
+			D3D_METHOD(g_pd3dDevice, d3dGetAvailableTextureMem_t, D3DDEV_GETAVAILABLETEXTUREMEM)(g_pd3dDevice) >> 20,
+			g_TexturePool);
+		ms[0] = 0x40;
+		exe_GlobalMemoryStatusEx(ms);
+		/* ullTotalVirtual - ullAvailVirtual */
+		used = ((uint64_t)ms[11] << 32 | ms[10]) - ((uint64_t)ms[13] << 32 | ms[12]);
+		Font_Printf(g_FntComic14, 10.0f, 96.0f, 2, "virtual memory used: %4d MB", (uint32_t)(used >> 20));
+		mode = g_ProfMode;
+	}
+	if (mode == 4) {
+		Motor_DrawFpsGraph(160.0f);
+		Font_PrintfXY(g_FntComic14, 10.0f, 32.0f, "%.2f MTri/s  %.2f MVert/s",
+			(double)((float)g_RenderCounts[0] * g_Fps) / 1000000.0, (double)((float)g_RenderCounts[1] * g_Fps) / 1000000.0);
+		mode = g_ProfMode;
+	}
+	if (mode == 5) {
+		now = g_TimeMsF - g_ProfResetTime > 1000.0f;
+		reset = g_ProfNoReset ? now : 1;
+		if (now) {
+			g_ProfResetTime = g_TimeMsF;
+		}
+		/* the time of this page is left out of the frame section */
+		g_ProfTicks[PROF_FRAME3D] += __builtin_ia32_rdtsc();
+		Font_PrintfXY(g_FntComic14, 10.0f, 112.0f, "CPU Mhz: %.2f", X87_Div((double)Tsc_CpuFreq(0), 1000000.0));
+		for (i = 0; i < (int)(sizeof(g_ProfLines) / sizeof(g_ProfLines[0])); i++) {
+			cnt = Prof_GetCount(g_ProfLines[i].section, reset);
+			mx = Prof_GetMaxTime(g_ProfLines[i].section, now);
+			tm = Prof_GetTime(g_ProfLines[i].section, reset);
+			Font_PrintfXY(g_FntComic14, 10.0f, g_ProfLines[i].y, g_ProfLines[i].fmt, (double)tm, (double)mx, cnt);
+		}
+		Font_PrintfXY(g_FntTerm8, 10.0f, 310.0f, "ncomp: %-5d  hit: %-5d  miss: %-5d  peak: %-5d  total: %-5d",
+			g_CollisionNComp, g_CollisionCacheHit, g_CollisionCacheMiss, g_CollisionTestsMax, g_CollisionTestsTotal);
+		g_CollisionTestsTotal = 0;
+		g_CollisionTestsMax = 0;
+		g_CollisionCacheMiss = 0;
+		g_CollisionCacheHit = 0;
+		g_ProfTicks[PROF_FRAME3D] -= __builtin_ia32_rdtsc();
+		mode = g_ProfMode;
+	}
+	Texto_Printf(10, mode == 2 ? 4 : 20, NULL);
+	if (g_ProfMode == 4 && g_TexCached) {
+		Font_PrintfXY(g_FntComic14, 10.0f, 192.0f, "%d %d %d  %.1f Kb", g_TexCached, g_TexUsed, g_TexCreated,
+			(double)g_TexUsedPixels * 0.0009765625);
+		g_TexCached = 0;
+		g_TexUsed = 0;
+		g_TexUsedPixels = 0;
+	}
+}
+
 /* EscenaGlobal: the scene of the world (or its first one, or bmp/vacia.m3d), counted while the level runs */
 void __fastcall Motor_ReleaseEscena(byte *self) {
 	CEscena *e;
@@ -446,6 +571,63 @@ void __thiscall CMotorApp_LightsDialog(byte *self, void *hwnd, void *inst) {
 	exe_DialogBoxParamA(inst, (const char *)MOTOR_LIGHTSDIALOG, hwnd, Game_Ptr(MOTOR_LIGHTSPROC),
 		(intptr_t)MOTOR_ESCENA(self));
 	((pause_t)(*(void ***)self)[MOTOR_VT_PAUSE / 4])(self, 0);
+}
+
+/* the frame time graph of R_Profiler 4 (Motor_DrawStats) */
+#define g_FpsText ((char *)Game_Ptr(0x4a9090))	/* 0x40, "frame: fps fps  ms" when the fps jumped */
+#define g_FpsTextTime GAME_DATA(float, 0x4a90d0)
+#define g_FpsGraph ((float *)Game_Ptr(0x4a90d8))	/* FPS_GRAPH bars of 2 vertices (x, 0) (x, frame ms) */
+#define g_FpsGraphPeak ((float *)Game_Ptr(0x4a92b8))	/* the same with the falling peak */
+#define g_FpsGraphPos GAME_DATA(int, 0x4a9498)
+#define g_FpsScaleTime GAME_DATA(float, 0x4a949c)
+#define g_FpsScale GAME_DATA(float, 0x431d00)	/* the height of the graph: 200 ms per 200 fps */
+#define FPS_GRAPH 30
+
+void Motor_DrawFpsGraph(float y) {
+	CGrafico2D g;
+	float fps = (float)(1.0 / (double)(g_FrameDelta + 1e-05f));
+	float *bar, *peak, fi, dt, k;
+	int i;
+
+	if (__builtin_fabs((double)(fps - g_Fps)) > (double)(g_Fps * 0.25f)) {
+		Bprintf(g_FpsText, 0x40, "%d: %.2f %.2f  %.1f ms", g_FrameCount, (double)fps, (double)g_Fps,
+			(double)(g_TimeMsF - g_FpsTextTime));
+		g_FpsTextTime = g_TimeMsF;
+	}
+	Font_PrintfXY(g_FntComic14, 10.0f, y, "%s", g_FpsText);
+	if (g_TimeMsF - g_FpsScaleTime > 2000.0f) {
+		g_FpsScaleTime = g_TimeMsF;
+		g_FpsScale = (float)((1 - (int)(g_Fps / -200.0f)) * 200);
+	}
+	i = g_FpsGraphPos;
+	dt = g_FrameDelta;
+	k = dt * 0.2f;
+	fi = (float)i;
+	bar = g_FpsGraph + i * 4;
+	peak = g_FpsGraphPeak + i * 4;
+	bar[0] = fi;
+	bar[1] = 0.0f;
+	bar[2] = fi;
+	bar[3] = dt;
+	peak[0] = fi;
+	peak[1] = 0.0f;
+	peak[2] = fi;
+	peak[3] = Float_MaxSS(dt, peak[3] * 0.95f - k);
+	g_FpsGraphPos = (i + 1) % FPS_GRAPH;
+	CGrafico2D_ctorTex(&g, NULL, NULL, 0);
+	g.x = 10.0f;
+	g.y = 460.0f;
+	g.escala[0] = 4.0f;
+	g.escala[1] = g_FpsScale * -10.0f;
+	g.pantalla = 1;
+	g.tamPantalla = 1;
+	g.sinTextura = 1;
+	g.color = 0x800000;
+	CGrafico2D_Draw(&g, g_FpsGraphPeak, NULL, NULL, FPS_GRAPH * 2, D3DPT_TRIANGLESTRIP);
+	g.color = 0xffffff;
+	CGrafico2D_Draw(&g, g_FpsGraph, NULL, NULL, FPS_GRAPH * 2, D3DPT_TRIANGLESTRIP);
+	Font_PrintfXY(g_FntComic14, 10.0f, 460.0f, "x%.1f", (double)g_FpsScale);
+	CGrafico2D_dtor(&g);
 }
 
 /* a tree view item with the printf text (TVINSERTSTRUCT, its pszText at 0x18); the new item */
