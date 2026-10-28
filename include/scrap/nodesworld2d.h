@@ -48,6 +48,7 @@ SD_SIZE(cNW2DBody, 0x10);
 
 #define g_NW2DBodies (&GAME_DATA(cNW2DBody, 0x444d98))	/* 3 bodies */
 #define g_NW2DDrawMode GAME_DATA(int, 0x444ddc)	/* what the debug view of the graph draws */
+#define g_NW2DShowNode GAME_DATA(int, 0x444e54)	/* the node the debug view shows, -1 none */
 #define g_NW2DGroundDist GAME_DATA(float, 0x444df4)	/* the length of the floor probes */
 #define g_NW2DHeight GAME_DATA(float, 0x444e24)	/* the height of the points over the floor */
 #define g_NW2DDebugSegs GAME_DATA(int, 0x444e3c)	/* the path tests keep their segments in the list they get */
@@ -109,6 +110,8 @@ byte __thiscall CNodesWorld2D_TestCorner(CNodesWorld2D *self, const vec3_t *a, c
 	float r, float r2, float h, float h2, byte flat, cNWSegList *debug);
 /* the generation of the graph (NWSup_Generate): the bodies walk at the start */
 byte __thiscall CNodesWorld2D_Generate(CNodesWorld2D *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
+/* the debug view of g_NW2DDrawMode, then the node g_NW2DShowNode with the cells of its region */
+void __fastcall CNodesWorld2D_Draw(CNodesWorld2D *self);
 /* the cell to link the pair of points through (NWSup_FindLinkBox, NWSup_FindLinkCell); Free: the cells of tmp1c8
  * whose center sees both points on the floor and walks to them */
 byte __thiscall CNodesWorld2D_FindLinkBox(CNodesWorld2D *self, const vec3_t *const *pair, const cNWBox *box,

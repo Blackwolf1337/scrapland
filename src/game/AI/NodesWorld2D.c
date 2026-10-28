@@ -12,6 +12,8 @@
 #include "scrap/nodesworld2d.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/scrapfont.h"
+#include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
 
 #define NW2D_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* the "" of the exe */
@@ -1440,4 +1442,81 @@ void __fastcall CNodesWorld2D_InterRegion(CNodesWorld2D *self) {
 
 byte __thiscall CNodesWorld2D_Generate(CNodesWorld2D *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
 	return NWSup_Generate(NW2D_SUP(self), init, min, max, &nw2d_ops);
+}
+
+void __fastcall CNodesWorld2D_Draw(CNodesWorld2D *self) {
+	CNodesWorld *w = NW2D_SUP(self);
+	int mode = g_NW2DDrawMode;
+
+	switch (mode) {
+	case 1:
+	case 7:
+	case 8:
+		g_FontTerminal8->color = 0xffffff;
+		g_FontTerminal8->align = 4;
+		for (int i = 0; i < w->numNodes; i++) {
+			DebugUtils_DrawSphere(&w->nodes[i].pos, 25.0f, 0xff00ff, 2, 2);
+			if (g_NW2DDrawMode == 8) {
+				NWSup_DrawNodeText(&w->nodes[i].pos, i);
+			}
+			for (int k = 0; k < w->nodes[i].numLinks; k++) {
+				DebugUtils_DrawLine(&w->nodes[i].pos, &w->nodes[i].links[k]->pos, 0xff00ff);
+			}
+			if (g_NW2DDrawMode == 7) {
+				vec3_t low = w->nodes[i].pos;
+				low.y = low.y - 1000.0f;
+				DebugUtils_DrawLine(&w->nodes[i].pos, &low, 0xff00);
+			}
+		}
+		NWSup_DrawFound(w, &w->lists25c[0], 25.0f, 0xff00);
+		NWSup_DrawFound(w, &w->lists25c[1], 25.0f, 0xff);
+		NWSup_DrawExtra(w, 25.0f, 0xffff00);
+		if (g_NW2DDrawMode == 8 && w->grid) {
+			w->grid->vftable->Draw(w->grid, 0xff00);
+		}
+		break;
+	case 2:
+		NWSup_DrawCells(w, &w->lists28c[1], 0xffffff, "ListNodesVis: %d\n");
+		break;
+	case 3:
+		NWSup_DrawCells(w, &w->lists28c[2], 0xff, "ListNodesNotVis: %d\n");
+		break;
+	case 4:
+		NWSup_DrawCells(w, &w->lists28c[0], 0xff0000, "ListNodesMap: %d\n");
+		break;
+	case 5:
+		NWSup_DrawCells(w, &w->lists28c[3], 0xff00, "ListNodesFree: %d\n");
+		break;
+	case 6:
+		NWSup_DrawCells(w, &w->lists28c[4], 0, "ListNodesOutMap: %d\n");
+		break;
+	case 9:
+	case 10: {
+		float r = mode == 9 ? 500.0f : 155.0f;
+		NWSup_DrawCollide(w, r, 0);
+		NWSup_DrawErrors(w, r);
+		break;
+	}
+	}
+	/* the node g_NW2DShowNode with its number and the cells of its region */
+	int s = g_NW2DShowNode;
+	if (s < 0 || s >= w->numNodes) {
+		return;
+	}
+	g_FontTerminal8->color = 0xffffff;
+	g_FontTerminal8->align = 4;
+	DebugUtils_DrawSphere(&w->nodes[g_NW2DShowNode].pos, 25.0f, 0xff0000, 2, 2);
+	NWSup_DrawNodeText(&w->nodes[g_NW2DShowNode].pos, g_NW2DShowNode);
+	cNW2DRegionNode *rn = self->regions.iter = self->regions.head;
+	while (rn) {
+		if (rn->r.id == w->numNodes - g_NW2DShowNode - 1) {
+			NWSup_DrawCells(w, &rn->r.points, 0xffffff, NULL);
+			Con_Printf("Num. Nodos Visibles: %d\n", rn->r.points.count);
+			return;
+		}
+		rn = self->regions.iter = self->regions.iter->next;
+		if (rn == self->regions.head) {
+			return;
+		}
+	}
 }

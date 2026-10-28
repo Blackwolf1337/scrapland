@@ -11,13 +11,12 @@
 #include "scrap/crt.h"
 #include "scrap/hashtable.h"
 #include "scrap/nodesworld2d.h"
+#include "scrap/scrapmain.h"
 
 #define CBINARYHEAP_VFTABLE 0x3a97c4
 #define CASTARSUP_VFTABLE 0x3a9a54
 #define CASTAR_VFTABLE 0x3a9774
 #define CASTAR2D_VFTABLE 0x3a99c8
-
-void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
 
 cBinaryHeap *__thiscall cBinaryHeap_ctor(cBinaryHeap *self, int capacity, binHeapLess_t less, binHeapEq_t equals,
 	binHeapIndex_t setIndex) {

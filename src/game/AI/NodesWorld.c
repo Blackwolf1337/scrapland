@@ -14,6 +14,7 @@
 #include "scrap/nodesworldsup.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
@@ -1648,4 +1649,108 @@ void __fastcall CNodesWorld_InterRegion(CNodesWorld *self) {
 
 byte __thiscall CNodesWorld_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
 	return NWSup_Generate(self, init, min, max, &nw_ops);
+}
+
+void __fastcall CNodesWorld_Draw(CNodesWorld *self) {
+	int mode = g_NWDrawMode;
+	float r;
+
+	switch (mode) {
+	case 1:
+	case 11:
+		if (mode == 11) {
+			g_FontTerminal8->color = 0xffffff;
+			g_FontTerminal8->align = 4;
+		}
+		for (int i = 0; i < self->numNodes; i++) {
+			DebugUtils_DrawSphere(&self->nodes[i].pos, 50.0f, 0xff0000, 2, 2);
+			if (mode == 11) {
+				NWSup_DrawNodeText(&self->nodes[i].pos, i);
+			}
+			for (int k = 0; k < self->nodes[i].numLinks; k++) {
+				DebugUtils_DrawLine(&self->nodes[i].pos, &self->nodes[i].links[k]->pos, 0xff0000);
+			}
+		}
+		NWSup_DrawFound(self, &self->lists25c[0], 50.0f, 0xff00);
+		NWSup_DrawFound(self, &self->lists25c[1], 50.0f, 0xff);
+		NWSup_DrawExtra(self, 50.0f, 0xff);
+		if (mode == 11 && self->grid) {
+			self->grid->vftable->Draw(self->grid, 0xff00);
+		}
+		break;
+	case 2:
+		NWSup_DrawCells(self, &self->lists28c[1], 0xffffff, "ListNodesVis: %d\n");
+		break;
+	case 3:
+		NWSup_DrawCells(self, &self->lists28c[2], 0xff, "ListNodesNotVis: %d\n");
+		break;
+	case 4:
+		NWSup_DrawCells(self, &self->lists28c[0], 0xff0000, "ListNodesMap: %d\n");
+		break;
+	case 5:
+		NWSup_DrawCells(self, &self->lists28c[3], 0xff0000, "ListNodesFree: %d\n");
+		break;
+	case 6:
+		NWSup_DrawCells(self, &self->lists28c[4], 0, "ListNodesOutMap: %d\n");
+		break;
+	case 7: {
+		/* the analysis: the open cell, the triangles with their point, hit and middle, the cells outside the
+		 * sectors */
+		r = g_IsMapOutDoor ? 5000.0f : 500.0f;
+		if (self->open) {
+			DebugUtils_DrawSphere(&self->openPos, r, 0xff, 20, 20);
+		}
+		cNWTriNode *t = self->tris.iter = self->tris.head;
+		while (t) {
+			const float *d = t->data;
+			const vec3_t *p = (const vec3_t *)&d[9];
+			vec3_t mn, mx;
+			mx.x = p->x + self->analizeSize.x * 0.5f;
+			mx.y = p->y + self->analizeSize.y * 0.5f;
+			mx.z = p->z + self->analizeSize.z * 0.5f;
+			mn.x = p->x - self->analizeSize.x * 0.5f;
+			mn.y = p->y - self->analizeSize.y * 0.5f;
+			mn.z = p->z - self->analizeSize.z * 0.5f;
+			DebugUtils_DrawBox(&mn, &mx, 0xff00);
+			DebugUtils_DrawLine(p, (const vec3_t *)&d[12], 0xff0000);
+			if (d[0] != 3.40282347e+38f) {
+				const vec3_t *v0 = (const vec3_t *)&d[0], *v1 = (const vec3_t *)&d[3], *v2 = (const vec3_t *)&d[6];
+				vec3_t c, top;
+				c.x = (v2->x + (v1->x + v0->x)) * 0.333333343f;
+				c.y = (v2->y + (v1->y + v0->y)) * 0.333333343f;
+				c.z = (v2->z + (v1->z + v0->z)) * 0.333333343f;
+				top.x = c.x;
+				top.y = self->max.y;
+				top.z = c.z;
+				DebugUtils_DrawLine(&c, &top, 0xffff00);
+				DebugUtils_DrawTri(v0, v1, v2, 0xffff00);
+			}
+			t = self->tris.iter = self->tris.iter->next;
+			if (t == self->tris.head) {
+				break;
+			}
+		}
+		cNWVecNode *n = self->errUnlinked.iter = self->errUnlinked.head;
+		while (n) {
+			vec3_t low = n->v;
+			DebugUtils_DrawSphere(&n->v, r, 0xffffff, 2, 2);
+			low.y = self->min.y;
+			DebugUtils_DrawLine(&n->v, &low, 0xffffff);
+			n = self->errUnlinked.iter = self->errUnlinked.iter->next;
+			if (n == self->errUnlinked.head) {
+				break;
+			}
+		}
+		break;
+	}
+	case 8:
+		DebugUtils_DrawBox(&self->min, &self->max, 0xff0000);
+		break;
+	case 9:
+	case 10:
+		r = mode == 9 ? (g_IsMapOutDoor ? 5000.0f : 500.0f) : g_NWNodeRadius;
+		NWSup_DrawCollide(self, r, 1);
+		NWSup_DrawErrors(self, r);
+		break;
+	}
 }

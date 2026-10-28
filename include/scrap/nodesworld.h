@@ -354,6 +354,8 @@ void __thiscall CNodesWorld_CreateRegion(CNodesWorld *self, const vec3_t *start)
 void __fastcall CNodesWorld_InterRegion(CNodesWorld *self);
 /* NWSup_Generate: the start free of the level */
 byte __thiscall CNodesWorld_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
+/* the debug view of g_NWDrawMode */
+void __fastcall CNodesWorld_Draw(CNodesWorld *self);
 void __thiscall CNodesWorld_AnalizeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 
 /* the name of the level with file after it, in a buffer of 0x100 like the original */

@@ -10,6 +10,8 @@
 #include "scrap/nodesworld2d.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/scrapfont.h"
+#include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
 
 double crt_ceil(double x);	/* rva 0x345010 */
@@ -1632,4 +1634,121 @@ byte NWSup_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, co
 		self->vftable->GetInfoNodes(self);
 	}
 	return 1;
+}
+
+/* ---- the debug view of the graphs (g_NWDrawMode, g_NW2DDrawMode) ---- */
+
+void NWSup_DrawNodeText(const vec3_t *n, int i) {
+	vec3_t p;
+
+	p.x = n->x + 0.0f;
+	p.y = n->y - 25.0f;
+	p.z = n->z + 0.0f;
+	CFont_Printf3D(g_FontTerminal8, &p, 3, "%d", i);
+}
+
+void NWSup_DrawFound(CNodesWorld *self, cNWVecList *list, float r, uint32_t color) {
+	cNWVecNode *n = list->iter = list->head;
+
+	while (n) {
+		const int *d = (const int *)&n->v;
+		vec3_t c;
+		self->vftable->BufferPos(self, &c, d[0]);
+		DebugUtils_DrawSphere(&c, r, color, 2, 2);
+		DebugUtils_DrawLine(&c, (const vec3_t *)(uintptr_t)d[1], color);
+		DebugUtils_DrawLine(&c, (const vec3_t *)(uintptr_t)d[2], color);
+		n = list->iter = list->iter->next;
+		if (n == list->head) {
+			break;
+		}
+	}
+}
+
+void NWSup_DrawCells(CNodesWorld *self, cNWVecList *list, uint32_t color, const char *fmt) {
+	cNWVecNode *n = list->iter = list->head;
+
+	while (n) {
+		const vec3_t *v = &n->v;
+		vec3_t mn, mx;
+		mx.x = v->x + self->halfNode.x;
+		mn.x = v->x - self->halfNode.x;
+		mx.y = self->halfNode.y + v->y;
+		mn.y = v->y - self->halfNode.y;
+		mx.z = self->halfNode.z + v->z;
+		mn.z = v->z - self->halfNode.z;
+		DebugUtils_DrawBox(&mn, &mx, color);
+		n = list->iter = list->iter->next;
+		if (n == list->head) {
+			break;
+		}
+	}
+	if (fmt) {
+		Con_Printf(fmt, list->count);
+	}
+}
+
+/* the next point of a ring of points, NULL at its head */
+static const vec3_t *NWSup_NextPoint(cNWVecList *list) {
+	cNWVecNode *n = list->iter = list->iter->next;
+
+	return n == list->head ? NULL : &n->v;
+}
+
+void NWSup_DrawErrors(CNodesWorld *self, float r) {
+	cNWVecList *l = &self->errUnlinked;
+	cNWVecNode *n = l->iter = l->head;
+
+	while (n) {
+		DebugUtils_DrawSphere(&n->v, r, 0xff00, 10, 10);
+		n = l->iter = l->iter->next;
+		if (n == l->head) {
+			break;
+		}
+	}
+	l = &self->errOneWay;
+	n = l->iter = l->head;
+	while (n) {
+		const vec3_t *a = &n->v;
+		DebugUtils_DrawSphere(a, r, 0xff00, 10, 10);
+		const vec3_t *b = NWSup_NextPoint(l);
+		DebugUtils_DrawSphere(b, r, 0xff, 10, 10);
+		DebugUtils_DrawLine(a, b, 0xff0000);
+		n = l->iter = l->iter->next;
+		if (n == l->head) {
+			break;
+		}
+	}
+}
+
+void NWSup_DrawCollide(CNodesWorld *self, float r, byte triples) {
+	cNWVecList *l = &self->errCollide;
+	cNWVecNode *n = l->iter = l->head;
+
+	while (n) {
+		const vec3_t *a = &n->v;
+		DebugUtils_DrawSphere(a, triples ? 25.0f : r, 0xff0000, triples ? 2 : 10, triples ? 2 : 10);
+		const vec3_t *b = NWSup_NextPoint(l);
+		DebugUtils_DrawSphere(b, triples ? 25.0f : r, 0xff0000, triples ? 2 : 10, triples ? 2 : 10);
+		DebugUtils_DrawLine(a, b, 0xff0000);
+		if (triples) {
+			DebugUtils_DrawSphere(NWSup_NextPoint(l), r, 0xff0000, 10, 10);
+		}
+		n = l->iter = l->iter->next;
+		if (n == l->head) {
+			break;
+		}
+	}
+}
+
+void NWSup_DrawExtra(CNodesWorld *self, float r, uint32_t color) {
+	cNWVecList *l = &self->extraPoints;
+	cNWVecNode *n = l->iter = l->head;
+
+	while (n) {
+		DebugUtils_DrawSphere(&n->v, r, color, 2, 2);
+		n = l->iter = l->iter->next;
+		if (n == l->head) {
+			break;
+		}
+	}
 }

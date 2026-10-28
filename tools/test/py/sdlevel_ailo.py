@@ -541,6 +541,9 @@ def aloGenerate(w):
 			pts = aloPointList(m)
 			check('alo gen points(%d) %s %d' % (k, fmt(f40), sz), lambda m=m, pts=pts: aloPoints(m, pts))
 			check('alo gen states(%d) %s %d' % (k, fmt(f40), sz), lambda m=m: aloStates(m))
+			if k == 0 and sz == 3:
+				SDTest.Call(aloI(aloI(m) + 0x50) - 0x400000, 'tvi', m)
+				aloDrawViews('gen', m, 0x0a5b10, 0x444d48, (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), pts)
 			SDTest.Call(aloI(aloI(m) + 0x90) - 0x400000, 'tvi', m)
 			SDTest.Call(0x0a5ab0, 'tvi', m + 0x190)
 		# the region reaches the side of the box: open
@@ -577,8 +580,63 @@ def aloGenerate2D():
 		aloI(aloI(m + 0x360) + 0x14), aloF(aloI(m + 0x190) + 0x2c, 6)))
 	SDTest.Poke(0x444ddc, dm)
 	check('alo gen2d NextInit', lambda m=m: SDTest.Call(0x0b7810, 'tbiF', m, (0.0,) * 3))
+	SDTest.Call(aloI(aloI(m) + 0x50) - 0x400000, 'tvi', m)
+	sn = SDTest.Peek(0x444e54, 'i')
+	for v in (-1, 2):
+		SDTest.Poke(0x444e54, v)
+		aloDrawViews('gen2d%d' % v, m, 0x0b1210, 0x444ddc, (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), [])
+	SDTest.Poke(0x444e54, sn)
 	SDTest.Call(aloI(aloI(m) + 0x90) - 0x400000, 'tvi', m)
 	check('alo gen2d Delete', lambda m=m: SDTest.Call(0x0ada70, 'tiii', m, 1)[0] == m)
+
+# the debug views through the D3D log (the length and the hash of the logged text): the views of all modes on an
+# object with lists, a small node array of three nodes and the error lists set up here
+def aloD3D(fn):
+	SDTest.Out()
+	SDTest.D3DLog(1)
+	fn()
+	SDTest.D3DLog(0)
+	t = SDTest.Out()
+	return (len(t), hash(t))
+
+def aloDrawViews(tag, m, rva, mode, modes, pts):
+	font = SDTest.Peek(0x4a8908, 'i')
+	keep = (aloI(font + 0x10), aloI(font + 0x14))
+	nodes = aloCalloc(3 * 0x14)
+	links = aloCalloc(4 * 4)
+	pos = ((100.0, 200.0, 300.0), (-50.0, 20.0, 400.0), (0.0, -10.0, -20.0))
+	for i in range(3):
+		aloSetF(nodes + 0x14 * i, pos[i])
+	aloPoke(links, nodes + 0x14)
+	aloPoke(links + 4, nodes + 0x28)
+	aloPoke(links + 8, nodes)
+	aloPoke(nodes + 0xc, 2)
+	aloPoke(nodes + 0x10, links)
+	aloPoke(nodes + 0x14 + 0xc, 1)
+	aloPoke(nodes + 0x14 + 0x10, links + 8)
+	aloPoke(m + 0x1a8, nodes)
+	aloPoke(m + 0x1ac, 3)
+	# links through the level: 6 points (two triples in 3D, three pairs in 2D), 3 nodes without links, 2 one way
+	# links
+	for off, n in ((0x310, 6), (0x328, 3), (0x340, 4)):
+		for i in range(n):
+			p = pos[i % 3]
+			SDTest.Call(0x06d720, 'tviF', m + off, (p[0] + i, p[1], p[2] - i))
+	SDTest.Call(0x06d720, 'tviF', m + 0x1f0, (5.0, 6.0, 7.0))
+	dm = SDTest.Peek(mode, 'i')
+	for v in modes:
+		SDTest.Poke(mode, v)
+		check('alo %s Draw(%d)' % (tag, v), lambda m=m, rva=rva, font=font: (aloD3D(lambda m=m, rva=rva:
+			SDTest.Call(rva, 'tvi', m)), aloI(font + 0x10), aloI(font + 0x14)))
+	SDTest.Poke(mode, dm)
+	aloPoke(font + 0x10, keep[0])
+	aloPoke(font + 0x14, keep[1])
+	aloPoke(m + 0x1a8, 0)
+	aloPoke(m + 0x1ac, 0)
+	for off in (0x310, 0x328, 0x340, 0x1f0):
+		SDTest.Call(0x06d8a0, 'tvi', m + off)
+	aloFree(links)
+	aloFree(nodes)
 
 aloW = SDTest.Peek(0x444d34, 'i')
 check('alo start', lambda: (aloW != 0, SDTest.Peek(0x444c7c, 'i') != 0))

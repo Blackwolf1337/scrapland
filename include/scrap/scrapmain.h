@@ -249,6 +249,8 @@ int Ini_GetPath(const char *sect, const char *key, char *dest, int size, const c
 /* DebugUtils.cpp (src/game/ScrapEng/DebugUtils.c): util_d3d.cpp lines with the identity of 0x431b10 */
 void DebugUtils_DrawAxes(const matrix_t *m, const vec3_t *pos, float size);	/* red, green, blue */
 void DebugUtils_DrawPoint(const vec3_t *pos, float size, uint32_t color);
+/* a sphere of lines: divV rings, divH segments */
+void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
 void DebugUtils_DrawBox(const vec3_t *mn, const vec3_t *mx, uint32_t color);
 void DebugUtils_DrawLine(const vec3_t *a, const vec3_t *b, uint32_t color);
 void DebugUtils_DrawTri(const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color);

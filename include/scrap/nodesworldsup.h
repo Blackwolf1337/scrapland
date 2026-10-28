@@ -150,5 +150,14 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops);
  * links, the points between the regions and the extra points; the start snapped to its cell must be inside the box
  * and free (a fatal error else) */
 byte NWSup_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max, const nwGenOps *ops);
+/* the debug view: the number of a node over it, the found cells (index, a, b) as spheres with the lines to a and
+ * b, the cells of a list as boxes (and their count with fmt), the extra points, the errors of AnalizeGraph (links
+ * through the level: triples with the radius r on the third, 2D pairs; the nodes without links, one way links) */
+void NWSup_DrawNodeText(const vec3_t *n, int i);
+void NWSup_DrawFound(CNodesWorld *self, cNWVecList *list, float r, uint32_t color);
+void NWSup_DrawCells(CNodesWorld *self, cNWVecList *list, uint32_t color, const char *fmt);
+void NWSup_DrawExtra(CNodesWorld *self, float r, uint32_t color);
+void NWSup_DrawCollide(CNodesWorld *self, float r, byte triples);
+void NWSup_DrawErrors(CNodesWorld *self, float r);
 
 #endif
