@@ -8263,3 +8263,5 @@ SD_HOOK(Timer_MeasureQP, 0x276e40, 72)
 SD_HOOK(Video_WaitKeysUp, 0x280d10, 70)
 
 /* module agent: Standalone 2a, the real Python 1.5.2 (hooks below this line) */
+
+/* module agent: Standalone, the other Sleep calls (hooks below this line) */
