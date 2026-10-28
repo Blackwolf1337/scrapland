@@ -509,21 +509,35 @@ byte __thiscall cGVar_SetString(cGVar *self, const char *s) {
 	return 1;
 }
 
-void Transport_Wait(int ms) {
+/*
+ * differs from the original on purpose (no blocking waits): the original waited in a select until a packet came or
+ * ms passed. This polls with a zero timeout and says whether that wait is over; the wait starts at the first call
+ * after the last one that returned 1.
+ */
+int Transport_Wait(int ms) {
+	static uint32_t start;
+	static int waiting;
 	struct {
 		uint32_t count;
 		uint32_t sockets[64];
 	} fds;
-	int32_t tv[2];
+	const int32_t tv[2] = { 0, 0 };
 
 	if (g_NetMode != NETMODE_SERVER) {
-		return;
+		return 1;
 	}
-	tv[0] = ms / 1000;
+	uint32_t now = exe_timeGetTime();
+	if (!waiting) {
+		waiting = 1;
+		start = now;
+	}
 	fds.sockets[0] = g_NetSocket;
 	fds.count = 1;
-	tv[1] = (ms % 1000) * 1000;
-	Wsock_select((int)g_NetSocket + 1, &fds, NULL, NULL, tv);
+	if (now - start < (uint32_t)ms && Wsock_select((int)g_NetSocket + 1, &fds, NULL, NULL, tv) <= 0) {
+		return 0;
+	}
+	waiting = 0;
+	return 1;
 }
 
 uint16_t Transport_Crc16(const byte *data, int size) {

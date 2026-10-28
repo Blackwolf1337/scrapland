@@ -106,6 +106,7 @@ void __thiscall CApp_InitGame(CApp *self, const char *level);
 void __thiscall CApp_Nop(CApp *self);
 byte __thiscall CApp_Init(CApp *self);
 byte __thiscall CApp_Frame(CApp *self);
+int CApp_FrameResume(void);
 void __thiscall CApp_Shutdown(CApp *self);
 void __thiscall CApp_LoadLevelNow(CApp *self, const char *level);
 void __thiscall CApp_Update(CApp *self, float dt);

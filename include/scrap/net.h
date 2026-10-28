@@ -427,6 +427,8 @@ byte Net_IsServer(void);
 byte Net_Kick(const char *player);
 byte Net_ServerChangeLevel(const char *level);
 byte Net_ServerFrame(void);
+void Net_ServerFrameHead(void);
+byte Net_ServerFrameTail(void);
 /* a hex and text dump of data into the console, 16 bytes a line */
 void Net_HexDump(const void *data, int size);
 void Net_DumpData(const char *title, const void *data, int size);
@@ -574,7 +576,7 @@ int Transport_SendToClient(const void *data, int size, int slot);
 void Transport_SendToServer(const void *data, int size);
 int Net_SendMasterString(const char *text);
 byte __thiscall cGVar_SetString(cGVar *self, const char *s);
-void Transport_Wait(int ms);
+int Transport_Wait(int ms);
 uint16_t Transport_Crc16(const byte *data, int size);
 int Net_IsMaster(void);
 int Net_PingInetSvrs(void);

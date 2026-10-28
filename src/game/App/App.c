@@ -526,6 +526,18 @@ void __thiscall App_PickLoadingTip(CApp *self, const char *level) {
 	Con_Debugf("Loading string:\n     '%s'\n", *g_LoadMsgString);
 }
 
+/* set while the dedicated server's frame waits for a packet (CApp_FrameResume finishes it) */
+static int g_AppNetPending;
+
+/* the end of a frame: the client's net frames and the net update */
+static void CApp_FrameNet(void) {
+	if (Net_IsClient()) {
+		while (Net_ClientFrame()) {
+		}
+	}
+	Net_Update();
+}
+
 /* vf05: one frame; 0 when the time did not go on (or the app waits in the background) */
 byte __thiscall CApp_Frame(CApp *self) {
 	if (self->loadPending) {
@@ -566,18 +578,34 @@ byte __thiscall CApp_Frame(CApp *self) {
 	}
 	self->vftable->Update(self, dt);
 	if (Net_IsServer() && (self->flags & APPF_SERVER)) {
-		if (!(self->flags >> 2 & 1)) {
+		if (!(self->flags & APPF_DEDICATED)) {
 			while (Net_ServerFrame()) {
 			}
 		} else {
-			Net_ServerFrame();
+			Net_ServerFrameHead();
+			/* differs from the original on purpose (no blocking waits): the original waited here up to 1 s for a
+			 * packet; now the rest of the frame runs from App_WinMain (CApp_FrameResume) once the wait is over */
+			if (!Transport_Wait(1000)) {
+				g_AppNetPending = 1;
+				return 1;
+			}
+			Net_ServerFrameTail();
 		}
 	}
-	if (Net_IsClient()) {
-		while (Net_ClientFrame()) {
-		}
+	CApp_FrameNet();
+	return 1;
+}
+
+/* the rest of the dedicated server's frame, when it waits in Transport_Wait; 0 while there is none */
+int CApp_FrameResume(void) {
+	if (!g_AppNetPending) {
+		return 0;
 	}
-	Net_Update();
+	if (Transport_Wait(1000)) {
+		g_AppNetPending = 0;
+		Net_ServerFrameTail();
+		CApp_FrameNet();
+	}
 	return 1;
 }
 

@@ -551,6 +551,10 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 	}
 	for (;;) {
 		if (!exe_PeekMessageA(&msg, NULL, 0, 0, 1)) {
+			/* the rest of a dedicated server frame that waits for a packet (the original blocked in Transport_Wait) */
+			if (CApp_FrameResume()) {
+				continue;
+			}
 			/* differs from the original on purpose (no sleeps): no frame while the frame limiter holds it back, the
 			 * original slept in CMotorApp_Render */
 			if (!g_Motor || Motor_FrameDue(g_Motor)) {

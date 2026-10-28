@@ -5028,7 +5028,7 @@ rva	size	source	callconv	name	signature
 00191b40	54	USER_DEFINED	__cdecl	Transport_SendToServer	void __cdecl(void * data, int size)
 00191b80	143	USER_DEFINED	__cdecl	Net_SendMasterString	int __cdecl(char * text)
 00191c10	32	USER_DEFINED	__thiscall	cGVar_SetString	byte __thiscall(char * s)
-00191c30	139	USER_DEFINED	__cdecl	Transport_Wait	void __cdecl(int ms)
+00191c30	139	USER_DEFINED	__cdecl	Transport_Wait	int __cdecl(int ms)
 00191cc0	58	USER_DEFINED	__cdecl	Transport_Crc16	ushort __cdecl(byte * data, int size)
 00191d00	6	USER_DEFINED	__cdecl	Net_IsMaster	int __cdecl(void)
 00191d10	435	USER_DEFINED	__cdecl	Transport_RecvFrom	int __cdecl(uint s, byte * buf, int len, int flags, void * from, int * fromlen)

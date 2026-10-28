@@ -248,9 +248,9 @@ byte Net_ServerChangeLevel(const char *level) {
 	return 1;
 }
 
-byte Net_ServerFrame(void) {
+/* the server frame up to the wait of the dedicated server: the heartbeat to the master and the ASE queries */
+void Net_ServerFrameHead(void) {
 	char s[0x80];
-	int r;
 
 	CHECK(g_NetServerPort != 0);
 	if (Transport_GetMaxClients() > Net_GetSendRate() && g_NetBrowserCode && *g_NetBrowserCode) {
@@ -263,9 +263,12 @@ byte Net_ServerFrame(void) {
 		}
 	}
 	Net_AseCheck();
-	if (g_pApp->flags & APPF_DEDICATED) {
-		Transport_Wait(1000);
-	}
+}
+
+/* the rest after the wait: receive, send to the clients in turn, drop the ones that timed out */
+byte Net_ServerFrameTail(void) {
+	int r;
+
 	do {
 		g_NetServerDataSize = 24000;
 		g_NetServerCtlSize = 24000;
@@ -292,6 +295,13 @@ byte Net_ServerFrame(void) {
 		}
 	}
 	return r != -1;
+}
+
+/* differs from the original on purpose (no blocking waits): the dedicated server's wait for a packet (Transport_Wait)
+ * is not here but in CApp_Frame, which finishes the frame later without blocking; this is the other servers' frame */
+byte Net_ServerFrame(void) {
+	Net_ServerFrameHead();
+	return Net_ServerFrameTail();
 }
 
 void Net_HexDump(const void *data, int size) {
