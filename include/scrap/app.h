@@ -105,7 +105,12 @@ void __thiscall CApp_DoneGame(CApp *self);
 void __thiscall CApp_InitGame(CApp *self, const char *level);
 void __thiscall CApp_Nop(CApp *self);
 byte __thiscall CApp_Init(CApp *self);
+/* the rest of CApp_Init when it returned while the videos of Engine_Init play (Engine_VideoWait); 0 while they
+ * still play */
+byte CApp_InitResume(CApp *self);
 byte __thiscall CApp_Frame(CApp *self);
+/* the rest of a frame that waits (the level load after the start video, the dedicated server's packet wait), from
+ * the message loop; 0 while none waits */
 int CApp_FrameResume(void);
 void __thiscall CApp_Shutdown(CApp *self);
 void __thiscall CApp_LoadLevelNow(CApp *self, const char *level);

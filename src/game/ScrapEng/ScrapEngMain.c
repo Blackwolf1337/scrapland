@@ -69,11 +69,101 @@ static D3DAdapterInfo *Motor_AdapterInfo(void) {
 	return ai;
 }
 
-static void StartVideo_Play(void) {
-	Video_PlayFile(*g_StartVideo, 0);
+static void StartVideo_End(void) {
 	if (!(g_StartVideoFlags & 1)) {
 		cString_Set(g_StartVideo, "");
 	}
+}
+
+/* 0 while the video plays on (StartVideo_End after it, from Engine_VideoResume) */
+static int StartVideo_Play(void) {
+	if (Video_PlayFile(*g_StartVideo, 0) == VIDEO_PENDING) {
+		return 0;
+	}
+	StartVideo_End();
+	return 1;
+}
+
+/* the rest of Engine_Init, Engine_LevelEnd or Video_PlayStart after a video of theirs, run by Engine_VideoResume */
+enum {
+	ENGWAIT_NONE,
+	ENGWAIT_INIT,
+	ENGWAIT_LEVELEND,
+	ENGWAIT_PLAYSTART,
+};
+static int eng_wait;
+static int eng_initStep;		/* the next step of Engine_InitVideos */
+static int eng_videoResult;		/* of the video of the step before */
+
+/* the steps of Engine_InitVideos: the four intro videos, MSE-Short, the start video */
+#define ENGINIT_STARTVIDEO 5
+
+/* the videos of Engine_Init and the rest after them; 0 while a video plays on (Engine_VideoResume goes on with the
+ * next step) */
+static int Engine_InitVideos(void) {
+	static const char *const intro[ENGINIT_STARTVIDEO] = { "Video/Enlight.avi", "Video/Distrib.avi",
+		"Video/Mauretania.avi", "Video/MSE.avi", "Video/MSE-Short.avi" };
+
+	while (eng_initStep <= ENGINIT_STARTVIDEO) {
+		int step = eng_initStep++;
+		if (step == ENGINIT_STARTVIDEO) {
+			if (*g_StartVideo && **g_StartVideo && !StartVideo_Play()) {
+				return 0;
+			}
+			continue;
+		}
+		/* MSE-Short when MSE.avi did not run to its end */
+		if (APP_DEDICATED(g_pApp) || (step == 4 && eng_videoResult == 1)) {
+			continue;
+		}
+		int r = Video_PlayFile(intro[step], 0);
+		if (r == VIDEO_PENDING) {
+			return 0;
+		}
+		eng_videoResult = r;
+	}
+	if (g_IsDemo) {
+		Splash_Show("2D/Loading/00LogoEnlight.dds", 1, 4000, 1);
+		if (g_IsDemo) {
+			Splash_Show("2D/Loading/00LogoMSE.dds", 1, 4000, 1);
+		}
+	}
+	Splash_Show("2D/Loading/00Legal_global.dds", 1, 0, 0);
+	Con_Printf("Engine 3D initialized\n");
+	return 1;
+}
+
+int Engine_VideoWait(void) {
+	return eng_wait != ENGWAIT_NONE;
+}
+
+int Engine_VideoResume(void) {
+	if (Video_Busy()) {
+		return 0;
+	}
+	int wait = eng_wait;
+	eng_wait = ENGWAIT_NONE;
+	switch (wait) {
+	case ENGWAIT_INIT:
+		if (eng_initStep > ENGINIT_STARTVIDEO) {
+			StartVideo_End();
+		} else {
+			eng_videoResult = Video_Result();
+		}
+		if (!Engine_InitVideos()) {
+			eng_wait = ENGWAIT_INIT;
+			return 0;
+		}
+		break;
+	case ENGWAIT_LEVELEND:
+		StartVideo_End();
+		Splash_Show(NULL, 1, 0, 0);
+		break;
+	case ENGWAIT_PLAYSTART:
+		StartVideo_End();
+		break;
+	}
+	return 1;
 }
 
 void Engine_Close(void) {
@@ -261,25 +351,12 @@ void Engine_Init(void) {
 	} else {
 		MOTOR_CALL(m, MOTOR_VT_RESTORE);
 	}
-	if (!APP_DEDICATED(g_pApp)) {
-		Video_PlayFile("Video/Enlight.avi", 0);
-		Video_PlayFile("Video/Distrib.avi", 0);
-		Video_PlayFile("Video/Mauretania.avi", 0);
-		if (Video_PlayFile("Video/MSE.avi", 0) != 1) {
-			Video_PlayFile("Video/MSE-Short.avi", 0);
-		}
+	/* differs from the original on purpose (no blocking waits): a video plays on from the message loop, the steps after
+	 * it run from Engine_VideoResume */
+	eng_initStep = 0;
+	if (!Engine_InitVideos()) {
+		eng_wait = ENGWAIT_INIT;
 	}
-	if (*g_StartVideo && **g_StartVideo) {
-		StartVideo_Play();
-	}
-	if (g_IsDemo) {
-		Splash_Show("2D/Loading/00LogoEnlight.dds", 1, 4000, 1);
-		if (g_IsDemo) {
-			Splash_Show("2D/Loading/00LogoMSE.dds", 1, 4000, 1);
-		}
-	}
-	Splash_Show("2D/Loading/00Legal_global.dds", 1, 0, 0);
-	Con_Printf("Engine 3D initialized\n");
 }
 
 /* al from the window flag with the rest of eax from g_Motor, like the original's sete */
@@ -307,8 +384,11 @@ void Engine_LevelEnd(void) {
 		if (**g_StartVideo && CD3DApp_ResetDevice(g_Motor) < 0) {
 			E3D_LogBlue(g_FileLog, "ERROR: 'ResetDevice()' failed");
 		}
-		if (*g_StartVideo && **g_StartVideo) {
-			StartVideo_Play();
+		/* differs from the original on purpose (no blocking waits): the rest after the video from
+		 * Engine_VideoResume */
+		if (*g_StartVideo && **g_StartVideo && !StartVideo_Play()) {
+			eng_wait = ENGWAIT_LEVELEND;
+			return;
 		}
 	}
 	Splash_Show(NULL, 1, 0, 0);
@@ -490,8 +570,10 @@ byte Video_PlayStart(byte play) {
 	if (!*g_StartVideo || !**g_StartVideo) {
 		return 0;
 	}
-	if (play) {
-		StartVideo_Play();
+	/* differs from the original on purpose (no blocking waits): StartVideo_End after the video from
+	 * Engine_VideoResume */
+	if (play && !StartVideo_Play()) {
+		eng_wait = ENGWAIT_PLAYSTART;
 	}
 	return 1;
 }
@@ -1037,7 +1119,8 @@ byte Video_Play(const char *name, const char *cmd, float arg) {
 	(void)arg;
 	CHECK(cmd);
 	if (!crt_stricmp(cmd, "play")) {
-		return Video_PlayFile(name, 0) > 0;
+		/* Scrap.VideoPlayer: the script goes on after the video, so this one still waits for it as the original */
+		return Video_PlayFileWait(name, 0) > 0;
 	}
 	E3D_LogBlue(g_FileLog, "VideoPlayer: invalid command: %s", cmd);
 	return 0;

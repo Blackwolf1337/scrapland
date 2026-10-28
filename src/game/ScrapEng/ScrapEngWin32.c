@@ -9,6 +9,7 @@
 #include "scrap/prof.h"
 #include "scrap/scrapmain.h"
 #include "scrap/e3dutil.h"
+#include "scrap/video.h"
 #include "scrap/win32.h"
 
 #define APP_EXCEPTIONFILTER 0x233410
@@ -61,7 +62,9 @@ intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lPa
 		}
 		break;
 	case WM_PAINT:
-		if (m && MOTOR_DEV(m) && !MOTOR_READY(m) && MOTOR_WINDOWED(m)) {
+		/* differs from the original on purpose (no blocking waits): no Present over a video, which plays from the
+		 * message loop now (the original handled no message while it played) */
+		if (m && MOTOR_DEV(m) && !MOTOR_READY(m) && MOTOR_WINDOWED(m) && !Video_Busy()) {
 			void *dev = MOTOR_DEV(m);
 
 			((int(__stdcall *)(void *, void *, void *, void *, void *))(*(void ***)dev)[DEV_VT_PRESENT / 4])(dev,
