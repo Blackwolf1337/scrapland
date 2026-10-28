@@ -435,6 +435,14 @@ def aloGen3D(dy):
 		check('alo %s NearestVisDist(%d)' % (tag, k), lambda m=m, p=p: SDTest.Call(0x0ac5a0, 'tfiF', m, p)[0])
 	aloFindLinks(tag, m, pts, dy, (0x0a7e80, 0x0a8270, 0x0a8530, 0x444d48))
 	check('alo %s NextInit' % tag, lambda m=m: SDTest.Call(0x0ad3d0, 'tbiF', m, (0.0,) * 3))
+	for a, b, c in ((0, 2, 9), (0, 4, 9), (3, 1, 7), (5, 5, 0), (1, 3, 23), (2, 4, 0)):
+		check('alo %s UnreachableFree(%d, %d, %d)' % (tag, a, b, c), lambda m=m, a=a, b=b, c=c, pts=pts:
+			SDTest.Call(0x0ac8a0, 'tbiiii', m, pts[a], pts[b], c)[0])
+	check('alo %s DrawCell' % tag, lambda m=m, pos=pos, dy=dy: map(lambda p, m=m, dy=dy: aloD3D(lambda m=m, p=p,
+		dy=dy: SDTest.Call(0x0a6930, 'tviF', m, (p[0], p[1] + dy, p[2]))), pos))
+	check('alo %s DrawLinkTest' % tag, lambda m=m, pos=pos, dy=dy: (aloD3D(lambda m=m, pos=pos, dy=dy:
+		SDTest.Call(0x0a6810, 'tviFF', m, (pos[0][0], pos[0][1] + dy, pos[0][2]), (pos[3][0], pos[3][1] + dy,
+		pos[3][2]))), aloI(m + 0x358)))
 	pl = aloCalloc(0x18)
 	check('alo %s GetPairs' % tag, lambda m=m, pl=pl, pts=pts: (SDTest.Call(0x0a8a40, 'tvii', m, pl), aloPairList(pl,
 		pts)))
@@ -445,6 +453,9 @@ def aloGen3D(dy):
 	aloFindLinks(tag + ' linked', m, pts, dy, (0x0a7e80, 0x0a8270, 0x0a8530, 0x444d48))
 	check('alo %s GetPairs linked' % tag, lambda m=m, pl=pl, pts=pts: (SDTest.Call(0x0a8a40, 'tvii', m, pl),
 		aloPairList(pl, pts)))
+	for a, b, c in ((0, 2, 9), (0, 4, 9), (3, 1, 7), (5, 5, 0), (1, 3, 23), (2, 4, 0), (0, 5, 0), (4, 1, 13)):
+		check('alo %s UnreachableFree linked(%d, %d, %d)' % (tag, a, b, c), lambda m=m, a=a, b=b, c=c, pts=pts:
+			SDTest.Call(0x0ac8a0, 'tbiiii', m, pts[a], pts[b], c)[0])
 	SDTest.Call(0x0a5900, 'tvi', pl)
 	aloFree(pl)
 	# the extra points linked to the points within linkDist
@@ -469,6 +480,9 @@ def aloGen2D(dy):
 	aloFindLinks(tag, m, pts, dy, (0x0b3370, 0x0b3730, free, 0x444ddc))
 	if free:
 		check('alo %s NextInit' % tag, lambda m=m: SDTest.Call(0x0b7810, 'tbiF', m, (0.0,) * 3))
+		for a, b, c in ((0, 2, 9), (0, 4, 9), (3, 1, 7), (5, 5, 0)):
+			check('alo %s UnreachableFree(%d, %d, %d)' % (tag, a, b, c), lambda m=m, a=a, b=b, c=c, pts=pts:
+				SDTest.Call(0x0b6f40, 'tbiiii', m, pts[a], pts[b], c)[0])
 	check('alo %s FreeTemp' % tag, lambda m=m: (SDTest.Call(0x0b9180, 'tvi', m), aloI(m + 0x1b0), aloI(m + 0x1e8)))
 	check('alo %s Delete' % tag, lambda m=m: SDTest.Call(0x0ada70, 'tiii', m, 1)[0] == m)
 

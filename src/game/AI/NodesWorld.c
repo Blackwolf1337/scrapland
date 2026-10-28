@@ -18,6 +18,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
+#include "scrap/world.h"
 
 #define NW_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* the "" of the exe */
 
@@ -1753,4 +1754,90 @@ void __fastcall CNodesWorld_Draw(CNodesWorld *self) {
 		NWSup_DrawErrors(self, r);
 		break;
 	}
+}
+
+byte __thiscall CNodesWorld_AnalizeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
+	static const char head[] = "PUNTOS TRIANGULOS NORMAL INVERTIDA\n\n";
+	char path[0x100];
+	vec3_t p, snap;
+
+	NW_LevelPath(path, self, "/AI/AnalisisMap.txt");
+	crt_chmod(path, 0x180);
+	self->file = crt_fopen(path, "wt");
+	if (!self->file) {
+		Con_Bluef("ERROR: Fichero AnalisisMap no abierto.\n");
+		CHECK(!"CNodesWorld_AnalizeMap_File_AnalisisMap_Not_Open");
+	}
+	crt_fwrite(head, 1, sizeof(head) - 1, self->file);
+	self->analizing = 1;
+	vec3_t neg = { -self->halfNode.x, -self->halfNode.y, -self->halfNode.z };
+	if (init->x + self->halfNode.x > max->x || min->x > init->x - self->halfNode.x ||
+		self->halfNode.y + init->y > max->y || min->y > init->y - self->halfNode.y ||
+		self->halfNode.z + init->z > max->z || min->z > init->z - self->halfNode.z ||
+		Collision_Box(init, &neg, &self->halfNode)) {
+		Con_Bluef("ERROR: AnalizeMapAI - Nodo Inicial Incorrecto: %f %f %f\n", (double)init->x, (double)init->y,
+			(double)init->z);
+		return 0;
+	}
+	self->min = *min;
+	self->max = *max;
+	p = *init;
+	p = *self->vftable->SnapPos(self, &snap, &p);
+	NWTriList_Clear(&self->tris);
+	DListVec3_Clear(&self->errCollide);
+	DListVec3_Clear(&self->errUnlinked);
+	self->b3b0 = 0;
+	byte ok = CNodesWorld_IniBuffer(self, &p, min, max);
+	const char *res = self->open ? "\n\nESCENARIO ABIERTO!\n" : "\n\nESCENARIO CERRADO\n";
+	crt_fwrite(res, 1, strlen(res), self->file);
+	self->analizing = 0;
+	if (crt_fclose(self->file)) {
+		Con_Bluef("ERROR: Fichero AnalisisMap no cerrado.\n");
+		CHECK(!"CNodesWorld_AnalizeMap_File_AnalisisMap_Not_Closed");
+	}
+	return ok;
+}
+
+/* not called in the exe: debug tools of the generation */
+
+void __thiscall CNodesWorld_DrawLinkTest(CNodesWorld *self, const vec3_t *a, const vec3_t *b) {
+	typedef float(__thiscall * getRadius_t)(cEntity * e);
+	cEntity *cam = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
+	cEntity *t = cCamEntity_GetTarget(cam);
+	vec3_t neg = { -self->halfNode.x, -self->halfNode.y, -self->halfNode.z };
+	uint32_t color = 0xff00;
+
+	if (Collision_Box(b, &neg, &self->halfNode) ||
+		Engine_TestSphere(a, b, ((getRadius_t)((void *const *)t->vftable)[0xa0 / 4])(t), NULL, NULL)) {
+		self->i358++;
+		color = 0xff0000;
+	}
+	DebugUtils_DrawSphere(a, 50.0f, color, 2, 2);
+	DebugUtils_DrawSphere(b, 50.0f, color, 2, 2);
+	DebugUtils_DrawLine(a, b, color);
+}
+
+void __thiscall CNodesWorld_DrawCell(CNodesWorld *self, const vec3_t *p) {
+	vec3_t neg = { -self->halfNode.x, -self->halfNode.y, -self->halfNode.z }, mn, mx;
+	byte hit = Collision_Box(p, &neg, &self->halfNode);
+
+	mx.x = p->x + self->halfNode.x;
+	mn.x = p->x - self->halfNode.x;
+	mx.y = self->halfNode.y + p->y;
+	mn.y = p->y - self->halfNode.y;
+	mx.z = self->halfNode.z + p->z;
+	mn.z = p->z - self->halfNode.z;
+	DebugUtils_DrawBox(&mn, &mx, hit ? 0xff0000 : 0xffffff);
+}
+
+/* the link to q counts when the sphere goes free from q to the center of the cell */
+static int NW_LinkFree(CNodesWorld *self, const vec3_t *q, int index) {
+	vec3_t c;
+
+	self->vftable->BufferPos(self, &c, index);
+	return !Engine_TestSphere(q, &c, g_NWNodeRadius, NULL, NULL);
+}
+
+byte __thiscall CNodesWorld_UnreachableFree(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index) {
+	return NWSup_UnreachableBy(self, from, to, index, NW_LinkFree);
 }

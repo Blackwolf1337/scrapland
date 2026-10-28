@@ -356,7 +356,15 @@ void __fastcall CNodesWorld_InterRegion(CNodesWorld *self);
 byte __thiscall CNodesWorld_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 /* the debug view of g_NWDrawMode */
 void __fastcall CNodesWorld_Draw(CNodesWorld *self);
-void __thiscall CNodesWorld_AnalizeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
+/* not called in the exe: the link test of a and b as spheres and a line (red with a hit, counted in i358), the box
+ * of the cell at p (red in the level) */
+void __thiscall CNodesWorld_DrawLinkTest(CNodesWorld *self, const vec3_t *a, const vec3_t *b);
+void __thiscall CNodesWorld_DrawCell(CNodesWorld *self, const vec3_t *p);
+/* not called in the exe: Unreachable over the links whose point the sphere leaves free to the center of the cell */
+byte __thiscall CNodesWorld_UnreachableFree(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index);
+/* the analysis of the level into <name>/AI/AnalisisMap.txt (writes a file): the buffer from init with the triangles
+ * around its cells, whether the region is open; 0 for a start in the level or outside the box */
+byte __thiscall CNodesWorld_AnalizeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 
 /* the name of the level with file after it, in a buffer of 0x100 like the original */
 void NW_LevelPath(char *path, const CNodesWorld *self, const char *file);

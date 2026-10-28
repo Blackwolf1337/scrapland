@@ -112,6 +112,8 @@ byte __thiscall CNodesWorld2D_TestCorner(CNodesWorld2D *self, const vec3_t *a, c
 byte __thiscall CNodesWorld2D_Generate(CNodesWorld2D *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 /* the debug view of g_NW2DDrawMode, then the node g_NW2DShowNode with the cells of its region */
 void __fastcall CNodesWorld2D_Draw(CNodesWorld2D *self);
+/* not called in the exe: Unreachable over the links whose point the bodies walk from to the center of the cell */
+byte __thiscall CNodesWorld2D_UnreachableFree(CNodesWorld2D *self, const vec3_t *from, const vec3_t *to, int index);
 /* the cell to link the pair of points through (NWSup_FindLinkBox, NWSup_FindLinkCell); Free: the cells of tmp1c8
  * whose center sees both points on the floor and walks to them */
 byte __thiscall CNodesWorld2D_FindLinkBox(CNodesWorld2D *self, const vec3_t *const *pair, const cNWBox *box,

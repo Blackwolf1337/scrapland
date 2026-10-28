@@ -1520,3 +1520,16 @@ void __fastcall CNodesWorld2D_Draw(CNodesWorld2D *self) {
 		}
 	}
 }
+
+/* the link to q counts when the bodies walk from q to the center of the cell on the floor */
+static int NW2D_LinkFree(CNodesWorld *w, const vec3_t *q, int index) {
+	CNodesWorld2D *self = (CNodesWorld2D *)w;
+	vec3_t c;
+
+	w->vftable->BufferPos(w, &c, index);
+	return NW2D_GroundsSee(self, q, &c) && CNodesWorld2D_TestWalk(self, q, &c, 0.0f);
+}
+
+byte __thiscall CNodesWorld2D_UnreachableFree(CNodesWorld2D *self, const vec3_t *from, const vec3_t *to, int index) {
+	return NWSup_UnreachableBy(NW2D_SUP(self), from, to, index, NW2D_LinkFree);
+}

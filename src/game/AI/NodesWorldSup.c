@@ -833,7 +833,15 @@ void __thiscall CNodesWorldSup_LinkPoint(CNodesWorld *self, const vec3_t *point)
 	self->buffer[i].vis->points.iter = saved;
 }
 
+static int NWSup_InSet(CNodesWorld *self, const vec3_t *q, int index) {
+	return self->vftable->VisHas(self, q, index);
+}
+
 byte __thiscall CNodesWorldSup_Unreachable(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index) {
+	return NWSup_UnreachableBy(self, from, to, index, NWSup_InSet);
+}
+
+byte NWSup_UnreachableBy(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index, nwLinkOk_t ok) {
 	cNWIntList queue, seen;
 	cNWIntNode *at = NULL;
 	byte res = 1;
@@ -847,7 +855,7 @@ byte __thiscall CNodesWorldSup_Unreachable(CNodesWorld *self, const vec3_t *from
 	cNWIntNode *it = l->iter = l->head;
 	while (it) {
 		const vec3_t *q = it->data;
-		if (q != to && self->vftable->VisHas(self, q, index)) {
+		if (q != to && ok(self, q, index)) {
 			NWIntList_Append(&queue, &it->data);
 			self->vftable->FindSorted(self, &seen, q, &at);
 			if (at) {
@@ -877,7 +885,7 @@ byte __thiscall CNodesWorldSup_Unreachable(CNodesWorld *self, const vec3_t *from
 		it = l->iter = l->head;
 		while (it) {
 			const vec3_t *q = it->data;
-			if (self->vftable->VisHas(self, q, index) && !self->vftable->FindSorted(self, &seen, q, &at)) {
+			if (ok(self, q, index) && !self->vftable->FindSorted(self, &seen, q, &at)) {
 				NWIntList_Append(&queue, &it->data);
 				seen.iter = at;
 				NWIntList_AddBefore(&seen, &it->data);

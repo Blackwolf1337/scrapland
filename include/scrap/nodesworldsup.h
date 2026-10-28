@@ -159,5 +159,8 @@ void NWSup_DrawCells(CNodesWorld *self, cNWVecList *list, uint32_t color, const 
 void NWSup_DrawExtra(CNodesWorld *self, float r, uint32_t color);
 void NWSup_DrawCollide(CNodesWorld *self, float r, byte triples);
 void NWSup_DrawErrors(CNodesWorld *self, float r);
+/* Unreachable over the links that ok lets through (CNodesWorldSup: the points in the set of the cell index) */
+typedef int (*nwLinkOk_t)(CNodesWorld *self, const vec3_t *q, int index);
+byte NWSup_UnreachableBy(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index, nwLinkOk_t ok);
 
 #endif
