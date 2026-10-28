@@ -80,7 +80,7 @@ void Stencil_Init(void);
 /* the frame pass of the shadows */
 void SombrasStencil_Render(void);
 
-/* still the exe's (src/imports.inc): the volumes of the segments and of the triangles, pass 0 front faces */
+/* the volumes of the segments and of the triangles, pass 0 (the front faces) fills the vertex buffers */
 void Stencil_DrawSegs(int pass);
 void Stencil_DrawTris(int pass);
 

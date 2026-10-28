@@ -403,8 +403,6 @@ SD_IMPORT(Matrix_ToTransform, 0x2d6c50)
 /* module agent: Engine NodeFX..ModelFX (imports below this line) */
 
 /* module agent: Engine leftovers 0x265000..0x278000 (imports below this line) */
-SD_IMPORT(Stencil_DrawSegs, 0x265510)
-SD_IMPORT(Stencil_DrawTris, 0x2661b0)
 
 /* module agent: Engine leftovers 0x2c9d90..0x2d6010 (imports below this line) */
 SD_IMPORT(crt_open, 0x359882)
