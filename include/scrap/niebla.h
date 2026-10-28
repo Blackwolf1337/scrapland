@@ -37,7 +37,7 @@ SD_SIZE(CNiebla, 0x24);
 #define g_FogDensity GAME_DATA(float, 0x4b1ca0)	/* forced, 0 none */
 
 CNiebla *__fastcall CNiebla_ctor(CNiebla *self);
-/* rva 0x278390, empty (too short for a hook) */
+/* rva 0x278390, empty */
 void __fastcall CNiebla_dtor(CNiebla *self);
 /* the fog capabilities of the device */
 void __fastcall CNiebla_InitD3D(CNiebla *self);

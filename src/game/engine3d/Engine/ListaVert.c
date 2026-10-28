@@ -9,6 +9,7 @@
 #include "scrap/listavert.h"
 #include "scrap/luz.h"
 #include "scrap/material.h"
+#include "scrap/render.h"
 
 #define LISTAVERT_ID "LFVF"
 #define LISTAVERT_VER 1
@@ -1308,4 +1309,11 @@ void __thiscall CListaVert_LightRampUV(CListaVert *self, const matrix_t *world) 
 	} else if (self->frmt == VERT_TEX2) {
 		ListaVert_RampUV(self, 0x28, 0x20, &r);
 	}
+}
+
+/* the D3D resources of the vertex lists: nothing to make or free (the buffers belong to the meshes) */
+void ListaVert_ReleaseD3D(void) {
+}
+
+void ListaVert_InitD3D(void) {
 }

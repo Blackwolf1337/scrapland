@@ -6,6 +6,7 @@
 
 #include "scrap/archio.h"
 #include "scrap/bsp.h"
+#include "scrap/crt.h"
 #include "scrap/e3dutil.h"
 #include "scrap/leedatos.h"
 #include "scrap/varios.h"
@@ -329,4 +330,9 @@ vec3_t *Rad_Normales(uint32_t *num) {
 	}
 	*num = t->n;
 	return t->p;
+}
+
+/* the static initializer (rva 0x05f7e0): the destructor of g_RadNormales at the exit (rva 0x38f070, with the CRT) */
+void Radiosidad_InitNormales(void) {
+	crt_atexit((void (*)(void))Game_Ptr(0x38f070));
 }

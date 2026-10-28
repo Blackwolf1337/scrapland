@@ -21,6 +21,7 @@
 #include "scrap/nodefx.h"
 #include "scrap/portal.h"
 #include "scrap/render.h"
+#include "scrap/scrap.h"
 #include "scrap/sistpart.h"
 #include "scrap/utild3d.h"
 #include "scrap/varios.h"
@@ -3318,4 +3319,19 @@ CEscena *Escena_Load(const char *name, int arg, const char *name2) {
 		CM3_Save(g_M3DName, esc);
 	}
 	return esc;
+}
+
+/* ---- the static initializers (rva 0x05f6e0, 0x05f720); name and description are the strings of the exe ---- */
+
+#define g_ShowNodesTreeVar ((cGVar *)Game_Ptr(0x4e1ee0))
+#define g_UseWSMVar ((cGVar *)Game_Ptr(0x4e1f70))
+
+void LeeM3D_InitShowNodesTree(void) {
+	/* "ShowNodesTree", "Show nodes tree at model M3D loading time (0/1)" */
+	GVar_InitInt(g_ShowNodesTreeVar, Game_Ptr(0x3e4870), 0, Game_Ptr(0x3e4840), 0);
+}
+
+void LeeM3D_InitUseWSM(void) {
+	/* "UseWSM", "Use ObjTMAfterWSM (0/1)" */
+	GVar_InitInt(g_UseWSMVar, Game_Ptr(0x3e47dc), 0, Game_Ptr(0x3e47c4), 0);
 }

@@ -94,7 +94,6 @@ SD_IMPORT(crt_floor, 0x345130)
 /* engine: Menu/ (include/scrap/scorer.h) */
 
 /* engine: functions behind the Scrap module (include/scrap/scrap.h) */
-SD_IMPORT(Steam_SetAchievement, 0x1a66a0)
 
 /* engine: Input/ */
 SD_IMPORT(ActionSet_IsNamed, 0x133a30)
@@ -161,8 +160,6 @@ SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 /* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/mundo.h) */
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
-SD_IMPORT(ListaVert_InitD3D, 0x2404f0)
-SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
 
 /* src/game/engine3d/Engine/Grafico2D.c (called from Engine/grafico2d.cpp, include/scrap/grafico2d.h) */
 
@@ -190,14 +187,12 @@ SD_IMPORT_STDCALL(D3DX_MatrixInverse, 12, 0x007cea)
 SD_IMPORT_STDCALL(D3DX_AssembleShader, 24, 0x00b2c2)
 
 /* module agent: Engine/Modelo (imports below this line) */
-SD_IMPORT(CEscena_Shared, 0x24ecb0)
 
 /* module agent: Engine/Nodo3D (imports below this line) */
 
 /* module agent: Engine/Animacion (imports below this line) */
 
 /* module agent: Engine/AnimGrupo (imports below this line) */
-SD_IMPORT(CAnimCtrl_dtor, 0x250f10)
 
 /* module agent: Engine/Textura (imports below this line) */
 SD_IMPORT(crt_mbsrchr, 0x3508c4)
@@ -238,13 +233,6 @@ SD_IMPORT_STDCALL(FSOUND_GetCurrentSample, 4, 0x317a62)
 /* module agent: World/CollisionGrid+FX/FXMisc.cpp (imports below this line) */
 
 /* module agent: App/CApp+CWinApp (imports below this line) */
-SD_IMPORT(Gog_Init, 0x137250)
-SD_IMPORT(Gog_Done, 0x137430)
-SD_IMPORT(InputMaps_Done, 0x139900)
-SD_IMPORT(Steam_Done, 0x1a64d0)	/* Sound agent range */
-SD_IMPORT(Steam_GetLanguage, 0x1a65f0)	/* Sound agent range */
-SD_IMPORT(Steam_Init, 0x1a6620)	/* Sound agent range */
-SD_IMPORT(Steam_RunCallbacks, 0x1a66e0)	/* Sound agent range */
 SD_IMPORT(crt_srand, 0x323c50)
 
 /* module agent: World/FX/FXCountermeasures+FXElementsOrbit+FXElementsPress.cpp (imports below this line) */
@@ -353,21 +341,6 @@ SD_IMPORT(Ase_AddRule, 0x002700)
 SD_IMPORT(Ase_AddPlayer, 0x002770)
 SD_IMPORT(Ase_Check, 0x0028f0)
 /* wsock32 by ordinal through the jump thunks of the exe */
-SD_IMPORT_STDCALL(Wsock_bind, 12, 0x20d9cc)
-SD_IMPORT_STDCALL(Wsock_closesocket, 4, 0x20d9d2)
-SD_IMPORT_STDCALL(Wsock_ioctlsocket, 12, 0x20d9d8)
-SD_IMPORT_STDCALL(Wsock_htonl, 4, 0x20d9de)
-SD_IMPORT_STDCALL(Wsock_htons, 4, 0x20d9e4)
-SD_IMPORT_STDCALL(Wsock_ntohs, 4, 0x20d9ea)
-SD_IMPORT_STDCALL(Wsock_recvfrom, 24, 0x20d9f0)
-SD_IMPORT_STDCALL(Wsock_select, 20, 0x20d9f6)
-SD_IMPORT_STDCALL(Wsock_sendto, 24, 0x20d9fc)
-SD_IMPORT_STDCALL(Wsock_setsockopt, 20, 0x20da02)
-SD_IMPORT_STDCALL(Wsock_socket, 12, 0x20da08)
-SD_IMPORT_STDCALL(Wsock_gethostbyaddr, 12, 0x20da0e)
-SD_IMPORT_STDCALL(Wsock_gethostbyname, 4, 0x20da14)
-SD_IMPORT_STDCALL(Wsock_WSAStartup, 8, 0x20da1a)
-SD_IMPORT_STDCALL(Wsock_WSACleanup, 0, 0x20da20)
 
 /* module agent: Logic part 4 (Nurse..Traffic) (imports below this line) */
 SD_IMPORT(crt_atexit, 0x313a5c)
@@ -432,8 +405,6 @@ SD_IMPORT(crt_Xlength_error, 0x317912)
 SD_IMPORT(crt_Xout_of_range, 0x317932)
 SD_IMPORT(crt_invalid_parameter_noinfo_noreturn, 0x34e614)
 SD_IMPORT(crt_Throw_bad_array_new_length, 0x3178b8)
-SD_IMPORT(MsvcString_ReallocFor, 0x1375f0)
-SD_IMPORT(PtrVector_Reallocate, 0x137790)
 
 /* module agent: Rest B, game leftovers from 0x240000 (imports below this line) */
 /* busy waits of the original (the project forbids blocking waits in C): left to the exe */

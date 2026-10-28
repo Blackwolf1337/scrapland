@@ -25,6 +25,14 @@ cGVar *__thiscall cGVar_ctor(cGVar *self, const char *name, byte flags, const ch
 	return self;
 }
 
+cGVar *GVar_InitInt(cGVar *v, const char *name, byte flags, const char *description, int value) {
+	cGVar_ctor(v, name, flags, description);
+	v->value.i = value;
+	v->def.i = value;
+	v->type = GVAR_INT;
+	return v;
+}
+
 /* sets or clears a flag bit; a read only variable takes only GVAR_READONLY */
 byte __thiscall cGVar_SetFlag(cGVar *self, byte bit, byte on) {
 	if (bit != GVAR_READONLY && (self->flags & GVAR_READONLY)) {

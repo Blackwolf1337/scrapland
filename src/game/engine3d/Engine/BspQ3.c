@@ -9,6 +9,7 @@
 #include "scrap/crt.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
+#include "scrap/grafico3d.h"
 #include "scrap/mallatri.h"
 #include "scrap/mundo.h"
 #include "scrap/render.h"
@@ -542,5 +543,15 @@ void BspQ3_Crear(void) {
 void BspQ3_Render(void) {
 	if (g_BspQ3) {
 		CBspQ3_Render(g_BspQ3);
+	}
+}
+
+/* the static initializer (rva 0x05f770) of a vertex array after g_BspQ3VertL that no code reads */
+#define BSPQ3_VERTG 0x40
+#define g_BspQ3VertG ((Grafico3DVert *)Game_Ptr(0x4e54f8))	/* [BSPQ3_VERTG] */
+
+void BspQ3_InitVertG(void) {
+	for (int i = 0; i < BSPQ3_VERTG; i++) {
+		Grafico3DVert_ctor(&g_BspQ3VertG[i]);
 	}
 }

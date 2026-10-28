@@ -1,11 +1,12 @@
 /*
  * The Steam parts of the game (rva 0x134260..0x1347e0, after Global/String.cpp; no CHECK string names the source):
  * the steam_api context with the interfaces, the auth ticket and the Steam ID for Scrap.GetSteamTicket and
- * Scrap.GetSteamID. Also the two stubs with arguments of the Steam layer that does nothing (rva 0x1a64d0..0x1a66f0,
- * the others are shorter than a hook).
+ * Scrap.GetSteamID. Also the Steam layer of the GOG build that does nothing (rva 0x1a64d0..0x1a66f0): the stubs the
+ * game calls, and the two with arguments.
  */
 #include <string.h>
 
+#include "scrap/app.h"
 #include "scrap/crt.h"
 #include "scrap/scrap.h"
 
@@ -280,7 +281,30 @@ byte SteamContext_Setup(cSteamAPIContext *c) {
 	return SteamContext_Init(c);
 }
 
-/* ---- the stubs (rva 0x1a65c0, 0x1a6600) ---- */
+/* ---- the stubs (rva 0x1a64d0..0x1a66f0) ---- */
+
+void Steam_Done(void) {
+}
+
+/* NULL: the language comes from GOG */
+const char *Steam_GetLanguage(void) {
+	return NULL;
+}
+
+/* "started": the caller then does not quit to let Steam restart the game */
+byte Steam_Init(int arg) {
+	(void)arg;
+	return 1;
+}
+
+byte Steam_SetAchievement(int n, int on) {
+	(void)n;
+	(void)on;
+	return 0;
+}
+
+void Steam_RunCallbacks(void) {
+}
 
 void SteamStub_Clear3(uint32_t *a, uint32_t *b, uint32_t *c) {
 	a[0] = 0;

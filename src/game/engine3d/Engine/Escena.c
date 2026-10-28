@@ -99,6 +99,10 @@ void __fastcall CEscena_dtor(CEscena *self) {
 	}
 }
 
+void __thiscall CEscena_Shared(CEscena *self) {
+	(void)self;
+}
+
 CEscena *__thiscall CEscena_Delete(CEscena *self, byte flags) {
 	CEscena_dtor(self);
 	if (flags & 1) {

@@ -4,7 +4,9 @@
  *
  * With [general] wipe=1 the rest of each hooked original is filled with int3, so a jump into the middle of
  * replaced code stops the game with its rva in the log (a check for the standalone build, docs/standalone.md).
- * wipe=2 fills the whole game and engine code with int3 first, except the functions that stay in the exe.
+ * wipe=2 fills the whole game and engine code with int3 first, except the functions that stay in the exe. wipe=3 is
+ * the same with a probe: each trap logs its rva and caller, copies the piece of original code there back and goes on,
+ * so one run lists every piece of game code without a C version that the run reaches.
  */
 #include <string.h>
 #include <windows.h>
@@ -87,6 +89,67 @@ static void Hook_WipeGame(void) {
 	FlushInstructionCache(GetCurrentProcess(), code, GAME_CODE_END - GAME_CODE_START);
 }
 
+/* wipe=3: a copy of the original code, and per byte whether it is in a hook (1, its jump 3) or a kept function (2) */
+static byte *probe_orig, *probe_mark;
+
+#define PROBE_HOOK 1
+#define PROBE_KEEP 2
+#define PROBE_JUMP 3
+
+/* int3 padding of the original: up to the next 16 byte boundary or more of it */
+static int Probe_Pad(uint32_t x) {
+	return probe_orig[x - GAME_CODE_START] == 0xcc
+		&& ((x + 1) % 16 == 0 || x + 1 >= GAME_CODE_END || probe_orig[x + 1 - GAME_CODE_START] == 0xcc);
+}
+
+/* the piece of original code around the trap (up to padding or the edge of a hook) is copied back and run */
+static LONG CALLBACK Hook_Probe(EXCEPTION_POINTERS *e) {
+	uintptr_t at = (uintptr_t)e->ExceptionRecord->ExceptionAddress;
+	uint32_t rva = (uint32_t)(at - game_base), lo, hi;
+	DWORD old;
+
+	if (e->ExceptionRecord->ExceptionCode != EXCEPTION_BREAKPOINT || rva < GAME_CODE_START || rva >= GAME_CODE_END
+		|| probe_orig[rva - GAME_CODE_START] == 0xcc) {
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+	byte m = probe_mark[rva - GAME_CODE_START];
+	for (lo = rva; lo > GAME_CODE_START && probe_mark[lo - 1 - GAME_CODE_START] == m && !Probe_Pad(lo - 1); lo--) {
+	}
+	for (hi = rva; hi < GAME_CODE_END && probe_mark[hi - GAME_CODE_START] == m && !Probe_Pad(hi); hi++) {
+	}
+	/* the return address when the trap is the first byte of a called function */
+	uint32_t ret = *(uint32_t *)e->ContextRecord->Esp;
+	Com_Printf("probe: rva %06x%s, piece %06x..%06x, [esp] %06x\n", (unsigned)rva, m ? " in a hook" : "",
+		(unsigned)lo, (unsigned)hi, (unsigned)(ret - game_base));
+	VirtualProtect((byte *)game_base + lo, hi - lo, PAGE_EXECUTE_READWRITE, &old);
+	memcpy((byte *)game_base + lo, probe_orig + lo - GAME_CODE_START, hi - lo);
+	VirtualProtect((byte *)game_base + lo, hi - lo, old, &old);
+	FlushInstructionCache(GetCurrentProcess(), (byte *)game_base + lo, hi - lo);
+	e->ContextRecord->Eip = (DWORD)at;
+	return EXCEPTION_CONTINUE_EXECUTION;
+}
+
+static void Hook_ProbeInit(void) {
+	probe_orig = VirtualAlloc(NULL, GAME_CODE_END - GAME_CODE_START, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	probe_mark = VirtualAlloc(NULL, GAME_CODE_END - GAME_CODE_START, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	if (!probe_orig || !probe_mark) {
+		Com_Printf("probe: no memory\n");
+		return;
+	}
+	memcpy(probe_orig, (byte *)game_base + GAME_CODE_START, GAME_CODE_END - GAME_CODE_START);
+	for (size_t i = 0; i < sizeof(hooks) / sizeof(hooks[0]); i++) {
+		uint32_t r = hooks[i].rva, n = hooks[i].size;
+		if (n >= 5 && r >= GAME_CODE_START && r + n <= GAME_CODE_END) {
+			memset(probe_mark + r - GAME_CODE_START, PROBE_HOOK, n);
+			memset(probe_mark + r - GAME_CODE_START, PROBE_JUMP, 5);
+		}
+	}
+	for (size_t i = 0; i < sizeof(keep) / sizeof(keep[0]); i++) {
+		memset(probe_mark + keep[i].rva - GAME_CODE_START, PROBE_KEEP, keep[i].size);
+	}
+	AddVectoredExceptionHandler(1, Hook_Probe);
+}
+
 static LONG CALLBACK Hook_Trap(EXCEPTION_POINTERS *e) {
 	uintptr_t at = (uintptr_t)e->ExceptionRecord->ExceptionAddress;
 
@@ -99,6 +162,9 @@ static LONG CALLBACK Hook_Trap(EXCEPTION_POINTERS *e) {
 void Hook_InstallAll(int wipe) {
 	int installed = 0, off = 0;
 
+	if (wipe >= 3) {
+		Hook_ProbeInit();
+	}
 	if (wipe >= 2) {
 		Hook_WipeGame();
 	}

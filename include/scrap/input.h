@@ -104,6 +104,7 @@ int Input_Bind(int player, const char *a, const char *b, const char *c);
 void __thiscall cPlayerInput_SetString(cPlayerInput *in, const char *text);
 void __thiscall cPlayerInput_SetInputFunc(cPlayerInput *in, const char *func);
 char __thiscall cPlayerInput_GetCursorChar(cPlayerInput *in);
+cVirtualKeyboard *__fastcall cVirtualKeyboard_ctor(cVirtualKeyboard *vk);
 byte __thiscall cVirtualKeyboard_Set(cVirtualKeyboard *vk, const char *text);
 void __thiscall cPad_Rumble(cPad *pad, float a, float b, float c);
 

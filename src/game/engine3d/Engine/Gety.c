@@ -2,6 +2,7 @@
  * The height of the floor at a point, original source Engine/gety.cpp (include/scrap/suelo.h, sueloportal.h): the
  * vertical ray through the collision triangles of the grid cell of x, z.
  */
+#include "scrap/scrap.h"
 #include "scrap/suelo.h"
 #include "scrap/sueloportal.h"
 
@@ -264,4 +265,11 @@ byte __thiscall CSuelo_GetYBelow(CSuelo *self, float x, float z, float maxY, flo
 		return 1;
 	}
 	return 0;
+}
+
+/* the static initializer (rva 0x05f7a0): "FastGetYSector", "Fast GetYSector (0/1)", on */
+#define g_FastGetYSectorVar ((cGVar *)Game_Ptr(0x4e6e00))
+
+void Gety_InitFastGetYSector(void) {
+	GVar_InitInt(g_FastGetYSectorVar, Game_Ptr(0x3e6efc), 0, Game_Ptr(0x3e6ee4), 1);
 }

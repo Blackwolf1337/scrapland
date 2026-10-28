@@ -147,6 +147,12 @@ void __fastcall Tabla_DeleteLods(CTabla *t) {
 	Lods_Delete(t);
 }
 
+CLod *__fastcall CLod_ctor(CLod *self) {
+	self->model = NULL;
+	self->f4 = 0;
+	return self;
+}
+
 void __fastcall CLod_dtor(CLod *self) {
 	CHECK(!self->model);
 }

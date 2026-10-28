@@ -153,6 +153,7 @@ void __fastcall CModelo_dtor(CModelo *self);
 CModelo *__thiscall CModelo_Delete(CModelo *self, byte flags);
 /* tabla.h instances: free of an array of plain elements, delete[] of the LODs */
 void __fastcall Tabla_DeleteLods(CTabla *t);
+CLod *__fastcall CLod_ctor(CLod *self);
 void __fastcall CLod_dtor(CLod *self);	/* CHECK(!Model) */
 /* the vector deleting destructors (flags 2: an array with the count before it, 1: free) */
 void *__thiscall CLod_DeleteVec(CLod *self, uint32_t flags);

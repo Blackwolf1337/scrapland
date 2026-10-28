@@ -96,6 +96,39 @@ typedef int(__stdcall *setthreadpriority_t)(void *thread, int priority);
 #define exe_GetLocalTime GAME_DATA(getlocaltime_t, 0x3a1188)
 #define STD_OUTPUT (-11)
 #define exe_QueryPerformanceFrequency GAME_DATA(queryperformancecounter_t, 0x3a12ac)
+typedef void(__stdcall *rtlunwind_t)(void *frame, void *ip, void *rec, void *ret);
+#define exe_RtlUnwind GAME_DATA(rtlunwind_t, 0x3a1214)
+
+/* wsock32 (Winsock 1.1 by ordinal) */
+typedef int(__stdcall *wsock_bind_t)(uint32_t s, const void *addr, int len);
+typedef int(__stdcall *wsock_socketfn_t)(uint32_t s);
+typedef int(__stdcall *wsock_ioctlsocket_t)(uint32_t s, int32_t cmd, uint32_t *arg);
+typedef uint32_t(__stdcall *wsock_htonl_t)(uint32_t v);
+typedef uint16_t(__stdcall *wsock_htons_t)(uint16_t v);
+typedef int(__stdcall *wsock_recvfrom_t)(uint32_t s, void *buf, int len, int flags, void *from, int *fromlen);
+typedef int(__stdcall *wsock_select_t)(int n, void *readfds, void *writefds, void *exceptfds, const void *timeout);
+typedef int(__stdcall *wsock_sendto_t)(uint32_t s, const void *buf, int len, int flags, const void *to, int tolen);
+typedef int(__stdcall *wsock_setsockopt_t)(uint32_t s, int level, int name, const void *val, int len);
+typedef uint32_t(__stdcall *wsock_socket_t)(int af, int type, int protocol);
+typedef void *(__stdcall *wsock_gethostbyaddr_t)(const void *addr, int len, int type);
+typedef void *(__stdcall *wsock_gethostbyname_t)(const char *name);
+typedef int(__stdcall *wsock_wsastartup_t)(uint16_t version, void *data);
+typedef int(__stdcall *wsock_wsacleanup_t)(void);
+#define exe_bind GAME_DATA(wsock_bind_t, 0x3a14a8)			/* ordinal 2 */
+#define exe_closesocket GAME_DATA(wsock_socketfn_t, 0x3a14a4)		/* 3 */
+#define exe_ioctlsocket GAME_DATA(wsock_ioctlsocket_t, 0x3a14a0)	/* 12 */
+#define exe_htonl GAME_DATA(wsock_htonl_t, 0x3a149c)			/* 8 */
+#define exe_htons GAME_DATA(wsock_htons_t, 0x3a1498)			/* 9 */
+#define exe_ntohs GAME_DATA(wsock_htons_t, 0x3a14b4)			/* 15 */
+#define exe_recvfrom GAME_DATA(wsock_recvfrom_t, 0x3a14b0)		/* 17 */
+#define exe_select GAME_DATA(wsock_select_t, 0x3a148c)		/* 18 */
+#define exe_sendto GAME_DATA(wsock_sendto_t, 0x3a1488)		/* 20 */
+#define exe_setsockopt GAME_DATA(wsock_setsockopt_t, 0x3a1484)	/* 21 */
+#define exe_socket GAME_DATA(wsock_socket_t, 0x3a1480)		/* 23 */
+#define exe_gethostbyaddr GAME_DATA(wsock_gethostbyaddr_t, 0x3a147c)	/* 51 */
+#define exe_gethostbyname GAME_DATA(wsock_gethostbyname_t, 0x3a1478)	/* 52 */
+#define exe_WSAStartup GAME_DATA(wsock_wsastartup_t, 0x3a1490)	/* 115 */
+#define exe_WSACleanup GAME_DATA(wsock_wsacleanup_t, 0x3a14ac)	/* 116 */
 
 /* winmm */
 typedef uint32_t(__stdcall *timegettime_t)(void);
