@@ -6,8 +6,8 @@
  * the C, the Python library and the code of the original that still runs from the copy: src/core/hook.c points the
  * entries of the original's CRT here (their rvas are the ones of imports.inc and src/standalone/crthooks.inc).
  *
- * Only the exact math functions come from the UCRT; the others are the MSVC code of src/core/libm.c, the libm of
- * the UCRT DLL differs in the last bits (Wine's at least). The compiler support (the vector constructor and
+ * Only the exact math functions come from this UCRT; the others are Microsoft's ucrtbase (src/standalone/crtmath.c),
+ * Wine's libm differs in the last bits. The compiler support (the vector constructor and
  * destructor iterators, the thread-safe statics, atexit and the startup) is src/standalone/crtinit.c.
  */
 #include <direct.h>
@@ -487,43 +487,10 @@ void (*crt_signal(int sig, void (*handler)(int)))(int) {
 	abort();
 }
 
-/* ---- math: the exact functions (correctly rounded or exact by definition) from the UCRT ---- */
+/* ---- math: the classification; the math functions are the ones of Microsoft's ucrtbase (crtmath.c) ---- */
 
 int crt_fpclass(double x) {
 	return _fpclass(x);
-}
-
-double crt_floor(double x) {
-	return floor(x);
-}
-
-double crt_ceil(double x) {
-	return ceil(x);
-}
-
-double crt_fabs(double x) {
-	return fabs(x);
-}
-
-double crt_frexp(double x, int *e) {
-	return frexp(x, e);
-}
-
-double crt_ldexp(double x, int e) {
-	return ldexp(x, e);
-}
-
-double crt_modf(double x, double *ip) {
-	return modf(x, ip);
-}
-
-/* x87 fsqrt in 53 bit precision there, correctly rounded like this one; both set EDOM below 0 */
-double crt_sqrt(double x) {
-	return sqrt(x);
-}
-
-double crt_fmod(double x, double y) {
-	return fmod(x, y);
 }
 
 /* ---- entries only the code of the copy and the tests reach (src/standalone/crthooks.inc) ---- */

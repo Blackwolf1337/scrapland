@@ -15,6 +15,8 @@
  * SDTest.Peek(rva, kind) reads a global of the exe: i int, b byte, d double, s the characters at rva, p the string a
  * pointer at rva points to (None for NULL); with '@' before the kind rva is an address (from a returned pointer).
  * SDTest.Poke(rva, value) writes an int.
+ * SDTest.ConvU(rva, lo, hi, isdouble) calls a function that takes a float (isdouble 0, bits in lo) or double (bits in
+ * lo and hi) in xmm0 and returns an unsigned int in eax, for the __ftoui3 and __dtoui3 conversions.
  * SDTest.OutFunc() is the address of a cdecl void(const char *) that collects text, SDTest.Out() returns and clears
  * that text (for the output callbacks of the engine).
  * SDTest.D3DLog(on) puts a proxy in place of the D3D device that writes its calls into that text (src/core/d3dlog.c),
@@ -26,6 +28,7 @@
 #include <windows.h>
 #include <string.h>
 
+#include "scrap/crt.h"
 #include "scrap/python.h"
 
 #define MAX_ARGS 16
@@ -300,6 +303,42 @@ static PyObject *SDTest_Poke(PyObject *self, PyObject *args) {
 	return Py_None;
 }
 
+/*
+ * Calls a function of the exe that takes a float or double in xmm0 and returns in eax (the __ftoui3 and __dtoui3
+ * conversions at rva 0x314310 and 0x3144f1, src/standalone/crtvec.c): lo and hi are the bits of the argument (lo
+ * alone for a float), signed so Python 1.5.2 can pass the top bit. The asm keeps the bits exact, so a NaN or an
+ * out of range value reaches the conversion as the test means it.
+ */
+uint32_t TestMod_ConvCall(void *fn, uint32_t lo, uint32_t hi, int isdouble);
+__asm__(
+	".text\n\t"
+	".globl _TestMod_ConvCall\n"
+	"_TestMod_ConvCall:\n\t"
+	"movl 4(%esp), %eax\n\t"
+	"cmpl $0, 16(%esp)\n\t"
+	"je 1f\n\t"
+	"movsd 8(%esp), %xmm0\n\t"
+	"call *%eax\n\t"
+	"ret\n"
+	"1:\n\t"
+	"movss 8(%esp), %xmm0\n\t"
+	"call *%eax\n\t"
+	"ret\n");
+
+static PyObject *SDTest_ConvU(PyObject *self, PyObject *args) {
+	(void)self;
+	int rva, lo, hi, isdouble;
+
+	if (!PyArg_ParseTuple(args, "iiii", &rva, &lo, &hi, &isdouble)) {
+		return NULL;
+	}
+	/* errno through crt_errno is the one the conversion sets: the exe's static CRT with the hooks off, the linked
+	 * UCRT in ScrapC.exe, each the one its __ftoui3 touches. Reset it so each call stands on its own. */
+	*crt_errno() = 0;
+	uint32_t r = TestMod_ConvCall(Game_Ptr((uint32_t)rva), (uint32_t)lo, (uint32_t)hi, isdouble);
+	return Py_BuildValue("ii", (int)r, *crt_errno());
+}
+
 static void SDTest_Collect(const char *s) {
 	size_t n = strlen(s);
 	if (n > sizeof(out) - 1 - outLen) {
@@ -362,6 +401,7 @@ static PyMethodDef sdtest_methods[] = {
 	{ "Call", SDTest_Call, 1, NULL },
 	{ "Peek", SDTest_Peek, 1, NULL },
 	{ "Poke", SDTest_Poke, 1, NULL },
+	{ "ConvU", SDTest_ConvU, 1, NULL },
 	{ "OutFunc", SDTest_OutFunc, 1, NULL },
 	{ "Out", SDTest_Out, 1, NULL },
 	{ "D3DLog", SDTest_D3DLog, 1, NULL },

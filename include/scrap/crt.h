@@ -1,7 +1,8 @@
 /*
  * The C runtime of Scrap.exe (statically linked UCRT), called through src/imports.inc. Used where the C code has
  * to share state with the exe (FILE objects, errno, locale, the current drive) or must behave like it bit for bit;
- * plain string work uses the CRT of the DLL. In ScrapC.exe these are src/standalone/crt.c and crtinit.c.
+ * plain string work uses the CRT of the DLL. In ScrapC.exe these are src/standalone/crt.c and crtinit.c, the
+ * inexact math Microsoft's ucrtbase (crtmath.c).
  */
 #ifndef SCRAP_CRT_H
 #define SCRAP_CRT_H
@@ -158,6 +159,30 @@ double crt_sinh(double x);
 double crt_sqrt(double x);
 double crt_tan(double x);
 double crt_tanh(double x);
+/*
+ * ScrapC.exe: the math entries of the runtime with conventions of their own, labels for the inline asm of
+ * src/core/libm.c and for the jumps of the copy (src/standalone/crtmath.c, crtvec.c, crthooks.inc): the SSE2 entries
+ * (argument and result in xmm0, the exponent of pow in xmm1), the _CI intrinsics (x87 stack), the conversions of a
+ * float or double in xmm0 to edx:eax and the vector functions of two doubles in xmm0
+ */
+void crt_libm_sse2_acos_precise(void);
+void crt_libm_sse2_asin_precise(void);
+void crt_libm_sse2_atan_precise(void);
+void crt_libm_sse2_cos_precise(void);
+void crt_libm_sse2_exp_precise(void);
+void crt_libm_sse2_log_precise(void);
+void crt_libm_sse2_pow_precise(void);
+void crt_libm_sse2_sin_precise(void);
+void crt_libm_sse2_sqrt_precise(void);
+void crt_CIacos(void);
+void crt_CIatan2(void);
+void crt_CIfmod(void);
+void crt_CIpow(void);
+void crt_ftoui3(void);
+void crt_dtoui3(void);
+void crt_vdecl_cos2(void);
+void crt_vdecl_sin2(void);
+void crt_vdecl_exp2(void);
 /* the guards of the thread-safe function statics (MSVC _Init_thread_header/_Init_thread_footer); the epoch they
  * are tested against is at +0x20 of the TLS block of the exe, its index g_TlsIndex */
 void crt_Init_thread_header(int *guard);

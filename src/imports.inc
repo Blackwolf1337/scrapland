@@ -4,8 +4,8 @@
  * from the normal header. A function that gets implemented in C moves to src/hooks.inc: the linker reports a
  * function that is in both lists. SD_IMPORT_PY(name, rva) is a function of the exe's Python 1.5.2: a thunk in the
  * hook DLL, the real library (src/python) in ScrapC.exe. SD_IMPORT_CRT(name, rva) and SD_IMPORT_CRT_STDCALL are
- * functions of the exe's C runtime: a thunk in the hook DLL; in ScrapC.exe the C of src/standalone/crt.c, and the
- * entry of the original at rva jumps there too (src/core/hook.c).
+ * functions of the exe's C runtime: a thunk in the hook DLL; in ScrapC.exe the C of src/standalone/crt.c (the math:
+ * crtmath.c), and the entry of the original at rva jumps there too (src/core/hook.c).
  */
 
 /* engine: Global/ */
@@ -436,27 +436,27 @@ SD_IMPORT_CRT(crt_strtod, 0x353750)
 SD_IMPORT_CRT(crt_islower, 0x34f873)
 SD_IMPORT_CRT(crt_isspace, 0x34f8fc)
 SD_IMPORT_CRT(crt_isupper, 0x34f929)
-SD_IMPORT(crt_acos, 0x3517f0)
-SD_IMPORT(crt_asin, 0x351940)
-SD_IMPORT(crt_atan, 0x351a90)
-SD_IMPORT(crt_atan2, 0x329f30)
-SD_IMPORT(crt_cos, 0x351bb0)
-SD_IMPORT(crt_cosh, 0x351cea)
-SD_IMPORT(crt_exp, 0x351d10)
+SD_IMPORT_CRT(crt_acos, 0x3517f0)
+SD_IMPORT_CRT(crt_asin, 0x351940)
+SD_IMPORT_CRT(crt_atan, 0x351a90)
+SD_IMPORT_CRT(crt_atan2, 0x329f30)
+SD_IMPORT_CRT(crt_cos, 0x351bb0)
+SD_IMPORT_CRT(crt_cosh, 0x351cea)
+SD_IMPORT_CRT(crt_exp, 0x351d10)
 SD_IMPORT_CRT(crt_fabs, 0x351d9b)
 SD_IMPORT_CRT(crt_fmod, 0x322010)
 SD_IMPORT_CRT(crt_frexp, 0x350e0e)
-SD_IMPORT(crt_hypot, 0x3526b7)
+SD_IMPORT_CRT(crt_hypot, 0x3526b7)
 SD_IMPORT_CRT(crt_ldexp, 0x35297d)
-SD_IMPORT(crt_log, 0x351e50)
-SD_IMPORT(crt_log10, 0x351fa0)
+SD_IMPORT_CRT(crt_log, 0x351e50)
+SD_IMPORT_CRT(crt_log10, 0x351fa0)
 SD_IMPORT_CRT(crt_modf, 0x350f10)
-SD_IMPORT(crt_pow, 0x3520f0)
-SD_IMPORT(crt_sin, 0x352380)
-SD_IMPORT(crt_sinh, 0x351ce0)
+SD_IMPORT_CRT(crt_pow, 0x3520f0)
+SD_IMPORT_CRT(crt_sin, 0x352380)
+SD_IMPORT_CRT(crt_sinh, 0x351ce0)
 SD_IMPORT_CRT(crt_sqrt, 0x3524c4)
-SD_IMPORT(crt_tan, 0x352570)
-SD_IMPORT(crt_tanh, 0x351cf1)
+SD_IMPORT_CRT(crt_tan, 0x352570)
+SD_IMPORT_CRT(crt_tanh, 0x351cf1)
 
 /* module agent: Standalone 2b, the CRT (imports below this line) */
 

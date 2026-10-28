@@ -18,6 +18,7 @@ void Hook_InstallAll(int wipe, int wipepy, int wipelow);
 void Log_Open(const char *dir);
 int Hook_Enabled(const char *name);
 int Game_Option(const char *key);
+int Game_OptionOr(const char *key, int def);
 void TestMod_Register(void);
 
 int Hook_Enabled(const char *name) {
@@ -26,7 +27,12 @@ int Hook_Enabled(const char *name) {
 
 /* a switch of the [general] section, 0 when it is not there */
 int Game_Option(const char *key) {
-	return GetPrivateProfileIntA("general", key, 0, ini_path);
+	return Game_OptionOr(key, 0);
+}
+
+/* the same with def when it is not there */
+int Game_OptionOr(const char *key, int def) {
+	return GetPrivateProfileIntA("general", key, def, ini_path);
 }
 
 /* the folder of the running exe with its trailing backslash */

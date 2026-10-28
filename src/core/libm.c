@@ -1,31 +1,40 @@
 /*
  * Math functions of the MSVC runtime linked into Scrap.exe. Not correctly rounded like sqrt, so the C code calls
- * the exe's versions to get the original results bit for bit. The __libm_sse2_* entries take the argument and give
+ * the exe's versions to get the original results bit for bit. The _libm_sse2_*_precise entries take the argument and give
  * the result in xmm0, the _CI* intrinsics (atan2) take theirs on the x87 stack and return st(0); neither is cdecl,
  * hence the inline asm. eax, ecx, edx and xmm0-7 are caller saved there like in cdecl.
+ *
+ * ScrapC.exe calls the same entries of Microsoft's ucrtbase.dll and the helpers without an export in
+ * src/standalone/crtvec.c, through the labels of include/scrap/crt.h (src/standalone/crtmath.c).
  */
+#include "scrap/crt.h"
 #include "scrap/game.h"
 #include "scrap/mathlib.h"
 
-#define LIBM_SSE2_ACOS 0x329f50
-#define LIBM_SSE2_COS 0x346fe0
-#define LIBM_SSE2_SIN 0x3471a0
-#define LIBM_SSE2_ATAN 0x347370
-#define LIBM_SSE2_EXP 0x34e950
-#define LIBM_SSE2_ASIN 0x350150
-#define LIBM_SSE2_POW 0x321440
-#define LIBM_SSE2_LOG 0x34ec30
-#define CI_ATAN2 0x329f3a
-#define CI_FMOD 0x32201a
-#define LIBM_VEC_EXP2 0x314a00
-#define LIBM_VEC_COS2 0x314930
-#define LIBM_VEC_SIN2 0x314940
-#define CRT_FTOUI3 0x314310
-#define CRT_DTOUI3 0x3144f1
+#ifdef SD_STANDALONE
+#define LIBM_FN(label, rva) ((void *)label)
+#else
+#define LIBM_FN(label, rva) Game_Ptr(rva)
+#endif
 
-static double Libm_Sse2(uint32_t rva, double x) {
+#define LIBM_SSE2_ACOS LIBM_FN(crt_libm_sse2_acos_precise, 0x329f50)
+#define LIBM_SSE2_COS LIBM_FN(crt_libm_sse2_cos_precise, 0x346fe0)
+#define LIBM_SSE2_SIN LIBM_FN(crt_libm_sse2_sin_precise, 0x3471a0)
+#define LIBM_SSE2_ATAN LIBM_FN(crt_libm_sse2_atan_precise, 0x347370)
+#define LIBM_SSE2_EXP LIBM_FN(crt_libm_sse2_exp_precise, 0x34e950)
+#define LIBM_SSE2_ASIN LIBM_FN(crt_libm_sse2_asin_precise, 0x350150)
+#define LIBM_SSE2_POW LIBM_FN(crt_libm_sse2_pow_precise, 0x321440)
+#define LIBM_SSE2_LOG LIBM_FN(crt_libm_sse2_log_precise, 0x34ec30)
+#define CI_ATAN2 LIBM_FN(crt_CIatan2, 0x329f3a)
+#define CI_FMOD LIBM_FN(crt_CIfmod, 0x32201a)
+#define LIBM_VEC_EXP2 LIBM_FN(crt_vdecl_exp2, 0x314a00)
+#define LIBM_VEC_COS2 LIBM_FN(crt_vdecl_cos2, 0x314930)
+#define LIBM_VEC_SIN2 LIBM_FN(crt_vdecl_sin2, 0x314940)
+#define CRT_FTOUI3 LIBM_FN(crt_ftoui3, 0x314310)
+#define CRT_DTOUI3 LIBM_FN(crt_dtoui3, 0x3144f1)
+
+static double Libm_Sse2(void *fn, double x) {
 	double r;
-	void *fn = Game_Ptr(rva);
 
 	__asm__ volatile(
 		"movsd %[x], %%xmm0\n\t"
@@ -49,7 +58,7 @@ double Game_Sin(double x) {
 	return Libm_Sse2(LIBM_SSE2_SIN, x);
 }
 
-/* __libm_sse2_atan (its table holds pi / 2 and the series 1/3, 1/5, ...) */
+/* _libm_sse2_atan_precise (its table holds pi / 2 and the series 1/3, 1/5, ...) */
 double Game_Atan(double x) {
 	return Libm_Sse2(LIBM_SSE2_ATAN, x);
 }
@@ -70,7 +79,7 @@ double Game_Log(double x) {
 /* the exponent in xmm1 */
 double Game_Pow(double x, double y) {
 	double r;
-	void *fn = Game_Ptr(LIBM_SSE2_POW);
+	void *fn = LIBM_SSE2_POW;
 
 	__asm__ volatile(
 		"movsd %[x], %%xmm0\n\t"
@@ -86,7 +95,7 @@ double Game_Pow(double x, double y) {
 /* y is loaded first, x on top of it, as the exe's callers do */
 double Game_Atan2(double y, double x) {
 	double r;
-	void *fn = Game_Ptr(CI_ATAN2);
+	void *fn = CI_ATAN2;
 
 	__asm__ volatile(
 		"fldl %[y]\n\t"
@@ -103,7 +112,7 @@ double Game_Atan2(double y, double x) {
 /* the same with the result stored as a float straight from the x87 (fstp DWORD) */
 float Game_Atan2F(double y, double x) {
 	float r;
-	void *fn = Game_Ptr(CI_ATAN2);
+	void *fn = CI_ATAN2;
 
 	__asm__ volatile(
 		"fldl %[y]\n\t"
@@ -120,7 +129,7 @@ float Game_Atan2F(double y, double x) {
 /* _CIfmod: x loaded first, y on top of it, the fprem remainder of x / y */
 double Game_Fmod(double x, double y) {
 	double r;
-	void *fn = Game_Ptr(CI_FMOD);
+	void *fn = CI_FMOD;
 
 	__asm__ volatile(
 		"fldl %[x]\n\t"
@@ -152,9 +161,7 @@ void X87_SinCos(float a, float *s, float *c) {
 }
 
 /* the packed double functions the compiler calls for vectorised loops, argument and result in xmm0 */
-static void Libm_Pd(uint32_t rva, const double in[2], double out[2]) {
-	void *fn = Game_Ptr(rva);
-
+static void Libm_Pd(void *fn, const double in[2], double out[2]) {
 	__asm__ volatile(
 		"movupd %[in], %%xmm0\n\t"
 		"call *%[fn]\n\t"
@@ -179,7 +186,7 @@ void Game_CosPd(const double in[2], double out[2]) {
 /* __ftoui3: a float in xmm0 to an unsigned int in eax, truncated, with the range checks of the runtime */
 uint32_t Game_FtoUI(float x) {
 	uint32_t r;
-	void *fn = Game_Ptr(CRT_FTOUI3);
+	void *fn = CRT_FTOUI3;
 
 	__asm__ volatile(
 		"movss %[x], %%xmm0\n\t"
@@ -193,7 +200,7 @@ uint32_t Game_FtoUI(float x) {
 /* __dtoui3: a double in xmm0 to an unsigned int in eax */
 uint32_t Game_DtoUI(double x) {
 	uint32_t r;
-	void *fn = Game_Ptr(CRT_DTOUI3);
+	void *fn = CRT_DTOUI3;
 
 	__asm__ volatile(
 		"movsd %[x], %%xmm0\n\t"

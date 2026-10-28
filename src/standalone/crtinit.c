@@ -120,10 +120,8 @@ static void Crt_InitState(void) {
 	 * inline printf and scanf get _CRT_INTERNAL_PRINTF_LEGACY_WIDE_SPECIFIERS and the scanf one */
 	*crt_local_printf_options() |= 4;
 	*crt_local_scanf_options() |= 2;
+	/* for the exact math of the UCRT this exe links; the MSVC math of ucrtbase has its own (crtmath.c) */
 	__setusermatherr((int (*)(struct _exception *))E3D_MathErr);
-	/* the inexact math functions still run from the copy (docs/standalone.md): their switch to the SSE2 code, which
-	 * the CRT initializer at rva 0x35fce1 sets from IsProcessorFeaturePresent(PF_XMMI64_INSTRUCTIONS_AVAILABLE) */
-	GAME_DATA(int, 0x4ed55c) = IsProcessorFeaturePresent(PF_XMMI64_INSTRUCTIONS_AVAILABLE);
 }
 
 /* the dynamic initializers of the game's globals, in the order of the __xc table */

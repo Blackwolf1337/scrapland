@@ -114,7 +114,7 @@ not tested in the difftest.
 Python 1.5.2 from source (python.org py152.tgz, done in stage 2a), UCRT for the `crt_*` imports (stage 2b), zlib 1.1.3,
 libpng 1.0.5, IJG libjpeg, D3DX8. The `GAME_DATA` addresses of library data (`include/scrap/python.h`:
 `PyString_Type`, `Py_None` ...) switch to the real symbols. Then the whole `.text` of the original is int3. Except
-for Python and most of the CRT, all of this is still to do.
+for Python and the CRT, all of this is still to do.
 
 ### Stage 2a: the real Python
 
@@ -192,7 +192,7 @@ print only written memory now (`Tabla_New` at rva 0x2c2c60, the trail points aft
 
 What still differs from the exe: `sys.executable` names ScrapC.exe.
 
-### Stage 2b: the C runtime (partly done)
+### Stage 2b: the C runtime
 
 The `crt_*` functions of `include/scrap/crt.h` are `SD_IMPORT_CRT` (and `SD_IMPORT_CRT_STDCALL`) in `src/imports.inc`:
 a thunk in the hook DLL; in ScrapC.exe the C of `src/standalone/crt.c` and `crtinit.c`, mostly a pass-through to the
@@ -207,37 +207,73 @@ one set of FILE objects, errno, locale and rand state. What differs from a plain
   (one epoch in C, ScrapC.exe no longer gives the original its TLS block), the vector constructor and destructor
   iterators, the STL error helpers
 
-The inexact math functions (sin, cos, atan, atan2, acos, asin, exp, log, pow, log10, tan, sinh, cosh, tanh, hypot,
-the SSE2 entries of `src/core/libm.c` and `__ftoui3`/`__dtoui3`) still run from the copy. Their results must stay bit
-for bit the MSVC ones, which the UCRT DLL does not give (Wine's libm differs in the last bits). Replacing them needs an
-implementation of its own that matches them; this is what is left of stage 2b.
+The math comes from Microsoft's ucrtbase.dll, the same code as the static UCRT of the original
+(`src/standalone/crtmath.c`). Wine's own ucrtbase differs in the last bits. ScrapC.exe loads `ucrtbase_ms.dll` from
+its folder when it is there, otherwise the system `ucrtbase.dll`, which on Windows is Microsoft's and the one the exe
+links. `tools/test/getucrt.sh` puts `ucrtbase_ms.dll` into game/Bin for the Wine tests (a Microsoft binary, never in
+git). There is no Wine DLL override.
 
-The start without the original's entry point is `Crt_Main` in `crtinit.c` (`[general] crtstart=1`,
-`DIFFTEST_CRTSTART=1`): it sets what the CRT initializers of the `__xi` table set (x87 precision 53 bits, the option
-words of the inline printf and scanf, the game's matherr, the SSE2 switch of the math code), runs the 1790 dynamic
-initializers of the game from the `__xc` table in order (the first entry is the CRT's) and calls `App_WinMain` with
-the module, the command line of `_get_narrow_winmain_command_line` and the show mode of the startup info. sdtest
-matches with it. It is not the default yet: the error path of the math functions of the copy (a domain error,
-`__startOneArgErrorHandling` at rva 0x3693c7 and its helper at 0x37213c) needs the initialized CRT and crashes
-without it (sdcall at `Quat_SlerpFlip any`, sdlevel at the vehicle motors).
+Each entry is a jmp through a slot that holds the export, so the SSE2 entries (xmm0, xmm1) and the `_CI` intrinsics
+(x87 stack) keep their conventions. The entries:
+
+- the 23 cdecl functions of `crt.h`, acos to tanh, with sqrt, fmod, floor, ceil, fabs, frexp, ldexp and modf
+  (`SD_IMPORT_CRT`; the Python's math module holds their addresses)
+- the SSE2 entries that `src/core/libm.c` calls. They are `_libm_sse2_*_precise` (the same bytes as the exe's
+  entries), not `__libm_sse2_*`, which in ucrtbase report no errors
+- `_CIatan2` and `_CIfmod` for libm.c, `_libm_sse2_sqrt_precise`, `_CIacos` and `_CIpow` for the copy
+
+libm.c calls the labels of `crt.h` in ScrapC.exe, `crthooks.inc` points the entries of the copy to the same labels.
+ucrtbase gets `_set_SSE2_enable` like the CRT initializer at rva 0x35fce1.
+
+Domain and range errors: ucrtbase calls the user matherr and sets errno when it returns 0, like the static CRT
+(`_umatherr` at rva 0x35657e). `Crt_MathErrMs` is registered with the loaded ucrtbase and calls the game's
+`E3D_MathErr`, which logs "Math Error" and returns 0. Under Wine `ucrtbase_ms.dll` keeps an errno of its own, so the
+handler also sets the errno of ScrapC.exe (EDOM for `_DOMAIN`, ERANGE for `_SING` and `_OVERFLOW`), which the Python
+reads after its math calls. On Windows both are the same DLL. The "Math Error" lines of log.html are the same as the
+original's in all three scenarios but for the sqrt lines of sdcall (below).
+
+No DLL exports `__ftoui3`, `__dtoui3` and the vector cos, sin and exp of two doubles. They are C of our own in
+`src/standalone/crtvec.c`, written from their documented behavior, with a short asm wrapper each for the register
+convention (argument in xmm0, result in eax or xmm0):
+
+- the conversions give the low 32 bits of the 64 bit truncation toward zero, so a negative or too large value wraps.
+  A NaN, an infinity or a magnitude of 2^63 or more gives 0 and errno EDOM, like the runtime's invalid path.
+  `tools/test/py/sdcall_crtconv.py` compares results and errno with the original for normal, wrapping, negative and
+  special inputs (`SDTest.ConvU` passes the argument bits in xmm0)
+- each lane of the vector functions is the scalar cos, sin or exp of ucrtbase, so a result can differ from the
+  original's vector code in the last bit (accepted). The tests that reach them (`CBmpFlt_Exposure`, the lava cos
+  table of `CFXTexLava`) match bit for bit all the same, so none compares a rounded value
+
+ScrapC.exe starts in `Crt_Main` of `crtinit.c`, the entry point of the original is not called (`[general]
+crtstart=0`, `DIFFTEST_CRTSTART=0` still runs it). Crt_Main sets what the CRT initializers of the `__xi` table set
+(x87 precision 53 bits, the option words of the inline printf and scanf, the game's matherr for the UCRT the exe
+links), runs the 1790 dynamic initializers of the game from the `__xc` table in order (the first entry is the CRT's)
+and calls `App_WinMain` with the module, the command line of `_get_narrow_winmain_command_line` and the show mode of
+the startup info.
 
 `[general] wipecrt=1` (`DIFFTEST_WIPECRT=1`, ScrapC.exe only) fills the code of the original's CRT with int3,
 `include/scrap/origcrt.h`: rva 0x313634 (operator delete, after the Python) up to the C++ unwind funclets of the game at
 0x37b3d0, but for the import thunks of the game in it (fmod, avifil32, msvfw32 and ddraw at 0x3179c6..0x317b2e,
 wsock32 and d3d8 at 0x3761d0..0x3761dc). The atexit destructors of the game's globals from 0x38cda0 stay. With
-`wipe=3` the probe covers it. The probe run (`wipe=3`, `wipepy=1`, `wipecrt=1`, `crtstart=1`) lists only the math
-functions in sdtest and sdlevel: the entries called by `libm.c` (0x329f3a, 0x34ec30, 0x347370, 0x329f50, 0x346fe0,
-0x32201a, 0x3471a0, 0x321440, 0x314310) with what they call (0x35aff0..0x35bf7f, 0x354666..0x357bef) and the error
-path (0x37213c, 0x365a0a..0x368b3b, guard_check_icall 0x316970). Nothing else of the CRT is reached; with the
-original's entry the CRT init itself of course runs, so `wipecrt=1` goes together with `crtstart=1` only.
+`wipe=3` the probe covers it. With the original's entry (`crtstart=0`) the CRT init itself runs, so `wipecrt=1` needs
+the default start.
 
-Code of the copy that calls the CRT itself (static scan, `src/standalone/crthooks.inc` points all of these to C):
+On 2026-10-28 `DIFFTEST_WIPE=2 DIFFTEST_WIPEPY=1 DIFFTEST_WIPECRT=1 DIFFTEST_STANDALONE=1 tools/test/difftest.sh`
+matches in all three scenarios with no "original code reached" line, and the probe run (`DIFFTEST_WIPE=3`, the same
+otherwise) logs no trap. No code of the original's CRT or Python runs any more.
+
+GCC turns `(float)__builtin_sqrt((double)f)` of the game C into `sqrtf`, which it calls for the errno of a negative
+argument. That call goes to the UCRT the exe links, so log.html shows "sqrtf: argument domain error: -3.000000" where
+the original logs "sqrt: argument domain error: -nan(ind)" (sdcall). The checks match.
+
+Code of the copy that calls the CRT itself (static scan, `src/standalone/crthooks.inc` points all of these to C or
+ucrtbase):
 the dynamic initializers (`_atexit` from 347 places, `new[]`, `memset`, the vector constructor iterator), the atexit
 destructors (`delete`, `delete[]`, the vector destructor iterator, `fclose`), the M3D library
-(`__security_check_cookie`, `__libm_sse2_sqrt_precise`), D3DX8 with libpng, libjpeg and zlib (`malloc`, `free`,
+(`__security_check_cookie`, `_libm_sse2_sqrt_precise`), D3DX8 with libpng, libjpeg and zlib (`malloc`, `free`,
 `_alloca_probe`, `_EH_prolog` from 26 places, `_setjmp3` and `longjmp`, `_ftol`, `_aullshr`, `_CIacos`, `_CIpow`,
 `floor`, `atoi`, ctype, `setlocale`, `strncpy`, `_strdup`, `calloc`, `_snprintf`, `_vsnprintf`, `exit`) and the ASE
-SDK. Of these only `__libm_sse2_sqrt_precise`, `_CIacos` and `_CIpow` are math and still the copy's.
+SDK.
 
 ### Stage 2c: D3DX8, ASE and the M3D math (in progress)
 

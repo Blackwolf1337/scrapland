@@ -13,8 +13,9 @@
  * Stage 2a: the Python is the real library of src/python, linked into this exe. Orig_PyPointers points the pointers
  * of the copy that lead into the original's Python to the real objects, so none of its code or data is used.
  *
- * Stage 2b: the CRT functions are the UCRT of this exe or C (src/standalone/crt.c and crtinit.c), the entries of the
- * original's CRT jump there; its thread-safe statics no longer need the TLS block of the original.
+ * Stage 2b: the CRT functions are the UCRT of this exe or C (src/standalone/crt.c and crtinit.c), the MSVC math is
+ * Microsoft's ucrtbase (crtmath.c, crtvec.c); the entries of the original's CRT jump there. The process starts in
+ * Crt_Main of crtinit.c, the entry point of the original is not called (crtstart=0 still runs it).
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -29,7 +30,8 @@ int Game_Dir(char *dir, size_t size);
 int Game_IsBuild(const IMAGE_NT_HEADERS32 *nt);
 int Game_Start(uintptr_t base, const char *dir);
 [[noreturn]] void Crt_Main(void);
-int Game_Option(const char *key);
+const char *Crt_MathInit(const char *dir);
+int Game_OptionOr(const char *key, int def);
 void Log_Open(const char *dir);
 
 #define ORIG_STR(x) ORIG_STR2(x)
@@ -257,11 +259,15 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
 	game_base = (uintptr_t)base;
 	Orig_PyPointers(base, nt);
 	VirtualFree(file, 0, MEM_RELEASE);
+	const char *missing = Crt_MathInit(dir);
+	if (missing) {
+		Fatal("the MSVC math: cannot load %s", missing);
+	}
 	Game_Start((uintptr_t)base, dir);
 
-	/* crtstart=1: the start of src/standalone/crtinit.c, without the original's CRT; the default is its entry,
-	 * whose CRT init the math functions still need (docs/standalone.md, stage 2b) */
-	if (Game_Option("crtstart")) {
+	/* the start of src/standalone/crtinit.c, without the original's CRT; crtstart=0 runs the entry of the original
+	 * with its CRT init instead (docs/standalone.md, stage 2b) */
+	if (Game_OptionOr("crtstart", 1)) {
 		Crt_Main();
 	}
 	Com_Printf("standalone: entry of the original at rva %06lx\n", entry);
