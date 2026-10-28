@@ -10,9 +10,9 @@
 # and one texture are compared through the D3D log.
 dxtdebug = 0
 def dxtz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def dxtfree(p):
-	SDTest.Call(0x133550, 'vi', p)
+	SDTest.Call('Mem_Free', 'vi', p)
 def dxtpk(a):
 	return SDTest.Peek(a, '@i')
 def dxtpo(a, v):
@@ -20,16 +20,16 @@ def dxtpo(a, v):
 # a COM method: sig is the return kind, the object and the arguments
 def dxtcom(obj, off, sig, args):
 	return apply(SDTest.Call, (dxtpk(dxtpk(obj) + off) - 0x400000, 't' + sig[0] + 'i' + sig[1:], 0, obj) + args)[0]
-dxtdev = SDTest.Peek(0x4ad6f4, 'i')
-dxterrdif = SDTest.Peek(0x4b25ec, 'i')
-dxtbuild = SDTest.Peek(0x4b2688, 'i')
-SDTest.Poke(0x4b25ec, 0)
-SDTest.Poke(0x4b2688, 0)
+dxtdev = SDTest.Peek('g_pd3dDevice', 'i')
+dxterrdif = SDTest.Peek('g_TexErrDif', 'i')
+dxtbuild = SDTest.Peek('g_BuildDDS', 'i')
+SDTest.Poke('g_TexErrDif', 0)
+SDTest.Poke('g_BuildDDS', 0)
 check('dxt device', lambda: dxtdev != 0)
 
 # CheckTextureRequirements: (hr, width, height, levels, format)
 def dxtctr(w, h, lv, usage, f, pool):
-	return SDTest.Call(0x0037ea, 'tiiipppipi', 0, dxtdev, w, h, lv, usage, f, pool)
+	return SDTest.Call('D3DX_CheckTextureRequirements', 'tiiipppipi', 0, dxtdev, w, h, lv, usage, f, pool)
 for f in (0, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x22, 0x28, 0x29, 0x32, 0x33, 0x34,
 		0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0x41, 0x43, 0x31545844, 0x32545844, 0x33545844, 0x34545844, 0x35545844,
 		0x59565955, 0x32595559, 0x50, 0x46, 0x20, 99):
@@ -40,14 +40,14 @@ for w, h in ((0, 0), (1, 1), (3, 5), (100, 60), (812, 812), (1204, 1204), (4096,
 		check('dxt CheckTextureRequirements size' + fmt((w, h, lv)), lambda w=w, h=h, lv=lv: dxtctr(w, h, lv, 0, 0x15, 1))
 	check('dxt CheckTextureRequirements size dxt' + fmt((w, h)), lambda w=w, h=h: dxtctr(w, h, 0, 0, 0x31545844, 1))
 	check('dxt CheckTextureRequirements size scratch' + fmt((w, h)), lambda w=w, h=h: dxtctr(w, h, 0, 0, 0x35545844, 3))
-check('dxt CheckTextureRequirements nulls', lambda: SDTest.Call(0x0037ea, 'tiiiiiiiii', 0, dxtdev, 0, 0, 0, 0, 0, 1))
-check('dxt CheckTextureRequirements fmt null', lambda: SDTest.Call(0x0037ea, 'tiiipppiii', 0, dxtdev, 10, 10, 0, 0, 0, 1))
-check('dxt CheckTextureRequirements size null', lambda: SDTest.Call(0x0037ea, 'tiiiiipipi', 0, dxtdev, 0, 0, 0, 0, 0x16, 1))
+check('dxt CheckTextureRequirements nulls', lambda: SDTest.Call('D3DX_CheckTextureRequirements', 'tiiiiiiiii', 0, dxtdev, 0, 0, 0, 0, 0, 1))
+check('dxt CheckTextureRequirements fmt null', lambda: SDTest.Call('D3DX_CheckTextureRequirements', 'tiiipppiii', 0, dxtdev, 10, 10, 0, 0, 0, 1))
+check('dxt CheckTextureRequirements size null', lambda: SDTest.Call('D3DX_CheckTextureRequirements', 'tiiiiipipi', 0, dxtdev, 0, 0, 0, 0, 0x16, 1))
 for u in (0, 1, 2, 8, 0x200, 0x20b, 4, 0x10, -1):
 	for p in (0, 1, 2, 3, 4):
 		check('dxt CheckTextureRequirements usage pool' + fmt((u, p)), lambda u=u, p=p: dxtctr(64, 64, 0, u, 0x15, p))
 check('dxt CheckTextureRequirements scratch unknown', lambda: dxtctr(64, 64, 0, 0, 0, 3))
-check('dxt CheckTextureRequirements no device', lambda: SDTest.Call(0x0037ea, 'tiiipppipi', 0, 0, 64, 64, 0, 0, 0x15, 1))
+check('dxt CheckTextureRequirements no device', lambda: SDTest.Call('D3DX_CheckTextureRequirements', 'tiiipppipi', 0, 0, 64, 64, 0, 0, 0x15, 1))
 
 # ---- reading the pixels back ----
 def dxtblock(f):
@@ -314,12 +314,12 @@ dxtreqs = ((32, 0, 0, 1, 1), (32, 0, 0, 1, 0), (32, 1, 0, 0, 1), (32, 0, 0, 0, 1
 	(16, 1, 0, 0, 1), (8, 0, 0, 0, 0), (32, 0, 1, 0, 1), (32, 1, 1, 0, 0), (16, 0, 1, 0, 1), (16, 1, 1, 0, 1),
 	(16, 0, 1, 1, 1))
 def dxtentry(name):
-	t = SDTest.Call(0x1334d0, 'ii', 0x258)[0]
-	SDTest.Call(0x27d020, 'tiizzii', t, name, None, 0, 0)
+	t = SDTest.Call('operator_new', 'ii', 0x258)[0]
+	SDTest.Call('CTextura_ctor', 'tiizzii', t, name, None, 0, 0)
 	return t
 def dxtfreeentry(t):
-	SDTest.Call(0x27d1e0, 'vi', t)
-	SDTest.Call(0x1334e0, 'vi', t)
+	SDTest.Call('CTextura_dtor', 'tvi', t)
+	SDTest.Call('operator_delete', 'vi', t)
 def dxtmake(t, req, buf, size, dev=None):
 	if dev is None:
 		dev = dxtdev
@@ -330,11 +330,11 @@ def dxtmake(t, req, buf, size, dev=None):
 	dxtpo(t + 0x240, comp)
 	dxtpo(t + 0x230, buf)
 	dxtpo(t + 0x234, size)
-	hr = SDTest.Call(0x27e1c0, 'tiii', t, dev)[0]
+	hr = SDTest.Call('CTextura_CreateD3D', 'tiii', t, dev)[0]
 	dxtpo(t + 0x230, 0)
 	return hr
 for dxtname in dxtfiles:
-	r = SDTest.Call(0x21b330, 'ispp', dxtname, 0, 0)
+	r = SDTest.Call('ArchIO_ReadAll', 'ispp', dxtname, 0, 0)
 	dxtbuf, dxtsize = r[1], r[2]
 	if not dxtbuf:
 		check('dxt file ' + dxtname, lambda: 'missing')
@@ -358,7 +358,7 @@ for dxtname in dxtfiles:
 			check('dxt CTextura_CreateD3D cut' + fmt((n,)), lambda t=t, n=n: (dxtmake(t, (32, 1, 0, 0, 1), dxtbuf, n) < 0,
 				dxtpk(t + 0x228) != 0))
 			dxtfreeentry(t)
-	SDTest.Call(0x21b300, 'vp', dxtbuf)
+	SDTest.Call('Ptr_Delete', 'vp', dxtbuf)
 
 # the TGA the game loads through D3DX (bmp/norm1.alpha.psa, 1024 x 32, 32 bits, rows bottom up): the top level as a
 # checksum, the made ones by their average against it
@@ -374,7 +374,7 @@ def dxttga(levels):
 		else:
 			r.append((f, w, h, dxtdiff(dxtavg(b, f, w, h), ref) <= 12))
 	return r
-r = SDTest.Call(0x21b330, 'ispp', 'bmp/norm1.alpha.psa', 0, 0)
+r = SDTest.Call('ArchIO_ReadAll', 'ispp', 'bmp/norm1.alpha.psa', 0, 0)
 dxtbuf, dxtsize = r[1], r[2]
 check('dxt file bmp/norm1.alpha.psa', lambda: (dxtbuf != 0, dxtsize))
 if dxtbuf:
@@ -387,7 +387,7 @@ if dxtbuf:
 		else:
 			check('dxt CTextura_CreateD3D tga' + fmt(dxtreq), lambda hr=hr: (hr, 'none'))
 		dxtfreeentry(t)
-	SDTest.Call(0x21b300, 'vp', dxtbuf)
+	SDTest.Call('Ptr_Delete', 'vp', dxtbuf)
 
 # ---- LoadSurfaceFromSurface ----
 dxtpix = (0x00000000, 0xffffffff, 0x80808080, 0x7f7f7f7f, 0x12345678, 0xff0000ff, 0x00ff00ff, 0x0000ffff, 0x01020304,
@@ -425,7 +425,7 @@ def dxtfill(s, w, h, pix):
 def dxtrelease(s):
 	dxtcom(s, 8, 'ii', ())
 def dxtlsfs(d, s, flt, ck):
-	return SDTest.Call(0x004dbf, 'tiiiiiiiiii', 0, d, 0, 0, s, 0, 0, flt, ck)[0]
+	return SDTest.Call('D3DX_LoadSurfaceFromSurface', 'tiiiiiiiiii', 0, d, 0, 0, s, 0, 0, flt, ck)[0]
 dxtsrc = dxtsurf(8, 4, 0x15)
 dxtfill(dxtsrc, 8, 4, dxtpix)
 # a smooth one for the DXT targets
@@ -500,8 +500,8 @@ dxtbmpreqs = ((32, 1, 0, 1), (32, 0, 0, 1), (24, 0, 0, 1), (16, 0, 0, 1), (16, 1
 	(16, 0, 1, 1), (16, 1, 1, 1), (16, 1, 0, 0))
 for dxtreq in dxtbmpreqs:
 	t = dxtentry('sdxbmp.bmp')
-	bm = SDTest.Call(0x1334d0, 'ii', 12)[0]
-	SDTest.Call(0x27cfe0, 'tiiii', bm, 16, 8)
+	bm = SDTest.Call('operator_new', 'ii', 12)[0]
+	SDTest.Call('CBmp_ctor', 'tiiii', bm, 16, 8)
 	img = dxtpk(bm + 8)
 	for i in range(16 * 8):
 		dxtpo(img + 4 * i, dxtpix[i % len(dxtpix)] ^ (i * 0x010305))
@@ -512,7 +512,7 @@ for dxtreq in dxtbmpreqs:
 	dxtpo(t + 0x21c, bpp)
 	dxtpo(t + 0x224, alpha)
 	dxtpo(t + 0x23c, mip | bump << 8)
-	hr = SDTest.Call(0x27e1c0, 'tiii', t, dxtdev)[0]
+	hr = SDTest.Call('CTextura_CreateD3D', 'tiii', t, dxtdev)[0]
 	tex = dxtpk(t + 0x228)
 	def dxtbmplevels(tex):
 		r = []
@@ -535,15 +535,15 @@ def dxtlog(fn):
 	r = fn()
 	SDTest.D3DLog(0)
 	return r, SDTest.Out()
-check('dxt CheckTextureRequirements log', lambda: dxtlog(lambda: SDTest.Call(0x0037ea, 'tiiipppipi', 0,
-	SDTest.Peek(0x4ad6f4, 'i'), 30, 20, 0, 0, 0x14, 1)))
-r = SDTest.Call(0x21b330, 'ispp', 'bmp/dds/partic1.dds', 0, 0)
+check('dxt CheckTextureRequirements log', lambda: dxtlog(lambda: SDTest.Call('D3DX_CheckTextureRequirements', 'tiiipppipi', 0,
+	SDTest.Peek('g_pd3dDevice', 'i'), 30, 20, 0, 0, 0x14, 1)))
+r = SDTest.Call('ArchIO_ReadAll', 'ispp', 'bmp/dds/partic1.dds', 0, 0)
 dxtbuf, dxtsize = r[1], r[2]
 if dxtbuf:
 	t = dxtentry('sdxtex.dds')
-	check('dxt CTextura_CreateD3D log', lambda t=t: dxtlog(lambda t=t: (dxtmake(t, (16, 0, 0, 0, 1), dxtbuf, dxtsize, SDTest.Peek(0x4ad6f4, 'i')),)))
+	check('dxt CTextura_CreateD3D log', lambda t=t: dxtlog(lambda t=t: (dxtmake(t, (16, 0, 0, 0, 1), dxtbuf, dxtsize, SDTest.Peek('g_pd3dDevice', 'i')),)))
 	dxtfreeentry(t)
-	SDTest.Call(0x21b300, 'vp', dxtbuf)
+	SDTest.Call('Ptr_Delete', 'vp', dxtbuf)
 
-SDTest.Poke(0x4b25ec, dxterrdif)
-SDTest.Poke(0x4b2688, dxtbuild)
+SDTest.Poke('g_TexErrDif', dxterrdif)
+SDTest.Poke('g_BuildDDS', dxtbuild)

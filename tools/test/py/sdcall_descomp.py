@@ -2,11 +2,11 @@
 # built from rotations, scales (equal, unequal, mirrored), shears and translations taken apart by Matrix_ToTransform,
 # the transforms turned back by M3DTransform_ToMatrix and _ToMatrixAnim; also matrices of rank 2, 1 and 0.
 def dcz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def dcget(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def dcset(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 dcm = dcz(64)
 dcr = dcz(64)
 dcs = dcz(64)
@@ -14,10 +14,10 @@ dct = dcz(64)
 def dcmul(a, b):
 	dcset(dcr, a)
 	dcset(dcs, b)
-	SDTest.Call(0x0077b8, 'tiiiii', 0, dcm, dcr, dcs)
+	SDTest.Call('D3DX_MatrixMultiply', 'tiiiii', 0, dcm, dcr, dcs)
 	return dcget(dcm, 16)
 def dcrot(y, p, r):
-	SDTest.Call(0x008701, 'tiiifff', 0, dcm, y, p, r)
+	SDTest.Call('D3DX_MatrixRotationYPR', 'tiiifff', 0, dcm, y, p, r)
 	return dcget(dcm, 16)
 def dcscale(x, y, z, tx, ty, tz):
 	return (x, 0.0, 0.0, 0.0, 0.0, y, 0.0, 0.0, 0.0, 0.0, z, 0.0, tx, ty, tz, 1.0)
@@ -41,21 +41,21 @@ dcmats = dcmats + [
 ]
 for dck in range(len(dcmats)):
 	dcset(dcm, dcmats[dck])
-	check('Matrix_ToTransform' + fmt(dcmats[dck]), lambda: (SDTest.Call(0x2d6c50, 'vii', dcm, dct), dcget(dct, 15)))
+	check('Matrix_ToTransform' + fmt(dcmats[dck]), lambda: (SDTest.Call('Matrix_ToTransform', 'vii', dcm, dct), dcget(dct, 15)))
 	dcok = 1
 	for dcx in dcget(dct, 15):
 		if dcx != dcx:
 			dcok = 0
 	if not dcok:
 		continue
-	check('M3DTransform_ToMatrix ' + fmt(dck), lambda: (SDTest.Call(0x2d6750, 'tvii', dct, dcr), dcget(dcr, 16)))
-	check('M3DTransform_ToMatrixAnim ' + fmt(dck), lambda: (SDTest.Call(0x2d65d0, 'tiii', dct, dcr)[0] != 0,
+	check('M3DTransform_ToMatrix ' + fmt(dck), lambda: (SDTest.Call('M3DTransform_ToMatrix', 'tvii', dct, dcr), dcget(dcr, 16)))
+	check('M3DTransform_ToMatrixAnim ' + fmt(dck), lambda: (SDTest.Call('M3DTransform_ToMatrixAnim', 'tiii', dct, dcr)[0] != 0,
 		dcget(dcr, 16)))
 for dcv in ((1.0, 2.0, 3.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 2.0, 2.0, 1.0),
 		(0.0, 0.0, 0.0, 0.1, 0.2, 0.3, 0.927, 0.5, -0.5, 0.5, 0.5, 1.0, 3.0, 0.5, -1.0)):
 	dcset(dct, dcv)
-	check('M3DTransform_ToMatrix' + fmt(dcv), lambda: (SDTest.Call(0x2d6750, 'tvii', dct, dcr), dcget(dcr, 16)))
-SDTest.Call(0x133550, 'vi', dcm)
-SDTest.Call(0x133550, 'vi', dcr)
-SDTest.Call(0x133550, 'vi', dcs)
-SDTest.Call(0x133550, 'vi', dct)
+	check('M3DTransform_ToMatrix' + fmt(dcv), lambda: (SDTest.Call('M3DTransform_ToMatrix', 'tvii', dct, dcr), dcget(dcr, 16)))
+SDTest.Call('Mem_Free', 'vi', dcm)
+SDTest.Call('Mem_Free', 'vi', dcr)
+SDTest.Call('Mem_Free', 'vi', dcs)
+SDTest.Call('Mem_Free', 'vi', dct)

@@ -720,6 +720,81 @@ datagen.py:
 On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios, and so does the hook DLL
 difftest.
 
+### Stage 3c0: the tests by name (done)
+
+The difftest scripts in `tools/test/py` reached the game by rva in about 12000 places (`SDTest.Call(rva, sig, ...)`,
+`SDTest.Peek(rva, kind)`, `SDTest.Poke(rva, v)`, absolute addresses as `rva + 0x400000`). Stage 3c moves the data and
+the functions of ScrapC.exe off the original rvas (normal C linkage), while the original run (`Scrap.exe` with
+`hooks=0`) keeps them there. So the tests address the game by names, which resolve per build.
+
+`src/core/testsyms.inc` is the table, generated and committed, sorted by key. A line is one of:
+
+- `SD_TEST_FUNC(key, name, rva)`: a C function of `src/hooks.inc`
+- `SD_TEST_CRT`: an entry of the C runtime of the original (the C of `src/standalone` in ScrapC.exe)
+- `SD_TEST_OBJ`: a C object of `SD_AT`
+- `SD_TEST_DATA`: data of the original, by a `GAME_DATA` or `Game_Ptr` define or a name of `symbols/globals.tsv`, with
+  no C object yet
+
+It holds only the names the scripts use: 6082 names (5090 functions, 10 CRT entries, 100 C objects, 882 data names) in
+12265 uses. `src/core/testmod.c` compiles it in, so it works in the original run too. `SDTest.Sym(name)` returns the
+rva of a name, and `Call`, `Peek`, `Poke` and `ConvU` take a name in place of the rva (a name the table lacks raises a
+TypeError). The lookup is a binary search. One function, `TestMod_SymRva`, turns an entry into the rva: the rva of the
+original in the hook DLL and, for now, in ScrapC.exe too. Stage 3c switches that one function in ScrapC.exe to the
+address of the C function or object minus `game_base` (`Game_Ptr` adds it back), so the arithmetic of the tests (rva +
+field offset, `0x400000 + rva`) keeps working. `sdlib.py` has `sym(name)`, which is `SDTest.Sym(name)`, and
+`symva(name)`, which is `0x400000 + sym(name)`: the address as the pointers of the game hold it.
+
+`tools/test/testsyms.py -w` rewrites the scripts and writes the table. Without `-w` it only reports and exits 1 when
+scripts or table would change. `-v` lists the numbers that stay, `-l` the rewrites outside the first argument of SDTest
+(tables, comparisons, arithmetic), which are the ones to look at by eye. It is idempotent. It reads the `SD_AT` objects
+with their sizes from the object files in `build/standalone/objects.txt` (the COFF sections `.sd.<rva>`, as datagen.py
+does), so it needs a build of ScrapC. After a merge that brings new tests or names: build ScrapC, run `-w`.
+
+A function rva of `src/hooks.inc` becomes its C function name. A C function that backs several identical copies of the
+original names the first copy by its name and the others `name@rva` (79 such keys). The CRT entries likewise
+(`crt_memcpy` for 0x3197d0). A data rva becomes, in this order, the name of the `SD_AT` object there, the name of a
+`GAME_DATA` or `Game_Ptr` define (the first that is not all capitals), else a name of globals.tsv (only USER_DEFINED and
+IMPORTED, no RTTI). As the first argument of SDTest the name is bare (`'Str_Trim'`), elsewhere `sym('Str_Trim')`,
+inside an object `sym('g_VirtualKeyboard') + 0x100`, as an absolute address `symva('cAI_vftable')`. The printed check
+labels are strings and stay as they were.
+
+A number is a candidate when it is hex, not an offset added to something else (`x + 0x24`), not an operand of
+`* / % & | ^ << >> ~` and not after a unary minus. The first argument of SDTest, `0x400000 + n` and a Peek with an `@`
+kind are certain addresses. Anywhere else the number must hit a name exactly or lie in an object of known size at a
+multiple of 4, and globals.tsv is not used there (a color 0x80ff00 matched the RTTI of cEntity). A struct type or a
+`Game_Ptr` array has no known size and reaches up to the next name, at most 0x1000 bytes.
+
+What stays a number: 16 certain data rvas without a name (fields after a 4 byte global, such as 0x4a8314 after
+`g_Watermark`, and the unnamed globals of `sdcall_render2.py`, `sdlevel_scorer2.py`, `sdlevel_scorer3.py`). Of the other
+numbers in the image, 340 are in the code range without a function start, 51 in the data range without a name, 3
+unaligned inside an object and 1 beyond 0x1000 into an object of unknown size, nearly all struct offsets, colors and
+test values. Stage 3b5 (the globals as C objects) gives names to most of the data, a rerun picks them up.
+
+`tools/test/sigcheck.py` (run by difftest.sh) checks that every name in the scripts is in the table. By name, the
+signature must fit the C prototype (found in `include/` and `src/`, the definition before a declaration): thiscall with
+`t` and its argument count, cdecl without `t` (at least its arguments with `...`), fastcall with one argument as `t`
+(ecx), stdcall as `t` with a dummy this (the callee pops like thiscall). `vec3_t` by value counts 3 words, `double` and
+64 bit ints 2, another struct by value is not counted. No global may be named `out`, `sym` or `symva`. It found 27
+calls of 15 fastcall functions with one argument written as cdecl (`'vi'`, `'ii'`: `cInputAction_ctor`,
+`MsvcString_Tidy`, `CTextura_dtor`, `CGameParticles_NumParticles` ...). They worked only because ecx happened to hold
+the argument, and are `t` calls now with the same outputs.
+
+`tools/standalone/datamap.py` resolves the names through the table when it scans the scripts for the rvas the tests use
+(`numbers()` of testsyms.py: the rva of each name, and with a following `+ 0x..` also rva plus offset). The post-link
+check of the build passes.
+
+Left for stage 3c: about 10 check labels (`sdlevel_fxmisc.py`, `sdlevel_logic1.py`, `sdlevel_aichar.py` ...) format an
+rva from a table with `%x`, they print the original rva only while `sym()` gives it. `isfn(p, rva)` of `sdlib.py` also
+compares with the rva of the original.
+
+On 2026-10-28 the hook DLL difftest and `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` match in all three scenarios
+with the counts of before (sdtest 9965, sdcall 29078, sdlevel 19095 checks). The outputs of sdtest and sdcall are the
+same bytes as before the rewrite. Of sdlevel 5 lines differ from before, in both runs alike: `SC2 cScorer_ctor` and 4
+lines of `SC3` (`Get` of `WeaponIconIndex`, `UpgradeIconIndex`, `AmmoIconIndex` and `Weapon fields`) print memory no
+code writes (the `Get` after a `Set` of 7 returns text bytes). It holds what the heap had there before, which depends
+on the text of the scripts: with the old `sdlevel_scorer2.py` and `sdlevel_scorer3.py` and all other scripts rewritten,
+the 4 SC3 lines are the old ones again.
+
 ## Stage 4: English names
 
 The Spanish names of the original stay until the C is complete, then everything is translated.

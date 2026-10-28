@@ -13,13 +13,13 @@ def efci(a):
 def efcb(a):
 	return SDTest.Peek(a, '@b')
 def efcz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def efcfree(p):
-	SDTest.Call(0x133550, 'ii', p)
+	SDTest.Call('Mem_Free', 'ii', p)
 def efcfl(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def efcset(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 def efcints(a, offs):
 	return tuple(map(lambda o, a=a: SDTest.Peek(a + o, '@i'), offs))
 def efcbytes(a, offs):
@@ -34,17 +34,17 @@ def efcparts(p):
 		efcfl(p + 0x9c, 2), efcbytes(p, (0x98, 0x99, 0xa4)))
 # particle i: active, position, color, size
 def efcpart(p, i):
-	return SDTest.Call(0x21d4e0, 'tbiiFiipF', p, i, (0.0, 0.0, 0.0), 0, 0, 0, (0.0,))
+	return SDTest.Call('CGameParticles_GetParticle', 'tbiiFiipF', p, i, (0.0, 0.0, 0.0), 0, 0, 0, (0.0,))
 def efcpartlist(p, n):
 	return tuple(map(lambda i, p=p: efcpart(p, i), range(n)))
 def efcnum(p):
-	return SDTest.Call(0x21d470, 'tii', p)[0]
+	return SDTest.Call('CGameParticles_NumActive', 'tii', p)[0]
 def efctrails(a, n):
-	return tuple(map(lambda i, a=a: (efci(a + 4 * i) != 0, SDTest.Call(0x21e1b0, 'tii', a + 4 * i)[0],
-		SDTest.Call(0x21e1a0, 'tii', a + 4 * i)[0]), range(n)))
+	return tuple(map(lambda i, a=a: (efci(a + 4 * i) != 0, SDTest.Call('CGameTrail_GetMaxTrails', 'tii', a + 4 * i)[0],
+		SDTest.Call('CGameTrail_GetTransp', 'tii', a + 4 * i)[0]), range(n)))
 # render node name of the CGameModel gm with a particle system (flags & 2, obj3D of class 0xa5000020)
 def efcsist(gm, name):
-	i = SDTest.Call(0x20f7d0, 'tiis', gm, name)[0]
+	i = SDTest.Call('CGameModel_FindNodoR', 'tiis', gm, name)[0]
 	if i < 0:
 		return 0
 	t = efci(efci(gm) + 0xac)
@@ -54,33 +54,33 @@ def efcsist(gm, name):
 	o = efci(r + 0x9c)
 	return (efcb(r + 4) & 2) and o != 0 and efci(o + 4) == -0x5affffe0
 def efcnode(gm, name):
-	return SDTest.Call(0x20f7d0, 'tiis', gm, name)[0] >= 0
+	return SDTest.Call('CGameModel_FindNodoR', 'tiis', gm, name)[0] >= 0
 
-efcworld = SDTest.Peek(0x467450, 'i')
-efcplayer = SDTest.Call(0x0c1430, 'tiii', efcworld, 0)[0]
+efcworld = SDTest.Peek('g_pWorld', 'i')
+efcplayer = SDTest.Call('cWorld_GetUsrEntity', 'tiii', efcworld, 0)[0]
 efcdelta = efci(efcworld + 0x2d4)
 efcset(efcworld + 0x2d4, (0.04,))
-efcsplit = SDTest.Peek(0x4a8c8c, 'i')
-SDTest.Poke(0x4a8c8c, 1)
-SDTest.Call(0x323c50, 'vi', 4711)
+efcsplit = SDTest.Peek('g_SplitScreen', 'i')
+SDTest.Poke('g_SplitScreen', 1)
+SDTest.Call('crt_srand', 'vi', 4711)
 
 # the constructors of the exe and the destructors and deleting destructors (flags 0) in C: vtable, particle nodes
 # (offset of Node), trails (offset, count) and the fields the constructors set
 efcctors = (
-	('BankDirector', 0xd6930, 0xd72d0, 0xc0, (0xc,), (), (4, 8), (0xbc,)),
-	('BankMaster', 0xd69a0, 0xd7010, 0x174, (0x10, 0xc4), (), (4, 0xc, 0xc0), (8,)),
-	('CrazyGambler', 0xd6a30, 0xd7040, 0x218c, (0xc,), ((0x2168, 8),), (4, 8, 0xc0, 0xc4, 0xc8, 0xcc), (0xbc, 0x2188)),
-	('Gear', 0xd6af0, 0xd70a0, 0x18c, (0xc, 0xd4), ((0x188, 1),), (4, 8, 0xc0, 0xd0), ()),
-	('Maintenance', 0xd6b90, 0xd70d0, 0xc0, (8,), (), (4, 0xb8, 0xbc), ()),
-	('Mercenary', 0xd6c10, 0xd70f0, 0x230, (0x14, 0xc8, 0x180), (), (4, 0xc, 0x10, 0xc4), (8, 0x178)),
-	('Messenger', 0xd6cb0, 0xd7120, 0x338, (0x14,), ((0x1f4, 12),), (4, 8), (0xc, 0x334)),
-	('Police', 0xd6d40, 0xd7180, 0xd0, (0xc,), (), (4, 8, 0xc0), ()),
-	('Rusty', 0xd6df0, 0xd71b0, 0x31c, (0x10, 0xc4, 0x178, 0x23c), ((0x30c, 4),), (4, 0xc, 0xc0, 0x174, 0x228), (8,)),
-	('Sentinel', 0xd6ed0, 0xd7230, 0x2bc, (0xc, 0xc0, 0x1f8), ((0x174, 4), (0x188, 4), (0x198, 4)),
+	('BankDirector', sym('cEmbeddedFXBankDirector_ctor'), sym('cEmbeddedFXBankDirector_Delete'), 0xc0, (0xc,), (), (4, 8), (0xbc,)),
+	('BankMaster', sym('cEmbeddedFXBankMaster_ctor'), sym('cEmbeddedFXBankMaster_dtor'), 0x174, (0x10, 0xc4), (), (4, 0xc, 0xc0), (8,)),
+	('CrazyGambler', sym('cEmbeddedFXCrazyGambler_ctor'), sym('cEmbeddedFXCrazyGambler_dtor'), 0x218c, (0xc,), ((0x2168, 8),), (4, 8, 0xc0, 0xc4, 0xc8, 0xcc), (0xbc, 0x2188)),
+	('Gear', sym('cEmbeddedFXGear_ctor'), sym('cEmbeddedFXGear_dtor'), 0x18c, (0xc, 0xd4), ((0x188, 1),), (4, 8, 0xc0, 0xd0), ()),
+	('Maintenance', sym('cEmbeddedFXMaintenance_ctor'), sym('cEmbeddedFXMaintenance_dtor'), 0xc0, (8,), (), (4, 0xb8, 0xbc), ()),
+	('Mercenary', sym('cEmbeddedFXMercenary_ctor'), sym('cEmbeddedFXMercenary_dtor'), 0x230, (0x14, 0xc8, 0x180), (), (4, 0xc, 0x10, 0xc4), (8, 0x178)),
+	('Messenger', sym('cEmbeddedFXMessenger_ctor'), sym('cEmbeddedFXMessenger_dtor'), 0x338, (0x14,), ((0x1f4, 12),), (4, 8), (0xc, 0x334)),
+	('Police', sym('cEmbeddedFXPolice_ctor'), sym('cEmbeddedFXPolice_dtor'), 0xd0, (0xc,), (), (4, 8, 0xc0), ()),
+	('Rusty', sym('cEmbeddedFXRusty_ctor'), sym('cEmbeddedFXRusty_dtor'), 0x31c, (0x10, 0xc4, 0x178, 0x23c), ((0x30c, 4),), (4, 0xc, 0xc0, 0x174, 0x228), (8,)),
+	('Sentinel', sym('cEmbeddedFXSentinel_ctor'), sym('cEmbeddedFXSentinel_dtor'), 0x2bc, (0xc, 0xc0, 0x1f8), ((0x174, 4), (0x188, 4), (0x198, 4)),
 		(4, 8, 0xbc, 0x1ec, 0x1f0, 0x1f4, 0x2ac), ()))
-efcdeletes = {'BankDirector': 0xd72d0, 'BankMaster': 0xd7310, 'CrazyGambler': 0xd7360, 'Gear': 0xd73e0,
-	'Maintenance': 0xd7430, 'Mercenary': 0xd7470, 'Messenger': 0xd74c0, 'Police': 0xd7540, 'Rusty': 0xd7580,
-	'Sentinel': 0xd7620}
+efcdeletes = {'BankDirector': sym('cEmbeddedFXBankDirector_Delete'), 'BankMaster': sym('cEmbeddedFXBankMaster_Delete'), 'CrazyGambler': sym('cEmbeddedFXCrazyGambler_Delete'), 'Gear': sym('cEmbeddedFXGear_Delete'),
+	'Maintenance': sym('cEmbeddedFXMaintenance_Delete'), 'Mercenary': sym('cEmbeddedFXMercenary_Delete'), 'Messenger': sym('cEmbeddedFXMessenger_Delete'), 'Police': sym('cEmbeddedFXPolice_Delete'), 'Rusty': sym('cEmbeddedFXRusty_Delete'),
+	'Sentinel': sym('cEmbeddedFXSentinel_Delete')}
 def efcstate(p, c):
 	parts = tuple(map(lambda o, p=p: efci(p + o + 0xa8) != 0, c[4]))
 	trails = []
@@ -103,34 +103,34 @@ for c in efcctors:
 efca = efcz(0xc8)
 def efcalarm(a):
 	return (efci(a), efcbytes(a, (0xb4, 0xb5, 0xc4)), efcfl(a + 0xb8, 3))
-check('cEmbeddedFXAlarm ctor', lambda: (SDTest.Call(0xd6dc0, 'tii', efca)[0] == efca, efcalarm(efca)))
-check('cEmbeddedFXAlarm_Reset', lambda: (SDTest.Call(0xd83e0, 'tbi', efca)[0], efcalarm(efca)))
-check('cEmbeddedFXAlarm_SetOn(1)', lambda: (SDTest.Call(0xd87c0, 'tvii', efca, 1), efcalarm(efca)))
-check('cEmbeddedFXAlarm_SetOn(0)', lambda: (SDTest.Call(0xd87c0, 'tvii', efca, 0), efcalarm(efca)))
-check('cEmbeddedFXAlarm_SetLights(0)', lambda: (SDTest.Call(0xd95b0, 'tvii', efca, 0), efcalarm(efca)))
-check('cEmbeddedFXAlarm_SetLights(7)', lambda: (SDTest.Call(0xd95b0, 'tvii', efca, 7), efcalarm(efca)))
-SDTest.Call(0xd95b0, 'tvii', efca, 0)
+check('cEmbeddedFXAlarm ctor', lambda: (SDTest.Call('cEmbeddedFXAlarm_ctor', 'tii', efca)[0] == efca, efcalarm(efca)))
+check('cEmbeddedFXAlarm_Reset', lambda: (SDTest.Call('cEmbeddedFXAlarm_Reset', 'tbi', efca)[0], efcalarm(efca)))
+check('cEmbeddedFXAlarm_SetOn(1)', lambda: (SDTest.Call('cEmbeddedFXAlarm_SetOn', 'tvii', efca, 1), efcalarm(efca)))
+check('cEmbeddedFXAlarm_SetOn(0)', lambda: (SDTest.Call('cEmbeddedFXAlarm_SetOn', 'tvii', efca, 0), efcalarm(efca)))
+check('cEmbeddedFXAlarm_SetLights(0)', lambda: (SDTest.Call('cEmbeddedFXAlarm_SetLights', 'tvii', efca, 0), efcalarm(efca)))
+check('cEmbeddedFXAlarm_SetLights(7)', lambda: (SDTest.Call('cEmbeddedFXAlarm_SetLights', 'tvii', efca, 7), efcalarm(efca)))
+SDTest.Call('cEmbeddedFXAlarm_SetLights', 'tvii', efca, 0)
 # on without a blink in the step and without the lights: only the times and the level
 for on, cur, lvl, t, last, dt in ((0, 0, 0.0, 0.3, 0.3, 0.01), (1, 0, 0.0, 0.3, 0.3, 0.01), (1, 0, 0.9, 0.3, 0.3, 0.01),
 		(1, 0, 0.98, 0.4, 0.3, 0.05), (1, 1, 0.5, 0.85, 0.8, 0.0), (0, 1, 0.5, 0.3, 0.3, 0.01), (1, 0, 0.0, 0.89, 0.85, 0.02)):
 	efcpoke(efca + 0xb4, on | (cur << 8))
 	efcset(efca + 0xb8, (lvl, t, last))
-	check('cEmbeddedFXAlarm_Update' + fmt((on, cur, lvl, t, last, dt)), lambda dt=dt: (SDTest.Call(0xdcfc0, 'tvif',
+	check('cEmbeddedFXAlarm_Update' + fmt((on, cur, lvl, t, last, dt)), lambda dt=dt: (SDTest.Call('cEmbeddedFXAlarm_Update', 'tvif',
 		efca, dt), efcalarm(efca)))
 check('cEmbeddedFXAlarm_Init(NULL model) skipped', lambda: 0)
-check('cEmbeddedFXAlarm_Release', lambda: (SDTest.Call(0xd7890, 'tvi', efca), efci(efca), efci(efca + 4 + 0xa8)))
-check('cEmbeddedFXAlarm_dtor', lambda: (SDTest.Call(0xd71a0, 'tvi', efca), efci(efca + 4 + 0xa8)))
+check('cEmbeddedFXAlarm_Release', lambda: (SDTest.Call('cEmbeddedFXAlarm_Release', 'tvi', efca), efci(efca), efci(efca + 4 + 0xa8)))
+check('cEmbeddedFXAlarm_dtor', lambda: (SDTest.Call('cEmbeddedFXAlarm_dtor', 'tvi', efca), efci(efca + 4 + 0xa8)))
 efcfree(efca)
 
 # EmbeddedFXChar_Create with the player and a model without an effect: *fx stays
 efcslot = efcz(4)
-check('EmbeddedFXChar_Create(Player0, Dtritus.M3D)', lambda: (SDTest.Call(0xd7ac0, 'visi', efcplayer, 'Dtritus.M3D',
+check('EmbeddedFXChar_Create(Player0, Dtritus.M3D)', lambda: (SDTest.Call('EmbeddedFXChar_Create', 'visi', efcplayer, 'Dtritus.M3D',
 	efcslot), efci(efcslot)))
 # SetAlarm only when the model of the player is no police or gear (else it writes into its effect)
 efcfx224 = efci(efcplayer + 0x224)
-efcpname = SDTest.Call(0x20f7a0, 'tsi', efcplayer + 0xb8)[0]
+efcpname = SDTest.Call('CGameModel_Name', 'tsi', efcplayer + 0xb8)[0]
 if strop.find(efcpname, 'Police') < 0 and strop.find(efcpname, 'Gear') < 0:
-	check('EmbeddedFXChar_SetAlarm(Player0)', lambda: (SDTest.Call(0xd8090, 'vsi', 'Player0', 1),
+	check('EmbeddedFXChar_SetAlarm(Player0)', lambda: (SDTest.Call('EmbeddedFXChar_SetAlarm', 'vsi', 'Player0', 1),
 		efci(efcplayer + 0x224) == efcfx224))
 efcfree(efcslot)
 
@@ -140,13 +140,13 @@ efcvec = efcz(0x20)
 def efcfake(path):
 	e = efcz(0x400)
 	efcpoke(e, efcvt)
-	SDTest.Call(0x20eb10, 'tiis', e + 0xb8, path)
+	SDTest.Call('CGameModel_ctor', 'tiis', e + 0xb8, path)
 	return e
 def efcunfake(e):
-	SDTest.Call(0x20ec10, 'tvi', e + 0xb8)
+	SDTest.Call('CGameModel_Reset', 'tvi', e + 0xb8)
 	efcfree(e)
 def efcok(gm, sists, nodes):
-	if not SDTest.Call(0x210da0, 'tbi', gm)[0] or not efci(gm):
+	if not SDTest.Call('CGameModel_IsLoaded', 'tbi', gm)[0] or not efci(gm):
 		return 0
 	for n in sists:
 		if not efcsist(gm, n):
@@ -158,33 +158,33 @@ def efcok(gm, sists, nodes):
 efccam = efcfl(efcworld + 0x254 + 12 * efci(efcworld + 0x50), 3)
 def efcplace(gm, d, rot):
 	efcset(efcvec, efcadd(efccam, d))
-	SDTest.Call(0x211d20, 'tvii', gm, efcvec)
+	SDTest.Call('CGameModel_SetPos', 'tvii', gm, efcvec)
 	efcset(efcvec, rot)
-	SDTest.Call(0x211e50, 'tvii', gm, efcvec)
+	SDTest.Call('CGameModel_SetRot', 'tvii', gm, efcvec)
 
 # name, model file, the name for Create, render nodes with particle systems, other nodes, release, reset, stop
 efcchars = (
-	('Police', 'Models/Chars/Police/Police.M3D', 'Police.M3D', ('DF_PoliceAlarm',), (), 0xd7880, 0xd83a0, 0),
-	('Gear', 'Models/Chars/Gear/Gear.M3D', 'gear.m3d', ('DF_GearShoot', 'DF_PoliceAlarm'), (), 0xd77c0, 0xd8290, 0),
-	('BankDirector', 'Models/Chars/BankDirector/BankDirector.M3D', 'BankDirector.M3D', ('DF_Glow',), (), 0xd76f0, 0,
+	('Police', 'Models/Chars/Police/Police.M3D', 'Police.M3D', ('DF_PoliceAlarm',), (), sym('cEmbeddedFXPolice_Release'), sym('cEmbeddedFXPolice_Reset@d83a0'), 0),
+	('Gear', 'Models/Chars/Gear/Gear.M3D', 'gear.m3d', ('DF_GearShoot', 'DF_PoliceAlarm'), (), sym('cEmbeddedFXGear_Release'), sym('cEmbeddedFXPolice_Reset'), 0),
+	('BankDirector', 'Models/Chars/BankDirector/BankDirector.M3D', 'BankDirector.M3D', ('DF_Glow',), (), sym('cEmbeddedFXBankDirector_Release'), 0,
 		0),
 	('BankMaster', 'Models/Chars/BankMaster/BankMaster.M3D', 'BankMaster.M3D', ('DF_Glow', 'DF_Glow_Baston'), (),
-		0xd7700, 0, 0),
-	('Maintenance', 'Models/Chars/Maintenance/Maintenance.M3D', 'Maintenance.M3D', ('DF_Light',), (), 0xd77f0, 0, 0),
+		sym('cEmbeddedFXBankMaster_Release'), 0, 0),
+	('Maintenance', 'Models/Chars/Maintenance/Maintenance.M3D', 'Maintenance.M3D', ('DF_Light',), (), sym('cEmbeddedFXMaintenance_Release'), 0, 0),
 	('Sentinel', 'Models/Chars/Sentinel/Sentinel.M3D', 'Sentinel.M3D', ('DF_LaserScaner', 'DF_StatusLight',
-		'DF_PoliceAlarm'), (), 0xd78e0, 0xd8490, 0xd8760),
-	('MercenaryA', 'Models/Chars/MercenaryA/MercenaryA.M3D', 'MercenaryA.M3D', ('DF_Glow', 'DF_Burbujas'), (), 0xd7800,
-		0xd82e0, 0),
+		'DF_PoliceAlarm'), (), sym('cEmbeddedFXSentinel_Release'), sym('cEmbeddedFXSentinel_Reset'), sym('cEmbeddedFXSentinel_Stop')),
+	('MercenaryA', 'Models/Chars/MercenaryA/MercenaryA.M3D', 'MercenaryA.M3D', ('DF_Glow', 'DF_Burbujas'), (), sym('cEmbeddedFXMercenary_Release'),
+		sym('cEmbeddedFXMercenary_Reset'), 0),
 	('MercenaryL', 'Models/Chars/MercenaryL/MercenaryL.M3D', 'MercenaryL.M3D', ('DF_Glow', 'DF_Burbujas',
-		'DF_Burbujas_Pipa'), (), 0xd7800, 0xd82e0, 0),
+		'DF_Burbujas_Pipa'), (), sym('cEmbeddedFXMercenary_Release'), sym('cEmbeddedFXMercenary_Reset'), 0),
 	('Messenger', 'Models/Chars/Messenger/Messenger.M3D', 'Messenger.M3D', ('DF_GlowLighting',), ('DF_Rayos_01',
 		'DF_Rayos_02', 'DF_Rayos_03', 'DF_Rayos_04', 'DF_Rayos_05', 'DF_Rayos_06', 'DF_Rayos_07', 'DF_Rayos_08'),
-		0xd7830, 0xd82f0, 0xd86e0),
+		sym('cEmbeddedFXMessenger_Release'), sym('cEmbeddedFXMessenger_Reset'), sym('cEmbeddedFXMessenger_Stop')),
 	('Rusty', 'Models/Chars/Rusty/Rusty.M3D', 'Rusty.M3D', ('DR_Mecanico_ColetaChispas', 'DR_Mecanico_PechoGlowA',
-		'DR_Mecanico_PechoGlowB', 'DF_GlowLighting'), ('DF_LightingA', 'DF_LightingB', 'DF_LightingC'), 0xd78a0,
-		0xd8420, 0xd8710),
+		'DR_Mecanico_PechoGlowB', 'DF_GlowLighting'), ('DF_LightingA', 'DF_LightingB', 'DF_LightingC'), sym('cEmbeddedFXRusty_Release'),
+		sym('cEmbeddedFXRusty_Reset'), sym('cEmbeddedFXRusty_Stop')),
 	('CrazyGambler', 'Models/Chars/CrazyGambler/CrazyGambler.M3D', 'CrazyGambler.M3D', ('DF_Glow',),
-		('R_Gambler_mano_Izq', 'R_Gambler_Cabeza-Pelos'), 0xd7730, 0xd81d0, 0xd8690))
+		('R_Gambler_mano_Izq', 'R_Gambler_Cabeza-Pelos'), sym('cEmbeddedFXCrazyGambler_Release'), sym('cEmbeddedFXCrazyGambler_Reset'), sym('cEmbeddedFXCrazyGambler_Stop')))
 # the fields of each effect after Init and after the calls
 def efcfields(name, fx, e):
 	gm = e + 0xb8
@@ -239,20 +239,20 @@ def efcafter(name, fx):
 def efcupdates(name, fx, e):
 	gm = e + 0xb8
 	if name == 'Police' or name == 'Gear':
-		upd = {'Police': 0xdcf90, 'Gear': 0xdaea0}[name]
+		upd = {'Police': sym('cEmbeddedFXPolice_Update@dcf90'), 'Gear': sym('cEmbeddedFXPolice_Update')}[name]
 		a = fx + 8
 		for lights in (1, 0):
-			SDTest.Call(0xd95b0, 'tvii', a, lights)
-			SDTest.Call(0xd87c0, 'tvii', a, 1)
+			SDTest.Call('cEmbeddedFXAlarm_SetLights', 'tvii', a, lights)
+			SDTest.Call('cEmbeddedFXAlarm_SetOn', 'tvii', a, 1)
 			for dt in (0.05, 0.1, 0.1, 0.3, 0.2, 0.15, 0.1, 0.0, 0.25):
 				check('%s_Update on' % name + fmt((lights, dt)), lambda upd=upd, fx=fx, a=a, dt=dt, lights=lights:
 					(SDTest.Call(upd, 'tvif', fx, dt), efcalarm(a), efcnum(a + 4), lights and efcpartlist(a + 4, 12)))
-			SDTest.Call(0xd87c0, 'tvii', a, 0)
+			SDTest.Call('cEmbeddedFXAlarm_SetOn', 'tvii', a, 0)
 			for dt in (0.1, 0.1, 0.1):
 				check('%s_Update off' % name + fmt((lights, dt)), lambda upd=upd, fx=fx, a=a, dt=dt, lights=lights:
 					(SDTest.Call(upd, 'tvif', fx, dt), efcalarm(a), efcnum(a + 4), lights and efcpartlist(a + 4, 12)))
 	if name == 'BankDirector' or name == 'BankMaster':
-		upd = {'BankDirector': 0xd9780, 'BankMaster': 0xd9c00}[name]
+		upd = {'BankDirector': sym('cEmbeddedFXBankDirector_Update'), 'BankMaster': sym('cEmbeddedFXBankMaster_Update')}[name]
 		p = {'BankDirector': fx + 0xc, 'BankMaster': fx + 0x10}[name]
 		on = {'BankDirector': fx + 0xbc, 'BankMaster': fx + 8}[name]
 		for d in ((0.0, 0.0, 300.0), (0.0, 0.0, -300.0), (0.0, 600.0, 300.0), (200.0, -1000.0, 50.0), (0.0, 2000.0, 1.0),
@@ -261,14 +261,14 @@ def efcupdates(name, fx, e):
 				efcplace(gm, d, rot)
 				check('%s_Update' % name + fmt((d, rot)), lambda upd=upd, fx=fx, p=p, on=on, name=name: (SDTest.Call(upd,
 					'tvif', fx, 0.04), efcb(on), efcb(on) and efcpartlist(p, 3),
-					name == 'BankMaster' and SDTest.Call(0x21d480, 'tfi', fx + 0xc4)[0]))
+					name == 'BankMaster' and SDTest.Call('CGameParticles_GetAlpha', 'tfi', fx + 0xc4)[0]))
 	if name == 'Maintenance':
 		for dt in (0.1, 0.15, 0.3, 0.7, 0.21, 0.0, 1.0, 0.25):
-			check('Maintenance_Update' + fmt((dt,)), lambda fx=fx, dt=dt: (SDTest.Call(0xdaec0, 'tvif', fx, dt),
+			check('Maintenance_Update' + fmt((dt,)), lambda fx=fx, dt=dt: (SDTest.Call('cEmbeddedFXMaintenance_Update', 'tvif', fx, dt),
 				efcfl(fx + 0xb8, 2), efcnum(fx + 8), efcparts(fx + 8)))
 
 # the fake entity needs GetModel at this + 0xb8 and IsType(WithLife)
-efcfakeok = isfn(efci(efcvt + 0x98), 0xfb380)
+efcfakeok = isfn(efci(efcvt + 0x98), sym('cObjEntity_GetModel'))
 check('fake entity GetModel', lambda: efcfakeok)
 for c in efcchars:
 	if not efcfakeok:
@@ -284,23 +284,23 @@ for c in efcchars:
 		check('%s nodes' % name, lambda: 'skipped')
 		efcunfake(e)
 		continue
-	check('%s model' % name, lambda gm=gm: (SDTest.Call(0x210da0, 'tbi', gm)[0], SDTest.Call(0x20f7a0, 'tsi', gm)[0]))
+	check('%s model' % name, lambda gm=gm: (SDTest.Call('CGameModel_IsLoaded', 'tbi', gm)[0], SDTest.Call('CGameModel_Name', 'tsi', gm)[0]))
 	slot = efcz(4)
 	# SetHead runs the Update of the Crazy Gambler (still in the exe): not visible there, it would read the action
 	# controller of the fake entity
 	if name == 'CrazyGambler':
-		SDTest.Poke(0x4a8c8c, 0)
+		SDTest.Poke('g_SplitScreen', 0)
 		efcvis = efci(efci(gm) + 0x120)
 		efcpoke(efci(gm) + 0x120, efcvis & ~0xff00)
-	check('EmbeddedFXChar_Create(%s)' % name, lambda e=e, c=c, slot=slot: (SDTest.Call(0xd7ac0, 'visi', e, c[2], slot),
+	check('EmbeddedFXChar_Create(%s)' % name, lambda e=e, c=c, slot=slot: (SDTest.Call('EmbeddedFXChar_Create', 'visi', e, c[2], slot),
 		efci(slot) != 0, efci(efci(slot)) - 0x400000, efci(efci(slot) + 4) == e))
 	fx = efci(slot)
 	if name == 'CrazyGambler':
-		SDTest.Poke(0x4a8c8c, 1)
+		SDTest.Poke('g_SplitScreen', 1)
 		efcpoke(efci(gm) + 0x120, efcvis)
 	check('%s fields' % name, lambda name=name, fx=fx, e=e: efcfields(name, fx, e))
 	if name == 'Police':
-		check('EmbeddedFXChar_Create(Police) again', lambda e=e, c=c, slot=slot: (SDTest.Call(0xd7ac0, 'visi', e,
+		check('EmbeddedFXChar_Create(Police) again', lambda e=e, c=c, slot=slot: (SDTest.Call('EmbeddedFXChar_Create', 'visi', e,
 			c[2], slot), efci(efci(slot)) - 0x400000, efci(efci(slot) + 4) == e))
 		fx = efci(slot)
 		check('Police fields again', lambda name=name, fx=fx, e=e: efcfields(name, fx, e))
@@ -325,42 +325,42 @@ for c in efcchars:
 efch = efcz(0xc4)
 def efchead(h):
 	return (efci(h) - 0x400000, efci(h + 0xb8), efcfl(h + 0xbc, 1), efcbytes(h, (0xc0,)), efcparts(h + 8))
-check('cEmbeddedFXHeadCrazyGambler_ctor', lambda: (SDTest.Call(0xdf850, 'tii', efch)[0] == efch, efci(efch + 4),
+check('cEmbeddedFXHeadCrazyGambler_ctor', lambda: (SDTest.Call('cEmbeddedFXHeadCrazyGambler_ctor', 'tii', efch)[0] == efch, efci(efch + 4),
 	efchead(efch)))
-check('cEmbeddedFXHeadCrazyGambler_dtor', lambda: (SDTest.Call(0xdf8d0, 'tvi', efch), efci(efch) - 0x400000))
-check('cEmbeddedFXHeadCrazyGambler_ctor 2', lambda: SDTest.Call(0xdf850, 'tii', efch)[0] == efch)
-check('cEmbeddedFXHeadCrazyGambler_Tick no owner', lambda: (SDTest.Call(0xdf930, 'tvi', efch), efchead(efch)))
-check('cEmbeddedFXHeadCrazyGambler_Delete(0)', lambda: (SDTest.Call(0xdf8f0, 'tiii', efch, 0)[0] == efch,
+check('cEmbeddedFXHeadCrazyGambler_dtor', lambda: (SDTest.Call('cEmbeddedFXHeadCrazyGambler_dtor', 'tvi', efch), efci(efch) - 0x400000))
+check('cEmbeddedFXHeadCrazyGambler_ctor 2', lambda: SDTest.Call('cEmbeddedFXHeadCrazyGambler_ctor', 'tii', efch)[0] == efch)
+check('cEmbeddedFXHeadCrazyGambler_Tick no owner', lambda: (SDTest.Call('cEmbeddedFXHeadCrazyGambler_Tick', 'tvi', efch), efchead(efch)))
+check('cEmbeddedFXHeadCrazyGambler_Delete(0)', lambda: (SDTest.Call('cEmbeddedFXHeadCrazyGambler_Delete', 'tiii', efch, 0)[0] == efch,
 	efci(efch) - 0x400000))
 efcfree(efch)
 for path, ok in (('Models/Heads/HeadGambler/HeadGambler.M3D', 1), ('Models/Heads/HeadBetty/HeadBetty.M3D', 0)):
 	gm = efcz(0x1c)
-	SDTest.Call(0x20eb10, 'tiis', gm, path)
-	check('head model' + fmt((path,)), lambda gm=gm: (SDTest.Call(0x210da0, 'tbi', gm)[0],
-		SDTest.Call(0x20f7a0, 'tsi', gm)[0]))
+	SDTest.Call('CGameModel_ctor', 'tiis', gm, path)
+	check('head model' + fmt((path,)), lambda gm=gm: (SDTest.Call('CGameModel_IsLoaded', 'tbi', gm)[0],
+		SDTest.Call('CGameModel_Name', 'tsi', gm)[0]))
 	if ok and not efcok(gm, ('DF_GlowLighting',), ('R_Gambler_Cabeza-Pelos',)):
 		check('head nodes', lambda: 'skipped')
 		ok = -1
 	if ok >= 0:
-		h = SDTest.Call(0xdfab0, 'ii', gm)[0]
+		h = SDTest.Call('EmbeddedFXCharHead_Create', 'ii', gm)[0]
 		check('EmbeddedFXCharHead_Create' + fmt((path,)), lambda h=h: h != 0)
 		if h:
 			check('head fields', lambda h=h, gm=gm: (efci(h + 4) == gm, efchead(h)))
 			for i in range(4):
-				check('cEmbeddedFXHeadCrazyGambler_Tick %d' % i, lambda h=h: (SDTest.Call(0xdf930, 'tvi', h),
+				check('cEmbeddedFXHeadCrazyGambler_Tick %d' % i, lambda h=h: (SDTest.Call('cEmbeddedFXHeadCrazyGambler_Tick', 'tvi', h),
 					efcfl(h + 0xbc, 1), efcpartlist(h + 8, 24)))
 			efcset(efcworld + 0x2d4, (0.01,))
 			for i in range(3):
-				check('cEmbeddedFXHeadCrazyGambler_Tick short %d' % i, lambda h=h: (SDTest.Call(0xdf930, 'tvi', h),
+				check('cEmbeddedFXHeadCrazyGambler_Tick short %d' % i, lambda h=h: (SDTest.Call('cEmbeddedFXHeadCrazyGambler_Tick', 'tvi', h),
 					efcfl(h + 0xbc, 1)))
 			efcset(efcworld + 0x2d4, (0.04,))
-			check('cEmbeddedFXHeadCrazyGambler_Clear', lambda h=h: (SDTest.Call(0xdfaa0, 'tvi', h), efcnum(h + 8)))
-			check('cEmbeddedFXHeadCrazyGambler_Release', lambda h=h: (SDTest.Call(0xdfa90, 'tvi', h), efchead(h)))
-			check('cEmbeddedFXHeadCrazyGambler_Delete(1)', lambda h=h: SDTest.Call(0xdf8f0, 'tiii', h, 1)[0] == h)
-	SDTest.Call(0x20ec10, 'tvi', gm)
+			check('cEmbeddedFXHeadCrazyGambler_Clear', lambda h=h: (SDTest.Call('cEmbeddedFXHeadCrazyGambler_Clear', 'tvi', h), efcnum(h + 8)))
+			check('cEmbeddedFXHeadCrazyGambler_Release', lambda h=h: (SDTest.Call('cEmbeddedFXHeadCrazyGambler_Release', 'tvi', h), efchead(h)))
+			check('cEmbeddedFXHeadCrazyGambler_Delete(1)', lambda h=h: SDTest.Call('cEmbeddedFXHeadCrazyGambler_Delete', 'tiii', h, 1)[0] == h)
+	SDTest.Call('CGameModel_Reset', 'tvi', gm)
 	efcfree(gm)
 
 efcfree(efcvec)
-check('rand after', lambda: SDTest.Call(0x323c2f, 'i')[0])
-SDTest.Poke(0x4a8c8c, efcsplit)
+check('rand after', lambda: SDTest.Call('crt_rand', 'i')[0])
+SDTest.Poke('g_SplitScreen', efcsplit)
 efcpoke(efcworld + 0x2d4, efcdelta)

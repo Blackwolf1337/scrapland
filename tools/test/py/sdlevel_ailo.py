@@ -6,17 +6,17 @@
 def aloI(a):
 	return SDTest.Peek(a, '@i')
 def aloF(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def aloNew(n):
-	return SDTest.Call(0x1334d0, 'ii', n)[0]
+	return SDTest.Call('operator_new', 'ii', n)[0]
 def aloCalloc(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def aloFree(p):
-	SDTest.Call(0x133550, 'ii', p)
+	SDTest.Call('Mem_Free', 'ii', p)
 def aloDelete(p, n):
-	SDTest.Call(0x313634, 'vii', p, n)
+	SDTest.Call('operator_delete_sized', 'vii', p, n)
 def aloSrand(s):
-	SDTest.Call(0x323c50, 'vi', s)
+	SDTest.Call('crt_srand', 'vi', s)
 def aloAdd(a, b):
 	return (a[0] + b[0], a[1] + b[1], a[2] + b[2])
 def aloInside(p, mn, mx):
@@ -68,9 +68,9 @@ def aloElem(e, nodes, n):
 # FindPath of 3D and 2D: the result, the path, the two flags and the state
 def aloFind(a, path, to, frm, r, stupid, flat, h1, h2):
 	if flat:
-		res = SDTest.Call(0x09a5e0, 'tbiiFFffffippp', a, path, to, frm, r, 99.0, h1, h2, stupid, 7, 7, 7)
+		res = SDTest.Call('CAStar2D_FindPath', 'tbiiFFffffippp', a, path, to, frm, r, 99.0, h1, h2, stupid, 7, 7, 7)
 	else:
-		res = SDTest.Call(0x099b30, 'tbiiFFffippp', a, path, to, frm, r, 99.0, stupid, 7, 7, 7)
+		res = SDTest.Call('CAStar_FindPath', 'tbiiFFffippp', a, path, to, frm, r, 99.0, stupid, 7, 7, 7)
 	return (res[0], res[3:6], aloPath(path, 60))
 
 # the pairs of points of the searches: near nodes and the player, inside the grid
@@ -104,16 +104,16 @@ def aloSearches(tag, a, w, n, nodes, pairs, flat):
 				stupid=stupid, flat=flat: aloFind(a, path, to, frm, r, stupid, flat, 30.0, 10.0))
 			check('alo %s lists(%d) %s %d' % (tag, k, fmt(r), stupid), lambda a=a, nodes=nodes, n=n: (aloLists(a, nodes,
 				n), aloF(a + 0x28, 7)))
-			SDTest.Call(0x06d8a0, 'tvi', path)
+			SDTest.Call('DListVec3_Clear', 'tvi', path)
 		k = k + 1
 	aloFree(path)
 
 def aloMain(w):
 	n = aloI(w + 0x1ac)
 	nodes = aloI(w + 0x1a8)
-	a = SDTest.Peek(0x444c78, 'i')
+	a = SDTest.Peek('g_AStar', 'i')
 	check('alo AStar', lambda a=a, w=w: (a != 0, a and aloI(a) - 0x400000, a and aloI(a + 0x44) == w,
-		SDTest.Peek(0x444c90, 'i'), n))
+		SDTest.Peek('g_AStarDrawMode', 'i'), n))
 	if not aloI(w + 0x18c) or n <= 0:
 		return
 	pairs = aloPairs(w, n, nodes)
@@ -123,7 +123,7 @@ def aloMain(w):
 		aloSearches('g', a, w, n, nodes, pairs, 0)
 	aloFresh(w, n, nodes, pairs)
 	aloFresh2D(w, n, nodes, pairs)
-	a2 = SDTest.Peek(0x444c7c, 'i')
+	a2 = SDTest.Peek('g_AStar2D', 'i')
 	if a2:
 		w2 = aloI(a2 + 0x44)
 		n2 = aloI(w2 + 0x1ac)
@@ -144,35 +144,35 @@ def aloQueries(tag, a, w, n, nodes, pairs, flat):
 			if flat:
 				check('alo %s GetPointsVis(%d) %d' % (tag, k, mx), lambda a=a, p=p, lst=lst, mx=mx, nodes=nodes, n=n:
 					(lambda r, lst=lst, nodes=nodes, n=n: (r[2], map(lambda i, lst=lst, nodes=nodes, n=n: aloIdx(aloI(lst +
-					4 * i), nodes, n), range(r[2]))))(SDTest.Call(0x09a6e0, 'tviFiipfff', a, p, lst, mx, 0, 40.0, 30.0,
+					4 * i), nodes, n), range(r[2]))))(SDTest.Call('CAStar2D_GetPointsVis', 'tviFiipfff', a, p, lst, mx, 0, 40.0, 30.0,
 					10.0)))
 			else:
 				check('alo %s GetPointsVis(%d) %d' % (tag, k, mx), lambda a=a, p=p, lst=lst, mx=mx, nodes=nodes, n=n:
 					(lambda r, lst=lst, nodes=nodes, n=n: (r[2], map(lambda i, lst=lst, nodes=nodes, n=n: aloIdx(aloI(lst +
-					4 * i), nodes, n), range(r[2]))))(SDTest.Call(0x099bf0, 'tviFiipf', a, p, lst, mx, 0, 40.0)))
-			pv = (0x099bb0, 0x09a680)[flat]
+					4 * i), nodes, n), range(r[2]))))(SDTest.Call('CAStar_GetPointsVis', 'tviFiipf', a, p, lst, mx, 0, 40.0)))
+			pv = (sym('CAStar_PointsVis'), sym('CAStar2D_PointsVis'))[flat]
 			check('alo %s PointsVis(%d) %d' % (tag, k, mx), lambda a=a, p=p, lst=lst, mx=mx, nodes=nodes, n=n, pv=pv:
 				(lambda r, lst=lst, nodes=nodes, n=n: (r[2], map(lambda i, lst=lst, nodes=nodes, n=n: aloIdx(aloI(lst +
 				4 * i), nodes, n), range(r[2]))))(SDTest.Call(pv, 'tviFiip', a, p, lst, mx, 0)))
-			pf = (0x099c30, 0x09a740)[flat]
+			pf = (sym('CAStar_PointsVisFile'), sym('CAStar2D_PointsVisFile'))[flat]
 			for file in (0, 1, -1):
 				check('alo %s PointsVisFile(%d) %d %d' % (tag, k, mx, file), lambda a=a, p=p, lst=lst, mx=mx, file=file,
 					nodes=nodes, n=n, pf=pf: (lambda r, lst=lst, nodes=nodes, n=n: (r[2], r[3], map(lambda i, lst=lst,
 					nodes=nodes, n=n: aloIdx(aloI(lst + 4 * i), nodes, n), range(r[2]))))(SDTest.Call(pf, 'tviFiippi', a,
 					p, lst, mx, 0, 9, file)))
-		tp = (0x0997e0, 0x09a520)[flat]
+		tp = (sym('CAStar_TestPath'), sym('CAStar2D_TestPath'))[flat]
 		check('alo %s TestPath(%d)' % (tag, k), lambda a=a, p=p, q=q, tp=tp: (SDTest.Call(tp, 'tbiFF', a, p, q)[0],
 			SDTest.Call(tp, 'tbiFF', a, q, p)[0]))
-		check('alo %s Dist(%d)' % (tag, k), lambda a=a, p=p, q=q: (SDTest.Call(0x09b000, 'tfiFF', a, p, q)[0],
-			SDTest.Call(0x09b060, 'tfiF', a, p)[0], SDTest.Call(0x09b060, 'tfiF', a, q)[0]))
+		check('alo %s Dist(%d)' % (tag, k), lambda a=a, p=p, q=q: (SDTest.Call('CAStarSup_Dist', 'tfiFF', a, p, q)[0],
+			SDTest.Call('CAStarSup_Heuristic', 'tfiF', a, p)[0], SDTest.Call('CAStarSup_Heuristic', 'tfiF', a, q)[0]))
 		k = k + 1
 	for i in (0, 1, n / 2, n - 1):
 		v = nodes + 0x14 * i
-		check('alo %s FileOf(%d)' % (tag, i), lambda a=a, v=v: (SDTest.Call(0x099b10, 'tiii', a, v)[0],
-			SDTest.Call(0x09a5d0, 'tiii', a, v)[0]))
+		check('alo %s FileOf(%d)' % (tag, i), lambda a=a, v=v: (SDTest.Call('CAStar_FileOf', 'tiii', a, v)[0],
+			SDTest.Call('CAStar_FileOf@9a5d0', 'tiii', a, v)[0]))
 		if aloI(v + 0xc) > 0:
 			pos = aloF(aloI(aloI(v + 0x10)), 3)
-			for f in (0x099e50, 0x09a9c0):
+			for f in (sym('CAStar_OtherLinks'), sym('CAStar_OtherLinks@9a9c0')):
 				check('alo %s OtherLinks(%d) %x' % (tag, i, f), lambda a=a, v=v, pos=pos, lst=lst, nodes=nodes, n=n, f=f:
 					(lambda r, lst=lst, nodes=nodes, n=n: (r[2], map(lambda k, lst=lst, nodes=nodes, n=n: aloIdx(aloI(lst +
 					4 * k), nodes, n), range(min(r[2], 20)))))(SDTest.Call(f, 'tviiFiip', a, v, pos, lst, 20, 0)))
@@ -186,37 +186,37 @@ def aloElems(tag, a, nodes, n):
 		v = nodes + 0x14 * i
 		check('alo %s GetElem(%d)' % (tag, i), lambda a=a, v=v, lst=lst, nodes=nodes, n=n: (lambda r, v=v,
 			nodes=nodes, n=n: (r[0], r[1] and aloElem(r[1], nodes, n), r[2] != 0 and aloI(r[2] + 0xc) == v))(SDTest.Call(
-			0x09b690, 'tbiipp', a, v, 0, 0)))
+			'CAStarSup_GetElem', 'tbiipp', a, v, 0, 0)))
 		check('alo %s TableGet(%d)' % (tag, i), lambda a=a, v=v: (lambda r, v=v: (r[0], r[1] != 0 and aloI(r[1] + 0xc) ==
-			v))(SDTest.Call(0x09b710, 'tbiip', a, v, 0)))
-	check('alo %s TableGet bad' % tag, lambda a=a, nodes=nodes: SDTest.Call(0x09b710, 'tbiip', a, nodes + 4, 0))
-	check('alo %s GetElem bad' % tag, lambda a=a, nodes=nodes: SDTest.Call(0x09b690, 'tbiipp', a, nodes + 4, 0, 0)[0:2])
-	check('alo %s GetTable' % tag, lambda a=a: SDTest.Call(0x09b100, 'tii', a)[0] == aloI(a + 8))
-	check('alo %s Count' % tag, lambda a=a: SDTest.Call(0x099b20, 'tii', aloI(a + 0x18))[0] == aloI(aloI(a + 0x18) + 8))
+			v))(SDTest.Call('CAStarSup_TableGet', 'tbiip', a, v, 0)))
+	check('alo %s TableGet bad' % tag, lambda a=a, nodes=nodes: SDTest.Call('CAStarSup_TableGet', 'tbiip', a, nodes + 4, 0))
+	check('alo %s GetElem bad' % tag, lambda a=a, nodes=nodes: SDTest.Call('CAStarSup_GetElem', 'tbiipp', a, nodes + 4, 0, 0)[0:2])
+	check('alo %s GetTable' % tag, lambda a=a: SDTest.Call('CAStarSup_GetTable', 'tii', a)[0] == aloI(a + 8))
+	check('alo %s Count' % tag, lambda a=a: SDTest.Call('cBinaryHeap_Count', 'tii', aloI(a + 0x18))[0] == aloI(aloI(a + 0x18) + 8))
 	# the closed list: an element in and out again
 	nc = aloI(a + 0x20)
 	if nc > 2:
 		e = aloI(aloI(a + 0x1c) + 4 * (nc - 1))
 		pe = aloCalloc(4)
 		SDTest.Poke(pe - 0x400000, e)
-		check('alo %s CloseRemove' % tag, lambda a=a, nc=nc, nodes=nodes, n=n: (SDTest.Call(0x09aed0, 'tbii', a, nc)[0],
-			SDTest.Call(0x09aed0, 'tbii', a, 0)[0], aloLists(a, nodes, n)))
-		check('alo %s CloseAdd' % tag, lambda a=a, pe=pe, e=e, nodes=nodes, n=n: (SDTest.Call(0x09ae80, 'tbii', a,
+		check('alo %s CloseRemove' % tag, lambda a=a, nc=nc, nodes=nodes, n=n: (SDTest.Call('CAStarSup_CloseRemove', 'tbii', a, nc)[0],
+			SDTest.Call('CAStarSup_CloseRemove', 'tbii', a, 0)[0], aloLists(a, nodes, n)))
+		check('alo %s CloseAdd' % tag, lambda a=a, pe=pe, e=e, nodes=nodes, n=n: (SDTest.Call('CAStarSup_CloseAdd', 'tbii', a,
 			pe)[0], aloLists(a, nodes, n), aloElem(e, nodes, n)))
 		aloFree(pe)
-	check('alo %s Reset' % tag, lambda a=a, lst=lst, nodes=nodes, n=n: (SDTest.Call(0x09b7a0, 'tvi', a), aloLists(a,
+	check('alo %s Reset' % tag, lambda a=a, lst=lst, nodes=nodes, n=n: (SDTest.Call('CAStarSup_Reset', 'tvi', a), aloLists(a,
 		nodes, n), map(lambda i, lst=lst, nodes=nodes, n=n: aloElem(lst + 0x14 * i, nodes, n)[3], (0, 1, n / 2))))
 
 # the lists full: AddElem until it fails, then a search that cannot add its start
 def aloFull(tag, a, pairs, flat):
 	el = (1.0, 2.0, 3.0, 4.0, 5.0)
-	check('alo %s AddElem' % tag, lambda a=a, el=el: (aloI(a + 0x10), aloI(a + 0x14), SDTest.Call(0x09b760, 'tbiF', a,
-		el)[0], SDTest.Call(0x09b760, 'tbiF', a, el)[0], aloI(a + 0x10)))
+	check('alo %s AddElem' % tag, lambda a=a, el=el: (aloI(a + 0x10), aloI(a + 0x14), SDTest.Call('CAStarSup_AddElem', 'tbiF', a,
+		el)[0], SDTest.Call('CAStarSup_AddElem', 'tbiF', a, el)[0], aloI(a + 0x10)))
 	path = aloCalloc(0x18)
 	to, frm = pairs[0]
 	check('alo %s FindPath full' % tag, lambda a=a, path=path, to=to, frm=frm, flat=flat: aloFind(a, path, to, frm,
 		0.0, 0, flat, 30.0, 10.0))
-	SDTest.Call(0x06d8a0, 'tvi', path)
+	SDTest.Call('DListVec3_Clear', 'tvi', path)
 	aloFree(path)
 
 def aloFields(a, nodes, n):
@@ -226,78 +226,78 @@ def aloFields(a, nodes, n):
 
 def aloFresh(w, n, nodes, pairs):
 	m = aloNew(0x48)
-	check('alo fresh ctor', lambda m=m, w=w, nodes=nodes, n=n: (SDTest.Call(0x099330, 'tiii', m, w)[0] == m,
+	check('alo fresh ctor', lambda m=m, w=w, nodes=nodes, n=n: (SDTest.Call('CAStar_ctor', 'tiii', m, w)[0] == m,
 		aloFields(m, nodes, n), aloI(m + 0x44) == w))
 	for i in (0, 1, n / 2, n - 1):
 		check('alo fresh elem(%d)' % i, lambda m=m, i=i, nodes=nodes, n=n: aloElem(aloI(m + 0xc) + 0x14 * i, nodes, n))
-	check('alo fresh DrawDebug', lambda m=m: (SDTest.Peek(0x444c90, 'i'), SDTest.Call(0x099820, 'tvi', m)))
+	check('alo fresh DrawDebug', lambda m=m: (SDTest.Peek('g_AStarDrawMode', 'i'), SDTest.Call('CAStar_DrawDebug', 'tvi', m)))
 	aloSearches('fresh', m, w, n, nodes, pairs[0:4], 0)
 	aloQueries('fresh', m, w, n, nodes, pairs, 0)
 	path = aloCalloc(0x18)
 	to, frm = pairs[1]
 	aloFind(m, path, to, frm, 0.0, 0, 0, 0.0, 0.0)
-	SDTest.Call(0x06d8a0, 'tvi', path)
+	SDTest.Call('DListVec3_Clear', 'tvi', path)
 	aloFree(path)
 	aloElems('fresh', m, nodes, n)
 	# NearestStart CHECKs that the start has a point: the same search first
 	lst = aloCalloc(4 * 8)
-	if SDTest.Call(0x0a9530, 'tviFiipfffii', w, aloF(m + 0x28, 3), lst, 7, 0, 0.0, 0.0, aloF(w + 0x60, 1)[0], 1,
+	if SDTest.Call('CNodesWorld_GetPointsVis', 'tviFiipfffii', w, aloF(m + 0x28, 3), lst, 7, 0, 0.0, 0.0, aloF(w + 0x60, 1)[0], 1,
 			2)[2] > 0:
-		check('alo fresh NearestStart', lambda m=m: (SDTest.Call(0x099ae0, 'tvi', m), aloF(m + 0x28, 3)))
+		check('alo fresh NearestStart', lambda m=m: (SDTest.Call('CAStar_NearestStart', 'tvi', m), aloF(m + 0x28, 3)))
 	aloFree(lst)
 	aloFull('fresh', m, pairs, 0)
-	check('alo fresh Delete', lambda m=m: SDTest.Call(0x099590, 'tiii', m, 1)[0] == m)
+	check('alo fresh Delete', lambda m=m: SDTest.Call('CAStar_Delete', 'tiii', m, 1)[0] == m)
 	# the destructor alone
 	m = aloNew(0x48)
-	SDTest.Call(0x099330, 'tiii', m, w)
-	check('alo fresh dtor', lambda m=m: (SDTest.Call(0x0994b0, 'tvi', m), aloI(m) - 0x400000))
+	SDTest.Call('CAStar_ctor', 'tiii', m, w)
+	check('alo fresh dtor', lambda m=m: (SDTest.Call('CAStar_dtor', 'tvi', m), aloI(m) - 0x400000))
 	aloDelete(m, 0x48)
 
 def aloFresh2D(w, n, nodes, pairs):
 	m = aloNew(0x50)
-	check('alo fresh2d ctor', lambda m=m, w=w, nodes=nodes, n=n: (SDTest.Call(0x09a2f0, 'tiii', m, w)[0] == m,
+	check('alo fresh2d ctor', lambda m=m, w=w, nodes=nodes, n=n: (SDTest.Call('CAStar2D_ctor', 'tiii', m, w)[0] == m,
 		aloFields(m, nodes, n), aloF(m + 0x48, 2)))
-	check('alo fresh2d DrawDebug', lambda m=m: SDTest.Call(0x09a560, 'tvi', m))
+	check('alo fresh2d DrawDebug', lambda m=m: SDTest.Call('CAStar2D_DrawDebug', 'tvi', m))
 	aloSearches('fresh2d', m, w, n, nodes, pairs[0:3], 1)
 	check('alo fresh2d h', lambda m=m: (aloF(m + 0x40, 1), aloF(m + 0x48, 2)))
 	aloQueries('fresh2d', m, w, n, nodes, pairs[0:3], 1)
 	aloElems('fresh2d', m, nodes, n)
 	lst = aloCalloc(4 * 8)
-	if SDTest.Call(0x0b4890, 'tviFiipfffffii', w, aloF(m + 0x28, 3), lst, 7, 0, 0.0, 0.0, 0.0, 0.0, aloF(w + 0x60, 1)[0],
+	if SDTest.Call('CNodesWorld2D_GetPointsVis', 'tviFiipfffffii', w, aloF(m + 0x28, 3), lst, 7, 0, 0.0, 0.0, 0.0, 0.0, aloF(w + 0x60, 1)[0],
 			1, 2)[2] > 0:
-		check('alo fresh2d NearestStart', lambda m=m: (SDTest.Call(0x09a5a0, 'tvi', m), aloF(m + 0x28, 3)))
+		check('alo fresh2d NearestStart', lambda m=m: (SDTest.Call('CAStar2D_NearestStart', 'tvi', m), aloF(m + 0x28, 3)))
 	aloFree(lst)
 	aloFull('fresh2d', m, pairs, 1)
-	check('alo fresh2d Delete', lambda m=m: SDTest.Call(0x09a490, 'tiii', m, 1)[0] == m)
+	check('alo fresh2d Delete', lambda m=m: SDTest.Call('CAStar2D_Delete', 'tiii', m, 1)[0] == m)
 	m = aloNew(0x50)
-	SDTest.Call(0x09a2f0, 'tiii', m, w)
-	check('alo fresh2d dtor', lambda m=m: (SDTest.Call(0x09a420, 'tvi', m), aloI(m) - 0x400000))
+	SDTest.Call('CAStar2D_ctor', 'tiii', m, w)
+	check('alo fresh2d dtor', lambda m=m: (SDTest.Call('CAStar2D_dtor', 'tvi', m), aloI(m) - 0x400000))
 	aloDelete(m, 0x50)
 
 # CAStarSup and the hash table on their own
 def aloSup():
 	m = aloNew(0x44)
-	check('alo Sup ctor', lambda m=m: (SDTest.Call(0x09ab50, 'tii', m)[0] == m, aloI(m) - 0x400000, aloF(m + 4, 1),
+	check('alo Sup ctor', lambda m=m: (SDTest.Call('CAStarSup_ctor', 'tii', m)[0] == m, aloI(m) - 0x400000, aloF(m + 4, 1),
 		aloI(aloI(m + 8)), aloI(m + 0x20), aloF(m + 0x28, 7)))
-	check('alo Sup Delete', lambda m=m: SDTest.Call(0x09ad20, 'tiii', m, 1)[0] == m)
+	check('alo Sup Delete', lambda m=m: SDTest.Call('CAStarSup_Delete', 'tiii', m, 1)[0] == m)
 	m = aloNew(0x44)
-	SDTest.Call(0x09ab50, 'tii', m)
-	check('alo Sup dtor', lambda m=m: (SDTest.Call(0x09acb0, 'tvi', m), aloI(m) - 0x400000))
+	SDTest.Call('CAStarSup_ctor', 'tii', m)
+	check('alo Sup dtor', lambda m=m: (SDTest.Call('CAStarSup_dtor', 'tvi', m), aloI(m) - 0x400000))
 	aloDelete(m, 0x44)
 	t = aloCalloc(0xc)
-	check('alo Table ctor', lambda t=t: (SDTest.Call(0x09aae0, 'tiii', t, 7)[0] == t, aloI(t), aloI(t + 4) != 0,
+	check('alo Table ctor', lambda t=t: (SDTest.Call('AStarTable_ctor', 'tiii', t, 7)[0] == t, aloI(t), aloI(t + 4) != 0,
 		SDTest.Peek(t + 8, '@b'), map(lambda k, t=t: aloI(aloI(t + 4) + 4 * k), range(7))))
 	for key in (5, 0x12345, 5, 77):
-		check('alo Table Add %x' % key, lambda t=t, key=key: SDTest.Call(0x099620, 'tbiiFi', t, key, (1.0, 2.0, 3.0),
+		check('alo Table Add %x' % key, lambda t=t, key=key: SDTest.Call('AStarTable_Add', 'tbiiFi', t, key, (1.0, 2.0, 3.0),
 			0)[0])
-	check('alo Table dtor', lambda t=t: (SDTest.Call(0x09ae50, 'tvi', t), aloI(t), aloI(t + 4)))
+	check('alo Table dtor', lambda t=t: (SDTest.Call('AStarTable_dtor@9ae50', 'tvi', t), aloI(t), aloI(t + 4)))
 	aloFree(t)
-	check('alo InDoor BuildGrid', lambda: SDTest.Call(0x0a1dc0, 'tvi', 0))
+	check('alo InDoor BuildGrid', lambda: SDTest.Call('CNodesTrafficInDoor_BuildGrid', 'tvi', 0))
 
 # ---- the generation tools of CNodesWorld and CNodesWorld2D on a fresh object with cells and points set up here ----
 
 def aloSetF(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 def aloPoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 
@@ -369,17 +369,17 @@ def aloGenSetup(m, dy):
 		(150.0, 90.0, 200.0), (-180.0, 60.0, 260.0))
 	pts = []
 	for p in pos:
-		SDTest.Call(0x0a2690, 'tviF', m + 0x190, (p[0], p[1] + dy, p[2]) + (0.0,) * 12)
+		SDTest.Call('NWPointList_Add', 'tviF', m + 0x190, (p[0], p[1] + dy, p[2]) + (0.0,) * 12)
 		pts.append(aloI(m + 0x190) + 8)
 	adds = ((0, 0), (1, 0), (0, 5), (1, 5), (2, 5), (2, 0), (3, 7), (0, 7), (4, 7), (1, 7), (4, 0), (5, 9), (5, 0),
 		(0, 9), (3, 9), (2, 9), (1, 9), (4, 9), (3, 23), (4, 23), (0, 2), (3, 2), (1, 12), (2, 12), (5, 13), (4, 13))
 	for p, c in adds:
-		SDTest.Call(0x0ba080, 'tviii', m, pts[p], c)
+		SDTest.Call('CNodesWorldSup_AddVis', 'tviii', m, pts[p], c)
 	# LinkPoints CHECKs that the cell of each point has a set
 	for k in range(len(pts)):
-		c = SDTest.Call(0x0b98c0, 'tiiF', m, (pos[k][0], pos[k][1] + dy, pos[k][2]))[0]
+		c = SDTest.Call('CNodesWorldSup_BufferIndex', 'tiiF', m, (pos[k][0], pos[k][1] + dy, pos[k][2]))[0]
 		if not aloI(buf + 8 * c + 4):
-			SDTest.Call(0x0ba080, 'tviii', m, pts[k], c)
+			SDTest.Call('CNodesWorldSup_AddVis', 'tviii', m, pts[k], c)
 	# the searches read the set of every cell they take: the cells without a set 3, 5 or 6
 	k = 0
 	for i in range(24):
@@ -395,7 +395,7 @@ def aloGenSetup(m, dy):
 	aloPoke(m + 0x1c8, cl)
 	aloPoke(m + 0x1cc, n)
 	for i in (3, 8, 13, 18, 23, 2):
-		SDTest.Call(0x0a2460, 'tvip', m + 0x1d0, i)
+		SDTest.Call('NWIntList_Add', 'tvip', m + 0x1d0, i)
 	return (buf, sets, pts, pos)
 
 # the cell searches on the pairs of points
@@ -422,69 +422,69 @@ def aloFindLinks(tag, m, pts, dy, rvas):
 		m, pair, (-200.0, dy, 100.0, 200.0, dy + 100.0, 340.0), -1)[0], SDTest.Call(rvas[1], 'tbiip', m, pair, -1),
 		rvas[2] and SDTest.Call(rvas[2], 'tbiip', m, pair, -1), aloFoundList(m, pts)))
 	SDTest.Poke(rvas[3], dm)
-	SDTest.Call(0x0a5900, 'tvi', m + 0x25c)
+	SDTest.Call('NWVecList_Clear', 'tvi', m + 0x25c)
 	aloFree(pair)
 
 def aloGen3D(dy):
 	tag = '3d%d' % int(dy)
 	m = aloNew(0x3f0)
-	SDTest.Call(0x0a21b0, 'tii', m)
+	SDTest.Call('CNodesWorld_ctor', 'tii', m)
 	buf, sets, pts, pos = aloGenSetup(m, dy)
 	for k in range(len(pos)):
 		p = (pos[k][0], pos[k][1] + dy, pos[k][2])
-		check('alo %s NearestVisDist(%d)' % (tag, k), lambda m=m, p=p: SDTest.Call(0x0ac5a0, 'tfiF', m, p)[0])
-	aloFindLinks(tag, m, pts, dy, (0x0a7e80, 0x0a8270, 0x0a8530, 0x444d48))
-	check('alo %s NextInit' % tag, lambda m=m: SDTest.Call(0x0ad3d0, 'tbiF', m, (0.0,) * 3))
+		check('alo %s NearestVisDist(%d)' % (tag, k), lambda m=m, p=p: SDTest.Call('CNodesWorld_NearestVisDist', 'tfiF', m, p)[0])
+	aloFindLinks(tag, m, pts, dy, (sym('CNodesWorld_FindLinkBox'), sym('CNodesWorld_FindLinkCell'), sym('CNodesWorld_FindLinkFree'), sym('g_NWDrawMode')))
+	check('alo %s NextInit' % tag, lambda m=m: SDTest.Call('CNodesWorld_NextInit', 'tbiF', m, (0.0,) * 3))
 	for a, b, c in ((0, 2, 9), (0, 4, 9), (3, 1, 7), (5, 5, 0), (1, 3, 23), (2, 4, 0)):
 		check('alo %s UnreachableFree(%d, %d, %d)' % (tag, a, b, c), lambda m=m, a=a, b=b, c=c, pts=pts:
-			SDTest.Call(0x0ac8a0, 'tbiiii', m, pts[a], pts[b], c)[0])
+			SDTest.Call('CNodesWorld_UnreachableFree', 'tbiiii', m, pts[a], pts[b], c)[0])
 	check('alo %s DrawCell' % tag, lambda m=m, pos=pos, dy=dy: map(lambda p, m=m, dy=dy: aloD3D(lambda m=m, p=p,
-		dy=dy: SDTest.Call(0x0a6930, 'tviF', m, (p[0], p[1] + dy, p[2]))), pos))
+		dy=dy: SDTest.Call('CNodesWorld_DrawCell', 'tviF', m, (p[0], p[1] + dy, p[2]))), pos))
 	check('alo %s DrawLinkTest' % tag, lambda m=m, pos=pos, dy=dy: (aloD3D(lambda m=m, pos=pos, dy=dy:
-		SDTest.Call(0x0a6810, 'tviFF', m, (pos[0][0], pos[0][1] + dy, pos[0][2]), (pos[3][0], pos[3][1] + dy,
+		SDTest.Call('CNodesWorld_DrawLinkTest', 'tviFF', m, (pos[0][0], pos[0][1] + dy, pos[0][2]), (pos[3][0], pos[3][1] + dy,
 		pos[3][2]))), aloI(m + 0x358)))
 	pl = aloCalloc(0x18)
-	check('alo %s GetPairs' % tag, lambda m=m, pl=pl, pts=pts: (SDTest.Call(0x0a8a40, 'tvii', m, pl), aloPairList(pl,
+	check('alo %s GetPairs' % tag, lambda m=m, pl=pl, pts=pts: (SDTest.Call('CNodesWorld_GetPairs', 'tvii', m, pl), aloPairList(pl,
 		pts)))
-	SDTest.Call(0x0a5900, 'tvi', pl)
+	SDTest.Call('NWVecList_Clear', 'tvi', pl)
 	# the links: then the cell searches and the pairs again
-	check('alo %s LinkPoints' % tag, lambda m=m, pts=pts: (SDTest.Call(0x0ba8d0, 'tvi', m), aloI(m + 0x1c4),
+	check('alo %s LinkPoints' % tag, lambda m=m, pts=pts: (SDTest.Call('CNodesWorldSup_LinkPoints', 'tvi', m), aloI(m + 0x1c4),
 		map(lambda v, pts=pts: aloLinks(v, pts), pts)))
-	aloFindLinks(tag + ' linked', m, pts, dy, (0x0a7e80, 0x0a8270, 0x0a8530, 0x444d48))
-	check('alo %s GetPairs linked' % tag, lambda m=m, pl=pl, pts=pts: (SDTest.Call(0x0a8a40, 'tvii', m, pl),
+	aloFindLinks(tag + ' linked', m, pts, dy, (sym('CNodesWorld_FindLinkBox'), sym('CNodesWorld_FindLinkCell'), sym('CNodesWorld_FindLinkFree'), sym('g_NWDrawMode')))
+	check('alo %s GetPairs linked' % tag, lambda m=m, pl=pl, pts=pts: (SDTest.Call('CNodesWorld_GetPairs', 'tvii', m, pl),
 		aloPairList(pl, pts)))
 	for a, b, c in ((0, 2, 9), (0, 4, 9), (3, 1, 7), (5, 5, 0), (1, 3, 23), (2, 4, 0), (0, 5, 0), (4, 1, 13)):
 		check('alo %s UnreachableFree linked(%d, %d, %d)' % (tag, a, b, c), lambda m=m, a=a, b=b, c=c, pts=pts:
-			SDTest.Call(0x0ac8a0, 'tbiiii', m, pts[a], pts[b], c)[0])
-	SDTest.Call(0x0a5900, 'tvi', pl)
+			SDTest.Call('CNodesWorld_UnreachableFree', 'tbiiii', m, pts[a], pts[b], c)[0])
+	SDTest.Call('NWVecList_Clear', 'tvi', pl)
 	aloFree(pl)
 	# the extra points linked to the points within linkDist
-	SDTest.Call(0x0a2540, 'tviF', m + 0x1f0, (-100.0, 40.0 + dy, 140.0))
-	SDTest.Call(0x0a2540, 'tviF', m + 0x1f0, (100.0, 60.0 + dy, 250.0))
-	SDTest.Call(0x0a2540, 'tviF', m + 0x1f0, (pp[0], pp[1], pp[2]))
-	check('alo %s LinkExtra' % tag, lambda m=m, pts=pts: (SDTest.Call(0x0ac200, 'tvi', m), aloI(m + 0x198),
+	SDTest.Call('NWVecList_Add', 'tviF', m + 0x1f0, (-100.0, 40.0 + dy, 140.0))
+	SDTest.Call('NWVecList_Add', 'tviF', m + 0x1f0, (100.0, 60.0 + dy, 250.0))
+	SDTest.Call('NWVecList_Add', 'tviF', m + 0x1f0, (pp[0], pp[1], pp[2]))
+	check('alo %s LinkExtra' % tag, lambda m=m, pts=pts: (SDTest.Call('CNodesWorld_LinkExtra', 'tvi', m), aloI(m + 0x198),
 		aloI(m + 0x1c4), aloI(m + 0x1f4) != 0, aloI(m + 0x194) == 0, map(lambda v, pts=pts: aloLinks(v, pts), pts)))
-	check('alo %s FreeTemp' % tag, lambda m=m: (SDTest.Call(0x0b9180, 'tvi', m), aloI(m + 0x1b0), aloI(m + 0x1e8)))
-	check('alo %s AddExtraPoints' % tag, lambda m=m: (SDTest.Call(0x0a93d0, 'tvi', m), aloI(m + 0x1f8)))
-	check('alo %s Delete' % tag, lambda m=m: SDTest.Call(0x0a2430, 'tiii', m, 1)[0] == m)
+	check('alo %s FreeTemp' % tag, lambda m=m: (SDTest.Call('CNodesWorldSup_FreeTemp', 'tvi', m), aloI(m + 0x1b0), aloI(m + 0x1e8)))
+	check('alo %s AddExtraPoints' % tag, lambda m=m: (SDTest.Call('CNodesWorld_AddExtraPoints', 'tvi', m), aloI(m + 0x1f8)))
+	check('alo %s Delete' % tag, lambda m=m: SDTest.Call('CNodesWorld_Delete', 'tiii', m, 1)[0] == m)
 
 def aloGen2D(dy):
 	tag = '2d%d' % int(dy)
 	m = aloNew(0x378)
-	SDTest.Call(0x0ad950, 'tii', m)
+	SDTest.Call('CNodesWorld2D_ctor', 'tii', m)
 	buf, sets, pts, pos = aloGenSetup(m, dy)
 	# the free searches walk the bodies on the floor: only far above the level, where there is no floor
 	free = 0
 	if dy > 100000.0:
-		free = 0x0b39d0
-	aloFindLinks(tag, m, pts, dy, (0x0b3370, 0x0b3730, free, 0x444ddc))
+		free = sym('CNodesWorld2D_FindLinkFree')
+	aloFindLinks(tag, m, pts, dy, (sym('CNodesWorld2D_FindLinkBox'), sym('CNodesWorld2D_FindLinkCell'), free, sym('g_NW2DDrawMode')))
 	if free:
-		check('alo %s NextInit' % tag, lambda m=m: SDTest.Call(0x0b7810, 'tbiF', m, (0.0,) * 3))
+		check('alo %s NextInit' % tag, lambda m=m: SDTest.Call('CNodesWorld2D_NextInit', 'tbiF', m, (0.0,) * 3))
 		for a, b, c in ((0, 2, 9), (0, 4, 9), (3, 1, 7), (5, 5, 0)):
 			check('alo %s UnreachableFree(%d, %d, %d)' % (tag, a, b, c), lambda m=m, a=a, b=b, c=c, pts=pts:
-				SDTest.Call(0x0b6f40, 'tbiiii', m, pts[a], pts[b], c)[0])
-	check('alo %s FreeTemp' % tag, lambda m=m: (SDTest.Call(0x0b9180, 'tvi', m), aloI(m + 0x1b0), aloI(m + 0x1e8)))
-	check('alo %s Delete' % tag, lambda m=m: SDTest.Call(0x0ada70, 'tiii', m, 1)[0] == m)
+				SDTest.Call('CNodesWorld2D_UnreachableFree', 'tbiiii', m, pts[a], pts[b], c)[0])
+	check('alo %s FreeTemp' % tag, lambda m=m: (SDTest.Call('CNodesWorldSup_FreeTemp', 'tvi', m), aloI(m + 0x1b0), aloI(m + 0x1e8)))
+	check('alo %s Delete' % tag, lambda m=m: SDTest.Call('CNodesWorld2D_Delete', 'tiii', m, 1)[0] == m)
 
 
 # the whole generation on a small box of FZ: a fresh CNodesWorld with the node size of the level, the start at a
@@ -527,17 +527,17 @@ def aloSetDummy(m, v):
 def aloGenerate(w):
 	nodes = aloI(w + 0x1a8)
 	m = aloNew(0x3f0)
-	SDTest.Call(0x0a21b0, 'tii', m)
-	SDTest.Call(0x0ab650, 'tviisF', m, -2, '', (1400.0, 1400.0, 1400.0))
+	SDTest.Call('CNodesWorld_ctor', 'tii', m)
+	SDTest.Call('CNodesWorld_Load', 'tviisF', m, -2, '', (1400.0, 1400.0, 1400.0))
 	snap = aloI(aloI(m) + 0x1c) - 0x400000
-	r = aloF(0x844d30, 1)[0]
+	r = aloF(symva('g_NWNodeRadius'), 1)[0]
 	starts = []
 	for k in (100, 300, 400, 600):
 		for dy in (0.0, 1500.0, 3000.0):
 			p = aloF(nodes + 0x14 * k, 3)
 			p = SDTest.Call(snap, 'tiiFF', m, (0.0,) * 3, (p[0], p[1] + dy, p[2]))[1]
-			if not SDTest.Call(0x212fe0, 'bFFF', p, (-700.0, -700.0, -700.0), (700.0, 700.0, 700.0))[0] and \
-					not SDTest.Call(0x213d60, 'bFFfii', p, p, r, 0, 0)[0]:
+			if not SDTest.Call('Collision_Box', 'bFFF', p, (-700.0, -700.0, -700.0), (700.0, 700.0, 700.0))[0] and \
+					not SDTest.Call('Engine_TestSphere', 'bFFfii', p, p, r, 0, 0)[0]:
 				starts.append(p)
 				break
 	check('alo gen starts', lambda starts=starts: starts)
@@ -549,7 +549,7 @@ def aloGenerate(w):
 			s = sz * 1400.0
 			mn = (p[0] - s, p[1] - s, p[2] - s)
 			mx = (p[0] + s, p[1] + s, p[2] + s)
-			check('alo gen Generate(%d) %s %d' % (k, fmt(f40), sz), lambda m=m, p=p, mn=mn, mx=mx: (SDTest.Call(0x0a7a00,
+			check('alo gen Generate(%d) %s %d' % (k, fmt(f40), sz), lambda m=m, p=p, mn=mn, mx=mx: (SDTest.Call('CNodesWorld_Generate',
 				'tbiFFF', m, p, mn, mx)[0], aloI(m + 0x198), aloI(m + 0x1c4), aloI(m + 0x1c0), aloI(m + 0x1cc),
 				aloI(m + 0x1f8), aloF(m + 0x304, 3), SDTest.Peek(m + 0x368, '@b')))
 			pts = aloPointList(m)
@@ -557,51 +557,51 @@ def aloGenerate(w):
 			check('alo gen states(%d) %s %d' % (k, fmt(f40), sz), lambda m=m: aloStates(m))
 			if k == 0 and sz == 3:
 				SDTest.Call(aloI(aloI(m) + 0x50) - 0x400000, 'tvi', m)
-				aloDrawViews('gen', m, 0x0a5b10, 0x444d48, (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), pts)
+				aloDrawViews('gen', m, sym('CNodesWorld_Draw'), sym('g_NWDrawMode'), (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), pts)
 			SDTest.Call(aloI(aloI(m) + 0x90) - 0x400000, 'tvi', m)
-			SDTest.Call(0x0a5ab0, 'tvi', m + 0x190)
+			SDTest.Call('NWPointList_Clear', 'tvi', m + 0x190)
 		# the region reaches the side of the box: open
 		aloSetDummy(m, 1)
 		s = 1400.0
 		mn = (p[0] - s, p[1] - s, p[2] - s)
 		mx = (p[0] + s, p[1] + s, p[2] + s)
-		check('alo gen Generate(%d) open' % k, lambda m=m, p=p, mn=mn, mx=mx: (SDTest.Call(0x0a7a00, 'tbiFFF', m, p, mn,
+		check('alo gen Generate(%d) open' % k, lambda m=m, p=p, mn=mn, mx=mx: (SDTest.Call('CNodesWorld_Generate', 'tbiFFF', m, p, mn,
 			mx)[0], aloI(m + 0x198), aloI(m + 0x1cc), aloF(m + 0x304, 3), SDTest.Peek(m + 0x368, '@b')))
 		SDTest.Call(aloI(aloI(m) + 0x90) - 0x400000, 'tvi', m)
-		SDTest.Call(0x0a5ab0, 'tvi', m + 0x190)
+		SDTest.Call('NWPointList_Clear', 'tvi', m + 0x190)
 		k = k + 1
-	check('alo gen Delete', lambda m=m: SDTest.Call(0x0a2430, 'tiii', m, 1)[0] == m)
+	check('alo gen Delete', lambda m=m: SDTest.Call('CNodesWorld_Delete', 'tiii', m, 1)[0] == m)
 
 # the 2D steps of the generation far above the level, where the bodies find no floor (the walk tests are not
 # reached): the buffer, a region with the debug regions on, the next start
 def aloGenerate2D():
 	m = aloNew(0x378)
-	SDTest.Call(0x0ad950, 'tii', m)
-	SDTest.Call(0x0b6200, 'tviisF', m, -2, '', (300.0, 400.0, 500.0))
+	SDTest.Call('CNodesWorld2D_ctor', 'tii', m)
+	SDTest.Call('CNodesWorld2D_Load', 'tviisF', m, -2, '', (300.0, 400.0, 500.0))
 	q = (1000.0, 1000000.0, -2000.0)
 	mn = (q[0] - 600.0, q[1] - 800.0, q[2] - 1000.0)
 	mx = (q[0] + 600.0, q[1] + 800.0, q[2] + 1000.0)
 	# the buffer is relative to the box of the object (Generate sets it)
 	aloSetF(m + 0x74, mn + mx)
 	p = SDTest.Call(aloI(aloI(m) + 0x1c) - 0x400000, 'tiiFF', m, (0.0,) * 3, q)[1]
-	check('alo gen2d IniBuffer', lambda m=m, p=p, mn=mn, mx=mx: (SDTest.Call(0x0b5860, 'tbiFFF', m, p, mn, mx)[0],
+	check('alo gen2d IniBuffer', lambda m=m, p=p, mn=mn, mx=mx: (SDTest.Call('CNodesWorld2D_IniBuffer', 'tbiFFF', m, p, mn, mx)[0],
 		aloI(m + 0x1c0), aloI(m + 0x1cc), aloI(m + 0x1ec), aloStates(m)))
-	SDTest.Call(0x0a2690, 'tviF', m + 0x190, p + (0.0,) * 6 + (3.4e38, 3.4e38, 3.4e38, -3.4e38, -3.4e38, -3.4e38))
-	dm = SDTest.Peek(0x444ddc, 'i')
-	SDTest.Poke(0x444ddc, 1)
-	check('alo gen2d CreateRegion', lambda m=m, p=p: (SDTest.Call(0x0b20f0, 'tviF', m, p)[0], aloStates(m),
+	SDTest.Call('NWPointList_Add', 'tviF', m + 0x190, p + (0.0,) * 6 + (3.4e38, 3.4e38, 3.4e38, -3.4e38, -3.4e38, -3.4e38))
+	dm = SDTest.Peek('g_NW2DDrawMode', 'i')
+	SDTest.Poke('g_NW2DDrawMode', 1)
+	check('alo gen2d CreateRegion', lambda m=m, p=p: (SDTest.Call('CNodesWorld2D_CreateRegion', 'tviF', m, p)[0], aloStates(m),
 		aloI(m + 0x1d8), aloI(m + 0x368), aloI(m + 0x360) and aloI(aloI(m + 0x360) + 8), aloI(m + 0x360) and
 		aloI(aloI(m + 0x360) + 0x14), aloF(aloI(m + 0x190) + 0x2c, 6)))
-	SDTest.Poke(0x444ddc, dm)
-	check('alo gen2d NextInit', lambda m=m: SDTest.Call(0x0b7810, 'tbiF', m, (0.0,) * 3))
+	SDTest.Poke('g_NW2DDrawMode', dm)
+	check('alo gen2d NextInit', lambda m=m: SDTest.Call('CNodesWorld2D_NextInit', 'tbiF', m, (0.0,) * 3))
 	SDTest.Call(aloI(aloI(m) + 0x50) - 0x400000, 'tvi', m)
-	sn = SDTest.Peek(0x444e54, 'i')
+	sn = SDTest.Peek('g_NW2DShowNode', 'i')
 	for v in (-1, 2):
-		SDTest.Poke(0x444e54, v)
-		aloDrawViews('gen2d%d' % v, m, 0x0b1210, 0x444ddc, (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), [])
-	SDTest.Poke(0x444e54, sn)
+		SDTest.Poke('g_NW2DShowNode', v)
+		aloDrawViews('gen2d%d' % v, m, sym('CNodesWorld2D_Draw'), sym('g_NW2DDrawMode'), (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), [])
+	SDTest.Poke('g_NW2DShowNode', sn)
 	SDTest.Call(aloI(aloI(m) + 0x90) - 0x400000, 'tvi', m)
-	check('alo gen2d Delete', lambda m=m: SDTest.Call(0x0ada70, 'tiii', m, 1)[0] == m)
+	check('alo gen2d Delete', lambda m=m: SDTest.Call('CNodesWorld2D_Delete', 'tiii', m, 1)[0] == m)
 
 # the debug views through the D3D log (the length and the hash of the logged text): the views of all modes on an
 # object with lists, a small node array of three nodes and the error lists set up here
@@ -614,7 +614,7 @@ def aloD3D(fn):
 	return (len(t), hash(t))
 
 def aloDrawViews(tag, m, rva, mode, modes, pts):
-	font = SDTest.Peek(0x4a8908, 'i')
+	font = SDTest.Peek('g_FontTerminal8', 'i')
 	keep = (aloI(font + 0x10), aloI(font + 0x14))
 	nodes = aloCalloc(3 * 0x14)
 	links = aloCalloc(4 * 4)
@@ -635,8 +635,8 @@ def aloDrawViews(tag, m, rva, mode, modes, pts):
 	for off, n in ((0x310, 6), (0x328, 3), (0x340, 4)):
 		for i in range(n):
 			p = pos[i % 3]
-			SDTest.Call(0x06d720, 'tviF', m + off, (p[0] + i, p[1], p[2] - i))
-	SDTest.Call(0x06d720, 'tviF', m + 0x1f0, (5.0, 6.0, 7.0))
+			SDTest.Call('DListVec3_Add', 'tviF', m + off, (p[0] + i, p[1], p[2] - i))
+	SDTest.Call('DListVec3_Add', 'tviF', m + 0x1f0, (5.0, 6.0, 7.0))
 	dm = SDTest.Peek(mode, 'i')
 	for v in modes:
 		SDTest.Poke(mode, v)
@@ -648,12 +648,12 @@ def aloDrawViews(tag, m, rva, mode, modes, pts):
 	aloPoke(m + 0x1a8, 0)
 	aloPoke(m + 0x1ac, 0)
 	for off in (0x310, 0x328, 0x340, 0x1f0):
-		SDTest.Call(0x06d8a0, 'tvi', m + off)
+		SDTest.Call('DListVec3_Clear', 'tvi', m + off)
 	aloFree(links)
 	aloFree(nodes)
 
-aloW = SDTest.Peek(0x444d34, 'i')
-check('alo start', lambda: (aloW != 0, SDTest.Peek(0x444c7c, 'i') != 0))
+aloW = SDTest.Peek('g_NodesWorld', 'i')
+check('alo start', lambda: (aloW != 0, SDTest.Peek('g_AStar2D', 'i') != 0))
 if aloW:
 	aloMain(aloW)
 aloSup()

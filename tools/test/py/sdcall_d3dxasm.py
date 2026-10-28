@@ -17,18 +17,18 @@ def asmbuf(obj, text):
 	SDTest.Call(asmvt(obj, 8), 'tiii', 0, obj)
 	return n, r
 def asmrun(data, size):
-	r = SDTest.Call(0x00b2c2, 'tiiiiiipp', 0, data, size, 0, 0, 0, 0)
+	r = SDTest.Call('D3DX_AssembleShader', 'tiiiiiipp', 0, data, size, 0, 0, 0, 0)
 	return r[0], asmbuf(r[1], 0), asmbuf(r[2], 1)
 def asmfile(name):
-	r = SDTest.Call(0x21b330, 'vspp', name, 0, 0)
+	r = SDTest.Call('ArchIO_ReadAll', 'vspp', name, 0, 0)
 	res = asmrun(r[1], r[2])
-	SDTest.Call(0x21b300, 'vp', r[1])
+	SDTest.Call('Ptr_Delete', 'vp', r[1])
 	return res
 def asmtext(t):
-	b = SDTest.Call(0x133650, 'ii', len(t) + 1)[0]
-	SDTest.Call(0x3197d0, 'iisi', b, t, len(t) + 1)
+	b = SDTest.Call('Mem_Calloc', 'ii', len(t) + 1)[0]
+	SDTest.Call('crt_memcpy', 'iisi', b, t, len(t) + 1)
 	res = asmrun(b, len(t))
-	SDTest.Call(0x133550, 'vi', b)
+	SDTest.Call('Mem_Free', 'vi', b)
 	return res
 for asmname in ('lightmap', 'specular', 'GlowmapMaskEnvBump', 'MaskEnvBump', 'MaskEnvmap', 'GlowmapMaskEnvmap',
 		'GlowmapMaskEnvmapLightmap', 'MaskEnvBumpLightmap', 'MaskEnvmapLightmap', 'CloudTest', 'Envmap',
@@ -52,13 +52,13 @@ for asmt in ('', 'ps.1.1', 'ps.1.1\n', 'ps.1.0\nmov r0, v0\n', 'ps.1.2\ntex t0\n
 	check('D3DX_AssembleShader text' + fmt((asmt,)), lambda t=asmt: asmtext(t))
 # flags (1 debug comments, 2 no validation) and the constant buffer of vertex shaders
 def asmrunf(data, size, flags):
-	r = SDTest.Call(0x00b2c2, 'tiiiiippp', 0, data, size, flags, 0, 0, 0)
+	r = SDTest.Call('D3DX_AssembleShader', 'tiiiiippp', 0, data, size, flags, 0, 0, 0)
 	return r[0], asmbuf(r[1], 0), asmbuf(r[2], 0), asmbuf(r[3], 1)
 def asmtextf(t, flags):
-	b = SDTest.Call(0x133650, 'ii', len(t) + 1)[0]
-	SDTest.Call(0x3197d0, 'iisi', b, t, len(t) + 1)
+	b = SDTest.Call('Mem_Calloc', 'ii', len(t) + 1)[0]
+	SDTest.Call('crt_memcpy', 'iisi', b, t, len(t) + 1)
 	res = asmrunf(b, len(t), flags)
-	SDTest.Call(0x133550, 'vi', b)
+	SDTest.Call('Mem_Free', 'vi', b)
 	return res
 for asmt in ('vs.1.1\ndef c3, 1.0, 2.5, -3, 4\nmov oPos, c[a0.x + 3]\n', 'vs.1.1\nm4x4 oPos, v0, c0\nmov oT0.xy, v7\n',
 		'vs.1.1\nmov r0, c[2]\nmov r1, c[a0.x]\nmov r2, -c[1 + a0.x]\nsub r3, r0, r1\n', 'vs.1.1\nmov oD0, v0.wzyx\n',

@@ -11,9 +11,9 @@ def scdI(a):
 def scdB(a):
 	return SDTest.Peek(a, '@b')
 def scdF(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def scdSet(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 def scdPoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 def scdPokeByte(a, v):
@@ -24,13 +24,13 @@ def scdInts(a, n):
 		r = r + (scdI(a + 4 * scdK),)
 	return r
 def scdSrand(s):
-	SDTest.Call(0x323c50, 'vi', s)
+	SDTest.Call('crt_srand', 'vi', s)
 def scdNew(n):
-	return SDTest.Call(0x1334d0, 'ii', n)[0]
+	return SDTest.Call('operator_new', 'ii', n)[0]
 def scdFree(p):
-	SDTest.Call(0x1334e0, 'vi', p)
+	SDTest.Call('operator_delete', 'vi', p)
 def scdCopy(dst, src, n):
-	SDTest.Call(0x3197d0, 'iiii', dst, src, n)
+	SDTest.Call('crt_memcpy', 'iiii', dst, src, n)
 # a heap copy of n bytes at the address a, put back with scdPutback
 def scdKeep(a, n):
 	b = scdNew(n)
@@ -42,32 +42,32 @@ def scdPutback(k):
 # a call with the D3D device replaced by the logging proxy: (its result, the D3D calls); the 2D draws CHECK the
 # viewport, set to 640 x 480 for the call
 def scdLog(fn):
-	vp = (SDTest.Peek(0x4ad7e8, 'i'), SDTest.Peek(0x4ad7ec, 'i'))
-	SDTest.Poke(0x4ad7e8, 640)
-	SDTest.Poke(0x4ad7ec, 480)
+	vp = (SDTest.Peek('g_ViewportW', 'i'), SDTest.Peek('g_ViewportH', 'i'))
+	SDTest.Poke('g_ViewportW', 640)
+	SDTest.Poke('g_ViewportH', 480)
 	SDTest.Out()
 	SDTest.D3DLog(1)
 	r = fn()
 	SDTest.D3DLog(0)
-	SDTest.Poke(0x4ad7e8, vp[0])
-	SDTest.Poke(0x4ad7ec, vp[1])
+	SDTest.Poke('g_ViewportW', vp[0])
+	SDTest.Poke('g_ViewportH', vp[1])
 	return (r, SDTest.Out())
-scdWorld = SDTest.Peek(0x467450, 'i')
-scdSc = SDTest.Call(0x170ea0, 'ii', 0)[0]
+scdWorld = SDTest.Peek('g_pWorld', 'i')
+scdSc = SDTest.Call('Scorer_Get', 'ii', 0)[0]
 def scdFind(name):
-	slot = SDTest.Call(0x131f70, 'tiis', scdWorld + 4, name)[0]
-	node = SDTest.Call(0x131e50, 'tiisi', scdWorld + 4, name, slot)[0]
+	slot = SDTest.Call('HashTable_Slot', 'tiis', scdWorld + 4, name)[0]
+	node = SDTest.Call('PtrTable_Find', 'tiisi', scdWorld + 4, name, slot)[0]
 	if node:
 		return scdI(node)
 	return 0
 def scdItem(name):
-	return SDTest.Call(0x170dc0, 'tiis', scdSc, name)[0]
+	return SDTest.Call('cScorer_FindItem', 'tiis', scdSc, name)[0]
 def scdSetVars(name, sets):
 	for scdV in sets:
 		SScorer.Set(0, name, scdV[0], scdV[1])
 # a string into a char array (with its zero)
 def scdStr(a, s):
-	SDTest.Call(0x3197d0, 'iisi', a, s, len(s) + 1)
+	SDTest.Call('crt_memcpy', 'iisi', a, s, len(s) + 1)
 
 # ---- the cars, the camera, the items ----
 # the second car in front of the camera (it looks along +z), the first and the third far away
@@ -84,7 +84,7 @@ scdCar2 = scdFind('SDScdCar2')
 scdCar3 = scdFind('SDScdCar3')
 check('SCD cars', lambda: (scdCarObj is not None, scdCar2Obj is not None, scdCar3Obj is not None, scdCar != 0,
 	scdCar2 != 0, scdCar3 != 0))
-scdCamName = SDTest.Call(0x209220, 'tsii', scdWorld, 0)[0]
+scdCamName = SDTest.Call('cWorld_GetCamName', 'tsii', scdWorld, 0)[0]
 scdCam = 0
 if scdCamName:
 	scdCam = scdFind(scdCamName)
@@ -94,7 +94,7 @@ if scdCam and Scrap.GetEntity(scdCamName).IsType('FCam'):
 check('SCD camera', lambda: (scdCamName, scdCamOk, scdSc != 0))
 # where the cars are on the screen
 for scdK in (scdC2P, (54300.0, 50000.0, 61000.0)):
-	check('SCD Engine_WorldToScreen' + fmt(scdK), lambda p=scdK: SDTest.Call(0x216d60, 'bFFF', p, (0.0, 0.0),
+	check('SCD Engine_WorldToScreen' + fmt(scdK), lambda p=scdK: SDTest.Call('Engine_WorldToScreen', 'bFFF', p, (0.0, 0.0),
 		(0.0,)))
 scdCamTarget = 0
 if scdCamOk:
@@ -111,7 +111,7 @@ scdScSaved = ()
 if scdSc:
 	scdScSaved = scdInts(scdSc + 0x20, 3) + (scdI(scdSc + 0x50),)
 	scdSet(scdSc + 0x20, (12.5, 12.25, 0.05))
-scdGvars = (0x467644, 0x4624f4, 0x467584)
+scdGvars = (sym('g_AtmosphereLimit'), sym('g_WindFxShow'), sym('g_SplitScreenGame'))
 scdGsaved = map(lambda a: SDTest.Peek(a, 'i'), scdGvars)
 scdTypes = (('scdWind', 'WindFx'), ('scdWeap', 'Weapon'), ('scdStat', 'Status'), ('scdTarg', 'Target'),
 	('scdMain', 'ScraplandMainMenu'), ('scdCur', 'Sprite'), ('scdRad', 'Radar'),
@@ -132,9 +132,9 @@ if scdA and scdOk:
 		scdSet(a + 0xb0, (0.1, 0.5, 0.9, 0.3))
 		scdSet(car + 0x4c4, (speed,))
 		scdSet(car + 0x4cc, ang)
-		scdSet(0x867644, (atmo,))
-		SDTest.Poke(0x4624f4, show)
-		d = scdLog(lambda a=a, car=car: scdWith(car, lambda a=a: SDTest.Call(0x188ea0, 'tvii', a, 0)))
+		scdSet(symva('g_AtmosphereLimit'), (atmo,))
+		SDTest.Poke('g_WindFxShow', show)
+		d = scdLog(lambda a=a, car=car: scdWith(car, lambda a=a: SDTest.Call('cWindFxScorer_Draw', 'tvii', a, 0)))
 		return (d, scdF(a + 0xb0, 4), scdI(a + 0xc0), scdI(a + 0xc4), scdF(a + 0xc8, 1))
 	for scdV in ((1, 14000.0, (0.0, 0.0, 0.0), 1.0e6, 0), (1, 14000.0, (0.0, 0.0, 0.0), 1000.0, 1),
 			(1, 28000.0, (0.4, -1.1, 0.0), 1.0e6, 1), (1, 10.0, (0.0, 0.5, 0.0), 1.0e6, 1),
@@ -143,9 +143,9 @@ if scdA and scdOk:
 		scdC = (0, scdCar, scdCar2)[scdV[0]]
 		check('SCD cWindFxScorer_Draw' + fmt(scdV), lambda a=scdA, c=scdC, v=scdV: scdWind(a, c, v[1], v[2], v[3],
 			v[4]))
-	SDTest.Poke(0x467644, scdGsaved[0])
-	SDTest.Poke(0x4624f4, scdGsaved[1])
-	SDTest.Call(0x1a4390, 'tvi', scdA + 0xc0)
+	SDTest.Poke('g_AtmosphereLimit', scdGsaved[0])
+	SDTest.Poke('g_WindFxShow', scdGsaved[1])
+	SDTest.Call('cSound_Stop@1a4390', 'tvi', scdA + 0xc0)
 
 # ---- the weapon: the HUD sheets of the game, the weapons of the car, the slot row and the fade of a change ----
 scdA = scdItems['scdWeap']
@@ -192,7 +192,7 @@ if scdA and scdOk:
 	if scdNW >= 7 and scdNA >= 4 and scdI(scdWm + 0x18) and scdI(scdWm + 0x20):
 		scdWeaps = scdKeep(scdI(scdWm + 0x18), 7 * 0xc)
 		scdAmmo = scdKeep(scdI(scdWm + 0x20), 4 * scdNA)
-		scdSlotG = scdKeep(0x862460, 0x3c)
+		scdSlotG = scdKeep(symva('g_WeaponSlotState'), 0x3c)
 		scdCarW = (scdI(scdWm + 0xc), scdI(scdCar + 0x414), scdI(scdCar + 0x238))
 		# the slots of the seven weapons, their upgrades and the ammo of each kind
 		for scdK in range(7):
@@ -209,12 +209,12 @@ if scdA and scdOk:
 			scdPoke(a + 0x1a8, last[1])
 			scdSet(a + 0x1a0, (change,))
 			scdSet(a + 0x1ac, (slots,))
-			SDTest.Poke(0x467584, split)
+			SDTest.Poke('g_SplitScreenGame', split)
 			scdSet(scdSc + 0x20, (time,))
 			if ammo >= 0.0:
 				scdSet(scdI(scdWm + 0x20) + 4 * scdKinds[w], (ammo,))
-			d = scdLog(lambda a=a: scdWith(scdCar, lambda a=a: SDTest.Call(0x188050, 'tvii', a, 0)))
-			return (d, scdF(a + 0x1a0, 1), scdInts(a + 0x1a4, 2), scdF(a + 0x1ac, 1), scdInts(0x862460, 15))
+			d = scdLog(lambda a=a: scdWith(scdCar, lambda a=a: SDTest.Call('cWeaponScorer_Draw', 'tvii', a, 0)))
+			return (d, scdF(a + 0x1a0, 1), scdInts(a + 0x1a4, 2), scdF(a + 0x1ac, 1), scdInts(symva('g_WeaponSlotState'), 15))
 		scdCases = [(0, 0, 100, (-100, -100), 0.0, 0.0, 0, 12.5, -1.0), (1, 1, 100, (1, 2), 0.0, 0.0, 0, 12.5, -1.0),
 			(3, 3, 100, (1, 2), 0.0, 0.5, 0, 12.5, -1.0), (3, 3, 0, (1, 2), 0.12, 0.05, 0, 12.5, -1.0),
 			(6, 6, 100, (3, 7), 0.12, 2.0, 0, 12.5, 0.0), (6, 6, 100, (6, 0), 0.0, 2.0, 0, 12.55, 0.0),
@@ -232,7 +232,7 @@ if scdA and scdOk:
 		scdPutback(scdWeaps)
 		scdPutback(scdAmmo)
 		scdPutback(scdSlotG)
-		SDTest.Poke(0x467584, scdGsaved[2])
+		SDTest.Poke('g_SplitScreenGame', scdGsaved[2])
 		scdSet(scdSc + 0x20, (12.5,))
 
 # ---- the status: life, boost segments, money, lives, the team flag and the hull; the warning and siren sounds ----
@@ -271,7 +271,7 @@ if scdA and scdOk:
 		scdSet(a + 0x1b0, (blink,))
 		SScorer.Set(0, 'scdStat', 'MoneyIconIndex', money)
 		scdSet(scdSc + 0x20, (time,))
-		d = scdLog(lambda a=a, t=target: scdWith(t, lambda a=a: SDTest.Call(0x17d610, 'tvii', a, 0)))
+		d = scdLog(lambda a=a, t=target: scdWith(t, lambda a=a: SDTest.Call('cStatusScorer_Draw', 'tvii', a, 0)))
 		return (d, scdInts(a + 0xac, 2), scdInts(a + 0xec, 2), scdF(a + 0xf4, 1), scdB(a + 0x12c), scdI(a + 0x160),
 			scdI(a + 0x1a8) - scdMoney, scdI(a + 0x1ac) - scdMoney, scdF(a + 0x1b0, 1), scdF(a + 0x1d4, 1))
 	for scdV in ((scdCar, 100, 20, 100, 0, (0xff, 0.0, 0.25), 0, 0, -1, 0.0, 15, 12.5),
@@ -292,8 +292,8 @@ if scdA and scdOk:
 	scdPoke(scdCar + 0x388, scdCarS[3])
 	scdPoke(scdRegen, scdRegenSaved)
 	scdSet(scdSc + 0x20, (12.5,))
-	SDTest.Call(0x1a4390, 'tvi', scdA + 0xac)
-	SDTest.Call(0x1a4390, 'tvi', scdA + 0xec)
+	SDTest.Call('cSound_Stop@1a4390', 'tvi', scdA + 0xac)
+	SDTest.Call('cSound_Stop@1a4390', 'tvi', scdA + 0xec)
 
 # ---- the target: the mark of the target of the car (rectangle in view, arrow out of it) and the attacker arrow ----
 scdA = scdItems['scdTarg']
@@ -307,7 +307,7 @@ if scdA and scdOk:
 	scdTimerT = scdF(scdCar + 0x118, 1)
 	# the attacker: SDScdCar3 hit the car (its timer at 10)
 	scdSet(scdCar + 0x118, (10.0,))
-	SDTest.Call(0x0f9b60, 'tvis', scdCar + 0x298, 'SDScdCar3')
+	SDTest.Call('cVehicleAttack_HitBy', 'tvis', scdCar + 0x298, 'SDScdCar3')
 	check('SCD attacker', lambda: (SDTest.Peek(scdCar + 0x2f8 + 8, '@i') == scdCar3, scdF(scdCar + 0x308, 1)))
 	def scdTarg(a, name, test, view, nofire, hit, burn, split, time):
 		scdStr(scdCar + 0x650, name)
@@ -316,9 +316,9 @@ if scdA and scdOk:
 		scdSet(scdCar3 + 0x598, (nofire,))
 		scdSet(scdCar + 0x308, (hit,))
 		scdSet(scdCar + 0x294, (burn,))
-		SDTest.Poke(0x467584, split)
+		SDTest.Poke('g_SplitScreenGame', split)
 		scdSet(scdSc + 0x20, (time,))
-		d = scdLog(lambda a=a: SDTest.Call(0x181600, 'tvii', a, scdCar))
+		d = scdLog(lambda a=a: SDTest.Call('cTargetScorer_DrawTarget', 'tvii', a, scdCar))
 		img = scdI(a + 0x134)
 		return (d, scdF(a + 0xac, 2), SDTest.Peek(a + 0xb4, '@s'), scdB(scdCar2 + 0x385), scdB(scdCar3 + 0x385),
 			scdF(img, 6), scdI(img + 0x34))
@@ -330,13 +330,13 @@ if scdA and scdOk:
 		check('SCD cTargetScorer_DrawTarget' + fmt(scdV), lambda a=scdA, v=scdV: scdTarg(a, v[0], v[1], v[2], v[3],
 			v[4], v[5], v[6], v[7]))
 	# the attacker link off again (the hit by the car itself)
-	SDTest.Call(0x0f9b60, 'tvis', scdCar + 0x298, 'SDScdCar')
+	SDTest.Call('cVehicleAttack_HitBy', 'tvis', scdCar + 0x298, 'SDScdCar')
 	scdPutback(scdTgtName)
 	scdSet(scdCar2 + 0x598, scdNoFire[0])
 	scdSet(scdCar3 + 0x598, scdNoFire[1])
 	scdSet(scdCar + 0x294, scdBurn)
 	scdSet(scdCar + 0x118, scdTimerT)
-	SDTest.Poke(0x467584, scdGsaved[2])
+	SDTest.Poke('g_SplitScreenGame', scdGsaved[2])
 	scdSet(scdSc + 0x20, (12.5,))
 
 # ---- the main menu logo on its sheets: the animation state and the game time set by hand ----
@@ -351,33 +351,33 @@ if scdA and scdB2 and scdSc:
 	scdLight = scdI(scdA + 0xc4)
 	scdNF = (0, 0)
 	if scdI(scdNeon + 0x3c) and scdI(scdLight + 0x3c):
-		scdNF = (SDTest.Call(0x22d280, 'tii', scdNeon)[0], SDTest.Call(0x22d280, 'tii', scdLight)[0])
+		scdNF = (SDTest.Call('CPsaImage_GetNumFrames', 'tii', scdNeon)[0], SDTest.Call('CPsaImage_GetNumFrames', 'tii', scdLight)[0])
 	check('SCD MainMenu sheets', lambda: scdNF)
-	scdSets = SDTest.Peek(0x44c12c, 'i')
+	scdSets = SDTest.Peek(sym('g_ActionSets') + 0x4, 'i')
 	scdAcc = 0
-	if scdSets and SDTest.Peek(0x44c128, 'i') > 0 and scdI(scdSets + 8) and scdI(scdSets + 4) > 10:
+	if scdSets and SDTest.Peek('g_ActionSets', 'i') > 0 and scdI(scdSets + 8) and scdI(scdSets + 4) > 10:
 		scdAcc = scdI(scdSets + 8) + 10 * 0x7c + 0x18
 	check('SCD menu accept action', lambda: scdAcc != 0)
 	if scdNF[0] > 0x26 and scdNF[1] > 0x4f and scdAcc:
-		scdAnim = scdKeep(0x860428, 0x22c)
-		scdApp = SDTest.Peek(0x467ba0, 'i')
+		scdAnim = scdKeep(symva('g_MainMenuAnimInit'), 0x22c)
+		scdApp = SDTest.Peek('g_pApp', 'i')
 		scdTime = scdInts(scdApp + 0x20, 2)
 		scdAccSaved = scdI(scdAcc)
-		scdFont = SDTest.Peek(0x4a8918, 'i')
+		scdFont = SDTest.Peek('g_FontScrapMedium', 'i')
 		scdFontK = scdKeep(scdFont, 0x34)
 		def scdMainState(v):
 			# the neon tubes: waits on and off, the next tube and the groups
 			w = ()
 			for k in range(21):
 				w = w + ((0.3, -0.1, 0.02, 0.0, 0.6, 0.11, -0.4)[(k + v) % 7],)
-			scdSet(0x8605f0, w)
-			scdSet(0x860544, ((0.1, -0.05, 0.0)[v % 3],))
-			scdSet(0x860594, ((0.2, -0.3, 0.04), (0.0, 0.5, -0.1), (0.3, 0.3, 0.0))[v % 3])
+			scdSet(symva('g_MainMenuNeonWait'), w)
+			scdSet(symva('g_MainMenuNeonNext'), ((0.1, -0.05, 0.0)[v % 3],))
+			scdSet(symva('g_MainMenuNeonGroup'), ((0.2, -0.3, 0.04), (0.0, 0.5, -0.1), (0.3, 0.3, 0.0))[v % 3])
 			# the letters: their waits, the time left of a lighting and its length
-			scdSet(0x86042c, (0.5, 0.01, 1.2, 0.02, 0.9, 0.0, 0.3, 0.04, 0.7))
-			scdSet(0x860450, ((0.0, 0.05, 0.1, 0.0, 0.15, 0.3, 0.06, 0.12, 0.2), (0.11, 0.0, 0.2, 0.08, 0.0, 0.05,
+			scdSet(symva('g_MainMenuWait'), (0.5, 0.01, 1.2, 0.02, 0.9, 0.0, 0.3, 0.04, 0.7))
+			scdSet(symva('g_MainMenuTime'), ((0.0, 0.05, 0.1, 0.0, 0.15, 0.3, 0.06, 0.12, 0.2), (0.11, 0.0, 0.2, 0.08, 0.0, 0.05,
 				0.25, 0.0, 0.17), (0.18, 0.09, 0.0, 0.2, 0.07, 0.15, 0.0, 0.21, 0.0))[v % 3])
-			scdSet(0x860474, (0.3, 0.25, 0.28, 0.2, 0.32, 0.4, 0.3, 0.26, 0.22))
+			scdSet(symva('g_MainMenuLength'), (0.3, 0.25, 0.28, 0.2, 0.32, 0.4, 0.3, 0.26, 0.22))
 			# the sparks: wait, time left, length, first frame, direction
 			sw = ()
 			st = ()
@@ -386,13 +386,13 @@ if scdA and scdB2 and scdSc:
 				sw = sw + ((0.4, 0.02, -0.1, 1.5)[(k + v) % 4],)
 				st = st + ((0.0, 0.3, 0.1, 0.0, 0.55)[(k + v) % 5],)
 				sl = sl + ((0.6, 0.7, 0.65)[k % 3],)
-			scdSet(0x860498, sw)
-			scdSet(0x8604f8, st)
-			scdSet(0x860548, sl)
+			scdSet(symva('g_MainMenuSparkWait'), sw)
+			scdSet(symva('g_MainMenuSparkTime'), st)
+			scdSet(symva('g_MainMenuSparkLength'), sl)
 			for k in range(19):
-				scdPoke(0x8605a0 + 4 * k, (k * 5 + v) % 14)
+				scdPoke(symva('g_MainMenuSparkFrame') + 4 * k, (k * 5 + v) % 14)
 			for k in range(0, 19, 4):
-				scdPoke(0x8604e4 + k, (0x01000100, 0x00010001, 0x01010000)[(k / 4 + v) % 3])
+				scdPoke(symva('g_MainMenuSparkDir') + k, (0x01000100, 0x00010001, 0x01010000)[(k / 4 + v) % 3])
 		def scdMain(a, v, cursor, accept, t, last):
 			scdMainState(v)
 			scdPoke(scdSc + 0x50, cursor)
@@ -402,10 +402,10 @@ if scdA and scdB2 and scdSc:
 			scdPoke(scdApp + 0x24, t)
 			scdSet(a + 0xac, (last,))
 			scdSrand(55 + v)
-			d = scdLog(lambda a=a: SDTest.Call(0x176130, 'tvii', a, 0))
-			return (d, scdF(a + 0xac, 2), scdF(0x86042c, 9), scdF(0x860450, 9), scdF(0x860474, 9),
-				scdF(0x8605f0, 21), scdF(0x860544, 1), scdF(0x860594, 3), scdF(0x860498, 19), scdF(0x8604f8, 19),
-				scdF(0x860548, 19), scdInts(0x8605a0, 19), scdInts(0x8604e4, 5))
+			d = scdLog(lambda a=a: SDTest.Call('cScraplandMainMenuScorer_Draw', 'tvii', a, 0))
+			return (d, scdF(a + 0xac, 2), scdF(symva('g_MainMenuWait'), 9), scdF(symva('g_MainMenuTime'), 9), scdF(symva('g_MainMenuLength'), 9),
+				scdF(symva('g_MainMenuNeonWait'), 21), scdF(symva('g_MainMenuNeonNext'), 1), scdF(symva('g_MainMenuNeonGroup'), 3), scdF(symva('g_MainMenuSparkWait'), 19), scdF(symva('g_MainMenuSparkTime'), 19),
+				scdF(symva('g_MainMenuSparkLength'), 19), scdInts(symva('g_MainMenuSparkFrame'), 19), scdInts(symva('g_MainMenuSparkDir'), 5))
 		# 0x40590000: 100.0, 0x40591000: 100.25
 		for scdV in ((0, 0, 0.0, 0x40590000, 99.95), (1, scdB2, 1.0, 0x40590000, 99.9), (2, scdB2, 0.25, 0x40591000,
 				100.0), (3, scdB2, 1.0, 0x40591000, 90.0), (4, 0, 1.0, 0x40590000, 100.0)):
@@ -478,16 +478,16 @@ if scdA and scdOk and scdRadOk:
 				return 1
 		return 0
 	scdFlags = []
-	scdE = SDTest.Call(0x2092a0, 'tii', scdWorld)[0]
+	scdE = SDTest.Call('cWorld_GetFirstEntity', 'tii', scdWorld)[0]
 	while scdE:
 		scdNm = SDTest.Peek(scdE + 4, '@p')
 		if scdNm is None or not scdActive(scdNm):
 			scdFlags.append((scdE, scdI(scdE + 0x4c)))
 			scdPokeByte(scdE + 0x4c, 0)
-		scdE = SDTest.Call(0x0ef310, 'tii', scdE)[0]
+		scdE = SDTest.Call('cEntity_Next', 'tii', scdE)[0]
 	check('SCD radar inactive', lambda: len(scdFlags))
 	# the engine variables, the view of the radar, the floors
-	scdRGvars = (0x45fe78, 0x45fe00, 0x45fe48, 0x467ad4, 0x4678d8, 0x45fe30, 0x45fe80, 0x45fe84, 0x45fe88, 0x45fe8c)
+	scdRGvars = (sym('g_RadarMMSelect'), sym('g_RadarShowAll'), sym('g_SuperDealAvaliable'), sym('g_IsDemo'), sym('g_IsSecondMission'), sym('g_NumEnemiesInRadar'), sym('g_RadarScale'), sym('g_RadarAngle'), sym('g_RadarCenterX'), sym('g_RadarCenterZ'))
 	scdRGsaved = map(lambda a: SDTest.Peek(a, 'i'), scdRGvars)
 	scdFloors = scdKeep(scdWorld + 0x2f0, 0x18c4)
 	scdL0 = scdWorld + 0x2f4
@@ -529,8 +529,8 @@ if scdA and scdOk and scdRadOk:
 		scdSet(scdCar + 0x58c, (emi,))
 		scdSet(scdSc + 0x20, (time,))
 		scdSrand(23)
-		d = scdLog(lambda a=a, t=target: SDTest.Call(0x16d570, 'tviii', a, t, scdRCam))
-		return (d, SDTest.Peek(0x45fe30, 'i'), scdInts(a + 0x8cc, 2), scdF(a + 0x8d4, 1), scdF(0x85fe80, 4))
+		d = scdLog(lambda a=a, t=target: SDTest.Call('cRadarScorer_DrawRadar', 'tviii', a, t, scdRCam))
+		return (d, SDTest.Peek('g_NumEnemiesInRadar', 'i'), scdInts(a + 0x8cc, 2), scdF(a + 0x8d4, 1), scdF(symva('g_RadarScale'), 4))
 	scdLevel(scdL0, None, (((54000.0, 19000.0, 61000.0), 0.5), ((54600.0, 19000.0, 61400.0), -1.2)),
 		(((53000.0, 9000.0, 60000.0), 2.0),))
 	scdLevel(scdL1, 20000.0, (((54100.0, 39000.0, 61050.0), 1.1), ((54300.0, 41000.0, 61000.0), 0.2),
@@ -611,13 +611,13 @@ if scdA and scdOk:
 	check('SCD Monitor sheets', lambda: (scdMonOk, scdI(scdA + 0xb4) != 0))
 	# a head model of our own in the scorer, the descriptor model of the second car names it
 	scdHeadOk = SScorer.AddModel(0, 'SDScdHead', 'Models/Heads/HeadRusty/HeadRusty', '', 3, 25.0, 10.0)
-	scdHead = SDTest.Call(0x170d60, 'tiis', scdSc, 'SDScdHead')[0]
+	scdHead = SDTest.Call('cScorer_FindModel', 'tiis', scdSc, 'SDScdHead')[0]
 	check('SCD head model', lambda: (scdHeadOk, scdHead != 0, scdHead and scdI(scdSc + 0xa8) == scdHead))
 if scdA and scdOk and scdMonOk:
-	scdApp = SDTest.Peek(0x467ba0, 'i')
+	scdApp = SDTest.Peek('g_pApp', 'i')
 	scdTime = scdInts(scdApp + 0x20, 2)
-	scdHM = SDTest.Peek(0x45fb10, 'i')
-	scdWCC = SDTest.Peek(0x4472b4, 'i')
+	scdHM = SDTest.Peek('g_HeadMonitorName', 'i')
+	scdWCC = SDTest.Peek('g_WalkCameraCenter', 'i')
 	scdHeadName = scdNew(0x20)
 	scdStr(scdHeadName, 'SDScdHead')
 	scdCar2M = (scdI(scdCar2 + 0x3e0), scdI(scdCar2 + 0x388), scdI(scdCar2 + 0x13c), scdI(scdCar2 + 0x398),
@@ -637,8 +637,8 @@ if scdA and scdOk and scdMonOk:
 		scdPoke(scdCar2 + 0x238, 77)
 		scdPokeByte(scdPl + 0x50c, lock)
 		scdPoke(scdPl + 0x518, (0, scdCar2)[lock])
-		SDTest.Poke(0x4472b4, (0, 0x3f800000)[lock])
-		scdPokeByte(0x85fb10, 0)
+		SDTest.Poke('g_WalkCameraCenter', (0, 0x3f800000)[lock])
+		scdPokeByte(symva('g_HeadMonitorName'), 0)
 		scdSet(a + 0xac, (st[0], st[1]))
 		scdPoke(a + 0xb8, (0, scdCar2)[st[2]])
 		scdStr(a + 0xbc, st[5])
@@ -655,7 +655,7 @@ if scdA and scdOk and scdMonOk:
 		scdPoke(scdApp + 0x24, t)
 		scdSet(scdSc + 0x20, (time,))
 		scdSrand(31)
-		d = scdLog(lambda a=a, e=(0, scdCar, scdPl)[target]: SDTest.Call(0x168c60, 'tviii', a, 0, e))
+		d = scdLog(lambda a=a, e=(0, scdCar, scdPl)[target]: SDTest.Call('cMonitorScorer_DrawMonitor', 'tviii', a, 0, e))
 		return (d, scdF(a + 0xac, 2), scdI(a + 0xb8) == scdCar2, SDTest.Peek(a + 0xbc, '@s'), scdF(a + 0x1fc, 1),
 			scdI(a + 0x208) == scdHead, scdI(a + 0x20c), scdF(a + 0x214, 4), SDTest.Peek(a + 0x224, '@s'),
 			scdF(a + 0x2a4, 1), scdB(a + 0x2a8), scdF(scdI(a + 0xb4), 13))
@@ -680,8 +680,8 @@ if scdA and scdOk and scdMonOk:
 			v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10]))
 	scdPoke(scdApp + 0x20, scdTime[0])
 	scdPoke(scdApp + 0x24, scdTime[1])
-	SDTest.Poke(0x45fb10, scdHM)
-	SDTest.Poke(0x4472b4, scdWCC)
+	SDTest.Poke('g_HeadMonitorName', scdHM)
+	SDTest.Poke('g_WalkCameraCenter', scdWCC)
 	scdPoke(scdCar2 + 0x3e0, scdCar2M[0])
 	scdPoke(scdCar2 + 0x388, scdCar2M[1])
 	scdPoke(scdCar2 + 0x13c, scdCar2M[2])
@@ -703,9 +703,9 @@ if scdA and scdOk and scdHead and scdI(scdSc + 0xa8) == scdHead:
 	if scdFx:
 		SDTest.Call(scdI(scdI(scdFx) + 8) - 0x400000, 'tvi', scdFx)
 		SDTest.Call(scdI(scdI(scdFx)) - 0x400000, 'tiii', scdFx, 1)
-	SDTest.Call(0x20ec10, 'tvi', scdHead + 0x20)
-	SDTest.Call(0x313634, 'vii', scdHead, 0x70)
-	check('SCD head model gone', lambda: SDTest.Call(0x170d60, 'tiis', scdSc, 'SDScdHead')[0])
+	SDTest.Call('CGameModel_Reset', 'tvi', scdHead + 0x20)
+	SDTest.Call('operator_delete_sized', 'vii', scdHead, 0x70)
+	check('SCD head model gone', lambda: SDTest.Call('cScorer_FindModel', 'tiis', scdSc, 'SDScdHead')[0])
 
 
 # ---- put back, the items marked DelMe, the cars deleted ----

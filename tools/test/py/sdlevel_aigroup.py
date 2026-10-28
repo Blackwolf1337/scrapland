@@ -13,9 +13,9 @@ def agrI(a):
 def agrB(a):
 	return SDTest.Peek(a, '@b')
 def agrF(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def agrSet(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 def agrPoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 def agrPokeB(a, v):
@@ -23,11 +23,11 @@ def agrPokeB(a, v):
 	sh = 8 * (a & 3)
 	agrPoke(a & ~3, (w & ~(0xff << sh)) | (v << sh))
 def agrAlloc(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def agrFree(p):
-	SDTest.Call(0x133550, 'ii', p)
+	SDTest.Call('Mem_Free', 'ii', p)
 def agrNew(n):
-	return SDTest.Call(0x1334d0, 'ii', n)[0]
+	return SDTest.Call('operator_new', 'ii', n)[0]
 def agrInts(a, offs):
 	r = ()
 	for o in offs:
@@ -58,7 +58,7 @@ def agrSetPos(e, p):
 def agrAdd(a, b):
 	return (a[0] + b[0], a[1] + b[1], a[2] + b[2])
 def agrSrand(n):
-	SDTest.Call(0x323c50, 'vi', n)
+	SDTest.Call('crt_srand', 'vi', n)
 agrStrs = ()
 def agrS(s):
 	global agrStrs
@@ -68,32 +68,32 @@ def agrS(s):
 
 # ---- cAIEntityGroup ----
 agrEg = agrAlloc(0x60)
-agrLimit = agrF(0x844698, 1)[0]
-check('AGR EntityGroup ctor', lambda: (SDTest.Call(0x084620, 'tii', agrEg)[0] == agrEg, agrI(agrEg) - 0x400000,
+agrLimit = agrF(symva('g_TimeBetwChangeStateAI'), 1)[0]
+check('AGR EntityGroup ctor', lambda: (SDTest.Call('cAIEntityGroup_ctor', 'tii', agrEg)[0] == agrEg, agrI(agrEg) - 0x400000,
 	agrI(agrEg + 0x54), agrB(agrEg + 0x58), agrF(agrEg + 0x5c, 1)[0] == agrLimit))
 def agrEgAdd(a=0):
 	r = ()
 	for k in range(21):
-		r = r + (SDTest.Call(0x084690, 'tbii', agrEg, 0x1000 + 16 * k)[0], agrI(agrEg + 0x54))
+		r = r + (SDTest.Call('cAIEntityGroup_Add', 'tbii', agrEg, 0x1000 + 16 * k)[0], agrI(agrEg + 0x54))
 	return r
 check('AGR EntityGroup Add', agrEgAdd)
 def agrEgGet(a=0):
 	r = ()
 	for k in range(20):
-		r = r + (SDTest.Call(0x084700, 'tiii', agrEg, k)[0] - 0x1000,)
+		r = r + (SDTest.Call('cAIEntityGroup_Get', 'tiii', agrEg, k)[0] - 0x1000,)
 	return r
 check('AGR EntityGroup Get', agrEgGet)
-check('AGR EntityGroup Num Clear', lambda: (SDTest.Call(0x084740, 'tii', agrEg)[0], SDTest.Call(0x084750, 'tvi',
-	agrEg), agrI(agrEg + 0x54), SDTest.Call(0x084740, 'tii', agrEg)[0], SDTest.Call(0x084690, 'tbii', agrEg, 0x50)[0],
+check('AGR EntityGroup Num Clear', lambda: (SDTest.Call('cAIEntityGroup_Num', 'tii', agrEg)[0], SDTest.Call('cAIEntityGroup_Clear', 'tvi',
+	agrEg), agrI(agrEg + 0x54), SDTest.Call('cAIEntityGroup_Num', 'tii', agrEg)[0], SDTest.Call('cAIEntityGroup_Add', 'tbii', agrEg, 0x50)[0],
 	agrI(agrEg + 4) - 0x50))
 for agrT in (0.0, 0.025, agrLimit, 0.5, -1.0):
 	agrSet(agrEg + 0x5c, (agrT,))
-	check('AGR EntityGroup CanChange %s' % fmt(agrT), lambda: SDTest.Call(0x084760, 'tbi', agrEg)[0])
-check('AGR EntityGroup times', lambda: (SDTest.Call(0x0846f0, 'tvi', agrEg), agrF(agrEg + 0x5c, 1),
-	SDTest.Call(0x084770, 'tvif', agrEg, 0.25), agrF(agrEg + 0x5c, 1), SDTest.Call(0x084770, 'tvif', agrEg, 0.125),
-	agrF(agrEg + 0x5c, 1), SDTest.Call(0x0846e0, 'tvi', agrEg), agrF(agrEg + 0x5c, 1)[0] == agrLimit))
-check('AGR EntityGroup Delete dtor', lambda: (agrPoke(agrEg, 0), SDTest.Call(0x084660, 'tiii', agrEg, 0)[0] == agrEg,
-	agrI(agrEg) - 0x400000, agrPoke(agrEg, 0), SDTest.Call(0x084650, 'tvi', agrEg), agrI(agrEg) - 0x400000))
+	check('AGR EntityGroup CanChange %s' % fmt(agrT), lambda: SDTest.Call('cAIEntityGroup_CanChange', 'tbi', agrEg)[0])
+check('AGR EntityGroup times', lambda: (SDTest.Call('cAIEntityGroup_ResetChange', 'tvi', agrEg), agrF(agrEg + 0x5c, 1),
+	SDTest.Call('cAIEntityGroup_Update', 'tvif', agrEg, 0.25), agrF(agrEg + 0x5c, 1), SDTest.Call('cAIEntityGroup_Update', 'tvif', agrEg, 0.125),
+	agrF(agrEg + 0x5c, 1), SDTest.Call('cAIEntityGroup_AllowChange', 'tvi', agrEg), agrF(agrEg + 0x5c, 1)[0] == agrLimit))
+check('AGR EntityGroup Delete dtor', lambda: (agrPoke(agrEg, 0), SDTest.Call('cAIEntityGroup_Delete', 'tiii', agrEg, 0)[0] == agrEg,
+	agrI(agrEg) - 0x400000, agrPoke(agrEg, 0), SDTest.Call('cAIEntityGroup_dtor', 'tvi', agrEg), agrI(agrEg) - 0x400000))
 agrFree(agrEg)
 
 # ---- the points of the character group and the Nto1 copies ----
@@ -102,29 +102,29 @@ agrPoke(agrHd, agrHd)
 agrPoke(agrHd + 4, agrHd)
 agrPoke(agrHd + 8, 0x1234)
 agrPt = agrAlloc(0x1c)
-check('AGR point ctor', lambda: (agrPoke(agrPt + 8, 7), SDTest.Call(0x080770, 'tii', agrPt)[0] == agrPt,
+check('AGR point ctor', lambda: (agrPoke(agrPt + 8, 7), SDTest.Call('cAICGPoint_ctor', 'tii', agrPt)[0] == agrPt,
 	agrI(agrPt) == agrPt, agrI(agrPt + 4) == agrPt, agrI(agrPt + 8), agrI(agrPt + 0xc)))
 agrPoke(agrPt + 0xc, agrPt)
 def agrRing(a=0):
 	return (agrI(agrHd) == agrPt, agrI(agrHd + 4) == agrPt, agrI(agrPt) == agrHd, agrI(agrPt + 8), agrI(agrHd) == agrHd,
 		agrI(agrPt) == agrPt)
-check('AGR UnlinkOpt', lambda: (SDTest.Call(0x080c40, 'tvii', 0, 0), SDTest.Call(0x067450, 'tvii', agrHd, agrPt),
-	agrRing(), SDTest.Call(0x080c40, 'tvii', 0, agrPt), agrRing()))
-check('AGR point dtor', lambda: (SDTest.Call(0x067450, 'tvii', agrHd, agrPt), agrRing(), SDTest.Call(0x080850, 'tvi',
-	agrPt), agrRing(), SDTest.Call(0x080990, 'tiii', agrPt, 0)[0] == agrPt, agrRing()))
+check('AGR UnlinkOpt', lambda: (SDTest.Call('Nto1Node_UnlinkOpt', 'tvii', 0, 0), SDTest.Call('Nto1Head_Link', 'tvii', agrHd, agrPt),
+	agrRing(), SDTest.Call('Nto1Node_UnlinkOpt', 'tvii', 0, agrPt), agrRing()))
+check('AGR point dtor', lambda: (SDTest.Call('Nto1Head_Link', 'tvii', agrHd, agrPt), agrRing(), SDTest.Call('cAICGPoint_dtor', 'tvi',
+	agrPt), agrRing(), SDTest.Call('cAICGPoint_Delete', 'tiii', agrPt, 0)[0] == agrPt, agrRing()))
 agrPoke(agrPt + 0xc, 0)
-check('AGR point dtor head', lambda: (SDTest.Call(0x080850, 'tvi', agrPt), agrI(agrPt) == agrPt, agrI(agrPt + 8)))
+check('AGR point dtor head', lambda: (SDTest.Call('cAICGPoint_dtor', 'tvi', agrPt), agrI(agrPt) == agrPt, agrI(agrPt + 8)))
 agrFree(agrPt)
 agrFree(agrHd)
-agrArr = SDTest.Call(0x313642, 'ii', 4 + 3 * 0x1c)[0]
+agrArr = SDTest.Call('operator_new_array', 'ii', 4 + 3 * 0x1c)[0]
 agrPoke(agrArr, 3)
 for agrK in range(3):
-	SDTest.Call(0x080770, 'tii', agrArr + 4 + 0x1c * agrK)
+	SDTest.Call('cAICGPoint_ctor', 'tii', agrArr + 4 + 0x1c * agrK)
 	agrPoke(agrArr + 4 + 0x1c * agrK + 0xc, agrArr + 4 + 0x1c * agrK)
-check('AGR point Delete array', lambda: SDTest.Call(0x080990, 'tiii', agrArr + 4, 3)[0] == agrArr)
+check('AGR point Delete array', lambda: SDTest.Call('cAICGPoint_Delete', 'tiii', agrArr + 4, 3)[0] == agrArr)
 agrPt = agrNew(0x1c)
-SDTest.Call(0x080770, 'tii', agrPt)
-check('AGR point Delete one', lambda: SDTest.Call(0x080990, 'tiii', agrPt, 1)[0] == agrPt)
+SDTest.Call('cAICGPoint_ctor', 'tii', agrPt)
+check('AGR point Delete one', lambda: SDTest.Call('cAICGPoint_Delete', 'tiii', agrPt, 1)[0] == agrPt)
 
 # the dummy lists: two position nodes, a free list of one
 agrL = agrAlloc(0x18)
@@ -138,11 +138,11 @@ agrPoke(agrL, agrN1)
 agrPoke(agrL + 4, agrN2)
 agrPoke(agrL + 8, 2)
 agrPoke(agrL + 0x14, 1)
-check('AGR PosList_Clear', lambda: (SDTest.Call(0x080bb0, 'tvi', agrL), agrI(agrL), agrI(agrL + 4), agrI(agrL + 8),
+check('AGR PosList_Clear', lambda: (SDTest.Call('cAICGPosList_Clear', 'tvi', agrL), agrI(agrL), agrI(agrL + 4), agrI(agrL + 8),
 	agrI(agrL + 0xc) == agrN1, agrI(agrL + 0x10), agrI(agrL + 0x14)))
 agrZd = agrAlloc(0x98)
-SDTest.Call(0x3197d0, 'iiii', agrZd + 0x80, agrL, 0x18)
-check('AGR ZoneData dtor', lambda: (SDTest.Call(0x080810, 'tvi', agrZd), agrInts(agrZd, (0x80, 0x88, 0x8c, 0x90))))
+SDTest.Call('crt_memcpy', 'iiii', agrZd + 0x80, agrL, 0x18)
+check('AGR ZoneData dtor', lambda: (SDTest.Call('cAICGZoneData_dtor', 'tvi', agrZd), agrInts(agrZd, (0x80, 0x88, 0x8c, 0x90))))
 agrFree(agrZd)
 # zone nodes, the inner list of the second with a free node
 agrZ1 = agrNew(0xa0)
@@ -162,15 +162,15 @@ agrPoke(agrL + 8, 2)
 agrPoke(agrL + 0xc, 0)
 agrPoke(agrL + 0x10, 0)
 agrPoke(agrL + 0x14, 1)
-check('AGR ZoneList_Clear', lambda: (SDTest.Call(0x080a90, 'tvi', agrL), agrI(agrL), agrI(agrL + 4), agrI(agrL + 8),
+check('AGR ZoneList_Clear', lambda: (SDTest.Call('cAICGZoneList_Clear', 'tvi', agrL), agrI(agrL), agrI(agrL + 4), agrI(agrL + 8),
 	agrI(agrL + 0xc) == agrZ1, agrI(agrL + 0x10)))
-check('AGR ZoneList_FreePool', lambda: (SDTest.Call(0x080c90, 'tvi', agrL), agrInts(agrL, (0, 8, 0xc, 0x10))))
-check('AGR ZoneList dtor', lambda: (SDTest.Call(0x080800, 'tvi', agrL), agrInts(agrL, (0, 8, 0xc, 0x10))))
+check('AGR ZoneList_FreePool', lambda: (SDTest.Call('cAICGZoneList_FreePool', 'tvi', agrL), agrInts(agrL, (0, 8, 0xc, 0x10))))
+check('AGR ZoneList dtor', lambda: (SDTest.Call('cAICGZoneList_dtor', 'tvi', agrL), agrInts(agrL, (0, 8, 0xc, 0x10))))
 agrFree(agrL)
 
 # ---- the character group of the level (read only) and one of our own from the same dummies ----
-agrWorld = SDTest.Peek(0x467450, 'i')
-agrGroup = SDTest.Peek(0x4445b8, 'i')
+agrWorld = SDTest.Peek('g_pWorld', 'i')
+agrGroup = SDTest.Peek('g_CharGroup', 'i')
 def agrZones(g):
 	r = ()
 	n = agrI(g + 0x64)
@@ -188,20 +188,20 @@ def agrZones(g):
 	return r
 check('AGR group', lambda: (agrGroup != 0, agrGroup and agrI(agrGroup) - 0x400000))
 if agrGroup:
-	check('AGR group zones', lambda: (SDTest.Call(0x080d10, 'tii', agrGroup)[0] == agrI(agrGroup + 0x60),
-		SDTest.Call(0x0814a0, 'tii', agrGroup)[0], SDTest.Call(0x084740, 'tii', agrGroup)[0], agrZones(agrGroup)))
+	check('AGR group zones', lambda: (SDTest.Call('cAICharGroup_GetZones', 'tii', agrGroup)[0] == agrI(agrGroup + 0x60),
+		SDTest.Call('cAICharGroup_NumZones', 'tii', agrGroup)[0], SDTest.Call('cAIEntityGroup_Num', 'tii', agrGroup)[0], agrZones(agrGroup)))
 	agrG2 = agrNew(0x68)
-	check('AGR group ctor', lambda: (SDTest.Call(0x080790, 'tii', agrG2)[0] == agrG2, agrI(agrG2) - 0x400000,
+	check('AGR group ctor', lambda: (SDTest.Call('cAICharGroup_ctor', 'tii', agrG2)[0] == agrG2, agrI(agrG2) - 0x400000,
 		agrInts(agrG2, (0x54, 0x64)), agrF(agrG2 + 0x5c, 1)[0] == agrLimit, agrZones(agrG2) == agrZones(agrGroup),
 		agrZones(agrG2)))
-	check('AGR group Delete', lambda: SDTest.Call(0x080a60, 'tiii', agrG2, 1)[0] == agrG2)
+	check('AGR group Delete', lambda: SDTest.Call('cAICharGroup_Delete', 'tiii', agrG2, 1)[0] == agrG2)
 
 # ---- two WalkChars of our own ----
 agrP = (-38000.0, 63000.0, 41000.0)
 agrQ = agrAdd(agrP, (200.0, 0.0, 0.0))
 agrSrand(4711)
-agrW = SDTest.Call(0x208360, 'tiisfffs', agrWorld, 'SDAgrWalk', agrP[0], agrP[1], agrP[2], 'WalkChar')[0]
-agrW2 = SDTest.Call(0x208360, 'tiisfffs', agrWorld, 'SDAgrWalk2', agrQ[0], agrQ[1], agrQ[2], 'WalkChar')[0]
+agrW = SDTest.Call('cWorld_CreateEntity', 'tiisfffs', agrWorld, 'SDAgrWalk', agrP[0], agrP[1], agrP[2], 'WalkChar')[0]
+agrW2 = SDTest.Call('cWorld_CreateEntity', 'tiisfffs', agrWorld, 'SDAgrWalk2', agrQ[0], agrQ[1], agrQ[2], 'WalkChar')[0]
 check('AGR WalkChars', lambda: (agrW != 0, agrW2 != 0, agrW and agrI(agrW + 0x78) == 0, agrW and agrI(agrW + 0x4bc + 8)
 	== agrW, agrW2 and agrI(agrW2 + 0x254 + 8) == agrW2))
 agrOk = agrW and agrW2 and agrI(agrW + 0x4bc + 8) == agrW and agrI(agrW2 + 0x254 + 8) == agrW2
@@ -251,14 +251,14 @@ if agrOk:
 	agrCamName = SDTest.Peek(agrWorld + 0x54, '@s')
 	agrCamEnt = 0
 	if agrCamName:
-		agrSlot = SDTest.Call(0x065370, 'tiis', agrWorld + 4, agrCamName)[0]
-		agrNode = SDTest.Call(0x0652e0, 'tiisi', agrWorld + 4, agrCamName, agrSlot)[0]
+		agrSlot = SDTest.Call('HashTable_Slot@65370', 'tiis', agrWorld + 4, agrCamName)[0]
+		agrNode = SDTest.Call('PtrTable_Find@652e0', 'tiisi', agrWorld + 4, agrCamName, agrSlot)[0]
 		if agrNode:
 			agrCamEnt = agrI(agrNode)
-	check('AGR camera', lambda: (agrCamEnt != 0, SDTest.Call(0x203af0, 'tiif', agrWorld + 0x2f0, agrCam[1])[0],
-		SDTest.Call(0x203af0, 'tiif', agrWorld + 0x2f0, agrCam[1] + 30000.0)[0]))
+	check('AGR camera', lambda: (agrCamEnt != 0, SDTest.Call('Floor_Get', 'tiif', agrWorld + 0x2f0, agrCam[1])[0],
+		SDTest.Call('Floor_Get', 'tiif', agrWorld + 0x2f0, agrCam[1] + 30000.0)[0]))
 	if agrCamEnt:
-		agrLook = SDTest.Call(0x15e3b0, 'iFFF', (0.0, 0.0, 0.0), (0.0, 0.0, 1.0), agrF(agrCamEnt + 0x88, 3))[1]
+		agrLook = SDTest.Call('Vec3_Rotate', 'iFFF', (0.0, 0.0, 0.0), (0.0, 0.0, 1.0), agrF(agrCamEnt + 0x88, 3))[1]
 		agrLen = (agrLook[0] * agrLook[0] + agrLook[2] * agrLook[2]) ** 0.5
 		if agrLen < 0.001:
 			agrLook = (1.0, 0.0, 0.0)
@@ -274,11 +274,11 @@ if agrOk:
 		agrPts = ()
 		for agrZd in ((0, (1500.0, -1000.0, -3000.0, 800.0)), (1, (-500.0, 500.0))):
 			agrN = len(agrZd[1])
-			agrA = SDTest.Call(0x313642, 'ii', 4 + agrN * 0x1c)[0]
+			agrA = SDTest.Call('operator_new_array', 'ii', 4 + agrN * 0x1c)[0]
 			agrPoke(agrA, agrN)
 			for agrK in range(agrN):
 				agrPp = agrA + 4 + 0x1c * agrK
-				SDTest.Call(0x080770, 'tii', agrPp)
+				SDTest.Call('cAICGPoint_ctor', 'tii', agrPp)
 				agrPoke(agrPp + 0xc, agrPp)
 				agrSet(agrPp + 0x10, (agrCam[0] + agrLx * agrZd[1][agrK], agrCam[1] + 30000.0, agrCam[2] + agrLz *
 					agrZd[1][agrK]))
@@ -293,7 +293,7 @@ if agrOk:
 			return r
 		def agrFind(minD, maxD, flag, seed):
 			agrSrand(seed)
-			r = SDTest.Call(0x080ee0, 'tbiFiffi', agrFg, (0.0, 0.0, 0.0), agrW, minD, maxD, flag)
+			r = SDTest.Call('cAICharGroup_FindRepos', 'tbiFiffi', agrFg, (0.0, 0.0, 0.0), agrW, minD, maxD, flag)
 			return (r[0], r[0] and r[1], agrHeld())
 		check('AGR FindRepos', lambda: (agrFind(0.0, 1.0e6, 0, 77), agrFind(0.0, 1.0e6, 0, 78), agrFind(0.0, 1.0e6, 1, 79),
 			agrFind(0.0, 1.0e6, 1, 80), agrFind(1.0e5, 1.0e6, 1, 81), agrFind(0.0, 100.0, 1, 82),
@@ -303,26 +303,26 @@ if agrOk:
 		check('AGR FindRepos no zone', lambda: agrFind(0.0, 1.0e6, 0, 85))
 		agrPoke(agrFakes[0][1] + 4, agrStrs[0])
 		def agrGet(name, tgt):
-			r = SDTest.Call(0x080d20, 'tbiFsFi', agrFg, (1.0, 2.0, 3.0), name, (0.0, 0.0, 0.0), tgt)
+			r = SDTest.Call('cAICharGroup_GetReposPos', 'tbiFsFi', agrFg, (1.0, 2.0, 3.0), name, (0.0, 0.0, 0.0), tgt)
 			return (r[0], r[0] and r[2], agrHeld())
 		check('AGR GetReposPos', lambda: (agrGet('SDAgrOther', 0), agrGet('SDAgrOther', agrW2), agrGet('SDAgrOther',
 			agrW2), agrGet('SDAgrOther', agrW2), agrGet('SDAgrZone', 0), agrGet('SDAgrNo', agrW2)))
 		for agrPp in agrPts:
 			if agrI(agrPp + 8):
-				SDTest.Call(0x080c40, 'tvii', 0, agrPp)
+				SDTest.Call('Nto1Node_UnlinkOpt', 'tvii', 0, agrPp)
 		check('AGR repos released', lambda: (agrHeld(), agrI(agrW + 0x4bc) == agrW + 0x4bc))
 		for agrK in (0, 1):
-			SDTest.Call(0x080990, 'tiii', agrI(agrZs + 0x88 * agrK + 0x80), 3)
+			SDTest.Call('cAICGPoint_Delete', 'tiii', agrI(agrZs + 0x88 * agrK + 0x80), 3)
 		agrFree(agrZs)
 		agrFree(agrFg)
 
 	# ---- the AIs of the classes on SDAgrWalk, the target SDAgrWalk2 ----
 	agrArg = agrAlloc(8)
 	agrAIs = {}
-	for agrT in (('Desktop', 0x084310, 0x380), ('Gear', 0x084790, 0x390), ('Human', 0x084d50, 0x380),
-			('Mayor', 0x084df0, 0x380), ('Messenger', 0x084f80, 0x390), ('Nurse', 0x085b30, 0x384),
-			('Police', 0x085f20, 0x380), ('Sentinel', 0x086100, 0x380), ('Bishop', 0x0669c0, 0x398),
-			('BankDirector', 0x066120, 0x384), ('BankMaster', 0x066560, 0x384)):
+	for agrT in (('Desktop', sym('cAIDesktop_ctor'), 0x380), ('Gear', sym('cAIGear_ctor'), 0x390), ('Human', sym('cAIHuman_ctor'), 0x380),
+			('Mayor', sym('cAIMayor_ctor'), 0x380), ('Messenger', sym('cAIMessenger_ctor'), 0x390), ('Nurse', sym('cAINurse_ctor'), 0x384),
+			('Police', sym('cAIPolice_ctor'), 0x380), ('Sentinel', sym('cAISentinel_ctor'), 0x380), ('Bishop', sym('cAIBishop_ctor'), 0x398),
+			('BankDirector', sym('cAIBankDirector_ctor'), 0x384), ('BankMaster', sym('cAIBankMaster_ctor'), 0x384)):
 		agrSrand(900 + len(agrAIs))
 		agrM = agrNew(agrT[2])
 		agrAi = SDTest.Call(agrT[1], 'tiiii', agrM, agrW, agrArg)[0]
@@ -336,21 +336,21 @@ if agrOk:
 		check('AGR ctor %s' % agrT[0], lambda m=agrM, a=agrAi, s=agrOwn: (a == m, agrI(a) - 0x400000,
 			agrI(agrI(a + 0x19c)) - 0x400000, agrI(a + 0x198) == agrW, agrInts(a, (0x1a0, 0x1a4)), agrB(a + 0x35c),
 			agrB(a + 0x48), agrB(a + 0x83), agrI(a + 0x44) == a, agrI(agrI(a + 0x19c) + 0x44) == a, s))
-		SDTest.Call(0x067450, 'tvii', agrW2 + 0x254, agrAi + 0x38)
+		SDTest.Call('Nto1Head_Link', 'tvii', agrW2 + 0x254, agrAi + 0x38)
 	agrCtrl = agrW + 0x4ec
 	# the target link of an AI back to SDAgrWalk2 (a change of state gives it up)
 	def agrRelink(a):
 		if agrI(a + 0x40) != agrW2:
 			if agrI(a + 0x40):
-				SDTest.Call(0x06af70, 'tvi', a + 0x38)
-			SDTest.Call(0x067450, 'tvii', agrW2 + 0x254, a + 0x38)
+				SDTest.Call('Nto1Node_UnlinkChecked@6af70', 'tvi', a + 0x38)
+			SDTest.Call('Nto1Head_Link', 'tvii', agrW2 + 0x254, a + 0x38)
 	def agrAct(a=0):
 		return agrB(agrCtrl + 0x18)
 	def agrDists(a):
 		return agrF(a + 0x1b0, 4)
 	# the distances by state
-	for agrT in (('Gear', 0x084ca0), ('Human', 0x084dc0), ('Mayor', 0x084f30), ('Messenger', 0x0852b0),
-			('Nurse', 0x085d70), ('Police', 0x086060), ('Sentinel', 0x0862e0)):
+	for agrT in (('Gear', sym('cAIGear_SetDists')), ('Human', sym('cAIHuman_SetDists')), ('Mayor', sym('cAIMayor_SetDists')), ('Messenger', sym('cAIMessenger_SetDists')),
+			('Nurse', sym('cAINurse_SetDists')), ('Police', sym('cAIPolice_SetDists')), ('Sentinel', sym('cAISentinel_SetDists'))):
 		for agrS0 in (0, 2, 3, 6, 7):
 			agrA = agrAIs[agrT[0]]
 			agrPoke(agrA + 0x1a0, agrS0)
@@ -361,14 +361,14 @@ if agrOk:
 				agrDists(a)))
 		agrPoke(agrA + 0x1a0, 0)
 	# the shot parameters (the target without an AI), then the distances of state 2
-	for agrT in (('Gear', 0x084d00, (0x388, 0x38c)), ('Messenger', 0x0852f0, (0x380, 0x384, 0x388, 0x38c))):
+	for agrT in (('Gear', sym('cAIGear_SetShoot'), (0x388, 0x38c)), ('Messenger', sym('cAIMessenger_SetShoot'), (0x380, 0x384, 0x388, 0x38c))):
 		agrA = agrAIs[agrT[0]]
 		agrPoke(agrA + 0x1a0, 2)
 		check('AGR SetShoot %s' % agrT[0], lambda a=agrA, t=agrT: (SDTest.Call(t[1], 'tvi', a), agrI(a + t[2][0]),
 			agrF(a + t[2][1], len(t[2]) - 1), agrDists(a)))
 		agrPoke(agrA + 0x1a0, 0)
 	# the action checks: (actMin, actMax, direct, priority, walk flag)
-	for agrT in (('Mayor', 0x084e60), ('Police', 0x085f90), ('Sentinel', 0x086200)):
+	for agrT in (('Mayor', sym('cAIMayor_CheckActDist')), ('Police', sym('cAIPolice_CheckActDist')), ('Sentinel', sym('cAISentinel_CheckActDist'))):
 		agrA = agrAIs[agrT[0]]
 		agrC = agrI(agrA + 0x19c)
 		for agrV in ((100.0, 300.0, 1, 0x10, 1), (250.0, 300.0, 1, 0x10, 1), (100.0, 150.0, 1, 0x10, 1),
@@ -380,7 +380,7 @@ if agrOk:
 			agrPokeB(agrFakes[0][2] + 0x49, agrV[4])
 			agrPokeB(agrCtrl + 0x18, 7)
 			check('AGR CheckActDist %s %s' % (agrT[0], fmt(agrV)), lambda a=agrA, f=agrT[1]: (SDTest.Call(f, 'tvi', a),
-				agrAct(), SDTest.Call(0x069fa0, 'tbi', a)[0]))
+				agrAct(), SDTest.Call('cAIChar_GetDirect2', 'tbi', a)[0]))
 	# the nurse at a dazed target
 	agrA = agrAIs['Nurse']
 	agrPokeB(agrFakes[0][2] + 0x49, 1)
@@ -390,11 +390,11 @@ if agrOk:
 		agrAction(agrW2, agrV[0])
 		agrSet(agrA + 0x1b4, (agrV[1],))
 		agrPokeB(agrA + 0x380, agrV[2])
-		check('AGR CheckActDist Nurse %s' % fmt(agrV), lambda a=agrA: (SDTest.Call(0x085c40, 'tvi', a), agrAct(),
+		check('AGR CheckActDist Nurse %s' % fmt(agrV), lambda a=agrA: (SDTest.Call('cAINurse_CheckActDist', 'tvi', a), agrAct(),
 			agrB(a + 0x380)))
 	agrAction(agrW2, '')
-	check('AGR Nurse SetState', lambda a=agrA: (agrPokeB(a + 0x380, 0), SDTest.Call(0x085de0, 'bii', a, 0)[0],
-		agrInts(a, (0x1a0, 0x1a4)), agrB(a + 0x380), SDTest.Call(0x085e80, 'bii', a, 0)[0], agrInts(a, (0x1a0,
+	check('AGR Nurse SetState', lambda a=agrA: (agrPokeB(a + 0x380, 0), SDTest.Call('cAINurse_SetState', 'bii', a, 0)[0],
+		agrInts(a, (0x1a0, 0x1a4)), agrB(a + 0x380), SDTest.Call('cAINurse_SetStateIntern', 'bii', a, 0)[0], agrInts(a, (0x1a0,
 		0x1a4)), agrB(a + 0x380)))
 	# the shots of the gear and the messenger: (standTime, shootAng, shootFactor, priority, act before)
 	agrA = agrAIs['Gear']
@@ -410,7 +410,7 @@ if agrOk:
 		agrPokeB(agrCtrl + 0x18, agrV[4])
 		agrPoke(agrA + 0x380, 0)
 		agrSrand(31)
-		check('AGR CheckActDist Gear %s' % fmt(agrV), lambda a=agrA: (SDTest.Call(0x0849f0, 'tvi', a), agrAct(),
+		check('AGR CheckActDist Gear %s' % fmt(agrV), lambda a=agrA: (SDTest.Call('cAIGear_CheckActDist', 'tvi', a), agrAct(),
 			agrB(a + 0x384), agrI(a + 0x380) == agrI(agrW2 + 0x238), agrF(a + 0x358, 1)))
 	agrA = agrAIs['Messenger']
 	agrC = agrI(agrA + 0x19c)
@@ -425,7 +425,7 @@ if agrOk:
 		agrPokeB(agrFakes[0][2] + 0x49, agrV[4])
 		agrSet(agrA + 0x354, (agrV[5],))
 		agrSrand(37)
-		check('AGR CheckActDist Messenger %s' % fmt(agrV), lambda a=agrA: (SDTest.Call(0x085080, 'tvi', a), agrAct(),
+		check('AGR CheckActDist Messenger %s' % fmt(agrV), lambda a=agrA: (SDTest.Call('cAIMessenger_CheckActDist', 'tvi', a), agrAct(),
 			agrF(a + 0x354, 1)))
 	agrPoke(agrFakes[0][2] + 0x64, 0x10)
 	agrPokeB(agrFakes[0][2] + 0x49, 0)
@@ -437,7 +437,7 @@ if agrOk:
 		agrSet(agrCtrl + 0xc, (agrV[1], agrV[2]))
 		agrAction(agrW, agrV[3])
 		agrPokeB(agrCtrl + 0x18, 7)
-		check('AGR Desktop UpdateAction0 %s' % fmt(agrV), lambda a=agrA: (SDTest.Call(0x084380, 'tvi', a), agrAct()))
+		check('AGR Desktop UpdateAction0 %s' % fmt(agrV), lambda a=agrA: (SDTest.Call('cAIDesktop_UpdateAction0', 'tvi', a), agrAct()))
 	agrAction(agrW, '')
 	agrPoke(agrA + 0x1a0, 0)
 	agrSet(agrCtrl + 0xc, (0.0, 0.0))
@@ -446,73 +446,73 @@ if agrOk:
 	agrC = agrI(agrA + 0x19c)
 	agrHasColl = agrI(agrW + 0x3e8 + 0xc) != 0
 	check('AGR Gear UpdateAction free', lambda a=agrA, c=agrC: (agrPokeB(agrCtrl + 0x18, 0), agrPokeB(c + 0xd4, 0),
-		SDTest.Call(0x0848a0, 'tvi', a), agrAct(), agrPokeB(c + 0xd4, 1), SDTest.Call(0x0848a0, 'tvi', a), agrAct()))
+		SDTest.Call('cAIGear_UpdateAction', 'tvi', a), agrAct(), agrPokeB(c + 0xd4, 1), SDTest.Call('cAIGear_UpdateAction', 'tvi', a), agrAct()))
 	if agrHasColl:
-		SDTest.Call(0x067450, 'tvii', agrW2 + 0x254, agrW + 0x3e8)
+		SDTest.Call('Nto1Head_Link', 'tvii', agrW2 + 0x254, agrW + 0x3e8)
 		agrPoke(agrW2 + 0x78, agrAIs['Human'])
 		for agrV in ((0, 0), (0, 1), (1, 1)):
 			agrPoke(agrA + 0x1a0, agrV[0])
 			agrPokeB(agrAIs['Human'] + 0x84, agrV[1])
 			agrPokeB(agrCtrl + 0x18, 0)
-			check('AGR Gear UpdateAction %s' % fmt(agrV), lambda a=agrA: (SDTest.Call(0x0848a0, 'tvi', a), agrAct()))
+			check('AGR Gear UpdateAction %s' % fmt(agrV), lambda a=agrA: (SDTest.Call('cAIGear_UpdateAction', 'tvi', a), agrAct()))
 		agrPokeB(agrAIs['Human'] + 0x84, 0)
 		agrPoke(agrW2 + 0x78, 0)
 		agrPoke(agrA + 0x1a0, 0)
-		SDTest.Call(0x06af70, 'tvi', agrW + 0x3e8)
+		SDTest.Call('Nto1Node_UnlinkChecked@6af70', 'tvi', agrW + 0x3e8)
 	agrPokeB(agrC + 0xd4, 0)
-	check('AGR Gear IsBlocked', lambda a=agrA, c=agrC: (agrPokeB(a + 0x384, 1), SDTest.Call(0x084c90, 'tbi', a)[0],
-		SDTest.Call(0x083960, 'tbi', c)[0], agrPokeB(a + 0x384, 0), SDTest.Call(0x083960, 'tbi', c)[0]))
+	check('AGR Gear IsBlocked', lambda a=agrA, c=agrC: (agrPokeB(a + 0x384, 1), SDTest.Call('cAIGear_IsBlocked', 'tbi', a)[0],
+		SDTest.Call('cAIControlGear_Vf89', 'tbi', c)[0], agrPokeB(a + 0x384, 0), SDTest.Call('cAIControlGear_Vf89', 'tbi', c)[0]))
 
 	# ---- cAIMove on the AI of the gear ----
-	check('AGR AIMove getters', lambda a=agrA: (SDTest.Call(0x085710, 'tbi', a)[0], SDTest.Call(0x085720, 'tii', a)[0]
-		== agrW2, SDTest.Call(0x085730, 'tii', a)[0] == a + 0x38, SDTest.Call(0x0859f0, 'tbi', a)[0],
-		SDTest.Call(0x085a40, 'tbi', a)[0], SDTest.Call(0x085a50, 'tbi', a)[0], SDTest.Call(0x085a60, 'tbii', a, 3)[0],
-		SDTest.Call(0x085a00, 'tbii', a, 0)[0], SDTest.Call(0x085a00, 'tbii', a, agrW2)[0] == agrB(agrW2 + 0x4c)))
+	check('AGR AIMove getters', lambda a=agrA: (SDTest.Call('cAIMove_CanJump', 'tbi', a)[0], SDTest.Call('cAIMove_GetTargetEnt', 'tii', a)[0]
+		== agrW2, SDTest.Call('cAIMove_GetTarget', 'tii', a)[0] == a + 0x38, SDTest.Call('cAIMove_GetStopped', 'tbi', a)[0],
+		SDTest.Call('cAIMove_GetArrived', 'tbi', a)[0], SDTest.Call('cAIMove_IsPaused', 'tbi', a)[0], SDTest.Call('cAIMove_Event', 'tbii', a, 3)[0],
+		SDTest.Call('cAIMove_CanTarget', 'tbii', a, 0)[0], SDTest.Call('cAIMove_CanTarget', 'tbii', a, agrW2)[0] == agrB(agrW2 + 0x4c)))
 	def agrVarS(a, name, set):
-		r = SDTest.Call(0x085a70, 'tbispi', a, name, 0, set)
+		r = SDTest.Call('cAIMove_VarS', 'tbispi', a, name, 0, set)
 		return (r[0], r[0] and SDTest.Peek(r[1], '@s'))
 	check('AGR AIMove Var', lambda a=agrA: (agrVarS(a, 'Target', 0), agrVarS(a, 'Target', 1), agrVarS(a, '', 0),
-		agrVarS(a, 'Targets', 0), agrVarS(a, 'Ta', 0), SDTest.Call(0x0859d0, 'tbispi', a, '', 3, 0)[0],
-		SDTest.Call(0x0859d0, 'tbispi', a, 'SDAgrX', 3, 0)[0], SDTest.Call(0x0856f0, 'tbisDi', a, '', 1.5, 0)[0],
-		SDTest.Call(0x0856f0, 'tbisDi', a, 'SDAgrX', 1.5, 0)[0], SDTest.Call(0x085b10, 'tbisiiii', a, '', 0, 0, 0, 0)[0]))
-	check('AGR AIMove CheckStopped', lambda a=agrA: (agrSet(a + 0x8c, (5.0,)), SDTest.Call(0x0855d0, 'tvif', a, 0.5),
+		agrVarS(a, 'Targets', 0), agrVarS(a, 'Ta', 0), SDTest.Call('cAIMove_VarI', 'tbispi', a, '', 3, 0)[0],
+		SDTest.Call('cAIMove_VarI', 'tbispi', a, 'SDAgrX', 3, 0)[0], SDTest.Call('cAIMove_VarF', 'tbisDi', a, '', 1.5, 0)[0],
+		SDTest.Call('cAIMove_VarF', 'tbisDi', a, 'SDAgrX', 1.5, 0)[0], SDTest.Call('cAIMove_VarV', 'tbisiiii', a, '', 0, 0, 0, 0)[0]))
+	check('AGR AIMove CheckStopped', lambda a=agrA: (agrSet(a + 0x8c, (5.0,)), SDTest.Call('cAIMove_CheckStopped', 'tvif', a, 0.5),
 		agrF(a + 0x8c, 1), agrB(a + 0x82)))
 	agrIs = agrI(agrA + 0x1a4)
 	agrPoke(agrA + 0x1a4, 10)
 	check('AGR AIMove CheckStopped moving', lambda a=agrA: (agrSet(a + 0x8c, (2.0,)), agrPokeB(a + 0x82, 1),
-		SDTest.Call(0x0855d0, 'tvif', a, 0.5), agrF(a + 0x8c, 1), agrB(a + 0x82)))
+		SDTest.Call('cAIMove_CheckStopped', 'tvif', a, 0.5), agrF(a + 0x8c, 1), agrB(a + 0x82)))
 	agrPoke(agrA + 0x1a4, agrIs)
-	check('AGR AIMove Update', lambda a=agrA: (SDTest.Call(0x0856a0, 'tvif', a, 0.5), agrF(a + 0xc, 1),
-		SDTest.Call(0x0856d0, 'tvif', a, 0.25), agrF(a + 0xc, 1)))
+	check('AGR AIMove Update', lambda a=agrA: (SDTest.Call('cAIMove_Update', 'tvif', a, 0.5), agrF(a + 0xc, 1),
+		SDTest.Call('cAIMove_UpdateOff', 'tvif', a, 0.25), agrF(a + 0xc, 1)))
 	agrPokeB(agrA + 0x48, 1)
 	for agrV in ((50.0, 61), (0.5, 62), (0.0, 63)):
 		agrSrand(agrV[1])
-		check('AGR AIMove RandomPoint %s' % fmt(agrV), lambda a=agrA, r=agrV[0]: SDTest.Call(0x085740, 'tiiFFf', a,
+		check('AGR AIMove RandomPoint %s' % fmt(agrV), lambda a=agrA, r=agrV[0]: SDTest.Call('cAIMove_RandomPoint', 'tiiFFf', a,
 			(0.0, 0.0, 0.0), agrAdd(agrP, (0.0, 500.0, 0.0)), r)[1])
 	agrPokeB(agrA + 0x48, 0)
 	agrMv = agrAlloc(0x90)
-	check('AGR AIMove ctorDefault dtor', lambda: (SDTest.Call(0x085480, 'tii', agrMv)[0] == agrMv, agrI(agrMv) - 0x400000,
-		agrI(agrMv + 0x38) == agrMv + 0x38, agrInts(agrMv, (0x40, 0x44)), SDTest.Call(0x0854c0, 'tvi', agrMv),
+	check('AGR AIMove ctorDefault dtor', lambda: (SDTest.Call('cAIMove_ctorDefault', 'tii', agrMv)[0] == agrMv, agrI(agrMv) - 0x400000,
+		agrI(agrMv + 0x38) == agrMv + 0x38, agrInts(agrMv, (0x40, 0x44)), SDTest.Call('cAIMove_dtor', 'tvi', agrMv),
 		agrI(agrMv) - 0x400000, agrI(agrMv + 0x38) == agrMv + 0x38))
 	agrFree(agrMv)
 
 	# ---- the move controls ----
-	for agrT in (('Gear', 0x0839e0), ('Messenger', 0x083bb0)):
+	for agrT in (('Gear', sym('cAIControlGear_SetTurnSpeed')), ('Messenger', sym('cAIControlMessenger_SetTurnSpeed'))):
 		agrC = agrI(agrAIs[agrT[0]] + 0x19c)
 		for agrV in (0.3, 0.55, 0.56, 0.8, 1.0):
 			check('AGR SetTurnSpeed %s %s' % (agrT[0], fmt(agrV)), lambda c=agrC, f=agrT[1], v=agrV: (SDTest.Call(f,
 				'tvif', c, v), agrF(c + 0x8c, 2), agrF(c + 0x204, 2)))
 	agrC = agrI(agrAIs['Messenger'] + 0x19c)
-	check('AGR Messenger UpdateFollowMode', lambda c=agrC: (agrI(c + 0x120), SDTest.Call(0x083ae0, 'tbif', c, 0.5)[0]))
+	check('AGR Messenger UpdateFollowMode', lambda c=agrC: (agrI(c + 0x120), SDTest.Call('cAIControlMessenger_UpdateFollowMode', 'tbif', c, 0.5)[0]))
 	agrC = agrI(agrAIs['Gear'] + 0x19c)
 	agrAction(agrW, 'PostFusion')
-	for agrF0 in (0x083090, 0x083100, 0x083170):
+	for agrF0 in (sym('cAIControlGear_TurnFollow'), sym('cAIControlGear_Turn'), sym('cAIControlGear_DirTurn')):
 		agrSet(agrCtrl, (1.0, 2.0))
 		check('AGR Gear turn %x' % agrF0, lambda c=agrC, f=agrF0: (SDTest.Call(f, 'tvi', c), agrF(agrCtrl, 2)))
 	agrAction(agrW, '')
 	# the walk of the bank director and of the nurse: (walkDir, far, near, orbitSide)
 	agrPokeB(agrCtrl + 0x18, 0)
-	for agrT in (('BankDirector', 0x081b60), ('BankMaster', 0x082340), ('Nurse', 0x083c80)):
+	for agrT in (('BankDirector', sym('cAIControlBank_Walk')), ('BankMaster', sym('cAIControlBank_Walk@82340')), ('Nurse', sym('cAIControlNurse_Walk'))):
 		agrA = agrAIs[agrT[0]]
 		agrC = agrI(agrA + 0x19c)
 		agrRelink(agrA)
@@ -534,7 +534,7 @@ if agrOk:
 		agrPoke(agrC + 0x94, 0)
 		agrPoke(agrC + 0x1b4, 0)
 	# the strafe parameters by the target
-	for agrT in (('Bishop', 0x082e90), ('Gear', 0x083970)):
+	for agrT in (('Bishop', sym('cAIControlBishop_SetParams')), ('Gear', sym('cAIControlGear_SetParams'))):
 		agrA = agrAIs[agrT[0]]
 		agrC = agrI(agrA + 0x19c)
 		check('AGR SetParams %s' % agrT[0], lambda a=agrA, c=agrC, f=agrT[1]: (agrSet(c + 0x37c, (1.0, 2.0)),
@@ -542,7 +542,7 @@ if agrOk:
 			SDTest.Call(f, 'tvi', c), agrF(c + 0x37c, 2)))
 	# the strafe of the bishop, the gear and the sentinel: (target class, target action, own action, walkDir, time,
 	# strafeAng, side, other, lifeMark above the life)
-	for agrT in (('Bishop', 0x0827a0, 0x082e70), ('Gear', 0x083220, 0x083940), ('Sentinel', 0x083eb0, 0x0842f0)):
+	for agrT in (('Bishop', sym('cAIControlBishop_Strafe'), sym('cAIControlShoot_Walk')), ('Gear', sym('cAIControlGear_Strafe'), sym('cAIControlShoot_Walk@83940')), ('Sentinel', sym('cAIControlSentinel_Strafe'), sym('cAIControlSentinel_Walk'))):
 		agrA = agrAIs[agrT[0]]
 		agrC = agrI(agrA + 0x19c)
 		agrRelink(agrA)
@@ -592,11 +592,11 @@ if agrOk:
 
 	# ---- the end: the AIs deleted (one by its destructor), the fakes freed, the characters deleted ----
 	agrSet(agrCtrl, (0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
-	check('AGR Desktop dtor', lambda a=agrAIs['Desktop']: (SDTest.Call(0x084340, 'tvi', a), agrI(a) - 0x400000,
-		SDTest.Call(0x313634, 'vii', a, 0x380)))
-	for agrT in (('Gear', 0x084870), ('Human', 0x084d90), ('Mayor', 0x084e30), ('Messenger', 0x085050),
-			('Nurse', 0x085c10), ('Police', 0x085f60), ('Sentinel', 0x0861d0), ('Bishop', 0x066aa0),
-			('BankDirector', 0x0661f0), ('BankMaster', 0x066630)):
+	check('AGR Desktop dtor', lambda a=agrAIs['Desktop']: (SDTest.Call('cAIDesktop_dtor', 'tvi', a), agrI(a) - 0x400000,
+		SDTest.Call('operator_delete_sized', 'vii', a, 0x380)))
+	for agrT in (('Gear', sym('cAIGear_Delete')), ('Human', sym('cAIHuman_Delete')), ('Mayor', sym('cAIMayor_Delete')), ('Messenger', sym('cAIMessenger_Delete')),
+			('Nurse', sym('cAINurse_Delete')), ('Police', sym('cAIPolice_Delete')), ('Sentinel', sym('cAISentinel_Delete')), ('Bishop', sym('cAIBishop_Delete')),
+			('BankDirector', sym('cAIBankDirector_Delete')), ('BankMaster', sym('cAIBankMaster_Delete'))):
 		check('AGR Delete %s' % agrT[0], lambda a=agrAIs[agrT[0]], f=agrT[1]: SDTest.Call(f, 'tiii', a, 1)[0] == a)
 	check('AGR target head', lambda: agrI(agrW2 + 0x254) == agrW2 + 0x254)
 	if agrGroup:
@@ -610,7 +610,7 @@ if agrOk:
 	agrFree(agrActName)
 	agrFree(agrActName2)
 	for agrE in (agrW, agrW2):
-		check('AGR delete entity', lambda e=agrE: (SDTest.Call(0x208810, 'tbis', agrWorld + 4, SDTest.Peek(e + 4,
+		check('AGR delete entity', lambda e=agrE: (SDTest.Call('PtrTable_Delete@208810', 'tbis', agrWorld + 4, SDTest.Peek(e + 4,
 			'@p')), SDTest.Call(agrI(agrI(e) + 0xc) - 0x400000, 'tiii', e, 1)[0] == e)[1])
 for agrP2 in agrStrs:
 	agrFree(agrP2)

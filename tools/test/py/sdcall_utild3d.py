@@ -10,29 +10,29 @@ def udlog(fn):
 
 for c in ((0.0, 0.0, 0.0, 0.0), (1.0, 0.5, 0.25, 1.0), (0.2, 0.4, 0.6, 0.8), (-0.5, 2.0, 1.002, 0.998),
 	(0.501 / 255, 1.5 / 255, 2.5 / 255, 254.5 / 255), (-0.0, 300.0, -300.0, 0.5)):
-	check('Color_FromFloat' + fmt(c), lambda c=c: SDTest.Call(0x276e90, 'iF', c)[0])
+	check('Color_FromFloat' + fmt(c), lambda c=c: SDTest.Call('Color_FromFloat', 'iF', c)[0])
 for k in (0, 0xa1000001, 0xa1000002, 0xa2000004, 0xa3000008, 0xa4000010, 0xa5000020, 0xa6000040, 0xa6000080,
 	0xa7000100, 0xa1000003, 5, -1):
-	check('Obj3D_ClaseName' + fmt((k,)), lambda k=k: SDTest.Call(0x2782c0, 'si', k)[0])
+	check('Obj3D_ClaseName' + fmt((k,)), lambda k=k: SDTest.Call('Obj3D_ClaseName', 'si', k)[0])
 
 udm = (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 10.0, 20.0, 30.0, 1.0)
 uda = (0.0, 1.0, 2.0)
 udb = (3.0, -4.0, 5.5)
 udz = (-0.0, 0.0, -0.0)
-check('Debug_DrawLine', lambda: udlog(lambda: SDTest.Call(0x278220, 'vFFi', uda, udb, 0xff00ff)))
-check('Debug_DrawLineM', lambda: udlog(lambda: SDTest.Call(0x278200, 'vFFFi', udm, uda, udb, 0x123456)))
-check('Debug_DrawBox', lambda: udlog(lambda: SDTest.Call(0x2772b0, 'vFFi', (-1.0, -2.0, -3.0), (1.0, 2.0, 3.0), 0xff)))
-check('Debug_DrawBoxM', lambda: udlog(lambda: SDTest.Call(0x276f90, 'vFFFi', udm, udz, udb, 0xff0000)))
-check('Debug_DrawTri', lambda: udlog(lambda: SDTest.Call(0x278280, 'vFFFi', uda, udb, udz, 0x8080)))
-check('Debug_DrawTriM', lambda: udlog(lambda: SDTest.Call(0x278240, 'vFFFFi', udm, uda, udb, udz, 0x8080)))
+check('Debug_DrawLine', lambda: udlog(lambda: SDTest.Call('Debug_DrawLine', 'vFFi', uda, udb, 0xff00ff)))
+check('Debug_DrawLineM', lambda: udlog(lambda: SDTest.Call('Debug_DrawLineM', 'vFFFi', udm, uda, udb, 0x123456)))
+check('Debug_DrawBox', lambda: udlog(lambda: SDTest.Call('Debug_DrawBox', 'vFFi', (-1.0, -2.0, -3.0), (1.0, 2.0, 3.0), 0xff)))
+check('Debug_DrawBoxM', lambda: udlog(lambda: SDTest.Call('Debug_DrawBoxM', 'vFFFi', udm, udz, udb, 0xff0000)))
+check('Debug_DrawTri', lambda: udlog(lambda: SDTest.Call('Debug_DrawTri', 'vFFFi', uda, udb, udz, 0x8080)))
+check('Debug_DrawTriM', lambda: udlog(lambda: SDTest.Call('Debug_DrawTriM', 'vFFFFi', udm, uda, udb, udz, 0x8080)))
 for p, s in ((uda, 4.0), (udz, 1.5), (udb, -2.0)):
-	check('Debug_DrawAxes' + fmt((p, s)), lambda p=p, s=s: udlog(lambda p=p, s=s: SDTest.Call(0x277850, 'vFFf', udm, p, s)))
-	check('Debug_DrawPointM' + fmt((p, s)), lambda p=p, s=s: udlog(lambda p=p, s=s: SDTest.Call(0x2779a0, 'vFFfi', udm,
+	check('Debug_DrawAxes' + fmt((p, s)), lambda p=p, s=s: udlog(lambda p=p, s=s: SDTest.Call('Debug_DrawAxes', 'vFFf', udm, p, s)))
+	check('Debug_DrawPointM' + fmt((p, s)), lambda p=p, s=s: udlog(lambda p=p, s=s: SDTest.Call('Debug_DrawPointM', 'vFFfi', udm,
 		p, s, 0xabcdef)))
-	check('Debug_DrawPoint' + fmt((p, s)), lambda p=p, s=s: udlog(lambda p=p, s=s: SDTest.Call(0x277af0, 'vFfi', p, s, 7)))
+	check('Debug_DrawPoint' + fmt((p, s)), lambda p=p, s=s: udlog(lambda p=p, s=s: SDTest.Call('Debug_DrawPoint', 'vFfi', p, s, 7)))
 for l, a in ((5.0, 0.7), (1.0, 0.0), (-3.0, 3.1), (100.0, 1.5)):
-	check('Debug_DrawConeM' + fmt((l, a)), lambda l=l, a=a: udlog(lambda l=l, a=a: SDTest.Call(0x2775d0, 'vFff', udm, l, a)))
+	check('Debug_DrawConeM' + fmt((l, a)), lambda l=l, a=a: udlog(lambda l=l, a=a: SDTest.Call('Debug_DrawConeM', 'vFff', udm, l, a)))
 for r, v, h in ((2.0, 8, -1), (1.0, 6, 5), (0.5, 4, 4), (3.0, 3, 2), (1.0, 2, 7), (0.0, 4, 4), (-1.0, 4, 4)):
-	check('Debug_DrawSphereM' + fmt((r, v, h)), lambda r=r, v=v, h=h: udlog(lambda r=r, v=v, h=h: SDTest.Call(0x277c40,
+	check('Debug_DrawSphereM' + fmt((r, v, h)), lambda r=r, v=v, h=h: udlog(lambda r=r, v=v, h=h: SDTest.Call('Debug_DrawSphereM',
 		'vFFfiii', udm, udb, r, 0x404040, v, h)))
-check('Debug_DrawSphere', lambda: udlog(lambda: SDTest.Call(0x2781d0, 'vFfiii', uda, 1.25, 0xffffff, 5, -1)))
+check('Debug_DrawSphere', lambda: udlog(lambda: SDTest.Call('Debug_DrawSphere', 'vFfiii', uda, 1.25, 0xffffff, 5, -1)))

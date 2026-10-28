@@ -13,40 +13,40 @@ def fxsi(a):
 def fxsb(a):
 	return SDTest.Peek(a, '@b')
 def fxsz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def fxsfree(p):
-	SDTest.Call(0x133550, 'ii', p)
+	SDTest.Call('Mem_Free', 'ii', p)
 def fxsfl(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def fxsset(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 def fxsints(a, offs):
 	return map(lambda o, a=a: SDTest.Peek(a + o, '@i'), offs)
 def fxsflt(a, offs):
 	return map(lambda o, a=a: fxsfl(a + o, 1)[0], offs)
 def fxspoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
-fxsworld = SDTest.Peek(0x467450, 'i')
+fxsworld = SDTest.Peek('g_pWorld', 'i')
 fxsdelta = fxsi(fxsworld + 0x2d4)
 fxsset(fxsworld + 0x2d4, (0.01,))
-fxsplayer = SDTest.Call(0x0c1430, 'tiii', fxsworld, 0)[0]
+fxsplayer = SDTest.Call('cWorld_GetUsrEntity', 'tiii', fxsworld, 0)[0]
 # the model of an entity through its vtable (slot 0x98)
 def fxsmodel(e):
 	return SDTest.Call(fxsi(fxsi(e) + 0x98) - 0x400000, 'tii', e)[0]
 def fxspos(m):
-	return (SDTest.Call(0x20fa30, 'tiiF', m, (0.0, 0.0, 0.0))[1], SDTest.Call(0x210830, 'tiiF', m, (0.0, 0.0, 0.0))[1])
+	return (SDTest.Call('CGameModel_GetPos', 'tiiF', m, (0.0, 0.0, 0.0))[1], SDTest.Call('CGameModel_GetRot', 'tiiF', m, (0.0, 0.0, 0.0))[1])
 fxsplayermodel = fxsmodel(fxsplayer)
 
 # name, constructor, size, SetEntity, the offset of the entity, Update, Reset (0 none)
 fxsclasses = (
-	('BeatPickus', 0x1de230, 0x240, 0x1e9ac0, 0xc, 0x1dec90, 0x1e9840),
-	('BillArrives_A', 0x1de2f0, 0xec, 0x1e9b60, 0xc, 0x1e0e50, 0x1e9880),
-	('Bishops', 0x1de390, 0x1b8, 0x1e9c00, 0x4, 0x1e3050, 0),
-	('Decontamination', 0x1de450, 0x11ec, 0x1e9ca0, 0xb4, 0x1e3dc0, 0),
-	('EnterMatrix', 0x1de500, 0x798, 0x1e9d40, 0xc, 0x1e4b90, 0x1e99c0),
-	('HumanCD', 0x1de5a0, 0x184, 0x1e9de0, 0xc, 0x1e73e0, 0),
-	('TheEndB', 0x1de630, 0xcc, 0x1e9ec0, 0xc, 0x1e7dc0, 0x1e9a70),
-	('Yakuzzi', 0x1de6c0, 0xd4, 0x1e9f60, 0xc, 0x1e8280, 0x1e9a90))
+	('BeatPickus', sym('cObjElementFXSceneBeatPickus_ctor'), 0x240, sym('cObjElementFXSceneBeatPickus_SetEntity'), 0xc, sym('cObjElementFXSceneBeatPickus_Update'), sym('cObjElementFXSceneBeatPickus_Reset')),
+	('BillArrives_A', sym('cObjElementFXSceneBillArrives_A_ctor'), 0xec, sym('cObjElementFXSceneBillArrives_A_SetEntity'), 0xc, sym('cObjElementFXSceneBillArrives_A_Update'), sym('cObjElementFXSceneBillArrives_A_Reset')),
+	('Bishops', sym('cObjElementFXSceneBishops_ctor'), 0x1b8, sym('cObjElementFXSceneBishops_SetEntity'), 0x4, sym('cObjElementFXSceneBishops_Update'), 0),
+	('Decontamination', sym('cObjElementFXSceneDecontamination_ctor'), 0x11ec, sym('cObjElementFXSceneDecontamination_SetEntity'), 0xb4, sym('cObjElementFXSceneDecontamination_Update'), 0),
+	('EnterMatrix', sym('cObjElementFXSceneEnterMatrix_ctor'), 0x798, sym('cObjElementFXSceneEnterMatrix_SetEntity'), 0xc, sym('cObjElementFXSceneEnterMatrix_Update'), sym('cObjElementFXSceneEnterMatrix_Reset')),
+	('HumanCD', sym('cObjElementFXSceneHumanCD_ctor'), 0x184, sym('cObjElementFXSceneHumanCD_SetEntity'), 0xc, sym('cObjElementFXSceneHumanCD_Update'), 0),
+	('TheEndB', sym('cObjElementFXSceneTheEndB_ctor'), 0xcc, sym('cObjElementFXSceneTheEndB_SetEntity'), 0xc, sym('cObjElementFXSceneTheEndB_Update'), sym('cObjElementFXSceneTheEndB_Reset')),
+	('Yakuzzi', sym('cObjElementFXSceneYakuzzi_ctor'), 0xd4, sym('cObjElementFXSceneYakuzzi_SetEntity'), 0xc, sym('cObjElementFXSceneYakuzzi_Update'), sym('cObjElementFXSceneYakuzzi_Reset')))
 fxsel = {}
 for fxsc in fxsclasses:
 	fxsp = fxsz(fxsc[2])
@@ -56,10 +56,10 @@ for fxsc in fxsclasses:
 # FXScene_Create with names of no scene: no debris, nothing changes
 for fxsn in ('Foo.m3d', '', 'Bishops.m3dx', 'TheEndB.M3D', 'Decontamination', 'BillArrives_B.m3d', 'Yakuzzi.m3',
 		'HumanCD.m3d ', 'EnterMatrix.m3d.bak', 'Be'):
-	check('FXScene_Create(%s)' % fxsn, lambda n=fxsn: SDTest.Call(0x1e8880, 'vis', fxsplayer, n))
+	check('FXScene_Create(%s)' % fxsn, lambda n=fxsn: SDTest.Call('FXScene_Create', 'vis', fxsplayer, n))
 
 # the main mental controller effect (HumanCD writes its scale 0x4270 and last 0x4274)
-fxsmain = SDTest.Peek(0x46719c, 'i')
+fxsmain = SDTest.Peek('g_MentalMainFX', 'i')
 check('MentalControllerMainFX there', lambda: fxsmain != 0)
 if fxsmain:
 	fxsmainsaved = fxsints(fxsmain, (0x4270, 0x4274))
@@ -75,7 +75,7 @@ for fxsc in fxsclasses:
 		check('HumanCD_SetEntity main', lambda: (fxsi(fxsmain + 0x4274), fxsfl(fxsmain + 0x4270, 1)))
 
 # the Resets: the floats set to 1.0 first, the entity pointers to the player
-SDTest.Call(0x323c50, 'vi', 4711)
+SDTest.Call('crt_srand', 'vi', 4711)
 fxsresets = (
 	('BeatPickus', (4, 8, 0xc, 0xcc, 0x180, 0x234, 0x238)),
 	('BillArrives_A', (4, 8, 0xc, 0x10, 0x18, 0xcc)),
@@ -94,11 +94,11 @@ for fxsn, fxsoffs in fxsresets:
 	check('%s_Reset' % fxsn, lambda p=fxsp, r=fxsrva, o=fxsoffs: (SDTest.Call(r, 'tvii', p, 0), fxsints(p, o)))
 # EnterMatrix: the trails cleared, 0x18c to -1 and new random waits at 0x1cc
 check('EnterMatrix_Reset arrays', lambda p=fxsel['EnterMatrix']: (fxsfl(p + 0x18c, 16), fxsfl(p + 0x1cc, 16)))
-check('rand after Reset', lambda: SDTest.Call(0x323c2f, 'i')[0])
+check('rand after Reset', lambda: SDTest.Call('crt_rand', 'i')[0])
 
 # a debris of a loaded model for the Updates
 fxsd = fxsz(0x60)
-check('fxs debris model', lambda: SDTest.Call(0x20eb10, 'tiis', fxsd,
+check('fxs debris model', lambda: SDTest.Call('CGameModel_ctor', 'tiis', fxsd,
 	'Models/Vehicles/Characters/P_Dtritus/P_Dtritus.M3D')[0] == fxsd)
 def fxslife(v):
 	fxsset(fxsd + 0x4c, (v,))
@@ -127,7 +127,7 @@ def fxsupd(name, offs, fl):
 		fxsset(p + o, (v,))
 	fxslife(5.0)
 	return (SDTest.Call(c[5], 'tviif', p, fxsd, 0.1), fxsflt(p, offs), fxsfollow(), fxsfl(fxsd + 0x4c, 1))
-SDTest.Call(0x323c50, 'vi', 4711)
+SDTest.Call('crt_srand', 'vi', 4711)
 # BeatPickus: t, tPrev, dust, debris, sparks, hit
 fxsoffs = (4, 8, 0xcc, 0x180, 0x234, 0x238)
 for fxsfl0 in (((4, 100.0), (8, 1.0)), ((4, 20.0), (8, 1.0), (0xcc, 0.0)), ((4, 40.0), (8, 1.0), (0xcc, 0.0),
@@ -184,16 +184,16 @@ if Scrap.GetEntity('EnterMatrixMatrix') == None:
 			fxsfl(fxsem + 0x18c, 32), fxsflare()))
 # Yakuzzi: throttled (no particles)
 check('Yakuzzi_Update', lambda: fxsupd('Yakuzzi', (4, 8, 0xc0), ((4, 5.0), (8, 1.0), (0xc0, 0.0))))
-check('rand after Update', lambda: SDTest.Call(0x323c2f, 'i')[0])
+check('rand after Update', lambda: SDTest.Call('crt_rand', 'i')[0])
 
-SDTest.Call(0x20ec10, 'tvi', fxsd)
+SDTest.Call('CGameModel_Reset', 'tvi', fxsd)
 fxsfree(fxsd)
 fxsfree(fxscap)
 SDTest.Poke(fxsworld + 0x2d4 - 0x400000, fxsdelta)
 # the elements go by their deleting destructors
-fxsdeletes = (('BeatPickus', 0x1de970), ('BillArrives_A', 0x1de9c0), ('Bishops', 0x1dea00),
-	('Decontamination', 0x1dea90), ('EnterMatrix', 0x1deb10), ('HumanCD', 0x1debb0), ('TheEndB', 0x1dec00),
-	('Yakuzzi', 0x1dec50))
+fxsdeletes = (('BeatPickus', sym('cObjElementFXSceneBeatPickus_Delete')), ('BillArrives_A', sym('cObjElementFXSceneBillArrives_A_Delete')), ('Bishops', sym('cObjElementFXSceneBishops_Delete')),
+	('Decontamination', sym('cObjElementFXSceneDecontamination_Delete')), ('EnterMatrix', sym('cObjElementFXSceneEnterMatrix_Delete')), ('HumanCD', sym('cObjElementFXSceneHumanCD_Delete')), ('TheEndB', sym('cObjElementFXSceneTheEndB_Delete')),
+	('Yakuzzi', sym('cObjElementFXSceneYakuzzi_Delete')))
 for fxsn, fxsrva in fxsdeletes:
 	fxsp = fxsel[fxsn]
 	SDTest.Call(fxsrva, 'tiii', fxsp, 0)

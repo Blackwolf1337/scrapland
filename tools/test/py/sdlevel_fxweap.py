@@ -11,11 +11,11 @@ def fwi(a):
 def fwb(a):
 	return SDTest.Peek(a, '@b')
 def fwz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def fwfl(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def fwset(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 def fwints(a, n):
 	r = []
 	for i in range(n):
@@ -24,7 +24,7 @@ def fwints(a, n):
 def fwpoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 def fwsrand(s):
-	SDTest.Call(0x323c50, 'vi', s)
+	SDTest.Call('crt_srand', 'vi', s)
 # a CGameTrail holder: the CTrail flags, color, width and scales, the counters, uv, uLen and the points written
 # since the last clear (numTrails before head)
 def fwtrail(h):
@@ -44,7 +44,7 @@ def fwtrail(h):
 	return r
 # particle i of a CGameParticles: active, then position, color and size while active
 def fwpart(p, i):
-	r = SDTest.Call(0x21d4e0, 'tbiiFiipF', p, i, (9.0, 9.0, 9.0), 0, 0, 6, (5.0,))
+	r = SDTest.Call('CGameParticles_GetParticle', 'tbiiFiipF', p, i, (9.0, 9.0, 9.0), 0, 0, 6, (5.0,))
 	if r[0]:
 		return r
 	return 0
@@ -65,21 +65,21 @@ def fwparts(p, n):
 		r = r + (fwpart(p, i),)
 	return r
 
-fwworld = SDTest.Peek(0x467450, 'i')
+fwworld = SDTest.Peek('g_pWorld', 'i')
 fwtimer = fwworld + 0x2c8 + 0xc
 fwsavedt = fwi(fwtimer)
-fwdudv = SDTest.Peek(0x4a8b34, 'i')
+fwdudv = SDTest.Peek('g_SceneDuDvRTarget', 'i')
 
 def fwdebris(name, kind):
 	fwsrand(4321)
 	Scrap.SetDebrisSys(name, 1, 0.0, 0.0, 1.0, 0.0, 0, kind)
-	s = SDTest.Call(0x209590, 'tiis', fwworld, name)[0]
+	s = SDTest.Call('cWorld_GetDebrisSys', 'tiis', fwworld, name)[0]
 	d = fwi(s)
 	return (s, d, fwi(d + 0x54))
-fwkinds = (('Models/Weapons/Swarm/Swarm.M3D', 32, 0x3cdc50), ('Models/Weapons/Tesla/Shoot.M3D', 33, 0x3cdc98),
-	('Models/Weapons/ATPC/Shoot.M3D', 34, 0x3cdcb0), ('Models/Weapons/Laser/Shoot.M3D', 41, 0x3cdc68),
-	('Models/Weapons/Inferno/Inferno.M3D', 43, 0x3cdcc8), ('Models/Weapons/Inferno/Explosion.M3D', 44, 0x3cdce0),
-	('Models/Weapons/Devastator/Shoot.M3D', 46, 0x3cdc80))
+fwkinds = (('Models/Weapons/Swarm/Swarm.M3D', 32, sym('cObjElementFXSwarmMissile_vftable')), ('Models/Weapons/Tesla/Shoot.M3D', 33, sym('cObjElementFXTesla_vftable')),
+	('Models/Weapons/ATPC/Shoot.M3D', 34, sym('cObjElementFXATPC_vftable')), ('Models/Weapons/Laser/Shoot.M3D', 41, sym('cObjElementFXLaser_vftable')),
+	('Models/Weapons/Inferno/Inferno.M3D', 43, sym('cObjElementFXInfernoMissile_vftable')), ('Models/Weapons/Inferno/Explosion.M3D', 44, sym('cObjElementFXInfernoExplosion_vftable')),
+	('Models/Weapons/Devastator/Shoot.M3D', 46, sym('cObjElementFXDevastatorShoot_vftable')))
 fwobjs = {}
 for name, kind, vt in fwkinds:
 	s, d, fx = fwdebris(name, kind)
@@ -92,7 +92,7 @@ for name, kind, vt in fwkinds:
 def fwmove(d, pos, rot, vel, avel):
 	fwset(d + 0x1c, pos + rot + vel + avel)
 def fwmodelpos(d):
-	return SDTest.Call(0x20fa30, 'tiiF', d, (0.0, 0.0, 0.0))[1]
+	return SDTest.Call('CGameModel_GetPos', 'tiiF', d, (0.0, 0.0, 0.0))[1]
 
 # ---- ATPC: Start set the trails, Reset clears ----
 if fwobjs.has_key(34):
@@ -103,7 +103,7 @@ if fwobjs.has_key(34):
 	fwpoke(fx + 0x180, 7)
 	fwpoke(fx + 0x18c, 8)
 	fwpoke(fx + 0x1dc, 9)
-	check('FXATPC_Reset', lambda fx=fx, d=d: (SDTest.Call(0x201c00, 'tvii', fx, d), fwi(fx + 0x180), fwi(fx + 0x18c),
+	check('FXATPC_Reset', lambda fx=fx, d=d: (SDTest.Call('cObjElementFXATPC_Reset', 'tvii', fx, d), fwi(fx + 0x180), fwi(fx + 0x18c),
 		fwi(fx + 0x1dc), fwtrail(fx + 0x1c4), fwtrail(fx + 0x1e0)))
 
 # ---- DevastatorShoot: the trail fades in over the duration ----
@@ -115,14 +115,14 @@ if fwobjs.has_key(46):
 		fwset(fx + 8, (dur, t))
 		fwpoke(fx + 0x10, first)
 		fwset(fwtimer, (dt,))
-		check('FXDevastator_Update' + fmt((first, t, dur, dt)), lambda fx=fx, d=d: (SDTest.Call(0x1fb0f0, 'tviif', fx,
+		check('FXDevastator_Update' + fmt((first, t, dur, dt)), lambda fx=fx, d=d: (SDTest.Call('cObjElementFXDevastatorShoot_Update', 'tviif', fx,
 			d, 0.0), fwfl(fx + 8, 2), fwb(fx + 0x10), fwtrail(fx + 4)))
 	for first, t, dur in ((1, 2.0, 1.0), (0, 0.5, 1.0), (0, 1.0, 1.0), (0, 1.5, 1.0)):
 		fwset(fx + 8, (dur, t))
 		fwpoke(fx + 0x10, first)
-		check('FXDevastator_IsAlive' + fmt((first, t, dur)), lambda fx=fx, d=d, s=s: (SDTest.Call(0x201a00, 'tbiii',
+		check('FXDevastator_IsAlive' + fmt((first, t, dur)), lambda fx=fx, d=d, s=s: (SDTest.Call('cObjElementFXDevastatorShoot_IsAlive', 'tbiii',
 			fx, d, s)[0], fwtrail(fx + 4)))
-	check('FXDevastator_Reset', lambda fx=fx, d=d: (SDTest.Call(0x201c60, 'tvii', fx, d), fwfl(fx + 8, 2),
+	check('FXDevastator_Reset', lambda fx=fx, d=d: (SDTest.Call('cObjElementFXDevastatorShoot_Reset', 'tvii', fx, d), fwfl(fx + 8, 2),
 		fwb(fx + 0x10), fwtrail(fx + 4)))
 	fwpoke(fwtimer, fwsavedt)
 
@@ -155,20 +155,20 @@ if fwobjs.has_key(44):
 	for dudv in (0, 1):
 		if dudv and ncores < 2:
 			continue
-		SDTest.Poke(0x4a8b34, dudv)
+		SDTest.Poke('g_SceneDuDvRTarget', dudv)
 		for t, step, dt in ((0.0, 0.0, 0.05), (0.8, 0.002, 0.003), (0.8, 0.0, 0.1), (1.3, 0.0, 0.05), (1.6, 0.01, 0.0),
 				(2.2, 0.0, 0.1), (3.0, 0.0, 0.05), (-1.0, 0.0, 0.5)):
 			fwset(fx + 0x164, (t, step))
 			fwset(fwtimer, (dt,))
 			r = (dudv, t, step, dt)
-			check('FXInfernoExplosion_Update' + fmt(r), lambda fx=fx, d=d, nrays=nrays: (SDTest.Call(0x1fb180, 'tviif',
+			check('FXInfernoExplosion_Update' + fmt(r), lambda fx=fx, d=d, nrays=nrays: (SDTest.Call('cObjElementFXInfernoExplosion_Update', 'tviif',
 				fx, d, 0.0), fwexpl(fx, nrays)))
 			if dudv:
 				check('FXInfernoExplosion cores' + fmt(r), lambda fx=fx: fwparts(fx + 0xb4, 2))
 		fwrays(fx, nrays)
-	SDTest.Poke(0x4a8b34, fwdudv)
+	SDTest.Poke('g_SceneDuDvRTarget', fwdudv)
 	fwpoke(fwtimer, fwsavedt)
-	check('FXInfernoExplosion_Reset', lambda fx=fx, d=d: (SDTest.Call(0x201c90, 'tvii', fx, d), fwfl(fx + 0x164, 2),
+	check('FXInfernoExplosion_Reset', lambda fx=fx, d=d: (SDTest.Call('cObjElementFXInfernoExplosion_Reset', 'tvii', fx, d), fwfl(fx + 0x164, 2),
 		fwi(fx + 0x24c0), fwtrail(fx + 0x2484), fwtrail(fx + 0x24bc)))
 
 # ---- the missiles: the smoke trail behind the model, the fade at the end ----
@@ -198,17 +198,17 @@ def fwflare(fx):
 if fwobjs.has_key(43):
 	s, d, fx = fwobjs[43]
 	check('FXInfernoMissile flare', lambda fx=fx: fwi(fx + 0xdc) != 0)
-	fwmissile('FXInfernoMissile', fx, d, 0x1fb690, 0x201cf0, fx + 4, fx + 8, fx + 0xc4, 5, 0)
-	check('FXInfernoMissile_SetFlare', lambda fx=fx: (SDTest.Call(0x201e90, 'tvii', fx, 1), fwb(fx + 0xd8)))
-	fwmissile('FXInfernoMissile flare', fx, d, 0x1fb690, 0x201cf0, fx + 4, fx + 8, fx + 0xc4, 5, 1)
-	check('FXInfernoMissile_SetFlare 0', lambda fx=fx: (SDTest.Call(0x201e90, 'tvii', fx, 0), fwb(fx + 0xd8)))
+	fwmissile('FXInfernoMissile', fx, d, sym('cObjElementFXInfernoMissile_Update'), sym('cObjElementFXInfernoMissile_Reset'), fx + 4, fx + 8, fx + 0xc4, 5, 0)
+	check('FXInfernoMissile_SetFlare', lambda fx=fx: (SDTest.Call('cObjElementFXInfernoMissile_SetFlare', 'tvii', fx, 1), fwb(fx + 0xd8)))
+	fwmissile('FXInfernoMissile flare', fx, d, sym('cObjElementFXInfernoMissile_Update'), sym('cObjElementFXInfernoMissile_Reset'), fx + 4, fx + 8, fx + 0xc4, 5, 1)
+	check('FXInfernoMissile_SetFlare 0', lambda fx=fx: (SDTest.Call('cObjElementFXInfernoMissile_SetFlare', 'tvii', fx, 0), fwb(fx + 0xd8)))
 if fwobjs.has_key(32):
 	s, d, fx = fwobjs[32]
 	check('FXSwarmMissile node', lambda fx=fx: fwi(fx + 4))
 	if fwi(fx + 4) != -1:
-		fwmissile('FXSwarmMissile', fx, d, 0x1fbdd0, 0x201d80, fx + 8, fx + 0xc, fx + 0xc8, 5, 0)
+		fwmissile('FXSwarmMissile', fx, d, sym('cObjElementFXSwarmMissile_Update'), sym('cObjElementFXSwarmMissile_Reset'), fx + 8, fx + 0xc, fx + 0xc8, 5, 0)
 	fwpoke(fx + 4, -1)
-	check('FXSwarmMissile_Update no node', lambda fx=fx, d=d: (SDTest.Call(0x1fbdd0, 'tviif', fx, d, 0.5),
+	check('FXSwarmMissile_Update no node', lambda fx=fx, d=d: (SDTest.Call('cObjElementFXSwarmMissile_Update', 'tviif', fx, d, 0.5),
 		fwfl(fx + 0xd0, 1), fwmodelpos(d)))
 
 # ---- Laser: Shoot sets the beam, Update moves it (hidden: only moves; seen: the trail and the particles) ----
@@ -222,27 +222,27 @@ if fwobjs.has_key(41):
 		return fwfl(fx + 0xc4, 23) + (fwb(fx + 0x120),)
 	for a, b, t in (((0.0, 0.0, 0.0), (10000.0, 0.0, 0.0), 1.0), ((5.0, 5.0, 5.0), (5.0, 5.0, 5.0), 0.5),
 			((-100.0, 20.0, 3000.0), (2500.0, -700.0, 1000.0), 0.25), ((1.0, 2.0, 3.0), (4.0, 6.0, 3.0), 0.0)):
-		check('FXLaser_Shoot' + fmt((a, b, t)), lambda fx=fx, a=a, b=b, t=t: (SDTest.Call(0x1fee40, 'tvifffffff', fx,
+		check('FXLaser_Shoot' + fmt((a, b, t)), lambda fx=fx, a=a, b=b, t=t: (SDTest.Call('cObjElementFXLaser_Shoot', 'tvifffffff', fx,
 			a[0], a[1], a[2], b[0], b[1], b[2], t), fwlaser(fx)))
 	model = fwi(d)
 	visaddr = model + 0x120
 	visword = fwi(visaddr)
-	SDTest.Call(0x1fee40, 'tvifffffff', fx, 100.0, -50.0, 20.0, 3600.0, 450.0, -480.0, 0.5)
+	SDTest.Call('cObjElementFXLaser_Shoot', 'tvifffffff', fx, 100.0, -50.0, 20.0, 3600.0, 450.0, -480.0, 0.5)
 	for vis, dt in ((0, 0.05), (0, 0.05), (1, 0.05), (1, 0.1), (1, 0.15), (0, 0.05), (1, 0.05), (1, 0.05), (1, 0.05),
 			(1, 0.1), (1, 0.3)):
 		fwpoke(visaddr, (visword & ~0xff00) | (vis << 8))
 		fwset(fwtimer, (dt,))
-		check('FXLaser_Update' + fmt((vis, dt)), lambda fx=fx, d=d, npl=npl, s=s: (SDTest.Call(0x1fb9a0, 'tviif', fx, d,
+		check('FXLaser_Update' + fmt((vis, dt)), lambda fx=fx, d=d, npl=npl, s=s: (SDTest.Call('cObjElementFXLaser_Update', 'tviif', fx, d,
 			0.7), fwlaser(fx), fwtrail(fx + 4), fwparts(fx + 8, npl), fwmodelpos(d),
-			SDTest.Call(0x201ac0, 'tbiii', fx, d, s)[0]))
+			SDTest.Call('cObjElementFXLaser_IsAlive', 'tbiii', fx, d, s)[0]))
 	fwpoke(visaddr, visword)
 	fwpoke(fwtimer, fwsavedt)
 	for dist, ln in ((1.0, 2.0), (2.0, 2.0), (3.0, 2.0), (0.0, -1.0)):
 		fwset(fx + 0x10c, (dist,))
 		fwset(fx + 0xf0, (ln,))
-		check('FXLaser_IsAlive' + fmt((dist, ln)), lambda fx=fx, d=d, s=s: SDTest.Call(0x201ac0, 'tbiii', fx, d, s)[0])
+		check('FXLaser_IsAlive' + fmt((dist, ln)), lambda fx=fx, d=d, s=s: SDTest.Call('cObjElementFXLaser_IsAlive', 'tbiii', fx, d, s)[0])
 	fwpoke(fx + 0xc4, 0x3f800000)
-	check('FXLaser_Reset', lambda fx=fx, d=d, npl=npl: (SDTest.Call(0x201d40, 'tvii', fx, d), fwfl(fx + 0xc4, 1),
+	check('FXLaser_Reset', lambda fx=fx, d=d, npl=npl: (SDTest.Call('cObjElementFXLaser_Reset', 'tvii', fx, d), fwfl(fx + 0xc4, 1),
 		fwb(fx + 0x120), fwtrail(fx + 4), fwparts(fx + 8, npl)))
 
 # ---- Tesla: Start set the 16 trails; IsAlive with an emitter that does not shoot; the emitter Parked ----
@@ -255,18 +255,18 @@ if fwobjs.has_key(33):
 	check('FXTesla started', lambda fx=fx: (fwi(fx + 0x14c) != 0, fwi(fx + 0x150), fwtesla(fx), fwtrail(fx + 0x6f4),
 		fwtrail(fx + 0x6f8), fwtrail(fx + 0x724), fwtrail(fx + 0x730)))
 	fwem = fwz(0x700)
-	check('FXTesla_IsAlive no emitter', lambda fx=fx, d=d, s=s: (SDTest.Call(0x201b50, 'tbiii', fx, d, s)[0],
+	check('FXTesla_IsAlive no emitter', lambda fx=fx, d=d, s=s: (SDTest.Call('cObjElementFXTesla_IsAlive', 'tbiii', fx, d, s)[0],
 		fwtesla(fx)))
 	fwpoke(fx + 4, fwem)
 	for shoot, t, fs in ((1, 0.5, -1.0), (0, 0.5, -1.0), (0, 0.5, 0.45), (0, 0.5, 0.3), (0, 0.5, 0.0), (1, 2.0, 1.0),
 			(0, 0.0, 0.0)):
 		fwset(fx + 0x744, (t, fs))
 		fwpoke(fx + 0x74c, shoot | 0x100)
-		check('FXTesla_IsAlive' + fmt((shoot, t, fs)), lambda fx=fx, d=d, s=s: (SDTest.Call(0x201b50, 'tbiii', fx, d,
+		check('FXTesla_IsAlive' + fmt((shoot, t, fs)), lambda fx=fx, d=d, s=s: (SDTest.Call('cObjElementFXTesla_IsAlive', 'tbiii', fx, d,
 			s)[0], fwtesla(fx)))
 	# the ship Parked by the entity table of the world
-	slot = SDTest.Call(0x131f70, 'tiis', fwworld + 4, 'Parked')[0]
-	node = SDTest.Call(0x131e50, 'tiisi', fwworld + 4, 'Parked', slot)[0]
+	slot = SDTest.Call('HashTable_Slot', 'tiis', fwworld + 4, 'Parked')[0]
+	node = SDTest.Call('PtrTable_Find', 'tiisi', fwworld + 4, 'Parked', slot)[0]
 	parked = 0
 	if node:
 		parked = fwi(node)
@@ -279,5 +279,5 @@ if fwobjs.has_key(33):
 	fwpoke(fx + 0x9c, 0x01000101)
 	fwset(fx + 0x734, (1.0, 2.0, 3.0, 4.0))
 	fwset(fx + 0x750, (5.0, 6.0, 7.0, 8.0))
-	check('FXTesla_Reset', lambda fx=fx, d=d: (SDTest.Call(0x201dc0, 'tvii', fx, d), fwtesla(fx), fwtrail(fx + 0x6f4),
+	check('FXTesla_Reset', lambda fx=fx, d=d: (SDTest.Call('cObjElementFXTesla_Reset', 'tvii', fx, d), fwtesla(fx), fwtrail(fx + 0x6f4),
 		fwtrail(fx + 0x700), fwtrail(fx + 0x730)))

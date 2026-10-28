@@ -13,13 +13,13 @@ def exhi(a):
 def exhb(a):
 	return SDTest.Peek(a, '@i') & 0xff
 def exhz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def exhpoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 def exhsrand(s):
-	SDTest.Call(0x323c50, 'vi', s)
+	SDTest.Call('crt_srand', 'vi', s)
 def exhrand():
-	return SDTest.Call(0x323c2f, 'i')[0]
+	return SDTest.Call('crt_rand', 'i')[0]
 def exhints(a, n):
 	r = []
 	for exhk in range(n):
@@ -29,7 +29,7 @@ def exhints(a, n):
 def exhpart(p):
 	return (exhints(p, 0x26), exhi(p + 0x98) & 0xffff, exhints(p + 0x9c, 2), exhb(p + 0xa4))
 def exhnum(p):
-	return SDTest.Call(0x21d4d0, 'tii', p)[0]
+	return SDTest.Call('CGameParticles_NumParticles', 'tii', p)[0]
 # the multi sprite count of the system, 99 without one
 def exhsprites(p):
 	ms = exhi(exhi(p + 0xac) + 0x118)
@@ -39,14 +39,14 @@ def exhsprites(p):
 def exhparticles(p):
 	r = []
 	for exhk in range(exhnum(p)):
-		x = SDTest.Call(0x21d4e0, 'tbiiFiipF', p, exhk, (9.0, 9.0, 9.0), 0, 0, 6, (5.0,))
+		x = SDTest.Call('CGameParticles_GetParticle', 'tbiiFiipF', p, exhk, (9.0, 9.0, 9.0), 0, 0, 6, (5.0,))
 		if x[0]:
 			r.append((exhk, x[1], x[2], x[3]))
 	return r
 def exhkill(p):
-	SDTest.Call(0x21d8c0, 'tviii', p, 0, exhnum(p))
+	SDTest.Call('CGameParticles_KillRange', 'tviii', p, 0, exhnum(p))
 def exhalpha(p):
-	return SDTest.Call(0x21d480, 'tfi', p)[0]
+	return SDTest.Call('CGameParticles_GetAlpha', 'tfi', p)[0]
 # the particles of side s of the effects e (0 for none)
 def exhps(e, s, j):
 	return exhi(e + 0x24 + 8 * s + 4 * j)
@@ -69,10 +69,10 @@ def exhstate(e):
 				r.append((exhs, exhj, exhpart(p), exhparticles(p), exhalpha(p)))
 	return r
 
-exhworld = SDTest.Peek(0x467450, 'i')
+exhworld = SDTest.Peek('g_pWorld', 'i')
 def exhfind(name):
-	slot = SDTest.Call(0x131f70, 'tiis', exhworld + 4, name)[0]
-	node = SDTest.Call(0x131e50, 'tiisi', exhworld + 4, name, slot)[0]
+	slot = SDTest.Call('HashTable_Slot', 'tiis', exhworld + 4, name)[0]
+	node = SDTest.Call('PtrTable_Find', 'tiisi', exhworld + 4, name, slot)[0]
 	if node:
 		return exhi(node)
 	return 0
@@ -85,8 +85,8 @@ def exhcar(name, x, model, indir):
 		iscar = SDTest.Call(exhi(exhi(car) + 0x14) - 0x400000, 'tbis', car, 'Car')[0]
 	loaded = 0
 	if iscar:
-		SDTest.Call(0x109db0, 'tvisfffi', car, model, 1.0, 1.0, 1.0, indir)
-		loaded = SDTest.Call(0x210da0, 'tbi', car + 0xb8)[0]
+		SDTest.Call('cVehicleEntity_SetModel', 'tvisfffi', car, model, 1.0, 1.0, 1.0, indir)
+		loaded = SDTest.Call('CGameModel_IsLoaded', 'tbi', car + 0xb8)[0]
 	check('EXH car ' + name, lambda o=obj, c=car, i=iscar, l=loaded: (o is not None, c != 0, i, l))
 	if not loaded:
 		car = 0
@@ -124,7 +124,7 @@ def exhrun(name, e, t, inp):
 			if p:
 				exhkill(p)
 	exhsrand(inp[6])
-	check('cVehicleMotorsEffects_Exhaust ' + name + fmt((t,) + inp), lambda e=e, i=inp: (SDTest.Call(0x10f210,
+	check('cVehicleMotorsEffects_Exhaust ' + name + fmt((t,) + inp), lambda e=e, i=inp: (SDTest.Call('cVehicleMotorsEffects_Exhaust',
 		'tviffffif', e, i[0], i[1], i[2], i[3], i[4], i[5]), exhstate(e), exhrand()))
 def exhtypesrun(name, e, types, inputs):
 	for exht in types:
@@ -138,9 +138,9 @@ def exhmodels(m, sides, on):
 	for exhs in sides:
 		if exhi(m + 0x38 + 4 * exhs) != -1:
 			if on:
-				SDTest.Call(0x20f420, 'tvi', m + 0x1c * exhs)
+				SDTest.Call('CGameModel_Enable', 'tvi', m + 0x1c * exhs)
 			else:
-				SDTest.Call(0x20f3f0, 'tvi', m + 0x1c * exhs)
+				SDTest.Call('CGameModel_Disable', 'tvi', m + 0x1c * exhs)
 # the particles empty and stopped: no birth, no life, no emit positions
 def exhstop(e):
 	for exhs in (0, 1):
@@ -150,23 +150,23 @@ def exhstop(e):
 				exhkill(p)
 				exhpoke(p + 0x18, 0)
 				exhpoke(p + 0x1c, 0)
-				SDTest.Call(0x21db80, 'tvi', p)
-				SDTest.Call(0x21d430, 'tviii', p, 0, 0)
+				SDTest.Call('CGameParticles_Apply', 'tvi', p)
+				SDTest.Call('CGameParticles_SetEmitPos', 'tviii', p, 0, 0)
 
 # ---- SPoli2 (two motor slots) with the motor MPoli1, then MBankMaster1 ----
 exhobj, exhc = exhcar('SDExhCar', 58000.0, 'SPoli2', 1)
 if exhc:
 	exhms = exhc + 0x720
-	check('EXH SetMotor MPoli1', lambda: SDTest.Call(0x10d5d0, 'tiiisfff', exhms, 0, 'MPoli1', 1.0, 1.0, 1.0)[0])
+	check('EXH SetMotor MPoli1', lambda: SDTest.Call('cVehicleMotors_SetMotor', 'tiiisfff', exhms, 0, 'MPoli1', 1.0, 1.0, 1.0)[0])
 	exhm = exhi(exhc + 0x728)
 	exhe = 0
 	if exhm:
 		exhe = exhm + 0x74
-		SDTest.Call(0x10f030, 'tvii', exhe, 0xd25a14)
+		SDTest.Call('cVehicleMotorsEffects_SetColor', 'tvii', exhe, 0xd25a14)
 		check('EXH MPoli1 effects', lambda: (exheff(exhe), exhints(exhm + 0x38, 2)))
 		for exhs in exhsides(exhe):
 			check('EXH MPoli1 side %d' % exhs, lambda s=exhs: (exhnum(exhps(exhe, s, 0)), exhsprites(exhps(exhe, s, 0)),
-				SDTest.Call(0x210f30, 'tbi', exhm + 0x1c * s)[0]))
+				SDTest.Call('CGameModel_IsEnabled', 'tbi', exhm + 0x1c * s)[0]))
 	if exhe and exhsides(exhe):
 		# the motor models seen
 		exhmodels(exhm, (0, 1), 1)
@@ -180,9 +180,9 @@ if exhc:
 		exhtypesrun('MPoli1 side 0', exhe, (1, 10, 14, 27, 60), exhinputs[:3])
 		exhpoke(exhe + 0x1c, exhnode)
 		# the color, scale and offset of type 1
-		SDTest.Call(0x10f030, 'tvii', exhe, 0x30a0ff)
-		SDTest.Call(0x10f0d0, 'tvif', exhe, 1.75)
-		SDTest.Call(0x10f0b0, 'tvif', exhe, -12.5)
+		SDTest.Call('cVehicleMotorsEffects_SetColor', 'tvii', exhe, 0x30a0ff)
+		SDTest.Call('cVehicleMotorsEffects_SetScale', 'tvif', exhe, 1.75)
+		SDTest.Call('cVehicleMotorsEffects_SetOffset', 'tvif', exhe, -12.5)
 		exhtypesrun('MPoli1 scaled', exhe, (1, 5), exhinputs[:2])
 		# the motor models disabled: nothing, then side 1 only
 		exhmodels(exhm, (0, 1), 0)
@@ -191,13 +191,13 @@ if exhc:
 		exhrun('MPoli1 side 0 disabled', exhe, 10, exhinputs[0])
 		exhmodels(exhm, (0,), 1)
 		exhstop(exhe)
-	check('EXH SetMotor MBankMaster1', lambda: SDTest.Call(0x10d5d0, 'tiiisfff', exhms, 0, 'MBankMaster1', 1.0, 1.0,
+	check('EXH SetMotor MBankMaster1', lambda: SDTest.Call('cVehicleMotors_SetMotor', 'tiiisfff', exhms, 0, 'MBankMaster1', 1.0, 1.0,
 		1.0)[0])
 	exhm = exhi(exhc + 0x728)
 	exhe = 0
 	if exhm:
 		exhe = exhm + 0x74
-		SDTest.Call(0x10f030, 'tvii', exhe, 0x1e64c8)
+		SDTest.Call('cVehicleMotorsEffects_SetColor', 'tvii', exhe, 0x1e64c8)
 		check('EXH MBankMaster1 effects', lambda: (exheff(exhe), exhints(exhm + 0x38, 2)))
 		for exhs in exhsides(exhe):
 			check('EXH MBankMaster1 side %d' % exhs, lambda s=exhs: (exhnum(exhps(exhe, s, 0)),
@@ -213,16 +213,16 @@ if exhc:
 exhobj, exhc = exhcar('SDExhCar3', 59200.0, 'SPoli1', 1)
 if exhc:
 	exhms = exhc + 0x720
-	check('EXH SetMotor MPoli3', lambda: SDTest.Call(0x10d5d0, 'tiiisfff', exhms, 0, 'MPoli3', 1.0, 1.0, 1.0)[0])
+	check('EXH SetMotor MPoli3', lambda: SDTest.Call('cVehicleMotors_SetMotor', 'tiiisfff', exhms, 0, 'MPoli3', 1.0, 1.0, 1.0)[0])
 	exhm = exhi(exhc + 0x728)
 	exhe = 0
 	if exhm:
 		exhe = exhm + 0x74
-		SDTest.Call(0x10f030, 'tvii', exhe, 0x50f0a0)
+		SDTest.Call('cVehicleMotorsEffects_SetColor', 'tvii', exhe, 0x50f0a0)
 		check('EXH MPoli3 effects', lambda: (exheff(exhe), exhints(exhm + 0x38, 2)))
 		for exhs in exhsides(exhe):
 			check('EXH MPoli3 side %d' % exhs, lambda s=exhs: (exhnum(exhps(exhe, s, 0)), exhsprites(exhps(exhe, s, 0)),
-				SDTest.Call(0x210f30, 'tbi', exhm + 0x1c * s)[0]))
+				SDTest.Call('CGameModel_IsEnabled', 'tbi', exhm + 0x1c * s)[0]))
 	if exhe and exhsides(exhe):
 		exhmodels(exhm, (0, 1), 1)
 		exhtypesrun('MPoli3', exhe, exhtypes, exhinputs[:3] + exhinputs[4:5])
@@ -233,11 +233,11 @@ if exhc:
 exhobj, exhc = exhcar('SDExhCar4', 59800.0, 'SLifeBoat', 1)
 if exhc:
 	exhe = exhc + 0x740
-	SDTest.Call(0x10f030, 'tvii', exhe, 0xff8c28)
+	SDTest.Call('cVehicleMotorsEffects_SetColor', 'tvii', exhe, 0xff8c28)
 	check('EXH SLifeBoat effects', lambda: exheff(exhe))
 	for exhs in exhsides(exhe):
 		check('EXH SLifeBoat side %d' % exhs, lambda s=exhs: (exhnum(exhps(exhe, s, 0)),
-			exhsprites(exhps(exhe, s, 0)), SDTest.Call(0x210f30, 'tbi', exhc + 0xb8)[0]))
+			exhsprites(exhps(exhe, s, 0)), SDTest.Call('CGameModel_IsEnabled', 'tbi', exhc + 0xb8)[0]))
 	if exhsides(exhe):
 		exhtypesrun('SLifeBoat', exhe, exhtypes, exhinputs[:3] + exhinputs[6:7])
 		exhstop(exhe)
@@ -247,11 +247,11 @@ if exhc:
 exhobj, exhc = exhcar('SDExhCar2', 58600.0, 'Models/Vehicles/OutTraffic/TMed2.M3D', 0)
 if exhc:
 	exhe = exhc + 0x740
-	SDTest.Call(0x10f030, 'tvii', exhe, 0xc8b496)
+	SDTest.Call('cVehicleMotorsEffects_SetColor', 'tvii', exhe, 0xc8b496)
 	check('EXH TMed2 effects', lambda: exheff(exhe))
 	for exhs in exhsides(exhe):
 		check('EXH TMed2 side %d' % exhs, lambda s=exhs: (exhnum(exhps(exhe, s, 0)), exhsprites(exhps(exhe, s, 0)),
-			SDTest.Call(0x210f30, 'tbi', exhc + 0xb8)[0]))
+			SDTest.Call('CGameModel_IsEnabled', 'tbi', exhc + 0xb8)[0]))
 	if exhsides(exhe):
 		exhtypesrun('TMed2', exhe, exhtypes, exhinputs[:4])
 		exhstop(exhe)

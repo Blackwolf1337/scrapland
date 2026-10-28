@@ -3,6 +3,10 @@
  * scrapdecomp.ini, also when the hooks are off. It calls functions of the exe by RVA, so a test script gets the
  * C version with the hooks on and the original with them off.
  *
+ * The functions and data of the exe go by name (stage 3c0, docs/standalone.md): SDTest.Sym(name) is the rva of a name of
+ * src/core/testsyms.inc (tools/test/testsyms.py writes it from the test scripts), and Call, Peek, Poke and ConvU take
+ * such a name in place of the rva.
+ *
  * SDTest.Call(rva, sig, args...): sig is the return type and then one character per argument.
  *   return: v nothing, i int, b byte (al), s char * (None for NULL), f float (st0)
  *   args:   i int, f float, s string, z string or None, b string copied into a buffer of BUF_SIZE bytes (rest 0)
@@ -114,6 +118,64 @@ static PyObject *SDTest_Result(char kind, uint32_t r) {
 	}
 }
 
+typedef struct {
+	const char *name;
+	uint32_t rva;
+} testsym_t;
+
+/* sorted by name (strcmp order) */
+static const testsym_t testSyms[] = {
+#define SD_TEST_FUNC(key, name, rva) { key, rva },
+#define SD_TEST_CRT(key, name, rva) { key, rva },
+#define SD_TEST_OBJ(key, name, rva) { key, rva },
+#define SD_TEST_DATA(key, name, rva) { key, rva },
+#include "testsyms.inc"
+#undef SD_TEST_FUNC
+#undef SD_TEST_CRT
+#undef SD_TEST_OBJ
+#undef SD_TEST_DATA
+};
+
+/*
+ * The rva a test name stands for, the one place that resolves them: the rva of the original in the hook DLL, so the run
+ * with hooks=0 reaches the original, and for now in ScrapC.exe too. Stage 3c, which moves the C off the rvas of the
+ * original, switches ScrapC.exe here to the address of the C function or object minus game_base (Game_Ptr adds it).
+ */
+static uint32_t TestMod_SymRva(const testsym_t *s) {
+	return s->rva;
+}
+
+static const testsym_t *TestMod_FindSym(const char *name) {
+	int lo = 0, hi = (int)(sizeof(testSyms) / sizeof(testSyms[0])) - 1;
+
+	while (lo <= hi) {
+		int mid = (lo + hi) / 2;
+		int c = strcmp(name, testSyms[mid].name);
+		if (!c) {
+			return &testSyms[mid];
+		}
+		if (c < 0) {
+			hi = mid - 1;
+		} else {
+			lo = mid + 1;
+		}
+	}
+	return NULL;
+}
+
+/* an rva argument: an int, or a name of testsyms.inc (a TypeError for another name) */
+static int TestMod_ParseRva(PyObject *o, int *rva) {
+	if (o && PyString_Check(o)) {
+		const testsym_t *s = TestMod_FindSym(PyString_AsString(o));
+		if (s) {
+			*rva = (int)TestMod_SymRva(s);
+			return 1;
+		}
+		return PyArg_Parse(o, "i;SDTest: a name that src/core/testsyms.inc does not have", rva);
+	}
+	return o && PyArg_Parse(o, "i", rva);
+}
+
 static char bufs[MAX_OUT][BUF_SIZE];
 static int ints[MAX_OUT];
 static double doubles[MAX_OUT];
@@ -130,7 +192,7 @@ static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 	char outKind[MAX_OUT];
 	int nOut = 0;
 
-	if (!PyArg_Parse(PyTuple_GetItem(args, 0), "i", &rva) || !PyArg_Parse(PyTuple_GetItem(args, 1), "s", &sig)) {
+	if (!TestMod_ParseRva(PyTuple_GetItem(args, 0), &rva) || !PyArg_Parse(PyTuple_GetItem(args, 1), "s", &sig)) {
 		return NULL;
 	}
 	int thiscall = sig[0] == 't';
@@ -259,10 +321,11 @@ static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 
 static PyObject *SDTest_Peek(PyObject *self, PyObject *args) {
 	(void)self;
+	PyObject *at;
 	int rva;
 	const char *kind;
 
-	if (!PyArg_ParseTuple(args, "is", &rva, &kind)) {
+	if (!PyArg_ParseTuple(args, "Os", &at, &kind) || !TestMod_ParseRva(at, &rva)) {
 		return NULL;
 	}
 	const void *p = Game_Ptr((uint32_t)rva);
@@ -293,9 +356,10 @@ static PyObject *SDTest_Peek(PyObject *self, PyObject *args) {
 
 static PyObject *SDTest_Poke(PyObject *self, PyObject *args) {
 	(void)self;
+	PyObject *at;
 	int rva, v;
 
-	if (!PyArg_ParseTuple(args, "ii", &rva, &v)) {
+	if (!PyArg_ParseTuple(args, "Oi", &at, &v) || !TestMod_ParseRva(at, &rva)) {
 		return NULL;
 	}
 	*(int32_t *)Game_Ptr((uint32_t)rva) = v;
@@ -327,9 +391,10 @@ __asm__(
 
 static PyObject *SDTest_ConvU(PyObject *self, PyObject *args) {
 	(void)self;
+	PyObject *at;
 	int rva, lo, hi, isdouble;
 
-	if (!PyArg_ParseTuple(args, "iiii", &rva, &lo, &hi, &isdouble)) {
+	if (!PyArg_ParseTuple(args, "Oiii", &at, &lo, &hi, &isdouble) || !TestMod_ParseRva(at, &rva)) {
 		return NULL;
 	}
 	/* errno through crt_errno is the one the conversion sets: the exe's static CRT with the hooks off, the linked
@@ -337,6 +402,17 @@ static PyObject *SDTest_ConvU(PyObject *self, PyObject *args) {
 	*crt_errno() = 0;
 	uint32_t r = TestMod_ConvCall(Game_Ptr((uint32_t)rva), (uint32_t)lo, (uint32_t)hi, isdouble);
 	return Py_BuildValue("ii", (int)r, *crt_errno());
+}
+
+static PyObject *SDTest_Sym(PyObject *self, PyObject *args) {
+	(void)self;
+	PyObject *name;
+	int rva;
+
+	if (!PyArg_ParseTuple(args, "S", &name) || !TestMod_ParseRva(name, &rva)) {
+		return NULL;
+	}
+	return PyInt_FromLong(rva);
 }
 
 static void SDTest_Collect(const char *s) {
@@ -402,6 +478,7 @@ static PyMethodDef sdtest_methods[] = {
 	{ "Peek", SDTest_Peek, 1, NULL },
 	{ "Poke", SDTest_Poke, 1, NULL },
 	{ "ConvU", SDTest_ConvU, 1, NULL },
+	{ "Sym", SDTest_Sym, 1, NULL },
 	{ "OutFunc", SDTest_OutFunc, 1, NULL },
 	{ "Out", SDTest_Out, 1, NULL },
 	{ "D3DLog", SDTest_D3DLog, 1, NULL },

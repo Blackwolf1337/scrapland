@@ -25,14 +25,14 @@ def rtrestore(rvas, vals):
 		SDTest.Poke(rvas[i], vals[i])
 
 for rtn in (-1, 0, 1, 255, 256, 257, 511, 512, 513, 1024, 5000):
-	check('RenderTarget_Pow2Size' + fmt((rtn,)), lambda rtn=rtn: SDTest.Call(0x220a30, 'ii', rtn)[0])
+	check('RenderTarget_Pow2Size' + fmt((rtn,)), lambda rtn=rtn: SDTest.Call('RenderTarget_Pow2Size', 'ii', rtn)[0])
 for rtname in ('Scene', 'NewsPanel', 'Credits'):
-	check('RenderTarget_Mode' + fmt((rtname,)), lambda rtname=rtname: SDTest.Call(0x220a60, 'iz', rtname)[0])
-check('RenderTarget_Mode None', lambda: SDTest.Call(0x220a60, 'iz', None)[0])
+	check('RenderTarget_Mode' + fmt((rtname,)), lambda rtname=rtname: SDTest.Call('RenderTarget_Mode', 'iz', rtname)[0])
+check('RenderTarget_Mode None', lambda: SDTest.Call('RenderTarget_Mode', 'iz', None)[0])
 
 # two 16 x 16 images of 4 byte pixels (pitch 64 and 80), the second one changed in a few bytes
-rta = SDTest.Call(0x133650, 'ii', 0x400)[0]
-rtb = SDTest.Call(0x133650, 'ii', 0x500)[0]
+rta = SDTest.Call('Mem_Calloc', 'ii', 0x400)[0]
+rtb = SDTest.Call('Mem_Calloc', 'ii', 0x500)[0]
 for rti_ in range(0x100):
 	rtpoke(rta + 4 * rti_, rti_ * 0x00010305 + 0x01020304)
 for rty in range(16):
@@ -43,32 +43,32 @@ rtpoke(rtb + 80 * 7 + 4 * 2, SDTest.Peek(rta + 64 * 7 + 4 * 2, '@i') ^ 0x0040000
 rtpoke(rtb + 80 * 9 + 4 * 9, SDTest.Peek(rta + 64 * 9 + 4 * 9, '@i') ^ 0x7f000000)
 for rtxy in ((0, 0), (5, 3), (2, 7), (9, 9), (15, 15), (4, 1)):
 	for rttol in (0, 1, 0x10, 0x20, 0x40, -1):
-		check('RenderTarget_PixelEqual' + fmt(rtxy + (rttol,)), lambda rtxy=rtxy, rttol=rttol: SDTest.Call(0x22b010,
+		check('RenderTarget_PixelEqual' + fmt(rtxy + (rttol,)), lambda rtxy=rtxy, rttol=rttol: SDTest.Call('RenderTarget_PixelEqual',
 			'biiiiiiii', 64, rta, 80, rtb, rtxy[0], 4, rtxy[1], rttol)[0])
 
 # the swap of source and target (texture and surface pointers set to numbers here, never used as objects)
-rtscene = (0x4a8e20, 0x4a8e24, 0x4a8e28, 0x4a8e2c, 0x4a8db4, 0x4a8e1c)
+rtscene = (sym('g_SceneSourceSurface'), sym('g_SceneTargetSurface'), sym('g_SceneSourceTexture'), sym('g_SceneTargetTexture'), sym('g_SceneRTargetSwap'), sym('g_RTLinNonPow2'))
 rtsaved = rtsave(rtscene)
 for rtswap in (0, 1):
 	for rtnoswap in (0, 1):
 		rtrestore(rtscene[:5], (0x1111, 0x2222, 0x3333, 0x4444, rtswap))
-		SDTest.Poke(0x4a8e1c, (rtsaved[5] & ~0x00ff0000) | rtnoswap << 16)
-		check('Scene_Swap' + fmt((rtswap, rtnoswap)), lambda: (SDTest.Call(0x22afc0, 'v')[0:0],
-			rtsave(rtscene[:4]), SDTest.Peek(0x4a8e1e, 'b')))
+		SDTest.Poke('g_RTLinNonPow2', (rtsaved[5] & ~0x00ff0000) | rtnoswap << 16)
+		check('Scene_Swap' + fmt((rtswap, rtnoswap)), lambda: (SDTest.Call('Scene_Swap', 'v')[0:0],
+			rtsave(rtscene[:4]), SDTest.Peek('g_SceneNoSwap', 'b')))
 # the target is the back buffer: a target surface equal to it is not released
-rtback = rtsave((0x4a8e0c,))
-rtrestore((0x4a8e24, 0x4a8e2c), (rtback[0], 0x5555))
-check('Scene_TargetBackBuffer', lambda: (SDTest.Call(0x22aa80, 'v')[0:0], SDTest.Peek(0x4a8e24, 'i') == rtback[0],
-	SDTest.Peek(0x4a8e2c, 'i')))
+rtback = rtsave((sym('g_RTBackBuffer'),))
+rtrestore((sym('g_SceneTargetSurface'), sym('g_SceneTargetTexture')), (rtback[0], 0x5555))
+check('Scene_TargetBackBuffer', lambda: (SDTest.Call('Scene_TargetBackBuffer', 'v')[0:0], SDTest.Peek('g_SceneTargetSurface', 'i') == rtback[0],
+	SDTest.Peek('g_SceneTargetTexture', 'i')))
 rtrestore(rtscene, rtsaved)
 
 # the effects on as the device has them, and the targets of the device (only whether they were made)
-for rtfx, rtrva in (('DuDv', 0x226490), ('Bloom', 0x222d80), ('MotionBlur', 0x2281a0), ('RadialBlur', 0x228a00),
-		('Blur', 0x2236f0)):
+for rtfx, rtrva in (('DuDv', sym('DuDv_IsOn')), ('Bloom', sym('Bloom_IsOn')), ('MotionBlur', sym('MotionBlur_IsOn')), ('RadialBlur', sym('RadialBlur_IsOn')),
+		('Blur', sym('Blur_IsOn'))):
 	check(rtfx + '_IsOn', lambda rtrva=rtrva: SDTest.Call(rtrva, 'b')[0])
-check('RenderTarget targets', lambda: (SDTest.Peek(0x4a8e1f, 'b'), SDTest.Peek(0x4a8b1c, 'i'),
-	SDTest.Call(0x220960, 'i')[0] != 0, SDTest.Peek(0x4a8e30, 'i') != 0, SDTest.Peek(0x4a8e68, 'i') != 0,
-	SDTest.Peek(0x4a8e98, 'i') != 0, SDTest.Peek(0x4ada50, 'i') != 0))
+check('RenderTarget targets', lambda: (SDTest.Peek('g_SceneOn', 'b'), SDTest.Peek('g_SceneRTarget', 'i'),
+	SDTest.Call('NewsPanel_GetTarget', 'i')[0] != 0, SDTest.Peek('g_SceneRT1', 'i') != 0, SDTest.Peek('g_BloomTarget1', 'i') != 0,
+	SDTest.Peek('g_CreditsTarget', 'i') != 0, SDTest.Peek('g_PSOn', 'i') != 0))
 
 # three materials made again (the made one stays in the material list; SceneCopy is shared: the same material)
 def rtmat(rva, glob):
@@ -86,31 +86,31 @@ def rtmat(rva, glob):
 			maps.append((i, SDTest.Peek(mp, '@p'), SDTest.Peek(mp + 8, '@b'), SDTest.Peek(mp + 0xc, '@b')))
 	return (m == old, SDTest.Peek(m + 4, '@p'), rti(m + 0x30), rti(m + 0x34), rti(m + 0x38), rti(m + 0x3c) & ~0x00ff0000,
 		rti(m + 0x40), maps)
-for rtname, rtrva, rtglob in (('CreditsMat', 0x21e6b0, 0x4a8e9c), ('DuDvMatRTarget', 0x2247a0, 0x4a8e58),
-		('SceneMatCopy', 0x229340, 0x4a8e38)):
+for rtname, rtrva, rtglob in (('CreditsMat', sym('RenderTarget_MakeCreditsMat'), sym('g_CreditsMat')), ('DuDvMatRTarget', sym('RenderTarget_MakeDuDvMatRTarget'), sym('g_SceneDuDvMatRTarget')),
+		('SceneMatCopy', sym('RenderTarget_MakeSceneMatCopy'), sym('g_SceneMatCopy'))):
 	check('RenderTarget_Make' + rtname, lambda rtrva=rtrva, rtglob=rtglob: rtmat(rtrva, rtglob))
 
 # the Begin/End pairs, each only when no target is on
 def rtpair(name):
-	if SDTest.Peek(0x4a8a00, 'i'):
+	if SDTest.Peek('g_RTMode', 'i'):
 		return 'busy'
-	r = rtlog(lambda name=name: SDTest.Call(0x220b40, 'bs', name)[0])
-	return (r, rtlog(lambda name=name: SDTest.Call(0x220bd0, 'bs', name)[0]), SDTest.Peek(0x4a8a00, 'i'))
+	r = rtlog(lambda name=name: SDTest.Call('RenderTarget_Begin', 'bs', name)[0])
+	return (r, rtlog(lambda name=name: SDTest.Call('RenderTarget_End', 'bs', name)[0]), SDTest.Peek('g_RTMode', 'i'))
 check('RenderTarget NewsPanel', lambda: rtpair('NewsPanel'))
 # Credits: the target made by Begin with R_CreditsRTarget 1, released again by Credits_Release (rva 0x220120)
-rtcred = (0x4a8dcc, 0x4a8d54, 0x4a8d04, 0x4a8aa4)
+rtcred = (sym('g_CreditsRTarget'), sym('g_CreditsAlpha'), sym('g_CreditsClear'), sym('g_CreditsPhase'))
 rtcsaved = rtsave(rtcred)
 for rtphase in (0, 1):
 	rtrestore(rtcred, (1, 200, 1, rtphase))
 	check('RenderTarget Credits' + fmt((rtphase,)), lambda: rtpair('Credits'))
-SDTest.Call(0x220120, 'v')
+SDTest.Call('Credits_Release', 'v')
 rtrestore(rtcred, rtcsaved)
 # Scene: bloom, radial blur and blur; DuDv off, motion blur value 0
-rtfxv = (0x4a8b34, 0x4a8c44, 0x4a8d24, 0x4a8cec)
+rtfxv = (sym('g_SceneDuDvRTarget'), sym('g_SceneMotionBlurValue'), sym('g_SceneRadialBlurValue'), sym('g_SceneBlurValue'))
 rtfsaved = rtsave(rtfxv)
 for rtvals in ((0, 0, 0, 0), (0, 0, 0x3f000000, 0), (0, 0, 0, 0x3e800000), (0, 0, 0x3f400000, 0x3f800000)):
 	rtrestore(rtfxv, rtvals)
 	check('RenderTarget Scene' + fmt(tuple(rtvals)), lambda: rtpair('Scene'))
 rtrestore(rtfxv, rtfsaved)
-SDTest.Call(0x133550, 'vi', rta)
-SDTest.Call(0x133550, 'vi', rtb)
+SDTest.Call('Mem_Free', 'vi', rta)
+SDTest.Call('Mem_Free', 'vi', rtb)

@@ -13,13 +13,13 @@ def efmi(a):
 def efmb(a):
 	return SDTest.Peek(a, '@b')
 def efmz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def efmfree(p):
-	SDTest.Call(0x133550, 'ii', p)
+	SDTest.Call('Mem_Free', 'ii', p)
 def efmfl(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def efmset(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 def efmints(a, offs):
 	return tuple(map(lambda o, a=a: SDTest.Peek(a + o, '@i'), offs))
 def efmbytes(a, offs):
@@ -34,11 +34,11 @@ def efmparts(p):
 		efmfl(p + 0x9c, 2), efmbytes(p, (0x98, 0x99, 0xa4)))
 # particle i: active, position, color, size
 def efmpart(p, i):
-	return SDTest.Call(0x21d4e0, 'tbiiFiipF', p, i, (0.0, 0.0, 0.0), 0, 0, 0, (0.0,))
+	return SDTest.Call('CGameParticles_GetParticle', 'tbiiFiipF', p, i, (0.0, 0.0, 0.0), 0, 0, 0, (0.0,))
 def efmnum(p):
-	return SDTest.Call(0x21d4d0, 'tii', p)[0]
+	return SDTest.Call('CGameParticles_NumParticles', 'tii', p)[0]
 def efmactive(p):
-	return SDTest.Call(0x21d470, 'tii', p)[0]
+	return SDTest.Call('CGameParticles_NumActive', 'tii', p)[0]
 # particle i if it is active (the data of the others may never have been written)
 def efmpartv(p, i):
 	r = efmpart(p, i)
@@ -79,7 +79,7 @@ efmmin = {'DOB_DataCube_Glow': 8, 'DOB_Interfono_Calling': 3, 'DF_Light': 2, 'DO
 # render node name of the CGameModel gm with a particle system (flags & 2, obj3D of class 0xa5000020) of enough
 # particles (nParticulas at 0xc)
 def efmsist(gm, name):
-	i = SDTest.Call(0x20f7d0, 'tiis', gm, name)[0]
+	i = SDTest.Call('CGameModel_FindNodoR', 'tiis', gm, name)[0]
 	if i < 0:
 		return 0
 	t = efmi(efmi(gm) + 0xac)
@@ -89,42 +89,42 @@ def efmsist(gm, name):
 	o = efmi(r + 0x9c)
 	return (efmb(r + 4) & 2) and o != 0 and efmi(o + 4) == -0x5affffe0 and efmi(o + 0xc) >= efmmin.get(name, 0)
 def efmnode(gm, name):
-	return SDTest.Call(0x20f7d0, 'tiis', gm, name)[0] >= 0
+	return SDTest.Call('CGameModel_FindNodoR', 'tiis', gm, name)[0] >= 0
 
-efmworld = SDTest.Peek(0x467450, 'i')
+efmworld = SDTest.Peek('g_pWorld', 'i')
 efmdelta = efmi(efmworld + 0x2d4)
 efmtime = efmi(efmworld + 0x2d0)
 efmset(efmworld + 0x2d4, (0.04,))
 efmset(efmworld + 0x2d0, (12.5,))
-efmsplit = SDTest.Peek(0x4a8c8c, 'i')
-SDTest.Poke(0x4a8c8c, 1)
-efmdpon = SDTest.Peek(0x44d48c, 'i')
-SDTest.Call(0x323c50, 'vi', 4711)
+efmsplit = SDTest.Peek('g_SplitScreen', 'i')
+SDTest.Poke('g_SplitScreen', 1)
+efmdpon = SDTest.Peek('g_MessengerTubeState', 'i')
+SDTest.Call('crt_srand', 'vi', 4711)
 
 # name, ctor, dtor, Delete, size, particles, trails (offset, count), ints after the ctor, bytes after the ctor,
 # Reset, Release, Stop (0 for the ones that are not hooked)
 efmclasses = (
-	('Amplifier', 0xdfd00, 0xe0500, 0xe08c0, 0xcc, (0x10,), ((0xc4, 1),), (4, 0xc8), (), 0xe2460, 0xe0f80, 0xe27b0),
-	('Battery', 0xdfd80, 0xe0530, 0xe0910, 0x134, (0x10,), ((0xc8, 3),), (4,), (), 0xe2490, 0xe0f90, 0xe27d0),
-	('BossShield', 0xdfe00, 0xe0590, 0xe0990, 0x1cf0, (8,), ((0x1cb0, 16),), (4,), (), 0xe2510, 0xe0fd0, 0),
-	('Capsule', 0xdfe80, 0xe05f0, 0xe0a10, 0x218, (8, 0xb8, 0x168), (), (4,), (), 0, 0xe1000, 0),
-	('Coin', 0xdfef0, 0xe0650, 0xe0a90, 0xc8, (0x10,), (), (4,), (), 0xe2590, 0xe1030, 0),
-	('Conversor', 0xdff50, 0xe0670, 0xe0ad0, 0xc4, (0x10,), (), (4,), (), 0xe25a0, 0xe1040, 0),
-	('DTritusDesktop', 0xdffb0, 0xe0690, 0xe0b10, 0xd0, (0x14,), ((0xcc, 1),), (4, 0xc, 0xc8), (), 0xe25b0, 0xe1050,
-		0xe2840),
-	('DataCube', 0xe0030, 0xe06c0, 0xe0b60, 0x170, (0xc, 0xc0), (), (4,), (), 0, 0xe1060, 0),
-	('DataPack', 0xe00a0, 0xe06f0, 0xe0bb0, 0x240, (0x24, 0xd8, 0x18c), ((0x23c, 1),), (4, 0xc), (9, 0xa), 0xe25f0,
-		0xe1090, 0xe2870),
-	('ExtraLife', 0xe0140, 0xe0730, 0xe0c10, 0xd4, (0x10,), ((0xc8, 1),), (4,), (), 0xe2600, 0xe10d0, 0xe2890),
-	('Flag', 0xe01b0, 0xe0760, 0xe0c60, 0xd0, (0x10,), (), (4, 0xc0, 0xc4), (), 0, 0xe10f0, 0),
-	('Item', 0xe0230, 0xe0780, 0xe0ca0, 0xcc, (0x10,), (), (4,), (), 0xe2670, 0xe1100, 0),
-	('Matrix', 0xe0290, 0xe07a0, 0xe0ce0, 0x1bc, (0x10, 0xc4), ((0x1b4, 1),), (4,), (9,), 0xe26a0, 0xe1110, 0xe28d0),
-	('MeetingPoint', 0xe0310, 0xe07d0, 0xe0d30, 0x230, (0x10, 0xc4, 0x178), (), (4, 0xc0, 0x174, 0x228, 0x22c), (),
-		0, 0xe1140, 0),
-	('Moto', 0xe03c0, 0xe0800, 0xe0d80, 0x7e0, (0x44, 0xf4, 0x1a4, 0x254, 0x304, 0x3b4, 0x464, 0x514, 0x5c4, 0x674,
-		0x724), (), (4,), (), 0xe2720, 0xe1150, 0),
-	('Treasure', 0xe0480, 0xe0890, 0xe0e30, 0xf0, (0x10,), ((0xe4, 1),), (4, 0xe8, 0xec), (), 0xe2760, 0xe11c0,
-		0xe2910))
+	('Amplifier', sym('cEmbeddedFXAmplifier_ctor'), sym('cEmbeddedFXAmplifier_dtor'), sym('cEmbeddedFXAmplifier_Delete'), 0xcc, (0x10,), ((0xc4, 1),), (4, 0xc8), (), sym('cEmbeddedFXAmplifier_Reset'), sym('cEmbeddedFXCoin_Release'), sym('cEmbeddedFXAmplifier_Stop')),
+	('Battery', sym('cEmbeddedFXBattery_ctor'), sym('cEmbeddedFXBattery_dtor'), sym('cEmbeddedFXBattery_Delete'), 0x134, (0x10,), ((0xc8, 3),), (4,), (), sym('cEmbeddedFXBattery_Reset'), sym('cEmbeddedFXBattery_Release'), sym('cEmbeddedFXBattery_Stop')),
+	('BossShield', sym('cEmbeddedFXBossShield_ctor'), sym('cEmbeddedFXBossShield_dtor'), sym('cEmbeddedFXBossShield_Delete'), 0x1cf0, (8,), ((0x1cb0, 16),), (4,), (), sym('cEmbeddedFXBossShield_Reset'), sym('cEmbeddedFXBossShield_Release'), 0),
+	('Capsule', sym('cEmbeddedFXCapsule_ctor'), sym('cEmbeddedFXCapsule_dtor'), sym('cEmbeddedFXCapsule_Delete'), 0x218, (8, 0xb8, 0x168), (), (4,), (), 0, sym('cEmbeddedFXCapsule_Release'), 0),
+	('Coin', sym('cEmbeddedFXCoin_ctor'), sym('cEmbeddedFXCoin_dtor'), sym('cEmbeddedFXCoin_Delete'), 0xc8, (0x10,), (), (4,), (), sym('cEmbeddedFXCoin_Reset'), sym('cEmbeddedFXCoin_Release@e1030'), 0),
+	('Conversor', sym('cEmbeddedFXConversor_ctor'), sym('cEmbeddedFXConversor_dtor'), sym('cEmbeddedFXConversor_Delete'), 0xc4, (0x10,), (), (4,), (), sym('cEmbeddedFXConversor_Reset'), sym('cEmbeddedFXCoin_Release@e1040'), 0),
+	('DTritusDesktop', sym('cEmbeddedFXDTritusDesktop_ctor'), sym('cEmbeddedFXDTritusDesktop_dtor'), sym('cEmbeddedFXDTritusDesktop_Delete'), 0xd0, (0x14,), ((0xcc, 1),), (4, 0xc, 0xc8), (), sym('cEmbeddedFXDTritusDesktop_Reset'), sym('cEmbeddedFXDTritusDesktop_Release'),
+		sym('cEmbeddedFXDTritusDesktop_Stop')),
+	('DataCube', sym('cEmbeddedFXDataCube_ctor'), sym('cEmbeddedFXDataCube_dtor'), sym('cEmbeddedFXDataCube_Delete'), 0x170, (0xc, 0xc0), (), (4,), (), 0, sym('cEmbeddedFXDataCube_Release'), 0),
+	('DataPack', sym('cEmbeddedFXDataPack_ctor'), sym('cEmbeddedFXDataPack_dtor'), sym('cEmbeddedFXDataPack_Delete'), 0x240, (0x24, 0xd8, 0x18c), ((0x23c, 1),), (4, 0xc), (9, 0xa), sym('cEmbeddedFXDataPack_Reset'),
+		sym('cEmbeddedFXDataPack_Release'), sym('cEmbeddedFXDataPack_Stop')),
+	('ExtraLife', sym('cEmbeddedFXExtraLife_ctor'), sym('cEmbeddedFXExtraLife_dtor'), sym('cEmbeddedFXExtraLife_Delete'), 0xd4, (0x10,), ((0xc8, 1),), (4,), (), sym('cEmbeddedFXExtraLife_Reset'), sym('cEmbeddedFXExtraLife_Release'), sym('cEmbeddedFXExtraLife_Stop')),
+	('Flag', sym('cEmbeddedFXFlag_ctor'), sym('cEmbeddedFXFlag_dtor'), sym('cEmbeddedFXFlag_Delete'), 0xd0, (0x10,), (), (4, 0xc0, 0xc4), (), 0, sym('cEmbeddedFXCoin_Release@e10f0'), 0),
+	('Item', sym('cEmbeddedFXItem_ctor'), sym('cEmbeddedFXItem_dtor'), sym('cEmbeddedFXItem_Delete'), 0xcc, (0x10,), (), (4,), (), sym('cEmbeddedFXItem_Reset'), sym('cEmbeddedFXCoin_Release@e1100'), 0),
+	('Matrix', sym('cEmbeddedFXMatrix_ctor'), sym('cEmbeddedFXMatrix_dtor'), sym('cEmbeddedFXMatrix_Delete'), 0x1bc, (0x10, 0xc4), ((0x1b4, 1),), (4,), (9,), sym('cEmbeddedFXMatrix_Reset'), sym('cEmbeddedFXMatrix_Release'), sym('cEmbeddedFXMatrix_Stop')),
+	('MeetingPoint', sym('cEmbeddedFXMeetingPoint_ctor'), sym('cEmbeddedFXMeetingPoint_dtor'), sym('cEmbeddedFXMeetingPoint_Delete'), 0x230, (0x10, 0xc4, 0x178), (), (4, 0xc0, 0x174, 0x228, 0x22c), (),
+		0, sym('cEmbeddedFXCoin_Release@e1140'), 0),
+	('Moto', sym('cEmbeddedFXMoto_ctor'), sym('cEmbeddedFXMoto_dtor'), sym('cEmbeddedFXMoto_Delete'), 0x7e0, (0x44, 0xf4, 0x1a4, 0x254, 0x304, 0x3b4, 0x464, 0x514, 0x5c4, 0x674,
+		0x724), (), (4,), (), sym('cEmbeddedFXMoto_Reset'), sym('cEmbeddedFXMoto_Release'), 0),
+	('Treasure', sym('cEmbeddedFXTreasure_ctor'), sym('cEmbeddedFXTreasure_dtor'), sym('cEmbeddedFXTreasure_Delete'), 0xf0, (0x10,), ((0xe4, 1),), (4, 0xe8, 0xec), (), sym('cEmbeddedFXTreasure_Reset'), sym('cEmbeddedFXTreasure_Release'),
+		sym('cEmbeddedFXTreasure_Stop')))
 efmbyname = {}
 for c in efmclasses:
 	efmbyname[c[0]] = c
@@ -177,35 +177,35 @@ for c in efmclasses:
 
 # the setters and the trail clears on calloc memory: rva, signature, offset written, arguments
 efms = efmz(0x2000)
-for rva, sig, offs, args in ((0xe4560, 'tvii', (0x1c9c,), (7,)), (0xe4570, 'tvif', (0xc0,), (2.5,)),
-		(0xe4590, 'tvif', (0xcc,), (-1.5,)), (0xe45b0, 'tvif', (0xc0,), (0.75,)), (0xe45d0, 'tvif', (0x1b8,), (6.0,)),
-		(0xe45f0, 'tvif', (0xec,), (8.0,)), (0xe4610, 'tvif', (0x1ca4,), (1.0,)), (0xe4670, 'tvii', (0xe8,), (3,)),
-		(0xe2940, 'tvii', (0xc4,), (0x123456,)), (0xe2a20, 'tvii', (0xc4,), (-2,)),
-		(0xe4640, 'tviff', (0x7d4, 0x7d8, 0x7dc), (0.5, 3.0))):
+for rva, sig, offs, args in ((sym('cEmbeddedFXBossShield_SetMode'), 'tvii', (0x1c9c,), (7,)), (sym('cEmbeddedFXCoin_SetScale'), 'tvif', (0xc0,), (2.5,)),
+		(sym('cEmbeddedFXExtraLife_SetScale'), 'tvif', (0xcc,), (-1.5,)), (sym('cEmbeddedFXCoin_SetScale@e45b0'), 'tvif', (0xc0,), (0.75,)), (sym('cEmbeddedFXMatrix_SetScale'), 'tvif', (0x1b8,), (6.0,)),
+		(sym('cEmbeddedFXTreasure_SetScale'), 'tvif', (0xec,), (8.0,)), (sym('cEmbeddedFXBossShield_SetHit'), 'tvif', (0x1ca4,), (1.0,)), (sym('cEmbeddedFXTreasure_SetType'), 'tvii', (0xe8,), (3,)),
+		(sym('cEmbeddedFXCoin_SetColor'), 'tvii', (0xc4,), (0x123456,)), (sym('cEmbeddedFXCoin_SetColor@e2a20'), 'tvii', (0xc4,), (-2,)),
+		(sym('cEmbeddedFXMoto_SetF7d4'), 'tviff', (0x7d4, 0x7d8, 0x7dc), (0.5, 3.0))):
 	check('setter %x' % rva + fmt(args), lambda rva=rva, sig=sig, offs=offs, args=args: (apply(SDTest.Call,
 		(rva, sig, efms) + args), efmints(efms, offs)))
-check('cEmbeddedFXDataPack_SetOn(1)', lambda: (SDTest.Call(0xe4630, 'tvii', efms, 0x101), efmbytes(efms, (9, 10))))
-check('cEmbeddedFXDataPack_On', lambda: (SDTest.Call(0xe4630, 'tvii', efms, 0), SDTest.Call(0xe2930, 'tvi', efms),
+check('cEmbeddedFXDataPack_SetOn(1)', lambda: (SDTest.Call('cEmbeddedFXDataPack_SetOn', 'tvii', efms, 0x101), efmbytes(efms, (9, 10))))
+check('cEmbeddedFXDataPack_On', lambda: (SDTest.Call('cEmbeddedFXDataPack_SetOn', 'tvii', efms, 0), SDTest.Call('cEmbeddedFXDataPack_On', 'tvi', efms),
 	efmbytes(efms, (9, 10))))
 for name, s in (('YellowS', 1), ('Yellow', 1), ('Green', 1), ('Red', 1), ('RED', 1), ('Blue', 1)):
 	efmset(efms + 0xc4, (0.0, 0.0, 0.0))
-	check('cEmbeddedFXFlag_SetColor' + fmt((name,)), lambda name=name: (SDTest.Call(0xe2950, 'tvis', efms, name),
+	check('cEmbeddedFXFlag_SetColor' + fmt((name,)), lambda name=name: (SDTest.Call('cEmbeddedFXFlag_SetColor', 'tvis', efms, name),
 		efmints(efms, (0xc4, 0xc8, 0xcc))))
 efmfree(efms)
 
 # the fake entity: the vtable of cObjEntity, GetModel at this + 0xb8
-efmvt = 0x3b367c + 0x400000
+efmvt = sym('cObjEntity_vftable') + 0x400000
 efmvec = efmz(0x20)
 def efmfake(path):
 	e = efmz(0x400)
 	efmpoke(e, efmvt)
-	SDTest.Call(0x20eb10, 'tiis', e + 0xb8, path)
+	SDTest.Call('CGameModel_ctor', 'tiis', e + 0xb8, path)
 	return e
 def efmunfake(e):
-	SDTest.Call(0x20ec10, 'tvi', e + 0xb8)
+	SDTest.Call('CGameModel_Reset', 'tvi', e + 0xb8)
 	efmfree(e)
 def efmok(gm, sists, nodes):
-	if not SDTest.Call(0x210da0, 'tbi', gm)[0] or not efmi(gm):
+	if not SDTest.Call('CGameModel_IsLoaded', 'tbi', gm)[0] or not efmi(gm):
 		return 0
 	for n in sists:
 		if not efmsist(gm, n):
@@ -219,16 +219,16 @@ def efmchan0(gm, anyok):
 	mo = efmi(gm)
 	if efmi(mo + 0xa4) <= 0 or not efmi(efmi(mo + 0xa8)):
 		return 0
-	anim = SDTest.Call(0x20f500, 'tbiiip', gm, 0, 0, -1)[1]
+	anim = SDTest.Call('CGameModel_ChanInfo', 'tbiiip', gm, 0, 0, -1)[1]
 	if anim < 0:
 		return anyok
-	return SDTest.Call(0x20f0b0, 'tsii', gm, anim)[0] != None
+	return SDTest.Call('CGameModel_AnimName', 'tsii', gm, anim)[0] != None
 efmcam = efmfl(efmworld + 0x254 + 12 * efmi(efmworld + 0x50), 3)
 def efmplace(gm, d, rot):
 	efmset(efmvec, efmadd(efmcam, d))
-	SDTest.Call(0x211d20, 'tvii', gm, efmvec)
+	SDTest.Call('CGameModel_SetPos', 'tvii', gm, efmvec)
 	efmset(efmvec, rot)
-	SDTest.Call(0x211e50, 'tvii', gm, efmvec)
+	SDTest.Call('CGameModel_SetRot', 'tvii', gm, efmvec)
 
 # class, model file, name for Create, render nodes with particle systems, other nodes
 efmmodels = (
@@ -311,8 +311,8 @@ def efmfields(name, fx, extra):
 	f = efmcreated[name]
 	parts = []
 	for o, n in f[2]:
-		parts.append((efmparts(fx + o), efmactive(fx + o), SDTest.Call(0x21d5b0, 'tbi', fx + o)[0],
-			SDTest.Call(0x21d480, 'tfi', fx + o)[0], efmpartlist(fx + o, n)))
+		parts.append((efmparts(fx + o), efmactive(fx + o), SDTest.Call('CGameParticles_IsVisible', 'tbi', fx + o)[0],
+			SDTest.Call('CGameParticles_GetAlpha', 'tfi', fx + o)[0], efmpartlist(fx + o, n)))
 	trails = []
 	for o, n in f[3]:
 		trails.append(efmtrails(fx + o, n))
@@ -323,9 +323,9 @@ efmupdated = {
 	'Amplifier': ((), (8,)), 'DTritusDesktop': ((), (8,)), 'MeetingPoint': ((), (8,)), 'ExtraLife': ((), (8,)),
 	'Flag': ((), (8,)), 'BossShield': ((0x1ca0,), ()), 'Conversor': ((), (8,)), 'Battery': ((), (8,)),
 	'Treasure': ((0xd0, 0xd4, 0xd8, 0xdc, 0xe0), (8,)), 'Coin': ((), (8,)), 'Item': ((), (8,))}
-efmupdates = {'Amplifier': 0xe4680, 'Battery': 0xe4a70, 'BossShield': 0xe5c10, 'Coin': 0xe67a0, 'Conversor': 0xe6a20,
-	'DTritusDesktop': 0xe6cc0, 'DataPack': 0xe71e0, 'ExtraLife': 0xe7520, 'Flag': 0xe7c80, 'Item': 0xe81f0,
-	'Matrix': 0xe8430, 'MeetingPoint': 0xe8b80, 'Treasure': 0xea730}
+efmupdates = {'Amplifier': sym('cEmbeddedFXAmplifier_Update'), 'Battery': sym('cEmbeddedFXBattery_Update'), 'BossShield': sym('cEmbeddedFXBossShield_Update'), 'Coin': sym('cEmbeddedFXCoin_Update'), 'Conversor': sym('cEmbeddedFXConversor_Update'),
+	'DTritusDesktop': sym('cEmbeddedFXDTritusDesktop_Update'), 'DataPack': sym('cEmbeddedFXDataPack_Update'), 'ExtraLife': sym('cEmbeddedFXExtraLife_Update'), 'Flag': sym('cEmbeddedFXFlag_Update'), 'Item': sym('cEmbeddedFXItem_Update'),
+	'Matrix': sym('cEmbeddedFXMatrix_Update'), 'MeetingPoint': sym('cEmbeddedFXMeetingPoint_Update'), 'Treasure': sym('cEmbeddedFXTreasure_Update')}
 # the BossShield slots: t, speed, dir, size, color of a few
 def efmslots(fx):
 	r = []
@@ -352,14 +352,14 @@ for c in efmmodels:
 		check('%s nodes' % c[2], lambda: 'skipped')
 		efmunfake(e)
 		continue
-	check('%s model' % c[2], lambda gm=gm: (SDTest.Call(0x210da0, 'tbi', gm)[0], SDTest.Call(0x20f7a0, 'tsi', gm)[0]))
+	check('%s model' % c[2], lambda gm=gm: (SDTest.Call('CGameModel_IsLoaded', 'tbi', gm)[0], SDTest.Call('CGameModel_Name', 'tsi', gm)[0]))
 	slot = efmz(4)
-	check('EmbeddedFXMisc_Create(%s)' % c[2], lambda e=e, c=c, slot=slot: (SDTest.Call(0xe1320, 'visi', e, c[2], slot),
+	check('EmbeddedFXMisc_Create(%s)' % c[2], lambda e=e, c=c, slot=slot: (SDTest.Call('EmbeddedFXMisc_Create', 'visi', e, c[2], slot),
 		efmi(slot) != 0, efmi(efmi(slot)) - 0x400000, efmi(efmi(slot) + 4) == e))
 	fx = efmi(slot)
 	check('%s fields' % c[2], lambda name=name, fx=fx: efmfields(name, fx, ((), ())))
 	if name == 'DataPack':
-		check('EmbeddedFXMisc_Create(DataPack) again', lambda e=e, c=c, slot=slot: (SDTest.Call(0xe1320, 'visi', e,
+		check('EmbeddedFXMisc_Create(DataPack) again', lambda e=e, c=c, slot=slot: (SDTest.Call('EmbeddedFXMisc_Create', 'visi', e,
 			c[2], slot), efmi(efmi(slot)) - 0x400000, efmi(efmi(slot) + 4) == e))
 		fx = efmi(slot)
 		check('DataPack fields again', lambda name=name, fx=fx: efmfields(name, fx, ((), ())))
@@ -389,7 +389,7 @@ for c in efmmodels:
 					check('DataPack Update on' + fmt((on, dt)), lambda name=name, fx=fx, dt=dt, extra=extra:
 						efmupd(name, fx, dt, extra))
 		if name == 'MeetingPoint':
-			check('cEmbeddedFXMeetingPoint_SetCountDown', lambda fx=fx: (SDTest.Call(0xe12e0, 'tviff', fx, 0.5, 440.0),
+			check('cEmbeddedFXMeetingPoint_SetCountDown', lambda fx=fx: (SDTest.Call('cEmbeddedFXMeetingPoint_SetCountDown', 'tviff', fx, 0.5, 440.0),
 				efmints(fx, (0x174, 0x228, 0x22c))))
 			for dt in (0.1, 0.2, 0.3, 0.02, 0.4, 0.3, 0.5, 0.5):
 				check('MeetingPoint Update count down' + fmt((dt,)), lambda name=name, fx=fx, dt=dt, extra=extra:
@@ -413,12 +413,12 @@ for c in efmmodels:
 			extra))
 		efmpoke(mo + 0x10c, efmfx)
 		# hidden: no split screen, the visible flag of the model off
-		SDTest.Poke(0x4a8c8c, 0)
+		SDTest.Poke('g_SplitScreen', 0)
 		efmvis = efmi(mo + 0x120)
 		efmpoke(mo + 0x120, efmvis & ~0xff00)
-		check('%s model visible' % c[2], lambda gm=gm: SDTest.Call(0x210f80, 'tbi', gm)[0])
+		check('%s model visible' % c[2], lambda gm=gm: SDTest.Call('CGameModel_IsVisible', 'tbi', gm)[0])
 		check('%s Update hidden' % c[2], lambda name=name, fx=fx, extra=extra: efmupd(name, fx, 0.04, extra))
-		SDTest.Poke(0x4a8c8c, 1)
+		SDTest.Poke('g_SplitScreen', 1)
 		efmpoke(mo + 0x120, efmvis)
 		check('%s Update shown again' % c[2], lambda name=name, fx=fx, extra=extra: efmupd(name, fx, 0.04, extra))
 	if k[9]:
@@ -427,7 +427,7 @@ for c in efmmodels:
 		check('%s Stop(1)' % c[2], lambda k=k, fx=fx: (SDTest.Call(k[11], 'tvii', fx, 1), efmreset(fx, k)))
 		check('%s Stop(0)' % c[2], lambda k=k, fx=fx: (SDTest.Call(k[11], 'tvii', fx, 0), efmreset(fx, k)))
 	if name == 'Moto':
-		check('cEmbeddedFXMoto_EnginePos', lambda fx=fx: SDTest.Call(0xe23a0, 'tiiF', fx, (0.0, 0.0, 0.0))[1])
+		check('cEmbeddedFXMoto_EnginePos', lambda fx=fx: SDTest.Call('cEmbeddedFXMoto_EnginePos', 'tiiF', fx, (0.0, 0.0, 0.0))[1])
 	# after Release the particle systems may be gone: reading them is a CHECK (SistPart)
 	check('%s Release' % c[2], lambda k=k, fx=fx: (SDTest.Call(k[10], 'tvi', fx), efmstate(fx, k)))
 	check('%s Delete(1)' % c[2], lambda k=k, fx=fx: SDTest.Call(k[3], 'tiii', fx, 1)[0] == fx)
@@ -437,16 +437,16 @@ for c in efmmodels:
 # Create with a model without an effect: *fx stays
 e = efmfake('Models/Misc/Coins/Coin1.M3D')
 slot = efmz(4)
-check('EmbeddedFXMisc_Create(Dtritus.M3D)', lambda e=e, slot=slot: (SDTest.Call(0xe1320, 'visi', e, 'Dtritus.M3D',
+check('EmbeddedFXMisc_Create(Dtritus.M3D)', lambda e=e, slot=slot: (SDTest.Call('EmbeddedFXMisc_Create', 'visi', e, 'Dtritus.M3D',
 	slot), efmi(slot)))
-check('EmbeddedFXMisc_Create(VAim.m3d)', lambda e=e, slot=slot: (SDTest.Call(0xe1320, 'visi', e, 'VAim.m3d', slot),
+check('EmbeddedFXMisc_Create(VAim.m3d)', lambda e=e, slot=slot: (SDTest.Call('EmbeddedFXMisc_Create', 'visi', e, 'VAim.m3d', slot),
 	efmi(slot)))
 efmfree(slot)
 efmunfake(e)
 
 efmfree(efmvec)
-check('rand after', lambda: SDTest.Call(0x323c2f, 'i')[0])
-SDTest.Poke(0x4a8c8c, efmsplit)
-SDTest.Poke(0x44d48c, efmdpon)
+check('rand after', lambda: SDTest.Call('crt_rand', 'i')[0])
+SDTest.Poke('g_SplitScreen', efmsplit)
+SDTest.Poke('g_MessengerTubeState', efmdpon)
 efmpoke(efmworld + 0x2d4, efmdelta)
 efmpoke(efmworld + 0x2d0, efmtime)

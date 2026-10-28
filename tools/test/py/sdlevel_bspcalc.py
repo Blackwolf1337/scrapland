@@ -7,7 +7,7 @@ def bsci(a):
 def bscp(a):
 	return SDTest.Peek(a, '@p')
 def bscz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def bscpoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 # a hash of n bytes at a (the 16 bit halves summed, the words xored)
@@ -38,12 +38,12 @@ def bscmat(m):
 		if mp:
 			r.append((i, bscp(mp), SDTest.Peek(mp + 9, '@b')))
 	return r
-bscbsp = SDTest.Peek(0x4b2b38, 'i')
-check('bsc map', lambda: (bscbsp != 0, SDTest.Peek(0x4b2b00, 'i'), SDTest.Peek(0x432970, 'i')))
+bscbsp = SDTest.Peek('g_Bsp', 'i')
+check('bsc map', lambda: (bscbsp != 0, SDTest.Peek('g_MapaSombrasMultitext', 'i'), SDTest.Peek('g_MaxLightmap', 'i')))
 if bscbsp:
 	# the pages
 	bscpages = []
-	bsclm = SDTest.Peek(0x4b2b3c, 'i')
+	bsclm = SDTest.Peek('g_BspLMaps', 'i')
 	while bsclm and len(bscpages) < 200:
 		bscpages.append(bsclm)
 		bsclm = bsci(bsclm)
@@ -97,36 +97,36 @@ if bscbsp:
 	check('CBsp_InitD3D mats', bscfxmats)
 	bscfx = (bsci(bscbsp + 0x61aa0), bsci(bscbsp + 0x61aa4))
 	# Bsp_ReleaseD3D and Bsp_InitD3D, as at a device reset
-	check('Bsp_ReleaseD3D', lambda: (SDTest.Call(0x286c80, 'v'), bsczonas()[1], bsclistvb()[0:4]))
-	check('Bsp_InitD3D', lambda: (SDTest.Call(0x286cb0, 'v'), bsczonas()))
+	check('Bsp_ReleaseD3D', lambda: (SDTest.Call('Bsp_ReleaseD3D', 'v'), bsczonas()[1], bsclistvb()[0:4]))
+	check('Bsp_InitD3D', lambda: (SDTest.Call('Bsp_InitD3D', 'v'), bsczonas()))
 	check('Bsp_InitD3D lists', bsclistvb)
 	check('Bsp_InitD3D mats', lambda: (bscfxmats(), bsci(bscbsp + 0x61aa0) == bscfx[0], bsci(bscbsp + 0x61aa4) == bscfx[1]))
 	# the statistics at debug level 3: the console lines written last
 	def bscconsole():
-		r = [SDTest.Peek(0x445a44, 'i')]
+		r = [SDTest.Peek('g_ConLine', 'i')]
 		for i in range(23):
-			r.append(SDTest.Peek(0x444e68 + 0x84 * i, 's'))
+			r.append(SDTest.Peek(sym('g_ConLines') + 0x84 * i, 's'))
 		return r
-	bsclevel = SDTest.Peek(0x445a74, 'i')
-	check('CBsp_Preparar off', lambda: (SDTest.Call(0x28efe0, 'tvi', bscbsp), SDTest.Peek(0x445a44, 'i')))
-	SDTest.Poke(0x445a74, 3)
-	check('CBsp_Preparar', lambda: (SDTest.Call(0x28efe0, 'tvi', bscbsp), bscconsole()))
-	SDTest.Poke(0x445a74, bsclevel)
+	bsclevel = SDTest.Peek('g_DebugLevel', 'i')
+	check('CBsp_Preparar off', lambda: (SDTest.Call('CBsp_Preparar', 'tvi', bscbsp), SDTest.Peek('g_ConLine', 'i')))
+	SDTest.Poke('g_DebugLevel', 3)
+	check('CBsp_Preparar', lambda: (SDTest.Call('CBsp_Preparar', 'tvi', bscbsp), bscconsole()))
+	SDTest.Poke('g_DebugLevel', bsclevel)
 	# a map without its .EMI
 	bscfake = bscz(0x61aa8)
 	bscname = bscz(32)
-	SDTest.Call(0x3197d0, 'iisi', bscname, 'Levels/FZ/Map/sdbscnone.sm3', 28)
+	SDTest.Call('crt_memcpy', 'iisi', bscname, 'Levels/FZ/Map/sdbscnone.sm3', 28)
 	bscpoke(bscfake, bscname)
-	check('CBsp_LeerEMI none', lambda: (SDTest.Call(0x28c650, 'tii', bscfake)[0], bsci(bscfake + 0x4e208)))
+	check('CBsp_LeerEMI none', lambda: (SDTest.Call('CBsp_LeerEMI', 'tii', bscfake)[0], bsci(bscfake + 0x4e208)))
 
 # the lights of a scene made here into the light table of the compiler
 def bscfl(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def bscwf(a, fl):
-	SDTest.Call(0x3197d0, 'iiFi', a, fl, 4 * len(fl))
+	SDTest.Call('crt_memcpy', 'iiFi', a, fl, 4 * len(fl))
 def bscstr(s):
 	p = bscz(len(s) + 1)
-	SDTest.Call(0x3197d0, 'iisi', p, s, len(s))
+	SDTest.Call('crt_memcpy', 'iisi', p, s, len(s))
 	return p
 # tipo, sombra, color, (intensidad f30 rango theta phi mult f44), position + direction, node flags, active
 bscluces = (
@@ -135,7 +135,7 @@ bscluces = (
 	(5001, 1, 0x00ffffff, (-2.0, 1.0, 50.0, 20.0, 25.0, 2.0, 0.5), (-5.0, 6.0, 7.0, 3.0, 4.0, 12.0), 0x8000000, 1),
 	(5001, 1, 0x00ffffff, (1.0, 1.0, 50.0, 20.0, 25.0, 2.0, 0.5), (0.0, 0.0, 0.0, 1.0, 0.0, 0.0), 0x4000000, 0),
 	(5002, 1, 0x00808080, (0.75, 0.0, 0.0, 43.0, 45.0, 1.0, 1.0), (0.0, 0.0, 0.0, 1e-30, 1e-30, 0.0), 0x4000000, 1))
-bscnl = SDTest.Peek(0x4ac434, 'i')
+bscnl = SDTest.Peek('g_nLuces', 'i')
 bscls = []
 bscprev = 0
 bscesc = bscz(0x64)
@@ -152,7 +152,7 @@ for bsc_i in range(len(bscluces) + 1):
 		continue
 	bsc_d = bscluces[bsc_i - (bsc_i > 2)]
 	bscl = bscz(0xcc)
-	SDTest.Call(0x23ab70, 'tii', bscl)
+	SDTest.Call('CLuz_ctor', 'tii', bscl)
 	bscpoke(bscl + 8, bsc_d[0])
 	bscpoke(bscl + 0xc, bsc_d[1] << 8)
 	bscpoke(bscl + 0x28, bsc_d[2])
@@ -165,12 +165,12 @@ bscpoke(bscesc + 0x14, 0x00204080)
 bscwf(bscesc + 0x18, (1.5,))
 def bscactivar():
 	for l, on in bscls:
-		SDTest.Call(0x23cb20, 'tvii', l, on)
+		SDTest.Call('CLuz_SetActiva', 'tvii', l, on)
 def bsctabla():
-	n = SDTest.Peek(0x4b2b44, 'i')
+	n = SDTest.Peek('g_BspNumLuces', 'i')
 	r = [n]
 	for i in range(min(n, 8)):
-		e = 0x4b2c20 + 0x118 * i
+		e = sym('g_BspLuces') + 0x118 * i
 		r.append((bscfl(e + 0x400000, 6), SDTest.Peek(e + 0x18, 'i'), bscfl(e + 0x40001c, 1), SDTest.Peek(e + 0x20, 'i'),
 			bscfl(e + 0x400024, 29), SDTest.Peek(e + 0x98, 's')))
 	return tuple(r)
@@ -182,24 +182,24 @@ def bscactivas():
 def bscambiente():
 	return (bsci(bscesc + 0x14), bscfl(bscesc + 0x18, 1))
 bscactivar()
-check('Bsp_TomarLuces', lambda: (SDTest.Call(0x290930, 'vi', bscesc), bsctabla(), bscactivas(), bscambiente()))
+check('Bsp_TomarLuces', lambda: (SDTest.Call('Bsp_TomarLuces', 'vi', bscesc), bsctabla(), bscactivas(), bscambiente()))
 # with the multiplier of the negative lights and the ambient of the ini
-bscini = SDTest.Call(0x261980, 'tii', bscz(4))[0]
-SDTest.Call(0x2621a0, 'tiisss', bscini, 'mapa_sombras', 'negative_lights_mult', '0.5')
-SDTest.Call(0x2621a0, 'tiisss', bscini, 'mapa_sombras', 'lightmap_ambient', '0.2 0.4 0.8')
+bscini = SDTest.Call('CArchINI_ctor', 'tii', bscz(4))[0]
+SDTest.Call('CArchINI_SetStr', 'tiisss', bscini, 'mapa_sombras', 'negative_lights_mult', '0.5')
+SDTest.Call('CArchINI_SetStr', 'tiisss', bscini, 'mapa_sombras', 'lightmap_ambient', '0.2 0.4 0.8')
 bscpoke(bscesc + 0x4c, bscini)
 bscactivar()
-check('Bsp_TomarLuces ini', lambda: (SDTest.Call(0x290930, 'vi', bscesc), bsctabla(), bscactivas(), bscambiente()))
-SDTest.Call(0x2621a0, 'tiisss', bscini, 'mapa_sombras', 'negative_lights_mult', '1')
-SDTest.Call(0x2621a0, 'tiisss', bscini, 'mapa_sombras', 'lightmap_ambient', '0 0 0')
+check('Bsp_TomarLuces ini', lambda: (SDTest.Call('Bsp_TomarLuces', 'vi', bscesc), bsctabla(), bscactivas(), bscambiente()))
+SDTest.Call('CArchINI_SetStr', 'tiisss', bscini, 'mapa_sombras', 'negative_lights_mult', '1')
+SDTest.Call('CArchINI_SetStr', 'tiisss', bscini, 'mapa_sombras', 'lightmap_ambient', '0 0 0')
 bscactivar()
-check('Bsp_TomarLuces ini 1', lambda: (SDTest.Call(0x290930, 'vi', bscesc), bsctabla()[3], bscambiente()))
-check('Bsp_TomarLuces lights', lambda: SDTest.Peek(0x4ac434, 'i') == bscnl)
+check('Bsp_TomarLuces ini 1', lambda: (SDTest.Call('Bsp_TomarLuces', 'vi', bscesc), bsctabla()[3], bscambiente()))
+check('Bsp_TomarLuces lights', lambda: SDTest.Peek('g_nLuces', 'i') == bscnl)
 
 # lists made here: the texels of their triangles, then the vertex lists of a fake map
 def bsctri(v, n=(0.0,) * 9, uv=(0.0,) * 6, uvl=(0.0,) * 6, col=(0, 0, 0)):
 	t = bscz(0x224)
-	SDTest.Call(0x281d40, 'tii', t)
+	SDTest.Call('BspTri_ctor', 'tii', t)
 	bscwf(t + 4, v)
 	bscwf(t + 0x28, n)
 	bscwf(t + 0x4c, uv)
@@ -213,26 +213,26 @@ def bsclink(ts):
 	return ts[0]
 def bscbmp(w, h, c):
 	b = bscz(12)
-	SDTest.Call(0x28ff20, 'tviiii', b, w, h, c)
+	SDTest.Call('CBmp_CreateFill', 'tviiii', b, w, h, c)
 	return b
 def bscswap(t):
 	return (t & 0xff000000) | (t & 0xff) << 16 | (t & 0xff00) | (t >> 16 & 0xff)
-bscsaved = (SDTest.Peek(0x432950, 'i'), SDTest.Peek(0x432954, 'i'))
-SDTest.Poke(0x432950, 0x40000000)
-SDTest.Poke(0x432954, 0x3f800000)
-check('bsc texels', lambda: (SDTest.Peek(0x432958, 'i'), SDTest.Peek(0x43295c, 'i')))
+bscsaved = (SDTest.Peek('g_MapaSombrasEscala', 'i'), SDTest.Peek('g_MapaSombrasResol', 'i'))
+SDTest.Poke('g_MapaSombrasEscala', 0x40000000)
+SDTest.Poke('g_MapaSombrasResol', 0x3f800000)
+check('bsc texels', lambda: (SDTest.Peek('g_MapaSombrasTexX', 'i'), SDTest.Peek('g_MapaSombrasTexY', 'i')))
 bscta = bsctri((0.3, 0.0, 0.2, 0.1, 0.0, 4.6, 4.4, 0.0, 0.3))
 bsctb = bsctri((4.4, 0.0, 0.3, 0.1, 0.0, 4.6, 4.7, 0.0, 4.9))
 bsctc = bsctri((1.0, 0.0, 0.0, 1.5, 3.0, 0.2, 0.8, 0.5, 3.3))
 bscmts = [bscta, bsctb, bsctc]
 bscl1 = bsclink([bscta, bsctb])
-SDTest.Call(0x287bf0, 'vi', bscl1)
-SDTest.Call(0x287bf0, 'vi', bsctc)
+SDTest.Call('BspTri_CalcPlanos', 'vi', bscl1)
+SDTest.Call('BspTri_CalcPlanos', 'vi', bsctc)
 for bsc_t, bsc_e in ((bscl1, (-2, -2, 12, 12)), (bsctc, (-3, -1, 11, 13))):
 	for bsc_i in range(4):
 		bscpoke(bsc_t + 0xdc + 4 * bsc_i, bsc_e[bsc_i])
-	SDTest.Call(0x28ff20, 'tviiii', bsc_t + 0x114, 16, 16, 0)
-SDTest.Call(0x28ff20, 'tviiii', bsctc + 0x120, 16, 16, 0)
+	SDTest.Call('CBmp_CreateFill', 'tviiii', bsc_t + 0x114, 16, 16, 0)
+SDTest.Call('CBmp_CreateFill', 'tviiii', bsctc + 0x120, 16, 16, 0)
 bscpoke(bsctc + 0x12c, 0x00332211)
 bsccob = bscbmp(16, 16, 0xffff0000)
 def bscpix(b, x, y):
@@ -264,20 +264,20 @@ def bscmask(b):
 	return tuple(r)
 def bscext2(t):
 	return (bsci(t + 0xec), bsci(t + 0xf0), bsci(t + 0xf4), bsci(t + 0xf8))
-check('BspTri_Mascara', lambda: (SDTest.Call(0x285d80, 'vii', bscl1, bsccob), bscext2(bscta), bscext2(bsctb), bsccobs(bsccob),
+check('BspTri_Mascara', lambda: (SDTest.Call('BspTri_Mascara', 'vii', bscl1, bsccob), bscext2(bscta), bscext2(bsctb), bsccobs(bsccob),
 	bscmask(bscl1 + 0x114), bscpix(bsccob, 5, 5) >> 8))
-check('BspTri_Mascara 2', lambda: (SDTest.Call(0x285d80, 'vii', bsctc, bsccob), bscext2(bsctc), bsccobs(bsccob),
+check('BspTri_Mascara 2', lambda: (SDTest.Call('BspTri_Mascara', 'vii', bsctc, bsccob), bscext2(bsctc), bsccobs(bsccob),
 	bscmask(bsctc + 0x114), bscmask(bsctc + 0x120)))
-SDTest.Poke(0x432950, bscsaved[0])
-SDTest.Poke(0x432954, bscsaved[1])
+SDTest.Poke('g_MapaSombrasEscala', bscsaved[0])
+SDTest.Poke('g_MapaSombrasResol', bscsaved[1])
 
 # the vertex lists of a fake map: lists of the same material, page and sector joined
 bscmata = bscz(0xb0)
-SDTest.Call(0x233830, 'tii', bscmata)
-SDTest.Call(0x2a1940, 'tvis', bscmata + 4, 'sdbscmatA')
+SDTest.Call('CMaterial_ctor', 'tii', bscmata)
+SDTest.Call('Cad_Set', 'tvis', bscmata + 4, 'sdbscmatA')
 bscmatb = bscz(0xb0)
-SDTest.Call(0x233830, 'tii', bscmatb)
-SDTest.Call(0x2a1940, 'tvis', bscmatb + 4, 'sdbscmatB')
+SDTest.Call('CMaterial_ctor', 'tii', bscmatb)
+SDTest.Call('Cad_Set', 'tvis', bscmatb + 4, 'sdbscmatB')
 bscpoke(bscmatb + 0x38, bsci(bscmatb + 0x38) | 0x01000000)
 bscpg1 = bscz(0x30)
 bscpoke(bscpg1 + 0x28, 1)
@@ -342,18 +342,18 @@ def bscvmap():
 		nv, frmt = bsci(lv + 4), bsci(lv + 0xc)
 		r.append((tuple(ch), nt, tuple(ix), nv, frmt, bscfls(bsci(lv), nv * bscvsize[frmt] / 4)))
 	return tuple(r)
-check('CBsp_CrearBuffers', lambda: (SDTest.Call(0x28d520, 'tvi', bscmap), bscvmap()))
+check('CBsp_CrearBuffers', lambda: (SDTest.Call('CBsp_CrearBuffers', 'tvi', bscmap), bscvmap()))
 
 # the direct light of two lists above the player, the lights made here, the shadows traced through the floor of FZ
-bscgl = (0x432950, 0x432954, 0x4b2b04, 0x4b2b0c, 0x4b2b24, 0x4b2b74, 0x4b2b20, 0x4b2b14, 0x4b2b18, 0x4d5d20)
+bscgl = (sym('g_MapaSombrasEscala'), sym('g_MapaSombrasResol'), sym('g_MapaSombrasSuaves'), sym('g_MapaSombrasAten'), sym('g_MapaSombrasUsarTxf'), sym('g_TxfMode'), sym('g_CalcLmap2'), sym('g_MapaSombrasIlumGlobal'), sym('g_MapaSombrasNoLuzAmb'), sym('g_LightmapLinealAtten'))
 bscglsaved = []
 for bsc_a in bscgl:
 	bscglsaved.append(SDTest.Peek(bsc_a, 'i'))
 check('bsc light globals', lambda: tuple(bscglsaved))
-SDTest.Poke(0x432950, 0x3f800000)
-SDTest.Poke(0x432954, 0x3f800000)
-SDTest.Poke(0x4b2b24, 0)
-SDTest.Poke(0x4b2b74, 0)
+SDTest.Poke('g_MapaSombrasEscala', 0x3f800000)
+SDTest.Poke('g_MapaSombrasResol', 0x3f800000)
+SDTest.Poke('g_MapaSombrasUsarTxf', 0)
+SDTest.Poke('g_TxfMode', 0)
 bscesc2 = bscz(0x64)
 bscpoke(bscesc2 + 0x14, 0x00102030)
 bscwf(bscesc2 + 0x18, (0.5,))
@@ -372,7 +372,7 @@ for bsc_d in ((5000, 1, 0x7fffffff, (1.0, 0.0, 0.0, 30.0, 40.0, 1.0, 0.5), (bsco
 		bscpoke(bscesc2 + 0xc, bscnd)
 	bscprev = bscnd
 	bscl = bscz(0xcc)
-	SDTest.Call(0x23ab70, 'tii', bscl)
+	SDTest.Call('CLuz_ctor', 'tii', bscl)
 	bscpoke(bscl + 8, bsc_d[0])
 	bscpoke(bscl + 0xc, bsc_d[1] << 8)
 	bscpoke(bscl + 0x28, bsc_d[2])
@@ -381,7 +381,7 @@ for bsc_d in ((5000, 1, 0x7fffffff, (1.0, 0.0, 0.0, 30.0, 40.0, 1.0, 0.5), (bsco
 	bscpoke(bscnd + 0x18, bsc_d[5])
 	bscpoke(bscnd + 0x3c, bscl)
 	bscls.append((bscl, 1))
-check('Bsp_TomarLuces 2', lambda: (SDTest.Call(0x290930, 'vi', bscesc2), bsctabla()))
+check('Bsp_TomarLuces 2', lambda: (SDTest.Call('Bsp_TomarLuces', 'vi', bscesc2), bsctabla()))
 # the lists: a square of two triangles and one triangle of a node without shadows
 bscup = (0.0, 1.0, 0.0) * 3
 def bscdtri(a, b, c, nodo):
@@ -398,14 +398,14 @@ bscdc = bscdtri((-4.0, -1.0), (-4.0, 2.0), (-1.0, -1.0), bscnd2)
 bscdts = [bscda, bscdb, bscdc]
 def bscdlist(ts):
 	l = bsclink(ts)
-	SDTest.Call(0x287bf0, 'vi', l)
+	SDTest.Call('BspTri_CalcPlanos', 'vi', l)
 	bscpoke(l + 0xac, bscmata)
-	b = SDTest.Call(0x287930, 'iFi', (0.0,) * 6, l)[1]
-	e = SDTest.Call(0x287ac0, 'vFifpppp', b, 1, 1.0, 0, 0, 0, 0)
-	SDTest.Call(0x2900d0, 'viiiiii', l, e[2], e[3], e[4], e[5], 0)
+	b = SDTest.Call('BspTri_ListBox', 'iFi', (0.0,) * 6, l)[1]
+	e = SDTest.Call('Bsp_TexelBox', 'vFifpppp', b, 1, 1.0, 0, 0, 0, 0)
+	SDTest.Call('BspTri_SetExt', 'viiiiii', l, e[2], e[3], e[4], e[5], 0)
 	lx, ly = bsci(l + 0xd4), bsci(l + 0xd8)
-	SDTest.Call(0x28ff20, 'tviiii', l + 0x114, lx, ly, 0)
-	SDTest.Call(0x285d80, 'vii', l, bscbmp(lx, ly, 0xffff0000))
+	SDTest.Call('CBmp_CreateFill', 'tviiii', l + 0x114, lx, ly, 0)
+	SDTest.Call('BspTri_Mascara', 'vii', l, bscbmp(lx, ly, 0xffff0000))
 	return l
 bscdl1 = bscdlist([bscda, bscdb])
 bscdl2 = bscdlist([bscdc])
@@ -428,41 +428,41 @@ def bscdlight():
 		r.append((bsci(l + 0xd4), bsci(l + 0xd8), bscflt2(l + 0xb0), bscflt2(l + 0xbc), bscflt2(l + 0x108)))
 	return tuple(r)
 # hard shadows, all three maps kept (the fading of mapa_sombras aten needs the hit point, which CSuelo_Trace CHECKs)
-SDTest.Poke(0x4b2b04, 0)
-SDTest.Poke(0x4b2b0c, 0)
-SDTest.Poke(0x4b2b20, 1)
-SDTest.Poke(0x4b2b14, 1)
-SDTest.Poke(0x4b2b18, 0)
-check('CBsp_LuzDirecta', lambda: (SDTest.Call(0x2888c0, 'tvi', bscdmap), bscdlight()))
+SDTest.Poke('g_MapaSombrasSuaves', 0)
+SDTest.Poke('g_MapaSombrasAten', 0)
+SDTest.Poke('g_CalcLmap2', 1)
+SDTest.Poke('g_MapaSombrasIlumGlobal', 1)
+SDTest.Poke('g_MapaSombrasNoLuzAmb', 0)
+check('CBsp_LuzDirecta', lambda: (SDTest.Call('CBsp_LuzDirecta', 'tvi', bscdmap), bscdlight()))
 # without the ambient, the lineal attenuation and the secondary maps
-SDTest.Poke(0x4b2b0c, 0)
-SDTest.Poke(0x4b2b20, 0)
-SDTest.Poke(0x4b2b14, 0)
-SDTest.Poke(0x4b2b18, 1)
-SDTest.Poke(0x4d5d20, 1 - bscglsaved[9])
-check('CBsp_LuzDirecta 2', lambda: (SDTest.Call(0x2888c0, 'tvi', bscdmap), bscdlight()))
+SDTest.Poke('g_MapaSombrasAten', 0)
+SDTest.Poke('g_CalcLmap2', 0)
+SDTest.Poke('g_MapaSombrasIlumGlobal', 0)
+SDTest.Poke('g_MapaSombrasNoLuzAmb', 1)
+SDTest.Poke('g_LightmapLinealAtten', 1 - bscglsaved[9])
+check('CBsp_LuzDirecta 2', lambda: (SDTest.Call('CBsp_LuzDirecta', 'tvi', bscdmap), bscdlight()))
 # soft shadows on the small list
-SDTest.Poke(0x4d5d20, bscglsaved[9])
-SDTest.Poke(0x4b2b04, 1)
-SDTest.Poke(0x4b2b18, 0)
+SDTest.Poke('g_LightmapLinealAtten', bscglsaved[9])
+SDTest.Poke('g_MapaSombrasSuaves', 1)
+SDTest.Poke('g_MapaSombrasNoLuzAmb', 0)
 bscpoke(bscdmap + 0x4e208, 1)
 bscpoke(bscdmap + 8, bscdl2)
-SDTest.Call(0x323c50, 'vi', 0x4321)
-check('CBsp_LuzDirecta soft', lambda: (SDTest.Call(0x2888c0, 'tvi', bscdmap), bscdlight()[1]))
+SDTest.Call('crt_srand', 'vi', 0x4321)
+check('CBsp_LuzDirecta soft', lambda: (SDTest.Call('CBsp_LuzDirecta', 'tvi', bscdmap), bscdlight()[1]))
 for bsc_i in range(len(bscgl)):
 	SDTest.Poke(bscgl[bsc_i], bscglsaved[bsc_i])
 
 # the pages: the two lists of the direct light and one without light map grouped onto small pages, saved as
 # sdbscpg.*.tga in the game folder (the pages of the level are put back after)
-bscpgg = (0x4b2b3c, 0x432958, 0x43295c, 0x4b2b5c, 0x432990)
+bscpgg = (sym('g_BspLMaps'), sym('g_MapaSombrasTexX'), sym('g_MapaSombrasTexY'), sym('g_LmapInfo'), sym('g_LmapInfo2'))
 bscpgsaved = []
 for bsc_a in bscpgg:
 	bscpgsaved.append(SDTest.Peek(bsc_a, 'i'))
-SDTest.Poke(0x4b2b3c, 0)
-SDTest.Poke(0x432958, 32)
-SDTest.Poke(0x43295c, 32)
-SDTest.Poke(0x4b2b5c, 1)
-SDTest.Poke(0x432990, 1)
+SDTest.Poke('g_BspLMaps', 0)
+SDTest.Poke('g_MapaSombrasTexX', 32)
+SDTest.Poke('g_MapaSombrasTexY', 32)
+SDTest.Poke('g_LmapInfo', 1)
+SDTest.Poke('g_LmapInfo2', 1)
 bscpoke(bscesc2 + 4, bscstr('sdbscpg.sm3'))
 bscpoke(bscdl2 + 0xac, bscmatb)
 bscnl = bsctri(bscq)
@@ -492,7 +492,7 @@ def bscfile(n):
 	return (len(d), s)
 def bscpages():
 	r = []
-	lm = SDTest.Peek(0x4b2b3c, 'i')
+	lm = SDTest.Peek('g_BspLMaps', 'i')
 	pgs = []
 	while lm and len(pgs) < 20:
 		pgs.append(lm)
@@ -519,6 +519,6 @@ def bscpages():
 		for e in ('LMAP1', 'LMAP2', 'LMAP1.INFO', 'LMAP2.INFO'):
 			f.append(bscfile('sdbscpg.%04d.%s.tga' % (k + 1, e)))
 	return (tuple(r), tuple(ls), tuple(f))
-check('CBsp_AgruparMapas', lambda: (SDTest.Call(0x284d00, 'tvi', bscdmap), bscpages()))
+check('CBsp_AgruparMapas', lambda: (SDTest.Call('CBsp_AgruparMapas', 'tvi', bscdmap), bscpages()))
 for bsc_i in range(len(bscpgg)):
 	SDTest.Poke(bscpgg[bsc_i], bscpgsaved[bsc_i])

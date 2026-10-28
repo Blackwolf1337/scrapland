@@ -2,17 +2,17 @@
 # src/standalone/crtvec.c in ScrapC.exe). SDTest.ConvU calls them with the argument bits in xmm0 and returns the
 # result in eax and errno, so the C of the standalone matches the original here (execfile'd by sdcall.py, Python 1.5.2).
 # The result is printed signed (a wrapped or negative conversion), errno beside it (0, 33 EDOM, 34 ERANGE).
-cvFtoUI = 0x314310
-cvDtoUI = 0x3144f1
+cvFtoUI = sym('crt_ftoui3')
+cvDtoUI = sym('crt_dtoui3')
 # a buffer for the bits of a representable value (operator new, 0x133650); memcpy (0x3197d0) writes it, Peek reads
-cvbuf = SDTest.Call(0x133650, 'ii', 16)[0]
+cvbuf = SDTest.Call('Mem_Calloc', 'ii', 16)[0]
 
 def cvFbits(v):
-	SDTest.Call(0x3197d0, 'iiFi', cvbuf, (v,), 4)
+	SDTest.Call('crt_memcpy', 'iiFi', cvbuf, (v,), 4)
 	return SDTest.Peek(cvbuf, '@i')
 
 def cvDbits(v):
-	SDTest.Call(0x3197d0, 'iiDi', cvbuf, v, 8)
+	SDTest.Call('crt_memcpy', 'iiDi', cvbuf, v, 8)
 	return SDTest.Peek(cvbuf, '@i'), SDTest.Peek(cvbuf + 4, '@i')
 
 # float: value, then the three special bit patterns (+inf 0x7f800000, nan 0x7fc00000, -inf 0xff800000 signed)

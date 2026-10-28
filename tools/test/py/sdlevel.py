@@ -422,13 +422,13 @@ check('SAI.SetStateChar(0, Player0)', lambda: SAI.SetStateChar(0, 'Player0'))
 
 # the sectors of the level (Engine/SueloPortal.c): their names and the sector walks between their first nodes
 import SDTest
-nz = SDTest.Peek(0x4b00d8, 'i')
-check('sectors', lambda: (nz, SDTest.Peek(0x4e1e00, 'i')))
+nz = SDTest.Peek('g_NumZonas', 'i')
+check('sectors', lambda: (nz, SDTest.Peek('g_PortalesOn', 'i')))
 # what the portal culling of the last frame saw (Zona_Pintar): the sectors, how often, their screen rectangles
 def sdpintar():
 	r = []
-	for i in range(SDTest.Peek(0x4afed0, 'i')):
-		e = 0x4b0168 + 0x20 * i
+	for i in range(SDTest.Peek('g_NumZonasPintar', 'i')):
+		e = sym('g_ZonasPintar') + 0x20 * i
 		v = []
 		for k in range(8):
 			v.append(SDTest.Peek(e + 4 * k, 'i'))
@@ -437,26 +437,26 @@ def sdpintar():
 check('Zona_Pintar', sdpintar)
 # a cull from each of the first sectors, on a frame number of its own (the real render of this frame checks that the
 # sectors were not seen yet)
-frame = SDTest.Peek(0x4a8ec8, 'i')
+frame = SDTest.Peek('g_FrameCount', 'i')
 for sec in range(min(nz, 6)):
-	SDTest.Poke(0x4a8ec8, frame + 1000 + sec)
-	check('Portales_Cull' + fmt((sec,)), lambda sec=sec: (SDTest.Call(0x26d350, 'vi', sec), sdpintar()))
-SDTest.Poke(0x4a8ec8, frame)
+	SDTest.Poke('g_FrameCount', frame + 1000 + sec)
+	check('Portales_Cull' + fmt((sec,)), lambda sec=sec: (SDTest.Call('Portales_Cull', 'vi', sec), sdpintar()))
+SDTest.Poke('g_FrameCount', frame)
 for i in range(min(nz, 12)):
-	check('Sector_GetName' + fmt((i,)), lambda i=i: SDTest.Call(0x26c340, 'si', i)[0])
-	check('Sector_IsOutside' + fmt((i,)), lambda i=i: SDTest.Call(0x26c390, 'bi', i)[0])
-	z = SDTest.Peek(0x4afed8 + 4 * i, 'i')
+	check('Sector_GetName' + fmt((i,)), lambda i=i: SDTest.Call('Sector_GetName', 'si', i)[0])
+	check('Sector_IsOutside' + fmt((i,)), lambda i=i: SDTest.Call('Sector_IsOutside', 'bi', i)[0])
+	z = SDTest.Peek(sym('g_Zonas') + 4 * i, 'i')
 	check('CZona' + fmt((i,)), lambda z=z: (SDTest.Peek(z, '@i'), SDTest.Peek(z + 0x30, '@i'), SDTest.Peek(z + 0x134, '@i')))
 for a in range(min(nz, 6)):
 	for b in range(min(nz, 6)):
-		pa = SDTest.Peek(SDTest.Peek(0x4afed8 + 4 * a, 'i') + 0x24, '@i')
-		pb = SDTest.Peek(SDTest.Peek(0x4afed8 + 4 * b, 'i') + 0x24, '@i')
-		check('Sector_Recorrer' + fmt((a, b)), lambda a=a, pa=pa, pb=pb: SDTest.Call(0x26cba0, 'iiiii', a, pa + 0x8c,
+		pa = SDTest.Peek(SDTest.Peek(sym('g_Zonas') + 4 * a, 'i') + 0x24, '@i')
+		pb = SDTest.Peek(SDTest.Peek(sym('g_Zonas') + 4 * b, 'i') + 0x24, '@i')
+		check('Sector_Recorrer' + fmt((a, b)), lambda a=a, pa=pa, pb=pb: SDTest.Call('Sector_Recorrer', 'iiiii', a, pa + 0x8c,
 			pb + 0x8c, 0)[0])
 
 # the world (Engine/Mundo.c) after the level load: gMundo, its dummies, the .dum file written and read back, the debug
 # points. Floats as their bits, pointers only compared.
-mundo = SDTest.Peek(0x4afde8, 'i')
+mundo = SDTest.Peek('g_Mundo', 'i')
 def mwi(a):
 	return SDTest.Peek(a, '@i')
 def mwints(a, n):
@@ -479,9 +479,9 @@ check('CMundo', lambda: (mwints(mundo + 0x24, 2), mwi(mundo + 0xa4) == mundo + 0
 	mwi(mundo + 0xa8) != 0, mwi(mundo + 0xac) != 0, mwi(mundo + 0xb0) != 0, mwi(mundo + 0xb4) != 0,
 	mwi(mundo + 0xb8) != 0, mwi(mundo + 0xbc) != 0, mwi(mundo + 0xc0) & 0xff))
 check('CMundo dummies', lambda: mwdummies(dummies))
-check('MundoDummy_Count', lambda: SDTest.Call(0x2697d0, 'tii', dummies)[0])
+check('MundoDummy_Count', lambda: SDTest.Call('MundoDummy_Count', 'tii', dummies)[0])
 def mwfind(name, own, case):
-	d = SDTest.Call(0x26a710, 'tiisii', dummies, name, own, case)[0]
+	d = SDTest.Call('MundoDummy_Find', 'tiisii', dummies, name, own, case)[0]
 	i = 0
 	e = dummies
 	while e and e != d:
@@ -494,50 +494,50 @@ if dummies:
 		(SDTest.Peek(mwi(dummies) + 4, '@p') or 'x', 0, 0), ('DM_sdnone', 1, 0)):
 		check('MundoDummy_Find' + fmt((name, own, case)), lambda n=name, o=own, c=case: mwfind(n, o, c))
 for name in ('DM_sdnone', 'sd*'):
-	check('CMundo_FindNodo' + fmt((name,)), lambda n=name: mwnodo(SDTest.Call(0x26b270, 'tiis', mundo, n)[0]))
-	check('CMundo_FindNodoWild' + fmt((name,)), lambda n=name: mwnodo(SDTest.Call(0x26b290, 'tiis', mundo, n)[0]))
-check('CMundo_FindClase(luz)', lambda: mwnodo(SDTest.Call(0x26b250, 'tiiii', mundo, 0, 0xa3000008)[0]))
-check('CMundo_GetCamaraSuelo', lambda: SDTest.Call(0x26b210, 'tiii', mundo, 0)[0] != 0)
+	check('CMundo_FindNodo' + fmt((name,)), lambda n=name: mwnodo(SDTest.Call('CMundo_FindNodo', 'tiis', mundo, n)[0]))
+	check('CMundo_FindNodoWild' + fmt((name,)), lambda n=name: mwnodo(SDTest.Call('CMundo_FindNodoWild', 'tiis', mundo, n)[0]))
+check('CMundo_FindClase(luz)', lambda: mwnodo(SDTest.Call('CMundo_FindClase', 'tiiii', mundo, 0, 0xa3000008)[0]))
+check('CMundo_GetCamaraSuelo', lambda: SDTest.Call('CMundo_GetCamaraSuelo', 'tiii', mundo, 0)[0] != 0)
 saved = mwints(mundo + 0x24, 2)
-check('CMundo_SetCieloPos', lambda: (SDTest.Call(0x26a790, 'tvif', mundo, 37.5), mwi(mundo + 0x24)))
-check('CMundo_SetCieloRot', lambda: (SDTest.Call(0x26a7c0, 'tvif', mundo, -30.0), mwi(mundo + 0x28)))
+check('CMundo_SetCieloPos', lambda: (SDTest.Call('CMundo_SetCieloPos', 'tvif', mundo, 37.5), mwi(mundo + 0x24)))
+check('CMundo_SetCieloRot', lambda: (SDTest.Call('CMundo_SetCieloRot', 'tvif', mundo, -30.0), mwi(mundo + 0x28)))
 SDTest.Poke(mundo + 0x24 - 0x400000, saved[0])
 SDTest.Poke(mundo + 0x28 - 0x400000, saved[1])
 # the .dum file of the floor scene read again (files cannot be written here), a dummy made here
 escpath = SDTest.Peek(mwi(mundo + 0xac) + 4, '@p')
-loaded = SDTest.Call(0x2699d0, 'isp', escpath, 0)
+loaded = SDTest.Call('Mundo_LoadDUM', 'isp', escpath, 0)
 check('Mundo_LoadDUM', lambda: (loaded[0], mwdummies(loaded[1])))
-cell = SDTest.Call(0x1334d0, 'ii', 4)[0]
+cell = SDTest.Call('operator_new', 'ii', 4)[0]
 SDTest.Poke(cell - 0x400000, loaded[1])
-check('MundoDummy_FreeList', lambda: (SDTest.Call(0x2697e0, 'vi', cell), mwi(cell)))
+check('MundoDummy_FreeList', lambda: (SDTest.Call('MundoDummy_FreeList', 'vi', cell), mwi(cell)))
 for name in ('DM_sdnuevo', 'sdnuevo'):
-	d = SDTest.Call(0x269480, 'tiisFF', SDTest.Call(0x1334d0, 'ii', 0x24)[0], name, (1.5, -2.0, 3.0), (0.1, 0.2, -0.3))[0]
+	d = SDTest.Call('MundoDummy_ctor', 'tiisFF', SDTest.Call('operator_new', 'ii', 0x24)[0], name, (1.5, -2.0, 3.0), (0.1, 0.2, -0.3))[0]
 	check('MundoDummy_ctor' + fmt((name,)), lambda d=d: mwdummies(d))
-	check('MundoDummy_dtor' + fmt((name,)), lambda d=d: (SDTest.Call(0x269650, 'tvi', d), mwi(d + 4)))
+	check('MundoDummy_dtor' + fmt((name,)), lambda d=d: (SDTest.Call('MundoDummy_dtor', 'tvi', d), mwi(d + 4)))
 # the debug points: a point, a line, a box, then cleared; the limit with a count of 3
-sdon = SDTest.Peek(0x4a8efa, 'i')
-sdmax = SDTest.Peek(0x432584, 'i')
+sdon = SDTest.Peek('g_PuntosOn', 'i')
+sdmax = SDTest.Peek('g_MaxPuntos', 'i')
 def mwpuntos():
-	n = SDTest.Peek(0x4afecc, 'i')
+	n = SDTest.Peek('g_NumPuntos', 'i')
 	p = SDTest.Peek(0x4afec8, 'i')
 	if p:
 		return (n, SDTest.Peek(0x4afec4, 'i'), mwints(p, 5 * n))
 	return (n, SDTest.Peek(0x4afec4, 'i'))
-SDTest.Call(0x26b450, 'v')
-check('Debug_Punto', lambda: (SDTest.Call(0x26b300, 'iFif', (1.0, 2.0, 3.0), 0xff0000, 0.5)[0], mwpuntos()))
-check('Debug_PuntoLinea', lambda: (SDTest.Call(0x26b2c0, 'iFFii', (0.0, 0.0, 0.0), (4.0, 5.0, 6.0), 0xff, 0xff00)[0],
+SDTest.Call('Debug_PuntosClear', 'v')
+check('Debug_Punto', lambda: (SDTest.Call('Debug_Punto', 'iFif', (1.0, 2.0, 3.0), 0xff0000, 0.5)[0], mwpuntos()))
+check('Debug_PuntoLinea', lambda: (SDTest.Call('Debug_PuntoLinea', 'iFFii', (0.0, 0.0, 0.0), (4.0, 5.0, 6.0), 0xff, 0xff00)[0],
 	mwpuntos()))
 for i in range(5):
-	check('Debug_Punto box' + fmt((i,)), lambda i=i: (SDTest.Call(0x26b300, 'iFif', (float(i), 1.0, -1.0), i, -2.0)[0],
+	check('Debug_Punto box' + fmt((i,)), lambda i=i: (SDTest.Call('Debug_Punto', 'iFif', (float(i), 1.0, -1.0), i, -2.0)[0],
 		mwpuntos()))
-check('Debug_PuntosClear', lambda: (SDTest.Call(0x26b450, 'v'), mwpuntos()))
-SDTest.Poke(0x432584, 3)
+check('Debug_PuntosClear', lambda: (SDTest.Call('Debug_PuntosClear', 'v'), mwpuntos()))
+SDTest.Poke('g_MaxPuntos', 3)
 for i in range(5):
-	check('Debug_Punto max' + fmt((i,)), lambda i=i: (SDTest.Call(0x26b300, 'iFif', (0.0, float(i), 0.0), 7, 1.0)[0],
+	check('Debug_Punto max' + fmt((i,)), lambda i=i: (SDTest.Call('Debug_Punto', 'iFif', (0.0, float(i), 0.0), 7, 1.0)[0],
 		mwpuntos()))
-SDTest.Call(0x26b450, 'v')
-SDTest.Poke(0x432584, sdmax)
-SDTest.Poke(0x4a8efa, sdon)
+SDTest.Call('Debug_PuntosClear', 'v')
+SDTest.Poke('g_MaxPuntos', sdmax)
+SDTest.Poke('g_PuntosOn', sdon)
 
 # the fog of the world (Engine/Niebla.c) through the D3D log: CNiebla_Apply with its flags and the fog variables
 # changed, all put back after
@@ -546,7 +546,7 @@ def nblog(fn):
 	SDTest.D3DLog(1)
 	r = fn()
 	SDTest.D3DLog(0)
-	return (r[0], SDTest.Out(), SDTest.Peek(0x4ad744, 'i'))
+	return (r[0], SDTest.Out(), SDTest.Peek('g_FogActive', 'i'))
 nbsaved = mwints(mundo, 9)
 # the 3 bytes after activa are padding that no constructor writes (heap garbage, it differs when the heap use before
 # differs, as under wipe=2 with its exception handler)
@@ -554,12 +554,12 @@ def nbints(a, n):
 	r = mwints(a, n)
 	r[0] = r[0] & 0xff
 	return r
-nbvars = (0x4b1cb8, 0x4b1ce8, 0x4b1cd0, 0x4b1ca0)
+nbvars = (sym('g_FogEnable'), sym('g_FogColor'), sym('g_FogAbsDist'), sym('g_FogDensity'))
 nbvarsaved = []
 for a in nbvars:
 	nbvarsaved.append(SDTest.Peek(a, 'i'))
 check('CNiebla', lambda: nbints(mundo, 9))
-check('CNiebla_Apply', lambda: nblog(lambda: SDTest.Call(0x278420, 'tvi', mundo)))
+check('CNiebla_Apply', lambda: nblog(lambda: SDTest.Call('CNiebla_Apply', 'tvi', mundo)))
 # activa, tabla, capsW, capsTabla, fuente, modo; then R_FogEnable, R_FogColor, R_FogAbsDist, R_FogDensity
 for flags in ((1, 0, 0, 0, 0, 3), (1, 1, 0, 1, 0, 3), (1, 1, 1, 1, 1, 1), (1, 1, 0, 1, 1, 2), (0, 1, 0, 1, 1, 3),
 	(1, 0, 1, 0, 1, 3)):
@@ -570,20 +570,20 @@ for flags in ((1, 0, 0, 0, 0, 3), (1, 1, 0, 1, 0, 3), (1, 1, 1, 1, 1, 1), (1, 1,
 		SDTest.Poke(mundo + 0x20 - 0x400000, flags[5])
 		for i in range(4):
 			SDTest.Poke(nbvars[i], fv[i])
-		check('CNiebla_Apply' + fmt((flags, fv)), lambda: (nblog(lambda: SDTest.Call(0x278420, 'tvi', mundo)),
+		check('CNiebla_Apply' + fmt((flags, fv)), lambda: (nblog(lambda: SDTest.Call('CNiebla_Apply', 'tvi', mundo)),
 			nbints(mundo, 9)))
 		for i in range(9):
 			SDTest.Poke(mundo + 4 * i - 0x400000, nbsaved[i])
 for i in range(4):
 	SDTest.Poke(nbvars[i], nbvarsaved[i])
-nb = SDTest.Call(0x1334d0, 'ii', 0x24)[0]
+nb = SDTest.Call('operator_new', 'ii', 0x24)[0]
 # 0x14 and 0x18 (the own color) are not set by the constructor
 def nbset(nb):
 	return nbints(nb, 5) + mwints(nb + 0x1c, 2)
-check('CNiebla_ctor', lambda: (SDTest.Call(0x278360, 'tii', nb)[0] == nb, nbset(nb)))
-check('CNiebla_InitD3D', lambda: (SDTest.Call(0x2783a0, 'tvi', nb), nbset(nb)))
-check('CNiebla_SetColor', lambda: (SDTest.Call(0x278680, 'tviif', nb, 0x11223344, 0.75), nbints(nb, 9)))
-check('CNiebla_SetRango', lambda: (SDTest.Call(0x2786a0, 'tviff', nb, 0.25, 0.9), nbints(nb, 9)))
+check('CNiebla_ctor', lambda: (SDTest.Call('CNiebla_ctor', 'tii', nb)[0] == nb, nbset(nb)))
+check('CNiebla_InitD3D', lambda: (SDTest.Call('CNiebla_InitD3D', 'tvi', nb), nbset(nb)))
+check('CNiebla_SetColor', lambda: (SDTest.Call('CNiebla_SetColor', 'tviif', nb, 0x11223344, 0.75), nbints(nb, 9)))
+check('CNiebla_SetRango', lambda: (SDTest.Call('CNiebla_SetRango', 'tviff', nb, 0.25, 0.9), nbints(nb, 9)))
 # the tests of single modules in the level (tools/test/py/sdlevel_*.py); a missing one is skipped
 for part in ('sdlevel_collision.py', 'sdlevel_scrapworld.py', 'sdlevel_world.py', 'sdlevel_fxcounter.py', 'sdlevel_grid.py', 'sdlevel_fxmisc.py', 'sdlevel_fxweap.py', 'sdlevel_efxchar.py', 'sdlevel_fxelem.py', 'sdlevel_efxveh.py', 'sdlevel_efxmisc.py', 'sdlevel_entity.py', 'sdlevel_weap1.py', 'sdlevel_weap2.py', 'sdlevel_fxchar.py', 'sdlevel_fxveh.py', 'sdlevel_fxscene.py', 'sdlevel_bsp.py', 'sdlevel_vehent.py', 'sdlevel_fxcharact.py', 'sdlevel_vehmot.py', 'sdlevel_entmore.py', 'sdlevel_nodestraf.py', 'sdlevel_nodesworld.py', 'sdlevel_chartype1.py', 'sdlevel_nodes2d.py', 'sdlevel_chartype2.py', 'sdlevel_logic1.py', 'sdlevel_scorer2.py', 'sdlevel_ivehicle.py', 'sdlevel_logic2.py', 'sdlevel_walkchar.py', 'sdlevel_scorer3.py', 'sdlevel_ivehctl.py', 'sdlevel_logic3.py', 'sdlevel_icharctl.py', 'sdlevel_net.py', 'sdlevel_aicharctl.py', 'sdlevel_aichar.py', 'sdlevel_logic4.py', 'sdlevel_actions.py', 'sdlevel_vweaps.py', 'sdlevel_aigroup.py', 'sdlevel_render2.py', 'sdlevel_eng2.py', 'sdlevel_eng1.py', 'sdlevel_eng3.py', 'sdlevel_fxbig1.py', 'sdlevel_gamebig.py', 'sdlevel_fxbig2.py', 'sdlevel_eng4.py', 'sdlevel_ailo.py', 'sdlevel_restb.py', 'sdlevel_fxfinal.py', 'sdlevel_resta.py', 'sdlevel_exhaust.py', 'sdlevel_bspcalc.py', 'sdlevel_leftc.py', 'sdlevel_engmisc.py', 'sdlevel_finalu.py', 'sdlevel_scorerdraw.py', 'sdlevel_ase.py'):
 	try:

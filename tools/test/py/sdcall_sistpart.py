@@ -2,7 +2,7 @@
 # sdcall.py after the other checks: check, fmt come from there). Floats are printed as their bits. Not tested here:
 # CSistPart_Update and the D3D drawing (they depend on the time and the device), the bounce (needs the world floor).
 def spnew(n):
-	return SDTest.Call(0x1334d0, 'ii', n)[0]
+	return SDTest.Call('operator_new', 'ii', n)[0]
 def spi(addr):
 	return SDTest.Peek(addr, '@i')
 def spb(addr):
@@ -13,9 +13,9 @@ def spints(addr, n):
 		r.append(spi(addr + 4 * i))
 	return r
 def spini(sect, keys):
-	ini = SDTest.Call(0x261980, 'tii', spnew(4))[0]
+	ini = SDTest.Call('CArchINI_ctor', 'tii', spnew(4))[0]
 	for k, v in keys:
-		SDTest.Call(0x2621a0, 'tiisss', ini, sect, k, v)
+		SDTest.Call('CArchINI_SetStr', 'tiisss', ini, sect, k, v)
 	return ini
 # a particle: the members both kinds have, then those of an active one
 def sppart(p, active):
@@ -38,18 +38,18 @@ def spget(sp):
 		SDTest.Peek(sp + 0x110, '@p'), spi(sp + 0x118) != 0, spb(sp + 0x140), spb(sp + 0x141), spb(sp + 0x142),
 		spb(sp + 0x14c), spb(sp + 0x14d))
 
-check('Grafico2D_NumPrims', lambda: map(lambda a: SDTest.Call(0x279900, 'iii', a[0], a[1])[0], ((4, 3), (4, 12), (5, 3),
+check('Grafico2D_NumPrims', lambda: map(lambda a: SDTest.Call('Grafico2D_NumPrims', 'iii', a[0], a[1])[0], ((4, 3), (4, 12), (5, 3),
 	(5, 10), (6, 3), (6, 7))))
-spsaved = (SDTest.Peek(0x432598, 'i'), SDTest.Peek(0x43259c, 'i'))
-check('Grafico2D_SetPantalla', lambda: (SDTest.Call(0x279580, 'vii', 640, 480), SDTest.Call(0x2799e0, 'vpp', 0, 0),
-	SDTest.Peek(0x4325a0, 'd'), SDTest.Peek(0x4325a8, 'd')))
-SDTest.Call(0x279580, 'vii', spsaved[0], spsaved[1])
-SDTest.Call(0x323c50, 'vi', 23)
+spsaved = (SDTest.Peek('g_Pantalla2DW', 'i'), SDTest.Peek('g_Pantalla2DH', 'i'))
+check('Grafico2D_SetPantalla', lambda: (SDTest.Call('Grafico2D_SetPantalla', 'vii', 640, 480), SDTest.Call('Grafico2D_GetPantalla', 'vpp', 0, 0),
+	SDTest.Peek('g_Pantalla2DInvW', 'd'), SDTest.Peek('g_Pantalla2DInvH', 'd')))
+SDTest.Call('Grafico2D_SetPantalla', 'vii', spsaved[0], spsaved[1])
+SDTest.Call('crt_srand', 'vi', 23)
 for a, b in (((0.0, 0.0, 0.0), (0.0, 0.0, 0.0)), ((-1.0, 2.0, 3.0), (1.0, 2.0, 5.0)), ((5.0, -5.0, 0.5), (-5.0, 5.0, 0.25))):
-	check('SistPart_RandVec' + fmt((a, b)), lambda a=a, b=b: SDTest.Call(0x27be80, 'iFFF', (9.0, 9.0, 9.0), a, b)[1])
+	check('SistPart_RandVec' + fmt((a, b)), lambda a=a, b=b: SDTest.Call('SistPart_RandVec', 'iFFF', (9.0, 9.0, 9.0), a, b)[1])
 
-node = SDTest.Call(0x23cf40, 'tii', spnew(0xfc))[0]
-SDTest.Call(0x2a1940, 'tvis', node + 4, 'sdpart')
+node = SDTest.Call('CNodo3D_ctor', 'tii', spnew(0xfc))[0]
+SDTest.Call('Cad_Set', 'tvis', node + 4, 'sdpart')
 # held by its scene, as the systems expect (they only add their own reference)
 SDTest.Poke(node + 8 - 0x400000, 1)
 SDTest.Poke(node + 0xf8 - 0x400000, spini('Particles', (('Type', 'sdpa'), ('Scale', '2.0'), ('Alpha', '0.5'))))
@@ -58,18 +58,18 @@ pini = spini('sdpa', (('Particles', '6'), ('BirthRate', '30'), ('LifeTime', '0.4
 	('InitPosMin', '-1 -1 -1'), ('InitPosMax', '1 2 1'), ('InitVelMin', '-2 4 -2'), ('InitVelMax', '2 8 2'),
 	('InitAcc', '0 -9.8 0'), ('RotIni', '10'), ('RotEnd', '90'), ('RotVar', '15'), ('SpriteIni', '1'), ('SpriteEnd', '4'),
 	('SpriteRand', '1'), ('Sparks', '1'), ('AdditiveAlpha', '0'), ('AlphaDist', '2'), ('Bounce', '1'), ('ZBias', '0.25')))
-SDTest.Call(0x2621a0, 'tiisss', pini, 'sdpr', 'Particles', '4')
-SDTest.Call(0x2621a0, 'tiisss', pini, 'sdpr', 'ColorRamp', '1')
+SDTest.Call('CArchINI_SetStr', 'tiisss', pini, 'sdpr', 'Particles', '4')
+SDTest.Call('CArchINI_SetStr', 'tiisss', pini, 'sdpr', 'ColorRamp', '1')
 for i in range(1, 6):
-	SDTest.Call(0x2621a0, 'tiisss', pini, 'sdpr', 'ColorRamp_%02d' % i, '%d %d %d %d' % (50 * i, 255 - 40 * i, 20 * i, 200))
-SDTest.Call(0x323c50, 'vi', 31)
-sp = SDTest.Call(0x27a470, 'iii', node, pini)[0]
+	SDTest.Call('CArchINI_SetStr', 'tiisss', pini, 'sdpr', 'ColorRamp_%02d' % i, '%d %d %d %d' % (50 * i, 255 - 40 * i, 20 * i, 200))
+SDTest.Call('crt_srand', 'vi', 31)
+sp = SDTest.Call('SistPart_FromNode', 'iii', node, pini)[0]
 check('SistPart_FromNode', lambda: (sp != 0, spget(sp), spparts(sp, 1)))
-check('CSistPart_GetEscala', lambda: (SDTest.Call(0x27a750, 'tviF', sp, (9.0, 9.0, 9.0))[1],
-	SDTest.Call(0x27a6f0, 'tviF', sp, (9.0, 9.0))[1]))
-check('CSistPart_SetAlpha', lambda: (SDTest.Call(0x27c2c0, 'tvif', sp, 0.75), spi(sp + 0xf8)))
+check('CSistPart_GetEscala', lambda: (SDTest.Call('CSistPart_GetEscala', 'tviF', sp, (9.0, 9.0, 9.0))[1],
+	SDTest.Call('CSistPart_GetEscala2', 'tviF', sp, (9.0, 9.0))[1]))
+check('CSistPart_SetAlpha', lambda: (SDTest.Call('CSistPart_SetAlpha', 'tvif', sp, 0.75), spi(sp + 0xf8)))
 for n, force, dt in ((3, 0, 0.05), (2, 0, 0.0), (4, 0, 0.1), (3, 1, 0.02)):
-	check('CSistPart_EmitDt' + fmt((n, force, dt)), lambda n=n, force=force, dt=dt: (SDTest.Call(0x27b8a0, 'tviiif', sp, n,
+	check('CSistPart_EmitDt' + fmt((n, force, dt)), lambda n=n, force=force, dt=dt: (SDTest.Call('CSistPart_EmitDt', 'tviiif', sp, n,
 		force, dt), spget(sp)[10:12], spparts(sp, 1)))
 # the life of the particles in fixed steps, without and with a multi sprite (only the sprite index then)
 for step in range(8):
@@ -77,56 +77,56 @@ for step in range(8):
 	for i in range(spi(sp + 0xc)):
 		p = spi(ps + 4 * i)
 		if spb(p + 4):
-			SDTest.Call(0x27c2e0, 'tviifi', p, sp, 0.06, 0)
+			SDTest.Call('CParticulaActive_Update', 'tviifi', p, sp, 0.06, 0)
 	check('CParticulaActive_Update' + fmt((step,)), lambda: (spget(sp)[10:12], spparts(sp, 1)))
 emit = spnew(24)
-SDTest.Call(0x3197d0, 'iiFi', emit, (1.0, 2.0, 3.0, -4.0, -5.0, -6.0), 24)
-check('CSistPart_SetEmitPos', lambda: (SDTest.Call(0x27a680, 'tviii', sp, emit, 2), spget(sp)[17:]))
-check('CSistPart_Emit pos', lambda: (SDTest.Call(0x27b8a0, 'tviiif', sp, 3, 1, 0.0), spget(sp)[17:], spparts(sp, 1)))
-check('CSistPart_SetEmitPos none', lambda: (SDTest.Call(0x27a680, 'tviii', sp, 0, 5), spget(sp)[17:]))
+SDTest.Call('crt_memcpy', 'iiFi', emit, (1.0, 2.0, 3.0, -4.0, -5.0, -6.0), 24)
+check('CSistPart_SetEmitPos', lambda: (SDTest.Call('CSistPart_SetEmitPos', 'tviii', sp, emit, 2), spget(sp)[17:]))
+check('CSistPart_Emit pos', lambda: (SDTest.Call('CSistPart_EmitDt', 'tviiif', sp, 3, 1, 0.0), spget(sp)[17:], spparts(sp, 1)))
+check('CSistPart_SetEmitPos none', lambda: (SDTest.Call('CSistPart_SetEmitPos', 'tviii', sp, 0, 5), spget(sp)[17:]))
 mat = (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 10.0, 20.0, 30.0, 1.0)
-check('CSistPart_EmitM', lambda: (SDTest.Call(0x27b880, 'tviiiF', sp, 2, 1, mat)[0], spparts(sp, 1)))
+check('CSistPart_EmitM', lambda: (SDTest.Call('CSistPart_EmitM', 'tviiiF', sp, 2, 1, mat)[0], spparts(sp, 1)))
 p0 = spi(spi(sp + 0x11c))
-check('CSistPart_SetActive', lambda: (SDTest.Call(0x27bbe0, 'tviii', sp, p0, 0), spb(sp + 0x10c),
-	SDTest.Call(0x27bbe0, 'tviii', sp, p0, 0), spb(sp + 0x10c), SDTest.Call(0x27bbe0, 'tviii', sp, p0, 1), spb(sp + 0x10c)))
+check('CSistPart_SetActive', lambda: (SDTest.Call('CSistPart_SetActive', 'tviii', sp, p0, 0), spb(sp + 0x10c),
+	SDTest.Call('CSistPart_SetActive', 'tviii', sp, p0, 0), spb(sp + 0x10c), SDTest.Call('CSistPart_SetActive', 'tviii', sp, p0, 1), spb(sp + 0x10c)))
 for force in (0, 1):
-	check('CSistPart_GetFree' + fmt((force,)), lambda force=force: SDTest.Call(0x27a360, 'tiii', sp, force)[0] != 0)
+	check('CSistPart_GetFree' + fmt((force,)), lambda force=force: SDTest.Call('CSistPart_GetFree', 'tiii', sp, force)[0] != 0)
 
 # a color ramp system on the same node
-SDTest.Call(0x2621a0, 'tiisss', spi(node + 0xf8), 'Particles', 'Type', 'sdpr')
-SDTest.Call(0x323c50, 'vi', 41)
-sr = SDTest.Call(0x27a470, 'iii', node, pini)[0]
+SDTest.Call('CArchINI_SetStr', 'tiisss', spi(node + 0xf8), 'Particles', 'Type', 'sdpr')
+SDTest.Call('crt_srand', 'vi', 41)
+sr = SDTest.Call('SistPart_FromNode', 'iii', node, pini)[0]
 check('SistPart_FromNode ramp', lambda: (spget(sr), spparts(sr, 1)))
-SDTest.Call(0x27b8a0, 'tviiif', sr, 4, 0, 0.0)
+SDTest.Call('CSistPart_EmitDt', 'tviiif', sr, 4, 0, 0.0)
 for step in range(4):
 	ps = spi(sr + 0x11c)
 	for i in range(spi(sr + 0xc)):
 		p = spi(ps + 4 * i)
 		if spb(p + 4):
-			SDTest.Call(0x27c2e0, 'tviifi', p, sr, 0.15, 0)
+			SDTest.Call('CParticulaActive_Update', 'tviifi', p, sr, 0.15, 0)
 	check('CParticulaActive_Update ramp' + fmt((step,)), lambda: spparts(sr, 1))
 
 # static systems: local ones get a box, the others not
 for name, local in (('sdst', '1'), ('sdsw', '0')):
-	SDTest.Call(0x2621a0, 'tiisss', pini, name, 'Static', '1')
-	SDTest.Call(0x2621a0, 'tiisss', pini, name, 'Local', local)
-	SDTest.Call(0x2621a0, 'tiisss', pini, name, 'Particles', '5')
-	SDTest.Call(0x2621a0, 'tiisss', pini, name, 'BirthRate', '5')
-	SDTest.Call(0x2621a0, 'tiisss', pini, name, 'InitVel', '1 2 0.5')
-	SDTest.Call(0x2621a0, 'tiisss', pini, name, 'SizeIni', '2')
-	SDTest.Call(0x2621a0, 'tiisss', spi(node + 0xf8), 'Particles', 'Type', name)
-	SDTest.Call(0x323c50, 'vi', 53)
-	st = SDTest.Call(0x27a470, 'iii', node, pini)[0]
+	SDTest.Call('CArchINI_SetStr', 'tiisss', pini, name, 'Static', '1')
+	SDTest.Call('CArchINI_SetStr', 'tiisss', pini, name, 'Local', local)
+	SDTest.Call('CArchINI_SetStr', 'tiisss', pini, name, 'Particles', '5')
+	SDTest.Call('CArchINI_SetStr', 'tiisss', pini, name, 'BirthRate', '5')
+	SDTest.Call('CArchINI_SetStr', 'tiisss', pini, name, 'InitVel', '1 2 0.5')
+	SDTest.Call('CArchINI_SetStr', 'tiisss', pini, name, 'SizeIni', '2')
+	SDTest.Call('CArchINI_SetStr', 'tiisss', spi(node + 0xf8), 'Particles', 'Type', name)
+	SDTest.Call('crt_srand', 'vi', 53)
+	st = SDTest.Call('SistPart_FromNode', 'iii', node, pini)[0]
 	check('SistPart_FromNode static' + fmt((local,)), lambda st=st: (spget(st), spparts(st, 0)))
-	check('CSistPart_GetBox' + fmt((local,)), lambda st=st: SDTest.Call(0x27a790, 'tbiF', st, (9.0, 9.0, 9.0, 9.0, 9.0, 9.0)))
-	check('CSistPart_Delete static' + fmt((local,)), lambda st=st: SDTest.Call(0x27a190, 'tiii', st, 1)[0] == st)
-check('CSistPart_GetBox not static', lambda: SDTest.Call(0x27a790, 'tbiF', sp, (9.0, 9.0, 9.0, 9.0, 9.0, 9.0)))
+	check('CSistPart_GetBox' + fmt((local,)), lambda st=st: SDTest.Call('CSistPart_GetBox', 'tbiF', st, (9.0, 9.0, 9.0, 9.0, 9.0, 9.0)))
+	check('CSistPart_Delete static' + fmt((local,)), lambda st=st: SDTest.Call('CSistPart_Delete', 'tiii', st, 1)[0] == st)
+check('CSistPart_GetBox not static', lambda: SDTest.Call('CSistPart_GetBox', 'tbiF', sp, (9.0, 9.0, 9.0, 9.0, 9.0, 9.0)))
 
 # a copy, then everything deleted
-SDTest.Call(0x323c50, 'vi', 61)
-cp = SDTest.Call(0x279a50, 'tiii', spnew(0x150), sp)[0]
+SDTest.Call('crt_srand', 'vi', 61)
+cp = SDTest.Call('CSistPart_ctorCopy', 'tiii', spnew(0x150), sp)[0]
 check('CSistPart_ctorCopy', lambda: (spget(cp), spparts(cp, 1)))
-cnt = SDTest.Peek(0x4b2588, 'i')
+cnt = SDTest.Peek('g_SistPartCount', 'i')
 for s in (cp, sr, sp):
-	check('CSistPart_Delete', lambda s=s: (SDTest.Call(0x27a190, 'tiii', s, 1)[0] == s, SDTest.Peek(0x4b2588, 'i') - cnt))
+	check('CSistPart_Delete', lambda s=s: (SDTest.Call('CSistPart_Delete', 'tiii', s, 1)[0] == s, SDTest.Peek('g_SistPartCount', 'i') - cnt))
 check('CSistPart node refs', lambda: spi(node + 8))

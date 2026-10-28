@@ -20,13 +20,13 @@ def lfci(a):
 def lfcb(a):
 	return SDTest.Peek(a, '@b')
 def lfcz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def lfcfree(p):
-	SDTest.Call(0x133550, 'ii', p)
+	SDTest.Call('Mem_Free', 'ii', p)
 def lfcfl(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def lfcset(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 def lfcints(a, offs):
 	return tuple(map(lambda o, a=a: SDTest.Peek(a + o, '@i'), offs))
 def lfcbytes(a, offs):
@@ -57,11 +57,11 @@ def lfcparts(p):
 	return (lfci(p + 0xac) != 0, lfcints(p, (0x00, 0x04, 0x18)), lfcfl(p + 0x08, 4), lfcfl(p + 0x1c, 28),
 		lfcfl(p + 0x9c, 2), lfcbytes(p, (0x98, 0x99, 0xa4)))
 def lfcpart(p, i):
-	return SDTest.Call(0x21d4e0, 'tbiiFiipF', p, i, (0.0, 0.0, 0.0), 0, 0, 0, (0.0,))
+	return SDTest.Call('CGameParticles_GetParticle', 'tbiiFiipF', p, i, (0.0, 0.0, 0.0), 0, 0, 0, (0.0,))
 def lfcnum(p):
-	return SDTest.Call(0x21d4d0, 'tii', p)[0]
+	return SDTest.Call('CGameParticles_NumParticles', 'tii', p)[0]
 def lfcactive(p):
-	return SDTest.Call(0x21d470, 'tii', p)[0]
+	return SDTest.Call('CGameParticles_NumActive', 'tii', p)[0]
 def lfcpartv(p, i):
 	r = lfcpart(p, i)
 	if r[0]:
@@ -93,7 +93,7 @@ def lfctrails(a, n):
 	return tuple(map(lambda i, a=a: lfctrail(a + 4 * i), range(n)))
 # render node name of the CGameModel gm with a particle system (flags & 2, obj3D of class 0xa5000020)
 def lfcsist(gm, name):
-	i = SDTest.Call(0x20f7d0, 'tiis', gm, name)[0]
+	i = SDTest.Call('CGameModel_FindNodoR', 'tiis', gm, name)[0]
 	if i < 0:
 		return 0
 	t = lfci(lfci(gm) + 0xac)
@@ -103,9 +103,9 @@ def lfcsist(gm, name):
 	o = lfci(r + 0x9c)
 	return (lfcb(r + 4) & 2) and o != 0 and lfci(o + 4) == -0x5affffe0
 def lfcnode(gm, name):
-	return SDTest.Call(0x20f7d0, 'tiis', gm, name)[0] >= 0
+	return SDTest.Call('CGameModel_FindNodoR', 'tiis', gm, name)[0] >= 0
 def lfcok(gm, sists, nodes):
-	if not SDTest.Call(0x210da0, 'tbi', gm)[0] or not lfci(gm):
+	if not SDTest.Call('CGameModel_IsLoaded', 'tbi', gm)[0] or not lfci(gm):
 		return 0
 	for n in sists:
 		if not lfcsist(gm, n):
@@ -115,14 +115,14 @@ def lfcok(gm, sists, nodes):
 			return 0
 	return 1
 
-lfcworld = SDTest.Peek(0x467450, 'i')
-lfcplayer = SDTest.Call(0x0c1430, 'tiii', lfcworld, 0)[0]
+lfcworld = SDTest.Peek('g_pWorld', 'i')
+lfcplayer = SDTest.Call('cWorld_GetUsrEntity', 'tiii', lfcworld, 0)[0]
 lfcvt = lfci(lfcplayer)
 lfcdelta = lfci(lfcworld + 0x2d4)
 lfcset(lfcworld + 0x2d4, (0.04,))
-lfcsplit = SDTest.Peek(0x4a8c8c, 'i')
-SDTest.Poke(0x4a8c8c, 1)
-SDTest.Call(0x323c50, 'vi', 2718)
+lfcsplit = SDTest.Peek('g_SplitScreen', 'i')
+SDTest.Poke('g_SplitScreen', 1)
+SDTest.Call('crt_srand', 'vi', 2718)
 lfcvec = lfcz(0x20)
 lfccam = lfcfl(lfcworld + 0x254 + 12 * lfci(lfcworld + 0x50), 3)
 
@@ -148,27 +148,27 @@ def lfcctrlfree(c):
 def lfcfake(path, c):
 	e = lfcz(0x600)
 	lfcpoke(e, lfcvt)
-	SDTest.Call(0x20eb10, 'tiis', e + 0xb8, path)
+	SDTest.Call('CGameModel_ctor', 'tiis', e + 0xb8, path)
 	lfcpoke(e + 0x238, 100)
 	lfcpoke(e + 0x424, -1)
 	lfcpoke(e + 0x234, c)
 	return e
 def lfcunfake(e):
-	SDTest.Call(0x20ec10, 'tvi', e + 0xb8)
+	SDTest.Call('CGameModel_Reset', 'tvi', e + 0xb8)
 	lfcfree(e)
 def lfcplace(gm, d, rot):
 	lfcset(lfcvec, lfcadd(lfccam, d))
-	SDTest.Call(0x211d20, 'tvii', gm, lfcvec)
+	SDTest.Call('CGameModel_SetPos', 'tvii', gm, lfcvec)
 	lfcset(lfcvec, rot)
-	SDTest.Call(0x211e50, 'tvii', gm, lfcvec)
+	SDTest.Call('CGameModel_SetRot', 'tvii', gm, lfcvec)
 # the model visible or not: R_SplitScreen and the visible flags of the model
 def lfcvisible(gm, on):
 	m = lfci(gm)
 	if on:
-		SDTest.Poke(0x4a8c8c, 1)
+		SDTest.Poke('g_SplitScreen', 1)
 		lfcpoke(m + 0x120, lfcvisflags)
 	else:
-		SDTest.Poke(0x4a8c8c, 0)
+		SDTest.Poke('g_SplitScreen', 0)
 		lfcpoke(m + 0x120, lfcvisflags & ~0xff00)
 # Create of the effect on the fake; the effect or 0
 def lfcmake(name, path, create, sists, nodes, c):
@@ -179,7 +179,7 @@ def lfcmake(name, path, create, sists, nodes, c):
 		lfcunfake(e)
 		return (0, 0, 0)
 	slot = lfcz(4)
-	SDTest.Call(0xd7ac0, 'visi', e, create, slot)
+	SDTest.Call('EmbeddedFXChar_Create', 'visi', e, create, slot)
 	fx = lfci(slot)
 	lfcfree(slot)
 	check('LFC %s created' % name, lambda fx=fx, e=e: (fx != 0, fx and lfci(fx) - 0x400000, fx and lfci(fx + 4) == e))
@@ -210,41 +210,41 @@ if lfcs[2]:
 	for lfcst, lfcdt in ((1, 0.05), (2, 0.05), (2, 0.01), (3, 0.05), (3, 0.02), (3, 0.03), (0, 0.05), (3, 0.05),
 			(2, 0.04), (1, 0.05)):
 		lfcpoke(lfce + 0x38c, lfcst)
-		check('LFC Sentinel_Update' + fmt((lfcst, lfcdt)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call(0xdee20, 'tvif',
+		check('LFC Sentinel_Update' + fmt((lfcst, lfcdt)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call('cEmbeddedFXSentinel_Update', 'tvif',
 			fx, dt), lfcsent(fx)))
 	# the player path: a player slot and the action Action.. (danger: no victim, so alert), then another action
 	lfcpoke(lfce + 0x424, 0)
 	lfcc = lfcctrlname(lfcc, 'ActionLoop')
-	check('LFC Sentinel_Update player Action', lambda fx=lfcfx: (SDTest.Call(0xdee20, 'tvif', fx, 0.05),
+	check('LFC Sentinel_Update player Action', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXSentinel_Update', 'tvif', fx, 0.05),
 		lfcsent(fx)))
 	lfcpoke(lfce + 0x38c, 0)
 	lfcc = lfcctrlname(lfcc, 'Relax')
-	check('LFC Sentinel_Update player Relax', lambda fx=lfcfx: (SDTest.Call(0xdee20, 'tvif', fx, 0.05),
+	check('LFC Sentinel_Update player Relax', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXSentinel_Update', 'tvif', fx, 0.05),
 		lfcsent(fx)))
 	lfcpoke(lfce + 0x424, -1)
 	# no life
 	lfcpoke(lfce + 0x38c, 3)
 	lfcpoke(lfce + 0x238, 0)
-	check('LFC Sentinel_Update dead', lambda fx=lfcfx: (SDTest.Call(0xdee20, 'tvif', fx, 0.05), lfcsent(fx)))
+	check('LFC Sentinel_Update dead', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXSentinel_Update', 'tvif', fx, 0.05), lfcsent(fx)))
 	lfcpoke(lfce + 0x238, 100)
 	# not visible: near (the scanner still sweeps) and far
 	lfcvisible(lfcs[1], 0)
 	for lfcd in ((0.0, 0.0, 300.0), (0.0, 0.0, 9000.0), (0.0, 200.0, 600.0)):
 		lfcplace(lfcs[1], lfcd, (0.0, -1.2, 0.0))
-		check('LFC Sentinel_Update hidden' + fmt(lfcd), lambda fx=lfcfx: (SDTest.Call(0xdee20, 'tvif', fx, 0.05),
+		check('LFC Sentinel_Update hidden' + fmt(lfcd), lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXSentinel_Update', 'tvif', fx, 0.05),
 			lfcsent(fx)))
 	lfcvisible(lfcs[1], 1)
 	# the alarm of the world, also with a camera
 	lfcal = lfcb(lfcworld + 0x1c70)
 	lfcpokeb(lfcworld + 0x1c70, 1)
-	check('LFC Sentinel_Update alarm', lambda fx=lfcfx: (SDTest.Call(0xdee20, 'tvif', fx, 0.05), lfcsent(fx),
+	check('LFC Sentinel_Update alarm', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXSentinel_Update', 'tvif', fx, 0.05), lfcsent(fx),
 		lfcpartlist(fx + 0x1f8, 12)))
 	lfcpoke(lfce + 0xf0, lfcplayer)
-	check('LFC Sentinel_Update alarm camera', lambda fx=lfcfx: (SDTest.Call(0xdee20, 'tvif', fx, 0.05),
+	check('LFC Sentinel_Update alarm camera', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXSentinel_Update', 'tvif', fx, 0.05),
 		lfcbytes(fx, (0x2a8, 0x2a9))))
 	lfcpoke(lfce + 0xf0, 0)
 	lfcpokeb(lfcworld + 0x1c70, lfcal)
-lfcdone(lfcs[0], lfcs[2], 0xd78e0, 0xd7620)
+lfcdone(lfcs[0], lfcs[2], sym('cEmbeddedFXSentinel_Release'), sym('cEmbeddedFXSentinel_Delete'))
 
 # ---- Crazy Gambler: SetHead in Init runs the Update too ----
 lfcc = lfcctrlname(lfcc, 'Relax1')
@@ -276,14 +276,14 @@ if lfcs[2]:
 	for lfct, lfcdt in ((2.0, 0.03), (2.0, 0.03), (2.0, 0.01), (2.0, 0.05), (6.0, 0.03), (6.0, 0.4), (1.0, 0.03),
 			(3.0, 0.03), (3.0, 0.03), (3.0, 0.5), (3.0, 0.03), (3.0, 0.03)):
 		lfcset(lfcc[0] + 0x10, (lfct,))
-		check('LFC CrazyGambler_Update' + fmt((lfct, lfcdt)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call(0xda0e0,
+		check('LFC CrazyGambler_Update' + fmt((lfct, lfcdt)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call('cEmbeddedFXCrazyGambler_Update',
 			'tvif', fx, dt), lfcgam(fx)))
 	lfcc = lfcctrlname(lfcc, 'Walk')
-	check('LFC CrazyGambler_Update Walk', lambda fx=lfcfx: (SDTest.Call(0xda0e0, 'tvif', fx, 0.03), lfcgam(fx)))
+	check('LFC CrazyGambler_Update Walk', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXCrazyGambler_Update', 'tvif', fx, 0.03), lfcgam(fx)))
 	lfcvisible(lfcs[1], 0)
-	check('LFC CrazyGambler_Update hidden', lambda fx=lfcfx: (SDTest.Call(0xda0e0, 'tvif', fx, 0.03), lfcgam(fx)))
+	check('LFC CrazyGambler_Update hidden', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXCrazyGambler_Update', 'tvif', fx, 0.03), lfcgam(fx)))
 	lfcvisible(lfcs[1], 1)
-lfcdone(lfcs[0], lfcs[2], 0xd7730, 0xd7360)
+lfcdone(lfcs[0], lfcs[2], sym('cEmbeddedFXCrazyGambler_Release'), sym('cEmbeddedFXCrazyGambler_Delete'))
 
 # ---- Messenger ----
 lfcc = lfcctrlname(lfcc, 'Walk')
@@ -301,24 +301,24 @@ if lfcs[2]:
 			lfcfl(fx + 0x224, 36), lfcints(fx, tuple(range(0x2b4, 0x334, 4))), lfctrails(fx + 0x1f4, 12),
 			lfcpartlist(fx + 0x14, 48))
 	for lfcdt in (0.05, 0.05, 0.02, 0.1, 0.05, 0.3, 0.01, 0.05):
-		check('LFC Messenger_Update' + fmt((lfcdt,)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call(0xdc1d0, 'tvif', fx,
+		check('LFC Messenger_Update' + fmt((lfcdt,)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call('cEmbeddedFXMessenger_Update', 'tvif', fx,
 			dt), lfcmes(fx)))
 	lfcc = lfcctrlname(lfcc, 'Relax')
-	check('LFC Messenger_Update Relax', lambda fx=lfcfx: (SDTest.Call(0xdc1d0, 'tvif', fx, 0.05), lfcmes(fx)))
+	check('LFC Messenger_Update Relax', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXMessenger_Update', 'tvif', fx, 0.05), lfcmes(fx)))
 	lfcc = lfcctrlname(lfcc, 'Relax2')
-	check('LFC Messenger_Update Relax2', lambda fx=lfcfx: (SDTest.Call(0xdc1d0, 'tvif', fx, 0.05), lfcmes(fx)))
+	check('LFC Messenger_Update Relax2', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXMessenger_Update', 'tvif', fx, 0.05), lfcmes(fx)))
 	lfcset(lfce + 0xa0, lfcadd(lfccam, (0.0, 0.0, 9000.0)))
-	check('LFC Messenger_Update far', lambda fx=lfcfx: (SDTest.Call(0xdc1d0, 'tvif', fx, 0.05), lfcmes(fx)))
-lfcdone(lfcs[0], lfcs[2], 0xd7830, 0xd74c0)
+	check('LFC Messenger_Update far', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXMessenger_Update', 'tvif', fx, 0.05), lfcmes(fx)))
+lfcdone(lfcs[0], lfcs[2], sym('cEmbeddedFXMessenger_Release'), sym('cEmbeddedFXMessenger_Delete'))
 
 # ---- Mercenary: the smoke system with particles when it is new ----
-lfcsmoke = SDTest.Peek(0x446c28, 'p')
+lfcsmoke = SDTest.Peek('g_FXMercenaryDrinkSmokeFile', 'p')
 lfcgm = lfcz(0x1c)
-SDTest.Call(0x20eb10, 'tiis', lfcgm, lfcsmoke)
+SDTest.Call('CGameModel_ctor', 'tiis', lfcgm, lfcsmoke)
 lfcsmokeok = lfcok(lfcgm, ('Dummy01',), ())
-SDTest.Call(0x20ec10, 'tvi', lfcgm)
+SDTest.Call('CGameModel_Reset', 'tvi', lfcgm)
 lfcfree(lfcgm)
-lfcsys = SDTest.Call(0x209590, 'tiis', lfcworld, lfcsmoke)[0]
+lfcsys = SDTest.Call('cWorld_GetDebrisSys', 'tiis', lfcworld, lfcsmoke)[0]
 lfcsysnew = lfcsys and not lfci(lfcsys) and not lfci(lfcsys + 4)
 check('LFC smoke system', lambda: (lfcsmoke, lfcsmokeok, lfcsys != 0, lfcsysnew))
 if lfcsmokeok and lfcsysnew:
@@ -349,12 +349,12 @@ for lfcm in ('MercenaryA', 'MercenaryL'):
 		for lfcname, lfcdt in (('Walk', 0.03), ('Walk', 0.03), ('Walk', 0.06), ('Drink', 0.06), ('Walk', 0.06),
 				('Walk', 0.08), ('TalkHappy', 0.06), ('Walk', 0.06), ('Walk', 0.06), ('Relax0', 0.06), ('Walk', 0.1)):
 			lfcc = lfcctrlname(lfcc, lfcname)
-			check('LFC %s_Update' % lfcm + fmt((lfcname, lfcdt)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call(0xdb1d0,
+			check('LFC %s_Update' % lfcm + fmt((lfcname, lfcdt)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call('cEmbeddedFXMercenary_Update',
 				'tvif', fx, dt), lfcmerc(fx)))
 		lfcvisible(lfcs[1], 0)
-		check('LFC %s_Update hidden' % lfcm, lambda fx=lfcfx: (SDTest.Call(0xdb1d0, 'tvif', fx, 0.06), lfcmerc(fx)))
+		check('LFC %s_Update hidden' % lfcm, lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXMercenary_Update', 'tvif', fx, 0.06), lfcmerc(fx)))
 		lfcvisible(lfcs[1], 1)
-	lfcdone(lfcs[0], lfcs[2], 0xd7800, 0xd7470)
+	lfcdone(lfcs[0], lfcs[2], sym('cEmbeddedFXMercenary_Release'), sym('cEmbeddedFXMercenary_Delete'))
 
 # ---- Rusty: the pauses of the bolts are not set by Reset (zeroed here) ----
 lfcc = lfcctrlname(lfcc, 'Walk')
@@ -371,26 +371,26 @@ if lfcs[2]:
 		return (lfcbytes(fx, (8,)), lfcfl(fx + 0x228, 1), lfcfl(fx + 0x2ec, 8), lfcparts(fx + 0x178),
 			lfcactive(fx + 0x178), lfctrails(fx + 0x30c, 4), lfcpartlist(fx + 0x23c, 16))
 	for lfcdt in (0.05, 0.05, 0.1, 0.02, 0.3, 0.05, 0.05, 0.2, 0.01, 0.6, 0.05, 0.05):
-		check('LFC Rusty_Update' + fmt((lfcdt,)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call(0xdd760, 'tvif', fx, dt),
+		check('LFC Rusty_Update' + fmt((lfcdt,)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call('cEmbeddedFXRusty_Update', 'tvif', fx, dt),
 			lfcrusty(fx)))
 	lfcvisible(lfcs[1], 0)
-	check('LFC Rusty_Update hidden', lambda fx=lfcfx: (SDTest.Call(0xdd760, 'tvif', fx, 0.05), lfcrusty(fx)))
+	check('LFC Rusty_Update hidden', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXRusty_Update', 'tvif', fx, 0.05), lfcrusty(fx)))
 	lfcvisible(lfcs[1], 1)
-lfcdone(lfcs[0], lfcs[2], 0xd78a0, 0xd7580)
+lfcdone(lfcs[0], lfcs[2], sym('cEmbeddedFXRusty_Release'), sym('cEmbeddedFXRusty_Delete'))
 lfcctrlfree(lfcc)
 
 # ---- Moto: a fake object (the vtable of cObjEntity); the engine positions of the last smoke set first (the exe reads
 # them before it writes them) ----
 lfce = lfcz(0x400)
-lfcpoke(lfce, 0x3b367c + 0x400000)
-SDTest.Call(0x20eb10, 'tiis', lfce + 0xb8, 'Levels/ABIndoor/Map/TheEndA/Moto.M3D')
+lfcpoke(lfce, sym('cObjEntity_vftable') + 0x400000)
+SDTest.Call('CGameModel_ctor', 'tiis', lfce + 0xb8, 'Levels/ABIndoor/Map/TheEndA/Moto.M3D')
 lfcgm = lfce + 0xb8
 lfcfx = 0
 if lfcok(lfcgm, ('DF_MotorTrust_01', 'DF_MotorTrust_02', 'DF_MotorTrust_03', 'DF_MotorTrust_04', 'DF_MotorTrust_05',
 		'DF_EscapeTube_01', 'DF_EscapeTube_02', 'DF_EscapeTube_03', 'DF_EscapeTube_04', 'DF_EscapeTube_05',
 		'DF_EscapeTube_06'), ()):
 	lfcslot = lfcz(4)
-	SDTest.Call(0xe1320, 'visi', lfce, 'Moto.M3D', lfcslot)
+	SDTest.Call('EmbeddedFXMisc_Create', 'visi', lfce, 'Moto.M3D', lfcslot)
 	lfcfx = lfci(lfcslot)
 	lfcfree(lfcslot)
 check('LFC Moto created', lambda: (lfcfx != 0, lfcfx and lfci(lfcfx) - 0x400000))
@@ -401,18 +401,18 @@ if lfcfx:
 	def lfcmoto(fx):
 		return (lfcfl(fx + 8, 12), lfcbytes(fx, (0x7dc,)), tuple(map(lambda i, fx=fx: (lfcparts(fx + 0x44 + 0xb0 * i),
 			lfcpartlist(fx + 0x44 + 0xb0 * i, 6)), range(3))), lfcpartlist(fx + 0x254, 16), lfcpartlist(fx + 0x304, 16))
-	check('LFC Moto_Update off', lambda fx=lfcfx: (SDTest.Call(0xe90f0, 'tvif', fx, 0.05), lfcfl(fx + 8, 3)))
+	check('LFC Moto_Update off', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXMoto_Update', 'tvif', fx, 0.05), lfcfl(fx + 8, 3)))
 	for lfcab, lfcdts in (((0.7, 0.3), (0.01, 0.015, 0.03, 0.05, 0.0, 0.1)), ((1.0, 0.0), (0.03, 0.04)), ((0.0, 1.0),
 			(0.03, 0.025)), ((1.5, 0.5), (0.05,))):
-		SDTest.Call(0xe4640, 'tviff', lfcfx, lfcab[0], lfcab[1])
+		SDTest.Call('cEmbeddedFXMoto_SetF7d4', 'tviff', lfcfx, lfcab[0], lfcab[1])
 		for lfcdt in lfcdts:
-			check('LFC Moto_Update' + fmt((lfcab, lfcdt)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call(0xe90f0, 'tvif',
+			check('LFC Moto_Update' + fmt((lfcab, lfcdt)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call('cEmbeddedFXMoto_Update', 'tvif',
 				fx, dt), lfcmoto(fx)))
-	SDTest.Call(0xe1150, 'tvi', lfcfx)
-	SDTest.Call(0xe0d80, 'tiii', lfcfx, 1)
+	SDTest.Call('cEmbeddedFXMoto_Release', 'tvi', lfcfx)
+	SDTest.Call('cEmbeddedFXMoto_Delete', 'tiii', lfcfx, 1)
 lfcunfake(lfce)
 lfcfree(lfcvec)
-check('LFC rand after effects', lambda: SDTest.Call(0x323c2f, 'i')[0])
+check('LFC rand after effects', lambda: SDTest.Call('crt_rand', 'i')[0])
 
 # ---- GearShootLoad on a WalkChar of our own with the Gear model and its embedded effect ----
 def lfcnative(name, params):
@@ -426,14 +426,14 @@ def lfcnative(name, params):
 			Scrap.AddParamf(p)
 	Scrap.Execute()
 	return ok
-SDTest.Call(0x323c50, 'vi', 31337)
+SDTest.Call('crt_srand', 'vi', 31337)
 lfcG = lfcadd(lfccam, (0.0, -60.0, 400.0))
-lfcg = SDTest.Call(0x208360, 'tiisfffs', lfcworld, 'SDLfcGear', lfcG[0], lfcG[1], lfcG[2], 'WalkChar')[0]
+lfcg = SDTest.Call('cWorld_CreateEntity', 'tiisfffs', lfcworld, 'SDLfcGear', lfcG[0], lfcG[1], lfcG[2], 'WalkChar')[0]
 check('LFC gear WalkChar', lambda: lfcg != 0)
 if lfcg:
 	SDTest.Call(lfci(lfci(lfcg) + 0x30) - 0x400000, 'tvisfffi', lfcg, 'Models/Chars/Gear/Gear.M3D', 1.0, 1.0, 1.0, 0)
 	lfcgok = lfcok(lfcg + 0xb8, ('DF_GearShoot', 'DF_PoliceAlarm'), ())
-	check('LFC gear model', lambda: (lfcgok, SDTest.Call(0x20f7a0, 'tsi', lfcg + 0xb8)[0]))
+	check('LFC gear model', lambda: (lfcgok, SDTest.Call('CGameModel_Name', 'tsi', lfcg + 0xb8)[0]))
 	if lfcgok:
 		SDTest.Call(lfci(lfci(lfcg) + 0x3c) - 0x400000, 'tvis', lfcg, 'Gear.M3D')
 		lfcfx = lfci(lfcg + 0x224)
@@ -442,21 +442,21 @@ if lfcg:
 		lfcvisflags = lfci(lfci(lfcg + 0xb8) + 0x120)
 		def lfcgear(fx):
 			return (lfcparts(fx + 0xd4), lfcactive(fx + 0xd4), lfcnum(fx + 0xd4))
-		SDTest.Poke(0x4a8c8c, 1)
+		SDTest.Poke('g_SplitScreen', 1)
 		for lfcd in (0.25, 0.0, 1.5):
 			check('LFC GearShootLoad' + fmt((lfcd,)), lambda d=lfcd, fx=lfcfx: (lfcnative('GearShootLoad',
-				('SDLfcGear', 'Ev', d)), lfcgear(fx), SDTest.Call(0x323c2f, 'i')[0]))
+				('SDLfcGear', 'Ev', d)), lfcgear(fx), SDTest.Call('crt_rand', 'i')[0]))
 		lfcpoke(lfcg + 0x224, 0)
 		check('LFC GearShootLoad no effect', lambda: (lfcnative('GearShootLoad', ('SDLfcGear', 'Ev', 0.5)),
-			SDTest.Call(0x323c2f, 'i')[0]))
+			SDTest.Call('crt_rand', 'i')[0]))
 		lfcpoke(lfcg + 0x224, lfcfx)
 		lfcvisible(lfcg + 0xb8, 0)
 		check('LFC GearShootLoad hidden', lambda fx=lfcfx: (lfcnative('GearShootLoad', ('SDLfcGear', 'Ev', 0.5)),
-			lfcgear(fx), SDTest.Call(0x323c2f, 'i')[0]))
+			lfcgear(fx), SDTest.Call('crt_rand', 'i')[0]))
 		lfcvisible(lfcg + 0xb8, 1)
-	check('LFC gear delete', lambda: (SDTest.Call(0x208810, 'tbis', lfcworld + 4, 'SDLfcGear'),
+	check('LFC gear delete', lambda: (SDTest.Call('PtrTable_Delete@208810', 'tbis', lfcworld + 4, 'SDLfcGear'),
 		SDTest.Call(lfci(lfci(lfcg) + 0xc) - 0x400000, 'tiii', lfcg, 1)[0] == lfcg)[1])
-SDTest.Poke(0x4a8c8c, lfcsplit)
+SDTest.Poke('g_SplitScreen', lfcsplit)
 lfcpoke(lfcworld + 0x2d4, lfcdelta)
 # ---- the strafe arcs of the 3D control ----
 def lfcpos(e):
@@ -474,9 +474,9 @@ def lfclist(l):
 		k = k + 1
 	return (lfci(l + 8), tuple(r))
 lfcP = (-36000.0, 60000.0, 42000.0)
-SDTest.Call(0x323c50, 'vi', 1213)
-lfcw = SDTest.Call(0x208360, 'tiisfffs', lfcworld, 'SDLfcWalk', lfcP[0], lfcP[1], lfcP[2], 'WalkChar')[0]
-lfcw2 = SDTest.Call(0x208360, 'tiisfffs', lfcworld, 'SDLfcWalk2', lfcP[0] + 300.0, lfcP[1], lfcP[2] + 100.0,
+SDTest.Call('crt_srand', 'vi', 1213)
+lfcw = SDTest.Call('cWorld_CreateEntity', 'tiisfffs', lfcworld, 'SDLfcWalk', lfcP[0], lfcP[1], lfcP[2], 'WalkChar')[0]
+lfcw2 = SDTest.Call('cWorld_CreateEntity', 'tiisfffs', lfcworld, 'SDLfcWalk2', lfcP[0] + 300.0, lfcP[1], lfcP[2] + 100.0,
 	'WalkChar')[0]
 check('LFC WalkChars', lambda: (lfcw != 0, lfcw2 != 0))
 if lfcw and lfcw2:
@@ -491,21 +491,21 @@ if lfcw and lfcw2:
 	lfcset(lfcw + 0x45c, (30.0,))
 	lfcAV = lfcz(0x80)
 	lfcA = lfcz(0x100)
-	lfcpoke(lfcAV + 0x38, 0x485730)
-	lfcpoke(lfcAV + 0x58, 0x46a4f0)
+	lfcpoke(lfcAV + 0x38, symva('cAIMove_GetTarget'))
+	lfcpoke(lfcAV + 0x58, symva('cAIChar_EventNone'))
 	lfcpoke(lfcA, lfcAV)
 	lfcpoke(lfcA + 0x38, lfcA + 0x38)
 	lfcpoke(lfcA + 0x3c, lfcA + 0x38)
 	lfcpoke(lfcA + 0x40, lfcw2)
 	lfcarg = lfcz(8)
-	lfcm3 = SDTest.Call(0x1334d0, 'ii', 0x360)[0]
-	lfcc3 = SDTest.Call(0x079d10, 'tiiiii', lfcm3, lfcw, lfcA, lfcarg)[0]
+	lfcm3 = SDTest.Call('operator_new', 'ii', 0x360)[0]
+	lfcc3 = SDTest.Call('cAICharControl3D_ctor', 'tiiiii', lfcm3, lfcw, lfcA, lfcarg)[0]
 	check('LFC 3D control', lambda: (lfcc3 == lfcm3, lfci(lfcc3) - 0x400000))
-	lfcshow = SDTest.Peek(0x4443e8, 'i')
-	lfcshowtest = SDTest.Peek(0x444e3c, 'i')
+	lfcshow = SDTest.Peek('g_ShowShirkAI', 'i')
+	lfcshowtest = SDTest.Peek('g_NWDebugSegs', 'i')
 	for lfcshowon in (0, 1):
-		SDTest.Poke(0x4443e8, lfcshowon)
-		SDTest.Poke(0x444e3c, lfcshowon)
+		SDTest.Poke('g_ShowShirkAI', lfcshowon)
+		SDTest.Poke('g_NWDebugSegs', lfcshowon)
 		for lfcgoal in ((600.0, 0.0, 200.0), (0.0, 500.0, 0.0), (0.0, 0.0, 0.0), (-300.0, -200.0, 50.0)):
 			lfcset(lfcc3 + 0x10c, lfcadd(lfcP, lfcgoal))
 			for lfcargs in (((1.0, 0.0, 0.0), (0.0, 0.0, 1.0), 200.0, 1, 1), ((1.0, 0.0, 0.0), (0.0, 0.0, 1.0), 200.0,
@@ -514,19 +514,19 @@ if lfcw and lfcw2:
 					1, 1)):
 				lfcE = lfcadd(lfcP, (150.0, 0.0, 60.0))
 				check('LFC 3D StrafeBack' + fmt((lfcshowon, lfcgoal, lfcargs)), lambda a=lfcargs, E=lfcE:
-					(SDTest.Call(0x07f250, 'tbiFFFfii', lfcc3, E, a[0], a[1], a[2], a[3], a[4])[0], lfclist(lfcc3 + 0x348),
+					(SDTest.Call('cAICharControl3D_StrafeBack', 'tbiFFFfii', lfcc3, E, a[0], a[1], a[2], a[3], a[4])[0], lfclist(lfcc3 + 0x348),
 					lfci(lfcc3 + 0x318 + 8)))
 				check('LFC 3D StrafeFwd' + fmt((lfcshowon, lfcgoal, lfcargs)), lambda a=lfcargs, E=lfcE:
-					(SDTest.Call(0x07fd50, 'tbiFFFfii', lfcc3, E, a[0], a[1], a[2], a[3], a[4])[0],
+					(SDTest.Call('cAICharControl3D_StrafeFwd', 'tbiFFFfii', lfcc3, E, a[0], a[1], a[2], a[3], a[4])[0],
 					lfci(lfcc3 + 0x318 + 8), lfci(lfcc3 + 0x330 + 8)))
 		# a strafe through the other character: the forward arc hits it
 		lfcset(lfcc3 + 0x10c, lfcadd(lfcP, (600.0, 0.0, 200.0)))
 		lfcE = lfcadd(lfcP, (150.0, 0.0, 50.0))
-		check('LFC 3D StrafeFwd hit %d' % lfcshowon, lambda E=lfcE: SDTest.Call(0x07fd50, 'tbiFFFfii', lfcc3, E,
+		check('LFC 3D StrafeFwd hit %d' % lfcshowon, lambda E=lfcE: SDTest.Call('cAICharControl3D_StrafeFwd', 'tbiFFFfii', lfcc3, E,
 			(-1.0, 0.0, -0.3), (1.0, 0.0, 0.3), 160.0, 1, 1)[0])
-	SDTest.Poke(0x4443e8, lfcshow)
-	SDTest.Poke(0x444e3c, lfcshowtest)
-	check('LFC 3D delete', lambda: SDTest.Call(0x079d50, 'tiii', lfcc3, 1)[0] == lfcc3)
+	SDTest.Poke('g_ShowShirkAI', lfcshow)
+	SDTest.Poke('g_NWDebugSegs', lfcshowtest)
+	check('LFC 3D delete', lambda: SDTest.Call('cAICharControl3D_Delete', 'tiii', lfcc3, 1)[0] == lfcc3)
 	lfcpoke(lfcw + 0x234, 0)
 	lfcfree(lfcac)
 	lfcfree(lfccls)
@@ -535,6 +535,6 @@ if lfcw and lfcw2:
 	lfcfree(lfcarg)
 for lfcE in (lfcw, lfcw2):
 	if lfcE:
-		check('LFC delete entity', lambda e=lfcE: (SDTest.Call(0x208810, 'tbis', lfcworld + 4, SDTest.Peek(e + 4,
+		check('LFC delete entity', lambda e=lfcE: (SDTest.Call('PtrTable_Delete@208810', 'tbis', lfcworld + 4, SDTest.Peek(e + 4,
 			'@p')), SDTest.Call(lfci(lfci(e) + 0xc) - 0x400000, 'tiii', e, 1)[0] == e)[1])
-check('LFC rand after', lambda: SDTest.Call(0x323c2f, 'i')[0])
+check('LFC rand after', lambda: SDTest.Call('crt_rand', 'i')[0])

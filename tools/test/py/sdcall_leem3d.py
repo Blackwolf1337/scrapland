@@ -22,51 +22,51 @@ models = ('models/elements/antenaa/antenaa.m3d', 'models/elements/antenaa/antena
 	'sdnone/none.m3d')
 m3esc = {}
 for name in models:
-	check('SM3_Load' + fmt((name,)), lambda name=name: m3scene(SDTest.Call(0x2bc5c0, 'is', name)[0]))
-	m3esc[name] = SDTest.Call(0x2bc5c0, 'is', name)[0]
-rdsm3 = SDTest.Peek(0x4e1f98, 'i')
-SDTest.Poke(0x4e1f98, 0)
-check('SM3_Load off', lambda: SDTest.Call(0x2bc5c0, 'is', models[0])[0])
-SDTest.Poke(0x4e1f98, rdsm3)
+	check('SM3_Load' + fmt((name,)), lambda name=name: m3scene(SDTest.Call('SM3_Load', 'is', name)[0]))
+	m3esc[name] = SDTest.Call('SM3_Load', 'is', name)[0]
+rdsm3 = SDTest.Peek('g_SM3UseScenes', 'i')
+SDTest.Poke('g_SM3UseScenes', 0)
+check('SM3_Load off', lambda: SDTest.Call('SM3_Load', 'is', models[0])[0])
+SDTest.Poke('g_SM3UseScenes', rdsm3)
 for base, anim in ((models[0], 'models/elements/antenaa/anm/loop.m3d'), (models[2],
 	'models/heads/headpolice&gear/headpolice.anim0.m3d'), (models[0], 'sdnone/anim.m3d')):
-	SDTest.Poke(0x4e1ec0, m3esc[base])
-	SDTest.Call(0x3197d0, 'iisi', 0x4e23c0 + 0x400000, anim, len(anim) + 1)
-	check('CM3_Load' + fmt((anim,)), lambda anim=anim: m3scene(SDTest.Call(0x2bc360, 'is', anim)[0]))
-	SDTest.Poke(0x4e1ec0, 0)
+	SDTest.Poke('g_EscenaAnimPadre', m3esc[base])
+	SDTest.Call('crt_memcpy', 'iisi', sym('g_M3DName') + 0x400000, anim, len(anim) + 1)
+	check('CM3_Load' + fmt((anim,)), lambda anim=anim: m3scene(SDTest.Call('CM3_Load', 'is', anim)[0]))
+	SDTest.Poke('g_EscenaAnimPadre', 0)
 # CM3_Save and SM3_Save are not tested: an open for writing is a fatal CHECK in the test setup
 for ok in (0, 1, 0, 0):
-	check('M3D_SetOk' + fmt((ok,)), lambda ok=ok: (SDTest.Call(0x2c0c40, 'vi', ok), SDTest.Peek(0x432a7c, 'i') & 0xff))
+	check('M3D_SetOk' + fmt((ok,)), lambda ok=ok: (SDTest.Call('M3D_SetOk', 'vi', ok), SDTest.Peek('g_M3DOk', 'i') & 0xff))
 
 # the node and name utilities
 for a, b in ((1.0, 1.0), (1.0, 1.0000001), (1.0, 1.001), (-2.0, -2.0000002), (2.0, -2.0), (0.0, 1e-30), (0.0, -0.0),
 	(1e-30, 1e-30 * 1.0000001), (-1.0, 1.0)):
-	check('Float_CasiIgual' + fmt((a, b)), lambda a=a, b=b: SDTest.Call(0x2c28c0, 'bff', a, b)[0])
-m3nb = SDTest.Call(0x1334d0, 'ii', 0x100)[0]
+	check('Float_CasiIgual' + fmt((a, b)), lambda a=a, b=b: SDTest.Call('Float_CasiIgual', 'bff', a, b)[0])
+m3nb = SDTest.Call('operator_new', 'ii', 0x100)[0]
 for nm in ('Bip Spine', 'Bip_x', 'BipB', 'Bone01', 'bip x', 'DR_door', 'dm_x', 'D_Cam-1', 'Actor_A', 'Traffic_3',
 	'NAVEBERTO', 'Navebert', 'flare01 (tam=12)', 'x(+tam = 7)', 'b(tam)', '(TAM=3x)', 'n\351me ', ''):
-	SDTest.Call(0x3197d0, 'iisi', m3nb, nm, len(nm) + 1)
-	nodo = SDTest.Call(0x1334d0, 'ii', 0xfc)[0]
+	SDTest.Call('crt_memcpy', 'iisi', m3nb, nm, len(nm) + 1)
+	nodo = SDTest.Call('operator_new', 'ii', 0xfc)[0]
 	SDTest.Poke(nodo + 4 - 0x400000, m3nb)
 	SDTest.Poke(nodo + 0x18 - 0x400000, 0x10)
-	m3out = SDTest.Call(0x1334d0, 'ii', 4)[0]
+	m3out = SDTest.Call('operator_new', 'ii', 4)[0]
 	SDTest.Poke(m3out - 0x400000, -5)
-	check('Nodo names' + fmt((nm,)), lambda nodo=nodo, m3out=m3out: (SDTest.Call(0x2c22c0, 'vi', nodo), m3i(nodo + 0x18),
-		SDTest.Call(0x2c29a0, 'bi', nodo)[0], SDTest.Call(0x2c6790, 'bisi', m3nb, 'tam', m3out)[0], m3i(m3out),
-		SDTest.Call(0x2c1380, 'vi', m3nb), SDTest.Peek(m3nb, '@s')))
-mat = SDTest.Call(0x233830, 'tii', SDTest.Call(0x1334d0, 'ii', 0xb0)[0])[0]
+	check('Nodo names' + fmt((nm,)), lambda nodo=nodo, m3out=m3out: (SDTest.Call('Nodo_MarcarBip', 'vi', nodo), m3i(nodo + 0x18),
+		SDTest.Call('Nodo_EsDeJuego', 'bi', nodo)[0], SDTest.Call('Nodo_ParamInt', 'bisi', m3nb, 'tam', m3out)[0], m3i(m3out),
+		SDTest.Call('Nodo_LimpiarNombre', 'vi', m3nb), SDTest.Peek(m3nb, '@s')))
+mat = SDTest.Call('CMaterial_ctor', 'tii', SDTest.Call('operator_new', 'ii', 0xb0)[0])[0]
 rdmu = []
-for a in (0x4e1fa6, 0x4e1fb4):
+for a in (sym('g_M3DUseOpacity'), sym('g_M3DUseBumpmap')):
 	rdmu.append(SDTest.Peek(a, 'i'))
 for atrib in (0, 0x200):
 	SDTest.Poke(mat + 0x3c - 0x400000, atrib)
 	for use in (0, 0x01000100, 0x01010101):
-		SDTest.Poke(0x4e1fa6, use)
-		SDTest.Poke(0x4e1fb4, use)
-		check('M3D_MapaActivo' + fmt((atrib, use)), lambda mat=mat: map(lambda i, mat=mat: SDTest.Call(0x2c1010, 'bii',
+		SDTest.Poke('g_M3DUseOpacity', use)
+		SDTest.Poke('g_M3DUseBumpmap', use)
+		check('M3D_MapaActivo' + fmt((atrib, use)), lambda mat=mat: map(lambda i, mat=mat: SDTest.Call('M3D_MapaActivo', 'bii',
 			mat, i)[0], (0, 1, 2, 3, 4, 5)))
-SDTest.Poke(0x4e1fa6, rdmu[0])
-SDTest.Poke(0x4e1fb4, rdmu[1])
+SDTest.Poke('g_M3DUseOpacity', rdmu[0])
+SDTest.Poke('g_M3DUseBumpmap', rdmu[1])
 for name in (models[2], models[0]):
 	e = m3esc[name]
 	n = m3i(e + 0xc)
@@ -78,11 +78,11 @@ for name in (models[2], models[0]):
 		for j in (0, i / 2, i - 1):
 			for cr in (0, 1):
 				check('Nodo_EsAntecesor' + fmt((name, i, j, cr)), lambda nodes=nodes, i=i, j=j, cr=cr:
-					SDTest.Call(0x2c2930, 'biii', nodes[i], nodes[j], cr)[0])
+					SDTest.Call('Nodo_EsAntecesor', 'biii', nodes[i], nodes[j], cr)[0])
 	for nd in nodes[-3:]:
-		check('Escena_CheckDuplicados' + fmt((name,)), lambda e=e, nd=nd: SDTest.Call(0x2c21e0, 'vii', e, nd))
-	check('Escena_Flares/Sprites' + fmt((name,)), lambda e=e: (SDTest.Call(0x2c2330, 'vi', e), SDTest.Call(0x2c24b0,
+		check('Escena_CheckDuplicados' + fmt((name,)), lambda e=e, nd=nd: SDTest.Call('Escena_CheckDuplicados', 'vii', e, nd))
+	check('Escena_Flares/Sprites' + fmt((name,)), lambda e=e: (SDTest.Call('Escena_Flares', 'vi', e), SDTest.Call('Escena_Sprites',
 		'vi', e), m3scene(e)))
-	check('Escena_Limpiar' + fmt((name,)), lambda e=e: (SDTest.Call(0x2c2870, 'vis', e, 'sd'), m3scene(e)))
+	check('Escena_Limpiar' + fmt((name,)), lambda e=e: (SDTest.Call('Escena_Limpiar', 'vis', e, 'sd'), m3scene(e)))
 
 # The M3D reader itself is not tested: the packs hold no .M3D files, only the .CM3 and .SM3 caches.

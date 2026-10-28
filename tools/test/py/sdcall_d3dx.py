@@ -1,11 +1,11 @@
 # D3DX8 math (src/lib/d3dx8/D3dxMath.c, execfile'd by sdcall.py, Python 1.5.2): the public stubs of the exe called as
 # thiscall with a dummy this (they are stdcall), in and out through heap buffers so the aliasing cases run too.
 def dxz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def dxget(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def dxset(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 dxa = dxz(64)
 dxb = dxz(64)
 dxo = dxz(64)
@@ -23,57 +23,57 @@ dxang = (0.0, 0.5, -1.0, 3.14159265, 1.5707963, 100.0, -1e6, 1e7, 1e-30, 6.28318
 
 for v in dxv:
 	dxset(dxa, v)
-	check('D3DX_Vec3Normalize' + fmt(v), lambda: (SDTest.Call(0x006d3b, 'tiiii', 0, dxo, dxa)[0] == dxo,
+	check('D3DX_Vec3Normalize' + fmt(v), lambda: (SDTest.Call('D3DX_Vec3Normalize', 'tiiii', 0, dxo, dxa)[0] == dxo,
 		dxget(dxo, 3)))
-	check('D3DX_Vec3Normalize in place' + fmt(v), lambda: (SDTest.Call(0x006d3b, 'tiiii', 0, dxa, dxa)[0] == dxa,
+	check('D3DX_Vec3Normalize in place' + fmt(v), lambda: (SDTest.Call('D3DX_Vec3Normalize', 'tiiii', 0, dxa, dxa)[0] == dxa,
 		dxget(dxa, 3)))
 	for m in dxm:
 		dxset(dxa, v)
 		dxset(dxb, m)
-		check('D3DX_Vec3Transform' + fmt(v + m), lambda: (SDTest.Call(0x007086, 'tiiiii', 0, dxo, dxa, dxb)[0] == dxo,
+		check('D3DX_Vec3Transform' + fmt(v + m), lambda: (SDTest.Call('D3DX_Vec3Transform', 'tiiiii', 0, dxo, dxa, dxb)[0] == dxo,
 			dxget(dxo, 3)))
 for m in dxm:
 	for m2 in dxm:
 		dxset(dxa, m)
 		dxset(dxb, m2)
-		check('D3DX_MatrixMultiply' + fmt(m + m2), lambda: (SDTest.Call(0x0077b8, 'tiiiii', 0, dxo, dxa, dxb)[0] ==
+		check('D3DX_MatrixMultiply' + fmt(m + m2), lambda: (SDTest.Call('D3DX_MatrixMultiply', 'tiiiii', 0, dxo, dxa, dxb)[0] ==
 			dxo, dxget(dxo, 16)))
 	dxset(dxa, m)
 	dxset(dxb, dxm[1])
-	check('D3DX_MatrixMultiply out=a' + fmt(m), lambda: (SDTest.Call(0x0077b8, 'tiiiii', 0, dxa, dxa, dxb)[0] == dxa,
+	check('D3DX_MatrixMultiply out=a' + fmt(m), lambda: (SDTest.Call('D3DX_MatrixMultiply', 'tiiiii', 0, dxa, dxa, dxb)[0] == dxa,
 		dxget(dxa, 16)))
 	dxset(dxa, m)
-	check('D3DX_MatrixMultiply out=b' + fmt(m), lambda: (SDTest.Call(0x0077b8, 'tiiiii', 0, dxb, dxa, dxb)[0] == dxb,
+	check('D3DX_MatrixMultiply out=b' + fmt(m), lambda: (SDTest.Call('D3DX_MatrixMultiply', 'tiiiii', 0, dxb, dxa, dxb)[0] == dxb,
 		dxget(dxb, 16)))
 	dxset(dxa, m)
-	check('D3DX_MatrixTranspose' + fmt(m), lambda: (SDTest.Call(0x007a01, 'tiiii', 0, dxo, dxa)[0] == dxo,
+	check('D3DX_MatrixTranspose' + fmt(m), lambda: (SDTest.Call('D3DX_MatrixTranspose', 'tiiii', 0, dxo, dxa)[0] == dxo,
 		dxget(dxo, 16)))
-	check('D3DX_MatrixTranspose in place' + fmt(m), lambda: (SDTest.Call(0x007a01, 'tiiii', 0, dxa, dxa)[0] == dxa,
+	check('D3DX_MatrixTranspose in place' + fmt(m), lambda: (SDTest.Call('D3DX_MatrixTranspose', 'tiiii', 0, dxa, dxa)[0] == dxa,
 		dxget(dxa, 16)))
 	dxset(dxa, m)
 	dxset(dxo, (9.0,) * 16)
-	check('D3DX_MatrixInverse' + fmt(m), lambda: (SDTest.Call(0x007cea, 'tiiiii', 0, dxo, 0, dxa)[0] == dxo,
+	check('D3DX_MatrixInverse' + fmt(m), lambda: (SDTest.Call('D3DX_MatrixInverse', 'tiiiii', 0, dxo, 0, dxa)[0] == dxo,
 		dxget(dxo, 16)))
 	dxset(dxa, m)
-	check('D3DX_MatrixInverse det' + fmt(m), lambda: (SDTest.Call(0x007cea, 'tiiiFi', 0, dxa, (7.0,), dxa)[0] == dxa,
-		SDTest.Call(0x007cea, 'tiiiFi', 0, dxo, (7.0,), dxa)[1], dxget(dxa, 16)))
+	check('D3DX_MatrixInverse det' + fmt(m), lambda: (SDTest.Call('D3DX_MatrixInverse', 'tiiiFi', 0, dxa, (7.0,), dxa)[0] == dxa,
+		SDTest.Call('D3DX_MatrixInverse', 'tiiiFi', 0, dxo, (7.0,), dxa)[1], dxget(dxa, 16)))
 for a in dxang:
-	for rva, name in ((0x0082fb, 'X'), (0x008397, 'Y'), (0x008434, 'Z')):
+	for rva, name in ((sym('D3DX_MatrixRotationX'), 'X'), (sym('D3DX_MatrixRotationY'), 'Y'), (sym('D3DX_MatrixRotationZ'), 'Z')):
 		dxset(dxo, (9.0,) * 16)
 		check('D3DX_MatrixRotation' + name + fmt((a,)), lambda rva=rva, a=a: (SDTest.Call(rva, 'tiiif', 0, dxo,
 			a)[0] == dxo, dxget(dxo, 16)))
 	for b in (0.0, 0.3, -2.0):
 		for c in (0.0, 1.0, 1e6):
 			dxset(dxo, (9.0,) * 16)
-			check('D3DX_MatrixRotationYPR' + fmt((a, b, c)), lambda a=a, b=b, c=c: (SDTest.Call(0x008701, 'tiiifff', 0,
+			check('D3DX_MatrixRotationYPR' + fmt((a, b, c)), lambda a=a, b=b, c=c: (SDTest.Call('D3DX_MatrixRotationYPR', 'tiiifff', 0,
 				dxo, a, b, c)[0] == dxo, dxget(dxo, 16)))
-			check('D3DX_QuaternionRotationYPR' + fmt((a, b, c)), lambda a=a, b=b, c=c: (SDTest.Call(0x009508,
+			check('D3DX_QuaternionRotationYPR' + fmt((a, b, c)), lambda a=a, b=b, c=c: (SDTest.Call('D3DX_QuaternionRotationYPR',
 				'tiiifff', 0, dxo, a, b, c)[0] == dxo, dxget(dxo, 4)))
 for q in ((0.0, 0.0, 0.0, 1.0), (0.5, 0.5, 0.5, 0.5), (0.1, -0.2, 0.3, 0.927), (1e-20, 3.0, -1e5, 2.0),
 		(1e20, 1e20, 0.0, 0.0)):
 	dxset(dxa, q)
-	check('D3DX_MatrixRotationQuaternion' + fmt(q), lambda: (SDTest.Call(0x0085eb, 'tiiii', 0, dxo, dxa)[0] == dxo,
+	check('D3DX_MatrixRotationQuaternion' + fmt(q), lambda: (SDTest.Call('D3DX_MatrixRotationQuaternion', 'tiiii', 0, dxo, dxa)[0] == dxo,
 		dxget(dxo, 16)))
-SDTest.Call(0x133550, 'vi', dxa)
-SDTest.Call(0x133550, 'vi', dxb)
-SDTest.Call(0x133550, 'vi', dxo)
+SDTest.Call('Mem_Free', 'vi', dxa)
+SDTest.Call('Mem_Free', 'vi', dxb)
+SDTest.Call('Mem_Free', 'vi', dxo)

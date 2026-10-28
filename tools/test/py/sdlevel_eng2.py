@@ -4,11 +4,11 @@
 def en2li(a):
 	return SDTest.Peek(a, '@i')
 def en2lz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def en2lfl(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def en2lset(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, tuple(v), 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, tuple(v), 4 * len(v))
 en2lsuelo = en2li(mundo + 0xb0)
 check('gety suelo', lambda: en2lsuelo != 0)
 en2lalt = en2lsuelo + 0x70
@@ -30,26 +30,26 @@ def en2lrayo(rva, x, z, flags, miny, y, minb, maxb):
 if en2lsuelo:
 	for x, z in en2lpts:
 		for maxy in (en2ly + 50.0, en2ly - 20.0, 1e5):
-			check('CSuelo_GetY' + fmt((x, z, maxy)), lambda x=x, z=z, maxy=maxy: (SDTest.Call(0x2c9da0, 'tfifffi',
-				en2lsuelo, x, z, maxy, 0)[0], SDTest.Call(0x2c9da0, 'tfifffi', en2lsuelo, x, z, maxy, 1)[0]))
-			check('CSuelo_GetYRange' + fmt((x, z, maxy)), lambda x=x, z=z, maxy=maxy: (SDTest.Call(0x2ca7f0, 'tfiffffi',
-				en2lsuelo, x, z, maxy, maxy - 200.0, 0)[0], SDTest.Call(0x2ca7f0, 'tfiffffi', en2lsuelo, x, z, maxy,
+			check('CSuelo_GetY' + fmt((x, z, maxy)), lambda x=x, z=z, maxy=maxy: (SDTest.Call('CSuelo_GetY', 'tfifffi',
+				en2lsuelo, x, z, maxy, 0)[0], SDTest.Call('CSuelo_GetY', 'tfifffi', en2lsuelo, x, z, maxy, 1)[0]))
+			check('CSuelo_GetYRange' + fmt((x, z, maxy)), lambda x=x, z=z, maxy=maxy: (SDTest.Call('CSuelo_GetYRange', 'tfiffffi',
+				en2lsuelo, x, z, maxy, maxy - 200.0, 0)[0], SDTest.Call('CSuelo_GetYRange', 'tfiffffi', en2lsuelo, x, z, maxy,
 				-1e5, 1)[0]))
-			check('CSuelo_GetYBelow' + fmt((x, z, maxy)), lambda x=x, z=z, maxy=maxy: (SDTest.Call(0x2caab0, 'tbifffi',
-				en2lsuelo, x, z, maxy, 0)[0], SDTest.Call(0x2caab0, 'tbifffF', en2lsuelo, x, z, maxy, (5.0,))[0:2]))
+			check('CSuelo_GetYBelow' + fmt((x, z, maxy)), lambda x=x, z=z, maxy=maxy: (SDTest.Call('CSuelo_GetYBelow', 'tbifffi',
+				en2lsuelo, x, z, maxy, 0)[0], SDTest.Call('CSuelo_GetYBelow', 'tbifffF', en2lsuelo, x, z, maxy, (5.0,))[0:2]))
 			for flags, miny, minb, maxb in ((2, 0.0, 0.0, 0.0), (3, en2ly - 100.0, 0.0, 0.0), (0xe, 0.0, 0.5, 0.9),
 					(0x10a, 0.0, 0.0, 0.95), (0x302, 0.0, 0.0, 0.0), (0x206, 0.0, 0.7, 0.0), (0, 0.0, 0.0, 0.0)):
 				check('CSuelo_GetYInfo' + fmt((x, z, maxy, flags)), lambda x=x, z=z, maxy=maxy, flags=flags, miny=miny,
-					minb=minb, maxb=maxb: en2lrayo(0x2c9ff0, x, z, flags, miny, maxy, minb, maxb))
+					minb=minb, maxb=maxb: en2lrayo(sym('CSuelo_GetYInfo'), x, z, flags, miny, maxy, minb, maxb))
 		for sect in (0, 1):
-			SDTest.Poke(0x4e6e10, sect)
+			SDTest.Poke('g_RayoVertSectors', sect)
 			for maxy in (en2ly + 50.0, en2ly - 20.0, 1e5):
-				check('CSuelo_RayoVert' + fmt((x, z, maxy, sect)), lambda x=x, z=z, maxy=maxy: en2lrayo(0x2ca360, x, z,
+				check('CSuelo_RayoVert' + fmt((x, z, maxy, sect)), lambda x=x, z=z, maxy=maxy: en2lrayo(sym('CSuelo_RayoVert'), x, z,
 					0x202, 0.0, maxy, 0.0, 0.0))
-	SDTest.Poke(0x4e6e10, 0)
+	SDTest.Poke('g_RayoVertSectors', 0)
 	en2lnx, en2lnz = en2li(en2lalt + 0x3498), en2li(en2lalt + 0x349c)
 	check('CAlturas grid', lambda: (en2lnx, en2lnz, en2li(en2lalt + 0x3490)))
 	for cx, cz in ((0, 0), (en2lnx - 1, en2lnz - 1), (en2lnx, 0), (0, en2lnz), (-1, 3), (en2lnx / 2, en2lnz / 3)):
 		check('CAlturas_GetCell' + fmt((cx, cz)), lambda cx=cx, cz=cz: (lambda r: (r != 0, r and (r - en2li(en2lalt +
-			0x3494)) / 0x24))(SDTest.Call(0x2cad00, 'tiiii', en2lalt, cx, cz)[0]))
-SDTest.Call(0x133550, 'vi', en2linfo)
+			0x3494)) / 0x24))(SDTest.Call('CAlturas_GetCell', 'tiiii', en2lalt, cx, cz)[0]))
+SDTest.Call('Mem_Free', 'vi', en2linfo)

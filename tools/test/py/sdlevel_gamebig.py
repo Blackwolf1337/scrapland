@@ -13,17 +13,17 @@ def gbgs(a):
 		return SDTest.Peek(a, '@s')
 	return None
 def gbgz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def gbgfree(p):
-	SDTest.Call(0x133550, 'ii', p)
+	SDTest.Call('Mem_Free', 'ii', p)
 def gbgfl(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def gbgset(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 def gbgpoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 def gbgstr(a, s):
-	SDTest.Call(0x22cf50, 'iisi', a, s, len(s) + 1)
+	SDTest.Call('Cad_Copy', 'iisi', a, s, len(s) + 1)
 def gbgcstr(s):
 	a = gbgz(len(s) + 16)
 	gbgstr(a, s)
@@ -38,10 +38,10 @@ def gbgints(a, n):
 		r = r + (gbgi(a + 4 * k),)
 	return r
 def gbgsrand(s):
-	SDTest.Call(0x323c50, 'vi', s)
+	SDTest.Call('crt_srand', 'vi', s)
 def gbgfind(name):
-	slot = SDTest.Call(0x131f70, 'tiis', gbgworld + 4, name)[0]
-	node = SDTest.Call(0x131e50, 'tiisi', gbgworld + 4, name, slot)[0]
+	slot = SDTest.Call('HashTable_Slot', 'tiis', gbgworld + 4, name)[0]
+	node = SDTest.Call('PtrTable_Find', 'tiisi', gbgworld + 4, name, slot)[0]
 	if node:
 		return gbgi(node)
 	return 0
@@ -62,14 +62,14 @@ def gbgistype(e, t):
 def gbgdebris(name):
 	if not name:
 		return 0
-	slot = SDTest.Call(0x131f70, 'tiis', gbgworld + 0x298, name)[0]
-	node = SDTest.Call(0x131e50, 'tiisi', gbgworld + 0x298, name, slot)[0]
+	slot = SDTest.Call('HashTable_Slot', 'tiis', gbgworld + 0x298, name)[0]
+	node = SDTest.Call('PtrTable_Find', 'tiisi', gbgworld + 0x298, name, slot)[0]
 	if node:
 		return gbgi(node)
 	return 0
 
-gbgworld = SDTest.Peek(0x467450, 'i')
-gbgtime = SDTest.Call(0x1368e0, 'tfi', gbgworld + 0x2c8)[0]
+gbgworld = SDTest.Peek('g_pWorld', 'i')
+gbgtime = SDTest.Call('Timer_GetTime', 'tfi', gbgworld + 0x2c8)[0]
 
 # the script functions of the missiles
 gbghits = []
@@ -118,17 +118,17 @@ def gbgvars(m, n, s):
 	a = gbgcstr(s)
 	p = gbgz(4)
 	gbgpoke(p, a)
-	r = SDTest.Call(0x0f51b0, 'tbisii', m, n, p, 1)[0]
+	r = SDTest.Call('cMissileEntity_VarS', 'tbisii', m, n, p, 1)[0]
 	gbgfree(p)
 	return r
 
 gbgsaved = gbgz(0x200)
-SDTest.Call(0x3197d0, 'iiii', gbgsaved, 0x8476b8, 0x200)
-gbgdrop = gbgfl(0x867408, 12)
-gbgatm = gbgfl(0x867644, 1)[0]
+SDTest.Call('crt_memcpy', 'iiii', gbgsaved, 0x8476b8, 0x200)
+gbgdrop = gbgfl(symva('g_DebrisDrop'), 12)
+gbgatm = gbgfl(symva('g_AtmosphereLimit'), 1)[0]
 check('GBG atmosphere', lambda: gbgatm)
 gbgmpos = (pp[0] + 3000.0, pp[1] + 100000.0, pp[2] + 3000.0)
-gbgswfile = gbgs(SDTest.Peek(0x44a208, 'i'))
+gbgswfile = gbgs(SDTest.Peek('g_SwarmMissileFile', 'i'))
 check('GBG swarm file', lambda: (gbgswfile, gbgdebris(gbgswfile) != 0))
 check('GBG SwarmCreate', lambda: gbgnative('SwarmCreate', ('SDGbgSw', gbgmpos[0], gbgmpos[1], gbgmpos[2], 0.0, 0.0,
 	1.0)))
@@ -141,27 +141,27 @@ if gbgsw and gbgistype(gbgsw, 'Missile'):
 	check('GBG OnHit', lambda m=m: gbgvars(m, 'OnHit', '__main__.gbgonhit'))
 	check('GBG OnBeeDeath', lambda m=m: gbgvars(m, 'OnBeeDeath', '__main__.gbgonbee'))
 	# SetModel: the empty name does nothing, a second load of the same model
-	check('cMissileEntity_SetModel empty', lambda m=m: (SDTest.Call(0x0f4b60, 'tvizfffi', m, None, 1.0, 1.0, 1.0, 0),
-		SDTest.Call(0x0f4b60, 'tvisfffi', m, '', 2.0, 2.0, 2.0, 0), gbgm(m)))
+	check('cMissileEntity_SetModel empty', lambda m=m: (SDTest.Call('cMissileEntity_SetModel', 'tvizfffi', m, None, 1.0, 1.0, 1.0, 0),
+		SDTest.Call('cMissileEntity_SetModel', 'tvisfffi', m, '', 2.0, 2.0, 2.0, 0), gbgm(m)))
 	gbgset(m + 0xac, (0.25, -0.5, 0.0))
 	gbgset(m + 0x28, gbgmpos)
-	check('cMissileEntity_SetModel', lambda m=m: (SDTest.Call(0x0f4b60, 'tvisfffi', m, gbgswfile, 1.0, 1.0, 1.0, 0),
+	check('cMissileEntity_SetModel', lambda m=m: (SDTest.Call('cMissileEntity_SetModel', 'tvisfffi', m, gbgswfile, 1.0, 1.0, 1.0, 0),
 		gbgm(m), gbgfl(m + 0xf8, 3), gbgb(m + 0x3e8)))
 	# the bees
 	gbgsys = gbgdebris(gbgswfile)
 	if gbgsys:
-		gbgset(0x867408, (gbgmpos[0], gbgmpos[1], gbgmpos[2], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 2.0))
-		check('cMissileEntity_AddToSwarm(3)', lambda m=m: (SDTest.Call(0x0f26f0, 'tvii', m, 3), gbgm(m),
+		gbgset(symva('g_DebrisDrop'), (gbgmpos[0], gbgmpos[1], gbgmpos[2], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 2.0))
+		check('cMissileEntity_AddToSwarm(3)', lambda m=m: (SDTest.Call('cMissileEntity_AddToSwarm', 'tvii', m, 3), gbgm(m),
 			gbgbeestate(m)))
 		gbgpoke(m + 0x57c, 2)
 		gbgsrand(4242)
-		check('cMissileEntity_AddToSwarm(2) cloud', lambda m=m: (SDTest.Call(0x0f26f0, 'tvii', m, 2), gbgm(m),
+		check('cMissileEntity_AddToSwarm(2) cloud', lambda m=m: (SDTest.Call('cMissileEntity_AddToSwarm', 'tvii', m, 2), gbgm(m),
 			gbgbeestate(m)))
 		gbgpoke(m + 0x57c, 0)
-		check('cMissileEntity_AddToSwarm(0)', lambda m=m: (SDTest.Call(0x0f26f0, 'tvii', m, 0), gbgm(m)))
-		check('cMissileEntity_AddToSwarm(-1)', lambda m=m: (SDTest.Call(0x0f26f0, 'tvii', m, -1), gbgm(m)))
+		check('cMissileEntity_AddToSwarm(0)', lambda m=m: (SDTest.Call('cMissileEntity_AddToSwarm', 'tvii', m, 0), gbgm(m)))
+		check('cMissileEntity_AddToSwarm(-1)', lambda m=m: (SDTest.Call('cMissileEntity_AddToSwarm', 'tvii', m, -1), gbgm(m)))
 		gbgsetbyte(m + 0x58c, 1)
-		check('cMissileEntity_AddToSwarm hidden', lambda m=m: (SDTest.Call(0x0f26f0, 'tvii', m, 2), gbgm(m)))
+		check('cMissileEntity_AddToSwarm hidden', lambda m=m: (SDTest.Call('cMissileEntity_AddToSwarm', 'tvii', m, 2), gbgm(m)))
 		gbgsetbyte(m + 0x58c, 0)
 		gbgpoke(m + 0x588, 5)
 		# Swarm: the render position of the missile is where the bees follow
@@ -173,14 +173,14 @@ if gbgsw and gbgistype(gbgsw, 'Missile'):
 		gbgsrand(31)
 		for dt, typ in ((0.1, 0), (0.02, 0), (0.2, 2), (0.07, 1)):
 			gbgpoke(m + 0x57c, typ)
-			check('cMissileEntity_Swarm' + fmt((dt, typ)), lambda m=m, dt=dt: (SDTest.Call(0x0f59b0, 'tvif', m, dt),
+			check('cMissileEntity_Swarm' + fmt((dt, typ)), lambda m=m, dt=dt: (SDTest.Call('cMissileEntity_Swarm', 'tvif', m, dt),
 				gbgm(m), gbgbeestate(m)))
 		# a bee far outside the radius
 		gbgbee = gbgi(m + 0x590)
 		if gbgbee:
 			gbgset(gbgbee + 0x1c, (gbgmpos[0] + 5000.0, gbgmpos[1], gbgmpos[2]))
 			gbgset(m + 0x580, (0.2,))
-			check('cMissileEntity_Swarm far bee', lambda m=m: (SDTest.Call(0x0f59b0, 'tvif', m, 0.05), gbgm(m),
+			check('cMissileEntity_Swarm far bee', lambda m=m: (SDTest.Call('cMissileEntity_Swarm', 'tvif', m, 0.05), gbgm(m),
 				gbgbeestate(m)))
 		gbgpoke(m + 0x57c, 0)
 		# Explode without flag584: the bees die where they are (OnBeeDeath), the slow ones go back to the system
@@ -190,11 +190,11 @@ if gbgsw and gbgistype(gbgsw, 'Missile'):
 		if len(gbgbl) > 1:
 			gbgset(gbgbl[1][0] + 0x34, (0.0, 0.0, 0.0))
 		gbgset(m + 0xd4, (0.0, 0.0, 0.0))
-		check('cMissileEntity_Explode die', lambda m=m, bl=gbgbl: (SDTest.Call(0x0f5650, 'tviF', m,
+		check('cMissileEntity_Explode die', lambda m=m, bl=gbgbl: (SDTest.Call('cMissileEntity_Explode', 'tviF', m,
 			(gbgmpos[0], gbgmpos[1] + 500.0, gbgmpos[2])), gbgm(m), map(lambda x: gbgfl(x[0] + 0x1c, 13), bl),
 			gbgcalls()))
 		# Explode with flag584: the bees fly to the point
-		check('cMissileEntity_AddToSwarm(4) again', lambda m=m: (SDTest.Call(0x0f26f0, 'tvii', m, 4), gbgm(m)))
+		check('cMissileEntity_AddToSwarm(4) again', lambda m=m: (SDTest.Call('cMissileEntity_AddToSwarm', 'tvii', m, 4), gbgm(m)))
 		gbgsetbyte(m + 0x584, 1)
 		gbgbl = gbgbeelist(m)
 		k = 0
@@ -203,14 +203,14 @@ if gbgsw and gbgistype(gbgsw, 'Missile'):
 			gbgset(d + 0x28, (0.1 * k, -0.2 * k, 0.3))
 			k = k + 1
 		for gbgat in ((gbgmpos[0] + 2000.0, gbgmpos[1], gbgmpos[2] - 1000.0),):
-			check('cMissileEntity_Explode fly' + fmt(gbgat), lambda m=m, bl=gbgbl, at=gbgat: (SDTest.Call(0x0f5650,
+			check('cMissileEntity_Explode fly' + fmt(gbgat), lambda m=m, bl=gbgbl, at=gbgat: (SDTest.Call('cMissileEntity_Explode',
 				'tviF', m, at), gbgm(m), map(lambda x: gbgfl(x[0] + 0x1c, 13), bl), gbgcalls()))
 		# the bees close to the point: the time is at least 0.01
-		check('cMissileEntity_AddToSwarm(2) close', lambda m=m: (SDTest.Call(0x0f26f0, 'tvii', m, 2), gbgm(m)))
+		check('cMissileEntity_AddToSwarm(2) close', lambda m=m: (SDTest.Call('cMissileEntity_AddToSwarm', 'tvii', m, 2), gbgm(m)))
 		gbgbl = gbgbeelist(m)
 		for d, st in gbgbl:
 			gbgset(d + 0x34, (1e6, 0.0, 0.0))
-		check('cMissileEntity_Explode close', lambda m=m, bl=gbgbl: (SDTest.Call(0x0f5650, 'tviF', m,
+		check('cMissileEntity_Explode close', lambda m=m, bl=gbgbl: (SDTest.Call('cMissileEntity_Explode', 'tviF', m,
 			gbgfl(bl[0][0] + 0x1c, 3)), gbgm(m), map(lambda x: gbgfl(x[0] + 0x1c, 13), bl), gbgcalls()))
 		gbgsetbyte(m + 0x584, 0)
 	# no names without a debris system: cWorld_GetDebrisSys loads it and the original hangs on a missing file
@@ -218,23 +218,23 @@ if gbgsw and gbgistype(gbgsw, 'Missile'):
 
 	# the network state through a memory file and a controller of our own
 	gbgnc = gbgz(0x60)
-	SDTest.Call(0x0fa1d0, 'tii', gbgnc)
+	SDTest.Call('cNetController_ctor', 'tii', gbgnc)
 	gbgf = gbgz(0x20)
 	gbgfbuf = gbgz(0x200)
-	SDTest.Call(0x12e050, 'tiiiii', gbgf, gbgfbuf, 0x200, 0)
+	SDTest.Call('cFileMem_ctor', 'tiiiii', gbgf, gbgfbuf, 0x200, 0)
 	gbgnet = gbgi(m + 0xf4)
 	gbgpoke(m + 0xf4, gbgnc)
 	def gbgfbytes():
-		n = SDTest.Call(0x12e2a0, 'tii', gbgf)[0]
+		n = SDTest.Call('cFileMem_Size', 'tii', gbgf)[0]
 		return map(lambda i: gbgb(gbgfbuf + i), range(n))
 	def gbgwrite(m, dist2, full):
-		SDTest.Call(0x12e1b0, 'tiisi', gbgf, '', 6)
-		SDTest.Call(0x0f3b10, 'tvifii', m, dist2, gbgf, full)
+		SDTest.Call('cFileMem_Open', 'tiisi', gbgf, '', 6)
+		SDTest.Call('cMissileEntity_NetWrite', 'tvifii', m, dist2, gbgf, full)
 		return gbgfbytes()
 	def gbgread(m, isnew):
-		SDTest.Call(0x12e240, 'tviiiii', gbgf, gbgfbuf, 0x200, 0, 0)
-		SDTest.Call(0x12e1b0, 'tiisi', gbgf, '', 1)
-		SDTest.Call(0x0f39b0, 'tviii', m, gbgf, isnew)
+		SDTest.Call('cFileMem_SetBuffer', 'tviiiii', gbgf, gbgfbuf, 0x200, 0, 0)
+		SDTest.Call('cFileMem_Open', 'tiisi', gbgf, '', 1)
+		SDTest.Call('cMissileEntity_NetRead', 'tviii', m, gbgf, isnew)
 		return (gbgm(m), gbgfl(m + 0x290, 2), gbgfl(gbgnc + 4, 13), gbgb(gbgnc + 0x38))
 	gbgstr(m + 0x3fc, 'SDGbgParent')
 	gbgstr(m + 0x47c, 'SDGbgTarget')
@@ -250,9 +250,9 @@ if gbgsw and gbgistype(gbgsw, 'Missile'):
 		check('cMissileEntity_NetRead old' + fmt((act, dist2, full, fire)), lambda m=m: gbgread(m, 0))
 	# the ids of the network names (0xffff for none) read back
 	for b in ((0xff, 0xff, 0x85, 0x0a), (0x03, 0x00, 0x3f, 0x00), (0x05, 0x01, 0xc0, 0xff)):
-		SDTest.Call(0x12e1b0, 'tiisi', gbgf, '', 6)
-		SDTest.Call(0x0f3b10, 'tvifii', m, 1e6, gbgf, 1)
-		n = SDTest.Call(0x12e2a0, 'tii', gbgf)[0]
+		SDTest.Call('cFileMem_Open', 'tiisi', gbgf, '', 6)
+		SDTest.Call('cMissileEntity_NetWrite', 'tvifii', m, 1e6, gbgf, 1)
+		n = SDTest.Call('cFileMem_Size', 'tii', gbgf)[0]
 		k = 0
 		for x in b:
 			gbgsetbyte(gbgfbuf + n - 4 + k, x)
@@ -271,22 +271,22 @@ if gbgsw and gbgistype(gbgsw, 'Missile'):
 	# SetEmbeddedFX: a deleted missile does nothing, unknown names, the effects whose debris systems are there
 	gbgdead = gbgi(m + 0x20)
 	gbgpoke(m + 0x20, 1)
-	check('cMissileEntity_SetEmbeddedFX deleted', lambda m=m: (SDTest.Call(0x0f4790, 'tvis', m, 'EMI'), gbgm(m)))
+	check('cMissileEntity_SetEmbeddedFX deleted', lambda m=m: (SDTest.Call('cMissileEntity_SetEmbeddedFX', 'tvis', m, 'EMI'), gbgm(m)))
 	gbgpoke(m + 0x20, gbgdead)
 	for n in ('Bogus', '', 'D', 'Dumb', 'G', 'GearMissil', 'C', 'Cloudy', 'E', 'EMIx'):
-		check('cMissileEntity_SetEmbeddedFX(%s)' % n, lambda m=m, n=n: (SDTest.Call(0x0f4790, 'tvis', m, n), gbgm(m)))
-	for n, g in (('DumbMotor', 0x448478), ('GearMissile', 0x446a3c), ('Cloud', 0x448e74), ('EMI', 0x449310)):
+		check('cMissileEntity_SetEmbeddedFX(%s)' % n, lambda m=m, n=n: (SDTest.Call('cMissileEntity_SetEmbeddedFX', 'tvis', m, n), gbgm(m)))
+	for n, g in (('DumbMotor', sym('g_MissileFXDumbMotor')), ('GearMissile', sym('g_MissileFXGearMissile')), ('Cloud', sym('g_MissileFXCloud')), ('EMI', sym('g_MissileFXEMI'))):
 		gbgfxsys = gbgdebris(gbgs(SDTest.Peek(g, 'i')))
 		check('GBG fx system ' + n, lambda g=g, s=gbgfxsys: (gbgs(SDTest.Peek(g, 'i')), s != 0))
 		if gbgfxsys:
 			gbgset(m + 0x3f0, (2.0,))
 			gbgsrand(55)
-			check('cMissileEntity_SetEmbeddedFX(%s)' % n, lambda m=m, n=n: (SDTest.Call(0x0f4790, 'tvis', m, n),
+			check('cMissileEntity_SetEmbeddedFX(%s)' % n, lambda m=m, n=n: (SDTest.Call('cMissileEntity_SetEmbeddedFX', 'tvis', m, n),
 				gbgm(m)))
 
 	# Tick (vf23): far above, no target, Linear; the radius grows to the top
 	def gbgtick(m, dt):
-		SDTest.Call(0x0f3c40, 'tvif', m, dt)
+		SDTest.Call('cMissileEntity_Tick', 'tvif', m, dt)
 		return (gbgm(m), gbgfl(m + 0x5a4, 3), gbgcalls(), gbgmhits(m))
 	gbgset(m + 0x28, gbgmpos)
 	gbgset(m + 0xac, (0.0, 0.5, 0.0))
@@ -373,11 +373,11 @@ if gbgsw and gbgistype(gbgsw, 'Missile'):
 	gbgsetbyte(m + 0x7bc, 0)
 	gbgset(m + 0x28, gbgmpos)
 	gbgset(m + 0xd4, (0.0, 0.0, 0.0))
-	check('cWithLifeEntity_Vf48', lambda m=m: (SDTest.Call(0x0f46b0, 'tvi', m), gbgm(m)))
+	check('cWithLifeEntity_Vf48', lambda m=m: (SDTest.Call('cWithLifeEntity_Vf48', 'tvi', m), gbgm(m)))
 	check('GBG SDGbgSw Del', lambda: Scrap.GetEntity('SDGbgSw').Del())
-SDTest.Call(0x3197d0, 'iiii', 0x8476b8, gbgsaved, 0x200)
+SDTest.Call('crt_memcpy', 'iiii', 0x8476b8, gbgsaved, 0x200)
 gbgfree(gbgsaved)
-gbgset(0x867408, gbgdrop)
+gbgset(symva('g_DebrisDrop'), gbgdrop)
 check('GBG missile hits restored', lambda: gbghitnames())
 
 # ---- the items a ship takes ----
@@ -385,7 +385,7 @@ gbgcar = gbgfind('SDGbgCar')
 if not gbgcar:
 	Scrap.CreateEntity('SDGbgCar', gbgmpos[0] + 1500.0, gbgmpos[1], gbgmpos[2], 'Car')
 	gbgcar = gbgfind('SDGbgCar')
-gbgitem = SDTest.Call(0x208360, 'tiisfffs', gbgworld, 'SDGbgItem', gbgmpos[0], gbgmpos[1] - 2000.0, gbgmpos[2],
+gbgitem = SDTest.Call('cWorld_CreateEntity', 'tiisfffs', gbgworld, 'SDGbgItem', gbgmpos[0], gbgmpos[1] - 2000.0, gbgmpos[2],
 	'item')[0]
 check('GBG item and car', lambda: (gbgitem != 0, gbgcar != 0))
 if gbgcar and gbgitem:
@@ -462,37 +462,37 @@ if gbgcar and gbgc2 and gbgc3:
 	gbgpoke(gbgc2 + 0x238, 100)
 	gbgpoke(gbgc3 + 0x238, 100)
 	check('cVehicleO648 state', lambda o=o: gbgtl(o))
-	check('cVehicleO648_IsStale no list', lambda o=o: SDTest.Call(0x0ff790, 'tbi', o)[0])
-	check('cVehicleO648_Rebuild no list', lambda o=o: (SDTest.Call(0x0ff070, 'tvi', o), gbgtl(o)))
-	check('cVehicleO648_Update no list', lambda o=o: (SDTest.Call(0x0ff6a0, 'tvif', o, 0.1), gbgtl(o)))
-	check('cVehicleO648_Cycle no list', lambda o=o: (SDTest.Call(0x0ff480, 'tvii', o, 1), gbgtl(o)))
-	check('cVehicleO648_PickInView no list', lambda o=o: (SDTest.Call(0x0ff5f0, 'tvi', o), gbgtl(o)))
-	check('cVehicleO648_SetSlot(-1) no list', lambda o=o: (SDTest.Call(0x0ff3f0, 'tvii', o, -1), gbgtl(o)))
-	check('cVehicleO648_SetSlot(0)', lambda o=o: (SDTest.Call(0x0ff3f0, 'tvii', o, 0), gbgtl(o),
-		gbgfl(gbgi(o + 4) + 0x808, 1)[0] == -gbgfl(0x847b74, 1)[0]))
-	check('cVehicleO648_SetSlot(1) again', lambda o=o: (SDTest.Call(0x0ff3f0, 'tvii', o, 1), gbgtl(o)))
+	check('cVehicleO648_IsStale no list', lambda o=o: SDTest.Call('cVehicleO648_IsStale', 'tbi', o)[0])
+	check('cVehicleO648_Rebuild no list', lambda o=o: (SDTest.Call('cVehicleO648_Rebuild', 'tvi', o), gbgtl(o)))
+	check('cVehicleO648_Update no list', lambda o=o: (SDTest.Call('cVehicleO648_Update', 'tvif', o, 0.1), gbgtl(o)))
+	check('cVehicleO648_Cycle no list', lambda o=o: (SDTest.Call('cVehicleO648_Cycle', 'tvii', o, 1), gbgtl(o)))
+	check('cVehicleO648_PickInView no list', lambda o=o: (SDTest.Call('cVehicleO648_PickInView', 'tvi', o), gbgtl(o)))
+	check('cVehicleO648_SetSlot(-1) no list', lambda o=o: (SDTest.Call('cVehicleO648_SetSlot', 'tvii', o, -1), gbgtl(o)))
+	check('cVehicleO648_SetSlot(0)', lambda o=o: (SDTest.Call('cVehicleO648_SetSlot', 'tvii', o, 0), gbgtl(o),
+		gbgfl(gbgi(o + 4) + 0x808, 1)[0] == -gbgfl(symva('g_TgtRegenerationTime'), 1)[0]))
+	check('cVehicleO648_SetSlot(1) again', lambda o=o: (SDTest.Call('cVehicleO648_SetSlot', 'tvii', o, 1), gbgtl(o)))
 	gbgemi = gbgfl(gbgcar + 0x58c, 1)
 	for emi in (0.0, 5.0):
 		gbgset(gbgcar + 0x58c, (emi,))
-		check('cVehicleO648_IsBlocked' + fmt(emi), lambda o=o: SDTest.Call(0x0ff030, 'tbi', o)[0])
+		check('cVehicleO648_IsBlocked' + fmt(emi), lambda o=o: SDTest.Call('cVehicleO648_IsBlocked', 'tbi', o)[0])
 	gbgset(gbgcar + 0x58c, (5.0,))
-	gbgpadlock = gbgfl(0x847ba4, 1)
-	gbgset(0x847ba4, (1.0,))
-	check('cVehicleO648_IsBlocked padlock', lambda o=o: SDTest.Call(0x0ff030, 'tbi', o)[0])
-	gbgset(0x847ba4, gbgpadlock)
+	gbgpadlock = gbgfl(symva('g_VehicleCenterPadLock'), 1)
+	gbgset(symva('g_VehicleCenterPadLock'), (1.0,))
+	check('cVehicleO648_IsBlocked padlock', lambda o=o: SDTest.Call('cVehicleO648_IsBlocked', 'tbi', o)[0])
+	gbgset(symva('g_VehicleCenterPadLock'), gbgpadlock)
 	gbgstr(o + 8, 'SDGbgCar3')
-	check('cVehicleO648_Cycle blocked', lambda o=o: (SDTest.Call(0x0ff480, 'tvii', o, 1), gbgtl(o)))
+	check('cVehicleO648_Cycle blocked', lambda o=o: (SDTest.Call('cVehicleO648_Cycle', 'tvii', o, 1), gbgtl(o)))
 	gbgstr(o + 8, 'SDGbgCar3')
-	check('cVehicleO648_Update blocked', lambda o=o: (SDTest.Call(0x0ff6a0, 'tvif', o, 0.1), gbgtl(o)))
+	check('cVehicleO648_Update blocked', lambda o=o: (SDTest.Call('cVehicleO648_Update', 'tvif', o, 0.1), gbgtl(o)))
 	gbgstr(o + 8, 'SDGbgCar3')
-	check('cVehicleO648_PickInView blocked', lambda o=o: (SDTest.Call(0x0ff5f0, 'tvi', o), gbgtl(o)))
+	check('cVehicleO648_PickInView blocked', lambda o=o: (SDTest.Call('cVehicleO648_PickInView', 'tvi', o), gbgtl(o)))
 	gbgset(gbgcar + 0x58c, (0.0,))
 	# the attacker time: long ago, then now (without attacker)
 	gbghit = gbgfl(gbgcar + 0x308, 1)
 	l = gbgi(o + 4)
 	for hit in (-1000.0, gbgtime + 100.0):
 		gbgset(gbgcar + 0x308, (hit,))
-		check('cVehicleO648_Rebuild' + fmt(hit - gbgtime > 0), lambda o=o: (SDTest.Call(0x0ff070, 'tvi', o), gbgi(l) > 1,
+		check('cVehicleO648_Rebuild' + fmt(hit - gbgtime > 0), lambda o=o: (SDTest.Call('cVehicleO648_Rebuild', 'tvi', o), gbgi(l) > 1,
 			gbgs(l + 8), gbgs(o + 8), gbgi(l + 0x80c)))
 	gbgset(gbgcar + 0x308, gbghit)
 	# a list of our own: the cars 2 and 3
@@ -506,28 +506,28 @@ if gbgcar and gbgc2 and gbgc3:
 	for nxt, cur, target in ((1, 0, 'SDGbgCar2'), (1, 1, 'SDGbgCar3'), (0, 0, 'SDGbgCar2'), (0, 1, 'SDGbgCar3'),
 			(1, 0, 'SDGbgCar3'), (0, 1, 'SDGbgCar2')):
 		gbgmylist(o, l, cur, target)
-		check('cVehicleO648_IsStale' + fmt((cur, target)), lambda o=o: SDTest.Call(0x0ff790, 'tbi', o)[0])
-		check('cVehicleO648_Cycle' + fmt((nxt, cur, target)), lambda o=o, n=nxt: (SDTest.Call(0x0ff480, 'tvii', o, n),
+		check('cVehicleO648_IsStale' + fmt((cur, target)), lambda o=o: SDTest.Call('cVehicleO648_IsStale', 'tbi', o)[0])
+		check('cVehicleO648_Cycle' + fmt((nxt, cur, target)), lambda o=o, n=nxt: (SDTest.Call('cVehicleO648_Cycle', 'tvii', o, n),
 			gbgtl(o)))
 	gbgmylist(o, l, 0, 'SDGbgNobody')
-	check('cVehicleO648_IsStale missing', lambda o=o: SDTest.Call(0x0ff790, 'tbi', o)[0])
+	check('cVehicleO648_IsStale missing', lambda o=o: SDTest.Call('cVehicleO648_IsStale', 'tbi', o)[0])
 	gbgmylist(o, l, 0, 'SDGbgCar3')
 	gbgsetbyte(gbgc3 + 0x4c, 0)
-	check('cVehicleO648_IsStale inactive', lambda o=o: SDTest.Call(0x0ff790, 'tbi', o)[0])
+	check('cVehicleO648_IsStale inactive', lambda o=o: SDTest.Call('cVehicleO648_IsStale', 'tbi', o)[0])
 	gbgsetbyte(gbgc3 + 0x4c, 1)
 	gbgmylist(o, l, 0, 'SDGbgCar3')
 	gbgpoke(l, 1)
-	check('cVehicleO648_IsStale one', lambda o=o: SDTest.Call(0x0ff790, 'tbi', o)[0])
+	check('cVehicleO648_IsStale one', lambda o=o: SDTest.Call('cVehicleO648_IsStale', 'tbi', o)[0])
 	gbgmylist(o, l, 0, 'SDGbgCar3')
 	gbgset(l + 0x808, (gbgtime - 100.0,))
-	check('cVehicleO648_IsStale old', lambda o=o: SDTest.Call(0x0ff790, 'tbi', o)[0])
+	check('cVehicleO648_IsStale old', lambda o=o: SDTest.Call('cVehicleO648_IsStale', 'tbi', o)[0])
 	# Update: the target stays, is gone, the wait
 	for target, wait, team in (('SDGbgCar3', 1.0, 5), ('SDGbgCar3', 1.0, 3), ('SDGbgNobody', 1.0, 5),
 			('SDGbgCar', 1.0, 5), ('', 0.0, 5)):
 		gbgmylist(o, l, 0, target)
 		gbgset(l + 4, (wait,))
 		gbgpoke(gbgc3 + 0x388, team)
-		check('cVehicleO648_Update' + fmt((target, wait, team)), lambda o=o: (SDTest.Call(0x0ff6a0, 'tvif', o, 0.25),
+		check('cVehicleO648_Update' + fmt((target, wait, team)), lambda o=o: (SDTest.Call('cVehicleO648_Update', 'tvif', o, 0.25),
 			gbgtl(o)))
 	gbgpoke(gbgc3 + 0x388, 5)
 	# PickInView: the car 2 straight ahead
@@ -537,8 +537,8 @@ if gbgcar and gbgc2 and gbgc3:
 			(gbgcpos[0], gbgcpos[1], gbgcpos[2] - 800.0)):
 		SDTest.Call(gbgi(gbgi(gbgc2) + 0x1c) - 0x400000, 'tviF', gbgc2, p)
 		gbgstr(o + 8, 'SDGbgCar3')
-		check('cVehicleO648_PickInView' + fmt(p), lambda o=o: (SDTest.Call(0x0ff5f0, 'tvi', o), gbgtl(o)))
-	check('cVehicleO648_SetSlot(-1)', lambda o=o: (SDTest.Call(0x0ff3f0, 'tvii', o, -1), gbgtl(o)))
+		check('cVehicleO648_PickInView' + fmt(p), lambda o=o: (SDTest.Call('cVehicleO648_PickInView', 'tvi', o), gbgtl(o)))
+	check('cVehicleO648_SetSlot(-1)', lambda o=o: (SDTest.Call('cVehicleO648_SetSlot', 'tvii', o, -1), gbgtl(o)))
 	gbgpoke(gbgcar + 0x388, gbgteams[0])
 	gbgpoke(gbgc2 + 0x388, gbgteams[1])
 	gbgpoke(gbgc3 + 0x388, gbgteams[2])
@@ -548,9 +548,9 @@ if gbgcar and gbgc2 and gbgc3:
 	gbgpoke(gbgo, 0x1234)
 	gbgpoke(gbgo + 4, 0x5678)
 	gbgpoke(gbgo + 8, 0x41414141)
-	check('cVehicleO648_ctor', lambda: (SDTest.Call(0x0fefb0, 'tii', gbgo)[0] == gbgo, gbgints(gbgo, 3)))
-	check('cVehicleO648_SetSlot(2) own', lambda: (SDTest.Call(0x0ff3f0, 'tvii', gbgo, 2), gbgi(gbgo + 4) != 0))
-	check('cVehicleO648_dtor', lambda: (SDTest.Call(0x0ff010, 'tvi', gbgo), gbgi(gbgo + 4) != 0))
+	check('cVehicleO648_ctor', lambda: (SDTest.Call('cVehicleO648_ctor', 'tii', gbgo)[0] == gbgo, gbgints(gbgo, 3)))
+	check('cVehicleO648_SetSlot(2) own', lambda: (SDTest.Call('cVehicleO648_SetSlot', 'tvii', gbgo, 2), gbgi(gbgo + 4) != 0))
+	check('cVehicleO648_dtor', lambda: (SDTest.Call('cVehicleO648_dtor', 'tvi', gbgo), gbgi(gbgo + 4) != 0))
 	gbgfree(gbgo)
 for n in ('SDGbgCar', 'SDGbgCar2', 'SDGbgCar3', 'SDGbgItem'):
 	if gbgfind(n):
@@ -558,9 +558,9 @@ for n in ('SDGbgCar', 'SDGbgCar2', 'SDGbgCar3', 'SDGbgItem'):
 
 # ---- the vehicle effects, motors, flight and model (the ship SDGbgCar4 with the model SPoli1) ----
 def gbgnew(n):
-	return SDTest.Call(0x1334d0, 'ii', n)[0]
+	return SDTest.Call('operator_new', 'ii', n)[0]
 def gbgdelete(p):
-	SDTest.Call(0x1334e0, 'vi', p)
+	SDTest.Call('operator_delete', 'vi', p)
 def gbgpoison(a, n):
 	for k in range(n):
 		gbgpoke(a + 4 * k, 0x5a5a5a5a)
@@ -569,40 +569,40 @@ def gbgpart(p):
 	return (gbgints(p, 0x98 / 4), gbgb(p + 0x98), gbgb(p + 0x99), gbgints(p + 0x9c, 2), gbgb(p + 0xa4))
 gbgve = gbgnew(0x24)
 gbgpoison(gbgve, 9)
-check('cVehicleEffects_ctor', lambda: (SDTest.Call(0x100ab0, 'tii', gbgve)[0] == gbgve, gbgints(gbgve, 9)))
+check('cVehicleEffects_ctor', lambda: (SDTest.Call('cVehicleEffects_ctor', 'tii', gbgve)[0] == gbgve, gbgints(gbgve, 9)))
 gbgtu = gbgnew(0x17c)
 gbgpoison(gbgtu, 0x17c / 4)
-check('cVehicleTubes_ctor', lambda: (SDTest.Call(0x100af0, 'tii', gbgtu)[0] == gbgtu, gbgi(gbgtu),
+check('cVehicleTubes_ctor', lambda: (SDTest.Call('cVehicleTubes_ctor', 'tii', gbgtu)[0] == gbgtu, gbgi(gbgtu),
 	gbgints(gbgtu + 0x1c + 0xa8, 2), gbgints(gbgtu + 0x1c + 0xb0 + 0xa8, 2), gbgi(gbgtu + 4)))
 gbgtr = gbgnew(0x60)
 gbgpoison(gbgtr, 0x60 / 4)
-check('cVehicleTrails_ctor', lambda: (SDTest.Call(0x100b30, 'tii', gbgtr)[0] == gbgtr, gbgi(gbgtr), gbgi(gbgtr + 4)))
+check('cVehicleTrails_ctor', lambda: (SDTest.Call('cVehicleTrails_ctor', 'tii', gbgtr)[0] == gbgtr, gbgi(gbgtr), gbgi(gbgtr + 4)))
 gbgpoke(gbgtu + 4, 0)
 gbgpoke(gbgtr + 4, 0)
 gbgpoke(gbgve + 0x1c, gbgtr)
 gbgpoke(gbgve + 0x20, gbgtu)
-check('cVehicleEffects_Update counts 0', lambda: (SDTest.Call(0x100c10, 'tvif', gbgve, 0.1), gbgints(gbgve, 9) ==
+check('cVehicleEffects_Update counts 0', lambda: (SDTest.Call('cVehicleEffects_Update', 'tvif', gbgve, 0.1), gbgints(gbgve, 9) ==
 	(0, 0, 0, 0, 0, 0, 0, gbgtr, gbgtu)))
-check('cVehicleEffects_dtor', lambda: (SDTest.Call(0x100b60, 'tvi', gbgve), gbgints(gbgve, 9)))
-check('cVehicleEffects_dtor empty', lambda: (SDTest.Call(0x100b60, 'tvi', gbgve), gbgints(gbgve, 9)))
-check('cVehicleEffects_Update none', lambda: SDTest.Call(0x100c10, 'tvif', gbgve, 0.1))
+check('cVehicleEffects_dtor', lambda: (SDTest.Call('cVehicleEffects_dtor', 'tvi', gbgve), gbgints(gbgve, 9)))
+check('cVehicleEffects_dtor empty', lambda: (SDTest.Call('cVehicleEffects_dtor', 'tvi', gbgve), gbgints(gbgve, 9)))
+check('cVehicleEffects_Update none', lambda: SDTest.Call('cVehicleEffects_Update', 'tvif', gbgve, 0.1))
 gbgdelete(gbgve)
 
 # the motors on memory of our own
 gbgms = gbgnew(0xc8)
 gbgpoison(gbgms, 0xc8 / 4)
-check('cVehicleMotors_ctor', lambda: (SDTest.Call(0x10bc20, 'tii', gbgms)[0] == gbgms, gbgi(gbgms) - 0x400000,
+check('cVehicleMotors_ctor', lambda: (SDTest.Call('cVehicleMotors_ctor', 'tii', gbgms)[0] == gbgms, gbgi(gbgms) - 0x400000,
 	gbgints(gbgms + 4, 7), gbgi(gbgms + 0x20), gbgi(gbgms + 0x30)))
 gbgm1 = gbgnew(0x11c)
 gbgpoison(gbgm1, 0x11c / 4)
-check('cVehicleMotor_ctor', lambda: (SDTest.Call(0x10bb90, 'tii', gbgm1)[0] == gbgm1, gbgints(gbgm1 + 0x38, 2),
+check('cVehicleMotor_ctor', lambda: (SDTest.Call('cVehicleMotor_ctor', 'tii', gbgm1)[0] == gbgm1, gbgints(gbgm1 + 0x38, 2),
 	gbgb(gbgm1 + 0x40), gbgb(gbgm1 + 0x60), gbgb(gbgm1 + 0x6c), gbgints(gbgm1 + 0x64, 4), gbgi(gbgm1 + 0x74)))
 gbgm2 = gbgnew(0x11c)
-SDTest.Call(0x10bb90, 'tii', gbgm2)
-check('cVehicleMotor_dtor', lambda: (SDTest.Call(0x10bcb0, 'tvi', gbgm2), gbgints(gbgm2 + 0x38, 2), gbgi(gbgm2 + 0x74)))
+SDTest.Call('cVehicleMotor_ctor', 'tii', gbgm2)
+check('cVehicleMotor_dtor', lambda: (SDTest.Call('cVehicleMotor_dtor', 'tvi', gbgm2), gbgints(gbgm2 + 0x38, 2), gbgi(gbgm2 + 0x74)))
 gbgdelete(gbgm2)
 gbgpoke(gbgms + 0xc, gbgm1)
-check('cVehicleMotors_dtor', lambda: (SDTest.Call(0x10bd10, 'tvi', gbgms), gbgi(gbgms) - 0x400000,
+check('cVehicleMotors_dtor', lambda: (SDTest.Call('cVehicleMotors_dtor', 'tvi', gbgms), gbgi(gbgms) - 0x400000,
 	gbgi(gbgms + 0xc) == gbgm1, gbgi(gbgms + 0x20)))
 gbgdelete(gbgms)
 
@@ -611,24 +611,24 @@ gbgc4 = gbgfind('SDGbgCar4')
 check('SDGbgCar4', lambda: (gbgc4obj is not None, gbgc4 != 0))
 if gbgc4:
 	c = gbgc4
-	check('GBG SetModel SPoli1', lambda c=c: (SDTest.Call(0x109db0, 'tvisfffi', c, 'SPoli1', 1.0, 1.0, 1.0, 1),
+	check('GBG SetModel SPoli1', lambda c=c: (SDTest.Call('cVehicleEntity_SetModel', 'tvisfffi', c, 'SPoli1', 1.0, 1.0, 1.0, 1),
 		gbgi(c + 0x51c), gbgi(c + 0x224) != 0, gbgi(c + 0x80c) != 0, gbgi(c + 0x810) != 0))
 	# the wind smoke at the ship
-	gbgwind = gbgs(SDTest.Peek(0x447d0c, 'i'))
+	gbgwind = gbgs(SDTest.Peek('g_WindFxSmokeFile', 'i'))
 	gbgwsys = gbgdebris(gbgwind)
-	check('GBG wind smoke', lambda: (gbgwind, gbgwsys != 0, gbgfl(0x847dcc, 1), gbgfl(0x847c7c, 1)))
+	check('GBG wind smoke', lambda: (gbgwind, gbgwsys != 0, gbgfl(symva('g_WindFXSmokeMaxDist'), 1), gbgfl(symva('g_WindFXSmokeSizeDiv'), 1)))
 	gbgwel = 0
 	if gbgwsys:
 		gbgcpos = SDTest.Call(gbgi(gbgi(c) + 0x74) - 0x400000, 'tiiF', c, (0.0, 0.0, 0.0))[1]
 		gbgsrand(1357)
 		for d in ((0.0, -300.0, 0.0), (100.0, -200.0, 50.0), (0.0, 0.0, 0.0), (1e6, 0.0, 0.0)):
-			gbgwd = SDTest.Call(0x204d40, 'tii', gbgwsys)[0]
+			gbgwd = SDTest.Call('cDebrisSys_GetIdle', 'tii', gbgwsys)[0]
 			gbgwel = gbgwd and gbgi(gbgwd + 0x54)
 			# the original reads the element without a check
 			if gbgwel:
-				check('cVehicleEffects_WindSmoke' + fmt(d), lambda c=c, d=d, el=gbgwel: (SDTest.Call(0x102940,
+				check('cVehicleEffects_WindSmoke' + fmt(d), lambda c=c, d=d, el=gbgwel: (SDTest.Call('cVehicleEffects_WindSmoke',
 					'tvifff', c + 0x7f0, gbgcpos[0] + d[0], gbgcpos[1] + d[1], gbgcpos[2] + d[2]),
-					gbgpart(el + 4), SDTest.Call(0x323c2f, 'i')[0]))
+					gbgpart(el + 4), SDTest.Call('crt_rand', 'i')[0]))
 	# the escape tubes on a tubes object of our own: the particles are copies of the particles of a wind smoke element
 	# (attached to its own system)
 	gbgsp = gbgwel and gbgwel + 4
@@ -637,9 +637,9 @@ if gbgc4:
 	check('GBG tube particles', lambda: (gbgsp != 0, gbgsp and gbgi(gbgsp + 0xac) != 0, gbgfl(c + 0x498, 1)))
 	if gbgsp and gbgi(gbgsp + 0xac) and gbgi(c + 0x224):
 		gbgtu = gbgnew(0x17c)
-		SDTest.Call(0x100af0, 'tii', gbgtu)
-		SDTest.Call(0x3197d0, 'iiii', gbgtu + 0x1c, gbgsp, 0xb0)
-		SDTest.Call(0x3197d0, 'iiii', gbgtu + 0x1c + 0xb0, gbgsp, 0xb0)
+		SDTest.Call('cVehicleTubes_ctor', 'tii', gbgtu)
+		SDTest.Call('crt_memcpy', 'iiii', gbgtu + 0x1c, gbgsp, 0xb0)
+		SDTest.Call('crt_memcpy', 'iiii', gbgtu + 0x1c + 0xb0, gbgsp, 0xb0)
 		gbgpoke(gbgtu, c)
 		gbgpoke(gbgtu + 4, 2)
 		gbgpoke(gbgtu + 0x14, 0)
@@ -655,19 +655,19 @@ if gbgc4:
 			gbgpoke(gbgtu + 0x14, nodes[0])
 			gbgpoke(gbgtu + 0x18, nodes[1])
 			gbgset(c + 0x4e4, (0.0, 0.0, lvz))
-			check('cVehicleTubes_Update' + fmt((kind, dt, lvz, nodes)), lambda dt=dt: (SDTest.Call(0x100c60, 'tvif',
+			check('cVehicleTubes_Update' + fmt((kind, dt, lvz, nodes)), lambda dt=dt: (SDTest.Call('cVehicleTubes_Update', 'tvif',
 				gbgtu, dt), gbgfl(gbgtu + 0x10, 1), gbgpart(gbgtu + 0x1c), gbgpart(gbgtu + 0x1c + 0xb0),
-				SDTest.Call(0x323c2f, 'i')[0]))
+				SDTest.Call('crt_rand', 'i')[0]))
 		gbgsetbyte(c + 0x4c, 0)
-		check('cVehicleTubes_Update inactive', lambda: (SDTest.Call(0x100c60, 'tvif', gbgtu, 0.5), gbgfl(gbgtu + 0x10, 1)))
+		check('cVehicleTubes_Update inactive', lambda: (SDTest.Call('cVehicleTubes_Update', 'tvif', gbgtu, 0.5), gbgfl(gbgtu + 0x10, 1)))
 		gbgsetbyte(c + 0x4c, 1)
 		gbgpoke(gbgtu + 4, 1)
 		gbgpoke(gbgtu + 0x14, 0)
 		gbgpoke(gbgtu + 0x18, -1)
 		gbgve = gbgnew(0x24)
-		SDTest.Call(0x100ab0, 'tii', gbgve)
+		SDTest.Call('cVehicleEffects_ctor', 'tii', gbgve)
 		gbgpoke(gbgve + 0x20, gbgtu)
-		check('cVehicleEffects_Update tubes', lambda: (SDTest.Call(0x100c10, 'tvif', gbgve, 0.04), gbgfl(gbgtu + 0x10, 1),
+		check('cVehicleEffects_Update tubes', lambda: (SDTest.Call('cVehicleEffects_Update', 'tvif', gbgve, 0.04), gbgfl(gbgtu + 0x10, 1),
 			gbgpart(gbgtu + 0x1c)))
 		gbgdelete(gbgve)
 		gbgsetbyte(gbgmodelo + 0x121, gbgvis)
@@ -681,14 +681,14 @@ if gbgc4:
 	check('GBG shoot setup', lambda: (gbgfx != 0, gbgnodes != 0, gbgfx and gbgi(gbgfx + 0x184) != 0, gbgsp != 0))
 	if gbgfx and gbgnodes and (gbgi(gbgfx + 0x184) or (gbgsp and gbgi(gbgsp + 0xac))):
 		gbgfxsaved = gbgz(0xb0)
-		SDTest.Call(0x3197d0, 'iiii', gbgfxsaved, gbgfx + 0xd8, 0xb0)
+		SDTest.Call('crt_memcpy', 'iiii', gbgfxsaved, gbgfx + 0xd8, 0xb0)
 		if not gbgi(gbgfx + 0x184):
-			SDTest.Call(0x3197d0, 'iiii', gbgfx + 0xd8, gbgsp, 0xb0)
+			SDTest.Call('crt_memcpy', 'iiii', gbgfx + 0xd8, gbgsp, 0xb0)
 		gbgmodelo = gbgi(c + 0xb8)
 		gbgvis = gbgb(gbgmodelo + 0x121)
 		gbgsetbyte(gbgmodelo + 0x121, 1)
-		gbgweap = map(lambda a: gbgi(a), (0x8487d0, 0x848818, 0x848830, 0x848800, 0x8487e8, 0x84886c, 0x848884))
-		gbgammoid = map(lambda a: gbgi(a), (0x84a8b0, 0x849108, 0x84a4f0, 0x848e4c, 0x8497f0))
+		gbgweap = map(lambda a: gbgi(a), (symva('g_LaserIDWeap'), symva('g_VulcanIDWeap'), symva('g_DevastatorIDWeap'), symva('g_SwarmIDWeap'), symva('g_ATPCIDWeap'), symva('g_InfernoIDWeap'), symva('g_TeslaIDWeap')))
+		gbgammoid = map(lambda a: gbgi(a), (symva('g_VulcanIDAmmo'), symva('g_DevastatorIDAmmo'), symva('g_SwarmIDAmmo'), symva('g_ATPCIDAmmo'), symva('g_InfernoIDAmmo')))
 		gbgnsaved = map(lambda k: gbgi(gbgnodes + 0x10 * k), gbgammoid)
 		for k in gbgammoid:
 			gbgpoke(gbgnodes + 0x10 * k, 0)
@@ -696,22 +696,22 @@ if gbgc4:
 		check('GBG shoot weapons', lambda: (gbgweap, gbgammoid))
 		gbgsrand(9753)
 		for w in gbgweap + [12345]:
-			check('cVehicleEffects_Shoot' + fmt(w), lambda c=c, w=w: (SDTest.Call(0x103500, 'tviii', c + 0x7f0, w, 0),
-				gbgpart(gbgfx + 0xd8), SDTest.Call(0x323c2f, 'i')[0]))
+			check('cVehicleEffects_Shoot' + fmt(w), lambda c=c, w=w: (SDTest.Call('cVehicleEffects_Shoot', 'tviii', c + 0x7f0, w, 0),
+				gbgpart(gbgfx + 0xd8), SDTest.Call('crt_rand', 'i')[0]))
 		gbgsetbyte(gbgmodelo + 0x121, 0)
-		check('cVehicleEffects_Shoot unseen', lambda c=c: (SDTest.Call(0x103500, 'tviii', c + 0x7f0, gbgweap[1], 0),
-			SDTest.Call(0x323c2f, 'i')[0]))
+		check('cVehicleEffects_Shoot unseen', lambda c=c: (SDTest.Call('cVehicleEffects_Shoot', 'tviii', c + 0x7f0, gbgweap[1], 0),
+			SDTest.Call('crt_rand', 'i')[0]))
 		gbgfol = gbgb(gbgfx + 0x189)
 		gbgsetbyte(gbgfx + 0x189, 1)
-		check('cVehicleEffects_Shoot followed', lambda c=c: (SDTest.Call(0x103500, 'tviii', c + 0x7f0, gbgweap[1], 0),
-			gbgpart(gbgfx + 0xd8), SDTest.Call(0x323c2f, 'i')[0]))
+		check('cVehicleEffects_Shoot followed', lambda c=c: (SDTest.Call('cVehicleEffects_Shoot', 'tviii', c + 0x7f0, gbgweap[1], 0),
+			gbgpart(gbgfx + 0xd8), SDTest.Call('crt_rand', 'i')[0]))
 		gbgsetbyte(gbgfx + 0x189, gbgfol)
 		k = 0
 		for a in gbgammoid:
 			gbgpoke(gbgnodes + 0x10 * a, gbgnsaved[k])
 			k = k + 1
 		gbgsetbyte(gbgmodelo + 0x121, gbgvis)
-		SDTest.Call(0x3197d0, 'iiii', gbgfx + 0xd8, gbgfxsaved, 0xb0)
+		SDTest.Call('crt_memcpy', 'iiii', gbgfx + 0xd8, gbgfxsaved, 0xb0)
 		gbgfree(gbgfxsaved)
 	# the flight
 	gbgstepf = ((0x28, 3), (0xac, 3), (0xd4, 3), (0xe0, 3), (0x45c, 5), (0x46c, 2), (0x490, 1), (0x590, 1))
@@ -738,46 +738,46 @@ if gbgc4:
 		gbgset(c + 0x45c, (thrust,))
 		gbgset(c + 0x46c, (speed,))
 		gbgset(c + 0x490, (0.0,))
-		check('cVehicleEntity_Step' + fmt(st), lambda c=c: (SDTest.Call(0x10a730, 'tvif', c, 0.05), gbgstep(c)))
+		check('cVehicleEntity_Step' + fmt(st), lambda c=c: (SDTest.Call('cVehicleEntity_Step', 'tvif', c, 0.05), gbgstep(c)))
 	gbgsetbyte(c + 0x438, 0)
 	gbgsetbyte(c + 0x439, 0)
 	# the push, above the atmosphere, the free space magnet
 	gbgset(c + 0x470, (0.5, 100.0, 200.0, -300.0))
 	gbgset(c + 0x28, gbgposlow)
-	check('cVehicleEntity_Step push', lambda c=c: (SDTest.Call(0x10a730, 'tvif', c, 0.1), gbgstep(c),
+	check('cVehicleEntity_Step push', lambda c=c: (SDTest.Call('cVehicleEntity_Step', 'tvif', c, 0.1), gbgstep(c),
 		gbgfl(c + 0x470, 1)))
-	gbgspace = gbgfl(0x8675d8, 1)[0]
+	gbgspace = gbgfl(symva('g_TopLimit'), 1)[0]
 	for y in (gbgatm + 100.0, (gbgatm + gbgspace) * 0.5, gbgspace + 10.0):
 		gbgset(c + 0x28, (gbgmpos[0], y, gbgmpos[2]))
 		gbgset(c + 0xac, (0.3, 0.0, 0.0))
-		check('cVehicleEntity_Step high' + fmt(y), lambda c=c: (SDTest.Call(0x10a730, 'tvif', c, 0.1), gbgstep(c)))
-	gbgmag = (gbgi(0x847f08), gbgfl(0x847f38, 1), gbgfl(0x848160, 1), gbgfl(0x847f80, 1), gbgfl(0x847ef0, 1),
-		gbgfl(0x847ed8, 1), gbgfl(0x848130, 1))
+		check('cVehicleEntity_Step high' + fmt(y), lambda c=c: (SDTest.Call('cVehicleEntity_Step', 'tvif', c, 0.1), gbgstep(c)))
+	gbgmag = (gbgi(symva('g_FreeSpaceMagnet')), gbgfl(symva('g_FreeSpaceMagnetCenterX'), 1), gbgfl(symva('g_FreeSpaceMagnetCenterY'), 1), gbgfl(symva('g_FreeSpaceMagnetCenterZ'), 1), gbgfl(symva('g_FreeSpaceMagnetLoRadius'), 1),
+		gbgfl(symva('g_FreeSpaceMagnetHiRadius'), 1), gbgfl(symva('g_FreeSpaceMagnetAccel'), 1))
 	check('GBG magnet', lambda: gbgmag)
-	gbgpoke(0x847f08, 1)
-	gbgset(0x847f38, (0.0,))
-	gbgset(0x848160, (0.0,))
-	gbgset(0x847f80, (0.0,))
-	gbgset(0x847ef0, (1000.0,))
-	gbgset(0x847ed8, (60000.0,))
-	gbgset(0x848130, (500.0,))
+	gbgpoke(symva('g_FreeSpaceMagnet'), 1)
+	gbgset(symva('g_FreeSpaceMagnetCenterX'), (0.0,))
+	gbgset(symva('g_FreeSpaceMagnetCenterY'), (0.0,))
+	gbgset(symva('g_FreeSpaceMagnetCenterZ'), (0.0,))
+	gbgset(symva('g_FreeSpaceMagnetLoRadius'), (1000.0,))
+	gbgset(symva('g_FreeSpaceMagnetHiRadius'), (60000.0,))
+	gbgset(symva('g_FreeSpaceMagnetAccel'), (500.0,))
 	for p in (gbgposlow, (100.0, 200.0, 300.0), (gbgmpos[0], 30000.0, 90000.0)):
 		gbgset(c + 0x28, p)
-		check('cVehicleEntity_Step magnet' + fmt(p), lambda c=c: (SDTest.Call(0x10a730, 'tvif', c, 0.1), gbgstep(c)))
-	gbgpoke(0x847f08, gbgmag[0])
-	gbgset(0x847f38, gbgmag[1])
-	gbgset(0x848160, gbgmag[2])
-	gbgset(0x847f80, gbgmag[3])
-	gbgset(0x847ef0, gbgmag[4])
-	gbgset(0x847ed8, gbgmag[5])
-	gbgset(0x848130, gbgmag[6])
+		check('cVehicleEntity_Step magnet' + fmt(p), lambda c=c: (SDTest.Call('cVehicleEntity_Step', 'tvif', c, 0.1), gbgstep(c)))
+	gbgpoke(symva('g_FreeSpaceMagnet'), gbgmag[0])
+	gbgset(symva('g_FreeSpaceMagnetCenterX'), gbgmag[1])
+	gbgset(symva('g_FreeSpaceMagnetCenterY'), gbgmag[2])
+	gbgset(symva('g_FreeSpaceMagnetCenterZ'), gbgmag[3])
+	gbgset(symva('g_FreeSpaceMagnetLoRadius'), gbgmag[4])
+	gbgset(symva('g_FreeSpaceMagnetHiRadius'), gbgmag[5])
+	gbgset(symva('g_FreeSpaceMagnetAccel'), gbgmag[6])
 	gbgset(c + 0x418, gbgstepsaved)
 
 	# the model of a slot
 	def gbgmodel(c):
-		return (SDTest.Call(0x20fa30, 'tiiF', c + 0xb8, (0.0, 0.0, 0.0))[1],
-			SDTest.Call(0x210830, 'tiiF', c + 0xb8, (0.0, 0.0, 0.0))[1])
-	gbgblur = map(lambda a: gbgfl(a, 1)[0], (0x85fec0, 0x860118, 0x8601a8, 0x860088, 0x85ffb0))
+		return (SDTest.Call('CGameModel_GetPos', 'tiiF', c + 0xb8, (0.0, 0.0, 0.0))[1],
+			SDTest.Call('CGameModel_GetRot', 'tiiF', c + 0xb8, (0.0, 0.0, 0.0))[1])
+	gbgblur = map(lambda a: gbgfl(a, 1)[0], (symva('g_MotionBlurFactorBegin'), symva('g_MotionBlurFactorEnd'), symva('g_MotionBlurOffVar'), symva('g_MotionBlurTime'), symva('g_MotionBlurEndTime')))
 	gbgtimer = gbgfl(c + 0x118, 2)
 	gbgofs = gbgfl(c + 0x3e8, 1)
 	gbgset(c + 0x3e8, (0.75,))
@@ -802,22 +802,22 @@ if gbgc4:
 			gbgpoke(c + 0xf0, 0)
 		gbgpoke(c + 0x410, slot)
 		check('cVehicleEntity_UpdateModel' + fmt((t, y, fixed, cam, slot, dying)), lambda c=c: (
-			SDTest.Call(0x105ea0, 'tvi', c), gbgmodel(c), gbgfl(gbgcam + 0xa8, 1), gbgfl(gbgcam + 0x214, 3),
-			map(lambda a: gbgfl(a, 1)[0], (0x85fec0, 0x860118, 0x8601a8, 0x860088, 0x85ffb0))))
+			SDTest.Call('cVehicleEntity_UpdateModel', 'tvi', c), gbgmodel(c), gbgfl(gbgcam + 0xa8, 1), gbgfl(gbgcam + 0x214, 3),
+			map(lambda a: gbgfl(a, 1)[0], (symva('g_MotionBlurFactorBegin'), symva('g_MotionBlurFactorEnd'), symva('g_MotionBlurOffVar'), symva('g_MotionBlurTime'), symva('g_MotionBlurEndTime')))))
 	gbgpoke(c + 0xf0, 0)
 	gbgpoke(c + 0x410, -1)
 	gbgsetbyte(c + 0x638, 0)
 	gbgsetbyte(c + 0x1ac, 0)
 	gbgfree(gbgcam)
 	k = 0
-	for a in (0x85fec0, 0x860118, 0x8601a8, 0x860088, 0x85ffb0):
+	for a in (symva('g_MotionBlurFactorBegin'), symva('g_MotionBlurFactorEnd'), symva('g_MotionBlurOffVar'), symva('g_MotionBlurTime'), symva('g_MotionBlurEndTime')):
 		gbgset(a, (gbgblur[k],))
 		k = k + 1
 	gbgset(c + 0x118, gbgtimer)
 	gbgset(c + 0x3e8, gbgofs)
 	# the controls of a player ship from the actions of player 0 (poked and restored)
-	gbgsets = gbgi(0x84c12c)
-	gbgset1 = gbgsets and gbgi(0x84c128) > 1 and gbgsets + 0xc
+	gbgsets = gbgi(symva('g_ActionSets') + 0x4)
+	gbgset1 = gbgsets and gbgi(symva('g_ActionSets')) > 1 and gbgsets + 0xc
 	gbgacts = gbgset1 and gbgi(gbgset1 + 8)
 	gbgnact = gbgset1 and gbgi(gbgset1 + 4)
 	check('GBG action set', lambda: (gbgacts != 0, gbgnact))
@@ -833,10 +833,10 @@ if gbgc4:
 				gbgset(gbgacts + 0x7c * i + 0x18, (v,))
 		gbgactsaved = map(lambda i: (gbgfl(gbgacts + 0x7c * i + 8, 1), gbgfl(gbgacts + 0x7c * i + 0x18, 1)), range(32))
 		gbgctlsaved = gbgfl(gbgctlp, 0x44 / 4)
-		gbgcamd = (gbgfl(0x845f08, 1), gbgfl(0x845ed8, 1))
-		gbgpad = gbgfl(0x84c510 + 0xc, 4)
-		gbgcurset = gbgi(0x828ac0)
-		gbglock = gbgfl(0x847ba4, 1)
+		gbgcamd = (gbgfl(symva('g_VehicleCamDist'), 1), gbgfl(symva('g_VehicleCamDist2'), 1))
+		gbgpad = gbgfl(symva('g_Pads') + 0xc, 4)
+		gbgcurset = gbgi(symva('g_CurActionSet'))
+		gbglock = gbgfl(symva('g_VehicleCenterPadLock'), 1)
 		# NextWeap and PrevWeap loop when the iNext or iPrev chain of the weapon does not come back
 		gbgnw = gbgi(gbgworld + 0x1bb8)
 		gbgweapt = gbgi(gbgworld + 0x1bbc)
@@ -850,7 +850,7 @@ if gbgc4:
 				i = gbgi(gbgweapt + 0xb0 * i + off)
 				if i == w:
 					return 1
-		gbglaser = gbgi(0x8487d0)
+		gbglaser = gbgi(symva('g_LaserIDWeap'))
 		gbgchains = (gbgchain(gbglaser, 0x90), gbgchain(gbglaser, 0x94))
 		check('GBG weapon chains', lambda: (gbglaser, gbgchains))
 		gbgpoke(c + 0x410, 0)
@@ -867,16 +867,16 @@ if gbgc4:
 			if (vals == ((14, 1.0),) and not gbgchains[0]) or (vals == ((15, 1.0),) and not gbgchains[1]):
 				continue
 			gbgactset(vals)
-			gbgset(0x847ba4, (lock,))
-			check('cVehicleControls_Tick' + fmt((vals, lock)), lambda c=c: (SDTest.Call(0x0ffcc0, 'tviif', gbgctlp, c,
-				0.05), gbgctl(gbgctlp), gbgfl(0x845f08, 1), gbgs(c + 0x650)))
+			gbgset(symva('g_VehicleCenterPadLock'), (lock,))
+			check('cVehicleControls_Tick' + fmt((vals, lock)), lambda c=c: (SDTest.Call('cVehicleControls_Tick', 'tviif', gbgctlp, c,
+				0.05), gbgctl(gbgctlp), gbgfl(symva('g_VehicleCamDist'), 1), gbgs(c + 0x650)))
 		# BlockSwitchAdvance in the strafe mode
-		gbgbsa = gbgi(0x847bd4)
-		gbgpoke(0x847bd4, 1)
+		gbgbsa = gbgi(symva('g_VehicleBlockSwitchAdvance'))
+		gbgpoke(symva('g_VehicleBlockSwitchAdvance'), 1)
 		gbgactset(((18, 1.0), (6, 0.5), (7, 0.25), (8, 1.0)))
-		check('cVehicleControls_Tick block switch', lambda c=c: (SDTest.Call(0x0ffcc0, 'tviif', gbgctlp, c, 0.05),
+		check('cVehicleControls_Tick block switch', lambda c=c: (SDTest.Call('cVehicleControls_Tick', 'tviif', gbgctlp, c, 0.05),
 			gbgctl(gbgctlp)))
-		gbgpoke(0x847bd4, gbgbsa)
+		gbgpoke(symva('g_VehicleBlockSwitchAdvance'), gbgbsa)
 		# the empty weapon: the next one after TimeWSwitchNo
 		gbgpoke(gbgctlp, gbgi(c + 0x5f0 + 0xc))
 		if not gbgchains[0]:
@@ -885,12 +885,12 @@ if gbgc4:
 			gbgactset(vals)
 			gbgsetbyte(gbgctlp + 0x20, 1)
 			gbgsetbyte(gbgctlp + 0x21, 1)
-			check('cVehicleControls_Tick empty' + fmt(vals), lambda c=c: (SDTest.Call(0x0ffcc0, 'tviif', gbgctlp, c,
+			check('cVehicleControls_Tick empty' + fmt(vals), lambda c=c: (SDTest.Call('cVehicleControls_Tick', 'tviif', gbgctlp, c,
 				0.5), gbgctl(gbgctlp)))
 		# the rumble of the pad (action set 1, a camera block, the last hit just now)
 		gbgcam = gbgz(0x240)
 		gbgpoke(c + 0xf0, gbgcam)
-		gbgpoke(0x828ac0, 1)
+		gbgpoke(symva('g_CurActionSet'), 1)
 		gbgset(c + 0x118, (50.0, 0.02))
 		for hit, p220, p224, shake, ra, rb in ((49.8, 0.0, 0.0, 0.5, 0.3, 0.2), (49.0, 0.5, 0.04, 3.0, 2.0, 0.0),
 				(10.0, 0.5, 0.0, 0.0, 0.0, 0.0), (49.99, 0.01, 1.0, 1.5, 0.7, 1.2)):
@@ -899,15 +899,15 @@ if gbgc4:
 			gbgset(gbgcam + 0x220, (p220, p224))
 			gbgset(c + 0x4c8, (shake,))
 			gbgset(gbgctlp + 0x34, (ra, rb, 1.0, 2.0))
-			check('cVehicleControls_Tick rumble' + fmt((hit, p220, p224, shake, ra, rb)), lambda c=c: (SDTest.Call(0x0ffcc0,
-				'tviif', gbgctlp, c, 0.05), gbgctl(gbgctlp), gbgfl(0x84c510 + 0xc, 4)))
+			check('cVehicleControls_Tick rumble' + fmt((hit, p220, p224, shake, ra, rb)), lambda c=c: (SDTest.Call('cVehicleControls_Tick',
+				'tviif', gbgctlp, c, 0.05), gbgctl(gbgctlp), gbgfl(symva('g_Pads') + 0xc, 4)))
 		gbgpoke(c + 0xf0, 0)
 		gbgfree(gbgcam)
-		gbgpoke(0x828ac0, gbgcurset)
-		gbgset(0x84c510 + 0xc, gbgpad)
-		gbgset(0x847ba4, gbglock)
-		gbgset(0x845f08, gbgcamd[0])
-		gbgset(0x845ed8, gbgcamd[1])
+		gbgpoke(symva('g_CurActionSet'), gbgcurset)
+		gbgset(symva('g_Pads') + 0xc, gbgpad)
+		gbgset(symva('g_VehicleCenterPadLock'), gbglock)
+		gbgset(symva('g_VehicleCamDist'), gbgcamd[0])
+		gbgset(symva('g_VehicleCamDist2'), gbgcamd[1])
 		for i in range(32):
 			gbgset(gbgacts + 0x7c * i + 8, gbgactsaved[i][0])
 			gbgset(gbgacts + 0x7c * i + 0x18, gbgactsaved[i][1])

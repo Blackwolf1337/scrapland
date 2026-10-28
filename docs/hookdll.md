@@ -111,9 +111,11 @@ All scripts use `sdlib.py` (the `check` helper and the output format) and are Py
 
 The module SDTest (`src/core/testmod.c`) is builtin in the Python of the game, on with `[general] testmod=1`, also when the hooks are off. It calls functions of the exe by RVA, so the same call reaches the C version with the hooks on and the original with them off. That makes functions testable that Python cannot reach.
 
-- `SDTest.Call(rva, sig, args...)`: `sig` is the return letter, then one letter per argument. Return: `v` nothing, `i` int, `b` byte (al), `s` string (None for NULL), `f` float (st0). Arguments: `i` int, `f` float, `s` string, `z` string or None, `b` string copied into a buffer that comes back, `p` int and `D` double passed by pointer and returned, `F` tuple of floats passed as array and returned. The result is a tuple: the return value, then the `b`, `p`, `D` and `F` arguments in order.
+- `SDTest.Call(name or rva, sig, args...)`: `sig` is the return letter, then one letter per argument. Return: `v` nothing, `i` int, `b` byte (al), `s` string (None for NULL), `f` float (st0). Arguments: `i` int, `f` float, `s` string, `z` string or None, `b` string copied into a buffer that comes back, `p` int and `D` double passed by pointer and returned, `F` tuple of floats passed as array and returned. The result is a tuple: the return value, then the `b`, `p`, `D` and `F` arguments in order.
 - cdecl by default. A `t` before `sig` calls a thiscall method, the first argument is `this`.
-- `SDTest.Peek(rva, kind)` reads a global of the exe (`i`, `b`, `d`, `s`, `p`; `@` before the kind takes an address instead of an RVA). `SDTest.Poke(rva, value)` writes an int.
+- `SDTest.Peek(name or rva, kind)` reads a global of the exe (`i`, `b`, `d`, `s`, `p`; `@` before the kind takes an address instead of an RVA). `SDTest.Poke(name or rva, value)` writes an int. `ConvU` takes a name or an rva too. A name the table `src/core/testsyms.inc` lacks raises a TypeError.
+- `SDTest.Sym(name)` returns the rva of a name. `sdlib.py` has `sym(name)` for it and `symva(name)` for `0x400000 + rva`, the address as the pointers of the game hold it.
+- `tools/test/testsyms.py -w` writes the names into the scripts and the table, `tools/test/sigcheck.py` checks them (see Stage 3c0 in `docs/standalone.md`).
 - `SDTest.OutFunc()` is the address of a cdecl `void(const char *)` that collects text, `SDTest.Out()` returns and clears it. Use it for the output callbacks of the engine.
 
 The limits (argument counts, buffer sizes) are at the top of `testmod.c`.

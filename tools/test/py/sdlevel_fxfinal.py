@@ -18,13 +18,13 @@ def ffni(a):
 def ffnb(a):
 	return SDTest.Peek(a, '@i') & 0xff
 def ffnz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def ffnfree(p):
-	SDTest.Call(0x133550, 'ii', p)
+	SDTest.Call('Mem_Free', 'ii', p)
 def ffnfl(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def ffnset(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 # n floats of zero from a (in chunks of 64)
 def ffnzero(a, n):
 	while n > 0:
@@ -62,17 +62,17 @@ def ffnsetbyte(a, v):
 	sh = 8 * (a & 3)
 	ffnpoke(a & ~3, (w & ~(0xff << sh)) | (v << sh))
 def ffnsrand(s):
-	SDTest.Call(0x323c50, 'vi', s)
+	SDTest.Call('crt_srand', 'vi', s)
 def ffnrand():
-	return SDTest.Call(0x323c2f, 'i')[0]
+	return SDTest.Call('crt_rand', 'i')[0]
 def ffnloaded(m):
-	return SDTest.Call(0x210da0, 'tbi', m)[0]
+	return SDTest.Call('CGameModel_IsLoaded', 'tbi', m)[0]
 def ffnnode(m, name):
-	return SDTest.Call(0x20f7d0, 'tiis', m, name)[0]
+	return SDTest.Call('CGameModel_FindNodoR', 'tiis', m, name)[0]
 def ffnnpart(p):
 	if not ffni(p + 0xac):
 		return 0
-	return SDTest.Call(0x21d4d0, 'tii', p)[0]
+	return SDTest.Call('CGameParticles_NumParticles', 'tii', p)[0]
 # the parameters of a CGameParticles without its padding and pointers
 def ffnpart(p):
 	return (ffnints(p, 0x26), ffni(p + 0x98) & 0xffff, ffnints(p + 0x9c, 2), ffnb(p + 0xa4))
@@ -82,7 +82,7 @@ def ffnparts(p, lo, hi):
 	if not ffni(p + 0xac):
 		return r
 	for ffnk in range(lo, hi):
-		x = SDTest.Call(0x21d4e0, 'tbiiFiipF', p, ffnk, (9.0, 9.0, 9.0), 0, 0, 6, (5.0,))
+		x = SDTest.Call('CGameParticles_GetParticle', 'tbiiFiipF', p, ffnk, (9.0, 9.0, 9.0), 0, 0, 6, (5.0,))
 		if x[0]:
 			r = r + ((x[1], x[2], x[3]),)
 		else:
@@ -110,22 +110,22 @@ def ffnstr(rva):
 		return ''
 	return SDTest.Peek(p, '@s')
 def ffnmodelpos(m):
-	return (SDTest.Call(0x20fa30, 'tiiF', m, (0.0, 0.0, 0.0))[1], SDTest.Call(0x210830, 'tiiF', m, (0.0, 0.0, 0.0))[1])
+	return (SDTest.Call('CGameModel_GetPos', 'tiiF', m, (0.0, 0.0, 0.0))[1], SDTest.Call('CGameModel_GetRot', 'tiiF', m, (0.0, 0.0, 0.0))[1])
 
-ffnworld = SDTest.Peek(0x467450, 'i')
+ffnworld = SDTest.Peek('g_pWorld', 'i')
 ffntimer = ffnworld + 0x2c8 + 0xc
 ffnsavedt = ffni(ffntimer)
-ffnsplit = 0x4a8c8c + 0x400000
+ffnsplit = sym('g_SplitScreen') + 0x400000
 ffnsavedsplit = ffni(ffnsplit)
-ffngame = 0x467584 + 0x400000
+ffngame = sym('g_SplitScreenGame') + 0x400000
 ffnsavedgame = ffni(ffngame)
-ffngetvert = SDTest.Peek(0x4a80c4, 'i')
+ffngetvert = SDTest.Peek('g_GetModelVertex', 'i')
 ffncam = ffnworld + 0x254 + 12 * ffni(ffnworld + 0x50)
 ffnsavedcam = ffnints(ffncam, 3)
-ffnplayer = SDTest.Call(0x0c1430, 'tiii', ffnworld, 0)[0]
-ffnpp = SDTest.Call(0x0ef330, 'tiiF', ffnplayer, (0.0, 0.0, 0.0))[1]
+ffnplayer = SDTest.Call('cWorld_GetUsrEntity', 'tiii', ffnworld, 0)[0]
+ffnpp = SDTest.Call('cEntity_GetPos', 'tiiF', ffnplayer, (0.0, 0.0, 0.0))[1]
 ffny = ffnpp[1] + 3000.0
-ffnatm = ffnfl(0x867644, 1)[0]
+ffnatm = ffnfl(symva('g_AtmosphereLimit'), 1)[0]
 if ffnatm + 1000.0 > ffny and ffnatm < 50000.0:
 	ffny = ffnatm + 1000.0
 def ffndt(dt):
@@ -135,7 +135,7 @@ def ffndt(dt):
 ffnbuf = ffnz(0x40)
 ffnset(ffnbuf, (ffnpp[0], ffny + 2000.0, ffnpp[2], 0.0, 0.4, 0.0))
 ffnmain = ffnz(0x4278)
-SDTest.Call(0x1d62e0, 'tiisii', ffnmain, 'MentalControllerMainFX', ffnbuf, ffnbuf + 12)
+SDTest.Call('cFXElementsMentalControllerMainFX_ctor', 'tiisii', ffnmain, 'MentalControllerMainFX', ffnbuf, ffnbuf + 12)
 ffnmm = ffnmain + 4
 ffnmok = ffnloaded(ffnmm)
 ffnmnodes = (-1, -1, -1)
@@ -145,7 +145,7 @@ ffnmok = ffnmok and ffnmnodes[0] != -1 and ffnmnodes[1] > -1 and ffnmnodes[2] > 
 ffnmn = (0, 0)
 if ffnmok:
 	ffnsrand(1717)
-	ffnmok = SDTest.Call(0x1d6d90, 'tbi', ffnmain)[0]
+	ffnmok = SDTest.Call('cFXElementsMentalControllerMainFX_Init', 'tbi', ffnmain)[0]
 	ffnmn = (ffnnpart(ffnmain + 0x3c94), ffnnpart(ffnmain + 0x3e64))
 check('FFN main fx', lambda: (ffnmok, ffnmnodes[0] != -1, ffnmnodes[1] != -1, ffnmnodes[2] != -1, ffnmn))
 # the nine controllers around it
@@ -155,7 +155,7 @@ for ffnk in range(9):
 	ffnc = ffnz(0x40)
 	ffnset(ffnbuf, (ffnpp[0] + 900.0 * (ffnk - 4), ffny + 2000.0 + 50.0 * ffnk, ffnpp[2] + 300.0 * (ffnk % 3), 0.0,
 		0.7 * ffnk, 0.0))
-	SDTest.Call(0x1d6240, 'tiisii', ffnc, 'MentalController1', ffnbuf, ffnbuf + 12)
+	SDTest.Call('cFXElementsMentalController_ctor', 'tiisii', ffnc, 'MentalController1', ffnbuf, ffnbuf + 12)
 	ffnctrls.append(ffnc)
 	if not ffnloaded(ffnc + 4):
 		ffnctrlok = 0
@@ -171,23 +171,23 @@ def ffnmainfx2(m):
 		ffntrail(m + 0x3d44), ffntrail(m + 0x3d48), ffntrail(m + 0x4178), ffntrail(m + 0x417c))
 if ffnmok:
 	ffnpoke(ffnsplit, 1)
-	check('cFXElementsMentalControllerMainFX_Update no controllers', lambda: (SDTest.Call(0x1d8960, 'tvif', ffnmain,
+	check('cFXElementsMentalControllerMainFX_Update no controllers', lambda: (SDTest.Call('cFXElementsMentalControllerMainFX_Update', 'tvif', ffnmain,
 		0.05), ffnb(ffnmain + 0x3c)))
 if ffnmok and ffnctrlok and ffnmn[0] >= 225 and ffnmn[1] >= 80:
 	for ffnk in range(9):
-		SDTest.Call(0x1d7a70, 'tviii', ffnmain, ffnk, ffnctrls[ffnk])
+		SDTest.Call('cFXElementsMentalControllerMainFX_SetController', 'tviii', ffnmain, ffnk, ffnctrls[ffnk])
 	# phase, last, scale, glow time, duration, pause, dt
 	for ffnph, ffnlast, ffnsc, ffngt, ffngd, ffngp, ffndt1 in ((3, -2, 1.0, 0.0, 0.0, 0.0, 0.05),
 			(3, -2, 1.0, 0.0, 0.0, 0.0, 0.05), (4, 1, 1.0, 0.5, 0.3, 0.0, 0.1), (2, 0, 3.0, 0.4, 1.0, 0.0, 0.05),
 			(2, 2, 1.5, 0.3, 0.4, 0.0, 0.2), (3, 5, 1.0, 0.0, 0.0, 0.01, 0.05), (2, -1, 1.0, 0.0, 0.5, -1.0, 0.1),
 			(1, -2, 1.0, 0.1, 0.5, 0.0, 0.3), (5, -2, 1.0, 0.1, 0.5, 0.0, 0.05), (3, 0, 2.95, 0.0, 0.0, 0.0, 1.5)):
-		SDTest.Call(0x1d7ae0, 'tvii', ffnmain, ffnph)
+		SDTest.Call('cFXElementsMentalControllerMainFX_SetPhase', 'tvii', ffnmain, ffnph)
 		ffnpoke(ffnmain + 0x4274, ffnlast)
 		ffnset(ffnmain + 0x4270, (ffnsc,))
 		ffnset(ffnmain + 0x3f14, (ffngt, ffngd, ffngp))
 		ffnsrand(4711)
 		ffnr = (ffnph, ffnlast, ffnsc, ffngt, ffngd, ffngp, ffndt1)
-		check('cFXElementsMentalControllerMainFX_Update' + fmt(ffnr), lambda dt=ffndt1: (SDTest.Call(0x1d8960, 'tvif',
+		check('cFXElementsMentalControllerMainFX_Update' + fmt(ffnr), lambda dt=ffndt1: (SDTest.Call('cFXElementsMentalControllerMainFX_Update', 'tvif',
 			ffnmain, dt), ffnmainfx(ffnmain), ffnmainfx2(ffnmain), ffnrand()))
 	ffnset(ffnmain + 0x4270, (1.0,))
 	ffnpoke(ffnmain + 0x4274, -2)
@@ -197,25 +197,25 @@ if ffnmok and ffnctrlok and ffnmn[0] >= 225 and ffnmn[1] >= 80:
 	for ffnofs in (5000.0, 5000.0, 100.0):
 		ffnset(ffncam, (ffntop[0] + ffnofs, ffntop[1], ffntop[2]))
 		ffnsrand(4712)
-		check('cFXElementsMentalControllerMainFX_Update not seen' + fmt((ffnofs,)), lambda: (SDTest.Call(0x1d8960,
+		check('cFXElementsMentalControllerMainFX_Update not seen' + fmt((ffnofs,)), lambda: (SDTest.Call('cFXElementsMentalControllerMainFX_Update',
 			'tvif', ffnmain, 0.05), ffnmainfx(ffnmain), ffnmainfx2(ffnmain), ffnloaded(ffnmm), ffnrand()))
 	for ffnk in range(3):
 		ffnpoke(ffncam + 4 * ffnk, ffnsavedcam[ffnk])
 ffnpoke(ffnsplit, ffnsavedsplit)
-SDTest.Call(0x1d6480, 'tvi', ffnmain)
+SDTest.Call('cFXElementsMentalControllerMainFX_dtor', 'tvi', ffnmain)
 ffnfree(ffnmain)
 for ffnc in ffnctrls:
-	SDTest.Call(0x1d6400, 'tvi', ffnc)
+	SDTest.Call('cFXElementsMentalController_dtor', 'tvi', ffnc)
 	ffnfree(ffnc)
 
 # ---- our entities: a missile and a car next to it ----
 ffnsrand(4242)
-ffnmis = SDTest.Call(0x208360, 'tiisfffs', ffnworld, 'SDFfnMis', ffnpp[0] + 300.0, ffny, ffnpp[2], 'Missile')[0]
+ffnmis = SDTest.Call('cWorld_CreateEntity', 'tiisfffs', ffnworld, 'SDFfnMis', ffnpp[0] + 300.0, ffny, ffnpp[2], 'Missile')[0]
 ffnmispos = (ffnpp[0] + 300.0, ffny, ffnpp[2])
 ffncarobj = Scrap.CreateEntity('SDFfnCar', ffnpp[0] + 450.0, ffny + 20.0, ffnpp[2] + 60.0, 'Car')
 def ffnfind(name):
-	slot = SDTest.Call(0x131f70, 'tiis', ffnworld + 4, name)[0]
-	node = SDTest.Call(0x131e50, 'tiisi', ffnworld + 4, name, slot)[0]
+	slot = SDTest.Call('HashTable_Slot', 'tiis', ffnworld + 4, name)[0]
+	node = SDTest.Call('PtrTable_Find', 'tiisi', ffnworld + 4, name, slot)[0]
 	if node:
 		return ffni(node)
 	return 0
@@ -224,14 +224,14 @@ ffniscar = 0
 if ffncar:
 	ffniscar = SDTest.Call(ffni(ffni(ffncar) + 0x14) - 0x400000, 'tbis', ffncar, 'Car')[0]
 if ffniscar:
-	SDTest.Call(0x109db0, 'tvisfffi', ffncar, 'SPoli1', 1.0, 1.0, 1.0, 1)
+	SDTest.Call('cVehicleEntity_SetModel', 'tvisfffi', ffncar, 'SPoli1', 1.0, 1.0, 1.0, 1)
 ffncarok = ffniscar and ffnloaded(ffncar + 0xb8)
 if not ffncarok:
 	ffncar = 0
 check('FFN entities', lambda: (ffnmis != 0, ffnmis and ffnb(ffnmis + 0x4c), ffncarobj is not None, ffniscar,
 	ffncarok))
 def ffndel(e):
-	SDTest.Call(0x208810, 'tbis', ffnworld + 4, SDTest.Peek(e + 4, '@p'))
+	SDTest.Call('PtrTable_Delete@208810', 'tbis', ffnworld + 4, SDTest.Peek(e + 4, '@p'))
 	SDTest.Call(ffni(ffni(e) + 0xc) - 0x400000, 'tiii', e, 1)
 # the element on the debris of a new debris system of file
 def ffndebris(name, kind):
@@ -239,7 +239,7 @@ def ffndebris(name, kind):
 		return (0, 0, 0)
 	ffnsrand(1234)
 	Scrap.SetDebrisSys(name, 1, 0.0, 0.0, 1.0, 0.0, 0, kind)
-	s = SDTest.Call(0x209590, 'tiis', ffnworld, name)[0]
+	s = SDTest.Call('cWorld_GetDebrisSys', 'tiis', ffnworld, name)[0]
 	d = 0
 	if s:
 		d = ffni(s)
@@ -256,14 +256,14 @@ if ffncar:
 	ffncarmodel = ffncar + 0xb8
 	ffncarpos = ffnmodelpos(ffncarmodel)
 	def ffncarat(pos, rot):
-		SDTest.Call(0x211d20, 'tviF', ffncarmodel, pos)
-		SDTest.Call(0x211e50, 'tviF', ffncarmodel, rot)
+		SDTest.Call('CGameModel_SetPos', 'tviF', ffncarmodel, pos)
+		SDTest.Call('CGameModel_SetRot', 'tviF', ffncarmodel, rot)
 ffnpoke(ffnsplit, 1)
 
 # ---- EMI: the bolts from the missile to the world and to our car ----
-ffns, ffnd, ffnfx = ffndebris(ffnstr(0x449310), 35)
+ffns, ffnd, ffnfx = ffndebris(ffnstr(sym('g_MissileFXEMI')), 35)
 ffnn = 0
-if ffnfx and ffni(ffnfx) == 0x400000 + 0x3cbe2c:
+if ffnfx and ffni(ffnfx) == 0x400000 + sym('cObjElementFXEMI_vftable'):
 	ffnn = ffnnpart(ffnfx + 0xc)
 check('FFN emi', lambda: (ffnd != 0, ffnfx != 0, ffnn))
 if ffnn >= 17 and ffnmis and ffncar:
@@ -296,29 +296,29 @@ if ffnn >= 17 and ffnmis and ffncar:
 		ffndt(ffndt1)
 		ffnsrand(35)
 		ffnr = (ffnlife, ffnhide, ffnt, ffngt, ffnemic, ffnsp, ffndt1)
-		check('cObjElementFXEMI_Update' + fmt(ffnr), lambda: (SDTest.Call(0x1ca580, 'tviif', ffnfx, ffnd, 0.0),
+		check('cObjElementFXEMI_Update' + fmt(ffnr), lambda: (SDTest.Call('cObjElementFXEMI_Update', 'tviif', ffnfx, ffnd, 0.0),
 			ffnemi(ffnfx), ffnemi2(ffnfx), ffnmodelpos(ffnd), ffnrand()))
 	ffnpoke(ffnsplit, 1)
 	ffnpoke(ffnfx + 4, 0)
-	check('cObjElementFXEMI_Update no entity', lambda: (SDTest.Call(0x1ca580, 'tviif', ffnfx, ffnd, 0.0),
+	check('cObjElementFXEMI_Update no entity', lambda: (SDTest.Call('cObjElementFXEMI_Update', 'tviif', ffnfx, ffnd, 0.0),
 		ffnemi(ffnfx)))
-	SDTest.Call(0x1cedb0, 'tvii', ffnfx, ffnd)
+	SDTest.Call('cObjElementFXEMI_Reset', 'tvii', ffnfx, ffnd)
 	check('FFN emi reset', lambda: ffnemi(ffnfx))
 
 # ---- GearMissile: the electric ball on the missile, its bolts to the world and to our car ----
 ffns, ffnd, ffnfx = (0, 0, 0)
 ffngearok = 0
-if ffnmis and ffnstr(0x446a3c):
+if ffnmis and ffnstr(sym('g_MissileFXGearMissile')):
 	# the nodes of the model checked on a model of our own first (Attach CHECKs Dummy01 and Dummy02)
 	ffngm = ffnz(0x1c)
-	SDTest.Call(0x20eb10, 'tiis', ffngm, ffnstr(0x446a3c))
+	SDTest.Call('CGameModel_ctor', 'tiis', ffngm, ffnstr(sym('g_MissileFXGearMissile')))
 	ffngearok = ffnloaded(ffngm) and ffnnode(ffngm, 'Dummy01') > -1 and ffnnode(ffngm, 'Dummy02') > -1
-	SDTest.Call(0x20ec10, 'tvi', ffngm)
+	SDTest.Call('CGameModel_Reset', 'tvi', ffngm)
 	ffnfree(ffngm)
 if ffngearok:
-	ffns, ffnd, ffnfx = ffndebris(ffnstr(0x446a3c), 71)
+	ffns, ffnd, ffnfx = ffndebris(ffnstr(sym('g_MissileFXGearMissile')), 71)
 ffnn = (0, 0)
-if ffnfx and ffni(ffnfx) == 0x400000 + 0x3cb5ac:
+if ffnfx and ffni(ffnfx) == 0x400000 + sym('cObjElementFXGearMissile_vftable'):
 	ffnn = (ffnnpart(ffnfx + 0xc), ffnnpart(ffnfx + 0xc0))
 check('FFN gear', lambda: (ffngearok, ffnd != 0, ffnfx != 0, ffnn))
 if ffnn[0] >= 12 and ffnn[1] >= 30 and ffncar:
@@ -334,7 +334,7 @@ if ffnn[0] >= 12 and ffnn[1] >= 30 and ffncar:
 	ffnzero(ffnfx + 0x1e0, (0x690 - 0x1e0) / 4)
 	ffnset(ffnfx + 0x17c, (ffnmispos[0] - 100.0, ffnmispos[1], ffnmispos[2] + 30.0))
 	# the parent of the missile is our car
-	SDTest.Call(0x3197d0, 'iisi', ffnmis + 0x3fc, 'SDFfnCar', 9)
+	SDTest.Call('crt_memcpy', 'iisi', ffnmis + 0x3fc, 'SDFfnCar', 9)
 	# the missile on, the debris life, emit time, time, trail step, frame time, dt
 	for ffnon, ffnlife, ffnet, ffnt, ffnts, ffndt1, ffnddt in ((1, 2.0, 0.05, 0.3, 0.0, 0.05, 0.02),
 			(1, 2.0, 0.0, 0.5, 0.01, 0.05, 0.02), (1, 2.0, 0.03, 0.6, 0.03, 0.03, 0.02),
@@ -352,21 +352,21 @@ if ffnn[0] >= 12 and ffnn[1] >= 30 and ffncar:
 		ffndt(ffndt1)
 		ffnsrand(71)
 		ffnr = (ffnon, ffnlife, ffnet, ffnt, ffnts, ffndt1, ffnddt)
-		check('cObjElementFXGearMissile_Update' + fmt(ffnr), lambda ddt=ffnddt: (SDTest.Call(0x1bd740, 'tviif', ffnfx,
+		check('cObjElementFXGearMissile_Update' + fmt(ffnr), lambda ddt=ffnddt: (SDTest.Call('cObjElementFXGearMissile_Update', 'tviif', ffnfx,
 			ffnd, ddt), ffngear(ffnfx), ffngear2(ffnfx), ffnmodelpos(ffnd), ffnfl(ffnd + 0x4c, 1), ffnrand()))
 	# the missile off: the model to its position and angles, the trail step 0.03
 	ffnsetbyte(ffnmis + 0x4c, 0)
 	ffnpoke(ffnfx + 4, ffnmis)
 	ffnset(ffnd + 0x4c, (2.0,))
 	ffnsrand(72)
-	check('cObjElementFXGearMissile_Update missile off', lambda: (SDTest.Call(0x1bd740, 'tviif', ffnfx, ffnd, 0.02),
+	check('cObjElementFXGearMissile_Update missile off', lambda: (SDTest.Call('cObjElementFXGearMissile_Update', 'tviif', ffnfx, ffnd, 0.02),
 		ffngear(ffnfx), ffnmodelpos(ffnd), ffnfl(ffnd + 0x4c, 1), ffnrand()))
 	ffnsetbyte(ffnmis + 0x4c, 1)
 	ffnpoke(ffnfx + 4, 0)
 
 # ---- VehicleDamage: the damage of our car ----
 ffns, ffnd, ffnfx = ffndebris('Models/GFX/VehicleDamage.M3D', 38)
-ffnok = ffnfx != 0 and ffni(ffnfx) == 0x400000 + 0x3cd980
+ffnok = ffnfx != 0 and ffni(ffnfx) == 0x400000 + sym('cObjElementFXVehicleDamage_vftable')
 ffnn = (0, 0, 0)
 if ffnok:
 	ffnn = (ffnnpart(ffnfx + 0x1c), ffnnpart(ffnfx + 0xcc), ffnnpart(ffnfx + 0x184))
@@ -393,7 +393,7 @@ if ffnok and ffncar and ffnefx and ffnn[0] and ffnn[1] and ffnn[2]:
 	ffnpoke(ffnfx + 0x24c, 0)
 	ffnpoke(ffnfx + 0x250, 0)
 	ffnpoke(ffnfx + 8, 1)
-	SDTest.Poke(0x4a80c4, 1)
+	SDTest.Poke('g_GetModelVertex', 1)
 	ffnsavedlv = ffnints(ffncar + 0x4e4, 3)
 	ffnset(ffncar + 0x4e4, (40.0, -10.0, 300.0))
 	ffnbase = ffncarpos[0][0]
@@ -419,34 +419,34 @@ if ffnok and ffncar and ffnefx and ffnn[0] and ffnn[1] and ffnn[2]:
 		ffndt(ffndt1)
 		ffnsrand(38)
 		ffnr = (ffnpct, ffnlv, ffnet, ffntt, ffnmove, ffnpl, ffngm, ffndt1, ffnfirst)
-		check('cObjElementFXVehicleDamage_Update' + fmt(ffnr), lambda: (SDTest.Call(0x1ed9c0, 'tviif', ffnfx, ffnd,
+		check('cObjElementFXVehicleDamage_Update' + fmt(ffnr), lambda: (SDTest.Call('cObjElementFXVehicleDamage_Update', 'tviif', ffnfx, ffnd,
 			0.0), ffndmg(ffnfx), ffndmg2(ffnfx), ffnmodelpos(ffnd), ffnrand()))
 		ffnpoke(ffngame, ffnsavedgame)
 	ffnpoke(ffncar + 0xf0, ffnsavedcar[1])
 	ffnpoke(ffnefx + 0x1a4, 0)
 	# not active, not seen
 	ffnpoke(ffnfx + 8, 0)
-	check('cObjElementFXVehicleDamage_Update not active', lambda: (SDTest.Call(0x1ed9c0, 'tviif', ffnfx, ffnd, 0.0),
+	check('cObjElementFXVehicleDamage_Update not active', lambda: (SDTest.Call('cObjElementFXVehicleDamage_Update', 'tviif', ffnfx, ffnd, 0.0),
 		ffndmg(ffnfx), ffnmodelpos(ffnd)))
 	ffnpoke(ffnsplit, 0)
-	check('cObjElementFXVehicleDamage_Update not seen', lambda: (SDTest.Call(0x1ed9c0, 'tviif', ffnfx, ffnd, 0.0),
+	check('cObjElementFXVehicleDamage_Update not seen', lambda: (SDTest.Call('cObjElementFXVehicleDamage_Update', 'tviif', ffnfx, ffnd, 0.0),
 		ffndmg(ffnfx)))
 	ffnpoke(ffnsplit, 1)
 	ffnpoke(ffnfx + 4, 0)
-	check('cObjElementFXVehicleDamage_Update no entity', lambda: (SDTest.Call(0x1ed9c0, 'tviif', ffnfx, ffnd, 0.0),
+	check('cObjElementFXVehicleDamage_Update no entity', lambda: (SDTest.Call('cObjElementFXVehicleDamage_Update', 'tviif', ffnfx, ffnd, 0.0),
 		ffndmg(ffnfx)))
 	for ffnk in range(3):
 		ffnpoke(ffncar + 0x4e4 + 4 * ffnk, ffnsavedlv[ffnk])
 	ffnpoke(ffncar + 0x728, ffncarmotor0)
-	SDTest.Poke(0x4a80c4, ffngetvert)
+	SDTest.Poke('g_GetModelVertex', ffngetvert)
 	ffnfree(ffnfakemotor)
 	ffnfree(ffnfakeplayer)
 
 # ---- FX_ShipExplosion: the debris, the explosion and its flames ----
-ffns, ffnd, ffnfx = ffndebris(ffnstr(0x467348), 1)
-ffnexpok = ffnfx != 0 and ffni(ffnfx) == 0x400000 + 0x3cccb4
-ffnsmk = ffndebris(ffnstr(0x4673c0), 48)[0]
-ffnfrd = ffndebris(ffnstr(0x4673a8), 40)[0]
+ffns, ffnd, ffnfx = ffndebris(ffnstr(sym('g_FXShipExplosionFile')), 1)
+ffnexpok = ffnfx != 0 and ffni(ffnfx) == 0x400000 + sym('cObjElementFXSistPart_vftable')
+ffnsmk = ffndebris(ffnstr(sym('g_FXSmokeDebrisFile')), 48)[0]
+ffnfrd = ffndebris(ffnstr(sym('g_FXFiredDebrisFile')), 40)[0]
 ffnexps = ffns
 check('FFN explosion', lambda: (ffnexpok, ffnexpok and ffnnpart(ffnfx + 4), ffnsmk != 0, ffnfrd != 0))
 # the first n debris of the active list of a system up to stop (the head before the call; the older ones are from
@@ -488,7 +488,7 @@ if ffnexpok and ffnnpart(ffnfx + 4) and ffnsmk and ffnfrd:
 		ffnr = (ffnat, ffnofs, ffnv, ffnsc, ffnt, ffnfl1, ffncol, ffngm)
 		ffnheads = (ffni(ffnexps + 4), ffni(ffnsmk + 4), ffni(ffnfrd + 4))
 		check('FX_ShipExplosion' + fmt(ffnr), lambda p=ffnp, v=ffnv, sc=ffnsc, t=ffnt, n=ffnfl1, c=ffncol: (
-			SDTest.Call(0x1f4d50, 'vffffffffii', p[0], p[1], p[2], v[0], v[1], v[2], sc, t, n, c),
+			SDTest.Call('FX_ShipExplosion', 'vffffffffii', p[0], p[1], p[2], v[0], v[1], v[2], sc, t, n, c),
 			ffnexplosion(ffnheads[0]), ffnsysdebris(ffnsmk, 4, ffnheads[1]), ffnsysdebris(ffnfrd, 4, ffnheads[2]),
 			ffnrand()))
 		ffnpoke(ffngame, ffnsavedgame)

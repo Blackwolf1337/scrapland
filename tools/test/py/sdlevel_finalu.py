@@ -14,25 +14,25 @@ def fnui(a):
 def fnub(a):
 	return SDTest.Peek(a, '@b')
 def fnuz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def fnufree(p):
-	SDTest.Call(0x133550, 'ii', p)
+	SDTest.Call('Mem_Free', 'ii', p)
 def fnufl(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def fnuset(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 def fnupoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 def fnustr(a, s):
-	SDTest.Call(0x22cf50, 'iisi', a, s, len(s) + 1)
+	SDTest.Call('Cad_Copy', 'iisi', a, s, len(s) + 1)
 def fnusrand(s):
-	SDTest.Call(0x323c50, 'vi', s)
+	SDTest.Call('crt_srand', 'vi', s)
 def fnurand():
-	return SDTest.Call(0x323c2f, 'i')[0]
-fnuworld = SDTest.Peek(0x467450, 'i')
+	return SDTest.Call('crt_rand', 'i')[0]
+fnuworld = SDTest.Peek('g_pWorld', 'i')
 def fnufind(name):
-	slot = SDTest.Call(0x131f70, 'tiis', fnuworld + 4, name)[0]
-	node = SDTest.Call(0x131e50, 'tiisi', fnuworld + 4, name, slot)[0]
+	slot = SDTest.Call('HashTable_Slot', 'tiis', fnuworld + 4, name)[0]
+	node = SDTest.Call('PtrTable_Find', 'tiisi', fnuworld + 4, name, slot)[0]
 	if node:
 		return fnui(node)
 	return 0
@@ -49,7 +49,7 @@ def fnucall(func, params):
 # the newest debris of the system of the file variable at rva (the system is made when missing), its element
 def fnudebris(rva):
 	name = SDTest.Peek(SDTest.Peek(rva, 'i'), '@s')
-	sys = SDTest.Call(0x209590, 'tiis', fnuworld, name)[0]
+	sys = SDTest.Call('cWorld_GetDebrisSys', 'tiis', fnuworld, name)[0]
 	if not sys:
 		return (0, 0)
 	d = fnui(sys + 4)
@@ -57,20 +57,20 @@ def fnudebris(rva):
 		return (sys, 0)
 	return (sys, d)
 def fnuhitfx():
-	sys, d = fnudebris(0x449228)
+	sys, d = fnudebris(sym('g_DevastatorHitFile'))
 	if not d or not fnui(d + 0x54):
 		return d != 0
 	p = fnui(d + 0x54) + 4
 	return (fnufl(d + 0x4c, 1), fnui(p + 0x18), fnufl(p + 8, 2), fnufl(p + 0x14, 1), fnufl(p + 0x1c, 1),
 		fnufl(p + 0x2c, 6), fnufl(p + 0x50, 6), fnufl(p + 0x74, 6), fnufl(p + 0x8c, 3), fnub(p + 0x98), fnub(p + 0x99))
 def fnushootfx():
-	sys, d = fnudebris(0x449130)
+	sys, d = fnudebris(sym('g_DevastatorShootFile'))
 	if not d or not fnui(d + 0x54):
 		return d != 0
 	e = fnui(d + 0x54)
 	return (fnufl(d + 0x4c, 1), fnufl(e + 8, 1), fnub(e + 0x11))
 def fnusparks():
-	sys, d = fnudebris(0x4491c0)
+	sys, d = fnudebris(sym('g_DevastatorSparksFile'))
 	if not d or not fnui(d + 0x54):
 		return d != 0
 	e = fnui(d + 0x54)
@@ -85,7 +85,7 @@ def fnusparks():
 		k = k + 1
 	return r
 def fnubullet():
-	sys, d = fnudebris(0x449058)
+	sys, d = fnudebris(sym('g_DevastatorBulletFile'))
 	if not d:
 		return sys != 0
 	return (fnufl(d + 0x1c, 12), fnufl(d + 0x4c, 1))
@@ -96,14 +96,14 @@ fnuc = fnufind('SDFnuCar')
 fnuc2 = fnufind('SDFnuCar2')
 check('SDFnuCar', lambda: (fnucar is not None, fnucar2 is not None, fnuc != 0, fnuc2 != 0))
 if fnuc and fnuc2:
-	check('SDFnuCar SetModel SPoli1', lambda c=fnuc: (SDTest.Call(0x109db0, 'tvisfffi', c, 'SPoli1', 1.0, 1.0, 1.0, 1),
+	check('SDFnuCar SetModel SPoli1', lambda c=fnuc: (SDTest.Call('cVehicleEntity_SetModel', 'tvisfffi', c, 'SPoli1', 1.0, 1.0, 1.0, 1),
 		fnui(c + 0xb8) != 0, fnui(c + 0x5f0 + 0x1c) != 0, fnui(c + 0xf0)))
 	fnuwm = fnuc + 0x5f0
 	fnuws = fnui(fnuwm + 0x18)
 	fnuam = fnui(fnuwm + 0x20)
 	fnunodes = fnui(fnuwm + 0x1c)
-	fnudw = SDTest.Peek(0x448830, 'i')
-	fnuda = SDTest.Peek(0x449108, 'i')
+	fnudw = SDTest.Peek('g_DevastatorIDWeap', 'i')
+	fnuda = SDTest.Peek('g_DevastatorIDAmmo', 'i')
 	check('SDFnuCar weapons', lambda: (fnudw, fnuda, fnuws != 0, fnuam != 0, fnunodes != 0))
 	if fnuws and fnuam and fnunodes and fnui(fnuc + 0xb8):
 		fnuslots = fnui(fnuws + 12 * fnudw)
@@ -112,9 +112,9 @@ if fnuc and fnuc2:
 		fnunsaved = map(lambda k: fnui(fnunodes + 0x10 * fnuda + 4 * k), range(4))
 		for fnuk in range(4):
 			fnupoke(fnunodes + 0x10 * fnuda + 4 * fnuk, 0)
-		fnudevs = SDTest.Peek(0x448f48, 's')
-		fnudevv = SDTest.Peek(0x448fc8, 's')
-		fnucenter = fnufl(0x849258, 3)
+		fnudevs = SDTest.Peek('g_DevShooter', 's')
+		fnudevv = SDTest.Peek('g_DevVictim', 's')
+		fnucenter = fnufl(symva('g_DevCenter'), 3)
 		fnushake = fnui(fnuc + 0xf0)
 		fnufake = fnuz(0x300)
 		fnucur = fnui(fnuworld + 0x50)
@@ -125,9 +125,9 @@ if fnuc and fnuc2:
 		fnupoke(fnuws + 12 * fnudw, 0)
 		fnusrand(3)
 		check('native !DevastatorCreate no slot', lambda p=fnufar: (fnucall('!DevastatorCreate', ('SDFnuCar', p[0],
-			p[1], p[2], '', 0)), fnurand(), fnufl(0x849258, 3)))
+			p[1], p[2], '', 0)), fnurand(), fnufl(symva('g_DevCenter'), 3)))
 		# the bullets stay (the system moves them at any distance from the cameras)
-		fnubsys = fnudebris(0x449058)[0]
+		fnubsys = fnudebris(sym('g_DevastatorBulletFile'))[0]
 		fnubrad = 0
 		if fnubsys:
 			fnubrad = fnui(fnubsys + 0x14)
@@ -146,8 +146,8 @@ if fnuc and fnuc2:
 			fnucall('!DevastatorCreate', ('SDFnuCar', fnup[0], fnup[1], fnup[2], fnut, fnushot))
 			fnupoke(fnuc + 0xf0, fnushake)
 			fnuname = fmt((fnup == fnuup3, fnut, fnusl, fnua, fnushot, fnuu, fnupl, fnuseed))
-			check('native !DevastatorCreate' + fnuname, lambda: (fnurand(), fnufl(0x849258, 3),
-				SDTest.Peek(0x448f48, 's'), SDTest.Peek(0x448fc8, 's')))
+			check('native !DevastatorCreate' + fnuname, lambda: (fnurand(), fnufl(symva('g_DevCenter'), 3),
+				SDTest.Peek('g_DevShooter', 's'), SDTest.Peek('g_DevVictim', 's')))
 			if fnup == fnufar:
 				check('DevastatorCreate hit' + fnuname, fnuhitfx)
 				check('DevastatorCreate shoot' + fnuname, fnushootfx)
@@ -161,9 +161,9 @@ if fnuc and fnuc2:
 		fnupoke(fnuam + 4 * fnuda, fnuammo)
 		for fnuk in range(4):
 			fnupoke(fnunodes + 0x10 * fnuda + 4 * fnuk, fnunsaved[fnuk])
-		fnuset(0x849258, fnucenter)
-		fnustr(0x848f48, fnudevs)
-		fnustr(0x848fc8, fnudevv)
+		fnuset(symva('g_DevCenter'), fnucenter)
+		fnustr(symva('g_DevShooter'), fnudevs)
+		fnustr(symva('g_DevVictim'), fnudevv)
 		fnufree(fnufake)
 if fnucar:
 	check('SDFnuCar Del', lambda: fnucar.Del())
@@ -186,37 +186,37 @@ def fnufls(a, n):
 	return r
 def fnustrz(s):
 	p = fnuz(len(s) + 1)
-	SDTest.Call(0x3197d0, 'iisi', p, s, len(s))
+	SDTest.Call('crt_memcpy', 'iisi', p, s, len(s))
 	return p
 def fnupokeb(a, v):
 	w = fnui(a & ~3)
 	sh = 8 * (a & 3)
 	fnupoke(a & ~3, (w & ~(0xff << sh)) | (v << sh))
-fnurg = (0x432950, 0x432954, 0x432958, 0x43295c, 0x4b2b14, 0x432968, 0x43296c, 0x4b2b60, 0x4b2b64, 0x4d5cf0, 0x4d5d08,
-	0x4b2b74, 0x4b2b24,
-	0x4b2b48, 0x4b2b4c, 0x4b2b50, 0x4b2b54, 0x4d5d78, 0x4d5d7c, 0x4d5d80, 0x4d5d84)
+fnurg = (sym('g_MapaSombrasEscala'), sym('g_MapaSombrasResol'), sym('g_MapaSombrasTexX'), sym('g_MapaSombrasTexY'), sym('g_MapaSombrasIlumGlobal'), sym('g_MapaSombrasRebotes'), sym('g_MapaSombrasCoefRad'), sym('g_BspRadMinD2'), sym('g_BspLodLevel'), sym('g_RadSkipBySectors'), sym('g_RadiosityPortals'),
+	sym('g_TxfMode'), sym('g_MapaSombrasUsarTxf'),
+	sym('g_BspLodCount'), sym('g_BspLodCount') + 0x4, sym('g_BspLodCount') + 0x8, sym('g_BspLodCount') + 0xc, sym('g_BspAreasTotal'), sym('g_BspAreasTotal') + 0x4, sym('g_BspAreasTotal') + 0x8, sym('g_BspAreasTotal') + 0xc)
 fnursaved = []
 for fnu_a in fnurg:
 	fnursaved.append(SDTest.Peek(fnu_a, 'i'))
-check('fnu radiosity globals', lambda: (SDTest.Peek(0x432958, 'i'), SDTest.Peek(0x43295c, 'i'), SDTest.Peek(0x4b2b74, 'i'),
-	SDTest.Peek(0x432968, 'i')))
-for fnu_a, fnu_v in ((0x432950, 1.0), (0x432954, 1.0), (0x43296c, 1.0), (0x4b2b60, 1.0), (0x4b2b64, 1.0)):
+check('fnu radiosity globals', lambda: (SDTest.Peek('g_MapaSombrasTexX', 'i'), SDTest.Peek('g_MapaSombrasTexY', 'i'), SDTest.Peek('g_TxfMode', 'i'),
+	SDTest.Peek('g_MapaSombrasRebotes', 'i')))
+for fnu_a, fnu_v in ((sym('g_MapaSombrasEscala'), 1.0), (sym('g_MapaSombrasResol'), 1.0), (sym('g_MapaSombrasCoefRad'), 1.0), (sym('g_BspRadMinD2'), 1.0), (sym('g_BspLodLevel'), 1.0)):
 	fnuset(fnu_a + 0x400000, (fnu_v,))
 # small light map pages (the areas of CBsp_IniciarAreas take a buffer of the size of a page)
-for fnu_a, fnu_v in ((0x432958, 32), (0x43295c, 32), (0x4b2b14, 1), (0x432968, 1), (0x4d5cf0, 0), (0x4d5d08, 0),
-		(0x4b2b74, 0), (0x4b2b24, 0)):
+for fnu_a, fnu_v in ((sym('g_MapaSombrasTexX'), 32), (sym('g_MapaSombrasTexY'), 32), (sym('g_MapaSombrasIlumGlobal'), 1), (sym('g_MapaSombrasRebotes'), 1), (sym('g_RadSkipBySectors'), 0), (sym('g_RadiosityPortals'), 0),
+		(sym('g_TxfMode'), 0), (sym('g_MapaSombrasUsarTxf'), 0)):
 	SDTest.Poke(fnu_a, fnu_v)
 fnumat = []
 for fnu_n in ('sdfnumatF', 'sdfnumatC'):
 	fnu_m = fnuz(0xb0)
-	SDTest.Call(0x233830, 'tii', fnu_m)
-	SDTest.Call(0x2a1940, 'tvis', fnu_m + 4, fnu_n)
+	SDTest.Call('CMaterial_ctor', 'tii', fnu_m)
+	SDTest.Call('Cad_Set', 'tvis', fnu_m + 4, fnu_n)
 	fnumat.append(fnu_m)
 fnuo = (pp[0] + 20.0, pp[1] + 200.0, pp[2] + 20.0)
 def fnutri(a, b, c, y, ny):
 	o = fnuo
 	t = fnuz(0x224)
-	SDTest.Call(0x281d40, 'tii', t)
+	SDTest.Call('BspTri_ctor', 'tii', t)
 	fnuset(t + 4, (o[0] + a[0], o[1] + y, o[2] + a[1], o[0] + b[0], o[1] + y, o[2] + b[1], o[0] + c[0], o[1] + y,
 		o[2] + c[1]))
 	fnuset(t + 0x28, (0.0, ny, 0.0) * 3)
@@ -225,28 +225,28 @@ def fnulist(ts, mat):
 	for i in range(len(ts) - 1):
 		fnupoke(ts[i], ts[i + 1])
 	l = ts[0]
-	SDTest.Call(0x287bf0, 'vi', l)
+	SDTest.Call('BspTri_CalcPlanos', 'vi', l)
 	fnupoke(l + 0xac, mat)
-	b = SDTest.Call(0x287930, 'iFi', (0.0,) * 6, l)[1]
-	e = SDTest.Call(0x287ac0, 'vFifpppp', b, 1, 1.0, 0, 0, 0, 0)
-	SDTest.Call(0x2900d0, 'viiiiii', l, e[2], e[3], e[4], e[5], 0)
+	b = SDTest.Call('BspTri_ListBox', 'iFi', (0.0,) * 6, l)[1]
+	e = SDTest.Call('Bsp_TexelBox', 'vFifpppp', b, 1, 1.0, 0, 0, 0, 0)
+	SDTest.Call('BspTri_SetExt', 'viiiiii', l, e[2], e[3], e[4], e[5], 0)
 	lx, ly = fnui(l + 0xd4), fnui(l + 0xd8)
-	SDTest.Call(0x28ff20, 'tviiii', l + 0x114, lx, ly, 0)
+	SDTest.Call('CBmp_CreateFill', 'tviiii', l + 0x114, lx, ly, 0)
 	cob = fnuz(12)
-	SDTest.Call(0x28ff20, 'tviiii', cob, lx, ly, 0xffff0000)
-	SDTest.Call(0x285d80, 'vii', l, cob)
-	SDTest.Call(0x28ff90, 'tviiiF', l + 0xb0, lx, ly, (0.1, 0.2, 0.3))
-	SDTest.Call(0x28ff90, 'tviiiF', l + 0x108, lx, ly, (0.5, 0.6, 0.7))
+	SDTest.Call('CBmp_CreateFill', 'tviiii', cob, lx, ly, 0xffff0000)
+	SDTest.Call('BspTri_Mascara', 'vii', l, cob)
+	SDTest.Call('CBmpFlt2_CreateFill', 'tviiiF', l + 0xb0, lx, ly, (0.1, 0.2, 0.3))
+	SDTest.Call('CBmpFlt2_CreateFill', 'tviiiF', l + 0x108, lx, ly, (0.5, 0.6, 0.7))
 	return l
 fnuF = fnulist([fnutri((0.0, 0.0), (0.0, 6.0), (6.0, 0.0), 0.0, 1.0), fnutri((6.0, 0.0), (0.0, 6.0), (6.0, 6.0), 0.0, 1.0)],
 	fnumat[0])
 fnuC = fnulist([fnutri((0.0, 0.0), (6.0, 0.0), (0.0, 6.0), 6.0, -1.0), fnutri((6.0, 0.0), (6.0, 6.0), (0.0, 6.0), 6.0, -1.0)],
 	fnumat[1])
-SDTest.Call(0x290000, 'tviiiF', fnuC + 0xc8, fnui(fnuC + 0xd4), fnui(fnuC + 0xd8), (2.0, 1.0, 0.5, 1.0))
+SDTest.Call('CBmpFlt_CreateFill', 'tviiiF', fnuC + 0xc8, fnui(fnuC + 0xd4), fnui(fnuC + 0xd8), (2.0, 1.0, 0.5, 1.0))
 fnuset(fnuC + 0x150, (2.0,))
-fnuini = SDTest.Call(0x261980, 'tii', fnuz(4))[0]
-SDTest.Call(0x2621a0, 'tiisss', fnuini, 'mats_luces_rad', 'sdfnumatC', '200 100 50 1.5')
-SDTest.Call(0x2621a0, 'tiisss', fnuini, 'lglow_mult', '_default_', '255 128 64 2.0')
+fnuini = SDTest.Call('CArchINI_ctor', 'tii', fnuz(4))[0]
+SDTest.Call('CArchINI_SetStr', 'tiisss', fnuini, 'mats_luces_rad', 'sdfnumatC', '200 100 50 1.5')
+SDTest.Call('CArchINI_SetStr', 'tiisss', fnuini, 'lglow_mult', '_default_', '255 128 64 2.0')
 fnuesc = fnuz(0x64)
 fnupoke(fnuesc + 0x4c, fnuini)
 fnumod = fnuz(0x128)
@@ -274,21 +274,21 @@ def fnuints(a, n):
 	return tuple(map(lambda i, a=a: fnui(a + 4 * i), range(n)))
 check('fnu lists', lambda: (fnuradlist(fnuF), fnuradlist(fnuC)))
 # the sample normals of bmp\normales.rad are not in the game data: a table of one normal stands in for them
-fnunorm = (fnui(0x8e73b0), fnui(0x8e73b4))
+fnunorm = (fnui(symva('g_RadNormales')), fnui(symva('g_RadNormales') + 0x4))
 fnunv = fnuz(12)
 fnuset(fnunv, (0.0, 1.0, 0.0))
-fnupoke(0x8e73b0, 1)
-fnupoke(0x8e73b4, fnunv)
-check('CBsp_RadAreas', lambda: (SDTest.Call(0x293af0, 'tvi', fnumap), fnuradlist(fnuF), fnuradlist(fnuC),
-	fnuflt(fnuF + 0xfc, 3), fnuflt(fnuC + 0xfc, 3), fnuflt(fnuC + 0xc8, 4), fnuints(0x8d5d78, 4)))
+fnupoke(symva('g_RadNormales'), 1)
+fnupoke(symva('g_RadNormales') + 0x4, fnunv)
+check('CBsp_RadAreas', lambda: (SDTest.Call('CBsp_RadAreas', 'tvi', fnumap), fnuradlist(fnuF), fnuradlist(fnuC),
+	fnuflt(fnuF + 0xfc, 3), fnuflt(fnuC + 0xfc, 3), fnuflt(fnuC + 0xc8, 4), fnuints(symva('g_BspAreasTotal'), 4)))
 fnupokeb(fnuC + 0x154, 0)
-check('CBsp_RadGlobal', lambda: (SDTest.Call(0x292060, 'tvi', fnumap), fnuradlist(fnuF), fnuradlist(fnuC),
+check('CBsp_RadGlobal', lambda: (SDTest.Call('CBsp_RadGlobal', 'tvi', fnumap), fnuradlist(fnuF), fnuradlist(fnuC),
 	fnuflt(fnuF + 0xb0, 3), fnuflt(fnuC + 0xb0, 3), fnuflt(fnuF + 0xfc, 3), fnuflt(fnuF + 0x108, 3),
-	fnuints(0x8b2b48, 4)))
+	fnuints(symva('g_BspLodCount'), 4)))
 for fnu_i in range(len(fnurg)):
 	SDTest.Poke(fnurg[fnu_i], fnursaved[fnu_i])
-fnupoke(0x8e73b0, fnunorm[0])
-fnupoke(0x8e73b4, fnunorm[1])
+fnupoke(symva('g_RadNormales'), fnunorm[0])
+fnupoke(symva('g_RadNormales') + 0x4, fnunorm[1])
 fnufree(fnunv)
 # the triangles one by one (they are calloc memory, the destructor deletes the next one)
 for fnu_l in (fnuF, fnuC):
@@ -298,5 +298,5 @@ for fnu_l in (fnuF, fnuC):
 		fnu_l = fnui(fnu_l)
 	for fnu_t in fnu_ts:
 		fnupoke(fnu_t, 0)
-		SDTest.Call(0x282580, 'tvi', fnu_t)
+		SDTest.Call('BspTri_dtor', 'tvi', fnu_t)
 		fnufree(fnu_t)

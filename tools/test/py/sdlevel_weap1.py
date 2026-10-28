@@ -14,50 +14,50 @@ def wmi(a):
 def wmb(a):
 	return SDTest.Peek(a, '@b')
 def wmz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def wmfree(p):
-	SDTest.Call(0x133550, 'ii', p)
+	SDTest.Call('Mem_Free', 'ii', p)
 def wmfl(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def wmset(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 def wmints(a, n):
 	return tuple(map(lambda i, a=a: wmi(a + 4 * i), range(n)))
 def wmpoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 def wmstr(a, s):
-	SDTest.Call(0x22cf50, 'iisi', a, s, len(s) + 1)
+	SDTest.Call('Cad_Copy', 'iisi', a, s, len(s) + 1)
 # 's' cannot carry a zero byte: rewrite the int at a with its low byte replaced
 def wmsetbyte(a, v):
 	wmpoke(a, (wmi(a) & ~0xff) | v)
 def wmsrand(s):
-	SDTest.Call(0x323c50, 'vi', s)
+	SDTest.Call('crt_srand', 'vi', s)
 def wmstrat(p):
 	if p:
 		return SDTest.Peek(p, '@s')
 	return None
 
-wmworld = SDTest.Peek(0x467450, 'i')
+wmworld = SDTest.Peek('g_pWorld', 'i')
 wmnw = wmi(wmworld + 0x1bb8)
 wmna = wmi(wmworld + 0x1bc4)
 wmweaps = wmi(wmworld + 0x1bbc)
 wmammos = wmi(wmworld + 0x1bc8)
-wmlaser = SDTest.Peek(0x4487d0, 'i')
+wmlaser = SDTest.Peek('g_LaserIDWeap', 'i')
 check('WM tables', lambda: (wmnw, wmna, wmi(wmworld + 0x1bc0), wmlaser))
 def wmammoof(w):
 	return wmi(wmweaps + 0xb0 * w + 0x98)
 
 # ---- the fake owner and the manager ----
 wmvt = wmz(0x100)
-wmpoke(wmvt + 0x58, 0x4ef2d0)
-wmpoke(wmvt + 0x98, 0x4fb380)
+wmpoke(wmvt + 0x58, symva('cEntity_GetAI'))
+wmpoke(wmvt + 0x98, symva('cObjEntity_GetModel'))
 wmown = wmz(0x800)
 wmname = wmz(0x20)
 wmstr(wmname, 'SDFakeWM')
 wmpoke(wmown, wmvt)
 wmpoke(wmown + 4, wmname)
 wm = wmz(0x48)
-wmpoke(wm, 0x400000 + 0x3b664c)
+wmpoke(wm, 0x400000 + sym('cWeaponManager_vftable'))
 # the lock node: a link of the manager (data set, alone in its ring)
 wmpoke(wm + 0x28, wm + 0x28)
 wmpoke(wm + 0x2c, wm + 0x28)
@@ -72,23 +72,23 @@ def wmarrays():
 	for w in range(wmnw):
 		r = r + ((wmi(ws + 12 * w), wmi(ws + 12 * w + 4), wmfl(ws + 12 * w + 8, 1)[0]),)
 	return (r, wmints(wmi(wm + 0x1c), 4 * wmna), wmfl(wmi(wm + 0x20), wmna))
-check('cWeaponManager_Init', lambda: (SDTest.Call(0x11aad0, 'tvii', wm, wmown), wmstate(), wmarrays()))
+check('cWeaponManager_Init', lambda: (SDTest.Call('cWeaponManager_Init', 'tvii', wm, wmown), wmstate(), wmarrays()))
 
 # the getters on the empty manager
 def wmgetters():
 	r = ()
 	for w in range(wmnw + 1):
-		r = r + ((SDTest.Call(0x11a8f0, 'tiii', wm, w)[0], SDTest.Call(0x11aa30, 'tiii', wm, w)[0],
-			SDTest.Call(0x11aa80, 'tfii', wm, w)[0]),)
+		r = r + ((SDTest.Call('cWeaponManager_GetSlots', 'tiii', wm, w)[0], SDTest.Call('cWeaponManager_GetUpgrade', 'tiii', wm, w)[0],
+			SDTest.Call('cWeaponManager_GetUAmmo', 'tfii', wm, w)[0]),)
 	for w in range(wmnw):
-		r = r + ((SDTest.Call(0x11a0f0, 'tiii', wm, w)[0], SDTest.Call(0x11a870, 'tfii', wm, w)[0],
-			SDTest.Call(0x11a7b0, 'tiiii', wm, w, 0)[0]),)
+		r = r + ((SDTest.Call('cWeaponManager_HasMinAmmo', 'tiii', wm, w)[0], SDTest.Call('cWeaponManager_GetWeapAmmo', 'tfii', wm, w)[0],
+			SDTest.Call('cWeaponManager_NumSlots', 'tiiii', wm, w, 0)[0]),)
 	for a in range(wmna + 2):
-		r = r + ((SDTest.Call(0x11a6c0, 'tfii', wm, a)[0], SDTest.Call(0x11a760, 'tiii', wm, a)[0]),)
+		r = r + ((SDTest.Call('cTargetLock_GetAmmo', 'tfii', wm, a)[0], SDTest.Call('cWeaponManager_NumAmmoSlots', 'tiii', wm, a)[0]),)
 	return r
 check('WM getters empty', wmgetters)
 for w in (-3, 0, 1, wmnw - 1, wmnw, 99):
-	check('cWeaponManager_FixWeapon' + fmt((w,)), lambda w=w: SDTest.Call(0x11a6f0, 'ii', w)[0])
+	check('cWeaponManager_FixWeapon' + fmt((w,)), lambda w=w: SDTest.Call('cWeaponManager_FixWeapon', 'ii', w)[0])
 
 # render nodes for the slots: ammo kind a gets 1 + a % 4 slots
 wmnodes = wmi(wm + 0x1c)
@@ -96,60 +96,60 @@ for a in range(wmna):
 	for s in range(4):
 		if s <= a % 4:
 			wmpoke(wmnodes + 16 * a + 4 * s, s)
-check('WM nodes', lambda: (wmints(wmnodes, 4 * wmna), map(lambda a: SDTest.Call(0x11a760, 'tiii', wm, a)[0],
+check('WM nodes', lambda: (wmints(wmnodes, 4 * wmna), map(lambda a: SDTest.Call('cWeaponManager_NumAmmoSlots', 'tiii', wm, a)[0],
 	range(wmna + 1))))
 for w in range(wmnw):
 	for mask in (0, 1, 3, 0xf, 0x1f, 6, -1):
-		check('cWeaponManager_SetSlots' + fmt((w, mask)), lambda w=w, mask=mask: (SDTest.Call(0x11b370, 'tiiii', wm, w,
-			mask)[0], SDTest.Call(0x11a8f0, 'tiii', wm, w)[0], SDTest.Call(0x11a7b0, 'tiiii', wm, w, 0)[0]))
-check('cWeaponManager_SetSlots out', lambda: (SDTest.Call(0x11b370, 'tiiii', wm, wmnw, 3)[0],
-	SDTest.Call(0x11b370, 'tiiii', wm, 1000, 3)[0]))
+		check('cWeaponManager_SetSlots' + fmt((w, mask)), lambda w=w, mask=mask: (SDTest.Call('cWeaponManager_SetSlots', 'tiiii', wm, w,
+			mask)[0], SDTest.Call('cWeaponManager_GetSlots', 'tiii', wm, w)[0], SDTest.Call('cWeaponManager_NumSlots', 'tiiii', wm, w, 0)[0]))
+check('cWeaponManager_SetSlots out', lambda: (SDTest.Call('cWeaponManager_SetSlots', 'tiiii', wm, wmnw, 3)[0],
+	SDTest.Call('cWeaponManager_SetSlots', 'tiiii', wm, 1000, 3)[0]))
 for w, s, on in ((0, 0, 1), (0, 3, 1), (1, 1, 1), (1, 1, 0), (2, 2, 1), (2, 5, 1), (wmnw - 1, 0, 1), (wmnw, 0, 1),
 		(3, 2, 7), (3, 0, 0)):
-	check('cWeaponManager_SetSlot' + fmt((w, s, on)), lambda w=w, s=s, on=on: (SDTest.Call(0x11b530, 'tbiiii', wm, w,
-		s, on)[0], SDTest.Call(0x11a8f0, 'tiii', wm, w)[0]))
+	check('cWeaponManager_SetSlot' + fmt((w, s, on)), lambda w=w, s=s, on=on: (SDTest.Call('cWeaponManager_SetSlot', 'tbiiii', wm, w,
+		s, on)[0], SDTest.Call('cWeaponManager_GetSlots', 'tiii', wm, w)[0]))
 def wmhasslots():
 	r = ()
 	for w in range(wmnw + 1):
 		t = ()
 		for s in (-1, 0, 1, 2, 3, 4, 5):
-			t = t + (SDTest.Call(0x11a9f0, 'tbiii', wm, w, s)[0],)
+			t = t + (SDTest.Call('cTargetLock_HasSlot', 'tbiii', wm, w, s)[0],)
 		r = r + (t,)
 	return r
 check('cTargetLock_HasSlot', wmhasslots)
 # NumSlots with the warning: no slot is an error, the laser gets slot 0
 for w in range(wmnw):
-	SDTest.Call(0x11b370, 'tiiii', wm, w, 0)
-	check('cWeaponManager_NumSlots warn' + fmt((w,)), lambda w=w: (SDTest.Call(0x11a7b0, 'tiiii', wm, w, 1)[0],
-		SDTest.Call(0x11a8f0, 'tiii', wm, w)[0]))
+	SDTest.Call('cWeaponManager_SetSlots', 'tiiii', wm, w, 0)
+	check('cWeaponManager_NumSlots warn' + fmt((w,)), lambda w=w: (SDTest.Call('cWeaponManager_NumSlots', 'tiiii', wm, w, 1)[0],
+		SDTest.Call('cWeaponManager_GetSlots', 'tiii', wm, w)[0]))
 
 # the weapon list
 for s in ('1,2,3,4,5,6,7,8,9,10,11,12', '0,15,7', '7', '', '3,,5', '1,2', '15,15,15,15,15,15,15,15,15,15,15,15,15',
 		'2,1,x', 'abc'):
-	check('cWeaponManager_SetWeapList' + fmt((s,)), lambda s=s: (SDTest.Call(0x11b430, 'tvis', wm, s),
-		wmarrays()[0], wmstrat(SDTest.Call(0x11a920, 'tii', wm)[0])))
+	check('cWeaponManager_SetWeapList' + fmt((s,)), lambda s=s: (SDTest.Call('cWeaponManager_SetWeapList', 'tvis', wm, s),
+		wmarrays()[0], wmstrat(SDTest.Call('cWeaponManager_GetWeapList', 'tii', wm)[0])))
 
 # ammo, upgrades, upgrade ammo
 for a, v in ((0, 10.5), (1, -3.0), (wmna - 1, 1e6), (wmna, 5.0), (wmna + 3, 5.0)):
-	check('cWeaponManager_SetAmmo' + fmt((a, v)), lambda a=a, v=v: (SDTest.Call(0x11b280, 'tfiif', wm, a, v)[0],
-		SDTest.Call(0x11a6c0, 'tfii', wm, a)[0]))
+	check('cWeaponManager_SetAmmo' + fmt((a, v)), lambda a=a, v=v: (SDTest.Call('cWeaponManager_SetAmmo', 'tfiif', wm, a, v)[0],
+		SDTest.Call('cTargetLock_GetAmmo', 'tfii', wm, a)[0]))
 for w in range(wmnw):
 	for up in (0, 1, 2, 3, 7, 8, 9, 10, 15, 16, -1):
-		check('cWeaponManager_SetUpgrade' + fmt((w, up)), lambda w=w, up=up: (SDTest.Call(0x11b5c0, 'tbiii', wm, w,
-			up)[0], SDTest.Call(0x11aa30, 'tiii', wm, w)[0]))
+		check('cWeaponManager_SetUpgrade' + fmt((w, up)), lambda w=w, up=up: (SDTest.Call('cWeaponManager_SetUpgrade', 'tbiii', wm, w,
+			up)[0], SDTest.Call('cWeaponManager_GetUpgrade', 'tiii', wm, w)[0]))
 	for v in (-1.0, 0.0, 0.5, 120.25, 199.99, 200.0, 1e9):
-		check('cWeaponManager_SetUAmmo' + fmt((w, v)), lambda w=w, v=v: (SDTest.Call(0x11b650, 'tbiif', wm, w, v)[0],
-			SDTest.Call(0x11aa80, 'tfii', wm, w)[0]))
-check('cWeaponManager_SetUpgrade out', lambda: (SDTest.Call(0x11b5c0, 'tbiii', wm, wmnw, 1)[0],
-	SDTest.Call(0x11b650, 'tbiif', wm, wmnw, 5.0)[0]))
+		check('cWeaponManager_SetUAmmo' + fmt((w, v)), lambda w=w, v=v: (SDTest.Call('cWeaponManager_SetUAmmo', 'tbiif', wm, w, v)[0],
+			SDTest.Call('cWeaponManager_GetUAmmo', 'tfii', wm, w)[0]))
+check('cWeaponManager_SetUpgrade out', lambda: (SDTest.Call('cWeaponManager_SetUpgrade', 'tbiii', wm, wmnw, 1)[0],
+	SDTest.Call('cWeaponManager_SetUAmmo', 'tbiif', wm, wmnw, 5.0)[0]))
 for i in range(wmna):
-	SDTest.Call(0x11b280, 'tfiif', wm, i, 3.0 + 7.0 * i)
+	SDTest.Call('cWeaponManager_SetAmmo', 'tfiif', wm, i, 3.0 + 7.0 * i)
 check('WM getters full', wmgetters)
 # WeaponNeed: a random order of six weapons
-SDTest.Call(0x11b430, 'tvis', wm, '15,15,15,15,15,15,15,15,15,15,15,15')
+SDTest.Call('cWeaponManager_SetWeapList', 'tvis', wm, '15,15,15,15,15,15,15,15,15,15,15,15')
 for seed in (1, 2, 3, 77, 12345):
 	wmsrand(seed)
-	check('cWeaponManager_WeaponNeed' + fmt((seed,)), lambda: SDTest.Call(0x11c260, 'tii', wm)[0])
+	check('cWeaponManager_WeaponNeed' + fmt((seed,)), lambda: SDTest.Call('cWeaponManager_WeaponNeed', 'tii', wm)[0])
 
 # next and previous weapon, only where the chain comes back to the start
 def wmchain(w, off):
@@ -164,77 +164,77 @@ def wmchain(w, off):
 			return 1
 for w in range(wmnw):
 	if wmchain(w, 0x90):
-		check('cWeaponManager_NextWeap' + fmt((w,)), lambda w=w: SDTest.Call(0x11b1a0, 'tiii', wm, w)[0])
+		check('cWeaponManager_NextWeap' + fmt((w,)), lambda w=w: SDTest.Call('cWeaponManager_NextWeap', 'tiii', wm, w)[0])
 	if wmchain(w, 0x94):
-		check('cWeaponManager_PrevWeap' + fmt((w,)), lambda w=w: SDTest.Call(0x11b210, 'tiii', wm, w)[0])
+		check('cWeaponManager_PrevWeap' + fmt((w,)), lambda w=w: SDTest.Call('cWeaponManager_PrevWeap', 'tiii', wm, w)[0])
 
 # the script variables
 wmfvars = ('UAmmo00', 'UAmmo01', 'UAmmo05', 'UAmmo99', 'UAmmo1', 'iUAmmo', 'AcUAmmo', 'Ammo00', 'Ammo01', 'Ammo09',
 	'Ammo0', 'Ammoi', 'AmmoAc', 'FireStamp', 'CMStamp', 'Bogus', 'ammo00', '')
 for v in wmfvars:
-	check('cWeaponManager_VarF get' + fmt((v,)), lambda v=v: SDTest.Call(0x11a190, 'tbisDi', wm, v, -7.0, 0))
+	check('cWeaponManager_VarF get' + fmt((v,)), lambda v=v: SDTest.Call('cWeaponManager_VarF', 'tbisDi', wm, v, -7.0, 0))
 for v, x in (('UAmmo01', 33.5), ('iUAmmo', 250.0), ('AcUAmmo', 12.0), ('Ammo01', 4.75), ('Ammoi', 8.5),
 		('AmmoAc', 2.25), ('FireStamp', -1.5), ('CMStamp', 0.75), ('Bogus', 1.0), ('UAmmo99', 1.0)):
-	check('cWeaponManager_VarF set' + fmt((v, x)), lambda v=v, x=x: (SDTest.Call(0x11a190, 'tbisDi', wm, v, x, 1),
-		SDTest.Call(0x11a190, 'tbisDi', wm, v, -7.0, 0), wmfl(wmi(wm + 0x20), wmna), wmfl(wm + 0x10, 2)))
+	check('cWeaponManager_VarF set' + fmt((v, x)), lambda v=v, x=x: (SDTest.Call('cWeaponManager_VarF', 'tbisDi', wm, v, x, 1),
+		SDTest.Call('cWeaponManager_VarF', 'tbisDi', wm, v, -7.0, 0), wmfl(wmi(wm + 0x20), wmna), wmfl(wm + 0x10, 2)))
 wmivars = ('WeapSnd', 'Upgrd00', 'Upgrd01', 'Upgrd99', 'iWeaponNeed', 'AcUpgrd', 'iUpgrd', 'isWpn00', 'isWpn03',
 	'isWpn99', 'nWeap00', 'nWeap02', 'nWeap99', 'nSlot00', 'nSlot01', 'nSlot99', 'WeapA00', 'WeapB01', 'WeapD02',
 	'WeapE00', 'AcAmmo', 'AcWeap', 'iWeap', 'iAmmo', 'Bogus', '')
 for v in wmivars:
 	wmsrand(5)
-	check('cWeaponManager_VarI get' + fmt((v,)), lambda v=v: SDTest.Call(0x11abf0, 'tbispi', wm, v, -7, 0))
+	check('cWeaponManager_VarI get' + fmt((v,)), lambda v=v: SDTest.Call('cWeaponManager_VarI', 'tbispi', wm, v, -7, 0))
 for v, x in (('WeapSnd', 3), ('Upgrd01', 1), ('AcUpgrd', 2), ('iUpgrd', 0), ('isWpn01', 5), ('isWpn99', 1),
 		('WeapA01', 0), ('WeapC02', 1), ('AcWeap', 2), ('iWeap', 1), ('nWeap01', 1), ('Bogus', 1)):
-	check('cWeaponManager_VarI set' + fmt((v, x)), lambda v=v, x=x: (SDTest.Call(0x11abf0, 'tbispi', wm, v, x, 1),
-		SDTest.Call(0x11abf0, 'tbispi', wm, v, -7, 0), wmstate()))
-SDTest.Call(0x11abf0, 'tbispi', wm, 'AcWeap', wmi(wm + 0xc), 1)
+	check('cWeaponManager_VarI set' + fmt((v, x)), lambda v=v, x=x: (SDTest.Call('cWeaponManager_VarI', 'tbispi', wm, v, x, 1),
+		SDTest.Call('cWeaponManager_VarI', 'tbispi', wm, v, -7, 0), wmstate()))
+SDTest.Call('cWeaponManager_VarI', 'tbispi', wm, 'AcWeap', wmi(wm + 0xc), 1)
 wmbuf = wmz(0x80)
 wmstr(wmbuf, '1,3,7,15')
-check('cWeaponManager_VarS', lambda: (wmstrat(SDTest.Call(0x11c030, 'tbispi', wm, 'WeapList', 0, 0)[1]),
-	SDTest.Call(0x11c030, 'tbispi', wm, 'WeapList', wmbuf, 1)[0],
-	wmstrat(SDTest.Call(0x11c030, 'tbispi', wm, 'WeapList', 0, 0)[1]),
-	SDTest.Call(0x11c030, 'tbispi', wm, 'Bogus', 0, 0)))
+check('cWeaponManager_VarS', lambda: (wmstrat(SDTest.Call('cWeaponManager_VarS', 'tbispi', wm, 'WeapList', 0, 0)[1]),
+	SDTest.Call('cWeaponManager_VarS', 'tbispi', wm, 'WeapList', wmbuf, 1)[0],
+	wmstrat(SDTest.Call('cWeaponManager_VarS', 'tbispi', wm, 'WeapList', 0, 0)[1]),
+	SDTest.Call('cWeaponManager_VarS', 'tbispi', wm, 'Bogus', 0, 0)))
 
 # the model of the owner for VarV and Update
-SDTest.Call(0x20eb10, 'tiis', wmown + 0xb8, 'Models/Vehicles/Ships/SPoli1/SPoli1.M3D')
-SDTest.Call(0x211d20, 'tviF', wmown + 0xb8, (pp[0] + 500.0, pp[1] + 80.0, pp[2] - 300.0))
-check('WM owner model', lambda: SDTest.Call(0x210da0, 'tbi', wmown + 0xb8)[0])
+SDTest.Call('CGameModel_ctor', 'tiis', wmown + 0xb8, 'Models/Vehicles/Ships/SPoli1/SPoli1.M3D')
+SDTest.Call('CGameModel_SetPos', 'tviF', wmown + 0xb8, (pp[0] + 500.0, pp[1] + 80.0, pp[2] - 300.0))
+check('WM owner model', lambda: SDTest.Call('CGameModel_IsLoaded', 'tbi', wmown + 0xb8)[0])
 for v in ('WPosA00', 'WPosB00', 'WPosA01', 'WPosD03', 'WPosE00', 'WPosA99', 'WPos00', 'Bogus'):
 	for setv in (0, 1):
-		check('cWeaponManager_VarV' + fmt((v, setv)), lambda v=v, setv=setv: SDTest.Call(0x11c0c0, 'tbisDDDi', wm, v,
+		check('cWeaponManager_VarV' + fmt((v, setv)), lambda v=v, setv=setv: SDTest.Call('cWeaponManager_VarV', 'tbisDDDi', wm, v,
 			-1.0, -2.0, -3.0, setv))
 
 # the lock
-check('cTargetLock lock off', lambda: (SDTest.Call(0x11a720, 'tsi', wm)[0], SDTest.Call(0x11a740, 'tii', wm)[0]))
-check('cWeaponManager_LockEntity(Player0)', lambda: (SDTest.Call(0x11b2b0, 'tvis', wm, 'Player0'), wmb(wm + 0x44),
-	wmi(wm + 0x30) != 0, wmi(wm + 0x28) != wm + 0x28, SDTest.Call(0x11a720, 'tsi', wm)[0],
-	SDTest.Call(0x11a740, 'tii', wm)[0]))
-check('cWeaponManager_LockPoint', lambda: (SDTest.Call(0x11b2e0, 'tviF', wm, (1.5, -2.5, 3.25)), wmb(wm + 0x44),
-	wmi(wm + 0x30), wmi(wm + 0x28) == wm + 0x28, SDTest.Call(0x11a720, 'tsi', wm)[0],
-	SDTest.Call(0x11a740, 'tii', wm)[0] == wm + 0x38, wmfl(wm + 0x38, 3)))
-check('cWeaponManager_LockEntity(NoSuch)', lambda: (SDTest.Call(0x11b2b0, 'tvis', wm, 'SDNoSuchEntity'),
-	wmb(wm + 0x44), wmi(wm + 0x30), SDTest.Call(0x11a720, 'tsi', wm)[0], SDTest.Call(0x11a740, 'tii', wm)[0] != 0))
-check('cWeaponManager_LockEntity(NULL)', lambda: (SDTest.Call(0x11b2b0, 'tvii', wm, 0), wmb(wm + 0x44),
-	SDTest.Call(0x11a740, 'tii', wm)[0]))
-check('cWeaponManager_LockPoint(NULL)', lambda: (SDTest.Call(0x11b2e0, 'tvii', wm, 0), wmb(wm + 0x44)))
+check('cTargetLock lock off', lambda: (SDTest.Call('cTargetLock_GetEntity', 'tsi', wm)[0], SDTest.Call('cTargetLock_GetPoint', 'tii', wm)[0]))
+check('cWeaponManager_LockEntity(Player0)', lambda: (SDTest.Call('cWeaponManager_LockEntity', 'tvis', wm, 'Player0'), wmb(wm + 0x44),
+	wmi(wm + 0x30) != 0, wmi(wm + 0x28) != wm + 0x28, SDTest.Call('cTargetLock_GetEntity', 'tsi', wm)[0],
+	SDTest.Call('cTargetLock_GetPoint', 'tii', wm)[0]))
+check('cWeaponManager_LockPoint', lambda: (SDTest.Call('cWeaponManager_LockPoint', 'tviF', wm, (1.5, -2.5, 3.25)), wmb(wm + 0x44),
+	wmi(wm + 0x30), wmi(wm + 0x28) == wm + 0x28, SDTest.Call('cTargetLock_GetEntity', 'tsi', wm)[0],
+	SDTest.Call('cTargetLock_GetPoint', 'tii', wm)[0] == wm + 0x38, wmfl(wm + 0x38, 3)))
+check('cWeaponManager_LockEntity(NoSuch)', lambda: (SDTest.Call('cWeaponManager_LockEntity', 'tvis', wm, 'SDNoSuchEntity'),
+	wmb(wm + 0x44), wmi(wm + 0x30), SDTest.Call('cTargetLock_GetEntity', 'tsi', wm)[0], SDTest.Call('cTargetLock_GetPoint', 'tii', wm)[0] != 0))
+check('cWeaponManager_LockEntity(NULL)', lambda: (SDTest.Call('cWeaponManager_LockEntity', 'tvii', wm, 0), wmb(wm + 0x44),
+	SDTest.Call('cTargetLock_GetPoint', 'tii', wm)[0]))
+check('cWeaponManager_LockPoint(NULL)', lambda: (SDTest.Call('cWeaponManager_LockPoint', 'tvii', wm, 0), wmb(wm + 0x44)))
 for v in (1, 0x101, 0):
-	check('cWeaponManager_SetFlag46' + fmt((v,)), lambda v=v: (SDTest.Call(0x11b360, 'tvii', wm, v), wmb(wm + 0x46)))
+	check('cWeaponManager_SetFlag46' + fmt((v,)), lambda v=v: (SDTest.Call('cWeaponManager_SetFlag46', 'tvii', wm, v), wmb(wm + 0x46)))
 
 # the weapon sound (the fake owner has none): -1 without fire or ammo
 for fire, a, snd in ((0, 5.0, 3), (1, 5.0, 3), (1, 0.0, 4), (1, 5.0, -1), (1, 5.0, 3)):
 	wmsetbyte(wmown + 0x436, fire)
-	SDTest.Call(0x11b280, 'tfiif', wm, wmammoof(wmi(wm + 0xc)), a)
-	check('cWeaponManager_SetWeapSnd' + fmt((fire, a, snd)), lambda snd=snd: (SDTest.Call(0x11b6d0, 'tvii', wm, snd),
+	SDTest.Call('cWeaponManager_SetAmmo', 'tfiif', wm, wmammoof(wmi(wm + 0xc)), a)
+	check('cWeaponManager_SetWeapSnd' + fmt((fire, a, snd)), lambda snd=snd: (SDTest.Call('cWeaponManager_SetWeapSnd', 'tvii', wm, snd),
 		wmi(wm + 0x24)))
-check('cWeaponManager_NextWeapSnd', lambda: (SDTest.Call(0x11bf60, 'tvii', wm, 0), wmi(wm + 0x24)))
-check('cWeaponManager_PlayStartSnd', lambda: (SDTest.Call(0x11c210, 'tvi', wm), wmi(wm + 0x24)))
+check('cWeaponManager_NextWeapSnd', lambda: (SDTest.Call('cWeaponManager_NextWeapSnd', 'tvii', wm, 0), wmi(wm + 0x24)))
+check('cWeaponManager_PlayStartSnd', lambda: (SDTest.Call('cWeaponManager_PlayStartSnd', 'tvi', wm), wmi(wm + 0x24)))
 wmsetbyte(wmown + 0x436, 0)
-SDTest.Call(0x11b6d0, 'tvii', wm, -1)
+SDTest.Call('cWeaponManager_SetWeapSnd', 'tvii', wm, -1)
 
 # Update past the model check reaches the auto-aim and attack nodes of the owner, empty here (a CHECK): only
 # the early return
-SDTest.Call(0x20ec10, 'tvi', wmown + 0xb8)
-check('cWeaponManager_Update model freed', lambda: (SDTest.Call(0x11b7b0, 'tvif', wm, 0.1), wmstate()))
+SDTest.Call('CGameModel_Reset', 'tvi', wmown + 0xb8)
+check('cWeaponManager_Update model freed', lambda: (SDTest.Call('cWeaponManager_Update', 'tvif', wm, 0.1), wmstate()))
 for p in (wmi(wm + 0x18), wmi(wm + 0x1c), wmi(wm + 0x20), wm, wmbuf, wmname, wmown, wmvt):
 	wmfree(p)
 
@@ -242,8 +242,8 @@ for p in (wmi(wm + 0x18), wmi(wm + 0x1c), wmi(wm + 0x20), wm, wmbuf, wmname, wmo
 wmcar = Scrap.CreateEntity('SDWeapCar', 50000.0, 50000.0, 50000.0, 'Car')
 wmcar2 = Scrap.CreateEntity('SDWeapCar2', 50300.0, 50000.0, 50000.0, 'Car')
 def wmentity(name):
-	slot = SDTest.Call(0x131f70, 'tiis', wmworld + 4, name)[0]
-	node = SDTest.Call(0x131e50, 'tiisi', wmworld + 4, name, slot)[0]
+	slot = SDTest.Call('HashTable_Slot', 'tiis', wmworld + 4, name)[0]
+	node = SDTest.Call('PtrTable_Find', 'tiisi', wmworld + 4, name, slot)[0]
 	if node:
 		return wmi(node)
 	return 0
@@ -271,12 +271,12 @@ if wmc and wmc2:
 		return (wmi(c + 0x718), wmfl(c + 0x6d4, 2), wmfl(c + 0x6f4, 2))
 	for f in ('!ATPCOnStart', '!ATPCOnEnd', '!DevastatorPress', '!DevastatorRelease'):
 		check('native ' + f, lambda f=f: (wmcall(f, ('SDWeapCar',)), wmaim(wmc)))
-	pad = SDTest.Peek(0x447ba4, 'i')
-	wmset(0x847ba4, (1.0,))
+	pad = SDTest.Peek('g_VehicleCenterPadLock', 'i')
+	wmset(symva('g_VehicleCenterPadLock'), (1.0,))
 	check('native !ATPCOnStart pad', lambda: (wmcall('!ATPCOnStart', ('SDWeapCar',)), wmaim(wmc)))
-	check('Devastator_SetUp pad', lambda: (SDTest.Call(0x120540, 'vi', wmc), wmaim(wmc)))
-	wmpoke(0x847ba4, pad)
-	check('Devastator_SetUp', lambda: (SDTest.Call(0x120540, 'vi', wmc), wmaim(wmc)))
+	check('Devastator_SetUp pad', lambda: (SDTest.Call('Devastator_SetUp', 'vi', wmc), wmaim(wmc)))
+	wmpoke(symva('g_VehicleCenterPadLock'), pad)
+	check('Devastator_SetUp', lambda: (SDTest.Call('Devastator_SetUp', 'vi', wmc), wmaim(wmc)))
 	# the cloud on a vehicle
 	for strong in (0, 1, 7):
 		check('native !CloudOnHit' + fmt((strong,)), lambda strong=strong: (wmcall('!CloudOnHit', ('SDCloud', 'x',
@@ -300,10 +300,10 @@ if wmc and wmc2:
 
 	# the HUD items of ATPC and Devastator on a Text item of player 0
 	SScorer.New(0, 'SDWeapItem', 'Text')
-	item = SDTest.Call(0x170dc0, 'tiis', SDTest.Call(0x170ea0, 'ii', 0)[0], 'SDWeapItem')[0]
+	item = SDTest.Call('cScorer_FindItem', 'tiis', SDTest.Call('Scorer_Get', 'ii', 0)[0], 'SDWeapItem')[0]
 	check('SDWeapItem', lambda item=item: item != 0)
-	atpcw = SDTest.Peek(0x4487e8, 'i')
-	devw = SDTest.Peek(0x448830, 'i')
+	atpcw = SDTest.Peek('g_ATPCIDWeap', 'i')
+	devw = SDTest.Peek('g_DevastatorIDWeap', 'i')
 	cws = wmi(cwm + 0x18)
 	if item:
 		def wmitem(item):
@@ -317,7 +317,7 @@ if wmc and wmc2:
 					'SDWeapItem')), wmitem(item)))
 		wmpoke(cws + 12 * atpcw + 4, 0)
 		check('native !ATPCFX no item', lambda: wmcall('!ATPCFX', ('SDWeapCar', 0, 'SDNoItem')))
-		sc = SDTest.Call(0x170ea0, 'ii', 0)[0]
+		sc = SDTest.Call('Scorer_Get', 'ii', 0)[0]
 		sctime = wmints(sc + 0x20, 3)
 		for up, fire, ang, t, dt in ((0, 0, 1.0, 0.0, 0.04), (0, 0, 0.01, 0.0, 0.04), (0, 0, -0.01, 0.0, 0.04),
 				(0, 0, -2.0, 0.0, 0.04), (0, 0, 7.0, 0.0, 0.1), (8, 1, 1.0, 0.0, 0.04), (8, 0, 1.0, 0.0, 0.04),
@@ -337,13 +337,13 @@ if wmc and wmc2:
 			wmpoke(item + 0xb4 + 4 * i, saved[i])
 
 	# the cdecl helpers: the ATPC recharge and the Devastator start (the car has no sounds)
-	atpca = SDTest.Peek(0x448e4c, 'i')
-	deva = SDTest.Peek(0x449108, 'i')
+	atpca = SDTest.Peek('g_ATPCIDAmmo', 'i')
+	deva = SDTest.Peek('g_DevastatorIDAmmo', 'i')
 	for up, a in ((0, 0.0), (0, 10.0), (9, 10.0), (9, 0.0), (10, 10.0)):
 		wmpoke(cws + 12 * atpcw + 4, up)
 		wmset(wmi(cwm + 0x20) + 4 * atpca, (a,))
 		wmset(cwm + 0x10, (1.0,))
-		check('ATPC_SetRecharge' + fmt((up, a)), lambda: (SDTest.Call(0x11c310, 'vi', wmc), wmfl(cwm + 0x10, 1)))
+		check('ATPC_SetRecharge' + fmt((up, a)), lambda: (SDTest.Call('ATPC_SetRecharge', 'vi', wmc), wmfl(cwm + 0x10, 1)))
 	wmpoke(cws + 12 * atpcw + 4, 0)
 	for slots, a, fs, snd in ((0, 5.0, 0.0, -1), (1, 0.0, 0.0, -1), (1, 5.0, 0.0, -1), (3, 5.0, 0.0, -1),
 			(0xf, 5.0, 0.5, -1), (0xf, 5.0, -0.2, 2), (0xf, 5.0, 0.01, -1)):
@@ -351,7 +351,7 @@ if wmc and wmc2:
 		wmset(wmi(cwm + 0x20) + 4 * deva, (a,))
 		wmset(cwm + 0x10, (fs,))
 		wmpoke(cwm + 0x24, snd)
-		check('Devastator_Start' + fmt((slots, a, fs, snd)), lambda: (SDTest.Call(0x11e150, 'vi', wmc),
+		check('Devastator_Start' + fmt((slots, a, fs, snd)), lambda: (SDTest.Call('Devastator_Start', 'vi', wmc),
 			wmfl(cwm + 0x10, 1), wmi(cwm + 0x24), wmaim(wmc)))
 	wmpoke(cws + 12 * devw, 0)
 
@@ -366,37 +366,37 @@ if wmc and wmc2:
 	cp = SDTest.Call(wmi(wmi(wmc2) + 0x18) - 0x400000, 'tiiF', wmc2, (0.0, 0.0, 0.0))[1]
 	check('SDWeapCar2', lambda: (cp, wmi(wmc2 + 0x238), wmb(wmc2 + 0x23c), wmfl(wmc2 + 0x230, 1),
 		wmfl(wmc2 + 0x3a0, 1), wmvel(wmc2), wmhit(wmc2)))
-	shooter = SDTest.Peek(0x448a90, 's')
-	victim = SDTest.Peek(0x448b10, 's')
-	slotsv = wmints(0x848b90, 1)
-	wmstr(0x848a90, '')
+	shooter = SDTest.Peek('g_ATPCShooter', 's')
+	victim = SDTest.Peek('g_ATPCVictim', 's')
+	slotsv = wmints(symva('g_ATPCNumSlots'), 1)
+	wmstr(symva('g_ATPCShooter'), '')
 	for ns, dx, dist, seed in ((1.0, 0.0, 0.5, 3), (2.0, 10.0, 30.0, 3), (4.0, 100.0, 120.0, 3),
 			(3.0, 0.0, 0.0, 9), (1.0, -200.0, 5000.0, 3)):
-		wmset(0x848b90, (ns,))
+		wmset(symva('g_ATPCNumSlots'), (ns,))
 		wmsrand(seed)
 		check('native !ATPCXplosionCall' + fmt((ns, dx, dist, seed)), lambda dx=dx, dist=dist: (
 			wmcall('!ATPCXplosionCall', ('SDWeapCar2', cp[0] - dx, cp[1] + 7.0, cp[2] - 3.0, dist)),
-			wmi(wmc2 + 0x238), wmvel(wmc2), wmhit(wmc2), SDTest.Peek(0x448b10, 's')))
+			wmi(wmc2 + 0x238), wmvel(wmc2), wmhit(wmc2), SDTest.Peek('g_ATPCVictim', 's')))
 	check('native !ATPCXplosionCall none', lambda: (wmcall('!ATPCXplosionCall', ('SDNoSuchEntity', 0.0, 0.0, 0.0,
-		1.0)), SDTest.Peek(0x448b10, 's')))
-	wmpoke(0x848b90, slotsv[0])
-	wmstr(0x848a90, shooter)
-	wmstr(0x848b10, victim)
-	devs = SDTest.Peek(0x448f48, 's')
-	devv = SDTest.Peek(0x448fc8, 's')
-	center = wmfl(0x849258, 3)
-	wmstr(0x848f48, '')
+		1.0)), SDTest.Peek('g_ATPCVictim', 's')))
+	wmpoke(symva('g_ATPCNumSlots'), slotsv[0])
+	wmstr(symva('g_ATPCShooter'), shooter)
+	wmstr(symva('g_ATPCVictim'), victim)
+	devs = SDTest.Peek('g_DevShooter', 's')
+	devv = SDTest.Peek('g_DevVictim', 's')
+	center = wmfl(symva('g_DevCenter'), 3)
+	wmstr(symva('g_DevShooter'), '')
 	for dx, dy, dz, seed in ((0.0, 0.0, 1.0, 4), (0.0, 0.0, 0.0, 4), (0.0, 0.5, 0.0, 6), (0.3, 0.0, 1.0, 4),
 			(50.0, 20.0, 1.0, 4), (300.0, -100.0, 1.0, 4), (5000.0, 0.0, 1.0, 4)):
-		wmset(0x849258, (cp[0] - dx, cp[1] - dy, cp[2] + dz))
+		wmset(symva('g_DevCenter'), (cp[0] - dx, cp[1] - dy, cp[2] + dz))
 		wmsrand(seed)
 		check('native !DevastatorXplosionCall' + fmt((dx, dy, dz, seed)), lambda: (
 			wmcall('!DevastatorXplosionCall', ('SDWeapCar2',)), wmi(wmc2 + 0x238), wmvel(wmc2), wmhit(wmc2),
-			SDTest.Peek(0x448fc8, 's')))
+			SDTest.Peek('g_DevVictim', 's')))
 	check('native !DevastatorXplosionCall none', lambda: wmcall('!DevastatorXplosionCall', ('SDNoSuchEntity',)))
-	wmset(0x849258, center)
-	wmstr(0x848f48, devs)
-	wmstr(0x848fc8, devv)
+	wmset(symva('g_DevCenter'), center)
+	wmstr(symva('g_DevShooter'), devs)
+	wmstr(symva('g_DevVictim'), devv)
 	wmpoke(wmc + 0x71c, aimon)
 if wmcar:
 	check('SDWeapCar Del', lambda: wmcar.Del())

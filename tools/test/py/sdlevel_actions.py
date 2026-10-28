@@ -16,13 +16,13 @@ def actb(a):
 def actpoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 def actfl(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def actsetfl(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 def actz(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def actfree(p):
-	SDTest.Call(0x133550, 'ii', p)
+	SDTest.Call('Mem_Free', 'ii', p)
 def actstr(a):
 	if a:
 		return SDTest.Peek(a, '@s')
@@ -42,10 +42,10 @@ def acttext(s):
 	return p
 
 # the Var functions (name, set, s, d, i): a read with all three pointers, the value by the type returned
-ACT_CLSVAR = 0x060770
-ACT_CAMVAR = 0x0613b0
-ACT_ACTVAR = 0x064280
-ACT_EVVAR = 0x064a10
+ACT_CLSVAR = sym('cActClass_Var')
+ACT_CAMVAR = sym('cActClassCam_Var')
+ACT_ACTVAR = sym('cAction_Var')
+ACT_EVVAR = sym('cActEvent_Var')
 def actget(fn, obj, name):
 	r = SDTest.Call(fn, 'tiisipDp', obj, name, 0, 0, -1.0, -7)
 	if r[0] == 1:
@@ -78,9 +78,9 @@ def actevname(e):
 		return actstr(acti(e + 4))
 	return None
 
-actworld = SDTest.Peek(0x467450, 'i')
-actlist = SDTest.Peek(0x444080, 'i')
-actplayer = SDTest.Call(0x0c1430, 'tiii', actworld, 0)[0]
+actworld = SDTest.Peek('g_pWorld', 'i')
+actlist = SDTest.Peek('g_pActClassList', 'i')
+actplayer = SDTest.Call('cWorld_GetUsrEntity', 'tiii', actworld, 0)[0]
 actpc = 0
 actcls = 0
 if actplayer:
@@ -104,12 +104,12 @@ actactvars = ('Name', 'AnmFilePath', 'AnmFPS', 'AnmTotalTime', 'isLoop', 'MaxSpe
 # ---- the class of Player0 ----
 if actcls:
 	actclsname = actstr(acti(actcls + 4))
-	check('ACT list Get', lambda: (SDTest.Call(0x062250, 'tiis', actlist, actclsname)[0] == actcls,
-		SDTest.Call(0x062250, 'tiis', actlist, 'SDActNoClass')[0]))
-	check('ACT list Del in use', lambda: (acti(actcls + 0x58) > 0) and SDTest.Call(0x062440, 'tbis', actlist,
+	check('ACT list Get', lambda: (SDTest.Call('cActClassList_Get', 'tiis', actlist, actclsname)[0] == actcls,
+		SDTest.Call('cActClassList_Get', 'tiis', actlist, 'SDActNoClass')[0]))
+	check('ACT list Del in use', lambda: (acti(actcls + 0x58) > 0) and SDTest.Call('cActClassList_Del', 'tbis', actlist,
 		actclsname)[0])
-	check('ACT list Del missing', lambda: SDTest.Call(0x062440, 'tbis', actlist, 'SDActNoClass')[0])
-	check('ACT Init again', lambda: (SDTest.Call(0x0623a0, 'v'), SDTest.Peek(0x444080, 'i') == actlist))
+	check('ACT list Del missing', lambda: SDTest.Call('cActClassList_Del', 'tbis', actlist, 'SDActNoClass')[0])
+	check('ACT Init again', lambda: (SDTest.Call('ActClassList_Init', 'v'), SDTest.Peek('g_pActClassList', 'i') == actlist))
 	for actn in actclsvars:
 		check('ACT cls %s' % actn, lambda n=actn: actget(ACT_CLSVAR, actcls, n))
 	for actn in ('CamDist', 'CamAng', 'FOV', 'MinFOV', 'MaxFOV', 'FOVInterpTime', 'camdist', 'Name'):
@@ -117,15 +117,15 @@ if actcls:
 	check('ACT cam no d', lambda: SDTest.Call(ACT_CAMVAR, 'tiisiiii', actcls + 0x110, 'CamDist', 0, 0, 0, 0)[0])
 	actdef = acti(actcls + 0x20)
 	if actdef:
-		check('ACT GetAction def', lambda: SDTest.Call(0x060590, 'tiis', actcls, actstr(acti(actdef + 8)))[0] ==
+		check('ACT GetAction def', lambda: SDTest.Call('cActClass_GetAction', 'tiis', actcls, actstr(acti(actdef + 8)))[0] ==
 			actdef)
-	check('ACT GetAction missing', lambda: SDTest.Call(0x060590, 'tiis', actcls, 'SDActX')[0])
+	check('ACT GetAction missing', lambda: SDTest.Call('cActClass_GetAction', 'tiis', actcls, 'SDActX')[0])
 	actnode = actz(8)
-	check('ACT SetNode', lambda: (SDTest.Call(0x061980, 'tviis', actnode, actcls + 0x24, '_Move_The_Model_'),
+	check('ACT SetNode', lambda: (SDTest.Call('cActNodeMod_SetNode', 'tviis', actnode, actcls + 0x24, '_Move_The_Model_'),
 		acti(actnode)))
 	if acti(actcls + 0x24):
-		check('ACT SetNode model', lambda: (SDTest.Call(0x061980, 'tviis', actnode, actcls + 0x24, '_Move_The_Model'),
-			acti(actnode), SDTest.Call(0x061980, 'tviis', actnode, actcls + 0x24, 'SDActNoNode'), acti(actnode)))
+		check('ACT SetNode model', lambda: (SDTest.Call('cActNodeMod_SetNode', 'tviis', actnode, actcls + 0x24, '_Move_The_Model'),
+			acti(actnode), SDTest.Call('cActNodeMod_SetNode', 'tviis', actnode, actcls + 0x24, 'SDActNoNode'), acti(actnode)))
 	actfree(actnode)
 	# the actions of the class (AnmName only where an animation was set; the frame times only with the frames of the
 	# animations as they are, AnimBaseFPS 0: else a frame out of range is a fatal error)
@@ -146,40 +146,40 @@ if actcls:
 
 # ---- the controller of Player0, read only ----
 if actpc:
-	check('ACT pc GetLayer', lambda: (SDTest.Call(0x062c70, 'tiii', actpc, 0)[0] == actpc + 0x10,
-		SDTest.Call(0x062c70, 'tiii', actpc, 3)[0] == actpc + 0x40))
-	check('ACT pc VarI/F/V read', lambda: (SDTest.Call(0x062ca0, 'tbispi', actpc, 'StopSecondary', 1, 0)[0:2],
-		SDTest.Call(0x062c30, 'tbisDi', actpc, 'Action', 1.0, 0)[0:2],
-		SDTest.Call(0x063610, 'tbisDDDi', actpc, 'Action', 1.0, 2.0, 3.0, 1)[0]))
-	check('ACT pc VarS missing', lambda: (SDTest.Call(0x063380, 'tbispi', actpc, 'Missing', 0, 0),
-		SDTest.Call(0x063380, 'tbispi', actpc, 'ActChan4', 0, 0), SDTest.Call(0x063380, 'tbispi', actpc, 'ActChan0',
+	check('ACT pc GetLayer', lambda: (SDTest.Call('cActCtrl_GetLayer', 'tiii', actpc, 0)[0] == actpc + 0x10,
+		SDTest.Call('cActCtrl_GetLayer', 'tiii', actpc, 3)[0] == actpc + 0x40))
+	check('ACT pc VarI/F/V read', lambda: (SDTest.Call('cActCtrl_VarI', 'tbispi', actpc, 'StopSecondary', 1, 0)[0:2],
+		SDTest.Call('cActCtrl_VarF', 'tbisDi', actpc, 'Action', 1.0, 0)[0:2],
+		SDTest.Call('cActCtrl_VarV', 'tbisDDDi', actpc, 'Action', 1.0, 2.0, 3.0, 1)[0]))
+	check('ACT pc VarS missing', lambda: (SDTest.Call('cActCtrl_VarS', 'tbispi', actpc, 'Missing', 0, 0),
+		SDTest.Call('cActCtrl_VarS', 'tbispi', actpc, 'ActChan4', 0, 0), SDTest.Call('cActCtrl_VarS', 'tbispi', actpc, 'ActChan0',
 		0, 1)[0]))
 
 # ---- pure functions ----
 for actv in (((1.0, 0.0, 0.0), (0.0, 1.0, 0.0)), ((1.0, 2.0, 3.0), (1.0, 2.0, 3.0)), ((1.0, 2.0, 3.0),
 		(-2.0, -4.0, -6.0)), ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0)), ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0)),
 		((3.0, -4.0, 0.5), (0.25, 7.0, -2.0)), ((1e-20, 0.0, 0.0), (0.0, 0.0, 1e-20))):
-	check('ACT Vec3_Angle %s' % fmt(actv), lambda v=actv: SDTest.Call(0x066ad0, 'fFF', v[0], v[1])[0])
+	check('ACT Vec3_Angle %s' % fmt(actv), lambda v=actv: SDTest.Call('Vec3_Angle', 'fFF', v[0], v[1])[0])
 for acti_ in range(-1, 12):
-	check('ACT AI GetEventName %d' % acti_, lambda i=acti_: SDTest.Call(0x065db0, 'tviib', 0, i, '')[1])
+	check('ACT AI GetEventName %d' % acti_, lambda i=acti_: SDTest.Call('cAI_GetEventName', 'tviib', 0, i, '')[1])
 acth = actz(0x18)
-check('ACT cActHead', lambda: (SDTest.Call(0x063260, 'tviF', acth, (0.5, -1.25)), actfl(acth, 6),
-	SDTest.Call(0x063260, 'tviF', acth, (2.0, 4.0)), actfl(acth, 6), SDTest.Call(0x0632c0, 'tvif', acth, 0.25),
-	actfl(acth, 6), SDTest.Call(0x0632c0, 'tvif', acth, 1.5), actfl(acth, 6)))
+check('ACT cActHead', lambda: (SDTest.Call('cActHead_Set', 'tviF', acth, (0.5, -1.25)), actfl(acth, 6),
+	SDTest.Call('cActHead_Set', 'tviF', acth, (2.0, 4.0)), actfl(acth, 6), SDTest.Call('cActHead_Blend', 'tvif', acth, 0.25),
+	actfl(acth, 6), SDTest.Call('cActHead_Blend', 'tvif', acth, 1.5), actfl(acth, 6)))
 actfree(acth)
 actfc = actz(0x80)
-check('ACT InitHeads', lambda: (SDTest.Call(0x062d10, 'tvi', actfc), acti(actfc + 0x58) != 0,
-	actfl(acti(actfc + 0x58), 18), SDTest.Call(0x062d10, 'tvi', actfc), acti(actfc + 0x58) != 0))
-SDTest.Call(0x31364b, 'vi', acti(actfc + 0x58))
+check('ACT InitHeads', lambda: (SDTest.Call('cActCtrl_InitHeads', 'tvi', actfc), acti(actfc + 0x58) != 0,
+	actfl(acti(actfc + 0x58), 18), SDTest.Call('cActCtrl_InitHeads', 'tvi', actfc), acti(actfc + 0x58) != 0))
+SDTest.Call('operator_delete_array', 'vi', acti(actfc + 0x58))
 actfree(actfc)
-check('ACT AI Print', lambda: SDTest.Call(0x0660d0, 'tvis', 0, 'SDActAI print\n'))
+check('ACT AI Print', lambda: SDTest.Call('cAI_Print', 'tvis', 0, 'SDActAI print\n'))
 
 # ---- DList<cString> by hand: three nodes of NewNode, room for two in the free list ----
 actsl = actz(0x18)
 actpoke(actsl + 0x14, 2)
-actn1 = SDTest.Call(0x0605f0, 'tii', actsl)[0]
-actn2 = SDTest.Call(0x0605f0, 'tii', actsl)[0]
-actn3 = SDTest.Call(0x0605f0, 'tii', actsl)[0]
+actn1 = SDTest.Call('cStringList_NewNode', 'tii', actsl)[0]
+actn2 = SDTest.Call('cStringList_NewNode', 'tii', actsl)[0]
+actn3 = SDTest.Call('cStringList_NewNode', 'tii', actsl)[0]
 check('ACT strlist new', lambda: (actn1 != 0, actn2 != 0, actn3 != 0, acti(actn1 + 8), acti(actsl + 4)))
 for actp in ((actn1, actn2, actn3), (actn2, actn3, actn1), (actn3, actn1, actn2)):
 	actpoke(actp[0], actp[1])
@@ -187,57 +187,57 @@ for actp in ((actn1, actn2, actn3), (actn2, actn3, actn1), (actn3, actn1, actn2)
 actpoke(actsl, actn1)
 actpoke(actsl + 4, actn2)
 actpoke(actsl + 8, 3)
-check('ACT strlist RemoveHead', lambda: (SDTest.Call(0x061640, 'tvi', actsl), acti(actsl) == actn2,
+check('ACT strlist RemoveHead', lambda: (SDTest.Call('cStringList_RemoveHead', 'tvi', actsl), acti(actsl) == actn2,
 	acti(actsl + 4), acti(actsl + 8), acti(actsl + 0xc) == actn1, acti(actsl + 0x10), acti(actn2 + 4) == actn3,
 	acti(actn3) == actn2))
-check('ACT strlist NewNode free', lambda: (SDTest.Call(0x0605f0, 'tii', actsl)[0] == actn1, acti(actsl + 0xc),
+check('ACT strlist NewNode free', lambda: (SDTest.Call('cStringList_NewNode', 'tii', actsl)[0] == actn1, acti(actsl + 0xc),
 	acti(actsl + 0x10)))
-check('ACT strlist Clear', lambda: (SDTest.Call(0x0602a0, 'tvi', actsl), acti(actsl), acti(actsl + 8),
+check('ACT strlist Clear', lambda: (SDTest.Call('cStringList_Clear', 'tvi', actsl), acti(actsl), acti(actsl + 8),
 	acti(actsl + 0x10), acti(actsl + 0xc) == actn3, acti(actn3) == actn2))
 # a one node ring with a full free list: the node is deleted
 actpoke(actn1, actn1)
 actpoke(actn1 + 4, actn1)
 actpoke(actsl, actn1)
 actpoke(actsl + 8, 1)
-check('ACT strlist RemoveHead last', lambda: (SDTest.Call(0x061640, 'tvi', actsl), acti(actsl), acti(actsl + 8),
+check('ACT strlist RemoveHead last', lambda: (SDTest.Call('cStringList_RemoveHead', 'tvi', actsl), acti(actsl), acti(actsl + 8),
 	acti(actsl + 0x10)))
-check('ACT strlist FreePool', lambda: (SDTest.Call(0x060420, 'tvi', actsl), acti(actsl + 0xc), acti(actsl + 0x10)))
+check('ACT strlist FreePool', lambda: (SDTest.Call('cStringList_FreePool', 'tvi', actsl), acti(actsl + 0xc), acti(actsl + 0x10)))
 actfree(actsl)
 
 # ---- a class list of our own ----
 actown = actz(0x10)
-check('ACT own list', lambda: (SDTest.Call(0x061b50, 'tii', actown)[0] == actown, acti(actown) - 0x400000,
+check('ACT own list', lambda: (SDTest.Call('cActClassList_ctor', 'tii', actown)[0] == actown, acti(actown) - 0x400000,
 	acti(actown + 4), acti(actown + 8) != 0, actb(actown + 0xc), actb(actown + 0xd)))
-actoc = SDTest.Call(0x061f70, 'tiis', actown, 'SDActOwnA')[0]
-check('ACT own Create', lambda: (actoc != 0, actstr(acti(actoc + 4)), SDTest.Call(0x062250, 'tiis', actown,
-	'SDActOwnA')[0] == actoc, SDTest.Call(0x062250, 'tiis', actown, 'sdactowna')[0] == actoc))
-check('ACT own Del', lambda: (SDTest.Call(0x062440, 'tbis', actown, 'SDActOwnA')[0], SDTest.Call(0x062250, 'tiis',
-	actown, 'SDActOwnA')[0], SDTest.Call(0x062440, 'tbis', actown, 'SDActOwnA')[0]))
-actoc = SDTest.Call(0x061f70, 'tiis', actown, 'SDActOwnB')[0]
-check('ACT own Delete', lambda: (actoc != 0, SDTest.Call(0x061cc0, 'tiii', actown, 0)[0] == actown,
+actoc = SDTest.Call('cActClassList_Create', 'tiis', actown, 'SDActOwnA')[0]
+check('ACT own Create', lambda: (actoc != 0, actstr(acti(actoc + 4)), SDTest.Call('cActClassList_Get', 'tiis', actown,
+	'SDActOwnA')[0] == actoc, SDTest.Call('cActClassList_Get', 'tiis', actown, 'sdactowna')[0] == actoc))
+check('ACT own Del', lambda: (SDTest.Call('cActClassList_Del', 'tbis', actown, 'SDActOwnA')[0], SDTest.Call('cActClassList_Get', 'tiis',
+	actown, 'SDActOwnA')[0], SDTest.Call('cActClassList_Del', 'tbis', actown, 'SDActOwnA')[0]))
+actoc = SDTest.Call('cActClassList_Create', 'tiis', actown, 'SDActOwnB')[0]
+check('ACT own Delete', lambda: (actoc != 0, SDTest.Call('cActClassList_Delete', 'tiii', actown, 0)[0] == actown,
 	acti(actown) - 0x400000, acti(actown + 4), acti(actown + 8)))
 actfree(actown)
 
 # ---- our class in the real list ----
 actc = 0
-if actlist and not SDTest.Call(0x062250, 'tiis', actlist, 'SDActCls')[0]:
-	actc = SDTest.Call(0x061f70, 'tiis', actlist, 'SDActCls')[0]
-check('ACT our class', lambda: (actc != 0, actc and SDTest.Call(0x062250, 'tiis', actlist, 'SDActCls')[0] == actc))
+if actlist and not SDTest.Call('cActClassList_Get', 'tiis', actlist, 'SDActCls')[0]:
+	actc = SDTest.Call('cActClassList_Create', 'tiis', actlist, 'SDActCls')[0]
+check('ACT our class', lambda: (actc != 0, actc and SDTest.Call('cActClassList_Get', 'tiis', actlist, 'SDActCls')[0] == actc))
 acta1 = 0
 acta2 = 0
 acta3 = 0
 if actc:
 	for actn in actclsvars:
 		check('ACT new cls %s' % actn, lambda n=actn: actget(ACT_CLSVAR, actc, n))
-	acta1 = SDTest.Call(0x05fe90, 'tiis', actc, 'SDActA')[0]
-	acta2 = SDTest.Call(0x05fe90, 'tiis', actc, 'SDActB')[0]
-	acta3 = SDTest.Call(0x05fe90, 'tiis', actc, 'SDActC')[0]
+	acta1 = SDTest.Call('cActClass_CreateAction', 'tiis', actc, 'SDActA')[0]
+	acta2 = SDTest.Call('cActClass_CreateAction', 'tiis', actc, 'SDActB')[0]
+	acta3 = SDTest.Call('cActClass_CreateAction', 'tiis', actc, 'SDActC')[0]
 	for actp in (acta1, acta2, acta3):
 		actpoke(actp + 0x10, 0)
 		actpoke(actp + 0x28, 0)
 	check('ACT actions', lambda: (acta1 != 0, acta2 != 0, acta3 != 0, acti(actc + 0x14) == acta1,
 		acti(actc + 0x18) == acta3, acti(acta1 + 0x18) == acta2, acti(acta1 + 0x14) == actc,
-		SDTest.Call(0x060590, 'tiis', actc, 'SDActB')[0] == acta2, SDTest.Call(0x060590, 'tiis', actc,
+		SDTest.Call('cActClass_GetAction', 'tiis', actc, 'SDActB')[0] == acta2, SDTest.Call('cActClass_GetAction', 'tiis', actc,
 		'sdactb')[0] == acta2))
 	for actn in actactvars:
 		check('ACT new act %s' % actn, lambda n=actn: actget(ACT_ACTVAR, acta1, n))
@@ -264,16 +264,16 @@ if actc:
 		check('ACT new cls set %s' % actn, lambda n=actn: actget(ACT_CLSVAR, actc, n))
 	check('ACT cls nodes', lambda: (acti(actc + 0x5c), actfl(actc + 0x60, 14), acti(actc + 0x98), actfl(actc + 0x9c,
 		14), acti(actc + 0xd4), actfl(actc + 0xd8, 14), actfl(actc + 0x110, 10)))
-	check('ACT SetDefAction', lambda: (SDTest.Call(0x0618c0, 'tiis', actc, 'SDActX')[0], acti(actc + 0x20),
-		SDTest.Call(0x0618c0, 'tiis', actc, 'SDActA')[0] == acta1, acti(actc + 0x20) == acta1))
+	check('ACT SetDefAction', lambda: (SDTest.Call('cActClass_SetDefAction', 'tiis', actc, 'SDActX')[0], acti(actc + 0x20),
+		SDTest.Call('cActClass_SetDefAction', 'tiis', actc, 'SDActA')[0] == acta1, acti(actc + 0x20) == acta1))
 	# the warning paths of the model and the animation (the fields go back to NULL)
 	actt = acttext('SDActModel.M3D')
 	actpoke(actc + 0x1c, actt)
-	check('ACT SetModelFile set', lambda: (SDTest.Call(0x061900, 'tvis', actc, 'SDActOther.M3D'),
+	check('ACT SetModelFile set', lambda: (SDTest.Call('cActClass_SetModelFile', 'tvis', actc, 'SDActOther.M3D'),
 		acti(actc + 0x1c) == actt, actget(ACT_CLSVAR, actc, 'ModelFilePath')))
 	actpoke(actc + 0x1c, 0)
 	actpoke(acta1 + 0xc, actt)
-	check('ACT SetAnmFile set', lambda: (SDTest.Call(0x064b20, 'tvis', acta1, 'SDActOther.M3D'),
+	check('ACT SetAnmFile set', lambda: (SDTest.Call('cAction_SetAnmFile', 'tvis', acta1, 'SDActOther.M3D'),
 		acti(acta1 + 0xc) == actt, acti(acta1 + 0x10), actget(ACT_ACTVAR, acta1, 'AnmFilePath')))
 	actpoke(acta1 + 0xc, 0)
 	actfree(actt)
@@ -295,7 +295,7 @@ if actc:
 	for actv in ((1.5, 'E15'), (0.5, 'E05'), (1.0, 'E10a'), (1.0, 'E10b')):
 		check('ACT AddEventAtTime %s' % fmt(actv), lambda v=actv: (actsetd(ACT_ACTVAR, acta1, 'AddEventAtTime', v[0]),
 			actsets(ACT_ACTVAR, acta1, 'EventName', v[1]), actevname(acti(acta1 + 0x28)), actevents(acta1)))
-	check('ACT AddEvent', lambda: (SDTest.Call(0x064110, 'tvif', acta1, 2.0), actsets(ACT_ACTVAR, acta1, 'EventName',
+	check('ACT AddEvent', lambda: (SDTest.Call('cAction_AddEvent', 'tvif', acta1, 2.0), actsets(ACT_ACTVAR, acta1, 'EventName',
 		'E20'), actevents(acta1)))
 	for actn in ('EventName', 'EventTime', 'EventDiscardable', 'Eventname', 'EventFunc', 'EventMissing', 'Event'):
 		check('ACT event get %s' % actn, lambda n=actn: actget(ACT_ACTVAR, acta1, n))
@@ -308,14 +308,14 @@ if actc:
 		'Time', 1.0), actsetd(ACT_EVVAR, actev, 'Discardable', 2), actget(ACT_EVVAR, actev, 'Discardable'),
 		SDTest.Call(ACT_EVVAR, 'tiisiiii', actev, 'Name', 1, 0, 0, 0)[0], SDTest.Call(ACT_EVVAR, 'tiisiiii', actev,
 		'Time', 0, 0, 0, 0)[0]))
-	check('ACT Fire empty', lambda: SDTest.Call(0x064240, 'tvis', actev, 'Player0'))
+	check('ACT Fire empty', lambda: SDTest.Call('cActEvent_Fire', 'tvis', actev, 'Player0'))
 	check('ACT anm time', lambda: actsetfl(acta1 + 0x1c, (1.8,)))
 
 	# ---- a copy of the controller of Player0 with our class: layer 0 SDActB, layer 1 SDActA, default SDActA ----
 	actcc = 0
 	if actpc:
 		actcc = actz(0x80)
-		SDTest.Call(0x3197d0, 'iiii', actcc, actpc, 0x7c)
+		SDTest.Call('crt_memcpy', 'iiii', actcc, actpc, 0x7c)
 		actpoke(actcc + 8, actc)
 		actpoke(actcc + 0xc, acta1)
 		for actv in ((0, acta2, 1), (1, acta1, 1), (2, 0, 0), (3, 0, 0)):
@@ -325,52 +325,52 @@ if actc:
 			actpoke(actcc + 0x1c + 0x10 * actv[0], actv[2])
 		actpoke(actcc + 0x58, 0)
 	if actcc:
-		check('ACT cc names', lambda: (SDTest.Call(0x062c40, 'tsii', actcc, 0)[0], SDTest.Call(0x062c40, 'tsii', actcc,
-			1)[0], SDTest.Call(0x062c40, 'tsii', actcc, 2)[0], SDTest.Call(0x062c80, 'tsi', actcc)[0],
-			SDTest.Call(0x062c70, 'tiii', actcc, 1)[0] == actcc + 0x20))
-		check('ACT cc IsActive', lambda: (SDTest.Call(0x063dc0, 'tbis', actcc, 'SDActA')[0], SDTest.Call(0x063dc0,
-			'tbis', actcc, 'SDActB')[0], SDTest.Call(0x063dc0, 'tbis', actcc, 'SDActC')[0], SDTest.Call(0x063dc0,
-			'tbis', actcc, 'sdacta')[0], SDTest.Call(0x063e30, 'tbis', actcc, 'SDActA')[0], SDTest.Call(0x063e30,
+		check('ACT cc names', lambda: (SDTest.Call('cActCtrl_GetActionName', 'tsii', actcc, 0)[0], SDTest.Call('cActCtrl_GetActionName', 'tsii', actcc,
+			1)[0], SDTest.Call('cActCtrl_GetActionName', 'tsii', actcc, 2)[0], SDTest.Call('cActCtrl_GetDefLoopName', 'tsi', actcc)[0],
+			SDTest.Call('cActCtrl_GetLayer', 'tiii', actcc, 1)[0] == actcc + 0x20))
+		check('ACT cc IsActive', lambda: (SDTest.Call('cActCtrl_IsActive', 'tbis', actcc, 'SDActA')[0], SDTest.Call('cActCtrl_IsActive',
+			'tbis', actcc, 'SDActB')[0], SDTest.Call('cActCtrl_IsActive', 'tbis', actcc, 'SDActC')[0], SDTest.Call('cActCtrl_IsActive',
+			'tbis', actcc, 'sdacta')[0], SDTest.Call('cActCtrl_IsDefLoop', 'tbis', actcc, 'SDActA')[0], SDTest.Call('cActCtrl_IsDefLoop',
 			'tbis', actcc, 'SDActB')[0]))
 		for actn in ('Action', 'DefLoop', 'ActChan0', 'ActChan1', 'ActChan2', 'ActChan3', 'ActChan4', 'ForceAction',
 				'Missing'):
 			check('ACT cc VarS %s' % actn, lambda n=actn: (lambda r: (r[0], r[0] and actstr(r[1])))(
-				SDTest.Call(0x063380, 'tbispi', actcc, n, 0, 0)))
+				SDTest.Call('cActCtrl_VarS', 'tbispi', actcc, n, 0, 0)))
 		# the default loop: a lower priority is refused unless forced
 		def actvars_cc(name, text):
 			p = acttext(text)
-			r = SDTest.Call(0x063380, 'tbispi', actcc, name, p, 1)[0]
+			r = SDTest.Call('cActCtrl_VarS', 'tbispi', actcc, name, p, 1)[0]
 			actfree(p)
-			return (r, SDTest.Call(0x062c80, 'tsi', actcc)[0])
+			return (r, SDTest.Call('cActCtrl_GetDefLoopName', 'tsi', actcc)[0])
 		for actv in (('DefLoop', 'SDActB'), ('DefLoop', 'SDActX'), ('ForceDefLoop', 'SDActX'), ('ForceDefLoop',
 				'SDActB'), ('DefLoop', 'SDActA'), ('Action', 'SDActX'), ('ForceAction', 'SDActX'), ('ActChan1', 'x'),
 				('Missing', 'x')):
 			check('ACT cc set %s' % fmt(actv), lambda v=actv: actvars_cc(v[0], v[1]))
 		for actv in (('SDActB', 0), ('SDActA', 0), ('SDActB', 1), ('SDActX', 0), ('SDActA', 0)):
-			check('ACT cc SetDefLoop %s' % fmt(actv), lambda v=actv: (SDTest.Call(0x063210, 'tvisi', actcc, v[0],
-				v[1]), SDTest.Call(0x062c80, 'tsi', actcc)[0]))
+			check('ACT cc SetDefLoop %s' % fmt(actv), lambda v=actv: (SDTest.Call('cActCtrl_SetDefLoop', 'tvisi', actcc, v[0],
+				v[1]), SDTest.Call('cActCtrl_GetDefLoopName', 'tsi', actcc)[0]))
 		# the plays that are refused before the model
-		check('ACT cc PlayAction refused', lambda: (SDTest.Call(0x063030, 'tbiiiif', actcc, 0, 1, 1, 1.0)[0],
-			SDTest.Call(0x063030, 'tbiiiif', actcc, acta2, 0, 1, 1.0)[0], SDTest.Call(0x063180, 'tbiiif', actcc,
-			acta1, 1, 1.0)[0], SDTest.Call(0x063180, 'tbiiif', actcc, 0, 1, 1.0)[0], SDTest.Call(0x0631c0, 'tbisif',
-			actcc, 'SDActA', 0, 1.0)[0], SDTest.Call(0x0631c0, 'tbisif', actcc, 'SDActX', 0, 1.0)[0],
-			SDTest.Call(0x063150, 'tbisif', actcc, 'SDActX', 0, 1.0)[0], SDTest.Call(0x062c40, 'tsii', actcc, 1)[0]))
-		check('ACT cc VarI read', lambda: SDTest.Call(0x062ca0, 'tbispi', actcc, 'StopSecondary', 3, 0)[0:2])
+		check('ACT cc PlayAction refused', lambda: (SDTest.Call('cActCtrl_PlayAction', 'tbiiiif', actcc, 0, 1, 1, 1.0)[0],
+			SDTest.Call('cActCtrl_PlayAction', 'tbiiiif', actcc, acta2, 0, 1, 1.0)[0], SDTest.Call('cActCtrl_PlayActionNew', 'tbiiif', actcc,
+			acta1, 1, 1.0)[0], SDTest.Call('cActCtrl_PlayActionNew', 'tbiiif', actcc, 0, 1, 1.0)[0], SDTest.Call('cActCtrl_PlayNew', 'tbisif',
+			actcc, 'SDActA', 0, 1.0)[0], SDTest.Call('cActCtrl_PlayNew', 'tbisif', actcc, 'SDActX', 0, 1.0)[0],
+			SDTest.Call('cActCtrl_Play', 'tbisif', actcc, 'SDActX', 0, 1.0)[0], SDTest.Call('cActCtrl_GetActionName', 'tsii', actcc, 1)[0]))
+		check('ACT cc VarI read', lambda: SDTest.Call('cActCtrl_VarI', 'tbispi', actcc, 'StopSecondary', 3, 0)[0:2])
 		# the events of layer 1 (SDActA ends at 1.8)
 		def actlayer(i):
 			return (actevname(acti(actcc + 0x18 + 0x10 * i)), acti(actcc + 0x14 + 0x10 * i) == acta1,
 				actfl(actcc + 0x10 + 0x10 * i, 1))
 		actpoke(actcc + 0x28, acti(acta1 + 0x24))
 		for actv in ((1.2, 0), (1.2, 0), (1.6, 1), (1.7, 0), (1.9, 1), (5.0, 0)):
-			check('ACT cc FireEvents %s' % fmt(actv), lambda v=actv: (SDTest.Call(0x062b40, 'tviifi', actcc, 1, v[0],
+			check('ACT cc FireEvents %s' % fmt(actv), lambda v=actv: (SDTest.Call('cActCtrl_FireEvents', 'tviifi', actcc, 1, v[0],
 				v[1]), actlayer(1)))
 		actpoke(actcc + 0x28, acti(acta1 + 0x24))
-		check('ACT cc FireEvents silent', lambda: (SDTest.Call(0x062b40, 'tviifi', actcc, 1, 0.75, 1), actlayer(1),
-			SDTest.Call(0x062b40, 'tviifi', actcc, 1, -2.0, 1), actlayer(1)))
+		check('ACT cc FireEvents silent', lambda: (SDTest.Call('cActCtrl_FireEvents', 'tviifi', actcc, 1, 0.75, 1), actlayer(1),
+			SDTest.Call('cActCtrl_FireEvents', 'tviifi', actcc, 1, -2.0, 1), actlayer(1)))
 		# a layer without an action ends at -1
 		actpoke(actcc + 0x38, acti(acta1 + 0x24))
-		check('ACT cc FireEvents no action', lambda: (SDTest.Call(0x062b40, 'tviifi', actcc, 2, -3.0, 0),
-			actlayer(2), SDTest.Call(0x062b40, 'tviifi', actcc, 2, -1.0, 0), actlayer(2)))
+		check('ACT cc FireEvents no action', lambda: (SDTest.Call('cActCtrl_FireEvents', 'tviifi', actcc, 2, -3.0, 0),
+			actlayer(2), SDTest.Call('cActCtrl_FireEvents', 'tviifi', actcc, 2, -1.0, 0), actlayer(2)))
 		actpoke(actcc + 0x38, 0)
 		# the event functions of the engine on Player0 (only where it stays as it was)
 		actdispl = actfl(actplayer + 0x468, 1)
@@ -383,11 +383,11 @@ if actc:
 				'Player0'), (0.72, 'SDActNoSnd:0.5', '!AnmSoundEvent', 'Player0'), (0.8, '99:0.5:1',
 				'!AnmSoundLoopEvent', 'SDActNoEnt'), (0.81, '99:0.5:1', '!AnmSoundLoopEvent', 'Player0'),
 				(0.9, 'SDActNoTalk', '!StopStreamingVoice', 'SDActNoEnt')):
-			SDTest.Call(0x323c50, 'vi', 77)
+			SDTest.Call('crt_srand', 'vi', 77)
 			check('ACT native %s' % fmt(actv), lambda v=actv: (actsetd(ACT_ACTVAR, acta3, 'AddEventAtTime', v[0]),
 				actsets(ACT_ACTVAR, acta3, 'EventName', v[1]), actsets(ACT_ACTVAR, acta3, 'EventFunc', v[2]),
-				SDTest.Call(0x064240, 'tvis', acti(acta3 + 0x28), v[3]), actfl(actplayer + 0x468, 1),
-				actb(actpc + 0x4c), SDTest.Call(0x323c2f, 'i')[0]))
+				SDTest.Call('cActEvent_Fire', 'tvis', acti(acta3 + 0x28), v[3]), actfl(actplayer + 0x468, 1),
+				actb(actpc + 0x4c), SDTest.Call('crt_rand', 'i')[0]))
 		actsetfl(actplayer + 0x468, actdispl)
 		check('ACT native events', lambda: actevents(acta3))
 		actfree(actcc)
@@ -395,13 +395,13 @@ if actc:
 	# ---- the camera of a class into a follow camera of calloc memory ----
 	actcam = actz(0x240)
 	actsetfl(actcam + 0xa8, (2.0,))
-	check('ACT cam update', lambda: (SDTest.Call(0x0616e0, 'tviii', actc + 0x110, actcam, 0), actfl(actcam + 0x214, 3),
-		actfl(actcam + 0xa8, 1), SDTest.Call(0x0616e0, 'tviii', actcls + 0x110, actcam, actplayer),
+	check('ACT cam update', lambda: (SDTest.Call('cActClassCam_Update', 'tviii', actc + 0x110, actcam, 0), actfl(actcam + 0x214, 3),
+		actfl(actcam + 0xa8, 1), SDTest.Call('cActClassCam_Update', 'tviii', actcls + 0x110, actcam, actplayer),
 		actfl(actcam + 0x214, 3), actfl(actcam + 0xa8, 1)))
 	# the zoom of the class "Functionary": the class of the controller of Player0 for a moment, its frame time 0.25
 	actfn = 0
-	if actpc and not SDTest.Call(0x062250, 'tiis', actlist, 'Functionary')[0]:
-		actfn = SDTest.Call(0x061f70, 'tiis', actlist, 'Functionary')[0]
+	if actpc and not SDTest.Call('cActClassList_Get', 'tiis', actlist, 'Functionary')[0]:
+		actfn = SDTest.Call('cActClassList_Create', 'tiis', actlist, 'Functionary')[0]
 	if actfn:
 		for actv in (('MinFOV', 40.0), ('MaxFOV', 80.0), ('FOV', 60.0), ('FOVInterpTime', 1.0)):
 			actsetd(ACT_CLSVAR, actfn, actv[0], actv[1])
@@ -413,75 +413,75 @@ if actc:
 				(0.5, 0.5, 0.0, 1, 0.5), (0.5, 0.9, 0.0, 1, 0.5), (1.5, 0.9, 0.0, 1, 0.5), (0.2, 0.0, 0.0, 0, 0.5)):
 			check('ACT cam zoom %s' % fmt(actv), lambda v=actv: (actsetfl(actcam + 0xa8, (v[0],)),
 				actsetfl(actfn + 0x120, (v[1], v[2])), actpoke(actplayer + 0x504, (actsaved[1] & ~0xff) | v[3]),
-				actsetfl(actplayer + 0x4b4, (v[4],)), SDTest.Call(0x0616e0, 'tviii', actfn + 0x110, actcam,
+				actsetfl(actplayer + 0x4b4, (v[4],)), SDTest.Call('cActClassCam_Update', 'tviii', actfn + 0x110, actcam,
 				actplayer), actfl(actcam + 0xa8, 1), actfl(actfn + 0x120, 2)))
 		actpoke(actpc + 8, actsaved[0])
 		actpoke(actplayer + 0x504, actsaved[1])
 		actpoke(actplayer + 0x4b4, actsaved[2])
 		actpoke(actplayer + 0x11c, actsaved[3])
-		check('ACT del Functionary', lambda: SDTest.Call(0x062440, 'tbis', actlist, 'Functionary')[0])
+		check('ACT del Functionary', lambda: SDTest.Call('cActClassList_Del', 'tbis', actlist, 'Functionary')[0])
 	actfree(actcam)
 
 	# ---- an action and an event of our own (not in the class) ----
 	actsa = actz(0x6c)
-	check('ACT action ctor', lambda: (SDTest.Call(0x063e80, 'tiiis', actsa, actc, 'SDActStand')[0] == actsa,
+	check('ACT action ctor', lambda: (SDTest.Call('cAction_ctor', 'tiiis', actsa, actc, 'SDActStand')[0] == actsa,
 		acti(actsa) - 0x400000, acti(actsa + 4), actstr(acti(actsa + 8)), acti(actsa + 0x14) == actc,
 		actfl(actsa + 0x1c, 2), acti(actsa + 0x2c), actfl(actsa + 0x30, 1), actb(actsa + 0x34), actfl(actsa + 0x38, 4),
 		(actb(actsa + 0x48), actb(actsa + 0x49), actb(actsa + 0x4a)), actfl(actsa + 0x50, 4), acti(actsa + 0x64),
 		acti(actsa + 0x68)))
-	check('ACT action dtor', lambda: (SDTest.Call(0x064040, 'tvi', actsa), acti(actsa) - 0x400000))
-	check('ACT action Delete', lambda: (SDTest.Call(0x063e80, 'tiiis', actsa, actc, 'SDActStand2')[0] == actsa,
-		SDTest.Call(0x0640e0, 'tiii', actsa, 0)[0] == actsa))
+	check('ACT action dtor', lambda: (SDTest.Call('cAction_dtor', 'tvi', actsa), acti(actsa) - 0x400000))
+	check('ACT action Delete', lambda: (SDTest.Call('cAction_ctor', 'tiiis', actsa, actc, 'SDActStand2')[0] == actsa,
+		SDTest.Call('cAction_Delete', 'tiii', actsa, 0)[0] == actsa))
 	actfree(actsa)
 	actse = actz(0x24)
-	check('ACT event ctor', lambda: (SDTest.Call(0x063fc0, 'tiifi', actse, 0.75, 1234)[0] == actse, actfl(actse, 1),
+	check('ACT event ctor', lambda: (SDTest.Call('cActEvent_ctor', 'tiifi', actse, 0.75, 1234)[0] == actse, actfl(actse, 1),
 		actstr(acti(actse + 4)), acti(actse + 0x1c), actb(actse + 0x20)))
-	SDTest.Call(0x192200, 'tvi', actse + 8)
-	SDTest.Call(0x133990, 'tvi', actse + 4)
+	SDTest.Call('cPy_Function_dtor', 'tvi', actse + 8)
+	SDTest.Call('cString_dtor', 'tvi', actse + 4)
 	actfree(actse)
 
-	check('ACT del our class', lambda: (SDTest.Call(0x062440, 'tbis', actlist, 'SDActCls')[0], SDTest.Call(0x062250,
-		'tiis', actlist, 'SDActCls')[0], SDTest.Call(0x062440, 'tbis', actlist, 'SDActCls')[0]))
+	check('ACT del our class', lambda: (SDTest.Call('cActClassList_Del', 'tbis', actlist, 'SDActCls')[0], SDTest.Call('cActClassList_Get',
+		'tiis', actlist, 'SDActCls')[0], SDTest.Call('cActClassList_Del', 'tbis', actlist, 'SDActCls')[0]))
 
 # ---- cAI of calloc memory on Player0 ----
 actai = actz(0x38)
 if actplayer:
-	check('ACT AI ctor', lambda: (SDTest.Call(0x065c20, 'tiii', actai, actplayer)[0] == actai, acti(actai) - 0x400000,
+	check('ACT AI ctor', lambda: (SDTest.Call('cAI_ctor', 'tiii', actai, actplayer)[0] == actai, acti(actai) - 0x400000,
 		actb(actai + 4), acti(actai + 8) == actplayer, actfl(actai + 0xc, 1), acti(actai + 0x10) - 0x400000,
 		actfl(actai + 0x14, 3), actb(actai + 0x20), acti(actai + 0x24), actb(actai + 0x28), actfl(actai + 0x2c, 2),
 		acti(actai + 0x34)))
 	def actaif():
 		return (actb(actai + 4), actfl(actai + 0xc, 1), actb(actai + 0x28), actfl(actai + 0x2c, 2))
 	actpokeb = lambda a, v: actpoke(a, (acti(a) & ~0xff) | v)
-	check('ACT AI Update', lambda: (actpokeb(actai + 0x28, 1), SDTest.Call(0x065d20, 'tvif', actai, 0.25), actaif(),
-		SDTest.Call(0x065d20, 'tvif', actai, 0.5), actaif()))
+	check('ACT AI Update', lambda: (actpokeb(actai + 0x28, 1), SDTest.Call('cAI_Update', 'tvif', actai, 0.25), actaif(),
+		SDTest.Call('cAI_Update', 'tvif', actai, 0.5), actaif()))
 	actpoke(actai + 0x34, 1)
-	check('ACT AI Update i34', lambda: (actpokeb(actai + 0x28, 1), SDTest.Call(0x065f70, 'tbi', actai)[0],
-		SDTest.Call(0x065d20, 'tvif', actai, 0.125), actaif(), SDTest.Call(0x065f70, 'tbi', actai)[0]))
+	check('ACT AI Update i34', lambda: (actpokeb(actai + 0x28, 1), SDTest.Call('cAI_GetChanged', 'tbi', actai)[0],
+		SDTest.Call('cAI_Update', 'tvif', actai, 0.125), actaif(), SDTest.Call('cAI_GetChanged', 'tbi', actai)[0]))
 	actpoke(actai + 0x34, 0)
-	check('ACT AI UpdateOff', lambda: (actpokeb(actai + 4, 0), actpokeb(actai + 0x28, 1), SDTest.Call(0x065d70, 'tvif',
+	check('ACT AI UpdateOff', lambda: (actpokeb(actai + 4, 0), actpokeb(actai + 0x28, 1), SDTest.Call('cAI_UpdateOff', 'tvif',
 		actai, 0.75), actaif()))
-	check('ACT AI Vars', lambda: (SDTest.Call(0x065f80, 'tbispi', actai, 'Life', 3, 1)[0:2], SDTest.Call(0x065da0,
-		'tbisDi', actai, 'Life', 2.5, 0)[0:2], SDTest.Call(0x0660f0, 'tbispi', actai, 'Name', 0, 0)[0:2],
-		SDTest.Call(0x066100, 'tbisDDDi', actai, 'Pos', 1.0, 2.0, 3.0, 0)[0], SDTest.Call(0x065d10, 'tvi', actai)))
-	check('ACT AI IsVisible', lambda: SDTest.Call(0x065f90, 'tbi', actai)[0])
-	check('ACT AI dtor', lambda: (SDTest.Call(0x065cd0, 'tvi', actai), acti(actai) - 0x400000,
-		SDTest.Call(0x065ce0, 'tiii', actai, 0)[0] == actai))
-check('ACT AI ctor default', lambda: (SDTest.Call(0x065cb0, 'tii', actai)[0] == actai, acti(actai) - 0x400000,
+	check('ACT AI Vars', lambda: (SDTest.Call('cAI_VarI', 'tbispi', actai, 'Life', 3, 1)[0:2], SDTest.Call('cAI_VarF',
+		'tbisDi', actai, 'Life', 2.5, 0)[0:2], SDTest.Call('cAI_VarS', 'tbispi', actai, 'Name', 0, 0)[0:2],
+		SDTest.Call('cAI_VarV', 'tbisDDDi', actai, 'Pos', 1.0, 2.0, 3.0, 0)[0], SDTest.Call('cAI_Draw', 'tvi', actai)))
+	check('ACT AI IsVisible', lambda: SDTest.Call('cAI_IsVisible', 'tbi', actai)[0])
+	check('ACT AI dtor', lambda: (SDTest.Call('cAI_dtor', 'tvi', actai), acti(actai) - 0x400000,
+		SDTest.Call('cAI_Delete', 'tiii', actai, 0)[0] == actai))
+check('ACT AI ctor default', lambda: (SDTest.Call('cAI_ctorDefault', 'tii', actai)[0] == actai, acti(actai) - 0x400000,
 	acti(actai + 0x10) - 0x400000, actfl(actai + 0x14, 3)))
 actfree(actai)
 
 # ---- the ranges of the bank and bishop AIs on calloc memory (the other states go to the ones of cAIChar) ----
 actbk = actz(0x398)
-for actv in ((0x0663c0, 2), (0x0663c0, 3), (0x0663c0, 7), (0x0663c0, 1), (0x066800, 2), (0x066800, 3), (0x066800, 7),
-		(0x066800, 5), (0x066f90, 2), (0x066f90, 3), (0x066f90, 7), (0x066f90, 0)):
+for actv in ((sym('cAIBankDirector_SetRanges'), 2), (sym('cAIBankDirector_SetRanges'), 3), (sym('cAIBankDirector_SetRanges'), 7), (sym('cAIBankDirector_SetRanges'), 1), (sym('cAIBankMaster_SetRanges'), 2), (sym('cAIBankMaster_SetRanges'), 3), (sym('cAIBankMaster_SetRanges'), 7),
+		(sym('cAIBankMaster_SetRanges'), 5), (sym('cAIBishop_SetRanges'), 2), (sym('cAIBishop_SetRanges'), 3), (sym('cAIBishop_SetRanges'), 7), (sym('cAIBishop_SetRanges'), 0)):
 	check('ACT AI SetRanges %s' % fmt(actv), lambda v=actv: (actsetfl(actbk + 0x1b0, (-1.0, -2.0, -3.0, -4.0)),
 		actsetfl(actbk + 0x394, (321.0,)), actpoke(actbk + 0x1a0, v[1]), SDTest.Call(v[0], 'tvi', actbk),
 		actfl(actbk + 0x1b0, 4)))
 if actplayer:
-	actpoke(actbk, 0x7a452c)
+	actpoke(actbk, symva('cAIBishop_vftable'))
 	actpoke(actbk + 0x40, actplayer)
 	actpoke(actbk + 0x1a0, 2)
-	check('ACT Bishop SetShoot', lambda: (SDTest.Call(0x066ff0, 'tvi', actbk), acti(actbk + 0x388), actfl(actbk + 0x38c,
+	check('ACT Bishop SetShoot', lambda: (SDTest.Call('cAIBishop_SetShoot', 'tvi', actbk), acti(actbk + 0x388), actfl(actbk + 0x38c,
 		3), actfl(actbk + 0x1b0, 4)))
 actfree(actbk)

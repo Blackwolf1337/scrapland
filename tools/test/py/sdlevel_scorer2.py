@@ -15,9 +15,9 @@ def sc2ints(a, offs):
 		r = r + (sc2i(a + o),)
 	return r
 def sc2fl(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def sc2setf(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 def sc2log(fn):
 	SDTest.Out()
 	SDTest.D3DLog(1)
@@ -25,17 +25,17 @@ def sc2log(fn):
 	SDTest.D3DLog(0)
 	return (r, SDTest.Out())
 def sc2srand(s):
-	SDTest.Call(0x323c50, 'vi', s)
+	SDTest.Call('crt_srand', 'vi', s)
 def sc2new(n):
-	return SDTest.Call(0x1334d0, 'ii', n)[0]
+	return SDTest.Call('operator_new', 'ii', n)[0]
 def sc2free(p):
-	SDTest.Call(0x1334e0, 'vi', p)
+	SDTest.Call('operator_delete', 'vi', p)
 def sc2get(name, var):
 	return SScorer.Get(0, name, var)
 def sc2set(name, var, v):
 	return SScorer.Set(0, name, var, v)
 def sc2find(name):
-	return SDTest.Call(0x170dc0, 'tiis', sc2sc, name)[0]
+	return SDTest.Call('cScorer_FindItem', 'tiis', sc2sc, name)[0]
 # the rvas of the engine variables as ints, saved and put back
 def sc2save(rvas):
 	return map(lambda a: SDTest.Peek(a, 'i'), rvas)
@@ -43,16 +43,16 @@ def sc2restore(rvas, vals):
 	for sc2k in range(len(rvas)):
 		SDTest.Poke(rvas[sc2k], vals[sc2k])
 
-sc2sc = SDTest.Call(0x170ea0, 'ii', 0)[0]
-sc2all = SDTest.Peek(0x4601d4, 'i')
-check('SC2 Scorer_Get', lambda: map(lambda p: SDTest.Call(0x170ea0, 'ii', p)[0] == sc2all + 0x104 * p,
+sc2sc = SDTest.Call('Scorer_Get', 'ii', 0)[0]
+sc2all = SDTest.Peek('g_Scorers', 'i')
+check('SC2 Scorer_Get', lambda: map(lambda p: SDTest.Call('Scorer_Get', 'ii', p)[0] == sc2all + 0x104 * p,
 	(-1, 0, 1, 3, 4)))
-sc2gvars = (0x45fe78, 0x45d85c, 0x45d844, 0x45d82c, 0x45fea8, 0x4600a0, 0x45d814, 0x45fe30, 0x45fa8c, 0x45ff98,
-	0x460058, 0x45fff8, 0x45ff80, 0x45fec0, 0x460118, 0x460088, 0x45ffb0, 0x4601a8, 0x4a8c44, 0x4a8b04, 0x4a8968,
-	0x4ad7e8, 0x4ad7ec, 0x460028, 0x460160, 0x45ff38, 0x46067c, 0x44726c, 0x428cf4, 0x428cf8)
+sc2gvars = (sym('g_RadarMMSelect'), sym('g_BarValue'), sym('g_BarStopValue'), sym('g_BarSpeedFactor'), sym('g_CinemaBlackBandHeight'), sym('g_CameraScene'), sym('g_BarAutoUpdate'), sym('g_NumEnemiesInRadar'), sym('g_MissionSolidTime'), sym('g_NoiseFactor'),
+	sym('g_NoiseFactorBegin'), sym('g_NoiseTime'), sym('g_NoiseEndTime'), sym('g_MotionBlurFactorBegin'), sym('g_MotionBlurFactorEnd'), sym('g_MotionBlurTime'), sym('g_MotionBlurEndTime'), sym('g_MotionBlurOffVar'), sym('g_SceneMotionBlurValue'), sym('g_SceneMotionBlurOff'), sym('g_PhysicalAspectRatio'),
+	sym('g_ViewportW'), sym('g_ViewportH'), sym('g_XboxSavingMsg'), sym('g_XboxNoPadMsg'), sym('g_XboxNoPadMsgP'), sym('g_SpecialActionActive'), sym('g_EnergyBarActive'), sym('g_SpecialActionState'), sym('g_SpecialActionFade'))
 sc2gsaved = sc2save(sc2gvars)
-SDTest.Poke(0x4ad7e8, 640)
-SDTest.Poke(0x4ad7ec, 480)
+SDTest.Poke('g_ViewportW', 640)
+SDTest.Poke('g_ViewportH', 480)
 if sc2sc:
 	sc2scsaved = sc2ints(sc2sc, (0x20, 0x24, 0x28, 0x2c, 0x100))
 	sc2setf(sc2sc + 0x20, (12.5, 12.25, 0.05))
@@ -62,91 +62,91 @@ if sc2sc:
 for sc2a, sc2c, sc2t in ((0x11223344, 0x55667788, 0.25), (-0x1000000, 0xffffff, 0.5), (0x7f808080, 0x10203040,
 	0.75), (0x12345678, -0x789abcdf, -1.0), (0x12345678, -0x789abcdf, 0.0), (0x12345678, -0x789abcdf, 0.5),
 	(0x12345678, -0x789abcdf, 1.0), (0x12345678, -0x789abcdf, 3.0), (0, -1, 0.999), (-1, 0, 0.3)):
-	check('SC2 Scorer_ColorLerp' + fmt((sc2a, sc2c, sc2t)), lambda a=sc2a, c=sc2c, t=sc2t: SDTest.Call(0x16fe90,
+	check('SC2 Scorer_ColorLerp' + fmt((sc2a, sc2c, sc2t)), lambda a=sc2a, c=sc2c, t=sc2t: SDTest.Call('Scorer_ColorLerp',
 		'iiif', a, c, t)[0])
 
 # ---- cinema, fade and noise objects on a buffer ----
 sc2buf = sc2new(0x40)
-check('SC2 ScorerCinema_ctor', lambda b=sc2buf: (SDTest.Call(0x16f410, 'tii', b)[0] == b, sc2fl(b, 2), sc2b(b + 8),
+check('SC2 ScorerCinema_ctor', lambda b=sc2buf: (SDTest.Call('ScorerCinema_ctor', 'tii', b)[0] == b, sc2fl(b, 2), sc2b(b + 8),
 	sc2fl(b + 12, 1)))
 for sc2on, sc2t in ((1, 0.0), (0, 0.5), (0, 0.25), (1, 2.0), (1, 1.0)):
-	check('SC2 ScorerCinema_Set' + fmt((sc2on, sc2t)), lambda b=sc2buf, o=sc2on, t=sc2t: (SDTest.Call(0x173ff0,
+	check('SC2 ScorerCinema_Set' + fmt((sc2on, sc2t)), lambda b=sc2buf, o=sc2on, t=sc2t: (SDTest.Call('ScorerCinema_Set',
 		'tviif', b, o, t), sc2fl(b, 2), sc2b(b + 8)))
 for sc2on, sc2scene, sc2ar, sc2dt in ((1, 0, 1.25, 0.5), (1, 1, 0.75, 0.25), (1, 1, 1.5, 0.25), (0, 0, 1.25, 0.25),
 	(0, 0, 1.25, 4.0)):
-	SDTest.Call(0x173ff0, 'tviif', sc2buf, sc2on, 0.0)
+	SDTest.Call('ScorerCinema_Set', 'tviif', sc2buf, sc2on, 0.0)
 	sc2setf(sc2buf, (0.25, 1.0))
-	SDTest.Poke(0x4600a0, sc2scene)
-	sc2setf(0x4a8968 + 0x400000, (sc2ar,))
+	SDTest.Poke('g_CameraScene', sc2scene)
+	sc2setf(sym('g_PhysicalAspectRatio') + 0x400000, (sc2ar,))
 	check('SC2 ScorerCinema_Draw' + fmt((sc2on, sc2scene, sc2ar, sc2dt)), lambda b=sc2buf, dt=sc2dt: (sc2log(
-		lambda b=b, dt=dt: SDTest.Call(0x172590, 'tviif', b, 0, dt)), sc2fl(b, 2), sc2fl(b + 12, 1)))
+		lambda b=b, dt=dt: SDTest.Call('ScorerCinema_Draw', 'tviif', b, 0, dt)), sc2fl(b, 2), sc2fl(b + 12, 1)))
 sc2restore(sc2gvars, sc2gsaved)
-SDTest.Poke(0x4ad7e8, 640)
-SDTest.Poke(0x4ad7ec, 480)
-check('SC2 ScorerFade_ctor', lambda b=sc2buf: (SDTest.Call(0x16f440, 'tii', b)[0] == b, sc2fl(b, 10)))
-check('SC2 ScorerFade_Start', lambda b=sc2buf: (SDTest.Call(0x170cb0, 'tviiif', b, 0x11223344, 0x55667788, 2.0),
+SDTest.Poke('g_ViewportW', 640)
+SDTest.Poke('g_ViewportH', 480)
+check('SC2 ScorerFade_ctor', lambda b=sc2buf: (SDTest.Call('ScorerFade_ctor', 'tii', b)[0] == b, sc2fl(b, 10)))
+check('SC2 ScorerFade_Start', lambda b=sc2buf: (SDTest.Call('ScorerFade_Start', 'tviiif', b, 0x11223344, 0x55667788, 2.0),
 	sc2fl(b, 10)))
 for sc2dt in (0.5, 1.0, 3.0):
 	check('SC2 ScorerFade_Draw' + fmt((sc2dt,)), lambda b=sc2buf, dt=sc2dt: (sc2log(lambda b=b, dt=dt:
-		SDTest.Call(0x1726b0, 'tviif', b, 0, dt)), sc2fl(b + 0x20, 2)))
-SDTest.Call(0x170cb0, 'tviiif', sc2buf, 0x112233, 0x445566, 1.0)
-check('SC2 ScorerFade_Draw no alpha', lambda b=sc2buf: sc2log(lambda b=b: SDTest.Call(0x1726b0, 'tviif', b, 0, 0.5)))
-check('SC2 ScorerFx_ctor', lambda b=sc2buf: (SDTest.Call(0x16f490, 'tii', b)[0] == b, sc2save((0x45ff98, 0x460058,
-	0x45fff8, 0x45ff80, 0x45fec0, 0x460118, 0x460088, 0x45ffb0, 0x4601a8))))
-sc2noise = SDTest.Peek(0x4601cc, 'i')
+		SDTest.Call('ScorerFade_Draw', 'tviif', b, 0, dt)), sc2fl(b + 0x20, 2)))
+SDTest.Call('ScorerFade_Start', 'tviiif', sc2buf, 0x112233, 0x445566, 1.0)
+check('SC2 ScorerFade_Draw no alpha', lambda b=sc2buf: sc2log(lambda b=b: SDTest.Call('ScorerFade_Draw', 'tviif', b, 0, 0.5)))
+check('SC2 ScorerFx_ctor', lambda b=sc2buf: (SDTest.Call('ScorerFx_ctor', 'tii', b)[0] == b, sc2save((sym('g_NoiseFactor'), sym('g_NoiseFactorBegin'),
+	sym('g_NoiseTime'), sym('g_NoiseEndTime'), sym('g_MotionBlurFactorBegin'), sym('g_MotionBlurFactorEnd'), sym('g_MotionBlurTime'), sym('g_MotionBlurEndTime'), sym('g_MotionBlurOffVar')))))
+sc2noise = SDTest.Peek('g_ScorerNoise', 'i')
 for sc2f, sc2fb, sc2nt, sc2ne, sc2mb, sc2me, sc2mt, sc2mend, sc2off in ((200, 0, 0.5, 2.0, 0.2, 0.8, 0.25, 1.0, 0.0),
 	(100, 50, 1.5, 2.0, 0.9, 0.3, 0.5, 2.0, 0.5), (0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), (90, 0, 1.9, 2.0, 0.0,
 	0.6, 0.9, 1.0, 1.0)):
-	SDTest.Poke(0x45ff98, sc2f)
-	SDTest.Poke(0x460058, sc2fb)
-	sc2setf(0x45fff8 + 0x400000, (sc2nt,))
-	sc2setf(0x45ff80 + 0x400000, (sc2ne,))
-	sc2setf(0x45fec0 + 0x400000, (sc2mb,))
-	sc2setf(0x460118 + 0x400000, (sc2me,))
-	sc2setf(0x460088 + 0x400000, (sc2mt,))
-	sc2setf(0x45ffb0 + 0x400000, (sc2mend,))
-	sc2setf(0x4601a8 + 0x400000, (sc2off,))
+	SDTest.Poke('g_NoiseFactor', sc2f)
+	SDTest.Poke('g_NoiseFactorBegin', sc2fb)
+	sc2setf(sym('g_NoiseTime') + 0x400000, (sc2nt,))
+	sc2setf(sym('g_NoiseEndTime') + 0x400000, (sc2ne,))
+	sc2setf(sym('g_MotionBlurFactorBegin') + 0x400000, (sc2mb,))
+	sc2setf(sym('g_MotionBlurFactorEnd') + 0x400000, (sc2me,))
+	sc2setf(sym('g_MotionBlurTime') + 0x400000, (sc2mt,))
+	sc2setf(sym('g_MotionBlurEndTime') + 0x400000, (sc2mend,))
+	sc2setf(sym('g_MotionBlurOffVar') + 0x400000, (sc2off,))
 	sc2srand(77)
 	check('SC2 ScorerFx_Draw' + fmt((sc2f, sc2fb, sc2nt, sc2ne, sc2mb, sc2me, sc2mt, sc2mend, sc2off)),
-		lambda b=sc2buf: (sc2log(lambda b=b: SDTest.Call(0x1727a0, 'tviif', b, 0, 0.25)), sc2fl(0x45fff8 + 0x400000,
-		1), sc2fl(0x45ff80 + 0x400000, 1), sc2fl(0x460088 + 0x400000, 1), sc2fl(0x45ffb0 + 0x400000, 1),
-		sc2fl(0x4a8c44 + 0x400000, 1), sc2fl(0x4a8b04 + 0x400000, 1), sc2noise and sc2fl(sc2noise + 0x24, 4)))
+		lambda b=sc2buf: (sc2log(lambda b=b: SDTest.Call('ScorerFx_Draw', 'tviif', b, 0, 0.25)), sc2fl(sym('g_NoiseTime') + 0x400000,
+		1), sc2fl(sym('g_NoiseEndTime') + 0x400000, 1), sc2fl(sym('g_MotionBlurTime') + 0x400000, 1), sc2fl(sym('g_MotionBlurEndTime') + 0x400000, 1),
+		sc2fl(sym('g_SceneMotionBlurValue') + 0x400000, 1), sc2fl(sym('g_SceneMotionBlurOff') + 0x400000, 1), sc2noise and sc2fl(sc2noise + 0x24, 4)))
 sc2restore(sc2gvars, sc2gsaved)
-SDTest.Poke(0x4ad7e8, 640)
-SDTest.Poke(0x4ad7ec, 480)
+SDTest.Poke('g_ViewportW', 640)
+SDTest.Poke('g_ViewportH', 480)
 sc2free(sc2buf)
 
 # ---- a scorer and an item on the heap ----
 sc2item = sc2new(0xac)
-check('SC2 cScorerItem_ctor', lambda a=sc2item: (SDTest.Call(0x16f7f0, 'tii', a)[0] == a, sc2i(a) - 0x400000,
+check('SC2 cScorerItem_ctor', lambda a=sc2item: (SDTest.Call('cScorerItem_ctor', 'tii', a)[0] == a, sc2i(a) - 0x400000,
 	sc2ints(a, (0xc, 0x10, 0x14, 0x18, 0x1c, 0x20, 0x24, 0x2c, 0x30)), sc2b(a + 0x28), sc2b(a + 0x29), sc2b(a + 0xa8),
 	map(lambda o, a=a: SDTest.Peek(a + o, '@p'), (4, 8, 0x34, 0x38, 0x3c, 0x40))))
 for sc2v, sc2d, sc2n in (('X', 3.5, 0), ('FocusPivotY', -2.0, 0), ('MaxHintLineWidth', 0.0, 40), ('Visible', 0.0, 0),
 	('MultiPress', 0.0, 7), ('DelMe', 0.0, 2), ('DelMe', 0.0, 1), ('Hint', 0.0, 0), ('Missing', 1.0, 1)):
-	check('SC2 cScorerItem_Var set ' + sc2v, lambda a=sc2item, v=sc2v, d=sc2d, n=sc2n: SDTest.Call(0x171580,
+	check('SC2 cScorerItem_Var set ' + sc2v, lambda a=sc2item, v=sc2v, d=sc2d, n=sc2n: SDTest.Call('cScorerItem_Var',
 		'tiisiiDp', a, v, 1, 0, d, n))
-	check('SC2 cScorerItem_Var get ' + sc2v, lambda a=sc2item, v=sc2v: SDTest.Call(0x171580, 'tiisiiDp', a, v, 0, 0,
+	check('SC2 cScorerItem_Var get ' + sc2v, lambda a=sc2item, v=sc2v: SDTest.Call('cScorerItem_Var', 'tiisiiDp', a, v, 0, 0,
 		0.0, 0))
-check('SC2 cScorerItem_Delete', lambda a=sc2item: SDTest.Call(0x16fb20, 'tiii', a, 1)[0] == a)
+check('SC2 cScorerItem_Delete', lambda a=sc2item: SDTest.Call('cScorerItem_Delete', 'tiii', a, 1)[0] == a)
 sc2scb = sc2new(0x104)
-check('SC2 cScorer_ctor', lambda a=sc2scb: (SDTest.Call(0x16f4f0, 'tii', a)[0] == a, sc2i(a) - 0x400000,
+check('SC2 cScorer_ctor', lambda a=sc2scb: (SDTest.Call('cScorer_ctor', 'tii', a)[0] == a, sc2i(a) - 0x400000,
 	sc2ints(a, (4, 0x2c, 0x38, 0x3c, 0x40, 0x50, 0xa4, 0xa8, 0xb0, 0xbc, 0xc0, 0xcc, 0xd0)), sc2fl(a + 0xc, 5),
 	sc2fl(a + 0x20, 2), sc2fl(a + 0xd4, 3), sc2fl(a + 0xe4, 1), sc2b(a + 0x8), sc2b(a + 0x44), sc2b(a + 0xe0),
 	sc2b(a + 0x100), map(lambda o, a=a: SDTest.Peek(a + o, '@p'), (0x30, 0x34, 0x48, 0x4c)),
-	sc2save((0x45fe78, 0x45d85c, 0x45d844, 0x45d82c, 0x45d814, 0x45fe30, 0x45fa8c, 0x45ff98, 0x4601a8)),
-	SDTest.Peek(0x45fea8, 'i') == SDTest.Peek(0x45feac, 'i'), SDTest.Peek(0x4600a0, 'i') == SDTest.Peek(0x4600a4,
+	sc2save((sym('g_RadarMMSelect'), sym('g_BarValue'), sym('g_BarStopValue'), sym('g_BarSpeedFactor'), sym('g_BarAutoUpdate'), sym('g_NumEnemiesInRadar'), sym('g_MissionSolidTime'), sym('g_NoiseFactor'), sym('g_MotionBlurOffVar'))),
+	SDTest.Peek('g_CinemaBlackBandHeight', 'i') == SDTest.Peek(0x45feac, 'i'), SDTest.Peek('g_CameraScene', 'i') == SDTest.Peek(0x4600a4,
 	'i')))
-check('SC2 cScorer_Delete', lambda a=sc2scb: SDTest.Call(0x16fa70, 'tiii', a, 1)[0] == a)
+check('SC2 cScorer_Delete', lambda a=sc2scb: SDTest.Call('cScorer_Delete', 'tiii', a, 1)[0] == a)
 sc2restore(sc2gvars, sc2gsaved)
-SDTest.Poke(0x4ad7e8, 640)
-SDTest.Poke(0x4ad7ec, 480)
+SDTest.Poke('g_ViewportW', 640)
+SDTest.Poke('g_ViewportH', 480)
 
 # ---- the items of scorer 0 ----
 # the menu animation state (the first main and sub menu constructors set it up with rand)
 sc2animsize = 0x224
 sc2anim = sc2new(sc2animsize)
-SDTest.Call(0x3197d0, 'iiii', sc2anim, 0x460428 + 0x400000, sc2animsize)
-SDTest.Poke(0x460428, SDTest.Peek(0x460428, 'i') & ~0xffff)
+SDTest.Call('crt_memcpy', 'iiii', sc2anim, sym('g_MainMenuAnimInit') + 0x400000, sc2animsize)
+SDTest.Poke('g_MainMenuAnimInit', SDTest.Peek('g_MainMenuAnimInit', 'i') & ~0xffff)
 sc2types = (('sc2Slider', 'Slider', 0), ('sc2Special', 'SpecialAction', 0), ('sc2Main', 'ScraplandMainMenu', 1),
 	('sc2Sub', 'ScraplandSubMenu', 1), ('sc2Sprite', 'Sprite', 1), ('sc2Slider', 'Slider', 0), ('sc2Bad',
 	'NoType', 0))
@@ -168,12 +168,12 @@ def sc2names():
 	return r
 if sc2sc:
 	check('SC2 item list', sc2names)
-check('SC2 menu anim', lambda: (sc2b(0x460428 + 0x400000), sc2b(0x460429 + 0x400000), sc2fl(0x46042c + 0x400000, 9),
-	sc2fl(0x460450 + 0x400000, 9), sc2fl(0x460474 + 0x400000, 9), sc2fl(0x460498 + 0x400000, 19),
-	sc2fl(0x460548 + 0x400000, 19), map(sc2i, range(0x4605a0 + 0x400000, 0x4605ec + 0x400000, 4)),
-	map(sc2b, range(0x4604e4 + 0x400000, 0x4604f7 + 0x400000)), sc2fl(0x4605f0 + 0x400000, 21),
-	sc2fl(0x460594 + 0x400000, 3), sc2fl(0x460544 + 0x400000, 1), sc2fl(0x4605ec + 0x400000, 1),
-	sc2fl(0x460644 + 0x400000, 2)))
+check('SC2 menu anim', lambda: (sc2b(sym('g_MainMenuAnimInit') + 0x400000), sc2b(sym('g_SubMenuAnimInit') + 0x400000), sc2fl(sym('g_MainMenuWait') + 0x400000, 9),
+	sc2fl(sym('g_MainMenuTime') + 0x400000, 9), sc2fl(sym('g_MainMenuLength') + 0x400000, 9), sc2fl(sym('g_MainMenuSparkWait') + 0x400000, 19),
+	sc2fl(sym('g_MainMenuSparkLength') + 0x400000, 19), map(sc2i, range(sym('g_MainMenuSparkFrame') + 0x400000, sym('g_SubMenuWait') + 0x400000, 4)),
+	map(sc2b, range(sym('g_MainMenuSparkDir') + 0x400000, 0x4604f7 + 0x400000)), sc2fl(sym('g_MainMenuNeonWait') + 0x400000, 21),
+	sc2fl(sym('g_MainMenuNeonGroup') + 0x400000, 3), sc2fl(sym('g_MainMenuNeonNext') + 0x400000, 1), sc2fl(sym('g_SubMenuWait') + 0x400000, 1),
+	sc2fl(sym('g_SubMenuRingTime') + 0x400000, 2)))
 sc2a = sc2items['sc2Slider']
 if sc2a:
 	check('SC2 ctor Slider', lambda a=sc2a: (sc2ints(a, (0xac, 0xb0, 0xbc, 0xc0, 0xc4, 0xc8, 0xcc, 0xd0, 0xd4, 0xd8)),
@@ -182,7 +182,7 @@ if sc2a:
 sc2a = sc2items['sc2Special']
 if sc2a:
 	check('SC2 ctor SpecialAction', lambda a=sc2a: (sc2ints(a, (0xac, 0x11c, 0x120, 0x130, 0x134)),
-		sc2i(a + 0xf0) == SDTest.Peek(0x4a891c, 'i'), map(lambda o, a=a: sc2i(a + o) != 0, (0xbc, 0xf4, 0x100,
+		sc2i(a + 0xf0) == SDTest.Peek('g_FontHoratio', 'i'), map(lambda o, a=a: sc2i(a + o) != 0, (0xbc, 0xf4, 0x100,
 		0x104, 0x108, 0x10c))))
 sc2a = sc2items['sc2Main']
 if sc2a:
@@ -249,107 +249,107 @@ if sc2a:
 		0x34), (0xbc, 0xc0, 0xc4, 0xc8, 0xcc, 0xd0))))
 sc2a = sc2items['sc2Special']
 if sc2a:
-	check('SC2 SpecialAction fields', lambda a=sc2a: (sc2i(a + 0xf0) == SDTest.Peek(0x4a891c, 'i'),
+	check('SC2 SpecialAction fields', lambda a=sc2a: (sc2i(a + 0xf0) == SDTest.Peek('g_FontHoratio', 'i'),
 		sc2ints(a, (0xec, 0x124, 0x128, 0x12c)), map(lambda o, a=a: sc2i(sc2i(a + o) + 0x34), (0xbc, 0xf4, 0x100,
 		0x108))))
-	SDTest.Poke(0x46067c, 0)
-	check('SC2 SpecialAction Draw off', lambda a=sc2a: sc2log(lambda a=a: SDTest.Call(0x17a950, 'tvii', a, 0)))
+	SDTest.Poke('g_SpecialActionActive', 0)
+	check('SC2 SpecialAction Draw off', lambda a=sc2a: sc2log(lambda a=a: SDTest.Call('cSpecialActionScorer_Draw', 'tvii', a, 0)))
 	# only frame 0 of the white sheets: every index back to 0, no icon (DrawIcon returns at once)
 	for sc2v in ('CharAction', 'CannonIndex', 'CrossHairIndex', 'EnergyBackIndex', 'EnergyBarIndex',
 		'BatteryBarIndex', 'BackIndex', 'IconIndex', 'GlowIconIndex'):
 		sc2set('sc2Special', sc2v, 0)
-	check('SC2 SpecialAction DrawIcon', lambda a=sc2a: (SDTest.Call(0x178de0, 'tviii', a, 0, 1),
-		SDTest.Peek(0x428cf4, 'i'), sc2fl(0x428cf8 + 0x400000, 1)))
-	check('SC2 SpecialAction DrawCrossHair', lambda a=sc2a: sc2log(lambda a=a: SDTest.Call(0x178cf0, 'tvii', a,
+	check('SC2 SpecialAction DrawIcon', lambda a=sc2a: (SDTest.Call('cSpecialActionScorer_DrawIcon', 'tviii', a, 0, 1),
+		SDTest.Peek('g_SpecialActionState', 'i'), sc2fl(sym('g_SpecialActionFade') + 0x400000, 1)))
+	check('SC2 SpecialAction DrawCrossHair', lambda a=sc2a: sc2log(lambda a=a: SDTest.Call('cSpecialActionScorer_DrawCrossHair', 'tvii', a,
 		0)))
 	sc2user = Scrap.UsrEntity(0)
 	if sc2user and sc2user.IsType('WalkChar'):
 		# with the battery bar on (0x44726c) DrawEnergy reads through a NULL in both runs: only off
 		for sc2bar, sc2act, sc2t in ((0, 2, 12.5), (0, 1, 12.625)):
-			SDTest.Poke(0x44726c, sc2bar)
-			SDTest.Poke(0x46067c, sc2act)
+			SDTest.Poke('g_EnergyBarActive', sc2bar)
+			SDTest.Poke('g_SpecialActionActive', sc2act)
 			sc2setf(sc2sc + 0x20, (sc2t,))
 			check('SC2 SpecialAction DrawEnergy' + fmt((sc2bar, sc2act, sc2t)), lambda a=sc2a: sc2log(lambda a=a:
-				SDTest.Call(0x17a9e0, 'tvi', a)))
+				SDTest.Call('cSpecialActionScorer_DrawEnergy', 'tvi', a)))
 			check('SC2 SpecialAction Draw' + fmt((sc2bar, sc2act, sc2t)), lambda a=sc2a: sc2log(lambda a=a:
-				SDTest.Call(0x17a950, 'tvii', a, 0)))
+				SDTest.Call('cSpecialActionScorer_Draw', 'tvii', a, 0)))
 		# the handlers without the banker (its money label needs the frames 0x22, 0x23) and the gear aims
-		SDTest.Poke(0x44726c, 0)
-		for sc2h in (0x1780a0, 0x1782b0, 0x1783b0, 0x178480, 0x1784e0, 0x1785c0, 0x178660, 0x178770):
+		SDTest.Poke('g_EnergyBarActive', 0)
+		for sc2h in (sym('SpecialAction_DrawDefault'), sym('SpecialAction_DrawTarget'), sym('SpecialAction_DrawVictim'), sym('SpecialAction_DrawOn'), sym('SpecialAction_DrawLowEnergy'), sym('SpecialAction_DrawFunctionary'), sym('SpecialAction_DrawEnergyOnly'), sym('SpecialAction_DrawOn@178770')):
 			check('SC2 SpecialAction handler %x' % sc2h, lambda a=sc2a, h=sc2h: SDTest.Call(h, 'tvii', a, 0))
 		sc2setf(sc2sc + 0x20, (12.5,))
 sc2restore(sc2gvars, sc2gsaved)
-SDTest.Poke(0x4ad7e8, 640)
-SDTest.Poke(0x4ad7ec, 480)
+SDTest.Poke('g_ViewportW', 640)
+SDTest.Poke('g_ViewportH', 480)
 
 # ---- the slider draw, the cursor update ----
 sc2a = sc2items['sc2Slider']
 if sc2a and sc2sc:
-	check('SC2 Slider Draw', lambda a=sc2a: (sc2log(lambda a=a: SDTest.Call(0x177c70, 'tvii', a, 0)),
+	check('SC2 Slider Draw', lambda a=sc2a: (sc2log(lambda a=a: SDTest.Call('cSliderScorer_Draw', 'tvii', a, 0)),
 		sc2fl(a + 0xc0, 2), sc2b(a + 0xdc), sc2b(a + 0xdd), sc2b(a + 0xde)))
 	SScorer.SetCursor(0, 'sc2Slider')
 	sc2setf(sc2sc + 0x2c, (-10.0,))
-	check('SC2 cScorer_UpdateCursor', lambda a=sc2a: (sc2log(lambda: SDTest.Call(0x16ff90, 'tvii', sc2sc, 0)),
+	check('SC2 cScorer_UpdateCursor', lambda a=sc2a: (sc2log(lambda: SDTest.Call('cScorer_UpdateCursor', 'tvii', sc2sc, 0)),
 		sc2fl(a + 0x10, 2), sc2b(a + 0x29), sc2i(sc2i(a + 0xf4) + 0x34), sc2fl(sc2sc + 0x2c, 1),
 		SDTest.Peek(sc2sc + 0x48, '@p'), SDTest.Peek(sc2sc + 0x30, '@p'), sc2b(sc2sc + 0x100)))
 	sc2setf(sc2a + 0x10, (330.0, 245.0))
-	check('SC2 cScorer_UpdateCursor hit', lambda a=sc2a: (sc2log(lambda: SDTest.Call(0x16ff90, 'tvii', sc2sc, 0)),
+	check('SC2 cScorer_UpdateCursor hit', lambda a=sc2a: (sc2log(lambda: SDTest.Call('cScorer_UpdateCursor', 'tvii', sc2sc, 0)),
 		sc2fl(a + 0x10, 2), sc2b(a + 0x29), sc2fl(sc2sc + 0x2c, 1), SDTest.Peek(sc2sc + 0x48, '@p'),
 		SDTest.Peek(sc2sc + 0x30, '@p'), sc2i(sc2sc + 0x3c)))
 	SDTest.Poke(sc2sc + 0x50 - 0x400000, 0)
-	check('SC2 cScorer_UpdateMP', lambda: SDTest.Call(0x171490, 'tvif', sc2sc, 0.0))
+	check('SC2 cScorer_UpdateMP', lambda: SDTest.Call('cScorer_UpdateMP', 'tvif', sc2sc, 0.0))
 
 # ---- the cursor moves and the other scorer functions ----
 if sc2sc:
 	SDTest.Poke(sc2sc + 0x100 - 0x400000, 0)
 	check('SC2 cScorer_FindItem', lambda: (sc2find('sc2Special') == sc2items['sc2Special'], sc2find('sc2NoItem'),
 		sc2i(sc2sc + 4) == 0))
-	check('SC2 cScorer_FindModel', lambda: (SDTest.Call(0x170d60, 'tiis', sc2sc, 'sc2NoModel')[0],
-		SDTest.Call(0x170e30, 'tiis', sc2sc, 'sc2NoModel')[0]))
-	check('SC2 cScorer_SetParam', lambda: SDTest.Call(0x171460, 'tviss', sc2sc, 'sc2Param', 'value'))
+	check('SC2 cScorer_FindModel', lambda: (SDTest.Call('cScorer_FindModel', 'tiis', sc2sc, 'sc2NoModel')[0],
+		SDTest.Call('cScorer_FindModelModel', 'tiis', sc2sc, 'sc2NoModel')[0]))
+	check('SC2 cScorer_SetParam', lambda: SDTest.Call('cScorer_SetParam', 'tviss', sc2sc, 'sc2Param', 'value'))
 	for sc2from, sc2to in ((None, None), ('sc2Slider', 'sc2Special'), (None, 'sc2Slider'), ('sc2Special',
 		'sc2NoItem'), ('sc2NoItem', None)):
-		check('SC2 cScorer_SetCursorItem' + fmt((sc2from, sc2to)), lambda f=sc2from, t=sc2to: (SDTest.Call(0x172390,
+		check('SC2 cScorer_SetCursorItem' + fmt((sc2from, sc2to)), lambda f=sc2from, t=sc2to: (SDTest.Call('cScorer_SetCursorItem',
 			'tviizz', sc2sc, 0, f, t), SDTest.Peek(sc2sc + 0x30, '@p'), sc2fl(sc2sc + 0x2c, 1), sc2fl(sc2sc + 0x38,
 			1), sc2i(sc2sc + 0x3c)))
 	for sc2d in ('sc2Main', 'sc2Main', 'sc2Sub'):
-		check('SC2 cScorer_SetDefault ' + sc2d, lambda d=sc2d: (SDTest.Call(0x1740a0, 'tvis', sc2sc, d),
+		check('SC2 cScorer_SetDefault ' + sc2d, lambda d=sc2d: (SDTest.Call('cScorer_SetDefault', 'tvis', sc2sc, d),
 			SDTest.Peek(sc2sc + 0x48, '@p'), SDTest.Peek(sc2sc + 0x4c, '@p'), sc2fl(sc2sc + 0x2c, 1)))
 	sc2skips = map(lambda k: SDTest.Peek(sc2all + 0x104 * k + 0xa4, '@i'), range(4))
-	check('SC2 Scorer_SetInputState', lambda: (SDTest.Call(0x1710f0, 'vi', 5), map(lambda k: SDTest.Peek(sc2all +
+	check('SC2 Scorer_SetInputState', lambda: (SDTest.Call('Scorer_SetInputState', 'vi', 5), map(lambda k: SDTest.Peek(sc2all +
 		0x104 * k + 0xa4, '@i'), range(4))))
 	for sc2k in range(4):
 		SDTest.Poke(sc2all + 0x104 * sc2k + 0xa4 - 0x400000, sc2skips[sc2k])
-	check('SC2 Scorer images', lambda: (SDTest.Call(0x171000, 'i')[0] == SDTest.Peek(0x4601c8, 'i'),
-		SDTest.Call(0x170e20, 'i')[0] == SDTest.Peek(0x4601d0, 'i'), SDTest.Call(0x170e90, 'i')[0] ==
-		SDTest.Peek(0x4601cc, 'i'), SDTest.Peek(0x4601c8, 'i') != 0))
-	check('SC2 cScorer_SetMarkerSprite', lambda: (SDTest.Call(0x1740f0, 'tviz', sc2sc, None),
-		SDTest.Peek(0x4601d0, 'i') != 0, sc2i(SDTest.Peek(0x4601d0, 'i') + 0x34)))
+	check('SC2 Scorer images', lambda: (SDTest.Call('Scorer_GetWhite', 'i')[0] == SDTest.Peek('g_ScorerWhite', 'i'),
+		SDTest.Call('Scorer_GetMarker', 'i')[0] == SDTest.Peek('g_ScorerMarker', 'i'), SDTest.Call('Scorer_GetNoise', 'i')[0] ==
+		SDTest.Peek('g_ScorerNoise', 'i'), SDTest.Peek('g_ScorerWhite', 'i') != 0))
+	check('SC2 cScorer_SetMarkerSprite', lambda: (SDTest.Call('cScorer_SetMarkerSprite', 'tviz', sc2sc, None),
+		SDTest.Peek('g_ScorerMarker', 'i') != 0, sc2i(SDTest.Peek('g_ScorerMarker', 'i') + 0x34)))
 	# Scorer_PreloadTexture loads a multisprite sheet: a plain tga is a CHECK
 	for sc2v in ('Life', 'sc2NoVar', ''):
-		check('SC2 Scorer_GetCamVarStr ' + sc2v, lambda v=sc2v: SDTest.Call(0x170ed0, 'vibsi', 0, 'none', v, 0x40)[1])
-	if SDTest.Call(0x170ed0, 'vibsi', 0, 'none', 'Life', 0x40)[1] != 'none':
+		check('SC2 Scorer_GetCamVarStr ' + sc2v, lambda v=sc2v: SDTest.Call('Scorer_GetCamVarStr', 'vibsi', 0, 'none', v, 0x40)[1])
+	if SDTest.Call('Scorer_GetCamVarStr', 'vibsi', 0, 'none', 'Life', 0x40)[1] != 'none':
 		for sc2v in ('Life', 'sc2NoVar', ''):
-			check('SC2 Scorer_GetCamVarInt ' + sc2v, lambda v=sc2v: SDTest.Call(0x171010, 'iis', 0, v)[0])
-	check('SC2 cScorer_DrawXboxMsgs off', lambda: sc2log(lambda: SDTest.Call(0x173c20, 'tvii', sc2sc, 0)))
-	check('SC2 cScorer_DrawNoPadMsg big', lambda: sc2log(lambda: SDTest.Call(0x173e00, 'tviifii', sc2sc, 0, 300.0,
+			check('SC2 Scorer_GetCamVarInt ' + sc2v, lambda v=sc2v: SDTest.Call('Scorer_GetCamVarInt', 'iis', 0, v)[0])
+	check('SC2 cScorer_DrawXboxMsgs off', lambda: sc2log(lambda: SDTest.Call('cScorer_DrawXboxMsgs', 'tvii', sc2sc, 0)))
+	check('SC2 cScorer_DrawNoPadMsg big', lambda: sc2log(lambda: SDTest.Call('cScorer_DrawNoPadMsg', 'tviifii', sc2sc, 0, 300.0,
 		1, 0)))
-	check('SC2 cScorer_DrawNoPadMsg', lambda: sc2log(lambda: SDTest.Call(0x173e00, 'tviifii', sc2sc, 0, 300.0, 0,
+	check('SC2 cScorer_DrawNoPadMsg', lambda: sc2log(lambda: SDTest.Call('cScorer_DrawNoPadMsg', 'tviifii', sc2sc, 0, 300.0, 0,
 		2)))
-	SDTest.Poke(0x460160, 1)
-	check('SC2 cScorer_DrawXboxMsgs pad', lambda: sc2log(lambda: SDTest.Call(0x173c20, 'tvii', sc2sc, 0)))
-	SDTest.Poke(0x460160, 0)
-	check('SC2 cScorer_DrawClouds', lambda: sc2log(lambda: SDTest.Call(0x172fe0, 'tvii', sc2sc, 0)))
+	SDTest.Poke('g_XboxNoPadMsg', 1)
+	check('SC2 cScorer_DrawXboxMsgs pad', lambda: sc2log(lambda: SDTest.Call('cScorer_DrawXboxMsgs', 'tvii', sc2sc, 0)))
+	SDTest.Poke('g_XboxNoPadMsg', 0)
+	check('SC2 cScorer_DrawClouds', lambda: sc2log(lambda: SDTest.Call('cScorer_DrawClouds', 'tvii', sc2sc, 0)))
 	sc2restore(sc2gvars, sc2gsaved)
 
 # ---- the items deleted: Clear marks them, RemoveDeleted runs the deleting destructors ----
 if sc2sc:
 	SDTest.Poke(sc2sc + 0x100 - 0x400000, 0)
 	check('SC2 SScorer.Clear(0)', lambda: (SScorer.Clear(0), sc2b(sc2sc + 8), sc2fl(sc2sc + 0x2c, 1)))
-	check('SC2 cScorer_RemoveDeleted', lambda: (SDTest.Call(0x172530, 'tvii', sc2sc, 0), sc2i(sc2sc + 0x40) != 0,
+	check('SC2 cScorer_RemoveDeleted', lambda: (SDTest.Call('cScorer_RemoveDeleted', 'tvii', sc2sc, 0), sc2i(sc2sc + 0x40) != 0,
 		sc2i(sc2sc + 4) != 0, sc2i(sc2sc + 0x50) != 0))
 	check('SC2 items gone', lambda: map(lambda t: SScorer.GetItem(0, t[0]), sc2types))
-	SDTest.Call(0x3197d0, 'iiii', 0x460428 + 0x400000, sc2anim, sc2animsize)
+	SDTest.Call('crt_memcpy', 'iiii', sym('g_MainMenuAnimInit') + 0x400000, sc2anim, sc2animsize)
 	sc2free(sc2anim)
 	for sc2k in range(5):
 		SDTest.Poke(sc2sc + [0x20, 0x24, 0x28, 0x2c, 0x100][sc2k] - 0x400000, sc2scsaved[sc2k])

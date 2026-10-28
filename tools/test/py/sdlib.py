@@ -1,8 +1,17 @@
 # Shared by the test scripts that tools/test/difftest.sh runs in the game (Python 1.5.2 syntax). The script sets
 # OUT (output file name) and then runs execfile on this file.
-import strop, sys
+import strop, sys, SDTest
 
 out = open(OUT, 'w')
+
+# the functions and data of the exe by name (src/core/testsyms.inc, written by tools/test/testsyms.py): sym is the rva
+# that SDTest.Call, Peek and Poke take (they also take the name itself), symva the address (0x400000 + rva) as the
+# pointers of the game hold it
+def sym(name):
+	return SDTest.Sym(name)
+
+def symva(name):
+	return 0x400000 + SDTest.Sym(name)
 
 # floats with 17 digits: repr() of Python 1.5.2 shows only 12, which hides differences in the last bits.
 # Python 1.5.2 has no string methods, hence no join.

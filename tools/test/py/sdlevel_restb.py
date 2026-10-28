@@ -5,31 +5,31 @@ def rsbli(a):
 	return SDTest.Peek(a, '@i')
 def rsblb(a):
 	return SDTest.Peek(a, '@i') & 0xff
-rsblpass = SDTest.Peek(0x4afdb8, 'i')
-rsbln = SDTest.Peek(0x4af7c8, 'i')
+rsblpass = SDTest.Peek('g_RenderPass', 'i')
+rsbln = SDTest.Peek('g_NumModelosRender', 'i')
 check('models in the render list', lambda: rsbln > 0)
-SDTest.Poke(0x4afdb8, 1)
+SDTest.Poke('g_RenderPass', 1)
 rsblk = 0
 while rsblk < rsbln and rsblk < 60:
-	rsblm = rsbli(SDTest.Peek(0x4ae7c8 + rsblk * 4, 'i'))
+	rsblm = rsbli(SDTest.Peek(sym('g_ModelosRender') + rsblk * 4, 'i'))
 	if rsblm:
 		check('CModelo_Visibility' + fmt((rsblk, SDTest.Peek(rsbli(rsblm + 4), '@s'))), lambda: (
-			SDTest.Call(0x254940, 'tbii', rsblm, rsblm + 0xb0)[0], rsblb(rsblm + 0x120), rsblb(rsblm + 0x121),
+			SDTest.Call('CModelo_Visibility', 'tbii', rsblm, rsblm + 0xb0)[0], rsblb(rsblm + 0x120), rsblb(rsblm + 0x121),
 			rsbli(rsblm + 0x100)))
 	rsblk = rsblk + 1
-SDTest.Poke(0x4afdb8, rsblpass)
+SDTest.Poke('g_RenderPass', rsblpass)
 def rsblfl(a, n):
-	return SDTest.Call(0x3197d0, 'iFii', (0.0,) * n, a, 4 * n)[1]
-SDTest.Poke(0x4afdb8, 1)
+	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
+SDTest.Poke('g_RenderPass', 1)
 rsblk = 0
 while rsblk < rsbln and rsblk < 12:
-	rsblm = rsbli(SDTest.Peek(0x4ae7c8 + rsblk * 4, 'i'))
+	rsblm = rsbli(SDTest.Peek(sym('g_ModelosRender') + rsblk * 4, 'i'))
 	if rsblm:
-		check('CModelo_Render' + fmt((rsblk,)), lambda: (SDTest.Call(0x253610, 'tvi', rsblm), rsblb(rsblm + 0x121),
+		check('CModelo_Render' + fmt((rsblk,)), lambda: (SDTest.Call('CModelo_Render', 'tvi', rsblm), rsblb(rsblm + 0x121),
 			rsblfl(rsblm + 0xb0, 16)))
-		check('CModelo_UpdateLOD' + fmt((rsblk,)), lambda: SDTest.Call(0x2542c0, 'tbi', rsblm)[0])
+		check('CModelo_UpdateLOD' + fmt((rsblk,)), lambda: SDTest.Call('CModelo_UpdateLOD', 'tbi', rsblm)[0])
 	rsblk = rsblk + 1
-SDTest.Poke(0x4afdb8, rsblpass)
+SDTest.Poke('g_RenderPass', rsblpass)
 
 # Stencil_Malla on the device meshes of the first models that have their shadow data: a light set here, the
 # distance multiplier raised so the meshes count as near, the counters of the volumes cleared and put back after
@@ -37,7 +37,7 @@ def rsblmeshes():
 	r = []
 	k = 0
 	while k < rsbln and len(r) < 3:
-		m = rsbli(SDTest.Peek(0x4ae7c8 + k * 4, 'i'))
+		m = rsbli(SDTest.Peek(sym('g_ModelosRender') + k * 4, 'i'))
 		k = k + 1
 		if not m or not rsbli(m + 0xac):
 			continue
@@ -56,55 +56,55 @@ def rsblmeshes():
 			if rsbli(o + 0x3c) and rsbli(o + 0x40) and rsbli(o + 0x44) and rsbli(o + 0xb4) and not (rsbli(rsbli(o + 0xb4) + 0x18) & 0x20):
 				r.append(o)
 	return r
-rsblvars = (0x4afdb0, 0x4afdc0, 0x4afdc4, 0x432578, 0x4afdd0, 0x4afdd8, 0x4afde0, 0x4afde4, 0x43257c, 0x432580,
-	0x4afdc8, 0x390030, 0x390034, 0x390038, 0x39006c, 0x390070, 0x390074, 0x39004c)
+rsblvars = (sym('g_SombrasStencil'), sym('g_StencilCapturar'), sym('g_ShadowLight'), sym('g_StencilMultFrame'), sym('g_StencilSegs'), sym('g_StencilInv'), sym('g_StencilGrupos'), sym('g_StencilGruposMax'), sym('g_ShadowLightTipo'), sym('g_ShadowRange'),
+	sym('g_ShadowCos'), sym('g_ShadowLightPos'), sym('g_ShadowLightPos') + 0x4, sym('g_ShadowLightPos') + 0x8, sym('g_ShadowLightDir'), sym('g_ShadowLightDir') + 0x4, sym('g_ShadowLightDir') + 0x8, sym('g_ShowStencil'))
 rsblsave = map(lambda a: SDTest.Peek(a, 'i'), rsblvars)
 rsblms = rsblmeshes()
-check('stencil meshes', lambda: (len(rsblms), SDTest.Peek(0x4afddc, 'i') != 0, SDTest.Peek(0x4afdcc, 'i') != 0,
-	SDTest.Peek(0x4afdd4, 'i') != 0))
+check('stencil meshes', lambda: (len(rsblms), SDTest.Peek('g_StencilBlock', 'i') != 0, SDTest.Peek('g_StencilSegmentos', 'i') != 0,
+	SDTest.Peek('g_StencilTriangInv', 'i') != 0))
 def rsblsetf(rva, v):
-	SDTest.Call(0x3197d0, 'iiFi', rva + 0x400000, (v,), 4)
+	SDTest.Call('crt_memcpy', 'iiFi', rva + 0x400000, (v,), 4)
 def rsblblock(i):
-	b = SDTest.Peek(0x4afddc, 'i') + i * 0x80
+	b = SDTest.Peek('g_StencilBlock', 'i') + i * 0x80
 	return (rsbli(b) != 0, rsblfl(b + 4, 4), rsblb(b + 0x18), rsblb(b + 0x19), rsblfl(b + 0x1c, 6),
 		rsblfl(b + 0x34, 16), rsbli(b + 0x74), rsbli(b + 0x7c))
 def rsblstate():
-	segs = SDTest.Peek(0x4afdd0, 'i')
-	tris = SDTest.Peek(0x4afdd8, 'i')
-	sp = SDTest.Peek(0x4afdcc, 'i')
-	tp = SDTest.Peek(0x4afdd4, 'i')
+	segs = SDTest.Peek('g_StencilSegs', 'i')
+	tris = SDTest.Peek('g_StencilInv', 'i')
+	sp = SDTest.Peek('g_StencilSegmentos', 'i')
+	tp = SDTest.Peek('g_StencilTriangInv', 'i')
 	f = []
 	for j in range(min(48, 0x10000)):
-		f.append(SDTest.Peek(0x3902c0 + j, 'b'))
-	r = (segs, tris, SDTest.Peek(0x4afde0, 'i'), SDTest.Peek(0x4afde4, 'i'), f)
+		f.append(SDTest.Peek(sym('g_TriFacing') + j, 'b'))
+	r = (segs, tris, SDTest.Peek('g_StencilGrupos', 'i'), SDTest.Peek('g_StencilGruposMax', 'i'), f)
 	if segs:
 		r = r + (rsblfl(sp, 6 * min(segs, 4)), rsblfl(sp + (segs - 1) * 0x18, 6))
 	if tris:
 		r = r + (rsblfl(tp, 9 * min(tris, 3)), rsblfl(tp + (tris - 1) * 0x24, 9))
 	return r
-if len(rsblms) and SDTest.Peek(0x4afddc, 'i') and SDTest.Peek(0x4afdcc, 'i') and SDTest.Peek(0x4afdd4, 'i'):
-	rsblluz = SDTest.Call(0x133650, 'ii', 0xcc)[0]
+if len(rsblms) and SDTest.Peek('g_StencilBlock', 'i') and SDTest.Peek('g_StencilSegmentos', 'i') and SDTest.Peek('g_StencilTriangInv', 'i'):
+	rsblluz = SDTest.Call('Mem_Calloc', 'ii', 0xcc)[0]
 	for rsblcase in ((0, 1, 1, 0x1388), (1, 0, 1, 0x1388), (1, 1, 0, 0x1388), (1, 1, 1, 0x1388), (1, 1, 1, 0x138a),
 			(1, 1, 1, 0x1389)):
-		SDTest.Poke(0x4afdd0, 0)
-		SDTest.Poke(0x4afdd8, 0)
-		SDTest.Poke(0x4afde0, 0)
-		SDTest.Poke(0x4afde4, 0)
-		SDTest.Poke(0x4afdb0, rsblcase[0])
-		SDTest.Poke(0x4afdc0, rsblcase[1])
-		SDTest.Poke(0x4afdc4, rsblcase[2] and rsblluz)
-		SDTest.Poke(0x43257c, rsblcase[3])
-		rsblsetf(0x432578, 1e10)
-		rsblsetf(0x432580, 3000.0)
-		rsblsetf(0x4afdc8, 0.5)
-		SDTest.Call(0x3197d0, 'iiFi', 0x390030 + 0x400000, (pp[0] + 50.0, pp[1] + 900.0, pp[2] - 30.0), 12)
-		SDTest.Call(0x3197d0, 'iiFi', 0x39006c + 0x400000, (0.0, -1.0, 0.0), 12)
+		SDTest.Poke('g_StencilSegs', 0)
+		SDTest.Poke('g_StencilInv', 0)
+		SDTest.Poke('g_StencilGrupos', 0)
+		SDTest.Poke('g_StencilGruposMax', 0)
+		SDTest.Poke('g_SombrasStencil', rsblcase[0])
+		SDTest.Poke('g_StencilCapturar', rsblcase[1])
+		SDTest.Poke('g_ShadowLight', rsblcase[2] and rsblluz)
+		SDTest.Poke('g_ShadowLightTipo', rsblcase[3])
+		rsblsetf(sym('g_StencilMultFrame'), 1e10)
+		rsblsetf(sym('g_ShadowRange'), 3000.0)
+		rsblsetf(sym('g_ShadowCos'), 0.5)
+		SDTest.Call('crt_memcpy', 'iiFi', sym('g_ShadowLightPos') + 0x400000, (pp[0] + 50.0, pp[1] + 900.0, pp[2] - 30.0), 12)
+		SDTest.Call('crt_memcpy', 'iiFi', sym('g_ShadowLightDir') + 0x400000, (0.0, -1.0, 0.0), 12)
 		for rsblm in rsblms:
-			check('Stencil_Malla' + fmt(rsblcase), lambda: (SDTest.Call(0x267530, 'viiiii', 0, 0, 0, rsblm, 0),
+			check('Stencil_Malla' + fmt(rsblcase), lambda: (SDTest.Call('Stencil_Malla', 'viiiii', 0, 0, 0, rsblm, 0),
 				rsblstate()))
-		if SDTest.Peek(0x4afde0, 'i'):
+		if SDTest.Peek('g_StencilGrupos', 'i'):
 			check('Stencil_Malla block', lambda: rsblblock(0))
-	SDTest.Call(0x133550, 'vi', rsblluz)
+	SDTest.Call('Mem_Free', 'vi', rsblluz)
 for rsblk in range(len(rsblvars)):
 	SDTest.Poke(rsblvars[rsblk], rsblsave[rsblk])
 
@@ -116,50 +116,50 @@ def rsbllog(fn):
 	r = fn()
 	SDTest.D3DLog(0)
 	return (r, SDTest.Out())
-rsbldvars = (0x4a8f70, 0x4af850, 0x4af880, 0x4af820, 0x4af808)
+rsbldvars = (sym('g_ShowCollision'), sym('g_ShowMapSolid'), sym('g_ShowMapQuads'), sym('g_ShowMapQDist'), sym('g_AnalizeQuads'))
 rsbldsave = map(lambda a: SDTest.Peek(a, 'i'), rsbldvars)
-rsblsuelo = rsbli(SDTest.Peek(0x4afde8, 'i') + 0xb0)
+rsblsuelo = rsbli(SDTest.Peek('g_Mundo', 'i') + 0xb0)
 check('suelo', lambda: rsblsuelo != 0)
 # a 2 x 2 grid of quads (one cell with a second quad) next to the camera on a floor made here
-rsblcam = rsblfl(rsbli(SDTest.Peek(0x4afde8, 'i') + 0xa4) + 0x14, 3)
-rsblgrid = SDTest.Call(0x133650, 'ii', 0x3524)[0]
-rsblq = SDTest.Call(0x133650, 'ii', 0x24 * 5)[0]
+rsblcam = rsblfl(rsbli(SDTest.Peek('g_Mundo', 'i') + 0xa4) + 0x14, 3)
+rsblgrid = SDTest.Call('Mem_Calloc', 'ii', 0x3524)[0]
+rsblq = SDTest.Call('Mem_Calloc', 'ii', 0x24 * 5)[0]
 SDTest.Poke(rsblgrid + 0x3500 - 0x400000, 4)
 SDTest.Poke(rsblgrid + 0x3504 - 0x400000, rsblq)
 SDTest.Poke(rsblgrid + 0x3508 - 0x400000, 2)
 SDTest.Poke(rsblgrid + 0x350c - 0x400000, 2)
-SDTest.Call(0x3197d0, 'iiFi', rsblgrid + 0x3510, (100.0, 80.0), 8)
-SDTest.Call(0x3197d0, 'iiFi', rsblgrid + 0x34dc, (rsblcam[0] - 100.0, rsblcam[1] - 50.0, rsblcam[2] - 30.0), 12)
+SDTest.Call('crt_memcpy', 'iiFi', rsblgrid + 0x3510, (100.0, 80.0), 8)
+SDTest.Call('crt_memcpy', 'iiFi', rsblgrid + 0x34dc, (rsblcam[0] - 100.0, rsblcam[1] - 50.0, rsblcam[2] - 30.0), 12)
 for rsblk in range(5):
-	SDTest.Call(0x3197d0, 'iiFi', rsblq + rsblk * 0x24, (rsblcam[1] + 10.0 * rsblk, rsblcam[1] - 5.0 * rsblk), 8)
-	SDTest.Call(0x3197d0, 'iiFi', rsblq + rsblk * 0x24 + 0x14, (rsblcam[1] + 20.0 + rsblk, rsblcam[1] - 20.0), 8)
+	SDTest.Call('crt_memcpy', 'iiFi', rsblq + rsblk * 0x24, (rsblcam[1] + 10.0 * rsblk, rsblcam[1] - 5.0 * rsblk), 8)
+	SDTest.Call('crt_memcpy', 'iiFi', rsblq + rsblk * 0x24 + 0x14, (rsblcam[1] + 20.0 + rsblk, rsblcam[1] - 20.0), 8)
 	SDTest.Poke(rsblq + rsblk * 0x24 + 0xc - 0x400000, (0x50, 0x150, 0x3ff, 0x400, 0x777)[rsblk])
 SDTest.Poke(rsblq + 0x20 - 0x400000, rsblq + 4 * 0x24)
 for rsblqd in (0.0, 120.0):
 	for rsblqm in (1, 2, 3, 4, 5, 6, 7):
-		SDTest.Poke(0x4a8f70, 0)
-		SDTest.Poke(0x4af880, rsblqm)
-		rsblsetf(0x4af820, rsblqd)
-		check('CSuelo_DrawDebug quads' + fmt((rsblqm, rsblqd)), lambda: rsbllog(lambda: SDTest.Call(0x25a260, 'tvi',
+		SDTest.Poke('g_ShowCollision', 0)
+		SDTest.Poke('g_ShowMapQuads', rsblqm)
+		rsblsetf(sym('g_ShowMapQDist'), rsblqd)
+		check('CSuelo_DrawDebug quads' + fmt((rsblqm, rsblqd)), lambda: rsbllog(lambda: SDTest.Call('CSuelo_DrawDebug', 'tvi',
 			rsblgrid)))
-SDTest.Poke(0x4af880, 0)
-SDTest.Poke(0x4af808, 1)
+SDTest.Poke('g_ShowMapQuads', 0)
+SDTest.Poke('g_AnalizeQuads', 1)
 for rsblk in range(5):
 	SDTest.Poke(rsblq + rsblk * 0x24 + 0xc - 0x400000, 0)
-check('CSuelo_DrawDebug analize grid', lambda: rsbllog(lambda: (SDTest.Call(0x25a260, 'tvi', rsblgrid),
-	SDTest.Peek(0x4af808, 'i'))))
-SDTest.Call(0x133550, 'vi', rsblq)
-SDTest.Call(0x133550, 'vi', rsblgrid)
-SDTest.Poke(0x4af880, 0)
-SDTest.Poke(0x4af808, 1)
-check('CSuelo_DrawDebug analize', lambda: rsbllog(lambda: (SDTest.Call(0x25a260, 'tvi', rsblsuelo),
-	SDTest.Peek(0x4af808, 'i'))))
-rsblfake = SDTest.Call(0x133650, 'ii', 0x3524)[0]
+check('CSuelo_DrawDebug analize grid', lambda: rsbllog(lambda: (SDTest.Call('CSuelo_DrawDebug', 'tvi', rsblgrid),
+	SDTest.Peek('g_AnalizeQuads', 'i'))))
+SDTest.Call('Mem_Free', 'vi', rsblq)
+SDTest.Call('Mem_Free', 'vi', rsblgrid)
+SDTest.Poke('g_ShowMapQuads', 0)
+SDTest.Poke('g_AnalizeQuads', 1)
+check('CSuelo_DrawDebug analize', lambda: rsbllog(lambda: (SDTest.Call('CSuelo_DrawDebug', 'tvi', rsblsuelo),
+	SDTest.Peek('g_AnalizeQuads', 'i'))))
+rsblfake = SDTest.Call('Mem_Calloc', 'ii', 0x3524)[0]
 for rsblshow in (0, 1, 6, 3):
-	SDTest.Poke(0x4a8f70, rsblshow)
-	SDTest.Poke(0x4af850, 0)
-	check('CSuelo_DrawDebug empty' + fmt((rsblshow,)), lambda: rsbllog(lambda: (SDTest.Call(0x25a260, 'tvi',
-		rsblfake), SDTest.Peek(0x4af850, 'i'))))
-SDTest.Call(0x133550, 'vi', rsblfake)
+	SDTest.Poke('g_ShowCollision', rsblshow)
+	SDTest.Poke('g_ShowMapSolid', 0)
+	check('CSuelo_DrawDebug empty' + fmt((rsblshow,)), lambda: rsbllog(lambda: (SDTest.Call('CSuelo_DrawDebug', 'tvi',
+		rsblfake), SDTest.Peek('g_ShowMapSolid', 'i'))))
+SDTest.Call('Mem_Free', 'vi', rsblfake)
 for rsblk in range(len(rsbldvars)):
 	SDTest.Poke(rsbldvars[rsblk], rsbldsave[rsblk])

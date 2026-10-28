@@ -8,49 +8,49 @@ def ns2i(a):
 	return SDTest.Peek(a, '@i')
 
 NS2VOICE = 7
-ns2v = 0x8a94e0 + NS2VOICE * 0x19c
+ns2v = symva('g_MusicVoices') + NS2VOICE * 0x19c
 # the music and voice globals the calls change: 0x831d04..0x831d1c, the stream, paused, the counts of the voices
 ns2state = []
-for ns2a in (0x831d04, 0x831d08, 0x831d0c, 0x831d10, 0x831d14, 0x831d18, 0x831d1c, 0x8aa2f4, 0x8aa2f8, 0x8aa304,
-		0x8aa308):
+for ns2a in (symva('g_MusicVolume'), symva('g_MusicVoiceover'), symva('g_MusicChannel'), symva('g_MusicVoiceoverTarget'), symva('g_MusicVoiceoverSpeed'), symva('g_MusicFadeTarget'), symva('g_MusicFadeSpeed'), symva('g_MusicStream'), symva('g_MusicPaused'), symva('g_NumVoices'),
+		symva('g_NumVoiceovers')):
 	ns2state.append((ns2a, ns2i(ns2a)))
-ns2name = SDTest.Peek(0x4aa1f0, 's')
-ns2fmod = SDTest.Peek(0x4a94dc, 'i') > 0
+ns2name = SDTest.Peek('g_MusicName', 's')
+ns2fmod = SDTest.Peek('g_FmodState', 'i') > 0
 
-check('ns2 Voice_Wait none', lambda: SDTest.Call(0x232120, 'vii', ns2v, 0)[0])
+check('ns2 Voice_Wait none', lambda: SDTest.Call('Voice_Wait', 'vii', ns2v, 0)[0])
 
 # a voice of English.packed
 ns2file = 'Sounds/Voices/challengecombatbertomsg1'
-ns2pack = SDTest.Call(0x130240, 'bsbpp', ns2file + '.ogg', '', 0, 0)
+ns2pack = SDTest.Call('Pack_GetFileInfo', 'bsbpp', ns2file + '.ogg', '', 0, 0)
 check('ns2 Pack_GetFileInfo', lambda: (ns2pack[0] != 0, ns2pack[3]))
 if ns2fmod and ns2pack[0] and ns2i(ns2v + 0x104) == 0:
-	check('ns2 Voice_Open', lambda: (SDTest.Call(0x2328e0, 'isii', ns2file, NS2VOICE, 0)[0], ns2i(ns2v + 0x104) != 0,
+	check('ns2 Voice_Open', lambda: (SDTest.Call('Voice_Open', 'isii', ns2file, NS2VOICE, 0)[0], ns2i(ns2v + 0x104) != 0,
 		ns2i(ns2v + 0x108)))
-	check('ns2 Voice_Remain', lambda: SDTest.Call(0x232c60, 'biF', NS2VOICE, (0.0,)))
-	check('ns2 Voice_SetParam before', lambda: SDTest.Call(0x232a80, 'bif', NS2VOICE, 0.5)[0])
-	check('ns2 Voice_Play', lambda: (SDTest.Call(0x232b40, 'bi', NS2VOICE)[0], ns2i(ns2v + 0x108) >= 0))
-	check('ns2 Voice_SetVolume', lambda: SDTest.Call(0x232dd0, 'bif', NS2VOICE, 0.0)[0])
-	check('ns2 Voice_Stop', lambda: (SDTest.Call(0x232d80, 'bi', NS2VOICE)[0], ns2i(ns2v + 0x104), ns2i(ns2v + 0x108)))
+	check('ns2 Voice_Remain', lambda: SDTest.Call('Voice_Remain', 'biF', NS2VOICE, (0.0,)))
+	check('ns2 Voice_SetParam before', lambda: SDTest.Call('Voice_SetParam', 'bif', NS2VOICE, 0.5)[0])
+	check('ns2 Voice_Play', lambda: (SDTest.Call('Voice_Play', 'bi', NS2VOICE)[0], ns2i(ns2v + 0x108) >= 0))
+	check('ns2 Voice_SetVolume', lambda: SDTest.Call('Voice_SetVolume', 'bif', NS2VOICE, 0.0)[0])
+	check('ns2 Voice_Stop', lambda: (SDTest.Call('Voice_Stop', 'bi', NS2VOICE)[0], ns2i(ns2v + 0x104), ns2i(ns2v + 0x108)))
 else:
 	check('ns2 Voice skipped', lambda: (ns2fmod, ns2i(ns2v + 0x104) == 0))
 
 # a music file of Data.packed, stopped right after the open; the music of the menu is stopped first and started
 # again at the end
-ns2music = ns2fmod and (ns2i(0x8aa2f4) == 0 or ns2name != '')
+ns2music = ns2fmod and (ns2i(symva('g_MusicStream')) == 0 or ns2name != '')
 if ns2music:
-	check('ns2 Music_Stop menu', lambda: (SDTest.Call(0x232360, 'b')[0], ns2i(0x8aa2f4), ns2i(0x831d0c)))
-	check('ns2 Music_PlayFile', lambda: (SDTest.Call(0x232240, 'bss', 'epic.ogg', 'Music/')[0], ns2i(0x8aa2f4) != 0,
-		SDTest.Peek(0x4aa1f0, 's')))
-	check('ns2 Music_Stop', lambda: (SDTest.Call(0x232360, 'b')[0], ns2i(0x8aa2f4), ns2i(0x831d0c)))
-	check('ns2 Music_Update', lambda: SDTest.Call(0x232600, 'b')[0])
+	check('ns2 Music_Stop menu', lambda: (SDTest.Call('Music_Stop', 'b')[0], ns2i(symva('g_MusicStream')), ns2i(symva('g_MusicChannel'))))
+	check('ns2 Music_PlayFile', lambda: (SDTest.Call('Music_PlayFile', 'bss', 'epic.ogg', 'Music/')[0], ns2i(symva('g_MusicStream')) != 0,
+		SDTest.Peek('g_MusicName', 's')))
+	check('ns2 Music_Stop', lambda: (SDTest.Call('Music_Stop', 'b')[0], ns2i(symva('g_MusicStream')), ns2i(symva('g_MusicChannel'))))
+	check('ns2 Music_Update', lambda: SDTest.Call('Music_Update', 'b')[0])
 else:
-	check('ns2 Music skipped', lambda: (ns2fmod, ns2i(0x8aa2f4) != 0))
+	check('ns2 Music skipped', lambda: (ns2fmod, ns2i(symva('g_MusicStream')) != 0))
 
 # back
 for ns2a, ns2x in ns2state:
-	if not ns2music or ns2a not in (0x8aa2f4, 0x831d0c):
+	if not ns2music or ns2a not in (symva('g_MusicStream'), symva('g_MusicChannel')):
 		SDTest.Poke(ns2a - 0x400000, ns2x)
 if ns2music and ns2state[7][1] != 0:
-	check('ns2 Music_PlayFile menu', lambda: (SDTest.Call(0x232240, 'bss', ns2name, '')[0], ns2i(0x8aa2f4) != 0))
+	check('ns2 Music_PlayFile menu', lambda: (SDTest.Call('Music_PlayFile', 'bss', ns2name, '')[0], ns2i(symva('g_MusicStream')) != 0))
 else:
-	SDTest.Call(0x22cf50, 'iisi', 0x8aa1f0, ns2name, 0x104)
+	SDTest.Call('Cad_Copy', 'iisi', symva('g_MusicName'), ns2name, 0x104)

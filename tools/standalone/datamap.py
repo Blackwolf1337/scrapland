@@ -229,13 +229,15 @@ def scan_c(m, cpath, syms):
 
 
 def scan_tests(m):
-	"""the rvas of the room in the test scripts"""
+	"""the rvas of the room in the test scripts: their numbers and the names of src/core/testsyms.inc"""
+	sys.path.insert(0, os.path.join(ROOT, 'tools', 'test'))
+	from testsyms import numbers, read_table
+	syms = read_table()
 	seeds = []
 	d = os.path.join(ROOT, 'tools', 'test', 'py')
 	for f in sorted(os.listdir(d)):
 		if f.endswith('.py'):
-			for v in re.findall(r'\b0x([0-9a-fA-F]+)\b', open(os.path.join(d, f)).read()):
-				v = int(v, 16)
+			for v in numbers(open(os.path.join(d, f)).read(), syms):
 				if v >= DATA_START and m.region(v):
 					# what a test reads through SDTest the probe sees (it runs in the C), so a number that only
 					# looks like an rva keeps no more than its unit

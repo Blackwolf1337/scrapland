@@ -4,7 +4,7 @@
 def fli(a):
 	return SDTest.Peek(a, '@i')
 def flpokef(a, v):
-	SDTest.Call(0x3197d0, 'iiFi', a, v, 4 * len(v))
+	SDTest.Call('crt_memcpy', 'iiFi', a, v, 4 * len(v))
 def flget(f):
 	g = fli(f + 0x34)
 	r = []
@@ -16,8 +16,8 @@ def flget(f):
 	if g:
 		r = r + [fli(g), fli(g + 4), fli(g + 0x10), fli(g + 0x14), fli(g + 0x38)]
 	return r
-a = SDTest.Call(0x1334d0, 'ii', 44)[0]
-b = SDTest.Call(0x1334d0, 'ii', 44)[0]
+a = SDTest.Call('operator_new', 'ii', 44)[0]
+b = SDTest.Call('operator_new', 'ii', 44)[0]
 vals = (1.0, 2.0, -3.0, 0.5, 0.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0)
 flpokef(a, vals)
 for i in (-1, 0, 3, 6, 10):
@@ -25,48 +25,48 @@ for i in (-1, 0, 3, 6, 10):
 	if i >= 0:
 		v[i] = v[i] + 1.0
 	flpokef(b, tuple(v))
-	check('Floats11_Equal' + fmt((i,)), lambda: SDTest.Call(0x297bd0, 'bii', a, b)[0])
-f = SDTest.Call(0x297c90, 'tii', SDTest.Call(0x1334d0, 'ii', 0x3c)[0])[0]
+	check('Floats11_Equal' + fmt((i,)), lambda: SDTest.Call('Floats11_Equal', 'bii', a, b)[0])
+f = SDTest.Call('CFlare_ctor', 'tii', SDTest.Call('operator_new', 'ii', 0x3c)[0])[0]
 check('CFlare_ctor', lambda f=f: (fli(f), fli(f + 4), flget(f)))
-check('CFlare_SetTextureAdd', lambda f=f: (SDTest.Call(0x298360, 'tviss', f, 'bmp/rgb_white.tga', 'bmp/rgb_grey.tga'),
+check('CFlare_SetTextureAdd', lambda f=f: (SDTest.Call('CFlare_SetTextureAdd', 'tviss', f, 'bmp/rgb_white.tga', 'bmp/rgb_grey.tga'),
 	flget(f)))
-check('CFlare_SetTexture', lambda f=f: (SDTest.Call(0x298380, 'tvizziii', f, 'bmp/rgb_white.tga', None, 2, 1, 180),
+check('CFlare_SetTexture', lambda f=f: (SDTest.Call('CFlare_SetTexture', 'tvizziii', f, 'bmp/rgb_white.tga', None, 2, 1, 180),
 	flget(f), SDTest.Peek(fli(fli(f + 0x34) + 0x3c) + 0x30, '@i')))
-nodo = SDTest.Call(0x1334d0, 'ii', 0x100)[0]
-SDTest.Call(0x3197d0, 'iiFi', nodo + 0x5c, (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+nodo = SDTest.Call('operator_new', 'ii', 0x100)[0]
+SDTest.Call('crt_memcpy', 'iiFi', nodo + 0x5c, (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
 	1.0), 64)
 SDTest.Poke(nodo + 4 - 0x400000, 0)
 SDTest.Poke(f + 8 - 0x400000, nodo)
 rdproj = []
 rdviewm = []
 for i in range(16):
-	rdproj.append(SDTest.Peek(0x4ae3f8 + 4 * i, 'i'))
-	rdviewm.append(SDTest.Peek(0x4ae4b8 + 4 * i, 'i'))
+	rdproj.append(SDTest.Peek(sym('g_DeviceStr') + 0x100 + 4 * i, 'i'))
+	rdviewm.append(SDTest.Peek(sym('g_DeviceStr') + 0x1c0 + 4 * i, 'i'))
 # a projection of 90 degrees, the view the identity, the eye at 0
-SDTest.Call(0x3197d0, 'iiFi', 0x4ae3f8 + 0x400000, (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.001, 1.0, 0.0,
+SDTest.Call('crt_memcpy', 'iiFi', sym('g_DeviceStr') + 0x100 + 0x400000, (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.001, 1.0, 0.0,
 	0.0, -0.1, 0.0), 64)
-SDTest.Call(0x3197d0, 'iiFi', 0x4ae4b8 + 0x400000, (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+SDTest.Call('crt_memcpy', 'iiFi', sym('g_DeviceStr') + 0x1c0 + 0x400000, (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
 	0.0, 0.0, 1.0), 64)
-rdfl = (SDTest.Peek(0x4a8ed0, 'i'), SDTest.Peek(0x4ad6f4, 'i'), SDTest.Peek(0x4d6d90, 'i'), SDTest.Peek(0x4329a0, 'i'),
-	SDTest.Peek(0x4329a4, 'i'), SDTest.Peek(0x4329a8, 'i'), SDTest.Peek(0x4d6d94, 'i'), SDTest.Peek(0x4d6da8, 'i'))
-rdfl2 = (SDTest.Peek(0x4d6dc0, 'i'), SDTest.Peek(0x4a8f2c, 'i'), SDTest.Peek(0x4ad7e8, 'i'), SDTest.Peek(0x4ad7ec, 'i'))
+rdfl = (SDTest.Peek('g_TimeMsF', 'i'), SDTest.Peek('g_pd3dDevice', 'i'), SDTest.Peek('g_FlareAtenDist', 'i'), SDTest.Peek('g_FlareAtenDistFin', 'i'),
+	SDTest.Peek('g_FlareFundidoEnt', 'i'), SDTest.Peek('g_FlareFundidoSal', 'i'), SDTest.Peek('g_FlareVerInfo', 'i'), SDTest.Peek('g_ShowFlaresInfo', 'i'))
+rdfl2 = (SDTest.Peek('g_SkipFlares', 'i'), SDTest.Peek('g_Sobredib', 'i'), SDTest.Peek('g_ViewportW', 'i'), SDTest.Peek('g_ViewportH', 'i'))
 dev = rdfl[1]
-SDTest.Poke(0x4d6dc0, 0)
-SDTest.Poke(0x4a8f2c, 0)
-SDTest.Poke(0x4d6d94, 0)
-SDTest.Poke(0x4d6da8, 0)
-flpokef(0x4329a4 + 0x400000, (2.0, 0.5))
+SDTest.Poke('g_SkipFlares', 0)
+SDTest.Poke('g_Sobredib', 0)
+SDTest.Poke('g_FlareVerInfo', 0)
+SDTest.Poke('g_ShowFlaresInfo', 0)
+flpokef(sym('g_FlareFundidoEnt') + 0x400000, (2.0, 0.5))
 def flrender(f, t, intens):
-	flpokef(0x4a8ed0 + 0x400000, (t,))
+	flpokef(sym('g_TimeMsF') + 0x400000, (t,))
 	flpokef(f + 0x28, (intens,))
-	SDTest.Poke(0x4ad6f4, 0)
-	SDTest.Call(0x297e50, 'tviii', f, dev, 0)
-	SDTest.Poke(0x4ad6f4, dev)
+	SDTest.Poke('g_pd3dDevice', 0)
+	SDTest.Call('CFlare_Render', 'tviii', f, dev, 0)
+	SDTest.Poke('g_pd3dDevice', dev)
 	return flget(f)
-SDTest.Poke(0x4d6d90, 1)
-flpokef(0x4329a0 + 0x400000, (50.0,))
+SDTest.Poke('g_FlareAtenDist', 1)
+flpokef(sym('g_FlareAtenDistFin') + 0x400000, (50.0,))
 for aten in (0, 1):
-	SDTest.Poke(0x4d6d90, aten)
+	SDTest.Poke('g_FlareAtenDist', aten)
 	for pos in ((0.0, 0.0, 10.0), (3.0, -2.0, 5.0), (0.0, 0.0, -5.0), (30.0, 0.0, 10.0), (0.0, 0.0, 0.01),
 		(0.0, 0.0, 200.0)):
 		flpokef(nodo + 0x5c + 48, pos)
@@ -75,17 +75,17 @@ for aten in (0, 1):
 			for intens in (1.0, 0.0, 0.3):
 				check('CFlare_Render' + fmt((aten, pos, t, intens)), lambda f=f, t=t, intens=intens:
 					flrender(f, t, intens))
-SDTest.Poke(0x4ad7e8, 640)
-SDTest.Poke(0x4ad7ec, 480)
+SDTest.Poke('g_ViewportW', 640)
+SDTest.Poke('g_ViewportH', 480)
 flpokef(f + 0x18, (0.5, 0.25))
-check('CFlare_Draw', lambda f=f: rdlog(lambda f=f: SDTest.Call(0x297e30, 'tvi', f)))
-SDTest.Call(0x3197d0, 'iiFi', 0x4ae3f8 + 0x400000, (0.0,) * 16, 64)
+check('CFlare_Draw', lambda f=f: rdlog(lambda f=f: SDTest.Call('CFlare_Draw', 'tvi', f)))
+SDTest.Call('crt_memcpy', 'iiFi', sym('g_DeviceStr') + 0x100 + 0x400000, (0.0,) * 16, 64)
 for i in range(16):
-	SDTest.Poke(0x4ae3f8 + 4 * i, rdproj[i])
-	SDTest.Poke(0x4ae4b8 + 4 * i, rdviewm[i])
-for addr, v in ((0x4a8ed0, rdfl[0]), (0x4d6d90, rdfl[2]), (0x4329a0, rdfl[3]), (0x4329a4, rdfl[4]),
-	(0x4329a8, rdfl[5]), (0x4d6d94, rdfl[6]), (0x4d6da8, rdfl[7]), (0x4d6dc0, rdfl2[0]), (0x4a8f2c, rdfl2[1]),
-	(0x4ad7e8, rdfl2[2]), (0x4ad7ec, rdfl2[3])):
+	SDTest.Poke(sym('g_DeviceStr') + 0x100 + 4 * i, rdproj[i])
+	SDTest.Poke(sym('g_DeviceStr') + 0x1c0 + 4 * i, rdviewm[i])
+for addr, v in ((sym('g_TimeMsF'), rdfl[0]), (sym('g_FlareAtenDist'), rdfl[2]), (sym('g_FlareAtenDistFin'), rdfl[3]), (sym('g_FlareFundidoEnt'), rdfl[4]),
+	(sym('g_FlareFundidoSal'), rdfl[5]), (sym('g_FlareVerInfo'), rdfl[6]), (sym('g_ShowFlaresInfo'), rdfl[7]), (sym('g_SkipFlares'), rdfl2[0]), (sym('g_Sobredib'), rdfl2[1]),
+	(sym('g_ViewportW'), rdfl2[2]), (sym('g_ViewportH'), rdfl2[3])):
 	SDTest.Poke(addr, v)
 SDTest.Poke(f + 8 - 0x400000, 0)
-check('CFlare_Delete', lambda f=f: SDTest.Call(0x297da0, 'tiii', f, 1)[0] == f)
+check('CFlare_Delete', lambda f=f: SDTest.Call('CFlare_Delete', 'tiii', f, 1)[0] == f)

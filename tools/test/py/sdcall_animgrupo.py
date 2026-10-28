@@ -3,21 +3,21 @@
 # the objects made here, floats as their bits. Fake scenes keep Refs above 0, so no destructor of the exe runs on
 # them. Not tested: AnimGrupo_AlignNode with a node position from the animation frames (CAnimNodo_GetPosRot true).
 def agcalloc(n):
-	return SDTest.Call(0x133650, 'ii', n)[0]
+	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def agfree(p):
-	SDTest.Call(0x133550, 'vi', p)
+	SDTest.Call('Mem_Free', 'vi', p)
 def agnew(n):
-	return SDTest.Call(0x1334d0, 'ii', n)[0]
+	return SDTest.Call('operator_new', 'ii', n)[0]
 def agnewa(n):
-	return SDTest.Call(0x313642, 'ii', n)[0]
+	return SDTest.Call('operator_new_array', 'ii', n)[0]
 def agdel(p, n):
-	SDTest.Call(0x313634, 'vii', p, n)
+	SDTest.Call('operator_delete_sized', 'vii', p, n)
 def agdela(p):
-	SDTest.Call(0x31364b, 'vi', p)
+	SDTest.Call('operator_delete_array', 'vi', p)
 def agwi(addr, v):
 	SDTest.Poke(addr - 0x400000, v)
 def agwf(addr, floats):
-	SDTest.Call(0x3197d0, 'iiFi', addr, floats, 4 * len(floats))
+	SDTest.Call('crt_memcpy', 'iiFi', addr, floats, 4 * len(floats))
 def agi(addr):
 	return SDTest.Peek(addr, '@i')
 def agb(addr):
@@ -59,15 +59,15 @@ md = agcalloc(0x50)
 for i, tag in ((2, 0x6261), (5, 0x6463), (7, 0x6261), (9, 0x61)):
 	agwi(md + 8 * i, tag)
 for t in ('ab', 'cd', 'a', 'zz', 'abc', 'ba', 'dc'):
-	agcall('MorphData_Find', 0x251ac0, 'iis', md, t)
+	agcall('MorphData_Find', sym('MorphData_Find'), 'iis', md, t)
 agwi(md, 0x7a7a)
-agcall('MorphData_Find first', 0x251ac0, 'iis', md, 'zz')
+agcall('MorphData_Find first', sym('MorphData_Find'), 'iis', md, 'zz')
 
 # the event lists
 evs = []
 def agev(t, id, arg):
 	e = agnew(0x14)
-	SDTest.Call(0x2bb8e0, 'tiifii', e, t, id, arg)
+	SDTest.Call('CAnimEvent_ctor', 'tiifii', e, t, id, arg)
 	evs.append(e)
 	return e
 def agevlist(lst):
@@ -79,26 +79,26 @@ def agevlist(lst):
 	return r
 evl = agcalloc(4)
 for t, id in ((5.0, 1), (1.0, 2), (3.0, 3), (3.0, 1), (5.0, 7)):
-	SDTest.Call(0x2bba70, 'tiii', evl, agev(t, id, id * 10))
+	SDTest.Call('AnimEventos_Add', 'tiii', evl, agev(t, id, id * 10))
 check('AnimEventos list', lambda: agevlist(evl))
-check('AnimEventos_Free', lambda: (SDTest.Call(0x251a90, 'tvi', evl), agi(evl)))
-check('AnimEventos_Free empty', lambda: (SDTest.Call(0x251a90, 'tvi', evl), agi(evl)))
+check('AnimEventos_Free', lambda: (SDTest.Call('AnimEventos_Free', 'tvi', evl), agi(evl)))
+check('AnimEventos_Free empty', lambda: (SDTest.Call('AnimEventos_Free', 'tvi', evl), agi(evl)))
 
 # MorphData_Read from an ini made here
-ini = SDTest.Call(0x1335a0, 'ii', 4)[0]
-SDTest.Call(0x261980, 'tii', ini)
+ini = SDTest.Call('Mem_Alloc', 'ii', 4)[0]
+SDTest.Call('CArchINI_ctor', 'tii', ini)
 for key, val in (('00_Data', '1 2 3 4 5 6'), ('00_Tag', 'ab'), ('01_Data', ' 0 0 1 9 9 255'), ('02_Data', '4 7 25 0 1 100'),
 		('02_Tag', 'xyz'), ('04_Data', '2  3\t4 5 6 7'), ('04_Tag', 'Q7'), ('05_Data', '0 1 200 2 3 4')):
-	SDTest.Call(0x2621a0, 'tiisss', ini, 'Morphing:grpm', key, val)
+	SDTest.Call('CArchINI_SetStr', 'tiisss', ini, 'Morphing:grpm', key, val)
 for key, val in (('00_Data', '2 0 30 1 0 50'), ('01_Data', '1 0 30 0 0 50'), ('01_Tag', 'zz')):
-	SDTest.Call(0x2621a0, 'tiisss', ini, 'Morphing:anim1', key, val)
+	SDTest.Call('CArchINI_SetStr', 'tiisss', ini, 'Morphing:anim1', key, val)
 mdr = agcalloc(0x50)
 for i in range(7):
 	agwi(mdr + 8 * i, 0x11223344)
 	agwi(mdr + 8 * i + 4, 0x55667788)
-	check('MorphData_Read' + fmt((i,)), lambda i=i: (SDTest.Call(0x251b30, 'bisiii', ini, 'Morphing:grpm', i, mdr + 8 * i, 5)[0],
+	check('MorphData_Read' + fmt((i,)), lambda i=i: (SDTest.Call('MorphData_Read', 'bisiii', ini, 'Morphing:grpm', i, mdr + 8 * i, 5)[0],
 		agi(mdr + 8 * i), agi(mdr + 8 * i + 4)))
-check('MorphData_Read none', lambda: (SDTest.Call(0x251b30, 'bisiii', ini, 'nosect', 0, mdr, 5)[0], agi(mdr), agi(mdr + 4)))
+check('MorphData_Read none', lambda: (SDTest.Call('MorphData_Read', 'bisiii', ini, 'nosect', 0, mdr, 5)[0], agi(mdr), agi(mdr + 4)))
 
 # fake scenes: a CEscena of 0x50 bytes, nodes of 0x60 bytes in a list by sig (0xc)
 nodes = []
@@ -171,7 +171,7 @@ def aggrupo(g, a):
 	return r
 escenas = []
 def agnewgrupo(name, escena, anim, nombre):
-	r = SDTest.Call(0x252000, 'iiiz', escena, anim, nombre)[0]
+	r = SDTest.Call('AnimGrupo_New', 'iiiz', escena, anim, nombre)[0]
 	grupos.append(r)
 	check(name + fmt((nombre,)), lambda g=r, a=agi(anim + 0x3c), anim=anim: (aggrupo(g, a), agi(anim + 8)))
 	return r
@@ -213,30 +213,30 @@ def agslots():
 		r.append(agidx(agi(slots + 4 * i), grupos))
 	return r
 for g in grupos[:5]:
-	agcall('CAnimGrupos_Add', 0x251d00, 'tiii', slots, g)
+	agcall('CAnimGrupos_Add', sym('CAnimGrupos_Add'), 'tiii', slots, g)
 agwi(slots + 4, 0)
-agcall('CAnimGrupos_Add hole', 0x251d00, 'tiii', slots, grupos[5])
+agcall('CAnimGrupos_Add hole', sym('CAnimGrupos_Add'), 'tiii', slots, grupos[5])
 agwi(slots + 4 * 41, grupos[6])
 agwi(slots + 4 * 43, grupos[7])
 check('CAnimGrupos slots', agslots)
-agcall('CAnimGrupos_Count', 0x2529b0, 'tii', slots)
+agcall('CAnimGrupos_Count', sym('CAnimGrupos_Count'), 'tii', slots)
 for i in (0, 1, 4, 5, 41, 43, 44, -1, 1000):
-	check('CAnimGrupos_Get' + fmt((i,)), lambda i=i: agidx(SDTest.Call(0x251d70, 'tiii', slots, i)[0], grupos))
+	check('CAnimGrupos_Get' + fmt((i,)), lambda i=i: agidx(SDTest.Call('CAnimGrupos_Get', 'tiii', slots, i)[0], grupos))
 for n in ('grp', 'GRP', 'anim1', 'grpm', 'one', 'none', 'me', 'nothing', ''):
-	check('CAnimGrupos_Find' + fmt((n,)), lambda n=n: (lambda r: (agidx(r[0], grupos), r[1]))(SDTest.Call(0x251d90, 'tiisp', slots, n, -7)))
-	check('CAnimGrupos_Find noidx' + fmt((n,)), lambda n=n: agidx(SDTest.Call(0x251d90, 'tiisi', slots, n, 0)[0], grupos))
-check('CAnimGrupos_Find NULL', lambda: SDTest.Call(0x251d90, 'tiizp', slots, None, -7))
-check('CAnimGrupo_dtor', lambda: (SDTest.Call(0x251980, 'tvi', grupos[8]), agi(grupos[8]), agi(grupos[8] + 4),
+	check('CAnimGrupos_Find' + fmt((n,)), lambda n=n: (lambda r: (agidx(r[0], grupos), r[1]))(SDTest.Call('CAnimGrupos_Find', 'tiisp', slots, n, -7)))
+	check('CAnimGrupos_Find noidx' + fmt((n,)), lambda n=n: agidx(SDTest.Call('CAnimGrupos_Find', 'tiisi', slots, n, 0)[0], grupos))
+check('CAnimGrupos_Find NULL', lambda: SDTest.Call('CAnimGrupos_Find', 'tiizp', slots, None, -7))
+check('CAnimGrupo_dtor', lambda: (SDTest.Call('CAnimGrupo_dtor', 'tvi', grupos[8]), agi(grupos[8]), agi(grupos[8] + 4),
 	agi(grupos[8] + 0x8c), agi(grupos[8] + 0x94), agi(anim2 + 8)))
 agdel(grupos[8], 0x98)
-check('CAnimGrupos_Clear', lambda: (SDTest.Call(0x251940, 'tvi', slots), agslots(), agi(anim + 8)))
-agcall('CAnimGrupos_Count empty', 0x2529b0, 'tii', slots)
+check('CAnimGrupos_Clear', lambda: (SDTest.Call('CAnimGrupos_Clear', 'tvi', slots), agslots(), agi(anim + 8)))
+agcall('CAnimGrupos_Count empty', sym('CAnimGrupos_Count'), 'tii', slots)
 for i in range(44):
 	agwi(slots + 4 * i, 1)
-agcall('CAnimGrupos_Count full', 0x2529b0, 'tii', slots)
+agcall('CAnimGrupos_Count full', sym('CAnimGrupos_Count'), 'tii', slots)
 agwi(slots + 4 * 7, 0)
 agwi(slots + 4 * 42, 0)
-agcall('CAnimGrupos_Count 42', 0x2529b0, 'tii', slots)
+agcall('CAnimGrupos_Count 42', sym('CAnimGrupos_Count'), 'tii', slots)
 for i in range(44):
 	agwi(slots + 4 * i, 0)
 # a group with a morph table, its events and a name destroyed by Clear
@@ -245,11 +245,11 @@ agwi(g, 0)
 agwi(g + 4, 0)
 agwi(g + 0x8c, agnewa(0x50))
 agwi(g + 0x94, anim)
-SDTest.Call(0x2a1940, 'tvis', g, 'fake')
-SDTest.Call(0x2bba70, 'tiii', g + 4, agev(2.0, 4, 0))
-SDTest.Call(0x2bba70, 'tiii', g + 4, agev(1.0, 4, 0))
-SDTest.Call(0x251d00, 'tiii', slots, g)
-check('CAnimGrupos_Clear fake', lambda: (SDTest.Call(0x251940, 'tvi', slots), agslots(), agi(anim + 8)))
+SDTest.Call('Cad_Set', 'tvis', g, 'fake')
+SDTest.Call('AnimEventos_Add', 'tiii', g + 4, agev(2.0, 4, 0))
+SDTest.Call('AnimEventos_Add', 'tiii', g + 4, agev(1.0, 4, 0))
+SDTest.Call('CAnimGrupos_Add', 'tiii', slots, g)
+check('CAnimGrupos_Clear fake', lambda: (SDTest.Call('CAnimGrupos_Clear', 'tvi', slots), agslots(), agi(anim + 8)))
 
 # AnimGrupo_AlignNode: the animation node of a scene node moved (the node has no frames, so its position comes from
 # the scene node of the animation), and an animation without the node: all nodes vertex animations
@@ -262,15 +262,15 @@ agwi(an + 8, pos)
 animA = agescena(aglink([agnode('other', 0), agnode('bone', 1, 0, 0, (0.5, 0.25, -1.0))]))
 agwi(animA + 0x3c, amA)
 escA = agescena(aglink([agnode('bone', 0, 0, 0, (1.5, -2.0, 3.25))]))
-agcall('AnimGrupo_AlignNode NULL', 0x251df0, 'biiz', escA, animA, None)
-check('AnimGrupo_AlignNode', lambda: (SDTest.Call(0x251df0, 'biiz', escA, animA, 'bone')[0], tpeek(pos, 3), agb(amA + 0x14)))
+agcall('AnimGrupo_AlignNode NULL', sym('AnimGrupo_AlignNode'), 'biiz', escA, animA, None)
+check('AnimGrupo_AlignNode', lambda: (SDTest.Call('AnimGrupo_AlignNode', 'biiz', escA, animA, 'bone')[0], tpeek(pos, 3), agb(amA + 0x14)))
 amV = aganimacion('vert', 0, 1, 0, 3)
 dummy = agcalloc(16)
 for i in range(3):
 	agwi(aganimnodo(amV, i) + 0x20, dummy)
 animV = agescena(aglink([agnode('bone', 0)]))
 agwi(animV + 0x3c, amV)
-check('AnimGrupo_AlignNode vert', lambda: (SDTest.Call(0x251df0, 'biiz', escA, animV, 'nobone')[0], agb(amV + 0x14)))
+check('AnimGrupo_AlignNode vert', lambda: (SDTest.Call('AnimGrupo_AlignNode', 'biiz', escA, animV, 'nobone')[0], agb(amV + 0x14)))
 
 # AnimGrupo_MapNodes: the table of the animation for the nodes of a scene, matched by name and parent name
 escM = agcalloc(0x50)
@@ -294,7 +294,7 @@ def agtabla(a):
 	for i in range(n):
 		r.append(agb(p + i))
 	return n, r
-check('AnimGrupo_MapNodes', lambda: (SDTest.Call(0x2525b0, 'vii', escM, animM), agtabla(amM)))
+check('AnimGrupo_MapNodes', lambda: (SDTest.Call('AnimGrupo_MapNodes', 'vii', escM, animM), agtabla(amM)))
 agdela(agi(amM + 0x1c))
 agwi(amM + 0x18, 0)
 agwi(amM + 0x1c, 0)
@@ -303,7 +303,7 @@ escS = agcalloc(0x50)
 agwi(escS + 8, 10)
 agwi(escS + 0xc, aglink([agnode('s', 2, escS), agnode('t', 0, escS)]))
 agwi(escS + 0x3c, amM)
-check('AnimGrupo_MapNodes self', lambda: (SDTest.Call(0x2525b0, 'vii', escS, escS), agtabla(amM)))
+check('AnimGrupo_MapNodes self', lambda: (SDTest.Call('AnimGrupo_MapNodes', 'vii', escS, escS), agtabla(amM)))
 agdela(agi(amM + 0x1c))
 agwi(amM + 0x1c, 0)
 
@@ -322,8 +322,8 @@ def agcompact():
 	for i in range(agi(amC + 0x24)):
 		v.append(agi(aganimnodo(amC, i) + 0x20) == dummy)
 	return r, agi(amC + 0x24), agi(agi(amC + 0x20) - 4), v
-check('AnimGrupo_Compact', lambda: (SDTest.Call(0x2528b0, 'vi', animC), agcompact()))
-check('AnimGrupo_Compact again', lambda: (SDTest.Call(0x2528b0, 'vi', animC), agcompact()))
+check('AnimGrupo_Compact', lambda: (SDTest.Call('AnimGrupo_Compact', 'vi', animC), agcompact()))
+check('AnimGrupo_Compact again', lambda: (SDTest.Call('AnimGrupo_Compact', 'vi', animC), agcompact()))
 
 # the rest freed: the nodes arrays without their destructors (their members are cleared first)
 for a in (am, am2, amA, amV, amM, amC):
@@ -333,12 +333,12 @@ for a in (am, am2, amA, amV, amM, amC):
 	agdela(arr - 4)
 	agfree(a)
 # the one group not in the slots any more
-SDTest.Call(0x251980, 'tvi', grupos[1])
+SDTest.Call('CAnimGrupo_dtor', 'tvi', grupos[1])
 agdel(grupos[1], 0x98)
 check('AnimGrupo refs at the end', lambda: (agi(anim + 8), agi(anim2 + 8)))
 for p in nodes + escenas + [escA, animA, animV, escM, animM, escS, animC, md, mdr, evl, slots, tab, pos, dummy]:
 	agfree(p)
 for p in agstrs:
 	agfree(p)
-SDTest.Call(0x261990, 'tvi', ini)
+SDTest.Call('CArchINI_dtor', 'tvi', ini)
 agfree(ini)
