@@ -2995,3 +2995,278 @@ void __fastcall CBsp_GuardarIni(CBsp *self) {
 	}
 	CArchINI_dtor(&ini);
 }
+
+
+/* the .EMI file of the map: the materials, the light map pages and the lists */
+
+int __fastcall CBsp_LeerEMI(CBsp *self) {
+	char ruta[0x104], dir[0x104], texPath[0x104], buf[0x104];
+	char sector[0x80];
+	CTablaHash tabMat, tabLMap;
+
+	Ruta_Merge(ruta, ".emi", self->nombre);
+	if (File_TimeDiff(ruta, self->nombre, 0) < 0) {
+		Con_Warnf("WARN: [%s] is older than [%s]\n", ruta, self->nombre);
+	}
+	CArchIO *mem = operator_new(sizeof(CArchIO));
+	CArchIO *f = mem ? CArchIO_ctor(mem, ruta, "rb") : NULL;
+	if (f->error) {
+		CArchIO_dtor(f);
+		operator_delete_sized(f, sizeof(CArchIO));
+		return -1;
+	}
+	Ruta_Part(dir, ruta, 3);
+	CHECK(CArchIO_BeginBlock(f, "EMI") == 0);
+	int version = CArchIO_ReadInt(f);
+	CHECK(version >= 103 && version <= 105);
+	E3D_LogDebug2(g_FileLog, "EMI: Version: %d", version);
+	CTablaHash_ctor(&tabMat, 0x1f);
+	CTablaHash_ctor(&tabLMap, 0x1f);
+	int n = CArchIO_ReadInt(f);
+	E3D_LogDebug2(g_FileLog, "EMI: Materials: %d", n);
+	Cad_Copy(texPath, dir, sizeof(texPath));
+	CArchINI *ini = Mundo_Get()->EscSuelo->ini;
+	CHECK(ini);
+	CArchINI_GetText(ini, "Model", "TexturePath", texPath, sizeof(texPath), NULL);
+	if (n > 0) {
+		do {
+			CMaterial *mm = operator_new(sizeof(CMaterial));
+			CMaterial *mat = mm ? CMaterial_ctor(mm) : NULL;
+			CTablaHash_AddInt(&tabMat, CArchIO_ReadInt(f), mat, 0);
+			CListaMat_Add(g_ListaMat, mat);
+			CMaterial_Read(mat, f);
+			mat->params.atrib |= MAT_NOSHARE;
+			/* the maps are looked for in the texture path of the map */
+			for (int i = 0; i < MAPA_TOTAL; i++) {
+				CHECK(i < MAPA_TOTAL);
+				CMapa *mapa = mat->mapa[i];
+				if (mapa) {
+					Ruta_Part(buf, mapa->Nombre, 0xc);
+					Ruta_Merge(buf, buf, texPath);
+					Cad_Set(&mapa->Nombre, buf);
+				}
+			}
+			CHECK(!f->error);
+		} while (--n);
+	}
+	BspLMap *old = g_BspLMaps;
+	if (old) {
+		BspLMap_dtor(old);
+		operator_delete_sized(old, sizeof(BspLMap));
+		g_BspLMaps = NULL;
+	}
+	/* without light maps every page is the grey texture */
+	const char *pre = g_MaxLightmap ? "" : "bmp/rgb_grey.tga";
+	int id = 0;
+	BspLMap **pp = &g_BspLMaps;
+	for (int key = CArchIO_ReadInt(f); key; key = CArchIO_ReadInt(f)) {
+		*pp = BspLMap_New();
+		CTablaHash_AddInt(&tabLMap, key, *pp, 0);
+		(*pp)->id = ++id;
+		CArchIO_ReadString(f, buf, sizeof(buf));
+		Ruta_Merge(buf, buf, dir);
+		Ruta_Merge(buf, pre, buf);
+		BspLMap_CrearMat(*pp, buf, 1);
+		if (version >= 104) {
+			CHECK(CArchIO_ReadInt(f) == 1);
+			CArchIO_ReadString(f, buf, sizeof(buf));
+			Ruta_Merge(buf, buf, dir);
+			Ruta_Merge(buf, pre, buf);
+			if (g_LmapInfo || g_CalcLmap2) {
+				(*pp)->lmap2 = BspLMap_New();
+				(*pp)->lmap2->id = id;
+				BspLMap_CrearMat((*pp)->lmap2, buf, 2);
+			}
+		}
+		pp = &(*pp)->sig;
+	}
+	CHECK(!self->num_listas);
+	self->num_listas = CArchIO_ReadInt(f);
+	E3D_LogDebug2(g_FileLog, "EMI: List count: %d", self->num_listas);
+	CHECK(self->num_listas < BSP_MAX_LISTAS);
+	for (int i = 0; i < self->num_listas; i++) {
+		BspTri *tm = operator_new(sizeof(BspTri));
+		BspTri *tri = tm ? BspTri_ctor(tm) : NULL;
+		self->listas[i] = tri;
+		CArchIO_BeginBlock(f, "TRI");
+		tri->flags = (uint32_t)CArchIO_ReadInt(f);
+		CArchIO_ReadString(f, buf, sizeof(buf));
+		tri->zona = CArchIO_ReadInt(f);
+		if (version >= 105) {
+			CArchIO_ReadString(f, sector, sizeof(sector));
+			tri->zona = Sector_Find(sector);
+			if (!strcmp(sector, "_nosector_")) {
+				E3D_LogInfo(g_FileLog, "WARN: Mesh without sector [%s]", buf);
+			} else if (!strcmp(sector, "_unasigned_")) {
+				Con_Warnf("WARN: Mesh without sector [%s]\n", buf);
+			}
+		}
+		CHECK(tri->zona < Sector_Num());
+		CHECK(!CTablaHash_GetInt(&tabMat, CArchIO_ReadInt(f), (void **)&tri->Mat));
+		CTablaHash_GetInt(&tabLMap, CArchIO_ReadInt(f), (void **)&tri->LMap);
+		CHECK(tri->LMap || tri->flags & BSPTRI_NOLMAP);
+		tri->numTri = CArchIO_ReadInt(f);
+		CHECK(!f->error);
+		tri->pTri = New_Array((uint32_t)tri->numTri, 6);
+		CArchIO_Read(f, tri->pTri, tri->numTri * 6);
+		CListaVert_Read(&tri->lv, f);
+		CListaVert_Read(&tri->lv2, f);
+		if (!tri->Mat->params.transp) {
+			CListaVert_SetColor(&tri->lv, 0xffffff, 0);
+		}
+		CArchIO_Error(f, "TRI");
+	}
+	CArchIO_Error(f, "EMI");
+	CHECK(!f->error);
+	CArchIO_dtor(f);
+	operator_delete_sized(f, sizeof(CArchIO));
+	CTablaHash_dtor(&tabLMap);
+	CTablaHash_dtor(&tabMat);
+	return 0;
+}
+
+/* the triangles of the map by material and vertex format, for the log */
+typedef struct BspMatStat {
+	CMaterial *Mat;			/* 0x00 */
+	int numTri;			/* 0x04 the sort key (BspTri_CmpId) */
+	int numVert;			/* 0x08 */
+	int count;			/* 0x0c lists */
+	int frmt;			/* 0x10 */
+} BspMatStat;
+SD_SIZE(BspMatStat, 0x14);
+
+static BspMatStat *BspMatStat_Get(CTabla *t, int i) {
+	TABLA_CHECK(t->p, i, t->n);
+	return &((BspMatStat *)t->p)[i];
+}
+
+void __fastcall CBsp_Preparar(CBsp *self) {
+	CTabla tab = { 0, NULL };
+
+	if (g_DebugLevel < 3) {
+		return;
+	}
+	E3D_LogDebug(g_FileLog, "\nMap triangles by material/sector:");
+	for (int zn = 0; zn < self->zonas.n; zn++) {
+		TABLA_CHECK(self->zonas.p, zn, self->zonas.n);
+		BspTri *tri = ((BspZona *)self->zonas.p)[zn].tris;
+		const char *nodo = tri && tri->nodo ? tri->nodo->name : "(null)";
+		Con_Verbosef("  Sector: %d  name: %s  node: %s\n", zn - 1, zn ? Sector_GetName(zn - 1) : "_unasigned_",
+			nodo);
+		if (!tri) {
+			Con_Warnf("    sector without triangles\n");
+			continue;
+		}
+		for (; tri; tri = tri->zona_sig) {
+			CHECK(tri->zona + 1 == zn);
+			const char *lmap = tri->LMap ? Ruta_FileName(CMaterial_GetMapName(tri->LMap->Mat, MAPA_DIFFUSE)) : "-";
+			Con_Debugf("    tri: %-5d  %-5d  %-6s    %-20s  ", tri->numTri, tri->lv.nVert, CListaVert_FormatName(&tri->lv),
+				lmap);
+			Bsp_MatInfo(tri->Mat);
+			if (tri->numTri < 16) {
+				Con_Bluef("    ============\n");
+			}
+			int i = 0;
+			for (; i < tab.n; i++) {
+				if (BspMatStat_Get(&tab, i)->Mat == tri->Mat && BspMatStat_Get(&tab, i)->frmt == tri->lv.frmt) {
+					break;
+				}
+			}
+			if (i == tab.n) {
+				Tabla_Resize14(&tab, i + 1);
+				memset(&((BspMatStat *)tab.p)[i], 0, sizeof(BspMatStat));
+			}
+			BspMatStat *e = BspMatStat_Get(&tab, i);
+			e->Mat = tri->Mat;
+			e->numTri += tri->numTri;
+			e->numVert += tri->lv.nVert;
+			e->count++;
+			CHECK(e->frmt == tri->lv.frmt || e->frmt == 0);
+			e->frmt = tri->lv.frmt;
+		}
+	}
+	E3D_LogDebug(g_FileLog, "\nTotal map triangles by material:");
+	crt_qsort(tab.p, (size_t)tab.n, sizeof(BspMatStat), (int (*)(const void *, const void *))Game_Ptr(0x28e650));
+	int totTri = 0, totVert = 0;
+	for (int i = 0; i < tab.n; i++) {
+		BspMatStat *e = BspMatStat_Get(&tab, i);
+		uint32_t bytes = (uint32_t)(ListaVert_FormatSize(e->frmt) * e->numVert);
+		Con_Debugf("  tri: %-5d  %-5d  %-6s %6.1fk   dis: %-3d", e->numTri, e->numVert, ListaVert_FormatName(e->frmt),
+			(double)bytes * 0.0009765625, e->count);
+		Bsp_MatInfo(e->Mat);
+		totTri += e->numTri;
+		totVert += e->numVert;
+	}
+	E3D_LogDebug(g_FileLog, "\nMap total: %d materials, %d triangles, %d vertexes\n", tab.n, totTri, totVert);
+	if (tab.p) {
+		operator_delete_array(tab.p);
+	}
+}
+
+void __fastcall CBsp_InitD3D(CBsp *self) {
+	/* the vertex size and FVF of the buffers of a sector (BspZona_GetVB: the first four) */
+	static const struct {
+		int size;
+		uint32_t fvf;
+	} fmts[8] = {
+		{ 0x1c, 0x1c2 }, { 0x24, 0x152 }, { 0x20, 0x242 }, { 0x2c, 0x252 },
+		{ 0x12, 0 }, { 0x16, 0 }, { 0x16, 0 }, { 0x1a, 0 },
+	};
+	CMaterial mat;
+
+	CHECK(g_Motor);
+	/* one vertex buffer of each format and one index buffer a sector, as large as its lists */
+	for (int zn = 0; zn < self->zonas.n; zn++) {
+		TABLA_CHECK(self->zonas.p, zn, self->zonas.n);
+		BspZona *z = &((BspZona *)self->zonas.p)[zn];
+		BspTri *tri = z->tris;
+		CHECK(tri || !zn);
+		for (int k = 0; k < 8; k++) {
+			CRenderVB_Reset(&z->vb[k]);
+		}
+		CRenderIB_Reset(&z->ib);
+		for (; tri; tri = tri->zona_sig) {
+			BspZona_GetVB(z, tri->lv.frmt)->Used += tri->lv.nVert;
+			z->ib.Used += tri->numTri;
+		}
+		for (int k = 0; k < 8; k++) {
+			CRenderVB_Create(&z->vb[k], (uint32_t)z->vb[k].Used, fmts[k].size, fmts[k].fvf);
+		}
+		CRenderIB_Create(&z->ib, (uint32_t)z->ib.Used);
+	}
+	/* the lists into the buffers of their sector, or buffers of their own */
+	for (int i = 0; i < self->num_listas; i++) {
+		BspTri *tri = self->listas[i];
+		CHECK(!tri->pVertVB);
+		CHECK(!tri->pVertIB);
+		BspZona *z = CBsp_Zona(self, tri->zona);
+		CRenderVB *vb = BspZona_GetVB(z, tri->lv.frmt);
+		if (vb->pVertVB) {
+			tri->pVertVB = CRenderVB_Get(vb, &tri->baseVert);
+			CRenderVB_Add(vb, tri->lv.nVert, tri->lv.pVert);
+			tri->pVertIB = CRenderIB_Get(&z->ib, &tri->startTri);
+			CRenderIB_Add(&z->ib, tri->numTri, tri->pTri);
+			continue;
+		}
+		tri->baseVert = 0;
+		tri->startTri = 0;
+		if (tri->lv.nVert < 6 || tri->numTri < 3) {
+			E3D_LogInfo(g_FileLog, "EMI: List index: %d   tri: %d   vert: %d", i, tri->numTri, tri->lv.nVert);
+		}
+		CHECK(Render_CreateVB(&tri->pVertVB, &tri->lv, !g_MapaSombrasMultitext) == 0);
+		CHECK(Render_CreateIB(&tri->pVertIB, tri->pTri, tri->numTri, !g_MapaSombrasMultitext) == 0);
+	}
+	/* the materials of the debug views: the light maps alone and the wire frame */
+	CMaterial_ctor(&mat);
+	Cad_Set(&mat.Nombre, "MatVerMapas");
+	CMaterial_SetMap(&mat, MAPA_DIFFUSE, "bmp/rgb_grey.tga");
+	mat.params.b39 = 0;
+	self->matFX = Mat_New(&mat, 1);
+	Cad_Set(&mat.Nombre, "MatVerMalla");
+	CMaterial_SetMap(&mat, MAPA_DIFFUSE, "bmp/rgb_white.tga");
+	mat.params.b39 = 0;
+	mat.params.atrib = 0x800;
+	self->matWire = Mat_New(&mat, 1);
+	CModelo_InitD3D(self->modelo, MOTOR_DEV(g_Motor), 1);
+	CMaterial_dtor(&mat);
+}

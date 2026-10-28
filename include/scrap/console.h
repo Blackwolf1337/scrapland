@@ -10,6 +10,8 @@
 #define CON_COLOR_ERROR 0x8f
 #define CON_COLOR_DEBUG 0x606060
 
+#define g_DebugLevel GAME_DATA(int, 0x445a74)
+
 /* prints text in a color; flag set: only into the second log (rva 0xbca50) */
 void Con_Print(int color, const char *text, int flag);
 /* printf in the error color (rva 0xbc580) */

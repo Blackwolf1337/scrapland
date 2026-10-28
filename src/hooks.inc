@@ -7963,3 +7963,7 @@ SD_HOOK(cObjElementFXVehicleDamage_Update, 0x1ed9c0, 12368)
 SD_HOOK(FX_ShipExplosion, 0x1f4d50, 13631)
 
 /* module agent: BSP light map compiler (hooks below this line) */
+SD_HOOK(CBsp_LeerEMI, 0x28c650, 2306)
+SD_HOOK(CBsp_Preparar, 0x28efe0, 1831)
+SD_HOOK(CBsp_InitD3D, 0x28f710, 1441)
+SD_HOOK(Bsp_TomarLuces, 0x290930, 1735)

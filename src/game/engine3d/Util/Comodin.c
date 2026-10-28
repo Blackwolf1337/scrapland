@@ -403,13 +403,18 @@ char *Ruta_Merge(char *dest, const char *ruta1, const char *ruta2) {
 	char ext1[256], ext2[256];
 
 	CHECK(dest && (ruta1 || ruta2));
-	/* the original copies a single path with strcpy, here at most MAX_RUTA bytes */
+	/* the original copies a single path with strcpy, here at most MAX_RUTA bytes; a copy onto itself (the .EMI
+	 * reader merges "" with dest) keeps it, Str_Copy would clear it */
 	if (!ruta1 || !*ruta1) {
-		Str_Copy(dest, ruta2, MAX_RUTA);
+		if (dest != ruta2) {
+			Str_Copy(dest, ruta2, MAX_RUTA);
+		}
 		return dest;
 	}
 	if (!ruta2 || !*ruta2) {
-		Str_Copy(dest, ruta1, MAX_RUTA);
+		if (dest != ruta1) {
+			Str_Copy(dest, ruta1, MAX_RUTA);
+		}
 		return dest;
 	}
 	Ruta_Split(ruta1, drive1, dir1, name1, ext1);

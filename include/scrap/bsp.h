@@ -11,6 +11,7 @@
 
 #include "scrap/bmpflt.h"
 #include "scrap/listavert.h"
+#include "scrap/luz.h"
 #include "scrap/material.h"
 #include "scrap/mundo.h"
 #include "scrap/render.h"
@@ -207,10 +208,30 @@ typedef struct BspTxf {
 SD_OFFSET(BspTxf, equipo, 0x210);
 SD_SIZE(BspTxf, 0x250);
 
+/* a light of the compiler, taken from the lights of the scene (0x118 bytes) */
+typedef struct BspLuz {
+	vec3_t pos;			/* 0x00 */
+	vec3_t dir;			/* 0x0c unit, (2 -1 1) for the omni lights */
+	byte puntual;			/* 0x18 not a directional light */
+	byte sombra;			/* 0x19 */
+	byte stencil;			/* 0x1a the shadows of the node too (NODO_SOMBRA) */
+	byte noLmap;			/* 0x1b node flag 27 */
+	float rad;			/* 0x1c */
+	D3DLight d3d;			/* 0x20 its position and direction from pos and dir */
+	float f88;			/* 0x88 */
+	float v8c[3];			/* 0x8c */
+	char nombre[0x80];		/* 0x98 of the node */
+} BspLuz;
+SD_OFFSET(BspLuz, d3d, 0x20);
+SD_OFFSET(BspLuz, nombre, 0x98);
+SD_SIZE(BspLuz, 0x118);
+
 #define g_Bsp GAME_DATA(CBsp *, 0x4b2b38)
 #define g_BspLMaps GAME_DATA(BspLMap *, 0x4b2b3c)	/* the pages */
 #define g_BspTriTmp GAME_DATA(BspTri *, 0x4b2b40)
 #define g_pBSP_VB GAME_DATA(void *, 0x4d5d70)
+#define g_BspNumLuces GAME_DATA(int, 0x4b2b44)
+#define g_BspLuces ((BspLuz *)Game_Ptr(0x4b2c20))	/* [BSP_MAX_LUCES] */
 #define g_LmapInfo GAME_DATA(int, 0x4b2b5c)		/* the .INFO maps */
 #define g_LmapInfo2 GAME_DATA(int, 0x432990)
 #define g_TxfMode GAME_DATA(int, 0x4b2b74)		/* the TXF loading of an .EMI (2 deletes) */
@@ -397,11 +418,19 @@ CBsp *__thiscall CBsp_ctor(CBsp *self, const char *nombre, const vec3_t *escala)
 void Bsp_DlgEnable(void *hwnd);
 intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intptr_t lparam);
 
+/* the .EMI file: 0 when read, -1 without the file */
+int __fastcall CBsp_LeerEMI(CBsp *self);
+/* the triangles by sector and by material into the log, at debug level 3 */
+void __fastcall CBsp_Preparar(CBsp *self);
+/* the vertex and index buffers of the sectors and lists, the materials of the debug views */
+void __fastcall CBsp_InitD3D(CBsp *self);
+
+/* the map compiler (BspCalc.c) */
+/* the active lights of the scene into g_BspLuces, all of them switched off; the ambient of [mapa_sombras] */
+void Bsp_TomarLuces(CEscena *esc);
+
 /* exe functions of this file still the exe's */
-void __fastcall CBsp_InitD3D(CBsp *self);		/* rva 0x28f710 */
-int __fastcall CBsp_LeerEMI(CBsp *self);		/* rva 0x28c650, 0 when read */
 void __fastcall CBsp_Calcular(CBsp *self);		/* rva 0x28a860, the light maps computed */
-void __fastcall CBsp_Preparar(CBsp *self);		/* rva 0x28efe0, the pages, materials and vertices */
 
 /* the float edits of the dialogs (src/game/engine3d/Engine/Varios.c): set returns 1, get 1 for a number */
 byte Dlg_SetFloat(void *hwnd, int id, float v, int prec);

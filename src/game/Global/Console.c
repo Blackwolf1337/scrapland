@@ -27,7 +27,6 @@ SD_SIZE(cConLine, 0x84);
 #define g_ConLine GAME_DATA(int, 0x445a44)
 #define g_ConCol GAME_DATA(int, 0x445a48)
 #define g_LogName GAME_DATA(const char *, 0x445a5c)
-#define g_DebugLevel GAME_DATA(int, 0x445a74)
 #define g_LastError GAME_DATA(DWORD, 0x445a7c)
 #define g_ConBuf ((char *)Game_Ptr(0x445a80))		/* 0x400, the text of the printf functions */
 #define g_LogFlush GAME_DATA(int, 0x445e90)		/* flush the logs after every text */
