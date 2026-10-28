@@ -34,8 +34,6 @@
 #define BUF_SIZE 1024
 #define MAX_FLOATS 64
 
-#define PyImport_Inittab GAME_DATA(struct _inittab *, 0x4334f0)
-
 typedef uint32_t (*call_int_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t,
 	uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 typedef float (*call_float_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t,

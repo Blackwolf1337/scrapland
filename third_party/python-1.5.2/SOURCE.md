@@ -6,5 +6,6 @@ Unchanged files of the official release, https://www.python.org/ftp/python/src/p
 - `Include/`: all headers. The hook DLL uses them with the stand-in `config/config.h` (layout of the MSVC build
   in Scrap.exe).
 - `Objects/`, `Python/`, `Parser/`, `PC/` and the built-in modules of Scrap.exe in `Modules/` (errno, math, new,
-  regex, signal, strop, _locale, marshal and imp are in Python/): for the standalone build, stage 2 of
+  regex, signal, strop, _locale, marshal and imp are in Python/): built into ScrapC.exe by the CMake target
+  `python152`, with `src/python` (config, module table, libc shim and the engine's changes), stage 2a of
   docs/standalone.md.

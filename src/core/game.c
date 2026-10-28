@@ -14,7 +14,7 @@ uintptr_t game_base;
 static char ini_path[MAX_PATH];
 
 int Imports_Resolve(uintptr_t base);
-void Hook_InstallAll(int wipe);
+void Hook_InstallAll(int wipe, int wipepy);
 void Log_Open(const char *dir);
 int Hook_Enabled(const char *name);
 void TestMod_Register(void);
@@ -63,7 +63,8 @@ int Game_Start(uintptr_t base, const char *dir) {
 		TestMod_Register();
 	}
 	if (hooks) {
-		Hook_InstallAll(GetPrivateProfileIntA("general", "wipe", 0, ini_path));
+		Hook_InstallAll(GetPrivateProfileIntA("general", "wipe", 0, ini_path),
+			GetPrivateProfileIntA("general", "wipepy", 0, ini_path));
 	}
 	return hooks;
 }

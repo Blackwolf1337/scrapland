@@ -1,7 +1,8 @@
 /*
  * The Python 1.5.2 interpreter linked into Scrap.exe. Declarations from third_party/python-1.5.2/Include (built
- * with MSVC 32 bit there, same layout here); the functions are thunks into the exe (src/imports.inc), the data
- * the exe owns is mapped with GAME_DATA.
+ * with MSVC 32 bit there, same layout here). In the hook DLL the functions are thunks into the exe (SD_IMPORT_PY in
+ * src/imports.inc) and the data the exe owns is mapped with GAME_DATA; ScrapC.exe (SD_STANDALONE) links the real
+ * library of src/python and uses its symbols.
  */
 #ifndef SCRAP_PYTHON_H
 #define SCRAP_PYTHON_H
@@ -9,15 +10,10 @@
 #include "scrap/game.h"
 
 #include <Python.h>
+#include <compile.h>
 
 static_assert(sizeof(PyObject) == 8, "PyObject: ob_refcnt, ob_type");
 static_assert(sizeof(PyTypeObject) == 0x6c, "PyTypeObject of 1.5.2 without COUNT_ALLOCS");
-
-/* type objects of the exe, for PyList_Check, PyString_Check, ... */
-#define PyList_Type GAME_DATA(PyTypeObject, 0x432ff0)
-#define PyString_Type GAME_DATA(PyTypeObject, 0x432b90)
-#define PyInt_Type GAME_DATA(PyTypeObject, 0x433128)
-#define PyFloat_Type GAME_DATA(PyTypeObject, 0x433288)
 
 /* the exe has the function form of ceval.c (rva 0x2ee850), the header only the macro */
 #undef PyEval_CallObject
@@ -38,7 +34,25 @@ void PyPool_Free(void *p);
 		Py_InitModule(#name, &GAME_DATA(PyMethodDef, rva)); \
 	}
 
+#ifdef SD_STANDALONE
+/* the engine's flag in its import.c (src/python/import.c) */
+extern int g_PyPackImport;
+#else
+/* type objects of the exe, for PyList_Check, PyString_Check, ... */
+#define PyList_Type GAME_DATA(PyTypeObject, 0x432ff0)
+#define PyString_Type GAME_DATA(PyTypeObject, 0x432b90)
+#define PyInt_Type GAME_DATA(PyTypeObject, 0x433128)
+#define PyFloat_Type GAME_DATA(PyTypeObject, 0x433288)
+#define PyCode_Type GAME_DATA(PyTypeObject, 0x437150)
+
 #undef Py_None
 #define Py_None (&GAME_DATA(PyObject, 0x435f3c))	/* _Py_NoneStruct */
+
+#undef Py_VerboseFlag
+#define Py_VerboseFlag GAME_DATA(int, 0x4e7af8)
+#define PyImport_Inittab GAME_DATA(struct _inittab *, 0x4334f0)
+/* 0 while Pack_PreloadLibrary imports through the normal path (a flag the engine added to import.c) */
+#define g_PyPackImport GAME_DATA(int, 0x4e79cc)
+#endif
 
 #endif

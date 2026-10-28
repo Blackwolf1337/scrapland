@@ -1062,18 +1062,20 @@ def tzero(num):
 	return r
 for num in (1, 5):
 	check('Tabla_Alloc10Z' + fmt((num,)), lambda num=num: tzero(num))
-# objects: the count before them and the first word of each (the constructors leave other fields as they are)
-def tobjs(rva, num, sz):
+# objects: the count before them and the first word of each (the constructors leave other fields as they are; the
+# one of 0x2c2c60 sets no first word, there only the count)
+def tobjs(rva, num, sz, first):
 	t = SDTest.Call(0x133650, 'ii', 8)[0]
 	SDTest.Call(rva, 'tvii', t, num)
 	n, p = SDTest.Peek(t, '@i'), SDTest.Peek(t + 4, '@i')
-	first = []
-	for i in range(num):
-		first.append(SDTest.Peek(p + i * sz, '@i'))
+	words = []
+	for i in range(num * first):
+		words.append(SDTest.Peek(p + i * sz, '@i'))
 	SDTest.Call(0x133550, 'vi', t)
-	return n, SDTest.Peek(p - 4, '@i'), first
-for rva, sz in ((0x255ff0, 8), (0x2560d0, 0xa8), (0x261300, 0x24), (0x2613e0, 0xfc), (0x28fdb0, 0xb4), (0x2c2c60, 0x1c)):
-	check('Tabla_New' + fmt((rva, sz)), lambda rva=rva, sz=sz: tobjs(rva, 3, sz))
+	return n, SDTest.Peek(p - 4, '@i'), words
+for rva, sz, tfirst in ((0x255ff0, 8, 1), (0x2560d0, 0xa8, 1), (0x261300, 0x24, 1), (0x2613e0, 0xfc, 1),
+		(0x28fdb0, 0xb4, 1), (0x2c2c60, 0x1c, 0)):
+	check('Tabla_New' + fmt((rva, sz)), lambda rva=rva, sz=sz, tfirst=tfirst: tobjs(rva, 3, sz, tfirst))
 tio = SDTest.Call(0x1335a0, 'ii', 16)[0]
 def topen(name, skip):
 	SDTest.Call(0x21b1f0, 'tiiss', tio, name, 'rb')

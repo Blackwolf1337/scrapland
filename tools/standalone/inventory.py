@@ -41,7 +41,7 @@ for l in open('src/hooks.inc'):
 		hooks[int(m.group(2), 16)] = m.group(1)
 imports = {}
 for l in open('src/imports.inc'):
-	m = re.match(r'SD_IMPORT(?:_STDCALL)?\((\w+),(?:\s*\d+,)?\s*0x([0-9a-f]+)', l)
+	m = re.match(r'SD_IMPORT(?:_STDCALL|_PY)?\((\w+),(?:\s*\d+,)?\s*0x([0-9a-f]+)', l)
 	if m:
 		imports[int(m.group(2), 16)] = m.group(1)
 names = {}
