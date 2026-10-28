@@ -17,8 +17,9 @@ the low memory is full of mappings, so the room must be part of the exe). At sta
 1.6.1 from game/Bin, copies its sections to their rvas (the rvas of `GAME_DATA` stay valid, no relocation), points
 its own resource directory to the original's, fills the import table with GetProcAddress (dinput8 from the system
 folder), gives the original its TLS block (the MSVC thread init epoch), installs the hooks and runs the entry point
-of the original. Library code (zlib, libpng, libjpeg and the ASE SDK below rva 0x05f6d8; Python 1.5.2 at
-0x2d6010..0x313642, the MSVC CRT and D3DX8 above) still runs from the copy.
+of the original. Library code (zlib, libpng, libjpeg and the ASE SDK below rva 0x05f6d8; the M3D math library at
+0x2d6010..0x2da770, still called by the C through imports; Python 1.5.2 at 0x2da770..0x313634; the MSVC CRT from
+its operator delete at 0x313634, and D3DX8) still runs from the copy.
 
 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` runs the hooked side as ScrapC.exe. Since 2026-10-28 all three
 scenarios match.
@@ -55,9 +56,86 @@ the time is over. `tools/test/py/sdcall_nosleep.py` checks them (some only in th
 
 ## Stage 2: real libraries
 
-Python 1.5.2 from source (python.org py152.tgz), UCRT for the `crt_*` imports, zlib 1.1.3, libpng 1.0.5, IJG
-libjpeg, D3DX8. The `GAME_DATA` addresses of library data (`include/scrap/python.h`: `PyString_Type`, `Py_None`
-...) switch to the real symbols. Then the whole `.text` of the original is int3.
+Python 1.5.2 from source (python.org py152.tgz, done in stage 2a), UCRT for the `crt_*` imports, zlib 1.1.3,
+libpng 1.0.5, IJG libjpeg, D3DX8. The `GAME_DATA` addresses of library data (`include/scrap/python.h`:
+`PyString_Type`, `Py_None` ...) switch to the real symbols. Then the whole `.text` of the original is int3. Except
+for Python, all of this is still to do.
+
+### Stage 2a: the real Python
+
+`ScrapC.exe` links a real Python 1.5.2. It is built from the unchanged sources of `third_party/python-1.5.2` (CMake
+target `python152`, `-std=gnu89`, `NDEBUG`). `src/python/config.h` is derived from the MSVC part of `PC/config.h`
+with the choices of the build in Scrap.exe:
+
+- static, no `MS_COREDLL` (the `_PyObject_New` of the exe takes only the type, `sys` has no `dllhandle` or `winver`)
+- no `WITH_THREAD` (the exe has no thread module and no `PyEval_AcquireThread`)
+- `staticforward` is `static`, `MS_WIN32` and `MS_WINDOWS` are set
+- `COMPILER` is "[MSC 32 bit (Intel)]" and `PLATFORM` is "win32"
+
+The build date and time of the exe ("Nov 24 2021", "15:23:52") are set for `getbuildinfo.c`, so `sys.version` reads
+like the original. `src/python/config.c` is the module table of the exe (rva 0x428d58) in its order: the 11 engine
+modules, then errno, math, new, regex, signal, strop, _locale, marshal, imp, `__main__`, `__builtin__`, sys. The
+errno and signal modules have the same names and values as the exe's (checked against its init code).
+
+`src/python/pyshim.h` is force-included into every Python source. It makes the library use what the Python of the
+exe used. `malloc`, `realloc` and `free` are the engine's Python pool (`PyPool_Malloc` and friends, as in the exe,
+where all 124 call sites go to the pool). The inline stdio functions of the UCRT headers (`sprintf`, `vsprintf`,
+`fprintf`, `vfprintf`, `printf`, `sscanf`) are the C versions in `src/game/Global/StdioInline.c`. Every other libc
+function that is not pure string work (FILE functions, `errno`, `getenv`, `signal`, locale, ctype, `strtod` and
+`atof`, `stat`) goes to the C runtime of the original through `crt_*` imports, so FILE objects, `errno` and the
+float formatting and parsing are the exe's.
+
+Math is split in two. Direct calls use the SSE2 entries that MSVC calls (`Game_Sin`, `Game_Pow`, `Game_Fmod` ... of
+`src/core/libm.c`). The address of a function (the tables of the math module) is the cdecl function of the runtime.
+One macro pair does both: `#define sin crt_sin` together with a function-like `crt_sin(x)` that becomes
+`Game_Sin(x)`, while a bare `sin` stays `crt_sin`.
+
+The engine changed three files of its Python. The vendored files stay as they are: `src/python` has files that
+include the vendored file and add the change around it.
+
+- `import.c`: once the startup imports are done (`g_PyPackImport`), reading or writing a .pyc prints
+  "WARNING: import %s (read)" or "(wrote)" with "the library was not preloaded". Macros on the one
+  `PyMarshal_ReadObjectFromFile` call and the one `fflush` put the warnings at the same places as in the exe, also
+  with -v.
+- `pythonrun.c`: `PyRun_ScrapString` is the `PyRun_SimpleString` of the console and the startup. It drops CR, adds
+  a newline, parses as `single_input` in a static buffer and runs under the file name "Scrap input".
+  `Py_FiniObjects` frees the objects of static pointers after `Py_Finalize`, before the engine deletes its pool.
+- `dictobject.c`, `stringobject.c`, `listobject.c`, `classobject.c` and `getpathp.c`: the statics that
+  `Py_FiniObjects` frees.
+
+The exe also frees the interned names held in function statics of `classobject.c` and the "__path__" of
+`get_parent` in `import.c`. They cannot be reached from outside the vendored files and stay in the pool, which is
+deleted right after (small pool blocks, nothing visible).
+
+The shared C is built twice. CMake makes the object library `scrapcode` for the hook DLL (unchanged: the Python
+functions are thunks into the exe) and `scrapcode_sa` with `SD_STANDALONE` for ScrapC.exe. The Python functions in
+`src/imports.inc` are `SD_IMPORT_PY`: a thunk in the DLL, none in ScrapC.exe, which links the library.
+`include/scrap/python.h` maps the Python data of the exe with `GAME_DATA` only without `SD_STANDALONE` (the type
+objects, `_Py_NoneStruct`, `Py_VerboseFlag`, `PyImport_Inittab`, `g_PyPackImport`). ScrapC.exe uses the real symbols.
+
+The copy of the original still holds pointers into the Python code and data: the `ob_type` of the two engine type
+objects at rva 0x428e18 and 0x428f78, the init functions in the module table of the exe, and the game code that is
+C now (mostly `Py_None`). `Orig_PyPointers` in `src/standalone/main.c` walks the .reloc of the original at start.
+Every pointer outside the Python (data, game code, CRT and library code) that leads into the Python code or data is
+set to the real symbol (371 pointers, 18 targets). A target without a real symbol stops the start. This was chosen
+over defining these objects in C: the scan finds every such pointer, also ones nobody listed, and the type objects
+and tables of the engine stay the exe's data until stage 3 moves all data into C at once. No CRT or other library
+code points into the Python.
+
+`tools/standalone/pymap.py` names the Python of the exe in the names of the vendored sources: functions from
+`symbols/functions.tsv` and by their string literals, type objects by `tp_name`, None and Ellipsis by their type,
+flags by the code next to their strings. With `-c` it prints the table of `main.c`. The ranges are in
+`include/scrap/origpython.h`: code 0x2da770..0x313634, data 0x432b50..0x43cfd8 and 0x4e73c0..0x4e8aa8, and the
+common symbols 0x4ed3a0..0x4ed540.
+
+`[general] wipepy=1` (`DIFFTEST_WIPEPY=1`, ScrapC.exe only, the DLL ignores it with a log line) fills the code of
+the original's Python with int3. With `wipe=3` the probe covers it too. On 2026-10-28 the probe run (`wipe=3`,
+`wipepy=1`) logged no trap in any scenario. `DIFFTEST_WIPE=2 DIFFTEST_WIPEPY=1 DIFFTEST_STANDALONE=1
+tools/test/difftest.sh` matches in all three scenarios, and so does the hook DLL difftest. Two tests had printed
+memory as `new[]` left it, which holds the address of the string type object of the Python and so differs now. They
+print only written memory now (`Tabla_New` at rva 0x2c2c60, the trail points after `SetMaxTrails`).
+
+What still differs from the exe: `sys.executable` names ScrapC.exe.
 
 ## Stage 3: data in C
 
