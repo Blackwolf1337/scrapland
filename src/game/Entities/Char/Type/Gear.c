@@ -7,6 +7,9 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+/* fxcharactions.h (from chartype.h) names its trail count so too; not used here */
+#undef FXMESSENGER_TRAILS
+#include "scrap/embeddedfxchar.h"
 #include "scrap/missileentity.h"
 #include "scrap/primitive.h"
 #include "scrap/vehicleattack.h"
@@ -271,6 +274,220 @@ void ChType_GearShoot(cAbstractFile *params) {
 	WChar_EnergyUsed(v) = used;
 	if (used >= 1.0f) {
 		WChar_EnergyUsed(v) = 1.0f;
+	}
+}
+
+/* the color ramps of the shot of the gear (9 colors each): 0..3 sparks and flashes, 2 also the core */
+#define g_RampGearShoot ((uint32_t *)Game_Ptr(0x428078))
+
+/* rand() & 0x7fff as 0..1 (double), unscaled */
+static inline double Gear_Rnd(void) {
+	return (double)(crt_rand() & 0x7fff) * (1.0 / 32767.0);
+}
+
+static inline void Gear_Pos(CGameParticles *p, float x, float y, float z) {
+	p->initPosMin.x = x;
+	p->initPosMin.y = y;
+	p->initPosMin.z = z;
+	p->initPosMax = p->initPosMin;
+}
+
+static inline void Gear_Vel(CGameParticles *p, float x, float y, float z) {
+	p->initVelMin.x = x;
+	p->initVelMin.y = y;
+	p->initVelMin.z = z;
+	p->initVelMax = p->initVelMin;
+}
+
+static inline void Gear_Acc(CGameParticles *p, float x, float y, float z) {
+	p->initAccMin.x = x;
+	p->initAccMin.y = y;
+	p->initAccMin.z = z;
+	p->initAccMax = p->initAccMin;
+}
+
+/* the acceleration against the velocity, w of it */
+static inline void Gear_Brake(CGameParticles *p, float w) {
+	Gear_Acc(p, -p->initVelMin.x * w, -p->initVelMin.y * w, -p->initVelMin.z * w);
+}
+
+static inline void Gear_Rot(CGameParticles *p) {
+	float rot = FX_Rand(6.2831854820251465, 0.0);
+	p->rotIni = rot;
+	p->rotEnd = rot;
+}
+
+static inline void Gear_Emit(CGameParticles *p, uint32_t *ramp, float dt) {
+	CGameParticles_Apply(p);
+	CGameParticles_SetColorRampOn(p, 1);
+	CGameParticles_SetColorRamp(p, ramp);
+	CGameParticles_EmitDt(p, 1, 0, dt);
+}
+
+/* a flash at the gun that falls down from y */
+static void Gear_Flash(CGameParticles *p, float y, double sizeR, double sizeA, double endR, double endA, byte sprite,
+	float dt) {
+	p->birthRate = 0;
+	Gear_Pos(p, 0.0f, y, 0.0f);
+	Gear_Vel(p, 0.0f, 0.0f, 0.0f);
+	Gear_Acc(p, 0.0f, 0.0f, 0.0f);
+	Gear_Rot(p);
+	p->rotVar = FX_Rand(0.7853981852531433, -0.39269909262657166);
+	p->sizeLife = 0.1f;
+	p->lifeTime = FX_Rand(0.019999995827674866, 0.18000000715255737);
+	p->sizeIni = FX_Rand(sizeR, sizeA);
+	p->spriteIni = sprite;
+	p->spriteEnd = sprite;
+	p->sizeEnd = FX_Rand(endR, endA);
+	Gear_Emit(p, g_RampGearShoot + 18, dt);
+}
+
+/* params: the gear, an event and the delay of the end flashes. The charge of the electric ball on the shot particles
+ * of its embedded effect (visible models only): 32 sparks, 20 and 5 glows flying out, three flashes falling from the
+ * gun, two end flashes and 12 glows thrown up */
+void ChType_GearShootLoad(cAbstractFile *params) {
+	char name[0x80], event[0x80];
+	float delay;
+
+	cAbstractFile_ReadString(params, name, 0x80);
+	cAbstractFile_ReadString(params, event, 0x80);
+	params->vftable->Read(params, &delay, 4);
+	cEntity *v = World_FindEntity(name);
+	CHECK(v);
+	CHECK(Entity_IsType(v, TYEN_WALKCHAR));
+	CGameModel *model = Obj_Vtbl(v)->GetModel(v);
+	if (!CGameModel_IsLoaded(model)) {
+		return;
+	}
+	if (CGameModel_IsLoaded(model) && !CGameModel_IsVisible(model)) {
+		return;
+	}
+	cEmbeddedFXGear *fx = WChar_FX(v);
+	if (!fx) {
+		return;
+	}
+	CGameParticles *p = &fx->shoot;
+	CHECK(p->SistPart);
+	for (int i = 0; i < 32; i++) {
+		float dt = FX_Rand(0.0010000001639127731, 0.008999999612569809) * (float)i;
+		double r = Gear_Rnd();
+		float y = FX_Rand(0.699999988079071, 0.30000001192092896);
+		float x = FX_Rand(2.0, -1.0);
+		y = -y;
+		float z = (float)(r + r - 1.0);
+		CGameParticles_SetSparksOn(p, 1);
+		p->birthRate = 0;
+		float s = FX_Rand(20.0, 100.0);
+		Gear_Pos(p, s * x, s * y, s * z);
+		float sp = FX_Rand(100.0, 450.0);
+		Gear_Vel(p, -x * sp, -y * sp, -z * sp);
+		Gear_Brake(p, FX_Rand(0.09999996423721313, 0.800000011920929));
+		p->lifeTime = FX_Rand(0.030000001192092896, 0.2199999988079071);
+		float size = FX_Rand(10.0, 105.0);
+		p->rotIni = 0.0f;
+		p->rotEnd = 0.0f;
+		p->rotVar = 0.0f;
+		p->sparkVelScale = 10.0f;
+		p->sizeIni = size;
+		p->sizeEnd = size;
+		p->sparkMaxSize = (float)i * 0.07f + 1.0f;
+		byte sprite = (~crt_rand() & 1) | 0x46;
+		p->spriteIni = sprite;
+		p->spriteEnd = sprite;
+		Gear_Emit(p, g_RampGearShoot + (crt_rand() % 3) * 9, dt);
+		CGameParticles_SetSparksOn(p, 0);
+	}
+	for (int i = 0; i < 20; i++) {
+		double r = Gear_Rnd();
+		float y = FX_Rand(1.0, 0.5);
+		p->birthRate = 0;
+		float x = FX_Rand(2.0, -1.0);
+		y = -y;
+		float z = (float)(r + r - 1.0);
+		float s = FX_Rand(10.0, 60.0);
+		Gear_Pos(p, x * s, y * s, z * s);
+		float sp = FX_Rand(205.0, 350.0);
+		Gear_Vel(p, -x * sp, -y * sp, -z * sp);
+		Gear_Brake(p, FX_Rand(0.09999996423721313, 0.6000000238418579));
+		Gear_Rot(p);
+		p->rotVar = FX_Rand(3.1415927410125732, 0.0);
+		p->sizeLife = 1.0f;
+		p->lifeTime = FX_Rand(0.019999995827674866, 0.20000000298023224);
+		p->sizeIni = FX_Rand(10.0, 110.0);
+		p->spriteIni = 0x29;
+		p->spriteEnd = 0x29;
+		p->sizeEnd = FX_Rand(5.0, 70.0);
+		CGameParticles_Apply(p);
+		CGameParticles_SetColorRampOn(p, 1);
+		CGameParticles_SetColorRamp(p, g_RampGearShoot + (crt_rand() & 1) * 9);
+		CGameParticles_EmitDt(p, 1, 0, FX_Rand(0.05000000074505806, 0.0) + (float)i * 0.017f);
+	}
+	for (int i = 0; i < 5; i++) {
+		double r = Gear_Rnd();
+		float y = FX_Rand(0.6000000238418579, 0.4000000059604645);
+		p->birthRate = 0;
+		float x = FX_Rand(2.0, -1.0);
+		y = -y;
+		float z = (float)(r + r - 1.0);
+		float s = FX_Rand(5.0, 15.0);
+		Gear_Pos(p, x * s, y * s, z * s);
+		float sp = FX_Rand(50.0, 125.0);
+		Gear_Vel(p, -x * sp, -y * sp, -z * sp);
+		Gear_Brake(p, FX_Rand(0.09999996423721313, 0.800000011920929));
+		p->rotVar = 0.0f;
+		Gear_Rot(p);
+		p->sizeLife = 1.0f;
+		p->lifeTime = FX_Rand(0.04999999701976776, 0.20000000298023224);
+		p->sizeIni = FX_Rand(50.0, 50.0);
+		p->spriteIni = 2;
+		p->spriteEnd = 2;
+		p->sizeEnd = FX_Rand(25.0, 225.0);
+		CGameParticles_Apply(p);
+		CGameParticles_SetColorRampOn(p, 1);
+		CGameParticles_SetColorRamp(p, g_RampGearShoot + 18);
+		CGameParticles_EmitDt(p, 1, 0, FX_Rand(0.06000000238418579, 0.17000000178813934) + (float)i * 0.048f);
+	}
+	int k = 0;
+	for (int d = 0; d < 0x3c; d += 0x14) {
+		p->birthRate = 0;
+		Gear_Pos(p, 0.0f, -10.0f - (float)d, 0.0f);
+		Gear_Vel(p, 0.0f, 0.0f, -400.0f);
+		Gear_Acc(p, 0.0f, 0.0f, 0.0f);
+		Gear_Rot(p);
+		p->rotVar = FX_Rand(1.5707963705062866, 0.0);
+		p->sizeLife = 0.1f;
+		p->lifeTime = FX_Rand(0.019999995827674866, 0.18000000715255737);
+		p->sizeIni = FX_Rand(50.0, 50.0);
+		p->sizeEnd = FX_Rand(50.0, 250.0);
+		p->spriteIni = 6;
+		p->spriteEnd = 6;
+		Gear_Emit(p, g_RampGearShoot + 18, (float)k * 0.022f + 0.4f);
+		k++;
+	}
+	Gear_Flash(p, -30.0f, 75.0, 225.0, 100.0, 550.0, 2, delay + 0.41f);
+	Gear_Flash(p, -40.0f, 125.0, 325.0, 150.0, 1100.0, 6, delay + 0.41f);
+	for (int i = 0; i < 12; i++) {
+		float z = FX_Rand(0.4000000059604645, -0.20000000298023224);
+		float y = FX_Rand(0.699999988079071, 0.800000011920929);
+		p->birthRate = 0;
+		Gear_Pos(p, 0.0f, 0.0f, 0.0f);
+		float x = FX_Rand(0.4000000059604645, -0.20000000298023224);
+		y = -y;
+		float sp = FX_Rand(175.0, 450.0);
+		Gear_Vel(p, x * sp, y * sp, z * sp);
+		Gear_Brake(p, FX_Rand(0.09999996423721313, 0.6000000238418579));
+		Gear_Rot(p);
+		p->rotVar = FX_Rand(3.1415927410125732, 0.0);
+		p->sizeLife = 1.0f;
+		p->lifeTime = FX_Rand(0.02000001072883606, 0.1599999964237213);
+		p->sizeIni = FX_Rand(15.0, 50.0);
+		p->spriteIni = 0x29;
+		p->spriteEnd = 0x29;
+		p->sizeEnd = FX_Rand(20.0, 105.0);
+		CGameParticles_Apply(p);
+		CGameParticles_SetColorRampOn(p, 1);
+		CGameParticles_SetColorRamp(p, g_RampGearShoot + (crt_rand() & 3) * 9);
+		CGameParticles_EmitDt(p, 1, 0, (float)i * 0.014f + 0.36f);
 	}
 }
 

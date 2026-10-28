@@ -1,13 +1,17 @@
 # game leftovers C (execfile'd by sdlevel.py, Python 1.5.2): the Updates of the character effects in
-# Entities/EmbeddedFX/EmbeddedFXChar.c (Sentinel, Crazy Gambler, Messenger, Mercenary), of the Moto in
-# EmbeddedFXMisc.c and the two strafe arcs of the 3D control in AI/ICharControl3D.c.
+# Entities/EmbeddedFX/EmbeddedFXChar.c (Sentinel, Crazy Gambler, Messenger, Mercenary, Rusty) and of the Moto in
+# EmbeddedFXMisc.c, the native GearShootLoad (Entities/Char/Type/Gear.c) and the two strafe arcs of the 3D control in
+# AI/ICharControl3D.c.
 # The effects run on a fake character (calloc memory with the vtable of Player0, the CGameModel at 0xb8, life 100, no
 # player slot) and a fake action controller (layer 0 on with an action of a given name and time), made by
 # EmbeddedFXChar_Create on the model of the class; the model is placed in front of the camera and every model is
 # visible (R_SplitScreen) unless a check turns it off. Printed: the fields the Updates write, the particles they place
 # and the points of their trails. rand is seeded. The smoke of the Mercenary uses a debris of the system of
 # FXMercenaryDrinkSmokeFile with particles (fxType 1, set only on a new system whose model has them). The word of the
-# vertex 0x100 in the vertex sets of the gambler arcs is never cleared by the exe (heap garbage): zeroed after Create.
+# vertex 0x100 in the vertex sets of the gambler arcs, the bolt pauses of Rusty and the last smoke positions of the Moto
+# are read before the exe writes them (heap garbage): set after Create. The Moto runs on a fake object (the vtable of
+# cObjEntity). GearShootLoad runs through Scrap.SetCallFunc on a WalkChar of our own with the Gear model and its
+# embedded effect (SetModel, SetEmbeddedFX).
 # The strafes: the setup of sdlevel_icharctl.py (two WalkChars far above the map, a fake AI, a 3D control) with both
 # arcs called directly, also with the debug lists of ShowShirkAI and ShowTestCanGoAI on (the segments of the path tests
 # of the arc).
@@ -351,6 +355,28 @@ for lfcm in ('MercenaryA', 'MercenaryL'):
 		check('LFC %s_Update hidden' % lfcm, lambda fx=lfcfx: (SDTest.Call(0xdb1d0, 'tvif', fx, 0.06), lfcmerc(fx)))
 		lfcvisible(lfcs[1], 1)
 	lfcdone(lfcs[0], lfcs[2], 0xd7800, 0xd7470)
+
+# ---- Rusty: the pauses of the bolts are not set by Reset (zeroed here) ----
+lfcc = lfcctrlname(lfcc, 'Walk')
+lfcs = lfcmake('Rusty', 'Models/Chars/Rusty/Rusty.M3D', 'Rusty.M3D', ('DR_Mecanico_ColetaChispas',
+	'DR_Mecanico_PechoGlowA', 'DR_Mecanico_PechoGlowB', 'DF_GlowLighting'), ('DF_LightingA', 'DF_LightingB',
+	'DF_LightingC'), lfcc[0])
+if lfcs[2]:
+	lfce = lfcs[0]
+	lfcfx = lfcs[2]
+	lfcvisflags = lfci(lfci(lfcs[1]) + 0x120)
+	lfcplace(lfcs[1], (0.0, -60.0, 400.0), (0.0, 0.7, 0.0))
+	lfcset(lfcfx + 0x2fc, (0.0, 0.0, 0.0, 0.0))
+	def lfcrusty(fx):
+		return (lfcbytes(fx, (8,)), lfcfl(fx + 0x228, 1), lfcfl(fx + 0x2ec, 8), lfcparts(fx + 0x178),
+			lfcactive(fx + 0x178), lfctrails(fx + 0x30c, 4), lfcpartlist(fx + 0x23c, 16))
+	for lfcdt in (0.05, 0.05, 0.1, 0.02, 0.3, 0.05, 0.05, 0.2, 0.01, 0.6, 0.05, 0.05):
+		check('LFC Rusty_Update' + fmt((lfcdt,)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call(0xdd760, 'tvif', fx, dt),
+			lfcrusty(fx)))
+	lfcvisible(lfcs[1], 0)
+	check('LFC Rusty_Update hidden', lambda fx=lfcfx: (SDTest.Call(0xdd760, 'tvif', fx, 0.05), lfcrusty(fx)))
+	lfcvisible(lfcs[1], 1)
+lfcdone(lfcs[0], lfcs[2], 0xd78a0, 0xd7580)
 lfcctrlfree(lfcc)
 
 # ---- Moto: a fake object (the vtable of cObjEntity); the engine positions of the last smoke set first (the exe reads
@@ -387,9 +413,51 @@ if lfcfx:
 lfcunfake(lfce)
 lfcfree(lfcvec)
 check('LFC rand after effects', lambda: SDTest.Call(0x323c2f, 'i')[0])
+
+# ---- GearShootLoad on a WalkChar of our own with the Gear model and its embedded effect ----
+def lfcnative(name, params):
+	ok = Scrap.SetCallFunc('!' + name)
+	for p in params:
+		if type(p) == type(''):
+			Scrap.AddParams(p)
+		elif type(p) == type(0):
+			Scrap.AddParami(p)
+		else:
+			Scrap.AddParamf(p)
+	Scrap.Execute()
+	return ok
+SDTest.Call(0x323c50, 'vi', 31337)
+lfcG = lfcadd(lfccam, (0.0, -60.0, 400.0))
+lfcg = SDTest.Call(0x208360, 'tiisfffs', lfcworld, 'SDLfcGear', lfcG[0], lfcG[1], lfcG[2], 'WalkChar')[0]
+check('LFC gear WalkChar', lambda: lfcg != 0)
+if lfcg:
+	SDTest.Call(lfci(lfci(lfcg) + 0x30) - 0x400000, 'tvisfffi', lfcg, 'Models/Chars/Gear/Gear.M3D', 1.0, 1.0, 1.0, 0)
+	lfcgok = lfcok(lfcg + 0xb8, ('DF_GearShoot', 'DF_PoliceAlarm'), ())
+	check('LFC gear model', lambda: (lfcgok, SDTest.Call(0x20f7a0, 'tsi', lfcg + 0xb8)[0]))
+	if lfcgok:
+		SDTest.Call(lfci(lfci(lfcg) + 0x3c) - 0x400000, 'tvis', lfcg, 'Gear.M3D')
+		lfcfx = lfci(lfcg + 0x224)
+		check('LFC gear effect', lambda: (lfcfx != 0, lfcfx and lfci(lfcfx) - 0x400000))
+	if lfcgok and lfcfx:
+		lfcvisflags = lfci(lfci(lfcg + 0xb8) + 0x120)
+		def lfcgear(fx):
+			return (lfcparts(fx + 0xd4), lfcactive(fx + 0xd4), lfcnum(fx + 0xd4))
+		SDTest.Poke(0x4a8c8c, 1)
+		for lfcd in (0.25, 0.0, 1.5):
+			check('LFC GearShootLoad' + fmt((lfcd,)), lambda d=lfcd, fx=lfcfx: (lfcnative('GearShootLoad',
+				('SDLfcGear', 'Ev', d)), lfcgear(fx), SDTest.Call(0x323c2f, 'i')[0]))
+		lfcpoke(lfcg + 0x224, 0)
+		check('LFC GearShootLoad no effect', lambda: (lfcnative('GearShootLoad', ('SDLfcGear', 'Ev', 0.5)),
+			SDTest.Call(0x323c2f, 'i')[0]))
+		lfcpoke(lfcg + 0x224, lfcfx)
+		lfcvisible(lfcg + 0xb8, 0)
+		check('LFC GearShootLoad hidden', lambda fx=lfcfx: (lfcnative('GearShootLoad', ('SDLfcGear', 'Ev', 0.5)),
+			lfcgear(fx), SDTest.Call(0x323c2f, 'i')[0]))
+		lfcvisible(lfcg + 0xb8, 1)
+	check('LFC gear delete', lambda: (SDTest.Call(0x208810, 'tbis', lfcworld + 4, 'SDLfcGear'),
+		SDTest.Call(lfci(lfci(lfcg) + 0xc) - 0x400000, 'tiii', lfcg, 1)[0] == lfcg)[1])
 SDTest.Poke(0x4a8c8c, lfcsplit)
 lfcpoke(lfcworld + 0x2d4, lfcdelta)
-
 # ---- the strafe arcs of the 3D control ----
 def lfcpos(e):
 	return SDTest.Call(lfci(lfci(e) + 0x18) - 0x400000, 'tiiF', e, (0.0, 0.0, 0.0))[1]

@@ -234,8 +234,8 @@ cEmbeddedFX *__fastcall cEmbeddedFXRusty_ctor(void *p) {
 	self->dummyFront = -1;
 	self->dummyBack = -1;
 	self->dummySparks = -1;
-	self->b08 = 0;
-	self->i228 = 0;
+	self->visible = 0;
+	self->sparkT = 0.0f;
 	return &self->base;
 }
 
@@ -598,7 +598,7 @@ byte __fastcall cEmbeddedFXMessenger_Reset(cEmbeddedFXMessenger *self) {
 
 byte __fastcall cEmbeddedFXRusty_Reset(cEmbeddedFXRusty *self) {
 	for (int i = 0; i < FXRUSTY_TRAILS; i++) {
-		self->trailState[i] = 0;
+		self->life[i] = 0.0f;
 		EFX_TrailStyle(&self->trails[i], 10, 1, 3, 1.0f, 0);
 	}
 	return 1;
@@ -1880,4 +1880,213 @@ void __thiscall cEmbeddedFXMercenary_Update(cEmbeddedFXMercenary *self, float dt
 		EFX_MercBubble(&self->pipe, 1);
 	}
 	EFX_MercSmoke(self, model);
+}
+
+#define g_FXRustyChispasSound GAME_DATA(const char *, 0x44736c)	/* "FXRustyChispasSound" */
+#define g_FXRustyChispasSoundVol GAME_DATA(float, 0x44732c)	/* "FXRustyChispasSoundVol" */
+/* the color ramps of the sparks of the pigtail (9 colors each) */
+#define g_RampRustySparks ((uint32_t *)Game_Ptr(0x4282c0))
+
+static inline void EFX_RustyStill(CGameParticles *p) {
+	p->initPosMin.x = 0.0f;
+	p->initPosMin.y = 0.0f;
+	p->initPosMin.z = 0.0f;
+	p->initPosMax = p->initPosMin;
+	p->initVelMin.x = 0.0f;
+	p->initVelMin.y = 0.0f;
+	p->initVelMin.z = 0.0f;
+	p->initVelMax = p->initVelMin;
+	p->initAccMin.x = 0.0f;
+	p->initAccMin.y = 0.0f;
+	p->initAccMin.z = 0.0f;
+	p->initAccMax = p->initAccMin;
+}
+
+/* a random direction: (1, 1, 1) turned by three random angles (z, y, x picked in that order) */
+static vec3_t EFX_RustyDir(void) {
+	vec3_t ang, out;
+	const vec3_t one = { 1.0f, 1.0f, 1.0f };
+
+	float a1 = FX_Rand(6.2831854820251465, 0.0);
+	float a2 = FX_Rand(6.2831854820251465, 0.0);
+	ang.x = FX_Rand(6.2831854820251465, 0.0);
+	ang.y = a2;
+	ang.z = a1;
+	return *Vec3_Rotate(&out, &one, &ang);
+}
+
+/* the burst of sparks out of the pigtail: two flashes and 4..8 sparks, and their sound */
+static void EFX_RustySparks(cEmbeddedFXRusty *self) {
+	CGameParticles *p = &self->sparks;
+	vec3_t buf;
+
+	self->sparkT = FX_Rand(0.699999988079071, 0.10000000149011612);
+	p->birthRate = 0;
+	CGameParticles_SetColorRampOn(p, 1);
+	CGameParticles_SetColorRamp(p, g_RampRustySparks);
+	EFX_RustyStill(p);
+	p->sizeIni = FX_Rand(10.0, 10.0);
+	p->sizeEnd = FX_Rand(10.0, 70.0);
+	p->sizeLife = 0.15f;
+	p->spriteIni = 2;
+	p->spriteEnd = 2;
+	p->lifeTime = FX_Rand(0.019999995827674866, 0.18000000715255737);
+	CGameParticles_Apply(p);
+	CGameParticles_EmitN(p, 1, 1);
+	CGameParticles_SetColorRamp(p, g_RampRustySparks);
+	EFX_RustyStill(p);
+	p->sizeIni = FX_Rand(2.0, 4.0);
+	p->sizeEnd = FX_Rand(5.0, 25.0);
+	p->sizeLife = 0.15f;
+	p->spriteIni = 1;
+	p->spriteEnd = 1;
+	p->lifeTime = FX_Rand(0.02000001072883606, 0.1599999964237213);
+	CGameParticles_Apply(p);
+	CGameParticles_EmitN(p, 1, 1);
+	int n = (int)FX_Rand(4.0, 4.0);
+	CGameParticles_SetSparksOn(p, 1);
+	for (; n > 0; n--) {
+		CGameParticles_SetColorRamp(p, g_RampRustySparks + (crt_rand() % 3) * 9);
+		vec3_t d = EFX_RustyDir();
+		float s = FX_Rand(3.0, 2.0);
+		p->initPosMin.x = d.x * s;
+		p->initPosMin.y = d.y * s;
+		p->initPosMin.z = d.z * s;
+		p->initPosMax = p->initPosMin;
+		s = FX_Rand(430.0, 120.0);
+		p->initVelMin.y = d.y * s;
+		p->initVelMin.z = d.z * s;
+		p->initVelMin.x = d.x * s;
+		p->initVelMax = p->initVelMin;
+		p->initAccMin.y = p->initVelMin.y * 0.2f - 950.0f;
+		p->initAccMin.x = p->initVelMin.x * 0.2f + 0.0f;
+		p->initAccMin.z = p->initVelMin.z * 0.2f + 0.0f;
+		p->initAccMax = p->initAccMin;
+		float dt = FX_Rand(0.029999999329447746, 0.0);
+		float life = FX_Rand(0.25, 0.15000000596046448);
+		CGameParticles_SetSparksOn(p, 1);
+		p->lifeTime = life;
+		p->sizeLife = 1.0f;
+		p->rotIni = 0.0f;
+		p->rotEnd = 0.0f;
+		p->rotVar = 0.0f;
+		float size = FX_Rand(20.0, 15.0);
+		p->sizeIni = size;
+		p->sizeEnd = size;
+		p->spriteEnd = 0x44;
+		p->spriteIni = (crt_rand() & 1) + 0x41;
+		p->sparkVelScale = 1.0f;
+		p->sparkMaxSize = FX_Rand(0.699999988079071, 0.30000001192092896);
+		CGameParticles_Apply(p);
+		CGameParticles_EmitDt(p, 1, 1, dt + 0.03f);
+	}
+	CGameParticles_SetSparksOn(p, 0);
+	cEntity *e = self->base.ent;
+	const char *name = g_FXRustyChispasSound;
+	int volume = Snd_Volume(g_FXRustyChispasSoundVol);
+	const vec3_t *pos = FX_Vtbl(e)->GetCenter(e, &buf);
+	g_pSound->vftable->PlayAt(g_pSound, name, pos, volume);
+}
+
+/* a control point of a bolt moved out from the center by m along its way and by a random offset of k */
+static void EFX_RustyBend(vec3_t *out, const vec3_t *v, const vec3_t *pos, double kr, double ka, double mr, double ma) {
+	vec3_t o = EFX_RustyDir();
+	float k = FX_Rand(kr, ka);
+	o.x = o.x * k;
+	o.y = o.y * k;
+	o.z = o.z * k;
+	float m = FX_Rand(mr, ma);
+	vec3_t d = { v->x - pos->x, v->y - pos->y, v->z - pos->z };
+	vec3_t n = FX_Unit(d);
+	out->x = v->x + n.x * m + o.x;
+	out->y = v->y + n.y * m + o.y;
+	out->z = v->z + n.z * m + o.z;
+}
+
+/*
+ * Rusty the mechanic while visible: the sparks of the pigtail every 0.1..0.8 s, and 4 lightning bolts between the
+ * first vertices of DF_LightingA, B and C that live 0.17..0.34 s with a pause of 0.1..0.65 s.
+ */
+void __thiscall cEmbeddedFXRusty_Update(cEmbeddedFXRusty *self, float dt) {
+	cEntity *e = self->base.ent;
+	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
+	vec3_t pos, pts[5], coefs[GAMETRAIL_MAX_BEZIER];
+
+	if (!CGameModel_IsLoaded(model)) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(model));
+	byte vis = CGameModel_IsVisible(model);
+	if (!vis || CGameModel_GetEffect(model, NULL)) {
+		if (self->visible) {
+			cEmbeddedFXRusty_Clear(self);
+			self->visible = 0;
+		}
+		return;
+	}
+	float t = self->sparkT - dt;
+	self->visible = vis;
+	self->sparkT = t;
+	if (t <= 0.0f) {
+		EFX_RustySparks(self);
+	}
+	CGameModel_GetPos(model, &pos);
+	for (int i = 0; i < FXRUSTY_TRAILS; i++) {
+		CGameTrail *trail = &self->trails[i];
+		if (!(self->life[i] > 0.0f)) {
+			if (self->pause[i] > 0.0f) {
+				self->pause[i] = self->pause[i] - dt;
+			} else {
+				self->life[i] = FX_Rand(0.16999998688697815, 0.18000000715255737);
+				self->pause[i] = FX_Rand(0.5499999523162842, 0.10000000149011612);
+			}
+			continue;
+		}
+		float life = self->life[i] - dt;
+		self->life[i] = life;
+		if (life > 0.0f) {
+			int fade = 0xff - (int)(Float_MinSS(1.0f, life / 0.2f) * 255.0f);
+			CGameTrail_Reset(trail);
+			CGameTrail_SetTransp(trail, (byte)fade);
+			CGameModel_Vertices(model, &pts[0], NULL, NULL, 1, 0, NULL, self->dummyLighting[0], NULL);
+			CGameModel_Vertices(model, &pts[2], NULL, NULL, 1, 0, NULL, self->dummyLighting[1], NULL);
+			CGameModel_Vertices(model, &pts[4], NULL, NULL, 1, 0, NULL, self->dummyLighting[2], NULL);
+			EFX_RustyBend(&pts[1], &pts[0], &pos, 2.0, 2.0, 2.0, 4.0);
+			EFX_RustyBend(&pts[2], &pts[2], &pos, 4.0, 2.0, 2.0, 2.0);
+			EFX_RustyBend(&pts[3], &pts[4], &pos, 2.0, 2.0, 2.0, 4.0);
+			CGameTrail_BezierCoefs(trail, 5, pts, coefs);
+			int m = CGameTrail_GetMaxTrails(trail);
+			if (m - 1 > 0) {
+				float span = (float)(m - 2);
+				for (int j = 0; j < m - 1; j++) {
+					vec3_t p, buf;
+					CGameTrail_BezierPoint(trail, 5, coefs, &p, (float)j / span);
+					float w = FX_Rand(1.0, 2.0);
+					if (j > 0 && j < m - 2) {
+						float r = FX_Rand(2.0, 0.5);
+						const vec3_t *d = FX_RandomDir(&buf);
+						p.x = p.x + r * d->x;
+						p.y = p.y + d->y * r;
+						p.z = p.z + d->z * r;
+					} else {
+						w = w + w;
+					}
+					CGameTrail_Add(trail, p, w, 0x108080ff);
+				}
+			}
+			int a = fade + 0x60 > 0xff ? 0xff : fade + 0x60;
+			int b = fade + 6 > 0xff ? 0xff : fade + 6;
+			for (int k = 0; k < 2; k++) {
+				const vec3_t *q = &pts[4 * k];
+				CGameParticles_SetParticle(&self->glowLighting, 4 * i + 2 * k, q->x, q->y, q->z, 50.0f,
+					((uint32_t)a << 24) | 0x6060ff, 5, 0.0f);
+				CGameParticles_SetParticle(&self->glowLighting, 4 * i + 2 * k + 1, q->x, q->y, q->z, 10.0f,
+					((uint32_t)b << 24) | 0xa4a4ff, 1, 0.0f);
+			}
+		}
+		if (self->life[i] <= 0.0f) {
+			CGameTrail_Clear(trail);
+			CGameParticles_KillRange(&self->glowLighting, 4 * i, 4 * i + 4);
+		}
+	}
 }

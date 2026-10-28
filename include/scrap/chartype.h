@@ -312,6 +312,8 @@ void ChType_GearSphereHit(cAbstractFile *params);
 void ChType_GearHit(cAbstractFile *params);
 void ChType_GearInitAction(cAbstractFile *params);
 void ChType_GearShoot(cAbstractFile *params);
+/* "!GearShootLoad": params the gear, an event and the delay of the end flashes; the charge on its shot particles */
+void ChType_GearShootLoad(cAbstractFile *params);
 int ChType_FlashChar(cEntity *e);
 void ChType_FlashHit(cAbstractFile *params);
 

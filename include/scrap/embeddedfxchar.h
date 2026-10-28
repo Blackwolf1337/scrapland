@@ -185,7 +185,7 @@ SD_SIZE(cEmbeddedFXPolice, 0xd0);
 
 typedef struct cEmbeddedFXRusty {
 	cEmbeddedFX base;
-	byte b08;			/* 0x008 */
+	byte visible;			/* 0x008 */
 	byte pad_09[3];
 	int dummyFront;			/* 0x00c */
 	CGameParticles front;		/* 0x010 DR_Mecanico_PechoGlowA */
@@ -193,12 +193,12 @@ typedef struct cEmbeddedFXRusty {
 	CGameParticles back;		/* 0x0c4 DR_Mecanico_PechoGlowB */
 	int dummySparks;		/* 0x174 */
 	CGameParticles sparks;		/* 0x178 DR_Mecanico_ColetaChispas */
-	int i228;			/* 0x228 */
+	float sparkT;			/* 0x228 the time to the next burst of sparks */
 	int dummyLighting[3];		/* 0x22c DF_LightingA, C, B */
 	int dummyGlowLighting;		/* 0x238 */
 	CGameParticles glowLighting;	/* 0x23c */
-	int trailState[FXRUSTY_TRAILS];	/* 0x2ec */
-	byte pad_2fc[0x30c - 0x2fc];
+	float life[FXRUSTY_TRAILS];	/* 0x2ec of the lightning bolts */
+	float pause[FXRUSTY_TRAILS];	/* 0x2fc before the next bolt (never set by Reset) */
 	CGameTrail trails[FXRUSTY_TRAILS];	/* 0x30c */
 } cEmbeddedFXRusty;
 SD_OFFSET(cEmbeddedFXRusty, sparks, 0x178);
