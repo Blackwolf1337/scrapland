@@ -16,6 +16,10 @@ typedef void *(*SteamCreateInterface_t)(const char *version);
 #define g_SteamAPI_GetHSteamUser GAME_DATA(SteamHandle_t, 0x3a159c)
 #define g_SteamInternal_CreateInterface GAME_DATA(SteamCreateInterface_t, 0x3a15a8)
 #define g_SteamAPI_GetHSteamPipe GAME_DATA(SteamHandle_t, 0x3a15b0)
+typedef void (*SteamRegisterCallback_t)(void *cb, int id);
+typedef void (*SteamUnregisterCallback_t)(void *cb);
+#define g_SteamAPI_RegisterCallback GAME_DATA(SteamRegisterCallback_t, 0x3a15a0)
+#define g_SteamAPI_UnregisterCallback GAME_DATA(SteamUnregisterCallback_t, 0x3a15ac)
 
 /* the auth ticket: requested once, then hex in g_SteamTicket when the callback (rva 0x1347a0) has it */
 #define g_SteamTicketCb ((cSteamTicketCallback *)Game_Ptr(0x428a90))
@@ -72,6 +76,29 @@ typedef struct cSteamTicketCallback {
 	byte pad_1a[2];
 } cSteamTicketCallback;
 SD_OFFSET(cSteamTicketCallback, ticket, 0x14);
+
+/* the static initializer (rva 0x04d8c0) and the atexit destructor (rva 0x38d860) of g_SteamTicketCb: the rest of the
+ * object is data; the destructor sets the vftable of the base class and unregisters it when steam_api registered it */
+#define STEAM_TICKET_CALLBACK 0xa3	/* GetAuthSessionTicketResponse_t::k_iCallback */
+#define STEAM_CALLBACK_REGISTERED 0x1
+#define CCALLBACKBASE_VFTABLE 0x3bb4d8
+
+void Steam_FiniTicketCallback(void) {
+	byte flags = g_SteamTicketCb->flags;
+
+	g_SteamTicketCb->vftable = Game_Ptr(CCALLBACKBASE_VFTABLE);
+	if (flags & STEAM_CALLBACK_REGISTERED) {
+		g_SteamAPI_UnregisterCallback(g_SteamTicketCb);
+	}
+}
+
+void Steam_InitTicketCallback(void) {
+	g_SteamAPI_RegisterCallback(g_SteamTicketCb, STEAM_TICKET_CALLBACK);
+	g_SteamTicketCb->ticket = 0;
+	g_SteamTicketCb->ready = 0;
+	g_SteamTicketCb->pending = 0;
+	crt_atexit(Steam_FiniTicketCallback);
+}
 
 /* GetAuthSessionTicketResponse_t */
 typedef struct SteamTicketResponse {

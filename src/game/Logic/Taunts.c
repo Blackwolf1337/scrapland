@@ -28,7 +28,11 @@
 #define s_TauntLastTime GAME_DATA(float, 0x44d6c0)
 #define s_TauntCountsGuard (&GAME_DATA(int, 0x44d6bc))
 #define s_TauntTimeGuard (&GAME_DATA(int, 0x44d6c4))
-#define TAUNTS_COUNTS_DTOR 0x38dcb0				/* the atexit destructor of the count table */
+
+/* the atexit destructor of the count table (rva 0x38dcb0) */
+void Taunts_FiniCounts(void) {
+	NameTable_Clear(s_TauntRaceCounts);
+}
 
 /* a random index below n (rand01 * (n - 1) rounded half up), the node that far into the ring */
 static int Taunts_RandIndex(int n) {
@@ -67,7 +71,7 @@ int Taunts_PoliceKind(cEntity *ship) {
 			memset(s_TauntRaceCounts->slots, 0, 0x724);
 			s_TauntRaceCounts->locked = 0;
 			s_TauntRaceCounts->caseSensitive = 1;
-			crt_atexit(Game_Ptr(TAUNTS_COUNTS_DTOR));
+			crt_atexit(Taunts_FiniCounts);
 			crt_Init_thread_footer(s_TauntCountsGuard);
 		}
 	}

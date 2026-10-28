@@ -53,7 +53,9 @@ static void Crt_RunOnexit(void) {
 }
 
 [[noreturn]] void crt_exit(int code) {
+	Com_Printf("crt: exit(%d), %d atexit functions\n", code, crt_onexit_count);
 	Crt_RunOnexit();
+	Com_Printf("crt: the atexit functions ran\n");
 	exit(code);
 }
 

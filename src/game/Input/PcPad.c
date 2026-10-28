@@ -8,6 +8,7 @@
 
 #include "scrap/app.h"
 #include "scrap/console.h"
+#include "scrap/crt.h"
 #include "scrap/global.h"
 #include "scrap/input.h"
 #include "scrap/mathlib.h"
@@ -52,6 +53,19 @@ cPcPad *__thiscall cPcPad_ctor(cPcPad *self, int index) {
 	self->base.gvar = g ? cFuncGvarDevices_ctor(g, &self->base) : NULL;
 	memset(self->f25, 0, sizeof(self->f25));
 	return self;
+}
+
+/* the atexit destructor (rva 0x38da50) and the static initializer (rva 0x04df30) of the four pads; the original has
+ * the constructor inlined */
+void PcPad_FiniPads(void) {
+	crt_eh_vector_dtor(g_PcPads, sizeof(cPcPad), 4, (void *)cAbstractIDevice_dtor);
+}
+
+void PcPad_InitPads(void) {
+	for (int i = 0; i < 4; i++) {
+		cPcPad_ctor(&g_PcPads[i], i);
+	}
+	crt_atexit(PcPad_FiniPads);
 }
 
 cPcPad *__thiscall cPcPad_Delete(cPcPad *self, byte flags) {

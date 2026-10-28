@@ -8,7 +8,8 @@
  * rva and caller, copies the piece of original code there back and goes on, so one run lists every piece of game
  * code without a C version that the run reaches. wipepy=1 (ScrapC.exe only, it runs the real Python of src/python)
  * also fills the code of the original's Python with int3, the probe of wipe=3 then covers it too. wipelow=1 (ScrapC.exe
- * only) does the same for the libraries below the game code (ASE, D3DX8) and the M3D math above it.
+ * only) does the same for the libraries below the game code (ASE, D3DX8) and the M3D math above it. wipeinit=1
+ * (ScrapC.exe only) fills the dynamic initializers of the game and the atexit destructors they register with int3.
  *
  * ScrapC.exe also points the entries of the original's C runtime to the C of src/standalone (crthooks.inc), and
  * wipecrt=1 fills the rest of that runtime with int3 (the probe covers it too).
@@ -82,8 +83,16 @@ static int Hook_Write(byte *at, const void *target, uint32_t wipe) {
 #define LIB_CODE_END 0x03e800
 #define M3D_CODE_END 0x2da770
 
+/* wipeinit: the dynamic initializers of the game's globals (between the libraries and the game code) and the atexit
+ * destructors at the end of the code, src/game/Global/StaticInit.c */
+#define INIT_CODE_START 0x03e800
+#define INIT_CODE_END GAME_CODE_START
+#define DTOR_CODE_START 0x38c720
+#define DTOR_CODE_END 0x38f097
+
 /* the code the probe covers: the game code, with wipelow from the libraries up to the end of the M3D math, with
- * wipepy up to the end of the Python, with wipecrt up to the end of the CRT */
+ * wipepy up to the end of the Python, with wipecrt up to the end of the CRT, with wipeinit from the initializers up to
+ * the end of the destructors */
 static uint32_t probe_start = GAME_CODE_START, probe_end = GAME_CODE_END;
 
 static void Hook_Wipe(uint32_t start, uint32_t end) {
@@ -126,7 +135,8 @@ static LONG CALLBACK Hook_Probe(EXCEPTION_POINTERS *e) {
 	/* the return address when the trap is the first byte of a called function */
 	uint32_t ret = *(uint32_t *)e->ContextRecord->Esp;
 	Com_Printf("probe: rva %06x%s, piece %06x..%06x, [esp] %06x\n", (unsigned)rva,
-		m ? " in a hook" : rva >= ORIG_CRT_CODE_START ? " in the CRT" : rva >= ORIG_PY_CODE_START ? " in the Python"
+		m ? " in a hook" : rva >= DTOR_CODE_START ? " in an atexit destructor" : rva >= ORIG_CRT_CODE_START ? " in the CRT"
+		: rva >= ORIG_PY_CODE_START ? " in the Python" : rva >= INIT_CODE_START && rva < INIT_CODE_END ? " in an initializer"
 		: rva < GAME_CODE_START || rva >= GAME_CODE_END ? " in a library" : "",
 		(unsigned)lo, (unsigned)hi, (unsigned)(ret - game_base));
 	VirtualProtect((byte *)game_base + lo, hi - lo, PAGE_EXECUTE_READWRITE, &old);
@@ -191,6 +201,28 @@ static int Hook_WipeCrt(void) {
 #endif
 }
 
+/* wipeinit=1: ScrapC.exe only; in the hook DLL the exe ran its initializers before the hooks */
+static int Hook_WipeInitRange(void) {
+	int wipeinit = Game_Option("wipeinit");
+
+#ifdef SD_STANDALONE
+	if (wipeinit) {
+		if (probe_start > INIT_CODE_START) {
+			probe_start = INIT_CODE_START;
+		}
+		if (probe_end < DTOR_CODE_END) {
+			probe_end = DTOR_CODE_END;
+		}
+	}
+	return wipeinit;
+#else
+	if (wipeinit) {
+		Com_Printf("wipeinit: only in ScrapC.exe, the exe of the hook DLL ran its initializers before the hooks\n");
+	}
+	return 0;
+#endif
+}
+
 /* wipelow=1: ScrapC.exe only; the hook DLL has the same C for what the game calls, but its exe still runs the rest */
 static int Hook_WipeLowRange(int wipelow) {
 #ifdef SD_STANDALONE
@@ -219,7 +251,7 @@ static int Hook_CodeGone(void) {
 }
 
 void Hook_InstallAll(int wipe, int wipepy, int wipelow) {
-	int installed = 0, off = 0, wipecrt;
+	int installed = 0, off = 0, wipecrt, wipeinit;
 
 #ifdef SD_STANDALONE
 	if (wipepy) {
@@ -235,6 +267,7 @@ void Hook_InstallAll(int wipe, int wipepy, int wipelow) {
 	}
 #endif
 	wipelow = Hook_WipeLowRange(wipelow);
+	wipeinit = Hook_WipeInitRange();
 	if (wipe >= 3) {
 		Hook_ProbeInit();
 	}
@@ -248,6 +281,10 @@ void Hook_InstallAll(int wipe, int wipepy, int wipelow) {
 	if (wipelow) {
 		Hook_Wipe(LIB_CODE_START, LIB_CODE_END);
 		Hook_Wipe(GAME_CODE_END, M3D_CODE_END);
+	}
+	if (wipeinit) {
+		Hook_Wipe(INIT_CODE_START, INIT_CODE_END);
+		Hook_Wipe(DTOR_CODE_START, DTOR_CODE_END);
 	}
 	for (size_t i = 0; i < sizeof(hooks) / sizeof(hooks[0]); i++) {
 		const hook_t *h = &hooks[i];
@@ -267,7 +304,7 @@ void Hook_InstallAll(int wipe, int wipepy, int wipelow) {
 	}
 	Com_Printf("%d of %d hooks installed, %d switched off in scrapdecomp.ini\n", installed,
 		(int)(sizeof(hooks) / sizeof(hooks[0])), off);
-	if (wipe || wipepy || wipecrt || wipelow || Hook_CodeGone()) {
+	if (wipe || wipepy || wipecrt || wipelow || wipeinit || Hook_CodeGone()) {
 		AddVectoredExceptionHandler(1, Hook_Trap);
 	}
 	if (wipe) {
@@ -281,5 +318,9 @@ void Hook_InstallAll(int wipe, int wipepy, int wipelow) {
 	if (wipelow) {
 		Com_Printf("wipelow: the code of the libraries (rva %06x..%06x) and the M3D math (rva %06x..%06x) is int3\n",
 			LIB_CODE_START, LIB_CODE_END, GAME_CODE_END, M3D_CODE_END);
+	}
+	if (wipeinit) {
+		Com_Printf("wipeinit: the initializers (rva %06x..%06x) and the atexit destructors (rva %06x..%06x) are int3\n",
+			INIT_CODE_START, INIT_CODE_END, DTOR_CODE_START, DTOR_CODE_END);
 	}
 }

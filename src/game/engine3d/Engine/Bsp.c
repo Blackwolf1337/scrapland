@@ -3301,3 +3301,12 @@ void __fastcall CBsp_InitD3D(CBsp *self) {
 	CModelo_InitD3D(self->modelo, MOTOR_DEV(g_Motor), 1);
 	CMaterial_dtor(&mat);
 }
+
+/* the static initializer (rva 0x05e6e0): the trace caches of the lights cleared */
+void Bsp_InitLuces(void) {
+	for (int i = 0; i < BSP_MAX_LUCES; i++) {
+		g_BspLuces[i].cache[0] = 0;
+		g_BspLuces[i].cache[1] = 0;
+		g_BspLuces[i].cache[2] = 0;
+	}
+}

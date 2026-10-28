@@ -81,7 +81,11 @@ int Batch_Compare(const void *a, const void *b) {
 	return !(eb->z > ea->z) ? 1 : -1;
 }
 
-/* the static initializer (rva 0x05f760): the destructor of g_BatchTab at the exit (rva 0x38f040, with the CRT) */
+/* the atexit destructor of g_BatchTab (rva 0x38f040) and the static initializer that registers it (rva 0x05f760) */
+void RenderSuelo_FiniBatchTab(void) {
+	Tabla_Free(g_BatchTab);
+}
+
 void RenderSuelo_InitBatchTab(void) {
-	crt_atexit((void (*)(void))Game_Ptr(0x38f040));
+	crt_atexit(RenderSuelo_FiniBatchTab);
 }

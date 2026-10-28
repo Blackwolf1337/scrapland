@@ -221,6 +221,11 @@ static inline const WeapEntityVtbl *Weap_Vtbl(cEntity *e) {
 #define g_SwarmNumber1 GAME_DATA(int, 0x44a5f8)
 #define g_SwarmEngineSoundAttEnd GAME_DATA(float, 0x44a638)
 #define g_SwarmEngineSoundDoppler GAME_DATA(float, 0x44a650)
+#define g_SwarmAmmoCost1 GAME_DATA(int, 0x44a3a0)
+#define g_SwarmAmmoCost2 GAME_DATA(int, 0x44a300)
+#define g_SwarmAmmoCost3 GAME_DATA(int, 0x44a478)
+#define g_SwarmAmmoCost4 GAME_DATA(int, 0x44a4a8)
+#define g_SwarmAmmoCosts ((int *)Game_Ptr(0x44a658))	/* [6] SwarmAmmoCost1..4 at the start, then 0 0 */
 #define g_TeslaDownRangeTimePad GAME_DATA(float, 0x44a680)
 #define g_TeslaMinAngRangePad GAME_DATA(float, 0x44a730)
 #define g_TeslaDownRangeTime GAME_DATA(float, 0x44a748)

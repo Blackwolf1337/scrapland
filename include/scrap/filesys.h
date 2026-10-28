@@ -78,6 +78,7 @@ int __thiscall cFile_Tell(cFile *self);
 int __thiscall cFile_Size(cFile *self);
 
 cFileMem *__thiscall cFileMem_ctor(cFileMem *self, void *buffer, int maxSize, byte ownsBuffer);
+void __fastcall cFileMem_dtor(cFileMem *self);
 /* a new buffer with size bytes of data in it */
 void __thiscall cFileMem_SetBuffer(cFileMem *self, void *buffer, int maxSize, byte ownsBuffer, int size);
 int __thiscall cFileMem_Open(cFileMem *self, const char *name, uint32_t mode);

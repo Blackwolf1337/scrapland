@@ -348,7 +348,12 @@ void __thiscall CLuz_Reset(CLuz *self, int arg) {
 #define g_ShowLights GAME_DATA(int, 0x4ac288)
 #define g_LuzMat (*(CMaterial *)Game_Ptr(0x4ad438))
 #define g_LuzMatGuard ((int *)Game_Ptr(0x4ad4e8))
-#define LUZ_MAT_DTOR 0x38ed20		/* the atexit destructor of it */
+
+/* the atexit destructor of it (rva 0x38ed20) */
+void Luz_FiniMat(void) {
+	CMaterial_dtor(&g_LuzMat);
+}
+
 #define D3DFVF_XYZ_DIFFUSE 0x42
 
 typedef struct LuzVert {
@@ -376,7 +381,7 @@ void __thiscall CLuz_Render(CLuz *self, void *dev, CNodoR *r) {
 		crt_Init_thread_header(g_LuzMatGuard);
 		if (*g_LuzMatGuard == -1) {
 			CMaterial_ctor(&g_LuzMat);
-			crt_atexit(Game_Ptr(LUZ_MAT_DTOR));
+			crt_atexit(Luz_FiniMat);
 			crt_Init_thread_footer(g_LuzMatGuard);
 		}
 	}

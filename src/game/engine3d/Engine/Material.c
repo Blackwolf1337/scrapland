@@ -1265,6 +1265,11 @@ void __fastcall CListaMat_dtor(CListaMat *self) {
 	}
 }
 
+/* the atexit destructor of g_ListaMat (rva 0x38ec70, the destructor inlined) */
+void Material_FiniListaMat(void) {
+	CListaMat_dtor(g_ListaMat);
+}
+
 void __thiscall CMapa_dtor(CMapa *self) {
 	CMapa_Release(self);
 	if (self->rutaAni) {

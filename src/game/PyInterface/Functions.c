@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "scrap/console.h"
+#include "scrap/crt.h"
 #include "scrap/pyfunction.h"
 
 byte Py_IsReady(void) {
@@ -29,6 +30,33 @@ cFileMem *ParamFile_Get(void) {
 static void ParamFile_Free(cFileMem *f) {
 	*(cFileMem **)f->buffer = g_FreeParamFiles;
 	g_FreeParamFiles = f;
+}
+
+/*
+ * The function of the sphere tests (g_ChTypeSphereFunc, g_DoorSphereFunc and the others at rva 0x46679c): its static
+ * initializer (rva 0x0554d0) has the constructor inlined without the fields that are 0 in the data, it only links it
+ * into the ring. The atexit destructor is rva 0x38e3a0.
+ */
+#define g_SphereFunc ((cPy_Function *)Game_Ptr(0x46679c))
+
+void PyFunction_FiniSphereFunc(void) {
+	cPy_Function_dtor(g_SphereFunc);
+}
+
+void PyFunction_InitSphereFunc(void) {
+	cPy_Function *head = g_PyFunctions, *self = g_SphereFunc;
+
+	if (!head) {
+		self->next = self;
+		self->prev = self;
+	} else {
+		self->prev = head->prev;
+		self->next = head;
+		head->prev->next = self;
+		head->prev = self;
+	}
+	g_PyFunctions = self;
+	crt_atexit(PyFunction_FiniSphereFunc);
 }
 
 cPy_Function *__thiscall cPy_Function_ctor(cPy_Function *self) {

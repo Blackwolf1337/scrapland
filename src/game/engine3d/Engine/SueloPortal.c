@@ -5,6 +5,7 @@
 
 #include "scrap/camara.h"
 #include "scrap/console.h"
+#include "scrap/crt.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/fuentes.h"
@@ -507,6 +508,17 @@ ZonaPintar *__fastcall ZonaPintar_ctor(ZonaPintar *self) {
 
 void __fastcall ZonaPintar_dtor(ZonaPintar *self) {
 	(void)self;
+}
+
+/* the static initializer (rva 0x05d6f0, the constructor inlined) and the atexit destructor (rva 0x38ee30) of
+ * g_PintarTodas */
+void SueloPortal_FiniPintarTodas(void) {
+	ZonaPintar_dtor(g_PintarTodas);
+}
+
+void SueloPortal_InitPintarTodas(void) {
+	ZonaPintar_ctor(g_PintarTodas);
+	crt_atexit(SueloPortal_FiniPintarTodas);
 }
 
 void Portales_DebugDraw(void) {

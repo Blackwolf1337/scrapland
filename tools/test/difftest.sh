@@ -13,11 +13,11 @@
 #                          goes on with the original code (src/core/hook.c)
 #        DIFFTEST_STANDALONE=1  the hooked run starts ScrapC.exe, the standalone loader (docs/standalone.md)
 #        DIFFTEST_WIPEPY=1  with DIFFTEST_STANDALONE=1: the code of the original's Python is int3 too ([general] wipepy)
-#        DIFFTEST_CRTSTART=0  with DIFFTEST_STANDALONE=1: ScrapC.exe runs the entry point of the original with its CRT
-#                          init instead of its own start ([general] crtstart=0, src/standalone/crtinit.c)
 #        DIFFTEST_WIPECRT=1  with DIFFTEST_STANDALONE=1: the code of the original's CRT is int3 too ([general] wipecrt)
 #        DIFFTEST_WIPELOW=1  with DIFFTEST_STANDALONE=1: the libraries below the game code (ASE, D3DX8) and the M3D math
 #                          are int3 too ([general] wipelow)
+#        DIFFTEST_WIPEINIT=1  with DIFFTEST_STANDALONE=1: the dynamic initializers of the game and their atexit
+#                          destructors are int3 too ([general] wipeinit)
 root=$(cd "$(dirname "$0")/../.." && pwd)
 game=$root/game
 ini=$game/Bin/scrapdecomp.ini
@@ -48,9 +48,9 @@ run() {
 	local arg
 	[ "$2" = 1 ] && [ "${DIFFTEST_STANDALONE:-0}" = 1 ] && exe=ScrapC.exe
 	arg="-PythonExecute:execfile($(python3 -I -c "print('+'.join('chr(%d)' % ord(c) for c in '$name.py'))"))"
-	printf '[general]\nhooks=%s\ntestmod=1\nwipe=%s\nwipepy=%s\nwipecrt=%s\ncrtstart=%s\nwipelow=%s\n' "$2" \
+	printf '[general]\nhooks=%s\ntestmod=1\nwipe=%s\nwipepy=%s\nwipecrt=%s\nwipelow=%s\nwipeinit=%s\n' "$2" \
 		"$(($2 ? ${DIFFTEST_WIPE:-0} : 0))" "$(($2 ? ${DIFFTEST_WIPEPY:-0} : 0))" "$(($2 ? ${DIFFTEST_WIPECRT:-0} : 0))" \
-		"$(($2 ? ${DIFFTEST_CRTSTART:-1} : 1))" "$(($2 ? ${DIFFTEST_WIPELOW:-0} : 0))" > "$ini"
+		"$(($2 ? ${DIFFTEST_WIPELOW:-0} : 0))" "$(($2 ? ${DIFFTEST_WIPEINIT:-0} : 0))" > "$ini"
 	# so the second run does not find the files of the first
 	rm -f "$result"
 	rm_written

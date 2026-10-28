@@ -35,6 +35,9 @@ typedef struct cPy_NativeFunc {
 	struct cPy_NativeFunc *less;	/* 0xc */
 } cPy_NativeFunc;
 
+/* a static entry, inserted into g_NativeFuncs */
+cPy_NativeFunc *__thiscall cPy_NativeFunc_ctor(cPy_NativeFunc *self, const char *name, nativefunc_t func);
+
 #define g_PyFunctions GAME_DATA(cPy_Function *, 0x4667b0)
 /* memory files of C function parameters for reuse; the first dword of the buffer links them */
 #define g_FreeParamFiles GAME_DATA(cFileMem *, 0x4667b4)

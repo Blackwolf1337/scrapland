@@ -66,6 +66,12 @@ cGVar *GVar_Find(const char *name);
 cGVar *__thiscall cGVar_ctor(cGVar *self, const char *name, byte flags, const char *description);
 /* an int variable with its default, as the static initializers make it */
 cGVar *GVar_InitInt(cGVar *v, const char *name, byte flags, const char *description, int value);
+cGVar *GVar_InitFloat(cGVar *v, const char *name, byte flags, const char *description, float value);
+/* a string variable: value and default are cString, the destructor frees both */
+cGVar *GVar_InitString(cGVar *v, const char *name, byte flags, const char *description, const char *value);
+void GVar_FiniString(cGVar *v);
+/* a script function variable bound to func ("Module.function", "!native", empty or NULL for none) */
+cGVar *GVar_InitFunction(cGVar *v, const char *name, byte flags, const char *description, const char *func);
 /* "name = value # comment" of Scrap.cfg: cuts the comment, splits at '=' and trims both; 0 without '=' */
 byte Cfg_ParseLine(char *line, char **value);
 
@@ -94,6 +100,8 @@ PyObject *SaveGames_GetList(const char *path);
 PyObject *Lang_GetEntries(const char *name, int n);
 const char *Lang_GetStr(const char *name);
 const char *Lang_GetLanguage(void);
+/* the string table of the language (src/game/Global/Language.c) */
+void __fastcall LangTable_Clear(HashTable *self);
 
 /* Global/StaticBuffer.h: a buffer that grows and is locked while in use */
 typedef struct cStaticBuffer {
@@ -106,6 +114,8 @@ SD_OFFSET(cStaticBuffer, lock, 0x8);
 void *__thiscall cStaticBuffer_Get(cStaticBuffer *self, uint32_t size);
 /* the end of the use of the buffer (CHECK lock); inlined in most places (rva 0x190370) */
 void __fastcall cStaticBuffer_Unlock(cStaticBuffer *self);
+cStaticBuffer *__fastcall cStaticBuffer_ctor(cStaticBuffer *self);
+void __fastcall cStaticBuffer_dtor(cStaticBuffer *self);
 /* the path of the game into buf (rva 0x20d100) */
 void App_GetPath(char *buf, int size);
 float __thiscall cWorld_GetMinCamDistSq(cWorld *world, const vec3_t *pos);

@@ -37,10 +37,7 @@ PY_DATA = ranges(py_h, 'ORIG_PY_DATA')
 # the pieces of .text that are built in; the rest of it is int3 at start
 TEXT_KEEP = [
 	(0x001000, 0x002070),	# the data formats of dinput8.lib (c_dfDIKeyboard and friends point here)
-	(0x03e800, 0x05f6d8),	# the dynamic initializers of the game, run by Crt_Main from the table at rva 0x3a15c4
-] + ranges(crt_h, 'ORIG_CRT_THUNKS') + [	# the import thunks of the game in the CRT, called through imports
-	(define(crt_h, 'ORIG_CRT_CODE_END'), None),	# the C++ unwind funclets and the atexit destructors of the game
-]
+] + ranges(crt_h, 'ORIG_CRT_THUNKS')	# the import thunks of the game in the CRT, called through imports
 
 # what pointers outside the original's Python point to in it, and the real symbol for each (pymap.py -c makes this
 # table): the type objects of the engine (ob_type), the module table of the exe and the code of the copy hold these

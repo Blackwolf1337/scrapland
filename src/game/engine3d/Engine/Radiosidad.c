@@ -332,7 +332,11 @@ vec3_t *Rad_Normales(uint32_t *num) {
 	return t->p;
 }
 
-/* the static initializer (rva 0x05f7e0): the destructor of g_RadNormales at the exit (rva 0x38f070, with the CRT) */
+/* the atexit destructor of g_RadNormales (rva 0x38f070) and the static initializer that registers it (rva 0x05f7e0) */
+void Radiosidad_FiniNormales(void) {
+	Tabla_Free(&g_RadNormales);
+}
+
 void Radiosidad_InitNormales(void) {
-	crt_atexit((void (*)(void))Game_Ptr(0x38f070));
+	crt_atexit(Radiosidad_FiniNormales);
 }
