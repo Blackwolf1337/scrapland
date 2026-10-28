@@ -137,9 +137,18 @@ void __thiscall cActionSet_Latch(cActionSet *s);
 byte __thiscall cActionSet_AnyActive(cActionSet *s);
 void Input_OnTextDone(int player, const char *text);
 
-/* the parts of ActionSet.cpp before rva 0x139950 */
-void __thiscall cPlayerInput_PressKey(cPlayerInput *in, int player);	/* rva 0x1396b0 */
-void __thiscall cActionSet_HoldPressed(cActionSet *s);			/* rva 0x139810 */
+void __thiscall cPlayerInput_PressKey(cPlayerInput *in, int player);
+void __thiscall cActionSet_HoldPressed(cActionSet *s);
+cActionSetTable *__fastcall ActionSets_ctor(cActionSetTable *sets);
+cInputAction *__fastcall cInputAction_ctor(cInputAction *a);
+cActionSet *__fastcall cActionSet_ctor(cActionSet *s);
+cPlayerInput *__fastcall cPlayerInput_ctor(cPlayerInput *in);
+void __fastcall ActionSetTable_Free(cActionSetTable *t);
+void __fastcall cInputAction_dtor(cInputAction *a);
+void __fastcall cActionSet_dtor(cActionSet *s);
+void __fastcall cPlayerInput_dtor(cPlayerInput *in);
+cInputAction *__thiscall cInputAction_Delete(cInputAction *a, uint32_t flags);
+cActionSet *__thiscall cActionSet_Delete(cActionSet *s, uint32_t flags);
 
 /*
  * Input/IDevice.cpp: the devices. An entry is a key, button or half axis; sets[set] is the binding of it in that

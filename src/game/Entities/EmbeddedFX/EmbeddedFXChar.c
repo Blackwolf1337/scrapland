@@ -11,6 +11,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/timer.h"
 
+#define CGAMETRAIL_CTOR 0x21ddb0
 #define CGAMETRAIL_DTOR 0x21de40
 
 #define VT_EMBEDDEDFX 0x3b08a0
@@ -102,6 +103,153 @@ static inline void EFX_TrailStyle(CGameTrail *t, byte segments, byte smooth, int
 	CGameTrail_SetFade(t, fade);
 }
 
+/* ---- constructors ---- */
+
+static inline void EFX_TrailsCtor(CGameTrail *trails, uint32_t n) {
+	crt_eh_vector_ctor(trails, sizeof(CGameTrail), n, Game_Ptr(CGAMETRAIL_CTOR), Game_Ptr(CGAMETRAIL_DTOR));
+}
+
+/* the original clears the vtable pointer before it stores the class one */
+static inline void EFX_CtorVtbl(void *self, uint32_t vt) {
+	*(void **)self = NULL;
+	EFX_SetVtbl(self, vt);
+}
+
+cEmbeddedFXAlarm *__fastcall cEmbeddedFXAlarm_ctor(cEmbeddedFXAlarm *self) {
+	CGameParticles_ctor(&self->particles);
+	self->dummy = -1;
+	self->level = 0.0f;
+	return self;
+}
+
+cEmbeddedFX *__fastcall cEmbeddedFXBankDirector_ctor(void *p) {
+	cEmbeddedFXBankDirector *self = p;
+	EFX_CtorVtbl(self, VT_BANKDIRECTOR);
+	CGameParticles_ctor(&self->glow);
+	self->base.ent = NULL;
+	self->dummyGlow = -1;
+	self->on = 0;
+	return &self->base;
+}
+
+cEmbeddedFX *__fastcall cEmbeddedFXBankMaster_ctor(void *p) {
+	cEmbeddedFXBankMaster *self = p;
+	EFX_CtorVtbl(self, VT_BANKMASTER);
+	CGameParticles_ctor(&self->glow);
+	CGameParticles_ctor(&self->baston);
+	self->base.ent = NULL;
+	self->dummyGlow = -1;
+	self->dummyBaston = -1;
+	self->on = 0;
+	return &self->base;
+}
+
+cEmbeddedFX *__fastcall cEmbeddedFXCrazyGambler_ctor(void *p) {
+	cEmbeddedFXCrazyGambler *self = p;
+	EFX_CtorVtbl(self, VT_CRAZYGAMBLER);
+	CGameParticles_ctor(&self->particles);
+	EFX_TrailsCtor(self->trails, FXGAMBLER_ARCS);
+	self->b2188 = 0;
+	self->base.ent = NULL;
+	self->arcT = 0.0f;
+	self->t = 0.0f;
+	self->visible = 0;
+	self->model = NULL;
+	self->nodeHead = -1;
+	self->nodeHand = -1;
+	return &self->base;
+}
+
+cEmbeddedFX *__fastcall cEmbeddedFXGear_ctor(void *p) {
+	cEmbeddedFXGear *self = p;
+	EFX_CtorVtbl(self, VT_GEAR);
+	cEmbeddedFXAlarm_ctor(&self->alarm);
+	CGameParticles_ctor(&self->shoot);
+	CGameTrail_ctor(&self->trail);
+	self->base.ent = NULL;
+	self->dummyShoot = -1;
+	return &self->base;
+}
+
+cEmbeddedFX *__fastcall cEmbeddedFXMaintenance_ctor(void *p) {
+	cEmbeddedFXMaintenance *self = p;
+	EFX_CtorVtbl(self, VT_MAINTENANCE);
+	CGameParticles_ctor(&self->light);
+	self->base.ent = NULL;
+	self->t = 0.0f;
+	self->lastT = 0.0f;
+	return &self->base;
+}
+
+cEmbeddedFX *__fastcall cEmbeddedFXMercenary_ctor(void *p) {
+	cEmbeddedFXMercenary *self = p;
+	EFX_CtorVtbl(self, VT_MERCENARY);
+	CGameParticles_ctor(&self->glow);
+	CGameParticles_ctor(&self->bubbles);
+	CGameParticles_ctor(&self->pipe);
+	self->base.ent = NULL;
+	self->dummyGlow = -1;
+	self->dummyBubbles = -1;
+	self->b08 = 0;
+	self->i0c = 0;
+	self->isL = 0;
+	return &self->base;
+}
+
+cEmbeddedFX *__fastcall cEmbeddedFXMessenger_ctor(void *p) {
+	cEmbeddedFXMessenger *self = p;
+	EFX_CtorVtbl(self, VT_MESSENGER);
+	CGameParticles_ctor(&self->glow);
+	EFX_TrailsCtor(self->trails, FXMESSENGER_TRAILS);
+	self->b334 = 0;
+	self->base.ent = NULL;
+	self->i08 = 0;
+	self->b0c = 0;
+	return &self->base;
+}
+
+cEmbeddedFX *__fastcall cEmbeddedFXPolice_ctor(void *p) {
+	cEmbeddedFXPolice *self = p;
+	EFX_CtorVtbl(self, VT_POLICE);
+	cEmbeddedFXAlarm_ctor(&self->alarm);
+	self->base.ent = NULL;
+	return &self->base;
+}
+
+cEmbeddedFX *__fastcall cEmbeddedFXRusty_ctor(void *p) {
+	cEmbeddedFXRusty *self = p;
+	EFX_CtorVtbl(self, VT_RUSTY);
+	CGameParticles_ctor(&self->front);
+	CGameParticles_ctor(&self->back);
+	CGameParticles_ctor(&self->sparks);
+	CGameParticles_ctor(&self->glowLighting);
+	EFX_TrailsCtor(self->trails, FXRUSTY_TRAILS);
+	self->base.ent = NULL;
+	self->dummyFront = -1;
+	self->dummyBack = -1;
+	self->dummySparks = -1;
+	self->b08 = 0;
+	self->i228 = 0;
+	return &self->base;
+}
+
+cEmbeddedFX *__fastcall cEmbeddedFXSentinel_ctor(void *p) {
+	cEmbeddedFXSentinel *self = p;
+	EFX_CtorVtbl(self, VT_SENTINEL);
+	CGameParticles_ctor(&self->status);
+	CGameParticles_ctor(&self->laser);
+	EFX_TrailsCtor(self->beams, FXSENTINEL_LASERS);
+	EFX_TrailsCtor(self->edgesA, FXSENTINEL_LASERS);
+	EFX_TrailsCtor(self->edgesB, FXSENTINEL_LASERS);
+	cEmbeddedFXAlarm_ctor(&self->alarm);
+	self->base.ent = NULL;
+	self->dummyStatus = -1;
+	self->dummyLaser = -1;
+	self->i1f0 = -1;
+	self->i1ec = -1;
+	return &self->base;
+}
+
 /* ---- destructors ---- */
 
 /* EmbeddedFX.h, in the exe after WalkCharEntity.cpp */
@@ -109,7 +257,13 @@ void __fastcall cEmbeddedFX_dtor(cEmbeddedFX *self) {
 	EFX_SetVtbl(self, VT_EMBEDDEDFX);
 }
 
-static void cEmbeddedFXBankDirector_Destruct(cEmbeddedFXBankDirector *self) {
+/* vf00 of the base class (rva 0xd6900); it frees 4 bytes, the size of the vtable pointer alone */
+cEmbeddedFX *__thiscall cEmbeddedFX_Delete(cEmbeddedFX *self, byte flags) {
+	cEmbeddedFX_dtor(self);
+	return EFX_Delete(self, flags, 4);
+}
+
+void __fastcall cEmbeddedFXBankDirector_dtor(cEmbeddedFXBankDirector *self) {
 	EFX_SetVtbl(self, VT_BANKDIRECTOR);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
@@ -192,7 +346,7 @@ void __fastcall cEmbeddedFXSentinel_dtor(cEmbeddedFXSentinel *self) {
 /* ---- vf00: deleting destructors ---- */
 
 cEmbeddedFX *__thiscall cEmbeddedFXBankDirector_Delete(cEmbeddedFXBankDirector *self, byte flags) {
-	cEmbeddedFXBankDirector_Destruct(self);
+	cEmbeddedFXBankDirector_dtor(self);
 	return EFX_Delete(&self->base, flags, sizeof(*self));
 }
 

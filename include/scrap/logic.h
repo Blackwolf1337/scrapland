@@ -735,11 +735,13 @@ void __thiscall cGateKeepers_Update(cGateKeepers *self, float dt);
 cDominationLogic *__fastcall cDominationFriendsLogic_ctor(cDominationLogic *self);
 void __fastcall cDominationFriendsLogic_dtor(cDominationLogic *self);
 
-/* MessengerLogic.cpp (imports) */
+/* MessengerLogic.cpp */
 void *__thiscall cMessengers_ctor(void *self);
 void __fastcall cMessengers_dtor(void *self);
 void __fastcall cMessengers_Init(void *self);
 void __fastcall cMessengers_Think(void *self);
+/* the messenger m with the pack at the desk: 1 while the drop goes on */
+byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack);
 
 /* the constructors of the logics of the other types (later sources of Logic/, imports) */
 void *__thiscall cLittlePoliceLocalLogic_ctor(void *self, cEntity *parent);

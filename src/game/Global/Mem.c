@@ -117,3 +117,13 @@ void Delete_Objects(void *p, uint32_t size, uint32_t dtor) {
 	crt_eh_vector_dtor(p, size, *mem, Game_Ptr(dtor));
 	operator_delete_array(mem);
 }
+
+void *Delete_VectorPart(void *p, uint32_t flags, uint32_t size, uint32_t dtor) {
+	uint32_t *mem = (uint32_t *)p - 1;
+
+	crt_eh_vector_dtor(p, size, *mem, Game_Ptr(dtor));
+	if (flags & 1) {
+		operator_delete_array(mem);
+	}
+	return mem;
+}

@@ -336,12 +336,12 @@ byte __thiscall cAIVehicle_ChangeStateMore(cAIVehicle *self, int state, byte all
 /* the vehicle too far from the camera for its view (the repos distances reset to the engine variables) */
 byte __thiscall cAIVehicle_NeedRepos(cAIVehicle *self);
 
-/* ---- the parts of AIVehicle.cpp not in C yet ---- */
+/* ---- the repositioning and the track points ---- */
 /* the repositioning near the camera */
-byte __thiscall cAIVehicle_Repos(cAIVehicle *self);			/* rva 0x89b00 */
-void __thiscall cAIVehicle_GraphTraffic(cAIVehicle *self);		/* rva 0x89070 */
-/* the hook point p free for the vehicle (a line test to a point beside it) */
-byte __thiscall cAIVehicle_TestHookPoint(cAIVehicle *self, const vec3_t *p);	/* rva 0x8ab20 */
+byte __thiscall cAIVehicle_Repos(cAIVehicle *self);
+void __thiscall cAIVehicle_GraphTraffic(cAIVehicle *self);
+/* a line from the vehicle to a point at HookRange beside it hits the scene; the hit point in p */
+byte __thiscall cAIVehicle_TestHookPoint(cAIVehicle *self, vec3_t *p);
 /* the point of the track node for the vehicle (out returned); Random with a random offset kept in trackOfs */
 vec3_t *__thiscall cAIVehicle_TrackPoint(cAIVehicle *self, vec3_t *out, const vec3_t *p, int track, int node);
 vec3_t *__thiscall cAIVehicle_TrackPointRandom(cAIVehicle *self, vec3_t *out, const vec3_t *p, int track,
@@ -349,7 +349,7 @@ vec3_t *__thiscall cAIVehicle_TrackPointRandom(cAIVehicle *self, vec3_t *out, co
 /* a point of a traffic track near the camera for the vehicle (in view between minVis and maxVis, else between
  * minNotVis and maxNotVis, around the point); track and node set; 0 for none */
 byte __thiscall cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis, float maxVis, float minNotVis,
-	float maxNotVis, float around);							/* rva 0x8d3c0 */
+	float maxNotVis, float around);
 
 /* ---- cAIMove (AI/AIMove.cpp), the base class ---- */
 void *__thiscall cAIMove_ctor(void *self, cEntity *e);

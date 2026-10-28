@@ -1,6 +1,6 @@
 /*
  * ScraplandScorer.cpp of the game (Menu/): cScraplandMainMenuScorer and cScraplandSubMenuScorer, the animated
- * logos of the menus. The draws (rva 0x176130 and 0x176d10) are not decompiled. See include/scrap/scoreritems.h.
+ * logos of the menus. The draw of the main menu (rva 0x176130) is not decompiled. See include/scrap/scoreritems.h.
  */
 #include <string.h>
 
@@ -157,27 +157,33 @@ void __fastcall cScraplandMainMenuScorer_Init(cScraplandMainMenuScorer *self) {
 	g_MainMenuNeonNext = ScraplandScorer_Rand(K(0x3b11a0), K(0x3afd68));
 }
 
-void __fastcall cScraplandSubMenuScorer_Init(cScraplandSubMenuScorer *self) {
-	float v;
+/* the random wait of the sub menu logo until its next ring: short, middle or (mostly) long */
+static float SubMenu_RandWait(void) {
+	if (crt_rand() % 4 == 0) {
+		return ScraplandScorer_Rand(K(0x3c4100), K(0x3aeb88));
+	}
+	if (crt_rand() % 4 == 0) {
+		return ScraplandScorer_Rand(K(0x3ae240), K(0x3abbc0));
+	}
+	return ScraplandScorer_Rand(K(0x3c40f0), K(0x3aeb68));
+}
 
+/* the random length of a ring */
+static float SubMenu_RandRing(void) {
+	if (crt_rand() & 1) {
+		return ScraplandScorer_Rand(K(0x3aeb50), K(0x3c40e0));
+	}
+	return ScraplandScorer_Rand(K(0x3c40c0), K(0x3c40d8));
+}
+
+void __fastcall cScraplandSubMenuScorer_Init(cScraplandSubMenuScorer *self) {
 	self->time = (float)g_pApp->vftable->GetGameTime(g_pApp);
 	if (g_SubMenuAnimInit) {
 		return;
 	}
 	g_SubMenuAnimInit = 1;
-	if (crt_rand() % 4 == 0) {
-		v = ScraplandScorer_Rand(K(0x3c4100), K(0x3aeb88));
-	} else if (crt_rand() % 4 == 0) {
-		v = ScraplandScorer_Rand(K(0x3ae240), K(0x3abbc0));
-	} else {
-		v = ScraplandScorer_Rand(K(0x3c40f0), K(0x3aeb68));
-	}
-	g_SubMenuWait = v;
-	if (crt_rand() & 1) {
-		v = ScraplandScorer_Rand(K(0x3aeb50), K(0x3c40e0));
-	} else {
-		v = ScraplandScorer_Rand(K(0x3c40c0), K(0x3c40d8));
-	}
+	g_SubMenuWait = SubMenu_RandWait();
+	float v = SubMenu_RandRing();
 	g_SubMenuRingTime = 0.0f;
 	g_SubMenuRingWait = v;
 }
@@ -317,4 +323,99 @@ int __thiscall cScraplandSubMenuScorer_Var(cScraplandSubMenuScorer *self, const 
 		return ScorerVar_Float(&self->scale, set, d);
 	}
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
+}
+
+#define SUBMENU_MAX_DT 0.2f
+#define SUBMENU_REFLECTION_SPEED 0.15f
+#define SUBMENU_REFLECTION_SIZE 0.56f	/* the reflection square turns inside the ring */
+#define SUBMENU_REFLECTION_SCALE 4.0f
+#define SUBMENU_REFLECTION_OFS 2.0f
+#define SUBMENU_REFLECTION_HALF 128.0f	/* the half size of the ring images */
+#define SUBMENU_RING_FRAMES 9
+#define SUBMENU_RING_STEPS (-8.0f)
+#define SUBMENU_LIGHTING_Y 11.0f
+
+static void SubMenu_Draw(CPsaImage *img, float scale, uint32_t color, byte setColor, float x, float y) {
+	img->pivotX = 0.5f;
+	img->pivotY = 0.5f;
+	img->scaleX = scale;
+	img->scaleY = scale;
+	if (setColor) {
+		img->color = color;
+	}
+	CPsaImage_Draw(img, x, y);
+}
+
+/* vf00: the logo, the ring mask, its reflection turning back and forth, the ring border and the flickering glow;
+ * after a random wait a ring of lightning frames runs in or out */
+void __thiscall cScraplandSubMenuScorer_Draw(cScraplandSubMenuScorer *self, int player) {
+	static const float uv[4][2] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
+	static const float corners[4][2] = {{-0.5f, -0.5f}, {0.5f, -0.5f}, {0.5f, 0.5f}, {-0.5f, 0.5f}};
+	float pos[4][2];
+
+	(void)player;
+	float t = (float)g_pApp->vftable->GetGameTime(g_pApp);
+	self->now = t;
+	float dt = t - self->time;
+	self->time = t;
+	dt = Float_MinSS(SUBMENU_MAX_DT, dt);
+	float x = self->base.x, y = self->base.y;
+	SubMenu_Draw(self->logo, self->scale, 0, 0, x, y);
+	SubMenu_Draw(self->ringMask, self->scale, 0xffffffff, 1, x, y);
+	self->ringReflection->color = 0x80ffffff;
+	double c = Game_Cos((double)(self->now * SUBMENU_REFLECTION_SPEED)) * K(0x3ae448);	/* -pi */
+	float a = (float)(c + c);
+	for (int k = 0; k < 4; k++) {
+		float r[2];
+		Vec2_Rotate(r, corners[k], a);
+		pos[k][0] = r[0] * SUBMENU_REFLECTION_SIZE * SUBMENU_REFLECTION_SCALE + SUBMENU_REFLECTION_OFS;
+		pos[k][1] = r[1] * SUBMENU_REFLECTION_SIZE * SUBMENU_REFLECTION_SCALE + SUBMENU_REFLECTION_OFS;
+	}
+	CPsaImage *img = self->ringReflection;
+	img->scaleX = self->scale;
+	img->scaleY = self->scale;
+	float h = self->scale * SUBMENU_REFLECTION_HALF;
+	img->x = x - h;
+	img->y = y - h;
+	CPsaImage_DrawPoly(img, &pos[0][0], &uv[0][0], NULL, 4, 6);
+	Eng_ResetViewRect();
+	SubMenu_Draw(self->ringBorder, self->scale, 0xffffffff, 1, x, y);
+	img = self->glow;
+	img->pivotX = 0.5f;
+	img->pivotY = 0.5f;
+	img->scaleX = self->scale;
+	img->scaleY = self->scale;
+	img->color = (uint32_t)(crt_rand() % 24 - 0x22) << 24 | 0xffffff;
+	CPsaImage_Draw(img, x, y);
+	if (g_SubMenuRingTime > 0.0f) {
+		g_SubMenuRingTime = g_SubMenuRingTime - dt;
+		int r = crt_rand();
+		float f = g_SubMenuRingTime / g_SubMenuRingWait * SUBMENU_RING_STEPS;
+		uint32_t alpha = 0xff - (uint32_t)(r % 3) * 16;
+		int frame = g_SubMenuRingFrame - (int)f;
+		if (frame > SUBMENU_RING_FRAMES) {
+			frame %= SUBMENU_RING_FRAMES;
+		}
+		int n = g_SubMenuRingDir ? SUBMENU_RING_FRAMES - frame : frame + 1;
+		if ((uint32_t)(n - 1) <= SUBMENU_RING_FRAMES - 1) {
+			img = self->lighting;
+			img->scaleX = self->scale;
+			img->scaleY = self->scale;
+			img->color = (img->color & 0xffffff) | alpha << 24;
+			img->pivotX = 0.5f;
+			img->pivotY = 0.5f;
+			CPsaImage_DrawFrame(img, n, self->base.x, self->scale * SUBMENU_LIGHTING_Y + self->base.y);
+		}
+		return;
+	}
+	g_SubMenuWait = g_SubMenuWait - dt;
+	if (0.0f < g_SubMenuWait) {
+		return;
+	}
+	g_SubMenuWait = SubMenu_RandWait();
+	float v = SubMenu_RandRing();
+	g_SubMenuRingWait = v;
+	g_SubMenuRingTime = v;
+	g_SubMenuRingDir = crt_rand() & 1;
+	g_SubMenuRingFrame = crt_rand() % SUBMENU_RING_FRAMES;
 }

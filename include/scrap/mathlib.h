@@ -171,6 +171,15 @@ static inline float Float_MaxSS(float a, float b) {
 	return a > b ? a : b;
 }
 
+/* the x87 a * b * c of the original (a on the stack from a call, fmul DWORD twice), rounded by the control word,
+ * then to float */
+static inline float X87_MulMulF(long double a, float b, float c) {
+	long double r;
+
+	__asm__("fmuls %2\n\tfmuls %3" : "=t"(r) : "0"(a), "m"(b), "m"(c));
+	return (float)r;
+}
+
 /* the x87 a * b of the original (fmul QWORD), in the precision the game set, stored as a double */
 static inline double X87_Mul(double a, double b) {
 	double r;

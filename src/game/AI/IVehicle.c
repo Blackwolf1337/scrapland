@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "scrap/aivehicle.h"
+#include "scrap/camcontrol.h"
 #include "scrap/console.h"
 #include "scrap/embeddedfxvehicle.h"
 #include "scrap/fxmisc.h"
@@ -22,6 +23,7 @@
 #define g_RadiusObjectiveTrafficInDoor GAME_DATA(float, 0x444918)	/* RADIUS_OBJECTIVE_TRAFFIC_INDOOR */
 #define g_RadiusObjectiveInRoute GAME_DATA(float, 0x444d60)		/* RADIUS_OBJECTIVE_IN_ROUTE */
 #define g_VelTrafficLightRotAI GAME_DATA(float, 0x444a14)
+#define g_MaxDistAroundReposAI GAME_DATA(float, 0x444930)
 #define AIV_NEAR_DIST2 225000000.0f		/* 15000 squared (rva 0x3a8e58) */
 #define AIV_ROT_SPEED_A 8334.0f			/* rva 0x3a8e4c */
 #define AIV_ROT_SPEED_B 4167.0f			/* rva 0x3a8e48 */
@@ -1206,6 +1208,429 @@ void __thiscall cAIVehicle_SetRotSpeed(cAIVehicle *self, float speed) {
 	AIV_SetRotSpeed(self, speed);
 }
 
+#define AIV_TRACK_DIR_MIN 0.1f		/* rva 0x3aab08, compared as double */
+#define AIV_TRACK_RAY 600000.0f		/* rva 0x3a8e50 */
+
+/* a component near 0 for the track directions (fabs as double against 0.1) */
+static inline int AIV_TrackSmall(float v) {
+	return (double)AIV_TRACK_DIR_MIN > __builtin_fabs((double)(v - 0.0f));
+}
+
+static inline int AIV_TrackSmall3(const vec3_t *v) {
+	return AIV_TrackSmall(v->x) && AIV_TrackSmall(v->y) && AIV_TrackSmall(v->z);
+}
+
+/* the width left for the vehicle on the track: the track radius less the vehicle radius */
+/* v / |v| with the factor 1 / len in float, v unchanged for the length 0 (inlined in AIVehicle.cpp) */
+static void AIV_Unit(vec3_t *out, const vec3_t *v) {
+	float len = (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
+
+	if (len == 0.0f) {
+		*out = *v;
+		return;
+	}
+	float k = 1.0f / len;
+	out->x = v->x * k;
+	out->y = v->y * k;
+	out->z = v->z * k;
+}
+
+#define AIV_HOOK_AHEAD 2.0f		/* rva 0x3a8e38 */
+
+/* a line from the vehicle to a point at HookRange in turn ahead-right, ahead-up and ahead-left (i334 counts); 1 if
+ * it hits the scene, the hit point in p */
+byte __thiscall cAIVehicle_TestHookPoint(cAIVehicle *self, vec3_t *p) {
+	vec3_t rot, f, d, c, n, e, h, u, o, tmp;
+	static const vec3_t back = { 0.0f, 0.0f, -1.0f };
+
+	AIV_EntVtbl(self->vehicle)->GetRot(self->vehicle, &rot);
+	vec3_t z = back;
+	Vec3_Rotate(&f, &z, &rot);
+	AIV_Unit(&d, &f);
+	c.x = d.y * 0.0f - d.z;
+	c.y = d.z * 0.0f - d.x * 0.0f;
+	c.z = d.x - d.y * 0.0f;
+	if (c.x == 0.0f && c.y == 0.0f && c.z == 0.0f) {
+		c.x = 1.0f;
+		c.y = 0.0f;
+		c.z = 0.0f;
+	}
+	AIV_Unit(&n, &c);
+	int mode = self->i334;
+	if (mode == 0) {
+		e.x = n.z * d.y - n.y * d.z;
+		e.y = n.x * d.z - n.z * d.x;
+		e.z = n.y * d.x - n.x * d.y;
+		AIV_Unit(&n, &e);
+		h.x = n.x + d.x * AIV_HOOK_AHEAD;
+		h.y = n.y + d.y * AIV_HOOK_AHEAD;
+		h.z = n.z + d.z * AIV_HOOK_AHEAD;
+	} else if (mode == 1) {
+		h.x = n.x + d.x * AIV_HOOK_AHEAD;
+		h.y = n.y + d.y * AIV_HOOK_AHEAD;
+		h.z = n.z + d.z * AIV_HOOK_AHEAD;
+	} else {
+		h.x = d.x * AIV_HOOK_AHEAD - n.x;
+		h.y = d.y * AIV_HOOK_AHEAD - n.y;
+		h.z = d.z * AIV_HOOK_AHEAD - n.z;
+	}
+	self->i334 = (mode + 1) % 3;
+	AIV_Unit(&u, &h);
+	o.x = u.x * g_HookRange;
+	o.z = u.z * g_HookRange;
+	o.y = u.y * g_HookRange;
+	const vec3_t *pos = self->vehicle->vftable->GetPos(self->vehicle, &tmp);
+	vec3_t to;
+	to.y = pos->y + o.y;
+	to.z = pos->z + o.z;
+	to.x = pos->x + o.x;
+	pos = self->vehicle->vftable->GetPos(self->vehicle, &tmp);
+	return Engine_TestLine(pos, &to, p, NULL) != 0;
+}
+
+/* the point of the track node for the vehicle: offset by trackOfs on the tracks 0..2; on 3 and 4 a light vehicle
+ * goes from its last point along the node direction to the plane through p across the track */
+vec3_t *__thiscall cAIVehicle_TrackPoint(cAIVehicle *self, vec3_t *out, const vec3_t *p, int track, int node) {
+	CNodesTraffic *t = g_IsMapOutDoor ? AIV_Outdoor() : AIV_Indoor();
+
+	switch (self->trackType) {
+	case 0:
+	case 1:
+	case 2:
+		out->x = self->trackOfs.x + p->x;
+		out->y = self->trackOfs.y + p->y;
+		out->z = self->trackOfs.z + p->z;
+		return out;
+	case 3:
+	case 4:
+		if (AIV_VehTraffic(self->vehicle)->type != 0) {
+			*out = *p;
+			return out;
+		}
+		vec3_t a, b, d, n;
+		t->vftable->GetDirs(t, &a, &b, track, node);
+		d.x = a.x - b.x;
+		d.y = a.y - b.y;
+		d.z = a.z - b.z;
+		Vec3_NormalizeTo(&n, &d);
+		if (AIV_TrackSmall3(&n)) {
+			Con_Bluef("ERROR TRACK: Track: %d Node: %d\n", track, node);
+			CheckFailed("TRACK_ERRONEO", __FILE__, __TIMESTAMP__, __LINE__);
+		}
+		plane_t pl;
+		pl.n = n;
+		pl.d = -(p->y * n.y + p->x * n.x + p->z * n.z);
+		vec3_t from = self->trackPos;
+		vec3_t to;
+		to.x = self->trackPos.x + (-a.x) * AIV_TRACK_RAY;
+		to.y = self->trackPos.y + (-a.y) * AIV_TRACK_RAY;
+		to.z = self->trackPos.z + (-a.z) * AIV_TRACK_RAY;
+		if (!SegmentPlane_Hit(out, &from, &to, &pl)) {
+			Con_Bluef("ERROR TRACK: Track: %d Node: %d\n", track, node);
+			CheckFailed("PROBLEMA_TRACK", __FILE__, __TIMESTAMP__, __LINE__);
+		}
+		self->trackPos = *out;
+		return out;
+	}
+	return out;
+}
+
+static float AIV_TrackRoom(cAIVehicle *self, CNodesTraffic *t, int track) {
+	float rt = t->vftable->GetRadius(t, track);
+	return rt - AIV_EntVtbl(self->vehicle)->GetRadius(self->vehicle);
+}
+
+/* rand() in -w..w as the original computes it */
+static inline float AIV_TrackRand(double range, double base) {
+	return (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * range + base);
+}
+
+/* A x (0, 1, 0) with the products by 0 of the original, (1, 0, 0) when that is near 0 too */
+static void AIV_TrackSide(vec3_t *c, const vec3_t *a) {
+	c->x = a->y * 0.0f - a->z;
+	c->y = a->z * 0.0f - a->x * 0.0f;
+	c->z = a->x - a->y * 0.0f;
+	if (AIV_TrackSmall3(c)) {
+		c->x = 1.0f;
+		c->z = 0.0f;
+		c->y = 0.0f;
+	}
+}
+
+vec3_t *__thiscall cAIVehicle_TrackPointRandom(cAIVehicle *self, vec3_t *out, const vec3_t *p, int track, int node) {
+	CNodesTraffic *t = g_IsMapOutDoor ? AIV_Outdoor() : AIV_Indoor();
+	float w;
+	double range, base;
+
+	switch (self->trackType) {
+	case 0:
+	case 1:
+	case 2:
+		w = AIV_TrackRoom(self, t, track);
+		range = (double)(w - -w);
+		base = (double)-w;
+		self->trackOfs.x = AIV_TrackRand(range, base);
+		self->trackOfs.y = AIV_TrackRand(range, base);
+		self->trackOfs.z = AIV_TrackRand(range, base);
+		out->x = p->x + self->trackOfs.x;
+		out->y = self->trackOfs.y + p->y;
+		out->z = self->trackOfs.z + p->z;
+		return out;
+	case 3:
+	case 4:
+		break;
+	default:
+		return out;
+	}
+	if (AIV_VehTraffic(self->vehicle)->type != 0) {
+		self->trackOfs.x = 0.0f;
+		self->trackOfs.y = 0.0f;
+		self->trackOfs.z = 0.0f;
+		*out = *p;
+		return out;
+	}
+	vec3_t a, b, c, n, m, u, q;
+	t->vftable->GetDirs(t, &a, &b, track, node);
+	if (AIV_TrackSmall3(&b)) {
+		AIV_TrackSide(&c, &a);
+	} else {
+		c.x = a.x + b.x;
+		c.y = a.y + b.y;
+		c.z = a.z + b.z;
+		if (AIV_TrackSmall3(&c)) {
+			AIV_TrackSide(&c, &a);
+		}
+	}
+	n = *Vec3_NormalizeTo(&q, &c);
+	w = AIV_TrackRoom(self, t, track);
+	range = (double)(w - -w);
+	base = (double)-w;
+	float r = AIV_TrackRand(range, base);
+	u.x = n.x * r;
+	u.y = n.y * r;
+	u.z = n.z * r;
+	c.x = n.z * a.y - n.y * a.z;
+	c.y = n.x * a.z - n.z * a.x;
+	c.z = n.y * a.x - n.x * a.y;
+	m = *Vec3_NormalizeTo(&q, &c);
+	r = AIV_TrackRand(range, base);
+	self->trackOfs.x = m.x * r + u.x;
+	self->trackOfs.y = m.y * r + u.y;
+	self->trackOfs.z = m.z * r + u.z;
+	n = *Vec3_NormalizeTo(&q, &self->trackOfs);
+	self->trackOfs.x = n.x * w;
+	self->trackOfs.y = n.y * w;
+	self->trackOfs.z = n.z * w;
+	t->vftable->GetNode(t, &q, track, node);
+	self->trackPos.x = q.x + self->trackOfs.x;
+	self->trackPos.y = self->trackOfs.y + q.y;
+	self->trackPos.z = self->trackOfs.z + q.z;
+	*out = self->trackPos;
+	return out;
+}
+
+#define g_VelReposBackAI GAME_DATA(float, 0x444978)	/* VelReposBackAI */
+#define AIV_REPOS_HALF 0.5f			/* rva 0x3a3a04 */
+#define AIV_REPOS_FOV 1.5f			/* rva 0x3a5a9c */
+#define AIV_REPOS_SPHERE 3.0f			/* rva 0x3a3710 */
+#define AIV_REPOS_SPHERE_W 5.0f			/* rva 0x3a5120 */
+
+/* a float in an int argument slot that the callee does not use: its bits, as the original pushes them */
+static inline int AIV_FloatArg(float f) {
+	int i;
+	memcpy(&i, &f, sizeof(i));
+	return i;
+}
+
+/* the camera of view 0, its position and its direction (z axis turned by its angles) */
+static cCamControl *AIV_ReposCam(vec3_t *camPos, vec3_t *dir) {
+	*camPos = g_pWorld->camPos[g_pWorld->curCam];
+	cCamControl *cam = (cCamControl *)World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
+	vec3_t z = { 0.0f, 0.0f, 1.0f };
+	Vec3_Rotate(dir, &z, &cam->cam.rot);
+	return cam;
+}
+
+/* the ship the camera follows is slower than VelReposBackAI */
+static int AIV_ReposSlowShip(cCamControl *cam) {
+	vec3_t tmp;
+
+	if (!cam->base.vftable->IsType(&cam->base, FCAM_CLASSNAME)) {
+		return 0;
+	}
+	cEntity *ship = cCamEntity_GetTarget(&cam->base);
+	if (!ship) {
+		return 0;
+	}
+	const vec3_t *v = AIV_EntVtbl(ship)->GetVel(ship, &tmp);
+	float speed = (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
+	return g_VelReposBackAI > speed;
+}
+
+/* the old destination dropped, behind kept for the next repos */
+static void AIV_ReposStart(cAIVehicle *self, byte behind) {
+	cAIVehicleControl_ClearDest(self->control);
+	self->b2e0 = behind != 0;
+	cAIVehicleGroup_ResetRepos(g_VehicleGroup);
+}
+
+/* the vehicle shown again at p with a fade in */
+static void AIV_ReposShow(cAIVehicle *self, const vec3_t *p) {
+	self->vehicle->vftable->SetActive(self->vehicle, 0);
+	self->vehicle->vftable->SetActive(self->vehicle, 1);
+	self->vehicle->vftable->SetPos(self->vehicle, p);
+	cVehicleEntity_StartFade(Veh(self->vehicle));
+}
+
+/* turned along d and stopped */
+static void AIV_ReposStop(cAIVehicle *self, const vec3_t *d) {
+	vec3_t ang;
+
+	Vec3_GetRotAng(&ang, d);
+	AIV_EntVtbl(self->vehicle)->SetRot(self->vehicle, &ang);
+	cAIVehicleControl_Stop(self->control);
+	vec3_t zero = { 0.0f, 0.0f, 0.0f };
+	AIV_EntVtbl(self->vehicle)->SetVel(self->vehicle, &zero);
+}
+
+/* a traffic node near the camera of the view: in the cone of view (dir) between minVis and maxVis, else behind it
+ * (-dir) between minNotVis and maxNotVis; the camera that follows a slow ship goes behind first one time in two.
+ * The vehicle is put there, turned to the node and stopped; 0 if no node is free */
+byte __thiscall cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis, float maxVis, float minNotVis,
+	float maxNotVis, float around) {
+	vec3_t camPos, dir, back, p;
+	cCamControl *cam = AIV_ReposCam(&camPos, &dir);
+	int track = self->track;
+	int node = self->node;
+	byte vis = 1;
+	byte behind = 0;
+	byte r;
+
+	if (AIV_ReposSlowShip(cam) && !self->b2e0) {
+		vis = crt_rand() % 2 == 0;
+	}
+	cAIVehicle_PickTrackType(self);
+	CNodesTraffic *t = AIV_Outdoor();
+	float cone = cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV;
+	if (vis) {
+		r = t->vftable->RandomNode(t, &p, self->trackType, &camPos, minVis, maxVis, AIV_FloatArg(around), &dir, cone,
+			&track, &node);
+		if (!r) {
+			if (self->b2e0) {
+				return r;
+			}
+			back.x = -dir.x;
+			back.y = -dir.y;
+			back.z = -dir.z;
+			t = AIV_Outdoor();
+			r = t->vftable->RandomNode(t, &p, self->trackType, &camPos, minNotVis, maxNotVis, AIV_FloatArg(around),
+				&back, M_PI_F - cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV, &track, &node);
+			if (!r) {
+				return r;
+			}
+			behind = 1;
+		}
+	} else {
+		back.x = -dir.x;
+		back.y = -dir.y;
+		back.z = -dir.z;
+		r = t->vftable->RandomNode(t, &p, self->trackType, &camPos, minNotVis, maxNotVis, AIV_FloatArg(around), &back,
+			M_PI_F - cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV, &track, &node);
+		if (r) {
+			behind = 1;
+		} else {
+			t = AIV_Outdoor();
+			r = t->vftable->RandomNode(t, &p, self->trackType, &camPos, minVis, maxVis, AIV_FloatArg(around), &dir,
+				cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV, &track, &node);
+			if (!r) {
+				return r;
+			}
+		}
+	}
+	cEntity *hit;
+	if (cWorld_TestSphereEntities(g_pWorld, self->vehicle, (void *)0x11, &p, Veh(self->vehicle)->radius *
+			AIV_REPOS_SPHERE, &hit, 1, 0)) {
+		return 0;
+	}
+	AIV_ReposStart(self, behind);
+	self->track = track;
+	self->node = node;
+	AIV_ReposShow(self, &p);
+	t = AIV_Outdoor();
+	t->vftable->GetNode(t, out, self->track, self->node);
+	vec3_t d;
+	d.x = p.x - out->x;
+	d.y = p.y - out->y;
+	d.z = p.z - out->z;
+	AIV_ReposStop(self, &d);
+	return r;
+}
+
+/* the vehicle to a point of visibility near the camera, as ReposTraffic without the tracks; then to IN_ROUTE */
+byte __thiscall cAIVehicle_Repos(cAIVehicle *self) {
+	vec3_t camPos, dir, back, p;
+	CNodesWorld *nw;
+	byte behind = 0;
+	byte r;
+
+	if (!cAIVehicleGroup_ReposReady(g_VehicleGroup)) {
+		return 0;
+	}
+	cCamControl *cam = AIV_ReposCam(&camPos, &dir);
+	if (AIV_ReposSlowShip(cam) && !self->b2e0 && crt_rand() % 2 != 0) {
+		back.x = -dir.x;
+		back.y = -dir.y;
+		back.z = -dir.z;
+		nw = g_NodesWorld;
+		r = CNodesWorld_GetRacePointDir(nw, &p, &camPos, self->minDistReposNotVis, self->maxDistReposNotVis,
+			AIV_FloatArg(g_MaxDistAroundReposAI), &back, M_PI_F - cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV);
+		if (r) {
+			behind = 1;
+		} else {
+			nw = g_NodesWorld;
+			r = CNodesWorld_GetRacePointDir(nw, &p, &camPos, self->minDistRepos, self->maxDistRepos,
+				AIV_FloatArg(g_MaxDistAroundReposAI), &dir, cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV);
+		}
+		if (!r) {
+			return 0;
+		}
+	} else {
+		nw = g_NodesWorld;
+		r = CNodesWorld_GetRacePointDir(nw, &p, &camPos, self->minDistRepos, self->maxDistRepos,
+			AIV_FloatArg(g_MaxDistAroundReposAI), &dir, cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV);
+		if (!r) {
+			if (self->b2e0) {
+				return 0;
+			}
+			back.x = -dir.x;
+			back.y = -dir.y;
+			back.z = -dir.z;
+			nw = g_NodesWorld;
+			r = CNodesWorld_GetRacePointDir(nw, &p, &camPos, self->minDistReposNotVis, self->maxDistReposNotVis,
+				AIV_FloatArg(g_MaxDistAroundReposAI), &back, M_PI_F - cam->cam.fov * AIV_REPOS_HALF *
+				AIV_REPOS_FOV);
+			if (!r) {
+				return 0;
+			}
+			behind = 1;
+		}
+	}
+	cEntity *hit;
+	if (cWorld_TestSphereEntities(g_pWorld, self->vehicle, (void *)0x11, &p, Veh(self->vehicle)->radius *
+			AIV_REPOS_SPHERE_W, &hit, 1, 0)) {
+		return 0;
+	}
+	AIV_ReposStart(self, behind);
+	AIV_ReposShow(self, &p);
+	vec3_t d;
+	d.x = p.x - camPos.x;
+	d.y = p.y - camPos.y;
+	d.z = p.z - camPos.z;
+	AIV_ReposStop(self, &d);
+	cAIVehicle_SetStateIntern(self, AIV_IN_ROUTE, 1, (double)self->rotA, (double)self->rotB);
+	return 1;
+}
+
 /* the kind of the traffic track for the class of the vehicle, at random among the kinds the graph has; 5 none */
 void __thiscall cAIVehicle_PickTrackType(cAIVehicle *self) {
 	int list[10];
@@ -1489,7 +1914,6 @@ done:
 #define g_RadiusShipGraph GAME_DATA(float, 0x444d30)			/* RADIUS_SHIP_GRAPH */
 #define g_DepthPathRouteOutDoorAI GAME_DATA(int, 0x444960)
 #define g_DepthPathRouteOutDoorAIInit GAME_DATA(int, 0x444964)	/* its default */
-#define g_MaxDistAroundReposAI GAME_DATA(float, 0x444930)
 #define AIV_LOST_SPEED 600.0				/* rva 0x3a8e40 */
 
 /* the name of the target into the pending state (the original copies without a bound) */
@@ -2702,6 +3126,93 @@ void __thiscall cAIVehicle_FightingAfterItem(cAIVehicle *self) {
 	cEntity *e = self->itemAmmoBest;
 	self->itemAmmoStart = self->itemAmmoLevel;
 	AIV_GoToItem(self, AIVI_FINISHING_LINE_AMMO, e);
+}
+
+#define g_VelReposStopAI GAME_DATA(float, 0x4447f8)	/* VelReposStopAI */
+#define g_MaxDistReposStopAI GAME_DATA(float, 0x444a5c)	/* MaxDistReposStopAI */
+#define g_MinDistReposStopAI GAME_DATA(float, 0x444870)	/* MinDistReposStopAI */
+
+/* the repositioning on a traffic track in view, once the vehicle is placed, again when it got too far from the camera
+ * (closer when the camera follows a slow ship) */
+static void AIV_GraphTrafficRepos(cAIVehicle *self, vec3_t *p) {
+	vec3_t tmp;
+
+	*p = *cAIVehicle_TrackPointRandom(self, &tmp, p, self->track, self->node);
+}
+
+/* TRAFFIC: a stopped vehicle onto a track near the camera; on the track (FINISHING_LINE_DIRECT) moved again when the
+ * camera is too far: behind the camera (out of the cone of view, not just placed) beyond the NotVis distances, else
+ * beyond maxDistRepos */
+void __thiscall cAIVehicle_GraphTraffic(cAIVehicle *self) {
+	vec3_t p, tmp, d, dir;
+
+	if (!self->repos) {
+		return;
+	}
+	if (self->internState == AIVI_STOPPED) {
+		if (!cAIVehicleGroup_ReposReady(g_VehicleGroup) || !cAIVehicle_ReposTraffic(self, &p, self->minDistRepos,
+				self->maxDistRepos, self->minDistReposNotVis, self->maxDistReposNotVis, g_MaxDistAroundReposAI)) {
+			return;
+		}
+		AIV_GraphTrafficRepos(self, &p);
+		AIV_VehTraffic(self->vehicle)->active = 1;
+		AIV_StartTrack(self, 0, &p);
+		return;
+	}
+	if (self->internState != AIVI_FINISHING_LINE_DIRECT) {
+		return;
+	}
+	cCamControl *cam = (cCamControl *)World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
+	vec3_t camPos = g_pWorld->camPos[g_pWorld->curCam];
+	const vec3_t *pos = self->vehicle->vftable->GetPos(self->vehicle, &tmp);
+	d.x = pos->x - camPos.x;
+	d.y = pos->y - camPos.y;
+	d.z = pos->z - camPos.z;
+	float dist = (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z));
+	int slow = 0;
+	if (cam->base.vftable->IsType(&cam->base, FCAM_CLASSNAME)) {
+		cEntity *ship = cCamEntity_GetTarget(&cam->base);
+		if (ship) {
+			const vec3_t *v = AIV_EntVtbl(ship)->GetVel(ship, &tmp);
+			slow = g_VelReposStopAI > (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
+		}
+	}
+	if (slow) {
+		self->maxDistRepos = g_MaxDistReposStopAI;
+		self->minDistRepos = g_MinDistReposStopAI;
+	} else {
+		self->maxDistRepos = g_MaxDistReposAI;
+		self->minDistRepos = g_MinDistReposAI;
+	}
+	self->maxDistReposNotVis = g_MaxDistReposNotVisAI;
+	self->minDistReposNotVis = g_MinDistReposNotVisAI;
+	vec3_t z = { 0.0f, 0.0f, 1.0f };
+	Vec3_Rotate(&dir, &z, &cam->cam.rot);
+	double ang = Vec3_Angle(&d, &dir);
+	if (ang > (double)(cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV) && !self->b88) {
+		if (!(dist > self->maxDistReposNotVis)) {
+			if (!(dist > self->minDistReposNotVis) || self->vftable->Vf05(self)) {
+				return;
+			}
+		}
+	} else {
+		if (!(dist > self->maxDistRepos)) {
+			return;
+		}
+		self->b88 = 0;
+	}
+	CNodesTraffic *t = AIV_Outdoor();
+	self->b2e0 = 0;
+	t->vftable->RemoveVehicle(t, self->track);
+	if (!cAIVehicleGroup_ReposReady(g_VehicleGroup) || !cAIVehicle_ReposTraffic(self, &p, self->minDistRepos,
+			self->maxDistRepos, self->minDistReposNotVis, self->maxDistReposNotVis, g_MaxDistAroundReposAI)) {
+		self->b2e0 = 0;
+		self->vehicle->vftable->SetActive(self->vehicle, 0);
+		cAIVehicle_SetInternState(self, AIVI_STOPPED);
+		return;
+	}
+	AIV_GraphTrafficRepos(self, &p);
+	AIV_StartTrack(self, 0, &p);
 }
 
 /* TRAFFIC_INDOOR: a stopped vehicle onto a track of a sector in view; on the track (i34: 0 not seen, 1 seen, 2 just

@@ -47,6 +47,8 @@ SD_SIZE(cAmmoInfo, 0x5c);
 /* the destructors of the table items (rva), for Delete_Objects */
 #define CAMMOINFO_DTOR 0x19fa40
 #define CWEAPINFO_DTOR 0x19fa70
+#define CAMMOINFO_CTOR 0x206360
+#define CWEAPINFO_CTOR 0x2063f0
 
 #define CWORLD_VFTABLE 0x3cec84
 #define CWORLD_SIZE 0x225c
@@ -238,6 +240,10 @@ byte Team_IsFriend(int a, int b);
 byte Team_IsEnemy(int a, int b);
 cAmmoInfo *__thiscall cAmmoInfo_ctor(cAmmoInfo *self);
 cWeapInfo *__thiscall cWeapInfo_ctor(cWeapInfo *self);
+void __fastcall cAmmoInfo_dtor(cAmmoInfo *self);
+void __fastcall cWeapInfo_dtor(cWeapInfo *self);
+cAmmoInfo *__thiscall cAmmoInfo_Delete(cAmmoInfo *self, uint32_t flags);
+cWeapInfo *__thiscall cWeapInfo_Delete(cWeapInfo *self, uint32_t flags);
 cWorld *__thiscall cWorld_ctor(cWorld *self);
 void __fastcall AmmoTable_Free(void *table);
 void __fastcall WeapTable_Free(void *table);

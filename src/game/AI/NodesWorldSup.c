@@ -259,6 +259,35 @@ static cNWNode *NWSup_FindNode(cNWNode *nodes, int first, int n, const vec3_t *p
 	return NULL;
 }
 
+/* the inf file of the graph: the node size and the box of the level, after the path itself is saved */
+byte __thiscall CNodesWorldSup_SaveInfPath(CNodesWorld *self, const char *path) {
+	cFilePack f;
+	byte ok;
+
+	if (!self->vftable->SavePath(self)) {
+		return 0;
+	}
+	Con_Printf("Saving Inf. AI...\n");
+	crt_chmod(path, 0x180);
+	cFilePack_ctor(&f);
+	if (!cFilePack_Open(&f, path, 6)) {
+		Con_Bluef("ERROR AI: File Inf. Path AI no abierto.\n");
+		ok = 0;
+	} else {
+		cFilePack_Write(&f, &self->nodeSize, sizeof(self->nodeSize));
+		cFilePack_Write(&f, &self->min, sizeof(self->min));
+		cFilePack_Write(&f, &self->max, sizeof(self->max));
+		if (!cFilePack_Close(&f)) {
+			Con_Bluef("ERROR AI: File Inf. Path AI no cerrado.\n");
+			ok = 0;
+		} else {
+			ok = 1;
+		}
+	}
+	cFilePack_dtor(&f);
+	return ok;
+}
+
 byte __thiscall CNodesWorldSup_LoadGraph(CNodesWorld *self, const char *path) {
 	char buf[0x100];
 	cFilePack f;

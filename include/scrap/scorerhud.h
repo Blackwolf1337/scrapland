@@ -269,8 +269,8 @@ SD_SIZE(cTargetScorer, 0x148);
 cTargetScorer *__fastcall cTargetScorer_ctor(cTargetScorer *self);
 void __fastcall cTargetScorer_dtor(cTargetScorer *self);
 cTargetScorer *__thiscall cTargetScorer_Delete(cTargetScorer *self, byte flags);
-/* the target of the ship (rva 0x181600, not decompiled) and the enemies aiming at it (rva 0x182430, not
- * decompiled); ship may be NULL */
+/* the target of the ship (rva 0x181600, not decompiled) and the marks of the enemies and friends around it; ship
+ * may be NULL for DrawTarget */
 void __thiscall cTargetScorer_DrawTarget(cTargetScorer *self, cEntity *ship);
 void __thiscall cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship);
 int __thiscall cTargetScorer_Var(cTargetScorer *self, const char *name, byte set, char **s, double *d, int *i);
@@ -326,6 +326,8 @@ int __thiscall cTextScorer_Var(cTextScorer *self, const char *name, byte set, ch
 int __thiscall cTextTypingScorer_Var(cTextTypingScorer *self, const char *name, byte set, char **s, double *d,
 	int *i);
 void __thiscall cTextScorer_Draw(cTextScorer *self, int player);
+/* vf04: the text being typed and the virtual keyboard */
+void __thiscall cTextScorer_DrawKeyboard(cTextScorer *self, int player);
 void __thiscall cTextTypingScorer_Draw(cTextTypingScorer *self, int player);
 /* the edit of the text item of player ends: the cursor item back, the hint of the item */
 void TextEdit_End(int player);
@@ -395,8 +397,8 @@ cWaypointScorer *__fastcall cWaypointScorer_ctor(cWaypointScorer *self);
 void __fastcall cWaypointScorer_dtor(cWaypointScorer *self);
 cWaypointScorer *__thiscall cWaypointScorer_Delete(cWaypointScorer *self, byte flags);
 int __thiscall cWaypointScorer_Var(cWaypointScorer *self, const char *name, byte set, char **s, double *d, int *i);
-/* the mark of the waypoint object: the rectangle around it in sight (named: the current one), else the arrow at the
- * edge (rva 0x185e90, not decompiled) */
+/* the mark of the waypoint object: the rectangle around it in sight (named: the current one), the blinking dot on
+ * another one in sight, else the arrow towards it */
 void __thiscall cWaypointScorer_DrawTarget(cWaypointScorer *self, cEntity *e, byte current);
 /* the current waypoint (CurrentWaypointName, CurrentWaypointName2 for player 1), else the nearest one */
 void __thiscall cWaypointScorer_Draw(cWaypointScorer *self, int player);
