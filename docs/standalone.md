@@ -54,6 +54,26 @@ measuring; `Tsc_CpuFreq` measures rdtsc against the performance counter between 
 starts a hold under which the video loop and `Keyboard_Poll` ignore Escape, Space and Enter until they are up or
 the time is over. `tools/test/py/sdcall_nosleep.py` checks them (some only in the hooked run).
 
+A second round removed the other Sleep calls and blocking waits from the C, each marked "differs from the original
+on purpose" in the code. `Splash_Show` (`ScrapEngWorld.c`) draws the splash again instead of Sleep(10). Its loop
+stays, because every caller goes on right after it. In the light map compiler (`Bsp.c`), `BspTxf_Guardar` no longer
+sleeps 10 s and retries a failed write: the next load finds the TXF missing and computes it again. `BspTxf_Cargar`
+no longer waits up to 30 s for another computer of a distributed compile. It deletes that file and rebuilds it here.
+In the fmod code (`MusicFmod.c`), voices open without FSOUND_NONBLOCKING, so `VoiceRemain` knows the length right
+after `PlayVoice`, and `Voice_Wait` is empty. `Music_Stop` closes a stream that is still opening later, from
+`Music_Update` (a list of 8 slots), because FSOUND_Stream_Close fails on it. `CWinApp_Frame` (`WinApp.c`) returns at
+once while the app is inactive, instead of Sleep(250), so the PeekMessage loop then runs at full CPU. `CD3DApp_Run`
+uses PeekMessageA instead of GetMessageA while inactive. `CEntradaDInput_ReadKeys` tries Acquire once per call
+instead of spinning. `win32.h` no longer has `exe_Sleep`. `tools/test/py/sdcall_nosleep2.py` checks the voice and
+music paths. Three places still block, each with a plan:
+
+- the GOG sign-in wait in `CWinApp_Init` (`while (!g_GogReady)`). Plan: finish the init from `CWinApp_Frame` once
+  signed in.
+- `Transport_Wait`, a select with a 1 s timeout that throttles the dedicated server. Plan: timeout 0 plus a frame
+  gate, waiting for the user's decision.
+- the video playback in `Video_RenderStream` (synchronous sample Update, DDBLT_WAIT). Plan: SSUPDATE_ASYNC, polled
+  once per frame.
+
 ## Stage 2: real libraries
 
 Python 1.5.2 from source (python.org py152.tgz, done in stage 2a), UCRT for the `crt_*` imports, zlib 1.1.3,
