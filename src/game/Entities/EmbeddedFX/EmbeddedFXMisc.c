@@ -33,19 +33,19 @@ static inline void EFXM_SetVtbl(void *self, void *vt) {
 }
 
 static inline void EFXM_ParticlesCtor(CGameParticles *p, uint32_t n) {
-	crt_eh_vector_ctor(p, sizeof(CGameParticles), n, Game_Ptr(CGAMEPARTICLES_CTOR), Game_Ptr(CGAMEPARTICLES_DTOR));
+	crt_eh_vector_ctor(p, sizeof(CGameParticles), n, GAME_FUNC(CGameParticles_ctor, CGAMEPARTICLES_CTOR), GAME_FUNC(CGameParticles_Release, CGAMEPARTICLES_DTOR));
 }
 
 static inline void EFXM_ParticlesDtor(CGameParticles *p, uint32_t n) {
-	crt_eh_vector_dtor(p, sizeof(CGameParticles), n, Game_Ptr(CGAMEPARTICLES_DTOR));
+	crt_eh_vector_dtor(p, sizeof(CGameParticles), n, GAME_FUNC(CGameParticles_Release, CGAMEPARTICLES_DTOR));
 }
 
 static inline void EFXM_TrailsCtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, Game_Ptr(CGAMETRAIL_CTOR), Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR), GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 }
 
 static inline void EFXM_TrailsDtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 }
 
 static inline cEmbeddedFX *EFXM_Delete(cEmbeddedFX *self, byte flags, uint32_t size) {
@@ -2132,7 +2132,7 @@ static void EFXM_SparkPos(CGameParticles *p, float s, const vec3_t *c) {
 /* a flash of the sparks: the sizes and the life from the random ranges */
 static void EFXM_SparkFlash(CGameParticles *p, double ini, double iniAdd, double endAdd, byte sprite, double life,
 	double lifeAdd) {
-	CGameParticles_SetColorRamp(p, (uint32_t *)Game_Ptr(RAMP_BATTERY_FLASH));
+	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, EFXM_SparkFlash_428450, RAMP_BATTERY_FLASH));
 	p->sizeIni = (float)(EFXM_Rnd() * ini + iniAdd);
 	p->sizeEnd = (float)(EFXM_Rnd() * 15.0 + endAdd);
 	int r = crt_rand() & 0x7fff;
@@ -2309,7 +2309,7 @@ void __thiscall cEmbeddedFXBattery_Update(cEmbeddedFXBattery *self, float dt) {
 		p->spriteEnd = 0x44;
 		CGameParticles_Apply(p);
 		CGameParticles_SetColorRampOn(p, 1);
-		CGameParticles_SetColorRamp(p, (uint32_t *)Game_Ptr(RAMP_BATTERY_SPARKS + 36 * (crt_rand() & 1)));
+		CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, EFXM_SparkFlash_428474, RAMP_BATTERY_SPARKS) + 9 * (crt_rand() & 1));
 		CGameParticles_EmitDt(p, 1, 0, (float)(EFXM_Rnd() * 0.10000000149011612 + 0.0));
 	}
 }

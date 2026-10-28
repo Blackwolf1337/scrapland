@@ -20,7 +20,7 @@ void *__fastcall cNurses_ctor(cNurses *self) {
 
 void __fastcall cNurses_Init(cNurses *self) {
 	self->list = cWorld_NewEntityList(g_pWorld, "Nurse");
-	self->list->func = (int (*)(void))Game_Ptr(NURSES_MAKELOGIC);
+	self->list->func = (int (*)(void))GAME_FUNC(Nurses_MakeLogic, NURSES_MAKELOGIC);
 }
 
 void __fastcall cNurses_Think(cNurses *self) {

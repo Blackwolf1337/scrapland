@@ -161,8 +161,8 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 	CHECK(e->vftable->IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
 	cAIVehicle *ai = Traffic_AI(e);
 	int st = cAIVehicle_GetState(ai);
-	if (AIV_OnEnd(ai) != Game_Ptr(TRAFFIC_ONAIEND)) {
-		AIV_OnEnd(ai) = Game_Ptr(TRAFFIC_ONAIEND);
+	if (AIV_OnEnd(ai) != GAME_FUNC(Traffic_OnAIEnd, TRAFFIC_ONAIEND)) {
+		AIV_OnEnd(ai) = GAME_FUNC(Traffic_OnAIEnd, TRAFFIC_ONAIEND);
 	}
 	if (alarm || !st) {
 		PoliceAI_RestoreParams(ai);
@@ -359,8 +359,8 @@ void __fastcall cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 		CHECK(last->vftable->IsType(last, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
 		lastAi = Traffic_AI(last);
 		n = Logic_ListNext(n);
-		if (AIV_OnEnd(lastAi) != Game_Ptr(TRAFFIC_ONAIEND)) {
-			AIV_OnEnd(lastAi) = Game_Ptr(TRAFFIC_ONAIEND);
+		if (AIV_OnEnd(lastAi) != GAME_FUNC(Traffic_OnAIEnd, TRAFFIC_ONAIEND)) {
+			AIV_OnEnd(lastAi) = GAME_FUNC(Traffic_OnAIEnd, TRAFFIC_ONAIEND);
 		}
 		if (usr && usr != self->usr) {
 			cAIVehicle_SetState(lastAi, 2, usr);
@@ -406,8 +406,8 @@ void __fastcall cEnemiesTraffic_Init(cEnemiesTraffic *self) {
 	for (int i = 0; i < 4; i++) {
 		cEntityListData *l = cWorld_NewEntityList(g_pWorld, names[i]);
 		*lists[i] = l;
-		cPy_Function_SetNative(&l->onDamage, Game_Ptr(TRAFFIC_DAMAGE_NATIVE));
-		cPy_Function_SetNative(&(*lists[i])->onDeath, Game_Ptr(TRAFFIC_DEATH_NATIVE));
+		cPy_Function_SetNative(&l->onDamage, GAME_FUNC(Traffic_DamageNative, TRAFFIC_DAMAGE_NATIVE));
+		cPy_Function_SetNative(&(*lists[i])->onDeath, GAME_FUNC(Traffic_DeathNative, TRAFFIC_DEATH_NATIVE));
 	}
 }
 

@@ -162,7 +162,7 @@ void FX_ItemBlink(cEntity *e) {
 	float r = CGameModel_Radius(m) * 4.0f;
 	sp->birthRate = 0;
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, Game_Ptr(FX_RAMP_BLINK));
+	CGameParticles_SetColorRamp(sp, GAME_PTR(FX_ItemBlink_430b44, 0, FX_RAMP_BLINK));
 	float life = cTimer_GetSpeed(&g_pWorld->timer) * 0.12f;
 	sp->sizeLife = 0.4f;
 	sp->sizeEnd = r;
@@ -636,7 +636,7 @@ static void FX_StillAt(CGameParticles *sp, const vec3_t *pos) {
 static void FX_EmitFade(CGameParticles *sp) {
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FX_RAMP_FADE) + crt_rand() % 3 * 9);
+	CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, FX_EmitFade_430ad8, FX_RAMP_FADE) + crt_rand() % 3 * 9);
 	CGameParticles_EmitN(sp, 1, 1);
 }
 
@@ -898,7 +898,7 @@ void __thiscall cObjElementFXItemTake_Update(cObjElementFXItemTake *self, cDebri
 		sp->spriteEnd = sp->spriteIni;
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, (uint32_t *)Game_Ptr(FX_RAMP_TAKE) + crt_rand() % 3 * 9);
+		CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXItemTake_Update_430b68, FX_RAMP_TAKE) + crt_rand() % 3 * 9);
 		CGameParticles_EmitDt(sp, 1, 1, FX_RandF((double)0.100000001f, 0.0));
 	}
 }
@@ -1054,11 +1054,11 @@ static inline void FX_PartsRelease(void *self, uint32_t off) {
 }
 
 static inline void FX_TrailsCtor(void *self, uint32_t off, uint32_t n) {
-	crt_eh_vector_ctor((byte *)self + off, sizeof(CGameTrail), n, Game_Ptr(CGAMETRAIL_CTOR), Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor((byte *)self + off, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR), GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 }
 
 static inline void FX_TrailsDtor(void *self, uint32_t off, uint32_t n) {
-	crt_eh_vector_dtor((byte *)self + off, sizeof(CGameTrail), n, Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor((byte *)self + off, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 }
 
 /* the start of every constructor: the base class leaves 0, then the vtable of the class */

@@ -548,7 +548,7 @@ void Input_SetDefineFunc(const char *func) {
 		g_OnDefined = NULL;
 		return;
 	}
-	g_OnDefined = (void (*)(void))Game_Ptr(0x13bfa0);	/* Input_OnDefined of the exe */
+	g_OnDefined = (void (*)(void))GAME_FUNC(Input_OnDefined, 0x13bfa0);	/* Input_OnDefined of the exe */
 	cPy_Function_SetFunc(g_DefineFunc, func);
 }
 

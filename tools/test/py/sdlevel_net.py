@@ -335,7 +335,7 @@ check('NetData_ReadUsrDescriptors unknown', lambda: (SDTest.Call('NetData_ReadUs
 	netf)[0]))
 netcb = SDTest.Peek('g_MasterCommandCallback', 'i')
 check('Net_Init', lambda: (SDTest.Call('Net_Init', 'v'), SDTest.Peek('g_NetBotCounter', 'i'), SDTest.Peek('g_NetObjCounter', 'i'),
-	SDTest.Peek('g_MasterCommandCallback', 'i') == symva('NetData_OnMasterCommand'), SDTest.Peek('g_NetResInit', 'b'), netres(2)))
+	isfn(SDTest.Peek('g_MasterCommandCallback', 'i'), sym('NetData_OnMasterCommand')), SDTest.Peek('g_NetResInit', 'b'), netres(2)))
 SDTest.Poke('g_NetBotCounter', netbot)
 SDTest.Poke('g_NetObjCounter', netobj)
 SDTest.Poke('g_MasterCommandCallback', netcb)

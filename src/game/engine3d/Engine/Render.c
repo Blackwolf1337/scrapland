@@ -1284,7 +1284,7 @@ const char *Render_GetDriver(void) {
 }
 
 static void Render_LogVersion(const char *fmt, uint32_t ver) {
-	char *buf = (char *)Game_Ptr(0x4ae540);
+	char *buf = GAME_ARRAY(char, g_VersionStr, 0x4ae540);
 	Bprintf(buf, 0x40, "%d.%d", ver >> 8 & 0xff, ver & 0xff);
 	E3D_LogPrint(g_FileLog, fmt, buf);
 }

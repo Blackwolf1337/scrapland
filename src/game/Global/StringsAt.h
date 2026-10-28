@@ -3328,3 +3328,4 @@
 #define SD_STR_0x3e49c8 GAME_STR(str_GVar_SharedTexuresPath, 0x3e49c8)
 #define SD_STR_0x3e4984 GAME_STR(str_GVarDesc_SharedTexuresPath, 0x3e4984)
 #define SD_STR_0x3e49b4 GAME_STR(str_GVarValue_SharedTexuresPath, 0x3e49b4)
+#define SD_STR_0x3bc0a4 GAME_STR(str_3bc0a4, 0x3bc0a4)

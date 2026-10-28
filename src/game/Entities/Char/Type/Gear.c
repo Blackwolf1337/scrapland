@@ -159,7 +159,7 @@ void ChType_GearHit(cAbstractFile *params) {
 	CHECK(Entity_IsType(g_GearSw, TYEN_MISSILE));
 	g_GearXplodePos = *g_GearSw->vftable->GetPos(g_GearSw, &tmp);
 	ChType_GearHitChar(name, 1);
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)Game_Ptr(CHTYPE_GEARSPHEREHIT));
+	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GAME_FUNC(ChType_GearSphereHit, CHTYPE_GEARSPHEREHIT));
 	cWorld_SphereCallF(g_pWorld, 0x11, &g_GearXplodePos, g_GearXplodeRadius, g_ChTypeSphereFunc, 1);
 	CSoundSys *snd = g_pSound;
 	const char *s = g_GearHitSound;
@@ -244,7 +244,7 @@ void ChType_GearShoot(cAbstractFile *params) {
 		cMissileEntity_SetRadiusGrow(m, 2000.0f);
 		cMissileEntity_SetSpeed(m, g_GearMissileSpeed);
 		cMissileEntity_SetTurnSpeed(m, 50.0f);
-		cPy_Function_SetNative(&m->onHit, (nativefunc_t)Game_Ptr(CHTYPE_GEARHIT));
+		cPy_Function_SetNative(&m->onHit, (nativefunc_t)GAME_FUNC(ChType_GearHit, CHTYPE_GEARHIT));
 		cMissileEntity_SetParent(m, name);
 		if (!WChar_ViewLock(v)) {
 			vec3_t va = *WChar_Ang(v);
@@ -498,7 +498,7 @@ int Logic_Flash(const vec3_t *pos, float radius, int max) {
 	g_FlashCount = 0;
 	g_FlashPos = *pos;
 	g_FlashMax = max;
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)Game_Ptr(CHTYPE_FLASHHIT));
+	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GAME_FUNC(ChType_FlashHit, CHTYPE_FLASHHIT));
 	cWorld_SphereCallF(g_pWorld, 0x10, &g_FlashPos, radius, g_ChTypeSphereFunc, 1);
 	return g_FlashResult;
 }

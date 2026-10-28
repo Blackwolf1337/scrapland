@@ -615,8 +615,8 @@ int crt_snprintf(char *buf, size_t count, const char *fmt, ...) {
 
 /*
  * The helpers the compiler calls with their own conventions, as the runtime has them:
- * - __security_check_cookie: the cookie in ecx against __security_cookie (rva 0x43cfdc), eax is kept (the return
- *   value of the caller); a mismatch fails fast like __report_gsfailure (FAST_FAIL_STACK_COOKIE_CHECK_FAILURE)
+ * - __security_check_cookie: the cookie in ecx against __security_cookie (crt_security_cookie), eax is kept (the
+ *   return value of the caller); a mismatch fails fast like __report_gsfailure (FAST_FAIL_STACK_COOKIE_CHECK_FAILURE)
  * - _alloca_probe (_chkstk): eax bytes more stack, touched page by page
  * - _aullshr: edx:eax >> cl
  * - _EH_prolog: the C++ exception frame of the caller with the handler in eax
@@ -629,10 +629,7 @@ __asm__(
 	".text\n\t"
 	".globl _crt_security_check_cookie\n"
 	"_crt_security_check_cookie:\n\t"
-	"pushl %eax\n\t"
-	"movl _game_base, %eax\n\t"
-	"cmpl 0x43cfdc(%eax), %ecx\n\t"
-	"popl %eax\n\t"
+	"cmpl _crt_security_cookie, %ecx\n\t"
 	"jne 1f\n\t"
 	"ret\n"
 	"1:\n\t"

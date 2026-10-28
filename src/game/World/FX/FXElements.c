@@ -47,8 +47,8 @@ cFXElementsLighting *__thiscall cFXElementsLighting_ctor(cFXElementsLighting *se
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSLIGHTING_VFTABLE;
 	CGameParticles_ctor(&self->glows);
-	crt_eh_vector_ctor(self->trails, sizeof(CGameTrail), FXLIGHTINGBOLTS, Game_Ptr(CGAMETRAIL_CTOR),
-		Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(self->trails, sizeof(CGameTrail), FXLIGHTINGBOLTS, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR),
+		GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 	return self;
 }
 
@@ -72,7 +72,7 @@ void __fastcall cFXElementsLighting_dtor(cFXElementsLighting *self) {
 		CGameTrail_Clear(&self->trails[i]);
 	}
 	CGameParticles_Release(&self->glows);
-	crt_eh_vector_dtor(self->trails, sizeof(CGameTrail), FXLIGHTINGBOLTS, Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(self->trails, sizeof(CGameTrail), FXLIGHTINGBOLTS, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 	CGameParticles_Release(&self->glows);
 	cMapElement_dtor(&self->base);
 }

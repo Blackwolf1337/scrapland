@@ -295,7 +295,6 @@ void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, f
 void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float size, float time, float dx, float dy,
 	float dz);
 
-#define WEAP_NATIVE(rva) ((nativefunc_t)Game_Ptr(rva))	/* a native of the exe (its C version behind the hook) */
 #define WEAP_PI 3.141592653589793			/* rva 0x3a3700 */
 #define Ent_Sounds(e) ((cSndInterface *)((byte *)(e) + 0x144))
 

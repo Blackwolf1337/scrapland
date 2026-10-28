@@ -305,7 +305,8 @@ int Luz_SetDefault(byte on) {
 		{ 0xb99a05ae, 0xbe807faa, 0xbf77ce74 },
 	};
 	/* their colors, constants of the exe */
-	static const uint32_t colorRva[3] = { 0x3d7c10, 0x3d7c00, 0x3d7bf0 };
+	const color4_t *colors[3] = { GAME_ARRAY(color4_t, colorRva_3d7c10, 0x3d7c10), GAME_ARRAY(color4_t, colorRva_3d7c00, 0x3d7c00),
+		GAME_ARRAY(color4_t, colorRva_3d7bf0, 0x3d7bf0) };
 
 	E3D_FlushBatch();
 	E3D_SetShadowLight(NULL, 0);
@@ -315,7 +316,7 @@ int Luz_SetDefault(byte on) {
 		for (uint32_t i = 0; i < 3; i++) {
 			color4_t c;
 			vec3_t d;
-			memcpy(&c, Game_Ptr(colorRva[i]), sizeof(c));
+			memcpy(&c, colors[i], sizeof(c));
 			memcpy(&d, dirBits[i], sizeof(d));
 			Luz_SetDirLight(i, &c, &d);
 		}

@@ -21,7 +21,7 @@ static const char *const s_HighLightColors[3] = {"HighLightColorRed", "HighLight
 /* also rva 0x1613b0 */
 void __fastcall StrTable_Free(cStrTable *self) {
 	if (self->items) {
-		Delete_Objects(self->items, sizeof(cString), CSTRING_DTOR);
+		Delete_Objects(self->items, sizeof(cString), GAME_FUNC(cString_dtor, CSTRING_DTOR));
 		self->items = NULL;
 		self->count = 0;
 	}
@@ -43,14 +43,14 @@ char **__thiscall StrTable_At(cStrTable *self, uint32_t i) {
 void __thiscall StrTable_Init(cStrTable *self, int num) {
 	CHECK(!self->items && num > 0);
 	self->count = num;
-	self->items = New_Objects(num, sizeof(cString), CSTRING_CTOR, CSTRING_DTOR);
+	self->items = New_Objects(num, sizeof(cString), GAME_FUNC(cString_ctor, CSTRING_CTOR), GAME_FUNC(cString_dtor, CSTRING_DTOR));
 	CHECK(self->items);
 }
 
 cString *__thiscall cString_DeleteVec(cString *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(cString), *mem, Game_Ptr(CSTRING_DTOR));
+		crt_eh_vector_dtor(self, sizeof(cString), *mem, GAME_FUNC(cString_dtor, CSTRING_DTOR));
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}

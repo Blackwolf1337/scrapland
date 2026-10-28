@@ -207,7 +207,7 @@ void __fastcall cMessengers_Think(void *obj) {
 	cPy_Function *take = &((cItemEntity *)pack)->onTake;
 	if (opened) {
 		if (!cPy_Function_IsValid(take)) {
-			cPy_Function_SetNative(take, (nativefunc_t)Game_Ptr(CHTYPE_MESSENGERTAKEDATAPACK));
+			cPy_Function_SetNative(take, (nativefunc_t)GAME_FUNC(ChType_MessengerTakeDataPack, CHTYPE_MESSENGERTAKEDATAPACK));
 		}
 	} else if (cPy_Function_IsValid(take)) {
 		cPy_Function_Clear(take);
@@ -280,7 +280,7 @@ void __fastcall cMessengers_Init(void *obj) {
 	cMessengers *self = obj;
 
 	self->list = cWorld_NewEntityList(g_pWorld, "Messenger");
-	self->list->func = (int (*)(void))Game_Ptr(GENCHARGROUP_MAKELOGIC);
+	self->list->func = (int (*)(void))GAME_FUNC(GenCharGroup_MakeLogic, GENCHARGROUP_MAKELOGIC);
 	g_MessengerDataPackMissionArrow = g_MessengerDataPackMissionArrowDef;
 	g_MessengerTubeState = g_MessengerTubeStateDef;
 	cPy_Function_Clear(g_MessengerDropCallback);

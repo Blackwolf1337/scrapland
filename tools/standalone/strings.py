@@ -376,7 +376,10 @@ def at_header(objs):
 		'#define SD_STR_0 ((char *)NULL)	/* no string (a script variable without a function) */',
 	]
 	seen = set()
-	for rva, kind, name in static_init():
+	# and the string arguments of the constructors (initpat.py writes them as GAME_STR_AT)
+	args = [int(v, 16) for v in re.findall(r'\bGAME_STR_AT\((0x[0-9a-fA-F]+)\)', open(os.path.join(ROOT,
+		STATIC_INIT)).read())]
+	for rva in [s[0] for s in static_init()] + args:
 		if rva in seen:
 			continue
 		seen.add(rva)

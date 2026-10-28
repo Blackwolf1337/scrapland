@@ -12,7 +12,6 @@
 #include "scrap/video.h"
 
 #define GUID_SYSKEYBOARD ((const void *)GAME_PTR(GUID_SYSKEYBOARD, 0, 0x3d0ffc))
-#define C_DFDIKEYBOARD ((const void *)GAME_PTR(C_DFDIKEYBOARD, 0, 0x3cfbec))
 #define KB_NAME GAME_STR(str_3bc588, 0x3bc588)	/* "Kb" */
 /* DIDEVICEOBJECTINSTANCEA of the last label, its tszName at 0x20 */
 #define g_KeyObjInfo (GAME_ARRAY(byte, g_KeyObjInfo, 0x44c738))
@@ -164,7 +163,7 @@ int32_t Keyboard_Create(void) {
 		return hr;
 	}
 	exe_IDirectInputDevice8 *d = g_KeyboardDev;
-	hr = d->lpVtbl->SetDataFormat(d, C_DFDIKEYBOARD);
+	hr = d->lpVtbl->SetDataFormat(d, GAME_DF_KEYBOARD);
 	if (hr >= 0) {
 		const exe_IDirectInputDevice8Vtbl *vt = g_KeyboardDev->lpVtbl;
 		void *hwnd = App_GetHWnd();

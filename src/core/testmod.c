@@ -28,6 +28,9 @@
  * SDTest.HeapOk() is -1 when every heap of the process passes HeapValidate, else the index of the first bad one (to
  * find the test call that breaks a heap).
  */
+/* the rva lookup of the tests (TestMod_SymRva) adds the load address, stage 3c switches it in ScrapC.exe */
+#define SD_GAME_RVA
+
 #include <stdio.h>
 #include <windows.h>
 #include <string.h>

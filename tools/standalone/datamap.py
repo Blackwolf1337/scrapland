@@ -94,7 +94,7 @@ class Map:
 	def __init__(self, x):
 		self.regions = []
 		for lo, hi in room_pieces(x):
-			what = 'code' if (lo, hi) in TEXT_KEEP[1:] else 'data'
+			what = 'code' if (lo, hi) in TEXT_KEEP else 'data'
 			self.regions.append((lo, hi, x.section(lo), what))
 		for name, (va, n, ptr, vsize) in x.secs.items():
 			if name not in ('.text', '.reloc') and vsize > n:
@@ -169,6 +169,21 @@ class Symbols:
 		return self.name[i] if i >= 0 else '.?'
 
 
+class LibraryData:
+	"""the rows of the map before (if there is one) of the data of the libraries and the RTTI: a number of the tests
+	or of a table of the C there only looks like an rva, nothing of ScrapC.exe reads that data (stage 3c1b)"""
+
+	def __init__(self, path):
+		self.rows = []
+		if os.path.exists(path):
+			self.rows = [(lo, hi) for lo, hi, sec, users, kind in read_map(path) if kind.startswith(DROPPABLE)]
+		self.starts = [lo for lo, hi in self.rows]
+
+	def __contains__(self, rva):
+		i = bisect.bisect_right(self.starts, rva) - 1
+		return i >= 0 and rva < self.rows[i][1]
+
+
 def scan_c(m, cpath, syms):
 	"""the rvas of the room in the code and the data of ScrapC.exe: [(rva, width or None, C function)], width None
 	for an address that is taken or indexed (its extent is not known)"""
@@ -224,7 +239,8 @@ def scan_c(m, cpath, syms):
 		b = cx.bytes(va, va + n)
 		for o in range(0, n - 3, 4):
 			v = struct.unpack_from('<I', b, o)[0]
-			if va + o in rel or v < DATA_START or not m.region(v) or (v not in m.targets and v not in code_rvas):
+			if va + o in rel or v < DATA_START or not m.region(v) or (v not in m.targets and v not in code_rvas) \
+					or v in LIBRARY:
 				continue
 			sym = syms.at(va + o + BASE)
 			if not sym.startswith('.') and not NOT_RVAS.match(sym):
@@ -242,7 +258,7 @@ def scan_tests(m):
 	for f in sorted(os.listdir(d)):
 		if f.endswith('.py'):
 			for v in numbers(open(os.path.join(d, f)).read(), syms):
-				if v >= DATA_START and m.region(v):
+				if v >= DATA_START and m.region(v) and v not in LIBRARY:
 					# what a test reads through SDTest the probe sees (it runs in the C), so a number that only
 					# looks like an rva keeps no more than its unit
 					seeds.append((v, 4, 'test ' + f[:-3]))
@@ -779,6 +795,7 @@ def read_map(path):
 # C++ exception tables (eh), which only the C++ runtime read. The game's own data stays even without a user: the three test scenarios do not
 # reach everything the game reads in play, until stage 3b turns it into C
 DROPPABLE = ('library', 'rtti', 'eh')
+LIBRARY = LibraryData(MAP)
 
 
 def kept(rows):
@@ -793,6 +810,105 @@ def kept(rows):
 		else:
 			out.append([lo, hi])
 	return [tuple(r) for r in out]
+
+
+# stage 3c1b: what no longer reads the data of the original. (lo, hi, kind or None, users): the users of the rows in
+# lo..hi that are gone (None: all of them), with the kind the rows get
+GONE_3C1B = [
+	# Crt_Main calls the initializers from the C table of src/standalone/crtxc.c
+	(0x3a15bc, 0x3a31ec, None, ('Crt_Main', 'probe Crt_Main')),
+	# the data formats of dinput8.lib: ScrapC.exe passes the ones of mingw's libdinput8 to SetDataFormat
+	(0x001000, 0x002070, 'library dinput8', None),
+	(0x3cfbec, 0x3cfc04, 'library dinput8', None),
+	(0x3cfdf4, 0x3cfe0c, 'library dinput8', None),
+	# the rest of the row of c_dfDIKeyboard: only the margin of its address
+	(0x3cfc04, 0x3cfdf4, None, None),
+	# the type descriptor of galaxy::api::IError: Gog_CatchError has a C copy
+	(0x442264, 0x44226c, None, ('Gog_CatchError',)),
+]
+
+
+def split_rows(rows, cuts):
+	"""the rows cut at the rvas of cuts"""
+	out = []
+	for r in rows:
+		inner = sorted(c for c in cuts if r[0] < c < r[1])
+		for a, z in zip([r[0]] + inner, inner + [r[1]]):
+			out.append([a, z] + list(r[2:]))
+	return out
+
+
+def users_of_label(lab):
+	"""the users of a label of the map and the number of the ones it leaves out ('a, b, c +2')"""
+	if lab == '-':
+		return [], 0
+	m = re.match(r'^(.*?)(?: \+(\d+))?$', lab)
+	return m.group(1).split(', '), int(m.group(2) or 0)
+
+
+def relabel_3c1b(x, rows, to_rtti):
+	"""the users that are gone in stage 3c1b (docs/standalone.md): GONE_3C1B; the margins of the probe (a hot page) and
+	the numbers of the tests and of the tables of the C in the data of the libraries and the RTTI, which nothing of
+	ScrapC.exe reads (their code is gone, the numbers only look like rvas); the pointers to the RTTI before the vtables
+	that rows of other kinds hold; the data of the original's Python that rows of the game's kinds hold. Then the
+	pointers of data that is no longer kept. Returns the rows and the number of users gone"""
+	cuts = {lo for lo, hi, k, u in GONE_3C1B} | {hi for lo, hi, k, u in GONE_3C1B}
+	for lo, hi in PY_DATA:
+		cuts |= {lo, hi}
+	cols = set()	# the words that point to the RTTI in rows of these kinds
+	for r in rows:
+		if r[4] in ('pointer table', 'unknown'):
+			for a in range(r[0] & ~3, r[1], 4):
+				if to_rtti(a):
+					cols.add(a)
+					cuts |= {a, a + 4}
+	rows = split_rows(rows, cuts)
+	gone = 0
+	for r in rows:
+		col = r[4] in ('pointer table', 'unknown') and r[0] & ~3 in cols and r[1] <= (r[0] & ~3) + 4
+		if col:
+			r[4] = 'rtti'
+		if r[4] not in ('bss', 'code') and not r[4].startswith(DROPPABLE) and \
+				any(lo <= r[0] and r[1] <= hi for lo, hi in PY_DATA):
+			r[4] = 'library python'
+		users, more = users_of_label(r[3])
+		keep = users
+		for lo, hi, kind, names in GONE_3C1B:
+			if lo <= r[0] and r[1] <= hi:
+				keep = [u for u in keep if names is not None and u not in names]
+				if names is None:
+					more = 0
+				if kind:
+					r[4] = kind
+		if col:
+			keep, more = [], 0	# the margin of the piece it was part of: nothing reads vtable[-1]
+		if r[4].startswith(DROPPABLE):
+			keep = [u for u in keep if u.startswith(('probe ', 'ptr ')) and not u.startswith('probe hot page')]
+			if not keep:
+				more = 0
+		if keep != users:
+			gone += len(users) - len(keep)
+			r[3] = (', '.join(keep) + (' +%d' % more if more else '')) if keep else '-'
+	# the pointers of data that is no longer kept, to a fixpoint
+	while True:
+		keep = kept(rows)
+		starts = [k[0] for k in keep]
+
+		def is_kept(rva):
+			i = bisect.bisect_right(starts, rva) - 1
+			return i >= 0 and rva < keep[i][1]
+
+		n = 0
+		for r in rows:
+			users, more = users_of_label(r[3])
+			left = [u for u in users if not u.startswith('ptr ') or is_kept(int(u[4:], 16))]
+			if left != users:
+				n += len(users) - len(left)
+				r[3] = (', '.join(left) + (' +%d' % more if more else '')) if left else '-'
+		if not n:
+			break
+		gone += n
+	return rows, gone
 
 
 def main():
@@ -877,6 +993,7 @@ def main():
 					all(to_rtti(a) for a in range(r[0], r[1], 4)):
 				r[4] = 'rtti'
 				m += 1
+		rows, gone = relabel_3c1b(x, rows, to_rtti)
 		merged = []
 		for r in rows:
 			if merged and merged[-1][1] == r[0] and merged[-1][2:] == r[2:]:
@@ -884,7 +1001,8 @@ def main():
 			else:
 				merged.append(r)
 		write_map(x, merged, out, head)
-		print('datamap.py: %d rows are C++ exception tables now, %d pointers to the RTTI' % (n, m))
+		print('datamap.py: %d rows are C++ exception tables now, %d pointers to the RTTI; %d users gone (stage 3c1b)'
+			% (n, m, gone))
 		return
 	m = Map(x)
 	syms = Symbols(cpath)
@@ -926,7 +1044,7 @@ def main():
 	seeds += [(lo, hi - lo, 'static: imports (main.c)') for lo, hi in scan_imports(x)]
 	rs = x.secs['.rsrc']
 	seeds.append((rs[0], rs[1], 'static: resources'))
-	seeds += [(lo, hi - lo, 'static: import thunks of the game') for lo, hi in TEXT_KEEP[1:]]
+	seeds += [(lo, hi - lo, 'static: import thunks of the game') for lo, hi in TEXT_KEEP]
 	probe_units, hot = read_probe(logs, syms)
 	probe_rows = []
 	if not logs and os.path.exists(out):

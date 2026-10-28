@@ -37,13 +37,13 @@ cFXElementsMentalControllerMainFX *__thiscall cFXElementsMentalControllerMainFX_
 	cFXElementsMentalControllerMainFX *self, const char *name, const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE;
-	crt_eh_vector_ctor(self->tubeTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, Game_Ptr(CGAMETRAIL_CTOR),
-		Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(self->tubeTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR),
+		GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 	CGameParticles_ctor(&self->dataFluid);
-	crt_eh_vector_ctor(self->glowTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, Game_Ptr(CGAMETRAIL_CTOR),
-		Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(self->glowTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR),
+		GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 	CGameParticles_ctor(&self->tubeGlow);
-	crt_eh_vector_ctor(self->topTrails, sizeof(CGameTrail), 2, Game_Ptr(CGAMETRAIL_CTOR), Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(self->topTrails, sizeof(CGameTrail), 2, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR), GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 	for (int i = 0; i < FXMENTALCONTROLLERMAINCOUNT; i++) {
 		self->controllers[i] = NULL;
 	}
@@ -69,11 +69,11 @@ void __fastcall cFXElementsMentalControllerDamageFX_dtor(cFXElementsMentalContro
 void __fastcall cFXElementsMentalControllerMainFX_dtor(cFXElementsMentalControllerMainFX *self) {
 	self->base.vftable = CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE;
 	CGameParticles_Release(&self->dataFluid);
-	crt_eh_vector_dtor(self->topTrails, sizeof(CGameTrail), 2, Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(self->topTrails, sizeof(CGameTrail), 2, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 	CGameParticles_Release(&self->tubeGlow);
-	crt_eh_vector_dtor(self->glowTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(self->glowTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 	CGameParticles_Release(&self->dataFluid);
-	crt_eh_vector_dtor(self->tubeTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(self->tubeTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 	cMapElement_dtor(&self->base);
 }
 
@@ -262,14 +262,14 @@ byte __fastcall cFXElementsMentalControllerDamageFX_Init(cFXElementsMentalContro
 #define DAMAGEFX_SMOKE_RAMPS 0x4309f8				/* 3 color ramps of 9 colors */
 #define DAMAGEFX_FLASH_RAMPS 0x430a68
 
-static inline uint32_t *Press_Ramp(uint32_t rva, int i) {
-	return (uint32_t *)Game_Ptr(rva) + i * 9;
+static inline uint32_t *Press_Ramp(uint32_t *ramps, int i) {
+	return ramps + i * 9;
 }
 
 /* one flash glow at the emitter: sizes and life random, scaled by s */
 static void DamageFX_Glow(CGameParticles *p, float s, double iniRange, double iniAdd, double endRange, double endAdd,
 	byte sprite, double lifeRange, double lifeAdd) {
-	CGameParticles_SetColorRamp(p, Press_Ramp(DAMAGEFX_FLASH_RAMPS, 0));
+	CGameParticles_SetColorRamp(p, Press_Ramp(GAME_ARRAY(uint32_t, DamageFX_Glow_430a68, DAMAGEFX_FLASH_RAMPS), 0));
 	p->sizeIni = FxElem_Rand(iniRange, iniAdd) * s;
 	p->sizeEnd = FxElem_Rand(endRange, endAdd) * s;
 	float lt = FxElem_Rand(lifeRange, lifeAdd);
@@ -312,7 +312,7 @@ void __thiscall cFXElementsMentalControllerDamageFX_Update(cFXElementsMentalCont
 		CGameParticles *sm = &self->smoke;
 		sm->birthRate = 0;
 		CGameParticles_SetColorRampOn(sm, 1);
-		CGameParticles_SetColorRamp(sm, Press_Ramp(DAMAGEFX_SMOKE_RAMPS, crt_rand() % 3));
+		CGameParticles_SetColorRamp(sm, Press_Ramp(GAME_ARRAY(uint32_t, cFXElementsMentalControllerDamageFX_Update_4309f8, DAMAGEFX_SMOKE_RAMPS), crt_rand() % 3));
 		for (int k = 0; k < FXMENTALDAMAGEEMITTERS; k++) {
 			if (self->smokeNode[k] <= -1) {
 				break;
@@ -392,7 +392,7 @@ void __thiscall cFXElementsMentalControllerDamageFX_Update(cFXElementsMentalCont
 		int n = lo2 + crt_rand() % (self->flashSparksMax[k] - lo2);
 		CGameParticles_SetSparksOn(fl, 1);
 		for (; n > 0; n--) {
-			CGameParticles_SetColorRamp(fl, Press_Ramp(DAMAGEFX_FLASH_RAMPS, crt_rand() % 3));
+			CGameParticles_SetColorRamp(fl, Press_Ramp(GAME_ARRAY(uint32_t, DamageFX_Glow_430a68, DAMAGEFX_FLASH_RAMPS), crt_rand() % 3));
 			float az = FxElem_Rand(3.1415927410125732, -1.5707963705062866);
 			float ay = FxElem_Rand(3.1415927410125732, -1.5707963705062866);
 			ang.x = 0.0f;

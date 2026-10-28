@@ -9,27 +9,6 @@
 
 #define g_CircuitRandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
 
-/* the stores of InitPaths: 16 bytes of the exe's tables (copy 1) or a dword, in the original order */
-static const struct {
-	uint32_t dst, src;
-	byte copy;
-} s_PathData[] = {
-	{0x45df3c, 0x3c2640, 1}, {0x45df4c, 0x3c2680, 1}, {0x45df5c, 0x3c26d0, 1}, {0x45df6c, 0x3c2710, 1},
-	{0x45df38, 0x10, 0}, {0x45df7c, 0x3c2740, 1}, {0x45e240, 0xa, 0}, {0x45df8c, 0x3c2790, 1},
-	{0x45e548, 0x9, 0}, {0x45df9c, 0x3c2820, 1}, {0x45e58c, 0x42920000, 0}, {0x45dfac, 0x3c2830, 1},
-	{0x45e590, 0x43d88000, 0}, {0x45e244, 0x3c2630, 1}, {0x45e850, 0x7, 0}, {0x45e254, 0x3c2700, 1},
-	{0x45e884, 0x42920000, 0}, {0x45e264, 0x3c27b0, 1}, {0x45e888, 0x43d88000, 0}, {0x45e274, 0x3c27f0, 1},
-	{0x45eb58, 0x6, 0}, {0x45e284, 0x3c2840, 1}, {0x45ee60, 0x4, 0}, {0x45e54c, 0x3c2800, 1},
-	{0x45f168, 0xe, 0}, {0x45e55c, 0x3c27c0, 1}, {0x45f470, 0x6, 0}, {0x45e56c, 0x3c2720, 1},
-	{0x45e57c, 0x3c26e0, 1}, {0x45e854, 0x3c2630, 1}, {0x45e864, 0x3c2700, 1}, {0x45e874, 0x3c26e0, 1},
-	{0x45eb5c, 0x3c2630, 1}, {0x45eb6c, 0x3c2660, 1}, {0x45eb7c, 0x3c26b0, 1}, {0x45ee64, 0x3c2650, 1},
-	{0x45ee74, 0x3c26b0, 1}, {0x45f16c, 0x3c2670, 1}, {0x45f17c, 0x3c2690, 1}, {0x45f18c, 0x3c2730, 1},
-	{0x45f19c, 0x3c2770, 1}, {0x45f1ac, 0x3c27a0, 1}, {0x45f1bc, 0x3c27e0, 1}, {0x45f1cc, 0x3c2850, 1},
-	{0x45f474, 0x3c2670, 1}, {0x45f484, 0x3c26c0, 1}, {0x45f778, 0x12, 0}, {0x45f494, 0x3c26a0, 1},
-	{0x45f77c, 0x3c2670, 1}, {0x45f78c, 0x3c26c0, 1}, {0x45f79c, 0x3c26f0, 1}, {0x45f7ac, 0x3c2750, 1},
-	{0x45f7bc, 0x3c2760, 1}, {0x45f7cc, 0x3c2780, 1}, {0x45f7dc, 0x3c27d0, 1}, {0x45f7ec, 0x3c2810, 1},
-	{0x45f7fc, 0x3c2860, 1},
-};
 
 /* rand() / 32767 * scale + ofs in double, as the original */
 static float Circuit_Rand(double scale, double ofs) {
@@ -86,11 +65,76 @@ cCircuitScorer *__thiscall cCircuitScorer_Delete(cCircuitScorer *self, byte flag
 }
 
 void CircuitScorer_InitPaths(void) {
-	for (size_t k = 0; k < sizeof(s_PathData) / sizeof(s_PathData[0]); k++) {
-		if (s_PathData[k].copy) {
-			memcpy(Game_Ptr(s_PathData[k].dst), Game_Ptr(s_PathData[k].src), 16);
+	/* the stores of the original in its order: 16 bytes of the exe's tables (src) or a dword (value) */
+	const struct {
+		void *dst;
+		const void *src;
+		uint32_t value;
+	} paths[] = {
+		{ GAME_PTR(g_CircuitPaths, 4, 0x45df3c), GAME_PTR(s_PathData_3c2640, 0, 0x3c2640), 0 },
+		{ GAME_PTR(g_CircuitPaths, 20, 0x45df4c), GAME_PTR(s_PathData_3c2680, 0, 0x3c2680), 0 },
+		{ GAME_PTR(g_CircuitPaths, 36, 0x45df5c), GAME_PTR(s_PathData_3c26d0, 0, 0x3c26d0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 52, 0x45df6c), GAME_PTR(s_PathData_3c2710, 0, 0x3c2710), 0 },
+		{ GAME_PTR(g_CircuitPaths, 0, 0x45df38), NULL, 0x10 },
+		{ GAME_PTR(g_CircuitPaths, 68, 0x45df7c), GAME_PTR(s_PathData_3c2740, 0, 0x3c2740), 0 },
+		{ GAME_PTR(g_CircuitPaths, 776, 0x45e240), NULL, 0xa },
+		{ GAME_PTR(g_CircuitPaths, 84, 0x45df8c), GAME_PTR(s_PathData_3c2790, 0, 0x3c2790), 0 },
+		{ GAME_PTR(g_CircuitPaths, 1552, 0x45e548), NULL, 0x9 },
+		{ GAME_PTR(g_CircuitPaths, 100, 0x45df9c), GAME_PTR(s_PathData_3c2820, 0, 0x3c2820), 0 },
+		{ GAME_PTR(g_CircuitPaths, 1620, 0x45e58c), NULL, 0x42920000 },
+		{ GAME_PTR(g_CircuitPaths, 116, 0x45dfac), GAME_PTR(s_PathData_3c2830, 0, 0x3c2830), 0 },
+		{ GAME_PTR(g_CircuitPaths, 1624, 0x45e590), NULL, 0x43d88000 },
+		{ GAME_PTR(g_CircuitPaths, 780, 0x45e244), GAME_PTR(s_PathData_3c2630, 0, 0x3c2630), 0 },
+		{ GAME_PTR(g_CircuitPaths, 2328, 0x45e850), NULL, 0x7 },
+		{ GAME_PTR(g_CircuitPaths, 796, 0x45e254), GAME_PTR(s_PathData_3c2700, 0, 0x3c2700), 0 },
+		{ GAME_PTR(g_CircuitPaths, 2380, 0x45e884), NULL, 0x42920000 },
+		{ GAME_PTR(g_CircuitPaths, 812, 0x45e264), GAME_PTR(s_PathData_3c27b0, 0, 0x3c27b0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 2384, 0x45e888), NULL, 0x43d88000 },
+		{ GAME_PTR(g_CircuitPaths, 828, 0x45e274), GAME_PTR(s_PathData_3c27f0, 0, 0x3c27f0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 3104, 0x45eb58), NULL, 0x6 },
+		{ GAME_PTR(g_CircuitPaths, 844, 0x45e284), GAME_PTR(s_PathData_3c2840, 0, 0x3c2840), 0 },
+		{ GAME_PTR(g_CircuitPaths, 3880, 0x45ee60), NULL, 0x4 },
+		{ GAME_PTR(g_CircuitPaths, 1556, 0x45e54c), GAME_PTR(s_PathData_3c2800, 0, 0x3c2800), 0 },
+		{ GAME_PTR(g_CircuitPaths, 4656, 0x45f168), NULL, 0xe },
+		{ GAME_PTR(g_CircuitPaths, 1572, 0x45e55c), GAME_PTR(s_PathData_3c27c0, 0, 0x3c27c0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 5432, 0x45f470), NULL, 0x6 },
+		{ GAME_PTR(g_CircuitPaths, 1588, 0x45e56c), GAME_PTR(s_PathData_3c2720, 0, 0x3c2720), 0 },
+		{ GAME_PTR(g_CircuitPaths, 1604, 0x45e57c), GAME_PTR(s_PathData_3c26e0, 0, 0x3c26e0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 2332, 0x45e854), GAME_PTR(s_PathData_3c2630, 0, 0x3c2630), 0 },
+		{ GAME_PTR(g_CircuitPaths, 2348, 0x45e864), GAME_PTR(s_PathData_3c2700, 0, 0x3c2700), 0 },
+		{ GAME_PTR(g_CircuitPaths, 2364, 0x45e874), GAME_PTR(s_PathData_3c26e0, 0, 0x3c26e0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 3108, 0x45eb5c), GAME_PTR(s_PathData_3c2630, 0, 0x3c2630), 0 },
+		{ GAME_PTR(g_CircuitPaths, 3124, 0x45eb6c), GAME_PTR(s_PathData_3c2660, 0, 0x3c2660), 0 },
+		{ GAME_PTR(g_CircuitPaths, 3140, 0x45eb7c), GAME_PTR(s_PathData_3c26b0, 0, 0x3c26b0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 3884, 0x45ee64), GAME_PTR(s_PathData_3c2650, 0, 0x3c2650), 0 },
+		{ GAME_PTR(g_CircuitPaths, 3900, 0x45ee74), GAME_PTR(s_PathData_3c26b0, 0, 0x3c26b0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 4660, 0x45f16c), GAME_PTR(s_PathData_3c2670, 0, 0x3c2670), 0 },
+		{ GAME_PTR(g_CircuitPaths, 4676, 0x45f17c), GAME_PTR(s_PathData_3c2690, 0, 0x3c2690), 0 },
+		{ GAME_PTR(g_CircuitPaths, 4692, 0x45f18c), GAME_PTR(s_PathData_3c2730, 0, 0x3c2730), 0 },
+		{ GAME_PTR(g_CircuitPaths, 4708, 0x45f19c), GAME_PTR(s_PathData_3c2770, 0, 0x3c2770), 0 },
+		{ GAME_PTR(g_CircuitPaths, 4724, 0x45f1ac), GAME_PTR(s_PathData_3c27a0, 0, 0x3c27a0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 4740, 0x45f1bc), GAME_PTR(s_PathData_3c27e0, 0, 0x3c27e0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 4756, 0x45f1cc), GAME_PTR(s_PathData_3c2850, 0, 0x3c2850), 0 },
+		{ GAME_PTR(g_CircuitPaths, 5436, 0x45f474), GAME_PTR(s_PathData_3c2670, 0, 0x3c2670), 0 },
+		{ GAME_PTR(g_CircuitPaths, 5452, 0x45f484), GAME_PTR(s_PathData_3c26c0, 0, 0x3c26c0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 6208, 0x45f778), NULL, 0x12 },
+		{ GAME_PTR(g_CircuitPaths, 5468, 0x45f494), GAME_PTR(s_PathData_3c26a0, 0, 0x3c26a0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 6212, 0x45f77c), GAME_PTR(s_PathData_3c2670, 0, 0x3c2670), 0 },
+		{ GAME_PTR(g_CircuitPaths, 6228, 0x45f78c), GAME_PTR(s_PathData_3c26c0, 0, 0x3c26c0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 6244, 0x45f79c), GAME_PTR(s_PathData_3c26f0, 0, 0x3c26f0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 6260, 0x45f7ac), GAME_PTR(s_PathData_3c2750, 0, 0x3c2750), 0 },
+		{ GAME_PTR(g_CircuitPaths, 6276, 0x45f7bc), GAME_PTR(s_PathData_3c2760, 0, 0x3c2760), 0 },
+		{ GAME_PTR(g_CircuitPaths, 6292, 0x45f7cc), GAME_PTR(s_PathData_3c2780, 0, 0x3c2780), 0 },
+		{ GAME_PTR(g_CircuitPaths, 6308, 0x45f7dc), GAME_PTR(s_PathData_3c27d0, 0, 0x3c27d0), 0 },
+		{ GAME_PTR(g_CircuitPaths, 6324, 0x45f7ec), GAME_PTR(s_PathData_3c2810, 0, 0x3c2810), 0 },
+		{ GAME_PTR(g_CircuitPaths, 6340, 0x45f7fc), GAME_PTR(s_PathData_3c2860, 0, 0x3c2860), 0 },
+	};
+
+	for (size_t k = 0; k < sizeof(paths) / sizeof(paths[0]); k++) {
+		if (paths[k].src) {
+			memcpy(paths[k].dst, paths[k].src, 16);
 		} else {
-			GAME_DATA(uint32_t, s_PathData[k].dst) = s_PathData[k].src;
+			*(uint32_t *)paths[k].dst = paths[k].value;
 		}
 	}
 	for (int p = 0; p < CIRCUIT_PATHS; p++) {
@@ -209,7 +253,7 @@ static void Circuit_Respawn(int k) {
 	f->delay = Circuit_Rand((double)0.2f, (double)0.2f);
 	int r = crt_rand() & 0x7fff;
 	float len = g_CircuitPaths[f->path].total / 550.0f;
-	float t = len * (float)((double)r * g_CircuitRandScale * GAME_DATA(double, 0x3c2608) + (double)0.7f);
+	float t = len * (float)((double)r * g_CircuitRandScale * GAME_GLOBAL(double, cCircuitScorer_Draw_3c2608, 0x3c2608) + (double)0.7f);
 	f->duration = t;
 	f->time = t;
 	f->reverse = crt_rand() & 1;

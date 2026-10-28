@@ -53,7 +53,7 @@ inpfree(inppi)
 # SetInputFunc on player 4 with no function; onDone is put back
 inppi = inpb + 0x44c130 + 3 * 0xb4
 inpold = inpi(inppi + 0x98)
-check('cPlayerInput_SetInputFunc', lambda: (SDTest.Call('cPlayerInput_SetInputFunc', 'tvis', inppi, ''), inpi(inppi + 0x98) == inpb + 0x13a930,
+check('cPlayerInput_SetInputFunc', lambda: (SDTest.Call('cPlayerInput_SetInputFunc', 'tvis', inppi, ''), isfn(inpi(inppi + 0x98), sym('Input_OnTextDone')),
 	inpi(inppi + 0x9c + 8)))
 inpwi(inppi + 0x98, inpold)
 

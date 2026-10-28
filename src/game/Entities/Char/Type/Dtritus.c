@@ -164,7 +164,7 @@ void ChType_DtritusHitEvent(cAbstractFile *params) {
 	c.x = p->x + ox;
 	c.y = p->y + oy;
 	c.z = p->z + oz;
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)Game_Ptr(CHTYPE_DTRITUSKILL));
+	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GAME_FUNC(ChType_DtritusKill, CHTYPE_DTRITUSKILL));
 	cWorld_SphereCallF(g_pWorld, 0x10, &c, 100.0f, g_ChTypeSphereFunc, 0);
 }
 

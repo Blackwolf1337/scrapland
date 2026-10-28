@@ -118,8 +118,8 @@ void __fastcall cFriends_Think(cFriends *self) {
 
 void __fastcall cFriends_Init(cFriends *self) {
 	self->list = cWorld_NewEntityList(g_pWorld, "Friends");
-	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)Game_Ptr(0x147b60));
-	cPy_Function_SetNative(&self->list->onDeath, (nativefunc_t)Game_Ptr(0x147b60));
+	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)GAME_FUNC(Logic_NativeNop, 0x147b60));
+	cPy_Function_SetNative(&self->list->onDeath, (nativefunc_t)GAME_FUNC(Logic_NativeNop, 0x147b60));
 }
 
 void __thiscall cFriends_Update(cFriends *self, float dt) {

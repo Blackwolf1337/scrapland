@@ -162,17 +162,24 @@ file(GLOB RES_FILES CONFIGURE_DEPENDS src/standalone/res/*)
 add_library(scrapres OBJECT src/standalone/scrap.rc)
 target_include_directories(scrapres PRIVATE src/standalone) # windres finds the res/ files from the include path
 set_source_files_properties(src/standalone/scrap.rc PROPERTIES OBJECT_DEPENDS "${RES_FILES}")
-add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtinit.c
+add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtinit.c src/standalone/crtxc.c
 	src/standalone/crtmath.c src/standalone/crtvec.c src/standalone/dataprobe.c ${ROOM_DIR}/room.c ${ROOM_DIR}/room.h
 	$<TARGET_OBJECTS:scrapres>)
 target_include_directories(ScrapC PRIVATE ${ROOM_DIR})
-target_link_libraries(ScrapC PRIVATE scrapcode_sa python152)
+# the data formats c_dfDIKeyboard and c_dfDIMouse of mingw's libdinput8 and their GUIDs (stage 3c1b), as -l flags: the
+# target dinput8 is the hook DLL
+target_link_libraries(ScrapC PRIVATE scrapcode_sa python152 -ldinput8 -ldxguid)
 target_link_options(ScrapC PRIVATE -Wl,--image-base,0x400000 -Wl,--disable-dynamicbase
 	-Wl,-T,${CMAKE_SOURCE_DIR}/cmake/ScrapC.ld -L${ROOM_DIR})
 set_target_properties(ScrapC PROPERTIES LINK_DEPENDS "${CMAKE_SOURCE_DIR}/cmake/ScrapC.ld;${ROOM_DIR}/room.ld")
 add_custom_command(TARGET ScrapC POST_BUILD
 	COMMAND ${PYTHON3} -I ${CMAKE_SOURCE_DIR}/tools/standalone/rsrccheck.py ${SCRAP_EXE} $<TARGET_FILE:ScrapC>
 	COMMENT "Resources of ScrapC.exe against Scrap.exe")
+# stage 3c1b: the C computes no address from an rva of the original (GAME_FUNC names its hook, game_base only in the
+# allowed places)
+add_custom_command(TARGET ScrapC POST_BUILD
+	COMMAND ${PYTHON3} -I ${CMAKE_SOURCE_DIR}/tools/standalone/rvacheck.py
+	COMMENT "Check that the C of ScrapC.exe uses no rvas")
 # stage 3b2: every rva of the C and the tests lies in the data that datagen.py builds in (tools/standalone/datamap.txt)
 add_custom_command(TARGET ScrapC POST_BUILD
 	COMMAND ${PYTHON3} -I ${CMAKE_SOURCE_DIR}/tools/standalone/datamap.py --check -e ${SCRAP_EXE} -c $<TARGET_FILE:ScrapC>

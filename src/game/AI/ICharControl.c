@@ -20,7 +20,7 @@
 #define g_AICCNumNear GAME_GLOBAL(int, g_AICCNumNear, 0x4443a0)
 #define g_AICCNearSelf GAME_GLOBAL(cEntity *, g_AICCNearSelf, 0x4443a4)	/* the character itself, left out */
 #define g_AICCNearFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0, 0x46679c))
-#define AICC_NEAR_NATIVE ((nativefunc_t)Game_Ptr(0x06fbf0))	/* AICC_NearChar (its C version behind the hook) */
+#define AICC_NEAR_NATIVE ((nativefunc_t)GAME_FUNC(AICC_NearChar, 0x06fbf0))	/* AICC_NearChar (its C version behind the hook) */
 #define AICC_MAX_NEAR 20
 
 #define AICC_EXE_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" */
@@ -75,7 +75,7 @@ cAICharControl *__thiscall cAICharControl_ctor(void *mem, cEntity *ent, cAIChar 
 	self->waitTargetPos.x = self->waitTargetPos.y = self->waitTargetPos.z = 0.0f;
 	self->waitPos.x = self->waitPos.y = self->waitPos.z = 0.0f;
 	self->b140 = 1;
-	self->path.maxFree = GAME_DATA(int, 0x3a9a2c);
+	self->path.maxFree = GAME_GLOBAL(int, cAICharControl_ctor_3a9a2c, 0x3a9a2c);
 	self->stopped = 0;
 	self->orbitSide = 0;
 	self->strafeDir = 0;

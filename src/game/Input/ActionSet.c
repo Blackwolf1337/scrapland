@@ -132,8 +132,8 @@ cActionSetTable *__fastcall ActionSets_ctor(cActionSetTable *sets) {
 
 cInputAction *__fastcall cInputAction_ctor(cInputAction *a) {
 	cString_ctor(&a->name);
-	crt_eh_vector_ctor(a->func, sizeof(cPy_Function), MAX_LOCAL_PLAYERS, Game_Ptr(CPYFUNCTION_CTOR),
-		Game_Ptr(CPYFUNCTION_DTOR));
+	crt_eh_vector_ctor(a->func, sizeof(cPy_Function), MAX_LOCAL_PLAYERS, GAME_FUNC(cPy_Function_ctor, CPYFUNCTION_CTOR),
+		GAME_FUNC(cPy_Function_dtor, CPYFUNCTION_DTOR));
 	return a;
 }
 
@@ -166,20 +166,20 @@ void ActionSet_FiniActionSets(void) {
 /* the Global/Table.h Free of the sets */
 void __fastcall ActionSetTable_Free(cActionSetTable *t) {
 	if (t->items) {
-		Delete_Objects(t->items, sizeof(cActionSet), ACTIONSET_DTOR);
+		Delete_Objects(t->items, sizeof(cActionSet), GAME_FUNC(cActionSet_dtor, ACTIONSET_DTOR));
 		t->items = NULL;
 		t->count = 0;
 	}
 }
 
 void __fastcall cInputAction_dtor(cInputAction *a) {
-	crt_eh_vector_dtor(a->func, sizeof(cPy_Function), MAX_LOCAL_PLAYERS, Game_Ptr(CPYFUNCTION_DTOR));
+	crt_eh_vector_dtor(a->func, sizeof(cPy_Function), MAX_LOCAL_PLAYERS, GAME_FUNC(cPy_Function_dtor, CPYFUNCTION_DTOR));
 	cString_dtor(&a->name);
 }
 
 void __fastcall cActionSet_dtor(cActionSet *s) {
 	if (s->actions.items) {
-		Delete_Objects(s->actions.items, sizeof(cInputAction), INPUTACTION_DTOR);
+		Delete_Objects(s->actions.items, sizeof(cInputAction), GAME_FUNC(cInputAction_dtor, INPUTACTION_DTOR));
 		s->actions.items = NULL;
 		s->actions.count = 0;
 	}
@@ -193,7 +193,7 @@ void __fastcall cPlayerInput_dtor(cPlayerInput *in) {
 /* the vector deleting destructors: flags 2 is an array with its count before it, 1 frees */
 cInputAction *__thiscall cInputAction_Delete(cInputAction *a, uint32_t flags) {
 	if (flags & 2) {
-		return Delete_VectorPart(a, flags, sizeof(cInputAction), INPUTACTION_DTOR);
+		return Delete_VectorPart(a, flags, sizeof(cInputAction), GAME_FUNC(cInputAction_dtor, INPUTACTION_DTOR));
 	}
 	cInputAction_dtor(a);
 	if (flags & 1) {
@@ -204,7 +204,7 @@ cInputAction *__thiscall cInputAction_Delete(cInputAction *a, uint32_t flags) {
 
 cActionSet *__thiscall cActionSet_Delete(cActionSet *s, uint32_t flags) {
 	if (flags & 2) {
-		return Delete_VectorPart(s, flags, sizeof(cActionSet), ACTIONSET_DTOR);
+		return Delete_VectorPart(s, flags, sizeof(cActionSet), GAME_FUNC(cActionSet_dtor, ACTIONSET_DTOR));
 	}
 	cActionSet_dtor(s);
 	if (flags & 1) {
@@ -279,14 +279,14 @@ char __thiscall cPlayerInput_GetCursorChar(cPlayerInput *in) {
 void __thiscall ActionTable_Init(cInputActionTable *t, int num) {
 	CHECK(!t->items && num > 0);
 	t->count = num;
-	t->items = New_Objects(num, sizeof(cInputAction), INPUTACTION_CTOR, INPUTACTION_DTOR);
+	t->items = New_Objects(num, sizeof(cInputAction), GAME_FUNC(cInputAction_ctor, INPUTACTION_CTOR), GAME_FUNC(cInputAction_dtor, INPUTACTION_DTOR));
 	CHECK(t->items);
 }
 
 void __thiscall ActionSetTable_Init(cActionSetTable *t, int num) {
 	CHECK(!t->items && num > 0);
 	t->count = num;
-	t->items = New_Objects(num, sizeof(cActionSet), ACTIONSET_CTOR, ACTIONSET_DTOR);
+	t->items = New_Objects(num, sizeof(cActionSet), GAME_FUNC(cActionSet_ctor, ACTIONSET_CTOR), GAME_FUNC(cActionSet_dtor, ACTIONSET_DTOR));
 	CHECK(t->items);
 }
 
@@ -578,7 +578,7 @@ byte __thiscall cVirtualKeyboard_Set(cVirtualKeyboard *vk, const char *text) {
 
 /* the function gets player and text when the player ends the line (Input_OnTextDone of the exe) */
 void __thiscall cPlayerInput_SetInputFunc(cPlayerInput *in, const char *func) {
-	in->onDone = (void (*)(int, const char *))Game_Ptr(0x13a930);
+	in->onDone = (void (*)(int, const char *))GAME_FUNC(Input_OnTextDone, 0x13a930);
 	cPy_Function_SetFunc(&in->func, func);
 }
 

@@ -56,7 +56,7 @@ void __fastcall CAnimVert_dtor(CAnimVert *self) {
 void *__thiscall CAnimVert_Delete(CAnimVert *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(*self), *mem, Game_Ptr(ANIMVERT_DTOR));
+		crt_eh_vector_dtor(self, sizeof(*self), *mem, GAME_FUNC(CAnimVert_dtor, ANIMVERT_DTOR));
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -247,7 +247,7 @@ void __fastcall CEVA_Free(CEVA *self) {
 	}
 	CHECK(self->nV > 0);
 	if (self->AnimV) {
-		Delete_Objects(self->AnimV, sizeof(CAnimVert), ANIMVERT_DTOR);
+		Delete_Objects(self->AnimV, sizeof(CAnimVert), GAME_FUNC(CAnimVert_dtor, ANIMVERT_DTOR));
 		self->AnimV = NULL;
 	}
 	self->nV = 0;
@@ -257,7 +257,7 @@ void __thiscall CEVA_Alloc(CEVA *self, int verts) {
 	CHECK(!self->AnimV);
 	CHECK(verts > 0);
 	self->nV = verts;
-	self->AnimV = New_Objects(verts, sizeof(CAnimVert), ANIMVERT_CTOR, ANIMVERT_DTOR);
+	self->AnimV = New_Objects(verts, sizeof(CAnimVert), GAME_FUNC(CAnimVert_ctor, ANIMVERT_CTOR), GAME_FUNC(CAnimVert_dtor, ANIMVERT_DTOR));
 }
 
 CAnimVert *__thiscall CEVA_Get(CEVA *self, uint32_t i) {

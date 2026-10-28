@@ -73,12 +73,12 @@
 #define ID_BTN_ENTER 0x68		/* ">" */
 
 #define APP_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" of the exe */
-#define APP_WNDPROC Game_Ptr(0x20d840)
-#define CONWIN_DLGPROC Game_Ptr(0x20df40)
-#define CONWIN_EDITPROC Game_Ptr(0x20dfc0)
-#define CONWIN_STREAMOUT Game_Ptr(0x20e460)
-#define CONWIN_WNDPROC Game_Ptr(0x20e690)
-#define CONSOLE_EXECUTE ((void (*)(const char *))Game_Ptr(0x20aaf0))
+#define APP_WNDPROC GAME_FUNC(App_WndProc, 0x20d840)
+#define CONWIN_DLGPROC GAME_FUNC(ConsoleWin_DlgProc, 0x20df40)
+#define CONWIN_EDITPROC GAME_FUNC(ConsoleWin_EditProc, 0x20dfc0)
+#define CONWIN_STREAMOUT GAME_FUNC(ConsoleWin_StreamOut, 0x20e460)
+#define CONWIN_WNDPROC GAME_FUNC(ConsoleWin_WndProc, 0x20e690)
+#define CONSOLE_EXECUTE ((void (*)(const char *))GAME_FUNC(Console_Execute, 0x20aaf0))
 
 /* the console window: 0x1a9 x 0x1f4 */
 #define CONWIN_W 0x1a9

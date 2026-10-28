@@ -51,7 +51,7 @@ void *__thiscall Logic_ctor(void *logic) {
 	cGenCharGroup_ctor(&self->genChars);
 	cGateKeepers_ctor(&self->gateKeepers);
 	cString_Assign((cString *)&g_NotCleanableByGear, g_NotCleanableByGearDef);
-	g_SetOriginFunc = Game_Ptr(LOGIC_SETORIGINFUNC);
+	g_SetOriginFunc = GAME_FUNC(Logic_SetOriginCallback, LOGIC_SETORIGINFUNC);
 	return self;
 }
 

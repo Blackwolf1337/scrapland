@@ -353,14 +353,15 @@ def read_table(path=TABLE):
 
 def numbers(src, syms):
 	"""the numbers a script names (for the scan of tools/standalone/datamap.py): its hex numbers, and the rva of each
-	name of syms ({key: (kind, rva)}) in sym(), symva() (the address) and the first argument of SDTest.Call/Peek/Poke/
-	ConvU. A name followed by + 0x.. also gives the rva with that offset: the rewrite writes an rva inside an object
-	that way, the same form as an offset of the test itself"""
+	name of syms ({key: (kind, rva)}) in sym(), symva() (its rva too, not the address: the address of a function
+	would look like an rva of the data) and the first argument of SDTest.Call/Peek/Poke/ConvU. A name followed by
+	+ 0x.. also gives the rva with that offset: the rewrite writes an rva inside an object that way, the same form as
+	an offset of the test itself"""
 	out = [int(v, 16) for v in re.findall(r'\b0x([0-9a-fA-F]+)\b', src)]
 	for m in re.finditer(r"(?:\b(symva|sym)\(|SDTest\.(?:%s)\(\s*)'([^']+)'\)?(?:\s*\+\s*0x([0-9a-fA-F]+)\b)?"
 			% '|'.join(SDTEST_RVA), src):
 		if m.group(2) in syms:
-			rva = syms[m.group(2)][1] + (BASE if m.group(1) == 'symva' else 0)
+			rva = syms[m.group(2)][1]
 			out.append(rva)
 			if m.group(3):
 				out.append(rva + int(m.group(3), 16))

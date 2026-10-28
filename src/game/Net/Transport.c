@@ -541,7 +541,7 @@ int Transport_Wait(int ms) {
 }
 
 uint16_t Transport_Crc16(const byte *data, int size) {
-	const uint16_t *table = (const uint16_t *)Game_Ptr(0x3c6c68);
+	const uint16_t *table = GAME_ARRAY(const uint16_t, Transport_Crc16_3c6c68, 0x3c6c68);
 	uint32_t crc = 0;
 
 	for (int i = 0; i < size; i++) {

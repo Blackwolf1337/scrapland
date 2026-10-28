@@ -18,8 +18,6 @@ typedef int(__stdcall *setcursorpos_t)(int x, int y);
 #define IID_IDirectInput8A GAME_PTR(IID_IDIRECTINPUT8A, 0, 0x3d116c)
 #define GUID_SysMouse GAME_PTR(GUID_SYSMOUSE, 0, 0x3d100c)
 #define GUID_SysKeyboard GAME_PTR(GUID_SYSKEYBOARD, 0, 0x3d0ffc)
-#define c_dfDIMouse GAME_PTR(C_DFDIMOUSE, 0, 0x3cfdf4)
-#define c_dfDIKeyboard GAME_PTR(C_DFDIKEYBOARD, 0, 0x3cfbec)
 #define DIRECTINPUT_VERSION 0x800
 #define DISCL_EXCLUSIVE_FOREGROUND 5
 #define DISCL_NONEXCLUSIVE_FOREGROUND 6
@@ -143,12 +141,12 @@ int __thiscall CEntradaDInput_Init(CEntradaDInput *self, void *hwnd, void *hinst
 	if (hr < 0) {
 		return hr;
 	}
-	hr = Entrada_CreateDevice(self, GUID_SysMouse, &self->mouse, c_dfDIMouse, hwnd,
+	hr = Entrada_CreateDevice(self, GUID_SysMouse, &self->mouse, GAME_DF_MOUSE, hwnd,
 		exclusive ? DISCL_EXCLUSIVE_FOREGROUND : DISCL_NONEXCLUSIVE_FOREGROUND);
 	if (hr < 0) {
 		return hr;
 	}
-	hr = Entrada_CreateDevice(self, GUID_SysKeyboard, &self->keyboard, c_dfDIKeyboard, hwnd,
+	hr = Entrada_CreateDevice(self, GUID_SysKeyboard, &self->keyboard, GAME_DF_KEYBOARD, hwnd,
 		DISCL_EXCLUSIVE_FOREGROUND);
 	return hr < 0 ? hr : 0;
 }

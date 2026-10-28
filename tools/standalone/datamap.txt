@@ -3,7 +3,7 @@
 # columns: rva, size (hex), section, used by (C functions, test scripts, probe, ptr <rva of the pointer>,
 # static), kind
 #
-# .text    unknown                     4208 bytes,    4208 used
+# .text    library dinput8             4208 bytes,       0 used
 # .rdata   C object                   20332 bytes,   20332 used
 # .rdata   double                       912 bytes,     152 used
 # .rdata   eh                         63528 bytes,       0 used
@@ -11,35 +11,35 @@
 # .rdata   guid                       20912 bytes,     192 used
 # .rdata   import                      9863 bytes,    9863 used
 # .rdata   int table                   5892 bytes,    2101 used
-# .rdata   library crt               112216 bytes,    7290 used
+# .rdata   library crt               112216 bytes,       0 used
 # .rdata   library crt+d3dx8              8 bytes,       0 used
 # .rdata   library crt+python           136 bytes,       0 used
-# .rdata   library d3dx8              18264 bytes,       4 used
+# .rdata   library d3dx8              18264 bytes,       0 used
 # .rdata   library d3dx8+python           8 bytes,       0 used
-# .rdata   library python             28096 bytes,     200 used
-# .rdata   pointer table                135 bytes,       7 used
-# .rdata   rtti                       26874 bytes,     128 used
-# .rdata   string                    237278 bytes,  119984 used
-# .rdata   unknown                      686 bytes,     584 used
+# .rdata   library dinput8               48 bytes,       0 used
+# .rdata   library python             28096 bytes,       0 used
+# .rdata   pointer table                 67 bytes,       3 used
+# .rdata   rtti                       26976 bytes,       0 used
+# .rdata   string                    237278 bytes,  119896 used
+# .rdata   unknown                      604 bytes,      32 used
 # .rdata   zero                        1186 bytes,     464 used
-# .data    float                       1120 bytes,    1120 used
+# .data    float                       1104 bytes,    1104 used
 # .data    int table                   9104 bytes,    9096 used
 # .data    library crt                 2428 bytes,       0 used
 # .data    library d3dx8              15464 bytes,       0 used
-# .data    library python             42296 bytes,    1472 used
+# .data    library python             42312 bytes,       0 used
 # .data    pointer table               5515 bytes,    5499 used
-# .data    rtti                       10908 bytes,     140 used
+# .data    rtti                       10908 bytes,       0 used
 # .data    string                     24531 bytes,   24531 used
 # .data    unknown                     2715 bytes,    2715 used
 # .data    zero                        1119 bytes,     827 used
 # .gfids   int table                   1272 bytes,       4 used
 # .tls     library d3dx8                 65 bytes,       0 used
-# _RDATA   library crt                 4832 bytes,       4 used
+# _RDATA   library crt                 4832 bytes,       0 used
 # .data1   library d3dx8               2272 bytes,       0 used
 # .rsrc    resource                  210560 bytes,  210560 used
 #
-001000	1000	.text	probe Keyboard_Create via dinput8.dll, ptr 3cfc00	unknown
-002000	70	.text	probe Mouse_Create via dinput8.dll, ptr 3cfe08	unknown
+001000	1070	.text	-	library dinput8
 3179c6	168	.text	static: import thunks of the game	code
 3761d0	c	.text	static: import thunks of the game	code
 390000	102c0	.bss_ste	-	bss
@@ -222,13 +222,9 @@
 3a15ac	4	.rdata	Steam_FiniTicketCallback, static: imports (main.c)	import
 3a15b0	4	.rdata	SteamContext_Init, SteamContext_Setup, static: imports (main.c)	import
 3a15b4	4	.rdata	static: imports (main.c)	import
-3a15b8	4	.rdata	-	library crt
-3a15bc	1c00	.rdata	Crt_Main, probe Crt_Main	library crt
-3a31bc	4	.rdata	Crt_Main	library crt
-3a31c0	24	.rdata	Crt_Main, probe Crt_Main	library crt
-3a31e4	8	.rdata	Crt_Main	library crt
-3a31ec	4	.rdata	probe hot page 3a3000	library d3dx8
-3a31f0	34	.rdata	probe hot page 3a3000	library crt
+3a15b8	1c34	.rdata	-	library crt
+3a31ec	4	.rdata	-	library d3dx8
+3a31f0	34	.rdata	-	library crt
 3a3224	4	.rdata	cActClass_vftable	C object
 3a3228	4	.rdata	CNodesWorld2D_AnalizeGraph, CNodesWorld2D_Load, CNodesWorld_Analize +61	zero
 3a322c	1c	.rdata	CNodesWorld2D_AnalizeGraph, CNodesWorld2D_Load, CNodesWorld_Analize +61	string
@@ -266,13 +262,14 @@
 3a3710	4	.rdata	Init_GVar_LaserDistLimit, Init_GVar_VulcanDistLimit, probe Init_GVar_LaserDistLimit	float
 3a3714	4	.rdata	probe hot page 3a3000	zero
 3a3718	8	.rdata	probe hot page 3a3000	float
-3a3720	14	.rdata	probe hot page 3a3000	unknown
+3a3720	10	.rdata	probe hot page 3a3000	unknown
+3a3730	4	.rdata	-	rtti
 3a3734	4	.rdata	cActClassList_vftable	C object
 3a3738	120	.rdata	probe hot page 3a3000	string
 3a3858	28	.rdata	Init_GVar_LogActEvents	string
 3a3880	10	.rdata	Init_GVar_LogActEvents, probe HashTable_Slot	string
 3a3890	c	.rdata	cWithLifeEntity_GetClassName, cWithLifeEntity_IsType, probe cWithLifeEntity_IsType via ucrtbase.dll	string
-3a389c	4	.rdata	probe hot page 3a3000	rtti
+3a389c	4	.rdata	-	rtti
 3a38a0	14	.rdata	cActCtrl_vftable	C object
 3a38b4	c	.rdata	cWalkCharEntity_GetClassName, cWalkCharEntity_Walk	string
 3a38c0	5c	.rdata	probe hot page 3a3000	string
@@ -316,7 +313,7 @@
 3a3a3c	4	.rdata	probe hot page 3a3000	float
 3a3a40	20	.rdata	Init_GVar_DefInterpTime	string
 3a3a60	10	.rdata	Init_GVar_DefInterpTime, probe HashTable_Slot	string
-3a3a70	4	.rdata	probe hot page 3a3000	rtti
+3a3a70	4	.rdata	-	rtti
 3a3a74	4	.rdata	cActionMove_vftable	C object
 3a3a78	24	.rdata	probe hot page 3a3000	string
 3a3a9c	2	.rdata	probe hot page 3a3000	int table
@@ -353,7 +350,7 @@
 3a3ee0	8	.rdata	Init_GVar_ShowAI, probe HashTable_Slot	string
 3a3ee8	20	.rdata	Init_GVar_NotShootAI	string
 3a3f08	c	.rdata	Init_GVar_NotShootAI, probe HashTable_Slot	string
-3a3f14	4	.rdata	probe hot page 3a3000	rtti
+3a3f14	4	.rdata	-	rtti
 3a3f18	38	.rdata	cAI_vftable	C object
 3a3f50	54	.rdata	probe hot page 3a3000	string
 3a3fa4	a	.rdata	probe hot page 3a3000	int table
@@ -584,13 +581,15 @@
 3a5a6a	22	.rdata	-	string
 3a5a8c	34	.rdata	-	float
 3a5ac0	4	.rdata	Init_GVar_MaxDistChaseElevatorAI, probe Init_GVar_MaxDistChaseElevatorAI	float
-3a5ac4	8	.rdata	-	pointer table
+3a5ac4	4	.rdata	-	pointer table
+3a5ac8	4	.rdata	-	rtti
 3a5acc	19c	.rdata	cAICharControl2D_vftable	C object
 3a5c68	90	.rdata	-	string
 3a5cf8	8	.rdata	-	double
 3a5d00	8	.rdata	cHeadScorer_ctor, cNewsPanel_DrawEntity	double
 3a5d08	8	.rdata	-	float
-3a5d10	8	.rdata	-	pointer table
+3a5d10	4	.rdata	-	pointer table
+3a5d14	4	.rdata	-	rtti
 3a5d18	194	.rdata	cAICharControl3D_vftable	C object
 3a5eac	74	.rdata	-	string
 3a5f20	4	.rdata	-	rtti
@@ -680,7 +679,8 @@
 3a79f0	20	.rdata	-	string
 3a7a10	4	.rdata	-	rtti
 3a7a14	18c	.rdata	cAIPolice_vftable	C object
-3a7ba0	8	.rdata	-	pointer table
+3a7ba0	4	.rdata	-	pointer table
+3a7ba4	4	.rdata	-	rtti
 3a7ba8	18c	.rdata	cAISentinel_vftable	C object
 3a7d34	18	.rdata	-	string
 3a7d4c	4	.rdata	-	float
@@ -851,7 +851,7 @@
 3a904c	18	.rdata	Init_GVar_MinAngleSearchPointAI, probe HashTable_Slot	string
 3a9064	1c	.rdata	Init_GVar_DecVelBrakeAI	string
 3a9080	10	.rdata	Init_GVar_DecVelBrakeAI, probe HashTable_Slot	string
-3a9090	4	.rdata	probe hot page 3a9000	rtti
+3a9090	4	.rdata	-	rtti
 3a9094	4	.rdata	cAIVehicleControl_vftable	C object
 3a9098	14c	.rdata	probe hot page 3a9000	string
 3a91e4	c	.rdata	probe hot page 3a9000	float
@@ -861,7 +861,7 @@
 3a924c	10	.rdata	Init_GVar_MinTimeReposAI, probe HashTable_Slot	string
 3a925c	18	.rdata	Init_GVar_ShowStopShipAI	string
 3a9274	10	.rdata	Init_GVar_ShowStopShipAI, probe HashTable_Slot	string
-3a9284	4	.rdata	probe hot page 3a9000	rtti
+3a9284	4	.rdata	-	rtti
 3a9288	24	.rdata	cAIVehicleGroup_vftable	C object
 3a92ac	b0	.rdata	probe hot page 3a9000	string
 3a935c	12	.rdata	probe hot page 3a9000	int table
@@ -884,7 +884,7 @@
 3a94bc	14	.rdata	Init_GVar_TimeChangeWeapAI, probe HashTable_Slot	string
 3a94d0	1c	.rdata	Init_GVar_TimeChangeWeapCMAI	string
 3a94ec	14	.rdata	Init_GVar_TimeChangeWeapCMAI, probe HashTable_Slot	string
-3a9500	4	.rdata	probe hot page 3a9000	rtti
+3a9500	4	.rdata	-	rtti
 3a9504	4	.rdata	cAIVehicleShootControl_vftable	C object
 3a9508	ac	.rdata	probe hot page 3a9000	string
 3a95b4	4	.rdata	probe hot page 3a9000	zero
@@ -910,20 +910,20 @@
 3a9764	4	.rdata	probe hot page 3a9000	string
 3a9768	4	.rdata	probe hot page 3a9000	float
 3a976c	4	.rdata	probe hot page 3a9000	zero
-3a9770	4	.rdata	probe hot page 3a9000	rtti
+3a9770	4	.rdata	-	rtti
 3a9774	4c	.rdata	CAStar_vftable	C object
-3a97c0	4	.rdata	probe hot page 3a9000	rtti
+3a97c0	4	.rdata	-	rtti
 3a97c4	30	.rdata	cBinaryHeap_ElemAStar_vftable	C object
 3a97f4	150	.rdata	probe hot page 3a9000	string
 3a9944	4	.rdata	probe hot page 3a9000	zero
 3a9948	7c	.rdata	probe hot page 3a9000	string
-3a99c4	4	.rdata	probe hot page 3a9000	rtti
+3a99c4	4	.rdata	-	rtti
 3a99c8	4c	.rdata	CAStar2D_vftable	C object
 3a9a14	18	.rdata	probe hot page 3a9000	string
 3a9a2c	4	.rdata	cAICharControl_ctor, probe cAICharControl_ctor	string
 3a9a30	14	.rdata	Init_GVar_ShowAStarAI	string
 3a9a44	c	.rdata	Init_GVar_ShowAStarAI, probe HashTable_Slot	string
-3a9a50	4	.rdata	probe hot page 3a9000	rtti
+3a9a50	4	.rdata	-	rtti
 3a9a54	4c	.rdata	CAStarSup_vftable	C object
 3a9aa0	30	.rdata	probe hot page 3a9000	string
 3a9ad0	14	.rdata	Init_GVar_ShowTrafficAI	string
@@ -938,9 +938,9 @@
 3a9be4	1c	.rdata	Init_GVar_MaxNumTrackNormalDensityAI, probe HashTable_Slot	string
 3a9c00	24	.rdata	Init_GVar_DistGetPVisTrafficAI	string
 3a9c24	18	.rdata	Init_GVar_DistGetPVisTrafficAI, probe HashTable_Slot	string
-3a9c3c	4	.rdata	probe hot page 3a9000	rtti
+3a9c3c	4	.rdata	-	rtti
 3a9c40	60	.rdata	CNodesTraffic_vftable	C object
-3a9ca0	4	.rdata	probe hot page 3a9000	rtti
+3a9ca0	4	.rdata	-	rtti
 3a9ca4	2c	.rdata	cGridElements_InfoTrafficNode_vftable	C object
 3a9cd0	5c	.rdata	probe hot page 3a9000	string
 3a9d2c	8	.rdata	probe hot page 3a9000	int table
@@ -983,7 +983,8 @@
 3aa728	48	.rdata	probe hot page 3aa000	string
 3aa770	c	.rdata	probe hot page 3aa000	float
 3aa77c	1	.rdata	probe hot page 3aa000	zero
-3aa77d	7	.rdata	probe hot page 3aa000	pointer table
+3aa77d	3	.rdata	probe hot page 3aa000	pointer table
+3aa780	4	.rdata	-	rtti
 3aa784	60	.rdata	CNodesTrafficInDoor_vftable	C object
 3aa7e4	4	.rdata	probe hot page 3aa000	zero
 3aa7e8	7c	.rdata	probe hot page 3aa000	string
@@ -1000,7 +1001,7 @@
 3aab74	14	.rdata	Init_GVar_BatchBuildGraph3DAI, probe HashTable_Slot	string
 3aab88	20	.rdata	Init_GVar_ViewerIniAI	string
 3aaba8	c	.rdata	Init_GVar_ViewerIniAI, probe HashTable_Slot	string
-3aabb4	4	.rdata	probe hot page 3aa000	rtti
+3aabb4	4	.rdata	-	rtti
 3aabb8	a0	.rdata	CNodesWorld_vftable	C object
 3aac58	19c	.rdata	probe hot page 3aa000	string
 3aadf4	4	.rdata	probe hot page 3aa000	zero
@@ -1079,11 +1080,11 @@
 3ac218	10	.rdata	Init_GVar_ShowInfoRegAI, probe HashTable_Slot	string
 3ac228	28	.rdata	Init_GVar_ShowTestCanGoAI	string
 3ac250	10	.rdata	Init_GVar_ShowTestCanGoAI, probe HashTable_Slot	string
-3ac260	4	.rdata	probe hot page 3ac000	rtti
+3ac260	4	.rdata	-	rtti
 3ac264	a0	.rdata	CNodesWorldSup_vftable	C object
 3ac304	4	.rdata	probe hot page 3ac000	zero
 3ac308	48	.rdata	probe hot page 3ac000	string
-3ac350	4	.rdata	probe hot page 3ac000	rtti
+3ac350	4	.rdata	-	rtti
 3ac354	2c	.rdata	cGridElements_InfPointVis_vftable	C object
 3ac380	b8	.rdata	probe hot page 3ac000	string
 3ac438	4	.rdata	probe hot page 3ac000	int table
@@ -1108,7 +1109,7 @@
 3acbcc	4	.rdata	probe hot page 3ac000	zero
 3acbd0	4	.rdata	probe hot page 3ac000	int table
 3acbd4	4	.rdata	probe hot page 3ac000	string
-3acbd8	4	.rdata	probe hot page 3ac000	rtti
+3acbd8	4	.rdata	-	rtti
 3acbdc	74	.rdata	cCamControl_vftable	C object
 3acc50	2	.rdata	cObjEntity_GetClassName, probe PyString_FromString via ucrtbase.dll	int table
 3acc52	2	.rdata	cObjEntity_GetClassName, probe PyString_FromString via ucrtbase.dll	string
@@ -1127,7 +1128,7 @@
 3acc8a	6	.rdata	probe hot page 3ac000	string
 3acc90	2	.rdata	probe hot page 3ac000	int table
 3acc92	6	.rdata	probe hot page 3ac000	string
-3acc98	4	.rdata	probe hot page 3ac000	rtti
+3acc98	4	.rdata	-	rtti
 3acc9c	74	.rdata	cCamPathEntity_vftable	C object
 3acd10	8	.rdata	cCamPathEntity_GetClassName	string
 3acd18	10	.rdata	probe hot page 3ac000	string
@@ -1158,7 +1159,7 @@
 3acf54	10	.rdata	Init_GVar_OutWalkCamFar, probe HashTable_Slot	string
 3acf64	28	.rdata	Init_GVar_FullCameraTest	string
 3acf8c	10	.rdata	Init_GVar_FullCameraTest, probe HashTable_Slot	string
-3acf9c	4	.rdata	probe hot page 3ac000	rtti
+3acf9c	4	.rdata	-	rtti
 3acfa0	7c	.rdata	cFollowCamEntity_vftable	C object
 3ad01c	2	.rdata	-	int table
 3ad01e	6	.rdata	-	string
@@ -1743,7 +1744,8 @@
 3b0860	8	.rdata	-	double
 3b0868	28	.rdata	-	float
 3b0890	8	.rdata	-	double
-3b0898	8	.rdata	-	pointer table
+3b0898	4	.rdata	-	pointer table
+3b089c	4	.rdata	-	rtti
 3b08a0	18	.rdata	cEmbeddedFX_vftable	C object
 3b08b8	24	.rdata	Init_GVar_FXRustyChispasSound	string
 3b08dc	14	.rdata	Init_GVar_FXRustyChispasSound, probe cString_Set via ucrtbase.dll	string
@@ -1794,7 +1796,8 @@
 3b11a8	8	.rdata	-	float
 3b11b0	8	.rdata	-	string
 3b11b8	9c	.rdata	-	float
-3b1254	8	.rdata	-	pointer table
+3b1254	4	.rdata	-	pointer table
+3b1258	4	.rdata	-	rtti
 3b125c	18	.rdata	cEmbeddedFXHeadCrazyGambler_vftable	C object
 3b1274	34	.rdata	-	string
 3b12a8	2	.rdata	-	int table
@@ -1894,7 +1897,8 @@
 3b23be	1e6	.rdata	-	string
 3b25a4	4	.rdata	-	zero
 3b25a8	48	.rdata	-	float
-3b25f0	8	.rdata	-	pointer table
+3b25f0	4	.rdata	-	pointer table
+3b25f4	4	.rdata	-	rtti
 3b25f8	5c	.rdata	cEntity_vftable	C object
 3b2654	58	.rdata	-	string
 3b26ac	2	.rdata	-	int table
@@ -1970,7 +1974,8 @@
 3b2b00	2	.rdata	-	int table
 3b2b02	2	.rdata	-	string
 3b2b04	c	.rdata	-	float
-3b2b10	14	.rdata	-	unknown
+3b2b10	10	.rdata	-	unknown
+3b2b20	4	.rdata	-	rtti
 3b2b24	10c	.rdata	cMissileEntity_vftable	C object
 3b2c30	10	.rdata	-	string
 3b2c40	2	.rdata	-	int table
@@ -2574,7 +2579,8 @@
 3b60cc	1c	.rdata	-	float
 3b60e8	10	.rdata	-	double
 3b60f8	b8	.rdata	-	float
-3b61b0	8	.rdata	-	pointer table
+3b61b0	4	.rdata	-	pointer table
+3b61b4	4	.rdata	-	rtti
 3b61b8	14	.rdata	cNetVController_vftable	C object
 3b61cc	28	.rdata	-	string
 3b61f4	4	.rdata	-	float
@@ -3225,7 +3231,7 @@
 3ba22c	c	.rdata	Init_GVar_StdMaxLife, probe HashTable_Slot	string
 3ba238	30	.rdata	Init_GVar_OnGeneralDamage	string
 3ba268	10	.rdata	Init_GVar_OnGeneralDamage, probe HashTable_Slot	string
-3ba278	4	.rdata	probe hot page 3ba000	rtti
+3ba278	4	.rdata	-	rtti
 3ba27c	e0	.rdata	cWithLifeEntity_vftable	C object
 3ba35c	3c	.rdata	probe hot page 3ba000	string
 3ba398	30	.rdata	cWithLifeEntity_SetActCtrl	string
@@ -3257,15 +3263,15 @@
 3ba45e	16	.rdata	probe hot page 3ba000	string
 3ba474	2	.rdata	probe hot page 3ba000	int table
 3ba476	e	.rdata	probe hot page 3ba000	string
-3ba484	4	.rdata	probe hot page 3ba000	rtti
+3ba484	4	.rdata	-	rtti
 3ba488	24	.rdata	cAbstractFile_vftable	C object
 3ba4ac	6c	.rdata	probe hot page 3ba000	string
-3ba518	4	.rdata	probe hot page 3ba000	rtti
+3ba518	4	.rdata	-	rtti
 3ba51c	24	.rdata	cFile_vftable	C object
 3ba540	28	.rdata	probe hot page 3ba000	string
 3ba568	4	.rdata	cStrMoney_GetStr	string
 3ba56c	168	.rdata	probe hot page 3ba000	string
-3ba6d4	4	.rdata	probe hot page 3ba000	rtti
+3ba6d4	4	.rdata	-	rtti
 3ba6d8	24	.rdata	cFileMem_vftable	C object
 3ba6fc	3c	.rdata	probe hot page 3ba000	string
 3ba738	38	.rdata	Init_GVar_PathInPackFile	string
@@ -3277,9 +3283,9 @@
 3ba7f8	1c	.rdata	Init_GVar_BuildPackPrompt	string
 3ba814	10	.rdata	Init_GVar_BuildPackPrompt, probe HashTable_Slot	string
 3ba824	40	.rdata	probe hot page 3ba000	string
-3ba864	4	.rdata	probe hot page 3ba000	rtti
+3ba864	4	.rdata	-	rtti
 3ba868	24	.rdata	cFile2_vftable	C object
-3ba88c	4	.rdata	probe hot page 3ba000	rtti
+3ba88c	4	.rdata	-	rtti
 3ba890	24	.rdata	cFilePack_vftable	C object
 3ba8b4	2f0	.rdata	probe hot page 3ba000	string
 3baba4	10	.rdata	Init_GVar_StreamPath, probe cString_Set via ucrtbase.dll	string
@@ -3517,7 +3523,8 @@
 3bd55c	2	.rdata	-	int table
 3bd55e	a	.rdata	-	string
 3bd568	8	.rdata	-	double
-3bd570	8	.rdata	-	pointer table
+3bd570	4	.rdata	-	pointer table
+3bd574	4	.rdata	-	rtti
 3bd578	b4	.rdata	cBertoLocalLogic_vftable	C object
 3bd62c	2	.rdata	-	int table
 3bd62e	4e	.rdata	-	string
@@ -3827,7 +3834,8 @@
 3c0048	2	.rdata	-	int table
 3c004a	e	.rdata	-	string
 3c0058	8	.rdata	-	zero
-3c0060	14	.rdata	-	unknown
+3c0060	10	.rdata	-	unknown
+3c0070	4	.rdata	-	rtti
 3c0074	90	.rdata	cMayorLocalLogic_vftable	C object
 3c0104	4	.rdata	-	rtti
 3c0108	90	.rdata	cMercenaryLocalLogic_vftable	C object
@@ -4117,13 +4125,15 @@
 3c2608	8	.rdata	cCircuitScorer_Draw	double
 3c2610	20	.rdata	-	float
 3c2630	230	.rdata	probe CircuitScorer_InitPaths, s_PathData	float
-3c2860	14	.rdata	probe CircuitScorer_InitPaths, s_PathData	unknown
+3c2860	10	.rdata	probe CircuitScorer_InitPaths, s_PathData	unknown
+3c2870	4	.rdata	-	rtti
 3c2874	10	.rdata	cCopMeterScorer_vftable	C object
 3c2884	60	.rdata	-	string
 3c28e4	4	.rdata	-	rtti
 3c28e8	14	.rdata	cHangarShipScorer_vftable	C object
 3c28fc	64	.rdata	-	string
-3c2960	8	.rdata	-	pointer table
+3c2960	4	.rdata	-	pointer table
+3c2964	4	.rdata	-	rtti
 3c2968	18	.rdata	cHeadScorer_vftable	C object
 3c2980	d4	.rdata	-	string
 3c2a54	4	.rdata	-	float
@@ -4299,7 +4309,8 @@
 3c3fd0	10	.rdata	Init_GVar_ShowConsoleLog, probe HashTable_Slot	string
 3c3fe0	8	.rdata	-	string
 3c3fe8	4	.rdata	-	float
-3c3fec	8	.rdata	-	pointer table
+3c3fec	4	.rdata	-	pointer table
+3c3ff0	4	.rdata	-	rtti
 3c3ff4	10	.rdata	cScraplandMainMenuScorer_vftable	C object
 3c4004	4	.rdata	-	rtti
 3c4008	10	.rdata	cScraplandSubMenuScorer_vftable	C object
@@ -4318,7 +4329,8 @@
 3c4110	8	.rdata	cScraplandMainMenuScorer_Draw, probe cScraplandMainMenuScorer_Draw	float
 3c4118	8	.rdata	cScraplandMainMenuScorer_Draw, cScraplandMainMenuScorer_Init, probe cScraplandMainMenuScorer_Init	float
 3c4120	18	.rdata	-	float
-3c4138	8	.rdata	-	pointer table
+3c4138	4	.rdata	-	pointer table
+3c413c	4	.rdata	-	rtti
 3c4140	10	.rdata	cSliderScorer_vftable	C object
 3c4150	9c	.rdata	-	string
 3c41ec	20	.rdata	Init_GVar_GearTargetCrossBlinkTime	string
@@ -4332,7 +4344,8 @@
 3c42d0	4	.rdata	-	rtti
 3c42d4	10	.rdata	cSpecialActionScorer_vftable	C object
 3c42e4	248	.rdata	-	string
-3c452c	8	.rdata	-	pointer table
+3c452c	4	.rdata	-	pointer table
+3c4530	4	.rdata	-	rtti
 3c4534	14	.rdata	cSpriteScorer_vftable	C object
 3c4548	4	.rdata	-	rtti
 3c454c	14	.rdata	cGradientScorer_vftable	C object
@@ -4368,7 +4381,8 @@
 3c493c	4	.rdata	-	rtti
 3c4940	10	.rdata	cStatusScorer_vftable	C object
 3c4950	2f8	.rdata	-	string
-3c4c48	8	.rdata	-	pointer table
+3c4c48	4	.rdata	-	pointer table
+3c4c4c	4	.rdata	-	rtti
 3c4c50	10	.rdata	cTabScorer_vftable	C object
 3c4c60	64	.rdata	-	string
 3c4cc4	c	.rdata	-	zero
@@ -4575,30 +4589,8 @@
 3c6c50	18	.rdata	Init_GVar_LastMasterCommandSent, probe HashTable_Slot	string
 3c6c68	4	.rdata	Transport_Crc16, probe Transport_Crc16, test sdlevel_net	int table
 3c6c6c	1fc	.rdata	Transport_Crc16, probe Transport_Crc16	int table
-3c6e68	ec	.rdata	-	string
-3c6f54	8	.rdata	ptr 428d58	string
-3c6f5c	8	.rdata	ptr 428d60	string
-3c6f64	8	.rdata	ptr 428d68	string
-3c6f6c	8	.rdata	ptr 428d70	string
-3c6f74	8	.rdata	ptr 428d78	string
-3c6f7c	8	.rdata	ptr 428d80	string
-3c6f84	8	.rdata	ptr 428d88	string
-3c6f8c	4	.rdata	ptr 428d90	string
-3c6f90	8	.rdata	ptr 428d98	string
-3c6f98	8	.rdata	ptr 428da0	string
-3c6fa0	4	.rdata	ptr 428da8	string
-3c6fa4	8	.rdata	ptr 428db0	string
-3c6fac	8	.rdata	ptr 428db8	library python
-3c6fb4	4	.rdata	ptr 428dc0	library python
-3c6fb8	8	.rdata	ptr 428dc8	library python
-3c6fc0	8	.rdata	ptr 428dd0	library python
-3c6fc8	8	.rdata	ptr 428dd8	library python
-3c6fd0	8	.rdata	ptr 428de0	library python
-3c6fd8	8	.rdata	ptr 428de8	library python
-3c6fe0	4	.rdata	ptr 428df0	library python
-3c6fe4	c	.rdata	ptr 428df8	library python
-3c6ff0	c	.rdata	ptr 428e00	library python
-3c6ffc	4	.rdata	ptr 428e08	library python
+3c6e68	144	.rdata	-	string
+3c6fac	54	.rdata	-	library python
 3c7000	284	.rdata	-	string
 3c7284	c	.rdata	ptr 428e24	string
 3c7290	4	.rdata	probe Py_FindMethodInChain, ptr 428e88	string
@@ -5201,7 +5193,8 @@
 3cbd28	20	.rdata	-	float
 3cbd48	8	.rdata	-	string
 3cbd50	bc	.rdata	-	float
-3cbe0c	8	.rdata	-	pointer table
+3cbe0c	4	.rdata	-	pointer table
+3cbe10	4	.rdata	-	rtti
 3cbe14	14	.rdata	cObjElementFXHook_vftable	C object
 3cbe28	4	.rdata	-	rtti
 3cbe2c	14	.rdata	cObjElementFXEMI_vftable	C object
@@ -5257,7 +5250,8 @@
 3cc4d0	18	.rdata	-	float
 3cc4e8	8	.rdata	-	double
 3cc4f0	70	.rdata	-	float
-3cc560	14	.rdata	-	unknown
+3cc560	10	.rdata	-	unknown
+3cc570	4	.rdata	-	rtti
 3cc574	c	.rdata	cFXElementsOrbitBoya_vftable	C object
 3cc580	4	.rdata	-	rtti
 3cc584	c	.rdata	cFXElementsOrbitBoyaController_vftable	C object
@@ -5446,7 +5440,8 @@
 3cdbe8	10	.rdata	-	float
 3cdbf8	8	.rdata	-	string
 3cdc00	48	.rdata	-	float
-3cdc48	8	.rdata	-	pointer table
+3cdc48	4	.rdata	-	pointer table
+3cdc4c	4	.rdata	-	rtti
 3cdc50	14	.rdata	cObjElementFXSwarmMissile_vftable	C object
 3cdc64	4	.rdata	-	rtti
 3cdc68	14	.rdata	cObjElementFXLaser_vftable	C object
@@ -5483,7 +5478,8 @@
 3cdfe0	28	.rdata	Init_GVar_O_Show	string
 3ce008	8	.rdata	Init_GVar_O_Show, probe HashTable_Slot	string
 3ce010	d4	.rdata	-	string
-3ce0e4	8	.rdata	-	pointer table
+3ce0e4	4	.rdata	-	pointer table
+3ce0e8	4	.rdata	-	rtti
 3ce0ec	4	.rdata	cScheduledFuncStack_vftable	C object
 3ce0f0	94	.rdata	-	string
 3ce184	14	.rdata	Init_GVar_PriorityWeapon	string
@@ -5642,17 +5638,16 @@
 3cf95c	4	.rdata	-	zero
 3cf960	9c	.rdata	-	string
 3cf9fc	1f0	.rdata	-	int table
-3cfbec	208	.rdata	CEntradaDInput_Init, Keyboard_Create, probe Keyboard_Create via dinput8.dll	unknown
-3cfdf4	18	.rdata	CEntradaDInput_Init, Keyboard_Create, Mouse_Create +1	unknown
+3cfbec	18	.rdata	-	library dinput8
+3cfc04	1f0	.rdata	-	unknown
+3cfdf4	18	.rdata	-	library dinput8
 3cfe0c	11f0	.rdata	-	guid
 3d0ffc	10	.rdata	CEntradaDInput_Init, Keyboard_Create, probe cPcPad_SetCharDefaults via dinput8.dll	guid
 3d100c	10	.rdata	CEntradaDInput_Init, Mouse_Create, probe Mouse_Create via dinput8.dll	guid
 3d101c	20	.rdata	-	guid
-3d103c	10	.rdata	probe Keyboard_Create via dinput8.dll, ptr 001000, ptr 001010 +61	guid
+3d103c	10	.rdata	probe Keyboard_Create via dinput8.dll +61	guid
 3d104c	50	.rdata	-	guid
-3d109c	10	.rdata	probe Mouse_Create via dinput8.dll, ptr 002020	guid
-3d10ac	10	.rdata	probe Mouse_Create via dinput8.dll, ptr 002010	guid
-3d10bc	10	.rdata	probe Mouse_Create via dinput8.dll, ptr 002000	guid
+3d109c	30	.rdata	probe Mouse_Create via dinput8.dll	guid
 3d10cc	a0	.rdata	-	guid
 3d116c	10	.rdata	CEntradaDInput_Init, DInput_Create, Input_OpenDevices +1	guid
 3d117c	f50	.rdata	-	guid
@@ -6185,7 +6180,8 @@
 3d9ac8	10	.rdata	-	float
 3d9ad8	28	.rdata	-	double
 3d9b00	10	.rdata	-	float
-3d9b10	14	.rdata	-	unknown
+3d9b10	10	.rdata	-	unknown
+3d9b20	4	.rdata	-	rtti
 3d9b24	4	.rdata	CEscena_vftable	C object
 3d9b28	3f8	.rdata	-	string
 3d9f20	8	.rdata	-	float
@@ -6253,7 +6249,7 @@
 3db088	1c	.rdata	Init_GVar_AnalizeQuads	string
 3db0a4	10	.rdata	Init_GVar_AnalizeQuads, probe HashTable_Slot	string
 3db0b4	84	.rdata	probe hot page 3db000	string
-3db138	4	.rdata	probe hot page 3db000	rtti
+3db138	4	.rdata	-	rtti
 3db13c	1c	.rdata	CSuelo_vftable	C object
 3db158	8b4	.rdata	probe hot page 3db000	string
 3dba0c	4	.rdata	probe hot page 3db000	zero
@@ -6263,7 +6259,7 @@
 3dbbe8	8	.rdata	probe hot page 3db000	string
 3dbbf0	10	.rdata	probe hot page 3db000	float
 3dbc00	ec	.rdata	probe hot page 3db000	string
-3dbcec	4	.rdata	probe hot page 3db000	rtti
+3dbcec	4	.rdata	-	rtti
 3dbcf0	1c	.rdata	CMallaTri_vftable	C object
 3dbd0c	188	.rdata	probe hot page 3db000	string
 3dbe94	8	.rdata	probe Proc_TypeLookup via ucrtbase.dll, probe ucrtbase.dll, ptr 432450 +1	string
@@ -6369,7 +6365,7 @@
 3dd0ec	c	.rdata	SectorVis_Draw	string
 3dd0f8	4	.rdata	probe hot page 3dd000	float
 3dd0fc	108	.rdata	probe hot page 3dd000	string
-3dd204	4	.rdata	probe hot page 3dd000	rtti
+3dd204	4	.rdata	-	rtti
 3dd208	38	.rdata	CD3DApplication_vftable	C object
 3dd240	10	.rdata	CD3DApp_ctor	string
 3dd250	14	.rdata	probe hot page 3dd000	string
@@ -6437,15 +6433,15 @@
 3ddbd4	14	.rdata	Init_GVar_R_ParticlesCount, probe HashTable_Slot	string
 3ddbe8	24	.rdata	Init_GVar_R_Particles	string
 3ddc0c	c	.rdata	Init_GVar_R_Particles, probe HashTable_Slot	string
-3ddc18	4	.rdata	probe hot page 3dd000	rtti
+3ddc18	4	.rdata	-	rtti
 3ddc1c	1c	.rdata	CObjBase3D_vftable	C object
-3ddc38	4	.rdata	probe hot page 3dd000	rtti
+3ddc38	4	.rdata	-	rtti
 3ddc3c	c	.rdata	CParticulaBase_vftable	C object
-3ddc48	4	.rdata	probe hot page 3dd000	rtti
+3ddc48	4	.rdata	-	rtti
 3ddc4c	c	.rdata	CParticulaStatic_vftable	C object
-3ddc58	4	.rdata	probe hot page 3dd000	rtti
+3ddc58	4	.rdata	-	rtti
 3ddc5c	c	.rdata	CParticulaActive_vftable	C object
-3ddc68	4	.rdata	probe hot page 3dd000	rtti
+3ddc68	4	.rdata	-	rtti
 3ddc6c	1c	.rdata	CSistPart_vftable	C object
 3ddc88	380	.rdata	probe hot page 3dd000	string
 3de008	70	.rdata	-	string
@@ -6770,7 +6766,8 @@
 3e3074	14	.rdata	Init_GVar_R_AnimNodo_Count, probe HashTable_Slot	string
 3e3088	4e8	.rdata	-	string
 3e3570	8	.rdata	-	float
-3e3578	c	.rdata	-	unknown
+3e3578	8	.rdata	-	unknown
+3e3580	4	.rdata	-	rtti
 3e3584	1c	.rdata	CMallaD3D_vftable	C object
 3e35a0	f4	.rdata	-	string
 3e3694	4	.rdata	-	zero
@@ -6919,24 +6916,9 @@
 3e7e90	8	.rdata	-	float
 3e7e98	8	.rdata	-	double
 3e7ea0	8	.rdata	-	float
-3e7ea8	78	.rdata	-	library python
-3e7f20	8	.rdata	ptr 432b9c	library python
-3e7f28	100	.rdata	-	library python
+3e7ea8	180	.rdata	-	library python
 3e8028	4	.rdata	-	library crt+python
-3e802c	144	.rdata	-	library python
-3e8170	8	.rdata	ptr 432e90, ptr 432f50	library python
-3e8178	8	.rdata	ptr 432ea0, ptr 432f60	library python
-3e8180	8	.rdata	ptr 432eb0	library python
-3e8188	4	.rdata	ptr 432ec0	library python
-3e818c	8	.rdata	ptr 432ed0, ptr 432f70	library python
-3e8194	8	.rdata	ptr 432ee0, ptr 432f80	library python
-3e819c	8	.rdata	ptr 432ef0, ptr 432f90	library python
-3e81a4	8	.rdata	ptr 432f00, ptr 432fa0	library python
-3e81ac	8	.rdata	ptr 432f10, ptr 432fb0	library python
-3e81b4	8	.rdata	ptr 432ffc	library python
-3e81bc	34	.rdata	-	library python
-3e81f0	20	.rdata	ptr 432c0c	library python
-3e8210	48	.rdata	-	library python
+3e802c	22c	.rdata	-	library python
 3e8258	4	.rdata	-	library crt+python
 3e825c	58	.rdata	-	library python
 3e82b4	4	.rdata	-	library crt
@@ -6972,8 +6954,7 @@
 3ec3cc	22d8	.rdata	-	library python
 3ee6a4	4	.rdata	-	library d3dx8
 3ee6a8	64c	.rdata	-	library python
-3eecf4	4	.rdata	ptr 442264, ptr 443ffc, ptr 444014 +2	library crt
-3eecf8	7190	.rdata	-	library crt
+3eecf4	7194	.rdata	-	library crt
 3f5e88	8	.rdata	-	library d3dx8
 3f5e90	40	.rdata	-	guid
 3f5ed0	10	.rdata	Video_OpenStream, probe Video_OpenStream via amstream.dll	guid
@@ -6994,22 +6975,12 @@
 3f8dc0	c0	.rdata	-	int table
 3f8e80	a0	.rdata	-	guid
 3f8f20	250	.rdata	-	int table
-3f9170	6e90	.rdata	-	library crt
-400000	4	.rdata	test sdcall, test sdcall_animacion, test sdcall_animgrupo +61	library crt
-400004	18	.rdata	-	library crt
-40001c	4	.rdata	test sdlevel_bspcalc	library crt
-400020	4	.rdata	-	library crt
-400024	4	.rdata	test sdlevel_bspcalc	library crt
-400028	58	.rdata	-	library crt
-400080	2	.rdata	VE_TubeSmokes, aivc_fwd, defMats.1 +11	library crt
-400082	3fbe	.rdata	-	library crt
-404040	4	.rdata	test sdcall_eng4, test sdcall_utild3d	library crt
-404044	692c	.rdata	-	library crt
+3f9170	11800	.rdata	-	library crt
 40a970	2e70	.rdata	-	library d3dx8
 40d7e0	40	.rdata	-	guid
 40d820	18cc	.rdata	-	library d3dx8
-40f0ec	f7a	.rdata	-	rtti
-410066	a	.rdata	-	unknown
+40f0ec	f80	.rdata	-	rtti
+41006c	4	.rdata	-	unknown
 410070	553c	.rdata	-	rtti
 4155ac	c	.rdata	-	library crt
 4155b8	f1c0	.rdata	-	eh
@@ -7503,7 +7474,7 @@
 428d50	4	.data	Transport_Recv, Transport_SendNeedPassword	zero
 428d54	1	.data	Transport_Recv, Transport_SendNeedPassword	int table
 428d55	3	.data	Transport_Recv, Transport_SendNeedPassword	zero
-428d58	c0	.data	probe hot page 428000	library python
+428d58	c0	.data	-	library python
 428e18	70	.data	PyEntity_New, probe PyObject_GetAttr, probe PyObject_GetAttrString +4	unknown
 428e88	70	.data	PyEntity_FindMethod, PyEntity_GetAttr	unknown
 428ef8	4	.data	PyPool_Get, PyPool_MallocImpl, PyPool_ReallocImpl +1	string
@@ -8107,26 +8078,8 @@
 432a9c	8	.data	probe hot page 432000	zero
 432aa4	34	.data	probe hot page 432000	float
 432ad8	4	.data	probe hot page 432000	int table
-432adc	84	.data	probe hot page 432000	float
-432b60	1c	.data	ptr 432bc4	library python
-432b7c	14	.data	ptr 432be0	library python
-432b90	dc	.data	probe hot page 432000	library python
-432c6c	2c	.data	ptr 432e9c	library python
-432c98	3c	.data	ptr 432ebc	library python
-432cd4	38	.data	ptr 432eac	library python
-432d0c	4	.data	probe hot page 432000	library python
-432d10	4c	.data	ptr 432ecc	library python
-432d5c	34	.data	ptr 432edc	library python
-432d90	48	.data	ptr 432eec	library python
-432dd8	44	.data	ptr 432efc	library python
-432e1c	24	.data	ptr 432f0c	library python
-432e40	4c	.data	ptr 432f1c	library python
-432e8c	a4	.data	probe hot page 432000	library python
-432f30	20	.data	ptr 433024	library python
-432f50	80	.data	probe hot page 432000	library python
-432fd0	20	.data	ptr 432c34	library python
-432ff0	70	.data	probe hot page 432000	library python
-433060	9f78	.data	-	library python
+432adc	74	.data	probe hot page 432000	float
+432b50	a488	.data	-	library python
 43cfd8	4	.data	-	library crt
 43cfdc	4	.data	crt_security_check_cookie	float
 43cfe0	8	.data	-	int table
@@ -8136,13 +8089,11 @@
 43d034	8c	.data	-	library d3dx8
 43d0c0	944	.data	-	library crt
 43da04	3bac	.data	-	library d3dx8
-4415b0	cb4	.data	-	rtti
-442264	8	.data	Gog_CatchError	rtti
+4415b0	cbc	.data	-	rtti
 44226c	18	.data	Gog_CatchError	string
 442284	1d2c	.data	-	rtti
 443fb0	1c	.data	-	library crt
-443fcc	30	.data	-	rtti
-443ffc	84	.data	probe hot page 444000	rtti
+443fcc	b4	.data	-	rtti
 444080	4	.data	ActClassList_Done, ActClassList_Init, NetData_ReadUsrDescriptor +6	zero
 444084	4	.data	ActClassList_Done, ActClassList_Init, SAct_CreateAction +7	zero
 444088	4	.data	ActClassList_Done, ActClassList_Init, SAct_CreateAction +5	zero
@@ -13919,9 +13870,7 @@
 4ee380	4	.gfids	test sdlevel_aicharctl	int table
 4ee384	174	.gfids	-	int table
 4ef000	41	.tls	-	library d3dx8
-4f0000	570	_RDATA	-	library crt
-4f0570	4	_RDATA	test sdlevel_entity	library crt
-4f0574	d6c	_RDATA	-	library crt
+4f0000	12e0	_RDATA	-	library crt
 4f2000	8e0	.data1	-	library d3dx8
 4f3000	8380	.rsrc	static: resources	resource
 4fb380	4	.rsrc	static: resources, test sdlevel_efxveh, test sdlevel_weap1	resource

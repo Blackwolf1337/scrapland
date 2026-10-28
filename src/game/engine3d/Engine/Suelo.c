@@ -171,7 +171,7 @@ void __fastcall CCollideQuad_dtor(CCollideQuad *self) {
 CCollideQuad *__thiscall CCollideQuad_Delete(CCollideQuad *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(*self), *mem, Game_Ptr(CCOLLIDEQUAD_DTOR));
+		crt_eh_vector_dtor(self, sizeof(*self), *mem, GAME_FUNC(CCollideQuad_dtor, CCOLLIDEQUAD_DTOR));
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -188,7 +188,7 @@ CCollideQuad *__thiscall CCollideQuad_Delete(CCollideQuad *self, uint32_t flags)
 void *__thiscall CNodo3D_VecDelete(void *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(CNodo3D), *mem, Game_Ptr(CNODO3D_DTOR));
+		crt_eh_vector_dtor(self, sizeof(CNodo3D), *mem, GAME_FUNC(CNodo3D_dtor, CNODO3D_DTOR));
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -202,10 +202,10 @@ void *__thiscall CNodo3D_VecDelete(void *self, uint32_t flags) {
 }
 
 CAlturas *__fastcall CAlturas_ctor(CAlturas *self) {
-	crt_eh_vector_ctor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, Game_Ptr(CCOLLIDEMESH_CTOR),
-		Game_Ptr(CCOLLIDEMESH_DTOR));
-	crt_eh_vector_ctor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, Game_Ptr(CCOLLIDEMESH_CTOR),
-		Game_Ptr(CCOLLIDEMESH_DTOR));
+	crt_eh_vector_ctor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_ctor, CCOLLIDEMESH_CTOR),
+		GAME_FUNC(CCollideMesh_dtor, CCOLLIDEMESH_DTOR));
+	crt_eh_vector_ctor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_ctor, CCOLLIDEMESH_CTOR),
+		GAME_FUNC(CCollideMesh_dtor, CCOLLIDEMESH_DTOR));
 	CCollideMesh_ctor(&self->CollideMesh1);
 	CCollideMesh_ctor(&self->CollideMesh2);
 	memset(&self->ext, 0, sizeof(self->ext) + sizeof(self->dim));
@@ -224,7 +224,7 @@ CAlturas *__fastcall CAlturas_ctor(CAlturas *self) {
 
 static void Alturas_FreeCuads(CAlturas *self) {
 	if (self->cuads) {
-		Delete_Objects(self->cuads, sizeof(CCollideQuad), CCOLLIDEQUAD_DTOR);
+		Delete_Objects(self->cuads, sizeof(CCollideQuad), GAME_FUNC(CCollideQuad_dtor, CCOLLIDEQUAD_DTOR));
 		self->cuads = NULL;
 		self->nCuads = 0;
 	}
@@ -248,8 +248,8 @@ void __fastcall CAlturas_dtor(CAlturas *self) {
 	Alturas_FreeCuads(self);
 	CCollideMesh_dtor(&self->CollideMesh2);
 	CCollideMesh_dtor(&self->CollideMesh1);
-	crt_eh_vector_dtor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, Game_Ptr(CCOLLIDEMESH_DTOR));
-	crt_eh_vector_dtor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, Game_Ptr(CCOLLIDEMESH_DTOR));
+	crt_eh_vector_dtor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_dtor, CCOLLIDEMESH_DTOR));
+	crt_eh_vector_dtor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_dtor, CCOLLIDEMESH_DTOR));
 }
 
 /* CSuelo */

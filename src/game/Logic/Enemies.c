@@ -138,9 +138,9 @@ void __fastcall cEnemies_Think(cEnemies *self) {
 void __fastcall cEnemies_Init(cEnemies *self) {
 	self->attacking = 0;
 	self->list = cWorld_NewEntityList(g_pWorld, "Enemies");
-	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)Game_Ptr(0x146bb0));
-	cPy_Function_SetNative(&self->list->onDeath, (nativefunc_t)Game_Ptr(0x146bb0));
-	self->list->func = (int (*)(void))Game_Ptr(0x146d90);
+	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)GAME_FUNC(Logic_NativeNop, 0x146bb0));
+	cPy_Function_SetNative(&self->list->onDeath, (nativefunc_t)GAME_FUNC(Logic_NativeNop, 0x146bb0));
+	self->list->func = (int (*)(void))GAME_FUNC(Enemies_MakeLogic, 0x146d90);
 }
 
 /* "IgnoreFriends", a flag of the world (+0x2174, the field of World_Enemies) for every ship */

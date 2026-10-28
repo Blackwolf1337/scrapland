@@ -910,6 +910,104 @@ The log of datagen.py:
 On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios (sdtest 1487 checks, sdcall
 29078, sdlevel 19095), and so does the hook DLL difftest.
 
+### Stage 3c1b: the last data of the original (done)
+
+Of the 24 KB that stayed bytes after stage 3b5, only the import part is left (stage 3c1a): the import directory, the
+import address table, the names and the import thunks of the game. Everything else is C or no longer read, and the C of
+ScrapC.exe computes no address from an rva of the original. The hook DLL works by rva as before: every form below is
+`Game_Ptr(rva)` there.
+
+The initializer table. `tools/standalone/xctable.py -w` writes `src/standalone/crtxc.inc` from the `__xc` table of the
+original (0x3a15bc..0x3a31bc): one `CRT_XC(name, rva)` line per initializer in its order, the C function the hook at the
+rva jumps to (1790 of them; the zero entries and the CRT's own are left out). Without `-w` it checks the file.
+`src/standalone/crtxc.c` makes the table of function pointers, and `Crt_Main` calls it. The `__xi` entries all belong
+to the CRT, `Crt_InitState` sets what they set. `App_WinMain` gets `GetModuleHandleA(NULL)`.
+
+The dinput8 data formats. The game passes `c_dfDIKeyboard` and `c_dfDIMouse` to SetDataFormat. Those of mingw's
+libdinput8 hold the same objects as the original's (its 4.2 KB at 0x001000..0x002070 in .text): the same header, and
+for all 256 and 7 objects the same GUID, offset, type and flags. ScrapC.exe links them (`-ldinput8 -ldxguid`, written
+as flags: `dinput8` alone is the target of the hook DLL), `GAME_DF_KEYBOARD` and `GAME_DF_MOUSE` of game.h are those in
+ScrapC.exe and the exe's in the hook DLL. `TEXT_KEEP` of sdexe.py has only the import thunks now, datagen.py starts the
+room with an uninitialized section when the first piece lies behind rva 0x1000.
+
+The IError type descriptor is a C copy in `Gog.c` for both builds: `Msvc_CatchAs` compares the descriptor pointer and
+the decorated name, the descriptors of Galaxy.dll are its own, so only the name counts.
+
+The rest was read by nobody. `datamap.py --relabel` now also drops the users that are gone (`relabel_3c1b`, idempotent,
+the map gives the same result from the one of stage 3b5):
+
+- the rows of `GONE_3C1B`: `Crt_Main` in the initializer table, the data formats (kind `library dinput8` now, also the
+  two DIDATAFORMAT at 0x3cfbec and 0x3cfdf4; the rest of the old row at 0x3cfc04 is game data without a user), and
+  `Gog_CatchError` in the type descriptor
+- in the data of the libraries, the RTTI and the exception tables: the margins of the probe (a retired page), the
+  numbers of the tests and of the tables of the C, which only look like rvas there (`0x400000`, a color 0x404040, the
+  absolute address of a function through `symva`). Their code is int3, the C reads none of it. The static scan of
+  datamap.py leaves such numbers out too (`LibraryData`), and `numbers()` of testsyms.py gives the rva of a `symva` name
+  instead of its address
+- the pointers to the RTTI that rows of other kinds held (kind `rtti` now): 56 before the vtables, nothing reads
+  `vtable[-1]`, the C has no RTTI, and the 2 of a base class array at 0x410064
+- the rows in the Python data of origpython.h are kind `library python` (the 16 bytes at 0x432b50)
+- then, to a fixpoint, the `ptr` users from data that is no longer kept (the strings and type objects behind the module
+  table and `PyString_Type` of the original's Python, `type_info::vftable` behind the type descriptors)
+
+datagen.py stops the build when it would build in a byte of the original that is no C object and not the import part.
+
+The address uses of the C:
+
+- `GAME_FUNC(name, rva)` of game.h is the address of a function of the exe: in ScrapC.exe the C function `name` (an asm
+  label reference, so no prototype is needed; stdcall and fastcall names get their decoration from
+  `--enable-stdcall-fixup`). The 215 `Game_Ptr` of function rvas (constructors and destructors for the vector
+  iterators, natives of the scripts, window and dialog procedures, callbacks, qsort compares) are `GAME_FUNC` now.
+  `New_Objects`, `Delete_Objects`, `Delete_VectorPart`, `Tabla_NewObjs` and `DeleteVecArray` take the functions instead
+  of rvas, `WEAP_NATIVE` is gone, the tables of debris effects (`cDebris_SetFX`) and scorer items (`cScorer_AddItem`)
+  hold `GAME_FUNC` (382 in all). `INIT_NATIVE_FUNC` of StaticInit.inc has the C function as a sixth argument (initpat.py writes it),
+  the string argument of `INIT_CALL_ARGS` is `GAME_STR_AT` (strings.py defines it in StringsAt.h).
+- the inline `GAME_DATA`, `Game_Ptr` and the `K(rva)` doubles of ScraplandScorer.c are `GAME_GLOBAL`, `GAME_ARRAY`, the
+  `_IN` views and `GAME_PTR`. globals.py rewrites the uses in the code now too, not only the defines (each inline claim
+  has its text span, and it is left alone when the claim has no object), and an rva may be the name of a numeric define
+  (`GAME_ARRAY(uint32_t, owner, FXV_RAMP_FIRE)`), which the rewrite keeps.
+- the helpers that took the rva of a ramp, a color table or a guard (`FXC_Ramp`, `FXV_Ramp`, `Press_Ramp`, `FXS_RAMP`,
+  `Particles_Emit`, `Sirens_Flash`, `VME_Colors`, `VME_StaticBegin`, `VME_ExhaustLine`) take the pointer, and the
+  `Game_Ptr(base + k * 0x24)` of a random ramp is `(uint32_t *)Game_Ptr(base) + 9 * k` before the rewrite.
+- the static tables of rvas are local tables of addresses in their functions (the variables of m3d.ini in
+  `Motor_LoadIni`, the stores of `CircuitScorer_InitPaths`, the checkboxes of `Bsp_DlgProc`, the font globals, the LOD
+  groups, the light colors of `Luz_SetDefault`); `txfKind_t` of BmpFlt.c names its header by the version.
+- `__security_check_cookie` of crt.c compares with `crt_security_cookie` (a define of crt.h, the C object at 0x43cfdc).
+- the unused import `ActionSet_IsNamed` is gone (`cString_EqStr` hooks that rva).
+
+The new claims changed some objects of globals.py, all checked by datagen.py against the bytes: the color tables of
+the exhaust are `uint32_t[10]` (the float before each of them was its first color), the source rows of the circuit
+paths are 16 byte objects, the ramp tables split where the C takes a ramp, the guards of the function statics of
+VehicleMotorsEffects.c are `int` objects. An address the C takes inside an array of known length is a view of it (the
+stores into `g_CircuitPaths`). A pointer of the original into data that stays bytes is an error of globals.py now,
+`SD_ORIG` is gone.
+
+The checks. In ScrapC.exe (game.h), `Game_Ptr` exists only where `SD_GAME_RVA` is defined (the rva lookup of
+testmod.c, which stage 3c switches), and `GAME_DATA` has a `static_assert` that its rva is a constant in the import
+address table (stage 3c1a removes those uses); any other use does not compile. `tools/standalone/rvacheck.py` runs after
+the link of ScrapC.exe: every `GAME_FUNC` and `INIT_NATIVE_FUNC` names the C function of the hook at its rva,
+`game_base` appears only in the hook installer, testmod.c, game.c, the room code of main.c and dataprobe.c, and
+`SD_ORIG` nowhere.
+
+Five checks of the tests compared a stored function pointer with the address of the exe (`sdlevel_weap2.py`,
+`sdlevel_scorer3.py`, `sdlevel_net.py`, `sdcall_input.py`, `sdcall_restb.py`). ScrapC.exe stores the C function now,
+so they use `isfn` of sdlib.py; their lines print 1 in place of the address.
+
+The log of datagen.py:
+
+    datagen.py: 15 sections, 10430 bytes of data, 2 pointers into the Python lead to the real one, 14482 C objects
+    datagen.py:   .text        372 bytes of the original (309 non-zero), 0 in 0 C objects
+    datagen.py:   .bss_ste       0 bytes of the original (0 non-zero), 66240 in 22 C objects (66240 of them bss in 22)
+    datagen.py:   .rdata     10058 bytes of the original (8272 non-zero), 293504 in 11119 C objects
+    datagen.py:   .data          0 bytes of the original (0 non-zero), 711420 in 3338 C objects (667320 of them bss in 2674)
+    datagen.py:   .gfids         0 bytes of the original (0 non-zero), 1272 in 3 C objects
+
+(before: .text 4580, .rdata 17786, .data 1628, _RDATA 4; the 2 pointers into the Python lie in C objects). The .rdata
+bytes are the import directory, the import address table and the names, the .text bytes the import thunks.
+
+On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios (sdtest 9965 checks, sdcall
+29078, sdlevel 19095), and so does the hook DLL difftest.
+
 ## Stage 4: English names
 
 The Spanish names of the original stay until the C is complete, then everything is translated.

@@ -546,7 +546,7 @@ void DbgWin_Open(void *hwnd) {
 	}
 	g_DbgWinOpen = 1;
 	g_DbgWnd = exe_CreateDialogParamA((void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE), (const char *)DBGWIN_DIALOG, hwnd,
-		Game_Ptr(DBGWIN_PROC), 0);
+		GAME_FUNC(DbgWin_DlgProc, DBGWIN_PROC), 0);
 }
 
 /* the debug output on with the dialog or the text console of the ini */
@@ -559,7 +559,7 @@ void DbgWin_Init(void *hwnd) {
 	if (g_DbgConWindow && !g_DbgWinOpen && !g_DbgWnd) {
 		g_DbgWinOpen = 1;
 		g_DbgWnd = exe_CreateDialogParamA((void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE),
-			(const char *)DBGWIN_DIALOG, hwnd, Game_Ptr(DBGWIN_PROC), 0);
+			(const char *)DBGWIN_DIALOG, hwnd, GAME_FUNC(DbgWin_DlgProc, DBGWIN_PROC), 0);
 	}
 	if (g_DbgConStd) {
 		DbgStd_Open(hwnd);

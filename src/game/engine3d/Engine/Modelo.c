@@ -89,7 +89,7 @@ static void Modelo_AddMove(CModelo *self, const vec3_t *r) {
 
 static void Lods_Delete(CTabla *t) {
 	if (t->p) {
-		Delete_Objects(t->p, sizeof(CLod), CLOD_DTOR);
+		Delete_Objects(t->p, sizeof(CLod), GAME_FUNC(CLod_dtor, CLOD_DTOR));
 		t->p = NULL;
 		t->n = 0;
 	}
@@ -172,10 +172,10 @@ void __fastcall CModelo_dtor(CModelo *self) {
 }
 
 /* the array branch of the vector deleting destructors: the count before the objects, the destructor on each */
-static void *DeleteVecArray(void *self, uint32_t flags, uint32_t size, uint32_t dtor) {
+static void *DeleteVecArray(void *self, uint32_t flags, uint32_t size, void *dtor) {
 	uint32_t *mem = (uint32_t *)self - 1;
 
-	crt_eh_vector_dtor(self, size, *mem, Game_Ptr(dtor));
+	crt_eh_vector_dtor(self, size, *mem, dtor);
 	if (flags & 1) {
 		operator_delete_array(mem);
 	}
@@ -184,7 +184,7 @@ static void *DeleteVecArray(void *self, uint32_t flags, uint32_t size, uint32_t 
 
 void *__thiscall CLod_DeleteVec(CLod *self, uint32_t flags) {
 	if (flags & 2) {
-		return DeleteVecArray(self, flags, sizeof(CLod), CLOD_DTOR);
+		return DeleteVecArray(self, flags, sizeof(CLod), GAME_FUNC(CLod_dtor, CLOD_DTOR));
 	}
 	CLod_dtor(self);
 	if (flags & 1) {
@@ -195,7 +195,7 @@ void *__thiscall CLod_DeleteVec(CLod *self, uint32_t flags) {
 
 void *__thiscall CNodoR_DeleteVec(CNodoR *self, uint32_t flags) {
 	if (flags & 2) {
-		return DeleteVecArray(self, flags, sizeof(CNodoR), CNODOR_DTOR);
+		return DeleteVecArray(self, flags, sizeof(CNodoR), GAME_FUNC(CNodoR_dtor, CNODOR_DTOR));
 	}
 	CNodoR_dtor(self);
 	if (flags & 1) {
@@ -634,7 +634,7 @@ void __thiscall CModelo_SetEscena(CModelo *self, CEscena *esc) {
 
 	if (tab) {
 		if (tab->p) {
-			Delete_Objects(tab->p, sizeof(CNodoR), CNODOR_DTOR);
+			Delete_Objects(tab->p, sizeof(CNodoR), GAME_FUNC(CNodoR_dtor, CNODOR_DTOR));
 			tab->p = NULL;
 			tab->n = 0;
 		}

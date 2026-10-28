@@ -209,7 +209,7 @@ byte Net_InitServer(const char *name, int a, int b, int c) {
 	CWinApp_LoadLevel(g_pApp, name);
 	g_NetServerData = Mem_Alloc(24000);
 	g_NetServerCtl = Mem_Alloc(24000);
-	MsgMan_SetUserFactory((netuserfactory_t)Game_Ptr(0x18afd0));
+	MsgMan_SetUserFactory((netuserfactory_t)GAME_FUNC(Net_NewClientManager, 0x18afd0));
 	Net_Init();
 	if (g_pApp->vftable->IsDedicatedWin(g_pApp)) {
 		Transport_SetMaster(g_MasterServerAddress, (uint16_t)g_MasterServerPort);

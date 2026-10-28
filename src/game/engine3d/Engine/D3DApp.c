@@ -404,7 +404,7 @@ int __thiscall CD3DApp_UserSelectNewDevice(byte *self) {
 		return E_FAIL;
 	}
 	/* the device dialog (resource 0x90), SelectDeviceProc */
-	if (exe_DialogBoxParamA(exe_GetModuleHandleA(NULL), (const char *)0x90, MOTOR_HWND(self), Game_Ptr(0x275960),
+	if (exe_DialogBoxParamA(exe_GetModuleHandleA(NULL), (const char *)0x90, MOTOR_HWND(self), GAME_FUNC(D3DApp_SelectDeviceProc, 0x275960),
 		(intptr_t)self) != 1) {
 		return 0;
 	}
@@ -556,7 +556,7 @@ int __thiscall CD3DApp_Create(byte *self, void *inst) {
 	}
 	if (!MOTOR_HWND(self)) {
 		wc.style = 0;
-		wc.wndProc = Game_Ptr(0x276460);	/* WndProc */
+		wc.wndProc = GAME_FUNC(D3DApp_WndProc, 0x276460);	/* WndProc */
 		wc.clsExtra = 0;
 		wc.wndExtra = 0;
 		wc.hInstance = inst;
@@ -606,10 +606,10 @@ int __thiscall CD3DApp_DisplayErrorMsg(byte *self, int hr, int type) {
 		s = GAME_STR(str_3dd490, 0x3dd490);
 		break;
 	case 0x8007000e:		/* E_OUTOFMEMORY */
-		s = Game_Ptr(0x3dd84c);
+		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd84c, 0, 0x3dd84c);
 		break;
 	case 0x8876017c:		/* D3DERR_OUTOFVIDEOMEMORY */
-		s = Game_Ptr(0x3dd860);
+		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd860, 0, 0x3dd860);
 		break;
 	case D3DAPPERR_NOCOMPATIBLEDEVICES:
 		s = GAME_STR(str_3dd508, 0x3dd508);
@@ -618,13 +618,13 @@ int __thiscall CD3DApp_DisplayErrorMsg(byte *self, int hr, int type) {
 		s = GAME_STR(str_3dd538, 0x3dd538);
 		break;
 	case D3DAPPERR_NOHARDWAREDEVICE:
-		s = Game_Ptr(0x3dd5e4);
+		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd5e4, 0, 0x3dd5e4);
 		break;
 	case D3DAPPERR_HALNOTCOMPATIBLE:
 		s = GAME_STR(str_3dd620, 0x3dd620);
 		break;
 	case D3DAPPERR_NOWINDOWEDHAL:
-		s = Game_Ptr(0x3dd688);
+		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd688, 0, 0x3dd688);
 		break;
 	case D3DAPPERR_NODESKTOPHAL:
 		s = GAME_STR(str_3dd6d0, 0x3dd6d0);
@@ -636,13 +636,13 @@ int __thiscall CD3DApp_DisplayErrorMsg(byte *self, int hr, int type) {
 		s = GAME_STR(str_3dd7f0, 0x3dd7f0);
 		break;
 	case 0x8200000b:		/* D3DAPPERR_MEDIANOTFOUND */
-		s = Game_Ptr(0x3dd7cc);
+		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd7cc, 0, 0x3dd7cc);
 		break;
 	case D3DAPPERR_RESIZEFAILED:
-		s = Game_Ptr(0x3d69f8);
+		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3d69f8, 0, 0x3d69f8);
 		break;
 	default:
-		s = Game_Ptr(0x3dd87c);	/* "Generic application error." */
+		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd87c, 0, 0x3dd87c);	/* "Generic application error." */
 		break;
 	}
 	Str_Copy(msg, s, sizeof(msg));
@@ -714,7 +714,7 @@ int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 				fmts[nFmts++] = dm.Format;
 			}
 		}
-		crt_qsort(modes, nModes, sizeof(D3DDisplayMode), Game_Ptr(0x276090));	/* D3DApp_SortModes */
+		crt_qsort(modes, nModes, sizeof(D3DDisplayMode), GAME_FUNC(D3DApp_SortModes, 0x276090));	/* D3DApp_SortModes */
 		for (int t = 0; t < 2; t++) {
 			D3DDeviceInfo *dev = &ad->devices[ad->dwNumDevices];
 			dev->DeviceType = types[t];

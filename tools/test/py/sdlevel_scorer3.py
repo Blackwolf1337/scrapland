@@ -472,7 +472,7 @@ if sc3a and sc3sc:
 	SDTest.Call('cPy_Function_ctor', 'tii', sc3fn)
 	check('SC3 EditText', lambda a=sc3a: (sc3native('EditText', 'sc3Text'), sc3b(a + 0xd0), sc3i(sym('g_TextEditItem') +
 		0x400000) == a, sc3i(sc3sc + 0x50), SDTest.Peek(sym('g_PlayerInput') + 0x8, 's'), SDTest.Peek('g_PlayerInput', 'i'),
-		SDTest.Peek(sym('g_PlayerInput') + 0x98, 'i') - 0x400000, sc3fl(a + 0xc8, 1), SDTest.Peek(sc3sc + 0x30, '@p'),
+		isfn(SDTest.Peek(sym('g_PlayerInput') + 0x98, 'i'), sym('TextEdit_Done')), sc3fl(a + 0xc8, 1), SDTest.Peek(sc3sc + 0x30, '@p'),
 		SDTest.Peek('g_VirtualKeyboard', 's')))
 	SDTest.Call('cPy_Function_dtor', 'tvi', sc3fn)
 	sc3free(sc3fn)

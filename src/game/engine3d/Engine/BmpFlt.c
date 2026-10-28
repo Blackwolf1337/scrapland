@@ -19,10 +19,13 @@
 #define RGB 3
 
 typedef struct {
-	uint32_t cab;			/* rva of the header */
-	int version;
+	int version;			/* 1 RGBA (the header g_TXFCab), 2 RGB (g_TXFCab2) */
 	int ch;
 } txfKind_t;
+
+static TXF_cab *TXF_Cab(const txfKind_t *k) {
+	return k->version == 1 ? g_TXFCab : g_TXFCab2;
+}
 
 static float *BmpFlt_Pixel(const CBmpFlt *b, uint32_t x, uint32_t y, int ch) {
 	return Img_Pixel(b, x, y, ch * sizeof(float));
@@ -37,7 +40,7 @@ static void BmpFlt_Create(CBmpFlt *b, int ancho, int alto, int ch) {
 }
 
 static int TXF_LoadKind(const txfKind_t *k, const char *name, CBmpFlt *dest, void *extra, int nbytes) {
-	TXF_cab *cab = Game_Ptr(k->cab);
+	TXF_cab *cab = TXF_Cab(k);
 
 	CHECK(name && dest);
 	void *f = crt_fsopen(name, "rb", CRT_SH_DENYWR);
@@ -72,7 +75,7 @@ fail:
 
 static int TXF_SaveKind(const txfKind_t *k, const char *name, const CBmpFlt *orig, byte flags, const void *extra,
 	int nbytes) {
-	TXF_cab *cab = Game_Ptr(k->cab);
+	TXF_cab *cab = TXF_Cab(k);
 
 	CHECK(name && orig && orig->img);
 	if (!(flags & TXF_OVERWRITE)) {
@@ -155,8 +158,8 @@ static void BmpFlt_Blend(CBmpFlt *self, int x, int y, const CBmpFlt *orig, int o
 	}
 }
 
-static const txfKind_t txfRgba = { TXF_CAB, 1, RGBA };
-static const txfKind_t txfRgb = { TXF2_CAB, 2, RGB };
+static const txfKind_t txfRgba = { 1, RGBA };
+static const txfKind_t txfRgb = { 2, RGB };
 
 float *__thiscall CBmpFlt_Pixel(const CBmpFlt *self, uint32_t x, uint32_t y) {
 	return BmpFlt_Pixel(self, x, y, RGBA);

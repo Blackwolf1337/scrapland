@@ -11,11 +11,11 @@ cGenCharGroup *__fastcall cGenCharGroup_ctor(cGenCharGroup *self) {
 	self->level = -1;
 	self->timer = 0.0f;
 	self->attackers = 0;
-	g_BishopAttackOnAlarm = GAME_DATA(int, 0x44cc04);
+	g_BishopAttackOnAlarm = GAME_GLOBAL_IN(int, GVar_BishopAttackOnAlarm, 20, 0x44cc04);
 	void *m = operator_new(0x14);
 	self->messengers = m ? cMessengers_ctor(m) : NULL;
-	g_BankDirectorAgressive = GAME_DATA(int, 0x44cb74);
-	g_GenCharAttackActive = GAME_DATA(int, 0x44d1e0);
+	g_BankDirectorAgressive = GAME_GLOBAL_IN(int, GVar_BankDirectorAgressive, 20, 0x44cb74);
+	g_GenCharAttackActive = GAME_GLOBAL_IN(int, GVar_GenCharAttackActive, 20, 0x44d1e0);
 	return self;
 }
 
@@ -56,7 +56,7 @@ int __fastcall cGenCharGroup_GetLevel(cGenCharGroup *self) {
 }
 
 void __fastcall cGenCharGroup_Init(cGenCharGroup *self) {
-	int (*make)(void) = (int (*)(void))Game_Ptr(0x14b860);
+	int (*make)(void) = (int (*)(void))GAME_FUNC(GenCharGroup_MakeLogic, 0x14b860);
 	cEntityListData *l = cWorld_NewEntityList(g_pWorld, "Bishop");
 
 	self->bishops = l;

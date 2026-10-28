@@ -8,21 +8,18 @@
 #include "scrap/e3dutil.h"
 #include "scrap/scrapfont.h"
 
-static const struct {
-	const char *name;
-	uint32_t rva;
-} fontTab[7] = {
-	{ "Terminal8", 0x4a8908 },
-	{ "Terminal8Fixed", 0x4a890c },
-	{ "BigNumbers", 0x4a8910 },
-	{ "ScrapBig", 0x4a8914 },
-	{ "ScrapMedium", 0x4a8918 },
-	{ "Horatio", 0x4a891c },
-	{ "HoratioSmall", 0x4a8920 },
+static const char *const fontNames[7] = {
+	"Terminal8", "Terminal8Fixed", "BigNumbers", "ScrapBig", "ScrapMedium", "Horatio", "HoratioSmall",
 };
 
+/* the global of the font, in the order of fontNames */
 static CFont **Font_Slot(int i) {
-	return (CFont **)Game_Ptr(fontTab[i].rva);
+	CFont **slots[7] = {
+		&GAME_GLOBAL(CFont *, g_FontTerminal8, 0x4a8908), &GAME_GLOBAL(CFont *, g_FontTerminal8Fixed, 0x4a890c), &GAME_GLOBAL(CFont *, g_FontBigNumbers, 0x4a8910),
+		&GAME_GLOBAL(CFont *, g_FontScrapBig, 0x4a8914), &GAME_GLOBAL(CFont *, g_FontScrapMedium, 0x4a8918), &GAME_GLOBAL(CFont *, g_FontHoratio, 0x4a891c),
+		&GAME_GLOBAL(CFont *, g_FontHoratioSmall, 0x4a8920),
+	};
+	return slots[i];
 }
 
 byte Font_Build(const char *name, int size) {
@@ -50,7 +47,7 @@ void Fonts_Unload(void) {
 
 CFont *Font_Get(const char *name) {
 	for (int i = 0; i < 7; i++) {
-		if (!crt_stricmp(name, fontTab[i].name)) {
+		if (!crt_stricmp(name, fontNames[i])) {
 			return *Font_Slot(i);
 		}
 	}
@@ -73,7 +70,7 @@ void Fonts_Load(void) {
 		}
 		CFont *f = operator_new(sizeof(CFont));
 		*slot = f ? CFont_ctor(f, NULL, NULL) : NULL;
-		CFont_Load(*slot, fontTab[i].name, NULL, &ini);
+		CFont_Load(*slot, fontNames[i], NULL, &ini);
 	}
 	CUnifont_Load(&g_Unifont);
 	CArchINI_dtor(&ini);

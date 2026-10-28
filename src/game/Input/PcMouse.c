@@ -14,7 +14,6 @@
 #include "scrap/weapons.h"
 
 #define GUID_SYSMOUSE ((const void *)GAME_PTR(GUID_SYSMOUSE, 0, 0x3d100c))
-#define C_DFDIMOUSE ((const void *)GAME_PTR(C_DFDIMOUSE, 0, 0x3cfdf4))
 #define MOUSE_NAME GAME_STR(str_3bca74, 0x3bca74)	/* "Mouse" */
 #define g_MouseLabelBuf (GAME_ARRAY(char, g_MouseLabelBuf, 0x44c904))	/* 0x20 bytes */
 #define g_MouseNameBuf (GAME_ARRAY(char, g_MouseNameBuf, 0x44c924))	/* 0x20 bytes */
@@ -129,7 +128,7 @@ int32_t Mouse_Create(void) {
 		return hr;
 	}
 	exe_IDirectInputDevice8 *d = g_MouseDev;
-	hr = d->lpVtbl->SetDataFormat(d, C_DFDIMOUSE);
+	hr = d->lpVtbl->SetDataFormat(d, GAME_DF_MOUSE);
 	if (hr >= 0) {
 		const exe_IDirectInputDevice8Vtbl *vt = g_MouseDev->lpVtbl;
 		void *hwnd = App_GetHWnd();

@@ -132,6 +132,8 @@ class Claim:
 	def __init__(self, rva, etype, form, name, prio, path, span=None, count=None, comment=''):
 		self.rva, self.etype, self.form, self.name, self.prio = rva, etype, form, name, prio
 		self.path, self.span, self.count, self.comment = path, span, count, comment
+		self.rvatok = '0x%06x' % rva	# the rva as the C writes it: a number or the name of a numeric define
+		self.inline = False	# a use in the code, not a define: rewritten only when it has an object
 		self.ctype = None	# ctypeinfo.CType of etype
 		self.size = None
 		self.obj = None		# the object that owns it
@@ -147,9 +149,23 @@ FORMS = re.compile(r'\b(GAME_DATA|GAME_GLOBAL|GAME_GLOBAL_IN|GAME_ARRAY|GAME_ARR
 RVA = re.compile(r'^0x[0-9a-fA-F]+$')
 
 
-def scan_text(path, t, data_lo, data_hi):
-	"""the claims of one source file"""
+NUMDEF = re.compile(r'^[ \t]*#[ \t]*define[ \t]+(\w+)[ \t]+(0x[0-9a-fA-F]+)\b', re.M)
+
+
+def scan_text(path, t, data_lo, data_hi, numdefs):
+	"""the claims of one source file; an rva is a number or the name of a numeric define (of the file, else one with a
+	single value in the sources, numdefs)"""
 	out = []
+	local = {n: int(v, 16) for n, v in NUMDEF.findall(t)}
+
+	def rva_of(tok):
+		if RVA.match(tok):
+			return int(tok, 16)
+		if tok in local:
+			return local[tok]
+		v = numdefs.get(tok)
+		return list(v)[0] if v is not None and len(v) == 1 else None
+
 	defs = []	# (start, end, name) of the object-like defines
 	for m in DEFINE.finditer(t):
 		if m.group(2):
@@ -177,11 +193,10 @@ def scan_text(path, t, data_lo, data_hi):
 		name = defs[i][2] if in_def else None
 		prio = (0 if header else 1) if in_def else 5
 		comment = re.sub(r'^[\s\)]*', '', t[end:t.find('\n', end)])
+		start = len(out)
 		if what == 'Game_Ptr':
-			if len(args) != 1 or not RVA.match(args[0]):
-				continue
-			rva = int(args[0], 16)
-			if not data_lo <= rva < data_hi:
+			rva = rva_of(args[0]) if len(args) == 1 else None
+			if rva is None or not data_lo <= rva < data_hi:
 				continue
 			# a cast before it, and a * before the cast for an object
 			p = m.start() - 1
@@ -199,33 +214,35 @@ def scan_text(path, t, data_lo, data_hi):
 						cast = None
 			e = deref(cast) if cast else None
 			if e is None or re.match(r'^(const\s+)?void$', e):
-				out.append(Claim(rva, None, 'addr', name, prio, path, (m.start(), end) if in_def else None))
+				out.append(Claim(rva, None, 'addr', name, prio, path, (m.start(), end)))
 			elif q >= 0 and t[q] == '*' and (q == 0 or t[q - 1] in '( \t'):
-				out.append(Claim(rva, e, 'global', name, prio, path, (q, end) if in_def else None))
+				out.append(Claim(rva, e, 'global', name, prio, path, (q, end)))
 			else:
-				out.append(Claim(rva, e, 'array', name, prio, path, (o, end) if in_def else None, comment=comment))
+				out.append(Claim(rva, e, 'array', name, prio, path, (o, end), comment=comment))
+			mark(out[start:], args[0], in_def)
 			continue
+		n = {'GAME_DATA': 2, 'GAME_GLOBAL': 3, 'GAME_ARRAY': 3, 'GAME_GLOBAL_IN': 4, 'GAME_ARRAY_IN': 4, 'GAME_PTR': 3}
+		if len(args) != n[what]:
+			continue
+		rva = rva_of(args[-1])
+		if rva is None:
+			continue
+		span = (m.start(), end)
 		if what == 'GAME_DATA':
-			if len(args) != 2 or not RVA.match(args[1]):
-				continue
-			c = Claim(int(args[1], 16), args[0], 'global', name, prio, path, (m.start(), end) if in_def else None,
-				comment=comment)
-			out.append(c)
-		elif what in ('GAME_GLOBAL', 'GAME_ARRAY'):
-			if len(args) != 3 or not RVA.match(args[2]):
-				continue
-			out.append(Claim(int(args[2], 16), args[0], 'global' if what == 'GAME_GLOBAL' else 'array', name, prio,
-				path, (m.start(), end) if in_def else None, comment=comment))
-		elif what in ('GAME_GLOBAL_IN', 'GAME_ARRAY_IN'):
-			if len(args) != 4 or not RVA.match(args[3]):
-				continue
-			out.append(Claim(int(args[3], 16), args[0], 'global' if what == 'GAME_GLOBAL_IN' else 'array', name, prio,
-				path, (m.start(), end) if in_def else None, comment=comment))
-		elif what == 'GAME_PTR':
-			if len(args) != 3 or not RVA.match(args[2]):
-				continue
-			out.append(Claim(int(args[2], 16), None, 'addr', name, prio, path, (m.start(), end) if in_def else None))
+			out.append(Claim(rva, args[0], 'global', name, prio, path, span, comment=comment))
+		elif what in ('GAME_GLOBAL', 'GAME_ARRAY', 'GAME_GLOBAL_IN', 'GAME_ARRAY_IN'):
+			out.append(Claim(rva, args[0], 'global' if what.startswith('GAME_GLOBAL') else 'array', name, prio, path,
+				span, comment=comment))
+		else:
+			out.append(Claim(rva, None, 'addr', name, prio, path, span))
+		mark(out[start:], args[-1], in_def)
 	return out
+
+
+def mark(claims, tok, in_def):
+	for c in claims:
+		c.rvatok = tok if not RVA.match(tok) else '0x%06x' % c.rva
+		c.inline = not in_def
 
 
 def scan_static_init():
@@ -271,9 +288,13 @@ def scan(x):
 	claims = []
 	texts = {}
 	for path in c_sources():
-		t = open(path, encoding='utf-8').read()
-		texts[path] = t
-		claims += scan_text(path, t, lo, hi)
+		texts[path] = open(path, encoding='utf-8').read()
+	numdefs = collections.defaultdict(set)
+	for t in texts.values():
+		for n, v in NUMDEF.findall(t):
+			numdefs[n].add(int(v, 16))
+	for path, t in texts.items():
+		claims += scan_text(path, t, lo, hi, numdefs)
 		for name, rva in re.findall(r'^SD_PY_MODULE\((\w+), (0x[0-9a-fA-F]+)\)', t, re.M):
 			claims.append(Claim(int(rva, 16), 'PyMethodDef', 'array', name + '_methods', 4, path))
 		# the uses of a define M(rva) GAME_DATA(type, rva) in its file: objects of type
@@ -505,8 +526,10 @@ def sizes(L, claims):
 		hard = min(L.sec_end(lo), L.next_excluded(lo), L.kept_end(lo) if not L.is_bss(lo) else 1 << 32,
 			enclosing_end(lo, esize, me))
 		i = bisect.bisect_right(starts, lo)
+		counted = me is not None and me.count is not None
 		while i < len(starts) and starts[i] < hard:
-			if not all(absorbable(d, lo, esize) for d in by_rva[starts[i]]):
+			# an address the C takes inside an array of a known length is a view of it (stage 3c1b)
+			if not all(absorbable(d, lo, esize) or (counted and d.form == 'addr') for d in by_rva[starts[i]]):
 				hard = starts[i]
 				break
 			i += 1
@@ -957,8 +980,10 @@ class Resolver:
 			return '(void *)%s' % self.alias(name, self.labels.get(name, '_' + name))
 		if t in PY_SYMBOLS:
 			return '(void *)%s' % self.alias(PY_SYMBOLS[t], '_' + PY_SYMBOLS[t])
+		# stage 3c1b: no pointer leads into bytes of the original any more (SD_ORIG is gone)
 		self.orig[x.section(t) or '?'] += 1
-		return 'SD_ORIG(0x%06x)' % t
+		raise InitError('a pointer to rva %06x (%s), which is no C object, C function or Python symbol'
+			% (t, x.section(t) or '?'))
 
 
 class Init:
@@ -1246,7 +1271,7 @@ def write_files(x, L, tops, res, hidx, macro_names):
 				% (k << 16, (k + 1) << 16),
 			' * rvas (docs/standalone.md, stage 3b5), generated by tools/standalone/globals.py, do not edit. The initial',
 			' * values are the original\'s; its pointers are the C objects, functions and Python symbols at their targets',
-			' * (sd_<name>), SD_ORIG for the data that stays bytes of the original. The hook DLL uses the exe\'s own data.',
+			' * (sd_<name>). The hook DLL uses the exe\'s own data.',
 			' * The C reaches them through GAME_GLOBAL, GAME_ARRAY and their _IN views (scrap/game.h).',
 			' */',
 			'#include "scrap/shared.h"',
@@ -1302,31 +1327,32 @@ def rewrite(claims, texts):
 	for a view into an object, GAME_PTR for an address; a claim without an object goes back to GAME_DATA"""
 	edits = collections.defaultdict(list)
 	for c in claims:
-		if not c.span:
+		if not c.span or (c.inline and (c.skip or c.obj is None)):
 			continue
 		if c.skip or c.obj is None:
 			if c.srcform == 'global':
-				new = 'GAME_DATA(%s, 0x%06x)' % (c.etype, c.rva)
+				new = 'GAME_DATA(%s, %s)' % (c.etype, c.rvatok)
 			elif c.srcform == 'array':
-				new = '(%s *)Game_Ptr(0x%06x)' % (c.etype if simple(c.etype) else 'typeof(%s)' % c.etype, c.rva)
+				new = '(%s *)Game_Ptr(%s)' % (c.etype if simple(c.etype) else 'typeof(%s)' % c.etype, c.rvatok)
 			else:
-				new = 'Game_Ptr(0x%06x)' % c.rva
+				new = 'Game_Ptr(%s)' % c.rvatok
 		else:
 			o = c.obj
 			base = o.group or o
 			off = c.rva - base.lo
 			whole = o.group is None and c.rva == o.lo and c.etype == o.etype and c.srcform == c.form and \
 				(c.form != 'array' or c.size == o.size) and o.claims[0].form == c.form
+			r = c.rvatok
 			if c.srcform == 'addr':
-				new = 'GAME_PTR(%s, %d, 0x%06x)' % (base.name, off, c.rva)
+				new = 'GAME_PTR(%s, %d, %s)' % (base.name, off, r)
 			elif whole and c.srcform == 'global':
-				new = 'GAME_GLOBAL(%s, %s, 0x%06x)' % (c.etype, o.name, c.rva)
+				new = 'GAME_GLOBAL(%s, %s, %s)' % (c.etype, o.name, r)
 			elif whole:
-				new = 'GAME_ARRAY(%s, %s, 0x%06x)' % (c.etype, o.name, c.rva)
+				new = 'GAME_ARRAY(%s, %s, %s)' % (c.etype, o.name, r)
 			elif c.srcform == 'global':
-				new = 'GAME_GLOBAL_IN(%s, %s, %d, 0x%06x)' % (c.etype, base.name, off, c.rva)
+				new = 'GAME_GLOBAL_IN(%s, %s, %d, %s)' % (c.etype, base.name, off, r)
 			else:
-				new = 'GAME_ARRAY_IN(%s, %s, %d, 0x%06x)' % (c.etype, base.name, off, c.rva)
+				new = 'GAME_ARRAY_IN(%s, %s, %d, %s)' % (c.etype, base.name, off, r)
 		edits[c.path].append((c.span[0], c.span[1], new))
 	out = {}
 	for path, es in edits.items():

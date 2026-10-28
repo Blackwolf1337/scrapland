@@ -104,7 +104,7 @@ void __fastcall CTextEst_dtor(CTextEst *self) {
 CTextEst *__thiscall CTextEst_Delete(CTextEst *self, byte flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(CTextEst), *mem, Game_Ptr(TEXTEST_DTOR));
+		crt_eh_vector_dtor(self, sizeof(CTextEst), *mem, GAME_FUNC(CTextEst_dtor, TEXTEST_DTOR));
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -770,7 +770,7 @@ void __thiscall CMapa_LoadTexture(CMapa *self, void *dev, CMapa *alpha, int kind
 		}
 		CHECK(!self->TextAni);
 		CHECK(!self->AnimMat);
-		self->TextAni = New_Objects(self->frames, sizeof(CTextEst), TEXTEST_CTOR, TEXTEST_DTOR);
+		self->TextAni = New_Objects(self->frames, sizeof(CTextEst), GAME_FUNC(CTextEst_ctor, TEXTEST_CTOR), GAME_FUNC(CTextEst_dtor, TEXTEST_DTOR));
 		if (self->frames > 0) {
 			char *aname = alphaPath ? abuf : NULL;
 			for (i = 0; i < self->frames; i++) {
@@ -1031,7 +1031,7 @@ void __fastcall CMapa_Release(CMapa *self) {
 	self->animated = 0;
 	self->frames = 0;
 	if (self->TextAni) {
-		Delete_Objects(self->TextAni, sizeof(CTextEst), TEXTEST_DTOR);
+		Delete_Objects(self->TextAni, sizeof(CTextEst), GAME_FUNC(CTextEst_dtor, TEXTEST_DTOR));
 		self->TextAni = NULL;
 	}
 	if (self->AnimMat) {

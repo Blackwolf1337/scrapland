@@ -346,8 +346,8 @@ void Engine_Init(void) {
 	g_TimerQPMult = g_TimerFreqMult;
 	Timer_GetQPFreq(&freq);
 	E3D_LogDebug(g_FileLog, "TimerQPFreq: %d", (int)freq);
-	Engine3D_Create(hInst, hWnd, Game_Ptr(RVA_ENGINE_ONETIMEINIT), Game_Ptr(RVA_ENGINE_FRAMEMOVE),
-		Game_Ptr(RVA_ENGINE_FINALCLEANUP), 0);
+	Engine3D_Create(hInst, hWnd, GAME_FUNC(Engine_OneTimeInit, RVA_ENGINE_ONETIMEINIT), GAME_FUNC(Engine_FrameMove, RVA_ENGINE_FRAMEMOVE),
+		GAME_FUNC(Engine_FinalCleanup, RVA_ENGINE_FINALCLEANUP), 0);
 	MOTOR_FULLSCREEN(g_Motor) = g_FullScreen && !APP_DEDICATED(g_pApp);
 	MOTOR_WIDTH(g_Motor) = g_VideoWidth;
 	MOTOR_HEIGHT(g_Motor) = g_VideoHeight;
@@ -1092,11 +1092,11 @@ void Model_Info(const char *name, int n) {
 	Con_Verbosef("\n");
 	void *hInst = App_GetHInstance();
 	void *hWnd = App_GetHWnd();
-	exe_CreateDialogParamA(hInst, (const char *)0x99, hWnd, Game_Ptr(RVA_MODELDLG_PROC), (intptr_t)e);
+	exe_CreateDialogParamA(hInst, (const char *)0x99, hWnd, GAME_FUNC(Motor_SceneDlgProc, RVA_MODELDLG_PROC), (intptr_t)e);
 }
 
 void Models_List(void) {
-	UtilEscena_Dump((utilPrintf_t)Game_Ptr(RVA_CON_VERBOSEF));
+	UtilEscena_Dump((utilPrintf_t)GAME_FUNC(Con_Verbosef, RVA_CON_VERBOSEF));
 }
 
 /* the original copies its local also when the timer has no value (then uninitialized) */

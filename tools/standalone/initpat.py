@@ -227,7 +227,8 @@ INIT_KINDS = [
 		lambda c: ('INIT_GVAR_FUNCTION', '%s, %s' % (gvar_args(c), '0x%06x' % c['s'] if c['s'] else '0'))),
 	# an entry of the registry of C functions for scripts
 	Kind('native function', ['push {func}', 'push {name}', 'mov ecx, {obj}', 'call $NATIVE_CTOR', 'ret'],
-		lambda c: True, lambda c: ('INIT_NATIVE_FUNC', '0x%06x, 0x%06x, 0x%06x' % (c['obj'], c['name'], c['func']))),
+		lambda c: c['func'] in HOOKS, lambda c: ('INIT_NATIVE_FUNC', '0x%06x, 0x%06x, 0x%06x, %s' % (c['obj'], c['name'],
+			c['func'], HOOKS[c['func']]))),
 	# only the destructor of a global without constructor code
 	Kind('atexit', ['push {fini}', 'call $ATEXIT', 'pop ecx', 'ret'], lambda c: True,
 		lambda c: ('INIT_ATEXIT', '')),
@@ -273,8 +274,8 @@ INIT_KINDS = [
 ]
 
 def arg(v):
-	"""an address of the exe as a pointer, else the number"""
-	return 'Game_Ptr(0x%06x)' % v if v >= 0x1000 else '%d' % v
+	"""an address of the exe as its string (the only one is the name of cVirtualKeyboard_Set), else the number"""
+	return 'GAME_STR_AT(0x%06x)' % v if v >= 0x1000 else '%d' % v
 
 DTOR_KINDS = [
 	Kind('call', ['mov ecx, {obj}', 'jmp {func}'], lambda c: c['func'] in HOOKS,

@@ -6,9 +6,10 @@
  *
  * The entry of the original (rva 0x314919: __security_init_cookie, then __scrt_common_main_seh at 0x31478c) runs
  * the C initializers of the __xi table with _initterm_e, the C++ initializers of the __xc table with _initterm and
- * then WinMain; exit() with its result runs the atexit functions, last registered first. Crt_Main does the same
- * with the tables of the original: every __xi entry and the first __xc one belong to the CRT, the other __xc entries
- * are the dynamic initializers of the game's globals. What the CRT ones set that the game can see is set here.
+ * then WinMain; exit() with its result runs the atexit functions, last registered first. Every __xi entry and the
+ * first __xc one belong to the CRT: what they set that the game can see is set here (Crt_InitState). The other
+ * __xc entries are the dynamic initializers of the game's globals, which Crt_Main calls from the C table of
+ * crtxc.c in the same order.
  */
 #include <float.h>
 #include <limits.h>
@@ -20,13 +21,6 @@
 #include "scrap/app.h"
 #include "scrap/crt.h"
 #include "scrap/game.h"
-#include "scrap/origcrt.h"
-
-/* the bounds the entry code pushes for _initterm_e (rva 0x3147d2) and _initterm (rva 0x3147f8) */
-#define CRT_XI_A 0x3a31c0
-#define CRT_XI_Z 0x3a31e4
-#define CRT_XC_A 0x3a15bc
-#define CRT_XC_Z 0x3a31bc
 
 /* the matherr of the game, which __scrt_common_main_seh registers with __setusermatherr (rva 0x23aae0) */
 int E3D_MathErr(void *exc);
@@ -126,25 +120,15 @@ static void Crt_InitState(void) {
 	__setusermatherr((int (*)(struct _exception *))E3D_MathErr);
 }
 
-/* the dynamic initializers of the game's globals, in the order of the __xc table */
-static void Crt_InitGlobals(void) {
-	const uint32_t *xi = Game_Ptr(CRT_XI_A), *xc = Game_Ptr(CRT_XC_A);
-	int n = 0;
+/* the dynamic initializers of the game's globals, in the order of the __xc table of the original (crtxc.c) */
+extern void (*const crt_xc[])(void);
+extern const int crt_xc_count;
 
-	for (; xi < (const uint32_t *)Game_Ptr(CRT_XI_Z); xi++) {
-		if (*xi && (*xi - 0x400000 < ORIG_CRT_CODE_START || *xi - 0x400000 >= ORIG_CRT_CODE_END)) {
-			Com_Printf("crt: the __xi initializer at rva %06x is not the CRT's\n", (unsigned)(*xi - 0x400000));
-		}
+static void Crt_InitGlobals(void) {
+	for (int i = 0; i < crt_xc_count; i++) {
+		crt_xc[i]();
 	}
-	for (; xc < (const uint32_t *)Game_Ptr(CRT_XC_Z); xc++) {
-		uint32_t rva = *xc - 0x400000;
-		if (!*xc || (rva >= ORIG_CRT_CODE_START && rva < ORIG_CRT_CODE_END)) {
-			continue;
-		}
-		((void (*)(void))Game_Ptr(rva))();
-		n++;
-	}
-	Com_Printf("crt: %d initializers of the game run\n", n);
+	Com_Printf("crt: %d initializers of the game run\n", crt_xc_count);
 }
 
 /* __scrt_get_show_window_mode (rva 0x314d21) */
@@ -159,5 +143,5 @@ static int Crt_ShowMode(void) {
 [[noreturn]] void Crt_Main(void) {
 	Crt_InitState();
 	Crt_InitGlobals();
-	crt_exit(App_WinMain(Game_Ptr(0), NULL, _get_narrow_winmain_command_line(), Crt_ShowMode()));
+	crt_exit(App_WinMain(GetModuleHandleA(NULL), NULL, _get_narrow_winmain_command_line(), Crt_ShowMode()));
 }

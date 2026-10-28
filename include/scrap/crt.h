@@ -202,5 +202,7 @@ static inline int crt_InitEpochAt(uint32_t index) {
 }
 #define crt_InitEpoch() crt_InitEpochAt(g_TlsIndex)
 #endif
+/* __security_cookie of the exe, which __security_check_cookie (src/standalone/crt.c) compares with */
+#define crt_security_cookie GAME_GLOBAL(uint32_t, crt_security_cookie, 0x43cfdc)
 
 #endif

@@ -69,7 +69,7 @@ void ChType_BertoHitEvent(cAbstractFile *params) {
 	if (WChar_Cam(g_BertoEnt)) {
 		cPad_Rumble(&g_Pads[0], 0.0f, 0.5f, 0.25f);
 	}
-	cPy_Function_SetNative(g_OnFlash, (nativefunc_t)Game_Ptr(CHTYPE_BERTOFLASHHIT));
+	cPy_Function_SetNative(g_OnFlash, (nativefunc_t)GAME_FUNC(ChType_BertoFlashHit, CHTYPE_BERTOFLASHHIT));
 	float radius = g_BertoFlashDist;
 	const vec3_t *pos = g_BertoEnt->vftable->GetPos(g_BertoEnt, &tmp);
 	Logic_Flash(pos, radius, 1);

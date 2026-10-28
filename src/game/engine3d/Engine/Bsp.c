@@ -323,7 +323,7 @@ void __fastcall BspVB_Unwind(CRenderVB *self) {
 BspZona *__thiscall BspZona_Delete(BspZona *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(BspZona), *mem, Game_Ptr(BSPZONA_DTOR));
+		crt_eh_vector_dtor(self, sizeof(BspZona), *mem, GAME_FUNC(BspZona_dtor, BSPZONA_DTOR));
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -338,7 +338,7 @@ BspZona *__thiscall BspZona_Delete(BspZona *self, uint32_t flags) {
 
 void __fastcall Tabla_FreeB4(CTabla *t) {
 	if (t->p) {
-		Delete_Objects(t->p, sizeof(BspZona), BSPZONA_DTOR);
+		Delete_Objects(t->p, sizeof(BspZona), GAME_FUNC(BspZona_dtor, BSPZONA_DTOR));
 		t->p = NULL;
 		t->n = 0;
 	}
@@ -820,7 +820,7 @@ void __thiscall CBsp_DrawPass(CBsp *self, byte pass) {
 	}
 	TABLA_CHECK(self->zonas.p, 0, self->zonas.n);
 	n = CBsp_ListZona(((BspZona *)self->zonas.p)->tris, -1, pass, n);
-	crt_qsort(g_ListaTri, (size_t)n, sizeof(BspTri *), (int (*)(const void *, const void *))Game_Ptr(0x28e4a0));
+	crt_qsort(g_ListaTri, (size_t)n, sizeof(BspTri *), (int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpMat, 0x28e4a0));
 	for (int i = 0; i < n; i++) {
 		CBsp_DrawTri(self, g_ListaTri[i], pass);
 	}
@@ -1020,7 +1020,7 @@ void Bsp_Render(void) {
 	if (!g_MapaSombrasUsar || !g_RenderMap) {
 		return;
 	}
-	g_StencilRender = g_SombrasStencil ? Game_Ptr(0x296d40) : g_StencilRender;
+	g_StencilRender = g_SombrasStencil ? GAME_FUNC(Bsp_RenderStencil, 0x296d40) : g_StencilRender;
 	CBsp_Render(g_Bsp);
 	CModelo_UpdateAnims(g_Bsp->modelo, 0.0f, -1);
 	CModelo_Render(g_Bsp->modelo);
@@ -1532,7 +1532,7 @@ void __fastcall CBsp_AgruparMapas(CBsp *self) {
 		self->listas[self->num_listas++] = self->nolmap[self->num_nolmap];
 	}
 	crt_qsort(self->listas, (size_t)self->num_listas, sizeof(BspTri *),
-		(int (*)(const void *, const void *))Game_Ptr(0x28e520));
+		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZona, 0x28e520));
 	for (int i = 0; i < self->num_listas; i++) {
 		BspTri *list = self->listas[i];
 		E3D_DebugPrintf("agrupar mapas:  %d / %d   mem: %d Kb  \r", i + 1, self->num_listas, g_MemStats->bytes / 1024);
@@ -1584,7 +1584,7 @@ void __fastcall CBsp_AgruparMapas(CBsp *self) {
 		BspLMap_CrearMat(l2, nombre2, 2);
 	}
 	crt_qsort(self->listas, (size_t)self->num_listas, sizeof(BspTri *),
-		(int (*)(const void *, const void *))Game_Ptr(0x28e520));
+		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZona, 0x28e520));
 }
 
 
@@ -1594,7 +1594,7 @@ void __fastcall CBsp_CrearZonas(CBsp *self) {
 	int n = Sector_Num() + 1;
 
 	crt_qsort(self->listas, (size_t)self->num_listas, sizeof(BspTri *),
-		(int (*)(const void *, const void *))Game_Ptr(0x28e520));
+		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZona, 0x28e520));
 	Tabla_NewB4(&self->zonas, n);
 	CHECK(self->zonas.p);
 	memset(self->zonas.p, 0, (size_t)self->zonas.n * sizeof(BspZona));
@@ -2354,7 +2354,7 @@ void __thiscall Bsp_FinMensaje(CBsp *self, int secs) {
 /* the map: made from the floor of the world */
 
 #define g_LmapGuardarIni GAME_GLOBAL_IN(int, g_BspLodDist, 24, 0x43298c)	/* the settings back into the .ini of the map */
-#define g_MapaSombrasDlgCalc ((void *)Game_Ptr(0x282e60))	/* Bsp_DlgProc */
+#define g_MapaSombrasDlgCalc ((void *)GAME_FUNC(Bsp_DlgProc, 0x282e60))	/* Bsp_DlgProc */
 
 typedef int(__stdcall *isdlgbuttonchecked_t)(void *hwnd, int id);
 typedef int(__stdcall *checkdlgbutton_t)(void *hwnd, int id, unsigned check);
@@ -2544,17 +2544,25 @@ void Bsp_DlgEnable(void *hwnd) {
 	}
 }
 
-/* the checkboxes of the dialog and their switches */
-static const struct {
-	int id;
-	uint32_t var;
-} g_BspDlgChecks[] = {
-	{ 0x40a, 0x4b2af8 }, { 0x409, 0x4b2afc }, { 0x40d, 0x4b2b58 }, { 0x40e, 0x4b2b5c }, { 0x411, 0x43298c },
-	{ 0x414, 0x4b2b04 }, { 0x417, 0x4b2b10 }, { 0x41a, 0x4b2b14 }, { 0x418, 0x4b2b18 }, { 0x41b, 0x4b2b1c },
-	{ 0x420, 0x4b2b20 }, { 0x419, 0x4b2b24 },
-};
-
 intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intptr_t lparam) {
+	/* the checkboxes of the dialog and their switches */
+	const struct {
+		int id;
+		int *var;
+	} checks[] = {
+		{ 0x40a, &GAME_GLOBAL(int, g_MapaSombrasUsar, 0x4b2af8) },
+		{ 0x409, &GAME_GLOBAL(int, g_MapaSombrasCalcular, 0x4b2afc) },
+		{ 0x40d, &GAME_GLOBAL(int, g_LmapOpcion58, 0x4b2b58) },
+		{ 0x40e, &GAME_GLOBAL(int, g_LmapInfo, 0x4b2b5c) },
+		{ 0x411, &GAME_GLOBAL_IN(int, g_BspLodDist, 24, 0x43298c) },
+		{ 0x414, &GAME_GLOBAL(int, g_MapaSombrasSuaves, 0x4b2b04) },
+		{ 0x417, &GAME_GLOBAL(int, g_MapaSombrasRadiosidad, 0x4b2b10) },
+		{ 0x41a, &GAME_GLOBAL(int, g_MapaSombrasIlumGlobal, 0x4b2b14) },
+		{ 0x418, &GAME_GLOBAL(int, g_MapaSombrasNoLuzAmb, 0x4b2b18) },
+		{ 0x41b, &GAME_GLOBAL(int, g_MapaSombrasModulate4x, 0x4b2b1c) },
+		{ 0x420, &GAME_GLOBAL(int, g_CalcLmap2, 0x4b2b20) },
+		{ 0x419, &GAME_GLOBAL(int, g_MapaSombrasUsarTxf, 0x4b2b24) },
+	};
 	char buf[0x100];
 
 	(void)lparam;
@@ -2564,24 +2572,24 @@ intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intpt
 	case 0x110:	/* WM_INITDIALOG */
 		Bprintf(buf, sizeof(buf),
 			" brillo = %.2f\n gamma = %.2f\n texturas = %d x %d\n rebotes = %d\n coef. rad = %.2f\n",
-			(double)GAME_DATA(float, 0x432964), (double)GAME_DATA(float, 0x432960), g_MapaSombrasTexX,
-			g_MapaSombrasTexY, GAME_DATA(int, 0x432968), (double)GAME_DATA(float, 0x43296c));
+			(double)GAME_GLOBAL(float, g_MapaSombrasBrillo, 0x432964), (double)GAME_GLOBAL(float, g_MapaSombrasGamma, 0x432960), g_MapaSombrasTexX,
+			g_MapaSombrasTexY, GAME_GLOBAL(int, g_MapaSombrasRebotes, 0x432968), (double)GAME_GLOBAL(float, g_MapaSombrasCoefRad, 0x43296c));
 		exe_SetDlgItemTextA(hwnd, 0x40b, buf);
 		for (int i = 0; i < 12; i++) {
-			exe_CheckDlgButton(hwnd, g_BspDlgChecks[i].id, (unsigned)GAME_DATA(int, g_BspDlgChecks[i].var));
+			exe_CheckDlgButton(hwnd, checks[i].id, (unsigned)*checks[i].var);
 		}
 		Dlg_SetFloat(hwnd, 0x410, g_MapaSombrasEscala, 3);
 		Dlg_SetFloat(hwnd, 0x40f, g_MapaSombrasResol, 3);
-		Dlg_SetFloat(hwnd, 0x41e, GAME_DATA(float, 0x432960), 2);
+		Dlg_SetFloat(hwnd, 0x41e, GAME_GLOBAL(float, g_MapaSombrasGamma, 0x432960), 2);
 		Bsp_DlgEnable(hwnd);
 		return 1;
 	case 0x111:	/* WM_COMMAND */
 		if (wparam == 1) {
 			for (int i = 0; i < 12; i++) {
-				GAME_DATA(int, g_BspDlgChecks[i].var) = exe_IsDlgButtonChecked(hwnd, g_BspDlgChecks[i].id);
+				*checks[i].var = exe_IsDlgButtonChecked(hwnd, checks[i].id);
 			}
 			if (Dlg_GetFloat(hwnd, 0x410, &g_MapaSombrasEscala) && Dlg_GetFloat(hwnd, 0x40f, &g_MapaSombrasResol) &&
-				Dlg_GetFloat(hwnd, 0x41e, &GAME_DATA(float, 0x432960)) && (double)g_MapaSombrasEscala > 0.001 &&
+				Dlg_GetFloat(hwnd, 0x41e, &GAME_GLOBAL(float, g_MapaSombrasGamma, 0x432960)) && (double)g_MapaSombrasEscala > 0.001 &&
 				(double)g_MapaSombrasResol > 0.001) {
 				exe_EndDialog(hwnd, 1);
 				return 1;
@@ -2619,11 +2627,11 @@ void __fastcall CBsp_AjustarGamma(CBsp *self) {
 		E3D_DebugPrintf("ajustar gamma:  %d / %d  \r", ++i, n);
 		if (list->luz2.img) {
 			CBmpFlt2_Blend(&list->luz2, 0, 0, &list->luz, 0, 0, list->luz2.ancho, list->luz2.alto, 0x100, -0x100);
-			CBmpFlt2_Scale(&list->luz2, GAME_DATA(float, 0x432964));
-			CBmpFlt2_Gamma(&list->luz2, GAME_DATA(float, 0x432960), 1.0f);
+			CBmpFlt2_Scale(&list->luz2, GAME_GLOBAL(float, g_MapaSombrasBrillo, 0x432964));
+			CBmpFlt2_Gamma(&list->luz2, GAME_GLOBAL(float, g_MapaSombrasGamma, 0x432960), 1.0f);
 		}
-		CBmpFlt2_Scale(&list->luz, GAME_DATA(float, 0x432964));
-		CBmpFlt2_Gamma(&list->luz, GAME_DATA(float, 0x432960), 1.0f);
+		CBmpFlt2_Scale(&list->luz, GAME_GLOBAL(float, g_MapaSombrasBrillo, 0x432964));
+		CBmpFlt2_Gamma(&list->luz, GAME_GLOBAL(float, g_MapaSombrasGamma, 0x432960), 1.0f);
 		if (g_LightmapDebugTex) {
 			Img_Free(&list->luz2, 0xc);
 			CBmpFlt2_Resample(&list->luz2, &list->luz, 0xf);
@@ -3003,19 +3011,19 @@ void __fastcall CBsp_GuardarIni(CBsp *self) {
 	CArchINI_ctorLoad(&ini, name, NULL);
 	int n = CArchINI_SetFloat(&ini, s, "escala", g_MapaSombrasEscala, 3);
 	n += CArchINI_SetFloat(&ini, s, "resolucion", g_MapaSombrasResol, 3);
-	n += CArchINI_SetFloat(&ini, s, "gamma", GAME_DATA(float, 0x432960), 2);
-	n += CArchINI_SetFloat(&ini, s, "brillo", GAME_DATA(float, 0x432964), 2);
-	n += CArchINI_SetBool(&ini, s, "sombras_suaves", GAME_DATA(int, 0x4b2b04));
+	n += CArchINI_SetFloat(&ini, s, "gamma", GAME_GLOBAL(float, g_MapaSombrasGamma, 0x432960), 2);
+	n += CArchINI_SetFloat(&ini, s, "brillo", GAME_GLOBAL(float, g_MapaSombrasBrillo, 0x432964), 2);
+	n += CArchINI_SetBool(&ini, s, "sombras_suaves", GAME_GLOBAL(int, g_MapaSombrasSuaves, 0x4b2b04));
 	n += CArchINI_SetInt(&ini, s, "text_tam_x", g_MapaSombrasTexX);
 	n += CArchINI_SetInt(&ini, s, "text_tam_y", g_MapaSombrasTexY);
 	n += CArchINI_SetBool(&ini, s, "radiosidad", g_MapaSombrasRadiosidad);
-	n += CArchINI_SetBool(&ini, s, "ilum_global", GAME_DATA(int, 0x4b2b14));
-	n += CArchINI_SetBool(&ini, s, "no_luz_amb", GAME_DATA(int, 0x4b2b18));
+	n += CArchINI_SetBool(&ini, s, "ilum_global", GAME_GLOBAL(int, g_MapaSombrasIlumGlobal, 0x4b2b14));
+	n += CArchINI_SetBool(&ini, s, "no_luz_amb", GAME_GLOBAL(int, g_MapaSombrasNoLuzAmb, 0x4b2b18));
 	n += CArchINI_SetBool(&ini, s, "modulate4x", g_MapaSombrasModulate4x);
 	n += CArchINI_SetFloat(&ini, s, "modulate_coef", g_MapaSombrasModulate4x ? 0.25f : 1.0f, 3);
 	n += CArchINI_SetFloat(&ini, s, "modulate_max", g_MapaSombrasModulate4x ? 1.0f : 1.2f, 3);
-	n += CArchINI_SetInt(&ini, s, "rebotes", GAME_DATA(int, 0x432968));
-	n += CArchINI_SetFloat(&ini, s, "coef_rad", GAME_DATA(float, 0x43296c), 3);
+	n += CArchINI_SetInt(&ini, s, "rebotes", GAME_GLOBAL(int, g_MapaSombrasRebotes, 0x432968));
+	n += CArchINI_SetFloat(&ini, s, "coef_rad", GAME_GLOBAL(float, g_MapaSombrasCoefRad, 0x43296c), 3);
 	n += CArchINI_SetBool(&ini, s, "calc_lmap2", g_CalcLmap2);
 	n += CArchINI_SetBool(&ini, s, "usar_txf", g_MapaSombrasUsarTxf);
 	if (n) {
@@ -3217,7 +3225,7 @@ void __fastcall CBsp_Preparar(CBsp *self) {
 		}
 	}
 	E3D_LogDebug(g_FileLog, "\nTotal map triangles by material:");
-	crt_qsort(tab.p, (size_t)tab.n, sizeof(BspMatStat), (int (*)(const void *, const void *))Game_Ptr(0x28e650));
+	crt_qsort(tab.p, (size_t)tab.n, sizeof(BspMatStat), (int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpId, 0x28e650));
 	int totTri = 0, totVert = 0;
 	for (int i = 0; i < tab.n; i++) {
 		BspMatStat *e = BspMatStat_Get(&tab, i);

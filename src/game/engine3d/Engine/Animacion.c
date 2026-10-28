@@ -212,12 +212,12 @@ void __thiscall CAnimacion_Init(CAnimacion *self, int nobjetos, int nframes, int
 	/* the destructors of the nodes free their tracks unless they are in the block */
 	g_ActAnimBlock = &self->AnimBlock;
 	if (self->AnimNodo) {
-		Delete_Objects(self->AnimNodo, sizeof(CAnimNodo), ANIMNODO_DTOR);
+		Delete_Objects(self->AnimNodo, sizeof(CAnimNodo), GAME_FUNC(CAnimNodo_dtor, ANIMNODO_DTOR));
 		self->AnimNodo = NULL;
 	}
 	self->num_objetos = nobjetos;
 	if (nobjetos) {
-		self->AnimNodo = New_Objects(nobjetos, sizeof(CAnimNodo), ANIMNODO_CTOR, ANIMNODO_DTOR);
+		self->AnimNodo = New_Objects(nobjetos, sizeof(CAnimNodo), GAME_FUNC(CAnimNodo_ctor, ANIMNODO_CTOR), GAME_FUNC(CAnimNodo_dtor, ANIMNODO_DTOR));
 	}
 	g_ActAnimBlock = NULL;
 	if (self->AnimBlock.MemBlock) {
@@ -249,9 +249,9 @@ CAnimNodo *__thiscall CAnimNodo_Delete(CAnimNodo *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
 		if (flags & 1) {
-			Delete_Objects(self, sizeof(CAnimNodo), ANIMNODO_DTOR);
+			Delete_Objects(self, sizeof(CAnimNodo), GAME_FUNC(CAnimNodo_dtor, ANIMNODO_DTOR));
 		} else {
-			crt_eh_vector_dtor(self, sizeof(CAnimNodo), *mem, Game_Ptr(ANIMNODO_DTOR));
+			crt_eh_vector_dtor(self, sizeof(CAnimNodo), *mem, GAME_FUNC(CAnimNodo_dtor, ANIMNODO_DTOR));
 		}
 		return (CAnimNodo *)mem;
 	}
@@ -719,7 +719,7 @@ void __fastcall CAnimacion_Trim(CAnimacion *self) {
 	}
 	self->num_objetos = n;
 	CHECK(self->num_objetos);
-	CAnimNodo *nodos = New_Objects(self->num_objetos, sizeof(CAnimNodo), ANIMNODO_CTOR, ANIMNODO_DTOR);
+	CAnimNodo *nodos = New_Objects(self->num_objetos, sizeof(CAnimNodo), GAME_FUNC(CAnimNodo_ctor, ANIMNODO_CTOR), GAME_FUNC(CAnimNodo_dtor, ANIMNODO_DTOR));
 	/* an empty temporary node, its destructor inline */
 	g_AnimNodoCount++;
 	for (int i = 0; i < self->num_objetos; i++) {
@@ -727,7 +727,7 @@ void __fastcall CAnimacion_Trim(CAnimacion *self) {
 		memset(&self->AnimNodo[i], 0, sizeof(CAnimNodo));
 	}
 	if (self->AnimNodo) {
-		Delete_Objects(self->AnimNodo, sizeof(CAnimNodo), ANIMNODO_DTOR);
+		Delete_Objects(self->AnimNodo, sizeof(CAnimNodo), GAME_FUNC(CAnimNodo_dtor, ANIMNODO_DTOR));
 		self->AnimNodo = NULL;
 	}
 	self->AnimNodo = nodos;

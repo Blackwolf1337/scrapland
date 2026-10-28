@@ -212,7 +212,7 @@ int __stdcall App_ExceptionFilter(void **ep) {
 void App_SetExceptionFilter(byte on) {
 	if (on) {
 		CHECK(!g_PrevExceptionFilter);
-		g_PrevExceptionFilter = exe_SetUnhandledExceptionFilter(Game_Ptr(APP_EXCEPTIONFILTER));
+		g_PrevExceptionFilter = exe_SetUnhandledExceptionFilter(GAME_FUNC(App_ExceptionFilter, APP_EXCEPTIONFILTER));
 		return;
 	}
 	exe_SetUnhandledExceptionFilter(g_PrevExceptionFilter);

@@ -84,7 +84,7 @@ void __thiscall cDominationEnemiesLogic_Init(cDominationLogic *self) {
 
 	CHECK(s->owner && "el");
 	s->list = cWorld_NewEntityList(g_pWorld, "DominationEnemies");
-	cPy_Function_SetNative(&s->list->onDeath, (nativefunc_t)Game_Ptr(0x1460c0));
+	cPy_Function_SetNative(&s->list->onDeath, (nativefunc_t)GAME_FUNC(DominationEnemies_OnDeath, 0x1460c0));
 }
 
 /* the deaths of both sides: the zone of the ship is free again, then the callback with the ship and its killer */

@@ -23,9 +23,9 @@
 #define APP_RANDSCALE GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1 / 32767 */
 
 /* the engine callbacks of the exe (Engine_SetCallback) */
-#define APP_CB_WORLDFRAME ((void (*)(void))Game_Ptr(0x172e30))
-#define APP_CB_LOADINGXBOX ((void (*)(void))Game_Ptr(0x20b500))
-#define APP_CB_LOADING ((void (*)(void))Game_Ptr(0x20bd90))
+#define APP_CB_WORLDFRAME ((void (*)(void))GAME_FUNC(Scorer_Render, 0x172e30))
+#define APP_CB_LOADINGXBOX ((void (*)(void))GAME_FUNC(Loading_DrawXbox, 0x20b500))
+#define APP_CB_LOADING ((void (*)(void))GAME_FUNC(Loading_Draw, 0x20bd90))
 
 #define PSAIMAGE_SIZE 0x44
 

@@ -72,11 +72,13 @@ void __thiscall CGameModel_LoadScaled(CGameModel *self, const char *name, const 
 
 /* the LOD distance of the model times the coefficient of its LOD group */
 static void CGameModel_LodGroup(CGameModel *self, CArchINI *ini) {
-	static const struct {
+	const struct {
 		const char *name;
-		uint32_t rva;
-	} grupos[7] = { { "Ships", 0x4a80f4 }, { "Pilots", 0x4a80dc }, { "Engines", 0x4a8064 }, { "Traffic", 0x4a804c },
-		{ "Characters", 0x4a80ac }, { "OutElement", 0x4a807c }, { "MenuElement", 0x4a8094 } };
+		const float *coef;
+	} grupos[7] = { { "Ships", GAME_ARRAY_IN(float, GVar_R_CoefMLODShips, 16, 0x4a80f4) }, { "Pilots", GAME_ARRAY_IN(float, GVar_R_CoefMLODPilots, 16, 0x4a80dc) },
+		{ "Engines", GAME_ARRAY_IN(float, GVar_R_CoefMLODEngines, 16, 0x4a8064) }, { "Traffic", GAME_ARRAY_IN(float, GVar_R_CoefMLODTraffic, 16, 0x4a804c) },
+		{ "Characters", GAME_ARRAY_IN(float, GVar_R_CoefMLODCharacters, 16, 0x4a80ac) }, { "OutElement", GAME_ARRAY_IN(float, GVar_R_CoefMLODOutElement, 16, 0x4a807c) },
+		{ "MenuElement", GAME_ARRAY_IN(float, GVar_R_CoefMLODMenuElement, 16, 0x4a8094) } };
 	char grupo[260];
 
 	if (!ini || !CArchINI_GetText(ini, "Model", "LOD_Group", grupo, sizeof(grupo), NULL)) {
@@ -88,7 +90,7 @@ static void CGameModel_LodGroup(CGameModel *self, CArchINI *ini) {
 	E3D_LogWhite(g_FileLog, "LOD_%s: %s", grupo, self->Model->name);
 	for (int i = 0; i < 7; i++) {
 		if (!crt_stricmp(grupo, grupos[i].name)) {
-			self->Model->lodDist *= *(float *)Game_Ptr(grupos[i].rva);
+			self->Model->lodDist *= *grupos[i].coef;
 			return;
 		}
 	}

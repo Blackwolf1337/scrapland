@@ -147,7 +147,7 @@ check('Lex out', SDTest.Out)
 call('Cmd_Out', sym('Cmd_Out'), 'vs', 'rsb out text')
 for rsbn in ('sdrsb2.txt', 'sdrsb3.txt', 'sdnofile.txt'):
 	check('Cmd_ReadFile' + fmt((rsbn,)), lambda: (SDTest.Call('Cmd_ReadFile', 'vs', rsbn), rsbcl(),
-		SDTest.Peek('g_LexOut', 'i'), SDTest.Peek('g_LexErrors', 'i')))
+		isfn(SDTest.Peek('g_LexOut', 'i'), sym('Cmd_Out')), SDTest.Peek('g_LexErrors', 'i')))
 check('Lex_SetOut(out)', lambda: SDTest.Call('Lex_SetOut', 'vi', SDTest.OutFunc()))
 rsbfree(rsbv)
 

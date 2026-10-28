@@ -492,7 +492,7 @@ void __thiscall cObjElementFXEMI_SetEntity(cObjElementFXEMI *self, cEntity *e) {
 #define FXEMI_ENTITIES 0x13		/* the entity lists the bolts hit */
 
 static uint32_t *EMI_Ramp(int first) {
-	return (uint32_t *)Game_Ptr(FXEMI_RAMPS) + (first + (crt_rand() & 1)) * 9;
+	return GAME_ARRAY(uint32_t, EMI_Emit_430888, FXEMI_RAMPS) + (first + (crt_rand() & 1)) * 9;
 }
 
 /* one still particle at pos: the rotation random (rnd) or 0, the life and the sizes random, sizeEnd from lo to hi */
@@ -1186,7 +1186,7 @@ static void FXDebrisCloud_Puff(cObjElementFXDebrisCloud *self, float size, doubl
 	}
 	p->sizeEnd = p->sizeIni * e;
 	CGameParticles_SetColorRampOn(p, 1);
-	CGameParticles_SetColorRamp(p, (uint32_t *)Game_Ptr(FXDEBRISCLOUD_RAMPS) + (crt_rand() % 3) * 9);
+	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXDebrisCloud_Puff_4308f8, FXDEBRISCLOUD_RAMPS) + (crt_rand() % 3) * 9);
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 0);
 }
@@ -1342,9 +1342,9 @@ void *__thiscall cObjElementFXEMI_ctor(void *self) {
 
 	FXCM_SetVtbl(s, COBJELEMENTFXEMI_VFTABLE);
 	CGameParticles_ctor(&s->particles);
-	crt_eh_vector_ctor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, Game_Ptr(FXCM_TRAIL_CTOR),
-		Game_Ptr(FXCM_TRAIL_DTOR));
-	crt_eh_vector_ctor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, Game_Ptr(FXCM_NODE_CTOR), Game_Ptr(FXCM_NODE_DTOR));
+	crt_eh_vector_ctor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, GAME_FUNC(CGameTrail_ctor, FXCM_TRAIL_CTOR),
+		GAME_FUNC(CGameTrail_dtor, FXCM_TRAIL_DTOR));
+	crt_eh_vector_ctor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, GAME_FUNC(FXCountermeasures_NodeCtor, FXCM_NODE_CTOR), GAME_FUNC(Nto1Node_dtor, FXCM_NODE_DTOR));
 	s->on = 0;
 	s->entity = NULL;
 	s->hideTime = 0.0f;
@@ -1396,8 +1396,8 @@ void __thiscall cObjElementFXEMI_dtor(void *self) {
 	cObjElementFXEMI *s = self;
 
 	*(void **)s = COBJELEMENTFXEMI_VFTABLE;
-	crt_eh_vector_dtor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, Game_Ptr(FXCM_NODE_DTOR));
-	crt_eh_vector_dtor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, Game_Ptr(FXCM_TRAIL_DTOR));
+	crt_eh_vector_dtor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, GAME_FUNC(Nto1Node_dtor, FXCM_NODE_DTOR));
+	crt_eh_vector_dtor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, GAME_FUNC(CGameTrail_dtor, FXCM_TRAIL_DTOR));
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }

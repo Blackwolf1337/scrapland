@@ -12,7 +12,7 @@ static void Tabla_New(CTabla *t, int num, uint32_t size) {
 	CHECK(t->p);
 }
 
-static void Tabla_NewObjs(CTabla *t, int num, uint32_t size, uint32_t ctor, uint32_t dtor) {
+static void Tabla_NewObjs(CTabla *t, int num, uint32_t size, void *ctor, void *dtor) {
 	CHECK(!t->p && num > 0);
 	t->n = num;
 	t->p = New_Objects(num, size, ctor, dtor);
@@ -52,12 +52,12 @@ void __thiscall Tabla_Alloc10Z(CTabla *t, int num) {
 	void __thiscall Tabla_New##sz(CTabla *t, int num) { \
 		Tabla_NewObjs(t, num, 0x##sz, ctor, dtor); \
 	}
-TABLA_NEW(8, 0x252a70, 0x252d80)
-TABLA_NEW(1C, 0x2bbcc0, 0x2bc160)
-TABLA_NEW(24, 0x258720, 0x258ce0)
-TABLA_NEW(A8, 0x23f3d0, 0x23f450)
-TABLA_NEW(B4, 0x281c50, 0x2824b0)
-TABLA_NEW(FC, 0x23cf40, 0x23d070)
+TABLA_NEW(8, GAME_FUNC(CLod_ctor, 0x252a70), GAME_FUNC(CLod_dtor, 0x252d80))
+TABLA_NEW(1C, GAME_FUNC(M3DSkinVert_ctor, 0x2bbcc0), GAME_FUNC(M3DSkinVert_dtor, 0x2bc160))
+TABLA_NEW(24, GAME_FUNC(CCollideQuad_ctor, 0x258720), GAME_FUNC(CCollideQuad_dtor, 0x258ce0))
+TABLA_NEW(A8, GAME_FUNC(CNodoR_ctor, 0x23f3d0), GAME_FUNC(CNodoR_dtor, 0x23f450))
+TABLA_NEW(B4, GAME_FUNC(BspZona_ctor, 0x281c50), GAME_FUNC(BspZona_dtor, 0x2824b0))
+TABLA_NEW(FC, GAME_FUNC(CNodo3D_ctor, 0x23cf40), GAME_FUNC(CNodo3D_dtor, 0x23d070))
 
 #define TABLA_READ(sz) \
 	void Tabla_Read##sz(CArchIO *f, CTabla *t) { \

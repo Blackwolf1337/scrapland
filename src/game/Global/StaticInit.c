@@ -93,9 +93,9 @@
 
 /* ---- the registry of C functions for the scripts ---- */
 
-#define INIT_NATIVE_FUNC(rva, fn, obj, name, func) \
+#define INIT_NATIVE_FUNC(rva, fn, obj, name, func, cfunc) \
 	void fn(void) { \
-		cPy_NativeFunc_ctor(SI_OBJ(obj), SI_STR(name), (nativefunc_t)Game_Ptr(func)); \
+		cPy_NativeFunc_ctor(SI_OBJ(obj), SI_STR(name), (nativefunc_t)GAME_FUNC(cfunc, func)); \
 	}
 
 /* ---- objects with a constructor of the C ---- */

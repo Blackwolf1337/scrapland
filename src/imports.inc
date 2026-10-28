@@ -98,9 +98,6 @@ SD_IMPORT_CRT(crt_floor, 0x345130)
 
 /* engine: functions behind the Scrap module (include/scrap/scrap.h) */
 
-/* engine: Input/ */
-SD_IMPORT(ActionSet_IsNamed, 0x133a30)
-
 /* engine: Math/ */
 
 /* engine: World/ (weapon and ammo tables of cWorld) */

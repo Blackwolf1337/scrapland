@@ -18,12 +18,33 @@
 
 extern uintptr_t game_base;	/* load address of Scrap.exe, 0 until Game_Init found the right build */
 
+#ifdef SD_STANDALONE
+/*
+ * ScrapC.exe computes no address from an rva (docs/standalone.md, stage 3c1b): Game_Ptr is there only for the rva
+ * lookup of the test module (SD_GAME_RVA, src/core/testmod.c), GAME_DATA only for the slots of the import address
+ * table of the original, which main.c fills (stage 3c1a removes them). Any other use stops the build.
+ */
+#define GAME_IAT_RVA 0x3a1000
+#define GAME_IAT_SIZE 0x5b8
+#define GAME_DATA(type, rva) \
+	(*(type *)({ \
+		static_assert((uint32_t)(rva) - GAME_IAT_RVA < GAME_IAT_SIZE, \
+			"GAME_DATA of ScrapC.exe reaches only the import address table"); \
+		(void *)(game_base + (rva)); \
+	}))
+#ifdef SD_GAME_RVA
+static inline void *Game_Ptr(uint32_t rva) {
+	return (void *)(game_base + rva);
+}
+#endif
+#else
 static inline void *Game_Ptr(uint32_t rva) {
 	return (void *)(game_base + rva);
 }
 
 /* lvalue of a global of the exe */
 #define GAME_DATA(type, rva) (*(type *)Game_Ptr(rva))
+#endif
 
 /*
  * The globals and tables of the exe that are C objects in ScrapC.exe (src/game/Global/Globals*.c, written by
@@ -65,6 +86,15 @@ static inline void *Game_Ptr(uint32_t rva) {
 #define GAME_PTR_AT(rva) Game_Ptr(rva)
 #endif
 
+/* a function of the exe (void *): in ScrapC.exe the C function name the hook at rva jumps to (src/hooks.inc,
+ * tools/standalone/rvacheck.py checks that name and rva agree; a stdcall or fastcall name gets its decoration from
+ * --enable-stdcall-fixup), in the hook DLL the exe's own at rva */
+#ifdef SD_STANDALONE
+#define GAME_FUNC(name, rva) SD_REF_(sd_fn_##name, "_" #name)
+#else
+#define GAME_FUNC(name, rva) Game_Ptr(rva)
+#endif
+
 /* a vtable of a game class (void *): in ScrapC.exe the C object of src/game/Global/Vtables.c (at the same rva,
  * tools/standalone/vtables.py checks that name and rva agree), in the hook DLL the exe's own */
 #ifdef SD_STANDALONE
@@ -91,6 +121,18 @@ static inline void *Game_Ptr(uint32_t rva) {
 #else
 #define GAME_STR(name, rva) ((char *)Game_Ptr(rva))
 #define GAME_STR_AT(rva) ((char *)Game_Ptr(rva))
+#endif
+
+/* the data formats of dinput8.lib that the game passes to SetDataFormat (const void *): in ScrapC.exe c_dfDIKeyboard
+ * and c_dfDIMouse of mingw's libdinput8, which hold the same objects as the ones the exe linked (docs/standalone.md,
+ * stage 3c1b), in the hook DLL the exe's own */
+#ifdef SD_STANDALONE
+extern const byte c_dfDIKeyboard[], c_dfDIMouse[];
+#define GAME_DF_KEYBOARD ((const void *)c_dfDIKeyboard)
+#define GAME_DF_MOUSE ((const void *)c_dfDIMouse)
+#else
+#define GAME_DF_KEYBOARD ((const void *)Game_Ptr(0x3cfbec))
+#define GAME_DF_MOUSE ((const void *)Game_Ptr(0x3cfdf4))
 #endif
 
 int Game_Init(void);

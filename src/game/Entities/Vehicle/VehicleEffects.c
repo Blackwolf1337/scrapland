@@ -273,7 +273,7 @@ void __fastcall cVehicleEffects_Init(cVehicleEffects *self) {
 	if (v->typeName[0] == 'T' || !strcmp(v->typeName, "SMosquito")) {
 		cVehicleTrails *t = self->trails;
 		if (t) {
-			crt_eh_vector_dtor(t->trails, sizeof(CGameTrail), VEFF_TRAILS, Game_Ptr(CGAMETRAIL_DTOR));
+			crt_eh_vector_dtor(t->trails, sizeof(CGameTrail), VEFF_TRAILS, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 			operator_delete_sized(t, sizeof(*t));
 			self->trails = NULL;
 		}
@@ -281,8 +281,8 @@ void __fastcall cVehicleEffects_Init(cVehicleEffects *self) {
 		if (!self->trails) {
 			cVehicleTrails *t = operator_new(sizeof(*t));
 			if (t) {
-				crt_eh_vector_ctor(t->trails, sizeof(CGameTrail), VEFF_TRAILS, Game_Ptr(CGAMETRAIL_CTOR),
-					Game_Ptr(CGAMETRAIL_DTOR));
+				crt_eh_vector_ctor(t->trails, sizeof(CGameTrail), VEFF_TRAILS, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR),
+					GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 				t->owner = NULL;
 			}
 			self->trails = t;
@@ -295,7 +295,7 @@ void __fastcall cVehicleEffects_Init(cVehicleEffects *self) {
 			cVehicleTubes *t = operator_new(sizeof(*t));
 			if (t) {
 				crt_eh_vector_ctor(t->particles, sizeof(CGameParticles), VEFF_TUBES,
-					Game_Ptr(CGAMEPARTICLES_CTOR), Game_Ptr(CGAMEPARTICLES_DTOR));
+					GAME_FUNC(CGameParticles_ctor, CGAMEPARTICLES_CTOR), GAME_FUNC(CGameParticles_Release, CGAMEPARTICLES_DTOR));
 				t->owner = NULL;
 			}
 			self->tubes = t;
@@ -306,7 +306,7 @@ void __fastcall cVehicleEffects_Init(cVehicleEffects *self) {
 	}
 	cVehicleTubes *t = self->tubes;
 	if (t) {
-		crt_eh_vector_dtor(t->particles, sizeof(CGameParticles), VEFF_TUBES, Game_Ptr(CGAMEPARTICLES_DTOR));
+		crt_eh_vector_dtor(t->particles, sizeof(CGameParticles), VEFF_TUBES, GAME_FUNC(CGameParticles_Release, CGAMEPARTICLES_DTOR));
 		operator_delete_sized(t, sizeof(*t));
 		self->tubes = NULL;
 	}
@@ -534,15 +534,15 @@ cVehicleEffects *__fastcall cVehicleEffects_ctor(cVehicleEffects *self) {
 }
 
 cVehicleTubes *__fastcall cVehicleTubes_ctor(cVehicleTubes *self) {
-	crt_eh_vector_ctor(self->particles, sizeof(CGameParticles), VEFF_TUBES, Game_Ptr(CGAMEPARTICLES_CTOR),
-		Game_Ptr(CGAMEPARTICLES_DTOR));
+	crt_eh_vector_ctor(self->particles, sizeof(CGameParticles), VEFF_TUBES, GAME_FUNC(CGameParticles_ctor, CGAMEPARTICLES_CTOR),
+		GAME_FUNC(CGameParticles_Release, CGAMEPARTICLES_DTOR));
 	self->owner = NULL;
 	return self;
 }
 
 cVehicleTrails *__fastcall cVehicleTrails_ctor(cVehicleTrails *self) {
-	crt_eh_vector_ctor(self->trails, sizeof(CGameTrail), VEFF_TRAILS, Game_Ptr(CGAMETRAIL_CTOR),
-		Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(self->trails, sizeof(CGameTrail), VEFF_TRAILS, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR),
+		GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 	self->owner = NULL;
 	return self;
 }
@@ -550,13 +550,13 @@ cVehicleTrails *__fastcall cVehicleTrails_ctor(cVehicleTrails *self) {
 void __fastcall cVehicleEffects_dtor(cVehicleEffects *self) {
 	cVehicleTrails *t = self->trails;
 	if (t) {
-		crt_eh_vector_dtor(t->trails, sizeof(CGameTrail), VEFF_TRAILS, Game_Ptr(CGAMETRAIL_DTOR));
+		crt_eh_vector_dtor(t->trails, sizeof(CGameTrail), VEFF_TRAILS, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 		operator_delete_sized(t, sizeof(*t));
 		self->trails = NULL;
 	}
 	cVehicleTubes *u = self->tubes;
 	if (u) {
-		crt_eh_vector_dtor(u->particles, sizeof(CGameParticles), VEFF_TUBES, Game_Ptr(CGAMEPARTICLES_DTOR));
+		crt_eh_vector_dtor(u->particles, sizeof(CGameParticles), VEFF_TUBES, GAME_FUNC(CGameParticles_Release, CGAMEPARTICLES_DTOR));
 		operator_delete_sized(u, sizeof(*u));
 		self->tubes = NULL;
 	}

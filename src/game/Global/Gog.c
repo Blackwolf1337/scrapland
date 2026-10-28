@@ -65,7 +65,6 @@ typedef void (*GalaxyInit_t)(const GalaxyInitOptions *opts);
 #define g_GogClientSecret GAME_GLOBAL(const char *, g_GogClientSecret, 0x428abc)
 #define GOG_CONFIG_PATH GAME_STR(str_3bbcb4, 0x3bbcb4)	/* "." */
 #define GOG_AUTH_FAILED GAME_STR(str_3bbcb8, 0x3bbcb8)	/* "Failed to Auth: %s" */
-#define GOG_IERROR_TYPE ((const MsvcTypeDescriptor *)Game_Ptr(0x442264))	/* galaxy::api::IError */
 
 #define GALAXY_LISTENER_AUTH 7
 
@@ -95,6 +94,18 @@ typedef struct MsvcTypeDescriptor {
 	void *spare;
 	char name[];			/* decorated, ".?AVIError@api@galaxy@@" */
 } MsvcTypeDescriptor;
+
+/*
+ * the type descriptor of galaxy::api::IError (rva 0x442264 in the exe). Msvc_CatchAs compares the pointer and the
+ * name, and the descriptors of Galaxy.dll are its own, so only the name counts: a C copy serves both builds (stage
+ * 3c1b of docs/standalone.md). Its vftable, type_info::vftable of the exe, is never read.
+ */
+static const struct {
+	const void *vftable;
+	void *spare;
+	char name[24];
+} gog_IErrorType = { NULL, NULL, ".?AVIError@api@galaxy@@" };
+#define GOG_IERROR_TYPE ((const MsvcTypeDescriptor *)&gog_IErrorType)
 
 typedef struct MsvcCatchableType {
 	uint32_t properties;

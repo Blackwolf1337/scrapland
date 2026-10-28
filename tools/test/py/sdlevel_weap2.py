@@ -148,7 +148,7 @@ def w2sound(m):
 		return n
 	return (n, w2ints(s, (0x4c, 0x14, 0x18, 0x10)), w2b(s + 0xc))
 def w2native_is(m, off, rva):
-	return w2i(m + off + 8) - 0x400000 == rva
+	return isfn(w2i(m + off + 8), rva)
 
 check('W2 InfernoCreate', lambda: w2native('InfernoCreate', ('SDW2Inf', w2pos[0], w2pos[1], w2pos[2], 0.1, 0.2,
 	0.3)))

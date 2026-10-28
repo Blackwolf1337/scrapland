@@ -22,11 +22,11 @@ cFXElementsABFakeLimit *__thiscall cFXElementsABFakeLimit_ctor(cFXElementsABFake
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSABFAKELIMIT_VFTABLE;
 	CGameParticles_ctor(&self->lighting);
-	crt_eh_vector_ctor(self->bolts, sizeof(CGameTrail), FXABBOLTS, Game_Ptr(CGAMETRAIL_CTOR),
-		Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(self->bolts, sizeof(CGameTrail), FXABBOLTS, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR),
+		GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 	CGameParticles_ctor(&self->nearParts);
-	crt_eh_vector_ctor(self->rings, sizeof(CGameTrail), FXABRINGS * FXABRINGTRAILS, Game_Ptr(CGAMETRAIL_CTOR),
-		Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(self->rings, sizeof(CGameTrail), FXABRINGS * FXABRINGTRAILS, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR),
+		GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 	return self;
 }
 
@@ -34,8 +34,8 @@ cFXElementsABFakeMeteors *__thiscall cFXElementsABFakeMeteors_ctor(cFXElementsAB
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSABFAKEMETEORS_VFTABLE;
-	crt_eh_vector_ctor(self->parts, sizeof(CGameParticles), 2, Game_Ptr(CGAMEPARTICLES_CTOR),
-		Game_Ptr(CGAMEPARTICLES_RELEASE));
+	crt_eh_vector_ctor(self->parts, sizeof(CGameParticles), 2, GAME_FUNC(CGameParticles_ctor, CGAMEPARTICLES_CTOR),
+		GAME_FUNC(CGameParticles_Release, CGAMEPARTICLES_RELEASE));
 	CGameTrail_ctor(&self->curve);
 	for (int i = 0; i < FXABMETEORS; i++) {
 		self->t[i] = -1.0f;
@@ -58,9 +58,9 @@ void __fastcall cFXElementsABFakeLimit_Clear(cFXElementsABFakeLimit *self) {
 void __fastcall cFXElementsABFakeLimit_dtor(cFXElementsABFakeLimit *self) {
 	self->base.vftable = CFXELEMENTSABFAKELIMIT_VFTABLE;
 	cFXElementsABFakeLimit_Clear(self);
-	crt_eh_vector_dtor(self->rings, sizeof(CGameTrail), FXABRINGS * FXABRINGTRAILS, Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(self->rings, sizeof(CGameTrail), FXABRINGS * FXABRINGTRAILS, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 	CGameParticles_Release(&self->nearParts);
-	crt_eh_vector_dtor(self->bolts, sizeof(CGameTrail), FXABBOLTS, Game_Ptr(CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(self->bolts, sizeof(CGameTrail), FXABBOLTS, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 	CGameParticles_Release(&self->lighting);
 	cMapElement_dtor(&self->base);
 }
@@ -68,7 +68,7 @@ void __fastcall cFXElementsABFakeLimit_dtor(cFXElementsABFakeLimit *self) {
 void __fastcall cFXElementsABFakeMeteors_dtor(cFXElementsABFakeMeteors *self) {
 	self->base.vftable = CFXELEMENTSABFAKEMETEORS_VFTABLE;
 	CGameTrail_dtor(&self->curve);
-	crt_eh_vector_dtor(self->parts, sizeof(CGameParticles), 2, Game_Ptr(CGAMEPARTICLES_RELEASE));
+	crt_eh_vector_dtor(self->parts, sizeof(CGameParticles), 2, GAME_FUNC(CGameParticles_Release, CGAMEPARTICLES_RELEASE));
 	cMapElement_dtor(&self->base);
 }
 

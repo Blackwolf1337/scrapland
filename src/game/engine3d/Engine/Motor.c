@@ -180,7 +180,7 @@ void Engine3D_Shutdown(void) {
 int __thiscall CMotorApp_OneTimeSceneInit(byte *self) {
 	void *mem;
 
-	g_E3DCmdProc = Game_Ptr(MOTOR_CMDPROC);
+	g_E3DCmdProc = GAME_FUNC(E3D_Command, MOTOR_CMDPROC);
 	E3D_DebugPrintf("\nprg: '%s'", E3D_GetExePath());
 	if (g_MotorInit && !((byte(*)(void))g_MotorInit)()) {
 		return (int)0x80004005;
@@ -673,54 +673,53 @@ void __fastcall Motor_GetEscena(byte *self) {
 enum { INI_BOOL, INI_LONG, INI_FLOAT, INI_TEXT };
 #define INI_TEXT_SIZE 0x40
 
-static const struct {
-	byte kind;
-	const char *sect;
-	const char *key;
-	uint32_t rva;
-} motorIni[] = {
-	{ INI_BOOL, "video", "TexPersp", 0x431bd0 },
-	{ INI_BOOL, "video", "Tramas", 0x431bd4 },
-	{ INI_BOOL, "video", "Filtrado", 0x431bc8 },
-	{ INI_BOOL, "video", "UsarTexturas", 0x431bcc },
-	{ INI_BOOL, "video", "UsarEnvMap", 0x431bd8 },
-	{ INI_BOOL, "video", "UsarHWEnvMap", 0x431bdc },
-	{ INI_BOOL, "video", "UsarBumpMap", 0x431be0 },
-	{ INI_BOOL, "video", "UsarGlowMap", 0x431be4 },
-	{ INI_BOOL, "video", "DiffuseMod4x", 0x431be8 },
-	{ INI_BOOL, "video", "Sharpen", 0x4b25e8 },
-	{ INI_BOOL, "video", "ErrDif", 0x4b25ec },
-	{ INI_LONG, "video", "TextBPP", 0x432938 },
-	{ INI_LONG, "video", "TextOpBPP", 0x43293c },
-	{ INI_BOOL, "video", "gamma2x", 0x4db878 },
-	{ INI_BOOL, "video", "sobredib", 0x4a8f2c },
-	{ INI_BOOL, "video", "tricolis", 0x4a8f70 },
-	{ INI_BOOL, "video", "bufferw", 0x4a8f7c },
-	{ INI_FLOAT, "video", "limitaFPS", 0x4a8f8c },
-	{ INI_FLOAT, "video", "despMipmap", 0x4ad73c },
-	{ INI_BOOL, "video", "LinearMipmap", 0x4a8f88 },
-	{ INI_LONG, "video", "MaxAnisoFlt", 0x431d74 },
-	{ INI_BOOL, "video", "ConsolaWnd", 0x4ab8f0 },
-	{ INI_BOOL, "video", "ConsolaTxt", 0x4ab8f4 },
-	{ INI_BOOL, "video", "IlumSpec", 0x4a8f80 },
-	{ INI_LONG, "video", "Stencil", 0x4a8f84 },
-	{ INI_LONG, "video", "Depth", 0x431cf4 },
-	{ INI_FLOAT, "sombras", "sombras", 0x431bb0 },
-	{ INI_LONG, "sombras", "objeto_ini", 0x4a8f28 },
-	{ INI_LONG, "sombras", "objeto_fin", 0x431bb4 },
-	{ INI_BOOL, "sombras", "modif_vnorm", 0x431bb8 },
-	{ INI_BOOL, "sombras", "proc_objetos", 0x431bbc },
-	{ INI_TEXT, "sombras", "nombre_luz", 0x4a8f30 },
-	{ INI_BOOL, "dinput", "raton_excl", 0x431cfc },
-	{ INI_BOOL, "dinput", "usar_di", 0x431cf8 },
-	{ INI_BOOL, "dinput", "raton_inv_x", 0x4db41c },
-	{ INI_BOOL, "dinput", "raton_inv_y", 0x4db420 },
-	{ INI_BOOL, "dinput", "raton_inv_z", 0x4db424 },
-	{ INI_LONG, "suelo", "suelo_caras_cuadr", 0x431bc0 },
-};
-
 /* the ini name (in dir, NULL for the game directory) into the variables */
 void Motor_LoadIni(const char *name, const char *dir) {
+	const struct {
+		byte kind;
+		const char *sect;
+		const char *key;
+		void *var;
+	} motorIni[] = {
+		{ INI_BOOL, "video", "TexPersp", GAME_PTR(motorIni_431bd0, 0, 0x431bd0) },
+		{ INI_BOOL, "video", "Tramas", GAME_PTR(g_Tramas, 0, 0x431bd4) },
+		{ INI_BOOL, "video", "Filtrado", GAME_PTR(motorIni_431bc8, 0, 0x431bc8) },
+		{ INI_BOOL, "video", "UsarTexturas", GAME_PTR(g_UsarTexturas, 0, 0x431bcc) },
+		{ INI_BOOL, "video", "UsarEnvMap", GAME_PTR(g_UsarEnvMap, 0, 0x431bd8) },
+		{ INI_BOOL, "video", "UsarHWEnvMap", GAME_PTR(g_UsarHWEnvMap, 0, 0x431bdc) },
+		{ INI_BOOL, "video", "UsarBumpMap", GAME_PTR(g_UsarBumpMap, 0, 0x431be0) },
+		{ INI_BOOL, "video", "UsarGlowMap", GAME_PTR(g_UsarGlowMap, 0, 0x431be4) },
+		{ INI_BOOL, "video", "DiffuseMod4x", GAME_PTR(g_DiffuseMod4x, 0, 0x431be8) },
+		{ INI_BOOL, "video", "Sharpen", GAME_PTR(g_Sharpen, 0, 0x4b25e8) },
+		{ INI_BOOL, "video", "ErrDif", GAME_PTR(g_TexErrDif, 0, 0x4b25ec) },
+		{ INI_LONG, "video", "TextBPP", GAME_PTR(g_TextBPP, 0, 0x432938) },
+		{ INI_LONG, "video", "TextOpBPP", GAME_PTR(g_TextOpBPP, 0, 0x43293c) },
+		{ INI_BOOL, "video", "gamma2x", GAME_PTR(g_Gamma2x, 0, 0x4db878) },
+		{ INI_BOOL, "video", "sobredib", GAME_PTR(g_Sobredib, 0, 0x4a8f2c) },
+		{ INI_BOOL, "video", "tricolis", GAME_PTR(g_ShowCollision, 0, 0x4a8f70) },
+		{ INI_BOOL, "video", "bufferw", GAME_PTR(g_MotorIni7c, 0, 0x4a8f7c) },
+		{ INI_FLOAT, "video", "limitaFPS", GAME_PTR(g_LimitaFps, 0, 0x4a8f8c) },
+		{ INI_FLOAT, "video", "despMipmap", GAME_PTR(g_MipmapBias2, 0, 0x4ad73c) },
+		{ INI_BOOL, "video", "LinearMipmap", GAME_PTR(g_MotorIni88, 0, 0x4a8f88) },
+		{ INI_LONG, "video", "MaxAnisoFlt", GAME_PTR(motorIni_431d74, 0, 0x431d74) },
+		{ INI_BOOL, "video", "ConsolaWnd", GAME_PTR(g_DbgConWindow, 0, 0x4ab8f0) },
+		{ INI_BOOL, "video", "ConsolaTxt", GAME_PTR(g_DbgConStd, 0, 0x4ab8f4) },
+		{ INI_BOOL, "video", "IlumSpec", GAME_PTR(g_MotorIni80, 0, 0x4a8f80) },
+		{ INI_LONG, "video", "Stencil", GAME_PTR(g_MotorIni84, 0, 0x4a8f84) },
+		{ INI_LONG, "video", "Depth", GAME_PTR(g_MotorDef1cf4, 0, 0x431cf4) },
+		{ INI_FLOAT, "sombras", "sombras", GAME_PTR(motorIni_431bb0, 0, 0x431bb0) },
+		{ INI_LONG, "sombras", "objeto_ini", GAME_PTR(motorIni_4a8f28, 0, 0x4a8f28) },
+		{ INI_LONG, "sombras", "objeto_fin", GAME_PTR(motorIni_431bb4, 0, 0x431bb4) },
+		{ INI_BOOL, "sombras", "modif_vnorm", GAME_PTR(motorIni_431bb8, 0, 0x431bb8) },
+		{ INI_BOOL, "sombras", "proc_objetos", GAME_PTR(motorIni_431bbc, 0, 0x431bbc) },
+		{ INI_TEXT, "sombras", "nombre_luz", GAME_PTR(motorIni_4a8f30, 0, 0x4a8f30) },
+		{ INI_BOOL, "dinput", "raton_excl", GAME_PTR(g_RatonExcl, 0, 0x431cfc) },
+		{ INI_BOOL, "dinput", "usar_di", GAME_PTR(motorIni_431cf8, 0, 0x431cf8) },
+		{ INI_BOOL, "dinput", "raton_inv_x", GAME_PTR(g_EntradaInvX, 0, 0x4db41c) },
+		{ INI_BOOL, "dinput", "raton_inv_y", GAME_PTR(g_EntradaInvY, 0, 0x4db420) },
+		{ INI_BOOL, "dinput", "raton_inv_z", GAME_PTR(g_EntradaInvZ, 0, 0x4db424) },
+		{ INI_LONG, "suelo", "suelo_caras_cuadr", GAME_PTR(g_SueloTrisPerNode, 0, 0x431bc0) },
+	};
 	char path[MAX_RUTA];
 	cArchDatos *dat;
 	unsigned i;
@@ -731,7 +730,7 @@ void Motor_LoadIni(const char *name, const char *dir) {
 	dat = Arch_New();
 	if (!Arch_Load(dat, path, Arch_Count(dat))) {
 		for (i = 0; i < sizeof(motorIni) / sizeof(motorIni[0]); i++) {
-			void *v = Game_Ptr(motorIni[i].rva);
+			void *v = motorIni[i].var;
 
 			switch (motorIni[i].kind) {
 			case INI_BOOL:
@@ -770,7 +769,7 @@ void __thiscall CMotorApp_LightsDialog(byte *self, void *hwnd, void *inst) {
 	typedef void(__thiscall * pause_t)(byte *, int);
 
 	((pause_t)(*(void ***)self)[MOTOR_VT_PAUSE / 4])(self, 1);
-	exe_DialogBoxParamA(inst, (const char *)MOTOR_LIGHTSDIALOG, hwnd, Game_Ptr(MOTOR_LIGHTSPROC),
+	exe_DialogBoxParamA(inst, (const char *)MOTOR_LIGHTSDIALOG, hwnd, GAME_FUNC(Motor_SceneDlgProc, MOTOR_LIGHTSPROC),
 		(intptr_t)MOTOR_ESCENA(self));
 	((pause_t)(*(void ***)self)[MOTOR_VT_PAUSE / 4])(self, 0);
 }
@@ -1124,7 +1123,7 @@ void E3D_Command(char *cmd) {
 		Escena_LogTree(e, NULL, 0);
 		hwnd = MOTOR_HWND(g_Motor);
 		exe_CreateDialogParamA((void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE), (const char *)MOTOR_LIGHTSDIALOG, hwnd,
-			Game_Ptr(MOTOR_LIGHTSPROC), (intptr_t)e);
+			GAME_FUNC(Motor_SceneDlgProc, MOTOR_LIGHTSPROC), (intptr_t)e);
 		return;
 	}
 	if (!crt_stricmp(cmd, "mem")) {

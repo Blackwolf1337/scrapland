@@ -116,7 +116,7 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	*(int *)(self->collision + 0) = 0;
 	*(int *)(self->collision + 4) = 0;
 	Controls_ctor(self->controls);
-	crt_eh_vector_ctor(&self->pilot, sizeof(CGameModel), 1, Game_Ptr(CGAMEMODEL_CTOR), Game_Ptr(CGAMEMODEL_DTOR));
+	crt_eh_vector_ctor(&self->pilot, sizeof(CGameModel), 1, GAME_FUNC(CGameModel_ctorDefault, CGAMEMODEL_CTOR), GAME_FUNC(CGameModel_Reset, CGAMEMODEL_DTOR));
 	cVehicleTraffic_ctor((cVehicleTraffic *)self->traffic);
 	cWeaponManager_ctor(&self->weapons);
 	cVehicleO648_ctor(self->o648);
@@ -228,7 +228,7 @@ void __fastcall cVehicleEntity_dtor(cVehicleEntity *self) {
 	cAutoAim_dtor((cAutoAim *)self->autoAim);
 	cVehicleO648_dtor(self->o648);
 	cWeaponManager_dtor(&self->weapons);
-	crt_eh_vector_dtor(&self->pilot, sizeof(CGameModel), 1, Game_Ptr(CGAMEMODEL_DTOR));
+	crt_eh_vector_dtor(&self->pilot, sizeof(CGameModel), 1, GAME_FUNC(CGameModel_Reset, CGAMEMODEL_DTOR));
 	cWithLifeEntity_dtor(&self->base);
 }
 

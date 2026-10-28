@@ -30,7 +30,7 @@ void __fastcall cGateKeepers_Init(cGateKeepers *self) {
 	cEntityListData *list = cWorld_NewEntityList(g_pWorld, "GateKeeper");
 
 	self->list = list;
-	list->func = (int (*)(void))Game_Ptr(0x149cf0);
+	list->func = (int (*)(void))GAME_FUNC(GateKeepers_MakeLogic, 0x149cf0);
 }
 
 void __thiscall cGateKeepers_Update(cGateKeepers *self, float dt) {
