@@ -199,6 +199,7 @@ void __thiscall Cad_Write(char **self, CArchIO *f);
 void Cad_Printf(char **self, const char *fmt, ...);
 
 void __fastcall CObjRef_dtor(int *Refs);
+CTextEst *__fastcall CTextEst_ctor(CTextEst *self);
 void __fastcall CTextEst_dtor(CTextEst *self);
 CTextEst *__thiscall CTextEst_Delete(CTextEst *self, byte flags);
 /* name and parameters, not the textures */

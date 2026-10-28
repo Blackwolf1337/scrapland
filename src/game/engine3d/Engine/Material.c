@@ -86,6 +86,12 @@ void __fastcall CObjRef_dtor(int *Refs) {
 	CHECK(!*Refs);
 }
 
+CTextEst *__fastcall CTextEst_ctor(CTextEst *self) {
+	self->tex = NULL;
+	self->Hint = NULL;
+	return self;
+}
+
 void __fastcall CTextEst_dtor(CTextEst *self) {
 	if (!Textura_Release(self->Hint) && g_TexDeleteUnused) {
 		Textura_Delete(self->Hint);

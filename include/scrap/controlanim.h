@@ -84,7 +84,7 @@ SD_OFFSET(CAnimCtrl, frame, 0x50);
 SD_OFFSET(CAnimCtrl, evento, 0x80);
 
 CAnimCtrl *__fastcall CAnimCtrl_ctor(CAnimCtrl *self);
-/* rva 0x250f10, empty (1 byte, not hooked) */
+/* rva 0x250f10, empty */
 void __thiscall CAnimCtrl_dtor(CAnimCtrl *self);
 void __fastcall CAnimCtrl_Play(CAnimCtrl *self);
 void __thiscall CAnimCtrl_SetCallback(CAnimCtrl *self, animCallback_t fn, int a, int b);

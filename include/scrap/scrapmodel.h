@@ -40,6 +40,8 @@ SD_SIZE(CGameModel, 0x1c);
 #define g_CoefMLODMenuElement GAME_DATA(float, 0x4a8094)
 
 CGameModel *__thiscall CGameModel_ctor(CGameModel *self, const char *name);
+/* the default constructor for the arrays (rva 0x105e60): without a model */
+CGameModel *__fastcall CGameModel_ctorDefault(CGameModel *self);
 /* the model of name (the .sm3 if the name is .m3d and the other way with the app flag 4) at the scale */
 void __thiscall CGameModel_Load(CGameModel *self, const char *name, const char *name2, const vec3_t *scale);
 void __thiscall CGameModel_LoadName(CGameModel *self, const char *name);

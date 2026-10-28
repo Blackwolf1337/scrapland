@@ -363,7 +363,7 @@ typedef void (*netmastercmd_t)(const char *cmd);
 #define g_NetServerFullPkt ((const byte *)Game_Ptr(0x428d48))	/* 5 bytes: 0, 0, 0, 0, 8 */
 #define g_NetNeedPasswordPkt ((const byte *)Game_Ptr(0x428d50))	/* 5 bytes: 0, 0, 0, 0, 9 */
 
-/* Winsock 1.1 of the exe (wsock32 by ordinal, through the jump thunks), stdcall */
+/* Winsock 1.1 of the exe: the jump thunks to wsock32 (src/game/Net/Wsock.c), stdcall */
 int __stdcall Wsock_bind(uint32_t s, const void *addr, int len);
 int __stdcall Wsock_closesocket(uint32_t s);
 int __stdcall Wsock_ioctlsocket(uint32_t s, int32_t cmd, uint32_t *arg);

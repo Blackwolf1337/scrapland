@@ -9,7 +9,8 @@
 # usage: tools/test/difftest.sh [scenario ...]   (sdtest, sdcall, sdlevel; default all; builds nothing: run cmake first)
 #        DIFFTEST_TIMEOUT  seconds per run, default 240
 #        DIFFTEST_WIPE=1   the hooked run also fills the rest of every hooked original with int3 ([general] wipe),
-#                          2 the whole game code but for the hooks
+#                          2 the whole game code but for the hooks, 3 that with a probe that logs each trap and
+#                          goes on with the original code (src/core/hook.c)
 #        DIFFTEST_STANDALONE=1  the hooked run starts ScrapC.exe, the standalone loader (docs/standalone.md)
 root=$(cd "$(dirname "$0")/../.." && pwd)
 game=$root/game

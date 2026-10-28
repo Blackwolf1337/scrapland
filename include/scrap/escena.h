@@ -34,7 +34,7 @@ void __thiscall CEscena_Msg(CEscena *self, int msg, int a, int b, int c, int d);
 /* OBJ3D_VF_RELEASED3D and OBJ3D_VF_INITD3D of the objects of all nodes */
 void __thiscall CEscena_ReleaseD3D(CEscena *self, void *dev);
 void __thiscall CEscena_InitD3D(CEscena *self, void *dev);
-/* rva 0x24ecb0, empty (1 byte, not hooked) */
+/* rva 0x24ecb0, empty */
 void __thiscall CEscena_Shared(CEscena *self);
 /* the "SCN" block; bAnim: the animation must be there (read) or is all there is (write) */
 void __thiscall CEscena_Read(CEscena *self, CArchIO *f, byte bAnim);

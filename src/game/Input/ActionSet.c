@@ -321,6 +321,9 @@ void InputMaps_Clear(void) {
 	}
 }
 
+void InputMaps_Done(void) {
+}
+
 /* every 0.05 seconds: counts the duration down and passes the motors to the callback while one of them runs */
 void __thiscall cPad_Update(cPad *pad) {
 	double next = (double)(pad->time + 0.05f);
@@ -538,6 +541,12 @@ void __thiscall cActionSet_Latch(cActionSet *s) {
 	for (uint32_t i = 0; (int)i < s->actions.count; i++) {
 		cInputAction_Latch(TABLE_AT(s->actions, i));
 	}
+}
+
+/* the constructor of a static keyboard (rva 0x1392e0, from its initializer): the standard grid */
+cVirtualKeyboard *__fastcall cVirtualKeyboard_ctor(cVirtualKeyboard *vk) {
+	cVirtualKeyboard_Set(vk, "Standard");
+	return vk;
 }
 
 /* "Standard", "Numbers" or "Console"; 0 for another name (the grid stays) */

@@ -33,6 +33,10 @@
 #define VEH_DEG_PER_RAD_NUM 180.0				/* the doubles at rva 0x3a3718, 0x3a3700 */
 #define VEH_DEG_PER_RAD_DEN 3.141592653589793
 
+CGameModel *__fastcall CGameModel_ctorDefault(CGameModel *self) {
+	return CGameModel_ctor(self, NULL);
+}
+
 /* the names of the pilot animations by index ("Left", "Right", "Go", "Back", "Relax") */
 #define g_PilotAnimNames ((const char **)Game_Ptr(0x4287e0))
 

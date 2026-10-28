@@ -548,11 +548,17 @@ def nblog(fn):
 	SDTest.D3DLog(0)
 	return (r[0], SDTest.Out(), SDTest.Peek(0x4ad744, 'i'))
 nbsaved = mwints(mundo, 9)
+# the 3 bytes after activa are padding that no constructor writes (heap garbage, it differs when the heap use before
+# differs, as under wipe=2 with its exception handler)
+def nbints(a, n):
+	r = mwints(a, n)
+	r[0] = r[0] & 0xff
+	return r
 nbvars = (0x4b1cb8, 0x4b1ce8, 0x4b1cd0, 0x4b1ca0)
 nbvarsaved = []
 for a in nbvars:
 	nbvarsaved.append(SDTest.Peek(a, 'i'))
-check('CNiebla', lambda: nbsaved)
+check('CNiebla', lambda: nbints(mundo, 9))
 check('CNiebla_Apply', lambda: nblog(lambda: SDTest.Call(0x278420, 'tvi', mundo)))
 # activa, tabla, capsW, capsTabla, fuente, modo; then R_FogEnable, R_FogColor, R_FogAbsDist, R_FogDensity
 for flags in ((1, 0, 0, 0, 0, 3), (1, 1, 0, 1, 0, 3), (1, 1, 1, 1, 1, 1), (1, 1, 0, 1, 1, 2), (0, 1, 0, 1, 1, 3),
@@ -565,7 +571,7 @@ for flags in ((1, 0, 0, 0, 0, 3), (1, 1, 0, 1, 0, 3), (1, 1, 1, 1, 1, 1), (1, 1,
 		for i in range(4):
 			SDTest.Poke(nbvars[i], fv[i])
 		check('CNiebla_Apply' + fmt((flags, fv)), lambda: (nblog(lambda: SDTest.Call(0x278420, 'tvi', mundo)),
-			mwints(mundo, 9)))
+			nbints(mundo, 9)))
 		for i in range(9):
 			SDTest.Poke(mundo + 4 * i - 0x400000, nbsaved[i])
 for i in range(4):
@@ -573,11 +579,11 @@ for i in range(4):
 nb = SDTest.Call(0x1334d0, 'ii', 0x24)[0]
 # 0x14 and 0x18 (the own color) are not set by the constructor
 def nbset(nb):
-	return mwints(nb, 5) + mwints(nb + 0x1c, 2)
+	return nbints(nb, 5) + mwints(nb + 0x1c, 2)
 check('CNiebla_ctor', lambda: (SDTest.Call(0x278360, 'tii', nb)[0] == nb, nbset(nb)))
 check('CNiebla_InitD3D', lambda: (SDTest.Call(0x2783a0, 'tvi', nb), nbset(nb)))
-check('CNiebla_SetColor', lambda: (SDTest.Call(0x278680, 'tviif', nb, 0x11223344, 0.75), mwints(nb, 9)))
-check('CNiebla_SetRango', lambda: (SDTest.Call(0x2786a0, 'tviff', nb, 0.25, 0.9), mwints(nb, 9)))
+check('CNiebla_SetColor', lambda: (SDTest.Call(0x278680, 'tviif', nb, 0x11223344, 0.75), nbints(nb, 9)))
+check('CNiebla_SetRango', lambda: (SDTest.Call(0x2786a0, 'tviff', nb, 0.25, 0.9), nbints(nb, 9)))
 # the tests of single modules in the level (tools/test/py/sdlevel_*.py); a missing one is skipped
 for part in ('sdlevel_collision.py', 'sdlevel_scrapworld.py', 'sdlevel_world.py', 'sdlevel_fxcounter.py', 'sdlevel_grid.py', 'sdlevel_fxmisc.py', 'sdlevel_fxweap.py', 'sdlevel_efxchar.py', 'sdlevel_fxelem.py', 'sdlevel_efxveh.py', 'sdlevel_efxmisc.py', 'sdlevel_entity.py', 'sdlevel_weap1.py', 'sdlevel_weap2.py', 'sdlevel_fxchar.py', 'sdlevel_fxveh.py', 'sdlevel_fxscene.py', 'sdlevel_bsp.py', 'sdlevel_vehent.py', 'sdlevel_fxcharact.py', 'sdlevel_vehmot.py', 'sdlevel_entmore.py', 'sdlevel_nodestraf.py', 'sdlevel_nodesworld.py', 'sdlevel_chartype1.py', 'sdlevel_nodes2d.py', 'sdlevel_chartype2.py', 'sdlevel_logic1.py', 'sdlevel_scorer2.py', 'sdlevel_ivehicle.py', 'sdlevel_logic2.py', 'sdlevel_walkchar.py', 'sdlevel_scorer3.py', 'sdlevel_ivehctl.py', 'sdlevel_logic3.py', 'sdlevel_icharctl.py', 'sdlevel_net.py', 'sdlevel_aicharctl.py', 'sdlevel_aichar.py', 'sdlevel_logic4.py', 'sdlevel_actions.py', 'sdlevel_vweaps.py', 'sdlevel_aigroup.py', 'sdlevel_render2.py', 'sdlevel_eng2.py', 'sdlevel_eng1.py', 'sdlevel_eng3.py', 'sdlevel_fxbig1.py', 'sdlevel_gamebig.py', 'sdlevel_fxbig2.py', 'sdlevel_eng4.py', 'sdlevel_ailo.py', 'sdlevel_restb.py', 'sdlevel_fxfinal.py', 'sdlevel_resta.py', 'sdlevel_exhaust.py', 'sdlevel_bspcalc.py', 'sdlevel_leftc.py', 'sdlevel_engmisc.py', 'sdlevel_finalu.py', 'sdlevel_scorerdraw.py'):
 	try:

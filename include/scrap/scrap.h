@@ -64,6 +64,8 @@ SD_OFFSET(cGVar, value, 0x10);
 cGVar *GVar_Find(const char *name);
 /* the base constructor (src/game/Global/Gvars.c): in front of g_GVars, the derived class sets the type */
 cGVar *__thiscall cGVar_ctor(cGVar *self, const char *name, byte flags, const char *description);
+/* an int variable with its default, as the static initializers make it */
+cGVar *GVar_InitInt(cGVar *v, const char *name, byte flags, const char *description, int value);
 /* "name = value # comment" of Scrap.cfg: cuts the comment, splits at '=' and trims both; 0 without '=' */
 byte Cfg_ParseLine(char *line, char **value);
 
@@ -78,7 +80,7 @@ typedef struct cGVarListVtbl {
 #define g_GVarTable GAME_DATA(HashTable *, 0x44b5fc)	/* by name after GVars_Init */
 
 void Achievement_Unlock(int n);
-void Steam_SetAchievement(int n, int on);
+byte Steam_SetAchievement(int n, int on);
 const char *Steam_GetID(void);
 const char *Steam_GetTicket(void);
 const char *Gog_GetID(void);

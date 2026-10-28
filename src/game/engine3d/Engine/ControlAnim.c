@@ -34,6 +34,10 @@ CAnimCtrl *__fastcall CAnimCtrl_ctor(CAnimCtrl *self) {
 	return self;
 }
 
+void __thiscall CAnimCtrl_dtor(CAnimCtrl *self) {
+	(void)self;
+}
+
 void __fastcall CAnimCtrl_Play(CAnimCtrl *self) {
 	self->state = ANIM_REPR;
 }
