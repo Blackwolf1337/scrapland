@@ -8103,3 +8103,10 @@ SD_HOOK(cVehicleMotorsEffects_Exhaust, 0x10f210, 34801)
 /* module agent: Engine leftovers (Escena_Load, stencil draws, debug and dialogs) (hooks below this line) */
 
 /* module agent: Leftovers C, EmbeddedFX vf03, AICharControl3D, Gear, Devastator (hooks below this line) */
+SD_HOOK(cEmbeddedFXCrazyGambler_Update, 0x0da0e0, 3507)
+SD_HOOK(cEmbeddedFXMercenary_Update, 0x0db1d0, 4087)
+SD_HOOK(cEmbeddedFXMessenger_Update, 0x0dc1d0, 3515)
+SD_HOOK(cEmbeddedFXSentinel_Update, 0x0dee20, 2579)
+SD_HOOK(cEmbeddedFXMoto_Update, 0x0e90f0, 5676)
+SD_HOOK(cAICharControl3D_StrafeBack, 0x07f250, 2805)
+SD_HOOK(cAICharControl3D_StrafeFwd, 0x07fd50, 2582)

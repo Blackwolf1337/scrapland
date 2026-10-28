@@ -490,9 +490,9 @@ byte __fastcall cEmbeddedFXMoto_Reset(cEmbeddedFXMoto *self) {
 	self->t[0] = 0.0f;
 	self->t[1] = 0.0f;
 	self->t[2] = 0.0f;
-	self->f7d4 = 1.0f;
-	self->f7d8 = 0.0f;
-	self->b7dc = 0;
+	self->throttle = 1.0f;
+	self->boost = 0.0f;
+	self->on = 0;
 	return 1;
 }
 
@@ -578,7 +578,7 @@ void __fastcall cEmbeddedFXMoto_Release(cEmbeddedFXMoto *self) {
 	for (int i = 0; i < FXMOTO_TUBES; i++) {
 		CGameParticles_Release(&self->tube[i]);
 	}
-	self->b7dc = 0;
+	self->on = 0;
 }
 
 void __fastcall cEmbeddedFXTreasure_Release(cEmbeddedFXTreasure *self) {
@@ -711,9 +711,9 @@ void __fastcall cEmbeddedFXDataPack_On(cEmbeddedFXDataPack *self) {
 }
 
 void __thiscall cEmbeddedFXMoto_SetF7d4(cEmbeddedFXMoto *self, float a, float b) {
-	self->f7d4 = a;
-	self->b7dc = 1;
-	self->f7d8 = b;
+	self->throttle = a;
+	self->on = 1;
+	self->boost = b;
 }
 
 void __thiscall cEmbeddedFXFlag_SetColor(cEmbeddedFXFlag *self, const char *name) {
@@ -2311,5 +2311,176 @@ void __thiscall cEmbeddedFXBattery_Update(cEmbeddedFXBattery *self, float dt) {
 		CGameParticles_SetColorRampOn(p, 1);
 		CGameParticles_SetColorRamp(p, (uint32_t *)Game_Ptr(RAMP_BATTERY_SPARKS + 36 * (crt_rand() & 1)));
 		CGameParticles_EmitDt(p, 1, 0, (float)(EFXM_Rnd() * 0.10000000149011612 + 0.0));
+	}
+}
+
+/* ---- vf03: the Update of the Moto ---- */
+
+/* the color ramps of the flames and the smoke of the engines (9 colors each) */
+#define g_RampMoto ((uint32_t *)Game_Ptr(0x4284c0))
+
+/* the 6 flames along the way of an engine: the distance, the add of the size, the alpha (rand % mod - sub) and the
+ * color of the main engine and of the two others */
+static const struct {
+	float dist;
+	double add;
+	int mod, sub;
+	uint32_t color[2];
+} efxm_motoFlames[6] = {
+	{ 50.0f, 350.0, 16, 0x22, { 0x2020ff, 0xff20ff } },
+	{ 60.0f, 210.0, 0x30, 0x48, { 0xdeffff, 0xffdeff } },
+	{ 70.0f, 180.0, 0x2a, 0x52, { 0xd4ffff, 0xffd4ff } },
+	{ 85.0f, 170.0, 32, 0x40, { 0xc0ffff, 0xffc0ff } },
+	{ 100.0f, 160.0, 0x19, 0x38, { 0xa4ffff, 0xffa4ff } },
+	{ 120.0f, 150.0, 16, 0x22, { 0x80c0ff, 0xc080ff } },
+};
+
+/* the velocities of a puff: between v1 and v2 turned by the angles of the engine */
+static void EFXM_MotoVel(CGameParticles *p, float spread, float z1, float z2, const vec3_t *ang, float scale) {
+	vec3_t a = { -spread, -spread, z1 }, b = { spread, spread, z2 }, buf;
+
+	const vec3_t *v = Vec3_Rotate(&buf, &a, ang);
+	p->initVelMin.z = v->z * scale;
+	p->initVelMin.x = v->x * scale;
+	p->initVelMin.y = v->y * scale;
+	v = Vec3_Rotate(&buf, &b, ang);
+	p->initVelMax.x = v->x * scale;
+	p->initVelMax.y = v->y * scale;
+	p->initVelMax.z = v->z * scale;
+}
+
+/*
+ * The engines of the Moto while they run: the 16 glows of each of the two down engines, 6 flames along the way of
+ * the three engines (the main one at DF_MotorTrust_01, the others beside it) and every 0.02 s a puff of smoke at each,
+ * with more puffs filling the way from where the engine was at the last one.
+ */
+void __thiscall cEmbeddedFXMoto_Update(cEmbeddedFXMoto *self, float dt) {
+	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	matrix_t m;
+	vec3_t ang, dir, buf;
+
+	CHECK(CGameModel_IsLoaded(model));
+	if (!self->on) {
+		return;
+	}
+	float a = self->throttle;
+	float b = self->boost;
+	for (int k = 0; k < FXMOTO_DOWN; k++) {
+		int n = 0;
+		for (int gx = 0; gx < 4; gx++) {
+			float x = (float)(gx - 2) * 10.0f + 8.0f;
+			for (int gy = 0; gy < 4; gy++) {
+				float size = FX_Rand(4.0, 36.0);
+				float y = (float)(gy - 2) * 8.0f + 5.0f;
+				uint32_t c = ((uint32_t)(crt_rand() % 0x5c + 0x5c) << 24) | 0xff8010;
+				CGameParticles_SetParticle(&self->down[k], n, x, y, 10.0f, size, c, 1, 0.0f);
+				n++;
+			}
+		}
+	}
+	CGameModel_NodoMatrix(model, &m, self->nodeEngine[0], 0, NULL, 0);
+	vec3_t org = { m.m[12], m.m[13], m.m[14] };
+	Matrix_GetEuler(&m, &ang);
+	const vec3_t fwd = { 0.0f, 0.0f, 1.0f };
+	Vec3_Rotate(&dir, &fwd, &ang);
+	for (int i = 0; i < FXMOTO_ENGINES; i++) {
+		vec3_t pos;
+		float scale;
+		if (i == 0) {
+			scale = 1.15f;
+			pos = org;
+		} else {
+			const vec3_t off = { i == 1 ? 192.0f : -192.0f, -40.0f, -140.0f };
+			const vec3_t *o = Vec3_Rotate(&buf, &off, &ang);
+			scale = 0.75f;
+			pos.x = o->x + org.x;
+			pos.y = o->y + org.y;
+			pos.z = o->z + org.z;
+		}
+		CGameParticles *p = &self->engine[i];
+		p->birthRate = 0;
+		float k = (self->throttle * 0.5f + 0.5f) * scale;
+		for (int j = 0; j < 6; j++) {
+			float size = FX_Rand(20.0, efxm_motoFlames[j].add);
+			float d = efxm_motoFlames[j].dist;
+			float x = dir.x * d + pos.x;
+			float y = dir.y * d + pos.y;
+			float z = dir.z * d + pos.z;
+			uint32_t c = ((uint32_t)(crt_rand() % efxm_motoFlames[j].mod - efxm_motoFlames[j].sub) << 24)
+				| efxm_motoFlames[j].color[i != 0];
+			CGameParticles_SetParticle(p, j, x, y, z, size * k, c, 1, 0.0f);
+		}
+		float t = self->t[i] + dt;
+		self->t[i] = t;
+		if (!(t > 0.02f)) {
+			continue;
+		}
+		float px = self->pos[i].x - pos.x;
+		float py = self->pos[i].y - pos.y;
+		float pz = self->pos[i].z - pos.z;
+		float r = FX_Rand(4.0, 4.0);
+		const vec3_t *rd = FX_RandomDir(&buf);
+		float jx = rd->x * r;
+		float jy = rd->y * r;
+		float jz = rd->z * r;
+		r = FX_Rand(30.0, 65.0);
+		p->initPosMin.x = dir.x * r + pos.x + jx;
+		p->initPosMin.y = dir.y * r + pos.y + jy;
+		p->initPosMin.z = dir.z * r + pos.z + jz;
+		float sb = b + b + a;
+		float q = sb * 48.0f;
+		p->initPosMax = p->initPosMin;
+		p->sizeIni = (FX_Rand(10.0, 85.0) + q) * scale;
+		float w = (b + a) * 18.0f;
+		p->sizeEnd = (FX_Rand(10.0, 22.0) + w) * scale;
+		float z1 = sb * 600.0f + 300.0f;
+		float z2 = sb * 900.0f + 600.0f;
+		EFXM_MotoVel(p, 10.0f, z1, z2, &ang, scale);
+		p->spriteEnd = 0xc;
+		p->spriteIni = (crt_rand() & 1) + 9;
+		p->rotIni = FX_Rand(6.2831854820251465, 0.0);
+		p->rotEnd = p->rotIni + FX_Rand(6.2831854820251465, -3.1415927410125732);
+		float spin = a + 0.2f;
+		p->rotVar = FX_Rand(1.5707963705062866, -0.7853981852531433) * spin;
+		CGameParticles_SetColorRampOn(p, 1);
+		CGameParticles_SetColorRamp(p, g_RampMoto + (i == 0 ? 9 : 27));
+		p->lifeTime = (FX_Rand(0.009999999776482582, 0.009999999776482582) * a + 0.16f) * scale;
+		CGameParticles_Apply(p);
+		float h = self->t[i] * 0.5f;
+		CGameParticles_EmitDt(p, 1, 1, FX_Rand((double)h, 0.0));
+		float acc = 0.0f;
+		if (self->t[i] > 0.0f) {
+			uint32_t *ramp = g_RampMoto + (i != 0 ? 18 : 0);
+			do {
+				float f = FX_Rand(1.0, 0.0);
+				float ox = px * f;
+				float oy = py * f;
+				float oz = pz * f;
+				r = FX_Rand(14.0, 2.0);
+				rd = FX_RandomDir(&buf);
+				p->initPosMin.x = dir.x * 75.0f + pos.x + rd->x * r + ox;
+				p->initPosMin.y = dir.y * 75.0f + pos.y + rd->y * r + oy;
+				p->initPosMin.z = dir.z * 75.0f + pos.z + rd->z * r + oz;
+				p->initPosMax = p->initPosMin;
+				p->sizeIni = (FX_Rand(10.0, 45.0) + q) * scale;
+				p->sizeEnd = (FX_Rand(10.0, 12.0) + w) * scale;
+				EFXM_MotoVel(p, 30.0f, z1, z2, &ang, scale);
+				p->spriteEnd = 0xc;
+				p->spriteIni = (crt_rand() & 1) + 9;
+				p->rotIni = FX_Rand(6.2831854820251465, 0.0);
+				p->rotVar = FX_Rand(1.5707963705062866, -0.7853981852531433) * spin;
+				CGameParticles_SetColorRampOn(p, 1);
+				CGameParticles_SetColorRamp(p, ramp);
+				p->lifeTime = (FX_Rand(0.05999999865889549, 0.019999999552965164) * a + 0.56f) * scale;
+				CGameParticles_Apply(p);
+				CGameParticles_EmitDt(p, 1, 1, self->t[i] * f);
+				float inc = 1.0f > a ? (1.0f - a) * 0.003f : 0.0f;
+				acc = inc + 0.003f + acc;
+			} while (self->t[i] > acc);
+		}
+		self->t[i] = 0.0f;
+		self->pos[i].x = dir.x * 75.0f + pos.x;
+		self->pos[i].y = dir.y * 75.0f + pos.y;
+		self->pos[i].z = dir.z * 75.0f + pos.z;
 	}
 }

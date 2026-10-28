@@ -249,22 +249,22 @@ SD_SIZE(cEmbeddedFXMeetingPoint, 0x230);
 
 typedef struct cEmbeddedFXMoto {
 	cEmbeddedFX base;
-	float t[FXMOTO_ENGINES];	/* 0x008 the times of the engines (the Update is in the exe) */
-	vec3_t pos[FXMOTO_ENGINES];	/* 0x014 */
+	float t[FXMOTO_ENGINES];	/* 0x008 the time since the last smoke of each engine */
+	vec3_t pos[FXMOTO_ENGINES];	/* 0x014 the engine at the last smoke (the smoke fills the way from there) */
 	int nodeEngine[FXMOTO_ENGINES];	/* 0x038 DF_MotorTrust_01..03 */
 	CGameParticles engine[FXMOTO_ENGINES];	/* 0x044 */
 	CGameParticles down[FXMOTO_DOWN];	/* 0x254 DF_MotorTrust_04, 05 */
 	CGameParticles tube[FXMOTO_TUBES];	/* 0x3b4 DF_EscapeTube_01..06 */
-	float f7d4;			/* 0x7d4 */
-	float f7d8;			/* 0x7d8 */
-	byte b7dc;			/* 0x7dc */
+	float throttle;			/* 0x7d4 0..1, the size of the flames and the smoke */
+	float boost;			/* 0x7d8 */
+	byte on;			/* 0x7dc the engines run (SetF7d4) */
 	byte pad_7dd[3];
 } cEmbeddedFXMoto;
 SD_OFFSET(cEmbeddedFXMoto, nodeEngine, 0x38);
 SD_OFFSET(cEmbeddedFXMoto, engine, 0x44);
 SD_OFFSET(cEmbeddedFXMoto, down, 0x254);
 SD_OFFSET(cEmbeddedFXMoto, tube, 0x3b4);
-SD_OFFSET(cEmbeddedFXMoto, f7d4, 0x7d4);
+SD_OFFSET(cEmbeddedFXMoto, throttle, 0x7d4);
 SD_SIZE(cEmbeddedFXMoto, 0x7e0);
 
 typedef struct cEmbeddedFXTreasure {

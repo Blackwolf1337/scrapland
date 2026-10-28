@@ -132,9 +132,9 @@ SD_SIZE(cEmbeddedFXMaintenance, 0xc0);
 
 typedef struct cEmbeddedFXMercenary {
 	cEmbeddedFX base;
-	byte b08;			/* 0x008 */
+	byte visible;			/* 0x008 */
 	byte pad_09[3];
-	int i0c;			/* 0x00c */
+	float t;			/* 0x00c the bubbles and the smoke every 0.05 s */
 	int dummyGlow;			/* 0x010 */
 	CGameParticles glow;		/* 0x014 */
 	int dummyBubbles;		/* 0x0c4 */
@@ -153,23 +153,26 @@ SD_SIZE(cEmbeddedFXMercenary, 0x230);
 typedef struct cEmbeddedFXMessenger {
 	cEmbeddedFX base;
 	int i08;			/* 0x008 */
-	byte b0c;			/* 0x00c */
+	byte on;			/* 0x00c the lightning was shown (visible, near the camera, not in Relax) */
 	byte pad_0d[3];
 	int dummyGlow;			/* 0x010 */
-	CGameParticles glow;		/* 0x014 */
+	CGameParticles glow;		/* 0x014 4 glows per bolt, at both ends */
 	int nodeRays[FXMESSENGER_RAYS];	/* 0x0c4 DF_Rayos_01.. */
-	int order[FXMESSENGER_RAYS];	/* 0x0e4 */
-	int trailState[FXMESSENGER_TRAILS];	/* 0x104 */
-	byte pad_134[0x1f4 - 0x134];
+	int order[FXMESSENGER_RAYS];	/* 0x0e4 the pairs of rays a bolt joins */
+	float life[FXMESSENGER_TRAILS];	/* 0x104 of the bolts */
+	int rays[FXMESSENGER_TRAILS][2];	/* 0x134 the two rays of a bolt */
+	int verts[FXMESSENGER_TRAILS][2];	/* 0x194 the vertex on each ray */
 	CGameTrail trails[FXMESSENGER_TRAILS];	/* 0x1f4 */
-	byte pad_224[0x2b4 - 0x224];
-	uint32_t u2b4[0x20];		/* 0x2b4 */
+	vec3_t offs[FXMESSENGER_TRAILS];	/* 0x224 the bend of the middle of a bolt */
+	byte used[FXMESSENGER_RAYS][16];	/* 0x2b4 the vertices of the rays a bolt ends at */
 	byte b334;			/* 0x334 */
 	byte pad_335[3];
 } cEmbeddedFXMessenger;
-SD_OFFSET(cEmbeddedFXMessenger, trailState, 0x104);
+SD_OFFSET(cEmbeddedFXMessenger, life, 0x104);
+SD_OFFSET(cEmbeddedFXMessenger, verts, 0x194);
 SD_OFFSET(cEmbeddedFXMessenger, trails, 0x1f4);
-SD_OFFSET(cEmbeddedFXMessenger, u2b4, 0x2b4);
+SD_OFFSET(cEmbeddedFXMessenger, offs, 0x224);
+SD_OFFSET(cEmbeddedFXMessenger, used, 0x2b4);
 SD_SIZE(cEmbeddedFXMessenger, 0x338);
 
 typedef struct cEmbeddedFXPolice {
@@ -213,14 +216,14 @@ typedef struct cEmbeddedFXSentinel {
 	CGameParticles laser;		/* 0x0c0 DF_LaserScaner */
 	float f170;			/* 0x170 */
 	CGameTrail beams[FXSENTINEL_LASERS];	/* 0x174 */
-	float f184;			/* 0x184 */
+	float alpha;			/* 0x184 of the lasers, fades to 0 */
 	CGameTrail edgesA[FXSENTINEL_LASERS];	/* 0x188 */
 	CGameTrail edgesB[FXSENTINEL_LASERS];	/* 0x198 */
 	int numLasers;			/* 0x1a8 */
-	vec3_t phase[FXSENTINEL_LASERS];	/* 0x1ac */
-	float f1dc[FXSENTINEL_LASERS];	/* 0x1dc */
-	int i1ec;			/* 0x1ec */
-	int i1f0;			/* 0x1f0 */
+	vec3_t phase[FXSENTINEL_LASERS];	/* 0x1ac x, y: the cosine phases of the sweep */
+	float edgeT[FXSENTINEL_LASERS];	/* 0x1dc the edge trails take a point every 0.016 s */
+	int lastState;			/* 0x1ec state of the last Update */
+	int state;			/* 0x1f0 the cone status of the arrow (off, relax, alert, danger) */
 	cEmbeddedFXAlarm alarm;		/* 0x1f4 */
 } cEmbeddedFXSentinel;
 SD_OFFSET(cEmbeddedFXSentinel, beams, 0x174);

@@ -81,8 +81,9 @@ byte __thiscall cAICharControl3D_TestLine(cAICharControl *self, const vec3_t *a,
 
 /* the 8 lines around a of the corridors: to the side of n (and up for n vertical), turned around n; each from
  * a + v * r along n * len (aim: to b) */
-static int AICC3D_Lines(const vec3_t *a, const vec3_t *n, float r, float len, const vec3_t *aim, cAICCSeg *segs) {
-	vec3_t P, s, u, w, in, nl, tmp;
+/* n x (0, 1, 0) as the original computes it (the products with 0 kept), (1, 0, 0) for a vertical n */
+static vec3_t AICC3D_Side(const vec3_t *n) {
+	vec3_t P;
 
 	P.x = n->y * 0.0f - n->z;
 	P.y = n->z * 0.0f - n->x * 0.0f;
@@ -92,6 +93,13 @@ static int AICC3D_Lines(const vec3_t *a, const vec3_t *n, float r, float len, co
 		P.y = 0.0f;
 		P.z = 0.0f;
 	}
+	return P;
+}
+
+static int AICC3D_Lines(const vec3_t *a, const vec3_t *n, float r, float len, const vec3_t *aim, cAICCSeg *segs) {
+	vec3_t P, s, u, w, in, nl, tmp;
+
+	P = AICC3D_Side(n);
 	Vec3_NormalizeTo(&s, &P);
 	nl.x = n->x * len;
 	nl.y = n->y * len;
@@ -717,4 +725,188 @@ byte __thiscall cAICharControl3D_TryStrafe(cAICharControl *self, int side, cEnti
 		res = vt->StrafeBack(self, &E, &A, &D, keep, left, e2) ? res : 0;
 	}
 	return res;
+}
+
+/* ---- the strafe around a character ---- */
+
+/* the inline normalize of the strafes: v itself for length 0 */
+static inline vec3_t AICC3D_Unit(vec3_t v) {
+	float len = AICC3D_Len(v.x, v.y, v.z);
+
+	if (len == 0.0f) {
+		return v;
+	}
+	float k = 1.0f / len;
+	v.x = v.x * k;
+	v.y = v.y * k;
+	v.z = v.z * k;
+	return v;
+}
+
+/* the axis the strafes turn around: the up of the way to the goal (the way crossed with its side) */
+static vec3_t AICC3D_StrafeAxis(cAICharControl *self) {
+	vec3_t buf;
+
+	const vec3_t *p = AICC_Pos(self, &buf);
+	vec3_t g;
+	g.y = self->goal.y - p->y;
+	g.x = self->goal.x - p->x;
+	g.z = self->goal.z - p->z;
+	vec3_t n = AICC3D_Unit(g);
+	vec3_t s = AICC3D_Side(&n);
+	s = AICC3D_Unit(s);
+	vec3_t u;
+	u.x = s.z * n.y - s.y * n.z;
+	u.y = s.x * n.z - s.z * n.x;
+	u.z = s.y * n.x - s.x * n.y;
+	return AICC3D_Unit(u);
+}
+
+/* the point at dist from pos along a turned by m; 0 when the transform fails */
+static byte AICC3D_ArcPoint(vec3_t *out, const vec3_t *pos, const vec3_t *a, const matrix_t *m, float dist) {
+	vec3_t v;
+
+	if (!Matrix_TransformProject(&v, a, m)) {
+		return 0;
+	}
+	vec3_t n = AICC3D_Unit(v);
+	out->x = n.x * dist + pos->x;
+	out->y = n.y * dist + pos->y;
+	out->z = n.z * dist + pos->z;
+	return 1;
+}
+
+static byte AICC3D_ArcCorner(cAICharControl *self, const vec3_t *s, const vec3_t *a, const vec3_t *b, byte left) {
+	cEntity *me = self->ent;
+
+	float r2 = Obj_Vtbl(me)->GetRadius(me);
+	float r = Obj_Vtbl(me)->GetRadius(me);
+	return CNodesWorld_TestCorner(g_NodesWorld, s, a, b, r, r2, left, &self->debug348);
+}
+
+static byte AICC3D_ArcPath(cAICharControl *self, const vec3_t *a, const vec3_t *b) {
+	cEntity *me = self->ent;
+
+	float r2 = Obj_Vtbl(me)->GetRadius(me);
+	float r = Obj_Vtbl(me)->GetRadius(me);
+	return CNodesWorld_TestPath(g_NodesWorld, a, b, r, r2, &self->debug348, 0);
+}
+
+/* the walk around pos on the circle of radius dist from the way away to the way dir (the other way round without
+ * flag), turned around the up of the way to the goal in steps of the radius of the character: each step and corner
+ * free in the graph */
+byte __thiscall cAICharControl3D_StrafeBack(cAICharControl *self, const vec3_t *pos, const vec3_t *away,
+	const vec3_t *dir, float dist, byte left, byte flag) {
+	cEntity *me = self->ent;
+	vec3_t buf, S, prev, cur;
+	matrix_t m;
+
+	DListSeg_Clear(&self->debug348);
+	vec3_t a = AICC3D_Unit(*away);
+	vec3_t d = AICC3D_Unit(*dir);
+	float sign = left ? 1.0f : -1.0f;
+	float ang = (float)Vec3_Angle(&a, &d);
+	if (!flag) {
+		ang = 6.2831855f - ang;
+	}
+	float step = Game_Atan2F(Obj_Vtbl(me)->GetRadius(me), dist);
+	prev.x = a.x * dist + pos->x;
+	prev.y = a.y * dist + pos->y;
+	prev.z = a.z * dist + pos->z;
+	if (g_ShowShirkAI == 1) {
+		DListVec3_Add(&self->debug318, AICC_Pos(self, &buf));
+		DListVec3_Add(&self->debug318, &prev);
+	}
+	float r2 = Obj_Vtbl(me)->GetRadius(me);
+	float r = Obj_Vtbl(me)->GetRadius(me);
+	if (!CNodesWorld_TestPath(g_NodesWorld, AICC_Pos(self, &buf), &prev, r, r2, &self->debug348, 0)) {
+		return 0;
+	}
+	AICC_Pos(self, &S);
+	byte res = 1;
+	vec3_t axis = AICC3D_StrafeAxis(self);
+	float t = step;
+	while (ang > t) {
+		Matrix_RotAxis(&m, &axis, t * sign);
+		if (!AICC3D_ArcPoint(&cur, pos, &a, &m, dist)) {
+			return 0;
+		}
+		if (g_ShowShirkAI == 1) {
+			DListVec3_Add(&self->debug318, &cur);
+		}
+		if (!AICC3D_ArcCorner(self, &S, &prev, &cur, left) || !AICC3D_ArcPath(self, &prev, &cur)) {
+			return 0;
+		}
+		S = prev;
+		prev = cur;
+		t = t + step;
+	}
+	Matrix_RotAxis(&m, &axis, ang * sign);
+	if (!AICC3D_ArcPoint(&cur, pos, &a, &m, dist)) {
+		return 0;
+	}
+	if (g_ShowShirkAI == 1) {
+		DListVec3_Add(&self->debug318, &cur);
+	}
+	/* both tests run */
+	res = AICC3D_ArcCorner(self, &S, &prev, &cur, left) ? res : 0;
+	res = AICC3D_ArcPath(self, &prev, &cur) ? res : 0;
+	return res;
+}
+
+/* p free of the other characters */
+static byte AICC3D_ArcFree(cAICharControl *self, const vec3_t *p) {
+	cEntity *hit;
+
+	float r = WChar(self->ent)->prim.radius + 1.0f - g_MarginCollCharAI;
+	return !cWorld_TestSphereEntities(g_pWorld, self->ent, (void *)0x10, p, r, &hit, 1, 0);
+}
+
+/* StrafeBack in half steps with only the other characters tested at each point of the circle */
+byte __thiscall cAICharControl3D_StrafeFwd(cAICharControl *self, const vec3_t *pos, const vec3_t *away,
+	const vec3_t *dir, float dist, byte left, byte flag) {
+	cEntity *me = self->ent;
+	vec3_t cur;
+	matrix_t m;
+
+	vec3_t a = AICC3D_Unit(*away);
+	vec3_t d = AICC3D_Unit(*dir);
+	float sign = left ? 1.0f : -1.0f;
+	float ang = (float)Vec3_Angle(&a, &d);
+	if (!flag) {
+		ang = 6.2831855f - ang;
+	}
+	float step = (float)Game_Atan2(Obj_Vtbl(me)->GetRadius(me), dist) * 0.5f;
+	cur.x = a.x * dist + pos->x;
+	cur.y = a.y * dist + pos->y;
+	cur.z = a.z * dist + pos->z;
+	if (g_ShowShirkAI == 1) {
+		DListVec3_Add(&self->debug330, &cur);
+	}
+	if (!AICC3D_ArcFree(self, &cur)) {
+		return 0;
+	}
+	vec3_t axis = AICC3D_StrafeAxis(self);
+	float t = step;
+	while (ang > t) {
+		Matrix_RotAxis(&m, &axis, t * sign);
+		if (!AICC3D_ArcPoint(&cur, pos, &a, &m, dist)) {
+			return 0;
+		}
+		if (g_ShowShirkAI == 1) {
+			DListVec3_Add(&self->debug318, &cur);
+		}
+		if (!AICC3D_ArcFree(self, &cur)) {
+			return 0;
+		}
+		t = t + step;
+	}
+	Matrix_RotAxis(&m, &axis, ang * sign);
+	if (!AICC3D_ArcPoint(&cur, pos, &a, &m, dist)) {
+		return 0;
+	}
+	if (g_ShowShirkAI == 1) {
+		DListVec3_Add(&self->debug318, &cur);
+	}
+	return AICC3D_ArcFree(self, &cur);
 }
