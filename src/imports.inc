@@ -164,24 +164,11 @@ SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 /* engine3d: called from Engine/luz.cpp (include/scrap/luz.h) */
 /* engine3d: Engine/Material.c (include/scrap/material.h), the parts of the classes outside Material.cpp and the
  * texture manager */
-SD_IMPORT(Cad_Set, 0x2a1940)
-SD_IMPORT(FXTextura_Create, 0x2a81d0)
-SD_IMPORT(CMatId_Check, 0x2a7a00)
-SD_IMPORT(CMatId_Register, 0x2a7ae0)
-SD_IMPORT(CMapa_ctor, 0x233760)
-SD_IMPORT(CMapa_dtor, 0x233a30)
-SD_IMPORT(CMaterial_ctor, 0x233830)
-SD_IMPORT(CMaterial_dtor, 0x233af0)
 SD_IMPORT(CAnimMat_ctor, 0x257f70)
 SD_IMPORT(CAnimMat_dtor, 0x257fb0)
 SD_IMPORT(CAnimMat_Start, 0x258110)
 
 /* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/escena.h) */
-SD_IMPORT(Cad_Read, 0x2a18a0)
-SD_IMPORT(Cad_Write, 0x2a1920)
-SD_IMPORT(CAnimacion_ctor, 0x2ab6f0)
-SD_IMPORT(CAnimacion_dtor, 0x2ab940)
-SD_IMPORT(Box_Transform, 0x239880)
 SD_IMPORT(CSuelo_CalcIlum, 0x261630)
 
 /* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
@@ -197,15 +184,7 @@ SD_IMPORT(ListaVert_InitD3D, 0x2404f0)
 SD_IMPORT(Stencil_Malla, 0x267530)
 SD_IMPORT(CListaVert_EnvMapUV, 0x2418c0)
 SD_IMPORT(CAnimMat_GetFrame, 0x258060)
-SD_IMPORT(RenderLock_ReleaseD3D, 0x2a4860)
 SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
-SD_IMPORT(RenderGamma_ReleaseD3D, 0x2a7980)
-SD_IMPORT(RenderGamma_Begin, 0x2a7520)
-SD_IMPORT(RenderGamma_LogShaderMask, 0x2a7cd0)
-SD_IMPORT(Matrix_Invert, 0x239560)
-SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
-SD_IMPORT(Vec3_ToAngles, 0x239150)
-SD_IMPORT(Matrix_RotationZ, 0x23a2b0)
 
 /* src/game/engine3d/Engine/Grafico2D.c (called from Engine/grafico2d.cpp, include/scrap/grafico2d.h) */
 
@@ -362,9 +341,6 @@ SD_IMPORT_STDCALL(FSOUND_GetCPUUsage, 0, 0x3179e4)
 /* module agent: Entities/Vehicle/WeaponManager+Weaps/ATPC+Devastator.cpp (imports below this line) */
 
 /* module agent: Entities/Vehicle/Weaps/Inferno+Laser+Swarm.cpp (imports below this line) */
-SD_IMPORT(FXSwarm_BeeDeath, 0x1ff190)
-SD_IMPORT(FXSwarm_Hit, 0x1ffea0)
-SD_IMPORT(cObjElementFXInfernoExplosion_Explode, 0x201eb0)
 
 /* module agent: Entities/Entity+Game/Doors.cpp (imports below this line) */
 
@@ -527,44 +503,16 @@ SD_IMPORT(CMapa_CopyBmp, 0x2370a0)
 /* module agent: Big leftovers 0x0f0000..0x110000 (imports below this line) */
 
 /* module agent: Big FX leftovers 0x1a8000..0x1eab00 (imports below this line) */
-SD_IMPORT(CGameLensFlare_SetB2c, 0x233020)
 
 /* module agent: Big FX leftovers 0x1eab00..0x200000 (imports below this line) */
 
 /* module agent: Engine leftovers 0x200000..0x240000 (imports below this line) */
-SD_IMPORT(cFXElementsLensFlare_ctor, 0x1cf8b0)
-SD_IMPORT(BlendMode_GetDst, 0x2a1a00)
-SD_IMPORT(BlendMode_GetSrc, 0x2a1a60)
 SD_IMPORT_STDCALL(D3DX_MatrixMultiply, 12, 0x0077b8)
 SD_IMPORT_STDCALL(D3DX_MatrixTranspose, 8, 0x007a01)
 SD_IMPORT_STDCALL(D3DX_MatrixRotationX, 8, 0x0082fb)
 SD_IMPORT_STDCALL(D3DX_MatrixRotationY, 8, 0x008397)
 SD_IMPORT_STDCALL(D3DX_MatrixRotationZ, 8, 0x008434)
-SD_IMPORT(LensFlare_ctor, 0x2a5dd0)
-SD_IMPORT(LensFlare_dtor, 0x2a5e70)
-SD_IMPORT(LensFlare_SetOn, 0x2a5fa0)
-SD_IMPORT(LensFlare_SetIntensity, 0x2a7460)
-SD_IMPORT(LensFlare_SetF30, 0x2a7480)
-SD_IMPORT(LensFlare_SetPos, 0x2a74c0)
-SD_IMPORT(LensFlare_SetF18, 0x2a74e0)
-SD_IMPORT(LensFlare_SetI1c, 0x2a7500)
-SD_IMPORT(LensFlare_SetB2c, 0x2a7510)
-SD_IMPORT(CMatId_ctor, 0x2a79e0)
-SD_IMPORT(CMatId_dtor, 0x2a79f0)
-SD_IMPORT(IEntrada_dtor, 0x2a3a40)
-SD_IMPORT(IEntrada_ctor, 0x2a39d0)
-SD_IMPORT(MotorOverlay_ctor, 0x2a4e90)
-SD_IMPORT(MotorOverlay_dtor, 0x2a4ea0)
-SD_IMPORT(Window_SetTextf, 0x2a5cc0)
-SD_IMPORT(LensFlares_ReleaseD3D, 0x2a6050)
-SD_IMPORT(LensFlares_Off, 0x2a5fe0)
-SD_IMPORT(LensFlares_FreeSprite, 0x2a56f0)
-SD_IMPORT(LensFlares_Init, 0x2a6140)
 SD_IMPORT(CD3DApp_MsgProc, 0x274b60)
-SD_IMPORT(Input_KeyDown, 0x2a37c0)
-SD_IMPORT(Input_KeyUp, 0x2a3870)
-SD_IMPORT(LensFlares_InitD3D, 0x2a6060)
-SD_IMPORT(LensFlares_ResetD3D, 0x2a5520)
 
 /* module agent: AI leftovers 0x098000..0x0b8000 (imports below this line) */
 

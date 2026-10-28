@@ -1250,10 +1250,6 @@ CMaterial *__thiscall CMaterial_ctor(CMaterial *self) {
 }
 
 /* a CBmp of the stack freed (the pixels with the sized delete of one pixel) */
-void __fastcall CBmp_dtor(CBmp *self) {
-	Img_Free(self, sizeof(uint32_t));
-}
-
 void __fastcall CListaMat_dtor(CListaMat *self) {
 	self->vftable = Game_Ptr(CLISTAMAT_VFTABLE);
 	CListaMat_DeleteAll(self);

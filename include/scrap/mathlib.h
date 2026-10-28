@@ -104,7 +104,7 @@ matrix_t *Matrix_RotationZ(matrix_t *out, float ang);		/* rva 0x23a2b0, D3DXMatr
 /* rva 0x23a2d0: Matrix_RotAxis returning out */
 matrix_t *Matrix_RotationAxis(matrix_t *out, const vec3_t *axis, float ang);
 /* rva 0x239150 is a copy of Vec3_GetRotAng: x pitch, y yaw, z 0 */
-#define Vec3_ToAngles Vec3_GetRotAng
+#define Vec3_GetRotAng Vec3_GetRotAng
 int Matrix_Invert(matrix_t *out, const matrix_t *m);		/* rva 0x239560, Matrix_InvertAffine, 0 S_OK */
 int Matrix_PerspectiveD3D(matrix_t *out, float fov, float aspect, float zNear, float zFar);	/* rva 0x23a190 */
 matrix_t *Matrix_MulD3D(matrix_t *out, const matrix_t *a, const matrix_t *b);	/* rva 0x2391f0, out = a * b */

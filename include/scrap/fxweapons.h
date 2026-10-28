@@ -37,33 +37,7 @@ float __thiscall CGameLensFlare_GetF30(const void *self);			/* rva 0x232f50 */
 float __thiscall CGameLensFlare_GetF18(const void *self);			/* rva 0x232f60 */
 int __thiscall CGameLensFlare_GetI1c(const void *self);			/* rva 0x232f70 */
 
-/* the lens flare object of the engine glue (0x50 bytes, no vtable; ScrapEngLensFlares.cpp, rva 0x2a5dd0..) */
-typedef struct LensFlare {
-	byte on;			/* 0x00 */
-	byte pad_01[3];
-	int i04;			/* 0x04 -1 */
-	vec3_t pos;			/* 0x08 */
-	float intensity;		/* 0x14 1 */
-	float f18;			/* 0x18 1 */
-	int i1c;			/* 0x1c */
-	float f20;			/* 0x20 0.2 */
-	byte pad_24[8];
-	byte b2c;			/* 0x2c */
-	byte pad_2d[3];
-	float f30;			/* 0x30 */
-	byte pad_34[0x50 - 0x34];
-} LensFlare;
-SD_OFFSET(LensFlare, f30, 0x30);
-SD_SIZE(LensFlare, 0x50);
-LensFlare *__thiscall LensFlare_ctor(LensFlare *self);
-void __thiscall LensFlare_dtor(LensFlare *self);
-void __thiscall LensFlare_SetOn(LensFlare *self, byte on);
-void __thiscall LensFlare_SetIntensity(LensFlare *self, float v);
-void __thiscall LensFlare_SetF30(LensFlare *self, float v);
-void __thiscall LensFlare_SetPos(LensFlare *self, vec3_t pos);
-void __thiscall LensFlare_SetF18(LensFlare *self, float v);
-void __thiscall LensFlare_SetI1c(LensFlare *self, int v);
-void __thiscall LensFlare_SetB2c(LensFlare *self, byte v);
+/* the lens flare object of the engine glue: CLensFlare of lensflare.h */
 
 /* the weapon block of a ship at 0x5f0 (the one of Entity_TargetLock): the ammo of kind i (0 out of range), whether
  * slot (0..4) of weapon kind w is mounted (rva 0x11a6c0, 0x11a9f0) */

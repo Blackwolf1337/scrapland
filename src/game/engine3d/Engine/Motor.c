@@ -8,10 +8,13 @@
 #include <string.h>
 
 #include "scrap/dxutil.h"
+#include "scrap/entrada.h"
 #include "scrap/escena.h"
 #include "scrap/e3dutil.h"
 #include "scrap/app.h"
 #include "scrap/crt.h"
+#include "scrap/fondo2d.h"
+#include "scrap/lensflare.h"
 #include "scrap/luz.h"
 #include "scrap/archio.h"
 #include "scrap/flare.h"
@@ -85,24 +88,9 @@ typedef void(__stdcall *initcommoncontrols_t)(void);
 #define g_Fps GAME_DATA(float, 0x431ba8)
 #define MOTOR_MAXFRAME 0.1f
 
-/* of the 0x2a3000.. part of the engine (still the exe's) */
-void Input_KeyDown(uint32_t key, intptr_t lParam);	/* rva 0x2a37c0 */
-void Input_KeyUp(uint32_t key, intptr_t lParam);	/* rva 0x2a3870 */
 #define WM_KEYDOWN 0x100
 #define WM_KEYUP 0x101
 #define WM_COMMAND 0x111
-void *__fastcall IEntrada_ctor(void *self);		/* rva 0x2a39d0 */
-void *__fastcall MotorOverlay_ctor(void *self);		/* rva 0x2a4e90 */
-void __fastcall MotorOverlay_dtor(void *self);		/* rva 0x2a4ea0 */
-void Window_SetTextf(void *hwnd, const char *fmt, ...);	/* rva 0x2a5cc0 */
-int LensFlares_ReleaseD3D(void);			/* rva 0x2a6050, 0 */
-void LensFlares_Off(void);				/* rva 0x2a5fe0 */
-void LensFlares_FreeSprite(void);			/* rva 0x2a56f0 */
-int LensFlares_Init(void);				/* rva 0x2a6140 */
-int LensFlares_InitD3D(void);				/* rva 0x2a6060, the material of the flares */
-void LensFlares_ResetD3D(void);				/* rva 0x2a5520 */
-/* the base class of the inputs (rva 0x2a3a40) */
-void __fastcall IEntrada_dtor(void *self);
 
 byte *__fastcall CMotorApp_ctor(byte *self) {
 	CD3DApp_ctor(self);
@@ -195,10 +183,10 @@ int __thiscall CMotorApp_OneTimeSceneInit(byte *self) {
 	}
 	g_Entrada = mem;
 	mem = operator_new(8);
-	MOTOR_OVERLAY(self) = mem ? MotorOverlay_ctor(mem) : NULL;
+	MOTOR_OVERLAY(self) = mem ? CListaGrf2D_ctor(mem) : NULL;
 	Fonts_Init();
 	Trails_InitLists();
-	LensFlares_Init();
+	LensFlare_InitList();
 	Escenas_Msg(1, 0, 0, 0, 0);
 	Escenas_Msg(2, 0, 0, 0, 0);
 	Motor_GetEscena(self);
@@ -229,7 +217,7 @@ int __thiscall CMotorApp_FrameMove(byte *self) {
 		g_Fps = (float)(n - g_FpsFrames) / d;
 		g_FpsFrames = n;
 		if (g_RenderOff) {
-			Window_SetTextf(MOTOR_HWND(self), "Scrapland dedicated server");
+			Win_SetTextf(MOTOR_HWND(self), "Scrapland dedicated server");
 		}
 	}
 	return 0;
@@ -243,7 +231,7 @@ int __thiscall CMotorApp_DeleteDeviceObjects(byte *self) {
 	CListaMat_Release(g_ListaMat);
 	Stencil_Free();
 	Trails_Release();
-	LensFlares_ReleaseD3D();
+	LensFlare_Release();
 	UtilEscena_ReleaseD3D();
 	CMundo_ReleaseD3D(Mundo_Get());
 	Render_FinD3D();
@@ -263,7 +251,7 @@ int __thiscall CMotorApp_FinalCleanup(byte *self) {
 	Debug_PuntosClear();
 	ov = MOTOR_OVERLAY(self);
 	if (ov) {
-		MotorOverlay_dtor(ov);
+		CListaGrf2D_DeleteAll(ov);
 		operator_delete_sized(ov, 8);
 		MOTOR_OVERLAY(self) = NULL;
 	}
@@ -275,8 +263,8 @@ int __thiscall CMotorApp_FinalCleanup(byte *self) {
 	}
 	UtilEscena_FreeAll();
 	Trails_ResetAll();
-	LensFlares_Off();
-	LensFlares_FreeSprite();
+	LensFlare_ClearAll();
+	Fondo2D_Release();
 	CListaMat_DeleteAll(g_ListaMat);
 	Textura_DeleteAll();
 	Tex_ClearPaths();
@@ -631,8 +619,8 @@ int __thiscall CMotorApp_InitDeviceObjects(byte *self) {
 	UtilEscena_InitD3D();
 	Stencil_Init();
 	Trails_Init();
-	LensFlares_InitD3D();
-	LensFlares_ResetD3D();
+	LensFlare_Init();
+	Fondo2D_Reset();
 	CListaMat_Prepare(g_ListaMat, dev);
 	Render_SetCamara(Mundo_Get()->cam);
 	Render_SetWorldMatrix(g_MatIdentity, 0);
@@ -698,9 +686,9 @@ intptr_t __thiscall CMotorApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uint
 			msg, wParam, lParam);
 	}
 	if (msg == WM_KEYDOWN) {
-		Input_KeyDown((uint16_t)wParam, lParam);
+		Teclado_KeyDown((uint16_t)wParam, lParam);
 	} else if (msg == WM_KEYUP) {
-		Input_KeyUp((uint16_t)wParam, lParam);
+		Teclado_KeyUp((uint16_t)wParam, lParam);
 	} else if (msg == WM_COMMAND) {
 		uint32_t id = (uint16_t)wParam;
 

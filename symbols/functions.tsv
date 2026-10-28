@@ -6226,50 +6226,50 @@ rva	size	source	callconv	name	signature
 00201d80	57	USER_DEFINED	__thiscall	cObjElementFXSwarmMissile_Reset	void __thiscall(void * debris)
 00201dc0	196	USER_DEFINED	__thiscall	cObjElementFXTesla_Reset	void __thiscall(void * debris)
 00201e90	16	USER_DEFINED	__thiscall	cObjElementFXInfernoMissile_SetFlare	void __thiscall(byte on)
-00201eb0	3565	DEFAULT	unknown	FUN_00601eb0	
+00201eb0	3565	USER_DEFINED	__thiscall	cObjElementFXInfernoExplosion_Explode	void __thiscall(float x, float y, float z, float range, int bees, byte flag)
 00202ca0	354	USER_DEFINED	__thiscall	cMapElement_ctor	void * __thiscall(char * name, void * pos, void * rot)
-00202e10	9	DEFAULT	unknown	FUN_00602e10	
+00202e10	9	USER_DEFINED	__thiscall	Elements_ctor	void * __thiscall(void)
 00202e20	26	USER_DEFINED	__thiscall	cMapElement_dtor	void __thiscall(void)
-00202e40	32	DEFAULT	unknown	FUN_00602e40	
-00202e60	52	ANALYSIS	__thiscall	cMapElement::vf00	undefined __thiscall(void)
-00202ea0	338	USER_DEFINED	unknown	Elements::Call	undefined(void)
-00203000	779	USER_DEFINED	unknown	Elements::Create	undefined(void)
+00202e40	32	USER_DEFINED	__thiscall	Elements_dtor	void __thiscall(void)
+00202e60	52	USER_DEFINED	__thiscall	cMapElement_Delete	void * __thiscall(byte flags)
+00202ea0	338	USER_DEFINED	__thiscall	Elements_Call	void __thiscall(char * name)
+00203000	779	USER_DEFINED	__thiscall	Elements_Create	void __thiscall(void)
 00203310	3	USER_DEFINED	__thiscall	cMapElement_Init	byte __thiscall(void)
-00203320	283	DEFAULT	unknown	FUN_00603320	
-00203440	223	DEFAULT	unknown	FUN_00603440	
+00203320	283	USER_DEFINED	__cdecl	Elements_Load	void __cdecl(void * f)
+00203440	223	USER_DEFINED	__thiscall	Elements_Find	void * __thiscall(char * name, float x, float y, float z, float maxDist)
 00203520	45	USER_DEFINED	__thiscall	cMapElement_Update	void __thiscall(float dt)
-00203550	46	DEFAULT	unknown	FUN_00603550	
-00203580	1104	DEFAULT	unknown	FUN_00603580	
-00203a00	1	DEFAULT	unknown	FUN_00603a00	
-00203a10	219	DEFAULT	unknown	FUN_00603a10	
-00203af0	58	USER_DEFINED	unknown	Floor::Get	undefined(void)
-00203b30	119	DEFAULT	unknown	FUN_00603b30	
-00203bb0	117	DEFAULT	unknown	FUN_00603bb0	
-00203c30	30	DEFAULT	unknown	FUN_00603c30	
-00203c50	2826	DEFAULT	unknown	FUN_00603c50	
-002048d0	112	DEFAULT	unknown	FUN_006048d0	
+00203550	46	USER_DEFINED	__thiscall	Elements_Update	void __thiscall(float dt)
+00203580	1104	USER_DEFINED	__thiscall	Floor_ctor	void * __thiscall(void)
+00203a00	1	USER_DEFINED	__thiscall	Floor_dtor	void __thiscall(void)
+00203a10	219	USER_DEFINED	__thiscall	Floor_Dist	float __thiscall(float ax, float ay, float az, float bx, float by, float bz)
+00203af0	58	USER_DEFINED	__thiscall	Floor_Get	int __thiscall(float y)
+00203b30	119	USER_DEFINED	__thiscall	MapLevel_NearestDown	int __thiscall(void * p)
+00203bb0	117	USER_DEFINED	__thiscall	MapLevel_NearestUp	int __thiscall(void * p)
+00203c30	30	USER_DEFINED	__cdecl	MapLevel_CompareY	int __cdecl(void * a, void * b)
+00203c50	2826	USER_DEFINED	__cdecl	cDebris_SetFX	byte __cdecl(int type, void * d)
+002048d0	112	USER_DEFINED	__thiscall	cDebrisSys_ctor	void * __thiscall(void)
 00204940	7	USER_DEFINED	__thiscall	cObjElement_dtor	void __thiscall(void)
-00204950	24	DEFAULT	unknown	FUN_00604950	
-00204970	208	DEFAULT	unknown	FUN_00604970	
-00204a40	229	USER_DEFINED	__thiscall	cDebrisSys::Drop	void __thiscall(void * debris)
-00204b30	69	DEFAULT	unknown	FUN_00604b30	
-00204b80	65	DEFAULT	unknown	FUN_00604b80	
-00204bd0	367	USER_DEFINED	__thiscall	cDebrisSys::NewElement	void * __thiscall(void)
+00204950	24	USER_DEFINED	__thiscall	cDebrisSys_dtor	void __thiscall(void)
+00204970	208	USER_DEFINED	__thiscall	cDebris_Step	void __thiscall(float dt)
+00204a40	229	USER_DEFINED	__thiscall	cDebrisSys_Drop	void __thiscall(void * debris)
+00204b30	69	USER_DEFINED	__thiscall	cDebrisSys_FreeActive	void __thiscall(void)
+00204b80	65	USER_DEFINED	__thiscall	cDebrisSys_FreeIdle	void __thiscall(void)
+00204bd0	367	USER_DEFINED	__thiscall	cDebrisSys_NewElement	void * __thiscall(void)
 00204d40	12	USER_DEFINED	__thiscall	cDebrisSys_GetIdle	void * __thiscall(void)
-00204d50	128	USER_DEFINED	__thiscall	cDebrisSys::Init	void __thiscall(int n, int e)
+00204d50	128	USER_DEFINED	__thiscall	cDebrisSys_Init	void __thiscall(int n, int e)
 00204dd0	16	USER_DEFINED	__thiscall	cDebrisSys_IsIdle	byte __thiscall(void * d)
 00204de0	183	USER_DEFINED	__thiscall	cDebris_Move	void __thiscall(float dt)
 00204ea0	664	USER_DEFINED	__thiscall	cDebris_Update	byte __thiscall(void * sys)
-00205140	91	USER_DEFINED	__cdecl	Object3D_Preload	void __cdecl(char * name, float * scale)
-002051a0	99	USER_DEFINED	unknown	Anm_Preload	undefined(void)
-00205210	387	DEFAULT	unknown	FUN_00605210	
-002053a0	33	DEFAULT	unknown	FUN_006053a0	
-002053d0	86	DEFAULT	unknown	FUN_006053d0	
-00205430	22	DEFAULT	unknown	FUN_00605430	
-00205450	56	DEFAULT	unknown	FUN_00605450	
-00205490	438	DEFAULT	unknown	FUN_00605490	
-00205680	105	DEFAULT	unknown	FUN_00605680	
-002056f0	113	DEFAULT	unknown	FUN_006056f0	
+00205140	91	USER_DEFINED	__cdecl	Object3D_Preload	void __cdecl(char * name, void * scale)
+002051a0	99	USER_DEFINED	__cdecl	Anm_Preload	void __cdecl(char * a, char * b)
+00205210	387	USER_DEFINED	__thiscall	cDebrisSys_ShowInfo	void __thiscall(int x, int y, float * line)
+002053a0	33	USER_DEFINED	__thiscall	cDebris_IsAlive	byte __thiscall(void * sys)
+002053d0	86	USER_DEFINED	__thiscall	cDebrisSys_Release	void __thiscall(void * d)
+00205430	22	USER_DEFINED	__thiscall	cDebrisSys_SetMaxIdle	void __thiscall(int n)
+00205450	56	USER_DEFINED	__thiscall	cDebrisSys_SetName	void __thiscall(char * name)
+00205490	438	USER_DEFINED	__thiscall	cDebrisSys_Update	void __thiscall(float dt)
+00205680	105	USER_DEFINED	__fastcall	cScheduledFunc_dtor	void __fastcall(void * self)
+002056f0	113	USER_DEFINED	__thiscall	cScheduledFuncStack_dtor	void __thiscall(void)
 00205770	150	USER_DEFINED	__thiscall	cScheduledFuncStack_Delete	void * __thiscall(byte flags)
 00205810	103	USER_DEFINED	__thiscall	SchedList_Add	void __thiscall(void **f)
 00205880	117	USER_DEFINED	__thiscall	SchedList_Insert	void __thiscall(void **f)
@@ -6418,7 +6418,7 @@ rva	size	source	callconv	name	signature
 0020d570	268	USER_DEFINED	__cdecl	App_GetConfigDir	void __cdecl(char * buf, int size)
 0020d680	94	USER_DEFINED	__thiscall	CWinApp_ParseParam	byte __thiscall(char * param, char * ext)
 0020d6e0	216	USER_DEFINED	__thiscall	CWinApp_RunApp	byte __thiscall(char * exe, char * cmdLine, int arg)
-0020d7c0	114	DEFAULT	unknown	FUN_0060d7c0	
+0020d7c0	114	USER_DEFINED	__cdecl	App_CheckExpiry	void __cdecl(void)
 0020d840	26	USER_DEFINED	__stdcall	App_WndProc	int __stdcall(void * hwnd, uint msg, uint wParam, int lParam)
 0020d860	80	USER_DEFINED	__fastcall	GogListeners_dtor	void __fastcall(void * self)
 0020d8b0	7	USER_DEFINED	__thiscall	CWinApp_IsDedicatedWin	byte __thiscall(void)
@@ -6570,7 +6570,7 @@ rva	size	source	callconv	name	signature
 00214f70	202	USER_DEFINED	__cdecl	Color_ToD3D	uint __cdecl(void * c)
 00215040	272	USER_DEFINED	__cdecl	Render_CopyBackBuffer	void __cdecl(void)
 00215150	8	USER_DEFINED	__cdecl	Matrix_Self	float * __cdecl(float * m)
-00215160	5	DEFAULT	unknown	thunk_FUN_0064b960	
+00215160	5	USER_DEFINED	__cdecl	Render_Line	int __cdecl(void * a, void * b, uint color)
 00215170	20	USER_DEFINED	__cdecl	Splash_Black	void __cdecl(void)
 002151c0	82	USER_DEFINED	__cdecl	Splash_Promos	void __cdecl(void)
 00215220	82	USER_DEFINED	__cdecl	Splash_Logos	void __cdecl(void)
@@ -6612,7 +6612,7 @@ rva	size	source	callconv	name	signature
 00217300	716	USER_DEFINED	__cdecl	Engine_DebugKeys	byte __cdecl(void)
 002175d0	133	USER_DEFINED	__cdecl	DVF_Process	void __cdecl(char * name, int arg)
 00217660	23	USER_DEFINED	__cdecl	Loading_Fade	void __cdecl(void)
-00217680	5	DEFAULT	unknown	thunk_FUN_0064bac0	
+00217680	5	USER_DEFINED	__cdecl	Render_SetWorldMatrix	int __cdecl(void * m, byte defer)
 00217690	177	USER_DEFINED	__cdecl	Engine_ResetAll	void __cdecl(void)
 00217750	92	USER_DEFINED	__cdecl	Engine_ResetTextures	void __cdecl(void)
 002177b0	11	USER_DEFINED	__cdecl	Eng_RenderTargetEnd	int __cdecl(void)
@@ -6648,8 +6648,8 @@ rva	size	source	callconv	name	signature
 00219720	27	USER_DEFINED	__cdecl	DebugUtils_DrawBox	void __cdecl(void * mn, void * mx, uint color)
 00219740	32	USER_DEFINED	__cdecl	DebugUtils_DrawLineM	void __cdecl(void * m, void * a, void * b, uint color)
 00219760	24	USER_DEFINED	__cdecl	DebugUtils_DrawLine	void __cdecl(void * a, void * b, uint color)
-00219780	1435	DEFAULT	unknown	FUN_00619780	
-00219d20	41	USER_DEFINED	__cdecl	DebugUtils_DrawSphere	void __cdecl(float * pos, float radius, uint color, int slices, int stacks)
+00219780	1435	USER_DEFINED	__cdecl	DebugUtils_DrawSphereM	void __cdecl(void * m, void * c, float r, uint color, int divV, int divH)
+00219d20	41	USER_DEFINED	__cdecl	DebugUtils_DrawSphere	void __cdecl(void * c, float r, uint color, int divV, int divH)
 00219d50	60	USER_DEFINED	__cdecl	DebugUtils_DrawTriM	void __cdecl(void * m, void * a, void * b, void * c, uint color)
 00219d90	62	USER_DEFINED	__cdecl	DebugUtils_DrawTri	void __cdecl(void * a, void * b, void * c, uint color)
 00219dd0	116	USER_DEFINED	__thiscall	CFont_ctor	void * __thiscall(char * name, void * unused)
@@ -6680,7 +6680,7 @@ rva	size	source	callconv	name	signature
 0021ad30	193	USER_DEFINED	__cdecl	Font_Get	void * __cdecl(char * name)
 0021ae00	948	USER_DEFINED	__cdecl	Fonts_Load	void __cdecl(void)
 0021b1c0	24	USER_DEFINED	__cdecl	Fonts_Unifont	byte __cdecl(void)
-0021b1e0	1	DEFAULT	unknown	FUN_0061b1e0	
+0021b1e0	1	USER_DEFINED	__cdecl	Font_SetLanguage	void __cdecl(char * lang)
 0021b1f0	105	USER_DEFINED	__thiscall	CArchIO_ctor	void * __thiscall(char *name, char *mode)
 0021b290	99	USER_DEFINED	__thiscall	CArchIO_dtor	void __thiscall(void)
 0021b300	33	USER_DEFINED	__cdecl	Ptr_Delete	void __cdecl(void **p)
@@ -6907,64 +6907,64 @@ rva	size	source	callconv	name	signature
 0022cfa0	81	USER_DEFINED	__cdecl	Cad_Dup	char * __cdecl(char * s)
 0022d000	129	USER_DEFINED	__cdecl	Cad_Thousands	int __cdecl(char * s)
 0022d090	45	USER_DEFINED	__cdecl	Cad_FromInt	char * __cdecl(char * buf, int n)
-0022d0c0	36	DEFAULT	unknown	FUN_0062d0c0	
-0022d0f0	37	DEFAULT	unknown	FUN_0062d0f0	
-0022d120	35	DEFAULT	unknown	FUN_0062d120	
-0022d150	12	DEFAULT	unknown	FUN_0062d150	
-0022d160	132	DEFAULT	unknown	FUN_0062d160	
-0022d1f0	140	DEFAULT	unknown	FUN_0062d1f0	
+0022d0c0	36	USER_DEFINED	__thiscall	CPsaImage_ctorTex	void * __thiscall(char * name, int a, int b)
+0022d0f0	37	USER_DEFINED	__thiscall	CPsaImage_ctorFlags	void * __thiscall(char * name, int a, int b, int flags)
+0022d120	35	USER_DEFINED	__thiscall	CPsaImage_ctor	void * __thiscall(char * name, int flags)
+0022d150	12	USER_DEFINED	__fastcall	CPsaImage_ctorEmpty	void * __fastcall(void * self)
+0022d160	132	USER_DEFINED	__fastcall	CPsaImage_dtor	void __fastcall(void * self)
+0022d1f0	140	USER_DEFINED	__fastcall	CPsaImage_Init	void __fastcall(void * self)
 0022d280	91	USER_DEFINED	__thiscall	CPsaImage_GetNumFrames	int __thiscall(void)
-0022d2e0	62	DEFAULT	unknown	FUN_0062d2e0	
-0022d320	148	DEFAULT	unknown	FUN_0062d320	
-0022d3c0	41	DEFAULT	unknown	FUN_0062d3c0	
-0022d3f0	56	DEFAULT	unknown	FUN_0062d3f0	
-0022d440	58	DEFAULT	unknown	FUN_0062d440	
-0022d480	153	DEFAULT	unknown	FUN_0062d480	
-0022d520	393	DEFAULT	unknown	FUN_0062d520	
-0022d6b0	23	DEFAULT	unknown	FUN_0062d6b0	
-0022d6d0	377	DEFAULT	unknown	FUN_0062d6d0	
-0022d850	22	DEFAULT	unknown	FUN_0062d850	
-0022d870	313	DEFAULT	unknown	FUN_0062d870	
-0022d9b0	34	DEFAULT	unknown	FUN_0062d9b0	
-0022d9e0	44	ANALYSIS	__thiscall	CEntradaNula::vf00	undefined __thiscall(void)
-0022da10	24	ANALYSIS	__thiscall	CMotorApp::vf01	undefined __thiscall(void)
-0022da30	317	DEFAULT	unknown	FUN_0062da30	
-0022db70	143	ANALYSIS	__thiscall	CMotorApp::vf08	undefined __thiscall(void)
-0022dc00	169	DEFAULT	unknown	FUN_0062dc00	
-0022dcb0	55	DEFAULT	unknown	FUN_0062dcb0	
+0022d2e0	62	USER_DEFINED	__thiscall	CPsaImage_GetFrameSize	byte __thiscall(int frame, int * w, int * h)
+0022d320	148	USER_DEFINED	__thiscall	CPsaImage_GetFrameUV	byte __thiscall(int frame, float * uv0, float * uv1)
+0022d3c0	41	USER_DEFINED	__thiscall	CPsaImage_Draw	void __thiscall(float x, float y)
+0022d3f0	56	USER_DEFINED	__thiscall	CPsaImage_DrawScaled	void __thiscall(float x, float y, float scale)
+0022d440	58	USER_DEFINED	__thiscall	CPsaImage_DrawFrame	void __thiscall(int frame, float x, float y)
+0022d480	153	USER_DEFINED	__thiscall	CPsaImage_DrawFrameFlip	void __thiscall(int frame, float x, float y, int mode, int flip)
+0022d520	393	USER_DEFINED	__thiscall	CPsaImage_DrawPoly	void __thiscall(float * pos, float * uv, uint * colors, int n, int mode)
+0022d6b0	23	USER_DEFINED	__thiscall	CPsaImage_LoadOpac	void __thiscall(char * name, char * opac, uint flags)
+0022d6d0	377	USER_DEFINED	__thiscall	CPsaImage_Load	void __thiscall(char * name, char * opac, int blend, uint flags)
+0022d850	22	USER_DEFINED	__thiscall	CPsaImage_LoadName	void __thiscall(char * name, uint flags)
+0022d870	313	USER_DEFINED	__fastcall	CMotorApp_ctor	byte * __fastcall(byte * self)
+0022d9b0	34	USER_DEFINED	__fastcall	Tabla_Free	void __fastcall(void * t)
+0022d9e0	44	USER_DEFINED	__thiscall	CEntradaNula_Delete	void * __thiscall(byte flags)
+0022da10	24	USER_DEFINED	__thiscall	CMotorApp_ConfirmDevice	int __thiscall(void * caps, uint behavior, int format)
+0022da30	317	USER_DEFINED	__cdecl	Engine3D_Create	void __cdecl(void * hInst, void * hWnd, void * init, void * frame, void * release, int arg)
+0022db70	143	USER_DEFINED	__thiscall	CMotorApp_DeleteDeviceObjects	int __thiscall(void)
+0022dc00	169	USER_DEFINED	__cdecl	Engine3D_Shutdown	void __cdecl(void)
+0022dcb0	55	USER_DEFINED	__thiscall	CMotorApp_LightsDialog	void __thiscall(void * hwnd, void * inst)
 0022dcf0	3251	DEFAULT	unknown	FUN_0062dcf0	
 0022e9b0	716	DEFAULT	unknown	FUN_0062e9b0	
-0022ec80	284	ANALYSIS	__thiscall	CMotorApp::vf09	undefined __thiscall(void)
-0022eda0	389	DEFAULT	unknown	FUN_0062eda0	
-0022ef30	318	ANALYSIS	__thiscall	CMotorApp::vf05	undefined __thiscall(void)
-0022f070	938	ANALYSIS	__thiscall	CMotorApp::vf03	undefined __thiscall(void)
-0022f420	3	ANALYSIS	__thiscall	CD3DApplication::vf07	undefined __thiscall(void)
-0022f430	3	ANALYSIS	__thiscall	CEntradaNula::vf07	undefined __thiscall(void)
-0022f440	826	ANALYSIS	__thiscall	CMotorApp::vf12	undefined __thiscall(void)
-0022f7f0	323	ANALYSIS	__thiscall	CMotorApp::vf02	undefined __thiscall(void)
+0022ec80	284	USER_DEFINED	__thiscall	CMotorApp_FinalCleanup	int __thiscall(void)
+0022eda0	389	USER_DEFINED	__cdecl	E3D_Command	void __cdecl(char * cmd)
+0022ef30	318	USER_DEFINED	__thiscall	CMotorApp_FrameMove	int __thiscall(void)
+0022f070	938	USER_DEFINED	__thiscall	CMotorApp_InitDeviceObjects	int __thiscall(void)
+0022f420	3	USER_DEFINED	__thiscall	CD3DApplication_Nothing	int __thiscall(void)
+0022f430	3	USER_DEFINED	__thiscall	CEntradaNula_Nothing4	void __thiscall(int a, int b, int c, int d)
+0022f440	826	USER_DEFINED	__thiscall	CMotorApp_MsgProc	int __thiscall(void * hwnd, uint msg, int wParam, int lParam)
+0022f7f0	323	USER_DEFINED	__thiscall	CMotorApp_OneTimeSceneInit	int __thiscall(void)
 0022f940	1039	ANALYSIS	__thiscall	CMotorApp::vf06	undefined __thiscall(void)
-0022fd50	9	ANALYSIS	__thiscall	CMotorApp::vf04	undefined __thiscall(void)
-0022fd60	68	DEFAULT	unknown	FUN_0062fd60	
-0022fdb0	22	DEFAULT	unknown	FUN_0062fdb0	
-0022fdd0	101	DEFAULT	unknown	FUN_0062fdd0	
-0022fe40	5	ANALYSIS	__thiscall	CEntradaNula::vf05	undefined __thiscall(void)
-0022fe50	5	ANALYSIS	__thiscall	CEntradaNula::vf06	undefined __thiscall(void)
+0022fd50	9	USER_DEFINED	__thiscall	CMotorApp_RestoreDeviceObjects	int __thiscall(void)
+0022fd60	68	USER_DEFINED	__cdecl	Motor_ColorStr	char * __cdecl(byte * c)
+0022fdb0	22	USER_DEFINED	__cdecl	Motor_BoolStr	char * __cdecl(int b)
+0022fdd0	101	USER_DEFINED	__cdecl	TreeView_InsertItemf	int __cdecl(void * hwnd, void * item, char * fmt, int arg)
+0022fe40	5	USER_DEFINED	__thiscall	CEntradaNula_Nothing1	int __thiscall(int a)
+0022fe50	5	USER_DEFINED	__thiscall	CEntradaNula_Nothing1	int __thiscall(int a)
 0022fe60	381	DEFAULT	unknown	FUN_0062fe60	
-0022ffe0	116	DEFAULT	unknown	FUN_0062ffe0	
-00230060	673	DEFAULT	unknown	FUN_00630060	
-00230310	87	DEFAULT	unknown	FUN_00630310	
-00230370	191	DEFAULT	unknown	FUN_00630370	
-00230430	5	ANALYSIS	__thiscall	CEntradaNula::vf01	undefined __thiscall(void)
-00230440	1060	DEFAULT	unknown	FUN_00630440	
-00230870	5	ANALYSIS	__thiscall	CEntradaNula::vf03	undefined __thiscall(void)
-00230880	3	ANALYSIS	__thiscall	CEntradaNula::vf04	undefined __thiscall(void)
-00230890	40	USER_DEFINED	__cdecl	Mundo_Get	void * __cdecl(void)
+0022ffe0	116	USER_DEFINED	__cdecl	Escena_LogTree	void __cdecl(void * esc, void * nodo, int indent)
+00230060	673	USER_DEFINED	__fastcall	CMotorApp_UpdateMenu	void __fastcall(byte * self)
+00230310	87	USER_DEFINED	__fastcall	Motor_ReleaseEscena	void __fastcall(byte * self)
+00230370	191	USER_DEFINED	__fastcall	Motor_GetEscena	void __fastcall(byte * self)
+00230430	5	USER_DEFINED	__thiscall	CEntradaNula_Nothing3	int __thiscall(int a, int b, int c)
+00230440	1060	USER_DEFINED	__cdecl	Motor_LoadIni	void __cdecl(char * name, char * dir)
+00230870	5	USER_DEFINED	__thiscall	CEntradaNula_Nothing1	int __thiscall(int a)
+00230880	3	USER_DEFINED	__thiscall	CEntradaNula_Nothing	int __thiscall(void)
+00230890	40	USER_DEFINED	__cdecl	Mundo_GetChecked	void * __cdecl(void)
 002308c0	2223	DEFAULT	unknown	FUN_006308c0	
-00231170	3	ANALYSIS	__thiscall	CEntradaNula::vf02	undefined __thiscall(void)
-00231180	43	DEFAULT	unknown	FUN_00631180	
-002311b0	1	DEFAULT	unknown	FUN_006311b0	
+00231170	3	USER_DEFINED	__thiscall	CEntradaNula_Nothing	int __thiscall(void)
+00231180	43	USER_DEFINED	__fastcall	cMusicVoice_ctor	void * __fastcall(void * self)
+002311b0	1	USER_DEFINED	__fastcall	cMusicVoice_dtor	void __fastcall(void * self)
 002311e0	162	USER_DEFINED	__cdecl	Fmod_ErrorString	char * __cdecl(int err)
-002312d0	438	DEFAULT	__thiscall	FUN_006312d0	
+002312d0	438	USER_DEFINED	__cdecl	Fmod_Init	int __cdecl(void)
 002314c0	67	USER_DEFINED	__cdecl	Voice_Get	void * __cdecl(uint voice)
 00231510	52	USER_DEFINED	__cdecl	Music_GetOpenState	int __cdecl(void)
 00231550	119	USER_DEFINED	__cdecl	Music_Ready	byte __cdecl(void)
@@ -7014,23 +7014,27 @@ rva	size	source	callconv	name	signature
 00232e80	135	USER_DEFINED	__thiscall	CGameLensFlare_ctor	void * __thiscall(void)
 00232f10	27	USER_DEFINED	__thiscall	CGameLensFlare_dtor	void __thiscall(void)
 00232f30	11	USER_DEFINED	__thiscall	CGameLensFlare_SetOn	void __thiscall(byte on)
+00232f40	16	USER_DEFINED	__thiscall	CGameLensFlare_GetIntensity	float __thiscall(void)
+00232f50	16	USER_DEFINED	__thiscall	CGameLensFlare_GetF30	float __thiscall(void)
+00232f60	16	USER_DEFINED	__thiscall	CGameLensFlare_GetF18	float __thiscall(void)
+00232f70	16	USER_DEFINED	__thiscall	CGameLensFlare_GetI1c	int __thiscall(void)
 00232f80	25	USER_DEFINED	__thiscall	CGameLensFlare_SetIntensity	void __thiscall(float v)
 00232fa0	25	USER_DEFINED	__thiscall	CGameLensFlare_SetF30	void __thiscall(float v)
 00232fc0	34	USER_DEFINED	__thiscall	CGameLensFlare_SetPos	void __thiscall(float x, float y, float z)
 00232ff0	25	USER_DEFINED	__thiscall	CGameLensFlare_SetF18	void __thiscall(float v)
 00233010	11	USER_DEFINED	__thiscall	CGameLensFlare_SetI1c	void __thiscall(int v)
-00233020	11	DEFAULT	unknown	FUN_00633020	
-00233030	741	DEFAULT	unknown	FUN_00633030	
-002333b0	88	DEFAULT	unknown	FUN_006333b0	
-00233410	415	DEFAULT	unknown	FUN_00633410	
-002336f0	111	ANALYSIS	__thiscall	CListaMat::vf00	undefined __thiscall(void)
-00233760	208	DEFAULT	unknown	FUN_00633760	
-00233830	350	DEFAULT	unknown	FUN_00633830	
-002339a0	43	DEFAULT	unknown	FUN_006339a0	
-002339d0	86	DEFAULT	unknown	FUN_006339d0	
-00233a30	178	DEFAULT	unknown	FUN_00633a30	
-00233af0	239	DEFAULT	unknown	FUN_00633af0	
-00233be0	61	DEFAULT	unknown	FUN_00633be0	
+00233020	11	USER_DEFINED	__thiscall	CGameLensFlare_SetB2c	void __thiscall(byte v)
+00233030	741	USER_DEFINED	__cdecl	D3DApp_MsgProc	int __cdecl(void * hwnd, uint msg, int wParam, int lParam)
+002333b0	88	USER_DEFINED	__cdecl	App_SetExceptionFilter	void __cdecl(byte on)
+00233410	415	USER_DEFINED	__stdcall	App_ExceptionFilter	int __stdcall(void ** ep)
+002336f0	111	USER_DEFINED	__thiscall	CListaMat_DeleteObj	void * __thiscall(byte flags)
+00233760	208	USER_DEFINED	__thiscall	CMapa_ctor	void * __thiscall(void)
+00233830	350	USER_DEFINED	__thiscall	CMaterial_ctor	void * __thiscall(void)
+002339a0	43	USER_DEFINED	__fastcall	CBmp_dtor	void __fastcall(void * self)
+002339d0	86	USER_DEFINED	__fastcall	CListaMat_dtor	void __fastcall(void * self)
+00233a30	178	USER_DEFINED	__thiscall	CMapa_dtor	void __thiscall(void)
+00233af0	239	USER_DEFINED	__thiscall	CMaterial_dtor	void __thiscall(void)
+00233be0	61	USER_DEFINED	__fastcall	Cad_dtor	void __fastcall(char ** self)
 00233c20	79	USER_DEFINED	__fastcall	CObjRef_dtor	void __fastcall(void * self)
 00233c70	100	USER_DEFINED	__fastcall	CTextEst_dtor	void __fastcall(void * self)
 00233ce0	118	USER_DEFINED	__thiscall	CMapa_Assign	void __thiscall(void *orig)
@@ -7082,36 +7086,36 @@ rva	size	source	callconv	name	signature
 00236ad0	341	USER_DEFINED	__fastcall	CMaterial_MapToColor	void __fastcall(void * self)
 00236c30	108	USER_DEFINED	__thiscall	CMapa_GetSize	byte __thiscall(int *w, int *h)
 00236ca0	124	USER_DEFINED	__thiscall	CBmp_Pixel	uint * __thiscall(uint x, uint y)
-00236d20	4	DEFAULT	unknown	FUN_00636d20	
+00236d20	4	USER_DEFINED	__fastcall	CMapa_HasAlpha	byte __fastcall(void * self)
 00236d30	59	USER_DEFINED	__thiscall	CMapa_GetTexture	void * __thiscall(byte load)
 00236d70	68	USER_DEFINED	__thiscall	CMaterial_GetMapName	char * __thiscall(uint idmapa)
 00236dc0	166	USER_DEFINED	__thiscall	CMaterial_GetMapSize	byte __thiscall(uint idmapa, int *w, int *h)
 00236e70	133	USER_DEFINED	__thiscall	CMapa_FramePath	char * __thiscall(int frame, char *buf, int size)
 00236f00	126	USER_DEFINED	__thiscall	CListaMat_Delete	void __thiscall(void *mat)
 00236f80	147	USER_DEFINED	__cdecl	Tex_TryFormat	byte __cdecl(char *frmt, char *name, char *out, int alpha)
-00237020	128	DEFAULT	unknown	FUN_00637020	
+00237020	128	USER_DEFINED	__thiscall	CMaterial_ScaleColors	void __thiscall(float k)
 002370a0	742	DEFAULT	unknown	FUN_006370a0	
-002373a0	46	DEFAULT	unknown	FUN_006373a0	
+002373a0	46	USER_DEFINED	__fastcall	cLog_dtor	void __fastcall(void * self)
 002373d0	790	DEFAULT	unknown	FUN_006373d0	
-002376f0	53	DEFAULT	unknown	FUN_006376f0	
+002376f0	53	USER_DEFINED	__cdecl	Window_MoveRel	int __cdecl(void * hwnd, int * rect, int x, int y, int w, int h)
 00237730	209	USER_DEFINED	__fastcall	cLog_Open	void __fastcall(void *self)
 00237810	26	USER_DEFINED	__fastcall	cLog_Close	void __fastcall(void *self)
-00237830	185	USER_DEFINED	__cdecl	DbgStd_Printf	void __cdecl(char *fmt, ...)
-002378f0	92	DEFAULT	unknown	FUN_006378f0	
-00237950	343	USER_DEFINED	__cdecl	DbgWin_Printf	void __cdecl(char *fmt, ...)
-00237ab0	77	DEFAULT	unknown	FUN_00637ab0	
+00237830	185	USER_DEFINED	__cdecl	DbgStd_Printf	void __cdecl(char * fmt, int arg)
+002378f0	92	USER_DEFINED	__cdecl	DbgStd_Open	void __cdecl(void * hwnd)
+00237950	343	USER_DEFINED	__cdecl	DbgWin_Printf	void __cdecl(char * fmt, int arg)
+00237ab0	77	USER_DEFINED	__cdecl	DbgWin_Open	void __cdecl(void * hwnd)
 00237b00	210	USER_DEFINED	__cdecl	E3D_LogWhite	void __cdecl(void *log, char *fmt, ...)
 00237be0	188	USER_DEFINED	__cdecl	E3D_LogBlue	void __cdecl(void *log, char *fmt, ...)
 00237ca0	210	USER_DEFINED	__cdecl	E3D_Log	void __cdecl(void *log, char *fmt, ...)
 00237d80	188	USER_DEFINED	__cdecl	E3D_LogDebug	void __cdecl(void *log, char *fmt, ...)
 00237e40	275	USER_DEFINED	__thiscall	cLog_Write	void __thiscall(uint mask, char *text)
 00237f60	132	USER_DEFINED	__cdecl	E3D_DebugPrintf	void __cdecl(char *fmt, ...)
-00237ff0	127	DEFAULT	unknown	FUN_00637ff0	
+00237ff0	127	USER_DEFINED	__cdecl	DbgWin_Init	void __cdecl(void * hwnd)
 00238070	188	USER_DEFINED	__cdecl	E3D_LogPrint	void __cdecl(void *log, char *fmt, ...)
-00238130	67	DEFAULT	unknown	FUN_00638130	
+00238130	67	USER_DEFINED	__cdecl	Window_GetNormalRect	void __cdecl(void * hwnd, int * rect)
 00238180	210	USER_DEFINED	__cdecl	E3D_LogInfo	void __cdecl(void *log, char *fmt, ...)
 00238260	188	USER_DEFINED	__cdecl	E3D_LogDebug2	void __cdecl(void *log, char *fmt, ...)
-00238320	88	DEFAULT	unknown	FUN_00638320	
+00238320	88	USER_DEFINED	__cdecl	DbgWin_AddLine	void __cdecl(char * line, int len, int size)
 00238380	188	USER_DEFINED	__cdecl	E3D_LogVerbose	void __cdecl(void *log, char *fmt, ...)
 00238440	145	USER_DEFINED	__cdecl	File_TimeChanged	byte __cdecl(int saved, char *name, int tol)
 002384e0	23	USER_DEFINED	__cdecl	File_Exists	byte __cdecl(char *name)
@@ -7121,30 +7125,30 @@ rva	size	source	callconv	name	signature
 002387d0	116	USER_DEFINED	__cdecl	File_Backup	int __cdecl(char *name, byte inDir)
 00238850	87	USER_DEFINED	__cdecl	Wild_MatchLower	int __cdecl(char *pat, char *name)
 002388b0	81	USER_DEFINED	__cdecl	Ruta_Copy	char * __cdecl(char *dest, char *src, int size)
-00238910	6	DEFAULT	unknown	FUN_00638910	
+00238910	6	USER_DEFINED	__cdecl	E3D_GetExePath	char * __cdecl(void)
 00238920	125	USER_DEFINED	__cdecl	Cad_Unquote	char * __cdecl(char *dest, char *src)
 002389a0	26	USER_DEFINED	__cdecl	Bprintf	int __cdecl(char *buf, int size, char *fmt, ...)
 002389c0	125	USER_DEFINED	__cdecl	VBprintf	int __cdecl(char *buf, int size, char *fmt, void *ap)
 00238a40	56	USER_DEFINED	__cdecl	RSqrt_Estimate	float __cdecl(float x)
 00238a80	136	USER_DEFINED	__cdecl	RSqrt	float __cdecl(float x)
-00238b10	105	DEFAULT	unknown	FUN_00638b10	
-00238b80	57	DEFAULT	unknown	FUN_00638b80	
+00238b10	105	USER_DEFINED	__cdecl	RSqrt_InitTable	void __cdecl(void)
+00238b80	57	USER_DEFINED	__cdecl	Ang_Wrap	float __cdecl(float a)
 00238bc0	277	USER_DEFINED	__cdecl	Vec3_Rotate2	float * __cdecl(float *out, float *in, float *rot)
 00238ce0	1125	DEFAULT	unknown	FUN_00638ce0	
-00239150	147	USER_DEFINED	unknown	Vec3_ToAngles	
+00239150	147	USER_DEFINED	__cdecl	Vec3_GetRotAng	void * __cdecl(void * out, void * dir)
 002391f0	22	USER_DEFINED	__cdecl	Matrix_MulD3D	void * __cdecl(void * out, void * a, void * b)
-00239210	185	DEFAULT	unknown	FUN_00639210	
+00239210	185	USER_DEFINED	__cdecl	Matrix_PostScale	void * __cdecl(void * m, void * s)
 002392d0	652	USER_DEFINED	__cdecl	Matrix_ToEuler	void * __cdecl(void * out, void * m)
-00239560	696	USER_DEFINED	unknown	Matrix_Invert	
-00239820	63	DEFAULT	unknown	FUN_00639820	
-00239860	19	DEFAULT	unknown	FUN_00639860	
-00239880	2169	DEFAULT	unknown	FUN_00639880	
-0023a100	135	DEFAULT	unknown	FUN_0063a100	
-0023a190	212	DEFAULT	unknown	FUN_0063a190	
+00239560	696	USER_DEFINED	__cdecl	Matrix_Invert	int __cdecl(void * out, void * m)
+00239820	63	USER_DEFINED	__cdecl	Matrix_MulTo	void __cdecl(void * out, void * a, void * b)
+00239860	19	USER_DEFINED	__cdecl	Matrix_Transpose	void * __cdecl(void * out, void * m)
+00239880	2169	USER_DEFINED	__cdecl	Box_Transform	void * __cdecl(void * out, void * box, void * m)
+0023a100	135	USER_DEFINED	__cdecl	Matrix_PostRotate	void __cdecl(void * m, void * rot)
+0023a190	212	USER_DEFINED	__cdecl	Matrix_PerspectiveD3D	int __cdecl(void * out, float fov, float aspect, float zNear, float zFar)
 0023a270	24	USER_DEFINED	__cdecl	Matrix_RotationX	void * __cdecl(void * out, float ang)
-0023a290	24	DEFAULT	unknown	FUN_0063a290	
-0023a2b0	24	USER_DEFINED	unknown	Matrix_RotationZ	
-0023a2d0	498	DEFAULT	unknown	FUN_0063a2d0	
+0023a290	24	USER_DEFINED	__cdecl	Matrix_RotationY	void * __cdecl(void * out, float ang)
+0023a2b0	24	USER_DEFINED	__cdecl	Matrix_RotationZ	void * __cdecl(void * out, float ang)
+0023a2d0	498	USER_DEFINED	__cdecl	Matrix_RotationAxis	void * __cdecl(void * out, void * axis, float ang)
 0023a4d0	55	USER_DEFINED	__cdecl	Matrix_AddPos	void __cdecl(float *m, float *v)
 0023a510	211	USER_DEFINED	__cdecl	Vec3_TransformH	int __cdecl(float *out, float *v, float *m)
 0023a5f0	144	USER_DEFINED	__cdecl	Vec3_TransformDir0	int __cdecl(float *out, float *v, float *m)
@@ -7220,15 +7224,15 @@ rva	size	source	callconv	name	signature
 0023f0d0	78	USER_DEFINED	__thiscall	CNodo3D_Channel	void * __thiscall(uint ch)
 0023f120	482	USER_DEFINED	__thiscall	CRotacion_GetQuat	void * __thiscall(void * out)
 0023f310	46	USER_DEFINED	__cdecl	CSistPart_Cast	void * __cdecl(void * obj)
-0023f340	144	DEFAULT	unknown	FUN_0063f340	
-0023f3d0	116	DEFAULT	unknown	FUN_0063f3d0	
-0023f450	233	DEFAULT	unknown	FUN_0063f450	
+0023f340	144	USER_DEFINED	__fastcall	NodoLook_ctor	void * __fastcall(void * self)
+0023f3d0	116	USER_DEFINED	__fastcall	CNodoR_ctor	void * __fastcall(void * self)
+0023f450	233	USER_DEFINED	__fastcall	CNodoR_dtor	void __fastcall(void * self)
 0023f540	134	USER_DEFINED	__thiscall	CNodoR_ApplyFX	int __thiscall(void * m)
 0023f5d0	535	USER_DEFINED	__thiscall	CNodoR_UpdateNodo	void __thiscall(void)
-0023f7f0	157	DEFAULT	unknown	FUN_0063f7f0	
-0023f890	557	DEFAULT	unknown	FUN_0063f890	
-0023fac0	79	DEFAULT	unknown	FUN_0063fac0	
-0023fb10	179	DEFAULT	unknown	FUN_0063fb10	
+0023f7f0	157	USER_DEFINED	__thiscall	CNodoR_SetLook	void __thiscall(int tipo)
+0023f890	557	USER_DEFINED	__thiscall	CNodoR_SetNodo	void __thiscall(void * nodo)
+0023fac0	79	USER_DEFINED	__thiscall	RenderCtx_Init	void __thiscall(void * m, void * scale)
+0023fb10	179	USER_DEFINED	__thiscall	RenderCtx_SetCanal	void __thiscall(void * slot)
 0023fbd0	37	USER_DEFINED	__fastcall	CListaVert_ctor	void * __fastcall(void * self)
 0023fc00	95	USER_DEFINED	__fastcall	CListaVert_Free	void __fastcall(void * self)
 0023fc60	1100	USER_DEFINED	__cdecl	ListaVert_Strip	byte __cdecl(void * out, void * in, ushort * tris, int nTri)

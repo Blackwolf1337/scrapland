@@ -788,7 +788,7 @@ void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias)
 			void *dev = g_pd3dDevice;
 			D3D_METHOD(dev, d3dGetTransform_t, D3DDEV_GETTRANSFORM)(dev, D3DTS_VIEW, &v);
 			vec3_t dir = { v.m[2], v.m[6], v.m[10] }, ang;
-			Vec3_ToAngles(&ang, &dir);
+			Vec3_GetRotAng(&ang, &dir);
 			m.m[12] -= (float)((double)ang.y * M_1_PI_D);
 			m.m[13] -= (float)((double)ang.x * M_1_PI_D);
 		}
