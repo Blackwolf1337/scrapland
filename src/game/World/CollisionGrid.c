@@ -385,8 +385,6 @@ void __thiscall Grid_Draw(void *grid) {
 	}
 }
 
-/* rva 0x219d20 (DebugUtils.cpp): a sphere of lines */
-void DebugUtils_DrawSphere(const vec3_t *pos, float radius, uint32_t color, int slices, int stacks);
 
 void Dummies_Draw(void) {
 	box_t box;

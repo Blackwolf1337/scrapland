@@ -1133,8 +1133,6 @@ byte __thiscall cAICharControl_StartOrbit(cAICharControl *self, float dist) {
 
 /* ---- the debug view ---- */
 
-/* rva 0x219d20 (DebugUtils.cpp): a sphere of lines */
-void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
 
 /* ShowPathAI: the corridor of the last path test, the view, the goal, the velocity and the path */
 static void AICC_DrawPath(cAICharControl *self) {

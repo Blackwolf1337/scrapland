@@ -51,7 +51,6 @@
 #define AIVC_DRAW_VEL2 10000.0f		/* rva 0x3a5ac0 */
 
 int Vec3_Differ(const float *a, const float *b);
-void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
 
 static const vec3_t aivc_fwd = { 0.0f, 0.0f, -1.0f };
 

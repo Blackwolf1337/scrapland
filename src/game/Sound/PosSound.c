@@ -10,6 +10,7 @@
 #include "scrap/cstring.h"
 #include "scrap/hashtable.h"
 #include "scrap/scrapfont.h"
+#include "scrap/scrapmain.h"
 #include "scrap/sound.h"
 #include "scrap/world.h"
 
@@ -49,8 +50,6 @@
 
 /* the voice volume by the distance to the speaker, of voice 0..2 (rva 0x1a0320) */
 void Sound_UpdateVoice(int voice);
-/* the debug sphere of DebugUtils.cpp */
-void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
 
 cSoundPS *__fastcall cSoundPS_ctor(cSoundPS *self) {
 	cSound_Init(&self->sound);

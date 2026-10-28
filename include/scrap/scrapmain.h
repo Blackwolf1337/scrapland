@@ -257,7 +257,6 @@ void DebugUtils_DrawLine(const vec3_t *a, const vec3_t *b, uint32_t color);
 void DebugUtils_DrawTri(const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color);
 /* divV meridians, divH (0: divV) parts of each, the axes at the center */
 void DebugUtils_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int divH);
-void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
 
 /* other modules (src/imports.inc) */
 /* name NULL: a random loading screen; the fade and the time in ms */

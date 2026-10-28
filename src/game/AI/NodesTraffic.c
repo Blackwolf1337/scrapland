@@ -18,7 +18,6 @@
 #include "scrap/scrapworld.h"
 
 double crt_ceil(double x);				/* rva 0x345010 */
-void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
 
 /* ---- Global/DList.h ---- */
 
