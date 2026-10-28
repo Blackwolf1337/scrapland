@@ -10440,3 +10440,5 @@ SD_HOOK(RenderSuelo_FiniBatchTab, 0x38f040, 39)
 SD_HOOK(Radiosidad_FiniNormales, 0x38f070, 39)
 
 /* module agent: Standalone 3a, the data built in (hooks below this line) */
+
+/* module agent: Standalone 3b1, data placement and the vtables (hooks below this line) */
