@@ -7954,3 +7954,5 @@ SD_HOOK(CListaVert_EnvMapUV, 0x2418c0, 1346)
 SD_HOOK(CListaVert_LightRampUV, 0x241f20, 751)
 SD_HOOK(CListaVert_Optimize, 0x243090, 16)
 SD_HOOK(BspQ3_Render, 0x2c9d90, 16)
+
+/* module agent: Final FX Starts (ShipExplosion, VehicleDamage, GearMissile, EMI, MentalController) (hooks below this line) */

@@ -489,3 +489,5 @@ SD_IMPORT(Timer_CountTicks, 0x276ba0)
 SD_IMPORT(Timer_GetQPFreq, 0x276d00)
 SD_IMPORT(Timer_MeasureQP, 0x276e40)
 SD_IMPORT(Tsc_CpuFreq, 0x272f90)
+
+/* module agent: Final FX Starts (ShipExplosion, VehicleDamage, GearMissile, EMI, MentalController) (imports below this line) */
