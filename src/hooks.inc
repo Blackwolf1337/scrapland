@@ -10452,3 +10452,7 @@ SD_HOOK(Radiosidad_FiniNormales, 0x38f070, 39)
 /* module agent: Standalone 3b5, the globals and tables of .data (hooks below this line) */
 
 /* module agent: Standalone 3c0, the tests by name (hooks below this line) */
+
+/* module agent: Standalone 3c1a, the imports of ScrapC.exe (hooks below this line) */
+
+/* module agent: Standalone 3c1b, the last data of the original (hooks below this line) */
