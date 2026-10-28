@@ -455,18 +455,6 @@ void BspTri_CalcCentro(BspTri *tri) {
 }
 
 /* the vertices of tri into box (minss and maxss with the box first) */
-static void Box_AddTri(box_t *box, const BspTri *tri) {
-	for (int i = 0; i < 3; i++) {
-		const vec3_t *p = &tri->v[i];
-		box->min.x = Float_MinSS(box->min.x, p->x);
-		box->min.y = Float_MinSS(box->min.y, p->y);
-		box->min.z = Float_MinSS(box->min.z, p->z);
-		box->max.x = Float_MaxSS(box->max.x, p->x);
-		box->max.y = Float_MaxSS(box->max.y, p->y);
-		box->max.z = Float_MaxSS(box->max.z, p->z);
-	}
-}
-
 box_t *BspTri_ListBox(box_t *out, const BspTri *list) {
 	out->min = (vec3_t){ 3.4028235e38f, 3.4028235e38f, 3.4028235e38f };
 	out->max = (vec3_t){ -3.4028235e38f, -3.4028235e38f, -3.4028235e38f };
@@ -646,11 +634,6 @@ void BspTri_GetExt2(const BspTri *tri, int *x0, int *y0, int *x1, int *y1) {
 	*y0 = tri->ext2[1];
 	*x1 = tri->ext2[2];
 	*y1 = tri->ext2[3];
-}
-
-/* the mask colors keep the list in R G B with R and B swapped */
-static inline uint32_t Color_SwapRB(uint32_t c) {
-	return (c & 0xff000000) | (c & 0xff) << 16 | (c & 0xff00) | (c >> 16 & 0xff);
 }
 
 byte BspTri_EsTexel(int x0, int y0, int x, int y, uint32_t color, const BspTri *tri) {

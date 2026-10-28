@@ -150,6 +150,24 @@ SD_SIZE(BspTri, 0x224);
 
 #define BSPTRI_NOLMAP 0x1		/* flags: no light map, the vertex colors */
 
+/* the corners of tri into box (minss and maxss in the order of the exe) */
+static inline void Box_AddTri(box_t *box, const BspTri *tri) {
+	for (int i = 0; i < 3; i++) {
+		const vec3_t *p = &tri->v[i];
+		box->min.x = Float_MinSS(box->min.x, p->x);
+		box->min.y = Float_MinSS(box->min.y, p->y);
+		box->min.z = Float_MinSS(box->min.z, p->z);
+		box->max.x = Float_MaxSS(box->max.x, p->x);
+		box->max.y = Float_MaxSS(box->max.y, p->y);
+		box->max.z = Float_MaxSS(box->max.z, p->z);
+	}
+}
+
+/* the mask colors keep the list in R G B with R and B swapped */
+static inline uint32_t Color_SwapRB(uint32_t c) {
+	return (c & 0xff000000) | (c & 0xff) << 16 | (c & 0xff00) | (c >> 16 & 0xff);
+}
+
 /* the vertex and index buffers of the lists without light map (0x2c bytes) */
 typedef struct BspNodo {
 	struct BspNodo *sig;		/* 0x00 */
@@ -428,6 +446,11 @@ void __fastcall CBsp_InitD3D(CBsp *self);
 /* the map compiler (BspCalc.c) */
 /* the active lights of the scene into g_BspLuces, all of them switched off; the ambient of [mapa_sombras] */
 void Bsp_TomarLuces(CEscena *esc);
+/* the texels of the triangles of list: the coverage into the low byte of cob (0xff when the texel is inside, else the
+ * weight of its samples) where it is larger, the triangle into the masks; the texel box of each into ext2 */
+void BspTri_Mascara(BspTri *list, CBmp *cob);
+/* the lists of the same material, page and sector joined (below 4096 triangles), sorted, their vertex lists */
+void __fastcall CBsp_CrearBuffers(CBsp *self);
 
 /* exe functions of this file still the exe's */
 void __fastcall CBsp_Calcular(CBsp *self);		/* rva 0x28a860, the light maps computed */

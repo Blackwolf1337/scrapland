@@ -195,3 +195,151 @@ SDTest.Call(0x2621a0, 'tiisss', bscini, 'mapa_sombras', 'lightmap_ambient', '0 0
 bscactivar()
 check('Bsp_TomarLuces ini 1', lambda: (SDTest.Call(0x290930, 'vi', bscesc), bsctabla()[3], bscambiente()))
 check('Bsp_TomarLuces lights', lambda: SDTest.Peek(0x4ac434, 'i') == bscnl)
+
+# lists made here: the texels of their triangles, then the vertex lists of a fake map
+def bsctri(v, n=(0.0,) * 9, uv=(0.0,) * 6, uvl=(0.0,) * 6, col=(0, 0, 0)):
+	t = bscz(0x224)
+	SDTest.Call(0x281d40, 'tii', t)
+	bscwf(t + 4, v)
+	bscwf(t + 0x28, n)
+	bscwf(t + 0x4c, uv)
+	bscwf(t + 0x64, uvl)
+	for i in range(3):
+		bscpoke(t + 0x7c + 4 * i, col[i])
+	return t
+def bsclink(ts):
+	for i in range(len(ts) - 1):
+		bscpoke(ts[i], ts[i + 1])
+	return ts[0]
+def bscbmp(w, h, c):
+	b = bscz(12)
+	SDTest.Call(0x28ff20, 'tviiii', b, w, h, c)
+	return b
+def bscswap(t):
+	return (t & 0xff000000) | (t & 0xff) << 16 | (t & 0xff00) | (t >> 16 & 0xff)
+bscsaved = (SDTest.Peek(0x432950, 'i'), SDTest.Peek(0x432954, 'i'))
+SDTest.Poke(0x432950, 0x40000000)
+SDTest.Poke(0x432954, 0x3f800000)
+check('bsc texels', lambda: (SDTest.Peek(0x432958, 'i'), SDTest.Peek(0x43295c, 'i')))
+bscta = bsctri((0.3, 0.0, 0.2, 0.1, 0.0, 4.6, 4.4, 0.0, 0.3))
+bsctb = bsctri((4.4, 0.0, 0.3, 0.1, 0.0, 4.6, 4.7, 0.0, 4.9))
+bsctc = bsctri((1.0, 0.0, 0.0, 1.5, 3.0, 0.2, 0.8, 0.5, 3.3))
+bscmts = [bscta, bsctb, bsctc]
+bscl1 = bsclink([bscta, bsctb])
+SDTest.Call(0x287bf0, 'vi', bscl1)
+SDTest.Call(0x287bf0, 'vi', bsctc)
+for bsc_t, bsc_e in ((bscl1, (-2, -2, 12, 12)), (bsctc, (-3, -1, 11, 13))):
+	for bsc_i in range(4):
+		bscpoke(bsc_t + 0xdc + 4 * bsc_i, bsc_e[bsc_i])
+	SDTest.Call(0x28ff20, 'tviiii', bsc_t + 0x114, 16, 16, 0)
+SDTest.Call(0x28ff20, 'tviiii', bsctc + 0x120, 16, 16, 0)
+bscpoke(bsctc + 0x12c, 0x00332211)
+bsccob = bscbmp(16, 16, 0xffff0000)
+def bscpix(b, x, y):
+	return bsci(bsci(b + 8) + 4 * (16 * y + x))
+def bsccobs(b):
+	r = []
+	for y in range(16):
+		s = ''
+		for x in range(16):
+			s = s + '%02x' % (bscpix(b, x, y) & 0xff)
+		r.append(s)
+	return tuple(r)
+def bscmask(b):
+	r = []
+	for y in range(16):
+		s = ''
+		for x in range(16):
+			v = bscpix(b, x, y)
+			c = '?'
+			if v == 0:
+				c = '.'
+			elif v == bscswap(0x00332211):
+				c = 'k'
+			for i in range(len(bscmts)):
+				if v == bscswap(bscmts[i]):
+					c = chr(ord('a') + i)
+			s = s + c
+		r.append(s)
+	return tuple(r)
+def bscext2(t):
+	return (bsci(t + 0xec), bsci(t + 0xf0), bsci(t + 0xf4), bsci(t + 0xf8))
+check('BspTri_Mascara', lambda: (SDTest.Call(0x285d80, 'vii', bscl1, bsccob), bscext2(bscta), bscext2(bsctb), bsccobs(bsccob),
+	bscmask(bscl1 + 0x114), bscpix(bsccob, 5, 5) >> 8))
+check('BspTri_Mascara 2', lambda: (SDTest.Call(0x285d80, 'vii', bsctc, bsccob), bscext2(bsctc), bsccobs(bsccob),
+	bscmask(bsctc + 0x114), bscmask(bsctc + 0x120)))
+SDTest.Poke(0x432950, bscsaved[0])
+SDTest.Poke(0x432954, bscsaved[1])
+
+# the vertex lists of a fake map: lists of the same material, page and sector joined
+bscmata = bscz(0xb0)
+SDTest.Call(0x233830, 'tii', bscmata)
+SDTest.Call(0x2a1940, 'tvis', bscmata + 4, 'sdbscmatA')
+bscmatb = bscz(0xb0)
+SDTest.Call(0x233830, 'tii', bscmatb)
+SDTest.Call(0x2a1940, 'tvis', bscmatb + 4, 'sdbscmatB')
+bscpoke(bscmatb + 0x38, bsci(bscmatb + 0x38) | 0x01000000)
+bscpg1 = bscz(0x30)
+bscpoke(bscpg1 + 0x28, 1)
+bscpg2 = bscz(0x30)
+bscpoke(bscpg2 + 0x28, 2)
+bscmap = bscz(0x61aa8)
+bscvtris = []
+def bscvlist(mat, lm, zona, flags, tris):
+	ts = []
+	for v, n, uv, uvl, col in tris:
+		t = bsctri(v, n, uv, uvl, col)
+		bscpoke(t + 0xac, mat)
+		bscpoke(t + 0x1c0, lm)
+		bscpoke(t + 0x1c8, zona)
+		bscpoke(t + 0xa8, flags)
+		ts.append(t)
+		bscvtris.append(t)
+	n = bsci(bscmap + 0x4e208)
+	bscpoke(bscmap + 8 + 4 * n, bsclink(ts))
+	bscpoke(bscmap + 0x4e208, n + 1)
+bscq = (0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+bscnrm = (0.0, 1.0, 0.0, 0.3337, 0.9426, 0.0012, -0.70711, 0.70711, 0.0)
+bscuv = (0.0, 0.0, 1.0, 0.0, 0.0, 1.0)
+bscvlist(bscmata, bscpg1, 0, 0, ((bscq, bscnrm, bscuv, bscuv, (1, 2, 3)), (bscq, bscnrm, bscuv, (0.5,) * 6, (1, 2, 3)),
+	((0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0), bscnrm, bscuv, bscuv, (1, 2, 3))))
+bscvlist(bscmatb, bscpg1, 1, 0, ((bscq, bscnrm, bscuv, bscuv, (7, 7, 7)),))
+bscvlist(bscmata, bscpg1, 0, 0, ((bscq, bscnrm, bscuv, bscuv, (1, 2, 4)), (bscq, bscnrm, bscuv, bscuv, (1, 2, 3))))
+bscvlist(bscmata, bscpg2, 0, 0, ((bscq, bscnrm, bscuv, bscuv, (5, 5, 5)),))
+bscvlist(bscmatb, 0, -1, 1, ((bscq, bscnrm, bscuv, bscuv, (9, 9, 9)), (bscq, bscnrm, (0.25,) * 6, bscuv, (9, 9, 9))))
+bscvlist(bscmatb, 0, -1, 1, ((bscq, bscnrm, bscuv, bscuv, (9, 9, 9)),))
+def bscfls(a, n):
+	r = ()
+	i = 0
+	while i < n:
+		k = min(32, n - i)
+		r = r + bscfl(a + 4 * i, k)
+		i = i + k
+	return r
+def bscvidx(t):
+	for i in range(len(bscvtris)):
+		if bscvtris[i] == t:
+			return i
+	if t:
+		return 'ptr'
+	return None
+def bscvmap():
+	n = bsci(bscmap + 0x4e208)
+	r = [n]
+	for i in range(n):
+		t = bsci(bscmap + 8 + 4 * i)
+		ch = []
+		c = t
+		while c and len(ch) < 50:
+			ch.append(bscvidx(c))
+			c = bsci(c)
+		nt = bsci(t + 0x1d0)
+		ix = []
+		for k in range(nt * 3):
+			w = bsci(bsci(t + 0x1d4) + 2 * k)
+			ix.append(w & 0xffff)
+		lv = t + 0x1d8
+		nv, frmt = bsci(lv + 4), bsci(lv + 0xc)
+		r.append((tuple(ch), nt, tuple(ix), nv, frmt, bscfls(bsci(lv), nv * bscvsize[frmt] / 4)))
+	return tuple(r)
+check('CBsp_CrearBuffers', lambda: (SDTest.Call(0x28d520, 'tvi', bscmap), bscvmap()))
