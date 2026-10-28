@@ -357,9 +357,6 @@ SD_IMPORT(crt_strtok, 0x33bbc1)
 /* module agent: Engine/lee_M3D.cpp and bsp_q3.cpp (imports below this line) */
 SD_IMPORT(crt_fileno, 0x3541cc)
 SD_IMPORT(crt_filelength, 0x358bef)
-SD_IMPORT(M3DTransform_ToMatrix, 0x2d6750)
-SD_IMPORT(M3DTransform_ToMatrixAnim, 0x2d65d0)
-SD_IMPORT(Matrix_ToTransform, 0x2d6c50)
 
 /* module agent: Engine NodeFX..ModelFX (imports below this line) */
 

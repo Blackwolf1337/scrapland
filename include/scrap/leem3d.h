@@ -283,7 +283,7 @@ void Escena_PadresAnim(CEscena *esc, CEscena *estatica);
 /* with OptimizeNodes: the nodes under deleted (NODO_BORRAR) parents moved up, cleaned before and after */
 void Escena_Jerarquia(CEscena *esc);
 
-/* other modules (src/imports.inc) */
+/* other modules: Engine/descomp_afin.cpp (src/game/engine3d/Engine/DescompAfin.c) */
 /* rva 0x2d6c50: the transform of a matrix */
 void Matrix_ToTransform(const matrix_t *m, m3dTransform_t *out);
 /* rva 0x2d6750 and 0x2d65d0: a transform as a matrix (the pivots of the meshes, the frames of the animation) */
