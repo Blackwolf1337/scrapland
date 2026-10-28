@@ -17,8 +17,8 @@ the low memory is full of mappings, so the room must be part of the exe). At sta
 1.6.1 from game/Bin, copies its sections to their rvas (the rvas of `GAME_DATA` stay valid, no relocation), points
 its own resource directory to the original's, fills the import table with GetProcAddress (dinput8 from the system
 folder), gives the original its TLS block (the MSVC thread init epoch), installs the hooks and runs the entry point
-of the original. Library code (Python 1.5.2 below rva 0x05f6d8, the MSVC CRT and other libraries from 0x2d6010)
-still runs from the copy.
+of the original. Library code (zlib, libpng, libjpeg and the ASE SDK below rva 0x05f6d8; Python 1.5.2 at
+0x2d6010..0x313642, the MSVC CRT and D3DX8 above) still runs from the copy.
 
 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` runs the hooked side as ScrapC.exe. Since 2026-10-28 all three
 scenarios match.

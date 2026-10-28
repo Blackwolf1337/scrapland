@@ -5,7 +5,7 @@
 import re, struct, sys, collections
 
 EXE = sys.argv[1] if len(sys.argv) > 1 else 'game/Bin/Scrap.exe'
-GAME_LO, GAME_HI = 0x05f6d8, 0x2d6010	# game and engine code; below is Python 1.5.2, above the CRT and other libraries
+GAME_LO, GAME_HI = 0x05f6d8, 0x2d6010	# game and engine code; below zlib, libpng, libjpeg, ASE; above Python, CRT, D3DX8
 
 b = open(EXE, 'rb').read()
 pe = struct.unpack_from('<I', b, 0x3c)[0]
