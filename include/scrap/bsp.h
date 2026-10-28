@@ -235,12 +235,11 @@ typedef struct BspLuz {
 	byte stencil;			/* 0x1a the shadows of the node too (NODO_SOMBRA) */
 	byte noLmap;			/* 0x1b node flag 27 */
 	float rad;			/* 0x1c */
-	D3DLight d3d;			/* 0x20 its position and direction from pos and dir */
-	float f88;			/* 0x88 */
-	float v8c[3];			/* 0x8c */
+	IlumLuz ilum;			/* 0x20 the position and direction of its D3D light from pos and dir */
+	int cache[3];			/* 0x8c the last hit of the shadow traces (CSuelo_Trace) */
 	char nombre[0x80];		/* 0x98 of the node */
 } BspLuz;
-SD_OFFSET(BspLuz, d3d, 0x20);
+SD_OFFSET(BspLuz, ilum, 0x20);
 SD_OFFSET(BspLuz, nombre, 0x98);
 SD_SIZE(BspLuz, 0x118);
 
@@ -294,6 +293,10 @@ SD_SIZE(BspLuz, 0x118);
 #define g_MapaSombrasRadiosidad GAME_DATA(int, 0x4b2b10)
 #define g_MapaSombrasModulate4x GAME_DATA(int, 0x4b2b1c)
 #define g_MapaSombrasUsarTxf GAME_DATA(int, 0x4b2b24)
+#define g_MapaSombrasSuaves GAME_DATA(int, 0x4b2b04)
+#define g_MapaSombrasAten GAME_DATA(float, 0x4b2b0c)
+#define g_MapaSombrasIlumGlobal GAME_DATA(int, 0x4b2b14)
+#define g_MapaSombrasNoLuzAmb GAME_DATA(int, 0x4b2b18)
 
 /* engine3d/engine/bmp*.h instanced here */
 void __fastcall CBmpFlt2_dtor(CBmpFlt2 *self);
@@ -451,6 +454,8 @@ void Bsp_TomarLuces(CEscena *esc);
 void BspTri_Mascara(BspTri *list, CBmp *cob);
 /* the lists of the same material, page and sector joined (below 4096 triangles), sorted, their vertex lists */
 void __fastcall CBsp_CrearBuffers(CBsp *self);
+/* the light maps luz, luz2 and rad2 of each list from the lights (shadows by tracing the floor), with the TXF caches */
+void __fastcall CBsp_LuzDirecta(CBsp *self);
 
 /* exe functions of this file still the exe's */
 void __fastcall CBsp_Calcular(CBsp *self);		/* rva 0x28a860, the light maps computed */

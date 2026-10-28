@@ -10,6 +10,7 @@
 #include "scrap/luz.h"
 #include "scrap/mathlib.h"
 #include "scrap/nodo3d.h"
+#include "scrap/scrapmain.h"
 #include "scrap/suelo.h"
 #include "scrap/varios.h"
 
@@ -46,13 +47,13 @@ void Bsp_TomarLuces(CEscena *esc) {
 			d.z = k * d.z;
 		}
 		l->dir = d;
-		l->v8c[0] = 0.0f;
-		l->v8c[1] = 0.0f;
-		l->v8c[2] = 0.0f;
-		CLuz_FillD3D(luz, &l->d3d);
-		l->f88 = luz->f30;
-		l->d3d.Position = l->pos;
-		l->d3d.Direction = l->dir;
+		l->cache[0] = 0;
+		l->cache[1] = 0;
+		l->cache[2] = 0;
+		CLuz_FillD3D(luz, &l->ilum.d3d);
+		l->ilum.rangeIni = luz->f30;
+		l->ilum.d3d.Position = l->pos;
+		l->ilum.d3d.Direction = l->dir;
 		l->stencil = luz->sombra && n->flags & NODO_SOMBRA;
 		l->noLmap = n->flags >> 27 & 1;
 		Con_Verbosef(" %d  shw:%d  stencil:%d  lmap:%d  dir:%d  rad:%.2f  rgbai:(%d %d %d %d %.2f)  p:(%.2f %.2f %.2f) "
@@ -66,12 +67,12 @@ void Bsp_TomarLuces(CEscena *esc) {
 			float m;
 			if (esc->ini && (m = CArchINI_GetFloat(esc->ini, "mapa_sombras", "negative_lights_mult", 1.0f)) != 1.0f) {
 				float k = luz->intensidad * m * BSP_INV255;
-				l->d3d.Diffuse.r = (float)luz->color[0] * k;
-				l->d3d.Diffuse.g = (float)luz->color[1] * k;
-				l->d3d.Diffuse.b = (float)luz->color[2] * k;
-				l->d3d.Diffuse.a = (float)luz->color[3] * k;
-				Con_Warnf(" light color set to: %f %f %f\n", (double)l->d3d.Diffuse.r, (double)l->d3d.Diffuse.g,
-					(double)l->d3d.Diffuse.b);
+				l->ilum.d3d.Diffuse.r = (float)luz->color[0] * k;
+				l->ilum.d3d.Diffuse.g = (float)luz->color[1] * k;
+				l->ilum.d3d.Diffuse.b = (float)luz->color[2] * k;
+				l->ilum.d3d.Diffuse.a = (float)luz->color[3] * k;
+				Con_Warnf(" light color set to: %f %f %f\n", (double)l->ilum.d3d.Diffuse.r, (double)l->ilum.d3d.Diffuse.g,
+					(double)l->ilum.d3d.Diffuse.b);
 			}
 		}
 		if (l->stencil && l->noLmap) {
@@ -317,4 +318,220 @@ void __fastcall CBsp_CrearBuffers(CBsp *self) {
 		}
 	}
 	E3D_DebugPrintf("\ncrear_buffers():   listas: %d   caras: %d   vert: %d\n", self->num_listas, caras, verts);
+}
+
+
+/* the direct light of the lights of g_BspLuces */
+
+#define g_LightmapLinealAtten GAME_DATA(int, 0x4d5d20)	/* gvar */
+
+/* the segment from c (moved back along the light direction d) to the light at dest blocked by the floor */
+static byte Bsp_Sombra(CSuelo *suelo, const vec3_t *c, const vec3_t *d, const vec3_t *dest, vec3_t *hit, int *cache) {
+	float off = 0.3f / g_MapaSombrasEscala;
+	vec3_t from = { c->x - off * d->x, c->y - off * d->y, c->z - off * d->z };
+
+	return CSuelo_Trace(suelo, &from, dest, hit, 0.8f / (g_MapaSombrasEscala * g_MapaSombrasResol), cache);
+}
+
+static inline float Bsp_Dist2(const vec3_t *a, const vec3_t *b) {
+	float dy = a->y - b->y, dx = a->x - b->x, dz = a->z - b->z;
+
+	return dy * dy + dx * dx + dz * dz;
+}
+
+/* the light maps of a list: luz all lights, luz2 the stencil ones, rad2 each times its rad */
+static void BspTri_LuzDirecta(BspTri *list, CEscena *esc, CSuelo *suelo, float diag) {
+	static const float sinCalc[3] = { 1.0f, 0.0f, 1.0f };
+	float colors[17];
+	int eje = list->eje;
+
+	CMaterial_CalcColors(list->Mat, colors);
+	float k = esc->ambiente.intens * BSP_INV255;
+	float ar = (float)(esc->ambiente.rgba & 0xff) * k;
+	float ag = (float)(esc->ambiente.rgba >> 8 & 0xff) * k;
+	float ab = (float)(esc->ambiente.rgba >> 16 & 0xff) * k;
+	if (g_MapaSombrasNoLuzAmb) {
+		ar = 0.0f;
+		ag = 0.0f;
+		ab = 0.0f;
+	}
+	float br = ar * colors[4] + colors[12];
+	float bg = ag * colors[5] + colors[13];
+	float bb = ab * colors[6] + colors[14];
+	CBmpFlt2_CreateFill(&list->luz, list->lx, list->ly, sinCalc);
+	CBmpFlt2_CreateFill(&list->luz2, list->lx, list->ly, sinCalc);
+	CBmpFlt2_Assign(&list->rad2, &list->luz);
+	int x0 = list->ext[0], y0 = list->ext[1];
+	int nTri = BspTri_Count(list);
+	int k3 = 0;
+	for (BspTri *t = list; t; t = t->sig, k3++) {
+		byte ok = 1;
+		if (t->flags & BSPTRI_NOLMAP) {
+			ok = 0;
+			CHECK(0);
+		} else {
+			E3D_DebugPrintf("tri: %d / %d  \r", k3 + 1, nTri);
+		}
+		int tx0 = t->ext2[0], ty0 = t->ext2[1], tx1 = t->ext2[2], ty1 = t->ext2[3];
+		for (int y = ty0; y <= ty1 && ok; y++) {
+			uint32_t ry = (uint32_t)(y - y0);
+			for (int x = tx0; x <= tx1; x++) {
+				float a1[4] = { br, bg, bb, 0.0f };
+				float a2[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+				float a3[4] = { br, bg, bb, 0.0f };
+				uint32_t rx = (uint32_t)(x - x0);
+				if (rx >= (uint32_t)g_MapaSombrasTexX || ry >= (uint32_t)g_MapaSombrasTexY) {
+					continue;
+				}
+				if (Color_SwapRB(*CBmp_Pixel(&list->mask, rx, ry)) != (uint32_t)(uintptr_t)t) {
+					continue;
+				}
+				vec3_t p, n;
+				float scale = g_MapaSombrasEscala * g_MapaSombrasResol;
+				Bsp_TexelToWorld(&p, (float)x + 0.5f, (float)y + 0.5f, eje, scale, &t->plano);
+				BspTri_Interp(t, &p, &n, NULL, 0);
+				for (int li = 0; li < g_BspNumLuces; li++) {
+					BspLuz *l = &g_BspLuces[li];
+					float w = 1.0f;
+					if (l->noLmap) {
+						continue;
+					}
+					color4_t c = { 0.0f, 0.0f, 0.0f, 1.0f };
+					if (Ilum_Light(&c, &p, &n, colors, &l->ilum, g_LightmapLinealAtten != 0)) {
+						continue;
+					}
+					if (l->sombra && !(t->nodo->flags >> 6 & 1)) {
+						vec3_t hit = p;
+						vec3_t *phit = g_MapaSombrasAten != 0.0f ? &hit : NULL;
+						float d2 = 0.0f;
+						byte puntual = l->puntual;
+						vec3_t d, dest;
+						if (puntual) {
+							float dx = p.x - l->pos.x, dy = p.y - l->pos.y, dz = p.z - l->pos.z;
+							float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+							if ((double)len != 0.0) {
+								float kl = (float)(1.0 / (double)len);
+								d = (vec3_t){ kl * dx, kl * dy, kl * dz };
+							} else {
+								d = (vec3_t){ dx, dy, dz };
+							}
+							dest = l->pos;
+						} else {
+							d = l->dir;
+							dest = (vec3_t){ p.x - d.x * diag, p.y - d.y * diag, p.z - d.z * diag };
+						}
+						if (Bsp_Sombra(suelo, &p, &d, &dest, phit, l->cache)) {
+							w = 0.0f;
+							d2 = Bsp_Dist2(&p, &hit);
+						}
+						if (g_MapaSombrasSuaves) {
+							/* the four corners of the texel, then the occlusion of the samples around p */
+							vec3_t q[4];
+							float fx = (float)x + 0.0f, fy = (float)y + 0.0f;
+							float fx1 = (float)x + 1.0f, fy1 = (float)y + 1.0f;
+							Bsp_TexelToWorld(&q[0], fx, fy, eje, scale, &t->plano);
+							Bsp_TexelToWorld(&q[1], fx1, fy, eje, scale, &t->plano);
+							Bsp_TexelToWorld(&q[2], fx, fy1, eje, scale, &t->plano);
+							Bsp_TexelToWorld(&q[3], fx1, fy1, eje, scale, &t->plano);
+							for (int i = 0; i < 4; i++) {
+								if (Bsp_Sombra(suelo, &q[i], &d, &dest, phit, l->cache)) {
+									d2 = Bsp_Dist2(&p, &hit);
+								}
+							}
+							CHECK(d2 == 0.0f);
+							w = Bsp_Oclusion(&p, &n, 0.8f / (g_MapaSombrasEscala * g_MapaSombrasResol), 400, &dest, suelo);
+						}
+						if (d2 > 0.0f) {
+							float s = (float)__builtin_sqrt((double)d2) * g_MapaSombrasEscala * g_MapaSombrasAten;
+							w = (float)(1.0 - 1.0 / ((double)s + 1.0) * (1.0 - (double)w));
+						}
+					}
+					float cr = c.r * w, cg = c.g * w, cb = c.b * w, ca = c.a * w;
+					if (l->stencil) {
+						a2[0] = a2[0] + cr;
+						a2[1] = cg + a2[1];
+						a2[2] = cb + a2[2];
+						a2[3] = ca + a2[3];
+					}
+					a1[0] = a1[0] + cr;
+					a1[1] = cg + a1[1];
+					a1[2] = cb + a1[2];
+					a1[3] = a1[3] + ca;
+					a3[0] = l->rad * cr + a3[0];
+					a3[1] = l->rad * cg + a3[1];
+					a3[2] = l->rad * cb + a3[2];
+					a3[3] = l->rad * ca + a3[3];
+				}
+				for (int i = 0; i < 3; i++) {
+					if (0.0f > a1[i]) {
+						a1[i] = 0.0f;
+					}
+				}
+				for (int i = 0; i < 3; i++) {
+					if (0.0f > a2[i]) {
+						a2[i] = 0.0f;
+					}
+				}
+				for (int i = 0; i < 3; i++) {
+					if (0.0f > a3[i]) {
+						a3[i] = 0.0f;
+					}
+				}
+				memcpy(CBmpFlt2_Pixel(&list->luz, rx, ry), a1, 12);
+				memcpy(CBmpFlt2_Pixel(&list->luz2, rx, ry), a2, 12);
+				memcpy(CBmpFlt2_Pixel(&list->rad2, rx, ry), a3, 12);
+			}
+		}
+	}
+	if (!g_CalcLmap2) {
+		Img_Free(&list->luz2, 0xc);
+	}
+	if (!g_MapaSombrasIlumGlobal) {
+		Img_Free(&list->rad2, 0xc);
+	}
+}
+
+void __fastcall CBsp_LuzDirecta(CBsp *self) {
+	CEscena *esc = self->modelo->escena;
+	CSuelo *suelo = Mundo_Suelo();
+	vec3_t dim = suelo->Dim;
+	float diag = (float)__builtin_sqrt((double)(dim.y * dim.y + dim.x * dim.x + dim.z * dim.z));
+	diag = diag + diag;
+	BspTxf txf[3];
+
+	BspTxf_ctor(&txf[0], self->nombre, "dir", 0, 1);
+	BspTxf_ctor(&txf[1], self->nombre, "dir", 1, g_CalcLmap2);
+	BspTxf_ctor(&txf[2], self->nombre, "dir", 9, g_MapaSombrasIlumGlobal);
+	/* again while the caches find lists to compute once more */
+	while (txf[0].rebuild || txf[1].rebuild || txf[2].rebuild) {
+		txf[0].rebuild = 0;
+		txf[1].rebuild = 0;
+		txf[2].rebuild = 0;
+		for (int i = 0; i < self->num_listas; i++) {
+			BspTri *list = self->listas[i];
+			if (g_TxfMode) {
+				E3D_DebugPrintf("Check TXF active, skipping...   \n");
+				break;
+			}
+			E3D_DebugPrintf("direct: %d / %d   ", i + 1, self->num_listas);
+			E3D_DebugPrintf("%.1f Mb   ", (double)g_MemStats->bytes * 0.0009765625 * 0.0009765625);
+			byte c0 = BspTxf_Check(&txf[0], i, 1, 0);
+			byte c1 = BspTxf_Check(&txf[1], i, 0, 0);
+			byte c2 = BspTxf_Check(&txf[2], i, 0, 0);
+			E3D_DebugPrintf("\n");
+			if (!c0 && !c1 && !c2) {
+				continue;
+			}
+			BspTri_LuzDirecta(list, esc, suelo, diag);
+			BspTxf_Guardar(&txf[0], &list->luz);
+			BspTxf_Guardar(&txf[1], &list->luz2);
+			BspTxf_Guardar(&txf[2], &list->rad2);
+		}
+		BspTxf_Cargar(&txf[0], self->listas, self->num_listas, 1);
+		BspTxf_Cargar(&txf[1], self->listas, self->num_listas, 2);
+		BspTxf_Cargar(&txf[2], self->listas, self->num_listas, 4);
+	}
+	BspTxf_dtor(&txf[2]);
+	BspTxf_dtor(&txf[1]);
+	BspTxf_dtor(&txf[0]);
 }

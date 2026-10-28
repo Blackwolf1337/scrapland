@@ -343,3 +343,111 @@ def bscvmap():
 		r.append((tuple(ch), nt, tuple(ix), nv, frmt, bscfls(bsci(lv), nv * bscvsize[frmt] / 4)))
 	return tuple(r)
 check('CBsp_CrearBuffers', lambda: (SDTest.Call(0x28d520, 'tvi', bscmap), bscvmap()))
+
+# the direct light of two lists above the player, the lights made here, the shadows traced through the floor of FZ
+bscgl = (0x432950, 0x432954, 0x4b2b04, 0x4b2b0c, 0x4b2b24, 0x4b2b74, 0x4b2b20, 0x4b2b14, 0x4b2b18, 0x4d5d20)
+bscglsaved = []
+for bsc_a in bscgl:
+	bscglsaved.append(SDTest.Peek(bsc_a, 'i'))
+check('bsc light globals', lambda: tuple(bscglsaved))
+SDTest.Poke(0x432950, 0x3f800000)
+SDTest.Poke(0x432954, 0x3f800000)
+SDTest.Poke(0x4b2b24, 0)
+SDTest.Poke(0x4b2b74, 0)
+bscesc2 = bscz(0x64)
+bscpoke(bscesc2 + 0x14, 0x00102030)
+bscwf(bscesc2 + 0x18, (0.5,))
+bscls = []
+bscprev = 0
+bsco = (pp[0], pp[1] + 1.5, pp[2])
+for bsc_d in ((5000, 1, 0x7fffffff, (1.0, 0.0, 0.0, 30.0, 40.0, 1.0, 0.5), (bsco[0] + 1.0, bsco[1] + 40.0, bsco[2] + 2.0, 0.0, -1.0, 0.0),
+		0x4000000), (5002, 1, 0x00c0e0ff, (0.75, 0.0, 0.0, 43.0, 45.0, 1.0, 1.0), (0.0, 0.0, 0.0, 0.3, -1.0, 0.2), 0),
+		(5000, 1, 0x00ffffff, (2.0, 0.0, 0.0, 30.0, 40.0, 1.0, 1.0), (bsco[0] + 3.0, bsco[1] - 200.0, bsco[2], 0.0, -1.0, 0.0), 0),
+		(5001, 0, 0x00ff8040, (1.5, 0.0, 300.0, 20.0, 25.0, 1.0, 2.0), (bsco[0], bsco[1] + 10.0, bsco[2] + 4.0, 0.0, -1.0, 0.0), 0)):
+	bscnd = bscz(0xfc)
+	bscpoke(bscnd + 4, bscstr('sdbscdir' + fmt((len(bscls),))))
+	if bscprev:
+		bscpoke(bscprev + 0xc, bscnd)
+	else:
+		bscpoke(bscesc2 + 0xc, bscnd)
+	bscprev = bscnd
+	bscl = bscz(0xcc)
+	SDTest.Call(0x23ab70, 'tii', bscl)
+	bscpoke(bscl + 8, bsc_d[0])
+	bscpoke(bscl + 0xc, bsc_d[1] << 8)
+	bscpoke(bscl + 0x28, bsc_d[2])
+	bscwf(bscl + 0x2c, bsc_d[3])
+	bscwf(bscl + 0x80, bsc_d[4])
+	bscpoke(bscnd + 0x18, bsc_d[5])
+	bscpoke(bscnd + 0x3c, bscl)
+	bscls.append((bscl, 1))
+check('Bsp_TomarLuces 2', lambda: (SDTest.Call(0x290930, 'vi', bscesc2), bsctabla()))
+# the lists: a square of two triangles and one triangle of a node without shadows
+bscup = (0.0, 1.0, 0.0) * 3
+def bscdtri(a, b, c, nodo):
+	o = bsco
+	t = bsctri((o[0] + a[0], o[1], o[2] + a[1], o[0] + b[0], o[1], o[2] + b[1], o[0] + c[0], o[1], o[2] + c[1]), bscup)
+	bscpoke(t + 0x1c4, nodo)
+	return t
+bscnd1 = bscz(0xfc)
+bscnd2 = bscz(0xfc)
+bscpoke(bscnd2 + 0x18, 0x40)
+bscda = bscdtri((0.0, 0.0), (0.0, 6.0), (6.0, 0.0), bscnd1)
+bscdb = bscdtri((6.0, 0.0), (0.0, 6.0), (6.0, 6.0), bscnd1)
+bscdc = bscdtri((-4.0, -1.0), (-4.0, 2.0), (-1.0, -1.0), bscnd2)
+bscdts = [bscda, bscdb, bscdc]
+def bscdlist(ts):
+	l = bsclink(ts)
+	SDTest.Call(0x287bf0, 'vi', l)
+	bscpoke(l + 0xac, bscmata)
+	b = SDTest.Call(0x287930, 'iFi', (0.0,) * 6, l)[1]
+	e = SDTest.Call(0x287ac0, 'vFifpppp', b, 1, 1.0, 0, 0, 0, 0)
+	SDTest.Call(0x2900d0, 'viiiiii', l, e[2], e[3], e[4], e[5], 0)
+	lx, ly = bsci(l + 0xd4), bsci(l + 0xd8)
+	SDTest.Call(0x28ff20, 'tviiii', l + 0x114, lx, ly, 0)
+	SDTest.Call(0x285d80, 'vii', l, bscbmp(lx, ly, 0xffff0000))
+	return l
+bscdl1 = bscdlist([bscda, bscdb])
+bscdl2 = bscdlist([bscdc])
+bscdmap = bscz(0x61aa8)
+bscpoke(bscdmap, bscstr('sdbsctxf/map.sm3'))
+bscdmod = bscz(0x128)
+bscpoke(bscdmod + 0x124, bscesc2)
+bscpoke(bscdmap + 4, bscdmod)
+bscpoke(bscdmap + 8, bscdl1)
+bscpoke(bscdmap + 12, bscdl2)
+bscpoke(bscdmap + 0x4e208, 2)
+def bscflt2(b):
+	img = bsci(b + 8)
+	if not img:
+		return (bsci(b), bsci(b + 4), 0)
+	return (bsci(b), bsci(b + 4), bscfls(img, 3 * bsci(b) * bsci(b + 4)))
+def bscdlight():
+	r = []
+	for l in (bscdl1, bscdl2):
+		r.append((bsci(l + 0xd4), bsci(l + 0xd8), bscflt2(l + 0xb0), bscflt2(l + 0xbc), bscflt2(l + 0x108)))
+	return tuple(r)
+# hard shadows, all three maps kept (the fading of mapa_sombras aten needs the hit point, which CSuelo_Trace CHECKs)
+SDTest.Poke(0x4b2b04, 0)
+SDTest.Poke(0x4b2b0c, 0)
+SDTest.Poke(0x4b2b20, 1)
+SDTest.Poke(0x4b2b14, 1)
+SDTest.Poke(0x4b2b18, 0)
+check('CBsp_LuzDirecta', lambda: (SDTest.Call(0x2888c0, 'tvi', bscdmap), bscdlight()))
+# without the ambient, the lineal attenuation and the secondary maps
+SDTest.Poke(0x4b2b0c, 0)
+SDTest.Poke(0x4b2b20, 0)
+SDTest.Poke(0x4b2b14, 0)
+SDTest.Poke(0x4b2b18, 1)
+SDTest.Poke(0x4d5d20, 1 - bscglsaved[9])
+check('CBsp_LuzDirecta 2', lambda: (SDTest.Call(0x2888c0, 'tvi', bscdmap), bscdlight()))
+# soft shadows on the small list
+SDTest.Poke(0x4d5d20, bscglsaved[9])
+SDTest.Poke(0x4b2b04, 1)
+SDTest.Poke(0x4b2b18, 0)
+bscpoke(bscdmap + 0x4e208, 1)
+bscpoke(bscdmap + 8, bscdl2)
+SDTest.Call(0x323c50, 'vi', 0x4321)
+check('CBsp_LuzDirecta soft', lambda: (SDTest.Call(0x2888c0, 'tvi', bscdmap), bscdlight()[1]))
+for bsc_i in range(len(bscgl)):
+	SDTest.Poke(bscgl[bsc_i], bscglsaved[bsc_i])
