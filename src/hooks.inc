@@ -8254,5 +8254,12 @@ SD_HOOK(Stub_Nop3, 0x27c8a0, 16)
 SD_HOOK(Stub_Nop1, 0x27c8b0, 16)
 
 /* module agent: Standalone, the Sleep and busy wait rewrites (hooks below this line) */
+SD_HOOK(CMotorApp_Render, 0x22f940, 1039)
+SD_HOOK(CMotorApp_ResetDevice, 0x22fe60, 381)
+SD_HOOK(Tsc_CpuFreq, 0x272f90, 171)
+SD_HOOK(Timer_CountTicks, 0x276ba0, 55)
+SD_HOOK(Timer_GetQPFreq, 0x276d00, 320)
+SD_HOOK(Timer_MeasureQP, 0x276e40, 72)
+SD_HOOK(Video_WaitKeysUp, 0x280d10, 70)
 
 /* module agent: Standalone 2a, the real Python 1.5.2 (hooks below this line) */

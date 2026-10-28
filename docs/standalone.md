@@ -26,17 +26,15 @@ scenarios match.
 `tools/standalone/inventory.py` lists what is still missing:
 
 - code pointers in the data sections (vtables, method tables) that point to game code without a C version: the
-  frame of CMotorApp (kept) and the C++ catch blocks of the GOG code in the exception tables (their functions are C)
-- the `SD_IMPORT`s of game code: the timers with busy waits
+  C++ catch blocks of the GOG code in the exception tables (their functions are C)
 
 ### Stage 1b: the whole game code int3
 
 `[general] wipe=2` (`DIFFTEST_WIPE=2`) fills the whole game and engine code (rva 0x05f6d8..0x2d6010) with int3
-before the hooks are written, except the functions of the `keep` table in `src/core/hook.c` (the frame with its
-limiter, the device reset with Sleep and the timers with busy waits). Since 2026-10-28
-`DIFFTEST_WIPE=2 DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios. The tiny methods
-share the stubs of `src/game/Global/Stubs.c`, the Winsock thunks are C (`src/game/Net/Wsock.c`), the catch blocks
-of the GOG code are done without C++ exceptions (`src/game/Global/Gog.c`).
+before the hooks are written. Since 2026-10-28 `DIFFTEST_WIPE=2 DIFFTEST_STANDALONE=1 tools/test/difftest.sh`
+matches in all three scenarios. The tiny methods share the stubs of `src/game/Global/Stubs.c`, the Winsock thunks
+are C (`src/game/Net/Wsock.c`), the catch blocks of the GOG code are done without C++ exceptions
+(`src/game/Global/Gog.c`).
 
 What `tools/standalone/uncovered.py` still lists is code that nothing reaches: no call, jump or pointer of the exe
 (code or data) and no rva in the C points to it. These are functions the compiler kept after it inlined every call,
@@ -46,6 +44,14 @@ jumps there), besides the switch and byte index tables.
 `wipe=3` is a probe for this work: the same int3, but each trap logs its rva and `[esp]` (the caller when the trap is
 the start of a function) and copies the piece of original code there back, so one run lists every piece of game
 code without a C version that the run reaches.
+
+The seven functions with Sleep or busy waits are C too, with intended behavior changes (each marked in the code
+with a comment): the frame (`CMotorApp_Render`) has no Sleep loop as its frame limiter, `Motor_FrameDue` holds the
+next frame back in the PeekMessage loop of `App_WinMain` (no own limiter with vsync); the device reset has no
+Sleep(250); `Timer_GetQPFreq`, `Timer_MeasureQP` and `Timer_CountTicks` take QueryPerformanceFrequency instead of
+measuring; `Tsc_CpuFreq` measures rdtsc against the performance counter between two calls; `Video_WaitKeysUp`
+starts a hold under which the video loop and `Keyboard_Poll` ignore Escape, Space and Enter until they are up or
+the time is over. `tools/test/py/sdcall_nosleep.py` checks them (some only in the hooked run).
 
 ## Stage 2: real libraries
 

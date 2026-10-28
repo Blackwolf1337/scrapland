@@ -18,8 +18,13 @@ int Video_OpenStream(const char *name, void *dd, void **out);
 int Video_RenderStream(void *dd, void *primary, void *ms, byte *played);
 /* the source rectangle of the DirectDraw surface stretched onto the window */
 void Video_BltToWindow(void *hwnd, const exe_rect *dst, void *surf, const exe_rect *src);
-/* busy waiting up to ms while Escape, Space or Enter is held */
+/* the keys that ended or started a video do not count for up to ms: the original waited that long while Escape,
+ * Space or Enter was held, the C starts a hold that Video_KeysHeld ends (no blocking wait) */
 void Video_WaitKeysUp(int ms);
+/* 1 while the hold of Video_WaitKeysUp is on (Escape, Space or Enter still held and its time not over) */
+byte Video_KeysHeld(void);
+/* the DirectInput states (256, by DIK_ code) of Escape, Space and the Enter keys cleared while the hold is on */
+void Video_MaskHeldKeys(char *keys);
 /* 1 once A or B of the first pad is let go */
 byte Video_PadPressed(void);
 

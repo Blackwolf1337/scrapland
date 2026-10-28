@@ -1375,7 +1375,7 @@ for part in ('sdcall_listavert.py', 'sdcall_mallatri.py', 'sdcall_material.py', 
 		'sdcall_trails.py', 'sdcall_modelo.py', 'sdcall_escena.py', 'sdcall_sistpart.py', 'sdcall_rendertarget.py',
 		'sdcall_controlanim.py', 'sdcall_portal.py', 'sdcall_grafico3d.py', 'sdcall_utild3d.py', 'sdcall_texto.py', 'sdcall_grafico2d.py', 'sdcall_render.py',
 		'sdcall_multisprite.py', 'sdcall_flare.py', 'sdcall_fuentes.py',
-		'sdcall_scrapfont.py', 'sdcall_leem3d.py', 'sdcall_m3d.py', 'sdcall_scrapmodel.py', 'sdcall_scrapcam.py', 'sdcall_scrapworld.py', 'sdcall_scrapmain.py', 'sdcall_app.py', 'sdcall_sound.py', 'sdcall_music.py', 'sdcall_bsp.py', 'sdcall_input.py', 'sdcall_render2.py', 'sdcall_eng2.py', 'sdcall_eng3.py', 'sdcall_eng4.py', 'sdcall_restb.py', 'sdcall_resta.py', 'sdcall_engmisc.py', 'sdcall_sa1b.py'):
+		'sdcall_scrapfont.py', 'sdcall_leem3d.py', 'sdcall_m3d.py', 'sdcall_scrapmodel.py', 'sdcall_scrapcam.py', 'sdcall_scrapworld.py', 'sdcall_scrapmain.py', 'sdcall_app.py', 'sdcall_sound.py', 'sdcall_music.py', 'sdcall_bsp.py', 'sdcall_input.py', 'sdcall_render2.py', 'sdcall_eng2.py', 'sdcall_eng3.py', 'sdcall_eng4.py', 'sdcall_restb.py', 'sdcall_resta.py', 'sdcall_engmisc.py', 'sdcall_sa1b.py', 'sdcall_nosleep.py'):
 	try:
 		f = open(part)
 	except IOError:

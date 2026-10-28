@@ -10,6 +10,7 @@
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
+#include "scrap/e3dutil.h"
 #include "scrap/filesys.h"
 #include "scrap/mathlib.h"
 #include "scrap/scrapmain.h"
@@ -551,7 +552,11 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 	}
 	for (;;) {
 		if (!exe_PeekMessageA(&msg, NULL, 0, 0, 1)) {
-			g_pApp->vftable->Frame(g_pApp);
+			/* differs from the original on purpose (no sleeps): no frame while the frame limiter holds it back, the
+			 * original slept in CMotorApp_Render */
+			if (!g_Motor || Motor_FrameDue(g_Motor)) {
+				g_pApp->vftable->Frame(g_pApp);
+			}
 			continue;
 		}
 		if (msg.message == WM_QUIT) {

@@ -407,12 +407,6 @@ SD_IMPORT(crt_invalid_parameter_noinfo_noreturn, 0x34e614)
 SD_IMPORT(crt_Throw_bad_array_new_length, 0x3178b8)
 
 /* module agent: Rest B, game leftovers from 0x240000 (imports below this line) */
-/* busy waits of the original (the project forbids blocking waits in C): left to the exe */
-SD_IMPORT(Video_WaitKeysUp, 0x280d10)
-SD_IMPORT(Timer_CountTicks, 0x276ba0)
-SD_IMPORT(Timer_GetQPFreq, 0x276d00)
-SD_IMPORT(Timer_MeasureQP, 0x276e40)
-SD_IMPORT(Tsc_CpuFreq, 0x272f90)
 
 /* module agent: Final FX Starts (ShipExplosion, VehicleDamage, GearMissile, EMI, MentalController) (imports below this line) */
 

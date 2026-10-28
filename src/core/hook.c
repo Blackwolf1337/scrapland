@@ -4,9 +4,9 @@
  *
  * With [general] wipe=1 the rest of each hooked original is filled with int3, so a jump into the middle of
  * replaced code stops the game with its rva in the log (a check for the standalone build, docs/standalone.md).
- * wipe=2 fills the whole game and engine code with int3 first, except the functions that stay in the exe. wipe=3 is
- * the same with a probe: each trap logs its rva and caller, copies the piece of original code there back and goes on,
- * so one run lists every piece of game code without a C version that the run reaches.
+ * wipe=2 fills the whole game and engine code with int3 first. wipe=3 is the same with a probe: each trap logs its
+ * rva and caller, copies the piece of original code there back and goes on, so one run lists every piece of game
+ * code without a C version that the run reaches.
  */
 #include <string.h>
 #include <windows.h>
@@ -55,45 +55,24 @@ static int Hook_Write(byte *at, const void *target, uint32_t wipe) {
 	return 1;
 }
 
-/* the game and engine code (below is Python 1.5.2, above the CRT and the other libraries) */
+/* the game and engine code (below zlib, libpng, libjpeg and the ASE SDK; above Python 1.5.2, the CRT and D3DX8) */
 #define GAME_CODE_START 0x05f6d8
 #define GAME_CODE_END 0x2d6010
-
-/* still the exe's: Sleep and busy waits (docs/standalone.md) */
-static const struct {
-	uint32_t rva, size;
-} keep[] = {
-	{ 0x22f940, 1039 },	/* CMotorApp vf06, the frame with its limiter */
-	{ 0x22fe60, 381 },	/* the device reset with Sleep(250) */
-	{ 0x272f90, 171 },	/* Tsc_CpuFreq */
-	{ 0x276ba0, 55 },	/* Timer_CountTicks */
-	{ 0x276d00, 320 },	/* Timer_GetQPFreq */
-	{ 0x276e40, 72 },	/* Timer_MeasureQP */
-	{ 0x280d10, 70 },	/* Video_WaitKeysUp */
-};
 
 static void Hook_WipeGame(void) {
 	byte *code = (byte *)(game_base + GAME_CODE_START);
 	DWORD old;
 
 	VirtualProtect(code, GAME_CODE_END - GAME_CODE_START, PAGE_EXECUTE_READWRITE, &old);
-	uint32_t at = GAME_CODE_START;
-	for (size_t i = 0; i <= sizeof(keep) / sizeof(keep[0]); i++) {
-		uint32_t end = i < sizeof(keep) / sizeof(keep[0]) ? keep[i].rva : GAME_CODE_END;
-		memset((byte *)game_base + at, 0xcc, end - at);
-		if (i < sizeof(keep) / sizeof(keep[0])) {
-			at = keep[i].rva + keep[i].size;
-		}
-	}
+	memset(code, 0xcc, GAME_CODE_END - GAME_CODE_START);
 	VirtualProtect(code, GAME_CODE_END - GAME_CODE_START, old, &old);
 	FlushInstructionCache(GetCurrentProcess(), code, GAME_CODE_END - GAME_CODE_START);
 }
 
-/* wipe=3: a copy of the original code, and per byte whether it is in a hook (1, its jump 3) or a kept function (2) */
+/* wipe=3: a copy of the original code, and per byte whether it is in a hook (1, its jump 3) */
 static byte *probe_orig, *probe_mark;
 
 #define PROBE_HOOK 1
-#define PROBE_KEEP 2
 #define PROBE_JUMP 3
 
 /* int3 padding of the original: up to the next 16 byte boundary or more of it */
@@ -144,9 +123,6 @@ static void Hook_ProbeInit(void) {
 			memset(probe_mark + r - GAME_CODE_START, PROBE_JUMP, 5);
 		}
 	}
-	for (size_t i = 0; i < sizeof(keep) / sizeof(keep[0]); i++) {
-		memset(probe_mark + keep[i].rva - GAME_CODE_START, PROBE_KEEP, keep[i].size);
-	}
 	AddVectoredExceptionHandler(1, Hook_Probe);
 }
 
@@ -188,7 +164,7 @@ void Hook_InstallAll(int wipe) {
 		(int)(sizeof(hooks) / sizeof(hooks[0])), off);
 	if (wipe) {
 		AddVectoredExceptionHandler(1, Hook_Trap);
-		Com_Printf(wipe >= 2 ? "wipe: the game code is int3 but for the hooks and %d functions\n"
-			: "wipe: the rest of every hooked original is int3\n", (int)(sizeof(keep) / sizeof(keep[0])));
+		Com_Printf(wipe >= 2 ? "wipe: the game code is int3 but for the hooks\n"
+			: "wipe: the rest of every hooked original is int3\n");
 	}
 }

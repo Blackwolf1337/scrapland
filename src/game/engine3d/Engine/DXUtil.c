@@ -90,6 +90,12 @@ void DXUtil_WideToGeneric(char *dst, const uint16_t *src, int cch) {
 #define g_TimerFixed GAME_DATA(int64_t, 0x4b1c80)
 #define g_TimerBase GAME_DATA(int64_t, 0x4b1c88)
 
+/* differs from the original on purpose (no busy waits): the original counted the distinct values of timeGetTime
+ * during ms, which the 1 ms period of CWinApp_Init (timeBeginPeriod) makes ms; no caller in the exe */
+int Timer_CountTicks(int ms) {
+	return ms > 0 ? ms : 0;
+}
+
 int Timer_GetFreq(int64_t *out) {
 	if (g_TimerFixed) {
 		*out = g_TimerFixed;
@@ -120,6 +126,31 @@ int Timer_FixedStep(float fps) {
 	Timer_GetQPFreq(&t);
 	g_TimerFixed += (int)((float)Int64_ToDouble(t) / fps);
 	return 1;
+}
+
+/* the frequency of the performance counter times g_TimerQPMult, taken once (-1 until then), 0 without a counter */
+#define g_TimerQPFreq GAME_DATA(int64_t, 0x432590)
+
+int Timer_GetQPFreq(int64_t *out) {
+	if (((uint32_t)g_TimerQPFreq & (uint32_t)((uint64_t)g_TimerQPFreq >> 32)) == 0xffffffff) {
+		/* differs from the original on purpose (no busy waits): the original also measured the counter over 100 ms
+		 * of timeGetTime, up to 10 times, and took 0 (timeGetTime) when it was not 1/10 of the frequency */
+		g_TimerQPFreq = exe_QueryPerformanceFrequency(out) ? *out : 0;
+		g_TimerQPFreq = (int64_t)((uint64_t)(uint32_t)g_TimerQPMult * (uint64_t)g_TimerQPFreq);
+	}
+	*out = g_TimerQPFreq;
+	return g_TimerQPFreq != 0;
+}
+
+/* differs from the original on purpose (no busy waits): the counter ticks of ms from its frequency, not measured
+ * (no caller in the exe) */
+int64_t Timer_MeasureQP(int ms) {
+	int64_t freq;
+
+	if (ms <= 0 || !exe_QueryPerformanceFrequency(&freq)) {
+		return 0;
+	}
+	return freq * ms / 1000;
 }
 
 /* the state of DXUtil_Timer: the counter path in ticks, the timeGetTime path in seconds */
