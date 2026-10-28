@@ -8,6 +8,7 @@
 #
 # usage: tools/test/difftest.sh [scenario ...]   (sdtest, sdcall, sdlevel; default all; builds nothing: run cmake first)
 #        DIFFTEST_TIMEOUT  seconds per run, default 240
+#        DIFFTEST_WIPE=1   the hooked run also fills the rest of every hooked original with int3 ([general] wipe)
 root=$(cd "$(dirname "$0")/../.." && pwd)
 game=$root/game
 ini=$game/Bin/scrapdecomp.ini
@@ -37,7 +38,7 @@ run() {
 	local name=$1 result=$game/$1.out tag=$1-$3
 	local arg
 	arg="-PythonExecute:execfile($(python3 -I -c "print('+'.join('chr(%d)' % ord(c) for c in '$name.py'))"))"
-	printf '[general]\nhooks=%s\ntestmod=1\n' "$2" > "$ini"
+	printf '[general]\nhooks=%s\ntestmod=1\nwipe=%s\n' "$2" "$(($2 && ${DIFFTEST_WIPE:-0}))" > "$ini"
 	# so the second run does not find the files of the first
 	rm -f "$result"
 	rm_written
