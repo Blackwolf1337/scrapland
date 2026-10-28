@@ -1175,6 +1175,7 @@ void __thiscall cObjElementFXGearMissile_Run(void *self, cDebris *d) {
 #define g_GearMissileThunderSoundVol GAME_GLOBAL_IN(float, GVar_GearMissileThunderSoundVol, 16, 0x446a0c)
 #define FXGEAR_RAMP_BALL 0x4306b0
 #define FXGEAR_RAMPS 0x4306d4		/* 3 color ramps of 9 colors */
+#define FXGEAR_PUFF_RAMPS (GAME_ARRAY(uint32_t, FXGEAR_PUFF_RAMPS, FXGEAR_RAMPS))	/* [3 * 9] */
 #define FXGEAR_RAMP_PUFF 0x4306f8
 #define FXGEAR_RAMP_SPARK 0x430788
 #define FXGEAR_ENTITIES 0x11		/* the entity lists the bolts hit */
@@ -1193,7 +1194,7 @@ static uint32_t GM_Color(int a, uint32_t rgb) {
 }
 
 static uint32_t *GM_Ramp3(void) {
-	return GAME_ARRAY(uint32_t, GM_Puff_4306d4, FXGEAR_RAMPS) + crt_rand() % 3 * 9;
+	return FXGEAR_PUFF_RAMPS + crt_rand() % 3 * 9;
 }
 
 /* the particles still at the node: no position, speed or acceleration */
@@ -1444,7 +1445,7 @@ static void GM_Puffs(cObjElementFXGearMissile *self, const vec3_t *pos) {
 	p->sizeEnd = FXA_Rand(15.0, 80.0);
 	CGameParticles_Apply(p);
 	CGameParticles_SetColorRampOn(p, 1);
-	CGameParticles_SetColorRamp(p, GAME_PTR(GM_Puff_4306f8, 0, FXGEAR_RAMP_PUFF));
+	CGameParticles_SetColorRamp(p, GAME_PTR(FXGEAR_PUFF_RAMPS, 36, FXGEAR_RAMP_PUFF));
 	CGameParticles_EmitN(p, 1, 0);
 
 	p->birthRate = 0;
@@ -3930,6 +3931,7 @@ void __thiscall cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self
 }
 
 #define FXA_RAMP_SELLLIFE 0x430818		/* [3] */
+#define FXA_SELLLIFE_RAMPS (GAME_ARRAY(uint32_t, FXA_SELLLIFE_RAMPS, FXA_RAMP_SELLLIFE))	/* [3 * 9] */
 #define FXA_RAMP_SELLLIFE2 0x43083c		/* [2] */
 
 /* the glow of the Bishop: rotation, the ramp and one particle */
@@ -3940,7 +3942,7 @@ static void FXSellLife_Glow(CGameParticles *sp) {
 	sp->spriteIni = sprite;
 	sp->spriteEnd = sprite;
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(FXSellLife_Code_430818, 0, FXA_RAMP_SELLLIFE));
+	CGameParticles_SetColorRamp(sp, GAME_PTR(FXA_SELLLIFE_RAMPS, 0, FXA_RAMP_SELLLIFE));
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 0);
 }
@@ -3955,7 +3957,7 @@ static void FXSellLife_Code(CGameParticles *sp) {
 	sp->spriteIni = sprite;
 	sp->spriteEnd = sprite;
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, FXSellLife_Code_430818, FXA_RAMP_SELLLIFE) + crt_rand() % 3 * 9);
+	CGameParticles_SetColorRamp(sp, FXA_SELLLIFE_RAMPS + crt_rand() % 3 * 9);
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 0);
 }
@@ -4133,7 +4135,7 @@ void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *
 			glow->spriteEnd = 5;
 			glow->rotVar = rv;
 			CGameParticles_SetColorRampOn(glow, 1);
-			CGameParticles_SetColorRamp(glow, GAME_PTR(FXSellLife_Code_430818, 0, FXA_RAMP_SELLLIFE));
+			CGameParticles_SetColorRamp(glow, GAME_PTR(FXA_SELLLIFE_RAMPS, 0, FXA_RAMP_SELLLIFE));
 			CGameParticles_Apply(glow);
 			CGameParticles_EmitN(glow, 1, 0);
 			code->birthRate = 0;
@@ -4160,7 +4162,7 @@ void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *
 			code->spriteIni = sprite;
 			code->spriteEnd = sprite;
 			CGameParticles_SetColorRampOn(code, 1);
-			CGameParticles_SetColorRamp(code, GAME_ARRAY(uint32_t, FXSellLife_Code_43083c, FXA_RAMP_SELLLIFE2) + (crt_rand() & 1) * 9);
+			CGameParticles_SetColorRamp(code, GAME_ARRAY_IN(uint32_t, FXA_SELLLIFE_RAMPS, 36, FXA_RAMP_SELLLIFE2) + (crt_rand() & 1) * 9);
 			CGameParticles_Apply(code);
 			CGameParticles_EmitN(code, 1, 0);
 			if (++count > 5) {

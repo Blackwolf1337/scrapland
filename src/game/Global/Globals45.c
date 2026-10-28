@@ -16,7 +16,6 @@
 #undef g_ChatMsgs
 #undef g_ChatTime
 #undef g_CircuitFlares
-#undef g_CircuitInit
 #undef g_CircuitPaths
 #undef g_HeadMonitorName
 #undef g_HeadMonitorText
@@ -68,9 +67,7 @@ cGVar GVar_QuickMessageString3 SD_BSS(0x45de80);
 cGVar GVar_QuickMessageString5 SD_BSS(0x45de98);
 cGVar GVar_QuickMessageString1 SD_BSS(0x45deb0);
 float g_ChatTime SD_BSS(0x45dec8);
-cCircuitFlare g_CircuitFlares[3] SD_BSS(0x45ded4);
-uint32_t CircuitScorer_InitPaths_45df1c[5] SD_BSS(0x45df1c);
-byte g_CircuitInit SD_BSS(0x45df30);
+cCircuitFlare g_CircuitFlares[4] SD_BSS(0x45ded4);
 cCircuitPath g_CircuitPaths[9] SD_BSS(0x45df38);
 int g_MissionBlinkOn SD_BSS(0x45fa80);
 float g_MissionBlinkTime SD_BSS(0x45fa84);

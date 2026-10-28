@@ -1278,7 +1278,7 @@ static void VME_Exhaust21(const VMExhaust *x) {
 	ps->sizeIni = s2 * 80.0f + 75.0f;
 	float s15 = k * 1.5f + t;
 	ps->sizeEnd = s15 * 60.0f + 55.0f;
-	const uint32_t *tab = GAME_PTR(VME_Exhaust10_3b5914, 0, 0x3b5914);
+	const uint32_t *tab = GAME_ARRAY(const uint32_t, VME_Exhaust10_3b5914, 0x3b5914);
 	int c = (int)(__builtin_fabs((double)tk) * 4.0);
 	ps->colorIni = tab[c];
 	ps->colorEnd = tab[c + 1];

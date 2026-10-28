@@ -287,7 +287,7 @@ SD_SIZE(BspLuz, 0x118);
 /* the distances of the level of detail of the areas (rva 0x432974..0x432988), plain and for large lists */
 #define g_BspLodDist (GAME_ARRAY(const float, g_BspLodDist, 0x432974))
 #define g_BspLodCount (GAME_ARRAY(int, g_BspLodCount, 0x4b2b48))
-#define g_BspColores (GAME_ARRAY(const uint32_t, g_BspColores, 0x432a30))	/* 16 debug colors */
+#define g_BspColores (GAME_ARRAY(const uint32_t, g_BspColores, 0x432a30))	/* [16], debug colors */
 /* the globals of m3d.ini ([mapa_sombras], read in ScrapEngMain.c, the same definitions) */
 #define g_MapaSombrasMultitext GAME_GLOBAL(int, g_MapaSombrasMultitext, 0x4b2b00)
 #define g_MapaSombrasEscala GAME_GLOBAL(float, g_MapaSombrasEscala, 0x432950)

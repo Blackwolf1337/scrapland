@@ -38,8 +38,8 @@ void ChType_NurseSphereHit(cAbstractFile *params) {
 }
 
 #define NURSE_RAMP_GLOW (GAME_ARRAY(uint32_t, NURSE_RAMP_GLOW, 0x428198))	/* [9] */
-#define NURSE_RAMPS_STARS (GAME_ARRAY(uint32_t, NURSE_RAMPS_STARS, 0x428108))	/* [2][9] */
-#define NURSE_RAMPS_SPARKS (GAME_ARRAY(uint32_t, NURSE_RAMPS_SPARKS, 0x428150))	/* [2][9] */
+#define NURSE_RAMPS_STARS (GAME_ARRAY(uint32_t, NURSE_RAMPS_STARS, 0x428108))	/* [2 * 9], two ramps */
+#define NURSE_RAMPS_SPARKS (GAME_ARRAY(uint32_t, NURSE_RAMPS_SPARKS, 0x428150))	/* [2 * 9], two ramps */
 #define NURSE_TWO_PI 6.2831854820251465
 
 static void Nurse_PosMin(CGameParticles *p, float x, float y, float z) {

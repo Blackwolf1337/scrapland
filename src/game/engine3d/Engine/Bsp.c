@@ -1960,7 +1960,7 @@ int BspTri_CmpZona(const void *pa, const void *pb) {
 #define g_BspDebugCnt GAME_GLOBAL(int, g_BspDebugCnt, 0x4d5d74)
 #define g_BspDebugSel GAME_GLOBAL(int, g_BspDebugSel, 0x432994)		/* the region drawn without links */
 /* the collision cache counters of suelo.cpp: hit, miss, peak */
-#define g_BspCacheStats (GAME_ARRAY(const int, g_BspCacheStats, 0x4af7e0))
+#define g_BspCacheStats (GAME_ARRAY(const int, g_BspCacheStats, 0x4af7e0))	/* [3], the hits, the misses and g_CollisionTestsMax */
 
 void Bsp_MatInfo(CMaterial *m) {
 	uint32_t atrib = m->params.atrib;

@@ -348,7 +348,7 @@ byte __thiscall cPcKeyboard_IsReserved(cAbstractIDevice *self, int entry);
 
 /* Input/PcMouse.cpp */
 #define g_MouseSensH GAME_GLOBAL_IN(float, GVar_MouseSensitivityH, 16, 0x44c8d0)		/* MouseSensitivityH */
-#define g_MouseSensV GAME_GLOBAL_IN(float, GVar_MouseSensitivityV, 16, 0x44c894)		/* MouseSensitivityV */
+#define g_MouseSensV GAME_GLOBAL_IN(float, g_KeyNameBuf, 32, 0x44c894)		/* MouseSensitivityV */
 #define g_InvertMouse GAME_GLOBAL_IN(int, GVar_InvertMouse, 16, 0x44c8e8)		/* InvertMouse */
 #define g_Mouse (GAME_ARRAY(cPcMouse, g_Mouse, 0x44c89c))
 #define g_MouseDev GAME_GLOBAL(exe_IDirectInputDevice8 *, g_MouseDev, 0x44c8f0)

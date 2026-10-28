@@ -61,7 +61,6 @@
 #undef g_CollisionStats
 #undef g_CollisionStats2
 #undef g_CollisionTests
-#undef g_CollisionTestsMax
 #undef g_CollisionTestsTotal
 #undef g_ColorStr
 #undef g_ConHistPos
@@ -356,8 +355,7 @@ uint32_t CPsaImage_dtor_4a8304 SD_BSS(0x4a8304);
 CGameCamera *g_CamActual SD_BSS(0x4a8308);
 CGameCamera *g_ViewerCamera SD_BSS(0x4a830c);
 CPsaImage *g_Watermark SD_BSS(0x4a8310);
-typeof(void (*)(void)) g_EngCallbacks SD_BSS(0x4a8314);
-uint32_t Engine_FrameSetup_4a8318 SD_BSS(0x4a8318);
+typeof(void (*)(void)) g_EngCallbacks[2] SD_BSS(0x4a8314);
 loadingDraw_t g_LoadingDraw2 SD_BSS(0x4a831c);
 loadingDraw_t g_LoadingDraw SD_BSS(0x4a8320);
 struct {
@@ -545,7 +543,7 @@ struct {
 	byte g_ResetDev;	/* 0x2 */
 	byte pad_3[1];
 } group_4a8efc SD_BSS(0x4a8efc);
-int g_RenderCounts[8] SD_BSS(0x4a8f00);
+int g_RenderCounts[10] SD_BSS(0x4a8f00);
 uint32_t motorIni_4a8f28 SD_BSS(0x4a8f28);
 int g_Sobredib SD_BSS(0x4a8f2c);
 uint32_t motorIni_4a8f30[16] SD_BSS(0x4a8f30);
@@ -717,29 +715,7 @@ CMaterial *g_MatFX1 SD_BSS(0x4ad74c);
 CMaterial *g_MatFX2 SD_BSS(0x4ad750);
 const CMaterial *g_MatForzado SD_BSS(0x4ad754);
 const CMaterial *g_MatFX3 SD_BSS(0x4ad758);
-uint32_t g_PSHandles[2] SD_BSS(0x4ad760);
-uint32_t Shader_GlowmapMaskEnvBump_4ad768 SD_BSS(0x4ad768);
-uint32_t Shader_GlowmapMaskEnvmap_4ad774 SD_BSS(0x4ad774);
-uint32_t Shader_GlowmapMaskEnvmapLightmap_4ad778 SD_BSS(0x4ad778);
-uint32_t Shader_Clouds_4ad784 SD_BSS(0x4ad784);
-uint32_t Shader_Glowmap_4ad790 SD_BSS(0x4ad790);
-uint32_t Shader_GlowmapLightmap_4ad794 SD_BSS(0x4ad794);
-uint32_t Shader_Hologram_4ad798 SD_BSS(0x4ad798);
-uint32_t Shader_GlowFlickLightmap_4ad79c SD_BSS(0x4ad79c);
-uint32_t Shader_Electric_4ad7a0 SD_BSS(0x4ad7a0);
-uint32_t Shader_Fire_4ad7a4 SD_BSS(0x4ad7a4);
-uint32_t Shader_Glass_4ad7a8 SD_BSS(0x4ad7a8);
-uint32_t Shader_Waves_4ad7ac SD_BSS(0x4ad7ac);
-uint32_t Shader_Noise_4ad7b0 SD_BSS(0x4ad7b0);
-uint32_t Render_PS0_4ad7b4 SD_BSS(0x4ad7b4);
-uint32_t Render_PS1_4ad7b8 SD_BSS(0x4ad7b8);
-uint32_t Render_PS2_4ad7bc SD_BSS(0x4ad7bc);
-uint32_t Render_PS3_4ad7c0 SD_BSS(0x4ad7c0);
-uint32_t Render_PS4_4ad7c4 SD_BSS(0x4ad7c4);
-uint32_t Render_PS5_4ad7c8 SD_BSS(0x4ad7c8);
-uint32_t Render_PS6_4ad7cc SD_BSS(0x4ad7cc);
-uint32_t Render_PS7_4ad7d0 SD_BSS(0x4ad7d0);
-uint32_t Render_PS8_4ad7d4 SD_BSS(0x4ad7d4);
+uint32_t g_PSHandles[32] SD_BSS(0x4ad760);
 uint32_t g_Viewport[6] SD_BSS(0x4ad7e0);
 uint32_t g_ViewportFull[6] SD_BSS(0x4ad7f8);
 cGVar GVar_R_VBIBTriLimit SD_BSS(0x4ad810);
@@ -806,8 +782,8 @@ CMaterial *g_MatCtx SD_BSS(0x4ae584);
 int g_MatPass SD_BSS(0x4ae588);
 int g_MatFrame SD_BSS(0x4ae58c);
 uint32_t g_ShaderActual SD_BSS(0x4ae590);
-void *g_StageTex SD_BSS(0x4ae594);
-int g_StageTexFrame SD_BSS(0x4ae5b4);
+void *g_StageTex[8] SD_BSS(0x4ae594);
+int g_StageTexFrame[8] SD_BSS(0x4ae5b4);
 int g_TileState SD_BSS(0x4ae5d4);
 int g_TileX SD_BSS(0x4ae5d8);
 int g_TileY SD_BSS(0x4ae5dc);
@@ -838,8 +814,7 @@ uint32_t g_CollisionCache SD_BSS(0x4af7d0);
 byte g_Motor4af7d4 SD_BSS(0x4af7d4);
 int g_QuadTriCacheID SD_BSS(0x4af7d8);
 uint32_t g_CollisionNComp SD_BSS(0x4af7dc);
-const int g_BspCacheStats[2] SD_BSS(0x4af7e0);
-uint32_t g_CollisionTestsMax SD_BSS(0x4af7e8);
+const int g_BspCacheStats[3] SD_BSS(0x4af7e0);
 uint32_t g_CollisionTests SD_BSS(0x4af7ec);
 uint32_t g_CollisionTestsTotal SD_BSS(0x4af7f0);
 int g_CollisionQuadCount SD_BSS(0x4af7f4);

@@ -1157,6 +1157,7 @@ void __thiscall cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cD
 /* ---- Fire ---- */
 
 #define FXV_RAMP_FIRE 0x431530		/* [3] */
+#define FXV_FIRE_RAMPS (GAME_ARRAY(uint32_t, FXV_FIRE_RAMPS, FXV_RAMP_FIRE))	/* [3 * 9] */
 #define FXV_RAMP_FIRE2 0x431554		/* [2] */
 #define FXV_RAMP_FIRESMOKE 0x43159c	/* [2] */
 
@@ -1270,7 +1271,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 			p->rotVar = FXV_Rand(1.0471975803375244, -0.5235987901687622);
 			FXV_SetSprite(p, 0x13);
 			p->sizeLife = FXV_Rand(0.10000002384185791, 0.5);
-			CGameParticles_SetColorRamp(p, FXV_Ramp(GAME_ARRAY(uint32_t, cObjElementFXVehicleFire_Update_431530, FXV_RAMP_FIRE) + 9 * (crt_rand() % 3)));
+			CGameParticles_SetColorRamp(p, FXV_Ramp(FXV_FIRE_RAMPS + 9 * (crt_rand() % 3)));
 			CGameParticles_Apply(p);
 			CGameParticles_EmitDt(p, 1, 1, self->emitTime * 0.25f);
 			break;
@@ -1298,7 +1299,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 			p->rotVar = FXV_Rand(1.0471975803375244, -0.5235987901687622);
 			p->sizeLife = FXV_Rand(0.10000002384185791, 0.5);
 			FXV_SetSprite(p, (byte)((crt_rand() & 1) + 0x1c));
-			CGameParticles_SetColorRamp(p, FXV_Ramp(GAME_ARRAY(uint32_t, cObjElementFXVehicleFire_Update_431530, FXV_RAMP_FIRE) + 9 * (crt_rand() % 2)));
+			CGameParticles_SetColorRamp(p, FXV_Ramp(FXV_FIRE_RAMPS + 9 * (crt_rand() % 2)));
 			CGameParticles_Apply(p);
 			CGameParticles_EmitDt(p, 1, 1, self->emitTime * 0.25f);
 			break;
@@ -1324,7 +1325,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 			p->rotVar = FXV_Rand(1.0471975803375244, -0.5235987901687622);
 			p->sizeLife = 1.0f;
 			FXV_SetSprite(p, 0x37);
-			CGameParticles_SetColorRamp(p, FXV_Ramp(GAME_ARRAY(uint32_t, cObjElementFXVehicleFire_Update_431554, FXV_RAMP_FIRE2) + 9 * (crt_rand() % 2)));
+			CGameParticles_SetColorRamp(p, FXV_Ramp(GAME_ARRAY_IN(uint32_t, FXV_FIRE_RAMPS, 36, FXV_RAMP_FIRE2) + 9 * (crt_rand() % 2)));
 			CGameParticles_Apply(p);
 			CGameParticles_EmitDt(p, 1, 1, self->emitTime * 0.5f);
 			break;
@@ -1362,7 +1363,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 		} else {
 			FXV_SetSprite(po, (byte)(crt_rand() % 4 + 0x21));
 		}
-		CGameParticles_SetColorRamp(po, FXV_Ramp(GAME_ARRAY(uint32_t, cObjElementFXVehicleFire_Update_431530, FXV_RAMP_FIRE) + 9 * (crt_rand() % 3)));
+		CGameParticles_SetColorRamp(po, FXV_Ramp(FXV_FIRE_RAMPS + 9 * (crt_rand() % 3)));
 		CGameParticles_Apply(po);
 		CGameParticles_EmitN(po, 1, 1);
 
@@ -1407,6 +1408,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 #define FXV_RAMP_TRAIL 0x4311e8		/* [2] */
 #define FXV_RAMP_DEBRIS 0x431254
 #define FXV_RAMP_FLAME 0x431278		/* [3] */
+#define FXV_FLAME_RAMPS (GAME_ARRAY(uint32_t, FXV_FLAME_RAMPS, FXV_RAMP_FLAME))	/* [3 * 9] */
 #define FXV_RAMP_FLAME2 0x43129c	/* [2] */
 #define FXV_RAMP_DSMOKE 0x4312e8	/* [5] */
 #define FXV_DAMAGE_VERTS 12		/* of the ship, then 6 of a motor */
@@ -1497,7 +1499,7 @@ static void FXV_DamageFlame(cObjElementFXVehicleDamage *self, cDebris *debris, c
 		p->rotVar = FXV_Rand(1.0471975803375244, -0.5235987901687622);
 		FXV_SetSprite(p, 0x13);
 		p->sizeLife = FXV_Rand(0.10000002384185791, 0.5);
-		CGameParticles_SetColorRamp(p, FXV_RampN(GAME_ARRAY(uint32_t, FXV_DamageDebris_431278, FXV_RAMP_FLAME), 3));
+		CGameParticles_SetColorRamp(p, FXV_RampN(FXV_FLAME_RAMPS, 3));
 		CGameParticles_Apply(p);
 		CGameParticles_EmitDt(p, 1, 1, self->emitTime * 0.25f);
 		break;
@@ -1517,7 +1519,7 @@ static void FXV_DamageFlame(cObjElementFXVehicleDamage *self, cDebris *debris, c
 		p->rotVar = FXV_Rand(1.0471975803375244, -0.5235987901687622);
 		p->sizeLife = FXV_Rand(0.10000002384185791, 0.5);
 		FXV_SetSprite(p, (byte)((crt_rand() & 1) + 0x1c));
-		CGameParticles_SetColorRamp(p, FXV_RampN(GAME_ARRAY(uint32_t, FXV_DamageDebris_431278, FXV_RAMP_FLAME), 2));
+		CGameParticles_SetColorRamp(p, FXV_RampN(FXV_FLAME_RAMPS, 2));
 		CGameParticles_Apply(p);
 		CGameParticles_EmitDt(p, 1, 1, self->emitTime * 0.25f);
 		break;
@@ -1535,7 +1537,7 @@ static void FXV_DamageFlame(cObjElementFXVehicleDamage *self, cDebris *debris, c
 		p->sizeLife = 1.0f;
 		FXV_SetSprite(p, 0x37);
 		p->rotVar = FXV_Rand(1.0471975803375244, -0.5235987901687622);
-		CGameParticles_SetColorRamp(p, FXV_RampN(GAME_ARRAY(uint32_t, FXV_DamageDebris_43129c, FXV_RAMP_FLAME2), 2));
+		CGameParticles_SetColorRamp(p, FXV_RampN(GAME_ARRAY_IN(uint32_t, FXV_FLAME_RAMPS, 36, FXV_RAMP_FLAME2), 2));
 		CGameParticles_Apply(p);
 		CGameParticles_EmitDt(p, 1, 1, self->emitTime * 0.5f);
 		break;
@@ -1932,6 +1934,7 @@ trail:
 #define FXV_RAMP_XSPARK 0x4313e8
 #define FXV_RAMP_XSMOKE 0x43140c
 #define FXV_RAMP_XFIRE 0x431454		/* [3] */
+#define FXV_XFIRE_RAMPS (GAME_ARRAY(uint32_t, FXV_XFIRE_RAMPS, FXV_RAMP_XFIRE))	/* [3 * 9] */
 #define FXV_RAMP_XPUFF 0x431478		/* [2] */
 #define FXV_RAMP_XBALL 0x4314c0		/* [3] */
 #define FXV_PI_2 1.5707964f		/* rva 0x3ad098 */
@@ -2068,7 +2071,7 @@ static void FXV_ShipFlames(CGameParticles *p, int numFlames, const vec3_t *pos, 
 			FXV_SetSprite(p, 0x79);
 			p->rotVar = FXV_Rand(1.5707963705062866, -0.78539818525314331);
 			CGameParticles_Apply(p);
-			CGameParticles_SetColorRamp(p, FXV_RampN(GAME_ARRAY(uint32_t, FX_ShipExplosion_431454, FXV_RAMP_XFIRE), 3));
+			CGameParticles_SetColorRamp(p, FXV_RampN(FXV_XFIRE_RAMPS, 3));
 			float et = (float)k * 0.02f * time;
 			CGameParticles_EmitDt(p, 1, 1, FXV_Rand(0.019999995827674866, 0.18000000715255737) + et);
 
@@ -2142,7 +2145,7 @@ static void FXV_ShipSphere(CGameParticles *p, const vec3_t *pos, const vec3_t *v
 				}
 				p->spriteEnd = p->spriteIni;
 				CGameParticles_Apply(p);
-				CGameParticles_SetColorRamp(p, FXV_RampN(GAME_ARRAY(uint32_t, FX_ShipExplosion_431454, FXV_RAMP_XFIRE), 3));
+				CGameParticles_SetColorRamp(p, FXV_RampN(FXV_XFIRE_RAMPS, 3));
 				CGameParticles_EmitDt(p, 1, 1, FXV_Rand(0.19999998807907104, 0.25));
 			}
 			if (crt_rand() & 1) {
@@ -2364,7 +2367,7 @@ void FX_ShipExplosion(vec3_t pos, vec3_t vel, float scale, float time, int numFl
 		p->rotVar = FXV_Rand(1.0471975803375244, -0.5235987901687622);
 		FXV_SetSprite(p, (byte)(crt_rand() % 4 + 0x79));
 		CGameParticles_Apply(p);
-		CGameParticles_SetColorRamp(p, FXV_RampN(GAME_ARRAY(uint32_t, FX_ShipExplosion_431478, FXV_RAMP_XPUFF), 2));
+		CGameParticles_SetColorRamp(p, FXV_RampN(GAME_ARRAY_IN(uint32_t, FXV_XFIRE_RAMPS, 36, FXV_RAMP_XPUFF), 2));
 		CGameParticles_EmitDt(p, 1, 1, FXV_Rand(0.11999998986721039, 0.20000000298023224) * time);
 	}
 

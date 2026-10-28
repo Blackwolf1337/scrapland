@@ -234,7 +234,7 @@ int __thiscall CMotorApp_FrameMove(byte *self) {
 }
 
 #define MOTOR_B2A5F8(m) (*(byte *)((m) + 0x2a5f8))
-#define g_RenderCounts (GAME_ARRAY(int, g_RenderCounts, 0x4a8f00))	/* 8, g_RenderTris and g_RenderVerts first; the frame clears 10 */
+#define g_RenderCounts (GAME_ARRAY(int, g_RenderCounts, 0x4a8f00))	/* [10], 8 counts (g_RenderTris and g_RenderVerts first), the frame clears 10 */
 #define g_Motor431bae GAME_GLOBAL_IN(byte, group_431bac, 2, 0x431bae)
 #define g_Tramas GAME_GLOBAL(int, g_Tramas, 0x431bd4)		/* [video] Tramas: dithering */
 /* the frame limiter: [video] limitaFPS of m3d.ini and the console variable R_LimitFPS, the larger counts */

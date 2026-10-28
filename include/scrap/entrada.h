@@ -41,7 +41,7 @@ void Teclado_KeyUp(uint32_t wparam, uint32_t lparam);
 #define g_EntradaInvY GAME_GLOBAL(int, g_EntradaInvY, 0x4db420)
 #define g_EntradaInvZ GAME_GLOBAL(int, g_EntradaInvZ, 0x4db424)
 /* the cursor position while CEntradaWindows holds the mouse */
-#define g_EntradaCursor (GAME_ARRAY(int32_t, g_EntradaCursor, 0x432a08))
+#define g_EntradaCursor (GAME_ARRAY(int32_t, g_EntradaCursor, 0x432a08))	/* [2], the POINT of GetCursorPos */
 #define ENTRADA_CURSOR_CENTER 100
 
 /* the vftable of IEntrada */

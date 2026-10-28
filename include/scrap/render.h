@@ -58,8 +58,8 @@ struct CListaVert;
 #define g_StageMip (GAME_ARRAY(byte, g_StageMip, 0x4addb4))	/* the b8 (mipmaps) of the map */
 #define g_StageTile (GAME_ARRAY(byte, g_StageTile, 0x4addbc))	/* the bc of the map: bit 0 wraps u, bit 1 v */
 /* the texture of each stage and the frame it was set in */
-#define g_StageTex (GAME_ARRAY(void *, g_StageTex, 0x4ae594))
-#define g_StageTexFrame (GAME_ARRAY(int, g_StageTexFrame, 0x4ae5b4))
+#define g_StageTex (GAME_ARRAY(void *, g_StageTex, 0x4ae594))	/* [8] */
+#define g_StageTexFrame (GAME_ARRAY(int, g_StageTexFrame, 0x4ae5b4))	/* [8] */
 #define g_TexChanges GAME_GLOBAL_IN(int, g_RenderCounts, 8, 0x4a8f08)
 #define g_VBIBTriLimit GAME_GLOBAL_IN(uint32_t, GVar_R_VBIBTriLimit, 16, 0x4ad820)	/* R_VBIBTriLimit */
 /* the projection split into g_Tiles x g_Tiles parts (screenshots larger than the screen), one per frame */
@@ -179,7 +179,7 @@ enum {
 #define g_PSOff GAME_GLOBAL_IN(uint32_t, GVar_R_PSMask, 16, 0x4ada98)
 /* all pixel shaders made from their files (the names end with NULL) */
 #define g_PSNames (GAME_ARRAY(const char *const, g_PSNames, 0x431d88))
-#define g_PSHandles (GAME_ARRAY(uint32_t, g_PSHandles, 0x4ad760))
+#define g_PSHandles (GAME_ARRAY(uint32_t, g_PSHandles, 0x4ad760))	/* [32], one per slot of g_PSNames */
 #define g_PShaderCount GAME_GLOBAL_IN(int, GVar_R_PShaderCount, 16, 0x4add70)	/* R_PShaderCount, the changes of the frame */
 #define g_CullMode GAME_GLOBAL_IN(int, GVar_R_CullMode, 16, 0x4ad910)	/* R_CullMode, 1 two-sided */
 /* the world matrix was given to the device */

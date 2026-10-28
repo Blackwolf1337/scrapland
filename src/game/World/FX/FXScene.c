@@ -1410,6 +1410,7 @@ void __thiscall cObjElementFXSceneBeatPickus_Update(cObjElementFXSceneBeatPickus
 #define FXS_RAMP_BILL_SMOKE 0x430d00	/* [2] */
 #define FXS_RAMP_BILL_CAPSULE 0x430d48	/* [2] */
 #define FXS_RAMP_BILL_JETA 0x430d90	/* [2] */
+#define FXS_BILL_JETA_RAMPS (GAME_ARRAY(uint32_t, FXS_BILL_JETA_RAMPS, FXS_RAMP_BILL_JETA))	/* [2 * 9] */
 #define FXS_RAMP_BILL_JETB 0x430db4
 #define FXBILL_JETS 3
 /* the jets of the capsule: the particles of its embedded effect (3 from + 0x8) */
@@ -1508,7 +1509,7 @@ static void FXS_BillJetsSmoke(void *efx) {
 		sp->rotVar = FxElem_Rand(1.5707964f, -0.7853982f);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBillArrives_A_Update_430d90, FXS_RAMP_BILL_JETA), crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(FXS_BILL_JETA_RAMPS, crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.04f, 0.0));
 	}
 }
@@ -1542,7 +1543,7 @@ static void FXS_BillJetsBlast(void *efx) {
 		FXS_Sprites(sp, 0x37, 0x37);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXSceneBillArrives_A_Update_430db4, FXS_RAMP_BILL_JETB));
+		CGameParticles_SetColorRamp(sp, GAME_ARRAY_IN(uint32_t, FXS_BILL_JETA_RAMPS, 36, FXS_RAMP_BILL_JETB));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.035f, 0.0));
 	}
 }

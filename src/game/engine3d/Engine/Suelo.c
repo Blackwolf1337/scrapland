@@ -1954,7 +1954,7 @@ void __thiscall CSuelo_CalcIlum(void *suelo, CNodo3D *nodo, CEscena *esc) {
 #define g_ShowMapSolid GAME_GLOBAL_IN(int, GVar_ShowMapSolid, 16, 0x4af850)		/* 0 wireframe, 1 solid, 2 solid with fog */
 #define g_CollideAddColor (GAME_ARRAY(float, g_CollideAddColor, 0x432420))	/* added to the shaded colors, rgba */
 #define g_CollideVerts (GAME_ARRAY(CollideVert, g_CollideVerts, 0x4af8b0))	/* the triangle drawn */
-#define g_SectorColors (GAME_ARRAY(const uint32_t, g_QuadColors, 0x432a34))
+#define g_SectorColors (GAME_ARRAY_IN(const uint32_t, g_BspColores, 4, 0x432a34))
 
 /* the shading of the solid view: (0 < s) ? min(1, s) : 0 the way the original branches (NaN to the minss) */
 static float Collide_Clamp01(float s) {
@@ -2119,7 +2119,7 @@ void Suelo_FiniCollideMat(void) {
 	CMaterial_dtor(&g_CollideMat);
 }
 
-#define g_QuadColors (GAME_ARRAY(const uint32_t, g_QuadColors, 0x432a34))
+#define g_QuadColors (GAME_ARRAY_IN(const uint32_t, g_BspColores, 4, 0x432a34))
 
 /* the box of a quad with its cell from x z of the grid */
 static void Suelo_QuadBox(const CAlturas *alt, const CCollideQuad *q, float x0, float x1, float z0, float z1,

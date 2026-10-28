@@ -848,6 +848,7 @@ void __thiscall cObjElementFXMaintenanceWork_Update(cObjElementFXMaintenanceWork
 }
 
 #define FXC_RAMP_TELEPORT 0x430340	/* 3 color ramps of 9 colors */
+#define FXC_TELEPORT_RAMPS (GAME_ARRAY(uint32_t, FXC_TELEPORT_RAMPS, FXC_RAMP_TELEPORT))	/* [3 * 9] */
 #define FXC_RAMP_TELEPORT_GLOW 0x430388
 
 static inline uint32_t *FXC_Ramp(uint32_t *ramps, int i) {
@@ -888,7 +889,7 @@ static void FXTeleport_Glow(CGameParticles *sp, float x, float y, float z, float
 	sp->sizeIni = sp->sizeEnd = FXC_Rand(0.099999904632568359, 1.2000000476837158) * r;
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, FXC_Ramp(GAME_ARRAY(uint32_t, FXTeleport_Glow_430340, FXC_RAMP_TELEPORT), crt_rand() % 3));
+	CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_TELEPORT_RAMPS, crt_rand() % 3));
 	CGameParticles_EmitN(sp, 1, 0);
 }
 
@@ -934,7 +935,7 @@ static void FXTeleport_Spark(CGameParticles *sp, const vec3_t *c, int mode, floa
 	sp->sparkVelScale = 100.0f;
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, FXC_Ramp(GAME_ARRAY(uint32_t, FXTeleport_Glow_430340, FXC_RAMP_TELEPORT), crt_rand() & 1));
+	CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_TELEPORT_RAMPS, crt_rand() & 1));
 	CGameParticles_EmitN(sp, 1, 0);
 }
 
@@ -952,7 +953,7 @@ static void FXTeleport_Smoke(CGameParticles *sp, float life) {
 	sp->spriteEnd = 9;
 	sp->sizeEnd = FXC_Rand(5.0, 70.0);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, FXC_Ramp(GAME_ARRAY(uint32_t, FXTeleport_Glow_430340, FXC_RAMP_TELEPORT), crt_rand() % 2));
+	CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_TELEPORT_RAMPS, crt_rand() % 2));
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 0);
 }
@@ -1097,7 +1098,7 @@ void __thiscall cObjElementFXCharacterTeleport_Update(cObjElementFXCharacterTele
 	sp->spriteEnd = sprite;
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, FXC_Ramp(GAME_ARRAY(uint32_t, FXTeleport_Glow_430340, FXC_RAMP_TELEPORT), crt_rand() & 1));
+	CGameParticles_SetColorRamp(sp, FXC_Ramp(FXC_TELEPORT_RAMPS, crt_rand() & 1));
 	CGameParticles_EmitN(sp, 1, 0);
 	/* smoke out of 8 vertices of the character */
 	CHECK(CGameModel_IsLoaded(m));
@@ -1163,7 +1164,7 @@ void __thiscall cObjElementFXCharacterTeleport_Update(cObjElementFXCharacterTele
 			sp->spriteIni = 5;
 			sp->spriteEnd = 5;
 			CGameParticles_SetColorRampOn(sp, 1);
-			CGameParticles_SetColorRamp(sp, GAME_PTR(FXTeleport_Glow_430388, 0, FXC_RAMP_TELEPORT_GLOW));
+			CGameParticles_SetColorRamp(sp, GAME_PTR(FXC_TELEPORT_RAMPS, 72, FXC_RAMP_TELEPORT_GLOW));
 			CGameParticles_Apply(sp);
 			CGameParticles_EmitDt(sp, 1, 0, lt);
 		}

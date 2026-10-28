@@ -139,7 +139,7 @@ vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);
 #define g_CollisionBalance GAME_GLOBAL_IN(float, GVar_MapCollisionBalance, 16, 0x4af868)
 #define g_QuadTriCacheID GAME_GLOBAL(int, g_QuadTriCacheID, 0x4af7d8)
 #define g_CollisionNComp GAME_GLOBAL(uint32_t, g_CollisionNComp, 0x4af7dc)
-#define g_CollisionTestsMax GAME_GLOBAL(uint32_t, g_CollisionTestsMax, 0x4af7e8)
+#define g_CollisionTestsMax GAME_GLOBAL_IN(uint32_t, g_BspCacheStats, 8, 0x4af7e8)
 #define g_CollisionTests GAME_GLOBAL(uint32_t, g_CollisionTests, 0x4af7ec)
 #define g_CollisionTestsTotal GAME_GLOBAL(uint32_t, g_CollisionTestsTotal, 0x4af7f0)
 #define g_CollisionQuadCount GAME_GLOBAL(int, g_CollisionQuadCount, 0x4af7f4)

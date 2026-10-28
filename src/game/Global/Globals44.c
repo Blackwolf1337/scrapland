@@ -120,7 +120,6 @@
 #undef g_NW2DBodies
 #undef g_NWNodeRadius
 #undef g_NameTable
-#undef g_NetStaticBuffer
 #undef g_NodesTraffic
 #undef g_NodesTrafficInDoor
 #undef g_NodesWorld
@@ -146,7 +145,6 @@
 #undef g_PlayerInput
 #undef g_PoliceBossEnt
 #undef g_PrintfOptions
-#undef g_PyStaticBuffer
 #undef g_RustyLoops
 #undef g_SaveVarCount
 #undef g_SaveVars
@@ -1146,8 +1144,7 @@ cGVarFunction GVar_OnCrazyDealFinished SD_BSS(0x44bb8c);
 cGVar GVar_LastSaveGameName SD_BSS(0x44bbb0);
 cGVarFunction GVar_OnCrazyDealTarget SD_BSS(0x44bbc8);
 int g_SaveVarCount SD_BSS(0x44bbec);
-cStaticBuffer g_PyStaticBuffer SD_BSS(0x44bbf0);
-cStaticBuffer g_NetStaticBuffer SD_BSS(0x44bbfc);
+cStaticBuffer cStaticBuffer_PyStaticBuffer[2] SD_BSS(0x44bbf0);
 char g_Utf8Buf[1024] SD_BSS(0x44bc08);
 char g_VersionBuf[256] SD_BSS(0x44c008);
 byte g_GogReady SD_BSS(0x44c108);
@@ -1170,8 +1167,7 @@ cAbstractIDevice g_Keyboard SD_BSS(0x44c624);
 uint32_t Fini_cPcKeyboard_Keyboard_44c634 SD_BSS(0x44c634);
 char g_KeyState[256] SD_BSS(0x44c638);
 byte g_KeyObjInfo[316] SD_BSS(0x44c738);
-char g_KeyNameBuf[16] SD_BSS(0x44c874);
-cGVar GVar_MouseSensitivityV SD_BSS(0x44c884);
+char g_KeyNameBuf[40] SD_BSS(0x44c874);
 cPcMouse g_Mouse SD_BSS(0x44c89c);
 cGVar GVar_MouseSensitivityH SD_BSS(0x44c8c0);
 cGVar GVar_InvertMouse SD_BSS(0x44c8d8);

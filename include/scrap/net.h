@@ -325,8 +325,8 @@ SD_SIZE(NetServerInfo, 0x5c);
 #define g_NetSendDelay GAME_GLOBAL(uint32_t, g_NetSendDelay, 0x428d30)	/* 100 */
 #define g_NetUserFactory GAME_GLOBAL(netuserfactory_t, g_NetUserFactory, 0x463bf0)
 #define g_NetMsg (&GAME_GLOBAL(cFileMem, g_NetMsg, 0x463bf8))	/* the memory file messages are built and read in */
-#define g_NetStaticBuffer (&GAME_GLOBAL(cStaticBuffer, g_NetStaticBuffer, 0x44bbfc))
-#define g_PyStaticBuffer (&GAME_GLOBAL(cStaticBuffer, g_PyStaticBuffer, 0x44bbf0))
+#define g_NetStaticBuffer (&GAME_GLOBAL_IN(cStaticBuffer, cStaticBuffer_PyStaticBuffer, 12, 0x44bbfc))
+#define g_PyStaticBuffer (&GAME_GLOBAL_IN(cStaticBuffer, cStaticBuffer_PyStaticBuffer, 0, 0x44bbf0))
 #define g_NetOrigin GAME_GLOBAL(vec3_t, g_NetOrigin, 0x463ef4)
 #define g_NetMaxDist2 GAME_GLOBAL(float, g_NetMaxDist2, 0x3b5690)	/* the distance (squared) of the near entities */
 /* NetData.cpp */

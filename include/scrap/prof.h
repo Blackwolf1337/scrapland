@@ -9,7 +9,7 @@
 #include "scrap/shared.h"
 
 #define g_ProfMode GAME_GLOBAL_IN(int, GVar_R_ShowInfo, 16, 0x4a9018)	/* 5: timing with rdtsc */
-#define g_ProfTicks (GAME_ARRAY(uint64_t, g_ProfTicks, 0x4b17e0))	/* per section */
+#define g_ProfTicks (GAME_ARRAY(uint64_t, g_ProfTicks, 0x4b17e0))	/* [32], per section */
 
 /* Util/tsc.cpp (src/game/engine3d/Util/Tsc.c) */
 /* the rdtsc ticks per second, measured once (or again with recalc) against the performance counter without waiting

@@ -829,8 +829,8 @@ void __thiscall cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float 
 /* ---- the shoot effects (rva 0x103500): the particles of m_FollowSistPart2 of the embedded FX at the weapon ---- */
 
 /* the color ramps of the shots (9 colors each) */
-#define VS_RAMP_FIRE (GAME_ARRAY(uint32_t, VS_RAMP_FIRE, 0x428704))	/* 2 ramps */
-#define VS_RAMP_FIRE2 (GAME_ARRAY(uint32_t, VS_RAMP_FIRE2, 0x428728))
+#define VS_RAMP_FIRE (GAME_ARRAY(uint32_t, VS_RAMP_FIRE, 0x428704))	/* [2 * 9], 2 ramps */
+#define VS_RAMP_FIRE2 (GAME_ARRAY_IN(uint32_t, VS_RAMP_FIRE, 36, 0x428728))
 #define VS_RAMP_SMOKE (GAME_ARRAY(uint32_t, VS_RAMP_SMOKE, 0x4286e0))
 #define VS_RAMP_ATPC (GAME_ARRAY(uint32_t, VS_RAMP_ATPC, 0x42874c))
 

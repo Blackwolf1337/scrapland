@@ -514,9 +514,11 @@ def sizes(L, claims):
 		end = 1 << 32
 		i = bisect.bisect_right(fixed_starts, lo) - 1
 		k = 0
+		counted = me is not None and me.count is not None
 		while i >= 0 and k < 256:
 			d = fixed[i]
-			if d is not me and d.rva + d.size > lo and not (d.rva == lo and absorbable(d, lo, esize)):
+			# an array of a known length is not cut by a smaller claim at its start (that one is a view of it)
+			if d is not me and d.rva + d.size > lo and not (d.rva == lo and (absorbable(d, lo, esize) or counted)):
 				end = min(end, d.rva + d.size)
 			i -= 1
 			k += 1
@@ -527,8 +529,13 @@ def sizes(L, claims):
 			enclosing_end(lo, esize, me))
 		i = bisect.bisect_right(starts, lo)
 		counted = me is not None and me.count is not None
+		cend = lo + me.count * esize if counted else lo
 		while i < len(starts) and starts[i] < hard:
-			# an address the C takes inside an array of a known length is a view of it (stage 3c1b)
+			# an address the C takes inside an array of a known length is a view of it (stage 3c1b), and so is any
+			# other claim there (stage 3c2: the C indexes the whole table, which must be one object)
+			if starts[i] < cend:
+				i += 1
+				continue
 			if not all(absorbable(d, lo, esize) or (counted and d.form == 'addr') for d in by_rva[starts[i]]):
 				hard = starts[i]
 				break

@@ -455,7 +455,7 @@ typedef struct cCircuitFlare {
 SD_SIZE(cCircuitFlare, 0x18);
 
 #define g_CircuitFlares (GAME_ARRAY(cCircuitFlare, g_CircuitFlares, 0x45ded4))	/* CIRCUIT_FLARES */
-#define g_CircuitInit GAME_GLOBAL(byte, g_CircuitInit, 0x45df30)
+#define g_CircuitInit GAME_GLOBAL_IN(byte, g_CircuitFlares, 92, 0x45df30)
 #define g_CircuitPaths (GAME_ARRAY(cCircuitPath, g_CircuitPaths, 0x45df38))	/* CIRCUIT_PATHS */
 
 /* the constructor of a path in the static array: nothing */
