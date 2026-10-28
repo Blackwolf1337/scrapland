@@ -78,6 +78,9 @@ static inline float FX_Rand(double range, double add) {
 #define g_FXItemTakeFile GAME_DATA(const char *, 0x467210)
 #define g_FXCharacterSputnikFile GAME_DATA(const char *, 0x466e38)
 #define g_FXShipEditBuildFile GAME_DATA(const char *, 0x467258)
+#define g_FXSmokeDebrisFile GAME_DATA(const char *, 0x4673c0)
+#define g_FXFiredDebrisFile GAME_DATA(const char *, 0x4673a8)
+#define g_FXShipExplosionFile GAME_DATA(const char *, 0x467348)
 
 /* the color ramps (9 colors) of the particles */
 #define FX_RAMP_BLINK 0x430b44

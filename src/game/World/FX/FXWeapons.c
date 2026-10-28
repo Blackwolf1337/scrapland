@@ -1883,7 +1883,6 @@ void __thiscall cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity 
 
 #define g_SwarmBeeExplosionFile GAME_DATA(const char *, 0x44a5c0)
 #define g_SwarmExplosionFile GAME_DATA(const char *, 0x44a520)
-#define g_FXSmokeDebrisFile GAME_DATA(const char *, 0x4673c0)
 #define FXSWARM_RAMP_BEE 0x431978
 #define FXSWARM_RAMP_FLASH 0x431a2c		/* [2] */
 #define FXSWARM_RAMP_SMOKE 0x4319c0		/* [3] */

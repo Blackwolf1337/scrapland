@@ -1,4 +1,4 @@
-# game World/FX: the final big FX Updates (execfile'd by sdlevel.py, Python 1.5.2): the main effect of the mental
+# game World/FX: the final big FX functions (execfile'd by sdlevel.py, Python 1.5.2): the main effect of the mental
 # controllers (built by its constructor with the model MentalControllerMainFX, its Init only when the model has the
 # nodes, nine controllers MentalController1 set by SetController), the EMI, the GearMissile and the VehicleDamage
 # Updates on the debris of debris systems of our own (Scrap.SetDebrisSys with the models of the FX engine variables;
@@ -8,8 +8,11 @@
 # camera position, SplitScreen and the fields of our entities are set by hand and restored. rand is seeded with srand
 # of the exe before each Update. Printed: the fields of the effects, the particle parameters, the particles placed by
 # hand and the trail points written.
-# Not called: FX_ShipExplosion (not in C), the paths that need more particles or nodes than the models have (skipped
-# by the checks before), the vehicle flames past the 12 vertices of the ship (the 6 of a motor may be stack garbage).
+# FX_ShipExplosion is called by rva with the debris systems of its engine variables set up by SetDebrisSys (the
+# explosion with SistPart elements, the smoke and fired debris with theirs), the split screen game flag set so that
+# it is seen.
+# Not called: the paths that need more particles or nodes than the models have (skipped by the checks before), the
+# vehicle flames past the 12 vertices of the ship (the 6 of a motor may be stack garbage).
 def ffni(a):
 	return SDTest.Peek(a, '@i')
 def ffnb(a):
@@ -438,6 +441,57 @@ if ffnok and ffncar and ffnefx and ffnn[0] and ffnn[1] and ffnn[2]:
 	SDTest.Poke(0x4a80c4, ffngetvert)
 	ffnfree(ffnfakemotor)
 	ffnfree(ffnfakeplayer)
+
+# ---- FX_ShipExplosion: the debris, the explosion and its flames ----
+ffns, ffnd, ffnfx = ffndebris(ffnstr(0x467348), 1)
+ffnexpok = ffnfx != 0 and ffni(ffnfx) == 0x400000 + 0x3cccb4
+ffnsmk = ffndebris(ffnstr(0x4673c0), 48)[0]
+ffnfrd = ffndebris(ffnstr(0x4673a8), 40)[0]
+ffnexps = ffns
+check('FFN explosion', lambda: (ffnexpok, ffnexpok and ffnnpart(ffnfx + 4), ffnsmk != 0, ffnfrd != 0))
+# the first n debris of the active list of a system up to stop (the head before the call; the older ones are from
+# the explosion of sdlevel.py without srand): position, speed, life and the smoke element fields
+def ffnsysdebris(s, n, stop):
+	r = ()
+	if not s:
+		return r
+	d = ffni(s + 4)
+	while d and d != stop and n > 0:
+		fx = ffni(d + 0x54)
+		r = r + ((ffnfl(d + 0x1c, 3), ffnfl(d + 0x34, 3), ffnfl(d + 0x4c, 1), fx != 0 and ffnfl(fx + 0xcc, 3),
+			fx != 0 and ffnb(fx + 0xd8)),)
+		d = ffni(d + 0x50)
+		n = n - 1
+	return r
+def ffnexplosion(stop):
+	d = ffni(ffnexps + 4)
+	if not d or d == stop:
+		return None
+	fx = ffni(d + 0x54)
+	r = (ffnfl(d + 0x4c, 1), ffnmodelpos(d)[0])
+	if fx:
+		r = r + (ffnbytes(fx + 0xb4, 2), ffnpart(fx + 4))
+	return r
+if ffnexpok and ffnnpart(ffnfx + 4) and ffnsmk and ffnfrd:
+	# offset from the missile (or the player for the ground), speed, scale, time, flames, collision, split game
+	for ffnat, ffnofs, ffnv, ffnsc, ffnt, ffnfl1, ffncol, ffngm in ((0, (900000.0, 0.0, 0.0), (0.0, 0.0, 0.0), 1.0,
+			1.0, 0, 0, 0), (0, (0.0, 0.0, 0.0), (100.0, 0.0, -50.0), 1.0, 1.0, 0, 0, 1),
+			(0, (40.0, -20.0, 10.0), (0.0, 30.0, 0.0), 0.5, 2.0, 2, 0, 1),
+			(1, (0.0, 0.0, 0.0), (-200.0, 10.0, 80.0), 1.5, 0.5, 3, 1, 1),
+			(0, (10.0, 0.0, 0.0), (0.0, 0.0, 0.0), 0.02, 0.02, 1, 1, 1)):
+		ffnbase = ffnmispos
+		if ffnat:
+			ffnbase = ffnpp
+		ffnp = (ffnbase[0] + ffnofs[0], ffnbase[1] + ffnofs[1], ffnbase[2] + ffnofs[2])
+		ffnpoke(ffngame, ffngm)
+		ffnsrand(1950)
+		ffnr = (ffnat, ffnofs, ffnv, ffnsc, ffnt, ffnfl1, ffncol, ffngm)
+		ffnheads = (ffni(ffnexps + 4), ffni(ffnsmk + 4), ffni(ffnfrd + 4))
+		check('FX_ShipExplosion' + fmt(ffnr), lambda p=ffnp, v=ffnv, sc=ffnsc, t=ffnt, n=ffnfl1, c=ffncol: (
+			SDTest.Call(0x1f4d50, 'vffffffffii', p[0], p[1], p[2], v[0], v[1], v[2], sc, t, n, c),
+			ffnexplosion(ffnheads[0]), ffnsysdebris(ffnsmk, 4, ffnheads[1]), ffnsysdebris(ffnfrd, 4, ffnheads[2]),
+			ffnrand()))
+		ffnpoke(ffngame, ffnsavedgame)
 
 # ---- the end ----
 ffnpoke(ffnsplit, ffnsavedsplit)

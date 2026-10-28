@@ -16,7 +16,6 @@ SD_IMPORT(operator_delete_sized, 0x313634)
 /* engine: Logic/ and AI/ (include/scrap/logic.h) */
 
 /* engine: World/FX/ and effects of Entities/ */
-SD_IMPORT(FX_ShipExplosion, 0x1f4d50)
 
 /* engine: Actions/ */
 SD_IMPORT(cActClass_CreateAction, 0x05fe90)

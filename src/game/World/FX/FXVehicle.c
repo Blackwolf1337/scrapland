@@ -3,10 +3,12 @@
  */
 #include "scrap/crt.h"
 #include "scrap/embeddedfxvehicle.h"
+#include "scrap/fx.h"
 #include "scrap/fxvehicle.h"
 #include "scrap/fxweapons.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
+#include "scrap/scrapcollision.h"
 #include "scrap/timer.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
@@ -1921,6 +1923,474 @@ trail:
 		return;
 	}
 	FXV_DamageTrail(self, &pos, &rot, t, rad);
+}
+
+/* ---- FX_ShipExplosion ---- */
+
+#define g_ShipExplosionMaxDist GAME_DATA(float, 0x467330)	/* ShipExplosionMaxDist */
+#define FXV_RAMP_XFLAME 0x4313a0	/* [2] */
+#define FXV_RAMP_XSPARK 0x4313e8
+#define FXV_RAMP_XSMOKE 0x43140c
+#define FXV_RAMP_XFIRE 0x431454		/* [3] */
+#define FXV_RAMP_XPUFF 0x431478		/* [2] */
+#define FXV_RAMP_XBALL 0x4314c0		/* [3] */
+#define FXV_PI_2 1.5707964f		/* rva 0x3ad098 */
+
+/* the speeds of the next particles: no own speed, no acceleration, the speed of the ship added */
+static void FXV_ShipSpeed(CGameParticles *p, const vec3_t *vel) {
+	p->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	p->initVelMax = p->initVelMin;
+	p->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	p->initAccMax = p->initAccMin;
+	p->initVelMin.x = p->initVelMin.x + vel->x;
+	p->initVelMin.y = vel->y + p->initVelMin.y;
+	p->initVelMin.z = vel->z + p->initVelMin.z;
+	p->initVelMax.x = p->initVelMax.x + vel->x;
+	p->initVelMax.y = p->initVelMax.y + vel->y;
+	p->initVelMax.z = p->initVelMax.z + vel->z;
+}
+
+/* the speeds set: braked by g, the speed of the ship added */
+static void FXV_ShipBrake(CGameParticles *p, const vec3_t *vel, double range, double add) {
+	p->initVelMax = p->initVelMin;
+	float g = FXV_Rand(range, add);
+	p->initAccMin.x = g * -p->initVelMin.x;
+	p->initAccMin.y = g * -p->initVelMin.y;
+	p->initAccMin.z = g * -p->initVelMin.z;
+	p->initAccMax = p->initAccMin;
+	p->initVelMin.x = p->initVelMin.x + vel->x;
+	p->initVelMin.y = p->initVelMin.y + vel->y;
+	p->initVelMin.z = p->initVelMin.z + vel->z;
+	p->initVelMax.x = p->initVelMax.x + vel->x;
+	p->initVelMax.y = p->initVelMax.y + vel->y;
+	p->initVelMax.z = p->initVelMax.z + vel->z;
+}
+
+static void FXV_RandRot(CGameParticles *p) {
+	float t = FXV_Rand(FXV_PI2, 0.0);
+	p->rotIni = t;
+	p->rotEnd = t;
+}
+
+/* a unit direction: (1, 1, 1) turned by two random angles (x the second) */
+static vec3_t FXV_FlameDir(void) {
+	vec3_t t;
+	const vec3_t one = { 1.0f, 1.0f, 1.0f };
+
+	float a1 = FXV_Rand(FXV_PI2, 0.0);
+	float a2 = FXV_Rand(FXV_PI2, 0.0);
+	vec3_t rot = { a2, a1, 0.0f };
+	return FX_Unit(*Vec3_Rotate(&t, &one, &rot));
+}
+
+/* n debris of sys thrown out of pos: life, position and speed random, the smoke behind it */
+static void FXV_ShipDebris(cDebrisSys *sys, int n, const vec3_t *pos, float scale, float time, double lifeRange,
+	double lifeAdd, double velRange, double velAdd, float minDist, double spreadRange, double spreadAdd,
+	double scaleRange, double scaleAdd) {
+	vec3_t dir;
+
+	for (int k = n; k; k--) {
+		cDebris *d = cDebrisSys_NewElement(sys);
+		d->speed = FXV_Rand(lifeRange, lifeAdd) * time;
+		cDebrisSys_Drop(sys, d);
+		FX_RandomDir(&dir);
+		float s = FXV_Rand(115.0, 120.0);
+		d->drop[0].x = s * dir.x * scale + pos->x;
+		d->drop[0].y = s * dir.y * scale + pos->y;
+		d->drop[0].z = s * dir.z * scale + pos->z;
+		s = FXV_Rand(velRange, velAdd);
+		d->drop[2].x = s * dir.x * scale;
+		d->drop[2].y = s * dir.y * scale;
+		d->drop[2].z = s * dir.z * scale;
+		cObjElementFXFiredDebris *el = (cObjElementFXFiredDebris *)d->fx;
+		if (el) {
+			if (!el->on) {
+				el->on = 1;
+			}
+			el->minDist = scale * minDist;
+			el->spread = FXV_Rand(spreadRange, spreadAdd) * scale;
+			el->scale = FXV_Rand(scaleRange, scaleAdd) * scale;
+		}
+	}
+}
+
+/* the flames: 8 puffs each along a curved way out of the explosion, the ways apart from the last one */
+static void FXV_ShipFlames(CGameParticles *p, int numFlames, const vec3_t *pos, const vec3_t *vel, float scale,
+	float time) {
+	vec3_t prev = { 0.0f, 0.0f, 0.0f };
+
+	for (int f = 0; f < numFlames; f++) {
+		vec3_t d1 = FXV_FlameDir();
+		vec3_t d2 = FXV_FlameDir();
+		float dist = FXV_Rand(45.0, 80.0);
+		float size = FXV_Rand(150.0, 650.0);
+		if (f > 0) {
+			float dy = prev.y - d1.y;
+			float dx = prev.x - d1.x;
+			float dz = prev.z - d1.z;
+			while (0.75f > (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz))) {
+				d1 = FXV_FlameDir();
+				dy = prev.y - d1.y;
+				dx = prev.x - d1.x;
+				dz = prev.z - d1.z;
+			}
+		}
+		prev = d1;
+		for (int k = 0; k < 8; k++) {
+			size = Float_MaxSS(125.0f, size - FXV_Rand(40.0, 60.0));
+			dist = FXV_Rand(0.079999998211860657, 0.23999999463558197) * size + dist;
+			float s = FXV_Rand(0.05000000074505806, 0.0);
+			d1 = FX_Unit((vec3_t){ d2.x * s + d1.x, d2.y * s + d1.y, d2.z * s + d1.z });
+			s = FXV_Rand(125.0, 275.0);
+			float vx = d1.x * s;
+			float vy = d1.y * s;
+			float vz = d1.z * s;
+			float o1 = FXV_Rand(30.0, -15.0);
+			float o2 = FXV_Rand(30.0, -15.0);
+			float o3 = FXV_Rand(30.0, -15.0);
+			float wx = d1.x * dist;
+			float wy = d1.y * dist;
+			float wz = d1.z * dist;
+			p->initPosMin.x = wx * scale + pos->x + o3 * scale;
+			p->initPosMin.y = wy * scale + pos->y + o2 * scale;
+			p->initPosMin.z = wz * scale + pos->z + o1 * scale;
+			p->initPosMax = p->initPosMin;
+			vx = vx * scale;
+			vy = vy * scale;
+			vz = vz * scale;
+			p->initVelMin = (vec3_t){ vx, vy, vz };
+			FXV_ShipBrake(p, vel, 0.10000002384185791, 0.69999998807907104);
+			p->sizeIni = FXV_Rand(0.10000000894069672, 0.20000000298023224) * size * scale;
+			p->sizeEnd = FXV_Rand(0.099999964237213135, 0.80000001192092896) * size * scale;
+			p->lifeTime = FXV_Rand(0.079999983310699463, 0.72000002861022949) * time;
+			FXV_RandRot(p);
+			p->sizeLife = 1.0f;
+			FXV_SetSprite(p, 0x79);
+			p->rotVar = FXV_Rand(1.5707963705062866, -0.78539818525314331);
+			CGameParticles_Apply(p);
+			CGameParticles_SetColorRamp(p, FXV_RampN(FXV_RAMP_XFIRE, 3));
+			float et = (float)k * 0.02f * time;
+			CGameParticles_EmitDt(p, 1, 1, FXV_Rand(0.019999995827674866, 0.18000000715255737) + et);
+
+			o1 = FXV_Rand(20.0, -10.0);
+			o2 = FXV_Rand(20.0, -10.0);
+			o3 = FXV_Rand(20.0, -10.0);
+			p->initPosMin.y = wy * scale + pos->y + o2 * scale;
+			p->initPosMin.z = wz * scale + pos->z + o1 * scale;
+			p->initPosMin.x = wx * scale + pos->x + o3 * scale;
+			p->initPosMax = p->initPosMin;
+			p->initVelMin = (vec3_t){ vx, vy, vz };
+			FXV_ShipBrake(p, vel, 0.14999997615814209, 0.75);
+			p->sizeIni = FXV_Rand(0.10000000894069672, 0.20000000298023224) * size * scale;
+			p->sizeEnd = size * scale;
+			p->lifeTime = FXV_Rand(0.099999964237213135, 0.60000002384185791) * time;
+			FXV_RandRot(p);
+			p->rotVar = FXV_Rand(1.0471975803375244, -0.5235987901687622);
+			p->sizeLife = FXV_Rand(0.070000007748603821, 0.10999999940395355);
+			p->spriteEnd = 0x21;
+			p->spriteIni = (byte)((byte)(int)FXV_Rand(6.0, 0.0) + 1 + k);
+			CGameParticles_Apply(p);
+			CGameParticles_SetColorRamp(p, FXV_RandRamp(FXV_RAMP_XFLAME));
+			CGameParticles_EmitDt(p, 1, 1, et);
+		}
+	}
+}
+
+/* the puffs on a sphere around the explosion: 4 x 4 directions, each with up to four kinds by chance */
+static void FXV_ShipSphere(CGameParticles *p, const vec3_t *pos, const vec3_t *vel, float scale, float time) {
+	const vec3_t one = { 1.0f, 1.0f, 1.0f };
+	vec3_t dir;
+
+	float a = 0.0f;
+	do {
+		float y0 = FXV_Rand(2.0943951606750488, -1.0471975803375244);
+		float y1 = FXV_Rand(2.0943951606750488, -1.0471975803375244);
+		float y2 = FXV_Rand(2.0943951606750488, -1.0471975803375244);
+		float b = 0.0f;
+		float rz = a + y2;
+		float rx = y0 + 0.0f + 0.0f;
+		do {
+			float j1 = FXV_Rand(0.69999998807907104, -0.34999999403953552);
+			float j2 = FXV_Rand(0.69999998807907104, -0.34999999403953552);
+			vec3_t rot = { rz + j2, j1 + (y1 + b), rx };
+			Vec3_Rotate(&dir, &one, &rot);
+			if (crt_rand() & 1) {
+				float o1 = FXV_Rand(100.0, -50.0);
+				float o2 = FXV_Rand(100.0, -50.0);
+				float o3 = FXV_Rand(100.0, -50.0);
+				p->initPosMin.y = dir.y * 125.0f * scale + pos->y + o2 * scale;
+				p->initPosMin.x = dir.x * 125.0f * scale + pos->x + o3 * scale;
+				p->initPosMin.z = dir.z * 125.0f * scale + pos->z + o1 * scale;
+				p->initPosMax = p->initPosMin;
+				FXV_ShipSpeed(p, vel);
+				p->sizeIni = FXV_Rand(100.0, 250.0) * scale;
+				p->sizeEnd = FXV_Rand(100.0, 650.0) * scale;
+				p->lifeTime = FXV_Rand(0.10000002384185791, 0.5) * time;
+				FXV_RandRot(p);
+				p->sizeLife = 1.0f;
+				p->rotVar = FXV_Rand(0.44879895448684692, -0.22439947724342346);
+				switch (crt_rand() % 3) {
+				case 0:
+					p->spriteIni = 0x79;
+					break;
+				case 1:
+					p->spriteIni = 0x7a;
+					break;
+				case 2:
+					p->spriteIni = 0x7c;
+					break;
+				}
+				p->spriteEnd = p->spriteIni;
+				CGameParticles_Apply(p);
+				CGameParticles_SetColorRamp(p, FXV_RampN(FXV_RAMP_XFIRE, 3));
+				CGameParticles_EmitDt(p, 1, 1, FXV_Rand(0.19999998807907104, 0.25));
+			}
+			if (crt_rand() & 1) {
+				float o1 = FXV_Rand(90.0, -45.0);
+				float o2 = FXV_Rand(90.0, -45.0);
+				float o3 = FXV_Rand(90.0, -45.0) * scale;
+				o2 = o2 * scale;
+				o1 = o1 * scale;
+				float s = FXV_Rand(40.0, 80.0);
+				p->initPosMin.x = s * dir.x * scale + pos->x + o3;
+				p->initPosMin.y = s * dir.y * scale + pos->y + o2;
+				p->initPosMin.z = s * dir.z * scale + pos->z + o1;
+				p->initPosMax = p->initPosMin;
+				FXV_ShipSpeed(p, vel);
+				p->sizeIni = FXV_Rand(100.0, 50.0) * scale;
+				p->sizeEnd = FXV_Rand(150.0, 500.0) * scale;
+				p->lifeTime = FXV_Rand(0.049999982118606567, 0.40000000596046448) * time;
+				FXV_RandRot(p);
+				p->rotVar = FXV_Rand(0.5235987901687622, -0.2617993950843811);
+				p->sizeLife = FXV_Rand(0.15000000596046448, 0.25);
+				int r = crt_rand() % 6;
+				p->spriteIni = (byte)(r + 0x21);
+				p->spriteEnd = (byte)(r + 0x21 + 0xa);
+				CGameParticles_Apply(p);
+				CGameParticles_SetColorRamp(p, FXV_Ramp(FXV_RAMP_XSMOKE));
+				CGameParticles_EmitDt(p, 1, 1, FXV_Rand(0.25, 0.05000000074505806));
+			}
+			if (crt_rand() & 1) {
+				float o1 = FXV_Rand(70.0, -35.0);
+				float o2 = FXV_Rand(70.0, -35.0);
+				float o3 = FXV_Rand(70.0, -35.0) * scale;
+				o2 = o2 * scale;
+				o1 = o1 * scale;
+				float s = FXV_Rand(50.0, 55.0);
+				p->initPosMin.x = s * dir.x * scale + pos->x + o3;
+				p->initPosMin.y = s * dir.y * scale + pos->y + o2;
+				p->initPosMin.z = s * dir.z * scale + pos->z + o1;
+				p->initPosMax = p->initPosMin;
+				float k = FXV_Rand(0.5, 2.1500000953674316);
+				float inv = 1.0f / time;
+				p->initVelMin.x = inv * (k * (p->initPosMin.x - pos->x));
+				p->initVelMin.z = inv * (k * (p->initPosMin.z - pos->z));
+				p->initVelMin.y = inv * (k * (p->initPosMin.y - pos->y));
+				FXV_ShipBrake(p, vel, 0.049999997019767761, 0.15000000596046448);
+				p->sizeIni = FXV_Rand(60.0, 115.0) * scale;
+				p->sizeEnd = FXV_Rand(150.0, 500.0) * scale;
+				p->rotIni = 0.0f;
+				p->rotEnd = 0.0f;
+				p->rotVar = 0.0f;
+				p->lifeTime = FXV_Rand(0.10000002384185791, 0.5) * time;
+				FXV_SetSprite(p, 0x75);
+				p->sparkMaxSize = 1.0f;
+				p->sizeLife = FXV_Rand(0.099999994039535522, 0.25);
+				CGameParticles_Apply(p);
+				CGameParticles_SetColorRamp(p, FXV_Ramp(FXV_RAMP_XSPARK));
+				CGameParticles_SetSparksOn(p, 1);
+				CGameParticles_EmitDt(p, 1, 1, FXV_Rand(0.15000000596046448, 0.0));
+				CGameParticles_SetSparksOn(p, 0);
+			}
+			if (crt_rand() & 1) {
+				float o1 = FXV_Rand(80.0, -40.0);
+				float o2 = FXV_Rand(80.0, -40.0);
+				float o3 = FXV_Rand(80.0, -40.0);
+				p->initPosMin.y = dir.y * 100.0f * scale + pos->y + o2 * scale;
+				p->initPosMin.x = dir.x * 100.0f * scale + pos->x + o3 * scale;
+				p->initPosMin.z = dir.z * 100.0f * scale + pos->z + o1 * scale;
+				p->initPosMax = p->initPosMin;
+				float k = FXV_Rand(0.5, 2.9500000476837158);
+				float inv = 1.0f / time;
+				p->initVelMin.x = (p->initPosMin.x - pos->x) * k * inv;
+				p->initVelMin.y = (p->initPosMin.y - pos->y) * k * inv;
+				p->initVelMin.z = (p->initPosMin.z - pos->z) * k * inv;
+				FXV_ShipBrake(p, vel, 0.20000004768371582, 1.0499999523162842);
+				p->sizeIni = FXV_Rand(100.0, 50.0) * scale;
+				p->sizeEnd = FXV_Rand(200.0, 750.0) * scale;
+				p->lifeTime = FXV_Rand(0.099999964237213135, 0.60000002384185791) * time;
+				FXV_RandRot(p);
+				p->rotVar = FXV_Rand(1.5707963705062866, -0.78539818525314331);
+				p->sizeLife = FXV_Rand(0.070000007748603821, 0.10999999940395355);
+				p->spriteEnd = 0x21;
+				p->spriteIni = (byte)(crt_rand() % 4 + 1);
+				CGameParticles_Apply(p);
+				CGameParticles_SetColorRamp(p, FXV_RandRamp(FXV_RAMP_XFLAME));
+				CGameParticles_EmitDt(p, 1, 1, FXV_Rand(0.30000001192092896, 0.0));
+			}
+			b = b + FXV_PI_2;
+		} while (6.2831853071795862 > (double)b);
+		a = a + FXV_PI_2;
+	} while (6.2831853071795862 > (double)a);
+}
+
+void FX_ShipExplosion(vec3_t pos, vec3_t vel, float scale, float time, int numFlames, int collision) {
+	vec3_t from, to, hit, tmp;
+	CColisTri tri;
+
+	CHECK(scale >= 0.01f);
+	CHECK(time >= 0.01f);
+	CHECK(numFlames >= 0);
+	if (!FX_IsVisible(pos.x, pos.y, pos.z, scale * 2000.0f, g_ShipExplosionMaxDist, NULL, 1)) {
+		return;
+	}
+	if (collision) {
+		/* pushed out of the wall it is in: the first axis on which a line through it hits */
+		float up = scale * 500.0f;
+		float down = scale * -500.0f;
+		vec3_t n = { 0.0f, 0.0f, 0.0f };
+		to = (vec3_t){ pos.x + 0.0f, pos.y + up, pos.z + 0.0f };
+		from = (vec3_t){ pos.x + 0.0f, down + pos.y, pos.z + 0.0f };
+		byte hitOk = Engine_TestLine(&from, &to, &hit, &tri);
+		if (!hitOk) {
+			to = (vec3_t){ pos.x + 0.0f, pos.y + 0.0f, up + pos.z };
+			from = (vec3_t){ pos.x + 0.0f, pos.y + 0.0f, down + pos.z };
+			hitOk = Engine_TestLine(&from, &to, &hit, &tri);
+		}
+		if (!hitOk) {
+			to = (vec3_t){ up + pos.x, pos.y + 0.0f, pos.z + 0.0f };
+			from = (vec3_t){ down + pos.x, pos.y + 0.0f, pos.z + 0.0f };
+			hitOk = Engine_TestLine(&from, &to, &hit, &tri);
+		}
+		if (hitOk) {
+			n = tri.plane.n;
+		}
+		pos.x = n.x * 750.0f * scale + pos.x;
+		pos.y = n.y * 750.0f * scale + pos.y;
+		pos.z = n.z * 750.0f * scale + pos.z;
+	}
+
+	/* debris with smoke, then debris on fire (only with the smoke ones) */
+	int flag = numFlames > 0;
+	int n1 = crt_rand() % 2 * numFlames + flag;
+	if (n1 > 0) {
+		cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXSmokeDebrisFile);
+		FXV_ShipDebris(sys, n1, &pos, scale, time, 0.55000001192092896, 0.80000001192092896, 1650.0, 700.0, 25.0f,
+			8.0, 24.0, 25.0, 150.0);
+	}
+	int n2 = crt_rand() % 2 * numFlames + flag;
+	if (n1 > 0) {
+		cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXFiredDebrisFile);
+		if (n2 > 0) {
+			FXV_ShipDebris(sys, n2, &pos, scale, time, 0.69999992847442627, 0.60000002384185791, 1200.0, 950.0,
+				50.0f, 4.0, 28.0, 30.0, 130.0);
+		}
+	}
+
+	/* the explosion itself: a debris of its own system, its particles */
+	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXShipExplosionFile);
+	cDebris *d = cDebrisSys_NewElement(sys);
+	const vec3_t *r = FX_RandomDir(&tmp);
+	vec3_t at = { r->x + pos.x, r->y + pos.y, r->z + pos.z };
+	CGameModel_SetPos(Debris_Model(d), &at);
+	d->speed = time * 1.5f;
+	cDebrisSys_Drop(sys, d);
+	cObjElementFXSistPart *el = (cObjElementFXSistPart *)d->fx;
+	if (!el) {
+		return;
+	}
+	if (!el->on) {
+		el->move = 0;
+		el->on = 1;
+	}
+	CGameParticles *p = &el->particles;
+	CGameParticles_SetColorRampOn(p, 1);
+	p->birthRate = 0;
+	p->initPosMin = pos;
+	p->initPosMax = p->initPosMin;
+	p->initVelMin = vel;
+	p->initVelMax = p->initVelMin;
+	p->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	p->initAccMax = p->initAccMin;
+	p->lifeTime = FXV_Rand(0.04999995231628418, 0.60000002384185791) * time;
+	p->sizeLife = FXV_Rand(0.019999995827674866, 0.20000000298023224);
+	p->sizeIni = FXV_Rand(50.0, 350.0) * scale;
+	p->sizeEnd = FXV_Rand(500.0, 1700.0) * scale;
+	float t = FXV_Rand(FXV_PI2, 0.0);
+	p->rotVar = 0.39269909f;
+	p->rotIni = t;
+	p->rotEnd = t;
+	CGameParticles_SetColorRamp(p, FXV_RampN(FXV_RAMP_XBALL, 3));
+	FXV_SetSprite(p, 0x72);
+	CGameParticles_Apply(p);
+	CGameParticles_EmitN(p, 1, 1);
+
+	FXV_ShipFlames(p, numFlames, &pos, &vel, scale, time);
+
+	/* four times a flash and a puff around the explosion */
+	for (int i = 0; i < 4; i++) {
+		vec3_t dir;
+		FX_RandomDir(&dir);
+		float s = FXV_Rand(50.0, 75.0);
+		p->initPosMin.y = s * dir.y * scale + pos.y;
+		p->initPosMin.x = s * dir.x * scale + pos.x;
+		p->initPosMin.z = s * dir.z * scale + pos.z;
+		p->initPosMax = p->initPosMin;
+		FXV_ShipSpeed(p, &vel);
+		p->sizeIni = FXV_Rand(50.0, 50.0) * scale;
+		p->sizeEnd = FXV_Rand(145.0, 805.0) * scale;
+		p->lifeTime = FXV_Rand(0.029999971389770508, 0.93000000715255737) * time;
+		FXV_RandRot(p);
+		p->rotVar = FXV_Rand(3.1415927410125732, -1.5707963705062866);
+		p->spriteIni = 1;
+		p->spriteEnd = 0x21;
+		p->sizeLife = FXV_Rand(0.070000000298023224, 0.10000000149011612);
+		CGameParticles_Apply(p);
+		CGameParticles_SetColorRamp(p, FXV_Ramp(FXV_RAMP_XFLAME));
+		CGameParticles_EmitDt(p, 1, 1, FXV_Rand(0.10000000149011612, 0.0) * time);
+
+		dir = *FX_RandomDir(&tmp);
+		s = FXV_Rand(50.0, 145.0);
+		p->initPosMin.y = s * dir.y * scale + pos.y;
+		p->initPosMin.x = s * dir.x * scale + pos.x;
+		p->initPosMin.z = s * dir.z * scale + pos.z;
+		p->initPosMax = p->initPosMin;
+		FXV_ShipSpeed(p, &vel);
+		p->sizeIni = FXV_Rand(100.0, 250.0) * scale;
+		p->sizeEnd = FXV_Rand(100.0, 850.0) * scale;
+		p->lifeTime = FXV_Rand(0.050000011920928955, 0.80000001192092896) * time;
+		FXV_RandRot(p);
+		p->sizeLife = 1.0f;
+		p->rotVar = FXV_Rand(1.0471975803375244, -0.5235987901687622);
+		FXV_SetSprite(p, (byte)(crt_rand() % 4 + 0x79));
+		CGameParticles_Apply(p);
+		CGameParticles_SetColorRamp(p, FXV_RampN(FXV_RAMP_XPUFF, 2));
+		CGameParticles_EmitDt(p, 1, 1, FXV_Rand(0.11999998986721039, 0.20000000298023224) * time);
+	}
+
+	FXV_ShipSphere(p, &pos, &vel, scale, time);
+
+	/* most times a second ball */
+	if (crt_rand() % 4) {
+		p->initPosMin = pos;
+		p->initPosMax = p->initPosMin;
+		p->initVelMin = vel;
+		p->initVelMax = p->initVelMin;
+		p->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		p->initAccMax = p->initAccMin;
+		p->lifeTime = FXV_Rand(0.040000021457672119, 0.25999999046325684) * time;
+		p->sizeLife = FXV_Rand(0.040000006556510925, 0.14000000059604645);
+		p->sizeIni = FXV_Rand(100.0, 600.0) * scale;
+		p->sizeEnd = FXV_Rand(200.0, 1450.0) * scale;
+		t = FXV_Rand(FXV_PI2, 0.0);
+		p->rotIni = t;
+		p->rotEnd = t;
+		p->rotVar = 0.39269909f;
+		CGameParticles_SetColorRamp(p, FXV_RampN(FXV_RAMP_XBALL, 3));
+		FXV_SetSprite(p, 0x72);
+		CGameParticles_Apply(p);
+		CGameParticles_EmitN(p, 1, 1);
+	}
 }
 
 /* ---- Sputnik ---- */
