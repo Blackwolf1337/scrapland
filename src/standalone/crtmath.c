@@ -19,6 +19,8 @@
  */
 #include <errno.h>
 #include <math.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <windows.h>
 
@@ -80,6 +82,31 @@ static const struct {
 #undef CRT_EXPORT
 };
 
+/*
+ * The number formatting and parsing of the same ucrtbase (the printf and scanf cores, strtod, atof) and its
+ * strerror texts, which crt.c calls for the pure string functions; the FILE functions and the locale stay with the
+ * UCRT this exe links. Under Wine its own printf rounds denormals and its strtod reads them wrong, takes "1d5" and
+ * not "nan(ind)", and its strerror has other texts; the Python of the original formatted with its static UCRT.
+ * NULL until Crt_MathInit (crt.c then takes the linked UCRT).
+ */
+int (*crt_ms_vsprintf)(uint64_t options, char *buf, size_t count, const char *fmt, void *locale, va_list ap);
+int (*crt_ms_vsscanf)(uint64_t options, const char *buf, size_t count, const char *fmt, void *locale, va_list ap);
+double (*crt_ms_strtod)(const char *s, char **end);
+double (*crt_ms_atof)(const char *s);
+char *(*crt_ms_strerror)(int code);
+int *(*crt_ms_errno)(void);
+
+static const struct {
+	const char *name;
+	void **slot;
+} crt_string_exports[] = {
+	{ "__stdio_common_vsprintf", (void **)&crt_ms_vsprintf },
+	{ "__stdio_common_vsscanf", (void **)&crt_ms_vsscanf },
+	{ "strtod", (void **)&crt_ms_strtod },
+	{ "atof", (void **)&crt_ms_atof },
+	{ "strerror", (void **)&crt_ms_strerror },
+};
+
 /* struct _exception of the runtime */
 typedef struct {
 	int type;
@@ -131,9 +158,19 @@ const char *Crt_MathInit(const char *dir) {
 		return "__setusermatherr, _set_SSE2_enable or _errno";
 	}
 	crt_math_apart = err() != crt_errno();
+	if (crt_math_apart) {
+		crt_ms_errno = err;
+	}
+	for (size_t i = 0; i < sizeof(crt_string_exports) / sizeof(crt_string_exports[0]); i++) {
+		void *fn = (void *)GetProcAddress(m, crt_string_exports[i].name);
+		if (!fn) {
+			return crt_string_exports[i].name;
+		}
+		*crt_string_exports[i].slot = fn;
+	}
 	setmatherr(Crt_MathErrMs);
 	/* the CRT initializer at rva 0x35fce1: the SSE2 code of the math functions when the CPU has SSE2 */
 	sse2(IsProcessorFeaturePresent(PF_XMMI64_INSTRUCTIONS_AVAILABLE));
-	Com_Printf("crt: the MSVC math from %s%s\n", path, crt_math_apart ? " (its errno is set in this exe too)" : "");
+	Com_Printf("crt: the MSVC math and number formatting from %s%s\n", path, crt_math_apart ? " (its errno is set in this exe too)" : "");
 	return NULL;
 }

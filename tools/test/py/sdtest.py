@@ -463,4 +463,6 @@ sdMinInt = -2147483647 - 1
 check('Python int overflow', lambda: (sdMinInt % 7, sdMinInt / 7, divmod(sdMinInt, 65521)))
 check('Python int mul overflow', lambda: 65536 * 65536)
 check('Python int neg overflow', lambda: -sdMinInt)
+# the interpreter at its edges (tools/test/py/sdpy.py)
+execfile('sdpy.py')
 finish()

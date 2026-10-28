@@ -55,8 +55,10 @@ target_compile_definitions(scrapcode_sa PUBLIC SD_STANDALONE)
 set(PY152 third_party/python-1.5.2)
 add_library(python152 STATIC
 	src/python/classobject.c
+	src/python/complexobject.c
 	src/python/config.c
 	src/python/dictobject.c
+	src/python/floatobject.c
 	src/python/getpathp.c
 	src/python/import.c
 	src/python/intobject.c
@@ -75,9 +77,7 @@ add_library(python152 STATIC
 	${PY152}/Objects/abstract.c
 	${PY152}/Objects/bufferobject.c
 	${PY152}/Objects/cobject.c
-	${PY152}/Objects/complexobject.c
 	${PY152}/Objects/fileobject.c
-	${PY152}/Objects/floatobject.c
 	${PY152}/Objects/frameobject.c
 	${PY152}/Objects/funcobject.c
 	${PY152}/Objects/longobject.c
