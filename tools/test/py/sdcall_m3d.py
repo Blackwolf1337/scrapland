@@ -219,8 +219,9 @@ for i in (0, 1, 2):
 	check('M3DNodo_FrameMatrix' + fmt((i,)), lambda i=i, m3dnodos=m3dnodos: SDTest.Call(0x2c13c0, 'tiiFi', m3dnodos,
 		(0.0,) * 16, i)[1])
 m3dsetf(m3dnodos, (1.0, 2.0, 3.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0))
-check('M3DNodo_CalcMatrix', lambda m3dnodos=m3dnodos: (SDTest.Call(0x2c1490, 'tii', m3dnodos)[0] == m3dnodos + 0x78,
-	m3dfl(m3dnodos + 0x78, 16)))
+# the return is what M3DTransform_ToMatrixAnim leaves in eax, in the exe a dead stack address: not printed
+check('M3DNodo_CalcMatrix', lambda m3dnodos=m3dnodos: (SDTest.Call(0x2c1490, 'tvi', m3dnodos), m3dfl(m3dnodos + 0x78,
+	16)))
 m3dsetf(m3dnodos + 0x78, (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0))
 
 # the materials of a file
