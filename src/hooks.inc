@@ -8112,3 +8112,5 @@ SD_HOOK(cEmbeddedFXMoto_Update, 0x0e90f0, 5676)
 SD_HOOK(ChType_GearShootLoad, 0x0c7b60, 5573)
 SD_HOOK(cAICharControl3D_StrafeBack, 0x07f250, 2805)
 SD_HOOK(cAICharControl3D_StrafeFwd, 0x07fd50, 2582)
+
+/* module agent: Scorer draws (Monitor, Radar, MainMenu, Status, Target, Weapon, WindFx) (hooks below this line) */

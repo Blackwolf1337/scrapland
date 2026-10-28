@@ -462,3 +462,5 @@ SD_IMPORT(Tsc_CpuFreq, 0x272f90)
 /* module agent: Engine leftovers (Escena_Load, stencil draws, debug and dialogs) (imports below this line) */
 
 /* module agent: Leftovers C, EmbeddedFX vf03, AICharControl3D, Gear, Devastator (imports below this line) */
+
+/* module agent: Scorer draws (Monitor, Radar, MainMenu, Status, Target, Weapon, WindFx) (imports below this line) */
