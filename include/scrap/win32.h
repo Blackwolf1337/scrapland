@@ -85,6 +85,12 @@ typedef void(__stdcall *getlocaltime_t)(uint16_t *st);	/* SYSTEMTIME: year, mont
 #define exe_WriteConsoleA GAME_DATA(writeconsole_t, 0x3a129c)
 #define exe_AllocConsole GAME_DATA(allocconsole_t, 0x3a1298)
 #define exe_SetConsoleTextAttribute GAME_DATA(setconsoletextattribute_t, 0x3a1294)
+typedef int(__stdcall *setconsoletitle_t)(const char *title);
+#define exe_SetConsoleTitleA GAME_DATA(setconsoletitle_t, 0x3a12cc)
+typedef void *(__stdcall *getcurrentthread_t)(void);
+typedef int(__stdcall *setthreadpriority_t)(void *thread, int priority);
+#define exe_GetCurrentThread GAME_DATA(getcurrentthread_t, 0x3a12c4)
+#define exe_SetThreadPriority GAME_DATA(setthreadpriority_t, 0x3a12c8)
 #define exe_FillConsoleOutputAttribute GAME_DATA(fillconsoleoutputattribute_t, 0x3a1290)
 #define exe_SetUnhandledExceptionFilter GAME_DATA(setunhandledexceptionfilter_t, 0x3a1280)
 #define exe_GetLocalTime GAME_DATA(getlocaltime_t, 0x3a1188)

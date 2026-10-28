@@ -8132,3 +8132,4 @@ SD_HOOK(CBsp_GuardarEMI, 0x28eae0, 1135)	/* not reached by the tests */
 SD_HOOK(Devastator_Create, 0x11e250, 6652)
 SD_HOOK(CBsp_RadGlobal, 0x292060, 6782)	/* not reached by the tests */
 SD_HOOK(CBsp_RadAreas, 0x293af0, 7340)	/* not reached by the tests */
+SD_HOOK(CBsp_Calcular, 0x28a860, 7329)	/* not reached by the tests */

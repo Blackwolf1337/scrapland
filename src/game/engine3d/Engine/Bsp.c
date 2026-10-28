@@ -1,7 +1,6 @@
 /*
- * Engine/bsp.cpp of the engine3d: the light maps of the floor, see include/scrap/bsp.h. The lights, texels, vertex
- * lists and direct light of the map compiler are in BspCalc.c. Still the exe's: the compiler itself (CBsp_Calcular,
- * rva 0x28a860), the .EMI writer (0x28eae0) and the two radiosity passes (0x292060 global, 0x293af0 the area lights).
+ * Engine/bsp.cpp of the engine3d: the light maps of the floor, see include/scrap/bsp.h. The map compiler (CBsp_Calcular),
+ * its lights, texels, vertex lists, direct light and radiosity passes and the .EMI writer are in BspCalc.c.
  */
 #include <string.h>
 
@@ -1145,10 +1144,6 @@ byte __thiscall BspTri_TexelOf(const BspTri *tri, const vec3_t *p, int *x, int *
 	*x = (int)crt_floor((double)((float)g_MapaSombrasTexX * uv[0]));
 	*y = (int)crt_floor((double)((float)g_MapaSombrasTexY * uv[1]));
 	return 1;
-}
-
-static inline byte Vec3_Equal(const vec3_t *a, const vec3_t *b) {
-	return a->x == b->x && a->y == b->y && a->z == b->z;
 }
 
 #define BSP_EPS_NORMAL 9.999999747378752e-05	/* 1e-4f as double */
@@ -2368,7 +2363,6 @@ void __thiscall Bsp_FinMensaje(CBsp *self, int secs) {
 
 /* the map: made from the floor of the world */
 
-#define g_LmapOpcion58 GAME_DATA(int, 0x4b2b58)		/* a switch of the dialog (0x40d) */
 #define g_LmapGuardarIni GAME_DATA(int, 0x43298c)	/* the settings back into the .ini of the map */
 #define g_MapaSombrasDlgCalc ((void *)Game_Ptr(0x282e60))	/* Bsp_DlgProc */
 

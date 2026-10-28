@@ -163,6 +163,10 @@ static inline void Box_AddTri(box_t *box, const BspTri *tri) {
 	}
 }
 
+static inline byte Vec3_Equal(const vec3_t *a, const vec3_t *b) {
+	return a->x == b->x && a->y == b->y && a->z == b->z;
+}
+
 /* the mask colors keep the list in R G B with R and B swapped */
 static inline uint32_t Color_SwapRB(uint32_t c) {
 	return (c & 0xff000000) | (c & 0xff) << 16 | (c & 0xff00) | (c >> 16 & 0xff);
@@ -305,6 +309,10 @@ SD_SIZE(BspLuz, 0x118);
 #define g_BspRadMinD2 GAME_DATA(float, 0x4b2b60)	/* the smallest squared distance of a form factor */
 #define g_RadSkipBySectors GAME_DATA(int, 0x4d5cf0)	/* gvar: only the lists of the same sector */
 #define g_RadiosityPortals GAME_DATA(int, 0x4d5d08)	/* gvar: other sectors only through the portals */
+#define g_RadiosityMinDist GAME_DATA(float, 0x4d5d50)	/* gvar: g_BspRadMinD2 in texels */
+/* the compiler */
+#define g_LmapOpcion58 GAME_DATA(int, 0x4b2b58)		/* a switch of the dialog (0x40d): only the nodes with flag 4 */
+#define g_TxfCheckFiles GAME_DATA(int, 0x4b2bac)	/* gvar TXF_CheckFiles: the TXF mode asked for */
 
 /* engine3d/engine/bmp*.h instanced here */
 void __fastcall CBmpFlt2_dtor(CBmpFlt2 *self);
@@ -474,8 +482,8 @@ void __fastcall CBsp_RadGlobal(CBsp *self);
 /* the light of the area lights and glow maps (radiosidad) into rad */
 void __fastcall CBsp_RadAreas(CBsp *self);
 
-/* exe functions of this file still the exe's */
-void __fastcall CBsp_Calcular(CBsp *self);		/* rva 0x28a860, the light maps computed */
+/* the light maps computed: the lists of the meshes of the scene, their light, the pages and the .EMI */
+void __fastcall CBsp_Calcular(CBsp *self);
 
 /* the float edits of the dialogs (src/game/engine3d/Engine/Varios.c): set returns 1, get 1 for a number */
 byte Dlg_SetFloat(void *hwnd, int id, float v, int prec);

@@ -9,14 +9,19 @@
 #include "scrap/bsp.h"
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
+#include "scrap/escena.h"
 #include "scrap/luz.h"
+#include "scrap/mallad3d.h"
+#include "scrap/mallatri.h"
 #include "scrap/mathlib.h"
 #include "scrap/nodo3d.h"
 #include "scrap/prof.h"
 #include "scrap/scrapmain.h"
 #include "scrap/suelo.h"
 #include "scrap/sueloportal.h"
+#include "scrap/utild3d.h"
 #include "scrap/varios.h"
+#include "scrap/win32.h"
 
 /* 1/255 of the color bytes (0x3b808081) */
 #define BSP_INV255 0x1.010102p-8f
@@ -337,6 +342,25 @@ static byte Bsp_Sombra(CSuelo *suelo, const vec3_t *c, const vec3_t *d, const ve
 	return CSuelo_Trace(suelo, &from, dest, hit, 0.8f / (g_MapaSombrasEscala * g_MapaSombrasResol), cache);
 }
 
+/* the direction of the light l at p (from the light) and its end of the shadow segment: the light, or diag back along
+ * the direction of a directional one */
+static void Bsp_LuzDir(const BspLuz *l, const vec3_t *p, float diag, vec3_t *d, vec3_t *dest) {
+	if (l->puntual) {
+		float dx = p->x - l->pos.x, dy = p->y - l->pos.y, dz = p->z - l->pos.z;
+		float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+		if ((double)len != 0.0) {
+			float kl = (float)(1.0 / (double)len);
+			*d = (vec3_t){ kl * dx, kl * dy, kl * dz };
+		} else {
+			*d = (vec3_t){ dx, dy, dz };
+		}
+		*dest = l->pos;
+	} else {
+		*d = l->dir;
+		*dest = (vec3_t){ p->x - d->x * diag, p->y - d->y * diag, p->z - d->z * diag };
+	}
+}
+
 static inline float Bsp_Dist2(const vec3_t *a, const vec3_t *b) {
 	float dy = a->y - b->y, dx = a->x - b->x, dz = a->z - b->z;
 
@@ -408,22 +432,8 @@ static void BspTri_LuzDirecta(BspTri *list, CEscena *esc, CSuelo *suelo, float d
 						vec3_t hit = p;
 						vec3_t *phit = g_MapaSombrasAten != 0.0f ? &hit : NULL;
 						float d2 = 0.0f;
-						byte puntual = l->puntual;
 						vec3_t d, dest;
-						if (puntual) {
-							float dx = p.x - l->pos.x, dy = p.y - l->pos.y, dz = p.z - l->pos.z;
-							float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-							if ((double)len != 0.0) {
-								float kl = (float)(1.0 / (double)len);
-								d = (vec3_t){ kl * dx, kl * dy, kl * dz };
-							} else {
-								d = (vec3_t){ dx, dy, dz };
-							}
-							dest = l->pos;
-						} else {
-							d = l->dir;
-							dest = (vec3_t){ p.x - d.x * diag, p.y - d.y * diag, p.z - d.z * diag };
-						}
+						Bsp_LuzDir(l, &p, diag, &d, &dest);
 						if (Bsp_Sombra(suelo, &p, &d, &dest, phit, l->cache)) {
 							w = 0.0f;
 							d2 = Bsp_Dist2(&p, &hit);
@@ -1194,4 +1204,366 @@ void __fastcall CBsp_RadAreas(CBsp *self) {
 		BspTxf_dtor(&txf);
 	}
 	CRadiosidad_dtor(&rad);
+}
+
+
+/* the compiler */
+
+/* the point cx, cz is inside the triangle p seen from above (the same side of its three edges) */
+static byte BspTri_DentroXZ(const BspTri *p, float cx, float cz) {
+	const vec3_t *v = p->v;
+	byte s1 = (cz - v[0].z) * (v[1].x - v[0].x) > (cx - v[0].x) * (v[1].z - v[0].z);
+	byte s2 = (cz - v[1].z) * (v[2].x - v[1].x) > (cx - v[1].x) * (v[2].z - v[1].z);
+
+	if (s1 != s2) {
+		return 0;
+	}
+	byte s3 = (cz - v[2].z) * (v[0].x - v[2].x) > (cx - v[2].x) * (v[0].z - v[2].z);
+	return s3 == s1;
+}
+
+/* the triangles of the pool g_BspTriTmp of the same node, axis, material and side, sharing two vertices with a
+ * triangle of list and with their box still on one light map page, moved to the end of list (box its box). A floor
+ * triangle over another one of the list stays (yellow mask color), one with three shared vertices too (red) */
+static int BspTri_Juntar(BspTri *list, box_t *box) {
+	box_t box2;
+	BspTri *tail = list;
+	int cnt = 1;
+
+	for (BspTri *act = list; act; act = act->sig) {
+		BspTri **pp = &g_BspTriTmp;
+		while (*pp) {
+			BspTri *c = *pp;
+			if (act->nodo != c->nodo) {
+				break;
+			}
+			if (act->eje != c->eje || act->Mat != c->Mat || BspTri_Lado(act) != BspTri_Lado(c)) {
+				pp = &c->sig;
+				continue;
+			}
+			CHECK(act->zona == c->zona);
+			BspTri_AddBox(&box2, box, c);
+			if (!Bsp_MismoTam(&box2, act->eje, g_MapaSombrasEscala * g_MapaSombrasResol, box)) {
+				pp = &c->sig;
+				continue;
+			}
+			byte encima = 0;
+			int k = BspTri_VertIgual(act, 0, c) ? 1 : 0;
+			if (BspTri_VertIgual(act, 1, c)) {
+				k++;
+			}
+			if (BspTri_VertIgual(act, 2, c)) {
+				k++;
+			}
+			if (k > 1 && c->eje == 1) {
+				float cz = (c->v[0].z + c->v[1].z + c->v[2].z) / 3.0f;
+				float cx = (c->v[0].x + c->v[1].x + c->v[2].x) / 3.0f;
+				for (BspTri *p = list; p; p = p->sig) {
+					if (BspTri_DentroXZ(p, cx, cz)) {
+						encima = 1;
+						c->i12c = 0xffff00;
+					}
+				}
+			}
+			if (k > 2) {
+				c->i12c = 0xff0000;
+				pp = &c->sig;
+				continue;
+			}
+			if (encima || k <= 1) {
+				pp = &c->sig;
+				continue;
+			}
+			CHECK(!tail->sig);
+			cnt++;
+			tail->sig = c;
+			*pp = c->sig;
+			tail = c;
+			c->sig = NULL;
+			*box = box2;
+		}
+	}
+	return cnt;
+}
+
+/* the vertex colors of the triangles of a list: the ambient, with the lights for a list without light map */
+static void BspTri_ColorVert(BspTri *list, const float *mc, const float *amb, CSuelo *suelo, float diag) {
+	for (BspTri *t = list; t; t = t->sig) {
+		for (int k = 0; k < 3; k++) {
+			float col[4] = { amb[0], amb[1], amb[2], 0.0f };
+			for (int li = 0; li < g_BspNumLuces; li++) {
+				BspLuz *l = &g_BspLuces[li];
+				vec3_t p = t->v[k];
+				float w = 1.0f;
+				if (g_TxfMode || !(list->flags & BSPTRI_NOLMAP)) {
+					break;
+				}
+				if (l->noLmap && !(t->nodo->flags >> 27 & 1)) {
+					continue;
+				}
+				color4_t c = { 0.0f, 0.0f, 0.0f, 1.0f };
+				if (Ilum_Light(&c, &t->v[k], &t->n[k], mc, &l->ilum, g_LightmapLinealAtten != 0)) {
+					continue;
+				}
+				if (l->sombra && !(t->nodo->flags >> 6 & 1)) {
+					vec3_t d, dest;
+					Bsp_LuzDir(l, &p, diag, &d, &dest);
+					if (Bsp_Sombra(suelo, &p, &d, &dest, NULL, l->cache)) {
+						w = 0.0f;
+					}
+				}
+				col[0] = c.r * w + col[0];
+				col[1] = col[1] + w * c.g;
+				col[2] = col[2] + w * c.b;
+				col[3] = col[3] + w * c.a;
+			}
+			if (g_DiffuseMod4x) {
+				col[0] = col[0] * 0.25f;
+				col[1] = col[1] * 0.25f;
+				col[2] = col[2] * 0.25f;
+			}
+			col[3] = mc[3];
+			t->color[k] = Color_FromFloat(col);
+		}
+	}
+}
+
+/* the light map uv of the corners of the triangles of a list from the texel origin of the list */
+static void BspTri_UvLmap(BspTri *list, int x0, int y0) {
+	float fx0 = (float)x0;
+	float fy0 = (float)y0;
+	int eje = list->eje;
+
+	for (BspTri *t = list; t; t = t->sig) {
+		vec3_t v[3] = { t->v[0], t->v[1], t->v[2] };
+		for (int i = 0; i < 3; i++) {
+			float u = eje == 0 ? v[i].y : v[i].x;
+			float w = eje == 0 || eje == 1 ? v[i].z : v[i].y;
+			t->uvl[i][0] = (g_MapaSombrasEscala * g_MapaSombrasResol * u - fx0 + 0.0f) / (float)g_MapaSombrasTexX;
+			t->uvl[i][1] = (g_MapaSombrasEscala * g_MapaSombrasResol * w - fy0 + 0.0f) / (float)g_MapaSombrasTexY;
+		}
+	}
+}
+
+/* the triangles of the meshes of the scene into the pool g_BspTriTmp (the two sided ones again turned) */
+static void Bsp_TomarTriangulos(CEscena *esc, byte allow) {
+	CVertMalla vm[3];
+	plane_t pl;
+	BspTri *last = NULL;
+
+	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+		byte outSector = strstr(n->name, "(+out_sector)") != NULL;
+		if (CNodo3D_Clase(n) != CLASE_OBJ3D_MALLATRI) {
+			continue;
+		}
+		if (g_LmapOpcion58 && !(n->flags >> 2 & 1)) {
+			continue;
+		}
+		if (n->flags >> 25 & 1 || (n->flags >> 7 & 1 && !(n->flags >> 29 & 1))) {
+			continue;
+		}
+		CMallaTri *mem = operator_new(sizeof(CMallaTri));
+		CMallaTri *malla = mem ? CMallaTri_ctorCopy(mem, Obj3D_Cast(n->obj3D, CLASE_OBJ3D_MALLATRI)) : NULL;
+		CMallaTri_Transform(malla, &n->m);
+		int zona = BspTri_Zona(n);
+		for (int pass = 0; pass < 2; pass++) {
+			for (int i = 0; i < malla->nTri; i++) {
+				CTriMalla *tm = CMallaTri_GetTri(malla, (uint32_t)i);
+				if (pass && !((CMaterial *)tm->mat)->params.b38) {
+					continue;
+				}
+				memset(vm, 0, sizeof(vm));
+				CMallaTri_GetTriVert(malla, &vm[0], (uint32_t)i, 0);
+				CMallaTri_GetTriVert(malla, &vm[1], (uint32_t)i, pass ? 2 : 1);
+				CMallaTri_GetTriVert(malla, &vm[2], (uint32_t)i, pass ? 1 : 2);
+				if (Vec3_Equal(&vm[0].pos, &vm[1].pos) || Vec3_Equal(&vm[1].pos, &vm[2].pos) ||
+					Vec3_Equal(&vm[2].pos, &vm[0].pos)) {
+					E3D_LogBlue(g_FileLog, "Invalid triangle #%d in object: %s", i, n->name);
+					continue;
+				}
+				if (!Plane_Calc(&pl, &vm[0].pos, &vm[1].pos, &vm[2].pos)) {
+					E3D_LogBlue(g_FileLog, "Invalid face normal #%d in object: %s", i, n->name);
+					continue;
+				}
+				if (last) {
+					CHECK(!last->sig);
+				}
+				BspTri *tm2 = operator_new(sizeof(BspTri));
+				BspTri *t = tm2 ? BspTri_ctor(tm2) : NULL;
+				if (last) {
+					last->sig = t;
+				} else {
+					g_BspTriTmp = t;
+				}
+				last = t;
+				for (int k = 0; k < 3; k++) {
+					t->v[k] = vm[k].pos;
+					t->n[k] = vm[k].n;
+					t->uv[k][0] = vm[k].uv.u;
+					t->uv[k][1] = vm[k].uv.v;
+					t->vid[k] = tm->v[k];
+					if (pass) {
+						t->n[k].x = -t->n[k].x;
+						t->n[k].y = -t->n[k].y;
+						t->n[k].z = -t->n[k].z;
+					}
+				}
+				if (pass) {
+					t->vid[1] = tm->v[2];
+					t->vid[2] = tm->v[1];
+				}
+				t->Mat = tm->mat;
+				t->zona = zona;
+				t->nodo = n;
+				t->Mat->params.b39 = 0;
+				if (n->flags >> 27 & 1 && (allow || outSector)) {
+					t->flags |= BSPTRI_NOLMAP;
+				}
+			}
+		}
+		((void(__thiscall *)(CMallaTri *, int))((void **)malla->vftable)[0])(malla, 1);
+		CNodo3D_FreeObj3D(n);
+		if (!(n->Refs - (n->ant != NULL) - (n->sig != NULL))) {
+			n->flags |= 0x20008;
+		}
+	}
+}
+
+void __fastcall CBsp_Calcular(CBsp *self) {
+	box_t box, box3;
+	float mc[17], amb[3];
+	CBmp cob;
+	uint32_t t0 = exe_timeGetTime();
+	CEscena *esc = self->modelo->escena;
+
+	CHECK(esc);
+	CSuelo *suelo = Mundo_Get()->ObjSuelo;
+	CHECK(suelo);
+	CEscena_UpdateNodes(esc);
+	Bsp_TomarLuces(esc);
+	vec3_t dim = suelo->Dim;
+	float diag = (float)__builtin_sqrt((double)(dim.y * dim.y + dim.x * dim.x + dim.z * dim.z));
+	diag = diag + diag;
+	byte allow = !esc->ini || CArchINI_GetBool(esc->ini, "mapa_sombras", "allow_nodo_no_lightmap", 1);
+	Con_Verbosef("NODO_NO_LIGHTMAP (allow_nodo_no_lightmap): %s\n", allow ? "true" : "false");
+	if (!allow) {
+		Con_Warnf("allow_nodo_no_lightmap set to false\n");
+	}
+	E3D_DebugPrintf("\n\ncalcular_mapas(): '%s'", esc->name);
+	E3D_DebugPrintf("\nluces: %d\n", g_BspNumLuces);
+	CHECK(!Mundo_Get()->EscSuelo->fromAmc);
+	CHECK(!esc->fromAmc);
+	Err_Printf(0, "USE_NO_COLLIDE_TRIS not defined, (+no_collide) objects will not cast shadows");
+	Win_SetTextf(MOTOR_HWND(g_Motor), "Compiling Map [%s] - Version %d", self->nombre, g_EngineVersion);
+	exe_SetConsoleTitleA(self->nombre);
+	if (g_TXF_Helper) {
+		CHECK(g_MapaSombrasUsarTxf);
+		exe_SetConsoleTitleA("TXF_Helper");
+		exe_SetConsoleTextAttribute(exe_GetStdHandle(STD_OUTPUT), 0x73);
+	}
+	if (g_TxfCheckFiles) {
+		if (exe_MessageBoxA(NULL, "Generate .EMI from valid .TXF files?", "Message", 0x2024) == 6) {
+			g_TxfMode = 3;
+		} else {
+			g_TxfMode = exe_MessageBoxA(NULL, "Delete invalid .TXF files?", "Message", 0x2024) == 6 ? 2 : 1;
+		}
+	}
+	exe_SetThreadPriority(exe_GetCurrentThread(), -1);
+	if (g_BspTriTmp) {
+		BspTri *t = g_BspTriTmp;
+		BspTri_dtor(t);
+		operator_delete_sized(t, sizeof(BspTri));
+		g_BspTriTmp = NULL;
+	}
+	Bsp_TomarTriangulos(esc, allow);
+
+	/* the lists, each with its light map texels and vertex colors */
+	BspTri_CalcPlanos(g_BspTriTmp);
+	int total = BspTri_Count(g_BspTriTmp);
+	int done = 0;
+	while (g_BspTriTmp) {
+		BspTri *list = g_BspTriTmp;
+		g_BspTriTmp = list->sig;
+		list->sig = NULL;
+		BspTri_ListBox(&box, list);
+		int cnt = BspTri_Juntar(list, &box);
+		BspTri_ListBox(&box3, list);
+		CHECK(box.min.x == box3.min.x && box.min.y == box3.min.y && box.min.z == box3.min.z &&
+			box.max.x == box3.max.x && box.max.y == box3.max.y && box.max.z == box3.max.z);
+		done += cnt;
+		E3D_DebugPrintf("cara: %d / %d   caras: %-3d  mat: '%s'\n", done, total, cnt, list->Mat->Nombre);
+		int eje = list->eje;
+		CMaterial_CalcColors(list->Mat, mc);
+		float k = esc->ambiente.intens * BSP_INV255;
+		float ar = (float)(esc->ambiente.rgba & 0xff) * k;
+		float ag = (float)(esc->ambiente.rgba >> 8 & 0xff) * k;
+		float ab = (float)(esc->ambiente.rgba >> 16 & 0xff) * k;
+		if (g_MapaSombrasNoLuzAmb) {
+			ar = 0.0f;
+			ag = 0.0f;
+			ab = 0.0f;
+		}
+		amb[0] = ar * mc[4] + mc[12];
+		amb[1] = ag * mc[5] + mc[13];
+		amb[2] = ab * mc[6] + mc[14];
+		int x0, y0, x1, y1;
+		BspTri_ListBox(&box, list);
+		Bsp_TexelBox(&box, eje, g_MapaSombrasEscala * g_MapaSombrasResol, &x0, &y0, &x1, &y1);
+		BspTri_SetExt(list, x0, y0, x1, y1, !(list->flags & BSPTRI_NOLMAP));
+		Img_Create(&list->mask, list->lx, list->ly, 4);
+		CBmp_Fill(&list->mask, 0);
+		cob.img = NULL;
+		cob.ancho = list->lx;
+		cob.alto = list->ly;
+		cob.img = New_Array((uint32_t)(cob.ancho * cob.alto), 4);
+		CBmp_Fill(&cob, 0xffff0000);
+		BspTri_Mascara(list, &cob);
+		BspTri_CalcGlow(list);
+		BspTri_UvLmap(list, x0, y0);
+		BspTri_ColorVert(list, mc, amb, suelo, diag);
+		Img_Free(&cob, 4);
+		if (list->flags & BSPTRI_NOLMAP) {
+			Img_Free(&list->mask, 4);
+			Img_Free(&list->mask2, 4);
+			CHECK(self->num_nolmap < BSP_MAX_NOLMAP);
+			self->nolmap[self->num_nolmap++] = list;
+		} else {
+			CHECK(self->num_listas < BSP_MAX_LISTAS);
+			self->listas[self->num_listas++] = list;
+		}
+	}
+	E3D_DebugPrintf("\nlistas: %d  nolmap: %d\n", self->num_listas, self->num_nolmap);
+
+	CBsp_LuzDirecta(self);
+	if (g_MapaSombrasCalcular && g_MapaSombrasRadiosidad) {
+		float sc = g_MapaSombrasEscala * g_MapaSombrasResol;
+		g_BspLodLevel = 1.0f / sc;
+		g_BspRadMinD2 = 1.0f / (sc * sc) * g_RadiosityMinDist;
+		CBsp_RadAreas(self);
+		CBsp_RadGlobal(self);
+	}
+	if (g_TXF_Helper) {
+		if (g_MapaSombrasDlg) {
+			exe_MessageBoxA(NULL, "TXF helper finished", "Message", 0x2040);
+		}
+		crt_fflush(NULL);
+		crt_exit_now(-1);
+	}
+	CBsp_QuitarLuces(self);
+	CBsp_AjustarGamma(self);
+	CBsp_AgruparMapas(self);
+	float secs = (float)((double)(exe_timeGetTime() - t0) / 1000.0);
+	int s = (int)secs;
+	E3D_DebugPrintf("\ncalcular_mapas(): %.2f seg. (%d:%02d:%02d hms)\n", (double)secs, s / 3600, s / 60 % 60, s % 60);
+	E3D_LogPrint(g_FileLog, "calcular_mapas(): %.2f seg. (%d:%02d:%02d hms)", (double)secs, s / 3600, s / 60 % 60,
+		s % 60);
+	E3D_DebugPrintf("\ng_CheckLine3D_lmap_ntricmp: %u   g_CheckLine3D_lmap_ncomp: %u\n", suelo->traceStats[0],
+		g_CollisionNComp);
+	E3D_DebugPrintf("ult_aciertos: %u   ult_fallos: %u\n\n", suelo->traceStats[1], suelo->traceStats[2]);
+	Bsp2_Stats((int)(intptr_t)self->luces);
+	CBsp_CrearBuffers(self);
+	CBsp_GuardarEMI(self);
+	CBsp_GuardarIni(self);
+	exe_SetThreadPriority(exe_GetCurrentThread(), 0);
+	Bsp_FinMensaje(self, s);
 }
