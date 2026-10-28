@@ -10446,3 +10446,7 @@ SD_HOOK(Radiosidad_FiniNormales, 0x38f070, 39)
 /* module agent: Standalone 3b2, the data usage map (hooks below this line) */
 
 /* module agent: Standalone 3b3, the resources as .rc (hooks below this line) */
+
+/* module agent: Standalone 3b4, the strings (hooks below this line) */
+
+/* module agent: Standalone 3b5, the globals and tables of .data (hooks below this line) */
