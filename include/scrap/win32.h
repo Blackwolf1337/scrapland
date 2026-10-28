@@ -251,7 +251,6 @@ typedef void *(__stdcall *virtualalloc_t)(void *addr, uint32_t size, uint32_t ty
 typedef int(__stdcall *virtualfree_t)(void *addr, uint32_t size, uint32_t type);
 typedef uint32_t(__stdcall *getmodulefilename_t)(void *module, char *buf, uint32_t size);
 typedef void(__stdcall *outputdebugstring_t)(const char *text);
-typedef void(__stdcall *sleep_t)(uint32_t ms);
 typedef void *(__stdcall *loadlibrary_t)(const char *name);
 typedef int(__stdcall *handlefn_t)(void *h);		/* FreeLibrary, CloseHandle */
 typedef void *(__stdcall *createfile_t)(const char *name, uint32_t access, uint32_t share, void *sa, uint32_t disp,
@@ -261,7 +260,7 @@ typedef int(__stdcall *writefile_t)(void *h, const void *buf, uint32_t n, uint32
 #define exe_VirtualFree GAME_DATA(virtualfree_t, 0x3a1138)
 #define exe_GetModuleFileNameA GAME_DATA(getmodulefilename_t, 0x3a1180)
 #define exe_OutputDebugStringA GAME_DATA(outputdebugstring_t, 0x3a1184)
-#define exe_Sleep GAME_DATA(sleep_t, 0x3a118c)
+/* no Sleep (0x3a118c): the C does not sleep or wait, see docs/standalone.md */
 #define exe_LoadLibraryA GAME_DATA(loadlibrary_t, 0x3a1278)
 #define exe_FreeLibrary GAME_DATA(handlefn_t, 0x3a1274)
 #define exe_CreateFileA GAME_DATA(createfile_t, 0x3a1268)

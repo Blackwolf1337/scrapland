@@ -489,7 +489,6 @@ typedef int(__stdcall *destroymenu_t)(void *menu);
 typedef void(__stdcall *postquitmessage_t)(int code);
 typedef int(__stdcall *getcursorpos_t)(exe_point *pt);
 typedef int(__stdcall *screentoclient_t)(void *hwnd, exe_point *pt);
-typedef int(__stdcall *getmessage_t)(exe_msg *msg, void *hwnd, uint32_t min, uint32_t max);
 typedef int(__stdcall *enablewindow_t)(void *hwnd, int on);
 #define exe_Direct3DCreate8 GAME_DATA(direct3dcreate8_t, 0x3a14c4)
 #define exe_AdjustWindowRect GAME_DATA(adjustwindowrect_t, 0x3a1380)
@@ -499,7 +498,6 @@ typedef int(__stdcall *enablewindow_t)(void *hwnd, int on);
 #define exe_PostQuitMessage GAME_DATA(postquitmessage_t, 0x3a1370)
 #define exe_GetCursorPos GAME_DATA(getcursorpos_t, 0x3a1384)
 #define exe_ScreenToClient GAME_DATA(screentoclient_t, 0x3a1388)
-#define exe_GetMessageA GAME_DATA(getmessage_t, 0x3a136c)
 #define exe_EnableWindow GAME_DATA(enablewindow_t, 0x3a1374)
 
 /* IDirect3D8 and IDirect3DDevice8 */
@@ -1241,7 +1239,9 @@ int __thiscall CD3DApp_Run(byte *self) {
 
 	exe_PeekMessageA(&msg, NULL, 0, 0, 0);
 	while (msg.message != 0x12) {	/* WM_QUIT */
-		int got = MOTOR_ACTIVE(self) ? exe_PeekMessageA(&msg, NULL, 0, 0, 1) : exe_GetMessageA(&msg, NULL, 0, 0);
+		/* differs from the original on purpose (no blocking waits): PeekMessage also while inactive, where the original
+		 * waited in GetMessage; without a message the inactive app goes round again */
+		int got = exe_PeekMessageA(&msg, NULL, 0, 0, 1);
 		if (got) {
 			if (!exe_TranslateAcceleratorA(MOTOR_HWND(self), acc, &msg)) {
 				exe_TranslateMessage(&msg);

@@ -2234,7 +2234,7 @@ byte __thiscall BspTxf_Check(BspTxf *self, int i, byte def, byte nl) {
 	return 1;
 }
 
-/* the computed map into the TXF, up to 100 retries 10 seconds apart */
+/* the computed map into the TXF; a failed write is computed again (up to 100 in all) */
 void __thiscall BspTxf_Guardar(BspTxf *self, CBmpFlt2 *bmp) {
 	if (!self->on) {
 		return;
@@ -2243,18 +2243,15 @@ void __thiscall BspTxf_Guardar(BspTxf *self, CBmpFlt2 *bmp) {
 		crt_fclose(self->FileTXF);
 	}
 	self->FileTXF = NULL;
-	int k = 0;
-	do {
-		if (!CBmpFlt2_Save(bmp, self->nombre, TXF_OVERWRITE, self->equipo, sizeof(self->equipo))) {
-			break;
-		}
-		CHECK(k < 100);
+	if (CBmpFlt2_Save(bmp, self->nombre, TXF_OVERWRITE, self->equipo, sizeof(self->equipo))) {
+		/* differs from the original on purpose (no sleeps): the original tried again 10 seconds later, up to 100
+		 * times for each map; here BspTxf_Cargar finds the TXF missing or unreadable and the rebuild computes it
+		 * again */
+		CHECK(self->writeRetries < 100);
 		self->writeRetries++;
-		k++;
-		E3D_LogPrint(g_FileLog, "Retry %d of %d", k, 100);
-		E3D_DebugPrintf("Waiting 10 seconds for writing '%s'...   \n", Ruta_FileName(self->nombre));
-		exe_Sleep(10000);
-	} while (k <= 100);
+		E3D_LogPrint(g_FileLog, "Retry %d of %d", self->writeRetries, 100);
+		return;
+	}
 	self->written++;
 }
 
@@ -2325,19 +2322,12 @@ void __thiscall BspTxf_Cargar(BspTxf *self, BspTri **listas, int n, int cual) {
 			self->rebuild = 1;
 			continue;
 		}
-		i--;
-		k--;
+		/* differs from the original on purpose (no sleeps): the original waited 30 seconds and read it again (another
+		 * computer still computes it, or ESC with SHIFT deleted it), here it is computed again like an old one */
 		self->readRetries++;
-		E3D_DebugPrintf("Waiting 30 seconds for '%s'...   \n", Ruta_FileName(self->nombre));
-		for (int s = 0; s < 15; s++) {
-			exe_Sleep(2000);
-			if (exe_GetAsyncKeyState(0x1b) < 0 && exe_GetAsyncKeyState(0x10) < 0) {
-				if (exe_MessageBoxA(NULL, "Delete file?", "Message", 0x2034) == 6) {
-					crt_remove(self->nombre);
-				}
-				break;
-			}
-		}
+		E3D_DebugPrintf("Deleting file '%s'...   \n", Ruta_FileName(self->nombre));
+		crt_remove(self->nombre);
+		self->rebuild = 1;
 	}
 	BspTxf_Info(self);
 }

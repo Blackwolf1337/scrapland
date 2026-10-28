@@ -35,7 +35,7 @@ int Fmod_IsInit(void);
 
 /* the voices; NULL without FMOD */
 cMusicVoice *Voice_Get(uint32_t voice);
-void Voice_Wait(cMusicVoice *v, const char *what);	/* until FMOD has opened the stream; what is not used */
+void Voice_Wait(cMusicVoice *v, const char *what);	/* nothing: the voices open at once (Voice_Open) */
 void Voice_Close(cMusicVoice *v);
 void Voice_ApplyVolume(cMusicVoice *v, float volume);
 int Voice_GetString(int voice, char *buf, int size);
@@ -56,7 +56,7 @@ int Music_GetOpenState(void);			/* -2 also the first second after it opened */
 byte Music_Ready(void);				/* started now if FMOD has opened it, closed if it failed */
 byte Music_UpdateVolumes(void);
 void Music_DrawDebug(int x, int y);
-byte Music_Wait(void);
+byte Music_Wait(void);					/* Music_Ready, the original waited for the open */
 byte Music_Open(const char *name);
 void Music_SetPaused(int paused);
 byte Music_Start(void);

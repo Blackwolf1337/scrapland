@@ -221,9 +221,12 @@ int __fastcall CEntradaDInput_ReadKeys(CEntradaDInput *self) {
 	if (hr >= 0) {
 		return 0;
 	}
-	do {
-		hr = D3D_METHOD(self->keyboard, diDevFn_t, DIDEV_ACQUIRE)(self->keyboard);
-	} while (hr == DIERR_INPUTLOST || hr == DIERR_OTHERAPPHASPRIO);
+	/* differs from the original on purpose (no blocking waits): one Acquire, the original tried again at once until
+	 * it worked (another app with the focus kept it spinning); the next call tries again */
+	hr = D3D_METHOD(self->keyboard, diDevFn_t, DIDEV_ACQUIRE)(self->keyboard);
+	if (hr == DIERR_INPUTLOST || hr == DIERR_OTHERAPPHASPRIO) {
+		return hr;
+	}
 	hr = D3D_METHOD(self->keyboard, diGetDeviceState_t, DIDEV_GETDEVICESTATE)(self->keyboard, 0x100,
 		self->base.keys);
 	return hr < 0 ? hr : 0;

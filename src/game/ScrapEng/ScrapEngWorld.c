@@ -44,14 +44,8 @@ typedef int(__stdcall *d3dGetDeviceCaps_t)(void *d3d, uint32_t adapter, int type
 /* D3DSURFACE_DESC as words */
 enum { SURFDESC_FORMAT = 0, SURFDESC_WIDTH = 6, SURFDESC_HEIGHT = 7, SURFDESC_WORDS = 8 };
 
-/* the imports of the exe this file calls (user32, kernel32, d3d8) */
-typedef short(__stdcall *getasynckeystate_t)(int key);
-typedef void(__stdcall *sleep_t)(uint32_t ms);
-typedef int(__stdcall *bringwindowtotop_t)(void *hwnd);
+/* the d3d8 import of the exe (user32 and kernel32 in win32.h) */
 typedef void *(__stdcall *direct3dcreate8_t)(uint32_t sdk);
-#define exe_GetAsyncKeyState GAME_DATA(getasynckeystate_t, 0x3a1424)
-#define exe_Sleep GAME_DATA(sleep_t, 0x3a118c)
-#define exe_BringWindowToTop GAME_DATA(bringwindowtotop_t, 0x3a13f4)
 #define exe_Direct3DCreate8 GAME_DATA(direct3dcreate8_t, 0x3a14c4)
 
 #define VK_RETURN 0x0d
@@ -489,7 +483,10 @@ void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 			if (enter < 0 || esc < 0 || space < 0) {
 				break;
 			}
-			exe_Sleep(10);
+			/* differs from the original on purpose (no sleeps): the picture again instead of Sleep(10). The loop
+			 * stays: the callers (engine start and end, level end, loading screen, device reset) go on with the
+			 * splash on the screen */
+			Splash_Draw(&rect, 0xffffff, tex);
 		}
 	}
 	if (fadeOut) {

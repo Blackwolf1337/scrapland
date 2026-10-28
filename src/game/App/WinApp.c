@@ -450,15 +450,14 @@ byte __thiscall CWinApp_Init(CWinApp *self) {
 	return 1;
 }
 
-/* vf05: GOG and Steam callbacks, a quarter second wait while the app is in the background, then CApp_Frame */
+/* vf05: GOG and Steam callbacks, then CApp_Frame */
 byte __thiscall CWinApp_Frame(CWinApp *self) {
 	Gog_ProcessData(&self->gog);
 	if (g_IsSteam) {
 		Steam_RunCallbacks();
 	}
-	if (!g_pApp->flags && !self->active) {
-		exe_Sleep(0xfa);
-	}
+	/* differs from the original on purpose (no sleeps): no Sleep(250) while the app is in the background; CApp_Frame
+	 * then only takes the time and returns 0, the PeekMessage loop of App_WinMain calls it again */
 	return CApp_Frame(self);
 }
 

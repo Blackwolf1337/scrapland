@@ -20,7 +20,10 @@
 
 #define FMOD_VERSION 3.73f
 #define MUSIC_MODE 0x41080132			/* FSOUND_LOOP_NORMAL | 2D | ... | NONBLOCKING */
-#define VOICE_MODE 0x41080131			/* the same with FSOUND_LOOP_OFF */
+#define FSOUND_NONBLOCKING 0x01000000
+/* the same with FSOUND_LOOP_OFF; differs from the original on purpose (no blocking waits): without
+ * FSOUND_NONBLOCKING, see Voice_Open */
+#define VOICE_MODE (0x41080131 & ~FSOUND_NONBLOCKING)
 #define MUSIC_SHOW_DEBUG 2			/* S_Show */
 
 /* engine variables */
@@ -60,6 +63,20 @@ static int Time_Since(uint32_t since) {
 	uint32_t m = (uint32_t)((int32_t)d >> 31);
 
 	return (int)((d ^ m) - m);
+}
+
+/* the music streams Music_Stop let go while FMOD still opened them in the background: FMOD can not close a file
+ * stream that opens (FSOUND_Stream_Close fails), Music_Update closes them once it has opened them */
+#define MUSIC_MAX_CLOSING 8
+static void *music_closing[MUSIC_MAX_CLOSING];
+
+static void Music_CloseOpened(void) {
+	for (int i = 0; i < MUSIC_MAX_CLOSING; i++) {
+		if (music_closing[i] && FSOUND_Stream_GetOpenState(music_closing[i]) != FSOUND_STREAM_OPENING) {
+			FSOUND_Stream_Close(music_closing[i]);
+			music_closing[i] = NULL;
+		}
+	}
 }
 
 /* the voices of the static array */
@@ -128,6 +145,8 @@ int Fmod_Init(void) {
 
 int Fmod_Close(void) {
 	if (g_FmodState > 0) {
+		Music_CloseOpened();
+		memset(music_closing, 0, sizeof(music_closing));
 		FSOUND_Close();
 		g_FmodState = 0;
 	}
@@ -148,23 +167,15 @@ cMusicVoice *Voice_Get(uint32_t voice) {
 	return &g_MusicVoices[voice];
 }
 
+/* differs from the original on purpose (no blocking waits): the voices open without FSOUND_NONBLOCKING (Voice_Open),
+ * there is nothing to wait for; the original polled the open state in Sleep(10) steps. Only for its rva */
 void Voice_Wait(cMusicVoice *v, const char *what) {
-	uint32_t t0;
-
+	(void)v;
 	(void)what;
-	if (FSOUND_Stream_GetOpenState(v->stream) != FSOUND_STREAM_OPENING) {
-		return;
-	}
-	t0 = exe_timeGetTime();
-	while (FSOUND_Stream_GetOpenState(v->stream) == FSOUND_STREAM_OPENING) {
-		exe_Sleep(10);
-	}
-	E3D_LogPrint(g_FileLog, "Waiting voice... %d ms", exe_timeGetTime() - t0);
 }
 
 void Voice_Close(cMusicVoice *v) {
 	if (v->stream) {
-		Voice_Wait(v, "stop");
 		FSOUND_Stream_Close(v->stream);
 		g_NumVoices--;
 		g_NumVoiceovers -= v->voiceover;
@@ -187,7 +198,6 @@ void Voice_ApplyVolume(cMusicVoice *v, float volume) {
 	if (!v->stream) {
 		return;
 	}
-	Voice_Wait(v, "volume");
 	if (v->channel != -1) {
 		FSOUND_SetVolume(v->channel, (int)(Volume_Clamp(volume) * g_VoiceMainVolume * 255.0f));
 	}
@@ -232,6 +242,8 @@ int Voice_Open(const char *name, int voice, int voiceover) {
 	}
 	Ruta_Format(path, name, "&U&D&N.ogg");
 	Voice_Close(v);
+	/* differs from the original on purpose (no blocking waits): VOICE_MODE opens the stream here and now instead of in
+	 * the background; the scripts read the length (Voice_Remain) right after PlayVoice, the original waited there */
 	if (Pack_GetFileInfo(path, pack, &offset, &size)) {
 		Ruta_Format(path, path, "PACK:&N&E");
 		v->stream = FSOUND_Stream_Open(pack, VOICE_MODE, offset, size);
@@ -264,7 +276,6 @@ int Voice_SetParam(int voice, float pan) {
 	if (!v || !v->stream) {
 		return 0;
 	}
-	Voice_Wait(v, "panning");
 	if (v->channel == -1) {
 		return 0;
 	}
@@ -283,7 +294,6 @@ int Voice_Play(int voice) {
 		return 0;
 	}
 	if (v->stream && v->channel < 0) {
-		Voice_Wait(v, "play");
 		if (FSOUND_Stream_GetOpenState(v->stream) != 0) {
 			E3D_LogBlue(g_FileLog, "ERROR: voice file not found [%s]", v->name);
 			Voice_Close(v);
@@ -313,7 +323,6 @@ int Voice_Remain(int voice, float *remain) {
 	if (!v || !v->stream) {
 		return 0;
 	}
-	Voice_Wait(v, "remain");
 	len = FSOUND_Stream_GetLengthMs(v->stream);
 	t = FSOUND_Stream_GetTime(v->stream);
 	if (t >= len) {
@@ -506,30 +515,22 @@ void Music_DrawDebug(int x, int y) {
 		(double)g_MusicCurMainVolume, (double)g_MusicVolume);
 }
 
+/* differs from the original on purpose (no blocking waits): the original waited in Sleep(10) steps until FMOD had
+ * opened the stream and Music_Ready had started it (one second after the open at the earliest); Music_Stop closes a
+ * stream that is not ready without starting it */
 byte Music_Wait(void) {
-	uint32_t t0;
-	int st;
-
-	if (Music_Ready()) {
-		return 1;
-	}
-	if (!g_MusicStream) {
-		return 0;
-	}
-	t0 = exe_timeGetTime();
-	for (;;) {
-		st = FSOUND_Stream_GetOpenState(g_MusicStream);
-		if (st == 0) {
-			if (Time_Since(g_MusicOpenTime) >= 1000) {
-				break;
-			}
-		} else if (st != FSOUND_STREAM_OPENING) {
-			break;
-		}
-		exe_Sleep(10);
-	}
-	E3D_LogPrint(g_FileLog, "Waiting music... %d ms", exe_timeGetTime() - t0);
 	return Music_Ready();
+}
+
+static void Music_CloseLater(void *stream) {
+	Music_CloseOpened();
+	for (int i = 0; i < MUSIC_MAX_CLOSING; i++) {
+		if (!music_closing[i]) {
+			music_closing[i] = stream;
+			return;
+		}
+	}
+	E3D_LogBlue(g_FileLog, "WARN: music stream left open");
 }
 
 byte Music_Open(const char *name) {
@@ -677,6 +678,17 @@ byte Music_Stop(void) {
 		g_MusicChannel = -1;
 		return 1;
 	}
+	if (g_MusicStream) {
+		/* differs from the original on purpose (no blocking waits): closed without the wait for the open and the
+		 * start, by Music_Update while FMOD still opens it */
+		if (FSOUND_Stream_GetOpenState(g_MusicStream) == FSOUND_STREAM_OPENING) {
+			Music_CloseLater(g_MusicStream);
+		} else {
+			FSOUND_Stream_Close(g_MusicStream);
+		}
+		g_MusicStream = NULL;
+		g_MusicChannel = -1;
+	}
 	CHECK(!g_MusicStream);
 	return 1;
 }
@@ -705,6 +717,8 @@ byte Music_Update(void) {
 	Music_UpdateVolumes();
 	Voices_DrawDebug(10, 0xb4);
 	Voices_UpdatePause();
+	/* differs from the original on purpose (no blocking waits): the streams Music_Stop could not close yet */
+	Music_CloseOpened();
 	return 1;
 }
 
