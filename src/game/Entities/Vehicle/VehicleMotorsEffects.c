@@ -1,9 +1,9 @@
 /*
  * Entities/Vehicle/VehicleMotorsEffects.cpp of the game: the exhaust effects of the motors of a ship, see
  * include/scrap/vehiclemotors.h: the particles at the DF_MotorTrust nodes, the glow, the trails, the smoke of the
- * motors and the Calima (hot air) particles.
- * Not here: the exhaust particles per FxClass (rva 0x10f210, 34 KB, a switch over the types); cNetVController
- * (rva 0x1186b0..0x119850, the network copy of a ship) that follows in the exe is in NetVController.c.
+ * motors, the Calima (hot air) particles and the exhaust particles of each FxClass type.
+ * Not here: cNetVController (rva 0x1186b0..0x119850, the network copy of a ship) that follows in the exe is in
+ * NetVController.c.
  */
 #include <string.h>
 
@@ -576,4 +576,1239 @@ void __thiscall cVehicleMotorsEffects_Trails(cVehicleMotorsEffects *self, float 
 	}
 	self->lastThrust = self->trailThrust;
 	self->dist = d;
+}
+
+/* ---- cVehicleMotorsEffects_Exhaust (rva 0x10f210): the exhaust particles of the FxClass types ---- */
+
+#define VME_PI_2 1.5707964f
+#define VME_PI_4 0.7853982f
+
+/* the function statics of the original: the guards and the emit positions they make once */
+#define VME_GUARD_10 0x448510
+#define VME_POS_10 0x4484e0	/* [4] */
+#define VME_GUARD_12 0x448560
+#define VME_POS_12 0x448518	/* [6] */
+#define VME_GUARD_13 0x44857c
+#define VME_POS_13 0x448564	/* [2] */
+#define VME_GUARD_14 0x4485b0
+#define VME_POS_14 0x448580	/* [4] */
+#define VME_POS_15 0x4485b8	/* [8], made on every call */
+#define VME_GUARD_27 0x448648
+#define VME_POS_27 0x448618	/* [4] */
+#define VME_GUARD_50 0x4486b0
+#define VME_POS_50 0x448650	/* [8] */
+#define VME_GUARD_60 0x4486d8
+#define VME_POS_60 0x4486b4	/* [3] */
+
+/* what every type reads */
+typedef struct VMExhaust {
+	cVehicleMotorsEffects *self;
+	CGameModel *model;		/* of the side, NULL for a motor without the node */
+	CGameParticles *ps;		/* the particles of node 0 of the side */
+	CGameParticles *ps2;		/* of node 1, only type 21 uses them */
+	float t;			/* thrust * f4bc */
+	float k;
+	float speed;
+	byte cloud;
+} VMExhaust;
+
+/* c - a * b in the x87 registers (fmul, fsubr), rounded once to float */
+static inline float VME_X87MulSubr(float a, float b, float c) {
+	long double r;
+
+	__asm__("fmuls %2\n\tfsubrs %3" : "=t"(r) : "0"((long double)a), "m"(b), "m"(c));
+	return (float)r;
+}
+
+/* (a + b) + c in the x87 registers, rounded once to float */
+static inline float VME_X87AddAdd(float a, float b, float c) {
+	long double r;
+
+	__asm__("fadds %2\n\tfadds %3" : "=t"(r) : "0"((long double)a), "m"(b), "m"(c));
+	return (float)r;
+}
+
+/* the placed particles show while the motors run, with a cloud only one frame in four */
+static byte VME_Show(float speed, byte cloud) {
+	if (cloud) {
+		return (crt_rand() & 3) == 3;
+	}
+	return speed > 0.0f;
+}
+
+/* the birth rate of thrust t: base at t 0, 100 more at t 1 */
+static int VME_Birth(float t, float speed, int base) {
+	return (int)((float)((int)((float)(100 - g_FXEngineBirthRate) * Float_MaxSS(t, 0.0f)) + base) * speed);
+}
+
+/* the birth rate n scaled to 0..0.35 while the ship leaves a cloud (the older types through VME_Rand) */
+static int VME_CloudBirthD(int n, double mul) {
+	float r = (float)VME_Rand(mul, 0.0);
+	return (int)((float)(double)(uint32_t)n * r);
+}
+
+static int VME_CloudBirth(int n) {
+	float r = Rand_FloatRange(0.0f, 0.35f);
+	return (int)(r * (float)(double)(uint32_t)n);
+}
+
+/* colorIni and colorEnd from the table of the type (10 colors at rva) by t + k */
+static void VME_Colors(CGameParticles *ps, uint32_t rva, float t, float k) {
+	const uint32_t *tab = Game_Ptr(rva);
+	int i = (int)(__builtin_fabs((double)(t + k)) * 4.0);
+
+	ps->colorIni = tab[i];
+	ps->colorEnd = tab[i + 1];
+}
+
+/* rotIni = rotEnd at random, rotVar in lo..hi */
+static void VME_RotSame(CGameParticles *ps, float lo, float hi) {
+	float r = Rand_FloatRange(0.0f, M_2PI_F);
+	ps->rotIni = r;
+	ps->rotEnd = r;
+	ps->rotVar = Rand_FloatRange(lo, hi);
+}
+
+/* rotIni at random, rotEnd up to pi / 2 off rotIni of base */
+static void VME_RotTurn(CGameParticles *ps, const CGameParticles *base, float var) {
+	ps->rotIni = Rand_FloatRange(0.0f, M_2PI_F);
+	ps->rotEnd = Rand_FloatRange(-VME_PI_2, VME_PI_2) + base->rotIni;
+	ps->rotVar = var;
+}
+
+/* the life time c - (lo..hi) * t */
+static float VME_Life(float c, float lo, float hi, float t) {
+	return VME_X87MulSubr(Rand_FloatRange(lo, hi), t, c);
+}
+
+static inline uint32_t VME_Alpha(float a, uint32_t rgb) {
+	return (uint32_t)(-1 - (int)a) << 24 | rgb;
+}
+
+static vec3_t VME_Turn(const vec3_t *rot, float x, float y, float z) {
+	vec3_t a = { x, y, z }, r;
+
+	Vec3_Rotate(&r, &a, rot);
+	return r;
+}
+
+/* the axis x y z of the model */
+static vec3_t VME_Axis(CGameModel *model, float x, float y, float z) {
+	vec3_t rot;
+
+	return VME_Turn(CGameModel_GetRot(model, &rot), x, y, z);
+}
+
+/* the static emit positions (x, y, z[i]) */
+static void VME_SetPos(vec3_t *pos, const float *xz, int n, float y) {
+	int i;
+
+	for (i = 0; i < n; i++) {
+		pos[i].x = xz[i * 2];
+		pos[i].y = y;
+		pos[i].z = xz[i * 2 + 1];
+	}
+}
+
+/* the guard of a static of the original: 1 when this call makes it, then VME_StaticEnd */
+static byte VME_StaticBegin(uint32_t guard) {
+	int *g = Game_Ptr(guard);
+
+	if (*g > crt_InitEpoch()) {
+		crt_Init_thread_header(g);
+		return *g == -1;
+	}
+	return 0;
+}
+
+static void VME_StaticEnd(uint32_t guard) {
+	crt_Init_thread_footer(Game_Ptr(guard));
+}
+
+/* n particles along dir from first: at distance i * m * dk + d0, size (c0 - i * cs) * s * sk + s0 */
+static void VME_Line(CGameParticles *ps, int first, int n, vec3_t dir, float m, float dk, float d0, int c0, int cs,
+	float s, float sk, float s0, uint32_t col) {
+	int i;
+
+	for (i = 0; i < n; i++) {
+		float d = (float)i * m * dk + d0;
+		float size = (float)(c0 - i * cs) * s * sk + s0;
+		CGameParticles_SetParticle(ps, first + i, d * dir.x, d * dir.y, d * dir.z, size, col, 1, 0.0f);
+	}
+}
+
+/* two pairs along dir, beside it at v * vm and v * -vm (first + c, first + 2 + c) */
+static void VME_Pair(CGameParticles *ps, int first, vec3_t dir, vec3_t v, float vm, float m, float dk, float d0,
+	float s, float sk, float s0, uint32_t col) {
+	int c;
+
+	for (c = 0; c < 2; c++) {
+		float d = (float)c * m * dk + d0;
+		float size = (float)(2 - c) * s * sk + s0;
+		float px = dir.x * d;
+		float py = dir.y * d;
+		float pz = dir.z * d;
+		CGameParticles_SetParticle(ps, first + c, v.x * vm + px, v.y * vm + py, v.z * vm + pz, size, col, 1,
+			0.0f);
+		CGameParticles_SetParticle(ps, first + 2 + c, v.x * -vm + px, v.y * -vm + py, v.z * -vm + pz, size, col,
+			1, 0.0f);
+	}
+}
+
+/* two quads along dir, at a * vm, a * -vm, b * vm, b * -vm beside it, smaller backwards */
+static void VME_Quad(CGameParticles *ps, int first, vec3_t dir, vec3_t a, vec3_t b, float vm, float t, float dk,
+	float d0, float s, float sk, float s0, uint32_t col) {
+	int c;
+
+	for (c = 0; c < 2; c++) {
+		float d = (float)c * t * dk + d0;
+		float px = dir.x * d;
+		float py = dir.y * d;
+		float pz = dir.z * d;
+		float f = 0.0f > t ? t + 1.0f : 1.0f;
+		float size = ((float)(2 - c) * s * sk + s0) * f;
+		CGameParticles_SetParticle(ps, first + c, a.x * vm + px, a.y * vm + py, a.z * vm + pz, size, col, 1, 0.0f);
+		CGameParticles_SetParticle(ps, first + 2 + c, a.x * -vm + px, a.y * -vm + py, a.z * -vm + pz, size, col, 1,
+			0.0f);
+		CGameParticles_SetParticle(ps, first + 4 + c, b.x * vm + px, b.y * vm + py, b.z * vm + pz, size, col, 1,
+			0.0f);
+		CGameParticles_SetParticle(ps, first + 6 + c, b.x * -vm + px, b.y * -vm + py, b.z * -vm + pz, size, col, 1,
+			0.0f);
+	}
+}
+
+/* a particle at each emit position (x * sx, z, y) turned by the model */
+static void VME_Ring(CGameParticles *ps, CGameModel *model, int first, const vec3_t *pos, int n, float sx, float y,
+	float size, uint32_t col) {
+	vec3_t v, rot, r;
+	int i;
+
+	for (i = 0; i < n; i++) {
+		v.x = pos[i].x * sx;
+		v.y = pos[i].z;
+		v.z = y;
+		Vec3_Rotate(&r, &v, CGameModel_GetRot(model, &rot));
+		CGameParticles_SetParticle(ps, first + i, r.x, r.y, r.z, size, col, 1, 0.0f);
+	}
+}
+
+/* the flare of k at the exhaust */
+static void VME_Flare(CGameParticles *ps, int i, float k, float size, uint32_t rgb, int sprite) {
+	if (k > 0.0f) {
+		CGameParticles_SetParticle(ps, i, 0.0f, 0.0f, 0.0f, k * size, VME_Alpha(k * 255.0f, rgb), sprite, 0.0f);
+	} else {
+		CGameParticles_Kill(ps, i);
+	}
+}
+
+/* the flare at dm along the z axis of the model */
+static void VME_FlareDir(CGameParticles *ps, CGameModel *model, int i, float k, float dm, float size, uint32_t rgb,
+	int sprite) {
+	if (k > 0.0f) {
+		vec3_t d = VME_Axis(model, 0.0f, 0.0f, 1.0f);
+		CGameParticles_SetParticle(ps, i, d.x * dm, d.y * dm, d.z * dm, k * size, VME_Alpha(k * 255.0f, rgb), sprite,
+			0.0f);
+	} else {
+		CGameParticles_Kill(ps, i);
+	}
+}
+
+/* two flares 30 along the z axis, at v * vm and v * -vm beside it */
+static void VME_FlarePair(CGameParticles *ps, CGameModel *model, int first, float k, float vx, float vy, float vz,
+	float vm, float size, uint32_t rgb) {
+	if (k > 0.0f) {
+		vec3_t d = VME_Axis(model, 0.0f, 0.0f, 1.0f);
+		vec3_t v = VME_Axis(model, vx, vy, vz);
+		uint32_t col = VME_Alpha(k * 255.0f, rgb);
+		float s = k * size;
+		CGameParticles_SetParticle(ps, first, d.x * 30.0f + v.x * vm, d.y * 30.0f + v.y * vm, d.z * 30.0f + v.z * vm,
+			s, col, 6, 0.0f);
+		CGameParticles_SetParticle(ps, first + 1, d.x * 30.0f + v.x * -vm, d.y * 30.0f + v.y * -vm,
+			d.z * 30.0f + v.z * -vm, s, col, 6, 0.0f);
+	} else {
+		CGameParticles_KillRange(ps, first, first + 2);
+	}
+}
+
+/* 1: four particles along the z axis in the color of the motor */
+static void VME_Exhaust1(const VMExhaust *x) {
+	CGameParticles *ps = x->ps;
+	cVehicleMotorsEffects *self = x->self;
+	int i;
+
+	CGameParticles_NumParticles(ps);
+	if (!VME_Show(x->speed, x->cloud)) {
+		CGameParticles_KillRange(ps, 0, 4);
+		return;
+	}
+	vec3_t dir = VME_Axis(x->model, 0.0f, 0.0f, 1.0f);
+	float a = x->speed * 32.0f;
+	float s = (x->k + x->k + x->t) * 60.0f;
+	for (i = 0; i < 4; i++) {
+		float r = (float)VME_Rand(10.0, 20.0);
+		float scale = self->scale;
+		float d = (float)i * x->t * 40.0f * scale + r * scale + self->offset;
+		uint32_t col = (uint32_t)(i * 30 - (int)((float)(4 - i) * a) - 0x5b) << 24 | (self->color & 0xffffff);
+		CGameParticles_SetParticle(ps, i, dir.x * d, dir.y * d, dir.z * d, ((float)(0xf5 - i * 0x41) + s) * scale,
+			col, 1, 0.0f);
+	}
+}
+
+/* 5: five particles along the y axis, a flare and the emitted smoke */
+static void VME_Exhaust5(const VMExhaust *x) {
+	CGameParticles *ps = x->ps;
+	float t = x->t, k = x->k;
+	vec3_t rot;
+	int i;
+
+	CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		CGameModel_GetRot(x->model, &rot);
+		vec3_t dir = VME_Axis(x->model, 0.0f, 1.0f, 0.0f);
+		float a = x->speed * 48.0f;
+		float s = k + k;
+		for (i = 0; i < 5; i++) {
+			float r = (float)VME_Rand(5.0, 20.0);
+			float fi = (float)i;
+			float d = r + (fi * t * 11.0f - 20.0f + fi * k * 100.0f);
+			uint32_t col = VME_Alpha((float)(4 - i) * a, x->self->color & 0xffffff);
+			CGameParticles_SetParticle(ps, i, dir.x * d, dir.y * d, dir.z * d, s * fi * 50.0f + 90.0f, col, 1, 0.0f);
+		}
+	} else {
+		CGameParticles_KillRange(ps, 0, 5);
+	}
+	if (k > 0.0f) {
+		float m = k - 1.0f;
+		uint32_t col = (uint32_t)(0xb4 - (int)(m * -128.0f)) << 8 | (uint32_t)(0x37 - (int)(m * 100.0f)) << 24 |
+			(uint32_t)(0xff - (int)(m * -32.0f)) << 16 | 0x3c;
+		CGameParticles_SetParticle(ps, 5, 0.0f, 80.0f, 0.0f, k * k * k * 900.0f, col, 1, 0.0f);
+	} else {
+		CGameParticles_Kill(ps, 5);
+	}
+	ps->birthRate = (int)(Float_MaxSS(k, 0.0f) * 60.0f * x->speed);
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirthD(ps->birthRate, (double)0.35f);
+	}
+	float k40 = k * 40.0f;
+	ps->initPosMin = (vec3_t){ -10.0f, k40 + 15.0f, -10.0f };
+	ps->initPosMax = (vec3_t){ 10.0f, k40 + 20.0f, 10.0f };
+	ps->sizeIni = (k + k) * 55.0f + 130.0f;
+	ps->sizeEnd = k * 1.5f * 30.0f + 80.0f;
+	float a = (float)VME_Rand(32.0, 64.0);
+	float r = (float)VME_Rand(55.0, 200.0);
+	float h = k * 0.5f + 0.5f;
+	float g = (float)VME_Rand(64.0, 64.0) * h;
+	ps->colorIni = (((uint32_t)(int)a << 8 | (uint32_t)(int)r) << 8 | (uint32_t)(int)g) << 8;
+	a = (float)VME_Rand(16.0, 16.0);
+	r = (float)VME_Rand(55.0, 200.0);
+	g = (float)VME_Rand(64.0, 64.0) * h;
+	ps->colorEnd = (((uint32_t)(int)a << 8 | (uint32_t)(int)r) << 8 | (uint32_t)(int)g) << 8;
+	float k150 = k * 150.0f;
+	float k3 = k * 3.0f;
+	float v = -200.0f - k150;
+	ps->initVelMin = (vec3_t){ v, k * 300.0f + 850.0f, k * 250.0f + 500.0f };
+	ps->initVelMax = (vec3_t){ k150 + 200.0f, k3 * 700.0f + 1250.0f, k * 500.0f + 750.0f };
+	ps->initAccMin = (vec3_t){ v, v, k * 9500.0f + 15000.0f };
+	ps->initAccMax = (vec3_t){ v, v, k3 * 9500.0f + 15000.0f };
+	ps->spriteIni = 9;
+	ps->spriteEnd = 0xb;
+	float rt = (float)VME_Rand((double)M_2PI_F, 0.0);
+	ps->rotIni = rt;
+	ps->rotEnd = rt;
+	ps->rotVar = (float)VME_Rand((double)VME_PI_2, -(double)VME_PI_4);
+	ps->lifeTime = 0.14f - (float)VME_Rand((double)0.030000001f, (double)0.02f) * t;
+	CGameParticles_Apply(ps);
+}
+
+/* 6: two quads of particles along the z axis */
+static void VME_Exhaust6(const VMExhaust *x) {
+	CGameParticles *ps = x->ps;
+	int n = CGameParticles_NumParticles(ps);
+
+	if (!VME_Show(x->speed, x->cloud)) {
+		CGameParticles_KillRange(ps, n - 8, n);
+		return;
+	}
+	vec3_t l = VME_Axis(x->model, -1.0f, 0.45f, 0.0f);
+	vec3_t r = VME_Axis(x->model, 1.0f, 0.45f, 0.0f);
+	vec3_t d = VME_Axis(x->model, 0.0f, 0.0f, 1.0f);
+	VME_Quad(ps, n - 8, d, l, r, 45.0f, x->t, 40.0f, 12.0f, x->k * 4.0f + x->t, 20.0f, 75.0f,
+		VME_Alpha(x->speed * 130.0f, 0xff0f0f));
+}
+
+/* 10: the emitted smoke, two pairs beside the z axis and a flare */
+static void VME_Exhaust10(const VMExhaust *x) {
+	static const float xz[] = { -30.0f, 0.0f, 30.0f, 0.0f, -10.0f, 0.0f, 10.0f, 0.0f };
+	CGameParticles *ps = x->ps;
+	vec3_t *pos = Game_Ptr(VME_POS_10);
+	float t = x->t, k = x->k;
+
+	ps->birthRate = VME_Birth(t, x->speed, g_FXEngineBirthRate);
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirthD(ps->birthRate, (double)0.15f);
+	}
+	float r = (float)VME_Rand(10.0, 25.0);
+	if (VME_StaticBegin(VME_GUARD_10)) {
+		VME_SetPos(pos, xz, 4, r + 0.0f);
+		VME_StaticEnd(VME_GUARD_10);
+	}
+	CGameParticles_SetEmitPos(ps, pos, 4);
+	float s = k + k + t;
+	ps->sizeIni = s * 80.0f + 120.0f;
+	ps->sizeEnd = (t + k) * 40.0f + 70.0f;
+	VME_Colors(ps, 0x3b57fc, t, k);
+	if (t > 0.0f) {
+		ps->initVelMin = (vec3_t){ -30.0f, s * 300.0f + 900.0f, -30.0f };
+		ps->initVelMax = (vec3_t){ 30.0f, s * 600.0f + 1200.0f, 30.0f };
+	} else {
+		ps->initVelMin = (vec3_t){ 0.0f, 50.0f, 0.0f };
+		ps->initVelMax = (vec3_t){ 0.0f, 100.0f, 0.0f };
+	}
+	ps->spriteIni = 9;
+	ps->spriteEnd = 0xc;
+	ps->rotIni = (float)VME_Rand((double)M_2PI_F, 0.0);
+	ps->rotVar = VME_PI_4;
+	ps->rotEnd = ps->rotIni + (float)VME_Rand((double)M_2PI_F, -(double)M_PI_F);
+	ps->lifeTime = 0.14f - (float)VME_Rand((double)0.01f, (double)0.01f) * t;
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		vec3_t d = VME_Axis(x->model, 0.0f, 0.0f, 1.0f);
+		vec3_t v = VME_Axis(x->model, 1.0f, 0.0f, 0.0f);
+		VME_Pair(ps, n - 4, d, v, 35.0f, t, 85.0f, 60.0f, k * 4.0f + t, 60.0f, 200.0f,
+			VME_Alpha(x->speed * 130.0f, 0x1e32d2));
+	} else {
+		CGameParticles_KillRange(ps, n - 4, n);
+	}
+	VME_Flare(ps, n - 5, k, 750.0f, 0x1e32d2, 7);
+}
+
+/* 11: the emitted smoke, four particles along the z axis and a flare */
+static void VME_Exhaust11(const VMExhaust *x) {
+	CGameParticles *ps = x->ps;
+	float t = x->t, k = x->k;
+	int i;
+
+	ps->birthRate = VME_Birth(t, x->speed, g_FXEngineBirthRate);
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirthD(ps->birthRate, (double)0.35f);
+	}
+	float k50 = k * 50.0f;
+	ps->initPosMin = (vec3_t){ -8.0f, k50 + 20.0f, -8.0f };
+	ps->initPosMax = (vec3_t){ 8.0f, k50 + 25.0f, 8.0f };
+	float s = k * 3.5f + t;
+	ps->sizeIni = s * 80.0f + 145.0f;
+	ps->sizeEnd = (k + k + t) * 30.0f + 60.0f;
+	VME_Colors(ps, 0x3b5824, t, k);
+	if (t > 0.0f) {
+		float a = k * 150.0f;
+		ps->initVelMin = (vec3_t){ -200.0f - a, (t + k) * 250.0f + 1125.0f, -200.0f - a };
+		ps->initVelMax = (vec3_t){ a + 200.0f, (k * 3.0f + t) * 850.0f + 1400.0f, a + 200.0f };
+	} else {
+		ps->initVelMin = (vec3_t){ 0.0f, 100.0f, 0.0f };
+		ps->initVelMax = (vec3_t){ 0.0f, 150.0f, 0.0f };
+	}
+	ps->spriteIni = 9;
+	ps->spriteEnd = 0xc;
+	ps->rotIni = (float)VME_Rand((double)M_2PI_F, 0.0);
+	ps->rotVar = M_2PI_F;
+	ps->rotEnd = ps->rotIni + (float)VME_Rand((double)M_PI_F, -(double)VME_PI_2);
+	ps->lifeTime = 0.15f - (float)VME_Rand((double)0.030000001f, (double)0.02f) * t;
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		vec3_t dir = VME_Axis(x->model, 0.0f, 0.0f, 1.0f);
+		for (i = 0; i < 4; i++) {
+			float d = (float)i * t * 50.0f + 50.0f;
+			uint32_t col = VME_Alpha((float)(0x80 - i * 0x19) * x->speed, 0x053c96);
+			CGameParticles_SetParticle(ps, n - 4 + i, d * dir.x, d * dir.y, d * dir.z, (float)(3 - i) * s * 75.0f + 160.0f,
+				col, 1, 0.0f);
+		}
+	} else {
+		CGameParticles_KillRange(ps, n - 4, n);
+	}
+	VME_Flare(ps, n - 5, k, 850.0f, 0xe66414, 6);
+}
+
+/* 12: the emitted smoke at six positions, a particle at each and a flare */
+static void VME_Exhaust12(const VMExhaust *x) {
+	static const float xz[] = { -26.0f, -26.0f, 26.0f, 26.0f, 26.0f, -26.0f, -26.0f, 26.0f, 0.0f, -26.0f, 0.0f, 26.0f };
+	CGameParticles *ps = x->ps;
+	vec3_t *pos = Game_Ptr(VME_POS_12);
+	float t = x->t, k = x->k;
+
+	ps->birthRate = VME_Birth(t, x->speed, 0) * 2;
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirthD(ps->birthRate, (double)0.35f) * 2;
+	}
+	float r = (float)VME_Rand(10.0, 15.0) + k * 35.0f;
+	if (VME_StaticBegin(VME_GUARD_12)) {
+		VME_SetPos(pos, xz, 6, r + 0.0f);
+		VME_StaticEnd(VME_GUARD_12);
+	}
+	CGameParticles_SetEmitPos(ps, pos, 4);
+	float k5 = k * 5.0f;
+	ps->sizeIni = (k * 4.0f + t) * 65.0f + 75.0f;
+	ps->sizeEnd = (k * 2.5f + t) * 45.0f + 40.0f;
+	VME_Colors(ps, 0x3b584c, t, k);
+	ps->initVelMin = (vec3_t){ -6.0f - k5, (k * 3.0f + t) * 250.0f + 800.0f, -6.0f - k5 };
+	ps->initVelMax = (vec3_t){ k5 + 6.0f, (k * 6.0f + t) * 600.0f + 1250.0f, k5 + 6.0f };
+	ps->spriteIni = 0xd;
+	ps->spriteEnd = 0xf;
+	float rt = (float)VME_Rand((double)M_2PI_F, 0.0);
+	ps->rotIni = rt;
+	ps->rotEnd = rt;
+	ps->rotVar = (float)VME_Rand((double)2.0943952f, -(double)1.0471976f);
+	ps->lifeTime = 0.11f - (float)VME_Rand((double)0.010000001f, (double)0.015f) * t;
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		float m = Float_MaxSS(0.0f, t);
+		VME_Ring(ps, x->model, n - 6, pos, 6, 1.3f, m * 10.0f, (k5 + m) * 90.0f + 110.0f,
+			VME_Alpha(x->speed * 130.0f, 0x2828b4));
+	} else {
+		CGameParticles_KillRange(ps, n - 6, n);
+	}
+	VME_FlareDir(ps, x->model, n - 7, k, 40.0f, 900.0f, 0xb4b4f0, 6);
+}
+
+/* 13: the emitted smoke at two random positions, two pairs and two flares */
+static void VME_Exhaust13(const VMExhaust *x) {
+	CGameParticles *ps = x->ps;
+	vec3_t *pos = Game_Ptr(VME_POS_13);
+	float t = x->t, k = x->k;
+
+	ps->birthRate = VME_Birth(t, x->speed, 0) * 3;
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirthD(ps->birthRate, (double)0.35f) * 3;
+	}
+	float pz = (float)VME_Rand(6.0, -3.0);
+	float py = (float)VME_Rand(5.0, 30.0);
+	float px = (float)VME_Rand(6.0, -3.0);
+	py = k * 50.0f + py;
+	if (VME_StaticBegin(VME_GUARD_13)) {
+		pos[0] = (vec3_t){ px + 0.0f, py + 0.0f, pz - 40.0f };
+		pos[1] = (vec3_t){ px + 0.0f, py + 0.0f, pz + 40.0f };
+		VME_StaticEnd(VME_GUARD_13);
+	}
+	CGameParticles_SetEmitPos(ps, pos, 2);
+	float k4 = k * 4.0f;
+	ps->sizeIni = (k4 + t) * 50.0f + 65.0f;
+	ps->sizeEnd = (k * 1.5f + t) * 20.0f + 40.0f;
+	VME_Colors(ps, 0x3b5874, t, k);
+	float a = k * 150.0f;
+	ps->initVelMin = (vec3_t){ -200.0f - a, (t + k) * 330.0f + 1100.0f, -200.0f - a };
+	ps->initVelMax = (vec3_t){ a + 200.0f, (k + k + t) * 600.0f + 1600.0f, a + 200.0f };
+	ps->spriteIni = 9;
+	ps->spriteEnd = 0xb;
+	ps->rotIni = (float)VME_Rand((double)M_2PI_F, 0.0);
+	ps->rotVar = M_2PI_F;
+	ps->rotEnd = ps->rotIni + (float)VME_Rand((double)M_PI_F, -(double)VME_PI_2);
+	ps->lifeTime = 0.14f - (float)VME_Rand((double)0.01f, (double)0.03f) * t;
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		float m = Float_MaxSS(0.0f, t);
+		vec3_t d = VME_Axis(x->model, 0.0f, 0.0f, 1.0f);
+		vec3_t v = VME_Axis(x->model, 1.0f, 0.0f, 0.0f);
+		VME_Pair(ps, n - 4, d, v, 40.0f, m, 40.0f, m * 25.0f + 15.0f, m + k4, 95.0f, 95.0f,
+			VME_Alpha(x->speed * 140.0f, 0x3c46d7));
+	} else {
+		CGameParticles_KillRange(ps, n - 4, n);
+	}
+	VME_FlarePair(ps, x->model, n - 6, k, 1.0f, 0.0f, 0.0f, 40.0f, 800.0f, 0x1464e6);
+}
+
+/* 14: the emitted smoke at four positions, two quads and a flare */
+static void VME_Exhaust14(const VMExhaust *x) {
+	static const float xz[] = { 0.0f, -65.0f, 0.0f, 65.0f, -65.0f, 0.0f, 65.0f, 0.0f };
+	CGameParticles *ps = x->ps;
+	vec3_t *pos = Game_Ptr(VME_POS_14);
+	float t = x->t, k = x->k;
+
+	ps->birthRate = VME_Birth(t, x->speed, 0) * 3;
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirth(ps->birthRate) * 3;
+	}
+	float r = Rand_FloatRange(15.0f, 20.0f) + k * 50.0f;
+	if (VME_StaticBegin(VME_GUARD_14)) {
+		VME_SetPos(pos, xz, 4, r + 0.0f);
+		VME_StaticEnd(VME_GUARD_14);
+	}
+	CGameParticles_SetEmitPos(ps, pos, 4);
+	float s = k * 4.0f + t;
+	ps->sizeIni = s * 50.0f + 60.0f;
+	ps->sizeEnd = (k * 1.5f + t) * 40.0f + 35.0f;
+	VME_Colors(ps, 0x3b589c, t, k);
+	float a = k * 30.0f;
+	ps->initVelMin = (vec3_t){ -20.0f - a, (t + k) * 120.0f + 800.0f, -20.0f - a };
+	ps->initVelMax = (vec3_t){ a + 20.0f, (k * 3.0f + t) * 650.0f + 1700.0f, a + 20.0f };
+	ps->spriteIni = 0xd;
+	ps->spriteEnd = 0x10;
+	VME_RotSame(ps, -VME_PI_2, VME_PI_2);
+	ps->lifeTime = VME_Life(0.14f, 0.02f, 0.05f, t);
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		vec3_t rot;
+		CGameModel_GetRot(x->model, &rot);
+		vec3_t ax = VME_Turn(&rot, 1.0f, 0.0f, 0.0f);
+		vec3_t ay = VME_Turn(&rot, 0.0f, 1.0f, 0.0f);
+		vec3_t az = VME_Turn(&rot, 0.0f, 0.0f, 1.0f);
+		VME_Quad(ps, n - 8, az, ax, ay, 65.0f, t, 40.0f, t * 25.0f + 5.0f, s, 65.0f, 90.0f,
+			VME_Alpha(x->speed * 160.0f, 0x0a5ae6));
+	} else {
+		CGameParticles_KillRange(ps, n - 8, n);
+	}
+	VME_FlareDir(ps, x->model, n - 9, k, 40.0f, 1200.0f, 0x50a0e6, 7);
+}
+
+/* 15: the emitted smoke on a circle of eight positions, a particle at each and a flare */
+static void VME_Exhaust15(const VMExhaust *x) {
+	CGameParticles *ps = x->ps;
+	vec3_t *pos = Game_Ptr(VME_POS_15);
+	float t = x->t, k = x->k;
+	vec3_t ang, v, r;
+	int i;
+
+	ps->birthRate = VME_Birth(t, x->speed, g_FXEngineBirthRate) * 3;
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirth(ps->birthRate) * 3;
+	}
+	float y = Rand_FloatRange(5.0f, 10.0f) + k * 10.0f;
+	float a = 0.0f;
+	for (i = 1;; i++) {
+		ang = (vec3_t){ 0.0f, a, 0.0f };
+		v = (vec3_t){ 0.0f, 0.0f, (float)((i & 1) ? 30 : -30) };
+		Vec3_Rotate(&r, &v, &ang);
+		pos[i - 1].x = r.x + 0.0f;
+		pos[i - 1].z = r.z + 0.0f;
+		pos[i - 1].y = r.y + y;
+		if (i >= 8) {
+			break;
+		}
+		a = a + VME_PI_4;
+		if (!(M_2PI_F > a)) {
+			break;
+		}
+	}
+	CGameParticles_SetEmitPos(ps, pos, 8);
+	float s = k * 3.0f + t;
+	ps->sizeIni = s * 45.0f + 45.0f;
+	ps->sizeEnd = (k * 1.5f + t) * 30.0f + 35.0f;
+	VME_Colors(ps, 0x3b58c4, t, k);
+	if (t > 0.0f) {
+		float b = k * 20.0f;
+		ps->initVelMin = (vec3_t){ -15.0f - b, (t + k) * 150.0f + 1200.0f, -15.0f - b };
+		ps->initVelMax = (vec3_t){ b + 15.0f, s * 800.0f + 2500.0f, b + 15.0f };
+	} else {
+		ps->initVelMin = (vec3_t){ 0.0f, 100.0f, 0.0f };
+		ps->initVelMax = (vec3_t){ 0.0f, 300.0f, 0.0f };
+	}
+	ps->spriteIni = 0xd;
+	ps->spriteEnd = 0x10;
+	ps->rotIni = (float)VME_Rand((double)M_2PI_F, 0.0);
+	ps->rotVar = M_2PI_F;
+	ps->rotEnd = (float)VME_Rand((double)M_PI_F, -(double)VME_PI_2) + ps->rotIni;
+	ps->lifeTime = 0.15f - (float)VME_Rand((double)0.030000001f, (double)0.02f) * t;
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		float m = Float_MaxSS(0.0f, t);
+		VME_Ring(ps, x->model, n - 8, pos, 8, 1.0f, m * 10.0f, (k * 5.0f + m) * 65.0f + 60.0f,
+			VME_Alpha(x->speed * 130.0f, 0x1e32d2));
+	} else {
+		CGameParticles_KillRange(ps, n - 8, n);
+	}
+	VME_FlareDir(ps, x->model, n - 9, k, 40.0f, 700.0f, 0x1e3cd2, 5);
+}
+
+/* 20: the emitted smoke, four particles along the z axis and a flare */
+static void VME_Exhaust20(const VMExhaust *x) {
+	CGameParticles *ps = x->ps;
+	float t = x->t, k = x->k;
+
+	ps->birthRate = VME_Birth(t, x->speed, g_FXEngineBirthRate);
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirth(ps->birthRate);
+	}
+	float t25 = t * 25.0f;
+	float k50 = k * 50.0f;
+	ps->initPosMin = (vec3_t){ -8.0f, t25 + 15.0f + k50, -8.0f };
+	ps->initPosMax = (vec3_t){ 8.0f, t25 + 20.0f + k50, 8.0f };
+	ps->sizeIni = (k + k + t) * 60.0f + 140.0f;
+	ps->sizeEnd = (k * 1.5f + t) * 20.0f + 75.0f;
+	VME_Colors(ps, 0x3b58ec, t, k);
+	if (t > 0.0f) {
+		float a = k * 150.0f;
+		ps->initVelMin = (vec3_t){ -200.0f - a, (t + k) * 500.0f + 1150.0f, -200.0f - a };
+		ps->initVelMax = (vec3_t){ a + 200.0f, (k * 3.0f + t) * 900.0f + 1550.0f, a + 200.0f };
+	} else {
+		ps->initVelMin = (vec3_t){ 0.0f, 100.0f, 0.0f };
+		ps->initVelMax = (vec3_t){ 0.0f, 300.0f, 0.0f };
+	}
+	ps->spriteIni = 9;
+	ps->spriteEnd = 0xb;
+	VME_RotTurn(ps, ps, M_2PI_F);
+	ps->lifeTime = VME_Life(0.14f, 0.02f, 0.05f, t);
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		vec3_t d = VME_Axis(x->model, 0.0f, 0.0f, 1.0f);
+		VME_Line(ps, n - 4, 4, d, t, 60.0f, 40.0f, 4, 1, k * 3.0f + t, 70.0f, 160.0f,
+			VME_Alpha(x->speed * 125.0f, 0x009632));
+	} else {
+		CGameParticles_KillRange(ps, n - 4, n);
+	}
+	VME_Flare(ps, n - 5, k, 700.0f, 0x64e614, 7);
+}
+
+/* 21: like 20 at node 0, a second smoke and one particle at node 1 */
+static void VME_Exhaust21(const VMExhaust *x) {
+	CGameParticles *ps = x->ps, *ps2 = x->ps2;
+	float t = x->t, k = x->k;
+
+	float m = Float_MaxSS(0.0f, t);
+	ps->birthRate = VME_Birth(t, x->speed, g_FXEngineBirthRate);
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirth(ps->birthRate);
+	}
+	float t15 = t * 15.0f;
+	ps->initPosMin = (vec3_t){ -10.0f, k * 40.0f + 5.0f + t15, -10.0f };
+	ps->initPosMax = (vec3_t){ 10.0f, k * 45.0f + 15.0f + t15, 10.0f };
+	float s2 = k + k + t;
+	float tk = t + k;
+	ps->sizeIni = s2 * 80.0f + 75.0f;
+	float s15 = k * 1.5f + t;
+	ps->sizeEnd = s15 * 60.0f + 55.0f;
+	const uint32_t *tab = Game_Ptr(0x3b5914);
+	int c = (int)(__builtin_fabs((double)tk) * 4.0);
+	ps->colorIni = tab[c];
+	ps->colorEnd = tab[c + 1];
+	if (t > 0.0f) {
+		float a = k * 150.0f;
+		ps->initVelMin = (vec3_t){ -200.0f - a, tk * 500.0f + 1150.0f, -200.0f - a };
+		ps->initVelMax = (vec3_t){ a + 200.0f, (k * 3.0f + t) * 900.0f + 1550.0f, a + 200.0f };
+	} else {
+		ps->initVelMin = (vec3_t){ 0.0f, 100.0f, 0.0f };
+		ps->initVelMax = (vec3_t){ 0.0f, 300.0f, 0.0f };
+	}
+	ps->spriteIni = 0xd;
+	ps->spriteEnd = 0xf;
+	VME_RotSame(ps, -VME_PI_2, VME_PI_2);
+	ps->lifeTime = VME_Life(0.14f, 0.02f, 0.05f, t);
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		vec3_t d = VME_Axis(x->model, 0.0f, 0.0f, 1.0f);
+		VME_Line(ps, n - 4, 4, d, m, 35.0f, 5.0f, 4, 1, k * 3.0f + m, 80.0f, 80.0f,
+			VME_Alpha(x->speed * 125.0f, 0x0a9632));
+	} else {
+		CGameParticles_KillRange(ps, n - 4, n);
+	}
+	VME_Flare(ps, n - 5, k, 700.0f, 0x64e614, 7);
+
+	ps2->birthRate = VME_Birth(t, x->speed, 0);
+	if (x->cloud) {
+		ps2->birthRate = VME_CloudBirth(ps2->birthRate);
+	}
+	float k50 = k * 50.0f;
+	ps2->initPosMin = (vec3_t){ -5.0f, t15 + 10.0f + k50, -5.0f };
+	ps2->initPosMax = (vec3_t){ 5.0f, t15 + 15.0f + k50, 5.0f };
+	ps2->colorIni = tab[c];
+	ps2->sizeIni = s2 * 30.0f + 50.0f;
+	ps2->colorEnd = tab[c + 1];
+	ps2->sizeEnd = s15 * 10.0f + 35.0f;
+	if (t > 0.0f) {
+		float a = k * 150.0f;
+		ps2->initVelMin = (vec3_t){ -20.0f - a, tk * 400.0f + 600.0f, -20.0f - a };
+		float s3 = k * 3.0f + t;
+		ps2->initVelMax = (vec3_t){ a + 20.0f, s3 * 700.0f + 900.0f, a + 20.0f };
+		ps2->initAccMin = (vec3_t){ 0.0f, 0.0f, s2 * -4200.0f };
+		ps2->initAccMax = (vec3_t){ 0.0f, 0.0f, s3 * -5500.0f };
+	} else {
+		ps2->initVelMin = (vec3_t){ 0.0f, 50.0f, 0.0f };
+		ps2->initVelMax = (vec3_t){ 0.0f, 200.0f, 0.0f };
+		ps2->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+		ps2->initAccMax = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	}
+	ps2->spriteIni = 9;
+	ps2->spriteEnd = (byte)(ps->spriteIni + 2);
+	VME_RotTurn(ps2, ps, M_2PI_F);
+	ps2->lifeTime = VME_Life(0.14f, 0.02f, 0.05f, t);
+	CGameParticles_Apply(ps2);
+	n = CGameParticles_NumParticles(ps2);
+	if (VME_Show(x->speed, x->cloud)) {
+		CGameParticles_SetParticle(ps2, n - 1, 0.0f, 0.0f, 0.0f, (k * 3.0f + m) * 80.0f + 60.0f,
+			VME_Alpha(x->speed * 125.0f, 0x0a9632), 1, 0.0f);
+	} else {
+		CGameParticles_KillRange(ps2, n - 1, n);
+	}
+	VME_Flare(ps2, n - 2, k, 500.0f, 0x14e664, 8);
+}
+
+/* 25, 30, 35: the emitted smoke, four particles along the z axis and a flare along it; the constants per type */
+typedef struct VMExhaustLine {
+	float posY;			/* the emit height over k * 60 (5 more for initPosMax) */
+	float sizeK;			/* sizeIni (k * sizeK + t) * sizeIniK + sizeIni0, also the velocity */
+	float sizeIniK, sizeIni0;
+	float sizeEndK, sizeEnd0;	/* sizeEnd (k * 1.5 + t) * sizeEndK + sizeEnd0 */
+	uint32_t colors;
+	float velMinK;			/* the y of initVelMin (k * velMinK + t) * 150 + 1200 */
+	vec3_t velMin0, velMax0;	/* the velocities at a thrust <= 0 */
+	float rotVar;
+	byte maxT;			/* the particles spaced by max(0, t), else by t + 0.4 */
+	float lineDk, lineD0;
+	float lineSk, line0;		/* their size (2 - i) * (k * 4 + t) * lineSk + line0 */
+	uint32_t rgb;
+	float flareD, flareSize;
+	uint32_t flareRgb;
+	int flareSprite;
+} VMExhaustLine;
+
+static const VMExhaustLine vme_Line25 = {
+	45.0f, 4.0f, 80.0f, 110.0f, 35.0f, 65.0f, 0x3b593c, 2.0f, { 0.0f, 0.0f, 0.0f }, { 0.0f, 5.0f, 0.0f }, VME_PI_2,
+	1, 50.0f, 25.0f, 70.0f, 190.0f, 0xd26432, 50.0f, 1100.0f, 0xf0c850, 8
+};
+static const VMExhaustLine vme_Line30 = {
+	50.0f, 4.0f, 85.0f, 120.0f, 35.0f, 65.0f, 0x3b59b4, 2.0f, { 0.0f, 0.0f, 0.0f }, { 0.0f, 5.0f, 0.0f }, VME_PI_2,
+	0, 45.0f, 35.0f, 45.0f, 210.0f, 0xd28c32, 50.0f, 1100.0f, 0xf0c850, 8
+};
+static const VMExhaustLine vme_Line35 = {
+	40.0f, 3.0f, 60.0f, 80.0f, 40.0f, 60.0f, 0x3b59dc, 1.0f, { 0.0f, 100.0f, 0.0f }, { 0.0f, 300.0f, 0.0f }, M_2PI_F,
+	0, 50.0f, 55.0f, 40.0f, 200.0f, 0xd2326e, 40.0f, 700.0f, 0xe66496, 1
+};
+
+static void VME_ExhaustLine(const VMExhaust *x, const VMExhaustLine *l, int base) {
+	CGameParticles *ps = x->ps;
+	float t = x->t, k = x->k;
+
+	ps->birthRate = VME_Birth(t, x->speed, base);
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirth(ps->birthRate);
+	}
+	float k60 = k * 60.0f;
+	ps->initPosMin = (vec3_t){ -5.0f, k60 + l->posY, -5.0f };
+	ps->initPosMax = (vec3_t){ 5.0f, k60 + (l->posY + 5.0f), 5.0f };
+	float s = k * l->sizeK + t;
+	ps->sizeIni = s * l->sizeIniK + l->sizeIni0;
+	ps->sizeEnd = (k * 1.5f + t) * l->sizeEndK + l->sizeEnd0;
+	VME_Colors(ps, l->colors, t, k);
+	if (t > 0.0f) {
+		float a = k * 150.0f;
+		ps->initVelMin = (vec3_t){ -200.0f - a, (k * l->velMinK + t) * 150.0f + 1200.0f, -200.0f - a };
+		ps->initVelMax = (vec3_t){ a + 200.0f, s * 800.0f + 2500.0f, a + 200.0f };
+	} else {
+		ps->initVelMin = l->velMin0;
+		ps->initVelMax = l->velMax0;
+	}
+	ps->spriteIni = 0xd;
+	ps->spriteEnd = 0x10;
+	VME_RotTurn(ps, ps, l->rotVar);
+	ps->lifeTime = VME_Life(0.15f, 0.02f, 0.05f, t);
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		float m = l->maxT ? Float_MaxSS(0.0f, t) : t + 0.4f;
+		vec3_t d = VME_Axis(x->model, 0.0f, 0.0f, 1.0f);
+		VME_Line(ps, n - 4, 4, d, m, l->lineDk, l->lineD0, 2, 1, k * 4.0f + t, l->lineSk, l->line0,
+			VME_Alpha(x->speed * 130.0f, l->rgb));
+	} else {
+		CGameParticles_KillRange(ps, n - 4, n);
+	}
+	VME_FlareDir(ps, x->model, n - 5, k, l->flareD, l->flareSize, l->flareRgb, l->flareSprite);
+}
+
+/* 26, 40, 55: the emitted smoke, four particles along the z axis and a flare; the constants per type */
+typedef struct VMExhaustLine4 {
+	float posX;			/* initPosMin (-posX, (k * 30 + posY0) + t * 25, -5) */
+	float posY0, posY1;		/* initPosMax (posX, (k * 45 + posY1) + t * 25, 5) */
+	float sizeIniK, sizeIniT, sizeIni0;	/* sizeIni (k * 5 + t) * sizeIniK + (t * sizeIniT + sizeIni0) */
+	float sizeEndK, sizeEndT;		/* sizeEnd (k * 1.5 + t) * sizeEndK + (t * sizeEndT + 60) */
+	uint32_t colors;
+	float velMin0, velMax0;		/* the y of the velocities over (t + k) * 500, (k + k + t) * 900 */
+	float lifeLo, lifeHi;
+	byte maxT;			/* the particles by max(0, t), else by t */
+	float lineDk, lineD0;
+	float lineSk, lineST, line0;	/* their size (4 - i) * (k * 3 + m) * lineSk + (m * lineST + line0) */
+	int flareSprite;
+} VMExhaustLine4;
+
+static const VMExhaustLine4 vme_Line26 = {
+	5.0f, 0.0f, 5.0f, 50.0f, 75.0f, 125.0f, 20.0f, 45.0f, 0x3b5964, 2100.0f, 2850.0f, 0.03f, 0.06f,
+	1, 70.0f, 30.0f, 75.0f, 120.0f, 230.0f, 7
+};
+static const VMExhaustLine4 vme_Line40 = {
+	15.0f, 10.0f, 20.0f, 50.0f, 80.0f, 100.0f, 20.0f, 50.0f, 0x3b5a2c, 2100.0f, 2850.0f, 0.02f, 0.05f,
+	0, 80.0f, 40.0f, 75.0f, 190.0f, 100.0f, 7
+};
+static const VMExhaustLine4 vme_Line55 = {
+	5.0f, 15.0f, 25.0f, 60.0f, 70.0f, 105.0f, 30.0f, 40.0f, 0x3b5aa4, 1800.0f, 2650.0f, 0.03f, 0.06f,
+	1, 70.0f, 40.0f, 60.0f, 110.0f, 190.0f, 8
+};
+
+static void VME_ExhaustLine4(const VMExhaust *x, const VMExhaustLine4 *l) {
+	CGameParticles *ps = x->ps;
+	float t = x->t, k = x->k;
+
+	ps->birthRate = VME_Birth(t, x->speed, g_FXEngineBirthRate);
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirth(ps->birthRate);
+	}
+	float t25 = t * 25.0f;
+	ps->initPosMin = (vec3_t){ -l->posX, k * 30.0f + l->posY0 + t25, -5.0f };
+	ps->initPosMax = (vec3_t){ l->posX, k * 45.0f + l->posY1 + t25, 5.0f };
+	ps->sizeIni = (k * 5.0f + t) * l->sizeIniK + (t * l->sizeIniT + l->sizeIni0);
+	ps->sizeEnd = (k * 1.5f + t) * l->sizeEndK + (t * l->sizeEndT + 60.0f);
+	VME_Colors(ps, l->colors, t, k);
+	if (t > 0.0f) {
+		float a = k * 150.0f;
+		ps->initVelMin = (vec3_t){ -150.0f - a, (t + k) * 500.0f + l->velMin0, -150.0f - a };
+		ps->initVelMax = (vec3_t){ a + 150.0f, (k + k + t) * 900.0f + l->velMax0, a + 150.0f };
+	} else {
+		ps->initVelMin = (vec3_t){ 0.0f, 50.0f, 0.0f };
+		ps->initVelMax = (vec3_t){ 0.0f, 200.0f, 0.0f };
+	}
+	ps->spriteIni = 9;
+	ps->spriteEnd = 0xc;
+	VME_RotTurn(ps, ps, VME_PI_2);
+	ps->lifeTime = VME_Life(0.14f, l->lifeLo, l->lifeHi, t);
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		float m = l->maxT ? Float_MaxSS(0.0f, t) : t;
+		vec3_t d = VME_Axis(x->model, 0.0f, 0.0f, 1.0f);
+		VME_Line(ps, n - 4, 4, d, m, l->lineDk, l->lineD0, 4, 1, k * 3.0f + m, l->lineSk, m * l->lineST + l->line0,
+			VME_Alpha(x->speed * 125.0f, 0xa01e05));
+	} else {
+		CGameParticles_KillRange(ps, n - 4, n);
+	}
+	VME_Flare(ps, n - 5, k, 1200.0f, 0xfff05a, l->flareSprite);
+}
+
+/* 27: the emitted smoke at four positions, two quads around the z axis and a flare */
+static void VME_Exhaust27(const VMExhaust *x) {
+	static const float xz[] = { -36.0f, 36.0f, 36.0f, 36.0f, -36.0f, -36.0f, 36.0f, -36.0f };
+	CGameParticles *ps = x->ps;
+	vec3_t *pos = Game_Ptr(VME_POS_27);
+	float t = x->t, k = x->k;
+	int c;
+
+	ps->birthRate = VME_Birth(t, x->speed, 0) * 3;
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirth(ps->birthRate) * 3;
+	}
+	float k15 = k * 15.0f;
+	float r = Rand_FloatRange(0.0f, 5.0f) + k15;
+	if (VME_StaticBegin(VME_GUARD_27)) {
+		VME_SetPos(pos, xz, 4, r + 0.0f);
+		VME_StaticEnd(VME_GUARD_27);
+	}
+	CGameParticles_SetEmitPos(ps, pos, 4);
+	float s = k * 4.0f + t;
+	ps->sizeIni = s * 60.0f + 60.0f;
+	ps->sizeEnd = (k * 1.5f + t) * 40.0f + 35.0f;
+	VME_Colors(ps, 0x3b598c, t, k);
+	ps->initVelMin = (vec3_t){ -10.0f - k15, (t + k) * 120.0f + 700.0f, -15.0f - k15 };
+	ps->initVelMax = (vec3_t){ k15 + 10.0f, (k * 3.0f + t) * 600.0f + 1400.0f, k15 + 15.0f };
+	ps->spriteIni = 0xd;
+	ps->spriteEnd = 0x10;
+	VME_RotSame(ps, -VME_PI_2, VME_PI_2);
+	ps->lifeTime = VME_Life(0.14f, 0.02f, 0.05f, t);
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		vec3_t rot;
+		CGameModel_GetRot(x->model, &rot);
+		vec3_t ax = VME_Turn(&rot, 1.0f, 0.0f, 0.0f);
+		vec3_t ay = VME_Turn(&rot, 0.0f, 1.0f, 0.0f);
+		vec3_t az = VME_Turn(&rot, 0.0f, 0.0f, 1.0f);
+		uint32_t col = VME_Alpha(x->speed * 125.0f, 0xaa280a);
+		for (c = 0; c < 2; c++) {
+			float d = (float)c * t * 35.0f - 25.0f;
+			float px = d * az.x;
+			float py = d * az.y;
+			float pz = d * az.z;
+			float f = 0.0f > t ? t + 1.0f : 1.0f;
+			float size = ((float)(2 - c) * s * 105.0f + 95.0f) * f;
+			CGameParticles_SetParticle(ps, n - 8 + c, ax.x * 38.0f + px + ay.x * 38.0f, ax.y * 38.0f + py + ay.y * 38.0f,
+				ax.z * 38.0f + pz + ay.z * 38.0f, size, col, 1, 0.0f);
+			CGameParticles_SetParticle(ps, n - 6 + c, ax.x * -38.0f + px + ay.x * 38.0f,
+				ax.y * -38.0f + py + ay.y * 38.0f, ax.z * -38.0f + pz + ay.z * 38.0f, size, col, 1, 0.0f);
+			CGameParticles_SetParticle(ps, n - 4 + c, ax.x * 38.0f + px + ay.x * -38.0f,
+				ax.y * 38.0f + py + ay.y * -38.0f, ax.z * 38.0f + pz + ay.z * -38.0f, size, col, 1, 0.0f);
+			CGameParticles_SetParticle(ps, n - 2 + c, ax.x * -38.0f + px + ay.x * -38.0f,
+				ax.y * -38.0f + py + ay.y * -38.0f, ax.z * -38.0f + pz + ay.z * -38.0f, size, col, 1, 0.0f);
+		}
+	} else {
+		CGameParticles_KillRange(ps, n - 8, n);
+	}
+	VME_FlareDir(ps, x->model, n - 9, k, 40.0f, 1200.0f, 0xfff05a, 7);
+}
+
+/* 36: the emitted smoke, five particles along the z axis and a flare along it */
+static void VME_Exhaust36(const VMExhaust *x) {
+	CGameParticles *ps = x->ps;
+	float t = x->t, k = x->k;
+
+	ps->birthRate = VME_Birth(t, x->speed, g_FXEngineBirthRate) * 2;
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirth(ps->birthRate);
+	}
+	float k60 = k * 60.0f;
+	ps->initPosMin = (vec3_t){ -5.0f, k60 + 40.0f, -5.0f };
+	ps->initPosMax = (vec3_t){ 5.0f, k60 + 45.0f, 5.0f };
+	ps->sizeIni = (k * 4.0f + t) * 70.0f + 95.0f;
+	ps->sizeEnd = (k * 2.5f + t) * 50.0f + 75.0f;
+	VME_Colors(ps, 0x3b5a04, t, k);
+	if (t > 0.0f) {
+		float a = k * 150.0f;
+		ps->initVelMin = (vec3_t){ -150.0f - a, (k * 1.5f + t) * 150.0f + 1500.0f, -150.0f - a };
+		ps->initVelMax = (vec3_t){ a + 150.0f, (k * 4.5f + t) * 800.0f + 2100.0f, a + 150.0f };
+	} else {
+		ps->initVelMin = (vec3_t){ 0.0f, 100.0f, 0.0f };
+		ps->initVelMax = (vec3_t){ 0.0f, 300.0f, 0.0f };
+	}
+	ps->spriteIni = 0xd;
+	ps->spriteEnd = 0x10;
+	VME_RotTurn(ps, ps, M_2PI_F);
+	ps->lifeTime = VME_Life(0.14f, 0.02f, 0.05f, t);
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		vec3_t d = VME_Axis(x->model, 0.0f, 0.0f, 1.0f);
+		VME_Line(ps, n - 5, 5, d, t * 0.25f + 0.5f, 60.0f, 25.0f, 2, 1, k * 3.0f + t, 70.0f, 230.0f,
+			VME_Alpha(x->speed * 140.0f, 0xd2326e));
+	} else {
+		CGameParticles_KillRange(ps, n - 5, n);
+	}
+	VME_FlareDir(ps, x->model, n - 6, k, 40.0f, 800.0f, 0xe678be, 1);
+}
+
+/* 45: the emitted smoke, four particles along the z axis and a flare along it */
+static void VME_Exhaust45(const VMExhaust *x) {
+	CGameParticles *ps = x->ps;
+	float t = x->t, k = x->k;
+
+	ps->birthRate = VME_Birth(t, x->speed, g_FXEngineBirthRate);
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirth(ps->birthRate);
+	}
+	float k60 = k * 60.0f;
+	ps->initPosMin = (vec3_t){ -15.0f, k60 + 10.0f, -15.0f };
+	ps->initPosMax = (vec3_t){ 15.0f, k60 + 20.0f, 15.0f };
+	ps->sizeIni = (k * 4.0f + t) * 95.0f + 125.0f;
+	ps->sizeEnd = (k * 1.5f + t) * 35.0f + 60.0f;
+	VME_Colors(ps, 0x3b5a54, t, k);
+	if (t > 0.0f) {
+		float a = k * 150.0f;
+		ps->initVelMin = (vec3_t){ -200.0f - a, (t + k) * 150.0f + 1400.0f, -200.0f - a };
+		ps->initVelMax = (vec3_t){ a + 200.0f, (k * 3.0f + t) * 800.0f + 2700.0f, a + 200.0f };
+	} else {
+		ps->initVelMin = (vec3_t){ 0.0f, 100.0f, 0.0f };
+		ps->initVelMax = (vec3_t){ 0.0f, 300.0f, 0.0f };
+	}
+	ps->spriteIni = 9;
+	ps->spriteEnd = 0xc;
+	VME_RotSame(ps, VME_PI_4, VME_PI_2);
+	ps->lifeTime = VME_Life(0.15f, 0.02f, 0.05f, t);
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		vec3_t d = VME_Axis(x->model, 0.0f, 0.0f, 1.0f);
+		/* the sizes 100, 50, 0, -50 over the base */
+		VME_Line(ps, n - 4, 4, d, t + 0.4f, 50.0f, 10.0f, 100, 50, 1.0f, 1.0f, (k + k + t) * 90.0f + 220.0f,
+			VME_Alpha(x->speed * 90.0f, 0x7896d2));
+	} else {
+		CGameParticles_KillRange(ps, n - 4, n);
+	}
+	VME_FlareDir(ps, x->model, n - 5, k, 40.0f, 1100.0f, 0x6496e6, 7);
+}
+
+/* 50: the emitted smoke at eight positions, a particle at each and a flare */
+static void VME_Exhaust50(const VMExhaust *x) {
+	static const float xz[] = {
+		-50.0f, -54.0f, 50.0f, -18.0f, -50.0f, 18.0f, 50.0f, 54.0f, 50.0f, -54.0f, -50.0f, -18.0f, 50.0f, 18.0f,
+		-50.0f, 54.0f
+	};
+	CGameParticles *ps = x->ps;
+	vec3_t *pos = Game_Ptr(VME_POS_50);
+	float t = x->t, k = x->k;
+
+	ps->birthRate = VME_Birth(t, x->speed, 0) * 4;
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirth(ps->birthRate) * 4;
+	}
+	float r = Rand_FloatRange(10.0f, 15.0f) + k * 35.0f;
+	if (VME_StaticBegin(VME_GUARD_50)) {
+		VME_SetPos(pos, xz, 8, r + 0.0f);
+		VME_StaticEnd(VME_GUARD_50);
+	}
+	CGameParticles_SetEmitPos(ps, pos, 8);
+	float s = k * 3.0f + t;
+	ps->sizeIni = s * 65.0f + 50.0f;
+	ps->sizeEnd = (k * 1.5f + t) * 35.0f + 50.0f;
+	VME_Colors(ps, 0x3b5a7c, t, k);
+	float k10 = k * 10.0f;
+	ps->initVelMin = (vec3_t){ -10.0f - k10, (k + k + t) * 100.0f + 600.0f, -10.0f - k10 };
+	ps->initVelMax = (vec3_t){ k10 + 10.0f, s * 500.0f + 1300.0f, k10 + 10.0f };
+	ps->spriteIni = 9;
+	ps->spriteEnd = 0xb;
+	VME_RotSame(ps, -VME_PI_2, VME_PI_2);
+	ps->lifeTime = VME_Life(0.12f, 0.015f, 0.025f, t);
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		float m = Float_MaxSS(0.0f, t);
+		uint32_t col = (uint32_t)(0xb4 - (int)(m * 130.0f * m)) | (uint32_t)(0x1e - (int)(m * -40.0f)) << 8 |
+			(uint32_t)(0x1e - (int)(m * -120.0f)) << 16 | (uint32_t)(-1 - (int)(x->speed * 130.0f)) << 24;
+		VME_Ring(ps, x->model, n - 8, pos, 8, 1.0f, m * 10.0f, (k * 5.0f + m) * 100.0f + 130.0f, col);
+	} else {
+		CGameParticles_KillRange(ps, n - 8, n);
+	}
+	VME_FlareDir(ps, x->model, n - 9, k, 40.0f, 1400.0f, 0xf0b496, 8);
+}
+
+/* 60: the emitted smoke at three positions, two pairs and two flares */
+static void VME_Exhaust60(const VMExhaust *x) {
+	static const float xz[] = { 0.0f, 0.0f, 0.0f, -40.0f, 0.0f, 40.0f };
+	CGameParticles *ps = x->ps;
+	vec3_t *pos = Game_Ptr(VME_POS_60);
+	float t = x->t, k = x->k;
+
+	ps->birthRate = VME_Birth(t, x->speed, 0) * 2;
+	if (x->cloud) {
+		ps->birthRate = VME_CloudBirth(ps->birthRate) * 2;
+	}
+	float t20 = t * 20.0f;
+	float r = Rand_FloatRange(10.0f, 15.0f);
+	r = VME_X87AddAdd(r, t20, k * 35.0f);
+	if (VME_StaticBegin(VME_GUARD_60)) {
+		VME_SetPos(pos, xz, 3, r + 0.0f);
+		VME_StaticEnd(VME_GUARD_60);
+	}
+	CGameParticles_SetEmitPos(ps, pos, 3);
+	ps->sizeIni = (k * 3.0f + t) * 70.0f + 85.0f;
+	ps->sizeEnd = (k * 1.5f + t) * 50.0f + 45.0f;
+	VME_Colors(ps, 0x3b5acc, t, k);
+	float k10 = k * 10.0f;
+	float s = k + k + t;
+	ps->initVelMin = (vec3_t){ -10.0f - k10, s * 350.0f + 950.0f, -10.0f - k10 };
+	ps->initVelMax = (vec3_t){ k10 + 10.0f, s * 950.0f + 1500.0f, k10 + 10.0f };
+	ps->spriteIni = 9;
+	ps->spriteEnd = 0xc;
+	VME_RotSame(ps, -VME_PI_2, VME_PI_2);
+	ps->lifeTime = VME_Life(0.13f, 0.015f, 0.02f, t);
+	CGameParticles_Apply(ps);
+	int n = CGameParticles_NumParticles(ps);
+	if (VME_Show(x->speed, x->cloud)) {
+		vec3_t d = VME_Axis(x->model, 0.0f, 0.0f, 1.0f);
+		vec3_t v = VME_Axis(x->model, 0.0f, 1.0f, 0.0f);
+		VME_Pair(ps, n - 4, d, v, 30.0f, t, 30.0f, t20, k * 4.0f + t, 125.0f, 105.0f,
+			VME_Alpha(x->speed * 128.0f, 0xc82814));
+	} else {
+		CGameParticles_KillRange(ps, n - 4, n);
+	}
+	VME_FlarePair(ps, x->model, n - 6, k, 0.0f, 1.0f, 0.0f, 30.0f, 1000.0f, 0xe6963c);
+}
+
+void __thiscall cVehicleMotorsEffects_Exhaust(cVehicleMotorsEffects *self, float thrust, float k, float f4bc,
+	float speed, byte cloud, float fade) {
+	VMExhaust x;
+	int i;
+
+	if (!self->type) {
+		return;
+	}
+	x.self = self;
+	x.t = thrust * f4bc;
+	x.k = k;
+	x.speed = speed;
+	x.cloud = cloud;
+	for (i = 0; i < VM_SIDES; i++) {
+		if (self->node[i][0] == -1) {
+			continue;
+		}
+		x.model = cVehicleMotorsEffects_GetModel(self, i);
+		if (x.model && !CGameModel_IsEnabled(x.model)) {
+			continue;
+		}
+		x.ps = self->sistPart[i][0];
+		x.ps2 = self->sistPart[i][1];
+		if (!x.ps) {
+			continue;
+		}
+		CGameParticles_SetAlpha(x.ps, fade);
+		if (x.ps2) {
+			CGameParticles_SetAlpha(x.ps2, fade);
+		}
+		switch (self->type) {
+		case 1:
+			VME_Exhaust1(&x);
+			break;
+		case 5:
+			VME_Exhaust5(&x);
+			break;
+		case 6:
+			VME_Exhaust6(&x);
+			break;
+		case 10:
+			VME_Exhaust10(&x);
+			break;
+		case 11:
+			VME_Exhaust11(&x);
+			break;
+		case 12:
+			VME_Exhaust12(&x);
+			break;
+		case 13:
+			VME_Exhaust13(&x);
+			break;
+		case 14:
+			VME_Exhaust14(&x);
+			break;
+		case 15:
+			VME_Exhaust15(&x);
+			break;
+		case 20:
+			VME_Exhaust20(&x);
+			break;
+		case 21:
+			VME_Exhaust21(&x);
+			break;
+		case 25:
+			VME_ExhaustLine(&x, &vme_Line25, x.t > 0.0f ? g_FXEngineBirthRate : 0);
+			break;
+		case 26:
+			VME_ExhaustLine4(&x, &vme_Line26);
+			break;
+		case 27:
+			VME_Exhaust27(&x);
+			break;
+		case 30:
+			VME_ExhaustLine(&x, &vme_Line30, g_FXEngineBirthRate);
+			break;
+		case 35:
+			VME_ExhaustLine(&x, &vme_Line35, g_FXEngineBirthRate);
+			break;
+		case 36:
+			VME_Exhaust36(&x);
+			break;
+		case 40:
+			VME_ExhaustLine4(&x, &vme_Line40);
+			break;
+		case 45:
+			VME_Exhaust45(&x);
+			break;
+		case 50:
+			VME_Exhaust50(&x);
+			break;
+		case 55:
+			VME_ExhaustLine4(&x, &vme_Line55);
+			break;
+		case 60:
+			VME_Exhaust60(&x);
+			break;
+		}
+	}
 }

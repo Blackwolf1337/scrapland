@@ -134,6 +134,7 @@ SD_SIZE(cVehicleMotors, 0xc8);
 #define g_FXEngineGlowDistFadeMult GAME_DATA(float, 0x448430)
 #define g_FXEngineGlowDistFadeFrom GAME_DATA(float, 0x448448)
 #define g_FXEngineGlowDistFadeTo GAME_DATA(float, 0x448460)
+#define g_FXEngineBirthRate GAME_DATA(int, 0x448490)	/* of the exhaust at thrust 0, 100 at full thrust */
 #define g_FXEngineGlowSize GAME_DATA(float, 0x4484a8)
 #define g_FXEngineGlowSizeMax GAME_DATA(float, 0x4484c0)
 #define g_FXEngineTrailDistSpeedFactor GAME_DATA(float, 0x4484d8)
@@ -217,7 +218,8 @@ void __thiscall cVehicleMotorsEffects_SetScale(cVehicleMotorsEffects *self, floa
 void __thiscall cVehicleMotorsEffects_Set(cVehicleMotorsEffects *self, cEntity *owner, cVehicleMotors *motors,
 	cVehicleMotor *motor);
 void __thiscall cVehicleMotorsEffects_SetVisible(cVehicleMotorsEffects *self, byte on);
-/* rva 0x10f210 (not in C, 34 KB): the exhaust particles of the FxClass type */
+/* the exhaust particles of the FxClass type at both sides: thrust * f4bc the thrust, speed the speed factor of
+ * the motors (0 hides them), one frame in four while the ship leaves a cloud, fade the alpha */
 void __thiscall cVehicleMotorsEffects_Exhaust(cVehicleMotorsEffects *self, float thrust, float k, float f4bc,
 	float speed, byte cloud, float fade);
 /* the smoke particles at the exhausts while the ship leaves a cloud */

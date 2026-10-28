@@ -316,7 +316,6 @@ SD_IMPORT(CBsp_Preparar, 0x28efe0)
 /* module agent: Engine/RenderTarget.cpp (imports below this line) */
 
 /* module agent: AI/NodesTraffic+NodesTrafficInDoor.cpp (imports below this line) */
-SD_IMPORT(cVehicleMotorsEffects_Exhaust, 0x10f210)
 
 /* module agent: Scorer/AbstractText+Button+Circuit+Head+Mission+Monitor+Radar (imports below this line) */
 
