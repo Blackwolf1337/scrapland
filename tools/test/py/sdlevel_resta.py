@@ -205,6 +205,10 @@ if rsaCar:
 		return SDTest.Call(0x118720, 'tvii', rsaNV, rsaMsgF), SDTest.Call(0x12e1a0, 'tii', rsaMsgF)[0], rsanvr()
 	rsaW = rsaI(rsaCar + 0x5fc) & 0xff
 	rsaHits = (rsaB(rsaCar + 0x298 + 0x74) + 1) & 0xff
+	# the burn and EMI times the messages set (0x290..0x294, 0x58c..0x590), put back after: with a burn time left the
+	# next frame starts VehicleFire on the car, whose SetEntity reads the motors of a ship (NULL on a Car) and crashes
+	# the original too
+	rsaTimes = (rsaF(rsaCar + 0x290, 2), rsaF(rsaCar + 0x58c, 2))
 	if rsaWS and rsaAm and rsaNWeap > 0:
 		rsaSet(rsaCar + 0x5f0 + 0x38, (0.0, 0.0, 0.0))
 		rsaPoke(rsaCar + 0x650, 0)
@@ -237,6 +241,8 @@ if rsaCar:
 		rsaSet(rsaCar + 0x290, (0.005, 3.0))
 		check('cNetVController_Write hits', lambda: rsawr(0xff, 1))
 		check('cNetVController_Write no flags', lambda: rsawr(0x00, 0))
+		rsaSet(rsaCar + 0x290, rsaTimes[0])
+		rsaSet(rsaCar + 0x58c, rsaTimes[1])
 	rsaFree(rsaMsgF)
 	rsaFree(rsaMsgB)
 	rsaFree(rsaNV)
