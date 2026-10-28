@@ -68,13 +68,13 @@ rva	size	source	callconv	name	signature
 00006b9e	42	DEFAULT	unknown	FUN_00406b9e	
 00006c7d	47	DEFAULT	unknown	FUN_00406c7d	
 00006d2e	13	DEFAULT	unknown	FUN_00406d2e	
-00006d3b	6	DEFAULT	unknown	thunk_FUN_00406d2e	
+00006d3b	6	USER_DEFINED	__stdcall	D3DX_Vec3Normalize	void * __stdcall(void * out, void * v)
 00006d4b	42	DEFAULT	unknown	FUN_00406d4b	
 00006d86	174	DEFAULT	unknown	FUN_00406d86	
 00006e3b	42	DEFAULT	unknown	FUN_00406e3b	
 00006f43	47	DEFAULT	unknown	FUN_00406f43	
 00007079	13	DEFAULT	unknown	FUN_00407079	
-00007086	6	DEFAULT	unknown	thunk_FUN_00407079	
+00007086	6	USER_DEFINED	__stdcall	D3DX_Vec3Transform	void * __stdcall(void * out, void * v, void * m)
 0000711d	17	DEFAULT	unknown	FUN_0040711d	
 00007168	17	DEFAULT	unknown	FUN_00407168	
 000072c4	40	DEFAULT	unknown	FUN_004072c4	
@@ -82,23 +82,23 @@ rva	size	source	callconv	name	signature
 00007420	42	DEFAULT	unknown	FUN_00407420	
 00007543	47	DEFAULT	unknown	FUN_00407543	
 000077ab	13	DEFAULT	unknown	FUN_004077ab	
-000077b8	6	DEFAULT	unknown	thunk_FUN_004077ab	
+000077b8	6	USER_DEFINED	__stdcall	D3DX_MatrixMultiply	void * __stdcall(void * out, void * a, void * b)
 000079f4	13	DEFAULT	unknown	FUN_004079f4	
-00007a01	6	DEFAULT	unknown	thunk_FUN_004079f4	
+00007a01	6	USER_DEFINED	__stdcall	D3DX_MatrixTranspose	void * __stdcall(void * out, void * m)
 00007cdd	13	DEFAULT	unknown	FUN_00407cdd	
-00007cea	6	DEFAULT	unknown	thunk_FUN_00407cdd	
+00007cea	6	USER_DEFINED	__stdcall	D3DX_MatrixInverse	void * __stdcall(void * out, float * det, void * m)
 00008121	44	DEFAULT	unknown	FUN_00408121	
 0000820a	46	DEFAULT	unknown	FUN_0040820a	
 000082df	28	DEFAULT	unknown	FUN_004082df	
-000082fb	6	DEFAULT	unknown	thunk_FUN_004082df	
+000082fb	6	USER_DEFINED	__stdcall	D3DX_MatrixRotationX	void * __stdcall(void * out, float ang)
 0000837b	28	DEFAULT	unknown	FUN_0040837b	
-00008397	6	DEFAULT	unknown	thunk_FUN_0040837b	
+00008397	6	USER_DEFINED	__stdcall	D3DX_MatrixRotationY	void * __stdcall(void * out, float ang)
 00008418	28	DEFAULT	unknown	FUN_00408418	
-00008434	6	DEFAULT	unknown	thunk_FUN_00408418	
+00008434	6	USER_DEFINED	__stdcall	D3DX_MatrixRotationZ	void * __stdcall(void * out, float ang)
 000085de	13	DEFAULT	unknown	FUN_004085de	
-000085eb	6	DEFAULT	unknown	thunk_FUN_004085de	
+000085eb	6	USER_DEFINED	__stdcall	D3DX_MatrixRotationQuaternion	void * __stdcall(void * out, void * q)
 000086d3	46	DEFAULT	unknown	FUN_004086d3	
-00008701	6	DEFAULT	unknown	thunk_FUN_004086d3	
+00008701	6	USER_DEFINED	__stdcall	D3DX_MatrixRotationYPR	void * __stdcall(void * out, float yaw, float pitch, float roll)
 00008707	17	DEFAULT	unknown	FUN_00408707	
 00008718	6	DEFAULT	unknown	thunk_FUN_00408707	
 00008736	39	DEFAULT	unknown	FUN_00408736	
@@ -117,7 +117,7 @@ rva	size	source	callconv	name	signature
 00009197	164	DEFAULT	unknown	FUN_00409197	
 00009458	32	DEFAULT	unknown	FUN_00409458	
 000094da	46	DEFAULT	unknown	FUN_004094da	
-00009508	6	DEFAULT	unknown	thunk_FUN_004094da	
+00009508	6	USER_DEFINED	__stdcall	D3DX_QuaternionRotationYPR	void * __stdcall(void * out, float yaw, float pitch, float roll)
 000095e7	13	DEFAULT	unknown	FUN_004095e7	
 000095f4	6	DEFAULT	unknown	thunk_FUN_004095e7	
 0000975c	13	DEFAULT	unknown	FUN_0040975c	
@@ -155,7 +155,7 @@ rva	size	source	callconv	name	signature
 0000b0dc	201	DEFAULT	unknown	FUN_0040b0dc	
 0000b1a5	142	DEFAULT	unknown	FUN_0040b1a5	
 0000b233	143	DEFAULT	unknown	FUN_0040b233	
-0000b2c2	100	DEFAULT	unknown	FUN_0040b2c2	
+0000b2c2	100	USER_DEFINED	__stdcall	D3DX_AssembleShader	int __stdcall(void * src, uint len, uint flags, void * constants, void * code, void * errors)
 0000b326	623	DEFAULT	unknown	FUN_0040b326	
 0000b595	91	DEFAULT	unknown	FUN_0040b595	
 0000b5f0	111	DEFAULT	unknown	FUN_0040b5f0	
@@ -8979,10 +8979,10 @@ rva	size	source	callconv	name	signature
 002d6460	27	DEFAULT	unknown	FUN_006d6460	
 002d6480	62	DEFAULT	unknown	FUN_006d6480	
 002d64c0	267	DEFAULT	unknown	FUN_006d64c0	
-002d65d0	376	DEFAULT	unknown	FUN_006d65d0	
-002d6750	580	DEFAULT	unknown	FUN_006d6750	
+002d65d0	376	USER_DEFINED	__thiscall	M3DTransform_ToMatrixAnim	void * __thiscall(void * out)
+002d6750	580	USER_DEFINED	__thiscall	M3DTransform_ToMatrix	void __thiscall(void * out)
 002d69a0	676	DEFAULT	unknown	FUN_006d69a0	
-002d6c50	355	DEFAULT	unknown	FUN_006d6c50	
+002d6c50	355	USER_DEFINED	__cdecl	Matrix_ToTransform	void __cdecl(void * m, void * out)
 002d6dc0	1788	DEFAULT	unknown	FUN_006d6dc0	
 002d74c0	1940	DEFAULT	unknown	FUN_006d74c0	
 002d7c60	118	DEFAULT	unknown	FUN_006d7c60	
