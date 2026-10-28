@@ -181,7 +181,6 @@ SD_IMPORT_PY(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 SD_IMPORT(crt_ceil, 0x345010)
 
 /* module agent: Engine/Trails (imports below this line) */
-SD_IMPORT_STDCALL(D3DX_AssembleShader, 24, 0x00b2c2)
 
 /* module agent: Engine/Modelo (imports below this line) */
 
