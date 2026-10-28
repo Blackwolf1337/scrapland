@@ -19,7 +19,7 @@ checks = sys.argv[1:] or ['ret', 'calls', 'eax', 'size']
 
 hooks = re.findall(r'^SD_HOOK\((\w+), (0x[0-9a-f]+), (\d+)\)', open(os.path.join(root, 'src/hooks.inc')).read(), re.M)
 imports = dict((int(a, 16), n) for n, a in
-	re.findall(r'^SD_IMPORT(?:_PY)?\((\w+), (0x[0-9a-f]+)\)', open(os.path.join(root, 'src/imports.inc')).read(), re.M))
+	re.findall(r'^SD_IMPORT(?:_PY|_CRT)?\((\w+), (0x[0-9a-f]+)\)', open(os.path.join(root, 'src/imports.inc')).read(), re.M))
 byaddr = collections.defaultdict(set)
 for n, a, sz in hooks:
 	byaddr[int(a, 16)].add(n)

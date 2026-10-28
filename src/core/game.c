@@ -17,10 +17,16 @@ int Imports_Resolve(uintptr_t base);
 void Hook_InstallAll(int wipe, int wipepy);
 void Log_Open(const char *dir);
 int Hook_Enabled(const char *name);
+int Game_Option(const char *key);
 void TestMod_Register(void);
 
 int Hook_Enabled(const char *name) {
 	return GetPrivateProfileIntA("hooks", name, 1, ini_path) != 0;
+}
+
+/* a switch of the [general] section, 0 when it is not there */
+int Game_Option(const char *key) {
+	return GetPrivateProfileIntA("general", key, 0, ini_path);
 }
 
 /* the folder of the running exe with its trailing backslash */
