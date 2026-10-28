@@ -8254,3 +8254,5 @@ SD_HOOK(Stub_Nop3, 0x27c8a0, 16)
 SD_HOOK(Stub_Nop1, 0x27c8b0, 16)
 
 /* module agent: Standalone, the Sleep and busy wait rewrites (hooks below this line) */
+
+/* module agent: Standalone 2a, the real Python 1.5.2 (hooks below this line) */

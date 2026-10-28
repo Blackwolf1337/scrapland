@@ -431,3 +431,5 @@ SD_IMPORT(Tsc_CpuFreq, 0x272f90)
 /* module agent: Standalone 1b, the last game code for wipe=2 (imports below this line) */
 
 /* module agent: Standalone, the Sleep and busy wait rewrites (imports below this line) */
+
+/* module agent: Standalone 2a, the real Python 1.5.2 (imports below this line) */
