@@ -27,9 +27,6 @@ void Video_Step(void);
 byte Video_Busy(void);
 /* the result of the Video_PlayFile that ended last */
 int Video_Result(void);
-/* Video_PlayFile up to the end of the video, waiting as the original did (synchronous Update, DDBLT_WAIT): for
- * Scrap.VideoPlayer, whose script goes on after the video */
-int Video_PlayFileWait(const char *name, const char *dir);
 /* the source rectangle of the DirectDraw surface stretched onto the window */
 void Video_BltToWindow(void *hwnd, const exe_rect *dst, void *surf, const exe_rect *src);
 /* the keys that ended or started a video do not count for up to ms: the original waited that long while Escape,

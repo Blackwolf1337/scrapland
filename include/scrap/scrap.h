@@ -193,6 +193,8 @@ byte SaveVar_Set(const char *name, const char *value);
 void Screenshot_Take(const char *name);
 void Video_SetCurrentMode(int mode);
 byte Video_Play(const char *name, const char *cmd, float arg);
+/* Video_Play "play" with a call when the video ends (Scrap.VideoPlayer with a callback) */
+byte Video_PlayThen(const char *name, void (*done)(int result));
 byte Music_Play(const char *name, const char *cmd, float volume);
 void Model_Info(const char *name, int arg);
 void GVars_Show(const char *filter);

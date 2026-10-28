@@ -1007,15 +1007,46 @@ PyObject *Scrap_Verbose(PyObject *self, PyObject *args) {
 	return ReturnNone();
 }
 
-/* VideoPlayer(name[, cmd]) : cmd default "play" */
+/* the callback of the video of Scrap.VideoPlayer, until it ends */
+static PyObject *videoPlayerDone;
+
+static void VideoPlayer_Done(int result) {
+	PyObject *f = videoPlayerDone;
+	videoPlayerDone = NULL;
+	PyObject *args = Py_BuildValue("(i)", result);
+	PyObject *r = args ? PyEval_CallObject(f, args) : NULL;
+	if (!r) {
+		PyErr_Print();
+	}
+	Py_XDECREF(r);
+	Py_XDECREF(args);
+	Py_DECREF(f);
+}
+
+/*
+ * VideoPlayer(name[, cmd[, done]]) : cmd default "play". differs from the original on purpose (no blocking waits):
+ * it returns at once, the video plays on and the frame waits for it; done(result) is called when it ends (an
+ * addition: 0 not found, 1 played to the end or not opened, 2 stopped by a key)
+ */
 PyObject *Scrap_VideoPlayer(PyObject *self, PyObject *args) {
 	char *name, *cmd = "play";
+	PyObject *done = NULL;
 
 	(void)self;
-	if (!PyArg_ParseTuple(args, "s|s", &name, &cmd)) {
+	if (!PyArg_ParseTuple(args, "s|sO", &name, &cmd, &done)) {
 		return NULL;
 	}
-	Video_Play(name, cmd, 0.0f);
+	if (done && done != Py_None && !PyCallable_Check(done)) {
+		Con_Warnf("VideoPlayer: done is not callable, ignored\n");
+		done = NULL;
+	}
+	if (!done || done == Py_None || crt_stricmp(cmd, "play")) {
+		Video_Play(name, cmd, 0.0f);
+		return ReturnNone();
+	}
+	Py_INCREF(done);
+	videoPlayerDone = done;
+	Video_PlayThen(name, VideoPlayer_Done);
 	return ReturnNone();
 }
 

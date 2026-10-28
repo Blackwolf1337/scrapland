@@ -95,11 +95,15 @@ the keyboard and mouse ranges, so the window can be moved or closed, but the inp
 original (it handled no message then). A WM_QUIT during a video is kept until the wait is over, a line entered in the
 console window runs after it, and WM_PAINT does not Present over a video.
 
-One place still blocks: `Scrap.VideoPlayer` (`Video_Play` calls `Video_PlayFileWait`, which plays with the
-synchronous Update and DDBLT_WAIT of the original), because the Python script goes on after the video. The game's own
-scripts never call it (no hit in the packs). Plan: return at once (whether the file is found is known before the
-video starts, so the result stays the same), and the rest of the script and of the frame then run before the video
-instead of after it; or a callback argument for the script. Waiting for the user's decision.
+`Scrap.VideoPlayer` does not block any more either. `Video_Play` calls the new `Video_PlayThen(name, done)`
+(ScrapEngMain.c). It starts the video through `Video_PlayFile` and returns at once. The frame waits for the video
+like for the other videos (ENGWAIT_PLAYER in `Engine_VideoResume`). `done`, if given, is called with the result when
+the video ends, or at once when it did not start. The script now goes on right after the call, in the original it
+went on after the video. As an addition, `Scrap.VideoPlayer(name[, cmd[, done]])` takes an optional third argument:
+a Python callable that gets the result (0 not found, 1 played to the end or not opened, 2 stopped by a key or the
+pad). The game's own scripts never call VideoPlayer. `Video_PlayFileWait` and the synchronous Update and DDBLT_WAIT
+paths of the video code are gone, so no blocking wait is left in the C. `tools/test/py/sdcall_nowait.py` checks the
+callback (only in the hooked run, the original takes two arguments).
 
 `tools/test/py/sdcall_nowait.py` checks the paths that end at once: in the test prefix the stream of Video/MSE.vds
 does not open (no XviD decoder, OpenFile fails in both runs). The stream itself (`Video_Step` with a real video) is

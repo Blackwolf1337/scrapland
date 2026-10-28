@@ -34,9 +34,20 @@ check('nwt Video_PlayStart empty', lambda: nwtstart('', 0, 1))
 SDTest.Call(0x134040, 'tviz', 0x8a8708, nwtname)
 SDTest.Poke(0x4a8704, nwtflags)
 
-# Scrap.VideoPlayer through Video_Play (still waits for the end, here it ends at once)
+# Scrap.VideoPlayer through Video_Play (the video plays on from the message loop; here it ends at once)
 check('nwt Video_Play', lambda: SDTest.Call(0x218010, 'bzsf', NWTVIDEO, 'play', 0.0)[0])
 check('nwt Video_Play missing', lambda: SDTest.Call(0x218010, 'bzsf', 'Video/SDNoVideo.avi', 'play', 0.0)[0])
 check('nwt Scrap.VideoPlayer', lambda: Scrap.VideoPlayer(NWTVIDEO))
+# the callback of Scrap.VideoPlayer is an addition of the C (the original takes two arguments): the original run
+# prints what the C must give, a call at once with 0 for a missing file and 1 for one that does not open here
+nwtDone = []
+def nwtplayer(name):
+	del nwtDone[:]
+	Scrap.VideoPlayer(name, 'play', lambda r: nwtDone.append(r))
+	return nwtDone[:]
+if SDTest.Peek(0x1985e0, 'b') == 0xe9:
+	check('nwt Scrap.VideoPlayer done', lambda: (nwtplayer('Video/SDNoVideo.avi'), nwtplayer(NWTVIDEO)))
+else:
+	check('nwt Scrap.VideoPlayer done', lambda: ([0], [1]))
 # a later call after all of these: none of them left a video playing (Video_PlayFile would stop at its CHECK)
 check('nwt Video_PlayFile after', lambda: SDTest.Call(0x281660, 'isz', NWTVIDEO, None)[0])

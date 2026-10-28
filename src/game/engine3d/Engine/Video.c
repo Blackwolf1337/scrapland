@@ -81,7 +81,6 @@ typedef int(__stdcall *ddsReleaseDC_t)(void *obj, void *dc);
 #define XINPUT_GAMEPAD_A_B 0x3000
 #define DDSCL_NORMAL 8
 #define DDBLT_DDFX 0x800
-#define DDBLT_WAIT 0x1000000
 #define DDERR_WASSTILLDRAWING ((int)0x8876021c)
 #define SSUPDATE_ASYNC 1
 #define COMPSTAT_ABORT 4
@@ -228,7 +227,6 @@ static void Video_ReleaseStream(void **sec, void **surf, void **sample, void **d
 static struct {
 	byte busy;			/* a video plays, Video_Step goes on with it */
 	byte stream;			/* the frames of the stream run */
-	byte wait;			/* Video_PlayFileWait: Update and Blt wait as in the original */
 	byte update;			/* an SSUPDATE_ASYNC Update is out */
 	byte frame;			/* a new frame in surf, not yet blitted */
 	byte secDone;			/* the blit into sec is done, the one onto primary not yet */
@@ -387,9 +385,8 @@ static void Video_StreamStop(byte skipped) {
 	video.vid = NULL;
 }
 
-/* one turn of the frame loop of the original: the keys and the pad, the next frame of the stream, the blits. Without
- * the wait of Video_PlayFileWait the Update is SSUPDATE_ASYNC and polled, the Blts are tried again on the next pass
- * while the surface is busy. */
+/* one turn of the frame loop of the original: the keys and the pad, the next frame of the stream, the blits. The
+ * Update is SSUPDATE_ASYNC and polled, the Blts are tried again on the next pass while the surface is busy. */
 static void Video_StreamStep(void) {
 	int hr;
 
@@ -405,9 +402,9 @@ static void Video_StreamStep(void) {
 	}
 	if (!video.frame) {
 		if (!video.update) {
-			hr = COM_CALL(video.sample, sampleUpdate_t, SAMPLE_UPDATE)(video.sample, video.wait ? 0 : SSUPDATE_ASYNC,
+			hr = COM_CALL(video.sample, sampleUpdate_t, SAMPLE_UPDATE)(video.sample, SSUPDATE_ASYNC,
 				NULL, NULL, 0);
-			if (hr == MS_S_PENDING && !video.wait) {
+			if (hr == MS_S_PENDING) {
 				video.update = 1;
 			} else if (hr) {
 				Video_StreamStop(0);
@@ -432,17 +429,16 @@ static void Video_StreamStep(void) {
 	if (!video.primary) {
 		Video_BltToWindow(MOTOR_HWND(g_Motor), &video.dst, video.surf, &video.src);
 	} else {
-		uint32_t wait = video.wait ? DDBLT_WAIT : 0;
 		if (!video.secDone) {
 			hr = COM_CALL(video.sec, ddsBlt_t, DDS_BLT)(video.sec, &video.src, video.surf, &video.src,
-				video.bltFlags | wait, video.fx);
-			if (hr == DDERR_WASSTILLDRAWING && !video.wait) {
+				video.bltFlags, video.fx);
+			if (hr == DDERR_WASSTILLDRAWING) {
 				return;
 			}
 			video.secDone = 1;
 		}
-		hr = COM_CALL(video.primary, ddsBlt_t, DDS_BLT)(video.primary, &video.dst, video.sec, &video.src, wait, NULL);
-		if (hr == DDERR_WASSTILLDRAWING && !video.wait) {
+		hr = COM_CALL(video.primary, ddsBlt_t, DDS_BLT)(video.primary, &video.dst, video.sec, &video.src, 0, NULL);
+		if (hr == DDERR_WASSTILLDRAWING) {
 			return;
 		}
 		video.secDone = 0;
@@ -587,18 +583,4 @@ byte Video_Busy(void) {
 
 int Video_Result(void) {
 	return video.result;
-}
-
-int Video_PlayFileWait(const char *name, const char *dir) {
-	video.wait = 1;
-	int r = Video_PlayFile(name, dir);
-	/* still a blocking wait, as in the original: the caller goes on only after the video (see video.h) */
-	while (r == VIDEO_PENDING) {
-		Video_Step();
-		if (!video.busy) {
-			r = video.result;
-		}
-	}
-	video.wait = 0;
-	return r;
 }

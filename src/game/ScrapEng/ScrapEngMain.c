@@ -90,8 +90,10 @@ enum {
 	ENGWAIT_INIT,
 	ENGWAIT_LEVELEND,
 	ENGWAIT_PLAYSTART,
+	ENGWAIT_PLAYER,
 };
 static int eng_wait;
+static void (*eng_playerDone)(int result);	/* of Video_PlayThen, called with the result after the video */
 static int eng_initStep;		/* the next step of Engine_InitVideos */
 static int eng_videoResult;		/* of the video of the step before */
 
@@ -162,6 +164,14 @@ int Engine_VideoResume(void) {
 	case ENGWAIT_PLAYSTART:
 		StartVideo_End();
 		break;
+	case ENGWAIT_PLAYER: {
+		void (*done)(int) = eng_playerDone;
+		eng_playerDone = NULL;
+		if (done) {
+			done(Video_Result());
+		}
+		break;
+	}
 	}
 	return 1;
 }
@@ -1115,12 +1125,36 @@ int Engine_ToggleOption(int opt) {
 	return RenderMode(opt, 0, 0);
 }
 
+/*
+ * differs from the original on purpose (no blocking waits): the video plays on from the message loop, done (if not
+ * NULL) is called with the result of Video_PlayFile when it ends, at once when the video did not start. The frame
+ * waits until then, as for the other videos; the caller goes on at once (the original returned after the video).
+ */
+byte Video_PlayThen(const char *name, void (*done)(int result)) {
+	if (Video_Busy() || eng_wait != ENGWAIT_NONE) {
+		E3D_LogBlue(g_FileLog, "VideoPlayer: a video plays already: %s", name);
+		if (done) {
+			done(0);
+		}
+		return 0;
+	}
+	int r = Video_PlayFile(name, 0);
+	if (r == VIDEO_PENDING) {
+		eng_playerDone = done;
+		eng_wait = ENGWAIT_PLAYER;
+		return 1;
+	}
+	if (done) {
+		done(r);
+	}
+	return r > 0;
+}
+
 byte Video_Play(const char *name, const char *cmd, float arg) {
 	(void)arg;
 	CHECK(cmd);
 	if (!crt_stricmp(cmd, "play")) {
-		/* Scrap.VideoPlayer: the script goes on after the video, so this one still waits for it as the original */
-		return Video_PlayFileWait(name, 0) > 0;
+		return Video_PlayThen(name, NULL);
 	}
 	E3D_LogBlue(g_FileLog, "VideoPlayer: invalid command: %s", cmd);
 	return 0;
