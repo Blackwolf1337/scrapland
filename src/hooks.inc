@@ -7956,3 +7956,7 @@ SD_HOOK(CListaVert_Optimize, 0x243090, 16)
 SD_HOOK(BspQ3_Render, 0x2c9d90, 16)
 
 /* module agent: Final FX Starts (ShipExplosion, VehicleDamage, GearMissile, EMI, MentalController) (hooks below this line) */
+SD_HOOK(cFXElementsMentalControllerMainFX_Update, 0x1d8960, 6154)
+SD_HOOK(cObjElementFXEMI_Update, 0x1ca580, 10031)
+SD_HOOK(cObjElementFXGearMissile_Update, 0x1bd740, 11409)
+SD_HOOK(cObjElementFXVehicleDamage_Update, 0x1ed9c0, 12368)

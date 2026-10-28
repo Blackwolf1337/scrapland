@@ -164,27 +164,34 @@ typedef struct cFXElementsMentalControllerMainFX {
 	cMapElement base;
 	int dcRoot;			/* 0x002c */
 	vec3_t pos;			/* 0x0030 */
-	byte pad_3c[4];
+	byte nearCam;			/* 0x003c */
+	byte pad_3d[3];
 	int phase;			/* 0x0040 1..5, the act of the story */
 	vec3_t top;			/* 0x0044 pos raised by 350 */
 	cFXElementsMentalController *controllers[FXMENTALCONTROLLERMAINCOUNT];	/* 0x0050 */
 	float levels[FXMENTALCONTROLLERLEVELS];					/* 0x0074 */
-	byte pad_94[0x2ac4 - 0x94];
-	float fluidSpeed[FXMENTALMAINFLUID];	/* 0x2ac4 */
-	byte pad_2e48[0x3550 - 0x2e48];
+	/* the drops of data that run from one controller to the next (or up the tube) */
+	vec3_t fluidPos[FXMENTALMAINFLUID];	/* 0x0094 the start */
+	vec3_t fluidEnd[FXMENTALMAINFLUID];	/* 0x0b20 */
+	vec3_t fluidDir[FXMENTALMAINFLUID];	/* 0x15ac end - start */
+	vec3_t fluidNormal[FXMENTALMAINFLUID];	/* 0x2038 the unit of fluidDir */
+	float fluidPhase[FXMENTALMAINFLUID];	/* 0x2ac4 0..1 along the way, over 1 a new drop */
+	float fluidTime[FXMENTALMAINFLUID];	/* 0x2e48 the seconds of the way */
+	float fluidWidth[FXMENTALMAINFLUID];	/* 0x31cc */
 	int fluidTube[FXMENTALMAINFLUID];	/* 0x3550 */
 	uint32_t fluidColor[FXMENTALMAINFLUID];	/* 0x38d4 */
 	CGameTrail tubeTrails[FXMENTALMAINTRAILS];	/* 0x3c58 */
 	CGameParticles dataFluid;		/* 0x3c94 DF_DataFluid */
 	CGameTrail glowTrails[FXMENTALMAINTRAILS];	/* 0x3d44 */
-	byte pad_3d80[0x3e64 - 0x3d80];
+	byte fluidActive[FXMENTALMAINFLUID];	/* 0x3d80 */
+	byte pad_3e61[3];
 	CGameParticles tubeGlow;		/* 0x3e64 DF_TubeGlow */
-	int glow3f14;				/* 0x3f14 */
-	int glow3f18;				/* 0x3f18 */
-	int glow3f1c;				/* 0x3f1c */
+	float glowTime;				/* 0x3f14 the glow of the tube left */
+	float glowDuration;			/* 0x3f18 */
+	float glowPause;			/* 0x3f1c */
 	float glowPhase[FXMENTALMAINGLOWS];	/* 0x3f20 */
 	float glowSpeed[FXMENTALMAINGLOWS];	/* 0x3f98 */
-	byte pad_4010[0x4178 - 0x4010];
+	vec3_t glowOffset[FXMENTALMAINGLOWS];	/* 0x4010 */
 	CGameTrail topTrails[2];		/* 0x4178 */
 	int glowSide[FXMENTALMAINGLOWS];	/* 0x4180 */
 	uint32_t glowColor[FXMENTALMAINGLOWS];	/* 0x41f8 */
@@ -192,7 +199,14 @@ typedef struct cFXElementsMentalControllerMainFX {
 	int last;				/* 0x4274 */
 } cFXElementsMentalControllerMainFX;
 SD_OFFSET(cFXElementsMentalControllerMainFX, levels, 0x74);
-SD_OFFSET(cFXElementsMentalControllerMainFX, fluidSpeed, 0x2ac4);
+SD_OFFSET(cFXElementsMentalControllerMainFX, fluidEnd, 0xb20);
+SD_OFFSET(cFXElementsMentalControllerMainFX, fluidNormal, 0x2038);
+SD_OFFSET(cFXElementsMentalControllerMainFX, fluidPhase, 0x2ac4);
+SD_OFFSET(cFXElementsMentalControllerMainFX, fluidWidth, 0x31cc);
+SD_OFFSET(cFXElementsMentalControllerMainFX, fluidTube, 0x3550);
+SD_OFFSET(cFXElementsMentalControllerMainFX, fluidActive, 0x3d80);
+SD_OFFSET(cFXElementsMentalControllerMainFX, glowTime, 0x3f14);
+SD_OFFSET(cFXElementsMentalControllerMainFX, glowOffset, 0x4010);
 SD_OFFSET(cFXElementsMentalControllerMainFX, tubeTrails, 0x3c58);
 SD_OFFSET(cFXElementsMentalControllerMainFX, dataFluid, 0x3c94);
 SD_OFFSET(cFXElementsMentalControllerMainFX, glowTrails, 0x3d44);
@@ -237,6 +251,9 @@ byte __fastcall cFXElementsMentalControllerMainFX_Init(cFXElementsMentalControll
 void __thiscall cFXElementsMentalControllerMainFX_SetController(cFXElementsMentalControllerMainFX *self, int index,
 	cFXElementsMentalController *ctrl);
 void __thiscall cFXElementsMentalControllerMainFX_SetPhase(cFXElementsMentalControllerMainFX *self, int phase);
+/* vf02: while a controller is seen or the camera is near the top: the drops of data along the tubes (phase < 5), the
+ * glow up the tube and the glows over the top (phase 2..4); else the model off and everything cleared */
+void __thiscall cFXElementsMentalControllerMainFX_Update(cFXElementsMentalControllerMainFX *self, float dt);
 /* the main controller and the controllers of the dummies of the level, by the act of the story (SaveVar GameAct) */
 void FXElementsPress_Create(void);
 

@@ -134,17 +134,17 @@ typedef struct cObjElementFXVehicleDamage {
 	int life;			/* 0x00c */
 	int lifePct;			/* 0x010 */
 	CGameModel *model;		/* 0x014 the model of the debris */
-	byte b18;			/* 0x018 */
+	byte seen;			/* 0x018 the ship was seen in the last Update, pos is valid */
 	byte pad_19[3];
-	CGameParticles parts3;		/* 0x01c on Dummy03 */
-	CGameParticles parts2;		/* 0x0cc on Dummy02 */
-	int f17c;			/* 0x17c */
-	int f180;			/* 0x180 */
-	CGameParticles parts1;		/* 0x184 on Dummy01 */
-	vec3_t pos;			/* 0x234 of the ship model */
-	byte b240;			/* 0x240 */
+	CGameParticles parts3;		/* 0x01c on Dummy03: the smoke at the vertices */
+	CGameParticles parts2;		/* 0x0cc on Dummy02: debris, sparks and flames */
+	float level;			/* 0x17c follows lifePct / FXSetOnFireLifePercent: 0 burning, 1 out */
+	float emitTime;			/* 0x180 since the last emission at the vertices */
+	CGameParticles parts1;		/* 0x184 on Dummy01: the trail of smoke */
+	vec3_t pos;			/* 0x234 of the ship model at the last puff of the trail */
+	byte first;			/* 0x240 */
 	byte pad_241[3];
-	int f244;			/* 0x244 */
+	float trailTime;		/* 0x244 since the last puff of the trail */
 	int numExhausts;		/* 0x248 */
 	FXVExhaust exhausts[FXV_EXHAUSTS];	/* 0x24c */
 	byte pad_28c[0x2cc - 0x28c];
@@ -319,6 +319,7 @@ void __thiscall cObjElementFXFiredDebris_Update(cObjElementFXFiredDebris *self, 
 void __thiscall cObjElementFXFiredEntity_Update(cObjElementFXFiredEntity *self, cDebris *debris, float dt);
 void __thiscall cObjElementFXVehicleAccelerator_Update(cObjElementFXVehicleAccelerator *self, cDebris *debris,
 	float dt);
+/* while the ship is seen: debris, sparks, smoke and flames at its vertices by the damage level, the trail of smoke */
 void __thiscall cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *self, cDebris *debris, float dt);
 void __thiscall cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cDebris *debris, float dt);
 void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, cDebris *debris, float dt);

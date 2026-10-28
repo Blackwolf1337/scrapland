@@ -44,6 +44,8 @@
 #define FXDTRITUSATTACK_TRAILS 10
 #define FXFUNCTIONARY_TRAILS 14
 #define FXGEARMISSILE_TRAILS 10
+#define FXGEARMISSILE_SLOTS 10
+#define FXGEARMISSILE_POINTS 6
 #define FXMESSENGER_TRAILS 6
 #define FXMESSENGER_POINTS 10		/* per line */
 #define FXMESSENGER_LINES 5
@@ -264,28 +266,31 @@ SD_OFFSET(cObjElementFXFunctionarySpecialAction, trails, 0xc4);
 SD_OFFSET(cObjElementFXFunctionarySpecialAction, pos, 0xfc);
 SD_SIZE(cObjElementFXFunctionarySpecialAction, 0x1ac);
 
+/* the electric ball of Gear: lightning bolts to the world or to entities near it, puffs, sparks and a tail */
 typedef struct cObjElementFXGearMissile {
 	void *vftable;			/* 0x000 */
-	int i4;				/* 0x004 */
+	cEntity *entity;		/* 0x004 the missile (FXChar_SetI4) */
 	int node;			/* 0x008 Dummy01 */
-	CGameParticles particles;	/* 0x00c on Dummy01 */
+	CGameParticles particles;	/* 0x00c on Dummy01: the ball, 0..3 the glows */
 	int nodeSparks;			/* 0x0bc Dummy02 */
-	CGameParticles sparks;		/* 0x0c0 on Dummy02 */
-	float f170;			/* 0x170 */
-	float f174;			/* 0x174 0.5 */
-	float f178;			/* 0x178 */
-	byte pad_17c[0x188 - 0x17c];
-	CGameTrail trail;		/* 0x188 */
-	int f18c;			/* 0x18c */
-	float f190[FXGEARMISSILE_TRAILS];	/* 0x190 -1 */
+	CGameParticles sparks;		/* 0x0c0 on Dummy02: 3 i .. 3 i + 2 the end of bolt i */
+	float emitTime;			/* 0x170 since the last puffs */
+	float fadeLife;			/* 0x174 0.5: the life of the debris from which it fades */
+	float time;			/* 0x178 since the start */
+	vec3_t lastPos;			/* 0x17c the position of the last Update with the missile on */
+	CGameTrail trail;		/* 0x188 the tail */
+	float trailStep;		/* 0x18c since the last point of the tail */
+	float boltTime[FXGEARMISSILE_TRAILS];	/* 0x190 the time left of bolt i, -1 */
 	CGameTrail trails[FXGEARMISSILE_TRAILS];	/* 0x1b8 */
-	byte pad_1e0[0x690 - 0x1e0];
-	float f690[FXGEARMISSILE_TRAILS];	/* 0x690 0.5 */
+	vec3_t pts[FXGEARMISSILE_TRAILS][FXGEARMISSILE_SLOTS];	/* 0x1e0 the FXGEARMISSILE_POINTS points of bolt i */
+	float boltScale[FXGEARMISSILE_TRAILS];	/* 0x690 0.5: the width of the trail and the end glows */
 	byte started;			/* 0x6b8 */
 } cObjElementFXGearMissile;
 SD_OFFSET(cObjElementFXGearMissile, sparks, 0xc0);
+SD_OFFSET(cObjElementFXGearMissile, lastPos, 0x17c);
 SD_OFFSET(cObjElementFXGearMissile, trails, 0x1b8);
-SD_OFFSET(cObjElementFXGearMissile, f690, 0x690);
+SD_OFFSET(cObjElementFXGearMissile, pts, 0x1e0);
+SD_OFFSET(cObjElementFXGearMissile, boltScale, 0x690);
 SD_SIZE(cObjElementFXGearMissile, 0x6bc);
 
 typedef struct cObjElementFXMercenaryDrink {
@@ -504,6 +509,8 @@ void __thiscall cObjElementFXBishopSellLife_Reset(cObjElementFXBishopSellLife *s
 void __thiscall cObjElementFXDTritusAttack_Reset(cObjElementFXDTritusAttack *self, int arg);
 void __thiscall cObjElementFXFunctionarySpecialAction_Reset(cObjElementFXFunctionarySpecialAction *self, int arg);
 void __thiscall cObjElementFXGearMissile_Reset(cObjElementFXGearMissile *self, int arg);
+/* vf01: the bolts, the tail, the glows, puffs and sparks of the ball and its fade at the end of the debris */
+void __thiscall cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, cDebris *debris, float dt);
 void __thiscall cObjElementFXMercenaryDrink_Reset(cObjElementFXMercenaryDrink *self, int arg);
 void __thiscall cObjElementFXMessengerAttack_Reset(cObjElementFXMessengerAttack *self, int arg);
 void __thiscall cObjElementFXMessengerTakeDataPack_Reset(cObjElementFXMessengerTakeDataPack *self, int arg);

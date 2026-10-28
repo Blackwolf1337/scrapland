@@ -8,7 +8,10 @@
 #include "scrap/mathlib.h"
 #include "scrap/missileentity.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/sound.h"
 #include "scrap/timer.h"
+#include "scrap/vehicleentity.h"
+#include "scrap/weapons.h"
 #include "scrap/world.h"
 
 #define g_RandScale GAME_DATA(double, 0x3a3d60)	/* 1/32767 */
@@ -447,22 +450,22 @@ void __thiscall cObjElementFXEMI_Start(cObjElementFXEMI *self, cDebris *debris) 
 		CGameTrail_SetTexture(t, (~i & 1) | 8);
 		CGameTrail_SetPremul(t, 1);
 		CGameTrail_SetUVScale(t, 0.25f, 1.0f);
-		self->c74[i] = 0.5f;
+		self->boltScale[i] = 0.5f;
 		self->trailTime[i] = -1.0f;
-		self->c54[i] = 0.0f;
+		self->stepTime[i] = 0.0f;
 	}
-	self->d18 = 0;
+	self->glowTime = 0.0f;
 }
 
 void __thiscall cObjElementFXEMI_Reset(cObjElementFXEMI *self, cDebris *debris) {
 	(void)debris;
 	self->entity = NULL;
-	self->bc = 0;
-	self->c4 = 0;
+	self->hideTime = 0.0f;
+	self->time = 0.0f;
 	for (int i = 0; i < FXEMI_TRAILS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
 		self->trailTime[i] = -1.0f;
-		self->c54[i] = 0.0f;
+		self->stepTime[i] = 0.0f;
 		/* Nto1Links.h line 0x4e */
 		if (!self->links[i].data) {
 			CheckFailed("Node", __FILE__, __TIMESTAMP__, __LINE__);
@@ -470,11 +473,428 @@ void __thiscall cObjElementFXEMI_Reset(cObjElementFXEMI *self, cDebris *debris) 
 		Nto1Node_Unlink(&self->links[i]);
 	}
 	CGameParticles_KillAll(&self->particles);
-	self->d18 = 0;
+	self->glowTime = 0.0f;
 }
 
 void __thiscall cObjElementFXEMI_SetEntity(cObjElementFXEMI *self, cEntity *e) {
 	self->entity = e;
+}
+
+#define g_FXEMIFollowTime GAME_DATA(float, 0x4492e0)
+#define g_FXEMIRandRadius GAME_DATA(float, 0x449474)
+#define g_FXEMIStepTime GAME_DATA(float, 0x449368)
+#define g_EMIThunder1Sound GAME_DATA(const char *, 0x449404)
+#define g_EMIThunder2Sound GAME_DATA(const char *, 0x4493d4)
+#define g_EMIThunderSoundAttIni GAME_DATA(float, 0x449380)
+#define g_EMIThunderSoundAttEnd GAME_DATA(float, 0x4493ec)
+#define g_EMIThunderSoundVol GAME_DATA(float, 0x44942c)
+#define FXEMI_RAMPS 0x430888		/* 3 color ramps of 9 colors: 0..1 for most, 1..2 for the last glow */
+#define FXEMI_ENTITIES 0x13		/* the entity lists the bolts hit */
+
+static uint32_t *EMI_Ramp(int first) {
+	return (uint32_t *)Game_Ptr(FXEMI_RAMPS) + (first + (crt_rand() & 1)) * 9;
+}
+
+/* one still particle at pos: the rotation random (rnd) or 0, the life and the sizes random, sizeEnd from lo to hi */
+static void EMI_Emit(CGameParticles *p, const vec3_t *pos, byte rnd, double lifeRange, double lifeAdd,
+	double sizeRange, double sizeAdd, float lo, float hi, float sizeLife, byte sprite, int ramps) {
+	p->initPosMin = *pos;
+	p->initPosMax = p->initPosMin;
+	p->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	p->initVelMax = p->initVelMin;
+	p->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	p->initAccMax = p->initAccMin;
+	if (rnd) {
+		float r = Fx_Rand(6.2831854820251465, 0.0);
+		p->rotVar = 0.0f;
+		p->rotIni = r;
+		p->rotEnd = r;
+	} else {
+		p->rotIni = 0.0f;
+		p->rotEnd = 0.0f;
+		p->rotVar = 0.0f;
+	}
+	p->lifeTime = Fx_Rand(lifeRange, lifeAdd);
+	p->sizeIni = Fx_Rand(sizeRange, sizeAdd);
+	p->sizeEnd = Fx_Rand((double)(hi - lo), (double)lo);
+	p->sizeLife = sizeLife;
+	p->spriteIni = sprite;
+	p->spriteEnd = sprite;
+	CGameParticles_SetColorRampOn(p, 1);
+	CGameParticles_SetColorRamp(p, EMI_Ramp(ramps));
+	CGameParticles_Apply(p);
+	CGameParticles_EmitN(p, 1, 0);
+}
+
+/* the points of bolt i on the line from the first to the last, pushed aside by a random length: g_FXEMIRandRadius
+ * for a step (step 1), 50..950 for a new bolt */
+static void EMI_Line(cObjElementFXEMI *self, int i, byte step) {
+	vec3_t *pts = self->pts[i];
+	vec3_t tmp;
+
+	int n = self->numPoints;
+	float inv = 1.0f / (float)(n - 1);
+	const vec3_t *e = &pts[n - 1];
+	float sx = (e->x - pts[0].x) * inv;
+	float sy = (e->y - pts[0].y) * inv;
+	float sz = (e->z - pts[0].z) * inv;
+	for (int k = 1; k < self->numPoints - 1; k++) {
+		float fk = (float)k;
+		pts[k].x = fk * sx + pts[0].x;
+		pts[k].y = fk * sy + pts[0].y;
+		pts[k].z = fk * sz + pts[0].z;
+		float s = step ? Fx_Rand((double)g_FXEMIRandRadius, 0.0) : Fx_Rand(900.0, 50.0);
+		const vec3_t *d = FX_RandomDir(&tmp);
+		pts[k].x = d->x * s + pts[k].x;
+		pts[k].y = d->y * s + pts[k].y;
+		pts[k].z = d->z * s + pts[k].z;
+	}
+}
+
+/* the running bolt i from pos: new points every FXEMIStepTime, the control points follow them, the trail along the
+ * curve, the glows at the end and sparks at a target; the end of the bolt when its time is over */
+static void EMI_Bolt(cObjElementFXEMI *self, int i, const vec3_t *pos, float dt, float radius) {
+	CGameTrail *trail = &self->trails[i];
+	CGameParticles *p = &self->particles;
+	vec3_t coefs[FXEMI_CTRL], tmp, pt, cur, prev;
+
+	float t = self->trailTime[i] - dt;
+	self->trailTime[i] = t;
+	if (!(t > 0.0f)) {
+		goto end;
+	}
+	int alpha = 0;
+	if (0.05f > t) {
+		alpha = (int)((1.0f - (t - dt) / 0.05f) * 255.0f);
+		if (alpha < 0) {
+			alpha = 0;
+		} else if (alpha > 0xff) {
+			alpha = 0xff;
+		}
+	}
+	CGameTrail_SetTransp(trail, (byte)alpha);
+	self->pts[i][0] = *pos;
+	cEntity *tgt = self->links[i].target;
+	if (tgt) {
+		const vec3_t *d = FX_RandomDir(&tmp);
+		float r = FX_Vtbl(tgt)->GetRadius(tgt);
+		float ox = r * d->x * 0.16666667f;
+		float oy = r * d->y * 0.16666667f;
+		float oz = r * d->z * 0.16666667f;
+		const vec3_t *c = FX_Vtbl(tgt)->GetCenter(tgt, &tmp);
+		vec3_t *e = &self->pts[i][self->numPoints - 1];
+		e->x = ox + c->x;
+		e->y = c->y + oy;
+		e->z = c->z + oz;
+		const vec3_t *tp = tgt->vftable->GetPos(tgt, &tmp);
+		float dy = tp->y - pos->y;
+		float dx = tp->x - pos->x;
+		float dz = tp->z - pos->z;
+		if ((float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) > 10000.0f) {
+			self->trailTime[i] = 0.0f;
+		}
+	}
+	float st = dt + self->stepTime[i];
+	self->stepTime[i] = st;
+	if (st >= g_FXEMIStepTime) {
+		self->stepTime[i] = 0.0f;
+		for (int k = 0; k < self->numPoints; k++) {
+			self->pts[i][k + FXEMI_CTRL] = self->pts[i][k];
+		}
+		EMI_Line(self, i, 1);
+	}
+
+	/* the control points: the ends on the points, the others half way from the last points to the new ones */
+	int n = self->numPoints;
+	self->ctrl[i][0] = self->pts[i][0];
+	self->ctrl[i][n - 1] = self->pts[i][n - 1];
+	float kf = Float_MinSS(1.0f, 1.0f / g_FXEMIFollowTime * dt);
+	float q = self->stepTime[i] / g_FXEMIFollowTime;
+	float u = 1.0f - q;
+	CGameTrail_SetUV(trail, u, 0.0f);
+	for (int k = 1; k < self->numPoints - 1; k++) {
+		vec3_t *c = &self->ctrl[i][k];
+		const vec3_t *a = &self->pts[i][k];
+		const vec3_t *o = &self->pts[i][k + FXEMI_CTRL];
+		float cx = c->x, cy = c->y, cz = c->z;
+		c->x = cx + kf * ((a->x - cx) * q);
+		c->y = kf * ((a->y - cy) * q) + cy;
+		c->z = cz + kf * ((a->z - cz) * q);
+		c->x = kf * ((o->x - cx) * u) + c->x;
+		c->y = kf * ((o->y - cy) * u) + c->y;
+		c->z = c->z + kf * ((o->z - cz) * u);
+	}
+
+	/* the trail along the curve, the inner points shaken */
+	int maxT = CGameTrail_GetMaxTrails(trail);
+	int segs = self->numPoints;
+	const vec3_t *c0 = &self->ctrl[i][0];
+	const vec3_t *cn = &self->ctrl[i][segs - 1];
+	float ly = c0->y - cn->y;
+	float lx = c0->x - cn->x;
+	float lz = c0->z - cn->z;
+	int want = (int)((float)__builtin_sqrt((double)(ly * ly + lx * lx + lz * lz)) / self->boltScale[i]);
+	if (want >= segs) {
+		segs = want > maxT ? maxT : want;
+	}
+	CGameTrail_SetSegments(trail, (byte)segs);
+	CGameTrail_Reset(trail);
+	CGameTrail_BezierCoefs(trail, self->numPoints, self->ctrl[i], coefs);
+	int last = segs - 1;
+	if (last > 0) {
+		float den = (float)(segs - 2);
+		for (int k = 0; k < last; k++) {
+			CGameTrail_BezierPoint(trail, self->numPoints, coefs, &pt, (float)k / den);
+			cur = pt;
+			if (k == 0) {
+				prev = pt;
+			}
+			float dx = prev.x - pt.x;
+			float dy = prev.y - pt.y;
+			float dz = prev.z - pt.z;
+			float w;
+			if (k > 0 && k < segs - 2) {
+				double r = (double)(crt_rand() & 0x7fff) * g_RandScale;
+				float range = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) * 0.5f - 1.5f;
+				float jit = (float)(r * (double)range + 1.5);
+				const vec3_t *d = FX_RandomDir(&tmp);
+				cur.x = jit * d->x + pt.x;
+				cur.y = d->y * jit + pt.y;
+				cur.z = d->z * jit + pt.z;
+				w = Fx_Rand(25.0, 145.0);
+			} else {
+				w = Fx_Rand(20.0, 215.0);
+			}
+			float g = Fx_Rand(24.0, 14.0);
+			float rd = Fx_Rand(6.0, 36.0);
+			float b = Fx_Rand(6.0, 36.0);
+			uint32_t color = ((((uint32_t)(int)g << 8 | (uint32_t)(int)rd) << 8 | (uint32_t)(int)b) << 8) | 0xff;
+			CGameTrail_Add(trail, cur, self->boltScale[i] * w, color);
+			prev = cur;
+		}
+	}
+
+	/* the glows at the end */
+	const vec3_t *e = &self->ctrl[i][self->numPoints - 1];
+	CGameParticles_SetParticle(p, i * 2 + 1, e->x, e->y, e->z, 500.0f, (uint32_t)alpha << 24 | 0x8080ff, 2, 0.0f);
+	int a2 = alpha + 0x5c;
+	if (a2 > 0xff) {
+		a2 = 0xff;
+	}
+	e = &self->ctrl[i][self->numPoints - 1];
+	CGameParticles_SetParticle(p, i * 2 + 2, e->x, e->y, e->z, 1800.0f, (uint32_t)a2 << 24 | 0x4040ff, 2, 0.0f);
+	if (tgt && self->stepTime[i] == 0.0f) {
+		EMI_Emit(p, &self->pts[i][self->numPoints - 1], 1, 0.049999982118606567, 0.30000001192092896, 5.0, 25.0,
+			radius * 1.35f, radius * 1.75f, 1.0f, 2, 0);
+	}
+
+end:
+	if (0.0f >= self->trailTime[i]) {
+		Nto1Node *node = &self->links[i];
+		if (node->target) {
+			/* Nto1Links.h line 0x4e */
+			if (!node->data) {
+				CheckFailed("Node", __FILE__, __TIMESTAMP__, __LINE__);
+			}
+			Nto1Node_Unlink(node);
+		}
+		CGameParticles_KillRange(p, i * 2 + 1, i * 2 + 3);
+		CGameTrail_Clear(trail);
+	}
+}
+
+/* a new bolt i from pos: to the world in a random direction, or to an entity of the sphere (not one another bolt
+ * hits, not a dead one); not too near the end of another bolt; a thunder at its end */
+static void EMI_NewBolt(cObjElementFXEMI *self, int i, const vec3_t *pos, float radius) {
+	vec3_t tmp, end, hit;
+	CColisTri tri;
+	cEntity *found;
+	float factor;
+	int kind = 0;
+
+	const vec3_t *d = FX_RandomDir(&tmp);
+	end.x = d->x * radius + pos->x;
+	end.y = d->y * radius + pos->y;
+	end.z = d->z * radius + pos->z;
+	if (Engine_TestLine(pos, &end, &hit, &tri)) {
+		kind = 1;
+		hit.x = hit.x + tri.plane.n.x * 50.0f;
+		hit.y = hit.y + tri.plane.n.y * 50.0f;
+		hit.z = hit.z + tri.plane.n.z * 50.0f;
+	}
+	found = NULL;
+	byte sphere = cWorld_TestSphereEntities(g_pWorld, self->entity, (void *)FXEMI_ENTITIES, pos,
+		radius / g_EMILowRadiusFactor, &found, 1, 0);
+	if (sphere) {
+		int m;
+		for (m = 0; m < FXEMI_TRAILS; m++) {
+			if (m != i && found == self->links[m].target) {
+				break;
+			}
+		}
+		if (m != FXEMI_TRAILS) {
+			found = NULL;
+			sphere = 0;
+		}
+	}
+	if (sphere) {
+		kind = 2;
+		d = FX_RandomDir(&tmp);
+		float r = FX_Vtbl(found)->GetRadius(found);
+		float ox = d->x * r * 0.16666667f;
+		float oy = d->y * r * 0.16666667f;
+		float oz = d->z * r * 0.16666667f;
+		const vec3_t *c = FX_Vtbl(found)->GetCenter(found, &tmp);
+		hit.x = c->x + ox;
+		hit.y = c->y + oy;
+		hit.z = c->z + oz;
+		cVehicleEntity *v = (cVehicleEntity *)found;
+		if (found->vftable->IsType(found, "WithLife") &&
+			(Entity_LifeI(found) <= 0 || (found->vftable->IsType(found, "Car") && 0.0f >= v->emi))) {
+			found = NULL;
+			kind = 0;
+		} else if (found && (Entity_Removed(found) || !found->flag_4c)) {
+			found = NULL;
+		}
+		factor = 0.1f;
+		if (!kind) {
+			return;
+		}
+	} else {
+		if (kind != 1) {
+			return;
+		}
+		factor = 0.6f;
+	}
+	for (int m = 0; m < FXEMI_TRAILS; m++) {
+		if (m != i && self->trailTime[m] > 0.0f) {
+			const vec3_t *c = &self->ctrl[m][self->numPoints - 1];
+			float dy = hit.y - c->y;
+			float dx = hit.x - c->x;
+			float dz = hit.z - c->z;
+			if (factor * radius > (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz))) {
+				return;
+			}
+		}
+	}
+
+	self->trailTime[i] = Fx_Rand(0.40999999642372131, 0.090000003576278687);
+	self->boltScale[i] = Fx_Rand(0.45000004768371582, 0.75);
+	if (found) {
+		cEntity_AddLink(found, &self->links[i]);
+	}
+	self->pts[i][0] = *pos;
+	self->pts[i][self->numPoints - 1] = hit;
+	EMI_Line(self, i, 0);
+	for (int k = 0; k < self->numPoints; k++) {
+		self->pts[i][k + FXEMI_CTRL] = self->pts[i][k];
+		self->ctrl[i][k] = self->pts[i][k];
+	}
+
+	cSoundDesc sd;
+	cSoundDesc_Init(&sd);
+	sd.param1 = g_EMIThunderSoundAttIni;
+	sd.param2 = g_EMIThunderSoundAttEnd;
+	sd.param3 = 0.0f;
+	cSoundDesc_SetPos(&sd, &hit);
+	sd.volume += Snd_Volume(g_EMIThunderSoundVol);
+	int r = crt_rand();
+	CSoundSys *snd = g_pSound;
+	snd->vftable->PlaySound(snd, (r & 1) ? g_EMIThunder1Sound : g_EMIThunder2Sound, &sd, NULL);
+}
+
+/* the glows at the center: a particle by the radius, puffs by the life left */
+static void EMI_Glow(cObjElementFXEMI *self, const vec3_t *pos, float life, float radius, float radius2) {
+	CGameParticles *p = &self->particles;
+	vec3_t dir, tmp, at;
+
+	self->glowTime = 0.0f;
+	float lo = life - 0.5f;
+	float s0 = radius2 * 4.0f;
+	float size = Fx_Rand((double)(radius2 * 4.5f - s0), (double)s0);
+	int a = (int)((Float_MinSS(1.0f, lo + lo) - 1.0f) * 128.0f);
+	CGameParticles_SetParticle(p, 0, pos->x, pos->y, pos->z, size, (0x800000ffu - ((uint32_t)a << 24)) | 0x8080ff, 2,
+		0.0f);
+	dir = *FX_RandomDir(&tmp);
+	p->birthRate = 0;
+	if (life > 0.8f) {
+		at.x = dir.x * radius * 0.15f + pos->x;
+		at.y = dir.y * radius * 0.15f + pos->y;
+		at.z = dir.z * radius * 0.15f + pos->z;
+		EMI_Emit(p, &at, 1, 0.050000011920928955, 0.55000001192092896, 5.0, 25.0, radius * 2.55f, radius * 2.85f,
+			1.0f, 0x33, 0);
+	}
+	float s = Fx_Rand(0.05000000074505806, 0.0);
+	at.x = pos->x + s * (dir.x * radius);
+	at.y = pos->y + s * (dir.y * radius);
+	at.z = pos->z + s * (dir.z * radius);
+	EMI_Emit(p, &at, 0, 0.049999982118606567, 0.40000000596046448, 5.0, 25.0, radius * 0.85f, radius * 1.15f, 0.5f, 2,
+		0);
+	EMI_Emit(p, pos, 1, 0.049999982118606567, 0.40000000596046448, 5.0, 25.0, radius * 1.15f, radius * 1.45f, 1.0f,
+		0x0a, 0);
+	if (life > 0.85f) {
+		const vec3_t *d = FX_RandomDir(&tmp);
+		s = Fx_Rand(0.10000000894069672, 0.05000000074505806);
+		at.x = pos->x + d->x * radius * s;
+		at.y = pos->y + d->y * radius * s;
+		at.z = pos->z + d->z * radius * s;
+		EMI_Emit(p, &at, 1, 0.050000011920928955, 0.34999999403953552, 35.0, 55.0, radius * 3.35f, radius * 3.75f,
+			1.0f, 0x35, 1);
+	}
+}
+
+void __thiscall cObjElementFXEMI_Update(cObjElementFXEMI *self, cDebris *debris, float dt) {
+	CGameModel *model = Debris_Model(debris);
+	vec3_t pos, rot, tmp;
+
+	(void)dt;
+	cEntity *e = self->entity;
+	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+		self->entity = NULL;
+	}
+	if (!self->entity) {
+		return;
+	}
+	float t = cTimer_GetDelta(&g_pWorld->timer);
+	self->hideTime = self->hideTime + t;
+	self->time = self->time + t;
+	self->glowTime = self->glowTime + t;
+	CGameModel_GetPos(model, &pos);
+	CGameModel_GetRot(model, &rot);
+	e = self->entity;
+	if (e && e->flag_4c) {
+		pos = *FX_Vtbl(e)->GetCenter(e, &tmp);
+		CGameModel_SetPos(model, &pos);
+		CGameModel_SetRot(model, &rot);
+	}
+	byte vis = CGameModel_IsVisible(model);
+	if (!vis) {
+		if (self->time > self->hideTime && 0.2f > self->hideTime) {
+			for (int i = 0; i < FXEMI_TRAILS; i++) {
+				if (CGameTrail_IsRender(&self->trails[i])) {
+					CGameTrail_Clear(&self->trails[i]);
+				}
+			}
+			return;
+		}
+		self->hideTime = 0.0f;
+	}
+	cMissileEntity *m = (cMissileEntity *)self->entity;
+	float radius = m->topRadius * g_EMILowRadiusFactor;
+	float life = m->lifeTime;
+	float radius2 = m->radius * g_EMILowRadiusFactor;
+	if (self->time > 0.2f) {
+		for (int i = 0; i < FXEMI_TRAILS; i++) {
+			if (vis && self->trailTime[i] > 0.0f) {
+				EMI_Bolt(self, i, &pos, t, radius);
+			} else if (life > 0.8f && self->glowTime > 0.04f) {
+				EMI_NewBolt(self, i, &pos, radius);
+			}
+		}
+	}
+	if (life > 0.6f && self->glowTime > 0.04f) {
+		EMI_Glow(self, &pos, life, radius, radius2);
+	}
 }
 
 /* ---- cObjElementFXSonicExplosion ---- */
@@ -927,10 +1347,10 @@ void *__thiscall cObjElementFXEMI_ctor(void *self) {
 	crt_eh_vector_ctor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, Game_Ptr(FXCM_NODE_CTOR), Game_Ptr(FXCM_NODE_DTOR));
 	s->on = 0;
 	s->entity = NULL;
-	s->bc = 0;
+	s->hideTime = 0.0f;
 	s->c0 = 0.6f;
-	s->c4 = 0;
-	s->d14 = 6;
+	s->time = 0.0f;
+	s->numPoints = 6;
 	for (int i = 0; i < FXEMI_TRAILS; i++) {
 		s->links[i].data = s;
 	}

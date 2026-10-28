@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/chartype.h"
 #include "scrap/crt.h"
 #include "scrap/doors.h"
 #include "scrap/fxcharactions.h"
@@ -11,6 +12,7 @@
 #include "scrap/fxweapons.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
+#include "scrap/missileentity.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/sound.h"
 #include "scrap/weapons.h"
@@ -281,11 +283,11 @@ void *__thiscall cObjElementFXGearMissile_ctor(void *self) {
 	CGameTrail_ctor(&s->trail);
 	FXA_TrailsCtor(s->trails, FXGEARMISSILE_TRAILS);
 	s->started = 0;
-	s->i4 = 0;
-	s->f170 = 0.0f;
-	s->f174 = 0.5f;
-	s->f178 = 0.0f;
-	s->f18c = 0;
+	s->entity = NULL;
+	s->emitTime = 0.0f;
+	s->fadeLife = 0.5f;
+	s->time = 0.0f;
+	s->trailStep = 0.0f;
 	return s;
 }
 
@@ -800,8 +802,8 @@ void __thiscall cObjElementFXGearMissile_Attach(cObjElementFXGearMissile *self, 
 		CGameTrail_SetTexture(t, 9);
 		CGameTrail_SetULen(t, 4.0f, 1.0f);
 		CGameTrail_SetPremul(t, 1);
-		self->f690[i] = 0.5f;
-		self->f190[i] = -1.0f;
+		self->boltScale[i] = 0.5f;
+		self->boltTime[i] = -1.0f;
 	}
 	CGameTrail_SetMaxTrails(&self->trail, 10);
 	CGameTrail_SetSmooth(&self->trail, 0);
@@ -1013,14 +1015,14 @@ void __thiscall cObjElementFXFunctionarySpecialAction_Reset(cObjElementFXFunctio
 
 void __thiscall cObjElementFXGearMissile_Reset(cObjElementFXGearMissile *self, int arg) {
 	(void)arg;
-	self->i4 = 0;
-	self->f170 = 0.0f;
-	self->f178 = 0.0f;
+	self->entity = NULL;
+	self->emitTime = 0.0f;
+	self->time = 0.0f;
 	for (int i = 0; i < FXGEARMISSILE_TRAILS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
-		self->f190[i] = -1.0f;
+		self->boltTime[i] = -1.0f;
 	}
-	self->f18c = 0;
+	self->trailStep = 0.0f;
 	CGameTrail_Clear(&self->trail);
 	CGameParticles_KillAll(&self->particles);
 }
@@ -1163,6 +1165,543 @@ void __thiscall cObjElementFXGearMissile_Run(void *self, cDebris *d) {
 
 	for (int i = 0; i < 8; i++) {
 		fx->vftable->Update(fx, d, 0.0f);
+	}
+}
+
+/* ---- cObjElementFXGearMissile_Update ---- */
+
+#define g_GearMissileThunder1Sound GAME_DATA(const char *, 0x4468ec)
+#define g_GearMissileThunder2Sound GAME_DATA(const char *, 0x4468d4)
+#define g_GearMissileThunderSoundVol GAME_DATA(float, 0x446a0c)
+#define FXGEAR_RAMP_BALL 0x4306b0
+#define FXGEAR_RAMPS 0x4306d4		/* 3 color ramps of 9 colors */
+#define FXGEAR_RAMP_PUFF 0x4306f8
+#define FXGEAR_RAMP_SPARK 0x430788
+#define FXGEAR_ENTITIES 0x11		/* the entity lists the bolts hit */
+#define FX_2PI 6.2831854820251465
+
+/* the slot 0x80 of the entity vtable: the angles into out */
+static inline vec3_t *GM_EntityRot(cEntity *e, vec3_t *out) {
+	return ((vec3_t * (__thiscall *)(cEntity *, vec3_t *)) WEnt_Vtbl(e)->vf1e_21[2])(e, out);
+}
+
+static uint32_t GM_Color(int a, uint32_t rgb) {
+	if (a > 0xff) {
+		a = 0xff;
+	}
+	return (uint32_t)a << 24 | rgb;
+}
+
+static uint32_t *GM_Ramp3(void) {
+	return (uint32_t *)Game_Ptr(FXGEAR_RAMPS) + crt_rand() % 3 * 9;
+}
+
+/* the particles still at the node: no position, speed or acceleration */
+static void GM_Still(CGameParticles *p) {
+	p->birthRate = 0;
+	p->initPosMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	p->initPosMax = p->initPosMin;
+	p->initVelMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	p->initVelMax = p->initVelMin;
+	p->initAccMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	p->initAccMax = p->initAccMin;
+}
+
+/* a random rotation without variation */
+static void GM_RandRot(CGameParticles *p) {
+	float r = FXA_Rand(FX_2PI, 0.0);
+	p->rotVar = 0.0f;
+	p->rotIni = r;
+	p->rotEnd = r;
+}
+
+static void GM_NoRot(CGameParticles *p) {
+	p->rotIni = 0.0f;
+	p->rotEnd = 0.0f;
+	p->rotVar = 0.0f;
+}
+
+/* a still puff of one of the 3 ramps */
+static void GM_Puff(CGameParticles *p, double lifeRange, double lifeAdd, double iniRange, double iniAdd, byte sprIni,
+	byte sprEnd, double endRange, double endAdd) {
+	GM_Still(p);
+	GM_RandRot(p);
+	p->sizeLife = 1.0f;
+	p->lifeTime = FXA_Rand(lifeRange, lifeAdd);
+	p->sizeIni = FXA_Rand(iniRange, iniAdd);
+	p->spriteIni = sprIni;
+	p->spriteEnd = sprEnd;
+	p->sizeEnd = FXA_Rand(endRange, endAdd);
+	CGameParticles_Apply(p);
+	CGameParticles_SetColorRampOn(p, 1);
+	CGameParticles_SetColorRamp(p, GM_Ramp3());
+	CGameParticles_EmitN(p, 1, 0);
+}
+
+/* the running bolt i from pos: the points shaken by the length, the trail along their curve, the glows at the end;
+ * out when its time is over */
+static void GM_Bolt(cObjElementFXGearMissile *self, int i, const vec3_t *pos, float t) {
+	CGameTrail *trail = &self->trails[i];
+	vec3_t *pts = self->pts[i];
+	vec3_t coefs[FXGEARMISSILE_SLOTS], pt, tmp;
+	const int last = FXGEARMISSILE_POINTS - 1;
+
+	float bt = self->boltTime[i] - t;
+	self->boltTime[i] = bt;
+	if (!(bt > 0.0f)) {
+		CGameParticles_KillRange(&self->sparks, i * 3, i * 3 + 3);
+		CGameTrail_Clear(trail);
+		return;
+	}
+	int alpha = 0;
+	if (0.05f > bt) {
+		alpha = (int)((1.0f - (bt - t) / 0.05f) * 255.0f);
+		if (alpha < 0) {
+			alpha = 0;
+		} else if (alpha > 0xff) {
+			alpha = 0xff;
+		}
+	}
+	CGameTrail_SetTransp(trail, (byte)alpha);
+	pts[0] = *pos;
+	float dy = pos->y - pts[last].y;
+	float dx = pos->x - pts[last].x;
+	float dz = pos->z - pts[last].z;
+	float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
+	for (int k = 1; k < last; k++) {
+		float a = FXA_Rand(1.0, 1.0);
+		const vec3_t *d = FX_RandomDir(&tmp);
+		float s = a * len * t;
+		pts[k].x = s * d->x + pts[k].x;
+		pts[k].y = pts[k].y + d->y * s;
+		pts[k].z = pts[k].z + d->z * s;
+	}
+	int maxT = CGameTrail_GetMaxTrails(trail);
+	CGameTrail_BezierCoefs(trail, FXGEARMISSILE_POINTS, pts, coefs);
+	if (maxT - 1 > 0) {
+		float den = (float)(maxT - 2);
+		for (int k = 0; k < maxT - 1; k++) {
+			CGameTrail_BezierPoint(trail, FXGEARMISSILE_POINTS, coefs, &pt, (float)k / den);
+			float w;
+			if (k > 0 && k < maxT - 2) {
+				float jit = FXA_Rand(1.0, 6.0);
+				const vec3_t *d = FX_RandomDir(&tmp);
+				pt.x = pt.x + jit * d->x;
+				pt.y = pt.y + d->y * jit;
+				pt.z = pt.z + d->z * jit;
+				w = FXA_Rand(40.0, 35.0);
+			} else {
+				w = FXA_Rand(10.0, 115.0);
+			}
+			float g = FXA_Rand(4.0, 22.0);
+			float r = FXA_Rand(9.0, 55.0);
+			float b = FXA_Rand(9.0, 55.0);
+			uint32_t color = ((((uint32_t)(int)g << 8 | (uint32_t)(int)r) << 8 | (uint32_t)(int)b) << 8) | 0xff;
+			CGameTrail_Add(trail, pt, self->boltScale[i] * w, color);
+		}
+	}
+	const vec3_t *e = &pts[last];
+	CGameParticles *sp = &self->sparks;
+	uint32_t c = GM_Color(alpha + 4, 0xc0c0ff);
+	CGameParticles_SetParticle(sp, i * 3, e->x, e->y, e->z, FXA_Rand(10.0, 75.0) * self->boltScale[i], c, 1, 0.0f);
+	c = GM_Color(alpha + 0x18, 0x3030c4);
+	CGameParticles_SetParticle(sp, i * 3 + 1, e->x, e->y, e->z, FXA_Rand(40.0, 230.0) * self->boltScale[i], c, 2,
+		0.0f);
+	c = GM_Color(alpha + 0xa4, 0x1010ff);
+	CGameParticles_SetParticle(sp, i * 3 + 2, e->x, e->y, e->z, FXA_Rand(100.0, 650.0) * self->boltScale[i], c, 5,
+		0.0f);
+}
+
+/* a new bolt i from pos: to the world in a random direction or to an entity of the sphere (not a dead one, not the
+ * one that shot in the first 0.4 seconds); not too near the end of another bolt, a thunder at its end */
+static void GM_NewBolt(cObjElementFXGearMissile *self, int i, const vec3_t *pos, cDebris *debris, float dt) {
+	vec3_t tmp, end, hit, o;
+	CColisTri tri;
+	cEntity *found;
+	int kind = 0;
+
+	float R = g_GearXplodeRadius;
+	const vec3_t *d = FX_RandomDir(&tmp);
+	end.x = d->x * R + pos->x;
+	end.y = d->y * R + pos->y;
+	end.z = d->z * R + pos->z;
+	if (Engine_TestLine(pos, &end, &hit, &tri)) {
+		kind = 1;
+		hit.x = hit.x + tri.plane.n.x * 30.0f;
+		hit.y = hit.y + tri.plane.n.y * 30.0f;
+		hit.z = hit.z + tri.plane.n.z * 30.0f;
+	}
+	found = NULL;
+	if (cWorld_TestSphereEntities(g_pWorld, self->entity, (void *)FXGEAR_ENTITIES, pos, R, &found, 1, 0)) {
+		kind = 2;
+		d = FX_RandomDir(&tmp);
+		float r = FX_Vtbl(found)->GetRadius(found);
+		float ox = r * d->x * 0.25f;
+		float oy = r * d->y * 0.25f;
+		float oz = r * d->z * 0.25f;
+		const vec3_t *c = FX_Vtbl(found)->GetCenter(found, &tmp);
+		hit.x = c->x + ox;
+		hit.y = c->y + oy;
+		hit.z = c->z + oz;
+		if (found->vftable->IsType(found, "WithLife")) {
+			if (Entity_LifeI(found) <= 0) {
+				kind = 0;
+			} else if (0.4f > self->time && self->entity &&
+				!strcmp(((cMissileEntity *)self->entity)->parent, found->name)) {
+				kind = 0;
+			}
+		}
+	}
+	float L = self->fadeLife;
+	float life = Debris_Life(debris);
+	float factor;
+	if (life > L) {
+		factor = kind == 1 ? 1.3f : (kind == 2 ? 0.15f : 0.45f);
+	} else {
+		factor = 0.1f;
+	}
+	if (kind) {
+		for (int m = 0; m < FXGEARMISSILE_TRAILS; m++) {
+			if (i != m && self->boltTime[m] > 0.0f) {
+				const vec3_t *p = &self->pts[m][FXGEARMISSILE_POINTS - 1];
+				float dy = hit.y - p->y;
+				float dx = hit.x - p->x;
+				float dz = hit.z - p->z;
+				if (factor * R > (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz))) {
+					kind = 0;
+					break;
+				}
+			}
+		}
+	}
+	float ex = pos->x - hit.x;
+	float ey = pos->y - hit.y;
+	float ez = pos->z - hit.z;
+	if (!kind) {
+		return;
+	}
+	if (!(L > life - dt) && !((float)__builtin_sqrt((double)(ey * ey + ex * ex + ez * ez)) > R * 0.25f)) {
+		return;
+	}
+
+	self->boltTime[i] = FXA_Rand(0.099999994039535522, 0.14000000059604645);
+	self->boltScale[i] = FXA_Rand(0.11999998986721039, 0.20000000298023224);
+	vec3_t *pts = self->pts[i];
+	float s = FXA_Rand(25.0, 0.0);
+	d = FX_RandomDir(&tmp);
+	pts[0].x = d->x * s + pos->x;
+	pts[0].y = d->y * s + pos->y;
+	pts[0].z = d->z * s + pos->z;
+	pts[FXGEARMISSILE_POINTS - 1] = hit;
+	float sx = (hit.x - pts[0].x) * 0.2f;
+	float sy = (hit.y - pts[0].y) * 0.2f;
+	float sz = (hit.z - pts[0].z) * 0.2f;
+	for (int k = 1; k < FXGEARMISSILE_POINTS - 1; k++) {
+		float fk = (float)k;
+		pts[k].x = pts[0].x + sx * fk;
+		pts[k].y = pts[0].y + sy * fk;
+		pts[k].z = pts[0].z + sz * fk;
+		float j = FXA_Rand(8.0, 6.0);
+		d = FX_RandomDir(&tmp);
+		pts[k].y = d->y * j + pts[k].y;
+		pts[k].z = d->z * j + pts[k].z;
+		pts[k].x = d->x * j + pts[k].x;
+	}
+	/* two kinks in the middle */
+	FXA_RandomDirScaled(&o, FXA_Rand(20.0, 40.0));
+	vec3_t *q = &pts[2 + (crt_rand() & 1)];
+	q->x = o.x + q->x;
+	q->y = o.y + q->y;
+	q->z = o.z + q->z;
+	FXA_RandomDirScaled(&o, FXA_Rand(105.0, 20.0));
+	q = &pts[2 + (crt_rand() & 1)];
+	q->x = o.x + q->x;
+	q->y = o.y + q->y;
+	q->z = o.z + q->z;
+	int r = crt_rand();
+	const char *name = (r & 1) ? g_GearMissileThunder1Sound : g_GearMissileThunder2Sound;
+	int vol = Snd_Volume(g_GearMissileThunderSoundVol);
+	CSoundSys *snd = g_pSound;
+	snd->vftable->PlayAt(snd, name, &hit, vol);
+}
+
+/* the puffs of the ball and the sparks behind it */
+static void GM_Puffs(cObjElementFXGearMissile *self, const vec3_t *pos) {
+	CGameParticles *p = &self->particles;
+	CGameParticles *sp = &self->sparks;
+	vec3_t v;
+
+	GM_Still(p);
+	float r = FXA_Rand(FX_2PI, 0.0);
+	p->rotIni = r;
+	p->rotEnd = r;
+	p->rotVar = FXA_Rand(FX_2PI, 0.0);
+	p->sizeLife = 1.0f;
+	p->lifeTime = FXA_Rand(0.01000000536441803, 0.079999998211860657);
+	p->sizeIni = FXA_Rand(10.0, 60.0);
+	p->spriteIni = 2;
+	p->spriteEnd = 2;
+	p->sizeEnd = FXA_Rand(15.0, 80.0);
+	CGameParticles_Apply(p);
+	CGameParticles_SetColorRampOn(p, 1);
+	CGameParticles_SetColorRamp(p, Game_Ptr(FXGEAR_RAMP_PUFF));
+	CGameParticles_EmitN(p, 1, 0);
+
+	p->birthRate = 0;
+	p->initPosMin = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	p->initPosMax = p->initPosMin;
+	FXA_RandomDirScaled(&p->initVelMin, FXA_Rand(30.0, 120.0));
+	p->initVelMax = p->initVelMin;
+	float g = FXA_Rand(0.69999998807907104, 0.80000001192092896);
+	p->initAccMin.x = -p->initVelMin.x * g;
+	p->initAccMin.y = -p->initVelMin.y * g;
+	p->initAccMin.z = -p->initVelMin.z * g;
+	p->initAccMax = p->initAccMin;
+	GM_RandRot(p);
+	p->lifeTime = FXA_Rand(0.039999991655349731, 0.18000000715255737);
+	p->sizeLife = FXA_Rand(0.099999964237213135, 0.80000001192092896);
+	p->sizeIni = FXA_Rand(10.0, 60.0);
+	p->spriteIni = 0x29;
+	p->spriteEnd = 0x29;
+	p->sizeEnd = FXA_Rand(15.0, 120.0);
+	CGameParticles_Apply(p);
+	CGameParticles_SetColorRampOn(p, 1);
+	CGameParticles_SetColorRamp(p, GM_Ramp3());
+	CGameParticles_EmitDt(p, 1, 0, 0.01f);
+
+	GM_Puff(p, 0.030000001192092896, 0.15000000596046448, 20.0, 135.0, 0x25, 0x29, 25.0, 190.0);
+	GM_Puff(p, 0.02000001072883606, 0.15999999642372131, 30.0, 45.0, 0x2a, 0x2a, 25.0, 150.0);
+
+	CGameParticles_SetSparksOn(sp, 1);
+	for (int n = 0; n < 3; n++) {
+		vec3_t nd = FX_Unit((vec3_t){ self->lastPos.x - pos->x, self->lastPos.y - pos->y, self->lastPos.z - pos->z });
+		float b1 = FXA_Rand(0.52359879016876221, -0.2617993950843811);
+		float b2 = FXA_Rand(0.52359879016876221, -0.2617993950843811);
+		float b3 = FXA_Rand(0.52359879016876221, -0.2617993950843811);
+		vec3_t rot = { b3, b2, b1 };
+		Vec3_Rotate(&v, &nd, &rot);
+		sp->birthRate = 0;
+		float q = FXA_Rand(30.0, 90.0);
+		sp->initPosMin.x = pos->x - nd.x * 100.0f + q * v.x;
+		sp->initPosMin.y = pos->y - nd.y * 100.0f + q * v.y;
+		sp->initPosMin.z = pos->z - nd.z * 100.0f + q * v.z;
+		sp->initPosMax = sp->initPosMin;
+		float vs = FXA_Rand(1000.0, 850.0);
+		sp->initVelMin.x = vs * v.x;
+		sp->initVelMin.y = vs * v.y;
+		sp->initVelMin.z = vs * v.z;
+		sp->initVelMax = sp->initVelMin;
+		float as = FXA_Rand(600.0, 200.0);
+		sp->initAccMin.x = 0.0f - as * nd.x;
+		sp->initAccMin.y = -2000.0f - as * nd.y;
+		sp->initAccMin.z = 0.0f - as * nd.z;
+		sp->initAccMax = sp->initAccMin;
+		sp->lifeTime = FXA_Rand(0.44999998807907104, 0.5);
+		GM_NoRot(sp);
+		float size = FXA_Rand(15.0, 60.0);
+		sp->sizeIni = size;
+		sp->sizeEnd = size;
+		int k = crt_rand();
+		sp->spriteEnd = 0x44;
+		sp->sparkMaxSize = 1.0f;
+		sp->spriteIni = (byte)((k & 1) + 0x41);
+		sp->sparkVelScale = 1.0f;
+		sp->bounce = 1;
+		CGameParticles_Apply(sp);
+		CGameParticles_SetColorRampOn(sp, 1);
+		CGameParticles_SetColorRamp(sp, Game_Ptr(FXGEAR_RAMP_SPARK));
+		CGameParticles_EmitN(sp, 1, 0);
+	}
+	CGameParticles_SetSparksOn(sp, 0);
+	sp->bounce = 0;
+}
+
+/* the fade of the ball at the end of the debris: 4 times three glows of the particles 0..11 around the node */
+static void GM_Fade(cObjElementFXGearMissile *self, float q) {
+	CGameParticles *p = &self->particles;
+	vec3_t o;
+
+	int a1 = 0xff - (int)(q * 512.0f);
+	a1 = a1 < 0 ? 0 : (a1 > 0xff ? 0xff : a1);
+	int a2 = 0xff - (int)(q * 350.0f);
+	a2 = a2 < 0 ? 0 : (a2 > 0xff ? 0xff : a2);
+	int n = 0;
+	for (int it = 0; it < 4; it++) {
+		int c = a1 + 4 > 0xff ? 0xff : a1 + 4;
+		float rr = FXA_Rand(FX_2PI, 0.0);
+		float size = FXA_Rand(15.0, 105.0);
+		FXA_RandomDirScaled(&o, FXA_Rand(10.0, 10.0));
+		int g = crt_rand() % 32;
+		int r = crt_rand() % 32;
+		uint32_t color = (uint32_t)(r + 0x80) << 16 | (uint32_t)c << 24 | (uint32_t)(g + 0x80) << 8 | 0xff;
+		CGameParticles_SetParticle(p, n, o.x, o.y, o.z, size, color, 2, rr);
+		n++;
+
+		c = a2 + 8 > 0xff ? 0xff : a2 + 8;
+		rr = FXA_Rand(FX_2PI, 0.0);
+		size = FXA_Rand(40.0, 290.0);
+		FXA_RandomDirScaled(&o, FXA_Rand(15.0, 20.0));
+		g = crt_rand() % 16;
+		r = crt_rand() % 16;
+		color = (uint32_t)(r + 0x5c) << 16 | (uint32_t)c << 24 | (uint32_t)(g + 0x5c) << 8 | 0xff;
+		CGameParticles_SetParticle(p, n, o.x, o.y, o.z, size, color, 5, rr);
+		n++;
+
+		c = a2 + 8 > 0xff ? 0xff : a2 + 8;
+		rr = FXA_Rand(FX_2PI, 0.0);
+		size = FXA_Rand(40.0, 290.0);
+		FXA_RandomDirScaled(&o, FXA_Rand(15.0, 10.0));
+		g = crt_rand() % 32;
+		r = crt_rand() % 32;
+		color = (uint32_t)(r + 0x40) << 16 | (uint32_t)c << 24 | (uint32_t)(g + 0x40) << 8 | 0xff;
+		CGameParticles_SetParticle(p, n, o.x, o.y, o.z, size, color, 0x29, rr);
+		n++;
+	}
+}
+
+/* the sparks of the ball while it fades */
+static void GM_FadeSparks(cObjElementFXGearMissile *self, cDebris *debris, float dt) {
+	CGameParticles *p = &self->particles;
+	vec3_t d;
+
+	self->emitTime = 0.0f;
+	CGameParticles_SetSparksOn(p, 1);
+	CGameParticles_SetColorRampOn(p, 1);
+	CGameParticles_SetColorRamp(p, Game_Ptr(FXGEAR_RAMP_BALL));
+	for (int it = 0; it < 8; it++) {
+		FX_RandomDir(&d);
+		p->birthRate = 0;
+		float s = FXA_Rand(5.0, 25.0);
+		p->initPosMin.x = d.x * s;
+		p->initPosMin.y = d.y * s;
+		p->initPosMin.z = d.z * s;
+		p->initPosMax = p->initPosMin;
+		float vs = FXA_Rand(600.0, 350.0);
+		p->initVelMin.x = d.x * vs;
+		p->initVelMin.y = d.y * vs;
+		p->initVelMin.z = d.z * vs;
+		p->initVelMax = p->initVelMin;
+		float as = FXA_Rand(0.099999994039535522, 0.30000001192092896);
+		p->initAccMin.x = -p->initVelMin.x * as + 0.0f;
+		p->initAccMin.y = -p->initVelMin.y * as - 980.0f;
+		p->initAccMin.z = -p->initVelMin.z * as + 0.0f;
+		p->initAccMax = p->initAccMin;
+		float lt = FXA_Rand(0.099999994039535522, 0.34999999403953552);
+		p->lifeTime = lt;
+		p->lifeTime = Float_MinSS(Debris_Life(debris) - dt, lt);
+		GM_NoRot(p);
+		float size = FXA_Rand(30.0, 40.0);
+		p->sizeIni = size;
+		p->sizeEnd = size;
+		int k = crt_rand();
+		p->spriteEnd = 0x44;
+		p->sparkMaxSize = 1.0f;
+		p->spriteIni = (byte)((k & 1) + 0x41);
+		p->sparkVelScale = 1.0f;
+		CGameParticles_Apply(p);
+		CGameParticles_EmitDt(p, 1, 0, FXA_Rand(0.029999999329447746, 0.0));
+	}
+	CGameParticles_SetSparksOn(p, 0);
+}
+
+void __thiscall cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, cDebris *debris, float dt) {
+	CGameModel *model = Debris_Model(debris);
+	CGameParticles *p = &self->particles;
+	vec3_t pos, rot, a, b, tmp;
+
+	cEntity *e = self->entity;
+	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+		if (!e->flag_4c) {
+			e->vftable->GetPos(e, &a);
+			GM_EntityRot(self->entity, &b);
+			CGameModel_SetPos(model, &a);
+			CGameModel_SetRot(model, &b);
+			self->trailStep = 0.03f;
+		}
+		self->entity = NULL;
+	}
+	e = self->entity;
+	if (!e || !e->flag_4c || self->node == -1) {
+		if (Debris_Life(debris) > self->fadeLife) {
+			Debris_Life(debris) = self->fadeLife;
+		}
+	}
+	float t = cTimer_GetDelta(&g_pWorld->timer);
+	self->emitTime = self->emitTime + t;
+	self->time = self->time + t;
+	CGameModel_GetPos(model, &pos);
+	CGameModel_GetRot(model, &rot);
+	e = self->entity;
+	if (e && e->flag_4c) {
+		pos = *FX_Vtbl(e)->GetCenter(e, &tmp);
+		CGameModel_SetPos(model, &pos);
+		CGameModel_SetRot(model, &rot);
+		CGameModel_SetSortZ(model, -71.0f, 0.0f);
+	}
+	if (self->time > 0.2f) {
+		for (int i = 0; i < FXGEARMISSILE_TRAILS; i++) {
+			if (self->boltTime[i] > 0.0f) {
+				GM_Bolt(self, i, &pos, t);
+			} else if (Debris_Life(debris) - dt > 0.25f) {
+				GM_NewBolt(self, i, &pos, debris, dt);
+			}
+		}
+	}
+
+	/* the tail */
+	float life = Debris_Life(debris);
+	float L = self->fadeLife;
+	int fade = 0;
+	if (L > life) {
+		fade = (int)((1.0f - (life - t) / L) * 255.0f);
+		if (fade < 0) {
+			fade = 0;
+		} else if (fade > 0xff) {
+			fade = 0xff;
+		}
+	}
+	float ts = t + self->trailStep;
+	self->trailStep = ts;
+	if (ts > 0.025f) {
+		self->trailStep = 0.0f;
+		if (Debris_Life(debris) > L) {
+			CGameTrail_Add(&self->trail, pos, 95.0f, 0x604040ff);
+		} else if (CGameTrail_IsRender(&self->trail)) {
+			CGameTrail_SetLastPos(&self->trail, pos);
+			CGameTrail_Shrink(&self->trail);
+		}
+	} else {
+		const vec3_t *d = FX_RandomDir(&tmp);
+		float s = FXA_Rand(10.0, 0.0);
+		CGameTrail_SetLastPos(&self->trail, (vec3_t){ d->x * s + pos.x, d->y * s + pos.y, d->z * s + pos.z });
+	}
+
+	/* the glows of the ball */
+	uint32_t c = GM_Color(fade + 0xeb, 0x1818c0);
+	CGameParticles_SetParticle(p, 3, 0.0f, 0.0f, 0.0f, FXA_Rand(110.0, 1040.0), c, 5, 0.0f);
+	c = GM_Color(fade + 0xc0, 0x2626dc);
+	CGameParticles_SetParticle(p, 2, 0.0f, 0.0f, 0.0f, FXA_Rand(50.0, 410.0), c, 2, 0.0f);
+	c = GM_Color(fade + 0x5c, 0x3232ff);
+	CGameParticles_SetParticle(p, 1, 0.0f, 0.0f, 0.0f, FXA_Rand(50.0, 270.0), c, 2, 0.0f);
+	c = GM_Color(fade + 0x10, 0xa4a4ff);
+	CGameParticles_SetParticle(p, 0, 0.0f, 0.0f, 0.0f, FXA_Rand(35.0, 175.0), c, 1, 0.0f);
+	if (Debris_Life(debris) > self->fadeLife && self->emitTime > 0.02f) {
+		self->emitTime = 0.0f;
+		GM_Puffs(self, &pos);
+	}
+
+	life = Debris_Life(debris);
+	L = self->fadeLife;
+	if (!(L < life)) {
+		GM_Fade(self, (life - dt) / L);
+	}
+	life = Debris_Life(debris);
+	L = self->fadeLife;
+	if (!(L < life) && life - dt > 0.2f && self->emitTime > 0.015f) {
+		GM_FadeSparks(self, debris, dt);
+	}
+	if (self->entity && self->entity->flag_4c) {
+		self->lastPos = pos;
 	}
 }
 

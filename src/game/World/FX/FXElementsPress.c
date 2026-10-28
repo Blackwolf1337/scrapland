@@ -490,7 +490,7 @@ byte __fastcall cFXElementsMentalControllerMainFX_Init(cFXElementsMentalControll
 		CGameTrail_SetUVScale(&self->tubeTrails[i], 0.25f, 0.5f);
 	}
 	for (uint32_t j = 0; j < FXMENTALMAINFLUID; j++) {
-		self->fluidSpeed[j] = 10.0f;
+		self->fluidPhase[j] = 10.0f;
 		self->fluidTube[j] = j % 15;
 		int g = crt_rand() % 0x30;
 		int b = crt_rand() % 32;
@@ -500,9 +500,9 @@ byte __fastcall cFXElementsMentalControllerMainFX_Init(cFXElementsMentalControll
 	CHECK(node > -1);
 	CGameParticles_Attach(&self->tubeGlow, model, node);
 	CHECK(self->tubeGlow.SistPart);
-	self->glow3f14 = 0;
-	self->glow3f18 = 0;
-	self->glow3f1c = 0;
+	self->glowTime = 0.0f;
+	self->glowDuration = 0.0f;
+	self->glowPause = 0.0f;
 	for (int k = 0; k < FXMENTALMAINGLOWS; k++) {
 		self->glowPhase[k] = (float)((double)(crt_rand() & 0x7fff) * g_RandScale - 1.0);
 		double r = (double)(crt_rand() & 0x7fff);
@@ -555,6 +555,330 @@ void __thiscall cFXElementsMentalControllerMainFX_SetPhase(cFXElementsMentalCont
 			self->levels[i] = 1.0f;
 		}
 		break;
+	}
+}
+
+/* the 8 ways of a drop: from controller, to controller; from -1 is the way up the tube to the controller */
+static const signed char MainFX_FluidWays[8][2] = {
+	{ -1, 8 }, { 8, 7 }, { 7, 6 }, { 6, 5 }, { 5, 4 }, { 4, 3 }, { 0, 1 }, { 1, 2 },
+};
+
+static CGameModel *MainFX_Model(cFXElementsMentalControllerMainFX *self, int i) {
+	return &self->controllers[i]->base.Mod;
+}
+
+/* p = the position of controller i raised by 275 plus off turned by rot */
+static void MainFX_Place(cFXElementsMentalControllerMainFX *self, int i, const vec3_t *off, const vec3_t *rot,
+	vec3_t *p) {
+	vec3_t base, tmp;
+
+	CGameModel_GetPos(MainFX_Model(self, i), &base);
+	float bx = base.x + 0.0f;
+	float by = base.y + 275.0f;
+	float bz = base.z + 0.0f;
+	const vec3_t *r = Vec3_Rotate(&tmp, off, rot);
+	p->x = bx + r->x;
+	p->y = r->y + by;
+	p->z = r->z + bz;
+}
+
+/* a new drop j: its time, width, color and way; active when the level of the way is high enough and one end seen */
+static void MainFX_FluidNew(cFXElementsMentalControllerMainFX *self, int j) {
+	vec3_t v, rot, tmp;
+	uint32_t color;
+
+	self->fluidPhase[j] = 0.0f;
+	self->fluidTime[j] = FxElem_Rand(0.59999996423721313, 0.30000001192092896);
+	self->fluidWidth[j] = FxElem_Rand(25.0, 35.0);
+	int k = crt_rand() % 8;
+	int from = MainFX_FluidWays[k][0];
+	int to = MainFX_FluidWays[k][1];
+	int last = self->last;
+	if ((last >= 0 && (from == last || to == last) && (crt_rand() & 1)) || !(2.92f > self->scale)) {
+		int g = crt_rand() % 64;
+		int r = crt_rand() % 32;
+		int b = crt_rand() % 64;
+		color = (uint32_t)(b + 0x18) | ((uint32_t)(r + 0xdc) << 16 | (uint32_t)(g + 0x18) << 8);
+	} else {
+		int g = crt_rand() % 0x30;
+		int r = crt_rand() % 32;
+		color = (uint32_t)(r + 0x80) << 16 | (uint32_t)(g + 0x80) << 8 | 0xff;
+	}
+	self->fluidColor[j] = color;
+	float chance = FxElem_Rand(1.0, 0.0);
+	self->fluidActive[j] = 0;
+	if (!(self->levels[k] > chance)) {
+		CGameParticles_Kill(&self->dataFluid, j);
+		return;
+	}
+	self->fluidActive[j] = 1;
+
+	vec3_t lo = { 0.0f, from == -1 ? -350.0f : -450.0f, -625.0f };
+	vec3_t hi = { 0.0f, 400.0f - (1.0f - self->levels[k]) * 850.0f, 525.0f };
+	FX_RandomVec(&v, &lo, &hi);
+	v.y = (float)(int)(v.y / 60.0f) * 60.0f;
+	v.z = (float)(int)(v.z / 20.0f) * 20.0f;
+	vec3_t *pos = &self->fluidPos[j];
+	vec3_t *end = &self->fluidEnd[j];
+	if (from == -1) {
+		/* up the tube: from around the top to the controller */
+		CGameModel_GetRot(MainFX_Model(self, to), &rot);
+		vec3_t off = { 0.0f, v.y, -600.0f };
+		MainFX_Place(self, to, &off, &rot, end);
+		float s = FxElem_Rand(90.0, 0.0);
+		const vec3_t *d = FX_RandomDir(&tmp);
+		pos->x = s * d->x + self->top.x + 0.0f;
+		pos->z = self->top.z + d->z * s + 0.0f;
+		pos->y = end->y + (self->top.y + d->y * s) * 0.0f;
+		if (!CGameModel_IsVisible(MainFX_Model(self, to)) &&
+			!FX_IsVisible(self->top.x, self->top.y, self->top.z, 500.0f, 0.0f, NULL, 0)) {
+			self->fluidActive[j] = 0;
+		}
+	} else {
+		/* the side of the controller that faces the next one */
+		vec3_t pa, pb;
+		CGameModel_GetPos(MainFX_Model(self, from), &pa);
+		CGameModel_GetPos(MainFX_Model(self, to), &pb);
+		vec3_t n = FX_Unit((vec3_t){ pb.x - pa.x, pb.y - pa.y, pb.z - pa.z });
+		CGameModel_GetRot(MainFX_Model(self, from), &rot);
+		const vec3_t zAxis = { 0.0f, 0.0f, 1.0f };
+		float ang = (float)Vec3_Angle(Vec3_Rotate(&tmp, &zAxis, &rot), &n);
+		v.x = ang > 0.0f ? -100.0f : (0.0f > ang ? 100.0f : 0.0f);
+		CGameModel_GetRot(MainFX_Model(self, from), &rot);
+		MainFX_Place(self, from, &v, &rot, pos);
+		CGameModel_GetRot(MainFX_Model(self, to), &rot);
+		vec3_t off = { -v.x, v.y, v.z };
+		MainFX_Place(self, to, &off, &rot, end);
+		if (!CGameModel_IsVisible(MainFX_Model(self, from)) && !CGameModel_IsVisible(MainFX_Model(self, to))) {
+			self->fluidActive[j] = 0;
+		}
+	}
+	vec3_t d = { end->x - pos->x, end->y - pos->y, end->z - pos->z };
+	self->fluidDir[j] = d;
+	self->fluidNormal[j] = FX_Unit(d);
+	if (!self->fluidActive[j]) {
+		CGameParticles_Kill(&self->dataFluid, j);
+	}
+}
+
+/* drop j at phase ph: a piece of its tube, the drop itself near the ends and its glow */
+static void MainFX_FluidMove(cFXElementsMentalControllerMainFX *self, int j, float ph) {
+	const vec3_t *p = &self->fluidPos[j];
+	const vec3_t *d = &self->fluidDir[j];
+	const vec3_t *n = &self->fluidNormal[j];
+	CGameParticles *fl = &self->dataFluid;
+	vec3_t a, b;
+	float f;
+
+	float w = self->fluidWidth[j];
+	float nx = n->x * w;
+	float ny = n->y * w;
+	float nz = n->z * w;
+	a.x = d->x * ph + p->x - nx;
+	a.y = d->y * ph + p->y - ny;
+	a.z = p->z + d->z * ph - nz;
+	b.x = nx + a.x;
+	b.y = ny + a.y;
+	b.z = nz + a.z;
+	int alpha = 0x60;
+	if (ph > 0.9f) {
+		alpha = 0x60 - (int)((ph - 0.9f) * -10.0f * 158.0f);
+	}
+	if (alpha > 0xff) {
+		alpha = 0xff;
+	}
+	uint32_t color = (uint32_t)alpha << 24 | (self->fluidColor[j] & 0xffffff);
+	CGameTrail *tube = &self->tubeTrails[self->fluidTube[j]];
+	CGameTrail_Add(tube, a, w, color);
+	CGameTrail_Add(tube, b, w, color);
+
+	ph = self->fluidPhase[j];
+	if (0.4f > ph) {
+		FX_InRange(ph, 0.0f, 0.4f, &f);
+		color = (uint32_t)(int)(f * 255.0f) << 24 | (self->fluidColor[j] & 0xffffff);
+		CGameParticles_SetParticle(fl, j, p->x, p->y, p->z, (1.0f - f) * w * 10.0f, color, 6, 0.0f);
+	} else if (ph > 0.8f) {
+		FX_InRange(ph, 0.8f, 1.0f, &f);
+		color = (uint32_t)(int)(f * 255.0f) << 24 | (self->fluidColor[j] & 0xffffff);
+		const vec3_t *e = &self->fluidEnd[j];
+		CGameParticles_SetParticle(fl, j, e->x, e->y, e->z, f * w * 10.0f, color, 6, 0.0f);
+	} else {
+		CGameParticles_Kill(fl, j);
+	}
+	FX_InRange(self->fluidPhase[j], 0.2f, 1.0f, &f);
+	f = (3.0f - f * 2.0f) * (f * f);
+	CGameTrail *glow = &self->glowTrails[self->fluidTube[j]];
+	color = (uint32_t)(0x60 - (int)(f * -159.0f)) << 24 | (self->fluidColor[j] & 0xffffff);
+	CGameTrail_Add(glow, *p, w, color);
+	color = (uint32_t)(0x60 - (int)(f * -159.0f)) << 24 | (self->fluidColor[j] & 0xffffff);
+	CGameTrail_Add(glow, b, w, color);
+}
+
+/* the glow up the tube (particles 0..39): on for glowTime, then a pause */
+static void MainFX_TubeGlow(cFXElementsMentalControllerMainFX *self, float dt) {
+	CGameParticles *tg = &self->tubeGlow;
+	vec3_t tmp;
+	float s;
+
+	if (self->phase == 4) {
+		self->glowTime = self->glowDuration;
+	}
+	if (!(self->glowTime > 0.0f)) {
+		float p = self->glowPause - dt;
+		self->glowPause = p;
+		if (0.0f >= p) {
+			self->glowDuration = FxElem_Rand(0.54999995231628418, 0.15000000596046448);
+			self->glowTime = self->glowDuration;
+			self->glowPause = FxElem_Rand(0.25, 0.05000000074505806);
+		}
+		self->glowPause = 0.0f;
+		return;
+	}
+	float t = self->glowTime - dt;
+	self->glowTime = t;
+	if (!(t > 0.0f)) {
+		CGameParticles_KillRange(tg, 0, 40);
+		return;
+	}
+	if (self->phase == 4) {
+		s = 0.8f;
+	} else {
+		float lim = self->glowDuration * 0.2f;
+		if (FX_InRange(t, 0.0f, lim, &s)) {
+			s = s * s * (2.0f - s);
+		} else if (FX_InRange(self->glowTime, lim, self->glowDuration, &s)) {
+			s = 1.0f - (3.0f - s * 2.0f) * (s * s);
+		}
+	}
+	uint32_t alpha = (uint32_t)(int)(255.0f - s * 222.0f) << 24;
+	for (int i = 0; i < 40; i++) {
+		float rr = FxElem_Rand(50.0, 0.0);
+		const vec3_t *d = FX_RandomDir(&tmp);
+		float x = self->top.x + 0.0f + d->x * rr;
+		float y = self->top.y + ((float)i * 100.0f - 275.0f) + d->y * rr;
+		float z = self->top.z + 0.0f + d->z * rr;
+		float size = FxElem_Rand(390.0, 390.0) * s;
+		if (self->scale > 1.0f) {
+			size = (self->scale * 0.2f + 1.0f) * size;
+		}
+		uint32_t color;
+		int last = self->last;
+		if (last >= 0 && last <= 2) {
+			int g = crt_rand() % 0x18;
+			int r = crt_rand() % 16;
+			int b = crt_rand() % 32;
+			color = (uint32_t)(b + 0x10) | ((uint32_t)(r + 0xdc) << 16 | (uint32_t)(g + 0x20) << 8) | alpha;
+		} else {
+			int g = crt_rand() % 0x18;
+			int r = crt_rand() % 16;
+			int b = crt_rand() % 32;
+			color = (uint32_t)(b + 0xdc) | alpha | ((uint32_t)(r + 0x18) << 16 | (uint32_t)(g + 0x60) << 8);
+		}
+		CGameParticles_SetParticle(tg, i, x, y, z, size, color, 2, 0.0f);
+	}
+}
+
+/* the glows that run up over the top (particles 50..79 and the two top trails) */
+static void MainFX_TopGlows(cFXElementsMentalControllerMainFX *self, float dt) {
+	vec3_t tmp;
+
+	for (int m = 0; m < 2; m++) {
+		CGameTrail_Reset(&self->topTrails[m]);
+	}
+	for (int k = 0; k < FXMENTALMAINGLOWS; k++) {
+		float p = self->glowSpeed[k] * dt + self->glowPhase[k];
+		self->glowPhase[k] = p;
+		if (p > 1.0f) {
+			self->glowPhase[k] = 0.0f;
+			float rr = FxElem_Rand(85.0, 75.0);
+			const vec3_t *d = FX_RandomDir(&tmp);
+			self->glowOffset[k].x = d->x * rr;
+			self->glowOffset[k].y = d->y * 0.0f * rr;
+			self->glowOffset[k].z = d->z * rr;
+			CGameParticles_Kill(&self->tubeGlow, 50 + k);
+			if (self->last >= 0 && self->last <= 2) {
+				int g = crt_rand() % 32;
+				int b = crt_rand() % 32;
+				self->glowColor[k] = (uint32_t)(b + 0x18) | (uint32_t)(g + 0x18) << 8 | 0xff0000;
+			}
+		} else if (p > 0.0f) {
+			const vec3_t *o = &self->glowOffset[k];
+			float y = self->top.y + o->y + (p * 5300.0f - 800.0f);
+			float x = o->x + self->top.x + 0.0f + 0.0f;
+			float z = self->top.z + o->z + 0.0f + 0.0f;
+			int a = 0;
+			if (0.1f > p) {
+				a = (int)((1.0f - p * 10.0f) * 128.0f);
+			} else if (p > 0.9f) {
+				a = (int)((p - 0.9f) * 10.0f * 128.0f);
+			}
+			a += 0x80;
+			if (a > 0xff) {
+				a = 0xff;
+			}
+			uint32_t color = (self->glowColor[k] & 0xffffff) | (uint32_t)a << 24;
+			CGameTrail *t = &self->topTrails[self->glowSide[k]];
+			CGameTrail_Add(t, (vec3_t){ x, y - 300.0f, z }, 90.0f, color);
+			CGameTrail_Add(t, (vec3_t){ x, y + 300.0f, z }, 90.0f, color);
+			float size = FxElem_Rand(1.0, 1.7999999523162842) * 90.0f;
+			CGameParticles_SetParticle(&self->tubeGlow, 50 + k, x, y + 250.0f, z, size, self->glowColor[k], 5,
+				0.0f);
+		}
+	}
+}
+
+void __thiscall cFXElementsMentalControllerMainFX_Update(cFXElementsMentalControllerMainFX *self, float dt) {
+	CGameModel *model = &self->base.Mod;
+
+	if (!self->controllers[0]) {
+		return;
+	}
+	CHECK(CGameModel_IsLoaded(model));
+	for (int i = 0; i < FXMENTALCONTROLLERMAINCOUNT; i++) {
+		if (CGameModel_IsVisible(MainFX_Model(self, i))) {
+			goto seen;
+		}
+	}
+	{
+		vec3_t cam = g_pWorld->camPos[g_pWorld->curCam];
+		float dx = self->top.x - cam.x;
+		float dz = self->top.z - cam.z;
+		if (!(16000000.0f > dx * dx + 0.0f + dz * dz)) {
+			CGameModel_Disable(model);
+			if (self->nearCam) {
+				cFXElementsMentalControllerMainFX_Clear(self);
+				self->nearCam = 0;
+			}
+			return;
+		}
+	}
+seen:
+	CGameModel_Enable(model);
+	dt = dt * self->scale;
+	self->nearCam = 1;
+	if (self->phase < 5) {
+		for (int i = 0; i < FXMENTALMAINTRAILS; i++) {
+			CGameTrail_Reset(&self->tubeTrails[i]);
+			CGameTrail_Reset(&self->glowTrails[i]);
+		}
+		for (int j = 0; j < FXMENTALMAINFLUID; j++) {
+			float ph = self->fluidPhase[j];
+			if (ph > 1.0f || ph == -1.0f) {
+				MainFX_FluidNew(self, j);
+				continue;
+			}
+			ph = dt / self->fluidTime[j] + ph;
+			self->fluidPhase[j] = ph;
+			if (self->fluidActive[j]) {
+				MainFX_FluidMove(self, j, ph);
+			}
+		}
+	}
+	if (self->phase >= 2 && self->phase < 5) {
+		MainFX_TubeGlow(self, dt);
+	}
+	if (self->phase >= 2 && self->phase < 5) {
+		MainFX_TopGlows(self, dt);
 	}
 }
 

@@ -36,6 +36,8 @@ struct cObjElementFX {
 
 #define FXHOOK_POINTS 10
 #define FXEMI_TRAILS 8
+#define FXEMI_CTRL 10
+#define FXEMI_PTS 20
 #define FXSONIC_RINGS 8
 #define FXDEBRISCLOUD_RANDS 0x48
 
@@ -65,30 +67,35 @@ SD_OFFSET(cObjElementFXHook, particles, 0x9c);
 SD_OFFSET(cObjElementFXHook, withTarget, 0x150);
 SD_SIZE(cObjElementFXHook, 0x15c);
 
-/* the electromagnetic impulse (0xd20 bytes, destructor rva 0x1c9a10) */
+/* the electromagnetic impulse (0xd20 bytes, destructor rva 0x1c9a10): up to 8 lightning bolts from the missile to
+ * the world or to entities near it, each a trail along the Bezier curve of its control points that follow its points,
+ * and glows at the center */
 typedef struct cObjElementFXEMI {
 	cObjElementFX base;
-	cEntity *entity;		/* 0x004 */
+	cEntity *entity;		/* 0x004 the EMI missile */
 	int node;			/* 0x008 Dummy01, -1 for none */
-	CGameParticles particles;	/* 0x00c */
-	int bc;				/* 0x0bc */
+	CGameParticles particles;	/* 0x00c 0 the center, 2 i + 1 and 2 i + 2 the end of bolt i */
+	float hideTime;			/* 0x0bc */
 	float c0;			/* 0x0c0 0.6 */
-	int c4;				/* 0x0c4 */
+	float time;			/* 0x0c4 since the start */
 	byte pad_c8[0xd4 - 0xc8];
-	float trailTime[FXEMI_TRAILS];	/* 0x0d4 -1 for a trail not running */
+	float trailTime[FXEMI_TRAILS];	/* 0x0d4 the time left of bolt i, -1 for a trail not running */
 	CGameTrail trails[FXEMI_TRAILS]; /* 0x0f4 */
-	byte pad_114[0xc54 - 0x114];
-	float c54[FXEMI_TRAILS];	/* 0xc54 */
-	float c74[FXEMI_TRAILS];	/* 0xc74 */
-	Nto1Node links[FXEMI_TRAILS];	/* 0xc94 */
-	int d14;			/* 0xd14 6 */
-	int d18;			/* 0xd18 */
+	vec3_t ctrl[FXEMI_TRAILS][FXEMI_CTRL];	/* 0x114 the control points of the curve */
+	vec3_t pts[FXEMI_TRAILS][FXEMI_PTS];	/* 0x4d4 the points, from FXEMI_CTRL the ones of the last step */
+	float stepTime[FXEMI_TRAILS];	/* 0xc54 since the last new points (FXEMIStepTime) */
+	float boltScale[FXEMI_TRAILS];	/* 0xc74 the width and the segment length of the trail */
+	Nto1Node links[FXEMI_TRAILS];	/* 0xc94 target the entity the bolt hit */
+	int numPoints;			/* 0xd14 6 */
+	float glowTime;			/* 0xd18 since the last glow */
 	byte on;			/* 0xd1c set by the countermeasure that drops it */
 	byte pad_d1d[3];
 } cObjElementFXEMI;
 SD_OFFSET(cObjElementFXEMI, particles, 0xc);
 SD_OFFSET(cObjElementFXEMI, trails, 0xf4);
-SD_OFFSET(cObjElementFXEMI, c54, 0xc54);
+SD_OFFSET(cObjElementFXEMI, ctrl, 0x114);
+SD_OFFSET(cObjElementFXEMI, pts, 0x4d4);
+SD_OFFSET(cObjElementFXEMI, stepTime, 0xc54);
 SD_OFFSET(cObjElementFXEMI, links, 0xc94);
 SD_OFFSET(cObjElementFXEMI, on, 0xd1c);
 SD_SIZE(cObjElementFXEMI, 0xd20);
@@ -203,6 +210,8 @@ byte __thiscall cObjElementFXHook_IsAlive(cObjElementFXHook *self, cDebris *debr
 void __thiscall cObjElementFXHook_Start(cObjElementFXHook *self, cDebris *debris);
 void __thiscall cObjElementFXHook_Reset(cObjElementFXHook *self, cDebris *debris);
 
+/* the bolts (while the missile is seen), new ones from a life of 0.8 on and the glows at the center */
+void __thiscall cObjElementFXEMI_Update(cObjElementFXEMI *self, cDebris *debris, float dt);
 byte __thiscall cObjElementFXEMI_IsAlive(cObjElementFXEMI *self, cDebris *debris, cDebrisSys *sys);
 void __thiscall cObjElementFXEMI_Start(cObjElementFXEMI *self, cDebris *debris);
 void __thiscall cObjElementFXEMI_Reset(cObjElementFXEMI *self, cDebris *debris);
