@@ -23,7 +23,7 @@ typedef struct cActCtrl cActCtrl;
 /* type of a variable as returned by the Var functions */
 enum { ACTVAR_NONE = 0, ACTVAR_STRING = 1, ACTVAR_DOUBLE = 2, ACTVAR_INT = 3 };
 
-#define ACT_EMPTY ((char *)Game_Ptr(0x3a3228))		/* "" of the exe */
+#define ACT_EMPTY GAME_STR(str_Empty, 0x3a3228)		/* "" of the exe */
 
 /* the first slot of the vftables of the classes here: the deleting destructor */
 typedef struct cActVtbl {

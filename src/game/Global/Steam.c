@@ -26,7 +26,7 @@ typedef void (*SteamUnregisterCallback_t)(void *cb);
 #define g_SteamTicket ((char *)Game_Ptr(0x44b748))	/* [0x400] */
 #define g_SteamIdStr ((char *)Game_Ptr(0x44bb48))
 #define g_HexDigits ((const char *)Game_Ptr(0x3bb788))	/* "0123456789abcdef" */
-#define STEAM_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* "" */
+#define STEAM_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" */
 
 #define STEAM_TICKET_SIZE 0x400
 

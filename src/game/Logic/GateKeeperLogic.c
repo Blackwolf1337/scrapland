@@ -85,7 +85,7 @@ void __thiscall cGateKeeperLocalLogic_UpdateView(cGateKeeperLocalLogic *self) {
 void __thiscall cGateKeeperLocalLogic_Vf16(cGateKeeperLocalLogic *self, int arg) {
 	(void)self;
 	(void)arg;
-	Con_Print(0x8f008f, Game_Ptr(0x3becb0), 0);
+	Con_Print(0x8f008f, GAME_STR(str_3becb0, 0x3becb0), 0);
 }
 
 /* vf17 */

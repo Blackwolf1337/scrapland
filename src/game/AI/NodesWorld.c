@@ -20,7 +20,7 @@
 #include "scrap/scrapworld.h"
 #include "scrap/world.h"
 
-#define NW_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* the "" of the exe */
+#define NW_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* the "" of the exe */
 
 
 /* ---- Global/DList.h ---- */

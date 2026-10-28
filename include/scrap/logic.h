@@ -16,7 +16,7 @@
 #include "scrap/filesys.h"
 #include "scrap/pyfunction.h"
 
-#define LOGIC_EMPTY ((char *)Game_Ptr(0x3a3228))	/* "" of the exe */
+#define LOGIC_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" of the exe */
 
 /* ---- AlarmStatus.cpp: g_pWorld->alarm (0x410 bytes at 0x1c68 of cWorld) ---- */
 typedef struct cAlarm {

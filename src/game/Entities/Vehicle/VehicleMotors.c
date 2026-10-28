@@ -7,7 +7,7 @@
 #include "scrap/arrowindicator.h"
 #include "scrap/vehiclemotors.h"
 
-#define VM_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* the "" of the exe */
+#define VM_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* the "" of the exe */
 
 /* "DC_EngineA_01": the slot of motor (A..D) and side (1, 2) */
 static inline void VM_SlotName(char *buf, int motor, int side) {

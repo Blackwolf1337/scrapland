@@ -13,10 +13,10 @@
 #include "scrap/objentity.h"
 #include "scrap/scrapcollision.h"
 
-#define OBJ_CLASSNAME ((const char *)Game_Ptr(0x3acc50))	/* "Obj" */
-#define EXE_EMPTY ((char *)Game_Ptr(0x3a3228))			/* "" of the exe */
-#define OBJ_ONENDMOVE_DESC ((char *)Game_Ptr(0x3b3814))		/* "<ObjMove.OnEnd> function" */
-#define OBJ_ONOBJSLOT_DESC ((char *)Game_Ptr(0x3b384c))		/* "<OnObjSlot> function" */
+#define OBJ_CLASSNAME GAME_STR(str_3acc50, 0x3acc50)	/* "Obj" */
+#define EXE_EMPTY GAME_STR(str_Empty, 0x3a3228)			/* "" of the exe */
+#define OBJ_ONENDMOVE_DESC GAME_STR(str_3b3814, 0x3b3814)		/* "<ObjMove.OnEnd> function" */
+#define OBJ_ONOBJSLOT_DESC GAME_STR(str_3b384c, 0x3b384c)		/* "<OnObjSlot> function" */
 
 #define OBJ_MIN_DT 1e-6f			/* rva 0x3b0830: no update for a smaller step */
 #define OBJ_SLOT_INTERVAL 0.05f

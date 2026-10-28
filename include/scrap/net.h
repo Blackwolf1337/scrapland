@@ -335,7 +335,7 @@ SD_SIZE(NetServerInfo, 0x5c);
 #define g_NetResources ((char **)Game_Ptr(0x463f50))	/* [NET_RESOURCES] Mem_Alloc names */
 #define g_NetResInit GAME_DATA(byte, 0x464350)
 #define g_NetBrowserPort GAME_DATA(int, 0x464354)
-#define NET_OFFLINE ((const char *)Game_Ptr(0x3c6a10))	/* "Offline" */
+#define NET_OFFLINE GAME_STR(str_3c6a10, 0x3c6a10)	/* "Offline" */
 /* the server side client table */
 #define g_NetClients GAME_DATA(cNetClient **, 0x465540)	/* [Transport_GetMaxClients()] */
 #define g_NetNextSend GAME_DATA(uint32_t, 0x465544)

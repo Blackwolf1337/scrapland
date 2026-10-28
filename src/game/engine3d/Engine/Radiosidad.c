@@ -55,7 +55,7 @@ CRadiosidad *__thiscall CRadiosidad_ctor(CRadiosidad *self, const char *dir) {
 		E3D_DebugPrintf("\n%s: %s", name, r ? "no encontrado" : "ok");
 	}
 	/* the global file, a string of the exe's data */
-	Ruta_Copy(name, (const char *)Game_Ptr(0x432a88), MAX_RUTA);
+	Ruta_Copy(name, GAME_STR(str_432a88, 0x432a88), MAX_RUTA);
 	int r = CArchINI_Load(&self->ini, name, NULL, 0);
 	E3D_DebugPrintf("\n%s: %s", name, r ? "no encontrado" : "ok");
 	CTablaHash *t = operator_new(sizeof(CTablaHash));

@@ -285,10 +285,10 @@ void __fastcall cWalkCharEntity_Unlink3e8(cEntity *self) {
 
 /* ---- the rest of WalkCharEntity.cpp ---- */
 
-#define WCE_WALKCHAR ((const char *)Game_Ptr(0x3a38b4))	/* "WalkChar", the class name */
-#define WCE_RELAX ((const char *)Game_Ptr(0x3ad2f4))		/* "Relax" */
-#define WCE_RELAXALARM ((const char *)Game_Ptr(0x3a3248))	/* "RelaxAlarm" */
-#define WCE_EMPTY ((const char *)Game_Ptr(0x3a3228))		/* "" */
+#define WCE_WALKCHAR GAME_STR(str_3a38b4, 0x3a38b4)	/* "WalkChar", the class name */
+#define WCE_RELAX GAME_STR(str_3ad2f4, 0x3ad2f4)		/* "Relax" */
+#define WCE_RELAXALARM GAME_STR(str_3a3248, 0x3a3248)	/* "RelaxAlarm" */
+#define WCE_EMPTY GAME_STR(str_Empty, 0x3a3228)		/* "" */
 
 #define WCE_MIN_DT 9.99999997e-07f		/* rva 0x3b0830 */
 #define WCE_MIN_MOVE2 0.00249999994f		/* rva 0x3b0834: a smaller walk step is undone */

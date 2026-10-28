@@ -78,7 +78,7 @@ void __fastcall cGearLocalLogic_Relax(cGearLocalLogic *self) {
 void __thiscall cGearLocalLogic_Vf16(cGearLocalLogic *self, int arg) {
 	(void)self;
 	(void)arg;
-	Con_Print(0x8f008f, Game_Ptr(0x3befa0), 0);
+	Con_Print(0x8f008f, GAME_STR(str_3befa0, 0x3befa0), 0);
 }
 
 int __thiscall cGearLocalLogic_GetDefaultState(cGearLocalLogic *self) {

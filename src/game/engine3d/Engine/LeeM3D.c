@@ -3328,10 +3328,10 @@ CEscena *Escena_Load(const char *name, int arg, const char *name2) {
 
 void LeeM3D_InitShowNodesTree(void) {
 	/* "ShowNodesTree", "Show nodes tree at model M3D loading time (0/1)" */
-	GVar_InitInt(g_ShowNodesTreeVar, Game_Ptr(0x3e4870), 0, Game_Ptr(0x3e4840), 0);
+	GVar_InitInt(g_ShowNodesTreeVar, GAME_STR(str_3e4870, 0x3e4870), 0, GAME_STR(str_3e4840, 0x3e4840), 0);
 }
 
 void LeeM3D_InitUseWSM(void) {
 	/* "UseWSM", "Use ObjTMAfterWSM (0/1)" */
-	GVar_InitInt(g_UseWSMVar, Game_Ptr(0x3e47dc), 0, Game_Ptr(0x3e47c4), 0);
+	GVar_InitInt(g_UseWSMVar, GAME_STR(str_3e47dc, 0x3e47dc), 0, GAME_STR(str_3e47c4, 0x3e47c4), 0);
 }

@@ -16,7 +16,7 @@
 
 double crt_ceil(double x);	/* rva 0x345010 */
 
-#define NWSUP_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* the "" of the exe */
+#define NWSUP_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* the "" of the exe */
 
 /* ---- Global/DList.h ---- */
 

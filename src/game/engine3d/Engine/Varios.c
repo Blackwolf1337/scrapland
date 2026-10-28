@@ -318,7 +318,7 @@ char *E3D_GetExePath(void) {
 void Varios_InitE3DDir(void) {
 	exe_GetModuleFileNameA(NULL, g_ExePath, 0x103);
 	Ruta_Part(g_E3DDir, g_ExePath, RUTA_DRIVE | RUTA_DIR);
-	Ruta_Normalize(g_E3DDir, Game_Ptr(0x3baec4), -1);	/* "../" */
+	Ruta_Normalize(g_E3DDir, GAME_STR(str_3baec4, 0x3baec4), -1);	/* "../" */
 }
 
 /* the bits 15..22 (rounded) of 1 / sqrt of the 128 mantissa steps of the exponents 0x7f (0..63) and 0x7e */

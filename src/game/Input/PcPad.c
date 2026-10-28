@@ -16,7 +16,7 @@
 #include "scrap/weapons.h"
 #include "scrap/win32.h"
 
-#define PAD_ERROR ((const char *)Game_Ptr(0x3bcc00))	/* "ERROR" */
+#define PAD_ERROR GAME_STR(str_3bcc00, 0x3bcc00)	/* "ERROR" */
 #define g_PadLabelBuf ((char *)Game_Ptr(0x44ca74))	/* 0x20 bytes */
 
 typedef uint32_t(__stdcall *xinputgetstate_t)(uint32_t index, exe_xinput_state *state);
@@ -224,10 +224,13 @@ void __thiscall cPcPad_SetCharDefaults(cPcPad *self) {
 const char *__thiscall cPcPad_GetName(cPcPad *self) {
 	switch (self->index) {
 	case 0:
+		return GAME_STR(str_3bcbc8, 0x3bcbc8);	/* "Pad1" .. "Pad4", 8 bytes apart */
 	case 1:
+		return GAME_STR(str_3bcbd0, 0x3bcbd0);
 	case 2:
+		return GAME_STR(str_3bcbd8, 0x3bcbd8);
 	case 3:
-		return (const char *)Game_Ptr(0x3bcbc8 + 8 * self->index);	/* "Pad1" .. "Pad4" */
+		return GAME_STR(str_3bcbe0, 0x3bcbe0);
 	default:
 		CHECK(0);
 		return PAD_ERROR;

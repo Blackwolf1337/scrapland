@@ -16,8 +16,6 @@
 #define CSTRING_CTOR 0x133980
 #define CSTRING_DTOR 0x133990
 
-#define EXE_STR(rva) ((char *)Game_Ptr(rva))
-
 /* the vtable slot of the parent called after a new use or view function */
 static inline void Arrow_FuncsChanged(cEntity *parent) {
 	(*(void(__thiscall **)(cEntity *))((const byte *)parent->vftable + 0xc0))(parent);
@@ -99,12 +97,12 @@ void __fastcall cArrowIndicator_dtor(cArrowIndicator *self) {
 
 byte __thiscall cArrowIndicator_AddOpt(cArrowIndicator *self, const char *s) {
 	if (!strchr(s, ':')) {
-		Con_Verbosef(EXE_STR(0x3b30c0), s, ':');
+		Con_Verbosef(GAME_STR(str_3b30c0, 0x3b30c0), s, ':');
 		return 0;
 	}
 	int n = self->nOpt;
 	if (n >= ARROW_MAX_OPTS) {
-		Con_Verbosef(EXE_STR(0x3b3118), s, ARROW_MAX_OPTS);
+		Con_Verbosef(GAME_STR(str_3b3118, 0x3b3118), s, ARROW_MAX_OPTS);
 		return 0;
 	}
 	self->nOpt = n + 1;
@@ -722,19 +720,19 @@ byte __thiscall cArrowIndicator_VarS(cArrowIndicator *self, const char *name, ch
 		}
 		switch (self->coneStatus) {
 		case 0:
-			*s = EXE_STR(0x3b2880);
+			*s = GAME_STR(str_3b2880, 0x3b2880);
 			break;
 		case 1:
-			*s = EXE_STR(0x3b326c);
+			*s = GAME_STR(str_3b326c, 0x3b326c);
 			break;
 		case 2:
-			*s = EXE_STR(0x3b3274);
+			*s = GAME_STR(str_3b3274, 0x3b3274);
 			break;
 		case 3:
-			*s = EXE_STR(0x3b327c);
+			*s = GAME_STR(str_3b327c, 0x3b327c);
 			break;
 		default:
-			*s = EXE_STR(0x3b3284);
+			*s = GAME_STR(str_3b3284, 0x3b3284);
 			break;
 		}
 		return 1;
@@ -758,22 +756,22 @@ byte __thiscall cArrowIndicator_VarS(cArrowIndicator *self, const char *name, ch
 		}
 		switch (self->tgType) {
 		case 0:
-			*s = EXE_STR(0x3b32e0);
+			*s = GAME_STR(str_3b32e0, 0x3b32e0);
 			break;
 		case 1:
-			*s = EXE_STR(0x3b32e4);
+			*s = GAME_STR(str_3b32e4, 0x3b32e4);
 			break;
 		case 2:
-			*s = EXE_STR(0x3b32d8);
+			*s = GAME_STR(str_3b32d8, 0x3b32d8);
 			break;
 		case 3:
-			*s = EXE_STR(0x3b32ec);
+			*s = GAME_STR(str_3b32ec, 0x3b32ec);
 			break;
 		case 4:
-			*s = EXE_STR(0x3b32d0);
+			*s = GAME_STR(str_3b32d0, 0x3b32d0);
 			break;
 		default:
-			*s = EXE_STR(0x3b3284);
+			*s = GAME_STR(str_3b3284, 0x3b3284);
 			break;
 		}
 		return 1;

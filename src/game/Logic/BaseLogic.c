@@ -326,7 +326,7 @@ cLocalLogic *Logic_GetLocalLogic(cEntity *e) {
 
 const char *__thiscall cBaseLocalLogic_GetName(cBaseLocalLogic *self) {
 	(void)self;
-	return Game_Ptr(0x3bd4a0);
+	return GAME_STR(str_3bd4a0, 0x3bd4a0);
 }
 
 const char *__thiscall cLocalLogic_GetName(cLocalLogic *self) {

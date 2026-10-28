@@ -36,7 +36,11 @@
 #include "scrap/varios.h"
 
 #define SI_GVAR(rva) ((cGVar *)Game_Ptr(rva))
-#define SI_STR(rva) ((const char *)Game_Ptr(rva))
+#ifdef SD_STANDALONE
+#include "StringsAt.h"
+#endif
+
+#define SI_STR(rva) GAME_STR_AT(rva)
 #define SI_FLOAT(rva) GAME_DATA(float, rva)
 
 /* ---- engine variables (cGVar): name, flags, description and the value ---- */

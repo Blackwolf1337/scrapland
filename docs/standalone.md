@@ -637,6 +637,63 @@ so does the hook DLL difftest. The game logs (log.html) of ScrapC.exe are the sa
 but for the lines after the end of the script (the game is stopped at a varying point). The probe runs of a reduced
 ScrapC.exe log no access to the data the map leaves out.
 
+### Stage 3b4: the strings (done)
+
+`tools/standalone/strings.py -w` writes the strings of the original as C: `src/game/Global/Strings3a.c` ..
+`Strings44.c` (one file per 64 KB of rvas), one SD_AT object per string, `const char` in .rdata, `char` in .data.
+Without `-w` it prints the counts and checks that every `GAME_STR(name, rva)` names the object at its rva.
+
+A string is a run of text bytes with its NUL, padded with zeros to the next multiple of 4, that starts at a multiple
+of 4 in the game's rows of the map of the kinds string, int table, float, double or zero (the map cuts strings where
+the C or an inlined strcmp or strcpy of the original reads them, and calls some of the pieces ints or floats). The
+original or the C points to its start or into its first 4 bytes (MSVC inlines strcmp with a compare of the first 2
+bytes and reads the rest from there). It is no string when the original reads it there with a float or double
+instruction (SSE or x87), when the C reads it only as another type (GAME_DATA or a pointer cast of a type that is not
+char), or when it is a single character in .data (the ints of a table). The 10 strings nothing points to (texts of
+CHECKs and messages whose code is gone) count when they lie in string rows only and are plain text. The one literal with
+NULs in it (the filter "RTF File", "*.rtf" ... of the file dialog of `ConsoleWin_SaveOutput`) stays one object. Zero
+words after a string that nothing reads become part of its array (227 arrays have a size: in .rdata the padding before
+the next string, in .data the rest of a char buffer such as the 128 bytes of `g_M3dIni`). The zero word at 0x3a3228
+that the C reads as a string is the empty string `str_Empty`.
+
+The names: `str_GVar_<name>`, `str_GVarDesc_<name>` and `str_GVarValue_<name>` for the name, the help text and the
+default value (or the script function) of the engine variables of `StaticInit.inc`, `str_NativeFunc_<name>` for the
+script functions of the C, `str_PyMethod_<module>_<name>` and `str_PyDoc_<module>_<name>` for the method tables of the
+Python modules (`SD_PY_MODULE` and `cPyEntity_methods`), else `str_<rva>`. A literal the compiler shared keeps the
+first name (in that order and the order of `StaticInit.inc`). The bytes stay exact: the build has
+`-fexec-charset=CP1252` with UTF-8 sources, so the letters 0xa1..0xff of the Spanish texts are UTF-8 (the same code
+points in Windows-1252), every other byte that is not ASCII text an octal escape of 3 digits (the 0xa0 of the
+DOS code page in "v\240lido", the soft hyphen 0xad). datagen.py compares every byte with the original.
+
+`GAME_STR(name, rva)` (`include/scrap/game.h`) is the string as `char *`: in ScrapC.exe the C object `name` (declared
+in the macro, as `GAME_VFTABLE` does), in the hook DLL `Game_Ptr(rva)`. The 175 uses of the C (the `((const char
+*)Game_Ptr(rva))` macros, the `EXE_STR` and `AA_STATUS` macros, the bare `Game_Ptr` of a string and the tables of rvas
+of `Fmod_ErrorString` and `cMissileEntity_VarS`, which are local tables of pointers now) are `GAME_STR`. The generated
+lines of `StaticInit.inc` know only the rvas: `SI_STR(rva)` of `StaticInit.c` is `GAME_STR_AT(rva)`, which pastes
+`SD_STR_<rva>`, and `src/game/Global/StringsAt.h` (written by strings.py, included by StaticInit.c in ScrapC.exe only)
+defines it for each string rva of `StaticInit.inc` as the `GAME_STR` of its object. One `Game_Ptr` of a string is
+left: the `INIT_CALL_ARGS` line of `Init_cVirtualKeyboard_VirtualKeyboard` (initpat.py writes the address arguments
+of its calls as `Game_Ptr`). The data that points to strings (pointer tables, method tables, the descriptors of the
+engine variables) stays bytes of the original, datagen.py checks those pointers at the original targets.
+
+Left out: the strings of the libraries (their rows are kinds `library *`) and the strings inside other structures,
+for stage 3b5. In the built-in data that is a single one, the name of the RTTI type descriptor of galaxy::api::IError
+at 0x44226c (24 bytes, `Gog_CatchError`). The string rows of the map left besides it, 278 bytes in .rdata and 199 in
+.data, are floats and ints that look like text (strings.py prints these counts). The map itself is not written again:
+datamap.txt still has these rows as kind string, and datagen.py leaves out what the C objects cover.
+
+The result: 10131 strings in .rdata (239380 bytes) and 291 in .data (24728 bytes), 3895 of them named after their use,
+4970 with a user in the map. room.bin went from 407070 to 142962 bytes, by the bytes of the strings. The log of
+datagen.py:
+
+    datagen.py:   .rdata    116118 bytes of the original (65742 non-zero), 259712 in 10429 C objects
+    datagen.py:   .data      20988 bytes of the original (12599 non-zero), 24728 in 291 C objects
+
+(before: .rdata 355498 bytes of the original, 20332 in the 298 vtables; .data 45716, no C object).
+
+On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios, and so does the hook DLL
+difftest.
+
 ## Stage 4: English names
 
 The Spanish names of the original stay until the C is complete, then everything is translated.

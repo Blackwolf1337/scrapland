@@ -19,7 +19,7 @@
 #include "scrap/win32.h"
 #include "scrap/world.h"
 
-#define APP_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* "" of the exe */
+#define APP_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" of the exe */
 #define APP_RANDSCALE GAME_DATA(double, 0x3a3d60)	/* 1 / 32767 */
 
 /* the engine callbacks of the exe (Engine_SetCallback) */

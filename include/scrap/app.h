@@ -68,8 +68,8 @@ typedef CWinApp CApp;
 #define g_WinHeight GAME_DATA(int, 0x431ab4)
 #define g_WideWinWidth GAME_DATA(int, 0x431ab8)
 #define g_WideWinHeight GAME_DATA(int, 0x431abc)
-#define g_ScrapTitle ((const char *)Game_Ptr(0x431a98))	/* "Scrapland" */
-#define g_ScrapClass ((const char *)Game_Ptr(0x431aa4))	/* "ScrapClass" */
+#define g_ScrapTitle GAME_STR(str_431a98, 0x431a98)	/* "Scrapland" */
+#define g_ScrapClass GAME_STR(str_431aa4, 0x431aa4)	/* "ScrapClass" */
 
 /* the console window (RichEdit output, edit line, four buttons, 64 lines of history) */
 #define CONWIN_HISTORY 64
@@ -93,8 +93,8 @@ typedef void (*conexec_t)(const char *cmd);
 #define g_ConOpen GAME_DATA(int, 0x4a801c)
 #define g_ConRichLib GAME_DATA(void *, 0x4a8020)
 #define g_ConDlgPrompt GAME_DATA(const char *, 0x431ac0)
-#define g_ConTitle ((const char *)Game_Ptr(0x431ac4))		/* "Console" */
-#define g_ConClass ((const char *)Game_Ptr(0x431acc))		/* "ScrapConsoleClass" */
+#define g_ConTitle GAME_STR(str_431ac4, 0x431ac4)		/* "Console" */
+#define g_ConClass GAME_STR(str_431acc, 0x431acc)		/* "ScrapConsoleClass" */
 #define g_ConInputH GAME_DATA(int, 0x431ae0)		/* 20, or 200 for the big input */
 
 /* App.c */

@@ -34,7 +34,7 @@
 
 #define CSCORER_VFTABLE GAME_VFTABLE(cScorer_vftable, 0x3c3bb4)
 #define CSCORERITEM_VFTABLE GAME_VFTABLE(cScorerItem_vftable, 0x3c3ba0)
-#define EXE_EMPTY ((char *)Game_Ptr(0x3a3228))		/* "" of the exe */
+#define EXE_EMPTY GAME_STR(str_Empty, 0x3a3228)		/* "" of the exe */
 #define SCORER_NO_ACCEPT -10.0f			/* cScorer.acceptTime off */
 
 /* ---- construction ---- */

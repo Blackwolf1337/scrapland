@@ -80,7 +80,7 @@ int RenderMallaD3D_Flush(void) {
 			RenderMallaEntry *e = g_ListaMalla[i];
 			if (g_MeshCache == 10) {
 				if (last == -1) {
-					E3D_LogVerbose(g_FileLog, Game_Ptr(0x3bae88), e->malla->nodo->escena->name);
+					E3D_LogVerbose(g_FileLog, GAME_STR(str_3bae88, 0x3bae88), e->malla->nodo->escena->name);
 				}
 				CMallaD3D *m = e->malla;
 				E3D_LogDebug(g_FileLog, " %s  [%d (%d)] skin:%d [%s]", m->nodo->name, e->list, last, m->pSkin != NULL,

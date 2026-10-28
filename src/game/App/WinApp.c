@@ -72,7 +72,7 @@
 #define ID_BTN_SIZE 0x67		/* "!" */
 #define ID_BTN_ENTER 0x68		/* ">" */
 
-#define APP_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* "" of the exe */
+#define APP_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" of the exe */
 #define APP_WNDPROC Game_Ptr(0x20d840)
 #define CONWIN_DLGPROC Game_Ptr(0x20df40)
 #define CONWIN_EDITPROC Game_Ptr(0x20dfc0)
@@ -989,7 +989,7 @@ int ConsoleWin_SaveOutput(void) {
 	memcpy(name, "*.rtf", 6);
 	ofn[0] = 0x58;
 	ofn[1] = (uint32_t)(uintptr_t)g_ConHwnd;
-	ofn[3] = (uint32_t)(uintptr_t)Game_Ptr(0x3d2114);	/* "RTF File" and its pattern */
+	ofn[3] = (uint32_t)(uintptr_t)GAME_STR(str_3d2114, 0x3d2114);	/* "RTF File" and its pattern */
 	ofn[7] = (uint32_t)(uintptr_t)name;
 	ofn[8] = 0x100;
 	ofn[12] = (uint32_t)(uintptr_t) "Save output as RTF File";

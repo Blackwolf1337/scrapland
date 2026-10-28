@@ -13,7 +13,7 @@
 
 #define GUID_SYSKEYBOARD ((const void *)Game_Ptr(0x3d0ffc))
 #define C_DFDIKEYBOARD ((const void *)Game_Ptr(0x3cfbec))
-#define KB_NAME ((const char *)Game_Ptr(0x3bc588))	/* "Kb" */
+#define KB_NAME GAME_STR(str_3bc588, 0x3bc588)	/* "Kb" */
 /* DIDEVICEOBJECTINSTANCEA of the last label, its tszName at 0x20 */
 #define g_KeyObjInfo ((byte *)Game_Ptr(0x44c738))
 #define g_KeyNameBuf ((char *)Game_Ptr(0x44c874))	/* 0x28 bytes */

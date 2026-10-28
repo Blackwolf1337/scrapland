@@ -23,7 +23,7 @@
 #define AICC_NEAR_NATIVE ((nativefunc_t)Game_Ptr(0x06fbf0))	/* AICC_NearChar (its C version behind the hook) */
 #define AICC_MAX_NEAR 20
 
-#define AICC_EXE_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* "" */
+#define AICC_EXE_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" */
 
 /* the unit vector the view of e looks along: (0, 0, -1) turned by its view angles */
 static inline vec3_t *AICC_ViewDir(vec3_t *out, cEntity *e) {

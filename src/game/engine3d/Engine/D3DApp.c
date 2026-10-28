@@ -135,7 +135,7 @@ byte *__fastcall CD3DApp_ctor(byte *self) {
 	self[0x2a524] = 0;			/* the device name */
 	self[0x2a57e] = 0;
 	MOTOR_DEVID(self) = 0;
-	*(const char **)(self + 0x2a5ac) = Game_Ptr(0x3dd240);	/* m_strWindowTitle "Engine3D [DX8]" */
+	*(const char **)(self + 0x2a5ac) = GAME_STR(str_3dd240, 0x3dd240);	/* m_strWindowTitle "Engine3D [DX8]" */
 	MOTOR_U32(self, 0x2a5bc) = 400;		/* m_dwCreationWidth */
 	MOTOR_U32(self, 0x2a5c0) = 300;
 	MOTOR_USEDEPTH(self) = 0;
@@ -234,7 +234,7 @@ static int D3DApp_DevReset(byte *self) {
 	int r = D3D_METHOD(dev, d3dReset_t, 0x38)(dev, MOTOR_PP(self));
 
 	if (r < 0) {
-		E3D_LogBlue(g_FileLog, Game_Ptr(0x3dd33c), r);	/* "ERROR: 'pd3dDevice->Reset()' failed: %08X" */
+		E3D_LogBlue(g_FileLog, GAME_STR(str_3dd33c, 0x3dd33c), r);	/* "ERROR: 'pd3dDevice->Reset()' failed: %08X" */
 	}
 	RenderGamma_Begin();
 	return r;
@@ -252,7 +252,7 @@ int __thiscall CD3DApp_Reset(byte *self) {
 	MOTOR_CALL(self, MOTOR_VT_INVALIDATE);
 	r = D3DApp_DevReset(self);
 	if (r < 0) {
-		E3D_LogBlue(g_FileLog, Game_Ptr(0x3dd30c), r);	/* "ERROR: ResetDevice(): %08X" */
+		E3D_LogBlue(g_FileLog, GAME_STR(str_3dd30c, 0x3dd30c), r);	/* "ERROR: ResetDevice(): %08X" */
 	}
 	CD3DApp_UpdateBackBufferDesc(self);
 	Splash_Reset();
@@ -291,7 +291,7 @@ int __thiscall CD3DApp_Cleanup(byte *self) {
 		MOTOR_CALL(self, 0x1c);
 		MOTOR_CALL(self, MOTOR_VT_INVALIDATE);
 		if (COM_RELEASE(MOTOR_DEV(self))) {
-			E3D_LogBlue(g_FileLog, Game_Ptr(0x3dd3dc));	/* "A D3D object has a non-zero reference count." */
+			E3D_LogBlue(g_FileLog, GAME_STR(str_3dd3dc, 0x3dd3dc));	/* "A D3D object has a non-zero reference count." */
 		}
 		COM_RELEASE(MOTOR_D3D(self));
 		MOTOR_DEV(self) = NULL;
@@ -603,7 +603,7 @@ int __thiscall CD3DApp_DisplayErrorMsg(byte *self, int hr, int type) {
 	/* the texts of the exe */
 	switch ((uint32_t)hr) {
 	case D3DAPPERR_NODIRECT3D:
-		s = Game_Ptr(0x3dd490);
+		s = GAME_STR(str_3dd490, 0x3dd490);
 		break;
 	case 0x8007000e:		/* E_OUTOFMEMORY */
 		s = Game_Ptr(0x3dd84c);
@@ -612,28 +612,28 @@ int __thiscall CD3DApp_DisplayErrorMsg(byte *self, int hr, int type) {
 		s = Game_Ptr(0x3dd860);
 		break;
 	case D3DAPPERR_NOCOMPATIBLEDEVICES:
-		s = Game_Ptr(0x3dd508);
+		s = GAME_STR(str_3dd508, 0x3dd508);
 		break;
 	case D3DAPPERR_NOWINDOWABLEDEVICES:
-		s = Game_Ptr(0x3dd538);
+		s = GAME_STR(str_3dd538, 0x3dd538);
 		break;
 	case D3DAPPERR_NOHARDWAREDEVICE:
 		s = Game_Ptr(0x3dd5e4);
 		break;
 	case D3DAPPERR_HALNOTCOMPATIBLE:
-		s = Game_Ptr(0x3dd620);
+		s = GAME_STR(str_3dd620, 0x3dd620);
 		break;
 	case D3DAPPERR_NOWINDOWEDHAL:
 		s = Game_Ptr(0x3dd688);
 		break;
 	case D3DAPPERR_NODESKTOPHAL:
-		s = Game_Ptr(0x3dd6d0);
+		s = GAME_STR(str_3dd6d0, 0x3dd6d0);
 		break;
 	case D3DAPPERR_NOHALTHISMODE:
-		s = Game_Ptr(0x3dd740);
+		s = GAME_STR(str_3dd740, 0x3dd740);
 		break;
 	case 0x8200000a:		/* D3DAPPERR_NONZEROREFCOUNT */
-		s = Game_Ptr(0x3dd7f0);
+		s = GAME_STR(str_3dd7f0, 0x3dd7f0);
 		break;
 	case 0x8200000b:		/* D3DAPPERR_MEDIANOTFOUND */
 		s = Game_Ptr(0x3dd7cc);
@@ -662,7 +662,7 @@ int __thiscall CD3DApp_DisplayErrorMsg(byte *self, int hr, int type) {
  * device (with MOTOR_FULLSCREEN) or the first windowed one; the reasons a windowed REF had to be taken shown */
 int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 	static const uint32_t types[2] = { D3DDEVTYPE_HAL, D3DDEVTYPE_REF };
-	const char *names[2] = { Game_Ptr(0x3dd264), Game_Ptr(0x3dd268) };	/* "HAL", "REF" */
+	const char *names[2] = { GAME_STR(str_3dd264, 0x3dd264), GAME_STR(str_3dd268, 0x3dd268) };	/* "HAL", "REF" */
 	D3DDisplayMode modes[100];
 	uint32_t fmts[20], behavior[20], depth[20];
 	int fmtOk[20];
@@ -1464,7 +1464,7 @@ intptr_t __stdcall D3DApp_SelectDeviceProc(void *dlg, uint32_t msg, uintptr_t w,
 			continue;
 		}
 		if (!t) {
-			Str_Copy(ms, Game_Ptr(0x3b32ec), sizeof(ms));	/* "none" */
+			Str_Copy(ms, GAME_STR(str_3b32ec, 0x3b32ec), sizeof(ms));	/* "none" */
 		} else {
 			exe_wsprintfA(ms, "%d samples", t);
 		}

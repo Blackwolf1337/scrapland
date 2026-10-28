@@ -1652,7 +1652,7 @@ int Render_SetMaterial(void *m, int pass) {
 		g_MatFrame = g_FrameCount;
 		g_MatCtx = g_LightmapMat;
 		if (g_MaterialLog) {
-			const char *ctx = g_LightmapMat ? *(const char **)((byte *)g_LightmapMat + 4) : Game_Ptr(0x3a3228);
+			const char *ctx = g_LightmapMat ? *(const char **)((byte *)g_LightmapMat + 4) : GAME_STR(str_Empty, 0x3a3228);
 			E3D_LogWhite(g_FileLog, "MatLog: %d %d %d [%s] [%s]", g_FrameCount, g_MatChanges,
 				CMaterial_GetId((CMaterial *)mat, NULL), mat->Nombre, ctx);
 		}

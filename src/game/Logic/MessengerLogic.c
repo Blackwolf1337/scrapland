@@ -21,7 +21,7 @@
 #define g_MessengerPrepareDistance GAME_DATA(float, 0x44d51c)	/* MessengerPrepareDistance */
 #define g_MessengerObjetiveDistance GAME_DATA(float, 0x44d4a4)	/* MessengerObjetiveDistance */
 #define MSG_THINK_STEP 0.13f				/* rva 0x3b60e0, the interval of the think */
-#define MSG_EMPTY ((const char *)Game_Ptr(0x3a3228))	/* "" */
+#define MSG_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" */
 
 #define MSG_VT(self) ((self)->base.vftable)
 

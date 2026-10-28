@@ -9,13 +9,13 @@
 #include "scrap/scoreritems.h"
 
 /* the strings Var returns (those of the exe) */
-#define STR_LEFT 0x3a3954
-#define STR_RIGHT 0x3a395c
-#define STR_CENTER 0x3c1bf4
-#define STR_NONE 0x3b2d30
-#define STR_OSCILE 0x3c1c04
-#define STR_SHADOW 0x3c1c0c
-#define STR_OUTLINE 0x3c1c14
+#define STR_LEFT GAME_STR(str_3a3954, 0x3a3954)
+#define STR_RIGHT GAME_STR(str_3a395c, 0x3a395c)
+#define STR_CENTER GAME_STR(str_3c1bf4, 0x3c1bf4)
+#define STR_NONE GAME_STR(str_3b2d30, 0x3b2d30)
+#define STR_OSCILE GAME_STR(str_3c1c04, 0x3c1c04)
+#define STR_SHADOW GAME_STR(str_3c1c0c, 0x3c1c0c)
+#define STR_OUTLINE GAME_STR(str_3c1c14, 0x3c1c14)
 
 static const char *const s_NetStates[] = {"Connecting...", NULL, "Waiting server response", "Server timeout",
 	"Disconnected from server"};
@@ -216,13 +216,13 @@ int __thiscall cAbstractTextScorer_Var(cAbstractTextScorer *self, const char *na
 					return 1;
 				}
 			} else if (self->align == TEXTSCORER_LEFT) {
-				*s = Game_Ptr(STR_LEFT);
+				*s = STR_LEFT;
 				return 1;
 			} else if (self->align == TEXTSCORER_RIGHT) {
-				*s = Game_Ptr(STR_RIGHT);
+				*s = STR_RIGHT;
 				return 1;
 			} else if (self->align == TEXTSCORER_CENTER) {
-				*s = Game_Ptr(STR_CENTER);
+				*s = STR_CENTER;
 				return 1;
 			}
 			return 0;
@@ -246,16 +246,16 @@ int __thiscall cAbstractTextScorer_Var(cAbstractTextScorer *self, const char *na
 					return 1;
 				}
 			} else if (self->effect == TEXTSCORER_SHADOW) {
-				*s = Game_Ptr(STR_SHADOW);
+				*s = STR_SHADOW;
 				return 1;
 			} else if (self->effect == 0) {
-				*s = Game_Ptr(STR_NONE);
+				*s = STR_NONE;
 				return 1;
 			} else if (self->effect == TEXTSCORER_OSCILE) {
-				*s = Game_Ptr(STR_OSCILE);
+				*s = STR_OSCILE;
 				return 1;
 			} else if (self->effect == TEXTSCORER_OUTLINE) {
-				*s = Game_Ptr(STR_OUTLINE);
+				*s = STR_OUTLINE;
 				return 1;
 			}
 			return 0;

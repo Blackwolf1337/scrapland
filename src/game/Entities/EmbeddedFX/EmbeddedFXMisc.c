@@ -21,7 +21,7 @@
 /* the switch of the DataPack lasers (a Gvar) */
 #define g_DataPackOn GAME_DATA(int, 0x44d48c)
 /* "" of the original, the glow node of a coin name that matches none */
-#define EFXM_EMPTY ((const char *)Game_Ptr(0x3a3228))
+#define EFXM_EMPTY GAME_STR(str_Empty, 0x3a3228)
 
 /* rand() & 0x7fff as 0..1 (double) */
 static inline double EFXM_Rnd(void) {

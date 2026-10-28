@@ -10,7 +10,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/sound.h"
 
-#define ITEM_CLASSNAME ((const char *)Game_Ptr(0x3af3f8))	/* "item" */
+#define ITEM_CLASSNAME GAME_STR(str_3af3f8, 0x3af3f8)	/* "item" */
 
 /* the "Obj" vtable slots used here */
 typedef struct cItemEntityVtbl {

@@ -20,9 +20,9 @@
 #include "scrap/varios.h"
 
 #define CLOD_DTOR 0x252d80
-#define LUZ_OMNI_NAME 0x3d598c
-#define LUZ_FOCO_NAME 0x3d5994
-#define LUZ_DIREC_NAME 0x3d599c
+#define LUZ_OMNI_NAME GAME_STR(str_3d598c, 0x3d598c)
+#define LUZ_FOCO_NAME GAME_STR(str_3d5994, 0x3d5994)
+#define LUZ_DIREC_NAME GAME_STR(str_3d599c, 0x3d599c)
 #define MORPH_SPEED_UNIT 0.01f
 #define MORPH_SPEED_MAX 0.08f
 #define STENCIL_DIST 4000.0f
@@ -849,11 +849,11 @@ float __thiscall CModelo_GetSlotFrame(CModelo *self, uint32_t slot) {
 const char *__fastcall CLuz_TipoNombre(const CLuz *l) {
 	switch (l->tipo) {
 	case LUZ_OMNI:
-		return Game_Ptr(LUZ_OMNI_NAME);
+		return LUZ_OMNI_NAME;
 	case LUZ_FOCO:
-		return Game_Ptr(LUZ_FOCO_NAME);
+		return LUZ_FOCO_NAME;
 	case LUZ_DIREC:
-		return Game_Ptr(LUZ_DIREC_NAME);
+		return LUZ_DIREC_NAME;
 	}
 	/* luz.h */
 	CHECK(0);

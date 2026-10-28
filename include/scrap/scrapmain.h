@@ -125,7 +125,7 @@ void __thiscall CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, flo
 #define g_DVFName ((char *)Game_Ptr(0x4b2840))		/* 0x100 */
 #define g_VideoStatus GAME_DATA(int, 0x4b2b34)
 #define g_LoadingScreen GAME_DATA(int, 0x431b08)	/* the last random loading screen */
-#define g_M3dIni ((char *)Game_Ptr(0x431bf0))		/* "m3d.ini" */
+#define g_M3dIni GAME_STR(str_431bf0, 0x431bf0)		/* "m3d.ini" */
 /* the video to play at the start and after a level ("" when played, unless bit 0 of its flags) */
 #define g_StartVideo ((cString *)Game_Ptr(0x4a8708))
 #define g_StartVideoFlags GAME_DATA(uint32_t, 0x4a8704)

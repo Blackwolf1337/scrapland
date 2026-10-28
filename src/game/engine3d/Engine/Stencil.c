@@ -240,10 +240,10 @@ void SombrasStencil_Set(byte on) {
 	byte ok;
 
 	if (!Render_StencilBits()) {
-		Con_Warnf("%s", (const char *)Game_Ptr(0x3dc684));	/* "No stencil bits\n" */
+		Con_Warnf("%s", GAME_STR(str_3dc684, 0x3dc684));	/* "No stencil bits\n" */
 		ok = 0;
 	} else if (Render_StencilBits() < 4) {
-		Con_Warnf("%s", (const char *)Game_Ptr(0x3dc698));	/* "Not enought stencil bits\n" */
+		Con_Warnf("%s", GAME_STR(str_3dc698, 0x3dc698));	/* "Not enought stencil bits\n" */
 		ok = 0;
 	} else {
 		ok = 1;
@@ -340,9 +340,9 @@ void Stencil_Init(void) {
 	byte ok, on;
 
 	if (!Render_StencilBits()) {
-		warn = Game_Ptr(0x3dc684);	/* "No stencil bits\n" */
+		warn = GAME_STR(str_3dc684, 0x3dc684);	/* "No stencil bits\n" */
 	} else if (Render_StencilBits() < 4) {
-		warn = Game_Ptr(0x3dc698);	/* "Not enought stencil bits\n" */
+		warn = GAME_STR(str_3dc698, 0x3dc698);	/* "Not enought stencil bits\n" */
 	}
 	if (warn) {
 		Con_Warnf("%s", warn);

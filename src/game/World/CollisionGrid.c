@@ -557,7 +557,7 @@ int __thiscall cEntityList_Var(void *list, const char *name, int set, char **s, 
 						return 1;
 					}
 				}
-				*s = Game_Ptr(0x3a3228);	/* "" */
+				*s = GAME_STR(str_Empty, 0x3a3228);	/* "" */
 				return 1;
 			}
 			if (!crt_stricmp(name, "First")) {
@@ -566,7 +566,7 @@ int __thiscall cEntityList_Var(void *list, const char *name, int set, char **s, 
 					*s = ((cEntity *)n->data)->name;
 					return 1;
 				}
-				*s = Game_Ptr(0x3a3228);
+				*s = GAME_STR(str_Empty, 0x3a3228);
 				return 1;
 			}
 		}

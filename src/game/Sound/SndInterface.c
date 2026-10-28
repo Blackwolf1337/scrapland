@@ -335,7 +335,7 @@ byte __thiscall cSndInterface_StrVar(cSndInterface *self, const char *name, cons
 		return 1;
 	}
 	cSndItem *it = PtrArray_Get(self, idx);
-	*v = it ? cSound_GetName(&it->sound) : (const char *)Game_Ptr(0x3a3228);
+	*v = it ? cSound_GetName(&it->sound) : GAME_STR(str_Empty, 0x3a3228);
 	return 1;
 }
 

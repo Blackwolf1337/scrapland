@@ -37,6 +37,22 @@ static inline void *Game_Ptr(uint32_t rva) {
 #define GAME_VFTABLE(name, rva) Game_Ptr(rva)
 #endif
 
+/* a string of the exe (char *): in ScrapC.exe the C object of src/game/Global/Strings*.c (at the same rva,
+ * tools/standalone/strings.py checks that name and rva agree), in the hook DLL the exe's own. GAME_STR_AT(rva) is
+ * the same for the generated tables that know only the rva (src/game/Global/StaticInit.inc): ScrapC.exe takes the
+ * object from src/game/Global/StringsAt.h */
+#ifdef SD_STANDALONE
+#define GAME_STR(name, rva) \
+	({ \
+		extern char name[]; \
+		(char *)name; \
+	})
+#define GAME_STR_AT(rva) SD_STR_##rva
+#else
+#define GAME_STR(name, rva) ((char *)Game_Ptr(rva))
+#define GAME_STR_AT(rva) ((char *)Game_Ptr(rva))
+#endif
+
 int Game_Init(void);
 
 /* weapon and ammo descriptors of the world tables (defined in include/scrap/world.h) */

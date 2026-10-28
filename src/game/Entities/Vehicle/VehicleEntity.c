@@ -22,8 +22,8 @@
 #include "scrap/weaps2.h"
 #include "scrap/world.h"
 
-#define VEH_CLASSNAME ((const char *)Game_Ptr(0x3a77b8))	/* "Car" */
-#define VEH_EMPTY ((const char *)Game_Ptr(0x3a3228))		/* "" */
+#define VEH_CLASSNAME GAME_STR(str_3a77b8, 0x3a77b8)	/* "Car" */
+#define VEH_EMPTY GAME_STR(str_Empty, 0x3a3228)		/* "" */
 #define CGAMEMODEL_CTOR 0x105e60	/* CGameModel_ctor(self, NULL) */
 #define CGAMEMODEL_DTOR 0x20ec10
 #define VEH_RAND_SCALE 3.051850947599719e-05	/* 1 / 32767 (the double at rva 0x3a3d60) */

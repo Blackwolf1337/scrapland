@@ -71,7 +71,7 @@ void __thiscall SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible,
 
 	(void)name;
 	if (!(self->flags & SECTORVIS_VALID)) {
-		Debug_Text3D(g_FntComic14, 0.0f, 0.0f, pos, 0x808080, Game_Ptr(0x3dd0ec));	/* "[-]" */
+		Debug_Text3D(g_FntComic14, 0.0f, 0.0f, pos, 0x808080, GAME_STR(str_3dd0ec, 0x3dd0ec));	/* "[-]" */
 		return;
 	}
 	uint32_t color;
@@ -89,8 +89,8 @@ void __thiscall SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible,
 	}
 	color = visible ? on : off;
 draw:
-	Debug_Text3D(g_FntComic14, 0.0f, 0.0f, pos, color, Game_Ptr(0x3dd0f0), self->sector,	/* "%d%s" */
-		(self->flags & SECTORVIS_CACHED) ? Game_Ptr(0x3a3228) : Game_Ptr(0x3ca94c));	/* "", "*" */
+	Debug_Text3D(g_FntComic14, 0.0f, 0.0f, pos, color, GAME_STR(str_3dd0f0, 0x3dd0f0), self->sector,	/* "%d%s" */
+		(self->flags & SECTORVIS_CACHED) ? GAME_STR(str_Empty, 0x3a3228) : GAME_STR(str_3ca94c, 0x3ca94c));	/* "", "*" */
 }
 
 /* the cached sector is seen (none counts as seen) */
@@ -157,7 +157,7 @@ byte Sector_FindPos(const vec3_t *pos, int *sector, const char *name) {
 
 const char *Sector_GetName(int sector) {
 	if (sector == -1) {
-		return Game_Ptr(0x3dd0a4);	/* "_unasigned_" */
+		return GAME_STR(str_3dd0a4, 0x3dd0a4);	/* "_unasigned_" */
 	}
 	return Sector_Get((uint32_t)sector)->nodo->name;
 }
@@ -530,12 +530,12 @@ void Portales_DebugDraw(void) {
 	}
 	dev = g_pd3dDevice;
 	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, vp);
-	Texto_Printf(300, 0x14, Game_Ptr(0x3dcf1c), g_NumZonasPintar);	/* "zonas: %d" */
+	Texto_Printf(300, 0x14, GAME_STR(str_3dcf1c, 0x3dcf1c), g_NumZonasPintar);	/* "zonas: %d" */
 	for (int i = 0; i < g_NumZonasPintar; i++) {
 		const ZonaPintar *zp = &g_ZonasPintar[i];
 		const box_t *r = &zp->rect;
 		if (g_ShowPortals > 2) {
-			Texto_Printf(300, 0x22 + i * 0xe, Game_Ptr(0x3dcf28), i, zp->zona, zp->veces, (double)r->min.x,
+			Texto_Printf(300, 0x22 + i * 0xe, GAME_STR(str_3dcf28, 0x3dcf28), i, zp->zona, zp->veces, (double)r->min.x,
 				(double)r->min.y, (double)r->min.z, (double)r->max.x, (double)r->max.y, (double)r->max.z);
 		}
 		int x0 = Portal_Pixel(r->min.x + 1.0f, vp[2], vp[0]) + 1;
@@ -562,7 +562,7 @@ static CZona *Zona_OfNodo(const CNodo3D *nodo) {
 }
 
 static const char *Nodo_NameOrNull(const CNodo3D *n) {
-	return n ? n->name : Game_Ptr(0x3d5da4);	/* "(null)" */
+	return n ? n->name : GAME_STR(str_3d5da4, 0x3d5da4);	/* "(null)" */
 }
 
 void Sectores_Crear(CEscena *esc) {
@@ -718,8 +718,8 @@ byte Portales_SetView(const ZonaPintar *zp) {
 		return 0;
 	}
 	if (g_ShowPortals > 2) {
-		Texto_PrintfRel(0, 0xe, Game_Ptr(0x3dd008), zp->zona, lx, ly);	/* "zona: %d  LX: %d  LY: %d" */
-		Texto_PrintfRel(0, 0xe, Game_Ptr(0x3dd024), x0, y0, x1, y1);	/* "  %d %d  %d %d" */
+		Texto_PrintfRel(0, 0xe, GAME_STR(str_3dd008, 0x3dd008), zp->zona, lx, ly);	/* "zona: %d  LX: %d  LY: %d" */
+		Texto_PrintfRel(0, 0xe, GAME_STR(str_3dd024, 0x3dd024), x0, y0, x1, y1);	/* "  %d %d  %d %d" */
 	}
 	uint32_t vp[6] = { (uint32_t)x0, (uint32_t)y0, (uint32_t)lx, (uint32_t)ly, 0, 0x3f800000 };
 	dev = g_pd3dDevice;

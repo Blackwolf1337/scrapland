@@ -290,8 +290,6 @@ void __thiscall cAutoAim_SetRange(cAutoAim *self, float range) {
 	self->distLimit = range;
 }
 
-#define AA_STATUS(i) ((char *)Game_Ptr(i))	/* the names of the exe */
-
 byte __thiscall cAutoAim_VarS(cAutoAim *self, const char *name, char **s, int set) {
 	if (!(byte)set && !strcmp(name, "Target")) {
 		*s = (char *)Nto1Node_TargetName(&self->target);
@@ -303,19 +301,19 @@ byte __thiscall cAutoAim_VarS(cAutoAim *self, const char *name, char **s, int se
 	if (!(byte)set) {
 		switch (self->status) {
 		case AUTOAIM_OFF:
-			*s = AA_STATUS(0x3b3970);
+			*s = GAME_STR(str_3b3970, 0x3b3970);
 			break;
 		case AUTOAIM_SEARCH:
-			*s = AA_STATUS(0x3b3984);
+			*s = GAME_STR(str_3b3984, 0x3b3984);
 			break;
 		case AUTOAIM_SELECT:
-			*s = AA_STATUS(0x3b3968);
+			*s = GAME_STR(str_3b3968, 0x3b3968);
 			break;
 		case AUTOAIM_KEEP:
-			*s = AA_STATUS(0x3b3974);
+			*s = GAME_STR(str_3b3974, 0x3b3974);
 			break;
 		case AUTOAIM_MAGNET:
-			*s = AA_STATUS(0x3b397c);
+			*s = GAME_STR(str_3b397c, 0x3b397c);
 			break;
 		default:
 			break;

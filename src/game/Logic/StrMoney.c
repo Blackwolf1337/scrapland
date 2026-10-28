@@ -24,7 +24,7 @@ void *__thiscall cStrMoney_ctor(void *obj) {
 /* the digits from the first one not "0", "0" for none */
 const char *__fastcall cStrMoney_GetStr(cStrMoney *self) {
 	if (!self->len) {
-		return (const char *)Game_Ptr(0x3ba568);
+		return GAME_STR(str_3ba568, 0x3ba568);
 	}
 	return (const char *)self + 0x10 - self->len;
 }

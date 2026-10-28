@@ -40,7 +40,7 @@ void Texto_DrawPila(void) {
 	int w, h;
 	Grafico2D_GetPantalla(&w, &h);
 	for (int i = 0; m && i < TEXTO_PILA_MAX; i++) {
-		Eng_Printf(2, (float)w * 0.5f, y, 3, 0xffffff, Game_Ptr(0x3bae88), m->texto);	/* "%s" */
+		Eng_Printf(2, (float)w * 0.5f, y, 3, 0xffffff, GAME_STR(str_3bae88, 0x3bae88), m->texto);	/* "%s" */
 		m = m->sig;
 		y = (float)(int)((float)h * 0.05f) + y;
 	}

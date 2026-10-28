@@ -271,5 +271,5 @@ byte __thiscall CSuelo_GetYBelow(CSuelo *self, float x, float z, float maxY, flo
 #define g_FastGetYSectorVar ((cGVar *)Game_Ptr(0x4e6e00))
 
 void Gety_InitFastGetYSector(void) {
-	GVar_InitInt(g_FastGetYSectorVar, Game_Ptr(0x3e6efc), 0, Game_Ptr(0x3e6ee4), 1);
+	GVar_InitInt(g_FastGetYSectorVar, GAME_STR(str_3e6efc, 0x3e6efc), 0, GAME_STR(str_3e6ee4, 0x3e6ee4), 1);
 }
