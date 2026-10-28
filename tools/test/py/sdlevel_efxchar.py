@@ -268,7 +268,7 @@ def efcupdates(name, fx, e):
 				efcfl(fx + 0xb8, 2), efcnum(fx + 8), efcparts(fx + 8)))
 
 # the fake entity needs GetModel at this + 0xb8 and IsType(WithLife)
-efcfakeok = efci(efcvt + 0x98) - 0x400000 == 0xfb380
+efcfakeok = isfn(efci(efcvt + 0x98), 0xfb380)
 check('fake entity GetModel', lambda: efcfakeok)
 for c in efcchars:
 	if not efcfakeok:

@@ -32,7 +32,7 @@ typedef struct cScheduledFuncStack {
 	cSchedList list;		/* 0x04 */
 } cScheduledFuncStack;
 SD_SIZE(cScheduledFuncStack, 0x1c);
-#define CSCHEDULEDFUNCSTACK_VFTABLE 0x3ce0ec
+#define CSCHEDULEDFUNCSTACK_VFTABLE GAME_VFTABLE(cScheduledFuncStack_vftable, 0x3ce0ec)
 
 void __fastcall cScheduledFunc_dtor(cScheduledFunc *self);
 cScheduledFuncStack *__thiscall cScheduledFuncStack_Delete(cScheduledFuncStack *self, byte flags);

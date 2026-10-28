@@ -9,7 +9,7 @@
 
 cNetStatsScorer *__fastcall cNetStatsScorer_ctor(cNetStatsScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CNETSTATSSCORER_VFTABLE);
+	self->base.vftable = CNETSTATSSCORER_VFTABLE;
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	self->img = img ? CPsaImage_ctor(img, "2D/white.tga", 0x24) : NULL;
 	memset(self->sent, 0, 6 * NETSTATS_SLOTS * 4);
@@ -18,7 +18,7 @@ cNetStatsScorer *__fastcall cNetStatsScorer_ctor(cNetStatsScorer *self) {
 
 void __fastcall cNetStatsScorer_dtor(cNetStatsScorer *self) {
 	CPsaImage *img = self->img;
-	self->base.vftable = Game_Ptr(CNETSTATSSCORER_VFTABLE);
+	self->base.vftable = CNETSTATSSCORER_VFTABLE;
 	if (img) {
 		CPsaImage_dtor(img);
 		operator_delete_sized(img, sizeof(CPsaImage));

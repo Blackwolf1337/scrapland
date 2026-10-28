@@ -38,7 +38,7 @@ static const byte mouse_gameDefaults[][3] = {
 
 cPcMouse *__thiscall cPcMouse_ctor(cPcMouse *self) {
 	cAbstractIDevice_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CPCMOUSE_VFTABLE);
+	self->base.vftable = CPCMOUSE_VFTABLE;
 	cAbstractIDevice_InitEntries(&self->base, 10);
 	self->move[0] = 0.0f;
 	self->move[1] = 0.0f;

@@ -21,8 +21,8 @@
 #include "scrap/scrapmain.h"
 #include "scrap/win32.h"
 
-#define CSUELO_VFTABLE 0x3db13c
-#define IOBJETO3D_VFTABLE 0x3d79dc
+#define CSUELO_VFTABLE GAME_VFTABLE(CSuelo_vftable, 0x3db13c)
+#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObjeto3D_vftable, 0x3d79dc)
 #define CCOLLIDEMESH_CTOR 0x2586b0
 #define CCOLLIDEMESH_DTOR 0x20eb70
 #define CCOLLIDEQUAD_DTOR 0x258ce0
@@ -256,7 +256,7 @@ void __fastcall CAlturas_dtor(CAlturas *self) {
 
 CSuelo *__fastcall CSuelo_ctor(CSuelo *self) {
 	self->clase = 0;
-	self->vftable = Game_Ptr(CSUELO_VFTABLE);
+	self->vftable = CSUELO_VFTABLE;
 	memset(self->cache, 0, sizeof(self->cache));
 	self->nodos = NULL;
 	self->nNodos = 0;
@@ -282,10 +282,10 @@ CSuelo *__fastcall CSuelo_ctor(CSuelo *self) {
 }
 
 void __fastcall CSuelo_dtor(CSuelo *self) {
-	self->vftable = Game_Ptr(CSUELO_VFTABLE);
+	self->vftable = CSUELO_VFTABLE;
 	CAlturas_dtor(&self->alturas);
 	Tabla_FreeObjs((CTabla *)&self->nNodos);
-	self->vftable = Game_Ptr(IOBJETO3D_VFTABLE);
+	self->vftable = IOBJETO3D_VFTABLE;
 }
 
 CSuelo *__thiscall CSuelo_Delete(CSuelo *self, byte flags) {

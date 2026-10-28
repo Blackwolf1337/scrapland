@@ -67,7 +67,7 @@ cString *__thiscall cString_DeleteVec(cString *self, uint32_t flags) {
 
 cButtonScorer *__fastcall cButtonScorer_ctor(cButtonScorer *self) {
 	cSpriteScorer_ctor(&self->base);
-	self->base.base.vftable = Game_Ptr(CBUTTONSCORER_VFTABLE);
+	self->base.base.vftable = CBUTTONSCORER_VFTABLE;
 	self->lines.items = NULL;
 	self->lines.count = 0;
 	self->isValue.items = NULL;
@@ -123,7 +123,7 @@ static void Button_FreeImage(CPsaImage **img) {
 }
 
 void __fastcall cButtonScorer_dtor(cButtonScorer *self) {
-	self->base.base.vftable = Game_Ptr(CBUTTONSCORER_VFTABLE);
+	self->base.base.vftable = CBUTTONSCORER_VFTABLE;
 	Button_FreeImage(&self->alphaImg);
 	Button_FreeImage(&self->focusImg);
 	ByteTable_Free(&self->isValue);

@@ -36,7 +36,7 @@ void *__thiscall cAIMove_ctor(void *mem, cEntity *e) {
 	byte fly;
 
 	cAI_ctor(mem, e);
-	self->vftable = Game_Ptr(CAIMOVE_VFTABLE);
+	self->vftable = CAIMOVE_VFTABLE;
 	AIMove_InitTarget(self);
 	self->target.data = self;
 	self->flying = 0;
@@ -80,7 +80,7 @@ void *__fastcall cAIMove_ctorDefault(void *mem) {
 	cAIChar *self = mem;
 
 	cAI_ctorDefault(mem);
-	self->vftable = Game_Ptr(CAIMOVE_VFTABLE);
+	self->vftable = CAIMOVE_VFTABLE;
 	AIMove_InitTarget(self);
 	return self;
 }
@@ -88,7 +88,7 @@ void *__fastcall cAIMove_ctorDefault(void *mem) {
 void __fastcall cAIMove_dtor(void *mem) {
 	cAIChar *self = mem;
 
-	self->vftable = Game_Ptr(CAIMOVE_VFTABLE);
+	self->vftable = CAIMOVE_VFTABLE;
 	Nto1Node_Done(&self->target);
 	cAI_dtor(mem);
 }

@@ -12,19 +12,19 @@ void *__thiscall cAISentinel_ctor(void *mem, cEntity *e, int *arg) {
 	cAIChar *self = mem;
 
 	cAIChar_ctor(mem, e, arg);
-	self->vftable = Game_Ptr(CAISENTINEL_VFTABLE);
+	self->vftable = CAISENTINEL_VFTABLE;
 	cAIChar_NewControl(self, CAICONTROLSENTINEL_SIZE, cAIControlSentinel_ctor, e, arg);
 	self->canTalk = 0;
 	return self;
 }
 
 void __fastcall cAISentinel_dtor(cAIChar *self) {
-	self->vftable = Game_Ptr(CAISENTINEL_VFTABLE);
+	self->vftable = CAISENTINEL_VFTABLE;
 	cAIChar_dtor(self);
 }
 
 cAIChar *__thiscall cAISentinel_Delete(cAIChar *self, byte flags) {
-	self->vftable = Game_Ptr(CAISENTINEL_VFTABLE);
+	self->vftable = CAISENTINEL_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAISENTINEL_SIZE);

@@ -19,7 +19,7 @@
 #include "scrap/pyfunction.h"
 #include "scrap/slotcontroller.h"
 
-#define CAIVEHICLE_VFTABLE 0x3a8448
+#define CAIVEHICLE_VFTABLE GAME_VFTABLE(cAIVehicle_vftable, 0x3a8448)
 #define CAIVEHICLE_SIZE 0x3b0
 #define CAIVEHICLECONTROL_SIZE 0x2b8
 #define CAIVEHICLESHOOT_SIZE 0x184

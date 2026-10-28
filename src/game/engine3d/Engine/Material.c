@@ -1224,7 +1224,7 @@ CMaterial *__thiscall CMaterial_ctor(CMaterial *self) {
 
 	self->Nombre = NULL;
 	self->Refs = 0;
-	self->vftable = Game_Ptr(CMATERIAL_VFTABLE);
+	self->vftable = CMATERIAL_VFTABLE;
 	CMatId_ctor(&self->id);
 	p->ambient[0] = p->ambient[1] = p->ambient[2] = 0xff;
 	p->ambient[3] = 0;
@@ -1258,7 +1258,7 @@ CMaterial *__thiscall CMaterial_ctor(CMaterial *self) {
 
 /* a CBmp of the stack freed (the pixels with the sized delete of one pixel) */
 void __fastcall CListaMat_dtor(CListaMat *self) {
-	self->vftable = Game_Ptr(CLISTAMAT_VFTABLE);
+	self->vftable = CLISTAMAT_VFTABLE;
 	CListaMat_DeleteAll(self);
 	if (self->Nombre) {
 		Cad_Set(&self->Nombre, NULL);
@@ -1287,7 +1287,7 @@ void __thiscall CMapa_dtor(CMapa *self) {
 void __thiscall CMaterial_dtor(CMaterial *self) {
 	int i;
 
-	self->vftable = Game_Ptr(CMATERIAL_VFTABLE);
+	self->vftable = CMATERIAL_VFTABLE;
 	if (self->ant) {
 		self->ant->sig = self->sig;
 	}

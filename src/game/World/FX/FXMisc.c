@@ -1062,9 +1062,9 @@ static inline void FX_TrailsDtor(void *self, uint32_t off, uint32_t n) {
 }
 
 /* the start of every constructor: the base class leaves 0, then the vtable of the class */
-static inline void FX_SetVtbl(void *self, uint32_t vt) {
+static inline void FX_SetVtbl(void *self, void *vt) {
 	*(void **)self = NULL;
-	*(void **)self = Game_Ptr(vt);
+	*(void **)self = vt;
 }
 
 static inline void *FX_Delete(void *self, uint32_t flags, uint32_t size) {
@@ -1081,13 +1081,13 @@ void *__thiscall cObjElementAbstract_Delete(void *self, uint32_t flags) {
 
 /* World/FX character effects */
 
-#define VT_FXCHARACTERCONVERSION 0x3cb174
-#define VT_FXCHARACTERCONVERSOR 0x3cb12c
-#define VT_FXCHARACTERDEATH 0x3cb144
-#define VT_FXCHARACTERTELEPORT 0x3cb114
-#define VT_FXMAINTENANCEWORK 0x3cb18c
-#define VT_FXMONEYTRANSFER 0x3cb0fc
-#define VT_FXSPUTNIK 0x3cb15c
+#define VT_FXCHARACTERCONVERSION GAME_VFTABLE(cObjElementFXCharacterConversion_vftable, 0x3cb174)
+#define VT_FXCHARACTERCONVERSOR GAME_VFTABLE(cObjElementFXCharacterConversor_vftable, 0x3cb12c)
+#define VT_FXCHARACTERDEATH GAME_VFTABLE(cObjElementFXCharacterDeath_vftable, 0x3cb144)
+#define VT_FXCHARACTERTELEPORT GAME_VFTABLE(cObjElementFXCharacterTeleport_vftable, 0x3cb114)
+#define VT_FXMAINTENANCEWORK GAME_VFTABLE(cObjElementFXMaintenanceWork_vftable, 0x3cb18c)
+#define VT_FXMONEYTRANSFER GAME_VFTABLE(cObjElementFXMoneyTransfer_vftable, 0x3cb0fc)
+#define VT_FXSPUTNIK GAME_VFTABLE(cObjElementFXSputnik_vftable, 0x3cb15c)
 
 void *__thiscall cObjElementFXCharacterConversion_ctor(void *self) {
 	FX_SetVtbl(self, VT_FXCHARACTERCONVERSION);
@@ -1176,7 +1176,7 @@ void *__thiscall cObjElementFXSputnik_ctor(void *self) {
 }
 
 void __thiscall cObjElementFXCharacterConversion_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXCHARACTERCONVERSION);
+	*(void **)self = VT_FXCHARACTERCONVERSION;
 	FX_TrailsDtor(self, 0x17c, 5);
 	FX_PartsRelease(self, 0xbc);
 	FX_PartsRelease(self, 0xc);
@@ -1184,14 +1184,14 @@ void __thiscall cObjElementFXCharacterConversion_dtor(void *self) {
 }
 
 void __thiscall cObjElementFXCharacterConversor_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXCHARACTERCONVERSOR);
+	*(void **)self = VT_FXCHARACTERCONVERSOR;
 	FX_TrailsDtor(self, 0x110, 3);
 	FX_PartsRelease(self, 0xc);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXCharacterDeath_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXCHARACTERDEATH);
+	*(void **)self = VT_FXCHARACTERDEATH;
 	FX_TrailsDtor(self, 0x224, 8);
 	FX_PartsRelease(self, 0x168);
 	FX_PartsRelease(self, 0xb8);
@@ -1200,26 +1200,26 @@ void __thiscall cObjElementFXCharacterDeath_dtor(void *self) {
 }
 
 void __thiscall cObjElementFXCharacterTeleport_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXCHARACTERTELEPORT);
+	*(void **)self = VT_FXCHARACTERTELEPORT;
 	FX_PartsRelease(self, 0xc);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXMaintenanceWork_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXMAINTENANCEWORK);
+	*(void **)self = VT_FXMAINTENANCEWORK;
 	FX_TrailsDtor(self, 0xc8, 2);
 	FX_PartsRelease(self, 0xc);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXMoneyTransfer_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXMONEYTRANSFER);
+	*(void **)self = VT_FXMONEYTRANSFER;
 	FX_PartsRelease(self, 0xc);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXSputnik_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXSPUTNIK);
+	*(void **)self = VT_FXSPUTNIK;
 	FX_PartsRelease(self, 0x8);
 	cObjElement_dtor(self);
 }
@@ -1261,14 +1261,14 @@ void *__thiscall cObjElementFXSputnik_Delete(void *self, uint32_t flags) {
 
 /* the FX scenes */
 
-#define VT_FXSCENEBEATPICKUS 0x3cd278
-#define VT_FXSCENEBILLARRIVES_A 0x3cd248
-#define VT_FXSCENEBISHOPS 0x3cd230
-#define VT_FXSCENEDECONTAMINATION 0x3cd218
-#define VT_FXSCENEENTERMATRIX 0x3cd2a8
-#define VT_FXSCENEHUMANCD 0x3cd290
-#define VT_FXSCENETHEENDB 0x3cd2c0
-#define VT_FXSCENEYAKUZZI 0x3cd260
+#define VT_FXSCENEBEATPICKUS GAME_VFTABLE(cObjElementFXSceneBeatPickus_vftable, 0x3cd278)
+#define VT_FXSCENEBILLARRIVES_A GAME_VFTABLE(cObjElementFXSceneBillArrives_A_vftable, 0x3cd248)
+#define VT_FXSCENEBISHOPS GAME_VFTABLE(cObjElementFXSceneBishops_vftable, 0x3cd230)
+#define VT_FXSCENEDECONTAMINATION GAME_VFTABLE(cObjElementFXSceneDecontamination_vftable, 0x3cd218)
+#define VT_FXSCENEENTERMATRIX GAME_VFTABLE(cObjElementFXSceneEnterMatrix_vftable, 0x3cd2a8)
+#define VT_FXSCENEHUMANCD GAME_VFTABLE(cObjElementFXSceneHumanCD_vftable, 0x3cd290)
+#define VT_FXSCENETHEENDB GAME_VFTABLE(cObjElementFXSceneTheEndB_vftable, 0x3cd2c0)
+#define VT_FXSCENEYAKUZZI GAME_VFTABLE(cObjElementFXSceneYakuzzi_vftable, 0x3cd260)
 
 void *__thiscall cObjElementFXSceneBeatPickus_ctor(void *self) {
 	FX_SetVtbl(self, VT_FXSCENEBEATPICKUS);
@@ -1374,7 +1374,7 @@ void *__thiscall cObjElementFXSceneYakuzzi_ctor(void *self) {
 }
 
 void __thiscall cObjElementFXSceneBeatPickus_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXSCENEBEATPICKUS);
+	*(void **)self = VT_FXSCENEBEATPICKUS;
 	FX_PartsRelease(self, 0x184);
 	FX_PartsRelease(self, 0xd0);
 	FX_PartsRelease(self, 0x1c);
@@ -1382,14 +1382,14 @@ void __thiscall cObjElementFXSceneBeatPickus_dtor(void *self) {
 }
 
 void __thiscall cObjElementFXSceneBillArrives_A_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXSCENEBILLARRIVES_A);
+	*(void **)self = VT_FXSCENEBILLARRIVES_A;
 	FX_PartsRelease(self, 0x1c);
 	CGameLensFlare_dtor((byte *)self + 0x14);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXSceneBishops_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXSCENEBISHOPS);
+	*(void **)self = VT_FXSCENEBISHOPS;
 	FX_TrailsDtor(self, 0x184, 12);
 	FX_PartsRelease(self, 0xbc);
 	FX_PartsRelease(self, 0xc);
@@ -1397,7 +1397,7 @@ void __thiscall cObjElementFXSceneBishops_dtor(void *self) {
 }
 
 void __thiscall cObjElementFXSceneDecontamination_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXSCENEDECONTAMINATION);
+	*(void **)self = VT_FXSCENEDECONTAMINATION;
 	FX_TrailsDtor(self, 0x248, 40);
 	FX_PartsRelease(self, 0x4);
 	cObjElement_dtor(self);
@@ -1405,7 +1405,7 @@ void __thiscall cObjElementFXSceneDecontamination_dtor(void *self) {
 
 /* the particles are released twice, as in the original */
 void __thiscall cObjElementFXSceneEnterMatrix_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXSCENEENTERMATRIX);
+	*(void **)self = VT_FXSCENEENTERMATRIX;
 	FX_PartsRelease(self, 0x10);
 	CGameLensFlare_dtor((byte *)self + 0x790);
 	FX_TrailsDtor(self, 0x28c, 16);
@@ -1414,21 +1414,21 @@ void __thiscall cObjElementFXSceneEnterMatrix_dtor(void *self) {
 }
 
 void __thiscall cObjElementFXSceneHumanCD_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXSCENEHUMANCD);
+	*(void **)self = VT_FXSCENEHUMANCD;
 	FX_PartsRelease(self, 0xc0);
 	FX_PartsRelease(self, 0x10);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXSceneTheEndB_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXSCENETHEENDB);
+	*(void **)self = VT_FXSCENETHEENDB;
 	CGameLensFlare_dtor((byte *)self + 0xc4);
 	FX_PartsRelease(self, 0x14);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXSceneYakuzzi_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXSCENEYAKUZZI);
+	*(void **)self = VT_FXSCENEYAKUZZI;
 	FX_PartsRelease(self, 0x10);
 	cObjElement_dtor(self);
 }
@@ -1475,15 +1475,15 @@ void *__thiscall cObjElementFXSceneYakuzzi_Delete(void *self, uint32_t flags) {
 
 /* the elements of this file (rva 0x1da190..0x1da940) */
 
-#define VT_FXFADEOUTTRAIL 0x3ccce4
-#define VT_FXITEMFADE 0x3ccd14
-#define VT_FXITEMTAKE 0x3cccfc
-#define VT_FXMODELFADE 0x3ccd44
-#define VT_FXMODELNOISE 0x3ccd5c
-#define VT_FXSISTPART 0x3cccb4
-#define VT_FXSISTPARTDUDV 0x3ccd74
-#define VT_FXSPARKS 0x3ccd2c
-#define VT_FXTRAIL 0x3ccccc
+#define VT_FXFADEOUTTRAIL GAME_VFTABLE(cObjElementFXFadeOutTrail_vftable, 0x3ccce4)
+#define VT_FXITEMFADE GAME_VFTABLE(cObjElementFXItemFade_vftable, 0x3ccd14)
+#define VT_FXITEMTAKE GAME_VFTABLE(cObjElementFXItemTake_vftable, 0x3cccfc)
+#define VT_FXMODELFADE GAME_VFTABLE(cObjElementFXModelFade_vftable, 0x3ccd44)
+#define VT_FXMODELNOISE GAME_VFTABLE(cObjElementFXModelNoise_vftable, 0x3ccd5c)
+#define VT_FXSISTPART GAME_VFTABLE(cObjElementFXSistPart_vftable, 0x3cccb4)
+#define VT_FXSISTPARTDUDV GAME_VFTABLE(cObjElementFXSistPartDuDv_vftable, 0x3ccd74)
+#define VT_FXSPARKS GAME_VFTABLE(cObjElementFXSparks_vftable, 0x3ccd2c)
+#define VT_FXTRAIL GAME_VFTABLE(cObjElementFXTrail_vftable, 0x3ccccc)
 
 #define FX_U16(self, off) (*(uint16_t *)((byte *)(self) + (off)))
 
@@ -1580,56 +1580,56 @@ void *__fastcall cObjElementFXTrail_ctor(void *self) {
 }
 
 void __fastcall cObjElementFXFadeOutTrail_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXFADEOUTTRAIL);
+	*(void **)self = VT_FXFADEOUTTRAIL;
 	FX_TrailDtor(self, 0x4);
 	cObjElement_dtor(self);
 }
 
 void __fastcall cObjElementFXItemFade_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXITEMFADE);
+	*(void **)self = VT_FXITEMFADE;
 	FX_PartsRelease(self, 0x8);
 	cObjElement_dtor(self);
 }
 
 void __fastcall cObjElementFXItemTake_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXITEMTAKE);
+	*(void **)self = VT_FXITEMTAKE;
 	FX_TrailDtor(self, 0xec);
 	FX_PartsRelease(self, 0xc);
 	cObjElement_dtor(self);
 }
 
 void __fastcall cObjElementFXSistPart_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXSISTPART);
+	*(void **)self = VT_FXSISTPART;
 	FX_PartsRelease(self, 0x4);
 	cObjElement_dtor(self);
 }
 
 void __fastcall cObjElementFXSistPartDuDv_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXSISTPARTDUDV);
+	*(void **)self = VT_FXSISTPARTDUDV;
 	FX_PartsRelease(self, 0x4);
 	cObjElement_dtor(self);
 }
 
 void __fastcall cObjElementFXSparks_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXSPARKS);
+	*(void **)self = VT_FXSPARKS;
 	FX_PartsRelease(self, 0xbbc);
 	FX_TrailsDtor(self, 0xb3c, FXSPARKS_MAXSPARKS);
 	cObjElement_dtor(self);
 }
 
 void __fastcall cObjElementFXTrail_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXTRAIL);
+	*(void **)self = VT_FXTRAIL;
 	FX_TrailDtor(self, 0x4);
 	cObjElement_dtor(self);
 }
 
 void __fastcall cObjElementFXModelFade_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXMODELFADE);
+	*(void **)self = VT_FXMODELFADE;
 	cObjElement_dtor(self);
 }
 
 void __fastcall cObjElementFXModelNoise_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_FXMODELNOISE);
+	*(void **)self = VT_FXMODELNOISE;
 	cObjElement_dtor(self);
 }
 

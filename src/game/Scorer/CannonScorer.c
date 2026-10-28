@@ -13,7 +13,7 @@
 
 cCannonScorer *__fastcall cCannonScorer_ctor(cCannonScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CCANNONSCORER_VFTABLE);
+	self->base.vftable = CCANNONSCORER_VFTABLE;
 	self->numWeapons = g_pWorld->weapons.count;
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	img = img ? CPsaImage_ctor(img, "2D/white.tga", 0x20) : NULL;
@@ -31,7 +31,7 @@ cCannonScorer *__fastcall cCannonScorer_ctor(cCannonScorer *self) {
 
 void __fastcall cCannonScorer_dtor(cCannonScorer *self) {
 	CPsaImage *img = self->img;
-	self->base.vftable = Game_Ptr(CCANNONSCORER_VFTABLE);
+	self->base.vftable = CCANNONSCORER_VFTABLE;
 	if (img) {
 		CPsaImage_dtor(img);
 		operator_delete_sized(img, sizeof(CPsaImage));

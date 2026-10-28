@@ -131,7 +131,7 @@ int PackLog_Add(const char *name);
 byte Pack_Open(const char *name, const char *dir, size_t bufSize);
 int Pack_Extract(const char *dir);
 
-#define cFile2_vftable ((const cAbstractFileVtbl *)Game_Ptr(0x3ba868))
-#define cFilePack_vftable ((const cAbstractFileVtbl *)Game_Ptr(0x3ba890))
+#define cFile2_vftable ((const cAbstractFileVtbl *)GAME_VFTABLE(cFile2_vftable, 0x3ba868))
+#define cFilePack_vftable ((const cAbstractFileVtbl *)GAME_VFTABLE(cFilePack_vftable, 0x3ba890))
 
 #endif

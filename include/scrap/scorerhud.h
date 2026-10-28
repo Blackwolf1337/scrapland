@@ -12,18 +12,18 @@
 #include "scrap/world.h"
 
 /* the vtables of the exe */
-#define CSPRITESCORER_VFTABLE 0x3c4534
-#define CGRADIENTSCORER_VFTABLE 0x3c454c
-#define CSTATUSSCORER_VFTABLE 0x3c4940
-#define CTABSCORER_VFTABLE 0x3c4c50
-#define CTALKSCORER_VFTABLE 0x3c4e34
-#define CTARGETSCORER_VFTABLE 0x3c4fb8
-#define CTEXTSCORER_VFTABLE 0x3c50f8
-#define CTEXTTYPINGSCORER_VFTABLE 0x3c5110
-#define CTIMERSCORER_VFTABLE 0x3c5428
-#define CWAYPOINTSCORER_VFTABLE 0x3c5654
-#define CWEAPONSCORER_VFTABLE 0x3c5734
-#define CWINDFXSCORER_VFTABLE 0x3c5b7c
+#define CSPRITESCORER_VFTABLE GAME_VFTABLE(cSpriteScorer_vftable, 0x3c4534)
+#define CGRADIENTSCORER_VFTABLE GAME_VFTABLE(cGradientScorer_vftable, 0x3c454c)
+#define CSTATUSSCORER_VFTABLE GAME_VFTABLE(cStatusScorer_vftable, 0x3c4940)
+#define CTABSCORER_VFTABLE GAME_VFTABLE(cTabScorer_vftable, 0x3c4c50)
+#define CTALKSCORER_VFTABLE GAME_VFTABLE(cTalkScorer_vftable, 0x3c4e34)
+#define CTARGETSCORER_VFTABLE GAME_VFTABLE(cTargetScorer_vftable, 0x3c4fb8)
+#define CTEXTSCORER_VFTABLE GAME_VFTABLE(cTextScorer_vftable, 0x3c50f8)
+#define CTEXTTYPINGSCORER_VFTABLE GAME_VFTABLE(cTextTypingScorer_vftable, 0x3c5110)
+#define CTIMERSCORER_VFTABLE GAME_VFTABLE(cTimerScorer_vftable, 0x3c5428)
+#define CWAYPOINTSCORER_VFTABLE GAME_VFTABLE(cWaypointScorer_vftable, 0x3c5654)
+#define CWEAPONSCORER_VFTABLE GAME_VFTABLE(cWeaponScorer_vftable, 0x3c5734)
+#define CWINDFXSCORER_VFTABLE GAME_VFTABLE(cWindFxScorer_vftable, 0x3c5b7c)
 
 /* the number of frames of the sheet (CHECKs a sheet) */
 int __thiscall CPsaImage_GetNumFrames(CPsaImage *self);	/* rva 0x22d280 */

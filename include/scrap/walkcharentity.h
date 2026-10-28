@@ -17,7 +17,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/walkcharcontrol.h"
 
-#define CWALKCHARENTITY_VFTABLE 0x3b03bc
+#define CWALKCHARENTITY_VFTABLE GAME_VFTABLE(cWalkCharEntity_vftable, 0x3b03bc)
 #define CWALKCHARENTITY_SIZE 0x574
 
 typedef struct cWalkCharEntity {

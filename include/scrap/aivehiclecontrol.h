@@ -15,9 +15,9 @@
 #include "scrap/nodesworld.h"
 #include "scrap/slotcontroller.h"
 
-#define CAIVEHICLECONTROL_VFTABLE 0x3a9094
-#define CAIVEHICLESHOOT_VFTABLE 0x3a9504
-#define CAIVEHICLEGROUP_VFTABLE 0x3a9288
+#define CAIVEHICLECONTROL_VFTABLE GAME_VFTABLE(cAIVehicleControl_vftable, 0x3a9094)
+#define CAIVEHICLESHOOT_VFTABLE GAME_VFTABLE(cAIVehicleShootControl_vftable, 0x3a9504)
+#define CAIVEHICLEGROUP_VFTABLE GAME_VFTABLE(cAIVehicleGroup_vftable, 0x3a9288)
 #define CAIVEHICLEGROUP_SIZE 0xf4
 
 /* a cSlotController inside the AI objects (0x10 bytes, AIV_Slot) */

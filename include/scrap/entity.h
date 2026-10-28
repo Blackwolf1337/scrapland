@@ -99,7 +99,7 @@ SD_OFFSET(cEntity, links, 0x64);
 SD_OFFSET(cEntity, ai, 0x78);
 SD_SIZE(cEntity, 0x7c);
 
-#define CENTITY_VFTABLE 0x3b25f8
+#define CENTITY_VFTABLE GAME_VFTABLE(cEntity_vftable, 0x3b25f8)
 
 /* a vehicle ("Car"): include/scrap/vehicleentity.h */
 typedef struct cVehicleEntity cVehicleEntity;

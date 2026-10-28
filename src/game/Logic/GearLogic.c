@@ -40,7 +40,7 @@ static inline cAIChar *Gear_AI(cGearLocalLogic *self) {
 
 cGearLocalLogic *__thiscall cGearLocalLogic_ctor(cGearLocalLogic *self, cEntity *parent) {
 	cBaseLocalLogic_ctor(&self->base, parent);
-	Gear_Vtbl(self) = Game_Ptr(CGEARLOCALLOGIC_VFTABLE);
+	Gear_Vtbl(self) = CGEARLOCALLOGIC_VFTABLE;
 	self->lostTime = 0.0f;
 	self->called = 0;
 	self->defaultState = 0;
@@ -52,7 +52,7 @@ cGearLocalLogic *__thiscall cGearLocalLogic_ctor(cGearLocalLogic *self, cEntity 
 }
 
 void __fastcall cGearLocalLogic_dtor(cGearLocalLogic *self) {
-	Gear_Vtbl(self) = Game_Ptr(CGEARLOCALLOGIC_VFTABLE);
+	Gear_Vtbl(self) = CGEARLOCALLOGIC_VFTABLE;
 	cString_dtor(&self->defaultTarget);
 	cBaseLocalLogic_dtor(&self->base);
 }

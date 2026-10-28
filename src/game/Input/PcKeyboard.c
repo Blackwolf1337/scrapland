@@ -71,7 +71,7 @@ static const byte kb_gameDefaults[][3] = {
 
 cAbstractIDevice *__thiscall cPcKeyboard_ctor(cAbstractIDevice *self) {
 	cAbstractIDevice_ctor(self);
-	self->vftable = Game_Ptr(CPCKEYBOARD_VFTABLE);
+	self->vftable = CPCKEYBOARD_VFTABLE;
 	cAbstractIDevice_InitEntries(self, 0x100);
 	cPcKeyboard_SetGameDefaults(self);
 	cFuncGvarDevices *g = operator_new(sizeof(cFuncGvarDevices));

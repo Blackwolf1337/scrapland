@@ -16,7 +16,7 @@
 #include "scrap/scrap.h"
 #include "scrap/world.h"
 
-#define CSCRAPYARDLOCALLOGIC_VFTABLE 0x3c10e4
+#define CSCRAPYARDLOCALLOGIC_VFTABLE GAME_VFTABLE(cScrapyardLocalLogic_vftable, 0x3c10e4)
 #define SHIPGROUP_SPHERE_NATIVE 0x157f10
 #define SHIPGROUP_DEATH_NATIVE 0x158020
 #define SHIPGROUP_MAKELOGIC 0x158400
@@ -71,7 +71,7 @@ void __fastcall cShipGroup_dtor(cShipGroup *self) {
 }
 
 cLocalLogic *__thiscall cScrapyardLocalLogic_Delete(cLocalLogic *self, byte flags) {
-	self->vftable = Game_Ptr(CSCRAPYARDLOCALLOGIC_VFTABLE);
+	self->vftable = CSCRAPYARDLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -309,6 +309,6 @@ cLocalLogic *ShipGroup_MakeLogic(cEntity *e) {
 		return NULL;
 	}
 	l->parent = e;
-	l->vftable = Game_Ptr(CSCRAPYARDLOCALLOGIC_VFTABLE);
+	l->vftable = CSCRAPYARDLOCALLOGIC_VFTABLE;
 	return l;
 }

@@ -20,7 +20,7 @@
 cFXElementsABFakeLimit *__thiscall cFXElementsABFakeLimit_ctor(cFXElementsABFakeLimit *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
-	self->base.vftable = Game_Ptr(CFXELEMENTSABFAKELIMIT_VFTABLE);
+	self->base.vftable = CFXELEMENTSABFAKELIMIT_VFTABLE;
 	CGameParticles_ctor(&self->lighting);
 	crt_eh_vector_ctor(self->bolts, sizeof(CGameTrail), FXABBOLTS, Game_Ptr(CGAMETRAIL_CTOR),
 		Game_Ptr(CGAMETRAIL_DTOR));
@@ -33,7 +33,7 @@ cFXElementsABFakeLimit *__thiscall cFXElementsABFakeLimit_ctor(cFXElementsABFake
 cFXElementsABFakeMeteors *__thiscall cFXElementsABFakeMeteors_ctor(cFXElementsABFakeMeteors *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
-	self->base.vftable = Game_Ptr(CFXELEMENTSABFAKEMETEORS_VFTABLE);
+	self->base.vftable = CFXELEMENTSABFAKEMETEORS_VFTABLE;
 	crt_eh_vector_ctor(self->parts, sizeof(CGameParticles), 2, Game_Ptr(CGAMEPARTICLES_CTOR),
 		Game_Ptr(CGAMEPARTICLES_RELEASE));
 	CGameTrail_ctor(&self->curve);
@@ -56,7 +56,7 @@ void __fastcall cFXElementsABFakeLimit_Clear(cFXElementsABFakeLimit *self) {
 }
 
 void __fastcall cFXElementsABFakeLimit_dtor(cFXElementsABFakeLimit *self) {
-	self->base.vftable = Game_Ptr(CFXELEMENTSABFAKELIMIT_VFTABLE);
+	self->base.vftable = CFXELEMENTSABFAKELIMIT_VFTABLE;
 	cFXElementsABFakeLimit_Clear(self);
 	crt_eh_vector_dtor(self->rings, sizeof(CGameTrail), FXABRINGS * FXABRINGTRAILS, Game_Ptr(CGAMETRAIL_DTOR));
 	CGameParticles_Release(&self->nearParts);
@@ -66,7 +66,7 @@ void __fastcall cFXElementsABFakeLimit_dtor(cFXElementsABFakeLimit *self) {
 }
 
 void __fastcall cFXElementsABFakeMeteors_dtor(cFXElementsABFakeMeteors *self) {
-	self->base.vftable = Game_Ptr(CFXELEMENTSABFAKEMETEORS_VFTABLE);
+	self->base.vftable = CFXELEMENTSABFAKEMETEORS_VFTABLE;
 	CGameTrail_dtor(&self->curve);
 	crt_eh_vector_dtor(self->parts, sizeof(CGameParticles), 2, Game_Ptr(CGAMEPARTICLES_RELEASE));
 	cMapElement_dtor(&self->base);

@@ -23,7 +23,7 @@ cTalkScorer *__fastcall cTalkScorer_ctor(cTalkScorer *self) {
 	float dim[2];
 
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CTALKSCORER_VFTABLE);
+	self->base.vftable = CTALKSCORER_VFTABLE;
 	self->sprite = NULL;
 	self->font = Font_Get("Horatio");
 	self->maxLines = 3;
@@ -60,7 +60,7 @@ cTalkScorer *__fastcall cTalkScorer_ctor(cTalkScorer *self) {
 }
 
 void __fastcall cTalkScorer_dtor(cTalkScorer *self) {
-	self->base.vftable = Game_Ptr(CTALKSCORER_VFTABLE);
+	self->base.vftable = CTALKSCORER_VFTABLE;
 	ScorerImg_Free(self->sprite);
 	ScorerImg_Free(self->tab);
 	cScorerItem_dtor(&self->base);

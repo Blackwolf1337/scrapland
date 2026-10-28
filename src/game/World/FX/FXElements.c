@@ -23,7 +23,7 @@
 cFXElementsFireDrop *__thiscall cFXElementsFireDrop_ctor(cFXElementsFireDrop *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
-	self->base.vftable = Game_Ptr(CFXELEMENTSFIREDROP_VFTABLE);
+	self->base.vftable = CFXELEMENTSFIREDROP_VFTABLE;
 	CGameParticles_ctor(&self->drops);
 	return self;
 }
@@ -31,7 +31,7 @@ cFXElementsFireDrop *__thiscall cFXElementsFireDrop_ctor(cFXElementsFireDrop *se
 cFXElementsLensFlare *__thiscall cFXElementsLensFlare_ctor(cFXElementsLensFlare *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
-	self->base.vftable = Game_Ptr(CFXELEMENTSLENSFLARE_VFTABLE);
+	self->base.vftable = CFXELEMENTSLENSFLARE_VFTABLE;
 	CGameLensFlare_ctor(self->flare);
 	CGameLensFlare_SetI1c(self->flare, 0);
 	CGameLensFlare_SetPos(self->flare, *pos);
@@ -45,7 +45,7 @@ cFXElementsLensFlare *__thiscall cFXElementsLensFlare_ctor(cFXElementsLensFlare 
 cFXElementsLighting *__thiscall cFXElementsLighting_ctor(cFXElementsLighting *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
-	self->base.vftable = Game_Ptr(CFXELEMENTSLIGHTING_VFTABLE);
+	self->base.vftable = CFXELEMENTSLIGHTING_VFTABLE;
 	CGameParticles_ctor(&self->glows);
 	crt_eh_vector_ctor(self->trails, sizeof(CGameTrail), FXLIGHTINGBOLTS, Game_Ptr(CGAMETRAIL_CTOR),
 		Game_Ptr(CGAMETRAIL_DTOR));
@@ -54,20 +54,20 @@ cFXElementsLighting *__thiscall cFXElementsLighting_ctor(cFXElementsLighting *se
 
 /* the particle members are released twice, by the class and by the member destructor */
 void __fastcall cFXElementsFireDrop_dtor(cFXElementsFireDrop *self) {
-	self->base.vftable = Game_Ptr(CFXELEMENTSFIREDROP_VFTABLE);
+	self->base.vftable = CFXELEMENTSFIREDROP_VFTABLE;
 	CGameParticles_Release(&self->drops);
 	CGameParticles_Release(&self->drops);
 	cMapElement_dtor(&self->base);
 }
 
 void __fastcall cFXElementsLensFlare_dtor(cFXElementsLensFlare *self) {
-	self->base.vftable = Game_Ptr(CFXELEMENTSLENSFLARE_VFTABLE);
+	self->base.vftable = CFXELEMENTSLENSFLARE_VFTABLE;
 	CGameLensFlare_dtor(self->flare);
 	cMapElement_dtor(&self->base);
 }
 
 void __fastcall cFXElementsLighting_dtor(cFXElementsLighting *self) {
-	self->base.vftable = Game_Ptr(CFXELEMENTSLIGHTING_VFTABLE);
+	self->base.vftable = CFXELEMENTSLIGHTING_VFTABLE;
 	for (int i = 0; i < FXLIGHTINGBOLTS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
 	}

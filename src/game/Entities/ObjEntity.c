@@ -94,7 +94,7 @@ cEntity *__thiscall cObjEntity_ctor(void *mem, const char *name, float x, float 
 	cObjEntity *self = mem;
 
 	cEntity_ctor(mem, name, x, y, z);
-	self->base.vftable = Game_Ptr(COBJENTITY_VFTABLE);
+	self->base.vftable = COBJENTITY_VFTABLE;
 	CGameModel_ctor(&self->model, NULL);
 	cTimer_ctor(&self->timer);
 	cSndInterface_ctor(&self->snd, 1);
@@ -153,7 +153,7 @@ void __fastcall cObjEntity_ReleaseFX(cEntity *self) {
 void __fastcall cObjEntity_dtor(cEntity *self) {
 	cObjEntity *o = Obj(self);
 
-	self->vftable = Game_Ptr(COBJENTITY_VFTABLE);
+	self->vftable = COBJENTITY_VFTABLE;
 	if (o->cam) {
 		cCamEntity_SetTarget(o->cam, NULL);
 	}
@@ -892,7 +892,7 @@ byte __thiscall cObjEntity_VarV(cEntity *self, const char *name, double *x, doub
 /* cNetController */
 
 cNetController *__fastcall cNetController_ctor(cNetController *self) {
-	self->vftable = Game_Ptr(CNETCONTROLLER_VFTABLE);
+	self->vftable = CNETCONTROLLER_VFTABLE;
 	self->age = 0.0f;
 	self->rotVel.x = 0.0f;
 	self->rotVel.y = 0.0f;

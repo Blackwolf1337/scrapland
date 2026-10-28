@@ -76,7 +76,7 @@ void *__thiscall cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void
 	cAIVehicle *self = mem;
 
 	cAIMove_ctor(mem, v);
-	self->vftable = Game_Ptr(CAIVEHICLE_VFTABLE);
+	self->vftable = CAIVEHICLE_VFTABLE;
 	cSlotController_ctor(AIV_Slot(&self->slotAttack), 0.2f);
 	cSlotController_ctor(AIV_Slot(&self->slotGraph), 0.5f);
 	cSlotController_ctor(AIV_Slot(&self->slotItems), 0.2f);
@@ -158,7 +158,7 @@ void *__thiscall cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void
 }
 
 void __fastcall cAIVehicle_dtor(cAIVehicle *self) {
-	self->vftable = Game_Ptr(CAIVEHICLE_VFTABLE);
+	self->vftable = CAIVEHICLE_VFTABLE;
 	if (self->control) {
 		self->control->vftable->Delete(self->control, 1);
 	}

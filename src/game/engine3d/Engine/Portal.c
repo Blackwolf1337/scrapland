@@ -12,7 +12,7 @@
 
 CPortal *__fastcall CPortal_ctor(CPortal *self) {
 	self->nodo = NULL;
-	self->vftable = Game_Ptr(CPORTAL_VFTABLE);
+	self->vftable = CPORTAL_VFTABLE;
 	self->clase = CLASE_OBJ3D_PORTAL;
 	self->ancho = 1.0f;
 	self->alto = 1.0f;
@@ -25,7 +25,7 @@ CPortal *__fastcall CPortal_ctor(CPortal *self) {
 }
 
 void __fastcall CPortal_dtor(CPortal *self) {
-	self->vftable = Game_Ptr(CPORTAL_VFTABLE);
+	self->vftable = CPORTAL_VFTABLE;
 	for (int i = 0; i < 2; i++) {
 		ObjRef_Drop(&self->zonas[i]);
 		self->zonas[i] = NULL;

@@ -233,11 +233,11 @@ typedef struct cInputDevNode {
 } cInputDevNode;
 typedef DLIST(cInputDevNode) cInputDevList;
 
-#define CABSTRACTIDEVICE_VFTABLE 0x3bc2e0
-#define CFUNCGVARDEVICES_VFTABLE 0x3bc2d4
-#define CPCKEYBOARD_VFTABLE 0x3bc50c
-#define CPCMOUSE_VFTABLE 0x3bca20
-#define CPCPAD_VFTABLE 0x3bcba4
+#define CABSTRACTIDEVICE_VFTABLE GAME_VFTABLE(cAbstractIDevice_vftable, 0x3bc2e0)
+#define CFUNCGVARDEVICES_VFTABLE GAME_VFTABLE(cFuncGvarDevices_vftable, 0x3bc2d4)
+#define CPCKEYBOARD_VFTABLE GAME_VFTABLE(cPcKeyboard_vftable, 0x3bc50c)
+#define CPCMOUSE_VFTABLE GAME_VFTABLE(cPcMouse_vftable, 0x3bca20)
+#define CPCPAD_VFTABLE GAME_VFTABLE(cPcPad_vftable, 0x3bcba4)
 
 /* the player, action and set waiting for the next key (SInput.ListenToDefine), -1 for none */
 #define g_ToDefinePlayer GAME_DATA(int, 0x428ac4)

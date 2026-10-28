@@ -10,7 +10,7 @@
 #include "scrap/fxmisc.h"
 #include "scrap/logic.h"
 
-#define CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE 0x3c169c
+#define CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE GAME_VFTABLE(cSputnikJunkyardLocalLogic_vftable, 0x3c169c)
 #define g_SputnikJunyardTimeToPissPlayer GAME_DATA(float, 0x44db88)
 #define g_SputnikPisser GAME_DATA(cEntity *, 0x44db70)	/* the Sputnik that laughs at the player */
 #define g_SputnikTime GAME_DATA(float, 0x44db74)		/* since the camera exists */
@@ -30,7 +30,7 @@ void *__thiscall cSputnikJunkyardLocalLogic_ctor(void *mem, cEntity *parent) {
 	cGenCharLocalLogic *self = mem;
 
 	cGenCharLocalLogic_ctor(self, parent, 1);
-	SPUTNIK_VT(self) = Game_Ptr(CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE);
+	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikTime = 0.0f;
 	if ((byte)cBaseLocalLogic_SetState(&self->base, 7, NULL)) {
 		Sputnik_Walk(self);
@@ -39,13 +39,13 @@ void *__thiscall cSputnikJunkyardLocalLogic_ctor(void *mem, cEntity *parent) {
 }
 
 void __fastcall cSputnikJunkyardLocalLogic_dtor(cGenCharLocalLogic *self) {
-	SPUTNIK_VT(self) = Game_Ptr(CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE);
+	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikPisser = NULL;
 	cGenCharLocalLogic_dtor(self);
 }
 
 cGenCharLocalLogic *__thiscall cSputnikJunkyardLocalLogic_Delete(cGenCharLocalLogic *self, byte flags) {
-	SPUTNIK_VT(self) = Game_Ptr(CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE);
+	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikPisser = NULL;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {

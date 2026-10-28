@@ -23,7 +23,7 @@ byte Floats11_Equal(const float *a, const float *b) {
 CFlare *__fastcall CFlare_ctor(CFlare *self) {
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->nodo = NULL;
-	self->vftable = Game_Ptr(CFLARE_VFTABLE);
+	self->vftable = CFLARE_VFTABLE;
 	self->clase = CLASE_OBJ3D_FLARE;
 	self->escala[0] = g_FlareTam;
 	self->escala[1] = g_FlareTam;
@@ -47,7 +47,7 @@ static void CFlare_FreeGrf(CFlare *self) {
 }
 
 void __fastcall CFlare_dtor(CFlare *self) {
-	self->vftable = Game_Ptr(CFLARE_VFTABLE);
+	self->vftable = CFLARE_VFTABLE;
 	CFlare_FreeGrf(self);
 	CObjBase3D_dtor((IObjeto3D *)self);
 }

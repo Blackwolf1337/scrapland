@@ -16,7 +16,7 @@
 #define cAI_Fail_Entity_NULL 0		/* the CHECK of the original that always fails */
 
 static void cAI_Init(cAI *self) {
-	self->vftable = Game_Ptr(CAI_VFTABLE);
+	self->vftable = CAI_VFTABLE;
 	cSlotController_ctor((cSlotController *)self->slot, AI_SLOT_TIME);
 }
 
@@ -44,11 +44,11 @@ cAI *__fastcall cAI_ctorDefault(cAI *self) {
 }
 
 void __fastcall cAI_dtor(cAI *self) {
-	self->vftable = Game_Ptr(CAI_VFTABLE);
+	self->vftable = CAI_VFTABLE;
 }
 
 cAI *__thiscall cAI_Delete(cAI *self, byte flags) {
-	self->vftable = Game_Ptr(CAI_VFTABLE);
+	self->vftable = CAI_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}

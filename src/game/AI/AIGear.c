@@ -19,7 +19,7 @@ void *__thiscall cAIGear_ctor(void *mem, cEntity *e, int *arg) {
 	cAIChar *c = &self->base;
 
 	cAIChar_ctor(mem, e, arg);
-	c->vftable = Game_Ptr(CAIGEAR_VFTABLE);
+	c->vftable = CAIGEAR_VFTABLE;
 	cAIChar_NewControl(c, CAICONTROLSHOOT_SIZE, cAIControlGear_ctor, e, arg);
 	self->targetLife = 0;
 	self->blocked = 0;
@@ -28,12 +28,12 @@ void *__thiscall cAIGear_ctor(void *mem, cEntity *e, int *arg) {
 }
 
 void __fastcall cAIGear_dtor(cAIChar *self) {
-	self->vftable = Game_Ptr(CAIGEAR_VFTABLE);
+	self->vftable = CAIGEAR_VFTABLE;
 	cAIChar_dtor(self);
 }
 
 cAIChar *__thiscall cAIGear_Delete(cAIChar *self, byte flags) {
-	self->vftable = Game_Ptr(CAIGEAR_VFTABLE);
+	self->vftable = CAIGEAR_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIGEAR_SIZE);

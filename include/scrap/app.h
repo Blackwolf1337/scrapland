@@ -14,8 +14,8 @@
 /* the CApp part of a CWinApp (0x48 bytes) */
 typedef CWinApp CApp;
 
-#define g_CAppVftable ((const CWinAppVtbl *)Game_Ptr(0x3cf190))
-#define g_CWinAppVftable ((const CWinAppVtbl *)Game_Ptr(0x3cf7d4))
+#define g_CAppVftable ((const CWinAppVtbl *)GAME_VFTABLE(CApp_vftable, 0x3cf190))
+#define g_CWinAppVftable ((const CWinAppVtbl *)GAME_VFTABLE(CWinApp_vftable, 0x3cf7d4))
 
 /* engine variables (Gvars) */
 #define g_LoadMsgIndex GAME_DATA(int, 0x4679c0)		/* iLoadMsgString: the next loading tip */

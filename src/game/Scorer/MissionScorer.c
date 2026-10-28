@@ -12,7 +12,7 @@ static const char *const s_TextColors[3] = {"TextRed", "TextGreen", "TextBlue"};
 
 cMissionScorer *__fastcall cMissionScorer_ctor(cMissionScorer *self) {
 	cSpriteScorer_ctor(&self->base);
-	self->base.base.vftable = Game_Ptr(CMISSIONSCORER_VFTABLE);
+	self->base.base.vftable = CMISSIONSCORER_VFTABLE;
 	cString_ctorStr(&self->forceMap, "");
 	self->font = g_FontHoratio;
 	self->nextText = Lang_GetStr("NextMissionMapText");
@@ -25,7 +25,7 @@ cMissionScorer *__fastcall cMissionScorer_ctor(cMissionScorer *self) {
 
 void __fastcall cMissionScorer_dtor(cMissionScorer *self) {
 	CPsaImage *img = self->tab;
-	self->base.base.vftable = Game_Ptr(CMISSIONSCORER_VFTABLE);
+	self->base.base.vftable = CMISSIONSCORER_VFTABLE;
 	if (img) {
 		CPsaImage_dtor(img);
 		operator_delete_sized(img, sizeof(CPsaImage));

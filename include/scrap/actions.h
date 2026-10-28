@@ -30,10 +30,10 @@ typedef struct cActVtbl {
 	void *(__thiscall *Delete)(void *self, byte flags);	/* 0x00 */
 } cActVtbl;
 
-#define CACTCLASS_VFTABLE 0x3a3224
-#define CACTCLASSLIST_VFTABLE 0x3a3734
-#define CACTCTRL_VFTABLE 0x3a38a0
-#define CACTIONMOVE_VFTABLE 0x3a3a74
+#define CACTCLASS_VFTABLE GAME_VFTABLE(cActClass_vftable, 0x3a3224)
+#define CACTCLASSLIST_VFTABLE GAME_VFTABLE(cActClassList_vftable, 0x3a3734)
+#define CACTCTRL_VFTABLE GAME_VFTABLE(cActCtrl_vftable, 0x3a38a0)
+#define CACTIONMOVE_VFTABLE GAME_VFTABLE(cActionMove_vftable, 0x3a3a74)
 
 #define ACT_LAYERS 4			/* the layers of a controller, the channels of the model */
 #define ACT_NODEMODS 3			/* the turned nodes of a class ("NodeN_...") */

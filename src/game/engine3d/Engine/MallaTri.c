@@ -8,8 +8,8 @@
 #include "scrap/e3dutil.h"
 #include "scrap/mallatri.h"
 
-#define CMALLATRI_VFTABLE 0x3dbcf0
-#define IOBJETO3D_VFTABLE 0x3d79dc
+#define CMALLATRI_VFTABLE GAME_VFTABLE(CMallaTri_vftable, 0x3dbcf0)
+#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObjeto3D_vftable, 0x3d79dc)
 #define MALLATRI_SKIN 16
 /* the box before the first vertex, rva 0x3a3a38 and 0x3a512c */
 #define MALLATRI_FLT_MAX 3.4028234663852886e+38f
@@ -90,7 +90,7 @@ void __fastcall CMallaTri_Init(CMallaTri *self) {
 }
 
 CMallaTri *__fastcall CMallaTri_ctor(CMallaTri *self) {
-	self->vftable = Game_Ptr(CMALLATRI_VFTABLE);
+	self->vftable = CMALLATRI_VFTABLE;
 	memset(&self->box, 0, sizeof(self->box));
 	CMallaTri_Init(self);
 	return self;
@@ -127,9 +127,9 @@ void __fastcall CMallaTri_Clear(CMallaTri *self) {
 }
 
 void __fastcall CMallaTri_dtor(CMallaTri *self) {
-	self->vftable = Game_Ptr(CMALLATRI_VFTABLE);
+	self->vftable = CMALLATRI_VFTABLE;
 	CMallaTri_Clear(self);
-	self->vftable = Game_Ptr(IOBJETO3D_VFTABLE);
+	self->vftable = IOBJETO3D_VFTABLE;
 }
 
 CMallaTri *__thiscall CMallaTri_Delete(CMallaTri *self, byte flags) {

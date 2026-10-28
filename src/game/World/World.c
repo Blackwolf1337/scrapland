@@ -447,12 +447,12 @@ cWorld *__thiscall cWorld_ctor(cWorld *self) {
 	box_t box;
 	vec3_t cell;
 
-	self->vftable = Game_Ptr(CWORLD_VFTABLE);
+	self->vftable = CWORLD_VFTABLE;
 	HashTable_ctor(&self->entities, 0x1c9, 1);
 	Nto1Node_Init(&self->entityList);
 	Nto1Node_Init(&self->deadList);
 	memset(&sched->list, 0, sizeof(sched->list));
-	sched->vftable = Game_Ptr(CSCHEDULEDFUNCSTACK_VFTABLE);
+	sched->vftable = CSCHEDULEDFUNCSTACK_VFTABLE;
 	HashTable_ctor(&self->debris, 0x1c9, 1);
 	HashTable_ctor(&self->lists, 0x1f, 1);
 	cTimer_ctor(&self->timer);
@@ -529,7 +529,7 @@ void __fastcall WeapTable_Free(void *table) {
 }
 
 void __fastcall cWorld_dtor(cWorld *self) {
-	self->vftable = Game_Ptr(CWORLD_VFTABLE);
+	self->vftable = CWORLD_VFTABLE;
 	cWorld_Clear(self);
 	Logic_dtor(self->taunts);
 	Grid_dtor(self->grid);

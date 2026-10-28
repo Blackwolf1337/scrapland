@@ -50,11 +50,11 @@ cMapElement *__thiscall cMapElement_Delete(cMapElement *self, byte flags);
 byte __thiscall cMapElement_Init(cMapElement *self);
 void __thiscall cMapElement_Update(cMapElement *self, float dt);
 
-#define CFXELEMENTSORBITBOYA_VFTABLE 0x3cc574
-#define CFXELEMENTSORBITBOYACONTROLLER_VFTABLE 0x3cc584
-#define CFXELEMENTSMENTALCONTROLLER_VFTABLE 0x3cc7f4
-#define CFXELEMENTSMENTALCONTROLLERDAMAGEFX_VFTABLE 0x3cc804
-#define CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE 0x3cc814
+#define CFXELEMENTSORBITBOYA_VFTABLE GAME_VFTABLE(cFXElementsOrbitBoya_vftable, 0x3cc574)
+#define CFXELEMENTSORBITBOYACONTROLLER_VFTABLE GAME_VFTABLE(cFXElementsOrbitBoyaController_vftable, 0x3cc584)
+#define CFXELEMENTSMENTALCONTROLLER_VFTABLE GAME_VFTABLE(cFXElementsMentalController_vftable, 0x3cc7f4)
+#define CFXELEMENTSMENTALCONTROLLERDAMAGEFX_VFTABLE GAME_VFTABLE(cFXElementsMentalControllerDamageFX_vftable, 0x3cc804)
+#define CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE GAME_VFTABLE(cFXElementsMentalControllerMainFX_vftable, 0x3cc814)
 
 /* ---- FXElementsOrbit.cpp ---- */
 
@@ -265,9 +265,9 @@ static inline float FxElem_Rand(double range, double add) {
 
 /* ---- FXElements.cpp ---- */
 
-#define CFXELEMENTSLIGHTING_VFTABLE 0x3cc0fc
-#define CFXELEMENTSFIREDROP_VFTABLE 0x3cc10c
-#define CFXELEMENTSLENSFLARE_VFTABLE 0x3cc11c
+#define CFXELEMENTSLIGHTING_VFTABLE GAME_VFTABLE(cFXElementsLighting_vftable, 0x3cc0fc)
+#define CFXELEMENTSFIREDROP_VFTABLE GAME_VFTABLE(cFXElementsFireDrop_vftable, 0x3cc10c)
+#define CFXELEMENTSLENSFLARE_VFTABLE GAME_VFTABLE(cFXElementsLensFlare_vftable, 0x3cc11c)
 
 /* drops of fire from the node DC_Root while the camera is within FXElementsFireDropMaxDist: bursts with pauses,
  * the parameters from the section FXFireDrop of the node (0x118 bytes, constructor rva 0x1cf850) */
@@ -402,8 +402,8 @@ void __thiscall cFXElementsLighting_Update(cFXElementsLighting *self, float dt);
 
 /* ---- FXElementsAB.cpp ---- */
 
-#define CFXELEMENTSABFAKEMETEORS_VFTABLE 0x3cc3bc
-#define CFXELEMENTSABFAKELIMIT_VFTABLE 0x3cc3cc
+#define CFXELEMENTSABFAKEMETEORS_VFTABLE GAME_VFTABLE(cFXElementsABFakeMeteors_vftable, 0x3cc3bc)
+#define CFXELEMENTSABFAKELIMIT_VFTABLE GAME_VFTABLE(cFXElementsABFakeLimit_vftable, 0x3cc3cc)
 
 #define FXABBOLTS 10
 #define FXABRINGS 4

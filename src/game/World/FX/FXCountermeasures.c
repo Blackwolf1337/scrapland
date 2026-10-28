@@ -1312,9 +1312,9 @@ void __thiscall cObjElementFXDebrisCloud_Warm(cObjElementFXDebrisCloud *self, cD
 #define FXCM_NODE_CTOR 0x1c9610
 #define FXCM_NODE_DTOR 0x0d1190		/* the same code as Nto1Node_dtor */
 
-static inline void FXCM_SetVtbl(void *self, uint32_t vt) {
+static inline void FXCM_SetVtbl(void *self, void *vt) {
 	*(void **)self = NULL;
-	*(void **)self = Game_Ptr(vt);
+	*(void **)self = vt;
 }
 
 Nto1Node *__thiscall FXCountermeasures_NodeCtor(Nto1Node *self) {
@@ -1387,7 +1387,7 @@ void *__thiscall cObjElementFXSonicExplosion_ctor(void *self) {
 void __thiscall cObjElementFXDebrisCloud_dtor(void *self) {
 	cObjElementFXDebrisCloud *s = self;
 
-	*(void **)s = Game_Ptr(COBJELEMENTFXDEBRISCLOUD_VFTABLE);
+	*(void **)s = COBJELEMENTFXDEBRISCLOUD_VFTABLE;
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
@@ -1395,7 +1395,7 @@ void __thiscall cObjElementFXDebrisCloud_dtor(void *self) {
 void __thiscall cObjElementFXEMI_dtor(void *self) {
 	cObjElementFXEMI *s = self;
 
-	*(void **)s = Game_Ptr(COBJELEMENTFXEMI_VFTABLE);
+	*(void **)s = COBJELEMENTFXEMI_VFTABLE;
 	crt_eh_vector_dtor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, Game_Ptr(FXCM_NODE_DTOR));
 	crt_eh_vector_dtor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, Game_Ptr(FXCM_TRAIL_DTOR));
 	CGameParticles_Release(&s->particles);
@@ -1405,7 +1405,7 @@ void __thiscall cObjElementFXEMI_dtor(void *self) {
 void __thiscall cObjElementFXHook_dtor(void *self) {
 	cObjElementFXHook *s = self;
 
-	*(void **)s = Game_Ptr(COBJELEMENTFXHOOK_VFTABLE);
+	*(void **)s = COBJELEMENTFXHOOK_VFTABLE;
 	CGameParticles_Release(&s->particles);
 	CGameTrail_dtor(&s->trail[1]);
 	CGameTrail_dtor(&s->trail[0]);
@@ -1415,7 +1415,7 @@ void __thiscall cObjElementFXHook_dtor(void *self) {
 void __thiscall cObjElementFXSonicExplosion_dtor(void *self) {
 	cObjElementFXSonicExplosion *s = self;
 
-	*(void **)s = Game_Ptr(COBJELEMENTFXSONICEXPLOSION_VFTABLE);
+	*(void **)s = COBJELEMENTFXSONICEXPLOSION_VFTABLE;
 	CGameParticles_Release(&s->rings);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);

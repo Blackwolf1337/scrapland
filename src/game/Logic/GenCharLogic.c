@@ -13,7 +13,7 @@
 
 cGenCharLocalLogic *__thiscall cGenCharLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent, int noRestart) {
 	cBaseLocalLogic_ctor(&self->base, parent);
-	self->base.vftable = Game_Ptr(CGENCHARLOCALLOGIC_VFTABLE);
+	self->base.vftable = CGENCHARLOCALLOGIC_VFTABLE;
 	self->time = 0.0f;
 	self->accuseAgain = 0.0f;
 	cString_ctor(&self->defaultTarget);
@@ -33,7 +33,7 @@ cGenCharLocalLogic *__thiscall cGenCharLocalLogic_ctor(cGenCharLocalLogic *self,
 }
 
 void __fastcall cGenCharLocalLogic_dtor(cGenCharLocalLogic *self) {
-	self->base.vftable = Game_Ptr(CGENCHARLOCALLOGIC_VFTABLE);
+	self->base.vftable = CGENCHARLOCALLOGIC_VFTABLE;
 	cString_dtor(&self->defaultTarget);
 	cBaseLocalLogic_dtor(&self->base);
 }

@@ -41,7 +41,7 @@ cEntity *__thiscall cCamPathEntity_ctor(void *mem, const char *name, float x, fl
 	cCamPathEntity *p = mem;
 
 	cCamEntity_ctor(mem, name, x, y, z);
-	p->base.base.vftable = Game_Ptr(CCAMPATHENTITY_VFTABLE);
+	p->base.base.vftable = CCAMPATHENTITY_VFTABLE;
 	cPy_Function_ctor(&p->onEnd);
 	for (int i = 0; i < CAMPATH_POINTS; i++) {
 		cCamPathPoint_ctor(&p->points[i]);
@@ -52,7 +52,7 @@ cEntity *__thiscall cCamPathEntity_ctor(void *mem, const char *name, float x, fl
 }
 
 void __fastcall cCamPathEntity_dtor(cEntity *self) {
-	self->vftable = Game_Ptr(CCAMPATHENTITY_VFTABLE);
+	self->vftable = CCAMPATHENTITY_VFTABLE;
 	cPy_Function_dtor(&Path(self)->onEnd);
 	cCamControl_dtor(self);
 }

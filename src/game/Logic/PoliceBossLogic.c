@@ -9,7 +9,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 
-#define CPOLICEBOSSLOCALLOGIC_VFTABLE 0x3c0a3c
+#define CPOLICEBOSSLOCALLOGIC_VFTABLE GAME_VFTABLE(cPoliceBossLocalLogic_vftable, 0x3c0a3c)
 #define g_PoliceBossMinSpecialActionTime GAME_DATA(float, 0x44d770)
 #define g_PoliceBossMaxSpecialActionTime GAME_DATA(float, 0x44d788)
 
@@ -17,17 +17,17 @@ void *__thiscall cPoliceBossLocalLogic_ctor(void *mem, cEntity *parent) {
 	cGenCharLocalLogic *self = mem;
 
 	cGenCharLocalLogic_ctor(self, parent, 0);
-	self->base.vftable = Game_Ptr(CPOLICEBOSSLOCALLOGIC_VFTABLE);
+	self->base.vftable = CPOLICEBOSSLOCALLOGIC_VFTABLE;
 	return self;
 }
 
 void __fastcall cPoliceBossLocalLogic_dtor(cGenCharLocalLogic *self) {
-	self->base.vftable = Game_Ptr(CPOLICEBOSSLOCALLOGIC_VFTABLE);
+	self->base.vftable = CPOLICEBOSSLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 }
 
 cGenCharLocalLogic *__thiscall cPoliceBossLocalLogic_Delete(cGenCharLocalLogic *self, byte flags) {
-	self->base.vftable = Game_Ptr(CPOLICEBOSSLOCALLOGIC_VFTABLE);
+	self->base.vftable = CPOLICEBOSSLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

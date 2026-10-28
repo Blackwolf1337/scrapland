@@ -8,7 +8,7 @@
 
 cChatScorer *__fastcall cChatScorer_ctor(cChatScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CCHATSCORER_VFTABLE);
+	self->base.vftable = CCHATSCORER_VFTABLE;
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	self->img = img ? CPsaImage_ctor(img, "2D/white.tga", 0x24) : NULL;
 	self->base.x = 200.0f;
@@ -22,7 +22,7 @@ cChatScorer *__fastcall cChatScorer_ctor(cChatScorer *self) {
 
 void __fastcall cChatScorer_dtor(cChatScorer *self) {
 	CPsaImage *img = self->img;
-	self->base.vftable = Game_Ptr(CCHATSCORER_VFTABLE);
+	self->base.vftable = CCHATSCORER_VFTABLE;
 	if (img) {
 		CPsaImage_dtor(img);
 		operator_delete_sized(img, sizeof(CPsaImage));

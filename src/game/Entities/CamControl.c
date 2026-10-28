@@ -13,7 +13,7 @@ cEntity *__thiscall cCamEntity_ctor(void *mem, const char *name, float x, float 
 	cCamControl *c = mem;
 
 	cEntity_ctor(mem, name, x, y, z);
-	c->base.vftable = Game_Ptr(CCAMCONTROL_VFTABLE);
+	c->base.vftable = CCAMCONTROL_VFTABLE;
 	CGameCamera_ctor(&c->cam);
 	c->cam.zNear = 100.0f;
 	c->cam.zFar = 400000.0f;
@@ -29,7 +29,7 @@ cEntity *__thiscall cCamEntity_ctor(void *mem, const char *name, float x, float 
 void __fastcall cCamControl_dtor(cEntity *self) {
 	cCamControl *c = Cam(self);
 
-	self->vftable = Game_Ptr(CCAMCONTROL_VFTABLE);
+	self->vftable = CCAMCONTROL_VFTABLE;
 	if (c->slot >= 0 && !strcmp(self->name, cWorld_GetCamName(g_pWorld, c->slot))) {
 		cWorld_SetCam(g_pWorld, c->slot, CAM_EXE_EMPTY);
 	}

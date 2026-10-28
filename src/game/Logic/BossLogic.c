@@ -19,7 +19,7 @@ cBossLocalLogic *__thiscall cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity 
 	byte flag;
 
 	cGenCharLocalLogic_ctor(&self->base, parent, 0);
-	self->base.base.vftable = Game_Ptr(CBOSSLOCALLOGIC_VFTABLE);
+	self->base.base.vftable = CBOSSLOCALLOGIC_VFTABLE;
 	self->time = 0.0f;
 	DummySearch_Start(g_BossWorkPlace, 0);
 	byte found = DummySearch_Next(name, 0x80, &self->workPos, self->workAng, &flag);
@@ -28,7 +28,7 @@ cBossLocalLogic *__thiscall cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity 
 }
 
 cBossLocalLogic *__thiscall cBossLocalLogic_Delete(cBossLocalLogic *self, byte flags) {
-	self->base.base.vftable = Game_Ptr(CBOSSLOCALLOGIC_VFTABLE);
+	self->base.base.vftable = CBOSSLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

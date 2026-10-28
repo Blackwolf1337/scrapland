@@ -122,7 +122,7 @@ cAICharGroup *__thiscall cAICharGroup_ctor(void *mem) {
 	cAICharGroup *self = mem;
 
 	cAIEntityGroup_ctor(&self->base);
-	self->vftable = Game_Ptr(CAICHARGROUP_VFTABLE);
+	self->vftable = CAICHARGROUP_VFTABLE;
 	self->zones = NULL;
 	self->numZones = 0;
 	cAICharGroup_Init(self);
@@ -130,7 +130,7 @@ cAICharGroup *__thiscall cAICharGroup_ctor(void *mem) {
 }
 
 void __fastcall cAICharGroup_dtor(cAICharGroup *self) {
-	self->vftable = Game_Ptr(CAICHARGROUP_VFTABLE);
+	self->vftable = CAICHARGROUP_VFTABLE;
 	for (int i = 0; i < self->numZones; i++) {
 		cAICGPoint *p = self->zones[i].points;
 		if (p) {

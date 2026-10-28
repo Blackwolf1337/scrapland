@@ -58,12 +58,12 @@ struct cGridElements {
 SD_OFFSET(cGridElements, nx, 0x24);
 SD_SIZE(cGridElements, 0x3c);
 
-#define CGRIDELEMENTS_VFTABLE 0x3a9ca4
+#define CGRIDELEMENTS_VFTABLE GAME_VFTABLE(cGridElements_InfoTrafficNode_vftable, 0x3a9ca4)
 
 cGridElements *__thiscall cGridElements_ctor(cGridElements *self, const vec3_t *max, const vec3_t *min, int nx,
 	int ny, int nz);
 /* the constructor of all instances, with the vtable (rva) of the instance */
-cGridElements *cGridElements_Init(cGridElements *self, uint32_t vftable, const vec3_t *max, const vec3_t *min, int nx,
+cGridElements *cGridElements_Init(cGridElements *self, void *vftable, const vec3_t *max, const vec3_t *min, int nx,
 	int ny, int nz);
 /* the cells emptied with clear and freed with their free nodes of nodeSize bytes, then the cell array */
 void cGridElements_FreeCells(cGridElements *self, void(__fastcall *clear)(void *cell), uint32_t nodeSize);
@@ -207,7 +207,7 @@ SD_OFFSET(CNodesTraffic, max, 0x40);
 SD_OFFSET(CNodesTraffic, errors, 0x58);
 SD_SIZE(CNodesTraffic, 0x70);
 
-#define CNODESTRAFFIC_VFTABLE 0x3a9c40
+#define CNODESTRAFFIC_VFTABLE GAME_VFTABLE(CNodesTraffic_vftable, 0x3a9c40)
 
 /* the engine variables */
 #define g_DistGetPVisTrafficAI GAME_DATA(float, 0x444cc4)	/* the searches end at this distance */
@@ -322,7 +322,7 @@ SD_OFFSET(CNodesTrafficInDoor, numLightAI, 0xde8);
 SD_OFFSET(CNodesTrafficInDoor, seenMediumLight, 0xf4c);
 SD_SIZE(CNodesTrafficInDoor, 0xfa4);
 
-#define CNODESTRAFFICINDOOR_VFTABLE 0x3aa784
+#define CNODESTRAFFICINDOOR_VFTABLE GAME_VFTABLE(CNodesTrafficInDoor_vftable, 0x3aa784)
 #define TRAFFICINDOOR_FRAME 0x0a0c20
 
 void __fastcall CNodesTrafficInDoor_dtor(CNodesTrafficInDoor *self);

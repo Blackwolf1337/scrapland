@@ -174,28 +174,28 @@ void *__thiscall cObjElementFXVehicleSputnik_ctor(void *self) {
 
 void __thiscall cObjElementFXFiredDebris_dtor(void *self) {
 	cObjElementFXFiredDebris *s = self;
-	*(void **)s = Game_Ptr(COBJELEMENTFXFIREDDEBRIS_VFTABLE);
+	*(void **)s = COBJELEMENTFXFIREDDEBRIS_VFTABLE;
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
 
 void __thiscall cObjElementFXFiredEntity_dtor(void *self) {
 	cObjElementFXFiredEntity *s = self;
-	*(void **)s = Game_Ptr(COBJELEMENTFXFIREDENTITY_VFTABLE);
+	*(void **)s = COBJELEMENTFXFIREDENTITY_VFTABLE;
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
 
 void __thiscall cObjElementFXSmokeDebris_dtor(void *self) {
 	cObjElementFXSmokeDebris *s = self;
-	*(void **)s = Game_Ptr(COBJELEMENTFXSMOKEDEBRIS_VFTABLE);
+	*(void **)s = COBJELEMENTFXSMOKEDEBRIS_VFTABLE;
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
 
 void __thiscall cObjElementFXVehicleAccelerator_dtor(void *self) {
 	cObjElementFXVehicleAccelerator *s = self;
-	*(void **)s = Game_Ptr(COBJELEMENTFXVEHICLEACCELERATOR_VFTABLE);
+	*(void **)s = COBJELEMENTFXVEHICLEACCELERATOR_VFTABLE;
 	FXObj_TrailsDtor(s->trails, FXVACCEL_TRAILS);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
@@ -203,7 +203,7 @@ void __thiscall cObjElementFXVehicleAccelerator_dtor(void *self) {
 
 void __thiscall cObjElementFXVehicleDamage_dtor(void *self) {
 	cObjElementFXVehicleDamage *s = self;
-	*(void **)s = Game_Ptr(COBJELEMENTFXVEHICLEDAMAGE_VFTABLE);
+	*(void **)s = COBJELEMENTFXVEHICLEDAMAGE_VFTABLE;
 	CGameParticles_Release(&s->parts1);
 	CGameParticles_Release(&s->parts2);
 	CGameParticles_Release(&s->parts3);
@@ -212,14 +212,14 @@ void __thiscall cObjElementFXVehicleDamage_dtor(void *self) {
 
 void __thiscall cObjElementFXVehicleDeathTrail_dtor(void *self) {
 	cObjElementFXDevastatorShoot *s = self;
-	*(void **)s = Game_Ptr(COBJELEMENTFXVEHICLEDEATHTRAIL_VFTABLE);
+	*(void **)s = COBJELEMENTFXVEHICLEDEATHTRAIL_VFTABLE;
 	CGameTrail_dtor(&s->trail);
 	cObjElement_dtor(s);
 }
 
 void __thiscall cObjElementFXVehicleEMI_dtor(void *self) {
 	cObjElementFXVehicleEMI *s = self;
-	*(void **)s = Game_Ptr(COBJELEMENTFXVEHICLEEMI_VFTABLE);
+	*(void **)s = COBJELEMENTFXVEHICLEEMI_VFTABLE;
 	FXObj_TrailsDtor(s->trails, FXVEMI_TRAILS);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
@@ -227,7 +227,7 @@ void __thiscall cObjElementFXVehicleEMI_dtor(void *self) {
 
 void __thiscall cObjElementFXVehicleFire_dtor(void *self) {
 	cObjElementFXVehicleFire *s = self;
-	*(void **)s = Game_Ptr(COBJELEMENTFXVEHICLEFIRE_VFTABLE);
+	*(void **)s = COBJELEMENTFXVEHICLEFIRE_VFTABLE;
 	s->entity = NULL;
 	s->time = 0.0f;
 	CGameParticles_Release(&s->particlesOut);
@@ -237,7 +237,7 @@ void __thiscall cObjElementFXVehicleFire_dtor(void *self) {
 
 void __thiscall cObjElementFXVehicleSpawn_dtor(void *self) {
 	cObjElementFXVehicleSpawn *s = self;
-	*(void **)s = Game_Ptr(COBJELEMENTFXVEHICLESPAWN_VFTABLE);
+	*(void **)s = COBJELEMENTFXVEHICLESPAWN_VFTABLE;
 	FXObj_TrailsDtor(s->trails, FXVSPAWN_TRAILS);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
@@ -245,7 +245,7 @@ void __thiscall cObjElementFXVehicleSpawn_dtor(void *self) {
 
 void __thiscall cObjElementFXVehicleSputnik_dtor(void *self) {
 	cObjElementFXVehicleSputnik *s = self;
-	*(void **)s = Game_Ptr(COBJELEMENTFXVEHICLESPUTNIK_VFTABLE);
+	*(void **)s = COBJELEMENTFXVEHICLESPUTNIK_VFTABLE;
 	FXObj_TrailsDtor(s->trails, FXVSPUTNIK_TRAILS);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);

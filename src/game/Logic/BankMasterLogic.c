@@ -6,13 +6,13 @@
 
 cGenCharLocalLogic *__thiscall cBankMasterLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
-	self->base.vftable = Game_Ptr(CBANKMASTERLOCALLOGIC_VFTABLE);
+	self->base.vftable = CBANKMASTERLOCALLOGIC_VFTABLE;
 	self->ignoreAlarm = 1;
 	return self;
 }
 
 cGenCharLocalLogic *__thiscall cBankMasterLocalLogic_Delete(cGenCharLocalLogic *self, byte flags) {
-	self->base.vftable = Game_Ptr(CBANKMASTERLOCALLOGIC_VFTABLE);
+	self->base.vftable = CBANKMASTERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

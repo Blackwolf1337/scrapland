@@ -2457,7 +2457,7 @@ void M3D_LeeMaterial(CListaMat *lista, int iMat, int iSubmat) {
 		CListaMat *sub = operator_new(sizeof(CListaMat));
 		if (sub) {
 			sub->Nombre = NULL;
-			sub->vftable = Game_Ptr(CLISTAMAT_VFTABLE);
+			sub->vftable = CLISTAMAT_VFTABLE;
 			sub->ult = NULL;
 			sub->pri = NULL;
 		}
@@ -3214,7 +3214,7 @@ CEscena *Escena_Load(const char *name, int arg, const char *name2) {
 	lm = operator_new(sizeof(CListaMat));
 	if (lm) {
 		lm->Nombre = NULL;
-		lm->vftable = Game_Ptr(CLISTAMAT_VFTABLE);
+		lm->vftable = CLISTAMAT_VFTABLE;
 		lm->ult = NULL;
 		lm->pri = NULL;
 	}

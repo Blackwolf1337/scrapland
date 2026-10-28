@@ -16,7 +16,7 @@
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 
-#define CSENTINELLOCALLOGIC_VFTABLE 0x3c156c
+#define CSENTINELLOCALLOGIC_VFTABLE GAME_VFTABLE(cSentinelLocalLogic_vftable, 0x3c156c)
 #define g_SentinelInspectTime GAME_DATA(float, 0x44d9d0)
 #define g_SentinelSuspectTime GAME_DATA(float, 0x44d9e8)
 #define g_SentinelBankerNPCDetect GAME_DATA(float, 0x44da00)
@@ -40,19 +40,19 @@ void *__thiscall cSentinelLocalLogic_ctor(void *mem, cEntity *parent) {
 	cSentinelLocalLogic *self = mem;
 
 	cBaseLocalLogic_ctor(&self->base, parent);
-	SENT_VT(self) = Game_Ptr(CSENTINELLOCALLOGIC_VFTABLE);
+	SENT_VT(self) = CSENTINELLOCALLOGIC_VFTABLE;
 	cSentinelLocalLogic_SetState(self, 0, NULL);
 	self->seen = 0;
 	return self;
 }
 
 void __fastcall cSentinelLocalLogic_dtor(cSentinelLocalLogic *self) {
-	SENT_VT(self) = Game_Ptr(CSENTINELLOCALLOGIC_VFTABLE);
+	SENT_VT(self) = CSENTINELLOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
 }
 
 cSentinelLocalLogic *__thiscall cSentinelLocalLogic_Delete(cSentinelLocalLogic *self, byte flags) {
-	SENT_VT(self) = Game_Ptr(CSENTINELLOCALLOGIC_VFTABLE);
+	SENT_VT(self) = CSENTINELLOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

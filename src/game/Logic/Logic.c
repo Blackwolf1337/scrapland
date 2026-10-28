@@ -26,7 +26,7 @@ static inline float Logic_X87Add(float a, float b) {
 void *__thiscall Logic_ctor(void *logic) {
 	cLogicControl *self = logic;
 
-	self->vftable = Game_Ptr(CLOGICCONTROL_VFTABLE);
+	self->vftable = CLOGICCONTROL_VFTABLE;
 	self->warned = 0;
 	self->warnTime = 0.0f;
 	self->timer = 0.0f;
@@ -58,7 +58,7 @@ void *__thiscall Logic_ctor(void *logic) {
 void __thiscall Logic_dtor(void *logic) {
 	cLogicControl *self = logic;
 
-	self->vftable = Game_Ptr(CLOGICCONTROL_VFTABLE);
+	self->vftable = CLOGICCONTROL_VFTABLE;
 	Logic_NopDtor(&self->gateKeepers);
 	cGenCharGroup_dtor(&self->genChars);
 	Logic_NopDtor(&self->nurses);

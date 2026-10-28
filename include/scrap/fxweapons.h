@@ -11,13 +11,13 @@
 #include "scrap/fxmisc.h"
 #include "scrap/global.h"
 
-#define COBJELEMENTFXSWARMMISSILE_VFTABLE 0x3cdc50
-#define COBJELEMENTFXLASER_VFTABLE 0x3cdc68
-#define COBJELEMENTFXDEVASTATORSHOOT_VFTABLE 0x3cdc80
-#define COBJELEMENTFXTESLA_VFTABLE 0x3cdc98
-#define COBJELEMENTFXATPC_VFTABLE 0x3cdcb0
-#define COBJELEMENTFXINFERNOMISSILE_VFTABLE 0x3cdcc8
-#define COBJELEMENTFXINFERNOEXPLOSION_VFTABLE 0x3cdce0
+#define COBJELEMENTFXSWARMMISSILE_VFTABLE GAME_VFTABLE(cObjElementFXSwarmMissile_vftable, 0x3cdc50)
+#define COBJELEMENTFXLASER_VFTABLE GAME_VFTABLE(cObjElementFXLaser_vftable, 0x3cdc68)
+#define COBJELEMENTFXDEVASTATORSHOOT_VFTABLE GAME_VFTABLE(cObjElementFXDevastatorShoot_vftable, 0x3cdc80)
+#define COBJELEMENTFXTESLA_VFTABLE GAME_VFTABLE(cObjElementFXTesla_vftable, 0x3cdc98)
+#define COBJELEMENTFXATPC_VFTABLE GAME_VFTABLE(cObjElementFXATPC_vftable, 0x3cdcb0)
+#define COBJELEMENTFXINFERNOMISSILE_VFTABLE GAME_VFTABLE(cObjElementFXInfernoMissile_vftable, 0x3cdcc8)
+#define COBJELEMENTFXINFERNOEXPLOSION_VFTABLE GAME_VFTABLE(cObjElementFXInfernoExplosion_vftable, 0x3cdce0)
 
 #define FXINFERNO_RAYS 224
 #define FXINFERNO_TRAILS 15		/* 15 rays per trail */
@@ -259,9 +259,9 @@ SD_SIZE(cObjElementFXTesla, 0x768);
 #define CGAMETRAIL_DTOR 0x21de40
 
 /* the start of every constructor: the base class leaves 0, then the vtable of the class */
-static inline void FXObj_SetVtbl(void *self, uint32_t vt) {
+static inline void FXObj_SetVtbl(void *self, void *vt) {
 	*(void **)self = NULL;
-	*(void **)self = Game_Ptr(vt);
+	*(void **)self = vt;
 }
 
 static inline void FXObj_TrailsCtor(CGameTrail *t, uint32_t n) {

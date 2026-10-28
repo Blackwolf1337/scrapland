@@ -211,21 +211,21 @@ typedef struct cBossLocalLogic {
 SD_OFFSET(cBossLocalLogic, time, 0x7c);
 SD_SIZE(cBossLocalLogic, 0x80);
 
-#define CLOCALLOGIC_VFTABLE 0x3bd340
-#define CBASELOCALLOGIC_VFTABLE 0x3bd360
-#define CBANKDIRECTORLOCALLOGIC_VFTABLE 0x3bcf2c
-#define CBANKMASTERLOCALLOGIC_VFTABLE 0x3bcfc0
-#define CBERTOLOCALLOGIC_VFTABLE 0x3bd578
-#define CBETTYLOCALLOGIC_VFTABLE 0x3bd680
-#define CBISHOPLOCALLOGIC_VFTABLE 0x3bd7e4
-#define CBOSSLOCALLOGIC_VFTABLE 0x3bd8f8
-#define CCRAZYDEALERLOCALLOGIC_VFTABLE 0x3bda0c
-#define CCTFENEMIESLOCALLOGIC_VFTABLE 0x3bdb54
-#define CDESKTOPLOCALLOGIC_VFTABLE 0x3bdccc
-#define CFUNCTIONARYLOCALLOGIC_VFTABLE 0x3be748
-#define CGATEKEEPERLOCALLOGIC_VFTABLE 0x3bec3c
-#define CGEARLOCALLOGIC_VFTABLE 0x3beeec
-#define CGENCHARLOCALLOGIC_VFTABLE 0x3bf5ec
+#define CLOCALLOGIC_VFTABLE GAME_VFTABLE(cLocalLogic_vftable, 0x3bd340)
+#define CBASELOCALLOGIC_VFTABLE GAME_VFTABLE(cBaseLocalLogic_vftable, 0x3bd360)
+#define CBANKDIRECTORLOCALLOGIC_VFTABLE GAME_VFTABLE(cBankDirectorLocalLogic_vftable, 0x3bcf2c)
+#define CBANKMASTERLOCALLOGIC_VFTABLE GAME_VFTABLE(cBankMasterLocalLogic_vftable, 0x3bcfc0)
+#define CBERTOLOCALLOGIC_VFTABLE GAME_VFTABLE(cBertoLocalLogic_vftable, 0x3bd578)
+#define CBETTYLOCALLOGIC_VFTABLE GAME_VFTABLE(cBettyLocalLogic_vftable, 0x3bd680)
+#define CBISHOPLOCALLOGIC_VFTABLE GAME_VFTABLE(cBishopLocalLogic_vftable, 0x3bd7e4)
+#define CBOSSLOCALLOGIC_VFTABLE GAME_VFTABLE(cBossLocalLogic_vftable, 0x3bd8f8)
+#define CCRAZYDEALERLOCALLOGIC_VFTABLE GAME_VFTABLE(cCrazyDealerLocalLogic_vftable, 0x3bda0c)
+#define CCTFENEMIESLOCALLOGIC_VFTABLE GAME_VFTABLE(cCTFEnemiesLocalLogic_vftable, 0x3bdb54)
+#define CDESKTOPLOCALLOGIC_VFTABLE GAME_VFTABLE(cDesktopLocalLogic_vftable, 0x3bdccc)
+#define CFUNCTIONARYLOCALLOGIC_VFTABLE GAME_VFTABLE(cFunctionaryLocalLogic_vftable, 0x3be748)
+#define CGATEKEEPERLOCALLOGIC_VFTABLE GAME_VFTABLE(cGateKeeperLocalLogic_vftable, 0x3bec3c)
+#define CGEARLOCALLOGIC_VFTABLE GAME_VFTABLE(cGearLocalLogic_vftable, 0x3beeec)
+#define CGENCHARLOCALLOGIC_VFTABLE GAME_VFTABLE(cGenCharLocalLogic_vftable, 0x3bf5ec)
 
 /* the character lists of the world the logics search (of cLogicControl at g_pWorld->taunts) */
 #define World_CharList(off) (*(cEntityListData **)((byte *)g_pWorld + (off)))
@@ -539,9 +539,9 @@ struct cDominationLogic {
 };
 SD_OFFSET(cDominationLogic, side, 0x10);
 
-#define CDOMINATIONLOGIC_VFTABLE 0x3be14c
-#define CDOMINATIONENEMIESLOGIC_VFTABLE 0x3be164
-#define CDOMINATIONFRIENDSLOGIC_VFTABLE 0x3be1ec
+#define CDOMINATIONLOGIC_VFTABLE GAME_VFTABLE(cDominationLogic_vftable, 0x3be14c)
+#define CDOMINATIONENEMIESLOGIC_VFTABLE GAME_VFTABLE(cDominationEnemiesLogic_vftable, 0x3be164)
+#define CDOMINATIONFRIENDSLOGIC_VFTABLE GAME_VFTABLE(cDominationFriendsLogic_vftable, 0x3be1ec)
 /* the engine variable LeaderName (the leader ship of the enemies) and the death callbacks of the sides */
 #define g_DominLeaderName GAME_DATA(char *, 0x44ce48)
 #define g_OnDominEnemyDeath ((cPy_Function *)Game_Ptr(0x44ce24))
@@ -594,7 +594,7 @@ typedef struct cEnemies {
 SD_SIZE(cEnemies, 0x10);
 
 #define World_Enemies() ((cEnemies *)((byte *)g_pWorld + 0x2170))
-#define CENEMIESLOCALLOGIC_VFTABLE 0x3be240
+#define CENEMIESLOCALLOGIC_VFTABLE GAME_VFTABLE(cEnemiesLocalLogic_vftable, 0x3be240)
 
 cEnemies *__fastcall cEnemies_ctor(cEnemies *self);
 void __thiscall cEnemies_Attack(cEnemies *self, cEntity *usr);
@@ -809,11 +809,11 @@ typedef struct cHumanLocalLogic {
 } cHumanLocalLogic;
 SD_SIZE(cHumanLocalLogic, 0x5c);
 
-#define CHUMANLOCALLOGIC_VFTABLE 0x3bf75c
+#define CHUMANLOCALLOGIC_VFTABLE GAME_VFTABLE(cHumanLocalLogic_vftable, 0x3bf75c)
 #define g_HumanEnt GAME_DATA(cEntity *, 0x44d304)	/* the parent of the last human logic made */
 
 /* HumphreyLogic.cpp: a cFunctionaryLocalLogic (isDefault: "Humphrey_Default") at the desktop "HumphreyDesktop" */
-#define CHUMPHREYLOCALLOGIC_VFTABLE 0x3bf7e0
+#define CHUMPHREYLOCALLOGIC_VFTABLE GAME_VFTABLE(cHumphreyLocalLogic_vftable, 0x3bf7e0)
 
 /* InfItem.cpp: the item list of the world (cItemList of game.h, g_pWorld + 0x20e0, 100 bytes), DLists of
  * cItemDesc nodes: the life items and the ammo items of three kinds */
@@ -835,7 +835,7 @@ typedef struct cInfItem {
 } cInfItem;
 SD_SIZE(cInfItem, 0x64);
 
-#define CINFITEM_VFTABLE 0x3bf8d0
+#define CINFITEM_VFTABLE GAME_VFTABLE(cInfItem_vftable, 0x3bf8d0)
 
 cInfItem *__fastcall cInfItem_ctor(cInfItem *self);
 void __fastcall cInfItem_dtor(cInfItem *self);
@@ -932,7 +932,7 @@ typedef struct cLittlePoliceLocalLogic {
 SD_OFFSET(cLittlePoliceLocalLogic, policeResult, 0x74);
 SD_SIZE(cLittlePoliceLocalLogic, 0x78);
 
-#define CLITTLEPOLICELOCALLOGIC_VFTABLE 0x3bfc50
+#define CLITTLEPOLICELOCALLOGIC_VFTABLE GAME_VFTABLE(cLittlePoliceLocalLogic_vftable, 0x3bfc50)
 #define g_LittlePoliceStopAcusingMaxDistFromUser GAME_DATA(float, 0x44d3a0)
 #define g_LittlePoliceMaxDistFar GAME_DATA(float, 0x44d3b8)
 #define g_LittlePoliceAsksForMoney GAME_DATA(int, 0x44d3d0)
@@ -1064,7 +1064,7 @@ SD_OFFSET(cLogicControl, genChars, 0x1a4);
 SD_OFFSET(cLogicControl, gateKeepers, 0x1c0);
 SD_SIZE(cLogicControl, 0x1c8);
 
-#define CLOGICCONTROL_VFTABLE 0x3bfe20
+#define CLOGICCONTROL_VFTABLE GAME_VFTABLE(cLogicControl_vftable, 0x3bfe20)
 #define g_RemainTalkTime GAME_DATA(float, 0x462148)
 #define g_TimeBetweeenTaunts GAME_DATA(float, 0x44d648)
 #define g_TimeBetweeenWarnings GAME_DATA(float, 0x44d6b4)
@@ -1084,7 +1084,7 @@ typedef struct cMaintenanceLocalLogic {
 SD_OFFSET(cMaintenanceLocalLogic, reposition, 0xc8);
 SD_SIZE(cMaintenanceLocalLogic, 0xdc);
 
-#define CMAINTENANCELOCALLOGIC_VFTABLE 0x3bff4c
+#define CMAINTENANCELOCALLOGIC_VFTABLE GAME_VFTABLE(cMaintenanceLocalLogic_vftable, 0x3bff4c)
 #define g_MaintenanceShip GAME_DATA(cEntity *, 0x44d43c)	/* the ship on the platform */
 #define g_MaintenanceFirstShip GAME_DATA(cEntity *, 0x44d440)	/* the one the work began with */
 #define g_MaintenanceTimeToNextPos GAME_DATA(float, 0x44d454)
@@ -1097,7 +1097,7 @@ typedef struct cMayorLocalLogic {
 } cMayorLocalLogic;
 SD_SIZE(cMayorLocalLogic, 0xe8);
 
-#define CMAYORLOCALLOGIC_VFTABLE 0x3c0074
+#define CMAYORLOCALLOGIC_VFTABLE GAME_VFTABLE(cMayorLocalLogic_vftable, 0x3c0074)
 #define g_MayorBlabliblaRadius GAME_DATA(float, 0x446c10)
 /* the search of the sphere native: the mayor, the nearest dazed character in its view and the square distance */
 #define g_MayorSearchEnt GAME_DATA(cEntity *, 0x44d478)
@@ -1105,7 +1105,7 @@ SD_SIZE(cMayorLocalLogic, 0xe8);
 #define g_MayorTargetDist GAME_DATA(float, 0x428ba4)
 
 
-#define CMERCENARYLOCALLOGIC_VFTABLE 0x3c0108
+#define CMERCENARYLOCALLOGIC_VFTABLE GAME_VFTABLE(cMercenaryLocalLogic_vftable, 0x3c0108)
 
 /* MessengerLogic.cpp: the messengers (cMessengers, 0x14 bytes, of cGenCharGroup) */
 typedef struct cMessengers {
@@ -1117,7 +1117,7 @@ typedef struct cMessengers {
 } cMessengers;
 SD_SIZE(cMessengers, 0x14);
 
-#define CMESSENGERLOCALLOGIC_VFTABLE 0x3c0440
+#define CMESSENGERLOCALLOGIC_VFTABLE GAME_VFTABLE(cMessengerLocalLogic_vftable, 0x3c0440)
 #define g_MessengerTubeState GAME_DATA(int, 0x44d48c)
 #define g_MessengerTubeStateDef GAME_DATA(int, 0x44d490)
 #define g_MessengerDropPrice GAME_DATA(int, 0x44d4e0)
@@ -1156,7 +1156,7 @@ typedef struct cNurseLocalLogic {
 } cNurseLocalLogic;
 SD_SIZE(cNurseLocalLogic, 0x4c);
 
-#define CNURSELOCALLOGIC_VFTABLE 0x3c06d4
+#define CNURSELOCALLOGIC_VFTABLE GAME_VFTABLE(cNurseLocalLogic_vftable, 0x3c06d4)
 #define g_NurseBankerDetect GAME_DATA(float, 0x44d5d0)
 #define g_NursePoliceRefuse GAME_DATA(float, 0x44d5e8)
 #define g_NurseEscapeTime GAME_DATA(float, 0x44d600)

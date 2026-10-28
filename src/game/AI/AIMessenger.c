@@ -15,19 +15,19 @@ void *__thiscall cAIMessenger_ctor(void *mem, cEntity *e, int *arg) {
 	cAIChar *self = mem;
 
 	cAIChar_ctor(mem, e, arg);
-	self->vftable = Game_Ptr(CAIMESSENGER_VFTABLE);
+	self->vftable = CAIMESSENGER_VFTABLE;
 	cAIChar_NewControl(self, CAICHARCONTROL_SIZE, cAIControlMessenger_ctor, e, arg);
 	self->canTalk = 0;
 	return self;
 }
 
 void __fastcall cAIMessenger_dtor(cAIChar *self) {
-	self->vftable = Game_Ptr(CAIMESSENGER_VFTABLE);
+	self->vftable = CAIMESSENGER_VFTABLE;
 	cAIChar_dtor(self);
 }
 
 cAIChar *__thiscall cAIMessenger_Delete(cAIChar *self, byte flags) {
-	self->vftable = Game_Ptr(CAIMESSENGER_VFTABLE);
+	self->vftable = CAIMESSENGER_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIMESSENGER_SIZE);

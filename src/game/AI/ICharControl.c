@@ -38,7 +38,7 @@ static inline vec3_t *AICC_ViewDir(vec3_t *out, cEntity *e) {
 cAICharControl *__thiscall cAICharControl_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg) {
 	cAICharControl *self = mem;
 
-	self->vftable = Game_Ptr(CAICHARCONTROL_VFTABLE);
+	self->vftable = CAICHARCONTROL_VFTABLE;
 	cSlotController_ctor(AICC_Slot(&self->slotWalk), 0.2f);
 	cSlotController_ctor(AICC_Slot(&self->slotSee2), 0.2f);
 	cSlotController_ctor(AICC_Slot(&self->slotStrafe), 0.13333334f);
@@ -138,7 +138,7 @@ void __fastcall DListSeg_Free(cNWSegList *list) {
 }
 
 void __fastcall cAICharControl_dtor(cAICharControl *self) {
-	self->vftable = Game_Ptr(CAICHARCONTROL_VFTABLE);
+	self->vftable = CAICHARCONTROL_VFTABLE;
 	DListSeg_Free(&self->debug348);
 	NWVecList_Free(&self->debug330);
 	NWVecList_Free(&self->debug318);

@@ -145,12 +145,12 @@ void __thiscall NWGrid_Free(cGridElements *self) {
 }
 
 void __fastcall NWGrid_dtor(cGridElements *self) {
-	self->vftable = Game_Ptr(NWGRID_VFTABLE);
+	self->vftable = NWGRID_VFTABLE;
 	NWGrid_Free(self);
 }
 
 cGridElements *__thiscall NWGrid_Delete(cGridElements *self, byte flags) {
-	self->vftable = Game_Ptr(NWGRID_VFTABLE);
+	self->vftable = NWGRID_VFTABLE;
 	NWGrid_Free(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -177,7 +177,7 @@ byte __thiscall NWGrid_Add(cGridElements *self, const vec3_t *p, void *const *da
 /* ---- CNodesWorldSup ---- */
 
 CNodesWorld *__thiscall CNodesWorldSup_ctor(CNodesWorld *self) {
-	self->vftable = Game_Ptr(CNODESWORLDSUP_VFTABLE);
+	self->vftable = CNODESWORLDSUP_VFTABLE;
 	/* the fields from halfNode to nodeInit, grid to extraPoints and numFiles to i358; the padding, the rest of
 	 * name and fileStart stay as they were */
 	memset(&self->halfNode, 0, offsetof(CNodesWorld, created) - offsetof(CNodesWorld, halfNode));
@@ -198,7 +198,7 @@ static void NWSup_FreeVecList(cNWVecList *list, void(__fastcall *clear)(cNWVecLi
 }
 
 void __fastcall CNodesWorldSup_dtor(CNodesWorld *self) {
-	self->vftable = Game_Ptr(CNODESWORLDSUP_VFTABLE);
+	self->vftable = CNODESWORLDSUP_VFTABLE;
 	NWSup_FreeVecList(&self->errOneWay, DListVec3_Clear);
 	NWSup_FreeVecList(&self->errUnlinked, DListVec3_Clear);
 	NWSup_FreeVecList(&self->errCollide, DListVec3_Clear);

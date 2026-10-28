@@ -13,11 +13,11 @@
 #include "scrap/sueloportal.h"
 #include "scrap/material.h"
 
-#define CSISTPART_VFTABLE 0x3ddc6c
-#define CPARTICULAACTIVE_VFTABLE 0x3ddc5c
-#define CPARTICULASTATIC_VFTABLE 0x3ddc4c
-#define COBJBASE3D_VFTABLE 0x3ddc1c
-#define IOBJETO3D_VFTABLE 0x3d79dc
+#define CSISTPART_VFTABLE GAME_VFTABLE(CSistPart_vftable, 0x3ddc6c)
+#define CPARTICULAACTIVE_VFTABLE GAME_VFTABLE(CParticulaActive_vftable, 0x3ddc5c)
+#define CPARTICULASTATIC_VFTABLE GAME_VFTABLE(CParticulaStatic_vftable, 0x3ddc4c)
+#define COBJBASE3D_VFTABLE GAME_VFTABLE(CObjBase3D_vftable, 0x3ddc1c)
+#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObjeto3D_vftable, 0x3d79dc)
 
 /* CSistPart.params.flags */
 #define SISTPART_LOCALPOS 0x01		/* the positions follow the node */

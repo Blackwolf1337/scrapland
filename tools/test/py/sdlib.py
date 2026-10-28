@@ -31,6 +31,13 @@ def check(name, fn):
 	out.write('%s = %s\n' % (name, r))
 	out.flush() # a crash in the game must not lose the lines before it
 
+# whether the code pointer p (a vtable slot) is the function at rva: the original's, or in ScrapC.exe the C function
+# its hook jumps to (the vtables there are C since stage 3b1 and point to the C directly)
+def isfn(p, rva):
+	if p - 0x400000 == rva:
+		return 1
+	return SDTest.Peek(rva, 'b') == 0xe9 and p == 0x400000 + rva + 5 + SDTest.Peek(rva + 1, 'i')
+
 def finish():
 	out.write('done\n')
 	out.close()

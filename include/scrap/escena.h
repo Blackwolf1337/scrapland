@@ -8,7 +8,7 @@
 
 #include "scrap/nodo3d.h"
 
-#define CESCENA_VFTABLE 0x3d9b24
+#define CESCENA_VFTABLE GAME_VFTABLE(CEscena_vftable, 0x3d9b24)
 
 /* node flags read here */
 #define NODO_JOIN1 (1u << 0)		/* CEscena_Join with sel */

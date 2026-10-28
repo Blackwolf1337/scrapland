@@ -8,7 +8,7 @@
 #include "scrap/mallad3d.h"
 #include "scrap/sueloportal.h"
 
-#define CGRAFICO3D_VFTABLE 0x3e45b8
+#define CGRAFICO3D_VFTABLE GAME_VFTABLE(CGrafico3D_vftable, 0x3e45b8)
 #define g_ShowSprites GAME_DATA(int, 0x4e1dd0)	/* 1: visibility, 2: drawn, 3: with the name */
 
 typedef struct CGrafico3D {

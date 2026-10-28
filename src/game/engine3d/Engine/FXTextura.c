@@ -29,11 +29,11 @@ static float Float_FromBits(uint32_t bits) {
 #define LAVA_COS_STEP Float_FromBits(0x3cc90fdb)	/* 2 pi / 256 */
 
 void __fastcall IFXTextura_dtor(IFXTextura *self) {
-	self->vftable = Game_Ptr(IFXTEXTURA_VFTABLE);
+	self->vftable = IFXTEXTURA_VFTABLE;
 }
 
 IFXTextura *__thiscall IFXTextura_Delete(IFXTextura *self, byte flags) {
-	self->vftable = Game_Ptr(IFXTEXTURA_VFTABLE);
+	self->vftable = IFXTEXTURA_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
@@ -70,7 +70,7 @@ static void FXTex_FreeBmp(CBmp **bmp) {
 }
 
 CFXTexLava *__thiscall CFXTexLava_ctor(CFXTexLava *self, const char *file) {
-	self->base.vftable = Game_Ptr(CFXTEXLAVA_VFTABLE);
+	self->base.vftable = CFXTEXLAVA_VFTABLE;
 	self->lastTime = 0;
 	FXTex_LoadBmps(&self->bmp, &self->orig, file);
 	CHECK(self->bmp->ancho == FXTEX_SIZE && self->bmp->alto == FXTEX_SIZE);
@@ -88,7 +88,7 @@ CFXTexLava *__thiscall CFXTexLava_ctor(CFXTexLava *self, const char *file) {
 }
 
 void __fastcall CFXTexLava_dtor(CFXTexLava *self) {
-	self->base.vftable = Game_Ptr(CFXTEXLAVA_VFTABLE);
+	self->base.vftable = CFXTEXLAVA_VFTABLE;
 	FXTex_FreeBmp(&self->bmp);
 	FXTex_FreeBmp(&self->orig);
 	IFXTextura_dtor(&self->base);
@@ -150,7 +150,7 @@ int __thiscall CFXTexLava_Update(CFXTexLava *self, CMapa *mapa) {
 }
 
 CFXTexScroll *__thiscall CFXTexScroll_ctor(CFXTexScroll *self, const char *file) {
-	self->base.vftable = Game_Ptr(CFXTEXSCROLL_VFTABLE);
+	self->base.vftable = CFXTEXSCROLL_VFTABLE;
 	self->lastTime = 0;
 	self->offset = 0;
 	self->i14 = 0;
@@ -160,7 +160,7 @@ CFXTexScroll *__thiscall CFXTexScroll_ctor(CFXTexScroll *self, const char *file)
 }
 
 void __fastcall CFXTexScroll_dtor(CFXTexScroll *self) {
-	self->base.vftable = Game_Ptr(CFXTEXSCROLL_VFTABLE);
+	self->base.vftable = CFXTEXSCROLL_VFTABLE;
 	FXTex_FreeBmp(&self->bmp);
 	FXTex_FreeBmp(&self->orig);
 	IFXTextura_dtor(&self->base);
@@ -193,7 +193,7 @@ int __thiscall CFXTexScroll_Update(CFXTexScroll *self, CMapa *mapa) {
 }
 
 CFXNewsPanel *__fastcall CFXNewsPanel_ctor(CFXNewsPanel *self) {
-	self->base.vftable = Game_Ptr(CFXNEWSPANEL_VFTABLE);
+	self->base.vftable = CFXNEWSPANEL_VFTABLE;
 	self->time = 0;
 	return self;
 }

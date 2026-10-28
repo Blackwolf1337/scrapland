@@ -13,14 +13,14 @@
 #include "scrap/nodesworld2d.h"
 #include "scrap/scrapmain.h"
 
-#define CBINARYHEAP_VFTABLE 0x3a97c4
-#define CASTARSUP_VFTABLE 0x3a9a54
-#define CASTAR_VFTABLE 0x3a9774
-#define CASTAR2D_VFTABLE 0x3a99c8
+#define CBINARYHEAP_VFTABLE GAME_VFTABLE(cBinaryHeap_ElemAStar_vftable, 0x3a97c4)
+#define CASTARSUP_VFTABLE GAME_VFTABLE(CAStarSup_vftable, 0x3a9a54)
+#define CASTAR_VFTABLE GAME_VFTABLE(CAStar_vftable, 0x3a9774)
+#define CASTAR2D_VFTABLE GAME_VFTABLE(CAStar2D_vftable, 0x3a99c8)
 
 cBinaryHeap *__thiscall cBinaryHeap_ctor(cBinaryHeap *self, int capacity, binHeapLess_t less, binHeapEq_t equals,
 	binHeapIndex_t setIndex) {
-	self->vftable = Game_Ptr(CBINARYHEAP_VFTABLE);
+	self->vftable = CBINARYHEAP_VFTABLE;
 	self->count = 0;
 	self->capacity = 0;
 	if (!less || !equals) {
@@ -38,7 +38,7 @@ cBinaryHeap *__thiscall cBinaryHeap_ctor(cBinaryHeap *self, int capacity, binHea
 }
 
 void __fastcall cBinaryHeap_dtor(cBinaryHeap *self) {
-	self->vftable = Game_Ptr(CBINARYHEAP_VFTABLE);
+	self->vftable = CBINARYHEAP_VFTABLE;
 	Mem_Free(self->elems);
 }
 
@@ -319,7 +319,7 @@ HashTable *__thiscall AStarTable_ctor(HashTable *self, int size) {
 }
 
 CAStar *__fastcall CAStarSup_ctor(CAStar *self) {
-	self->vftable = Game_Ptr(CASTARSUP_VFTABLE);
+	self->vftable = CASTARSUP_VFTABLE;
 	HashTable *t = operator_new(0xc);
 	if (t) {
 		t->numSlots = 0x3f1;
@@ -346,7 +346,7 @@ CAStar *__fastcall CAStarSup_ctor(CAStar *self) {
 void __fastcall CAStarSup_dtor(CAStar *self) {
 	HashTable *t = self->table;
 
-	self->vftable = Game_Ptr(CASTARSUP_VFTABLE);
+	self->vftable = CASTARSUP_VFTABLE;
 	if (t) {
 		AStarTable_dtor(t);
 		operator_delete_sized(t, 0xc);
@@ -685,7 +685,7 @@ static void AStar_Alloc(CAStar *self) {
 void *__thiscall CAStar_ctor(void *mem, CNodesWorld *nodes) {
 	CAStar *self = CAStarSup_ctor(mem);
 
-	self->vftable = Game_Ptr(CASTAR_VFTABLE);
+	self->vftable = CASTAR_VFTABLE;
 	self->nodes = NULL;
 	if (!nodes) {
 		Con_FatalErrorf("ERROR AI: Grafo pathfinding inexistente.\n");
@@ -698,7 +698,7 @@ void *__thiscall CAStar_ctor(void *mem, CNodesWorld *nodes) {
 void *__thiscall CAStar2D_ctor(void *mem, CNodesWorld2D *nodes) {
 	CAStar *self = CAStarSup_ctor(mem);
 
-	self->vftable = Game_Ptr(CASTAR2D_VFTABLE);
+	self->vftable = CASTAR2D_VFTABLE;
 	self->nodes = NULL;
 	if (!nodes) {
 		Con_FatalErrorf("ERROR AI: Grafo pathfinding inexistente.\n");
@@ -710,10 +710,10 @@ void *__thiscall CAStar2D_ctor(void *mem, CNodesWorld2D *nodes) {
 	return self;
 }
 
-static void AStar_Free(CAStar *self, uint32_t vftable) {
+static void AStar_Free(CAStar *self, void *vftable) {
 	void *list = self->list;
 
-	self->vftable = Game_Ptr(vftable);
+	self->vftable = vftable;
 	Mem_Free(list);
 	if (self->open) {
 		self->open->vftable->Delete(self->open, 1);

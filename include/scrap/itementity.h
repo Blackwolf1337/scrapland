@@ -12,7 +12,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/world.h"
 
-#define CITEMENTITY_VFTABLE 0x3b294c
+#define CITEMENTITY_VFTABLE GAME_VFTABLE(cItemEntity_vftable, 0x3b294c)
 #define CITEMENTITY_SIZE 0x398
 
 typedef struct cItemEntity {

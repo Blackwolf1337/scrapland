@@ -12,18 +12,18 @@ void *__thiscall cAIHuman_ctor(void *mem, cEntity *e, int *arg) {
 	cAIChar *self = mem;
 
 	cAIChar_ctor(mem, e, arg);
-	self->vftable = Game_Ptr(CAIHUMAN_VFTABLE);
+	self->vftable = CAIHUMAN_VFTABLE;
 	self->canTalk = 0;
 	return self;
 }
 
 void __fastcall cAIHuman_dtor(cAIChar *self) {
-	self->vftable = Game_Ptr(CAIHUMAN_VFTABLE);
+	self->vftable = CAIHUMAN_VFTABLE;
 	cAIChar_dtor(self);
 }
 
 cAIChar *__thiscall cAIHuman_Delete(cAIChar *self, byte flags) {
-	self->vftable = Game_Ptr(CAIHUMAN_VFTABLE);
+	self->vftable = CAIHUMAN_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIHUMAN_SIZE);

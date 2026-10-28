@@ -33,7 +33,7 @@ void *__thiscall cHumanLocalLogic_ctor(void *mem, cEntity *parent) {
 	cHumanLocalLogic *self = mem;
 
 	cBaseLocalLogic_ctor(&self->base, parent);
-	self->base.vftable = Game_Ptr(CHUMANLOCALLOGIC_VFTABLE);
+	self->base.vftable = CHUMANLOCALLOGIC_VFTABLE;
 	cPy_Function_ctor(&self->func);
 	g_HumanEnt = self->base.parent;
 	cPy_Function_SetNative(&self->func, (nativefunc_t)Game_Ptr(0x14d950));
@@ -41,7 +41,7 @@ void *__thiscall cHumanLocalLogic_ctor(void *mem, cEntity *parent) {
 }
 
 void __fastcall cHumanLocalLogic_dtor(cHumanLocalLogic *self) {
-	self->base.vftable = Game_Ptr(CHUMANLOCALLOGIC_VFTABLE);
+	self->base.vftable = CHUMANLOCALLOGIC_VFTABLE;
 	cPy_Function_dtor(&self->func);
 	cBaseLocalLogic_dtor(&self->base);
 }

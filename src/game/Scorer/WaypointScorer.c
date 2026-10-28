@@ -17,7 +17,7 @@
 
 cWaypointScorer *__fastcall cWaypointScorer_ctor(cWaypointScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CWAYPOINTSCORER_VFTABLE);
+	self->base.vftable = CWAYPOINTSCORER_VFTABLE;
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	img = img ? CPsaImage_ctor(img, "2D/white.tga", 0x20) : NULL;
 	self->img = img;
@@ -29,7 +29,7 @@ cWaypointScorer *__fastcall cWaypointScorer_ctor(cWaypointScorer *self) {
 }
 
 void __fastcall cWaypointScorer_dtor(cWaypointScorer *self) {
-	self->base.vftable = Game_Ptr(CWAYPOINTSCORER_VFTABLE);
+	self->base.vftable = CWAYPOINTSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	cScorerItem_dtor(&self->base);
 }

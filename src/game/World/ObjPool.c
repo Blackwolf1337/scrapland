@@ -12,7 +12,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/world.h"
 
-#define COBJELEMENTABSTRACT_VFTABLE 0x3cb0e4
+#define COBJELEMENTABSTRACT_VFTABLE GAME_VFTABLE(cObjElementAbstract_vftable, 0x3cb0e4)
 #define DEBRIS_STEP 0.05f
 #define DEBRIS_MAXSTEP 0.1f
 
@@ -139,7 +139,7 @@ cDebrisSys *__thiscall cDebrisSys_ctor(void *mem) {
 }
 
 void __thiscall cObjElement_dtor(void *self) {
-	((cObjElementFX *)self)->vftable = Game_Ptr(COBJELEMENTABSTRACT_VFTABLE);
+	((cObjElementFX *)self)->vftable = COBJELEMENTABSTRACT_VFTABLE;
 }
 
 void __thiscall cDebrisSys_dtor(cDebrisSys *sys) {

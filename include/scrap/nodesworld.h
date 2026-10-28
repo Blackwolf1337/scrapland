@@ -278,7 +278,7 @@ SD_OFFSET(CNodesWorld, hitFrom, 0x3c0);
 SD_OFFSET(CNodesWorld, tris, 0x3d8);
 SD_SIZE(CNodesWorld, 0x3f0);
 
-#define CNODESWORLD_VFTABLE 0x3aabb8
+#define CNODESWORLD_VFTABLE GAME_VFTABLE(CNodesWorld_vftable, 0x3aabb8)
 
 /* the globals of the module */
 #define g_NWDebugSegs GAME_DATA(int, 0x444e3c)		/* the path tests keep their segments in the list they get */

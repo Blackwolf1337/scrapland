@@ -22,7 +22,7 @@ static const char *const s_TextColors[4] = {"TextColorRed", "TextColorGreen", "T
 
 cSpecialActionScorer *__fastcall cSpecialActionScorer_ctor(cSpecialActionScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CSPECIALACTIONSCORER_VFTABLE);
+	self->base.vftable = CSPECIALACTIONSCORER_VFTABLE;
 	self->charAction = 0;
 	self->textFont = g_FontHoratio;
 	self->sprite = ScorerImg_ReplaceSimple(NULL, "2D/white.tga", 0x20);
@@ -39,7 +39,7 @@ cSpecialActionScorer *__fastcall cSpecialActionScorer_ctor(cSpecialActionScorer 
 }
 
 void __fastcall cSpecialActionScorer_dtor(cSpecialActionScorer *self) {
-	self->base.vftable = Game_Ptr(CSPECIALACTIONSCORER_VFTABLE);
+	self->base.vftable = CSPECIALACTIONSCORER_VFTABLE;
 	ScorerImg_Free(self->sprite);
 	ScorerImg_Free(self->cannon);
 	ScorerImg_Free(self->icon[0]);

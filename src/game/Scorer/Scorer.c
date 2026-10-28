@@ -32,8 +32,8 @@
 #include "scrap/utild3d.h"
 #include "scrap/weapons.h"
 
-#define CSCORER_VFTABLE 0x3c3bb4
-#define CSCORERITEM_VFTABLE 0x3c3ba0
+#define CSCORER_VFTABLE GAME_VFTABLE(cScorer_vftable, 0x3c3bb4)
+#define CSCORERITEM_VFTABLE GAME_VFTABLE(cScorerItem_vftable, 0x3c3ba0)
 #define EXE_EMPTY ((char *)Game_Ptr(0x3a3228))		/* "" of the exe */
 #define SCORER_NO_ACCEPT -10.0f			/* cScorer.acceptTime off */
 
@@ -72,7 +72,7 @@ void *__fastcall ScorerFx_ctor(void *self) {
 }
 
 cScorer *__fastcall cScorer_ctor(cScorer *self) {
-	self->vftable = Game_Ptr(CSCORER_VFTABLE);
+	self->vftable = CSCORER_VFTABLE;
 	cString_ctor(&self->hint);
 	cString_ctor(&self->specialHint);
 	cString_ctor(&self->actual);
@@ -125,7 +125,7 @@ cScorer *__fastcall cScorer_ctor(cScorer *self) {
 }
 
 cScorerItem *__fastcall cScorerItem_ctor(cScorerItem *self) {
-	self->vftable = Game_Ptr(CSCORERITEM_VFTABLE);
+	self->vftable = CSCORERITEM_VFTABLE;
 	cString_ctor(&self->name);
 	cString_ctor(&self->hint);
 	cString_ctor(&self->left);
@@ -159,7 +159,7 @@ cScorerItem *__fastcall cScorerItem_ctor(cScorerItem *self) {
 }
 
 void __fastcall cScorer_dtor(cScorer *self) {
-	self->vftable = Game_Ptr(CSCORER_VFTABLE);
+	self->vftable = CSCORER_VFTABLE;
 	cScorer_Free(self);
 	cPy_Function_dtor(&self->mpFunc);
 	cPy_Function_dtor(&self->onSpecialHint);
@@ -173,7 +173,7 @@ void __fastcall cScorer_dtor(cScorer *self) {
 }
 
 void __fastcall cScorerItem_dtor(cScorerItem *self) {
-	self->vftable = Game_Ptr(CSCORERITEM_VFTABLE);
+	self->vftable = CSCORERITEM_VFTABLE;
 	cPy_Function_dtor(&self->onGainFocus);
 	cPy_Function_dtor(&self->onLooseFocus);
 	cPy_Function_dtor(&self->onRender);

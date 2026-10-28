@@ -21,7 +21,7 @@
 #include "scrap/sound.h"
 #include "scrap/vehicleattack.h"
 
-#define CWITHLIFEENTITY_VFTABLE 0x3ba27c
+#define CWITHLIFEENTITY_VFTABLE GAME_VFTABLE(cWithLifeEntity_vftable, 0x3ba27c)
 #define CWITHLIFEENTITY_SIZE 0x3e8
 
 typedef struct cWithLifeEntity {

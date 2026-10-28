@@ -19,7 +19,7 @@
 #include "scrap/aicharcontrol.h"
 #include "scrap/dlist.h"
 
-#define CAICHAR_VFTABLE 0x3a49b4
+#define CAICHAR_VFTABLE GAME_VFTABLE(cAIChar_vftable, 0x3a49b4)
 #define CAICHAR_SIZE 0x380
 
 /* the external states (SAI.SetStateChar, the names of cAIChar_StateName) */
@@ -42,7 +42,7 @@ enum {
  * a group state waits until the time reached the limit) with the points of the repositioning out of view, the dummies
  * "DM_NPC_Repos_<zone>_..." of the level by zone. The zone is the name of the action class of a character, a point
  * is taken by linking it to the head at 0x4bc of the character ---- */
-#define CAICHARGROUP_VFTABLE 0x3a5f24
+#define CAICHARGROUP_VFTABLE GAME_VFTABLE(cAICharGroup_vftable, 0x3a5f24)
 #define CAICHARGROUP_SIZE 0x68
 
 /* a point of a zone (0x1c bytes, new[] of the exe with the count before it) */

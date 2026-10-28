@@ -411,7 +411,7 @@ byte cAIVehicle_SetState(cAIVehicle *ai, int state, ...);
 
 /* ---- cAI (AI/AI.cpp, src/game/AI/AI.c): the base of every AI (0x38 bytes), the entity, the time of the frame and
  * of the state, and the slot of the reactions ---- */
-#define CAI_VFTABLE 0x3a3f18
+#define CAI_VFTABLE GAME_VFTABLE(cAI_vftable, 0x3a3f18)
 
 typedef struct cAI cAI;
 
@@ -483,13 +483,13 @@ void __thiscall cAI_OnEvent(cAI *self, int ev);
 /* ---- cAIMove (AI/AIMove.cpp, src/game/AI/AIMove.c): the base of cAIChar and cAIVehicle (the first 0x90 bytes of
  * cAIChar: the target link, the move of the state, the check of a character that does not move); the prototypes in
  * aivehicle.h ---- */
-#define CAIMOVE_VFTABLE 0x3a7754
+#define CAIMOVE_VFTABLE GAME_VFTABLE(cAIMove_vftable, 0x3a7754)
 #define CAIMOVE_SIZE 0x90
 
 /* ---- cAIEntityGroup (AI/AIEntityGroup.cpp, src/game/AI/AIEntityGroup.c): the base of the vehicle and the character
  * groups, up to 20 entities (a race) and the time since an AI of the group took a group state; the next one may take
  * one when the time reached TimeBetwChangeStateAI ---- */
-#define CAIENTITYGROUP_VFTABLE 0x3a6f18
+#define CAIENTITYGROUP_VFTABLE GAME_VFTABLE(cAIEntityGroup_vftable, 0x3a6f18)
 #define CAIENTITYGROUP_SIZE 0x60
 #define CAIENTITYGROUP_MAX 20
 
@@ -539,17 +539,17 @@ void __thiscall cAIEntityGroup_Update(cAIEntityGroup *self, float dt);
  * with its own slots and its own move control (cAIControl<Class>, aicharcontrol.h). The constructors are declared in
  * walkcharentity.h. Most of them replace the action check (CheckActDist, the action button at the target) and the
  * distances of the states (SetDists); the ones that shoot take their parameters in SetDists2 ---- */
-#define CAIBANKDIRECTOR_VFTABLE 0x3a40a8
-#define CAIBANKMASTER_VFTABLE 0x3a42b8
-#define CAIBISHOP_VFTABLE 0x3a452c
-#define CAIDESKTOP_VFTABLE 0x3a6d14
-#define CAIGEAR_VFTABLE 0x3a6fdc
-#define CAIHUMAN_VFTABLE 0x3a7180
-#define CAIMAYOR_VFTABLE 0x3a7310
-#define CAIMESSENGER_VFTABLE 0x3a7580
-#define CAINURSE_VFTABLE 0x3a7864
-#define CAIPOLICE_VFTABLE 0x3a7a14
-#define CAISENTINEL_VFTABLE 0x3a7ba8
+#define CAIBANKDIRECTOR_VFTABLE GAME_VFTABLE(cAIBankDirector_vftable, 0x3a40a8)
+#define CAIBANKMASTER_VFTABLE GAME_VFTABLE(cAIBankMaster_vftable, 0x3a42b8)
+#define CAIBISHOP_VFTABLE GAME_VFTABLE(cAIBishop_vftable, 0x3a452c)
+#define CAIDESKTOP_VFTABLE GAME_VFTABLE(cAIDesktop_vftable, 0x3a6d14)
+#define CAIGEAR_VFTABLE GAME_VFTABLE(cAIGear_vftable, 0x3a6fdc)
+#define CAIHUMAN_VFTABLE GAME_VFTABLE(cAIHuman_vftable, 0x3a7180)
+#define CAIMAYOR_VFTABLE GAME_VFTABLE(cAIMayor_vftable, 0x3a7310)
+#define CAIMESSENGER_VFTABLE GAME_VFTABLE(cAIMessenger_vftable, 0x3a7580)
+#define CAINURSE_VFTABLE GAME_VFTABLE(cAINurse_vftable, 0x3a7864)
+#define CAIPOLICE_VFTABLE GAME_VFTABLE(cAIPolice_vftable, 0x3a7a14)
+#define CAISENTINEL_VFTABLE GAME_VFTABLE(cAISentinel_vftable, 0x3a7ba8)
 
 /* the director and the master (0x384 bytes) */
 typedef struct cAIBank {

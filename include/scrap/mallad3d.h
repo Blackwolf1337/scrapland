@@ -14,7 +14,7 @@
 #include "scrap/material.h"
 #include "scrap/tabla.h"
 
-#define CMALLAD3D_VFTABLE 0x3e3584
+#define CMALLAD3D_VFTABLE GAME_VFTABLE(CMallaD3D_vftable, 0x3e3584)
 
 /* Build flags */
 #define MALLAD3D_ONESIDED 0x01		/* no back faces for two sided materials */

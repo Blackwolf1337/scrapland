@@ -16,7 +16,7 @@
 #include "scrap/sueloportal.h"
 #include "scrap/tabla.h"
 
-#define CMODELO_VFTABLE 0x3da6a0
+#define CMODELO_VFTABLE GAME_VFTABLE(CModelo_vftable, 0x3da6a0)
 #define MAX_MODELOS_RENDER 1024
 #define g_ModelosOn GAME_DATA(byte, 0x432418)	/* RenderModels: the models are drawn */
 

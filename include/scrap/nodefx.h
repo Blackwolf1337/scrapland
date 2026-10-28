@@ -10,9 +10,9 @@
 
 #include "scrap/nodo3d.h"
 
-#define INODEFX_VFTABLE 0x3e3b9c
-#define CNODEFX_WHEEL_VFTABLE 0x3e3bac
-#define CNODEFX_SPRING_VFTABLE 0x3e3bbc
+#define INODEFX_VFTABLE GAME_VFTABLE(INodeFX_vftable, 0x3e3b9c)
+#define CNODEFX_WHEEL_VFTABLE GAME_VFTABLE(CNodeFX_Wheel_vftable, 0x3e3bac)
+#define CNODEFX_SPRING_VFTABLE GAME_VFTABLE(CNodeFX_Spring_vftable, 0x3e3bbc)
 
 /* the types vftable[1] returns */
 enum { NODEFX_NONE = 0, NODEFX_WHEEL = 1, NODEFX_SPRING = 2 };

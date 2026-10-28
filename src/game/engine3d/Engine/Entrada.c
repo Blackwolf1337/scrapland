@@ -55,7 +55,7 @@ typedef int(__thiscall *entradaAcquire_t)(IEntrada *self, byte on);
 
 /* the part of the constructors of IEntrada: one at a time, the state cleared */
 static void IEntrada_Init(IEntrada *self) {
-	self->vftable = Game_Ptr(IENTRADA_VFTABLE);
+	self->vftable = IENTRADA_VFTABLE;
 	CHECK(!g_EntradaInic);
 	g_EntradaInic = 1;
 	memset(self->mouse, 0, sizeof(*self) - offsetof(IEntrada, mouse));
@@ -67,7 +67,7 @@ IEntrada *__fastcall IEntrada_ctor(IEntrada *self) {
 }
 
 void __fastcall IEntrada_dtor(IEntrada *self) {
-	self->vftable = Game_Ptr(IENTRADA_VFTABLE);
+	self->vftable = IENTRADA_VFTABLE;
 	g_EntradaInic = 0;
 }
 
@@ -113,7 +113,7 @@ void __thiscall IEntrada_WndProc(IEntrada *self, void *hwnd, uint32_t msg, uint3
 
 CEntradaDInput *__fastcall CEntradaDInput_ctor(CEntradaDInput *self) {
 	IEntrada_Init(&self->base);
-	self->base.vftable = Game_Ptr(CENTRADADINPUT_VFTABLE);
+	self->base.vftable = CENTRADADINPUT_VFTABLE;
 	self->di = NULL;
 	self->mouse = NULL;
 	self->keyboard = NULL;
@@ -261,7 +261,7 @@ void __thiscall CEntradaDInput_WndProc(CEntradaDInput *self, void *hwnd, uint32_
 
 CEntradaWindows *__fastcall CEntradaWindows_ctor(CEntradaWindows *self) {
 	IEntrada_Init(&self->base);
-	self->base.vftable = Game_Ptr(CENTRADAWINDOWS_VFTABLE);
+	self->base.vftable = CENTRADAWINDOWS_VFTABLE;
 	self->acquired = 0;
 	self->buttons = 0;
 	return self;

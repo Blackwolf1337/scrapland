@@ -46,7 +46,7 @@ static void Pad_Bind(cPcPad *pad, int code, int set, int action) {
 
 cPcPad *__thiscall cPcPad_ctor(cPcPad *self, int index) {
 	cAbstractIDevice_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CPCPAD_VFTABLE);
+	self->base.vftable = CPCPAD_VFTABLE;
 	self->index = index;
 	cAbstractIDevice_InitEntries(&self->base, 0x34);
 	cFuncGvarDevices *g = operator_new(sizeof(cFuncGvarDevices));

@@ -27,7 +27,7 @@ static float Layer_End(const cActLayer *l) {
 }
 
 cActCtrl *__thiscall cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls) {
-	self->vftable = Game_Ptr(CACTCTRL_VFTABLE);
+	self->vftable = CACTCTRL_VFTABLE;
 	for (int k = 0; k < ACT_LAYERS; k++) {
 		self->layers[k].time = 0.0f;
 		self->layers[k].on = 0;
@@ -64,7 +64,7 @@ cActCtrl *__thiscall cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cl
 }
 
 void __fastcall cActCtrl_dtor(cActCtrl *self) {
-	self->vftable = Game_Ptr(CACTCTRL_VFTABLE);
+	self->vftable = CACTCTRL_VFTABLE;
 	self->cls->users--;
 	self->owner->vftable->SetModel(self->owner, NULL, 1.0f, 1.0f, 1.0f, 1);
 	if (self->heads) {

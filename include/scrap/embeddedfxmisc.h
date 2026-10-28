@@ -17,22 +17,22 @@
 
 #define TYEN_OBJECT "Obj"
 
-#define VT_EFX_DATAPACK 0x3b14b8
-#define VT_EFX_DATACUBE 0x3b14d4
-#define VT_EFX_CAPSULE 0x3b14f0
-#define VT_EFX_MATRIX 0x3b150c
-#define VT_EFX_AMPLIFIER 0x3b1528
-#define VT_EFX_MEETINGPOINT 0x3b1544
-#define VT_EFX_EXTRALIFE 0x3b1560
-#define VT_EFX_BATTERY 0x3b157c
-#define VT_EFX_TREASURE 0x3b1598
-#define VT_EFX_FLAG 0x3b15b4
-#define VT_EFX_DTRITUSDESKTOP 0x3b15d0
-#define VT_EFX_MOTO 0x3b15ec
-#define VT_EFX_BOSSSHIELD 0x3b1608
-#define VT_EFX_CONVERSOR 0x3b1624
-#define VT_EFX_COIN 0x3b1640
-#define VT_EFX_ITEM 0x3b165c
+#define VT_EFX_DATAPACK GAME_VFTABLE(cEmbeddedFXDataPack_vftable, 0x3b14b8)
+#define VT_EFX_DATACUBE GAME_VFTABLE(cEmbeddedFXDataCube_vftable, 0x3b14d4)
+#define VT_EFX_CAPSULE GAME_VFTABLE(cEmbeddedFXCapsule_vftable, 0x3b14f0)
+#define VT_EFX_MATRIX GAME_VFTABLE(cEmbeddedFXMatrix_vftable, 0x3b150c)
+#define VT_EFX_AMPLIFIER GAME_VFTABLE(cEmbeddedFXAmplifier_vftable, 0x3b1528)
+#define VT_EFX_MEETINGPOINT GAME_VFTABLE(cEmbeddedFXMeetingPoint_vftable, 0x3b1544)
+#define VT_EFX_EXTRALIFE GAME_VFTABLE(cEmbeddedFXExtraLife_vftable, 0x3b1560)
+#define VT_EFX_BATTERY GAME_VFTABLE(cEmbeddedFXBattery_vftable, 0x3b157c)
+#define VT_EFX_TREASURE GAME_VFTABLE(cEmbeddedFXTreasure_vftable, 0x3b1598)
+#define VT_EFX_FLAG GAME_VFTABLE(cEmbeddedFXFlag_vftable, 0x3b15b4)
+#define VT_EFX_DTRITUSDESKTOP GAME_VFTABLE(cEmbeddedFXDTritusDesktop_vftable, 0x3b15d0)
+#define VT_EFX_MOTO GAME_VFTABLE(cEmbeddedFXMoto_vftable, 0x3b15ec)
+#define VT_EFX_BOSSSHIELD GAME_VFTABLE(cEmbeddedFXBossShield_vftable, 0x3b1608)
+#define VT_EFX_CONVERSOR GAME_VFTABLE(cEmbeddedFXConversor_vftable, 0x3b1624)
+#define VT_EFX_COIN GAME_VFTABLE(cEmbeddedFXCoin_vftable, 0x3b1640)
+#define VT_EFX_ITEM GAME_VFTABLE(cEmbeddedFXItem_vftable, 0x3b165c)
 
 typedef struct cEmbeddedFXAmplifier {
 	cEmbeddedFX base;

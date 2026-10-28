@@ -69,7 +69,7 @@ static void Particles_SetSize(CGameParticles *p, float ini, float end, float lif
 /* ---- cEmbeddedFXVehicle ---- */
 
 cEmbeddedFXVehicle *__fastcall cEmbeddedFXVehicle_ctor(cEmbeddedFXVehicle *self) {
-	self->vftable = Game_Ptr(CEMBEDDEDFXVEHICLE_VFTABLE);
+	self->vftable = CEMBEDDEDFXVEHICLE_VFTABLE;
 	CGameModel_ctor(&self->model, NULL);
 	CGameParticles_ctor(&self->follow);
 	CGameParticles_ctor(&self->follow2);
@@ -82,7 +82,7 @@ cEmbeddedFXVehicle *__fastcall cEmbeddedFXVehicle_ctor(cEmbeddedFXVehicle *self)
 }
 
 void __fastcall cEmbeddedFXVehicle_dtor(cEmbeddedFXVehicle *self) {
-	self->vftable = Game_Ptr(CEMBEDDEDFXVEHICLE_VFTABLE);
+	self->vftable = CEMBEDDEDFXVEHICLE_VFTABLE;
 	CHECK(!self->sirens);
 	CHECK(!self->other);
 	CGameParticles_Release(&self->follow2);
@@ -502,7 +502,7 @@ void cFXVehicleSirens_RenderModel(void) {
 
 cEmbeddedFXVehicleProbe *__thiscall cEmbeddedFXVehicleProbe_ctor(cEmbeddedFXVehicleProbe *self,
 	cEmbeddedFXVehicle *fx) {
-	self->vftable = Game_Ptr(CEMBEDDEDFXVEHICLEPROBE_VFTABLE);
+	self->vftable = CEMBEDDEDFXVEHICLEPROBE_VFTABLE;
 	crt_eh_vector_ctor(self->lights, sizeof(CGameParticles), PROBE_LIGHTS, Game_Ptr(CGAMEPARTICLES_CTOR),
 		Game_Ptr(CGAMEPARTICLES_DTOR));
 	CGameParticles_ctor(&self->trans);
@@ -520,7 +520,7 @@ cEmbeddedFXVehicleProbe *__thiscall cEmbeddedFXVehicleProbe_ctor(cEmbeddedFXVehi
 }
 
 void __fastcall cEmbeddedFXVehicleProbe_dtor(cEmbeddedFXVehicleProbe *self) {
-	self->vftable = Game_Ptr(CEMBEDDEDFXVEHICLEPROBE_VFTABLE);
+	self->vftable = CEMBEDDEDFXVEHICLEPROBE_VFTABLE;
 	CGameParticles_Release(&self->trans);
 	for (int i = 0; i < PROBE_LIGHTS; i++) {
 		CGameParticles_Release(&self->lights[i]);
@@ -733,7 +733,7 @@ void __fastcall cEmbeddedFXVehicleProbe_ClearTrail(cEmbeddedFXVehicleProbe *self
 
 cEmbeddedFXVehicleVote *__thiscall cEmbeddedFXVehicleVote_ctor(cEmbeddedFXVehicleVote *self,
 	cEmbeddedFXVehicle *fx) {
-	self->vftable = Game_Ptr(CEMBEDDEDFXVEHICLEVOTE_VFTABLE);
+	self->vftable = CEMBEDDEDFXVEHICLEVOTE_VFTABLE;
 	CGameParticles_ctor(&self->glow);
 	crt_eh_vector_ctor(self->trails, sizeof(CGameTrail), 2, Game_Ptr(CGAMETRAIL_CTOR), Game_Ptr(CGAMETRAIL_DTOR));
 	crt_eh_vector_ctor(self->motor, sizeof(CGameParticles), VOTE_MOTORS, Game_Ptr(CGAMEPARTICLES_CTOR),
@@ -746,7 +746,7 @@ cEmbeddedFXVehicleVote *__thiscall cEmbeddedFXVehicleVote_ctor(cEmbeddedFXVehicl
 }
 
 void __fastcall cEmbeddedFXVehicleVote_dtor(cEmbeddedFXVehicleVote *self) {
-	self->vftable = Game_Ptr(CEMBEDDEDFXVEHICLEVOTE_VFTABLE);
+	self->vftable = CEMBEDDEDFXVEHICLEVOTE_VFTABLE;
 	crt_eh_vector_dtor(self->motor, sizeof(CGameParticles), VOTE_MOTORS, Game_Ptr(CGAMEPARTICLES_DTOR));
 	crt_eh_vector_dtor(self->trails, sizeof(CGameTrail), 2, Game_Ptr(CGAMETRAIL_DTOR));
 	CGameParticles_Release(&self->glow);

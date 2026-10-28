@@ -54,17 +54,17 @@ static inline vec3_t AICC2D_FlatNorm(float x, float z) {
 cAICharControl *__thiscall cAICharControl2D_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg) {
 	cAICharControl *self = cAICharControl_ctor(mem, ent, ai, arg);
 
-	self->vftable = Game_Ptr(CAICHARCONTROL2D_VFTABLE);
+	self->vftable = CAICHARCONTROL2D_VFTABLE;
 	return self;
 }
 
 void __fastcall cAICharControl2D_dtor(cAICharControl *self) {
-	self->vftable = Game_Ptr(CAICHARCONTROL2D_VFTABLE);
+	self->vftable = CAICHARCONTROL2D_VFTABLE;
 	cAICharControl_dtor(self);
 }
 
 cAICharControl *__thiscall cAICharControl2D_Delete(cAICharControl *self, byte flags) {
-	self->vftable = Game_Ptr(CAICHARCONTROL2D_VFTABLE);
+	self->vftable = CAICHARCONTROL2D_VFTABLE;
 	cAICharControl_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAICHARCONTROL_SIZE);

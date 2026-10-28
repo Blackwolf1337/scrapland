@@ -14,7 +14,7 @@
 
 /* the members both constructors clear */
 static void Grafico3D_Clear(CGrafico3D *self) {
-	self->vftable = Game_Ptr(CGRAFICO3D_VFTABLE);
+	self->vftable = CGRAFICO3D_VFTABLE;
 	memset(&self->vis, 0, sizeof(self->vis));
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->ancho = 1.0f;
@@ -51,11 +51,11 @@ CGrafico3D *__fastcall CGrafico3D_ctor(CGrafico3D *self) {
 }
 
 void __fastcall CGrafico3D_dtor(CGrafico3D *self) {
-	self->vftable = Game_Ptr(CGRAFICO3D_VFTABLE);
+	self->vftable = CGRAFICO3D_VFTABLE;
 	ObjRef_Drop(&self->nodo);
 	self->nodo = NULL;
 	AnimMat_Free(&self->AnimMat);
-	self->vftable = Game_Ptr(IOBJETO3D_VFTABLE);
+	self->vftable = IOBJETO3D_VFTABLE;
 }
 
 CGrafico3D *__thiscall CGrafico3D_Delete(CGrafico3D *self, byte flags) {

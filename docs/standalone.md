@@ -401,16 +401,15 @@ uninitialized, .reloc is left out (fixed base).
 Of .text only the pieces that are still read or run are built in:
 
 - the data formats of dinput8.lib at 0x001000..0x002070 (the `c_dfDIKeyboard` and `c_dfDIMouse` in .rdata point there)
-- the dynamic initializers of the game at 0x03e800..0x05f6d8, until stage 2d makes them C
 - the import thunks of the game in the CRT (`ORIG_CRT_THUNKS` of `origcrt.h`)
-- from 0x37b3d0 to the end of .text the C++ unwind funclets and the atexit destructors the initializers register
 
-The C reads no other data in .text: its `Game_Ptr` and `GAME_DATA` rvas below 0x3a1000 are hooked functions, atexit
-destructors of the last piece or .bss_ste.
+Until stage 2d the dynamic initializers at 0x03e800..0x05f6d8 and, from 0x37b3d0 to the end of .text, the C++ unwind
+funclets and the atexit destructors were built in too. The C reads no other data in .text: its `Game_Ptr` and
+`GAME_DATA` rvas below 0x3a1000 are hooked functions or .bss_ste.
 
-`cmake/ScrapC.ld` includes `room.ld`, which puts the sections `.orig0` to `.orig11` from rva 0x1000 to 0x55e000:
+`cmake/ScrapC.ld` includes `room.ld`, which puts the sections `.orig0`, `.orig1` ... from rva 0x1000 to 0x55e000:
 initialized ones where there are bytes, uninitialized ones without file data for the gaps (the code, the tail of
-.data, .reloc). That is 1.1 MB of data of the original in the exe.
+.data, .reloc). That is 890 KB of data of the original in the exe, 690 KB of it non-zero.
 
 At start `main.c` fills the rest of .text with int3 (`ROOM_INT3` of `room.h`), fills the import table of the
 original with GetProcAddress from its import directory and points its own resource directory to the original's.
@@ -433,6 +432,86 @@ tools/test/difftest.sh` matches in all three scenarios with no "original code re
 DLL difftest. A run of ScrapC.exe in each scenario with `game/Bin/Scrap.exe` renamed gives the output of the
 original but for the checks of that file itself (`Scrap.FileExist(Bin/Scrap.exe)`, `File_Access` and `File_Stat` of
 it).
+
+### Stage 3b: typed C at the same addresses
+
+The data moves into C region by region, each object at the rva of the original, so the rvas of `GAME_DATA`,
+`Game_Ptr` and the tests stay valid. `SD_AT(rva)` (`include/scrap/shared.h`, only with `SD_STANDALONE`) puts a C
+object into a section `.sd.<rva>` of its own:
+
+    void (*const cAI_vftable[14])(void) SD_AT(0x3a3f18) = { ... };
+
+It is aligned to 4 (GCC would align larger arrays to 32), so it must start at a multiple of 4, and it covers its size
+rounded up to 4, because the assembler pads every PE section to that. Neighbours smaller than that go into one
+struct. SD_AT objects belong in the sources of `scrapcode_sa` (src/core, src/game, src/lib), the hook DLL keeps the
+exe's own data.
+
+`tools/standalone/datagen.py` learns the objects from the object files themselves: CMake writes the list of the
+objects of `scrapcode_sa` into `build/standalone/objects.txt` (`file(GENERATE)`), and datagen.py reads the section
+table, the contents and the relocations of each `.sd.` section (COFF). So there is no second link pass, no table to
+keep in step with the C and no generated header. The order is: compile `scrapcode_sa`, run datagen.py, link
+ScrapC.exe (it links the objects, so they are built first). datagen.py depends on these objects and runs again when
+one of them changes; it always writes its outputs, so a build without changes does not run it. `room.c` carries the
+SHA-1 of `room.bin`, because ccache does not hash the data of `.incbin`.
+
+In `room.ld` each section `.orig<k>` lists its parts at their offsets (`. = offset`): the runs of original bytes of
+`room.c` (input sections `.room.<rva>`) and the C objects, each followed by an `ASSERT` of its end. `ScrapC.ld`
+collects any `.sd.` section left over into `.sd.unplaced` and stops the link when it is not empty (an SD_AT object
+outside `scrapcode_sa`).
+
+datagen.py stops the build when a C object
+
+- lies outside the data (in .text, .rsrc or .reloc) or on the import directory or the import address table, which
+  `main.c` fills
+- overlaps another one or is not at a multiple of its alignment
+- does not hold what the original holds there: every byte must be the same, but for pointers. Where the original has
+  a pointer (.reloc), the C object must have one too, to the C function the hook of the original target jumps to
+  (`src/hooks.inc`, the CRT entries of `imports.inc` and `crthooks.inc`), to the real Python symbol, or to another C
+  object at the original target. An absolute address without a relocation (a fixed rva of the room) is compared as
+  bytes. A bss object needs zeros in the original.
+
+The build logs what is left of the original per section: its bytes built in (and how many of them are not zero) and
+what the C objects cover.
+
+`GAME_VFTABLE(name, rva)` (`include/scrap/game.h`) is the address of such an object: in ScrapC.exe the C object
+`name` (declared in the macro, so no header lists them), in the hook DLL `Game_Ptr(rva)`.
+
+### Stage 3b1: the vtables (done)
+
+`tools/standalone/vtables.py -w` writes `src/game/Global/Vtables.c`. It finds the vtables from the RTTI of the exe:
+every pointer in .rdata to a complete object locator (signature 0, a type descriptor in .data) is followed by a
+vtable, whose slots are the relocated pointers into .text after it. Nothing points into the middle of one. The
+other code pointers in .rdata are tables of the CRT (the initializers, the exception and unwind tables, the catch
+blocks of the GOG code) and the D3DX8 interfaces, which have no RTTI. Each class has one vtable (all locators have
+offset 0). The objects are named after the class of the type descriptor
+(`cWorld_vftable`, namespaces joined by `_` as in `gog_GoGScrap_AuthListener_vftable`, the 7 templates by hand), each
+slot is the C function its hook jumps to (`crt_purecall` for `_purecall`).
+
+298 vtables of game classes with 5083 slots (20332 bytes) are C now, room.bin went from 891623 to 871291 bytes. A
+virtual call of ScrapC.exe goes straight to the C, not through the hook jump at the original rva, so a hook switched
+off in scrapdecomp.ini still leaves int3 at its rva but no longer stops its virtual calls.
+
+Every slot has a C function, none points to an unhooked rva. vtables.py stops on such a slot; the choice would then
+be a stub, a library function or a remaining jump thunk (the rva of the original), per slot.
+
+What stays bytes of the original:
+
+- the vtables of the C++ runtime in the copy: `type_info`, the 11 std exceptions and the 6 name nodes of its
+  undecorator (18 vtables). The C throws nothing and calls none of them
+- the RTTI itself: the complete object locator before each vtable, the type descriptors and the class hierarchies
+- the D3DX8 interfaces, no C calls them
+
+The 292 vtable defines of the C (`CAI_VFTABLE`, `VT_FXSPARKS`, `cFile_vftable`, `g_CAppVftable` ...) are
+`GAME_VFTABLE` now, pointers instead of rvas: `Game_Ptr(CAI_VFTABLE)` became `CAI_VFTABLE`, and the 17 helpers that
+took the rva of a vtable take the pointer. vtables.py checks that each `GAME_VFTABLE` names the vtable at its rva. The
+hook DLL behaves as before, only those helpers add the load address at the caller now.
+
+A test that compares a vtable slot with an rva of the original sees the C function in ScrapC.exe. `isfn(p, rva)` of
+`tools/test/py/sdlib.py` accepts both (the C function is the target of the hook jump at the rva); the check of the fake
+entity in `sdlevel_efxchar.py` uses it.
+
+On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios, and so does the hook DLL
+difftest.
 
 ## Stage 4: English names
 

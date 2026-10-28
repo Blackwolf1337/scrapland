@@ -7,7 +7,7 @@
 
 cTabScorer *__fastcall cTabScorer_ctor(cTabScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CTABSCORER_VFTABLE);
+	self->base.vftable = CTABSCORER_VFTABLE;
 	self->highRes = 0;
 	self->blend = 3;
 	self->filled = 1;
@@ -34,7 +34,7 @@ cTabScorer *__fastcall cTabScorer_ctor(cTabScorer *self) {
 
 void __fastcall cTabScorer_dtor(cTabScorer *self) {
 	CPsaImage *img = self->img;
-	self->base.vftable = Game_Ptr(CTABSCORER_VFTABLE);
+	self->base.vftable = CTABSCORER_VFTABLE;
 	if (img) {
 		ScorerImg_Free(img);
 		self->img = NULL;

@@ -43,9 +43,9 @@ static int Grid_Outside(const cGridElements *self, const vec3_t *p) {
 		p->z > self->max.z || p->z < self->min.z;
 }
 
-cGridElements *cGridElements_Init(cGridElements *self, uint32_t vftable, const vec3_t *max, const vec3_t *min, int nx,
+cGridElements *cGridElements_Init(cGridElements *self, void *vftable, const vec3_t *max, const vec3_t *min, int nx,
 	int ny, int nz) {
-	self->vftable = Game_Ptr(vftable);
+	self->vftable = vftable;
 	CHECK((max->x >= min->x) && (max->y >= min->y) && (max->z >= min->z) && (nx > 0) && (ny > 0) && (nz > 0));
 	self->max = *max;
 	self->min = *min;
@@ -95,12 +95,12 @@ void __thiscall cGridElements_Free(cGridElements *self) {
 }
 
 void __fastcall cGridElements_dtor(cGridElements *self) {
-	self->vftable = Game_Ptr(CGRIDELEMENTS_VFTABLE);
+	self->vftable = CGRIDELEMENTS_VFTABLE;
 	cGridElements_Free(self);
 }
 
 cGridElements *__thiscall cGridElements_Delete(cGridElements *self, byte flags) {
-	self->vftable = Game_Ptr(CGRIDELEMENTS_VFTABLE);
+	self->vftable = CGRIDELEMENTS_VFTABLE;
 	cGridElements_Free(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -269,7 +269,7 @@ static void NodesWorld_GetBox(vec3_t *min, vec3_t *max) {
 cNodesTraffic *__thiscall CNodesTraffic_ctor(void *mem) {
 	CNodesTraffic *self = mem;
 
-	self->vftable = Game_Ptr(CNODESTRAFFIC_VFTABLE);
+	self->vftable = CNODESTRAFFIC_VFTABLE;
 	memset(&self->errors, 0, sizeof(self->errors));
 	self->cellSize = 0.0f;
 	self->numTracks = 0;
@@ -293,7 +293,7 @@ cNodesTraffic *__thiscall CNodesTraffic_ctor(void *mem) {
 }
 
 void __fastcall CNodesTraffic_dtor(CNodesTraffic *self) {
-	self->vftable = Game_Ptr(CNODESTRAFFIC_VFTABLE);
+	self->vftable = CNODESTRAFFIC_VFTABLE;
 	if (self->tracks) {
 		for (int i = 0; i < self->numTracks; i++) {
 			if (self->tracks[i].nodes) {

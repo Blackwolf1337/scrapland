@@ -13,7 +13,7 @@
 #include "scrap/timer.h"
 #include "scrap/vehicleeffects.h"
 
-#define CVEHICLEENTITY_VFTABLE 0x3b52bc
+#define CVEHICLEENTITY_VFTABLE GAME_VFTABLE(cVehicleEntity_vftable, 0x3b52bc)
 #define CVEHICLEENTITY_SIZE 0x814
 #define CNETVCONTROLLER_SIZE 0x78	/* allocated with this size, freed with 0x5c (the base class) */
 

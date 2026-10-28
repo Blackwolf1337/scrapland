@@ -22,8 +22,8 @@
 #include "scrap/walkcharentity.h"
 
 #define CAICHARCONTROL_SIZE 0x360
-#define CAICHARCONTROL2D_VFTABLE 0x3a5acc
-#define CAICHARCONTROL3D_VFTABLE 0x3a5d18
+#define CAICHARCONTROL2D_VFTABLE GAME_VFTABLE(cAICharControl2D_vftable, 0x3a5acc)
+#define CAICHARCONTROL3D_VFTABLE GAME_VFTABLE(cAICharControl3D_vftable, 0x3a5d18)
 
 /* the moves of cAICharControl_SetMove (mode at 0x74) */
 enum {
@@ -562,7 +562,7 @@ byte __thiscall cAICharControl_Wait(cAICharControl *self, float dt);
 /* the control of the AI of a character (0x19c of cAIChar) */
 cAICharControl *__thiscall cAIChar_GetControl(cAIChar *ai);
 
-#define CAICHARCONTROL_VFTABLE 0x3a572c
+#define CAICHARCONTROL_VFTABLE GAME_VFTABLE(cAICharControl_vftable, 0x3a572c)
 
 /* the engine variables of the character AI */
 #define g_DepthPathRouteInDoorAI GAME_DATA(int, 0x444300)	/* "DepthPathRouteInDoorAI" */
@@ -698,13 +698,13 @@ byte __thiscall cAICharControl3D_TryStrafe(cAICharControl *self, int side, cEnti
 /* ---- the move controls of the character classes (AI/AIControl<Class>.cpp, src/game/AI/AIControls.c): the 2D
  * control for the bank director, the bank master, the bishop and the gear, the 3D one for the messenger, the nurse and
  * the sentinel, each with some slots of its own ---- */
-#define CAICONTROLBANKDIRECTOR_VFTABLE 0x3a6000
-#define CAICONTROLBANKMASTER_VFTABLE 0x3a61a0
-#define CAICONTROLBISHOP_VFTABLE 0x3a63b0
-#define CAICONTROLGEAR_VFTABLE 0x3a65a8
-#define CAICONTROLMESSENGER_VFTABLE 0x3a67d0
-#define CAICONTROLNURSE_VFTABLE 0x3a6968
-#define CAICONTROLSENTINEL_VFTABLE 0x3a6b7c
+#define CAICONTROLBANKDIRECTOR_VFTABLE GAME_VFTABLE(cAIControlBankDirector_vftable, 0x3a6000)
+#define CAICONTROLBANKMASTER_VFTABLE GAME_VFTABLE(cAIControlBankMaster_vftable, 0x3a61a0)
+#define CAICONTROLBISHOP_VFTABLE GAME_VFTABLE(cAIControlBishop_vftable, 0x3a63b0)
+#define CAICONTROLGEAR_VFTABLE GAME_VFTABLE(cAIControlGear_vftable, 0x3a65a8)
+#define CAICONTROLMESSENGER_VFTABLE GAME_VFTABLE(cAIControlMessenger_vftable, 0x3a67d0)
+#define CAICONTROLNURSE_VFTABLE GAME_VFTABLE(cAIControlNurse_vftable, 0x3a6968)
+#define CAICONTROLSENTINEL_VFTABLE GAME_VFTABLE(cAIControlSentinel_vftable, 0x3a6b7c)
 #define CAICONTROLSHOOT_SIZE 0x384		/* the bishop and the gear */
 #define CAICONTROLSENTINEL_SIZE 0x37c		/* without strafeTime and strafeAng */
 

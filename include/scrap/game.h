@@ -25,6 +25,18 @@ static inline void *Game_Ptr(uint32_t rva) {
 /* lvalue of a global of the exe */
 #define GAME_DATA(type, rva) (*(type *)Game_Ptr(rva))
 
+/* a vtable of a game class (void *): in ScrapC.exe the C object of src/game/Global/Vtables.c (at the same rva,
+ * tools/standalone/vtables.py checks that name and rva agree), in the hook DLL the exe's own */
+#ifdef SD_STANDALONE
+#define GAME_VFTABLE(name, rva) \
+	({ \
+		extern void (*const name[])(void); \
+		(void *)name; \
+	})
+#else
+#define GAME_VFTABLE(name, rva) Game_Ptr(rva)
+#endif
+
 int Game_Init(void);
 
 /* weapon and ammo descriptors of the world tables (defined in include/scrap/world.h) */

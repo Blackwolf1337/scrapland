@@ -44,7 +44,7 @@ void __fastcall cCTFEnemies_dtor(cCTFEnemies *self) {
 }
 
 cLocalLogic *__thiscall cCTFEnemiesLocalLogic_Delete(cLocalLogic *self, byte flags) {
-	self->vftable = Game_Ptr(CCTFENEMIESLOCALLOGIC_VFTABLE);
+	self->vftable = CCTFENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -278,7 +278,7 @@ cLocalLogic *CTFEnemies_MakeLogic(cEntity *e) {
 	cLocalLogic *l = operator_new(sizeof(*l));
 	if (l) {
 		l->parent = e;
-		l->vftable = Game_Ptr(CCTFENEMIESLOCALLOGIC_VFTABLE);
+		l->vftable = CCTFENEMIESLOCALLOGIC_VFTABLE;
 		return l;
 	}
 	return NULL;

@@ -14,13 +14,13 @@ void *__thiscall cMayorLocalLogic_ctor(void *mem, cEntity *parent) {
 	cMayorLocalLogic *self = mem;
 
 	cGenCharLocalLogic_ctor(&self->base, parent, 0);
-	MAYOR_VT(self) = Game_Ptr(CMAYORLOCALLOGIC_VFTABLE);
+	MAYOR_VT(self) = CMAYORLOCALLOGIC_VFTABLE;
 	self->listener[0] = 0;
 	return self;
 }
 
 cMayorLocalLogic *__thiscall cMayorLocalLogic_Delete(cMayorLocalLogic *self, byte flags) {
-	MAYOR_VT(self) = Game_Ptr(CMAYORLOCALLOGIC_VFTABLE);
+	MAYOR_VT(self) = CMAYORLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

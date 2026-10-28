@@ -140,7 +140,7 @@ static inline void VC_Release(cAIVehicleControl *self) {
 cAIVehicleControl *__thiscall cAIVehicleControl_ctor(void *mem, cEntity *v, cAIVehicle *ai, void *params) {
 	cAIVehicleControl *self = mem;
 
-	self->vftable = Game_Ptr(CAIVEHICLECONTROL_VFTABLE);
+	self->vftable = CAIVEHICLECONTROL_VFTABLE;
 	cSlotController_ctor(AIV_Slot(&self->slotStrafe), 0.2f);
 	cSlotController_ctor(AIV_Slot(&self->slotArrive), 0.2f);
 	cSlotController_ctor(AIV_Slot(&self->slotPath), 0.2f);
@@ -225,7 +225,7 @@ cAIVehicleControl *__thiscall cAIVehicleControl_ctor(void *mem, cEntity *v, cAIV
 void __fastcall cAIVehicleControl_dtor(cAIVehicleControl *self) {
 	cNWVecList *l = &self->path;
 
-	self->vftable = Game_Ptr(CAIVEHICLECONTROL_VFTABLE);
+	self->vftable = CAIVEHICLECONTROL_VFTABLE;
 	DListVec3_Clear(l);
 	while (l->freeNodes) {
 		cNWVecNode *n = l->freeNodes;
@@ -1977,7 +1977,7 @@ cAIVehicleGroup *__thiscall cAIVehicleGroup_ctor(void *mem) {
 	cAIVehicleGroup *self = mem;
 
 	cAIEntityGroup_ctor(self);
-	self->vftable = Game_Ptr(CAIVEHICLEGROUP_VFTABLE);
+	self->vftable = CAIVEHICLEGROUP_VFTABLE;
 	float now = Timer_GetTime(&g_pWorld->timer);
 	self->numStopped = 0;
 	self->reposTime = now;
@@ -1991,7 +1991,7 @@ cAIVehicleGroup *__thiscall cAIVehicleGroup_ctor(void *mem) {
 }
 
 void __fastcall cAIVehicleGroup_dtor(cAIVehicleGroup *self) {
-	self->vftable = Game_Ptr(CAIVEHICLEGROUP_VFTABLE);
+	self->vftable = CAIVEHICLEGROUP_VFTABLE;
 	cAIEntityGroup_dtor(self);
 }
 

@@ -27,17 +27,17 @@ static inline float AICC3D_DistTo(cAICharControl *self, const vec3_t *t) {
 cAICharControl *__thiscall cAICharControl3D_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg) {
 	cAICharControl *self = cAICharControl_ctor(mem, ent, ai, arg);
 
-	self->vftable = Game_Ptr(CAICHARCONTROL3D_VFTABLE);
+	self->vftable = CAICHARCONTROL3D_VFTABLE;
 	return self;
 }
 
 void __fastcall cAICharControl3D_dtor(cAICharControl *self) {
-	self->vftable = Game_Ptr(CAICHARCONTROL3D_VFTABLE);
+	self->vftable = CAICHARCONTROL3D_VFTABLE;
 	cAICharControl_dtor(self);
 }
 
 cAICharControl *__thiscall cAICharControl3D_Delete(cAICharControl *self, byte flags) {
-	self->vftable = Game_Ptr(CAICHARCONTROL3D_VFTABLE);
+	self->vftable = CAICHARCONTROL3D_VFTABLE;
 	cAICharControl_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAICHARCONTROL_SIZE);

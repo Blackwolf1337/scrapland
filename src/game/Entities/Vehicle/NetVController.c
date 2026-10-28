@@ -20,13 +20,13 @@
 #include "scrap/scrap.h"
 #include "scrap/world.h"
 
-#define CNETVCONTROLLER_VFTABLE 0x3b61b8
+#define CNETVCONTROLLER_VFTABLE GAME_VFTABLE(cNetVController_vftable, 0x3b61b8)
 
 cNetVController *__thiscall cNetVController_ctor(void *mem, cEntity *v) {
 	cNetVController *self = (cNetVController *)cNetController_ctor(mem);
 
 	self->vehicle = v;
-	self->vftable = Game_Ptr(CNETVCONTROLLER_VFTABLE);
+	self->vftable = CNETVCONTROLLER_VFTABLE;
 	self->hit = 0;
 	self->force = 0;
 	self->b60 = 0;

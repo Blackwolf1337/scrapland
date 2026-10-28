@@ -6,12 +6,12 @@
 
 cGenCharLocalLogic *__thiscall cCrazyDealerLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
-	self->base.vftable = Game_Ptr(CCRAZYDEALERLOCALLOGIC_VFTABLE);
+	self->base.vftable = CCRAZYDEALERLOCALLOGIC_VFTABLE;
 	return self;
 }
 
 cGenCharLocalLogic *__thiscall cCrazyDealerLocalLogic_Delete(cGenCharLocalLogic *self, byte flags) {
-	self->base.vftable = Game_Ptr(CCRAZYDEALERLOCALLOGIC_VFTABLE);
+	self->base.vftable = CCRAZYDEALERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

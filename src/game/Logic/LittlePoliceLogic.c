@@ -28,7 +28,7 @@ void *__thiscall cLittlePoliceLocalLogic_ctor(void *mem, cEntity *parent) {
 	cLittlePoliceLocalLogic *self = mem;
 
 	cGenCharLocalLogic_ctor(&self->base, parent, 0);
-	LP_VT(self) = Game_Ptr(CLITTLEPOLICELOCALLOGIC_VFTABLE);
+	LP_VT(self) = CLITTLEPOLICELOCALLOGIC_VFTABLE;
 	self->lostTime = 0.0f;
 	float t = (float)(Weap_Rand01() * (double)0.2f + 0.0);
 	self->policeResult = 0;
@@ -38,7 +38,7 @@ void *__thiscall cLittlePoliceLocalLogic_ctor(void *mem, cEntity *parent) {
 }
 
 cLittlePoliceLocalLogic *__thiscall cLittlePoliceLocalLogic_Delete(cLittlePoliceLocalLogic *self, byte flags) {
-	LP_VT(self) = Game_Ptr(CLITTLEPOLICELOCALLOGIC_VFTABLE);
+	LP_VT(self) = CLITTLEPOLICELOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

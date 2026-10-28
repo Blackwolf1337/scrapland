@@ -7,7 +7,7 @@
 
 cTimerScorer *__fastcall cTimerScorer_ctor(cTimerScorer *self) {
 	cAbstractTextScorer_ctor(&self->base);
-	self->base.base.vftable = Game_Ptr(CTIMERSCORER_VFTABLE);
+	self->base.base.vftable = CTIMERSCORER_VFTABLE;
 	self->type = 0;
 	cPy_Function_ctor(&self->onTimeExpired);
 	cPy_Function_ctor(&self->onTimeWarning);
@@ -15,7 +15,7 @@ cTimerScorer *__fastcall cTimerScorer_ctor(cTimerScorer *self) {
 }
 
 void __fastcall cTimerScorer_dtor(cTimerScorer *self) {
-	self->base.base.vftable = Game_Ptr(CTIMERSCORER_VFTABLE);
+	self->base.base.vftable = CTIMERSCORER_VFTABLE;
 	cPy_Function_dtor(&self->onTimeWarning);
 	cPy_Function_dtor(&self->onTimeExpired);
 	cAbstractTextScorer_dtor(&self->base);

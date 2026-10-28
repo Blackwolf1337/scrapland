@@ -9,7 +9,7 @@
 #include "scrap/mallatri.h"
 #include "scrap/varios.h"
 
-#define IOBJETO3D_VFTABLE 0x3d79dc
+#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObjeto3D_vftable, 0x3d79dc)
 
 /* the engine (g_pD3DApp) and its device */
 
@@ -97,7 +97,7 @@ void __fastcall CMallaD3D_Init(CMallaD3D *self) {
 /* the part of both constructors before Init */
 static void MallaD3D_Construct(CMallaD3D *self) {
 	self->clase = 0;
-	self->vftable = Game_Ptr(CMALLAD3D_VFTABLE);
+	self->vftable = CMALLAD3D_VFTABLE;
 	CListaVert_ctor(&self->vert);
 	memset(&self->box, 0, sizeof(self->box));
 	memset(&self->ext, 0, sizeof(self->ext));
@@ -138,7 +138,7 @@ CMallaD3D *__fastcall CMallaD3D_ctor(CMallaD3D *self) {
 }
 
 void __fastcall CMallaD3D_dtor(CMallaD3D *self) {
-	self->vftable = Game_Ptr(CMALLAD3D_VFTABLE);
+	self->vftable = CMALLAD3D_VFTABLE;
 	if (self->pVertVB || self->pVertIB) {
 		CHECK(g_Motor && MOTOR_DEV(g_Motor));
 		CMallaD3D_Invalidate(self, MOTOR_DEV(g_Motor));
@@ -159,7 +159,7 @@ void __fastcall CMallaD3D_dtor(CMallaD3D *self) {
 	MallaD3D_DeleteArray((void **)&self->triFlags);
 	MallaD3D_DeleteArray((void **)&self->pSkin);
 	CListaVert_Free(&self->vert);
-	self->vftable = Game_Ptr(IOBJETO3D_VFTABLE);
+	self->vftable = IOBJETO3D_VFTABLE;
 }
 
 CMallaD3D *__thiscall CMallaD3D_Delete(CMallaD3D *self, byte flags) {

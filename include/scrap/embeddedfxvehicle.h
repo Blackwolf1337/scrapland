@@ -16,9 +16,9 @@
 #include "scrap/scrapparticles.h"
 #include "scrap/scraptrails.h"
 
-#define CEMBEDDEDFXVEHICLE_VFTABLE 0x3b2234
-#define CEMBEDDEDFXVEHICLEPROBE_VFTABLE 0x3b21fc
-#define CEMBEDDEDFXVEHICLEVOTE_VFTABLE 0x3b2218
+#define CEMBEDDEDFXVEHICLE_VFTABLE GAME_VFTABLE(cEmbeddedFXVehicle_vftable, 0x3b2234)
+#define CEMBEDDEDFXVEHICLEPROBE_VFTABLE GAME_VFTABLE(cEmbeddedFXVehicleProbe_vftable, 0x3b21fc)
+#define CEMBEDDEDFXVEHICLEVOTE_VFTABLE GAME_VFTABLE(cEmbeddedFXVehicleVote_vftable, 0x3b2218)
 
 typedef struct cEmbeddedFXVehicleVtbl {
 	void *(__thiscall *Delete)(void *self, byte flags);	/* 0x00 */

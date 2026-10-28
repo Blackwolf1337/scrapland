@@ -21,8 +21,8 @@ enum {
 #define MAX_RUTAS_TEXTURAS 10
 #define MAX_EXTENS_TEXTURAS 10
 
-#define CLISTAMAT_VFTABLE 0x3d6d48
-#define CMATERIAL_VFTABLE 0x3d6dbc
+#define CLISTAMAT_VFTABLE GAME_VFTABLE(CListaMat_vftable, 0x3d6d48)
+#define CMATERIAL_VFTABLE GAME_VFTABLE(CMaterial_vftable, 0x3d6dbc)
 
 /* params.atrib */
 #define MAT_LOADTEX 0x40		/* textures loaded also with LoadTextures 2 */

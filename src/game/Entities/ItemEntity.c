@@ -78,7 +78,7 @@ cEntity *__thiscall cItemEntity_ctor(void *mem, const char *name, float x, float
 	cItemEntity *self = mem;
 
 	cObjEntity_ctor(mem, name, x, y, z);
-	self->base.vftable = Game_Ptr(CITEMENTITY_VFTABLE);
+	self->base.vftable = CITEMENTITY_VFTABLE;
 	Nto1Node_Init(&self->taker);
 	cPy_Function_ctor(&self->onTake);
 	cPy_Function_ctor(&self->onReset);
@@ -107,7 +107,7 @@ cEntity *__thiscall cItemEntity_ctor(void *mem, const char *name, float x, float
 }
 
 void __fastcall cItemEntity_dtor(cItemEntity *self) {
-	self->base.vftable = Game_Ptr(CITEMENTITY_VFTABLE);
+	self->base.vftable = CITEMENTITY_VFTABLE;
 	cPy_Function_dtor(&self->onReset);
 	cPy_Function_dtor(&self->onTake);
 	Nto1Node_Done(&self->taker);

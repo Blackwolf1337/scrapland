@@ -28,8 +28,8 @@ static inline double EFXM_Rnd(void) {
 	return (double)(crt_rand() & 0x7fff) * (1.0 / 32767.0);
 }
 
-static inline void EFXM_SetVtbl(void *self, uint32_t vt) {
-	*(void **)self = Game_Ptr(vt);
+static inline void EFXM_SetVtbl(void *self, void *vt) {
+	*(void **)self = vt;
 }
 
 static inline void EFXM_ParticlesCtor(CGameParticles *p, uint32_t n) {
@@ -90,7 +90,7 @@ cEmbeddedFXCapsule *__fastcall cEmbeddedFXCapsule_ctor(cEmbeddedFXCapsule *self)
 }
 
 /* Coin, Conversor and Item: the vtable and one particle system at 0x10 */
-static void *EFXM_Ctor10(void *self, uint32_t vt) {
+static void *EFXM_Ctor10(void *self, void *vt) {
 	EFXM_SetVtbl(self, vt);
 	CGameParticles_ctor((CGameParticles *)((byte *)self + 0x10));
 	((cEmbeddedFX *)self)->ent = NULL;
@@ -202,35 +202,35 @@ cEmbeddedFXTreasure *__fastcall cEmbeddedFXTreasure_ctor(cEmbeddedFXTreasure *se
 /* ---- destructors ---- */
 
 void __fastcall cEmbeddedFXAmplifier_dtor(cEmbeddedFXAmplifier *self) {
-	self->base.vftable = Game_Ptr(VT_EFX_AMPLIFIER);
+	self->base.vftable = VT_EFX_AMPLIFIER;
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->flares);
 	cEmbeddedFX_dtor(&self->base);
 }
 
 void __fastcall cEmbeddedFXBattery_dtor(cEmbeddedFXBattery *self) {
-	self->base.vftable = Game_Ptr(VT_EFX_BATTERY);
+	self->base.vftable = VT_EFX_BATTERY;
 	EFXM_TrailsDtor(self->trails, FXBATTERY_TRAILS);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
 
 void __fastcall cEmbeddedFXBossShield_dtor(cEmbeddedFXBossShield *self) {
-	self->base.vftable = Game_Ptr(VT_EFX_BOSSSHIELD);
+	self->base.vftable = VT_EFX_BOSSSHIELD;
 	EFXM_TrailsDtor(self->trails, FXBOSSSHIELD_TRAILS);
 	CGameParticles_Release(&self->particles);
 	cEmbeddedFX_dtor(&self->base);
 }
 
 void __fastcall cEmbeddedFXCapsule_dtor(cEmbeddedFXCapsule *self) {
-	self->base.vftable = Game_Ptr(VT_EFX_CAPSULE);
+	self->base.vftable = VT_EFX_CAPSULE;
 	EFXM_ParticlesDtor(self->motors, FXCAPSULE_MOTORS);
 	cEmbeddedFX_dtor(&self->base);
 }
 
 /* Coin, Conversor, Flag and Item */
-static void EFXM_Dtor10(cEmbeddedFX *self, uint32_t vt) {
-	self->vftable = Game_Ptr(vt);
+static void EFXM_Dtor10(cEmbeddedFX *self, void *vt) {
+	self->vftable = vt;
 	CGameParticles_Release((CGameParticles *)((byte *)self + 0x10));
 	cEmbeddedFX_dtor(self);
 }
@@ -244,21 +244,21 @@ void __fastcall cEmbeddedFXConversor_dtor(cEmbeddedFXConversor *self) {
 }
 
 void __fastcall cEmbeddedFXDTritusDesktop_dtor(cEmbeddedFXDTritusDesktop *self) {
-	self->base.vftable = Game_Ptr(VT_EFX_DTRITUSDESKTOP);
+	self->base.vftable = VT_EFX_DTRITUSDESKTOP;
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
 
 void __fastcall cEmbeddedFXDataCube_dtor(cEmbeddedFXDataCube *self) {
-	self->base.vftable = Game_Ptr(VT_EFX_DATACUBE);
+	self->base.vftable = VT_EFX_DATACUBE;
 	CGameParticles_Release(&self->flares);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
 
 void __fastcall cEmbeddedFXDataPack_dtor(cEmbeddedFXDataPack *self) {
-	self->base.vftable = Game_Ptr(VT_EFX_DATAPACK);
+	self->base.vftable = VT_EFX_DATAPACK;
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->laser);
 	CGameParticles_Release(&self->codec);
@@ -267,7 +267,7 @@ void __fastcall cEmbeddedFXDataPack_dtor(cEmbeddedFXDataPack *self) {
 }
 
 void __fastcall cEmbeddedFXExtraLife_dtor(cEmbeddedFXExtraLife *self) {
-	self->base.vftable = Game_Ptr(VT_EFX_EXTRALIFE);
+	self->base.vftable = VT_EFX_EXTRALIFE;
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
@@ -282,7 +282,7 @@ void __fastcall cEmbeddedFXItem_dtor(cEmbeddedFXItem *self) {
 }
 
 void __fastcall cEmbeddedFXMatrix_dtor(cEmbeddedFXMatrix *self) {
-	self->base.vftable = Game_Ptr(VT_EFX_MATRIX);
+	self->base.vftable = VT_EFX_MATRIX;
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->flares);
 	CGameParticles_Release(&self->glow);
@@ -290,7 +290,7 @@ void __fastcall cEmbeddedFXMatrix_dtor(cEmbeddedFXMatrix *self) {
 }
 
 void __fastcall cEmbeddedFXMeetingPoint_dtor(cEmbeddedFXMeetingPoint *self) {
-	self->base.vftable = Game_Ptr(VT_EFX_MEETINGPOINT);
+	self->base.vftable = VT_EFX_MEETINGPOINT;
 	CGameParticles_Release(&self->countDown);
 	CGameParticles_Release(&self->flares);
 	CGameParticles_Release(&self->light);
@@ -298,7 +298,7 @@ void __fastcall cEmbeddedFXMeetingPoint_dtor(cEmbeddedFXMeetingPoint *self) {
 }
 
 void __fastcall cEmbeddedFXMoto_dtor(cEmbeddedFXMoto *self) {
-	self->base.vftable = Game_Ptr(VT_EFX_MOTO);
+	self->base.vftable = VT_EFX_MOTO;
 	EFXM_ParticlesDtor(self->tube, FXMOTO_TUBES);
 	EFXM_ParticlesDtor(self->down, FXMOTO_DOWN);
 	EFXM_ParticlesDtor(self->engine, FXMOTO_ENGINES);
@@ -306,7 +306,7 @@ void __fastcall cEmbeddedFXMoto_dtor(cEmbeddedFXMoto *self) {
 }
 
 void __fastcall cEmbeddedFXTreasure_dtor(cEmbeddedFXTreasure *self) {
-	self->base.vftable = Game_Ptr(VT_EFX_TREASURE);
+	self->base.vftable = VT_EFX_TREASURE;
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);

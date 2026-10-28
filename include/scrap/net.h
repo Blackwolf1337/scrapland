@@ -96,9 +96,9 @@ SD_OFFSET(cClientNetManager, team, 0x48c);
 SD_OFFSET(cClientNetManager, sends, 0x498);
 SD_SIZE(cClientNetManager, 0x49c);
 
-#define g_UserNetManagerVftable ((const cUserNetManagerVtbl *)Game_Ptr(0x3c6100))
-#define g_ServerNetManagerVftable ((const cUserNetManagerVtbl *)Game_Ptr(0x3c5e20))
-#define g_ClientNetManagerVftable ((const cUserNetManagerVtbl *)Game_Ptr(0x3c5f58))
+#define g_UserNetManagerVftable ((const cUserNetManagerVtbl *)GAME_VFTABLE(cUserNetManager_vftable, 0x3c6100))
+#define g_ServerNetManagerVftable ((const cUserNetManagerVtbl *)GAME_VFTABLE(cServerNetManager_vftable, 0x3c5e20))
+#define g_ClientNetManagerVftable ((const cUserNetManagerVtbl *)GAME_VFTABLE(cClientNetManager_vftable, 0x3c5f58))
 
 /* cNetClient.state */
 #define NETCLIENT_CONNECTING 0

@@ -50,7 +50,7 @@ SD_SIZE(cAmmoInfo, 0x5c);
 #define CAMMOINFO_CTOR 0x206360
 #define CWEAPINFO_CTOR 0x2063f0
 
-#define CWORLD_VFTABLE 0x3cec84
+#define CWORLD_VFTABLE GAME_VFTABLE(cWorld_vftable, 0x3cec84)
 #define CWORLD_SIZE 0x225c
 
 /* the slots of the entity vtables the world calls; entity.h has the first ones by their script use */

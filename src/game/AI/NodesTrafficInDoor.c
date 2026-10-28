@@ -24,7 +24,7 @@ cNodesTraffic *__thiscall CNodesTrafficInDoor_ctor(void *mem) {
 	CNodesTrafficInDoor *self = mem;
 
 	CNodesTraffic_ctor(mem);
-	self->base.vftable = Game_Ptr(CNODESTRAFFICINDOOR_VFTABLE);
+	self->base.vftable = CNODESTRAFFICINDOOR_VFTABLE;
 	self->heavy.list = NULL;
 	self->medium.list = NULL;
 	self->light.list = NULL;
@@ -65,7 +65,7 @@ static void Sectors_Free(cTrafficSectorList *l) {
 }
 
 void __fastcall CNodesTrafficInDoor_dtor(CNodesTrafficInDoor *self) {
-	self->base.vftable = Game_Ptr(CNODESTRAFFICINDOOR_VFTABLE);
+	self->base.vftable = CNODESTRAFFICINDOOR_VFTABLE;
 	Sectors_Free(&self->heavy);
 	Sectors_Free(&self->medium);
 	Sectors_Free(&self->light);

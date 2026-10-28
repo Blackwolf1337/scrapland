@@ -24,7 +24,7 @@ static const char *const s_NetStates[] = {"Connecting...", NULL, "Waiting server
 
 cAbstractTextScorer *__fastcall cAbstractTextScorer_ctor(cAbstractTextScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CABSTRACTTEXTSCORER_VFTABLE);
+	self->base.vftable = CABSTRACTTEXTSCORER_VFTABLE;
 	cString_ctor(&self->fontName);
 	cString_ctor(&self->text);
 	self->font = Font_Get("Horatio");
@@ -38,7 +38,7 @@ cAbstractTextScorer *__fastcall cAbstractTextScorer_ctor(cAbstractTextScorer *se
 
 cCreditsScorer *__fastcall cCreditsScorer_ctor(cCreditsScorer *self) {
 	cAbstractTextScorer_ctor(&self->base);
-	self->base.base.vftable = Game_Ptr(CCREDITSSCORER_VFTABLE);
+	self->base.base.vftable = CCREDITSSCORER_VFTABLE;
 	self->font = Font_Get("ScrapMedium");
 	self->titleFont = Font_Get("Horatio");
 	self->time = 0.0f;
@@ -50,9 +50,9 @@ cCreditsScorer *__fastcall cCreditsScorer_ctor(cCreditsScorer *self) {
 }
 
 /* the frame sheet of the hint and the label */
-static cHintScorer *TabText_ctor(cHintScorer *self, uint32_t vftable) {
+static cHintScorer *TabText_ctor(cHintScorer *self, void *vftable) {
 	cAbstractTextScorer_ctor(&self->base);
-	self->base.base.vftable = Game_Ptr(vftable);
+	self->base.base.vftable = vftable;
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	self->tab = img ? CPsaImage_ctor(img, "2D/white.tga", 0x20) : NULL;
 	self->tabIndex = 0;
@@ -72,7 +72,7 @@ cMsgScorer *__fastcall cMsgScorer_ctor(cMsgScorer *self) {
 	float dim[2];
 
 	cAbstractTextScorer_ctor(&self->base);
-	self->base.base.vftable = Game_Ptr(CMSGSCORER_VFTABLE);
+	self->base.base.vftable = CMSGSCORER_VFTABLE;
 	Font_TextSize(self->base.font, NULL, dim, 0.0f, 0.0f, "W");
 	self->lineHeight = dim[1];
 	self->base.align = TEXTSCORER_CENTER;
@@ -82,7 +82,7 @@ cMsgScorer *__fastcall cMsgScorer_ctor(cMsgScorer *self) {
 
 /* also the destructor of cMsgScorer (rva 0x15e9c0) */
 void __fastcall cAbstractTextScorer_dtor(cAbstractTextScorer *self) {
-	self->base.vftable = Game_Ptr(CABSTRACTTEXTSCORER_VFTABLE);
+	self->base.vftable = CABSTRACTTEXTSCORER_VFTABLE;
 	cString_dtor(&self->text);
 	cString_dtor(&self->fontName);
 	cScorerItem_dtor(&self->base);
@@ -93,9 +93,9 @@ void __fastcall cCreditsScorer_dtor(cCreditsScorer *self) {
 	cAbstractTextScorer_dtor(&self->base);
 }
 
-static void TabText_dtor(cHintScorer *self, uint32_t vftable) {
+static void TabText_dtor(cHintScorer *self, void *vftable) {
 	CPsaImage *img = self->tab;
-	self->base.base.vftable = Game_Ptr(vftable);
+	self->base.base.vftable = vftable;
 	if (img) {
 		CPsaImage_dtor(img);
 		operator_delete_sized(img, sizeof(CPsaImage));

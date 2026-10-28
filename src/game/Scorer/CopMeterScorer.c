@@ -23,7 +23,7 @@ static void CopMeter_FreeImage(CPsaImage *img) {
 
 cCopMeterScorer *__fastcall cCopMeterScorer_ctor(cCopMeterScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CCOPMETERSCORER_VFTABLE);
+	self->base.vftable = CCOPMETERSCORER_VFTABLE;
 	self->base.x = 320.0f;
 	self->base.y = 240.0f;
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
@@ -45,7 +45,7 @@ cCopMeterScorer *__fastcall cCopMeterScorer_ctor(cCopMeterScorer *self) {
 
 void __fastcall cCopMeterScorer_dtor(cCopMeterScorer *self) {
 	CPsaImage *img = self->img;
-	self->base.vftable = Game_Ptr(CCOPMETERSCORER_VFTABLE);
+	self->base.vftable = CCOPMETERSCORER_VFTABLE;
 	CopMeter_FreeImage(img);
 	CopMeter_FreeImage(self->flash);
 	cScorerItem_dtor(&self->base);

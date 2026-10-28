@@ -205,7 +205,7 @@ void __thiscall cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, 
 
 /* the base part of the constructors of the sides (inlined in the original) */
 void cDominationLogic_ctor(cDominationLogic *self) {
-	self->vftable = Game_Ptr(CDOMINATIONLOGIC_VFTABLE);
+	self->vftable = CDOMINATIONLOGIC_VFTABLE;
 	self->assigned.numSlots = 4;
 	self->assigned.slots = operator_new_array(4 * sizeof(HashNode *));
 	memset(self->assigned.slots, 0, 4 * sizeof(HashNode *));
@@ -216,7 +216,7 @@ void cDominationLogic_ctor(cDominationLogic *self) {
 
 cDominationLogic *__fastcall cDominationEnemiesLogic_ctor(cDominationLogic *self) {
 	cDominationLogic_ctor(self);
-	self->vftable = Game_Ptr(CDOMINATIONENEMIESLOGIC_VFTABLE);
+	self->vftable = CDOMINATIONENEMIESLOGIC_VFTABLE;
 	cDominationSide *s = operator_new(sizeof(*s));
 	if (s) {
 		s->owner = self;
@@ -231,7 +231,7 @@ cDominationLogic *__fastcall cDominationEnemiesLogic_ctor(cDominationLogic *self
 }
 
 void __fastcall cDominationEnemiesLogic_dtor(cDominationLogic *self) {
-	self->vftable = Game_Ptr(CDOMINATIONENEMIESLOGIC_VFTABLE);
+	self->vftable = CDOMINATIONENEMIESLOGIC_VFTABLE;
 	if (self->side) {
 		operator_delete_sized(self->side, sizeof(*self->side));
 	}
@@ -239,7 +239,7 @@ void __fastcall cDominationEnemiesLogic_dtor(cDominationLogic *self) {
 }
 
 void __fastcall cDominationLogic_dtor(cDominationLogic *self) {
-	self->vftable = Game_Ptr(CDOMINATIONLOGIC_VFTABLE);
+	self->vftable = CDOMINATIONLOGIC_VFTABLE;
 	g_DominNumZones = 0;
 	NameTable_Clear(&self->assigned);
 }

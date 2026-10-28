@@ -35,7 +35,7 @@ cEntity *__thiscall cWalkCharEntity_ctor(void *mem, const char *name, float x, f
 	cEntity *self = mem;
 
 	cWithLifeEntity_ctor(mem, name, x, y, z);
-	self->vftable = Game_Ptr(CWALKCHARENTITY_VFTABLE);
+	self->vftable = CWALKCHARENTITY_VFTABLE;
 	Nto1Node_Init(WC_NODE(self, 0x3e8));
 	WC_I(self, 0x404) = 0;
 	WC_I(self, 0x408) = 0;
@@ -93,7 +93,7 @@ cEntity *__thiscall cWalkCharEntity_ctor(void *mem, const char *name, float x, f
 }
 
 void __fastcall cWalkCharEntity_dtor(cEntity *self) {
-	self->vftable = Game_Ptr(CWALKCHARENTITY_VFTABLE);
+	self->vftable = CWALKCHARENTITY_VFTABLE;
 	if (WChar_ActCtrlPtr(self)) {
 		void *ai = self->ai;
 		if (ai) {

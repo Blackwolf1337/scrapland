@@ -95,7 +95,7 @@ cActNodeMod *__fastcall cActNodeMod_ctor(cActNodeMod *self) {
 }
 
 cActClass *__thiscall cActClass_ctor(cActClass *self, const char *name) {
-	self->vftable = Game_Ptr(CACTCLASS_VFTABLE);
+	self->vftable = CACTCLASS_VFTABLE;
 	cString_ctor(&self->name);
 	self->actions.numSlots = ACTCLASS_SLOTS;
 	self->actions.slots = New_Array(ACTCLASS_SLOTS, sizeof(HashNode *));
@@ -163,7 +163,7 @@ cActClass *__thiscall cActClass_ctor(cActClass *self, const char *name) {
 }
 
 void __fastcall cActClass_dtor(cActClass *self) {
-	self->vftable = Game_Ptr(CACTCLASS_VFTABLE);
+	self->vftable = CACTCLASS_VFTABLE;
 	if (self->users) {
 		Con_Bluef("ERROR : The class %s is going to be deleted but the reference counter is %d\n", self->name,
 			self->users);

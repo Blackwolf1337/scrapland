@@ -8,7 +8,7 @@
 void *__fastcall cAIEntityGroup_ctor(void *self) {
 	cAIEntityGroup *g = self;
 
-	g->vftable = Game_Ptr(CAIENTITYGROUP_VFTABLE);
+	g->vftable = CAIENTITYGROUP_VFTABLE;
 	g->num = 0;
 	g->b58 = 0;
 	g->changeTime = g_TimeBetwChangeStateAI;
@@ -16,11 +16,11 @@ void *__fastcall cAIEntityGroup_ctor(void *self) {
 }
 
 void __fastcall cAIEntityGroup_dtor(void *self) {
-	((cAIEntityGroup *)self)->vftable = Game_Ptr(CAIENTITYGROUP_VFTABLE);
+	((cAIEntityGroup *)self)->vftable = CAIENTITYGROUP_VFTABLE;
 }
 
 cAIEntityGroup *__thiscall cAIEntityGroup_Delete(cAIEntityGroup *self, byte flags) {
-	self->vftable = Game_Ptr(CAIENTITYGROUP_VFTABLE);
+	self->vftable = CAIENTITYGROUP_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, CAIENTITYGROUP_SIZE);
 	}

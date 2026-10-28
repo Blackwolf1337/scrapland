@@ -35,7 +35,7 @@ static void Text_Get(cTextScorer *self, int player, char *buf, int size) {
 
 cTextScorer *__fastcall cTextScorer_ctor(cTextScorer *self) {
 	cAbstractTextScorer_ctor(&self->base);
-	self->base.base.vftable = Game_Ptr(CTEXTSCORER_VFTABLE);
+	self->base.base.vftable = CTEXTSCORER_VFTABLE;
 	cString_ctor(&self->editHint);
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	self->img = img ? CPsaImage_ctorTex(img, "2D/white.tga", 0, 0x24) : NULL;
@@ -49,7 +49,7 @@ cTextScorer *__fastcall cTextScorer_ctor(cTextScorer *self) {
 
 cTextTypingScorer *__fastcall cTextTypingScorer_ctor(cTextTypingScorer *self) {
 	cTextScorer_ctor(&self->base);
-	self->base.base.base.vftable = Game_Ptr(CTEXTTYPINGSCORER_VFTABLE);
+	self->base.base.base.vftable = CTEXTTYPINGSCORER_VFTABLE;
 	self->typingTime = 0.0f;
 	self->typingSpeed = 0.04f;
 	self->lastTime = 0.0f;
@@ -62,7 +62,7 @@ cTextTypingScorer *__fastcall cTextTypingScorer_ctor(cTextTypingScorer *self) {
 
 /* also the destructor of cTextTypingScorer (rva 0x182bf0, the same code) */
 void __fastcall cTextScorer_dtor(cTextScorer *self) {
-	self->base.base.vftable = Game_Ptr(CTEXTSCORER_VFTABLE);
+	self->base.base.vftable = CTEXTSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	cString_dtor(&self->editHint);
 	cAbstractTextScorer_dtor(&self->base);

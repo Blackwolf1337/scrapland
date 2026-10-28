@@ -137,14 +137,19 @@ set_target_properties(dinput8 PROPERTIES PREFIX "" OUTPUT_NAME dinput8)
 
 # ScrapC.exe: the standalone exe (docs/standalone.md), in game/Bin. Fixed base 0x400000; the linker script puts the
 # room of the original first: its data at their rvas, read from Scrap.exe 1.6.1 at build time by datagen.py (stage
-# 3a). The build needs the original exe, ScrapC.exe does not.
+# 3a), and the C objects of SD_AT at theirs (stage 3b). The build needs the original exe, ScrapC.exe does not.
+# datagen.py runs after the objects of scrapcode_sa (ScrapC links them) and again when one of them changes, it reads
+# their .sd.<rva> sections from the list in objects.txt.
 set(SCRAP_EXE ${CMAKE_SOURCE_DIR}/game/Bin/Scrap.exe CACHE FILEPATH "Scrap.exe 1.6.1, whose data ScrapC.exe builds in")
 find_program(PYTHON3 python3 REQUIRED)
 set(ROOM_DIR ${CMAKE_CURRENT_BINARY_DIR}/standalone)
+file(GENERATE OUTPUT ${ROOM_DIR}/objects.txt CONTENT "$<JOIN:$<TARGET_OBJECTS:scrapcode_sa>,\n>\n")
 add_custom_command(OUTPUT ${ROOM_DIR}/room.c ${ROOM_DIR}/room.h ${ROOM_DIR}/room.ld ${ROOM_DIR}/room.bin
 	COMMAND ${PYTHON3} -I ${CMAKE_SOURCE_DIR}/tools/standalone/datagen.py ${SCRAP_EXE} ${ROOM_DIR}
-	DEPENDS tools/standalone/datagen.py ${SCRAP_EXE} include/scrap/game.h include/scrap/origcrt.h
-		include/scrap/origpython.h
+		${ROOM_DIR}/objects.txt
+	DEPENDS tools/standalone/datagen.py tools/standalone/sdexe.py ${SCRAP_EXE} include/scrap/game.h
+		include/scrap/origcrt.h include/scrap/origpython.h src/hooks.inc src/imports.inc src/standalone/crthooks.inc
+		${ROOM_DIR}/objects.txt $<TARGET_OBJECTS:scrapcode_sa>
 	COMMENT "Data of Scrap.exe for ScrapC.exe")
 add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtinit.c
 	src/standalone/crtmath.c src/standalone/crtvec.c ${ROOM_DIR}/room.c ${ROOM_DIR}/room.h)

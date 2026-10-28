@@ -29,12 +29,12 @@ void Logic_NativeNop(cAbstractFile *params) {
 }
 
 void __fastcall cEnemiesLocalLogic_dtor(cLocalLogic *self) {
-	self->vftable = Game_Ptr(CENEMIESLOCALLOGIC_VFTABLE);
+	self->vftable = CENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 }
 
 cLocalLogic *__thiscall cEnemiesLocalLogic_Delete(cLocalLogic *self, byte flags) {
-	self->vftable = Game_Ptr(CENEMIESLOCALLOGIC_VFTABLE);
+	self->vftable = CENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -186,7 +186,7 @@ cLocalLogic *Enemies_MakeLogic(cEntity *e) {
 	cLocalLogic *l = operator_new(sizeof(*l));
 	if (l) {
 		l->parent = e;
-		l->vftable = Game_Ptr(CENEMIESLOCALLOGIC_VFTABLE);
+		l->vftable = CENEMIESLOCALLOGIC_VFTABLE;
 		return l;
 	}
 	return NULL;

@@ -143,8 +143,8 @@ typedef struct cSoundStrItem {
 } cSoundStrItem;
 SD_SIZE(cSoundStrItem, 0x2c);
 
-#define CSoundSys_vftable ((const CSoundSysVtbl *)Game_Ptr(0x3c9f3c))
-#define CSoundXBox_vftable ((const CSoundSysVtbl *)Game_Ptr(0x3ca718))
+#define CSoundSys_vftable ((const CSoundSysVtbl *)GAME_VFTABLE(CSoundSys_vftable, 0x3c9f3c))
+#define CSoundXBox_vftable ((const CSoundSysVtbl *)GAME_VFTABLE(CSoundXBox_vftable, 0x3ca718))
 
 #define g_pSound GAME_DATA(CSoundSys *, 0x466bb4)
 
@@ -276,7 +276,7 @@ typedef struct cSndInterface {
 } cSndInterface;
 SD_SIZE(cSndInterface, 0x1c);
 
-#define cSndInterface_vftable ((const void *)Game_Ptr(0x3c9cfc))
+#define cSndInterface_vftable ((const void *)GAME_VFTABLE(cSndInterface_vftable, 0x3c9cfc))
 #define g_SndInterfaces GAME_DATA(cSndInterface *, 0x466bb0)
 
 /* Sound/SndInterface.cpp (src/game/Sound/SndInterface.c) */

@@ -50,7 +50,7 @@ cEntity *__thiscall cEntity_ctor(void *mem, const char *name, float x, float y, 
 	cEntity *self = mem;
 	void *value;
 
-	self->vftable = Game_Ptr(CENTITY_VFTABLE);
+	self->vftable = CENTITY_VFTABLE;
 	cString_ctor((cString *)&self->name);
 	Nto1Node_Init(&self->worldNode);
 	Nto1Node_Init(&self->deadNode);
@@ -113,7 +113,7 @@ void __thiscall EntityDList_dtor(void *list) {
 }
 
 void __fastcall cEntity_dtor(cEntity *self) {
-	self->vftable = Game_Ptr(CENTITY_VFTABLE);
+	self->vftable = CENTITY_VFTABLE;
 	if (self->lLogic) {
 		Obj_Delete(self->lLogic);
 	}

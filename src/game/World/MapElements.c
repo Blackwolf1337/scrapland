@@ -11,7 +11,7 @@
 #include "scrap/scrap.h"
 #include "scrap/world.h"
 
-#define CMAPELEMENT_VFTABLE 0x3cde68
+#define CMAPELEMENT_VFTABLE GAME_VFTABLE(cMapElement_vftable, 0x3cde68)
 
 /* ElementModelPath, the folder of the element models (a cString, "Models/Elements/") */
 #define g_ElementModelPath GAME_DATA(char *, 0x4673d8)
@@ -21,7 +21,7 @@
 cMapElement *__thiscall cMapElement_ctor(cMapElement *self, const char *name, const vec3_t *pos, const vec3_t *rot) {
 	char buf[128];
 
-	self->vftable = Game_Ptr(CMAPELEMENT_VFTABLE);
+	self->vftable = CMAPELEMENT_VFTABLE;
 	CGameModel_ctor(&self->Mod, NULL);
 	cString_ctor(&self->name);
 	if (name) {
@@ -41,7 +41,7 @@ cMapElement *__thiscall cMapElement_ctor(cMapElement *self, const char *name, co
 }
 
 void __thiscall cMapElement_dtor(cMapElement *self) {
-	self->vftable = Game_Ptr(CMAPELEMENT_VFTABLE);
+	self->vftable = CMAPELEMENT_VFTABLE;
 	cString_dtor(&self->name);
 	CGameModel_Reset(&self->Mod);
 }

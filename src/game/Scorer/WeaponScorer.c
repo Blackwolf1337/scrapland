@@ -17,7 +17,7 @@ static CPsaImage *Weapon_NewWhite(byte color) {
 
 cWeaponScorer *__fastcall cWeaponScorer_ctor(cWeaponScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CWEAPONSCORER_VFTABLE);
+	self->base.vftable = CWEAPONSCORER_VFTABLE;
 	self->base.x = 320.0f;
 	self->base.y = 240.0f;
 	self->ammoFont = g_FontHoratio;
@@ -38,7 +38,7 @@ cWeaponScorer *__fastcall cWeaponScorer_ctor(cWeaponScorer *self) {
 }
 
 void __fastcall cWeaponScorer_dtor(cWeaponScorer *self) {
-	self->base.vftable = Game_Ptr(CWEAPONSCORER_VFTABLE);
+	self->base.vftable = CWEAPONSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	ScorerImg_Free(self->img3D);
 	ScorerImg_Free(self->tab);

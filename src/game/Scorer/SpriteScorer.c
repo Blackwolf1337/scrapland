@@ -30,7 +30,7 @@ int ScorerVar_Table(void *item, const ScorerVarDef *defs, int n, const char *nam
 
 cSpriteScorer *__fastcall cSpriteScorer_ctor(cSpriteScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CSPRITESCORER_VFTABLE);
+	self->base.vftable = CSPRITESCORER_VFTABLE;
 	self->numSubSprites = 1;
 	self->spriteIndex = 1;
 	self->isMultiSprite = 0;
@@ -52,7 +52,7 @@ cSpriteScorer *__fastcall cSpriteScorer_ctor(cSpriteScorer *self) {
 /* also the destructor of cGradientScorer (rva 0x17b2d0, the same code) */
 void __fastcall cSpriteScorer_dtor(cSpriteScorer *self) {
 	CPsaImage *img = self->img;
-	self->base.vftable = Game_Ptr(CSPRITESCORER_VFTABLE);
+	self->base.vftable = CSPRITESCORER_VFTABLE;
 	if (img) {
 		ScorerImg_Free(img);
 		self->img = NULL;
@@ -215,7 +215,7 @@ void __thiscall cSpriteScorer_SetMultiSprite(cSpriteScorer *self, byte on) {
 
 cGradientScorer *__fastcall cGradientScorer_ctor(cGradientScorer *self) {
 	cSpriteScorer_ctor(&self->base);
-	self->base.base.vftable = Game_Ptr(CGRADIENTSCORER_VFTABLE);
+	self->base.base.vftable = CGRADIENTSCORER_VFTABLE;
 	self->colorSelected = 0;
 	self->colors[0] = 0xffffffff;
 	self->colors[1] = 0xffffffff;

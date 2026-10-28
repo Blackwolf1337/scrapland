@@ -90,7 +90,7 @@ CNodesWorld2D *__thiscall CNodesWorld2D_ctor(void *mem) {
 	CNodesWorld *w = NW2D_SUP(self);
 
 	CNodesWorldSup_ctor(w);
-	w->vftable = Game_Ptr(CNODESWORLD2D_VFTABLE);
+	w->vftable = CNODESWORLD2D_VFTABLE;
 	memset(&self->regions, 0, sizeof(self->regions));
 	w->maxVisDist = 5000.0f;
 	w->f54 = 750.0f;
@@ -103,7 +103,7 @@ CNodesWorld2D *__thiscall CNodesWorld2D_ctor(void *mem) {
 void __fastcall CNodesWorld2D_dtor(CNodesWorld2D *self) {
 	CNodesWorld *w = NW2D_SUP(self);
 
-	w->vftable = Game_Ptr(CNODESWORLD2D_VFTABLE);
+	w->vftable = CNODESWORLD2D_VFTABLE;
 	CNodesWorldSup_FreeGraph(w);
 	NW2DRegionList_Clear(&self->regions);
 	NW2DRegionList_FreePool(&self->regions);

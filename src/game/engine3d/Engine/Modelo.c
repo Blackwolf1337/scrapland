@@ -96,7 +96,7 @@ static void Lods_Delete(CTabla *t) {
 }
 
 CModelo *__fastcall CModelo_ctor(CModelo *self) {
-	self->vftable = Game_Ptr(CMODELO_VFTABLE);
+	self->vftable = CMODELO_VFTABLE;
 	self->name = NULL;
 	self->slots.p = NULL;
 	self->slots.n = 0;
@@ -158,7 +158,7 @@ void __fastcall CLod_dtor(CLod *self) {
 }
 
 void __fastcall CModelo_dtor(CModelo *self) {
-	self->vftable = Game_Ptr(CMODELO_VFTABLE);
+	self->vftable = CMODELO_VFTABLE;
 	for (uint32_t i = 0; (int)i < self->lods.n; i++) {
 		Modelo_Destroy(&Modelo_Lod(self, i)->model, 0);
 	}

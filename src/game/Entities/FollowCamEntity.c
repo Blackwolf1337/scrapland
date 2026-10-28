@@ -31,7 +31,7 @@ cEntity *__thiscall cFollowCamEntity_ctor(void *mem, const char *name, float x, 
 	cFollowCamEntity *fc = mem;
 
 	cCamEntity_ctor(mem, name, x, y, z);
-	fc->base.base.vftable = Game_Ptr(CFOLLOWCAMENTITY_VFTABLE);
+	fc->base.base.vftable = CFOLLOWCAMENTITY_VFTABLE;
 	cPy_Function_ctor(&fc->onSwitch);
 	fc->target = NULL;
 	fc->camDist = g_VehicleCamDist;
@@ -67,7 +67,7 @@ cEntity *__thiscall cFollowCamEntity_ctor(void *mem, const char *name, float x, 
 void __fastcall cFollowCamEntity_dtor(cEntity *self) {
 	cFollowCamEntity *fc = FCam(self);
 
-	self->vftable = Game_Ptr(CFOLLOWCAMENTITY_VFTABLE);
+	self->vftable = CFOLLOWCAMENTITY_VFTABLE;
 	cPy_Function_Clear(&fc->onSwitch);
 	cCamEntity_SetTarget(self, NULL);
 	cPy_Function_dtor(&fc->onSwitch);

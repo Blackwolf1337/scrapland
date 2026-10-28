@@ -20,17 +20,17 @@
 #define CGAMETRAIL_CTOR 0x21ddb0
 #define CGAMETRAIL_DTOR 0x21de40
 
-#define VT_EMBEDDEDFX 0x3b08a0
-#define VT_SENTINEL 0x3b09e8
-#define VT_GEAR 0x3b0a04
-#define VT_POLICE 0x3b0a20
-#define VT_BANKDIRECTOR 0x3b0a3c
-#define VT_BANKMASTER 0x3b0a58
-#define VT_CRAZYGAMBLER 0x3b0a74
-#define VT_RUSTY 0x3b0a90
-#define VT_MESSENGER 0x3b0aac
-#define VT_MAINTENANCE 0x3b0ac8
-#define VT_MERCENARY 0x3b0ae4
+#define VT_EMBEDDEDFX GAME_VFTABLE(cEmbeddedFX_vftable, 0x3b08a0)
+#define VT_SENTINEL GAME_VFTABLE(cEmbeddedFXSentinel_vftable, 0x3b09e8)
+#define VT_GEAR GAME_VFTABLE(cEmbeddedFXGear_vftable, 0x3b0a04)
+#define VT_POLICE GAME_VFTABLE(cEmbeddedFXPolice_vftable, 0x3b0a20)
+#define VT_BANKDIRECTOR GAME_VFTABLE(cEmbeddedFXBankDirector_vftable, 0x3b0a3c)
+#define VT_BANKMASTER GAME_VFTABLE(cEmbeddedFXBankMaster_vftable, 0x3b0a58)
+#define VT_CRAZYGAMBLER GAME_VFTABLE(cEmbeddedFXCrazyGambler_vftable, 0x3b0a74)
+#define VT_RUSTY GAME_VFTABLE(cEmbeddedFXRusty_vftable, 0x3b0a90)
+#define VT_MESSENGER GAME_VFTABLE(cEmbeddedFXMessenger_vftable, 0x3b0aac)
+#define VT_MAINTENANCE GAME_VFTABLE(cEmbeddedFXMaintenance_vftable, 0x3b0ac8)
+#define VT_MERCENARY GAME_VFTABLE(cEmbeddedFXMercenary_vftable, 0x3b0ae4)
 
 #define TRAIL_COLOR 0xc0c0ff
 #define LASER_COLOR 0x800000
@@ -48,8 +48,8 @@ static inline double EFX_Rnd(void) {
 	return (double)(crt_rand() & 0x7fff) * (1.0 / 32767.0);
 }
 
-static inline void EFX_SetVtbl(void *self, uint32_t vt) {
-	*(void **)self = Game_Ptr(vt);
+static inline void EFX_SetVtbl(void *self, void *vt) {
+	*(void **)self = vt;
 }
 
 static inline void EFX_TrailsDtor(CGameTrail *trails, uint32_t n) {
@@ -116,7 +116,7 @@ static inline void EFX_TrailsCtor(CGameTrail *trails, uint32_t n) {
 }
 
 /* the original clears the vtable pointer before it stores the class one */
-static inline void EFX_CtorVtbl(void *self, uint32_t vt) {
+static inline void EFX_CtorVtbl(void *self, void *vt) {
 	*(void **)self = NULL;
 	EFX_SetVtbl(self, vt);
 }

@@ -14,7 +14,7 @@ void *__thiscall cAINurse_ctor(void *mem, cEntity *e, int *arg) {
 	cAIChar *c = &self->base;
 
 	cAIChar_ctor(mem, e, arg);
-	c->vftable = Game_Ptr(CAINURSE_VFTABLE);
+	c->vftable = CAINURSE_VFTABLE;
 	cAIChar_NewControl(c, CAICHARCONTROL_SIZE, cAIControlNurse_ctor, e, arg);
 	self->fresh = 0;
 	c->canTalk = 0;
@@ -22,12 +22,12 @@ void *__thiscall cAINurse_ctor(void *mem, cEntity *e, int *arg) {
 }
 
 void __fastcall cAINurse_dtor(cAIChar *self) {
-	self->vftable = Game_Ptr(CAINURSE_VFTABLE);
+	self->vftable = CAINURSE_VFTABLE;
 	cAIChar_dtor(self);
 }
 
 cAIChar *__thiscall cAINurse_Delete(cAIChar *self, byte flags) {
-	self->vftable = Game_Ptr(CAINURSE_VFTABLE);
+	self->vftable = CAINURSE_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAINURSE_SIZE);

@@ -34,7 +34,7 @@ SD_SIZE(CNodesWorld2D, 0x378);
 /* the CNodesWorldSup part */
 #define NW2D_SUP(self) ((CNodesWorld *)(self))
 
-#define CNODESWORLD2D_VFTABLE 0x3abce8
+#define CNODESWORLD2D_VFTABLE GAME_VFTABLE(CNodesWorld2D_vftable, 0x3abce8)
 
 /* a body that walks the graph: a capsule of radius r - shrink between the heights h1 and h2 above a foot sphere of
  * radius foot */

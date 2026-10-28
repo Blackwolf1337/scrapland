@@ -13,18 +13,18 @@ void *__thiscall cAIBankDirector_ctor(void *mem, cEntity *e, int *arg) {
 	cAIChar *self = mem;
 
 	cAIChar_ctor(mem, e, arg);
-	self->vftable = Game_Ptr(CAIBANKDIRECTOR_VFTABLE);
+	self->vftable = CAIBANKDIRECTOR_VFTABLE;
 	cAIChar_NewControl(self, CAICHARCONTROL_SIZE, cAIControlBankDirector_ctor, e, arg);
 	return self;
 }
 
 void __fastcall cAIBankDirector_dtor(cAIChar *self) {
-	self->vftable = Game_Ptr(CAIBANKDIRECTOR_VFTABLE);
+	self->vftable = CAIBANKDIRECTOR_VFTABLE;
 	cAIChar_dtor(self);
 }
 
 cAIChar *__thiscall cAIBankDirector_Delete(cAIChar *self, byte flags) {
-	self->vftable = Game_Ptr(CAIBANKDIRECTOR_VFTABLE);
+	self->vftable = CAIBANKDIRECTOR_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIBANK_SIZE);

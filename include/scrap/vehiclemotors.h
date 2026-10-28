@@ -16,7 +16,7 @@
 #define VM_MOTORS 4
 #define VM_SIDES 2
 
-#define CVEHICLEMOTORS_VFTABLE 0x3b56f8
+#define CVEHICLEMOTORS_VFTABLE GAME_VFTABLE(cVehicleMotors_vftable, 0x3b56f8)
 
 typedef struct cVehicleMotor cVehicleMotor;
 typedef struct cVehicleMotors cVehicleMotors;

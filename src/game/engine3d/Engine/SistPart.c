@@ -31,19 +31,19 @@ static float SistPart_Seconds(uint32_t ms) {
 }
 
 CParticula *__fastcall CParticulaActive_ctor(CParticula *self) {
-	self->vftable = Game_Ptr(CPARTICULAACTIVE_VFTABLE);
+	self->vftable = CPARTICULAACTIVE_VFTABLE;
 	CParticulaActive_Init(self);
 	return self;
 }
 
 CParticula *__fastcall CParticulaStatic_ctor(CParticula *self) {
-	self->vftable = Game_Ptr(CPARTICULASTATIC_VFTABLE);
+	self->vftable = CPARTICULASTATIC_VFTABLE;
 	CParticulaStatic_Init(self);
 	return self;
 }
 
 void __fastcall CParticulaActive_dtor(CParticula *self) {
-	self->vftable = Game_Ptr(CPARTICULAACTIVE_VFTABLE);
+	self->vftable = CPARTICULAACTIVE_VFTABLE;
 }
 
 int __fastcall CParticulaActive_Type(CParticula *self) {
@@ -109,7 +109,7 @@ void __fastcall CParticulaStatic_Init(CParticula *self) {
 static void SistPart_Clear(CSistPart *self) {
 	self->clase = 0;
 	self->nodo = NULL;
-	self->vftable = Game_Ptr(CSISTPART_VFTABLE);
+	self->vftable = CSISTPART_VFTABLE;
 	cString_ctor(&self->params.texture);
 	memset(&self->vis, 0, sizeof(self->vis));
 }
@@ -155,9 +155,9 @@ CSistPart *__fastcall CSistPart_ctor(CSistPart *self) {
 }
 
 void __fastcall CObjBase3D_dtor(IObjeto3D *self) {
-	self->vftable = Game_Ptr(COBJBASE3D_VFTABLE);
+	self->vftable = COBJBASE3D_VFTABLE;
 	CObjBase3D_SetNodo(self, NULL);
-	self->vftable = Game_Ptr(IOBJETO3D_VFTABLE);
+	self->vftable = IOBJETO3D_VFTABLE;
 }
 
 void __fastcall SistPartParams_dtor(SistPartParams *self) {
@@ -165,7 +165,7 @@ void __fastcall SistPartParams_dtor(SistPartParams *self) {
 }
 
 void __fastcall CSistPart_dtor(CSistPart *self) {
-	self->vftable = Game_Ptr(CSISTPART_VFTABLE);
+	self->vftable = CSISTPART_VFTABLE;
 	for (int i = 0; i < self->params.nParticulas; i++) {
 		if (self->Particles[i]) {
 			operator_delete_sized(self->Particles[i], sizeof(CParticula));
@@ -718,7 +718,7 @@ void __fastcall CSistPart_CreateParticles(CSistPart *self) {
 	}
 	/* a static system: each particle where a moving one would be at its part of the life time */
 	CParticulaActive tmp;
-	tmp.p.vftable = Game_Ptr(CPARTICULAACTIVE_VFTABLE);
+	tmp.p.vftable = CPARTICULAACTIVE_VFTABLE;
 	CParticulaActive_Init(&tmp.p);
 	for (int i = 0; i < pa->nParticulas; i++) {
 		CSistPart_GenParticle(self, &tmp.p);

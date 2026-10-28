@@ -111,7 +111,7 @@ cEntity *__thiscall cMissileEntity_ctor(void *mem, const char *name, float x, fl
 	cMissileEntity *self = mem;
 
 	cWithLifeEntity_ctor(mem, name, x, y, z);
-	self->base.vftable = Game_Ptr(CMISSILEENTITY_VFTABLE);
+	self->base.vftable = CMISSILEENTITY_VFTABLE;
 	cPy_Function_ctor(&self->onBeeDeath);
 	cPy_Function_ctor(&self->onHit);
 	byte *p = self->obj140;
@@ -156,7 +156,7 @@ cEntity *__thiscall cMissileEntity_ctor(void *mem, const char *name, float x, fl
 void __fastcall cMissileEntity_dtor(cMissileEntity *self) {
 	int n = self->swarmCount;
 
-	self->base.vftable = Game_Ptr(CMISSILEENTITY_VFTABLE);
+	self->base.vftable = CMISSILEENTITY_VFTABLE;
 	if (n > 0 || self->base.flag_4c) {
 		cMissileEntity_Hit(self, n + 1, 0);
 	}

@@ -9,7 +9,7 @@
 
 cDominationLogic *__fastcall cDominationFriendsLogic_ctor(cDominationLogic *self) {
 	cDominationLogic_ctor(self);
-	self->vftable = Game_Ptr(CDOMINATIONFRIENDSLOGIC_VFTABLE);
+	self->vftable = CDOMINATIONFRIENDSLOGIC_VFTABLE;
 	cDominationFriendsSide *s = operator_new(sizeof(*s));
 	if (s) {
 		s->owner = self;
@@ -23,7 +23,7 @@ cDominationLogic *__fastcall cDominationFriendsLogic_ctor(cDominationLogic *self
 }
 
 void __fastcall cDominationFriendsLogic_dtor(cDominationLogic *self) {
-	self->vftable = Game_Ptr(CDOMINATIONFRIENDSLOGIC_VFTABLE);
+	self->vftable = CDOMINATIONFRIENDSLOGIC_VFTABLE;
 	if (self->side) {
 		operator_delete_sized(self->side, sizeof(cDominationFriendsSide));
 	}

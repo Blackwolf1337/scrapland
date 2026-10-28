@@ -15,7 +15,7 @@
 
 cHeadScorer *__fastcall cHeadScorer_ctor(cHeadScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CHEADSCORER_VFTABLE);
+	self->base.vftable = CHEADSCORER_VFTABLE;
 	CGameCamera *cam = operator_new(sizeof(CGameCamera));
 	self->cam = cam ? CGameCamera_ctor(cam) : NULL;
 	self->model = NULL;
@@ -28,7 +28,7 @@ cHeadScorer *__fastcall cHeadScorer_ctor(cHeadScorer *self) {
 
 void __fastcall cHeadScorer_dtor(cHeadScorer *self) {
 	CGameCamera *cam = self->cam;
-	self->base.vftable = Game_Ptr(CHEADSCORER_VFTABLE);
+	self->base.vftable = CHEADSCORER_VFTABLE;
 	if (cam) {
 		CGameCamera_dtor(cam);
 		operator_delete_sized(cam, sizeof(CGameCamera));

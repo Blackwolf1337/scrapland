@@ -16,7 +16,7 @@
 #include "scrap/varios.h"
 #include "scrap/win32.h"
 
-#define CD3DAPPLICATION_VFTABLE 0x3dd208
+#define CD3DAPPLICATION_VFTABLE GAME_VFTABLE(CD3DApplication_vftable, 0x3dd208)
 #define D3DAPP_TIMER_START 1
 #define D3DAPP_TIMER_STOP 2
 
@@ -118,7 +118,7 @@ int __thiscall CD3DApp_FindDepthStencilFormat(byte *self, uint32_t adapter, uint
 }
 
 byte *__fastcall CD3DApp_ctor(byte *self) {
-	*(void **)self = Game_Ptr(CD3DAPPLICATION_VFTABLE);
+	*(void **)self = CD3DAPPLICATION_VFTABLE;
 	g_Motor = self;
 	MOTOR_U32(self, 0x2a37c) = 0;		/* m_dwNumAdapters */
 	MOTOR_ADAPTER(self) = 0;
@@ -151,7 +151,7 @@ byte *__fastcall CD3DApp_ctor(byte *self) {
 }
 
 void __fastcall CD3DApp_dtor(byte *self) {
-	*(void **)self = Game_Ptr(CD3DAPPLICATION_VFTABLE);
+	*(void **)self = CD3DAPPLICATION_VFTABLE;
 	g_Motor = NULL;
 }
 

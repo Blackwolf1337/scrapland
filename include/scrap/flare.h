@@ -10,7 +10,7 @@
 #include "scrap/grafico2d.h"
 #include "scrap/nodo3d.h"
 
-#define CFLARE_VFTABLE 0x3e1958
+#define CFLARE_VFTABLE GAME_VFTABLE(CFlare_vftable, 0x3e1958)
 
 #define g_FlareTam GAME_DATA(float, 0x432998)		/* tam_def */
 #define g_FlareAtenDist GAME_DATA(int, 0x4d6d90)	/* aten_dist */

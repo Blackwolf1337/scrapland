@@ -14,8 +14,8 @@
 #include "scrap/sueloportal.h"
 #include "scrap/utild3d.h"
 
-#define CLUZ_VFTABLE 0x3d79fc
-#define IOBJETO3D_VFTABLE 0x3d79dc
+#define CLUZ_VFTABLE GAME_VFTABLE(CLuz_vftable, 0x3d79fc)
+#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObjeto3D_vftable, 0x3d79dc)
 #define LUZ_INV255 (1.0f / 255.0f)
 /* "no limit" for the range of the device light and the start of the nearest search, a float constant of the exe */
 #define LUZ_RANGO_INF GAME_DATA(const float, 0x3d7be0)
@@ -149,7 +149,7 @@ CLuz *__fastcall CLuz_ctor(CLuz *self) {
 	self->intensidad = 1.0f;
 	self->indD3D = g_LuzIndD3D + 4;
 	g_LuzIndD3D++;
-	self->vftable = Game_Ptr(CLUZ_VFTABLE);
+	self->vftable = CLUZ_VFTABLE;
 	self->clase = CLASE_OBJ3D_LUZ;
 	self->tipo = LUZ_DIREC;
 	self->mostrar = 0;
@@ -176,7 +176,7 @@ CLuz *__fastcall CLuz_ctor(CLuz *self) {
 }
 
 void __fastcall CLuz_dtor(CLuz *self) {
-	self->vftable = Game_Ptr(CLUZ_VFTABLE);
+	self->vftable = CLUZ_VFTABLE;
 	Luz_Release(&self->nodo);
 	self->nodo = NULL;
 	Luz_Release(&self->nodoObjetivo);
@@ -189,7 +189,7 @@ void __fastcall CLuz_dtor(CLuz *self) {
 		g_LuzIndD3D = 0;
 		E3D_LogDebug(g_FileLog, "Global light index reset");
 	}
-	self->vftable = Game_Ptr(IOBJETO3D_VFTABLE);
+	self->vftable = IOBJETO3D_VFTABLE;
 }
 
 CLuz *__thiscall CLuz_Delete(CLuz *self, byte flags) {
@@ -201,11 +201,11 @@ CLuz *__thiscall CLuz_Delete(CLuz *self, byte flags) {
 }
 
 void __fastcall IObjeto3D_dtor(IObjeto3D *self) {
-	self->vftable = Game_Ptr(IOBJETO3D_VFTABLE);
+	self->vftable = IOBJETO3D_VFTABLE;
 }
 
 IObjeto3D *__thiscall IObjeto3D_Delete(IObjeto3D *self, byte flags) {
-	self->vftable = Game_Ptr(IOBJETO3D_VFTABLE);
+	self->vftable = IOBJETO3D_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}

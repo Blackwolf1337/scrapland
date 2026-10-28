@@ -17,11 +17,11 @@ static float Vec3_Dist(const vec3_t *a, const vec3_t *b) {
 }
 
 void __fastcall INodeFX_ctor(INodeFX *self) {
-	self->vftable = Game_Ptr(INODEFX_VFTABLE);
+	self->vftable = INODEFX_VFTABLE;
 }
 
 INodeFX *__thiscall INodeFX_Delete(INodeFX *self, byte flags) {
-	self->vftable = Game_Ptr(INODEFX_VFTABLE);
+	self->vftable = INODEFX_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(INodeFX));
 	}
@@ -39,7 +39,7 @@ CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNodo3D *nodo,
 	static const vec3_t zero = { 0.0f, 0.0f, 0.0f }, one = { 1.0f, 1.0f, 1.0f };
 	vec3_t tmp;
 
-	self->vftable = Game_Ptr(CNODEFX_WHEEL_VFTABLE);
+	self->vftable = CNODEFX_WHEEL_VFTABLE;
 	CHECK(nodo && nodo->ini);
 	if (type == 0 || type == 1) {
 		CArchINI *ini = nodo->ini;
@@ -68,7 +68,7 @@ CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNodo3D *nodo,
 }
 
 CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNodeFX_Wheel *src) {
-	self->vftable = Game_Ptr(CNODEFX_WHEEL_VFTABLE);
+	self->vftable = CNODEFX_WHEEL_VFTABLE;
 	self->radius = src->radius;
 	self->rot = src->rot;
 	self->trans = src->trans;
@@ -81,13 +81,13 @@ CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNod
 }
 
 CNodeFX_Wheel *__fastcall CNodeFX_Wheel_ctor0(CNodeFX_Wheel *self) {
-	self->vftable = Game_Ptr(CNODEFX_WHEEL_VFTABLE);
+	self->vftable = CNODEFX_WHEEL_VFTABLE;
 	CHECK(0);
 	return self;
 }
 
 CNodeFX_Wheel *__thiscall CNodeFX_Wheel_Delete(CNodeFX_Wheel *self, byte flags) {
-	self->vftable = Game_Ptr(INODEFX_VFTABLE);
+	self->vftable = INODEFX_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CNodeFX_Wheel));
 	}
@@ -191,7 +191,7 @@ static void Spring_Clear(CNodeFX_Spring *self) {
 }
 
 CNodeFX_Spring *__thiscall CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNodo3D *nodo, int type) {
-	self->vftable = Game_Ptr(CNODEFX_SPRING_VFTABLE);
+	self->vftable = CNODEFX_SPRING_VFTABLE;
 	CHECK(nodo && nodo->ini);
 	self->damp2 = 1.0f;
 	switch (type) {
@@ -232,7 +232,7 @@ CNodeFX_Spring *__thiscall CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNodo3D *no
 }
 
 CNodeFX_Spring *__thiscall CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const CNodeFX_Spring *src) {
-	self->vftable = Game_Ptr(CNODEFX_SPRING_VFTABLE);
+	self->vftable = CNODEFX_SPRING_VFTABLE;
 	self->damping = src->damping;
 	self->spring = src->spring;
 	self->torsion = src->torsion;
@@ -242,13 +242,13 @@ CNodeFX_Spring *__thiscall CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const C
 }
 
 CNodeFX_Spring *__fastcall CNodeFX_Spring_ctor0(CNodeFX_Spring *self) {
-	self->vftable = Game_Ptr(CNODEFX_SPRING_VFTABLE);
+	self->vftable = CNODEFX_SPRING_VFTABLE;
 	CHECK(0);
 	return self;
 }
 
 CNodeFX_Spring *__thiscall CNodeFX_Spring_Delete(CNodeFX_Spring *self, byte flags) {
-	self->vftable = Game_Ptr(INODEFX_VFTABLE);
+	self->vftable = INODEFX_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CNodeFX_Spring));
 	}

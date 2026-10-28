@@ -112,7 +112,7 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	cVehicleEntity *self = mem;
 
 	cWithLifeEntity_ctor(mem, name, x, y, z);
-	self->base.vftable = Game_Ptr(CVEHICLEENTITY_VFTABLE);
+	self->base.vftable = CVEHICLEENTITY_VFTABLE;
 	*(int *)(self->collision + 0) = 0;
 	*(int *)(self->collision + 4) = 0;
 	Controls_ctor(self->controls);
@@ -214,7 +214,7 @@ void __fastcall cAutoAim_dtor(void *self) {
 }
 
 void __fastcall cVehicleEntity_dtor(cVehicleEntity *self) {
-	self->base.vftable = Game_Ptr(CVEHICLEENTITY_VFTABLE);
+	self->base.vftable = CVEHICLEENTITY_VFTABLE;
 	if (self->netCtrl) {
 		operator_delete_sized(self->netCtrl, 0x5c);
 		self->netCtrl = NULL;

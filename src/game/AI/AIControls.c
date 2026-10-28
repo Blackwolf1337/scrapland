@@ -89,10 +89,10 @@ static void ACtl_RandomSide(cAIControlShoot *self) {
 	self->time = 0.0f;
 }
 
-static cAICharControl *ACtl_ShootInit(cAICharControl *self, uint32_t vftable) {
+static cAICharControl *ACtl_ShootInit(cAICharControl *self, void *vftable) {
 	cAIControlShoot *s = (cAIControlShoot *)self;
 
-	self->vftable = Game_Ptr(vftable);
+	self->vftable = vftable;
 	cSlotController_ctor(AICC_Slot(&s->slotSide), 0.2f);
 	s->side = 0;
 	s->time = 0.0f;
@@ -106,17 +106,17 @@ cAICharControl *__thiscall cAIControlBankDirector_ctor(void *mem, cEntity *e, cA
 	cAICharControl *self = mem;
 
 	cAICharControl2D_ctor(mem, e, ai, arg);
-	self->vftable = Game_Ptr(CAICONTROLBANKDIRECTOR_VFTABLE);
+	self->vftable = CAICONTROLBANKDIRECTOR_VFTABLE;
 	return self;
 }
 
 void __fastcall cAIControlBankDirector_dtor(cAICharControl *self) {
-	self->vftable = Game_Ptr(CAICONTROLBANKDIRECTOR_VFTABLE);
+	self->vftable = CAICONTROLBANKDIRECTOR_VFTABLE;
 	cAICharControl2D_dtor(self);
 }
 
 cAICharControl *__thiscall cAIControlBankDirector_Delete(cAICharControl *self, byte flags) {
-	self->vftable = Game_Ptr(CAICONTROLBANKDIRECTOR_VFTABLE);
+	self->vftable = CAICONTROLBANKDIRECTOR_VFTABLE;
 	cAICharControl2D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAICHARCONTROL_SIZE);
@@ -179,17 +179,17 @@ cAICharControl *__thiscall cAIControlBankMaster_ctor(void *mem, cEntity *e, cAIC
 	cAICharControl *self = mem;
 
 	cAICharControl2D_ctor(mem, e, ai, arg);
-	self->vftable = Game_Ptr(CAICONTROLBANKMASTER_VFTABLE);
+	self->vftable = CAICONTROLBANKMASTER_VFTABLE;
 	return self;
 }
 
 void __fastcall cAIControlBankMaster_dtor(cAICharControl *self) {
-	self->vftable = Game_Ptr(CAICONTROLBANKMASTER_VFTABLE);
+	self->vftable = CAICONTROLBANKMASTER_VFTABLE;
 	cAICharControl2D_dtor(self);
 }
 
 cAICharControl *__thiscall cAIControlBankMaster_Delete(cAICharControl *self, byte flags) {
-	self->vftable = Game_Ptr(CAICONTROLBANKMASTER_VFTABLE);
+	self->vftable = CAICONTROLBANKMASTER_VFTABLE;
 	cAICharControl2D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAICHARCONTROL_SIZE);
@@ -370,12 +370,12 @@ cAICharControl *__thiscall cAIControlBishop_ctor(void *mem, cEntity *e, cAIChar 
 }
 
 void __fastcall cAIControlBishop_dtor(cAICharControl *self) {
-	self->vftable = Game_Ptr(CAICONTROLBISHOP_VFTABLE);
+	self->vftable = CAICONTROLBISHOP_VFTABLE;
 	cAICharControl2D_dtor(self);
 }
 
 cAICharControl *__thiscall cAIControlBishop_Delete(cAICharControl *self, byte flags) {
-	self->vftable = Game_Ptr(CAICONTROLBISHOP_VFTABLE);
+	self->vftable = CAICONTROLBISHOP_VFTABLE;
 	cAICharControl2D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAICONTROLSHOOT_SIZE);
@@ -425,12 +425,12 @@ cAICharControl *__thiscall cAIControlGear_ctor(void *mem, cEntity *e, cAIChar *a
 }
 
 void __fastcall cAIControlGear_dtor(cAICharControl *self) {
-	self->vftable = Game_Ptr(CAICONTROLGEAR_VFTABLE);
+	self->vftable = CAICONTROLGEAR_VFTABLE;
 	cAICharControl2D_dtor(self);
 }
 
 cAICharControl *__thiscall cAIControlGear_Delete(cAICharControl *self, byte flags) {
-	self->vftable = Game_Ptr(CAICONTROLGEAR_VFTABLE);
+	self->vftable = CAICONTROLGEAR_VFTABLE;
 	cAICharControl2D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAICONTROLSHOOT_SIZE);
@@ -528,17 +528,17 @@ cAICharControl *__thiscall cAIControlMessenger_ctor(void *mem, cEntity *e, cAICh
 	cAICharControl *self = mem;
 
 	cAICharControl3D_ctor(mem, e, ai, arg);
-	self->vftable = Game_Ptr(CAICONTROLMESSENGER_VFTABLE);
+	self->vftable = CAICONTROLMESSENGER_VFTABLE;
 	return self;
 }
 
 void __fastcall cAIControlMessenger_dtor(cAICharControl *self) {
-	self->vftable = Game_Ptr(CAICONTROLMESSENGER_VFTABLE);
+	self->vftable = CAICONTROLMESSENGER_VFTABLE;
 	cAICharControl3D_dtor(self);
 }
 
 cAICharControl *__thiscall cAIControlMessenger_Delete(cAICharControl *self, byte flags) {
-	self->vftable = Game_Ptr(CAICONTROLMESSENGER_VFTABLE);
+	self->vftable = CAICONTROLMESSENGER_VFTABLE;
 	cAICharControl3D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAICHARCONTROL_SIZE);
@@ -598,17 +598,17 @@ cAICharControl *__thiscall cAIControlNurse_ctor(void *mem, cEntity *e, cAIChar *
 	cAICharControl *self = mem;
 
 	cAICharControl3D_ctor(mem, e, ai, arg);
-	self->vftable = Game_Ptr(CAICONTROLNURSE_VFTABLE);
+	self->vftable = CAICONTROLNURSE_VFTABLE;
 	return self;
 }
 
 void __fastcall cAIControlNurse_dtor(cAICharControl *self) {
-	self->vftable = Game_Ptr(CAICONTROLNURSE_VFTABLE);
+	self->vftable = CAICONTROLNURSE_VFTABLE;
 	cAICharControl3D_dtor(self);
 }
 
 cAICharControl *__thiscall cAIControlNurse_Delete(cAICharControl *self, byte flags) {
-	self->vftable = Game_Ptr(CAICONTROLNURSE_VFTABLE);
+	self->vftable = CAICONTROLNURSE_VFTABLE;
 	cAICharControl3D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAICHARCONTROL_SIZE);
@@ -643,12 +643,12 @@ cAICharControl *__thiscall cAIControlSentinel_ctor(void *mem, cEntity *e, cAICha
 }
 
 void __fastcall cAIControlSentinel_dtor(cAICharControl *self) {
-	self->vftable = Game_Ptr(CAICONTROLSENTINEL_VFTABLE);
+	self->vftable = CAICONTROLSENTINEL_VFTABLE;
 	cAICharControl3D_dtor(self);
 }
 
 cAICharControl *__thiscall cAIControlSentinel_Delete(cAICharControl *self, byte flags) {
-	self->vftable = Game_Ptr(CAICONTROLSENTINEL_VFTABLE);
+	self->vftable = CAICONTROLSENTINEL_VFTABLE;
 	cAICharControl3D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAICONTROLSENTINEL_SIZE);

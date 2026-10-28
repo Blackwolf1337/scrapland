@@ -81,12 +81,12 @@ SD_OFFSET(cSteamTicketCallback, ticket, 0x14);
  * object is data; the destructor sets the vftable of the base class and unregisters it when steam_api registered it */
 #define STEAM_TICKET_CALLBACK 0xa3	/* GetAuthSessionTicketResponse_t::k_iCallback */
 #define STEAM_CALLBACK_REGISTERED 0x1
-#define CCALLBACKBASE_VFTABLE 0x3bb4d8
+#define CCALLBACKBASE_VFTABLE GAME_VFTABLE(CCallbackImpl_8_vftable, 0x3bb4d8)
 
 void Steam_FiniTicketCallback(void) {
 	byte flags = g_SteamTicketCb->flags;
 
-	g_SteamTicketCb->vftable = Game_Ptr(CCALLBACKBASE_VFTABLE);
+	g_SteamTicketCb->vftable = CCALLBACKBASE_VFTABLE;
 	if (flags & STEAM_CALLBACK_REGISTERED) {
 		g_SteamAPI_UnregisterCallback(g_SteamTicketCb);
 	}

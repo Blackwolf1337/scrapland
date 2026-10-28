@@ -17,7 +17,7 @@ void *__thiscall cAIBishop_ctor(void *mem, cEntity *e, int *arg) {
 	cAIChar *c = &self->base;
 
 	cAIChar_ctor(mem, e, arg);
-	c->vftable = Game_Ptr(CAIBISHOP_VFTABLE);
+	c->vftable = CAIBISHOP_VFTABLE;
 	cAIChar_NewControl(c, CAICONTROLSHOOT_SIZE, cAIControlBishop_ctor, e, arg);
 	self->targetLife = 0;
 	self->blocked = 0;
@@ -25,12 +25,12 @@ void *__thiscall cAIBishop_ctor(void *mem, cEntity *e, int *arg) {
 }
 
 void __fastcall cAIBishop_dtor(cAIChar *self) {
-	self->vftable = Game_Ptr(CAIBISHOP_VFTABLE);
+	self->vftable = CAIBISHOP_VFTABLE;
 	cAIChar_dtor(self);
 }
 
 cAIChar *__thiscall cAIBishop_Delete(cAIChar *self, byte flags) {
-	self->vftable = Game_Ptr(CAIBISHOP_VFTABLE);
+	self->vftable = CAIBISHOP_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIBISHOP_SIZE);

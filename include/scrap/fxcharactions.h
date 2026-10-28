@@ -13,25 +13,25 @@
 #include "scrap/timer.h"
 
 /* the vtables */
-#define VT_FXBANKMASTERATTACK 0x3cb72c
-#define VT_FXBANKMASTERSUCTION 0x3cb744
-#define VT_FXBANKERSTEAL 0x3cb5c4
-#define VT_FXBERTOATTACK 0x3cb684
-#define VT_FXBERTOFLASH 0x3cb69c
-#define VT_FXBETTYATTACK 0x3cb6fc
-#define VT_FXBETTYKILL 0x3cb714
-#define VT_FXBISHOPATTACK 0x3cb66c
-#define VT_FXBISHOPSELLLIFE 0x3cb654
-#define VT_FXDTRITUSATTACK 0x3cb624
-#define VT_FXDTRITUSKILL 0x3cb63c
-#define VT_FXFUNCTIONARYSPECIALACTION 0x3cb5f4
-#define VT_FXGEARMISSILE 0x3cb5ac
-#define VT_FXMERCENARYDRINK 0x3cb75c
-#define VT_FXMESSENGERATTACK 0x3cb6b4
-#define VT_FXMESSENGERTAKEDATAPACK 0x3cb6cc
-#define VT_FXPOLICEGEARCONVERSION 0x3cb60c
-#define VT_FXPOLICESTEAL 0x3cb5dc
-#define VT_FXSEBASTIANFLASH 0x3cb6e4
+#define VT_FXBANKMASTERATTACK GAME_VFTABLE(cObjElementFXBankMasterAttack_vftable, 0x3cb72c)
+#define VT_FXBANKMASTERSUCTION GAME_VFTABLE(cObjElementFXBankMasterSuction_vftable, 0x3cb744)
+#define VT_FXBANKERSTEAL GAME_VFTABLE(cObjElementFXBankerSteal_vftable, 0x3cb5c4)
+#define VT_FXBERTOATTACK GAME_VFTABLE(cObjElementFXBertoAttack_vftable, 0x3cb684)
+#define VT_FXBERTOFLASH GAME_VFTABLE(cObjElementFXBertoFlash_vftable, 0x3cb69c)
+#define VT_FXBETTYATTACK GAME_VFTABLE(cObjElementFXBettyAttack_vftable, 0x3cb6fc)
+#define VT_FXBETTYKILL GAME_VFTABLE(cObjElementFXBettyKill_vftable, 0x3cb714)
+#define VT_FXBISHOPATTACK GAME_VFTABLE(cObjElementFXBishopAttack_vftable, 0x3cb66c)
+#define VT_FXBISHOPSELLLIFE GAME_VFTABLE(cObjElementFXBishopSellLife_vftable, 0x3cb654)
+#define VT_FXDTRITUSATTACK GAME_VFTABLE(cObjElementFXDTritusAttack_vftable, 0x3cb624)
+#define VT_FXDTRITUSKILL GAME_VFTABLE(cObjElementFXDTritusKill_vftable, 0x3cb63c)
+#define VT_FXFUNCTIONARYSPECIALACTION GAME_VFTABLE(cObjElementFXFunctionarySpecialAction_vftable, 0x3cb5f4)
+#define VT_FXGEARMISSILE GAME_VFTABLE(cObjElementFXGearMissile_vftable, 0x3cb5ac)
+#define VT_FXMERCENARYDRINK GAME_VFTABLE(cObjElementFXMercenaryDrink_vftable, 0x3cb75c)
+#define VT_FXMESSENGERATTACK GAME_VFTABLE(cObjElementFXMessengerAttack_vftable, 0x3cb6b4)
+#define VT_FXMESSENGERTAKEDATAPACK GAME_VFTABLE(cObjElementFXMessengerTakeDataPack_vftable, 0x3cb6cc)
+#define VT_FXPOLICEGEARCONVERSION GAME_VFTABLE(cObjElementFXPoliceGearConversion_vftable, 0x3cb60c)
+#define VT_FXPOLICESTEAL GAME_VFTABLE(cObjElementFXPoliceSteal_vftable, 0x3cb5dc)
+#define VT_FXSEBASTIANFLASH GAME_VFTABLE(cObjElementFXSebastianFlash_vftable, 0x3cb6e4)
 
 #define FXBMSUCTION_POINTS 14
 #define FXBERTOFLASH_POINTS 60

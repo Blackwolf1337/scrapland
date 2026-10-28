@@ -12,13 +12,13 @@ void *__thiscall cHumphreyLocalLogic_ctor(void *mem, cEntity *parent) {
 	cFunctionaryLocalLogic *self = mem;
 
 	cFunctionaryLocalLogic_ctor(self, parent);
-	Humphrey_Vtbl(self) = Game_Ptr(CHUMPHREYLOCALLOGIC_VFTABLE);
+	Humphrey_Vtbl(self) = CHUMPHREYLOCALLOGIC_VFTABLE;
 	self->isDefault = !strcmp(parent->name, "Humphrey_Default");
 	return self;
 }
 
 cFunctionaryLocalLogic *__thiscall cHumphreyLocalLogic_Delete(cFunctionaryLocalLogic *self, byte flags) {
-	Humphrey_Vtbl(self) = Game_Ptr(CHUMPHREYLOCALLOGIC_VFTABLE);
+	Humphrey_Vtbl(self) = CHUMPHREYLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, 0xbc);

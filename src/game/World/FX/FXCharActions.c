@@ -36,9 +36,9 @@ static inline float FXA_Rand(double range, double add) {
 }
 
 /* the same helpers as the constructors of FXMisc.c (kept local, FXMisc.c has them static) */
-static inline void FXA_SetVtbl(void *self, uint32_t vt) {
+static inline void FXA_SetVtbl(void *self, void *vt) {
 	*(void **)self = NULL;
-	*(void **)self = Game_Ptr(vt);
+	*(void **)self = vt;
 }
 
 static inline void FXA_TrailsCtor(CGameTrail *t, uint32_t n) {
@@ -199,7 +199,7 @@ void *__thiscall cObjElementFXBettyAttack_ctor(void *self) {
 	return s;
 }
 
-static void FXKill_Ctor(cObjElementFXKill *s, uint32_t vt) {
+static void FXKill_Ctor(cObjElementFXKill *s, void *vt) {
 	FXA_SetVtbl(s, vt);
 	CGameParticles_ctor(&s->particles);
 	FXA_TrailsCtor(s->trails, FXKILL_TRAILS);
@@ -376,7 +376,7 @@ void *__thiscall cObjElementFXSebastianFlash_ctor(void *self) {
 void __thiscall cObjElementFXBankMasterAttack_dtor(void *self) {
 	cObjElementFXBankMasterAttack *s = self;
 
-	*(void **)s = Game_Ptr(VT_FXBANKMASTERATTACK);
+	*(void **)s = VT_FXBANKMASTERATTACK;
 	CGameTrail_dtor(&s->trail2);
 	CGameTrail_dtor(&s->trail);
 	CGameParticles_Release(&s->particles);
@@ -386,15 +386,15 @@ void __thiscall cObjElementFXBankMasterAttack_dtor(void *self) {
 void __thiscall cObjElementFXBankMasterSuction_dtor(void *self) {
 	cObjElementFXBankMasterSuction *s = self;
 
-	*(void **)s = Game_Ptr(VT_FXBANKMASTERSUCTION);
+	*(void **)s = VT_FXBANKMASTERSUCTION;
 	CGameTrail_dtor(&s->trail);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
 
 /* the classes with only the particles at off */
-static void FXA_DtorParts(void *self, uint32_t vt, uint32_t off) {
-	*(void **)self = Game_Ptr(vt);
+static void FXA_DtorParts(void *self, void *vt, uint32_t off) {
+	*(void **)self = vt;
 	CGameParticles_Release((CGameParticles *)((byte *)self + off));
 	cObjElement_dtor(self);
 }
@@ -408,8 +408,8 @@ void __thiscall cObjElementFXBertoAttack_dtor(void *self) {
 }
 
 /* the classes with the particles at poff and n trails at toff */
-static void FXA_DtorTrails(void *self, uint32_t vt, uint32_t poff, uint32_t toff, uint32_t n) {
-	*(void **)self = Game_Ptr(vt);
+static void FXA_DtorTrails(void *self, void *vt, uint32_t poff, uint32_t toff, uint32_t n) {
+	*(void **)self = vt;
 	FXA_TrailsDtor((CGameTrail *)((byte *)self + toff), n);
 	CGameParticles_Release((CGameParticles *)((byte *)self + poff));
 	cObjElement_dtor(self);
@@ -422,7 +422,7 @@ void __thiscall cObjElementFXBertoFlash_dtor(void *self) {
 void __thiscall cObjElementFXBettyAttack_dtor(void *self) {
 	cObjElementFXBettyAttack *s = self;
 
-	*(void **)s = Game_Ptr(VT_FXBETTYATTACK);
+	*(void **)s = VT_FXBETTYATTACK;
 	CGameLensFlare_dtor(&s->flare);
 	CGameTrail_dtor(&s->trail);
 	FXA_TrailsDtor(s->trails2, FXBETTYATTACK_TRAILS);
@@ -439,7 +439,7 @@ void __thiscall cObjElementFXBettyKill_dtor(void *self) {
 void __thiscall cObjElementFXBishopAttack_dtor(void *self) {
 	cObjElementFXBishopAttack *s = self;
 
-	*(void **)s = Game_Ptr(VT_FXBISHOPATTACK);
+	*(void **)s = VT_FXBISHOPATTACK;
 	for (int i = FXBISHOPATTACK_TRAILS - 1; i >= 0; i--) {
 		CGameTrail_dtor(&s->trails[i]);
 	}
@@ -450,7 +450,7 @@ void __thiscall cObjElementFXBishopAttack_dtor(void *self) {
 void __thiscall cObjElementFXBishopSellLife_dtor(void *self) {
 	cObjElementFXBishopSellLife *s = self;
 
-	*(void **)s = Game_Ptr(VT_FXBISHOPSELLLIFE);
+	*(void **)s = VT_FXBISHOPSELLLIFE;
 	CGameParticles_Release(&s->dataCodec);
 	CGameParticles_Release(&s->glow);
 	cObjElement_dtor(s);
@@ -471,7 +471,7 @@ void __thiscall cObjElementFXFunctionarySpecialAction_dtor(void *self) {
 void __thiscall cObjElementFXGearMissile_dtor(void *self) {
 	cObjElementFXGearMissile *s = self;
 
-	*(void **)s = Game_Ptr(VT_FXGEARMISSILE);
+	*(void **)s = VT_FXGEARMISSILE;
 	FXA_TrailsDtor(s->trails, FXGEARMISSILE_TRAILS);
 	CGameTrail_dtor(&s->trail);
 	CGameParticles_Release(&s->sparks);
@@ -494,7 +494,7 @@ void __thiscall cObjElementFXMessengerTakeDataPack_dtor(void *self) {
 void __thiscall cObjElementFXPoliceGearConversion_dtor(void *self) {
 	cObjElementFXPoliceGearConversion *s = self;
 
-	*(void **)s = Game_Ptr(VT_FXPOLICEGEARCONVERSION);
+	*(void **)s = VT_FXPOLICEGEARCONVERSION;
 	crt_eh_vector_dtor(s->armor, sizeof(CGameModel), FXGEAR_ARMORS, Game_Ptr(CGAMEMODEL_RESET));
 	FXA_TrailsDtor(s->trails, FXGEAR_TRAILS);
 	CGameParticles_Release(&s->particles2);

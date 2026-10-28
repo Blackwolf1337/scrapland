@@ -28,7 +28,7 @@ static double Escena_Seconds(uint32_t t0) {
 CEscena *__fastcall CEscena_ctor(CEscena *self) {
 	self->name = NULL;
 	self->Refs = 0;
-	self->vftable = Game_Ptr(CESCENA_VFTABLE);
+	self->vftable = CESCENA_VFTABLE;
 	self->box = (box_t){ { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
 	self->nodo = NULL;
 	self->mainLOD = NULL;
@@ -58,7 +58,7 @@ static void Escena_DeleteIni(CArchINI **ini) {
 }
 
 void __fastcall CEscena_dtor(CEscena *self) {
-	self->vftable = Game_Ptr(CESCENA_VFTABLE);
+	self->vftable = CESCENA_VFTABLE;
 	E3D_DebugPrintf("\n> Escena::~Escena(): '%s' (%08Xh)", self->name, self);
 	self->anim = NULL;
 	E3D_LogDebug2(g_FileLog, " Scene deleted: %s", self->name);

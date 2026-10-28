@@ -12,17 +12,17 @@ void *__thiscall cAIPolice_ctor(void *mem, cEntity *e, int *arg) {
 	cAIChar *self = mem;
 
 	cAIChar_ctor(mem, e, arg);
-	self->vftable = Game_Ptr(CAIPOLICE_VFTABLE);
+	self->vftable = CAIPOLICE_VFTABLE;
 	return self;
 }
 
 void __fastcall cAIPolice_dtor(cAIChar *self) {
-	self->vftable = Game_Ptr(CAIPOLICE_VFTABLE);
+	self->vftable = CAIPOLICE_VFTABLE;
 	cAIChar_dtor(self);
 }
 
 cAIChar *__thiscall cAIPolice_Delete(cAIChar *self, byte flags) {
-	self->vftable = Game_Ptr(CAIPOLICE_VFTABLE);
+	self->vftable = CAIPOLICE_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIPOLICE_SIZE);

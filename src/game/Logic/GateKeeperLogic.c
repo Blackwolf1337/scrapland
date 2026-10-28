@@ -55,14 +55,14 @@ cGateKeeperLocalLogic *GateKeepers_MakeLogic(cEntity *e) {
 
 cGateKeeperLocalLogic *__thiscall cGateKeeperLocalLogic_ctor(cGateKeeperLocalLogic *self, cEntity *parent) {
 	cBaseLocalLogic_ctor(&self->base, parent);
-	self->base.vftable = Game_Ptr(CGATEKEEPERLOCALLOGIC_VFTABLE);
+	self->base.vftable = CGATEKEEPERLOCALLOGIC_VFTABLE;
 	self->hiddenTime = 0.0f;
 	cGateKeeperLocalLogic_SetState(self, 0, NULL);
 	return self;
 }
 
 void __fastcall cGateKeeperLocalLogic_dtor(cGateKeeperLocalLogic *self) {
-	self->base.vftable = Game_Ptr(CGATEKEEPERLOCALLOGIC_VFTABLE);
+	self->base.vftable = CGATEKEEPERLOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
 }
 

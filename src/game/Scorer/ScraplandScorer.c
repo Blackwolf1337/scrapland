@@ -17,7 +17,7 @@ static float ScraplandScorer_Rand(double range, double add) {
 
 cScraplandMainMenuScorer *__fastcall cScraplandMainMenuScorer_ctor(cScraplandMainMenuScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CSCRAPLANDMAINMENUSCORER_VFTABLE);
+	self->base.vftable = CSCRAPLANDMAINMENUSCORER_VFTABLE;
 	self->highRes = 0;
 	self->time = 0.0f;
 	self->now = 0.0f;
@@ -35,7 +35,7 @@ cScraplandMainMenuScorer *__fastcall cScraplandMainMenuScorer_ctor(cScraplandMai
 
 cScraplandSubMenuScorer *__fastcall cScraplandSubMenuScorer_ctor(cScraplandSubMenuScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CSCRAPLANDSUBMENUSCORER_VFTABLE);
+	self->base.vftable = CSCRAPLANDSUBMENUSCORER_VFTABLE;
 	cString_ctor(&self->file);
 	self->highRes = 0;
 	self->scale = 1.0f;
@@ -68,7 +68,7 @@ static void ScraplandScorer_Drop(CPsaImage **slot) {
 }
 
 void __fastcall cScraplandMainMenuScorer_dtor(cScraplandMainMenuScorer *self) {
-	self->base.vftable = Game_Ptr(CSCRAPLANDMAINMENUSCORER_VFTABLE);
+	self->base.vftable = CSCRAPLANDMAINMENUSCORER_VFTABLE;
 	ScraplandScorer_Drop(&self->logo);
 	ScraplandScorer_Drop(&self->glow);
 	ScraplandScorer_Drop(&self->neon);
@@ -77,7 +77,7 @@ void __fastcall cScraplandMainMenuScorer_dtor(cScraplandMainMenuScorer *self) {
 }
 
 void __fastcall cScraplandSubMenuScorer_dtor(cScraplandSubMenuScorer *self) {
-	self->base.vftable = Game_Ptr(CSCRAPLANDSUBMENUSCORER_VFTABLE);
+	self->base.vftable = CSCRAPLANDSUBMENUSCORER_VFTABLE;
 	ScraplandScorer_Drop(&self->logo);
 	ScraplandScorer_Drop(&self->glow);
 	ScraplandScorer_Drop(&self->lighting);

@@ -24,7 +24,7 @@ cBaseLocalLogic *__thiscall cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity 
 	vec3_t tmp, ang, out;
 
 	self->parent = parent;
-	self->vftable = Game_Ptr(CBASELOCALLOGIC_VFTABLE);
+	self->vftable = CBASELOCALLOGIC_VFTABLE;
 	self->target.target = NULL;
 	self->target.data = NULL;
 	self->target.next = &self->target;
@@ -47,13 +47,13 @@ cBaseLocalLogic *__thiscall cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity 
 }
 
 void __fastcall cBaseLocalLogic_dtor(cBaseLocalLogic *self) {
-	self->vftable = Game_Ptr(CBASELOCALLOGIC_VFTABLE);
+	self->vftable = CBASELOCALLOGIC_VFTABLE;
 	Nto1Node_Done(&self->target);
-	self->vftable = Game_Ptr(CLOCALLOGIC_VFTABLE);
+	self->vftable = CLOCALLOGIC_VFTABLE;
 }
 
 void __fastcall cLocalLogic_dtor(cLocalLogic *self) {
-	self->vftable = Game_Ptr(CLOCALLOGIC_VFTABLE);
+	self->vftable = CLOCALLOGIC_VFTABLE;
 }
 
 cBaseLocalLogic *__thiscall cBaseLocalLogic_Delete(cBaseLocalLogic *self, byte flags) {
@@ -65,7 +65,7 @@ cBaseLocalLogic *__thiscall cBaseLocalLogic_Delete(cBaseLocalLogic *self, byte f
 }
 
 cLocalLogic *__thiscall cLocalLogic_Delete(cLocalLogic *self, byte flags) {
-	self->vftable = Game_Ptr(CLOCALLOGIC_VFTABLE);
+	self->vftable = CLOCALLOGIC_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}

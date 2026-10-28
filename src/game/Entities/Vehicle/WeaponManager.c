@@ -808,7 +808,7 @@ int __thiscall cWeaponManager_WeaponNeed(cWeaponManager *self) {
 /* the functions before rva 0x11a0f0 */
 
 cWeaponManager *__fastcall cWeaponManager_ctor(cWeaponManager *self) {
-	self->vftable = Game_Ptr(CWEAPONMANAGER_VFTABLE);
+	self->vftable = CWEAPONMANAGER_VFTABLE;
 	self->lock.target = NULL;
 	self->lock.data = NULL;
 	self->lock.next = &self->lock;
@@ -822,7 +822,7 @@ cWeaponManager *__fastcall cWeaponManager_ctor(cWeaponManager *self) {
 }
 
 void __fastcall cWeaponManager_dtor(cWeaponManager *self) {
-	self->vftable = Game_Ptr(CWEAPONMANAGER_VFTABLE);
+	self->vftable = CWEAPONMANAGER_VFTABLE;
 	Mem_Free(self->weaps);
 	Mem_Free(self->ammo);
 	Mem_Free(self->nodes);

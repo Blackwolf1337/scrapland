@@ -312,14 +312,14 @@ void *__thiscall cMessengerLocalLogic_ctor(void *mem, cEntity *parent) {
 	cGenCharLocalLogic *self = mem;
 
 	cGenCharLocalLogic_ctor(self, parent, 0);
-	MSG_VT(self) = Game_Ptr(CMESSENGERLOCALLOGIC_VFTABLE);
+	MSG_VT(self) = CMESSENGERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_SetState(self, GENCHAR_RELAX, NULL);
 	self->ignoreAlarm = 1;
 	return self;
 }
 
 cGenCharLocalLogic *__thiscall cMessengerLocalLogic_Delete(cGenCharLocalLogic *self, byte flags) {
-	MSG_VT(self) = Game_Ptr(CMESSENGERLOCALLOGIC_VFTABLE);
+	MSG_VT(self) = CMESSENGERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

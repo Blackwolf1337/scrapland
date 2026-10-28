@@ -9,7 +9,7 @@
 #include "scrap/cstring.h"
 
 cAction *__thiscall cAction_ctor(cAction *self, cActClass *parent, const char *name) {
-	self->vftable = Game_Ptr(CACTIONMOVE_VFTABLE);
+	self->vftable = CACTIONMOVE_VFTABLE;
 	cString_ctor(&self->name);
 	CHECK(parent);
 	CHECK(name);
@@ -53,7 +53,7 @@ cActEvent *__thiscall cActEvent_ctor(cActEvent *self, float time, cActEvent *nex
 }
 
 void __fastcall cAction_dtor(cAction *self) {
-	self->vftable = Game_Ptr(CACTIONMOVE_VFTABLE);
+	self->vftable = CACTIONMOVE_VFTABLE;
 	if (self->anmFile) {
 		Mem_Free(self->anmFile);
 	}

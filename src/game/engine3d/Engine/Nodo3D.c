@@ -19,7 +19,7 @@
 #include "scrap/suelo.h"
 #include "scrap/varios.h"
 
-#define CNODO3D_VFTABLE 0x3d7e78
+#define CNODO3D_VFTABLE GAME_VFTABLE(CNodo3D_vftable, 0x3d7e78)
 #define MALLAD3D_SIZE 200
 #define MALLAD3D_SKIN 0x94		/* the CMallaD3D member that puts the object into mObj */
 #define A6000080_ALPHA 0x28
@@ -99,7 +99,7 @@ static quat_t Quat_Conj(const quat_t *q) {
 CNodo3D *__fastcall CNodo3D_ctor(CNodo3D *self) {
 	self->name = NULL;
 	self->Refs = 0;
-	self->vftable = Game_Ptr(CNODO3D_VFTABLE);
+	self->vftable = CNODO3D_VFTABLE;
 	self->flags = 0;
 	g_Nodo3DCount++;
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
@@ -123,7 +123,7 @@ CNodo3D *__fastcall CNodo3D_ctor(CNodo3D *self) {
 }
 
 void __fastcall CNodo3D_dtor(CNodo3D *self) {
-	self->vftable = Game_Ptr(CNODO3D_VFTABLE);
+	self->vftable = CNODO3D_VFTABLE;
 	g_Nodo3DCount--;
 	CHECK(!self->ant && !self->sig);
 	CNodo3D_Free(self);

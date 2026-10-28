@@ -30,7 +30,7 @@ static inline void Hangar_Render(cEntity *e) {
 
 cHangarShipScorer *__fastcall cHangarShipScorer_ctor(cHangarShipScorer *self) {
 	cSpriteScorer_ctor(&self->base);
-	self->base.base.vftable = Game_Ptr(CHANGARSHIPSCORER_VFTABLE);
+	self->base.base.vftable = CHANGARSHIPSCORER_VFTABLE;
 	self->grid = NULL;
 	cString_ctor(&self->targetName);
 	self->reset = 1;
@@ -45,7 +45,7 @@ cHangarShipScorer *__fastcall cHangarShipScorer_ctor(cHangarShipScorer *self) {
 
 void __fastcall cHangarShipScorer_dtor(cHangarShipScorer *self) {
 	CGameCamera *cam = self->cam;
-	self->base.base.vftable = Game_Ptr(CHANGARSHIPSCORER_VFTABLE);
+	self->base.base.vftable = CHANGARSHIPSCORER_VFTABLE;
 	if (cam) {
 		CGameCamera_dtor(cam);
 		operator_delete_sized(cam, sizeof(CGameCamera));

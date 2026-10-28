@@ -14,8 +14,12 @@ SECTIONS
   /* ScrapC.exe: the room of Scrap.exe 1.6.1 (rva 0x1000 .. its SizeOfImage) before the own code
      (docs/standalone.md, stage 3a). tools/standalone/datagen.py writes its sections .orig0, .orig1 ... at the build
      and room.ld with their places: initialized where the original has data or code that still runs, uninitialized
-     in between, so the zero parts take no room in the file. */
+     in between, so the zero parts take no room in the file. The C objects of SD_AT (.sd.<rva>, stage 3b) lie in
+     them at their rvas. */
   INCLUDE room.ld
+  /* an SD_AT object that datagen.py did not see (it reads only the objects of scrapcode_sa) */
+  .sd.unplaced : { *(.sd.*) }
+  ASSERT (SIZEOF (.sd.unplaced) == 0, "an SD_AT object outside scrapcode_sa, datagen.py did not place it")
   ASSERT (. == __image_base__ + 0x55e000, "the room of Scrap.exe must end at its SizeOfImage")
   .text ALIGN(__section_alignment__) :
   {

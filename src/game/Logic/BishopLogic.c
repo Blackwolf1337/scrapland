@@ -16,13 +16,13 @@ SD_OFFSET(cLogicBishopAIVtbl, Vf94, 0x94);
 
 cGenCharLocalLogic *__thiscall cBishopLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
-	self->base.vftable = Game_Ptr(CBISHOPLOCALLOGIC_VFTABLE);
+	self->base.vftable = CBISHOPLOCALLOGIC_VFTABLE;
 	self->alarmState = 4;
 	return self;
 }
 
 cGenCharLocalLogic *__thiscall cBishopLocalLogic_Delete(cGenCharLocalLogic *self, byte flags) {
-	self->base.vftable = Game_Ptr(CBISHOPLOCALLOGIC_VFTABLE);
+	self->base.vftable = CBISHOPLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

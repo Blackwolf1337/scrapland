@@ -41,7 +41,7 @@ static CPsaImage *Monitor_WhiteImage(uint32_t flags) {
 
 cMonitorScorer *__fastcall cMonitorScorer_ctor(cMonitorScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CMONITORSCORER_VFTABLE);
+	self->base.vftable = CMONITORSCORER_VFTABLE;
 	self->panel = Monitor_WhiteImage(0x10000);
 	self->mask = Monitor_WhiteImage(0x10000);
 	self->frame = Monitor_WhiteImage(0x10000);
@@ -77,7 +77,7 @@ cMonitorScorer *__fastcall cMonitorScorer_ctor(cMonitorScorer *self) {
 
 void __fastcall cMonitorScorer_dtor(cMonitorScorer *self) {
 	CPsaImage *img = self->panel;
-	self->base.vftable = Game_Ptr(CMONITORSCORER_VFTABLE);
+	self->base.vftable = CMONITORSCORER_VFTABLE;
 	Monitor_FreeImage(img);
 	Monitor_FreeImage(self->mask);
 	Monitor_FreeImage(self->frame);

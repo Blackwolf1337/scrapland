@@ -158,7 +158,7 @@ void __fastcall cScheduledFunc_dtor(cScheduledFunc *self) {
 void __thiscall cScheduledFuncStack_dtor(void *stack) {
 	cScheduledFuncStack *self = stack;
 
-	self->vftable = Game_Ptr(CSCHEDULEDFUNCSTACK_VFTABLE);
+	self->vftable = CSCHEDULEDFUNCSTACK_VFTABLE;
 	Scheduler_Clear(self);
 	SchedList_Clear(&self->list);
 	DList_FreePool(&self->list, sizeof(cSchedNode));

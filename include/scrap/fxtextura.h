@@ -9,10 +9,10 @@
 #include "scrap/bmp.h"
 #include "scrap/material.h"
 
-#define IFXTEXTURA_VFTABLE 0x3e2c44
-#define CFXTEXLAVA_VFTABLE 0x3e2c54
-#define CFXTEXSCROLL_VFTABLE 0x3e2c64
-#define CFXNEWSPANEL_VFTABLE 0x3e2c74
+#define IFXTEXTURA_VFTABLE GAME_VFTABLE(IFXTextura_vftable, 0x3e2c44)
+#define CFXTEXLAVA_VFTABLE GAME_VFTABLE(CFXTexLava_vftable, 0x3e2c54)
+#define CFXTEXSCROLL_VFTABLE GAME_VFTABLE(CFXTexScroll_vftable, 0x3e2c64)
+#define CFXNEWSPANEL_VFTABLE GAME_VFTABLE(CFXNewsPanel_vftable, 0x3e2c74)
 #define FXTEX_SIZE 128
 #define FXTEX_PERIOD 50
 

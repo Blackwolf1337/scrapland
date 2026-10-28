@@ -10,7 +10,7 @@ static const char *const s_BlackColors[4] = {"BlackRed", "BlackGreen", "BlackBlu
 
 cBarScorer *__fastcall cBarScorer_ctor(cBarScorer *self) {
 	cSpriteScorer_ctor(&self->base);
-	self->base.base.vftable = Game_Ptr(CBARSCORER_VFTABLE);
+	self->base.base.vftable = CBARSCORER_VFTABLE;
 	self->maxValue = 0.0f;
 	self->blinkTime = 0.0f;
 	self->blink = 0;
@@ -33,7 +33,7 @@ cBarScorer *__fastcall cBarScorer_ctor(cBarScorer *self) {
 }
 
 void __fastcall cBarScorer_dtor(cBarScorer *self) {
-	self->base.base.vftable = Game_Ptr(CBARSCORER_VFTABLE);
+	self->base.base.vftable = CBARSCORER_VFTABLE;
 	cSpriteScorer_dtor(&self->base);
 }
 

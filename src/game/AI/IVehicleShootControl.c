@@ -108,7 +108,7 @@ static inline byte AIVS_TargetActive(cAIVehicleShoot *self) {
 cAIVehicleShoot *__thiscall cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehicle *ai, void *params) {
 	cAIVehicleShoot *self = mem;
 
-	self->vftable = Game_Ptr(CAIVEHICLESHOOT_VFTABLE);
+	self->vftable = CAIVEHICLESHOOT_VFTABLE;
 	cSlotController_ctor(AIV_Slot(&self->slotFire), 0.2f);
 	cSlotController_ctor(AIV_Slot(&self->slotFireCM), 0.2f);
 	cSlotController_ctor(AIV_Slot(&self->slotWeap), 0.5f);
@@ -140,11 +140,11 @@ cAIVehicleShoot *__thiscall cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehic
 }
 
 void __fastcall cAIVehicleShoot_dtor(cAIVehicleShoot *self) {
-	self->vftable = Game_Ptr(CAIVEHICLESHOOT_VFTABLE);
+	self->vftable = CAIVEHICLESHOOT_VFTABLE;
 }
 
 cAIVehicleShoot *__thiscall cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags) {
-	self->vftable = Game_Ptr(CAIVEHICLESHOOT_VFTABLE);
+	self->vftable = CAIVEHICLESHOOT_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, CAIVEHICLESHOOT_SIZE);
 	}

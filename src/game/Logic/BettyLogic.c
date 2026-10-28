@@ -9,13 +9,13 @@
 
 cFunctionaryLocalLogic *__thiscall cBettyLocalLogic_ctor(cFunctionaryLocalLogic *self, cEntity *parent) {
 	cFunctionaryLocalLogic_ctor(self, parent);
-	self->base.base.vftable = Game_Ptr(CBETTYLOCALLOGIC_VFTABLE);
+	self->base.base.vftable = CBETTYLOCALLOGIC_VFTABLE;
 	self->isDefault = !strcmp(parent->name, "Betty_Default");
 	return self;
 }
 
 cFunctionaryLocalLogic *__thiscall cBettyLocalLogic_Delete(cFunctionaryLocalLogic *self, byte flags) {
-	self->base.base.vftable = Game_Ptr(CBETTYLOCALLOGIC_VFTABLE);
+	self->base.base.vftable = CBETTYLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

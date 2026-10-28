@@ -884,7 +884,7 @@ cVehicleMotor *__thiscall cVehicleMotor_ctor(cVehicleMotor *self) {
 void *__fastcall cVehicleMotors_ctor(void *motors) {
 	cVehicleMotors *self = motors;
 
-	self->vftable = Game_Ptr(CVEHICLEMOTORS_VFTABLE);
+	self->vftable = CVEHICLEMOTORS_VFTABLE;
 	cVehicleMotorsEffects_ctor(&self->effects);
 	self->owner = NULL;
 	self->stopped = 0;
@@ -906,7 +906,7 @@ void __fastcall cVehicleMotor_dtor(cVehicleMotor *self) {
 void __fastcall cVehicleMotors_dtor(void *motors) {
 	cVehicleMotors *self = motors;
 
-	self->vftable = Game_Ptr(CVEHICLEMOTORS_VFTABLE);
+	self->vftable = CVEHICLEMOTORS_VFTABLE;
 	cVehicleMotorsEffects_Clear(&self->effects);
 	/* the pointers are kept */
 	for (int i = 0; i < VM_MOTORS; i++) {

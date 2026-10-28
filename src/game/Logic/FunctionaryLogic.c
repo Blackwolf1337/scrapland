@@ -43,7 +43,7 @@ static void Func_SetWorkTime(cFunctionaryLocalLogic *self) {
 
 cFunctionaryLocalLogic *__thiscall cFunctionaryLocalLogic_ctor(cFunctionaryLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(&self->base, parent, 0);
-	Func_Vtbl(self) = Game_Ptr(CFUNCTIONARYLOCALLOGIC_VFTABLE);
+	Func_Vtbl(self) = CFUNCTIONARYLOCALLOGIC_VFTABLE;
 	self->desktop.target = NULL;
 	self->desktop.data = NULL;
 	self->desktop.next = &self->desktop;
@@ -79,7 +79,7 @@ cFunctionaryLocalLogic *__thiscall cFunctionaryLocalLogic_ctor(cFunctionaryLocal
 }
 
 void __fastcall cFunctionaryLocalLogic_dtor(cFunctionaryLocalLogic *self) {
-	Func_Vtbl(self) = Game_Ptr(CFUNCTIONARYLOCALLOGIC_VFTABLE);
+	Func_Vtbl(self) = CFUNCTIONARYLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_ReleaseDesktop(self);
 	g_DesktopsList = NULL;
 	Nto1Node_Done(&self->desktop);

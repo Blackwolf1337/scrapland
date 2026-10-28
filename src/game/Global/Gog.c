@@ -70,9 +70,9 @@ typedef void (*GalaxyInit_t)(const GalaxyInitOptions *opts);
 #define GALAXY_LISTENER_AUTH 7
 
 /* the listener vtables of the exe */
-#define VT_IGALAXYLISTENER 0x3bbc00
-#define VT_SELFREGLISTENER 0x3bbc24
-#define VT_AUTHLISTENER 0x3bbc38
+#define VT_IGALAXYLISTENER GAME_VFTABLE(galaxy_api_IGalaxyListener_vftable, 0x3bbc00)
+#define VT_SELFREGLISTENER GAME_VFTABLE(galaxy_api_SelfRegisteringListener_IAuthListener_vftable, 0x3bbc24)
+#define VT_AUTHLISTENER GAME_VFTABLE(gog_GoGScrap_AuthListener_vftable, 0x3bbc38)
 
 /* the authorization has come (the stats may be used) */
 #define g_GogSignedIn GAME_DATA(byte, 0x44c108)
@@ -620,7 +620,7 @@ void **PtrVector_UninitMove(void **first, void **last, void **dest) {
 
 /* the SelfRegisteringListener part: registered as an auth listener while the registrar is there */
 static void GogListener_Register(GogAuthListener *l) {
-	l->vftable = Game_Ptr(VT_SELFREGLISTENER);
+	l->vftable = VT_SELFREGLISTENER;
 	if (g_GalaxyListenerRegistrar()) {
 		GalaxyIface *r = g_GalaxyListenerRegistrar();
 		((void(__thiscall *)(GalaxyIface *, int, void *))r->vftable[1])(r, GALAXY_LISTENER_AUTH, l);
@@ -628,12 +628,12 @@ static void GogListener_Register(GogAuthListener *l) {
 }
 
 static void GogListener_Unregister(GogAuthListener *l) {
-	l->vftable = Game_Ptr(VT_SELFREGLISTENER);
+	l->vftable = VT_SELFREGLISTENER;
 	if (g_GalaxyListenerRegistrar()) {
 		GalaxyIface *r = g_GalaxyListenerRegistrar();
 		((void(__thiscall *)(GalaxyIface *, int, void *))r->vftable[2])(r, GALAXY_LISTENER_AUTH, l);
 	}
-	l->vftable = Game_Ptr(VT_IGALAXYLISTENER);
+	l->vftable = VT_IGALAXYLISTENER;
 }
 
 /* std::make_unique<AuthListener>(owner) */
@@ -646,7 +646,7 @@ GogAuthListener **GogAuthListener_MakeUnique(GogAuthListener **out, cGogListener
 	}
 	GogListener_Register(l);
 	l->owner = owner;
-	l->vftable = Game_Ptr(VT_AUTHLISTENER);
+	l->vftable = VT_AUTHLISTENER;
 	*out = l;
 	return out;
 }
@@ -654,7 +654,7 @@ GogAuthListener **GogAuthListener_MakeUnique(GogAuthListener **out, cGogListener
 GogAuthListener *__thiscall GogAuthListener_ctor(GogAuthListener *self, cGogListeners *owner) {
 	GogListener_Register(self);
 	self->owner = owner;
-	self->vftable = Game_Ptr(VT_AUTHLISTENER);
+	self->vftable = VT_AUTHLISTENER;
 	return self;
 }
 
@@ -676,11 +676,11 @@ void __fastcall GogListenerPtr_dtor(void **p) {
 
 /* ~IGalaxyListener and its deleting destructor */
 void __fastcall IGalaxyListener_dtor(void *self) {
-	*(void **)self = Game_Ptr(VT_IGALAXYLISTENER);
+	*(void **)self = VT_IGALAXYLISTENER;
 }
 
 void *__thiscall IGalaxyListener_Delete(void *self, byte flags) {
-	*(void **)self = Game_Ptr(VT_IGALAXYLISTENER);
+	*(void **)self = VT_IGALAXYLISTENER;
 	if (flags & 1) {
 		operator_delete_sized(self, 4);
 	}

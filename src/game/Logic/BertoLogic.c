@@ -9,13 +9,13 @@
 
 cFunctionaryLocalLogic *__thiscall cBertoLocalLogic_ctor(cFunctionaryLocalLogic *self, cEntity *parent) {
 	cFunctionaryLocalLogic_ctor(self, parent);
-	self->base.base.vftable = Game_Ptr(CBERTOLOCALLOGIC_VFTABLE);
+	self->base.base.vftable = CBERTOLOCALLOGIC_VFTABLE;
 	self->isDefault = !strcmp(parent->name, "Berto_Default");
 	return self;
 }
 
 cFunctionaryLocalLogic *__thiscall cBertoLocalLogic_Delete(cFunctionaryLocalLogic *self, byte flags) {
-	self->base.base.vftable = Game_Ptr(CBERTOLOCALLOGIC_VFTABLE);
+	self->base.base.vftable = CBERTOLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

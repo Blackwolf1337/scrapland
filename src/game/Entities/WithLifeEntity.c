@@ -38,7 +38,7 @@ cEntity *__thiscall cWithLifeEntity_ctor(void *mem, const char *name, float x, f
 	cEntity *e = &self->obj.base;
 
 	cObjEntity_ctor(mem, name, x, y, z);
-	e->vftable = Game_Ptr(CWITHLIFEENTITY_VFTABLE);
+	e->vftable = CWITHLIFEENTITY_VFTABLE;
 	Nto1Node_Init(&self->burner);
 	cString_ctor(&self->usrName);
 	Nto1Node_Init(&self->targets);
@@ -76,7 +76,7 @@ cEntity *__thiscall cWithLifeEntity_ctor(void *mem, const char *name, float x, f
 void __fastcall cWithLifeEntity_dtor(cEntity *self) {
 	cWithLifeEntity *w = WLife(self);
 
-	self->vftable = Game_Ptr(CWITHLIFEENTITY_VFTABLE);
+	self->vftable = CWITHLIFEENTITY_VFTABLE;
 	if (w->actCtrl) {
 		ActCtrl_Vtbl(w->actCtrl)->Delete(w->actCtrl, 1);
 	}

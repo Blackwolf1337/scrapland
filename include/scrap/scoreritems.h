@@ -16,12 +16,12 @@
 #include "scrap/sound.h"
 
 /* the vtables of the exe */
-#define CABSTRACTTEXTSCORER_VFTABLE 0x3c1b4c
-#define CMSGSCORER_VFTABLE 0x3c1b60
-#define CLABELSCORER_VFTABLE 0x3c1b74
-#define CHINTSCORER_VFTABLE 0x3c1b88
-#define CCREDITSSCORER_VFTABLE 0x3c1b9c
-#define CBARSCORER_VFTABLE 0x3c1de4
+#define CABSTRACTTEXTSCORER_VFTABLE GAME_VFTABLE(cAbstractTextScorer_vftable, 0x3c1b4c)
+#define CMSGSCORER_VFTABLE GAME_VFTABLE(cMsgScorer_vftable, 0x3c1b60)
+#define CLABELSCORER_VFTABLE GAME_VFTABLE(cLabelScorer_vftable, 0x3c1b74)
+#define CHINTSCORER_VFTABLE GAME_VFTABLE(cHintScorer_vftable, 0x3c1b88)
+#define CCREDITSSCORER_VFTABLE GAME_VFTABLE(cCreditsScorer_vftable, 0x3c1b9c)
+#define CBARSCORER_VFTABLE GAME_VFTABLE(cBarScorer_vftable, 0x3c1de4)
 
 /* the x87 arithmetic of the originals on float returns (st0), in the precision the game set */
 static inline float Scorer_X87MulSub(float a, float b, float c) {
@@ -258,7 +258,7 @@ void __thiscall cBarScorer_Draw(cBarScorer *self, int player);
 
 /* ---- ButtonScorer.cpp ---- */
 
-#define CBUTTONSCORER_VFTABLE 0x3c1ebc
+#define CBUTTONSCORER_VFTABLE GAME_VFTABLE(cButtonScorer_vftable, 0x3c1ebc)
 #define CSTRING_DTOR 0x133990
 #define CSTRING_CTOR 0x133980
 
@@ -338,7 +338,7 @@ void __thiscall cButtonScorer_Draw(cButtonScorer *self, int player);
 
 /* ---- CannonScorer.cpp ---- */
 
-#define CCANNONSCORER_VFTABLE 0x3c2324
+#define CCANNONSCORER_VFTABLE GAME_VFTABLE(cCannonScorer_vftable, 0x3c2324)
 #define CANNON_WEAPONS 7
 
 /* the crosshair of the ship of the camera: the center sprite, the aim of the weapon at the aim point of the auto aim,
@@ -380,7 +380,7 @@ void __thiscall cCannonScorer_DrawLock(cCannonScorer *self, int player, const fl
 
 /* ---- ChatScorer.cpp ---- */
 
-#define CCHATSCORER_VFTABLE 0x3c2540
+#define CCHATSCORER_VFTABLE GAME_VFTABLE(cChatScorer_vftable, 0x3c2540)
 #define CHAT_MSGS 16
 
 /* the chat lines of Scorer_AddChatMsg (0xbc bytes) */
@@ -413,7 +413,7 @@ void __thiscall cChatScorer_Draw(cChatScorer *self, int player);
 
 /* ---- CircuitScorer.cpp ---- */
 
-#define CCIRCUITSCORER_VFTABLE 0x3c255c
+#define CCIRCUITSCORER_VFTABLE GAME_VFTABLE(cCircuitScorer_vftable, 0x3c255c)
 #define CIRCUIT_PATHS 9
 #define CIRCUIT_FLARES 4
 #define CIRCUIT_TRAIL 24
@@ -474,7 +474,7 @@ void __thiscall cCircuitScorer_Draw(cCircuitScorer *self, int player);
 
 /* ---- CopMeterScorer.cpp ---- */
 
-#define CCOPMETERSCORER_VFTABLE 0x3c2874
+#define CCOPMETERSCORER_VFTABLE GAME_VFTABLE(cCopMeterScorer_vftable, 0x3c2874)
 
 /* the police alarm meter: a back frame, a bar to the alarm level of the world, two blinking lights while the
  * alarm is on; fades in with the alarm (0xf0 bytes) */
@@ -507,7 +507,7 @@ void __thiscall cCopMeterScorer_Draw(cCopMeterScorer *self, int player);
 
 /* ---- HangarShipScorer.cpp ---- */
 
-#define CHANGARSHIPSCORER_VFTABLE 0x3c28e8
+#define CHANGARSHIPSCORER_VFTABLE GAME_VFTABLE(cHangarShipScorer_vftable, 0x3c28e8)
 
 /* a ship of the world turning in a view of its own over a grid frame (0xf0 bytes) */
 typedef struct cHangarShipScorer {
@@ -553,7 +553,7 @@ cScorerModel *__thiscall cScorer_FindModel(cScorer *scorer, const char *name);
 
 /* ---- HeadScorer.cpp ---- */
 
-#define CHEADSCORER_VFTABLE 0x3c2968
+#define CHEADSCORER_VFTABLE GAME_VFTABLE(cHeadScorer_vftable, 0x3c2968)
 
 /* a talking head: a scorer model in a view of its own, the camera swaying (0xc4 bytes) */
 typedef struct cHeadScorer {
@@ -585,7 +585,7 @@ void __thiscall cHeadScorer_SetAnim(cHeadScorer *self, int anim);
 
 /* ---- MissionScorer.cpp ---- */
 
-#define CMISSIONSCORER_VFTABLE 0x3c2b70
+#define CMISSIONSCORER_VFTABLE GAME_VFTABLE(cMissionScorer_vftable, 0x3c2b70)
 #define MISSION_STATUS 3
 
 /* the mission icons (three status lamps) and the text of the next mission's map (0xec bytes); the status and
@@ -629,7 +629,7 @@ void __thiscall cMissionScorer_Draw(cMissionScorer *self, int player);
 
 /* ---- MonitorScorer.cpp ---- */
 
-#define CMONITORSCORER_VFTABLE 0x3c2cb4
+#define CMONITORSCORER_VFTABLE GAME_VFTABLE(cMonitorScorer_vftable, 0x3c2cb4)
 #define MONITOR_WEAPONS 7
 #define MONITOR_UPGRADES 13
 
@@ -708,7 +708,7 @@ void Monitor_RepeatPhotoMessage(void);
 
 /* ---- NetStatsScorer.cpp ---- */
 
-#define CNETSTATSSCORER_VFTABLE 0x3c2f7c
+#define CNETSTATSSCORER_VFTABLE GAME_VFTABLE(cNetStatsScorer_vftable, 0x3c2f7c)
 #define NETSTATS_SLOTS 16
 
 /* the ping and the bars of the net traffic of the client (0x230 bytes) */
@@ -794,7 +794,7 @@ void __thiscall cNewsPanel_DrawNews(cNewsPanel *self, float dt);
 
 /* ---- RadarScorer.cpp ---- */
 
-#define CRADARSCORER_VFTABLE 0x3c33c4
+#define CRADARSCORER_VFTABLE GAME_VFTABLE(cRadarScorer_vftable, 0x3c33c4)
 #define RADAR_FLOORS 16
 #define RADAR_ICONS 254		/* the icon frames, then their colors */
 /* the flags of cRadarScorer_DrawIcon for an entity out of the radar */
@@ -1019,8 +1019,8 @@ static inline void ScorerImg_Free(CPsaImage *img) {
 
 /* ---- ScraplandScorer.cpp: the animated logos of the main menu and of the sub menus ---- */
 
-#define CSCRAPLANDMAINMENUSCORER_VFTABLE 0x3c3ff4
-#define CSCRAPLANDSUBMENUSCORER_VFTABLE 0x3c4008
+#define CSCRAPLANDMAINMENUSCORER_VFTABLE GAME_VFTABLE(cScraplandMainMenuScorer_vftable, 0x3c3ff4)
+#define CSCRAPLANDSUBMENUSCORER_VFTABLE GAME_VFTABLE(cScraplandSubMenuScorer_vftable, 0x3c4008)
 
 /* the logo of the main menu with its glow, neon and lighting (200 bytes); the animation state is global */
 typedef struct cScraplandMainMenuScorer {
@@ -1108,7 +1108,7 @@ int __thiscall cScraplandSubMenuScorer_Var(cScraplandSubMenuScorer *self, const 
 
 /* ---- SliderScorer.cpp ---- */
 
-#define CSLIDERSCORER_VFTABLE 0x3c4140
+#define CSLIDERSCORER_VFTABLE GAME_VFTABLE(cSliderScorer_vftable, 0x3c4140)
 
 /* a slider of a sprite sheet: the back frame and the knob moved by the cursor (0xf8 bytes) */
 typedef struct cSliderScorer {
@@ -1143,7 +1143,7 @@ void __thiscall cSliderScorer_Draw(cSliderScorer *self, int player);
 
 /* ---- SpecialActionScorer.cpp ---- */
 
-#define CSPECIALACTIONSCORER_VFTABLE 0x3c42d4
+#define CSPECIALACTIONSCORER_VFTABLE GAME_VFTABLE(cSpecialActionScorer_vftable, 0x3c42d4)
 #define SPECIALACTION_MAX_ACTIONS 15
 
 /* the special action of the character: its icon, energy and battery bars, the cannon aim (0x138 bytes) */

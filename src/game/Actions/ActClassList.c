@@ -8,7 +8,7 @@
 #define ACTCLASSLIST_SLOTS 457
 
 cActClassList *__fastcall cActClassList_ctor(cActClassList *self) {
-	self->vftable = Game_Ptr(CACTCLASSLIST_VFTABLE);
+	self->vftable = CACTCLASSLIST_VFTABLE;
 	HashTable_ctor(&self->classes, ACTCLASSLIST_SLOTS, 1);
 	return self;
 }
@@ -16,7 +16,7 @@ cActClassList *__fastcall cActClassList_ctor(cActClassList *self) {
 void __fastcall cActClassList_dtor(cActClassList *self) {
 	HashTable *t = &self->classes;
 
-	self->vftable = Game_Ptr(CACTCLASSLIST_VFTABLE);
+	self->vftable = CACTCLASSLIST_VFTABLE;
 	for (;;) {
 		int k = 0;
 		if ((int)t->numSlots < 1) {

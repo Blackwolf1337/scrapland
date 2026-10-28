@@ -13,7 +13,7 @@
 #include "scrap/scrap.h"
 #include "scrap/weapons.h"
 
-#define CRUSTYLOCALLOGIC_VFTABLE 0x3c0d58
+#define CRUSTYLOCALLOGIC_VFTABLE GAME_VFTABLE(cRustyLocalLogic_vftable, 0x3c0d58)
 #define g_JunkPointsList GAME_DATA(cEntityListData *, 0x44d844)
 #define g_JunkPointsListName GAME_DATA(char *, 0x44d85c)	/* cString "JunkPointsListName" */
 #define g_RustyLoops GAME_DATA(int, 0x44d848)			/* the working loops done at this point */
@@ -25,7 +25,7 @@ void *__thiscall cRustyLocalLogic_ctor(void *mem, cEntity *parent) {
 	cRustyLocalLogic *self = mem;
 
 	cGenCharLocalLogic_ctor(&self->base, parent, 1);
-	self->base.base.vftable = Game_Ptr(CRUSTYLOCALLOGIC_VFTABLE);
+	self->base.base.vftable = CRUSTYLOCALLOGIC_VFTABLE;
 	if (!g_JunkPointsList) {
 		g_JunkPointsList = (cEntityListData *)cWorld_GetList(g_pWorld, g_JunkPointsListName);
 		CHECK(g_JunkPointsList && "Lista de puntos de chatarra no inicializada");
@@ -34,13 +34,13 @@ void *__thiscall cRustyLocalLogic_ctor(void *mem, cEntity *parent) {
 }
 
 void __fastcall cRustyLocalLogic_dtor(cRustyLocalLogic *self) {
-	self->base.base.vftable = Game_Ptr(CRUSTYLOCALLOGIC_VFTABLE);
+	self->base.base.vftable = CRUSTYLOCALLOGIC_VFTABLE;
 	g_JunkPointsList = NULL;
 	cGenCharLocalLogic_dtor(&self->base);
 }
 
 cRustyLocalLogic *__thiscall cRustyLocalLogic_Delete(cRustyLocalLogic *self, byte flags) {
-	self->base.base.vftable = Game_Ptr(CRUSTYLOCALLOGIC_VFTABLE);
+	self->base.base.vftable = CRUSTYLOCALLOGIC_VFTABLE;
 	g_JunkPointsList = NULL;
 	cGenCharLocalLogic_dtor(&self->base);
 	if (flags & 1) {

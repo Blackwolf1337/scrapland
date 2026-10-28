@@ -25,7 +25,7 @@ void *__thiscall cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 	cMaintenanceLocalLogic *self = mem;
 
 	cGenCharLocalLogic_ctor(&self->base, parent, 1);
-	MAINT_VT(self) = Game_Ptr(CMAINTENANCELOCALLOGIC_VFTABLE);
+	MAINT_VT(self) = CMAINTENANCELOCALLOGIC_VFTABLE;
 	self->timer = g_MaintenanceTimeToNextPos;
 	self->point = -1;
 	g_MaintenanceShip = NULL;
@@ -39,7 +39,7 @@ void *__thiscall cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 }
 
 cMaintenanceLocalLogic *__thiscall cMaintenanceLocalLogic_Delete(cMaintenanceLocalLogic *self, byte flags) {
-	MAINT_VT(self) = Game_Ptr(CMAINTENANCELOCALLOGIC_VFTABLE);
+	MAINT_VT(self) = CMAINTENANCELOCALLOGIC_VFTABLE;
 	g_MaintenanceShip = NULL;
 	g_MaintenanceFirstShip = NULL;
 	cGenCharLocalLogic_dtor(&self->base);

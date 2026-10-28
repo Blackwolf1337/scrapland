@@ -10,7 +10,7 @@
 
 cWindFxScorer *__fastcall cWindFxScorer_ctor(cWindFxScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CWINDFXSCORER_VFTABLE);
+	self->base.vftable = CWINDFXSCORER_VFTABLE;
 	cSound_Init(&self->sound);
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	/* the color stays the one of the image */
@@ -25,7 +25,7 @@ cWindFxScorer *__fastcall cWindFxScorer_ctor(cWindFxScorer *self) {
 }
 
 void __fastcall cWindFxScorer_dtor(cWindFxScorer *self) {
-	self->base.vftable = Game_Ptr(CWINDFXSCORER_VFTABLE);
+	self->base.vftable = CWINDFXSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	cSound_Stop(&self->sound);
 	cScorerItem_dtor(&self->base);

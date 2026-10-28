@@ -138,7 +138,7 @@ void *__thiscall cAIChar_ctor(void *mem, cEntity *e, int *arg) {
 	void *m;
 
 	cAIMove_ctor(mem, e);
-	self->vftable = Game_Ptr(CAICHAR_VFTABLE);
+	self->vftable = CAICHAR_VFTABLE;
 	cSlotController_ctor(AIC_Slot(self->slotAction), 0.2f);
 	cSlotController_ctor(AIC_Slot(self->slotPause), 1.0f);
 	cSlotController_ctor(AIC_Slot(self->slotRepos), 1.0f);
@@ -191,7 +191,7 @@ void *__thiscall cAIChar_ctor(void *mem, cEntity *e, int *arg) {
 }
 
 void __fastcall cAIChar_dtor(cAIChar *self) {
-	self->vftable = Game_Ptr(CAICHAR_VFTABLE);
+	self->vftable = CAICHAR_VFTABLE;
 	if (self->control) {
 		AICC_Vtbl(self->control)->Delete(self->control, 1);
 	}

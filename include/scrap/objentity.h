@@ -18,8 +18,8 @@
 #include "scrap/world.h"
 
 #define TYEN_OBJECT "Obj"
-#define COBJENTITY_VFTABLE 0x3b367c
-#define CNETCONTROLLER_VFTABLE 0x3b3664
+#define COBJENTITY_VFTABLE GAME_VFTABLE(cObjEntity_vftable, 0x3b367c)
+#define CNETCONTROLLER_VFTABLE GAME_VFTABLE(cNetController_vftable, 0x3b3664)
 #define COBJENTITY_SIZE 0x228
 
 /* the flags of the network state */

@@ -7,12 +7,12 @@
 #include "scrap/global.h"
 #include "scrap/timer.h"
 
-#define VT_HEADCRAZYGAMBLER 0x3b125c
+#define VT_HEADCRAZYGAMBLER GAME_VFTABLE(cEmbeddedFXHeadCrazyGambler_vftable, 0x3b125c)
 #define HEAD_GLOWS 12
 
 cEmbeddedFXHeadCrazyGambler *__fastcall cEmbeddedFXHeadCrazyGambler_ctor(cEmbeddedFXHeadCrazyGambler *self) {
 	self->vftable = NULL;
-	self->vftable = Game_Ptr(VT_HEADCRAZYGAMBLER);
+	self->vftable = VT_HEADCRAZYGAMBLER;
 	CGameParticles_ctor(&self->particles);
 	self->bc0 = 0;
 	self->owner = NULL;
@@ -22,7 +22,7 @@ cEmbeddedFXHeadCrazyGambler *__fastcall cEmbeddedFXHeadCrazyGambler_ctor(cEmbedd
 }
 
 void __fastcall cEmbeddedFXHeadCrazyGambler_dtor(cEmbeddedFXHeadCrazyGambler *self) {
-	self->vftable = Game_Ptr(VT_HEADCRAZYGAMBLER);
+	self->vftable = VT_HEADCRAZYGAMBLER;
 	CGameParticles_Release(&self->particles);
 	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }

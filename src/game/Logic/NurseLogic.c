@@ -77,14 +77,14 @@ void *__thiscall cNurseLocalLogic_ctor(void *mem, cEntity *parent) {
 	cNurseLocalLogic *self = mem;
 
 	cBaseLocalLogic_ctor(&self->base, parent);
-	NURSE_VT(self) = Game_Ptr(CNURSELOCALLOGIC_VFTABLE);
+	NURSE_VT(self) = CNURSELOCALLOGIC_VFTABLE;
 	self->time = 0.0f;
 	cNurseLocalLogic_SetState(self, 0, NULL);
 	return self;
 }
 
 cNurseLocalLogic *__thiscall cNurseLocalLogic_Delete(cNurseLocalLogic *self, byte flags) {
-	NURSE_VT(self) = Game_Ptr(CNURSELOCALLOGIC_VFTABLE);
+	NURSE_VT(self) = CNURSELOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

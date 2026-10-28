@@ -20,14 +20,14 @@
 cFXElementsMentalController *__thiscall cFXElementsMentalController_ctor(cFXElementsMentalController *self,
 	const char *name, const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
-	self->base.vftable = Game_Ptr(CFXELEMENTSMENTALCONTROLLER_VFTABLE);
+	self->base.vftable = CFXELEMENTSMENTALCONTROLLER_VFTABLE;
 	return self;
 }
 
 cFXElementsMentalControllerDamageFX *__thiscall cFXElementsMentalControllerDamageFX_ctor(
 	cFXElementsMentalControllerDamageFX *self, const char *name, const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base.base, name, pos, rot);
-	self->base.base.vftable = Game_Ptr(CFXELEMENTSMENTALCONTROLLERDAMAGEFX_VFTABLE);
+	self->base.base.vftable = CFXELEMENTSMENTALCONTROLLERDAMAGEFX_VFTABLE;
 	CGameParticles_ctor(&self->smoke);
 	CGameParticles_ctor(&self->flash);
 	return self;
@@ -36,7 +36,7 @@ cFXElementsMentalControllerDamageFX *__thiscall cFXElementsMentalControllerDamag
 cFXElementsMentalControllerMainFX *__thiscall cFXElementsMentalControllerMainFX_ctor(
 	cFXElementsMentalControllerMainFX *self, const char *name, const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
-	self->base.vftable = Game_Ptr(CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE);
+	self->base.vftable = CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE;
 	crt_eh_vector_ctor(self->tubeTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, Game_Ptr(CGAMETRAIL_CTOR),
 		Game_Ptr(CGAMETRAIL_DTOR));
 	CGameParticles_ctor(&self->dataFluid);
@@ -53,12 +53,12 @@ cFXElementsMentalControllerMainFX *__thiscall cFXElementsMentalControllerMainFX_
 }
 
 void __fastcall cFXElementsMentalController_dtor(cFXElementsMentalController *self) {
-	self->base.vftable = Game_Ptr(CFXELEMENTSMENTALCONTROLLER_VFTABLE);
+	self->base.vftable = CFXELEMENTSMENTALCONTROLLER_VFTABLE;
 	cMapElement_dtor(&self->base);
 }
 
 void __fastcall cFXElementsMentalControllerDamageFX_dtor(cFXElementsMentalControllerDamageFX *self) {
-	self->base.base.vftable = Game_Ptr(CFXELEMENTSMENTALCONTROLLERDAMAGEFX_VFTABLE);
+	self->base.base.vftable = CFXELEMENTSMENTALCONTROLLERDAMAGEFX_VFTABLE;
 	CGameParticles_Release(&self->smoke);
 	CGameParticles_Release(&self->flash);
 	CGameParticles_Release(&self->flash);
@@ -67,7 +67,7 @@ void __fastcall cFXElementsMentalControllerDamageFX_dtor(cFXElementsMentalContro
 }
 
 void __fastcall cFXElementsMentalControllerMainFX_dtor(cFXElementsMentalControllerMainFX *self) {
-	self->base.vftable = Game_Ptr(CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE);
+	self->base.vftable = CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE;
 	CGameParticles_Release(&self->dataFluid);
 	crt_eh_vector_dtor(self->topTrails, sizeof(CGameTrail), 2, Game_Ptr(CGAMETRAIL_DTOR));
 	CGameParticles_Release(&self->tubeGlow);

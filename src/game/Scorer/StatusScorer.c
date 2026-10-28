@@ -22,7 +22,7 @@ static CPsaImage *Status_NewWhite(void) {
 
 cStatusScorer *__fastcall cStatusScorer_ctor(cStatusScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CSTATUSSCORER_VFTABLE);
+	self->base.vftable = CSTATUSSCORER_VFTABLE;
 	cSound_Init(&self->lowLife);
 	cSound_Init(&self->alarm);
 	self->numLives = 0;
@@ -57,7 +57,7 @@ cStatusScorer *__fastcall cStatusScorer_ctor(cStatusScorer *self) {
 }
 
 void __fastcall cStatusScorer_dtor(cStatusScorer *self) {
-	self->base.vftable = Game_Ptr(CSTATUSSCORER_VFTABLE);
+	self->base.vftable = CSTATUSSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	ScorerImg_Free(self->glow);
 	ScorerImg_Free(self->flag);

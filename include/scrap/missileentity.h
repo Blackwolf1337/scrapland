@@ -13,7 +13,7 @@
 #include "scrap/timer.h"
 #include "scrap/world.h"
 
-#define CMISSILEENTITY_VFTABLE 0x3b2b24
+#define CMISSILEENTITY_VFTABLE GAME_VFTABLE(cMissileEntity_vftable, 0x3b2b24)
 #define CMISSILEENTITY_SIZE 0x7e8
 
 #define MISSILE_HIT_NONE 0

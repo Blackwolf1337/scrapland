@@ -10,7 +10,7 @@
 #include "scrap/logic.h"
 
 cInfItem *__fastcall cInfItem_ctor(cInfItem *self) {
-	self->vftable = Game_Ptr(CINFITEM_VFTABLE);
+	self->vftable = CINFITEM_VFTABLE;
 	memset(&self->life, 0, sizeof(*self) - 4);
 	return self;
 }
@@ -82,7 +82,7 @@ void __thiscall InfItemList_Add(cInfItemList *list, cItemDesc *item) {
 }
 
 void __fastcall cInfItem_dtor(cInfItem *self) {
-	self->vftable = Game_Ptr(CINFITEM_VFTABLE);
+	self->vftable = CINFITEM_VFTABLE;
 	InfItemList_Clear(&self->ammo1);
 	InfItemList_FreePool(&self->ammo1);
 	InfItemList_Clear(&self->ammo2);

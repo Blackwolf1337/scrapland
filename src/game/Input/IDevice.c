@@ -71,7 +71,7 @@ static cDevEntry *Dev_Entry(cAbstractIDevice *d, int entry, int set) {
 }
 
 cAbstractIDevice *__thiscall cAbstractIDevice_ctor(cAbstractIDevice *self) {
-	self->vftable = Game_Ptr(CABSTRACTIDEVICE_VFTABLE);
+	self->vftable = CABSTRACTIDEVICE_VFTABLE;
 	self->entries = NULL;
 	self->nEntries = 0;
 	self->gvar = NULL;
@@ -84,13 +84,13 @@ cFuncGvarDevices *__thiscall cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbst
 	cGVar_ctor(v, dev->vftable->GetName(dev), 3, (const char *)Game_Ptr(0x3bc4b4));	/* "User Control definition" */
 	self->device = dev;
 	v->type = GVAR_FUNCTION;
-	self->vftable = Game_Ptr(CFUNCGVARDEVICES_VFTABLE);
+	self->vftable = CFUNCGVARDEVICES_VFTABLE;
 	return self;
 }
 
 /* the variable stays in g_GVars, as in the original */
 void __thiscall cAbstractIDevice_dtor(cAbstractIDevice *self) {
-	self->vftable = Game_Ptr(CABSTRACTIDEVICE_VFTABLE);
+	self->vftable = CABSTRACTIDEVICE_VFTABLE;
 	if (self->entries) {
 		Mem_Free(self->entries);
 	}

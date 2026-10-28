@@ -8,7 +8,7 @@ static const char *const s_SliderColors[4] = {"Red", "Green", "Blue", "Alpha"};
 
 cSliderScorer *__fastcall cSliderScorer_ctor(cSliderScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CSLIDERSCORER_VFTABLE);
+	self->base.vftable = CSLIDERSCORER_VFTABLE;
 	self->highRes = 0;
 	self->blend = 3;
 	cPy_Function_ctor(&self->onChange);
@@ -31,7 +31,7 @@ cSliderScorer *__fastcall cSliderScorer_ctor(cSliderScorer *self) {
 }
 
 void __fastcall cSliderScorer_dtor(cSliderScorer *self) {
-	self->base.vftable = Game_Ptr(CSLIDERSCORER_VFTABLE);
+	self->base.vftable = CSLIDERSCORER_VFTABLE;
 	if (self->img) {
 		ScorerImg_Free(self->img);
 		self->img = NULL;

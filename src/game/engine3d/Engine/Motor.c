@@ -44,8 +44,8 @@
 #include "scrap/varios.h"
 #include "scrap/win32.h"
 
-#define CMOTORAPP_VFTABLE 0x3d59e0
-#define CENTRADANULA_VFTABLE 0x3d5934
+#define CMOTORAPP_VFTABLE GAME_VFTABLE(CMotorApp_vftable, 0x3d59e0)
+#define CENTRADANULA_VFTABLE GAME_VFTABLE(CEntradaNula_vftable, 0x3d5934)
 #define CMOTORAPP_SIZE 0x2a600
 #define CENTRADANULA_SIZE 0x114
 
@@ -104,7 +104,7 @@ typedef void(__stdcall *initcommoncontrols_t)(void);
 
 byte *__fastcall CMotorApp_ctor(byte *self) {
 	CD3DApp_ctor(self);
-	*(void **)self = Game_Ptr(CMOTORAPP_VFTABLE);
+	*(void **)self = CMOTORAPP_VFTABLE;
 	MOTOR_TABLA(self)->p = NULL;
 	MOTOR_TABLA(self)->n = 0;
 	MOTOR_TITLE(self) = "ScrapEngine [DX8]";
@@ -189,7 +189,7 @@ int __thiscall CMotorApp_OneTimeSceneInit(byte *self) {
 	mem = operator_new(CENTRADANULA_SIZE);
 	if (mem) {
 		IEntrada_ctor(mem);
-		*(void **)mem = Game_Ptr(CENTRADANULA_VFTABLE);
+		*(void **)mem = CENTRADANULA_VFTABLE;
 	}
 	g_Entrada = mem;
 	mem = operator_new(8);
@@ -1385,7 +1385,7 @@ intptr_t __thiscall CMotorApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uint
 /* ---- CEntradaNula: every method of the input does nothing ---- */
 
 void *__thiscall CEntradaNula_Delete(void *self, byte flags) {
-	*(void **)self = Game_Ptr(CENTRADANULA_VFTABLE);
+	*(void **)self = CENTRADANULA_VFTABLE;
 	IEntrada_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CENTRADANULA_SIZE);

@@ -178,7 +178,7 @@ CNodesWorld *__thiscall CNodesWorld_ctor(void *mem) {
 	CNodesWorld *self = mem;
 
 	CNodesWorldSup_ctor(self);
-	self->vftable = Game_Ptr(CNODESWORLD_VFTABLE);
+	self->vftable = CNODESWORLD_VFTABLE;
 	memset(&self->tris, 0, sizeof(self->tris));
 	self->file = NULL;
 	self->analizing = 0;
@@ -203,7 +203,7 @@ CNodesWorld *__thiscall CNodesWorld_ctor(void *mem) {
 }
 
 void __fastcall CNodesWorld_dtor(CNodesWorld *self) {
-	self->vftable = Game_Ptr(CNODESWORLD_VFTABLE);
+	self->vftable = CNODESWORLD_VFTABLE;
 	CNodesWorldSup_FreeGraph(self);
 	NWTriList_Clear(&self->tris);
 	DList_FreePool(&self->tris, sizeof(cNWTriNode));

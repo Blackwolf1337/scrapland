@@ -40,7 +40,7 @@ cRadarScorer *__fastcall cRadarScorer_ctor(cRadarScorer *self) {
 	float x0, z0, x1, z1;
 
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CRADARSCORER_VFTABLE);
+	self->base.vftable = CRADARSCORER_VFTABLE;
 	self->noise = Radar_White(0x2034);
 	self->cone = Radar_White(0x2024);
 	self->radar = Radar_White(0x20);
@@ -89,7 +89,7 @@ cRadarScorer *__fastcall cRadarScorer_ctor(cRadarScorer *self) {
 
 void __fastcall cRadarScorer_dtor(cRadarScorer *self) {
 	CPsaImage *img = self->radar;
-	self->base.vftable = Game_Ptr(CRADARSCORER_VFTABLE);
+	self->base.vftable = CRADARSCORER_VFTABLE;
 	Radar_FreeImage(img);
 	Radar_FreeImage(self->mask);
 	Radar_FreeImage(self->icons);

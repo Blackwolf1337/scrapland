@@ -14,7 +14,7 @@
 cFXElementsOrbitBoya *__thiscall cFXElementsOrbitBoya_ctor(cFXElementsOrbitBoya *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
-	self->base.vftable = Game_Ptr(CFXELEMENTSORBITBOYA_VFTABLE);
+	self->base.vftable = CFXELEMENTSORBITBOYA_VFTABLE;
 	CGameParticles_ctor(&self->light);
 	return self;
 }
@@ -23,7 +23,7 @@ cFXElementsOrbitBoya *__thiscall cFXElementsOrbitBoya_ctor(cFXElementsOrbitBoya 
 cFXElementsOrbitBoyaController *__thiscall cFXElementsOrbitBoyaController_ctor(cFXElementsOrbitBoyaController *self,
 	const char *name, const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
-	self->base.vftable = Game_Ptr(CFXELEMENTSORBITBOYACONTROLLER_VFTABLE);
+	self->base.vftable = CFXELEMENTSORBITBOYACONTROLLER_VFTABLE;
 	for (int col = 0; col < FXORBITBOYACOLUMNS; col++) {
 		for (int i = 0; i < FXORBITBOYACOLUMNCOUNT; i++) {
 			self->boya[col][i] = NULL;
@@ -36,14 +36,14 @@ cFXElementsOrbitBoyaController *__thiscall cFXElementsOrbitBoyaController_ctor(c
 
 /* the light is released twice, by the class and by the member destructor */
 void __fastcall cFXElementsOrbitBoya_dtor(cFXElementsOrbitBoya *self) {
-	self->base.vftable = Game_Ptr(CFXELEMENTSORBITBOYA_VFTABLE);
+	self->base.vftable = CFXELEMENTSORBITBOYA_VFTABLE;
 	CGameParticles_Release(&self->light);
 	CGameParticles_Release(&self->light);
 	cMapElement_dtor(&self->base);
 }
 
 void __fastcall cFXElementsOrbitBoyaController_dtor(cFXElementsOrbitBoyaController *self) {
-	self->base.vftable = Game_Ptr(CFXELEMENTSORBITBOYACONTROLLER_VFTABLE);
+	self->base.vftable = CFXELEMENTSORBITBOYACONTROLLER_VFTABLE;
 	cMapElement_dtor(&self->base);
 }
 
@@ -201,7 +201,7 @@ void FXElementsOrbit_Create(void) {
 			rot.y = ang[1];
 			rot.z = 0.0f;
 			cMapElement_ctor(&b->base, name, &pos, &rot);
-			b->base.vftable = Game_Ptr(CFXELEMENTSORBITBOYA_VFTABLE);
+			b->base.vftable = CFXELEMENTSORBITBOYA_VFTABLE;
 			CGameParticles_ctor(&b->light);
 		}
 		/* the original reads the digits also without '_' */

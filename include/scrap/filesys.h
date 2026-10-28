@@ -55,9 +55,9 @@ SD_OFFSET(cFileMem, buffer, 0xc);
 SD_OFFSET(cFileMem, ownsBuffer, 0x1c);
 SD_SIZE(cFileMem, 0x20);
 
-#define cAbstractFile_vftable ((const cAbstractFileVtbl *)Game_Ptr(0x3ba488))
-#define cFile_vftable ((const cAbstractFileVtbl *)Game_Ptr(0x3ba51c))
-#define cFileMem_vftable ((const cAbstractFileVtbl *)Game_Ptr(0x3ba6d8))
+#define cAbstractFile_vftable ((const cAbstractFileVtbl *)GAME_VFTABLE(cAbstractFile_vftable, 0x3ba488))
+#define cFile_vftable ((const cAbstractFileVtbl *)GAME_VFTABLE(cFile_vftable, 0x3ba51c))
+#define cFileMem_vftable ((const cAbstractFileVtbl *)GAME_VFTABLE(cFileMem_vftable, 0x3ba6d8))
 
 void __fastcall cAbstractFile_dtor(cAbstractFile *self);
 int __thiscall cAbstractFile_Open(cAbstractFile *self, const char *name, uint32_t mode);

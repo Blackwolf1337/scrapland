@@ -42,7 +42,7 @@ cCircuitPath *__fastcall cCircuitPath_ctor(cCircuitPath *self) {
 
 cCircuitScorer *__fastcall cCircuitScorer_ctor(cCircuitScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CCIRCUITSCORER_VFTABLE);
+	self->base.vftable = CCIRCUITSCORER_VFTABLE;
 	cString_ctor(&self->file);
 	self->highRes = 0;
 	self->blend = 3;
@@ -70,7 +70,7 @@ static void Circuit_FreeImage(CPsaImage **img) {
 }
 
 void __fastcall cCircuitScorer_dtor(cCircuitScorer *self) {
-	self->base.vftable = Game_Ptr(CCIRCUITSCORER_VFTABLE);
+	self->base.vftable = CCIRCUITSCORER_VFTABLE;
 	Circuit_FreeImage(&self->circuit);
 	Circuit_FreeImage(&self->flare);
 	cString_dtor(&self->file);

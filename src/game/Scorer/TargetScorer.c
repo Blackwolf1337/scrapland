@@ -173,7 +173,7 @@ void __thiscall cTargetScorer_DrawTarget(cTargetScorer *self, cEntity *ship) {
 
 cTargetScorer *__fastcall cTargetScorer_ctor(cTargetScorer *self) {
 	cScorerItem_ctor(&self->base);
-	self->base.vftable = Game_Ptr(CTARGETSCORER_VFTABLE);
+	self->base.vftable = CTARGETSCORER_VFTABLE;
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	img = img ? CPsaImage_ctor(img, "2D/white.tga", 0x20) : NULL;
 	self->img = img;
@@ -186,7 +186,7 @@ cTargetScorer *__fastcall cTargetScorer_ctor(cTargetScorer *self) {
 }
 
 void __fastcall cTargetScorer_dtor(cTargetScorer *self) {
-	self->base.vftable = Game_Ptr(CTARGETSCORER_VFTABLE);
+	self->base.vftable = CTARGETSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	cScorerItem_dtor(&self->base);
 }
