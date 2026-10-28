@@ -31,7 +31,9 @@ SD_SIZE(D3DModeInfo, 0x14);
 #define MAX_D3DDEVICES 5
 
 typedef struct D3DDeviceInfo {
-	byte pad_00[0xdc];		/* the type, the caps and the description */
+	uint32_t DeviceType;		/* 0x00 1 HAL, 2 REF */
+	uint32_t d3dCaps[0x35];		/* 0x04 D3DCAPS8: Caps2 at word 3, DevCaps at word 7 */
+	const char *strDesc;		/* 0xd8 "HAL", "REF" (strings of the exe) */
 	int bCanDoWindowed;		/* 0xdc */
 	int dwNumModes;			/* 0xe0 */
 	D3DModeInfo modes[MAX_D3DMODES];	/* 0xe4 */
@@ -43,7 +45,9 @@ SD_OFFSET(D3DDeviceInfo, dwCurrentMode, 0xc9c);
 SD_SIZE(D3DDeviceInfo, 0xca8);
 
 typedef struct D3DAdapterInfo {
-	byte d3dAdapterIdentifier[0x42c];	/* 0x0000 */
+	char Driver[0x200];			/* 0x0000 D3DADAPTER_IDENTIFIER8 */
+	char Description[0x200];		/* 0x0200 */
+	byte identRest[0x2c];			/* 0x0400 */
 	uint32_t desktopMode[4];		/* 0x042c d3ddmDesktop: width, height, refresh rate, format */
 	uint32_t dwNumDevices;			/* 0x043c */
 	D3DDeviceInfo devices[MAX_D3DDEVICES];	/* 0x0440 */
@@ -300,11 +304,15 @@ void *App_GetHInstance(void);					/* rva 0x20d1a0 */
 void *App_GetHWnd(void);					/* rva 0x20d290 */
 int Timer_GetFreq(int64_t *out);				/* rva 0x276cb0 */
 int Timer_GetQPFreq(int64_t *out);				/* rva 0x276d00 */
-int Video_PlayFile(const char *name, int flags);		/* rva 0x281660 */
-/* AVI capture of DVF_Process (rva 0x27fa20, 0x27f9f0, 0x27f9b0) */
+/* Video_PlayFile: video.h */
+/* AVI capture of DVF_Process (CaptPant.c): Save and Load close the file (Save with a log line), Frame is 0 while
+ * frame is past the frames written */
 byte Avi_Save(const char *name);
 byte Avi_Frame(const char *name, int frame);
 byte Avi_Load(const char *name);
+/* a frame of lx * ly RGB bytes into the AVI file name (made on the first frame, the compressor chosen in a
+ * dialog); without buf nothing, without name the file closed */
+void Avi_Write(const char *name, int lx, int ly, const void *buf, int bufsize);
 void SombrasStencil_Set(byte on);				/* rva 0x267460 */
 CPsaImage *__thiscall CPsaImage_ctor(CPsaImage *self, const char *name, int flags);	/* rva 0x22d120 */
 void __fastcall CPsaImage_dtor(CPsaImage *self);			/* rva 0x22d160 */
@@ -323,6 +331,6 @@ int BlendMode_GetDst(int mode);		/* rva 0x2a1a00 */
 /* the camera of ScrapEngCamera.cpp (rva 0x21c6c0, 0x21c7c0, 0x21c980, 0x21ce80, 0x21ccf0) */
 /* the viewer camera moved by the keys of the second action set (rva 0x218080, this file, still the exe's) */
 void ViewerCamera_Move(CGameCamera *cam);
-void Cmd_ReadFile(const char *name);				/* rva 0x280b10 */
+/* Cmd_ReadFile: cmd.h */
 
 #endif

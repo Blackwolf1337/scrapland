@@ -121,3 +121,199 @@ int Timer_FixedStep(float fps) {
 	g_TimerFixed += (int)((float)Int64_ToDouble(t) / fps);
 	return 1;
 }
+
+/* the frequency of the performance counter times g_TimerQPMult, -1 until measured */
+#define g_QPFreq GAME_DATA(int64_t, 0x432590)
+
+/* busy waiting until timeGetTime reaches t */
+static void Timer_WaitUntil(uint32_t t) {
+	while (exe_timeGetTime() < t) {
+	}
+}
+
+int Timer_CountTicks(int ms) {
+	uint32_t last = 0;
+	int n = 0;
+	uint32_t end = exe_timeGetTime() + (uint32_t)ms;
+
+	while (exe_timeGetTime() < end) {
+		uint32_t t = exe_timeGetTime();
+		if (last != t) {
+			n++;
+			last = t;
+		}
+	}
+	return n;
+}
+
+/* the frequency is accepted when 100 ms measure 9 to 11 tenths of it, 10 tries, else no counter */
+int Timer_GetQPFreq(int64_t *out) {
+	if (((uint32_t)g_QPFreq & (uint32_t)((uint64_t)g_QPFreq >> 32)) == 0xffffffffu) {
+		g_QPFreq = exe_QueryPerformanceFrequency(out) ? *out : 0;
+		int tries = 10;
+		if (g_QPFreq) {
+			while (tries > 0) {
+				int64_t a, b;
+				uint32_t t = exe_timeGetTime() + 1;
+				Timer_WaitUntil(t);
+				exe_QueryPerformanceCounter(&a);
+				Timer_WaitUntil(t + 100);
+				exe_QueryPerformanceCounter(&b);
+				int64_t r = g_QPFreq / (b - a);
+				if (r >= 9 && r <= 11) {
+					break;
+				}
+				tries--;
+				if (!g_QPFreq) {
+					break;
+				}
+			}
+			if (!tries) {
+				g_QPFreq = 0;
+			}
+		}
+		g_QPFreq = (int64_t)((uint64_t)(uint32_t)g_TimerQPMult * (uint64_t)g_QPFreq);
+	}
+	*out = g_QPFreq;
+	return g_QPFreq != 0;
+}
+
+int64_t Timer_MeasureQP(int ms) {
+	int64_t a, b;
+	uint32_t t = exe_timeGetTime() + 1;
+
+	Timer_WaitUntil(t);
+	exe_QueryPerformanceCounter(&a);
+	Timer_WaitUntil(t + (uint32_t)ms);
+	exe_QueryPerformanceCounter(&b);
+	return b - a;
+}
+
+/* the state of DXUtil_Timer: the counter path in ticks, the timeGetTime path in seconds */
+#define g_DXTimerInit GAME_DATA(int, 0x4b1c40)
+#define g_DXTimerQP GAME_DATA(int, 0x4b1c44)
+#define g_DXTimerFreq GAME_DATA(int64_t, 0x4b1c48)
+#define g_DXTimerStop GAME_DATA(int64_t, 0x4b1c50)
+#define g_DXTimerLast GAME_DATA(int64_t, 0x4b1c58)
+#define g_DXTimerBase GAME_DATA(int64_t, 0x4b1c60)
+#define g_DXTimerLastD GAME_DATA(double, 0x4b1c68)
+#define g_DXTimerBaseD GAME_DATA(double, 0x4b1c70)
+#define g_DXTimerStopD GAME_DATA(double, 0x4b1c78)
+#define g_DXTimerStopped GAME_DATA(int, 0x43258c)
+
+/* the x87 a - b of the original (fsub QWORD) in the precision the game set, stored as a float */
+static float X87_SubToFloat(double a, double b) {
+	long double r;
+
+	__asm__("fsubl %2" : "=t"(r) : "0"((long double)a), "m"(b));
+	return (float)r;
+}
+
+static float DXTimer_Seconds(int64_t t, int64_t freq) {
+	double n = Int64_ToDouble(t);
+	return (float)(n / Int64_ToDouble(freq));
+}
+
+float __stdcall DXUtil_Timer(int cmd) {
+	int64_t freq;
+
+	if (!g_DXTimerInit) {
+		g_DXTimerInit = 1;
+		g_DXTimerQP = Timer_GetQPFreq(&freq);
+		if (!g_DXTimerQP) {
+			goto noqp;
+		}
+		g_DXTimerFreq = freq;
+	}
+	freq = g_DXTimerFreq;
+	if (!g_DXTimerQP) {
+		goto noqp;
+	}
+	int64_t t;
+	if (g_DXTimerStop && cmd != DXUTIL_TIMER_START && cmd != DXUTIL_TIMER_GETABSOLUTETIME) {
+		t = g_DXTimerStop;
+	} else if (g_TimerFixed) {
+		t = g_TimerFixed;
+	} else {
+		exe_QueryPerformanceCounter(&t);
+		t -= g_TimerBase;
+	}
+	switch (cmd) {
+	case DXUTIL_TIMER_GETELAPSEDTIME: {
+		float r = DXTimer_Seconds(t - g_DXTimerLast, freq);
+		g_DXTimerLast = t;
+		return r;
+	}
+	case DXUTIL_TIMER_GETAPPTIME:
+		return DXTimer_Seconds(t - g_DXTimerBase, freq);
+	case DXUTIL_TIMER_RESET:
+		g_DXTimerBase = t;
+		g_DXTimerLast = t;
+		g_DXTimerStop = 0;
+		g_DXTimerStopped = 0;
+		return 0.0f;
+	case DXUTIL_TIMER_START:
+		if (g_DXTimerStopped) {
+			g_DXTimerBase += t - g_DXTimerStop;
+		}
+		g_DXTimerLast = t;
+		g_DXTimerStop = 0;
+		g_DXTimerStopped = 0;
+		return 0.0f;
+	case DXUTIL_TIMER_STOP:
+		g_DXTimerStop = t;
+		g_DXTimerLast = t;
+		g_DXTimerStopped = 1;
+		return 0.0f;
+	case DXUTIL_TIMER_ADVANCE:
+		g_DXTimerStop += freq / 10;
+		return 0.0f;
+	case DXUTIL_TIMER_GETABSOLUTETIME:
+		return DXTimer_Seconds(t, freq);
+	}
+	return -1.0f;
+
+noqp:;
+	double stop = g_DXTimerStopD;
+	double time;
+	if (stop == 0.0 || cmd == DXUTIL_TIMER_START || cmd == DXUTIL_TIMER_GETABSOLUTETIME) {
+		time = (double)exe_timeGetTime() * 0.001;
+		stop = g_DXTimerStopD;
+	} else {
+		time = stop;
+	}
+	switch (cmd) {
+	case DXUTIL_TIMER_GETELAPSEDTIME: {
+		float r = X87_SubToFloat(time, g_DXTimerLastD);
+		g_DXTimerLastD = time;
+		return r;
+	}
+	case DXUTIL_TIMER_GETAPPTIME:
+		return X87_SubToFloat(time, g_DXTimerBaseD);
+	case DXUTIL_TIMER_RESET:
+		g_DXTimerStopped = 0;
+		g_DXTimerBaseD = time;
+		g_DXTimerLastD = time;
+		g_DXTimerStopD = 0.0;
+		return 0.0f;
+	case DXUTIL_TIMER_START:
+		if (g_DXTimerStopped) {
+			g_DXTimerBaseD = (time - stop) + g_DXTimerBaseD;
+		}
+		g_DXTimerStopD = 0.0;
+		g_DXTimerLastD = time;
+		g_DXTimerStopped = 0;
+		return 0.0f;
+	case DXUTIL_TIMER_STOP:
+		g_DXTimerStopD = time;
+		g_DXTimerLastD = time;
+		g_DXTimerStopped = 1;
+		return 0.0f;
+	case DXUTIL_TIMER_ADVANCE:
+		g_DXTimerStopD = stop + (double)0.1f;
+		return 0.0f;
+	case DXUTIL_TIMER_GETABSOLUTETIME:
+		return (float)time;
+	}
+	return -1.0f;
+}

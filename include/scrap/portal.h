@@ -56,7 +56,6 @@ byte __thiscall CPortal_ClipRect(CPortal *self, box_t *rect);
 void Portal_DrawRect(const int *vp, const float *rect, uint32_t color);
 
 /* other modules (src/imports.inc) */
-/* rva 0x27cb80, a GDI line on the window for the debug output */
-void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width);
+/* Debug_Line: e3dutil.h */
 
 #endif

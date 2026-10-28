@@ -525,9 +525,7 @@ int Shader_Find(const char *name);		/* the index in g_ShaderTab, 0 and an error 
 /* other modules (src/imports.inc) */
 /* rva 0x267530 (stencil.cpp): the shadow volume of the triangles of a mesh */
 void Stencil_Malla(struct CListaVert *v, const void *tris, uint32_t nTri, struct CMallaD3D *m, struct CNodoR *r);
-/* rva 0x2418c0 (ListaVert.cpp): the coordinates of the reflection map of the vertices in software */
-void __thiscall CListaVert_EnvMapUV(struct CListaVert *self, const matrix_t *world, const matrix_t *view,
-	struct CMapa *mapa, byte set);
+/* CListaVert_EnvMapUV: listavert.h */
 void ListaVert_InitD3D(void);			/* rva 0x2404f0, empty */
 void RenderTarget_InitD3D(void);		/* rva 0x220d20 */
 void ModelFX_InitD3D(void);			/* ModelFX.c, modelo.h */

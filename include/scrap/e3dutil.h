@@ -84,6 +84,8 @@ int VBprintf(char *buf, int size, const char *fmt, va_list ap);
  * fatal, else into a message box */
 void Dbg_FrameRect(int x, int y, int w, int h, uint32_t color);	/* color 0xRRGGBB, on the engine window */
 void Dbg_FillRect(int x, int y, int w, int h, uint32_t color);
+/* a GDI line of width pixels on the engine window, color 0xRRGGBB */
+void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width);
 const char *Err_Unregister(int code);
 const char *Err_Str(int code);
 int Err_Register(const char *text);	/* the new code or -1 */

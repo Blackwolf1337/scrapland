@@ -78,8 +78,16 @@ void __fastcall CListaVert_Free(CListaVert *self);
 void __thiscall CListaVert_SetFormat(CListaVert *self, int frmt);
 /* n vertices; with pVert set (realloc) 25% more room */
 void __thiscall CListaVert_Alloc(CListaVert *self, int n, byte realloc);
-/* rva 0x243090: an empty stub, returns 0 */
+/* an empty stub, returns 0 */
 byte __thiscall CListaVert_Optimize(CListaVert *self, void *tris, int nTri);
+/* the coordinates itex of the reflection map in software: with mapa->bb 1 the reflected view direction (sphere
+ * map), else the normal through world * view; then offset f10 and scale f18 of the map */
+struct CMapa;
+void __thiscall CListaVert_EnvMapUV(CListaVert *self, const matrix_t *world, const matrix_t *view,
+	const struct CMapa *mapa, int itex);
+/* VERT_TEX1 and VERT_TEX2 (second set): u from the angle between the normal through world and light 0 of the
+ * device, v 0.5 (a ramp texture); nothing while light 0 is off */
+void __thiscall CListaVert_LightRampUV(CListaVert *self, const matrix_t *world);
 /* the first 4 fields */
 void __thiscall CListaVert_Swap(CListaVert *self, CListaVert *other);
 /* the "LFVF" block */

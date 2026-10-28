@@ -1,13 +1,14 @@
 /*
  * The rdtsc timers of the engine3d profiler, original source Util/tsc.cpp (include/scrap/prof.h): per section the
- * ticks of the frame, their average over n frames and the maximum, in milliseconds. The measurement of the processor
- * clock (Tsc_CpuFreq, 200 ms of busy waiting) is still the exe's.
+ * ticks of the frame, their average over n frames and the maximum, in milliseconds, and the measurement of the
+ * processor clock (Tsc_CpuFreq, 200 ms of busy waiting).
  */
 #include "scrap/crt.h"
 #include "scrap/game.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/prof.h"
+#include "scrap/win32.h"
 
 #define PROF_SECTIONS 32
 
@@ -86,4 +87,21 @@ float Prof_GetMaxTime(int section, int reset) {
 	}
 	double ms = Int64_ToDouble(t) * 1000.0;
 	return X87_DivToFloat(ms, Tsc_CpuFreq(0));
+}
+
+/* the rdtsc ticks per second (those of 200 ms of busy waiting times 5), measured once or again with recalc */
+#define g_CpuFreq GAME_DATA(float, 0x4b1c00)
+
+float Tsc_CpuFreq(int recalc) {
+	if (g_CpuFreq == 0.0f || recalc) {
+		uint64_t t0 = __builtin_ia32_rdtsc();
+		uint32_t ms = exe_timeGetTime();
+		while (exe_timeGetTime() - ms < 200) {
+		}
+		uint64_t t1 = __builtin_ia32_rdtsc();
+		float f = (float)Int64_ToDouble((int64_t)(t1 - t0)) * 5.0f;
+		g_CpuFreq = f;
+		CHECK(f != 0.0f);
+	}
+	return g_CpuFreq;
 }

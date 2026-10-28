@@ -42,6 +42,25 @@ void Dbg_FillRect(int x, int y, int w, int h, uint32_t color) {
 	Dbg_Rect(x, y, w, h, color, exe_FillRect);
 }
 
+void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width) {
+	if (!g_Motor) {
+		return;
+	}
+	void *dc = exe_GetDC(MOTOR_HWND(g_Motor));
+	if (!dc) {
+		return;
+	}
+	void *pen = exe_CreatePen(0, width, ((color >> 8 & 0xff) | (color & 0xff) << 8) << 8 | (color >> 16 & 0xff));
+	if (pen) {
+		void *old = exe_SelectObject(dc, pen);
+		exe_MoveToEx(dc, x0, y0, NULL);
+		exe_LineTo(dc, x1, y1);
+		exe_SelectObject(dc, old);
+		exe_DeleteObject(pen);
+	}
+	exe_ReleaseDC(MOTOR_HWND(g_Motor), dc);
+}
+
 const char *Err_Unregister(int code) {
 	if ((unsigned)(code - ERR_FIRST_FREE) < ERR_COUNT - ERR_FIRST_FREE) {
 		const char *s = g_ErrTable[code];

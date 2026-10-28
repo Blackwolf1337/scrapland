@@ -270,6 +270,9 @@ byte RenderTarget_PixelEqual(int pitchA, const byte *bitsA, int pitchB, const by
 void RenderTarget_DrawTexQuad(const box_t *quad, uint32_t color, void *tex);
 
 /* other modules */
-byte Surface_SaveShot(void *surf);	/* rva 0x27fe90: the surface as the next ShotNNNN.pcx */
+/* CaptPant.c: the surface as the next ShotNNNN.pcx (or a frame of the AVI capture); ShotCopy through a copy made
+ * on its device */
+byte Surface_SaveShot(void *surf);
+byte Surface_ShotCopy(void *surf);
 
 #endif

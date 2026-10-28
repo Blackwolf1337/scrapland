@@ -1,6 +1,7 @@
 /*
  * Engine/portal.cpp of the engine3d: CPortal, see include/scrap/portal.h.
  */
+#include "scrap/e3dutil.h"
 #include "scrap/mundo.h"
 #include "scrap/portal.h"
 #include "scrap/render.h"

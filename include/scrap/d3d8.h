@@ -33,7 +33,9 @@ typedef uint32_t(__stdcall *d3dRelease_t)(void *obj);
 #define D3DDEV_GETVIEWPORT 0xa4
 #define D3DDEV_SETMATERIAL 0xa8
 #define D3DDEV_SETLIGHT 0xb0
+#define D3DDEV_GETLIGHT 0xb4
 #define D3DDEV_LIGHTENABLE 0xb8
+#define D3DDEV_GETLIGHTENABLE 0xbc
 #define D3DDEV_SETRENDERSTATE 0xc8
 #define D3DDEV_GETRENDERSTATE 0xcc
 #define D3DDEV_SETTEXTURE 0xf4
@@ -55,6 +57,8 @@ typedef int(__stdcall *d3dCreateIB_t)(void *dev, uint32_t len, uint32_t usage, i
 typedef int(__stdcall *d3dSetTransform_t)(void *dev, uint32_t state, const void *m);
 typedef int(__stdcall *d3dGetTransform_t)(void *dev, uint32_t state, void *m);
 typedef int(__stdcall *d3dSetMaterial_t)(void *dev, const void *mat);
+typedef int(__stdcall *d3dGetLight_t)(void *dev, uint32_t i, void *light);
+typedef int(__stdcall *d3dGetLightEnable_t)(void *dev, uint32_t i, int *on);
 typedef int(__stdcall *d3dSetPixelShaderConstant_t)(void *dev, uint32_t reg, const void *data, uint32_t count);
 typedef int(__stdcall *d3dGetViewport_t)(void *dev, uint32_t *vp);
 typedef int(__stdcall *d3dSetViewport_t)(void *dev, const uint32_t *vp);

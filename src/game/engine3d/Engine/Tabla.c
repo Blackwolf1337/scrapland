@@ -154,12 +154,24 @@ static void Tabla_Resize(CTabla *t, int n, uint32_t size, void(__thiscall *alloc
 	t->n = n;
 }
 
+void __thiscall Tabla_Resize2(CTabla *t, int n) {
+	Tabla_Resize(t, n, 2, Tabla_Alloc2);
+}
+
 void __thiscall Tabla_Resize4(CTabla *t, int n) {
 	Tabla_Resize(t, n, 4, Tabla_Alloc4);
 }
 
+void __thiscall Tabla_ResizeC(CTabla *t, int n) {
+	Tabla_Resize(t, n, 0xc, Tabla_AllocC);
+}
+
 void __thiscall Tabla_Resize14(CTabla *t, int n) {
 	Tabla_Resize(t, n, 0x14, Tabla_Alloc14);
+}
+
+void __thiscall Tabla_Resize1C(CTabla *t, int n) {
+	Tabla_Resize(t, n, 0x1c, Tabla_Alloc1C);
 }
 
 void __thiscall Tabla_Resize2C(CTabla *t, int n) {

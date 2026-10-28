@@ -153,21 +153,42 @@ CMaterial *__thiscall CMaterial_ctor(CMaterial *self);
 void __thiscall CMaterial_ScaleColors(CMaterial *self, float k);
 void __thiscall CMaterial_dtor(CMaterial *self);
 /* free the old string, a Mem_Alloc copy of s (NULL stays NULL) */
-/* the animation of an animated texture (rva 0x257f70.., not decompiled yet), 0x2c bytes */
+/* the animation of an animated texture (Engine/ControlAnimMat.cpp, rva 0x257f10..0x258284), 0x2c bytes */
 typedef struct CAnimMat {
 	float fps;			/* 0x0 */
 	int frames;			/* 0x4 */
-	int ciclo;			/* 0x8 */
-	byte rest[0x20];
+	int ciclo;			/* 0x8 the frame it loops back to, -1: stops at the end */
+	float dt;			/* 0xc the seconds of the last step (at most 0.1) */
+	int frame;			/* 0x10 */
+	float framef;			/* 0x14 */
+	int modo;			/* 0x18 ANIMMAT_REPR .. ANIMMAT_FIN */
+	float fundRate;			/* 0x1c FUND_PAUSA: the slow down per second */
+	float fundK;			/* 0x20 FUND_PAUSA: the speed factor, down to 0.2 */
+	uint32_t lastTime;		/* 0x24 g_TimeMs of the last step */
+	int lastFrame;			/* 0x28 g_FrameCount of the last step */
 } CAnimMat;
 SD_SIZE(CAnimMat, 0x2c);
+#define ANIMMAT_REPR 0			/* playing */
+#define ANIMMAT_PAUSA 1
+#define ANIMMAT_FUND_PAUSA 2		/* slowing down */
+#define ANIMMAT_FIN 3
 CAnimMat *__thiscall CAnimMat_ctor(CAnimMat *self);
-/* rva 0x257f10, a copy of src */
+/* rva 0x257f10, a copy of fps, frames and ciclo of src */
 CAnimMat *__thiscall CAnimMat_ctorCopy(CAnimMat *self, const CAnimMat *src);
 void __thiscall CAnimMat_dtor(CAnimMat *self);
+/* from frame 0 at the time of now */
 void __thiscall CAnimMat_Start(CAnimMat *self);
 /* rva 0x258060: the frame of now (updated once each frame) */
 int __fastcall CAnimMat_GetFrame(CAnimMat *self);
+/* the step to g_TimeMs */
+void __fastcall CAnimMat_Update(CAnimMat *self);
+void __thiscall CAnimMat_SetFrameF(CAnimMat *self, float frame);
+/* only while already FUND_PAUSA: the slow down restarted over ms */
+void __thiscall CAnimMat_FundPausa(CAnimMat *self, float ms);
+/* fps and ciclo of a, 0 for a NULL a (al only) */
+byte AnimMat_Set(CAnimMat *a, float fps, int ciclo);
+/* "REPR", "PAUSA", "FUND_PAUSA", "FIN" (strings of the exe), CHECK and NULL for others */
+const char *AnimMat_ModoName(int modo);
 void __thiscall Cad_Set(char **self, const char *s);
 /* rva 0x2a1970: *self a Cad_Dup of the printf of fmt, NULL (freed) for fmt NULL */
 void Cad_Printf(char **self, const char *fmt, ...);

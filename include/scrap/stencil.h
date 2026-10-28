@@ -2,8 +2,9 @@
  * Engine/stencil.cpp of the engine3d: the stencil shadows. While a frame is captured (g_StencilCapturar) the meshes
  * of the shadow casters add the silhouette segments and triangles of their volumes, in groups per light
  * (StencilBlock); the frame pass draws the volumes into the stencil buffer and then the scene again, unlit where the
- * stencil is set. SombrasStencil_Set (scrapmain.h), E3D_SetShadowLight (luz.h) and Stencil_Malla (render.h) are
- * declared with their users.
+ * stencil is set. SombrasStencil_Set (scrapmain.h), E3D_SetShadowLight (luz.h) and Stencil_Malla (render.h: the
+ * silhouette and the cap triangles of a mesh list facing away from the light into a new group) are declared with
+ * their users.
  */
 #ifndef SCRAP_STENCIL_H
 #define SCRAP_STENCIL_H
@@ -17,17 +18,26 @@
 /* a group of volumes of one light */
 typedef struct StencilBlock {
 	CLuz *Light;			/* 0x00 */
-	byte pad_4[0x70];
+	vec3_t lightPos;		/* 0x04 g_ShadowLightPos */
+	float range;			/* 0x10 g_ShadowRange */
+	float cosCone;			/* 0x14 g_ShadowCos */
+	byte direccional;		/* 0x18 */
+	byte foco;			/* 0x19 */
+	byte pad_1a[2];
+	vec3_t lightPosObj;		/* 0x1c in the space of the mesh */
+	vec3_t lightDirObj;		/* 0x28 */
+	matrix_t world;			/* 0x34 moved by R_StencilViewDisp along the view */
 	int useg;			/* 0x74 the segments end here */
-	byte pad_78[8];
+	int i78;			/* 0x78 */
+	int utri;			/* 0x7c the cap triangles end here */
 } StencilBlock;
 SD_SIZE(StencilBlock, 0x80);
 
 #define g_StencilBlock GAME_DATA(StencilBlock *, 0x4afddc)	/* new[] of STENCIL_MAX_GRUPOS */
 #define g_StencilGrupos GAME_DATA(int, 0x4afde0)
-#define g_StencilSegmentos GAME_DATA(void *, 0x4afdcc)	/* new[] 0x30000 */
+#define g_StencilSegmentos GAME_DATA(vec3_t *, 0x4afdcc)	/* new[] 0x30000: two points a segment */
 #define g_StencilSegs GAME_DATA(int, 0x4afdd0)
-#define g_StencilTriangInv GAME_DATA(void *, 0x4afdd4)	/* new[] 0x6c000 */
+#define g_StencilTriangInv GAME_DATA(vec3_t *, 0x4afdd4)	/* new[] 0x6c000: three points a triangle */
 #define g_StencilInv GAME_DATA(int, 0x4afdd8)
 #define g_StencilCapturar GAME_DATA(int, 0x4afdc0)	/* bSombrasStencilCapturar */
 #define g_StencilVB GAME_DATA(void *, 0x3902b0)	/* pVB_Stencil */
