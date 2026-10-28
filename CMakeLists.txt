@@ -18,6 +18,8 @@ endif()
 # the C code shared by the hook DLL and the standalone exe, built twice: scrapcode for the DLL (the libraries are the
 # exe's, Python through thunks), scrapcode_sa with SD_STANDALONE for ScrapC.exe (the real Python of python152)
 file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS src/game/*.c)
+# the libraries linked into Scrap.exe that are C here (D3DX8, the ASE SDK, the M3D math)
+file(GLOB_RECURSE LIB_SOURCES CONFIGURE_DEPENDS src/lib/*.c)
 foreach(lib scrapcode scrapcode_sa)
 	add_library(${lib} OBJECT
 		src/core/d3dlog.c
@@ -30,6 +32,7 @@ foreach(lib scrapcode scrapcode_sa)
 	)
 	# the decompiled game code, in the folder layout of the original sources (paths from the asserts in Scrap.exe)
 	target_sources(${lib} PRIVATE ${GAME_SOURCES})
+	target_sources(${lib} PRIVATE ${LIB_SOURCES})
 	target_include_directories(${lib} PUBLIC
 		include
 		src

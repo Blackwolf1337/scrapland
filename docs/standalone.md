@@ -204,6 +204,37 @@ destructors (`delete`, `delete[]`, the vector destructor iterator, `fclose`), th
 `floor`, `atoi`, ctype, `setlocale`, `strncpy`, `_strdup`, `calloc`, `_snprintf`, `_vsnprintf`, `exit`) and the ASE
 SDK. Of these only `__libm_sse2_sqrt_precise`, `_CIacos` and `_CIpow` are math and still the copy's.
 
+### Stage 2c: D3DX8, ASE and the M3D math (in progress)
+
+The start of the code of the original is not all library code: rva 0x001000..0x002070 holds the data formats of
+dinput8.lib (`c_dfDIKeyboard` and friends, data in `.text`), rva 0x002070..0x03e800 the libraries (the ASE SDK,
+D3DX8 with its zlib 1.1.3, libpng 1.0.5 and IJG libjpeg 6a), and rva 0x03e800..0x05f6d8 the 1784 dynamic
+initializers of the game, which the CRT calls from its table at rva 0x3a15c4. "M3D" at 0x2d6010..0x2da770 is
+Engine/descomp_afin.cpp.
+
+`[general] wipelow=1` (`DIFFTEST_WIPELOW=1`, ScrapC.exe only) fills the libraries (0x002070..0x03e800) and
+descomp_afin.cpp with int3; with `wipe=3` the probe covers them. The library code has no int3 padding between its
+functions, so a probe piece there can span several functions.
+
+Done in C, as hooks in both builds:
+
+- the D3DX math the game calls (`src/lib/d3dx8/D3dxMath.c`). D3DX picks its code per CPU on the first call (rva
+  0x017f06); the C has the versions of a CPU with SSE2 and without 3DNow!: SSE2 for normalize, transform, multiply,
+  inverse and the rotations about x and y (with the same rcpss/rsqrtss estimates and its own sine and cosine), the
+  x87 code for transpose, the rotation about z, yaw pitch roll and the quaternion matrix.
+- the shader assembler `D3DXAssembleShader` (`src/lib/d3dx8/D3dxAsm.c`): the Berkeley yacc parser with the tables
+  of the exe (`D3dxAsmTables.h`), its lexer and rules, the validation through d3d8.dll. The game assembles the 30
+  pixel shaders of `bmp/*.psh` (ps.1.1); `tools/test/py/sdcall_d3dxasm.py` compares their tokens and the errors of
+  bad texts.
+- descomp_afin.cpp (`src/game/engine3d/Engine/DescompAfin.c`): Shoemake's polar decomposition of Graphics Gems IV
+  and the two transform matrices.
+
+Still from the copy: the ASE SDK and the texture functions of D3DX (`D3DXCreateTextureFromFileInMemoryEx`,
+`D3DXCheckTextureRequirements`, `D3DXLoadSurfaceFromSurface`). The game data loads DDS through D3DX (DXT1, DXT3,
+DXT5, A8R8G8B8, R5G6B5, A4R4G4B4, X1R5G5B5; many with one level where the texture wants mipmaps, so D3DX makes them,
+for DXT with its own compressor) and BMP and TGA through its own code, then D3DXLoadSurfaceFromSurface. No PNG or JPG
+is in the packs.
+
 ## Stage 3: data in C
 
 The data sections move into C: vtables, tables, strings, then the globals with their types. After that the

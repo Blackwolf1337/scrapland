@@ -8269,3 +8269,18 @@ SD_HOOK(Video_WaitKeysUp, 0x280d10, 70)
 /* module agent: Standalone 2b, the CRT (hooks below this line) */
 
 /* module agent: Standalone 2c, D3DX8, ASE and the M3D math (hooks below this line) */
+SD_HOOK(D3DX_Vec3Normalize, 0x006d3b, 6)
+SD_HOOK(D3DX_Vec3Transform, 0x007086, 6)
+SD_HOOK(D3DX_MatrixMultiply, 0x0077b8, 6)
+SD_HOOK(D3DX_MatrixTranspose, 0x007a01, 6)
+SD_HOOK(D3DX_MatrixInverse, 0x007cea, 6)
+SD_HOOK(D3DX_MatrixRotationX, 0x0082fb, 6)
+SD_HOOK(D3DX_MatrixRotationY, 0x008397, 6)
+SD_HOOK(D3DX_MatrixRotationZ, 0x008434, 6)
+SD_HOOK(D3DX_MatrixRotationQuaternion, 0x0085eb, 6)
+SD_HOOK(D3DX_MatrixRotationYPR, 0x008701, 6)
+SD_HOOK(D3DX_QuaternionRotationYPR, 0x009508, 6)
+SD_HOOK(D3DX_AssembleShader, 0x00b2c2, 100)
+SD_HOOK(M3DTransform_ToMatrixAnim, 0x2d65d0, 376)
+SD_HOOK(M3DTransform_ToMatrix, 0x2d6750, 580)
+SD_HOOK(Matrix_ToTransform, 0x2d6c50, 355)
