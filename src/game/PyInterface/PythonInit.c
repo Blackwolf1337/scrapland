@@ -10,12 +10,7 @@
 
 #define g_IsViewer GAME_DATA(int, 0x467b34)		/* model viewer build: Viewer.py instead of Init.py */
 #define g_PythonExecute GAME_DATA(char *, 0x4669f8)	/* engine variable PythonExecute */
-/* 0 while Pack_PreloadLibrary imports through the normal path (flag of the import code in the exe) */
-#define g_PyPackImport GAME_DATA(int, 0x4e79cc)
 #define g_PyStaticBuffer (&GAME_DATA(cStaticBuffer, 0x44bbf0))
-#undef Py_VerboseFlag
-#define Py_VerboseFlag GAME_DATA(int, 0x4e7af8)
-#define PyCode_Type GAME_DATA(PyTypeObject, 0x437150)
 
 /* PyRun_SimpleString of the exe, changed by the engine: CR dropped, the code is called "Scrap input" (rva 0x2ec790) */
 int PyRun_ScrapString(const char *code);

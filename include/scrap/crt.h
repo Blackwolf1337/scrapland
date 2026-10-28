@@ -114,6 +114,50 @@ int crt_atexit(void (*func)(void));
 int crt_open(const char *name, int flags, ...);
 int crt_read(int fd, void *buf, unsigned int size);
 int crt_close(int fd);
+/* the rest of the libc of the Python library (src/python/pyshim.h); the inline vsprintf and vfprintf of the headers
+ * are C (src/game/Global/StdioInline.c), stat and fstat fill a struct crt_stat32 there */
+int crt_vsprintf(char *buf, const char *fmt, va_list ap);
+int crt_vfprintf(void *f, const char *fmt, va_list ap);
+char *crt_strdup(const char *s);
+int crt_ferror(void *f);
+void crt_clearerr(void *f);
+int crt_isatty(int fd);
+long crt_lseek(int fd, long off, int origin);
+int crt_chsize(int fd, long size);
+int crt_fstat32(int fd, void *st);
+char *crt_strerror(int code);
+char *crt_getenv(const char *name);
+[[noreturn]] void crt_abort(void);
+void (*crt_signal(int sig, void (*handler)(int)))(int);
+void *crt_localeconv(void);
+int crt_strcoll(const char *a, const char *b);
+size_t crt_strxfrm(char *dst, const char *src, size_t n);
+double crt_strtod(const char *s, char **end);
+int crt_islower(int c);
+int crt_isspace(int c);
+int crt_isupper(int c);
+/* the cdecl math functions (their addresses are in the math module's tables; calls of the C use src/core/libm.c) */
+double crt_acos(double x);
+double crt_asin(double x);
+double crt_atan(double x);
+double crt_atan2(double y, double x);
+double crt_cos(double x);
+double crt_cosh(double x);
+double crt_exp(double x);
+double crt_fabs(double x);
+double crt_fmod(double x, double y);
+double crt_frexp(double x, int *e);
+double crt_hypot(double x, double y);
+double crt_ldexp(double x, int e);
+double crt_log(double x);
+double crt_log10(double x);
+double crt_modf(double x, double *ip);
+double crt_pow(double x, double y);
+double crt_sin(double x);
+double crt_sinh(double x);
+double crt_sqrt(double x);
+double crt_tan(double x);
+double crt_tanh(double x);
 /* the guards of the thread-safe function statics (MSVC _Init_thread_header/_Init_thread_footer); the epoch they
  * are tested against is at +0x20 of the TLS block of the exe, its index g_TlsIndex */
 void crt_Init_thread_header(int *guard);

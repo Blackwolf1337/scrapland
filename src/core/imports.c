@@ -1,11 +1,18 @@
 /*
  * Thunks for the functions of src/imports.inc. Each is a global symbol with the original name that jumps through
  * a slot holding the RVA, Imports_Resolve adds the load address. The stack and the registers stay untouched, so
- * the calling convention of the caller's prototype goes through as it is.
+ * the calling convention of the caller's prototype goes through as it is. The Python functions (SD_IMPORT_PY) get
+ * no thunk in ScrapC.exe (SD_STANDALONE), it links the real Python library.
  *
  * This file must not see the real prototypes (the thunks are plain labels), so it includes no game header.
  */
 #include <stdint.h>
+
+#ifdef SD_STANDALONE
+#define SD_IMPORT_PY(name, rva)
+#else
+#define SD_IMPORT_PY(name, rva) SD_IMPORT(name, rva)
+#endif
 
 #define SD_THUNK(sym, name, rva) \
 	uint32_t imp_##name = (rva); \

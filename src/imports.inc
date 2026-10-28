@@ -2,7 +2,8 @@
  * Functions of Scrap.exe the C code calls: SD_IMPORT(name, rva) for __cdecl, SD_IMPORT_STDCALL(name, argbytes, rva)
  * for __stdcall. src/core/imports.c turns each into a thunk with the name of the original, so the prototype comes
  * from the normal header. A function that gets implemented in C moves to src/hooks.inc: the linker reports a
- * function that is in both lists.
+ * function that is in both lists. SD_IMPORT_PY(name, rva) is a function of the exe's Python 1.5.2: a thunk in the
+ * hook DLL, the real library (src/python) in ScrapC.exe.
  */
 
 /* engine: Global/ */
@@ -102,44 +103,44 @@ SD_IMPORT(ActionSet_IsNamed, 0x133a30)
 
 /* engine: World/ (weapon and ammo tables of cWorld) */
 
-/* Python 1.5.2 */
-SD_IMPORT(PyArg_ParseTuple, 0x2f0560)	/* getargs.c */
-SD_IMPORT(Py_BuildValue, 0x2f1b90)	/* modsupport.c */
-SD_IMPORT(Py_InitModule4, 0x2f1bb0)	/* modsupport.c */
-SD_IMPORT(PyErr_Clear, 0x2efd30)	/* errors.c */
-SD_IMPORT(PyTuple_New, 0x2decb0)	/* tupleobject.c */
-SD_IMPORT(PyTuple_SetItem, 0x2ded50)	/* tupleobject.c */
-SD_IMPORT(PyFloat_FromDouble, 0x2dfd70)	/* floatobject.c */
-SD_IMPORT(PyList_Size, 0x2dd2b0)	/* listobject.c */
-SD_IMPORT(PyList_New, 0x2dd040)	/* listobject.c */
-SD_IMPORT(PyTuple_GetItem, 0x2dec30)	/* tupleobject.c */
-SD_IMPORT(PyInt_AsLong, 0x2de3a0)	/* intobject.c */
-SD_IMPORT(PyList_GetItem, 0x2dcf80)	/* listobject.c */
-SD_IMPORT(PyString_AsString, 0x2dadd0)	/* stringobject.c */
-SD_IMPORT(PyArg_Parse, 0x2f0530)	/* getargs.c */
-SD_IMPORT(Py_FindMethod, 0x2f29d0)	/* methodobject.c */
-SD_IMPORT(_PyObject_New, 0x2ebc00)	/* object.c */
-SD_IMPORT(PyList_AsTuple, 0x2dcf10)	/* listobject.c */
-SD_IMPORT(PyList_Append, 0x2dcee0)	/* listobject.c */
-SD_IMPORT(PyList_SetItem, 0x2dd1e0)	/* listobject.c */
-SD_IMPORT(PyInt_FromLong, 0x2de630)	/* intobject.c */
-SD_IMPORT(PyString_FromString, 0x2dbb80)	/* stringobject.c */
-SD_IMPORT(PyEval_CallObject, 0x2ee850)	/* ceval.c */
-SD_IMPORT(PyErr_Print, 0x2ebd00)	/* pythonrun.c */
-SD_IMPORT(PyImport_AddModule, 0x2e1ba0)	/* import.c */
-SD_IMPORT(PyModule_GetDict, 0x2e1240)	/* moduleobject.c */
-SD_IMPORT(PyDict_GetItemString, 0x2e0930)	/* dictobject.c */
-SD_IMPORT(PyCallable_Check, 0x2eb1f0)	/* object.c */
-SD_IMPORT(Py_Initialize, 0x2ecde0)	/* pythonrun.c */
-SD_IMPORT(Py_Finalize, 0x2ecd20)	/* pythonrun.c */
-SD_IMPORT(PyRun_ScrapString, 0x2ec790)	/* pythonrun.c, changed by the engine */
-SD_IMPORT(Py_FiniObjects, 0x2ebce0)
-SD_IMPORT(PyImport_ImportModule, 0x2e25d0)	/* import.c */
-SD_IMPORT(PyImport_GetModuleDict, 0x2e2300)	/* import.c */
-SD_IMPORT(PyImport_ExecCodeModuleEx, 0x2e2100)	/* import.c */
-SD_IMPORT(PyMarshal_ReadObjectFromString, 0x2e9c30)	/* marshal.c */
-SD_IMPORT(PySys_GetObject, 0x2f4390)	/* sysmodule.c */
-SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
+/* Python 1.5.2 (SD_IMPORT_PY) */
+SD_IMPORT_PY(PyArg_ParseTuple, 0x2f0560)	/* getargs.c */
+SD_IMPORT_PY(Py_BuildValue, 0x2f1b90)	/* modsupport.c */
+SD_IMPORT_PY(Py_InitModule4, 0x2f1bb0)	/* modsupport.c */
+SD_IMPORT_PY(PyErr_Clear, 0x2efd30)	/* errors.c */
+SD_IMPORT_PY(PyTuple_New, 0x2decb0)	/* tupleobject.c */
+SD_IMPORT_PY(PyTuple_SetItem, 0x2ded50)	/* tupleobject.c */
+SD_IMPORT_PY(PyFloat_FromDouble, 0x2dfd70)	/* floatobject.c */
+SD_IMPORT_PY(PyList_Size, 0x2dd2b0)	/* listobject.c */
+SD_IMPORT_PY(PyList_New, 0x2dd040)	/* listobject.c */
+SD_IMPORT_PY(PyTuple_GetItem, 0x2dec30)	/* tupleobject.c */
+SD_IMPORT_PY(PyInt_AsLong, 0x2de3a0)	/* intobject.c */
+SD_IMPORT_PY(PyList_GetItem, 0x2dcf80)	/* listobject.c */
+SD_IMPORT_PY(PyString_AsString, 0x2dadd0)	/* stringobject.c */
+SD_IMPORT_PY(PyArg_Parse, 0x2f0530)	/* getargs.c */
+SD_IMPORT_PY(Py_FindMethod, 0x2f29d0)	/* methodobject.c */
+SD_IMPORT_PY(_PyObject_New, 0x2ebc00)	/* object.c */
+SD_IMPORT_PY(PyList_AsTuple, 0x2dcf10)	/* listobject.c */
+SD_IMPORT_PY(PyList_Append, 0x2dcee0)	/* listobject.c */
+SD_IMPORT_PY(PyList_SetItem, 0x2dd1e0)	/* listobject.c */
+SD_IMPORT_PY(PyInt_FromLong, 0x2de630)	/* intobject.c */
+SD_IMPORT_PY(PyString_FromString, 0x2dbb80)	/* stringobject.c */
+SD_IMPORT_PY(PyEval_CallObject, 0x2ee850)	/* ceval.c */
+SD_IMPORT_PY(PyErr_Print, 0x2ebd00)	/* pythonrun.c */
+SD_IMPORT_PY(PyImport_AddModule, 0x2e1ba0)	/* import.c */
+SD_IMPORT_PY(PyModule_GetDict, 0x2e1240)	/* moduleobject.c */
+SD_IMPORT_PY(PyDict_GetItemString, 0x2e0930)	/* dictobject.c */
+SD_IMPORT_PY(PyCallable_Check, 0x2eb1f0)	/* object.c */
+SD_IMPORT_PY(Py_Initialize, 0x2ecde0)	/* pythonrun.c */
+SD_IMPORT_PY(Py_Finalize, 0x2ecd20)	/* pythonrun.c */
+SD_IMPORT_PY(PyRun_ScrapString, 0x2ec790)	/* pythonrun.c, changed by the engine */
+SD_IMPORT_PY(Py_FiniObjects, 0x2ebce0)
+SD_IMPORT_PY(PyImport_ImportModule, 0x2e25d0)	/* import.c */
+SD_IMPORT_PY(PyImport_GetModuleDict, 0x2e2300)	/* import.c */
+SD_IMPORT_PY(PyImport_ExecCodeModuleEx, 0x2e2100)	/* import.c */
+SD_IMPORT_PY(PyMarshal_ReadObjectFromString, 0x2e9c30)	/* marshal.c */
+SD_IMPORT_PY(PySys_GetObject, 0x2f4390)	/* sysmodule.c */
+SD_IMPORT_PY(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 
 /* engine: FileSys/ (include/scrap/filesys.h) */
 
@@ -324,7 +325,7 @@ SD_IMPORT(crt_ltoa, 0x34d525)
 
 /* module agent: Scorer part 3 (Gradient+Sprite+Tab) (imports below this line) */
 SD_IMPORT(crt_strtime, 0x33bb73)
-SD_IMPORT(PyFloat_AsDouble, 0x2dfa30)	/* floatobject.c */
+SD_IMPORT_PY(PyFloat_AsDouble, 0x2dfa30)	/* floatobject.c */
 
 /* module agent: Logic part 3 (GenCharLogic..Messenger) (imports below this line) */
 
@@ -427,3 +428,43 @@ SD_IMPORT(crt_Throw_bad_array_new_length, 0x3178b8)
 /* module agent: Standalone, the Sleep and busy wait rewrites (imports below this line) */
 
 /* module agent: Standalone 2a, the real Python 1.5.2 (imports below this line) */
+/* the libc of the Python library of ScrapC.exe (src/python/pyshim.h) */
+SD_IMPORT(crt_strdup, 0x35a6fc)
+SD_IMPORT(crt_ferror, 0x3482fd)
+SD_IMPORT(crt_clearerr, 0x353a06)
+SD_IMPORT(crt_isatty, 0x35a752)
+SD_IMPORT(crt_lseek, 0x35ab30)
+SD_IMPORT(crt_chsize, 0x353f84)
+SD_IMPORT(crt_fstat32, 0x34a3fa)
+SD_IMPORT(crt_strerror, 0x353dd5)
+SD_IMPORT(crt_getenv, 0x3517d9)
+SD_IMPORT(crt_abort, 0x353ad7)
+SD_IMPORT(crt_signal, 0x353065)
+SD_IMPORT(crt_localeconv, 0x3537da)
+SD_IMPORT(crt_strcoll, 0x3538b5)
+SD_IMPORT(crt_strxfrm, 0x3539ec)
+SD_IMPORT(crt_strtod, 0x353750)
+SD_IMPORT(crt_islower, 0x34f873)
+SD_IMPORT(crt_isspace, 0x34f8fc)
+SD_IMPORT(crt_isupper, 0x34f929)
+SD_IMPORT(crt_acos, 0x3517f0)
+SD_IMPORT(crt_asin, 0x351940)
+SD_IMPORT(crt_atan, 0x351a90)
+SD_IMPORT(crt_atan2, 0x329f30)
+SD_IMPORT(crt_cos, 0x351bb0)
+SD_IMPORT(crt_cosh, 0x351cea)
+SD_IMPORT(crt_exp, 0x351d10)
+SD_IMPORT(crt_fabs, 0x351d9b)
+SD_IMPORT(crt_fmod, 0x322010)
+SD_IMPORT(crt_frexp, 0x350e0e)
+SD_IMPORT(crt_hypot, 0x3526b7)
+SD_IMPORT(crt_ldexp, 0x35297d)
+SD_IMPORT(crt_log, 0x351e50)
+SD_IMPORT(crt_log10, 0x351fa0)
+SD_IMPORT(crt_modf, 0x350f10)
+SD_IMPORT(crt_pow, 0x3520f0)
+SD_IMPORT(crt_sin, 0x352380)
+SD_IMPORT(crt_sinh, 0x351ce0)
+SD_IMPORT(crt_sqrt, 0x3524c4)
+SD_IMPORT(crt_tan, 0x352570)
+SD_IMPORT(crt_tanh, 0x351cf1)

@@ -22,13 +22,31 @@ uint64_t *crt_local_scanf_options(void) {
 }
 
 /* _CRT_INTERNAL_PRINTF_STANDARD_SNPRINTF_BEHAVIOR (1) set, no count: -1 for an error */
+static inline int Stdio_VSprintf(char *buf, const char *fmt, va_list ap) {
+	int r = crt_stdio_common_vsprintf(*crt_local_printf_options() | 1, buf, (size_t)-1, fmt, NULL, ap);
+	return r < 0 ? -1 : r;
+}
+
+static inline int Stdio_VFprintf(void *f, const char *fmt, va_list ap) {
+	return crt_stdio_common_vfprintf(*crt_local_printf_options(), f, fmt, NULL, ap);
+}
+
 int crt_sprintf(char *buf, const char *fmt, ...) {
 	va_list ap;
 
 	va_start(ap, fmt);
-	int r = crt_stdio_common_vsprintf(*crt_local_printf_options() | 1, buf, (size_t)-1, fmt, NULL, ap);
+	int r = Stdio_VSprintf(buf, fmt, ap);
 	va_end(ap);
-	return r < 0 ? -1 : r;
+	return r;
+}
+
+/* vsprintf and vfprintf: only inlined in the exe (the Python code), C for the Python library of ScrapC.exe */
+int crt_vsprintf(char *buf, const char *fmt, va_list ap) {
+	return Stdio_VSprintf(buf, fmt, ap);
+}
+
+int crt_vfprintf(void *f, const char *fmt, va_list ap) {
+	return Stdio_VFprintf(f, fmt, ap);
 }
 
 int crt_sscanf(const char *s, const char *fmt, ...) {
@@ -44,7 +62,7 @@ int crt_fprintf(void *file, const char *fmt, ...) {
 	va_list ap;
 
 	va_start(ap, fmt);
-	int r = crt_stdio_common_vfprintf(*crt_local_printf_options(), file, fmt, NULL, ap);
+	int r = Stdio_VFprintf(file, fmt, ap);
 	va_end(ap);
 	return r;
 }
