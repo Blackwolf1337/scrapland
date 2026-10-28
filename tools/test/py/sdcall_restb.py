@@ -151,12 +151,8 @@ for rsbn in ('sdrsb2.txt', 'sdrsb3.txt', 'sdnofile.txt'):
 call('Lex_SetOut', 0x2cda80, 'vi', SDTest.OutFunc())
 rsbfree(rsbv)
 
-# timers (only what does not depend on the clock), the capture without a surface or a file, the video player on
+# the capture without a surface or a file, the video player on
 # missing files, the GDI line on the window
-check('Timer_GetQPFreq', lambda: SDTest.Call(0x276d00, 'iD', 0.0)[0])
-check('Timer_CountTicks 0', lambda: SDTest.Call(0x276ba0, 'ii', 0)[0])
-check('Timer_MeasureQP 0', lambda: SDTest.Call(0x276e40, 'ii', 0)[0] >= 0)
-check('Tsc_CpuFreq', lambda: SDTest.Call(0x272f90, 'fi', 0)[0] != 0.0)
 check('Debug_Line', lambda: SDTest.Call(0x27cb80, 'viiiiii', 1, 2, 30, 40, 0x123456, 1))
 check('Avi_Frame', lambda: (SDTest.Peek(0x4b29a0, 'i'), SDTest.Call(0x27f9f0, 'bsi', 'sdrsb.avi', 5)[0]))
 check('Avi_Load', lambda: SDTest.Call(0x27f9b0, 'bs', 'sdrsb.avi')[0])
@@ -164,7 +160,6 @@ check('Avi_Save', lambda: SDTest.Call(0x27fa20, 'bs', 'sdrsb.avi')[0])
 check('Avi_Write close', lambda: SDTest.Call(0x27fa70, 'viiiii', 0, 0, 0, 0, 0))
 check('Surface_SaveShot NULL', lambda: SDTest.Call(0x27fe90, 'bi', 0)[0])
 check('Surface_ShotCopy NULL', lambda: SDTest.Call(0x280310, 'bi', 0)[0])
-check('Video_WaitKeysUp 0', lambda: SDTest.Call(0x280d10, 'vi', 0))
 check('Video_PadPressed', lambda: SDTest.Call(0x280d60, 'b')[0])
 for rsbn in ('sdnovideo.avi', 'sdnoa.avi|  sdnob.avi', 'Video/sdno.avi'):
 	check('Video_PlayFile' + fmt((rsbn,)), lambda: SDTest.Call(0x281660, 'isz', rsbn, None)[0])

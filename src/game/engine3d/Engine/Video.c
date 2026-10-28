@@ -93,17 +93,6 @@ SD_SIZE(VideoDDSD, 0x6c);
 #define g_VideoPadHeld GAME_DATA(int, 0x4b2af4)
 #define g_VideoMirror GAME_DATA(uint32_t, 0x4b2aec)	/* 1: up-down, 2: left-right */
 
-void Video_WaitKeysUp(int ms) {
-	uint32_t end = exe_timeGetTime() + (uint32_t)ms;
-
-	while (end > exe_timeGetTime()) {
-		if (exe_GetAsyncKeyState(VK_ESCAPE) >= 0 && exe_GetAsyncKeyState(VK_SPACE) >= 0 &&
-			exe_GetAsyncKeyState(VK_RETURN) >= 0) {
-			return;
-		}
-	}
-}
-
 byte Video_PadPressed(void) {
 	uint32_t state[4] = { 0, 0, 0, 0 };
 

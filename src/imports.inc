@@ -162,19 +162,10 @@ SD_IMPORT(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 /* engine3d: called from Engine/luz.cpp (include/scrap/luz.h) */
 /* engine3d: Engine/Material.c (include/scrap/material.h), the parts of the classes outside Material.cpp and the
  * texture manager */
-SD_IMPORT(CMapa_ctor, 0x233760)
-SD_IMPORT(CMapa_dtor, 0x233a30)
-SD_IMPORT(CMaterial_ctor, 0x233830)
-SD_IMPORT(CMaterial_dtor, 0x233af0)
 
 /* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/escena.h) */
-SD_IMPORT(Box_Transform, 0x239880)
-SD_IMPORT(CAnimMat_ctor, 0x257f70)
-SD_IMPORT(CAnimMat_dtor, 0x257fb0)
-SD_IMPORT(CAnimMat_Start, 0x258110)
 
 /* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/escena.h) */
-SD_IMPORT(CSuelo_CalcIlum, 0x261630)
 
 /* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
 
@@ -184,10 +175,6 @@ SD_IMPORT(CSuelo_CalcIlum, 0x261630)
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
 SD_IMPORT(ListaVert_InitD3D, 0x2404f0)
-SD_IMPORT(Matrix_Invert, 0x239560)
-SD_IMPORT(Stencil_Malla, 0x267530)
-SD_IMPORT(CListaVert_EnvMapUV, 0x2418c0)
-SD_IMPORT(CAnimMat_GetFrame, 0x258060)
 SD_IMPORT(ListaVert_ReleaseD3D, 0x2404e0)
 
 /* src/game/engine3d/Engine/Grafico2D.c (called from Engine/grafico2d.cpp, include/scrap/grafico2d.h) */
@@ -241,17 +228,6 @@ SD_IMPORT_STDCALL(D3DX_LoadSurfaceFromSurface, 32, 0x004dbf)
 /* module agent: ScrapEng/ScrapEngWorld.cpp (imports below this line) */
 
 /* module agent: ScrapEng/ScrapEngMain.cpp (imports below this line) */
-SD_IMPORT(Engine3D_Create, 0x22da30)
-SD_IMPORT(Engine3D_Shutdown, 0x22dc00)
-SD_IMPORT(CPsaImage_ctor, 0x22d120)
-SD_IMPORT(CPsaImage_dtor, 0x22d160)
-SD_IMPORT(CPsaImage_Draw, 0x22d3c0)
-SD_IMPORT(CD3DApp_Render, 0x275120)
-SD_IMPORT(Timer_GetQPFreq, 0x276d00)
-SD_IMPORT(Video_PlayFile, 0x281660)
-SD_IMPORT(Avi_Save, 0x27fa20)
-SD_IMPORT(Avi_Frame, 0x27f9f0)
-SD_IMPORT(Avi_Load, 0x27f9b0)
 SD_IMPORT(ViewerCamera_Move, 0x218080)
 
 /* module agent: ScrapEng/ScrapEngCamera+Particles+Trails.cpp (imports below this line) */
@@ -499,7 +475,6 @@ SD_IMPORT_STDCALL(D3DX_MatrixTranspose, 8, 0x007a01)
 SD_IMPORT_STDCALL(D3DX_MatrixRotationX, 8, 0x0082fb)
 SD_IMPORT_STDCALL(D3DX_MatrixRotationY, 8, 0x008397)
 SD_IMPORT_STDCALL(D3DX_MatrixRotationZ, 8, 0x008434)
-SD_IMPORT(CD3DApp_MsgProc, 0x274b60)
 
 /* module agent: AI leftovers 0x098000..0x0b8000 (imports below this line) */
 SD_IMPORT(crt_difftime32, 0x345bb1)
@@ -508,5 +483,9 @@ SD_IMPORT(crt_ctime32, 0x345734)
 /* module agent: Rest A, game leftovers below 0x1a8000 (imports below this line) */
 
 /* module agent: Rest B, game leftovers from 0x240000 (imports below this line) */
-SD_IMPORT(Matrix_MulCopy, 0x239820)
-SD_IMPORT(Matrix_RotationY, 0x23a290)
+/* busy waits of the original (the project forbids blocking waits in C): left to the exe */
+SD_IMPORT(Video_WaitKeysUp, 0x280d10)
+SD_IMPORT(Timer_CountTicks, 0x276ba0)
+SD_IMPORT(Timer_GetQPFreq, 0x276d00)
+SD_IMPORT(Timer_MeasureQP, 0x276e40)
+SD_IMPORT(Tsc_CpuFreq, 0x272f90)

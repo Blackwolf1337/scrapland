@@ -7251,9 +7251,9 @@ rva	size	source	callconv	name	signature
 00241710	223	USER_DEFINED	__cdecl	ListaVert_PackNormal	uint __cdecl(void * n)
 002417f0	89	USER_DEFINED	__cdecl	ListaVert_UnpackNormal	void * __cdecl(void * out, uint packed)
 00241850	106	USER_DEFINED	__thiscall	CListaVert_SetColor	void __thiscall(uint and, uint or)
-002418c0	1346	USER_DEFINED	unknown	CListaVert_EnvMapUV	
+002418c0	1346	USER_DEFINED	__thiscall	CListaVert_EnvMapUV	void __thiscall(void * world, void * view, void * mapa, int itex)
 00241e10	272	USER_DEFINED	__thiscall	CListaVert_GetExtents	void __thiscall(void * ext, byte reset)
-00241f20	751	DEFAULT	unknown	FUN_00641f20	
+00241f20	751	USER_DEFINED	__thiscall	CListaVert_LightRampUV	void __thiscall(void * world)
 00242210	127	USER_DEFINED	__thiscall	CListaVert_SetLTex1	void __thiscall(uint i, void * v)
 00242290	110	USER_DEFINED	__thiscall	CListaVert_SetTex1	void __thiscall(uint i, void * v)
 00242300	119	USER_DEFINED	__thiscall	CListaVert_SetTex1B1	void __thiscall(uint i, void * v)
@@ -7289,7 +7289,7 @@ rva	size	source	callconv	name	signature
 00242f70	95	USER_DEFINED	__thiscall	CListaVert_Tex1	byte * __thiscall(uint i)
 00242fd0	96	USER_DEFINED	__thiscall	CListaVert_Tex1B1	byte * __thiscall(uint i)
 00243030	96	USER_DEFINED	__thiscall	CListaVert_Tex2	byte * __thiscall(uint i)
-00243090	5	DEFAULT	unknown	FUN_00643090	
+00243090	5	USER_DEFINED	__thiscall	CListaVert_Optimize	byte __thiscall(void * tris, int nTri)
 002430a0	376	USER_DEFINED	__cdecl	Strip_FindFirst	int __cdecl(ushort * tris, int nTri, int depth)
 00243220	254	USER_DEFINED	__cdecl	Strip_Length	int __cdecl(int t, ushort * tris, int nTri, int depth, uint a, uint b)
 00243320	573	USER_DEFINED	__cdecl	Strip_FindNew	int __cdecl(ushort * tris, int nTri, int depth)
@@ -7485,12 +7485,12 @@ rva	size	source	callconv	name	signature
 002531e0	490	USER_DEFINED	__thiscall	CModelo_SetupRender	void __thiscall(void * ctx)
 002533d0	97	USER_DEFINED	__thiscall	CModelo_GetNodoR	void * __thiscall(void * nodo)
 00253440	457	USER_DEFINED	__thiscall	CModelo_GetNodeMatrix	void * __thiscall(void * m, uint inodo, byte anim, uint slot, byte * visible, float * fov)
-00253610	3241	DEFAULT	unknown	FUN_00653610	
-002542c0	985	DEFAULT	unknown	FUN_006542c0	
+00253610	3241	USER_DEFINED	__fastcall	CModelo_Render	void __fastcall(void * self)
+002542c0	985	USER_DEFINED	__fastcall	CModelo_UpdateLOD	byte __fastcall(void * self)
 002546a0	15	USER_DEFINED	__thiscall	CModelo_SetNumLods	void __thiscall(int n)
 002546b0	413	USER_DEFINED	__thiscall	CModelo_SetLod	void __thiscall(uint i, void * model)
 00254850	239	USER_DEFINED	__thiscall	CModelo_SetMorphSubset	byte __thiscall(uint slot, char * tag)
-00254940	643	DEFAULT	unknown	FUN_00654940	
+00254940	643	USER_DEFINED	__thiscall	CModelo_Visibility	byte __thiscall(void * m)
 00254bd0	29	USER_DEFINED	__fastcall	CModelo_GetSector	int __fastcall(void * self)
 00254bf0	88	USER_DEFINED	__thiscall	CModelo_AddAnim	void * __thiscall(void * anim, char * nombre)
 00254c50	286	USER_DEFINED	__thiscall	CModelo_AddAnimEvents	byte __thiscall(char * name, float start, float end)
@@ -7553,17 +7553,21 @@ rva	size	source	callconv	name	signature
 00257e60	60	USER_DEFINED	__cdecl	Crear_Modelo2	void * __cdecl(char * name, char * name2, uint flags)
 00257ea0	63	USER_DEFINED	__cdecl	Crear_Modelo4	void * __cdecl(char * name, char * name2, float umbral, uint flags)
 00257ee0	36	USER_DEFINED	__cdecl	ListaModelo_CompareKey	int __cdecl(void * a, void * b)
-00257f10	85	DEFAULT	unknown	FUN_00657f10	
-00257f70	58	DEFAULT	unknown	FUN_00657f70	
-00257fb0	1	DEFAULT	unknown	FUN_00657fb0	
-00257fc0	33	DEFAULT	unknown	FUN_00657fc0	
-00258000	75	DEFAULT	unknown	FUN_00658000	
-00258060	31	USER_DEFINED	unknown	CAnimMat_GetFrame	
+00257f10	85	USER_DEFINED	__thiscall	CAnimMat_ctorCopy	void * __thiscall(void * src)
+00257f70	58	USER_DEFINED	__thiscall	CAnimMat_ctor	void * __thiscall(void)
+00257fb0	1	USER_DEFINED	__thiscall	CAnimMat_dtor	void __thiscall(void)
+00257fc0	33	USER_DEFINED	__cdecl	AnimMat_Set	byte __cdecl(void * a, float fps, int ciclo)
+00258000	75	USER_DEFINED	__cdecl	AnimMat_ModoName	char * __cdecl(int modo)
+00258060	31	USER_DEFINED	__fastcall	CAnimMat_GetFrame	int __fastcall(void * self)
+00258080	16	USER_DEFINED	__thiscall	CAnimMat_Play	void __thiscall(void)
 00258090	25	USER_DEFINED	__thiscall	CAnimMat_SetFrame	void __thiscall(int frame)
-002580b0	24	DEFAULT	unknown	FUN_006580b0	
-00258110	37	DEFAULT	unknown	FUN_00658110	
-00258160	56	DEFAULT	unknown	FUN_00658160	
-002581a0	228	DEFAULT	unknown	FUN_006581a0	
+002580b0	24	USER_DEFINED	__thiscall	CAnimMat_SetFrameF	void __thiscall(float frame)
+002580d0	56	USER_DEFINED	__thiscall	CAnimMat_Init	void __thiscall(void)
+00258110	37	USER_DEFINED	__thiscall	CAnimMat_Start	void __thiscall(void)
+00258140	16	USER_DEFINED	__thiscall	CAnimMat_Stop	void __thiscall(void)
+00258150	16	USER_DEFINED	__thiscall	CAnimMat_Pause	void __thiscall(void)
+00258160	56	USER_DEFINED	__thiscall	CAnimMat_FundPausa	void __thiscall(float ms)
+002581a0	228	USER_DEFINED	__fastcall	CAnimMat_Update	void __fastcall(void * self)
 00258290	121	USER_DEFINED	__cdecl	Tabla_Read2	void __cdecl(void *f, void *t)
 00258310	131	USER_DEFINED	__cdecl	Tabla_Read1C	void __cdecl(void *f, void *t)
 002583a0	125	USER_DEFINED	__cdecl	Tabla_ReadC	void __cdecl(void *f, void *t)
@@ -7583,14 +7587,14 @@ rva	size	source	callconv	name	signature
 00258e30	161	USER_DEFINED	__thiscall	CNodo3D_VecDelete	void * __thiscall(uint flags)
 00258ee0	100	USER_DEFINED	__thiscall	CSuelo_Delete	void * __thiscall(byte flags)
 00258f50	100	USER_DEFINED	__thiscall	CCollideMesh_TriWithPlane	void __thiscall(void * out, int i)
-00258fc0	1267	DEFAULT	unknown	FUN_00658fc0	
+00258fc0	1267	USER_DEFINED	__cdecl	Collide_TriVerts	void __cdecl(void * out, void * a, void * b, void * c, uint color)
 002594c0	453	USER_DEFINED	__thiscall	CCollideMesh_TriPlane	float * __thiscall(float * out, uint i)
 00259690	1397	USER_DEFINED	__thiscall	CSuelo_AddMesh	void __thiscall(void * mesh, void * tm, uint * outID, int * outIni)
 00259c10	275	USER_DEFINED	__thiscall	CSuelo_RemoveMesh	void __thiscall(void * mesh, int a2, int a3)
 00259d30	233	USER_DEFINED	__thiscall	CSuelo_SetMeshCollide	void __thiscall(void * mesh, byte on, int MeshID, int IniTri)
 00259e20	523	USER_DEFINED	__fastcall	CSuelo_CreateQuadCollision	void __fastcall(void * self)
-0025a030	550	DEFAULT	unknown	FUN_0065a030	
-0025a260	2507	DEFAULT	unknown	FUN_0065a260	
+0025a030	550	USER_DEFINED	__cdecl	CCollideMesh_DrawDebug	void __cdecl(void * self, int nested)
+0025a260	2507	USER_DEFINED	__fastcall	CSuelo_DrawDebug	void __fastcall(void * self)
 0025ac30	87	USER_DEFINED	__thiscall	CSuelo_NodosVf4	void __thiscall(void * arg)
 0025ac90	125	USER_DEFINED	__thiscall	CCollideQuad_TriMaxY	float __thiscall(void * tri)
 0025ad10	125	USER_DEFINED	__thiscall	CCollideQuad_TriMinY	float __thiscall(void * tri)
@@ -7637,12 +7641,12 @@ rva	size	source	callconv	name	signature
 00261300	223	USER_DEFINED	__thiscall	Tabla_New24	void __thiscall(int num)
 002613e0	226	USER_DEFINED	__thiscall	Tabla_NewFC	void __thiscall(int num)
 002614d0	94	USER_DEFINED	__thiscall	Tabla_Alloc1	void __thiscall(int num)
-00261530	66	USER_DEFINED	unknown	CSuelo_FreeNodos	
-00261580	161	DEFAULT	unknown	FUN_00661580	
-00261630	187	DEFAULT	unknown	FUN_00661630	
-002616f0	137	DEFAULT	unknown	FUN_006616f0	
-00261780	168	DEFAULT	unknown	FUN_00661780	
-00261830	162	DEFAULT	unknown	FUN_00661830	
+00261530	66	USER_DEFINED	__fastcall	CSuelo_FreeNodos	void __fastcall(void * self)
+00261580	161	USER_DEFINED	__cdecl	Vec3_Normalize	void * __cdecl(void * out, void * in)
+00261630	187	USER_DEFINED	__thiscall	CSuelo_CalcIlum	void __thiscall(void * nodo, void * esc)
+002616f0	137	USER_DEFINED	__thiscall	Tabla_Resize2	void __thiscall(int n)
+00261780	168	USER_DEFINED	__thiscall	Tabla_Resize1C	void __thiscall(int n)
+00261830	162	USER_DEFINED	__thiscall	Tabla_ResizeC	void __thiscall(int n)
 002618e0	156	USER_DEFINED	__thiscall	CArchINI_ctorLoad	void * __thiscall(char *name, char *dir)
 00261980	14	USER_DEFINED	__thiscall	CArchINI_ctor	void * __thiscall(void)
 00261990	59	USER_DEFINED	__thiscall	CArchINI_dtor	void __thiscall(void)
@@ -7733,7 +7737,7 @@ rva	size	source	callconv	name	signature
 00265510	3229	USER_DEFINED	__cdecl	Stencil_DrawSegs	void __cdecl(int pass)
 002661b0	4765	USER_DEFINED	__cdecl	Stencil_DrawTris	void __cdecl(int pass)
 00267460	202	USER_DEFINED	__cdecl	SombrasStencil_Set	void __cdecl(byte on)
-00267530	3410	USER_DEFINED	unknown	Stencil_Malla	
+00267530	3410	USER_DEFINED	__cdecl	Stencil_Malla	void __cdecl(void * v, void * tris, uint nTri, void * m, void * r)
 00268290	52	USER_DEFINED	__cdecl	SombrasStencil_Capturar	void __cdecl(byte on)
 002682d0	534	USER_DEFINED	__cdecl	E3D_SetShadowLight	void __cdecl(void * l, int arg)
 002684f0	208	USER_DEFINED	__cdecl	Stencil_Free	void __cdecl(void)
@@ -7831,10 +7835,10 @@ rva	size	source	callconv	name	signature
 002732a0	279	USER_DEFINED	__fastcall	CD3DApp_ctor	byte * __fastcall(byte * self)
 002733c0	17	USER_DEFINED	__fastcall	CD3DApp_dtor	void __fastcall(byte * self)
 002733e0	144	USER_DEFINED	__thiscall	CD3DApp_AdjustWindowForChange	int __thiscall(void)
-00273470	2332	DEFAULT	unknown	FUN_00673470	
+00273470	2332	USER_DEFINED	__fastcall	CD3DApp_BuildDeviceList	int __fastcall(byte * self)
 00273d90	118	USER_DEFINED	__thiscall	CD3DApp_Cleanup	int __thiscall(void)
 00273e10	5	USER_DEFINED	__thiscall	CD3DApp_ConfirmDevice	int __thiscall(void * caps, uint behavior, uint fmt)
-00273e20	528	ANALYSIS	__thiscall	CD3DApplication::vf10	undefined __thiscall(void)
+00273e20	528	USER_DEFINED	__thiscall	CD3DApp_Create	int __thiscall(void * inst)
 00274030	3	USER_DEFINED	__thiscall	CD3DApp_Nop	int __thiscall(void)
 00274040	817	USER_DEFINED	__thiscall	CD3DApp_DisplayErrorMsg	int __thiscall(int hr, int type)
 002743a0	3	USER_DEFINED	__thiscall	CD3DApp_Nop	int __thiscall(void)
@@ -7843,16 +7847,16 @@ rva	size	source	callconv	name	signature
 002747c0	3	USER_DEFINED	__thiscall	CD3DApp_Nop	int __thiscall(void)
 002747d0	3	USER_DEFINED	__thiscall	CD3DApp_Nop	int __thiscall(void)
 002747e0	881	USER_DEFINED	__thiscall	CD3DApp_Initialize3DEnvironment	int __thiscall(void)
-00274b60	1160	ANALYSIS	__thiscall	CD3DApplication::vf12	undefined __thiscall(void)
+00274b60	1160	USER_DEFINED	__thiscall	CD3DApp_MsgProc	int __thiscall(void * hwnd, uint msg, int wParam, int lParam)
 002750a0	3	USER_DEFINED	__thiscall	CD3DApp_Nop	int __thiscall(void)
 002750b0	112	USER_DEFINED	__thiscall	CD3DApp_Pause	void __thiscall(int pause)
-00275120	787	DEFAULT	unknown	FUN_00675120	
+00275120	787	USER_DEFINED	__thiscall	CD3DApp_Render	int __thiscall(void)
 00275460	3	USER_DEFINED	__thiscall	CD3DApp_Nop	int __thiscall(void)
 00275470	54	USER_DEFINED	__thiscall	CD3DApp_ResetDevice	int __thiscall(void)
 002754b0	172	USER_DEFINED	__thiscall	CD3DApp_Reset	int __thiscall(void)
 00275560	3	USER_DEFINED	__thiscall	CD3DApp_Nop	int __thiscall(void)
-00275570	955	ANALYSIS	__thiscall	CD3DApplication::vf11	undefined __thiscall(void)
-00275960	1835	DEFAULT	unknown	FUN_00675960	
+00275570	955	USER_DEFINED	__thiscall	CD3DApp_Run	int __thiscall(void)
+00275960	1835	USER_DEFINED	__stdcall	D3DApp_SelectDeviceProc	int __stdcall(void * dlg, uint msg, int w, int l)
 00276090	66	USER_DEFINED	__cdecl	D3DApp_SortModes	int __cdecl(void * a, void * b)
 002760e0	410	USER_DEFINED	__thiscall	CD3DApp_ToggleFullscreen	int __thiscall(void)
 00276280	238	USER_DEFINED	__fastcall	CD3DApp_UpdateBackBufferDesc	void __fastcall(byte * self)
@@ -7867,7 +7871,7 @@ rva	size	source	callconv	name	signature
 00276630	198	USER_DEFINED	__cdecl	DXUtil_StringToGUID	int __cdecl(char * s, void * g)
 00276700	81	USER_DEFINED	__cdecl	DXUtil_WideToAnsi	void __cdecl(char * dst, ushort * src, int cch)
 00276760	41	USER_DEFINED	__cdecl	DXUtil_WideToGeneric	void __cdecl(char * dst, ushort * src, int cch)
-00276790	1037	USER_DEFINED	__cdecl	DXUtil_Timer	float __cdecl(int cmd)
+00276790	1037	USER_DEFINED	__stdcall	DXUtil_Timer	float __stdcall(int cmd)
 00276ba0	55	DEFAULT	unknown	FUN_00676ba0	
 00276be0	207	USER_DEFINED	__cdecl	Timer_FixedStep	int __cdecl(float fps)
 00276cb0	67	USER_DEFINED	__cdecl	Timer_GetFreq	int __cdecl(void * out)
@@ -7962,7 +7966,7 @@ rva	size	source	callconv	name	signature
 0027c8a0	3	ANALYSIS	__thiscall	CParticulaStatic::vf02	undefined __thiscall(void)
 0027c8b0	3	ANALYSIS	__thiscall	CObjBase3D::vf01	undefined __thiscall(void)
 0027c8c0	691	USER_DEFINED	__thiscall	CSistPart_Update	void __thiscall(void * r)
-0027cb80	165	DEFAULT	unknown	FUN_0067cb80	
+0027cb80	165	USER_DEFINED	__cdecl	Debug_Line	void __cdecl(int x0, int y0, int x1, int y1, uint color, int width)
 0027cc30	171	USER_DEFINED	__cdecl	Dbg_FrameRect	void __cdecl(int x, int y, int w, int h, uint color)
 0027ccf0	171	USER_DEFINED	__cdecl	Dbg_FillRect	void __cdecl(int x, int y, int w, int h, uint color)
 0027cda0	40	USER_DEFINED	__cdecl	Err_Unregister	char * __cdecl(int code)
@@ -8008,30 +8012,34 @@ rva	size	source	callconv	name	signature
 0027f2f0	682	USER_DEFINED	__cdecl	Bmp_ToRamp	void __cdecl(void * bmp)
 0027f5a0	328	USER_DEFINED	__cdecl	Surface_FromBmp	int __cdecl(void * surf, void * bmp)
 0027f6f0	398	USER_DEFINED	__cdecl	D3DFmt_Name	char * __cdecl(int fmt)
-0027f980	43	DEFAULT	unknown	FUN_0067f980	
-0027f9b0	53	DEFAULT	unknown	FUN_0067f9b0	
-0027f9f0	40	DEFAULT	unknown	FUN_0067f9f0	
-0027fa20	69	DEFAULT	unknown	FUN_0067fa20	
-0027fa70	1048	DEFAULT	unknown	FUN_0067fa70	
+0027f980	43	USER_DEFINED	__fastcall	CBmp_dtor	void __fastcall(void * self)
+0027f9b0	53	USER_DEFINED	__cdecl	Avi_Load	byte __cdecl(char * name)
+0027f9f0	40	USER_DEFINED	__cdecl	Avi_Frame	byte __cdecl(char * name, int frame)
+0027fa20	69	USER_DEFINED	__cdecl	Avi_Save	byte __cdecl(char * name)
+0027fa70	1048	USER_DEFINED	__cdecl	Avi_Write	void __cdecl(char * name, int lx, int ly, void * buf, int bufsize)
 0027fe90	1125	USER_DEFINED	__cdecl	Surface_SaveShot	byte __cdecl(void * surf)
-00280310	186	DEFAULT	unknown	FUN_00680310	
-002803d0	140	DEFAULT	unknown	FUN_006803d0	
-00280460	329	DEFAULT	unknown	FUN_00680460	
-002805d0	93	DEFAULT	unknown	FUN_006805d0	
-00280630	196	DEFAULT	unknown	FUN_00680630	
-00280720	89	DEFAULT	unknown	FUN_00680720	
-00280780	488	DEFAULT	unknown	FUN_00680780	
-00280970	132	DEFAULT	unknown	FUN_00680970	
-00280a00	114	DEFAULT	unknown	FUN_00680a00	
-00280af0	21	DEFAULT	unknown	FUN_00680af0	
-00280b10	508	USER_DEFINED	__cdecl	Cmd_ReadFile	void __cdecl(char *name)
+00280310	186	USER_DEFINED	__cdecl	Surface_ShotCopy	byte __cdecl(void * surf)
+002803d0	140	USER_DEFINED	__cdecl	Cmd_AddAnim	void __cdecl(void)
+00280460	329	USER_DEFINED	__cdecl	Cmd_Load	void __cdecl(void)
+002805b0	32	USER_DEFINED	__cdecl	Cmd_PivotPos	void __cdecl(void)
+002805d0	93	USER_DEFINED	__cdecl	Cmd_PlayAnim	void __cdecl(void)
+00280630	196	USER_DEFINED	__cdecl	Cmd_EfecMalla	void __cdecl(void)
+00280700	32	USER_DEFINED	__cdecl	Cmd_FundirNodos	void __cdecl(void)
+00280720	89	USER_DEFINED	__cdecl	Cmd_GetModelo	void * __cdecl(void)
+00280780	488	USER_DEFINED	__cdecl	Cmd_GetVec	int __cdecl(byte next, void * out, int unused)
+00280970	132	USER_DEFINED	__cdecl	Cmd_GetBool	byte __cdecl(byte def)
+00280a00	114	USER_DEFINED	__cdecl	Cmd_GetFloat	int __cdecl(byte next, float * out, int end)
+00280a80	64	USER_DEFINED	__cdecl	Cmd_SkipToIdent	void __cdecl(void)
+00280ac0	48	USER_DEFINED	__cdecl	Cmd_NextInt	int __cdecl(void)
+00280af0	21	USER_DEFINED	__cdecl	Cmd_Out	void __cdecl(char * text)
+00280b10	508	USER_DEFINED	__cdecl	Cmd_ReadFile	void __cdecl(char * name)
 00280d10	70	DEFAULT	unknown	FUN_00680d10	
-00280d60	112	DEFAULT	unknown	FUN_00680d60	
-00280dd0	386	DEFAULT	unknown	FUN_00680dd0	
-00280f60	1643	DEFAULT	unknown	FUN_00680f60	
-002815d0	142	DEFAULT	unknown	FUN_006815d0	
-00281660	219	DEFAULT	unknown	FUN_00681660	
-00281740	423	DEFAULT	unknown	FUN_00681740	
+00280d60	112	USER_DEFINED	__cdecl	Video_PadPressed	byte __cdecl(void)
+00280dd0	386	USER_DEFINED	__cdecl	Video_OpenStream	int __cdecl(char * name, void * dd, void ** out)
+00280f60	1643	USER_DEFINED	__cdecl	Video_RenderStream	int __cdecl(void * dd, void * primary, void * ms, byte * played)
+002815d0	142	USER_DEFINED	__cdecl	Video_BltToWindow	void __cdecl(void * hwnd, void * dst, void * surf, void * src)
+00281660	219	USER_DEFINED	__cdecl	Video_PlayFile	int __cdecl(char * name, char * dir)
+00281740	423	USER_DEFINED	__cdecl	Video_PlayPath	int __cdecl(char * name, char * dir, byte warn)
 00281900	563	USER_DEFINED	__thiscall	CBsp_ctor	void * __thiscall(char * nombre, void * escala)
 00281b40	270	USER_DEFINED	__thiscall	BspTxf_ctor	void * __thiscall(char * mapa, char * name, int n, int on)
 00281c50	235	USER_DEFINED	__fastcall	BspZona_ctor	void * __fastcall(void * self)
@@ -8766,7 +8774,7 @@ rva	size	source	callconv	name	signature
 002c9a40	770	USER_DEFINED	__fastcall	CBspQ3_Build	void __fastcall(void * self)
 002c9d50	41	USER_DEFINED	__cdecl	BspQ3_Free	void __cdecl(void)
 002c9d80	1	USER_DEFINED	__cdecl	BspQ3_Crear	void __cdecl(void)
-002c9d90	15	USER_DEFINED	unknown	BspQ3_Render	
+002c9d90	15	USER_DEFINED	__cdecl	BspQ3_Render	void __cdecl(void)
 002c9da0	590	USER_DEFINED	__thiscall	CSuelo_GetY	float __thiscall(float x, float z, float maxY, byte all)
 002c9ff0	874	USER_DEFINED	__thiscall	CSuelo_GetYInfo	byte __thiscall(float x, float z, void * info)
 002ca360	1168	USER_DEFINED	__thiscall	CSuelo_RayoVert	byte __thiscall(float x, float z, void * res)

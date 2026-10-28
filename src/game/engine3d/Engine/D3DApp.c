@@ -485,7 +485,6 @@ typedef void *(__stdcall *direct3dcreate8_t)(uint32_t version);
 typedef int(__stdcall *adjustwindowrect_t)(exe_rect *r, uint32_t style, int menu);
 typedef void *(__stdcall *loadmenu_t)(void *inst, const char *name);
 typedef int(__stdcall *setrect_t)(exe_rect *r, int left, int top, int right, int bottom);
-typedef void *(__stdcall *gethwndmenu_t)(void *hwnd);
 typedef int(__stdcall *destroymenu_t)(void *menu);
 typedef void(__stdcall *postquitmessage_t)(int code);
 typedef int(__stdcall *getcursorpos_t)(exe_point *pt);
@@ -497,7 +496,6 @@ typedef int(__stdcall *enablewindow_t)(void *hwnd, int on);
 #define exe_AdjustWindowRect GAME_DATA(adjustwindowrect_t, 0x3a1380)
 #define exe_LoadMenuA GAME_DATA(loadmenu_t, 0x3a13c4)
 #define exe_SetRect GAME_DATA(setrect_t, 0x3a138c)
-#define exe_GetMenu GAME_DATA(gethwndmenu_t, 0x3a1348)
 #define exe_DestroyMenu GAME_DATA(destroymenu_t, 0x3a137c)
 #define exe_PostQuitMessage GAME_DATA(postquitmessage_t, 0x3a1370)
 #define exe_GetCursorPos GAME_DATA(getcursorpos_t, 0x3a1384)
