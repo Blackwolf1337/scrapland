@@ -3,6 +3,11 @@
 Goal: a `scrap.exe` built only from the C code of `src/` and real libraries, with no code of the original Scrap.exe.
 It is reached in stages, each one runs the difftest.
 
+Since stage 3c2 ScrapC.exe is a normal exe with no byte of the original, and neither ScrapC.exe nor its build needs
+Scrap.exe. ScrapC.exe needs only the game files: the packs and the DLLs of the game in game/Bin (fmod, Galaxy,
+steam_api, and ucrtbase_ms.dll for the Wine tests). The original exe is needed only for the optional check
+(`cmake --build build --target datacheck`, stage 3c2) and for the original run of the difftest.
+
 ## Stage 0: wipe check (hook DLL)
 
 `[general] wipe=1` in scrapdecomp.ini (`DIFFTEST_WIPE=1 tools/test/difftest.sh`) fills the rest of every hooked
@@ -10,6 +15,8 @@ original with int3 after the hook jump. A jump into the middle of replaced code 
 `wipe: original code reached at rva ...`.
 
 ## Stage 1: loader with the data of the original
+
+Stage 3c2 removed the room, the fixed base and the switches described in stages 1 to 3c1, see stage 3c2.
 
 `ScrapC.exe` (`src/standalone/main.c`) has the base 0x400000 of the original. `cmake/ScrapC.ld` puts the
 uninitialized section `.orig` at rva 0x1000, as large as the original image, and the own code after it (under Wine
@@ -1093,6 +1100,138 @@ The log of datagen.py, with stage 3c1a:
 
 On 2026-10-28 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios (sdtest 9965 checks, sdcall
 29078, sdlevel 19095), and so does the hook DLL difftest.
+
+### Stage 3c2: ScrapC.exe without the room (done)
+
+The room is gone. ScrapC.exe is a normal exe: the linker places everything, and no byte of the original is built in.
+
+Linkage. `SD_AT(rva)` and `SD_BSS(rva)` of `include/scrap/shared.h` are plain definitions in ScrapC.exe now
+(`__attribute__((used))`, initialized or bss). The linker places the 14378 C objects of src/game/Global (Globals*.c,
+Strings*.c, Vtables.c) like any other global, and the `GAME_*` macros of game.h give them as before. There is no room,
+no `cmake/ScrapC.ld`, and no `room.ld`, `room.c`, `room.h` or `room.bin`.
+
+ScrapC.exe has the default base of ld (0x400000) with dynamic base (`-Wl,--dynamicbase`, DllCharacteristics 0x140:
+DYNAMIC_BASE and NX_COMPAT). Under Wine it loads at 0x400000 (the log line "ScrapC.exe at 00400000"). The test scripts
+take 0x400000 in many places, as they do for Scrap.exe, which has dynamic base too, and sdlib.py writes a line into the
+output when `SDTest.Base()` is another.
+
+Gone from ScrapC.exe:
+
+- the room code of main.c (`Orig_Room`, the int3 fill)
+- the hook installer and the thunks of the imports (src/core/hook.c and src/core/imports.c are built into the hook DLL
+  only)
+- the switches wipepy, wipecrt, wipelow, wipeinit and dataprobe with `src/standalone/dataprobe.c`, and the code-gone trap
+
+`Game_Start` of game.c in ScrapC.exe only reads scrapdecomp.ini, sets `game_base` to its own module and adds SDTest with
+testmod=1. wipe is a switch of the hook DLL only (stages 0 and 1b), and difftest.sh has only DIFFTEST_WIPE and
+DIFFTEST_STANDALONE now.
+
+The entries of the original's CRT that only the code of the copy reached are gone from src/standalone/crt.c and
+crtmath.c (`_alloca_probe`, `_EH_prolog`, `_setjmp3`, `longjmp`, `_ftol`, `_aullshr`, `__security_check_cookie`,
+`strncpy`, `_finite`, `calloc`, `_vsnprintf`, `_snprintf`, the sized `operator delete[]`, `_CIacos`, `_CIpow`,
+`_libm_sse2_sqrt_precise`). `src/standalone/crthooks.inc` stays as a table of names: no C includes it, the tools read it
+to name an rva of the original's CRT (sdexe.py `c_names`, rvacheck.py, testsyms.py, initpat.py).
+
+ScrapC.exe has a read-only .rdata now (the room was writable as a whole). globals.py no longer gives an object outside
+the original's .rdata the const of a claim (`GAME_ARRAY(const byte, ...)`): `g_RSqrtTable`, `g_MatIdentity`,
+`g_Frustum` and others in the original's .data and bss were written into const objects.
+
+Tables that are one object now. The 3c1b layout had split tables where the C took an address inside them, and in the
+room the C reached the rest through the neighbouring objects. They were found by a scan of the indexed accesses of the
+original's code (capstone) and of the C (the relocations of the object files) against the sizes of the C objects, and
+by the difftest.
+
+globals.py: an array of a known length (a count in the comment of its claim) takes every claim inside it as a view, also
+a smaller array at its start. Before, the next claim cut it: `g_BspColores` became 4 bytes, `g_CircuitFlares` 3 of 4,
+`g_KeyNameBuf` 16 of 40 bytes, and the vector of 2 cStaticBuffer of `cStaticBuffer_PyStaticBuffer` 1.
+
+Counts in the C:
+
+- the ramp tables the C picks a ramp of 9 colors from at random (`NURSE_RAMPS_STARS` and `NURSE_RAMPS_SPARKS`, which had
+  `[2][9]` read as 2, `RUSTY_RAMPS`, `VS_RAMP_FIRE`, and table defines with a count for the FX ramps of FXChar.c,
+  FXCharActions.c, FXScene.c, FXVehicle.c and FXWeapons.c, such as `FXV_FIRE_RAMPS` and `FXATPC_GLOW_RAMPS`)
+- the exhaust colors at 0x3b5914
+- `g_EngCallbacks` (4: entries 2 and 3 are `g_LoadingDraw2` and `g_LoadingDraw`, which `Engine_SetCallback` writes)
+- `g_EntradaCursor` (the POINT of GetCursorPos)
+- `g_StageTex` and `g_StageTexFrame` (8), `g_PSHandles` (32), `g_ProfTicks` (32)
+- `g_RenderCounts` (10, the frame clears 10)
+- `g_BspCacheStats` (3, the third is `g_CollisionTestsMax`)
+- `g_ShaderTab` (32, `Shader_Find` walks it to the NULL name)
+
+Changes in the C where the original reached a separate global through a table. `Render_IniD3D` writes the six default
+materials (`g_MatBlanco` .. `g_MatSuelo`) through a table of their addresses instead of `(&g_MatBlanco)[i]`.
+`Mat_ConvertBlend` reads the legacy blend modes 1..6 from `g_BlendTable[mode - 1]` (the original indexed from the last
+word of `g_ListaMat` before it). `MainMenu_Sparks` reads the spark waits for k >= 9 where the original read past the
+letter lengths.
+
+One case is left as it is. `Str_WrapText` of the message scorer may write up to 0xfa line pointers into `g_MsgLines`,
+which holds 20. With more than 20 lines the original wrote over `g_LabelText` and the hint globals after it, and
+ScrapC.exe writes over whatever the linker put after `g_MsgLines`. No message of the game has that many lines.
+
+The check against the original (optional). `cmake --build build --target datacheck` runs
+`tools/standalone/datagen.py --check <SCRAP_EXE> build/standalone/datacheck.txt` and `rsrccheck.py <SCRAP_EXE>
+ScrapC.exe`. SCRAP_EXE is the CMake cache path (default game/Bin/Scrap.exe). The normal build needs neither, and a clean
+build with `-DSCRAP_EXE=/nonexistent/Scrap.exe` succeeds.
+
+The check build has the object library `scrapdata_check` (EXCLUDE_FROM_ALL). It compiles Globals*.c, Strings*.c and
+Vtables.c again with `SD_DATACHECK`, which puts every object into a section `.sd.<rva>` of its own as in stage 3b.
+datagen.py reads them as before. It stops when an object lies outside the data, overlaps another, is not at a multiple
+of its alignment, holds other bytes or pointers than the original (the same rules as stage 3b), or when a byte the map
+of stage 3b2 keeps is no C object. It writes nothing. The log on 2026-10-29:
+
+    datagen.py: 14378 C objects match Scrap.exe 1.6.1, 2 pointers into the Python lead to the real one
+
+with .bss_ste 66240 bytes in 22 C objects, .rdata 293504 in 11118, .data 711612 in 3235 (667512 of them bss in 2585) and
+.gfids 1272 in 3. rsrccheck.py: 23 resources match.
+
+`build/standalone/objects.txt` lists the objects of scrapcode_sa and of scrapdata_check. The generators (globals.py,
+strings.py, vtables.py, testsyms.py, datamap.py) read the .sd sections from the check objects, so build the target
+scrapdata_check before running them. The post-link check `datamap.py --check` of stage 3b2 is gone (there is no built-in
+data to map); datamap.py stays for the generators. rvacheck.py still runs after each link, and `game_base` is allowed
+only in game.h, game.c, hook.c and testmod.c.
+
+The tests. `TestMod_SymRva` gives in ScrapC.exe the address of the C function or object (plus the offset of a view
+inside it) minus the load address. The table of testmod.c takes the address from the assembler label like `GAME_FUNC`.
+In the hook DLL it gives the rva of the original as before. testsyms.inc writes data names as `SD_TEST_DATA(key, owner,
+off, rva)`: the C object that holds them and the offset. testsyms.py stops when a data name lies in no C object, or when
+an offset after a name in a script (`sym('g_X') + 0x10`) leaves the object.
+
+`SDTest.Base()` is the load address. `SDTest.Orig(v)` turns the start of a C object or C function of ScrapC.exe
+(absolute, or as an rva for data) into the original's address. It uses `src/core/testaddrs.inc` (every C object with its
+rva and size, written by `testsyms.py -w` from the check build) and src/hooks.inc (a C function that backs several
+copies names the first). In the hook DLL it returns v. `fmt` of sdlib.py prints every int through it, so vtable
+pointers, string pointers and table pointers in the outputs compare with the original run. Only starts count, and the
+rva form only for data: colors and packed numbers hit the inside of objects and the starts of the functions too often.
+The rva form is tried first: the tests print pointers to data as `p - 0x400000`, and such a value can also be the
+address of a C function (the rva of `g_ExePath` was one). The guess depends on where the linker puts things: a number
+that a test prints and that hits the start of a C object or function after a change of the layout shows up as a
+difference of the difftest, and the test then marks it with `plain()`.
+`plain(v)` of sdlib.py marks values that hold no address (the pixels of the bitmap tests, trail vertices and indices, a
+hash of sdlevel_bspcalc.py, particle data of sdlevel_efxmisc.py): their ints become longs, which `fmt` prints as they
+are.
+
+`SDTest.PeekSpan(name, off, n)` and `SDTest.PokeSpan(name, off, value, n)` read and write n bytes (1..4) after a name in
+the layout of the original, byte by byte through the C objects there. They are for the tests that read or wrote a word
+over byte flags of separate objects (`g_TileOn`, `g_UsarShaders`, `g_M3DUseOpacity`, `g_PuntosOn`).
+
+The tests that read or wrote several neighbouring globals as one block read them one by one now (the domination zones,
+the mission scorer words, the radar, the music volumes, `g_DbgWnd` .. `g_DbgButtonRect`, `g_Pantallas` and `g_Modelos`,
+`g_VCacheVert` and `g_VCacheAge`, the XBOX vertex shaders, the default materials and others), with tables of names in
+place of `sym('A') + 4 * i`. `Render_PS0 + 0x60 * i` (the nine shader functions one after the other in the original) is
+a table of names. The check labels that printed the rva of a function (`%x` or `fmt` of a `sym()`: the loops of
+sdlevel_logic1..4, sdlevel_fxmisc.py, `Tabla_Alloc`, `Array_Read`, the Stub functions and others, about 50 loops) go over
+the names and print them. `SDTest.Call` takes a name, and testsyms.py adds a name of the table that a script holds as a plain
+string. `isfn(p, rva)` of sdlib.py compares p with 0x400000 + rva, which is the C function in ScrapC.exe
+(sym gives its address there).
+
+On 2026-10-29 `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` matches in all three scenarios: sdtest 9965 checks (116
+raise an exception in both), sdcall 29078 (0), sdlevel 19095 (89). So does the hook DLL difftest, with the same counts
+and 9957 of 9957 hooks installed. `ScrapC.exe -dedicated` starts the server (port 28086 bound, the AI graph loads) with
+the same log.html as `Scrap.exe -dedicated` but for the time in its head line (an hour earlier, as before).
+
+The size of ScrapC.exe was 24423137 bytes before (stage 3c1b) and is 24701035 after, with the debug information;
+stripped 5432846 and 5265934 bytes. SizeOfImage went from 0xa62000 to 0x620000 (stripped exes): the room of 0x55e000 is
+gone, and the .reloc of the dynamic base (about 180 KB) and the address table of `SDTest.Orig` came in.
 
 ## Stage 4: English names
 

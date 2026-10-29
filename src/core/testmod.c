@@ -254,13 +254,15 @@ static uint32_t TestMod_OrigRva(uintptr_t a) {
  * of the game prints this. In the hook DLL v itself.
  */
 static uint32_t TestMod_Orig(uint32_t v) {
-	uint32_t r = TestMod_OrigRva(v);
-	if (r) {
-		return 0x400000 + r;
+	/* the rva form for data only: small numbers hit the starts of the functions (aligned to 16) too often. It goes
+	 * first: the tests print the pointers to data as rvas (p - 0x400000), and the rva of a C object can be the address
+	 * of a C function too */
+	uint32_t r = TestMod_OrigRva((uintptr_t)v + game_base);
+	if (r >= TEST_DATA_RVA) {
+		return r;
 	}
-	/* the rva form for data only: small numbers hit the starts of the functions (aligned to 16) too often */
-	r = TestMod_OrigRva((uintptr_t)v + game_base);
-	return r && r >= TEST_DATA_RVA ? r : v;
+	r = TestMod_OrigRva(v);
+	return r ? 0x400000 + r : v;
 }
 
 /* the byte of ScrapC.exe at the rva of the original's data, NULL where no C object is (data nothing uses) */
