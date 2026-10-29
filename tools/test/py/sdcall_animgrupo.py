@@ -1,4 +1,4 @@
-# engine3d Engine/AnimGrupo.c: animation groups on fake scenes, nodes and animations in heap memory (Python 1.5.2, runs
+# engine3d Engine/AnimGroup.c: animation groups on fake scenes, nodes and animations in heap memory (Python 1.5.2, runs
 # inside sdcall.py after the other checks: check, fmt, tpeek come from there). Pointers are printed as indices of
 # the objects made here, floats as their bits. Fake scenes keep Refs above 0, so no destructor of the exe runs on
 # them. Not tested: AnimGroup_AlignNode with a node position from the animation frames (CAnimNode_GetPosRot true).

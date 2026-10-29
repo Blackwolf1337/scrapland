@@ -13,9 +13,9 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
-#include "scrap/sueloportal.h"
+#include "scrap/groundportal.h"
 #include "scrap/utild3d.h"
-#include "scrap/varios.h"
+#include "scrap/misc.h"
 #include "scrap/win32.h"
 
 /* the methods of IDirect3DDevice8, IDirect3DSurface8 and IDirect3D8 only this file calls */

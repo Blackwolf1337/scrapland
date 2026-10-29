@@ -1,4 +1,4 @@
-# engine3d Engine/Fuentes.c: the two debug fonts measured and drawn through the D3D log (the viewport set), the
+# engine3d Engine/Fonts.c: the two debug fonts measured and drawn through the D3D log (the viewport set), the
 # unicode font loaded into a table made here and its escapes, a grid font and the digits, the border rows of a bitmap.
 # Python 1.5.2, runs inside sdcall.py after the other checks: check, fmt and rdlog come from there.
 def fni(a):

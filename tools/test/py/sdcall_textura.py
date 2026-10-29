@@ -1,4 +1,4 @@
-# engine3d Engine/Textura.c (execfile'd by sdcall.py after its other checks, Python 1.5.2): the pure helpers, the
+# engine3d Engine/Texture.c (execfile'd by sdcall.py after its other checks, Python 1.5.2): the pure helpers, the
 # bump, DUDV and ramp conversions on heap images, and the texture cache on a list of its own. The list head of the
 # engine (rva 0x4b2610) is set aside while the cache functions run and put back at the end, so no entry of the
 # engine is touched. Entries are made by the constructor of the exe; the only files are BMP and TGA files written

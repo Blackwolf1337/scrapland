@@ -5,9 +5,9 @@
 #include <string.h>
 
 #include "scrap/bsp.h"
-#include "scrap/suelo.h"
+#include "scrap/ground.h"
 #include "scrap/utild3d.h"
-#include "scrap/varios.h"
+#include "scrap/misc.h"
 
 #define BSP2_EPS 1e-4f
 #define BSP2_COLORS (GAME_ARRAY(const uint32_t, g_BspColors, 0x432a30))	/* 16 */

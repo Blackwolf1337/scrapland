@@ -5,11 +5,11 @@
  */
 #include "scrap/app.h"
 #include "scrap/console.h"
-#include "scrap/grafico2d.h"
+#include "scrap/graphic2d.h"
 #include "scrap/scorerhud.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
-#include "scrap/textura.h"
+#include "scrap/texture.h"
 
 /* the scale of the images, of SPR2D 0x10000 and of SPR2D 0x20000 (two floats each) */
 #define g_Sprite2DScale (GAME_ARRAY(float, g_Sprite2DScale, 0x431b8c))

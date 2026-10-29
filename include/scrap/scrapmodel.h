@@ -7,8 +7,8 @@
 #define SCRAP_SCRAPMODEL_H
 
 #include "scrap/material.h"
-#include "scrap/modelo.h"
-#include "scrap/suelo.h"
+#include "scrap/model.h"
+#include "scrap/ground.h"
 
 typedef struct CGameModel {
 	CModel *Model;			/* 0x00 */

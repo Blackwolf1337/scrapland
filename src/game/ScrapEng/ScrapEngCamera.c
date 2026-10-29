@@ -4,11 +4,11 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "scrap/animacion.h"
+#include "scrap/animation.h"
 #include "scrap/scrapcamera.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapfont.h"
-#include "scrap/varios.h"
+#include "scrap/misc.h"
 
 #define CAM_CHECK(self) \
 	do { \

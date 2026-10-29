@@ -6,7 +6,7 @@
 #ifndef SCRAP_SCRAPCOLLISION_H
 #define SCRAP_SCRAPCOLLISION_H
 
-#include "scrap/suelo.h"
+#include "scrap/ground.h"
 
 /* the profiler sections */
 #define PROF_SLIDE 0x10

@@ -219,7 +219,7 @@ struct CImage;
 /* the w x h pixels of bmp at (sx, sy) into the texture at (dx, dy); 0 when not done */
 byte __thiscall CMap_CopyBmp(CMap *self, int dx, int dy, const struct CImage *bmp, int sx, int sy, int w, int h);
 char *__thiscall CMap_FramePath(CMap *self, int frame, char *buf, int size);
-/* FXTexture_Kind (the kind of FXTexture of a map name): fxtextura.h */
+/* FXTexture_Kind (the kind of FXTexture of a map name): fxtexture.h */
 
 CMaterial *__thiscall CMaterial_Delete(CMaterial *self, byte flags);
 /* name, parameters and copies of the maps */

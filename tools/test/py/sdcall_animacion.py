@@ -1,4 +1,4 @@
-# engine3d Engine/Animacion.c (execfile'd at the end of sdcall.py, Python 1.5.2): animations and nodes in heap memory
+# engine3d Engine/Animation.c (execfile'd at the end of sdcall.py, Python 1.5.2): animations and nodes in heap memory
 # with random tracks, the optimization into constants and streams, and animations read from the packs. Pointers are
 # printed as offsets or as "set", never as addresses. Not called: CAnimNode_FreeTracks (always fails its CHECK(0)).
 # CAnimation_Write and the node writers run on a CFileIO with the error flag set, which writes nothing.

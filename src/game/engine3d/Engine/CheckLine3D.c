@@ -3,8 +3,8 @@
  * (include/scrap/ground.h, CGround_Trace in include/scrap/light.h): walks through the cells of the quad grid that the
  * segment passes, with the triangles shared by cells tested once per query.
  */
-#include "scrap/luz.h"
-#include "scrap/suelo.h"
+#include "scrap/light.h"
+#include "scrap/ground.h"
 
 #define TRACE_FLT_MAX 3.4028234663852886e+38f
 

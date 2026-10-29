@@ -7,7 +7,7 @@
 #define SCRAP_SCRAPPARTICLES_H
 
 #include "scrap/scrapmodel.h"
-#include "scrap/sistpart.h"
+#include "scrap/particlesystem.h"
 
 typedef struct CGameParticles {
 	uint32_t colorIni;		/* 0x00 */

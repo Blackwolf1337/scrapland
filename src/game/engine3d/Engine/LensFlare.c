@@ -7,10 +7,10 @@
 #include "scrap/e3dutil.h"
 #include "scrap/flare.h"
 #include "scrap/lensflare.h"
-#include "scrap/luz.h"
-#include "scrap/mundo.h"
+#include "scrap/light.h"
+#include "scrap/e3dworld.h"
 #include "scrap/render.h"
-#include "scrap/textura.h"
+#include "scrap/texture.h"
 
 CLensFlare *__fastcall CLensFlare_ctor(CLensFlare *self) {
 	self->hit = (vec3_t){ 0.0f, 0.0f, 0.0f };

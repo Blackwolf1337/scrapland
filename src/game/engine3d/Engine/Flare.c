@@ -3,12 +3,12 @@
  */
 #include "scrap/e3dutil.h"
 #include "scrap/flare.h"
-#include "scrap/luz.h"
-#include "scrap/mundo.h"
+#include "scrap/light.h"
+#include "scrap/e3dworld.h"
 #include "scrap/render.h"
-#include "scrap/sistpart.h"
+#include "scrap/particlesystem.h"
 #include "scrap/crt.h"
-#include "scrap/texto.h"
+#include "scrap/text.h"
 
 byte Floats11_Equal(const float *a, const float *b) {
 	static const byte order[11] = { 0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 6 };

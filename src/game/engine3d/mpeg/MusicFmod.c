@@ -15,7 +15,7 @@
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/sound.h"
-#include "scrap/varios.h"
+#include "scrap/misc.h"
 #include "scrap/win32.h"
 
 #define FMOD_VERSION 3.73f

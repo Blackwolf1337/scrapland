@@ -147,7 +147,7 @@ for p in ((0.0, 0.0, 10.0), (3.0, -2.0, 25.0), (100.0, 0.0, 10.0), (0.0, -50.0, 
 smpoke(sym('g_MatView'), smmats[0])
 smpoke(sym('g_MatProj'), smmats[1])
 
-# the text functions: the cursor of Texto.c and the state of the two fonts of Eng_Printf
+# the text functions: the cursor of Text.c and the state of the two fonts of Eng_Printf
 def smcur():
 	return (SDTest.Peek('g_TextX', 'i'), SDTest.Peek('g_TextY', 'i'))
 smcur0 = smcur()

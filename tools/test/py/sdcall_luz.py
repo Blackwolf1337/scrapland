@@ -1,4 +1,4 @@
-# engine3d Engine/Luz.c (run by sdcall.py after its own checks, its helpers in scope). Lights in heap memory live in
+# engine3d Engine/Light.c (run by sdcall.py after its own checks, its helpers in scope). Lights in heap memory live in
 # the global list of the engine while they exist and are all destroyed at the end; the device calls go to the real
 # device of the main menu. Nodes are fake (Refs kept above 1, a matrix at 0x5c, no animation at 0x40). Engine
 # variables are changed for some checks and restored. Not called: Light_SetDefault (render state of the menu),

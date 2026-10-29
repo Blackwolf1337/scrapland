@@ -5,7 +5,7 @@
 
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
-#include "scrap/nodo3d.h"
+#include "scrap/node3d.h"
 #include "scrap/material.h"
 #include "scrap/trails.h"
 

@@ -8,7 +8,7 @@
 #define SCRAP_ARCHIO_H
 
 #include "scrap/filepak.h"
-#include "scrap/varios.h"
+#include "scrap/misc.h"
 
 typedef struct cBlockFile {
 	uint32_t id;			/* 0x0 IdToDword */
@@ -72,7 +72,7 @@ void __thiscall CFileIO_PopBlock(CFileIO *self, const char *id);
 int File_Check(const char *name, int mode, byte pack);
 int File_StatX(const char *name, void *st, byte pack);
 
-/* Engine/ArchINI.cpp (src/game/engine3d/Engine/ArchINI.c): an ini file, the getters take a default; the setters
+/* Engine/ArchINI.cpp (src/game/engine3d/Engine/IniFile.c): an ini file, the getters take a default; the setters
  * return 1 if the value changed */
 typedef struct cDataFile cDataFile;
 

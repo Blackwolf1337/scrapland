@@ -5,7 +5,7 @@
  */
 #include <string.h>
 
-#include "scrap/suelo.h"
+#include "scrap/ground.h"
 #include "scrap/utild3d.h"
 
 #define BBOX_FLT_MAX 3.4028234663852886e+38f

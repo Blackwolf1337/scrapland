@@ -27,7 +27,7 @@
 #define g_EngineDev ENGINE_DEV(g_Engine)
 /* the frames drawn by the engine3d */
 #define g_FrameCount GAME_GLOBAL(int, g_FrameCount, 0x4a8ec8)
-/* the time of the last frame (the clock of the engine, also g_FrameDelta of Motor.c) */
+/* the time of the last frame (the clock of the engine, also g_FrameDelta of Engine.c) */
 #define g_FrameMs GAME_GLOBAL(float, g_FrameMs, 0x4a8ed4)
 /* the time of the engine in ms */
 #define g_TimeMs GAME_GLOBAL(uint32_t, g_TimeMs, 0x4a8ef0)

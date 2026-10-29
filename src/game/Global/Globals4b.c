@@ -11,14 +11,14 @@
 
 #include "scrap/archio.h"
 #include "scrap/bsp.h"
-#include "scrap/grafico2d.h"
+#include "scrap/graphic2d.h"
+#include "scrap/ground.h"
+#include "scrap/groundportal.h"
 #include "scrap/mathlib.h"
 #include "scrap/rendertarget.h"
 #include "scrap/scrap.h"
-#include "scrap/suelo.h"
-#include "scrap/sueloportal.h"
-#include "scrap/texto.h"
-#include "scrap/textura.h"
+#include "scrap/text.h"
+#include "scrap/texture.h"
 
 #undef g_AppPausedCount
 #undef g_AviBih

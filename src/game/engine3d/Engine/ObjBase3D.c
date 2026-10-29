@@ -1,7 +1,7 @@
 /*
- * The base of the 3D objects with a node, original source Engine/objbase3d.cpp (include/scrap/sistpart.h).
+ * The base of the 3D objects with a node, original source Engine/objbase3d.cpp (include/scrap/particlesystem.h).
  */
-#include "scrap/sistpart.h"
+#include "scrap/particlesystem.h"
 
 void __thiscall CObjBase3D_SetNode(IObject3D *self, CNode3D *node) {
 	ObjRef **slot = (ObjRef **)((byte *)self + 8);

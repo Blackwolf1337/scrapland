@@ -128,7 +128,7 @@ int __thiscall cFileBlock_CloseBlockRead(cFileBlock *self, const char *id);
 int __thiscall cFileBlock_OpenBlockWrite(cFileBlock *self, const char *id);
 int __thiscall cFileBlock_CloseBlockWrite(cFileBlock *self, const char *id);
 
-/* Engine/ArchIO.cpp (src/game/engine3d/Engine/ArchIO.c): fopen relative to the game directory, a drive in the path is
+/* Engine/ArchIO.cpp (src/game/engine3d/Engine/FileIO.c): fopen relative to the game directory, a drive in the path is
  * fatal */
 void *File_OpenRel(const char *name, const char *mode);
 /* 0 if the file is there */

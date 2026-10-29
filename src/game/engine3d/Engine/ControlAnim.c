@@ -3,7 +3,7 @@
  */
 #include <string.h>
 
-#include "scrap/animgrupo.h"
+#include "scrap/animgroup.h"
 #include "scrap/controlanim.h"
 #include "scrap/e3dutil.h"
 

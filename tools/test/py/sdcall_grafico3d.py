@@ -1,4 +1,4 @@
-# engine3d Engine/Grafico3D.c: sprites made here (Python 1.5.2, runs inside sdcall.py after the other checks: check, fmt
+# engine3d Engine/Graphic3D.c: sprites made here (Python 1.5.2, runs inside sdcall.py after the other checks: check, fmt
 # come from there). Not tested: the drawing (device).
 def g3new(n):
 	return SDTest.Call('operator_new', 'ii', n)[0]

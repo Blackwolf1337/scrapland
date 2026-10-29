@@ -8,7 +8,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/material.h"
 #include "scrap/render.h"
-#include "scrap/varios.h"
+#include "scrap/misc.h"
 
 #define g_GlowMap GAME_GLOBAL_IN(int, g_GvGlowMap, 16, 0x4adab0)		/* R_GlowMap */
 #define g_ShaderModeMask GAME_GLOBAL(uint32_t, g_ShaderModeMask, 0x4db8f8)

@@ -7,8 +7,8 @@
 #ifndef SCRAP_SCRAPCAMERA_H
 #define SCRAP_SCRAPCAMERA_H
 
-#include "scrap/camara.h"
-#include "scrap/modelo.h"
+#include "scrap/camera.h"
+#include "scrap/model.h"
 #include "scrap/scrapmodel.h"
 
 #define CAMERA_FREE (CAMERA_LOOKAT + 1)	/* mode: the angles are set directly */

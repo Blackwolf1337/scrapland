@@ -4,12 +4,12 @@
 #include "scrap/cmd.h"
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
-#include "scrap/escena.h"
+#include "scrap/scene.h"
 #include "scrap/lex.h"
 #include "scrap/material.h"
-#include "scrap/modelo.h"
-#include "scrap/mundo.h"
-#include "scrap/varios.h"
+#include "scrap/model.h"
+#include "scrap/e3dworld.h"
+#include "scrap/misc.h"
 
 void Cmd_AddAnim(void) {
 	CmdLex_Next();

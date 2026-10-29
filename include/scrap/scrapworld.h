@@ -10,7 +10,7 @@
 #ifndef SCRAP_SCRAPWORLD_H
 #define SCRAP_SCRAPWORLD_H
 
-#include "scrap/mundo.h"
+#include "scrap/e3dworld.h"
 
 /* what the world node info functions give for one dummy or node */
 typedef struct WorldNodeInfo {

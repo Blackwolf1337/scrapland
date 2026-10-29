@@ -8,9 +8,9 @@
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/global.h"
-#include "scrap/grafico2d.h"
+#include "scrap/graphic2d.h"
 #include "scrap/material.h"
-#include "scrap/modelo.h"
+#include "scrap/model.h"
 #include "scrap/flare.h"
 #include "scrap/render.h"
 

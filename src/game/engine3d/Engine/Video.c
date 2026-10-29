@@ -10,7 +10,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/filesys.h"
 #include "scrap/scrapmain.h"
-#include "scrap/varios.h"
+#include "scrap/misc.h"
 #include "scrap/video.h"
 #include "scrap/win32.h"
 

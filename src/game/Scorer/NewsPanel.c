@@ -3,7 +3,7 @@
  * not known): the texture "NewsPanel" with the news head, or the entities the police watch while the alarm is on.
  * See include/scrap/scoreritems.h.
  */
-#include "scrap/fuentes.h"
+#include "scrap/fonts.h"
 #include "scrap/scoreritems.h"
 #include "scrap/scrapcamera.h"
 #include "scrap/scrapmodel.h"

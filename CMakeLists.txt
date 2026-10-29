@@ -28,7 +28,8 @@ foreach(lib scrapcode scrapcode_sa)
 		src/core/log.c
 		src/core/testmod.c
 	)
-	# the decompiled game code, in the folder layout of the original sources (paths from the asserts in Scrap.exe)
+	# the decompiled game code, in the folder layout of the original sources (paths from the asserts in Scrap.exe), the
+	# file names in English (docs/rename.md)
 	target_sources(${lib} PRIVATE ${GAME_SOURCES})
 	target_sources(${lib} PRIVATE ${LIB_SOURCES})
 	target_include_directories(${lib} PUBLIC

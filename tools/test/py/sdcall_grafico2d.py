@@ -1,4 +1,4 @@
-# engine3d Engine/Grafico2D.c: screen sprites made here, their materials and their drawing through the D3D log, with
+# engine3d Engine/Graphic2D.c: screen sprites made here, their materials and their drawing through the D3D log, with
 # the viewport size set for the draw (it is 0 between frames). Python 1.5.2, runs inside sdcall.py after the other
 # checks: check, fmt come from there. Not with 0x40: a multi sprite needs a texture made as one (fatal CHECK).
 def g2new(n):

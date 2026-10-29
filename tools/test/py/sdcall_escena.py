@@ -1,4 +1,4 @@
-# engine3d Engine/Escena.c: scenes built in heap memory, nodes without objects or with small CTriMesh meshes
+# engine3d Engine/Scene.c: scenes built in heap memory, nodes without objects or with small CTriMesh meshes
 # (Python 1.5.2, runs inside sdcall.py after the other checks: check, fmt come from there). Nodes are printed as
 # their index in esnodes, floats as their bits. Not tested here: CScene_Read/Write, ConvertD3D, ToSuelo, CalcPesos,
 # PrecalcIlum and SetAlpha with real objects (the sdlevel scenario loads scenes through them), CompactMats.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Names the hooks of one block of src/hooks.inc in symbols/functions.tsv: the calling convention and the Ghidra
 # signature come from the C prototype in include/scrap/*.h (or the .c files). Runs tools/symname.py, 4 at a time.
-# usage: tools/hooksym.py <block>   (block: the text of its marker comment, e.g. "Engine/Modelo" or "Modelo.c")
+# usage: tools/hooksym.py <block>   (block: the text of its marker comment, e.g. "Engine/Model" or "Model.c")
 #        tools/hooksym.py -n <block>  only prints the symname arguments
 import glob
 import re

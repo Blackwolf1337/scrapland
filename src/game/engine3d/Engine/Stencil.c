@@ -8,20 +8,20 @@
 
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
-#include "scrap/fuentes.h"
-#include "scrap/luz.h"
-#include "scrap/mallad3d.h"
+#include "scrap/fonts.h"
+#include "scrap/light.h"
+#include "scrap/meshd3d.h"
 #include "scrap/material.h"
-#include "scrap/modelo.h"
+#include "scrap/model.h"
 #include "scrap/prof.h"
 #include "scrap/render.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
 #include "scrap/stencil.h"
-#include "scrap/suelo.h"
+#include "scrap/ground.h"
 #include "scrap/utild3d.h"
 #include "scrap/bsp.h"
-#include "scrap/varios.h"
+#include "scrap/misc.h"
 
 
 #define LIGHT_DIRECTIONAL 0x138a

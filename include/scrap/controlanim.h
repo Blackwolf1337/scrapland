@@ -5,7 +5,7 @@
 #ifndef SCRAP_CONTROLANIM_H
 #define SCRAP_CONTROLANIM_H
 
-#include "scrap/animacion.h"
+#include "scrap/animation.h"
 #include "scrap/e3dutil.h"
 
 /* CAnimCtrl.state */

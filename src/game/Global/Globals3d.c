@@ -10,7 +10,7 @@
 #ifdef SD_STANDALONE
 
 #include "scrap/dxutil.h"
-#include "scrap/luz.h"
+#include "scrap/light.h"
 
 #undef GUID_SYSKEYBOARD
 #undef GUID_SYSMOUSE

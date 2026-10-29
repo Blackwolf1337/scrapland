@@ -1,10 +1,10 @@
 /*
- * The height of the floor at a point, original source Engine/gety.cpp (include/scrap/ground.h, sueloportal.h): the
+ * The height of the floor at a point, original source Engine/gety.cpp (include/scrap/ground.h, groundportal.h): the
  * vertical ray through the collision triangles of the grid cell of x, z.
  */
 #include "scrap/scrap.h"
-#include "scrap/suelo.h"
-#include "scrap/sueloportal.h"
+#include "scrap/ground.h"
+#include "scrap/groundportal.h"
 
 #define GETY_FLT_MAX 3.4028234663852886e+38f
 

@@ -1,4 +1,4 @@
-# engine3d Engine/Suelo.c (run by sdcall.py after its own checks, its helpers in scope, Python 1.5.2): the geometry
+# engine3d Engine/Ground.c (run by sdcall.py after its own checks, its helpers in scope, Python 1.5.2): the geometry
 # helpers on random input, collision meshes, quads and whole floors (CGround) in heap memory with meshes of known
 # triangles, then many random spheres and sweeps against them. The engine variables the floor code uses are saved
 # and put back at the end. The floors with meshes are leaked (their destructor CHECKs that no quad uses a mesh), the
@@ -366,7 +366,7 @@ check('CCollideQuad_Delete', lambda: (SDTest.Call('CCollideQuad_Delete', 'tiii',
 SDTest.Poke('g_CollisionNComp', -1)
 check('CGround_NewQuery wrap', lambda: (SDTest.Call('CGround_NewQuery', 'tvi', su), suglobals(), suwords(mesh1, 3), sumtri(mesh1, 0), sumtri(mesh1, 5)))
 check('CGround_NewQuery', lambda: (SDTest.Call('CGround_NewQuery', 'tvi', su), suglobals()))
-# the tables of tabla.h
+# the tables of table.h
 tb = sunew(8)
 check('Table_Free', lambda: (SDTest.Call('Table_Alloc2', 'tvii', tb, 5), SDTest.Call('Table_Free@2589c0', 'tvi', tb), suwords(tb, 2)))
 check('Table_Free empty', lambda: (SDTest.Call('Table_Free@2589c0', 'tvi', tb), suwords(tb, 2)))

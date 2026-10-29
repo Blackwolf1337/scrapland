@@ -1,4 +1,4 @@
-# engine3d Engine/MallaTri.c (execfile'd at the end of sdcall.py, Python 1.5.2): triangle meshes in heap memory.
+# engine3d Engine/TriMesh.c (execfile'd at the end of sdcall.py, Python 1.5.2): triangle meshes in heap memory.
 # The arrays are printed by content, never by address; materials are small numbers (Draw, the only user, is not
 # called: it always fails a CHECK). The CVertList and CMeshD3D inputs are fake records with format VERT_TEX1 and
 # others.

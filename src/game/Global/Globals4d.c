@@ -9,19 +9,19 @@
 
 #ifdef SD_STANDALONE
 
-#include "scrap/animacion.h"
+#include "scrap/animation.h"
 #include "scrap/bmp.h"
 #include "scrap/bsp.h"
-#include "scrap/fuentes.h"
+#include "scrap/fonts.h"
 #include "scrap/global.h"
-#include "scrap/grafico2d.h"
+#include "scrap/graphic2d.h"
 #include "scrap/lensflare.h"
-#include "scrap/mallad3d.h"
 #include "scrap/material.h"
-#include "scrap/modelo.h"
+#include "scrap/meshd3d.h"
+#include "scrap/model.h"
 #include "scrap/render.h"
 #include "scrap/scrap.h"
-#include "scrap/tabla.h"
+#include "scrap/table.h"
 #include "scrap/trails.h"
 
 #undef g_ActAnimBlock

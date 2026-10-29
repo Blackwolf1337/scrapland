@@ -3,7 +3,7 @@
  */
 #include "scrap/scrapparticles.h"
 #include "scrap/scrapmain.h"
-#include "scrap/textura.h"
+#include "scrap/texture.h"
 
 #define SP_CHECK(self) \
 	do { \

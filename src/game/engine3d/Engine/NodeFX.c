@@ -2,12 +2,12 @@
  * Engine/NodeFX.cpp of the engine3d: the node effects, see include/scrap/nodefx.h.
  */
 #include "scrap/archio.h"
-#include "scrap/fuentes.h"
+#include "scrap/fonts.h"
 #include "scrap/global.h"
 #include "scrap/nodefx.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/utild3d.h"
-#include "scrap/varios.h"
+#include "scrap/misc.h"
 #include "scrap/e3dutil.h"
 
 /* the distance of a and b */

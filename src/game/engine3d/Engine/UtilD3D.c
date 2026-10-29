@@ -2,7 +2,7 @@
  * Engine/util_d3d.cpp of the engine3d: debug lines, see include/scrap/utild3d.h.
  */
 #include "scrap/e3dutil.h"
-#include "scrap/nodo3d.h"
+#include "scrap/node3d.h"
 #include "scrap/utild3d.h"
 
 static int Color_Clamp(int v) {

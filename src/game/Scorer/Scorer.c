@@ -10,7 +10,7 @@
 #include "scrap/camcontrol.h"
 #include "scrap/console.h"
 #include "scrap/embeddedfxchar.h"
-#include "scrap/fuentes.h"
+#include "scrap/fonts.h"
 #include "scrap/nodesworld.h"
 #include "scrap/nodesworld2d.h"
 #include "scrap/pymempool.h"

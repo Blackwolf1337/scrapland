@@ -10,13 +10,13 @@
 #define SCRAP_BSP_H
 
 #include "scrap/bmpflt.h"
-#include "scrap/listavert.h"
-#include "scrap/luz.h"
+#include "scrap/vertlist.h"
+#include "scrap/light.h"
 #include "scrap/material.h"
-#include "scrap/mundo.h"
+#include "scrap/e3dworld.h"
 #include "scrap/render.h"
-#include "scrap/tabla.h"
-#include "scrap/tablahash.h"
+#include "scrap/table.h"
+#include "scrap/e3dhashtable.h"
 
 #define BSP_MAX_LISTS 80000
 #define BSP_MAX_NOLMAP 20000
@@ -485,7 +485,7 @@ void __fastcall CBsp_RadAreas(CBsp *self);
 /* the light maps computed: the lists of the meshes of the scene, their light, the pages and the .EMI */
 void __fastcall CBsp_Calculate(CBsp *self);
 
-/* the float edits of the dialogs (src/game/engine3d/Engine/Varios.c): set returns 1, get 1 for a number */
+/* the float edits of the dialogs (src/game/engine3d/Engine/Misc.c): set returns 1, get 1 for a number */
 byte Dlg_SetFloat(void *hwnd, int id, float v, int prec);
 byte Dlg_GetFloat(void *hwnd, int id, float *out);
 
@@ -549,7 +549,7 @@ void __thiscall Bsp2_Build(BspLights *self, Bsp2Node *node, int depth);
 void Bsp2_Split(byte countOnly, Bsp2Node *node, const plane_t *pl, int *outFront, int *outBack);
 
 /*
- * Engine/radiosidad.cpp (Radiosidad.c): the regions and links of the radiosity, and the area lights of the
+ * Engine/radiosidad.cpp (Radiosity.c): the regions and links of the radiosity, and the area lights of the
  * materials: a material named "(+area_light: name)" (MAT_AREALIGHT, older ones "(+name)") emits the light of the
  * section name of the .rad files of the map ("rgbi", "aten", "falloff").
  */

@@ -95,7 +95,7 @@ void __thiscall Matrix_RotZ(matrix_t *self, float ang);
 void __thiscall Matrix_RotAxis(matrix_t *self, const vec3_t *axis, float ang);
 const vec3_t *__thiscall Matrix_Translate(matrix_t *self, const vec3_t *v);	/* returns v */
 byte Matrix_TransformProject(vec3_t *out, const vec3_t *v, const matrix_t *m);
-/* the math of the engine3d (matriz.h: src/game/engine3d/Engine/Calculo3d.c and Math/Matrix.c), D3DX through
+/* the math of the engine3d (matriz.h: src/game/engine3d/Engine/Calc3d.c and Math/Matrix.c), D3DX through
  * the stubs of the exe */
 matrix_t *Matrix_LoadIdentity(matrix_t *m);			/* src/game/ScrapEng/ScrapEngWorld.c */
 const vec3_t *Matrix_PostScale(matrix_t *m, const vec3_t *s);	/* rva 0x239210, Matrix_Scale, returns s */
@@ -148,7 +148,7 @@ void Game_SinPd(const double in[2], double out[2]);
 void Game_CosPd(const double in[2], double out[2]);
 
 
-/* Engine/calculo3d.cpp (src/game/engine3d/Engine/Calculo3d.c) */
+/* Engine/calculo3d.cpp (src/game/engine3d/Engine/Calc3d.c) */
 void Matrix_AddPos(matrix_t *m, const vec3_t *v);
 /* v * m divided by w, no check of w; 0 */
 int Vec3_TransformH(vec3_t *out, const vec3_t *v, const matrix_t *m);

@@ -10,7 +10,7 @@
 #define SCRAP_STENCIL_H
 
 #include "scrap/e3dutil.h"
-#include "scrap/luz.h"
+#include "scrap/light.h"
 #include "scrap/material.h"
 #include "scrap/render.h"
 

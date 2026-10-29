@@ -6,12 +6,12 @@
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/global.h"
-#include "scrap/grafico3d.h"
-#include "scrap/listavert.h"
-#include "scrap/mallad3d.h"
-#include "scrap/modelo.h"
+#include "scrap/graphic3d.h"
+#include "scrap/vertlist.h"
+#include "scrap/meshd3d.h"
+#include "scrap/model.h"
 #include "scrap/render.h"
-#include "scrap/sistpart.h"
+#include "scrap/particlesystem.h"
 
 #define D3DFVF_TEX1 0x112		/* XYZ | NORMAL | TEX1 */
 #define D3DFVF_PART 0x1c2		/* XYZ | DIFFUSE | SPECULAR | TEX1 */

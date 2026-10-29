@@ -1,4 +1,4 @@
-# engine3d Engine/Texto.c: the message stack (with the game's own stack put aside) and the text cursor. Python 1.5.2,
+# engine3d Engine/Text.c: the message stack (with the game's own stack put aside) and the text cursor. Python 1.5.2,
 # runs inside sdcall.py after the other checks: check, fmt come from there. The GDI output itself is not compared;
 # Text_DrawStack is not tested (its text needs the viewport of a frame being drawn, Python runs between frames).
 def txi(a):

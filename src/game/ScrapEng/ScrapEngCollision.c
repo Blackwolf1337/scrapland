@@ -4,10 +4,10 @@
 #include <string.h>
 
 #include "scrap/console.h"
-#include "scrap/mundo.h"
+#include "scrap/e3dworld.h"
 #include "scrap/prof.h"
 #include "scrap/scrapcollision.h"
-#include "scrap/sueloportal.h"
+#include "scrap/groundportal.h"
 
 void __fastcall ProfScope_End(const int *section) {
 	Prof_End(*section);

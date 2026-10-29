@@ -29,7 +29,7 @@ for s in ('', 'abc', 'x' * 20):
 for s in ('', ' a ', '\t a\tb \t', 'abc'):
 	call('Str_TrimBlanks', sym('Str_TrimBlanks'), 'vb', s)
 
-# engine3d Util/Comodin.c
+# engine3d Util/Wildcard.c
 paths = ('', 'a', 'a.b', '.a', 'a.', '.', '..', 'dir\\', 'dir/', 'C:', 'C:a', 'C:\\a\\b.c', 'c:/x/y/z.tar.gz',
 	'\\\\srv\\share\\f.x', 'a b .c  ', '   ', 'x\\.', 'x\\..', 'C:.', 'C:..', '..\\a', 'd:x\\', 'a:b:c', '1:2',
 	'Bin\\Scrap.exe', 'x' * 300, 'd/' + 'y' * 300 + '.e', 'a.' + 'e' * 300)
@@ -82,7 +82,7 @@ for d in ('', 'C', 'C:', 'x', 'dir'):
 		call('Path_Make', sym('Path_Make'), 'vbzzzz', '', d, d + 'x\\', n, '.e')
 		call('Path_Make NULL', sym('Path_Make'), 'vbzzzz', '', None, None, None, None)
 
-# engine3d Util/Cadenas.c and Bprintf.c
+# engine3d Util/Strings.c and Bprintf.c
 for s, pos in (('abc', 0), ('abc', 1), ('abc', 3), ('', 0)):
 	call('String_InsertChar', sym('String_InsertChar'), 'vbiii', s, ord('X'), pos, len(s))
 for s in ('', '1', '123', '1234', '1234567', '-1234567', 'x123456', '12x3456789', '0000000000'):
@@ -184,7 +184,7 @@ check('Lex out', SDTest.Out)
 call('Lex_Error', sym('Lex_Error'), 'viss', 2, 'info %s', 'no file')
 check('Lex out', SDTest.Out)
 
-# engine3d Util/Errores.c: no reports, they end the game (Con_FatalErrorf) or open a message box
+# engine3d Util/Errors.c: no reports, they end the game (Con_FatalErrorf) or open a message box
 for c in (0, 1, 2, 3, 49, 50, 199, 200, -1, -2):
 	call('Err_Str', sym('Err_Str'), 'si', c)
 errtext = 'sdtest error'
@@ -198,7 +198,7 @@ call('Err_Unregister 200', sym('Err_Unregister'), 'si', 200)
 call('Dbg_FrameRect', sym('Dbg_FrameRect'), 'viiiii', 1, 2, 30, 40, 0x123456)
 call('Dbg_FillRect', sym('Dbg_FillRect'), 'viiiii', 1, 2, 30, 40, 0x654321)
 
-# engine3d Util/Listadin.c: elements of 8 bytes written with String_Copy; addresses differ between the runs, so only
+# engine3d Util/DynList.c: elements of 8 bytes written with String_Copy; addresses differ between the runs, so only
 # offsets and contents are compared
 def ldin(d, contents=1):
 	n = SDTest.Peek(d + 12, '@i')
@@ -257,7 +257,7 @@ check('DynList_Count', lambda: SDTest.Call('DynList_Count', 'ii', d))
 lstep('DynList_Clear', sym('DynList_Clear'), 'vi', d)
 check('DynList_Free', lambda: SDTest.Call('DynList_Free', 'vi', d))
 
-# engine3d Util/Arch_dat.c and Dat_simp.c: lines added one by one (DataFile_Load only reads files in the packs)
+# engine3d Util/DataFile.c and Dat_simp.c: lines added one by one (DataFile_Load only reads files in the packs)
 inilines = ('; head comment', '[Main]', 'Name = Scrap  ; the name', '  Count=12', 'flag = SI', 'Float = 1.5', 'Big = 1e3',
 	'Word = 65000', 'Item = one', 'Item = two words  ', 'Empty =', 'Semi = ;only comment', 'NoEq', '', '[ Other ]  ',
 	'name = other\t;tab', '[]', 'Item = three')
@@ -383,7 +383,7 @@ for i in range(16):
 		SDTest.Poke(sym('g_ProcTypes') + 12 * i, 0)
 check('Proc types', lambda: map(lambda i: SDTest.Peek(sym('g_ProcTypes') + 12 * i, 'p'), range(16)))
 
-# engine3d Engine/ArchIO.c: reads only (writing blocks and seeking need the pack building mode, else a CHECK
+# engine3d Engine/FileIO.c: reads only (writing blocks and seeking need the pack building mode, else a CHECK
 # fails), CFileIO on a block file of the packs
 for t in ('ABCD', 'AB', '', 'ABCDEF', 'DUM'):
 	call('IdToDword', sym('IdToDword'), 'is', t)
@@ -585,7 +585,7 @@ for q1, q2 in (((0.0, 0.0, 0.9, 0.1), (0.0, 0.0, -0.9, 0.1)), ((0.7, 0.0, 0.0, -
 	for t in (0.0, 0.3, 1.0):
 		fcall('Quat_SlerpFlip s', sym('Quat_SlerpFlip'), 'bFFFf', (0.0, 0.0, 0.0, 0.0), q1, q2, t)
 
-# engine3d Engine/ArchINI.c on two ini files of the packs
+# engine3d Engine/IniFile.c on two ini files of the packs
 ini = SDTest.Call('Mem_Alloc', 'ii', 4)[0]
 def istep(name, rva, sig, *args):
 	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: apply(SDTest.Call, (rva, sig, ini) + args))
@@ -641,7 +641,7 @@ istep('CIniFile_Count', sym('CIniFile_Count'), 'tii')
 SDTest.Call('CIniFile_dtor', 'tvi', ini)
 SDTest.Call('Mem_Free', 'vi', ini)
 
-# engine3d Engine/TablaHash.c
+# engine3d Engine/HashTable.c
 th = SDTest.Call('Mem_Alloc', 'ii', 12)[0]
 def tstep(name, rva, sig, *args):
 	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: apply(SDTest.Call, (rva, sig, th) + args))
@@ -681,7 +681,7 @@ check('CHashTable_GetList', tlist)
 SDTest.Call('CHashTable_dtor', 'tvi', th)
 SDTest.Call('Mem_Free', 'vi', th)
 
-# engine3d Engine/LeeDatos.c on an ini of the packs (only pack files open, one at a time), Read_String on a buffer
+# engine3d Engine/ReadData.c on an ini of the packs (only pack files open, one at a time), Read_String on a buffer
 # put in g_ReadString
 def lee():
 	return SDTest.Peek('g_ReadString', 'p'), SDTest.Peek('g_ReadStack', 'i') != 0
@@ -947,7 +947,7 @@ check('TGA_Save long', lambda: (SDTest.Call('TGA_Save', 'isii', 'sdlong.tga', cr
 bfree(cr)
 bfree(cs)
 
-# engine3d Engine/LeeM3D.c: the M3D values in text (an ini of the packs) and binary (a bmp, the ini read as binary)
+# engine3d Engine/ReadM3D.c: the M3D values in text (an ini of the packs) and binary (a bmp, the ini read as binary)
 def m3dmode(binary, labels):
 	v = SDTest.Peek('g_M3DBinary', 'i')
 	SDTest.Poke('g_M3DBinary', (v & -0x10000) + binary + (labels << 8))
@@ -1033,7 +1033,7 @@ mstep('M3D_ReadIndex bin', sym('M3D_ReadIndex'), 'vi', -38)
 SDTest.Call('Read_Close', 'i')
 SDTest.Poke('g_M3DBinary', m3dsaved)
 
-# engine3d Engine/Tabla.c: the array template instances; the readers on .sm3 files of the packs at offsets where a
+# engine3d Engine/Table.c: the array template instances; the readers on .sm3 files of the packs at offsets where a
 # count and an element size follow
 def tpeek(addr, n):
 	v = []
@@ -1201,7 +1201,7 @@ evastep('CEVA_Alloc', sym('CEVA_Alloc'), 'tvii', 4)
 evastep('CEVA_dtor', sym('CEVA_Free'), 'tvi')
 SDTest.Call('Mem_Free', 'vi', eva)
 
-# engine3d Engine/Varios.c: logs, file and string helpers
+# engine3d Engine/Misc.c: logs, file and string helpers
 for p in ('a.txt', 'dir/x/../y.txt', './a/./b', 'a/../../b', '../x', 'a\\b\\..\\c', 'C:\\abs\\p', '\\root', '/root', 'a..b/c', 'x/.../y',
 		'..', '.', 'a/.', 'a/..', 'a//b', 'levels/menu/./map/../map/map3d.ini', 'a/b/c/../../d', 'x:', 'x:y/../z', '.hidden', 'a/.b'):
 	for n in (-1, 8, 300):
@@ -1230,7 +1230,7 @@ for m in (1, 2, 4, 8, 0x10, 0x20, 0x40, 0x80, 0xff, 0):
 	check('cLog_Write' + fmt((m,)), lambda m=m: SDTest.Call('cLog_Write', 'tviis', sym('g_FileLog') + 0x400000, m, 'sdlog write'))
 call('E3D_DebugPrintf', sym('E3D_DebugPrintf'), 'vs', 'sdlog debug')
 
-# engine3d Engine/Camara.c on cameras in heap memory; nodes are fake (only Refs), kept above 1
+# engine3d Engine/Camera.c on cameras in heap memory; nodes are fake (only Refs), kept above 1
 def camget(c):
 	return tpeek(c, 30)
 def camstep(name, c, rva, sig, *args):

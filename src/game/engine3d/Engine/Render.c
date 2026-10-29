@@ -4,20 +4,20 @@
 #include <string.h>
 
 #include "scrap/archio.h"
-#include "scrap/camara.h"
+#include "scrap/camera.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
-#include "scrap/escena.h"
-#include "scrap/grafico2d.h"
-#include "scrap/listavert.h"
-#include "scrap/mallad3d.h"
-#include "scrap/modelo.h"
+#include "scrap/scene.h"
+#include "scrap/graphic2d.h"
+#include "scrap/vertlist.h"
+#include "scrap/meshd3d.h"
+#include "scrap/model.h"
 #include "scrap/material.h"
-#include "scrap/niebla.h"
-#include "scrap/nodo3d.h"
-#include "scrap/textura.h"
+#include "scrap/fog.h"
+#include "scrap/node3d.h"
+#include "scrap/texture.h"
 #include "scrap/utild3d.h"
-#include "scrap/varios.h"
+#include "scrap/misc.h"
 
 static void Render_TSS(uint32_t stage, uint32_t type, uint32_t value) {
 	void *dev = g_pd3dDevice;

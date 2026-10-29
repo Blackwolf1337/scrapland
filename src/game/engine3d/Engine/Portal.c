@@ -2,13 +2,13 @@
  * Engine/portal.cpp of the engine3d: CPortal, see include/scrap/portal.h.
  */
 #include "scrap/e3dutil.h"
-#include "scrap/mundo.h"
+#include "scrap/e3dworld.h"
 #include "scrap/portal.h"
 #include "scrap/render.h"
-#include "scrap/sistpart.h"
-#include "scrap/suelo.h"
+#include "scrap/particlesystem.h"
+#include "scrap/ground.h"
 #include "scrap/utild3d.h"
-#include "scrap/varios.h"
+#include "scrap/misc.h"
 
 CPortal *__fastcall CPortal_ctor(CPortal *self) {
 	self->node = NULL;

@@ -6,16 +6,16 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
-#include "scrap/listavert.h"
-#include "scrap/luz.h"
-#include "scrap/mallad3d.h"
-#include "scrap/mallatri.h"
-#include "scrap/mundo.h"
+#include "scrap/vertlist.h"
+#include "scrap/light.h"
+#include "scrap/meshd3d.h"
+#include "scrap/trimesh.h"
+#include "scrap/e3dworld.h"
 #include "scrap/render.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
-#include "scrap/varios.h"
+#include "scrap/misc.h"
 
 #define GM_CHECK(self) \
 	do { \

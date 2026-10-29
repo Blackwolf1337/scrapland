@@ -12,8 +12,8 @@
 #include "scrap/render.h"
 #include "scrap/scrapcamera.h"
 #include "scrap/scrapmain.h"
-#include "scrap/textura.h"
-#include "scrap/varios.h"
+#include "scrap/texture.h"
+#include "scrap/misc.h"
 #include "scrap/win32.h"
 
 #define CD3DAPPLICATION_VFTABLE GAME_VFTABLE(CD3DApplication_vftable, 0x3dd208)

@@ -885,7 +885,7 @@ SD_HOOK(SScorer_AddModel, 0x19dea0, 215)
 SD_HOOK(SScorer_SetMPFunc, 0x19df80, 84)
 SD_HOOK(SScorer_PreloadTexture, 0x19dfe0, 84)
 
-/* src/game/engine3d/Util/Comodin.c */
+/* src/game/engine3d/Util/Wildcard.c */
 SD_HOOK(Path_GetDrive, 0x22b410, 46)
 SD_HOOK(Path_MakeDir, 0x22b450, 304)
 SD_HOOK(Wild_MatchSet, 0x22b590, 168)
@@ -909,7 +909,7 @@ SD_HOOK(Path_LastDir, 0x22cd20, 197)
 SD_HOOK(Path_DriveNum, 0x22cdf0, 84)
 SD_HOOK(Path_GetCwd, 0x22ce50, 179)
 
-/* src/game/engine3d/Util/Cadenas.c */
+/* src/game/engine3d/Util/Strings.c */
 SD_HOOK(String_InsertChar, 0x22cf10, 51)
 SD_HOOK(String_Copy, 0x22cf50, 75)
 SD_HOOK(String_Dup, 0x22cfa0, 81)
@@ -956,7 +956,7 @@ SD_HOOK(CmdLex_SkipTo, 0x2cdfe0, 320)
 SD_HOOK(CmdLex_SkipToAny, 0x2ce120, 334)
 SD_HOOK(CmdLex_Next, 0x2ce270, 307)
 
-/* src/game/engine3d/Util/Errores.c */
+/* src/game/engine3d/Util/Errors.c */
 SD_HOOK(Dbg_FrameRect, 0x27cc30, 171)
 SD_HOOK(Dbg_FillRect, 0x27ccf0, 171)
 SD_HOOK(Err_Unregister, 0x27cda0, 40)
@@ -968,7 +968,7 @@ SD_HOOK(Err_Printf, 0x27cea0, 25)
 SD_HOOK(Err_Report, 0x27cec0, 26)
 SD_HOOK(Err_VReport, 0x27cee0, 254)
 
-/* src/game/engine3d/Util/Listadin.c */
+/* src/game/engine3d/Util/DynList.c */
 SD_HOOK(DynList_Free, 0x2d4b00, 31)
 SD_HOOK(DynList_New, 0x2d4b20, 56)
 SD_HOOK(DynList_NewBlock, 0x2d4b60, 95)
@@ -984,7 +984,7 @@ SD_HOOK(DynList_Insert, 0x2d50d0, 148)
 SD_HOOK(DynList_Move, 0x2d5170, 340)
 SD_HOOK(DynList_Clear, 0x2d52d0, 113)
 
-/* src/game/engine3d/Util/Arch_dat.c */
+/* src/game/engine3d/Util/DataFile.c */
 SD_HOOK(DataFile_AddSection, 0x2a1ac0, 183)
 SD_HOOK(DataFile_AddLine, 0x2a1b80, 87)
 SD_HOOK(DataFile_InsertAt, 0x2a1be0, 244)
@@ -1143,7 +1143,7 @@ SD_HOOK(CGameModel_StopAnim, 0x2124d0, 56)
 SD_HOOK(CRotation_SetEuler, 0x212510, 84)
 SD_HOOK(CAnimMat_SetFrame, 0x258090, 25)
 
-/* src/game/ScrapEng/ScrapEngCollision.c (CVertList_GetPos in MallaTri.c) */
+/* src/game/ScrapEng/ScrapEngCollision.c (CVertList_GetPos in TriMesh.c) */
 SD_HOOK(CVertList_GetPos, 0x212570, 469)
 SD_HOOK(ProfScope_End, 0x212770, 57)
 SD_HOOK(CollisionEpsilon_Set, 0x2127b0, 271)
@@ -1189,7 +1189,7 @@ SD_HOOK(Font_Get, 0x21ad30, 193)
 SD_HOOK(Fonts_Load, 0x21ae00, 948)
 SD_HOOK(Fonts_Unifont, 0x21b1c0, 24)
 
-/* src/game/engine3d/Engine/ArchIO.c */
+/* src/game/engine3d/Engine/FileIO.c */
 SD_HOOK(CFileIO_ctor, 0x21b1f0, 105)
 SD_HOOK(CFileIO_dtor, 0x21b290, 99)
 SD_HOOK(Ptr_Delete, 0x21b300, 33)
@@ -1300,7 +1300,7 @@ SD_HOOK(Vec3_Rotate, 0x15e3b0, 277)
 SD_HOOK(Vec3_Rotate, 0x238bc0, 277)
 SD_HOOK(Vec3_RotateXY, 0x15e4d0, 178)
 
-/* src/game/engine3d/Engine/ArchINI.c */
+/* src/game/engine3d/Engine/IniFile.c */
 SD_HOOK(CIniFile_ctorLoad, 0x2618e0, 156)
 SD_HOOK(CIniFile_ctor, 0x261980, 14)
 SD_HOOK(CIniFile_dtor, 0x261990, 59)
@@ -1387,7 +1387,7 @@ SD_HOOK(CBmpFlt2_Blend, 0x2d0450, 402)
 SD_HOOK(CBmpFlt2_Resample, 0x2d05f0, 231)
 SD_HOOK(CBmpFlt2_Pixel, 0x2906b0, 127)
 
-/* src/game/engine3d/Engine/MallaTri.c */
+/* src/game/engine3d/Engine/TriMesh.c */
 SD_HOOK(CTriMesh_ctorCopy, 0x262510, 220)
 SD_HOOK(CTriMesh_ctorD3D, 0x2625f0, 219)
 SD_HOOK(CTriMesh_ctor, 0x2626d0, 153)
@@ -1429,7 +1429,7 @@ SD_HOOK(CVertList_GetUV, 0x264580, 267)
 SD_HOOK(CTriMesh_GetSkin, 0x2646c0, 91)
 SD_HOOK(CTriMesh_Transform, 0x264720, 820)
 
-/* src/game/engine3d/Engine/Tabla.c */
+/* src/game/engine3d/Engine/Table.c */
 SD_HOOK(Table_Alloc4, 0x250b50, 112)
 SD_HOOK(Table_Alloc10Z, 0x255f40, 173)
 SD_HOOK(Table_New8, 0x255ff0, 223)
@@ -1462,7 +1462,7 @@ SD_HOOK(Table_Alloc8, 0x2c2bf0, 112)
 SD_HOOK(Table_New1C, 0x2c2c60, 223)
 SD_HOOK(Table_Alloc38, 0x2d2000, 115)
 
-/* src/game/engine3d/Engine/TablaHash.c */
+/* src/game/engine3d/Engine/HashTable.c */
 SD_HOOK(CHashTable_ctor, 0x2d06e0, 102)
 SD_HOOK(CHashTable_dtor, 0x2d0750, 171)
 SD_HOOK(CHashTable_AddInt, 0x2d0800, 73)
@@ -1476,7 +1476,7 @@ SD_HOOK(CHashTable_List, 0x2d0b00, 106)
 SD_HOOK(CHashTable_GetList, 0x2d0b70, 174)
 SD_HOOK(CHashTable_Slot, 0x2d0c20, 109)
 
-/* src/game/engine3d/Engine/LeeM3D.c */
+/* src/game/engine3d/Engine/ReadM3D.c */
 SD_HOOK(CM3_Load, 0x2bc360, 593)
 SD_HOOK(SM3_Load, 0x2bc5c0, 641)
 SD_HOOK(M3D_SetOk, 0x2c0c40, 59)
@@ -1505,7 +1505,7 @@ SD_HOOK(M3D_ReadFloat, 0x2bd430, 117)
 SD_HOOK(M3D_ReadIndex, 0x2be9f0, 116)
 SD_HOOK(M3D_ReadInt, 0x2bea70, 170)
 
-/* src/game/engine3d/Engine/Varios.c */
+/* src/game/engine3d/Engine/Misc.c */
 SD_HOOK(cLog_Open, 0x237730, 209)
 SD_HOOK(cLog_Close, 0x237810, 26)
 SD_HOOK(E3D_LogWhite, 0x237b00, 210)
@@ -1587,7 +1587,7 @@ SD_HOOK(Light_NumTotal, 0x23ce30, 6)
 SD_HOOK(CLight_UpdateD3D, 0x23ce40, 184)
 SD_HOOK(Box_Zero, 0x23cf00, 59)
 
-/* src/game/engine3d/Engine/Camara.c */
+/* src/game/engine3d/Engine/Camera.c */
 SD_HOOK(CCamera_ctorCopy, 0x29bf50, 446)
 SD_HOOK(CCamera_ctor, 0x29c110, 242)
 SD_HOOK(CCamera_dtor, 0x29c210, 227)
@@ -1665,7 +1665,7 @@ SD_HOOK(CMap_FramePath, 0x236e70, 133)
 SD_HOOK(CMatList_Delete, 0x236f00, 126)
 SD_HOOK(Tex_TryFormat, 0x236f80, 147)
 
-/* src/game/engine3d/Engine/Calculo3d.c */
+/* src/game/engine3d/Engine/Calc3d.c */
 SD_HOOK(Matrix_AddPos, 0x23a4d0, 55)
 SD_HOOK(Vec3_TransformH, 0x23a510, 211)
 SD_HOOK(Vec3_TransformDir0, 0x23a5f0, 144)
@@ -1675,7 +1675,7 @@ SD_HOOK(Vec3_StrDeg, 0x23a9b0, 163)
 SD_HOOK(Vec3_Str, 0x23aa60, 123)
 SD_HOOK(E3D_MathErr, 0x23aae0, 111)
 
-/* src/game/engine3d/Engine/ListaVert.c */
+/* src/game/engine3d/Engine/VertList.c */
 SD_HOOK(CVertList_ctor, 0x23fbd0, 37)
 SD_HOOK(CVertList_Free, 0x23fc00, 95)	/* the destructor */
 SD_HOOK(VertList_Strip, 0x23fc60, 1100)
@@ -1743,7 +1743,7 @@ SD_HOOK(VertCache_Oldest, 0x243990, 51)
 SD_HOOK(VertCache_Find, 0x2439d0, 36)
 SD_HOOK(VertCache_Compare, 0x243a00, 162)
 
-/* src/game/engine3d/Engine/LeeDatos.c */
+/* src/game/engine3d/Engine/ReadData.c */
 SD_HOOK(Read_String, 0x2d58a0, 236)
 SD_HOOK(Read_Pop, 0x2d59d0, 88)
 SD_HOOK(Read_Expect, 0x2d5a30, 232)
@@ -1758,7 +1758,7 @@ SD_HOOK(Read_Bytes, 0x2d5e70, 182)
 SD_HOOK(Read_Byte, 0x2d5f30, 108)
 SD_HOOK(Read_Int, 0x2d5fa0, 102)
 
-/* src/game/engine3d/Engine/Escena.c (Engine/escena.cpp; Box_Merge: its copy in MallaD3D.cpp) */
+/* src/game/engine3d/Engine/Scene.c (Engine/escena.cpp; Box_Merge: its copy in MallaD3D.cpp) */
 SD_HOOK(CScene_ctor, 0x24e7d0, 230)
 SD_HOOK(CScene_dtor, 0x24e8c0, 528)
 SD_HOOK(CScene_Delete, 0x24ead0, 35)
@@ -1792,7 +1792,7 @@ SD_HOOK(CScene_RemoveNode, 0x250d30, 140)
 SD_HOOK(Table_Resize4, 0x250dc0, 141)
 SD_HOOK(Box_Merge, 0x2b8870, 144)
 
-/* src/game/engine3d/Engine/EventoAnim.c */
+/* src/game/engine3d/Engine/AnimEvent.c */
 SD_HOOK(CAnimEvent_ctor2, 0x2bb8b0, 45)
 SD_HOOK(CAnimEvent_ctor, 0x2bb8e0, 44)
 SD_HOOK(CAnimEvent_ctorAdd, 0x2bb910, 56)
@@ -1980,7 +1980,7 @@ SD_HOOK(Render_GetBillboard, 0x24cdc0, 6)
 SD_HOOK(Render_GetEyePos, 0x24cdd0, 6)
 SD_HOOK(Render_GetViewportSize, 0x24e750, 116)
 
-/* src/game/engine3d/Engine/Grafico2D.c (Engine/grafico2d.cpp, the screen sprites) */
+/* src/game/engine3d/Engine/Graphic2D.c (Engine/grafico2d.cpp, the screen sprites) */
 SD_HOOK(CGraphic2D_ctorTex, 0x278a80, 73)
 SD_HOOK(CGraphic2D_ctor, 0x278ad0, 12)
 SD_HOOK(CGraphic2D_dtor, 0x278ae0, 111)
@@ -1993,14 +1993,14 @@ SD_HOOK(CGraphic2D_Init, 0x279830, 199)
 SD_HOOK(Graphic2D_NumPrims, 0x279900, 221)
 SD_HOOK(Graphic2D_GetScreen, 0x2799e0, 33)
 
-/* src/game/engine3d/Engine/Niebla.c (Engine/niebla.cpp, the fog) */
+/* src/game/engine3d/Engine/Fog.c (Engine/niebla.cpp, the fog) */
 SD_HOOK(CFog_ctor, 0x278360, 48)
 SD_HOOK(CFog_InitD3D, 0x2783a0, 113)
 SD_HOOK(CFog_Apply, 0x278420, 600)
 SD_HOOK(CFog_SetColor, 0x278680, 26)
 SD_HOOK(CFog_SetRange, 0x2786a0, 27)
 
-/* src/game/engine3d/Engine/Texto.c (Engine/texto.cpp, debug text and the message stack) */
+/* src/game/engine3d/Engine/Text.c (Engine/texto.cpp, debug text and the message stack) */
 SD_HOOK(Text_Draw, 0x2786c0, 101)
 SD_HOOK(Text_DrawStack, 0x278730, 232)
 SD_HOOK(Text_Push, 0x278820, 86)
@@ -2010,7 +2010,7 @@ SD_HOOK(Text_PrintfRel, 0x278950, 107)
 SD_HOOK(Text_Printf, 0x2789c0, 105)
 SD_HOOK(Text_Message, 0x278a30, 75)
 
-/* src/game/engine3d/Engine/Mundo.c (Engine/mundo.cpp, the world and the debug points) */
+/* src/game/engine3d/Engine/World.c (Engine/mundo.cpp, the world and the debug points) */
 SD_HOOK(CWorld_ctor, 0x269210, 270)
 SD_HOOK(WorldDummy_ctorNode, 0x269320, 342)
 SD_HOOK(WorldDummy_ctor, 0x269480, 225)
@@ -2049,7 +2049,7 @@ SD_HOOK(Debug_Point, 0x26b300, 327)
 SD_HOOK(Debug_PointsClear, 0x26b450, 46)
 SD_HOOK(Debug_PointsDraw, 0x26b480, 1062)
 
-/* src/game/engine3d/Engine/SueloPortal.c (Engine/SueloPortal.cpp, the sectors and their lookups) */
+/* src/game/engine3d/Engine/GroundPortal.c (Engine/SueloPortal.cpp, the sectors and their lookups) */
 SD_HOOK(Table_Resize14, 0x26b930, 162)
 SD_HOOK(CZone_ctor, 0x26b9e0, 170)
 SD_HOOK(CZone_dtor, 0x26bad0, 334)
@@ -2075,7 +2075,7 @@ SD_HOOK(Sector_OfZoneNode, 0x26d0b0, 29)
 SD_HOOK(Portals_Cull, 0x26d350, 450)
 SD_HOOK(Sectors_FreeAll, 0x26d520, 127)
 
-/* src/game/engine3d/Engine/Grafico3D.c (Engine/grafico3d.cpp) */
+/* src/game/engine3d/Engine/Graphic3D.c (Engine/grafico3d.cpp) */
 SD_HOOK(CGraphic3D_ctorTex, 0x2b94b0, 240)
 SD_HOOK(CGraphic3D_ctor, 0x2b95a0, 134)
 SD_HOOK(CGraphic3D_dtor, 0x2b9640, 94)
@@ -7083,7 +7083,7 @@ SD_HOOK(cWithLifeEntity_VarV, 0x12cd80, 419)			/* vf19 */
 SD_HOOK(cWithLifeEntity_IsEMIed, 0x12cf30, 16)			/* vf55, 3 bytes and int3 */
 
 /* module agent: Engine/lee_M3D.cpp and bsp_q3.cpp (hooks below this line) */
-/* src/game/engine3d/Engine/LeeM3D.c */
+/* src/game/engine3d/Engine/ReadM3D.c */
 SD_HOOK(M3DTable_ctor, 0x2bba90, 30)
 SD_HOOK(String_ctor, 0x2bbab0, 9)
 SD_HOOK(M3DTrack_ctor, 0x2bbac0, 199)
@@ -7143,7 +7143,7 @@ SD_HOOK(Scene_Sort, 0x2c7930, 878)
 SD_HOOK(Node_FindDescendant, 0x2c7ca0, 105)
 SD_HOOK(Node_FindDescendantPrev, 0x2c7d10, 133)
 SD_HOOK(Scene_AnimParents, 0x2c7da0, 1070)
-/* src/game/engine3d/Engine/RenderSuelo.c */
+/* src/game/engine3d/Engine/RenderGround.c */
 SD_HOOK(Batch_AddMesh, 0x2c81d0, 494)
 SD_HOOK(Batch_Flush, 0x2c83c0, 342)
 SD_HOOK(Batch_Compare, 0x2c8520, 56)
@@ -7378,12 +7378,12 @@ SD_HOOK(CAnimVert_ctor, 0x2d33f0, 16)
 SD_HOOK(CMeshD3D_CalcSegments, 0x2d5350, 1353)
 
 /* module agent: Engine leftovers 0x29c000..0x2b2000 (hooks below this line) */
-/* src/game/engine3d/Engine/Camara.c */
+/* src/game/engine3d/Engine/Camera.c */
 SD_HOOK(CCamera_ReleaseD3D, 0x29c680, 16)
 SD_HOOK(CCamera_InitD3D, 0x29c690, 16)
 SD_HOOK(CCamera_Render, 0x29c960, 16)
 SD_HOOK(CCamera_Update, 0x29cba0, 108)
-/* src/game/engine3d/Util/Cadenas.c */
+/* src/game/engine3d/Util/Strings.c */
 SD_HOOK(String_Read, 0x2a18a0, 117)
 SD_HOOK(String_Write, 0x2a1920, 17)
 SD_HOOK(String_Set, 0x2a1940, 46)
@@ -7391,14 +7391,14 @@ SD_HOOK(String_Printf, 0x2a1970, 136)
 /* src/game/ScrapEng/ScrapEngMaterial.c */
 SD_HOOK(BlendMode_GetDst, 0x2a1a00, 86)
 SD_HOOK(BlendMode_GetSrc, 0x2a1a60, 86)
-/* src/game/engine3d/Engine/Teclado.c */
+/* src/game/engine3d/Engine/Keyboard.c */
 SD_HOOK(Time_Get, 0x2a3640, 13)
 SD_HOOK(Time_Pause, 0x2a3660, 80)
 SD_HOOK(Keyboard_Clear, 0x2a36b0, 21)
 SD_HOOK(Keyboard_GetChars, 0x2a36d0, 119)
 SD_HOOK(Keyboard_KeyDown, 0x2a37c0, 163)
 SD_HOOK(Keyboard_KeyUp, 0x2a3870, 110)
-/* src/game/engine3d/Engine/Entrada.c */
+/* src/game/engine3d/Engine/Input.c */
 SD_HOOK(CInputDInput_ctor, 0x2a38e0, 119)
 SD_HOOK(CInputWindows_ctor, 0x2a3960, 106)
 SD_HOOK(IInput_ctor, 0x2a39d0, 73)
@@ -7429,14 +7429,14 @@ SD_HOOK(RenderLock_Frame, 0x2a49e0, 36)
 SD_HOOK(RenderLock_CopyBack, 0x2a4a10, 153)
 SD_HOOK(RenderLock_DrawMem, 0x2a4ab0, 549)
 SD_HOOK(RenderLock_Clear, 0x2a4ce0, 421)
-/* src/game/engine3d/Engine/ListaGrf2D.c */
+/* src/game/engine3d/Engine/Graphic2DList.c */
 SD_HOOK(CGraphic2DList_ctor, 0x2a4e90, 16)
 SD_HOOK(CGraphic2DList_DeleteAll, 0x2a4ea0, 104)
 SD_HOOK(CGraphic2DList_Render, 0x2a4f10, 23)
 SD_HOOK(CGraphic2DList_Add, 0x2a4f30, 168)
 SD_HOOK(CGraphic2DList_Delete, 0x2a4fe0, 40)
 SD_HOOK(CGraphic2DList_Remove, 0x2a5010, 148)
-/* src/game/engine3d/Engine/Fondo2D.c */
+/* src/game/engine3d/Engine/Background2D.c */
 SD_HOOK(CBackground2D_ctorFile, 0x2a50b0, 92)
 SD_HOOK(CBackground2D_ctor, 0x2a5110, 78)
 SD_HOOK(CBmp_dtor, 0x2a5160, 43)
@@ -7446,13 +7446,13 @@ SD_HOOK(Background2D_Render, 0x2a5530, 435)
 SD_HOOK(Background2D_Release, 0x2a56f0, 41)
 SD_HOOK(CBackground2D_Init, 0x2a5720, 345)
 SD_HOOK(Background2D_Set, 0x2a5880, 66)
-/* src/game/engine3d/Engine/EfecMalla.c */
+/* src/game/engine3d/Engine/MeshEffect.c */
 SD_HOOK(MeshEffect_AddScreen, 0x2a58d0, 64)
 SD_HOOK(MeshEffect_AddModel, 0x2a5910, 64)
 SD_HOOK(MeshEffect_Render, 0x2a5950, 646)
 SD_HOOK(MeshEffect_RenderModels, 0x2a5be0, 104)
 SD_HOOK(MeshEffect_RenderScreens, 0x2a5c50, 104)
-/* src/game/engine3d/Engine/Varios.c */
+/* src/game/engine3d/Engine/Misc.c */
 SD_HOOK(Win_SetTextf, 0x2a5cc0, 85)
 SD_HOOK(Dlg_SetFloat, 0x2a5d20, 89)
 SD_HOOK(Dlg_GetFloat, 0x2a5d80, 78)
@@ -7504,7 +7504,7 @@ SD_HOOK(FXTexture_Kind, 0x2a82f0, 123)
 SD_HOOK(CFXNewsPanel_Update, 0x2a8370, 13)
 SD_HOOK(CFXTexLava_Update, 0x2a8380, 700)
 SD_HOOK(CFXTexScroll_Update, 0x2a8640, 243)
-/* src/game/engine3d/Engine/Animacion.c */
+/* src/game/engine3d/Engine/Animation.c */
 SD_HOOK(CAnimNode_ctorFrames, 0x2ab640, 81)
 SD_HOOK(CAnimNode_ctor, 0x2ab6a0, 73)
 SD_HOOK(CAnimation_ctor, 0x2ab6f0, 275)

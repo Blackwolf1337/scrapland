@@ -1,4 +1,4 @@
-# engine3d Engine/LeeM3D.c (the reader of the M3D files and the scene passes), BspQ3.c, RenderSuelo.c. Python 1.5.2,
+# engine3d Engine/ReadM3D.c (the reader of the M3D files and the scene passes), BspQ3.c, RenderGround.c. Python 1.5.2,
 # runs inside sdcall.py after the other checks: check, fmt come from there. The M3D reader reads binary streams built
 # here in a cFileMem that is put on the Lee stack (no labels); the scene passes run on scenes built here.
 # Not called: Scene_Load (needs an M3D file), the animation paths of the camera and light readers, the polygon
@@ -704,7 +704,7 @@ m3dpk(m3dq3 + 4, 0)
 check('CBspQ3_dtor', lambda m3dq3=m3dq3: (SDTest.Call('CBspQ3_dtor', 'tvi', m3dq3), m3dints(m3dq3, 3), m3dints(m3dq3 + 0x60,
 	3)))
 
-# RenderSuelo.c: the order of the batches, a mesh added and taken out again
+# RenderGround.c: the order of the batches, a mesh added and taken out again
 m3dbm = m3dz(0xc8 * 2)
 m3dpk(m3dbm + 0x4c, 0x100)
 m3dpk(m3dbm + 0xc8 + 0x4c, 0x200)

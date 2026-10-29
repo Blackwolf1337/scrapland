@@ -7,7 +7,7 @@
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/render.h"
-#include "scrap/varios.h"
+#include "scrap/misc.h"
 
 #define GAMMA_RAMP 256
 #define g_VideoGammaRGB GAME_GLOBAL_IN(float, GVar_VideoGammaRGB, 16, 0x4db88c)

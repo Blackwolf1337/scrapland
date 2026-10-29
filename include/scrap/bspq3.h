@@ -8,8 +8,8 @@
 #ifndef SCRAP_BSPQ3_H
 #define SCRAP_BSPQ3_H
 
-#include "scrap/listavert.h"
-#include "scrap/mallad3d.h"
+#include "scrap/vertlist.h"
+#include "scrap/meshd3d.h"
 #include "scrap/material.h"
 
 #define BSPQ3_ID 0x50534249		/* "IBSP" */

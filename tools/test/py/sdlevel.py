@@ -420,7 +420,7 @@ for st in range(10):
 check('SAI.SetStateVehicle(0, Parked)', lambda: SAI.SetStateVehicle(0, 'Parked'))
 check('SAI.SetStateChar(0, Player0)', lambda: SAI.SetStateChar(0, 'Player0'))
 
-# the sectors of the level (Engine/SueloPortal.c): their names and the sector walks between their first nodes
+# the sectors of the level (Engine/GroundPortal.c): their names and the sector walks between their first nodes
 import SDTest
 nz = SDTest.Peek('g_NumZones', 'i')
 check('sectors', lambda: (nz, SDTest.Peek('g_PortalsOn', 'i')))
@@ -454,7 +454,7 @@ for a in range(min(nz, 6)):
 		check('Sector_Traverse' + fmt((a, b)), lambda a=a, pa=pa, pb=pb: SDTest.Call('Sector_Traverse', 'iiiii', a, pa + 0x8c,
 			pb + 0x8c, 0)[0])
 
-# the world (Engine/Mundo.c) after the level load: gMundo, its dummies, the .dum file written and read back, the debug
+# the world (Engine/World.c) after the level load: gMundo, its dummies, the .dum file written and read back, the debug
 # points. Floats as their bits, pointers only compared.
 mundo = SDTest.Peek('g_World', 'i')
 def mwi(a):
@@ -539,7 +539,7 @@ SDTest.Call('Debug_PointsClear', 'v')
 SDTest.Poke('g_MaxPoints', sdmax)
 SDTest.PokeSpan('g_PointsOn', 0, sdon, 4)
 
-# the fog of the world (Engine/Niebla.c) through the D3D log: CFog_Apply with its flags and the fog variables
+# the fog of the world (Engine/Fog.c) through the D3D log: CFog_Apply with its flags and the fog variables
 # changed, all put back after
 def nblog(fn):
 	SDTest.Out()

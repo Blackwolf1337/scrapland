@@ -8,11 +8,11 @@
 #define SCRAP_SCRAPMAIN_H
 
 #include "scrap/archio.h"
-#include "scrap/camara.h"
+#include "scrap/camera.h"
 #include "scrap/e3dutil.h"
-#include "scrap/modelo.h"
+#include "scrap/model.h"
 #include "scrap/musicfmod.h"
-#include "scrap/nodo3d.h"
+#include "scrap/node3d.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcamera.h"
 #include "scrap/scrapworld.h"
@@ -271,7 +271,7 @@ void DebugUtils_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_
 /* other modules (src/imports.inc) */
 /* name NULL: a random loading screen; the fade and the time in ms */
 void Loading_Step(int percent);					/* rva 0x2157a0, -1: one step */
-/* the CMotorApp made (arg 0) or freed (Engine/Motor.cpp, src/game/engine3d/Engine/Motor.c) */
+/* the CMotorApp made (arg 0) or freed (Engine/Motor.cpp, src/game/engine3d/Engine/Engine.c) */
 void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *release, int arg);
 void Engine3D_Shutdown(void);
 byte *__fastcall CEngineApp_ctor(byte *self);
@@ -323,7 +323,7 @@ void *App_GetHWnd(void);					/* rva 0x20d290 */
 int Timer_GetFreq(int64_t *out);				/* rva 0x276cb0 */
 int Timer_GetQPFreq(int64_t *out);				/* rva 0x276d00 */
 /* Video_PlayFile: video.h */
-/* AVI capture of DVF_Process (CaptPant.c): Save and Load close the file (Save with a log line), Frame is 0 while
+/* AVI capture of DVF_Process (ScreenCapture.c): Save and Load close the file (Save with a log line), Frame is 0 while
  * frame is past the frames written */
 byte Avi_Save(const char *name);
 byte Avi_Frame(const char *name, int frame);

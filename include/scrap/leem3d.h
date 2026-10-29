@@ -1,6 +1,6 @@
 /*
  * Engine/lee_M3D.cpp of the engine3d, the reader of the M3D models and scenes. The files are text (read with
- * include/scrap/leedatos.h, "Label: value" lines) or binary with the same order of values; a binary file may hold the
+ * include/scrap/readdata.h, "Label: value" lines) or binary with the same order of values; a binary file may hold the
  * labels too, as strings. Binary ints are variable length: 6 bits and a sign bit in the first byte, 7 more bits in
  * each following byte while bit 7 is set.
  *
@@ -13,8 +13,8 @@
 #include "scrap/game.h"
 #include "scrap/material.h"
 #include "scrap/mathlib.h"
-#include "scrap/nodo3d.h"
-#include "scrap/tabla.h"
+#include "scrap/node3d.h"
+#include "scrap/table.h"
 
 #define M3D_STRING 0x400
 

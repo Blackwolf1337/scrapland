@@ -1,4 +1,4 @@
-# engine3d Engine/LeeM3D.c: scenes of the .SM3 caches of the packs and an animation of a .CM3 for one of them, a
+# engine3d Engine/ReadM3D.c: scenes of the .SM3 caches of the packs and an animation of a .CM3 for one of them, a
 # missing cache, SM3_UseScenes off. The scenes are kept. Python 1.5.2, runs inside sdcall.py after the other checks:
 # check, fmt come from there.
 def m3i(a):

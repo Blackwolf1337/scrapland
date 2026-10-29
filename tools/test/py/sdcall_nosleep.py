@@ -1,4 +1,4 @@
-# The Sleep and busy wait rewrites (Motor.c, DXUtil.c, Tsc.c, Video.c; execfile'd by sdcall.py, Python 1.5.2). They
+# The Sleep and busy wait rewrites (Engine.c, DXUtil.c, Tsc.c, Video.c; execfile'd by sdcall.py, Python 1.5.2). They
 # differ from the original on purpose, so the checks of the new behavior run only in the hooked run (the first byte
 # of the frame function is the jmp of the hook) and print the constant they expect in the original run. No timing
 # values are printed. Not called: the frame with the limiter off (a render from inside the frame callback), the reset

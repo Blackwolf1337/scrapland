@@ -10,7 +10,7 @@
 #include <stdarg.h>
 
 #include "scrap/archio.h"
-#include "scrap/fuentes.h"
+#include "scrap/fonts.h"
 
 typedef struct CFont {
 	float x, y;			/* 0x00 the cursor, the end of the last text */

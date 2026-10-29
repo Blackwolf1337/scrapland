@@ -9,11 +9,11 @@
 #include "scrap/crt.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
-#include "scrap/grafico3d.h"
-#include "scrap/mallatri.h"
-#include "scrap/mundo.h"
+#include "scrap/graphic3d.h"
+#include "scrap/trimesh.h"
+#include "scrap/e3dworld.h"
 #include "scrap/render.h"
-#include "scrap/varios.h"
+#include "scrap/misc.h"
 
 /* 1 in the exe: the light map materials keep the blend of CMaterial_Prepare */
 #define g_BspQ3LMapNoBlend GAME_GLOBAL_IN(byte, group_432a7c, 1, 0x432a7d)

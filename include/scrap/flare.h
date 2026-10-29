@@ -7,8 +7,8 @@
 #ifndef SCRAP_FLARE_H
 #define SCRAP_FLARE_H
 
-#include "scrap/grafico2d.h"
-#include "scrap/nodo3d.h"
+#include "scrap/graphic2d.h"
+#include "scrap/node3d.h"
 
 #define CFLARE_VFTABLE GAME_VFTABLE(CFlare_vftable, 0x3e1958)
 

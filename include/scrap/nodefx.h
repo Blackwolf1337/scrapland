@@ -8,7 +8,7 @@
 #ifndef SCRAP_NODEFX_H
 #define SCRAP_NODEFX_H
 
-#include "scrap/nodo3d.h"
+#include "scrap/node3d.h"
 
 #define INODEFX_VFTABLE GAME_VFTABLE(INodeFX_vftable, 0x3e3b9c)
 #define CNODEFX_WHEEL_VFTABLE GAME_VFTABLE(CNodeFX_Wheel_vftable, 0x3e3bac)

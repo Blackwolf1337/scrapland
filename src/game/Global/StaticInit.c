@@ -18,9 +18,9 @@
 #include "scrap/archio.h"
 #include "scrap/crt.h"
 #include "scrap/filepak.h"
-#include "scrap/fuentes.h"
+#include "scrap/fonts.h"
 #include "scrap/global.h"
-#include "scrap/grafico2d.h"
+#include "scrap/graphic2d.h"
 #include "scrap/hashtable.h"
 #include "scrap/input.h"
 #include "scrap/material.h"
@@ -31,9 +31,9 @@
 #include "scrap/scrap.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapparticles.h"
-#include "scrap/sueloportal.h"
-#include "scrap/tabla.h"
-#include "scrap/varios.h"
+#include "scrap/groundportal.h"
+#include "scrap/table.h"
+#include "scrap/misc.h"
 
 /* the objects of the data at the rvas of the lines: in ScrapC.exe the C objects of src/game/Global/Globals*.c through
  * GlobalsAt.h (GAME_PTR_AT), in the hook DLL the exe's own */

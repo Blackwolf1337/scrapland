@@ -68,7 +68,7 @@ check('CAnimMat_GetFrame', lambda: (SDTest.Call('CAnimMat_GetFrame', 'tii', rsba
 rsbfree(rsba)
 rsbfree(rsbb)
 
-# the CTable resizes of tabla.h: n elements, the old ones kept
+# the CTable resizes of table.h: n elements, the old ones kept
 def rsbtab(t, size):
 	n = rsbi(t)
 	p = rsbi(t + 4)

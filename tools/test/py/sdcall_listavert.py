@@ -1,4 +1,4 @@
-# engine3d Engine/ListaVert.c: vertex lists in heap memory, the strips and the vertex cache (Python 1.5.2, runs inside
+# engine3d Engine/VertList.c: vertex lists in heap memory, the strips and the vertex cache (Python 1.5.2, runs inside
 # sdcall.py after the other checks: check, fmt, tpeek, rnd, affine come from there). Floats in memory are compared as
 # their bits (Peek '@i').
 LV_SIZE = {1: 0x20, 2: 0x28, 3: 0x1c, 4: 0x24, 5: 0x2c, 6: 0x34, 7: 0x24, 8: 0x20, 10: 0x20, 11: 4, 12: 0x18,

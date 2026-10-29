@@ -10,7 +10,7 @@
 #include "scrap/cstring.h"
 #include "scrap/d3d8.h"
 #include "scrap/mathlib.h"
-#include "scrap/tabla.h"
+#include "scrap/table.h"
 
 struct CMaterial;
 typedef struct CMaterial CMaterial;
@@ -450,7 +450,7 @@ void Particle_Quad(struct CParticle *p, const matrix_t *bill, const matrix_t *vi
 	float alpha, float zbias);
 
 /* Engine/RenderMallaD3D.cpp, RenderMallaD3D_transp.cpp and RenderObjBase3D.cpp
- * (src/game/engine3d/Engine/RenderMallaD3D.c): the batches of a view. Opaque meshes (R_MeshCache) are sorted by
+ * (src/game/engine3d/Engine/RenderMeshD3D.c): the batches of a view. Opaque meshes (R_MeshCache) are sorted by
  * texture, material and skin, transparent ones and the particle systems and flares far to near, each drawn with the
  * world matrix it was queued with. Up to 0x400 of each, a full batch is drawn at once. */
 #define MAX_RENDER_BATCH 0x400
@@ -525,7 +525,7 @@ int Shader_Find(const char *name);		/* the index in g_ShaderTab, 0 and an error 
 /* other modules (src/imports.inc) */
 /* rva 0x267530 (stencil.cpp): the shadow volume of the triangles of a mesh */
 void Stencil_Mesh(struct CVertList *v, const void *tris, uint32_t nTri, struct CMeshD3D *m, struct CRenderNode *r);
-/* CVertList_EnvMapUV: listavert.h */
+/* CVertList_EnvMapUV: vertlist.h */
 void VertList_InitD3D(void);			/* rva 0x2404f0, empty */
 void RenderTarget_InitD3D(void);		/* rva 0x220d20 */
 void ModelFX_InitD3D(void);			/* ModelFX.c, model.h */

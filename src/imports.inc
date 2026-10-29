@@ -145,31 +145,31 @@ SD_IMPORT_PY(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 
 /* engine: FileSys/ (include/scrap/filesys.h) */
 
-/* engine3d: Engine/ListaVert.cpp and Engine/render.cpp (include/scrap/listavert.h, mallatri.h) */
+/* engine3d: Engine/ListaVert.cpp and Engine/render.cpp (include/scrap/vertlist.h, trimesh.h) */
 
 /* engine3d: called from Engine/luz.cpp (include/scrap/light.h) */
 /* engine3d: Engine/Material.c (include/scrap/material.h), the parts of the classes outside Material.cpp and the
  * texture manager */
 
-/* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/scene.h) */
+/* src/game/engine3d/Engine/Scene.c (called from Engine/escena.cpp, include/scrap/scene.h) */
 
-/* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/scene.h) */
+/* src/game/engine3d/Engine/Scene.c (called from Engine/escena.cpp, include/scrap/scene.h) */
 
-/* src/game/engine3d/Engine/ParticleSystem.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
+/* src/game/engine3d/Engine/ParticleSystem.c (called from Engine/SistPart.cpp, include/scrap/particlesystem.h) */
 
-/* src/game/engine3d/Engine/SueloPortal.c (called from Engine/SueloPortal.cpp, include/scrap/sueloportal.h) */
+/* src/game/engine3d/Engine/GroundPortal.c (called from Engine/SueloPortal.cpp, include/scrap/groundportal.h) */
 
-/* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/world.h) */
+/* src/game/engine3d/Engine/World.c (called from Engine/mundo.cpp, include/scrap/world.h) */
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
 
-/* src/game/engine3d/Engine/Grafico2D.c (called from Engine/grafico2d.cpp, include/scrap/grafico2d.h) */
+/* src/game/engine3d/Engine/Graphic2D.c (called from Engine/grafico2d.cpp, include/scrap/graphic2d.h) */
 
-/* src/game/engine3d/Engine/Texto.c (called from Engine/texto.cpp, include/scrap/text.h) */
+/* src/game/engine3d/Engine/Text.c (called from Engine/texto.cpp, include/scrap/text.h) */
 
 /* src/game/engine3d/Engine/UtilD3D.c (called from Engine/util_d3d.cpp, include/scrap/utild3d.h) */
 
-/* src/game/engine3d/Engine/Grafico3D.c (called from Engine/grafico3d.cpp, include/scrap/grafico3d.h) */
+/* src/game/engine3d/Engine/Graphic3D.c (called from Engine/grafico3d.cpp, include/scrap/graphic3d.h) */
 
 /* src/game/engine3d/Engine/Portal.c (called from Engine/portal.cpp, include/scrap/portal.h) */
 

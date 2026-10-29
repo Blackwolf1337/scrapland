@@ -1,5 +1,5 @@
-# engine3d Engine/NodeFX.c, RenderEVA.c (the particle corners), RenderMallaD3D.c (the batch tables, their orders),
-# ModelFX.c (the materials), CalcPesos.c, CalcIlum.c, Grafico3D.c and Portal.c leftovers, the tabla.h instances, on
+# engine3d Engine/NodeFX.c, RenderEVA.c (the particle corners), RenderMeshD3D.c (the batch tables, their orders),
+# ModelFX.c (the materials), CalcWeights.c, CalcIllum.c, Graphic3D.c and Portal.c leftovers, the table.h instances, on
 # objects made here (Python 1.5.2, runs inside sdcall.py after the other checks: check, fmt come from there). Floats
 # are printed as their bits. Not tested: the drawing of the skinned and animated meshes, the particles and the model
 # effects (they need a model of a level drawn in a frame).
@@ -28,7 +28,7 @@ rn2id = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0
 rn2frame = SDTest.Peek('g_FrameCount', 'i')
 rn2now = SDTest.Peek('g_TimeMs', 'i')
 
-# the tabla.h instances
+# the table.h instances
 rn2t = rn2new(8)
 rn2pk(rn2t, 3)
 rn2pk(rn2t + 4, rn2new(0x100))

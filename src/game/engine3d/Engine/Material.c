@@ -8,9 +8,9 @@
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
-#include "scrap/fxtextura.h"
+#include "scrap/fxtexture.h"
 #include "scrap/material.h"
-#include "scrap/textura.h"
+#include "scrap/texture.h"
 #include "scrap/win32.h"
 
 #define TEXTSTATIC_CTOR 0x233990

@@ -1,5 +1,5 @@
 /*
- * Engine/MultiSprite.cpp of the engine3d: the sprite tables of the textures, see include/scrap/textura.h.
+ * Engine/MultiSprite.cpp of the engine3d: the sprite tables of the textures, see include/scrap/texture.h.
  */
 #include <string.h>
 
@@ -8,9 +8,9 @@
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
 #include "scrap/filesys.h"
-#include "scrap/tabla.h"
-#include "scrap/textura.h"
-#include "scrap/varios.h"
+#include "scrap/table.h"
+#include "scrap/texture.h"
+#include "scrap/misc.h"
 
 #define MAX_SPRITES 256
 

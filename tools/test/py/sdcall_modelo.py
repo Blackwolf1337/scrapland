@@ -1,4 +1,4 @@
-# engine3d Engine/Modelo.c and UtilEscena.c (execfile'd by sdcall.py after its other checks, Python 1.5.2): models
+# engine3d Engine/Model.c and UtilScene.c (execfile'd by sdcall.py after its other checks, Python 1.5.2): models
 # made by the constructor of the exe in heap memory, with fake scenes, nodes and animations around them. No model is
 # loaded and nothing stays in the lists of the engine: the list heads and gModelosRender are swapped for the checks
 # that need them and put back. Fake scenes that may lose their last reference get a vftable whose deleting
@@ -418,7 +418,7 @@ mopoke(p, 0)
 mopoke(p + 8, 0)
 check('CModel_Delete', lambda: (SDTest.Call('CModel_Delete', 'tiii', m2, 1)[0] == m2, mopeek(eB + 8)))
 
-# tabla.h instances and the vector deleting destructors
+# table.h instances and the vector deleting destructors
 t = moz(8)
 mopoke(t, 3)
 mopoke(t + 4, SDTest.Call('operator_new_array', 'ii', 16)[0])
@@ -458,7 +458,7 @@ mopoke(e + 0xa4, nr)
 check('CRenderNode_DeleteVec 1', lambda: (SDTest.Call('CRenderNode_DeleteVec', 'tiii', e, 1)[0] == e, mopeek(nr + 8)))
 mofree(t)
 
-# luz.h
+# light.h
 l = moz(0xcc)
 for tipo in (5000, 5001, 5002):
 	mopoke(l + 8, tipo)
