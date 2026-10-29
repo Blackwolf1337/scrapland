@@ -555,7 +555,7 @@ class Plan:
 			p = os.path.join(ROOT, f)
 			if not os.path.isfile(p) or os.path.islink(p):
 				continue
-			if f.startswith('tools/rename/'):
+			if f.startswith('tools/rename/') or f == 'docs/rename.md':
 				continue
 			if f in self.cfiles:
 				t = read(p)

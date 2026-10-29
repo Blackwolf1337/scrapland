@@ -55,7 +55,7 @@ the start of a function) and copies the piece of original code there back, so on
 code without a C version that the run reaches.
 
 The seven functions with Sleep or busy waits are C too, with intended behavior changes (each marked in the code
-with a comment): the frame (`CMotorApp_Render`) has no Sleep loop as its frame limiter, `Motor_FrameDue` holds the
+with a comment): the frame (`CEngineApp_Render`) has no Sleep loop as its frame limiter, `Engine_FrameDue` holds the
 next frame back in the PeekMessage loop of `App_WinMain` (no own limiter with vsync); the device reset has no
 Sleep(250); `Timer_GetQPFreq`, `Timer_MeasureQP` and `Timer_CountTicks` take QueryPerformanceFrequency instead of
 measuring; `Tsc_CpuFreq` measures rdtsc against the performance counter between two calls; `Video_WaitKeysUp`
@@ -64,14 +64,14 @@ the time is over. `tools/test/py/sdcall_nosleep.py` checks them (some only in th
 
 A second round removed the other Sleep calls and blocking waits from the C, each marked "differs from the original
 on purpose" in the code. `Splash_Show` (`ScrapEngWorld.c`) draws the splash again instead of Sleep(10). Its loop
-stays, because every caller goes on right after it. In the light map compiler (`Bsp.c`), `BspTxf_Guardar` no longer
-sleeps 10 s and retries a failed write: the next load finds the TXF missing and computes it again. `BspTxf_Cargar`
+stays, because every caller goes on right after it. In the light map compiler (`Bsp.c`), `BspTxf_Save` no longer
+sleeps 10 s and retries a failed write: the next load finds the TXF missing and computes it again. `BspTxf_Load`
 no longer waits up to 30 s for another computer of a distributed compile. It deletes that file and rebuilds it here.
 In the fmod code (`MusicFmod.c`), voices open without FSOUND_NONBLOCKING, so `VoiceRemain` knows the length right
 after `PlayVoice`, and `Voice_Wait` is empty. `Music_Stop` closes a stream that is still opening later, from
 `Music_Update` (a list of 8 slots), because FSOUND_Stream_Close fails on it. `CWinApp_Frame` (`WinApp.c`) returns at
 once while the app is inactive, instead of Sleep(250), so the PeekMessage loop then runs at full CPU. `CD3DApp_Run`
-uses PeekMessageA instead of GetMessageA while inactive. `CEntradaDInput_ReadKeys` tries Acquire once per call
+uses PeekMessageA instead of GetMessageA while inactive. `CInputDInput_ReadKeys` tries Acquire once per call
 instead of spinning. `win32.h` no longer has `exe_Sleep`. `tools/test/py/sdcall_nosleep2.py` checks the voice and
 music paths.
 
@@ -197,7 +197,7 @@ the original's Python with int3. With `wipe=3` the probe covers it too. On 2026-
 `wipepy=1`) logged no trap in any scenario. `DIFFTEST_WIPE=2 DIFFTEST_WIPEPY=1 DIFFTEST_STANDALONE=1
 tools/test/difftest.sh` matches in all three scenarios, and so does the hook DLL difftest. Two tests had printed
 memory as `new[]` left it, which holds the address of the string type object of the Python and so differs now. They
-print only written memory now (`Tabla_New` at rva 0x2c2c60, the trail points after `SetMaxTrails`).
+print only written memory now (`Table_New` at rva 0x2c2c60, the trail points after `SetMaxTrails`).
 
 What still differs from the exe: `sys.executable` names ScrapC.exe.
 
@@ -356,7 +356,7 @@ the copy. These are tested by what they do, not bit for bit:
   (`D3DX_FILTER_DITHER` is ignored) and the scaling filters, which the game never needs (no size changes on this
   device).
 - `tools/test/py/sdcall_d3dxtex.py` (prefix `dxt`) checks the requirements, the conversions and the color key
-  exactly, and 14 DDS files and the TGA with the requests of the game through `CTextura_CreateD3D`: format, size and
+  exactly, and 14 DDS files and the TGA with the requests of the game through `CTexture_CreateD3D`: format, size and
   levels exactly, the file's levels as a checksum, the converted and made levels by their average color within a
   tolerance. The device calls of a texture are the same in the D3D log.
 - the ASE SDK (`src/lib/ase/Ase.c`): a UDP socket on the game port + 123 (the next free one of 64) answers the
@@ -395,14 +395,14 @@ C or the class and the address. The patterns:
   loop (2), a constructor without destructor (8), the slots of a HashTable (4), a vector of three floats (2), only
   the destructor (11)
 - destructors: a call of the C destructor (90), two (243, mostly the strings), the vector destructor iterator (7), a
-  CTabla freed (6), a DList cleared with its free list (2)
+  CTable freed (6), a DList cleared with its free list (2)
 
 The 10 initializers and 5 destructors that fit no pattern, and 9 destructors that belong to C written by hand (their
 initializer or the function of their static), are C by hand in the files of their classes (the HAND table of the
 tool): the costs of the Swarm, the Steam ticket callback,
 the four pads, the chat lines, the cPy_Function of the sphere tests, the paths of the exe and the engine, the shader
-switch and the identity and bias matrices, the box of `g_PintarTodas`, the faces of CheckBBox, the trace caches of the
-lights, and the destructors of g_ActionSets, g_ListaMat, g_FileLog, g_TexList and the function statics.
+switch and the identity and bias matrices, the box of `g_PaintAll`, the faces of CheckBBox, the trace caches of the
+lights, and the destructors of g_ActionSets, g_MatList, g_FileLog, g_TexList and the function statics.
 
 `[general] wipeinit=1` (`DIFFTEST_WIPEINIT=1`, ScrapC.exe only; the exe of the hook DLL ran its initializers before
 the hooks) fills both ranges with int3, and the probe of `wipe=3` covers them. The hook DLL installs the hooks too,
@@ -612,7 +612,7 @@ The static side of `datamap.py`:
 - the rvas in the code of ScrapC.exe: game_base plus an immediate in the data (`GAME_DATA`, `Game_Ptr`), from
   `objdump -d` and the .reloc of ScrapC.exe (a relocated immediate is an address of ScrapC.exe), with the width of the
   access; `lea`, `add $rva` and indexed accesses have an unknown extent
-- the rvas in the named data of ScrapC.exe (tables of rvas such as `motorIni` or `s_PathData`) where the original or
+- the rvas in the named data of ScrapC.exe (tables of rvas such as `engineIni` or `s_PathData`) where the original or
   the code of ScrapC.exe points too; the 16 bit tables of the shader assembler and a few byte tables are left out
 - the numbers of the test scripts that lie in the data, 4 bytes each
 - the import directory with its names and the import address table (main.c), the resources (found by id at run time)
@@ -783,7 +783,7 @@ signature must fit the C prototype (found in `include/` and `src/`, the definiti
 (ecx), stdcall as `t` with a dummy this (the callee pops like thiscall). `vec3_t` by value counts 3 words, `double` and
 64 bit ints 2, another struct by value is not counted. No global may be named `out`, `sym` or `symva`. It found 27
 calls of 15 fastcall functions with one argument written as cdecl (`'vi'`, `'ii'`: `cInputAction_ctor`,
-`MsvcString_Tidy`, `CTextura_dtor`, `CGameParticles_NumParticles` ...). They worked only because ecx happened to hold
+`MsvcString_Tidy`, `CTexture_dtor`, `CGameParticles_NumParticles` ...). They worked only because ecx happened to hold
 the argument, and are `t` calls now with the same outputs.
 
 `tools/standalone/datamap.py` resolves the names through the table when it scans the scripts for the rvas the tests use
@@ -813,7 +813,7 @@ again. `tools/standalone/ctypeinfo.py` gives it the C types: it compiles one pro
 `include/scrap` like scrapcode_sa (mingw-w64 i686, `-g`, `-fno-merge-debug-strings`) and reads the DWARF back from
 `objdump --dwarf=info`: sizes, the members of structs and unions with offsets, bit fields, array lengths, the encoding
 of base types. The same probe evaluates the counts in the comments of the arrays (`/* [9] */`, `/* 256, ... */`,
-`/* MAX_RUTA */`, `/* 3 bodies */` after an `&GAME_DATA`).
+`/* MAX_FILEPATH */`, `/* 3 bodies */` after an `&GAME_DATA`).
 
 What it reads are the claims of the C, 4883 of them: the defines of `GAME_DATA(type, rva)` (2614 defines of 2470 rvas,
 20 of them of the form `(*(T *)Game_Ptr(rva))`), the pointer casts `((T *)Game_Ptr(rva))` (an array of what the cast
@@ -833,7 +833,7 @@ an element of a table, a second type at the same rva. No claim overlaps the end 
 variables needed their own type for that: `cGVarFunction` in scrap.h, a `cGVar` with its `cPy_Function` at +0x10, 0x24
 bytes). Objects that would share a word (each SD_AT section covers whole words) become one group struct with the
 objects as members and the bytes between them as filler members. There are 16 groups, all of byte flags such as
-`g_UsarVB` and `g_MallaD3DOn` at 0x431bac. The name of an object is the macro of the best claim at its start with its
+`g_UseVB` and `g_MeshD3DOn` at 0x431bac. The name of an object is the macro of the best claim at its start with its
 type, else the name of an address the C takes there, else the first C function of the "used by" column of the map with
 the rva (`cScraplandMainMenuScorer_Draw_3b11a0`), else `data_<rva>`. A name already used by C gets the rva appended.
 That makes 3659 objects: 2874 of claims, 816 of rows of the map and 16 groups. 587 are `data_<rva>`, mostly constants
@@ -875,7 +875,7 @@ which is `GAME_PTR_AT`: GlobalsAt.h defines `SD_DATA_<rva>` for the 1840 rvas of
 registers `<module>_methods`.
 
 Around it, the types of ten objects moved from their .c files into headers (the BMP, TGA and TEX headers of Bmp.c into
-bmp.h, `AviBih` into rendertarget.h, `traceCell_t` into suelo.h, `procrange_t` and `cProcType` into e3dutil.h,
+bmp.h, `AviBih` into rendertarget.h, `traceCell_t` into ground.h, `procrange_t` and `cProcType` into e3dutil.h,
 `cSaveVar` and `cSteamTicketCallback` into scrap.h). `g_LastError` is a `uint32_t` instead of DWORD, `BlendMode_GetSrc`
 and `GetDst` have one prototype type in scrapmain.h and scrapmaterial.h, and the inline of bsp.h is `Bsp_Vec3Equal` (it
 had the name of the C function `Vec3_Equal` of ICharControl.c). datagen.py accepts pointers with an offset into another
@@ -957,7 +957,7 @@ What stays as it was:
 - dinput8 is no import. ScrapC.exe runs in game/Bin, where dinput8.dll is the hook DLL. `Orig_DInput8` of `main.c`
   loads the one of the system folder at the start of WinMain, before anything of the game runs, and sets
   `sd_DirectInput8Create`, which is `exe_DirectInput8Create` in ScrapC.exe (win32.h, one define for IDevice.c and
-  Entrada.c).
+  Input.c).
 - fmod.dll, Galaxy.dll and steam_api.dll are found in game/Bin, the directory of the exe, first in the search order, as
   for the original.
 - The original has no delay load (its delay import directory is empty), neither has ScrapC.exe.
@@ -1052,7 +1052,7 @@ The address uses of the C:
   label reference, so no prototype is needed; stdcall and fastcall names get their decoration from
   `--enable-stdcall-fixup`). The 215 `Game_Ptr` of function rvas (constructors and destructors for the vector
   iterators, natives of the scripts, window and dialog procedures, callbacks, qsort compares) are `GAME_FUNC` now.
-  `New_Objects`, `Delete_Objects`, `Delete_VectorPart`, `Tabla_NewObjs` and `DeleteVecArray` take the functions instead
+  `New_Objects`, `Delete_Objects`, `Delete_VectorPart`, `Table_NewObjs` and `DeleteVecArray` take the functions instead
   of rvas, `WEAP_NATIVE` is gone, the tables of debris effects (`cDebris_SetFX`) and scorer items (`cScorer_AddItem`)
   hold `GAME_FUNC` (382 in all). `INIT_NATIVE_FUNC` of StaticInit.inc has the C function as a sixth argument (initpat.py writes it),
   the string argument of `INIT_CALL_ARGS` is `GAME_STR_AT` (strings.py defines it in StringsAt.h).
@@ -1064,8 +1064,8 @@ The address uses of the C:
   `Particles_Emit`, `Sirens_Flash`, `VME_Colors`, `VME_StaticBegin`, `VME_ExhaustLine`) take the pointer, and the
   `Game_Ptr(base + k * 0x24)` of a random ramp is `(uint32_t *)Game_Ptr(base) + 9 * k` before the rewrite.
 - the static tables of rvas are local tables of addresses in their functions (the variables of m3d.ini in
-  `Motor_LoadIni`, the stores of `CircuitScorer_InitPaths`, the checkboxes of `Bsp_DlgProc`, the font globals, the LOD
-  groups, the light colors of `Luz_SetDefault`); `txfKind_t` of BmpFlt.c names its header by the version.
+  `Engine_LoadVarsIni`, the stores of `CircuitScorer_InitPaths`, the checkboxes of `Bsp_DlgProc`, the font globals, the LOD
+  groups, the light colors of `Light_SetDefault`); `txfKind_t` of BmpFlt.c names its header by the version.
 - `__security_check_cookie` of crt.c compares with `crt_security_cookie` (a define of crt.h, the C object at 0x43cfdc).
 - the unused import `ActionSet_IsNamed` is gone (`cString_EqStr` hooks that rva).
 
@@ -1142,7 +1142,7 @@ original's code (capstone) and of the C (the relocations of the object files) ag
 by the difftest.
 
 globals.py: an array of a known length (a count in the comment of its claim) takes every claim inside it as a view, also
-a smaller array at its start. Before, the next claim cut it: `g_BspColores` became 4 bytes, `g_CircuitFlares` 3 of 4,
+a smaller array at its start. Before, the next claim cut it: `g_BspColors` became 4 bytes, `g_CircuitFlares` 3 of 4,
 `g_KeyNameBuf` 16 of 40 bytes, and the vector of 2 cStaticBuffer of `cStaticBuffer_PyStaticBuffer` 1.
 
 Counts in the C:
@@ -1152,16 +1152,16 @@ Counts in the C:
   FXCharActions.c, FXScene.c, FXVehicle.c and FXWeapons.c, such as `FXV_FIRE_RAMPS` and `FXATPC_GLOW_RAMPS`)
 - the exhaust colors at 0x3b5914
 - `g_EngCallbacks` (4: entries 2 and 3 are `g_LoadingDraw2` and `g_LoadingDraw`, which `Engine_SetCallback` writes)
-- `g_EntradaCursor` (the POINT of GetCursorPos)
+- `g_InputCursor` (the POINT of GetCursorPos)
 - `g_StageTex` and `g_StageTexFrame` (8), `g_PSHandles` (32), `g_ProfTicks` (32)
 - `g_RenderCounts` (10, the frame clears 10)
 - `g_BspCacheStats` (3, the third is `g_CollisionTestsMax`)
 - `g_ShaderTab` (32, `Shader_Find` walks it to the NULL name)
 
 Changes in the C where the original reached a separate global through a table. `Render_IniD3D` writes the six default
-materials (`g_MatBlanco` .. `g_MatSuelo`) through a table of their addresses instead of `(&g_MatBlanco)[i]`.
+materials (`g_MatWhite` .. `g_MatGround`) through a table of their addresses instead of `(&g_MatWhite)[i]`.
 `Mat_ConvertBlend` reads the legacy blend modes 1..6 from `g_BlendTable[mode - 1]` (the original indexed from the last
-word of `g_ListaMat` before it). `MainMenu_Sparks` reads the spark waits for k >= 9 where the original read past the
+word of `g_MatList` before it). `MainMenu_Sparks` reads the spark waits for k >= 9 where the original read past the
 letter lengths.
 
 One case is left as it is. `Str_WrapText` of the message scorer may write up to 0xfa line pointers into `g_MsgLines`,
@@ -1212,14 +1212,14 @@ are.
 
 `SDTest.PeekSpan(name, off, n)` and `SDTest.PokeSpan(name, off, value, n)` read and write n bytes (1..4) after a name in
 the layout of the original, byte by byte through the C objects there. They are for the tests that read or wrote a word
-over byte flags of separate objects (`g_TileOn`, `g_UsarShaders`, `g_M3DUseOpacity`, `g_PuntosOn`).
+over byte flags of separate objects (`g_TileOn`, `g_UseShaders`, `g_M3DUseOpacity`, `g_PointsOn`).
 
 The tests that read or wrote several neighbouring globals as one block read them one by one now (the domination zones,
-the mission scorer words, the radar, the music volumes, `g_DbgWnd` .. `g_DbgButtonRect`, `g_Pantallas` and `g_Modelos`,
+the mission scorer words, the radar, the music volumes, `g_DbgWnd` .. `g_DbgButtonRect`, `g_Screens` and `g_Models`,
 `g_VCacheVert` and `g_VCacheAge`, the XBOX vertex shaders, the default materials and others), with tables of names in
 place of `sym('A') + 4 * i`. `Render_PS0 + 0x60 * i` (the nine shader functions one after the other in the original) is
 a table of names. The check labels that printed the rva of a function (`%x` or `fmt` of a `sym()`: the loops of
-sdlevel_logic1..4, sdlevel_fxmisc.py, `Tabla_Alloc`, `Array_Read`, the Stub functions and others, about 50 loops) go over
+sdlevel_logic1..4, sdlevel_fxmisc.py, `Table_Alloc`, `Array_Read`, the Stub functions and others, about 50 loops) go over
 the names and print them. `SDTest.Call` takes a name, and testsyms.py adds a name of the table that a script holds as a plain
 string. `isfn(p, rva)` of sdlib.py compares p with 0x400000 + rva, which is the C function in ScrapC.exe
 (sym gives its address there).
@@ -1235,4 +1235,18 @@ gone, and the .reloc of the dynamic base (about 180 KB) and the address table of
 
 ## Stage 4: English names
 
-The Spanish names of the original stay until the C is complete, then everything is translated.
+Stage 4 translated the Spanish names of our C to English: 2625 identifiers of `src/` and `include/` and 81 files, with
+the uses in the tests, the tools, `symbols/*.tsv`, `datamap.txt` and the docs. The tool is `tools/rename`, the
+decisions, the tables and the proof are in `docs/rename.md`. String literals, RTTI names, engine variable names and the
+paths of the original in comments did not change.
+
+The generators `vtables.py`, `strings.py` and `initpat.py` map the names they derive from the exe through `english()`
+now. `strings.py` and `initpat.py` were not idempotent and are fixed: `strings.py` read the rvas of
+`src/core/testaddrs.inc` as uses of the C, and `initpat.py` knew only the defines before stage 3b5 for the names of
+objects. All generators with `-w` change nothing now.
+
+The results on 2026-10-29. `objcmp.py` finds all 882 objects of the build before the rename the same after it but for
+the names (the only difference is the order of the table of `testmod.c`). `DIFFTEST_STANDALONE=1` and the hook DLL
+difftest match with the counts of before: sdtest 9965 checks (116 raise an exception in both), sdcall 29078 (0),
+sdlevel 19095 (89), and 9957 of 9957 hooks installed. `datacheck` passes: 14378 C objects match Scrap.exe 1.6.1 and 23
+resources match.

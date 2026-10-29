@@ -60,13 +60,13 @@ Scrap_GetMoney=0   ; one hook off, the original runs
 
 ## Implemented so far
 
-987 hooks in total (`tools/progress.py` prints the counts). The list is `src/hooks.inc`, the files are under `src/game/<original folder>/`.
+987 hooks in total (`tools/progress.py` prints the counts). The list is `src/hooks.inc`, the files are under `src/game/<original folder>/` with English names (`docs/rename.md`).
 
 - Script API: all 290 functions of the 11 Python modules (Scrap, SAct, SAI, SFX, SInput, SLogic, SNet, SScorer, SSound, SVec, SWeap) and the 6 cPyEntity methods.
 - The rest of `PyInterface/`: the cPyEntity and cPyMenuEntity Python types (getattr, setattr, print, dealloc), cPy_Function (`Functions.cpp`, callbacks by name, "Module.func" or "!NativeName"), the module init functions, the Python block pools (`pymempool.cpp`), `PythonInit.cpp` (interpreter start and end, PreloadLibrary) and the 20 SAI SetState handlers.
 - `FileSys/`: AbstractFile, File, FileMem, FileBlock, FilePak (see `docs/packed.md`).
 - `Global/`: the memory manager, cString, StrUtils, Timer, StaticBuffer, console and logs, Gvars (engine variables, `Scrap.cfg`), Language, SaveVars, SlotController, FileUtils, the hash table instances (shared code in `HashTable.c`, the templates in `HashTable.h`) and the Nto1Links instances.
-- `engine3d/`: Engine (`ArchIO.c`, `cmd_lex.c`) and Util (the lexer, the ini style data files and typed values, value scanner, wildcards and paths, strings, error output, dynamic lists).
+- `engine3d/`: Engine (`FileIO.c`, `cmd_lex.c`) and Util (the lexer, the ini style data files and typed values, value scanner, wildcards and paths, strings, error output, dynamic lists).
 - `Math/`: boxes, planes and distances (`MathUtils.c`), matrices, quaternions and the rotations.
 
 ## Workflow for one function

@@ -19,7 +19,7 @@ The work is done incrementally with a hook DLL, the re3 method: a proxy `dinput8
 
 | Path | Content |
 |------|---------|
-| `docs/` | `binary.md`, triage report of Scrap.exe; `ghidra.md`, Ghidra database and symbols; `hookdll.md`, hook DLL and decompilation workflow; `packed.md`, the .packed archives |
+| `docs/` | `binary.md`, triage report of Scrap.exe; `ghidra.md`, Ghidra database and symbols; `hookdll.md`, hook DLL and decompilation workflow; `packed.md`, the .packed archives; `rename.md`, the English names of stage 4 |
 | `symbols/` | `functions.tsv`, `globals.tsv`, `comments.tsv`, `srcstrings.tsv`, `rtti_classes.txt` (see `docs/ghidra.md`) |
 | `tools/ghidra/` | `rebuild.sh`, `headless.sh`, export/import and naming scripts (Java), `include/` (parse stand-ins) |
 | `third_party/python-1.5.2/` | Python 1.5.2 headers, `COPYRIGHT` |
