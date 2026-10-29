@@ -544,6 +544,8 @@ void Scorer_SetLabelText(const char *text, float time) {
 
 void Scorer_SetMsgText(const char *text, float time, const char *font) {
 	Str_Copy(g_MsgText, text, 0xf424);
-	g_MsgNumLines = Str_WrapText(g_MsgText, g_MsgLines, 260.0f, 0xfa, font);
+	/* differs from the original on purpose: it allowed 0xfa lines in the 20 slots and wrote over g_LabelText and the
+	 * globals after it; ScrapC.exe has no fixed layout, so the lines stop at the slots */
+	g_MsgNumLines = Str_WrapText(g_MsgText, g_MsgLines, 260.0f, MSG_LINES, font);
 	g_MsgTime = time;
 }

@@ -183,7 +183,8 @@ SD_SIZE(cMsgScorer, 0xc8);
 /* the message (Scorer_SetMsgText): the text and its lines */
 #define g_MsgText (GAME_ARRAY(char, g_MsgText, 0x44dd18))		/* 0xf424 */
 #define g_MsgNumLines GAME_GLOBAL(int, g_MsgNumLines, 0x45d13c)
-#define g_MsgLines (GAME_ARRAY(char *, g_MsgLines, 0x45d140))		/* 0xfa lines */
+#define g_MsgLines (GAME_ARRAY(char *, g_MsgLines, 0x45d140))		/* MSG_LINES */
+#define MSG_LINES 20	/* the slots up to g_LabelText at 0x45d190 */
 #define g_MsgTime GAME_GLOBAL_IN(float, GVar_TimeToMsg, 16, 0x45d2b8)
 /* the hint text and its two lines */
 #define g_HintLines (GAME_ARRAY(char *, g_HintLines, 0x45d2c0))
