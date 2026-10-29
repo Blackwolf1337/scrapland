@@ -227,7 +227,7 @@ if SDTest.Peek('g_NetUserFactory', 'i') == 0:
 	check('cNetClient_dtor', lambda: (SDTest.Call('cNetClient_dtor', 'tvi', netc), neti(netc), neti(netc + 4)))
 netsaved = map(lambda a: SDTest.Peek(a, 'i'), (sym('g_NetCloseTime'), sym('g_NetUserFactory'), sym('g_NetSendDelay'), sym('g_NetWaitTime')))
 check('msgman times', lambda: netsaved)
-for netset in ((sym('MsgMan_SetCloseTime'), sym('g_NetCloseTime')), (sym('MsgMan_SetSendDelay'), sym('g_NetSendDelay')), (sym('MsgMan_SetWaitTime'), sym('g_NetWaitTime'))):
+for netset in (('MsgMan_SetCloseTime', sym('g_NetCloseTime')), ('MsgMan_SetSendDelay', sym('g_NetSendDelay')), ('MsgMan_SetWaitTime', sym('g_NetWaitTime'))):
 	check('MsgMan_Set' + fmt(netset), lambda s=netset: (SDTest.Call(s[0], 'vi', 1234), SDTest.Peek(s[1], 'i')))
 SDTest.Call('MsgMan_SetCloseTime', 'vi', netsaved[0])
 SDTest.Call('MsgMan_SetSendDelay', 'vi', netsaved[2])

@@ -21,7 +21,7 @@ def bschash(a, n):
 	if n % 4:
 		v = bsci(a + n - n % 4) & ((1 << 8 * (n % 4)) - 1)
 		s = (s + v) % 1000003
-	return (s, x)
+	return plain((s, x))
 bscvsize = {3: 0x1c, 7: 0x24, 10: 0x20, 5: 0x2c}
 def bsclv(lv):
 	n, frmt = bsci(lv + 4), bsci(lv + 0xc)

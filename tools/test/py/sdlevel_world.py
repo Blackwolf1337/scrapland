@@ -81,28 +81,28 @@ if wnammo > 0:
 	SDTest.Call('cAmmoInfo_SetF', 'tiisf', a, 'Charger', wold[1])
 
 # constructors on scratch memory filled with 0x55 (the destructors 0x19fa70/0x19fa40 free the strings again)
-for ctor, dtor, size, setS, getS in ((sym('cWeapInfo_ctor'), sym('cWeapInfo_dtor'), 0xb0, sym('cWeapInfo_SetS'), sym('cWeapInfo_GetS')),
-		(sym('cAmmoInfo_ctor'), sym('cAmmoInfo_dtor'), 0x5c, sym('cAmmoInfo_SetS'), sym('cAmmoInfo_GetS'))):
+for ctor, dtor, size, setS, getS in (('cWeapInfo_ctor', 'cWeapInfo_dtor', 0xb0, 'cWeapInfo_SetS', 'cWeapInfo_GetS'),
+		('cAmmoInfo_ctor', 'cAmmoInfo_dtor', 0x5c, 'cAmmoInfo_SetS', 'cAmmoInfo_GetS')):
 	m = wcalloc(size)
 	SDTest.Call('crt_memset', 'iiii', m, 0x55, size)
-	check('ctor %x' % ctor, lambda ctor=ctor, m=m: SDTest.Call(ctor, 'tii', m)[0] == m)
+	check('ctor %s' % ctor, lambda ctor=ctor, m=m: SDTest.Call(ctor, 'tii', m)[0] == m)
 	if size == 0xb0:
 		check('cWeapInfo_ctor fields', lambda m=m: (wpeek(m), wints(m + 0x90, 8), wints(m + 0x0c, 2), wints(m + 0x84, 2)))
 	else:
 		check('cAmmoInfo_ctor fields', lambda m=m: (wpeek(m), wints(m + 0x4, 2), wints(m + 0x14, 2), wints(m + 0x50, 2)))
 	for v, s in (('Name', 'SDWeap'), ('name', 'SDWeap2'), ('OnPress', 'SDNoModule.x'), ('OnHit', ''), ('SetFx', 'x'),
 			('Bogus', 'x')):
-		check('SetS %x' % setS + fmt((v, s)), lambda setS=setS, getS=getS, m=m, v=v, s=s: (SDTest.Call(setS, 'tiiss', m, v,
+		check('SetS %s' % setS + fmt((v, s)), lambda setS=setS, getS=getS, m=m, v=v, s=s: (SDTest.Call(setS, 'tiiss', m, v,
 			s)[0], (lambda r: (r[0], r[1] and SDTest.Peek(r[1], '@s')))(SDTest.Call(getS, 'tiisp', m, v, 0))))
 	SDTest.Call(dtor, 'tvi', m)
 	wfree(m)
 # Table<cWeapInfo>/<cAmmoInfo> made with Init (rva 0x19fd40, 0x19fc60) and freed
-for init, free, n in ((sym('WeapTable_Init'), sym('WeapTable_Free'), 3), (sym('AmmoTable_Init'), sym('AmmoTable_Free'), 2), (sym('AmmoTable_Init'), sym('AmmoTable_Free'), 1)):
+for init, free, n in (('WeapTable_Init', 'WeapTable_Free', 3), ('AmmoTable_Init', 'AmmoTable_Free', 2), ('AmmoTable_Init', 'AmmoTable_Free', 1)):
 	t = wcalloc(8)
 	SDTest.Call(init, 'tvii', t, n)
-	check('Table init %x' % init, lambda t=t: (wpeek(t), wpeek(t + 4) != 0))
+	check('Table init %s' % init, lambda t=t: (wpeek(t), wpeek(t + 4) != 0))
 	SDTest.Call(free, 'tvi', t)
-	check('Table_Free %x' % free, lambda t=t: wints(t, 2))
+	check('Table_Free %s' % free, lambda t=t: wints(t, 2))
 	SDTest.Call(free, 'tvi', t)
 	wfree(t)
 

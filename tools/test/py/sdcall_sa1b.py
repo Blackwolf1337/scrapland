@@ -14,16 +14,16 @@ def sabpoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 
 sabobj = sabz(0x40)
-for sabr in (sym('Stub_Nop'), sym('Stub_Nop@e0f70'), sym('Stub_Nop@1373f0'), sym('CNiebla_dtor')):
+for sabr in ('Stub_Nop', 'Stub_Nop@e0f70', 'Stub_Nop@1373f0', 'CNiebla_dtor'):
 	check('Stub_Nop' + fmt((sabr,)), lambda r=sabr: SDTest.Call(r, 'tvi', sabobj))
-for sabr in (sym('Stub_True'), sym('Stub_True@e2710'), sym('Stub_True@dfc10')):
+for sabr in ('Stub_True', 'Stub_True@e2710', 'Stub_True@dfc10'):
 	check('Stub_True' + fmt((sabr,)), lambda r=sabr: SDTest.Call(r, 'tbi', sabobj)[0])
-for sabr in (sym('Stub_Nop1'), sym('Stub_Nop1@e71d0'), sym('Stub_Nop1@2627e0'), sym('Stub_Nop1@27c8b0')):
+for sabr in ('Stub_Nop1', 'Stub_Nop1@e71d0', 'Stub_Nop1@2627e0', 'Stub_Nop1@27c8b0'):
 	check('Stub_Nop1' + fmt((sabr,)), lambda r=sabr: SDTest.Call(r, 'tvii', sabobj, 5))
 check('Stub_Nop2', lambda: SDTest.Call('Stub_Nop2', 'tviii', sabobj, 5, 6))
 check('Stub_Nop3', lambda: SDTest.Call('Stub_Nop3', 'tviiii', sabobj, 5, 6, 7))
 check('Stub_Zero', lambda: SDTest.Call('Stub_Zero', 'i')[0])
-for sabr in (sym('Stub_ReturnSelf'), sym('Stub_ReturnSelf@249490'), sym('Stub_ReturnSelf@258940')):
+for sabr in ('Stub_ReturnSelf', 'Stub_ReturnSelf@249490', 'Stub_ReturnSelf@258940'):
 	check('Stub_ReturnSelf' + fmt((sabr,)), lambda r=sabr: SDTest.Call(r, 'tii', sabobj)[0] == sabobj)
 
 check('Steam_Done', lambda: SDTest.Call('Steam_Done', 'v'))

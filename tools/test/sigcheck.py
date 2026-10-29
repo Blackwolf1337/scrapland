@@ -120,7 +120,7 @@ def fits(conv, params, thiscall, nargs):
 	return not thiscall and (n is None or nargs == n or varargs and nargs >= n)
 
 
-NAME_USE = re.compile(r"(?:SDTest\.(?:Call|Peek|Poke|ConvU)\(\s*|\bsym(?:va)?\(\s*)'([^']*)'")
+NAME_USE = re.compile(r"(?:SDTest\.(?:Call|Peek|Poke|ConvU|PeekSpan|PokeSpan)\(\s*|\bsym(?:va)?\(\s*)'([^']*)'")
 
 bad = 0
 table = read_table()

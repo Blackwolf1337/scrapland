@@ -473,8 +473,8 @@ actfree(actai)
 
 # ---- the ranges of the bank and bishop AIs on calloc memory (the other states go to the ones of cAIChar) ----
 actbk = actz(0x398)
-for actv in ((sym('cAIBankDirector_SetRanges'), 2), (sym('cAIBankDirector_SetRanges'), 3), (sym('cAIBankDirector_SetRanges'), 7), (sym('cAIBankDirector_SetRanges'), 1), (sym('cAIBankMaster_SetRanges'), 2), (sym('cAIBankMaster_SetRanges'), 3), (sym('cAIBankMaster_SetRanges'), 7),
-		(sym('cAIBankMaster_SetRanges'), 5), (sym('cAIBishop_SetRanges'), 2), (sym('cAIBishop_SetRanges'), 3), (sym('cAIBishop_SetRanges'), 7), (sym('cAIBishop_SetRanges'), 0)):
+for actv in (('cAIBankDirector_SetRanges', 2), ('cAIBankDirector_SetRanges', 3), ('cAIBankDirector_SetRanges', 7), ('cAIBankDirector_SetRanges', 1), ('cAIBankMaster_SetRanges', 2), ('cAIBankMaster_SetRanges', 3), ('cAIBankMaster_SetRanges', 7),
+		('cAIBankMaster_SetRanges', 5), ('cAIBishop_SetRanges', 2), ('cAIBishop_SetRanges', 3), ('cAIBishop_SetRanges', 7), ('cAIBishop_SetRanges', 0)):
 	check('ACT AI SetRanges %s' % fmt(actv), lambda v=actv: (actsetfl(actbk + 0x1b0, (-1.0, -2.0, -3.0, -4.0)),
 		actsetfl(actbk + 0x394, (321.0,)), actpoke(actbk + 0x1a0, v[1]), SDTest.Call(v[0], 'tvi', actbk),
 		actfl(actbk + 0x1b0, 4)))

@@ -199,14 +199,14 @@ check('Render_EndView', lambda: (rdlog(lambda: SDTest.Call('Render_EndView', 'v'
 # a forced material and the default material and texture modes (the last material forgotten before each)
 check('Render_ResetState', lambda: rdlog(lambda: SDTest.Call('Render_ResetState', 'v')))
 rdsm = []
-for a in (sym('g_UsarShaders'), sym('g_UseDefMaterial'), sym('g_UseDefTexture'), sym('g_MatForzado'), sym('g_MatFX1'), sym('g_AlphaFog')):
-	rdsm.append((a, SDTest.Peek(a, 'i')))
+for a in ('g_UsarShaders', 'g_UseDefMaterial', 'g_UseDefTexture', 'g_MatForzado', 'g_MatFX1', 'g_AlphaFog'):
+	rdsm.append((a, SDTest.PeekSpan(a, 0, 4)))
 def rdset(pass_):
 	SDTest.Call('Render_SetMaterial', 'iii', 0, -1)
 	return rdlog(lambda pass_=pass_: SDTest.Call('Render_SetMaterial', 'iii', rmat, pass_))
 rdsaved38 = (rdi(rmat + 0x30), rdi(rmat + 0x34), rdi(rmat + 0x38), rdi(rmat + 0x3c), rdi(rmat + 0x40))
 # without the pixel shader modes (the mode of this material fails a CHECK with a texture)
-SDTest.Poke('g_UsarShaders', SDTest.Peek('g_UsarShaders', 'i') & ~0xff)
+SDTest.PokeSpan('g_UsarShaders', 0, SDTest.PeekSpan('g_UsarShaders', 0, 4) & ~0xff, 4)
 for src, dst in ((5, 6), (2, 2), (2, 1)):
 	for b38 in (0, 0x0100, 0x010000, 0x01000000, 0x01010100):
 		for atrib in (0, 0x20, 0x400, 0x800, 0x40, 0x1000020):
@@ -232,17 +232,17 @@ for tex in (1, 2, 3, 4):
 check('Render_SetMaterial same', lambda: (rdset(0), rdlog(lambda: SDTest.Call('Render_SetMaterial', 'iii', rmat, 0))))
 check('Render_SetMaterial none', lambda: (SDTest.Call('Render_SetMaterial', 'iii', 0, -1), SDTest.Peek('g_MatActual', 'i')))
 for a, v in rdsm:
-	SDTest.Poke(a, v)
+	SDTest.PokeSpan(a, 0, v, 4)
 # the pixel shader modes with a material without textures (the shader of its mode is switched as it changes)
 rmat2 = SDTest.Call('CMaterial_ctor', 'tii', SDTest.Call('operator_new', 'ii', 0xb0)[0])[0]
-SDTest.Poke('g_UsarShaders', SDTest.Peek('g_UsarShaders', 'i') | 1)
+SDTest.PokeSpan('g_UsarShaders', 0, SDTest.PeekSpan('g_UsarShaders', 0, 4) | 1, 4)
 for transp in (0, 1):
 	SDTest.Poke(rmat2 + 0x38 - 0x400000, transp << 16)
 	check('Render_SetMaterial shaders' + fmt((transp,)), lambda: (rdlog(lambda: SDTest.Call('Render_SetMaterial', 'iii', 0, -1)),
 		rdlog(lambda: SDTest.Call('Render_SetMaterial', 'iii', rmat2, 0)), rdlog(lambda: SDTest.Call('Render_SetMaterial', 'iii', rmat2, 0)),
 		SDTest.Peek('g_ShaderActual', 'i')))
 for a, v in rdsm:
-	SDTest.Poke(a, v)
+	SDTest.PokeSpan(a, 0, v, 4)
 for i in range(5):
 	SDTest.Poke(rmat + 0x30 + 4 * i - 0x400000, rdsaved38[i])
 
@@ -261,17 +261,17 @@ def rdheap(a, n):
 rdproj = rdints(sym('g_MatProj'), 16)
 rdview = rdints(sym('g_MatView'), 16)
 rdtiles = (SDTest.Peek('g_Tiles', 'i'), SDTest.Peek('g_TileState', 'i'), SDTest.Peek('g_TileX', 'i'), SDTest.Peek('g_TileY', 'i'),
-	SDTest.Peek('g_TileOn', 'i'))
+	SDTest.PeekSpan('g_TileOn', 0, 4))
 pm = (1.5, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.001, 1.0, 0.0, 0.0, -0.1, 0.0)
 SDTest.Poke('g_Tiles', 2)
 for step in range(7):
 	on = (0, 1, 0, 0, 1, 0, 0)[step]
-	SDTest.Poke('g_TileOn', (rdtiles[4] & ~0xff) | on)
+	SDTest.PokeSpan('g_TileOn', 0, (rdtiles[4] & ~0xff) | on, 4)
 	check('Render_ProjTile' + fmt((step,)), lambda: (rdlog(lambda: SDTest.Call('Render_ProjTile', 'bF', pm)), SDTest.Peek('g_TileState', 'i'),
-		SDTest.Peek('g_TileX', 'i'), SDTest.Peek('g_TileY', 'i'), SDTest.Peek('g_TileOn', 'i') & 0xff, rdints(sym('g_MatProj'), 16)))
-for a, v in ((sym('g_Tiles'), rdtiles[0]), (sym('g_TileState'), rdtiles[1]), (sym('g_TileX'), rdtiles[2]), (sym('g_TileY'), rdtiles[3]),
-	(sym('g_TileOn'), rdtiles[4])):
+		SDTest.Peek('g_TileX', 'i'), SDTest.Peek('g_TileY', 'i'), SDTest.Peek('g_TileOn', 'b'), rdints(sym('g_MatProj'), 16)))
+for a, v in ((sym('g_Tiles'), rdtiles[0]), (sym('g_TileState'), rdtiles[1]), (sym('g_TileX'), rdtiles[2]), (sym('g_TileY'), rdtiles[3])):
 	SDTest.Poke(a, v)
+SDTest.PokeSpan('g_TileOn', 0, rdtiles[4], 4)
 check('Render_SetProj', lambda: (rdlog(lambda: SDTest.Call('Render_SetProj', 'iF', pm)), rdints(sym('g_MatProj'), 16)))
 rdcull = SDTest.Peek('g_CullMode', 'i')
 for cm in (0, 1):

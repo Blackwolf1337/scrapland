@@ -258,7 +258,7 @@ rsaRad = 0
 if rsaCar2 and rsaI(SDTest.Peek('g_pWorld', 'i') + 0x2f0) > 0 and SDTest.Call('Scorer_Get', 'ii', 0)[0]:
 	# a Radar item of the scorer of player 0 (the exe's constructor), marked DelMe after; the draws go to the D3D log
 	rsaSc = SDTest.Call('Scorer_Get', 'ii', 0)[0]
-	rsaRadView = rsaF(0x400000 + sym('g_RadarScale'), 4)
+	rsaRadView = rsaF(0x400000 + sym('g_RadarScale'), 1) + rsaF(0x400000 + sym('g_RadarAngle'), 1) + rsaF(0x400000 + sym('g_RadarCenterX'), 1) + rsaF(0x400000 + sym('g_RadarCenterZ'), 1)
 	SScorer.Add(0, 'SDRsaRadar', 'Radar')
 	rsaRad = SDTest.Call('cScorer_FindItem', 'tiis', rsaSc, 'SDRsaRadar')[0]
 	check('cRadarScorer item', lambda: rsaRad != 0)
@@ -278,7 +278,7 @@ if rsaRad:
 	def rsaimg(p):
 		return rsaF(p, 2), rsaI(p + 0x34)
 	def rsarad():
-		r = (rsaF(0x400000 + sym('g_RadarScale'), 4), rsaimg(rsaI(rsaRad + 0x8c4)), rsaimg(rsaI(rsaRad + 0x8dc)),
+		r = (rsaF(0x400000 + sym('g_RadarScale'), 1) + rsaF(0x400000 + sym('g_RadarAngle'), 1) + rsaF(0x400000 + sym('g_RadarCenterX'), 1) + rsaF(0x400000 + sym('g_RadarCenterZ'), 1), rsaimg(rsaI(rsaRad + 0x8c4)), rsaimg(rsaI(rsaRad + 0x8dc)),
 			rsaimg(rsaI(rsaRad + 0xcc)))
 		for k in (3, 5):
 			r = r + (rsaI(rsaRad + 0x4cc + 4 * k),)
@@ -329,7 +329,10 @@ if rsaRad:
 	for rsaK in range(16):
 		rsaPoke(rsaRad + 0x8dc + 4 * rsaK, rsaRadImgs[1 + rsaK])
 	rsaPoke(rsaRad + 0x28, rsaI(rsaRad + 0x28) | 1)
-	rsaSet(0x400000 + sym('g_RadarScale'), rsaRadView)
+	rsaSet(0x400000 + sym('g_RadarScale'), rsaRadView[0:1])
+	rsaSet(0x400000 + sym('g_RadarAngle'), rsaRadView[1:2])
+	rsaSet(0x400000 + sym('g_RadarCenterX'), rsaRadView[2:3])
+	rsaSet(0x400000 + sym('g_RadarCenterZ'), rsaRadView[3:4])
 	rsaFree(rsaCam)
 	rsaFree(rsaPos)
 # ---- the waypoint mark of the car on a cWaypointScorer of our own: current or not, split screen, players 0 and 1
@@ -433,17 +436,18 @@ SDTest.Poke('g_CShow', rsaCShow)
 # state poked, rand seeded; the game time itself (the turn of the reflection) is not shown ----
 rsaSub = rsaAlloc(0xd8)
 SDTest.Call('cScraplandSubMenuScorer_ctor', 'tii', rsaSub)
-rsaSubSave = rsaF(0x400000 + sym('g_SubMenuWait'), 1) + rsaF(0x400000 + sym('g_SubMenuRingTime'), 2)
+rsaSubSave = rsaF(0x400000 + sym('g_SubMenuWait'), 1) + rsaF(0x400000 + sym('g_SubMenuRingTime'), 1) + rsaF(0x400000 + sym('g_SubMenuRingWait'), 1)
 rsaSubSaveI = (rsaI(0x400000 + sym('g_SubMenuRingDir')), rsaI(0x400000 + sym('g_SubMenuRingFrame')))
 def rsasub(ring, wait, ringWait, dir, frame, seed):
 	rsaSet(rsaSub + 0xac, (-1.0e9,))
 	rsaSet(0x400000 + sym('g_SubMenuWait'), (wait,))
-	rsaSet(0x400000 + sym('g_SubMenuRingTime'), (ring, ringWait))
+	rsaSet(0x400000 + sym('g_SubMenuRingTime'), (ring,))
+	rsaSet(0x400000 + sym('g_SubMenuRingWait'), (ringWait,))
 	rsaPoke(0x400000 + sym('g_SubMenuRingDir'), dir)
 	rsaPoke(0x400000 + sym('g_SubMenuRingFrame'), frame)
 	rsaSrand(seed)
 	d3d = rsalog(lambda: SDTest.Call('cScraplandSubMenuScorer_Draw', 'tvii', rsaSub, 0))
-	r = (d3d, rsaF(0x400000 + sym('g_SubMenuWait'), 1), rsaF(0x400000 + sym('g_SubMenuRingTime'), 2), rsaI(0x400000 + sym('g_SubMenuRingDir')),
+	r = (d3d, rsaF(0x400000 + sym('g_SubMenuWait'), 1), rsaF(0x400000 + sym('g_SubMenuRingTime'), 1) + rsaF(0x400000 + sym('g_SubMenuRingWait'), 1), rsaI(0x400000 + sym('g_SubMenuRingDir')),
 		rsaI(0x400000 + sym('g_SubMenuRingFrame')))
 	for o in (0xbc, 0xc0, 0xc4, 0xc8, 0xcc, 0xd0):
 		img = rsaI(rsaSub + o)
@@ -457,7 +461,8 @@ for rsav in ((0.2, 1.0, 1.0, 0, 9, 1), (0.2, 1.0, 1.0, 1, 9, 2), (0.2, 1.0, 0.5,
 	check('cScraplandSubMenuScorer_Draw' + fmt(rsav), lambda rsav=rsav: rsasub(rsav[0], rsav[1], rsav[2], rsav[3],
 		rsav[4], rsav[5]))
 rsaSet(0x400000 + sym('g_SubMenuWait'), rsaSubSave[0:1])
-rsaSet(0x400000 + sym('g_SubMenuRingTime'), rsaSubSave[1:3])
+rsaSet(0x400000 + sym('g_SubMenuRingTime'), rsaSubSave[1:2])
+rsaSet(0x400000 + sym('g_SubMenuRingWait'), rsaSubSave[2:3])
 rsaPoke(0x400000 + sym('g_SubMenuRingDir'), rsaSubSaveI[0])
 rsaPoke(0x400000 + sym('g_SubMenuRingFrame'), rsaSubSaveI[1])
 SDTest.Call('cScraplandSubMenuScorer_dtor', 'tvi', rsaSub)

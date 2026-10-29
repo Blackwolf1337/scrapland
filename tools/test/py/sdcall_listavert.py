@@ -62,6 +62,9 @@ def lvoff(r, p):
 def lvstep(name, lv, rva, sig, *args):
 	check(name + fmt(args), lambda lv=lv, rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig, lv) + args)[0], lvget(lv)))
 
+# the vertex shaders of the XBOX formats 12..17, separate C objects in ScrapC.exe
+lvvshaders = (sym('g_hVShader_Tex1_XBox'), sym('g_hVShader_Tex1C_XBox'), sym('g_hVShader_LTex1_XBox'),
+	sym('g_hVShader_LTex1N_XBox'), sym('g_hVShader_LTex2_XBox'), sym('g_hVShader_LTex2N_XBox'))
 for f in range(1, 18):
 	if f != 9:
 		call('ListaVert_FormatSize', sym('ListaVert_FormatSize'), 'ii', f)
@@ -69,8 +72,8 @@ for f in range(1, 18):
 		call('ListaVert_FormatName', sym('ListaVert_FormatName'), 'si', f)
 		call('ListaVert_FormatFVF', sym('ListaVert_FormatFVF'), 'ii', f)
 	# the XBOX formats name a vertex shader that the PC version may not have: only checked when it is there
-	if f >= 12 and SDTest.Peek(sym('g_hVShader_Tex1_XBox') + 4 * (f - 12), 'i'):
-		check('ListaVert_FormatFVF shader' + fmt((f,)), lambda f=f: SDTest.Call('ListaVert_FormatFVF', 'ii', f)[0] == SDTest.Peek(sym('g_hVShader_Tex1_XBox') + 4 * (f - 12), 'i'))
+	if f >= 12 and SDTest.Peek(lvvshaders[f - 12], 'i'):
+		check('ListaVert_FormatFVF shader' + fmt((f,)), lambda f=f: SDTest.Call('ListaVert_FormatFVF', 'ii', f)[0] == SDTest.Peek(lvvshaders[f - 12], 'i'))
 for i in range(30):
 	n = (rnd(-1.0, 1.0), rnd(-1.0, 1.0), rnd(-1.0, 1.0))
 	call('ListaVert_PackNormal', sym('ListaVert_PackNormal'), 'iF', n)
@@ -81,8 +84,8 @@ for n in ((1.0, -1.0, 1.0), (-1.0, 1.0, -1.0), (0.0, -0.0, 0.0), (0.0009, -0.000
 for packed in (0, -1, 0x7fffffff, -0x7fffffff - 1, 0x3ff, 0x400, 0x1ff800, 0x200000, 0x12345678):
 	call('ListaVert_UnpackNormal', sym('ListaVert_UnpackNormal'), 'vFi', (9.0, 9.0, 9.0), packed)
 # the field getters of one vertex, on a fake address (they only add)
-for rva in (sym('VertLTex1_Field'), sym('VertLTex1N_Field'), sym('VertLTex1NXBox_Field'), sym('VertLTex1XBox_Field'), sym('VertLTex2_Field'), sym('VertLTex2N_Field'), sym('VertLTex2NXBox_Field'), sym('VertLTex2XBox_Field'), sym('VertLTex3_Field'), sym('VertTLTex1_Field'),
-		sym('VertTex1_Field'), sym('VertTex1CXBox_Field'), sym('VertTex1XBox_Field'), sym('VertTex2_Field')):
+for rva in ('VertLTex1_Field', 'VertLTex1N_Field', 'VertLTex1NXBox_Field', 'VertLTex1XBox_Field', 'VertLTex2_Field', 'VertLTex2N_Field', 'VertLTex2NXBox_Field', 'VertLTex2XBox_Field', 'VertLTex3_Field', 'VertTLTex1_Field',
+		'VertTex1_Field', 'VertTex1CXBox_Field', 'VertTex1XBox_Field', 'VertTex2_Field'):
 	for f in range(-1, 18):
 		check('Vert_Field' + fmt((rva, f)), lambda rva=rva, f=f: SDTest.Call(rva, 'tiii', 0x1000, f)[0] - 0x1000)
 

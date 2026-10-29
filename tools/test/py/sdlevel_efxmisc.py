@@ -43,7 +43,7 @@ def efmactive(p):
 def efmpartv(p, i):
 	r = efmpart(p, i)
 	if r[0]:
-		return r
+		return plain(r)
 	return (0,)
 # the first n particles (at most the number the system has)
 def efmpartlist(p, n):
@@ -331,7 +331,7 @@ def efmslots(fx):
 	r = []
 	for i in (0, 1, 2, 77, 254):
 		r.append((efmfl(fx + 0xb8 + 4 * i, 1), efmfl(fx + 0x4b4 + 4 * i, 1), efmfl(fx + 0x8b0 + 12 * i, 3),
-			efmfl(fx + 0x14a4 + 4 * i, 1), efmi(fx + 0x18a0 + 4 * i), efmpartv(fx + 8, i)))
+			efmfl(fx + 0x14a4 + 4 * i, 1), plain(efmi(fx + 0x18a0 + 4 * i)), efmpartv(fx + 8, i)))
 	return tuple(r)
 def efmupd(name, fx, dt, extra):
 	SDTest.Call(efmupdates[name], 'tvif', fx, dt)

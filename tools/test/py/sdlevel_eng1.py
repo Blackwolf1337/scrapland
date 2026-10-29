@@ -383,16 +383,16 @@ def en1ints(a, n):
 	return r
 for en1s in ('', 'abc', 'Hello World 123', 'x'):
 	for en1c in (-1, 1, 4, 0, 30):
-		for en1fn in (sym('DXUtil_AnsiToGeneric'), sym('DXUtil_AnsiToGeneric@2765b0')):
+		for en1fn in ('DXUtil_AnsiToGeneric', 'DXUtil_AnsiToGeneric@2765b0'):
 			check('en1 DXUtil_AnsiToGeneric' + fmt((en1fn, en1s, en1c)), lambda fn=en1fn, s=en1s, c=en1c:
 				SDTest.Call(fn, 'vbsi', 'qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq', s, c)[1])
-		for en1fn in (sym('DXUtil_AnsiToWide'), sym('DXUtil_GenericToWide')):
+		for en1fn in ('DXUtil_AnsiToWide', 'DXUtil_GenericToWide'):
 			def en1aw(fn=en1fn, s=en1s, c=en1c):
 				en1wfill(en1wb + 4, 30, 0x41414141)
 				SDTest.Call(fn, 'visi', en1wb + 4, s, c)
 				return en1ints(en1wb, 16)
 			check('en1 DXUtil_AnsiToWide' + fmt((en1fn, en1s, en1c)), en1aw)
-		for en1fn in (sym('DXUtil_WideToAnsi'), sym('DXUtil_WideToGeneric')):
+		for en1fn in ('DXUtil_WideToAnsi', 'DXUtil_WideToGeneric'):
 			def en1wa(fn=en1fn, s=en1s, c=en1c):
 				en1wfill(en1wb, 32, 0)
 				for k in range(len(s)):

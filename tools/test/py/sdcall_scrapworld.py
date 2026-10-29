@@ -35,17 +35,18 @@ for old in (0, 1, 0x80, 0x100):
 				st))
 
 # RenderMode: the profiler mode, the tile switch and the vertex specular share 0x4a9018 and the bytes from 0x4a8efb
+# (g_TileOn and the three byte flags after it, separate C objects in ScrapC.exe: read and written as the span)
 swprof = SDTest.Peek('g_ProfMode', 'i')
-swbytes = SDTest.Peek('g_TileOn', 'i')
+swbytes = SDTest.PeekSpan('g_TileOn', 0, 4)
 swfilter = SDTest.Peek('g_TexFilter', 'i')
 for mode in (0x10, 0x20, 0x100, 0x101, 0x102, 0x103, 0x7, 0x11, 0x104, -1):
 	check('RenderMode get' + fmt((mode,)), lambda mode=mode: SDTest.Call('RenderMode', 'iiii', mode, 0, 0)[0])
 for mode, v in ((0x10, 0), (0x10, 0), (0x10, 0), (0x10, 0), (0x100, 0), (0x100, 5), (0x100, 0), (0x101, 0), (0x101, 0),
 	(0x102, 0), (0x102, 0), (0x102, 0), (0x20, 0), (0x7, 1)):
 	check('RenderMode set' + fmt((mode, v)), lambda mode=mode, v=v: (SDTest.Call('RenderMode', 'iiii', mode, v, 1)[0],
-		SDTest.Peek('g_ProfMode', 'i'), SDTest.Peek('g_TileOn', 'i'), SDTest.Peek('g_TexFilter', 'i')))
+		SDTest.Peek('g_ProfMode', 'i'), SDTest.PeekSpan('g_TileOn', 0, 4), SDTest.Peek('g_TexFilter', 'i')))
 SDTest.Poke('g_ProfMode', swprof)
-SDTest.Poke('g_TileOn', swbytes)
+SDTest.PokeSpan('g_TileOn', 0, swbytes, 4)
 SDTest.Poke('g_TexFilter', swfilter)
 
 for f in ('sdnofile%d.xyz', 'sdcall.py', 'sd%dcall.py'):
@@ -78,7 +79,7 @@ swlast = SDTest.Peek('g_SplashLast', 's')
 swon = SDTest.Peek('g_ShowSplashScreen', 'i')
 swtime = SDTest.Peek('g_SplashTime', 'i')
 SDTest.Poke('g_ShowSplashScreen', 0)
-for fn in (sym('Splash_Black'), sym('Splash_Promos'), sym('Splash_Logos'), sym('Splash_Reset')):
+for fn in ('Splash_Black', 'Splash_Promos', 'Splash_Logos', 'Splash_Reset'):
 	check('Splash off' + fmt((fn,)), lambda fn=fn: (SDTest.Call(fn, 'v'), SDTest.Peek('g_SplashLast', 's')))
 SDTest.Poke('g_ShowSplashScreen', 1)
 for name in ('sdnosplash.dds', '', 'sdnosplash2.dds'):

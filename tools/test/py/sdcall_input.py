@@ -51,7 +51,7 @@ for inpc in (65, 122, 48, 10, 8, 126, 32, 0, 200):
 		inpf(inppi + 0x8c, 2), SDTest.Call('cPlayerInput_GetCursorChar', 'tbi', inppi)[0]))
 inpfree(inppi)
 # SetInputFunc on player 4 with no function; onDone is put back
-inppi = inpb + 0x44c130 + 3 * 0xb4
+inppi = symva('g_PlayerInput') + 3 * 0xb4
 inpold = inpi(inppi + 0x98)
 check('cPlayerInput_SetInputFunc', lambda: (SDTest.Call('cPlayerInput_SetInputFunc', 'tvis', inppi, ''), isfn(inpi(inppi + 0x98), sym('Input_OnTextDone')),
 	inpi(inppi + 0x9c + 8)))
@@ -144,9 +144,9 @@ while inpk < inpnsets:
 	inpk = inpk + 1
 
 # the devices: keyboard, mouse and the four pads (static objects of the exe)
-inpkb = inpb + 0x44c624
-inpms = inpb + 0x44c89c
-inppads = (inpb + 0x44c9a8, inpb + 0x44c9d4, inpb + 0x44ca00, inpb + 0x44ca2c)
+inpkb = symva('g_Keyboard')
+inpms = symva('g_Mouse')
+inppads = (symva('g_PcPads'), symva('g_PcPads') + 0x2c, symva('g_PcPads') + 0x58, symva('g_PcPads') + 0x84)
 inpdevs = (inpkb, inpms) + inppads
 def inpdevlist():
 	r = []
@@ -287,10 +287,10 @@ check('Input_SetToDefine', lambda: (SDTest.Call('Input_SetToDefine', 'viii', 2, 
 	inpdefst()))
 check('Input_SetDefineCallback', lambda: (SDTest.Call('Input_SetDefineCallback', 'vi', 0x1234560), inpdefst(),
 	SDTest.Call('Input_SetDefineFunc', 'vs', ''), inpdefst()))
-inpwi(inpb + 0x428ac4, inpdefsaved[0])
-inpwi(inpb + 0x428ac8, inpdefsaved[1])
-inpwi(inpb + 0x428acc, inpdefsaved[2])
-inpwi(inpb + 0x44c610, inpdefsaved[3])
+inpwi(0x400000 + sym('g_ToDefinePlayer'), inpdefsaved[0])
+inpwi(0x400000 + sym('g_ToDefineAction'), inpdefsaved[1])
+inpwi(0x400000 + sym('g_ToDefineSet'), inpdefsaved[2])
+inpwi(0x400000 + sym('g_OnDefined'), inpdefsaved[3])
 
 # entry values: the actions of the current set (0 in the menu) take the largest value; values put back after
 def inpactaddr(s, a):
@@ -345,15 +345,15 @@ for inpv in inpsaved:
 check('bindings restored', lambda: inpallbinds() == inpstart)
 
 # the inactivity timer, with the time far away so that no function runs
-inptimer = inpf(inpb + 0x44c614, 1)
+inptimer = inpf(0x400000 + sym('g_InactivityTimer'), 1)
 inppause = SDTest.Peek('g_PauseInactivity', 'i')
-check('CheckInactivityTime', lambda: (inpf(inpb + 0x44c5a0, 1), inpf(inpb + 0x44c5a4, 1)))
-inpwf(inpb + 0x44c614, (5.0,))
-check('Input_CheckInactivity', lambda: (SDTest.Call('Input_CheckInactivity', 'vf', 1.5), inpf(inpb + 0x44c614, 1)))
-inpwi(inpb + 0x44c608, 1)
-check('Input_CheckInactivity paused', lambda: (SDTest.Call('Input_CheckInactivity', 'vf', 1.5), inpf(inpb + 0x44c614, 1)))
-inpwi(inpb + 0x44c608, inppause)
-inpwf(inpb + 0x44c614, inptimer)
+check('CheckInactivityTime', lambda: (inpf(0x400000 + sym('g_InactivityTime'), 1), inpf(0x400000 + sym('g_InactivityTimeDef'), 1)))
+inpwf(0x400000 + sym('g_InactivityTimer'), (5.0,))
+check('Input_CheckInactivity', lambda: (SDTest.Call('Input_CheckInactivity', 'vf', 1.5), inpf(0x400000 + sym('g_InactivityTimer'), 1)))
+inpwi(0x400000 + sym('g_PauseInactivity'), 1)
+check('Input_CheckInactivity paused', lambda: (SDTest.Call('Input_CheckInactivity', 'vf', 1.5), inpf(0x400000 + sym('g_InactivityTimer'), 1)))
+inpwi(0x400000 + sym('g_PauseInactivity'), inppause)
+inpwf(0x400000 + sym('g_InactivityTimer'), inptimer)
 
 # the stick dead zone
 for inpv in ((0.1, 0.1, 0.2), (0.5, 0.5, 0.2), (1.0, 0.0, 0.2), (0.7, -0.7, 0.24), (-1.0, -1.0, 0.2), (0.3, 0.4, 0.5),

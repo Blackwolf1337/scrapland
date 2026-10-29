@@ -515,7 +515,7 @@ for name in ('DM_sdnuevo', 'sdnuevo'):
 	check('MundoDummy_ctor' + fmt((name,)), lambda d=d: mwdummies(d))
 	check('MundoDummy_dtor' + fmt((name,)), lambda d=d: (SDTest.Call('MundoDummy_dtor', 'tvi', d), mwi(d + 4)))
 # the debug points: a point, a line, a box, then cleared; the limit with a count of 3
-sdon = SDTest.Peek('g_PuntosOn', 'i')
+sdon = SDTest.PeekSpan('g_PuntosOn', 0, 4)
 sdmax = SDTest.Peek('g_MaxPuntos', 'i')
 def mwpuntos():
 	n = SDTest.Peek('g_NumPuntos', 'i')
@@ -537,7 +537,7 @@ for i in range(5):
 		mwpuntos()))
 SDTest.Call('Debug_PuntosClear', 'v')
 SDTest.Poke('g_MaxPuntos', sdmax)
-SDTest.Poke('g_PuntosOn', sdon)
+SDTest.PokeSpan('g_PuntosOn', 0, sdon, 4)
 
 # the fog of the world (Engine/Niebla.c) through the D3D log: CNiebla_Apply with its flags and the fog variables
 # changed, all put back after

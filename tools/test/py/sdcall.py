@@ -369,8 +369,9 @@ for n in ('C4', 'a0', 'G#9', 'Bb3', 'Ex-1', 'C', 'H2', 'C#b4', 'D##2'):
 	call('Proc_Note', sym('Proc_Note'), 'ibszi', '', n, None, 16)
 sino = SDTest.Peek(sym('g_ProcTypes') + 4, 'i')
 for n in ('si', 'YES', 'false', 'Nope', 'S', ''):
-	call('Proc_TypeLookup', sym('Proc_TypeLookup'), 'ibsii', '', n, sino, 260)
-	call('Proc_TypeLookup short', sym('Proc_TypeLookup'), 'ibsii', '', n, sino, 1)
+	# the label without the table address, which differs between the exes
+	check('Proc_TypeLookup%s' % fmt(('', n, 260)), lambda n=n: SDTest.Call('Proc_TypeLookup', 'ibsii', '', n, sino, 260))
+	check('Proc_TypeLookup short%s' % fmt(('', n, 1)), lambda n=n: SDTest.Call('Proc_TypeLookup', 'ibsii', '', n, sino, 1))
 sdtipo = 'sdtipo'
 bucle = SDTest.Peek(sym('g_ProcTypes') + 16, 'i')
 check('Proc_DefineType', lambda: SDTest.Call('Proc_DefineType', 'isi', sdtipo, bucle)[0])
@@ -736,7 +737,7 @@ def bget(b, ch=4):
 	px = []
 	for i in range(w * h * ch):
 		px.append(SDTest.Peek(img + 4 * i, '@i'))
-	return w, h, px
+	return w, h, plain(px)
 def bfree(b):
 	img = SDTest.Peek(b + 8, '@i')
 	if img:
@@ -1048,9 +1049,9 @@ def tnew(rva, num, words):
 		r = r + (tpeek(p, words),)
 	SDTest.Call('Mem_Free', 'vi', t)
 	return r
-for rva, sz in ((sym('Tabla_Alloc4'), 4), (sym('Tabla_Alloc2'), 2), (sym('Tabla_Alloc1C'), 0x1c), (sym('Tabla_AllocC'), 0xc), (sym('Tabla_Alloc1'), 1), (sym('Tabla_Alloc14'), 0x14),
-		(sym('Tabla_Alloc14@28fcc0'), 0x14), (sym('Tabla_Alloc18'), 0x18), (sym('Tabla_Alloc2C'), 0x2c), (sym('Tabla_Alloc10'), 0x10), (sym('Tabla_Alloc4@2c2b10'), 4), (sym('Tabla_Alloc4@2c2b80'), 4),
-		(sym('Tabla_Alloc8'), 8), (sym('Tabla_Alloc38'), 0x38)):
+for rva, sz in (('Tabla_Alloc4', 4), ('Tabla_Alloc2', 2), ('Tabla_Alloc1C', 0x1c), ('Tabla_AllocC', 0xc), ('Tabla_Alloc1', 1), ('Tabla_Alloc14', 0x14),
+		('Tabla_Alloc14@28fcc0', 0x14), ('Tabla_Alloc18', 0x18), ('Tabla_Alloc2C', 0x2c), ('Tabla_Alloc10', 0x10), ('Tabla_Alloc4@2c2b10', 4), ('Tabla_Alloc4@2c2b80', 4),
+		('Tabla_Alloc8', 8), ('Tabla_Alloc38', 0x38)):
 	for num in (1, 7):
 		check('Tabla_Alloc' + fmt((rva, sz, num)), lambda rva=rva, num=num: tnew(rva, num, 0))
 # the last 2 bytes of each element stay as new[] left them
@@ -1073,8 +1074,8 @@ def tobjs(rva, num, sz, first):
 		words.append(SDTest.Peek(p + i * sz, '@i'))
 	SDTest.Call('Mem_Free', 'vi', t)
 	return n, SDTest.Peek(p - 4, '@i'), words
-for rva, sz, tfirst in ((sym('Tabla_New8'), 8, 1), (sym('Tabla_NewA8'), 0xa8, 1), (sym('Tabla_New24'), 0x24, 1), (sym('Tabla_NewFC'), 0xfc, 1),
-		(sym('Tabla_NewB4'), 0xb4, 1), (sym('Tabla_New1C'), 0x1c, 0)):
+for rva, sz, tfirst in (('Tabla_New8', 8, 1), ('Tabla_NewA8', 0xa8, 1), ('Tabla_New24', 0x24, 1), ('Tabla_NewFC', 0xfc, 1),
+		('Tabla_NewB4', 0xb4, 1), ('Tabla_New1C', 0x1c, 0)):
 	check('Tabla_New' + fmt((rva, sz)), lambda rva=rva, sz=sz, tfirst=tfirst: tobjs(rva, 3, sz, tfirst))
 tio = SDTest.Call('Mem_Alloc', 'ii', 16)[0]
 def topen(name, skip):
@@ -1096,8 +1097,8 @@ def aread(rva, name, off, sz):
 		data = tpeek(p, (n * sz + 3) / 4)
 	tclose()
 	return n, p != 0, data
-for rva, sz, off in ((sym('Array_Read2'), 2, 3564), (sym('Array_Read4'), 4, 4242), (sym('Array_Read8'), 8, 5852), (sym('Array_Read10'), 0x10, 1824),
-		(sym('Array_Read10@2af4e0'), 0x10, 1824), (sym('Array_Read6'), 6, 5174), (sym('Array_ReadC'), 0xc, 7209)):
+for rva, sz, off in (('Array_Read2', 2, 3564), ('Array_Read4', 4, 4242), ('Array_Read8', 8, 5852), ('Array_Read10', 0x10, 1824),
+		('Array_Read10@2af4e0', 0x10, 1824), ('Array_Read6', 6, 5174), ('Array_ReadC', 0xc, 7209)):
 	check('Array_Read' + fmt((rva, sz)), lambda rva=rva, sz=sz, off=off: aread(rva, sm3, off, sz))
 def tread(rva, name, off, sz):
 	topen(name, off)

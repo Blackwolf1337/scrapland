@@ -100,9 +100,9 @@ def trbuild(t, rva, vtx0):
 	di = SDTest.Peek(cell + 4, '@i') - ib
 	verts = idx = None
 	if dv >= 0 and dv <= 0x1c * 80:
-		verts = tpeek(vb, dv / 4)
+		verts = plain(tpeek(vb, dv / 4))
 	if di >= 0 and di <= 2 * 160:
-		idx = tpeek(ib, (di + 3) / 4)
+		idx = plain(tpeek(ib, (di + 3) / 4))
 	g = (SDTest.Peek('g_TrailsVertex', 'i'), SDTest.Peek('g_TrailsPrims', 'i'), SDTest.Peek('g_TrailsIndex', 'i'))
 	trfree(cell)
 	trfree(ib)
@@ -142,7 +142,7 @@ for npts in (2, 3, 5):
 	check('CTrail_Reset' + fmt((npts,)), lambda: (SDTest.Call('CTrail_Reset', 'tvi', T), trstate(T, 1)))
 	for i in range(npts):
 		tradd(T, i + 20)
-	for rva in (sym('CTrail_BuildRibbon'), sym('CTrail_BuildFan'), sym('CTrail_BuildCross'), sym('CTrail_BuildQuads')):
+	for rva in ('CTrail_BuildRibbon', 'CTrail_BuildFan', 'CTrail_BuildCross', 'CTrail_BuildQuads'):
 		for orient in (0, 1, 2):
 			trset(T, 0, orient, npts % 2, 1, npts / 3, 40, 8)
 			check('CTrail_Build direct' + fmt((npts, rva, orient)), lambda rva=rva: (trbuild(T, rva, 0), trget(T)))

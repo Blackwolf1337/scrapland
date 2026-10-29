@@ -22,6 +22,8 @@ if SDTest.Base() != 0x400000:
 # Python 1.5.2 has no string methods, hence no join.
 # every NaN prints as nan: which NaN (sign, payload) an operation passes on depends on the order of its operands,
 # which the C compiler may swap for + and *
+# Every int goes through SDTest.Orig: an address of a C function or C object of ScrapC.exe (absolute or as an rva) prints
+# as the original's (stage 3c2), so vtable pointers, string pointers and function rvas compare between the runs.
 def fmt(v):
 	if type(v) == type(0.0):
 		r = '%.17g' % v
@@ -34,6 +36,38 @@ def fmt(v):
 			if r:
 				r = r + ', '
 			r = r + fmt(x)
+		return '(' + r + ')'
+	if type(v) == type(0):
+		return repr(SDTest.Orig(v))
+	if type(v) == type([]):
+		return lrepr(v)
+	return repr(v)
+
+# a value that holds no address (pixels, colors, hashes): its ints as longs, which fmt prints as they are; a color or
+# a packed number can be the address of a C object or function in ScrapC.exe
+def plain(v):
+	if type(v) == type(0):
+		return long(v)
+	if type(v) == type([]):
+		return map(plain, v)
+	if type(v) == type(()):
+		return tuple(map(plain, v))
+	return v
+
+# repr of a list or of what it holds, with the ints through SDTest.Orig
+def lrepr(v):
+	if type(v) == type(0):
+		return repr(SDTest.Orig(v))
+	if type(v) == type([]) or type(v) == type(()):
+		r = ''
+		for x in v:
+			if r:
+				r = r + ', '
+			r = r + lrepr(x)
+		if type(v) == type([]):
+			return '[' + r + ']'
+		if len(v) == 1:
+			return '(' + r + ',)'
 		return '(' + r + ')'
 	return repr(v)
 

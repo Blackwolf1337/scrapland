@@ -108,7 +108,7 @@ mtstep('CMallaTri_Transform', m, sym('CMallaTri_Transform'), 'tviF', affine())
 mtstep('CMallaTri_Transform any', m, sym('CMallaTri_Transform'), 'tviF', mat())
 mtstep('CMallaTri_RemoveTri', m, sym('CMallaTri_RemoveTri'), 'tvii', 1)
 mtstep('CMallaTri_RemoveTri last', m, sym('CMallaTri_RemoveTri'), 'tvii', 2)
-for rva in (sym('CMallaTri_NoFile'), sym('CMallaTri_NoFile@262be0')):
+for rva in ('CMallaTri_NoFile', 'CMallaTri_NoFile@262be0'):
 	check('CMallaTri_NoFile' + fmt((rva,)), lambda m=m, rva=rva: SDTest.Call(rva, 'tbiii', m, 0, 0))
 
 # texture vertex 0 for triangles without them; 0 texture vertices free them

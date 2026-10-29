@@ -56,17 +56,17 @@ for nm in ('Bip Spine', 'Bip_x', 'BipB', 'Bone01', 'bip x', 'DR_door', 'dm_x', '
 		SDTest.Call('Nodo_LimpiarNombre', 'vi', m3nb), SDTest.Peek(m3nb, '@s')))
 mat = SDTest.Call('CMaterial_ctor', 'tii', SDTest.Call('operator_new', 'ii', 0xb0)[0])[0]
 rdmu = []
-for a in (sym('g_M3DUseOpacity'), sym('g_M3DUseBumpmap')):
-	rdmu.append(SDTest.Peek(a, 'i'))
+for a in ('g_M3DUseOpacity', 'g_M3DUseBumpmap'):
+	rdmu.append(SDTest.PeekSpan(a, 0, 4))
 for atrib in (0, 0x200):
 	SDTest.Poke(mat + 0x3c - 0x400000, atrib)
 	for use in (0, 0x01000100, 0x01010101):
-		SDTest.Poke('g_M3DUseOpacity', use)
-		SDTest.Poke('g_M3DUseBumpmap', use)
+		SDTest.PokeSpan('g_M3DUseOpacity', 0, use, 4)
+		SDTest.PokeSpan('g_M3DUseBumpmap', 0, use, 4)
 		check('M3D_MapaActivo' + fmt((atrib, use)), lambda mat=mat: map(lambda i, mat=mat: SDTest.Call('M3D_MapaActivo', 'bii',
 			mat, i)[0], (0, 1, 2, 3, 4, 5)))
-SDTest.Poke('g_M3DUseOpacity', rdmu[0])
-SDTest.Poke('g_M3DUseBumpmap', rdmu[1])
+SDTest.PokeSpan('g_M3DUseOpacity', 0, rdmu[0], 4)
+SDTest.PokeSpan('g_M3DUseBumpmap', 0, rdmu[1], 4)
 for name in (models[2], models[0]):
 	e = m3esc[name]
 	n = m3i(e + 0xc)

@@ -35,7 +35,7 @@ rn2pk(rn2t + 4, rn2new(0x100))
 for i in (0, 1, 2):
 	check('Tabla_Get8' + fmt((i,)), lambda i=i: SDTest.Call('Tabla_Get8', 'tiii', rn2t, i)[0] - rn2i(rn2t + 4))
 	check('Tabla_Get50' + fmt((i,)), lambda i=i: SDTest.Call('Tabla_Get50', 'tiii', rn2t, i)[0] - rn2i(rn2t + 4))
-for rva in (sym('Tabla_Free@2b8dd0'), sym('Tabla_Free@2bbcf0'), sym('Tabla_Free@2bbd20')):
+for rva in ('Tabla_Free@2b8dd0', 'Tabla_Free@2bbcf0', 'Tabla_Free@2bbd20'):
 	rn2pk(rn2t, 4)
 	rn2pk(rn2t + 4, SDTest.Call('operator_new_array', 'ii', 32)[0])
 	check('Tabla_Free' + fmt((rva,)), lambda rva=rva: (SDTest.Call(rva, 'tvi', rn2t), rn2ints(rn2t, 2),
@@ -82,7 +82,7 @@ check('RenderMallaD3D_Flush2', lambda: rn2log(lambda: (SDTest.Call('RenderMallaD
 check('MallaD3D_Render NULL', lambda: (SDTest.Call('MallaD3D_Render', 'iii', 0, 0)[0], SDTest.Peek('g_UsadosMalla', 'i')))
 
 # the stubs
-for rva in (sym('FXMisc_Nop@2b96d0'), sym('FXMisc_Nop@2b96e0'), sym('FXMisc_Nop@2b9e40'), sym('FXMisc_Nop@2ba7a0')):
+for rva in ('FXMisc_Nop@2b96d0', 'FXMisc_Nop@2b96e0', 'FXMisc_Nop@2b9e40', 'FXMisc_Nop@2ba7a0'):
 	check('Obj3D nop' + fmt((rva,)), lambda rva=rva: SDTest.Call(rva, 'tvii', rn2t, 7))
 check('Grafico3DVert_ctor', lambda: SDTest.Call('Grafico3DVert_ctor', 'tii', rn2t)[0] == rn2t)
 def rn2g3(g):

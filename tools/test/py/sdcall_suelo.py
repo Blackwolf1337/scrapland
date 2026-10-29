@@ -260,7 +260,7 @@ check('CSuelo_Delete', lambda s=s: (SDTest.Call('CSuelo_Delete', 'tiii', s, 1)[0
 su = sunew(0x3524)
 check('CSuelo_ctor', lambda: (SDTest.Call('CSuelo_ctor', 'tii', su)[0] == su, suwords(su + 4, 0x1b), suglobals(), sualt(su + 0x70)))
 sualt0 = su + 0x70
-for f in (sym('CSuelo_NodosVf4'), sym('CSuelo_NodosVf3'), sym('CSuelo_NodosToD3D')):
+for f in ('CSuelo_NodosVf4', 'CSuelo_NodosVf3', 'CSuelo_NodosToD3D'):
 	check('CSuelo nodes' + fmt((f,)), lambda f=f: SDTest.Call(f, 'tvii', su, 0))
 check('CSuelo_Nop', lambda: SDTest.Call('CSuelo_Nop', 'tvii', su, 5))
 box = sunew(24)

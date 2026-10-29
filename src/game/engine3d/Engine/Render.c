@@ -1429,6 +1429,8 @@ void Render_IniD3D(void) {
 	}
 	RenderTarget_InitD3D();
 	ModelFX_InitD3D();
+	/* the six globals one after the other in the original, separate C objects since stage 3c2 */
+	CMaterial **slots[6] = { &g_MatBlanco, &g_MatAjedrez, &g_MatGris, &g_MatInvis, &g_MatBump, &g_MatSuelo };
 	for (int i = 0; i < 6; i++) {
 		CMaterial m;
 		CMaterial_ctor(&m);
@@ -1439,7 +1441,7 @@ void Render_IniD3D(void) {
 			m.params.i40 = 1;
 		}
 		m.params.b39 = 0;
-		(&g_MatBlanco)[i] = Mat_New(&m, 1);
+		*slots[i] = Mat_New(&m, 1);
 		CMaterial_dtor(&m);
 	}
 	cString_Set(g_DriverName, g_DriverStr);

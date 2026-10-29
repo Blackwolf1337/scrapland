@@ -562,8 +562,9 @@ static void MainMenu_Sparks(cScraplandMainMenuScorer *self, float dt) {
 			if (0.0f >= w) {
 				g_MainMenuSparkWait[k] = ScraplandScorer_Rand(GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3c4110, 0x3c4110), GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3c40f8, 0x3c40f8));
 				int r = crt_rand() & 0x7fff;
-				/* the original reads the letter lengths by the spark index, past them for k >= 9 */
-				g_MainMenuSparkTime[k] = g_MainMenuLength[k];
+				/* the original reads the letter lengths by the spark index, past them for k >= 9 into the spark waits
+				 * that follow them there (a separate C object since stage 3c2) */
+				g_MainMenuSparkTime[k] = k < 9 ? g_MainMenuLength[k] : g_MainMenuSparkWait[k - 9];
 				g_MainMenuSparkLength[k] = (float)((double)r * g_ScorerRandScale * GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3b9748, 0x3b9748) + GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3c40e8, 0x3c40e8));
 				g_MainMenuSparkFrame[k] = crt_rand() % 14;
 				g_MainMenuSparkDir[k] = (byte)crt_rand() & 1;
