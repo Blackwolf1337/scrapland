@@ -144,13 +144,13 @@ typedef struct cObjElementFXModelNoise {
 	float duration;			/* 0x0c */
 } cObjElementFXModelNoise;
 
-typedef struct cObjElementFXSistPart {
+typedef struct cObjElementFXParticleSystem {
 	void *vftable;			/* 0x00 */
 	CGameParticles particles;	/* 0x04 */
 	byte move;			/* 0xb4 the debris moves */
 	byte on;			/* 0xb5 */
-} cObjElementFXSistPart;
-SD_OFFSET(cObjElementFXSistPart, move, 0xb4);
+} cObjElementFXParticleSystem;
+SD_OFFSET(cObjElementFXParticleSystem, move, 0xb4);
 
 typedef struct cObjElementFXSparks {
 	void *vftable;			/* 0x000 */
@@ -233,9 +233,9 @@ void __thiscall cObjElementFXModelFade_Update(cObjElementFXModelFade *self, cDeb
 byte __thiscall cObjElementFXModelFade_Alive(cObjElementFXModelFade *self, cDebris *d, cDebrisSys *sys);
 void __thiscall cObjElementFXModelNoise_Update(cObjElementFXModelNoise *self, cDebris *d, float dt);
 byte __thiscall cObjElementFXModelNoise_Alive(cObjElementFXModelNoise *self, cDebris *d, cDebrisSys *sys);
-void __thiscall cObjElementFXSistPart_Update(cObjElementFXSistPart *self, cDebris *d, float dt);
-void __thiscall cObjElementFXSistPart_Attach(cObjElementFXSistPart *self, cDebris *d);
-void __thiscall cObjElementFXSistPartDuDv_Attach(cObjElementFXSistPart *self, cDebris *d);
+void __thiscall cObjElementFXParticleSystem_Update(cObjElementFXParticleSystem *self, cDebris *d, float dt);
+void __thiscall cObjElementFXParticleSystem_Attach(cObjElementFXParticleSystem *self, cDebris *d);
+void __thiscall cObjElementFXParticleSystemDuDv_Attach(cObjElementFXParticleSystem *self, cDebris *d);
 void __thiscall cObjElementFXSparks_Update(cObjElementFXSparks *self, cDebris *d, float dt);
 void __thiscall cObjElementFXSparks_Attach(cObjElementFXSparks *self, cDebris *d);
 void __thiscall cObjElementFXSparks_Reset(cObjElementFXSparks *self, int arg);
@@ -258,8 +258,8 @@ void *__fastcall cObjElementFXItemFade_ctor(void *self);
 void *__fastcall cObjElementFXItemTake_ctor(void *self);
 void *__fastcall cObjElementFXModelFade_ctor(void *self);
 void *__fastcall cObjElementFXModelNoise_ctor(void *self);
-void *__fastcall cObjElementFXSistPart_ctor(void *self);
-void *__fastcall cObjElementFXSistPartDuDv_ctor(void *self);
+void *__fastcall cObjElementFXParticleSystem_ctor(void *self);
+void *__fastcall cObjElementFXParticleSystemDuDv_ctor(void *self);
 void *__fastcall cObjElementFXSparks_ctor(void *self);
 void *__fastcall cObjElementFXTrail_ctor(void *self);
 void __fastcall cObjElementFXFadeOutTrail_dtor(void *self);
@@ -267,8 +267,8 @@ void __fastcall cObjElementFXItemFade_dtor(void *self);
 void __fastcall cObjElementFXItemTake_dtor(void *self);
 void __fastcall cObjElementFXModelFade_dtor(void *self);
 void __fastcall cObjElementFXModelNoise_dtor(void *self);
-void __fastcall cObjElementFXSistPart_dtor(void *self);
-void __fastcall cObjElementFXSistPartDuDv_dtor(void *self);
+void __fastcall cObjElementFXParticleSystem_dtor(void *self);
+void __fastcall cObjElementFXParticleSystemDuDv_dtor(void *self);
 void __fastcall cObjElementFXSparks_dtor(void *self);
 void __fastcall cObjElementFXTrail_dtor(void *self);
 void *__thiscall cObjElementFXFadeOutTrail_Delete(void *self, uint32_t flags);
@@ -276,8 +276,8 @@ void *__thiscall cObjElementFXItemFade_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXItemTake_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXModelFade_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXModelNoise_Delete(void *self, uint32_t flags);
-void *__thiscall cObjElementFXSistPart_Delete(void *self, uint32_t flags);
-void *__thiscall cObjElementFXSistPartDuDv_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXParticleSystem_Delete(void *self, uint32_t flags);
+void *__thiscall cObjElementFXParticleSystemDuDv_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXSparks_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXTrail_Delete(void *self, uint32_t flags);
 /* the elements of the effects started by name: the entity (its model a CHECK), fields at 0x8 and 0xc */

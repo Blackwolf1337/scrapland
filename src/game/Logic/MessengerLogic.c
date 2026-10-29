@@ -19,7 +19,7 @@
 #include "scrap/withlifeentity.h"
 
 #define g_MessengerPrepareDistance GAME_GLOBAL_IN(float, GVar_MessengerPrepareDistance, 16, 0x44d51c)	/* MessengerPrepareDistance */
-#define g_MessengerObjetiveDistance GAME_GLOBAL_IN(float, GVar_MessengerObjetiveDistance, 16, 0x44d4a4)	/* MessengerObjetiveDistance */
+#define g_MessengerObjectiveDistance GAME_GLOBAL_IN(float, GVar_MessengerObjectiveDistance, 16, 0x44d4a4)	/* MessengerObjetiveDistance */
 #define MSG_THINK_STEP 0.13f				/* rva 0x3b60e0, the interval of the think */
 #define MSG_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" */
 
@@ -77,7 +77,7 @@ byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack) {
 	}
 	CGameModel *model = Obj_Vtbl(desk)->GetModel(desk);
 	byte dropping = cActCtrl_IsActive(ChType_ActCtrl(m), "DropData");
-	const matrix_t *mm = CGameModel_NodoMatrix(model, &mat, CGameModel_FindNodoR(model, "DC_DataPack"), 0, NULL, 0);
+	const matrix_t *mm = CGameModel_NodeMatrix(model, &mat, CGameModel_FindRenderNode(model, "DC_DataPack"), 0, NULL, 0);
 	float px = mm->m[12];
 	float py = mm->m[13];
 	float pz = mm->m[14];
@@ -98,7 +98,7 @@ byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack) {
 		cActCtrl_SetDefLoop(ChType_ActCtrl(m), "DropData", 1);
 		return 1;
 	}
-	if (!dropping || !(g_MessengerObjetiveDistance > dist)) {
+	if (!dropping || !(g_MessengerObjectiveDistance > dist)) {
 		return 1;
 	}
 	cActCtrl_Play(ChType_ActCtrl(m), "Relax", 1, 1.0f);
@@ -180,8 +180,8 @@ void __fastcall cMessengers_Think(void *obj) {
 				self->target = NULL;
 				self->timer = 5.0f;
 				CGameModel_GetPos(Obj_Vtbl(pack)->GetModel(pack), &old);
-				int node = CGameModel_FindNodoR(Obj_Vtbl(desk)->GetModel(desk), "DC_DataPack");
-				const matrix_t *mm = CGameModel_NodoMatrix(Obj_Vtbl(desk)->GetModel(desk), &mat, node, 0, NULL, 0);
+				int node = CGameModel_FindRenderNode(Obj_Vtbl(desk)->GetModel(desk), "DC_DataPack");
+				const matrix_t *mm = CGameModel_NodeMatrix(Obj_Vtbl(desk)->GetModel(desk), &mat, node, 0, NULL, 0);
 				p.x = mm->m[12];
 				p.y = mm->m[13];
 				p.z = mm->m[14];
@@ -355,7 +355,7 @@ void __thiscall cMessengerLocalLogic_GoTo(cGenCharLocalLogic *self, cAIChar *ai,
 		cGenCharLocalLogic_GoTo(self, ai, e);
 		return;
 	}
-	int node = CGameModel_FindNodoR(Obj_Vtbl(e)->GetModel(e), "DC_DataPack");
+	int node = CGameModel_FindRenderNode(Obj_Vtbl(e)->GetModel(e), "DC_DataPack");
 	if (node == -1) {
 		cGenCharLocalLogic_GoTo(self, ai, e);
 		return;
@@ -376,7 +376,7 @@ void __thiscall cMessengerLocalLogic_GoTo(cGenCharLocalLogic *self, cAIChar *ai,
 		dir.y = d.y * inv;
 		dir.z = d.z * inv;
 	}
-	const matrix_t *mm = CGameModel_NodoMatrix(Obj_Vtbl(e)->GetModel(e), &m, node, 0, NULL, 0);
+	const matrix_t *mm = CGameModel_NodeMatrix(Obj_Vtbl(e)->GetModel(e), &m, node, 0, NULL, 0);
 	vec3_t np = { mm->m[12], mm->m[13], mm->m[14] };
 	ai->vftable->SetState(ai, 4, np, dir, 70.0, (double)speed);
 }

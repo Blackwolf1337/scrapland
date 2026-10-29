@@ -519,8 +519,8 @@ void crt_srand(unsigned int seed) {
 	srand(seed);
 }
 
-void (*crt_signal(int sig, void (*handler)(int)))(int) {
-	return signal(sig, handler);
+void (*crt_signal(int next, void (*handler)(int)))(int) {
+	return signal(next, handler);
 }
 
 [[noreturn]] void crt_abort(void) {

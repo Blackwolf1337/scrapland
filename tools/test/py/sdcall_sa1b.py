@@ -14,7 +14,7 @@ def sabpoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 
 sabobj = sabz(0x40)
-for sabr in ('Stub_Nop', 'Stub_Nop@e0f70', 'Stub_Nop@1373f0', 'CNiebla_dtor'):
+for sabr in ('Stub_Nop', 'Stub_Nop@e0f70', 'Stub_Nop@1373f0', 'CFog_dtor'):
 	check('Stub_Nop' + fmt((sabr,)), lambda r=sabr: SDTest.Call(r, 'tvi', sabobj))
 for sabr in ('Stub_True', 'Stub_True@e2710', 'Stub_True@dfc10'):
 	check('Stub_True' + fmt((sabr,)), lambda r=sabr: SDTest.Call(r, 'tbi', sabobj)[0])
@@ -33,15 +33,15 @@ check('Steam_SetAchievement', lambda: SDTest.Call('Steam_SetAchievement', 'bii',
 check('Steam_RunCallbacks', lambda: SDTest.Call('Steam_RunCallbacks', 'v'))
 check('Gog_Done', lambda: SDTest.Call('Gog_Done', 'tvi', sabobj))
 check('InputMaps_Done', lambda: SDTest.Call('InputMaps_Done', 'v'))
-check('ListaVert_ReleaseD3D', lambda: SDTest.Call('ListaVert_ReleaseD3D', 'v'))
-check('ListaVert_InitD3D', lambda: SDTest.Call('ListaVert_InitD3D', 'v'))
-check('CEscena_Shared', lambda: SDTest.Call('CEscena_Shared', 'tvi', sabobj))
+check('VertList_ReleaseD3D', lambda: SDTest.Call('VertList_ReleaseD3D', 'v'))
+check('VertList_InitD3D', lambda: SDTest.Call('VertList_InitD3D', 'v'))
+check('CScene_Shared', lambda: SDTest.Call('CScene_Shared', 'tvi', sabobj))
 check('CAnimCtrl_dtor', lambda: SDTest.Call('CAnimCtrl_dtor', 'tvi', sabobj))
 check('BspQ3_InitVertG', lambda: SDTest.Call('BspQ3_InitVertG', 'v'))
 
 # constructors
 sabset(sabobj, 'abcdefgh')
-check('CTextEst_ctor', lambda: (SDTest.Call('CTextEst_ctor', 'tii', sabobj)[0] == sabobj, sabi(sabobj), sabi(sabobj + 4)))
+check('CTextStatic_ctor', lambda: (SDTest.Call('CTextStatic_ctor', 'tii', sabobj)[0] == sabobj, sabi(sabobj), sabi(sabobj + 4)))
 sabset(sabobj, 'abcdefgh')
 check('CLod_ctor', lambda: (SDTest.Call('CLod_ctor', 'tii', sabobj)[0] == sabobj, sabi(sabobj), sabi(sabobj + 4)))
 sabvk = sabz(0x110)

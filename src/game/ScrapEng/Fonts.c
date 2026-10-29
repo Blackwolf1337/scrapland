@@ -55,12 +55,12 @@ CFont *Font_Get(const char *name) {
 }
 
 void Fonts_Load(void) {
-	CArchINI ini;
+	CIniFile ini;
 	char path[128];
 
-	CArchINI_ctor(&ini);
+	CIniFile_ctor(&ini);
 	snprintf(path, sizeof(path), "%sFonts.fnt", g_FontsDir);
-	if (CArchINI_Load(&ini, path, NULL, 0)) {
+	if (CIniFile_Load(&ini, path, NULL, 0)) {
 		Con_FatalErrorf("CFont: File not found: '%s'", path);
 	}
 	for (int i = 0; i < 7; i++) {
@@ -73,11 +73,11 @@ void Fonts_Load(void) {
 		CFont_Load(*slot, fontNames[i], NULL, &ini);
 	}
 	CUnifont_Load(&g_Unifont);
-	CArchINI_dtor(&ini);
+	CIniFile_dtor(&ini);
 }
 
 byte Fonts_Unifont(void) {
-	return g_Unifont.grf && g_Unifont.sprites;
+	return g_Unifont.graphic && g_Unifont.sprites;
 }
 
 /* the language of the fonts: nothing to do in this version */

@@ -298,11 +298,11 @@ DTOR_KINDS = [
 			and c['end'] == c['@'][-2] and c['loop'] == c['@'][6],
 		lambda c: ('FINI_DLIST', '0x%06x, %s, %d' % (c['obj'], HOOKS[c['func']], c['size'])))
 		for test in ('test eax, eax', 'test ecx, ecx')],
-	# a CTabla: delete[] of its elements, pointer and count cleared
-	Kind('tabla', ['mov eax, dword ptr [{p}]', 'test eax, eax', 'je {end}', 'push eax', 'call $DELETE_ARRAY',
+	# a CTable: delete[] of its elements, pointer and count cleared
+	Kind('table', ['mov eax, dword ptr [{p}]', 'test eax, eax', 'je {end}', 'push eax', 'call $DELETE_ARRAY',
 		'add esp, 4', 'mov dword ptr [{p}], 0', 'mov dword ptr [{obj}], 0', 'ret'],
 		lambda c: c['end'] == c['@'][-1] and c['p'] == c['obj'] + 4,
-		lambda c: ('FINI_TABLA', '0x%06x' % c['obj'])),
+		lambda c: ('FINI_TABLE', '0x%06x' % c['obj'])),
 ]
 
 # by hand: rva -> C name (in the file of the class of the object)
@@ -312,24 +312,24 @@ HAND = {
 	0x04df30: 'PcPad_InitPads', 0x38da50: 'PcPad_FiniPads',
 	0x051be0: 'ChatScorer_InitMsgs',
 	0x0554d0: 'PyFunction_InitSphereFunc', 0x38e3a0: 'PyFunction_FiniSphereFunc',
-	0x05b3b0: 'Varios_InitE3DDir',
+	0x05b3b0: 'Misc_InitE3DDir',
 	0x05bdc0: 'Render_InitMatrices',
-	0x05d6f0: 'SueloPortal_InitPintarTodas', 0x38ee30: 'SueloPortal_FiniPintarTodas',
-	0x05d940: 'CheckBBox_InitCarasTortas',
-	0x05e6e0: 'Bsp_InitLuces',
+	0x05d6f0: 'GroundPortal_InitPaintAll', 0x38ee30: 'GroundPortal_FiniPaintAll',
+	0x05d940: 'CheckBBox_InitResponseFaces',
+	0x05e6e0: 'Bsp_InitLights',
 	0x38d950: 'ActionSet_FiniActionSets',
-	0x38ec70: 'Material_FiniListaMat',
-	0x38ece0: 'Varios_FiniFileLog',
-	0x38ee70: 'Textura_FiniTexList',
+	0x38ec70: 'Material_FiniMatList',
+	0x38ece0: 'Misc_FiniFileLog',
+	0x38ee70: 'Texture_FiniTexList',
 	# the destructors of function statics, registered by the C of their functions
-	0x38dcb0: 'Taunts_FiniCounts', 0x38ed20: 'Luz_FiniMat', 0x38edb0: 'Suelo_FiniCollideMat', 0x38f010: 'Portal_FiniMat',
-	0x38f040: 'RenderSuelo_FiniBatchTab', 0x38f070: 'Radiosidad_FiniNormales',
+	0x38dcb0: 'Taunts_FiniCounts', 0x38ed20: 'Light_FiniMat', 0x38edb0: 'Ground_FiniCollideMat', 0x38f010: 'Portal_FiniMat',
+	0x38f040: 'RenderGround_FiniBatchTab', 0x38f070: 'Radiosity_FiniNormals',
 }
 
 # names for generated functions where the pattern gives none
 NAMES = {
 	0x05b3f0: 'Init_RSqrtTable',
-	0x05b210: 'Init_ListaMat',
+	0x05b210: 'Init_MatList',
 	0x05b360: 'Init_FileLog',
 	0x05dcd0: 'Init_TexList',
 }
@@ -413,7 +413,7 @@ def dtor_base(d):
 	if not d.get('kind') or c.get('obj', c.get('o1')) is None:
 		return None
 	func = c.get('func') or c.get('dtor') or c.get('f1')
-	if d['kind'] == 'tabla':
+	if d['kind'] == 'table':
 		return obj_name(c['obj'])
 	return class_name(HOOKS[func], c.get('obj', c.get('o1')))
 

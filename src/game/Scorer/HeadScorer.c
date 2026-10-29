@@ -78,7 +78,7 @@ void __thiscall cHeadScorer_Draw(cHeadScorer *self, int player) {
 	float ft = Scorer_Get(player)->frameTime;
 	Render_ClearRect(self->base.x, self->base.y, self->vw, self->vh, 0, 0);
 	Eng_SetViewRect(self->base.x, self->base.y, self->vw, self->vh);
-	CGameCamera *cur = Camera_GetActual();
+	CGameCamera *cur = Camera_GetCurrent();
 	self->time = ft + ft + self->time;
 	if (cur) {
 		CGameCamera_Copy(self->cam, cur);
@@ -101,7 +101,7 @@ void __thiscall cHeadScorer_Draw(cHeadScorer *self, int player) {
 		cam->target.y = p->y + h;
 		self->cam->fov = HEAD_FOV;
 		self->cam->aspectScreen = self->vw / self->vh;
-		Camera_SetActual(self->cam);
+		Camera_SetCurrent(self->cam);
 		CGameModel_RootMotion(&self->model->model, ft, NULL, NULL);
 		CGameModel_Enable(&self->model->model);
 		CGameModel_RenderNow(&self->model->model, 2);
@@ -110,7 +110,7 @@ void __thiscall cHeadScorer_Draw(cHeadScorer *self, int player) {
 			(*(void(__thiscall **)(void *))(*(byte **)extra + 0x10))(extra);
 		}
 		CGameModel_Disable(&self->model->model);
-		Camera_SetActual(cur);
+		Camera_SetCurrent(cur);
 	}
 	Eng_ResetViewRect();
 }

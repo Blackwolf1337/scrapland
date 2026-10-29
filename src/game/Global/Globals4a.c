@@ -30,7 +30,7 @@
 
 #undef g_Adapter
 #undef g_AmbientD3D
-#undef g_AnimCicloDefault
+#undef g_AnimCycleDefault
 #undef g_BloomH
 #undef g_BloomMatBlur
 #undef g_BloomMatFilter
@@ -42,13 +42,10 @@
 #undef g_BlurMatCopy
 #undef g_BlurMatTarget
 #undef g_BspCacheStats
-#undef g_CamActual
 #undef g_CamCompositeFrame
 #undef g_CamCompositeIdx
 #undef g_CamCompositeName
-#undef g_CieloPath
-#undef g_CieloPosScale
-#undef g_CieloRotation
+#undef g_CamCurrent
 #undef g_ClipFar
 #undef g_ClipNear
 #undef g_CollideMat
@@ -96,12 +93,28 @@
 #undef g_E3DCmdProc
 #undef g_E3DDir
 #undef g_EngCallbacks
+#undef g_Engine3D
+#undef g_Engine4af7d4
+#undef g_EngineFrame
+#undef g_EngineFrameCount
+#undef g_EngineFrameNext
+#undef g_EngineIni7c
+#undef g_EngineIni80
+#undef g_EngineIni84
+#undef g_EngineIni88
+#undef g_EngineInit
+#undef g_EngineInitNext
+#undef g_EngineInits
+#undef g_EngineRelease
+#undef g_EngineReleaseNext
 #undef g_ExePath
-#undef g_ExtensTexturas
 #undef g_EyePos
 #undef g_FileLog
 #undef g_FmodState
 #undef g_FogActive
+#undef g_FogActiveIni
+#undef g_FogColorIni
+#undef g_FogTableMode
 #undef g_FontBigNumbers
 #undef g_FontHoratio
 #undef g_FontHoratioSmall
@@ -120,52 +133,52 @@
 #undef g_FrameSec
 #undef g_Frustum
 #undef g_GameTimeD
+#undef g_GroundPath
 #undef g_GvEnvBump
 #undef g_GvEnvMap
 #undef g_GvGlowMap
 #undef g_IntBuf
 #undef g_LastCollisionEpsilon
 #undef g_LastTime
+#undef g_LightIndexD3D
+#undef g_LightMat
+#undef g_LightMatGuard
 #undef g_LightmapMat
+#undef g_Lights
+#undef g_LightsD3D
+#undef g_LightsTotal
+#undef g_LimitFps
 #undef g_LimitNext
-#undef g_LimitaFps
-#undef g_ListaEscenas
-#undef g_ListaModelos
 #undef g_LoadMeshList
 #undef g_LoadingCount
 #undef g_LogFileMask
-#undef g_Luces
-#undef g_LucesD3D
-#undef g_LucesTotal
-#undef g_LuzIndD3D
-#undef g_LuzMat
-#undef g_LuzMatGuard
 #undef g_MapTextDataFile
-#undef g_MatActual
-#undef g_MatAjedrez
 #undef g_MatBias
 #undef g_MatBillboard
-#undef g_MatBlanco
 #undef g_MatBump
+#undef g_MatCheckerboard
 #undef g_MatCtx
+#undef g_MatCurrent
 #undef g_MatFX1
 #undef g_MatFX2
 #undef g_MatFX3
-#undef g_MatForzado
+#undef g_MatForced
 #undef g_MatFrame
-#undef g_MatGris
+#undef g_MatGray
+#undef g_MatGround
 #undef g_MatIdentity
 #undef g_MatInvis
 #undef g_MatPass
 #undef g_MatProj
 #undef g_MatStr
-#undef g_MatSuelo
 #undef g_MatView
+#undef g_MatWhite
 #undef g_MatWorld
 #undef g_MipmapBias2
 #undef g_MipmapsOn
 #undef g_ModelAmbientIni
-#undef g_ModelosRender
+#undef g_ModelList
+#undef g_ModelsRender
 #undef g_MotionBlurFilled
 #undef g_MotionBlurH
 #undef g_MotionBlurMatAdd
@@ -173,21 +186,6 @@
 #undef g_MotionBlurTarget
 #undef g_MotionBlurTime
 #undef g_MotionBlurW
-#undef g_Motor3D
-#undef g_Motor4af7d4
-#undef g_MotorFrame
-#undef g_MotorFrameCount
-#undef g_MotorFrameNext
-#undef g_MotorIni7c
-#undef g_MotorIni80
-#undef g_MotorIni84
-#undef g_MotorIni88
-#undef g_MotorInit
-#undef g_MotorInitNext
-#undef g_MotorInits
-#undef g_MotorRelease
-#undef g_MotorReleaseNext
-#undef g_Mundo
 #undef g_MusicCurMainVolume
 #undef g_MusicName
 #undef g_MusicOpenTime
@@ -196,19 +194,17 @@
 #undef g_MusicWaitTime
 #undef g_NewsPanelTarget
 #undef g_NewsPanelZ
-#undef g_NieblaActiva
-#undef g_NieblaColor
-#undef g_NieblaModoTabla
-#undef g_NumPuntos
+#undef g_NumPaintZones
+#undef g_NumPoints
 #undef g_NumVoiceovers
 #undef g_NumVoices
-#undef g_NumZonasPintar
+#undef g_Overdraw
 #undef g_PSHandles
+#undef g_Points
+#undef g_PointsOn
 #undef g_PrevExceptionFilter
 #undef g_ProcBuf
 #undef g_ProfResetTime
-#undef g_Puntos
-#undef g_PuntosOn
 #undef g_QuadTriCacheID
 #undef g_RSqrtTable
 #undef g_RTBackBuffer
@@ -220,7 +216,7 @@
 #undef g_RTZBuffer
 #undef g_RadialBlurMat
 #undef g_RealFrameSecs
-#undef g_RenderClaseMask
+#undef g_RenderClassMask
 #undef g_RenderCounts
 #undef g_RenderFlagMask
 #undef g_RenderFlagNeg
@@ -231,7 +227,6 @@
 #undef g_RenderSoloB38
 #undef g_ResetDev
 #undef g_ResetPending
-#undef g_RutasTexturas
 #undef g_SaveCollideMeshParam
 #undef g_SceneDuDvBumpTarget
 #undef g_SceneDuDvFrame
@@ -245,6 +240,7 @@
 #undef g_SceneFxLast
 #undef g_SceneFxOn
 #undef g_SceneH
+#undef g_SceneList
 #undef g_SceneMatCopy
 #undef g_SceneNoSwap
 #undef g_SceneOn
@@ -257,13 +253,16 @@
 #undef g_SceneTargetTexture
 #undef g_SceneViewport
 #undef g_SceneW
-#undef g_ShaderActual
+#undef g_ShaderCurrent
 #undef g_ShadowCos
 #undef g_ShadowLight
+#undef g_ShadowsDestAlpha
+#undef g_ShadowsStencil
 #undef g_ShowCollision
-#undef g_Sobredib
-#undef g_SombrasDestAlpha
-#undef g_SombrasStencil
+#undef g_ShowJoins
+#undef g_SkyPath
+#undef g_SkyPosScaleIni
+#undef g_SkyRotationIni
 #undef g_SplashLast
 #undef g_SplashTime
 #undef g_StageMip
@@ -271,20 +270,20 @@
 #undef g_StageTexFrame
 #undef g_StageTile
 #undef g_StencilBlock
-#undef g_StencilCapturar
-#undef g_StencilGrupos
-#undef g_StencilGruposMax
+#undef g_StencilCapture
+#undef g_StencilGroups
+#undef g_StencilGroupsMax
 #undef g_StencilInv
 #undef g_StencilRender
-#undef g_StencilSegmentos
+#undef g_StencilSegments
 #undef g_StencilSegs
-#undef g_StencilTriangInv
-#undef g_SueloPath
+#undef g_StencilTriInv
 #undef g_TexDeleteUnused
 #undef g_TexNoPow2
 #undef g_TexPow2
 #undef g_TexRepeat
-#undef g_TiempoScaled
+#undef g_TextureExts
+#undef g_TexturePaths
 #undef g_TileOn
 #undef g_TileState
 #undef g_TileX
@@ -293,11 +292,11 @@
 #undef g_TimeMs
 #undef g_TimeMsF
 #undef g_TimeMsInt
+#undef g_TimeScaled
 #undef g_VCacheAge
 #undef g_VCacheVert
 #undef g_Vec3Str
 #undef g_Vec3StrDeg
-#undef g_VerUniones
 #undef g_VersionStr
 #undef g_VertexSpecular
 #undef g_ViewerCamera
@@ -305,19 +304,20 @@
 #undef g_ViewportFull
 #undef g_VoicesPaused
 #undef g_Watermark
+#undef g_World
 #undef g_WorldInfoDummy
 #undef g_WorldInfoNode
 #undef g_WorldInfoPattern
 #undef g_WorldInfoWild
 #undef g_ZEnable
-#undef g_Zonas
+#undef g_Zones
 #undef g_hVShader_LTex1N_XBox
 #undef g_hVShader_LTex1_XBox
 #undef g_hVShader_LTex2N_XBox
 #undef g_hVShader_LTex2_XBox
 #undef g_hVShader_Tex1C_XBox
 #undef g_hVShader_Tex1_XBox
-#undef g_nLuces
+#undef g_nLights
 #undef g_pd3dDevice
 
 int g_ConHistPos SD_BSS(0x4a8018);
@@ -344,12 +344,12 @@ cGVar GVar_c_caps SD_BSS(0x4a81bc);
 cGVar GVar_c_hold SD_BSS(0x4a81d4);
 float g_LastCollisionEpsilon SD_BSS(0x4a81ec);
 int g_CountSprite2D SD_BSS(0x4a81f0);
-CNodo3D *g_WorldInfoNode SD_BSS(0x4a81f4);
-MundoDummy *g_WorldInfoDummy SD_BSS(0x4a81f8);
+CNode3D *g_WorldInfoNode SD_BSS(0x4a81f4);
+WorldDummy *g_WorldInfoDummy SD_BSS(0x4a81f8);
 byte g_WorldInfoWild SD_BSS(0x4a81fc);
 char g_WorldInfoPattern[260] SD_BSS(0x4a8200);
 uint32_t CPsaImage_dtor_4a8304 SD_BSS(0x4a8304);
-CGameCamera *g_CamActual SD_BSS(0x4a8308);
+CGameCamera *g_CamCurrent SD_BSS(0x4a8308);
 CGameCamera *g_ViewerCamera SD_BSS(0x4a830c);
 CPsaImage *g_Watermark SD_BSS(0x4a8310);
 typeof(void (*)(void)) g_EngCallbacks[4] SD_BSS(0x4a8314);
@@ -362,14 +362,14 @@ int g_LoadingCount SD_BSS(0x4a8328);
 void *g_MapTextDataFile SD_BSS(0x4a832c);
 float g_ClipNear SD_BSS(0x4a8330);
 float g_ClipFar SD_BSS(0x4a8334);
-char g_CieloPath[260] SD_BSS(0x4a8338);
-float g_CieloPosScale SD_BSS(0x4a843c);
-char g_SueloPath[260] SD_BSS(0x4a8440);
-float g_CieloRotation SD_BSS(0x4a8544);
-int g_NieblaActiva SD_BSS(0x4a8548);
-int g_NieblaModoTabla SD_BSS(0x4a854c);
+char g_SkyPath[260] SD_BSS(0x4a8338);
+float g_SkyPosScaleIni SD_BSS(0x4a843c);
+char g_GroundPath[260] SD_BSS(0x4a8440);
+float g_SkyRotationIni SD_BSS(0x4a8544);
+int g_FogActiveIni SD_BSS(0x4a8548);
+int g_FogTableMode SD_BSS(0x4a854c);
 cGVar GVar_RenderUseVB SD_BSS(0x4a8550);
-ColorIntens g_NieblaColor SD_BSS(0x4a8568);
+ColorIntens g_FogColorIni SD_BSS(0x4a8568);
 cGVar GVar_ViewerModel SD_BSS(0x4a8570);
 cGVar GVar_ShowProgressBar SD_BSS(0x4a8588);
 cGVar GVar_ViewerCameraInv SD_BSS(0x4a85a0);
@@ -517,7 +517,7 @@ uint32_t g_MotionBlurTime SD_BSS(0x4a8eac);
 uint32_t g_CreditsBlurTime SD_BSS(0x4a8eb0);
 char g_IntBuf[20] SD_BSS(0x4a8eb4);
 int g_FrameCount SD_BSS(0x4a8ec8);
-int g_TiempoScaled SD_BSS(0x4a8ecc);
+int g_TimeScaled SD_BSS(0x4a8ecc);
 float g_TimeMsF SD_BSS(0x4a8ed0);
 float g_FrameMs SD_BSS(0x4a8ed4);
 double g_TimeD SD_BSS(0x4a8ed8);
@@ -529,7 +529,7 @@ float g_FrameSec SD_BSS(0x4a8ef4);
 struct {
 	byte g_RenderOff;	/* 0x0 */
 	byte g_RenderSoloB38;	/* 0x1 */
-	byte g_PuntosOn;	/* 0x2 */
+	byte g_PointsOn;	/* 0x2 */
 	byte g_TileOn;	/* 0x3 */
 } group_4a8ef8 SD_BSS(0x4a8ef8);
 struct {
@@ -539,39 +539,39 @@ struct {
 	byte pad_3[1];
 } group_4a8efc SD_BSS(0x4a8efc);
 int g_RenderCounts[10] SD_BSS(0x4a8f00);
-uint32_t motorIni_4a8f28 SD_BSS(0x4a8f28);
-int g_Sobredib SD_BSS(0x4a8f2c);
-uint32_t motorIni_4a8f30[16] SD_BSS(0x4a8f30);
+uint32_t engineIni_4a8f28 SD_BSS(0x4a8f28);
+int g_Overdraw SD_BSS(0x4a8f2c);
+uint32_t engineIni_4a8f30[16] SD_BSS(0x4a8f30);
 int g_ShowCollision SD_BSS(0x4a8f70);
-int g_MotorInits SD_BSS(0x4a8f74);
-int g_MotorFrameCount SD_BSS(0x4a8f78);
-int g_MotorIni7c SD_BSS(0x4a8f7c);
-int g_MotorIni80 SD_BSS(0x4a8f80);
-int g_MotorIni84 SD_BSS(0x4a8f84);
-int g_MotorIni88 SD_BSS(0x4a8f88);
-float g_LimitaFps SD_BSS(0x4a8f8c);
-void *g_MotorInit SD_BSS(0x4a8f90);
-void *g_MotorFrame SD_BSS(0x4a8f94);
-void *g_MotorRelease SD_BSS(0x4a8f98);
-void *g_MotorInitNext SD_BSS(0x4a8f9c);
-void *g_MotorFrameNext SD_BSS(0x4a8fa0);
-void *g_MotorReleaseNext SD_BSS(0x4a8fa4);
+int g_EngineInits SD_BSS(0x4a8f74);
+int g_EngineFrameCount SD_BSS(0x4a8f78);
+int g_EngineIni7c SD_BSS(0x4a8f7c);
+int g_EngineIni80 SD_BSS(0x4a8f80);
+int g_EngineIni84 SD_BSS(0x4a8f84);
+int g_EngineIni88 SD_BSS(0x4a8f88);
+float g_LimitFps SD_BSS(0x4a8f8c);
+void *g_EngineInit SD_BSS(0x4a8f90);
+void *g_EngineFrame SD_BSS(0x4a8f94);
+void *g_EngineRelease SD_BSS(0x4a8f98);
+void *g_EngineInitNext SD_BSS(0x4a8f9c);
+void *g_EngineFrameNext SD_BSS(0x4a8fa0);
+void *g_EngineReleaseNext SD_BSS(0x4a8fa4);
 cGVar GVar_ShowTSCMode SD_BSS(0x4a8fa8);
 cGVar GVar_R_ForceFPS SD_BSS(0x4a8fc0);
 cGVar GVar_R_LimitFPS SD_BSS(0x4a8fd8);
 cGVar GVar_VSync SD_BSS(0x4a8ff0);
 cGVar GVar_R_ShowInfo SD_BSS(0x4a9008);
 cGVar GVar_AutoScreenShot SD_BSS(0x4a9020);
-byte *g_Motor3D SD_BSS(0x4a9038);
+byte *g_Engine3D SD_BSS(0x4a9038);
 float g_LastTime SD_BSS(0x4a903c);
 float g_FpsTime SD_BSS(0x4a9040);
 int g_FpsFrames SD_BSS(0x4a9044);
 uint32_t g_LimitNext SD_BSS(0x4a9048);
-uint32_t CMotorApp_Render_4a904c SD_BSS(0x4a904c);
+uint32_t CEngineApp_Render_4a904c SD_BSS(0x4a904c);
 char g_ColorStr[64] SD_BSS(0x4a9050);
 char g_FpsText[64] SD_BSS(0x4a9090);
 float g_FpsTextTime SD_BSS(0x4a90d0);
-uint32_t Motor_DrawFpsGraph_4a90d4 SD_BSS(0x4a90d4);
+uint32_t Engine_DrawFpsGraph_4a90d4 SD_BSS(0x4a90d4);
 float g_FpsGraph[120] SD_BSS(0x4a90d8);
 float g_FpsGraphPeak[122] SD_BSS(0x4a92b8);
 float g_ProfResetTime SD_BSS(0x4a94a0);
@@ -593,14 +593,14 @@ byte g_VoicesPaused SD_BSS(0x4aa30c);
 void *g_PrevExceptionFilter SD_BSS(0x4aa310);
 uint32_t App_SetExceptionFilter_4aa314 SD_BSS(0x4aa314);
 int g_TexDeleteUnused SD_BSS(0x4aa318);
-int g_AnimCicloDefault SD_BSS(0x4aa31c);
+int g_AnimCycleDefault SD_BSS(0x4aa31c);
 cGVar GVar_DDS_MarkSource SD_BSS(0x4aa320);
 cGVar GVar_LoadTextures SD_BSS(0x4aa338);
 cGVar GVar_DDS_CheckMark SD_BSS(0x4aa350);
 cGVar GVar_MatEmissive SD_BSS(0x4aa368);
 cGVar GVar_DDS_UseTextures SD_BSS(0x4aa380);
-char g_RutasTexturas[10][MAX_RUTA] SD_BSS(0x4aa398);
-char g_ExtensTexturas[10][MAX_RUTA] SD_BSS(0x4aadc0);
+char g_TexturePaths[10][MAX_FILEPATH] SD_BSS(0x4aa398);
+char g_TextureExts[10][MAX_FILEPATH] SD_BSS(0x4aadc0);
 char g_MatStr[256] SD_BSS(0x4ab7e8);
 uint32_t g_LogFileMask SD_BSS(0x4ab8e8);
 int g_DbgCon SD_BSS(0x4ab8ec);
@@ -652,20 +652,20 @@ cGVar GVar_R_LightDefer SD_BSS(0x4ac3c8);
 cGVar GVar_R_LightSector SD_BSS(0x4ac3e0);
 cGVar GVar_R_LightSort SD_BSS(0x4ac3f8);
 cGVar GVar_R_LightMultName SD_BSS(0x4ac410);
-uint32_t g_LuzIndD3D SD_BSS(0x4ac428);
-int g_LucesTotal SD_BSS(0x4ac42c);
-int g_LucesD3D SD_BSS(0x4ac430);
-int g_nLuces SD_BSS(0x4ac434);
-CLuz *g_Luces[1024] SD_BSS(0x4ac438);
-CMaterial g_LuzMat SD_BSS(0x4ad438);
-int g_LuzMatGuard SD_BSS(0x4ad4e8);
+uint32_t g_LightIndexD3D SD_BSS(0x4ac428);
+int g_LightsTotal SD_BSS(0x4ac42c);
+int g_LightsD3D SD_BSS(0x4ac430);
+int g_nLights SD_BSS(0x4ac434);
+CLight *g_Lights[1024] SD_BSS(0x4ac438);
+CMaterial g_LightMat SD_BSS(0x4ad438);
+int g_LightMatGuard SD_BSS(0x4ad4e8);
 byte g_RenderFlagNeg SD_BSS(0x4ad4ec);
 cGVar GVar_R_SkipAnim SD_BSS(0x4ad4f0);
 cGVar GVar_R_ShowLBoxMax SD_BSS(0x4ad508);
 cGVar GVar_R_ShowLocalBox SD_BSS(0x4ad520);
-cGVar GVar_R_Nodo3D_Count SD_BSS(0x4ad538);
+cGVar GVar_R_Node3D_Count SD_BSS(0x4ad538);
 cGVar GVar_R_NodeSlerp2 SD_BSS(0x4ad550);
-uint32_t g_RenderClaseMask SD_BSS(0x4ad568);
+uint32_t g_RenderClassMask SD_BSS(0x4ad568);
 cGVar GVar_R_SkipNodeFX SD_BSS(0x4ad56c);
 cGVar GVar_R_SkipNodes SD_BSS(0x4ad584);
 cGVar GVar_R_SkipTrans SD_BSS(0x4ad59c);
@@ -674,7 +674,7 @@ cGVar GVar_R_ShowLBoxName SD_BSS(0x4ad5cc);
 cGVar GVar_R_SkipTrans2 SD_BSS(0x4ad5e4);
 uint32_t g_RenderFlagMask SD_BSS(0x4ad5fc);
 cGVar GVar_R_ShowLBoxMin SD_BSS(0x4ad600);
-cGVar GVar_R_NodoR_Count SD_BSS(0x4ad618);
+cGVar GVar_R_RenderNode_Count SD_BSS(0x4ad618);
 uint32_t g_hVShader_Tex1_XBox SD_BSS(0x4ad630);
 uint32_t g_hVShader_Tex1C_XBox SD_BSS(0x4ad634);
 uint32_t g_hVShader_LTex1_XBox SD_BSS(0x4ad638);
@@ -683,14 +683,14 @@ uint32_t g_hVShader_LTex2_XBox SD_BSS(0x4ad640);
 uint32_t g_hVShader_LTex2N_XBox SD_BSS(0x4ad644);
 int g_VCacheVert[16] SD_BSS(0x4ad648);
 int g_VCacheAge[20] SD_BSS(0x4ad688);
-CMaterial *g_MatBlanco SD_BSS(0x4ad6d8);
-CMaterial *g_MatAjedrez SD_BSS(0x4ad6dc);
-CMaterial *g_MatGris SD_BSS(0x4ad6e0);
+CMaterial *g_MatWhite SD_BSS(0x4ad6d8);
+CMaterial *g_MatCheckerboard SD_BSS(0x4ad6dc);
+CMaterial *g_MatGray SD_BSS(0x4ad6e0);
 CMaterial *g_MatInvis SD_BSS(0x4ad6e4);
 CMaterial *g_MatBump SD_BSS(0x4ad6e8);
-CMaterial *g_MatSuelo SD_BSS(0x4ad6ec);
+CMaterial *g_MatGround SD_BSS(0x4ad6ec);
 struct {
-	byte g_VerUniones;	/* 0x0 */
+	byte g_ShowJoins;	/* 0x0 */
 	byte g_D3DOn;	/* 0x1 */
 	byte g_MipmapsOn;	/* 0x2 */
 	byte g_TexRepeat;	/* 0x3 */
@@ -708,7 +708,7 @@ int g_FogActive SD_BSS(0x4ad744);
 uint32_t g_AmbientD3D SD_BSS(0x4ad748);
 CMaterial *g_MatFX1 SD_BSS(0x4ad74c);
 CMaterial *g_MatFX2 SD_BSS(0x4ad750);
-const CMaterial *g_MatForzado SD_BSS(0x4ad754);
+const CMaterial *g_MatForced SD_BSS(0x4ad754);
 const CMaterial *g_MatFX3 SD_BSS(0x4ad758);
 uint32_t g_PSHandles[32] SD_BSS(0x4ad760);
 uint32_t g_Viewport[6] SD_BSS(0x4ad7e0);
@@ -724,7 +724,7 @@ cGVar GVar_R_LastDevice SD_BSS(0x4ad8b8);
 cGVar GVar_R_UseDefMaterial SD_BSS(0x4ad8d0);
 cGVar GVar_R_MipFilter SD_BSS(0x4ad8e8);
 cGVar GVar_R_CullMode SD_BSS(0x4ad900);
-CMaterial CMaterial_MatLinea SD_BSS(0x4ad918);
+CMaterial CMaterial_MatLine SD_BSS(0x4ad918);
 cGVar GVar_R_EnvBlend SD_BSS(0x4ad9c8);
 cGVar GVar_R_CloudG SD_BSS(0x4ad9e0);
 cGVar GVar_R_EnvBumpScale SD_BSS(0x4ad9f8);
@@ -772,11 +772,11 @@ matrix_t g_MatView SD_BSS(0x4ae4b8);
 matrix_t g_MatBillboard SD_BSS(0x4ae4f8);
 int g_DeviceLogged SD_BSS(0x4ae538);
 char g_VersionStr[64] SD_BSS(0x4ae540);
-const CMaterial *g_MatActual SD_BSS(0x4ae580);
+const CMaterial *g_MatCurrent SD_BSS(0x4ae580);
 CMaterial *g_MatCtx SD_BSS(0x4ae584);
 int g_MatPass SD_BSS(0x4ae588);
 int g_MatFrame SD_BSS(0x4ae58c);
-uint32_t g_ShaderActual SD_BSS(0x4ae590);
+uint32_t g_ShaderCurrent SD_BSS(0x4ae590);
 void *g_StageTex[8] SD_BSS(0x4ae594);
 int g_StageTexFrame[8] SD_BSS(0x4ae5b4);
 int g_TileState SD_BSS(0x4ae5d4);
@@ -799,21 +799,21 @@ cGVar GVar_R_ShowModelSector SD_BSS(0x4ae718);
 cGVar GVar_R_SkipUpdateVis SD_BSS(0x4ae730);
 cGVar GVar_R_DistMStencil SD_BSS(0x4ae748);
 cGVar GVar_R_AnimInterpMult SD_BSS(0x4ae760);
-CListaModelo *g_ListaModelos SD_BSS(0x4ae778);
-CListaEscena *g_ListaEscenas SD_BSS(0x4ae77c);
+CModelList *g_ModelList SD_BSS(0x4ae778);
+CSceneList *g_SceneList SD_BSS(0x4ae77c);
 cGVar GVar_R_SortModels SD_BSS(0x4ae780);
 cGVar GVar_R_SortShow SD_BSS(0x4ae798);
 cGVar GVar_R_SortInvert SD_BSS(0x4ae7b0);
-CListaModelo *g_ModelosRender[1026] SD_BSS(0x4ae7c8);
+CModelList *g_ModelsRender[1026] SD_BSS(0x4ae7c8);
 uint32_t g_CollisionCache SD_BSS(0x4af7d0);
-byte g_Motor4af7d4 SD_BSS(0x4af7d4);
+byte g_Engine4af7d4 SD_BSS(0x4af7d4);
 int g_QuadTriCacheID SD_BSS(0x4af7d8);
 uint32_t g_CollisionNComp SD_BSS(0x4af7dc);
 int g_BspCacheStats[3] SD_BSS(0x4af7e0);
 uint32_t g_CollisionTests SD_BSS(0x4af7ec);
 uint32_t g_CollisionTestsTotal SD_BSS(0x4af7f0);
 int g_CollisionQuadCount SD_BSS(0x4af7f4);
-cGVar GVar_AnalizeQuads SD_BSS(0x4af7f8);
+cGVar GVar_AnalyzeQuads SD_BSS(0x4af7f8);
 cGVar GVar_ShowMapQDist SD_BSS(0x4af810);
 cGVar GVar_MapTriCacheRecalc SD_BSS(0x4af828);
 cGVar GVar_ShowMapSolid SD_BSS(0x4af840);
@@ -827,21 +827,21 @@ CollideVert g_CollideVerts[3] SD_BSS(0x4af8b0);
 CMaterial g_CollideMat SD_BSS(0x4af8f8);
 int g_CollideMatGuard[2] SD_BSS(0x4af9a8);
 char g_ProcBuf[1024] SD_BSS(0x4af9b0);
-int g_SombrasStencil SD_BSS(0x4afdb0);
-int g_SombrasDestAlpha SD_BSS(0x4afdb4);
+int g_ShadowsStencil SD_BSS(0x4afdb0);
+int g_ShadowsDestAlpha SD_BSS(0x4afdb4);
 int g_RenderPass SD_BSS(0x4afdb8);
 void *g_StencilRender SD_BSS(0x4afdbc);
-int g_StencilCapturar SD_BSS(0x4afdc0);
-CLuz *g_ShadowLight SD_BSS(0x4afdc4);
+int g_StencilCapture SD_BSS(0x4afdc0);
+CLight *g_ShadowLight SD_BSS(0x4afdc4);
 float g_ShadowCos SD_BSS(0x4afdc8);
-vec3_t *g_StencilSegmentos SD_BSS(0x4afdcc);
+vec3_t *g_StencilSegments SD_BSS(0x4afdcc);
 int g_StencilSegs SD_BSS(0x4afdd0);
-vec3_t *g_StencilTriangInv SD_BSS(0x4afdd4);
+vec3_t *g_StencilTriInv SD_BSS(0x4afdd4);
 int g_StencilInv SD_BSS(0x4afdd8);
 StencilBlock *g_StencilBlock SD_BSS(0x4afddc);
-int g_StencilGrupos SD_BSS(0x4afde0);
-int g_StencilGruposMax SD_BSS(0x4afde4);
-CMundo *g_Mundo SD_BSS(0x4afde8);
+int g_StencilGroups SD_BSS(0x4afde0);
+int g_StencilGroupsMax SD_BSS(0x4afde4);
+CWorld *g_World SD_BSS(0x4afde8);
 cGVar GVar_RenderWorld SD_BSS(0x4afdec);
 cGVar GVar_RenderSky SD_BSS(0x4afe04);
 cGVar GVar_WorldPreIllum SD_BSS(0x4afe1c);
@@ -851,9 +851,9 @@ cGVar GVar_SkyPosScale SD_BSS(0x4afe64);
 cGVar GVar_SkyTubeTest SD_BSS(0x4afe7c);
 cGVar GVar_ShowWorldDummies SD_BSS(0x4afe94);
 cGVar GVar_SkyInit SD_BSS(0x4afeac);
-CTabla g_Puntos SD_BSS(0x4afec4);
-int g_NumPuntos SD_BSS(0x4afecc);
-int g_NumZonasPintar SD_BSS(0x4afed0);
-CZona *g_Zonas[132] SD_BSS(0x4afed8);
+CTable g_Points SD_BSS(0x4afec4);
+int g_NumPoints SD_BSS(0x4afecc);
+int g_NumPaintZones SD_BSS(0x4afed0);
+CZone *g_Zones[132] SD_BSS(0x4afed8);
 
 #endif

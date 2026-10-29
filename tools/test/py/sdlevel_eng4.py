@@ -167,11 +167,11 @@ check('e4 Anm_Preload', lambda: SDTest.Call('Anm_Preload', 'vss', 'Models/Elemen
 	'Models/Elements/FireAFXFireDrop/Anm/Loop.m3d')[0:0])
 
 # ---- Motor.cpp ----
-check('e4 Mundo_GetChecked', lambda: SDTest.Call('Mundo_GetChecked', 'i')[0] == SDTest.Peek('g_Mundo', 'i'))
+check('e4 World_GetChecked', lambda: SDTest.Call('World_GetChecked', 'i')[0] == SDTest.Peek('g_World', 'i'))
 # the commands of the debug console of the engine (the output goes to the debug console, off)
-e4vu = SDTest.Peek('g_VerUniones', 'i')
+e4vu = SDTest.Peek('g_ShowJoins', 'i')
 for c in ('listar luces', 'LISTAR', 'mem', 'ver uniones', 'ver uniones', 'nada', 'arbo', 'imbecil', 'Idiota', 'capullo'):
 	e4srand(55)
-	check('e4 E3D_Command' + fmt((c,)), lambda c=c: (SDTest.Call('E3D_Command', 'vs', c), SDTest.Peek('g_VerUniones', 'i') & 0xff,
+	check('e4 E3D_Command' + fmt((c,)), lambda c=c: (SDTest.Call('E3D_Command', 'vs', c), SDTest.Peek('g_ShowJoins', 'i') & 0xff,
 		SDTest.Call('crt_rand', 'i')[0]))
-SDTest.Poke('g_VerUniones', e4vu)
+SDTest.Poke('g_ShowJoins', e4vu)

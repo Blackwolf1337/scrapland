@@ -150,7 +150,7 @@ void Video_MaskHeldKeys(char *keys) {
 }
 
 int Video_OpenStream(const char *name, void *dd, void **out) {
-	uint16_t wpath[MAX_RUTA];
+	uint16_t wpath[MAX_FILEPATH];
 	void *ms = NULL;
 	const char *what;
 
@@ -177,7 +177,7 @@ int Video_OpenStream(const char *name, void *dd, void **out) {
 		E3D_LogBlue(g_FileLog, "pAMStream->AddMediaStream()  failed with HRESULT(0x%8.8X)", hr);
 		goto done;
 	}
-	exe_MultiByteToWideChar(0, 0, name, -1, wpath, MAX_RUTA);
+	exe_MultiByteToWideChar(0, 0, name, -1, wpath, MAX_FILEPATH);
 	hr = COM_CALL(ms, ammsOpenFile_t, AMMS_OPENFILE)(ms, wpath, 0);
 	if (hr < 0) {
 		what = "pAMStream->OpenFile(wPath, 0)";
@@ -293,9 +293,9 @@ int Video_RenderStream(void *dd, void *primary, void *ms, byte *played) {
 	if (!Engine_IsFullScreen()) {
 		exe_point pt = { 0, 0 };
 		if (primary) {
-			exe_ClientToScreen(MOTOR_HWND(g_Motor), &pt);
+			exe_ClientToScreen(ENGINE_HWND(g_Engine), &pt);
 		}
-		const int *cr = (const int *)(g_Motor + 0x2a508);
+		const int *cr = (const int *)(g_Engine + 0x2a508);
 		dst.left = cr[0] + pt.x;
 		dst.top = cr[1] + pt.y;
 		dst.right = cr[2] + pt.x;
@@ -427,7 +427,7 @@ static void Video_StreamStep(void) {
 		}
 	}
 	if (!video.primary) {
-		Video_BltToWindow(MOTOR_HWND(g_Motor), &video.dst, video.surf, &video.src);
+		Video_BltToWindow(ENGINE_HWND(g_Engine), &video.dst, video.surf, &video.src);
 	} else {
 		if (!video.secDone) {
 			hr = COM_CALL(video.sec, ddsBlt_t, DDS_BLT)(video.sec, &video.src, video.surf, &video.src,
@@ -464,10 +464,10 @@ void Video_BltToWindow(void *hwnd, const exe_rect *dst, void *surf, const exe_re
 
 /* name in the language directory of dir, else as it is (with the warning when neither is found) */
 static int Video_PlayName(const char *name, const char *dir) {
-	char buf[MAX_RUTA];
+	char buf[MAX_FILEPATH];
 
 	Bprintf(buf, sizeof(buf), "&U&D%s/&N&E", *g_LangName);
-	Ruta_Format(buf, name, buf);
+	Path_Format(buf, name, buf);
 	int r = Video_PlayPath(buf, dir, 0);
 	if (!r) {
 		r = Video_PlayPath(name, dir, 1);
@@ -476,7 +476,7 @@ static int Video_PlayName(const char *name, const char *dir) {
 }
 
 int Video_PlayFile(const char *name, const char *dir) {
-	char buf[MAX_RUTA];
+	char buf[MAX_FILEPATH];
 
 	CHECK(!video.busy);
 	/* "a|b": a first, then b */
@@ -509,12 +509,12 @@ static int Video_PlayPathEnd(void *dd) {
 }
 
 int Video_PlayPath(const char *name, const char *dir, byte warn) {
-	char path[MAX_RUTA];
+	char path[MAX_FILEPATH];
 	void *dd, *ms;
 
 	Bprintf(path, sizeof(path), "%s%s", dir ? dir : "", name);
 	if (File_Access(path, 0)) {
-		Ruta_Format(path, path, "&U&D&N.vds");
+		Path_Format(path, path, "&U&D&N.vds");
 		if (File_Access(path, 0)) {
 			if (warn) {
 				Con_Warnf("ERROR: video file not found [%s]\n", path);
@@ -529,7 +529,7 @@ int Video_PlayPath(const char *name, const char *dir, byte warn) {
 		E3D_LogBlue(g_FileLog, "ERROR: Could not open DirectDraw - check it is installed");
 		dd = NULL;
 	} else {
-		int hr = COM_CALL(dd, ddSetCoop_t, DD_SETCOOPERATIVELEVEL)(dd, MOTOR_HWND(g_Motor), DDSCL_NORMAL);
+		int hr = COM_CALL(dd, ddSetCoop_t, DD_SETCOOPERATIVELEVEL)(dd, ENGINE_HWND(g_Engine), DDSCL_NORMAL);
 		if (hr < 0) {
 			E3D_LogBlue(g_FileLog, "ERROR: SetCooperativeLevel(): 0x%08X", hr);
 		} else if (Video_OpenStream(path, dd, &ms) >= 0) {

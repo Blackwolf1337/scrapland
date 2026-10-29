@@ -105,8 +105,8 @@ fxset(fxe + 8, (1.0, 2.0))
 check('cObjElementFXModelNoise_Update no entity', lambda: (SDTest.Call('cObjElementFXModelNoise_Update', 'tviif', fxe, 0, 0.1),
 	fxfl(fxe + 8, 2)))
 fxreset(fxe)
-for rva in ('cObjElementFXSistPart_Update', 'cObjElementFXSistPart_Update@1db9f0'):
-	check('cObjElementFXSistPart_Update off %s' % rva, lambda rva=rva: (SDTest.Call(rva, 'tviif', fxe, 0, 0.1),
+for rva in ('cObjElementFXParticleSystem_Update', 'cObjElementFXParticleSystem_Update@1db9f0'):
+	check('cObjElementFXParticleSystem_Update off %s' % rva, lambda rva=rva: (SDTest.Call(rva, 'tviif', fxe, 0, 0.1),
 		fxb(fxe + 0xb4)))
 fxfree(fxe)
 

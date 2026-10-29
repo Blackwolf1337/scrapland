@@ -17,7 +17,7 @@ def w2set(a, v):
 def w2fl(a, n):
 	return SDTest.Call('crt_memcpy', 'iFii', (0.0,) * n, a, 4 * n)[1]
 def w2str(a, s):
-	SDTest.Call('Cad_Copy', 'iisi', a, s, len(s) + 1)
+	SDTest.Call('String_Copy', 'iisi', a, s, len(s) + 1)
 def w2ints(a, offs):
 	r = ()
 	for o in offs:

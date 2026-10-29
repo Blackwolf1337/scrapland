@@ -1,6 +1,6 @@
 /*
  * ScrapEngMain.cpp of the game: the glue between the game and the engine3d. The start and the end of the engine
- * (the D3D application g_Motor and its three callbacks), the level start and end with the loading screens, the
+ * (the D3D application g_Engine and its three callbacks), the level start and end with the loading screens, the
  * video modes of the adapter, the music and video players, world to screen, the engine printf, screenshots and AVI
  * capture, the model list and info, the viewer camera and the engine options of m3d.ini.
  */
@@ -17,7 +17,7 @@
 #include "scrap/scrapcamera.h"
 #include "scrap/scrapworld.h"
 
-/* the D3D framework of the DX8 SDK inside g_Motor (CD3DApplication): the adapters with their devices and modes */
+/* the D3D framework of the DX8 SDK inside g_Engine (CD3DApplication): the adapters with their devices and modes */
 typedef struct D3DModeInfo {
 	uint32_t Width;			/* 0x00 */
 	uint32_t Height;		/* 0x04 */
@@ -57,24 +57,24 @@ SD_OFFSET(D3DAdapterInfo, dwNumDevices, 0x43c);
 SD_OFFSET(D3DAdapterInfo, dwCurrentDevice, 0x4388);
 SD_SIZE(D3DAdapterInfo, 0x438c);
 
-/* more of g_Motor (see e3dutil.h) */
-#define MOTOR_ADAPTERINFO(m) ((D3DAdapterInfo *)MOTOR_ADAPTERS(m) + MOTOR_ADAPTER(m))
-#define MOTOR_WINDOWED(m) (*(int *)((m) + 0x2a384))
-#define MOTOR_PP(m) ((uint32_t *)((m) + 0x2a398))	/* D3DPRESENT_PARAMETERS, 13 words */
-#define MOTOR_VSYNC(m) (*(int *)((m) + 0x2a5c8))
-#define MOTOR_FULLSCREEN(m) (*(int *)((m) + 0x2a5cc))
-#define MOTOR_WIDTH(m) (*(int *)((m) + 0x2a5d0))
-#define MOTOR_HEIGHT(m) (*(int *)((m) + 0x2a5d4))
-#define MOTOR_BPP(m) (*(int *)((m) + 0x2a5d8))
-/* the D3D framework methods of g_Motor (thiscall, HRESULT) by their vtable offset */
-#define MOTOR_CALL(m, off) (((int(__thiscall *)(byte *)) (*(void ***)(m))[(off) / 4])(m))
-#define MOTOR_VT_RESTORE 0x08		/* InitDeviceObjects/RestoreDeviceObjects of the level */
-#define MOTOR_VT_RESTORE2 0x0c
-#define MOTOR_VT_INVALIDATE 0x20
-#define MOTOR_VT_DELETE 0x24
-#define MOTOR_VT_CREATE 0x28		/* (hInstance) */
+/* more of g_Engine (see e3dutil.h) */
+#define ENGINE_ADAPTERINFO(m) ((D3DAdapterInfo *)ENGINE_ADAPTERS(m) + ENGINE_ADAPTER(m))
+#define ENGINE_WINDOWED(m) (*(int *)((m) + 0x2a384))
+#define ENGINE_PP(m) ((uint32_t *)((m) + 0x2a398))	/* D3DPRESENT_PARAMETERS, 13 words */
+#define ENGINE_VSYNC(m) (*(int *)((m) + 0x2a5c8))
+#define ENGINE_FULLSCREEN(m) (*(int *)((m) + 0x2a5cc))
+#define ENGINE_WIDTH(m) (*(int *)((m) + 0x2a5d0))
+#define ENGINE_HEIGHT(m) (*(int *)((m) + 0x2a5d4))
+#define ENGINE_BPP(m) (*(int *)((m) + 0x2a5d8))
+/* the D3D framework methods of g_Engine (thiscall, HRESULT) by their vtable offset */
+#define ENGINE_CALL(m, off) (((int(__thiscall *)(byte *)) (*(void ***)(m))[(off) / 4])(m))
+#define ENGINE_VT_RESTORE 0x08		/* InitDeviceObjects/RestoreDeviceObjects of the level */
+#define ENGINE_VT_RESTORE2 0x0c
+#define ENGINE_VT_INVALIDATE 0x20
+#define ENGINE_VT_DELETE 0x24
+#define ENGINE_VT_CREATE 0x28		/* (hInstance) */
 
-/* a camera of the game (0x3c bytes) over a CCamara of the engine */
+/* a camera of the game (0x3c bytes) over a CCamera of the engine */
 
 /* the watermark drawn with ShowSplashScreen 100 (0x44 bytes, a .psa image) */
 typedef struct CPsaImage CPsaImage;
@@ -85,9 +85,9 @@ struct CPsaImage {
 	float x, y;			/* 0x00 */
 	float pivotX, pivotY;		/* 0x08 0..1 of the size */
 	float scaleX, scaleY;		/* 0x10 1 */
-	float f18, f1c;			/* 0x18 the second scale of the CGrafico2D (g_Sprite2DScale) */
-	byte pantalla;			/* 0x20 SPR2D 1: the position in pixels (the CGrafico2D gets the inverse) */
-	byte tamPantalla;		/* 0x21 SPR2D 2 */
+	float f18, f1c;			/* 0x18 the second scale of the CGraphic2D (g_Sprite2DScale) */
+	byte screen;			/* 0x20 SPR2D 1: the position in pixels (the CGraphic2D gets the inverse) */
+	byte screenSize;		/* 0x21 SPR2D 2 */
 	byte unit;			/* 0x22 SPR2D 4, the scorer "Unit": sizes of 1 (no texture size, no second scale) */
 	byte pad_23;
 	float uv0[2];			/* 0x24 the texture rectangle of frame 0 */
@@ -109,7 +109,7 @@ void __thiscall CPsaImage_DrawFrame(CPsaImage *self, int frame, float x, float y
 void __thiscall CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, float y, int mode, int flip);	/* rva 0x22d480 */
 
 /* the state of the engine glue */
-#define g_CamActual GAME_GLOBAL(CGameCamera *, g_CamActual, 0x4a8308)	/* the camera drawn */
+#define g_CamCurrent GAME_GLOBAL(CGameCamera *, g_CamCurrent, 0x4a8308)	/* the camera drawn */
 #define g_ViewerCamera GAME_GLOBAL(CGameCamera *, g_ViewerCamera, 0x4a830c)	/* gViewerCamera, made with the engine */
 #define g_Watermark GAME_GLOBAL(CPsaImage *, g_Watermark, 0x4a8310)
 /* the callbacks of Engine_SetCallback (1..4): before each frame, after the frame setup, two more */
@@ -123,7 +123,7 @@ void __thiscall CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, flo
 #define g_CallbacksOn GAME_GLOBAL(byte, g_CallbacksOn, 0x431ae4)
 #define g_ScreenshotName (GAME_ARRAY(char, g_ScreenshotName, 0x4b2740))	/* 0x100 */
 #define g_DVFName (GAME_ARRAY(char, g_DVFName, 0x4b2840))		/* 0x100 */
-#define g_VideoStatus GAME_GLOBAL(int, g_BspSecVisto, 0x4b2b34)
+#define g_VideoStatus GAME_GLOBAL(int, g_BspSectorSeen, 0x4b2b34)
 #define g_LoadingScreen GAME_GLOBAL(int, g_LoadingScreen, 0x431b08)	/* the last random loading screen */
 #define g_M3dIni GAME_STR(str_431bf0, 0x431bf0)		/* "m3d.ini" */
 /* the video to play at the start and after a level ("" when played, unless bit 0 of its flags) */
@@ -134,22 +134,22 @@ void __thiscall CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, flo
 #define g_EngineVersion GAME_GLOBAL(int, g_EngineVersion, 0x3d5838)
 
 /* m3d.ini of the level (Engine_LoadIni) */
-#define g_SueloPath (GAME_ARRAY(char, g_SueloPath, 0x4a8440))	/* [suelo] ruta_m3d, 0x104 */
-#define g_SueloEscala (GAME_ARRAY(vec3_t, g_SueloEscala, 0x431af8))
+#define g_GroundPath (GAME_ARRAY(char, g_GroundPath, 0x4a8440))	/* [suelo] ruta_m3d, 0x104 */
+#define g_GroundScale (GAME_ARRAY(vec3_t, g_GroundScale, 0x431af8))
 #define g_ModelAmbientIni (GAME_ARRAY(ColorIntens, g_ModelAmbientIni, 0x4a8630))	/* [suelo] model_ambient */
 #define g_ClipNear GAME_GLOBAL(float, g_ClipNear, 0x4a8330)		/* [camara] forzar_clipNear */
 #define g_ClipFar GAME_GLOBAL(float, g_ClipFar, 0x4a8334)
-#define g_CieloPath (GAME_ARRAY(char, g_CieloPath, 0x4a8338))	/* [cielo], 0x104 */
-#define g_CieloPosScale GAME_GLOBAL(float, g_CieloPosScale, 0x4a843c)
-#define g_CieloRotation GAME_GLOBAL(float, g_CieloRotation, 0x4a8544)
-#define g_NieblaActiva GAME_GLOBAL(int, g_NieblaActiva, 0x4a8548)	/* [niebla] */
-#define g_NieblaModoTabla GAME_GLOBAL(int, g_NieblaModoTabla, 0x4a854c)
-#define g_NieblaLineal GAME_GLOBAL(int, g_NieblaLineal, 0x431ae8)
-#define g_NieblaRangoIni GAME_GLOBAL(float, g_NieblaRangoIni, 0x431aec)
-#define g_NieblaRangoFin GAME_GLOBAL(float, g_NieblaRangoFin, 0x431af0)
-#define g_NieblaDensidad GAME_GLOBAL(float, g_NieblaDensidad, 0x431af4)
-#define g_NieblaColor (GAME_ARRAY(ColorIntens, g_NieblaColor, 0x4a8568))
-#define g_SueloTrisPerNode GAME_GLOBAL(int, g_SueloTrisPerNode, 0x431bc0)
+#define g_SkyPath (GAME_ARRAY(char, g_SkyPath, 0x4a8338))	/* [cielo], 0x104 */
+#define g_SkyPosScaleIni GAME_GLOBAL(float, g_SkyPosScaleIni, 0x4a843c)
+#define g_SkyRotationIni GAME_GLOBAL(float, g_SkyRotationIni, 0x4a8544)
+#define g_FogActiveIni GAME_GLOBAL(int, g_FogActiveIni, 0x4a8548)	/* [niebla] */
+#define g_FogTableMode GAME_GLOBAL(int, g_FogTableMode, 0x4a854c)
+#define g_FogLinear GAME_GLOBAL(int, g_FogLinear, 0x431ae8)
+#define g_FogRangeIni GAME_GLOBAL(float, g_FogRangeIni, 0x431aec)
+#define g_FogRangeEnd GAME_GLOBAL(float, g_FogRangeEnd, 0x431af0)
+#define g_FogDensityIni GAME_GLOBAL(float, g_FogDensityIni, 0x431af4)
+#define g_FogColorIni (GAME_ARRAY(ColorIntens, g_FogColorIni, 0x4a8568))
+#define g_GroundTrisPerNode GAME_GLOBAL(int, g_GroundTrisPerNode, 0x431bc0)
 
 /* the engine variables (Gvars) */
 #define g_RenderLightmap GAME_GLOBAL_IN(int, GVar_RenderLightmap, 16, 0x4a8690)
@@ -212,13 +212,13 @@ int Engine_ToggleOption(int opt);
 void Engine_SetCallback(void (*fn)(void), int which);
 byte Engine_Unsupported(void);
 char *Engine_SetIniName(const char *name);
-void Engine_SetSuelo(const char *dir, const char *name, const vec3_t *escala);
+void Engine_SetGround(const char *dir, const char *name, const vec3_t *scale);
 /* m3d.ini: [suelo], [camara], [cielo], [niebla], [mapa_sombras], [sombras_stencil], [flares], [texturas] */
 void Engine_LoadIni(const char *name, const char *dir);
 const void *Eng_Identity(const void *v);
 
-CGameCamera *Camera_GetActual(void);
-void Camera_SetActual(CGameCamera *cam);
+CGameCamera *Camera_GetCurrent(void);
+void Camera_SetCurrent(CGameCamera *cam);
 /* camera.set: position, angles and target of the camera, save != 0 writes it */
 void Camera_SaveRestore(CGameCamera *cam, byte save);
 
@@ -251,9 +251,9 @@ void GVar_SetIntVerbose(cGVar *v, int value);
 int Timer_GetFreq64(int64_t *out);
 int Timer_GetQPFreq64(int64_t *out);
 byte Wild_MatchCase(const char *pattern, const char *name, byte ignoreCase);
-void Ini_GetColor(const char *sect, const char *key, ColorIntens *color, CArchINI *ini);
+void Ini_GetColor(const char *sect, const char *key, ColorIntens *color, CIniFile *ini);
 /* the path of key relative to the directory of base into dest; 0 or -1 */
-int Ini_GetPath(const char *sect, const char *key, char *dest, int size, const char *base, CArchINI *ini);
+int Ini_GetPath(const char *sect, const char *key, char *dest, int size, const char *base, CIniFile *ini);
 
 /* DebugUtils.cpp (src/game/ScrapEng/DebugUtils.c): util_d3d.cpp lines with the identity of 0x431b10 */
 void DebugUtils_DrawAxes(const matrix_t *m, const vec3_t *pos, float size);	/* red, green, blue */
@@ -274,46 +274,46 @@ void Loading_Step(int percent);					/* rva 0x2157a0, -1: one step */
 /* the CMotorApp made (arg 0) or freed (Engine/Motor.cpp, src/game/engine3d/Engine/Motor.c) */
 void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *release, int arg);
 void Engine3D_Shutdown(void);
-byte *__fastcall CMotorApp_ctor(byte *self);
+byte *__fastcall CEngineApp_ctor(byte *self);
 /* the ini name (in dir, NULL for the game directory) into the variables of the engine */
-void Motor_LoadIni(const char *name, const char *dir);
-void __thiscall CMotorApp_LightsDialog(byte *self, void *hwnd, void *inst);
+void Engine_LoadVarsIni(const char *name, const char *dir);
+void __thiscall CEngineApp_LightsDialog(byte *self, void *hwnd, void *inst);
 intptr_t TreeView_InsertItemf(void *hwnd, void *item, const char *fmt, ...);
-void Escena_LogTree(CEscena *esc, CNodo3D *nodo, int indent);
-/* a command of the debug console of the engine: listar, listar luces, arbol <scene>, ver uniones */
+void Scene_LogTree(CScene *scn, CNode3D *node, int indent);
+/* a command of the debug console of the engine: listar, listar lights, arbol <scene>, ver uniones */
 void E3D_Command(char *cmd);
-void __fastcall CMotorApp_UpdateMenu(byte *self);
-int __thiscall CMotorApp_InitDeviceObjects(byte *self);
-intptr_t __thiscall CMotorApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
-int __thiscall CMotorApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior, int format);
-int __thiscall CMotorApp_RestoreDeviceObjects(byte *self);
-int __thiscall CMotorApp_OneTimeSceneInit(byte *self);
-int __thiscall CMotorApp_FrameMove(byte *self);
-/* Render (vtable 0x18): the frame, 1 to quit; at once 0 while Motor_FrameDue is 0 */
-int __thiscall CMotorApp_Render(byte *self);
+void __fastcall CEngineApp_UpdateMenu(byte *self);
+int __thiscall CEngineApp_InitDeviceObjects(byte *self);
+intptr_t __thiscall CEngineApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
+int __thiscall CEngineApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior, int format);
+int __thiscall CEngineApp_RestoreDeviceObjects(byte *self);
+int __thiscall CEngineApp_OneTimeSceneInit(byte *self);
+int __thiscall CEngineApp_FrameMove(byte *self);
+/* Render (vtable 0x18): the frame, 1 to quit; at once 0 while Engine_FrameDue is 0 */
+int __thiscall CEngineApp_Render(byte *self);
 /* the reset of the device objects that g_ResetDev asks for, the HRESULT */
-int __fastcall CMotorApp_ResetDevice(byte *self);
+int __fastcall CEngineApp_ResetDevice(byte *self);
 /* 0 while the frame limiter (limitaFPS, R_LimitFPS; none with vsync) holds the next frame back */
-byte Motor_FrameDue(byte *self);
-int __thiscall CMotorApp_DeleteDeviceObjects(byte *self);
-int __thiscall CMotorApp_FinalCleanup(byte *self);
+byte Engine_FrameDue(byte *self);
+int __thiscall CEngineApp_DeleteDeviceObjects(byte *self);
+int __thiscall CEngineApp_FinalCleanup(byte *self);
 int __thiscall CD3DApplication_Nothing(byte *self);
-char *Motor_ColorStr(const byte *c);
-const char *Motor_BoolStr(int b);
-CMundo *Mundo_GetChecked(void);
+char *Engine_ColorStr(const byte *c);
+const char *Engine_BoolStr(int b);
+CWorld *World_GetChecked(void);
 /* the statistics on the screen by R_Profiler: 1 fps, 2 camera and lights, 3 memory, 4 frame time graph, 5 profiler */
-void Motor_DrawStats(void);
+void Engine_DrawStats(void);
 /* the frame time graph at the bottom, the fps text at y */
-void Motor_DrawFpsGraph(float y);
+void Engine_DrawFpsGraph(float y);
 /* the modal dialog of the global scene: its counts and a tree of the nodes, the node selected in the tree */
-intptr_t __stdcall Motor_SceneDlgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
-void __fastcall Motor_ReleaseEscena(byte *self);
-void __fastcall Motor_GetEscena(byte *self);
-void *__thiscall CEntradaNula_Delete(void *self, byte flags);
-int __thiscall CEntradaNula_Nothing3(void *self, int a, int b, int c);
-int __thiscall CEntradaNula_Nothing1(void *self, int a);
-int __thiscall CEntradaNula_Nothing(void *self);
-void __thiscall CEntradaNula_Nothing4(void *self, int a, int b, int c, int d);
+intptr_t __stdcall Engine_SceneDlgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
+void __fastcall Engine_ReleaseScene(byte *self);
+void __fastcall Engine_GetScene(byte *self);
+void *__thiscall CNullInput_Delete(void *self, byte flags);
+int __thiscall CNullInput_Nothing3(void *self, int a, int b, int c);
+int __thiscall CNullInput_Nothing1(void *self, int a);
+int __thiscall CNullInput_Nothing(void *self);
+void __thiscall CNullInput_Nothing4(void *self, int a, int b, int c, int d);
 int __thiscall CD3DApp_Cleanup(byte *self);			/* rva 0x273d90 */
 int __thiscall CD3DApp_Render(byte *self);			/* rva 0x275120 */
 int __thiscall CD3DApp_ResetDevice(byte *self);		/* rva 0x275470 */
@@ -331,7 +331,7 @@ byte Avi_Load(const char *name);
 /* a frame of lx * ly RGB bytes into the AVI file name (made on the first frame, the compressor chosen in a
  * dialog); without buf nothing, without name the file closed */
 void Avi_Write(const char *name, int lx, int ly, const void *buf, int bufsize);
-void SombrasStencil_Set(byte on);				/* rva 0x267460 */
+void ShadowsStencil_Set(byte on);				/* rva 0x267460 */
 CPsaImage *__thiscall CPsaImage_ctor(CPsaImage *self, const char *name, int flags);	/* rva 0x22d120 */
 void __fastcall CPsaImage_dtor(CPsaImage *self);			/* rva 0x22d160 */
 void __thiscall CPsaImage_Draw(CPsaImage *self, float x, float y);	/* rva 0x22d3c0 */
@@ -339,7 +339,7 @@ void __thiscall CPsaImage_Draw(CPsaImage *self, float x, float y);	/* rva 0x22d3
 void __fastcall CPsaImage_Init(CPsaImage *self);
 CPsaImage *__fastcall CPsaImage_ctorEmpty(CPsaImage *self);
 void __thiscall CPsaImage_DrawScaled(CPsaImage *self, float x, float y, float scale);
-/* the CGrafico2D of the sheet name (opac: the opacity map) with a blend mode (BlendMode_*) and the SPR2D flags */
+/* the CGraphic2D of the sheet name (opac: the opacity map) with a blend mode (BlendMode_*) and the SPR2D flags */
 void __thiscall CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int blend, uint32_t flags);
 void __thiscall CPsaImage_LoadOpac(CPsaImage *self, const char *name, const char *opac, uint32_t flags);
 void __thiscall CPsaImage_LoadName(CPsaImage *self, const char *name, uint32_t flags);

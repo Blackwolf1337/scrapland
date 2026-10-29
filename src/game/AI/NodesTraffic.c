@@ -1160,7 +1160,7 @@ static int NT_Overlap(const vec3_t *a, const vec3_t *b, const vec3_t *c) {
 		(double)0.1f > __builtin_fabs((double)(r.z - 0.0f));
 }
 
-void __thiscall CNodesTraffic_Analize(CNodesTraffic *self) {
+void __thiscall CNodesTraffic_Analyze(CNodesTraffic *self) {
 	char path[0x100], buf[0xc8];
 	vec3_t bmin, bmax, hit;
 	byte bad = 0;

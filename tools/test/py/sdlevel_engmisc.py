@@ -1,6 +1,6 @@
 # engine3d leftovers in the level FZ (execfile'd by sdlevel.py, Python 1.5.2): the stencil volumes drawn from groups,
-# segments and triangles written here (the vertex buffers read back through their Lock), CLuz_Render on a light made
-# here, CNodo3D_DebugDraw on nodes made here and on a mesh node of a model of the level, and the camera page of the
+# segments and triangles written here (the vertex buffers read back through their Lock), CLight_Render on a light made
+# here, CNode3D_DebugDraw on nodes made here and on a mesh node of a model of the level, and the camera page of the
 # statistics. The device calls go through the D3D log; the engine variables and the world matrix are put back.
 def emcri(a):
 	return SDTest.Peek(a, '@i')
@@ -53,11 +53,11 @@ emcident = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0
 emcm1 = (0.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 120.5, -30.0, 44.25, 1.0)
 
 # ---- Stencil_DrawSegs and Stencil_DrawTris (rva 0x265510, 0x2661b0) ----
-emcsv = (sym('g_StencilSegs'), sym('g_StencilInv'), sym('g_StencilGrupos'), sym('g_StencilFisq'), sym('g_StencilDraw'), sym('g_StencilLDir'))
+emcsv = (sym('g_StencilSegs'), sym('g_StencilInv'), sym('g_StencilGroups'), sym('g_StencilFisq'), sym('g_StencilDraw'), sym('g_StencilLDir'))
 emcsvs = emcsave(emcsv)
 emcblk = emcgi(sym('g_StencilBlock'))
-emcsegp = emcgi(sym('g_StencilSegmentos'))
-emctrip = emcgi(sym('g_StencilTriangInv'))
+emcsegp = emcgi(sym('g_StencilSegments'))
+emctrip = emcgi(sym('g_StencilTriInv'))
 emcvbs = (emcgi(sym('g_StencilVB')), emcgi(sym('g_StencilIB')), emcgi(sym('g_StencilVB2')), emcgi(sym('g_StencilVB3')))
 check('emc stencil buffers', lambda: (emcblk != 0, emcsegp != 0, emctrip != 0, emcvbs[0] != 0, emcvbs[1] != 0,
 	emcvbs[2] != 0, emcvbs[3] != 0))
@@ -107,7 +107,7 @@ if emcblk and emcsegp and emctrip and emcvbs[0] and emcvbs[1] and emcvbs[2] and 
 		emcwf(emctrip + emck * 36, emctris[emck][0] + emctris[emck][1] + emctris[emck][2])
 	SDTest.Poke('g_StencilSegs', len(emcsegs))
 	SDTest.Poke('g_StencilInv', len(emctris))
-	SDTest.Poke('g_StencilGrupos', len(emcgroups))
+	SDTest.Poke('g_StencilGroups', len(emcgroups))
 	emcsf(sym('g_StencilLDir'), 500.0)
 	for emcfisq in (0, 1):
 		SDTest.Poke('g_StencilFisq', emcfisq)
@@ -120,17 +120,17 @@ if emcblk and emcsegp and emctrip and emcvbs[0] and emcvbs[1] and emcvbs[2] and 
 	SDTest.Poke('g_StencilDraw', 0)
 	check('emc Stencil_DrawSegs no draw', lambda: emclog(lambda: SDTest.Call('Stencil_DrawSegs', 'vi', 0)))
 	check('emc Stencil_DrawTris no draw', lambda: emclog(lambda: SDTest.Call('Stencil_DrawTris', 'vi', 0)))
-	SDTest.Poke('g_StencilGrupos', 0)
+	SDTest.Poke('g_StencilGroups', 0)
 	check('emc Stencil_DrawSegs no groups', lambda: emclog(lambda: SDTest.Call('Stencil_DrawSegs', 'vi', 0)))
 	for emck in range(len(emcgroups)):
 		emcwf(emcblk + emck * 0x80, emcbs[emck])
 emcrestore(emcsv, emcsvs)
 
-# ---- CLuz_Render (rva 0x23bb70) on a light in calloc memory with a node name, the world and eye set here ----
+# ---- CLight_Render (rva 0x23bb70) on a light in calloc memory with a node name, the world and eye set here ----
 emcsl = emcgi(sym('g_ShowLights'))
 emcluz = emcz(0xcc)
 emcnodo = emcz(0x100)
-emcwi(emcnodo + 4, emcstr('luzA'))
+emcwi(emcnodo + 4, emcstr('lightA'))
 emcwi(emcluz + 0xc4, emcnodo)
 SDTest.Call('Render_SetWorldMatrix', 'vFi', emcm1, 1)
 emcwf(sym('g_EyePos') + 0x400000, (300.0, -20.0, 80.0))
@@ -147,17 +147,17 @@ for emcc in ((5000, 0, 0, 50.0, 45.0, (0.0, -1.0, 0.0)), (5000, 1, 0, 0.0, 45.0,
 	emcwf(emcluz + 0x80, (10.0, 20.0, -30.0) + emcc[5])
 	emcwi(emcluz + 0xbc, 37)
 	emcwi(emcluz + 0xc0, -1)
-	check('emc CLuz_Render' + fmt(emcc), lambda: emclog(lambda: SDTest.Call('CLuz_Render', 'tviii', emcluz,
+	check('emc CLight_Render' + fmt(emcc), lambda: emclog(lambda: SDTest.Call('CLight_Render', 'tviii', emcluz,
 		SDTest.Peek('g_pd3dDevice', 'i'), 0)))
 SDTest.Poke('g_ShowLights', emcsl)
 
-# ---- CNodo3D_DebugDraw (rva 0x23d9d0) ----
+# ---- CNode3D_DebugDraw (rva 0x23d9d0) ----
 emcdv = (sym('g_ShowLocalBox'), sym('g_ShowLBoxMin'), sym('g_ShowLBoxMax'), sym('g_ShowLBoxName'))
 emcdvs = emcsave(emcdv)
 emcempty = emcstr('')
 emcpat = emcstr('*nod*')
 emcpad = emcz(0x100)
-emcwi(emcpad + 4, emcstr('padre'))
+emcwi(emcpad + 4, emcstr('parent'))
 emcwf(emcpad + 0x5c, emcident[0:12] + (5.0, 6.0, 7.0, 1.0))
 emcn = emcz(0x100)
 emcwi(emcn + 4, emcstr('nodoX'))
@@ -179,19 +179,19 @@ for emcc in ((0, 0, 0, 0, 0), (1, 0, 0, 0, 0), (1, 8, 0, 0, 0), (1, 0, 6, 0, 0),
 		SDTest.Poke('g_ShowLBoxName', emcpat)
 	else:
 		SDTest.Poke('g_ShowLBoxName', emcempty)
-	check('emc CNodo3D_DebugDraw' + fmt(emcc), lambda c=emcc: emclog(lambda c=c: SDTest.Call('CNodo3D_DebugDraw', 'tbii', emcn,
+	check('emc CNode3D_DebugDraw' + fmt(emcc), lambda c=emcc: emclog(lambda c=c: SDTest.Call('CNode3D_DebugDraw', 'tbii', emcn,
 		c[4] and emcnr)[0]))
 emcwi(emcn + 0x14, 0)
 SDTest.Poke('g_ShowLocalBox', 6)
-check('emc CNodo3D_DebugDraw root', lambda: emclog(lambda: SDTest.Call('CNodo3D_DebugDraw', 'tbii', emcn, 0)[0]))
+check('emc CNode3D_DebugDraw root', lambda: emclog(lambda: SDTest.Call('CNode3D_DebugDraw', 'tbii', emcn, 0)[0]))
 SDTest.Poke('g_ShowLBoxName', emcempty)
 SDTest.Poke('g_ShowLBoxMin', 0)
 SDTest.Poke('g_ShowLBoxMax', 0)
 # a mesh node of the first models of the level with its render node (boxes, modes 2 to 4)
 emcmesh = []
 emck = 0
-while emck < SDTest.Peek('g_NumModelosRender', 'i') and emck < 40 and len(emcmesh) < 2:
-	emcmo = emcgi(sym('g_ModelosRender') + emck * 4)
+while emck < SDTest.Peek('g_NumModelsRender', 'i') and emck < 40 and len(emcmesh) < 2:
+	emcmo = emcgi(sym('g_ModelsRender') + emck * 4)
 	if emcmo:
 		emcmo = emcri(emcmo)
 	emck = emck + 1
@@ -209,32 +209,32 @@ check('emc mesh nodes', lambda: len(emcmesh))
 for emcm in emcmesh:
 	for emcmode in (2, 3, 4):
 		SDTest.Poke('g_ShowLocalBox', emcmode)
-		check('emc CNodo3D_DebugDraw mesh' + fmt((emcmode,)), lambda m=emcm: emclog(lambda m=m: SDTest.Call('CNodo3D_DebugDraw',
+		check('emc CNode3D_DebugDraw mesh' + fmt((emcmode,)), lambda m=emcm: emclog(lambda m=m: SDTest.Call('CNode3D_DebugDraw',
 			'tbii', m[0], m[1])[0]))
 emcrestore(emcdv, emcdvs)
 
-# ---- Motor_SceneDlgProc (rva 0x22dcf0, stdcall) without a dialog: the scene of a mesh node, a fake selection ----
+# ---- Engine_SceneDlgProc (rva 0x22dcf0, stdcall) without a dialog: the scene of a mesh node, a fake selection ----
 def emcdlg(msg, wp, lp):
-	return SDTest.Call('Motor_SceneDlgProc', 'tiiiiii', 0, 0, msg, wp, lp)[0]
-check('emc Motor_SceneDlgProc other', lambda: (emcdlg(0x999, 0, 0), emcdlg(0x111, 3, 0), emcdlg(0x111, 0, 0),
+	return SDTest.Call('Engine_SceneDlgProc', 'tiiiiii', 0, 0, msg, wp, lp)[0]
+check('emc Engine_SceneDlgProc other', lambda: (emcdlg(0x999, 0, 0), emcdlg(0x111, 3, 0), emcdlg(0x111, 0, 0),
 	emcdlg(0x10, 0, 0)))
-check('emc Motor_SceneDlgProc init NULL', lambda: emcdlg(0x110, 0, 0))
+check('emc Engine_SceneDlgProc init NULL', lambda: emcdlg(0x110, 0, 0))
 if len(emcmesh):
 	emcesc = emcri(emcmesh[0][0] + 0x40)
-	check('emc Motor_SceneDlgProc init', lambda: (emcdlg(0x110, 0, emcesc), SDTest.Peek('g_ColorStr', 's')))
+	check('emc Engine_SceneDlgProc init', lambda: (emcdlg(0x110, 0, emcesc), SDTest.Peek('g_ColorStr', 's')))
 	emcnm = emcz(0x60)
 	emcwi(emcnm + 8, -402)
 	emcwi(emcnm + 0x5c, emcmesh[0][0])
-	check('emc Motor_SceneDlgProc notify', lambda: emcdlg(0x4e, 0, emcnm))
+	check('emc Engine_SceneDlgProc notify', lambda: emcdlg(0x4e, 0, emcnm))
 	emcwi(emcnm + 8, -401)
-	check('emc Motor_SceneDlgProc notify other', lambda: emcdlg(0x4e, 0, emcnm))
+	check('emc Engine_SceneDlgProc notify other', lambda: emcdlg(0x4e, 0, emcnm))
 	emcfree(emcnm)
 
-# ---- Motor_DrawStats (rva 0x2308c0) page 2: the camera of the world and the light counts ----
+# ---- Engine_DrawStats (rva 0x2308c0) page 2: the camera of the world and the light counts ----
 emcpm = emcgi(sym('g_ProfMode'))
-if emcgi(sym('g_Mundo')):
+if emcgi(sym('g_World')):
 	SDTest.Poke('g_ProfMode', 2)
-	check('emc Motor_DrawStats 2', lambda: SDTest.Call('Motor_DrawStats', 'v'))
+	check('emc Engine_DrawStats 2', lambda: SDTest.Call('Engine_DrawStats', 'v'))
 SDTest.Poke('g_ProfMode', emcpm)
 
 SDTest.Call('Render_SetWorldMatrix', 'vFi', emcworld, 1)

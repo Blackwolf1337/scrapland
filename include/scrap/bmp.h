@@ -8,39 +8,39 @@
 
 #include "scrap/game.h"
 
-typedef struct CImagen {
-	int ancho;			/* 0x0 */
-	int alto;			/* 0x4 */
+typedef struct CImage {
+	int width;			/* 0x0 */
+	int height;			/* 0x4 */
 	void *img;			/* 0x8 rows of pixels */
-} CImagen;
-SD_SIZE(CImagen, 0xc);
-typedef CImagen CBmp;
+} CImage;
+SD_SIZE(CImage, 0xc);
+typedef CImage CBmp;
 
 /* the pixel at x, y with CHECKs */
-void *Img_Pixel(const CImagen *b, uint32_t x, uint32_t y, int bytes);
+void *Img_Pixel(const CImage *b, uint32_t x, uint32_t y, int bytes);
 /* the originals free the pixels with the sized delete of one pixel */
-void Img_Free(CImagen *b, int bytes);
+void Img_Free(CImage *b, int bytes);
 /* new pixels, not cleared */
-void Img_Create(CImagen *b, int ancho, int alto, int bytes);
+void Img_Create(CImage *b, int width, int height, int bytes);
 /* the last 4 characters of name are ext, ignoring case (all of a shorter name) */
 int Img_IsExt(const char *name, const char *ext);
 /* w and h cut to both images; 0 if nothing is left */
-int Img_Clip(const CImagen *self, int x, int y, const CImagen *orig, int ox, int oy, int *w, int *h);
+int Img_Clip(const CImage *self, int x, int y, const CImage *orig, int ox, int oy, int *w, int *h);
 /* the first source row or column of destination i in a box filter */
 int Img_BoxStart(int i, float scale);
 /* the start of the Resample methods: a missing image gets the size of orig, the same size with all channels is a
  * copy (then 1) */
-int Img_ResampleCopy(CImagen *self, const CImagen *orig, uint32_t mask, int bytes);
+int Img_ResampleCopy(CImage *self, const CImage *orig, uint32_t mask, int bytes);
 
 /* 0xAARRGGBB colors: a + (b - a) * t in steps of 1/256 */
 uint32_t Color_Lerp(uint32_t a, uint32_t b, float t);
 
 uint32_t *__thiscall CBmp_Pixel(const CBmp *self, uint32_t x, uint32_t y);
-void __thiscall CBmp_Create(CBmp *self, int ancho, int alto);
+void __thiscall CBmp_Create(CBmp *self, int width, int height);
 /* the constructor with a size (new pixels) and the deleting destructor, copies in Engine/Textura.cpp */
-CBmp *__thiscall CBmp_ctor(CBmp *self, int ancho, int alto);
+CBmp *__thiscall CBmp_ctor(CBmp *self, int width, int height);
 CBmp *__thiscall CBmp_Delete(CBmp *self, byte flags);
-/* the size 0, the pixels freed (also CFondo2D, Engine/fondo2d.cpp) */
+/* the size 0, the pixels freed (also CBackground2D, Engine/fondo2d.cpp) */
 void __fastcall CBmp_dtor(CBmp *self);
 void __thiscall CBmp_Fill(CBmp *self, uint32_t color);
 /* orig at (ox, oy) size w x h into (x, y), only the channels in mask (1 r, 2 g, 4 b, 8 a) */
@@ -89,8 +89,8 @@ SD_SIZE(bmpFileCab_t, 0xe);
 
 typedef struct {
 	uint32_t size;			/* 0x00 */
-	int32_t ancho;			/* 0x04 */
-	int32_t alto;			/* 0x08 bottom up */
+	int32_t width;			/* 0x04 */
+	int32_t height;			/* 0x08 bottom up */
 	uint16_t planes;		/* 0x0c */
 	uint16_t bits;			/* 0x0e */
 	uint32_t compression;		/* 0x10 */
@@ -105,8 +105,8 @@ SD_SIZE(bmpInfoCab_t, 0x28);
 typedef struct {
 	uint32_t magic;			/* 0x00 "TEX\x1a" */
 	int32_t version;		/* 0x04 1 */
-	int32_t ancho;			/* 0x08 */
-	int32_t alto;			/* 0x0c */
+	int32_t width;			/* 0x08 */
+	int32_t height;			/* 0x0c */
 	uint32_t pad[4];		/* 0x10 */
 } texCab_t;
 SD_SIZE(texCab_t, 0x20);
@@ -117,7 +117,7 @@ typedef struct __attribute__((packed)) {
 	byte type;			/* 0x02 2 true color, 10 RLE */
 	byte cmap[5];			/* 0x03 */
 	uint16_t x, y;			/* 0x08 */
-	uint16_t ancho, alto;		/* 0x0c */
+	uint16_t width, height;		/* 0x0c */
 	byte bits;			/* 0x10 */
 	byte desc;			/* 0x11 0x20 top down */
 } tgaCab_t;

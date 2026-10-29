@@ -134,7 +134,7 @@ static void MentalController_InitBase(cMapElement *e, int *dcRoot, vec3_t *pos) 
 	cMapElement_Init(e);
 	CHECK(CGameModel_IsLoaded(&e->Mod));
 	*pos = *CGameModel_GetPos(&e->Mod, &tmp);
-	*dcRoot = CGameModel_FindNodoR(&e->Mod, "DC_Root");
+	*dcRoot = CGameModel_FindRenderNode(&e->Mod, "DC_Root");
 	CHECK(*dcRoot != -1);
 }
 
@@ -172,7 +172,7 @@ static void Press_NodePlace(CGameModel *model, int node, vec3_t *pos, vec3_t *ro
 	matrix_t mat;
 	vec3_t tmp;
 
-	CGameModel_NodoMatrix(model, &mat, node, 0, NULL, 0);
+	CGameModel_NodeMatrix(model, &mat, node, 0, NULL, 0);
 	pos->x = mat.m[12];
 	pos->y = mat.m[13];
 	pos->z = mat.m[14];
@@ -186,17 +186,17 @@ byte __fastcall cFXElementsMentalControllerDamageFX_Init(cFXElementsMentalContro
 	int node;
 
 	MentalController_InitBase(&self->base.base, &self->base.dcRoot, &self->base.pos);
-	node = CGameModel_FindNodoR(model, "DF_Smoke");
+	node = CGameModel_FindRenderNode(model, "DF_Smoke");
 	CHECK(node > -1);
 	CGameParticles_Attach(&self->smoke, model, node);
-	CHECK(self->smoke.SistPart);
+	CHECK(self->smoke.ParticleSystem);
 	self->smokeTime = 0.0f;
 	for (int i = 0; i < FXMENTALDAMAGEEMITTERS;) {
 		i++;
 		Str_PrintfQuiet(buf, 0xff, "DF_SmokeEmitter_%02d", i);
 		int k = i - 1;
 		self->smokeNode[k] = -1;
-		self->smokeNode[k] = CGameModel_FindNodoR(model, buf);
+		self->smokeNode[k] = CGameModel_FindRenderNode(model, buf);
 		if (self->smokeNode[k] <= -1) {
 			break;
 		}
@@ -204,50 +204,50 @@ byte __fastcall cFXElementsMentalControllerDamageFX_Init(cFXElementsMentalContro
 		def.x = -85.0f;
 		def.y = -55.0f;
 		def.z = 350.0f;
-		self->smokeVelMin[k] = *CGameModel_NodoIniVec3(model, &tmp, self->smokeNode[k], "SmokeEmitter", "VelMin", &def);
+		self->smokeVelMin[k] = *CGameModel_NodeIniVec3(model, &tmp, self->smokeNode[k], "SmokeEmitter", "VelMin", &def);
 		def.x = 85.0f;
 		def.y = 55.0f;
 		def.z = 650.0f;
-		self->smokeVelMax[k] = *CGameModel_NodoIniVec3(model, &tmp, self->smokeNode[k], "SmokeEmitter", "VelMax", &def);
+		self->smokeVelMax[k] = *CGameModel_NodeIniVec3(model, &tmp, self->smokeNode[k], "SmokeEmitter", "VelMax", &def);
 		def.x = -15.0f;
 		def.y = 300.0f;
 		def.z = -15.0f;
-		self->smokeAccMin[k] = *CGameModel_NodoIniVec3(model, &tmp, self->smokeNode[k], "SmokeEmitter", "AccMin", &def);
+		self->smokeAccMin[k] = *CGameModel_NodeIniVec3(model, &tmp, self->smokeNode[k], "SmokeEmitter", "AccMin", &def);
 		def.x = 15.0f;
 		def.y = 950.0f;
 		def.z = 15.0f;
-		self->smokeAccMax[k] = *CGameModel_NodoIniVec3(model, &tmp, self->smokeNode[k], "SmokeEmitter", "AccMax", &def);
-		self->smokeSizeIni[k] = CGameModel_NodoIniFloat(model, self->smokeNode[k], "SmokeEmitter", "SizeIni", 50.0f);
-		self->smokeSizeEnd[k] = CGameModel_NodoIniFloat(model, self->smokeNode[k], "SmokeEmitter", "SizeEnd", 250.0f);
-		self->smokeLifeMin[k] = CGameModel_NodoIniFloat(model, self->smokeNode[k], "SmokeEmitter", "LifeTimeMin",
+		self->smokeAccMax[k] = *CGameModel_NodeIniVec3(model, &tmp, self->smokeNode[k], "SmokeEmitter", "AccMax", &def);
+		self->smokeSizeIni[k] = CGameModel_NodeIniFloat(model, self->smokeNode[k], "SmokeEmitter", "SizeIni", 50.0f);
+		self->smokeSizeEnd[k] = CGameModel_NodeIniFloat(model, self->smokeNode[k], "SmokeEmitter", "SizeEnd", 250.0f);
+		self->smokeLifeMin[k] = CGameModel_NodeIniFloat(model, self->smokeNode[k], "SmokeEmitter", "LifeTimeMin",
 			0.5f);
-		self->smokeLifeMax[k] = CGameModel_NodoIniFloat(model, self->smokeNode[k], "SmokeEmitter", "LifeTimeMax",
+		self->smokeLifeMax[k] = CGameModel_NodeIniFloat(model, self->smokeNode[k], "SmokeEmitter", "LifeTimeMax",
 			0.9f);
 	}
 
-	node = CGameModel_FindNodoR(model, "DF_Flash");
+	node = CGameModel_FindRenderNode(model, "DF_Flash");
 	CHECK(node > -1);
 	CGameParticles_Attach(&self->flash, model, node);
-	CHECK(self->flash.SistPart);
+	CHECK(self->flash.ParticleSystem);
 	self->flashTime = 0.0f;
 	for (int i = 0; i < FXMENTALDAMAGEEMITTERS;) {
 		i++;
 		Str_PrintfQuiet(buf, 0xff, "DF_FlashEmitter_%02d", i);
 		int k = i - 1;
 		self->flashNode[k] = -1;
-		self->flashNode[k] = CGameModel_FindNodoR(model, buf);
+		self->flashNode[k] = CGameModel_FindRenderNode(model, buf);
 		if (self->flashNode[k] <= -1) {
 			break;
 		}
 		Press_NodePlace(model, self->flashNode[k], &self->flashPos[k], &self->flashRot[k]);
-		self->flashSizeMin[k] = CGameModel_NodoIniFloat(model, self->flashNode[k], "FlashEmitter", "SizeMin", 0.8f);
-		self->flashSizeMax[k] = CGameModel_NodoIniFloat(model, self->flashNode[k], "FlashEmitter", "SizeMax", 1.2f);
-		self->flashSleepMin[k] = CGameModel_NodoIniFloat(model, self->flashNode[k], "FlashEmitter", "SleepTimeMin",
+		self->flashSizeMin[k] = CGameModel_NodeIniFloat(model, self->flashNode[k], "FlashEmitter", "SizeMin", 0.8f);
+		self->flashSizeMax[k] = CGameModel_NodeIniFloat(model, self->flashNode[k], "FlashEmitter", "SizeMax", 1.2f);
+		self->flashSleepMin[k] = CGameModel_NodeIniFloat(model, self->flashNode[k], "FlashEmitter", "SleepTimeMin",
 			0.1f);
-		self->flashSleepMax[k] = CGameModel_NodoIniFloat(model, self->flashNode[k], "FlashEmitter", "SleepTimeMax",
+		self->flashSleepMax[k] = CGameModel_NodeIniFloat(model, self->flashNode[k], "FlashEmitter", "SleepTimeMax",
 			0.9f);
-		self->flashSparksMin[k] = CGameModel_NodoIniInt(model, self->flashNode[k], "FlashEmitter", "SparksMin", 4);
-		self->flashSparksMax[k] = CGameModel_NodoIniInt(model, self->flashNode[k], "FlashEmitter", "SparksMax", 8);
+		self->flashSparksMin[k] = CGameModel_NodeIniInt(model, self->flashNode[k], "FlashEmitter", "SparksMin", 4);
+		self->flashSparksMax[k] = CGameModel_NodeIniInt(model, self->flashNode[k], "FlashEmitter", "SparksMax", 8);
 		float lo = self->flashSleepMin[k];
 		float hi = self->flashSleepMax[k];
 		double r = (double)(crt_rand() & 0x7fff) * g_RandScale;
@@ -470,10 +470,10 @@ byte __fastcall cFXElementsMentalControllerMainFX_Init(cFXElementsMentalControll
 	self->top.x = self->pos.x + 0.0f;
 	self->top.y = self->pos.y + 350.0f;
 	self->top.z = self->pos.z + 0.0f;
-	node = CGameModel_FindNodoR(model, "DF_DataFluid");
+	node = CGameModel_FindRenderNode(model, "DF_DataFluid");
 	CHECK(node > -1);
 	CGameParticles_Attach(&self->dataFluid, model, node);
-	CHECK(self->dataFluid.SistPart);
+	CHECK(self->dataFluid.ParticleSystem);
 
 	up.x = 0.0f;
 	up.y = 1.0f;
@@ -496,10 +496,10 @@ byte __fastcall cFXElementsMentalControllerMainFX_Init(cFXElementsMentalControll
 		int b = crt_rand() % 32;
 		self->fluidColor[j] = (uint32_t)(b + 0x80) << 16 | (uint32_t)(g + 0x80) << 8 | 0xff;
 	}
-	node = CGameModel_FindNodoR(model, "DF_TubeGlow");
+	node = CGameModel_FindRenderNode(model, "DF_TubeGlow");
 	CHECK(node > -1);
 	CGameParticles_Attach(&self->tubeGlow, model, node);
-	CHECK(self->tubeGlow.SistPart);
+	CHECK(self->tubeGlow.ParticleSystem);
 	self->glowTime = 0.0f;
 	self->glowDuration = 0.0f;
 	self->glowPause = 0.0f;

@@ -153,7 +153,7 @@ void Render_PSFixed(void *arg, byte flags) {
 /* the shader modes (g_ShaderTab, g_ShaderTab2 with the lightmap): a pixel shader with its constants, the fixed
  * texture stages without one. Flags 1 begin, 4 the next material of the same mode, 2 end; the end takes the
  * textures of the stages beyond 0 away. */
-#define LIGHTMAP(stage) Render_SetMapa(stage, g_LightmapMat->mapa[0])
+#define LIGHTMAP(stage) Render_SetMap(stage, g_LightmapMat->map[0])
 
 void Shader_DiffuseNoLit(CMaterial *mat, uint32_t flags) {
 	(void)mat;
@@ -177,7 +177,7 @@ void Shader_DiffuseLightmap(CMaterial *mat, uint32_t flags) {
 	if (flags & 2) {
 		Stage_End();
 		Stage_Off(1);
-		Render_SetMapa(1, NULL);
+		Render_SetMap(1, NULL);
 	}
 }
 
@@ -216,7 +216,7 @@ static void Shader_Env(CMaterial *mat, uint32_t flags, int ps, byte mask, byte l
 		}
 	}
 	if (flags & 5) {
-		Render_SetMapa(1, mat->mapa[MAPA_ENTORNO]);
+		Render_SetMap(1, mat->map[MAP_ENVIRONMENT]);
 		if (lightmap) {
 			LIGHTMAP(2);
 		}
@@ -234,9 +234,9 @@ static void Shader_Env(CMaterial *mat, uint32_t flags, int ps, byte mask, byte l
 	if (lightmap) {
 		Render_TSS(2, D3DTSS_TEXCOORDINDEX, 2);
 	}
-	Render_SetMapa(1, NULL);
+	Render_SetMap(1, NULL);
 	if (lightmap) {
-		Render_SetMapa(2, NULL);
+		Render_SetMap(2, NULL);
 	}
 }
 
@@ -256,7 +256,7 @@ void Shader_MaskEnvmapLightmap(CMaterial *mat, uint32_t flags) {
 	Shader_Env(mat, flags, PS_MASKENVMAP_LM, 1, 1);
 }
 
-/* MaskEnvBump: the bump map (mapa 3) in stage 1 moves the reflection of stage 2 */
+/* MaskEnvBump: the bump map (map 3) in stage 1 moves the reflection of stage 2 */
 static void Shader_EnvBump(CMaterial *mat, uint32_t flags, int ps, byte lightmap) {
 	uint32_t h = Render_PSHandle(ps);
 	Mat_StageEnvBump(mat, flags, 2, h ? 2 : 1);
@@ -281,8 +281,8 @@ static void Shader_EnvBump(CMaterial *mat, uint32_t flags, int ps, byte lightmap
 		}
 	}
 	if (flags & 5) {
-		Render_SetMapa(1, mat->mapa[MAPA_BUMP]);
-		Render_SetMapa(2, mat->mapa[MAPA_ENTORNO]);
+		Render_SetMap(1, mat->map[MAP_BUMP]);
+		Render_SetMap(2, mat->map[MAP_ENVIRONMENT]);
 		if (lightmap) {
 			LIGHTMAP(3);
 		}
@@ -302,10 +302,10 @@ static void Shader_EnvBump(CMaterial *mat, uint32_t flags, int ps, byte lightmap
 	if (lightmap) {
 		Render_TSS(3, D3DTSS_TEXCOORDINDEX, 3);
 	}
-	Render_SetMapa(1, NULL);
-	Render_SetMapa(2, NULL);
+	Render_SetMap(1, NULL);
+	Render_SetMap(2, NULL);
 	if (lightmap) {
-		Render_SetMapa(3, NULL);
+		Render_SetMap(3, NULL);
 	}
 }
 
@@ -317,7 +317,7 @@ void Shader_MaskEnvBumpLightmap(CMaterial *mat, uint32_t flags) {
 	Shader_EnvBump(mat, flags, PS_MASKENVBUMP_LM, 1);
 }
 
-/* Glowmap: the glow map (mapa 4) added in the last stage; the pixel shaders take the alpha constant */
+/* Glowmap: the glow map (map 4) added in the last stage; the pixel shaders take the alpha constant */
 void Shader_Glowmap(CMaterial *mat, uint32_t flags) {
 	uint32_t h = Render_PSHandle(PS_GLOWMAP);
 	if (flags & 1) {
@@ -334,7 +334,7 @@ void Shader_Glowmap(CMaterial *mat, uint32_t flags) {
 		if (h) {
 			Render_PSConstAlpha(mat, 0);
 		}
-		Render_SetMapa(1, mat->mapa[MAPA_GLOW]);
+		Render_SetMap(1, mat->map[MAP_GLOW]);
 	}
 	if (!(flags & 2)) {
 		return;
@@ -346,7 +346,7 @@ void Shader_Glowmap(CMaterial *mat, uint32_t flags) {
 		Render_SetPS(0);
 	}
 	Render_TSS(1, D3DTSS_TEXCOORDINDEX, 1);
-	Render_SetMapa(1, NULL);
+	Render_SetMap(1, NULL);
 }
 
 /* without the pixel shader the glow is left out */
@@ -363,13 +363,13 @@ void Shader_GlowmapLightmap(CMaterial *mat, uint32_t flags) {
 	if (flags & 5) {
 		Render_PSConstAlpha(mat, 0);
 		LIGHTMAP(1);
-		Render_SetMapa(2, mat->mapa[MAPA_GLOW]);
+		Render_SetMap(2, mat->map[MAP_GLOW]);
 	}
 	if (flags & 2) {
 		Render_SetPS(0);
 		Render_TSS(2, D3DTSS_TEXCOORDINDEX, 2);
-		Render_SetMapa(1, NULL);
-		Render_SetMapa(2, NULL);
+		Render_SetMap(1, NULL);
+		Render_SetMap(2, NULL);
 	}
 }
 
@@ -402,8 +402,8 @@ void Shader_GlowmapMaskEnvmap(CMaterial *mat, uint32_t flags) {
 		if (h) {
 			Render_PSConstAlpha(mat, 0);
 		}
-		Render_SetMapa(1, mat->mapa[MAPA_ENTORNO]);
-		Render_SetMapa(glow, mat->mapa[MAPA_GLOW]);
+		Render_SetMap(1, mat->map[MAP_ENVIRONMENT]);
+		Render_SetMap(glow, mat->map[MAP_GLOW]);
 	}
 	if (flags & 2) {
 		if (!h) {
@@ -415,8 +415,8 @@ void Shader_GlowmapMaskEnvmap(CMaterial *mat, uint32_t flags) {
 			Render_SetPS(0);
 		}
 		Render_TSS(glow, D3DTSS_TEXCOORDINDEX, glow);
-		Render_SetMapa(1, NULL);
-		Render_SetMapa(glow, NULL);
+		Render_SetMap(1, NULL);
+		Render_SetMap(glow, NULL);
 	}
 }
 
@@ -436,9 +436,9 @@ void Shader_GlowmapMaskEnvmapLightmap(CMaterial *mat, uint32_t flags) {
 		if (h) {
 			Render_PSConstAlpha(mat, 0);
 		}
-		Render_SetMapa(1, mat->mapa[MAPA_ENTORNO]);
+		Render_SetMap(1, mat->map[MAP_ENVIRONMENT]);
 		LIGHTMAP(2);
-		Render_SetMapa(3, mat->mapa[MAPA_GLOW]);
+		Render_SetMap(3, mat->map[MAP_GLOW]);
 	}
 	if (!(flags & 2)) {
 		return;
@@ -453,9 +453,9 @@ void Shader_GlowmapMaskEnvmapLightmap(CMaterial *mat, uint32_t flags) {
 	}
 	Render_TSS(2, D3DTSS_TEXCOORDINDEX, 2);
 	Render_TSS(3, D3DTSS_TEXCOORDINDEX, 3);
-	Render_SetMapa(1, NULL);
-	Render_SetMapa(2, NULL);
-	Render_SetMapa(3, NULL);
+	Render_SetMap(1, NULL);
+	Render_SetMap(2, NULL);
+	Render_SetMap(3, NULL);
 }
 
 /* also the lightmap mode, without the lightmap */
@@ -481,9 +481,9 @@ void Shader_GlowmapMaskEnvBump(CMaterial *mat, uint32_t flags) {
 		if (h) {
 			Render_PSConstAlpha(mat, 0);
 		}
-		Render_SetMapa(1, mat->mapa[MAPA_BUMP]);
-		Render_SetMapa(2, mat->mapa[MAPA_ENTORNO]);
-		Render_SetMapa(glow, mat->mapa[MAPA_GLOW]);
+		Render_SetMap(1, mat->map[MAP_BUMP]);
+		Render_SetMap(2, mat->map[MAP_ENVIRONMENT]);
+		Render_SetMap(glow, mat->map[MAP_GLOW]);
 	}
 	if (flags & 2) {
 		if (!h) {
@@ -497,9 +497,9 @@ void Shader_GlowmapMaskEnvBump(CMaterial *mat, uint32_t flags) {
 		}
 		Render_TSS(1, D3DTSS_TEXCOORDINDEX, 1);
 		Render_TSS(glow, D3DTSS_TEXCOORDINDEX, glow);
-		Render_SetMapa(1, NULL);
-		Render_SetMapa(2, NULL);
-		Render_SetMapa(glow, NULL);
+		Render_SetMap(1, NULL);
+		Render_SetMap(2, NULL);
+		Render_SetMap(glow, NULL);
 	}
 }
 
@@ -518,21 +518,21 @@ void Shader_Glass(CMaterial *mat, uint32_t flags) {
 		if (!mat->params.transp) {
 			CheckFailed("mat->params.dif_alpha", __FILE__, __TIMESTAMP__, __LINE__);
 		}
-		Render_SetMapa(1, mat->mapa[MAPA_ENTORNO]);
+		Render_SetMap(1, mat->map[MAP_ENVIRONMENT]);
 	}
 	if (flags & 2) {
 		Render_SetPS(0);
-		Render_SetMapa(1, NULL);
+		Render_SetMap(1, NULL);
 	}
 }
 
 /* Glowmap with the scroll of map 0 and of the glow map */
 static void Shader_ScrollGlow(CMaterial *mat, uint32_t flags, uint32_t glowStage) {
-	if (mat && mat->mapa[MAPA_ENTORNO]) {
+	if (mat && mat->map[MAP_ENVIRONMENT]) {
 		CheckFailed("!mat || !mat->obt_mapa(MAPA_ENTORNO)", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	Mat_StageScroll(mat, MAPA_DIFFUSE, flags, 0, 1.0f);
-	Mat_StageScroll(mat, MAPA_GLOW, flags, glowStage, 1.0f);
+	Mat_StageScroll(mat, MAP_DIFFUSE, flags, 0, 1.0f);
+	Mat_StageScroll(mat, MAP_GLOW, flags, glowStage, 1.0f);
 }
 
 void Shader_Scroll(CMaterial *mat, uint32_t flags) {
@@ -552,10 +552,10 @@ static float Frustum_Dist(int i, const vec3_t *p) {
 }
 
 int Frustum_TestSeg(const vec3_t *a, const vec3_t *b) {
-	float da[MAX_PLANOS_FRUSTUM], db[MAX_PLANOS_FRUSTUM];
+	float da[MAX_PLANES_FRUSTUM], db[MAX_PLANES_FRUSTUM];
 	uint32_t outA = 0, outB = 0;
 
-	for (int i = 0; i < MAX_PLANOS_FRUSTUM; i++) {
+	for (int i = 0; i < MAX_PLANES_FRUSTUM; i++) {
 		uint32_t bit = 1u << i;
 		da[i] = Frustum_Dist(i, a);
 		db[i] = Frustum_Dist(i, b);
@@ -574,7 +574,7 @@ int Frustum_TestSeg(const vec3_t *a, const vec3_t *b) {
 	}
 	/* the crossings of the planes only one end is outside of */
 	uint32_t cross = outA ^ outB;
-	for (int i = 0; i < MAX_PLANOS_FRUSTUM; i++) {
+	for (int i = 0; i < MAX_PLANES_FRUSTUM; i++) {
 		uint32_t bit = 1u << i;
 		if (!(bit & cross)) {
 			continue;
@@ -589,7 +589,7 @@ int Frustum_TestSeg(const vec3_t *a, const vec3_t *b) {
 }
 
 int Frustum_PlaneOutside(const vec3_t *p, uint32_t skip) {
-	for (int i = 0; i < MAX_PLANOS_FRUSTUM; i++) {
+	for (int i = 0; i < MAX_PLANES_FRUSTUM; i++) {
 		if (!(skip & 1u << i) && Frustum_Dist(i, p) > 0.0f) {
 			return i + 1;
 		}
@@ -600,7 +600,7 @@ int Frustum_PlaneOutside(const vec3_t *p, uint32_t skip) {
 void Frustum_TestSpheres(const vec3_t *centers, const float *radius, int n, int *out) {
 	for (int k = 0; k < n; k++) {
 		out[k] = 0;
-		for (int i = 0; i < MAX_PLANOS_FRUSTUM; i++) {
+		for (int i = 0; i < MAX_PLANES_FRUSTUM; i++) {
 			if (Frustum_Dist(i, &centers[k]) > radius[k]) {
 				out[k] = i + 1;
 				break;
@@ -705,11 +705,11 @@ byte Render_Clear(const box_t *rect, uint32_t flags, uint32_t color, float z, ui
 	return D3D_METHOD(dev, d3dClear_t, D3DDEV_CLEAR)(dev, rect != NULL, rect ? r : NULL, flags, color, z, stencil) == 0;
 }
 
-void Render_GetViewportSize(int *ancho, int *alto) {
+void Render_GetViewportSize(int *width, int *height) {
 	CHECK(g_ViewportW && g_ViewportH);
-	CHECK(ancho && alto);
-	*ancho = g_ViewportW;
-	*alto = g_ViewportH;
+	CHECK(width && height);
+	*width = g_ViewportW;
+	*height = g_ViewportH;
 }
 
 /* the time of the engine in ms as a float (unsigned through double) */
@@ -734,10 +734,10 @@ static void Render_PSConst(uint32_t reg, const float *c) {
 }
 
 void Render_PSConstAlpha(const CMaterial *mat, uint32_t reg) {
-	static const float uno[4] = { 1.0f, 1.0f, 1.0f, 0.0f };
+	static const float one[4] = { 1.0f, 1.0f, 1.0f, 0.0f };
 	float c[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	if ((!mat->params.transp || mat->params.atrib & MAT_1000) && !g_MatForzado) {
-		memcpy(c, uno, sizeof(c));
+	if ((!mat->params.transp || mat->params.attrib & MAT_1000) && !g_MatForced) {
+		memcpy(c, one, sizeof(c));
 	}
 	Render_PSConst(reg, c);
 }
@@ -745,7 +745,7 @@ void Render_PSConstAlpha(const CMaterial *mat, uint32_t reg) {
 void Mat_StageEnvBump(CMaterial *mat, uint32_t flags, uint32_t stageEnv, uint32_t stageBump) {
 	float bias = 0.0f;
 	if (flags & 5) {
-		const CMapa *bump = mat->mapa[3];
+		const CMap *bump = mat->map[3];
 		float s = bump->f2c * g_EnvBumpScale;
 		if (bump->b55 && g_EnvBumpBias) {
 			bias = s * -0.5f;
@@ -761,7 +761,7 @@ void Mat_StageEnvBump(CMaterial *mat, uint32_t flags, uint32_t stageEnv, uint32_
 }
 
 void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias) {
-	CHECK(g_UsarHWEnvMap);
+	CHECK(g_UseHWEnvMap);
 	if (flags & 1) {
 		Render_TSS(stage, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_COUNT2);
 		Render_TSS(stage, D3DTSS_TEXCOORDINDEX, D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR);
@@ -769,7 +769,7 @@ void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias)
 	if (flags & 5) {
 		matrix_t m;
 		Matrix_LoadIdentity(&m);
-		const CMapa *env = mat->mapa[2];
+		const CMap *env = mat->map[2];
 		if (g_EnvMapViewDep == 2) {
 			m = g_MatBillboard;
 			m.m[12] = 0.0f;
@@ -802,10 +802,10 @@ void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias)
 	}
 }
 
-void Render_Shader(uint32_t modo, void *a, void *b) {
-	CHECK((byte)modo < MAX_SHADER_TAB);
-	const ShaderTab *sh = modo < 0x100 ? &g_ShaderTab[modo] : &g_ShaderTab2[modo & 0xff];
-	CHECK(sh->Index == (byte)modo);
+void Render_Shader(uint32_t mode, void *a, void *b) {
+	CHECK((byte)mode < MAX_SHADER_TAB);
+	const ShaderTab *sh = mode < 0x100 ? &g_ShaderTab[mode] : &g_ShaderTab2[mode & 0xff];
+	CHECK(sh->Index == (byte)mode);
 	CHECK(sh->fnRender);
 	sh->fnRender(a, b);
 }
@@ -836,15 +836,15 @@ void Tex_StageJitter(void *unused, uint32_t flags, uint32_t stage, float ju, flo
 	}
 }
 
-void Mat_StageScroll(CMaterial *mat, uint32_t idmapa, uint32_t flags, uint32_t stage, float k) {
+void Mat_StageScroll(CMaterial *mat, uint32_t mapid, uint32_t flags, uint32_t stage, float k) {
 	if (flags & 5) {
-		CHECK(idmapa < MAPA_TOTAL);
-		const CMapa *mapa = mat->mapa[idmapa];
-		CHECK(mapa);
-		if (mapa->f10[0] == 0.0f && mapa->f10[1] == 0.0f && mapa->v20[2] == 0.0f) {
+		CHECK(mapid < MAP_TOTAL);
+		const CMap *map = mat->map[mapid];
+		CHECK(map);
+		if (map->f10[0] == 0.0f && map->f10[1] == 0.0f && map->v20[2] == 0.0f) {
 			Tex_StageTransform(mat, 2, stage, 0.0f, 0.0f, 1.0f, 0.0f);
 		} else {
-			Tex_StageTransform(mat, flags, stage, mapa->f10[0], mapa->f10[1], mapa->f18[0], mapa->v20[2] * k);
+			Tex_StageTransform(mat, flags, stage, map->f10[0], map->f10[1], map->f18[0], map->v20[2] * k);
 		}
 	}
 	if (flags & 2) {
@@ -885,7 +885,7 @@ void Mat_StageBumpMat(CMaterial *mat, uint32_t flags, uint32_t stage, float k, f
 		return;
 	}
 	if (k != 0.0f) {
-		s = mat->mapa[3]->f2c * k + s;
+		s = mat->map[3]->f2c * k + s;
 	}
 	float c = 1.0f, sn = 0.0f;
 	if (rot != 0.0f) {
@@ -911,8 +911,8 @@ static void Shader_End12(void) {
 	Render_SetPS(0);
 	Render_TSS(1, D3DTSS_TEXCOORDINDEX, 1);
 	Render_TSS(2, D3DTSS_TEXCOORDINDEX, 2);
-	Render_SetMapa(1, NULL);
-	Render_SetMapa(2, NULL);
+	Render_SetMap(1, NULL);
+	Render_SetMap(2, NULL);
 }
 
 /* the cloud color: diffuse by R_CloudR, G, B and R_CloudA, all times emissive blue by R_CloudEmi */
@@ -943,7 +943,7 @@ void Shader_Clouds(CMaterial *mat, uint32_t flags) {
 			Render_TSS(1, D3DTSS_TEXCOORDINDEX, 0);
 		}
 		if (flags & 5) {
-			Render_SetMapa(1, mat->mapa[MAPA_DIFFUSE]);
+			Render_SetMap(1, mat->map[MAP_DIFFUSE]);
 		}
 		if (flags & 2) {
 			Render_State(D3DRS_TEXTUREFACTOR, 0xffffffff);
@@ -951,7 +951,7 @@ void Shader_Clouds(CMaterial *mat, uint32_t flags) {
 			Stage_Alpha(0, D3DTA_TEXTURE, D3DTA_DIFFUSE, D3DTOP_SELECTARG1);
 			Stage_Off(1);
 			Render_TSS(1, D3DTSS_TEXCOORDINDEX, 1);
-			Render_SetMapa(1, NULL);
+			Render_SetMap(1, NULL);
 		}
 		return;
 	}
@@ -965,8 +965,8 @@ void Shader_Clouds(CMaterial *mat, uint32_t flags) {
 	if (flags & 5) {
 		Clouds_Color(mat, c);
 		Render_PSConst(0, c);
-		Render_SetMapa(1, mat->mapa[MAPA_DIFFUSE]);
-		Render_SetMapa(2, mat->mapa[MAPA_GLOW]);
+		Render_SetMap(1, mat->map[MAP_DIFFUSE]);
+		Render_SetMap(2, mat->map[MAP_GLOW]);
 	}
 	if (flags & 2) {
 		Shader_End12();
@@ -992,8 +992,8 @@ void Shader_Hologram(CMaterial *mat, uint32_t flags) {
 		float f = Rand_Between(0.92f, 1.0f);
 		const float c[4] = { f, f, f, f };
 		Render_PSConst(0, c);
-		Render_SetMapa(1, mat->mapa[MAPA_GLOW]);
-		Render_SetMapa(2, mat->mapa[MAPA_BUMP]);
+		Render_SetMap(1, mat->map[MAP_GLOW]);
+		Render_SetMap(2, mat->map[MAP_BUMP]);
 	}
 	if (flags & 2) {
 		Shader_End12();
@@ -1024,18 +1024,18 @@ void Shader_GlowFlickLightmap(CMaterial *mat, uint32_t flags) {
 		float v = a * b * (f * f);
 		const float c[4] = { v, v, v, v };
 		Render_PSConst(0, c);
-		Render_SetMapa(1, g_MatBump->mapa[MAPA_DIFFUSE]);
+		Render_SetMap(1, g_MatBump->map[MAP_DIFFUSE]);
 		LIGHTMAP(2);
-		Render_SetMapa(3, mat->mapa[MAPA_GLOW]);
+		Render_SetMap(3, mat->map[MAP_GLOW]);
 	}
 	if (flags & 2) {
 		Render_SetPS(0);
 		Render_TSS(1, D3DTSS_TEXCOORDINDEX, 1);
 		Render_TSS(2, D3DTSS_TEXCOORDINDEX, 2);
 		Render_TSS(3, D3DTSS_TEXCOORDINDEX, 3);
-		Render_SetMapa(1, NULL);
-		Render_SetMapa(2, NULL);
-		Render_SetMapa(3, NULL);
+		Render_SetMap(1, NULL);
+		Render_SetMap(2, NULL);
+		Render_SetMap(3, NULL);
 	}
 }
 
@@ -1049,8 +1049,8 @@ static void Shader_Burn(CMaterial *mat, uint32_t flags, uint32_t h, float bumpSc
 		Render_TSS(2, D3DTSS_TEXCOORDINDEX, 0);
 	}
 	if (flags & 5) {
-		Render_SetMapa(1, mat->mapa[MAPA_GLOW]);
-		Render_SetMapa(2, mat->mapa[MAPA_BUMP]);
+		Render_SetMap(1, mat->map[MAP_GLOW]);
+		Render_SetMap(2, mat->map[MAP_BUMP]);
 		Shader_PSConstDiffuse(mat);
 	}
 	if (flags & 2) {
@@ -1114,12 +1114,12 @@ void Shader_Waves(CMaterial *mat, uint32_t flags) {
 		if (!mat->params.transp) {
 			CheckFailed("mat->params.dif_alpha", __FILE__, __TIMESTAMP__, __LINE__);
 		}
-		const CMapa *m = mat->mapa[MAPA_DIFFUSE];
+		const CMap *m = mat->map[MAP_DIFFUSE];
 		Tex_StageTransform(mat, flags, 0, m->f10[0], m->f10[1], m->f18[0], m->v20[2]);
 		Tex_StageTransform(mat, flags, 1, -m->f10[0], -m->f10[1], m->f18[0], m->v20[2]);
-		Render_SetMapa(1, mat->mapa[MAPA_BUMP]);
-		Render_SetMapa(2, mat->mapa[MAPA_ENTORNO]);
-		Render_SetMapa(3, mat->mapa[MAPA_DIFFUSE]);
+		Render_SetMap(1, mat->map[MAP_BUMP]);
+		Render_SetMap(2, mat->map[MAP_ENVIRONMENT]);
+		Render_SetMap(3, mat->map[MAP_DIFFUSE]);
 	}
 	if (flags & 2) {
 		Tex_StageTransform(mat, flags, 0, 0.0f, 0.0f, 1.0f, 0.0f);
@@ -1127,9 +1127,9 @@ void Shader_Waves(CMaterial *mat, uint32_t flags) {
 		Render_SetPS(0);
 		Render_TSS(1, D3DTSS_TEXCOORDINDEX, 1);
 		Render_TSS(3, D3DTSS_TEXCOORDINDEX, 3);
-		Render_SetMapa(1, NULL);
-		Render_SetMapa(2, NULL);
-		Render_SetMapa(3, NULL);
+		Render_SetMap(1, NULL);
+		Render_SetMap(2, NULL);
+		Render_SetMap(3, NULL);
 	}
 }
 
@@ -1155,15 +1155,15 @@ void Shader_Noise(CMaterial *mat, uint32_t flags) {
 void Render_D3DMaterial(const CMaterial *mat, const float *colors) {
 	float m[17];
 	const float *p = colors;
-	if (g_MatForzado || g_DiffuseMod4x) {
-		float k = !g_MatForzado || g_DiffuseMod4x ? 0.25f : 1.0f;
+	if (g_MatForced || g_DiffuseMod4x) {
+		float k = !g_MatForced || g_DiffuseMod4x ? 0.25f : 1.0f;
 		for (int i = 0; i < 16; i++) {
 			m[i] = i == 3 || (i >= 8 && i < 12) ? colors[i] : colors[i] * k;
 		}
 		m[16] = colors[16];
-		if (g_MatForzado) {
+		if (g_MatForced) {
 			float a = mat->params.transp ? colors[3] : 1.0f;
-			m[3] = (float)g_MatForzado->params.diffuse[3] / 255.0f * a;
+			m[3] = (float)g_MatForced->params.diffuse[3] / 255.0f * a;
 		}
 		p = m;
 	}
@@ -1197,7 +1197,7 @@ void Render_DrawTexRect(const box_t *rect, uint32_t cLeft, uint32_t cRight, void
 		return;
 	}
 	void *saved = g_pd3dDevice;
-	g_pd3dDevice = g_MotorDev;
+	g_pd3dDevice = g_EngineDev;
 	Render_ResetState();
 	Render_SetTexture(0, tex);
 	Render_TSS(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
@@ -1232,11 +1232,11 @@ void Render_DrawTexRect(const box_t *rect, uint32_t cLeft, uint32_t cRight, void
 	g_pd3dDevice = saved;
 }
 
-void Render_FinD3D(void) {
+void Render_EndD3D(void) {
 	E3D_DebugPrintf("\n> RenderFinD3D()");
 	g_D3DOn = 0;
 	CHECK(!g_ViewportW);
-	void *dev = g_MotorDev;
+	void *dev = g_EngineDev;
 	if (dev) {
 		for (uint32_t i = 0; i < 8; i++) {
 			D3D_METHOD(dev, d3dSetTexture_t, D3DDEV_SETTEXTURE)(dev, i, NULL);
@@ -1252,7 +1252,7 @@ void Render_FinD3D(void) {
 		}
 	}
 	RenderLock_ReleaseD3D();
-	ListaVert_ReleaseD3D();
+	VertList_ReleaseD3D();
 	RenderEVA_ReleaseD3D();
 	RenderTarget_ReleaseD3D();
 	if (dev) {
@@ -1274,9 +1274,9 @@ void Render_ClearForced(void) {
 	E3D_FlushBatch();
 	g_MatFX1 = NULL;
 	g_MatFX2 = NULL;
-	g_MatForzado = NULL;
+	g_MatForced = NULL;
 	g_MatFX3 = NULL;
-	g_MatActual = NULL;
+	g_MatCurrent = NULL;
 }
 
 const char *Render_GetDriver(void) {
@@ -1290,7 +1290,7 @@ static void Render_LogVersion(const char *fmt, uint32_t ver) {
 }
 
 static void Render_LogDevice(const uint32_t *caps, const uint32_t *mode, const uint32_t *zbuf) {
-	E3D_LogPrint(g_FileLog, "%s", MOTOR_DEVNAME(g_Motor));
+	E3D_LogPrint(g_FileLog, "%s", ENGINE_DEVNAME(g_Engine));
 	E3D_LogPrint(g_FileLog, "Driver: %s  WHQL: %d", g_DriverStr, g_Adapter.WHQLLevel);
 	E3D_LogPrint(g_FileLog, "%s", g_DeviceStr);
 	E3D_LogPrint(g_FileLog, "Mode: %dx%d %s", mode[6], mode[7], D3DFmt_Name((int)mode[0]));
@@ -1310,7 +1310,7 @@ static void Render_LoadPS(int i) {
 	void *data, *code = NULL, *errors = NULL;
 	uint32_t size;
 
-	ArchIO_ReadAll(name, &data, &size);
+	FileIO_ReadAll(name, &data, &size);
 	int hr = D3DX_AssembleShader(data, size, 0, NULL, &code, &errors);
 	if (errors || hr < 0) {
 		const char *msg = errors ? D3D_METHOD(errors, d3dxGetPointer_t, D3DXBUF_GETPOINTER)(errors)
@@ -1344,8 +1344,8 @@ static void Render_SetMatrices(void) {
 
 /* the static initializer (rva 0x05bdc0): the shaders on with the hardware environment maps, and the two matrices */
 void Render_InitMatrices(void) {
-	if (g_UsarHWEnvMap) {
-		g_UsarShaders = 1;
+	if (g_UseHWEnvMap) {
+		g_UseShaders = 1;
 	}
 	Render_SetMatrices();
 }
@@ -1364,30 +1364,30 @@ void Render_IniD3D(void) {
 	uint32_t caps[D3DCAPS_WORDS], mode[8], zbuf[8];
 
 	E3D_DebugPrintf("\n> RenderIniD3D()");
-	if (!g_Motor || !g_MotorDev) {
+	if (!g_Engine || !g_EngineDev) {
 		CheckFailed("g_pD3DApp && g_pD3DApp->m_pd3dDevice", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	byte *motor = g_Motor;
-	void *dev = MOTOR_DEV(motor);
+	byte *motor = g_Engine;
+	void *dev = ENGINE_DEV(motor);
 	g_pd3dDevice = dev;
-	memcpy(caps, MOTOR_CAPS(motor), sizeof(caps));
-	((CMaterial *)g_MatLinea)->params.b39 = 0;
+	memcpy(caps, ENGINE_CAPS(motor), sizeof(caps));
+	((CMaterial *)g_MatLine)->params.b39 = 0;
 	((CMaterial *)g_MatDefault)->params.b39 = 0;
-	memcpy(&g_Adapter, MOTOR_ADAPTERS(motor) + MOTOR_ADAPTER(motor) * 0x438c, sizeof(g_Adapter));
+	memcpy(&g_Adapter, ENGINE_ADAPTERS(motor) + ENGINE_ADAPTER(motor) * 0x438c, sizeof(g_Adapter));
 	const uint16_t *ver = g_Adapter.DriverVersion;
 	Bprintf(g_DriverStr, 0x100, "%s [%s]  %d.%02d.%02d.%04d", g_Adapter.Description, g_Adapter.Driver, ver[3],
 		ver[2], ver[1], ver[0]);
 	Bprintf(g_DeviceStr, 0x100, "VendorId: %04X   DeviceId: %04X   SubSysId: %04X   Revision: %d",
 		g_Adapter.VendorId, g_Adapter.DeviceId, g_Adapter.SubSysId, g_Adapter.Revision);
-	memcpy(mode, MOTOR_MODE(motor), sizeof(mode));
-	memcpy(zbuf, MOTOR_ZBUF(motor), sizeof(zbuf));
-	if (g_DeviceLogged != MOTOR_DEVID(motor)) {
-		g_DeviceLogged = MOTOR_DEVID(motor);
+	memcpy(mode, ENGINE_MODE(motor), sizeof(mode));
+	memcpy(zbuf, ENGINE_ZBUF(motor), sizeof(zbuf));
+	if (g_DeviceLogged != ENGINE_DEVID(motor)) {
+		g_DeviceLogged = ENGINE_DEVID(motor);
 		Render_LogDevice(caps, mode, zbuf);
 	}
 	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, g_ViewportFull);
-	g_UsarShaders2 = 0;
-	g_UsarShaders = 1;
+	g_UseShaders2 = 0;
+	g_UseShaders = 1;
 	Render_SetMatrices();
 	uint32_t tc = caps[D3DCAPS_TEXTURECAPS];
 	g_MipmapsOn = (tc & D3DPTEXTURECAPS_MIPMAP) != 0;
@@ -1423,18 +1423,18 @@ void Render_IniD3D(void) {
 		}
 	}
 	RenderLock_InitD3D();
-	ListaVert_InitD3D();
+	VertList_InitD3D();
 	if (RenderEVA_InitD3D() != 0) {
 		CheckFailed("EVA_crear_VB() == S_OK", __FILE__, __TIMESTAMP__, __LINE__);
 	}
 	RenderTarget_InitD3D();
 	ModelFX_InitD3D();
 	/* the six globals one after the other in the original, separate C objects since stage 3c2 */
-	CMaterial **slots[6] = { &g_MatBlanco, &g_MatAjedrez, &g_MatGris, &g_MatInvis, &g_MatBump, &g_MatSuelo };
+	CMaterial **slots[6] = { &g_MatWhite, &g_MatCheckerboard, &g_MatGray, &g_MatInvis, &g_MatBump, &g_MatGround };
 	for (int i = 0; i < 6; i++) {
 		CMaterial m;
 		CMaterial_ctor(&m);
-		Cad_Set(&m.Nombre, defMats[i].name);
+		String_Set(&m.Name, defMats[i].name);
 		if (defMats[i].file) {
 			CMaterial_SetMap(&m, 0, defMats[i].file);
 		} else {
@@ -1454,7 +1454,7 @@ void Render_IniD3D(void) {
 }
 
 void Render_BeginFrame(void) {
-	g_pd3dDevice = g_MotorDev;
+	g_pd3dDevice = g_EngineDev;
 	CHECK(g_pd3dDevice);
 	g_RenderI1F4 = 0;
 	RenderGamma_Begin();
@@ -1469,8 +1469,8 @@ void Render_BeginFrame(void) {
 	RenderGamma_LogShaderMask();
 }
 
-int Render_DrawListaIdx(const CListaVert *v, const uint16_t *idx, int ntri, byte stats) {
-	void *dev = g_MotorDev;
+int Render_DrawListIdx(const CVertList *v, const uint16_t *idx, int ntri, byte stats) {
+	void *dev = g_EngineDev;
 	if (!dev) {
 		return E_FAIL;
 	}
@@ -1478,9 +1478,9 @@ int Render_DrawListaIdx(const CListaVert *v, const uint16_t *idx, int ntri, byte
 		g_RenderTris += ntri;
 		g_RenderVerts += v->nVert;
 	}
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, CListaVert_FVF((CListaVert *)v));
+	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, CVertList_FVF((CVertList *)v));
 	return D3D_METHOD(dev, d3dDrawIndexedPrimitiveUP_t, D3DDEV_DRAWINDEXEDPRIMITIVEUP)(dev, D3DPT_TRIANGLELIST, 0,
-		(uint32_t)v->nVert, (uint32_t)ntri, idx, D3DFMT_INDEX16, v->pVert, (uint32_t)CListaVert_Size((CListaVert *)v));
+		(uint32_t)v->nVert, (uint32_t)ntri, idx, D3DFMT_INDEX16, v->pVert, (uint32_t)CVertList_Size((CVertList *)v));
 }
 
 static int Render_WorldToDevice(const matrix_t *m) {
@@ -1530,22 +1530,22 @@ int Render_SetWorld(void) {
 }
 
 void Render_ResetState(void) {
-	uint32_t filtro = g_TexFilter == 2 ? 3 : (uint32_t)(g_TexFilter != 0) + 1;
-	g_FiltroMin = filtro;
-	g_FiltroMag = filtro;
-	g_FiltroMip = 2 - (uint32_t)(g_MipFilter != 1);
+	uint32_t filter = g_TexFilter == 2 ? 3 : (uint32_t)(g_TexFilter != 0) + 1;
+	g_FilterMin = filter;
+	g_FilterMag = filter;
+	g_FilterMip = 2 - (uint32_t)(g_MipFilter != 1);
 	uint32_t aniso = g_Anisotropy;
-	if (MOTOR_MAXANISOTROPY(g_Motor) < aniso) {
-		aniso = MOTOR_MAXANISOTROPY(g_Motor);
+	if (ENGINE_MAXANISOTROPY(g_Engine) < aniso) {
+		aniso = ENGINE_MAXANISOTROPY(g_Engine);
 	}
-	g_Anisotropia = aniso;
+	g_AnisotropyCur = aniso;
 	for (uint32_t i = 0; i < 8; i++) {
 		Render_SetTexture(i, NULL);
 		Render_TSS(i, D3DTSS_TEXCOORDINDEX, i);
-		Render_TSS(i, D3DTSS_MINFILTER, g_FiltroMin);
-		Render_TSS(i, D3DTSS_MAGFILTER, g_FiltroMag);
-		Render_TSS(i, D3DTSS_MIPFILTER, g_MipmapsOn ? g_FiltroMip : 0);
-		Render_TSS(i, D3DTSS_MAXANISOTROPY, g_Anisotropia);
+		Render_TSS(i, D3DTSS_MINFILTER, g_FilterMin);
+		Render_TSS(i, D3DTSS_MAGFILTER, g_FilterMag);
+		Render_TSS(i, D3DTSS_MIPFILTER, g_MipmapsOn ? g_FilterMip : 0);
+		Render_TSS(i, D3DTSS_MAXANISOTROPY, g_AnisotropyCur);
 		Render_TSS(i, D3DTSS_MIPMAPLODBIAS, F2U(g_MipmapBias + g_MipmapBias2));
 		Render_TSS(i, D3DTSS_ADDRESSU, D3DTADDRESS_WRAP);
 		Render_TSS(i, D3DTSS_ADDRESSV, D3DTADDRESS_WRAP);
@@ -1567,13 +1567,13 @@ static void Mat_Shader(const CMaterial *mat, byte frameChanged, byte *alphaTest,
 	if (g_LightmapMat) {
 		mode += 0x100;
 	}
-	if (g_ShaderActual == mode && !frameChanged) {
+	if (g_ShaderCurrent == mode && !frameChanged) {
 		Render_Shader(mode, (void *)mat, (void *)4);
 	} else {
 		g_PShaderCount++;
-		Render_Shader(g_ShaderActual, NULL, (void *)2);
+		Render_Shader(g_ShaderCurrent, NULL, (void *)2);
 		Render_Shader(mode, (void *)mat, (void *)1);
-		g_ShaderActual = mode;
+		g_ShaderCurrent = mode;
 	}
 }
 
@@ -1582,13 +1582,13 @@ static void Mat_Blend(void *dev, const CMaterial *mat, byte shAlphaTest, byte sh
 	byte alpha = shAlphaTest ? shAlpha : 0;
 	byte blend = shBlend ? mat->params.transp : 0;
 	int src = mat->params.srcBlend, dst = mat->params.dstBlend;
-	byte at = mat->params.atrib >> 5 & 1;
+	byte at = mat->params.attrib >> 5 & 1;
 	byte alphaTest = at ? 1 : alpha;
 	byte blending = at ? 0 : blend;
-	if (g_MatForzado) {
-		src = g_MatForzado->params.srcBlend;
+	if (g_MatForced) {
+		src = g_MatForced->params.srcBlend;
 		if (!blending) {
-			dst = g_MatForzado->params.dstBlend;
+			dst = g_MatForced->params.dstBlend;
 		}
 		alphaTest = 0;
 		blending = 1;
@@ -1600,7 +1600,7 @@ static void Mat_Blend(void *dev, const CMaterial *mat, byte shAlphaTest, byte sh
 	} else {
 		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHATESTENABLE, 0);
 	}
-	if (mat->params.atrib & 0x400) {
+	if (mat->params.attrib & 0x400) {
 		alphaTest = 0;
 	}
 	if (!alphaTest && !blending) {
@@ -1636,31 +1636,31 @@ static void Mat_Pass1(void *dev) {
 int Render_SetMaterial(void *m, int pass) {
 	if (!m) {
 		CHECK(pass == -1);
-		g_MatActual = NULL;
+		g_MatCurrent = NULL;
 		return 0;
 	}
 	const CMaterial *mat = g_MatFX1 ? g_MatFX1 : m;
-	if (g_UseDefMaterial && !(mat->params.atrib & 0x840)) {
-		mat = g_UseDefMaterial == 1 ? g_MatBlanco : g_MatInvis;
+	if (g_UseDefMaterial && !(mat->params.attrib & 0x840)) {
+		mat = g_UseDefMaterial == 1 ? g_MatWhite : g_MatInvis;
 	}
-	void *dev = g_MotorDev;
+	void *dev = g_EngineDev;
 	if (!dev) {
 		return E_FAIL;
 	}
-	if (g_MatActual != mat || g_MatPass != pass || g_MatFrame != g_FrameCount || g_LightmapMat != g_MatCtx) {
+	if (g_MatCurrent != mat || g_MatPass != pass || g_MatFrame != g_FrameCount || g_LightmapMat != g_MatCtx) {
 		byte frameChanged = g_MatFrame != g_FrameCount;
-		g_MatActual = mat;
+		g_MatCurrent = mat;
 		g_MatPass = pass;
 		g_MatFrame = g_FrameCount;
 		g_MatCtx = g_LightmapMat;
 		if (g_MaterialLog) {
 			const char *ctx = g_LightmapMat ? *(const char **)((byte *)g_LightmapMat + 4) : GAME_STR(str_Empty, 0x3a3228);
 			E3D_LogWhite(g_FileLog, "MatLog: %d %d %d [%s] [%s]", g_FrameCount, g_MatChanges,
-				CMaterial_GetId((CMaterial *)mat, NULL), mat->Nombre, ctx);
+				CMaterial_GetId((CMaterial *)mat, NULL), mat->Name, ctx);
 		}
 		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZWRITEENABLE, mat->params.w3e >> 8);
 		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZFUNC, (uint32_t)mat->params.i40);
-		Render_State(D3DRS_ZBIAS, mat->params.atrib & 0x800 ? g_DecalZBias : 0);
+		Render_State(D3DRS_ZBIAS, mat->params.attrib & 0x800 ? g_DecalZBias : 0);
 		uint32_t light = 0;
 		if (mat->params.b39) {
 			Render_D3DMaterial(mat, g_MatFX3 ? g_MatFX3->colors : mat->colors);
@@ -1668,7 +1668,7 @@ int Render_SetMaterial(void *m, int pass) {
 		}
 		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_LIGHTING, light);
 		byte shAlphaTest = 1, shBlend = 1, shAlpha = 0;
-		if (g_UsarShaders) {
+		if (g_UseShaders) {
 			CHECK(!pass);
 			Mat_Shader(mat, frameChanged, &shAlphaTest, &shBlend, &shAlpha);
 		} else if (mat->params.b3b && pass == 1) {
@@ -1685,35 +1685,35 @@ int Render_SetMaterial(void *m, int pass) {
 	}
 	if (pass) {
 		if (pass == 1) {
-			Render_SetMapa(0, mat->mapa[2]);
+			Render_SetMap(0, mat->map[2]);
 		}
 		return 0;
 	}
 	/* R_UseDefTexture: the white texture (1: only without one) */
-	CMapa *mapa = mat->mapa[0];
+	CMap *map = mat->map[0];
 	switch (g_UseDefTexture) {
 	case 1:
-		if (!mapa) {
-			mapa = g_MatBlanco->mapa[0];
+		if (!map) {
+			map = g_MatWhite->map[0];
 		}
 		break;
 	case 2:
-		if (!(mat->params.atrib & 0x40)) {
-			mapa = g_MatBlanco->mapa[0];
+		if (!(mat->params.attrib & 0x40)) {
+			map = g_MatWhite->map[0];
 		}
 		break;
 	case 3:
-		if (!(mat->params.atrib & 0x40)) {
-			mapa = g_MatAjedrez->mapa[0];
+		if (!(mat->params.attrib & 0x40)) {
+			map = g_MatCheckerboard->map[0];
 		}
 		break;
 	case 4:
-		if (!(mat->params.atrib & 0x40)) {
-			mapa = g_MatGris->mapa[0];
+		if (!(mat->params.attrib & 0x40)) {
+			map = g_MatGray->map[0];
 		}
 		break;
 	}
-	Render_SetMapa(0, mapa);
+	Render_SetMap(0, map);
 	return 0;
 }
 
@@ -1801,36 +1801,36 @@ void Render_SetLightmapMat(CMaterial *mat, int mode) {
 	}
 }
 
-typedef void(__thiscall *fxTexUpdate_t)(void *fx, CMapa *mapa);
+typedef void(__thiscall *fxTexUpdate_t)(void *fx, CMap *map);
 typedef void *(__thiscall *fxTexGet_t)(void *fx);
 
-int Render_SetMapa(uint32_t stage, CMapa *mapa) {
+int Render_SetMap(uint32_t stage, CMap *map) {
 	CHECK(g_pd3dDevice);
 	CHECK(stage < 8);
 	void *tex = NULL;
-	if (mapa) {
-		if (mapa->AnimMat) {
-			uint32_t f = (uint32_t)CAnimMat_GetFrame(mapa->AnimMat);
-			mapa->cur = f < (uint32_t)mapa->frames ? &mapa->TextAni[f] : &mapa->est;
+	if (map) {
+		if (map->AnimMat) {
+			uint32_t f = (uint32_t)CAnimMat_GetFrame(map->AnimMat);
+			map->cur = f < (uint32_t)map->frames ? &map->TextAni[f] : &map->staticTex;
 		}
-		if (mapa->FXTextura) {
-			void *fx = mapa->FXTextura;
-			((fxTexUpdate_t)(*(void ***)fx)[1])(fx, mapa);
-			fx = mapa->FXTextura;
+		if (map->FXTexture) {
+			void *fx = map->FXTexture;
+			((fxTexUpdate_t)(*(void ***)fx)[1])(fx, map);
+			fx = map->FXTexture;
 			tex = ((fxTexGet_t)(*(void ***)fx)[2])(fx);
 		}
-		if (mapa->b8 != g_StageMip[stage]) {
-			g_StageMip[stage] = mapa->b8;
-			Render_TSS(stage, D3DTSS_MIPFILTER, mapa->b8 && g_MipmapsOn ? g_FiltroMip : 0);
+		if (map->b8 != g_StageMip[stage]) {
+			g_StageMip[stage] = map->b8;
+			Render_TSS(stage, D3DTSS_MIPFILTER, map->b8 && g_MipmapsOn ? g_FilterMip : 0);
 		}
-		if (mapa->bc != g_StageTile[stage]) {
-			g_StageTile[stage] = mapa->bc;
-			Render_TSS(stage, D3DTSS_ADDRESSU, (~((uint32_t)mapa->bc * 2) & 2) | 1);
-			Render_TSS(stage, D3DTSS_ADDRESSV, (~(uint32_t)mapa->bc & 2) | 1);
+		if (map->bc != g_StageTile[stage]) {
+			g_StageTile[stage] = map->bc;
+			Render_TSS(stage, D3DTSS_ADDRESSU, (~((uint32_t)map->bc * 2) & 2) | 1);
+			Render_TSS(stage, D3DTSS_ADDRESSV, (~(uint32_t)map->bc & 2) | 1);
 		}
-		Render_TSS(stage, D3DTSS_MAXANISOTROPY, mapa->lightmap ? 1 : g_Anisotropia);
+		Render_TSS(stage, D3DTSS_MAXANISOTROPY, map->lightmap ? 1 : g_AnisotropyCur);
 		if (!tex) {
-			tex = CMapa_GetTexture(mapa, 1);
+			tex = CMap_GetTexture(map, 1);
 		}
 	}
 	if (g_StageTex[stage] != tex || g_StageTexFrame[stage] != g_FrameCount) {
@@ -1859,13 +1859,13 @@ int Render_DrawVBIBFmt(void *vb, void *ib, int frmt, uint32_t numVerts, uint32_t
 	if (!dev) {
 		return E_FAIL;
 	}
-	Render_Stream(dev, vb, ListaVert_FormatFVF(frmt), ListaVert_FormatSize(frmt), ib, baseVert);
+	Render_Stream(dev, vb, VertList_FormatFVF(frmt), VertList_FormatSize(frmt), ib, baseVert);
 	D3D_METHOD(dev, d3dDrawIndexedPrimitive_t, D3DDEV_DRAWINDEXEDPRIMITIVE)(dev, D3DPT_TRIANGLELIST, 0, numVerts,
 		startTri * 3, ntri);
 	return 0;
 }
 
-int Render_DrawMallaD3D(const CMallaD3D *m) {
+int Render_DrawMeshD3D(const CMeshD3D *m) {
 	void *dev = g_pd3dDevice;
 	if (!dev) {
 		return E_FAIL;
@@ -1874,7 +1874,7 @@ int Render_DrawMallaD3D(const CMallaD3D *m) {
 		CHECK(m->StripList > 2);
 		CHECK(m->pVertVB && !m->pVertIB);
 		CHECK(!m->BaseIndex && !m->StartIndex);
-		Render_Stream(dev, m->pVertVB, ListaVert_FormatFVF(m->vbFrmt), ListaVert_FormatSize(m->vbFrmt), NULL, 0);
+		Render_Stream(dev, m->pVertVB, VertList_FormatFVF(m->vbFrmt), VertList_FormatSize(m->vbFrmt), NULL, 0);
 		D3D_METHOD(dev, d3dDrawPrimitive_t, D3DDEV_DRAWPRIMITIVE)(dev, D3DPT_TRIANGLESTRIP, 0,
 			(uint32_t)m->StripList - 2);
 		return 0;
@@ -1884,19 +1884,19 @@ int Render_DrawMallaD3D(const CMallaD3D *m) {
 	if (g_VBIBTriLimit < ntri) {
 		ntri = g_VBIBTriLimit;
 	}
-	Render_Stream(dev, m->pVertVB, ListaVert_FormatFVF(m->vbFrmt), ListaVert_FormatSize(m->vbFrmt), m->pVertIB,
+	Render_Stream(dev, m->pVertVB, VertList_FormatFVF(m->vbFrmt), VertList_FormatSize(m->vbFrmt), m->pVertIB,
 		(uint32_t)m->BaseIndex);
 	D3D_METHOD(dev, d3dDrawIndexedPrimitive_t, D3DDEV_DRAWINDEXEDPRIMITIVE)(dev, D3DPT_TRIANGLELIST, 0,
 		(uint32_t)m->vert.nVert, (uint32_t)m->StartIndex * 3, ntri);
 	return 0;
 }
 
-int Render_DrawVBIB(void *vb, void *ib, const CListaVert *v, uint32_t ntri) {
-	void *dev = g_MotorDev;
+int Render_DrawVBIB(void *vb, void *ib, const CVertList *v, uint32_t ntri) {
+	void *dev = g_EngineDev;
 	if (!dev) {
 		return E_FAIL;
 	}
-	Render_Stream(dev, vb, CListaVert_FVF((CListaVert *)v), CListaVert_Size((CListaVert *)v), ib, 0);
+	Render_Stream(dev, vb, CVertList_FVF((CVertList *)v), CVertList_Size((CVertList *)v), ib, 0);
 	D3D_METHOD(dev, d3dDrawIndexedPrimitive_t, D3DDEV_DRAWINDEXEDPRIMITIVE)(dev, D3DPT_TRIANGLELIST, 0,
 		(uint32_t)v->nVert, 0, ntri);
 	return 0;
@@ -1918,8 +1918,8 @@ int Render_SetView(const matrix_t *m) {
 
 void E3D_FlushBatch(void) {
 	if (g_ViewportW) {
-		RenderMallaD3D_Flush();
-		RenderMallaD3D_Flush2();
+		RenderMeshD3D_Flush();
+		RenderMeshD3D_Flush2();
 		RenderObjBase3D_Flush();
 	}
 }
@@ -1984,7 +1984,7 @@ int Render_CreateIB(void **ib, const void *tris, int nTri, byte dynamic) {
 	CHECK(tris);
 	CHECK(nTri > 0);
 	uint32_t n = (uint32_t)nTri * 6;
-	void *dev = g_MotorDev;
+	void *dev = g_EngineDev;
 	if (D3D_METHOD(dev, d3dCreateIB_t, D3DDEV_CREATEIB)(dev, n, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16,
 		dynamic ? D3DPOOL_SYSTEMMEM : D3DPOOL_DEFAULT, ib) < 0) {
 		return E_FAIL;
@@ -1992,18 +1992,18 @@ int Render_CreateIB(void **ib, const void *tris, int nTri, byte dynamic) {
 	return Buf_Fill(*ib, tris, n, n);
 }
 
-int Render_CreateVB(void **vb, CListaVert *vert, byte dynamic) {
+int Render_CreateVB(void **vb, CVertList *vert, byte dynamic) {
 	CHECK(vb);
 	CHECK(vert);
 	CHECK(vert->nVert > 0);
 	int n = vert->nVert;
-	void *dev = g_MotorDev;
-	uint32_t fvf = CListaVert_FVF(vert);
-	if (D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, (uint32_t)(CListaVert_Size(vert) * n), D3DUSAGE_WRITEONLY,
+	void *dev = g_EngineDev;
+	uint32_t fvf = CVertList_FVF(vert);
+	if (D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, (uint32_t)(CVertList_Size(vert) * n), D3DUSAGE_WRITEONLY,
 		fvf, dynamic ? D3DPOOL_SYSTEMMEM : D3DPOOL_DEFAULT, vb) < 0) {
 		return E_FAIL;
 	}
-	return Buf_Fill(*vb, vert->pVert, 0, (uint32_t)(CListaVert_Size(vert) * vert->nVert));
+	return Buf_Fill(*vb, vert->pVert, 0, (uint32_t)(CVertList_Size(vert) * vert->nVert));
 }
 
 const char *Render_VersionStr(uint32_t v) {
@@ -2011,10 +2011,10 @@ const char *Render_VersionStr(uint32_t v) {
 	return g_VersionStr;
 }
 
-void Render_SetCamara(CCamara *cam) {
+void Render_SetCamera(CCamera *cam) {
 	matrix_t m;
-	Render_SetView(CCamara_GetView(cam, &m));
-	g_MatProj = *CCamara_GetProj(cam, &m);
+	Render_SetView(CCamera_GetView(cam, &m));
+	g_MatProj = *CCamera_GetProj(cam, &m);
 	void *dev = g_pd3dDevice;
 	if (dev) {
 		D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &g_MatProj);
@@ -2096,7 +2096,7 @@ int Render_GetViewportW(void) {
 }
 
 int Render_StencilBits(void) {
-	switch (MOTOR_ZFORMAT(g_Motor)) {
+	switch (ENGINE_ZFORMAT(g_Engine)) {
 	case D3DFMT_D15S1:
 		return 1;
 	case D3DFMT_D24S8:
@@ -2109,7 +2109,7 @@ int Render_StencilBits(void) {
 }
 
 int Render_Line(const vec3_t *a, const vec3_t *b, uint32_t color) {
-	if (!g_MotorDev) {
+	if (!g_EngineDev) {
 		return E_FAIL;
 	}
 	if (g_DiffuseMod4x) {
@@ -2119,7 +2119,7 @@ int Render_Line(const vec3_t *a, const vec3_t *b, uint32_t color) {
 		vec3_t p;
 		uint32_t color;
 	} v[2] = { { *a, color }, { *b, color } };
-	Render_SetMaterial(g_MatLinea, 0);
+	Render_SetMaterial(g_MatLine, 0);
 	void *dev = g_pd3dDevice;
 	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_XYZ | D3DFVF_DIFFUSE);
 	dev = g_pd3dDevice;
@@ -2166,7 +2166,7 @@ void Frustum_Calc(const matrix_t *view, const matrix_t *proj) {
 		{ -1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 0.0f }, { 1.0f, -1.0f, 0.0f }, { -1.0f, -1.0f, 0.0f },
 		{ -1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, -1.0f, 1.0f }, { -1.0f, -1.0f, 1.0f },
 	};
-	static const byte planos[MAX_PLANOS_FRUSTUM][3] = {
+	static const byte planes[MAX_PLANES_FRUSTUM][3] = {
 		{ 4, 6, 5 }, { 0, 1, 2 }, { 0, 3, 4 }, { 1, 5, 2 }, { 0, 4, 1 }, { 2, 6, 3 },
 	};
 	matrix_t tmp, m, inv;
@@ -2179,40 +2179,40 @@ void Frustum_Calc(const matrix_t *view, const matrix_t *proj) {
 		Vec3_TransformH(&c[i], &c[i], &inv);
 	}
 	plane_t *fr = (plane_t *)g_Frustum;
-	for (int i = 0; i < MAX_PLANOS_FRUSTUM; i++) {
-		Plane_From3(&fr[i], &c[planos[i][0]], &c[planos[i][1]], &c[planos[i][2]]);
+	for (int i = 0; i < MAX_PLANES_FRUSTUM; i++) {
+		Plane_From3(&fr[i], &c[planes[i][0]], &c[planes[i][1]], &c[planes[i][2]]);
 	}
 }
 
-int Render_MallaD3D(CMallaD3D *m, CNodoR *r) {
+int Render_MeshD3D(CMeshD3D *m, CRenderNode *r) {
 	CHECK(m);
 	/* the shadow pass of a model being drawn with stencil shadows */
-	if (r && ((CModelo *)r->owner)->visible == 2) {
+	if (r && ((CModel *)r->owner)->visible == 2) {
 		CHECK(g_RenderPass == 1 || g_RenderPass == 11);
 		if (m->pSkin) {
 			RenderEVA_DrawSkin(m, r);
 		} else if (r->skin) {
-			RenderEVA_DrawSkinNodo(m, r, r->skin);
+			RenderEVA_DrawSkinNode(m, r, r->skin);
 		} else {
-			Stencil_Malla(&m->vert, m->pTri, m->nTri, m, r);
+			Stencil_Mesh(&m->vert, m->pTri, m->nTri, m, r);
 		}
 		return 0;
 	}
 	if (g_RenderSoloB38 && m->mat && !m->mat->params.b38) {
 		return 0;
 	}
-	void *dev = g_MotorDev;
+	void *dev = g_EngineDev;
 	if (!dev) {
 		return E_FAIL;
 	}
 	byte pass1 = 0, envSoft = 0;
 	if (m->mat && m->mat->params.b3b) {
 		pass1 = 1;
-		if (!g_UsarHWEnvMap) {
+		if (!g_UseHWEnvMap) {
 			matrix_t view, world;
 			D3D_METHOD(dev, d3dGetTransform_t, D3DDEV_GETTRANSFORM)(dev, D3DTS_VIEW, &view);
 			D3D_METHOD(dev, d3dGetTransform_t, D3DDEV_GETTRANSFORM)(dev, D3DTS_WORLD, &world);
-			CListaVert_EnvMapUV(&m->vert, &world, &view, m->mat->mapa[2], 1);
+			CVertList_EnvMapUV(&m->vert, &world, &view, m->mat->map[2], 1);
 			envSoft = 1;
 		}
 	}
@@ -2221,21 +2221,21 @@ int Render_MallaD3D(CMallaD3D *m, CNodoR *r) {
 	if (m->pSkin) {
 		RenderEVA_DrawSkin(m, r);
 	} else if (r && r->skin) {
-		RenderEVA_DrawSkinNodo(m, r, r->skin);
+		RenderEVA_DrawSkinNode(m, r, r->skin);
 	} else if (m->b51) {
 		CHECK(0);
 	} else {
-		if (m->pVertVB && g_UsarVB && !envSoft) {
-			Render_DrawMallaD3D(m);
+		if (m->pVertVB && g_UseVB && !envSoft) {
+			Render_DrawMeshD3D(m);
 		} else {
 			CHECK(0);
-			Render_DrawListaIdx(&m->vert, (const uint16_t *)m->pTri, (int)m->nTri, 0);
+			Render_DrawListIdx(&m->vert, (const uint16_t *)m->pTri, (int)m->nTri, 0);
 		}
-		Stencil_Malla(&m->vert, m->pTri, m->nTri, m, r);
+		Stencil_Mesh(&m->vert, m->pTri, m->nTri, m, r);
 	}
-	if (pass1 && !g_UsarShaders) {
+	if (pass1 && !g_UseShaders) {
 		Render_SetMaterial(m->mat, 1);
-		Render_DrawListaIdx(&m->vert, (const uint16_t *)m->pTri, (int)m->nTri, 0);
+		Render_DrawListIdx(&m->vert, (const uint16_t *)m->pTri, (int)m->nTri, 0);
 	}
 	g_RenderTris += (int)m->nTri;
 	g_RenderVerts += m->vert.nVert;

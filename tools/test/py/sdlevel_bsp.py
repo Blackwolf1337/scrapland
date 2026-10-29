@@ -15,18 +15,18 @@ def bsplidx(p, lst):
 		return 'ptr'
 	return None
 bspln = SDTest.Call('Sector_Num', 'i')[0]
-check('bsp level', lambda: (SDTest.Peek('g_MapaSombrasUsar', 'i'), bspln, SDTest.Peek('g_Bsp', 'i') != 0))
+check('bsp level', lambda: (SDTest.Peek('g_ShadowMapUse', 'i'), bspln, SDTest.Peek('g_Bsp', 'i') != 0))
 bspltri = bsplz(0x224)
 for bspl_z in (-1, 0, 1, 2, bspln - 1):
 	if bspl_z < bspln:
 		bsplpoke(bspltri + 0x1c8, bspl_z)
-		check('BspTri_ZonaName' + fmt((bspl_z,)), lambda: SDTest.Call('BspTri_ZonaName', 'si', bspltri)[0])
+		check('BspTri_ZoneName' + fmt((bspl_z,)), lambda: SDTest.Call('BspTri_ZoneName', 'si', bspltri)[0])
 # the nodes of the floor scene
-bsplm = SDTest.Peek('g_Mundo', 'i')
+bsplm = SDTest.Peek('g_World', 'i')
 bsplnodo = bspli(bspli(bsplm + 0xac) + 0xc)
 bspli0 = 0
 while bsplnodo and bspli0 < 40:
-	check('BspTri_Zona' + fmt((bspli0,)), lambda bspl_n=bsplnodo: (SDTest.Peek(bspl_n + 4, '@p'), SDTest.Call('BspTri_Zona', 'ii', bspl_n)[0]))
+	check('BspTri_Zone' + fmt((bspli0,)), lambda bspl_n=bsplnodo: (SDTest.Peek(bspl_n + 4, '@p'), SDTest.Call('BspTri_Zone', 'ii', bspl_n)[0]))
 	bsplnodo = bspli(bsplnodo + 0xc)
 	bspli0 = bspli0 + 1
 # a map with lists in the sectors 0 and 1 and none
@@ -55,8 +55,8 @@ def bsplzonas():
 	for i in range(min(n, 4)):
 		r.append(bsplchain(bspli(p + 0xb4 * i)))
 	return r
-check('CBsp_CrearZonas', lambda: (SDTest.Call('CBsp_CrearZonas', 'tvi', bsplmap), bsplzonas()))
-check('Tabla_FreeB4', lambda: (SDTest.Call('Tabla_FreeB4', 'tvi', bsplmap + 0x61a98), bspli(bsplmap + 0x61a98)))
+check('CBsp_CreateZones', lambda: (SDTest.Call('CBsp_CreateZones', 'tvi', bsplmap), bsplzonas()))
+check('Table_FreeB4', lambda: (SDTest.Call('Table_FreeB4', 'tvi', bsplmap + 0x61a98), bspli(bsplmap + 0x61a98)))
 # two regions near the player linked through the floor trace (and one through a wall of the level, maybe)
 def bsplreg(c, n, col, other):
 	r = bsplz(0x64)
@@ -70,12 +70,12 @@ for bspl_d in ((0.0, 0.0, 300.0), (0.0, 0.0, 3000.0), (0.0, -500.0, 10.0)):
 	bspla = bsplreg(bsplp, (0.0, 0.0, 1.0), (0.5, 0.25, 1.0, 1.0), 1)
 	bsplb = bsplreg((bsplp[0] + bspl_d[0], bsplp[1] + bspl_d[1], bsplp[2] + bspl_d[2]), (0.0, 0.0, -1.0),
 		(1.0, 1.0, 0.5, 1.0), 1)
-	check('BspRegion_Enlazar' + fmt(bspl_d), lambda: (SDTest.Call('BspRegion_Enlazar', 'tiiiiif', bsplmap, bspla, bsplb, 0, 0.001)[0],
+	check('BspRegion_Link' + fmt(bspl_d), lambda: (SDTest.Call('BspRegion_Link', 'tiiiiif', bsplmap, bspla, bsplb, 0, 0.001)[0],
 		bsplacum(bspla), bsplacum(bsplb)))
 # rays from a point above the floor to a light, the random part seeded
 for bspl_l, bspl_r, bspl_n in (((0.0, 300.0, 0.0), 5.0, 16), ((0.0, -300.0, 0.0), 2.0, 8), ((200.0, 20.0, 0.0), 0.0, 4),
 		((0.0, 0.0, 0.0), 1.0, 0)):
 	SDTest.Call('crt_srand', 'vi', 0x1234)
-	check('Bsp_Oclusion' + fmt((bspl_l, bspl_r, bspl_n)), lambda: SDTest.Call('Bsp_Oclusion', 'fFFfiFi', bsplp, (0.0, 1.0, 0.0),
+	check('Bsp_Occlusion' + fmt((bspl_l, bspl_r, bspl_n)), lambda: SDTest.Call('Bsp_Occlusion', 'fFFfiFi', bsplp, (0.0, 1.0, 0.0),
 		bspl_r, bspl_n, (bsplp[0] + bspl_l[0], bsplp[1] + bspl_l[1], bsplp[2] + bspl_l[2]),
-		bspli(SDTest.Peek('g_Mundo', 'i') + 0xb0))[0])
+		bspli(SDTest.Peek('g_World', 'i') + 0xb0))[0])

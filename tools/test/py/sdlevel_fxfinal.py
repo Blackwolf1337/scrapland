@@ -9,7 +9,7 @@
 # of the exe before each Update. Printed: the fields of the effects, the particle parameters, the particles placed by
 # hand and the trail points written.
 # FX_ShipExplosion is called by rva with the debris systems of its engine variables set up by SetDebrisSys (the
-# explosion with SistPart elements, the smoke and fired debris with theirs), the split screen game flag set so that
+# explosion with ParticleSystem elements, the smoke and fired debris with theirs), the split screen game flag set so that
 # it is seen.
 # Not called: the paths that need more particles or nodes than the models have (skipped by the checks before), the
 # vehicle flames past the 12 vertices of the ship (the 6 of a motor may be stack garbage).
@@ -68,7 +68,7 @@ def ffnrand():
 def ffnloaded(m):
 	return SDTest.Call('CGameModel_IsLoaded', 'tbi', m)[0]
 def ffnnode(m, name):
-	return SDTest.Call('CGameModel_FindNodoR', 'tiis', m, name)[0]
+	return SDTest.Call('CGameModel_FindRenderNode', 'tiis', m, name)[0]
 def ffnnpart(p):
 	if not ffni(p + 0xac):
 		return 0
@@ -444,7 +444,7 @@ if ffnok and ffncar and ffnefx and ffnn[0] and ffnn[1] and ffnn[2]:
 
 # ---- FX_ShipExplosion: the debris, the explosion and its flames ----
 ffns, ffnd, ffnfx = ffndebris(ffnstr(sym('g_FXShipExplosionFile')), 1)
-ffnexpok = ffnfx != 0 and ffni(ffnfx) == 0x400000 + sym('cObjElementFXSistPart_vftable')
+ffnexpok = ffnfx != 0 and ffni(ffnfx) == 0x400000 + sym('cObjElementFXParticleSystem_vftable')
 ffnsmk = ffndebris(ffnstr(sym('g_FXSmokeDebrisFile')), 48)[0]
 ffnfrd = ffndebris(ffnstr(sym('g_FXFiredDebrisFile')), 40)[0]
 ffnexps = ffns

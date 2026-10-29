@@ -26,8 +26,8 @@ void __fastcall CMatId_dtor(CMatId *self) {
 
 byte __thiscall CMatId_Check(CMatId *self, CMaterial *mat) {
 	if (self->id == -1) {
-		CHECK(!mat->mapa[MAPA_DIFFUSE]);
-		E3D_LogWhite(g_FileLog, "GetShaderMode: Deferred update: %s", mat->Nombre);
+		CHECK(!mat->map[MAP_DIFFUSE]);
+		E3D_LogWhite(g_FileLog, "GetShaderMode: Deferred update: %s", mat->Name);
 		CMatId_Register(self, mat);
 		return 0;
 	}
@@ -40,8 +40,8 @@ byte __thiscall CMatId_Check(CMatId *self, CMaterial *mat) {
 }
 
 int Shader_Find(const char *name) {
-	for (int i = 0; g_ShaderTab[i].Nombre; i++) {
-		if (!crt_stricmp(g_ShaderTab[i].Nombre, name)) {
+	for (int i = 0; g_ShaderTab[i].Name; i++) {
+		if (!crt_stricmp(g_ShaderTab[i].Name, name)) {
 			return i;
 		}
 	}
@@ -53,9 +53,9 @@ void __thiscall CMatId_Register(CMatId *self, CMaterial *mat) {
 	char buf[SHADER_NAME];
 	const char *name;
 
-	CMapa *bump = g_EnvBump ? mat->mapa[MAPA_BUMP] : NULL;
-	CMapa *glow = g_GlowMap ? mat->mapa[MAPA_GLOW] : NULL;
-	byte alpha = mat->mapa[MAPA_DIFFUSE] && mat->mapa[MAPA_DIFFUSE]->hasAlpha;
+	CMap *bump = g_EnvBump ? mat->map[MAP_BUMP] : NULL;
+	CMap *glow = g_GlowMap ? mat->map[MAP_GLOW] : NULL;
+	byte alpha = mat->map[MAP_DIFFUSE] && mat->map[MAP_DIFFUSE]->hasAlpha;
 	byte env = 0;
 	byte mask = 0;
 	if (g_EnvMap) {
@@ -73,17 +73,17 @@ void __thiscall CMatId_Register(CMatId *self, CMaterial *mat) {
 	} else {
 		name = env ? "EnvMap" : "Diffuse";
 	}
-	if (mat->params.transp && mat->params.srcBlend == 1 && mat->params.dstBlend == 3 && (mat->params.atrib & 0x800)) {
+	if (mat->params.transp && mat->params.srcBlend == 1 && mat->params.dstBlend == 3 && (mat->params.attrib & 0x800)) {
 		name = "DiffuseNoLit";
 	}
 	int mode = Shader_Find(CMaterial_GetShaderName(mat, buf, sizeof(buf)) ? buf : name);
 	CHECK(self->id == -1);
 	self->id = mode;
-	if (mat->params.b3b && !(mat->params.atrib & MAT_SHADER)) {
+	if (mat->params.b3b && !(mat->params.attrib & MAT_SHADER)) {
 		alpha = 0;
 	}
-	if (!(mat->params.atrib & MAT_SHADER) && (glow || bump) && env && !mask) {
-		E3D_LogInfo(g_FileLog, "Invalid shader for material: %s", mat->Nombre);
+	if (!(mat->params.attrib & MAT_SHADER) && (glow || bump) && env && !mask) {
+		E3D_LogInfo(g_FileLog, "Invalid shader for material: %s", mat->Name);
 	}
 	CHECK(mode < MAX_SHADER_TAB);
 	self->alphaTest = (byte)g_ShaderTab[mode].flags;

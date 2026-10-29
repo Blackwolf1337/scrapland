@@ -1,5 +1,5 @@
 /*
- * The scene and model lists of the engine3d, original source Engine/util_escena.cpp (include/scrap/modelo.h):
+ * The scene and model lists of the engine3d, original source Engine/util_escena.cpp (include/scrap/model.h):
  * crear_escena and crear_modelo with the shared scenes, gModelosRender and the list dump.
  */
 #include <string.h>
@@ -20,150 +20,150 @@
 #define SORT_TEXT_Y 10.0f
 #define SORT_TEXT_COLOR 0xff00
 
-static void ListaEscena_Free(CListaEscena *le) {
-	if (le->escena) {
-		Escena_Unref(&le->escena);
+static void SceneList_Free(CSceneList *le) {
+	if (le->scene) {
+		Scene_Unref(&le->scene);
 	}
 	if (le->name2) {
-		Cad_Set(&le->name2, NULL);
+		String_Set(&le->name2, NULL);
 	}
 	if (le->name) {
-		Cad_Set(&le->name, NULL);
+		String_Set(&le->name, NULL);
 	}
 	operator_delete_sized(le, sizeof(*le));
 }
 
-CListaEscena *__thiscall CListaEscena_ctor(CListaEscena *self, CEscena *esc, const char *name, const char *name2,
-	const vec3_t *escala, uint32_t flags, CListaEscena **lista) {
+CSceneList *__thiscall CSceneList_ctor(CSceneList *self, CScene *scn, const char *name, const char *name2,
+	const vec3_t *scale, uint32_t flags, CSceneList **list) {
 	self->name = NULL;
 	self->name2 = NULL;
-	Cad_Set(&self->name, name);
-	Cad_Set(&self->name2, name2);
-	self->escala = *escala;
+	String_Set(&self->name, name);
+	String_Set(&self->name2, name2);
+	self->scale = *scale;
 	self->flags = flags;
-	self->escena = esc;
+	self->scene = scn;
 	self->next = NULL;
-	if (esc) {
-		esc->Refs++;
+	if (scn) {
+		scn->Refs++;
 	}
-	CHECK(lista);
-	while (*lista) {
-		lista = &(*lista)->next;
+	CHECK(list);
+	while (*list) {
+		list = &(*list)->next;
 	}
-	*lista = self;
+	*list = self;
 	return self;
 }
 
-CListaModelo *__thiscall CListaModelo_ctor(CListaModelo *self, CModelo *m, const char *name, const char *name2,
-	uint32_t flags, CListaModelo **lista) {
+CModelList *__thiscall CModelList_ctor(CModelList *self, CModel *m, const char *name, const char *name2,
+	uint32_t flags, CModelList **list) {
 	self->name = NULL;
 	self->name2 = NULL;
-	Cad_Set(&self->name, name);
-	Cad_Set(&self->name2, name2);
+	String_Set(&self->name, name);
+	String_Set(&self->name2, name2);
 	self->flags = flags;
-	self->modelo = m;
+	self->model = m;
 	self->next = NULL;
-	CHECK(lista);
-	while (*lista) {
-		lista = &(*lista)->next;
+	CHECK(list);
+	while (*list) {
+		list = &(*list)->next;
 	}
-	*lista = self;
+	*list = self;
 	self->sortKey = 0.0f;
-	self->indiceRender = -1;
-	m->lista = self;
-	Modelo_UpdateRender(m);
+	self->renderIndex = -1;
+	m->list = self;
+	Model_UpdateRender(m);
 	return self;
 }
 
-void __fastcall CListaModelo_dtor(CListaModelo *self) {
-	CHECK(self->flags & ESCENA_AUTOINIC);
-	CHECK(self->modelo);
-	CModelo *m = self->modelo;
+void __fastcall CModelList_dtor(CModelList *self) {
+	CHECK(self->flags & SCENE_AUTOINIT);
+	CHECK(self->model);
+	CModel *m = self->model;
 	if (m->enable) {
 		m->enable = 0;
 		m->visible = 0;
-		Modelo_UpdateRender(m);
+		Model_UpdateRender(m);
 	}
-	if (self->modelo) {
-		((modeloDelete_t)((void **)self->modelo->vftable)[0])(self->modelo, 1);
-		self->modelo = NULL;
+	if (self->model) {
+		((modelDelete_t)((void **)self->model->vftable)[0])(self->model, 1);
+		self->model = NULL;
 	}
 	if (self->name2) {
-		Cad_Set(&self->name2, NULL);
+		String_Set(&self->name2, NULL);
 	}
 	if (self->name) {
-		Cad_Set(&self->name, NULL);
+		String_Set(&self->name, NULL);
 	}
 }
 
-void Modelo_UpdateRender(CModelo *m) {
-	CListaModelo *lm = m->lista;
+void Model_UpdateRender(CModel *m) {
+	CModelList *lm = m->list;
 
 	if (!lm) {
 		return;
 	}
-	int idx = lm->indiceRender;
+	int idx = lm->renderIndex;
 	if (m->enable) {
 		if (idx != -1) {
 			return;
 		}
-		CHECK(g_NumModelosRender < MAX_MODELOS_RENDER);
-		int n = g_NumModelosRender;
-		g_ModelosRender[n] = lm;
-		lm->indiceRender = n;
+		CHECK(g_NumModelsRender < MAX_MODELS_RENDER);
+		int n = g_NumModelsRender;
+		g_ModelsRender[n] = lm;
+		lm->renderIndex = n;
 		n++;
-		g_NumModelosRender = n;
-		g_MaxModelosRender = g_MaxModelosRender > n ? g_MaxModelosRender : n;
+		g_NumModelsRender = n;
+		g_MaxModelsRender = g_MaxModelsRender > n ? g_MaxModelsRender : n;
 		return;
 	}
 	if (idx == -1) {
 		return;
 	}
-	CHECK(idx < MAX_MODELOS_RENDER);
-	CHECK(g_NumModelosRender <= MAX_MODELOS_RENDER);
-	CHECK(g_ModelosRender[idx] == lm);
-	CHECK(lm->modelo == m);
-	int n = g_NumModelosRender;
-	g_NumModelosRender = n - 1;
-	CListaModelo *last = g_ModelosRender[n - 1];
-	g_ModelosRender[idx] = last;
-	last->indiceRender = idx;
-	lm->indiceRender = -1;
+	CHECK(idx < MAX_MODELS_RENDER);
+	CHECK(g_NumModelsRender <= MAX_MODELS_RENDER);
+	CHECK(g_ModelsRender[idx] == lm);
+	CHECK(lm->model == m);
+	int n = g_NumModelsRender;
+	g_NumModelsRender = n - 1;
+	CModelList *last = g_ModelsRender[n - 1];
+	g_ModelsRender[idx] = last;
+	last->renderIndex = idx;
+	lm->renderIndex = -1;
 }
 
-byte Escena_Release(CEscena *esc, byte force) {
-	CListaEscena *le = g_ListaEscenas;
+byte SceneList_Release(CScene *scn, byte force) {
+	CSceneList *le = g_SceneList;
 
-	if (!esc || !le) {
+	if (!scn || !le) {
 		return 0;
 	}
-	CHECK(esc->Refs > 1);
+	CHECK(scn->Refs > 1);
 	if (force) {
-		if (esc->Refs != 2) {
-			Con_Warnf("WARN: Trying to release a nonzero reference scene: %s\n", esc->name);
+		if (scn->Refs != 2) {
+			Con_Warnf("WARN: Trying to release a nonzero reference scene: %s\n", scn->name);
 			return 1;
 		}
-	} else if (esc->Refs != 2) {
+	} else if (scn->Refs != 2) {
 		return 0;
 	}
-	if (le->escena == esc) {
-		if ((le->flags & ESCENA_COMPARTIR) && !force) {
+	if (le->scene == scn) {
+		if ((le->flags & SCENE_SHARED) && !force) {
 			return 0;
 		}
-		g_ListaEscenas = le->next;
+		g_SceneList = le->next;
 	} else {
 		for (;;) {
 			if (!le->next) {
 				return 0;
 			}
-			if (le->next->escena == esc) {
+			if (le->next->scene == scn) {
 				break;
 			}
 			le = le->next;
 		}
-		CListaEscena **slot = &le->next;
+		CSceneList **slot = &le->next;
 		le = *slot;
-		if ((le->flags & ESCENA_COMPARTIR) && !force) {
+		if ((le->flags & SCENE_SHARED) && !force) {
 			return 0;
 		}
 		*slot = le->next;
@@ -171,34 +171,34 @@ byte Escena_Release(CEscena *esc, byte force) {
 	if (!le) {
 		return 0;
 	}
-	ListaEscena_Free(le);
+	SceneList_Free(le);
 	return 1;
 }
 
-void Modelo_Destroy(CModelo **pm, byte force) {
+void Model_Destroy(CModel **pm, byte force) {
 	CHECK(pm);
 	if (!*pm) {
 		return;
 	}
-	if (g_ListaEscenas) {
-		CEscena *esc = (*pm)->escena;
+	if (g_SceneList) {
+		CScene *scn = (*pm)->scene;
 
-		CHECK(esc);
-		CHECK(esc->Refs > 1);
-		Escena_Release(esc, force);
+		CHECK(scn);
+		CHECK(scn->Refs > 1);
+		SceneList_Release(scn, force);
 	}
-	CListaModelo *lm = g_ListaModelos;
+	CModelList *lm = g_ModelList;
 	if (lm) {
-		CModelo *m = *pm;
-		CListaModelo *found = NULL;
+		CModel *m = *pm;
+		CModelList *found = NULL;
 
-		if (lm->modelo == m) {
-			g_ListaModelos = lm->next;
+		if (lm->model == m) {
+			g_ModelList = lm->next;
 			found = lm;
 		} else {
 			while (lm->next) {
-				if (lm->next->modelo == m) {
-					CListaModelo **slot = &lm->next;
+				if (lm->next->model == m) {
+					CModelList **slot = &lm->next;
 					found = *slot;
 					*slot = found->next;
 					break;
@@ -207,90 +207,90 @@ void Modelo_Destroy(CModelo **pm, byte force) {
 			}
 		}
 		if (found) {
-			CListaModelo_dtor(found);
+			CModelList_dtor(found);
 			operator_delete_sized(found, sizeof(*found));
 			*pm = NULL;
 			return;
 		}
 	}
 	if (*pm) {
-		((modeloDelete_t)((void **)(*pm)->vftable)[0])(*pm, 1);
+		((modelDelete_t)((void **)(*pm)->vftable)[0])(*pm, 1);
 		*pm = NULL;
 	}
 }
 
-void Modelo_SetEnable(CModelo *m, byte on) {
+void Model_SetEnable(CModel *m, byte on) {
 	if (m->enable != on) {
 		m->enable = on;
 		m->visible = 0;
-		Modelo_UpdateRender(m);
+		Model_UpdateRender(m);
 	}
 }
 
 /* the CHECKs on an entry of gModelosRender */
-static CListaModelo *Modelos_Render_Get(int i) {
-	CListaModelo *lm = g_ModelosRender[i];
+static CModelList *Models_Render_Get(int i) {
+	CModelList *lm = g_ModelsRender[i];
 
-	CHECK(lm->flags & ESCENA_AUTOINIC);
-	CHECK(lm->indiceRender == i);
-	CHECK(lm->modelo->enable);
+	CHECK(lm->flags & SCENE_AUTOINIT);
+	CHECK(lm->renderIndex == i);
+	CHECK(lm->model->enable);
 	return lm;
 }
 
-void Modelos_UpdateAnims(float dt) {
-	for (int i = 0; i < g_NumModelosRender; i++) {
-		CModelo_UpdateAnims(Modelos_Render_Get(i)->modelo, dt, -1);
+void Models_UpdateAnims(float dt) {
+	for (int i = 0; i < g_NumModelsRender; i++) {
+		CModel_UpdateAnims(Models_Render_Get(i)->model, dt, -1);
 	}
 }
 
-void UtilEscena_FreeAll(void) {
-	if (g_ListaModelos) {
+void UtilScene_FreeAll(void) {
+	if (g_ModelList) {
 		Con_Warnf("WARN: Model list not empty.\n");
 	}
-	for (CListaEscena *le = g_ListaEscenas; le;) {
-		CListaEscena *next = le->next;
+	for (CSceneList *le = g_SceneList; le;) {
+		CSceneList *next = le->next;
 
-		CHECK(le->escena->Refs == 1);
-		ListaEscena_Free(le);
+		CHECK(le->scene->Refs == 1);
+		SceneList_Free(le);
 		le = next;
 	}
-	for (CListaModelo *lm = g_ListaModelos; lm;) {
-		CListaModelo *next = lm->next;
+	for (CModelList *lm = g_ModelList; lm;) {
+		CModelList *next = lm->next;
 
-		CListaModelo_dtor(lm);
+		CModelList_dtor(lm);
 		operator_delete_sized(lm, sizeof(*lm));
 		lm = next;
 	}
-	g_ListaModelos = NULL;
-	g_ListaEscenas = NULL;
+	g_ModelList = NULL;
+	g_SceneList = NULL;
 }
 
-void UtilEscena_ReleaseD3D(void) {
-	void *dev = g_MotorDev;
+void UtilScene_ReleaseD3D(void) {
+	void *dev = g_EngineDev;
 
 	CHECK((g_pApp->flags >> 2 & 1) || dev);
-	for (CListaEscena *le = g_ListaEscenas; le; le = le->next) {
-		if (le->flags & ESCENA_AUTOINIC) {
-			CEscena_ReleaseD3D(le->escena, dev);
+	for (CSceneList *le = g_SceneList; le; le = le->next) {
+		if (le->flags & SCENE_AUTOINIT) {
+			CScene_ReleaseD3D(le->scene, dev);
 		}
 	}
-	for (CListaModelo *lm = g_ListaModelos; lm; lm = lm->next) {
-		CHECK(lm->flags & ESCENA_AUTOINIC);
-		CModelo_ReleaseD3D(lm->modelo, dev, 0);
+	for (CModelList *lm = g_ModelList; lm; lm = lm->next) {
+		CHECK(lm->flags & SCENE_AUTOINIT);
+		CModel_ReleaseD3D(lm->model, dev, 0);
 	}
 }
 
-void UtilEscena_InitD3D(void) {
-	void *dev = g_MotorDev;
+void UtilScene_InitD3D(void) {
+	void *dev = g_EngineDev;
 
 	CHECK(dev);
-	for (CListaModelo *lm = g_ListaModelos; lm; lm = lm->next) {
-		CHECK(lm->flags & ESCENA_AUTOINIC);
-		CModelo_InitD3D(lm->modelo, dev, 0);
+	for (CModelList *lm = g_ModelList; lm; lm = lm->next) {
+		CHECK(lm->flags & SCENE_AUTOINIT);
+		CModel_InitD3D(lm->model, dev, 0);
 	}
-	for (CListaEscena *le = g_ListaEscenas; le; le = le->next) {
-		if (le->flags & ESCENA_AUTOINIC) {
-			CEscena_InitD3D(le->escena, dev);
+	for (CSceneList *le = g_SceneList; le; le = le->next) {
+		if (le->flags & SCENE_AUTOINIT) {
+			CScene_InitD3D(le->scene, dev);
 		}
 	}
 }
@@ -299,79 +299,79 @@ static const char *Dump_Flag(uint32_t flags, uint32_t bit, const char *text) {
 	return flags & bit ? text : "";
 }
 
-static void Dump_Modelo(utilPrintf_t fn, CListaModelo *lm) {
+static void Dump_Model(utilPrintf_t fn, CModelList *lm) {
 	uint32_t f = lm->flags;
-	CModelo *m = lm->modelo;
+	CModel *m = lm->model;
 
-	fn("\n  '%s' (%08Xh %08Xh)%s%s%s", lm->name, m, m->escena, Dump_Flag(f, ESCENA_COMPARTIR, "  COMPARTIR"),
-		Dump_Flag(f, ESCENA_AUTOINIC, "  AUTOINIC"), Dump_Flag(f, ESCENA_USARANIM, "  USARANIM"));
-	fn("   Render: %d  Vis: %d", lm->modelo->enable, lm->modelo->visible);
+	fn("\n  '%s' (%08Xh %08Xh)%s%s%s", lm->name, m, m->scene, Dump_Flag(f, SCENE_SHARED, "  COMPARTIR"),
+		Dump_Flag(f, SCENE_AUTOINIT, "  AUTOINIC"), Dump_Flag(f, SCENE_USEANIM, "  USARANIM"));
+	fn("   Render: %d  Vis: %d", lm->model->enable, lm->model->visible);
 }
 
-void UtilEscena_Dump(utilPrintf_t fn) {
-	int nModelos = 0, nRender = 0, nVis = 0, nEscenas = 0, nAnim = 0, nVisRender = 0;
+void UtilScene_Dump(utilPrintf_t fn) {
+	int nModels = 0, nRender = 0, nVis = 0, nScenes = 0, nAnim = 0, nVisRender = 0;
 
 	if (!fn) {
 		fn = E3D_DebugPrintf;
 	}
 	fn("\nModelos:");
-	for (CListaModelo *lm = g_ListaModelos; lm; lm = lm->next) {
-		Dump_Modelo(fn, lm);
-		nModelos++;
-		if (lm->modelo->enable) {
+	for (CModelList *lm = g_ModelList; lm; lm = lm->next) {
+		Dump_Model(fn, lm);
+		nModels++;
+		if (lm->model->enable) {
 			nRender++;
 		}
-		if (lm->modelo->visible & 1) {
+		if (lm->model->visible & 1) {
 			nVis++;
 		}
 	}
 	fn("\n\nEscenas:");
-	for (CListaEscena *le = g_ListaEscenas; le; le = le->next) {
+	for (CSceneList *le = g_SceneList; le; le = le->next) {
 		uint32_t f = le->flags;
-		CEscena *e = le->escena;
+		CScene *e = le->scene;
 
-		fn("\n  '%s' (%08Xh)%s%s%s%s%s", le->name, e, Dump_Flag(f, ESCENA_COMPARTIR, "  COMPARTIR"),
-			Dump_Flag(f, ESCENA_AUTOINIC, "  AUTOINIC"), Dump_Flag(f, ESCENA_USARANIM, "  USARANIM"),
-			Dump_Flag(f, ESCENA_IGN_ESCALA, "  IGN_ESCALA"), e->AnimM3D ? "  [AnimM3D]" : "");
-		fn("   escala: %s", Vec3_Str(&le->escala, 0, 6));
-		nEscenas++;
-		if (le->escena->AnimM3D && !le->escena->Nodo3D) {
+		fn("\n  '%s' (%08Xh)%s%s%s%s%s", le->name, e, Dump_Flag(f, SCENE_SHARED, "  COMPARTIR"),
+			Dump_Flag(f, SCENE_AUTOINIT, "  AUTOINIC"), Dump_Flag(f, SCENE_USEANIM, "  USARANIM"),
+			Dump_Flag(f, SCENE_IGNORE_SCALE, "  IGN_ESCALA"), e->AnimM3D ? "  [AnimM3D]" : "");
+		fn("   escala: %s", Vec3_Str(&le->scale, 0, 6));
+		nScenes++;
+		if (le->scene->AnimM3D && !le->scene->Node3D) {
 			nAnim++;
 		}
 	}
 	fn("\n\nModelos activos:");
-	for (int i = 0; i < g_NumModelosRender; i++) {
-		CListaModelo *lm = g_ModelosRender[i];
+	for (int i = 0; i < g_NumModelsRender; i++) {
+		CModelList *lm = g_ModelsRender[i];
 
-		Dump_Modelo(fn, lm);
-		if (lm->modelo->visible & 1) {
+		Dump_Model(fn, lm);
+		if (lm->model->visible & 1) {
 			nVisRender++;
 		}
 	}
-	fn("\n\n%d modelos (%d render, %d vis), %d escenas (%d anim)\n\n", nModelos, nRender, nVis, nEscenas, nAnim);
-	CHECK(nRender == g_NumModelosRender);
+	fn("\n\n%d modelos (%d render, %d vis), %d escenas (%d anim)\n\n", nModels, nRender, nVis, nScenes, nAnim);
+	CHECK(nRender == g_NumModelsRender);
 	CHECK(nVis == nVisRender);
 }
 
-void Escenas_Msg(int msg, int a, int b, int c, int d) {
-	for (CListaEscena *le = g_ListaEscenas; le; le = le->next) {
-		if (le->flags & ESCENA_AUTOINIC) {
-			CEscena_Msg(le->escena, msg, a, b, c, d);
+void Scenes_Msg(int msg, int a, int b, int c, int d) {
+	for (CSceneList *le = g_SceneList; le; le = le->next) {
+		if (le->flags & SCENE_AUTOINIT) {
+			CScene_Msg(le->scene, msg, a, b, c, d);
 		}
 	}
 }
 
-CEscena *Escena_Next(CEscena *esc) {
-	CListaEscena *le = g_ListaEscenas;
+CScene *Scene_Next(CScene *scn) {
+	CSceneList *le = g_SceneList;
 
-	if (esc) {
+	if (scn) {
 		for (;;) {
 			if (!le) {
 				return NULL;
 			}
-			CEscena *e = le->escena;
+			CScene *e = le->scene;
 			le = le->next;
-			if (e == esc) {
+			if (e == scn) {
 				break;
 			}
 		}
@@ -379,18 +379,18 @@ CEscena *Escena_Next(CEscena *esc) {
 	if (!le) {
 		return NULL;
 	}
-	return le->escena;
+	return le->scene;
 }
 
-void Modelos_Render(void) {
-	if (!g_ModelosOn) {
+void Models_Render(void) {
+	if (!g_ModelsOn) {
 		return;
 	}
 	vec3_t cam = *Render_GetEyePos();
-	int n = g_NumModelosRender;
+	int n = g_NumModelsRender;
 	for (int i = 0; i < n; i++) {
-		CListaModelo *lm = Modelos_Render_Get(i);
-		CModelo *m = lm->modelo;
+		CModelList *lm = Models_Render_Get(i);
+		CModel *m = lm->model;
 		float dy = m->pos.y - cam.y;
 		float dx = m->pos.x - cam.x;
 		float dz = m->pos.z - cam.z;
@@ -406,21 +406,21 @@ void Modelos_Render(void) {
 		}
 	}
 	if (g_SortModels) {
-		crt_qsort(g_ModelosRender, n, sizeof(CListaModelo *), ListaModelo_CompareKey);
+		crt_qsort(g_ModelsRender, n, sizeof(CModelList *), ModelList_CompareKey);
 	}
-	for (int i = 0; i < g_NumModelosRender; i++) {
-		g_ModelosRender[i]->indiceRender = i;
-		CModelo_Render(g_ModelosRender[i]->modelo);
+	for (int i = 0; i < g_NumModelsRender; i++) {
+		g_ModelsRender[i]->renderIndex = i;
+		CModel_Render(g_ModelsRender[i]->model);
 	}
 	int pass = g_RenderPass;
 	if (!g_SortShow || (pass != 0 && pass != 3 && pass != 0xd)) {
 		return;
 	}
 	int y = 0x34;
-	n = g_NumModelosRender;
+	n = g_NumModelsRender;
 	for (int k = 0; k < n; k++, y += 4) {
-		CListaModelo *lm = g_ModelosRender[n - k - 1];
-		CModelo *m = lm->modelo;
+		CModelList *lm = g_ModelsRender[n - k - 1];
+		CModel *m = lm->model;
 		byte vis = m->visible;
 
 		if (!vis && g_SortShow < 2) {
@@ -430,49 +430,49 @@ void Modelos_Render(void) {
 		Font_Printf(g_FntTerm8, SORT_TEXT_X, (float)y + SORT_TEXT_Y, 2, "%s %.2f", m->name, (double)lm->sortKey);
 		if (m->sortZBias != 0.0f || m->sortZMult != 1.0f) {
 			Font_SetColor(g_FntTerm8, SORT_TEXT_COLOR);
-			CFuente3 *f = g_FntTerm8;
+			CFont3 *f = g_FntTerm8;
 			Font_Printf(f, f->x, f->y, FNT_PRINT_COLOR, " %.2f %.2f", (double)m->sortZBias, (double)m->sortZMult);
 		}
-		n = g_NumModelosRender;
+		n = g_NumModelsRender;
 		y += 6;
 	}
 }
 
-CListaEscena *__thiscall CListaEscena_Find(CListaEscena *self, const char *name, const char *name2,
-	const vec3_t *escala, uint32_t flags, uint32_t mask) {
-	for (CListaEscena *le = self; le; le = le->next) {
-		if ((le->flags & mask) == (flags & mask) && Cad_EqualNoCase(le->name, name) &&
-			Cad_EqualNoCase(le->name2, name2) && ((flags & ESCENA_IGN_ESCALA) || (le->escala.x == escala->x &&
-			le->escala.y == escala->y && le->escala.z == escala->z))) {
+CSceneList *__thiscall CSceneList_Find(CSceneList *self, const char *name, const char *name2,
+	const vec3_t *scale, uint32_t flags, uint32_t mask) {
+	for (CSceneList *le = self; le; le = le->next) {
+		if ((le->flags & mask) == (flags & mask) && String_EqualNoCase(le->name, name) &&
+			String_EqualNoCase(le->name2, name2) && ((flags & SCENE_IGNORE_SCALE) || (le->scale.x == scale->x &&
+			le->scale.y == scale->y && le->scale.z == scale->z))) {
 			return le;
 		}
 	}
 	return NULL;
 }
 
-CListaModelo *__thiscall CListaModelo_Find(CListaModelo *self, const char *name, const char *name2, uint32_t flags,
+CModelList *__thiscall CModelList_Find(CModelList *self, const char *name, const char *name2, uint32_t flags,
 	uint32_t mask) {
-	for (CListaModelo *lm = self; lm; lm = lm->next) {
-		if ((lm->flags & mask) == (flags & mask) && Cad_EqualNoCase(lm->name, name) &&
-			Cad_EqualNoCase(lm->name2, name2)) {
+	for (CModelList *lm = self; lm; lm = lm->next) {
+		if ((lm->flags & mask) == (flags & mask) && String_EqualNoCase(lm->name, name) &&
+			String_EqualNoCase(lm->name2, name2)) {
 			return lm;
 		}
 	}
 	return NULL;
 }
 
-CModelo *Modelo_FindName(const char *name) {
-	for (CListaModelo *lm = g_ListaModelos; lm; lm = lm->next) {
-		CHECK(lm->modelo);
-		const char *n = lm->modelo->name;
+CModel *Model_FindName(const char *name) {
+	for (CModelList *lm = g_ModelList; lm; lm = lm->next) {
+		CHECK(lm->model);
+		const char *n = lm->model->name;
 		if (n && !strcmp(name, n)) {
-			return lm->modelo;
+			return lm->model;
 		}
 	}
 	return NULL;
 }
 
-int Cad_EqualNoCase(const char *a, const char *b) {
+int String_EqualNoCase(const char *a, const char *b) {
 	if (a) {
 		if (b) {
 			return !crt_stricmp(a, b);
@@ -484,146 +484,146 @@ int Cad_EqualNoCase(const char *a, const char *b) {
 	return !b || !*b;
 }
 
-void Crear_Animacion(CModelo *m, const char *name, uint32_t flags) {
-	CEscena *esc = m ? m->escena : NULL;
+void Create_Animation(CModel *m, const char *name, uint32_t flags) {
+	CScene *scn = m ? m->scene : NULL;
 	byte shared;
 
-	CHECK(esc);
-	const char *name2 = esc->nodo;
+	CHECK(scn);
+	const char *name2 = scn->node;
 	E3D_DebugPrintf("\ncrear_animacion(): '%s'", name);
-	g_EscenaAnimPadre = esc;
-	CEscena *anim = Crear_Escena(&shared, name, name2, &m->escala, esc->umbralUnirVert, flags);
-	g_EscenaAnimPadre = NULL;
+	g_SceneAnimParent = scn;
+	CScene *anim = Create_Scene(&shared, name, name2, &m->scaleBase, scn->vertWeldThreshold, flags);
+	g_SceneAnimParent = NULL;
 	CHECK(anim && anim->AnimM3D);
-	CModelo_AddAnim(m, anim, NULL);
+	CModel_AddAnim(m, anim, NULL);
 }
 
-CEscena *Crear_Escena(byte *shared, const char *name, const char *name2, const vec3_t *escala, float umbral,
+CScene *Create_Scene(byte *shared, const char *name, const char *name2, const vec3_t *scale, float threshold,
 	uint32_t flags) {
-	CEscena *esc;
+	CScene *scn;
 	void *p;
 
 	CHECK(name && shared);
-	uint32_t compartir = flags & ESCENA_COMPARTIR;
-	if (compartir && g_ListaEscenas) {
-		CListaEscena *le = CListaEscena_Find(g_ListaEscenas, name, name2, escala, flags, ESCENA_COMPARTIR);
+	uint32_t isShared = flags & SCENE_SHARED;
+	if (isShared && g_SceneList) {
+		CSceneList *le = CSceneList_Find(g_SceneList, name, name2, scale, flags, SCENE_SHARED);
 
 		if (le) {
-			CHECK(le->escena);
-			esc = le->escena;
+			CHECK(le->scene);
+			scn = le->scene;
 			*shared = 1;
-			if (esc) {
+			if (scn) {
 				goto made;
 			}
 		}
 	}
-	if ((flags & ESCENA_SM3) && (esc = SM3_Load(name)) != NULL) {
+	if ((flags & SCENE_SM3) && (scn = SM3_Load(name)) != NULL) {
 		*shared = 0;
 		E3D_DebugPrintf("  [sm3]");
-		p = operator_new(sizeof(CListaEscena));
+		p = operator_new(sizeof(CSceneList));
 		if (p) {
-			CListaEscena_ctor(p, esc, name, name2, escala, flags, &g_ListaEscenas);
+			CSceneList_ctor(p, scn, name, name2, scale, flags, &g_SceneList);
 		}
-		if (!g_MotorDev) {
-			return esc;
+		if (!g_EngineDev) {
+			return scn;
 		}
-		CHECK(flags & ESCENA_AUTOINIC);
+		CHECK(flags & SCENE_AUTOINIT);
 		goto initD3D;
 	}
-	esc = Escena_Load(name, 1, name2);
+	scn = Scene_Load(name, 1, name2);
 	*shared = 0;
 made:
 	E3D_DebugPrintf("  [%s]", *shared ? "compartido" : "creado");
 	if (!*shared) {
-		p = operator_new(sizeof(CListaEscena));
+		p = operator_new(sizeof(CSceneList));
 		if (p) {
-			CListaEscena_ctor(p, esc, name, name2, escala, flags, &g_ListaEscenas);
+			CSceneList_ctor(p, scn, name, name2, scale, flags, &g_SceneList);
 		}
-		esc->umbralUnirVert = umbral;
-		CEscena_SetEscala(esc, escala);
-		CEscena_UpdateBox(esc, 0, 1);
-		if (compartir && !g_EscenaAnimPadre) {
-			CEscena_Shared(esc);
+		scn->vertWeldThreshold = threshold;
+		CScene_SetScale(scn, scale);
+		CScene_UpdateBox(scn, 0, 1);
+		if (isShared && !g_SceneAnimParent) {
+			CScene_Shared(scn);
 		}
 	} else {
-		CHECK(esc->umbralUnirVert == umbral);
+		CHECK(scn->vertWeldThreshold == threshold);
 	}
 	if (*shared) {
-		return esc;
+		return scn;
 	}
-	uint32_t autoinic = flags & ESCENA_AUTOINIC;
-	if (autoinic) {
-		CEscena_Msg(esc, 1, 0, 0, 0, 0);
-		CEscena_Msg(esc, 2, 0, 0, 0, 0);
-		if (flags & ESCENA_F20) {
-			SM3_Save(name, esc);
+	uint32_t autoinit = flags & SCENE_AUTOINIT;
+	if (autoinit) {
+		CScene_Msg(scn, 1, 0, 0, 0, 0);
+		CScene_Msg(scn, 2, 0, 0, 0, 0);
+		if (flags & SCENE_F20) {
+			SM3_Save(name, scn);
 		}
 	}
-	if (*shared || !g_MotorDev) {
-		return esc;
+	if (*shared || !g_EngineDev) {
+		return scn;
 	}
-	CHECK(autoinic);
+	CHECK(autoinit);
 initD3D:
-	CEscena_InitD3D(esc, g_MotorDev);
-	CListaMat_Prepare(g_ListaMat, g_MotorDev);
-	return esc;
+	CScene_InitD3D(scn, g_EngineDev);
+	CMatList_Prepare(g_MatList, g_EngineDev);
+	return scn;
 }
 
-CModelo *Crear_Modelo(const char *name, const char *name2, const vec3_t *escala, float umbral, uint32_t flags) {
-	CModelo *m = operator_new(sizeof(CModelo));
+CModel *Create_Model(const char *name, const char *name2, const vec3_t *scale, float threshold, uint32_t flags) {
+	CModel *m = operator_new(sizeof(CModel));
 	byte shared;
 
-	m = m ? CModelo_ctor(m) : NULL;
+	m = m ? CModel_ctor(m) : NULL;
 	E3D_DebugPrintf("\ncrear_modelo(): '%s'", name);
-	CEscena *esc = Crear_Escena(&shared, name, name2, escala, umbral, flags);
-	Cad_Set(&m->name, Ruta_FileName(esc->name));
-	m->escala = *escala;
-	CHECK(esc->Nodo3D);
-	CModelo_SetEscena(m, esc);
-	if ((flags & ESCENA_USARANIM) && esc->AnimM3D) {
-		CModelo_AddAnim(m, esc, NULL);
+	CScene *scn = Create_Scene(&shared, name, name2, scale, threshold, flags);
+	String_Set(&m->name, Path_FileName(scn->name));
+	m->scaleBase = *scale;
+	CHECK(scn->Node3D);
+	CModel_SetScene(m, scn);
+	if ((flags & SCENE_USEANIM) && scn->AnimM3D) {
+		CModel_AddAnim(m, scn, NULL);
 	}
-	uint32_t autoinic = flags & ESCENA_AUTOINIC;
-	if (autoinic) {
-		void *p = operator_new(sizeof(CListaModelo));
+	uint32_t autoinit = flags & SCENE_AUTOINIT;
+	if (autoinit) {
+		void *p = operator_new(sizeof(CModelList));
 
 		if (p) {
-			CListaModelo_ctor(p, m, name, name2, flags, &g_ListaModelos);
+			CModelList_ctor(p, m, name, name2, flags, &g_ModelList);
 		}
 	}
-	if (g_MotorDev && autoinic) {
-		CModelo_InitD3D(m, g_MotorDev, 0);
+	if (g_EngineDev && autoinit) {
+		CModel_InitD3D(m, g_EngineDev, 0);
 	}
 	return m;
 }
 
-CModelo *Crear_Modelo3(const char *name, const char *name2, const vec3_t *escala, uint32_t flags) {
-	return Crear_Modelo(name, name2, escala, -1.0f, flags);
+CModel *Create_Model3(const char *name, const char *name2, const vec3_t *scale, uint32_t flags) {
+	return Create_Model(name, name2, scale, -1.0f, flags);
 }
 
-CModelo *Crear_ModeloLOD(const char *name, const char *name2, const vec3_t *escala, CModelo *main, uint32_t flags) {
-	g_EscenaLODPadre = main->escena;
-	CModelo *m = Crear_Modelo(name, name2, escala, -1.0f, flags);
-	g_EscenaLODPadre = NULL;
-	CModelo_Disable(m);
+CModel *Create_ModelLOD(const char *name, const char *name2, const vec3_t *scale, CModel *main, uint32_t flags) {
+	g_SceneLODParent = main->scene;
+	CModel *m = Create_Model(name, name2, scale, -1.0f, flags);
+	g_SceneLODParent = NULL;
+	CModel_Disable(m);
 	return m;
 }
 
-CModelo *Crear_Modelo2(const char *name, const char *name2, uint32_t flags) {
+CModel *Create_Model2(const char *name, const char *name2, uint32_t flags) {
 	vec3_t one = { 1.0f, 1.0f, 1.0f };
 
-	return Crear_Modelo(name, name2, &one, -1.0f, flags);
+	return Create_Model(name, name2, &one, -1.0f, flags);
 }
 
-CModelo *Crear_Modelo4(const char *name, const char *name2, float umbral, uint32_t flags) {
+CModel *Create_Model4(const char *name, const char *name2, float threshold, uint32_t flags) {
 	vec3_t one = { 1.0f, 1.0f, 1.0f };
 
-	return Crear_Modelo(name, name2, &one, umbral, flags);
+	return Create_Model(name, name2, &one, threshold, flags);
 }
 
-int ListaModelo_CompareKey(const void *a, const void *b) {
-	const CListaModelo *la = *(CListaModelo *const *)a;
-	const CListaModelo *lb = *(CListaModelo *const *)b;
+int ModelList_CompareKey(const void *a, const void *b) {
+	const CModelList *la = *(CModelList *const *)a;
+	const CModelList *lb = *(CModelList *const *)b;
 
 	return lb->sortKey > la->sortKey ? 1 : -1;
 }

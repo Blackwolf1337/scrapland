@@ -46,7 +46,7 @@ fxadelta = fxai(fxaworld + 0x2d4)
 # the model of the player through its vtable (GetModel 0x98) and a node of it
 fxapmodel = SDTest.Call(fxai(fxai(fxaplayer) + 0x98) - 0x400000, 'tii', fxaplayer)[0]
 def fxanode(name):
-	return SDTest.Call('CGameModel_FindNodoR', 'tiis', fxapmodel, name)[0]
+	return SDTest.Call('CGameModel_FindRenderNode', 'tiis', fxapmodel, name)[0]
 
 # the elements: name, ctor, dtor, Delete, size, vtable, the ints and bytes the constructor writes
 fxaclasses = (

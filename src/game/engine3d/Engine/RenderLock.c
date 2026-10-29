@@ -56,7 +56,7 @@ void RenderLock_InitD3D(void) {
 		return;
 	}
 	CHECK(!g_TextLock[0] && !g_TextLock[1] && !g_TextLock[2] && !g_TextMem && !g_TextBack);
-	int fmt = (int)MOTOR_MODE(g_Motor)[0];
+	int fmt = (int)ENGINE_MODE(g_Engine)[0];
 	RenderLock_Create(D3DUSAGE_RENDERTARGET, D3DFMT_R5G6B5, D3DPOOL_DEFAULT, &g_TextLock[0]);
 	RenderLock_Create(D3DUSAGE_RENDERTARGET, D3DFMT_R5G6B5, D3DPOOL_DEFAULT, &g_TextLock[1]);
 	RenderLock_Create(D3DUSAGE_RENDERTARGET, D3DFMT_R5G6B5, D3DPOOL_DEFAULT, &g_TextLock[2]);

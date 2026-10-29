@@ -75,7 +75,7 @@ static CGameModel *EFX_Model(cEmbeddedFX *self, cEntity *e) {
 static int EFX_AttachOpt(CGameParticles *p, int *dummy, CGameModel *model, const char *name) {
 	*dummy = -1;
 	CGameParticles_Release(p);
-	int i = CGameModel_FindNodoR(model, name);
+	int i = CGameModel_FindRenderNode(model, name);
 	*dummy = i;
 	if (i != -1) {
 		CGameParticles_Attach(p, model, i);
@@ -142,10 +142,10 @@ cEmbeddedFX *__fastcall cEmbeddedFXBankMaster_ctor(void *p) {
 	cEmbeddedFXBankMaster *self = p;
 	EFX_CtorVtbl(self, VT_BANKMASTER);
 	CGameParticles_ctor(&self->glow);
-	CGameParticles_ctor(&self->baston);
+	CGameParticles_ctor(&self->baton);
 	self->base.ent = NULL;
 	self->dummyGlow = -1;
-	self->dummyBaston = -1;
+	self->dummyBaton = -1;
 	self->on = 0;
 	return &self->base;
 }
@@ -277,7 +277,7 @@ void __fastcall cEmbeddedFXBankDirector_dtor(cEmbeddedFXBankDirector *self) {
 
 void __fastcall cEmbeddedFXBankMaster_dtor(cEmbeddedFXBankMaster *self) {
 	EFX_SetVtbl(self, VT_BANKMASTER);
-	CGameParticles_Release(&self->baston);
+	CGameParticles_Release(&self->baton);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
@@ -411,8 +411,8 @@ void __fastcall cEmbeddedFXBankDirector_Release(cEmbeddedFXBankDirector *self) {
 void __fastcall cEmbeddedFXBankMaster_Release(cEmbeddedFXBankMaster *self) {
 	self->dummyGlow = -1;
 	CGameParticles_Release(&self->glow);
-	self->dummyBaston = -1;
-	CGameParticles_Release(&self->baston);
+	self->dummyBaton = -1;
+	CGameParticles_Release(&self->baton);
 }
 
 void __fastcall cEmbeddedFXCrazyGambler_Release(cEmbeddedFXCrazyGambler *self) {
@@ -663,7 +663,7 @@ void __thiscall cEmbeddedFXAlarm_Init(cEmbeddedFXAlarm *self, CGameModel *model)
 		return;
 	}
 	EFX_AttachOpt(&self->particles, &self->dummy, model, "DF_PoliceAlarm");
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	EFX_Still(&self->particles);
 	CGameParticles_Apply(&self->particles);
 }
@@ -675,10 +675,10 @@ void __thiscall cEmbeddedFXBankDirector_Init(cEmbeddedFXBankDirector *self, cEnt
 
 	self->dummyGlow = -1;
 	CGameParticles_Release(&self->glow);
-	self->dummyGlow = CGameModel_FindNodoR(model, "DF_Glow");
+	self->dummyGlow = CGameModel_FindRenderNode(model, "DF_Glow");
 	CHECK(self->dummyGlow > -1);
 	CGameParticles_Attach(&self->glow, model, self->dummyGlow);
-	CHECK(self->glow.SistPart);
+	CHECK(self->glow.ParticleSystem);
 }
 
 void __thiscall cEmbeddedFXBankMaster_Init(cEmbeddedFXBankMaster *self, cEntity *e) {
@@ -686,17 +686,17 @@ void __thiscall cEmbeddedFXBankMaster_Init(cEmbeddedFXBankMaster *self, cEntity 
 
 	self->dummyGlow = -1;
 	CGameParticles_Release(&self->glow);
-	self->dummyGlow = CGameModel_FindNodoR(model, "DF_Glow");
+	self->dummyGlow = CGameModel_FindRenderNode(model, "DF_Glow");
 	CHECK(self->dummyGlow > -1);
 	CGameParticles_Attach(&self->glow, model, self->dummyGlow);
-	CHECK(self->glow.SistPart);
-	self->dummyBaston = CGameModel_FindNodoR(model, "DF_Glow_Baston");
-	CHECK(self->dummyBaston > -1);
-	CGameParticles_Attach(&self->baston, model, self->dummyBaston);
-	CHECK(self->baston.SistPart);
+	CHECK(self->glow.ParticleSystem);
+	self->dummyBaton = CGameModel_FindRenderNode(model, "DF_Glow_Baston");
+	CHECK(self->dummyBaton > -1);
+	CGameParticles_Attach(&self->baton, model, self->dummyBaton);
+	CHECK(self->baton.ParticleSystem);
 	/* a row of glows along the stick */
 	for (int i = 0; i < 16; i++) {
-		CGameParticles_SetParticle(&self->baston, i, 0.0f, (float)i * 8.0f - 74.0f, 0.0f, 65.0f, 0xe1f7d255, 2,
+		CGameParticles_SetParticle(&self->baton, i, 0.0f, (float)i * 8.0f - 74.0f, 0.0f, 65.0f, 0xe1f7d255, 2,
 			0.0f);
 	}
 }
@@ -706,7 +706,7 @@ void __thiscall cEmbeddedFXCrazyGambler_SetHead(cEmbeddedFXCrazyGambler *self, C
 	CHECK(model && CGameModel_IsLoaded(model));
 	self->model = model;
 	self->nodeHead = -1;
-	self->nodeHead = CGameModel_FindNodoR(model, node);
+	self->nodeHead = CGameModel_FindRenderNode(model, node);
 	CHECK(self->nodeHead > -1);
 	cEmbeddedFXCrazyGambler_Clear(self);
 	self->base.vftable->Update(&self->base, 0.5f);
@@ -715,12 +715,12 @@ void __thiscall cEmbeddedFXCrazyGambler_SetHead(cEmbeddedFXCrazyGambler *self, C
 void __thiscall cEmbeddedFXCrazyGambler_Init(cEmbeddedFXCrazyGambler *self, cEntity *e) {
 	CGameModel *model = EFX_Model(&self->base, e);
 
-	self->nodeHand = CGameModel_FindNodoR(model, "R_Gambler_mano_Izq");
+	self->nodeHand = CGameModel_FindRenderNode(model, "R_Gambler_mano_Izq");
 	CHECK(self->nodeHand > -1);
-	int glow = CGameModel_FindNodoR(model, "DF_Glow");
+	int glow = CGameModel_FindRenderNode(model, "DF_Glow");
 	CHECK(glow > -1);
 	CGameParticles_Attach(&self->particles, model, glow);
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	cEmbeddedFXCrazyGambler_SetHead(self, model, "R_Gambler_Cabeza-Pelos");
 }
 
@@ -728,15 +728,15 @@ void __thiscall cEmbeddedFXGear_Init(cEmbeddedFXGear *self, cEntity *e) {
 	CGameModel *model = EFX_Model(&self->base, e);
 
 	EFX_AttachOpt(&self->shoot, &self->dummyShoot, model, "DF_GearShoot");
-	CHECK(self->shoot.SistPart);
+	CHECK(self->shoot.ParticleSystem);
 	cEmbeddedFXAlarm_Init(&self->alarm, model);
 }
 
 void __thiscall cEmbeddedFXMaintenance_Init(cEmbeddedFXMaintenance *self, cEntity *e) {
 	CGameModel *model = EFX_Model(&self->base, e);
 
-	CGameParticles_Attach(&self->light, model, CGameModel_FindNodoR(model, "DF_Light"));
-	CHECK(self->light.SistPart);
+	CGameParticles_Attach(&self->light, model, CGameModel_FindRenderNode(model, "DF_Light"));
+	CHECK(self->light.ParticleSystem);
 }
 
 void __thiscall cEmbeddedFXMercenary_Init(cEmbeddedFXMercenary *self, cEntity *e) {
@@ -745,7 +745,7 @@ void __thiscall cEmbeddedFXMercenary_Init(cEmbeddedFXMercenary *self, cEntity *e
 	self->isL = crt_stricmp(CGameModel_Name(model), "MercenaryL.M3D") == 0;
 	byte isL = self->isL;
 	EFX_AttachOpt(&self->glow, &self->dummyGlow, model, "DF_Glow");
-	CHECK(self->glow.SistPart);
+	CHECK(self->glow.ParticleSystem);
 	/* two blocks of 8 glows, mirrored in y */
 	uint32_t color = isL ? 0xdccf5019 : 0xdccfaa2d;
 	int n = 0;
@@ -761,11 +761,11 @@ void __thiscall cEmbeddedFXMercenary_Init(cEmbeddedFXMercenary *self, cEntity *e
 		}
 	}
 	EFX_AttachOpt(&self->bubbles, &self->dummyBubbles, model, "DF_Burbujas");
-	CHECK(self->bubbles.SistPart);
+	CHECK(self->bubbles.ParticleSystem);
 	self->dummyPipe = -1;
 	if (self->isL) {
 		EFX_AttachOpt(&self->pipe, &self->dummyPipe, model, "DF_Burbujas_Pipa");
-		CHECK(self->pipe.SistPart);
+		CHECK(self->pipe.ParticleSystem);
 	}
 }
 
@@ -773,15 +773,15 @@ void __thiscall cEmbeddedFXMessenger_Init(cEmbeddedFXMessenger *self, cEntity *e
 	CGameModel *model = EFX_Model(&self->base, e);
 	char name[256];
 
-	self->dummyGlow = CGameModel_FindNodoR(model, "DF_GlowLighting");
+	self->dummyGlow = CGameModel_FindRenderNode(model, "DF_GlowLighting");
 	CHECK(self->dummyGlow > -1);
 	if (self->dummyGlow != -1) {
 		CGameParticles_Attach(&self->glow, model, self->dummyGlow);
 	}
-	CHECK(self->glow.SistPart);
+	CHECK(self->glow.ParticleSystem);
 	for (int i = 0; i < FXMESSENGER_RAYS; i++) {
 		Str_PrintfQuiet(name, 0xff, "DF_Rayos_%02d", i + 1);
-		self->nodeRays[i] = CGameModel_FindNodoR(model, name);
+		self->nodeRays[i] = CGameModel_FindRenderNode(model, name);
 		CHECK(self->nodeRays[i] > -1);
 	}
 	for (int i = 0; i < FXMESSENGER_RAYS; i++) {
@@ -799,11 +799,11 @@ void __thiscall cEmbeddedFXRusty_Init(cEmbeddedFXRusty *self, cEntity *e) {
 	CGameModel *model = EFX_Model(&self->base, e);
 
 	EFX_AttachOpt(&self->sparks, &self->dummySparks, model, "DR_Mecanico_ColetaChispas");
-	CHECK(self->sparks.SistPart);
+	CHECK(self->sparks.ParticleSystem);
 	EFX_AttachOpt(&self->front, &self->dummyFront, model, "DR_Mecanico_PechoGlowA");
-	CHECK(self->front.SistPart);
+	CHECK(self->front.ParticleSystem);
 	EFX_AttachOpt(&self->back, &self->dummyBack, model, "DR_Mecanico_PechoGlowB");
-	CHECK(self->back.SistPart);
+	CHECK(self->back.ParticleSystem);
 	/* the same 8 glows on the chest front and back */
 	int n = 0;
 	for (int x = -10; x < 30; x += 20) {
@@ -817,17 +817,17 @@ void __thiscall cEmbeddedFXRusty_Init(cEmbeddedFXRusty *self, cEntity *e) {
 			}
 		}
 	}
-	self->dummyGlowLighting = CGameModel_FindNodoR(model, "DF_GlowLighting");
+	self->dummyGlowLighting = CGameModel_FindRenderNode(model, "DF_GlowLighting");
 	CHECK(self->dummyGlowLighting > -1);
 	if (self->dummyGlowLighting != -1) {
 		CGameParticles_Attach(&self->glowLighting, model, self->dummyGlowLighting);
 	}
-	CHECK(self->glowLighting.SistPart);
-	self->dummyLighting[0] = CGameModel_FindNodoR(model, "DF_LightingA");
+	CHECK(self->glowLighting.ParticleSystem);
+	self->dummyLighting[0] = CGameModel_FindRenderNode(model, "DF_LightingA");
 	CHECK(self->dummyLighting[0] > -1);
-	self->dummyLighting[1] = CGameModel_FindNodoR(model, "DF_LightingC");
+	self->dummyLighting[1] = CGameModel_FindRenderNode(model, "DF_LightingC");
 	CHECK(self->dummyLighting[1] > -1);
-	self->dummyLighting[2] = CGameModel_FindNodoR(model, "DF_LightingB");
+	self->dummyLighting[2] = CGameModel_FindRenderNode(model, "DF_LightingB");
 	CHECK(self->dummyLighting[2] > -1);
 }
 
@@ -839,14 +839,14 @@ void __thiscall cEmbeddedFXSentinel_Init(cEmbeddedFXSentinel *self, cEntity *e) 
 	CGameParticles_Release(&self->laser);
 	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
 	CHECK(CGameModel_IsLoaded(model));
-	self->dummyLaser = CGameModel_FindNodoR(model, "DF_LaserScaner");
+	self->dummyLaser = CGameModel_FindRenderNode(model, "DF_LaserScaner");
 	CHECK(self->dummyLaser > -1);
 	CGameParticles_Attach(&self->laser, model, self->dummyLaser);
-	CHECK(self->laser.SistPart);
-	self->dummyStatus = CGameModel_FindNodoR(model, "DF_StatusLight");
+	CHECK(self->laser.ParticleSystem);
+	self->dummyStatus = CGameModel_FindRenderNode(model, "DF_StatusLight");
 	CHECK(self->dummyStatus > -1);
 	CGameParticles_Attach(&self->status, model, self->dummyStatus);
-	CHECK(self->status.SistPart);
+	CHECK(self->status.ParticleSystem);
 	cEmbeddedFXAlarm_Init(&self->alarm, model);
 }
 
@@ -1028,7 +1028,7 @@ void __thiscall cEmbeddedFXBankMaster_Update(cEmbeddedFXBankMaster *self, float 
 		self->on = 0;
 		CGameParticles_KillRange(p, 0, 3);
 	}
-	CGameParticles_SetAlpha(&self->baston, (float)(EFX_Rnd() * 0.1499999761581421 + 0.8500000238418579));
+	CGameParticles_SetAlpha(&self->baton, (float)(EFX_Rnd() * 0.1499999761581421 + 0.8500000238418579));
 }
 
 /* the burst of a blink: a small flash first when the rotating lights are off, then the big one */
@@ -1285,7 +1285,7 @@ void __thiscall cEmbeddedFXSentinel_Update(cEmbeddedFXSentinel *self, float dt) 
 	model = Obj_Vtbl(e)->GetModel(e);
 	CHECK(CGameModel_IsLoaded(model));
 	matrix_t mbuf;
-	const matrix_t *m = CGameModel_NodoMatrix(model, &mbuf, self->dummyLaser, 1, NULL, 0);
+	const matrix_t *m = CGameModel_NodeMatrix(model, &mbuf, self->dummyLaser, 1, NULL, 0);
 	vec3_t org = { m->m[12], m->m[13], m->m[14] };
 	vec3_t viewAng, ang;
 	Obj_Vtbl(e)->GetViewAng(e, &viewAng);
@@ -1780,7 +1780,7 @@ static void EFX_MercSmoke(cEmbeddedFXMercenary *self, CGameModel *model) {
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	}
-	cObjElementFXSistPart *el = (cObjElementFXSistPart *)d->fx;
+	cObjElementFXParticleSystem *el = (cObjElementFXParticleSystem *)d->fx;
 	if (!el) {
 		return;
 	}
@@ -1882,8 +1882,8 @@ void __thiscall cEmbeddedFXMercenary_Update(cEmbeddedFXMercenary *self, float dt
 	EFX_MercSmoke(self, model);
 }
 
-#define g_FXRustyChispasSound GAME_GLOBAL_IN(const char *, GVar_FXRustyChispasSound, 16, 0x44736c)	/* "FXRustyChispasSound" */
-#define g_FXRustyChispasSoundVol GAME_GLOBAL_IN(float, GVar_FXRustyChispasSoundVol, 16, 0x44732c)	/* "FXRustyChispasSoundVol" */
+#define g_FXRustySparksSound GAME_GLOBAL_IN(const char *, GVar_FXRustySparksSound, 16, 0x44736c)	/* "FXRustyChispasSound" */
+#define g_FXRustySparksSoundVol GAME_GLOBAL_IN(float, GVar_FXRustySparksSoundVol, 16, 0x44732c)	/* "FXRustyChispasSoundVol" */
 /* the color ramps of the sparks of the pigtail (9 colors each) */
 #define g_RampRustySparks (GAME_ARRAY(uint32_t, g_RampRustySparks, 0x4282c0))
 
@@ -1982,8 +1982,8 @@ static void EFX_RustySparks(cEmbeddedFXRusty *self) {
 	}
 	CGameParticles_SetSparksOn(p, 0);
 	cEntity *e = self->base.ent;
-	const char *name = g_FXRustyChispasSound;
-	int volume = Snd_Volume(g_FXRustyChispasSoundVol);
+	const char *name = g_FXRustySparksSound;
+	int volume = Snd_Volume(g_FXRustySparksSoundVol);
 	const vec3_t *pos = FX_Vtbl(e)->GetCenter(e, &buf);
 	g_pSound->vftable->PlayAt(g_pSound, name, pos, volume);
 }

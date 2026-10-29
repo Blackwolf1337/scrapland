@@ -4,7 +4,7 @@
  * visibility (the nodes) in a grid of cells (0x18c), which the searches walk ring by ring around the cell of a
  * position.
  * CNodesWorld adds the file names of the graph, the path and visibility queries on the points, the analysis of
- * the graph (AnalizeGraph, the "GRAFO" texts) and of the level (Analize), and the Global/DList.h instances the
+ * the graph (AnalizeGraph, the "GRAFO" texts) and of the level (Analyze), and the Global/DList.h instances the
  * generation of the graph uses.
  */
 #ifndef SCRAP_NODESWORLD_H
@@ -13,7 +13,7 @@
 #include "scrap/dlist.h"
 
 typedef struct CNodesWorld CNodesWorld;
-struct CColisTri;
+struct CCollisionTri;
 
 /* ---- Global/DList.h instances ---- */
 
@@ -56,7 +56,7 @@ typedef struct cNWPointNode {
 SD_SIZE(cNWPointNode, 0x44);
 typedef DLIST(cNWPointNode) cNWPointList;
 
-/* a triangle with an inverted normal found by Analize (0x44 bytes, 15 words of data) */
+/* a triangle with an inverted normal found by Analyze (0x44 bytes, 15 words of data) */
 typedef struct cNWTriNode {
 	struct cNWTriNode *next;	/* 0x00 */
 	struct cNWTriNode *prev;	/* 0x04 */
@@ -250,15 +250,15 @@ struct CNodesWorld {
 	byte b35c;			/* 0x35c */
 	byte pad_35d[3];
 	/* CNodesWorld */
-	byte analizing;			/* 0x360 Analize: Load analyzes the level instead of making the graph */
+	byte analyzing;			/* 0x360 Analyze: Load analyzes the level instead of making the graph */
 	byte pad_361[3];
 	void *file;			/* 0x364 AnalisisMap.txt */
 	byte open;			/* 0x368 the level is open */
 	byte pad_369[3];
-	byte firstTri[0x44];		/* 0x36c the first triangle the analysis found (a CColisTri) */
+	byte firstTri[0x44];		/* 0x36c the first triangle the analysis found (a CCollisionTri) */
 	byte b3b0;			/* 0x3b0 */
 	byte pad_3b1[3];
-	vec3_t analizeSize;		/* 0x3b4 */
+	vec3_t analyzeSize;		/* 0x3b4 */
 	vec3_t hitFrom;			/* 0x3c0 */
 	vec3_t hitTo;			/* 0x3cc */
 	cNWTriList tris;		/* 0x3d8 */
@@ -273,7 +273,7 @@ SD_OFFSET(CNodesWorld, extraPoints, 0x1f0);
 SD_OFFSET(CNodesWorld, numFiles, 0x258);
 SD_OFFSET(CNodesWorld, openPos, 0x304);
 SD_OFFSET(CNodesWorld, errCollide, 0x310);
-SD_OFFSET(CNodesWorld, analizing, 0x360);
+SD_OFFSET(CNodesWorld, analyzing, 0x360);
 SD_OFFSET(CNodesWorld, hitFrom, 0x3c0);
 SD_OFFSET(CNodesWorld, tris, 0x3d8);
 SD_SIZE(CNodesWorld, 0x3f0);
@@ -284,7 +284,7 @@ SD_SIZE(CNodesWorld, 0x3f0);
 #define g_NWDebugSegs GAME_GLOBAL_IN(int, GVar_ShowTestCanGoAI, 16, 0x444e3c)		/* the path tests keep their segments in the list they get */
 #define g_NWNodeRadius GAME_GLOBAL(float, g_NWNodeRadius, 0x444d30)	/* 751 outdoors, 131 indoors */
 #define g_NWF60 GAME_GLOBAL_IN(float, GVar_RADIUS_OBJECTIVE_IN_ROUTE, 16, 0x444d60)
-#define g_NWAnalizeOn GAME_GLOBAL_IN(int, GVar_ShowAI, 16, 0x44418c)
+#define g_NWAnalyzeOn GAME_GLOBAL_IN(int, GVar_ShowAI, 16, 0x44418c)
 #define g_NWDrawMode GAME_GLOBAL_IN(int, GVar_ShowNodesAI, 16, 0x444d48)		/* what the debug view of the graph draws */
 
 /* the base class (another source) */
@@ -347,7 +347,7 @@ byte __thiscall CNodesWorld_NextInit(CNodesWorld *self, vec3_t *out);
 byte __thiscall CNodesWorld_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 /* the triangle tri hit around p into tris and the file of the analysis (not twice, at most 1000); hit is changed
  * into meters with y and z swapped */
-void __thiscall CNodesWorld_LogTri(CNodesWorld *self, const vec3_t *p, vec3_t *hit, const struct CColisTri *tri);
+void __thiscall CNodesWorld_LogTri(CNodesWorld *self, const vec3_t *p, vec3_t *hit, const struct CCollisionTri *tri);
 /* the region of the new point of visibility (NWSup_CreateRegion): the cells nearer than f40 that a sphere reaches */
 void __thiscall CNodesWorld_CreateRegion(CNodesWorld *self, const vec3_t *start);
 /* the points of visibility between the regions (NWSup_InterRegion) */
@@ -364,7 +364,7 @@ void __thiscall CNodesWorld_DrawCell(CNodesWorld *self, const vec3_t *p);
 byte __thiscall CNodesWorld_UnreachableFree(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index);
 /* the analysis of the level into <name>/AI/AnalisisMap.txt (writes a file): the buffer from init with the triangles
  * around its cells, whether the region is open; 0 for a start in the level or outside the box */
-byte __thiscall CNodesWorld_AnalizeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
+byte __thiscall CNodesWorld_AnalyzeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 
 /* the name of the level with file after it, in a buffer of 0x100 like the original */
 void NW_LevelPath(char *path, const CNodesWorld *self, const char *file);
@@ -401,9 +401,9 @@ byte __thiscall CNodesWorld_BufferPosSeen(CNodesWorld *self, const vec3_t *from,
 /* the analysis of a segment of the level: 1 when it is free (hit = b, the hit of tri FLT_MAX; outdoors 0 straight
  * up) or it hits a solid triangle facing it (hitFrom and hitTo kept unless b3b0) */
 byte __thiscall CNodesWorld_TestSurface(CNodesWorld *self, const vec3_t *a, const vec3_t *b, vec3_t *hit,
-	struct CColisTri *tri);
+	struct CCollisionTri *tri);
 /* TestSurface from pos along the 6 axis directions as far as the largest side of the level box */
-byte __thiscall CNodesWorld_TestSurfaceAround(CNodesWorld *self, const vec3_t *pos, vec3_t *hit, struct CColisTri *tri);
+byte __thiscall CNodesWorld_TestSurfaceAround(CNodesWorld *self, const vec3_t *pos, vec3_t *hit, struct CCollisionTri *tri);
 /* the points of visibility of the cell between distMin and the visibility distance (and distMax with useMax):
  * mode 0 TestPath with radius, 1 the segment, 2 indoors on the same floor */
 void __thiscall CNodesWorld_CollectCell(CNodesWorld *self, const vec3_t *pos, cNWIntList *cell, const vec3_t **list,
@@ -437,7 +437,7 @@ void __thiscall CNodesWorld_RandomNearNode(CNodesWorld *self, int node, float ma
 void __thiscall CNodesWorld_RandomAheadNode(CNodesWorld *self, int node, const vec3_t *pos, float distMin,
 	float distMax, float maxDist, const vec3_t *dir, float maxAngle, vec3_t *out);
 /* CNodesWorld_GetRacePoint (a random point of visibility on the floor of initial between minDist and maxDist),
- * CNodesWorld_Analize (Load in the analysis mode, writes AnalisisMap.txt) and CNodesWorld_AnalizeGraph: ai.h */
+ * CNodesWorld_Analyze (Load in the analysis mode, writes AnalisisMap.txt) and CNodesWorld_AnalyzeGraph: ai.h */
 
 /* ---- AI/AStar.cpp (another source, not in C): a path over the visibility graph from from to to; startOk and
  * goalOk 0 when the end has no point of visibility ---- */

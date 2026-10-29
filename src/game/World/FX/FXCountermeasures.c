@@ -68,7 +68,7 @@ void __thiscall cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *
 	self->slot = slot;
 	self->active = 1;
 	self->fade = 0.0f;
-	const matrix_t *m = CGameModel_NodoMatrix(model, &mat, Entity_WeapNodes(self->emitter)[slot + g_LaserIDAmmo * 4],
+	const matrix_t *m = CGameModel_NodeMatrix(model, &mat, Entity_WeapNodes(self->emitter)[slot + g_LaserIDAmmo * 4],
 		0, NULL, 0);
 	off.x = 0.0f;
 	off.y = 0.0f;
@@ -104,7 +104,7 @@ void __thiscall cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *
 	}
 	CGameTrail_Clear(&self->trail[0]);
 	CGameTrail_Clear(&self->trail[1]);
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 }
 
 /* the direction from a to b, the inline normalize of the original */
@@ -135,7 +135,7 @@ static void FXHook_GlowOut(cObjElementFXHook *self, int i, const vec3_t *p, cons
 /* the sparks debris at the hook end against dir (the normal of the wall when the end is near one) */
 static void FXHook_Sparks(cObjElementFXHook *self, const vec3_t *end, vec3_t dir) {
 	vec3_t hit, n;
-	CColisTri tri;
+	CCollisionTri tri;
 
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_LaserHookSparksFile);
 	cDebris *d = cDebrisSys_GetIdle(sys);
@@ -210,7 +210,7 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 				return;
 			}
 		}
-		const matrix_t *m = CGameModel_NodoMatrix(model, &mat,
+		const matrix_t *m = CGameModel_NodeMatrix(model, &mat,
 			Entity_WeapNodes(self->emitter)[self->slot + g_LaserIDAmmo * 4], 0, NULL, 0);
 		vec3_t off = { 0.0f, 0.0f, -g_HookRange };
 		self->points[0].x = m->m[12];
@@ -235,7 +235,7 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 	if (e && e->flag_4c) {
 		model = Entity_Model(e);
 		CHECK(CGameModel_IsLoaded(model));
-		const matrix_t *m = CGameModel_NodoMatrix(model, &mat,
+		const matrix_t *m = CGameModel_NodeMatrix(model, &mat,
 			Entity_WeapNodes(self->emitter)[self->slot + g_LaserIDAmmo * 4], 0, NULL, 0);
 		vec3_t off = { 0.0f, 0.0f, -500.0f };
 		self->points[0].x = m->m[12];
@@ -309,7 +309,7 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 		CGameTrail_Add(&self->trail[0], pt, g_FXHookSize, 0x22020ff);
 		CGameTrail_Add(&self->trail[1], pt, g_FXHookSize * 3.0f, 0x404040c0);
 	}
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	CGameParticles_SetSparksOn(&self->particles, 0);
 	CGameParticles_SetColorRampOn(&self->particles, 0);
 	uint32_t a24 = (uint32_t)alpha << 24;
@@ -403,7 +403,7 @@ void __thiscall cObjElementFXHook_Start(cObjElementFXHook *self, cDebris *debris
 	/* the original keeps the debris pointer as the node when the model has none */
 	int node = (int)(intptr_t)debris;
 	if (CGameModel_IsLoaded(model)) {
-		node = CGameModel_FindNodoR(model, "Dummy01");
+		node = CGameModel_FindRenderNode(model, "Dummy01");
 	}
 	if (node != -1) {
 		CGameParticles_Attach(&self->particles, model, node);
@@ -436,12 +436,12 @@ void __thiscall cObjElementFXEMI_Start(cObjElementFXEMI *self, cDebris *debris) 
 	CGameModel *model = Debris_Model(debris);
 	self->node = -1;
 	if (CGameModel_IsLoaded(model)) {
-		self->node = CGameModel_FindNodoR(model, "Dummy01");
+		self->node = CGameModel_FindRenderNode(model, "Dummy01");
 	}
 	if (self->node != -1) {
 		CGameParticles_Attach(&self->particles, model, self->node);
 	}
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	for (int i = 0; i < FXEMI_TRAILS; i++) {
 		CGameTrail *t = &self->trails[i];
 		CGameTrail_SetMaxTrails(t, 0x10);
@@ -707,7 +707,7 @@ end:
  * hits, not a dead one); not too near the end of another bolt; a thunder at its end */
 static void EMI_NewBolt(cObjElementFXEMI *self, int i, const vec3_t *pos, float radius) {
 	vec3_t tmp, end, hit;
-	CColisTri tri;
+	CCollisionTri tri;
 	cEntity *found;
 	float factor;
 	int kind = 0;
@@ -947,10 +947,10 @@ byte __thiscall cObjElementFXSonicExplosion_IsAlive(cObjElementFXSonicExplosion 
 void __thiscall cObjElementFXSonicExplosion_Start(cObjElementFXSonicExplosion *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
-	int node = CGameModel_FindNodoR(model, "Dummy01");
+	int node = CGameModel_FindRenderNode(model, "Dummy01");
 	CHECK(node > -1);
 	CGameParticles_Attach(&self->particles, model, node);
-	node = CGameModel_FindNodoR(model, "Dummy02(+dudv_pass)");
+	node = CGameModel_FindRenderNode(model, "Dummy02(+dudv_pass)");
 	CHECK(node > -1);
 	CGameParticles_Attach(&self->rings, model, node);
 }
@@ -1119,12 +1119,12 @@ void __thiscall cObjElementFXDebrisCloud_Start(cObjElementFXDebrisCloud *self, c
 	CGameModel *model = Debris_Model(debris);
 	self->node = -1;
 	if (CGameModel_IsLoaded(model)) {
-		self->node = CGameModel_FindNodoR(model, "Dummy01");
+		self->node = CGameModel_FindRenderNode(model, "Dummy01");
 	}
 	if (self->node != -1) {
 		CGameParticles_Attach(&self->particles, model, self->node);
 	}
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	cObjElementFXDebrisCloud_Shuffle(self);
 }
 

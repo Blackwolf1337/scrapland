@@ -209,7 +209,7 @@ int Voice_GetString(int voice, char *buf, int size) {
 	*buf = '\0';
 	v = Voice_Get(voice);
 	if (v && v->stream) {
-		Cad_Copy(buf, v->text, size);
+		String_Copy(buf, v->text, size);
 		return 1;
 	}
 	return 0;
@@ -240,12 +240,12 @@ int Voice_Open(const char *name, int voice, int voiceover) {
 	if (!v) {
 		return 0;
 	}
-	Ruta_Format(path, name, "&U&D&N.ogg");
+	Path_Format(path, name, "&U&D&N.ogg");
 	Voice_Close(v);
 	/* differs from the original on purpose (no blocking waits): VOICE_MODE opens the stream here and now instead of in
 	 * the background; the scripts read the length (Voice_Remain) right after PlayVoice, the original waited there */
 	if (Pack_GetFileInfo(path, pack, &offset, &size)) {
-		Ruta_Format(path, path, "PACK:&N&E");
+		Path_Format(path, path, "PACK:&N&E");
 		v->stream = FSOUND_Stream_Open(pack, VOICE_MODE, offset, size);
 	} else {
 		v->stream = FSOUND_Stream_Open(path, VOICE_MODE, 0, 0);
@@ -336,7 +336,7 @@ int Voice_SetString(int voice, const char *text) {
 	cMusicVoice *v = Voice_Get(voice);
 
 	if (v && v->stream) {
-		Cad_Copy(v->text, text, 0x80);
+		String_Copy(v->text, text, 0x80);
 		return 1;
 	}
 	return 0;
@@ -393,38 +393,38 @@ void Voices_DrawDebug(int x, int y) {
 		return;
 	}
 	yy = (float)y;
-	CFont_PrintfColorSombra(g_FontTerminal8, (float)x, yy, 0xffff00, "Voices:");
+	CFont_PrintfColorShadow(g_FontTerminal8, (float)x, yy, 0xffff00, "Voices:");
 	for (uint32_t i = 0; i < MUSIC_MAX_VOICES; i++) {
 		cMusicVoice *v = Voice_Get(i);
 		if (!v) {
 			continue;
 		}
 		yy = yy + 10.0f;
-		CFont_PrintfColorSombra(g_FontTerminal8, (float)x, yy, 0xff00, "%2d %08xh %u", i, v->stream, v->voiceover);
+		CFont_PrintfColorShadow(g_FontTerminal8, (float)x, yy, 0xff00, "%2d %08xh %u", i, v->stream, v->voiceover);
 		color = v->stream ? 0xffff00 : 0x808000;
 		if (v->name[0]) {
-			CFont_PrintfColorSombra(g_FontTerminal8, g_FontTerminal8->x, yy, color, "  [%s]",
-				Ruta_FileName(v->name));
+			CFont_PrintfColorShadow(g_FontTerminal8, g_FontTerminal8->x, yy, color, "  [%s]",
+				Path_FileName(v->name));
 		}
 		if (v->stream && FSOUND_Stream_GetOpenState(v->stream) == FSOUND_STREAM_OPENING) {
 			v->waitTime = exe_timeGetTime();
 		}
-		CFont_PrintfColorSombra(g_FontTerminal8, g_FontTerminal8->x, yy, color, "  %d %d", v->waitTime - v->openTime,
+		CFont_PrintfColorShadow(g_FontTerminal8, g_FontTerminal8->x, yy, color, "  %d %d", v->waitTime - v->openTime,
 			v->playTime - v->openTime);
 		Music_DrawStream(g_FontTerminal8->x, yy, v->stream, v->channel, &playing);
 		if (v->text[0]) {
-			CFont_PrintfColorSombra(g_FontTerminal8, g_FontTerminal8->x, yy, color, "  [%s]", v->text);
+			CFont_PrintfColorShadow(g_FontTerminal8, g_FontTerminal8->x, yy, color, "  [%s]", v->text);
 		}
 		if (playing) {
 			playingCount++;
 		}
 	}
 	double cpu = FSOUND_GetCPUUsage();
-	CFont_PrintfColorSombra(g_FontTerminal8, (float)x, yy + 10.0f, 0xffff00, "channels: %d/%d  cpu %5.02f%%",
+	CFont_PrintfColorShadow(g_FontTerminal8, (float)x, yy + 10.0f, 0xffff00, "channels: %d/%d  cpu %5.02f%%",
 		playingCount, MUSIC_MAX_VOICES, cpu);
 	uint32_t memCur, memMax;
 	FSOUND_GetMemoryStats(&memCur, &memMax);
-	CFont_PrintfColorSombra(g_FontTerminal8, (float)x, yy + 20.0f, 0xffff00, "memory: %d %d", memCur >> 10,
+	CFont_PrintfColorShadow(g_FontTerminal8, (float)x, yy + 20.0f, 0xffff00, "memory: %d %d", memCur >> 10,
 		memMax >> 10);
 }
 
@@ -496,12 +496,12 @@ void Music_DrawDebug(int x, int y) {
 	if (g_S_Show != MUSIC_SHOW_DEBUG) {
 		return;
 	}
-	CFont_PrintfColorSombra(g_FontTerminal8, (float)x, (float)y, 0xffff00, "Music:");
+	CFont_PrintfColorShadow(g_FontTerminal8, (float)x, (float)y, 0xffff00, "Music:");
 	yy = (float)y + 10.0f;
-	CFont_PrintfColorSombra(g_FontTerminal8, (float)x, yy, 0xff00, "%2d %08xh %u", 0, g_MusicStream, 0);
+	CFont_PrintfColorShadow(g_FontTerminal8, (float)x, yy, 0xff00, "%2d %08xh %u", 0, g_MusicStream, 0);
 	color = g_MusicStream ? 0xffff00 : 0x808000;
 	if (g_MusicName[0]) {
-		CFont_PrintfColorSombra(g_FontTerminal8, g_FontTerminal8->x, yy, color, "  [%s]", g_MusicName);
+		CFont_PrintfColorShadow(g_FontTerminal8, g_FontTerminal8->x, yy, color, "  [%s]", g_MusicName);
 	}
 	if (g_MusicStream && FSOUND_Stream_GetOpenState(g_MusicStream) == FSOUND_STREAM_OPENING) {
 		t = exe_timeGetTime();
@@ -509,9 +509,9 @@ void Music_DrawDebug(int x, int y) {
 	} else {
 		t = g_MusicWaitTime;
 	}
-	CFont_PrintfColorSombra(g_FontTerminal8, g_FontTerminal8->x, yy, color, "  %d", t - g_MusicOpenTime);
+	CFont_PrintfColorShadow(g_FontTerminal8, g_FontTerminal8->x, yy, color, "  %d", t - g_MusicOpenTime);
 	Music_DrawStream(g_FontTerminal8->x, yy, g_MusicStream, g_MusicChannel, &playing);
-	CFont_PrintfColorSombra(g_FontTerminal8, (float)x, yy + 10.0f, 0xffff00, "main_vol: %.2f  vol: %.2f",
+	CFont_PrintfColorShadow(g_FontTerminal8, (float)x, yy + 10.0f, 0xffff00, "main_vol: %.2f  vol: %.2f",
 		(double)g_MusicCurMainVolume, (double)g_MusicVolume);
 }
 
@@ -621,15 +621,15 @@ void Music_DrawStream(float x, float y, void *stream, int channel, byte *playing
 
 	*playing = 0;
 	if (!stream) {
-		CFont_PrintfColorSombra(g_FontTerminal8, x, y, 0x8000, "  ---");
+		CFont_PrintfColorShadow(g_FontTerminal8, x, y, 0x8000, "  ---");
 		return;
 	}
 	if (FSOUND_Stream_GetOpenState(stream) == FSOUND_STREAM_OPENING) {
-		CFont_PrintfColorSombra(g_FontTerminal8, x, y, 0xff, "  opening...");
+		CFont_PrintfColorShadow(g_FontTerminal8, x, y, 0xff, "  opening...");
 		return;
 	}
 	if (channel < 0) {
-		CFont_PrintfColorSombra(g_FontTerminal8, x, y, 0xff, "  waiting...");
+		CFont_PrintfColorShadow(g_FontTerminal8, x, y, 0xff, "  waiting...");
 		return;
 	}
 	vol = FSOUND_GetVolume(channel);
@@ -637,10 +637,10 @@ void Music_DrawStream(float x, float y, void *stream, int channel, byte *playing
 	freq = FSOUND_GetFrequency(channel);
 	isPlaying = FSOUND_IsPlaying(channel);
 	color = isPlaying ? 0xff00 : 0x8000;
-	CFont_PrintfColorSombra(g_FontTerminal8, x, y, color, "  vpf: %6d %6d %6d", vol, pan, freq);
+	CFont_PrintfColorShadow(g_FontTerminal8, x, y, color, "  vpf: %6d %6d %6d", vol, pan, freq);
 	len = FSOUND_Stream_GetLengthMs(stream);
 	t = FSOUND_Stream_GetTime(stream);
-	CFont_PrintfColorSombra(g_FontTerminal8, g_FontTerminal8->x, y, color, "  %.1f%%",
+	CFont_PrintfColorShadow(g_FontTerminal8, g_FontTerminal8->x, y, color, "  %.1f%%",
 		(double)(((float)t * 100.0f) / (float)len));
 	*playing = isPlaying != 0;
 }

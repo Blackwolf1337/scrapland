@@ -26,7 +26,7 @@ static inline float FXW_Delta(void) {
 
 /* the node of name in the model, CHECKed */
 static int FXW_Node(CGameModel *model, const char *name) {
-	int node = CGameModel_FindNodoR(model, name);
+	int node = CGameModel_FindRenderNode(model, name);
 	CHECK(node > -1);
 	return node;
 }
@@ -369,7 +369,7 @@ void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debri
 			if (g_SceneDuDvRTarget) {
 				CGameTrail_Clear(&self->trail1e0);
 			}
-			CHECK(p->SistPart);
+			CHECK(p->ParticleSystem);
 			int np = CGameParticles_NumParticles(p);
 			CGameParticles_KillRange(p, np - 9, np - 1);
 		}
@@ -478,7 +478,7 @@ void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debri
 	float size = (self->width + self->width) * s1 * rs2 + 100.0f;
 	vec3_t n3;
 	FX_Normalize(&n3, self->to.x - self->from.x, self->to.y - self->from.y, self->to.z - self->from.z);
-	CHECK(p->SistPart);
+	CHECK(p->ParticleSystem);
 	int np = CGameParticles_NumParticles(p);
 	float sz10 = size / 10.0f;
 	uint32_t alpha = (uint32_t)a << 24;
@@ -543,7 +543,7 @@ void __thiscall cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, con
 	self->numSlots = 0;
 	for (int i = 0; i < FXATPC_SLOTS; i++) {
 		if (cTargetLock_HasSlot(Entity_TargetLock(self->shooter), g_ATPCIDWeap, i)) {
-			const matrix_t *m = CGameModel_NodoMatrix(model, &mat,
+			const matrix_t *m = CGameModel_NodeMatrix(model, &mat,
 				(uint32_t)Entity_WeapNodes(self->shooter)[i + g_ATPCIDAmmo * 4], 0, NULL, 0);
 			self->numSlots++;
 			self->slotOn[i] = 1;
@@ -553,7 +553,7 @@ void __thiscall cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, con
 		}
 	}
 	self->width = (float)self->numSlots * g_ATPCShootSize * 0.2f + g_ATPCShootSize * 0.8f;
-	CHECK(p->SistPart);
+	CHECK(p->ParticleSystem);
 
 	/* from each slot to the origin */
 	for (int i = 0; i < FXATPC_SLOTS; i++) {
@@ -1135,7 +1135,7 @@ void __thiscall cObjElementFXInfernoMissile_Start(cObjElementFXInfernoMissile *s
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
 	CGameParticles_Attach(&self->particles, model, FXW_Node(model, "Dummy01"));
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	CGameParticles_SetParticle(&self->particles, 0, 0.0f, 0.0f, 0.0f, 6000.0f, 0xc0ff2805, 6, 0.0f);
 	CGameParticles_SetParticle(&self->particles, 1, 0.0f, 0.0f, 0.0f, 2650.0f, 0x40ffbe32, 5, 0.0f);
 	CGameParticles_SetParticle(&self->particles, 2, 0.0f, 0.0f, 0.0f, 450.0f, 0x10fff050, 1, 0.0f);
@@ -1267,12 +1267,12 @@ byte __thiscall cObjElementFXLaser_IsAlive(cObjElementFXLaser *self, cDebris *de
 void __thiscall cObjElementFXLaser_Start(cObjElementFXLaser *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	if (CGameModel_IsLoaded(model)) {
-		int node = CGameModel_FindNodoR(model, "Dummy01");
+		int node = CGameModel_FindRenderNode(model, "Dummy01");
 		if (node != -1) {
 			CGameParticles_Attach(&self->particles, model, node);
 		}
 	}
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	CGameTrail_SetMaxTrails(&self->trail, 3);
 	CGameTrail_SetTexture(&self->trail, 0);
 	CGameTrail_SetType(&self->trail, 2);
@@ -1394,12 +1394,12 @@ void __thiscall cObjElementFXSwarmMissile_Start(cObjElementFXSwarmMissile *self,
 	CGameParticles *p = &self->particles;
 	self->node = -1;
 	if (CGameModel_IsLoaded(model)) {
-		self->node = CGameModel_FindNodoR(model, "DF_MissileMotor");
+		self->node = CGameModel_FindRenderNode(model, "DF_MissileMotor");
 	}
 	if (self->node != -1) {
 		CGameParticles_Attach(p, model, self->node);
 	}
-	CHECK(p->SistPart);
+	CHECK(p->ParticleSystem);
 	CGameParticles_SetParticle(p, 0, 0.0f, 25.0f, 0.0f, FXW_Rand(250.0, 725.0), 0x80ff5514, 5, 0.0f);
 	CGameParticles_SetParticle(p, 1, 0.0f, 40.0f, 0.0f, FXW_Rand(25.0, 150.0), 0x50ffc33c, 2, 0.0f);
 	CGameParticles_SetParticle(p, 2, 0.0f, 120.0f, 0.0f, FXW_Rand(25.0, 125.0), 0x6effa528, 2, 0.0f);
@@ -1557,7 +1557,7 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 		matrix_t mat;
 
 		/* the line from the weapon node of the slot to the end */
-		const matrix_t *m = CGameModel_NodoMatrix(em, &mat,
+		const matrix_t *m = CGameModel_NodeMatrix(em, &mat,
 			(uint32_t)Entity_WeapNodes(self->emitter)[i + g_TeslaIDAmmo * 4], 0, NULL, 0);
 		v.x = 0.0f;
 		v.y = 0.0f;
@@ -1822,12 +1822,12 @@ void __thiscall cObjElementFXTesla_Start(cObjElementFXTesla *self, cDebris *debr
 	/* the original keeps the debris pointer as the node when the model has none */
 	int node = (int)(intptr_t)debris;
 	if (CGameModel_IsLoaded(model)) {
-		node = CGameModel_FindNodoR(model, "Dummy01");
+		node = CGameModel_FindRenderNode(model, "Dummy01");
 	}
 	if (node != -1) {
 		CGameParticles_Attach(&self->particles, model, node);
 	}
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	for (int i = 0; i < FXTESLA_SLOTS; i++) {
 		self->stepTime[i] = 0.0f;
 		self->uvOfs[i] = 0.0f;
@@ -1892,9 +1892,9 @@ void __thiscall cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity 
 #define FXSWARM_RAMP_HIT 0x431810		/* [2] */
 #define FXSWARM_RAMP_HITSPARK 0x431858		/* [2] */
 
-/* the particles of the element (a cObjElementFXSistPart) of a debris, switched on; NULL without element */
-static CGameParticles *FXW_SistPart(cDebris *debris) {
-	cObjElementFXSistPart *el = Debris_Element(debris);
+/* the particles of the element (a cObjElementFXParticleSystem) of a debris, switched on; NULL without element */
+static CGameParticles *FXW_ParticleSystem(cDebris *debris) {
+	cObjElementFXParticleSystem *el = Debris_Element(debris);
 	if (!el) {
 		return NULL;
 	}
@@ -1931,7 +1931,7 @@ void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, f
 	if (!cDebrisSys_IsIdle(sys, debris)) {
 		cDebrisSys_Drop(sys, debris);
 	}
-	CGameParticles *p = FXW_SistPart(debris);
+	CGameParticles *p = FXW_ParticleSystem(debris);
 	if (!p) {
 		return;
 	}
@@ -2154,7 +2154,7 @@ void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float 
 	/* the explosion moves out from a wall within 500 in y, z or x */
 	vec3_t pos = { x, y, z };
 	vec3_t from, to, hit;
-	CColisTri tri;
+	CCollisionTri tri;
 	float off = size * 500.0f;
 	float offn = size * -500.0f;
 	from.x = x + 0.0f;
@@ -2206,7 +2206,7 @@ void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float 
 	CGameModel_SetSortZ(Debris_Model(deb), -0.4f, 0.0f);
 	deb->speed = time + time;
 	cDebrisSys_Drop(sys, deb);
-	CGameParticles *p = FXW_SistPart(deb);
+	CGameParticles *p = FXW_ParticleSystem(deb);
 	if (!p) {
 		return;
 	}

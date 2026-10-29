@@ -113,15 +113,15 @@ byte __fastcall cEmbeddedFXVehicle_Init(cEmbeddedFXVehicle *self) {
 	CGameModel_LoadName(&self->model, self->traffic ? g_FXTrafficEmbeddedFile : g_FXVehicleEmbeddedFile);
 	CHECK(CGameModel_IsLoaded(&self->model));
 	CGameModel_Disable(&self->model);
-	node = CGameModel_FindNodoR(&self->model, "Dummy01");
+	node = CGameModel_FindRenderNode(&self->model, "Dummy01");
 	CHECK(node > -1);
 	CGameParticles_Attach(&self->follow, &self->model, node);
-	CHECK(self->follow.SistPart);
+	CHECK(self->follow.ParticleSystem);
 	if (!self->traffic) {
-		node = CGameModel_FindNodoR(&self->model, "Dummy02");
+		node = CGameModel_FindRenderNode(&self->model, "Dummy02");
 		CHECK(node > -1);
 		CGameParticles_Attach(&self->follow2, &self->model, node);
-		CHECK(self->follow2.SistPart);
+		CHECK(self->follow2.ParticleSystem);
 	}
 	return 1;
 }
@@ -320,10 +320,10 @@ void __thiscall cEmbeddedFXVehicle_SetOwner(cEmbeddedFXVehicle *self, cEntity *o
 	model = FX_Vtbl(owner)->GetModel(owner);
 	CHECK(CGameModel_IsLoaded(model));
 	CGameModel_SetSortZ(&self->model, -FX_Vtbl(self->owner)->GetRadius(self->owner), 1.0f);
-	int root = CGameModel_FindNodoR(model, "DC_Root");
+	int root = CGameModel_FindRenderNode(model, "DC_Root");
 	CHECK(root != -1);
 	self->rootPos = (vec3_t){0.0f, 0.0f, 0.0f};
-	self->rootPos = *CGameModel_NodoPos(model, &t, root, 0);
+	self->rootPos = *CGameModel_NodePos(model, &t, root, 0);
 	if (crt_strncmp(Vehicle_TypeName(self->owner), "SPoli", 5) == 0) {
 		if (!self->sirens) {
 			cFXVehicleSirens *s = operator_new(sizeof(cFXVehicleSirens));
@@ -403,19 +403,19 @@ byte __fastcall cFXVehicleSirens_Init(cFXVehicleSirens *self) {
 		CGameModel_LoadName(g_SirenModel, g_FXVehicleEmbeddedFile);
 		CHECK(CGameModel_IsLoaded(g_SirenModel));
 		CGameModel_Disable(g_SirenModel);
-		int node = CGameModel_FindNodoR(g_SirenModel, "Dummy01");
+		int node = CGameModel_FindRenderNode(g_SirenModel, "Dummy01");
 		CHECK(node > -1);
 		CGameParticles_Attach(g_SirenParticles, g_SirenModel, node);
-		CHECK(g_SirenParticles->SistPart);
+		CHECK(g_SirenParticles->ParticleSystem);
 	}
 	CHECK(self->owner->owner);
 	CGameModel *vm = FX_Vtbl(self->owner->owner)->GetModel(self->owner->owner);
 	for (int i = 0; i < 2; i++) {
 		Str_PrintfQuiet(name, 0xff, "DF_SpeedTrail_%02d", i + 1);
-		int node = CGameModel_FindNodoR(vm, name);
+		int node = CGameModel_FindRenderNode(vm, name);
 		if (node != -1) {
 			vec3_t root = self->owner->rootPos;
-			const vec3_t *p = CGameModel_NodoPos(vm, &t, node, 0);
+			const vec3_t *p = CGameModel_NodePos(vm, &t, node, 0);
 			self->pos[i].x = p->x - root.x;
 			self->pos[i].y = p->y - root.y;
 			self->pos[i].z = p->z - root.z;
@@ -541,11 +541,11 @@ cEmbeddedFXVehicleProbe *__thiscall cEmbeddedFXVehicleProbe_Delete(cEmbeddedFXVe
 
 /* the particles of the model, CHECKed */
 static int Particles_AttachNode(CGameParticles *p, CGameModel *model, const char *name) {
-	int node = CGameModel_FindNodoR(model, name);
+	int node = CGameModel_FindRenderNode(model, name);
 
 	CHECK(node > -1);
 	CGameParticles_Attach(p, model, node);
-	CHECK(p->SistPart);
+	CHECK(p->ParticleSystem);
 	return node;
 }
 
@@ -767,14 +767,14 @@ byte __fastcall cEmbeddedFXVehicleVote_Init(cEmbeddedFXVehicleVote *self) {
 	if (!model || !CGameModel_IsLoaded(model)) {
 		CheckFailed("model && model->HasModel()", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	self->glowNode = CGameModel_FindNodoR(model, "DS_Electoral_ArzobispoGlow");
+	self->glowNode = CGameModel_FindRenderNode(model, "DS_Electoral_ArzobispoGlow");
 	CHECK(self->glowNode > -1);
 	CGameParticles_Attach(&self->glow, model, self->glowNode);
-	CHECK(self->glow.SistPart);
+	CHECK(self->glow.ParticleSystem);
 	Particles_AttachNode(&self->motor[0], model, "DF_MotorTrust_01");
 	Particles_AttachNode(&self->motor[1], model, "DF_MotorTrust_02");
 	Particles_AttachNode(&self->motor[2], model, "DF_MotorTrust_03");
-	self->rootNode = CGameModel_FindNodoR(model, "DC_Root");
+	self->rootNode = CGameModel_FindRenderNode(model, "DC_Root");
 	CHECK(self->rootNode > -1);
 	for (int i = 0; i < 2; i++) {
 		CGameTrail_SetMaxTrails(&self->trails[i], 0x1f);

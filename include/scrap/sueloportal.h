@@ -1,34 +1,34 @@
 /*
- * Engine/SueloPortal.cpp of the engine3d: the sectors (zonas) of a floor, joined by portals, and which of them are
+ * Engine/SueloPortal.cpp of the engine3d: the sectors (zones) of a floor, joined by portals, and which of them are
  * seen in a frame. A sector is the node it was made from, its portals (objects of class CLASE_OBJ3D_A7000100) and
  * the sector behind each portal: the sectors, their lookups, the cached sector of an object (SectorVis), the portal
  * culling and the viewport narrowed to a seen sector.
  */
-#ifndef SCRAP_SUELOPORTAL_H
-#define SCRAP_SUELOPORTAL_H
+#ifndef SCRAP_GROUNDPORTAL_H
+#define SCRAP_GROUNDPORTAL_H
 
 #include "scrap/nodo3d.h"
 
-#define MAX_PORTALES 32
+#define MAX_PORTALS 32
 
-typedef struct CZona {
-	int id;				/* 0x000 its index in g_Zonas */
-	int bloq;			/* 0x004 set while the culling is in it */
+typedef struct CZone {
+	int id;				/* 0x000 its index in g_Zones */
+	int locked;			/* 0x004 set while the culling is in it */
 	int Frame3D;			/* 0x008 g_FrameCount of the last frame it was seen */
 	box_t rect;			/* 0x00c the screen rectangle it is seen through */
-	CNodo3D *nodo;			/* 0x024 the node of the sector, counted */
-	CNodo3D *nodos[2];		/* 0x028 counted */
-	int numNodos;			/* 0x030 */
-	CNodo3D *portales[MAX_PORTALES];	/* 0x034 the portal nodes, counted (their object is the portal) */
-	struct CZona *zonas[MAX_PORTALES];	/* 0x0b4 the sector behind each portal */
-	int numPortales;		/* 0x134 */
+	CNode3D *node;			/* 0x024 the node of the sector, counted */
+	CNode3D *nodes[2];		/* 0x028 counted */
+	int numNodes;			/* 0x030 */
+	CNode3D *portals[MAX_PORTALS];	/* 0x034 the portal nodes, counted (their object is the portal) */
+	struct CZone *zones[MAX_PORTALS];	/* 0x0b4 the sector behind each portal */
+	int numPortals;		/* 0x134 */
 	byte exterior;			/* 0x138 */
 	byte b139;			/* 0x139 counted into the rectangle of all seen sectors */
 	byte b13a;			/* 0x13a */
 	byte pad_13b;
-} CZona;
-SD_SIZE(CZona, 0x13c);
-SD_OFFSET(CZona, numPortales, 0x134);
+} CZone;
+SD_SIZE(CZone, 0x13c);
+SD_OFFSET(CZone, numPortals, 0x134);
 
 /* the cached sector of a position (the vis member of objects that ask for their visibility) */
 typedef struct SectorVis {
@@ -39,35 +39,35 @@ typedef struct SectorVis {
 #define SECTORVIS_VALID 1
 #define SECTORVIS_CACHED 2		/* pos was the same as the last time */
 
-#define g_Zonas (GAME_ARRAY(CZona *, g_Zonas, 0x4afed8))
-#define g_NumZonas GAME_GLOBAL_IN(int, g_Zonas, 512, 0x4b00d8)
+#define g_Zones (GAME_ARRAY(CZone *, g_Zones, 0x4afed8))
+#define g_NumZones GAME_GLOBAL_IN(int, g_Zones, 512, 0x4b00d8)
 #define g_SectorCache GAME_GLOBAL_IN(int, GVar_R_PortalPos, 16, 0x4b0128)	/* the cached sector is used when the position is the same */
-#define g_PortalesOn GAME_GLOBAL_IN(int, GVar_R_UsePortals, 16, 0x4e1e00)	/* 0: everything is seen */
+#define g_PortalsOn GAME_GLOBAL_IN(int, GVar_R_UsePortals, 16, 0x4e1e00)	/* 0: everything is seen */
 #define g_PortalTest GAME_GLOBAL_IN(int, GVar_R_PortalExt, 16, 0x4b1178)	/* the screen rectangle test; 2: drawn */
 #define g_PortalFront GAME_GLOBAL_IN(int, GVar_R_PortalNorm, 16, 0x4b0110)	/* portals the camera is in front of beyond the near distance are skipped */
 #define g_PortalExterior GAME_GLOBAL_IN(int, GVar_R_PortalEnd, 16, 0x4b1190)	/* exterior sectors do not look into interior ones */
 #define g_PortalNear GAME_GLOBAL_IN(float, GVar_R_PortalDist, 16, 0x4b0140)	/* the near distance of the portals, times zNear / 256 * 128 */
-#define g_PortalUnion GAME_GLOBAL_IN(int, g_Zonas, 516, 0x4b00dc)	/* the rectangle of all seen sectors with b139 is kept */
+#define g_PortalUnion GAME_GLOBAL_IN(int, g_Zones, 516, 0x4b00dc)	/* the rectangle of all seen sectors with b139 is kept */
 
-/* the sectors seen this frame (zonas a pintar) and their screen rectangles */
-#define MAX_ZONAS_PINTAR 0x80
-typedef struct ZonaPintar {
-	int zona;			/* 0x00 */
+/* the sectors seen this frame (zones a pintar) and their screen rectangles */
+#define MAX_PAINT_ZONES 0x80
+typedef struct PaintZone {
+	int zone;			/* 0x00 */
 	box_t rect;			/* 0x04 */
-	int veces;			/* 0x1c how many portals it was seen through */
-} ZonaPintar;
-SD_SIZE(ZonaPintar, 0x20);
-#define g_ZonasPintar (GAME_ARRAY(ZonaPintar, g_ZonasPintar, 0x4b0168))
-#define g_NumZonasPintar GAME_GLOBAL(int, g_NumZonasPintar, 0x4afed0)
+	int times;			/* 0x1c how many portals it was seen through */
+} PaintZone;
+SD_SIZE(PaintZone, 0x20);
+#define g_PaintZones (GAME_ARRAY(PaintZone, g_PaintZones, 0x4b0168))
+#define g_NumPaintZones GAME_GLOBAL(int, g_NumPaintZones, 0x4afed0)
 /* the union of the rectangles of the seen sectors with b139 */
-#define g_PintarI148 GAME_GLOBAL_IN(int, g_PintarTodas, 0, 0x4b0148)
-#define g_PintarRect (GAME_GLOBAL_IN(box_t, g_PintarTodas, 4, 0x4b014c))
-#define g_PintarNum GAME_GLOBAL_IN(int, g_PintarTodas, 28, 0x4b0164)
-#define g_PintarTodas (GAME_ARRAY(ZonaPintar, g_PintarTodas, 0x4b0148))	/* the same three as one */
+#define g_PaintI148 GAME_GLOBAL_IN(int, g_PaintAll, 0, 0x4b0148)
+#define g_PaintRect (GAME_GLOBAL_IN(box_t, g_PaintAll, 4, 0x4b014c))
+#define g_PaintNum GAME_GLOBAL_IN(int, g_PaintAll, 28, 0x4b0164)
+#define g_PaintAll (GAME_ARRAY(PaintZone, g_PaintAll, 0x4b0148))	/* the same three as one */
 
 
-CZona *__fastcall CZona_ctor(CZona *self);
-void __fastcall CZona_dtor(CZona *self);
+CZone *__fastcall CZone_ctor(CZone *self);
+void __fastcall CZone_dtor(CZone *self);
 /* the sector of the cache drawn at pos for the debug output */
 void __thiscall SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible, byte cached, const char *name);
 /* whether the cached sector is seen; a new position only clears SECTORVIS_CACHED */
@@ -81,21 +81,21 @@ byte __thiscall SectorVis_Sphere(SectorVis *self, const vec3_t *pos, const vec3_
 	const char *name);
 /* the sector reached from sector by the segment from a to b through the portals; front: only through portals
  * whose front side a is not on */
-int Sector_Recorrer(int sector, const vec3_t *a, const vec3_t *b, byte front);
+int Sector_Traverse(int sector, const vec3_t *a, const vec3_t *b, byte front);
 /* sector seen through rect, and the sectors behind its portals through their part of it */
-void Zona_Pintar(uint32_t zona, const box_t *rect);
+void Zone_Paint(uint32_t zone, const box_t *rect);
 /* the sectors seen from sector (the one of the camera) this frame */
-void Portales_Cull(uint32_t sector);
-/* the elements of g_ZonasPintar: the rectangle cleared */
-ZonaPintar *__fastcall ZonaPintar_ctor(ZonaPintar *self);
-void __fastcall ZonaPintar_dtor(ZonaPintar *self);
+void Portals_Cull(uint32_t sector);
+/* the elements of g_PaintZones: the rectangle cleared */
+PaintZone *__fastcall PaintZone_ctor(PaintZone *self);
+void __fastcall PaintZone_dtor(PaintZone *self);
 /* the debug drawing of the seen sectors (gvRenderShowPortals 2, 3 also their rectangles as text) */
-void Portales_DebugDraw(void);
+void Portals_DebugDraw(void);
 /* the sectors (the nodes the portals join) and their portals from the floor scene */
-void Sectores_Crear(CEscena *esc);
+void Sectors_Create(CScene *scn);
 /* the projection narrowed to the screen rectangle of zp (NULL: back to the whole view); 0 when
  * nothing of it is seen */
-byte Portales_SetView(const ZonaPintar *zp);
+byte Portals_SetView(const PaintZone *zp);
 /* the sector under pos into *sector; whether it is seen (always without portals); name is not used */
 byte Sector_FindPos(const vec3_t *pos, int *sector, const char *name);
 const char *Sector_GetName(int sector);
@@ -104,16 +104,16 @@ byte Sector_IsExterior(int sector);
 byte Sector_IsOutside(int sector);
 byte Sector_Get139(int sector);
 byte Sector_IsVisible(int sector);
-/* the sector with nodo among its nodes (main: as its node) */
-CZona *Zona_FindNodo(CNodo3D *nodo, byte main);
-/* the sector named like nodo or one of its parents, -1 */
-int Sector_OfNode(CNodo3D *nodo);
+/* the sector with node among its nodes (main: as its node) */
+CZone *Zone_FindNode(CNode3D *node, byte main);
+/* the sector named like node or one of its parents, -1 */
+int Sector_OfNode(CNode3D *node);
 int Sector_Find(const char *name);
-CZona *Sector_Get(uint32_t sector);
+CZone *Sector_Get(uint32_t sector);
 int Sector_Num(void);
-/* the sector with nodo among its nodes, -1 */
-int Sector_OfZonaNodo(CNodo3D *nodo);
-void Sectores_Free(void);
+/* the sector with node among its nodes, -1 */
+int Sector_OfZoneNode(CNode3D *node);
+void Sectors_FreeAll(void);
 
 /* the query of Engine/gety.cpp (src/game/engine3d/Engine/Gety.c): the highest floor point below y at x, z */
 #define GETY_INFO_MINY 0x1		/* minY given, else -FLT_MAX */
@@ -122,7 +122,7 @@ void Sectores_Free(void);
 #define GETY_INFO_MAXB 0x8		/* at most maxB, else 1 */
 #define GETY_INFO_NOCOL 0x100		/* also the triangles without collisions */
 #define GETY_INFO_SECTOR 0x200		/* not the meshes added at run time */
-typedef struct SueloRayo {
+typedef struct GroundRay {
 	uint32_t flags;			/* 0x00 GETY_INFO_ */
 	float minY;			/* 0x04 */
 	float y;			/* 0x08 the height it starts at */
@@ -131,12 +131,12 @@ typedef struct SueloRayo {
 	float hitY;			/* 0x14 out */
 	struct CCollideTri *tri;	/* 0x18 out, NULL for the top of a sector */
 	int sector;			/* 0x1c out, -1 none */
-} SueloRayo;
-SD_SIZE(SueloRayo, 0x20);
-/* GETY_INFO_MAXY|GETY_INFO_SECTOR only; with g_RayoVertSectors the top of the sector the ray starts in */
-byte __thiscall CSuelo_RayoVert(void *suelo, float x, float z, SueloRayo *res);
+} GroundRay;
+SD_SIZE(GroundRay, 0x20);
+/* GETY_INFO_MAXY|GETY_INFO_SECTOR only; with g_RayVertSectors the top of the sector the ray starts in */
+byte __thiscall CGround_RayVert(void *ground, float x, float z, GroundRay *res);
 /* the highest triangle point between minY and y with the flags of info; 1 when found */
-byte __thiscall CSuelo_GetYInfo(void *suelo, float x, float z, SueloRayo *info);
-#define g_RayoVertSectors GAME_GLOBAL_IN(int, g_FastGetYSectorVar, 16, 0x4e6e10)
+byte __thiscall CGround_GetYInfo(void *ground, float x, float z, GroundRay *info);
+#define g_RayVertSectors GAME_GLOBAL_IN(int, g_FastGetYSectorVar, 16, 0x4e6e10)
 
 #endif

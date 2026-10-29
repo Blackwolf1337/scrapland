@@ -1,5 +1,5 @@
 /*
- * The height of the floor at a point, original source Engine/gety.cpp (include/scrap/suelo.h, sueloportal.h): the
+ * The height of the floor at a point, original source Engine/gety.cpp (include/scrap/ground.h, sueloportal.h): the
  * vertical ray through the collision triangles of the grid cell of x, z.
  */
 #include "scrap/scrap.h"
@@ -8,10 +8,10 @@
 
 #define GETY_FLT_MAX 3.4028234663852886e+38f
 
-static CCollideQuad *Gety_Cell(CSuelo *self, float x, float z) {
-	CAlturas *alt = &self->alturas;
+static CCollideQuad *Gety_Cell(CGround *self, float x, float z) {
+	CHeights *alt = &self->heights;
 
-	return CAlturas_GetCell(alt, (uint32_t)(int)((x - alt->ext.min.x) * alt->invX),
+	return CHeights_GetCell(alt, (uint32_t)(int)((x - alt->ext.min.x) * alt->invX),
 		(uint32_t)(int)((z - alt->ext.min.z) * alt->invZ));
 }
 
@@ -33,18 +33,18 @@ static byte Gety_InTri(const CCollideMesh *mesh, const CCollideTri *t, float x, 
 	return s2 != s0;
 }
 
-/* the y range overlap of a quad (inline of suelo.h) */
+/* the y range overlap of a quad (inline of ground.h) */
 static byte Gety_QuadInRange(const CCollideQuad *q, float minY, float maxY) {
 	CHECK(minY <= maxY);
 	return !(q->minY > maxY) && !(minY > q->maxY);
 }
 
-float __thiscall CSuelo_GetY(CSuelo *self, float x, float z, float maxY, byte all) {
+float __thiscall CGround_GetY(CGround *self, float x, float z, float maxY, byte all) {
 	float best = -GETY_FLT_MAX;
 
-	CSuelo_NewQuery(self);
+	CGround_NewQuery(self);
 	for (CCollideQuad *q = Gety_Cell(self, x, z); q; q = q->next) {
-		if (!all && (q->Mesh->flags & TRI_ALT_NO_COLISIONES)) {
+		if (!all && (q->Mesh->flags & TRI_ALT_NO_COLLISIONS)) {
 			continue;
 		}
 		if (!(maxY >= q->minY)) {
@@ -53,7 +53,7 @@ float __thiscall CSuelo_GetY(CSuelo *self, float x, float z, float maxY, byte al
 		CCollideMesh *mesh = q->Mesh;
 		for (int i = 0; i < q->nTri; i++) {
 			const CCollideTri *t = &mesh->pTri[q->pTri[i]];
-			if (!all && (t->flags & TRI_ALT_NO_COLISIONES)) {
+			if (!all && (t->flags & TRI_ALT_NO_COLLISIONS)) {
 				continue;
 			}
 			if (!(t->plane.n.y != 0.0f)) {
@@ -68,18 +68,18 @@ float __thiscall CSuelo_GetY(CSuelo *self, float x, float z, float maxY, byte al
 	return best;
 }
 
-byte __thiscall CSuelo_GetYInfo(void *suelo, float x, float z, SueloRayo *info) {
-	CSuelo *self = suelo;
+byte __thiscall CGround_GetYInfo(void *ground, float x, float z, GroundRay *info) {
+	CGround *self = ground;
 	byte hit = 0;
 
 	CHECK(info);
-	CSuelo_NewQuery(self);
+	CGround_NewQuery(self);
 	uint32_t flags = info->flags;
 	float minY = flags & GETY_INFO_MINY ? info->minY : -GETY_FLT_MAX;
 	float maxY = flags & GETY_INFO_MAXY ? info->y : GETY_FLT_MAX;
 	float minB = flags & GETY_INFO_MINB ? info->minB : -1.0f;
 	float maxB = flags & GETY_INFO_MAXB ? info->maxB : 1.0f;
-	uint32_t mask = ~(flags >> 8) & TRI_ALT_NO_COLISIONES;
+	uint32_t mask = ~(flags >> 8) & TRI_ALT_NO_COLLISIONS;
 	if (flags & GETY_INFO_SECTOR) {
 		mask |= TRI_ALT_MESH;
 	}
@@ -117,29 +117,29 @@ byte __thiscall CSuelo_GetYInfo(void *suelo, float x, float z, SueloRayo *info) 
 	return hit;
 }
 
-byte __thiscall CSuelo_RayoVert(void *suelo, float x, float z, SueloRayo *info) {
-	CSuelo *self = suelo;
+byte __thiscall CGround_RayVert(void *ground, float x, float z, GroundRay *info) {
+	CGround *self = ground;
 	byte hit = 0;
 
 	CHECK(info);
 	CHECK(info->flags == (GETY_INFO_MAXY | GETY_INFO_SECTOR));
-	CSuelo_NewQuery(self);
+	CGround_NewQuery(self);
 	float minY = info->flags & GETY_INFO_MINY ? info->minY : -GETY_FLT_MAX;
 	float maxY = info->flags & GETY_INFO_MAXY ? info->y : GETY_FLT_MAX;
 	CCollideQuad *q = Gety_Cell(self, x, z);
 	if (!q) {
-		q = self->alturas.outSector;
+		q = self->heights.outSector;
 		if (!q) {
 			return 0;
 		}
 		CHECK(!q || q->Mesh);
-	} else if (g_RayoVertSectors) {
+	} else if (g_RayVertSectors) {
 		/* the sector meshes of the cell: the one whose y range holds maxY when no other overlaps it */
 		CCollideQuad *sel = NULL, *above = NULL;
 		byte alone = 1;
 		float low = minY;
 		for (CCollideQuad *c = q; c; c = c->next) {
-			if (c->Mesh->flags & (TRI_ALT_NO_COLISIONES | TRI_ALT_MESH)) {
+			if (c->Mesh->flags & (TRI_ALT_NO_COLLISIONS | TRI_ALT_MESH)) {
 				continue;
 			}
 			CHECK(low <= maxY);
@@ -172,7 +172,7 @@ byte __thiscall CSuelo_RayoVert(void *suelo, float x, float z, SueloRayo *info) 
 		}
 	}
 	for (; q; q = q->next) {
-		if (q->Mesh->flags & (TRI_ALT_NO_COLISIONES | TRI_ALT_MESH)) {
+		if (q->Mesh->flags & (TRI_ALT_NO_COLLISIONS | TRI_ALT_MESH)) {
 			continue;
 		}
 		if (!Gety_QuadInRange(q, minY, maxY)) {
@@ -180,7 +180,7 @@ byte __thiscall CSuelo_RayoVert(void *suelo, float x, float z, SueloRayo *info) 
 		}
 		for (int i = 0; i < q->nTri; i++) {
 			CCollideTri *t = &q->Mesh->pTri[q->pTri[i]];
-			if (t->flags & (TRI_ALT_NO_COLISIONES | TRI_ALT_MESH)) {
+			if (t->flags & (TRI_ALT_NO_COLLISIONS | TRI_ALT_MESH)) {
 				continue;
 			}
 			if (t->ncomp == g_CollisionNComp) {
@@ -205,12 +205,12 @@ byte __thiscall CSuelo_RayoVert(void *suelo, float x, float z, SueloRayo *info) 
 	return hit;
 }
 
-float __thiscall CSuelo_GetYRange(CSuelo *self, float x, float z, float maxY, float minY, byte all) {
+float __thiscall CGround_GetYRange(CGround *self, float x, float z, float maxY, float minY, byte all) {
 	float best = -GETY_FLT_MAX;
 
-	CSuelo_NewQuery(self);
+	CGround_NewQuery(self);
 	for (CCollideQuad *q = Gety_Cell(self, x, z); q; q = q->next) {
-		if (!all && (q->Mesh->flags & TRI_ALT_NO_COLISIONES)) {
+		if (!all && (q->Mesh->flags & TRI_ALT_NO_COLLISIONS)) {
 			continue;
 		}
 		if (!Gety_QuadInRange(q, minY, maxY)) {
@@ -222,7 +222,7 @@ float __thiscall CSuelo_GetYRange(CSuelo *self, float x, float z, float maxY, fl
 			if (0.6f > t->plane.n.y) {
 				continue;
 			}
-			if (!all && (t->flags & TRI_ALT_NO_COLISIONES)) {
+			if (!all && (t->flags & TRI_ALT_NO_COLLISIONS)) {
 				continue;
 			}
 			if (!(t->plane.n.y != 0.0f)) {
@@ -237,13 +237,13 @@ float __thiscall CSuelo_GetYRange(CSuelo *self, float x, float z, float maxY, fl
 	return best;
 }
 
-byte __thiscall CSuelo_GetYBelow(CSuelo *self, float x, float z, float maxY, float *out) {
+byte __thiscall CGround_GetYBelow(CGround *self, float x, float z, float maxY, float *out) {
 	CCollideQuad *q = Gety_Cell(self, x, z);
 
 	if (!q) {
 		return 0;
 	}
-	CSuelo_NewQuery(self);
+	CGround_NewQuery(self);
 	float best = -GETY_FLT_MAX;
 	for (; q; q = q->next) {
 		CCollideMesh *mesh = q->Mesh;

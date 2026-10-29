@@ -356,7 +356,7 @@ static inline cEntity *Weap_SetAimMode(cAbstractFile *f, int mode) {
 
 /* the debris drop (position, angles, velocity) at a weapon node of the ship */
 static inline void Weap_DropAtNode(cEntity *v, uint32_t node, matrix_t *mtx, vec3_t *ang, vec3_t *vel) {
-	const matrix_t *mm = CGameModel_NodoMatrix(Weap_Vtbl(v)->GetModel(v), mtx, node, 0, NULL, 0);
+	const matrix_t *mm = CGameModel_NodeMatrix(Weap_Vtbl(v)->GetModel(v), mtx, node, 0, NULL, 0);
 	float x = mm->m[12];
 	float y = mm->m[13];
 	float z = mm->m[14];

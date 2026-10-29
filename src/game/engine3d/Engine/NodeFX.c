@@ -35,22 +35,22 @@ byte __fastcall INodeFX_Type(INodeFX *self) {
 
 /* ---- CNodeFX_Wheel ---- */
 
-CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNodo3D *nodo, int type) {
+CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNode3D *node, int type) {
 	static const vec3_t zero = { 0.0f, 0.0f, 0.0f }, one = { 1.0f, 1.0f, 1.0f };
 	vec3_t tmp;
 
 	self->vftable = CNODEFX_WHEEL_VFTABLE;
-	CHECK(nodo && nodo->ini);
+	CHECK(node && node->ini);
 	if (type == 0 || type == 1) {
-		CArchINI *ini = nodo->ini;
+		CIniFile *ini = node->ini;
 		/* Wheel turns by the movement, Roll by itself */
 		const vec3_t *move = type == 0 ? &one : &zero;
-		self->radius = CArchINI_GetFloat(ini, g_NodeEffectSect, "Radius", type == 0 ? 1.0f : 0.0f);
-		self->rot = *CArchINI_GetVec3(ini, &tmp, g_NodeEffectSect, "Rotation", move);
-		self->trans = *CArchINI_GetVec3(ini, &tmp, g_NodeEffectSect, "Translation", move);
-		self->roll = *CArchINI_GetVec3(ini, &tmp, g_NodeEffectSect, "Roll", type == 0 ? &zero : &one);
-		self->noiseVel = *CArchINI_GetVec3(ini, &tmp, g_NodeEffectSect, "NoiseVel", &zero);
-		self->noiseAmt = *CArchINI_GetVec3(ini, &tmp, g_NodeEffectSect, "NoiseAmt", &zero);
+		self->radius = CIniFile_GetFloat(ini, g_NodeEffectSect, "Radius", type == 0 ? 1.0f : 0.0f);
+		self->rot = *CIniFile_GetVec3(ini, &tmp, g_NodeEffectSect, "Rotation", move);
+		self->trans = *CIniFile_GetVec3(ini, &tmp, g_NodeEffectSect, "Translation", move);
+		self->roll = *CIniFile_GetVec3(ini, &tmp, g_NodeEffectSect, "Roll", type == 0 ? &zero : &one);
+		self->noiseVel = *CIniFile_GetVec3(ini, &tmp, g_NodeEffectSect, "NoiseVel", &zero);
+		self->noiseAmt = *CIniFile_GetVec3(ini, &tmp, g_NodeEffectSect, "NoiseAmt", &zero);
 	} else {
 		CHECK(0);
 	}
@@ -99,8 +99,8 @@ byte __fastcall CNodeFX_Wheel_Type(CNodeFX_Wheel *self) {
 	return NODEFX_WHEEL;
 }
 
-int __thiscall CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNodo3D *nodo, CNodoR *r) {
-	CHECK(r && nodo && nodo->padre);
+int __thiscall CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNode3D *node, CRenderNode *r) {
+	CHECK(r && node && node->parent);
 	if (r->frame == g_FrameCount) {
 		return 0;
 	}
@@ -108,7 +108,7 @@ int __thiscall CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNodo3D *no
 		self->ang = (vec3_t){ 0.0f, 0.0f, 0.0f };
 		self->noiseBase = (uint32_t)(crt_rand() % 20000) + g_TimeMs;
 	}
-	CNodoR_SetLook(r, 1);
+	CRenderNode_SetLook(r, 1);
 	float dt = g_FrameSec;
 	vec3_t cur = r->look->r1.ang;
 	vec3_t a = { cur.x + self->roll.x * dt, cur.y + self->roll.y * dt, cur.z + self->roll.z * dt };
@@ -118,7 +118,7 @@ int __thiscall CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNodo3D *no
 	if (rad != 0.0f) {
 		matrix_t tr;
 		/* the movement in the space of the parent */
-		Matrix_Transpose(&tr, &nodo->padre->m);
+		Matrix_Transpose(&tr, &node->parent->m);
 		Vec3_TransformDir0(&t, &t, &tr);
 		vec3_t s = { self->trans.x * t.x, self->trans.y * t.y, self->trans.z * t.z };
 		float slide = g_NodeFXWheelSlide;
@@ -138,7 +138,7 @@ int __thiscall CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNodo3D *no
 	self->ang.x = Ang_Wrap(a.x);
 	self->ang.y = Ang_Wrap(a.y);
 	self->ang.z = Ang_Wrap(a.z);
-	CRotacion *r1 = &r->look->r1;
+	CRotation *r1 = &r->look->r1;
 	r1->ang = self->ang;
 	r1->flags |= ROT_DIRTY;
 	if (self->ang.x == 0.0f && self->ang.y == 0.0f && self->ang.z == 0.0f) {
@@ -155,7 +155,7 @@ int __thiscall CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNodo3D *no
 		float sy = (float)Game_Sin((double)ny);
 		float sz = (float)Game_Sin((double)nz);
 		vec3_t v = { self->noiseAmt.x * sx, self->noiseAmt.y * sy, self->noiseAmt.z * sz };
-		Vec3_TransformDir0(&v, &v, &nodo->m);
+		Vec3_TransformDir0(&v, &v, &node->m);
 		Matrix_AddPos(m, &v);
 	}
 	if (g_NodeFXWheelShow) {
@@ -190,9 +190,9 @@ static void Spring_Clear(CNodeFX_Spring *self) {
 	self->nextMSec = 0;
 }
 
-CNodeFX_Spring *__thiscall CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNodo3D *nodo, int type) {
+CNodeFX_Spring *__thiscall CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNode3D *node, int type) {
 	self->vftable = CNODEFX_SPRING_VFTABLE;
-	CHECK(nodo && nodo->ini);
+	CHECK(node && node->ini);
 	self->damp2 = 1.0f;
 	switch (type) {
 	case 0:
@@ -221,10 +221,10 @@ CNodeFX_Spring *__thiscall CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNodo3D *no
 		CHECK(0);
 		break;
 	}
-	self->damping = CArchINI_GetFloat(nodo->ini, g_NodeEffectSect, "Damping", self->damping);
-	self->spring = CArchINI_GetFloat(nodo->ini, g_NodeEffectSect, "Spring", self->spring);
-	self->torsion = CArchINI_GetFloat(nodo->ini, g_NodeEffectSect, "Torsion", self->torsion);
-	self->damp2 = CArchINI_GetFloat(nodo->ini, g_NodeEffectSect, "Damp2", self->damp2);
+	self->damping = CIniFile_GetFloat(node->ini, g_NodeEffectSect, "Damping", self->damping);
+	self->spring = CIniFile_GetFloat(node->ini, g_NodeEffectSect, "Spring", self->spring);
+	self->torsion = CIniFile_GetFloat(node->ini, g_NodeEffectSect, "Torsion", self->torsion);
+	self->damp2 = CIniFile_GetFloat(node->ini, g_NodeEffectSect, "Damp2", self->damp2);
 	E3D_LogWhite(g_FileLog, "CNodeFX_Spring:  Damping: %f  Spring: %f  Torsion: %f  Damp2: %f", (double)self->damping,
 		(double)self->spring, (double)self->torsion, (double)self->damp2);
 	Spring_Clear(self);
@@ -260,8 +260,8 @@ byte __fastcall CNodeFX_Spring_Type(CNodeFX_Spring *self) {
 	return NODEFX_SPRING;
 }
 
-int __thiscall CNodeFX_Spring_Apply(CNodeFX_Spring *self, matrix_t *m, CNodo3D *nodo, CNodoR *r) {
-	CNodo3D *padre = nodo->padre;
+int __thiscall CNodeFX_Spring_Apply(CNodeFX_Spring *self, matrix_t *m, CNode3D *node, CRenderNode *r) {
+	CNode3D *parent = node->parent;
 	float damping, spring, torsion, damp2;
 	vec3_t p;
 
@@ -292,9 +292,9 @@ int __thiscall CNodeFX_Spring_Apply(CNodeFX_Spring *self, matrix_t *m, CNodo3D *
 		self->vel.x = (q.x - n.x) * spring;
 		self->vel.y = (q.y - n.y) * spring;
 		self->vel.z = (q.z - n.z) * spring;
-		if (padre) {
+		if (parent) {
 			/* kept at the distance of the node from its parent */
-			vec3_t *o = (vec3_t *)&padre->m.m[12];
+			vec3_t *o = (vec3_t *)&parent->m.m[12];
 			float d = Vec3_Dist(&mp, o);
 			vec3_t v = { q.x - o->x, q.y - o->y, q.z - o->z };
 			Vec3_Unit(&v);
@@ -316,8 +316,8 @@ int __thiscall CNodeFX_Spring_Apply(CNodeFX_Spring *self, matrix_t *m, CNodo3D *
 		p.z = self->next.z * t + self->prev.z * u;
 	}
 	vec3_t mp = { m->m[12], m->m[13], m->m[14] };
-	vec3_t o = padre ? *(vec3_t *)&padre->m.m[12] : mp;
-	if (padre) {
+	vec3_t o = parent ? *(vec3_t *)&parent->m.m[12] : mp;
+	if (parent) {
 		vec3_t a = { mp.x + (p.x - mp.x) * damp2, mp.y + (p.y - mp.y) * damp2, mp.z + (p.z - mp.z) * damp2 };
 		float d = Vec3_Dist(&mp, &o);
 		vec3_t v = { a.x - o.x, a.y - o.y, a.z - o.z };
@@ -367,39 +367,39 @@ void __fastcall CNodeFX_Spring_Reset(CNodeFX_Spring *self) {
 
 /* ---- the factory ---- */
 
-void *NodeFX_New(const char *type, CNodo3D *nodo) {
+void *NodeFX_New(const char *type, CNode3D *node) {
 	char tmp[0x20];
 	void *p;
 
 	if (!type) {
-		CHECK(CArchINI_GetText(nodo->ini, "NodeEffect", "Type", tmp, sizeof(tmp), NULL));
+		CHECK(CIniFile_GetText(node->ini, "NodeEffect", "Type", tmp, sizeof(tmp), NULL));
 		type = tmp;
 	}
-	CHECK(type && nodo);
-	E3D_LogWhite(g_FileLog, "NodeFX: [%s] in node: %s", type, nodo->name);
+	CHECK(type && node);
+	E3D_LogWhite(g_FileLog, "NodeFX: [%s] in node: %s", type, node->name);
 	if (!crt_stricmp(type, "Wheel")) {
 		p = operator_new(sizeof(CNodeFX_Wheel));
-		return p ? CNodeFX_Wheel_ctor(p, nodo, 0) : NULL;
+		return p ? CNodeFX_Wheel_ctor(p, node, 0) : NULL;
 	}
 	if (!crt_stricmp(type, "Roll")) {
 		p = operator_new(sizeof(CNodeFX_Wheel));
-		return p ? CNodeFX_Wheel_ctor(p, nodo, 1) : NULL;
+		return p ? CNodeFX_Wheel_ctor(p, node, 1) : NULL;
 	}
 	if (!crt_stricmp(type, "Spring")) {
 		p = operator_new(sizeof(CNodeFX_Spring));
-		return p ? CNodeFX_Spring_ctor(p, nodo, 0) : NULL;
+		return p ? CNodeFX_Spring_ctor(p, node, 0) : NULL;
 	}
 	if (!crt_stricmp(type, "Cloth")) {
 		p = operator_new(sizeof(CNodeFX_Spring));
-		return p ? CNodeFX_Spring_ctor(p, nodo, 1) : NULL;
+		return p ? CNodeFX_Spring_ctor(p, node, 1) : NULL;
 	}
 	if (!crt_stricmp(type, "Hair")) {
 		p = operator_new(sizeof(CNodeFX_Spring));
-		return p ? CNodeFX_Spring_ctor(p, nodo, 2) : NULL;
+		return p ? CNodeFX_Spring_ctor(p, node, 2) : NULL;
 	}
 	if (!crt_stricmp(type, "Bust")) {
 		p = operator_new(sizeof(CNodeFX_Spring));
-		return p ? CNodeFX_Spring_ctor(p, nodo, 3) : NULL;
+		return p ? CNodeFX_Spring_ctor(p, node, 3) : NULL;
 	}
 	E3D_LogBlue(g_FileLog, "Unknown Node Effect: %s", type);
 	return NULL;

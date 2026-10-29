@@ -75,7 +75,7 @@ cScorer *__fastcall cScorer_ctor(cScorer *self) {
 	self->vftable = CSCORER_VFTABLE;
 	cString_ctor(&self->hint);
 	cString_ctor(&self->specialHint);
-	cString_ctor(&self->actual);
+	cString_ctor(&self->current);
 	cString_ctor(&self->defaultItem);
 	cPy_Function_ctor(&self->onCancel);
 	cPy_Function_ctor(&self->onNext);
@@ -88,7 +88,7 @@ cScorer *__fastcall cScorer_ctor(cScorer *self) {
 	self->items = NULL;
 	cString_Set(&self->defaultItem, NULL);
 	self->cursor = NULL;
-	cString_Set(&self->actual, NULL);
+	cString_Set(&self->current, NULL);
 	self->visible = 1;
 	cString_Set(&self->hint, EXE_EMPTY);
 	cString_Set(&self->specialHint, EXE_EMPTY);
@@ -167,7 +167,7 @@ void __fastcall cScorer_dtor(cScorer *self) {
 	cPy_Function_dtor(&self->onNext);
 	cPy_Function_dtor(&self->onCancel);
 	cString_dtor(&self->defaultItem);
-	cString_dtor(&self->actual);
+	cString_dtor(&self->current);
 	cString_dtor(&self->specialHint);
 	cString_dtor(&self->hint);
 }
@@ -282,7 +282,7 @@ void __thiscall cScorer_Clear(cScorer *scorer) {
 	scorer->found = NULL;
 	cString_Set(&scorer->defaultItem, NULL);
 	scorer->cursor = NULL;
-	cString_Set(&scorer->actual, NULL);
+	cString_Set(&scorer->current, NULL);
 	scorer->visible = 1;
 	cPy_Function_SetFunc(&scorer->onCancel, NULL);
 	cPy_Function_SetFunc(&scorer->onPrev, NULL);
@@ -299,7 +299,7 @@ void __thiscall cScorer_Clear(cScorer *scorer) {
 void __fastcall cScorer_Free(cScorer *scorer) {
 	cString_Set(&scorer->defaultItem, NULL);
 	scorer->cursor = NULL;
-	cString_Set(&scorer->actual, NULL);
+	cString_Set(&scorer->current, NULL);
 	scorer->visible = 1;
 	scorer->found = NULL;
 	cPy_Function_SetFunc(&scorer->onCancel, NULL);
@@ -570,11 +570,11 @@ void __thiscall cScorer_SetCursorItem(cScorer *scorer, int player, const char *f
 
 void __thiscall cScorer_SetDefault(cScorer *scorer, const char *name) {
 	cString_Set(&scorer->defaultItem, name);
-	if (scorer->defaultItem != scorer->actual) {
-		cScorer_SetCursorItem(scorer, scorer->player, scorer->actual, scorer->defaultItem);
+	if (scorer->defaultItem != scorer->current) {
+		cScorer_SetCursorItem(scorer, scorer->player, scorer->current, scorer->defaultItem);
 		scorer->acceptTime = SCORER_NO_ACCEPT;
 	}
-	cString_Set(&scorer->actual, name);
+	cString_Set(&scorer->current, name);
 }
 
 /* ---- the scorers of the players ---- */
@@ -1024,7 +1024,7 @@ static cScorerItem *cScorer_ItemAt(cScorer *scorer, const cScorerItem *cur) {
 /* a function of the scorer with (player, actual), the accept sound after it */
 static void cScorer_Call(cScorer *scorer, cPy_Function *f, int player) {
 	cPy_Function_AddParamI(f, player);
-	cPy_Function_AddParamS(f, scorer->actual);
+	cPy_Function_AddParamS(f, scorer->current);
 	cPy_Function_Execute(f, 0);
 	Scorer_PlaySound(g_OnAcceptSound, g_OnAcceptSoundVol);
 	scorer->focusSound = 0;
@@ -1063,16 +1063,16 @@ void __thiscall cScorer_UpdateCursor(cScorer *scorer, int player) {
 		char *name = NULL;
 		it = cScorer_ItemAt(scorer, cur);
 		if (it) {
-			if (cString_Cmp(&scorer->actual, &it->name)) {
-				cScorer_SetCursorItem(scorer, player, scorer->actual, it->name);
+			if (cString_Cmp(&scorer->current, &it->name)) {
+				cScorer_SetCursorItem(scorer, player, scorer->current, it->name);
 			}
 			name = it->name;
 		}
-		if (!name && scorer->actual) {
-			cScorer_SetCursorItem(scorer, player, scorer->actual, NULL);
+		if (!name && scorer->current) {
+			cScorer_SetCursorItem(scorer, player, scorer->current, NULL);
 		}
-		if (!cString_EqStr(&scorer->actual, name)) {
-			cString_Set(&scorer->actual, name);
+		if (!cString_EqStr(&scorer->current, name)) {
+			cString_Set(&scorer->current, name);
 		}
 	}
 	up = cInputAction_Pressed(Menu_Action(MENU_UP), player);
@@ -1081,50 +1081,50 @@ void __thiscall cScorer_UpdateCursor(cScorer *scorer, int player) {
 	right = cInputAction_Pressed(Menu_Action(MENU_RIGHT), player);
 	if (up || down || left || right) {
 		scorer->cursor->visible = 0;
-		if (!scorer->actual && scorer->defaultItem) {
+		if (!scorer->current && scorer->defaultItem) {
 			cScorer_SetCursorItem(scorer, player, NULL, scorer->defaultItem);
-			cString_Assign(&scorer->actual, &scorer->defaultItem);
+			cString_Assign(&scorer->current, &scorer->defaultItem);
 		} else {
 			for (it = scorer->items; it; it = it->next) {
 				if (!it->visible || !(it->w > 0.0f) || !(it->h > 0.0f)) {
 					continue;
 				}
-				if (!scorer->actual) {
-					cString_Assign(&scorer->actual, &it->name);
+				if (!scorer->current) {
+					cString_Assign(&scorer->current, &it->name);
 					break;
 				}
-				if (!cString_Eq(&scorer->actual, &it->name)) {
+				if (!cString_Eq(&scorer->current, &it->name)) {
 					continue;
 				}
-				cString_Assign(&scorer->actual, &it->name);
+				cString_Assign(&scorer->current, &it->name);
 				if (up && cString_CmpStr(&it->up, EXE_EMPTY)) {
-					cString_Assign(&scorer->actual, &it->up);
+					cString_Assign(&scorer->current, &it->up);
 				}
 				if (down && cString_CmpStr(&it->down, EXE_EMPTY)) {
-					cString_Assign(&scorer->actual, &it->down);
+					cString_Assign(&scorer->current, &it->down);
 				}
 				if (left && cString_CmpStr(&it->left, EXE_EMPTY)) {
-					cString_Assign(&scorer->actual, &it->left);
+					cString_Assign(&scorer->current, &it->left);
 				}
 				if (right && cString_CmpStr(&it->right, EXE_EMPTY)) {
-					cString_Assign(&scorer->actual, &it->right);
+					cString_Assign(&scorer->current, &it->right);
 				}
-				if (cString_Cmp(&scorer->actual, &it->name)) {
-					cScorer_SetCursorItem(scorer, player, it->name, scorer->actual);
+				if (cString_Cmp(&scorer->current, &it->name)) {
+					cScorer_SetCursorItem(scorer, player, it->name, scorer->current);
 				}
 				break;
 			}
 		}
-		it = cScorer_FindItem(scorer, scorer->actual);
+		it = cScorer_FindItem(scorer, scorer->current);
 		if (it) {
 			scorer->cursor->x = it->w * 0.5f + it->x;
 			scorer->cursor->y = it->y + it->h * 0.5f;
 		}
 	}
-	if (!scorer->actual) {
+	if (!scorer->current) {
 		scorer->acceptTime = SCORER_NO_ACCEPT;
 	} else {
-		it = cScorer_FindItem(scorer, scorer->actual);
+		it = cScorer_FindItem(scorer, scorer->current);
 		if (cInputAction_Pressed(Menu_Action(MENU_ACCEPT), player) && cPy_Function_IsValid(&it->onAccept)) {
 			scorer->acceptTime = SCORER_ACCEPT_REPEAT;
 		}
@@ -1141,13 +1141,13 @@ void __thiscall cScorer_UpdateCursor(cScorer *scorer, int player) {
 			Scorer_PlaySound(g_OnAcceptSound, g_OnAcceptSoundVol);
 			scorer->focusSound = 0;
 			cPy_Function_AddParamI(&it->onAccept, player);
-			cPy_Function_AddParamS(&it->onAccept, scorer->actual);
+			cPy_Function_AddParamS(&it->onAccept, scorer->current);
 			cPy_Function_Execute(&it->onAccept, 0);
 		}
 		scorer->acceptTime = scorer->acceptTime - scorer->frameTime;
 		if (cInputAction_Pressed(Menu_Action(MENU_DELETE), player)) {
 			cPy_Function_AddParamI(&it->onDelete, player);
-			cPy_Function_AddParamS(&it->onDelete, scorer->actual);
+			cPy_Function_AddParamS(&it->onDelete, scorer->current);
 			cPy_Function_Execute(&it->onDelete, 0);
 		}
 	}
@@ -1204,7 +1204,7 @@ void __thiscall cScorer_Draw(cScorer *scorer, int player) {
 		}
 	}
 	if (g_ScorerMarkerOn) {
-		cScorerItem *it = cScorer_FindItem(scorer, scorer->actual);
+		cScorerItem *it = cScorer_FindItem(scorer, scorer->current);
 		if (!it || !(it->w > 0.0f) || !(it->h > 0.0f)) {
 			scorer->markerAlpha = 0.0f;
 		} else {
@@ -1370,7 +1370,7 @@ byte Scorer_Render(void) {
 	int n;
 
 	if (g_SplitScreenGame) {
-		saved = Camera_GetActual();
+		saved = Camera_GetCurrent();
 	}
 	n = 0;
 	do {
@@ -1380,7 +1380,7 @@ byte Scorer_Render(void) {
 				cEntity *e = World_FindEntity(camName);
 				if (e) {
 					CHECK(e->vftable->IsType(e, CAM_CLASSNAME));
-					Camera_SetActual(&((cCamControl *)e)->cam);
+					Camera_SetCurrent(&((cCamControl *)e)->cam);
 				}
 			}
 			Eng_SetViewRect(0.0f, n == 1 ? 240.0f : 0.0f, 640.0f, 240.0f);
@@ -1390,7 +1390,7 @@ byte Scorer_Render(void) {
 		}
 		if (!Scorer_DrawConsole()) {
 			cScorer_Draw(&g_Scorers[n], n);
-			if (g_CShow || g_NWAnalizeOn) {
+			if (g_CShow || g_NWAnalyzeOn) {
 				Scorer_DrawDebug();
 			}
 		}
@@ -1399,7 +1399,7 @@ byte Scorer_Render(void) {
 	} while (n < (g_SplitScreenGame != 0) + 1);
 	if (g_SplitScreenGame) {
 		Eng_ResetViewRect();
-		Camera_SetActual(saved);
+		Camera_SetCurrent(saved);
 	}
 	g_pSound->vftable->Update(g_pSound);
 	g_pSound->vftable->DebugDraw(g_pSound, 10, 120);
@@ -1786,7 +1786,7 @@ void Scorer_DrawDebug(void) {
 		break;
 	}
 	Dummies_Draw();
-	if (!g_NWAnalizeOn) {
+	if (!g_NWAnalyzeOn) {
 		return;
 	}
 	if (g_NodesWorld) {

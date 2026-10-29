@@ -27,7 +27,7 @@ static void Vulcan_Shells(cEntity *v) {
 		if (!cTargetLock_HasSlot(Veh_Weapons(v), g_VulcanIDWeap, i)) {
 			continue;
 		}
-		const matrix_t *m = CGameModel_NodoMatrix(Weap_Vtbl(v)->GetModel(v), &mtx,
+		const matrix_t *m = CGameModel_NodeMatrix(Weap_Vtbl(v)->GetModel(v), &mtx,
 			Veh_WeapNodes(v)[i + g_VulcanIDAmmo * 4], 0, NULL, 0);
 		float sx = m->m[12];
 		float sy = m->m[13];
@@ -271,7 +271,7 @@ static void Vul_Ricochet(const vec3_t *hit) {
 void Vulcan_CreateNative(cAbstractFile *f) {
 	char name[0x80], targetName[0x80];
 	vec3_t hit, tmp, n, ang, from, to, out, cam, off;
-	CColisTri tri;
+	CCollisionTri tri;
 	matrix_t mtx;
 
 	cAbstractFile_ReadString(f, name, 0x80);

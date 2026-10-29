@@ -42,7 +42,7 @@ static inline cEntity *FXC_Keep(cEntity *e) {
 
 /* the node of name in the model, CHECKed */
 static int FXC_Node(CGameModel *m, const char *name) {
-	int i = CGameModel_FindNodoR(m, name);
+	int i = CGameModel_FindRenderNode(m, name);
 
 	CHECK(i > -1);
 	return i;
@@ -90,7 +90,7 @@ void __thiscall FXSputnik_Start(cObjElementFXSputnik *self, cEntity *e) {
 	CGameModel_GetPos(m, &pos);
 	CGameModel_GetRot(m, &rot);
 	self->node = -1;
-	self->node = CGameModel_FindNodoR(m, "Bip Spootnick MASTER");
+	self->node = CGameModel_FindRenderNode(m, "Bip Spootnick MASTER");
 }
 
 void __thiscall cObjElementFXCharacterConversion_SetAttacked(cObjElementFXCharacterConversion *self, cEntity *e) {
@@ -134,13 +134,13 @@ void __thiscall cObjElementFXCharacterConversor_SetConversor(cObjElementFXCharac
 	CGameModel *m = FXC_Model(e);
 	for (int i = 1; i <= 3; i++) {
 		Str_PrintfQuiet(buf, 0xff, "DF_Pared_%02d", i);
-		self->nodePared[i - 1] = CGameModel_FindNodoR(m, buf);
+		self->nodeWall[i - 1] = CGameModel_FindRenderNode(m, buf);
 		Str_PrintfQuiet(buf, 0xff, "DF_Salida_%02d", i);
-		self->nodeSalida[i - 1] = CGameModel_FindNodoR(m, buf);
+		self->nodeExit[i - 1] = CGameModel_FindRenderNode(m, buf);
 	}
 	for (int i = 1; i <= 4; i++) {
 		Str_PrintfQuiet(buf, 0xff, "DF_Light_%02d", i);
-		self->nodeLight[i - 1] = CGameModel_FindNodoR(m, buf);
+		self->nodeLight[i - 1] = CGameModel_FindRenderNode(m, buf);
 	}
 }
 
@@ -151,7 +151,7 @@ void __thiscall FXChar_SetI4(void *self, int v) {
 void __thiscall cObjElementFXMaintenanceWork_SetMaintenance(cObjElementFXMaintenanceWork *self, cEntity *e) {
 	self->maintenance = e;
 	CGameModel *m = FXC_Model(e);
-	self->nodeLaser = CGameModel_FindNodoR(m, "DF_Laser");
+	self->nodeLaser = CGameModel_FindRenderNode(m, "DF_Laser");
 	CHECK(self->nodeLaser > -1);
 }
 
@@ -193,19 +193,19 @@ static void FXConversion_RandomPoints(cObjElementFXCharacterConversion *self) {
 
 void __thiscall cObjElementFXCharacterConversion_Attach(cObjElementFXCharacterConversion *self, cDebris *d) {
 	CGameModel *m = Debris_Model(d);
-	uint32_t i = CGameModel_IsLoaded(m) ? (uint32_t)CGameModel_FindNodoR(m, "Dummy01") : (uint32_t)(uintptr_t)m;
+	uint32_t i = CGameModel_IsLoaded(m) ? (uint32_t)CGameModel_FindRenderNode(m, "Dummy01") : (uint32_t)(uintptr_t)m;
 
 	if (i != 0xffffffffu) {
 		CGameParticles_Attach(&self->particles, m, i);
 	}
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	if (CGameModel_IsLoaded(m)) {
-		i = (uint32_t)CGameModel_FindNodoR(m, "Dummy02");
+		i = (uint32_t)CGameModel_FindRenderNode(m, "Dummy02");
 	}
 	if (i != 0xffffffffu) {
 		CGameParticles_Attach(&self->particles2, m, i);
 	}
-	CHECK(self->particles2.SistPart);
+	CHECK(self->particles2.ParticleSystem);
 	for (int k = 0; k < FXCONVERSION_TRAILS; k++) {
 		CGameTrail_SetMaxTrails(&self->trails[k], 15);
 		CGameTrail_SetType(&self->trails[k], 3);
@@ -250,7 +250,7 @@ void __thiscall cObjElementFXCharacterConversor_Reset(cObjElementFXCharacterConv
 	self->character = NULL;
 	self->conversor = NULL;
 	CHECK(&self->particles);
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	CGameParticles_KillAll(&self->particles);
 	for (int i = 0; i < self->numTrails; i++) {
 		CGameTrail_Clear(&self->trails[i]);
@@ -308,7 +308,7 @@ void __thiscall cObjElementFXMaintenanceWork_Attach(cObjElementFXMaintenanceWork
 
 	CHECK(CGameModel_IsLoaded(m));
 	CGameParticles_Attach(&self->particles, m, FXC_Node(m, "Dummy01"));
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	CGameTrail_SetMaxTrails(&self->trails[0], 3);
 	CGameTrail_SetTexture(&self->trails[0], 0);
 	CGameTrail_SetMaxTrails(&self->trails[1], 3);
@@ -1529,7 +1529,7 @@ static void FXConversor_Exit(CGameModel *mc, int node, const vec3_t *rot, vec3_t
 	vec3_t eu, o1;
 	const vec3_t up = { 0.0f, 1.0f, 0.0f };
 
-	CGameModel_NodoMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
+	CGameModel_NodeMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
 	p->x = mat.m[12];
 	p->y = mat.m[13];
 	p->z = mat.m[14];
@@ -1623,7 +1623,7 @@ void __thiscall cObjElementFXCharacterConversor_Update(cObjElementFXCharacterCon
 		CGameModel_ChanTime(cm, 0, &ct);
 		if ((self->phase == 1 && ct >= 1.7f) || (self->phase == 2 && ct >= 1.0f && 1.7f >= ct)) {
 			CHECK(sp);
-			CHECK(sp->SistPart);
+			CHECK(sp->ParticleSystem);
 			CGameParticles_KillAll(sp);
 			for (int i = 0; i < self->numTrails; i++) {
 				CGameTrail_Clear(&self->trails[i]);
@@ -1658,7 +1658,7 @@ void __thiscall cObjElementFXCharacterConversor_Update(cObjElementFXCharacterCon
 				continue;
 			}
 			const vec3_t v = { 0.0f, 0.0f, 4.0f };
-			CGameModel_NodoMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
+			CGameModel_NodeMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
 			float px = mat.m[12], py = mat.m[13], pz = mat.m[14];
 			Matrix_GetEuler(&mat, &eu);
 			Vec3_Rotate(&o2, Vec3_Rotate(&o1, &v, &eu), &ang);
@@ -1668,17 +1668,17 @@ void __thiscall cObjElementFXCharacterConversor_Update(cObjElementFXCharacterCon
 		}
 		/* the walls and the exits */
 		for (int j = 0, idx = 5; idx < 0xb; j++, idx += 2) {
-			int node = self->nodePared[j];
+			int node = self->nodeWall[j];
 			if (node != -1) {
 				const vec3_t v = { 0.0f, 0.0f, -8.0f };
-				CGameModel_NodoMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
+				CGameModel_NodeMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
 				float px = mat.m[12], py = mat.m[13], pz = mat.m[14];
 				Vec3_Rotate(&o2, &v, &ang);
 				float x = o2.x + px, y = o2.y + py, z = o2.z + pz;
 				CGameParticles_SetParticle(sp, idx - 1, x, y, z, 40.0f, (uint32_t)k1 << 24 | 0xc8c8ff, 2, 0.0f);
 				CGameParticles_SetParticle(sp, idx, x, y, z, 200.0f, (uint32_t)k2 << 24 | 0x32ff, 5, 0.0f);
 			}
-			node = self->nodeSalida[j];
+			node = self->nodeExit[j];
 			if (node != -1) {
 				FXConversor_Exit(mc, node, &rot, &o2, &p);
 				CGameParticles_SetParticle(sp, idx + 5, o2.x * 5.0f + p.x, o2.y * 5.0f + p.y, o2.z * 5.0f + p.z, 35.0f,
@@ -1705,10 +1705,10 @@ void __thiscall cObjElementFXCharacterConversor_Update(cObjElementFXCharacterCon
 			}
 			CGameTrail_SetTransp(tr, (byte)a);
 			if (self->trailT[j] > 0.0f) {
-				int node = self->nodePared[j];
+				int node = self->nodeWall[j];
 				if (node != -1) {
 					const vec3_t v = { 0.0f, 0.0f, -30.0f };
-					const matrix_t *mp = CGameModel_NodoMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
+					const matrix_t *mp = CGameModel_NodeMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
 					pts[0].x = mp->m[12];
 					pts[0].y = mp->m[13];
 					pts[0].z = mp->m[14];
@@ -1717,7 +1717,7 @@ void __thiscall cObjElementFXCharacterConversor_Update(cObjElementFXCharacterCon
 					pts[1].y = o->y + pts[0].y;
 					pts[1].z = o->z + pts[0].z;
 				}
-				node = self->nodeSalida[j];
+				node = self->nodeExit[j];
 				if (node != -1) {
 					FXConversor_Exit(mc, node, &rot, &o2, &p);
 					int n = self->numPoints;
@@ -1781,14 +1781,14 @@ void __thiscall cObjElementFXCharacterConversor_Update(cObjElementFXCharacterCon
 				/* a new lightning */
 				self->trailT[j] = FXC_Rand(0.11000000685453415, 0.070000000298023224);
 				self->width[j] = FXC_Rand(0.069999992847442627, 0.090000003576278687);
-				int node = self->nodePared[j];
+				int node = self->nodeWall[j];
 				if (node != -1) {
-					const matrix_t *mp = CGameModel_NodoMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
+					const matrix_t *mp = CGameModel_NodeMatrix(mc, &mat, (uint32_t)node, 1, NULL, 0);
 					pts[0].x = mp->m[12];
 					pts[0].y = mp->m[13];
 					pts[0].z = mp->m[14];
 				}
-				node = self->nodeSalida[j];
+				node = self->nodeExit[j];
 				int n = self->numPoints;
 				if (node != -1) {
 					FXConversor_Exit(mc, node, &rot, &o2, &p);
@@ -1901,7 +1901,7 @@ void __thiscall cObjElementFXSputnik_Update(cObjElementFXSputnik *self, cDebris 
 	if (!CGameModel_IsVisible(m) || self->node == -1) {
 		return;
 	}
-	const matrix_t *mp = CGameModel_NodoMatrix(m, &mat, (uint32_t)self->node, 1, NULL, 0);
+	const matrix_t *mp = CGameModel_NodeMatrix(m, &mat, (uint32_t)self->node, 1, NULL, 0);
 	float px = mp->m[12], py = mp->m[13], pz = mp->m[14];
 	if (self->minMove > 0.0f) {
 		float dx = self->last.x - px, dy = self->last.y - py, dz = self->last.z - pz;
@@ -2320,7 +2320,7 @@ void FX_CharacterBlaBliBla(cAbstractFile *params) {
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXCharacterBlaBliBlaFile);
 	vec3_t cp = FXC_CamPos();
 	cDebris *d = FXC_IdleDebris(sys, &cp, 2.0f);
-	cObjElementFXSistPart *el = Debris_Element(d);
+	cObjElementFXParticleSystem *el = Debris_Element(d);
 	if (!el) {
 		return;
 	}
@@ -2393,7 +2393,7 @@ void FX_CharacterDazed(cAbstractFile *params) {
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXCharacterDazedFile);
 	vec3_t cp = FXC_CamPos();
 	cDebris *d = FXC_IdleDebris(sys, &cp, 2.0f);
-	cObjElementFXSistPart *el = Debris_Element(d);
+	cObjElementFXParticleSystem *el = Debris_Element(d);
 	if (!el) {
 		return;
 	}

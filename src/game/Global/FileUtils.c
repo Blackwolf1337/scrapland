@@ -114,8 +114,8 @@ byte Str_MatchNoCase(const char *pattern, const char *name) {
 	char n[520];
 	char p[520];
 
-	Cad_Copy(n, name, sizeof(n));
-	Cad_Copy(p, pattern, sizeof(p));
+	String_Copy(n, name, sizeof(n));
+	String_Copy(p, pattern, sizeof(p));
 	crt_strlwr(n);
 	crt_strlwr(p);
 	return Wild_Match(p, n) != 0;

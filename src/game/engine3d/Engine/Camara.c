@@ -1,46 +1,46 @@
 /*
- * Cameras of the engine3d, original source Engine/camara.cpp (include/scrap/camara.h).
+ * Cameras of the engine3d, original source Engine/camara.cpp (include/scrap/camera.h).
  */
 #include <string.h>
 
 #include "scrap/camara.h"
 #include "scrap/scrapcamera.h"
 
-#define CCAMARA_VFTABLE GAME_VFTABLE(CCamara_vftable, 0x3e1c98)
-#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObjeto3D_vftable, 0x3d79dc)
+#define CCAMARA_VFTABLE GAME_VFTABLE(CCamera_vftable, 0x3e1c98)
+#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
 /* the limit of the projection, a float constant widened */
-#define CAMARA_EPS ((double)0.01f)
+#define CAMERA_EPS ((double)0.01f)
 
-typedef void(__thiscall *nodoDelete_t)(CNodoRef *self, int flags);
+typedef void(__thiscall *nodeDelete_t)(CNodeRef *self, int flags);
 
 /* the reference to n in *slot, the old one released */
-static void Camara_Link(CNodoRef **slot, CNodoRef *n) {
+static void Camera_Link(CNodeRef **slot, CNodeRef *n) {
 	if (n) {
 		n->Refs++;
 	}
 	CHECK(!*slot || (*slot)->Refs > 1);
 	if (*slot) {
-		CNodoRef *old = *slot;
+		CNodeRef *old = *slot;
 		old->Refs--;
 		if (!old->Refs && old) {
-			((nodoDelete_t)old->vftable[0])(old, 1);
+			((nodeDelete_t)old->vftable[0])(old, 1);
 		}
 		*slot = NULL;
 	}
 	*slot = n;
 }
 
-static void CCamara_ClearVectors(CCamara *self) {
+static void CCamera_ClearVectors(CCamera *self) {
 	memset(&self->viewPos, 0, sizeof(self->viewPos) + sizeof(self->dir) + sizeof(self->up));
 }
 
-CCamara *__fastcall CCamara_ctor(CCamara *self) {
-	CCamara_ClearVectors(self);
+CCamera *__fastcall CCamera_ctor(CCamera *self) {
+	CCamera_ClearVectors(self);
 	memset(&self->rot, 0, sizeof(self->rot) + sizeof(self->pos) + sizeof(self->target));
 	self->vftable = CCAMARA_VFTABLE;
-	self->clase = CLASE_OBJ3D_CAMARA;
-	self->nodo = NULL;
-	self->nodoObjetivo = NULL;
+	self->class = CLASS_OBJ3D_CAMERA;
+	self->node = NULL;
+	self->nodeTarget = NULL;
 	self->zNear = 1.0f;
 	self->zFar = 1000.0f;
 	self->f34 = 0.0f;
@@ -48,86 +48,86 @@ CCamara *__fastcall CCamara_ctor(CCamara *self) {
 	self->fov = 0.78539819f;
 	self->aspect = 1.3333334f;
 	self->aspectScreen = 1.3333334f;
-	self->mode = CAMARA_LOOKAT;
+	self->mode = CAMERA_LOOKAT;
 	return self;
 }
 
-CCamara *__thiscall CCamara_ctorCopy(CCamara *self, const CCamara *other) {
-	CCamara_ClearVectors(self);
+CCamera *__thiscall CCamera_ctorCopy(CCamera *self, const CCamera *other) {
+	CCamera_ClearVectors(self);
 	self->vftable = CCAMARA_VFTABLE;
-	self->clase = CLASE_OBJ3D_CAMARA;
-	self->nodo = NULL;
-	self->nodoObjetivo = NULL;
-	Camara_Link(&self->nodo, other->nodo);
-	Camara_Link(&self->nodoObjetivo, other->nodoObjetivo);
-	memcpy(&self->rot, &other->rot, offsetof(CCamara, viewPos) - offsetof(CCamara, rot));
+	self->class = CLASS_OBJ3D_CAMERA;
+	self->node = NULL;
+	self->nodeTarget = NULL;
+	Camera_Link(&self->node, other->node);
+	Camera_Link(&self->nodeTarget, other->nodeTarget);
+	memcpy(&self->rot, &other->rot, offsetof(CCamera, viewPos) - offsetof(CCamera, rot));
 	return self;
 }
 
-void __fastcall CCamara_dtor(CCamara *self) {
+void __fastcall CCamera_dtor(CCamera *self) {
 	self->vftable = CCAMARA_VFTABLE;
-	Camara_Link(&self->nodo, NULL);
-	Camara_Link(&self->nodoObjetivo, NULL);
+	Camera_Link(&self->node, NULL);
+	Camera_Link(&self->nodeTarget, NULL);
 	self->vftable = IOBJETO3D_VFTABLE;
 }
 
-CCamara *__thiscall CCamara_Delete(CCamara *self, byte flags) {
-	CCamara_dtor(self);
+CCamera *__thiscall CCamera_Delete(CCamera *self, byte flags) {
+	CCamera_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
 	return self;
 }
 
-void __fastcall CCamara_Clear(CCamara *self) {
-	CCamara_ClearVectors(self);
-	self->clase = CLASE_OBJ3D_CAMARA;
-	self->nodo = NULL;
-	self->nodoObjetivo = NULL;
+void __fastcall CCamera_Clear(CCamera *self) {
+	CCamera_ClearVectors(self);
+	self->class = CLASS_OBJ3D_CAMERA;
+	self->node = NULL;
+	self->nodeTarget = NULL;
 }
 
-void __thiscall CCamara_SetNodo(CCamara *self, CNodoRef *nodo) {
-	Camara_Link(&self->nodo, nodo);
+void __thiscall CCamera_SetNode(CCamera *self, CNodeRef *node) {
+	Camera_Link(&self->node, node);
 }
 
-void __thiscall CCamara_SetNodoObjetivo(CCamara *self, CNodoRef *nodo) {
-	Camara_Link(&self->nodoObjetivo, nodo);
+void __thiscall CCamera_SetNodeTarget(CCamera *self, CNodeRef *node) {
+	Camera_Link(&self->nodeTarget, node);
 }
 
 /* the members from rot to mode as the file has them */
 static const struct {
 	uint8_t off, size;
-} camaraFields[] = {
-	{ offsetof(CCamara, rot), 12 }, { offsetof(CCamara, pos), 12 }, { offsetof(CCamara, target), 12 },
-	{ offsetof(CCamara, zNear), 4 }, { offsetof(CCamara, zFar), 4 }, { offsetof(CCamara, f34), 4 },
-	{ offsetof(CCamara, f38), 4 }, { offsetof(CCamara, fov), 4 }, { offsetof(CCamara, aspect), 4 },
-	{ offsetof(CCamara, aspectScreen), 4 }, { offsetof(CCamara, mode), 4 },
+} cameraFields[] = {
+	{ offsetof(CCamera, rot), 12 }, { offsetof(CCamera, pos), 12 }, { offsetof(CCamera, target), 12 },
+	{ offsetof(CCamera, zNear), 4 }, { offsetof(CCamera, zFar), 4 }, { offsetof(CCamera, f34), 4 },
+	{ offsetof(CCamera, f38), 4 }, { offsetof(CCamera, fov), 4 }, { offsetof(CCamera, aspect), 4 },
+	{ offsetof(CCamera, aspectScreen), 4 }, { offsetof(CCamera, mode), 4 },
 };
 
-int __thiscall CCamara_Read(CCamara *self, CArchIO *f, void *ctx) {
-	CCamara_SetNodo(self, *(CNodoRef **)((byte *)ctx + 4));
-	CArchIO_BeginBlock(f, "CAM");
-	CHECK(CArchIO_ReadInt(f) == 1);
-	for (size_t i = 0; i < sizeof(camaraFields) / sizeof(camaraFields[0]); i++) {
-		CArchIO_Read(f, (byte *)self + camaraFields[i].off, camaraFields[i].size);
+int __thiscall CCamera_Read(CCamera *self, CFileIO *f, void *ctx) {
+	CCamera_SetNode(self, *(CNodeRef **)((byte *)ctx + 4));
+	CFileIO_BeginBlock(f, "CAM");
+	CHECK(CFileIO_ReadInt(f) == 1);
+	for (size_t i = 0; i < sizeof(cameraFields) / sizeof(cameraFields[0]); i++) {
+		CFileIO_Read(f, (byte *)self + cameraFields[i].off, cameraFields[i].size);
 	}
-	CArchIO_Error(f, "CAM");
+	CFileIO_Error(f, "CAM");
 	return 1;
 }
 
-int __thiscall CCamara_Write(CCamara *self, CArchIO *f, void *ctx) {
-	CHECK(self->nodo == *(CNodoRef **)((byte *)ctx + 4));
-	CArchIO_BeginBlockWrite(f, "CAM");
-	CArchIO_WriteInt(f, 1);
-	CHECK(!self->nodoObjetivo);
-	for (size_t i = 0; i < sizeof(camaraFields) / sizeof(camaraFields[0]); i++) {
-		CArchIO_Write(f, (byte *)self + camaraFields[i].off, camaraFields[i].size);
+int __thiscall CCamera_Write(CCamera *self, CFileIO *f, void *ctx) {
+	CHECK(self->node == *(CNodeRef **)((byte *)ctx + 4));
+	CFileIO_BeginBlockWrite(f, "CAM");
+	CFileIO_WriteInt(f, 1);
+	CHECK(!self->nodeTarget);
+	for (size_t i = 0; i < sizeof(cameraFields) / sizeof(cameraFields[0]); i++) {
+		CFileIO_Write(f, (byte *)self + cameraFields[i].off, cameraFields[i].size);
 	}
-	CArchIO_EndBlockWrite(f, "CAM");
+	CFileIO_EndBlockWrite(f, "CAM");
 	return 1;
 }
 
-void __fastcall CCamara_UpdateVectors(CCamara *self) {
+void __fastcall CCamera_UpdateVectors(CCamera *self) {
 	const vec3_t z = { 0.0f, 0.0f, 1.0f };
 	const vec3_t y = { 0.0f, 1.0f, 0.0f };
 	vec3_t t;
@@ -140,7 +140,7 @@ void __fastcall CCamara_UpdateVectors(CCamara *self) {
 }
 
 /* v / |v| (the length summed as given), unchanged for length 0 */
-static vec3_t Camara_Unit(vec3_t v, float len) {
+static vec3_t Camera_Unit(vec3_t v, float len) {
 	if ((double)len != 0.0) {
 		float k = (float)(1.0 / (double)len);
 		v.x = v.x * k;
@@ -150,12 +150,12 @@ static vec3_t Camara_Unit(vec3_t v, float len) {
 	return v;
 }
 
-void __thiscall CCamara_LookAt(CCamara *self, matrix_t *m, const vec3_t *dir, const vec3_t *up) {
+void __thiscall CCamera_LookAt(CCamera *self, matrix_t *m, const vec3_t *dir, const vec3_t *up) {
 	(void)self;
-	vec3_t n = Camara_Unit(*dir, (float)__builtin_sqrt((double)(dir->x * dir->x + dir->y * dir->y + dir->z * dir->z)));
+	vec3_t n = Camera_Unit(*dir, (float)__builtin_sqrt((double)(dir->x * dir->x + dir->y * dir->y + dir->z * dir->z)));
 	float d = n.y * up->y + n.x * up->x + n.z * up->z;
 	vec3_t u = { up->x - d * n.x, up->y - d * n.y, up->z - d * n.z };
-	u = Camara_Unit(u, (float)__builtin_sqrt((double)(u.y * u.y + u.x * u.x + u.z * u.z)));
+	u = Camera_Unit(u, (float)__builtin_sqrt((double)(u.y * u.y + u.x * u.x + u.z * u.z)));
 	float *a = m->m;
 	a[3] = 0.0f;
 	a[7] = 0.0f;
@@ -172,7 +172,7 @@ void __thiscall CCamara_LookAt(CCamara *self, matrix_t *m, const vec3_t *dir, co
 	a[10] = n.z;
 }
 
-void __fastcall CCamara_LookAtRot(CCamara *self) {
+void __fastcall CCamera_LookAtRot(CCamera *self) {
 	float dy = self->target.y - self->pos.y;
 	float dx = self->target.x - self->pos.x;
 	float dz = self->target.z - self->pos.z;
@@ -181,12 +181,12 @@ void __fastcall CCamara_LookAtRot(CCamara *self) {
 	self->rot.x = (float)Game_Atan2((double)-dy, __builtin_sqrt((double)(dz * dz + dx * dx)));
 }
 
-void __thiscall CCamara_ViewMatrix(CCamara *self, matrix_t *m) {
-	if (self->mode == CAMARA_LOOKAT) {
-		CCamara_LookAtRot(self);
+void __thiscall CCamera_ViewMatrix(CCamera *self, matrix_t *m) {
+	if (self->mode == CAMERA_LOOKAT) {
+		CCamera_LookAtRot(self);
 	}
-	CCamara_UpdateVectors(self);
-	CCamara_LookAt(self, m, &self->dir, &self->up);
+	CCamera_UpdateVectors(self);
+	CCamera_LookAt(self, m, &self->dir, &self->up);
 	const vec3_t *p = &self->viewPos;
 	float *a = m->m;
 	a[12] = -(a[4] * p->y + p->x * a[0] + a[8] * p->z);
@@ -194,21 +194,21 @@ void __thiscall CCamara_ViewMatrix(CCamara *self, matrix_t *m) {
 	a[14] = -(a[2] * p->x + a[6] * p->y + a[10] * p->z);
 }
 
-matrix_t *__thiscall CCamara_GetView(CCamara *self, matrix_t *m) {
-	CCamara_ViewMatrix(self, m);
+matrix_t *__thiscall CCamera_GetView(CCamera *self, matrix_t *m) {
+	CCamera_ViewMatrix(self, m);
 	return m;
 }
 
-byte __thiscall CCamara_ProjMatrix(CCamara *self, matrix_t *m) {
+byte __thiscall CCamera_ProjMatrix(CCamera *self, matrix_t *m) {
 	float zNear = self->zNear, zFar = self->zFar;
 	float d = zFar - zNear;
 	float s, c;
 
-	if (CAMARA_EPS > __builtin_fabs((double)d)) {
+	if (CAMERA_EPS > __builtin_fabs((double)d)) {
 		return 0;
 	}
 	X87_SinCos(self->fov * 0.5f, &s, &c);
-	if (CAMARA_EPS > __builtin_fabs((double)s)) {
+	if (CAMERA_EPS > __builtin_fabs((double)s)) {
 		return 0;
 	}
 	float cot = c / s;
@@ -223,18 +223,18 @@ byte __thiscall CCamara_ProjMatrix(CCamara *self, matrix_t *m) {
 	return 1;
 }
 
-matrix_t *__thiscall CCamara_GetProj(CCamara *self, matrix_t *m) {
-	CCamara_ProjMatrix(self, m);
+matrix_t *__thiscall CCamera_GetProj(CCamera *self, matrix_t *m) {
+	CCamera_ProjMatrix(self, m);
 	return m;
 }
 
-void __thiscall CCamara_Move(CCamara *self, float d) {
+void __thiscall CCamera_Move(CCamera *self, float d) {
 	self->pos.y = self->dir.y * d + self->pos.y;
 	self->pos.z = self->dir.z * d + self->pos.z;
 	self->pos.x = self->pos.x + self->dir.x * d;
 }
 
-void __thiscall CCamara_Strafe(CCamara *self, float side, float rise) {
+void __thiscall CCamera_Strafe(CCamera *self, float side, float rise) {
 	const vec3_t x = { 1.0f, 0.0f, 0.0f };
 	vec3_t t;
 
@@ -248,30 +248,30 @@ void __thiscall CCamara_Strafe(CCamara *self, float side, float rise) {
 }
 
 /* OBJ3D_VF_UPDATE: with CamaraNodos the fov and the position from the animated node */
-void __thiscall CCamara_Update(CCamara *self, CNodoR *r) {
+void __thiscall CCamera_Update(CCamera *self, CRenderNode *r) {
 	(void)r;
-	if (!g_CamaraNodos || !self->nodo || !CNodo3D_Track((CNodo3D *)self->nodo, 0)) {
+	if (!g_CameraNodes || !self->node || !CNode3D_Track((CNode3D *)self->node, 0)) {
 		return;
 	}
-	CNodo3D_AnimFloat((CNodo3D *)self->nodo, &self->fov);
-	const CNodo3D *n = (const CNodo3D *)self->nodo;
+	CNode3D_AnimFloat((CNode3D *)self->node, &self->fov);
+	const CNode3D *n = (const CNode3D *)self->node;
 	self->pos = (vec3_t){ n->m.m[12], n->m.m[13], n->m.m[14] };
-	CCamara_UpdateVectors(self);
+	CCamera_UpdateVectors(self);
 }
 
 /* OBJ3D_VF_RENDER, OBJ3D_VF_INITD3D and OBJ3D_VF_RELEASED3D do nothing */
-void __thiscall CCamara_Render(CCamara *self, void *arg, CNodoR *r) {
+void __thiscall CCamera_Render(CCamera *self, void *arg, CRenderNode *r) {
 	(void)self;
 	(void)arg;
 	(void)r;
 }
 
-void __thiscall CCamara_InitD3D(CCamara *self, void *dev) {
+void __thiscall CCamera_InitD3D(CCamera *self, void *dev) {
 	(void)self;
 	(void)dev;
 }
 
-void __thiscall CCamara_ReleaseD3D(CCamara *self, void *dev) {
+void __thiscall CCamera_ReleaseD3D(CCamera *self, void *dev) {
 	(void)self;
 	(void)dev;
 }

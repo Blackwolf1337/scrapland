@@ -26,7 +26,7 @@ def wmints(a, n):
 def wmpoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 def wmstr(a, s):
-	SDTest.Call('Cad_Copy', 'iisi', a, s, len(s) + 1)
+	SDTest.Call('String_Copy', 'iisi', a, s, len(s) + 1)
 # 's' cannot carry a zero byte: rewrite the int at a with its low byte replaced
 def wmsetbyte(a, v):
 	wmpoke(a, (wmi(a) & ~0xff) | v)

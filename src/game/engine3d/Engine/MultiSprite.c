@@ -17,8 +17,8 @@
 CMultiSprite *__fastcall CMultiSprite_ctor(CMultiSprite *self) {
 	self->p = NULL;
 	self->n = 0;
-	self->ancho = 0;
-	self->alto = 0;
+	self->width = 0;
+	self->height = 0;
 	return self;
 }
 
@@ -34,7 +34,7 @@ byte __thiscall CMultiSprite_Build(CMultiSprite *self, const char *name) {
 	char mst[260];
 
 	CHECK(!self->n);
-	Ruta_Format(mst, name, "&U&D&N.mst");
+	Path_Format(mst, name, "&U&D&N.mst");
 	if (File_TimeDiff(mst, name, 0) < 0) {
 		E3D_LogBlue(g_FileLog, "WARN: [%s] is older than [%s]", mst, name);
 	} else if (CMultiSprite_Load(self, mst)) {
@@ -65,33 +65,33 @@ byte __thiscall CMultiSprite_BuildTable(CMultiSprite *self, const char *name) {
 	if ((!ext || crt_stricmp(ext, ".dds")) && CBmp_Load(&bmp, name, 0)) {
 		Con_Bluef("CMultiSprite: BuildMultiSpriteTable: File not found: '%s'\n", name);
 	}
-	Ruta_Format(path, name, "&U&D&N.index.bmp");
+	Path_Format(path, name, "&U&D&N.index.bmp");
 	if (CBmp_Load(&pal, path, 0x100)) {
 		Con_Bluef("CMultiSprite: BuildMultiSpriteTable: File not found: '%s'\n", path);
 		goto done;
 	}
 	if (bmp.img) {
-		CHECK(bmp.ancho == pal.ancho);
-		CHECK(bmp.alto == pal.alto);
+		CHECK(bmp.width == pal.width);
+		CHECK(bmp.height == pal.height);
 	}
-	self->ancho = pal.ancho;
-	self->alto = pal.alto;
+	self->width = pal.width;
+	self->height = pal.height;
 	memset(info, 0, sizeof(info));
 	int maxIndex = 0;
-	for (int y = 0; y < pal.alto; y++) {
+	for (int y = 0; y < pal.height; y++) {
 		Img_Pixel(&pal, 0, (uint32_t)y, 4);
-		for (int x = 0; x < pal.ancho; x++) {
-			byte idx = ((const byte *)pal.img)[((uint32_t)y * (uint32_t)pal.ancho + (uint32_t)x) * 4 + 3];
+		for (int x = 0; x < pal.width; x++) {
+			byte idx = ((const byte *)pal.img)[((uint32_t)y * (uint32_t)pal.width + (uint32_t)x) * 4 + 3];
 			if (!idx) {
 				continue;
 			}
 			MSprite *s = &info[idx];
 			if (!s->cx && !s->cy) {
 				int x2 = x, y2 = y;
-				while (x2 < pal.ancho && Index_Alpha(&pal, (uint32_t)x2, (uint32_t)y) == idx) {
+				while (x2 < pal.width && Index_Alpha(&pal, (uint32_t)x2, (uint32_t)y) == idx) {
 					x2++;
 				}
-				while (y2 < pal.alto && Index_Alpha(&pal, (uint32_t)x, (uint32_t)y2) == idx) {
+				while (y2 < pal.height && Index_Alpha(&pal, (uint32_t)x, (uint32_t)y2) == idx) {
 					y2++;
 				}
 				s->x = (uint16_t)x;
@@ -112,7 +112,7 @@ byte __thiscall CMultiSprite_BuildTable(CMultiSprite *self, const char *name) {
 		}
 	}
 	CHECK(maxIndex);
-	Tabla_Alloc8((CTabla *)&self->n, maxIndex + 1);
+	Table_Alloc8((CTable *)&self->n, maxIndex + 1);
 	memcpy(self->p, info, (uint32_t)self->n * sizeof(MSprite));
 	ok = 1;
 done:
@@ -124,11 +124,11 @@ done:
 byte __thiscall CMultiSprite_GetSize(const CMultiSprite *self, uint32_t i, uint32_t *cx, uint32_t *cy) {
 	CHECK(cx && cy);
 	if (!i || !self->n) {
-		*cx = (uint32_t)self->ancho;
-		*cy = (uint32_t)self->alto;
+		*cx = (uint32_t)self->width;
+		*cy = (uint32_t)self->height;
 		return 0;
 	}
-	TABLA_CHECK(self->p, i, self->n);
+	TABLE_CHECK(self->p, i, self->n);
 	*cx = self->p[i].cx;
 	*cy = self->p[i].cy;
 	return 1;
@@ -145,10 +145,10 @@ byte __thiscall CMultiSprite_GetUV(const CMultiSprite *self, uint32_t i, float *
 	}
 	CHECK(i < (uint32_t)self->n);
 	const MSprite *s = &self->p[i];
-	texMin[0] = (float)s->x / (float)self->ancho;
-	texMin[1] = (float)s->y / (float)self->alto;
-	texMax[0] = (float)((uint32_t)s->cx + s->x) / (float)self->ancho;
-	texMax[1] = (float)((uint32_t)s->cy + s->y) / (float)self->alto;
+	texMin[0] = (float)s->x / (float)self->width;
+	texMin[1] = (float)s->y / (float)self->height;
+	texMax[0] = (float)((uint32_t)s->cx + s->x) / (float)self->width;
+	texMax[1] = (float)((uint32_t)s->cy + s->y) / (float)self->height;
 	return 1;
 }
 
@@ -160,9 +160,9 @@ byte __thiscall CMultiSprite_Load(CMultiSprite *self, const char *name) {
 	if (g_BuildMST && cFileBlock_Open(&f, name, 1, 0x12)) {
 		cFileBlock_OpenBlockRead(&f, "MST");
 		CHECK(cFileBlock_ReadInt(&f) == MST_VER);
-		self->ancho = cFileBlock_ReadInt(&f);
-		self->alto = cFileBlock_ReadInt(&f);
-		Tabla_Alloc8((CTabla *)&self->n, cFileBlock_ReadInt(&f));
+		self->width = cFileBlock_ReadInt(&f);
+		self->height = cFileBlock_ReadInt(&f);
+		Table_Alloc8((CTable *)&self->n, cFileBlock_ReadInt(&f));
 		cFileBlock_Read(&f, self->p, self->n * (int)sizeof(MSprite));
 		cFileBlock_CloseBlockRead(&f, "MST");
 		cFileBlock_Close(&f);
@@ -180,8 +180,8 @@ byte __thiscall CMultiSprite_Save(const CMultiSprite *self, const char *name) {
 	if (ok) {
 		cFileBlock_OpenBlockWrite(&f, "MST");
 		cFileBlock_WriteInt(&f, MST_VER);
-		cFileBlock_WriteInt(&f, self->ancho);
-		cFileBlock_WriteInt(&f, self->alto);
+		cFileBlock_WriteInt(&f, self->width);
+		cFileBlock_WriteInt(&f, self->height);
 		cFileBlock_WriteInt(&f, self->n);
 		cFileBlock_Write(&f, self->p, self->n * (int)sizeof(MSprite));
 		cFileBlock_CloseBlockWrite(&f, "MST");

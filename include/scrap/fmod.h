@@ -18,7 +18,7 @@ int __stdcall FSOUND_GetMaxChannels(void);
 byte __stdcall FSOUND_GetMemoryStats(uint32_t *current, uint32_t *max);
 void *__stdcall FSOUND_Sample_Load(int index, const void *data, uint32_t mode, int offset, int length);
 void __stdcall FSOUND_Sample_Free(void *sample);
-byte __stdcall FSOUND_Sample_GetDefaults(void *sample, int *freq, int *vol, int *pan, int *pri);
+byte __stdcall FSOUND_Sample_GetDefaults(void *sample, int *freq, int *vol, int *pan, int *first);
 uint32_t __stdcall FSOUND_Sample_GetMode(void *sample);
 int __stdcall FSOUND_PlaySoundEx(int channel, void *sample, void *dsp, byte paused);
 int __stdcall FSOUND_StopSound(int channel);

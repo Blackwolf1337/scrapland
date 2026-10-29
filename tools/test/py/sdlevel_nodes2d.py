@@ -337,11 +337,11 @@ def n2dLoaded(m, path):
 
 # AnalizeGraph of the 2D graph on a loaded graph: its three lists; the switches of the debug view restored after
 def n2dAnalize(m, path):
-	s1 = SDTest.Peek('g_NWAnalizeOn', 'i')
+	s1 = SDTest.Peek('g_NWAnalyzeOn', 'i')
 	s2 = SDTest.Peek('g_NW2DDrawMode', 'i')
-	check('n2d AnalizeGraph %s' % path, lambda m=m: (SDTest.Call('CNodesWorld2D_AnalizeGraph', 'tvi', m), SDTest.Peek('g_NWAnalizeOn', 'i'),
+	check('n2d AnalizeGraph %s' % path, lambda m=m: (SDTest.Call('CNodesWorld2D_AnalyzeGraph', 'tvi', m), SDTest.Peek('g_NWAnalyzeOn', 'i'),
 		SDTest.Peek('g_NW2DDrawMode', 'i'), n2dVecRing(m + 0x310, 30), n2dVecRing(m + 0x328, 30), n2dVecRing(m + 0x340, 30)))
-	SDTest.Poke('g_NWAnalizeOn', s1)
+	SDTest.Poke('g_NWAnalyzeOn', s1)
 	SDTest.Poke('g_NW2DDrawMode', s2)
 	for off in (0x310, 0x328, 0x340):
 		SDTest.Call('DListVec3_Clear', 'tvi', m + off)

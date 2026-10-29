@@ -2,8 +2,8 @@
  * Engine/varios.cpp of the engine3d: the logs (engine.log and the console, by level bits), the debug console and
  * file and string helpers.
  */
-#ifndef SCRAP_VARIOS_H
-#define SCRAP_VARIOS_H
+#ifndef SCRAP_MISC_H
+#define SCRAP_MISC_H
 
 #include "scrap/game.h"
 
@@ -81,12 +81,12 @@ byte File_TimeChanged(int saved, const char *name, int tol);
 int File_Backup(const char *name, byte inDir);
 /* Wild_Match on the name in lower case */
 int Wild_MatchLower(const char *pat, const char *name);
-/* a copy of the path (size -1: MAX_RUTA) */
-char *Ruta_Copy(char *dest, const char *src, int size);
-/* the path relative to the game directory without "." and "..", "\" as separator (size -1: MAX_RUTA) */
-void Ruta_Normalize(char *dest, const char *path, int size);
+/* a copy of the path (size -1: MAX_FILEPATH) */
+char *Path_Copy(char *dest, const char *src, int size);
+/* the path relative to the game directory without "." and "..", "\" as separator (size -1: MAX_FILEPATH) */
+void Path_Normalize(char *dest, const char *path, int size);
 /* what is between quotes at the start of src (after blanks), else all of src; NULL for nothing */
-char *Cad_Unquote(char *dest, const char *src);
+char *String_Unquote(char *dest, const char *src);
 /* 1 / sqrt(x) from a table: the estimate and two Newton steps */
 float RSqrt_Estimate(float x);
 float RSqrt(float x);

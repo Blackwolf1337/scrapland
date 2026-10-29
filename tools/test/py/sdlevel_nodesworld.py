@@ -218,11 +218,11 @@ def nwoBuild(w, n, nodes):
 
 # AnalizeGraph on the graph of the level: its three lists; the switches of the debug view restored after
 def nwoAnalize(w):
-	s1 = SDTest.Peek('g_NWAnalizeOn', 'i')
+	s1 = SDTest.Peek('g_NWAnalyzeOn', 'i')
 	s2 = SDTest.Peek('g_NWDrawMode', 'i')
-	check('AnalizeGraph', lambda w=w: (SDTest.Call('CNodesWorld_AnalizeGraph', 'tvi', w), SDTest.Peek('g_NWAnalizeOn', 'i'),
+	check('AnalizeGraph', lambda w=w: (SDTest.Call('CNodesWorld_AnalyzeGraph', 'tvi', w), SDTest.Peek('g_NWAnalyzeOn', 'i'),
 		SDTest.Peek('g_NWDrawMode', 'i'), nwoVecRing(w + 0x310, 30), nwoVecRing(w + 0x328, 30), nwoVecRing(w + 0x340, 30)))
-	SDTest.Poke('g_NWAnalizeOn', s1)
+	SDTest.Poke('g_NWAnalyzeOn', s1)
 	SDTest.Poke('g_NWDrawMode', s2)
 	for off in (0x310, 0x328, 0x340):
 		SDTest.Call('DListVec3_Clear', 'tvi', w + off)

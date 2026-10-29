@@ -1,5 +1,5 @@
 /*
- * The BSP tree of the shadow casting triangles of the floor (BspLuces of CBsp, the line checks of the light maps),
+ * The BSP tree of the shadow casting triangles of the floor (BspLights of CBsp, the line checks of the light maps),
  * original source Engine/bsp2.cpp (include/scrap/bsp.h).
  */
 #include <string.h>
@@ -10,7 +10,7 @@
 #include "scrap/varios.h"
 
 #define BSP2_EPS 1e-4f
-#define BSP2_COLORS (GAME_ARRAY(const uint32_t, g_BspColores, 0x432a30))	/* 16 */
+#define BSP2_COLORS (GAME_ARRAY(const uint32_t, g_BspColors, 0x432a30))	/* 16 */
 
 static uint32_t Bsp2_Bits(float f) {
 	uint32_t u;
@@ -19,8 +19,8 @@ static uint32_t Bsp2_Bits(float f) {
 	return u;
 }
 
-static Bsp2Tri *Bsp2_Tri(const Bsp2Nodo *node, uint32_t i) {
-	TABLA_CHECK(node->tris.p, i, node->tris.n);
+static Bsp2Tri *Bsp2_Tri(const Bsp2Node *node, uint32_t i) {
+	TABLE_CHECK(node->tris.p, i, node->tris.n);
 	return &((Bsp2Tri *)node->tris.p)[i];
 }
 
@@ -36,7 +36,7 @@ static int Bsp2_Side(float d) {
 	return -BSP2_EPS > d ? -1 : 0;
 }
 
-Bsp2Nodo *__fastcall Bsp2Nodo_ctor(Bsp2Nodo *self) {
+Bsp2Node *__fastcall Bsp2Node_ctor(Bsp2Node *self) {
 	self->tris.p = NULL;
 	self->tris.n = 0;
 	self->front = NULL;
@@ -44,42 +44,42 @@ Bsp2Nodo *__fastcall Bsp2Nodo_ctor(Bsp2Nodo *self) {
 	return self;
 }
 
-void __fastcall BspLuces_dtor(void *self) {
-	BspLuces *l = self;
+void __fastcall BspLights_dtor(void *self) {
+	BspLights *l = self;
 
 	if (l->root) {
-		Bsp2Nodo *root = l->root;
-		Bsp2Nodo_dtor(root);
-		operator_delete_sized(root, sizeof(Bsp2Nodo));
+		Bsp2Node *root = l->root;
+		Bsp2Node_dtor(root);
+		operator_delete_sized(root, sizeof(Bsp2Node));
 		l->root = NULL;
 	}
 }
 
-void __fastcall Bsp2Nodo_dtor(Bsp2Nodo *self) {
+void __fastcall Bsp2Node_dtor(Bsp2Node *self) {
 	if (self->front) {
-		Bsp2Nodo *n = self->front;
-		Bsp2Nodo_dtor(n);
-		operator_delete_sized(n, sizeof(Bsp2Nodo));
+		Bsp2Node *n = self->front;
+		Bsp2Node_dtor(n);
+		operator_delete_sized(n, sizeof(Bsp2Node));
 		self->front = NULL;
 	}
 	if (self->back) {
-		Bsp2Nodo *n = self->back;
-		Bsp2Nodo_dtor(n);
-		operator_delete_sized(n, sizeof(Bsp2Nodo));
+		Bsp2Node *n = self->back;
+		Bsp2Node_dtor(n);
+		operator_delete_sized(n, sizeof(Bsp2Node));
 		self->back = NULL;
 	}
-	Tabla_Free(&self->tris);
+	Table_Free(&self->tris);
 }
 
-int __thiscall BspLuces_CheckLine(BspLuces *self, const vec3_t *a, const vec3_t *b, vec3_t *out) {
+int __thiscall BspLights_CheckLine(BspLights *self, const vec3_t *a, const vec3_t *b, vec3_t *out) {
 	CHECK(++g_Bsp2NComp);
 	return Bsp2_CheckLine(a, b, out, self->root) == 1;
 }
 
-int Bsp2_CheckLine(const vec3_t *a, const vec3_t *b, vec3_t *out, Bsp2Nodo *node) {
+int Bsp2_CheckLine(const vec3_t *a, const vec3_t *b, vec3_t *out, Bsp2Node *node) {
 	if (node->front && node->back) {
-		float da = Bsp2_Dist(&node->plano, a);
-		float db = Bsp2_Dist(&node->plano, b);
+		float da = Bsp2_Dist(&node->plane, a);
+		float db = Bsp2_Dist(&node->plane, b);
 		if ((int32_t)(Bsp2_Bits(db) ^ Bsp2_Bits(da)) >= 0) {
 			return Bsp2_CheckLine(a, b, out, 0.0f > da ? node->back : node->front);
 		}
@@ -111,16 +111,16 @@ int Bsp2_CheckLine(const vec3_t *a, const vec3_t *b, vec3_t *out, Bsp2Nodo *node
 	for (int i = 0; i < n; i++) {
 		const Bsp2Tri *t = Bsp2_Tri(node, i);
 		const CMaterial *mat = t->Mat;
-		if (!(mat->params.atrib & MAT_SOMBRA) && (mat->params.transp || (mat->mapa[1] && !mat->params.b3b))) {
+		if (!(mat->params.attrib & MAT_SHADOW) && (mat->params.transp || (mat->map[1] && !mat->params.b3b))) {
 			continue;
 		}
 		g_Bsp2NTriCmp++;
-		float da = Bsp2_Dist(&t->plano, a);
-		float db = Bsp2_Dist(&t->plano, b);
+		float da = Bsp2_Dist(&t->plane, a);
+		float db = Bsp2_Dist(&t->plane, b);
 		if ((int32_t)(Bsp2_Bits(db) ^ Bsp2_Bits(da)) < 0) {
 			float k = da / (da - db);
 			vec3_t p = { (b->x - a->x) * k + a->x, (b->y - a->y) * k + a->y, (b->z - a->z) * k + a->z };
-			if (Suelo_PointInTri(&p, &t->v[0], &t->v[1], &t->v[2])) {
+			if (Ground_PointInTri(&p, &t->v[0], &t->v[1], &t->v[2])) {
 				if (!out) {
 					return 1;
 				}
@@ -139,8 +139,8 @@ int Bsp2_CheckLine(const vec3_t *a, const vec3_t *b, vec3_t *out, Bsp2Nodo *node
 	return -1;
 }
 
-void __fastcall BspLuces_Render(void *self) {
-	BspLuces *l = self;
+void __fastcall BspLights_Render(void *self) {
+	BspLights *l = self;
 
 	const vec3_t *eye = Render_GetEyePos();
 	g_Bsp2Color = 15;
@@ -148,11 +148,11 @@ void __fastcall BspLuces_Render(void *self) {
 	Bsp2_Render(l->root);
 }
 
-void Bsp2_AddTri(byte countOnly, Bsp2Nodo *node, uint32_t *nFront, uint32_t *nBack, int lado, const Bsp2Tri *src,
+void Bsp2_AddTri(byte countOnly, Bsp2Node *node, uint32_t *nFront, uint32_t *nBack, int side, const Bsp2Tri *src,
 	const vec3_t *v0, const vec3_t *v1, const vec3_t *v2) {
-	CHECK(lado == 1 || lado == -1);
+	CHECK(side == 1 || side == -1);
 	if (countOnly) {
-		if (lado > 0) {
+		if (side > 0) {
 			(*nFront)++;
 		} else {
 			(*nBack)++;
@@ -161,11 +161,11 @@ void Bsp2_AddTri(byte countOnly, Bsp2Nodo *node, uint32_t *nFront, uint32_t *nBa
 	}
 	Bsp2Tri t;
 	t.Mat = src->Mat;
-	t.plano = src->plano;
+	t.plane = src->plane;
 	t.v[0] = *v0;
 	t.v[1] = *v1;
 	t.v[2] = *v2;
-	if (lado > 0) {
+	if (side > 0) {
 		*Bsp2_Tri(node->front, *nFront) = t;
 		(*nFront)++;
 	} else {
@@ -182,7 +182,7 @@ void Bsp2_Stats(int print) {
 	}
 }
 
-byte __thiscall Bsp2_ChoosePlane(BspLuces *self, Bsp2Nodo *node, plane_t *dest) {
+byte __thiscall Bsp2_ChoosePlane(BspLights *self, Bsp2Node *node, plane_t *dest) {
 	(void)self;
 	CHECK(node);
 	CHECK(dest);
@@ -231,16 +231,16 @@ byte __thiscall Bsp2_ChoosePlane(BspLuces *self, Bsp2Nodo *node, plane_t *dest) 
 	return 0;
 }
 
-Bsp2Nodo *__thiscall BspLuces_FindLeaf(BspLuces *self, const vec3_t *p) {
-	Bsp2Nodo *root = self->root;
-	Bsp2Nodo *n = 0.0f > Bsp2_Dist(&root->plano, p) ? root->back : root->front;
+Bsp2Node *__thiscall BspLights_FindLeaf(BspLights *self, const vec3_t *p) {
+	Bsp2Node *root = self->root;
+	Bsp2Node *n = 0.0f > Bsp2_Dist(&root->plane, p) ? root->back : root->front;
 
 	return n ? Bsp2_FindLeaf(p, n) : root;
 }
 
-Bsp2Nodo *Bsp2_FindLeaf(const vec3_t *p, Bsp2Nodo *node) {
+Bsp2Node *Bsp2_FindLeaf(const vec3_t *p, Bsp2Node *node) {
 	for (;;) {
-		Bsp2Nodo *n = 0.0f > Bsp2_Dist(&node->plano, p) ? node->back : node->front;
+		Bsp2Node *n = 0.0f > Bsp2_Dist(&node->plane, p) ? node->back : node->front;
 		if (!n) {
 			return node;
 		}
@@ -248,7 +248,7 @@ Bsp2Nodo *Bsp2_FindLeaf(const vec3_t *p, Bsp2Nodo *node) {
 	}
 }
 
-int Bsp2_Count(const Bsp2Nodo *node) {
+int Bsp2_Count(const Bsp2Node *node) {
 	if (!node) {
 		return 0;
 	}
@@ -267,7 +267,7 @@ Bsp2Tri *Bsp2Tri_Copy(Bsp2Tri *dest, const Bsp2Tri *src) {
 	return dest;
 }
 
-void __thiscall Bsp2_Build(BspLuces *self, Bsp2Nodo *node, int depth) {
+void __thiscall Bsp2_Build(BspLights *self, Bsp2Node *node, int depth) {
 	plane_t pl;
 
 	for (;;) {
@@ -282,17 +282,17 @@ void __thiscall Bsp2_Build(BspLuces *self, Bsp2Nodo *node, int depth) {
 	}
 }
 
-void Bsp2_Split(byte countOnly, Bsp2Nodo *node, const plane_t *pl, int *outFront, int *outBack) {
+void Bsp2_Split(byte countOnly, Bsp2Node *node, const plane_t *pl, int *outFront, int *outBack) {
 	int n = node->tris.n;
 
 	if (!countOnly) {
-		node->plano = *pl;
-		Bsp2Nodo *f = operator_new(sizeof(Bsp2Nodo));
-		node->front = f ? Bsp2Nodo_ctor(f) : NULL;
-		Bsp2Nodo *b = operator_new(sizeof(Bsp2Nodo));
-		node->back = b ? Bsp2Nodo_ctor(b) : NULL;
-		Tabla_Alloc38(&node->front->tris, n * 2);
-		Tabla_Alloc38(&node->back->tris, n * 2);
+		node->plane = *pl;
+		Bsp2Node *f = operator_new(sizeof(Bsp2Node));
+		node->front = f ? Bsp2Node_ctor(f) : NULL;
+		Bsp2Node *b = operator_new(sizeof(Bsp2Node));
+		node->back = b ? Bsp2Node_ctor(b) : NULL;
+		Table_Alloc38(&node->front->tris, n * 2);
+		Table_Alloc38(&node->back->tris, n * 2);
 	}
 	uint32_t nf = 0, nb = 0;
 	for (int i = 0; i < n; i++) {
@@ -303,7 +303,7 @@ void Bsp2_Split(byte countOnly, Bsp2Nodo *node, const plane_t *pl, int *outFront
 		byte front, back;
 		if (!s0 && !s1 && !s2) {
 			/* in the plane: on the side its normal faces */
-			if (t->plano.n.x * pl->n.x + t->plano.n.y * pl->n.y + t->plano.n.z * pl->n.z > 0.0f) {
+			if (t->plane.n.x * pl->n.x + t->plane.n.y * pl->n.y + t->plane.n.z * pl->n.z > 0.0f) {
 				Bsp2_AddTri(countOnly, node, &nf, &nb, 1, t, &t->v[0], &t->v[1], &t->v[2]);
 				continue;
 			}
@@ -331,9 +331,9 @@ void Bsp2_Split(byte countOnly, Bsp2Nodo *node, const plane_t *pl, int *outFront
 		}
 	}
 	if (!countOnly) {
-		Tabla_Free(&node->tris);
-		Tabla_Resize38(&node->front->tris, nf);
-		Tabla_Resize38(&node->back->tris, nb);
+		Table_Free(&node->tris);
+		Table_Resize38(&node->front->tris, nf);
+		Table_Resize38(&node->back->tris, nb);
 	}
 	if (outFront) {
 		*outFront = nf;
@@ -343,9 +343,9 @@ void Bsp2_Split(byte countOnly, Bsp2Nodo *node, const plane_t *pl, int *outFront
 	}
 }
 
-void Bsp2_Render(Bsp2Nodo *node) {
+void Bsp2_Render(Bsp2Node *node) {
 	while (node->back && node->front) {
-		if (0.0f > Bsp2_Dist(&node->plano, &g_Bsp2Eye)) {
+		if (0.0f > Bsp2_Dist(&node->plane, &g_Bsp2Eye)) {
 			Bsp2_Render(node->back);
 			node = node->front;
 		} else {

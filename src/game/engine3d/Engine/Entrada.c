@@ -47,68 +47,68 @@ typedef int(__stdcall *diGetDeviceState_t)(void *dev, uint32_t size, void *data)
 #define WM_ENTERSIZEMOVE 0x231
 #define WM_EXITSIZEMOVE 0x232
 
-typedef int(__thiscall *entradaAcquire_t)(IEntrada *self, byte on);
+typedef int(__thiscall *inputAcquire_t)(IInput *self, byte on);
 
-/* the part of the constructors of IEntrada: one at a time, the state cleared */
-static void IEntrada_Init(IEntrada *self) {
+/* the part of the constructors of IInput: one at a time, the state cleared */
+static void IInput_Init(IInput *self) {
 	self->vftable = IENTRADA_VFTABLE;
-	CHECK(!g_EntradaInic);
-	g_EntradaInic = 1;
-	memset(self->mouse, 0, sizeof(*self) - offsetof(IEntrada, mouse));
+	CHECK(!g_InputInit);
+	g_InputInit = 1;
+	memset(self->mouse, 0, sizeof(*self) - offsetof(IInput, mouse));
 }
 
-IEntrada *__fastcall IEntrada_ctor(IEntrada *self) {
-	IEntrada_Init(self);
+IInput *__fastcall IInput_ctor(IInput *self) {
+	IInput_Init(self);
 	return self;
 }
 
-void __fastcall IEntrada_dtor(IEntrada *self) {
+void __fastcall IInput_dtor(IInput *self) {
 	self->vftable = IENTRADA_VFTABLE;
-	g_EntradaInic = 0;
+	g_InputInit = 0;
 }
 
-static void *Entrada_Delete(IEntrada *self, byte flags, uint32_t size) {
-	IEntrada_dtor(self);
+static void *Input_Delete(IInput *self, byte flags, uint32_t size) {
+	IInput_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, size);
 	}
 	return self;
 }
 
-IEntrada *__thiscall IEntrada_Delete(IEntrada *self, byte flags) {
-	return Entrada_Delete(self, flags, sizeof(IEntrada));
+IInput *__thiscall IInput_Delete(IInput *self, byte flags) {
+	return Input_Delete(self, flags, sizeof(IInput));
 }
 
-static void IEntrada_AcquireMouse(IEntrada *self, byte on) {
-	((entradaAcquire_t)self->vftable[ENTRADA_VF_ACQUIREMOUSE])(self, on);
+static void IInput_AcquireMouse(IInput *self, byte on) {
+	((inputAcquire_t)self->vftable[INPUT_VF_ACQUIREMOUSE])(self, on);
 }
 
-void __thiscall IEntrada_WndProc(IEntrada *self, void *hwnd, uint32_t msg, uint32_t wparam, uint32_t lparam) {
+void __thiscall IInput_WndProc(IInput *self, void *hwnd, uint32_t msg, uint32_t wparam, uint32_t lparam) {
 	(void)lparam;
 	switch (msg) {
 	case WM_ACTIVATE:
 		/* WA_ACTIVE or WA_CLICKACTIVE and not minimized */
-		IEntrada_AcquireMouse(self, (uint16_t)wparam && !(wparam >> 16));
+		IInput_AcquireMouse(self, (uint16_t)wparam && !(wparam >> 16));
 		break;
 	case WM_ENTERMENULOOP:
 	case WM_ENTERSIZEMOVE:
-		IEntrada_AcquireMouse(self, 0);
+		IInput_AcquireMouse(self, 0);
 		break;
 	case WM_EXITMENULOOP:
 	case WM_EXITSIZEMOVE:
 		if (exe_GetActiveWindow() != hwnd && exe_IsIconic(hwnd)) {
-			IEntrada_AcquireMouse(self, 0);
+			IInput_AcquireMouse(self, 0);
 		} else {
-			IEntrada_AcquireMouse(self, 1);
+			IInput_AcquireMouse(self, 1);
 		}
 		break;
 	}
 }
 
-/* ---- CEntradaDInput ---- */
+/* ---- CInputDInput ---- */
 
-CEntradaDInput *__fastcall CEntradaDInput_ctor(CEntradaDInput *self) {
-	IEntrada_Init(&self->base);
+CInputDInput *__fastcall CInputDInput_ctor(CInputDInput *self) {
+	IInput_Init(&self->base);
 	self->base.vftable = CENTRADADINPUT_VFTABLE;
 	self->di = NULL;
 	self->mouse = NULL;
@@ -116,12 +116,12 @@ CEntradaDInput *__fastcall CEntradaDInput_ctor(CEntradaDInput *self) {
 	return self;
 }
 
-CEntradaDInput *__thiscall CEntradaDInput_Delete(CEntradaDInput *self, byte flags) {
-	return Entrada_Delete(&self->base, flags, sizeof(CEntradaDInput));
+CInputDInput *__thiscall CInputDInput_Delete(CInputDInput *self, byte flags) {
+	return Input_Delete(&self->base, flags, sizeof(CInputDInput));
 }
 
 /* the device of guid with its data format and cooperative level */
-static int Entrada_CreateDevice(CEntradaDInput *self, const void *guid, void **dev, const void *fmt, void *hwnd,
+static int Input_CreateDevice(CInputDInput *self, const void *guid, void **dev, const void *fmt, void *hwnd,
 	uint32_t coop) {
 	int hr = D3D_METHOD(self->di, diCreateDevice_t, DI_CREATEDEVICE)(self->di, guid, dev, NULL);
 	if (hr < 0) {
@@ -134,23 +134,23 @@ static int Entrada_CreateDevice(CEntradaDInput *self, const void *guid, void **d
 	return D3D_METHOD(*dev, diSetCooperativeLevel_t, DIDEV_SETCOOPERATIVELEVEL)(*dev, hwnd, coop);
 }
 
-int __thiscall CEntradaDInput_Init(CEntradaDInput *self, void *hwnd, void *hinst, byte exclusive) {
+int __thiscall CInputDInput_Init(CInputDInput *self, void *hwnd, void *hinst, byte exclusive) {
 	int hr = exe_DirectInput8Create(hinst, DIRECTINPUT_VERSION, IID_IDirectInput8A, &self->di, NULL);
 	if (hr < 0) {
 		return hr;
 	}
-	hr = Entrada_CreateDevice(self, GUID_SysMouse, &self->mouse, GAME_DF_MOUSE, hwnd,
+	hr = Input_CreateDevice(self, GUID_SysMouse, &self->mouse, GAME_DF_MOUSE, hwnd,
 		exclusive ? DISCL_EXCLUSIVE_FOREGROUND : DISCL_NONEXCLUSIVE_FOREGROUND);
 	if (hr < 0) {
 		return hr;
 	}
-	hr = Entrada_CreateDevice(self, GUID_SysKeyboard, &self->keyboard, GAME_DF_KEYBOARD, hwnd,
+	hr = Input_CreateDevice(self, GUID_SysKeyboard, &self->keyboard, GAME_DF_KEYBOARD, hwnd,
 		DISCL_EXCLUSIVE_FOREGROUND);
 	return hr < 0 ? hr : 0;
 }
 
 /* unacquired and released */
-static void Entrada_ReleaseDevice(void **dev) {
+static void Input_ReleaseDevice(void **dev) {
 	if (*dev) {
 		D3D_METHOD(*dev, diDevFn_t, DIDEV_UNACQUIRE)(*dev);
 		COM_RELEASE(*dev);
@@ -158,9 +158,9 @@ static void Entrada_ReleaseDevice(void **dev) {
 	}
 }
 
-int __fastcall CEntradaDInput_Release(CEntradaDInput *self) {
-	Entrada_ReleaseDevice(&self->keyboard);
-	Entrada_ReleaseDevice(&self->mouse);
+int __fastcall CInputDInput_Release(CInputDInput *self) {
+	Input_ReleaseDevice(&self->keyboard);
+	Input_ReleaseDevice(&self->mouse);
 	if (self->di) {
 		COM_RELEASE(self->di);
 		self->di = NULL;
@@ -174,7 +174,7 @@ typedef struct DIMouseState {
 	byte rgbButtons[4];
 } DIMouseState;
 
-int __thiscall CEntradaDInput_ReadMouse(CEntradaDInput *self, int32_t *out) {
+int __thiscall CInputDInput_ReadMouse(CInputDInput *self, int32_t *out) {
 	DIMouseState st;
 	int hr;
 
@@ -198,17 +198,17 @@ int __thiscall CEntradaDInput_ReadMouse(CEntradaDInput *self, int32_t *out) {
 	if (hr < 0) {
 		return hr;
 	}
-	self->base.mouse[0] = g_EntradaInvX ? -st.lX : st.lX;
-	self->base.mouse[1] = g_EntradaInvY ? -st.lY : st.lY;
-	self->base.mouse[2] = g_EntradaInvZ ? -st.lZ : st.lZ;
+	self->base.mouse[0] = g_InputInvX ? -st.lX : st.lX;
+	self->base.mouse[1] = g_InputInvY ? -st.lY : st.lY;
+	self->base.mouse[2] = g_InputInvZ ? -st.lZ : st.lZ;
 	memcpy(self->base.buttons, st.rgbButtons, sizeof(self->base.buttons));
 	if (out) {
-		memcpy(out, (const byte *)self + offsetof(IEntrada, mouse), 16);
+		memcpy(out, (const byte *)self + offsetof(IInput, mouse), 16);
 	}
 	return 0;
 }
 
-int __fastcall CEntradaDInput_ReadKeys(CEntradaDInput *self) {
+int __fastcall CInputDInput_ReadKeys(CInputDInput *self) {
 	if (!self->keyboard) {
 		return 0;
 	}
@@ -228,7 +228,7 @@ int __fastcall CEntradaDInput_ReadKeys(CEntradaDInput *self) {
 	return hr < 0 ? hr : 0;
 }
 
-static int Entrada_Acquire(void *dev, byte on) {
+static int Input_Acquire(void *dev, byte on) {
 	if (!dev) {
 		return 1;
 	}
@@ -240,34 +240,34 @@ static int Entrada_Acquire(void *dev, byte on) {
 	return 0;
 }
 
-int __thiscall CEntradaDInput_AcquireMouse(CEntradaDInput *self, byte on) {
-	return Entrada_Acquire(self->mouse, on);
+int __thiscall CInputDInput_AcquireMouse(CInputDInput *self, byte on) {
+	return Input_Acquire(self->mouse, on);
 }
 
-int __thiscall CEntradaDInput_AcquireKeys(CEntradaDInput *self, byte on) {
-	return Entrada_Acquire(self->keyboard, on);
+int __thiscall CInputDInput_AcquireKeys(CInputDInput *self, byte on) {
+	return Input_Acquire(self->keyboard, on);
 }
 
-void __thiscall CEntradaDInput_WndProc(CEntradaDInput *self, void *hwnd, uint32_t msg, uint32_t wparam,
+void __thiscall CInputDInput_WndProc(CInputDInput *self, void *hwnd, uint32_t msg, uint32_t wparam,
 	uint32_t lparam) {
-	IEntrada_WndProc(&self->base, hwnd, msg, wparam, lparam);
+	IInput_WndProc(&self->base, hwnd, msg, wparam, lparam);
 }
 
-/* ---- CEntradaWindows ---- */
+/* ---- CInputWindows ---- */
 
-CEntradaWindows *__fastcall CEntradaWindows_ctor(CEntradaWindows *self) {
-	IEntrada_Init(&self->base);
+CInputWindows *__fastcall CInputWindows_ctor(CInputWindows *self) {
+	IInput_Init(&self->base);
 	self->base.vftable = CENTRADAWINDOWS_VFTABLE;
 	self->acquired = 0;
 	self->buttons = 0;
 	return self;
 }
 
-CEntradaWindows *__thiscall CEntradaWindows_Delete(CEntradaWindows *self, byte flags) {
-	return Entrada_Delete(&self->base, flags, sizeof(CEntradaWindows));
+CInputWindows *__thiscall CInputWindows_Delete(CInputWindows *self, byte flags) {
+	return Input_Delete(&self->base, flags, sizeof(CInputWindows));
 }
 
-int __thiscall CEntradaWindows_Init(CEntradaWindows *self, void *hwnd, void *hinst, byte exclusive) {
+int __thiscall CInputWindows_Init(CInputWindows *self, void *hwnd, void *hinst, byte exclusive) {
 	(void)self;
 	(void)hwnd;
 	(void)hinst;
@@ -275,13 +275,13 @@ int __thiscall CEntradaWindows_Init(CEntradaWindows *self, void *hwnd, void *hin
 	return 0;
 }
 
-int __fastcall CEntradaWindows_Release(CEntradaWindows *self) {
+int __fastcall CInputWindows_Release(CInputWindows *self) {
 	(void)self;
 	return 0;
 }
 
 /* the motion since the last read, the cursor put back to the center */
-int __thiscall CEntradaWindows_ReadMouse(CEntradaWindows *self, int32_t *out) {
+int __thiscall CInputWindows_ReadMouse(CInputWindows *self, int32_t *out) {
 	int32_t pt[2];
 
 	(void)out;
@@ -289,9 +289,9 @@ int __thiscall CEntradaWindows_ReadMouse(CEntradaWindows *self, int32_t *out) {
 		return 1;
 	}
 	exe_GetCursorPos(pt);
-	exe_SetCursorPos(ENTRADA_CURSOR_CENTER, ENTRADA_CURSOR_CENTER);
-	self->base.mouse[0] = g_EntradaInvX ? ENTRADA_CURSOR_CENTER - pt[0] : pt[0] - ENTRADA_CURSOR_CENTER;
-	self->base.mouse[1] = g_EntradaInvY ? ENTRADA_CURSOR_CENTER - pt[1] : pt[1] - ENTRADA_CURSOR_CENTER;
+	exe_SetCursorPos(INPUT_CURSOR_CENTER, INPUT_CURSOR_CENTER);
+	self->base.mouse[0] = g_InputInvX ? INPUT_CURSOR_CENTER - pt[0] : pt[0] - INPUT_CURSOR_CENTER;
+	self->base.mouse[1] = g_InputInvY ? INPUT_CURSOR_CENTER - pt[1] : pt[1] - INPUT_CURSOR_CENTER;
 	byte b = (byte)self->buttons;
 	self->base.mouse[2] = 0;
 	self->base.buttons[3] = 0;
@@ -301,34 +301,34 @@ int __thiscall CEntradaWindows_ReadMouse(CEntradaWindows *self, int32_t *out) {
 	return 0;
 }
 
-int __fastcall CEntradaWindows_ReadKeys(CEntradaWindows *self) {
+int __fastcall CInputWindows_ReadKeys(CInputWindows *self) {
 	if (!self->acquired) {
 		return 1;
 	}
 	for (int i = 0; i < 256; i++) {
-		self->base.keys[i] = g_TecladoKeys[i] ? 0x80 : 0;
+		self->base.keys[i] = g_KeyboardKeys[i] ? 0x80 : 0;
 	}
 	return 0;
 }
 
-int __thiscall CEntradaWindows_AcquireMouse(CEntradaWindows *self, byte on) {
+int __thiscall CInputWindows_AcquireMouse(CInputWindows *self, byte on) {
 	self->acquired = on;
 	if (on) {
-		exe_GetCursorPos(g_EntradaCursor);
-		exe_SetCursorPos(ENTRADA_CURSOR_CENTER, ENTRADA_CURSOR_CENTER);
+		exe_GetCursorPos(g_InputCursor);
+		exe_SetCursorPos(INPUT_CURSOR_CENTER, INPUT_CURSOR_CENTER);
 	} else {
-		exe_SetCursorPos(g_EntradaCursor[0], g_EntradaCursor[1]);
+		exe_SetCursorPos(g_InputCursor[0], g_InputCursor[1]);
 	}
 	return 0;
 }
 
-int __thiscall CEntradaWindows_AcquireKeys(CEntradaWindows *self, byte on) {
+int __thiscall CInputWindows_AcquireKeys(CInputWindows *self, byte on) {
 	(void)self;
 	(void)on;
 	return 0;
 }
 
-void __thiscall CEntradaWindows_WndProc(CEntradaWindows *self, void *hwnd, uint32_t msg, uint32_t wparam,
+void __thiscall CInputWindows_WndProc(CInputWindows *self, void *hwnd, uint32_t msg, uint32_t wparam,
 	uint32_t lparam) {
 	switch (msg) {
 	case WM_LBUTTONDOWN:
@@ -350,5 +350,5 @@ void __thiscall CEntradaWindows_WndProc(CEntradaWindows *self, void *hwnd, uint3
 		self->buttons &= ~4u;
 		break;
 	}
-	IEntrada_WndProc(&self->base, hwnd, msg, wparam, lparam);
+	IInput_WndProc(&self->base, hwnd, msg, wparam, lparam);
 }

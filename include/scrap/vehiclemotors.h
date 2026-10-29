@@ -30,7 +30,7 @@ typedef struct cVehicleMotorsEffects {
 	byte pad_0d[3];
 	int type;			/* 0x10 FxClass, picks the color; 0 no glow */
 	int node[VM_SIDES][2];		/* 0x14 the two DF_MotorTrust nodes per side, -1 none */
-	CGameParticles *sistPart[VM_SIDES][2];	/* 0x24 the exhaust particles of the nodes */
+	CGameParticles *particleSystem[VM_SIDES][2];	/* 0x24 the exhaust particles of the nodes */
 	byte visible;			/* 0x34 */
 	byte pad_35[3];
 	CGameTrail *trail[VM_SIDES];	/* 0x38 none for the traffic (type name T...) */
@@ -56,7 +56,7 @@ typedef struct cVehicleMotorsEffects {
 	float smokeTime;		/* 0xa4 since the last smoke particles */
 } cVehicleMotorsEffects;
 SD_OFFSET(cVehicleMotorsEffects, type, 0x10);
-SD_OFFSET(cVehicleMotorsEffects, sistPart, 0x24);
+SD_OFFSET(cVehicleMotorsEffects, particleSystem, 0x24);
 SD_OFFSET(cVehicleMotorsEffects, trail, 0x38);
 SD_OFFSET(cVehicleMotorsEffects, trailsOn, 0x68);
 SD_OFFSET(cVehicleMotorsEffects, numExhausts, 0x7c);
@@ -116,21 +116,21 @@ SD_SIZE(cVehicleMotors, 0xc8);
 #define VM_Team(e) ((void *)((byte *)(e) + 0x314))	/* for cArrowIndicator_GetColor */
 
 /* the emit positions of the Calima particles of all motors (8) */
-#define g_CalimaPos (GAME_ARRAY(vec3_t, g_CalimaPos, 0x4482b8))
+#define g_HazePos (GAME_ARRAY(vec3_t, g_HazePos, 0x4482b8))
 
 /* the engine variables */
 #define g_EnginePathFmt GAME_GLOBAL_IN(const char *, GVar_EnginePathFmt, 16, 0x4482b0)		/* EnginePathFmt */
 #define g_FXEngineTrailOffset GAME_GLOBAL_IN(float, GVar_FXEngineTrailOffset, 16, 0x448328)
 #define g_FXVehicleDeathTrailFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleDeathTrailFile, 16, 0x448340)
 #define g_FXMotorSmokeFile GAME_GLOBAL_IN(const char *, GVar_FXMotorSmokeFile, 16, 0x448358)
-#define g_FXMotorCalimaOffset GAME_GLOBAL_IN(float, GVar_FXMotorCalimaOffset, 16, 0x448370)
+#define g_FXMotorHazeOffset GAME_GLOBAL_IN(float, GVar_FXMotorHazeOffset, 16, 0x448370)
 #define g_FXEngineTrailHideTime GAME_GLOBAL_IN(float, GVar_FXEngineTrailHideTime, 16, 0x448388)
 #define g_FXEngineTrailSize GAME_GLOBAL_IN(float, GVar_FXEngineTrailSize, 16, 0x4483a0)
 #define g_FXEngineGlowDistFadeMid GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeMid, 16, 0x4483b8)
 #define g_FXEngineTrailDist GAME_GLOBAL_IN(float, GVar_FXEngineTrailDist, 16, 0x4483d0)
 #define g_FXEngineGlowSizeAtt GAME_GLOBAL_IN(float, GVar_FXEngineGlowSizeAtt, 16, 0x4483e8)
-#define g_FXMotorCalima GAME_GLOBAL_IN(int, GVar_FXMotorCalima, 16, 0x448400)
-#define g_FXMotorCalimaFile GAME_GLOBAL_IN(const char *, GVar_FXMotorCalimaFile, 16, 0x448418)
+#define g_FXMotorHaze GAME_GLOBAL_IN(int, GVar_FXMotorHaze, 16, 0x448400)
+#define g_FXMotorHazeFile GAME_GLOBAL_IN(const char *, GVar_FXMotorHazeFile, 16, 0x448418)
 #define g_FXEngineGlowDistFadeMult GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeMult, 16, 0x448430)
 #define g_FXEngineGlowDistFadeFrom GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeFrom, 16, 0x448448)
 #define g_FXEngineGlowDistFadeTo GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeTo, 16, 0x448460)
@@ -206,7 +206,7 @@ CGameModel *__thiscall cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *sel
 void __fastcall cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self);
 /* Rand_FloatRange (rva 0x10e8f0) is declared in weapons.h */
 /* the particles of the Calima effect (the hot air under the motors) for n emit positions at pos */
-void __stdcall VMEffects_SetupCalima(float thrust, float speed, vec3_t *pos, int n, CGameParticles *ps);
+void __stdcall VMEffects_SetupHaze(float thrust, float speed, vec3_t *pos, int n, CGameParticles *ps);
 void __thiscall cVehicleMotorsEffects_SetType(cVehicleMotorsEffects *self, int type);
 /* the glow particles of the exhausts in ps from *first on (2 each), *first moved on */
 void __thiscall cVehicleMotorsEffects_Glow(cVehicleMotorsEffects *self, float thrust, float k, float dist,

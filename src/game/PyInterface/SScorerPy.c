@@ -18,7 +18,7 @@ static uint32_t PackColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a) {
 	return ((a << 8 | r) << 8 | g) << 8 | b;
 }
 
-/* AddChatMsg(string,red,green,blue) : Agrega un mensaje a la lista de chat. */
+/* AddChatMsg(string,red,green,blue) : Agrega un mensaje a la list de chat. */
 PyObject *SScorer_AddChatMsg(PyObject *self, PyObject *args) {
 	char *text;
 	uint32_t r, g, b;
@@ -411,7 +411,7 @@ PyObject *SScorer_GetDefault(PyObject *self, PyObject *args) {
 }
 
 /* GetActual(playernumber) */
-PyObject *SScorer_GetActual(PyObject *self, PyObject *args) {
+PyObject *SScorer_GetCurrent(PyObject *self, PyObject *args) {
 	int player;
 
 	(void)self;
@@ -419,8 +419,8 @@ PyObject *SScorer_GetActual(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	cScorer *sc = Scorer_Get(player);
-	if (sc && sc->actual) {
-		return Py_BuildValue("s", sc->actual);
+	if (sc && sc->current) {
+		return Py_BuildValue("s", sc->current);
 	}
 	return ReturnNone();
 }

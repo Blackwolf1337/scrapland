@@ -1,7 +1,7 @@
 /*
  * CBmpFlt and CBmpFlt2 of the engine3d (original sources Engine/BmpFlt.cpp, Engine/BmpFlt2.cpp and the headers
  * bmpflt.h, bmpflt2.h): images of float pixels, RGBA in CBmpFlt and RGB in CBmpFlt2, as the light maps are made.
- * TXF is their file format: a TXF_cab header (version 1 RGBA, 2 RGB), the pixels, then extra bytes of the caller.
+ * TXF is their file format: a TXF_header header (version 1 RGBA, 2 RGB), the pixels, then extra bytes of the caller.
  */
 #ifndef SCRAP_BMPFLT_H
 #define SCRAP_BMPFLT_H
@@ -9,26 +9,26 @@
 #include "scrap/bmp.h"
 
 /* img: 4 floats a pixel, 3 in a CBmpFlt2 */
-typedef CImagen CBmpFlt;
-typedef CImagen CBmpFlt2;
+typedef CImage CBmpFlt;
+typedef CImage CBmpFlt2;
 
 #define TXF_MAGIC 0x1a465854	/* "TXF\x1a" */
 
-typedef struct TXF_cab {
+typedef struct TXF_header {
 	int magic;			/* 0x00 */
 	int version;			/* 0x04 */
-	int ancho;			/* 0x08 */
-	int alto;			/* 0x0c */
+	int width;			/* 0x08 */
+	int height;			/* 0x0c */
 	int extra;			/* 0x10 bytes after the pixels */
 	int pad[3];			/* 0x14 */
-} TXF_cab;
-SD_SIZE(TXF_cab, 0x20);
+} TXF_header;
+SD_SIZE(TXF_header, 0x20);
 
 /* the header of each class */
 #define TXF_CAB 0x4e734c
 #define TXF2_CAB 0x4e736c
-#define g_TXFCab (GAME_ARRAY(TXF_cab, g_TXFCab, TXF_CAB))
-#define g_TXFCab2 (GAME_ARRAY(TXF_cab, g_TXFCab2, TXF2_CAB))
+#define g_TXFCab (GAME_ARRAY(TXF_header, g_TXFCab, TXF_CAB))
+#define g_TXFCab2 (GAME_ARRAY(TXF_header, g_TXFCab2, TXF2_CAB))
 
 /* TXF_Save: an existing file is only replaced with this flag */
 #define TXF_OVERWRITE 1
@@ -43,7 +43,7 @@ int __thiscall CBmpFlt_Load(CBmpFlt *self, const char *name, int flags, void *ex
 /* c = b * (1 - exp(-c * a / b)) on all channels */
 void __thiscall CBmpFlt_Exposure(CBmpFlt *self, float a, float b);
 /* new pixels, not cleared */
-void __thiscall CBmpFlt_Create(CBmpFlt *self, int ancho, int alto);
+void __thiscall CBmpFlt_Create(CBmpFlt *self, int width, int height);
 /* orig at (ox, oy) size w x h into (x, y), weights a and b in 1/256: c = orig * a + c * b */
 void __thiscall CBmpFlt_Blend(CBmpFlt *self, int x, int y, const CBmpFlt *orig, int ox, int oy, int w, int h, int a,
 	int b);
@@ -62,7 +62,7 @@ int __thiscall CBmpFlt2_Save(CBmpFlt2 *self, const char *name, byte flags, const
 void __thiscall CBmpFlt2_Exposure(CBmpFlt2 *self, float a, float b);
 /* c = b * pow(c / b, 1 / g) with negative channels as 0, nothing for g 1 */
 void __thiscall CBmpFlt2_Gamma(CBmpFlt2 *self, float g, float b);
-void __thiscall CBmpFlt2_Create(CBmpFlt2 *self, int ancho, int alto);
+void __thiscall CBmpFlt2_Create(CBmpFlt2 *self, int width, int height);
 int __thiscall CBmpFlt2_Load(CBmpFlt2 *self, const char *name, int flags, void *extra, int nbytes);
 void __thiscall CBmpFlt2_Blend(CBmpFlt2 *self, int x, int y, const CBmpFlt2 *orig, int ox, int oy, int w, int h,
 	int a, int b);

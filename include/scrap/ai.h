@@ -25,10 +25,10 @@ typedef struct cNodesTrafficVtbl {
 	void *vf00_06[7];
 	void(__thiscall *Init)(cNodesTraffic *self);		/* 0x1c */
 	void *vf08_0f[8];
-	void(__thiscall *Analize)(cNodesTraffic *self);		/* 0x40 */
+	void(__thiscall *Analyze)(cNodesTraffic *self);		/* 0x40 */
 } cNodesTrafficVtbl;
 SD_OFFSET(cNodesTrafficVtbl, Init, 0x1c);
-SD_OFFSET(cNodesTrafficVtbl, Analize, 0x40);
+SD_OFFSET(cNodesTrafficVtbl, Analyze, 0x40);
 
 struct cNodesTraffic {
 	const cNodesTrafficVtbl *vftable;
@@ -374,12 +374,12 @@ cAIVehicleGroup *__thiscall cAIVehicleGroup_ctor(void *mem);
 cAICharGroup *__thiscall cAICharGroup_ctor(void *mem);
 
 void __thiscall CNodesWorld_Load(CNodesWorld *nodes, int arg, const char *name, const vec3_t *pos);
-void __thiscall CNodesWorld_Analize(CNodesWorld *nodes, const vec3_t *size);
-void __thiscall CNodesWorld_AnalizeGraph(CNodesWorld *nodes);
+void __thiscall CNodesWorld_Analyze(CNodesWorld *nodes, const vec3_t *size);
+void __thiscall CNodesWorld_AnalyzeGraph(CNodesWorld *nodes);
 byte __thiscall CNodesWorld_GetRacePoint(CNodesWorld *nodes, vec3_t *out, const vec3_t *initial, float minDist,
 	float maxDist, int arg);
 void __thiscall CNodesWorld2D_Load(CNodesWorld2D *nodes, int arg, const char *name, const vec3_t *pos);
-void __thiscall CNodesWorld2D_AnalizeGraph(CNodesWorld2D *nodes);
+void __thiscall CNodesWorld2D_AnalyzeGraph(CNodesWorld2D *nodes);
 
 byte __thiscall cAICharGroup_GetReposPos(cAICharGroup *group, const vec3_t *pos, const char *name, vec3_t *out,
 	cEntity *target);
@@ -438,7 +438,7 @@ SD_OFFSET(cAIBaseVtbl, OnEvent, 0x34);
 /* the events of the AI (GetEventName) */
 enum {
 	AIEV_LOST_AGENT, AIEV_OBJECTIVE_NOT_FOUND, AIEV_OBJECTIVE_REACHED, AIEV_OBJECTIVE_DIED, AIEV_OBJECTIVE_NEAR,
-	AIEV_OBJECTIVE_VIS, AIEV_ORIENT_REACHED, AIEV_DONT_GO, AIEV_PROBLEM_MOV, AIEV_NO_PROBLEM, AIEV_COLLISION_AGENTS
+	AIEV_OBJECTIVE_VIS, AIEV_ORIENT_REACHED, AIEV_DONT_GO, AIEV_PROBLEM_MOVE, AIEV_NO_PROBLEM, AIEV_COLLISION_AGENTS
 };
 
 struct cAI {

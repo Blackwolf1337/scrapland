@@ -8,7 +8,7 @@
 
 #include "scrap/mathlib.h"
 
-struct CModelo;
+struct CModel;
 
 void Cmd_ReadFile(const char *name);
 /* the lexer output into the debug log */
@@ -22,11 +22,11 @@ void Cmd_PivotPos(void);
 /* "PlayAnim model anim slot" */
 void Cmd_PlayAnim(void);
 /* "EFEC_MALLA pantalla|modelo model" */
-void Cmd_EfecMalla(void);
+void Cmd_MeshEffect(void);
 /* "FUNDIR_NODOS model": the nodes of its scene joined */
-void Cmd_FundirNodos(void);
+void Cmd_MergeNodes(void);
 /* the model named by the token (an identifier or a string), with an error NULL; then the next token */
-struct CModelo *Cmd_GetModelo(void);
+struct CModel *Cmd_GetModel(void);
 /* "( x , y , z )" or "$node" (its world position); 0 or -1 with an error. next: the token before is skipped */
 int Cmd_GetVec(byte next, vec3_t *out, int unused);
 /* "true" or "false", else an error and def */

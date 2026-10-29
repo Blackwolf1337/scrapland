@@ -750,8 +750,8 @@ byte __thiscall cAIChar_React(cAIChar *self) {
 	case AIC_CHASE_WITHOUT_ACTION:
 	case AIC_GET_AWAY:
 	case AIC_CHASE_WITH_ACTION_BACK:
-	case AIC_ORIENT_DINAMIC_OBJECTIVE:
-	case AIC_ORIENT_DINAMIC_OBJECTIVE_WITH_ACTION:
+	case AIC_ORIENT_DYNAMIC_OBJECTIVE:
+	case AIC_ORIENT_DYNAMIC_OBJECTIVE_WITH_ACTION:
 		t = AIC_Target(self);
 		if (!t || !t->flag_4c) {
 			self->vftable->Event(self, 3);
@@ -1457,8 +1457,8 @@ static byte AIC_Restore(cAIChar *self, const cAICharSaved *s, int intern) {
 		return set(self, AIC_GO_TO, s->dest, s->dir, (double)s->dist, (double)s->speed);
 	case AIC_PATROL_ZONE:
 		return set(self, AIC_PATROL_ZONE, s->center, (double)s->radius, (double)s->speed, (int)s->pauses);
-	case AIC_ORIENT_DINAMIC_OBJECTIVE:
-	case AIC_ORIENT_DINAMIC_OBJECTIVE_WITH_ACTION:
+	case AIC_ORIENT_DYNAMIC_OBJECTIVE:
+	case AIC_ORIENT_DYNAMIC_OBJECTIVE_WITH_ACTION:
 		return set(self, s->state, World_FindEntity(s->target), (int)s->orient);
 	case AIC_LOST_PATH:
 		return set(self, AIC_LOST_PATH);
@@ -1662,8 +1662,8 @@ byte __thiscall cAIChar_ChangeState(cAIChar *self, int state, va_list ap) {
 		}
 		AICC_Vtbl(self->control)->Nop(self->control);
 		break;
-	case AIC_ORIENT_DINAMIC_OBJECTIVE:
-	case AIC_ORIENT_DINAMIC_OBJECTIVE_WITH_ACTION:
+	case AIC_ORIENT_DYNAMIC_OBJECTIVE:
+	case AIC_ORIENT_DYNAMIC_OBJECTIVE_WITH_ACTION:
 		e = va_arg(ap, cEntity *);
 		if (!self->vftable->CanTarget(self, e)) {
 			ok = 0;
@@ -1680,8 +1680,8 @@ byte __thiscall cAIChar_ChangeState(cAIChar *self, int state, va_list ap) {
 			AIC_LinkTarget(self, e);
 			orient = (byte)va_arg(ap, int);
 			self->vftable->SetDists2(self);
-			self->vftable->SetInternState(self, state == AIC_ORIENT_DINAMIC_OBJECTIVE ? AICI_STOPPED_ORIENT_DINAMIC :
-				AICI_STOPPED_ORIENT_DINAMIC_WITH_ACTION, (int)orient);
+			self->vftable->SetInternState(self, state == AIC_ORIENT_DYNAMIC_OBJECTIVE ? AICI_STOPPED_ORIENT_DYNAMIC :
+				AICI_STOPPED_ORIENT_DYNAMIC_WITH_ACTION, (int)orient);
 			AICC_Vtbl(self->control)->Nop(self->control);
 		}
 		break;
@@ -1799,12 +1799,12 @@ void __thiscall cAIChar_SetInternStateV(cAIChar *self, int state, va_list ap) {
 		self->dir = va_arg(ap, vec3_t);
 		ok = AICC_Vtbl(c)->SetMove(c, AICC_DIR, self->dir);
 		break;
-	case AICI_STOPPED_ORIENT_DINAMIC:
-	case AICI_STOPPED_ORIENT_DINAMIC_WITH_ACTION:
+	case AICI_STOPPED_ORIENT_DYNAMIC:
+	case AICI_STOPPED_ORIENT_DYNAMIC_WITH_ACTION:
 		self->moveMode = AICC_AWAY;
 		self->orient = (byte)va_arg(ap, int);
 		ok = AICC_Vtbl(c)->SetMove(c, AICC_AWAY, (int)self->orient);
-		act = state == AICI_STOPPED_ORIENT_DINAMIC_WITH_ACTION;
+		act = state == AICI_STOPPED_ORIENT_DYNAMIC_WITH_ACTION;
 		break;
 	case AICI_FOLLOW_THE_PATH:
 		self->moveMode = AICC_ROUTE;
@@ -1852,8 +1852,8 @@ byte __thiscall cAIChar_IsMoving(cAIChar *self) {
 	case AICI_STOPPED:
 	case AICI_PAUSED_CONTROL:
 	case AICI_STOPPED_ORIENT_STATIC:
-	case AICI_STOPPED_ORIENT_DINAMIC:
-	case AICI_STOPPED_ORIENT_DINAMIC_WITH_ACTION:
+	case AICI_STOPPED_ORIENT_DYNAMIC:
+	case AICI_STOPPED_ORIENT_DYNAMIC_WITH_ACTION:
 	case AICI_RELAX:
 	case AICI_TALK_TO:
 		return 0;

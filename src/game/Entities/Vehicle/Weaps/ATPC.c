@@ -77,7 +77,7 @@ void ATPC_Create(cAbstractFile *params) {
 				continue;
 			}
 			int node = wm->nodes[g_ATPCIDAmmo][i];
-			const matrix_t *m = CGameModel_NodoMatrix(WEnt_Vtbl(v)->GetObjData(v), &mat, node, 0, NULL, 0);
+			const matrix_t *m = CGameModel_NodeMatrix(WEnt_Vtbl(v)->GetObjData(v), &mat, node, 0, NULL, 0);
 			p.x = m->m[12];
 			p.y = m->m[13];
 			p.z = m->m[14];

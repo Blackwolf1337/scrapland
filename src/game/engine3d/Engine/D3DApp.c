@@ -1,5 +1,5 @@
 /*
- * CD3DApplication (d3dapp.cpp of the DX8 SDK framework, g_Motor) in the engine3d range, see include/scrap/dxutil.h:
+ * CD3DApplication (d3dapp.cpp of the DX8 SDK framework, g_Engine) in the engine3d range, see include/scrap/dxutil.h:
  * the constructor and destructor, the enumeration of the adapters, devices and modes, the window and the device
  * creation, the frame, the message procedure and loop, the window style of a mode change, pause, the back buffer
  * description, the device reset and the device dialog.
@@ -45,7 +45,7 @@ int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b) {
 typedef intptr_t(__thiscall *d3dappMsgProc_t)(byte *self, void *hwnd, uint32_t msg, uintptr_t w, intptr_t l);
 
 intptr_t __stdcall D3DApp_WndProc(void *hwnd, uint32_t msg, uintptr_t w, intptr_t l) {
-	byte *app = g_Motor;
+	byte *app = g_Engine;
 	return ((d3dappMsgProc_t)(*(void ***)app)[0x30 / 4])(app, hwnd, msg, w, l);
 }
 
@@ -74,7 +74,7 @@ byte D3DApp_DepthFormatOk(void *d3d, uint32_t adapter, uint32_t type, uint32_t f
 #define FMT_D32 0x47
 
 static byte D3DApp_TryDepth(byte *self, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t ds, uint32_t *out) {
-	if (!D3DApp_DepthFormatOk(MOTOR_D3D(self), adapter, type, fmt, ds)) {
+	if (!D3DApp_DepthFormatOk(ENGINE_D3D(self), adapter, type, fmt, ds)) {
 		return 0;
 	}
 	*out = ds;
@@ -83,7 +83,7 @@ static byte D3DApp_TryDepth(byte *self, uint32_t adapter, uint32_t type, uint32_
 
 /* the depth/stencil format for m_dwMinDepthBits and m_dwMinStencilBits, then the depth alone, then D16 */
 int __thiscall CD3DApp_FindDepthStencilFormat(byte *self, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t *out) {
-	uint32_t depth = MOTOR_U32(self, 0x2a5b4), stencil = MOTOR_U32(self, 0x2a5b8);
+	uint32_t depth = ENGINE_U32(self, 0x2a5b4), stencil = ENGINE_U32(self, 0x2a5b8);
 
 	if (depth <= 16 && stencil == 0 && D3DApp_TryDepth(self, adapter, type, fmt, FMT_D16, out)) {
 		return 1;
@@ -119,54 +119,54 @@ int __thiscall CD3DApp_FindDepthStencilFormat(byte *self, uint32_t adapter, uint
 
 byte *__fastcall CD3DApp_ctor(byte *self) {
 	*(void **)self = CD3DAPPLICATION_VFTABLE;
-	g_Motor = self;
-	MOTOR_U32(self, 0x2a37c) = 0;		/* m_dwNumAdapters */
-	MOTOR_ADAPTER(self) = 0;
-	MOTOR_D3D(self) = NULL;
-	MOTOR_DEV(self) = NULL;
-	MOTOR_HWND(self) = NULL;
-	MOTOR_U32(self, 0x2a3d0) = 0;		/* m_hWndFocus */
-	MOTOR_ACTIVE(self) = 0;
-	MOTOR_READY(self) = 0;
-	MOTOR_U32(self, 0x2a4f0) = 0;
-	MOTOR_FRAMEMOVING(self) = 1;
-	MOTOR_SINGLESTEP(self) = 0;
-	MOTOR_U32(self, 0x2a520) = 0;
+	g_Engine = self;
+	ENGINE_U32(self, 0x2a37c) = 0;		/* m_dwNumAdapters */
+	ENGINE_ADAPTER(self) = 0;
+	ENGINE_D3D(self) = NULL;
+	ENGINE_DEV(self) = NULL;
+	ENGINE_HWND(self) = NULL;
+	ENGINE_U32(self, 0x2a3d0) = 0;		/* m_hWndFocus */
+	ENGINE_ACTIVE(self) = 0;
+	ENGINE_READY(self) = 0;
+	ENGINE_U32(self, 0x2a4f0) = 0;
+	ENGINE_FRAMEMOVING(self) = 1;
+	ENGINE_SINGLESTEP(self) = 0;
+	ENGINE_U32(self, 0x2a520) = 0;
 	self[0x2a524] = 0;			/* the device name */
 	self[0x2a57e] = 0;
-	MOTOR_DEVID(self) = 0;
+	ENGINE_DEVID(self) = 0;
 	*(const char **)(self + 0x2a5ac) = GAME_STR(str_3dd240, 0x3dd240);	/* m_strWindowTitle "Engine3D [DX8]" */
-	MOTOR_U32(self, 0x2a5bc) = 400;		/* m_dwCreationWidth */
-	MOTOR_U32(self, 0x2a5c0) = 300;
-	MOTOR_USEDEPTH(self) = 0;
-	MOTOR_U32(self, 0x2a5b4) = 0x10;	/* m_dwMinDepthBits */
-	MOTOR_U32(self, 0x2a5b8) = 0;		/* m_dwMinStencilBits */
-	MOTOR_U32(self, 0x2a5c4) = 0;		/* m_bShowCursorWhenFullscreen */
-	MOTOR_VSYNC(self) = 1;
-	MOTOR_FULLSCREEN(self) = 0;
-	MOTOR_WIDTH(self) = 800;
-	MOTOR_HEIGHT(self) = 600;
-	MOTOR_BPP(self) = 32;
+	ENGINE_U32(self, 0x2a5bc) = 400;		/* m_dwCreationWidth */
+	ENGINE_U32(self, 0x2a5c0) = 300;
+	ENGINE_USEDEPTH(self) = 0;
+	ENGINE_U32(self, 0x2a5b4) = 0x10;	/* m_dwMinDepthBits */
+	ENGINE_U32(self, 0x2a5b8) = 0;		/* m_dwMinStencilBits */
+	ENGINE_U32(self, 0x2a5c4) = 0;		/* m_bShowCursorWhenFullscreen */
+	ENGINE_VSYNC(self) = 1;
+	ENGINE_FULLSCREEN(self) = 0;
+	ENGINE_WIDTH(self) = 800;
+	ENGINE_HEIGHT(self) = 600;
+	ENGINE_BPP(self) = 32;
 	return self;
 }
 
 void __fastcall CD3DApp_dtor(byte *self) {
 	*(void **)self = CD3DAPPLICATION_VFTABLE;
-	g_Motor = NULL;
+	g_Engine = NULL;
 }
 
 /* vf00: the window style (and in fullscreen the size of the mode) after a change */
 int __thiscall CD3DApp_AdjustWindowForChange(byte *self) {
-	if (MOTOR_WINDOWED(self)) {
-		exe_SetWindowLongA(MOTOR_HWND(self), -16, (int32_t)MOTOR_U32(self, 0x2a4f4));	/* m_dwWindowStyle */
+	if (ENGINE_WINDOWED(self)) {
+		exe_SetWindowLongA(ENGINE_HWND(self), -16, (int32_t)ENGINE_U32(self, 0x2a4f4));	/* m_dwWindowStyle */
 	} else {
-		exe_SetWindowLongA(MOTOR_HWND(self), -16, (int32_t)0x90080000);	/* WS_POPUP | WS_SYSMENU | WS_VISIBLE */
-		D3DAdapterInfo *ad = MOTOR_ADAPTERINFO(self);
+		exe_SetWindowLongA(ENGINE_HWND(self), -16, (int32_t)0x90080000);	/* WS_POPUP | WS_SYSMENU | WS_VISIBLE */
+		D3DAdapterInfo *ad = ENGINE_ADAPTERINFO(self);
 		D3DDeviceInfo *dev = &ad->devices[ad->dwCurrentDevice];
 		D3DModeInfo *mode = &dev->modes[dev->dwCurrentMode];
-		exe_SetWindowPos(MOTOR_HWND(self), (void *)-1, 0, 0, (int)mode->Width, (int)mode->Height, 0);
+		exe_SetWindowPos(ENGINE_HWND(self), (void *)-1, 0, 0, (int)mode->Width, (int)mode->Height, 0);
 	}
-	if (!MOTOR_WINDOWED(self)) {
+	if (!ENGINE_WINDOWED(self)) {
 		exe_SetCursor(NULL);
 	}
 	return 0;
@@ -177,15 +177,15 @@ void __thiscall CD3DApp_Pause(byte *self, int pause) {
 	int n = g_AppPausedCount + (pause ? 1 : -1);
 
 	g_AppPausedCount = n;
-	MOTOR_READY(self) = n == 0;
+	ENGINE_READY(self) = n == 0;
 	if (pause && n == 1) {
-		if (!MOTOR_FRAMEMOVING(self)) {
+		if (!ENGINE_FRAMEMOVING(self)) {
 			return;
 		}
 		DXUtil_Timer(D3DAPP_TIMER_STOP);
 		n = g_AppPausedCount;
 	}
-	if (n == 0 && MOTOR_FRAMEMOVING(self)) {
+	if (n == 0 && ENGINE_FRAMEMOVING(self)) {
 		DXUtil_Timer(D3DAPP_TIMER_START);
 	}
 }
@@ -196,33 +196,33 @@ typedef int(__stdcall *d3dGetDesc_t)(void *surf, void *desc);
 /* the descriptions of the back buffer and the depth buffer, the aspect ratio of the back buffer */
 void __fastcall CD3DApp_UpdateBackBufferDesc(byte *self) {
 	void *surf;
-	void *dev = MOTOR_DEV(self);
+	void *dev = ENGINE_DEV(self);
 
 	D3D_METHOD(dev, d3dGetBackBuffer_t, 0x40)(dev, 0, 0, &surf);
 	D3D_METHOD(surf, d3dGetDesc_t, 0x20)(surf, self + 0x2a4b0);
 	COM_RELEASE(surf);
-	uint32_t *zbuf = (uint32_t *)MOTOR_ZBUF(self);
+	uint32_t *zbuf = (uint32_t *)ENGINE_ZBUF(self);
 	for (int i = 0; i < 8; i++) {
 		zbuf[i] = 0;
 	}
-	if (MOTOR_USEDEPTH(self)) {
-		dev = MOTOR_DEV(self);
+	if (ENGINE_USEDEPTH(self)) {
+		dev = ENGINE_DEV(self);
 		D3D_METHOD(dev, d3dGetDepthStencil_t, 0x84)(dev, &surf);
 		D3D_METHOD(surf, d3dGetDesc_t, 0x20)(surf, zbuf);
 		COM_RELEASE(surf);
 	}
-	uint32_t w = MOTOR_MODE(self)[6], h = MOTOR_MODE(self)[7];
+	uint32_t w = ENGINE_MODE(self)[6], h = ENGINE_MODE(self)[7];
 	g_PhysicalAspectRatio = (float)(double)w / (float)(double)h;
-	Con_Printf("Aspect: %f (%dx%d)\n", (double)g_PhysicalAspectRatio, (int)MOTOR_MODE(self)[6], (int)MOTOR_MODE(self)[7]);
-	MOTOR_DEVID(self)++;
+	Con_Printf("Aspect: %f (%dx%d)\n", (double)g_PhysicalAspectRatio, (int)ENGINE_MODE(self)[6], (int)ENGINE_MODE(self)[7]);
+	ENGINE_DEVID(self)++;
 }
 
 typedef int(__stdcall *d3dReset_t)(void *dev, void *pp);
 
 /* without frame moving one frame is stepped: the timer started and stopped */
 static void D3DApp_SingleStep(byte *self) {
-	if (!MOTOR_FRAMEMOVING(self)) {
-		MOTOR_SINGLESTEP(self) = 1;
+	if (!ENGINE_FRAMEMOVING(self)) {
+		ENGINE_SINGLESTEP(self) = 1;
 		DXUtil_Timer(D3DAPP_TIMER_START);
 		DXUtil_Timer(D3DAPP_TIMER_STOP);
 	}
@@ -230,8 +230,8 @@ static void D3DApp_SingleStep(byte *self) {
 
 /* IDirect3DDevice8::Reset with the present parameters, logged when it fails; the gamma ramp set again */
 static int D3DApp_DevReset(byte *self) {
-	void *dev = MOTOR_DEV(self);
-	int r = D3D_METHOD(dev, d3dReset_t, 0x38)(dev, MOTOR_PP(self));
+	void *dev = ENGINE_DEV(self);
+	int r = D3D_METHOD(dev, d3dReset_t, 0x38)(dev, ENGINE_PP(self));
 
 	if (r < 0) {
 		E3D_LogBlue(g_FileLog, GAME_STR(str_3dd33c, 0x3dd33c), r);	/* "ERROR: 'pd3dDevice->Reset()' failed: %08X" */
@@ -245,22 +245,22 @@ int __thiscall CD3DApp_ResetDevice(byte *self) {
 }
 
 int __thiscall CD3DApp_Reset(byte *self) {
-	int r = MOTOR_CALL(self, 0x1c);
+	int r = ENGINE_CALL(self, 0x1c);
 	if (r < 0) {
 		return r;
 	}
-	MOTOR_CALL(self, MOTOR_VT_INVALIDATE);
+	ENGINE_CALL(self, ENGINE_VT_INVALIDATE);
 	r = D3DApp_DevReset(self);
 	if (r < 0) {
 		E3D_LogBlue(g_FileLog, GAME_STR(str_3dd30c, 0x3dd30c), r);	/* "ERROR: ResetDevice(): %08X" */
 	}
 	CD3DApp_UpdateBackBufferDesc(self);
 	Splash_Reset();
-	r = MOTOR_CALL(self, 0x0c);
+	r = ENGINE_CALL(self, 0x0c);
 	if (r < 0) {
 		return r;
 	}
-	r = MOTOR_CALL(self, 0x10);
+	r = ENGINE_CALL(self, 0x10);
 	if (r < 0) {
 		return r;
 	}
@@ -285,31 +285,31 @@ int __thiscall CD3DApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior, 
 
 /* the device released (an error in the log when something still holds it), then FinalCleanup (vtable 0x24) */
 int __thiscall CD3DApp_Cleanup(byte *self) {
-	MOTOR_ACTIVE(self) = 0;
-	MOTOR_READY(self) = 0;
-	if (MOTOR_DEV(self)) {
-		MOTOR_CALL(self, 0x1c);
-		MOTOR_CALL(self, MOTOR_VT_INVALIDATE);
-		if (COM_RELEASE(MOTOR_DEV(self))) {
+	ENGINE_ACTIVE(self) = 0;
+	ENGINE_READY(self) = 0;
+	if (ENGINE_DEV(self)) {
+		ENGINE_CALL(self, 0x1c);
+		ENGINE_CALL(self, ENGINE_VT_INVALIDATE);
+		if (COM_RELEASE(ENGINE_DEV(self))) {
 			E3D_LogBlue(g_FileLog, GAME_STR(str_3dd3dc, 0x3dd3dc));	/* "A D3D object has a non-zero reference count." */
 		}
-		COM_RELEASE(MOTOR_D3D(self));
-		MOTOR_DEV(self) = NULL;
-		MOTOR_D3D(self) = NULL;
+		COM_RELEASE(ENGINE_D3D(self));
+		ENGINE_DEV(self) = NULL;
+		ENGINE_D3D(self) = NULL;
 	}
-	return MOTOR_CALL(self, MOTOR_VT_DELETE);
+	return ENGINE_CALL(self, ENGINE_VT_DELETE);
 }
 
 static D3DDeviceInfo *D3DApp_CurDevice(byte *self) {
-	D3DAdapterInfo *ad = MOTOR_ADAPTERINFO(self);
+	D3DAdapterInfo *ad = ENGINE_ADAPTERINFO(self);
 	return &ad->devices[ad->dwCurrentDevice];
 }
 
 /* the device released and the environment made again; 0 and the result of the error shown on failures */
 static byte D3DApp_Recreate(byte *self, int *err) {
-	MOTOR_CALL(self, 0x1c);
-	MOTOR_CALL(self, MOTOR_VT_INVALIDATE);
-	if (COM_RELEASE(MOTOR_DEV(self))) {
+	ENGINE_CALL(self, 0x1c);
+	ENGINE_CALL(self, ENGINE_VT_INVALIDATE);
+	if (COM_RELEASE(ENGINE_DEV(self))) {
 		*err = CD3DApp_DisplayErrorMsg(self, 0x8200000a, 1);	/* D3DAPPERR_NONZEROREFCOUNT */
 		return 0;
 	}
@@ -327,71 +327,71 @@ int __thiscall CD3DApp_ForceWindowed(byte *self) {
 
 	if (!dev->bCanDoWindowed) {
 		uint32_t a, d = 0;
-		D3DAdapterInfo *ad = (D3DAdapterInfo *)MOTOR_ADAPTERS(self);
-		for (a = 0; a < MOTOR_U32(self, 0x2a37c); a++, ad++) {
+		D3DAdapterInfo *ad = (D3DAdapterInfo *)ENGINE_ADAPTERS(self);
+		for (a = 0; a < ENGINE_U32(self, 0x2a37c); a++, ad++) {
 			for (d = 0; d < ad->dwNumDevices && !ad->devices[d].bCanDoWindowed; d++) {
 			}
 			if (d < ad->dwNumDevices) {
 				break;
 			}
 		}
-		if (a >= MOTOR_U32(self, 0x2a37c)) {
+		if (a >= ENGINE_U32(self, 0x2a37c)) {
 			return E_FAIL;
 		}
-		MOTOR_ADAPTER(self) = (int)a;
+		ENGINE_ADAPTER(self) = (int)a;
 		ad->dwCurrentDevice = (int)d;
 		dev = &ad->devices[d];
 	}
 	dev->bWindowed = 1;
-	MOTOR_WINDOWED(self) = 1;
-	MOTOR_READY(self) = 0;
+	ENGINE_WINDOWED(self) = 1;
+	ENGINE_READY(self) = 0;
 	int err;
 	if (!D3DApp_Recreate(self, &err)) {
 		return err;
 	}
-	MOTOR_READY(self) = 1;
+	ENGINE_READY(self) = 1;
 	return 0;
 }
 
 int __thiscall CD3DApp_ToggleFullscreen(byte *self) {
-	D3DAdapterInfo *ad = MOTOR_ADAPTERINFO(self);
+	D3DAdapterInfo *ad = ENGINE_ADAPTERINFO(self);
 	D3DDeviceInfo *dev = &ad->devices[ad->dwCurrentDevice];
 	D3DModeInfo *mode = &dev->modes[dev->dwCurrentMode];
-	uint32_t *pp = MOTOR_PP(self);
+	uint32_t *pp = ENGINE_PP(self);
 
-	if (!MOTOR_WINDOWED(self) && !dev->bCanDoWindowed) {
+	if (!ENGINE_WINDOWED(self) && !dev->bCanDoWindowed) {
 		return CD3DApp_ForceWindowed(self);
 	}
-	MOTOR_READY(self) = 0;
-	MOTOR_WINDOWED(self) = !MOTOR_WINDOWED(self);
-	dev->bWindowed = MOTOR_WINDOWED(self);
-	MOTOR_CALL(self, 0x00);			/* AdjustWindowForChange */
+	ENGINE_READY(self) = 0;
+	ENGINE_WINDOWED(self) = !ENGINE_WINDOWED(self);
+	dev->bWindowed = ENGINE_WINDOWED(self);
+	ENGINE_CALL(self, 0x00);			/* AdjustWindowForChange */
 	pp[7] = (uint32_t)dev->bWindowed;	/* Windowed */
 	pp[4] = dev->MultiSampleType;
 	pp[9] = mode->DepthStencilFormat;	/* AutoDepthStencilFormat */
-	pp[6] = (uint32_t)(uintptr_t)MOTOR_HWND(self);	/* hDeviceWindow */
-	if (MOTOR_WINDOWED(self)) {
+	pp[6] = (uint32_t)(uintptr_t)ENGINE_HWND(self);	/* hDeviceWindow */
+	if (ENGINE_WINDOWED(self)) {
 		/* the client rectangle of the window */
-		pp[0] = MOTOR_U32(self, 0x2a510) - MOTOR_U32(self, 0x2a508);
-		pp[1] = MOTOR_U32(self, 0x2a514) - MOTOR_U32(self, 0x2a50c);
+		pp[0] = ENGINE_U32(self, 0x2a510) - ENGINE_U32(self, 0x2a508);
+		pp[1] = ENGINE_U32(self, 0x2a514) - ENGINE_U32(self, 0x2a50c);
 		pp[2] = ad->desktopMode[3];
 		pp[12] = 0;			/* FullScreen_PresentationInterval */
 	} else {
 		pp[0] = mode->Width;
 		pp[1] = mode->Height;
 		pp[2] = mode->Format;
-		pp[12] = MOTOR_VSYNC(self) ? 0 : 0x80000000;	/* D3DPRESENT_INTERVAL_IMMEDIATE without vsync */
+		pp[12] = ENGINE_VSYNC(self) ? 0 : 0x80000000;	/* D3DPRESENT_INTERVAL_IMMEDIATE without vsync */
 	}
 	if (CD3DApp_Reset(self) < 0) {
 		return CD3DApp_DisplayErrorMsg(self, 0x8200000c, 1);	/* D3DAPPERR_RESIZEFAILED */
 	}
-	if (MOTOR_WINDOWED(self)) {
+	if (ENGINE_WINDOWED(self)) {
 		/* the window rectangle, not topmost */
-		int x = (int)MOTOR_U32(self, 0x2a4f8), y = (int)MOTOR_U32(self, 0x2a4fc);
-		exe_SetWindowPos(MOTOR_HWND(self), (void *)-2, x, y, (int)MOTOR_U32(self, 0x2a500) - x,
-			(int)MOTOR_U32(self, 0x2a504) - y, 0x40);
+		int x = (int)ENGINE_U32(self, 0x2a4f8), y = (int)ENGINE_U32(self, 0x2a4fc);
+		exe_SetWindowPos(ENGINE_HWND(self), (void *)-2, x, y, (int)ENGINE_U32(self, 0x2a500) - x,
+			(int)ENGINE_U32(self, 0x2a504) - y, 0x40);
 	}
-	MOTOR_READY(self) = 1;
+	ENGINE_READY(self) = 1;
 	return 0;
 }
 
@@ -399,16 +399,16 @@ typedef void *(__stdcall *getmodulehandle_t)(const char *name);
 #define exe_GetModuleHandleA GAME_IMPORT(getmodulehandle_t, GetModuleHandleA, 4, 0x3a1160)
 
 int __thiscall CD3DApp_UserSelectNewDevice(byte *self) {
-	if (!MOTOR_WINDOWED(self) && CD3DApp_ToggleFullscreen(self) < 0) {
+	if (!ENGINE_WINDOWED(self) && CD3DApp_ToggleFullscreen(self) < 0) {
 		CD3DApp_DisplayErrorMsg(self, 0x8200000c, 1);
 		return E_FAIL;
 	}
 	/* the device dialog (resource 0x90), SelectDeviceProc */
-	if (exe_DialogBoxParamA(exe_GetModuleHandleA(NULL), (const char *)0x90, MOTOR_HWND(self), GAME_FUNC(D3DApp_SelectDeviceProc, 0x275960),
+	if (exe_DialogBoxParamA(exe_GetModuleHandleA(NULL), (const char *)0x90, ENGINE_HWND(self), GAME_FUNC(D3DApp_SelectDeviceProc, 0x275960),
 		(intptr_t)self) != 1) {
 		return 0;
 	}
-	MOTOR_WINDOWED(self) = D3DApp_CurDevice(self)->bWindowed;
+	ENGINE_WINDOWED(self) = D3DApp_CurDevice(self)->bWindowed;
 	int err;
 	if (!D3DApp_Recreate(self, &err)) {
 		return err;
@@ -460,22 +460,22 @@ typedef void(__thiscall *d3dappPause_t)(byte *self, int pause);
 #define D3DCREATE_MIXED_VERTEXPROCESSING 0x80
 #define D3DCREATE_PUREDEVICE 0x10
 
-#define MOTOR_D3DCAPS(m) ((void *)((m) + 0x2a3dc))
-#define MOTOR_BEHAVIOR(m) MOTOR_U32(m, 0x2a4f0)
-#define MOTOR_WINSTYLE(m) MOTOR_U32(m, 0x2a4f4)
-#define MOTOR_WINRECT(m) ((exe_rect *)((m) + 0x2a4f8))
-#define MOTOR_CLIENTRECT(m) ((exe_rect *)((m) + 0x2a508))
-#define MOTOR_TIME(m) (*(float *)((m) + 0x2a518))
-#define MOTOR_ELAPSED(m) (*(float *)((m) + 0x2a51c))
-#define MOTOR_FPS(m) (*(float *)((m) + 0x2a520))
-#define MOTOR_DEVICESTATS(m) ((char *)((m) + 0x2a524))	/* 90 */
-#define MOTOR_FRAMESTATS(m) ((char *)((m) + 0x2a57e))	/* 90 */
-#define MOTOR_TITLE(m) (*(const char **)((m) + 0x2a5ac))
-#define MOTOR_SHOWCURSOR(m) MOTOR_U32(m, 0x2a5c4)	/* the cursor of the device while fullscreen */
-#define MOTOR_CREATEW(m) MOTOR_U32(m, 0x2a5bc)
-#define MOTOR_CREATEH(m) MOTOR_U32(m, 0x2a5c0)
-#define MOTOR_HWNDFOCUS(m) (*(void **)((m) + 0x2a3d0))
-#define MOTOR_NUMADAPTERS(m) MOTOR_U32(m, 0x2a37c)
+#define ENGINE_D3DCAPS(m) ((void *)((m) + 0x2a3dc))
+#define ENGINE_BEHAVIOR(m) ENGINE_U32(m, 0x2a4f0)
+#define ENGINE_WINSTYLE(m) ENGINE_U32(m, 0x2a4f4)
+#define ENGINE_WINRECT(m) ((exe_rect *)((m) + 0x2a4f8))
+#define ENGINE_CLIENTRECT(m) ((exe_rect *)((m) + 0x2a508))
+#define ENGINE_TIME(m) (*(float *)((m) + 0x2a518))
+#define ENGINE_ELAPSED(m) (*(float *)((m) + 0x2a51c))
+#define ENGINE_FPS(m) (*(float *)((m) + 0x2a520))
+#define ENGINE_DEVICESTATS(m) ((char *)((m) + 0x2a524))	/* 90 */
+#define ENGINE_FRAMESTATS(m) ((char *)((m) + 0x2a57e))	/* 90 */
+#define ENGINE_TITLE(m) (*(const char **)((m) + 0x2a5ac))
+#define ENGINE_SHOWCURSOR(m) ENGINE_U32(m, 0x2a5c4)	/* the cursor of the device while fullscreen */
+#define ENGINE_CREATEW(m) ENGINE_U32(m, 0x2a5bc)
+#define ENGINE_CREATEH(m) ENGINE_U32(m, 0x2a5c0)
+#define ENGINE_HWNDFOCUS(m) (*(void **)((m) + 0x2a3d0))
+#define ENGINE_NUMADAPTERS(m) ENGINE_U32(m, 0x2a37c)
 #define D3DAPP_STATS 90
 
 #define g_D3DAppFrames GAME_GLOBAL(uint32_t, g_D3DAppFrames, 0x4b1c38)
@@ -546,15 +546,15 @@ int __thiscall CD3DApp_Create(byte *self, void *inst) {
 	exe_rect r;
 	int hr;
 
-	MOTOR_D3D(self) = exe_Direct3DCreate8(0xdc);	/* D3D_SDK_VERSION */
-	if (!MOTOR_D3D(self)) {
+	ENGINE_D3D(self) = exe_Direct3DCreate8(0xdc);	/* D3D_SDK_VERSION */
+	if (!ENGINE_D3D(self)) {
 		return CD3DApp_DisplayErrorMsg(self, D3DAPPERR_NODIRECT3D, 1);
 	}
 	hr = CD3DApp_BuildDeviceList(self);
 	if (hr < 0) {
 		goto fail;
 	}
-	if (!MOTOR_HWND(self)) {
+	if (!ENGINE_HWND(self)) {
 		wc.style = 0;
 		wc.wndProc = GAME_FUNC(D3DApp_WndProc, 0x276460);	/* WndProc */
 		wc.clsExtra = 0;
@@ -566,32 +566,32 @@ int __thiscall CD3DApp_Create(byte *self, void *inst) {
 		wc.menuName = NULL;
 		wc.className = "Class_Engine3D_DX8";
 		exe_RegisterClassA(&wc);
-		MOTOR_WINSTYLE(self) = 0x90ce0000;	/* WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | ... */
-		exe_SetRect(&r, 0, 0, (int)MOTOR_CREATEW(self), (int)MOTOR_CREATEH(self));
-		exe_AdjustWindowRect(&r, MOTOR_WINSTYLE(self), 1);
+		ENGINE_WINSTYLE(self) = 0x90ce0000;	/* WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | ... */
+		exe_SetRect(&r, 0, 0, (int)ENGINE_CREATEW(self), (int)ENGINE_CREATEH(self));
+		exe_AdjustWindowRect(&r, ENGINE_WINSTYLE(self), 1);
 		void *menu = exe_LoadMenuA(inst, (const char *)0x8d);
-		MOTOR_HWND(self) = exe_CreateWindowExA(0, "Class_Engine3D_DX8", MOTOR_TITLE(self), MOTOR_WINSTYLE(self),
+		ENGINE_HWND(self) = exe_CreateWindowExA(0, "Class_Engine3D_DX8", ENGINE_TITLE(self), ENGINE_WINSTYLE(self),
 			(int)0x80000000, (int)0x80000000, r.right - r.left, r.bottom - r.top, NULL, menu, inst, NULL);
 	}
-	if (!MOTOR_HWNDFOCUS(self)) {
-		MOTOR_HWNDFOCUS(self) = MOTOR_HWND(self);
+	if (!ENGINE_HWNDFOCUS(self)) {
+		ENGINE_HWNDFOCUS(self) = ENGINE_HWND(self);
 	}
-	MOTOR_WINSTYLE(self) = (uint32_t)exe_GetWindowLongA(MOTOR_HWND(self), -16);	/* GWL_STYLE */
-	exe_GetWindowRect(MOTOR_HWND(self), MOTOR_WINRECT(self));
-	exe_GetClientRect(MOTOR_HWND(self), MOTOR_CLIENTRECT(self));
-	hr = MOTOR_CALL(self, D3DAPP_VT_ONETIMESCENEINIT);
+	ENGINE_WINSTYLE(self) = (uint32_t)exe_GetWindowLongA(ENGINE_HWND(self), -16);	/* GWL_STYLE */
+	exe_GetWindowRect(ENGINE_HWND(self), ENGINE_WINRECT(self));
+	exe_GetClientRect(ENGINE_HWND(self), ENGINE_CLIENTRECT(self));
+	hr = ENGINE_CALL(self, D3DAPP_VT_ONETIMESCENEINIT);
 	if (hr >= 0) {
 		hr = CD3DApp_Initialize3DEnvironment(self);
 		if (hr >= 0) {
 			DXUtil_Timer(DXUTIL_TIMER_START);
-			MOTOR_READY(self) = 1;
+			ENGINE_READY(self) = 1;
 			return 0;
 		}
 	}
 fail:
-	if (MOTOR_D3D(self)) {
-		COM_RELEASE(MOTOR_D3D(self));
-		MOTOR_D3D(self) = NULL;
+	if (ENGINE_D3D(self)) {
+		COM_RELEASE(ENGINE_D3D(self));
+		ENGINE_D3D(self) = NULL;
 	}
 	return CD3DApp_DisplayErrorMsg(self, hr, 1);
 }
@@ -648,7 +648,7 @@ int __thiscall CD3DApp_DisplayErrorMsg(byte *self, int hr, int type) {
 	Str_Copy(msg, s, sizeof(msg));
 	int fatal = 1;
 	if (type != 1) {
-		if (MOTOR_FULLSCREEN(self)) {
+		if (ENGINE_FULLSCREEN(self)) {
 			Err_Printf(1, "%s", msg);
 		}
 		D3DApp_Cat(msg, sizeof(msg), "\nUsing REF (allowed only in windowed)");
@@ -659,7 +659,7 @@ int __thiscall CD3DApp_DisplayErrorMsg(byte *self, int hr, int type) {
 }
 
 /* the modes, depth formats and behaviors of the HAL and REF devices of all adapters, then the first fullscreen HAL
- * device (with MOTOR_FULLSCREEN) or the first windowed one; the reasons a windowed REF had to be taken shown */
+ * device (with ENGINE_FULLSCREEN) or the first windowed one; the reasons a windowed REF had to be taken shown */
 int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 	static const uint32_t types[2] = { D3DDEVTYPE_HAL, D3DDEVTYPE_REF };
 	const char *names[2] = { GAME_STR(str_3dd264, 0x3dd264), GAME_STR(str_3dd268, 0x3dd268) };	/* "HAL", "REF" */
@@ -667,28 +667,28 @@ int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 	uint32_t fmts[20], behavior[20], depth[20];
 	int fmtOk[20];
 	int halExists = 0, halWindowed = 0, halDesktop = 0, halSample = 0;
-	void *d3d = MOTOR_D3D(self);
+	void *d3d = ENGINE_D3D(self);
 
 	for (uint32_t a = 0; a < D3D_METHOD(d3d, d3dGetAdapterCount_t, D3D8_GETADAPTERCOUNT)(d3d);
-		a++, d3d = MOTOR_D3D(self)) {
-		if (MOTOR_NUMADAPTERS(self) >= 10) {
+		a++, d3d = ENGINE_D3D(self)) {
+		if (ENGINE_NUMADAPTERS(self) >= 10) {
 			continue;
 		}
-		D3DAdapterInfo *ad = (D3DAdapterInfo *)MOTOR_ADAPTERS(self) + MOTOR_NUMADAPTERS(self);
+		D3DAdapterInfo *ad = (D3DAdapterInfo *)ENGINE_ADAPTERS(self) + ENGINE_NUMADAPTERS(self);
 		D3D_METHOD(d3d, d3dGetAdapterIdentifier_t, D3D8_GETADAPTERIDENTIFIER)(d3d, a, 0, ad);
-		d3d = MOTOR_D3D(self);
+		d3d = ENGINE_D3D(self);
 		D3D_METHOD(d3d, d3dGetAdapterDisplayMode_t, D3D8_GETADAPTERDISPLAYMODE)(d3d, a, ad->desktopMode);
 		ad->dwNumDevices = 0;
 		ad->dwCurrentDevice = 0;
 		/* the modes without the refresh rates, and their formats with the desktop one first */
 		uint32_t nModes = 0;
-		d3d = MOTOR_D3D(self);
+		d3d = ENGINE_D3D(self);
 		uint32_t count = D3D_METHOD(d3d, d3dGetAdapterModeCount_t, D3D8_GETADAPTERMODECOUNT)(d3d, a);
 		uint32_t nFmts = 1;
 		fmts[0] = ad->desktopMode[3];
 		for (uint32_t m = 0; m < count; m++) {
 			D3DDisplayMode dm;
-			d3d = MOTOR_D3D(self);
+			d3d = ENGINE_D3D(self);
 			D3D_METHOD(d3d, d3dEnumAdapterModes_t, D3D8_ENUMADAPTERMODES)(d3d, a, m, &dm);
 			uint32_t i;
 			for (i = 0; i < nModes; i++) {
@@ -718,7 +718,7 @@ int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 		for (int t = 0; t < 2; t++) {
 			D3DDeviceInfo *dev = &ad->devices[ad->dwNumDevices];
 			dev->DeviceType = types[t];
-			d3d = MOTOR_D3D(self);
+			d3d = ENGINE_D3D(self);
 			D3D_METHOD(d3d, d3dGetDeviceCaps_t, D3D8_GETDEVICECAPS)(d3d, a, types[t], dev->d3dCaps);
 			dev->dwNumModes = 0;
 			dev->dwCurrentMode = 0;
@@ -730,7 +730,7 @@ int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 				uint32_t fmt = fmts[f];
 				fmtOk[f] = 0;
 				depth[f] = 0;
-				d3d = MOTOR_D3D(self);
+				d3d = ENGINE_D3D(self);
 				if (D3D_METHOD(d3d, d3dCheckDeviceType_t, D3D8_CHECKDEVICETYPE)(d3d, a, dev->DeviceType, fmt, fmt, 0) < 0) {
 					continue;
 				}
@@ -773,7 +773,7 @@ int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 						continue;
 					}
 				}
-				if (!MOTOR_USEDEPTH(self)) {
+				if (!ENGINE_USEDEPTH(self)) {
 					continue;
 				}
 				if (!CD3DApp_FindDepthStencilFormat(self, a, dev->DeviceType, fmt, &depth[f])) {
@@ -812,8 +812,8 @@ int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 				}
 			}
 			for (uint32_t m = 0; m < n; m++) {
-				if (dev->modes[m].Width == (uint32_t)MOTOR_WIDTH(self) &&
-					dev->modes[m].Height == (uint32_t)MOTOR_HEIGHT(self)) {
+				if (dev->modes[m].Width == (uint32_t)ENGINE_WIDTH(self) &&
+					dev->modes[m].Height == (uint32_t)ENGINE_HEIGHT(self)) {
 					dev->dwCurrentMode = (int)m;
 					if (dev->modes[m].Format == D3DFMT_X8R8G8B8 || dev->modes[m].Format == D3DFMT_A8R8G8B8) {
 						break;
@@ -821,12 +821,12 @@ int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 				}
 			}
 			for (uint32_t m = 0; m < n; m++) {
-				if (dev->modes[m].Width != (uint32_t)MOTOR_WIDTH(self) ||
-					dev->modes[m].Height != (uint32_t)MOTOR_HEIGHT(self)) {
+				if (dev->modes[m].Width != (uint32_t)ENGINE_WIDTH(self) ||
+					dev->modes[m].Height != (uint32_t)ENGINE_HEIGHT(self)) {
 					continue;
 				}
 				uint32_t f = dev->modes[m].Format;
-				if (MOTOR_BPP(self) == 16 ? f == D3DFMT_R5G6B5 : (f == D3DFMT_X8R8G8B8 || f == D3DFMT_A8R8G8B8)) {
+				if (ENGINE_BPP(self) == 16 ? f == D3DFMT_R5G6B5 : (f == D3DFMT_X8R8G8B8 || f == D3DFMT_A8R8G8B8)) {
 					dev->dwCurrentMode = (int)m;
 					break;
 				}
@@ -840,34 +840,34 @@ int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 			}
 		}
 		if (ad->dwNumDevices) {
-			MOTOR_NUMADAPTERS(self)++;
+			ENGINE_NUMADAPTERS(self)++;
 		}
 	}
-	if (!MOTOR_NUMADAPTERS(self)) {
+	if (!ENGINE_NUMADAPTERS(self)) {
 		return (int)D3DAPPERR_NOCOMPATIBLEDEVICES;
 	}
-	D3DAdapterInfo *ads = (D3DAdapterInfo *)MOTOR_ADAPTERS(self);
-	if (MOTOR_FULLSCREEN(self)) {
-		for (uint32_t a = 0; a < MOTOR_NUMADAPTERS(self); a++) {
+	D3DAdapterInfo *ads = (D3DAdapterInfo *)ENGINE_ADAPTERS(self);
+	if (ENGINE_FULLSCREEN(self)) {
+		for (uint32_t a = 0; a < ENGINE_NUMADAPTERS(self); a++) {
 			for (uint32_t d = 0; d < ads[a].dwNumDevices; d++) {
 				if (ads[a].devices[d].DeviceType == D3DDEVTYPE_HAL) {
 					ads[a].devices[d].bWindowed = 0;
 					ads[a].dwCurrentDevice = (int)d;
-					MOTOR_ADAPTER(self) = (int)a;
-					MOTOR_WINDOWED(self) = 0;
+					ENGINE_ADAPTER(self) = (int)a;
+					ENGINE_WINDOWED(self) = 0;
 					return 0;
 				}
 			}
 		}
 	}
-	for (uint32_t a = 0; a < MOTOR_NUMADAPTERS(self); a++) {
+	for (uint32_t a = 0; a < ENGINE_NUMADAPTERS(self); a++) {
 		for (uint32_t d = 0; d < ads[a].dwNumDevices; d++) {
 			if (!ads[a].devices[d].bWindowed) {
 				continue;
 			}
 			ads[a].dwCurrentDevice = (int)d;
-			MOTOR_ADAPTER(self) = (int)a;
-			MOTOR_WINDOWED(self) = 1;
+			ENGINE_ADAPTER(self) = (int)a;
+			ENGINE_WINDOWED(self) = 1;
 			if (ads[a].devices[d].DeviceType == D3DDEVTYPE_REF) {
 				int why;
 				if (!halExists) {
@@ -890,45 +890,45 @@ int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 }
 
 int __thiscall CD3DApp_Initialize3DEnvironment(byte *self) {
-	D3DAdapterInfo *ad = MOTOR_ADAPTERINFO(self);
+	D3DAdapterInfo *ad = ENGINE_ADAPTERINFO(self);
 	D3DDeviceInfo *dev = &ad->devices[ad->dwCurrentDevice];
 	D3DModeInfo *mode = &dev->modes[dev->dwCurrentMode];
-	uint32_t *pp = MOTOR_PP(self);
+	uint32_t *pp = ENGINE_PP(self);
 	int hr;
 
-	MOTOR_CALL(self, D3DAPP_VT_ADJUSTWINDOW);
+	ENGINE_CALL(self, D3DAPP_VT_ADJUSTWINDOW);
 	memset(pp, 0, 0x34);
 	pp[7] = (uint32_t)dev->bWindowed;		/* Windowed */
 	pp[3] = 1;					/* BackBufferCount */
 	pp[4] = dev->MultiSampleType;
-	pp[8] = MOTOR_USEDEPTH(self);			/* EnableAutoDepthStencil */
+	pp[8] = ENGINE_USEDEPTH(self);			/* EnableAutoDepthStencil */
 	pp[5] = 1;					/* D3DSWAPEFFECT_DISCARD */
 	pp[9] = mode->DepthStencilFormat;
-	pp[6] = (uint32_t)(uintptr_t)MOTOR_HWND(self);
-	if (MOTOR_WINDOWED(self)) {
-		pp[0] = (uint32_t)(MOTOR_CLIENTRECT(self)->right - MOTOR_CLIENTRECT(self)->left);
-		pp[1] = (uint32_t)(MOTOR_CLIENTRECT(self)->bottom - MOTOR_CLIENTRECT(self)->top);
+	pp[6] = (uint32_t)(uintptr_t)ENGINE_HWND(self);
+	if (ENGINE_WINDOWED(self)) {
+		pp[0] = (uint32_t)(ENGINE_CLIENTRECT(self)->right - ENGINE_CLIENTRECT(self)->left);
+		pp[1] = (uint32_t)(ENGINE_CLIENTRECT(self)->bottom - ENGINE_CLIENTRECT(self)->top);
 		pp[2] = ad->desktopMode[3];
 		pp[12] = 0;
 	} else {
 		pp[0] = mode->Width;
 		pp[1] = mode->Height;
 		pp[2] = mode->Format;
-		pp[12] = MOTOR_VSYNC(self) ? 0 : 0x80000000;	/* D3DPRESENT_INTERVAL_IMMEDIATE without vsync */
+		pp[12] = ENGINE_VSYNC(self) ? 0 : 0x80000000;	/* D3DPRESENT_INTERVAL_IMMEDIATE without vsync */
 	}
-	void *d3d = MOTOR_D3D(self);
-	hr = D3D_METHOD(d3d, d3dCreateDevice_t, D3D8_CREATEDEVICE)(d3d, (uint32_t)MOTOR_ADAPTER(self), dev->DeviceType,
-		MOTOR_HWNDFOCUS(self), mode->dwBehavior, pp, &MOTOR_DEV(self));
+	void *d3d = ENGINE_D3D(self);
+	hr = D3D_METHOD(d3d, d3dCreateDevice_t, D3D8_CREATEDEVICE)(d3d, (uint32_t)ENGINE_ADAPTER(self), dev->DeviceType,
+		ENGINE_HWNDFOCUS(self), mode->dwBehavior, pp, &ENGINE_DEV(self));
 	if (hr >= 0) {
-		if (MOTOR_WINDOWED(self)) {
-			exe_rect *r = MOTOR_WINRECT(self);
-			exe_SetWindowPos(MOTOR_HWND(self), (void *)-2, r->left, r->top, r->right - r->left, r->bottom - r->top,
+		if (ENGINE_WINDOWED(self)) {
+			exe_rect *r = ENGINE_WINRECT(self);
+			exe_SetWindowPos(ENGINE_HWND(self), (void *)-2, r->left, r->top, r->right - r->left, r->bottom - r->top,
 				0x40);
 		}
-		void *d = MOTOR_DEV(self);
-		D3D_METHOD(d, devGetDeviceCaps_t, D3DDEV_GETDEVICECAPS)(d, MOTOR_D3DCAPS(self));
-		MOTOR_BEHAVIOR(self) = mode->dwBehavior;
-		char *stats = MOTOR_DEVICESTATS(self);
+		void *d = ENGINE_DEV(self);
+		D3D_METHOD(d, devGetDeviceCaps_t, D3DDEV_GETDEVICECAPS)(d, ENGINE_D3DCAPS(self));
+		ENGINE_BEHAVIOR(self) = mode->dwBehavior;
+		char *stats = ENGINE_DEVICESTATS(self);
 		if (dev->DeviceType == D3DDEVTYPE_REF) {
 			Str_Copy(stats, "REF", D3DAPP_STATS);
 		} else if (dev->DeviceType == D3DDEVTYPE_HAL) {
@@ -952,30 +952,30 @@ int __thiscall CD3DApp_Initialize3DEnvironment(byte *self) {
 			D3DApp_Cat(stats, D3DAPP_STATS, ad->Description);
 		}
 		CD3DApp_UpdateBackBufferDesc(self);
-		hr = MOTOR_CALL(self, D3DAPP_VT_INITDEVICEOBJECTS);
+		hr = ENGINE_CALL(self, D3DAPP_VT_INITDEVICEOBJECTS);
 		if (hr >= 0) {
-			hr = MOTOR_CALL(self, D3DAPP_VT_RESTOREDEVICEOBJECTS);
+			hr = ENGINE_CALL(self, D3DAPP_VT_RESTOREDEVICEOBJECTS);
 			if (hr >= 0) {
-				MOTOR_ACTIVE(self) = 1;
+				ENGINE_ACTIVE(self) = 1;
 				return 0;
 			}
 		}
-		MOTOR_CALL(self, D3DAPP_VT_INVALIDATEDEVICEOBJECTS);
-		MOTOR_CALL(self, D3DAPP_VT_DELETEDEVICEOBJECTS);
-		if (MOTOR_DEV(self)) {
-			COM_RELEASE(MOTOR_DEV(self));
-			MOTOR_DEV(self) = NULL;
+		ENGINE_CALL(self, D3DAPP_VT_INVALIDATEDEVICEOBJECTS);
+		ENGINE_CALL(self, D3DAPP_VT_DELETEDEVICEOBJECTS);
+		if (ENGINE_DEV(self)) {
+			COM_RELEASE(ENGINE_DEV(self));
+			ENGINE_DEV(self) = NULL;
 		}
 	}
 	/* a failed HAL: the error shown, then the first REF device of the first adapter */
 	if (dev->DeviceType == D3DDEVTYPE_HAL) {
 		CD3DApp_DisplayErrorMsg(self, hr, 1);
-		MOTOR_ADAPTER(self) = 0;
-		D3DAdapterInfo *a0 = (D3DAdapterInfo *)MOTOR_ADAPTERS(self);
+		ENGINE_ADAPTER(self) = 0;
+		D3DAdapterInfo *a0 = (D3DAdapterInfo *)ENGINE_ADAPTERS(self);
 		for (uint32_t d = 0; d < a0->dwNumDevices; d++) {
 			if (a0->devices[d].DeviceType == D3DDEVTYPE_REF) {
 				a0->dwCurrentDevice = (int)d;
-				MOTOR_WINDOWED(self) = a0->devices[d].bWindowed;
+				ENGINE_WINDOWED(self) = a0->devices[d].bWindowed;
 				break;
 			}
 		}
@@ -989,11 +989,11 @@ int __thiscall CD3DApp_Initialize3DEnvironment(byte *self) {
 intptr_t __thiscall CD3DApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintptr_t w, intptr_t l) {
 	switch (msg) {
 	case 0x5:			/* WM_SIZE */
-		MOTOR_ACTIVE(self) = !(w == 4 || w == 1);	/* SIZE_MAXHIDE, SIZE_MINIMIZED */
+		ENGINE_ACTIVE(self) = !(w == 4 || w == 1);	/* SIZE_MAXHIDE, SIZE_MINIMIZED */
 		break;
 	case 0xf:			/* WM_PAINT */
-		if (MOTOR_DEV(self) && !MOTOR_READY(self) && MOTOR_WINDOWED(self)) {
-			void *d = MOTOR_DEV(self);
+		if (ENGINE_DEV(self) && !ENGINE_READY(self) && ENGINE_WINDOWED(self)) {
+			void *d = ENGINE_DEV(self);
 			D3D_METHOD(d, devPresent_t, D3DDEV_PRESENT)(d, NULL, NULL, NULL, NULL);
 		}
 		break;
@@ -1004,10 +1004,10 @@ intptr_t __thiscall CD3DApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintpt
 		exe_PostQuitMessage(0);
 		return 0;
 	case 0x20:			/* WM_SETCURSOR */
-		if (MOTOR_ACTIVE(self) && MOTOR_READY(self) && !MOTOR_WINDOWED(self)) {
+		if (ENGINE_ACTIVE(self) && ENGINE_READY(self) && !ENGINE_WINDOWED(self)) {
 			exe_SetCursor(NULL);
-			if (MOTOR_SHOWCURSOR(self)) {
-				void *d = MOTOR_DEV(self);
+			if (ENGINE_SHOWCURSOR(self)) {
+				void *d = ENGINE_DEV(self);
 				D3D_METHOD(d, devShowCursor_t, D3DDEV_SHOWCURSOR)(d, 1);
 			}
 			return 1;
@@ -1018,14 +1018,14 @@ intptr_t __thiscall CD3DApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintpt
 		((int *)l)[7] = 100;
 		return exe_DefWindowProcA(hwnd, msg, w, l);
 	case 0x84:			/* WM_NCHITTEST */
-		if (!MOTOR_WINDOWED(self)) {
+		if (!ENGINE_WINDOWED(self)) {
 			return 1;
 		}
 		break;
 	case 0x111:			/* WM_COMMAND */
 		switch (w & 0xffff) {
 		case 0x9c42:		/* IDM_CHANGEDEVICE */
-			if (!MOTOR_ACTIVE(self) || !MOTOR_READY(self)) {
+			if (!ENGINE_ACTIVE(self) || !ENGINE_READY(self)) {
 				return 0;
 			}
 			D3DAPP_PAUSE(self, 1);
@@ -1035,7 +1035,7 @@ intptr_t __thiscall CD3DApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintpt
 			D3DAPP_PAUSE(self, 0);
 			return 0;
 		case 0x9c43:		/* IDM_TOGGLEFULLSCREEN */
-			if (!MOTOR_ACTIVE(self) || !MOTOR_READY(self)) {
+			if (!ENGINE_ACTIVE(self) || !ENGINE_READY(self)) {
 				return 0;
 			}
 			if (CD3DApp_ToggleFullscreen(self) < 0) {
@@ -1043,15 +1043,15 @@ intptr_t __thiscall CD3DApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintpt
 			}
 			return 0;
 		case 0x9c44: {		/* IDM_TOGGLESTART */
-			int moving = (int)MOTOR_FRAMEMOVING(self);
-			MOTOR_FRAMEMOVING(self) = !moving;
+			int moving = (int)ENGINE_FRAMEMOVING(self);
+			ENGINE_FRAMEMOVING(self) = !moving;
 			DXUtil_Timer(moving ? DXUTIL_TIMER_STOP : DXUTIL_TIMER_START);
 			break;
 		}
 		case 0x9c45:		/* IDM_SINGLESTEP */
-			DXUtil_Timer(MOTOR_FRAMEMOVING(self) ? DXUTIL_TIMER_STOP : DXUTIL_TIMER_ADVANCE);
-			MOTOR_FRAMEMOVING(self) = 0;
-			MOTOR_SINGLESTEP(self) = 1;
+			DXUtil_Timer(ENGINE_FRAMEMOVING(self) ? DXUTIL_TIMER_STOP : DXUTIL_TIMER_ADVANCE);
+			ENGINE_FRAMEMOVING(self) = 0;
+			ENGINE_SINGLESTEP(self) = 1;
 			break;
 		case 0x9c46:		/* IDM_EXIT */
 			exe_SendMessageA(hwnd, 0x10, 0, 0);
@@ -1059,16 +1059,16 @@ intptr_t __thiscall CD3DApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintpt
 		}
 		break;
 	case 0x112:			/* WM_SYSCOMMAND: no moving, sizing, maximizing, menu and power off when fullscreen */
-		if ((w == 0xf010 || w == 0xf000 || w == 0xf030 || w == 0xf100 || w == 0xf170) && !MOTOR_WINDOWED(self)) {
+		if ((w == 0xf010 || w == 0xf000 || w == 0xf030 || w == 0xf100 || w == 0xf170) && !ENGINE_WINDOWED(self)) {
 			return 1;
 		}
 		break;
 	case 0x200:			/* WM_MOUSEMOVE */
-		if (MOTOR_ACTIVE(self) && MOTOR_READY(self) && MOTOR_DEV(self)) {
+		if (ENGINE_ACTIVE(self) && ENGINE_READY(self) && ENGINE_DEV(self)) {
 			exe_point pt;
 			exe_GetCursorPos(&pt);
-			exe_ScreenToClient(MOTOR_HWND(self), &pt);
-			void *d = MOTOR_DEV(self);
+			exe_ScreenToClient(ENGINE_HWND(self), &pt);
+			void *d = ENGINE_DEV(self);
 			D3D_METHOD(d, devSetCursorPosition_t, D3DDEV_SETCURSORPOSITION)(d, pt.x, pt.y, 0);
 		}
 		break;
@@ -1087,29 +1087,29 @@ intptr_t __thiscall CD3DApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintpt
 		}
 		break;
 	case 0x231:			/* WM_ENTERSIZEMOVE */
-		if (MOTOR_FRAMEMOVING(self)) {
+		if (ENGINE_FRAMEMOVING(self)) {
 			DXUtil_Timer(DXUTIL_TIMER_STOP);
 		}
 		break;
 	case 0x232:			/* WM_EXITSIZEMOVE: the back buffer of a new client size */
-		if (MOTOR_FRAMEMOVING(self)) {
+		if (ENGINE_FRAMEMOVING(self)) {
 			DXUtil_Timer(DXUTIL_TIMER_START);
 		}
-		if (MOTOR_ACTIVE(self) && MOTOR_WINDOWED(self)) {
-			exe_rect old = *MOTOR_CLIENTRECT(self);
-			exe_GetWindowRect(MOTOR_HWND(self), MOTOR_WINRECT(self));
-			exe_GetClientRect(MOTOR_HWND(self), MOTOR_CLIENTRECT(self));
-			exe_rect *c = MOTOR_CLIENTRECT(self);
+		if (ENGINE_ACTIVE(self) && ENGINE_WINDOWED(self)) {
+			exe_rect old = *ENGINE_CLIENTRECT(self);
+			exe_GetWindowRect(ENGINE_HWND(self), ENGINE_WINRECT(self));
+			exe_GetClientRect(ENGINE_HWND(self), ENGINE_CLIENTRECT(self));
+			exe_rect *c = ENGINE_CLIENTRECT(self);
 			int nw = c->right - c->left;
 			if (old.right - old.left != nw || old.bottom - old.top != c->bottom - c->top) {
-				MOTOR_READY(self) = 0;
-				MOTOR_PP(self)[0] = (uint32_t)nw;
-				MOTOR_PP(self)[1] = (uint32_t)(c->bottom - c->top);
+				ENGINE_READY(self) = 0;
+				ENGINE_PP(self)[0] = (uint32_t)nw;
+				ENGINE_PP(self)[1] = (uint32_t)(c->bottom - c->top);
 				if (CD3DApp_Reset(self) < 0) {
 					CD3DApp_DisplayErrorMsg(self, (int)D3DAPPERR_RESIZEFAILED, 1);
 					return 0;
 				}
-				MOTOR_READY(self) = 1;
+				ENGINE_READY(self) = 1;
 			}
 		}
 		break;
@@ -1127,19 +1127,19 @@ static void D3DApp_FrameStats(byte *self) {
 	}
 	g_D3DAppFrames = 0;
 	g_D3DAppLastTime = t;
-	MOTOR_FPS(self) = (float)(double)frames / d;
+	ENGINE_FPS(self) = (float)(double)frames / d;
 	if (g_pApp->flags & APPF_DEDICATED) {
 		return;
 	}
 	D3DDisplayMode mode;
-	void *d3d = MOTOR_D3D(self);
-	D3D_METHOD(d3d, d3dGetAdapterDisplayMode_t, D3D8_GETADAPTERDISPLAYMODE)(d3d, (uint32_t)MOTOR_ADAPTER(self), &mode);
-	Bprintf(MOTOR_FRAMESTATS(self), D3DAPP_STATS, "%.02f fps (%dx%dx%d)", (double)MOTOR_FPS(self),
-		MOTOR_U32(self, 0x2a4c8), MOTOR_U32(self, 0x2a4cc), mode.Format == D3DFMT_X8R8G8B8 ? 32 : 16);
-	if (!MOTOR_USEDEPTH(self)) {
+	void *d3d = ENGINE_D3D(self);
+	D3D_METHOD(d3d, d3dGetAdapterDisplayMode_t, D3D8_GETADAPTERDISPLAYMODE)(d3d, (uint32_t)ENGINE_ADAPTER(self), &mode);
+	Bprintf(ENGINE_FRAMESTATS(self), D3DAPP_STATS, "%.02f fps (%dx%dx%d)", (double)ENGINE_FPS(self),
+		ENGINE_U32(self, 0x2a4c8), ENGINE_U32(self, 0x2a4cc), mode.Format == D3DFMT_X8R8G8B8 ? 32 : 16);
+	if (!ENGINE_USEDEPTH(self)) {
 		return;
 	}
-	D3DAdapterInfo *ad = MOTOR_ADAPTERINFO(self);
+	D3DAdapterInfo *ad = ENGINE_ADAPTERINFO(self);
 	D3DDeviceInfo *dev = &ad->devices[ad->dwCurrentDevice];
 	const char *s;
 	switch (dev->modes[dev->dwCurrentMode].DepthStencilFormat) {
@@ -1164,7 +1164,7 @@ static void D3DApp_FrameStats(byte *self) {
 	default:
 		return;
 	}
-	D3DApp_Cat(MOTOR_FRAMESTATS(self), D3DAPP_STATS, s);
+	D3DApp_Cat(ENGINE_FRAMESTATS(self), D3DAPP_STATS, s);
 }
 
 /* a lost device reset when it can be; the scene moved (while the time runs or for a single step) and drawn */
@@ -1172,11 +1172,11 @@ int __thiscall CD3DApp_Render(byte *self) {
 	int hr = 0;
 
 	/* differs from the original on purpose (no sleeps): no frame while the frame limiter holds it back */
-	if (!(g_pApp->flags & APPF_DEDICATED) && !Motor_FrameDue(self)) {
+	if (!(g_pApp->flags & APPF_DEDICATED) && !Engine_FrameDue(self)) {
 		return 0;
 	}
 	if (!(g_pApp->flags & APPF_DEDICATED)) {
-		void *d = MOTOR_DEV(self);
+		void *d = ENGINE_DEV(self);
 		hr = D3D_METHOD(d, devTestCooperativeLevel_t, D3DDEV_TESTCOOPERATIVELEVEL)(d);
 		if (hr < 0) {
 			if (hr == D3DERR_DEVICELOST) {
@@ -1185,12 +1185,12 @@ int __thiscall CD3DApp_Render(byte *self) {
 			if (hr != D3DERR_DEVICENOTRESET) {
 				return hr;
 			}
-			if (MOTOR_WINDOWED(self)) {
-				D3DAdapterInfo *ad = (D3DAdapterInfo *)MOTOR_ADAPTERS(self) + MOTOR_ADAPTER(self);
-				void *d3d = MOTOR_D3D(self);
+			if (ENGINE_WINDOWED(self)) {
+				D3DAdapterInfo *ad = (D3DAdapterInfo *)ENGINE_ADAPTERS(self) + ENGINE_ADAPTER(self);
+				void *d3d = ENGINE_D3D(self);
 				D3D_METHOD(d3d, d3dGetAdapterDisplayMode_t, D3D8_GETADAPTERDISPLAYMODE)(d3d,
-					(uint32_t)MOTOR_ADAPTER(self), ad->desktopMode);
-				MOTOR_PP(self)[2] = ad->desktopMode[3];
+					(uint32_t)ENGINE_ADAPTER(self), ad->desktopMode);
+				ENGINE_PP(self)[2] = ad->desktopMode[3];
 			}
 			hr = CD3DApp_Reset(self);
 			if (hr < 0) {
@@ -1201,31 +1201,31 @@ int __thiscall CD3DApp_Render(byte *self) {
 	}
 	float appTime = DXUtil_Timer(DXUTIL_TIMER_GETAPPTIME);
 	float elapsed = DXUtil_Timer(DXUTIL_TIMER_GETELAPSEDTIME);
-	if (elapsed == 0.0f && MOTOR_FRAMEMOVING(self)) {
+	if (elapsed == 0.0f && ENGINE_FRAMEMOVING(self)) {
 		return 0;
 	}
-	if (MOTOR_FRAMEMOVING(self) || MOTOR_SINGLESTEP(self)) {
-		MOTOR_TIME(self) = appTime;
-		MOTOR_ELAPSED(self) = elapsed;
-		hr = MOTOR_CALL(self, D3DAPP_VT_FRAMEMOVE);
+	if (ENGINE_FRAMEMOVING(self) || ENGINE_SINGLESTEP(self)) {
+		ENGINE_TIME(self) = appTime;
+		ENGINE_ELAPSED(self) = elapsed;
+		hr = ENGINE_CALL(self, D3DAPP_VT_FRAMEMOVE);
 		if (hr < 0) {
 			return hr;
 		}
-		MOTOR_SINGLESTEP(self) = 0;
+		ENGINE_SINGLESTEP(self) = 0;
 	}
 	if (!(g_pApp->flags & APPF_DEDICATED)) {
-		hr = MOTOR_CALL(self, D3DAPP_VT_RENDER);
+		hr = ENGINE_CALL(self, D3DAPP_VT_RENDER);
 		if (hr < 0) {
 			return hr;
 		}
 	}
 	if (hr == 1) {
-		exe_SendMessageA(MOTOR_HWND(self), 0x10, 0, 0);
+		exe_SendMessageA(ENGINE_HWND(self), 0x10, 0, 0);
 		return 0;
 	}
 	D3DApp_FrameStats(self);
 	if (!(g_pApp->flags & APPF_DEDICATED)) {
-		void *d = MOTOR_DEV(self);
+		void *d = ENGINE_DEV(self);
 		D3D_METHOD(d, devPresent_t, D3DDEV_PRESENT)(d, NULL, NULL, NULL, NULL);
 	}
 	return 0;
@@ -1243,23 +1243,23 @@ int __thiscall CD3DApp_Run(byte *self) {
 		 * waited in GetMessage; without a message the inactive app goes round again */
 		int got = exe_PeekMessageA(&msg, NULL, 0, 0, 1);
 		if (got) {
-			if (!exe_TranslateAcceleratorA(MOTOR_HWND(self), acc, &msg)) {
+			if (!exe_TranslateAcceleratorA(ENGINE_HWND(self), acc, &msg)) {
 				exe_TranslateMessage(&msg);
 				exe_DispatchMessageA(&msg);
 			}
 			continue;
 		}
-		if (!MOTOR_ACTIVE(self) || !MOTOR_READY(self)) {
+		if (!ENGINE_ACTIVE(self) || !ENGINE_READY(self)) {
 			continue;
 		}
-		/* differs from the original on purpose (no sleeps): the frame limiter of CMotorApp_Render holds the frame
+		/* differs from the original on purpose (no sleeps): the frame limiter of CEngineApp_Render holds the frame
 		 * back here, before the clock and FrameMove, instead of sleeping inside Render */
-		if (!(g_pApp->flags & APPF_DEDICATED) && !Motor_FrameDue(self)) {
+		if (!(g_pApp->flags & APPF_DEDICATED) && !Engine_FrameDue(self)) {
 			continue;
 		}
 		int r = 0;
 		if (!(g_pApp->flags & APPF_DEDICATED)) {
-			void *d = MOTOR_DEV(self);
+			void *d = ENGINE_DEV(self);
 			hr = D3D_METHOD(d, devTestCooperativeLevel_t, D3DDEV_TESTCOOPERATIVELEVEL)(d);
 			if (hr < 0) {
 				if (hr == D3DERR_DEVICELOST) {
@@ -1267,12 +1267,12 @@ int __thiscall CD3DApp_Run(byte *self) {
 				}
 				r = hr;
 				if (hr == D3DERR_DEVICENOTRESET) {
-					if (MOTOR_WINDOWED(self)) {
-						D3DAdapterInfo *ad = (D3DAdapterInfo *)MOTOR_ADAPTERS(self) + MOTOR_ADAPTER(self);
-						void *d3d = MOTOR_D3D(self);
+					if (ENGINE_WINDOWED(self)) {
+						D3DAdapterInfo *ad = (D3DAdapterInfo *)ENGINE_ADAPTERS(self) + ENGINE_ADAPTER(self);
+						void *d3d = ENGINE_D3D(self);
 						D3D_METHOD(d3d, d3dGetAdapterDisplayMode_t, D3D8_GETADAPTERDISPLAYMODE)(d3d,
-							(uint32_t)MOTOR_ADAPTER(self), ad->desktopMode);
-						MOTOR_PP(self)[2] = ad->desktopMode[3];
+							(uint32_t)ENGINE_ADAPTER(self), ad->desktopMode);
+						ENGINE_PP(self)[2] = ad->desktopMode[3];
 					}
 					r = CD3DApp_Reset(self);
 					hr = r;
@@ -1285,40 +1285,40 @@ int __thiscall CD3DApp_Run(byte *self) {
 		}
 		float appTime = DXUtil_Timer(DXUTIL_TIMER_GETAPPTIME);
 		float elapsed = DXUtil_Timer(DXUTIL_TIMER_GETELAPSEDTIME);
-		if (elapsed == 0.0f && MOTOR_FRAMEMOVING(self)) {
+		if (elapsed == 0.0f && ENGINE_FRAMEMOVING(self)) {
 			continue;
 		}
-		if (MOTOR_FRAMEMOVING(self) || MOTOR_SINGLESTEP(self)) {
-			MOTOR_TIME(self) = appTime;
-			MOTOR_ELAPSED(self) = elapsed;
-			hr = MOTOR_CALL(self, D3DAPP_VT_FRAMEMOVE);
+		if (ENGINE_FRAMEMOVING(self) || ENGINE_SINGLESTEP(self)) {
+			ENGINE_TIME(self) = appTime;
+			ENGINE_ELAPSED(self) = elapsed;
+			hr = ENGINE_CALL(self, D3DAPP_VT_FRAMEMOVE);
 			r = hr;
 			if (hr < 0) {
 				goto failed;
 			}
-			MOTOR_SINGLESTEP(self) = 0;
+			ENGINE_SINGLESTEP(self) = 0;
 		}
 		if (!(g_pApp->flags & APPF_DEDICATED)) {
-			hr = MOTOR_CALL(self, D3DAPP_VT_RENDER);
+			hr = ENGINE_CALL(self, D3DAPP_VT_RENDER);
 			r = hr;
 			if (hr < 0) {
 				goto failed;
 			}
 		}
 		if (hr == 1) {
-			exe_SendMessageA(MOTOR_HWND(self), 0x10, 0, 0);
+			exe_SendMessageA(ENGINE_HWND(self), 0x10, 0, 0);
 			continue;
 		}
 		D3DApp_FrameStats(self);
 		if (!(g_pApp->flags & APPF_DEDICATED)) {
-			void *d = MOTOR_DEV(self);
+			void *d = ENGINE_DEV(self);
 			D3D_METHOD(d, devPresent_t, D3DDEV_PRESENT)(d, NULL, NULL, NULL, NULL);
 		}
 		continue;
 failed:
 		/* the first error ends the loop through WM_CLOSE */
 		if (r < 0) {
-			exe_SendMessageA(MOTOR_HWND(self), 0x10, 0, 0);
+			exe_SendMessageA(ENGINE_HWND(self), 0x10, 0, 0);
 		}
 	}
 	return (int)msg.wParam;
@@ -1366,7 +1366,7 @@ static void D3DApp_ComboAdd(void *combo, const char *text, uint32_t data, int se
 }
 
 static D3DAdapterInfo *D3DApp_SelAdapter(void) {
-	return (D3DAdapterInfo *)MOTOR_ADAPTERS(g_SelApp) + g_SelAdapter;
+	return (D3DAdapterInfo *)ENGINE_ADAPTERS(g_SelApp) + g_SelAdapter;
 }
 
 intptr_t __stdcall D3DApp_SelectDeviceProc(void *dlg, uint32_t msg, uintptr_t w, intptr_t l) {
@@ -1381,8 +1381,8 @@ intptr_t __stdcall D3DApp_SelectDeviceProc(void *dlg, uint32_t msg, uintptr_t w,
 	if (msg == 0x110) {		/* WM_INITDIALOG: the application in lParam */
 		byte *app = (byte *)l;
 		g_SelApp = app;
-		D3DAdapterInfo *ad = (D3DAdapterInfo *)MOTOR_ADAPTERS(app) + MOTOR_ADAPTER(app);
-		g_OrigAdapter = g_SelAdapter = (uint32_t)MOTOR_ADAPTER(app);
+		D3DAdapterInfo *ad = (D3DAdapterInfo *)ENGINE_ADAPTERS(app) + ENGINE_ADAPTER(app);
+		g_OrigAdapter = g_SelAdapter = (uint32_t)ENGINE_ADAPTER(app);
 		D3DDeviceInfo *dev = &ad->devices[ad->dwCurrentDevice];
 		g_OrigDevice = g_SelDevice = (uint32_t)ad->dwCurrentDevice;
 		g_OrigMode = g_SelMode = (uint32_t)dev->dwCurrentMode;
@@ -1397,7 +1397,7 @@ intptr_t __stdcall D3DApp_SelectDeviceProc(void *dlg, uint32_t msg, uintptr_t w,
 				exe_EndDialog(dlg, 2);
 				return 1;
 			}
-			MOTOR_ADAPTER(g_SelApp) = (int)g_SelAdapter;
+			ENGINE_ADAPTER(g_SelApp) = (int)g_SelAdapter;
 			D3DAdapterInfo *ad = D3DApp_SelAdapter();
 			ad->dwCurrentDevice = (int)g_SelDevice;
 			D3DDeviceInfo *dev = &ad->devices[g_SelDevice];
@@ -1440,8 +1440,8 @@ intptr_t __stdcall D3DApp_SelectDeviceProc(void *dlg, uint32_t msg, uintptr_t w,
 	exe_SendMessageA(hMultiSample, CB_RESETCONTENT, 0, 0);
 	D3DAdapterInfo *ad = D3DApp_SelAdapter();
 	D3DDeviceInfo *dev = &ad->devices[g_SelDevice];
-	for (uint32_t a = 0; a < MOTOR_NUMADAPTERS(g_SelApp); a++) {
-		D3DApp_ComboAdd(hAdapter, ((D3DAdapterInfo *)MOTOR_ADAPTERS(g_SelApp))[a].Description, a, a == g_SelAdapter);
+	for (uint32_t a = 0; a < ENGINE_NUMADAPTERS(g_SelApp); a++) {
+		D3DApp_ComboAdd(hAdapter, ((D3DAdapterInfo *)ENGINE_ADAPTERS(g_SelApp))[a].Description, a, a == g_SelAdapter);
 	}
 	for (uint32_t d = 0; d < ad->dwNumDevices; d++) {
 		D3DApp_ComboAdd(hDevice, ad->devices[d].strDesc, d, d == g_SelDevice);
@@ -1453,12 +1453,12 @@ intptr_t __stdcall D3DApp_SelectDeviceProc(void *dlg, uint32_t msg, uintptr_t w,
 		D3DApp_ComboAdd(hMode, buf, m, m == g_SelMode);
 	}
 	for (uint32_t t = 0; t <= 16; t++) {
-		uint32_t fmt = g_SelWindowed ? ((D3DAdapterInfo *)MOTOR_ADAPTERS(g_SelApp))[g_SelAdapter].desktopMode[3] :
+		uint32_t fmt = g_SelWindowed ? ((D3DAdapterInfo *)ENGINE_ADAPTERS(g_SelApp))[g_SelAdapter].desktopMode[3] :
 			dev->modes[g_SelMode].Format;
 		if (t == 1) {
 			continue;
 		}
-		void *d3d = MOTOR_D3D(g_SelApp);
+		void *d3d = ENGINE_D3D(g_SelApp);
 		if (D3D_METHOD(d3d, d3dCheckDeviceMultiSampleType_t, D3D8_CHECKDEVICEMULTISAMPLETYPE)(d3d, g_SelAdapter,
 			dev->DeviceType, fmt, g_SelWindowed, t) < 0) {
 			continue;

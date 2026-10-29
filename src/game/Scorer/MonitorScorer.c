@@ -46,7 +46,7 @@ cMonitorScorer *__fastcall cMonitorScorer_ctor(cMonitorScorer *self) {
 	self->mask = Monitor_WhiteImage(0x10000);
 	self->frame = Monitor_WhiteImage(0x10000);
 	self->staticImg = Monitor_WhiteImage(0x10000);
-	self->objetive = Monitor_WhiteImage(0x10000);
+	self->objective = Monitor_WhiteImage(0x10000);
 	self->weapon = Monitor_WhiteImage(0x10000);
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	self->noiseImg = img ? CPsaImage_ctorFlags(img, "2D/white.tga", 0, 3, 0x2030) : NULL;
@@ -82,7 +82,7 @@ void __fastcall cMonitorScorer_dtor(cMonitorScorer *self) {
 	Monitor_FreeImage(self->mask);
 	Monitor_FreeImage(self->frame);
 	Monitor_FreeImage(self->staticImg);
-	Monitor_FreeImage(self->objetive);
+	Monitor_FreeImage(self->objective);
 	Monitor_FreeImage(self->weapon);
 	if (self->cam) {
 		CGameCamera_dtor(self->cam);
@@ -134,20 +134,20 @@ int __thiscall cMonitorScorer_Var(cMonitorScorer *self, const char *name, byte s
 		return ScorerVar_Int(&self->frameIndex, set, i);
 	}
 	if (s && !crt_stricmp(name, "ObjetiveSprite") && set) {
-		return Monitor_VarSprite(&self->objetive, *s, 3, 0x10048, 0xffffff);
+		return Monitor_VarSprite(&self->objective, *s, 3, 0x10048, 0xffffff);
 	}
 	if (i) {
 		if (!crt_stricmp(name, "ObjetiveIndex")) {
-			return ScorerVar_Int(&self->objetiveIndex, set, i);
+			return ScorerVar_Int(&self->objectiveIndex, set, i);
 		}
 		if (!crt_stricmp(name, "ObjetiveChargeIndex")) {
-			return ScorerVar_Int(&self->objetiveChargeIndex, set, i);
+			return ScorerVar_Int(&self->objectiveChargeIndex, set, i);
 		}
 		if (!crt_stricmp(name, "ObjetiveBlackIndex")) {
-			return ScorerVar_Int(&self->objetiveBlackIndex, set, i);
+			return ScorerVar_Int(&self->objectiveBlackIndex, set, i);
 		}
 		if (!crt_stricmp(name, "ObjetiveWhiteIndex")) {
-			return ScorerVar_Int(&self->objetiveWhiteIndex, set, i);
+			return ScorerVar_Int(&self->objectiveWhiteIndex, set, i);
 		}
 	}
 	if (s && !crt_stricmp(name, "StaticSprite") && set) {
@@ -351,7 +351,7 @@ static void Monitor_SetHead(cMonitorScorer *self, cEntity *e) {
 static void Monitor_DrawHead(cMonitorScorer *self, float frameTime) {
 	vec3_t t;
 
-	CGameCamera *cur = Camera_GetActual();
+	CGameCamera *cur = Camera_GetCurrent();
 	float tt = frameTime * 3.0f + self->textTime;
 	self->textTime = tt;
 	if (tt > 1.0f) {
@@ -379,7 +379,7 @@ static void Monitor_DrawHead(cMonitorScorer *self, float frameTime) {
 	cam->target.z = p->z + 0.0f;
 	cam->target.y = p->y + h;
 	self->cam->fov = MONITOR_HEAD_FOV;
-	Camera_SetActual(self->cam);
+	Camera_SetCurrent(self->cam);
 	CGameModel_RootMotion(&self->model->model, frameTime, NULL, NULL);
 	CGameModel_Enable(&self->model->model);
 	CGameModel_RenderNow(&self->model->model, 2);
@@ -388,7 +388,7 @@ static void Monitor_DrawHead(cMonitorScorer *self, float frameTime) {
 		(*(void(__thiscall **)(void *))(*(byte **)extra + 0x10))(extra);
 	}
 	CGameModel_Disable(&self->model->model);
-	Camera_SetActual(cur);
+	Camera_SetCurrent(cur);
 }
 
 /* the view of the looked entity e: its camera at a distance by its size, the mark of a mission ship, the life and
@@ -426,7 +426,7 @@ static uint32_t Monitor_DrawLooked(cMonitorScorer *self, cEntity *target, cEntit
 	if (!(self->textTime > 0.5f)) {
 		return textColor;
 	}
-	CGameCamera *cur = Camera_GetActual();
+	CGameCamera *cur = Camera_GetCurrent();
 	if (!cur) {
 		return textColor;
 	}
@@ -479,9 +479,9 @@ static uint32_t Monitor_DrawLooked(cMonitorScorer *self, cEntity *target, cEntit
 	self->cam->fov = MONITOR_VIEW_FOV;
 	p = vt->GetViewPos(e, &t);
 	self->cam->target = *p;
-	Camera_SetActual(self->cam);
+	Camera_SetCurrent(self->cam);
 	vt->Render(e);
-	Camera_SetActual(cur);
+	Camera_SetCurrent(cur);
 	if (e != self->lastTarget) {
 		self->lastTarget = e;
 		Str_Copy(self->text, WLife(e)->usrName ? WLife(e)->usrName : ACT_EMPTY, sizeof(self->text));
@@ -493,7 +493,7 @@ static uint32_t Monitor_DrawLooked(cMonitorScorer *self, cEntity *target, cEntit
 		return textColor;
 	}
 	uint32_t c = cVehicleO648_IsStale(Veh(target)->o648) ? textColor : lifeColor;
-	CFont_PrintfColorSombra(self->bigFont, self->base.x + 8.0f, self->base.y + 6.0f, c, "%d", WLife(e)->life);
+	CFont_PrintfColorShadow(self->bigFont, self->base.x + 8.0f, self->base.y + 6.0f, c, "%d", WLife(e)->life);
 	if (!eIsCar) {
 		return textColor;
 	}
@@ -537,14 +537,14 @@ static void Monitor_DrawText(cMonitorScorer *self, cEntity *e, float frameTime, 
 		textColor = ((cObjEntity *)e)->radarShow == 1 ? 0xeeffae : 0xaeffae;
 	}
 	CFont *f = self->smallFont;
-	f->sombra[0] = 1.0f;
-	f->sombra[1] = 1.0f;
-	CFont_PrintfColorSombra(f, self->base.x + 8.0f, self->base.y + MONITOR_H - 20.0f, textColor, "%.*s", n, self->text);
+	f->shadow[0] = 1.0f;
+	f->shadow[1] = 1.0f;
+	CFont_PrintfColorShadow(f, self->base.x + 8.0f, self->base.y + MONITOR_H - 20.0f, textColor, "%.*s", n, self->text);
 	f = self->smallFont;
-	CFont_PrintfColorSombra(f, f->x, f->y, 0xffffff, "%c", self->text[n]);
+	CFont_PrintfColorShadow(f, f->x, f->y, 0xffffff, "%c", self->text[n]);
 	f = self->smallFont;
-	CFont_PrintfColorSombra(f, f->x, f->y, 0xffffff, "%c", self->text[n] ? 0x80 : 0);
-	CFont_ResetEfectos(self->smallFont);
+	CFont_PrintfColorShadow(f, f->x, f->y, 0xffffff, "%c", self->text[n] ? 0x80 : 0);
+	CFont_ResetEffects(self->smallFont);
 	if (self->noise > 0.1f) {
 		CPsaImage *img = self->noiseImg;
 		img->f18 = 0.8f;
@@ -635,7 +635,7 @@ static void Monitor_DrawObjective(cMonitorScorer *self, cEntity *e, float time, 
 	const char *name;
 	byte on = 0;
 
-	CPsaImage *o = self->objetive;
+	CPsaImage *o = self->objective;
 	if (e && Entity_IsType(e, TYEN_WITH_LIFE) && WLife(e)->arrow.canPhoto) {
 		on = 1;
 		o->color = ((int)(time * 10.0f) & 1) ? 0x80ff : 0xffff;
@@ -671,7 +671,7 @@ static void Monitor_DrawObjective(cMonitorScorer *self, cEntity *e, float time, 
 	float k1 = on ? 1.5f : 0.5f;
 	float k0 = self->objWas ? 1.5f : 0.5f;
 	float sc = k1 * s + u * k0;
-	o = self->objetive;
+	o = self->objective;
 	o->scaleX = sc;
 	o->scaleY = sc;
 	float h = sc * 11.0f;
@@ -681,15 +681,15 @@ static void Monitor_DrawObjective(cMonitorScorer *self, cEntity *e, float time, 
 	/* the shadowed corners: the colors at half, no alpha */
 	uint32_t dark = (((c >> 16 & 0xfe) << 8 | (c >> 8 & 0xff)) & ~1u) << 7 | (c & 0xff) >> 1;
 	o->color = dark;
-	CPsaImage_DrawFrameFlip(o, self->objetiveIndex, px - h, py - h, 0, 0);
-	self->objetive->color = c;
-	CPsaImage_DrawFrameFlip(self->objetive, self->objetiveIndex, px + h, py - h, 1, 0);
-	self->objetive->color = dark;
-	CPsaImage_DrawFrameFlip(self->objetive, self->objetiveIndex, px + h, py + h, 2, 0);
-	self->objetive->color = c;
-	CPsaImage_DrawFrameFlip(self->objetive, self->objetiveIndex, px - h, py + h, 3, 0);
-	self->objetive->scaleX = 1.0f;
-	self->objetive->scaleY = 1.0f;
+	CPsaImage_DrawFrameFlip(o, self->objectiveIndex, px - h, py - h, 0, 0);
+	self->objective->color = c;
+	CPsaImage_DrawFrameFlip(self->objective, self->objectiveIndex, px + h, py - h, 1, 0);
+	self->objective->color = dark;
+	CPsaImage_DrawFrameFlip(self->objective, self->objectiveIndex, px + h, py + h, 2, 0);
+	self->objective->color = c;
+	CPsaImage_DrawFrameFlip(self->objective, self->objectiveIndex, px - h, py + h, 3, 0);
+	self->objective->scaleX = 1.0f;
+	self->objective->scaleY = 1.0f;
 }
 
 void __thiscall cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEntity *target) {
@@ -740,8 +740,8 @@ void __thiscall cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEn
 		}
 		uint32_t c = can ? (uint32_t)(0x5c - (int)(a * -64.0f)) << 24 | 0xfbf1ae
 			: (uint32_t)(int)(a * 128.0f) << 24 | 0xff2020;
-		self->objetive->color = c;
-		CPsaImage_DrawFrameFlip(self->objetive, self->canPossessIndex, self->base.x + MONITOR_W - 22.0f,
+		self->objective->color = c;
+		CPsaImage_DrawFrameFlip(self->objective, self->canPossessIndex, self->base.x + MONITOR_W - 22.0f,
 			self->base.y + 12.0f, 0, 0);
 	}
 	float tt = self->textTime;

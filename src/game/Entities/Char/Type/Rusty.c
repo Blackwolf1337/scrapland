@@ -56,7 +56,7 @@ void ChType_FXRustyHit(cAbstractFile *params) {
 	CGameModel_SetPos(Debris_Model(d), &pos);
 	Debris_Life(d) = 1.0f;
 	cDebrisSys_Drop(sys, d);
-	cObjElementFXSistPart *el = Debris_Element(d);
+	cObjElementFXParticleSystem *el = Debris_Element(d);
 	if (!el) {
 		return;
 	}

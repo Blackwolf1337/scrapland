@@ -33,14 +33,14 @@ rn2t = rn2new(8)
 rn2pk(rn2t, 3)
 rn2pk(rn2t + 4, rn2new(0x100))
 for i in (0, 1, 2):
-	check('Tabla_Get8' + fmt((i,)), lambda i=i: SDTest.Call('Tabla_Get8', 'tiii', rn2t, i)[0] - rn2i(rn2t + 4))
-	check('Tabla_Get50' + fmt((i,)), lambda i=i: SDTest.Call('Tabla_Get50', 'tiii', rn2t, i)[0] - rn2i(rn2t + 4))
-for rva in ('Tabla_Free@2b8dd0', 'Tabla_Free@2bbcf0', 'Tabla_Free@2bbd20'):
+	check('Table_Get8' + fmt((i,)), lambda i=i: SDTest.Call('Table_Get8', 'tiii', rn2t, i)[0] - rn2i(rn2t + 4))
+	check('Table_Get50' + fmt((i,)), lambda i=i: SDTest.Call('Table_Get50', 'tiii', rn2t, i)[0] - rn2i(rn2t + 4))
+for rva in ('Table_Free@2b8dd0', 'Table_Free@2bbcf0', 'Table_Free@2bbd20'):
 	rn2pk(rn2t, 4)
 	rn2pk(rn2t + 4, SDTest.Call('operator_new_array', 'ii', 32)[0])
-	check('Tabla_Free' + fmt((rva,)), lambda rva=rva: (SDTest.Call(rva, 'tvi', rn2t), rn2ints(rn2t, 2),
+	check('Table_Free' + fmt((rva,)), lambda rva=rva: (SDTest.Call(rva, 'tvi', rn2t), rn2ints(rn2t, 2),
 		SDTest.Call(rva, 'tvi', rn2t), rn2ints(rn2t, 2)))
-check('Tabla_Alloc10', lambda: (SDTest.Call('Tabla_Alloc10@2b8e00', 'tvii', rn2t, 5), rn2i(rn2t), rn2i(rn2t + 4) != 0))
+check('Table_Alloc10', lambda: (SDTest.Call('Table_Alloc10@2b8e00', 'tvii', rn2t, 5), rn2i(rn2t), rn2i(rn2t + 4) != 0))
 
 # the qsort orders of the batches: entries in cells, the meshes and materials faked
 def rn2entry(off, v):
@@ -66,25 +66,25 @@ def rn2mentry(tex, mat, skin):
 	return c
 for ta, tb, ma, mb, sa, sb in ((1, 2, 0, 0, 0, 0), (5, 2, 0, 0, 0, 0), (3, 3, 0x100, 0x80, 0, 0), (3, 3, 0x80, 0x100, 0, 0),
 		(3, 3, 0x80, 0x80, 1, 0), (3, 3, 0x80, 0x80, 0, 1), (3, 3, 0x80, 0x80, 1, 1)):
-	check('RenderMalla_Compare' + fmt((ta, tb, ma, mb, sa, sb)), lambda ta=ta, tb=tb, ma=ma, mb=mb, sa=sa, sb=sb:
-		SDTest.Call('RenderMalla_Compare', 'iii', rn2mentry(ta, ma, sa), rn2mentry(tb, mb, sb))[0])
+	check('RenderMesh_Compare' + fmt((ta, tb, ma, mb, sa, sb)), lambda ta=ta, tb=tb, ma=ma, mb=mb, sa=sa, sb=sb:
+		SDTest.Call('RenderMesh_Compare', 'iii', rn2mentry(ta, ma, sa), rn2mentry(tb, mb, sb))[0])
 
 # the batches when nothing is queued, a transparent list without a mesh (only its group counted)
-check('RenderMallaD3D_Flush', lambda: rn2log(lambda: (SDTest.Call('RenderMallaD3D_Flush', 'i')[0], SDTest.Peek('g_UsadosMalla', 'i'))))
-check('RenderObjBase3D_Flush', lambda: rn2log(lambda: (SDTest.Call('RenderObjBase3D_Flush', 'i')[0], SDTest.Peek('g_UsadosObj', 'i'))))
-check('SistPart_Draw NULL', lambda: rn2log(lambda: (SDTest.Call('SistPart_Draw', 'iii', 0, 0)[0], SDTest.Peek('g_UsadosObj', 'i'))))
+check('RenderMeshD3D_Flush', lambda: rn2log(lambda: (SDTest.Call('RenderMeshD3D_Flush', 'i')[0], SDTest.Peek('g_UsedMesh', 'i'))))
+check('RenderObjBase3D_Flush', lambda: rn2log(lambda: (SDTest.Call('RenderObjBase3D_Flush', 'i')[0], SDTest.Peek('g_UsedObj', 'i'))))
+check('ParticleSystem_Draw NULL', lambda: rn2log(lambda: (SDTest.Call('ParticleSystem_Draw', 'iii', 0, 0)[0], SDTest.Peek('g_UsedObj', 'i'))))
 rn2grp = SDTest.Peek('g_TranspGroup', 'i')
-check('RenderMallaD3D_AddTransp NULL', lambda: (SDTest.Call('RenderMallaD3D_AddTransp', 'iiiii', 0, sym('g_MatIdentity') + 0x400000, 0, 0)[0],
-	SDTest.Peek('g_TranspGroup', 'i') - rn2grp, SDTest.Call('RenderMallaD3D_AddTransp', 'iiiii', 0, sym('g_MatIdentity') + 0x400000, 1, 0)[0],
-	SDTest.Peek('g_TranspGroup', 'i') - rn2grp, SDTest.Peek('g_UsadosTransp', 'i')))
-check('RenderMallaD3D_Flush2', lambda: rn2log(lambda: (SDTest.Call('RenderMallaD3D_Flush2', 'i')[0], SDTest.Peek('g_UsadosTransp', 'i'),
+check('RenderMeshD3D_AddTransp NULL', lambda: (SDTest.Call('RenderMeshD3D_AddTransp', 'iiiii', 0, sym('g_MatIdentity') + 0x400000, 0, 0)[0],
+	SDTest.Peek('g_TranspGroup', 'i') - rn2grp, SDTest.Call('RenderMeshD3D_AddTransp', 'iiiii', 0, sym('g_MatIdentity') + 0x400000, 1, 0)[0],
+	SDTest.Peek('g_TranspGroup', 'i') - rn2grp, SDTest.Peek('g_UsedTransp', 'i')))
+check('RenderMeshD3D_Flush2', lambda: rn2log(lambda: (SDTest.Call('RenderMeshD3D_Flush2', 'i')[0], SDTest.Peek('g_UsedTransp', 'i'),
 	SDTest.Peek('g_TranspGroup', 'i'))))
-check('MallaD3D_Render NULL', lambda: (SDTest.Call('MallaD3D_Render', 'iii', 0, 0)[0], SDTest.Peek('g_UsadosMalla', 'i')))
+check('MeshD3D_Render NULL', lambda: (SDTest.Call('MeshD3D_Render', 'iii', 0, 0)[0], SDTest.Peek('g_UsedMesh', 'i')))
 
 # the stubs
 for rva in ('FXMisc_Nop@2b96d0', 'FXMisc_Nop@2b96e0', 'FXMisc_Nop@2b9e40', 'FXMisc_Nop@2ba7a0'):
 	check('Obj3D nop' + fmt((rva,)), lambda rva=rva: SDTest.Call(rva, 'tvii', rn2t, 7))
-check('Grafico3DVert_ctor', lambda: SDTest.Call('Grafico3DVert_ctor', 'tii', rn2t)[0] == rn2t)
+check('Graphic3DVert_ctor', lambda: SDTest.Call('Graphic3DVert_ctor', 'tii', rn2t)[0] == rn2t)
 def rn2g3(g):
 	m = rn2i(g + 0x20)
 	r = (rn2ints(g + 4, 6), rn2i(g + 0x1c), m != 0, rn2ints(g + 0x28, 5))
@@ -93,20 +93,20 @@ def rn2g3(g):
 			SDTest.Call('CMaterial_GetMapName', 'tsii', m, 1)[0])
 	return r
 for tex, opac in (('bmp/partic1.bmp', None), ('bmp/partic1.bmp', 'bmp/partic1.bmp')):
-	check('CGrafico3D_ctorTex2' + fmt((tex, opac)), lambda tex=tex, opac=opac: rn2g3(SDTest.Call('CGrafico3D_ctorTex2', 'tiisz',
+	check('CGraphic3D_ctorTex2' + fmt((tex, opac)), lambda tex=tex, opac=opac: rn2g3(SDTest.Call('CGraphic3D_ctorTex2', 'tiisz',
 		rn2new(0x3c), tex, opac)[0]))
 
 # the weights and the preillumination of a mesh without them
 rn2m = rn2new(0xc8)
-check('CMallaD3D_CalcPesos none', lambda: SDTest.Call('CMallaD3D_CalcPesos', 'tbii', rn2m, 0)[0])
-check('CMallaD3D_CalcIlum no mat', lambda: (SDTest.Call('CMallaD3D_CalcIlum', 'tviii', rn2m, 0, 0), rn2ints(rn2m + 0x14, 5)))
+check('CMeshD3D_CalcWeights none', lambda: SDTest.Call('CMeshD3D_CalcWeights', 'tbii', rn2m, 0)[0])
+check('CMeshD3D_CalcIllum no mat', lambda: (SDTest.Call('CMeshD3D_CalcIllum', 'tviii', rn2m, 0, 0), rn2ints(rn2m + 0x14, 5)))
 
 # the debug drawing of a portal
-rn2pn = SDTest.Call('CNodo3D_ctor', 'tii', rn2new(0xfc))[0]
+rn2pn = SDTest.Call('CNode3D_ctor', 'tii', rn2new(0xfc))[0]
 rn2pk(rn2pn + 8, 1)
 rn2pf(rn2pn + 0x5c, (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 3.0, 4.0, 5.0, 1.0))
 rn2po = SDTest.Call('CPortal_ctor', 'tii', rn2new(0x68))[0]
-SDTest.Call('CObjBase3D_SetNodo', 'tvii', rn2po, rn2pn)
+SDTest.Call('CObjBase3D_SetNode', 'tvii', rn2po, rn2pn)
 rn2pf(rn2po + 0xc, (4.0, 2.0))
 rn2sp = SDTest.Peek('g_ShowPortals', 'i')
 SDTest.Poke('g_ShowPortals', 1)
@@ -124,9 +124,9 @@ rn2pf(rn2v, rn2view)
 rn2out = rn2new(0x70)
 def rn2part(active, rot, sparks):
 	if active:
-		p = SDTest.Call('CParticulaActive_ctor', 'tii', rn2new(0x90))[0]
+		p = SDTest.Call('CParticleActive_ctor', 'tii', rn2new(0x90))[0]
 	else:
-		p = SDTest.Call('CParticulaStatic_ctor', 'tii', rn2new(0x34))[0]
+		p = SDTest.Call('CParticleStatic_ctor', 'tii', rn2new(0x34))[0]
 	rn2pb(p + 4, 1)
 	rn2pf(p + 8, (1.5, -2.0, 3.0, 1.25, 2.5))
 	rn2pk(p + 0x1c, -0x7f007fc0)
@@ -140,17 +140,17 @@ def rn2part(active, rot, sparks):
 for active, rot, sparks in ((0, 0.0, 0), (0, 0.7, 0), (1, 0.0, 0), (1, -1.3, 0), (1, 0.0, 1), (1, 0.4, 1)):
 	rn2p = rn2part(active, rot, sparks)
 	for alpha, zbias in ((1.0, 0.0), (0.5, 0.0), (1.0, 0.3), (0.25, 2.0)):
-		check('Particula_Quad' + fmt((active, rot, sparks, alpha, zbias)), lambda p=rn2p, alpha=alpha, zbias=zbias:
-			(SDTest.Call('Particula_Quad', 'viiiiff', p, rn2b, rn2v, rn2out, alpha, zbias), rn2ints(rn2out, 28)))
+		check('Particle_Quad' + fmt((active, rot, sparks, alpha, zbias)), lambda p=rn2p, alpha=alpha, zbias=zbias:
+			(SDTest.Call('Particle_Quad', 'viiiiff', p, rn2b, rn2v, rn2out, alpha, zbias), rn2ints(rn2out, 28)))
 
 # the node effects: nodes with user properties, a parent, render nodes with a look
 def rn2ini(keys):
-	ini = SDTest.Call('CArchINI_ctor', 'tii', rn2new(4))[0]
+	ini = SDTest.Call('CIniFile_ctor', 'tii', rn2new(4))[0]
 	for k, v in keys:
-		SDTest.Call('CArchINI_SetStr', 'tiisss', ini, 'NodeEffect', k, v)
+		SDTest.Call('CIniFile_SetStr', 'tiisss', ini, 'NodeEffect', k, v)
 	return ini
 def rn2node(m, ini):
-	n = SDTest.Call('CNodo3D_ctor', 'tii', rn2new(0xfc))[0]
+	n = SDTest.Call('CNode3D_ctor', 'tii', rn2new(0xfc))[0]
 	rn2pk(n + 8, 1)
 	rn2pf(n + 0x5c, m)
 	rn2pk(n + 0xf8, ini)
@@ -245,4 +245,4 @@ def rn2mat(m):
 		SDTest.Call('CMaterial_GetMapName', 'tsii', m, 0)[0], SDTest.Call('CMaterial_GetMapName', 'tsii', m, 3)[0], SDTest.Call('CMaterial_GetMapName', 'tsii', m, 4)[0])
 check('ModelFX_InitD3D', lambda: (SDTest.Call('ModelFX_InitD3D', 'v'), rn2mat(SDTest.Peek('g_MatElectric', 'i')),
 	rn2mat(SDTest.Peek('g_MatFire', 'i')), rn2mat(SDTest.Peek('g_MatNoise', 'i')), rn2i(SDTest.Peek('g_MatNoise', 'i') + 0x9c) != 0,
-	SDTest.Peek(sym('g_FXGrfStatic') + 0x20, 'i'), SDTest.Peek(sym('g_FXGrfNoise1') + 0x20, 'i'), SDTest.Peek(sym('g_FXGrfNoise2') + 0x20, 'i')))
+	SDTest.Peek(sym('g_FXGraphicStatic') + 0x20, 'i'), SDTest.Peek(sym('g_FXGraphicNoise1') + 0x20, 'i'), SDTest.Peek(sym('g_FXGraphicNoise2') + 0x20, 'i')))

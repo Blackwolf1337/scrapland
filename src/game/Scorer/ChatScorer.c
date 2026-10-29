@@ -80,7 +80,7 @@ void __thiscall cChatScorer_Draw(cChatScorer *self, int player) {
 	}
 	for (int k = CHAT_MSGS - self->numMsg; k < CHAT_MSGS; k++) {
 		const cChatMsg *m = &g_ChatMsgs[k];
-		CFont_PrintfColorSombra(self->font, self->base.x, (float)(self->numMsg - CHAT_MSGS + k) * self->lineHeight
+		CFont_PrintfColorShadow(self->font, self->base.x, (float)(self->numMsg - CHAT_MSGS + k) * self->lineHeight
 			+ self->base.y, m->color, "%s", m->text);
 	}
 }

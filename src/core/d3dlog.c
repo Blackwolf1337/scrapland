@@ -22,7 +22,7 @@ static struct {
 	void **vtbl;
 } d3dlog_fake = { d3dlog_vtbl };
 static d3dlogOut_t d3dlog_out;
-static void *d3dlog_motor;		/* the device of the D3D application was the same, swapped too */
+static void *d3dlog_engine;		/* the device of the D3D application was the same, swapped too */
 
 void D3DLog_Record(uint32_t slot, const uint32_t *a);
 
@@ -188,16 +188,16 @@ void D3DLog_Set(d3dlogOut_t out) {
 			d3dlog_vtbl[i] = (void *)(d3dlog_stubs + STUB_SIZE * i);
 		}
 		d3dlog_real = g_pd3dDevice;
-		d3dlog_motor = g_MotorDev == d3dlog_real ? &d3dlog_fake : NULL;
+		d3dlog_engine = g_EngineDev == d3dlog_real ? &d3dlog_fake : NULL;
 		d3dlog_out = out;
 		g_pd3dDevice = &d3dlog_fake;
-		if (d3dlog_motor) {
-			g_MotorDev = &d3dlog_fake;
+		if (d3dlog_engine) {
+			g_EngineDev = &d3dlog_fake;
 		}
 	} else if (!out && d3dlog_out) {
 		g_pd3dDevice = d3dlog_real;
-		if (d3dlog_motor) {
-			g_MotorDev = d3dlog_real;
+		if (d3dlog_engine) {
+			g_EngineDev = d3dlog_real;
 		}
 		d3dlog_out = NULL;
 	}

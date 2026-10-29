@@ -336,7 +336,7 @@ byte __thiscall CApp_Init(CApp *self) {
 	Input_OpenDevices();
 	Con_Print(0, "Input devices initialized.\n", 0);
 	one = app_one;
-	Engine_SetSuelo(*g_iMap, "Map/Map3D.m3d", &one);
+	Engine_SetGround(*g_iMap, "Map/Map3D.m3d", &one);
 	Engine_Init();
 	/* differs from the original on purpose (no blocking waits): while the videos of Engine_Init play from the message
 	 * loop, the rest is CApp_InitResume */
@@ -416,7 +416,7 @@ static void CApp_LoadLevelEnd(CApp *self, const char *level, double t0, byte rel
 
 	if (reload) {
 		one = app_one;
-		Engine_SetSuelo(level, "Map/Map3D.m3d", &one);
+		Engine_SetGround(level, "Map/Map3D.m3d", &one);
 		Engine_LevelInit();
 		Engine_SetCallback(APP_CB_WORLDFRAME, 1);
 		g_ForceReload = 0;
@@ -482,11 +482,11 @@ byte Loading_DrawXbox(void) {
 	float h = (float)(n + 1) * 22.0f;
 	Menu_DrawFrame(tabs, 1, 52.0f, 420.0f - h, 536.0f, h);
 	for (int i = 0, k = n; i < n; i++, k--) {
-		CFont_PrintfAlignColorSombra(g_FontHoratio, 320.0f, 420.0f - (float)k * 22.0f, 4, 0xffd7e7ff, "%s",
+		CFont_PrintfAlignColorShadow(g_FontHoratio, 320.0f, 420.0f - (float)k * 22.0f, 4, 0xffd7e7ff, "%s",
 			lines[i]);
 	}
 	const char *s = Lang_GetStr("XBox_Loading");
-	CFont_PrintfAlignColorSombra(g_FontHoratio, 54.0f, 394.0f - h, 0, 0xffd7e7ff, "%s", s);
+	CFont_PrintfAlignColorShadow(g_FontHoratio, 54.0f, 394.0f - h, 0, 0xffd7e7ff, "%s", s);
 	CPsaImage_dtor((CPsaImage *)tabs);
 	CPsaImage_dtor((CPsaImage *)white);
 	return 1;
@@ -879,16 +879,16 @@ byte Loading_Draw(void) {
 		Menu_DrawFrame(tabs, 1, 320.0f - w * 0.5f, 382.0f - h * 0.5f, w, h);
 		CPsaImage_dtor((CPsaImage *)tabs);
 	}
-	CFont_PrintfAlignColorSombra(g_FontHoratio, (320.0f - dim[0] * 0.5f) - 1.0f, 407.0f, 0, 0, text);
-	CFont_PrintfAlignColorSombra(g_FontHoratio, (320.0f - dim[0] * 0.5f) + 1.0f, 407.0f, 0, 0, text);
-	CFont_PrintfAlignColorSombra(g_FontHoratio, (320.0f - dim[0] * 0.5f) - 1.0f, 409.0f, 0, 0, text);
-	CFont_PrintfAlignColorSombra(g_FontHoratio, (320.0f - dim[0] * 0.5f) + 1.0f, 409.0f, 0, 0, text);
+	CFont_PrintfAlignColorShadow(g_FontHoratio, (320.0f - dim[0] * 0.5f) - 1.0f, 407.0f, 0, 0, text);
+	CFont_PrintfAlignColorShadow(g_FontHoratio, (320.0f - dim[0] * 0.5f) + 1.0f, 407.0f, 0, 0, text);
+	CFont_PrintfAlignColorShadow(g_FontHoratio, (320.0f - dim[0] * 0.5f) - 1.0f, 409.0f, 0, 0, text);
+	CFont_PrintfAlignColorShadow(g_FontHoratio, (320.0f - dim[0] * 0.5f) + 1.0f, 409.0f, 0, 0, text);
 	uint32_t k = (uint32_t)((int)(t * 3.0f) % 5 - 3 + (int)strlen(text));
 	if (k >= sizeof(text)) {
 		crt_report_rangecheckfailure();
 	}
 	text[k] = 0;
-	CFont_PrintfAlignColorSombra(g_FontHoratio, 320.0f - dim[0] * 0.5f, 408.0f, 0, 0xffd7e7ff, text);
+	CFont_PrintfAlignColorShadow(g_FontHoratio, 320.0f - dim[0] * 0.5f, 408.0f, 0, 0xffd7e7ff, text);
 	if (g_XLoadIcon) {
 		float u0 = (float)(g_XLoadIconFrame % 8) * 0.125f;
 		float u1 = u0 + 0.125f;

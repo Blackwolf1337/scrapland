@@ -147,25 +147,25 @@ SD_IMPORT_PY(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 
 /* engine3d: Engine/ListaVert.cpp and Engine/render.cpp (include/scrap/listavert.h, mallatri.h) */
 
-/* engine3d: called from Engine/luz.cpp (include/scrap/luz.h) */
+/* engine3d: called from Engine/luz.cpp (include/scrap/light.h) */
 /* engine3d: Engine/Material.c (include/scrap/material.h), the parts of the classes outside Material.cpp and the
  * texture manager */
 
-/* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/escena.h) */
+/* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/scene.h) */
 
-/* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/escena.h) */
+/* src/game/engine3d/Engine/Escena.c (called from Engine/escena.cpp, include/scrap/scene.h) */
 
-/* src/game/engine3d/Engine/SistPart.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
+/* src/game/engine3d/Engine/ParticleSystem.c (called from Engine/SistPart.cpp, include/scrap/sistpart.h) */
 
 /* src/game/engine3d/Engine/SueloPortal.c (called from Engine/SueloPortal.cpp, include/scrap/sueloportal.h) */
 
-/* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/mundo.h) */
+/* src/game/engine3d/Engine/Mundo.c (called from Engine/mundo.cpp, include/scrap/world.h) */
 
 /* src/game/engine3d/Engine/Render.c (called from Engine/render.cpp, include/scrap/render.h) */
 
 /* src/game/engine3d/Engine/Grafico2D.c (called from Engine/grafico2d.cpp, include/scrap/grafico2d.h) */
 
-/* src/game/engine3d/Engine/Texto.c (called from Engine/texto.cpp, include/scrap/texto.h) */
+/* src/game/engine3d/Engine/Texto.c (called from Engine/texto.cpp, include/scrap/text.h) */
 
 /* src/game/engine3d/Engine/UtilD3D.c (called from Engine/util_d3d.cpp, include/scrap/utild3d.h) */
 
@@ -176,16 +176,16 @@ SD_IMPORT_PY(PyFile_WriteString, 0x2f3ee0)	/* fileobject.c */
 /* module agent: Engine/RenderTarget (imports below this line) */
 
 
-/* module agent: Engine/MallaD3D (imports below this line) */
+/* module agent: Engine/MeshD3D (imports below this line) */
 
-/* module agent: Engine/Suelo (imports below this line) */
+/* module agent: Engine/Ground (imports below this line) */
 SD_IMPORT_CRT(crt_ceil, 0x345010)
 
 /* module agent: Engine/Trails (imports below this line) */
 
 /* module agent: Engine/Modelo (imports below this line) */
 
-/* module agent: Engine/Nodo3D (imports below this line) */
+/* module agent: Engine/Node3D (imports below this line) */
 
 /* module agent: Engine/Animacion (imports below this line) */
 
@@ -195,7 +195,7 @@ SD_IMPORT_CRT(crt_ceil, 0x345010)
 SD_IMPORT_CRT(crt_mbsrchr, 0x3508c4)
 SD_IMPORT_CRT(crt_spawnlp, 0x34f2e0)
 
-/* src/game/ScrapEng/ScrapEngCollision.c (called from suelo.cpp and checkbbox.cpp, include/scrap/suelo.h) */
+/* src/game/ScrapEng/ScrapEngCollision.c (called from suelo.cpp and checkbbox.cpp, include/scrap/ground.h) */
 
 /* module agent: World/World.cpp (imports below this line) */
 
@@ -393,7 +393,7 @@ SD_IMPORT_CRT(crt_Throw_bad_array_new_length, 0x3178b8)
 
 /* module agent: Exhaust (imports below this line) */
 
-/* module agent: Engine leftovers (Escena_Load, stencil draws, debug and dialogs) (imports below this line) */
+/* module agent: Engine leftovers (Scene_Load, stencil draws, debug and dialogs) (imports below this line) */
 
 /* module agent: Leftovers C, EmbeddedFX vf03, AICharControl3D, Gear, Devastator (imports below this line) */
 

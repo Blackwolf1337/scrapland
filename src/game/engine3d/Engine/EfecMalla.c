@@ -13,69 +13,69 @@
 #include "scrap/render.h"
 #include "scrap/scrapworld.h"
 
-#define MAX_PANTALLAS 10
-#define MAX_MODELOS 10
-#define TECLA_M 0x32
-#define TECLA_CTRL 0x1d
+#define MAX_SCREENS 10
+#define MAX_MODELS 10
+#define KEY_M 0x32
+#define KEY_CTRL 0x1d
 
-#define g_EfecMallaOn GAME_GLOBAL(int, g_EfecMallaOn, 0x4db6b0)
-#define g_EfecMallaStencil GAME_GLOBAL(int, g_EfecMallaStencil, 0x4db6b4)
-#define g_NumPantallas GAME_GLOBAL(int, g_NumPantallas, 0x4db6b8)
-#define g_NumModelos GAME_GLOBAL(int, g_NumModelos, 0x4db6bc)
-#define g_EfecMallaMat (GAME_ARRAY(CMaterial, g_EfecMallaMat, 0x4db6c0))	/* a static object of the file */
-#define g_Pantallas (GAME_ARRAY(CModelo *, g_Pantallas, 0x4db770))
-#define g_Modelos (GAME_ARRAY(CModelo *, g_Modelos, 0x4db798))
-#define g_EfecMallaMatInic GAME_GLOBAL(byte, g_EfecMallaMatInic, 0x4db7c0)
+#define g_MeshEffectOn GAME_GLOBAL(int, g_MeshEffectOn, 0x4db6b0)
+#define g_MeshEffectStencil GAME_GLOBAL(int, g_MeshEffectStencil, 0x4db6b4)
+#define g_NumScreens GAME_GLOBAL(int, g_NumScreens, 0x4db6b8)
+#define g_NumModels GAME_GLOBAL(int, g_NumModels, 0x4db6bc)
+#define g_MeshEffectMat (GAME_ARRAY(CMaterial, g_MeshEffectMat, 0x4db6c0))	/* a static object of the file */
+#define g_Screens (GAME_ARRAY(CModel *, g_Screens, 0x4db770))
+#define g_Models (GAME_ARRAY(CModel *, g_Models, 0x4db798))
+#define g_MeshEffectMatInit GAME_GLOBAL(byte, g_MeshEffectMatInit, 0x4db7c0)
 
-void EfecMalla_AddPantalla(CModelo *m) {
-	CHECK(g_NumPantallas < MAX_PANTALLAS);
-	g_Pantallas[g_NumPantallas] = m;
-	g_NumPantallas++;
+void MeshEffect_AddScreen(CModel *m) {
+	CHECK(g_NumScreens < MAX_SCREENS);
+	g_Screens[g_NumScreens] = m;
+	g_NumScreens++;
 }
 
-void EfecMalla_AddModelo(CModelo *m) {
-	CHECK(g_NumModelos < MAX_MODELOS);
-	g_Modelos[g_NumModelos] = m;
-	g_NumModelos++;
+void MeshEffect_AddModel(CModel *m) {
+	CHECK(g_NumModels < MAX_MODELS);
+	g_Models[g_NumModels] = m;
+	g_NumModels++;
 }
 
 /* the disabled models drawn once each */
-static void EfecMalla_RenderList(CModelo **list, int n) {
+static void MeshEffect_RenderList(CModel **list, int n) {
 	for (int i = 0; i < n; i++) {
 		CHECK(!list[i]->enable);
-		CModelo_Enable(list[i]);
-		CModelo_Render(list[i]);
-		CModelo_Disable(list[i]);
+		CModel_Enable(list[i]);
+		CModel_Render(list[i]);
+		CModel_Disable(list[i]);
 	}
 }
 
-void EfecMalla_RenderModelos(void) {
-	EfecMalla_RenderList(g_Modelos, g_NumModelos);
+void MeshEffect_RenderModels(void) {
+	MeshEffect_RenderList(g_Models, g_NumModels);
 }
 
-void EfecMalla_RenderPantallas(void) {
-	EfecMalla_RenderList(g_Pantallas, g_NumPantallas);
+void MeshEffect_RenderScreens(void) {
+	MeshEffect_RenderList(g_Screens, g_NumScreens);
 }
 
-static void EfecMalla_SetRS(uint32_t state, uint32_t value) {
+static void MeshEffect_SetRS(uint32_t state, uint32_t value) {
 	void *dev = g_pd3dDevice;
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
 }
 
-void EfecMalla_Render(void) {
-	if (g_TecladoKeys[TECLA_M] && g_TecladoKeys[TECLA_CTRL]) {
-		g_TecladoKeys[TECLA_M] = 0;
-		g_EfecMallaOn = !g_EfecMallaOn;
+void MeshEffect_Render(void) {
+	if (g_KeyboardKeys[KEY_M] && g_KeyboardKeys[KEY_CTRL]) {
+		g_KeyboardKeys[KEY_M] = 0;
+		g_MeshEffectOn = !g_MeshEffectOn;
 	}
-	if (!g_EfecMallaOn) {
-		EfecMalla_RenderModelos();
-		EfecMalla_RenderPantallas();
+	if (!g_MeshEffectOn) {
+		MeshEffect_RenderModels();
+		MeshEffect_RenderScreens();
 		return;
 	}
-	if (!g_EfecMallaMatInic) {
-		CMaterial *m = g_EfecMallaMat;
+	if (!g_MeshEffectMatInit) {
+		CMaterial *m = g_MeshEffectMat;
 		m->params.w3e = 0;
-		m->params.i40 = (g_EfecMallaStencil != 0) + 4;
+		m->params.i40 = (g_MeshEffectStencil != 0) + 4;
 		memset(m->params.ambient, 0, 4);
 		memset(m->params.diffuse, 0, 4);
 		const byte emissive[4] = { 0x10, 0x10, 0x30, 0 };
@@ -83,46 +83,46 @@ void EfecMalla_Render(void) {
 		m->params.transp = 1;
 		m->params.srcBlend = 2;
 		m->params.dstBlend = 2;
-		g_EfecMallaMatInic = 1;
-		CMaterial_Prepare(m, MOTOR_DEV(g_Motor));
+		g_MeshEffectMatInit = 1;
+		CMaterial_Prepare(m, ENGINE_DEV(g_Engine));
 	}
 	E3D_FlushBatch();
-	if (g_EfecMallaStencil) {
+	if (g_MeshEffectStencil) {
 		/* the screens mark the stencil */
-		EfecMalla_SetRS(D3DRS_STENCILENABLE, 1);
-		EfecMalla_SetRS(D3DRS_STENCILFUNC, D3DCMP_ALWAYS);
-		EfecMalla_SetRS(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
-		EfecMalla_SetRS(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP);
-		EfecMalla_SetRS(D3DRS_STENCILPASS, D3DSTENCILOP_INCR);
-		EfecMalla_SetRS(D3DRS_STENCILREF, 1);
-		EfecMalla_SetRS(D3DRS_STENCILMASK, 0xffffffffu);
-		EfecMalla_SetRS(D3DRS_STENCILWRITEMASK, 0xffffffffu);
-		EfecMalla_RenderPantallas();
+		MeshEffect_SetRS(D3DRS_STENCILENABLE, 1);
+		MeshEffect_SetRS(D3DRS_STENCILFUNC, D3DCMP_ALWAYS);
+		MeshEffect_SetRS(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
+		MeshEffect_SetRS(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP);
+		MeshEffect_SetRS(D3DRS_STENCILPASS, D3DSTENCILOP_INCR);
+		MeshEffect_SetRS(D3DRS_STENCILREF, 1);
+		MeshEffect_SetRS(D3DRS_STENCILMASK, 0xffffffffu);
+		MeshEffect_SetRS(D3DRS_STENCILWRITEMASK, 0xffffffffu);
+		MeshEffect_RenderScreens();
 		E3D_FlushBatch();
-		EfecMalla_SetRS(D3DRS_STENCILFUNC, D3DCMP_LESSEQUAL);
-		EfecMalla_SetRS(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
-		EfecMalla_SetRS(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP);
-		EfecMalla_SetRS(D3DRS_STENCILPASS, D3DSTENCILOP_KEEP);
-		EfecMalla_SetRS(D3DRS_STENCILREF, 1);
+		MeshEffect_SetRS(D3DRS_STENCILFUNC, D3DCMP_LESSEQUAL);
+		MeshEffect_SetRS(D3DRS_STENCILFAIL, D3DSTENCILOP_KEEP);
+		MeshEffect_SetRS(D3DRS_STENCILZFAIL, D3DSTENCILOP_KEEP);
+		MeshEffect_SetRS(D3DRS_STENCILPASS, D3DSTENCILOP_KEEP);
+		MeshEffect_SetRS(D3DRS_STENCILREF, 1);
 	}
 	uint32_t fill;
 	void *dev = g_pd3dDevice;
-	g_MatFX1 = g_EfecMallaMat;
+	g_MatFX1 = g_MeshEffectMat;
 	D3D_METHOD(dev, d3dGetRenderState_t, D3DDEV_GETRENDERSTATE)(dev, D3DRS_FILLMODE, &fill);
-	EfecMalla_SetRS(D3DRS_FILLMODE, D3DFILL_WIREFRAME);
-	int stencil = g_SombrasStencil;
-	g_SombrasStencil = 0;
-	EfecMalla_RenderModelos();
+	MeshEffect_SetRS(D3DRS_FILLMODE, D3DFILL_WIREFRAME);
+	int stencil = g_ShadowsStencil;
+	g_ShadowsStencil = 0;
+	MeshEffect_RenderModels();
 	E3D_FlushBatch();
-	g_SombrasStencil = stencil;
+	g_ShadowsStencil = stencil;
 	g_MatFX1 = NULL;
-	EfecMalla_SetRS(D3DRS_FILLMODE, fill);
-	if (g_EfecMallaStencil) {
-		EfecMalla_SetRS(D3DRS_STENCILENABLE, 0);
-		EfecMalla_RenderModelos();
+	MeshEffect_SetRS(D3DRS_FILLMODE, fill);
+	if (g_MeshEffectStencil) {
+		MeshEffect_SetRS(D3DRS_STENCILENABLE, 0);
+		MeshEffect_RenderModels();
 		return;
 	}
-	EfecMalla_RenderPantallas();
+	MeshEffect_RenderScreens();
 	E3D_FlushBatch();
-	EfecMalla_RenderModelos();
+	MeshEffect_RenderModels();
 }

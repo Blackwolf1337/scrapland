@@ -9,9 +9,9 @@
 
 #include "scrap/mathlib.h"
 
-#define MAX_DIVY_ESFERA 32
-/* 16 colors of the debug views (g_BspColores of bsp.h, the same table) */
-#define g_DebugColors (GAME_ARRAY_IN(const uint32_t, g_BspColores, 0, 0x432a30))
+#define MAX_DIVY_SPHERE 32
+/* 16 colors of the debug views (g_BspColors of bsp.h, the same table) */
+#define g_DebugColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 0, 0x432a30))
 
 /* r, g, b, a (0..1, clamped) to 0xAARRGGBB */
 uint32_t Color_FromFloat(const float *c);
@@ -29,14 +29,14 @@ void Debug_DrawPoint(const vec3_t *pos, float size, uint32_t color);
 /* divV meridians, divH (-1: divV) parts of each, a cross at the center */
 void Debug_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int divH);
 void Debug_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
-/* the lines of both after the check of r: nEcu parts of each meridian, center draws the middle */
-void Debug_SphereLines(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int nEcu,
+/* the lines of both after the check of r: nEquator parts of each meridian, center draws the middle */
+void Debug_SphereLines(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int nEquator,
 	void (*center)(const matrix_t *m, const vec3_t *c, float r));
 void Debug_DrawLineM(const matrix_t *m, const vec3_t *a, const vec3_t *b, uint32_t color);
 void Debug_DrawLine(const vec3_t *a, const vec3_t *b, uint32_t color);
 void Debug_DrawTriM(const matrix_t *m, const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color);
 void Debug_DrawTri(const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color);
 /* "MallaTri", "Luz", ... "otro" for an unknown class */
-const char *Obj3D_ClaseName(uint32_t clase);
+const char *Obj3D_ClassName(uint32_t class);
 
 #endif

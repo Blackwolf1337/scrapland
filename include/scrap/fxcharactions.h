@@ -136,10 +136,10 @@ typedef struct cObjElementFXBertoAttack {
 	float fb8;			/* 0xb8 */
 	float fbc;			/* 0xbc */
 	int fc0;			/* 0xc0 */
-	int nodeCristal;		/* 0xc4 R_Berto_TroncoInf-cristal */
+	int nodeGlass;		/* 0xc4 R_Berto_TroncoInf-cristal */
 	byte started;			/* 0xc8 */
 } cObjElementFXBertoAttack;
-SD_OFFSET(cObjElementFXBertoAttack, nodeCristal, 0xc4);
+SD_OFFSET(cObjElementFXBertoAttack, nodeGlass, 0xc4);
 SD_SIZE(cObjElementFXBertoAttack, 0xcc);
 
 typedef struct cObjElementFXBertoFlash {

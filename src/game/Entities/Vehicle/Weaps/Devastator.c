@@ -62,7 +62,7 @@ static inline float Dev_RandSym(float r) {
 void Devastator_Create(cAbstractFile *params) {
 	vec3_t c, r, in, rot, a, b, hit, n, p, origin, cam, d, u, q, e, mid;
 	matrix_t mat;
-	CColisTri tri;
+	CCollisionTri tri;
 	int shot;
 
 	cAbstractFile_ReadString(params, g_DevShooter, 0x80);
@@ -91,7 +91,7 @@ void Devastator_Create(cAbstractFile *params) {
 			continue;
 		}
 		int node = wm->nodes[g_DevastatorIDAmmo][i];
-		const matrix_t *m = CGameModel_NodoMatrix(WEnt_Vtbl(v)->GetObjData(v), &mat, node, 0, NULL, 0);
+		const matrix_t *m = CGameModel_NodeMatrix(WEnt_Vtbl(v)->GetObjData(v), &mat, node, 0, NULL, 0);
 		p.x = m->m[12];
 		p.y = m->m[13];
 		p.z = m->m[14];
@@ -179,7 +179,7 @@ void Devastator_Create(cAbstractFile *params) {
 		if (!cDebrisSys_IsIdle(sys, dhit)) {
 			cDebrisSys_Drop(sys, dhit);
 		}
-		cObjElementFXSistPart *fx = Debris_Element(dhit);
+		cObjElementFXParticleSystem *fx = Debris_Element(dhit);
 		if (!fx) {
 			goto sphere;
 		}

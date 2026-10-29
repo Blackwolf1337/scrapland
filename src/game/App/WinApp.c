@@ -653,8 +653,8 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 				continue;
 			}
 			/* differs from the original on purpose (no sleeps): no frame while the frame limiter holds it back, the
-			 * original slept in CMotorApp_Render */
-			if (!g_Motor || Motor_FrameDue(g_Motor)) {
+			 * original slept in CEngineApp_Render */
+			if (!g_Engine || Engine_FrameDue(g_Engine)) {
 				g_pApp->vftable->Frame(g_pApp);
 			}
 			continue;
@@ -983,7 +983,7 @@ int ConsoleWin_SaveOutput(void) {
 		void *cookie;
 		uint32_t error;
 		void *callback;
-	} es;
+	} is;
 
 	memset(ofn, 0, sizeof(ofn));
 	memcpy(name, "*.rtf", 6);
@@ -1001,10 +1001,10 @@ int ConsoleWin_SaveOutput(void) {
 	if (f == (void *)-1) {
 		return 0;
 	}
-	es.cookie = f;
-	es.error = 0;
-	es.callback = CONWIN_STREAMOUT;
-	exe_SendMessageA(g_ConRich, EM_STREAMOUT, 2, (intptr_t)&es);
+	is.cookie = f;
+	is.error = 0;
+	is.callback = CONWIN_STREAMOUT;
+	exe_SendMessageA(g_ConRich, EM_STREAMOUT, 2, (intptr_t)&is);
 	exe_CloseHandle(f);
 	return 1;
 }

@@ -1,6 +1,6 @@
 /*
  * The texture cache of the engine3d, original source Engine/Textura.cpp (include/scrap/textura.h): the list of the
- * CTextura entries, their files, the Direct3D 8 textures made from them (by hand from a CBmp, or by D3DX from the
+ * CTexture entries, their files, the Direct3D 8 textures made from them (by hand from a CBmp, or by D3DX from the
  * raw file), the bump and DUDV conversions, the DDS export of the developer tools and two CBmp helpers of bmp.h.
  */
 #include <string.h>
@@ -78,7 +78,7 @@ typedef int(__stdcall *surfGetDesc_t)(void *surf, d3dSurfaceDesc_t *desc);
 typedef int(__stdcall *surfLockRect_t)(void *surf, d3dLockedRect_t *r, const void *rect, uint32_t flags);
 typedef int(__stdcall *surfUnlockRect_t)(void *surf);
 
-static void Tex_ReleaseD3D(CTextura *t) {
+static void Tex_ReleaseD3D(CTexture *t) {
 	if (t->tex) {
 		COM_RELEASE(t->tex);
 		t->tex = NULL;
@@ -102,7 +102,7 @@ static int Tex_FormatRGB(int bpp, int alpha, int bump) {
 	return alpha ? 0x1a : 0x17;
 }
 
-static int Tex_BPP(const CTextura *t) {
+static int Tex_BPP(const CTexture *t) {
 	return t->flags & TEXF_FIXEDBPP ? g_TexFixedBPP : t->bpp;
 }
 
@@ -111,16 +111,16 @@ static uint32_t Tex_Dither(void) {
 	return g_TexErrDif ? D3DX_FILTER_DITHER_DIFFUSION : 0;
 }
 
-static const char *Tex_OpacName(const CTextura *t) {
-	return t->Opac[0] ? Ruta_FileName(t->Opac) : "none";
+static const char *Tex_OpacName(const CTexture *t) {
+	return t->Opac[0] ? Path_FileName(t->Opac) : "none";
 }
 
 /* bmp.h */
-CBmp *__thiscall CBmp_ctor(CBmp *self, int ancho, int alto) {
-	self->ancho = ancho;
-	self->alto = alto;
+CBmp *__thiscall CBmp_ctor(CBmp *self, int width, int height) {
+	self->width = width;
+	self->height = height;
 	self->img = NULL;
-	self->img = New_Array((uint32_t)ancho * alto, BMP_PIXEL);
+	self->img = New_Array((uint32_t)width * height, BMP_PIXEL);
 	return self;
 }
 
@@ -132,23 +132,23 @@ CBmp *__thiscall CBmp_Delete(CBmp *self, byte flags) {
 	return self;
 }
 
-CTextura *__thiscall CTextura_ctor(CTextura *self, const char *name, const char *opac, int kind, uint32_t flags) {
+CTexture *__thiscall CTexture_ctor(CTexture *self, const char *name, const char *opac, int kind, uint32_t flags) {
 	CMultiSprite_ctor(&self->multi);
 	g_TexCount++;
 	self->Refs = 0;
-	self->Nombre[0] = 0;
+	self->Name[0] = 0;
 	self->Opac[0] = 0;
-	CHECK(name && strlen(name) < sizeof(self->Nombre));
+	CHECK(name && strlen(name) < sizeof(self->Name));
 	CHECK(!opac || strlen(opac) < sizeof(self->Opac));
 	if (name) {
-		Str_Copy(self->Nombre, name, sizeof(self->Nombre));
+		Str_Copy(self->Name, name, sizeof(self->Name));
 	}
 	if (opac) {
 		Str_Copy(self->Opac, opac, sizeof(self->Opac));
 	}
 	self->kind = kind;
-	self->ancho = 0;
-	self->alto = 0;
+	self->width = 0;
+	self->height = 0;
 	self->bpp = 0;
 	self->flags = flags;
 	self->alpha = 0;
@@ -170,12 +170,12 @@ CTextura *__thiscall CTextura_ctor(CTextura *self, const char *name, const char 
 	if (flags & TEXF_FIXEDBPP) {
 		self->mipmap = 0;
 	}
-	self->sig = g_TexList;
+	self->next = g_TexList;
 	g_TexList = self;
 	return self;
 }
 
-void __fastcall CTextura_dtor(CTextura *self) {
+void __fastcall CTexture_dtor(CTexture *self) {
 	g_TexCount--;
 	CHECK(!self->Refs);
 	Tex_ReleaseD3D(self);
@@ -185,28 +185,28 @@ void __fastcall CTextura_dtor(CTextura *self) {
 	}
 	Ptr_Delete(&self->PngData);
 	if (g_TexList == self) {
-		g_TexList = self->sig;
+		g_TexList = self->next;
 	} else {
-		for (CTextura *t = g_TexList; t; t = t->sig) {
-			if (t->sig == self) {
-				t->sig = self->sig;
+		for (CTexture *t = g_TexList; t; t = t->next) {
+			if (t->next == self) {
+				t->next = self->next;
 			}
 		}
 	}
 	CMultiSprite_dtor(&self->multi);
 }
 
-static void Textura_Free(CTextura *t) {
-	CTextura_dtor(t);
-	operator_delete_sized(t, sizeof(CTextura));
+static void Texture_Free(CTexture *t) {
+	CTexture_dtor(t);
+	operator_delete_sized(t, sizeof(CTexture));
 }
 
-CTextura *Textura_FindPurge(void) {
-	CTextura *best = NULL;
+CTexture *Texture_FindPurge(void) {
+	CTexture *best = NULL;
 	int n = 0;
 	int frame = g_FrameCount;
 
-	for (CTextura *t = g_TexList; t; t = t->sig) {
+	for (CTexture *t = g_TexList; t; t = t->next) {
 		if (!t->PngData || !t->tex) {
 			continue;
 		}
@@ -229,7 +229,7 @@ CTextura *Textura_FindPurge(void) {
 	return NULL;
 }
 
-int __thiscall CTextura_UploadLevel(CTextura *self, CBmp *src, int level) {
+int __thiscall CTexture_UploadLevel(CTexture *self, CBmp *src, int level) {
 	void *dev = NULL;
 	void *surf = NULL;
 	void *dst;
@@ -262,11 +262,11 @@ int __thiscall CTextura_UploadLevel(CTextura *self, CBmp *src, int level) {
 	}
 	if (g_TexMipFadeOn && level > 0 && g_MipmapFade) {
 		CBmp fade;
-		fade.ancho = p->ancho;
-		fade.alto = p->alto;
-		fade.img = New_Array((uint32_t)fade.ancho * fade.alto, BMP_PIXEL);
+		fade.width = p->width;
+		fade.height = p->height;
+		fade.img = New_Array((uint32_t)fade.width * fade.height, BMP_PIXEL);
 		CBmp_Fill(&fade, 0x64c8ff);
-		CBmp_Blend(p, 0, 0, &fade, 0, 0, fade.ancho, fade.alto, 10, 0x100);
+		CBmp_Blend(p, 0, 0, &fade, 0, 0, fade.width, fade.height, 10, 0x100);
 		Img_Free(&fade, BMP_PIXEL);
 	}
 	if (g_MipmapColor && level > 0) {
@@ -290,7 +290,7 @@ int __thiscall CTextura_UploadLevel(CTextura *self, CBmp *src, int level) {
 				if (self->mipmap) {
 					level++;
 					if (D3D_METHOD(self->tex, texGetLevelCount_t, 0x34)(self->tex) > (uint32_t)level) {
-						hr = CTextura_UploadLevel(self, p, level);
+						hr = CTexture_UploadLevel(self, p, level);
 					}
 				}
 			}
@@ -310,7 +310,7 @@ out:
 	return hr;
 }
 
-int Textura_AddRef(CTextura *t) {
+int Texture_AddRef(CTexture *t) {
 	if (!t) {
 		return -1;
 	}
@@ -319,30 +319,30 @@ int Textura_AddRef(CTextura *t) {
 	return t->Refs;
 }
 
-int Textura_Add(const char *name, const char *opac, int kind, uint32_t flags) {
-	CTextura *t;
+int Texture_Add(const char *name, const char *opac, int kind, uint32_t flags) {
+	CTexture *t;
 
 	if (!name) {
 		return TEX_E_INVALIDARG;
 	}
-	if (Textura_Lookup(name, opac)) {
+	if (Texture_Lookup(name, opac)) {
 		return 0;
 	}
-	t = operator_new(sizeof(CTextura));
+	t = operator_new(sizeof(CTexture));
 	if (t) {
-		t = CTextura_ctor(t, name, opac, kind, flags);
+		t = CTexture_ctor(t, name, opac, kind, flags);
 	}
 	if (!t) {
 		return TEX_E_OUTOFMEMORY;
 	}
-	if (CTextura_LoadFile(t, 0) < 0) {
-		Textura_Free(t);
+	if (CTexture_LoadFile(t, 0) < 0) {
+		Texture_Free(t);
 		return TEX_E_FAIL;
 	}
 	return 0;
 }
 
-int Textura_Release(CTextura *t) {
+int Texture_Release(CTexture *t) {
 	if (!t) {
 		return -1;
 	}
@@ -351,35 +351,35 @@ int Textura_Release(CTextura *t) {
 	return t->Refs;
 }
 
-int Textura_DeleteAll(void) {
+int Texture_DeleteAll(void) {
 	while (g_TexList) {
-		Textura_Free(g_TexList);
+		Texture_Free(g_TexList);
 	}
 	return 0;
 }
 
-void Textura_Delete(CTextura *t) {
+void Texture_Delete(CTexture *t) {
 	if (t) {
-		E3D_LogDebug2(g_FileLog, "  Texture deleted: %s", t->Nombre);
-		Textura_Free(t);
+		E3D_LogDebug2(g_FileLog, "  Texture deleted: %s", t->Name);
+		Texture_Free(t);
 	}
 }
 
-int Textura_Remove(const char *name, const char *opac) {
-	CTextura *t = Textura_Lookup(name, opac);
+int Texture_Remove(const char *name, const char *opac) {
+	CTexture *t = Texture_Lookup(name, opac);
 
 	if (t) {
-		Textura_Free(t);
+		Texture_Free(t);
 	}
 	return 0;
 }
 
-void *Textura_Load(CTextura *t, void *dev) {
+void *Texture_Load(CTexture *t, void *dev) {
 	if (t->PngData) {
 		if (g_TexPurgeFrame != g_FrameCount) {
-			CTextura *old;
+			CTexture *old;
 			g_TexPurgeFrame = g_FrameCount;
-			old = Textura_FindPurge();
+			old = Texture_FindPurge();
 			if (old) {
 				Tex_ReleaseD3D(old);
 			}
@@ -387,11 +387,11 @@ void *Textura_Load(CTextura *t, void *dev) {
 		CHECK(t->PngData);
 		if (t->frame != g_FrameCount) {
 			g_TexUsed++;
-			g_TexUsedPixels += t->alto * t->ancho;
+			g_TexUsedPixels += t->height * t->width;
 		}
 		if (!t->tex) {
 			CHECK(t->PngData);
-			CTextura_CreateD3D(t, dev);
+			CTexture_CreateD3D(t, dev);
 			g_TexCreated++;
 		}
 		t->frame = g_FrameCount;
@@ -399,7 +399,7 @@ void *Textura_Load(CTextura *t, void *dev) {
 	return t->tex;
 }
 
-CMultiSprite *Textura_GetMultiSprite(CTextura *t, const char *name) {
+CMultiSprite *Texture_GetMultiSprite(CTexture *t, const char *name) {
 	if (!t) {
 		return NULL;
 	}
@@ -416,14 +416,14 @@ CMultiSprite *Textura_GetMultiSprite(CTextura *t, const char *name) {
 	return NULL;
 }
 
-void *Textura_GetD3DByName(const char *name, const char *opac) {
-	CTextura *t = Textura_Lookup(name, opac);
+void *Texture_GetD3DByName(const char *name, const char *opac) {
+	CTexture *t = Texture_Lookup(name, opac);
 
 	return t ? t->tex : NULL;
 }
 
-CTextura *Textura_Find(const char *name, const char *opac) {
-	CTextura *t = Textura_Lookup(name, opac);
+CTexture *Texture_Find(const char *name, const char *opac) {
+	CTexture *t = Texture_Lookup(name, opac);
 
 	if (t) {
 		t->Refs++;
@@ -432,13 +432,13 @@ CTextura *Textura_Find(const char *name, const char *opac) {
 	return t;
 }
 
-int Textura_GetInfo(CTextura *t, int *info) {
+int Texture_GetInfo(CTexture *t, int *info) {
 	if (!t) {
 		return TEX_E_NOTFOUND;
 	}
 	if (info) {
-		info[0] = t->ancho;
-		info[1] = t->alto;
+		info[0] = t->width;
+		info[1] = t->height;
 		info[2] = t->flags;
 		info[3] = t->alpha;
 		info[4] = t->compressed;
@@ -446,8 +446,8 @@ int Textura_GetInfo(CTextura *t, int *info) {
 	return 0;
 }
 
-int Textura_ReleaseD3D(const char *name, const char *opac) {
-	CTextura *t = Textura_Lookup(name, opac);
+int Texture_ReleaseD3D(const char *name, const char *opac) {
+	CTexture *t = Texture_Lookup(name, opac);
 
 	if (!t) {
 		return TEX_E_NOTFOUND;
@@ -456,15 +456,15 @@ int Textura_ReleaseD3D(const char *name, const char *opac) {
 	return 0;
 }
 
-int Textura_ReleaseAllD3D(void) {
-	for (CTextura *t = g_TexList; t; t = t->sig) {
+int Texture_ReleaseAllD3D(void) {
+	for (CTexture *t = g_TexList; t; t = t->next) {
 		Tex_ReleaseD3D(t);
 	}
 	return 0;
 }
 
-int Textura_Recreate(const char *name, const char *opac, void *dev) {
-	CTextura *t = Textura_Lookup(name, opac);
+int Texture_Recreate(const char *name, const char *opac, void *dev) {
+	CTexture *t = Texture_Lookup(name, opac);
 
 	if (!t) {
 		return TEX_E_NOTFOUND;
@@ -472,20 +472,20 @@ int Textura_Recreate(const char *name, const char *opac, void *dev) {
 	if (t->PngData) {
 		return TEX_E_NOTAVAILABLE;
 	}
-	return CTextura_CreateD3D(t, dev);
+	return CTexture_CreateD3D(t, dev);
 }
 
-int Textura_RecreateAll(void *dev) {
-	for (CTextura *e = g_TexList; e; e = e->sig) {
-		CTextura *t = Textura_Lookup(e->Nombre, e->Opac);
+int Texture_RecreateAll(void *dev) {
+	for (CTexture *e = g_TexList; e; e = e->next) {
+		CTexture *t = Texture_Lookup(e->Name, e->Opac);
 		if (t && !t->PngData) {
-			CTextura_CreateD3D(t, dev);
+			CTexture_CreateD3D(t, dev);
 		}
 	}
 	return 0;
 }
 
-void *Textura_GetD3D(CTextura *t, void *dev) {
+void *Texture_GetD3D(CTexture *t, void *dev) {
 	if (!t) {
 		return NULL;
 	}
@@ -493,14 +493,14 @@ void *Textura_GetD3D(CTextura *t, void *dev) {
 		if (t->PngData) {
 			return NULL;
 		}
-		CTextura_CreateD3D(t, dev);
+		CTexture_CreateD3D(t, dev);
 	}
 	return t->tex;
 }
 
-CTextura *Textura_Lookup(const char *name, const char *opac) {
-	for (CTextura *t = g_TexList; t; t = t->sig) {
-		if (exe_lstrcmpiA(name, t->Nombre)) {
+CTexture *Texture_Lookup(const char *name, const char *opac) {
+	for (CTexture *t = g_TexList; t; t = t->next) {
+		if (exe_lstrcmpiA(name, t->Name)) {
 			continue;
 		}
 		if ((!opac || !opac[0]) && !t->Opac[0]) {
@@ -523,8 +523,8 @@ byte Tex_IsPower2(int n) {
 	return !(n & (n - 1));
 }
 
-int __thiscall CTextura_LoadFile(CTextura *self, byte load) {
-	char *name = self->Nombre;
+int __thiscall CTexture_LoadFile(CTexture *self, byte load) {
+	char *name = self->Name;
 	char *ext;
 	byte isBmp, isTga, isTex, isPng, isDdc, isDds;
 	byte opac;
@@ -546,15 +546,15 @@ int __thiscall CTextura_LoadFile(CTextura *self, byte load) {
 	self->ddy = !exe_lstrcmpiA(ext, ".ddy");
 	self->ddv = !exe_lstrcmpiA(ext, ".ddv");
 	self->compressed = isDds || isDdc || self->ddx || self->ddy || self->ddv;
-	self->ancho = 0;
-	self->alto = 0;
+	self->width = 0;
+	self->height = 0;
 	self->bpp = g_TextBPP;
 	self->alpha = 0;
-	if (Ruta_HasSubExt(name, ".alpha")) {
+	if (Path_HasSubExt(name, ".alpha")) {
 		self->bpp = g_TextOpBPP;
 		self->alpha = 1;
 	}
-	if (Ruta_HasSubExt(name, ".bump")) {
+	if (Path_HasSubExt(name, ".bump")) {
 		self->bpp = 16;
 		self->bump = 1;
 		self->mipmap = g_BumpMipmap ? self->mipmap : 0;
@@ -562,10 +562,10 @@ int __thiscall CTextura_LoadFile(CTextura *self, byte load) {
 			return TEX_E_NOTFOUND;
 		}
 	}
-	if (Ruta_HasSubExt(name, ".cube")) {
+	if (Path_HasSubExt(name, ".cube")) {
 		self->cube = 1;
 	}
-	if (Ruta_HasSubExt(name, ".dudv")) {
+	if (Path_HasSubExt(name, ".dudv")) {
 		self->bpp = 32;
 		self->alpha = 1;
 		self->dudv = 1;
@@ -575,7 +575,7 @@ int __thiscall CTextura_LoadFile(CTextura *self, byte load) {
 		/* D3DX makes the texture from the file */
 		if (isPng || isDdc) {
 			CHECK(!self->PngData);
-			ArchIO_ReadAll(name, &self->PngData, &self->PngSize);
+			FileIO_ReadAll(name, &self->PngData, &self->PngSize);
 		}
 		if (self->Opac[0] && !self->alpha) {
 			self->bpp = g_TextOpBPP;
@@ -598,7 +598,7 @@ int __thiscall CTextura_LoadFile(CTextura *self, byte load) {
 		self->alpha = 1;
 	}
 	if (!load) {
-		/* an empty CBmp: CTextura_CreateD3D loads it */
+		/* an empty CBmp: CTexture_CreateD3D loads it */
 		Img_Free(b, BMP_PIXEL);
 		return 0;
 	}
@@ -609,8 +609,8 @@ int __thiscall CTextura_LoadFile(CTextura *self, byte load) {
 		}
 		return TEX_E_NOTFOUND;
 	}
-	self->ancho = self->bitmap->ancho;
-	self->alto = self->bitmap->alto;
+	self->width = self->bitmap->width;
+	self->height = self->bitmap->height;
 	if (opac) {
 		CBmp o = { 0, 0, NULL };
 		if (!CBmp_Load(&o, self->Opac, 0)) {
@@ -629,14 +629,14 @@ int __thiscall CTextura_LoadFile(CTextura *self, byte load) {
 }
 
 /* the log lines of a new device texture: the format asked for and the one the device made */
-static void Tex_LogCreated(CTextura *self, const char *line, const char *formatLine, int fmt, int made) {
-	E3D_LogDebug(g_FileLog, line, D3DFmt_Name(fmt), self->ancho, self->alto, Ruta_FileName(self->Nombre));
+static void Tex_LogCreated(CTexture *self, const char *line, const char *formatLine, int fmt, int made) {
+	E3D_LogDebug(g_FileLog, line, D3DFmt_Name(fmt), self->width, self->height, Path_FileName(self->Name));
 	if (made != fmt) {
 		E3D_LogDebug(g_FileLog, formatLine, D3DFmt_Name(made));
 	}
 }
 
-int __thiscall CTextura_CreateD3D(CTextura *self, void *dev) {
+int __thiscall CTexture_CreateD3D(CTexture *self, void *dev) {
 	d3dSurfaceDesc_t desc = { 0 };
 	int fmt, bpp, hr;
 
@@ -649,38 +649,38 @@ int __thiscall CTextura_CreateD3D(CTextura *self, void *dev) {
 	}
 	if (self->bitmap) {
 		uint32_t w, h;
-		if (!self->bitmap->ancho && !self->bitmap->alto) {
+		if (!self->bitmap->width && !self->bitmap->height) {
 			/* the pixels were not loaded or were freed */
 			CBmp_Delete(self->bitmap, 1);
 			self->bitmap = NULL;
-			if (CTextura_LoadFile(self, 1) < 0) {
+			if (CTexture_LoadFile(self, 1) < 0) {
 				return TEX_E_FAIL;
 			}
 			CHECK(self->bitmap);
 		}
 		fmt = Tex_FormatRGB(Tex_BPP(self), self->alpha != 0, self->bump);
-		w = self->ancho;
-		h = self->alto;
+		w = self->width;
+		h = self->height;
 		D3DX_CheckTextureRequirements(dev, &w, &h, NULL, 0, &fmt, D3DPOOL_MANAGED);
 		if (fmt == FMT_A1R5G5B5) {
 			fmt = FMT_A4R4G4B4;
 			D3DX_CheckTextureRequirements(dev, &w, &h, NULL, 0, &fmt, D3DPOOL_MANAGED);
 		}
-		if (w != (uint32_t)self->ancho || h != (uint32_t)self->alto) {
-			E3D_LogVerbose(g_FileLog, "Invalid texture size: %d x %d", self->ancho, self->alto);
+		if (w != (uint32_t)self->width || h != (uint32_t)self->height) {
+			E3D_LogVerbose(g_FileLog, "Invalid texture size: %d x %d", self->width, self->height);
 		}
 		hr = D3D_METHOD(dev, devCreateTexture_t, D3DDEV_CREATETEXTURE)(dev, w, h, !self->mipmap, 0, fmt, D3DPOOL_MANAGED, &self->tex);
 		if (!hr) {
-			hr = CTextura_UploadLevel(self, self->bitmap, 0);
+			hr = CTexture_UploadLevel(self, self->bitmap, 0);
 		}
 		if (g_BuildDDS) {
-			CTextura_SaveDDS(self, self->bitmap, 0, 0);
+			CTexture_SaveDDS(self, self->bitmap, 0, 0);
 		}
 		if (!g_TexKeepBitmaps) {
 			Img_Free(self->bitmap, BMP_PIXEL);
 		}
 		if (hr < 0) {
-			E3D_LogBlue(g_FileLog, "ERROR: creando la textura (CBMP): '%s'", Ruta_FileName(self->Nombre));
+			E3D_LogBlue(g_FileLog, "ERROR: creando la textura (CBMP): '%s'", Path_FileName(self->Name));
 			return hr;
 		}
 		D3D_METHOD(self->tex, texGetLevelDesc_t, 0x38)(self->tex, 0, &desc);
@@ -693,12 +693,12 @@ int __thiscall CTextura_CreateD3D(CTextura *self, void *dev) {
 			comp ? 0 : fmt, D3DPOOL_MANAGED, Tex_Dither() | D3DX_FILTER_TRIANGLE, Tex_Dither() | D3DX_FILTER_BOX, 0,
 			NULL, NULL, &self->tex);
 		if (hr < 0) {
-			E3D_LogBlue(g_FileLog, "ERROR: creando la textura (D3DX): '%s'", Ruta_FileName(self->Nombre));
+			E3D_LogBlue(g_FileLog, "ERROR: creando la textura (D3DX): '%s'", Path_FileName(self->Name));
 			return hr;
 		}
 		D3D_METHOD(self->tex, texGetLevelDesc_t, 0x38)(self->tex, 0, &desc);
-		self->ancho = desc.Width;
-		self->alto = desc.Height;
+		self->width = desc.Width;
+		self->height = desc.Height;
 		if (!self->frame) {
 			/* the first time only, the texture is made again after each purge */
 			Tex_LogCreated(self, "Texture (D3DX):  %-8s  %4d %4d  [cached] '%s'", "Format  (D3DX):  %-8s", fmt,
@@ -711,18 +711,18 @@ int __thiscall CTextura_CreateD3D(CTextura *self, void *dev) {
 		if (!self->cube) {
 			void *buf;
 			uint32_t size;
-			ArchIO_ReadAll(self->Nombre, &buf, &size);
+			FileIO_ReadAll(self->Name, &buf, &size);
 			hr = D3DX_CreateTextureFromFileInMemoryEx(dev, buf, size, 0, 0, !self->mipmap, 0,
 				self->compressed ? 0 : fmt, g_TexturePool == 1, Tex_Dither() | D3DX_FILTER_TRIANGLE,
 				Tex_Dither() | D3DX_FILTER_BOX, 0, NULL, NULL, &self->tex);
 			Ptr_Delete(&buf);
 			if (hr < 0) {
-				E3D_LogBlue(g_FileLog, "ERROR: creando la textura (D3DX): '%s'", Ruta_FileName(self->Nombre));
+				E3D_LogBlue(g_FileLog, "ERROR: creando la textura (D3DX): '%s'", Path_FileName(self->Name));
 				return hr;
 			}
 			D3D_METHOD(self->tex, texGetLevelDesc_t, 0x38)(self->tex, 0, &desc);
-			self->ancho = desc.Width;
-			self->alto = desc.Height;
+			self->width = desc.Width;
+			self->height = desc.Height;
 		} else {
 			CHECK(0);
 		}
@@ -734,12 +734,12 @@ int __thiscall CTextura_CreateD3D(CTextura *self, void *dev) {
 	return 0;
 }
 
-int __thiscall CTextura_SaveDDS(CTextura *self, CBmp *orig, int level, byte keepExt) {
-	char ruta[MAX_RUTA];
-	char tmp[MAX_RUTA];
-	char dir[MAX_RUTA];
+int __thiscall CTexture_SaveDDS(CTexture *self, CBmp *orig, int level, byte keepExt) {
+	char path[MAX_FILEPATH];
+	char tmp[MAX_FILEPATH];
+	char dir[MAX_FILEPATH];
 	char cmd[0x400];
-	const char *name = self->Nombre;
+	const char *name = self->Name;
 	const char *mode;
 	CBmp b;
 	int lx, ly, dx, ok;
@@ -750,23 +750,23 @@ int __thiscall CTextura_SaveDDS(CTextura *self, CBmp *orig, int level, byte keep
 	if (!(self->flags & TEXF_DDS) || (self->flags & TEXF_FIXEDBPP) || (self->flags & TEXF_NODDS)) {
 		return 0;
 	}
-	Ruta_Format(ruta, name, "&U&D_dds");
-	if (!Ruta_IsDir(ruta)) {
+	Path_Format(path, name, "&U&D_dds");
+	if (!Path_IsDir(path)) {
 		return 0;
 	}
-	E3D_DebugPrintf("\nSaveDDS: %s [opac:%s]\n", Ruta_FileName(name), Tex_OpacName(self));
+	E3D_DebugPrintf("\nSaveDDS: %s [opac:%s]\n", Path_FileName(name), Tex_OpacName(self));
 	if (self->alpha) {
 		mode = g_SaveDXT5 && !keepExt ? "dxt5" : "dxt3";
 	} else {
 		mode = "dxt1c";
 	}
-	lx = orig->ancho;
+	lx = orig->width;
 	dx = 0;
-	ly = orig->alto;
+	ly = orig->height;
 	CHECK(Tex_IsPower2(lx) && Tex_IsPower2(ly));
 	for (;;) {
-		b.ancho = lx;
-		b.alto = ly;
+		b.width = lx;
+		b.height = ly;
 		b.img = New_Array((uint32_t)ly * lx, BMP_PIXEL);
 		CBmp_Resample(&b, orig, 0xf);
 		if (g_TexSharpen && level > 0) {
@@ -776,13 +776,13 @@ int __thiscall CTextura_SaveDDS(CTextura *self, CBmp *orig, int level, byte keep
 			Bmp_ToBump(&b);
 		}
 		Bprintf(tmp, sizeof(tmp), "&U&D_dds/_dds_tmp_%02d.tga", level);
-		Ruta_Format(ruta, name, tmp);
-		Ruta_ToBackslash(ruta);
-		if (CBmp_Save(&b, ruta, self->alpha ? IMG_ALPHA : 0)) {
-			Con_FatalErrorf("SaveCBitmapDDS: Could not write to file: '%s'", ruta);
+		Path_Format(path, name, tmp);
+		Path_ToBackslash(path);
+		if (CBmp_Save(&b, path, self->alpha ? IMG_ALPHA : 0)) {
+			Con_FatalErrorf("SaveCBitmapDDS: Could not write to file: '%s'", path);
 		}
-		Ruta_Format(dir, ruta, "&U&D.");
-		Bprintf(cmd, sizeof(cmd), "-outdir \"%s\" -nomipmap -%s -file \"%s\"", dir, mode, ruta);
+		Path_Format(dir, path, "&U&D.");
+		Bprintf(cmd, sizeof(cmd), "-outdir \"%s\" -nomipmap -%s -file \"%s\"", dir, mode, path);
 		CHECK(!crt_spawnlp(P_WAIT, "bmp/nvdxt.exe", "nvdxt.exe", cmd, NULL));
 		dx += lx;
 		if (!self->mipmap || lx == 1) {
@@ -795,35 +795,35 @@ int __thiscall CTextura_SaveDDS(CTextura *self, CBmp *orig, int level, byte keep
 	}
 	Img_Free(&b, BMP_PIXEL);
 	if (self->mipmap) {
-		ok = dx + 1 == orig->ancho * 2;
+		ok = dx + 1 == orig->width * 2;
 	} else {
-		ok = dx == orig->ancho;
+		ok = dx == orig->width;
 	}
 	CHECK(ok);
 	Bprintf(tmp, sizeof(tmp), "&U&D_dds/_dds_tmp_%02d.dds", level + 1);
-	Ruta_Format(ruta, name, tmp);
-	CHECK(crt_access(ruta, 0));
-	Ruta_Format(ruta, name, "\"&U&D_dds/_dds_tmp\"");
-	Ruta_ToBackslash(ruta);
-	CHECK(!crt_spawnlp(P_WAIT, "bmp/stitch.exe", "stitch.exe", ruta, NULL));
+	Path_Format(path, name, tmp);
+	CHECK(crt_access(path, 0));
+	Path_Format(path, name, "\"&U&D_dds/_dds_tmp\"");
+	Path_ToBackslash(path);
+	CHECK(!crt_spawnlp(P_WAIT, "bmp/stitch.exe", "stitch.exe", path, NULL));
 	for (int i = 0; i <= level; i++) {
 		Bprintf(tmp, sizeof(tmp), "&U&D_dds/_dds_tmp_%02d.tga", i);
-		Ruta_Format(ruta, name, tmp);
-		CHECK(!crt_remove(ruta));
+		Path_Format(path, name, tmp);
+		CHECK(!crt_remove(path));
 		Bprintf(tmp, sizeof(tmp), "&U&D_dds/_dds_tmp_%02d.dds", i);
-		Ruta_Format(ruta, name, tmp);
-		CHECK(!crt_remove(ruta));
+		Path_Format(path, name, tmp);
+		CHECK(!crt_remove(path));
 	}
 	Bprintf(tmp, sizeof(tmp), "&U&D_dds/&N%s.dds", self->Opac[0] ? ".alpha" : "");
-	Ruta_Format(ruta, name, "&U&D_dds/_dds_tmp.dds");
-	Ruta_Format(tmp, name, tmp);
+	Path_Format(path, name, "&U&D_dds/_dds_tmp.dds");
+	Path_Format(tmp, name, tmp);
 	if (keepExt) {
 		Bprintf(tmp + strlen(tmp), 8, ".%s", mode);
 	}
-	if (crt_rename(ruta, tmp)) {
-		Con_FatalErrorf("SaveCBitmapDDS: Could not rename: '%s' -> '%s'", Ruta_FileName(ruta), Ruta_FileName(tmp));
+	if (crt_rename(path, tmp)) {
+		Con_FatalErrorf("SaveCBitmapDDS: Could not rename: '%s' -> '%s'", Path_FileName(path), Path_FileName(tmp));
 	}
-	E3D_LogDebug(g_FileLog, "SaveCBitmapDDS: File saved: '%s' [mip:%d] [opac:%s]", Ruta_FileName(tmp), level,
+	E3D_LogDebug(g_FileLog, "SaveCBitmapDDS: File saved: '%s' [mip:%d] [opac:%s]", Path_FileName(tmp), level,
 		Tex_OpacName(self));
 	return 0;
 }
@@ -845,15 +845,15 @@ int Tex_Format(int bpp, byte alpha, byte palette, byte bump, byte compressed, by
 	return Tex_FormatRGB(bpp, alpha, 0);
 }
 
-void Ruta_ToBackslash(char *ruta) {
-	for (; *ruta; ruta++) {
-		if (*ruta == '/') {
-			*ruta = '\\';
+void Path_ToBackslash(char *path) {
+	for (; *path; path++) {
+		if (*path == '/') {
+			*path = '\\';
 		}
 	}
 }
 
-byte Ruta_HasSubExt(const char *name, const char *ext) {
+byte Path_HasSubExt(const char *name, const char *ext) {
 	size_t len = strlen(ext);
 	const char *dot = crt_mbsrchr(name, '.');
 
@@ -876,8 +876,8 @@ static byte Bump_Channel(uint32_t c) {
 
 void Bmp_ToBump(CBmp *bmp) {
 	CHECK(bmp);
-	for (int y = 0; y < bmp->alto; y++) {
-		for (int x = 0; x < bmp->ancho; x++) {
+	for (int y = 0; y < bmp->height; y++) {
+		for (int x = 0; x < bmp->width; x++) {
 			uint32_t p = *CBmp_Pixel(bmp, x, y);
 			uint32_t u = Bump_Channel(p & 0xff);
 			uint32_t v = Bump_Channel(p >> 8 & 0xff);
@@ -890,11 +890,11 @@ void Bmp_ToDudv(CBmp *bmp) {
 	CBmp tmp;
 
 	CHECK(bmp);
-	tmp.ancho = bmp->ancho;
-	tmp.alto = bmp->alto;
-	tmp.img = New_Array((uint32_t)tmp.ancho * tmp.alto, BMP_PIXEL);
-	for (int y = 0; y < bmp->alto; y++) {
-		for (int x = 0; x < bmp->ancho; x++) {
+	tmp.width = bmp->width;
+	tmp.height = bmp->height;
+	tmp.img = New_Array((uint32_t)tmp.width * tmp.height, BMP_PIXEL);
+	for (int y = 0; y < bmp->height; y++) {
+		for (int x = 0; x < bmp->width; x++) {
 			uint32_t p = *CBmp_Pixel(bmp, x, y);
 			byte u = (byte)p >> 2;
 			byte v = (byte)(p >> 8) >> 2;
@@ -935,11 +935,11 @@ void Bmp_ToRamp(CBmp *bmp) {
 	uint32_t p;
 
 	CHECK(bmp);
-	avg.ancho = 1;
-	avg.alto = 1;
+	avg.width = 1;
+	avg.height = 1;
 	avg.img = New_Array(1, BMP_PIXEL);
-	ramp.ancho = 8;
-	ramp.alto = 1;
+	ramp.width = 8;
+	ramp.height = 1;
 	ramp.img = New_Array(8, BMP_PIXEL);
 	CBmp_Resample(&avg, bmp, 0xf);
 	CBmp_Resample(&ramp, &avg, 0xf);
@@ -966,8 +966,8 @@ int Surface_FromBmp(void *surf, const CBmp *bmp) {
 		return hr;
 	}
 	CHECK(desc.Format == FMT_A8R8G8B8);
-	CHECK(desc.Width == (uint32_t)bmp->ancho);
-	CHECK(desc.Height == (uint32_t)bmp->alto);
+	CHECK(desc.Width == (uint32_t)bmp->width);
+	CHECK(desc.Height == (uint32_t)bmp->height);
 	hr = D3D_METHOD(surf, surfLockRect_t, 0x24)(surf, &lr, NULL, 0);
 	if (hr < 0) {
 		return hr;
@@ -1037,11 +1037,11 @@ const char *D3DFmt_Name(int fmt) {
 }
 
 /* the atexit destructor of g_TexList (rva 0x38ee70): the first texture of the list deleted */
-void Textura_FiniTexList(void) {
-	CTextura *t = g_TexList;
+void Texture_FiniTexList(void) {
+	CTexture *t = g_TexList;
 
 	if (t) {
-		CTextura_dtor(t);
-		operator_delete_sized(t, sizeof(CTextura));
+		CTexture_dtor(t);
+		operator_delete_sized(t, sizeof(CTexture));
 	}
 }

@@ -966,7 +966,7 @@ byte __thiscall cVehicleEntity_GetPilotPos(cVehicleEntity *self, int slot, vec3_
 	if (slot != 0 || *Veh_PilotNode(self, slot) == -1) {
 		return 0;
 	}
-	CGameModel_NodoMatrix(&self->model, &m, (uint32_t)*Veh_PilotNode(self, slot), 0, NULL, 0);
+	CGameModel_NodeMatrix(&self->model, &m, (uint32_t)*Veh_PilotNode(self, slot), 0, NULL, 0);
 	if (pos) {
 		pos->x = m.m[12];
 		pos->y = m.m[13];
@@ -997,7 +997,7 @@ byte __thiscall cVehicleEntity_SetPilot(cVehicleEntity *self, int slot, const ch
 	}
 	memcpy(node, "DC_Player_01", 13);
 	node[11] = (char)(node[11] + slot);
-	int n = CGameModel_FindNodoR(&self->model, node);
+	int n = CGameModel_FindRenderNode(&self->model, node);
 	*Veh_PilotNode(self, slot) = n;
 	if (n == -1) {
 		return 0;
@@ -1014,7 +1014,7 @@ byte __thiscall cVehicleEntity_SetPilot(cVehicleEntity *self, int slot, const ch
 	scale.z = sz;
 	CGameModel *m = Veh_PilotModel(self, slot);
 	CGameModel_LoadScaled(m, path, &scale);
-	CGameModel_SetPivotNodo(m, "DC_Ship_Link");
+	CGameModel_SetPivotNode(m, "DC_Ship_Link");
 	CGameModel_SetPos(m, &self->base.pos);
 	CGameModel_SetRot(m, &self->ang);
 	if (!self->base.flag_4c) {
@@ -1134,7 +1134,7 @@ void __thiscall cVehicleEntity_UpdatePilotPos(cVehicleEntity *self, byte on) {
 	} else {
 		CGameModel_Disable(pm);
 	}
-	CGameModel_NodoMatrix(&self->model, &m, (uint32_t)self->pilotNode, 0, NULL, 0);
+	CGameModel_NodeMatrix(&self->model, &m, (uint32_t)self->pilotNode, 0, NULL, 0);
 	CGameModel_SetRot(pm, Matrix_GetEuler(&m, &e));
 	pos.x = m.m[12];
 	pos.y = m.m[13];
@@ -1171,9 +1171,9 @@ void __thiscall cVehicleEntity_SetModel(cVehicleEntity *self, const char *file, 
 	}
 	cObjEntity_SetModel(Veh_Ent(self), path, sx, sy, sz, 1);
 	CGameModel *model = &self->model;
-	vec3_t root = *CGameModel_NodoPos(model, &tmp, (uint32_t)CGameModel_FindNodoR(model, "DC_Root"), 0);
-	vec3_t w = *CGameModel_NodoPos(model, &tmp, (uint32_t)CGameModel_FindNodoR(model, "DC_WRadius"), 0);
-	vec3_t v = *CGameModel_NodoPos(model, &tmp, (uint32_t)CGameModel_FindNodoR(model, "DC_VRadius"), 0);
+	vec3_t root = *CGameModel_NodePos(model, &tmp, (uint32_t)CGameModel_FindRenderNode(model, "DC_Root"), 0);
+	vec3_t w = *CGameModel_NodePos(model, &tmp, (uint32_t)CGameModel_FindRenderNode(model, "DC_WRadius"), 0);
+	vec3_t v = *CGameModel_NodePos(model, &tmp, (uint32_t)CGameModel_FindRenderNode(model, "DC_VRadius"), 0);
 	float dx = root.x - w.x, dy = root.y - w.y, dz = root.z - w.z;
 	self->wRadius = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 	dx = root.x - v.x;
@@ -1187,7 +1187,7 @@ void __thiscall cVehicleEntity_SetModel(cVehicleEntity *self, const char *file, 
 				__asm__ volatile("int3");	/* the bounds check of Global/Table.h */
 			}
 			Str_PrintfQuiet(node, 0xff, "DC_%s_%02d", wd->ammo.items[i].name, j + 1);
-			self->weapons.nodes[i][j] = CGameModel_FindNodoR(model, node);
+			self->weapons.nodes[i][j] = CGameModel_FindRenderNode(model, node);
 		}
 	}
 	cWeaponManager_ClearWeaps(&self->weapons);
@@ -1973,7 +1973,7 @@ static void Veh_UpdatePilotModel(cVehicleEntity *self, const vec3_t *pos, float 
 	} else {
 		CGameModel_Disable(&self->pilot);
 	}
-	CGameModel_NodoMatrix(&self->model, &mtx, (uint32_t)self->pilotNode, 0, NULL, 0);
+	CGameModel_NodeMatrix(&self->model, &mtx, (uint32_t)self->pilotNode, 0, NULL, 0);
 	CGameModel_SetRot(&self->pilot, Matrix_GetEuler(&mtx, &ang));
 	ppos.x = mtx.m[12];
 	ppos.y = mtx.m[13];

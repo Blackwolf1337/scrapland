@@ -77,7 +77,7 @@ check('CAnimCtrl_Update stopped', lambda: (SDTest.Call('CAnimCtrl_Update', 'tbii
 
 # a root node with positions (and identity rotations) for 50 frames: the root motion, a taken jump, the fade and a rotation
 n = cacalloc(0x24)
-SDTest.Call('CAnimNodo_Init', 'tviiii', n, 50, 0, 3)
+SDTest.Call('CAnimNode_Init', 'tviiii', n, 50, 0, 3)
 for i in range(0, 50, 16):
 	k = min(16, 50 - i)
 	SDTest.Call('crt_memcpy', 'iiFi', cai(n + 0xc) + 16 * i, (0.0, 0.0, 0.0, 1.0) * k, 16 * k)

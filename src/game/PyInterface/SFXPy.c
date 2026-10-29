@@ -102,7 +102,7 @@ PyObject *SFX_MoneyTransfer(PyObject *self, PyObject *args) {
 	return ReturnNone();
 }
 
-/* FXEmbeddedSet(EntityName, FXType) : Asigna el controlador de efectos embedidos */
+/* FXEmbeddedSet(EntityName, FXType) : Asigna el controlador de effects embedidos */
 PyObject *SFX_EmbeddedSet(PyObject *self, PyObject *args) {
 	char *entityName, *fxType;
 

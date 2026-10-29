@@ -72,7 +72,7 @@ PyObject *SAct_CreateClass(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", g_pAuxActClass ? 1 : 0);
 }
 
-/* DelClass(classname) : Borra una clase de objeto animado */
+/* DelClass(classname) : Borra una class de objeto animado */
 PyObject *SAct_DelClass(PyObject *self, PyObject *args) {
 	char *name;
 
@@ -96,7 +96,7 @@ PyObject *SAct_GetClass(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", g_pAuxActClass ? 1 : 0);
 }
 
-/* SetCls(varname,value) : Modifica el valor de una variable de una clase objeto animado */
+/* SetCls(varname,value) : Modifica el valor de una variable de una class objeto animado */
 PyObject *SAct_SetCls(PyObject *self, PyObject *args) {
 	int parsed;
 
@@ -108,7 +108,7 @@ PyObject *SAct_SetCls(PyObject *self, PyObject *args) {
 	return SetVar(args, (varfunc_t)cActClass_Var, g_pAuxActClass, &parsed);
 }
 
-/* GetCls(varname) : Obtiene el valor de una variable de una clase objeto animado */
+/* GetCls(varname) : Obtiene el valor de una variable de una class objeto animado */
 PyObject *SAct_GetCls(PyObject *self, PyObject *args) {
 	(void)self;
 	return GetVar(args, (varfunc_t)cActClass_Var, g_pAuxActClass,
@@ -116,7 +116,7 @@ PyObject *SAct_GetCls(PyObject *self, PyObject *args) {
 		"Caution: SAct.GetCls('%s'): element not found.\n");
 }
 
-/* CreateAction(varname) : Crea una accion en la clase actual. */
+/* CreateAction(varname) : Crea una accion en la class actual. */
 PyObject *SAct_CreateAction(PyObject *self, PyObject *args) {
 	char *name;
 
@@ -132,7 +132,7 @@ PyObject *SAct_CreateAction(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", g_pAuxAction ? 1 : 0);
 }
 
-/* GetAction(varname) : Obtiene una accion de la clase actual. */
+/* GetAction(varname) : Obtiene una accion de la class actual. */
 PyObject *SAct_GetAction(PyObject *self, PyObject *args) {
 	char *name;
 
@@ -167,7 +167,7 @@ PyObject *SAct_SetAct(PyObject *self, PyObject *args) {
 	return ReturnNone();
 }
 
-/* GetAct(varname) : Obtiene el valor de una variable de la accion de una clase objeto animado */
+/* GetAct(varname) : Obtiene el valor de una variable de la accion de una class objeto animado */
 PyObject *SAct_GetAct(PyObject *self, PyObject *args) {
 	(void)self;
 	return GetVar(args, (varfunc_t)cAction_Var, g_pAuxAction,

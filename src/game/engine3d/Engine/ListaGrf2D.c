@@ -3,77 +3,77 @@
  */
 #include "scrap/fondo2d.h"
 
-CListaGrf2D *__fastcall CListaGrf2D_ctor(CListaGrf2D *self) {
-	self->pri = NULL;
-	self->ult = NULL;
+CGraphic2DList *__fastcall CGraphic2DList_ctor(CGraphic2DList *self) {
+	self->first = NULL;
+	self->last = NULL;
 	return self;
 }
 
-static void Grafico2D_Delete(CGrafico2D *grf) {
-	if (grf) {
-		CGrafico2D_dtor(grf);
-		operator_delete_sized(grf, sizeof(CGrafico2D));
+static void Graphic2D_Delete(CGraphic2D *graphic) {
+	if (graphic) {
+		CGraphic2D_dtor(graphic);
+		operator_delete_sized(graphic, sizeof(CGraphic2D));
 	}
 }
 
-void __fastcall CListaGrf2D_DeleteAll(CListaGrf2D *self) {
-	while (self->pri) {
-		CGrafico2D *grf = self->pri->grf;
-		CListaGrf2D_Remove(self, grf);
-		Grafico2D_Delete(grf);
+void __fastcall CGraphic2DList_DeleteAll(CGraphic2DList *self) {
+	while (self->first) {
+		CGraphic2D *graphic = self->first->graphic;
+		CGraphic2DList_Remove(self, graphic);
+		Graphic2D_Delete(graphic);
 	}
 }
 
-void __fastcall CListaGrf2D_Render(CListaGrf2D *self) {
-	for (NodoGrf2D *n = self->pri; n; n = n->sig) {
-		CGrafico2D_Render(n->grf);
+void __fastcall CGraphic2DList_Render(CGraphic2DList *self) {
+	for (NodeGraphic2D *n = self->first; n; n = n->next) {
+		CGraphic2D_Render(n->graphic);
 	}
 }
 
-void __thiscall CListaGrf2D_Add(CListaGrf2D *self, CGrafico2D *grf) {
-	NodoGrf2D *n = operator_new(sizeof(*n));
+void __thiscall CGraphic2DList_Add(CGraphic2DList *self, CGraphic2D *graphic) {
+	NodeGraphic2D *n = operator_new(sizeof(*n));
 
 	if (n) {
-		n->grf = grf;
-		n->sig = NULL;
+		n->graphic = graphic;
+		n->next = NULL;
 	}
-	CHECK(grf);
-	if (self->ult) {
-		CHECK(!self->ult->sig);
-		self->ult->sig = n;
-		self->ult = n;
+	CHECK(graphic);
+	if (self->last) {
+		CHECK(!self->last->next);
+		self->last->next = n;
+		self->last = n;
 		return;
 	}
-	CHECK(!self->pri);
-	self->pri = n;
-	self->ult = n;
+	CHECK(!self->first);
+	self->first = n;
+	self->last = n;
 }
 
-void __thiscall CListaGrf2D_Delete(CListaGrf2D *self, CGrafico2D *grf) {
-	CListaGrf2D_Remove(self, grf);
-	Grafico2D_Delete(grf);
+void __thiscall CGraphic2DList_Delete(CGraphic2DList *self, CGraphic2D *graphic) {
+	CGraphic2DList_Remove(self, graphic);
+	Graphic2D_Delete(graphic);
 }
 
-void __thiscall CListaGrf2D_Remove(CListaGrf2D *self, CGrafico2D *grf) {
-	NodoGrf2D *nodo = self->pri;
-	NodoGrf2D *ant = NULL;
+void __thiscall CGraphic2DList_Remove(CGraphic2DList *self, CGraphic2D *graphic) {
+	NodeGraphic2D *node = self->first;
+	NodeGraphic2D *prev = NULL;
 
-	CHECK(grf);
-	while (nodo && nodo->grf != grf) {
-		ant = nodo;
-		nodo = nodo->sig;
+	CHECK(graphic);
+	while (node && node->graphic != graphic) {
+		prev = node;
+		node = node->next;
 	}
-	CHECK(nodo);
-	if (self->pri == nodo) {
-		self->pri = nodo->sig;
+	CHECK(node);
+	if (self->first == node) {
+		self->first = node->next;
 	}
-	if (self->ult == nodo) {
-		self->ult = ant;
+	if (self->last == node) {
+		self->last = prev;
 	}
-	if (ant) {
-		ant->sig = nodo->sig;
+	if (prev) {
+		prev->next = node->next;
 	}
-	nodo->sig = NULL;
-	nodo->grf = NULL;
-	operator_delete_sized(nodo, sizeof(*nodo));
+	node->next = NULL;
+	node->graphic = NULL;
+	operator_delete_sized(node, sizeof(*node));
 }

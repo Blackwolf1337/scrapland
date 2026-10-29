@@ -1,42 +1,42 @@
 /*
- * Engine/grafico2d.cpp of the engine3d: CGrafico2D, see include/scrap/grafico2d.h.
+ * Engine/grafico2d.cpp of the engine3d: CGraphic2D, see include/scrap/grafico2d.h.
  */
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/grafico2d.h"
 
 /* the corner of the texture of each corner of the rectangle (u0 v0, u1 v0, u0 v1, u1 v1) by rot */
-#define g_Grafico2DRot (GAME_ARRAY(const int[4], g_Grafico2DRot, 0x4325b0))
+#define g_Graphic2DRot (GAME_ARRAY(const int[4], g_Graphic2DRot, 0x4325b0))
 
-CGrafico2D *__thiscall CGrafico2D_ctorTex(CGrafico2D *self, const char *tex, const char *opac, uint32_t flags) {
-	CGrafico2D_Init(self);
-	CGrafico2D_CreateMat(self, tex, opac, 5, 6, 0, flags);
-	if (flags & GRAF2D_PANTALLA) {
-		self->pantalla = 1;
+CGraphic2D *__thiscall CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags) {
+	CGraphic2D_Init(self);
+	CGraphic2D_CreateMat(self, tex, opac, 5, 6, 0, flags);
+	if (flags & GRAPHIC2D_SCREEN) {
+		self->screen = 1;
 	}
-	if (flags & GRAF2D_TAM_PANTALLA) {
-		self->tamPantalla = 1;
+	if (flags & GRAPHIC2D_SCREEN_SIZE) {
+		self->screenSize = 1;
 	}
-	if (flags & GRAF2D_PROPIO) {
-		self->propio = 1;
+	if (flags & GRAPHIC2D_OWN) {
+		self->own = 1;
 	}
 	return self;
 }
 
-CGrafico2D *__fastcall CGrafico2D_ctor(CGrafico2D *self) {
-	CGrafico2D_Init(self);
+CGraphic2D *__fastcall CGraphic2D_ctor(CGraphic2D *self) {
+	CGraphic2D_Init(self);
 	return self;
 }
 
-void __fastcall CGrafico2D_dtor(CGrafico2D *self) {
+void __fastcall CGraphic2D_dtor(CGraphic2D *self) {
 	AnimMat_Free(&self->AnimMat);
-	if (self->propio && self->Mat) {
-		CListaMat_Delete(g_ListaMat, self->Mat);
+	if (self->own && self->Mat) {
+		CMatList_Delete(g_MatList, self->Mat);
 	}
 }
 
-void __fastcall CGrafico2D_Render(CGrafico2D *self) {
-	CGrafico2D_Draw(self, NULL, NULL, NULL, 0, 0);
+void __fastcall CGraphic2D_Render(CGraphic2D *self) {
+	CGraphic2D_Draw(self, NULL, NULL, NULL, 0, 0);
 }
 
 static uint32_t Color_Mod4x(uint32_t c) {
@@ -52,41 +52,41 @@ static void Verts2D_ScaleX(Vert2D *v, uint32_t n) {
 	}
 }
 
-static void Draw_Verts(void *dev, int tipo, uint32_t nPrim, const Vert2D *v, uint32_t nVert) {
+static void Draw_Verts(void *dev, int type, uint32_t nPrim, const Vert2D *v, uint32_t nVert) {
 	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_2D);
-	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, tipo, nPrim, v, sizeof(Vert2D));
+	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, type, nPrim, v, sizeof(Vert2D));
 	g_RenderTris += (int)nPrim;
 	g_RenderVerts += (int)nVert;
 }
 
-void __thiscall CGrafico2D_Draw(CGrafico2D *self, const float *pos, const float *uv, const uint32_t *colors,
-	uint32_t nVert, int tipo) {
+void __thiscall CGraphic2D_Draw(CGraphic2D *self, const float *pos, const float *uv, const uint32_t *colors,
+	uint32_t nVert, int type) {
 	if (g_RenderOff) {
 		return;
 	}
-	void *dev = g_MotorDev;
+	void *dev = g_EngineDev;
 	CHECK(dev);
 	CHECK(self->Mat);
 	Render_SetMaterialAnim(self->Mat, self->AnimMat);
 	int tw, th;
-	if (self->sinTextura) {
+	if (self->noTexture) {
 		th = 1;
 		tw = 1;
 	} else if (!CMaterial_GetMapSize(self->Mat, 0, &tw, &th)) {
 		return;
 	}
-	float sx = (float)((double)Render_GetViewportW() * g_Pantalla2DInvW);
-	float sy = (float)((double)Render_GetViewportH() * g_Pantalla2DInvH);
-	float x = self->pantalla ? sx * self->x : self->x;
+	float sx = (float)((double)Render_GetViewportW() * g_Screen2DInvW);
+	float sy = (float)((double)Render_GetViewportH() * g_Screen2DInvH);
+	float x = self->screen ? sx * self->x : self->x;
 	x -= 0.5f;
 	float y = self->y;
-	if (self->pantalla) {
+	if (self->screen) {
 		y *= sy;
 	}
 	y -= 0.5f;
-	float w = (float)tw * self->escala[0] * self->escala2[0];
-	float h = (float)th * self->escala[1] * self->escala2[1];
-	if (!tipo) {
+	float w = (float)tw * self->scale[0] * self->scale2[0];
+	float h = (float)th * self->scale[1] * self->scale2[1];
+	if (!type) {
 		w *= self->u1 > self->u0 ? self->u1 - self->u0 : self->u0 - self->u1;
 		h *= self->v1 > self->v0 ? self->v1 - self->v0 : self->v0 - self->v1;
 	}
@@ -95,20 +95,20 @@ void __thiscall CGrafico2D_Draw(CGrafico2D *self, const float *pos, const float 
 		w = h;
 		h = t;
 	}
-	if (self->tamPantalla) {
+	if (self->screenSize) {
 		w *= sx;
 		h *= sy;
 	}
-	if (self->centrado) {
+	if (self->centered) {
 		x -= w * 0.5f;
 		y -= h * 0.5f;
 	} else {
 		x -= self->alignX * w;
 		y -= self->alignY * h;
 	}
-	if (tipo) {
+	if (type) {
 		CHECK(pos && nVert < MAX_VERT_2D);
-		uint32_t nPrim = Grafico2D_NumPrims(tipo, nVert);
+		uint32_t nPrim = Graphic2D_NumPrims(type, nVert);
 		float ku = 1.0f, kv = 1.0f;
 		if (!uv) {
 			ku = 1.0f / (float)Render_GetViewportW();
@@ -133,7 +133,7 @@ void __thiscall CGrafico2D_Draw(CGrafico2D *self, const float *pos, const float 
 			v->color = Color_Mod4x(c);
 		}
 		Verts2D_ScaleX(g_Verts2D, nVert);
-		Draw_Verts(dev, tipo, nPrim, g_Verts2D, nVert);
+		Draw_Verts(dev, type, nPrim, g_Verts2D, nVert);
 		return;
 	}
 	float x2 = w + x, y2 = h + y;
@@ -143,30 +143,30 @@ void __thiscall CGrafico2D_Draw(CGrafico2D *self, const float *pos, const float 
 	uint32_t c = Color_Mod4x(self->color);
 	Vert2D v[4];
 	for (int i = 0; i < 4; i++) {
-		const float *t = uvs[g_Grafico2DRot[self->rot][i]];
+		const float *t = uvs[g_Graphic2DRot[self->rot][i]];
 		v[i] = (Vert2D){ xy[i][0], xy[i][1], 0.0f, 1.0f, c, 0, t[0], t[1] };
 	}
 	Verts2D_ScaleX(v, 4);
 	Draw_Verts(dev, D3DPT_TRIANGLESTRIP, 2, v, 4);
 }
 
-void Grafico2D_SetPantalla(int w, int h) {
-	g_Pantalla2DW = w;
-	g_Pantalla2DH = h;
-	g_Pantalla2DInvW = 1.0 / (double)w;
-	g_Pantalla2DInvH = 1.0 / (double)h;
+void Graphic2D_SetScreen(int w, int h) {
+	g_Screen2DW = w;
+	g_Screen2DH = h;
+	g_Screen2DInvW = 1.0 / (double)w;
+	g_Screen2DInvH = 1.0 / (double)h;
 }
 
-void __thiscall CGrafico2D_SetTexture(CGrafico2D *self, const char *tex, const char *opac, uint32_t flags) {
-	CGrafico2D_CreateMat(self, tex, opac, 5, 6, 0, flags);
+void __thiscall CGraphic2D_SetTexture(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags) {
+	CGraphic2D_CreateMat(self, tex, opac, 5, 6, 0, flags);
 }
 
-void __thiscall CGrafico2D_CreateMat(CGrafico2D *self, const char *tex, const char *opac, int src, int dst, byte alpha,
+void __thiscall CGraphic2D_CreateMat(CGraphic2D *self, const char *tex, const char *opac, int src, int dst, byte alpha,
 	uint32_t flags) {
 	CMaterial m;
 
 	CMaterial_ctor(&m);
-	Cad_Set(&m.Nombre, tex);
+	String_Set(&m.Name, tex);
 	CMaterial_SetMap(&m, 0, tex);
 	CMaterial_SetMap(&m, 1, opac);
 	m.params.srcBlend = src;
@@ -176,72 +176,72 @@ void __thiscall CGrafico2D_CreateMat(CGrafico2D *self, const char *tex, const ch
 	m.params.b39 = 0;
 	((byte *)&m.params.w3e)[0] = 0;
 	((byte *)&m.params.w3e)[1] = flags >> 3 & 1;
-	m.params.i40 = flags & GRAF2D_MAT_I40 ? 2 : 8;
-	m.params.atrib = flags & GRAF2D_ATRIB_20 ? 0x60 : 0x40;
-	if (m.mapa[0]) {
-		m.mapa[0]->b8 = 0;
-		if (!(flags & GRAF2D_MAPA_BC)) {
-			m.mapa[0]->bc = 0;
+	m.params.i40 = flags & GRAPHIC2D_MAT_I40 ? 2 : 8;
+	m.params.attrib = flags & GRAPHIC2D_ATTRIB_20 ? 0x60 : 0x40;
+	if (m.map[0]) {
+		m.map[0]->b8 = 0;
+		if (!(flags & GRAPHIC2D_MAP_BC)) {
+			m.map[0]->bc = 0;
 		}
 	}
-	if (flags & GRAF2D_MAPA_BA && m.mapa[0]) {
-		m.mapa[0]->ba = 1;
+	if (flags & GRAPHIC2D_MAP_BA && m.map[0]) {
+		m.map[0]->ba = 1;
 	}
-	if (flags & GRAF2D_PROPIO) {
-		m.params.atrib |= 8;
-		self->propio = 1;
+	if (flags & GRAPHIC2D_OWN) {
+		m.params.attrib |= 8;
+		self->own = 1;
 	}
-	if (!self->propio) {
-		self->Mat = CListaMat_Find(g_ListaMat, &m);
+	if (!self->own) {
+		self->Mat = CMatList_Find(g_MatList, &m);
 	}
 	if (!self->Mat) {
 		self->Mat = Mat_AddCopy(&m);
 	}
-	CMaterial_Prepare(self->Mat, g_MotorDev);
+	CMaterial_Prepare(self->Mat, g_EngineDev);
 	AnimMat_Free(&self->AnimMat);
-	CMapa *mapa = self->Mat->mapa[0];
-	if (mapa) {
-		AnimMat_FromMapa(&self->AnimMat, mapa);
-		if (flags & GRAF2D_MULTISPRITE) {
-			CMapa_BuildMultiSprite(mapa);
+	CMap *map = self->Mat->map[0];
+	if (map) {
+		AnimMat_FromMap(&self->AnimMat, map);
+		if (flags & GRAPHIC2D_MULTISPRITE) {
+			CMap_BuildMultiSprite(map);
 		}
 	}
 	CMaterial_dtor(&m);
 }
 
-void __fastcall CGrafico2D_Init(CGrafico2D *self) {
+void __fastcall CGraphic2D_Init(CGraphic2D *self) {
 	self->x = 0.0f;
 	self->y = 0.0f;
 	self->alignX = 0.0f;
 	self->alignY = 0.0f;
-	self->escala[0] = 1.0f;
-	self->escala[1] = 1.0f;
-	self->escala2[0] = 1.0f;
-	self->escala2[1] = 1.0f;
+	self->scale[0] = 1.0f;
+	self->scale[1] = 1.0f;
+	self->scale2[0] = 1.0f;
+	self->scale2[1] = 1.0f;
 	self->u0 = 0.0f;
 	self->v0 = 0.0f;
 	self->u1 = 1.0f;
-	self->pantalla = 0;
-	self->tamPantalla = 0;
-	self->centrado = 0;
-	self->sinTextura = 0;
+	self->screen = 0;
+	self->screenSize = 0;
+	self->centered = 0;
+	self->noTexture = 0;
 	self->v1 = 1.0f;
 	self->color = 0xffffff;
 	self->Mat = NULL;
 	self->AnimMat = NULL;
-	self->propio = 0;
+	self->own = 0;
 	self->rot = 0;
 }
 
-uint32_t Grafico2D_NumPrims(int tipo, uint32_t nVert) {
+uint32_t Graphic2D_NumPrims(int type, uint32_t nVert) {
 	CHECK(nVert > 0);
-	if (tipo == 4) {
+	if (type == 4) {
 		CHECK((nVert % 3) == 0);
 		return nVert / 3;
 	}
-	if (tipo == 5) {
+	if (type == 5) {
 		CHECK(nVert > 2);
-	} else if (tipo == 6) {
+	} else if (type == 6) {
 		CHECK(nVert > 2);
 	} else {
 		CHECK(0);
@@ -250,11 +250,11 @@ uint32_t Grafico2D_NumPrims(int tipo, uint32_t nVert) {
 	return nVert - 2;
 }
 
-void Grafico2D_GetPantalla(int *w, int *h) {
+void Graphic2D_GetScreen(int *w, int *h) {
 	if (w) {
-		*w = g_Pantalla2DW;
+		*w = g_Screen2DW;
 	}
 	if (h) {
-		*h = g_Pantalla2DH;
+		*h = g_Screen2DH;
 	}
 }

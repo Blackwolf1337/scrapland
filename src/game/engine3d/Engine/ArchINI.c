@@ -1,7 +1,7 @@
 /*
- * Ini files of the engine3d, original source Engine/ArchINI.cpp (include/scrap/archio.h): a CArchINI holds a
- * cArchDatos, the getters take a default for a missing or bad value. In model files the lines are stored as an
- * "INI" block of a CArchIO.
+ * Ini files of the engine3d, original source Engine/ArchINI.cpp (include/scrap/archio.h): a CIniFile holds a
+ * cDataFile, the getters take a default for a missing or bad value. In model files the lines are stored as an
+ * "INI" block of a CFileIO.
  */
 #include <string.h>
 
@@ -11,63 +11,63 @@
 #define INI_LOADSAVE_MAXLINE 0x100
 
 /* name, below dir if there is one */
-static void ArchINI_Path(char *path, const char *name, const char *dir) {
+static void IniFile_Path(char *path, const char *name, const char *dir) {
 	if (dir) {
-		Ruta_Merge(path, dir, name);
+		Path_Merge(path, dir, name);
 	} else {
-		Cad_Copy(path, name, MAX_RUTA);
+		String_Copy(path, name, MAX_FILEPATH);
 	}
 }
 
-CArchINI *__thiscall CArchINI_ctorLoad(CArchINI *self, const char *name, const char *dir) {
-	char path[MAX_RUTA];
+CIniFile *__thiscall CIniFile_ctorLoad(CIniFile *self, const char *name, const char *dir) {
+	char path[MAX_FILEPATH];
 
-	self->dat = Arch_New();
-	ArchINI_Path(path, name, dir);
-	int r = Arch_Load(self->dat, path, Arch_Count(self->dat));
+	self->dat = DataFile_New();
+	IniFile_Path(path, name, dir);
+	int r = DataFile_Load(self->dat, path, DataFile_Count(self->dat));
 	E3D_LogInfo(g_FileLog, "INI: %s%s", path, r == 0 ? " <ok>" : " <not found>");
 	return self;
 }
 
-CArchINI *__thiscall CArchINI_ctor(CArchINI *self) {
-	self->dat = Arch_New();
+CIniFile *__thiscall CIniFile_ctor(CIniFile *self) {
+	self->dat = DataFile_New();
 	return self;
 }
 
-void __thiscall CArchINI_dtor(CArchINI *self) {
-	Arch_Free(self->dat);
+void __thiscall CIniFile_dtor(CIniFile *self) {
+	DataFile_Free(self->dat);
 }
 
 /* a flag, then the block if it is set */
-void ArchINI_Read(CArchIO *f, CArchINI **ini) {
+void IniFile_Read(CFileIO *f, CIniFile **ini) {
 	CHECK(ini && !*ini);
-	if (CArchIO_ReadInt(f) == 0) {
+	if (CFileIO_ReadInt(f) == 0) {
 		return;
 	}
-	CArchINI *p = operator_new(sizeof(*p));
+	CIniFile *p = operator_new(sizeof(*p));
 	if (p) {
-		p->dat = Arch_New();
+		p->dat = DataFile_New();
 	}
 	*ini = p;
-	CArchINI_ReadBlock(p, f);
+	CIniFile_ReadBlock(p, f);
 }
 
-void ArchINI_Write(CArchIO *f, CArchINI *ini) {
-	CArchIO_WriteInt(f, ini != NULL);
+void IniFile_Write(CFileIO *f, CIniFile *ini) {
+	CFileIO_WriteInt(f, ini != NULL);
 	if (ini) {
-		CArchINI_WriteBlock(ini, f);
+		CIniFile_WriteBlock(ini, f);
 	}
 }
 
-int __thiscall CArchINI_FindKey(CArchINI *self, const char *key, char *value, int size, int from) {
-	return Arch_FindKey(self->dat, key, from, value, size);
+int __thiscall CIniFile_FindKey(CIniFile *self, const char *key, char *value, int size, int from) {
+	return DataFile_FindKey(self->dat, key, from, value, size);
 }
 
-int __thiscall CArchINI_FindSection(CArchINI *self, const char *name, int from) {
-	return Arch_FindSection(self->dat, name, from);
+int __thiscall CIniFile_FindSection(CIniFile *self, const char *name, int from) {
+	return DataFile_FindSection(self->dat, name, from);
 }
 
-byte __thiscall CArchINI_GetBool(CArchINI *self, const char *sect, const char *key, byte def) {
+byte __thiscall CIniFile_GetBool(CIniFile *self, const char *sect, const char *key, byte def) {
 	int v;
 
 	if (Dat_GetBool(self->dat, sect, key, &v) != 0) {
@@ -76,28 +76,28 @@ byte __thiscall CArchINI_GetBool(CArchINI *self, const char *sect, const char *k
 	return v != 0;
 }
 
-float __thiscall CArchINI_GetFloat(CArchINI *self, const char *sect, const char *key, float def) {
+float __thiscall CIniFile_GetFloat(CIniFile *self, const char *sect, const char *key, float def) {
 	float v;
 
 	return Dat_GetFloat(self->dat, sect, key, &v) != 0 ? def : v;
 }
 
-int __thiscall CArchINI_GetInt(CArchINI *self, const char *sect, const char *key, int def) {
+int __thiscall CIniFile_GetInt(CIniFile *self, const char *sect, const char *key, int def) {
 	int v;
 
 	return Dat_GetLong(self->dat, sect, key, &v) != 0 ? def : v;
 }
 
-int __thiscall CArchINI_Count(CArchINI *self) {
-	return Arch_Count(self->dat);
+int __thiscall CIniFile_Count(CIniFile *self) {
+	return DataFile_Count(self->dat);
 }
 
-static void ArchINI_Invalid(const char *sect, const char *key, const char *text) {
+static void IniFile_Invalid(const char *sect, const char *key, const char *text) {
 	E3D_LogBlue(g_FileLog, "Invalid parameter: [%s] %s = %s", sect, key, text);
 }
 
 /* "R G B A" as 0xAARRGGBB */
-uint32_t __thiscall CArchINI_GetColor(CArchINI *self, const char *sect, const char *key, uint32_t def) {
+uint32_t __thiscall CIniFile_GetColor(CIniFile *self, const char *sect, const char *key, uint32_t def) {
 	char text[0x100];
 	byte c[4];
 
@@ -105,33 +105,33 @@ uint32_t __thiscall CArchINI_GetColor(CArchINI *self, const char *sect, const ch
 		return def;
 	}
 	if (Proc_Scan(text, "&b&b&b&b", &c[0], &c[1], &c[2], &c[3]) != 4) {
-		ArchINI_Invalid(sect, key, text);
+		IniFile_Invalid(sect, key, text);
 		return def;
 	}
 	return (uint32_t)c[3] << 24 | (uint32_t)c[0] << 16 | (uint32_t)c[1] << 8 | c[2];
 }
 
-byte __thiscall CArchINI_GetSectionName(CArchINI *self, int idx, char *dest, int size) {
-	if (Arch_LineType(self->dat, idx) != LINEA_SECTION) {
+byte __thiscall CIniFile_GetSectionName(CIniFile *self, int idx, char *dest, int size) {
+	if (DataFile_LineType(self->dat, idx) != LINE_SECTION) {
 		return 0;
 	}
-	Arch_SectionName(dest, Arch_Line(self->dat, idx)->text, size);
+	DataFile_SectionName(dest, DataFile_Line(self->dat, idx)->text, size);
 	return 1;
 }
 
 /* dest, or NULL if the key is missing and there is no default */
-char *__thiscall CArchINI_GetText(CArchINI *self, const char *sect, const char *key, char *dest, int size,
+char *__thiscall CIniFile_GetText(CIniFile *self, const char *sect, const char *key, char *dest, int size,
 	const char *def) {
 	if (Dat_GetText(self->dat, sect, key, dest, size) != 0) {
 		if (!def) {
 			return NULL;
 		}
-		Cad_Copy(dest, def, size);
+		String_Copy(dest, def, size);
 	}
 	return dest;
 }
 
-float *__thiscall CArchINI_GetVec2(CArchINI *self, float *out, const char *sect, const char *key, const float *def) {
+float *__thiscall CIniFile_GetVec2(CIniFile *self, float *out, const char *sect, const char *key, const float *def) {
 	char text[0x100];
 	float v[2];
 
@@ -141,7 +141,7 @@ float *__thiscall CArchINI_GetVec2(CArchINI *self, float *out, const char *sect,
 		return out;
 	}
 	if (Proc_Scan(text, "&f&f", &v[0], &v[1]) != 2) {
-		ArchINI_Invalid(sect, key, text);
+		IniFile_Invalid(sect, key, text);
 		out[0] = def[0];
 		out[1] = def[1];
 		return out;
@@ -151,7 +151,7 @@ float *__thiscall CArchINI_GetVec2(CArchINI *self, float *out, const char *sect,
 	return out;
 }
 
-vec3_t *__thiscall CArchINI_GetVec3(CArchINI *self, vec3_t *out, const char *sect, const char *key, const vec3_t *def) {
+vec3_t *__thiscall CIniFile_GetVec3(CIniFile *self, vec3_t *out, const char *sect, const char *key, const vec3_t *def) {
 	char text[0x100];
 	vec3_t v;
 
@@ -160,7 +160,7 @@ vec3_t *__thiscall CArchINI_GetVec3(CArchINI *self, vec3_t *out, const char *sec
 		return out;
 	}
 	if (Proc_Scan(text, "&f&f&f", &v.x, &v.y, &v.z) != 3) {
-		ArchINI_Invalid(sect, key, text);
+		IniFile_Invalid(sect, key, text);
 		*out = *def;
 		return out;
 	}
@@ -168,66 +168,66 @@ vec3_t *__thiscall CArchINI_GetVec3(CArchINI *self, vec3_t *out, const char *sec
 	return out;
 }
 
-void __thiscall CArchINI_ReadBlock(CArchINI *self, CArchIO *f) {
+void __thiscall CIniFile_ReadBlock(CIniFile *self, CFileIO *f) {
 	char line[INI_LOADSAVE_MAXLINE];
 
-	CHECK(!Arch_Count(self->dat));
-	CArchIO_BeginBlock(f, "INI");
-	int version = CArchIO_ReadInt(f);
+	CHECK(!DataFile_Count(self->dat));
+	CFileIO_BeginBlock(f, "INI");
+	int version = CFileIO_ReadInt(f);
 	CHECK(version == 1);
-	for (int n = CArchIO_ReadInt(f); n > 0; n--) {
-		CArchIO_ReadString(f, line, sizeof(line));
-		Arch_InsertAt(self->dat, line, Arch_Count(self->dat));
+	for (int n = CFileIO_ReadInt(f); n > 0; n--) {
+		CFileIO_ReadString(f, line, sizeof(line));
+		DataFile_InsertAt(self->dat, line, DataFile_Count(self->dat));
 	}
-	CArchIO_Error(f, "INI");
+	CFileIO_Error(f, "INI");
 }
 
-void __thiscall CArchINI_Clear(CArchINI *self) {
-	Arch_Free(self->dat);
-	self->dat = Arch_New();
+void __thiscall CIniFile_Clear(CIniFile *self) {
+	DataFile_Free(self->dat);
+	self->dat = DataFile_New();
 }
 
-void __thiscall CArchINI_WriteBlock(CArchINI *self, CArchIO *f) {
-	CHECK(Arch_Count(self->dat));
-	CArchIO_BeginBlockWrite(f, "INI");
-	CArchIO_WriteInt(f, 1);
-	int n = Arch_Count(self->dat);
-	CArchIO_WriteInt(f, n);
+void __thiscall CIniFile_WriteBlock(CIniFile *self, CFileIO *f) {
+	CHECK(DataFile_Count(self->dat));
+	CFileIO_BeginBlockWrite(f, "INI");
+	CFileIO_WriteInt(f, 1);
+	int n = DataFile_Count(self->dat);
+	CFileIO_WriteInt(f, n);
 	for (int i = 1; i <= n; i++) {
-		cLineaDat *lin = Arch_Line(self->dat, i);
+		cDatLine *lin = DataFile_Line(self->dat, i);
 		const char *line = lin ? lin->text : NULL;
 		CHECK(strlen(line) < INI_LOADSAVE_MAXLINE);
-		CArchIO_WriteString(f, line);
+		CFileIO_WriteString(f, line);
 	}
-	CArchIO_EndBlockWrite(f, "INI");
+	CFileIO_EndBlockWrite(f, "INI");
 }
 
-int __thiscall CArchINI_SetYesNo(CArchINI *self, const char *sect, const char *key, byte v) {
+int __thiscall CIniFile_SetYesNo(CIniFile *self, const char *sect, const char *key, byte v) {
 	return Dat_SetStr(self->dat, sect, key, v ? "YES" : "NO");
 }
 
 /* prec digits after the point */
-int __thiscall CArchINI_SetFloat(CArchINI *self, const char *sect, const char *key, float v, int prec) {
+int __thiscall CIniFile_SetFloat(CIniFile *self, const char *sect, const char *key, float v, int prec) {
 	char text[0x40];
 
 	Bprintf(text, sizeof(text), "%.*f", prec, (double)v);
 	return Dat_SetStr(self->dat, sect, key, text);
 }
 
-int __thiscall CArchINI_SetInt(CArchINI *self, const char *sect, const char *key, int v) {
+int __thiscall CIniFile_SetInt(CIniFile *self, const char *sect, const char *key, int v) {
 	return Dat_SetInt(self->dat, sect, key, v);
 }
 
-int __thiscall CArchINI_SetStr(CArchINI *self, const char *sect, const char *key, const char *v) {
+int __thiscall CIniFile_SetStr(CIniFile *self, const char *sect, const char *key, const char *v) {
 	return Dat_SetStr(self->dat, sect, key, v);
 }
 
 /* the lines of a file after the ones there are; verbose logs a missing file once more */
-int __thiscall CArchINI_Load(CArchINI *self, const char *name, const char *dir, byte verbose) {
-	char path[MAX_RUTA];
+int __thiscall CIniFile_Load(CIniFile *self, const char *name, const char *dir, byte verbose) {
+	char path[MAX_FILEPATH];
 
-	ArchINI_Path(path, name, dir);
-	int r = Arch_Load(self->dat, path, Arch_Count(self->dat));
+	IniFile_Path(path, name, dir);
+	int r = DataFile_Load(self->dat, path, DataFile_Count(self->dat));
 	if (verbose) {
 		E3D_LogDebug(g_FileLog, "INI: %s%s", path, r == 0 ? "" : " <not found>");
 	}
@@ -236,58 +236,58 @@ int __thiscall CArchINI_Load(CArchINI *self, const char *name, const char *dir, 
 }
 
 /* idx < 0: at the end */
-void __thiscall CArchINI_AddLine(CArchINI *self, const char *text, int idx) {
+void __thiscall CIniFile_AddLine(CIniFile *self, const char *text, int idx) {
 	if (idx < 0) {
-		idx = Arch_Count(self->dat);
+		idx = DataFile_Count(self->dat);
 	}
-	Arch_InsertAt(self->dat, text, idx);
+	DataFile_InsertAt(self->dat, text, idx);
 }
 
-void __thiscall CArchINI_DeleteLine(CArchINI *self, int idx) {
-	Arch_Delete(self->dat, idx);
+void __thiscall CIniFile_DeleteLine(CIniFile *self, int idx) {
+	DataFile_Delete(self->dat, idx);
 }
 
 /* "SI" / "NO" */
-int __thiscall CArchINI_SetBool(CArchINI *self, const char *sect, const char *key, int v) {
+int __thiscall CIniFile_SetBool(CIniFile *self, const char *sect, const char *key, int v) {
 	return Dat_SetBool(self->dat, sect, key, v);
 }
 
 /* 0 or -1; the third argument is not used */
-int __thiscall CArchINI_Save(CArchINI *self, const char *name, const char *dir, int unused) {
-	char path[MAX_RUTA];
+int __thiscall CIniFile_Save(CIniFile *self, const char *name, const char *dir, int unused) {
+	char path[MAX_FILEPATH];
 
 	(void)unused;
-	ArchINI_Path(path, name, dir);
+	IniFile_Path(path, name, dir);
 	void *f = File_OpenRel(path, "wt");
 	if (!f) {
 		return -1;
 	}
-	int r = Arch_Write(self->dat, f);
+	int r = DataFile_Write(self->dat, f);
 	crt_fclose(f);
 	return r;
 }
 
-int __thiscall CArchINI_ReadBool(CArchINI *self, const char *sect, const char *key, int *out) {
+int __thiscall CIniFile_ReadBool(CIniFile *self, const char *sect, const char *key, int *out) {
 	return Dat_GetBool(self->dat, sect, key, out);
 }
 
-int __thiscall CArchINI_ReadFloat(CArchINI *self, const char *sect, const char *key, float *out) {
+int __thiscall CIniFile_ReadFloat(CIniFile *self, const char *sect, const char *key, float *out) {
 	return Dat_GetFloat(self->dat, sect, key, out);
 }
 
-int __thiscall CArchINI_ReadInt(CArchINI *self, const char *sect, const char *key, int *out) {
+int __thiscall CIniFile_ReadInt(CIniFile *self, const char *sect, const char *key, int *out) {
 	return Dat_GetLong(self->dat, sect, key, out);
 }
 
-int __thiscall CArchINI_ReadText(CArchINI *self, const char *sect, const char *key, char *dest, int size) {
+int __thiscall CIniFile_ReadText(CIniFile *self, const char *sect, const char *key, char *dest, int size) {
 	return Dat_GetText(self->dat, sect, key, dest, size);
 }
 
-const char *__thiscall CArchINI_LineText(CArchINI *self, int idx) {
-	cLineaDat *lin = Arch_Line(self->dat, idx);
+const char *__thiscall CIniFile_LineText(CIniFile *self, int idx) {
+	cDatLine *lin = DataFile_Line(self->dat, idx);
 	return lin ? lin->text : NULL;
 }
 
-int __thiscall CArchINI_LineType(CArchINI *self, int idx) {
-	return Arch_LineType(self->dat, idx);
+int __thiscall CIniFile_LineType(CIniFile *self, int idx) {
+	return DataFile_LineType(self->dat, idx);
 }

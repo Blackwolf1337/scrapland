@@ -32,7 +32,7 @@ cNewsPanel *__fastcall cNewsPanel_ctor(cNewsPanel *self) {
 	self->lastTime = 0.0f;
 	self->open = 0.0f;
 	self->closedDrawn = 0;
-	self->motorInits = g_MotorInits;
+	self->engineInits = g_EngineInits;
 	return self;
 }
 
@@ -98,10 +98,10 @@ void __fastcall cNewsPanel_Update(cNewsPanel *self) {
 		return;
 	}
 	if (g_NewsPanelActive) {
-		if (self->motorInits != g_MotorInits) {
+		if (self->engineInits != g_EngineInits) {
 			self->closedDrawn = 0;
 		}
-		self->motorInits = g_MotorInits;
+		self->engineInits = g_EngineInits;
 		int v = Scorer_Abs(0xff - (int)(Game_FtoUI(t * 1024.0f) % 0x1ff));
 		if (Eng_RenderTargetBegin("NewsPanel")) {
 			if (!g_pWorld->alarmOn) {
@@ -134,7 +134,7 @@ void __thiscall cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
 		return;
 	}
 	g_NewsPanelAspect = 1.33333004f;
-	CGameCamera *cur = Camera_GetActual();
+	CGameCamera *cur = Camera_GetCurrent();
 	CGameCamera_Copy(self->cam, cur);
 	CGameCamera_SetLookAt(self->cam, 1);
 	const vec3_t *p = CGameModel_GetPos(Entity_GetModel(e), &tmp);
@@ -160,9 +160,9 @@ void __thiscall cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
 	cam->pos = self->camPos;
 	cam->fov = NEWS_FOV;
 	self->cam->aspectScreen = g_NewsPanelAspect;
-	Camera_SetActual(self->cam);
+	Camera_SetCurrent(self->cam);
 	Entity_RenderNow(e);
-	Camera_SetActual(cur);
+	Camera_SetCurrent(cur);
 }
 
 void __thiscall cNewsPanel_DrawNews(cNewsPanel *self, float dt) {
@@ -234,7 +234,7 @@ void __thiscall cNewsPanel_DrawNews(cNewsPanel *self, float dt) {
 		back->scaleX = 680.0f;
 		back->scaleY = 480.0f;
 		CPsaImage_Draw(self->backImg, self->open * -40.0f, 0.0f);
-		CGameCamera *cur = Camera_GetActual();
+		CGameCamera *cur = Camera_GetCurrent();
 		CGameCamera_Copy(self->cam, cur);
 		CGameCamera_SetLookAt(self->cam, 1);
 		float mx = g_NewsPanelMove * self->open;
@@ -252,9 +252,9 @@ void __thiscall cNewsPanel_DrawNews(cNewsPanel *self, float dt) {
 		cam->pos.y = cam->target.y + 0.0f;
 		self->cam->fov = NEWS_FOV;
 		self->cam->aspectScreen = g_NewsPanelAspect;
-		Camera_SetActual(self->cam);
+		Camera_SetCurrent(self->cam);
 		CGameModel_RenderNow(self->model, 2);
-		Camera_SetActual(cur);
+		Camera_SetCurrent(cur);
 		CPsaImage *logo = self->logoImg;
 		logo->color = (uint32_t)(0x7f - (int)(closed * -128.0f)) << 24 | 0xffffff;
 		float sx = closed * 640.0f + self->open * g_NewsPanelW;

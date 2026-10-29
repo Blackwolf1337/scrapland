@@ -604,28 +604,28 @@ void Matrix_ToTransform(const matrix_t *m, m3dTransform_t *out) {
 	out->rot.y = -parts.q.y;
 	out->rot.z = -parts.q.z;
 	out->rot.w = parts.q.w;
-	out->rotEsc.x = -parts.u.x;
-	out->rotEsc.y = -parts.u.y;
-	out->rotEsc.z = -parts.u.z;
-	out->rotEsc.w = parts.u.w;
-	out->esc.x = parts.k.x;
-	out->esc.y = parts.k.y;
-	out->esc.z = parts.k.z;
-	out->signo = parts.f;
+	out->rotScale.x = -parts.u.x;
+	out->rotScale.y = -parts.u.y;
+	out->rotScale.z = -parts.u.z;
+	out->rotScale.w = parts.u.w;
+	out->scale.x = parts.k.x;
+	out->scale.y = parts.k.y;
+	out->scale.z = parts.k.z;
+	out->sign = parts.f;
 }
 
-/* the scale along the axes of rotEsc: (u^-1) diag(esc) u, then the sign */
+/* the scale along the axes of rotScale: (u^-1) diag(esc) u, then the sign */
 static void M3DTransform_Scale(const m3dTransform_t *self, matrix_t *mu, matrix_t *mui, matrix_t *ms, matrix_t *mf) {
-	Quat_ToMatrixD3D(mu, &self->rotEsc);
+	Quat_ToMatrixD3D(mu, &self->rotScale);
 	CHECK(Matrix_Invert(mui, mu) == 0);
 	Matrix_LoadIdentity(ms);
-	ms->m[0] = self->esc.x;
-	ms->m[5] = self->esc.y;
-	ms->m[10] = self->esc.z;
+	ms->m[0] = self->scale.x;
+	ms->m[5] = self->scale.y;
+	ms->m[10] = self->scale.z;
 	Matrix_LoadIdentity(mf);
-	mf->m[0] = self->signo;
-	mf->m[5] = self->signo;
-	mf->m[10] = self->signo;
+	mf->m[0] = self->sign;
+	mf->m[5] = self->sign;
+	mf->m[10] = self->sign;
 }
 
 /* rva 0x2d65d0: the matrix of a transform without its rotation and translation (the frames of an animation) */

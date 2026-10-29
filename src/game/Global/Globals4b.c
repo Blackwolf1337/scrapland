@@ -27,19 +27,18 @@
 #undef g_AviFrames
 #undef g_AviStream
 #undef g_Bsp
+#undef g_BspEyePrev
 #undef g_BspLMaps
+#undef g_BspLights
 #undef g_BspLodCount
 #undef g_BspLodLevel
-#undef g_BspLuces
-#undef g_BspNumLuces
-#undef g_BspOjoAnt
+#undef g_BspNumLights
 #undef g_BspRadMinD2
-#undef g_BspSecVisto
+#undef g_BspSectorSeen
 #undef g_BspTriTmp
 #undef g_BspTris
 #undef g_BspVerts
 #undef g_CalcLmap2
-#undef g_CarasTortas
 #undef g_CpuFreq
 #undef g_D3DAppFrames
 #undef g_D3DAppLastTime
@@ -53,42 +52,34 @@
 #undef g_DXTimerQP
 #undef g_DXTimerStop
 #undef g_DXTimerStopD
+#undef g_Engine
 #undef g_ErrCustom
 #undef g_ErrLastCode
 #undef g_ErrLastFatal
 #undef g_LightmapMode2
 #undef g_LightmapOff
 #undef g_LmapInfo
-#undef g_LmapOpcion58
+#undef g_LmapOption58
 #undef g_LmapSecond
 #undef g_MapTextSaving
 #undef g_MapTextSavingOn
-#undef g_MapaSombrasAten
-#undef g_MapaSombrasCalcular
-#undef g_MapaSombrasEscrTemp
-#undef g_MapaSombrasIlumGlobal
-#undef g_MapaSombrasModulate4x
-#undef g_MapaSombrasMultitext
-#undef g_MapaSombrasNoLuzAmb
-#undef g_MapaSombrasRadiosidad
-#undef g_MapaSombrasSuaves
-#undef g_MapaSombrasUsar
-#undef g_MapaSombrasUsarTxf
-#undef g_Motor
-#undef g_NCarasTortas
+#undef g_NResponseFaces
 #undef g_NTortas
 #undef g_OrigAdapter
 #undef g_OrigDevice
 #undef g_OrigMode
 #undef g_OrigMultiSample
 #undef g_OrigWindowed
-#undef g_PintarTodas
+#undef g_PaintAll
+#undef g_PaintZones
+#undef g_ParticleSystemIni
 #undef g_ProfAvg
 #undef g_ProfCounts
 #undef g_ProfFrames
 #undef g_ProfLastCounts
 #undef g_ProfMax
 #undef g_ProfTicks
+#undef g_ResponseFaces
 #undef g_ScreenshotName
 #undef g_SelAdapter
 #undef g_SelApp
@@ -96,9 +87,19 @@
 #undef g_SelMode
 #undef g_SelMultiSample
 #undef g_SelWindowed
+#undef g_ShadowMapAtten
+#undef g_ShadowMapCalculate
+#undef g_ShadowMapIllumGlobal
+#undef g_ShadowMapModulate4x
+#undef g_ShadowMapMultitext
+#undef g_ShadowMapNoLightAmb
+#undef g_ShadowMapRadiosity
+#undef g_ShadowMapSoft
+#undef g_ShadowMapUse
+#undef g_ShadowMapUseTxf
+#undef g_ShadowMapWriteTemp
 #undef g_Sharpen
 #undef g_ShotPath
-#undef g_SistPartIni
 #undef g_TexCached
 #undef g_TexCreated
 #undef g_TexErrDif
@@ -107,9 +108,9 @@
 #undef g_TexPurgeFrame
 #undef g_TexUsed
 #undef g_TexUsedPixels
-#undef g_TextoPila
-#undef g_TextoX
-#undef g_TextoY
+#undef g_TextStack
+#undef g_TextX
+#undef g_TextY
 #undef g_TimerBase
 #undef g_TimerFixed
 #undef g_TraceCell
@@ -118,22 +119,21 @@
 #undef g_VideoBufferSize
 #undef g_VideoPadHeld
 #undef g_WireFrame
-#undef g_ZonasPintar
 
 cGVar GVar_R_PortalClip SD_BSS(0x4b00e8);
 cGVar GVar_R_PortalNorm SD_BSS(0x4b0100);
 cGVar GVar_R_PortalPos SD_BSS(0x4b0118);
 cGVar GVar_R_PortalDist SD_BSS(0x4b0130);
-ZonaPintar g_PintarTodas SD_BSS(0x4b0148);
-ZonaPintar g_ZonasPintar[128] SD_BSS(0x4b0168);
+PaintZone g_PaintAll SD_BSS(0x4b0148);
+PaintZone g_PaintZones[128] SD_BSS(0x4b0168);
 cGVar GVar_R_PortalExt SD_BSS(0x4b1168);
 cGVar GVar_R_PortalEnd SD_BSS(0x4b1180);
 cGVar GVar_R_PortalBand SD_BSS(0x4b1198);
 traceCell_t g_TraceCell SD_BSS(0x4b11b0);
 int g_NTortas SD_BSS(0x4b11d8);
-int g_NCarasTortas SD_BSS(0x4b11dc);
-int g_CarasTortas[64][3] SD_BSS(0x4b11e0);
-uint32_t CheckBBox_InitCarasTortas_4b14e0[192] SD_BSS(0x4b14e0);
+int g_NResponseFaces SD_BSS(0x4b11dc);
+int g_ResponseFaces[64][3] SD_BSS(0x4b11e0);
+uint32_t CheckBBox_InitResponseFaces_4b14e0[192] SD_BSS(0x4b14e0);
 uint64_t g_ProfTicks[32] SD_BSS(0x4b17e0);
 int64_t g_ProfAvg[32] SD_BSS(0x4b18e0);
 int64_t g_ProfMax[32] SD_BSS(0x4b19e0);
@@ -141,7 +141,7 @@ byte g_ProfFrames[32] SD_BSS(0x4b1ae0);
 int g_ProfCounts[32] SD_BSS(0x4b1b00);
 int g_ProfLastCounts[32] SD_BSS(0x4b1b80);
 float g_CpuFreq SD_BSS(0x4b1c00);
-byte *g_Motor SD_BSS(0x4b1c04);
+byte *g_Engine SD_BSS(0x4b1c04);
 byte *g_SelApp SD_BSS(0x4b1c08);
 uint32_t g_OrigAdapter SD_BSS(0x4b1c0c);
 uint32_t g_SelAdapter SD_BSS(0x4b1c10);
@@ -171,9 +171,9 @@ cGVar GVar_R_FogDensity SD_BSS(0x4b1c90);
 cGVar GVar_R_FogEnable SD_BSS(0x4b1ca8);
 cGVar GVar_R_FogAbsDist SD_BSS(0x4b1cc0);
 cGVar GVar_R_FogColor SD_BSS(0x4b1cd8);
-int g_TextoX SD_BSS(0x4b1cf0);
-int g_TextoY SD_BSS(0x4b1cf4);
-TextoMsg *g_TextoPila SD_BSS(0x4b1cf8);
+int g_TextX SD_BSS(0x4b1cf0);
+int g_TextY SD_BSS(0x4b1cf4);
+TextMsg *g_TextStack SD_BSS(0x4b1cf8);
 cGVar GVar_SpriteScaleWidth SD_BSS(0x4b1cfc);
 uint32_t Init_GVar_SpriteScaleWidth_4b1d14 SD_BSS(0x4b1d14);
 Vert2D g_Verts2D[64] SD_BSS(0x4b1d18);
@@ -185,7 +185,7 @@ cGVar GVar_R_ParticlesCount SD_BSS(0x4b2578);
 cGVar GVar_R_ParticleSector SD_BSS(0x4b2590);
 cGVar GVar_R_ParticleRate SD_BSS(0x4b25a8);
 cGVar GVar_R_ParticleLife SD_BSS(0x4b25c0);
-CArchINI g_SistPartIni SD_BSS(0x4b25d8);
+CIniFile g_ParticleSystemIni SD_BSS(0x4b25d8);
 int g_ErrLastCode SD_BSS(0x4b25dc);
 int g_ErrLastFatal SD_BSS(0x4b25e0);
 char g_ErrCustom[4] SD_BSS(0x4b25e4);
@@ -199,7 +199,7 @@ int g_VideoBufferSize SD_BSS(0x4b2600);
 int g_MapTextSaving SD_BSS(0x4b2604);
 byte g_MapTextSavingOn SD_BSS(0x4b2608);
 int g_TexKeepBitmaps SD_BSS(0x4b260c);
-CTextura *g_TexList SD_BSS(0x4b2610);
+CTexture *g_TexList SD_BSS(0x4b2610);
 cGVar GVar_DUDVMipmap SD_BSS(0x4b2614);
 uint32_t Init_GVar_DUDVMipmap_4b262c SD_BSS(0x4b262c);
 cGVar GVar_SaveDXT5 SD_BSS(0x4b2630);
@@ -228,28 +228,28 @@ AviBih g_AviBih SD_BSS(0x4b29b0);
 char g_ShotPath[260] SD_BSS(0x4b29d8);
 cGVar GVar_PlayVideoFX SD_BSS(0x4b2adc);
 int g_VideoPadHeld SD_BSS(0x4b2af4);
-int g_MapaSombrasUsar SD_BSS(0x4b2af8);
-int g_MapaSombrasCalcular SD_BSS(0x4b2afc);
-int g_MapaSombrasMultitext SD_BSS(0x4b2b00);
-int g_MapaSombrasSuaves SD_BSS(0x4b2b04);
-int g_MapaSombrasEscrTemp SD_BSS(0x4b2b08);
-float g_MapaSombrasAten SD_BSS(0x4b2b0c);
-int g_MapaSombrasRadiosidad SD_BSS(0x4b2b10);
-int g_MapaSombrasIlumGlobal SD_BSS(0x4b2b14);
-int g_MapaSombrasNoLuzAmb SD_BSS(0x4b2b18);
-int g_MapaSombrasModulate4x SD_BSS(0x4b2b1c);
+int g_ShadowMapUse SD_BSS(0x4b2af8);
+int g_ShadowMapCalculate SD_BSS(0x4b2afc);
+int g_ShadowMapMultitext SD_BSS(0x4b2b00);
+int g_ShadowMapSoft SD_BSS(0x4b2b04);
+int g_ShadowMapWriteTemp SD_BSS(0x4b2b08);
+float g_ShadowMapAtten SD_BSS(0x4b2b0c);
+int g_ShadowMapRadiosity SD_BSS(0x4b2b10);
+int g_ShadowMapIllumGlobal SD_BSS(0x4b2b14);
+int g_ShadowMapNoLightAmb SD_BSS(0x4b2b18);
+int g_ShadowMapModulate4x SD_BSS(0x4b2b1c);
 int g_CalcLmap2 SD_BSS(0x4b2b20);
-int g_MapaSombrasUsarTxf SD_BSS(0x4b2b24);
+int g_ShadowMapUseTxf SD_BSS(0x4b2b24);
 int g_LightmapMode2 SD_BSS(0x4b2b28);
 int g_LightmapOff SD_BSS(0x4b2b2c);
 int g_WireFrame SD_BSS(0x4b2b30);
-int g_BspSecVisto SD_BSS(0x4b2b34);
+int g_BspSectorSeen SD_BSS(0x4b2b34);
 CBsp *g_Bsp SD_BSS(0x4b2b38);
 BspLMap *g_BspLMaps SD_BSS(0x4b2b3c);
 BspTri *g_BspTriTmp SD_BSS(0x4b2b40);
-int g_BspNumLuces SD_BSS(0x4b2b44);
+int g_BspNumLights SD_BSS(0x4b2b44);
 int g_BspLodCount[4] SD_BSS(0x4b2b48);
-int g_LmapOpcion58 SD_BSS(0x4b2b58);
+int g_LmapOption58 SD_BSS(0x4b2b58);
 int g_LmapInfo SD_BSS(0x4b2b5c);
 float g_BspRadMinD2 SD_BSS(0x4b2b60);
 float g_BspLodLevel SD_BSS(0x4b2b64);
@@ -264,7 +264,7 @@ cGVar GVar_RenderSectors SD_BSS(0x4b2bb4);
 cGVar GVar_MapDrawSector SD_BSS(0x4b2bcc);
 cGVar GVar_LightmapPackMode SD_BSS(0x4b2be4);
 cGVar GVar_MapRenderMap SD_BSS(0x4b2bfc);
-vec3_t g_BspOjoAnt SD_BSS(0x4b2c14);
-BspLuz g_BspLuces[512] SD_BSS(0x4b2c20);
+vec3_t g_BspEyePrev SD_BSS(0x4b2c14);
+BspLight g_BspLights[512] SD_BSS(0x4b2c20);
 
 #endif

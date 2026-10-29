@@ -13,8 +13,8 @@
 #include "scrap/textura.h"
 #include "scrap/win32.h"
 
-#define TEXTEST_CTOR 0x233990
-#define TEXTEST_DTOR 0x233c70
+#define TEXTSTATIC_CTOR 0x233990
+#define TEXTSTATIC_DTOR 0x233c70
 
 int Vec3_Differ(const float *a, const float *b);
 
@@ -22,57 +22,57 @@ typedef void *(__thiscall *deleteObj_t)(void *self, int flags);
 
 /* set while a material is deleted: the textures without references go too */
 #define g_TexDeleteUnused GAME_GLOBAL(int, g_TexDeleteUnused, 0x4aa318)
-#define g_AnimCicloDefault GAME_GLOBAL(int, g_AnimCicloDefault, 0x4aa31c)
+#define g_AnimCycleDefault GAME_GLOBAL(int, g_AnimCycleDefault, 0x4aa31c)
 /* engine variables DDS_MarkSource, LoadTextures, DDS_CheckMark, MatEmissive, DDS_UseTextures */
 #define g_DDSMarkSource GAME_GLOBAL_IN(int, GVar_DDS_MarkSource, 16, 0x4aa330)
 #define g_LoadTextures GAME_GLOBAL_IN(int, GVar_LoadTextures, 16, 0x4aa348)
 #define g_DDSCheckMark GAME_GLOBAL_IN(int, GVar_DDS_CheckMark, 16, 0x4aa360)
 #define g_MatEmissive GAME_GLOBAL_IN(float, GVar_MatEmissive, 16, 0x4aa378)
 #define g_DDSUseTextures GAME_GLOBAL_IN(int, GVar_DDS_UseTextures, 16, 0x4aa390)
-#define g_RutasTexturas (GAME_ARRAY(char[MAX_RUTA], g_RutasTexturas, 0x4aa398))
-#define g_ExtensTexturas (GAME_ARRAY(char[MAX_RUTA], g_ExtensTexturas, 0x4aadc0))
+#define g_TexturePaths (GAME_ARRAY(char[MAX_FILEPATH], g_TexturePaths, 0x4aa398))
+#define g_TextureExts (GAME_ARRAY(char[MAX_FILEPATH], g_TextureExts, 0x4aadc0))
 #define g_MatStr (GAME_ARRAY(char, g_MatStr, 0x4ab7e8))
-#define g_LightmapsHigh GAME_GLOBAL(int, g_SombrasStencil, 0x4afdb0)
+#define g_LightmapsHigh GAME_GLOBAL(int, g_ShadowsStencil, 0x4afdb0)
 #define g_AnimFpsDefault GAME_GLOBAL(float, g_AnimFpsDefault, 0x431d20)
 #define g_BlendTable (GAME_ARRAY(const uint32_t, g_BlendTable, 0x431d34))
 #define g_MaxLightmap GAME_GLOBAL(int, g_MaxLightmap, 0x432970)
 
 #define BLEND_MODES 6
 #define MAT_FILE_VERSION 3
-#define MAPA_FILE_VERSION 3
+#define MAP_FILE_VERSION 3
 #define FILE_HIDDEN 2
 #define MAT_BYTE 0x1.010102p-8f		/* 1 / 255 */
 
 static int Mat_IsShareable(const CMaterial *m) {
-	return !(m->params.atrib & MAT_NOSHARE);
+	return !(m->params.attrib & MAT_NOSHARE);
 }
 
-static void Mat_DeleteMapa(CMapa **slot) {
-	CMapa *m = *slot;
+static void Mat_DeleteMap(CMap **slot) {
+	CMap *m = *slot;
 
 	if (m) {
-		CMapa_dtor(m);
-		operator_delete_sized(m, sizeof(CMapa));
+		CMap_dtor(m);
+		operator_delete_sized(m, sizeof(CMap));
 		*slot = NULL;
 	}
 }
 
-static CMapa *Mat_NewMapa(void) {
-	CMapa *m = operator_new(sizeof(CMapa));
+static CMap *Mat_NewMap(void) {
+	CMap *m = operator_new(sizeof(CMap));
 
-	return m ? CMapa_ctor(m) : NULL;
+	return m ? CMap_ctor(m) : NULL;
 }
 
-static CMapa *Mat_SetMapCopy(CMaterial *self, uint32_t idmapa, const CMapa *orig) {
-	CHECK(idmapa < MAPA_TOTAL);
-	CHECK(orig != self->mapa[idmapa] || orig == NULL);
-	Mat_DeleteMapa(&self->mapa[idmapa]);
+static CMap *Mat_SetMapCopy(CMaterial *self, uint32_t mapid, const CMap *orig) {
+	CHECK(mapid < MAP_TOTAL);
+	CHECK(orig != self->map[mapid] || orig == NULL);
+	Mat_DeleteMap(&self->map[mapid]);
 	if (orig) {
-		CMapa *m = Mat_NewMapa();
-		self->mapa[idmapa] = m;
-		CMapa_Assign(m, orig);
+		CMap *m = Mat_NewMap();
+		self->map[mapid] = m;
+		CMap_Assign(m, orig);
 	}
-	return self->mapa[idmapa];
+	return self->map[mapid];
 }
 
 static int Mat_StrSign(const char *a, const char *b) {
@@ -85,39 +85,39 @@ void __fastcall CObjRef_dtor(int *Refs) {
 	CHECK(!*Refs);
 }
 
-CTextEst *__fastcall CTextEst_ctor(CTextEst *self) {
+CTextStatic *__fastcall CTextStatic_ctor(CTextStatic *self) {
 	self->tex = NULL;
 	self->Hint = NULL;
 	return self;
 }
 
-void __fastcall CTextEst_dtor(CTextEst *self) {
-	if (!Textura_Release(self->Hint) && g_TexDeleteUnused) {
-		Textura_Delete(self->Hint);
+void __fastcall CTextStatic_dtor(CTextStatic *self) {
+	if (!Texture_Release(self->Hint) && g_TexDeleteUnused) {
+		Texture_Delete(self->Hint);
 	}
 	self->tex = NULL;
 	self->Hint = NULL;
 }
 
 /* the vector deleting destructor (flags 2: an array of new[]) */
-CTextEst *__thiscall CTextEst_Delete(CTextEst *self, byte flags) {
+CTextStatic *__thiscall CTextStatic_Delete(CTextStatic *self, byte flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(CTextEst), *mem, GAME_FUNC(CTextEst_dtor, TEXTEST_DTOR));
+		crt_eh_vector_dtor(self, sizeof(CTextStatic), *mem, GAME_FUNC(CTextStatic_dtor, TEXTSTATIC_DTOR));
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
-		return (CTextEst *)mem;
+		return (CTextStatic *)mem;
 	}
-	CTextEst_dtor(self);
+	CTextStatic_dtor(self);
 	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CTextEst));
+		operator_delete_sized(self, sizeof(CTextStatic));
 	}
 	return self;
 }
 
-void __thiscall CMapa_Assign(CMapa *self, const CMapa *orig) {
-	Cad_Set(&self->Nombre, orig->Nombre);
+void __thiscall CMap_Assign(CMap *self, const CMap *orig) {
+	String_Set(&self->Name, orig->Name);
 	self->b8 = orig->b8;
 	self->lightmap = orig->lightmap;
 	self->ba = orig->ba;
@@ -132,10 +132,10 @@ void __thiscall CMapa_Assign(CMapa *self, const CMapa *orig) {
 }
 
 void __thiscall CMaterial_Assign(CMaterial *self, const CMaterial *orig) {
-	Cad_Set(&self->Nombre, orig->Nombre);
+	String_Set(&self->Name, orig->Name);
 	self->params = orig->params;
-	for (uint32_t i = 0; i < MAPA_TOTAL; i++) {
-		Mat_SetMapCopy(self, i, orig->mapa[i]);
+	for (uint32_t i = 0; i < MAP_TOTAL; i++) {
+		Mat_SetMapCopy(self, i, orig->map[i]);
 	}
 }
 
@@ -169,8 +169,8 @@ void Mat_ConvertBlend(uint32_t *mode, byte toFile, byte legacy) {
 	if (legacy) {
 		CHECK(*mode - 1 < BLEND_MODES);
 		/* the original reads the word at 0x431d30 + 4 * mode: g_BlendTable[mode - 1], for 0 (after the CHECK) the last
-		 * word of g_ListaMat before it, a separate C object since stage 3c2 */
-		*mode = *mode ? g_BlendTable[*mode - 1] : GAME_GLOBAL_IN(uint32_t, g_ListaMat, 12, 0x431d30);
+		 * word of g_MatList before it, a separate C object since stage 3c2 */
+		*mode = *mode ? g_BlendTable[*mode - 1] : GAME_GLOBAL_IN(uint32_t, g_MatList, 12, 0x431d30);
 		return;
 	}
 	if (toFile) {
@@ -188,84 +188,84 @@ void Mat_ConvertBlend(uint32_t *mode, byte toFile, byte legacy) {
 	*mode = g_BlendTable[*mode];
 }
 
-byte __fastcall CMapa_BuildMultiSprite(CMapa *self) {
+byte __fastcall CMap_BuildMultiSprite(CMap *self) {
 	if (!self->MultiSprite) {
-		CHECK(self->est.Hint);
-		self->MultiSprite = Textura_GetMultiSprite(self->est.Hint, self->Nombre);
+		CHECK(self->staticTex.Hint);
+		self->MultiSprite = Texture_GetMultiSprite(self->staticTex.Hint, self->Name);
 		CHECK(self->MultiSprite);
 	}
 	return 1;
 }
 
-void *__thiscall CMaterial_GetMultiSprite(CMaterial *self, uint32_t idmapa) {
-	CHECK(idmapa < MAPA_TOTAL);
-	CMapa *m = self->mapa[idmapa];
+void *__thiscall CMaterial_GetMultiSprite(CMaterial *self, uint32_t mapid) {
+	CHECK(mapid < MAP_TOTAL);
+	CMap *m = self->map[mapid];
 	if (!m) {
-		E3D_LogWhite(g_FileLog, "BuildMultiSpriteTable: Map not found in Material: %s", self->Nombre);
+		E3D_LogWhite(g_FileLog, "BuildMultiSpriteTable: Map not found in Material: %s", self->Name);
 		return NULL;
 	}
-	if (CMapa_BuildMultiSprite(m)) {
+	if (CMap_BuildMultiSprite(m)) {
 		return m->MultiSprite;
 	}
 	return NULL;
 }
 
-int __thiscall CMapa_Read(CMapa *self, CArchIO *f) {
-	char buf[MAX_RUTA];
+int __thiscall CMap_Read(CMap *self, CFileIO *f) {
+	char buf[MAX_FILEPATH];
 
-	CArchIO_BeginBlock(f, "MAP");
-	int version = CArchIO_ReadInt(f);
+	CFileIO_BeginBlock(f, "MAP");
+	int version = CFileIO_ReadInt(f);
 	CHECK(version >= 2 && version <= 3);
-	CArchIO_ReadString(f, buf, MAX_RUTA);
-	Cad_Set(&self->Nombre, buf);
-	CArchIO_Read(f, &self->b8, 1);
-	CArchIO_Read(f, &self->lightmap, 1);
-	CArchIO_Read(f, &self->ba, 1);
-	CArchIO_Read(f, &self->bb, 1);
-	CArchIO_Read(f, &self->bc, 1);
-	CArchIO_Read(f, &self->bd, 1);
-	CArchIO_Read(f, &self->fx, 1);
-	CArchIO_Read(f, self->f10, 8);
-	CArchIO_Read(f, self->f18, 8);
-	CArchIO_Read(f, &self->f2c, 4);
+	CFileIO_ReadString(f, buf, MAX_FILEPATH);
+	String_Set(&self->Name, buf);
+	CFileIO_Read(f, &self->b8, 1);
+	CFileIO_Read(f, &self->lightmap, 1);
+	CFileIO_Read(f, &self->ba, 1);
+	CFileIO_Read(f, &self->bb, 1);
+	CFileIO_Read(f, &self->bc, 1);
+	CFileIO_Read(f, &self->bd, 1);
+	CFileIO_Read(f, &self->fx, 1);
+	CFileIO_Read(f, self->f10, 8);
+	CFileIO_Read(f, self->f18, 8);
+	CFileIO_Read(f, &self->f2c, 4);
 	if (version > 2) {
-		CArchIO_Read(f, self->v20, 0xc);
+		CFileIO_Read(f, self->v20, 0xc);
 	}
-	return CArchIO_Error(f, "MAP");
+	return CFileIO_Error(f, "MAP");
 }
 
-int __thiscall CMaterial_Read(CMaterial *self, CArchIO *f) {
+int __thiscall CMaterial_Read(CMaterial *self, CFileIO *f) {
 	char buf[0x100];
 
-	CArchIO_BeginBlock(f, "MAT");
-	int version = CArchIO_ReadInt(f);
+	CFileIO_BeginBlock(f, "MAT");
+	int version = CFileIO_ReadInt(f);
 	CHECK(version >= 1 && version <= 3);
 	if (version > 1) {
-		CArchIO_ReadString(f, buf, sizeof(buf));
-		Cad_Set(&self->Nombre, buf);
+		CFileIO_ReadString(f, buf, sizeof(buf));
+		String_Set(&self->Name, buf);
 	}
-	CArchIO_Read(f, self->params.ambient, 4);
-	CArchIO_Read(f, self->params.diffuse, 4);
-	CArchIO_Read(f, self->params.color, 4);
-	CArchIO_Read(f, self->params.specular, 4);
-	CArchIO_Read(f, self->params.emissive, 4);
-	CArchIO_Read(f, &self->params.power, 4);
-	CArchIO_Read(f, &self->params.specLevel, 4);
-	CArchIO_Read(f, &self->params.i2c, 0x18);
-	for (uint32_t i = 0; i < MAPA_TOTAL; i++) {
-		CHECK(i < MAPA_TOTAL);
-		Mat_DeleteMapa(&self->mapa[i]);
+	CFileIO_Read(f, self->params.ambient, 4);
+	CFileIO_Read(f, self->params.diffuse, 4);
+	CFileIO_Read(f, self->params.color, 4);
+	CFileIO_Read(f, self->params.specular, 4);
+	CFileIO_Read(f, self->params.emissive, 4);
+	CFileIO_Read(f, &self->params.power, 4);
+	CFileIO_Read(f, &self->params.specLevel, 4);
+	CFileIO_Read(f, &self->params.i2c, 0x18);
+	for (uint32_t i = 0; i < MAP_TOTAL; i++) {
+		CHECK(i < MAP_TOTAL);
+		Mat_DeleteMap(&self->map[i]);
 		/* version 2 has 3 maps */
 		if (version <= 2 && i > 2) {
 			break;
 		}
-		if (CArchIO_ReadInt(f)) {
-			CMapa *m = Mat_NewMapa();
-			self->mapa[i] = m;
-			CMapa_Read(m, f);
+		if (CFileIO_ReadInt(f)) {
+			CMap *m = Mat_NewMap();
+			self->map[i] = m;
+			CMap_Read(m, f);
 		}
 	}
-	return CArchIO_Error(f, "MAT");
+	return CFileIO_Error(f, "MAT");
 }
 
 /* SetFileAttributes with exactly attr, if the file has none of its bits */
@@ -298,7 +298,7 @@ void DDS_Unhide(const char *name, uint32_t attr) {
 
 CMaterial *Mat_New(const CMaterial *orig, byte share) {
 	if (share) {
-		CMaterial *m = CListaMat_Find(g_ListaMat, orig);
+		CMaterial *m = CMatList_Find(g_MatList, orig);
 		if (m) {
 			return m;
 		}
@@ -306,8 +306,8 @@ CMaterial *Mat_New(const CMaterial *orig, byte share) {
 	CMaterial *m = operator_new(sizeof(CMaterial));
 	m = m ? CMaterial_ctor(m) : NULL;
 	CMaterial_Assign(m, orig);
-	CMaterial_Prepare(m, g_MotorDev);
-	CListaMat_Add(g_ListaMat, m);
+	CMaterial_Prepare(m, g_EngineDev);
+	CMatList_Add(g_MatList, m);
 	return m;
 }
 
@@ -315,7 +315,7 @@ CMaterial *Mat_AddCopy(const CMaterial *orig) {
 	CMaterial *m = operator_new(sizeof(CMaterial));
 	m = m ? CMaterial_ctor(m) : NULL;
 	CMaterial_Assign(m, orig);
-	CListaMat_Add(g_ListaMat, m);
+	CMatList_Add(g_MatList, m);
 	return m;
 }
 
@@ -328,10 +328,10 @@ void AnimMat_Free(CAnimMat **slot) {
 	}
 }
 
-void AnimMat_FromMapa(CAnimMat **slot, const CMapa *mapa) {
-	if (mapa && mapa->AnimMat) {
+void AnimMat_FromMap(CAnimMat **slot, const CMap *map) {
+	if (map && map->AnimMat) {
 		void *p = operator_new(sizeof(CAnimMat));
-		*slot = p ? CAnimMat_ctorCopy(p, mapa->AnimMat) : NULL;
+		*slot = p ? CAnimMat_ctorCopy(p, map->AnimMat) : NULL;
 		CAnimMat_Start(*slot);
 	}
 }
@@ -341,11 +341,11 @@ void Render_SetMaterialAnim(CMaterial *m, CAnimMat *anim) {
 		Render_SetMaterial(m, 0);
 		return;
 	}
-	CMapa *mapa = m->mapa[0];
-	void *old = mapa->AnimMat;
-	mapa->AnimMat = anim;
+	CMap *map = m->map[0];
+	void *old = map->AnimMat;
+	map->AnimMat = anim;
 	Render_SetMaterial(m, 0);
-	mapa->AnimMat = old;
+	map->AnimMat = old;
 }
 
 int __thiscall CMaterial_GetId(CMaterial *self, CMatId **out) {
@@ -365,10 +365,10 @@ int __fastcall CMaterial_Id(CMaterial *self) {
 
 char *__thiscall CMaterial_GetShaderName(CMaterial *self, char *str, uint32_t nbytes) {
 	CHECK(str);
-	if (!self->Nombre || !(self->params.atrib & MAT_SHADER)) {
+	if (!self->Name || !(self->params.attrib & MAT_SHADER)) {
 		return NULL;
 	}
-	const char *name = strstr(self->Nombre, "(+shader:");
+	const char *name = strstr(self->Name, "(+shader:");
 	if (!name) {
 		CHECK(name);
 		return NULL;
@@ -390,57 +390,57 @@ char *__thiscall CMaterial_GetShaderName(CMaterial *self, char *str, uint32_t nb
 	return str;
 }
 
-int __thiscall CMapa_Write(CMapa *self, CArchIO *f) {
-	char buf[MAX_RUTA];
+int __thiscall CMap_Write(CMap *self, CFileIO *f) {
+	char buf[MAX_FILEPATH];
 
-	CArchIO_BeginBlockWrite(f, "MAP");
-	CArchIO_WriteInt(f, MAPA_FILE_VERSION);
-	CHECK(self->Nombre);
-	Ruta_Part(buf, self->Nombre, RUTA_DIR | RUTA_NAME | RUTA_EXT);
-	CArchIO_WriteString(f, buf);
-	CArchIO_Write(f, &self->b8, 1);
-	CArchIO_Write(f, &self->lightmap, 1);
-	CArchIO_Write(f, &self->ba, 1);
-	CArchIO_Write(f, &self->bb, 1);
-	CArchIO_Write(f, &self->bc, 1);
-	CArchIO_Write(f, &self->bd, 1);
-	CArchIO_Write(f, &self->fx, 1);
-	CArchIO_Write(f, self->f10, 8);
-	CArchIO_Write(f, self->f18, 8);
-	CArchIO_Write(f, &self->f2c, 4);
-	CArchIO_Write(f, self->v20, 0xc);
-	return CArchIO_EndBlockWrite(f, "MAP");
+	CFileIO_BeginBlockWrite(f, "MAP");
+	CFileIO_WriteInt(f, MAP_FILE_VERSION);
+	CHECK(self->Name);
+	Path_Part(buf, self->Name, PATH_DIR | PATH_NAME | PATH_EXT);
+	CFileIO_WriteString(f, buf);
+	CFileIO_Write(f, &self->b8, 1);
+	CFileIO_Write(f, &self->lightmap, 1);
+	CFileIO_Write(f, &self->ba, 1);
+	CFileIO_Write(f, &self->bb, 1);
+	CFileIO_Write(f, &self->bc, 1);
+	CFileIO_Write(f, &self->bd, 1);
+	CFileIO_Write(f, &self->fx, 1);
+	CFileIO_Write(f, self->f10, 8);
+	CFileIO_Write(f, self->f18, 8);
+	CFileIO_Write(f, &self->f2c, 4);
+	CFileIO_Write(f, self->v20, 0xc);
+	return CFileIO_EndBlockWrite(f, "MAP");
 }
 
-int __thiscall CMaterial_Write(CMaterial *self, CArchIO *f) {
-	CArchIO_BeginBlockWrite(f, "MAT");
-	CArchIO_WriteInt(f, MAT_FILE_VERSION);
-	CArchIO_WriteString(f, self->Nombre);
-	CArchIO_Write(f, self->params.ambient, 4);
-	CArchIO_Write(f, self->params.diffuse, 4);
-	CArchIO_Write(f, self->params.color, 4);
-	CArchIO_Write(f, self->params.specular, 4);
-	CArchIO_Write(f, self->params.emissive, 4);
-	CArchIO_Write(f, &self->params.power, 4);
-	CArchIO_Write(f, &self->params.specLevel, 4);
-	CArchIO_Write(f, &self->params.i2c, 0x18);
-	for (int i = 0; i < MAPA_TOTAL; i++) {
-		if (self->mapa[i]) {
-			CArchIO_WriteInt(f, 1);
-			CMapa_Write(self->mapa[i], f);
+int __thiscall CMaterial_Write(CMaterial *self, CFileIO *f) {
+	CFileIO_BeginBlockWrite(f, "MAT");
+	CFileIO_WriteInt(f, MAT_FILE_VERSION);
+	CFileIO_WriteString(f, self->Name);
+	CFileIO_Write(f, self->params.ambient, 4);
+	CFileIO_Write(f, self->params.diffuse, 4);
+	CFileIO_Write(f, self->params.color, 4);
+	CFileIO_Write(f, self->params.specular, 4);
+	CFileIO_Write(f, self->params.emissive, 4);
+	CFileIO_Write(f, &self->params.power, 4);
+	CFileIO_Write(f, &self->params.specLevel, 4);
+	CFileIO_Write(f, &self->params.i2c, 0x18);
+	for (int i = 0; i < MAP_TOTAL; i++) {
+		if (self->map[i]) {
+			CFileIO_WriteInt(f, 1);
+			CMap_Write(self->map[i], f);
 		} else {
-			CArchIO_WriteInt(f, 0);
+			CFileIO_WriteInt(f, 0);
 		}
 	}
-	return CArchIO_EndBlockWrite(f, "MAT");
+	return CFileIO_EndBlockWrite(f, "MAT");
 }
 
 byte Mat_CompareNames(const CMaterial *a, const CMaterial *b) {
-	CHECK((a->params.atrib & MAT_NAMED) == (b->params.atrib & MAT_NAMED));
-	if ((a->params.atrib & MAT_NAMED) || (b->params.atrib & MAT_NAMED)) {
-		CHECK(a->Nombre && b->Nombre);
-		if (strcmp(a->Nombre, b->Nombre)) {
-			E3D_LogInfo(g_FileLog, "MatCompareNames: [%s] [%s]", a->Nombre, b->Nombre);
+	CHECK((a->params.attrib & MAT_NAMED) == (b->params.attrib & MAT_NAMED));
+	if ((a->params.attrib & MAT_NAMED) || (b->params.attrib & MAT_NAMED)) {
+		CHECK(a->Name && b->Name);
+		if (strcmp(a->Name, b->Name)) {
+			E3D_LogInfo(g_FileLog, "MatCompareNames: [%s] [%s]", a->Name, b->Name);
 			return 0;
 		}
 	}
@@ -449,31 +449,31 @@ byte Mat_CompareNames(const CMaterial *a, const CMaterial *b) {
 
 const char *Mat_Str(const CMaterial *m) {
 	if (m) {
-		Bprintf(g_MatStr, 0x100, "%s [%s]", m->Nombre, m->mapa[0] ? m->mapa[0]->Nombre : NULL);
+		Bprintf(g_MatStr, 0x100, "%s [%s]", m->Name, m->map[0] ? m->map[0]->Name : NULL);
 		return g_MatStr;
 	}
 	Bprintf(g_MatStr, 0x100, "(null material)");
 	return g_MatStr;
 }
 
-void __thiscall CListaMat_Add(CListaMat *self, CMaterial *mat) {
+void __thiscall CMatList_Add(CMatList *self, CMaterial *mat) {
 	CHECK(mat);
-	CHECK(!mat->ant && !mat->sig);
-	if (!self->ult) {
-		self->ult = self->pri;
+	CHECK(!mat->prev && !mat->next);
+	if (!self->last) {
+		self->last = self->first;
 	}
-	if (self->ult) {
-		while (self->ult->sig) {
-			self->ult = self->ult->sig;
+	if (self->last) {
+		while (self->last->next) {
+			self->last = self->last->next;
 		}
-		self->ult->sig = mat;
-		mat->ant = self->ult;
-		self->ult = mat;
+		self->last->next = mat;
+		mat->prev = self->last;
+		self->last = mat;
 		mat->Refs++;
 		return;
 	}
-	self->pri = mat;
-	self->ult = mat;
+	self->first = mat;
+	self->last = mat;
 	mat->Refs++;
 }
 
@@ -484,12 +484,12 @@ void Tex_AddExtension(const char *ext) {
 	if (!ext || !*ext) {
 		return;
 	}
-	for (i = 0; i < MAX_EXTENS_TEXTURAS; i++) {
-		if (!g_ExtensTexturas[i][0]) {
+	for (i = 0; i < MAX_TEXTURE_EXTS; i++) {
+		if (!g_TextureExts[i][0]) {
 			break;
 		}
 	}
-	CHECK(i < MAX_EXTENS_TEXTURAS);
+	CHECK(i < MAX_TEXTURE_EXTS);
 	uint32_t j = 0;
 	byte prefix = 1;
 	do {
@@ -517,65 +517,65 @@ void Tex_AddExtension(const char *ext) {
 		crt_report_rangecheckfailure();
 	}
 	tmp[j] = 0;
-	CHECK(j + 1 <= MAX_RUTA);
-	char *d = g_ExtensTexturas[i];
+	CHECK(j + 1 <= MAX_FILEPATH);
+	char *d = g_TextureExts[i];
 	if (prefix) {
-		Bprintf(d, MAX_RUTA, "&u&d&n.%s", tmp);
+		Bprintf(d, MAX_FILEPATH, "&u&d&n.%s", tmp);
 	} else {
-		Cad_Copy(d, tmp, MAX_RUTA);
+		String_Copy(d, tmp, MAX_FILEPATH);
 	}
 	E3D_LogDebug(g_FileLog, "DBG: ExtensTexturas%d: '%s'", i + 1, d);
 }
 
-void Tex_AddPath(const char *ruta) {
+void Tex_AddPath(const char *path) {
 	int i;
 
-	if (!ruta || !*ruta) {
+	if (!path || !*path) {
 		return;
 	}
-	for (i = 0; i < MAX_RUTAS_TEXTURAS; i++) {
-		if (!g_RutasTexturas[i][0]) {
+	for (i = 0; i < MAX_TEXTURE_PATHS; i++) {
+		if (!g_TexturePaths[i][0]) {
 			break;
 		}
 	}
-	CHECK(i < MAX_RUTAS_TEXTURAS);
-	Ruta_Copy(g_RutasTexturas[i], ruta, MAX_RUTA);
-	E3D_LogDebug(g_FileLog, "DBG: RutaTextura%d: '%s'", i + 1, g_RutasTexturas[i]);
+	CHECK(i < MAX_TEXTURE_PATHS);
+	Path_Copy(g_TexturePaths[i], path, MAX_FILEPATH);
+	E3D_LogDebug(g_FileLog, "DBG: RutaTextura%d: '%s'", i + 1, g_TexturePaths[i]);
 }
 
 void Tex_ClearExtensions(void) {
-	for (int i = 0; i < MAX_EXTENS_TEXTURAS; i++) {
-		g_ExtensTexturas[i][0] = 0;
+	for (int i = 0; i < MAX_TEXTURE_EXTS; i++) {
+		g_TextureExts[i][0] = 0;
 	}
 }
 
 void Tex_ClearPaths(void) {
-	for (int i = 0; i < MAX_RUTAS_TEXTURAS; i++) {
-		g_RutasTexturas[i][0] = 0;
+	for (int i = 0; i < MAX_TEXTURE_PATHS; i++) {
+		g_TexturePaths[i][0] = 0;
 	}
 }
 
-CMaterial *__thiscall CListaMat_Find(CListaMat *self, const CMaterial *mat) {
-	CHECK(!self->pri || !self->pri->ant);
+CMaterial *__thiscall CMatList_Find(CMatList *self, const CMaterial *mat) {
+	CHECK(!self->first || !self->first->prev);
 	CHECK(Mat_IsShareable(mat));
-	for (CMaterial *m = self->pri; m; m = m->sig) {
+	for (CMaterial *m = self->first; m; m = m->next) {
 		const CMatParams *a = &m->params, *b = &mat->params;
 		/* the four colors up to power as bytes */
 		if (!memcmp(a->ambient, b->ambient, 0x10) && a->power == b->power && a->specLevel == b->specLevel
 			&& Color_Equal(a->color, b->color) && MatParams_Equal((const uint32_t *)&a->i2c, (const uint32_t *)&b->i2c)) {
 			int i;
-			for (i = 0; i < MAPA_TOTAL; i++) {
-				if (!CMapa_Equal(m->mapa[i], mat->mapa[i])) {
+			for (i = 0; i < MAP_TOTAL; i++) {
+				if (!CMap_Equal(m->map[i], mat->map[i])) {
 					break;
 				}
 			}
-			if (i == MAPA_TOTAL && Mat_CompareNames(m, mat)) {
+			if (i == MAP_TOTAL && Mat_CompareNames(m, mat)) {
 				CHECK(Mat_IsShareable(m));
 				return m;
 			}
 		}
 		if (m->sub) {
-			CMaterial *r = CListaMat_Find(m->sub, mat);
+			CMaterial *r = CMatList_Find(m->sub, mat);
 			if (r) {
 				return r;
 			}
@@ -585,23 +585,23 @@ CMaterial *__thiscall CListaMat_Find(CListaMat *self, const CMaterial *mat) {
 }
 
 byte Tex_TryFormat(const char *frmt, const char *name, char *out, int alpha) {
-	char tmp[MAX_RUTA];
+	char tmp[MAX_FILEPATH];
 
-	Ruta_Format(tmp, name, frmt);
+	Path_Format(tmp, name, frmt);
 	if (alpha) {
-		Ruta_Format(tmp, tmp, "&U&D&N.alpha&E");
+		Path_Format(tmp, tmp, "&U&D&N.alpha&E");
 	}
 	if (File_Exists(tmp)) {
-		Cad_Copy(out, tmp, MAX_RUTA);
+		String_Copy(out, tmp, MAX_FILEPATH);
 		return 1;
 	}
 	return 0;
 }
 
 int Tex_FindDDS(const char *name, char *out, int alpha) {
-	char ext[MAX_RUTA];
+	char ext[MAX_FILEPATH];
 
-	Ruta_Split(name, NULL, NULL, NULL, ext);
+	Path_SplitDrive(name, NULL, NULL, NULL, ext);
 	crt_strlwr(ext);
 	if (g_DDSUseTextures) {
 		if (!strcmp(ext, ".bmp") || !strcmp(ext, ".tga")) {
@@ -613,8 +613,8 @@ int Tex_FindDDS(const char *name, char *out, int alpha) {
 			return 0;
 		}
 	}
-	for (int i = 0; i < MAX_EXTENS_TEXTURAS && g_ExtensTexturas[i][0]; i++) {
-		if (Tex_TryFormat(g_ExtensTexturas[i], name, out, alpha)) {
+	for (int i = 0; i < MAX_TEXTURE_EXTS && g_TextureExts[i][0]; i++) {
+		if (Tex_TryFormat(g_TextureExts[i], name, out, alpha)) {
 			return 0;
 		}
 	}
@@ -622,17 +622,17 @@ int Tex_FindDDS(const char *name, char *out, int alpha) {
 }
 
 int Tex_FindInPaths(const char *name, char *out) {
-	char file[MAX_RUTA];
-	char tmp[MAX_RUTA];
+	char file[MAX_FILEPATH];
+	char tmp[MAX_FILEPATH];
 
-	if (!g_RutasTexturas[0][0]) {
+	if (!g_TexturePaths[0][0]) {
 		return -1;
 	}
-	Ruta_Part(file, name, RUTA_NAME | RUTA_EXT);
-	for (int i = 0; i < MAX_RUTAS_TEXTURAS && g_RutasTexturas[i][0]; i++) {
-		Ruta_Merge(tmp, g_RutasTexturas[i], file);
+	Path_Part(file, name, PATH_NAME | PATH_EXT);
+	for (int i = 0; i < MAX_TEXTURE_PATHS && g_TexturePaths[i][0]; i++) {
+		Path_Merge(tmp, g_TexturePaths[i], file);
 		if (File_Exists(tmp)) {
-			Cad_Copy(out, tmp, MAX_RUTA);
+			String_Copy(out, tmp, MAX_FILEPATH);
 			return 0;
 		}
 	}
@@ -641,97 +641,97 @@ int Tex_FindInPaths(const char *name, char *out) {
 
 static void Mat_LogOlder(const char *dds, const char *orig) {
 	if (File_TimeDiff(dds, orig, 0) < 0) {
-		E3D_LogVerbose(g_FileLog, "WARN: [%s] is older than [%s]", Ruta_FileName(dds), Ruta_FileName(orig));
+		E3D_LogVerbose(g_FileLog, "WARN: [%s] is older than [%s]", Path_FileName(dds), Path_FileName(orig));
 	}
 }
 
-char *__thiscall CMapa_ResolvePath(CMapa *self, byte load, CMapa *alpha) {
-	char path[MAX_RUTA];
-	char found[MAX_RUTA];
+char *__thiscall CMap_ResolvePath(CMap *self, byte load, CMap *alpha) {
+	char path[MAX_FILEPATH];
+	char found[MAX_FILEPATH];
 	char drive[4], dir[0x100], name[0x100], ext[0x100];
 
-	CHECK(self->Nombre);
+	CHECK(self->Name);
 	self->state = 0;
-	Cad_Set(&self->ruta, NULL);
+	String_Set(&self->path, NULL);
 	self->animated = 0;
 	self->frames = 0;
-	Ruta_Copy(path, self->Nombre, MAX_RUTA);
+	Path_Copy(path, self->Name, MAX_FILEPATH);
 	/* the alpha map as a flag: the DDS with both */
 	if (load && !Tex_FindDDS(path, found, (int)(intptr_t)alpha)) {
 		Mat_LogOlder(found, path);
-		if (alpha && alpha->ruta) {
-			Mat_LogOlder(found, alpha->ruta);
+		if (alpha && alpha->path) {
+			Mat_LogOlder(found, alpha->path);
 		}
 		if (g_DDSMarkSource) {
 			DDS_Hide(path, FILE_HIDDEN);
-			if (alpha && alpha->ruta) {
-				DDS_Hide(alpha->ruta, FILE_HIDDEN);
+			if (alpha && alpha->path) {
+				DDS_Hide(alpha->path, FILE_HIDDEN);
 			}
 		}
 		memcpy(path, found, strlen(found) + 1);
 	} else if (!File_Exists(path)) {
-		Ruta_Split(path, drive, dir, name, ext);
-		Bprintf(path, MAX_RUTA, "%s%sbmp/%s%s", drive, dir, name, ext);
-		if (!File_Exists(path) && Tex_FindInPaths(self->Nombre, path)) {
+		Path_SplitDrive(path, drive, dir, name, ext);
+		Bprintf(path, MAX_FILEPATH, "%s%sbmp/%s%s", drive, dir, name, ext);
+		if (!File_Exists(path) && Tex_FindInPaths(self->Name, path)) {
 			/* numbered frames from 0000 */
-			Bprintf(path, MAX_RUTA, "%s%s%s%s%s", drive, dir, name, "%04d", ext);
-			Bprintf(found, MAX_RUTA, path, 0);
+			Bprintf(path, MAX_FILEPATH, "%s%s%s%s%s", drive, dir, name, "%04d", ext);
+			Bprintf(found, MAX_FILEPATH, path, 0);
 			if (!File_Exists(found)) {
-				Bprintf(path, MAX_RUTA, "%s%sbmp/%s%s%s", drive, dir, name, "%04d", ext);
-				Bprintf(found, MAX_RUTA, path, 0);
+				Bprintf(path, MAX_FILEPATH, "%s%sbmp/%s%s%s", drive, dir, name, "%04d", ext);
+				Bprintf(found, MAX_FILEPATH, path, 0);
 				if (!File_Exists(found)) {
 					if (load) {
-						Con_Warnf("WARN: Texture not found: '%s'\n", self->Nombre);
+						Con_Warnf("WARN: Texture not found: '%s'\n", self->Name);
 					}
-					self->state = MAPA_MISSING;
+					self->state = MAP_MISSING;
 					return NULL;
 				}
 			}
-			Cad_Set(&self->rutaAni, path);
+			String_Set(&self->pathAni, path);
 			memcpy(path, found, strlen(found) + 1);
 			self->animated = 1;
 		}
 	}
 	if (!self->animated) {
 		/* name.000.ext: frames name.%03d.ext */
-		char *p = strstr(Ruta_FileName(path), ".000.");
+		char *p = strstr(Path_FileName(path), ".000.");
 		if (p) {
-			Bprintf(found, MAX_RUTA, "%.*s.%s.%s", (int)(p - path), path, "%03d", p + 5);
-			Cad_Set(&self->rutaAni, found);
+			Bprintf(found, MAX_FILEPATH, "%.*s.%s.%s", (int)(p - path), path, "%03d", p + 5);
+			String_Set(&self->pathAni, found);
 			self->animated = 1;
 		}
 	}
-	Cad_Set(&self->ruta, path);
+	String_Set(&self->path, path);
 	if (g_DDSCheckMark && load) {
 		DDS_Unhide(path, FILE_HIDDEN);
 	}
-	return self->ruta;
+	return self->path;
 }
 
-void __thiscall CMapa_LoadTexture(CMapa *self, void *dev, CMapa *alpha, int kind) {
-	char buf[MAX_RUTA];
-	char abuf[MAX_RUTA];
-	char ini_name[MAX_RUTA];
+void __thiscall CMap_LoadTexture(CMap *self, void *dev, CMap *alpha, int kind) {
+	char buf[MAX_FILEPATH];
+	char abuf[MAX_FILEPATH];
+	char ini_name[MAX_FILEPATH];
 	int info[5];
-	CArchINI ini;
+	CIniFile ini;
 
-	if (self->est.tex || self->state == MAPA_MISSING) {
+	if (self->staticTex.tex || self->state == MAP_MISSING) {
 		return;
 	}
 	const char *alphaPath = NULL;
-	if (self->est.Hint) {
-		self->est.tex = Textura_GetD3D(self->est.Hint, dev);
-		self->cur = &self->est;
-		if (!self->est.tex || (!self->animated && !self->fx)) {
+	if (self->staticTex.Hint) {
+		self->staticTex.tex = Texture_GetD3D(self->staticTex.Hint, dev);
+		self->cur = &self->staticTex;
+		if (!self->staticTex.tex || (!self->animated && !self->fx)) {
 			return;
 		}
 	}
-	CMapa_Release(self);
-	if (alpha && alpha->state != MAPA_MISSING) {
-		CMapa_ResolvePath(alpha, 0, NULL);
-		alphaPath = alpha->ruta;
+	CMap_Release(self);
+	if (alpha && alpha->state != MAP_MISSING) {
+		CMap_ResolvePath(alpha, 0, NULL);
+		alphaPath = alpha->path;
 	}
-	if (!CMapa_ResolvePath(self, 1, alpha)) {
+	if (!CMap_ResolvePath(self, 1, alpha)) {
 		return;
 	}
 	byte lm = self->lightmap;
@@ -740,8 +740,8 @@ void __thiscall CMapa_LoadTexture(CMapa *self, void *dev, CMapa *alpha, int kind
 			return;
 		}
 		if ((int)lm > g_MaxLightmap || (lm > 1 && !g_LightmapsHigh)) {
-			Con_Verbosef("INFO: Skipping lightmap texture: '%s'\n", self->Nombre);
-			self->state = MAPA_MISSING;
+			Con_Verbosef("INFO: Skipping lightmap texture: '%s'\n", self->Name);
+			self->state = MAP_MISSING;
 			return;
 		}
 	}
@@ -760,83 +760,83 @@ void __thiscall CMapa_LoadTexture(CMapa *self, void *dev, CMapa *alpha, int kind
 	if (self->animated) {
 		int i = 0;
 		self->frames = 0;
-		CMapa_FramePath(self, i, buf, MAX_RUTA);
+		CMap_FramePath(self, i, buf, MAX_FILEPATH);
 		while (File_Exists(buf)) {
 			i++;
-			CMapa_FramePath(self, i, buf, MAX_RUTA);
+			CMap_FramePath(self, i, buf, MAX_FILEPATH);
 		}
 		self->frames = i;
 		if (i < 2) {
-			E3D_LogVerbose(g_FileLog, "WARN: Animated texture with %d frame: %s", i, self->ruta);
+			E3D_LogVerbose(g_FileLog, "WARN: Animated texture with %d frame: %s", i, self->path);
 		}
 		CHECK(!self->TextAni);
 		CHECK(!self->AnimMat);
-		self->TextAni = New_Objects(self->frames, sizeof(CTextEst), GAME_FUNC(CTextEst_ctor, TEXTEST_CTOR), GAME_FUNC(CTextEst_dtor, TEXTEST_DTOR));
+		self->TextAni = New_Objects(self->frames, sizeof(CTextStatic), GAME_FUNC(CTextStatic_ctor, TEXTSTATIC_CTOR), GAME_FUNC(CTextStatic_dtor, TEXTSTATIC_DTOR));
 		if (self->frames > 0) {
 			char *aname = alphaPath ? abuf : NULL;
 			for (i = 0; i < self->frames; i++) {
-				CMapa_FramePath(self, i, buf, MAX_RUTA);
+				CMap_FramePath(self, i, buf, MAX_FILEPATH);
 				if (alphaPath) {
-					CMapa_FramePath(alpha, i, abuf, MAX_RUTA);
+					CMap_FramePath(alpha, i, abuf, MAX_FILEPATH);
 				}
-				Textura_Add(buf, aname, kind, flags);
-				self->TextAni[i].Hint = Textura_Find(buf, aname);
-				self->TextAni[i].tex = Textura_GetD3D(self->TextAni[i].Hint, dev);
+				Texture_Add(buf, aname, kind, flags);
+				self->TextAni[i].Hint = Texture_Find(buf, aname);
+				self->TextAni[i].tex = Texture_GetD3D(self->TextAni[i].Hint, dev);
 			}
 		}
-		/* name.txa: [anim] fps, ciclo */
-		CArchINI_ctor(&ini);
-		int ciclo = g_AnimCicloDefault;
+		/* name.txa: [anim] fps, cycle */
+		CIniFile_ctor(&ini);
+		int cycle = g_AnimCycleDefault;
 		float fps = g_AnimFpsDefault;
-		Ruta_Copy(ini_name, self->Nombre, MAX_RUTA);
-		CArchINI_Load(&ini, ini_name, ".txa", 0);
-		if (CArchINI_FindSection(&ini, "anim", 1)) {
-			CArchINI_ReadFloat(&ini, "anim", "fps", &fps);
-			CArchINI_ReadInt(&ini, "anim", "ciclo", &ciclo);
+		Path_Copy(ini_name, self->Name, MAX_FILEPATH);
+		CIniFile_Load(&ini, ini_name, ".txa", 0);
+		if (CIniFile_FindSection(&ini, "anim", 1)) {
+			CIniFile_ReadFloat(&ini, "anim", "fps", &fps);
+			CIniFile_ReadInt(&ini, "anim", "ciclo", &cycle);
 		}
 		CAnimMat *am = operator_new(sizeof(CAnimMat));
 		am = am ? CAnimMat_ctor(am) : NULL;
 		self->AnimMat = am;
 		am->fps = fps;
 		((CAnimMat *)self->AnimMat)->frames = self->frames;
-		((CAnimMat *)self->AnimMat)->ciclo = ciclo;
+		((CAnimMat *)self->AnimMat)->cycle = cycle;
 		CAnimMat_Start(self->AnimMat);
-		CArchINI_dtor(&ini);
+		CIniFile_dtor(&ini);
 	}
-	Textura_Add(self->ruta, alphaPath, kind, flags);
-	self->est.Hint = Textura_Find(self->ruta, alphaPath);
-	self->est.tex = Textura_GetD3D(self->est.Hint, dev);
-	self->cur = &self->est;
-	if (self->est.tex && self->fx) {
-		CHECK(!self->FXTextura);
-		self->FXTextura = FXTextura_Create(self->fx, self);
+	Texture_Add(self->path, alphaPath, kind, flags);
+	self->staticTex.Hint = Texture_Find(self->path, alphaPath);
+	self->staticTex.tex = Texture_GetD3D(self->staticTex.Hint, dev);
+	self->cur = &self->staticTex;
+	if (self->staticTex.tex && self->fx) {
+		CHECK(!self->FXTexture);
+		self->FXTexture = FXTexture_Create(self->fx, self);
 	}
-	if (!Textura_GetInfo(self->est.Hint, info)) {
+	if (!Texture_GetInfo(self->staticTex.Hint, info)) {
 		self->hasAlpha = info[3] != 0;
 		self->b55 = info[4] != 0;
 	}
-	if (alpha && alpha->state == MAPA_MISSING && !self->hasAlpha) {
-		Con_Warnf("WARN: Opacity map not found: '%s'\n", alpha->Nombre);
+	if (alpha && alpha->state == MAP_MISSING && !self->hasAlpha) {
+		Con_Warnf("WARN: Opacity map not found: '%s'\n", alpha->Name);
 	}
 }
 
 void __thiscall CMaterial_Prepare(CMaterial *self, void *dev) {
 	CMaterial_CalcColors(self, self->colors);
 	if (self->sub) {
-		CListaMat_Prepare(self->sub, dev);
+		CMatList_Prepare(self->sub, dev);
 	}
-	if (g_LoadTextures != 2 || (self->params.atrib & MAT_LOADTEX)) {
-		if (self->mapa[0]) {
-			CMapa_LoadTexture(self->mapa[0], dev, self->mapa[1], 0);
+	if (g_LoadTextures != 2 || (self->params.attrib & MAT_LOADTEX)) {
+		if (self->map[0]) {
+			CMap_LoadTexture(self->map[0], dev, self->map[1], 0);
 		}
-		if (self->mapa[2] && self->params.b3b) {
-			CMapa_LoadTexture(self->mapa[2], dev, NULL, 1);
+		if (self->map[2] && self->params.b3b) {
+			CMap_LoadTexture(self->map[2], dev, NULL, 1);
 		}
-		if (self->mapa[3]) {
-			CMapa_LoadTexture(self->mapa[3], dev, NULL, 0);
+		if (self->map[3]) {
+			CMap_LoadTexture(self->map[3], dev, NULL, 0);
 		}
-		if (self->mapa[4]) {
-			CMapa_LoadTexture(self->mapa[4], dev, NULL, 0);
+		if (self->map[4]) {
+			CMap_LoadTexture(self->map[4], dev, NULL, 0);
 		}
 	}
 	if (self->id.id == -1) {
@@ -844,21 +844,21 @@ void __thiscall CMaterial_Prepare(CMaterial *self, void *dev) {
 	}
 }
 
-void __thiscall CListaMat_Prepare(CListaMat *self, void *dev) {
-	CHECK(!self->pri || !self->pri->ant);
-	for (CMaterial *m = self->pri; m; m = m->sig) {
+void __thiscall CMatList_Prepare(CMatList *self, void *dev) {
+	CHECK(!self->first || !self->first->prev);
+	for (CMaterial *m = self->first; m; m = m->next) {
 		CMaterial_Prepare(m, dev);
 	}
 }
 
-byte CMapa_Equal(const CMapa *a, const CMapa *b) {
+byte CMap_Equal(const CMap *a, const CMap *b) {
 	if (a == b) {
 		return 1;
 	}
 	if (!a || !b) {
 		return 0;
 	}
-	if (strcmp(a->Nombre, b->Nombre) || a->b8 != b->b8 || a->lightmap != b->lightmap || a->ba != b->ba || a->bb != b->bb
+	if (strcmp(a->Name, b->Name) || a->b8 != b->b8 || a->lightmap != b->lightmap || a->ba != b->ba || a->bb != b->bb
 		|| a->bc != b->bc || a->bd != b->bd || a->fx != b->fx) {
 		return 0;
 	}
@@ -868,44 +868,44 @@ byte CMapa_Equal(const CMapa *a, const CMapa *b) {
 	return a->f2c == b->f2c;
 }
 
-int __thiscall CListaMat_Count(CListaMat *self, byte sub) {
+int __thiscall CMatList_Count(CMatList *self, byte sub) {
 	int n = 0;
 
-	CHECK(!self->pri || !self->pri->ant);
-	for (CMaterial *m = self->pri; m; m = m->sig) {
+	CHECK(!self->first || !self->first->prev);
+	for (CMaterial *m = self->first; m; m = m->next) {
 		if (sub && m->sub) {
-			n += CListaMat_Count(m->sub, 0);
+			n += CMatList_Count(m->sub, 0);
 		}
 		n++;
 	}
 	return n;
 }
 
-CMapa *__thiscall CMaterial_SetMap(CMaterial *self, uint32_t idmapa, const char *name) {
-	CHECK(idmapa < MAPA_TOTAL);
-	Mat_DeleteMapa(&self->mapa[idmapa]);
+CMap *__thiscall CMaterial_SetMap(CMaterial *self, uint32_t mapid, const char *name) {
+	CHECK(mapid < MAP_TOTAL);
+	Mat_DeleteMap(&self->map[mapid]);
 	if (name) {
-		CMapa *m = Mat_NewMapa();
-		self->mapa[idmapa] = m;
-		Cad_Set(&m->Nombre, name);
+		CMap *m = Mat_NewMap();
+		self->map[mapid] = m;
+		String_Set(&m->Name, name);
 	}
-	return self->mapa[idmapa];
+	return self->map[mapid];
 }
 
-CMapa *__thiscall CMaterial_SetMapCopy(CMaterial *self, uint32_t idmapa, const CMapa *orig) {
-	return Mat_SetMapCopy(self, idmapa, orig);
+CMap *__thiscall CMaterial_SetMapCopy(CMaterial *self, uint32_t mapid, const CMap *orig) {
+	return Mat_SetMapCopy(self, mapid, orig);
 }
 
-CMaterial *__thiscall CListaMat_Extract(CListaMat *self, CMaterial *mat, byte sub) {
+CMaterial *__thiscall CMatList_Extract(CMatList *self, CMaterial *mat, byte sub) {
 	CMaterial *m;
 
 	CHECK(mat);
-	for (m = self->pri; m; m = m->sig) {
+	for (m = self->first; m; m = m->next) {
 		if (m == mat) {
 			break;
 		}
 		if (m->sub && sub) {
-			CMaterial *r = CListaMat_Extract(m->sub, mat, 1);
+			CMaterial *r = CMatList_Extract(m->sub, mat, 1);
 			if (r) {
 				return r;
 			}
@@ -916,20 +916,20 @@ CMaterial *__thiscall CListaMat_Extract(CListaMat *self, CMaterial *mat, byte su
 	}
 	m->Refs--;
 	CHECK(m->Refs == 0);
-	if (self->pri == m) {
-		self->pri = m->sig;
+	if (self->first == m) {
+		self->first = m->next;
 	}
-	if (self->ult == m) {
-		self->ult = m->ant;
+	if (self->last == m) {
+		self->last = m->prev;
 	}
-	if (m->ant) {
-		m->ant->sig = m->sig;
+	if (m->prev) {
+		m->prev->next = m->next;
 	}
-	if (m->sig) {
-		m->sig->ant = m->ant;
+	if (m->next) {
+		m->next->prev = m->prev;
 	}
-	m->ant = NULL;
-	m->sig = NULL;
+	m->prev = NULL;
+	m->next = NULL;
 	return m;
 }
 
@@ -945,14 +945,14 @@ int Mat_Compare(const CMaterial *a, const CMaterial *b) {
 	if (a->params.b3b != b->params.b3b) {
 		return a->params.b3b ? 1 : -1;
 	}
-	if (!a->mapa[3] != !b->mapa[3]) {
-		return a->mapa[3] ? 1 : -1;
+	if (!a->map[3] != !b->map[3]) {
+		return a->map[3] ? 1 : -1;
 	}
-	if (!a->mapa[4] != !b->mapa[4]) {
-		return a->mapa[4] ? 1 : -1;
+	if (!a->map[4] != !b->map[4]) {
+		return a->map[4] ? 1 : -1;
 	}
-	const char *na = a->mapa[0] ? a->mapa[0]->Nombre : NULL;
-	const char *nb = b->mapa[0] ? b->mapa[0]->Nombre : NULL;
+	const char *na = a->map[0] ? a->map[0]->Name : NULL;
+	const char *nb = b->map[0] ? b->map[0]->Name : NULL;
 	int r;
 	if (na && nb) {
 		r = Mat_StrSign(na, nb);
@@ -982,11 +982,11 @@ void __thiscall CMaterial_CalcColors(CMaterial *self, float *out) {
 	out[13] = (float)p->emissive[1] * MAT_BYTE;
 	out[14] = (float)p->emissive[2] * MAT_BYTE;
 	out[15] = 1.0f;
-	if (!self->mapa[0]) {
+	if (!self->map[0]) {
 		out[0] = ((float)p->diffuse[0] / 255.0f) * out[0];
 		out[1] = ((float)p->diffuse[1] / 255.0f) * out[1];
 		out[2] = ((float)p->diffuse[2] / 255.0f) * out[2];
-		if (p->atrib & MAT_MAPCOLOR) {
+		if (p->attrib & MAT_MAPCOLOR) {
 			out[4] = out[0] * 0.8f;
 			out[5] = out[1] * 0.8f;
 			out[6] = out[2] * 0.8f;
@@ -1025,14 +1025,14 @@ void __thiscall CMaterial_CalcColors(CMaterial *self, float *out) {
 	out[3] = (float)p->diffuse[3] / 255.0f;
 }
 
-void __fastcall CMapa_Release(CMapa *self) {
+void __fastcall CMap_Release(CMap *self) {
 	self->cur = NULL;
-	CTextEst_dtor(&self->est);
+	CTextStatic_dtor(&self->staticTex);
 	self->state = 0;
 	self->animated = 0;
 	self->frames = 0;
 	if (self->TextAni) {
-		Delete_Objects(self->TextAni, sizeof(CTextEst), GAME_FUNC(CTextEst_dtor, TEXTEST_DTOR));
+		Delete_Objects(self->TextAni, sizeof(CTextStatic), GAME_FUNC(CTextStatic_dtor, TEXTSTATIC_DTOR));
 		self->TextAni = NULL;
 	}
 	if (self->AnimMat) {
@@ -1040,85 +1040,85 @@ void __fastcall CMapa_Release(CMapa *self) {
 		operator_delete_sized(self->AnimMat, sizeof(CAnimMat));
 		self->AnimMat = NULL;
 	}
-	if (self->FXTextura) {
-		((deleteObj_t)(*(void ***)self->FXTextura)[0])(self->FXTextura, 1);
-		self->FXTextura = NULL;
+	if (self->FXTexture) {
+		((deleteObj_t)(*(void ***)self->FXTexture)[0])(self->FXTexture, 1);
+		self->FXTexture = NULL;
 	}
 }
 
 void __fastcall CMaterial_Release(CMaterial *self) {
 	if (self->sub) {
-		CListaMat_Release(self->sub);
+		CMatList_Release(self->sub);
 	}
-	for (int i = 0; i < MAPA_TOTAL; i++) {
-		if (self->mapa[i]) {
-			CMapa_Release(self->mapa[i]);
+	for (int i = 0; i < MAP_TOTAL; i++) {
+		if (self->map[i]) {
+			CMap_Release(self->map[i]);
 		}
 	}
 }
 
-void __fastcall CListaMat_Release(CListaMat *self) {
-	CHECK(!self->pri || !self->pri->ant);
-	for (CMaterial *m = self->pri; m; m = m->sig) {
+void __fastcall CMatList_Release(CMatList *self) {
+	CHECK(!self->first || !self->first->prev);
+	for (CMaterial *m = self->first; m; m = m->next) {
 		CMaterial_Release(m);
 	}
 }
 
-void __fastcall CListaMat_DeleteAll(CListaMat *self) {
+void __fastcall CMatList_DeleteAll(CMatList *self) {
 	int n = 0;
 
-	CHECK(!self->pri || !self->pri->ant);
-	while (self->pri) {
-		CMaterial *next = self->pri->sig;
-		self->pri->Refs--;
-		if (self->pri) {
-			((deleteObj_t)self->pri->vftable[0])(self->pri, 1);
+	CHECK(!self->first || !self->first->prev);
+	while (self->first) {
+		CMaterial *next = self->first->next;
+		self->first->Refs--;
+		if (self->first) {
+			((deleteObj_t)self->first->vftable[0])(self->first, 1);
 		}
 		n++;
-		self->pri = next;
+		self->first = next;
 	}
 	E3D_LogDebug2(g_FileLog, "ListaMat: %d materials deleted", n);
-	self->ult = NULL;
-	self->pri = NULL;
+	self->last = NULL;
+	self->first = NULL;
 }
 
 void __fastcall CMaterial_MapToColor(CMaterial *self) {
-	CMapa *m = self->mapa[0];
+	CMap *m = self->map[0];
 
 	if (!m) {
 		return;
 	}
-	self->params.atrib |= MAT_MAPCOLOR;
-	CMapa_ResolvePath(m, 0, NULL);
-	if (m->ruta) {
+	self->params.attrib |= MAT_MAPCOLOR;
+	CMap_ResolvePath(m, 0, NULL);
+	if (m->path) {
 		CBmp img = { 0, 0, NULL };
 		CBmp avg = { 1, 1, NULL };
 		avg.img = New_Array(1, 4);
-		CBmp_Load(&img, m->ruta, 0);
+		CBmp_Load(&img, m->path, 0);
 		CBmp_Resample(&avg, &img, 0xf);
 		uint32_t c = *CBmp_Pixel(&avg, 0, 0);
 		self->params.diffuse[0] = c;
 		self->params.diffuse[2] = c >> 16;
 		self->params.diffuse[1] = c >> 8;
-		avg.ancho = 0;
-		avg.alto = 0;
+		avg.width = 0;
+		avg.height = 0;
 		if (avg.img) {
 			operator_delete_sized(avg.img, 4);
 			avg.img = NULL;
 		}
-		img.ancho = 0;
-		img.alto = 0;
+		img.width = 0;
+		img.height = 0;
 		if (img.img) {
 			operator_delete_sized(img.img, 4);
 		}
 	}
-	Mat_DeleteMapa(&self->mapa[0]);
+	Mat_DeleteMap(&self->map[0]);
 }
 
-byte __thiscall CMapa_GetSize(CMapa *self, int *w, int *h) {
+byte __thiscall CMap_GetSize(CMap *self, int *w, int *h) {
 	int info[5];
 
-	if (self->cur && !Textura_GetInfo(self->cur->Hint, info)) {
+	if (self->cur && !Texture_GetInfo(self->cur->Hint, info)) {
 		if (w) {
 			*w = info[0];
 		}
@@ -1130,8 +1130,8 @@ byte __thiscall CMapa_GetSize(CMapa *self, int *w, int *h) {
 	return 0;
 }
 
-void *__thiscall CMapa_GetTexture(CMapa *self, byte load) {
-	CTextEst *e = self->cur;
+void *__thiscall CMap_GetTexture(CMap *self, byte load) {
+	CTextStatic *e = self->cur;
 
 	if (!e) {
 		return NULL;
@@ -1142,34 +1142,34 @@ void *__thiscall CMapa_GetTexture(CMapa *self, byte load) {
 	if (!load) {
 		return NULL;
 	}
-	return Textura_Load(e->Hint, g_pd3dDevice);
+	return Texture_Load(e->Hint, g_pd3dDevice);
 }
 
-char *__thiscall CMaterial_GetMapName(CMaterial *self, uint32_t idmapa) {
-	CHECK(idmapa < MAPA_TOTAL);
-	return self->mapa[idmapa] ? self->mapa[idmapa]->Nombre : NULL;
+char *__thiscall CMaterial_GetMapName(CMaterial *self, uint32_t mapid) {
+	CHECK(mapid < MAP_TOTAL);
+	return self->map[mapid] ? self->map[mapid]->Name : NULL;
 }
 
-byte __thiscall CMaterial_GetMapSize(CMaterial *self, uint32_t idmapa, int *w, int *h) {
-	CHECK(idmapa < MAPA_TOTAL);
-	return self->mapa[idmapa] ? CMapa_GetSize(self->mapa[idmapa], w, h) : 0;
+byte __thiscall CMaterial_GetMapSize(CMaterial *self, uint32_t mapid, int *w, int *h) {
+	CHECK(mapid < MAP_TOTAL);
+	return self->map[mapid] ? CMap_GetSize(self->map[mapid], w, h) : 0;
 }
 
-char *__thiscall CMapa_FramePath(CMapa *self, int frame, char *buf, int size) {
+char *__thiscall CMap_FramePath(CMap *self, int frame, char *buf, int size) {
 	if (self->animated) {
-		CHECK(self->rutaAni);
-		Bprintf(buf, size, self->rutaAni, frame);
+		CHECK(self->pathAni);
+		Bprintf(buf, size, self->pathAni, frame);
 		return buf;
 	}
-	CHECK(self->ruta);
-	Cad_Copy(buf, self->ruta, size);
+	CHECK(self->path);
+	String_Copy(buf, self->path, size);
 	return buf;
 }
 
-void __thiscall CListaMat_Delete(CListaMat *self, CMaterial *mat) {
+void __thiscall CMatList_Delete(CMatList *self, CMaterial *mat) {
 	g_TexDeleteUnused = 1;
 	CHECK(!Mat_IsShareable(mat));
-	CMaterial *m = CListaMat_Extract(self, mat, 0);
+	CMaterial *m = CMatList_Extract(self, mat, 0);
 	CHECK(m);
 	((deleteObj_t)mat->vftable[0])(mat, 1);
 	g_TexDeleteUnused = 0;
@@ -1177,20 +1177,20 @@ void __thiscall CListaMat_Delete(CListaMat *self, CMaterial *mat) {
 
 /* ---- the constructors and destructors of material.h and objref.h (rva 0x2336f0..) ---- */
 
-CListaMat *__thiscall CListaMat_DeleteObj(CListaMat *self, byte flags) {
-	CListaMat_dtor(self);
+CMatList *__thiscall CMatList_DeleteObj(CMatList *self, byte flags) {
+	CMatList_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
 	return self;
 }
 
-CMapa *__thiscall CMapa_ctor(CMapa *self) {
-	self->Nombre = NULL;
-	self->ruta = NULL;
-	self->est.tex = NULL;
-	self->est.Hint = NULL;
-	self->rutaAni = NULL;
+CMap *__thiscall CMap_ctor(CMap *self) {
+	self->Name = NULL;
+	self->path = NULL;
+	self->staticTex.tex = NULL;
+	self->staticTex.Hint = NULL;
+	self->pathAni = NULL;
 	self->f10[0] = 0.0f;
 	self->f10[1] = 0.0f;
 	self->f18[0] = 1.0f;
@@ -1211,7 +1211,7 @@ CMapa *__thiscall CMapa_ctor(CMapa *self) {
 	self->frames = 0;
 	self->TextAni = NULL;
 	self->AnimMat = NULL;
-	self->FXTextura = NULL;
+	self->FXTexture = NULL;
 	self->hasAlpha = 0;
 	self->b55 = 0;
 	self->state = 0;
@@ -1223,7 +1223,7 @@ CMaterial *__thiscall CMaterial_ctor(CMaterial *self) {
 	CMatParams *p = &self->params;
 	int i;
 
-	self->Nombre = NULL;
+	self->Name = NULL;
 	self->Refs = 0;
 	self->vftable = CMATERIAL_VFTABLE;
 	CMatId_ctor(&self->id);
@@ -1234,8 +1234,8 @@ CMaterial *__thiscall CMaterial_ctor(CMaterial *self) {
 	p->color[0] = p->color[1] = p->color[2] = 0xff;
 	p->color[3] = 0;
 	memset(p->specular, 0, sizeof(p->specular));
-	self->sig = NULL;
-	self->ant = NULL;
+	self->next = NULL;
+	self->prev = NULL;
 	self->sub = NULL;
 	memset(p->emissive, 0, sizeof(p->emissive));
 	p->power = 0.0f;
@@ -1247,41 +1247,41 @@ CMaterial *__thiscall CMaterial_ctor(CMaterial *self) {
 	p->b39 = 1;
 	p->transp = 0;
 	p->b3b = 0;
-	p->atrib = 0;
+	p->attrib = 0;
 	p->w3e = 0x100;
 	p->i40 = 4;
-	for (i = 0; i < MAPA_TOTAL; i++) {
-		self->mapa[i] = NULL;
+	for (i = 0; i < MAP_TOTAL; i++) {
+		self->map[i] = NULL;
 	}
 	CMaterial_CalcColors(self, self->colors);
 	return self;
 }
 
 /* a CBmp of the stack freed (the pixels with the sized delete of one pixel) */
-void __fastcall CListaMat_dtor(CListaMat *self) {
+void __fastcall CMatList_dtor(CMatList *self) {
 	self->vftable = CLISTAMAT_VFTABLE;
-	CListaMat_DeleteAll(self);
-	if (self->Nombre) {
-		Cad_Set(&self->Nombre, NULL);
+	CMatList_DeleteAll(self);
+	if (self->Name) {
+		String_Set(&self->Name, NULL);
 	}
 }
 
-/* the atexit destructor of g_ListaMat (rva 0x38ec70, the destructor inlined) */
-void Material_FiniListaMat(void) {
-	CListaMat_dtor(g_ListaMat);
+/* the atexit destructor of g_MatList (rva 0x38ec70, the destructor inlined) */
+void Material_FiniMatList(void) {
+	CMatList_dtor(g_MatList);
 }
 
-void __thiscall CMapa_dtor(CMapa *self) {
-	CMapa_Release(self);
-	if (self->rutaAni) {
-		Cad_Set(&self->rutaAni, NULL);
+void __thiscall CMap_dtor(CMap *self) {
+	CMap_Release(self);
+	if (self->pathAni) {
+		String_Set(&self->pathAni, NULL);
 	}
-	CTextEst_dtor(&self->est);
-	if (self->ruta) {
-		Cad_Set(&self->ruta, NULL);
+	CTextStatic_dtor(&self->staticTex);
+	if (self->path) {
+		String_Set(&self->path, NULL);
 	}
-	if (self->Nombre) {
-		Cad_Set(&self->Nombre, NULL);
+	if (self->Name) {
+		String_Set(&self->Name, NULL);
 	}
 }
 
@@ -1289,14 +1289,14 @@ void __thiscall CMaterial_dtor(CMaterial *self) {
 	int i;
 
 	self->vftable = CMATERIAL_VFTABLE;
-	if (self->ant) {
-		self->ant->sig = self->sig;
+	if (self->prev) {
+		self->prev->next = self->next;
 	}
-	if (self->sig) {
-		self->sig->ant = self->ant;
+	if (self->next) {
+		self->next->prev = self->prev;
 	}
-	for (i = 0; i < MAPA_TOTAL; i++) {
-		Mat_DeleteMapa(&self->mapa[i]);
+	for (i = 0; i < MAP_TOTAL; i++) {
+		Mat_DeleteMap(&self->map[i]);
 	}
 	if (self->sub) {
 		((deleteObj_t)self->sub->vftable[0])(self->sub, 1);
@@ -1304,18 +1304,18 @@ void __thiscall CMaterial_dtor(CMaterial *self) {
 	}
 	CMatId_dtor(&self->id);
 	CObjRef_dtor(&self->Refs);
-	if (self->Nombre) {
-		Cad_Set(&self->Nombre, NULL);
+	if (self->Name) {
+		String_Set(&self->Name, NULL);
 	}
 }
 
-void __fastcall Cad_dtor(char **self) {
+void __fastcall String_dtor(char **self) {
 	if (*self) {
-		Cad_Set(self, NULL);
+		String_Set(self, NULL);
 	}
 }
 
-byte __fastcall CMapa_HasAlpha(const CMapa *self) {
+byte __fastcall CMap_HasAlpha(const CMap *self) {
 	return self->hasAlpha;
 }
 
@@ -1336,8 +1336,8 @@ void __thiscall CMaterial_ScaleColors(CMaterial *self, float k) {
 }
 
 /* only managed textures in R5G6B5, A8R8G8B8 or X8R8G8B8; the 32 bit formats get an alpha of 0 */
-byte __thiscall CMapa_CopyBmp(CMapa *self, int dx, int dy, const CImagen *bmp, int sx, int sy, int w, int h) {
-	void *tex = self->est.tex;
+byte __thiscall CMap_CopyBmp(CMap *self, int dx, int dy, const CImage *bmp, int sx, int sy, int w, int h) {
+	void *tex = self->staticTex.tex;
 	d3dSurfaceDesc_t desc;
 	d3dLockedRect_t lr;
 	const byte *src;
@@ -1353,11 +1353,11 @@ byte __thiscall CMapa_CopyBmp(CMapa *self, int dx, int dy, const CImagen *bmp, i
 	if (desc.Format != 0x17 && desc.Format != 0x15 && desc.Format != 0x16) {
 		return 0;
 	}
-	if (w >= bmp->ancho - sx) {
-		w = bmp->ancho - sx;
+	if (w >= bmp->width - sx) {
+		w = bmp->width - sx;
 	}
-	if (h >= bmp->alto - sy) {
-		h = bmp->alto - sy;
+	if (h >= bmp->height - sy) {
+		h = bmp->height - sy;
 	}
 	if (w >= (int)desc.Width - dx) {
 		w = (int)desc.Width - dx;

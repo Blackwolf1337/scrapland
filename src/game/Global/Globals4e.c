@@ -27,31 +27,27 @@
 #include "scrap/scrap.h"
 #include "scrap/tabla.h"
 
-#undef g_BatchOrden
+#undef g_BatchOrder
 #undef g_BatchTab
-#undef g_BatchUsados
+#undef g_BatchUsed
 #undef g_Bsp2Color
 #undef g_Bsp2Eye
 #undef g_Bsp2Hits
 #undef g_Bsp2Misses
 #undef g_Bsp2NComp
 #undef g_Bsp2NTriCmp
-#undef g_BspNumEnlaces
+#undef g_BspNumLinks
 #undef g_BspQ3
 #undef g_BspQ3Attrib
 #undef g_BspQ3Vert
 #undef g_BspQ3VertG
 #undef g_BspQ3VertL
 #undef g_Cl
-#undef g_EscenaAnimPadre
-#undef g_EscenaLODPadre
-#undef g_FXGrfNoise1
-#undef g_FXGrfNoise2
-#undef g_FXGrfStatic
+#undef g_FXGraphicNoise1
+#undef g_FXGraphicNoise2
+#undef g_FXGraphicStatic
 #undef g_FXMat
 #undef g_FastGetYSectorVar
-#undef g_LeeCad
-#undef g_LeePila
 #undef g_Lex
 #undef g_LexDir
 #undef g_LexErrors
@@ -59,29 +55,28 @@
 #undef g_LexToken
 #undef g_LexTokenLen
 #undef g_LexWarnings
-#undef g_ListaObj
 #undef g_M3DBaseName
 #undef g_M3DBinary
-#undef g_M3DCad
 #undef g_M3DDir
-#undef g_M3DEscenaMax
 #undef g_M3DFileINI
+#undef g_M3DFirstFrame
 #undef g_M3DFrames
 #undef g_M3DLMat
 #undef g_M3DLabels
+#undef g_M3DLastFrame
 #undef g_M3DMat
 #undef g_M3DMatId
 #undef g_M3DMatSub
 #undef g_M3DMatUsado
 #undef g_M3DName
-#undef g_M3DNodos
+#undef g_M3DNodes
 #undef g_M3DNumMat
 #undef g_M3DPreScaleU
 #undef g_M3DPreScaleV
-#undef g_M3DPriFrame
-#undef g_M3DTablasEscena
+#undef g_M3DSceneMax
+#undef g_M3DSceneTables
+#undef g_M3DString
 #undef g_M3DTexturePath
-#undef g_M3DUltFrame
 #undef g_M3DUseBumpmap
 #undef g_M3DUseEnvmap
 #undef g_M3DUseGlowmap
@@ -90,10 +85,15 @@
 #undef g_MatElectric
 #undef g_MatFire
 #undef g_MatNoise
+#undef g_ObjList
 #undef g_Pal16Shift
 #undef g_PortalMat
 #undef g_PortalMatGuard
-#undef g_RadNormales
+#undef g_RadNormals
+#undef g_ReadStack
+#undef g_ReadString
+#undef g_SceneAnimParent
+#undef g_SceneLODParent
 #undef g_ShowNodesTreeVar
 #undef g_TXFCab
 #undef g_TXFCab2
@@ -101,15 +101,15 @@
 #undef g_TlsIndex
 #undef g_UseWSMVar
 
-CTabla g_TabObj SD_BSS(0x4e0bf8);
-RenderObjEntry *g_ListaObj[1026] SD_BSS(0x4e0c00);
+CTable g_TabObj SD_BSS(0x4e0bf8);
+RenderObjEntry *g_ObjList[1026] SD_BSS(0x4e0c00);
 cGVar GVar_R_SkipModelFX SD_BSS(0x4e1c08);
-struct CGrafico2D g_FXGrfNoise1 SD_BSS(0x4e1c20);
+struct CGraphic2D g_FXGraphicNoise1 SD_BSS(0x4e1c20);
 CMaterial *g_MatElectric SD_BSS(0x4e1c64);
 CMaterial g_FXMat SD_BSS(0x4e1c68);
-struct CGrafico2D g_FXGrfStatic SD_BSS(0x4e1d18);
+struct CGraphic2D g_FXGraphicStatic SD_BSS(0x4e1d18);
 CMaterial *g_MatFire SD_BSS(0x4e1d5c);
-struct CGrafico2D g_FXGrfNoise2 SD_BSS(0x4e1d60);
+struct CGraphic2D g_FXGraphicNoise2 SD_BSS(0x4e1d60);
 CMaterial *g_MatNoise SD_BSS(0x4e1da4);
 cGVar GVar_R_ShowPreIllumVtx SD_BSS(0x4e1da8);
 cGVar GVar_R_SpriteSector SD_BSS(0x4e1dc0);
@@ -117,8 +117,8 @@ cGVar GVar_R_ShowPortals SD_BSS(0x4e1dd8);
 cGVar GVar_R_UsePortals SD_BSS(0x4e1df0);
 CMaterial g_PortalMat SD_BSS(0x4e1e08);
 int g_PortalMatGuard[2] SD_BSS(0x4e1eb8);
-CEscena *g_EscenaAnimPadre SD_BSS(0x4e1ec0);
-CEscena *g_EscenaLODPadre SD_BSS(0x4e1ec4);
+CScene *g_SceneAnimParent SD_BSS(0x4e1ec0);
+CScene *g_SceneLODParent SD_BSS(0x4e1ec4);
 cGVar GVar_CM3_DeleteM3D SD_BSS(0x4e1ec8);
 cGVar g_ShowNodesTreeVar SD_BSS(0x4e1ee0);
 cGVar GVar_OptimizeNodes SD_BSS(0x4e1ef8);
@@ -135,8 +135,8 @@ struct {
 	byte g_M3DUseOpacity;	/* 0x2 */
 	byte g_M3DUseEnvmap;	/* 0x3 */
 } group_4e1fa4 SD_BSS(0x4e1fa4);
-int g_M3DPriFrame SD_BSS(0x4e1fa8);
-int g_M3DUltFrame SD_BSS(0x4e1fac);
+int g_M3DFirstFrame SD_BSS(0x4e1fa8);
+int g_M3DLastFrame SD_BSS(0x4e1fac);
 int g_M3DFrames SD_BSS(0x4e1fb0);
 struct {
 	byte g_M3DUseBumpmap;	/* 0x0 */
@@ -145,31 +145,31 @@ struct {
 } group_4e1fb4 SD_BSS(0x4e1fb4);
 float g_M3DPreScaleU SD_BSS(0x4e1fb8);
 float g_M3DPreScaleV SD_BSS(0x4e1fbc);
-char g_M3DCad[1024] SD_BSS(0x4e1fc0);
+char g_M3DString[1024] SD_BSS(0x4e1fc0);
 char g_M3DName[260] SD_BSS(0x4e23c0);
-CListaMat *g_M3DLMat SD_BSS(0x4e24c4);
+CMatList *g_M3DLMat SD_BSS(0x4e24c4);
 char g_M3DDir[260] SD_BSS(0x4e24c8);
 int g_M3DNumMat SD_BSS(0x4e25cc);
 char g_M3DBaseName[260] SD_BSS(0x4e25d0);
-CArchINI *g_M3DFileINI SD_BSS(0x4e26d4);
-char g_M3DEscenaMax[260] SD_BSS(0x4e26d8);
-M3DNodo *g_M3DNodos SD_BSS(0x4e27dc);
+CIniFile *g_M3DFileINI SD_BSS(0x4e26d4);
+char g_M3DSceneMax[260] SD_BSS(0x4e26d8);
+M3DNode *g_M3DNodes SD_BSS(0x4e27dc);
 char g_M3DTexturePath[260] SD_BSS(0x4e27e0);
-M3DTabla *g_M3DTablasEscena SD_BSS(0x4e28e4);
+M3DTable *g_M3DSceneTables SD_BSS(0x4e28e4);
 CMaterial *g_M3DMat[512] SD_BSS(0x4e28e8);
 byte g_M3DMatUsado[512] SD_BSS(0x4e30e8);
 int g_M3DMatId[512] SD_BSS(0x4e32e8);
 int g_M3DMatSub[512] SD_BSS(0x4e3ae8);
-CTabla g_BatchTab SD_BSS(0x4e42e8);
-BatchMalla *g_BatchOrden[512] SD_BSS(0x4e42f0);
-uint32_t g_BatchUsados SD_BSS(0x4e4af0);
-uint32_t Batch_AddMalla_4e4af4 SD_BSS(0x4e4af4);
+CTable g_BatchTab SD_BSS(0x4e42e8);
+BatchMesh *g_BatchOrder[512] SD_BSS(0x4e42f0);
+uint32_t g_BatchUsed SD_BSS(0x4e4af0);
+uint32_t Batch_AddMesh_4e4af4 SD_BSS(0x4e4af4);
 byte g_BspQ3VertL[64] SD_BSS(0x4e4af8);
 uint32_t CBspQ3_Build_4e4b38[624] SD_BSS(0x4e4b38);
-Grafico3DVert g_BspQ3VertG[64] SD_BSS(0x4e54f8);
+Graphic3DVert g_BspQ3VertG[64] SD_BSS(0x4e54f8);
 CBspQ3 *g_BspQ3 SD_BSS(0x4e5bf8);
 uint32_t g_BspQ3Attrib[640] SD_BSS(0x4e5c00);
-CVertMalla g_BspQ3Vert[64] SD_BSS(0x4e6600);
+CMeshVert g_BspQ3Vert[64] SD_BSS(0x4e6600);
 cGVar g_FastGetYSectorVar SD_BSS(0x4e6e00);
 Pal16Shift g_Pal16Shift SD_BSS(0x4e6e18);
 cLexFile *g_Lex SD_BSS(0x4e6e20);
@@ -181,18 +181,18 @@ char g_LexDir[260] SD_BSS(0x4e7230);
 lexout_t g_LexOut SD_BSS(0x4e7334);
 cClex g_Cl SD_BSS(0x4e7338);
 uint32_t CmdLex_Expect_4e7348 SD_BSS(0x4e7348);
-TXF_cab g_TXFCab SD_BSS(0x4e734c);
-TXF_cab g_TXFCab2 SD_BSS(0x4e736c);
+TXF_header g_TXFCab SD_BSS(0x4e734c);
+TXF_header g_TXFCab2 SD_BSS(0x4e736c);
 int g_Bsp2NTriCmp SD_BSS(0x4e738c);
 int g_Bsp2NComp SD_BSS(0x4e7390);
 int g_Bsp2Hits SD_BSS(0x4e7394);
 int g_Bsp2Misses SD_BSS(0x4e7398);
 vec3_t g_Bsp2Eye SD_BSS(0x4e739c);
 int g_Bsp2Color SD_BSS(0x4e73a8);
-int g_BspNumEnlaces SD_BSS(0x4e73ac);
-CTabla g_RadNormales SD_BSS(0x4e73b0);
-char *g_LeeCad SD_BSS(0x4e73b8);
-cLeePila *g_LeePila SD_BSS(0x4e73bc);
+int g_BspNumLinks SD_BSS(0x4e73ac);
+CTable g_RadNormals SD_BSS(0x4e73b0);
+char *g_ReadString SD_BSS(0x4e73b8);
+cReadStack *g_ReadStack SD_BSS(0x4e73bc);
 uint32_t g_TlsIndex SD_BSS(0x4e8dec);
 uint32_t data_4eb680 SD_BSS(0x4eb680);
 uint32_t data_4ee000[224] SD_AT(0x4ee000) = {

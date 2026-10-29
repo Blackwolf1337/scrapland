@@ -13,7 +13,7 @@ for c in ((0.0, 0.0, 0.0, 0.0), (1.0, 0.5, 0.25, 1.0), (0.2, 0.4, 0.6, 0.8), (-0
 	check('Color_FromFloat' + fmt(c), lambda c=c: SDTest.Call('Color_FromFloat', 'iF', c)[0])
 for k in (0, 0xa1000001, 0xa1000002, 0xa2000004, 0xa3000008, 0xa4000010, 0xa5000020, 0xa6000040, 0xa6000080,
 	0xa7000100, 0xa1000003, 5, -1):
-	check('Obj3D_ClaseName' + fmt((k,)), lambda k=k: SDTest.Call('Obj3D_ClaseName', 'si', k)[0])
+	check('Obj3D_ClassName' + fmt((k,)), lambda k=k: SDTest.Call('Obj3D_ClassName', 'si', k)[0])
 
 udm = (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 10.0, 20.0, 30.0, 1.0)
 uda = (0.0, 1.0, 2.0)

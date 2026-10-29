@@ -23,14 +23,14 @@
 #define STAT32_MTIME 0x1c
 
 void __fastcall cLog_Open(cLog *self) {
-	char path[MAX_RUTA];
+	char path[MAX_FILEPATH];
 	char date[LOG_TIME];
 	int32_t t;
 
 	if (self->f || self->failed) {
 		return;
 	}
-	self->f = File_OpenRel(Ruta_Copy(path, LOG_NAME, -1), "wb");
+	self->f = File_OpenRel(Path_Copy(path, LOG_NAME, -1), "wb");
 	if (!self->f) {
 		self->failed = 1;
 		return;
@@ -55,7 +55,7 @@ void __fastcall cLog_dtor(cLog *self) {
 }
 
 /* the atexit destructor of g_FileLog (rva 0x38ece0, the destructor inlined) */
-void Varios_FiniFileLog(void) {
+void Misc_FiniFileLog(void) {
 	cLog_dtor(g_FileLog);
 }
 
@@ -196,10 +196,10 @@ byte File_TimeChanged(int saved, const char *name, int tol) {
 }
 
 int File_Backup(const char *name, byte inDir) {
-	char bak[2 * MAX_RUTA];
+	char bak[2 * MAX_FILEPATH];
 
 	if (inDir) {
-		Ruta_Merge(bak, ".bak", name);
+		Path_Merge(bak, ".bak", name);
 	} else {
 		Bprintf(bak, sizeof(bak), "%s.bak", name);
 	}
@@ -209,36 +209,36 @@ int File_Backup(const char *name, byte inDir) {
 }
 
 int Wild_MatchLower(const char *pat, const char *name) {
-	char low[2 * MAX_RUTA];
+	char low[2 * MAX_FILEPATH];
 
-	Cad_Copy(low, name, sizeof(low));
+	String_Copy(low, name, sizeof(low));
 	crt_strlwr(low);
 	return Wild_Match(pat, low);
 }
 
-char *Ruta_Copy(char *dest, const char *src, int size) {
+char *Path_Copy(char *dest, const char *src, int size) {
 	if (size == -1) {
-		size = MAX_RUTA;
+		size = MAX_FILEPATH;
 	}
 	CHECK(dest && size > 0);
 	if (dest != src) {
-		Cad_Copy(dest, src, size);
+		String_Copy(dest, src, size);
 	}
 	return dest;
 }
 
-void Ruta_Normalize(char *dest, const char *path, int size) {
+void Path_Normalize(char *dest, const char *path, int size) {
 	char drive[4], dir[0x100];
-	char b[2 * MAX_RUTA];
+	char b[2 * MAX_FILEPATH];
 
 	if (size == -1) {
-		size = MAX_RUTA;
+		size = MAX_FILEPATH;
 	}
 	CHECK(dest && size > 0);
 	crt_splitpath(path, drive, dir, NULL, NULL);
-	if (drive[0] || Ruta_IsSep(dir[0])) {
+	if (drive[0] || Path_IsSep(dir[0])) {
 		if (dest != path) {
-			Cad_Copy(dest, path, size);
+			String_Copy(dest, path, size);
 		}
 		return;
 	}
@@ -254,12 +254,12 @@ void Ruta_Normalize(char *dest, const char *path, int size) {
 			}
 			char prev = w > 0 ? b[w - 1] : '\0';
 			char next = b[r + n - 1];
-			if ((Ruta_IsSep(prev) || (n == 1 && (prev == '\0' || prev == ':'))) &&
-				(next == '\0' || Ruta_IsSep(next))) {
-				r += n - 1 + Ruta_IsSep(next);
+			if ((Path_IsSep(prev) || (n == 1 && (prev == '\0' || prev == ':'))) &&
+				(next == '\0' || Path_IsSep(next))) {
+				r += n - 1 + Path_IsSep(next);
 				for (int i = 1; i < n; i++) {
-					if (w > 1 && Ruta_IsSep(b[w - 1]) && b[w - 2] != ':') {
-						for (w--; w > 0 && b[w - 1] != ':' && !Ruta_IsSep(b[w - 1]); w--) {
+					if (w > 1 && Path_IsSep(b[w - 1]) && b[w - 2] != ':') {
+						for (w--; w > 0 && b[w - 1] != ':' && !Path_IsSep(b[w - 1]); w--) {
 						}
 					}
 				}
@@ -273,10 +273,10 @@ void Ruta_Normalize(char *dest, const char *path, int size) {
 			break;
 		}
 	}
-	Cad_Copy(dest, b, size);
+	String_Copy(dest, b, size);
 }
 
-char *Cad_Unquote(char *dest, const char *src) {
+char *String_Unquote(char *dest, const char *src) {
 	if (!dest) {
 		return NULL;
 	}
@@ -296,7 +296,7 @@ char *Cad_Unquote(char *dest, const char *src) {
 		while (*p && *p != '"') {
 			p++;
 		}
-		Cad_Copy(dest, s, p - s + 1);
+		String_Copy(dest, s, p - s + 1);
 		return dest;
 	}
 	/* the whole string, blanks before the word too */
@@ -315,10 +315,10 @@ char *E3D_GetExePath(void) {
 }
 
 /* the static initializer (rva 0x05b3b0): the path of the exe, g_E3DDir from its directory and "../" */
-void Varios_InitE3DDir(void) {
+void Misc_InitE3DDir(void) {
 	exe_GetModuleFileNameA(NULL, g_ExePath, 0x103);
-	Ruta_Part(g_E3DDir, g_ExePath, RUTA_DRIVE | RUTA_DIR);
-	Ruta_Normalize(g_E3DDir, GAME_STR(str_3baec4, 0x3baec4), -1);	/* "../" */
+	Path_Part(g_E3DDir, g_ExePath, PATH_DRIVE | PATH_DIR);
+	Path_Normalize(g_E3DDir, GAME_STR(str_3baec4, 0x3baec4), -1);	/* "../" */
 }
 
 /* the bits 15..22 (rounded) of 1 / sqrt of the 128 mantissa steps of the exponents 0x7f (0..63) and 0x7e */

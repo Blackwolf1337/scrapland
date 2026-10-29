@@ -6,9 +6,9 @@
 #include "scrap/e3dutil.h"
 #include "scrap/tablahash.h"
 
-#define TABLAHASH_INTKEY 16
+#define HASHTABLE_INTKEY 16
 
-CTablaHash *__thiscall CTablaHash_ctor(CTablaHash *self, int num) {
+CHashTable *__thiscall CHashTable_ctor(CHashTable *self, int num) {
 	CHECK(num > 0);
 	self->num = num;
 	self->slots = New_Array(num, 4);
@@ -17,14 +17,14 @@ CTablaHash *__thiscall CTablaHash_ctor(CTablaHash *self, int num) {
 	return self;
 }
 
-void __fastcall CTablaHash_dtor(CTablaHash *self) {
+void __fastcall CHashTable_dtor(CHashTable *self) {
 	CHECK(!self->lock);
 	if (!self->slots) {
 		return;
 	}
 	for (int i = 0; i < self->num; i++) {
 		while (self->slots[i]) {
-			CTablaHashNodo *n = self->slots[i];
+			CHashTableNode *n = self->slots[i];
 			self->slots[i] = n->next;
 			Mem_Free(n->key);
 			operator_delete_sized(n, sizeof(*n));
@@ -33,45 +33,45 @@ void __fastcall CTablaHash_dtor(CTablaHash *self) {
 	operator_delete_array(self->slots);
 }
 
-int __thiscall CTablaHash_AddInt(CTablaHash *self, int key, void *value, int warn) {
-	char text[TABLAHASH_INTKEY];
+int __thiscall CHashTable_AddInt(CHashTable *self, int key, void *value, int warn) {
+	char text[HASHTABLE_INTKEY];
 
 	Str_PrintfQuiet(text, sizeof(text), "%08X", key);
-	return CTablaHash_Add(self, text, value, warn);
+	return CHashTable_Add(self, text, value, warn);
 }
 
-int __thiscall CTablaHash_Add(CTablaHash *self, const char *key, void *value, int warn) {
+int __thiscall CHashTable_Add(CHashTable *self, const char *key, void *value, int warn) {
 	CHECK(!self->lock);
-	uint32_t slot = CTablaHash_Slot(self, key);
-	if (CTablaHash_Find(self, key, slot)) {
+	uint32_t slot = CHashTable_Slot(self, key);
+	if (CHashTable_Find(self, key, slot)) {
 		if (warn) {
 			Err_Printf(0, "CTablaHash: S\xedmbolo ya definido:\n'%s'", key);
 		}
 		return -1;
 	}
-	CTablaHash_Insert(self, key, slot, value);
+	CHashTable_Insert(self, key, slot, value);
 	return 0;
 }
 
-CTablaHashNodo *__thiscall CTablaHash_Insert(CTablaHash *self, const char *key, uint32_t slot, void *value) {
+CHashTableNode *__thiscall CHashTable_Insert(CHashTable *self, const char *key, uint32_t slot, void *value) {
 	CHECK(!self->lock);
-	CTablaHashNodo *n = operator_new(sizeof(*n));
+	CHashTableNode *n = operator_new(sizeof(*n));
 	n->next = self->slots[slot];
-	n->key = Cad_Dup(key);
+	n->key = String_Dup(key);
 	n->value = value;
 	self->slots[slot] = n;
 	return n;
 }
 
-int __thiscall CTablaHash_GetInt(CTablaHash *self, int key, void **out) {
-	char text[TABLAHASH_INTKEY];
+int __thiscall CHashTable_GetInt(CHashTable *self, int key, void **out) {
+	char text[HASHTABLE_INTKEY];
 
 	Str_PrintfQuiet(text, sizeof(text), "%08X", key);
-	return CTablaHash_Get(self, text, out);
+	return CHashTable_Get(self, text, out);
 }
 
-int __thiscall CTablaHash_Get(CTablaHash *self, const char *key, void **out) {
-	CTablaHashNodo *n = CTablaHash_Find(self, key, CTablaHash_Slot(self, key));
+int __thiscall CHashTable_Get(CHashTable *self, const char *key, void **out) {
+	CHashTableNode *n = CHashTable_Find(self, key, CHashTable_Slot(self, key));
 
 	if (!n) {
 		return -1;
@@ -82,8 +82,8 @@ int __thiscall CTablaHash_Get(CTablaHash *self, const char *key, void **out) {
 	return 0;
 }
 
-CTablaHashNodo *__thiscall CTablaHash_Find(CTablaHash *self, const char *key, uint32_t slot) {
-	for (CTablaHashNodo *n = self->slots[slot]; n; n = n->next) {
+CHashTableNode *__thiscall CHashTable_Find(CHashTable *self, const char *key, uint32_t slot) {
+	for (CHashTableNode *n = self->slots[slot]; n; n = n->next) {
 		if (!strcmp(n->key, key)) {
 			return n;
 		}
@@ -91,7 +91,7 @@ CTablaHashNodo *__thiscall CTablaHash_Find(CTablaHash *self, const char *key, ui
 	return NULL;
 }
 
-int __thiscall CTablaHash_FreeList(CTablaHash *self, CTablaHashNodo ***elems) {
+int __thiscall CHashTable_FreeList(CHashTable *self, CHashTableNode ***elems) {
 	CHECK(elems);
 	self->lock--;
 	operator_delete_array(*elems);
@@ -99,11 +99,11 @@ int __thiscall CTablaHash_FreeList(CTablaHash *self, CTablaHashNodo ***elems) {
 	return 0;
 }
 
-int __thiscall CTablaHash_List(CTablaHash *self, CTablaHashNodo **out, int max) {
+int __thiscall CHashTable_List(CHashTable *self, CHashTableNode **out, int max) {
 	int count = 0;
 
 	for (int i = 0; i < self->num; i++) {
-		for (CTablaHashNodo *n = self->slots[i]; n; n = n->next) {
+		for (CHashTableNode *n = self->slots[i]; n; n = n->next) {
 			count++;
 			if (out) {
 				if (count > max) {
@@ -116,18 +116,18 @@ int __thiscall CTablaHash_List(CTablaHash *self, CTablaHashNodo **out, int max) 
 	return out ? 0 : count;
 }
 
-int __thiscall CTablaHash_GetList(CTablaHash *self, CTablaHashNodo ***elems, int *num) {
+int __thiscall CHashTable_GetList(CHashTable *self, CHashTableNode ***elems, int *num) {
 	CHECK(elems && num);
 	self->lock++;
-	int count = CTablaHash_List(self, NULL, 0);
-	CTablaHashNodo **list = New_Array(count, 4);
-	CHECK(!CTablaHash_List(self, list, count));
+	int count = CHashTable_List(self, NULL, 0);
+	CHashTableNode **list = New_Array(count, 4);
+	CHECK(!CHashTable_List(self, list, count));
 	*elems = list;
 	*num = count;
 	return 0;
 }
 
-uint32_t __thiscall CTablaHash_Slot(CTablaHash *self, const char *key) {
+uint32_t __thiscall CHashTable_Slot(CHashTable *self, const char *key) {
 	uint32_t h = 0;
 
 	CHECK(key);

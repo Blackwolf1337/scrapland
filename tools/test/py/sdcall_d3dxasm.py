@@ -20,7 +20,7 @@ def asmrun(data, size):
 	r = SDTest.Call('D3DX_AssembleShader', 'tiiiiiipp', 0, data, size, 0, 0, 0, 0)
 	return r[0], asmbuf(r[1], 0), asmbuf(r[2], 1)
 def asmfile(name):
-	r = SDTest.Call('ArchIO_ReadAll', 'vspp', name, 0, 0)
+	r = SDTest.Call('FileIO_ReadAll', 'vspp', name, 0, 0)
 	res = asmrun(r[1], r[2])
 	SDTest.Call('Ptr_Delete', 'vp', r[1])
 	return res

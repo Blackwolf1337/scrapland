@@ -28,7 +28,7 @@ cMapElement *__thiscall cMapElement_ctor(cMapElement *self, const char *name, co
 		cString_Set(&self->name, name);
 		Str_PrintfQuiet(buf, sizeof(buf), "%s%s/%s.m3d", g_ElementModelPath, self->name, self->name);
 		CGameModel_LoadName(&self->Mod, buf);
-		CGameModel_SetPivotNodo(&self->Mod, "DC_Root");
+		CGameModel_SetPivotNode(&self->Mod, "DC_Root");
 		CGameModel_SetPos(&self->Mod, pos);
 		CGameModel_SetRot(&self->Mod, rot);
 		CGameModel_EnableCollision(&self->Mod, 1, 1);

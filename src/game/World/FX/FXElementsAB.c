@@ -94,14 +94,14 @@ static void AB_AttachParticles(cMapElement *e, CGameParticles *p1, CGameParticle
 
 	cMapElement_Init(e);
 	CHECK(CGameModel_IsLoaded(model));
-	int node = CGameModel_FindNodoR(model, "Dummy01");
+	int node = CGameModel_FindRenderNode(model, "Dummy01");
 	CHECK(node != -1);
 	CGameParticles_Attach(p1, model, node);
-	CHECK(p1->SistPart);
-	node = CGameModel_FindNodoR(model, "Dummy02");
+	CHECK(p1->ParticleSystem);
+	node = CGameModel_FindRenderNode(model, "Dummy02");
 	CHECK(node != -1);
 	CGameParticles_Attach(p2, model, node);
-	CHECK(p2->SistPart);
+	CHECK(p2->ParticleSystem);
 }
 
 /* ---- cFXElementsABFakeMeteors ---- */

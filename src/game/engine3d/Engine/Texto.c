@@ -1,5 +1,5 @@
 /*
- * Engine/texto.cpp of the engine3d: debug text, see include/scrap/texto.h.
+ * Engine/texto.cpp of the engine3d: debug text, see include/scrap/text.h.
  */
 #include <stdarg.h>
 
@@ -9,61 +9,61 @@
 #include "scrap/texto.h"
 #include "scrap/win32.h"
 
-#define TEXTO_BUF 0x400
-#define TEXTO_PILA_MAX 5
+#define TEXT_BUF 0x400
+#define TEXT_STACK_MAX 5
 
-void Texto_Draw(int x, int y, const char *s) {
-	void *dc = exe_GetDC(MOTOR_HWND(g_Motor));
+void Text_Draw(int x, int y, const char *s) {
+	void *dc = exe_GetDC(ENGINE_HWND(g_Engine));
 	if (dc) {
 		exe_SetTextColor(dc, 0xffff);
 		exe_SetBkMode(dc, 1);
 		exe_ExtTextOutA(dc, x, y, 0, NULL, s, (unsigned)exe_lstrlenA(s), NULL);
-		exe_ReleaseDC(MOTOR_HWND(g_Motor), dc);
+		exe_ReleaseDC(ENGINE_HWND(g_Engine), dc);
 	}
 }
 
-void Texto_DrawPila(void) {
-	if (!g_TextoPila) {
+void Text_DrawStack(void) {
+	if (!g_TextStack) {
 		return;
 	}
-	if (!g_TextoPila->inicio) {
-		g_TextoPila->inicio = exe_timeGetTime();
+	if (!g_TextStack->start) {
+		g_TextStack->start = exe_timeGetTime();
 	}
-	if (exe_timeGetTime() > g_TextoPila->duracion + g_TextoPila->inicio) {
-		Texto_Pop();
+	if (exe_timeGetTime() > g_TextStack->duration + g_TextStack->start) {
+		Text_Pop();
 	}
-	const TextoMsg *m = g_TextoPila;
+	const TextMsg *m = g_TextStack;
 	if (!m) {
 		return;
 	}
 	float y = 40.0f;
 	int w, h;
-	Grafico2D_GetPantalla(&w, &h);
-	for (int i = 0; m && i < TEXTO_PILA_MAX; i++) {
-		Eng_Printf(2, (float)w * 0.5f, y, 3, 0xffffff, GAME_STR(str_3bae88, 0x3bae88), m->texto);	/* "%s" */
-		m = m->sig;
+	Graphic2D_GetScreen(&w, &h);
+	for (int i = 0; m && i < TEXT_STACK_MAX; i++) {
+		Eng_Printf(2, (float)w * 0.5f, y, 3, 0xffffff, GAME_STR(str_3bae88, 0x3bae88), m->text);	/* "%s" */
+		m = m->next;
 		y = (float)(int)((float)h * 0.05f) + y;
 	}
 }
 
-TextoMsg *Texto_Push(void) {
-	TextoMsg **slot = &g_TextoPila;
+TextMsg *Text_Push(void) {
+	TextMsg **slot = &g_TextStack;
 	while (*slot) {
-		slot = &(*slot)->sig;
+		slot = &(*slot)->next;
 	}
-	*slot = Mem_Calloc(sizeof(TextoMsg));
+	*slot = Mem_Calloc(sizeof(TextMsg));
 	return *slot;
 }
 
-void Texto_Pop(void) {
-	CHECK(g_TextoPila);
-	TextoMsg *m = g_TextoPila;
-	g_TextoPila = m->sig;
+void Text_Pop(void) {
+	CHECK(g_TextStack);
+	TextMsg *m = g_TextStack;
+	g_TextStack = m->next;
 	Mem_Free(m);
 }
 
-void Texto_Printf3D(const vec3_t *pos, const char *fmt, ...) {
-	char buf[TEXTO_BUF];
+void Text_Printf3D(const vec3_t *pos, const char *fmt, ...) {
+	char buf[TEXT_BUF];
 	float xy[2];
 
 	if (!fmt || Render_ToScreen(pos, xy)) {
@@ -73,50 +73,50 @@ void Texto_Printf3D(const vec3_t *pos, const char *fmt, ...) {
 	va_start(ap, fmt);
 	VBprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
-	g_TextoY = (int)xy[1];
-	g_TextoX = (int)xy[0];
-	Texto_Draw(g_TextoX, g_TextoY, buf);
+	g_TextY = (int)xy[1];
+	g_TextX = (int)xy[0];
+	Text_Draw(g_TextX, g_TextY, buf);
 }
 
 /* the text at the cursor */
-static void Texto_VDraw(const char *fmt, va_list ap) {
-	char buf[TEXTO_BUF];
+static void Text_VDraw(const char *fmt, va_list ap) {
+	char buf[TEXT_BUF];
 
 	VBprintf(buf, sizeof(buf), fmt, ap);
-	Texto_Draw(g_TextoX, g_TextoY, buf);
+	Text_Draw(g_TextX, g_TextY, buf);
 }
 
-void Texto_PrintfRel(int dx, int dy, const char *fmt, ...) {
-	g_TextoX += dx;
-	g_TextoY += dy;
+void Text_PrintfRel(int dx, int dy, const char *fmt, ...) {
+	g_TextX += dx;
+	g_TextY += dy;
 	if (fmt) {
 		va_list ap;
 		va_start(ap, fmt);
-		Texto_VDraw(fmt, ap);
+		Text_VDraw(fmt, ap);
 		va_end(ap);
 	}
 }
 
-void Texto_Printf(int x, int y, const char *fmt, ...) {
-	g_TextoX = x;
-	g_TextoY = y;
+void Text_Printf(int x, int y, const char *fmt, ...) {
+	g_TextX = x;
+	g_TextY = y;
 	if (fmt) {
 		va_list ap;
 		va_start(ap, fmt);
-		Texto_VDraw(fmt, ap);
+		Text_VDraw(fmt, ap);
 		va_end(ap);
 	}
 }
 
-void Texto_Mensaje(uint32_t ms, const char *fmt, ...) {
-	if (g_TextoPila && ms) {
-		Texto_Pop();
+void Text_Message(uint32_t ms, const char *fmt, ...) {
+	if (g_TextStack && ms) {
+		Text_Pop();
 	}
-	TextoMsg *m = Texto_Push();
+	TextMsg *m = Text_Push();
 	va_list ap;
 	va_start(ap, fmt);
-	VBprintf(m->texto, sizeof(m->texto), fmt, ap);
+	VBprintf(m->text, sizeof(m->text), fmt, ap);
 	va_end(ap);
-	m->inicio = 0;
-	m->duracion = (int)ms < 0 ? 0u - ms : ms;
+	m->start = 0;
+	m->duration = (int)ms < 0 ? 0u - ms : ms;
 }

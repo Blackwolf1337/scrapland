@@ -1,6 +1,6 @@
 /*
  * The DX8 SDK framework inside the engine3d: the helpers of dxutil.cpp (src/game/engine3d/Engine/DXUtil.c) and the
- * CD3DApplication of d3dapp.cpp (g_Motor, D3DApp.c; more of it in e3dutil.h and scrapmain.h).
+ * CD3DApplication of d3dapp.cpp (g_Engine, D3DApp.c; more of it in e3dutil.h and scrapmain.h).
  */
 #ifndef SCRAP_DXUTIL_H
 #define SCRAP_DXUTIL_H
@@ -24,14 +24,14 @@ typedef struct D3DGuid {
 } D3DGuid;
 SD_SIZE(D3DGuid, 0x10);
 
-/* more of g_Motor */
-#define MOTOR_U32(m, off) (*(uint32_t *)((m) + (off)))
-#define MOTOR_ACTIVE(m) MOTOR_U32(m, 0x2a388)
-#define MOTOR_READY(m) MOTOR_U32(m, 0x2a38c)
-#define MOTOR_FRAMEMOVING(m) MOTOR_U32(m, 0x2a390)
-#define MOTOR_SINGLESTEP(m) MOTOR_U32(m, 0x2a394)
-#define MOTOR_D3D(m) (*(void **)((m) + 0x2a3d4))	/* IDirect3D8 */
-#define MOTOR_USEDEPTH(m) MOTOR_U32(m, 0x2a5b0)
+/* more of g_Engine */
+#define ENGINE_U32(m, off) (*(uint32_t *)((m) + (off)))
+#define ENGINE_ACTIVE(m) ENGINE_U32(m, 0x2a388)
+#define ENGINE_READY(m) ENGINE_U32(m, 0x2a38c)
+#define ENGINE_FRAMEMOVING(m) ENGINE_U32(m, 0x2a390)
+#define ENGINE_SINGLESTEP(m) ENGINE_U32(m, 0x2a394)
+#define ENGINE_D3D(m) (*(void **)((m) + 0x2a3d4))	/* IDirect3D8 */
+#define ENGINE_USEDEPTH(m) ENGINE_U32(m, 0x2a5b0)
 
 /* dxutil.cpp */
 /* cch characters with the end (-1: the whole string); the generic strings are ANSI (two copies in the exe) */
@@ -66,13 +66,13 @@ int64_t Timer_MeasureQP(int ms);
 /* d3dapp.cpp */
 /* qsort order of the display modes: width, height, then the format (the higher first) */
 int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b);
-/* the window procedure of the application window: the MsgProc of g_Motor (vtable 0x30) */
+/* the window procedure of the application window: the MsgProc of g_Engine (vtable 0x30) */
 intptr_t __stdcall D3DApp_WndProc(void *hwnd, uint32_t msg, uintptr_t w, intptr_t l);
 /* ds is a depth/stencil format the adapter supports with the format fmt (IDirect3D8 d3d) */
 byte D3DApp_DepthFormatOk(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t ds);
-/* the depth/stencil format (D3DFMT_*) of a device for the minimum bits of g_Motor; 0 for none */
+/* the depth/stencil format (D3DFMT_*) of a device for the minimum bits of g_Engine; 0 for none */
 int __thiscall CD3DApp_FindDepthStencilFormat(byte *self, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t *out);
-/* the defaults, g_Motor set (cleared by the destructor) */
+/* the defaults, g_Engine set (cleared by the destructor) */
 byte *__fastcall CD3DApp_ctor(byte *self);
 void __fastcall CD3DApp_dtor(byte *self);
 int __thiscall CD3DApp_AdjustWindowForChange(byte *self);

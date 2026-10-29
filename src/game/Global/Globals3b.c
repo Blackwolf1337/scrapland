@@ -111,7 +111,7 @@ const double data_3b5658[3] SD_AT(0x3b5658) = { 1.1, 1.600000023841858, 25.13274
 const float data_3b5670[8] SD_AT(0x3b5670) = { 0, 4.4765625f, 12.566371f, 2800.0f, 15400.0f, 20000.0f, 42000.0f, 100000000.0f };
 const float g_NetMaxDist2 SD_AT(0x3b5690) = 1.21e+10f;
 const uint32_t data_3b5694 SD_AT(0x3b5694) = 0xc6834000;
-const uint32_t VMEffects_SetupCalima_3b57d8[9] SD_AT(0x3b57d8) = { 0xbf404040, 0x7f808080, 0x7f808080, 0x7f808080, 0xa35c5c5c, 0xbf404040, 0xdf202020, 0xff000000, 0xff000000 };
+const uint32_t VMEffects_SetupHaze_3b57d8[9] SD_AT(0x3b57d8) = { 0xbf404040, 0x7f808080, 0x7f808080, 0x7f808080, 0xa35c5c5c, 0xbf404040, 0xdf202020, 0xff000000, 0xff000000 };
 const uint32_t VME_Exhaust10_3b57fc[10] SD_AT(0x3b57fc) = {
 	0x320a280f, 0x30191919, 0x2d0f2332, 0x2c0a3264, 0x2a143796, 0x282850fa, 0x283264fa, 0x23466efb, 0x1e5a82fd,
 	0x146496ff,

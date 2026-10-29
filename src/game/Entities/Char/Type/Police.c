@@ -221,7 +221,7 @@ void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 				}
 				if (cActCtrl_IsActive(ChType_ActCtrl(victim), "PoliceListen") &&
 					ChLogic_Vtbl(vl)->GivesMoney(vl, me) &&
-					ChType_Steal(&me, &victim, g_PoliceStealQuanto, "Stats.Police", 1.0f)) {
+					ChType_Steal(&me, &victim, g_PoliceStealAmount, "Stats.Police", 1.0f)) {
 					act = "ActionOK";
 					FX_PoliceSteal(me, victim);
 				}

@@ -6,167 +6,167 @@
 #include "scrap/e3dutil.h"
 
 /* the inlined check at the start of every function */
-static void LDin_Check(const cListaDin *din) {
-	CHECK(din);
-	CHECK(din->id == LISTADIN_ID);
+static void DynList_Check(const cDynList *dyn) {
+	CHECK(dyn);
+	CHECK(dyn->id == DYNLIST_ID);
 }
 
-#define LDIN_ELEM(din, i) ((din)->mem + (din)->elemSize * (i))
+#define LDIN_ELEM(dyn, i) ((dyn)->mem + (dyn)->elemSize * (i))
 
-void LDin_Free(cListaDin *din) {
-	LDin_Clear(din);
-	din->id = 0;
-	Mem_Free(din);
+void DynList_Free(cDynList *dyn) {
+	DynList_Clear(dyn);
+	dyn->id = 0;
+	Mem_Free(dyn);
 }
 
-static cListaDin *LDin_Alloc(uint16_t elemSize, uint16_t blockSize) {
-	cListaDin *din = Mem_Alloc(sizeof(*din));
-	din->id = LISTADIN_ID;
-	din->mem = NULL;
-	din->total = 0;
-	din->used = 0;
-	din->elemSize = elemSize;
-	din->blockSize = blockSize;
-	din->changed = 0;
-	din->pad_17 = 0;
-	return din;
+static cDynList *DynList_Alloc(uint16_t elemSize, uint16_t blockSize) {
+	cDynList *dyn = Mem_Alloc(sizeof(*dyn));
+	dyn->id = DYNLIST_ID;
+	dyn->mem = NULL;
+	dyn->total = 0;
+	dyn->used = 0;
+	dyn->elemSize = elemSize;
+	dyn->blockSize = blockSize;
+	dyn->changed = 0;
+	dyn->pad_17 = 0;
+	return dyn;
 }
 
-cListaDin *LDin_New(uint16_t elemSize) {
-	return LDin_Alloc(elemSize, 0x100);
+cDynList *DynList_New(uint16_t elemSize) {
+	return DynList_Alloc(elemSize, 0x100);
 }
 
-cListaDin *LDin_NewBlock(uint16_t elemSize, uint16_t blockSize) {
+cDynList *DynList_NewBlock(uint16_t elemSize, uint16_t blockSize) {
 	CHECK(blockSize > 0);
-	return LDin_Alloc(elemSize, blockSize);
+	return DynList_Alloc(elemSize, blockSize);
 }
 
-void *LDin_Get(cListaDin *din, uint32_t i) {
-	LDin_Check(din);
-	CHECK(i < din->used);
-	CHECK(din->mem);
-	return LDIN_ELEM(din, i);
+void *DynList_Get(cDynList *dyn, uint32_t i) {
+	DynList_Check(dyn);
+	CHECK(i < dyn->used);
+	CHECK(dyn->mem);
+	return LDIN_ELEM(dyn, i);
 }
 
-uint32_t LDin_Count(cListaDin *din) {
-	LDin_Check(din);
-	return din->used;
+uint32_t DynList_Count(cDynList *dyn) {
+	DynList_Check(dyn);
+	return dyn->used;
 }
 
-void *LDin_Last(cListaDin *din) {
-	LDin_Check(din);
-	CHECK(din->used > 0);
-	CHECK(din->mem);
-	return LDIN_ELEM(din, din->used - 1);
+void *DynList_Last(cDynList *dyn) {
+	DynList_Check(dyn);
+	CHECK(dyn->used > 0);
+	CHECK(dyn->mem);
+	return LDIN_ELEM(dyn, dyn->used - 1);
 }
 
-void *LDin_AddOne(cListaDin *din) {
-	return LDin_Add(din, 1);
+void *DynList_AddOne(cDynList *dyn) {
+	return DynList_Add(dyn, 1);
 }
 
-void *LDin_Add(cListaDin *din, int num) {
-	LDin_Check(din);
+void *DynList_Add(cDynList *dyn, int num) {
+	DynList_Check(dyn);
 	CHECK(num > 0);
-	if (din->total < din->used + num) {
-		uint32_t total = num - 1 + din->blockSize + din->used;
-		din->total = total - total % din->blockSize;
-		din->mem = Mem_Realloc(din->mem, din->elemSize * din->total);
+	if (dyn->total < dyn->used + num) {
+		uint32_t total = num - 1 + dyn->blockSize + dyn->used;
+		dyn->total = total - total % dyn->blockSize;
+		dyn->mem = Mem_Realloc(dyn->mem, dyn->elemSize * dyn->total);
 	}
-	uint32_t first = din->used;
-	din->changed = 1;
-	din->used = first + num;
-	CHECK(din->used <= din->total);
-	return LDIN_ELEM(din, first);
+	uint32_t first = dyn->used;
+	dyn->changed = 1;
+	dyn->used = first + num;
+	CHECK(dyn->used <= dyn->total);
+	return LDIN_ELEM(dyn, first);
 }
 
-void LDin_Copy(cListaDin *din, uint32_t orig, uint32_t dest, int num) {
-	LDin_Check(din);
+void DynList_Copy(cDynList *dyn, uint32_t orig, uint32_t dest, int num) {
+	DynList_Check(dyn);
 	CHECK(num >= 0);
-	CHECK(orig < din->used && orig + num <= din->used);
-	CHECK(dest < din->used && dest + num <= din->used);
+	CHECK(orig < dyn->used && orig + num <= dyn->used);
+	CHECK(dest < dyn->used && dest + num <= dyn->used);
 	if (orig != dest && num) {
-		din->changed = 1;
-		memmove(LDIN_ELEM(din, dest), LDIN_ELEM(din, orig), din->elemSize * num);
+		dyn->changed = 1;
+		memmove(LDIN_ELEM(dyn, dest), LDIN_ELEM(dyn, orig), dyn->elemSize * num);
 	}
 }
 
-void LDin_Delete(cListaDin *din, uint32_t i) {
-	LDin_Check(din);
-	CHECK(i < din->used);
-	if (i != din->used - 1) {
-		memmove(LDIN_ELEM(din, i), LDIN_ELEM(din, i + 1), (din->used - 1 - i) * din->elemSize);
+void DynList_Delete(cDynList *dyn, uint32_t i) {
+	DynList_Check(dyn);
+	CHECK(i < dyn->used);
+	if (i != dyn->used - 1) {
+		memmove(LDIN_ELEM(dyn, i), LDIN_ELEM(dyn, i + 1), (dyn->used - 1 - i) * dyn->elemSize);
 	}
-	LDin_RemoveLast(din);
+	DynList_RemoveLast(dyn);
 }
 
 /* frees whole blocks that are no longer used */
-void LDin_RemoveLast(cListaDin *din) {
-	LDin_Check(din);
-	if (!din->used) {
+void DynList_RemoveLast(cDynList *dyn) {
+	DynList_Check(dyn);
+	if (!dyn->used) {
 		return;
 	}
-	din->used--;
-	din->changed = 1;
-	uint32_t limit = din->blockSize + din->used;
-	if (limit > din->total) {
+	dyn->used--;
+	dyn->changed = 1;
+	uint32_t limit = dyn->blockSize + dyn->used;
+	if (limit > dyn->total) {
 		return;
 	}
-	uint32_t total = din->total;
+	uint32_t total = dyn->total;
 	do {
-		total -= din->blockSize;
+		total -= dyn->blockSize;
 	} while (limit <= total);
-	din->total = total;
-	if (din->elemSize * total != 0) {
-		din->mem = Mem_Realloc(din->mem, din->elemSize * total);
+	dyn->total = total;
+	if (dyn->elemSize * total != 0) {
+		dyn->mem = Mem_Realloc(dyn->mem, dyn->elemSize * total);
 		return;
 	}
-	Mem_Free(din->mem);
-	din->mem = NULL;
-	CHECK(!din->total && !din->used);
+	Mem_Free(dyn->mem);
+	dyn->mem = NULL;
+	CHECK(!dyn->total && !dyn->used);
 }
 
-/* i == used fails the CHECK of LDin_Copy, in the original too */
-void *LDin_Insert(cListaDin *din, uint32_t i) {
-	LDin_Check(din);
-	CHECK(i <= din->used);
-	LDin_Add(din, 1);
-	LDin_Copy(din, i, i + 1, din->used - i - 1);
-	return LDIN_ELEM(din, i);
+/* i == used fails the CHECK of DynList_Copy, in the original too */
+void *DynList_Insert(cDynList *dyn, uint32_t i) {
+	DynList_Check(dyn);
+	CHECK(i <= dyn->used);
+	DynList_Add(dyn, 1);
+	DynList_Copy(dyn, i, i + 1, dyn->used - i - 1);
+	return LDIN_ELEM(dyn, i);
 }
 
-void LDin_Move(cListaDin *din, int orig, int dest) {
-	LDin_Check(din);
-	CHECK(din->used);
+void DynList_Move(cDynList *dyn, int orig, int dest) {
+	DynList_Check(dyn);
+	CHECK(dyn->used);
 	if (orig < 0) {
-		orig = din->used - 1;
+		orig = dyn->used - 1;
 	}
 	if (dest < 0) {
-		dest = din->used - 1;
+		dest = dyn->used - 1;
 	}
-	CHECK((uint32_t)orig < din->used);
-	CHECK((uint32_t)dest < din->used);
+	CHECK((uint32_t)orig < dyn->used);
+	CHECK((uint32_t)dest < dyn->used);
 	if (orig == dest) {
 		return;
 	}
-	din->changed = 1;
-	void *tmp = Mem_Alloc(din->elemSize);
-	memcpy(tmp, LDIN_ELEM(din, orig), din->elemSize);
+	dyn->changed = 1;
+	void *tmp = Mem_Alloc(dyn->elemSize);
+	memcpy(tmp, LDIN_ELEM(dyn, orig), dyn->elemSize);
 	if (orig < dest) {
-		memmove(LDIN_ELEM(din, orig), LDIN_ELEM(din, orig + 1), (dest - orig) * din->elemSize);
+		memmove(LDIN_ELEM(dyn, orig), LDIN_ELEM(dyn, orig + 1), (dest - orig) * dyn->elemSize);
 	} else {
-		memmove(LDIN_ELEM(din, dest + 1), LDIN_ELEM(din, dest), (orig - dest) * din->elemSize);
+		memmove(LDIN_ELEM(dyn, dest + 1), LDIN_ELEM(dyn, dest), (orig - dest) * dyn->elemSize);
 	}
-	memcpy(LDIN_ELEM(din, dest), tmp, din->elemSize);
+	memcpy(LDIN_ELEM(dyn, dest), tmp, dyn->elemSize);
 	Mem_Free(tmp);
 }
 
-void LDin_Clear(cListaDin *din) {
-	LDin_Check(din);
-	if (din->mem) {
-		Mem_Free(din->mem);
-		din->mem = NULL;
+void DynList_Clear(cDynList *dyn) {
+	DynList_Check(dyn);
+	if (dyn->mem) {
+		Mem_Free(dyn->mem);
+		dyn->mem = NULL;
 	}
-	din->total = 0;
-	din->used = 0;
-	din->changed = 1;
+	dyn->total = 0;
+	dyn->used = 0;
+	dyn->changed = 1;
 }

@@ -1,6 +1,6 @@
 /*
  * The lighting of points by the D3D light formulas on the CPU (the light maps of bsp.cpp), original source
- * Engine/RenderCalcIlum.cpp (include/scrap/luz.h).
+ * Engine/RenderCalcIlum.cpp (include/scrap/light.h).
  */
 #include "scrap/listavert.h"
 #include "scrap/luz.h"
@@ -8,11 +8,11 @@
 #include "scrap/material.h"
 #include "scrap/mathlib.h"
 
-/* the weight of the smoothing of the light angle (ILUM_SUAVE) */
-#define g_IlumSmooth GAME_GLOBAL(float, g_IlumSmooth, 0x432a84)
+/* the weight of the smoothing of the light angle (ILLUM_SOFT) */
+#define g_IllumSmooth GAME_GLOBAL(float, g_IllumSmooth, 0x432a84)
 
-float Ilum_Smooth(float v) {
-	float k = g_IlumSmooth;
+float Illum_Smooth(float v) {
+	float k = g_IllumSmooth;
 
 	if (k != 0.0f) {
 		v = v * v * (2.0f - v) * k + (1.0f - k) * v;
@@ -21,7 +21,7 @@ float Ilum_Smooth(float v) {
 }
 
 /* (x, y, z) / its length, unchanged for length 0 */
-static vec3_t Ilum_Normalize(float x, float y, float z) {
+static vec3_t Illum_Normalize(float x, float y, float z) {
 	vec3_t v = { x, y, z };
 	float len = (float)__builtin_sqrt((double)(y * y + x * x + z * z));
 
@@ -34,24 +34,24 @@ static vec3_t Ilum_Normalize(float x, float y, float z) {
 	return v;
 }
 
-int Ilum_ListaVert(color4_t *dest, CListaVert *lv, CMaterial *Mat, CLuz *Luz) {
+int Illum_VertList(color4_t *dest, CVertList *lv, CMaterial *Mat, CLight *Light) {
 	float mc[17];
 	D3DLight l;
 
-	CHECK(Mat && Luz);
+	CHECK(Mat && Light);
 	CMaterial_CalcColors(Mat, mc);
-	CLuz_FillD3D(Luz, &l);
-	CLuz_AdjustD3D(Luz, &l);
+	CLight_FillD3D(Light, &l);
+	CLight_AdjustD3D(Light, &l);
 	/* the direction and the position of the light as it is set, the rest adjusted */
-	vec3_t dir = Ilum_Normalize(Luz->d3d.Direction.x, Luz->d3d.Direction.y, Luz->d3d.Direction.z);
-	vec3_t org = Luz->d3d.Position;
+	vec3_t dir = Illum_Normalize(Light->d3d.Direction.x, Light->d3d.Direction.y, Light->d3d.Direction.z);
+	vec3_t org = Light->d3d.Position;
 	for (int i = 0; i < lv->nVert; i++) {
 		vec3_t pos, n, d;
 		float att;
-		CListaVert_GetPos(lv, &pos, i);
-		CListaVert_GetNormal(lv, &n, i);
-		int tipo = Luz->tipo;
-		if (tipo == LUZ_DIREC) {
+		CVertList_GetPos(lv, &pos, i);
+		CVertList_GetNormal(lv, &n, i);
+		int type = Light->type;
+		if (type == LIGHT_DIR) {
 			att = 1.0f;
 			d = dir;
 		} else {
@@ -61,9 +61,9 @@ int Ilum_ListaVert(color4_t *dest, CListaVert *lv, CMaterial *Mat, CLuz *Luz) {
 				continue;
 			}
 			att = (float)(1.0 / (double)(l.Attenuation1 * dist + l.Attenuation0 + dist * dist * l.Attenuation2));
-			d = Ilum_Normalize(dx, dy, dz);
+			d = Illum_Normalize(dx, dy, dz);
 		}
-		if (tipo == LUZ_FOCO) {
+		if (type == LIGHT_SPOT) {
 			float c = d.x * dir.x + d.y * dir.y + d.z * dir.z;
 			float cosTheta = (float)Game_Cos((double)l.Theta * 0.5);
 			float cosPhi = (float)Game_Cos((double)l.Phi * 0.5);
@@ -89,9 +89,9 @@ int Ilum_ListaVert(color4_t *dest, CListaVert *lv, CMaterial *Mat, CLuz *Luz) {
 	return 0;
 }
 
-int Ilum_Light(color4_t *dest, const vec3_t *pos, const vec3_t *n, const float *mat, const IlumLuz *luz,
+int Illum_Light(color4_t *dest, const vec3_t *pos, const vec3_t *n, const float *mat, const IllumLight *light,
 	uint32_t flags) {
-	const D3DLight *l = &luz->d3d;
+	const D3DLight *l = &light->d3d;
 	vec3_t d;
 	float att;
 
@@ -108,10 +108,10 @@ int Ilum_Light(color4_t *dest, const vec3_t *pos, const vec3_t *n, const float *
 		if (dist == 0.0f) {
 			return 1;
 		}
-		if (flags & ILUM_SUAVE) {
+		if (flags & ILLUM_SOFT) {
 			att = 1.0f;
-			if (dist > luz->rangeIni) {
-				float t = (l->Range - dist) / (l->Range - luz->rangeIni);
+			if (dist > light->rangeIni) {
+				float t = (l->Range - dist) / (l->Range - light->rangeIni);
 				att = (3.0f - (t + t)) * (t * t);
 			}
 		} else {
@@ -134,7 +134,7 @@ int Ilum_Light(color4_t *dest, const vec3_t *pos, const vec3_t *n, const float *
 			if (l->Falloff != 1.0f) {
 				s = (float)Game_Pow((double)s, (double)l->Falloff);
 			}
-			if (flags & ILUM_SUAVE) {
+			if (flags & ILLUM_SOFT) {
 				s = s * s * (3.0f - (s + s));
 			}
 			att = s * att;
@@ -144,8 +144,8 @@ int Ilum_Light(color4_t *dest, const vec3_t *pos, const vec3_t *n, const float *
 	if (0.0f >= dot) {
 		return 1;
 	}
-	if (flags & ILUM_SUAVE) {
-		dot = Ilum_Smooth(dot);
+	if (flags & ILLUM_SOFT) {
+		dot = Illum_Smooth(dot);
 	}
 	color4_t c;
 	c.r = (l->Diffuse.r * (mat[0] * dot) + l->Ambient.r * mat[4]) * att + dest->r;

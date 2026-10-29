@@ -1,41 +1,41 @@
 /*
- * The instances of the array template of the engine3d, engine3d/engine/tabla.h (include/scrap/tabla.h).
+ * The instances of the array template of the engine3d, engine3d/engine/table.h (include/scrap/table.h).
  */
 #include <string.h>
 
 #include "scrap/tabla.h"
 
-static void Tabla_New(CTabla *t, int num, uint32_t size) {
+static void Table_New(CTable *t, int num, uint32_t size) {
 	CHECK(!t->p && num > 0);
 	t->n = num;
 	t->p = New_Array(num, size);
 	CHECK(t->p);
 }
 
-static void Tabla_NewObjs(CTabla *t, int num, uint32_t size, void *ctor, void *dtor) {
+static void Table_NewObjs(CTable *t, int num, uint32_t size, void *ctor, void *dtor) {
 	CHECK(!t->p && num > 0);
 	t->n = num;
 	t->p = New_Objects(num, size, ctor, dtor);
 	CHECK(t->p);
 }
 
-#define TABLA_ALLOC(sz) \
-	void __thiscall Tabla_Alloc##sz(CTabla *t, int num) { \
-		Tabla_New(t, num, 0x##sz); \
+#define TABLE_ALLOC(sz) \
+	void __thiscall Table_Alloc##sz(CTable *t, int num) { \
+		Table_New(t, num, 0x##sz); \
 	}
-TABLA_ALLOC(1)
-TABLA_ALLOC(2)
-TABLA_ALLOC(4)
-TABLA_ALLOC(8)
-TABLA_ALLOC(C)
-TABLA_ALLOC(10)
-TABLA_ALLOC(14)
-TABLA_ALLOC(18)
-TABLA_ALLOC(1C)
-TABLA_ALLOC(2C)
-TABLA_ALLOC(38)
+TABLE_ALLOC(1)
+TABLE_ALLOC(2)
+TABLE_ALLOC(4)
+TABLE_ALLOC(8)
+TABLE_ALLOC(C)
+TABLE_ALLOC(10)
+TABLE_ALLOC(14)
+TABLE_ALLOC(18)
+TABLE_ALLOC(1C)
+TABLE_ALLOC(2C)
+TABLE_ALLOC(38)
 
-void __thiscall Tabla_Alloc10Z(CTabla *t, int num) {
+void __thiscall Table_Alloc10Z(CTable *t, int num) {
 	CHECK(!t->p && num > 0);
 	t->n = num;
 	byte *p = New_Array(num, 0x10);
@@ -48,43 +48,43 @@ void __thiscall Tabla_Alloc10Z(CTabla *t, int num) {
 	CHECK(t->p);
 }
 
-#define TABLA_NEW(sz, ctor, dtor) \
-	void __thiscall Tabla_New##sz(CTabla *t, int num) { \
-		Tabla_NewObjs(t, num, 0x##sz, ctor, dtor); \
+#define TABLE_NEW(sz, ctor, dtor) \
+	void __thiscall Table_New##sz(CTable *t, int num) { \
+		Table_NewObjs(t, num, 0x##sz, ctor, dtor); \
 	}
-TABLA_NEW(8, GAME_FUNC(CLod_ctor, 0x252a70), GAME_FUNC(CLod_dtor, 0x252d80))
-TABLA_NEW(1C, GAME_FUNC(M3DSkinVert_ctor, 0x2bbcc0), GAME_FUNC(M3DSkinVert_dtor, 0x2bc160))
-TABLA_NEW(24, GAME_FUNC(CCollideQuad_ctor, 0x258720), GAME_FUNC(CCollideQuad_dtor, 0x258ce0))
-TABLA_NEW(A8, GAME_FUNC(CNodoR_ctor, 0x23f3d0), GAME_FUNC(CNodoR_dtor, 0x23f450))
-TABLA_NEW(B4, GAME_FUNC(BspZona_ctor, 0x281c50), GAME_FUNC(BspZona_dtor, 0x2824b0))
-TABLA_NEW(FC, GAME_FUNC(CNodo3D_ctor, 0x23cf40), GAME_FUNC(CNodo3D_dtor, 0x23d070))
+TABLE_NEW(8, GAME_FUNC(CLod_ctor, 0x252a70), GAME_FUNC(CLod_dtor, 0x252d80))
+TABLE_NEW(1C, GAME_FUNC(M3DSkinVert_ctor, 0x2bbcc0), GAME_FUNC(M3DSkinVert_dtor, 0x2bc160))
+TABLE_NEW(24, GAME_FUNC(CCollideQuad_ctor, 0x258720), GAME_FUNC(CCollideQuad_dtor, 0x258ce0))
+TABLE_NEW(A8, GAME_FUNC(CRenderNode_ctor, 0x23f3d0), GAME_FUNC(CRenderNode_dtor, 0x23f450))
+TABLE_NEW(B4, GAME_FUNC(BspZone_ctor, 0x281c50), GAME_FUNC(BspZone_dtor, 0x2824b0))
+TABLE_NEW(FC, GAME_FUNC(CNode3D_ctor, 0x23cf40), GAME_FUNC(CNode3D_dtor, 0x23d070))
 
-#define TABLA_READ(sz) \
-	void Tabla_Read##sz(CArchIO *f, CTabla *t) { \
+#define TABLE_READ(sz) \
+	void Table_Read##sz(CFileIO *f, CTable *t) { \
 		CHECK(!t->p); \
-		int num = CArchIO_ReadInt(f); \
-		int size = CArchIO_ReadInt(f); \
+		int num = CFileIO_ReadInt(f); \
+		int size = CFileIO_ReadInt(f); \
 		CHECK(size == 0x##sz); \
 		if (num) { \
-			Tabla_Alloc##sz(t, num); \
-			CArchIO_Read(f, t->p, t->n * 0x##sz); \
+			Table_Alloc##sz(t, num); \
+			CFileIO_Read(f, t->p, t->n * 0x##sz); \
 		} \
 	}
-TABLA_READ(2)
-TABLA_READ(C)
-TABLA_READ(1C)
+TABLE_READ(2)
+TABLE_READ(C)
+TABLE_READ(1C)
 
-static void Array_Read(CArchIO *f, void **p, uint32_t *n, int size) {
-	*n = CArchIO_ReadInt(f);
-	CHECK(!*p && CArchIO_ReadInt(f) == size);
+static void Array_Read(CFileIO *f, void **p, uint32_t *n, int size) {
+	*n = CFileIO_ReadInt(f);
+	CHECK(!*p && CFileIO_ReadInt(f) == size);
 	if (*n) {
 		*p = New_Array(*n, size);
-		CArchIO_Read(f, *p, *n * size);
+		CFileIO_Read(f, *p, *n * size);
 	}
 }
 
 #define ARRAY_READ(sz) \
-	void Array_Read##sz(CArchIO *f, void **p, uint32_t *n) { \
+	void Array_Read##sz(CFileIO *f, void **p, uint32_t *n) { \
 		Array_Read(f, p, n, 0x##sz); \
 	}
 ARRAY_READ(2)
@@ -94,17 +94,17 @@ ARRAY_READ(8)
 ARRAY_READ(C)
 ARRAY_READ(10)
 
-static void Array_Write(CArchIO *f, const void *p, uint32_t n, int size) {
+static void Array_Write(CFileIO *f, const void *p, uint32_t n, int size) {
 	if (!p) {
 		n = 0;
 	}
-	CArchIO_WriteInt(f, n);
-	CArchIO_WriteInt(f, size);
-	CArchIO_Write(f, p, n * size);
+	CFileIO_WriteInt(f, n);
+	CFileIO_WriteInt(f, size);
+	CFileIO_Write(f, p, n * size);
 }
 
 #define ARRAY_WRITE(sz) \
-	void Array_Write##sz(CArchIO *f, const void *p, uint32_t n) { \
+	void Array_Write##sz(CFileIO *f, const void *p, uint32_t n) { \
 		Array_Write(f, p, n, 0x##sz); \
 	}
 ARRAY_WRITE(2)
@@ -114,15 +114,15 @@ ARRAY_WRITE(8)
 ARRAY_WRITE(C)
 ARRAY_WRITE(10)
 
-#define TABLA_GET(sz) \
-	void *__thiscall Tabla_Get##sz(CTabla *t, uint32_t i) { \
-		TABLA_CHECK(t->p, i, t->n); \
+#define TABLE_GET(sz) \
+	void *__thiscall Table_Get##sz(CTable *t, uint32_t i) { \
+		TABLE_CHECK(t->p, i, t->n); \
 		return (byte *)t->p + i * 0x##sz; \
 	}
-TABLA_GET(8)
-TABLA_GET(50)
+TABLE_GET(8)
+TABLE_GET(50)
 
-void __fastcall Tabla_Free(CTabla *t) {
+void __fastcall Table_Free(CTable *t) {
 	if (t->p) {
 		operator_delete_array(t->p);
 		t->p = NULL;
@@ -130,8 +130,8 @@ void __fastcall Tabla_Free(CTabla *t) {
 	}
 }
 
-/* the resize of tabla.h: n elements of size, the old ones kept as far as they fit, n < 1 frees */
-static void Tabla_Resize(CTabla *t, int n, uint32_t size, void(__thiscall *alloc)(CTabla *, int)) {
+/* the resize of table.h: n elements of size, the old ones kept as far as they fit, n < 1 frees */
+static void Table_Resize(CTable *t, int n, uint32_t size, void(__thiscall *alloc)(CTable *, int)) {
 	if (n < 1) {
 		if (t->p) {
 			operator_delete_array(t->p);
@@ -154,30 +154,30 @@ static void Tabla_Resize(CTabla *t, int n, uint32_t size, void(__thiscall *alloc
 	t->n = n;
 }
 
-void __thiscall Tabla_Resize2(CTabla *t, int n) {
-	Tabla_Resize(t, n, 2, Tabla_Alloc2);
+void __thiscall Table_Resize2(CTable *t, int n) {
+	Table_Resize(t, n, 2, Table_Alloc2);
 }
 
-void __thiscall Tabla_Resize4(CTabla *t, int n) {
-	Tabla_Resize(t, n, 4, Tabla_Alloc4);
+void __thiscall Table_Resize4(CTable *t, int n) {
+	Table_Resize(t, n, 4, Table_Alloc4);
 }
 
-void __thiscall Tabla_ResizeC(CTabla *t, int n) {
-	Tabla_Resize(t, n, 0xc, Tabla_AllocC);
+void __thiscall Table_ResizeC(CTable *t, int n) {
+	Table_Resize(t, n, 0xc, Table_AllocC);
 }
 
-void __thiscall Tabla_Resize14(CTabla *t, int n) {
-	Tabla_Resize(t, n, 0x14, Tabla_Alloc14);
+void __thiscall Table_Resize14(CTable *t, int n) {
+	Table_Resize(t, n, 0x14, Table_Alloc14);
 }
 
-void __thiscall Tabla_Resize1C(CTabla *t, int n) {
-	Tabla_Resize(t, n, 0x1c, Tabla_Alloc1C);
+void __thiscall Table_Resize1C(CTable *t, int n) {
+	Table_Resize(t, n, 0x1c, Table_Alloc1C);
 }
 
-void __thiscall Tabla_Resize2C(CTabla *t, int n) {
-	Tabla_Resize(t, n, 0x2c, Tabla_Alloc2C);
+void __thiscall Table_Resize2C(CTable *t, int n) {
+	Table_Resize(t, n, 0x2c, Table_Alloc2C);
 }
 
-void __thiscall Tabla_Resize38(CTabla *t, int n) {
-	Tabla_Resize(t, n, 0x38, Tabla_Alloc38);
+void __thiscall Table_Resize38(CTable *t, int n) {
+	Table_Resize(t, n, 0x38, Table_Alloc38);
 }

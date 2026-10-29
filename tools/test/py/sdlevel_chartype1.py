@@ -35,7 +35,7 @@ def ct1str(a):
 	return None
 def ct1cstr(s):
 	a = ct1z(len(s) + 4)
-	SDTest.Call('Cad_Copy', 'iisi', a, s, len(s) + 1)
+	SDTest.Call('String_Copy', 'iisi', a, s, len(s) + 1)
 	return a
 def ct1name(e):
 	if e:
@@ -134,8 +134,8 @@ if ct1cam:
 		ct1cam, 1.0), SDTest.Call('cCamControl_NopF@bd650', 'tvif', ct1cam, 1.0), ct1camf(ct1cam)))
 	# an Obj with a model is taken only when the model has a camera node (else a CHECK of the node)
 	ct1pmodel = SDTest.Call(ct1slot(ct1player, 0x98), 'tii', ct1player)[0]
-	ct1camnode = SDTest.Call('CGameModel_FindNodoR', 'tiis', ct1pmodel, 'D_Cam-Composite')[0] >= 0 or \
-		SDTest.Call('CGameModel_FindNodoR', 'tiis', ct1pmodel, 'Camera_01')[0] >= 0
+	ct1camnode = SDTest.Call('CGameModel_FindRenderNode', 'tiis', ct1pmodel, 'D_Cam-Composite')[0] >= 0 or \
+		SDTest.Call('CGameModel_FindRenderNode', 'tiis', ct1pmodel, 'Camera_01')[0] >= 0
 	check('CT1 player camera node', lambda: ct1camnode)
 	ct1targets = ['SDNone', '', 'SDCt1Cam']
 	if ct1camnode:
@@ -408,9 +408,9 @@ ct1savedtarget = SDTest.Peek('g_GearTarget', 's')
 check('CT1 ChType_GearHitChar', lambda: (SDTest.Call('ChType_GearHitChar', 'vsi', 'SDNone', 0), SDTest.Call('ChType_GearHitChar', 'vsi', '',
 	0), SDTest.Call('ChType_GearHitChar', 'vsi', 'Player0', 1), ct1i(ct1player + 0x238), ct1savedtarget))
 ct1poke(ct1player + 0x238, ct1savedlife)
-SDTest.Call('Cad_Copy', 'iisi', 0x400000 + sym('g_GearTarget'), 'Player0', 8)
+SDTest.Call('String_Copy', 'iisi', 0x400000 + sym('g_GearTarget'), 'Player0', 8)
 check('CT1 ChType_GearHitChar(shooter)', lambda: (SDTest.Call('ChType_GearHitChar', 'vsi', 'Player0', 0), ct1i(ct1player + 0x238)))
-SDTest.Call('Cad_Copy', 'iisi', 0x400000 + sym('g_GearTarget'), ct1savedtarget, len(ct1savedtarget) + 1)
+SDTest.Call('String_Copy', 'iisi', 0x400000 + sym('g_GearTarget'), ct1savedtarget, len(ct1savedtarget) + 1)
 ct1poke(ct1player + 0x238, ct1savedlife)
 # the flash: far away, at the player (it is not an AI)
 def ct1flash():

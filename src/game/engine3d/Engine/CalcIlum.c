@@ -28,33 +28,33 @@ SD_SIZE(VertLTex1N, 0x24);
 /* the colors of CMaterial_CalcColors */
 enum { COL_DIFFUSE = 0, COL_AMBIENT = 4, COL_SPECULAR = 8, COL_EMISSIVE = 12, COL_POWER = 16, COL_TOTAL = 17 };
 
-void __thiscall CMallaD3D_CalcIlum(CMallaD3D *self, CNodo3D *nodo, CEscena *esc) {
+void __thiscall CMeshD3D_CalcIllum(CMeshD3D *self, CNode3D *node, CScene *scn) {
 	if (self->next) {
-		CMallaD3D_CalcIlum(self->next, nodo, esc);
+		CMeshD3D_CalcIllum(self->next, node, scn);
 	}
 	if (!self->mat || self->vert.frmt != VERT_TEX1) {
 		return;
 	}
-	CListaVert lv;
-	CListaVert_ctor(&lv);
-	CListaVert_SetFormat(&lv, VERT_LTEX1N);
-	CListaVert_Alloc(&lv, self->vert.nVert, 0);
+	CVertList lv;
+	CVertList_ctor(&lv);
+	CVertList_SetFormat(&lv, VERT_LTEX1N);
+	CVertList_Alloc(&lv, self->vert.nVert, 0);
 	float colors[COL_TOTAL];
 	CMaterial_CalcColors(self->mat, colors);
 	/* the vertices without a light color stay green, magenta with the scene */
-	uint32_t mark = esc ? 0x800080 : 0x8000;
+	uint32_t mark = scn ? 0x800080 : 0x8000;
 	for (int i = 0; i < self->vert.nVert; i++) {
-		VertLTex1N *d = (VertLTex1N *)CListaVert_LTex1N(&lv, (uint32_t)i);
+		VertLTex1N *d = (VertLTex1N *)CVertList_LTex1N(&lv, (uint32_t)i);
 		vec3_t t;
 		uv_t uv;
-		d->pos = *CListaVert_GetPos(&self->vert, &t, (uint32_t)i);
-		d->n = *CListaVert_GetNormal(&self->vert, &t, (uint32_t)i);
+		d->pos = *CVertList_GetPos(&self->vert, &t, (uint32_t)i);
+		d->n = *CVertList_GetNormal(&self->vert, &t, (uint32_t)i);
 		d->color = mark;
-		d->uv = *CListaVert_GetUV(&self->vert, &uv, (uint32_t)i);
+		d->uv = *CVertList_GetUV(&self->vert, &uv, (uint32_t)i);
 	}
-	if (!esc) {
+	if (!scn) {
 		for (int i = 0; i < lv.nVert; i++) {
-			VertLTex1N *d = (VertLTex1N *)CListaVert_LTex1N(&lv, (uint32_t)i);
+			VertLTex1N *d = (VertLTex1N *)CVertList_LTex1N(&lv, (uint32_t)i);
 			float c[4] = { colors[COL_EMISSIVE], colors[COL_EMISSIVE + 1], colors[COL_EMISSIVE + 2], 0.0f };
 			if (g_DiffuseMod4x) {
 				c[0] = c[0] * 0.25f;
@@ -67,43 +67,43 @@ void __thiscall CMallaD3D_CalcIlum(CMallaD3D *self, CNodo3D *nodo, CEscena *esc)
 			}
 		}
 	} else {
-		CHECK(nodo);
-		CEscena_UpdateNodes(esc);
-		CListaVert_Transform(&self->vert, &nodo->m, 1);
-		CTabla acc = { 0, NULL };
-		Tabla_Alloc10(&acc, lv.nVert);
+		CHECK(node);
+		CScene_UpdateNodes(scn);
+		CVertList_Transform(&self->vert, &node->m, 1);
+		CTable acc = { 0, NULL };
+		Table_Alloc10(&acc, lv.nVert);
 		CHECK(acc.p);
 		float(*sum)[4] = acc.p;
 		memset(sum, 0, (uint32_t)acc.n << 4);
-		float k = esc->ambiente.intens * (1.0f / 255.0f);
-		const byte *amb = (const byte *)&esc->ambiente.rgba;
+		float k = scn->ambient.intens * (1.0f / 255.0f);
+		const byte *amb = (const byte *)&scn->ambient.rgba;
 		float base[4];
 		for (int j = 0; j < 4; j++) {
 			base[j] = colors[COL_EMISSIVE + j] + (float)amb[j] * k * colors[COL_AMBIENT + j];
 		}
 		for (int i = 0; i < self->vert.nVert; i++) {
-			TABLA_CHECK(sum, i, acc.n);
+			TABLE_CHECK(sum, i, acc.n);
 			memcpy(sum[i], base, sizeof(base));
 		}
-		for (CNodo3D *n = CEscena_FindClase(esc, NULL, CLASE_OBJ3D_LUZ); n;
-			n = CEscena_FindClase(esc, n, CLASE_OBJ3D_LUZ)) {
-			CLuz *luz = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_LUZ);
-			if (luz && luz->activa) {
-				Ilum_ListaVert((color4_t *)sum, &self->vert, self->mat, luz);
+		for (CNode3D *n = CScene_FindClass(scn, NULL, CLASS_OBJ3D_LIGHT); n;
+			n = CScene_FindClass(scn, n, CLASS_OBJ3D_LIGHT)) {
+			CLight *light = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_LIGHT);
+			if (light && light->active) {
+				Illum_VertList((color4_t *)sum, &self->vert, self->mat, light);
 			}
 		}
 		for (int i = 0; i < lv.nVert; i++) {
-			VertLTex1N *d = (VertLTex1N *)CListaVert_LTex1N(&lv, (uint32_t)i);
+			VertLTex1N *d = (VertLTex1N *)CVertList_LTex1N(&lv, (uint32_t)i);
 			if (g_DiffuseMod4x) {
-				TABLA_CHECK(sum, i, acc.n);
+				TABLE_CHECK(sum, i, acc.n);
 				float c[4] = { sum[i][0] * 0.25f, sum[i][1] * 0.25f, sum[i][2] * 0.25f, sum[i][3] * 0.25f };
-				TABLA_CHECK(sum, i, acc.n);
+				TABLE_CHECK(sum, i, acc.n);
 				memcpy(sum[i], c, sizeof(c));
 			}
-			TABLA_CHECK(sum, i, acc.n);
+			TABLE_CHECK(sum, i, acc.n);
 			sum[i][3] = colors[COL_DIFFUSE + 3];
 			if (!(g_ShowPreIllumVtx & 1)) {
-				TABLA_CHECK(sum, i, acc.n);
+				TABLE_CHECK(sum, i, acc.n);
 				d->color = Color_FromFloat(sum[i]);
 			}
 		}
@@ -111,8 +111,8 @@ void __thiscall CMallaD3D_CalcIlum(CMallaD3D *self, CNodo3D *nodo, CEscena *esc)
 			operator_delete_array(sum);
 		}
 	}
-	CListaVert_Swap(&self->vert, &lv);
-	CListaVert_Free(&lv);
+	CVertList_Swap(&self->vert, &lv);
+	CVertList_Free(&lv);
 	self->mat->params.b39 = 0;
-	CListaVert_Free(&lv);
+	CVertList_Free(&lv);
 }

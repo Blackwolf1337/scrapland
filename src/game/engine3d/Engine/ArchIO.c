@@ -22,18 +22,18 @@ static const char *File_LogKind(byte pack) {
 }
 
 /* cFilePack_Destroy without the vtable: close was already called */
-static void ArchIO_Delete(cAbstractFile *f) {
+static void FileIO_Delete(cAbstractFile *f) {
 	cFilePack_dtor((cFilePack *)f);
 	operator_delete_sized(f, sizeof(cFilePack));
 }
 
-CArchIO *__thiscall CArchIO_ctor(CArchIO *self, const char *name, const char *mode) {
+CFileIO *__thiscall CFileIO_ctor(CFileIO *self, const char *name, const char *mode) {
 	self->f = NULL;
 	self->error = 0;
 	self->err = 0;
-	self->blq = NULL;
+	self->block = NULL;
 	CHECK(name);
-	self->f = ArchIO_Open(name, mode);
+	self->f = FileIO_Open(name, mode);
 	if (!self->f) {
 		self->error = 1;
 		self->err = *crt_errno();
@@ -41,9 +41,9 @@ CArchIO *__thiscall CArchIO_ctor(CArchIO *self, const char *name, const char *mo
 	return self;
 }
 
-void __thiscall CArchIO_dtor(CArchIO *self) {
-	CHECK(self->error || !self->blq);
-	CArchIO_Close(self);
+void __thiscall CFileIO_dtor(CFileIO *self) {
+	CHECK(self->error || !self->block);
+	CFileIO_Close(self);
 }
 
 void Ptr_Delete(void **p) {
@@ -53,46 +53,46 @@ void Ptr_Delete(void **p) {
 	}
 }
 
-void *ArchIO_ReadAll(const char *name, void **buf, uint32_t *size) {
-	cAbstractFile *f = ArchIO_Open(name, "rb");
+void *FileIO_ReadAll(const char *name, void **buf, uint32_t *size) {
+	cAbstractFile *f = FileIO_Open(name, "rb");
 	if (!f) {
 		Con_FatalErrorf("File not found%s: %s", PackLog_Closed() ? " in packfile" : "", name);
 		CHECK(f);
 	}
-	int tam = f->vftable->Size(f);
-	CHECK(tam > 0);
-	void *data = operator_new_array(tam);
-	CHECK(f->vftable->Read(f, data, tam) == tam);
+	int len = f->vftable->Size(f);
+	CHECK(len > 0);
+	void *data = operator_new_array(len);
+	CHECK(f->vftable->Read(f, data, len) == len);
 	int closed = f->vftable->Close(f);
-	ArchIO_Delete(f);
+	FileIO_Delete(f);
 	CHECK(closed);
 	if (buf) {
 		*buf = data;
 	}
 	if (size) {
-		*size = tam;
+		*size = len;
 	}
 	return data;
 }
 
-int __thiscall CArchIO_Finish(CArchIO *self) {
-	CArchIO_Close(self);
+int __thiscall CFileIO_Finish(CFileIO *self) {
+	CFileIO_Close(self);
 	return 0;
 }
 
 void File_RelPath(char *dest, const char *path) {
 	File_CheckRelative(path);
-	Cad_Copy(dest, path, MAX_RUTA);
+	String_Copy(dest, path, MAX_FILEPATH);
 }
 
 /* the open blocks are dropped: the block pointer starts with its id, so it passes for the id */
-int __thiscall CArchIO_Close(CArchIO *self) {
-	while (self->blq) {
-		CArchIO_PopBlock(self, (const char *)self->blq);
+int __thiscall CFileIO_Close(CFileIO *self) {
+	while (self->block) {
+		CFileIO_PopBlock(self, (const char *)self->block);
 	}
 	if (self->f) {
 		int closed = self->f->vftable->Close(self->f);
-		ArchIO_Delete(self->f);
+		FileIO_Delete(self->f);
 		if (!closed && !self->error) {
 			self->error = 1;
 			self->err = *crt_errno();
@@ -102,7 +102,7 @@ int __thiscall CArchIO_Close(CArchIO *self) {
 	return 0;
 }
 
-int __thiscall CArchIO_Write(CArchIO *self, const void *buf, int n) {
+int __thiscall CFileIO_Write(CFileIO *self, const void *buf, int n) {
 	if (self->error) {
 		return -1;
 	}
@@ -112,7 +112,7 @@ int __thiscall CArchIO_Write(CArchIO *self, const void *buf, int n) {
 	return 0;
 }
 
-int __thiscall CArchIO_WriteString(CArchIO *self, const char *s) {
+int __thiscall CFileIO_WriteString(CFileIO *self, const char *s) {
 	int len = s ? (int)strlen(s) + 1 : 0;
 
 	if (self->error) {
@@ -129,30 +129,30 @@ int __thiscall CArchIO_WriteString(CArchIO *self, const char *s) {
 }
 
 /* the size of the block into its placeholder */
-int __thiscall CArchIO_EndBlockWrite(CArchIO *self, const char *id) {
+int __thiscall CFileIO_EndBlockWrite(CFileIO *self, const char *id) {
 	if (self->error) {
 		return -1;
 	}
-	CHECK(self->blq);
+	CHECK(self->block);
 	int pos = self->f->vftable->Tell(self->f);
 	if (pos == -1) {
-		return CArchIO_SetError(self, NULL);
+		return CFileIO_SetError(self, NULL);
 	}
 	CHECK(!PackLog_Closed());
-	if (self->f->vftable->Seek(self->f, self->blq->pos) >= 0) {
-		if (CArchIO_WriteInt(self, pos - self->blq->pos - 4) != 0) {
+	if (self->f->vftable->Seek(self->f, self->block->pos) >= 0) {
+		if (CFileIO_WriteInt(self, pos - self->block->pos - 4) != 0) {
 			return -1;
 		}
 		CHECK(!PackLog_Closed());
 		if (self->f->vftable->Seek(self->f, pos) >= 0) {
-			CArchIO_PopBlock(self, id);
+			CFileIO_PopBlock(self, id);
 			return 0;
 		}
 	}
-	return CArchIO_SetError(self, NULL);
+	return CFileIO_SetError(self, NULL);
 }
 
-int __thiscall CArchIO_WriteInt(CArchIO *self, int32_t v) {
+int __thiscall CFileIO_WriteInt(CFileIO *self, int32_t v) {
 	if (self->error) {
 		return -1;
 	}
@@ -160,7 +160,7 @@ int __thiscall CArchIO_WriteInt(CArchIO *self, int32_t v) {
 	return 0;
 }
 
-int __thiscall CArchIO_BeginBlockWrite(CArchIO *self, const char *id) {
+int __thiscall CFileIO_BeginBlockWrite(CFileIO *self, const char *id) {
 	if (self->error) {
 		return -1;
 	}
@@ -171,24 +171,24 @@ int __thiscall CArchIO_BeginBlockWrite(CArchIO *self, const char *id) {
 	CHECK(self->f->vftable->Write(self->f, &v, 4) == 4);
 	int pos = self->f->vftable->Tell(self->f);
 	if (pos == -1) {
-		CArchIO_SetError(self, NULL);
+		CFileIO_SetError(self, NULL);
 		return -1;
 	}
-	if (CArchIO_WriteInt(self, 0) != 0) {
+	if (CFileIO_WriteInt(self, 0) != 0) {
 		return -1;
 	}
-	CArchIO_PushBlock(self, id, pos);
+	CFileIO_PushBlock(self, id, pos);
 	return 0;
 }
 
-int ArchIO_Close(void *f) {
+int FileIO_Close(void *f) {
 	cAbstractFile *file = f;
 	int closed = file->vftable->Close(file);
-	ArchIO_Delete(file);
+	FileIO_Delete(file);
 	return closed ? 0 : -1;
 }
 
-int ArchIO_Getc(void *f) {
+int FileIO_Getc(void *f) {
 	cAbstractFile *file = f;
 	char ch;
 
@@ -196,7 +196,7 @@ int ArchIO_Getc(void *f) {
 	return (byte)ch;
 }
 
-char *ArchIO_Gets(char *buf, int size, void *f) {
+char *FileIO_Gets(char *buf, int size, void *f) {
 	cAbstractFile *file = f;
 
 	CHECK(buf && size > 0);
@@ -219,7 +219,7 @@ char *ArchIO_Gets(char *buf, int size, void *f) {
 	return buf;
 }
 
-int __thiscall CArchIO_Unsupported(CArchIO *self) {
+int __thiscall CFileIO_Unsupported(CFileIO *self) {
 	if (!self->error) {
 		CHECK(0);
 		self->error = 1;
@@ -228,14 +228,14 @@ int __thiscall CArchIO_Unsupported(CArchIO *self) {
 	return -1;
 }
 
-int ArchIO_Read(void *buf, int size, int count, void *f) {
+int FileIO_Read(void *buf, int size, int count, void *f) {
 	cAbstractFile *file = f;
 
 	CHECK(file->vftable->Read(file, buf, size * count) == size * count);
 	return count;
 }
 
-int ArchIO_Seek(void *f, int off, int origin) {
+int FileIO_Seek(void *f, int off, int origin) {
 	cAbstractFile *file = f;
 
 	CHECK(!PackLog_Closed());
@@ -243,17 +243,17 @@ int ArchIO_Seek(void *f, int off, int origin) {
 	return file->vftable->Seek(file, off) >= 0 ? 0 : -1;
 }
 
-int ArchIO_Size(void *f) {
+int FileIO_Size(void *f) {
 	cAbstractFile *file = f;
 	return file->vftable->Size(file);
 }
 
-int ArchIO_Tell(void *f) {
+int FileIO_Tell(void *f) {
 	cAbstractFile *file = f;
 	return file->vftable->Tell(file);
 }
 
-int ArchIO_Write(const void *buf, int size, int count, void *f) {
+int FileIO_Write(const void *buf, int size, int count, void *f) {
 	cAbstractFile *file = f;
 
 	CHECK(file->vftable->Write(file, buf, size * count) == size * count);
@@ -277,19 +277,19 @@ int File_Access(const char *name, int mode) {
 }
 
 void File_MkDirRel(const char *dir) {
-	char buf[MAX_RUTA];
+	char buf[MAX_FILEPATH];
 
 	File_CheckRelative(dir);
-	Cad_Copy(buf, dir, sizeof(buf));
+	String_Copy(buf, dir, sizeof(buf));
 	int r = crt_mkdir(buf);
 	E3D_Log(g_FileLog, "FILE MKDIR: %s <%s>", buf, r ? "error" : "ok");
 }
 
 void *File_OpenRel(const char *name, const char *mode) {
-	char buf[MAX_RUTA];
+	char buf[MAX_FILEPATH];
 
 	File_CheckRelative(name);
-	Cad_Copy(buf, name, sizeof(buf));
+	String_Copy(buf, name, sizeof(buf));
 	CHECK(!strcmp(mode, "wb") || !strcmp(mode, "wt") || !strcmp(mode, "rb") || !strcmp(mode, "rt"));
 	void *f = crt_fopen(buf, mode);
 	E3D_Log(g_FileLog, "FILE OPEN: %s [%s] <%s>", buf, mode, f ? "ok" : "not found");
@@ -301,7 +301,7 @@ int File_Stat(const char *name, void *st) {
 }
 
 /* "wb" makes a file on disk, "rb" reads one from the packs or the disk */
-void *ArchIO_Open(const char *name, const char *mode) {
+void *FileIO_Open(const char *name, const char *mode) {
 	uint32_t fmode;
 
 	CHECK(!*g_PackName || !**g_PackName);
@@ -324,7 +324,7 @@ int File_StatPack(const char *name, void *st) {
 	return File_StatX(name, st, 1);
 }
 
-byte __thiscall CArchIO_ReadBool(CArchIO *self) {
+byte __thiscall CFileIO_ReadBool(CFileIO *self) {
 	int v = -1;
 
 	if (!self->error) {
@@ -335,7 +335,7 @@ byte __thiscall CArchIO_ReadBool(CArchIO *self) {
 	return v != 0;
 }
 
-int __thiscall CArchIO_ReadInt(CArchIO *self) {
+int __thiscall CFileIO_ReadInt(CFileIO *self) {
 	int v = -1;
 
 	if (!self->error) {
@@ -346,7 +346,7 @@ int __thiscall CArchIO_ReadInt(CArchIO *self) {
 	return v;
 }
 
-int __thiscall CArchIO_Read(CArchIO *self, void *buf, int n) {
+int __thiscall CFileIO_Read(CFileIO *self, void *buf, int n) {
 	if (self->error) {
 		return -1;
 	}
@@ -356,7 +356,7 @@ int __thiscall CArchIO_Read(CArchIO *self, void *buf, int n) {
 	return 0;
 }
 
-int __thiscall CArchIO_ReadStringNull(CArchIO *self, char *buf, uint32_t size, byte *isNull) {
+int __thiscall CFileIO_ReadStringNull(CFileIO *self, char *buf, uint32_t size, byte *isNull) {
 	uint32_t len;
 
 	*isNull = 1;
@@ -377,18 +377,18 @@ int __thiscall CArchIO_ReadStringNull(CArchIO *self, char *buf, uint32_t size, b
 	return 0;
 }
 
-int __thiscall CArchIO_ReadString(CArchIO *self, char *buf, uint32_t size) {
+int __thiscall CFileIO_ReadString(CFileIO *self, char *buf, uint32_t size) {
 	byte isNull;
 
-	return CArchIO_ReadStringNull(self, buf, size, &isNull);
+	return CFileIO_ReadStringNull(self, buf, size, &isNull);
 }
 
-int __thiscall CArchIO_Error(CArchIO *self, const char *what) {
+int __thiscall CFileIO_Error(CFileIO *self, const char *what) {
 	(void)what;
 	return self->error ? -1 : 0;
 }
 
-int __thiscall CArchIO_Read4(CArchIO *self, void *out) {
+int __thiscall CFileIO_Read4(CFileIO *self, void *out) {
 	if (self->error) {
 		return -1;
 	}
@@ -396,52 +396,52 @@ int __thiscall CArchIO_Read4(CArchIO *self, void *out) {
 	return 0;
 }
 
-int __thiscall CArchIO_BeginBlockSize(CArchIO *self, const char *id, int *size) {
+int __thiscall CFileIO_BeginBlockSize(CFileIO *self, const char *id, int *size) {
 	if (self->error) {
 		return -1;
 	}
-	if (CArchIO_ReadInt(self) != (int)IdToDword(id)) {
+	if (CFileIO_ReadInt(self) != (int)IdToDword(id)) {
 		Con_FatalErrorf("CArchIO: block id mismatch: %s", id);
 	}
-	int n = CArchIO_ReadInt(self);
+	int n = CFileIO_ReadInt(self);
 	if (size) {
 		*size = n;
 	}
 	return 0;
 }
 
-int __thiscall CArchIO_BeginBlock(CArchIO *self, const char *id) {
-	return CArchIO_BeginBlockSize(self, id, NULL);
+int __thiscall CFileIO_BeginBlock(CFileIO *self, const char *id) {
+	return CFileIO_BeginBlockSize(self, id, NULL);
 }
 
-void __thiscall CArchIO_PushBlock(CArchIO *self, const char *id, int pos) {
-	cArchBlq *b = operator_new(sizeof(*b));
-	b->prev = self->blq;
+void __thiscall CFileIO_PushBlock(CFileIO *self, const char *id, int pos) {
+	cBlockFile *b = operator_new(sizeof(*b));
+	b->prev = self->block;
 	b->id = IdToDword(id);
 	b->pos = pos;
-	self->blq = b;
+	self->block = b;
 }
 
-int __thiscall CArchIO_SetError(CArchIO *self, const char *what) {
+int __thiscall CFileIO_SetError(CFileIO *self, const char *what) {
 	(void)what;
 	self->error = 1;
 	self->err = *crt_errno();
 	return -1;
 }
 
-void __thiscall CArchIO_PopBlock(CArchIO *self, const char *id) {
-	CHECK(self->blq);
-	CHECK(self->blq->id == IdToDword(id));
-	cArchBlq *prev = self->blq->prev;
-	operator_delete_sized(self->blq, sizeof(cArchBlq));
-	self->blq = prev;
+void __thiscall CFileIO_PopBlock(CFileIO *self, const char *id) {
+	CHECK(self->block);
+	CHECK(self->block->id == IdToDword(id));
+	cBlockFile *prev = self->block->prev;
+	operator_delete_sized(self->block, sizeof(cBlockFile));
+	self->block = prev;
 }
 
 int File_Check(const char *name, int mode, byte pack) {
-	char buf[MAX_RUTA];
+	char buf[MAX_FILEPATH];
 
 	File_CheckRelative(name);
-	Cad_Copy(buf, name, sizeof(buf));
+	String_Copy(buf, name, sizeof(buf));
 	if (pack && PackLog_Closed()) {
 		if (Pack_FileExists(name)) {
 			return 0;
@@ -455,10 +455,10 @@ int File_Check(const char *name, int mode, byte pack) {
 }
 
 int File_StatX(const char *name, void *st, byte pack) {
-	char buf[MAX_RUTA];
+	char buf[MAX_FILEPATH];
 
 	File_CheckRelative(name);
-	Cad_Copy(buf, name, sizeof(buf));
+	String_Copy(buf, name, sizeof(buf));
 	if (pack && PackLog_Closed()) {
 		return -1;
 	}

@@ -33,7 +33,7 @@ def emoname(e):
 	return None
 def emocstr(s):
 	a = emoz(len(s) + 4)
-	SDTest.Call('Cad_Copy', 'iisi', a, s, len(s) + 1)
+	SDTest.Call('String_Copy', 'iisi', a, s, len(s) + 1)
 	return a
 def emoints(a, offs):
 	return tuple(map(lambda o, a=a: SDTest.Peek(a + o, '@i'), offs))
@@ -126,7 +126,7 @@ def emovarok(e, v):
 	if v in ('RenderEffect', 'RenderEffectParam0'):
 		return SDTest.Call('CGameModel_IsLoaded', 'tbi', e + 0xb8)[0]
 	if v[:8] == 'NodePos_' or v[:11] == 'NT_NodePos_':
-		return SDTest.Call('CGameModel_IsLoaded', 'tbi', e + 0xb8)[0] and SDTest.Call('CGameModel_FindNodoR', 'tiis', e + 0xb8, 'DC_Root')[0] > 0
+		return SDTest.Call('CGameModel_IsLoaded', 'tbi', e + 0xb8)[0] and SDTest.Call('CGameModel_FindRenderNode', 'tiis', e + 0xb8, 'DC_Root')[0] > 0
 	return 1
 def emogets(e, tag):
 	for v in emoivars:
@@ -311,7 +311,7 @@ emomodel = 'Models/Misc/Coins/Battery.M3D'
 check('cObjEntity_SetModel', lambda: (SDTest.Call('cObjEntity_SetModel', 'tvisfffi', emoA, emomodel, 1.0, 1.0, 1.0, 0),
 	SDTest.Call('CGameModel_IsLoaded', 'tbi', emoA + 0xb8)[0], SDTest.Call('CGameModel_Name', 'tsi', emoA + 0xb8)[0], emofl(emoA + 0xf8, 3),
 	emoi(emoA + 0x224) != 0))
-emohas = SDTest.Call('CGameModel_IsLoaded', 'tbi', emoA + 0xb8)[0] and SDTest.Call('CGameModel_FindNodoR', 'tiis', emoA + 0xb8, 'DC_Root')[0] > 0
+emohas = SDTest.Call('CGameModel_IsLoaded', 'tbi', emoA + 0xb8)[0] and SDTest.Call('CGameModel_FindRenderNode', 'tiis', emoA + 0xb8, 'DC_Root')[0] > 0
 check('Battery DC_Root', lambda: emohas)
 if emohas:
 	emogets(emoA, 'A model')
@@ -345,7 +345,7 @@ if emohas:
 	check('cModMove_Link again', lambda: (SDTest.Call('cModMove_Link', 'tviss', emoB + 0x1e4, 'SDObjA', 'DC_Root'),
 		emomod(emoB)))
 	# the effect of the Battery model needs its glow node (a missing one is a CHECK)
-	if SDTest.Call('CGameModel_FindNodoR', 'tiis', emoA + 0xb8, 'DOB_Batery_Glow')[0] >= 0:
+	if SDTest.Call('CGameModel_FindRenderNode', 'tiis', emoA + 0xb8, 'DOB_Batery_Glow')[0] >= 0:
 		SDTest.Call('crt_srand', 'vi', 4321)
 		check('cObjEntity_SetEmbeddedFX', lambda: (SDTest.Call('cObjEntity_SetEmbeddedFX', 'tvis', emoA, 'SDNone'), emoi(emoA + 0x224) != 0))
 		check('cObjEntity_Update A model', lambda: emoupdate(emoA, sym('cObjEntity_Update'), 0.02, 0.01, 0.05))

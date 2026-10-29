@@ -339,10 +339,10 @@ void __thiscall cCreditsScorer_DrawLines(cCreditsScorer *self, byte fade, uint32
 
 		if (i == 0) {
 			font = self->titleFont;
-			font->efectos = TEXTSCORER_SHADOW;
+			font->effects = TEXTSCORER_SHADOW;
 		} else {
 			font = self->font;
-			font->efectos = TEXTSCORER_OUTLINE;
+			font->effects = TEXTSCORER_OUTLINE;
 		}
 		font->color = color;
 		font->align = 0;
@@ -378,7 +378,7 @@ void __thiscall cCreditsScorer_DrawLines(cCreditsScorer *self, byte fade, uint32
 				y = sy + (float)g_CreditsY;
 			}
 		}
-		CFont_PrintfFlags(font, x, y + yoff, CFONT_ALIGN | CFONT_COLOR | CFONT_EFECTOS, "%s", line);
+		CFont_PrintfFlags(font, x, y + yoff, CFONT_ALIGN | CFONT_COLOR | CFONT_EFFECTS, "%s", line);
 	}
 }
 
@@ -439,7 +439,7 @@ void __thiscall cCreditsScorer_Draw(cCreditsScorer *self, int player) {
 
 void __thiscall cHintScorer_Draw(cHintScorer *self, int player) {
 	cScorer *sc = Scorer_Get(player);
-	cScorerItem *item = cScorer_FindItem(sc, sc->actual);
+	cScorerItem *item = cScorer_FindItem(sc, sc->current);
 
 	if (item && cPy_Function_IsValid(&item->onAccept)) {
 		const cString *src;
@@ -485,7 +485,7 @@ void __thiscall cHintScorer_Draw(cHintScorer *self, int player) {
 			(self->base.base.y - (float)row * lineH) - 16.0f, w, h);
 	}
 	for (int k = 0; k < n; k++, row--) {
-		CFont_PrintfAlignColorSombra(self->base.font, self->base.base.x, self->base.base.y - (float)row * lineH,
+		CFont_PrintfAlignColorShadow(self->base.font, self->base.base.x, self->base.base.y - (float)row * lineH,
 			TEXTSCORER_CENTER, self->base.color, "%s", g_HintLines[k]);
 	}
 }
@@ -519,7 +519,7 @@ void __thiscall cLabelScorer_Draw(cLabelScorer *self, int player) {
 		}
 		text = s_NetStates[state];
 	}
-	CFont_PrintfAlignColorSombra(self->base.font, self->base.base.x, self->base.base.y, self->base.align,
+	CFont_PrintfAlignColorShadow(self->base.font, self->base.base.x, self->base.base.y, self->base.align,
 		self->base.color, "%s", text);
 }
 
@@ -530,7 +530,7 @@ void __thiscall cMsgScorer_Draw(cMsgScorer *self, int player) {
 	}
 	for (int k = 0; k < g_MsgNumLines; k++) {
 		float lh = self->lineHeight;
-		CFont_PrintfAlignColorSombra(self->base.font, self->base.base.x,
+		CFont_PrintfAlignColorShadow(self->base.font, self->base.base.x,
 			(float)k * lh + (lh * 0.5f + self->base.base.y), self->base.align, self->base.color, "%s", g_MsgLines[k]);
 	}
 }

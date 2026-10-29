@@ -12,54 +12,54 @@
 #include "scrap/render.h"
 #include "scrap/varios.h"
 
-CFuenteGrid *__thiscall CFuenteGrid_ctor(CFuenteGrid *self, const char *tex, const char *opac, byte pri, byte ult,
-	int celdaAncho, int celdaAlto, float espacio) {
-	CGrafico2D_ctor(&self->grf);
-	CGrafico2D_SetTexture(&self->grf, tex, opac, 0);
-	self->grf.pantalla = 1;
-	self->grf.tamPantalla = 1;
+CFontGrid *__thiscall CFontGrid_ctor(CFontGrid *self, const char *tex, const char *opac, byte first, byte last,
+	int cellWidth, int cellHeight, float space) {
+	CGraphic2D_ctor(&self->graphic);
+	CGraphic2D_SetTexture(&self->graphic, tex, opac, 0);
+	self->graphic.screen = 1;
+	self->graphic.screenSize = 1;
 	self->i54 = 0;
 	self->i50 = 0;
-	CHECK(pri <= ult);
-	self->celdaAncho = celdaAncho;
-	self->celdaAlto = celdaAlto;
-	self->pri = pri;
-	self->ult = ult;
-	self->espacio = espacio;
+	CHECK(first <= last);
+	self->cellWidth = cellWidth;
+	self->cellHeight = cellHeight;
+	self->first = first;
+	self->last = last;
+	self->space = space;
 	return self;
 }
 
-void __thiscall CFuenteGrid_Print(CFuenteGrid *self, float x, float y, const char *s) {
-	int porFila = 0x100 / self->celdaAncho;
-	float cw = (float)self->celdaAncho * (1.0f / 256.0f);
-	float ch = (float)self->celdaAlto * (1.0f / 256.0f);
+void __thiscall CFontGrid_Print(CFontGrid *self, float x, float y, const char *s) {
+	int perRow = 0x100 / self->cellWidth;
+	float cw = (float)self->cellWidth * (1.0f / 256.0f);
+	float ch = (float)self->cellHeight * (1.0f / 256.0f);
 	for (const byte *c = (const byte *)s; *c; c++) {
-		if (*c >= self->pri && *c <= self->ult) {
-			int i = *c - self->pri;
-			self->grf.v0 = (float)(i / porFila) * ch;
-			self->grf.v1 = self->grf.v0 + ch;
-			self->grf.u0 = (float)(i % porFila) * cw;
-			self->grf.u1 = self->grf.u0 + cw;
-			self->grf.x = x;
-			self->grf.y = y;
-			CGrafico2D_Render(&self->grf);
+		if (*c >= self->first && *c <= self->last) {
+			int i = *c - self->first;
+			self->graphic.v0 = (float)(i / perRow) * ch;
+			self->graphic.v1 = self->graphic.v0 + ch;
+			self->graphic.u0 = (float)(i % perRow) * cw;
+			self->graphic.u1 = self->graphic.u0 + cw;
+			self->graphic.x = x;
+			self->graphic.y = y;
+			CGraphic2D_Render(&self->graphic);
 		}
-		x = self->espacio + x;
+		x = self->space + x;
 	}
 }
 
-CDigitos *__fastcall CDigitos_ctor(CDigitos *self) {
+CDigits *__fastcall CDigits_ctor(CDigits *self) {
 	char tex[128], opac[128];
 
 	for (int i = 0; i < 10; i++) {
-		CGrafico2D_ctor(&self->digito[i]);
+		CGraphic2D_ctor(&self->digit[i]);
 	}
 	for (int i = 0; i < 10; i++) {
 		snprintf(tex, sizeof(tex), "bmp/digitos/digito%04d.tga", i + 1);
 		snprintf(opac, sizeof(opac), "bmp/digitos/digito%04do.tga", i + 1);
-		CGrafico2D_SetTexture(&self->digito[i], tex, opac, 0);
-		self->digito[i].pantalla = 1;
-		self->digito[i].tamPantalla = 1;
+		CGraphic2D_SetTexture(&self->digit[i], tex, opac, 0);
+		self->digit[i].screen = 1;
+		self->digit[i].screenSize = 1;
 	}
 	self->i2ac = 0;
 	self->i2a8 = 0;
@@ -67,39 +67,39 @@ CDigitos *__fastcall CDigitos_ctor(CDigitos *self) {
 	return self;
 }
 
-void __fastcall CDigitos_dtor(CDigitos *self) {
+void __fastcall CDigits_dtor(CDigits *self) {
 	for (int i = 9; i >= 0; i--) {
-		CGrafico2D_dtor(&self->digito[i]);
+		CGraphic2D_dtor(&self->digit[i]);
 	}
 }
 
-static const FntGlifo *CFuente3_Glifo(const CFuente3 *self, uint32_t i) {
-	TABLA_CHECK(self->glifos.p, i, self->glifos.n);
-	return (const FntGlifo *)self->glifos.p + i;
+static const FntGlyph *CFont3_Glyph(const CFont3 *self, uint32_t i) {
+	TABLE_CHECK(self->glyphs.p, i, self->glyphs.n);
+	return (const FntGlyph *)self->glyphs.p + i;
 }
 
-static void CFuente3_SetGlifoRect(CFuente3 *self, byte letra, float u0, float v0, float u1, float v1) {
-	FntGlifo *g = (FntGlifo *)CFuente3_Glifo(self, (uint32_t)(letra - self->pri));
+static void CFont3_SetGlyphRect(CFont3 *self, byte letter, float u0, float v0, float u1, float v1) {
+	FntGlyph *g = (FntGlyph *)CFont3_Glyph(self, (uint32_t)(letter - self->first));
 	g->u0 = u0;
 	g->v0 = v0;
 	g->u1 = u1;
 	g->v1 = v1;
 }
 
-static byte Pixel_EsBorde(const CBmp *b, int x, int y, uint32_t borde) {
-	return ((*(const uint32_t *)Img_Pixel(b, (uint32_t)x, (uint32_t)y, 4) ^ borde) & 0xffffff) == 0;
+static byte Pixel_IsBorder(const CBmp *b, int x, int y, uint32_t border) {
+	return ((*(const uint32_t *)Img_Pixel(b, (uint32_t)x, (uint32_t)y, 4) ^ border) & 0xffffff) == 0;
 }
 
 /* the glyphs between the border color (the pixel 0, 0): rows of glyphs between border rows, in each row the glyphs
  * between border pixels; the last letter found */
-static byte CFuente3_Escanear(CFuente3 *self, const CBmp *bmp, byte ult) {
-	byte letra = self->pri;
-	int w = self->bmpAncho, h = self->bmpAlto;
-	uint32_t borde = *CBmp_Pixel(bmp, 0, 0);
+static byte CFont3_Scan(CFont3 *self, const CBmp *bmp, byte last) {
+	byte letter = self->first;
+	int w = self->bmpWidth, h = self->bmpHeight;
+	uint32_t border = *CBmp_Pixel(bmp, 0, 0);
 
 	for (int y = 0; y < h;) {
-		CHECK(Bmp_FilaBorde(bmp, y, borde) == w);
-		while (y < h && Bmp_FilaBorde(bmp, y, borde) == w) {
+		CHECK(Bmp_RowBorder(bmp, y, border) == w);
+		while (y < h && Bmp_RowBorder(bmp, y, border) == w) {
 			y++;
 		}
 		int ytop = y;
@@ -107,7 +107,7 @@ static byte CFuente3_Escanear(CFuente3 *self, const CBmp *bmp, byte ult) {
 			break;
 		}
 		do {
-			if (Bmp_FilaBorde(bmp, y, borde) == w) {
+			if (Bmp_RowBorder(bmp, y, border) == w) {
 				break;
 			}
 			y++;
@@ -117,130 +117,130 @@ static byte CFuente3_Escanear(CFuente3 *self, const CBmp *bmp, byte ult) {
 			break;
 		}
 		for (int x = 0; x < w; x++) {
-			if (Pixel_EsBorde(bmp, x, ytop, borde)) {
+			if (Pixel_IsBorder(bmp, x, ytop, border)) {
 				continue;
 			}
 			int x1 = x;
-			while (x < w && !Pixel_EsBorde(bmp, x, ytop, borde)) {
+			while (x < w && !Pixel_IsBorder(bmp, x, ytop, border)) {
 				x++;
 			}
-			CFuente3_SetGlifoRect(self, letra, (float)x1 / (float)w, (float)ytop / (float)h, (float)x / (float)w,
+			CFont3_SetGlyphRect(self, letter, (float)x1 / (float)w, (float)ytop / (float)h, (float)x / (float)w,
 				(float)ybot / (float)h);
-			if (letra == ult) {
-				return letra;
+			if (letter == last) {
+				return letter;
 			}
-			letra++;
+			letter++;
 		}
-		if (letra == ult) {
+		if (letter == last) {
 			break;
 		}
 	}
-	return letra;
+	return letter;
 }
 
-/* the glyphs packed into a square alpha texture of the size ancho (256 below 4), written as &u&d&n.Alpha.TGA */
-static void CFuente3_CrearAlpha(CFuente3 *self, CBmp *bmp, char *tmp, byte ult, float ancho) {
-	int tam = (int)(4.0f > ancho ? 256.0f : ancho);
-	CBmp alfa = { tam, tam, operator_new_array((uint32_t)tam * (uint32_t)tam * 4) };
+/* the glyphs packed into a square alpha texture of the size width (256 below 4), written as &u&d&n.Alpha.TGA */
+static void CFont3_CreateAlpha(CFont3 *self, CBmp *bmp, char *tmp, byte last, float width) {
+	int size = (int)(4.0f > width ? 256.0f : width);
+	CBmp alpha = { size, size, operator_new_array((uint32_t)size * (uint32_t)size * 4) };
 
-	CBmp_Fill(&alfa, 0xf5f5f5);
-	for (int y = 0; y < self->bmpAlto; y++) {
-		uint32_t *fila = Img_Pixel(bmp, 0, (uint32_t)y, 4);
-		for (int x = 0; x < self->bmpAncho; x++) {
-			fila[x] = (uint32_t)((const byte *)&fila[x])[1] << 24 | 0xffffff;
+	CBmp_Fill(&alpha, 0xf5f5f5);
+	for (int y = 0; y < self->bmpHeight; y++) {
+		uint32_t *row = Img_Pixel(bmp, 0, (uint32_t)y, 4);
+		for (int x = 0; x < self->bmpWidth; x++) {
+			row[x] = (uint32_t)((const byte *)&row[x])[1] << 24 | 0xffffff;
 		}
 	}
 	int px = 1, py = 1;
-	for (byte c = self->pri; c <= ult; c++) {
-		const FntGlifo *g = CFuente3_Glifo(self, (uint32_t)(c - self->pri));
-		int x1 = (int)((double)((float)bmp->ancho * g->u0) + 0.5);
-		int y1 = (int)((double)((float)bmp->alto * g->v0) + 0.5);
-		int x2 = (int)((double)((float)bmp->ancho * g->u1) + 0.5);
-		int y2 = (int)((double)((float)bmp->alto * g->v1) + 0.5);
+	for (byte c = self->first; c <= last; c++) {
+		const FntGlyph *g = CFont3_Glyph(self, (uint32_t)(c - self->first));
+		int x1 = (int)((double)((float)bmp->width * g->u0) + 0.5);
+		int y1 = (int)((double)((float)bmp->height * g->v0) + 0.5);
+		int x2 = (int)((double)((float)bmp->width * g->u1) + 0.5);
+		int y2 = (int)((double)((float)bmp->height * g->v1) + 0.5);
 		CHECK(x1 < x2);
 		CHECK(y1 < y2);
 		int cw = x2 - x1;
-		if (px + cw > alfa.ancho) {
+		if (px + cw > alpha.width) {
 			px = 1;
 			py = py + 1 + (y2 - y1);
-			if ((y2 - y1) + py > alfa.alto) {
-				Err_Printf(1, "'%s' no cabe en %dx%d (letra: %d)", tmp, alfa.ancho, alfa.alto, c);
+			if ((y2 - y1) + py > alpha.height) {
+				Err_Printf(1, "'%s' no cabe en %dx%d (letra: %d)", tmp, alpha.width, alpha.height, c);
 			}
 		}
-		CBmp_Copy(&alfa, px, py, bmp, x1, y1, cw, y2 - y1, 0xf);
+		CBmp_Copy(&alpha, px, py, bmp, x1, y1, cw, y2 - y1, 0xf);
 		px = px + 1 + cw;
 		if (c == 0xff) {
 			break;
 		}
 	}
-	Ruta_Format(tmp, tmp, "&u&d&n.Alpha.TGA");
-	if (CBmp_Save(&alfa, tmp, 2)) {
+	Path_Format(tmp, tmp, "&u&d&n.Alpha.TGA");
+	if (CBmp_Save(&alpha, tmp, 2)) {
 		CheckFailed("!bmp2.escr_archivo( tmp, BITMAP_SAVEALPHA )", __FILE__, __TIMESTAMP__, __LINE__);
 	}
 	Err_Printf(0, "creado: %s", tmp);
-	alfa.ancho = 0;
-	alfa.alto = 0;
-	if (alfa.img) {
-		operator_delete_sized(alfa.img, 4);
+	alpha.width = 0;
+	alpha.height = 0;
+	if (alpha.img) {
+		operator_delete_sized(alpha.img, 4);
 	}
 }
 
-/* the sprite table of the glyphs (sprite i + 1 is glyph pri + i) */
-static void CFuente3_TablaMST(const CFuente3 *self, CMultiSprite *ms, byte ult) {
-	ms->ancho = self->bmpAncho;
-	ms->alto = self->bmpAlto;
-	Tabla_Alloc8((CTabla *)&ms->n, ult - self->pri + 2);
-	for (int i = 1; i <= ult - self->pri + 1; i++) {
-		const FntGlifo *g = CFuente3_Glifo(self, (uint32_t)(i - 1));
+/* the sprite table of the glyphs (sprite i + 1 is glyph first + i) */
+static void CFont3_TableMST(const CFont3 *self, CMultiSprite *ms, byte last) {
+	ms->width = self->bmpWidth;
+	ms->height = self->bmpHeight;
+	Table_Alloc8((CTable *)&ms->n, last - self->first + 2);
+	for (int i = 1; i <= last - self->first + 1; i++) {
+		const FntGlyph *g = CFont3_Glyph(self, (uint32_t)(i - 1));
 		float du = g->u1 - g->u0, dv = g->v1 - g->v0;
 		MSprite *s = &ms->p[i];
-		s->x = (uint16_t)(int)((float)ms->ancho * g->u0);
-		s->y = (uint16_t)(int)((float)ms->alto * g->v0);
-		s->cx = (uint16_t)(int)((float)ms->ancho * du);
-		s->cy = (uint16_t)(int)((float)ms->alto * dv);
+		s->x = (uint16_t)(int)((float)ms->width * g->u0);
+		s->y = (uint16_t)(int)((float)ms->height * g->v0);
+		s->cx = (uint16_t)(int)((float)ms->width * du);
+		s->cy = (uint16_t)(int)((float)ms->height * dv);
 	}
 }
 
-CFuente3 *__thiscall CFuente3_ctor(CFuente3 *self, const char *tex, const char *opac, byte pri, byte ult, float ancho,
-	byte generar, uint32_t flags, float unused) {
+CFont3 *__thiscall CFont3_ctor(CFont3 *self, const char *tex, const char *opac, byte first, byte last, float width,
+	byte generate, uint32_t flags, float unused) {
 	char tmp[260], mst[260];
 	CMultiSprite ms;
 
 	(void)unused;
-	self->glifos.p = NULL;
-	self->glifos.n = 0;
-	if (generar) {
-		self->grf = NULL;
+	self->glyphs.p = NULL;
+	self->glyphs.n = 0;
+	if (generate) {
+		self->graphic = NULL;
 	} else {
-		CGrafico2D *g = operator_new(sizeof(CGrafico2D));
-		self->grf = g ? CGrafico2D_ctorTex(g, tex, opac, flags | GRAF2D_PANTALLA | GRAF2D_TAM_PANTALLA) : NULL;
+		CGraphic2D *g = operator_new(sizeof(CGraphic2D));
+		self->graphic = g ? CGraphic2D_ctorTex(g, tex, opac, flags | GRAPHIC2D_SCREEN | GRAPHIC2D_SCREEN_SIZE) : NULL;
 	}
 	self->y = 0.0f;
 	self->x = 0.0f;
-	self->onda = 1.0f;
+	self->wave = 1.0f;
 	self->color = 0xffffff;
 	self->flags = 0;
 	self->i18 = 0;
-	self->redondear = 0;
+	self->round = 0;
 	self->mono = 0;
-	CHECK(pri <= ult);
-	self->ult = ult;
-	self->pri = pri;
-	self->ancho = ancho;
-	Tabla_Alloc10(&self->glifos, ult - pri + 1);
-	Ruta_Copy(tmp, tex, sizeof(tmp));
-	Ruta_Format(mst, tmp, "&u&d&n.MST");
+	CHECK(first <= last);
+	self->last = last;
+	self->first = first;
+	self->width = width;
+	Table_Alloc10(&self->glyphs, last - first + 1);
+	Path_Copy(tmp, tex, sizeof(tmp));
+	Path_Format(mst, tmp, "&u&d&n.MST");
 	CMultiSprite_ctor(&ms);
 	if (File_TimeDiff(mst, tex, 0) < 0) {
 		E3D_LogBlue(g_FileLog, "WARN: [%s] is older than [%s]", mst, tex);
 	} else if (CMultiSprite_Load(&ms, mst)) {
-		CHECK(ult - pri + 2 == ms.n);
-		self->bmpAncho = ms.ancho;
-		self->bmpAlto = ms.alto;
-		for (int i = 0; i <= ult - pri; i++) {
+		CHECK(last - first + 2 == ms.n);
+		self->bmpWidth = ms.width;
+		self->bmpHeight = ms.height;
+		for (int i = 0; i <= last - first; i++) {
 			float t0[2], t1[2];
 			CMultiSprite_GetUV(&ms, (uint32_t)(i + 1), t0, t1);
-			CFuente3_SetGlifoRect(self, (byte)(pri + i), t0[0], t0[1], t1[0], t1[1]);
+			CFont3_SetGlyphRect(self, (byte)(first + i), t0[0], t0[1], t1[0], t1[1]);
 		}
 		CMultiSprite_dtor(&ms);
 		return self;
@@ -249,23 +249,23 @@ CFuente3 *__thiscall CFuente3_ctor(CFuente3 *self, const char *tex, const char *
 	if (CBmp_Load(&bmp, tmp, 0)) {
 		Err_Report(*crt_errno(), 1, "\n'%s'", tmp);
 	}
-	self->bmpAncho = bmp.ancho;
-	self->bmpAlto = bmp.alto;
-	byte letra = CFuente3_Escanear(self, &bmp, ult);
-	if (!generar) {
-		CHECK(letra == ult);
+	self->bmpWidth = bmp.width;
+	self->bmpHeight = bmp.height;
+	byte letter = CFont3_Scan(self, &bmp, last);
+	if (!generate) {
+		CHECK(letter == last);
 	} else {
-		if (letra || ult) {
-			if (!letra) {
+		if (letter || last) {
+			if (!letter) {
 				CheckFailed("letra!=0 || ult==0", __FILE__, __TIMESTAMP__, __LINE__);
 			}
-			if (ult != letra) {
-				ult = (byte)(letra - 1);
+			if (last != letter) {
+				last = (byte)(letter - 1);
 			}
 		}
-		CFuente3_CrearAlpha(self, &bmp, tmp, ult, ancho);
+		CFont3_CreateAlpha(self, &bmp, tmp, last, width);
 	}
-	CFuente3_TablaMST(self, &ms, ult);
+	CFont3_TableMST(self, &ms, last);
 	if (CMultiSprite_Save(&ms, mst)) {
 		Con_Verbosef("CFuente3: SaveMultiSpriteTable: '%s'\n", mst);
 	} else {
@@ -276,32 +276,32 @@ CFuente3 *__thiscall CFuente3_ctor(CFuente3 *self, const char *tex, const char *
 	return self;
 }
 
-void __fastcall CFuente3_dtor(CFuente3 *self) {
-	if (self->grf) {
-		CGrafico2D_dtor(self->grf);
-		operator_delete_sized(self->grf, sizeof(CGrafico2D));
-		self->grf = NULL;
+void __fastcall CFont3_dtor(CFont3 *self) {
+	if (self->graphic) {
+		CGraphic2D_dtor(self->graphic);
+		operator_delete_sized(self->graphic, sizeof(CGraphic2D));
+		self->graphic = NULL;
 	}
-	Tabla_Free(&self->glifos);
+	Table_Free(&self->glyphs);
 }
 
-float __thiscall CFuente3_GlifoAncho(const CFuente3 *self, const FntGlifo *g) {
+float __thiscall CFont3_GlyphWidth(const CFont3 *self, const FntGlyph *g) {
 	if (self->mono) {
-		return self->grf->escala2[0] * self->ancho;
+		return self->graphic->scale2[0] * self->width;
 	}
-	return (g->u1 - g->u0) * (float)self->bmpAncho * self->grf->escala2[0];
+	return (g->u1 - g->u0) * (float)self->bmpWidth * self->graphic->scale2[0];
 }
 
-float __thiscall CFuente3_GlifoAlto(const CFuente3 *self, const FntGlifo *g) {
-	return (g->v1 - g->v0) * (float)self->bmpAlto * self->grf->escala2[1];
+float __thiscall CFont3_GlyphHeight(const CFont3 *self, const FntGlyph *g) {
+	return (g->v1 - g->v0) * (float)self->bmpHeight * self->graphic->scale2[1];
 }
 
-/* the height of the unicode characters: the glyph pri */
-static float CFuente3_UniAlto(const CFuente3 *self) {
-	return CFuente3_GlifoAlto(self, CFuente3_Glifo(self, self->pri)) * self->uniEscala[1];
+/* the height of the unicode characters: the glyph first */
+static float CFont3_UniHeight(const CFont3 *self) {
+	return CFont3_GlyphHeight(self, CFont3_Glyph(self, self->first)) * self->uniScale[1];
 }
 
-void __thiscall CFuente3_Medir(const CFuente3 *self, float x, float y, uint16_t align, const char *s, float *pos,
+void __thiscall CFont3_Measure(const CFont3 *self, float x, float y, uint16_t align, const char *s, float *pos,
 	float *dim) {
 	float w = 0.0f, h = 0.0f;
 
@@ -309,18 +309,18 @@ void __thiscall CFuente3_Medir(const CFuente3 *self, float x, float y, uint16_t 
 	if (align || dim) {
 		for (const byte *c = (const byte *)s; *c; c++) {
 			float gh;
-			if (*c < self->pri || *c > self->ult) {
+			if (*c < self->first || *c > self->last) {
 				uint16_t u;
 				if (!CUnifont_Parse(&g_Unifont, (const char *)c, &u)) {
 					continue;
 				}
 				c += 4;
-				gh = CFuente3_UniAlto(self);
-				w += CUnifont_Ancho(&g_Unifont, u, gh) * self->uniEscala[0] + 1.0f;
+				gh = CFont3_UniHeight(self);
+				w += CUnifont_Width(&g_Unifont, u, gh) * self->uniScale[0] + 1.0f;
 			} else {
-				const FntGlifo *g = CFuente3_Glifo(self, (uint32_t)(*c - self->pri));
-				w += CFuente3_GlifoAncho(self, g);
-				gh = CFuente3_GlifoAlto(self, g);
+				const FntGlyph *g = CFont3_Glyph(self, (uint32_t)(*c - self->first));
+				w += CFont3_GlyphWidth(self, g);
+				gh = CFont3_GlyphHeight(self, g);
 			}
 			if (!(h > gh)) {
 				h = gh;
@@ -335,15 +335,15 @@ void __thiscall CFuente3_Medir(const CFuente3 *self, float x, float y, uint16_t 
 		return;
 	}
 	switch (align) {
-	case FNT_ALIGN_DER:
+	case FNT_ALIGN_RIGHT:
 		h = 0.0f;
 		break;
-	case FNT_ALIGN_ABAJO:
+	case FNT_ALIGN_BOTTOM:
 		w = 0.0f;
 		break;
-	case FNT_ALIGN_DER_ABAJO:
+	case FNT_ALIGN_RIGHT_BOTTOM:
 		break;
-	case FNT_ALIGN_CENTRO:
+	case FNT_ALIGN_CENTER:
 		w *= 0.5f;
 		h *= 0.5f;
 		break;
@@ -355,215 +355,215 @@ void __thiscall CFuente3_Medir(const CFuente3 *self, float x, float y, uint16_t 
 	pos[1] = y - h;
 }
 
-void __thiscall CFuente3_SetEscala(CFuente3 *self, float x, float y) {
-	CHECK(self->grf);
-	self->grf->escala2[0] = x;
-	self->grf->escala2[1] = y;
+void __thiscall CFont3_SetScale(CFont3 *self, float x, float y) {
+	CHECK(self->graphic);
+	self->graphic->scale2[0] = x;
+	self->graphic->scale2[1] = y;
 }
 
-uint32_t __thiscall Font_SetColor(CFuente3 *self, uint32_t color) {
+uint32_t __thiscall Font_SetColor(CFont3 *self, uint32_t color) {
 	self->color = color;
 	return 2;
 }
 
-uint32_t __thiscall Font_SetFlags(CFuente3 *self, uint32_t flags) {
+uint32_t __thiscall Font_SetFlags(CFont3 *self, uint32_t flags) {
 	self->flags = flags;
 	return 8;
 }
 
 /* the control characters of a font with them are drawn white (keeping the alpha) */
-static byte CFuente3_Control(const CFuente3 *self, byte c) {
-	return self->pri < 0x20 && c < 0x20 && self->grf->color;
+static byte CFont3_Control(const CFont3 *self, byte c) {
+	return self->first < 0x20 && c < 0x20 && self->graphic->color;
 }
 
-static void CFuente3_SetGlifo(CFuente3 *self, const FntGlifo *g, float x, float y) {
-	CGrafico2D *grf = self->grf;
-	grf->u0 = g->u0;
-	grf->v0 = g->v0;
-	grf->u1 = g->u1;
-	grf->v1 = g->v1;
-	grf->x = x;
-	grf->y = y;
+static void CFont3_SetGlyph(CFont3 *self, const FntGlyph *g, float x, float y) {
+	CGraphic2D *graphic = self->graphic;
+	graphic->u0 = g->u0;
+	graphic->v0 = g->v0;
+	graphic->u1 = g->u1;
+	graphic->v1 = g->v1;
+	graphic->x = x;
+	graphic->y = y;
 }
 
-void __thiscall CFuente3_Print(CFuente3 *self, float x, float y, const char *s) {
+void __thiscall CFont3_Print(CFont3 *self, float x, float y, const char *s) {
 	if (!s) {
 		return;
 	}
-	if (self->redondear) {
+	if (self->round) {
 		x = (float)crt_floor((double)x + 0.5);
 		y = (float)crt_floor((double)y + 0.5);
 	}
-	uint32_t color = self->grf->color;
+	uint32_t color = self->graphic->color;
 	for (const byte *c = (const byte *)s; *c; c++) {
 		byte ch = *c;
-		if (CFuente3_Control(self, ch)) {
-			self->grf->color = (self->grf->color & 0xff000000) | 0xffffff;
+		if (CFont3_Control(self, ch)) {
+			self->graphic->color = (self->graphic->color & 0xff000000) | 0xffffff;
 		}
-		if (ch < self->pri || ch > self->ult) {
+		if (ch < self->first || ch > self->last) {
 			uint16_t u;
 			if (CUnifont_Parse(&g_Unifont, (const char *)c, &u)) {
-				float h = CFuente3_UniAlto(self);
-				float w = CUnifont_Ancho(&g_Unifont, u, h) * self->uniEscala[0];
+				float h = CFont3_UniHeight(self);
+				float w = CUnifont_Width(&g_Unifont, u, h) * self->uniScale[0];
 				c += 4;
-				CGrafico2D *ug = g_Unifont.grf;
+				CGraphic2D *ug = g_Unifont.graphic;
 				ug->x = self->uniOffset[0] + x;
 				ug->y = self->uniOffset[1] + y;
 				ug->color = color;
 				CUnifont_SetSprite(&g_Unifont, u, w, h);
-				CGrafico2D_Render(ug);
+				CGraphic2D_Render(ug);
 				x = w + 1.0f + x;
 			}
 		} else {
-			const FntGlifo *g = CFuente3_Glifo(self, (uint32_t)(ch - self->pri));
-			CFuente3_SetGlifo(self, g, x, y);
-			CGrafico2D_Render(self->grf);
-			x = CFuente3_GlifoAncho(self, g) + x;
+			const FntGlyph *g = CFont3_Glyph(self, (uint32_t)(ch - self->first));
+			CFont3_SetGlyph(self, g, x, y);
+			CGraphic2D_Render(self->graphic);
+			x = CFont3_GlyphWidth(self, g) + x;
 		}
-		if (CFuente3_Control(self, ch)) {
-			self->grf->color = color;
+		if (CFont3_Control(self, ch)) {
+			self->graphic->color = color;
 		}
 	}
 	self->x = x;
 	self->y = y;
 }
 
-void __thiscall CFuente3_PrintColor(CFuente3 *self, float x, float y, uint32_t color, const char *s) {
-	self->grf->color = color;
-	CFuente3_Print(self, x, y, s);
-	self->grf->color = 0xffffff;
+void __thiscall CFont3_PrintColor(CFont3 *self, float x, float y, uint32_t color, const char *s) {
+	self->graphic->color = color;
+	CFont3_Print(self, x, y, s);
+	self->graphic->color = 0xffffff;
 }
 
-void __thiscall CFuente3_PrintAlign(CFuente3 *self, float x, float y, uint32_t flags, uint32_t color, const char *s) {
+void __thiscall CFont3_PrintAlign(CFont3 *self, float x, float y, uint32_t flags, uint32_t color, const char *s) {
 	float pos[2];
 
 	if (!s) {
 		return;
 	}
-	CFuente3_Medir(self, x, y, (uint16_t)flags, s, pos, NULL);
-	if (flags & FNT_ONDA) {
-		CFuente3_PrintOnda(self, pos[0], pos[1], color, self->onda, s);
-	} else if (flags & FNT_CONTORNO) {
-		CFuente3_PrintContorno(self, pos[0], pos[1], color, s);
+	CFont3_Measure(self, x, y, (uint16_t)flags, s, pos, NULL);
+	if (flags & FNT_WAVE) {
+		CFont3_PrintWave(self, pos[0], pos[1], color, self->wave, s);
+	} else if (flags & FNT_OUTLINE) {
+		CFont3_PrintOutline(self, pos[0], pos[1], color, s);
 	} else {
-		CFuente3_PrintColor(self, pos[0], pos[1], color, s);
+		CFont3_PrintColor(self, pos[0], pos[1], color, s);
 	}
 }
 
-void __thiscall CFuente3_PrintOnda(CFuente3 *self, float x, float y, uint32_t color, float onda, const char *s) {
+void __thiscall CFont3_PrintWave(CFont3 *self, float x, float y, uint32_t color, float wave, const char *s) {
 	if (!s) {
 		return;
 	}
-	CGrafico2D *grf = self->grf;
-	grf->color = color;
+	CGraphic2D *graphic = self->graphic;
+	graphic->color = color;
 	for (uint32_t i = 0; s[i]; i++) {
 		byte ch = (byte)s[i];
-		if (ch < self->pri || ch > self->ult) {
+		if (ch < self->first || ch > self->last) {
 			continue;
 		}
-		const FntGlifo *g = CFuente3_Glifo(self, (uint32_t)(ch - self->pri));
-		CFuente3_SetGlifo(self, g, x, y);
-		if (onda != 1.0f) {
+		const FntGlyph *g = CFont3_Glyph(self, (uint32_t)(ch - self->first));
+		CFont3_SetGlyph(self, g, x, y);
+		if (wave != 1.0f) {
 			if (i & 1) {
-				grf->escala[0] = onda;
-				grf->escala[1] = 1.0f / onda;
+				graphic->scale[0] = wave;
+				graphic->scale[1] = 1.0f / wave;
 			} else {
-				grf->escala[0] = 1.0f / onda;
-				grf->escala[1] = onda;
+				graphic->scale[0] = 1.0f / wave;
+				graphic->scale[1] = wave;
 			}
-			float w = CFuente3_GlifoAncho(self, g);
-			grf->x = grf->x - (grf->escala[0] - 1.0f) * w * 0.5f;
-			grf->y = grf->y - CFuente3_GlifoAlto(self, g) * (grf->escala[1] - 1.0f) * 0.5f;
+			float w = CFont3_GlyphWidth(self, g);
+			graphic->x = graphic->x - (graphic->scale[0] - 1.0f) * w * 0.5f;
+			graphic->y = graphic->y - CFont3_GlyphHeight(self, g) * (graphic->scale[1] - 1.0f) * 0.5f;
 		}
-		CGrafico2D_Render(grf);
-		x = CFuente3_GlifoAncho(self, g) + x;
+		CGraphic2D_Render(graphic);
+		x = CFont3_GlyphWidth(self, g) + x;
 	}
-	grf->escala[0] = 1.0f;
-	grf->escala[1] = 1.0f;
-	grf->color = 0xffffff;
+	graphic->scale[0] = 1.0f;
+	graphic->scale[1] = 1.0f;
+	graphic->color = 0xffffff;
 }
 
 /* the outline material of the texture of src: cached in *mat until the device starts again or the texture changes */
-static CMaterial *Fnt_MatContorno(CMaterial *src, CMaterial **mat, int *init, const char *name) {
-	if (g_MotorInits == *init && *mat) {
+static CMaterial *Fnt_MatOutline(CMaterial *src, CMaterial **mat, int *init, const char *name) {
+	if (g_EngineInits == *init && *mat) {
 		const char *a = CMaterial_GetMapName(src, 0) ? CMaterial_GetMapName(src, 0) : "";
 		const char *b = CMaterial_GetMapName(*mat, 0) ? CMaterial_GetMapName(*mat, 0) : "";
 		if (!strcmp(b, a)) {
 			return *mat;
 		}
 	}
-	*init = g_MotorInits;
+	*init = g_EngineInits;
 	CMaterial m;
 	CMaterial_ctor(&m);
-	Cad_Set(&m.Nombre, name);
+	String_Set(&m.Name, name);
 	CMaterial_SetMap(&m, 0, CMaterial_GetMapName(src, 0));
 	m.params.srcBlend = 5;
 	m.params.dstBlend = 6;
 	m.params.b39 = 0;
 	m.params.transp = 1;
 	m.params.i40 = 8;
-	m.params.atrib = 0x40;
+	m.params.attrib = 0x40;
 	m.params.w3e = 0;
 	*mat = Mat_New(&m, 1);
 	CMaterial_dtor(&m);
 	return *mat;
 }
 
-static byte Unifont_Activa(void) {
-	return g_Unifont.grf && g_Unifont.sprites;
+static byte Unifont_Active(void) {
+	return g_Unifont.graphic && g_Unifont.sprites;
 }
 
 static void Fnt_SetBlend(CMaterial *mat, CMaterial *uni, int dst) {
 	mat->params.srcBlend = 5;
 	mat->params.dstBlend = dst;
-	if (Unifont_Activa()) {
+	if (Unifont_Active()) {
 		uni->params.srcBlend = 5;
 		uni->params.dstBlend = dst;
 	}
 }
 
 /* the unicode character at c: its sprite on the unicode sprite, its size; 0 if c is not one */
-static byte CFuente3_UniGlifo(const CFuente3 *self, const char *c, float *w, float *h) {
+static byte CFont3_UniGlyph(const CFont3 *self, const char *c, float *w, float *h) {
 	uint16_t u;
 	if (!CUnifont_Parse(&g_Unifont, c, &u)) {
 		return 0;
 	}
-	*h = CFuente3_UniAlto(self);
-	*w = CUnifont_Ancho(&g_Unifont, u, *h) * self->uniEscala[0];
+	*h = CFont3_UniHeight(self);
+	*w = CUnifont_Width(&g_Unifont, u, *h) * self->uniScale[0];
 	CUnifont_SetSprite(&g_Unifont, u, *w, *h);
 	return 1;
 }
 
-static void CFuente3_UniDibujar(const CFuente3 *self, float x, float y) {
-	CGrafico2D *ug = g_Unifont.grf;
+static void CFont3_UniDraw(const CFont3 *self, float x, float y) {
+	CGraphic2D *ug = g_Unifont.graphic;
 	ug->x = self->uniOffset[0] + x;
 	ug->y = self->uniOffset[1] + y;
-	CGrafico2D_Render(ug);
+	CGraphic2D_Render(ug);
 }
 
-static void CFuente3_GlifoDibujar(CFuente3 *self, float x, float y) {
-	self->grf->x = x;
-	self->grf->y = y;
-	CGrafico2D_Render(self->grf);
+static void CFont3_GlyphDraw(CFont3 *self, float x, float y) {
+	self->graphic->x = x;
+	self->graphic->y = y;
+	CGraphic2D_Render(self->graphic);
 }
 
 /* the sprite at x, y moved d to each corner */
-static void Fnt_Esquinas(CFuente3 *self, byte uni, float x, float y, float d) {
-	static const signed char esq[4][2] = { { -1, -1 }, { -1, 1 }, { 1, -1 }, { 1, 1 } };
+static void Fnt_Corners(CFont3 *self, byte uni, float x, float y, float d) {
+	static const signed char corner[4][2] = { { -1, -1 }, { -1, 1 }, { 1, -1 }, { 1, 1 } };
 	for (int i = 0; i < 4; i++) {
-		float px = esq[i][0] < 0 ? x - d : d + x;
-		float py = esq[i][1] < 0 ? y - d : d + y;
+		float px = corner[i][0] < 0 ? x - d : d + x;
+		float py = corner[i][1] < 0 ? y - d : d + y;
 		if (uni) {
-			CFuente3_UniDibujar(self, px, py);
+			CFont3_UniDraw(self, px, py);
 		} else {
-			CFuente3_GlifoDibujar(self, px, py);
+			CFont3_GlyphDraw(self, px, py);
 		}
 	}
 }
 
 /* the glow: the corners at 0.5 to 3 pixels, the alpha of color in 7 steps less 16 per pixel */
-static void Fnt_Brillo(CFuente3 *self, byte uni, float x, float y, uint32_t color) {
-	uint32_t *c = uni ? &g_Unifont.grf->color : &self->grf->color;
+static void Fnt_Brightness(CFont3 *self, byte uni, float x, float y, uint32_t color) {
+	uint32_t *c = uni ? &g_Unifont.graphic->color : &self->graphic->color;
 	float d = 0.5f;
 	do {
 		int a = (int)(color / 0x7000000) - (int)(d * 16.0f);
@@ -571,72 +571,72 @@ static void Fnt_Brillo(CFuente3 *self, byte uni, float x, float y, uint32_t colo
 			break;
 		}
 		*c = (uint32_t)(a + 6) << 24 | (color & 0xffffff);
-		Fnt_Esquinas(self, uni, x, y, d);
+		Fnt_Corners(self, uni, x, y, d);
 		d += 0.4f;
 	} while (3.0f >= d);
 }
 
-void __thiscall CFuente3_PrintContorno(CFuente3 *self, float x, float y, uint32_t color, const char *s) {
+void __thiscall CFont3_PrintOutline(CFont3 *self, float x, float y, uint32_t color, const char *s) {
 	if (!s) {
 		return;
 	}
-	CMaterial *grfMat = self->grf->Mat;
-	CHECK(grfMat);
-	CMaterial *mat = Fnt_MatContorno(grfMat, &g_FntMatContorno, &g_FntMatContornoInit, "Font_FX_Outline");
-	CMaterial *uniMat = g_FntMatContornoUni;
-	if (Unifont_Activa()) {
-		uniMat = Fnt_MatContorno(g_Unifont.grf->Mat, &g_FntMatContornoUni, &g_FntMatContornoUniInit,
+	CMaterial *graphicMat = self->graphic->Mat;
+	CHECK(graphicMat);
+	CMaterial *mat = Fnt_MatOutline(graphicMat, &g_FntMatOutline, &g_FntMatOutlineInit, "Font_FX_Outline");
+	CMaterial *uniMat = g_FntMatOutlineUni;
+	if (Unifont_Active()) {
+		uniMat = Fnt_MatOutline(g_Unifont.graphic->Mat, &g_FntMatOutlineUni, &g_FntMatOutlineUniInit,
 			"Font_FX_Outline_Unifont");
 	}
 	/* the outline */
 	Render_ClearForced();
 	g_MatFX1 = mat;
 	Fnt_SetBlend(mat, uniMat, 6);
-	self->grf->color = 0xdc000000;
+	self->graphic->color = 0xdc000000;
 	float px = x;
 	for (const char *c = s; *c; c++) {
 		byte ch = (byte)*c;
 		float w, h;
-		if (ch >= self->pri && ch <= self->ult) {
+		if (ch >= self->first && ch <= self->last) {
 			g_MatFX1 = mat;
-			const FntGlifo *g = CFuente3_Glifo(self, (uint32_t)(ch - self->pri));
-			CFuente3_SetGlifo(self, g, self->grf->x, self->grf->y);
-			Fnt_Esquinas(self, 0, px, y, 1.0f);
-			px = CFuente3_GlifoAncho(self, g) + px;
-		} else if (Unifont_Activa()) {
+			const FntGlyph *g = CFont3_Glyph(self, (uint32_t)(ch - self->first));
+			CFont3_SetGlyph(self, g, self->graphic->x, self->graphic->y);
+			Fnt_Corners(self, 0, px, y, 1.0f);
+			px = CFont3_GlyphWidth(self, g) + px;
+		} else if (Unifont_Active()) {
 			g_MatFX1 = uniMat;
-			if (CFuente3_UniGlifo(self, c, &w, &h)) {
+			if (CFont3_UniGlyph(self, c, &w, &h)) {
 				c += 4;
-				g_Unifont.grf->color = self->grf->color;
-				Fnt_Esquinas(self, 1, px, y, 1.0f);
+				g_Unifont.graphic->color = self->graphic->color;
+				Fnt_Corners(self, 1, px, y, 1.0f);
 				px = w + 1.0f + px;
 			}
 		}
 	}
 	/* the text */
 	Render_ClearForced();
-	self->grf->color = color;
+	self->graphic->color = color;
 	px = x;
 	for (const char *c = s; *c; c++) {
 		byte ch = (byte)*c;
 		float w, h;
-		if (ch >= self->pri && ch <= self->ult) {
-			const FntGlifo *g = CFuente3_Glifo(self, (uint32_t)(ch - self->pri));
-			CFuente3_SetGlifo(self, g, px, y);
-			CGrafico2D_Render(self->grf);
-			px = CFuente3_GlifoAncho(self, g) + px;
-		} else if (Unifont_Activa()) {
+		if (ch >= self->first && ch <= self->last) {
+			const FntGlyph *g = CFont3_Glyph(self, (uint32_t)(ch - self->first));
+			CFont3_SetGlyph(self, g, px, y);
+			CGraphic2D_Render(self->graphic);
+			px = CFont3_GlyphWidth(self, g) + px;
+		} else if (Unifont_Active()) {
 			uint16_t u;
 			if (CUnifont_Parse(&g_Unifont, c, &u)) {
-				h = CFuente3_UniAlto(self);
-				w = CUnifont_Ancho(&g_Unifont, u, h) * self->uniEscala[0];
+				h = CFont3_UniHeight(self);
+				w = CUnifont_Width(&g_Unifont, u, h) * self->uniScale[0];
 				c += 4;
-				CGrafico2D *ug = g_Unifont.grf;
+				CGraphic2D *ug = g_Unifont.graphic;
 				ug->x = self->uniOffset[0] + px;
 				ug->y = self->uniOffset[1] + y;
-				ug->color = self->grf->color;
+				ug->color = self->graphic->color;
 				CUnifont_SetSprite(&g_Unifont, u, w, h);
-				CGrafico2D_Render(ug);
+				CGraphic2D_Render(ug);
 				px = w + 1.0f + px;
 			}
 		}
@@ -649,43 +649,43 @@ void __thiscall CFuente3_PrintContorno(CFuente3 *self, float x, float y, uint32_
 	for (const char *c = s; *c; c++) {
 		byte ch = (byte)*c;
 		float w, h;
-		if (ch >= self->pri && ch <= self->ult) {
+		if (ch >= self->first && ch <= self->last) {
 			g_MatFX1 = mat;
-			const FntGlifo *g = CFuente3_Glifo(self, (uint32_t)(ch - self->pri));
-			CFuente3_SetGlifo(self, g, self->grf->x, self->grf->y);
-			Fnt_Brillo(self, 0, px, y, color);
-			px = CFuente3_GlifoAncho(self, g) + px;
-		} else if (Unifont_Activa()) {
+			const FntGlyph *g = CFont3_Glyph(self, (uint32_t)(ch - self->first));
+			CFont3_SetGlyph(self, g, self->graphic->x, self->graphic->y);
+			Fnt_Brightness(self, 0, px, y, color);
+			px = CFont3_GlyphWidth(self, g) + px;
+		} else if (Unifont_Active()) {
 			g_MatFX1 = uniMat;
-			if (CFuente3_UniGlifo(self, c, &w, &h)) {
+			if (CFont3_UniGlyph(self, c, &w, &h)) {
 				c += 4;
-				Fnt_Brillo(self, 1, px, y, color);
+				Fnt_Brightness(self, 1, px, y, color);
 				px = w + 1.0f + px;
 			}
 		}
 	}
 	Render_ClearForced();
 	Fnt_SetBlend(mat, uniMat, 6);
-	self->grf->color = 0xffffff;
+	self->graphic->color = 0xffffff;
 }
 
-void Font_PrintfXY(CFuente3 *font, float x, float y, const char *fmt, ...) {
+void Font_PrintfXY(CFont3 *font, float x, float y, const char *fmt, ...) {
 	char buf[1024];
 	va_list ap;
 
 	va_start(ap, fmt);
 	VBprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
-	CFuente3_Print(font, x, y, buf);
+	CFont3_Print(font, x, y, buf);
 }
 
 /* s with a black shadow 1 right and 2 down */
-static void CFuente3_PrintSombra(CFuente3 *font, float x, float y, uint32_t color, const char *s) {
-	CFuente3_PrintColor(font, x + 1.0f, y + 2.0f, 0, s);
-	CFuente3_PrintColor(font, x, y, color, s);
+static void CFont3_PrintShadow(CFont3 *font, float x, float y, uint32_t color, const char *s) {
+	CFont3_PrintColor(font, x + 1.0f, y + 2.0f, 0, s);
+	CFont3_PrintColor(font, x, y, color, s);
 }
 
-void Debug_Text3D(CFuente3 *font, float x, float y, const vec3_t *pos, uint32_t color, const char *fmt, ...) {
+void Debug_Text3D(CFont3 *font, float x, float y, const vec3_t *pos, uint32_t color, const char *fmt, ...) {
 	char buf[1024];
 	float scr[2];
 	int w, h;
@@ -697,13 +697,13 @@ void Debug_Text3D(CFuente3 *font, float x, float y, const vec3_t *pos, uint32_t 
 	va_start(ap, fmt);
 	VBprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
-	Grafico2D_GetPantalla(&w, &h);
+	Graphic2D_GetScreen(&w, &h);
 	float sx = (float)w * scr[0] / (float)Render_GetViewportW() + x;
 	float sy = (float)h * scr[1] / (float)Render_GetViewportH() + y;
-	CFuente3_PrintSombra(font, sx, sy, color, buf);
+	CFont3_PrintShadow(font, sx, sy, color, buf);
 }
 
-void Font_PrintfCentro(CFuente3 *font, float x, float y, const char *fmt, ...) {
+void Font_PrintfCenter(CFont3 *font, float x, float y, const char *fmt, ...) {
 	char buf[1024];
 	float pos[2];
 	va_list ap;
@@ -711,32 +711,32 @@ void Font_PrintfCentro(CFuente3 *font, float x, float y, const char *fmt, ...) {
 	va_start(ap, fmt);
 	VBprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
-	CFuente3_Medir(font, x + 1.0f, y + 2.0f, FNT_ALIGN_CENTRO, buf, pos, NULL);
-	CFuente3_PrintColor(font, pos[0], pos[1], 0, buf);
-	CFuente3_Medir(font, x, y, FNT_ALIGN_CENTRO, buf, pos, NULL);
-	font->grf->color = 0xffffff;
-	CFuente3_Print(font, pos[0], pos[1], buf);
-	font->grf->color = 0xffffff;
+	CFont3_Measure(font, x + 1.0f, y + 2.0f, FNT_ALIGN_CENTER, buf, pos, NULL);
+	CFont3_PrintColor(font, pos[0], pos[1], 0, buf);
+	CFont3_Measure(font, x, y, FNT_ALIGN_CENTER, buf, pos, NULL);
+	font->graphic->color = 0xffffff;
+	CFont3_Print(font, pos[0], pos[1], buf);
+	font->graphic->color = 0xffffff;
 }
 
-void Font_Printf(CFuente3 *font, float x, float y, byte flags, const char *fmt, ...) {
+void Font_Printf(CFont3 *font, float x, float y, byte flags, const char *fmt, ...) {
 	char buf[1024];
 	va_list ap;
 
 	va_start(ap, fmt);
 	VBprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
-	if (flags & FNT_PRINT_SOMBRA && font->flags & FNT_SOMBRA) {
-		CFuente3_PrintColor(font, x + 1.0f, y + 2.0f, 0, buf);
+	if (flags & FNT_PRINT_SHADOW && font->flags & FNT_SHADOW) {
+		CFont3_PrintColor(font, x + 1.0f, y + 2.0f, 0, buf);
 	}
-	CFuente3_PrintColor(font, x, y, flags & FNT_PRINT_COLOR ? font->color : 0xffffff, buf);
+	CFont3_PrintColor(font, x, y, flags & FNT_PRINT_COLOR ? font->color : 0xffffff, buf);
 }
 
-int Bmp_FilaBorde(const CBmp *b, int y, uint32_t borde) {
+int Bmp_RowBorder(const CBmp *b, int y, uint32_t border) {
 	int x = 0;
-	while (x < b->ancho) {
+	while (x < b->width) {
 		uint32_t p = *(const uint32_t *)Img_Pixel(b, (uint32_t)x, (uint32_t)y, 4);
-		if ((p & 0xffffff) != (borde & 0xffffff)) {
+		if ((p & 0xffffff) != (border & 0xffffff)) {
 			break;
 		}
 		x++;
@@ -744,32 +744,32 @@ int Bmp_FilaBorde(const CBmp *b, int y, uint32_t borde) {
 	return x;
 }
 
-static void CFuente3_Delete(CFuente3 *f) {
-	CFuente3_dtor(f);
-	operator_delete_sized(f, sizeof(CFuente3));
+static void CFont3_Delete(CFont3 *f) {
+	CFont3_dtor(f);
+	operator_delete_sized(f, sizeof(CFont3));
 }
 
 void Fonts_Free(void) {
 	if (g_FntComic14) {
-		CFuente3_Delete(g_FntComic14);
+		CFont3_Delete(g_FntComic14);
 		g_FntComic14 = NULL;
 	}
 	if (g_FntTerm8) {
-		CFuente3_Delete(g_FntTerm8);
+		CFont3_Delete(g_FntTerm8);
 		g_FntTerm8 = NULL;
 	}
 }
 
 void Fonts_Init(void) {
 	CHECK(!g_FntComic14);
-	CFuente3 *f = operator_new(sizeof(CFuente3));
-	f = f ? CFuente3_ctor(f, "bmp/fnt/Comic14.tga", "bmp/fnt/A_Comic14.tga", 0x20, 0xff, 0.0f, 0, 0, 1.0f) : NULL;
+	CFont3 *f = operator_new(sizeof(CFont3));
+	f = f ? CFont3_ctor(f, "bmp/fnt/Comic14.tga", "bmp/fnt/A_Comic14.tga", 0x20, 0xff, 0.0f, 0, 0, 1.0f) : NULL;
 	g_FntComic14 = f;
-	CFuente3_SetEscala(f, 0.8f, 0.8f);
+	CFont3_SetScale(f, 0.8f, 0.8f);
 	CHECK(!g_FntTerm8);
-	f = operator_new(sizeof(CFuente3));
-	g_FntTerm8 = f ? CFuente3_ctor(f, "bmp/fnt/Term8.alpha.tga", NULL, 0x20, 0xff, 0.0f, 0, 8, 1.0f) : NULL;
-	g_FntTerm8->redondear = 1;
+	f = operator_new(sizeof(CFont3));
+	g_FntTerm8 = f ? CFont3_ctor(f, "bmp/fnt/Term8.alpha.tga", NULL, 0x20, 0xff, 0.0f, 0, 8, 1.0f) : NULL;
+	g_FntTerm8->round = 1;
 }
 
 void __fastcall CUnifont_Load(CUnifont *self) {
@@ -782,15 +782,15 @@ void __fastcall CUnifont_Load(CUnifont *self) {
 	snprintf(ust, sizeof(ust), "%sUnicode.alpha.ust", g_FontsDir);
 	if (cFilePack_Exists(&f, uct)) {
 		cFilePack_Open(&f, uct, 1);
-		cFilePack_Read(&f, &self->pri, 2);
-		cFilePack_Read(&f, &self->ult, 2);
-		uint32_t size = ((uint32_t)self->ult - self->pri) * 2 + 2;
-		self->mapa = Mem_Alloc(size);
-		cFilePack_Read(&f, self->mapa, (int)size);
+		cFilePack_Read(&f, &self->first, 2);
+		cFilePack_Read(&f, &self->last, 2);
+		uint32_t size = ((uint32_t)self->last - self->first) * 2 + 2;
+		self->map = Mem_Alloc(size);
+		cFilePack_Read(&f, self->map, (int)size);
 		cFilePack_Close(&f);
-		CGrafico2D *g = operator_new(sizeof(CGrafico2D));
-		self->grf = g ? CGrafico2D_ctorTex(g, tga, NULL, GRAF2D_PANTALLA | GRAF2D_TAM_PANTALLA) : NULL;
-		self->grf->sinTextura = 1;
+		CGraphic2D *g = operator_new(sizeof(CGraphic2D));
+		self->graphic = g ? CGraphic2D_ctorTex(g, tga, NULL, GRAPHIC2D_SCREEN | GRAPHIC2D_SCREEN_SIZE) : NULL;
+		self->graphic->noTexture = 1;
 		CMultiSprite *ms = operator_new(sizeof(CMultiSprite));
 		self->sprites = ms ? CMultiSprite_ctor(ms) : NULL;
 		CMultiSprite_Load(self->sprites, ust);
@@ -804,17 +804,17 @@ void __fastcall CUnifont_Free(CUnifont *self) {
 		operator_delete_sized(self->sprites, sizeof(CMultiSprite));
 		self->sprites = NULL;
 	}
-	if (self->grf) {
-		CGrafico2D_dtor(self->grf);
-		operator_delete_sized(self->grf, sizeof(CGrafico2D));
-		self->grf = NULL;
+	if (self->graphic) {
+		CGraphic2D_dtor(self->graphic);
+		operator_delete_sized(self->graphic, sizeof(CGraphic2D));
+		self->graphic = NULL;
 	}
-	if (self->mapa) {
-		Mem_Free(self->mapa);
-		self->mapa = NULL;
+	if (self->map) {
+		Mem_Free(self->map);
+		self->map = NULL;
 	}
-	self->pri = 0;
-	self->ult = 0;
+	self->first = 0;
+	self->last = 0;
 }
 
 void Unifont_Exit(void) {
@@ -823,7 +823,7 @@ void Unifont_Exit(void) {
 
 byte __thiscall CUnifont_Parse(const CUnifont *self, const char *s, uint16_t *out) {
 	*out = 0;
-	if (!self->pri || !s || s[0] != 1) {
+	if (!self->first || !s || s[0] != 1) {
 		return 0;
 	}
 	for (int i = 1; i < 5; i++) {
@@ -841,8 +841,8 @@ byte __thiscall CUnifont_Parse(const CUnifont *self, const char *s, uint16_t *ou
 		}
 		*out = v;
 	}
-	if (*out >= self->pri && *out <= self->ult) {
-		*out = self->mapa[*out - self->pri];
+	if (*out >= self->first && *out <= self->last) {
+		*out = self->map[*out - self->first];
 	} else {
 		*out = 0;
 	}
@@ -860,7 +860,7 @@ static const MSprite *CUnifont_Sprite(const CUnifont *self, uint16_t i) {
 	return &ms->p[i];
 }
 
-float __thiscall CUnifont_Ancho(const CUnifont *self, uint16_t i, float h) {
+float __thiscall CUnifont_Width(const CUnifont *self, uint16_t i, float h) {
 	const MSprite *s = CUnifont_Sprite(self, i);
 	if (!s) {
 		return 0.0f;
@@ -869,24 +869,24 @@ float __thiscall CUnifont_Ancho(const CUnifont *self, uint16_t i, float h) {
 }
 
 byte __thiscall CUnifont_SetSprite(const CUnifont *self, uint16_t i, float w, float h) {
-	if (!self->pri) {
+	if (!self->first) {
 		return 0;
 	}
 	const MSprite *s = CUnifont_Sprite(self, i);
 	if (!s) {
 		return 0;
 	}
-	CGrafico2D *g = self->grf;
+	CGraphic2D *g = self->graphic;
 	g->u0 = (float)s->x;
 	g->v0 = (float)s->y;
 	g->u1 = g->u0 + (float)s->cx;
 	g->v1 = g->v0 + (float)s->cy;
-	float aw = (float)self->sprites->ancho, ah = (float)self->sprites->alto;
+	float aw = (float)self->sprites->width, ah = (float)self->sprites->height;
 	g->u0 /= aw;
 	g->v0 /= ah;
 	g->u1 /= aw;
 	g->v1 /= ah;
-	g->escala[0] = w / (g->u1 - g->u0);
-	g->escala[1] = h / (g->v1 - g->v0);
+	g->scale[0] = w / (g->u1 - g->u0);
+	g->scale[1] = h / (g->v1 - g->v0);
 	return 1;
 }

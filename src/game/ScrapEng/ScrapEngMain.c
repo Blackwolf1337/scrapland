@@ -62,9 +62,9 @@ enum {
 	DBG_CAMERA = 0x1d,
 };
 
-static D3DAdapterInfo *Motor_AdapterInfo(void) {
-	CHECK(g_Motor);
-	D3DAdapterInfo *ai = MOTOR_ADAPTERINFO(g_Motor);
+static D3DAdapterInfo *Engine_AdapterInfo(void) {
+	CHECK(g_Engine);
+	D3DAdapterInfo *ai = ENGINE_ADAPTERINFO(g_Engine);
 	CHECK(ai);
 	return ai;
 }
@@ -177,7 +177,7 @@ int Engine_VideoResume(void) {
 }
 
 void Engine_Close(void) {
-	CHECK(g_Motor);
+	CHECK(g_Engine);
 	Splash_Show("2D/Loading/00Black.dds", 0, 0, 0);
 	if (g_IsDemo) {
 		Splash_Show("2D/Loading/00Promo01.dds", 1, 6000, 1);
@@ -185,7 +185,7 @@ void Engine_Close(void) {
 			Splash_Show("2D/Loading/00Promo02.dds", 1, 20000, 1);
 		}
 	}
-	CD3DApp_Cleanup(g_Motor);
+	CD3DApp_Cleanup(g_Engine);
 	Engine3D_Shutdown();
 	Con_Printf("Engine 3D closed\n");
 }
@@ -197,7 +197,7 @@ byte Engine_FinalCleanup(void) {
 		operator_delete_sized(w, 0x44);
 		g_Watermark = NULL;
 	}
-	Camera_SetActual(NULL);
+	Camera_SetCurrent(NULL);
 	CGameCamera *cam = g_ViewerCamera;
 	if (cam) {
 		CGameCamera_dtor(cam);
@@ -205,19 +205,19 @@ byte Engine_FinalCleanup(void) {
 		g_ViewerCamera = NULL;
 	}
 	Fonts_Unload();
-	CMundo *m = g_Mundo;
+	CWorld *m = g_World;
 	if (m) {
-		CMundo_dtor(m);
-		operator_delete_sized(m, sizeof(CMundo));
-		g_Mundo = NULL;
+		CWorld_dtor(m);
+		operator_delete_sized(m, sizeof(CWorld));
+		g_World = NULL;
 	}
 	WorldInfo_Reset();
-	SistPart_LoadIni(NULL, NULL);
+	ParticleSystem_LoadIni(NULL, NULL);
 	return 1;
 }
 
-CGameCamera *Camera_GetActual(void) {
-	return g_CamActual;
+CGameCamera *Camera_GetCurrent(void) {
+	return g_CamCurrent;
 }
 
 byte Keys_SkipPressed(void) {
@@ -253,12 +253,12 @@ int Engine_GetOption(int opt) {
 }
 
 int Video_GetCurrentMode(void) {
-	D3DAdapterInfo *ai = Motor_AdapterInfo();
+	D3DAdapterInfo *ai = Engine_AdapterInfo();
 	return ai->devices[ai->dwCurrentDevice].dwCurrentMode;
 }
 
 int Video_GetModes(int i, char *buf) {
-	D3DAdapterInfo *ai = Motor_AdapterInfo();
+	D3DAdapterInfo *ai = Engine_AdapterInfo();
 	int n = ai->devices[ai->dwCurrentDevice].dwNumModes;
 	if (i >= 0 && buf) {
 		CHECK(i < n);
@@ -275,7 +275,7 @@ int Video_GetStatus(void) {
 
 byte Engine_OneTimeInit(void) {
 	g_RenderFlag6e0 = g_RenderFlag6e4;
-	g_SueloTrisPerNode = 8000000;
+	g_GroundTrisPerNode = 8000000;
 	g_CollisionEpsilon = g_GvCollisionEpsilon;
 	int lm = g_RenderLightmap;
 	g_LightmapMode2 = lm == 2;
@@ -287,44 +287,44 @@ byte Engine_OneTimeInit(void) {
 	}
 	g_ClipNear = 0.0f;
 	g_ClipFar = 0.0f;
-	g_SombrasStencil = g_StencilShadows > 0;
-	g_CieloPath[0] = 0;
-	g_CieloPosScale = 0.0f;
-	g_CieloRotation = 0.0f;
-	g_NieblaColor->intens = 0.0f;
+	g_ShadowsStencil = g_StencilShadows > 0;
+	g_SkyPath[0] = 0;
+	g_SkyPosScaleIni = 0.0f;
+	g_SkyRotationIni = 0.0f;
+	g_FogColorIni->intens = 0.0f;
 	g_ModelAmbientIni->intens = 0.0f;
 	Engine_LoadIni(g_M3dIni, NULL);
-	Engine_LoadIni(g_SueloPath, ".ini");
-	SistPart_LoadIni(NULL, NULL);
-	SistPart_LoadIni(g_SueloPath, "particles.ini");
-	SistPart_LoadIni("bmp/particles.ini", NULL);
-	void *p = operator_new(sizeof(CMundo));
-	g_Mundo = p ? CMundo_ctor(p) : NULL;
+	Engine_LoadIni(g_GroundPath, ".ini");
+	ParticleSystem_LoadIni(NULL, NULL);
+	ParticleSystem_LoadIni(g_GroundPath, "particles.ini");
+	ParticleSystem_LoadIni("bmp/particles.ini", NULL);
+	void *p = operator_new(sizeof(CWorld));
+	g_World = p ? CWorld_ctor(p) : NULL;
 	WorldInfo_Reset();
-	CMundo_LoadCielo(g_Mundo, g_CieloPath);
-	CMundo_LoadSueloEscala(g_Mundo, g_SueloPath, g_SueloEscala);
-	CMundo_SetCieloPos(g_Mundo, g_CieloPosScale);
-	CMundo_SetCieloRot(g_Mundo, g_CieloRotation);
-	CMundo_SetClip(g_Mundo, g_ClipNear, g_ClipFar);
-	g_Mundo->niebla.activa = g_NieblaActiva != 0;
-	CNiebla_SetRango(&g_Mundo->niebla, g_NieblaRangoIni, g_NieblaRangoFin);
-	g_Mundo->niebla.tabla = g_NieblaModoTabla != 0;
-	g_Mundo->niebla.densidad = g_NieblaDensidad;
-	g_Mundo->niebla.modo = g_NieblaLineal ? 3 : 1;	/* D3DFOG_LINEAR, D3DFOG_EXP */
-	if (g_NieblaColor->intens != 0.0f) {
-		CNiebla_SetColor(&g_Mundo->niebla, g_NieblaColor->rgba, g_NieblaColor->intens);
+	CWorld_LoadSky(g_World, g_SkyPath);
+	CWorld_LoadGroundScale(g_World, g_GroundPath, g_GroundScale);
+	CWorld_SetSkyPos(g_World, g_SkyPosScaleIni);
+	CWorld_SetSkyRot(g_World, g_SkyRotationIni);
+	CWorld_SetClip(g_World, g_ClipNear, g_ClipFar);
+	g_World->fog.active = g_FogActiveIni != 0;
+	CFog_SetRange(&g_World->fog, g_FogRangeIni, g_FogRangeEnd);
+	g_World->fog.table = g_FogTableMode != 0;
+	g_World->fog.density = g_FogDensityIni;
+	g_World->fog.mode = g_FogLinear ? 3 : 1;	/* D3DFOG_LINEAR, D3DFOG_EXP */
+	if (g_FogColorIni->intens != 0.0f) {
+		CFog_SetColor(&g_World->fog, g_FogColorIni->rgba, g_FogColorIni->intens);
 	}
 	Cmd_ReadFile("engine.txt");
 	Fonts_Load();
-	Grafico2D_SetPantalla(640, 480);
+	Graphic2D_SetScreen(640, 480);
 	CHECK(!g_ViewerCamera);
 	p = operator_new(0x3c);
 	g_ViewerCamera = p ? CGameCamera_ctor(p) : NULL;
-	CCamara *cam = CMundo_GetCamaraSuelo(Mundo_Get(), 1);
+	CCamera *cam = CWorld_GetCameraGround(World_Get(), 1);
 	if (!cam) {
-		cam = Mundo_Get()->cam;
+		cam = World_Get()->cam;
 	}
-	CGameCamera_FromCamara(g_ViewerCamera, cam);
+	CGameCamera_FromCamera(g_ViewerCamera, cam);
 	p = operator_new(0x44);
 	g_Watermark = p ? CPsaImage_ctor(p, "bmp/norm1.alpha.psa", 0x10008) : NULL;
 	return 1;
@@ -333,7 +333,7 @@ byte Engine_OneTimeInit(void) {
 void Engine_Init(void) {
 	int64_t freq;
 
-	CHECK(!g_Motor);
+	CHECK(!g_Engine);
 	Con_Printf("Engine 3D initializing (Version %d)\n", g_EngineVersion);
 	if (APP_DEDICATED(g_pApp)) {
 		g_RenderOff = 1;
@@ -348,18 +348,18 @@ void Engine_Init(void) {
 	E3D_LogDebug(g_FileLog, "TimerQPFreq: %d", (int)freq);
 	Engine3D_Create(hInst, hWnd, GAME_FUNC(Engine_OneTimeInit, RVA_ENGINE_ONETIMEINIT), GAME_FUNC(Engine_FrameMove, RVA_ENGINE_FRAMEMOVE),
 		GAME_FUNC(Engine_FinalCleanup, RVA_ENGINE_FINALCLEANUP), 0);
-	MOTOR_FULLSCREEN(g_Motor) = g_FullScreen && !APP_DEDICATED(g_pApp);
-	MOTOR_WIDTH(g_Motor) = g_VideoWidth;
-	MOTOR_HEIGHT(g_Motor) = g_VideoHeight;
-	MOTOR_BPP(g_Motor) = g_VideoBPP;
+	ENGINE_FULLSCREEN(g_Engine) = g_FullScreen && !APP_DEDICATED(g_pApp);
+	ENGINE_WIDTH(g_Engine) = g_VideoWidth;
+	ENGINE_HEIGHT(g_Engine) = g_VideoHeight;
+	ENGINE_BPP(g_Engine) = g_VideoBPP;
 	g_MapTextSavingOn = g_ComputeMapTextSaving == 1;
-	byte *m = g_Motor;
+	byte *m = g_Engine;
 	if (!APP_DEDICATED(g_pApp)) {
-		if (((int(__thiscall *)(byte *, void *))(*(void ***)m)[MOTOR_VT_CREATE / 4])(m, hInst) < 0) {
+		if (((int(__thiscall *)(byte *, void *))(*(void ***)m)[ENGINE_VT_CREATE / 4])(m, hInst) < 0) {
 			Err_Printf(1, "Engine3D initialization error");
 		}
 	} else {
-		MOTOR_CALL(m, MOTOR_VT_RESTORE);
+		ENGINE_CALL(m, ENGINE_VT_RESTORE);
 	}
 	/* differs from the original on purpose (no blocking waits): a video plays on from the message loop, the steps after
 	 * it run from Engine_VideoResume */
@@ -369,11 +369,11 @@ void Engine_Init(void) {
 	}
 }
 
-/* al from the window flag with the rest of eax from g_Motor, like the original's sete */
+/* al from the window flag with the rest of eax from g_Engine, like the original's sete */
 int Engine_IsFullScreen(void) {
-	byte *m = g_Motor;
+	byte *m = g_Engine;
 	if (m) {
-		return (int)(((uintptr_t)m & ~(uintptr_t)0xff) | (MOTOR_WINDOWED(m) == 0));
+		return (int)(((uintptr_t)m & ~(uintptr_t)0xff) | (ENGINE_WINDOWED(m) == 0));
 	}
 	if (g_FullScreen && !APP_DEDICATED(g_pApp)) {
 		return 1;
@@ -382,16 +382,16 @@ int Engine_IsFullScreen(void) {
 }
 
 void Engine_LevelEnd(void) {
-	CHECK(g_Motor);
-	if (MOTOR_CALL(g_Motor, MOTOR_VT_INVALIDATE) < 0) {
+	CHECK(g_Engine);
+	if (ENGINE_CALL(g_Engine, ENGINE_VT_INVALIDATE) < 0) {
 		Err_Printf(1, "ERROR: LevelEndEngine3D()");
 	}
-	if (MOTOR_CALL(g_Motor, MOTOR_VT_DELETE) < 0) {
+	if (ENGINE_CALL(g_Engine, ENGINE_VT_DELETE) < 0) {
 		Err_Printf(1, "ERROR: LevelEndEngine3D()");
 	}
 	Splash_Show("2D/Loading/00Black.dds", 0, 0, 0);
 	if (*g_StartVideo) {
-		if (**g_StartVideo && CD3DApp_ResetDevice(g_Motor) < 0) {
+		if (**g_StartVideo && CD3DApp_ResetDevice(g_Engine) < 0) {
 			E3D_LogBlue(g_FileLog, "ERROR: 'ResetDevice()' failed");
 		}
 		/* differs from the original on purpose (no blocking waits): the rest after the video from
@@ -405,35 +405,35 @@ void Engine_LevelEnd(void) {
 }
 
 void Engine_LevelInit(void) {
-	char path[MAX_RUTA];
+	char path[MAX_FILEPATH];
 
-	CHECK(g_Motor);
+	CHECK(g_Engine);
 	g_VideoBufferSize = 0;
 	g_MapTextSaving = 0;
-	const char *sep = strrchr(g_SueloPath, '/');
+	const char *sep = strrchr(g_GroundPath, '/');
 	if (g_ComputeMapTextSaving) {
 		static const char name[] = "/MapTextData.ini";
-		size_t n = sep ? (size_t)(sep - g_SueloPath) : 0;
+		size_t n = sep ? (size_t)(sep - g_GroundPath) : 0;
 		/* the original copies without a bound (strncpy, strcat) */
 		if (n > sizeof(path) - sizeof(name)) {
 			n = sizeof(path) - sizeof(name);
 		}
 		memset(path, 0, sizeof(path));
-		memcpy(path, g_SueloPath, n);
+		memcpy(path, g_GroundPath, n);
 		memcpy(path + strlen(path), name, sizeof(name));
 		g_MapTextDataFile = File_OpenRel(path, "wt");
 	}
 	g_DrawProgressBar = 1;
 	g_ProgressBarCount = 0;
 	Loading_Step(0);
-	void *dev = MOTOR_DEV(g_Motor);
-	MOTOR_DEV(g_Motor) = NULL;
-	if (MOTOR_CALL(g_Motor, MOTOR_VT_RESTORE) < 0) {
+	void *dev = ENGINE_DEV(g_Engine);
+	ENGINE_DEV(g_Engine) = NULL;
+	if (ENGINE_CALL(g_Engine, ENGINE_VT_RESTORE) < 0) {
 		Err_Printf(1, "ERROR: LevelInitEngine3D()");
 	}
-	MOTOR_DEV(g_Motor) = dev;
+	ENGINE_DEV(g_Engine) = dev;
 	if (!APP_DEDICATED(g_pApp)) {
-		if (MOTOR_CALL(g_Motor, MOTOR_VT_RESTORE2) < 0) {
+		if (ENGINE_CALL(g_Engine, ENGINE_VT_RESTORE2) < 0) {
 			Err_Printf(1, "ERROR: LevelInitEngine3D()");
 		}
 	}
@@ -459,7 +459,7 @@ void Engine_LevelLoaded(void) {
 
 /* CGameCamera: position at 0x0, angles at 0xc, target at 0x18 */
 void Camera_SaveRestore(CGameCamera *cam, byte save) {
-	char name[MAX_RUTA] = "camera.set";
+	char name[MAX_FILEPATH] = "camera.set";
 	byte *c = (byte *)cam;
 
 	if (save) {
@@ -485,30 +485,30 @@ void Camera_SaveRestore(CGameCamera *cam, byte save) {
 	}
 }
 
-void Escena_ShowTree(CEscena *esc, CNodo3D *padre, int indent) {
-	CHECK(esc);
-	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
-		if (n->padre != padre) {
+void Scene_ShowTree(CScene *scn, CNode3D *parent, int indent) {
+	CHECK(scn);
+	for (CNode3D *n = scn->Node3D; n; n = n->next) {
+		if (n->parent != parent) {
 			continue;
 		}
 		Con_Verbosef("%*s%s", indent + 2, "", n->name);
 		int len = (int)strlen(n->name);
-		Con_Debugf("%*s  %3d %3d %3d  c:%-8s  f:%08X  a:%04X", 0x30 - len - indent, "", n->indice, n->i48, n->nodoR,
-			Obj3D_ClaseName(CNodo3D_Clase(n)), n->flags, (uint16_t)n->i50);
-		if (CNodo3D_Clase(n) == CLASE_OBJ3D_MALLATRI) {
-			CMallaTri *mt = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_MALLATRI);
+		Con_Debugf("%*s  %3d %3d %3d  c:%-8s  f:%08X  a:%04X", 0x30 - len - indent, "", n->index, n->i48, n->renderNode,
+			Obj3D_ClassName(CNode3D_Class(n)), n->flags, (uint16_t)n->i50);
+		if (CNode3D_Class(n) == CLASS_OBJ3D_TRIMESH) {
+			CTriMesh *mt = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_TRIMESH);
 			if (mt->pSkin) {
 				Con_Debugf("  [skin]");
 			}
 		}
-		if (CNodo3D_Clase(n) == CLASE_OBJ3D_MALLAD3D) {
-			CMallaD3D *md = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_MALLAD3D);
+		if (CNode3D_Class(n) == CLASS_OBJ3D_MESHD3D) {
+			CMeshD3D *md = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_MESHD3D);
 			if (md->pSkin) {
 				Con_Debugf("  [skin]");
 			}
 		}
 		Con_Verbosef("\n");
-		Escena_ShowTree(esc, n, indent + 2);
+		Scene_ShowTree(scn, n, indent + 2);
 	}
 }
 
@@ -548,7 +548,7 @@ void Eng_Printf3D(const vec3_t *pos, const char *fmt, ...) {
 		va_start(ap, fmt);
 		VBprintf(buf, sizeof(buf), fmt, ap);
 		va_end(ap);
-		Texto_Printf3D(pos, "%s", buf);
+		Text_Printf3D(pos, "%s", buf);
 	}
 }
 
@@ -560,7 +560,7 @@ void Eng_PrintfRel(int dx, int dy, const char *fmt, ...) {
 		va_start(ap, fmt);
 		VBprintf(buf, sizeof(buf), fmt, ap);
 		va_end(ap);
-		Texto_PrintfRel(dx, dy, "%s", buf);
+		Text_PrintfRel(dx, dy, "%s", buf);
 	}
 }
 
@@ -572,7 +572,7 @@ void Eng_PrintfXY(int x, int y, const char *fmt, ...) {
 		va_start(ap, fmt);
 		VBprintf(buf, sizeof(buf), fmt, ap);
 		va_end(ap);
-		Texto_Printf(x, y, "%s", buf);
+		Text_Printf(x, y, "%s", buf);
 	}
 }
 
@@ -599,7 +599,7 @@ static void ViewProj(matrix_t *out) {
 /* x, y from -1..1 to the 2D screen */
 static void ToScreen(float x, float y, float *out) {
 	int w, h;
-	Grafico2D_GetPantalla(&w, &h);
+	Graphic2D_GetScreen(&w, &h);
 	out[0] = (x + 1.0f) * (float)w * 0.5f;
 	out[1] = (1.0f - y) * (float)h * 0.5f;
 }
@@ -671,7 +671,7 @@ void Eng_Printf(int fnt, float x, float y, int align, uint32_t color, const char
 	Str_VPrintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 	if (align & 1) {
-		CFont_PrintfAlignColorSombra(font, x, y, (align & 2) * 2, color, "%s", buf);
+		CFont_PrintfAlignColorShadow(font, x, y, (align & 2) * 2, color, "%s", buf);
 		return;
 	}
 	CFont_PrintfAlignColor(font, x, y, (align & 2) * 2, color, "%s", buf);
@@ -681,7 +681,7 @@ byte Engine_FrameMove(void) {
 	if (g_EngCallbacks[0] && g_CallbacksOn) {
 		g_EngCallbacks[0]();
 	}
-	Modelos_UpdateAnims(0.0f);
+	Models_UpdateAnims(0.0f);
 	Music_Update();
 	CamComposite_DrawDebug();
 	if (g_IsViewer) {
@@ -697,10 +697,10 @@ byte Engine_FrameMove(void) {
 }
 
 void Engine_Render(void) {
-	CHECK(g_Motor);
+	CHECK(g_Engine);
 	CHECK(!g_DrawProgressBar);
-	Camera_SetActual(g_CamActual);
-	CD3DApp_Render(g_Motor);
+	Camera_SetCurrent(g_CamCurrent);
+	CD3DApp_Render(g_Engine);
 	if (g_ResetPending) {
 		Engine_ResetAll();
 		g_ResetPending = 0;
@@ -755,11 +755,11 @@ void ViewerCamera_Move(CGameCamera *cam) {
 	}
 	if (DebugAction(DBG_VIEWER_FASTER)) {
 		g_ViewerSpeed = (float)((double)g_ViewerSpeed + (double)g_ViewerSpeed);
-		Texto_Mensaje(250, "velocity: x%g", (double)g_ViewerSpeed);
+		Text_Message(250, "velocity: x%g", (double)g_ViewerSpeed);
 	}
 	if (DebugAction(DBG_VIEWER_SLOWER)) {
 		g_ViewerSpeed = (float)((double)g_ViewerSpeed * 0.5);
-		Texto_Mensaje(250, "velocity: x%g", (double)g_ViewerSpeed);
+		Text_Message(250, "velocity: x%g", (double)g_ViewerSpeed);
 	}
 	speed = g_ViewerCameraVel * 100.0f * g_FrameMs * g_ViewerSpeed;
 	a = DebugValue(DBG_VIEWER_UP);
@@ -821,7 +821,7 @@ void ViewerCamera_Move(CGameCamera *cam) {
 
 byte Engine_DebugKeys(void) {
 	if (!g_ViewerCameraAnim) {
-		Camera_SetActual(g_ViewerCamera);
+		Camera_SetCurrent(g_ViewerCamera);
 		ViewerCamera_Move(g_ViewerCamera);
 	}
 	if (exe_GetAsyncKeyState(VK_CONTROL) < 0) {
@@ -833,7 +833,7 @@ byte Engine_DebugKeys(void) {
 		Con_Verbosef("Textures reloaded\n");
 	}
 	if (DebugAction(DBG_STENCIL)) {
-		SombrasStencil_Set(g_SombrasStencil == 0);
+		ShadowsStencil_Set(g_ShadowsStencil == 0);
 	}
 	if (DebugAction(DBG_SPECULAR)) {
 		g_VertexSpecular = g_VertexSpecular == 0;
@@ -887,26 +887,26 @@ void Loading_Fade(void) {
 
 void Engine_ResetAll(void) {
 	Con_Printf("ResetEngine3D_All\n");
-	CHECK(MOTOR_DEV(g_Motor));
+	CHECK(ENGINE_DEV(g_Engine));
 	Splash_Show("2D/Loading/00Reset.dds", 1, 500, 0);
-	byte *m = g_Motor;
-	MOTOR_VSYNC(m) = g_VSync;
-	if (MOTOR_WINDOWED(m)) {
-		MOTOR_PP(m)[12] = 0;	/* FullScreen_PresentationInterval */
+	byte *m = g_Engine;
+	ENGINE_VSYNC(m) = g_VSync;
+	if (ENGINE_WINDOWED(m)) {
+		ENGINE_PP(m)[12] = 0;	/* FullScreen_PresentationInterval */
 	} else {
-		MOTOR_PP(m)[12] = MOTOR_VSYNC(m) ? 0 : 0x80000000;	/* D3DPRESENT_INTERVAL_IMMEDIATE */
+		ENGINE_PP(m)[12] = ENGINE_VSYNC(m) ? 0 : 0x80000000;	/* D3DPRESENT_INTERVAL_IMMEDIATE */
 	}
-	if (CD3DApp_Reset(g_Motor) < 0) {
+	if (CD3DApp_Reset(g_Engine) < 0) {
 		E3D_LogBlue(g_FileLog, "ERROR: ResetEngine3D_All()");
 	}
 }
 
 void Engine_ResetTextures(void) {
 	Con_Printf("ResetEngine3D_Textures\n");
-	CHECK(MOTOR_DEV(g_Motor));
-	Textura_ReleaseAllD3D();
-	CListaMat_Release(g_ListaMat);
-	CListaMat_Prepare(g_ListaMat, MOTOR_DEV(g_Motor));
+	CHECK(ENGINE_DEV(g_Engine));
+	Texture_ReleaseAllD3D();
+	CMatList_Release(g_MatList);
+	CMatList_Prepare(g_MatList, ENGINE_DEV(g_Engine));
 }
 
 int Eng_RenderTargetEnd(void) {
@@ -924,8 +924,8 @@ byte Engine_FrameSetup(void) {
 	int lm = g_RenderLightmap;
 	g_LightmapMode2 = lm == 2;
 	g_LightmapOff = lm == 0;
-	g_ModelosOn = g_RenderModels != 0;
-	g_UsarVB = g_RenderUseVB != 0;
+	g_ModelsOn = g_RenderModels != 0;
+	g_UseVB = g_RenderUseVB != 0;
 	if (!g_PSOn && !g_CalcLmap2) {
 		g_LightmapOff = 1;
 	}
@@ -956,11 +956,11 @@ void Screenshot_Take(const char *name) {
 }
 
 void Loading_RandomName(char *buf, int size) {
-	char level[MAX_RUTA], next[MAX_RUTA], fmt[MAX_RUTA];
+	char level[MAX_FILEPATH], next[MAX_FILEPATH], fmt[MAX_FILEPATH];
 	int count = 0;
 
-	Ruta_Part(level, g_pApp->levelPath, RUTA_NAME);
-	Ruta_Part(next, g_pApp->newLevelPath, RUTA_NAME);
+	Path_Part(level, g_pApp->levelPath, PATH_NAME);
+	Path_Part(next, g_pApp->newLevelPath, PATH_NAME);
 	Str_PrintfQuiet(fmt, sizeof(fmt), "2D/Loading/%s_%s_%s.dds", level, next, "%02d");
 	File_FreeIndex(fmt, &count);
 	if (!count) {
@@ -976,24 +976,24 @@ done:
 	Str_PrintfQuiet(buf, size, fmt, g_LoadingScreen);
 }
 
-void Camera_SetActual(CGameCamera *cam) {
-	if (!cam && !g_CamActual) {
+void Camera_SetCurrent(CGameCamera *cam) {
+	if (!cam && !g_CamCurrent) {
 		return;
 	}
-	CCamara *c = NULL;
-	g_CamActual = cam;
+	CCamera *c = NULL;
+	g_CamCurrent = cam;
 	if (g_pd3dDevice) {
 		E3D_FlushBatch();
 	}
 	if (cam) {
 		c = CGameCamera_Update(cam);
 	}
-	CMundo *m = Mundo_Get();
+	CWorld *m = World_Get();
 	if (c != m->cam) {
-		CMundo_SetCamara(m, c);
+		CWorld_SetCamera(m, c);
 	}
 	if (g_pd3dDevice) {
-		Render_SetCamara(Mundo_Get()->cam);
+		Render_SetCamera(World_Get()->cam);
 	}
 }
 
@@ -1003,7 +1003,7 @@ void GVar_SetIntVerbose(cGVar *v, int value) {
 }
 
 char *Engine_SetIniName(const char *name) {
-	return Ruta_Merge(g_M3dIni, name, ".ini");
+	return Path_Merge(g_M3dIni, name, ".ini");
 }
 
 void Engine_SetCallback(void (*fn)(void), int which) {
@@ -1044,7 +1044,7 @@ byte Eng_SetViewRect(float x, float y, float w, float h) {
 }
 
 void Video_SetCurrentMode(int mode) {
-	D3DAdapterInfo *ai = Motor_AdapterInfo();
+	D3DAdapterInfo *ai = Engine_AdapterInfo();
 	if (mode < 0 || mode >= ai->devices[ai->dwCurrentDevice].dwNumModes) {
 		CheckFailed("NumMode>=0 && NumMode<NumModes", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -1055,7 +1055,7 @@ void Video_SetCurrentMode(int mode) {
 	g_VideoHeight = (int)mi->Height;
 	g_VideoBPP = Format_Bpp((int)mi->Format);
 	dev->dwCurrentMode = mode;
-	uint32_t *pp = MOTOR_PP(g_Motor);
+	uint32_t *pp = ENGINE_PP(g_Engine);
 	pp[9] = mi->DepthStencilFormat;		/* AutoDepthStencilFormat */
 	pp[0] = mi->Width;
 	pp[1] = mi->Height;
@@ -1063,21 +1063,21 @@ void Video_SetCurrentMode(int mode) {
 	g_ResetPending = 1;
 }
 
-void Engine_SetSuelo(const char *dir, const char *name, const vec3_t *escala) {
-	Str_PrintfQuiet(g_SueloPath, MAX_RUTA, "%s/%s", dir, name);
-	g_SueloEscala->x = escala->x;
-	g_SueloEscala->y = escala->y;
-	g_SueloEscala->z = escala->z;
+void Engine_SetGround(const char *dir, const char *name, const vec3_t *scale) {
+	Str_PrintfQuiet(g_GroundPath, MAX_FILEPATH, "%s/%s", dir, name);
+	g_GroundScale->x = scale->x;
+	g_GroundScale->y = scale->y;
+	g_GroundScale->z = scale->z;
 }
 
 void Model_Info(const char *name, int n) {
-	char pat[MAX_RUTA], nm[MAX_RUTA];
+	char pat[MAX_FILEPATH], nm[MAX_FILEPATH];
 
 	Str_Copy(pat, name, sizeof(pat));
 	crt_strlwr(pat);
-	CEscena *e;
-	for (e = Escena_Next(NULL); e; e = Escena_Next(e)) {
-		Ruta_Part(nm, e->name, RUTA_NAME);
+	CScene *e;
+	for (e = Scene_Next(NULL); e; e = Scene_Next(e)) {
+		Path_Part(nm, e->name, PATH_NAME);
 		crt_strlwr(nm);
 		if (Wild_Match(pat, nm) && --n < 1) {
 			break;
@@ -1088,15 +1088,15 @@ void Model_Info(const char *name, int n) {
 		return;
 	}
 	Con_Verbosef("\nEscena: %s\n", e->name);
-	Escena_ShowTree(e, NULL, 0);
+	Scene_ShowTree(e, NULL, 0);
 	Con_Verbosef("\n");
 	void *hInst = App_GetHInstance();
 	void *hWnd = App_GetHWnd();
-	exe_CreateDialogParamA(hInst, (const char *)0x99, hWnd, GAME_FUNC(Motor_SceneDlgProc, RVA_MODELDLG_PROC), (intptr_t)e);
+	exe_CreateDialogParamA(hInst, (const char *)0x99, hWnd, GAME_FUNC(Engine_SceneDlgProc, RVA_MODELDLG_PROC), (intptr_t)e);
 }
 
 void Models_List(void) {
-	UtilEscena_Dump((utilPrintf_t)GAME_FUNC(Con_Verbosef, RVA_CON_VERBOSEF));
+	UtilScene_Dump((utilPrintf_t)GAME_FUNC(Con_Verbosef, RVA_CON_VERBOSEF));
 }
 
 /* the original copies its local also when the timer has no value (then uninitialized) */
@@ -1165,119 +1165,119 @@ byte Wild_MatchCase(const char *pattern, const char *name, byte ignoreCase) {
 	return Wild_Match(pattern, name) != 0;
 }
 
-void Ini_GetColor(const char *sect, const char *key, ColorIntens *color, CArchINI *ini) {
+void Ini_GetColor(const char *sect, const char *key, ColorIntens *color, CIniFile *ini) {
 	char buf[0x40];
 	byte *c = (byte *)&color->rgba;
 
-	if (!CArchINI_ReadText(ini, sect, key, buf, sizeof(buf))) {
+	if (!CIniFile_ReadText(ini, sect, key, buf, sizeof(buf))) {
 		if (Proc_Scan(buf, "&b&b&b&f", c, c + 1, c + 2, &color->intens) != 4) {
 			CheckFailed("IniGetColor == 4", __FILE__, __TIMESTAMP__, __LINE__);
 		}
 	}
 }
 
-int Ini_GetPath(const char *sect, const char *key, char *dest, int size, const char *base, CArchINI *ini) {
-	char dir[MAX_RUTA], rel[MAX_RUTA];
+int Ini_GetPath(const char *sect, const char *key, char *dest, int size, const char *base, CIniFile *ini) {
+	char dir[MAX_FILEPATH], rel[MAX_FILEPATH];
 
-	if (CArchINI_ReadText(ini, sect, key, rel, sizeof(rel))) {
+	if (CIniFile_ReadText(ini, sect, key, rel, sizeof(rel))) {
 		return -1;
 	}
-	Ruta_Part(dir, base, RUTA_DRIVE | RUTA_DIR);
+	Path_Part(dir, base, PATH_DRIVE | PATH_DIR);
 	Bprintf(dest, size, "%s%s", dir, rel);
 	return 0;
 }
 
 /* the globals of m3d.ini without a better home */
-#define g_MapaSombrasMultitext GAME_GLOBAL(int, g_MapaSombrasMultitext, 0x4b2b00)
-#define g_MapaSombrasSuaves GAME_GLOBAL(int, g_MapaSombrasSuaves, 0x4b2b04)
-#define g_MapaSombrasEscrTemp GAME_GLOBAL(int, g_MapaSombrasEscrTemp, 0x4b2b08)
-#define g_MapaSombrasAten GAME_GLOBAL(float, g_MapaSombrasAten, 0x4b2b0c)
-#define g_MapaSombrasEscala GAME_GLOBAL(float, g_MapaSombrasEscala, 0x432950)
-#define g_MapaSombrasResol GAME_GLOBAL(float, g_MapaSombrasResol, 0x432954)
-#define g_MapaSombrasTexX GAME_GLOBAL(int, g_MapaSombrasTexX, 0x432958)
-#define g_MapaSombrasTexY GAME_GLOBAL(int, g_MapaSombrasTexY, 0x43295c)
-#define g_MapaSombrasGamma GAME_GLOBAL(float, g_MapaSombrasGamma, 0x432960)
-#define g_MapaSombrasBrillo GAME_GLOBAL(float, g_MapaSombrasBrillo, 0x432964)
-#define g_MapaSombrasRadiosidad GAME_GLOBAL(int, g_MapaSombrasRadiosidad, 0x4b2b10)
-#define g_MapaSombrasIlumGlobal GAME_GLOBAL(int, g_MapaSombrasIlumGlobal, 0x4b2b14)
-#define g_MapaSombrasNoLuzAmb GAME_GLOBAL(int, g_MapaSombrasNoLuzAmb, 0x4b2b18)
-#define g_MapaSombrasModulate4x GAME_GLOBAL(int, g_MapaSombrasModulate4x, 0x4b2b1c)
-#define g_MapaSombrasRebotes GAME_GLOBAL(int, g_MapaSombrasRebotes, 0x432968)
-#define g_MapaSombrasCoefRad GAME_GLOBAL(float, g_MapaSombrasCoefRad, 0x43296c)
-#define g_MapaSombrasUsarTxf GAME_GLOBAL(int, g_MapaSombrasUsarTxf, 0x4b2b24)
-#define g_SombrasDestAlpha GAME_GLOBAL(int, g_SombrasDestAlpha, 0x4afdb4)
-#define g_FlaresTamDef GAME_GLOBAL(float, g_FlareTam, 0x432998)
-#define g_FlaresAtenDist GAME_GLOBAL(int, g_FlareAtenDist, 0x4d6d90)
-#define g_FlaresAtenIni GAME_GLOBAL(float, g_FlareAtenDistIni, 0x43299c)
-#define g_FlaresAtenFin GAME_GLOBAL(float, g_FlareAtenDistFin, 0x4329a0)
-#define g_FlaresFundidoEnt GAME_GLOBAL(float, g_FlareFundidoEnt, 0x4329a4)
-#define g_FlaresFundidoSal GAME_GLOBAL(float, g_FlareFundidoSal, 0x4329a8)
-#define g_FlaresVerInfo GAME_GLOBAL(int, g_FlareVerInfo, 0x4d6d94)
+#define g_ShadowMapMultitext GAME_GLOBAL(int, g_ShadowMapMultitext, 0x4b2b00)
+#define g_ShadowMapSoft GAME_GLOBAL(int, g_ShadowMapSoft, 0x4b2b04)
+#define g_ShadowMapWriteTemp GAME_GLOBAL(int, g_ShadowMapWriteTemp, 0x4b2b08)
+#define g_ShadowMapAtten GAME_GLOBAL(float, g_ShadowMapAtten, 0x4b2b0c)
+#define g_ShadowMapScale GAME_GLOBAL(float, g_ShadowMapScale, 0x432950)
+#define g_ShadowMapRes GAME_GLOBAL(float, g_ShadowMapRes, 0x432954)
+#define g_ShadowMapTexX GAME_GLOBAL(int, g_ShadowMapTexX, 0x432958)
+#define g_ShadowMapTexY GAME_GLOBAL(int, g_ShadowMapTexY, 0x43295c)
+#define g_ShadowMapGamma GAME_GLOBAL(float, g_ShadowMapGamma, 0x432960)
+#define g_ShadowMapBrightness GAME_GLOBAL(float, g_ShadowMapBrightness, 0x432964)
+#define g_ShadowMapRadiosity GAME_GLOBAL(int, g_ShadowMapRadiosity, 0x4b2b10)
+#define g_ShadowMapIllumGlobal GAME_GLOBAL(int, g_ShadowMapIllumGlobal, 0x4b2b14)
+#define g_ShadowMapNoLightAmb GAME_GLOBAL(int, g_ShadowMapNoLightAmb, 0x4b2b18)
+#define g_ShadowMapModulate4x GAME_GLOBAL(int, g_ShadowMapModulate4x, 0x4b2b1c)
+#define g_ShadowMapBounces GAME_GLOBAL(int, g_ShadowMapBounces, 0x432968)
+#define g_ShadowMapCoefRad GAME_GLOBAL(float, g_ShadowMapCoefRad, 0x43296c)
+#define g_ShadowMapUseTxf GAME_GLOBAL(int, g_ShadowMapUseTxf, 0x4b2b24)
+#define g_ShadowsDestAlpha GAME_GLOBAL(int, g_ShadowsDestAlpha, 0x4afdb4)
+#define g_FlaresSizeDef GAME_GLOBAL(float, g_FlareSize, 0x432998)
+#define g_FlaresAttenDist GAME_GLOBAL(int, g_FlareAttenDist, 0x4d6d90)
+#define g_FlaresAttenIni GAME_GLOBAL(float, g_FlareAttenDistIni, 0x43299c)
+#define g_FlaresAttenEnd GAME_GLOBAL(float, g_FlareAttenDistEnd, 0x4329a0)
+#define g_FlaresFadeIn GAME_GLOBAL(float, g_FlareFadeIn, 0x4329a4)
+#define g_FlaresFadeOut GAME_GLOBAL(float, g_FlareFadeOut, 0x4329a8)
+#define g_FlaresShowInfo GAME_GLOBAL(int, g_FlareShowInfo, 0x4d6d94)
 
 void Engine_LoadIni(const char *name, const char *dir) {
-	static const char *const rutas[4] = { "ruta1", "ruta2", "ruta3", "ruta4" };
-	static const char *const extens[4] = { "extens1", "extens2", "extens3", "extens4" };
-	char tex[MAX_RUTA];
-	CArchINI ini;
+	static const char *const paths[4] = { "ruta1", "ruta2", "ruta3", "ruta4" };
+	static const char *const ext[4] = { "extens1", "extens2", "extens3", "extens4" };
+	char tex[MAX_FILEPATH];
+	CIniFile ini;
 
-	CArchINI_ctor(&ini);
-	if (!CArchINI_Load(&ini, name, dir, 1)) {
-		CArchINI_ReadText(&ini, "suelo", "ruta_m3d", g_SueloPath, MAX_RUTA);
+	CIniFile_ctor(&ini);
+	if (!CIniFile_Load(&ini, name, dir, 1)) {
+		CIniFile_ReadText(&ini, "suelo", "ruta_m3d", g_GroundPath, MAX_FILEPATH);
 		Ini_GetColor("suelo", "model_ambient", g_ModelAmbientIni, &ini);
-		CArchINI_ReadFloat(&ini, "camara", "forzar_clipNear", &g_ClipNear);
-		CArchINI_ReadFloat(&ini, "camara", "forzar_clipFar", &g_ClipFar);
-		CArchINI_ReadText(&ini, "cielo", "path", g_CieloPath, MAX_RUTA);
-		CArchINI_ReadText(&ini, "cielo", "ruta_m3d", g_CieloPath, MAX_RUTA);
-		Ini_GetPath("cielo", "ruta_rel", g_CieloPath, MAX_RUTA, name, &ini);
-		CArchINI_ReadFloat(&ini, "cielo", "pos_scale", &g_CieloPosScale);
-		CArchINI_ReadFloat(&ini, "cielo", "rotation", &g_CieloRotation);
-		CArchINI_ReadBool(&ini, "niebla", "activa", &g_NieblaActiva);
-		CArchINI_ReadBool(&ini, "niebla", "modo_tabla", &g_NieblaModoTabla);
-		CArchINI_ReadBool(&ini, "niebla", "lineal", &g_NieblaLineal);
-		CArchINI_ReadFloat(&ini, "niebla", "rango_ini", &g_NieblaRangoIni);
-		CArchINI_ReadFloat(&ini, "niebla", "rango_fin", &g_NieblaRangoFin);
-		CArchINI_ReadFloat(&ini, "niebla", "densidad", &g_NieblaDensidad);
-		Ini_GetColor("niebla", "color", g_NieblaColor, &ini);
-		CArchINI_ReadBool(&ini, "mapa_sombras", "usar", &g_MapaSombrasUsar);
-		CArchINI_ReadBool(&ini, "mapa_sombras", "dlg", &g_MapaSombrasDlg);
-		CArchINI_ReadBool(&ini, "mapa_sombras", "calcular", &g_MapaSombrasCalcular);
-		CArchINI_ReadBool(&ini, "mapa_sombras", "multitext", &g_MapaSombrasMultitext);
-		CArchINI_ReadBool(&ini, "mapa_sombras", "sombras_suaves", &g_MapaSombrasSuaves);
-		CArchINI_ReadBool(&ini, "mapa_sombras", "escr_mapas_temp", &g_MapaSombrasEscrTemp);
-		CArchINI_ReadFloat(&ini, "mapa_sombras", "aten_sombras", &g_MapaSombrasAten);
-		CArchINI_ReadFloat(&ini, "mapa_sombras", "escala", &g_MapaSombrasEscala);
-		CArchINI_ReadFloat(&ini, "mapa_sombras", "resolucion", &g_MapaSombrasResol);
-		CArchINI_ReadInt(&ini, "mapa_sombras", "text_tam_x", &g_MapaSombrasTexX);
-		CArchINI_ReadInt(&ini, "mapa_sombras", "text_tam_y", &g_MapaSombrasTexY);
-		CArchINI_ReadFloat(&ini, "mapa_sombras", "gamma", &g_MapaSombrasGamma);
-		CArchINI_ReadFloat(&ini, "mapa_sombras", "brillo", &g_MapaSombrasBrillo);
-		CArchINI_ReadBool(&ini, "mapa_sombras", "radiosidad", &g_MapaSombrasRadiosidad);
-		CArchINI_ReadBool(&ini, "mapa_sombras", "ilum_global", &g_MapaSombrasIlumGlobal);
-		CArchINI_ReadBool(&ini, "mapa_sombras", "no_luz_amb", &g_MapaSombrasNoLuzAmb);
-		CArchINI_ReadBool(&ini, "mapa_sombras", "modulate4x", &g_MapaSombrasModulate4x);
-		CArchINI_ReadInt(&ini, "mapa_sombras", "rebotes", &g_MapaSombrasRebotes);
-		CArchINI_ReadFloat(&ini, "mapa_sombras", "coef_rad", &g_MapaSombrasCoefRad);
-		CArchINI_ReadBool(&ini, "mapa_sombras", "calc_lmap2", &g_CalcLmap2);
-		CArchINI_ReadBool(&ini, "mapa_sombras", "usar_txf", &g_MapaSombrasUsarTxf);
-		CArchINI_ReadBool(&ini, "sombras_stencil", "usar", &g_SombrasStencil);
-		CArchINI_ReadBool(&ini, "sombras_stencil", "dest_alpha", &g_SombrasDestAlpha);
-		CArchINI_ReadFloat(&ini, "flares", "tam_def", &g_FlaresTamDef);
-		CArchINI_ReadBool(&ini, "flares", "aten_dist", &g_FlaresAtenDist);
-		CArchINI_ReadFloat(&ini, "flares", "aten_dist_ini", &g_FlaresAtenIni);
-		CArchINI_ReadFloat(&ini, "flares", "aten_dist_fin", &g_FlaresAtenFin);
-		CArchINI_ReadFloat(&ini, "flares", "fundido_ent", &g_FlaresFundidoEnt);
-		CArchINI_ReadFloat(&ini, "flares", "fundido_sal", &g_FlaresFundidoSal);
-		CArchINI_ReadBool(&ini, "flares", "ver_info", &g_FlaresVerInfo);
+		CIniFile_ReadFloat(&ini, "camara", "forzar_clipNear", &g_ClipNear);
+		CIniFile_ReadFloat(&ini, "camara", "forzar_clipFar", &g_ClipFar);
+		CIniFile_ReadText(&ini, "cielo", "path", g_SkyPath, MAX_FILEPATH);
+		CIniFile_ReadText(&ini, "cielo", "ruta_m3d", g_SkyPath, MAX_FILEPATH);
+		Ini_GetPath("cielo", "ruta_rel", g_SkyPath, MAX_FILEPATH, name, &ini);
+		CIniFile_ReadFloat(&ini, "cielo", "pos_scale", &g_SkyPosScaleIni);
+		CIniFile_ReadFloat(&ini, "cielo", "rotation", &g_SkyRotationIni);
+		CIniFile_ReadBool(&ini, "niebla", "activa", &g_FogActiveIni);
+		CIniFile_ReadBool(&ini, "niebla", "modo_tabla", &g_FogTableMode);
+		CIniFile_ReadBool(&ini, "niebla", "lineal", &g_FogLinear);
+		CIniFile_ReadFloat(&ini, "niebla", "rango_ini", &g_FogRangeIni);
+		CIniFile_ReadFloat(&ini, "niebla", "rango_fin", &g_FogRangeEnd);
+		CIniFile_ReadFloat(&ini, "niebla", "densidad", &g_FogDensityIni);
+		Ini_GetColor("niebla", "color", g_FogColorIni, &ini);
+		CIniFile_ReadBool(&ini, "mapa_sombras", "usar", &g_ShadowMapUse);
+		CIniFile_ReadBool(&ini, "mapa_sombras", "dlg", &g_ShadowMapDlg);
+		CIniFile_ReadBool(&ini, "mapa_sombras", "calcular", &g_ShadowMapCalculate);
+		CIniFile_ReadBool(&ini, "mapa_sombras", "multitext", &g_ShadowMapMultitext);
+		CIniFile_ReadBool(&ini, "mapa_sombras", "sombras_suaves", &g_ShadowMapSoft);
+		CIniFile_ReadBool(&ini, "mapa_sombras", "escr_mapas_temp", &g_ShadowMapWriteTemp);
+		CIniFile_ReadFloat(&ini, "mapa_sombras", "aten_sombras", &g_ShadowMapAtten);
+		CIniFile_ReadFloat(&ini, "mapa_sombras", "escala", &g_ShadowMapScale);
+		CIniFile_ReadFloat(&ini, "mapa_sombras", "resolucion", &g_ShadowMapRes);
+		CIniFile_ReadInt(&ini, "mapa_sombras", "text_tam_x", &g_ShadowMapTexX);
+		CIniFile_ReadInt(&ini, "mapa_sombras", "text_tam_y", &g_ShadowMapTexY);
+		CIniFile_ReadFloat(&ini, "mapa_sombras", "gamma", &g_ShadowMapGamma);
+		CIniFile_ReadFloat(&ini, "mapa_sombras", "brillo", &g_ShadowMapBrightness);
+		CIniFile_ReadBool(&ini, "mapa_sombras", "radiosidad", &g_ShadowMapRadiosity);
+		CIniFile_ReadBool(&ini, "mapa_sombras", "ilum_global", &g_ShadowMapIllumGlobal);
+		CIniFile_ReadBool(&ini, "mapa_sombras", "no_luz_amb", &g_ShadowMapNoLightAmb);
+		CIniFile_ReadBool(&ini, "mapa_sombras", "modulate4x", &g_ShadowMapModulate4x);
+		CIniFile_ReadInt(&ini, "mapa_sombras", "rebotes", &g_ShadowMapBounces);
+		CIniFile_ReadFloat(&ini, "mapa_sombras", "coef_rad", &g_ShadowMapCoefRad);
+		CIniFile_ReadBool(&ini, "mapa_sombras", "calc_lmap2", &g_CalcLmap2);
+		CIniFile_ReadBool(&ini, "mapa_sombras", "usar_txf", &g_ShadowMapUseTxf);
+		CIniFile_ReadBool(&ini, "sombras_stencil", "usar", &g_ShadowsStencil);
+		CIniFile_ReadBool(&ini, "sombras_stencil", "dest_alpha", &g_ShadowsDestAlpha);
+		CIniFile_ReadFloat(&ini, "flares", "tam_def", &g_FlaresSizeDef);
+		CIniFile_ReadBool(&ini, "flares", "aten_dist", &g_FlaresAttenDist);
+		CIniFile_ReadFloat(&ini, "flares", "aten_dist_ini", &g_FlaresAttenIni);
+		CIniFile_ReadFloat(&ini, "flares", "aten_dist_fin", &g_FlaresAttenEnd);
+		CIniFile_ReadFloat(&ini, "flares", "fundido_ent", &g_FlaresFadeIn);
+		CIniFile_ReadFloat(&ini, "flares", "fundido_sal", &g_FlaresFadeOut);
+		CIniFile_ReadBool(&ini, "flares", "ver_info", &g_FlaresShowInfo);
 		for (int i = 0; i < 4; i++) {
-			if (!CArchINI_ReadText(&ini, "texturas", rutas[i], tex, sizeof(tex))) {
+			if (!CIniFile_ReadText(&ini, "texturas", paths[i], tex, sizeof(tex))) {
 				Tex_AddPath(tex);
 			}
 		}
 		for (int i = 0; i < 4; i++) {
-			if (!CArchINI_ReadText(&ini, "texturas", extens[i], tex, sizeof(tex))) {
+			if (!CIniFile_ReadText(&ini, "texturas", ext[i], tex, sizeof(tex))) {
 				Tex_AddExtension(tex);
 			}
 		}
 	}
-	CArchINI_dtor(&ini);
+	CIniFile_dtor(&ini);
 }

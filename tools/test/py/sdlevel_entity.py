@@ -169,7 +169,7 @@ def ntgets(e, n):
 # the strings for the set of EntityList (a char * by pointer)
 def ntcstr(s):
 	a = ntcalloc(32)
-	SDTest.Call('Cad_Copy', 'iisi', a, s, len(s) + 1)
+	SDTest.Call('String_Copy', 'iisi', a, s, len(s) + 1)
 	return a
 ntsdl = ntcstr('SDEntList')
 ntsdn = ntcstr('SDNoList')
@@ -419,14 +419,14 @@ SDTest.Call('cMissileEntity_SetParent', 'tvis', ntm, 'Player0')
 check('cMissileEntity_Touch(player) parent', lambda: ntmtouch(ntplayer))
 for i in range(4):
 	if ntmhits[i]:
-		SDTest.Call('Cad_Copy', 'iisi', symva('g_MissileHits') + 0x80 * i, ntmhits[i], len(ntmhits[i]) + 1)
+		SDTest.Call('String_Copy', 'iisi', symva('g_MissileHits') + 0x80 * i, ntmhits[i], len(ntmhits[i]) + 1)
 	else:
 		ntsetfl(symva('g_MissileHits') + 0x80 * i, (0.0,))
 check('missile hits restored', lambda: map(lambda i: ntstr(symva('g_MissileHits') + 0x80 * i), range(4)))
 # InOut: leaving it calls OnHit for the names the missile went through
 ntcalls = []
-SDTest.Call('Cad_Copy', 'iisi', ntm + 0x5b4, 'SDHitA', 7)
-SDTest.Call('Cad_Copy', 'iisi', ntm + 0x6b4, 'SDHitC', 7)
+SDTest.Call('String_Copy', 'iisi', ntm + 0x5b4, 'SDHitA', 7)
+SDTest.Call('String_Copy', 'iisi', ntm + 0x6b4, 'SDHitC', 7)
 check('cMissileEntity_SetHitType(InOut)', lambda: (SDTest.Call('cMissileEntity_SetHitType', 'tvii', ntm, 2), ntpeek(ntm + 0x7b4), len(ntcalls)))
 check('cMissileEntity_SetHitType(InOut) again', lambda: (SDTest.Call('cMissileEntity_SetHitType', 'tvii', ntm, 2), len(ntcalls)))
 check('cMissileEntity_SetHitType(None)', lambda: (SDTest.Call('cMissileEntity_SetHitType', 'tvii', ntm, 0), ntpeek(ntm + 0x7b4), ntcalls))

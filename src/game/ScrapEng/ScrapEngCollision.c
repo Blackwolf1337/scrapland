@@ -106,7 +106,7 @@ byte Collision_SphereBox(const vec3_t *a, const vec3_t *b, float r, CSphereBox *
 	if (cache->wait) {
 		cache->wait--;
 		if (g_CollisionSboxShow) {
-			Debug_Punto(b, 0x800000, r * 0.25f);
+			Debug_Point(b, 0x800000, r * 0.25f);
 		}
 		return 0;
 	}
@@ -121,7 +121,7 @@ byte Collision_SphereBox(const vec3_t *a, const vec3_t *b, float r, CSphereBox *
 			cache->wait = 20;
 			cache->flags = flags & 0xfffc;
 			if (g_CollisionSboxShow) {
-				Debug_Punto(b, 0xffff00, r);
+				Debug_Point(b, 0xffff00, r);
 			}
 			return 0;
 		}
@@ -135,9 +135,9 @@ byte Collision_SphereBox(const vec3_t *a, const vec3_t *b, float r, CSphereBox *
 		vec3_t zero = { 0.0f, 0.0f, 0.0f };
 		byte hit = Collision_Box(&zero, &box.min, &box.max);
 		if (g_CollisionSboxShow) {
-			Debug_Punto(&box.min, hit ? 0x800000 : 0xffff00, -2.0f);
-			Debug_Punto(&box.max, 0xffff00, 1.0f);
-			Debug_Punto(&m, 0xff, r);
+			Debug_Point(&box.min, hit ? 0x800000 : 0xffff00, -2.0f);
+			Debug_Point(&box.max, 0xffff00, 1.0f);
+			Debug_Point(&m, 0xff, r);
 		}
 		cache->flags = (cache->flags & 0xfffc) | (hit == 0);
 		cache->wait = hit ? 20 : 0;
@@ -145,43 +145,43 @@ byte Collision_SphereBox(const vec3_t *a, const vec3_t *b, float r, CSphereBox *
 		cache->box = box;
 	}
 	if (g_CollisionSboxShow) {
-		Debug_Punto(b, (cache->flags & SPHEREBOX_FREE) ? 0x8000 : 0xff0000, r);
+		Debug_Point(b, (cache->flags & SPHEREBOX_FREE) ? 0x8000 : 0xff0000, r);
 	}
 	return cache->flags & SPHEREBOX_FREE;
 }
 
 byte Collision_Box(const vec3_t *pos, const vec3_t *min, const vec3_t *max) {
-	CColisBBox colis;
+	CCollisionBBox collision;
 
 	Prof_Begin(PROF_BOX);
-	CSuelo *suelo = Mundo_Get()->ObjSuelo;
-	CHECK(suelo);
-	memset(&colis, 0, sizeof(colis));
-	colis.usar_minmax = 1;
-	colis.calc_respuesta = 0;
-	colis.pos = *pos;
-	colis.min = *min;
-	colis.max = *max;
-	byte res = CSuelo_CheckBBox(suelo, &colis);
+	CGround *ground = World_Get()->ObjGround;
+	CHECK(ground);
+	memset(&collision, 0, sizeof(collision));
+	collision.use_minmax = 1;
+	collision.calc_response = 0;
+	collision.pos = *pos;
+	collision.min = *min;
+	collision.max = *max;
+	byte res = CGround_CheckBBox(ground, &collision);
 	Prof_End(PROF_BOX);
 	return res;
 }
 
-byte Engine_TestLine(const vec3_t *from, const vec3_t *to, vec3_t *hit, CColisTri *tri) {
+byte Engine_TestLine(const vec3_t *from, const vec3_t *to, vec3_t *hit, CCollisionTri *tri) {
 	vec3_t pos = *to;
 	byte res;
 
 	Prof_Begin(PROF_TESTLINE);
-	CSuelo *suelo = Mundo_Get()->ObjSuelo;
-	CHECK(suelo);
+	CGround *ground = World_Get()->ObjGround;
+	CHECK(ground);
 	if (!hit && !tri) {
-		res = CSuelo_TestSeg(suelo, from, to, 0);
+		res = CGround_TestSeg(ground, from, to, 0);
 		Prof_End(PROF_TESTLINE);
 		return res;
 	}
 	if (tri) {
-		CSueloHit h = { 0, 0, NULL };
-		res = CSuelo_TraceSeg(suelo, from, to, &pos, &h, 0);
+		CGroundHit h = { 0, 0, NULL };
+		res = CGround_TraceSeg(ground, from, to, &pos, &h, 0);
 		if (res) {
 			CCollideMesh *mesh = h.quad->Mesh;
 			const CCollideTri *t = &mesh->pTri[h.quad->pTri[h.tri]];
@@ -190,10 +190,10 @@ byte Engine_TestLine(const vec3_t *from, const vec3_t *to, vec3_t *hit, CColisTr
 			}
 			tri->plane = t->plane;
 			tri->hit = pos;
-			tri->noColisiones = t->flags >> 4 & 1;
+			tri->noCollisions = t->flags >> 4 & 1;
 		}
 	} else {
-		res = CSuelo_TraceSegPos(suelo, from, to, &pos, 0);
+		res = CGround_TraceSegPos(ground, from, to, &pos, 0);
 	}
 	if (hit) {
 		*hit = pos;
@@ -207,7 +207,7 @@ int Collision_Sector(int sector, const vec3_t *a, const vec3_t *b, byte front) {
 		CheckFailed("Sector >= 0", __FILE__, __TIMESTAMP__, __LINE__);
 	}
 	Prof_Begin(PROF_SECTOR);
-	int res = Sector_Recorrer(sector, a, b, front);
+	int res = Sector_Traverse(sector, a, b, front);
 	Prof_End(PROF_SECTOR);
 	return res;
 }
@@ -217,9 +217,9 @@ byte Collision_Check(const vec3_t *pos, float r) {
 
 	Prof_Begin(PROF_CHECK);
 	if (g_CollisionScts) {
-		res = CSuelo_SweepSphere(Mundo_Suelo(), pos, pos, r, NULL, NULL, NULL);
+		res = CGround_SweepSphere(World_Ground(), pos, pos, r, NULL, NULL, NULL);
 	} else {
-		res = CSuelo_SphereContact(Mundo_Suelo(), pos, pos, r, NULL, NULL, NULL);
+		res = CGround_SphereContact(World_Ground(), pos, pos, r, NULL, NULL, NULL);
 	}
 	Prof_End(PROF_CHECK);
 	return res;
@@ -243,7 +243,7 @@ static byte Collision_Shortcut(const vec3_t *a, const vec3_t *b, float r, vec3_t
 	return 0;
 }
 
-typedef byte(__thiscall *sphereFn_t)(CSuelo *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out,
+typedef byte(__thiscall *sphereFn_t)(CGround *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out,
 	vec3_t *hit, vec3_t *n);
 
 /* the slides: steps of half the radius from a to b, each step pushed out of the triangles by fn up to maxIter
@@ -255,9 +255,9 @@ static byte Collision_SlideSteps(const vec3_t *a, const vec3_t *b, float r, vec3
 	int n = 0;
 
 	Prof_Begin(section);
-	CSuelo *suelo = Mundo_Suelo();
+	CGround *ground = World_Ground();
 	vec3_t cur = *b, prev;
-	if (suelo) {
+	if (ground) {
 		cur = *a;
 		float stepT = r * 0.5f;
 		float len = (float)__builtin_sqrt((double)(d.x * d.x + d.y * d.y + d.z * d.z));
@@ -276,7 +276,7 @@ static byte Collision_SlideSteps(const vec3_t *a, const vec3_t *b, float r, vec3
 				cur.z = cur.z + d.z * stepT;
 			}
 			int k = maxIter;
-			while (k > 0 && fn(suelo, &prev, &cur, r, &cur, NULL, NULL)) {
+			while (k > 0 && fn(ground, &prev, &cur, r, &cur, NULL, NULL)) {
 				k--;
 				n++;
 				moved = 1;
@@ -309,7 +309,7 @@ byte Collision_Slide2D(const vec3_t *a, const vec3_t *b, float r, vec3_t *out, C
 	if (Collision_Shortcut(a, b, r, out, cache, 0, &res)) {
 		return res;
 	}
-	return Collision_SlideSteps(a, b, r, out, PROF_SLIDE2D, g_CollisionSld2, CSuelo_CollideSphere,
+	return Collision_SlideSteps(a, b, r, out, PROF_SLIDE2D, g_CollisionSld2, CGround_CollideSphere,
 		"WorldSphereCollisionSlide2D");
 }
 
@@ -319,7 +319,7 @@ byte Collision_Slide(const vec3_t *a, const vec3_t *b, float r, vec3_t *out, CSp
 	if (Collision_Shortcut(a, b, r, out, cache, 1, &res)) {
 		return res;
 	}
-	return Collision_SlideSteps(a, b, r, out, PROF_SLIDE, g_CollisionSldi, CSuelo_SphereContact,
+	return Collision_SlideSteps(a, b, r, out, PROF_SLIDE, g_CollisionSldi, CGround_SphereContact,
 		"WorldSphereCollisionSlide");
 }
 
@@ -333,16 +333,16 @@ byte Engine_TestSphere(const vec3_t *a, const vec3_t *b, float r, vec3_t *out, C
 		return res;
 	}
 	Prof_Begin(PROF_TESTSPHERE);
-	CSuelo *suelo = Mundo_Suelo();
+	CGround *ground = World_Ground();
 	vec3_t cur = end;
 	if (g_CollisionCaps && a->x == b->x && a->z == b->z) {
 		if (out) {
 			*out = end;
 		}
-		res = CSuelo_SweepSphere(suelo, &start, &end, r, out, NULL, NULL);
+		res = CGround_SweepSphere(ground, &start, &end, r, out, NULL, NULL);
 		goto done;
 	}
-	if (suelo) {
+	if (ground) {
 		cur = start;
 		float stepT = r * 0.5f;
 		stepT = stepT + stepT;
@@ -360,7 +360,7 @@ byte Engine_TestSphere(const vec3_t *a, const vec3_t *b, float r, vec3_t *out, C
 			}
 			if (g_CollisionIter < 2) {
 				iter++;
-				if (CSuelo_SweepSphere(suelo, &prev, &cur, r, out ? &cur : NULL, NULL, NULL)) {
+				if (CGround_SweepSphere(ground, &prev, &cur, r, out ? &cur : NULL, NULL, NULL)) {
 					if (out) {
 						if (cur.x == a->x && cur.y == a->y && cur.z == a->z) {
 							Con_Verbosef("WorldSphereCollisionTest(): initially colliding: %d %f %ph [%s]\n", iter,

@@ -37,7 +37,7 @@ static byte VM_NodeInfo(cVehicleMotors *self, int i, vec3_t *pos, vec3_t *ang) {
 	matrix_t m;
 	vec3_t e;
 
-	CGameModel_NodoMatrix(VM_OwnerModel(self), &m, i, 0, NULL, 0);
+	CGameModel_NodeMatrix(VM_OwnerModel(self), &m, i, 0, NULL, 0);
 	if (pos) {
 		pos->x = m.m[12];
 		pos->y = m.m[13];
@@ -115,17 +115,17 @@ static void VM_UpdateEffects(cVehicleMotors *self, cVehicleMotorsEffects *eff, V
 }
 
 /* the Calima particles (the hot air under the exhausts) of the motors of a player ship */
-static void VM_Calima(cVehicleMotors *self, VMUpdate *u) {
+static void VM_Haze(cVehicleMotors *self, VMUpdate *u) {
 	vec3_t t;
 	int i, k, n;
 
-	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXMotorCalimaFile);
+	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXMotorHazeFile);
 	cDebris *d = cDebrisSys_GetIdle(sys);
 	d->speed = 1.0f;
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	}
-	cObjElementFXSistPart *el = Debris_Element(d);
+	cObjElementFXParticleSystem *el = Debris_Element(d);
 	if (!el) {
 		return;
 	}
@@ -136,7 +136,7 @@ static void VM_Calima(cVehicleMotors *self, VMUpdate *u) {
 	CGameModel_SetSortZ(Debris_Model(d), -0.5f, 0.0f);
 	CGameModel_SetPos(Debris_Model(d), CGameModel_GetPos(vm, &t));
 	CGameModel_SetRot(Debris_Model(d), CGameModel_GetRot(vm, &t));
-	float off = g_FXMotorCalimaOffset;
+	float off = g_FXMotorHazeOffset;
 	n = 0;
 	for (i = 0; i < VM_MOTORS; i++) {
 		cVehicleMotor *m = self->motor[i];
@@ -144,14 +144,14 @@ static void VM_Calima(cVehicleMotors *self, VMUpdate *u) {
 			continue;
 		}
 		for (k = 0; k < m->effects.numExhausts; k++) {
-			g_CalimaPos[n].x = m->effects.exhaustPos[k].x + 0.0f;
-			g_CalimaPos[n].y = m->effects.exhaustPos[k].y + 0.0f;
-			g_CalimaPos[n].z = m->effects.exhaustPos[k].z + off;
+			g_HazePos[n].x = m->effects.exhaustPos[k].x + 0.0f;
+			g_HazePos[n].y = m->effects.exhaustPos[k].y + 0.0f;
+			g_HazePos[n].z = m->effects.exhaustPos[k].z + off;
 			n++;
 		}
 	}
 	if (n > 0) {
-		VMEffects_SetupCalima(u->thrust, u->k4c8, g_CalimaPos, n, &el->particles);
+		VMEffects_SetupHaze(u->thrust, u->k4c8, g_HazePos, n, &el->particles);
 	}
 }
 
@@ -175,7 +175,7 @@ void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
 	CHECK(VM_EmbeddedFX(owner));
 	cEmbeddedFXVehicle *fx = VM_EmbeddedFX(self->owner);
 	u.glowPs = &fx->follow;
-	CHECK(fx->follow.SistPart);
+	CHECK(fx->follow.ParticleSystem);
 	u.alpha = fx->alpha;
 	u.visible = fx->visible;
 	u.camDist = fx->camDist;
@@ -224,7 +224,7 @@ void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
 		if (!cDebrisSys_IsIdle(sys, d)) {
 			cDebrisSys_Drop(sys, d);
 		}
-		cObjElementFXSistPart *el = Debris_Element(d);
+		cObjElementFXParticleSystem *el = Debris_Element(d);
 		u.smokePs = &el->particles;
 		if (!el->on) {
 			el->move = 0;
@@ -240,7 +240,7 @@ void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
 		for (j = 0; j < VM_SIDES && self->motor[i] && m->node[j] != -1; j++) {
 			matrix_t mat;
 			vec3_t pos, e, rot;
-			CGameModel_NodoMatrix(VM_OwnerModel(self), &mat, m->node[j], 0, NULL, 0);
+			CGameModel_NodeMatrix(VM_OwnerModel(self), &mat, m->node[j], 0, NULL, 0);
 			pos.x = mat.m[12];
 			pos.y = mat.m[13];
 			pos.z = mat.m[14];
@@ -256,8 +256,8 @@ void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
 		VM_UpdateEffects(self, &m->effects, &u);
 	}
 	VM_UpdateEffects(self, &self->effects, &u);
-	if (g_SceneDuDvRTarget && g_FXMotorCalima && u.player && !self->stopped && !u.traffic && !g_SplitScreenGame) {
-		VM_Calima(self, &u);
+	if (g_SceneDuDvRTarget && g_FXMotorHaze && u.player && !self->stopped && !u.traffic && !g_SplitScreenGame) {
+		VM_Haze(self, &u);
 	}
 	owner = self->owner;
 	if (VM_Thrust(owner) == 0.0f && VM_F490(owner) / VM_F494(owner) == 0.0f && Vehicle_Speed(owner) == 0.0f &&
@@ -343,7 +343,7 @@ byte __thiscall cVehicleMotors_GetSlot(cVehicleMotors *self, uint32_t motor, uin
 		return 0;
 	}
 	VM_SlotName(name, (int)motor, (int)side);
-	int i = CGameModel_FindNodoR(VM_OwnerModel(self), name);
+	int i = CGameModel_FindRenderNode(VM_OwnerModel(self), name);
 	if (i == -1) {
 		return 0;
 	}
@@ -370,7 +370,7 @@ int __thiscall cVehicleMotors_NumSlots(cVehicleMotors *self, byte motor) {
 
 	for (i = 0; i < VM_SIDES; i++) {
 		VM_SlotName(name, motor, i);
-		if (CGameModel_FindNodoR(VM_OwnerModel(self), name) == -1) {
+		if (CGameModel_FindRenderNode(VM_OwnerModel(self), name) == -1) {
 			return i;
 		}
 	}
@@ -512,12 +512,12 @@ int __thiscall cVehicleMotor_Load(cVehicleMotor *self, cEntity *owner, byte moto
 	Str_Printf(path, sizeof(path), g_EnginePathFmt, file, file);
 	for (i = 0; i < VM_SIDES; i++) {
 		VM_SlotName(name, motor, i);
-		self->node[i] = CGameModel_FindNodoR(Weap_Vtbl(owner)->GetModel(owner), name);
+		self->node[i] = CGameModel_FindRenderNode(Weap_Vtbl(owner)->GetModel(owner), name);
 		if (self->node[i] == -1) {
 			break;
 		}
 		CGameModel_LoadScaled(&self->model[i], path, scale);
-		CGameModel_SetPivotNodo(&self->model[i], "DC_Ship_Link");
+		CGameModel_SetPivotNode(&self->model[i], "DC_Ship_Link");
 		CGameModel_SetPos(&self->model[i], Weap_Vtbl(owner)->GetPos(owner, &v));
 		CGameModel_SetRot(&self->model[i], Weap_Vtbl(owner)->GetOrient(owner, &v));
 		if (!owner->flag_4c) {
@@ -726,13 +726,13 @@ cVehicleMotorsEffects *__fastcall cVehicleMotorsEffects_ctor(cVehicleMotorsEffec
 	self->on = 0;
 	self->node[0][0] = -1;
 	self->node[0][1] = -1;
-	self->sistPart[0][0] = NULL;
-	self->sistPart[0][1] = NULL;
+	self->particleSystem[0][0] = NULL;
+	self->particleSystem[0][1] = NULL;
 	self->trail[0] = NULL;
 	self->node[1][0] = -1;
 	self->node[1][1] = -1;
-	self->sistPart[1][0] = NULL;
-	self->sistPart[1][1] = NULL;
+	self->particleSystem[1][0] = NULL;
+	self->particleSystem[1][1] = NULL;
 	self->trail[1] = NULL;
 	self->smokeTime = 0.0f;
 	self->trailsOn = 0;
@@ -757,7 +757,7 @@ vec3_t *__thiscall Vec3_Assign(vec3_t *self, const vec3_t *v) {
 
 /* the particles of a node killed, released and freed */
 static void VM_FreeParticles(CGameParticles **slot) {
-	if (*slot && (*slot)->SistPart) {
+	if (*slot && (*slot)->ParticleSystem) {
 		CGameParticles_KillAll(*slot);
 		CGameParticles_Release(*slot);
 	}
@@ -780,8 +780,8 @@ void __fastcall cVehicleMotorsEffects_Clear(cVehicleMotorsEffects *self) {
 	for (i = 0; i < VM_SIDES; i++) {
 		self->node[i][0] = -1;
 		self->node[i][1] = -1;
-		VM_FreeParticles(&self->sistPart[i][0]);
-		VM_FreeParticles(&self->sistPart[i][1]);
+		VM_FreeParticles(&self->particleSystem[i][0]);
+		VM_FreeParticles(&self->particleSystem[i][1]);
 		if (self->trail[i]) {
 			CGameTrail_Clear(self->trail[i]);
 			if (self->trail[i]) {
@@ -794,7 +794,7 @@ void __fastcall cVehicleMotorsEffects_Clear(cVehicleMotorsEffects *self) {
 }
 
 static void VM_StopParticles(CGameParticles *ps) {
-	if (ps && ps->SistPart) {
+	if (ps && ps->ParticleSystem) {
 		ps->birthRate = 0;
 		CGameParticles_Apply(ps);
 		CGameParticles_KillAll(ps);
@@ -805,8 +805,8 @@ void __fastcall cVehicleMotorsEffects_Stop(cVehicleMotorsEffects *self) {
 	int i;
 
 	for (i = 0; i < VM_SIDES; i++) {
-		VM_StopParticles(self->sistPart[i][0]);
-		VM_StopParticles(self->sistPart[i][1]);
+		VM_StopParticles(self->particleSystem[i][0]);
+		VM_StopParticles(self->particleSystem[i][1]);
 		if (!self->trail[i]) {
 			continue;
 		}

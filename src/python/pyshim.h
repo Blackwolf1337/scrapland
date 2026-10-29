@@ -37,7 +37,7 @@
 void *PyPool_Malloc(size_t size);
 void *PyPool_Realloc(void *p, size_t size);
 void PyPool_Free(void *p);
-void Arch_Printf(const char *fmt, ...);	/* the inline printf of the CRT headers, folded with it in the exe */
+void DataFile_Printf(const char *fmt, ...);	/* the inline printf of the CRT headers, folded with it in the exe */
 double Game_Sin(double x);
 double Game_Cos(double x);
 double Game_Atan(double x);
@@ -74,7 +74,7 @@ struct crt_stat32 {
 #define vsprintf crt_vsprintf
 #define fprintf crt_fprintf
 #define vfprintf crt_vfprintf
-#define printf Arch_Printf
+#define printf DataFile_Printf
 #define sscanf crt_sscanf
 
 #undef stdin

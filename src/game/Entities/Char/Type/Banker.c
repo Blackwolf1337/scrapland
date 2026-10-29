@@ -75,7 +75,7 @@ void ChType_BankerAttack(cAbstractFile *params) {
 	if (v == ChType_Usr0()) {
 		victim = ChType_BankerVictim(v);
 	}
-	ChType_Steal(&thief, &victim, g_BankerStealQuanto, "Stats.BankDirector", 1.0f);
+	ChType_Steal(&thief, &victim, g_BankerStealAmount, "Stats.BankDirector", 1.0f);
 	cLocalLogic *l = Logic_GetLocalLogic(victim);
 	if (l) {
 		float d = NormAng(WChar_Ang(victim)->y - WChar_Ang(v)->y);

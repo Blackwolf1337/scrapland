@@ -1,7 +1,7 @@
 # engine3d Engine/Animacion.c (execfile'd at the end of sdcall.py, Python 1.5.2): animations and nodes in heap memory
 # with random tracks, the optimization into constants and streams, and animations read from the packs. Pointers are
-# printed as offsets or as "set", never as addresses. Not called: CAnimNodo_FreeTracks (always fails its CHECK(0)).
-# CAnimacion_Write and the node writers run on a CArchIO with the error flag set, which writes nothing.
+# printed as offsets or as "set", never as addresses. Not called: CAnimNode_FreeTracks (always fails its CHECK(0)).
+# CAnimation_Write and the node writers run on a CFileIO with the error flag set, which writes nothing.
 def anew(n):
 	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def afree(p):
@@ -37,7 +37,7 @@ def arb(addr, n):
 def ablocks():
 	return SDTest.Peek(sym('g_MemStats') + 8, 'i')
 def acount():
-	return SDTest.Peek('g_AnimNodoCount', 'i')
+	return SDTest.Peek('g_AnimNodeCount', 'i')
 def aint(lo, hi):
 	return int(rnd(lo + 0.0, hi + 0.999))
 def aoff(p, base):
@@ -60,7 +60,7 @@ def nptrs(n):
 def nstate(n):
 	return nhead(n), nptrs(n)
 def nflags(n):
-	return SDTest.Call('CAnimNodo_GetFlags', 'tii', n)[0]
+	return SDTest.Call('CAnimNode_GetFlags', 'tii', n)[0]
 # the values of the tracks: plain ones as arrays, streams by their bytes
 def ntracks(n):
 	h = nhead(n)
@@ -86,7 +86,7 @@ def ascale():
 def uq():
 	a = vec()
 	return SDTest.Call('Quat_FromEuler', 'vFfff', (0.0, 0.0, 0.0, 0.0), a[0], a[1], a[2])[1]
-# unit: only unit quaternions (CAnimNodo_Optimize CHECKs their dot products)
+# unit: only unit quaternions (CAnimNode_Optimize CHECKs their dot products)
 def nfill(n, flags, unit=0):
 	h = nhead(n)
 	nf = h[1]
@@ -153,20 +153,20 @@ def nquery(name, n):
 		k = k + 1
 		a = fmt((f, sf))
 		if (fl & 3) == 3 or (fl & 3) == 0:
-			check(name + ' CAnimNodo_GetPosRot' + a, lambda n=n, f=f, sf=sf: SDTest.Call('CAnimNodo_GetPosRot', 'tbiFFif', n, zero3, (0.0, 0.0, 0.0, 0.0), f, sf))
+			check(name + ' CAnimNode_GetPosRot' + a, lambda n=n, f=f, sf=sf: SDTest.Call('CAnimNode_GetPosRot', 'tbiFFif', n, zero3, (0.0, 0.0, 0.0, 0.0), f, sf))
 		if (fl & 3) == 3 and not (opt & 3):
-			check(name + ' CAnimNodo_GetPosRotFrame' + a, lambda n=n, f=f: SDTest.Call('CAnimNodo_GetPosRotFrame', 'tbiFFi', n, zero3, (0.0, 0.0, 0.0, 0.0), f))
+			check(name + ' CAnimNode_GetPosRotFrame' + a, lambda n=n, f=f: SDTest.Call('CAnimNode_GetPosRotFrame', 'tbiFFi', n, zero3, (0.0, 0.0, 0.0, 0.0), f))
 		if fl & 4:
-			check(name + ' CAnimNodo_GetFOV' + a, lambda n=n, f=f, sf=sf: SDTest.Call('CAnimNodo_GetFOV', 'tbiFif', n, (0.0,), f, sf))
+			check(name + ' CAnimNode_GetFOV' + a, lambda n=n, f=f, sf=sf: SDTest.Call('CAnimNode_GetFOV', 'tbiFif', n, (0.0,), f, sf))
 		if (fl & 0x18) == 0x18 and not (opt & 0x18):
-			check(name + ' CAnimNodo_GetColor' + a, lambda n=n, f=f, sf=sf: SDTest.Call('CAnimNodo_GetColor', 'tbiFFif', n, zero3, (0.0,), f, sf))
+			check(name + ' CAnimNode_GetColor' + a, lambda n=n, f=f, sf=sf: SDTest.Call('CAnimNode_GetColor', 'tbiFFif', n, zero3, (0.0,), f, sf))
 		if not (opt & 0x80):
-			check(name + ' CAnimNodo_GetVisible' + a, lambda n=n, f=f, sf=sf: SDTest.Call('CAnimNodo_GetVisible', 'tbipif', n, 0, f, sf))
-		check(name + ' CAnimNodo_TrackKind' + fmt((f,)), lambda n=n, f=f: (SDTest.Call('CAnimNodo_TrackKind', 'tiiiii', n, f, 0, 1)[0],
-			SDTest.Call('CAnimNodo_TrackKind', 'tiiiii', n, f, 0, 2)[0], SDTest.Call('CAnimNodo_TrackKind', 'tiiiii', n, f, 0, 4)[0],
-			SDTest.Call('CAnimNodo_TrackKind', 'tiiiii', n, f, 0, 3)[0], SDTest.Call('CAnimNodo_TrackKind', 'tiiiii', n, f, 0, 8)[0]))
+			check(name + ' CAnimNode_GetVisible' + a, lambda n=n, f=f, sf=sf: SDTest.Call('CAnimNode_GetVisible', 'tbipif', n, 0, f, sf))
+		check(name + ' CAnimNode_TrackKind' + fmt((f,)), lambda n=n, f=f: (SDTest.Call('CAnimNode_TrackKind', 'tiiiii', n, f, 0, 1)[0],
+			SDTest.Call('CAnimNode_TrackKind', 'tiiiii', n, f, 0, 2)[0], SDTest.Call('CAnimNode_TrackKind', 'tiiiii', n, f, 0, 4)[0],
+			SDTest.Call('CAnimNode_TrackKind', 'tiiiii', n, f, 0, 3)[0], SDTest.Call('CAnimNode_TrackKind', 'tiiiii', n, f, 0, 8)[0]))
 		if f - h[0] >= 0 and f - h[0] < h[1]:
-			check(name + ' CAnimNodo_FrameIndex' + fmt((f,)), lambda n=n, f=f: SDTest.Call('CAnimNodo_FrameIndex', 'tiiiii', n, f, 1, 0)[0])
+			check(name + ' CAnimNode_FrameIndex' + fmt((f,)), lambda n=n, f=f: SDTest.Call('CAnimNode_FrameIndex', 'tiiiii', n, f, 1, 0)[0])
 
 SDTest.Call('crt_srand', 'vi', 0x5a17)
 
@@ -229,14 +229,14 @@ awi(ablk + 4, 256)
 SDTest.Poke('g_ActAnimBlock', ablk)
 check('AnimBlock_Free inside', lambda: (afreed(amem + 8, 0x8000), afreed(amem + 255, 0)))
 check('AnimBlock_Free outside', lambda: afreed(anew(16), 0))
-# CAnimNodo_ReadTrack into the fake block: plain tracks only, a stream would read its size from the file
+# CAnimNode_ReadTrack into the fake block: plain tracks only, a stream would read its size from the file
 aio = anew(16)
 SDTest.Poke(aio - 0x400000, 1)
 rn = anew(0x24)
 awi(rn, 0x00050002)
 awi(rn + 4, 0x00000001)
 for flag, size in ((0, 12), (1, 12), (2, 16), (4, 4)):
-	check('CAnimNodo_ReadTrack' + fmt((flag, size)), lambda flag=flag, size=size: (aoff(SDTest.Call('CAnimNodo_ReadTrack', 'tviiipi', rn, aio, flag, 0, size)[1], amem), ari(ablk + 8)))
+	check('CAnimNode_ReadTrack' + fmt((flag, size)), lambda flag=flag, size=size: (aoff(SDTest.Call('CAnimNode_ReadTrack', 'tviiipi', rn, aio, flag, 0, size)[1], amem), ari(ablk + 8)))
 SDTest.Poke('g_ActAnimBlock', 0)
 afree(rn)
 afree(ablk)
@@ -245,35 +245,35 @@ afree(amem)
 # an animation of nodes with random tracks
 c0 = acount()
 an = anew(0x34)
-check('CAnimacion_Init', lambda: (SDTest.Call('CAnimacion_Init', 'tviiii', an, 5, 40, 3)[0], aget(an), acount() - c0))
-check('CAnimacion_Init again', lambda: (SDTest.Call('CAnimacion_Init', 'tviiii', an, 6, 41, 1)[0], aget(an), acount() - c0))
+check('CAnimation_Init', lambda: (SDTest.Call('CAnimation_Init', 'tviiii', an, 5, 40, 3)[0], aget(an), acount() - c0))
+check('CAnimation_Init again', lambda: (SDTest.Call('CAnimation_Init', 'tviiii', an, 6, 41, 1)[0], aget(an), acount() - c0))
 for i in range(8):
-	check('CAnimacion_GetNodo' + fmt((i,)), lambda i=i: aoff(SDTest.Call('CAnimacion_GetNodo', 'tiii', an, i)[0], ari(an + 0x20)))
+	check('CAnimation_GetNode' + fmt((i,)), lambda i=i: aoff(SDTest.Call('CAnimation_GetNode', 'tiii', an, i)[0], ari(an + 0x20)))
 anodes = []
 for i in range(6):
 	anodes.append(anodo(an, i))
 for i, nf, first, flags in ((0, 12, 3, 0x9f), (1, 20, 0, 3), (2, 1, 5, 0x9f), (3, 0, 0, 3), (4, 8, 2, 0x1000), (5, 30, 70, 0x1f)):
 	n = anodes[i]
-	check('CAnimNodo_Init' + fmt((i, nf, first, flags)), lambda n=n, nf=nf, first=first, flags=flags: (SDTest.Call('CAnimNodo_Init', 'tviiii', n, nf, first, flags)[0], nstate(n)))
+	check('CAnimNode_Init' + fmt((i, nf, first, flags)), lambda n=n, nf=nf, first=first, flags=flags: (SDTest.Call('CAnimNode_Init', 'tviiii', n, nf, first, flags)[0], nstate(n)))
 	nfill(n, flags)
-	check('CAnimNodo_GetFlags' + fmt((i,)), lambda n=n: nflags(n))
+	check('CAnimNode_GetFlags' + fmt((i,)), lambda n=n: nflags(n))
 for i in (0, 1, 2, 5):
-	nquery('nodo' + fmt((i,)), anodes[i])
+	nquery('node' + fmt((i,)), anodes[i])
 n0 = anodes[0]
-check('CAnimNodo_Translate', lambda: (SDTest.Call('CAnimNodo_Translate', 'tbiF', n0, vec())[0], afl(ari(n0 + 8), 36)))
-check('CAnimNodo_Translate none', lambda: SDTest.Call('CAnimNodo_Translate', 'tbiF', anodes[3], vec())[0])
-check('CAnimNodo_Scale', lambda: (SDTest.Call('CAnimNodo_Scale', 'tviF', n0, (ascale(), ascale(), ascale()))[0], afl(ari(n0 + 8), 36)))
+check('CAnimNode_Translate', lambda: (SDTest.Call('CAnimNode_Translate', 'tbiF', n0, vec())[0], afl(ari(n0 + 8), 36)))
+check('CAnimNode_Translate none', lambda: SDTest.Call('CAnimNode_Translate', 'tbiF', anodes[3], vec())[0])
+check('CAnimNode_Scale', lambda: (SDTest.Call('CAnimNode_Scale', 'tviF', n0, (ascale(), ascale(), ascale()))[0], afl(ari(n0 + 8), 36)))
 s = ascale()
-check('CAnimacion_Scale', lambda: (SDTest.Call('CAnimacion_Scale', 'tviF', an, (s, s, s))[0], afl(ari(n0 + 8), 36), afl(ari(anodes[1] + 8), 60)))
-check('CAnimNodo_GetVert none', lambda: SDTest.Call('CAnimNodo_GetVert', 'tiii', n0, 0)[0])
+check('CAnimation_Scale', lambda: (SDTest.Call('CAnimation_Scale', 'tviF', an, (s, s, s))[0], afl(ari(n0 + 8), 36), afl(ari(anodes[1] + 8), 60)))
+check('CAnimNode_GetVert none', lambda: SDTest.Call('CAnimNode_GetVert', 'tiii', n0, 0)[0])
 # a node of a single value per track, then a node with hand made streams
 n2 = anodes[2]
 awi(n2 + 4, 0x7f)
 nquery('const', n2)
-check('CAnimNodo_Translate const', lambda: (SDTest.Call('CAnimNodo_Translate', 'tbiF', n2, vec())[0], afl(ari(n2 + 8), 3)))
+check('CAnimNode_Translate const', lambda: (SDTest.Call('CAnimNode_Translate', 'tbiF', n2, vec())[0], afl(ari(n2 + 8), 3)))
 awi(n2 + 4, 0)
 n5 = anodes[5]
-SDTest.Call('CAnimNodo_Init', 'tviiii', n5, 30, 70, 0)
+SDTest.Call('CAnimNode_Init', 'tviiii', n5, 30, 70, 0)
 astreams = []
 for start, keys in ((0, 1), (2, 3), (9, 25), (40, 2)):
 	pp = anew(6 + 12 * keys + 4)
@@ -295,15 +295,15 @@ for start, keys in ((0, 1), (2, 3), (9, 25), (40, 2)):
 	awi(n5 + 12, pr)
 	awi(n5 + 16, pf)
 	nquery('stream' + fmt((start, keys)), n5)
-	SDTest.Call('CAnimNodo_Init', 'tviiii', n5, 30, 70, 0)
-	check('CAnimNodo_Init free streams', lambda n5=n5: nstate(n5))
+	SDTest.Call('CAnimNode_Init', 'tviiii', n5, 30, 70, 0)
+	check('CAnimNode_Init free streams', lambda n5=n5: nstate(n5))
 
 # EVA: vertices with frames that move or not
 n4 = anodes[4]
-check('CAnimNodo_SetEVA', lambda: (SDTest.Call('CAnimNodo_SetEVA', 'tvii', n4, 3)[0], nptrs(n4), ari(ari(n4 + 32))))
+check('CAnimNode_SetEVA', lambda: (SDTest.Call('CAnimNode_SetEVA', 'tvii', n4, 3)[0], nptrs(n4), ari(ari(n4 + 32))))
 aeva = ari(n4 + 32)
 for i in range(3):
-	check('CAnimNodo_GetVert' + fmt((i,)), lambda i=i: aoff(SDTest.Call('CAnimNodo_GetVert', 'tiii', n4, i)[0], ari(aeva + 4)))
+	check('CAnimNode_GetVert' + fmt((i,)), lambda i=i: aoff(SDTest.Call('CAnimNode_GetVert', 'tiii', n4, i)[0], ari(aeva + 4)))
 def evafill(e, moving):
 	for i in range(ari(e)):
 		av = ari(e + 4) + 16 * i
@@ -330,12 +330,12 @@ def evaget(n):
 		r.append((w[0], w[1] != 0, w[2], t2))
 	return r
 evafill(aeva, (1,))
-check('CAnimNodo_OptimizeEVA', lambda: (SDTest.Call('CAnimNodo_OptimizeEVA', 'tvi', n4)[0], evaget(n4)))
-check('CAnimacion_Scale eva', lambda: (SDTest.Call('CAnimacion_Scale', 'tviF', an, (s, s, s))[0], evaget(n4)))
-check('CAnimNodo_SetEVA again', lambda: (SDTest.Call('CAnimNodo_SetEVA', 'tvii', n4, 2)[0], nptrs(n4), ari(ari(n4 + 32))))
+check('CAnimNode_OptimizeEVA', lambda: (SDTest.Call('CAnimNode_OptimizeEVA', 'tvi', n4)[0], evaget(n4)))
+check('CAnimation_Scale eva', lambda: (SDTest.Call('CAnimation_Scale', 'tviF', an, (s, s, s))[0], evaget(n4)))
+check('CAnimNode_SetEVA again', lambda: (SDTest.Call('CAnimNode_SetEVA', 'tvii', n4, 2)[0], nptrs(n4), ari(ari(n4 + 32))))
 evafill(ari(n4 + 32), ())
-check('CAnimNodo_OptimizeEVA static', lambda: (SDTest.Call('CAnimNodo_OptimizeEVA', 'tvi', n4)[0], evaget(n4), nptrs(n4)))
-SDTest.Call('CAnimNodo_SetEVA', 'tvii', n4, 1)
+check('CAnimNode_OptimizeEVA static', lambda: (SDTest.Call('CAnimNode_OptimizeEVA', 'tvi', n4)[0], evaget(n4), nptrs(n4)))
+SDTest.Call('CAnimNode_SetEVA', 'tvii', n4, 1)
 
 # the table of objects and swapping nodes
 atab = anew(8)
@@ -344,32 +344,32 @@ awi(atab + 4, 0x09070605)
 awi(an + 0x18, 8)
 awi(an + 0x1c, atab)
 for i in range(10):
-	check('CAnimacion_GetNodoTabla' + fmt((i,)), lambda i=i: aoff(SDTest.Call('CAnimacion_GetNodoTabla', 'tiii', an, i)[0], ari(an + 0x20)))
+	check('CAnimation_GetNodeTable' + fmt((i,)), lambda i=i: aoff(SDTest.Call('CAnimation_GetNodeTable', 'tiii', an, i)[0], ari(an + 0x20)))
 awi(an + 0x18, 0)
 awi(an + 0x1c, 0)
 afree(atab)
 p0 = ari(anodes[0] + 8)
-check('CAnimacion_SwapNodos', lambda: (SDTest.Call('CAnimacion_SwapNodos', 'tviii', an, 3, 0)[0], nstate(anodes[0]), nstate(anodes[3]), ari(anodes[3] + 8) == p0, acount() - c0))
-check('CAnimacion_SwapNodos back', lambda: (SDTest.Call('CAnimacion_SwapNodos', 'tviii', an, 0, 3)[0], nstate(anodes[0]), nstate(anodes[3]), ari(anodes[0] + 8) == p0, acount() - c0))
-check('CAnimacion_SwapNodos same', lambda: (SDTest.Call('CAnimacion_SwapNodos', 'tviii', an, 3, 3)[0], nstate(anodes[3]), acount() - c0))
+check('CAnimation_SwapNodes', lambda: (SDTest.Call('CAnimation_SwapNodes', 'tviii', an, 3, 0)[0], nstate(anodes[0]), nstate(anodes[3]), ari(anodes[3] + 8) == p0, acount() - c0))
+check('CAnimation_SwapNodes back', lambda: (SDTest.Call('CAnimation_SwapNodes', 'tviii', an, 0, 3)[0], nstate(anodes[0]), nstate(anodes[3]), ari(anodes[0] + 8) == p0, acount() - c0))
+check('CAnimation_SwapNodes same', lambda: (SDTest.Call('CAnimation_SwapNodes', 'tviii', an, 3, 3)[0], nstate(anodes[3]), acount() - c0))
 
 # Trim drops the empty nodes at the end
 at = anew(0x34)
-SDTest.Call('CAnimacion_Init', 'tviiii', at, 6, 10, 0)
-SDTest.Call('CAnimNodo_Init', 'tviiii', anodo(at, 0), 5, 0, 1)
-SDTest.Call('CAnimNodo_Init', 'tviiii', anodo(at, 2), 6, 1, 0x80)
-SDTest.Call('CAnimNodo_Init', 'tviiii', anodo(at, 4), 3, 0, 0)
+SDTest.Call('CAnimation_Init', 'tviiii', at, 6, 10, 0)
+SDTest.Call('CAnimNode_Init', 'tviiii', anodo(at, 0), 5, 0, 1)
+SDTest.Call('CAnimNode_Init', 'tviiii', anodo(at, 2), 6, 1, 0x80)
+SDTest.Call('CAnimNode_Init', 'tviiii', anodo(at, 4), 3, 0, 0)
 nfill(anodo(at, 0), 1)
 pt = ari(anodo(at, 0) + 8)
-check('CAnimacion_Trim', lambda: (SDTest.Call('CAnimacion_Trim', 'tvi', at)[0], aget(at), nstate(anodo(at, 0)), nstate(anodo(at, 1)), nstate(anodo(at, 2)),
+check('CAnimation_Trim', lambda: (SDTest.Call('CAnimation_Trim', 'tvi', at)[0], aget(at), nstate(anodo(at, 0)), nstate(anodo(at, 1)), nstate(anodo(at, 2)),
 	ari(anodo(at, 0) + 8) == pt, acount() - c0))
-check('CAnimacion_Trim again', lambda: (SDTest.Call('CAnimacion_Trim', 'tvi', at)[0], aget(at), acount() - c0))
-check('CAnimacion_Init free', lambda: (SDTest.Call('CAnimacion_Init', 'tviiii', at, 0, 0, 0)[0], aget(at), acount() - c0))
+check('CAnimation_Trim again', lambda: (SDTest.Call('CAnimation_Trim', 'tvi', at)[0], aget(at), acount() - c0))
+check('CAnimation_Init free', lambda: (SDTest.Call('CAnimation_Init', 'tviiii', at, 0, 0, 0)[0], aget(at), acount() - c0))
 afree(at)
 
 # the optimization before writing: tracks constant (within the errors), changing only in the middle, changing all over
 def onode(n, nf, lead, trail, eps):
-	SDTest.Call('CAnimNodo_Init', 'tviiii', n, nf, 0, 7)
+	SDTest.Call('CAnimNode_Init', 'tviiii', n, nf, 0, 7)
 	p0, pl = vec(), vec()
 	q0, ql = uq(), uq()
 	f0, fl = rnd(0.5, 1.5), rnd(0.5, 1.5)
@@ -391,7 +391,7 @@ def onode(n, nf, lead, trail, eps):
 	awf(ari(n + 12), w)
 	awf(ari(n + 16), x)
 ao = anew(0x34)
-SDTest.Call('CAnimacion_Init', 'tviiii', ao, 8, 30, 0)
+SDTest.Call('CAnimation_Init', 'tviiii', ao, 8, 30, 0)
 aos = (('stream', 30, 10, 10, 0.004), ('const', 15, 15, 0, 0.004), ('none', 12, 0, 0, 0.0), ('trail', 25, 3, 9, 0.0),
 	('lead', 20, 8, 1, 0.001), ('short', 13, 7, 6, 0.0), ('one', 1, 1, 0, 0.0), ('noisy', 18, 9, 9, 0.02))
 for i in range(len(aos)):
@@ -403,50 +403,50 @@ for i in range(len(aos)):
 		awf(ari(n + 16) + 4 * 4, (nan,))
 	if name == 'lead':
 		awf(ari(n + 16) + 4 * 2, (nan,))
-	check('CAnimNodo_Optimize ' + name, lambda n=n: (SDTest.Call('CAnimNodo_Optimize', 'tvi', n)[0], nstate(n), ntracks(n)))
+	check('CAnimNode_Optimize ' + name, lambda n=n: (SDTest.Call('CAnimNode_Optimize', 'tvi', n)[0], nstate(n), ntracks(n)))
 	nquery('optimized ' + name, n)
-SDTest.Call('CAnimacion_Init', 'tviiii', ao, 0, 0, 0)
-check('CAnimacion_Init optimized', lambda: (aget(ao), acount() - c0))
+SDTest.Call('CAnimation_Init', 'tviiii', ao, 0, 0, 0)
+check('CAnimation_Init optimized', lambda: (aget(ao), acount() - c0))
 optanims = SDTest.Peek('g_OptimizeAnims', 'i')
-SDTest.Call('CAnimacion_Init', 'tviiii', ao, 1, 30, 0)
+SDTest.Call('CAnimation_Init', 'tviiii', ao, 1, 30, 0)
 onode(anodo(ao, 0), 30, 10, 10, 0.0)
 SDTest.Poke('g_OptimizeAnims', 0)
-check('CAnimNodo_Optimize off', lambda: (SDTest.Call('CAnimNodo_Optimize', 'tvi', anodo(ao, 0))[0], nstate(anodo(ao, 0))))
+check('CAnimNode_Optimize off', lambda: (SDTest.Call('CAnimNode_Optimize', 'tvi', anodo(ao, 0))[0], nstate(anodo(ao, 0))))
 SDTest.Poke('g_OptimizeAnims', optanims)
-SDTest.Call('CAnimacion_Init', 'tviiii', ao, 0, 0, 0)
+SDTest.Call('CAnimation_Init', 'tviiii', ao, 0, 0, 0)
 
-# writing to a CArchIO in error: the nodes are optimized, nothing is written
+# writing to a CFileIO in error: the nodes are optimized, nothing is written
 aw = anew(0x34)
-SDTest.Call('CAnimacion_Init', 'tviiii', aw, 3, 30, 0)
+SDTest.Call('CAnimation_Init', 'tviiii', aw, 3, 30, 0)
 onode(anodo(aw, 0), 30, 10, 10, 0.0)
 onode(anodo(aw, 1), 20, 20, 0, 0.0)
-SDTest.Call('CAnimNodo_Init', 'tviiii', anodo(aw, 2), 9, 4, 0x9f)
+SDTest.Call('CAnimNode_Init', 'tviiii', anodo(aw, 2), 9, 4, 0x9f)
 nfill(anodo(aw, 2), 0x9f, 1)
 for flag, off, size in ((1, 8, 12), (2, 12, 16), (0x80, 28, 1)):
 	for hdr in (0, 1):
-		check('CAnimNodo_WriteTrack' + fmt((flag, hdr)), lambda flag=flag, off=off, size=size, hdr=hdr: (SDTest.Call('CAnimNodo_WriteTrack', 'tviiiiii', anodo(aw, 2), aio, flag, ari(anodo(aw, 2) + off), size, hdr)[0], SDTest.Peek(aio, '@b')))
-check('CAnimNodo_WriteData', lambda: (SDTest.Call('CAnimNodo_WriteData', 'tvii', anodo(aw, 2), aio)[0], nstate(anodo(aw, 2))))
-check('CAnimNodo_WriteHeader', lambda: (SDTest.Call('CAnimNodo_WriteHeader', 'tvii', anodo(aw, 2), aio)[0], nstate(anodo(aw, 2))))
-check('CAnimacion_Write', lambda: (SDTest.Call('CAnimacion_Write', 'tvii', aw, aio)[0], aget(aw), nstate(anodo(aw, 0)), ntracks(anodo(aw, 0)),
+		check('CAnimNode_WriteTrack' + fmt((flag, hdr)), lambda flag=flag, off=off, size=size, hdr=hdr: (SDTest.Call('CAnimNode_WriteTrack', 'tviiiiii', anodo(aw, 2), aio, flag, ari(anodo(aw, 2) + off), size, hdr)[0], SDTest.Peek(aio, '@b')))
+check('CAnimNode_WriteData', lambda: (SDTest.Call('CAnimNode_WriteData', 'tvii', anodo(aw, 2), aio)[0], nstate(anodo(aw, 2))))
+check('CAnimNode_WriteHeader', lambda: (SDTest.Call('CAnimNode_WriteHeader', 'tvii', anodo(aw, 2), aio)[0], nstate(anodo(aw, 2))))
+check('CAnimation_Write', lambda: (SDTest.Call('CAnimation_Write', 'tvii', aw, aio)[0], aget(aw), nstate(anodo(aw, 0)), ntracks(anodo(aw, 0)),
 	nstate(anodo(aw, 1)), ntracks(anodo(aw, 1)), nstate(anodo(aw, 2))))
-SDTest.Call('CAnimacion_Init', 'tviiii', aw, 0, 0, 0)
+SDTest.Call('CAnimation_Init', 'tviiii', aw, 0, 0, 0)
 afree(aw)
 afree(aio)
-check('CAnimacion_Init end', lambda: (SDTest.Call('CAnimacion_Init', 'tviiii', an, 0, 0, 0)[0], aget(an), acount() - c0))
+check('CAnimation_Init end', lambda: (SDTest.Call('CAnimation_Init', 'tviiii', an, 0, 0, 0)[0], aget(an), acount() - c0))
 afree(an)
 afree(ao)
 
 # animations of the packs, the ANI block 108 bytes into the file
 ario = anew(16)
 def aopen(name, skip):
-	SDTest.Call('CArchIO_ctor', 'tiiss', ario, name, 'rb')
+	SDTest.Call('CFileIO_ctor', 'tiiss', ario, name, 'rb')
 	while skip > 0:
 		k = min(skip, 1000)
-		SDTest.Call('CArchIO_Read', 'tiibi', ario, '', k)
+		SDTest.Call('CFileIO_Read', 'tiibi', ario, '', k)
 		skip = skip - k
 def aclose():
-	SDTest.Call('CArchIO_Close', 'tii', ario)
-	SDTest.Call('CArchIO_dtor', 'tvi', ario)
+	SDTest.Call('CFileIO_Close', 'tii', ario)
+	SDTest.Call('CFileIO_dtor', 'tvi', ario)
 def amstats():
 	return SDTest.Peek(sym('g_AnimMemStats') + 8, 'i')
 def nread(name, n, mem):
@@ -458,7 +458,7 @@ def nread(name, n, mem):
 	if e:
 		r.append(ari(e))
 		for i in range(min(3, ari(e))):
-			av = SDTest.Call('CAnimNodo_GetVert', 'tiii', n, i)[0]
+			av = SDTest.Call('CAnimNode_GetVert', 'tiii', n, i)[0]
 			w = tpeek(av, 4)
 			r.append((w[0], w[1] != 0, w[2], w[3] != 0))
 	return r
@@ -470,7 +470,7 @@ for name in ('models/vehicles/ships/sfunc1/anm/leftflap.cm3', 'models/doors/elev
 	ar = anew(0x34)
 	aopen(name, 108)
 	b0, m0, c1 = ablocks(), amstats(), acount()
-	check('CAnimacion_Read' + fmt((name,)), lambda ar=ar, b0=b0, m0=m0, c1=c1: (SDTest.Call('CAnimacion_Read', 'tvii', ar, ario)[0], aget(ar),
+	check('CAnimation_Read' + fmt((name,)), lambda ar=ar, b0=b0, m0=m0, c1=c1: (SDTest.Call('CAnimation_Read', 'tvii', ar, ario)[0], aget(ar),
 		arb(ari(ar + 0x1c), ari(ar + 0x18)), ablocks() - b0, amstats() - m0, acount() - c1, SDTest.Peek(ario, '@b')))
 	aclose()
 	mem = ari(ar + 0x28)
@@ -481,10 +481,10 @@ for name in ('models/vehicles/ships/sfunc1/anm/leftflap.cm3', 'models/doors/elev
 			nquery('read' + fmt((i,)), n)
 		h = nhead(n)
 		if ari(n + 8) and not (h[3] & 1) and i < 6:
-			check('read CAnimNodo_Translate' + fmt((i,)), lambda n=n: (SDTest.Call('CAnimNodo_Translate', 'tbiF', n, vec())[0], afl(ari(n + 8), 3)))
+			check('read CAnimNode_Translate' + fmt((i,)), lambda n=n: (SDTest.Call('CAnimNode_Translate', 'tbiF', n, vec())[0], afl(ari(n + 8), 3)))
 	for i in range(min(ari(ar + 0x18), 50)):
-		check('read CAnimacion_GetNodoTabla' + fmt((i,)), lambda ar=ar, i=i: aoff(SDTest.Call('CAnimacion_GetNodoTabla', 'tiii', ar, i)[0], ari(ar + 0x20)))
-	check('read CAnimacion_Init free', lambda ar=ar: (SDTest.Call('CAnimacion_Init', 'tviiii', ar, 0, 0, 0)[0], aget(ar)))
+		check('read CAnimation_GetNodeTable' + fmt((i,)), lambda ar=ar, i=i: aoff(SDTest.Call('CAnimation_GetNodeTable', 'tiii', ar, i)[0], ari(ar + 0x20)))
+	check('read CAnimation_Init free', lambda ar=ar: (SDTest.Call('CAnimation_Init', 'tviiii', ar, 0, 0, 0)[0], aget(ar)))
 	afree(ari(ar + 0x1c))
 	check('read freed', lambda b0=b0, c1=c1: (ablocks() - b0, acount() - c1))
 	afree(ar)

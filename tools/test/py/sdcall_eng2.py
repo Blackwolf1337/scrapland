@@ -1,7 +1,7 @@
 # engine3d leftovers 0x2c9d90..0x2d6010 (execfile'd at the end of sdcall.py, Python 1.5.2): the palettes and the
 # PCX decoder on buffers in heap memory, the light formulas of RenderCalcIlum.cpp, the shadow BSP tree of bsp2.cpp on
 # fake triangles, the radiosity regions, links and area lights (fake materials, sections added to the ini in
-# memory), the segments of a mesh made from a CMallaTri, and the small constructors. Pointers are only compared. Not
+# memory), the segments of a mesh made from a CTriMesh, and the small constructors. Pointers are only compared. Not
 # called: the files (Pal_Load, the PCX readers and writers on FILEs, bmp\normales.rad), the debug drawing of the BSP.
 def en2z(n):
 	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
@@ -131,12 +131,12 @@ for p in (en2b, en2pal, en2pal2, en2hdr, en2dst, en2src):
 	en2free(p)
 
 # the light formulas
-en2k = SDTest.Peek('g_IlumSmooth', 'i')
+en2k = SDTest.Peek('g_IllumSmooth', 'i')
 for k in (en2k, 0, 0x3e800000, 0x3f800000):
-	SDTest.Poke('g_IlumSmooth', k)
+	SDTest.Poke('g_IllumSmooth', k)
 	for v in (0.0, 0.25, 0.5, 1.0, -0.5, 2.0):
-		check('Ilum_Smooth' + fmt((k, v)), lambda v=v: SDTest.Call('Ilum_Smooth', 'ff', v)[0])
-SDTest.Poke('g_IlumSmooth', en2k)
+		check('Illum_Smooth' + fmt((k, v)), lambda v=v: SDTest.Call('Illum_Smooth', 'ff', v)[0])
+SDTest.Poke('g_IllumSmooth', en2k)
 en2dest = en2z(16)
 en2pos = en2z(16)
 en2n = en2z(16)
@@ -158,16 +158,16 @@ for tipo in (1, 2, 3):
 						en2set(en2dest, (0.1, 0.1, 0.1, 0.1))
 						en2set(en2pos, pos)
 						en2set(en2n, n)
-						check('Ilum_Light' + fmt((tipo, falloff, dirv, flags, pos, n)), lambda flags=flags: (SDTest.Call('Ilum_Light',
+						check('Illum_Light' + fmt((tipo, falloff, dirv, flags, pos, n)), lambda flags=flags: (SDTest.Call('Illum_Light',
 							'iiiiiii', en2dest, en2pos, en2n, en2mat, en2luz, flags)[0], en2fl(en2dest, 4)))
 for p in (en2dest, en2pos, en2n, en2mat, en2luz):
 	en2free(p)
 
-# Ilum_ListaVert: a list of 6 vertices (format 1: pos, normal, tex), a fake material, real lights of the engine
+# Illum_VertList: a list of 6 vertices (format 1: pos, normal, tex), a fake material, real lights of the engine
 en2lv = en2z(0x14)
-SDTest.Call('CListaVert_ctor', 'tii', en2lv)
-SDTest.Call('CListaVert_SetFormat', 'tvii', en2lv, 1)
-SDTest.Call('CListaVert_Alloc', 'tviii', en2lv, 6, 0)
+SDTest.Call('CVertList_ctor', 'tii', en2lv)
+SDTest.Call('CVertList_SetFormat', 'tvii', en2lv, 1)
+SDTest.Call('CVertList_Alloc', 'tviii', en2lv, 6, 0)
 en2verts = ((10.0, 0.0, 30.0, 0.0, 1.0, 0.0), (17.0, 1.0, 30.0, 0.0, 1.0, 0.0), (50.0, 5.0, -20.0, 0.6, 0.8, 0.0),
 	(10.0, 20.0, 30.0, 0.0, 1.0, 0.0), (900.0, 0.0, 0.0, 0.0, 1.0, 0.0), (10.0, -5.0, 31.0, 0.0, -1.0, 0.0))
 for k in range(6):
@@ -178,7 +178,7 @@ en2wb(en2m + 0x28, (255, 200, 150, 255))
 en2cols = en2z(6 * 16)
 for tipo in (5000, 5001, 5002):
 	l = en2z(0xcc)
-	SDTest.Call('CLuz_ctor', 'tii', l)
+	SDTest.Call('CLight_ctor', 'tii', l)
 	en2poke(l + 8, tipo)
 	en2set(l + 0x10, (10.0, 20.0, 30.0, 0.0, -1.0, 0.2))
 	en2poke(l + 0x28, 0x7f40c0ff)
@@ -186,16 +186,16 @@ for tipo in (5000, 5001, 5002):
 	en2set(l + 0x34, (120.0, 40.0, 60.0, 1.0))
 	en2set(l + 0x80, (10.0, 20.0, 30.0, 0.1, -2.0, 0.3))
 	en2set(en2cols, (0.05,) * 24)
-	check('Ilum_ListaVert' + fmt((tipo,)), lambda l=l: (SDTest.Call('Ilum_ListaVert', 'iiiii', en2cols, en2lv, en2m, l)[0],
+	check('Illum_VertList' + fmt((tipo,)), lambda l=l: (SDTest.Call('Illum_VertList', 'iiiii', en2cols, en2lv, en2m, l)[0],
 		en2fl(en2cols, 24)))
-	SDTest.Call('CLuz_dtor', 'tvi', l)
+	SDTest.Call('CLight_dtor', 'tvi', l)
 	en2free(l)
 en2free(en2i(en2lv))
 for p in (en2lv, en2m, en2cols):
 	en2free(p)
 
 # the shadow BSP: 24 small horizontal triangles on a grid, three materials (casting, transparent, transparent that
-# casts with MAT_SOMBRA)
+# casts with MAT_SHADOW)
 en2mats = en2z(3 * 0xb0)
 en2poke(en2mats + 0xb0 + 0x38, 0x00010000)
 en2poke(en2mats + 0x160 + 0x38, 0x00010000)
@@ -206,9 +206,9 @@ def en2tri(k):
 def en2node(n):
 	nd = en2new(0x20)
 	en2wb(nd, [0xcd] * 0x20)
-	SDTest.Call('Bsp2Nodo_ctor', 'tii', nd)
+	SDTest.Call('Bsp2Node_ctor', 'tii', nd)
 	if n:
-		SDTest.Call('Tabla_Alloc38', 'tvii', nd + 0x18, n)
+		SDTest.Call('Table_Alloc38', 'tvii', nd + 0x18, n)
 		for k in range(n):
 			p = en2i(nd + 0x1c) + 0x38 * k
 			en2set(p, en2tri(k))
@@ -220,7 +220,7 @@ def en2leaf(nd):
 		return (en2fl(nd, 4), en2i(nd + 0x10) != 0, en2i(nd + 0x14) != 0, en2i(nd + 0x18))
 	return (en2i(nd + 0x18), en2fl(en2i(nd + 0x1c), 3))
 en2nd = en2node(0)
-check('Bsp2Nodo_ctor', lambda: en2words(en2nd, 8))
+check('Bsp2Node_ctor', lambda: en2words(en2nd, 8))
 SDTest.Call('operator_delete_sized', 'vii', en2nd, 0x20)
 en2root = en2node(24)
 en2luces = en2z(4)
@@ -251,12 +251,12 @@ en2segs = en2segs + [((-150.0, 5.0, -100.0), (150.0, 5.0, 100.0)), ((-102.0, 100
 for a, b in en2segs:
 	check('Bsp2_CheckLine' + fmt((a, b)), lambda a=a, b=b: (SDTest.Call('Bsp2_CheckLine', 'iFFii', a, b, 0, en2root)[0],
 		SDTest.Call('Bsp2_CheckLine', 'iFFFi', a, b, (9.0, 9.0, 9.0), en2root)[3]))
-	check('BspLuces_CheckLine' + fmt((a, b)), lambda a=a, b=b: (SDTest.Call('BspLuces_CheckLine', 'tiiFFi', en2luces, a, b, 0)[0],
-		SDTest.Call('BspLuces_CheckLine', 'tiiFFF', en2luces, a, b, (9.0, 9.0, 9.0))[3]))
+	check('BspLights_CheckLine' + fmt((a, b)), lambda a=a, b=b: (SDTest.Call('BspLights_CheckLine', 'tiiFFi', en2luces, a, b, 0)[0],
+		SDTest.Call('BspLights_CheckLine', 'tiiFFF', en2luces, a, b, (9.0, 9.0, 9.0))[3]))
 check('Bsp2 counters', lambda: (SDTest.Peek('g_Bsp2NTriCmp', 'i') - en2c0[0], SDTest.Peek('g_Bsp2NComp', 'i') - en2c0[1]))
 for p in ((0.0, 0.0, 0.0), (-90.0, 10.0, 60.0), (90.0, -50.0, -60.0), (2.5, 10.0, 2.5)):
 	check('Bsp2_FindLeaf' + fmt(p), lambda p=p: (en2leaf(SDTest.Call('Bsp2_FindLeaf', 'iFi', p, en2root)[0]),
-		en2leaf(SDTest.Call('BspLuces_FindLeaf', 'tiiF', en2luces, p)[0])))
+		en2leaf(SDTest.Call('BspLights_FindLeaf', 'tiiF', en2luces, p)[0])))
 check('Bsp2_Stats', lambda: (SDTest.Call('Bsp2_Stats', 'vi', 0), SDTest.Call('Bsp2_Stats', 'vi', 1)))
 # the first leaf and the node above it
 en2f = en2root
@@ -269,19 +269,19 @@ check('Bsp2_AddTri', lambda: (SDTest.Call('Bsp2_AddTri', 'viippiiFFF', 0, en2f, 
 	(4.0, 5.0, 6.0), (7.0, 8.0, 9.0))[1:3], en2fl(en2i(en2i(en2f + 0x10) + 0x1c), 13),
 	en2i(en2i(en2i(en2f + 0x10) + 0x1c) + 0x34) - en2mats))
 en2free(en2t)
-check('BspLuces_dtor', lambda: (SDTest.Call('BspLuces_dtor', 'tvi', en2luces), en2i(en2luces)))
-# Bsp2Nodo_dtor on a node of its own with children from a split
+check('BspLights_dtor', lambda: (SDTest.Call('BspLights_dtor', 'tvi', en2luces), en2i(en2luces)))
+# Bsp2Node_dtor on a node of its own with children from a split
 en2nd = en2node(10)
 SDTest.Call('Bsp2_Split', 'viiFii', 0, en2nd, (1.0, 0.0, 0.0, -50.0), 0, 0)
 check('Bsp2_Split', lambda: en2walk(en2nd, 0))
-check('Bsp2Nodo_dtor', lambda: (SDTest.Call('Bsp2Nodo_dtor', 'tvi', en2nd), en2words(en2nd + 0x10, 4)))
+check('Bsp2Node_dtor', lambda: (SDTest.Call('Bsp2Node_dtor', 'tvi', en2nd), en2words(en2nd + 0x10, 4)))
 SDTest.Call('operator_delete_sized', 'vii', en2nd, 0x20)
 en2free(en2luces)
 en2free(en2mats)
 
-# the CTabla instances
+# the CTable instances
 en2tab = en2z(8)
-check('Tabla_AllocC', lambda: (SDTest.Call('Tabla_AllocC@2d2e10', 'tvii', en2tab, 4), en2i(en2tab), en2i(en2tab + 4) != 0))
+check('Table_AllocC', lambda: (SDTest.Call('Table_AllocC@2d2e10', 'tvii', en2tab, 4), en2i(en2tab), en2i(en2tab + 4) != 0))
 SDTest.Call('operator_delete_array', 'vi', en2i(en2tab))
 en2poke(en2tab, 0)
 en2poke(en2tab + 4, 0)
@@ -289,7 +289,7 @@ en2poke(en2tab + 4, 0)
 en2tn = [0]
 for n in (3, 3, 5, 2, 0, -1, 4):
 	def en2r(n=n):
-		SDTest.Call('Tabla_Resize38', 'tvii', en2tab, n)
+		SDTest.Call('Table_Resize38', 'tvii', en2tab, n)
 		r = (en2i(en2tab), en2i(en2tab + 4) != 0)
 		if en2i(en2tab + 4):
 			r = r + (en2words(en2i(en2tab + 4), 14 * min(min(en2i(en2tab), en2tn[0]), 3)),)
@@ -297,13 +297,13 @@ for n in (3, 3, 5, 2, 0, -1, 4):
 				en2poke(en2i(en2tab + 4) + 4 * k, 0x1000 * n + k)
 		en2tn[0] = en2i(en2tab)
 		return r
-	check('Tabla_Resize38' + fmt((n,)), en2r)
-SDTest.Call('Tabla_Resize38', 'tvii', en2tab, 0)
+	check('Table_Resize38' + fmt((n,)), en2r)
+SDTest.Call('Table_Resize38', 'tvii', en2tab, 0)
 en2free(en2tab)
 
 # radiosity: links, regions and area lights
 def en2nenl():
-	return SDTest.Peek('g_BspNumEnlaces', 'i')
+	return SDTest.Peek('g_BspNumLinks', 'i')
 en2n0 = en2nenl()
 en2e = []
 for k in range(5):
@@ -311,12 +311,12 @@ for k in range(5):
 	sig = 0
 	if k in (1, 2, 4):
 		sig = en2e[k - 1]
-	check('BspEnlace_ctor' + fmt((k,)), lambda e=e, k=k, sig=sig: (SDTest.Call('BspEnlace_ctor', 'tiiiif', e, sig, 0x1234 + k,
+	check('BspLink_ctor' + fmt((k,)), lambda e=e, k=k, sig=sig: (SDTest.Call('BspLink_ctor', 'tiiiif', e, sig, 0x1234 + k,
 		0.5 * k)[0] == e, en2i(e) == sig, en2i(e + 4), en2fl(e + 8, 1), en2nenl() - en2n0))
 	en2e.append(e)
-check('BspEnlace_Delete', lambda: (SDTest.Call('BspEnlace_Delete', 'tiii', en2e[2], 1)[0] == en2e[2], en2nenl() - en2n0))
-check('BspEnlace_dtor', lambda: (SDTest.Call('BspEnlace_dtor', 'tvi', en2e[4]), en2words(en2e[4], 2), en2nenl() - en2n0))
-check('BspEnlace_Delete 0', lambda: (SDTest.Call('BspEnlace_Delete', 'tiii', en2e[4], 0)[0] == en2e[4], en2nenl() - en2n0))
+check('BspLink_Delete', lambda: (SDTest.Call('BspLink_Delete', 'tiii', en2e[2], 1)[0] == en2e[2], en2nenl() - en2n0))
+check('BspLink_dtor', lambda: (SDTest.Call('BspLink_dtor', 'tvi', en2e[4]), en2words(en2e[4], 2), en2nenl() - en2n0))
+check('BspLink_Delete 0', lambda: (SDTest.Call('BspLink_Delete', 'tiii', en2e[4], 0)[0] == en2e[4], en2nenl() - en2n0))
 SDTest.Call('operator_delete_sized', 'vii', en2e[4], 12)
 def en2region(x, y, lx, ly, padre):
 	r = en2new(100)
@@ -335,26 +335,26 @@ check('BspRegion_ctor padre', lambda: (en2words(en2kids[1], 25)[:4], en2fl(en2ki
 en2poke(en2kids[2] + 4, en2region(1, 1, 1, 1, en2kids[2]))
 for k in range(3):
 	e = en2new(12)
-	SDTest.Call('BspEnlace_ctor', 'tiiiif', e, en2i(en2r0 + 0x60), en2kids[k], 1.0)
+	SDTest.Call('BspLink_ctor', 'tiiiif', e, en2i(en2r0 + 0x60), en2kids[k], 1.0)
 	en2poke(en2r0 + 0x60, e)
 check('BspRegion_dtor', lambda: (SDTest.Call('BspRegion_dtor', 'tvi', en2r0), en2words(en2r0, 5), en2i(en2r0 + 0x60),
 	en2nenl() - en2n0))
 SDTest.Call('operator_delete_sized', 'vii', en2r0, 100)
 en2a = en2z(0x20)
 en2wb(en2a, [0x77] * 0x20)
-check('RadAreaLuz_ctor', lambda: (SDTest.Call('RadAreaLuz_ctor', 'tii', en2a)[0] == en2a, en2words(en2a, 8)))
+check('RadAreaLight_ctor', lambda: (SDTest.Call('RadAreaLight_ctor', 'tii', en2a)[0] == en2a, en2words(en2a, 8)))
 en2a2 = en2new(0x20)
-SDTest.Call('RadAreaLuz_ctor', 'tii', en2a2)
-SDTest.Call('Cad_Set', 'tvis', en2a2 + 4, 'nombre')
+SDTest.Call('RadAreaLight_ctor', 'tii', en2a2)
+SDTest.Call('String_Set', 'tvis', en2a2 + 4, 'name')
 en2poke(en2a, en2a2)
-check('RadAreaLuz_Delete', lambda: (SDTest.Call('RadAreaLuz_Delete', 'tiii', en2a, 0)[0] == en2a, en2words(en2a, 2)))
+check('RadAreaLight_Delete', lambda: (SDTest.Call('RadAreaLight_Delete', 'tiii', en2a, 0)[0] == en2a, en2words(en2a, 2)))
 en2free(en2a)
 en2rad = en2z(12)
-check('CRadiosidad_ctor', lambda: (SDTest.Call('CRadiosidad_ctor', 'tiiz', en2rad, None)[0] == en2rad, en2i(en2rad + 4) != 0,
+check('CRadiosity_ctor', lambda: (SDTest.Call('CRadiosity_ctor', 'tiiz', en2rad, None)[0] == en2rad, en2i(en2rad + 4) != 0,
 	en2i(en2rad + 8)))
-for sect, key, val in (('luz1', 'rgbi', '10 20 30 2.5'), ('luz1', 'aten', '5 60'), ('luz1', 'falloff', '1.5'),
-		('luz2', 'x', '1'), ('luz3', 'rgbi', '1 2 3 0.5'), ('luz3', 'falloff', '3')):
-	SDTest.Call('CArchINI_SetStr', 'tiisss', en2rad, sect, key, val)
+for sect, key, val in (('luz1', 'rgbi', '10 20 30 2.5'), ('luz1', 'atten', '5 60'), ('luz1', 'falloff', '1.5'),
+		('light2', 'x', '1'), ('luz3', 'rgbi', '1 2 3 0.5'), ('luz3', 'falloff', '3')):
+	SDTest.Call('CIniFile_SetStr', 'tiisss', en2rad, sect, key, val)
 en2names = ('plain', 'm(+area_light: luz1)', 'm( +area_light:luz2)x', 'old(+luz2)', 'o(+ luz3 )y', '(+nada)(+luz1)',
 	'(', '(+', '( ', '(x(+luz2', 'a(+AREA_LIGHT:luz1')
 en2mt = []
@@ -370,44 +370,44 @@ for k in range(len(en2names)):
 	m = en2mt[k]
 	en2wb(en2dl, [0x55] * 0x20)
 	en2poke(en2dl + 4, 0)
-	check('CRadiosidad_ReadMat' + fmt((en2names[k],)), lambda m=m: (SDTest.Call('CRadiosidad_ReadMat', 'tbiii', en2rad, m, 0)[0],
-		SDTest.Call('CRadiosidad_ReadMat', 'tbiii', en2rad, m, en2dl)[0], en2words(en2dl, 1), SDTest.Peek(en2dl + 4, '@p'),
+	check('CRadiosity_ReadMat' + fmt((en2names[k],)), lambda m=m: (SDTest.Call('CRadiosity_ReadMat', 'tbiii', en2rad, m, 0)[0],
+		SDTest.Call('CRadiosity_ReadMat', 'tbiii', en2rad, m, en2dl)[0], en2words(en2dl, 1), SDTest.Peek(en2dl + 4, '@p'),
 		en2rb(en2dl + 8, 4), en2fl(en2dl + 0xc, 5)))
 	if en2i(en2dl + 4):
-		SDTest.Call('Cad_Set', 'tviz', en2dl + 4, None)
+		SDTest.Call('String_Set', 'tviz', en2dl + 4, None)
 en2free(en2dl)
 en2got = []
 for k in (0, 1, 3, 4, 1, 10):
 	m = en2mt[k]
-	check('CRadiosidad_Find' + fmt((en2names[k],)), lambda m=m: SDTest.Call('CRadiosidad_Find', 'tiii', en2rad, m)[0] != 0)
+	check('CRadiosity_Find' + fmt((en2names[k],)), lambda m=m: SDTest.Call('CRadiosity_Find', 'tiii', en2rad, m)[0] != 0)
 	def en2get(m=m):
-		l = SDTest.Call('CRadiosidad_Get', 'tiii', en2rad, m)[0]
+		l = SDTest.Call('CRadiosity_Get', 'tiii', en2rad, m)[0]
 		en2got.append(l)
 		if not l:
 			return l
 		return (en2got.index(l), SDTest.Peek(l + 4, '@p'), en2rb(l + 8, 4), en2fl(l + 0xc, 5), en2i(en2rad + 8) == l,
-			SDTest.Call('CRadiosidad_Find', 'tiii', en2rad, m)[0] == l)
-	check('CRadiosidad_Get' + fmt((en2names[k],)), en2get)
+			SDTest.Call('CRadiosity_Find', 'tiii', en2rad, m)[0] == l)
+	check('CRadiosity_Get' + fmt((en2names[k],)), en2get)
 	en2c = en2z(8)
-	check('CRadiosidad_GetColor' + fmt((en2names[k],)), lambda m=m, c=en2c: (SDTest.Call('CRadiosidad_GetColor', 'tbiii', en2rad, m,
+	check('CRadiosity_GetColor' + fmt((en2names[k],)), lambda m=m, c=en2c: (SDTest.Call('CRadiosity_GetColor', 'tbiii', en2rad, m,
 		c)[0], en2rb(c, 4), en2fl(c + 4, 1)))
 	en2free(en2c)
-check('CRadiosidad_Add plain', lambda: SDTest.Call('CRadiosidad_Add', 'tiii', en2rad, en2mt[0])[0])
-check('CRadiosidad_ReadMatWarn', lambda: (SDTest.Call('CRadiosidad_ReadMatWarn', 'tbiii', en2rad, en2mt[0], 0)[0],
-	SDTest.Call('CRadiosidad_ReadMatWarn', 'tbiii', en2rad, en2mt[1], 0)[0], SDTest.Call('CRadiosidad_ReadMatWarn', 'tbiii', en2rad, en2mt[4], 0)[0]))
-check('CRadiosidad_dtor', lambda: (SDTest.Call('CRadiosidad_dtor', 'tvi', en2rad), en2words(en2rad + 4, 2)))
+check('CRadiosity_Add plain', lambda: SDTest.Call('CRadiosity_Add', 'tiii', en2rad, en2mt[0])[0])
+check('CRadiosity_ReadMatWarn', lambda: (SDTest.Call('CRadiosity_ReadMatWarn', 'tbiii', en2rad, en2mt[0], 0)[0],
+	SDTest.Call('CRadiosity_ReadMatWarn', 'tbiii', en2rad, en2mt[1], 0)[0], SDTest.Call('CRadiosity_ReadMatWarn', 'tbiii', en2rad, en2mt[4], 0)[0]))
+check('CRadiosity_dtor', lambda: (SDTest.Call('CRadiosity_dtor', 'tvi', en2rad), en2words(en2rad + 4, 2)))
 for m in en2mt:
 	en2free(en2i(m + 4))
 	en2free(m)
 en2free(en2rad)
 # the normals as read before
-en2nrm = (SDTest.Peek('g_RadNormales', 'i'), SDTest.Peek(sym('g_RadNormales') + 0x4, 'i'))
+en2nrm = (SDTest.Peek('g_RadNormals', 'i'), SDTest.Peek(sym('g_RadNormals') + 0x4, 'i'))
 en2v = en2z(36)
-SDTest.Poke('g_RadNormales', 3)
-SDTest.Poke(sym('g_RadNormales') + 0x4, en2v)
-check('Rad_Normales', lambda: (lambda r: (r[0] == en2v, r[1]))(SDTest.Call('Rad_Normales', 'ip', 0)))
-SDTest.Poke('g_RadNormales', en2nrm[0])
-SDTest.Poke(sym('g_RadNormales') + 0x4, en2nrm[1])
+SDTest.Poke('g_RadNormals', 3)
+SDTest.Poke(sym('g_RadNormals') + 0x4, en2v)
+check('Rad_Normals', lambda: (lambda r: (r[0] == en2v, r[1]))(SDTest.Call('Rad_Normals', 'ip', 0)))
+SDTest.Poke('g_RadNormals', en2nrm[0])
+SDTest.Poke(sym('g_RadNormals') + 0x4, en2nrm[1])
 en2free(en2v)
 
 # the small constructors and the node of a 3D object
@@ -423,12 +423,12 @@ en2n2 = en2z(12)
 en2poke(en2n1 + 8, 5)
 en2poke(en2n2 + 8, 3)
 for nd in (en2n1, en2n2, 0, en2n2, en2n2):
-	check('CObjBase3D_SetNodo' + fmt((nd == en2n1, nd == en2n2)), lambda nd=nd: (SDTest.Call('CObjBase3D_SetNodo', 'tvii', en2ob, nd),
+	check('CObjBase3D_SetNode' + fmt((nd == en2n1, nd == en2n2)), lambda nd=nd: (SDTest.Call('CObjBase3D_SetNode', 'tvii', en2ob, nd),
 		en2i(en2ob + 8) == nd, en2i(en2n1 + 8), en2i(en2n2 + 8)))
 for p in (en2ob, en2n1, en2n2):
 	en2free(p)
 
-# the segments of the meshes from a CMallaTri with MALLAD3D_POS: an octahedron (closed) and a fan with an edge of
+# the segments of the meshes from a CTriMesh with MESHD3D_POS: an octahedron (closed) and a fan with an edge of
 # three triangles, materials with a name and a map
 en2segm = en2z(3 * 0xb0)
 en2segn = (en2str('segA'), en2str('segB'), en2str('segC'))
@@ -439,20 +439,20 @@ for k in range(3):
 	en2poke(en2segm + 0xb0 * k + 0x9c, en2segmap + 0x60 * k)
 def en2malla(verts, tris, mats):
 	m = en2new(0x4c)
-	SDTest.Call('CMallaTri_ctor', 'tii', m)
-	SDTest.Call('CMallaTri_SetNumVert', 'tviii', m, len(verts), 0)
-	SDTest.Call('CMallaTri_SetNumTVert', 'tviii', m, 3, 0)
-	SDTest.Call('CMallaTri_SetNumTri', 'tviii', m, len(tris), 0)
+	SDTest.Call('CTriMesh_ctor', 'tii', m)
+	SDTest.Call('CTriMesh_SetNumVert', 'tviii', m, len(verts), 0)
+	SDTest.Call('CTriMesh_SetNumTVert', 'tviii', m, 3, 0)
+	SDTest.Call('CTriMesh_SetNumTri', 'tviii', m, len(tris), 0)
 	for k in range(len(verts)):
-		SDTest.Call('CMallaTri_SetVert', 'tviiF', m, k, verts[k])
+		SDTest.Call('CTriMesh_SetVert', 'tviiF', m, k, verts[k])
 	for k in range(3):
-		SDTest.Call('CMallaTri_SetTVert', 'tviiF', m, k, (0.5 * k, 1.0 - 0.25 * k))
+		SDTest.Call('CTriMesh_SetTVert', 'tviiF', m, k, (0.5 * k, 1.0 - 0.25 * k))
 	for k in range(len(tris)):
-		apply(SDTest.Call, (sym('CMallaTri_SetTriVerts'), 'tviiiii', m, k) + tris[k])
-		SDTest.Call('CMallaTri_SetTriTVerts', 'tviiiii', m, k, 0, 1, 2)
-		SDTest.Call('CMallaTri_SetTriNormals', 'tviiFFF', m, k, (0.0, 1.0, 0.0), (0.0, 1.0, 0.0), (0.0, 1.0, 0.0))
-		SDTest.Call('CMallaTri_SetTriMat', 'tviii', m, k, en2segm + 0xb0 * mats[k])
-		SDTest.Call('CMallaTri_SetTriFlags', 'tviii', m, k, k + 1)
+		apply(SDTest.Call, (sym('CTriMesh_SetTriVerts'), 'tviiiii', m, k) + tris[k])
+		SDTest.Call('CTriMesh_SetTriTVerts', 'tviiiii', m, k, 0, 1, 2)
+		SDTest.Call('CTriMesh_SetTriNormals', 'tviiFFF', m, k, (0.0, 1.0, 0.0), (0.0, 1.0, 0.0), (0.0, 1.0, 0.0))
+		SDTest.Call('CTriMesh_SetTriMat', 'tviii', m, k, en2segm + 0xb0 * mats[k])
+		SDTest.Call('CTriMesh_SetTriFlags', 'tviii', m, k, k + 1)
 	return m
 def en2seglist(d):
 	r = ()
@@ -474,10 +474,10 @@ for verts, tris, mats in ((en2oct, en2octt, (0, 0, 0, 0, 0, 0, 0, 0)), (en2oct, 
 	m = en2malla(verts, tris, mats)
 	for flags in (0x12, 0x13):
 		d = en2new(200)
-		check('CMallaD3D_CalcSegmentos' + fmt((len(verts), mats, flags)), lambda d=d, m=m, flags=flags:
-			(SDTest.Call('CMallaD3D_ctorMalla', 'tiiiii', d, m, flags, 0)[0] == d, en2seglist(d)))
-		SDTest.Call('CMallaD3D_Delete', 'tiii', d, 1)
-	SDTest.Call('CMallaTri_Delete', 'tiii', m, 1)
+		check('CMeshD3D_CalcSegments' + fmt((len(verts), mats, flags)), lambda d=d, m=m, flags=flags:
+			(SDTest.Call('CMeshD3D_ctorMesh', 'tiiiii', d, m, flags, 0)[0] == d, en2seglist(d)))
+		SDTest.Call('CMeshD3D_Delete', 'tiii', d, 1)
+	SDTest.Call('CTriMesh_Delete', 'tiii', m, 1)
 for p in en2segn:
 	en2free(p)
 en2free(en2segm)

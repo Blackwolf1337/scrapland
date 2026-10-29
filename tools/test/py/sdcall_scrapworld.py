@@ -1,6 +1,6 @@
 # game ScrapEng/ScrapEngWorld.c (execfile'd by sdcall.py after its other checks, Python 1.5.2): the identity matrix, the
 # D3D color of a color with intensity, RenderMode (every mode read, the ones that can be put back also set), the free
-# file index, the box of a fake CSuelo, the clear of a 640x480 rectangle through the D3D log, the start of the world
+# file index, the box of a fake CGround, the clear of a 640x480 rectangle through the D3D log, the start of the world
 # node walk, and the early returns of the splash screens and the loading bar (no frame is drawn: the splash files are
 # missing or the switches are off). All engine variables poked are put back.
 def swz(n):
@@ -54,7 +54,7 @@ for f in ('sdnofile%d.xyz', 'sdcall.py', 'sd%dcall.py'):
 
 sws = swz(0x70)
 swset(sws + 0x54, (1.0, -2.5, 3.25, 100.0, 200.0, -0.0))
-check('CSuelo_GetCollideExt', lambda: SDTest.Call('CSuelo_GetCollideExt', 'tiiF', sws, (0.0,) * 6)[1])
+check('CGround_GetCollideExt', lambda: SDTest.Call('CGround_GetCollideExt', 'tiiF', sws, (0.0,) * 6)[1])
 
 for args in ((0.0, 0.0, 640.0, 480.0, 1, 0x102030), (10.0, 20.0, 100.0, 50.0, 0, 0xff0000), (-5.0, 470.0, 30.0, 30.0, 7,
 	0)):
@@ -90,7 +90,7 @@ SDTest.Call('crt_memcpy', 'iisi', symva('g_SplashLast'), swlast, len(swlast) + 1
 
 # the loading bar without the device switch (only the step count), the loading screen switch off
 swload = (SDTest.Peek('g_DrawProgressBar', 'i'), SDTest.Peek('g_LoadingBar', 'i'), SDTest.Peek('g_ProgressBarCount', 'i'), SDTest.Peek('g_ProgressBar', 'i'),
-	SDTest.Peek('g_VerUniones', 'i'), SDTest.Peek('g_CallbacksOn', 'i'))
+	SDTest.Peek('g_ShowJoins', 'i'), SDTest.Peek('g_CallbacksOn', 'i'))
 SDTest.Poke('g_CallbacksOn', swload[5] & ~0xff)
 check('Loading_DrawBack off', lambda: SDTest.Call('Loading_DrawBack', 'v'))
 check('Loading_DrawBack2 off', lambda: SDTest.Call('Loading_DrawBack2', 'v'))
@@ -99,7 +99,7 @@ check('Loading_Step off', lambda: (SDTest.Call('Loading_Step', 'vi', -1), SDTest
 SDTest.Poke('g_DrawProgressBar', (swload[0] & ~0xff) | 1)
 SDTest.Poke('g_LoadingBar', 1)
 SDTest.Poke('g_ProgressBar', 50)
-SDTest.Poke('g_VerUniones', swload[4] & ~0xff00)
+SDTest.Poke('g_ShowJoins', swload[4] & ~0xff00)
 SDTest.Poke('g_ProgressBarCount', -3)
 for k in range(20):
 	check('Loading_Step -1' + fmt((k,)), lambda: (SDTest.Call('Loading_Step', 'vi', -1), SDTest.Peek('g_ProgressBarCount', 'i')))
@@ -108,5 +108,5 @@ SDTest.Poke('g_DrawProgressBar', swload[0])
 SDTest.Poke('g_LoadingBar', swload[1])
 SDTest.Poke('g_ProgressBarCount', swload[2])
 SDTest.Poke('g_ProgressBar', swload[3])
-SDTest.Poke('g_VerUniones', swload[4])
+SDTest.Poke('g_ShowJoins', swload[4])
 SDTest.Poke('g_CallbacksOn', swload[5])

@@ -1,16 +1,16 @@
 /*
- * Engine/AnimGrupo.cpp of the engine3d: animation groups. A group (CAnimGrupo) plays the animation of a scene
- * (CEscena, Engine/escena.cpp) loaded as an animation ("Anim", its CAnimacion in AnimM3D) on another scene: the
+ * Engine/AnimGrupo.cpp of the engine3d: animation groups. A group (CAnimGroup) plays the animation of a scene
+ * (CScene, Engine/escena.cpp) loaded as an animation ("Anim", its CAnimation in AnimM3D) on another scene: the
  * nodes are matched by name, the table at AnimM3D+0x18 maps the iObjeto of each scene node to the animation node.
  * A group has an event list (the end event at the last frame), the play state (CAnimCtrl) and for vertex
  * animations up to MAX_MORPHDATA morph steps read from the "Morphing:<name>" section of the scene's ini. A scene
- * keeps its groups in a CAnimGrupos of MAX_ANIMGRUPOS slots.
+ * keeps its groups in a CAnimGroups of MAX_ANIMGROUPS slots.
  *
- * CAnimacion and CAnimNodo belong to Engine/animacion.cpp, CEscena to Engine/escena.cpp: only the members read
+ * CAnimation and CAnimNode belong to Engine/animacion.cpp, CScene to Engine/escena.cpp: only the members read
  * here are named.
  */
-#ifndef SCRAP_ANIMGRUPO_H
-#define SCRAP_ANIMGRUPO_H
+#ifndef SCRAP_ANIMGROUP_H
+#define SCRAP_ANIMGROUP_H
 
 #include "scrap/animacion.h"
 #include "scrap/archio.h"
@@ -20,19 +20,19 @@
 #include "scrap/mathlib.h"
 #include "scrap/tabla.h"
 
-#define MAX_ANIMGRUPOS 44
+#define MAX_ANIMGROUPS 44
 #define MAX_MORPHDATA 10
-#define ANIM_VERT 0x1000		/* CAnimNodo_GetFlags: vertex animation */
-#define ANIMEVENT_FIN 0xd		/* the event a group puts at its last frame */
+#define ANIM_VERT 0x1000		/* CAnimNode_GetFlags: vertex animation */
+#define ANIMEVENT_END 0xd		/* the event a group puts at its last frame */
 
 
 
 
 SD_OFFSET(CAnimCtrl, speed, 0x0c);
 SD_OFFSET(CAnimCtrl, ofs, 0x20);
-SD_OFFSET(CAnimCtrl, nodo, 0x30);
+SD_OFFSET(CAnimCtrl, node, 0x30);
 SD_OFFSET(CAnimCtrl, frame, 0x50);
-SD_OFFSET(CAnimCtrl, eventos, 0x3c);
+SD_OFFSET(CAnimCtrl, events, 0x3c);
 SD_SIZE(CAnimCtrl, 0x84);
 
 typedef struct MorphData {
@@ -46,9 +46,9 @@ typedef struct MorphData {
 } MorphData;
 SD_SIZE(MorphData, 8);
 
-typedef struct CAnimGrupo {
-	char *name;			/* 0x00 Cad_Set */
-	CAnimEvent *eventos;		/* 0x04 */
+typedef struct CAnimGroup {
+	char *name;			/* 0x00 String_Set */
+	CAnimEvent *events;		/* 0x04 */
 	CAnimCtrl ctrl;			/* 0x08 */
 	MorphData *morph;		/* 0x8c new[] of MAX_MORPHDATA */
 	union {
@@ -59,46 +59,46 @@ typedef struct CAnimGrupo {
 		};
 	};
 	uint16_t pad_92;
-	CEscena *Anim;			/* 0x94 a reference */
-} CAnimGrupo;
-SD_OFFSET(CAnimGrupo, morph, 0x8c);
-SD_OFFSET(CAnimGrupo, Anim, 0x94);
-SD_SIZE(CAnimGrupo, 0x98);
+	CScene *Anim;			/* 0x94 a reference */
+} CAnimGroup;
+SD_OFFSET(CAnimGroup, morph, 0x8c);
+SD_OFFSET(CAnimGroup, Anim, 0x94);
+SD_SIZE(CAnimGroup, 0x98);
 
-typedef struct CAnimGrupos {
-	CAnimGrupo *g[MAX_ANIMGRUPOS];
-} CAnimGrupos;
-SD_SIZE(CAnimGrupos, 0xb0);
+typedef struct CAnimGroups {
+	CAnimGroup *g[MAX_ANIMGROUPS];
+} CAnimGroups;
+SD_SIZE(CAnimGroups, 0xb0);
 
 /* of other modules, called in the exe */
-/* Engine/Nodo3D.cpp: the node named name from self on (self itself with incl), by sig */
+/* Engine/Nodo3D.cpp: the node named name from self on (self itself with incl), by next */
 /* Engine/escena.cpp: the node with that iObjeto */
 
 /* the groups destroyed and their slots cleared */
-CAnimGrupos *__fastcall CAnimGrupos_ctor(CAnimGrupos *self);
-CAnimGrupo *__fastcall CAnimGrupo_ctor(CAnimGrupo *self);
-void __fastcall CAnimGrupos_Clear(CAnimGrupos *self);
-void __fastcall CAnimGrupo_dtor(CAnimGrupo *self);
+CAnimGroups *__fastcall CAnimGroups_ctor(CAnimGroups *self);
+CAnimGroup *__fastcall CAnimGroup_ctor(CAnimGroup *self);
+void __fastcall CAnimGroups_Clear(CAnimGroups *self);
+void __fastcall CAnimGroup_dtor(CAnimGroup *self);
 /* the events of the list deleted */
-void __fastcall AnimEventos_Free(CAnimEvent **list);
+void __fastcall AnimEvents_Free(CAnimEvent **list);
 /* the step with the 2 character tag, -1 none */
 int MorphData_Find(const MorphData *md, const char *tag);
 /* "<i>_Data" (6 bytes from Target on) and "<i>_Tag" of the section; 0 without the data */
-byte MorphData_Read(CArchINI *ini, const char *sect, int i, MorphData *d, int targets);
+byte MorphData_Read(CIniFile *ini, const char *sect, int i, MorphData *d, int targets);
 /* into the first free slot, its index */
-int __thiscall CAnimGrupos_Add(CAnimGrupos *self, CAnimGrupo *g);
-CAnimGrupo *__thiscall CAnimGrupos_Get(CAnimGrupos *self, uint32_t i);
+int __thiscall CAnimGroups_Add(CAnimGroups *self, CAnimGroup *g);
+CAnimGroup *__thiscall CAnimGroups_Get(CAnimGroups *self, uint32_t i);
 /* by name (no case), its slot into *idx */
-CAnimGrupo *__thiscall CAnimGrupos_Find(CAnimGrupos *self, const char *name, int *idx);
-int __fastcall CAnimGrupos_Count(CAnimGrupos *self);
-/* the animation node of the scene node named nodo moved to where that node is in escena; without it in anim the
+CAnimGroup *__thiscall CAnimGroups_Find(CAnimGroups *self, const char *name, int *idx);
+int __fastcall CAnimGroups_Count(CAnimGroups *self);
+/* the animation node of the scene node named node moved to where that node is in scene; without it in anim the
  * animation is marked a morph (vertex) animation */
-byte AnimGrupo_AlignNode(CEscena *escena, CEscena *anim, const char *nodo);
-/* a new group playing anim on escena, named nombre or after the animation */
-CAnimGrupo *AnimGrupo_New(CEscena *escena, CEscena *anim, const char *nombre);
-/* the table AnimM3D->objetos of anim for the nodes of escena */
-void AnimGrupo_MapNodes(CEscena *escena, CEscena *anim);
+byte AnimGroup_AlignNode(CScene *scene, CScene *anim, const char *node);
+/* a new group playing anim on scene, named name or after the animation */
+CAnimGroup *AnimGroup_New(CScene *scene, CScene *anim, const char *name);
+/* the table AnimM3D->objetos of anim for the nodes of scene */
+void AnimGroup_MapNodes(CScene *scene, CScene *anim);
 /* the animated nodes moved to the front of the animation (iObjeto of the scene nodes swapped with them) */
-void AnimGrupo_Compact(CEscena *anim);
+void AnimGroup_Compact(CScene *anim);
 
 #endif

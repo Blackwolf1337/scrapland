@@ -1,7 +1,7 @@
 /*
- * ScrapEngModel.cpp of the game: CGameModel, the model of an entity: a CModelo of the engine3d made with its LOD
+ * ScrapEngModel.cpp of the game: CGameModel, the model of an entity: a CModel of the engine3d made with its LOD
  * models (&U&D&N.LODn), the collision mesh of its meshes in the floor of the world and the access of the entities to
- * its animations, render nodes and vertices. Animation channels ("chan") are the slots of the CModelo.
+ * its animations, render nodes and vertices. Animation channels ("chan") are the slots of the CModel.
  */
 #ifndef SCRAP_SCRAPMODEL_H
 #define SCRAP_SCRAPMODEL_H
@@ -11,7 +11,7 @@
 #include "scrap/suelo.h"
 
 typedef struct CGameModel {
-	CModelo *Model;			/* 0x00 */
+	CModel *Model;			/* 0x00 */
 	CCollideMesh *CollideMesh;	/* 0x04 */
 	int CollisionMeshID;		/* 0x08 -1: the model has none */
 	int CollisionIni;		/* 0x0c the first triangle in the floor */
@@ -24,7 +24,7 @@ SD_SIZE(CGameModel, 0x1c);
 
 #define MODEL_EFFECT_LAST 8
 #define MAX_RENDERFX_PARAM 1
-#define MAX_VALIDOS 256
+#define MAX_VALID 256
 #define MAT_SINVERTICES 0x4000		/* the meshes of the material give no vertices to the effects */
 
 /* the engine variables (Gvars) */
@@ -67,7 +67,7 @@ void __thiscall CGameModel_SetRot2(CGameModel *self, const vec3_t *v);
 /* d along z turned by rot2 and rot */
 void __thiscall CGameModel_MoveForward(CGameModel *self, float d);
 void __thiscall CGameModel_SetPivot(CGameModel *self, const vec3_t *v, byte rel, byte recalcBB);
-void __thiscall CGameModel_SetPivotNodo(CGameModel *self, const char *name);
+void __thiscall CGameModel_SetPivotNode(CGameModel *self, const char *name);
 void __thiscall CGameModel_SetSortZ(CGameModel *self, float bias, float mult);
 uint32_t __thiscall CGameModel_GetEffect(const CGameModel *self, uint32_t *out);
 void __thiscall CGameModel_SetEffect(CGameModel *self, uint32_t fx);
@@ -93,36 +93,36 @@ void __thiscall CGameModel_SetAnim(CGameModel *self, int i, uint32_t chan, int u
 void __thiscall CGameModel_SetAnimName(CGameModel *self, const char *name, uint32_t chan, int unused);
 void __fastcall CGameModel_StopAnims(CGameModel *self);
 void __thiscall CGameModel_StopAnim(CGameModel *self, uint32_t chan);
-CAnimGrupo *__thiscall CGameModel_ChanAnim(CGameModel *self, uint32_t chan);
+CAnimGroup *__thiscall CGameModel_ChanAnim(CGameModel *self, uint32_t chan);
 byte __thiscall CGameModel_ChanEnd(CGameModel *self, uint32_t chan);
 byte __thiscall CGameModel_ChanInfo(CGameModel *self, uint32_t chan, int *mode, int *anim);
 byte __thiscall CGameModel_ChanTime(CGameModel *self, uint32_t chan, float *t);
-/* the root motion of the channels over t, of the first one into move and saltos */
-void __thiscall CGameModel_RootMotion(CGameModel *self, float t, vec3_t *move, int *saltos);
+/* the root motion of the channels over t, of the first one into move and jumps */
+void __thiscall CGameModel_RootMotion(CGameModel *self, float t, vec3_t *move, int *jumps);
 /* the channel moved t seconds on, its root motion since the last frame */
 byte __thiscall CGameModel_AnimDelta(CGameModel *self, uint32_t chan, float t, vec3_t *move);
 
 /* the render nodes */
-int __thiscall CGameModel_FindNodoR(CGameModel *self, const char *name);
-int __thiscall CGameModel_FindNodoRWild(CGameModel *self, const char *name);
-CNodoR *__thiscall CGameModel_NodoRRef(CGameModel *self, uint32_t i);
-/* a reference of CGameModel_NodoRRef dropped (the count at 0x0, nothing is freed), *slot cleared */
-static inline void NodoR_Unref(CNodoR **slot) {
+int __thiscall CGameModel_FindRenderNode(CGameModel *self, const char *name);
+int __thiscall CGameModel_FindRenderNodeWild(CGameModel *self, const char *name);
+CRenderNode *__thiscall CGameModel_RenderNodeRef(CGameModel *self, uint32_t i);
+/* a reference of CGameModel_RenderNodeRef dropped (the count at 0x0, nothing is freed), *slot cleared */
+static inline void RenderNode_Unref(CRenderNode **slot) {
 	if (*slot) {
 		(*(int *)*slot)--;
 		*slot = NULL;
 	}
 }
-vec3_t *__thiscall CGameModel_NodoPos(CGameModel *self, vec3_t *out, uint32_t i, byte animated);
-matrix_t *__thiscall CGameModel_NodoMatrix(CGameModel *self, matrix_t *out, uint32_t i, byte anim, byte *visible,
+vec3_t *__thiscall CGameModel_NodePos(CGameModel *self, vec3_t *out, uint32_t i, byte animated);
+matrix_t *__thiscall CGameModel_NodeMatrix(CGameModel *self, matrix_t *out, uint32_t i, byte anim, byte *visible,
 	uint32_t slot);
 /* the transform mode of the look of node i (0 none, 1..6) with the angles v */
-byte __thiscall CGameModel_NodoLook(CGameModel *self, uint32_t i, int mode, const vec3_t *v);
-float __thiscall CGameModel_NodoIniFloat(CGameModel *self, uint32_t i, const char *sect, const char *key, float def);
-int __thiscall CGameModel_NodoIniInt(CGameModel *self, uint32_t i, const char *sect, const char *key, int def);
-uint32_t __thiscall CGameModel_NodoIniColor(CGameModel *self, uint32_t i, const char *sect, const char *key,
+byte __thiscall CGameModel_NodeLook(CGameModel *self, uint32_t i, int mode, const vec3_t *v);
+float __thiscall CGameModel_NodeIniFloat(CGameModel *self, uint32_t i, const char *sect, const char *key, float def);
+int __thiscall CGameModel_NodeIniInt(CGameModel *self, uint32_t i, const char *sect, const char *key, int def);
+uint32_t __thiscall CGameModel_NodeIniColor(CGameModel *self, uint32_t i, const char *sect, const char *key,
 	uint32_t def);
-vec3_t *__thiscall CGameModel_NodoIniVec3(CGameModel *self, vec3_t *out, uint32_t i, const char *sect, const char *key,
+vec3_t *__thiscall CGameModel_NodeIniVec3(CGameModel *self, vec3_t *out, uint32_t i, const char *sect, const char *key,
 	const vec3_t *def);
 /* the frame of the animated texture named name in the meshes */
 byte __thiscall CGameModel_SetTexFrame(CGameModel *self, const char *name, int frame);
@@ -130,11 +130,11 @@ byte __thiscall CGameModel_SetTexFrame(CGameModel *self, const char *name, int f
 /* vertices for the effects (R_GetModelVertex, else the position of the model) */
 int __thiscall CGameModel_VertexCounts(CGameModel *self, int *out, int max);
 void __thiscall CGameModel_RandomVertices(CGameModel *self, vec3_t *pos, void *normal, void *area, int count,
-	uint32_t nodo);
+	uint32_t node);
 void __thiscall CGameModel_Vertices(CGameModel *self, vec3_t *pos, void *normal, void *area, int count, int first,
-	int *index, uint32_t nodo, int *indices);
+	int *index, uint32_t node, int *indices);
 void __thiscall CGameModel_ClosestVertex(CGameModel *self, float x, float y, float z, vec3_t *pos, int *index,
-	uint32_t nodo);
+	uint32_t node);
 
 /* the collision mesh */
 void __fastcall CGameModel_FreeCollision(CGameModel *self);
@@ -147,6 +147,6 @@ void __thiscall CAnimMat_SetFrame(CAnimMat *self, int frame);
 /* the sector of the floor at pos, -2 for none (ScrapEngWorld.c) */
 int Sector_At(const vec3_t *pos);
 /* rva 0x23f7f0 (NodoR.cpp): the look type of the node */
-void __thiscall CNodoR_SetLook(CNodoR *self, int tipo);
+void __thiscall CRenderNode_SetLook(CRenderNode *self, int type);
 
 #endif

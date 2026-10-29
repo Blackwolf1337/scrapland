@@ -129,7 +129,7 @@ int crt_fstat32(int fd, void *st);
 char *crt_strerror(int code);
 char *crt_getenv(const char *name);
 [[noreturn]] void crt_abort(void);
-void (*crt_signal(int sig, void (*handler)(int)))(int);
+void (*crt_signal(int next, void (*handler)(int)))(int);
 void *crt_localeconv(void);
 int crt_strcoll(const char *a, const char *b);
 size_t crt_strxfrm(char *dst, const char *src, size_t n);

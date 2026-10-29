@@ -16,7 +16,7 @@ rl2saved = rl2ints(sym('g_MatProj') + 0x400000, 16) + rl2ints(sym('g_MatView') +
 rl2pf(sym('g_MatProj') + 0x400000, (1.2, 0.0, 0.0, 0.0, 0.0, 1.6, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, -1.0, 0.0))
 rl2pf(sym('g_MatView') + 0x400000, (0.8, 0.0, 0.6, 0.0, 0.0, 1.0, 0.0, 0.0, -0.6, 0.0, 0.8, 0.0, 2.0, -1.0, 3.0, 1.0))
 rl2rect = rl2new(24)
-rl2mundo = SDTest.Peek('g_Mundo', 'i')
+rl2mundo = SDTest.Peek('g_World', 'i')
 check('mundo cam', lambda: (rl2mundo != 0, rl2mundo and rl2i(rl2mundo + 0xa4) != 0))
 rl2cases = ()
 if rl2mundo and rl2i(rl2mundo + 0xa4) and rl2i(rl2i(rl2mundo + 0xa4) + 0x2c) > 0:
@@ -24,11 +24,11 @@ if rl2mundo and rl2i(rl2mundo + 0xa4) and rl2i(rl2i(rl2mundo + 0xa4) + 0x2c) > 0
 		((1.0, -1.0, -40.0), (4.0, 2.0)), ((0.0, 0.0, 1000000.0), (4.0, 2.0)), ((0.0, 3.0, 0.5), (30.0, 3.0)))
 	check('camera planes', lambda: rl2ints(rl2i(rl2mundo + 0xa4) + 0x2c, 2))
 for rl2pos, rl2size in rl2cases:
-	rl2n = SDTest.Call('CNodo3D_ctor', 'tii', rl2new(0xfc))[0]
+	rl2n = SDTest.Call('CNode3D_ctor', 'tii', rl2new(0xfc))[0]
 	SDTest.Poke(rl2n + 8 - 0x400000, 1)
 	rl2pf(rl2n + 0x5c, (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0) + rl2pos + (1.0,))
 	rl2po = SDTest.Call('CPortal_ctor', 'tii', rl2new(0x68))[0]
-	SDTest.Call('CObjBase3D_SetNodo', 'tvii', rl2po, rl2n)
+	SDTest.Call('CObjBase3D_SetNode', 'tvii', rl2po, rl2n)
 	rl2pf(rl2po + 0xc, rl2size)
 	rl2pf(rl2rect, (9.0, 9.0, 9.0, 9.0, 9.0, 9.0))
 	check('CPortal_ClipRect' + fmt((rl2pos, rl2size)), lambda: (SDTest.Call('CPortal_ClipRect', 'tbii', rl2po, rl2rect)[0],

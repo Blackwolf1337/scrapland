@@ -26,72 +26,70 @@
 
 #undef g_ActAnimBlock
 #undef g_AnimMemStats
-#undef g_AnimNodoName
-#undef g_BmpFileCab
+#undef g_AnimNodeName
+#undef g_BackgroundCurrent
+#undef g_BackgroundFrame
+#undef g_BackgroundGraphic
+#undef g_BackgroundNew
+#undef g_BackgroundPending
+#undef g_BmpFileHeader
 #undef g_BmpInfoCab
 #undef g_BspAreasTotal
 #undef g_BspDebugCnt
-#undef g_BspSecErrores
-#undef g_BspSecOk
+#undef g_BspSectorErrors
+#undef g_BspSectorOk
 #undef g_D3DObj
 #undef g_EVAVB
 #undef g_EVAVBUsed
-#undef g_EfecMallaMat
-#undef g_EfecMallaMatInic
-#undef g_EfecMallaOn
-#undef g_EfecMallaStencil
-#undef g_Entrada
-#undef g_EntradaInic
-#undef g_EntradaInvX
-#undef g_EntradaInvY
-#undef g_EntradaInvZ
-#undef g_FlareAtenDist
-#undef g_FlareVerInfo
+#undef g_FlareAttenDist
+#undef g_FlareShowInfo
 #undef g_FntComic14
-#undef g_FntMatContorno
-#undef g_FntMatContornoInit
-#undef g_FntMatContornoUni
-#undef g_FntMatContornoUniInit
+#undef g_FntMatOutline
+#undef g_FntMatOutlineInit
+#undef g_FntMatOutlineUni
+#undef g_FntMatOutlineUniInit
 #undef g_FntTerm8
-#undef g_FondoActual
-#undef g_FondoFrame
-#undef g_FondoGrf
-#undef g_FondoNuevo
-#undef g_FondoPendiente
 #undef g_Gamma2x
 #undef g_GammaLast2x
+#undef g_Input
+#undef g_InputInit
+#undef g_InputInvX
+#undef g_InputInvY
+#undef g_InputInvZ
+#undef g_KeyboardBuf
+#undef g_KeyboardBufCount
+#undef g_KeyboardBufStart
+#undef g_KeyboardKeys
 #undef g_LavaCos
-#undef g_LavaCosInic
+#undef g_LavaCosInit
 #undef g_LavaOffset
 #undef g_LensFlareMat
 #undef g_LensFlareRender
 #undef g_LensFlareVerts
-#undef g_ListaMalla
-#undef g_ListaTransp
-#undef g_ListaTri
-#undef g_Modelos
+#undef g_MeshEffectMat
+#undef g_MeshEffectMatInit
+#undef g_MeshEffectOn
+#undef g_MeshEffectStencil
+#undef g_MeshList
+#undef g_Models
 #undef g_NumD3DObj
-#undef g_NumModelos
-#undef g_NumPantallas
-#undef g_Pantallas
+#undef g_NumModels
+#undef g_NumScreens
 #undef g_PartIB
 #undef g_PartNumTri
 #undef g_PartTri
 #undef g_PartVB
 #undef g_PartVBUsed
+#undef g_Screens
 #undef g_ShaderModeMask
-#undef g_TabMalla
+#undef g_TabMesh
 #undef g_TabTransp
-#undef g_TecladoBuf
-#undef g_TecladoBufCount
-#undef g_TecladoBufStart
-#undef g_TecladoKeys
-#undef g_TexCab
+#undef g_TexHeader
 #undef g_TextLock
 #undef g_TgaCab
-#undef g_TiempoPausa
-#undef g_TiempoPausado
-#undef g_TiempoReanudado
+#undef g_TimePause
+#undef g_TimePaused
+#undef g_TimeResumed
 #undef g_TrailsIB
 #undef g_TrailsIndex
 #undef g_TrailsMat
@@ -99,6 +97,8 @@
 #undef g_TrailsRender
 #undef g_TrailsVB
 #undef g_TrailsVertex
+#undef g_TranspList
+#undef g_TriList
 #undef g_Unifont
 #undef g_WeldVert
 #undef g_nLensFlareRender
@@ -116,26 +116,26 @@ cGVar GVar_LightmapGlowMult SD_BSS(0x4d5cb0);
 cGVar GVar_MapSortByShader SD_BSS(0x4d5cc8);
 cGVar GVar_RadSkipBySectors SD_BSS(0x4d5ce0);
 cGVar GVar_RadiosityPortals SD_BSS(0x4d5cf8);
-cGVar GVar_LightmapLinealAtten SD_BSS(0x4d5d10);
+cGVar GVar_LightmapLinearAtten SD_BSS(0x4d5d10);
 cGVar GVar_LightmapDebugTex SD_BSS(0x4d5d28);
 cGVar GVar_RadiosityMinDist SD_BSS(0x4d5d40);
 cGVar GVar_LightmapLimitUV SD_BSS(0x4d5d58);
 void *g_pBSP_VB SD_BSS(0x4d5d70);
 int g_BspDebugCnt SD_BSS(0x4d5d74);
 int g_BspAreasTotal[4] SD_BSS(0x4d5d78);
-byte g_BspSecOk SD_BSS(0x4d5d88);
-int g_BspSecErrores SD_BSS(0x4d5d8c);
-BspTri *g_ListaTri[1024] SD_BSS(0x4d5d90);
-int g_FlareAtenDist SD_BSS(0x4d6d90);
-int g_FlareVerInfo SD_BSS(0x4d6d94);
+byte g_BspSectorOk SD_BSS(0x4d5d88);
+int g_BspSectorErrors SD_BSS(0x4d5d8c);
+BspTri *g_TriList[1024] SD_BSS(0x4d5d90);
+int g_FlareAttenDist SD_BSS(0x4d6d90);
+int g_FlareShowInfo SD_BSS(0x4d6d94);
 cGVar GVar_R_ShowFlaresInfo SD_BSS(0x4d6d98);
 cGVar GVar_R_SkipFlares SD_BSS(0x4d6db0);
-CFuente3 *g_FntComic14 SD_BSS(0x4d6dc8);
-CFuente3 *g_FntTerm8 SD_BSS(0x4d6dcc);
-CMaterial *g_FntMatContorno SD_BSS(0x4d6dd0);
-int g_FntMatContornoInit SD_BSS(0x4d6dd4);
-CMaterial *g_FntMatContornoUni SD_BSS(0x4d6dd8);
-int g_FntMatContornoUniInit SD_BSS(0x4d6ddc);
+CFont3 *g_FntComic14 SD_BSS(0x4d6dc8);
+CFont3 *g_FntTerm8 SD_BSS(0x4d6dcc);
+CMaterial *g_FntMatOutline SD_BSS(0x4d6dd0);
+int g_FntMatOutlineInit SD_BSS(0x4d6dd4);
+CMaterial *g_FntMatOutlineUni SD_BSS(0x4d6dd8);
+int g_FntMatOutlineUniInit SD_BSS(0x4d6ddc);
 CUnifont g_Unifont SD_BSS(0x4d6de0);
 cGVar GVar_BuildMST SD_BSS(0x4d6df0);
 struct CMaterial *g_TrailsMat[17] SD_BSS(0x4d6e08);
@@ -149,36 +149,36 @@ CTrail *g_TrailsRender[17][MAX_TRAILS_RENDER] SD_BSS(0x4d6e78);
 int g_nTrails SD_BSS(0x4db278);
 uint32_t Trails_Init_4db27c SD_BSS(0x4db27c);
 int g_nTrailsRender[17] SD_BSS(0x4db280);
-uint32_t g_TiempoPausado SD_BSS(0x4db2c4);
-int g_TiempoReanudado SD_BSS(0x4db2c8);
-uint32_t g_TiempoPausa SD_BSS(0x4db2cc);
-byte g_TecladoKeys[256] SD_BSS(0x4db2d0);
-uint16_t g_TecladoBuf[32] SD_BSS(0x4db3d0);
-int g_TecladoBufStart SD_BSS(0x4db410);
-int g_TecladoBufCount SD_BSS(0x4db414);
-void *g_Entrada SD_BSS(0x4db418);
-int g_EntradaInvX SD_BSS(0x4db41c);
-int g_EntradaInvY SD_BSS(0x4db420);
-int g_EntradaInvZ SD_BSS(0x4db424);
-byte g_EntradaInic SD_BSS(0x4db428);
+uint32_t g_TimePaused SD_BSS(0x4db2c4);
+int g_TimeResumed SD_BSS(0x4db2c8);
+uint32_t g_TimePause SD_BSS(0x4db2cc);
+byte g_KeyboardKeys[256] SD_BSS(0x4db2d0);
+uint16_t g_KeyboardBuf[32] SD_BSS(0x4db3d0);
+int g_KeyboardBufStart SD_BSS(0x4db410);
+int g_KeyboardBufCount SD_BSS(0x4db414);
+void *g_Input SD_BSS(0x4db418);
+int g_InputInvX SD_BSS(0x4db41c);
+int g_InputInvY SD_BSS(0x4db420);
+int g_InputInvZ SD_BSS(0x4db424);
+byte g_InputInit SD_BSS(0x4db428);
 cGVar GVar_R_VideoLockMode SD_BSS(0x4db42c);
 cGVar GVar_R_VideoLockShow SD_BSS(0x4db444);
 cGVar GVar_R_VideoLockBuf SD_BSS(0x4db45c);
 void *g_TextLock[7] SD_BSS(0x4db474);
-byte g_FondoPendiente SD_BSS(0x4db490);
-int g_FondoFrame SD_BSS(0x4db494);
-CGrafico2D *g_FondoGrf SD_BSS(0x4db498);
-uint32_t Fondo2D_Render_4db49c SD_BSS(0x4db49c);
-char g_FondoActual[264] SD_BSS(0x4db4a0);
-char g_FondoNuevo[264] SD_BSS(0x4db5a8);
-int g_EfecMallaOn SD_BSS(0x4db6b0);
-int g_EfecMallaStencil SD_BSS(0x4db6b4);
-int g_NumPantallas SD_BSS(0x4db6b8);
-int g_NumModelos SD_BSS(0x4db6bc);
-CMaterial g_EfecMallaMat SD_BSS(0x4db6c0);
-CModelo *g_Pantallas[10] SD_BSS(0x4db770);
-CModelo *g_Modelos[10] SD_BSS(0x4db798);
-byte g_EfecMallaMatInic SD_BSS(0x4db7c0);
+byte g_BackgroundPending SD_BSS(0x4db490);
+int g_BackgroundFrame SD_BSS(0x4db494);
+CGraphic2D *g_BackgroundGraphic SD_BSS(0x4db498);
+uint32_t Background2D_Render_4db49c SD_BSS(0x4db49c);
+char g_BackgroundCurrent[264] SD_BSS(0x4db4a0);
+char g_BackgroundNew[264] SD_BSS(0x4db5a8);
+int g_MeshEffectOn SD_BSS(0x4db6b0);
+int g_MeshEffectStencil SD_BSS(0x4db6b4);
+int g_NumScreens SD_BSS(0x4db6b8);
+int g_NumModels SD_BSS(0x4db6bc);
+CMaterial g_MeshEffectMat SD_BSS(0x4db6c0);
+CModel *g_Screens[10] SD_BSS(0x4db770);
+CModel *g_Models[10] SD_BSS(0x4db798);
+byte g_MeshEffectMatInit SD_BSS(0x4db7c0);
 CMaterial *g_LensFlareMat SD_BSS(0x4db7c4);
 cGVar GVar_R_LensFlare SD_BSS(0x4db7c8);
 CLensFlare *g_LensFlareRender[8] SD_BSS(0x4db7e0);
@@ -194,27 +194,27 @@ cGVar GVar_VideoScaleGreen SD_BSS(0x4db8dc);
 int g_GammaLast2x SD_BSS(0x4db8f4);
 uint32_t g_ShaderModeMask SD_BSS(0x4db8f8);
 float g_LavaCos[256] SD_BSS(0x4db900);
-byte g_LavaCosInic SD_BSS(0x4dbd00);
+byte g_LavaCosInit SD_BSS(0x4dbd00);
 uint32_t CFXTexLava_Update_4dbd04 SD_BSS(0x4dbd04);
 int g_LavaOffset[128] SD_BSS(0x4dbd08);
-bmpFileCab_t g_BmpFileCab SD_BSS(0x4dbf08);
+bmpFileCab_t g_BmpFileHeader SD_BSS(0x4dbf08);
 bmpInfoCab_t g_BmpInfoCab SD_BSS(0x4dbf18);
-texCab_t g_TexCab SD_BSS(0x4dbf40);
+texCab_t g_TexHeader SD_BSS(0x4dbf40);
 tgaCab_t g_TgaCab SD_BSS(0x4dbf60);
 uint32_t TGA_Load_4dbf74 SD_BSS(0x4dbf74);
-char g_AnimNodoName[256] SD_BSS(0x4dbf78);
+char g_AnimNodeName[256] SD_BSS(0x4dbf78);
 cMemStats g_AnimMemStats SD_BSS(0x4dc078);
 CAnimBlock *g_ActAnimBlock SD_BSS(0x4dc090);
 cGVar GVar_OptAnimPosMax SD_BSS(0x4dc094);
 cGVar GVar_OptAnimPosErr SD_BSS(0x4dc0ac);
 cGVar GVar_OptimizeAnims SD_BSS(0x4dc0c4);
 cGVar GVar_OptAnimFovErr SD_BSS(0x4dc0dc);
-cGVar GVar_R_AnimNodo_Count SD_BSS(0x4dc0f4);
+cGVar GVar_R_AnimNode_Count SD_BSS(0x4dc0f4);
 cGVar GVar_OptAnimRotErr SD_BSS(0x4dc10c);
 uint32_t Init_GVar_OptAnimRotErr_4dc124 SD_BSS(0x4dc124);
-MallaD3DObj g_D3DObj[512] SD_BSS(0x4dc128);
+MeshD3DObj g_D3DObj[512] SD_BSS(0x4dc128);
 int g_NumD3DObj SD_BSS(0x4de928);
-MallaD3DVert *g_WeldVert SD_BSS(0x4de92c);
+MeshD3DVert *g_WeldVert SD_BSS(0x4de92c);
 cGVar GVar_NodeFXSpringMidP SD_BSS(0x4de930);
 cGVar GVar_NodeFXSpringDamp2 SD_BSS(0x4de948);
 cGVar GVar_NodeFXWheelShow SD_BSS(0x4de960);
@@ -247,12 +247,12 @@ int g_PartVBUsed SD_BSS(0x4deb80);
 uint16_t *g_PartTri SD_BSS(0x4deb84);
 int g_PartNumTri SD_BSS(0x4deb88);
 uint32_t RenderEVA_CreateParticles_4deb8c SD_BSS(0x4deb8c);
-CTabla g_TabMalla SD_BSS(0x4deb90);
+CTable g_TabMesh SD_BSS(0x4deb90);
 cGVar GVar_R_MeshCache SD_BSS(0x4deb98);
-RenderMallaEntry *g_ListaMalla[1026] SD_BSS(0x4debb0);
-CTabla g_TabTransp SD_BSS(0x4dfbb8);
+RenderMeshEntry *g_MeshList[1026] SD_BSS(0x4debb0);
+CTable g_TabTransp SD_BSS(0x4dfbb8);
 cGVar GVar_R_TranspZBias SD_BSS(0x4dfbc0);
 cGVar GVar_R_ShowTranspBox SD_BSS(0x4dfbd8);
-RenderTranspEntry *g_ListaTransp[1026] SD_BSS(0x4dfbf0);
+RenderTranspEntry *g_TranspList[1026] SD_BSS(0x4dfbf0);
 
 #endif

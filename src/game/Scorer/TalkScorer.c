@@ -244,7 +244,7 @@ void __thiscall cTalkScorer_DrawUse(cTalkScorer *self, int player, float *pos) {
 	v = Scorer_Abs((int)(Scorer_Get(player)->time * 1024.0f) % 0x1ff - 0xff);
 	for (int k = 0; k < self->numUseLines; k++) {
 		float l = self->lineHeight;
-		CFont_PrintfAlignColorSombra(self->font, pos[0], (float)(k - self->numUseLines) * l + (l * 0.5f + pos[1]), 4,
+		CFont_PrintfAlignColorShadow(self->font, pos[0], (float)(k - self->numUseLines) * l + (l * 0.5f + pos[1]), 4,
 			0xdcebff, "%s", self->useLines[k]);
 	}
 	if (self->sprite) {

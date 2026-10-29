@@ -44,7 +44,7 @@ def efctrails(a, n):
 		SDTest.Call('CGameTrail_GetTransp', 'tii', a + 4 * i)[0]), range(n)))
 # render node name of the CGameModel gm with a particle system (flags & 2, obj3D of class 0xa5000020)
 def efcsist(gm, name):
-	i = SDTest.Call('CGameModel_FindNodoR', 'tiis', gm, name)[0]
+	i = SDTest.Call('CGameModel_FindRenderNode', 'tiis', gm, name)[0]
 	if i < 0:
 		return 0
 	t = efci(efci(gm) + 0xac)
@@ -54,7 +54,7 @@ def efcsist(gm, name):
 	o = efci(r + 0x9c)
 	return (efcb(r + 4) & 2) and o != 0 and efci(o + 4) == -0x5affffe0
 def efcnode(gm, name):
-	return SDTest.Call('CGameModel_FindNodoR', 'tiis', gm, name)[0] >= 0
+	return SDTest.Call('CGameModel_FindRenderNode', 'tiis', gm, name)[0] >= 0
 
 efcworld = SDTest.Peek('g_pWorld', 'i')
 efcplayer = SDTest.Call('cWorld_GetUsrEntity', 'tiii', efcworld, 0)[0]
@@ -312,7 +312,7 @@ for c in efcchars:
 			efcafter(name, fx)))
 		check('%s Stop(0)' % name, lambda c=c, fx=fx, name=name: (SDTest.Call(c[7], 'tvii', fx, 0),
 			efcafter(name, fx)))
-	# after Release the particle systems may be gone: reading them is a CHECK (SistPart)
+	# after Release the particle systems may be gone: reading them is a CHECK (ParticleSystem)
 	check('%s Release' % name, lambda c=c, fx=fx: SDTest.Call(c[5], 'tvi', fx))
 	n = name
 	if n[:9] == 'Mercenary':

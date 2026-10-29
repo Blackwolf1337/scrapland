@@ -1,6 +1,6 @@
 /*
  * The segment queries against the collision triangles of the floor, original source Engine/checkline3d.cpp
- * (include/scrap/suelo.h, CSuelo_Trace in include/scrap/luz.h): walks through the cells of the quad grid that the
+ * (include/scrap/ground.h, CGround_Trace in include/scrap/light.h): walks through the cells of the quad grid that the
  * segment passes, with the triangles shared by cells tested once per query.
  */
 #include "scrap/luz.h"
@@ -10,7 +10,7 @@
 
 #define g_TraceCell GAME_GLOBAL(traceCell_t, g_TraceCell, 0x4b11b0)
 
-byte Alturas_CellStep(CAlturas *alt, int *x, int *z, const vec3_t *a, const vec3_t *b, float *t) {
+byte Heights_CellStep(CHeights *alt, int *x, int *z, const vec3_t *a, const vec3_t *b, float *t) {
 	float x1 = (float)(*x + 1) * alt->sizeX + alt->ext.min.x;
 	float x0 = (float)*x * alt->sizeX + alt->ext.min.x;
 	float z0 = (float)*z * alt->sizeZ + alt->ext.min.z;
@@ -58,7 +58,7 @@ byte Alturas_CellStep(CAlturas *alt, int *x, int *z, const vec3_t *a, const vec3
 	return 0;
 }
 
-byte Alturas_TraceStep(CAlturas *alt) {
+byte Heights_TraceStep(CHeights *alt) {
 	traceCell_t *tc = &g_TraceCell;
 	float x0 = (float)tc->x * alt->sizeX + alt->ext.min.x;
 	float x1 = (float)(tc->x + 1) * alt->sizeX + alt->ext.min.x;
@@ -96,14 +96,14 @@ byte Alturas_TraceStep(CAlturas *alt) {
 	return 1;
 }
 
-byte Suelo_PointInTriIn(const vec3_t *p, const vec3_t *a, const vec3_t *b, const vec3_t *c) {
-	vec3_t n = Suelo_EdgeCross(p, a, b);
-	vec3_t m = Suelo_EdgeCross(p, b, c);
+byte Ground_PointInTriIn(const vec3_t *p, const vec3_t *a, const vec3_t *b, const vec3_t *c) {
+	vec3_t n = Ground_EdgeCross(p, a, b);
+	vec3_t m = Ground_EdgeCross(p, b, c);
 
 	if (0.0f > n.x * m.x + n.y * m.y + n.z * m.z) {
 		return 0;
 	}
-	vec3_t k = Suelo_EdgeCross(p, c, a);
+	vec3_t k = Ground_EdgeCross(p, c, a);
 	return !(0.0f > k.x * n.x + k.y * n.y + k.z * n.z);
 }
 
@@ -136,35 +136,35 @@ static int Seg_HitTri(const CCollideTri *tri, const CCollideMesh *mesh, const ve
 	}
 	*t = da / (da - db);
 	vec3_t p = Seg_Lerp(a, b, *t);
-	return Suelo_PointInTri(&p, &mesh->pVert[tri->v[0]], &mesh->pVert[tri->v[1]], &mesh->pVert[tri->v[2]]);
+	return Ground_PointInTri(&p, &mesh->pVert[tri->v[0]], &mesh->pVert[tri->v[1]], &mesh->pVert[tri->v[2]]);
 }
 
 enum { SEG_TEST, SEG_POS, SEG_TRI };
 
 /* the walk of TestSeg (the first hit), TraceSegPos and TraceSeg (the nearest hit); mode 0 skips the meshes and the
  * triangles without collisions, TraceSeg with mode 1 also the triangles without the 0x40 flag */
-static byte Suelo_SegWalk(CSuelo *self, const vec3_t *a, const vec3_t *b, int mode, int kind, vec3_t *hit,
-	CSueloHit *info) {
-	CAlturas *alt = &self->alturas;
+static byte Ground_SegWalk(CGround *self, const vec3_t *a, const vec3_t *b, int mode, int kind, vec3_t *hit,
+	CGroundHit *info) {
+	CHeights *alt = &self->heights;
 	CCollideTri *bestTri = NULL;
 	float best = 2.0f;
 
-	CSuelo_NewQuery(self);
+	CGround_NewQuery(self);
 	int cx = (int)((a->x - alt->ext.min.x) * alt->invX);
 	int cz = (int)((a->z - alt->ext.min.z) * alt->invZ);
 	float endY = a->y;
 	for (;;) {
-		CCollideQuad *q = Alturas_Cell(alt, cx, cz);
+		CCollideQuad *q = Heights_Cell(alt, cx, cz);
 		if (!q) {
 			return 0;
 		}
 		int nx = cx, nz = cz;
 		float t;
 		float startY = endY;
-		byte stepped = Alturas_CellStep(alt, &nx, &nz, a, b, &t);
+		byte stepped = Heights_CellStep(alt, &nx, &nz, a, b, &t);
 		endY = stepped ? a->y + (b->y - a->y) * t : b->y;
 		for (; q; q = q->next) {
-			if (!mode && (q->Mesh->flags & TRI_ALT_NO_COLISIONES)) {
+			if (!mode && (q->Mesh->flags & TRI_ALT_NO_COLLISIONS)) {
 				continue;
 			}
 			if (Seg_SkipQuad(q, startY, endY)) {
@@ -178,13 +178,13 @@ static byte Suelo_SegWalk(CSuelo *self, const vec3_t *a, const vec3_t *b, int mo
 					continue;
 				}
 				if (kind == SEG_TRI) {
-					if ((tri->flags & TRI_ALT_NO_COLISIONES) && mode == 0) {
+					if ((tri->flags & TRI_ALT_NO_COLLISIONS) && mode == 0) {
 						continue;
 					}
 					if (!(tri->flags & 0x40) && mode == 1) {
 						continue;
 					}
-				} else if (!mode && (tri->flags & TRI_ALT_NO_COLISIONES)) {
+				} else if (!mode && (tri->flags & TRI_ALT_NO_COLLISIONS)) {
 					continue;
 				}
 				if (!Seg_HitTri(tri, q->Mesh, a, b, &th)) {
@@ -220,17 +220,17 @@ static byte Suelo_SegWalk(CSuelo *self, const vec3_t *a, const vec3_t *b, int mo
 	}
 }
 
-byte __thiscall CSuelo_TestSeg(CSuelo *self, const vec3_t *a, const vec3_t *b, int flags) {
-	return Suelo_SegWalk(self, a, b, (byte)flags, SEG_TEST, NULL, NULL);
+byte __thiscall CGround_TestSeg(CGround *self, const vec3_t *a, const vec3_t *b, int flags) {
+	return Ground_SegWalk(self, a, b, (byte)flags, SEG_TEST, NULL, NULL);
 }
 
-byte __thiscall CSuelo_TraceSegPos(CSuelo *self, const vec3_t *a, const vec3_t *b, vec3_t *hit, int flags) {
-	return Suelo_SegWalk(self, a, b, (byte)flags, SEG_POS, hit, NULL);
+byte __thiscall CGround_TraceSegPos(CGround *self, const vec3_t *a, const vec3_t *b, vec3_t *hit, int flags) {
+	return Ground_SegWalk(self, a, b, (byte)flags, SEG_POS, hit, NULL);
 }
 
-byte __thiscall CSuelo_TraceSeg(CSuelo *self, const vec3_t *a, const vec3_t *b, vec3_t *hit, CSueloHit *tri,
+byte __thiscall CGround_TraceSeg(CGround *self, const vec3_t *a, const vec3_t *b, vec3_t *hit, CGroundHit *tri,
 	int flags) {
-	return Suelo_SegWalk(self, a, b, flags, SEG_TRI, hit, tri);
+	return Ground_SegWalk(self, a, b, flags, SEG_TRI, hit, tri);
 }
 
 static int Float_SignDiffers(float a, float b) {
@@ -239,29 +239,29 @@ static int Float_SignDiffers(float a, float b) {
 }
 
 /* the crossing of the plane counts: with a threshold, not when from lies less than it behind the plane */
-static int Trace_Crosses(float da, byte useUmbral, float umbral) {
-	return !useUmbral || -umbral > da || da >= 0.0f;
+static int Trace_Crosses(float da, byte useThreshold, float threshold) {
+	return !useThreshold || -threshold > da || da >= 0.0f;
 }
 
-byte __thiscall CSuelo_Trace(void *suelo, const vec3_t *from, const vec3_t *to, void *res, float umbral, void *cache) {
-	CSuelo *self = suelo;
-	CSueloHit *c = cache;
+byte __thiscall CGround_Trace(void *ground, const vec3_t *from, const vec3_t *to, void *res, float threshold, void *cache) {
+	CGround *self = ground;
+	CGroundHit *c = cache;
 	vec3_t *out = res;
 
 	CHECK(!out);
-	byte useUmbral = umbral > 0.0f;
-	CSuelo_NewQuery(self);
+	byte useThreshold = threshold > 0.0f;
+	CGround_NewQuery(self);
 	if (!c) {
-		c = (CSueloHit *)self->cache;
+		c = (CGroundHit *)self->cache;
 	}
 	if (c->quad && c->i0 == g_QuadTriCacheID && !out) {
 		CCollideMesh *mesh = c->quad->Mesh;
 		CCollideTri *tri = &mesh->pTri[c->quad->pTri[c->tri]];
 		float da = Plane_Side(&tri->plane, from);
 		float db = Plane_Side(&tri->plane, to);
-		if (Float_SignDiffers(da, db) && Trace_Crosses(da, useUmbral, umbral)) {
+		if (Float_SignDiffers(da, db) && Trace_Crosses(da, useThreshold, threshold)) {
 			vec3_t p = Seg_Lerp(from, to, da / (da - db));
-			if (Suelo_PointInTriIn(&p, &mesh->pVert[tri->v[0]], &mesh->pVert[tri->v[1]], &mesh->pVert[tri->v[2]])) {
+			if (Ground_PointInTriIn(&p, &mesh->pVert[tri->v[0]], &mesh->pVert[tri->v[1]], &mesh->pVert[tri->v[2]])) {
 				self->traceStats[1]++;
 				return 1;
 			}
@@ -272,7 +272,7 @@ byte __thiscall CSuelo_Trace(void *suelo, const vec3_t *from, const vec3_t *to, 
 		c->quad = NULL;
 	}
 
-	CAlturas *alt = &self->alturas;
+	CHeights *alt = &self->heights;
 	traceCell_t *tc = &g_TraceCell;
 	float best = 2.0f;
 	int cx = (int)((from->x - alt->ext.min.x) * alt->invX);
@@ -305,7 +305,7 @@ byte __thiscall CSuelo_Trace(void *suelo, const vec3_t *from, const vec3_t *to, 
 	d = from->z - to->z;
 	tc->invDZ = d == 0.0f ? TRACE_FLT_MAX : 1.0f / d;
 	for (;;) {
-		CCollideQuad *q = Alturas_Cell(alt, tc->x, tc->z);
+		CCollideQuad *q = Heights_Cell(alt, tc->x, tc->z);
 		if (!q) {
 			return 0;
 		}
@@ -326,12 +326,12 @@ byte __thiscall CSuelo_Trace(void *suelo, const vec3_t *from, const vec3_t *to, 
 				self->traceStats[0]++;
 				float da = Plane_Side(&tri->plane, from);
 				float db = Plane_Side(&tri->plane, to);
-				if (!Float_SignDiffers(da, db) || !Trace_Crosses(da, useUmbral, umbral)) {
+				if (!Float_SignDiffers(da, db) || !Trace_Crosses(da, useThreshold, threshold)) {
 					continue;
 				}
 				float t = da / (da - db);
 				vec3_t p = Seg_Lerp(from, to, t);
-				if (!Suelo_PointInTriIn(&p, &mesh->pVert[tri->v[0]], &mesh->pVert[tri->v[1]],
+				if (!Ground_PointInTriIn(&p, &mesh->pVert[tri->v[0]], &mesh->pVert[tri->v[1]],
 					&mesh->pVert[tri->v[2]])) {
 					continue;
 				}
@@ -352,7 +352,7 @@ byte __thiscall CSuelo_Trace(void *suelo, const vec3_t *from, const vec3_t *to, 
 		if (1.0f >= best && best >= 0.0f) {
 			break;
 		}
-		if (!Alturas_TraceStep(alt)) {
+		if (!Heights_TraceStep(alt)) {
 			return 0;
 		}
 	}

@@ -83,8 +83,8 @@ typedef struct cObjElementFXCharacterConversor {
 	float time;			/* 0x0cc since the start */
 	float emitT;			/* 0x0d0 since the last particles */
 	byte pad_d4[4];
-	int nodePared[3];		/* 0x0d8 DF_Pared_01..03 of the conversor */
-	int nodeSalida[3];		/* 0x0e4 DF_Salida_01..03 */
+	int nodeWall[3];		/* 0x0d8 DF_Pared_01..03 of the conversor */
+	int nodeExit[3];		/* 0x0e4 DF_Salida_01..03 */
 	int nodeLight[4];		/* 0x0f0 DF_Light_01..04 */
 	int numTrails;			/* 0x100 */
 	float trailT[FXCONVERSOR_TRAILS];	/* 0x104 the life of the lightning, a new one at 0 */
@@ -94,7 +94,7 @@ typedef struct cObjElementFXCharacterConversor {
 	int numPoints;			/* 0x290 the control points used, 5 */
 	byte started;			/* 0x294 */
 } cObjElementFXCharacterConversor;
-SD_OFFSET(cObjElementFXCharacterConversor, nodePared, 0xd8);
+SD_OFFSET(cObjElementFXCharacterConversor, nodeWall, 0xd8);
 SD_OFFSET(cObjElementFXCharacterConversor, trails, 0x110);
 SD_OFFSET(cObjElementFXCharacterConversor, pts, 0x11c);
 SD_OFFSET(cObjElementFXCharacterConversor, width, 0x284);

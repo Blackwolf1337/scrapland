@@ -22,20 +22,20 @@ def scpoke(addr, v):
 def scset(addr, fl):
 	SDTest.Call('crt_memcpy', 'iiFi', addr, fl, 4 * len(fl))
 def scini(sect, keys):
-	ini = SDTest.Call('CArchINI_ctor', 'tii', scz(4))[0]
+	ini = SDTest.Call('CIniFile_ctor', 'tii', scz(4))[0]
 	for k, v in keys:
-		SDTest.Call('CArchINI_SetStr', 'tiisss', ini, sect, k, v)
+		SDTest.Call('CIniFile_SetStr', 'tiisss', ini, sect, k, v)
 	return ini
 
 # --- CGameCamera ---
-# the values, the node, the CCamara from rot to mode
+# the values, the node, the CCamera from rot to mode
 def scam(c, node):
 	cam = sci(c + 0x34)
 	r = (scints(c, 13), cam != 0, sci(c + 0x38) == node)
 	if cam:
 		r = r + (scints(cam + 8, 17),)
 	return r
-scvars = (sym('g_CameraDefViewAspect'), sym('g_PhysicalAspectRatio'), sym('g_ShowSceneCamera'), sym('g_CameraScene'), sym('g_CamaraNodos'), sym('g_CamCompositeIdx'), sym('g_CamCompositeFrame'), sym('g_CamCompositeFPS'))
+scvars = (sym('g_CameraDefViewAspect'), sym('g_PhysicalAspectRatio'), sym('g_ShowSceneCamera'), sym('g_CameraScene'), sym('g_CameraNodes'), sym('g_CamCompositeIdx'), sym('g_CamCompositeFrame'), sym('g_CamCompositeFPS'))
 scsaved = map(lambda a: SDTest.Peek(a, 'i'), scvars)
 check('scrapcam vars', lambda: scsaved)
 scnode = scz(0xa8)
@@ -70,7 +70,7 @@ scset(sci(C + 0x34) + 8, (0.5, -1.25, 2.0, 1.0, 2.0, 3.0, -4.0, 5.0, -6.0))
 scset(sci(C + 0x34) + 0x3c, (0.875,))
 for mode in (0x463, 0x464, 7):
 	scpoke(sci(C + 0x34) + 0x48, mode)
-	check('CGameCamera_FromCamara' + fmt((mode,)), lambda: (SDTest.Call('CGameCamera_FromCamara', 'tvii', C2, sci(C + 0x34)),
+	check('CGameCamera_FromCamera' + fmt((mode,)), lambda: (SDTest.Call('CGameCamera_FromCamera', 'tvii', C2, sci(C + 0x34)),
 		scam(C2, 0)))
 for v in ((0.0, 0.0, 0.0), (1.0, 2.0, 3.0), (-100.5, 7.25, 1e4)):
 	check('CGameCamera_ToLocal' + fmt(v), lambda v=v: SDTest.Call('CGameCamera_ToLocal', 'tiiFF', C2, (9.0, 9.0, 9.0), v)[1:])
@@ -85,7 +85,7 @@ check('CamComposite_DrawDebug off', lambda: SDTest.Call('CamComposite_DrawDebug'
 scgm = scz(0x1c)
 SDTest.Call('CGameModel_ctor', 'tiis', scgm, 'Models/Vehicles/Characters/P_Dtritus/P_Dtritus.M3D')
 scmod = sci(scgm)
-scbip = SDTest.Call('CGameModel_FindNodoR', 'tiis', scgm, 'Bip01')[0]
+scbip = SDTest.Call('CGameModel_FindRenderNode', 'tiis', scgm, 'Bip01')[0]
 check('scrapcam model', lambda: (scmod != 0, scbip))
 if scmod and scbip >= 0:
 	# node 0 is a unique render node (sdcall_scrapmodel.py takes its reference too)
@@ -127,7 +127,7 @@ check('scrapcam vars after', lambda: map(lambda a: SDTest.Peek(a, 'i'), scvars))
 # --- CGameParticles ---
 def scpart(p):
 	r = (scb(p + 4), scints(p + 8, 11))
-	if sci(p) == 0x400000 + sym('CParticulaActive_vftable'):
+	if sci(p) == 0x400000 + sym('CParticleActive_vftable'):
 		r = r + (scb(p + 0x34), scints(p + 0x38, 3), scints(p + 0x48, 3))
 	return r
 def scparts(sp):
@@ -139,15 +139,15 @@ def scparts(sp):
 def scsp(sp):
 	return (scints(sp + 0xc, 0x32), scb(sp + 0xd4), scb(sp + 0xd5), scb(sp + 0xd6), scints(sp + 0xe0, 3), scb(sp + 0xec),
 		sci(sp + 0xf8), scb(sp + 0x10c), scb(sp + 0x140), scb(sp + 0x141))
-spnode = SDTest.Call('CNodo3D_ctor', 'tii', scz(0xfc))[0]
-SDTest.Call('Cad_Set', 'tvis', spnode + 4, 'sdgpart')
+spnode = SDTest.Call('CNode3D_ctor', 'tii', scz(0xfc))[0]
+SDTest.Call('String_Set', 'tvis', spnode + 4, 'sdgpart')
 SDTest.Poke(spnode + 8 - 0x400000, 1)
 SDTest.Poke(spnode + 0xf8 - 0x400000, scini('Particles', (('Type', 'sdgp'), ('Scale', '1.0'))))
 spini = scini('sdgp', (('Particles', '5'), ('BirthRate', '20'), ('LifeTime', '0.5'), ('SizeIni', '0.5'),
 	('SizeEnd', '2'), ('InitVelMin', '-1 2 -1'), ('InitVelMax', '1 4 1'), ('InitAcc', '0 -9.8 0')))
 SDTest.Call('crt_srand', 'vi', 17)
-SP = SDTest.Call('SistPart_FromNode', 'iii', spnode, spini)[0]
-check('scrapcam SistPart', lambda: SP != 0)
+SP = SDTest.Call('ParticleSystem_FromNode', 'iii', spnode, spini)[0]
+check('scrapcam ParticleSystem', lambda: SP != 0)
 G = scz(0xb0)
 # 0x9a, 0x9b and 0xa5..0xa7 are not set
 def scgp(g):

@@ -468,7 +468,7 @@ check('SC1 SScorer.SetHeadMonitor', lambda: (SScorer.SetHeadMonitor('sc1Head', '
 # ---- the news panel object on its own ----
 sc1np = SDTest.Call('operator_new', 'ii', 0x38)[0]
 check('SC1 cNewsPanel_ctor', lambda p=sc1np: (SDTest.Call('cNewsPanel_ctor', 'tii', p)[0] == p, sc1ints(p, (0x24, 0x28,
-	0x2c, 0x30)), sc1b(p + 0x34), sc1i(p) == SDTest.Peek('g_MotorInits', 'i'), sc1i(p + 0x10) != 0))
+	0x2c, 0x30)), sc1b(p + 0x34), sc1i(p) == SDTest.Peek('g_EngineInits', 'i'), sc1i(p + 0x10) != 0))
 check('SC1 cNewsPanel_Reset', lambda p=sc1np: (SDTest.Call('cNewsPanel_Reset', 'tvi', p), sc1run(p + 4, 3), sc1ints(p,
 	(0x20, 0x24, 0x28, 0x2c, 0x30)), sc1b(p + 0x34), SDTest.Peek(p + 0x14, '@p'), SDTest.Peek(p + 0x18, '@p'),
 	SDTest.Peek(p + 0x1c, '@p'), SDTest.Peek('g_NewsPanelActive', 'i') == SDTest.Peek('g_NewsPanelActiveDef', 'i'), SDTest.Peek('g_NewsPanelShowHead',

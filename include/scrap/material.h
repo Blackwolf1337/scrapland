@@ -1,7 +1,7 @@
 /*
  * Materials of the engine3d (original sources Engine/Material.cpp, engine3d/engine/Material.h): CMaterial with its
- * parameters and up to MAPA_TOTAL texture maps (CMapa), kept in lists (CListaMat) that can nest (a material may own
- * a list of sub materials). The textures themselves belong to the texture manager of the engine (CTextura,
+ * parameters and up to MAP_TOTAL texture maps (CMap), kept in lists (CMatList) that can nest (a material may own
+ * a list of sub materials). The textures themselves belong to the texture manager of the engine (CTexture,
  * decompiled), the maps hold references to them.
  */
 #ifndef SCRAP_MATERIAL_H
@@ -9,73 +9,73 @@
 
 #include "scrap/archio.h"
 
-#define MAPA_TOTAL 5
+#define MAP_TOTAL 5
 /* the maps of a material */
 enum {
-	MAPA_DIFFUSE = 0,
-	MAPA_OPACITY = 1,
-	MAPA_ENTORNO = 2,		/* the reflection */
-	MAPA_BUMP = 3,
-	MAPA_GLOW = 4,
+	MAP_DIFFUSE = 0,
+	MAP_OPACITY = 1,
+	MAP_ENVIRONMENT = 2,		/* the reflection */
+	MAP_BUMP = 3,
+	MAP_GLOW = 4,
 };
-#define MAX_RUTAS_TEXTURAS 10
-#define MAX_EXTENS_TEXTURAS 10
+#define MAX_TEXTURE_PATHS 10
+#define MAX_TEXTURE_EXTS 10
 
-#define CLISTAMAT_VFTABLE GAME_VFTABLE(CListaMat_vftable, 0x3d6d48)
+#define CLISTAMAT_VFTABLE GAME_VFTABLE(CMatList_vftable, 0x3d6d48)
 #define CMATERIAL_VFTABLE GAME_VFTABLE(CMaterial_vftable, 0x3d6dbc)
 
-/* params.atrib */
+/* params.attrib */
 #define MAT_LOADTEX 0x40		/* textures loaded also with LoadTextures 2 */
 #define MAT_MAPCOLOR 0x80		/* the diffuse color comes from the map (CMaterial_MapToColor) */
 #define MAT_SHADER 0x200		/* the name holds "(+shader: name)" */
 #define MAT_NAMED 0x300			/* materials only shared with the same name */
 #define MAT_NOSHARE 0x8
-#define MAT_SOMBRA 0x20			/* casts shadows in the light maps also when transparent (bsp2.cpp) */
+#define MAT_SHADOW 0x20			/* casts shadows in the light maps also when transparent (bsp2.cpp) */
 #define MAT_AREALIGHT 0x100		/* the name holds "(+area_light: name)" of a radiosity light (radiosidad.cpp) */
 #define MAT_1000 0x1000		/* transparent, but the alpha constant of the pixel shaders stays */
 
 /* a texture of the texture manager: the reference (hint) and its device texture */
-typedef struct CTextEst {
-	void *tex;			/* 0x0 Textura_GetD3D */
-	void *Hint;			/* 0x4 CTextura, referenced */
-} CTextEst;
-SD_SIZE(CTextEst, 0x8);
+typedef struct CTextStatic {
+	void *tex;			/* 0x0 Texture_GetD3D */
+	void *Hint;			/* 0x4 CTexture, referenced */
+} CTextStatic;
+SD_SIZE(CTextStatic, 0x8);
 
-typedef struct CMapa {
-	char *Nombre;			/* 0x00 as in the model */
-	char *ruta;			/* 0x04 the file found (CMapa_ResolvePath) */
+typedef struct CMap {
+	char *Name;			/* 0x00 as in the model */
+	char *path;			/* 0x04 the file found (CMap_ResolvePath) */
 	byte b8;			/* 0x08 */
 	byte lightmap;			/* 0x09 lightmap level, 0 for none */
 	byte ba;			/* 0x0a */
 	byte bb;			/* 0x0b */
 	byte bc;			/* 0x0c */
 	byte bd;			/* 0x0d */
-	byte fx;			/* 0x0e kind of FXTextura, 0 for none */
+	byte fx;			/* 0x0e kind of FXTexture, 0 for none */
 	byte pad_f;
 	float f10[2];			/* 0x10 */
 	float f18[2];			/* 0x18 */
 	float v20[3];			/* 0x20 */
 	float f2c;			/* 0x2c */
-	CTextEst *cur;			/* 0x30 est or a frame of TextAni */
-	CTextEst est;			/* 0x34 */
-	byte animated;			/* 0x3c rutaAni is set */
+	CTextStatic *cur;			/* 0x30 est or a frame of TextAni */
+	CTextStatic staticTex;			/* 0x34 */
+	byte animated;			/* 0x3c pathAni is set */
 	byte pad_3d[3];
 	int frames;			/* 0x40 */
-	char *rutaAni;			/* 0x44 printf format of the frame files */
-	CTextEst *TextAni;		/* 0x48 new[] of frames */
+	char *pathAni;			/* 0x44 printf format of the frame files */
+	CTextStatic *TextAni;		/* 0x48 new[] of frames */
 	void *AnimMat;			/* 0x4c 0x2c bytes */
-	void *FXTextura;		/* 0x50 object with a virtual deleting destructor at [0] */
+	void *FXTexture;		/* 0x50 object with a virtual deleting destructor at [0] */
 	byte hasAlpha;			/* 0x54 */
 	byte b55;			/* 0x55 */
 	byte pad_56[2];
-	int state;			/* 0x58 MAPA_MISSING: the file was not found */
+	int state;			/* 0x58 MAP_MISSING: the file was not found */
 	void *MultiSprite;		/* 0x5c */
-} CMapa;
-SD_SIZE(CMapa, 0x60);
-SD_OFFSET(CMapa, est, 0x34);
-SD_OFFSET(CMapa, state, 0x58);
+} CMap;
+SD_SIZE(CMap, 0x60);
+SD_OFFSET(CMap, staticTex, 0x34);
+SD_OFFSET(CMap, state, 0x58);
 
-#define MAPA_MISSING 2
+#define MAP_MISSING 2
 
 /* the colors are bytes R G B A; diffuse, ambient, specular and emissive of colors[] are D3DMATERIAL9 order */
 typedef struct CMatParams {
@@ -93,7 +93,7 @@ typedef struct CMatParams {
 	byte b39;			/* 0x39 */
 	byte transp;			/* 0x3a */
 	byte b3b;			/* 0x3b */
-	uint16_t atrib;			/* 0x3c MAT_* */
+	uint16_t attrib;			/* 0x3c MAT_* */
 	uint16_t w3e;			/* 0x3e */
 	int i40;			/* 0x40 */
 } CMatParams;
@@ -110,44 +110,44 @@ typedef struct CMatId {
 } CMatId;
 SD_SIZE(CMatId, 0xc);
 
-typedef struct CListaMat CListaMat;
+typedef struct CMatList CMatList;
 
 typedef struct CMaterial {
 	void **vftable;			/* 0x00 [0] the deleting destructor */
-	char *Nombre;			/* 0x04 */
+	char *Name;			/* 0x04 */
 	int Refs;			/* 0x08 the lists holding it */
-	CListaMat *sub;			/* 0x0c */
+	CMatList *sub;			/* 0x0c */
 	CMatParams params;		/* 0x10 */
-	struct CMaterial *sig;		/* 0x44 */
-	struct CMaterial *ant;		/* 0x48 */
+	struct CMaterial *next;		/* 0x44 */
+	struct CMaterial *prev;		/* 0x48 */
 	float colors[17];		/* 0x4c diffuse, ambient, specular, emissive, power */
 	CMatId id;			/* 0x90 */
-	CMapa *mapa[MAPA_TOTAL];	/* 0x9c */
+	CMap *map[MAP_TOTAL];	/* 0x9c */
 } CMaterial;
 SD_SIZE(CMaterial, 0xb0);
-SD_OFFSET(CMaterial, sig, 0x44);
-SD_OFFSET(CMaterial, mapa, 0x9c);
+SD_OFFSET(CMaterial, next, 0x44);
+SD_OFFSET(CMaterial, map, 0x9c);
 
-struct CListaMat {
+struct CMatList {
 	void **vftable;			/* 0x0 */
-	char *Nombre;			/* 0x4 */
-	CMaterial *pri;			/* 0x8 */
-	CMaterial *ult;			/* 0xc */
+	char *Name;			/* 0x4 */
+	CMaterial *first;			/* 0x8 */
+	CMaterial *last;			/* 0xc */
 };
-SD_SIZE(CListaMat, 0x10);
+SD_SIZE(CMatList, 0x10);
 
 /* the materials of the engine */
-#define g_ListaMat (GAME_ARRAY(CListaMat, g_ListaMat, 0x431d24))
+#define g_MatList (GAME_ARRAY(CMatList, g_MatList, 0x431d24))
 
 /* the constructors and destructors of material.h (rva 0x2336f0..0x233c20) */
-CListaMat *__thiscall CListaMat_DeleteObj(CListaMat *self, byte flags);
-void __fastcall CListaMat_dtor(CListaMat *self);
+CMatList *__thiscall CMatList_DeleteObj(CMatList *self, byte flags);
+void __fastcall CMatList_dtor(CMatList *self);
 /* the string freed if set (the destructor of the string members) */
-void __fastcall Cad_dtor(char **self);
+void __fastcall String_dtor(char **self);
 CMatId *__fastcall CMatId_ctor(CMatId *self);		/* rva 0x2a79e0 */
 void __fastcall CMatId_dtor(CMatId *self);		/* rva 0x2a79f0 */
-CMapa *__thiscall CMapa_ctor(CMapa *self);
-void __thiscall CMapa_dtor(CMapa *self);
+CMap *__thiscall CMap_ctor(CMap *self);
+void __thiscall CMap_dtor(CMap *self);
 CMaterial *__thiscall CMaterial_ctor(CMaterial *self);
 /* rva 0x237020: the D3D colors (CMaterial_CalcColors) times k unless k is 1, the alpha of colors from diffuse[3] */
 void __thiscall CMaterial_ScaleColors(CMaterial *self, float k);
@@ -157,23 +157,23 @@ void __thiscall CMaterial_dtor(CMaterial *self);
 typedef struct CAnimMat {
 	float fps;			/* 0x0 */
 	int frames;			/* 0x4 */
-	int ciclo;			/* 0x8 the frame it loops back to, -1: stops at the end */
+	int cycle;			/* 0x8 the frame it loops back to, -1: stops at the end */
 	float dt;			/* 0xc the seconds of the last step (at most 0.1) */
 	int frame;			/* 0x10 */
 	float framef;			/* 0x14 */
-	int modo;			/* 0x18 ANIMMAT_REPR .. ANIMMAT_FIN */
-	float fundRate;			/* 0x1c FUND_PAUSA: the slow down per second */
-	float fundK;			/* 0x20 FUND_PAUSA: the speed factor, down to 0.2 */
+	int mode;			/* 0x18 ANIMMAT_REPR .. ANIMMAT_END */
+	float fadeRate;			/* 0x1c FUND_PAUSA: the slow down per second */
+	float fadeK;			/* 0x20 FUND_PAUSA: the speed factor, down to 0.2 */
 	uint32_t lastTime;		/* 0x24 g_TimeMs of the last step */
 	int lastFrame;			/* 0x28 g_FrameCount of the last step */
 } CAnimMat;
 SD_SIZE(CAnimMat, 0x2c);
 #define ANIMMAT_REPR 0			/* playing */
-#define ANIMMAT_PAUSA 1
-#define ANIMMAT_FUND_PAUSA 2		/* slowing down */
-#define ANIMMAT_FIN 3
+#define ANIMMAT_PAUSE 1
+#define ANIMMAT_FADE_PAUSE 2		/* slowing down */
+#define ANIMMAT_END 3
 CAnimMat *__thiscall CAnimMat_ctor(CAnimMat *self);
-/* rva 0x257f10, a copy of fps, frames and ciclo of src */
+/* rva 0x257f10, a copy of fps, frames and cycle of src */
 CAnimMat *__thiscall CAnimMat_ctorCopy(CAnimMat *self, const CAnimMat *src);
 void __thiscall CAnimMat_dtor(CAnimMat *self);
 /* from frame 0 at the time of now */
@@ -184,49 +184,49 @@ int __fastcall CAnimMat_GetFrame(CAnimMat *self);
 void __fastcall CAnimMat_Update(CAnimMat *self);
 void __thiscall CAnimMat_SetFrameF(CAnimMat *self, float frame);
 /* only while already FUND_PAUSA: the slow down restarted over ms */
-void __thiscall CAnimMat_FundPausa(CAnimMat *self, float ms);
-/* fps and ciclo of a, 0 for a NULL a (al only) */
-byte AnimMat_Set(CAnimMat *a, float fps, int ciclo);
+void __thiscall CAnimMat_FadePause(CAnimMat *self, float ms);
+/* fps and cycle of a, 0 for a NULL a (al only) */
+byte AnimMat_Set(CAnimMat *a, float fps, int cycle);
 /* "REPR", "PAUSA", "FUND_PAUSA", "FIN" (strings of the exe), CHECK and NULL for others */
-const char *AnimMat_ModoName(int modo);
-void __thiscall Cad_Set(char **self, const char *s);
-/* rva 0x2a1970: *self a Cad_Dup of the printf of fmt, NULL (freed) for fmt NULL */
-void Cad_Printf(char **self, const char *fmt, ...);
-/* rva 0x2a18a0 and 0x2a1920: the string as a CArchIO string (empty is NULL) */
-void __thiscall Cad_Read(char **self, CArchIO *f);
-void __thiscall Cad_Write(char **self, CArchIO *f);
+const char *AnimMat_ModeName(int mode);
+void __thiscall String_Set(char **self, const char *s);
+/* rva 0x2a1970: *self a String_Dup of the printf of fmt, NULL (freed) for fmt NULL */
+void String_Printf(char **self, const char *fmt, ...);
+/* rva 0x2a18a0 and 0x2a1920: the string as a CFileIO string (empty is NULL) */
+void __thiscall String_Read(char **self, CFileIO *f);
+void __thiscall String_Write(char **self, CFileIO *f);
 /* rva 0x2a1970: a VBprintf (1 KB) copy, NULL for a NULL fmt */
-void Cad_Printf(char **self, const char *fmt, ...);
+void String_Printf(char **self, const char *fmt, ...);
 
 void __fastcall CObjRef_dtor(int *Refs);
-CTextEst *__fastcall CTextEst_ctor(CTextEst *self);
-void __fastcall CTextEst_dtor(CTextEst *self);
-CTextEst *__thiscall CTextEst_Delete(CTextEst *self, byte flags);
+CTextStatic *__fastcall CTextStatic_ctor(CTextStatic *self);
+void __fastcall CTextStatic_dtor(CTextStatic *self);
+CTextStatic *__thiscall CTextStatic_Delete(CTextStatic *self, byte flags);
 /* name and parameters, not the textures */
-void __thiscall CMapa_Assign(CMapa *self, const CMapa *orig);
-byte CMapa_Equal(const CMapa *a, const CMapa *b);
-int __thiscall CMapa_Read(CMapa *self, CArchIO *f);
-int __thiscall CMapa_Write(CMapa *self, CArchIO *f);
-byte __fastcall CMapa_BuildMultiSprite(CMapa *self);
-/* the file of the map: a DDS version, the bmp/ directory, the texture paths, numbered frames; ruta or NULL */
-char *__thiscall CMapa_ResolvePath(CMapa *self, byte load, CMapa *alpha);
-void __thiscall CMapa_LoadTexture(CMapa *self, void *dev, CMapa *alpha, int flags);
-void __fastcall CMapa_Release(CMapa *self);
-byte __thiscall CMapa_GetSize(CMapa *self, int *w, int *h);
-byte __fastcall CMapa_HasAlpha(const CMapa *self);
-void *__thiscall CMapa_GetTexture(CMapa *self, byte load);
-struct CImagen;
+void __thiscall CMap_Assign(CMap *self, const CMap *orig);
+byte CMap_Equal(const CMap *a, const CMap *b);
+int __thiscall CMap_Read(CMap *self, CFileIO *f);
+int __thiscall CMap_Write(CMap *self, CFileIO *f);
+byte __fastcall CMap_BuildMultiSprite(CMap *self);
+/* the file of the map: a DDS version, the bmp/ directory, the texture paths, numbered frames; path or NULL */
+char *__thiscall CMap_ResolvePath(CMap *self, byte load, CMap *alpha);
+void __thiscall CMap_LoadTexture(CMap *self, void *dev, CMap *alpha, int flags);
+void __fastcall CMap_Release(CMap *self);
+byte __thiscall CMap_GetSize(CMap *self, int *w, int *h);
+byte __fastcall CMap_HasAlpha(const CMap *self);
+void *__thiscall CMap_GetTexture(CMap *self, byte load);
+struct CImage;
 /* the w x h pixels of bmp at (sx, sy) into the texture at (dx, dy); 0 when not done */
-byte __thiscall CMapa_CopyBmp(CMapa *self, int dx, int dy, const struct CImagen *bmp, int sx, int sy, int w, int h);
-char *__thiscall CMapa_FramePath(CMapa *self, int frame, char *buf, int size);
-/* FXTextura_Kind (the kind of FXTextura of a map name): fxtextura.h */
+byte __thiscall CMap_CopyBmp(CMap *self, int dx, int dy, const struct CImage *bmp, int sx, int sy, int w, int h);
+char *__thiscall CMap_FramePath(CMap *self, int frame, char *buf, int size);
+/* FXTexture_Kind (the kind of FXTexture of a map name): fxtextura.h */
 
 CMaterial *__thiscall CMaterial_Delete(CMaterial *self, byte flags);
 /* name, parameters and copies of the maps */
 void __thiscall CMaterial_Assign(CMaterial *self, const CMaterial *orig);
-void *__thiscall CMaterial_GetMultiSprite(CMaterial *self, uint32_t idmapa);
-int __thiscall CMaterial_Read(CMaterial *self, CArchIO *f);
-int __thiscall CMaterial_Write(CMaterial *self, CArchIO *f);
+void *__thiscall CMaterial_GetMultiSprite(CMaterial *self, uint32_t mapid);
+int __thiscall CMaterial_Read(CMaterial *self, CFileIO *f);
+int __thiscall CMaterial_Write(CMaterial *self, CFileIO *f);
 int __thiscall CMaterial_GetId(CMaterial *self, CMatId **out);
 /* src/game/engine3d/Engine/RenderShader.c: id -1 */
 CMatId *__fastcall CMatId_ctor(CMatId *self);
@@ -238,38 +238,38 @@ void __thiscall CMatId_Register(CMatId *self, CMaterial *mat);
 int __fastcall CMaterial_Id(CMaterial *self);
 char *__thiscall CMaterial_GetShaderName(CMaterial *self, char *str, uint32_t nbytes);
 void __thiscall CMaterial_Prepare(CMaterial *self, void *dev);
-CMapa *__thiscall CMaterial_SetMap(CMaterial *self, uint32_t idmapa, const char *name);
-CMapa *__thiscall CMaterial_SetMapCopy(CMaterial *self, uint32_t idmapa, const CMapa *orig);
+CMap *__thiscall CMaterial_SetMap(CMaterial *self, uint32_t mapid, const char *name);
+CMap *__thiscall CMaterial_SetMapCopy(CMaterial *self, uint32_t mapid, const CMap *orig);
 /* colors as a D3DMATERIAL9 */
 void __thiscall CMaterial_CalcColors(CMaterial *self, float *out);
 void __fastcall CMaterial_Release(CMaterial *self);
 /* the average color of map 0 as the diffuse color, the map deleted */
 void __fastcall CMaterial_MapToColor(CMaterial *self);
-char *__thiscall CMaterial_GetMapName(CMaterial *self, uint32_t idmapa);
-byte __thiscall CMaterial_GetMapSize(CMaterial *self, uint32_t idmapa, int *w, int *h);
+char *__thiscall CMaterial_GetMapName(CMaterial *self, uint32_t mapid);
+byte __thiscall CMaterial_GetMapSize(CMaterial *self, uint32_t mapid, int *w, int *h);
 
-void __thiscall CListaMat_Add(CListaMat *self, CMaterial *mat);
+void __thiscall CMatList_Add(CMatList *self, CMaterial *mat);
 /* an equal shareable material, also in the sub lists */
-CMaterial *__thiscall CListaMat_Find(CListaMat *self, const CMaterial *mat);
-void __thiscall CListaMat_Prepare(CListaMat *self, void *dev);
-int __thiscall CListaMat_Count(CListaMat *self, byte sub);
-CMaterial *__thiscall CListaMat_Extract(CListaMat *self, CMaterial *mat, byte sub);
-void __fastcall CListaMat_Release(CListaMat *self);
-void __fastcall CListaMat_DeleteAll(CListaMat *self);
-void __thiscall CListaMat_Delete(CListaMat *self, CMaterial *mat);
+CMaterial *__thiscall CMatList_Find(CMatList *self, const CMaterial *mat);
+void __thiscall CMatList_Prepare(CMatList *self, void *dev);
+int __thiscall CMatList_Count(CMatList *self, byte sub);
+CMaterial *__thiscall CMatList_Extract(CMatList *self, CMaterial *mat, byte sub);
+void __fastcall CMatList_Release(CMatList *self);
+void __fastcall CMatList_DeleteAll(CMatList *self);
+void __thiscall CMatList_Delete(CMatList *self, CMaterial *mat);
 
 byte Color_Equal(const byte *a, const byte *b);
 byte __thiscall MatParams_Equal(const uint32_t *self, const uint32_t *other);
 int Vec2_Differ(const float *a, const float *b);
 /* blend modes between the file values and the engine (legacy: the files of version 1) */
 void Mat_ConvertBlend(uint32_t *mode, byte toFile, byte legacy);
-/* a copy of orig in g_ListaMat, prepared; with share an equal material of the list instead */
+/* a copy of orig in g_MatList, prepared; with share an equal material of the list instead */
 CMaterial *Mat_New(const CMaterial *orig, byte share);
-/* a copy of orig added to g_ListaMat, not prepared */
+/* a copy of orig added to g_MatList, not prepared */
 CMaterial *Mat_AddCopy(const CMaterial *orig);
-/* the own animation of a sprite: freed; a running copy of the one of mapa (if mapa has one) */
+/* the own animation of a sprite: freed; a running copy of the one of map (if map has one) */
 void AnimMat_Free(CAnimMat **slot);
-void AnimMat_FromMapa(CAnimMat **slot, const CMapa *mapa);
+void AnimMat_FromMap(CAnimMat **slot, const CMap *map);
 /* Render_SetMaterial of pass 0 with anim (if set) in place of the animation of the first map */
 void Render_SetMaterialAnim(CMaterial *m, CAnimMat *anim);
 byte Mat_CompareNames(const CMaterial *a, const CMaterial *b);
@@ -278,16 +278,16 @@ const char *Mat_Str(const CMaterial *m);
 int Mat_Compare(const CMaterial *a, const CMaterial *b);
 /* with an opacity: transparent flag or map 1 without b3b (inline in the exe) */
 static inline byte Mat_IsTransp(const CMaterial *m) {
-	if (m->params.atrib & 0x20) {
+	if (m->params.attrib & 0x20) {
 		return 0;
 	}
-	return m->params.transp || (m->mapa[1] && !m->params.b3b);
+	return m->params.transp || (m->map[1] && !m->params.b3b);
 }
 void DDS_Hide(const char *name, uint32_t attr);
 void DDS_Unhide(const char *name, uint32_t attr);
-/* an extension: a Ruta_Format format, "<x>" for &x; without one "&u&d&n." is put before it */
+/* an extension: a Path_Format format, "<x>" for &x; without one "&u&d&n." is put before it */
 void Tex_AddExtension(const char *ext);
-void Tex_AddPath(const char *ruta);
+void Tex_AddPath(const char *path);
 void Tex_ClearExtensions(void);
 void Tex_ClearPaths(void);
 /* 0 with the file in out, -1 */

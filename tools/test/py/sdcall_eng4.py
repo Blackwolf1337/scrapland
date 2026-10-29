@@ -139,15 +139,15 @@ en4free(en4sf)
 
 # ---- material.h ----
 en4mp = en4z(0x60)
-check('en4 CMapa_ctor', lambda: (SDTest.Call('CMapa_ctor', 'tii', en4mp)[0] == en4mp, en4words(en4mp, 24),
+check('en4 CMap_ctor', lambda: (SDTest.Call('CMap_ctor', 'tii', en4mp)[0] == en4mp, en4words(en4mp, 24),
 	en4fl(en4mp + 0x10, 8)))
 en4poke(en4mp + 0x54, 0x101)
-check('en4 CMapa_HasAlpha', lambda: SDTest.Call('CMapa_HasAlpha', 'tbi', en4mp)[0])
+check('en4 CMap_HasAlpha', lambda: SDTest.Call('CMap_HasAlpha', 'tbi', en4mp)[0])
 en4poke(en4mp + 0x54, 0)
-check('en4 CMapa_HasAlpha 0', lambda: SDTest.Call('CMapa_HasAlpha', 'tbi', en4mp)[0])
-SDTest.Call('Cad_Set', 'tvis', en4mp, 'tex.tga')
-SDTest.Call('Cad_Set', 'tvis', en4mp + 0x44, 'tex%02d.tga')
-check('en4 CMapa_dtor', lambda: (SDTest.Call('CMapa_dtor', 'tvi', en4mp), en4words(en4mp, 24)))
+check('en4 CMap_HasAlpha 0', lambda: SDTest.Call('CMap_HasAlpha', 'tbi', en4mp)[0])
+SDTest.Call('String_Set', 'tvis', en4mp, 'tex.tga')
+SDTest.Call('String_Set', 'tvis', en4mp + 0x44, 'tex%02d.tga')
+check('en4 CMap_dtor', lambda: (SDTest.Call('CMap_dtor', 'tvi', en4mp), en4words(en4mp, 24)))
 en4free(en4mp)
 en4mt = en4z(0xb0)
 check('en4 CMaterial_ctor', lambda: (SDTest.Call('CMaterial_ctor', 'tii', en4mt)[0] == en4mt, en4i(en4mt) - 0x400000,
@@ -157,20 +157,20 @@ for k in (1.0, 0.5, 2.0, 0.0, -1.0, en4nan):
 		en4fl(en4mt + 0x4c, 17)))
 en4poke(en4mt + 0x14, 0x80ffffff)
 check('en4 CMaterial_ScaleColors alpha', lambda: (SDTest.Call('CMaterial_ScaleColors', 'tvif', en4mt, 0.25), en4fl(en4mt + 0x4c, 17)))
-SDTest.Call('Cad_Set', 'tvis', en4mt + 4, 'mat1')
+SDTest.Call('String_Set', 'tvis', en4mt + 4, 'mat1')
 check('en4 CMaterial_dtor', lambda: (SDTest.Call('CMaterial_dtor', 'tvi', en4mt), en4i(en4mt) - 0x400000, en4words(en4mt + 4, 3),
 	en4words(en4mt + 0x9c, 5)))
 en4free(en4mt)
 en4lm = en4z(0x10)
-en4poke(en4lm, symva('CListaMat_vftable'))
-SDTest.Call('Cad_Set', 'tvis', en4lm + 4, 'lista')
-check('en4 CListaMat_dtor', lambda: (SDTest.Call('CListaMat_dtor', 'tvi', en4lm), en4i(en4lm) - 0x400000, en4words(en4lm + 4, 3)))
-check('en4 CListaMat_DeleteObj', lambda: (SDTest.Call('CListaMat_DeleteObj', 'tiii', en4lm, 0)[0] == en4lm, en4words(en4lm + 4, 3)))
+en4poke(en4lm, symva('CMatList_vftable'))
+SDTest.Call('String_Set', 'tvis', en4lm + 4, 'list')
+check('en4 CMatList_dtor', lambda: (SDTest.Call('CMatList_dtor', 'tvi', en4lm), en4i(en4lm) - 0x400000, en4words(en4lm + 4, 3)))
+check('en4 CMatList_DeleteObj', lambda: (SDTest.Call('CMatList_DeleteObj', 'tiii', en4lm, 0)[0] == en4lm, en4words(en4lm + 4, 3)))
 en4free(en4lm)
 en4cs = en4z(4)
-en4poke(en4cs, SDTest.Call('Cad_Dup', 'is', 'cadena')[0])
-check('en4 Cad_dtor', lambda: (SDTest.Call('Cad_dtor', 'tvi', en4cs), en4i(en4cs)))
-check('en4 Cad_dtor NULL', lambda: (SDTest.Call('Cad_dtor', 'tvi', en4cs), en4i(en4cs)))
+en4poke(en4cs, SDTest.Call('String_Dup', 'is', 'cadena')[0])
+check('en4 String_dtor', lambda: (SDTest.Call('String_dtor', 'tvi', en4cs), en4i(en4cs)))
+check('en4 String_dtor NULL', lambda: (SDTest.Call('String_dtor', 'tvi', en4cs), en4i(en4cs)))
 en4free(en4cs)
 en4bm = en4z(12)
 SDTest.Call('CBmp_Create', 'tviii', en4bm, 4, 3)
@@ -195,41 +195,41 @@ check('en4 CGameLensFlare_dtor', lambda: (SDTest.Call('CGameLensFlare_dtor', 'tv
 en4free(en4lf)
 
 # ---- NodoR.cpp and RenderCtx.h ----
-en4cnt = SDTest.Peek('g_NodoRCount', 'i')
+en4cnt = SDTest.Peek('g_RenderNodeCount', 'i')
 en4r = en4z(0xa8)
-check('en4 CNodoR_ctor', lambda: (SDTest.Call('CNodoR_ctor', 'tii', en4r)[0] == en4r, SDTest.Peek('g_NodoRCount', 'i') - en4cnt,
+check('en4 CRenderNode_ctor', lambda: (SDTest.Call('CRenderNode_ctor', 'tii', en4r)[0] == en4r, SDTest.Peek('g_RenderNodeCount', 'i') - en4cnt,
 	en4words(en4r, 4), en4fl(en4r + 0x10, 32), en4words(en4r + 0x90, 6)))
 en4lk = en4new(0x4c)
 en4set(en4lk, (5.0,) * 19)
-check('en4 NodoLook_ctor', lambda: (SDTest.Call('NodoLook_ctor', 'tii', en4lk)[0] == en4lk, en4fl(en4lk, 19),
+check('en4 NodeLook_ctor', lambda: (SDTest.Call('NodeLook_ctor', 'tii', en4lk)[0] == en4lk, en4fl(en4lk, 19),
 	en4i(en4lk + 0x20), en4i(en4lk + 0x24), en4i(en4lk + 0x44), en4i(en4lk + 0x48)))
 en4obj = en4z(0x10)
 en4poke(en4obj + 4, 0xa5000020)
-check('en4 CSistPart_Cast', lambda: SDTest.Call('CSistPart_Cast', 'ii', en4obj)[0] == en4obj)
+check('en4 CParticleSystem_Cast', lambda: SDTest.Call('CParticleSystem_Cast', 'ii', en4obj)[0] == en4obj)
 en4own = en4z(0x130)
 en4poke(en4r + 4, 2)
 en4poke(en4r + 8, en4own)
-check('en4 CNodoR_ApplyFX', lambda: SDTest.Call('CNodoR_ApplyFX', 'tiiF', en4r, (0.0,) * 16)[0])
+check('en4 CRenderNode_ApplyFX', lambda: SDTest.Call('CRenderNode_ApplyFX', 'tiiF', en4r, (0.0,) * 16)[0])
 en4poke(en4own + 0x128, en4own)
-check('en4 CNodoR_ApplyFX lod', lambda: SDTest.Call('CNodoR_ApplyFX', 'tiiF', en4r, (0.0,) * 16)[0])
+check('en4 CRenderNode_ApplyFX lod', lambda: SDTest.Call('CRenderNode_ApplyFX', 'tiiF', en4r, (0.0,) * 16)[0])
 en4poke(en4own + 0x128, 0)
 en4poke(en4r + 0xc, en4lk)
 for t in (3, 1, 5):
-	check('en4 CNodoR_SetLook' + fmt((t,)), lambda t=t: (SDTest.Call('CNodoR_SetLook', 'tvii', en4r, t), en4i(en4lk)))
+	check('en4 CRenderNode_SetLook' + fmt((t,)), lambda t=t: (SDTest.Call('CRenderNode_SetLook', 'tvii', en4r, t), en4i(en4lk)))
 en4nd = en4z(0x120)
 en4poke(en4nd + 8, 1)
-check('en4 CNodoR_SetNodo', lambda: (SDTest.Call('CNodoR_SetNodo', 'tvii', en4r, en4nd), en4i(en4r + 0xa4) == en4nd,
+check('en4 CRenderNode_SetNode', lambda: (SDTest.Call('CRenderNode_SetNode', 'tvii', en4r, en4nd), en4i(en4r + 0xa4) == en4nd,
 	en4i(en4nd + 8), en4words(en4r + 0x9c, 2)))
-check('en4 CNodoR_dtor', lambda: (SDTest.Call('CNodoR_dtor', 'tvi', en4r), SDTest.Peek('g_NodoRCount', 'i') - en4cnt,
+check('en4 CRenderNode_dtor', lambda: (SDTest.Call('CRenderNode_dtor', 'tvi', en4r), SDTest.Peek('g_RenderNodeCount', 'i') - en4cnt,
 	en4words(en4r + 0x9c, 3), en4i(en4r + 0xc), en4i(en4nd + 8)))
 en4r2 = en4z(0xa8)
-SDTest.Call('CNodoR_ctor', 'tii', en4r2)
+SDTest.Call('CRenderNode_ctor', 'tii', en4r2)
 en4poke(en4r2 + 8, en4own)
 en4poke(en4own + 0x128, en4own)
-check('en4 CNodoR_SetNodo lod', lambda: (SDTest.Call('CNodoR_SetNodo', 'tvii', en4r2, en4nd), en4i(en4r2 + 0xa4) == en4nd,
+check('en4 CRenderNode_SetNode lod', lambda: (SDTest.Call('CRenderNode_SetNode', 'tvii', en4r2, en4nd), en4i(en4r2 + 0xa4) == en4nd,
 	en4i(en4nd + 8)))
 en4poke(en4nd + 8, 2)
-SDTest.Call('CNodoR_dtor', 'tvi', en4r2)
+SDTest.Call('CRenderNode_dtor', 'tvi', en4r2)
 en4free(en4r2)
 en4ctx = en4z(0xa8)
 en4poke(en4own + 0xac, en4obj)
@@ -239,7 +239,7 @@ check('en4 RenderCtx_Init NULL', lambda: (SDTest.Call('RenderCtx_Init', 'tviii',
 en4slot = en4z(0x10)
 en4g1 = en4z(0x98)
 en4g2 = en4z(0x98)
-check('en4 RenderCtx_SetCanal NULL', lambda: (SDTest.Call('RenderCtx_SetCanal', 'tvii', en4ctx, 0), en4words(en4ctx, 6)))
+check('en4 RenderCtx_SetChannel NULL', lambda: (SDTest.Call('RenderCtx_SetChannel', 'tvii', en4ctx, 0), en4words(en4ctx, 6)))
 for f1, f2, b, a1, a2 in ((3.75, 1.25, 0.3, 1, 1), (-2.5, 0.0, 1.0, 1, 0), (0.0, 7.0, 2.0, 0, 1), (10.0, 10.5, -1.0, 1, 1),
 		(0.5, 0.5, 0.0, 0, 0), (1.0, 2.0, en4nan, 1, 1), (123456.789, -0.75, 0.999, 1, 1)):
 	en4set(en4g1 + 0x58, (f1,))
@@ -247,7 +247,7 @@ for f1, f2, b, a1, a2 in ((3.75, 1.25, 0.3, 1, 1), (-2.5, 0.0, 1.0, 1, 0), (0.0,
 	en4poke(en4slot, a1 and en4g1 or 0)
 	en4poke(en4slot + 4, a2 and en4g2 or 0)
 	en4set(en4slot + 8, (b,))
-	check('en4 RenderCtx_SetCanal' + fmt((f1, f2, b, a1, a2)), lambda: (SDTest.Call('RenderCtx_SetCanal', 'tvii', en4ctx + 0x18,
+	check('en4 RenderCtx_SetChannel' + fmt((f1, f2, b, a1, a2)), lambda: (SDTest.Call('RenderCtx_SetChannel', 'tvii', en4ctx + 0x18,
 		en4slot), en4i(en4ctx + 0x18) == en4slot, en4i(en4ctx + 0x1c), en4fl(en4ctx + 0x20, 1), en4i(en4ctx + 0x24),
 		en4fl(en4ctx + 0x28, 2)))
 for p in (en4ctx, en4slot, en4g1, en4g2, en4nd, en4own, en4obj, en4r):
@@ -330,29 +330,29 @@ en4free(en4el)
 
 # ---- Motor.cpp: the small methods, the null input ----
 for b in (0, 0x10, 0x30, 0xffff, 0x110, 0x8):
-	check('en4 CMotorApp_ConfirmDevice' + fmt((b,)), lambda b=b: SDTest.Call('CMotorApp_ConfirmDevice', 'tiiiii', 0, 0, b, 0)[0])
-en4fc = SDTest.Peek('g_MotorFrameCount', 'i')
-check('en4 CMotorApp_CountFrame', lambda: (SDTest.Call('CMotorApp_RestoreDeviceObjects', 'tii', 0)[0], SDTest.Peek('g_MotorFrameCount', 'i') - en4fc))
-SDTest.Poke('g_MotorFrameCount', en4fc)
+	check('en4 CEngineApp_ConfirmDevice' + fmt((b,)), lambda b=b: SDTest.Call('CEngineApp_ConfirmDevice', 'tiiiii', 0, 0, b, 0)[0])
+en4fc = SDTest.Peek('g_EngineFrameCount', 'i')
+check('en4 CMotorApp_CountFrame', lambda: (SDTest.Call('CEngineApp_RestoreDeviceObjects', 'tii', 0)[0], SDTest.Peek('g_EngineFrameCount', 'i') - en4fc))
+SDTest.Poke('g_EngineFrameCount', en4fc)
 check('en4 CD3DApplication_Nothing', lambda: SDTest.Call('CD3DApplication_Nothing', 'tii', 0)[0])
-check('en4 CEntradaNula stubs', lambda: (SDTest.Call('CEntradaNula_Nothing1', 'tiii', 0, 5)[0], SDTest.Call('CEntradaNula_Nothing1@22fe50', 'tiii', 0, 5)[0],
-	SDTest.Call('CEntradaNula_Nothing3', 'tiiiii', 0, 1, 2, 3)[0], SDTest.Call('CEntradaNula_Nothing1@230870', 'tiii', 0, 1)[0], SDTest.Call('CEntradaNula_Nothing', 'tii', 0)[0],
-	SDTest.Call('CEntradaNula_Nothing@231170', 'tii', 0)[0], SDTest.Call('CEntradaNula_Nothing4', 'tviiiii', 0, 1, 2, 3, 4)[0:0]))
+check('en4 CEntradaNula stubs', lambda: (SDTest.Call('CNullInput_Nothing1', 'tiii', 0, 5)[0], SDTest.Call('CNullInput_Nothing1@22fe50', 'tiii', 0, 5)[0],
+	SDTest.Call('CNullInput_Nothing3', 'tiiiii', 0, 1, 2, 3)[0], SDTest.Call('CNullInput_Nothing1@230870', 'tiii', 0, 1)[0], SDTest.Call('CNullInput_Nothing', 'tii', 0)[0],
+	SDTest.Call('CNullInput_Nothing@231170', 'tii', 0)[0], SDTest.Call('CNullInput_Nothing4', 'tviiiii', 0, 1, 2, 3, 4)[0:0]))
 en4ent = en4new(0x114)
-en4entb = SDTest.Peek('g_EntradaInic', 'i')
-check('en4 CEntradaNula_Delete', lambda: (SDTest.Call('CEntradaNula_Delete', 'tiii', en4ent, 0)[0] == en4ent, en4i(en4ent) - 0x400000,
-	SDTest.Peek('g_EntradaInic', 'i') & 0xff))
-SDTest.Poke('g_EntradaInic', en4entb)
-check('en4 CEntradaNula_Delete free', lambda: SDTest.Call('CEntradaNula_Delete', 'tiii', en4ent, 1)[0] == en4ent)
-SDTest.Poke('g_EntradaInic', en4entb)
+en4entb = SDTest.Peek('g_InputInit', 'i')
+check('en4 CNullInput_Delete', lambda: (SDTest.Call('CNullInput_Delete', 'tiii', en4ent, 0)[0] == en4ent, en4i(en4ent) - 0x400000,
+	SDTest.Peek('g_InputInit', 'i') & 0xff))
+SDTest.Poke('g_InputInit', en4entb)
+check('en4 CNullInput_Delete free', lambda: SDTest.Call('CNullInput_Delete', 'tiii', en4ent, 1)[0] == en4ent)
+SDTest.Poke('g_InputInit', en4entb)
 en4col = en4z(8)
 for c in (0x01020304, -1, 0x7f00ff80):
 	en4poke(en4col, c)
 	en4set(en4col + 4, (0.75,))
-	check('en4 Motor_ColorStr' + fmt((c,)), lambda: SDTest.Call('Motor_ColorStr', 'si', en4col)[0])
+	check('en4 Engine_ColorStr' + fmt((c,)), lambda: SDTest.Call('Engine_ColorStr', 'si', en4col)[0])
 en4free(en4col)
 for b in (0, 1, -1, 2):
-	check('en4 Motor_BoolStr' + fmt((b,)), lambda b=b: SDTest.Call('Motor_BoolStr', 'si', b)[0])
+	check('en4 Engine_BoolStr' + fmt((b,)), lambda b=b: SDTest.Call('Engine_BoolStr', 'si', b)[0])
 en4mv = en4z(0x19c)
 en4set(en4mv, (3.0,) * 64)
 en4set(en4mv + 0x100, (3.0,) * 39)
@@ -375,14 +375,14 @@ en4lg = en4z(8)
 check('en4 cLog_dtor', lambda: (SDTest.Call('cLog_dtor', 'tvi', en4lg), en4words(en4lg, 2)))
 en4free(en4lg)
 
-# ---- the menu commands of the D3D window through CMotorApp_MsgProc (the menu itself is not there) ----
-en4mot = SDTest.Peek('g_Motor', 'i')
+# ---- the menu commands of the D3D window through CEngineApp_MsgProc (the menu itself is not there) ----
+en4mot = SDTest.Peek('g_Engine', 'i')
 en4hw = SDTest.Call('App_GetHWnd', 'i')[0]
-en4sv = (SDTest.Peek('g_Motor4af7d4', 'i'), SDTest.PeekSpan('g_TileOn', 0, 4), SDTest.Peek('g_FiltroMip', 'i'))
+en4sv = (SDTest.Peek('g_Engine4af7d4', 'i'), SDTest.PeekSpan('g_TileOn', 0, 4), SDTest.Peek('g_FilterMip', 'i'))
 check('en4 motor menu', lambda: en4i(en4mot + 0x2a5dc) != 0)
 for w in (0x9c64, 0x9c64, 0x9c63, 0x9c4c, 0x9c4b, 0x9c50, 0x1234):
-	check('en4 CMotorApp_MsgProc' + fmt((w,)), lambda w=w: (SDTest.Call('CMotorApp_MsgProc', 'tiiiiii', en4mot, en4hw, 0x111, w, 0)[0],
-		SDTest.Peek('g_Motor4af7d4', 'i') & 0xff, SDTest.Peek('g_TileOn', 'b'), SDTest.Peek('g_FiltroMip', 'i')))
-SDTest.Poke('g_Motor4af7d4', en4sv[0])
+	check('en4 CEngineApp_MsgProc' + fmt((w,)), lambda w=w: (SDTest.Call('CEngineApp_MsgProc', 'tiiiiii', en4mot, en4hw, 0x111, w, 0)[0],
+		SDTest.Peek('g_Engine4af7d4', 'i') & 0xff, SDTest.Peek('g_TileOn', 'b'), SDTest.Peek('g_FilterMip', 'i')))
+SDTest.Poke('g_Engine4af7d4', en4sv[0])
 SDTest.PokeSpan('g_TileOn', 0, en4sv[1], 4)
-SDTest.Poke('g_FiltroMip', en4sv[2])
+SDTest.Poke('g_FilterMip', en4sv[2])

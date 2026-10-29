@@ -1,6 +1,6 @@
 /*
  * The vertex buffer meshes of the engine3d, original source Engine/MallaD3D.cpp (include/scrap/mallad3d.h), with
- * the inline functions of MallaD3D.h it instances.
+ * the inline functions of MeshD3D.h it instances.
  */
 #include <string.h>
 
@@ -9,40 +9,40 @@
 #include "scrap/mallatri.h"
 #include "scrap/varios.h"
 
-#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObjeto3D_vftable, 0x3d79dc)
+#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
 
 /* the engine (g_pD3DApp) and its device */
 
-#define NODO_NOPOS 0xa8			/* flags of nodes whose meshes keep no positions */
-#define NODO_NO_RENDER 0x80
+#define NODE_NOPOS 0xa8			/* flags of nodes whose meshes keep no positions */
+#define NODE_NO_RENDER 0x80
 
-/* params.atrib: no back faces for two sided materials */
+/* params.attrib: no back faces for two sided materials */
 #define MAT_ONESIDED 0x4000
 
-/* the render node of RenderCtx.h as CMallaD3D_SetRender fills it */
-typedef struct MallaD3D_NodoR {
+/* the render node of RenderCtx.h as CMeshD3D_SetRender fills it */
+typedef struct MeshD3D_RenderNode {
 	byte pad_0[0x94];
 	void *eva;			/* 0x94 the vertex animation data, NULL for none */
-	int16_t canal;			/* 0x98 its channel */
+	int16_t channel;			/* 0x98 its channel */
 	int16_t s9a;			/* 0x9a */
-} MallaD3D_NodoR;
-SD_OFFSET(MallaD3D_NodoR, s9a, 0x9a);
+} MeshD3D_RenderNode;
+SD_OFFSET(MeshD3D_RenderNode, s9a, 0x9a);
 
 /* an entry of the animation channels of a node: the animation first */
-typedef struct MallaD3D_Canal {
+typedef struct MeshD3D_Channel {
 	byte *anim;			/* 0x0 bytes 0xc and 0xd: whether it moves the vertices */
 	int i4;				/* 0x4 */
-} MallaD3D_Canal;
+} MeshD3D_Channel;
 
-typedef CMallaD3D *(__thiscall *mallaD3DDelete_t)(CMallaD3D *self, byte flags);
-typedef int(__thiscall *mallaD3DRestore_t)(CMallaD3D *self, void *dev);
-typedef void(__thiscall *mallaD3DInvalidate_t)(CMallaD3D *self, void *dev);
-typedef byte(__thiscall *mallaD3DFile_t)(CMallaD3D *self, CArchIO *f, MallaD3D_FileCtx *ctx);
-typedef void(__thiscall *nodoDelete_t)(CNodo3D *self, int flags);
+typedef CMeshD3D *(__thiscall *meshD3DDelete_t)(CMeshD3D *self, byte flags);
+typedef int(__thiscall *meshD3DRestore_t)(CMeshD3D *self, void *dev);
+typedef void(__thiscall *meshD3DInvalidate_t)(CMeshD3D *self, void *dev);
+typedef byte(__thiscall *meshD3DFile_t)(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+typedef void(__thiscall *nodeDelete_t)(CNode3D *self, int flags);
 typedef uint32_t(__stdcall *comRelease_t)(void *self);
 
 /* IUnknown::Release of a COM object, the pointer cleared */
-static void MallaD3D_Release(void **p) {
+static void MeshD3D_Release(void **p) {
 	void *obj = *p;
 	if (obj) {
 		((comRelease_t)(*(void ***)obj)[2])(obj);
@@ -51,17 +51,17 @@ static void MallaD3D_Release(void **p) {
 }
 
 /* the tests of the inline delete[] of the destructor */
-static void MallaD3D_DeleteArray(void **p) {
+static void MeshD3D_DeleteArray(void **p) {
 	if (*p) {
 		operator_delete_array(*p);
 		*p = NULL;
 	}
 }
 
-void __fastcall CMallaD3D_Init(CMallaD3D *self) {
+void __fastcall CMeshD3D_Init(CMeshD3D *self) {
 	self->center.x = 0.0f;
 	self->center.y = 0.0f;
-	self->clase = CLASE_OBJ3D_MALLAD3D;
+	self->class = CLASS_OBJ3D_MESHD3D;
 	self->next = NULL;
 	self->nTri = 0;
 	self->pTri = NULL;
@@ -80,7 +80,7 @@ void __fastcall CMallaD3D_Init(CMallaD3D *self) {
 	self->BaseIndex = 0;
 	self->StartIndex = 0;
 	self->StripList = 0;
-	self->nodo = NULL;
+	self->node = NULL;
 	self->mat = NULL;
 	self->b50 = 0;
 	self->b51 = 0;
@@ -95,118 +95,118 @@ void __fastcall CMallaD3D_Init(CMallaD3D *self) {
 }
 
 /* the part of both constructors before Init */
-static void MallaD3D_Construct(CMallaD3D *self) {
-	self->clase = 0;
+static void MeshD3D_Construct(CMeshD3D *self) {
+	self->class = 0;
 	self->vftable = CMALLAD3D_VFTABLE;
-	CListaVert_ctor(&self->vert);
+	CVertList_ctor(&self->vert);
 	memset(&self->box, 0, sizeof(self->box));
 	memset(&self->ext, 0, sizeof(self->ext));
 }
 
-CMallaD3D *__thiscall CMallaD3D_ctorMalla(CMallaD3D *self, CMallaTri *malla, uint32_t flags, CNodo3D *nodo) {
-	MallaD3D_Construct(self);
-	CHECK(malla);
-	CMallaD3D_Init(self);
-	if (flags & MALLAD3D_WEIGHT) {
+CMeshD3D *__thiscall CMeshD3D_ctorMesh(CMeshD3D *self, CTriMesh *mesh, uint32_t flags, CNode3D *node) {
+	MeshD3D_Construct(self);
+	CHECK(mesh);
+	CMeshD3D_Init(self);
+	if (flags & MESHD3D_WEIGHT) {
 		self->b50 = 1;
 	}
-	if (flags & MALLAD3D_WEIGHT2) {
+	if (flags & MESHD3D_WEIGHT2) {
 		self->b51 = 1;
 	}
-	if (nodo && (nodo->flags & NODO_NOPOS)) {
-		flags &= ~MALLAD3D_POS;
+	if (node && (node->flags & NODE_NOPOS)) {
+		flags &= ~MESHD3D_POS;
 	}
 	/* the checked cast of objeto3d.h */
-	if (malla->clase != CLASE_OBJ3D_MALLATRI) {
+	if (mesh->class != CLASS_OBJ3D_TRIMESH) {
 		CHECK(!"devNULL");
-		malla = NULL;
+		mesh = NULL;
 	}
-	CMallaD3D_Build(self, malla, flags);
-	if (nodo) {
-		CNodo3D_FreeObj3D(nodo);
-		CNodo3D_SetObj3D(nodo, (IObjeto3D *)self);
-		CMallaD3D_SetNodo(self, nodo);
+	CMeshD3D_Build(self, mesh, flags);
+	if (node) {
+		CNode3D_FreeObj3D(node);
+		CNode3D_SetObj3D(node, (IObject3D *)self);
+		CMeshD3D_SetNode(self, node);
 	}
-	CMallaD3D_CalcBox(self, NULL, 1);
+	CMeshD3D_CalcBox(self, NULL, 1);
 	return self;
 }
 
-CMallaD3D *__fastcall CMallaD3D_ctor(CMallaD3D *self) {
-	MallaD3D_Construct(self);
-	CMallaD3D_Init(self);
+CMeshD3D *__fastcall CMeshD3D_ctor(CMeshD3D *self) {
+	MeshD3D_Construct(self);
+	CMeshD3D_Init(self);
 	return self;
 }
 
-void __fastcall CMallaD3D_dtor(CMallaD3D *self) {
+void __fastcall CMeshD3D_dtor(CMeshD3D *self) {
 	self->vftable = CMALLAD3D_VFTABLE;
 	if (self->pVertVB || self->pVertIB) {
-		CHECK(g_Motor && MOTOR_DEV(g_Motor));
-		CMallaD3D_Invalidate(self, MOTOR_DEV(g_Motor));
+		CHECK(g_Engine && ENGINE_DEV(g_Engine));
+		CMeshD3D_Invalidate(self, ENGINE_DEV(g_Engine));
 	}
 	if (self->skinRef) {
 		self->pSkin = NULL;
 	}
-	CMallaD3D_SetNodo(self, NULL);
+	CMeshD3D_SetNode(self, NULL);
 	if (self->next) {
-		((mallaD3DDelete_t)self->next->vftable[MALLAD3D_VF_DELETE])(self->next, 1);
+		((meshD3DDelete_t)self->next->vftable[MESHD3D_VF_DELETE])(self->next, 1);
 		self->next = NULL;
 	}
-	MallaD3D_DeleteArray((void **)&self->pTri);
-	MallaD3D_DeleteArray((void **)&self->vertOrig);
-	MallaD3D_DeleteArray(&self->p40);
-	MallaD3D_DeleteArray(&self->pSeg);
-	MallaD3D_DeleteArray((void **)&self->pPos);
-	MallaD3D_DeleteArray((void **)&self->triFlags);
-	MallaD3D_DeleteArray((void **)&self->pSkin);
-	CListaVert_Free(&self->vert);
+	MeshD3D_DeleteArray((void **)&self->pTri);
+	MeshD3D_DeleteArray((void **)&self->vertOrig);
+	MeshD3D_DeleteArray(&self->p40);
+	MeshD3D_DeleteArray(&self->pSeg);
+	MeshD3D_DeleteArray((void **)&self->pPos);
+	MeshD3D_DeleteArray((void **)&self->triFlags);
+	MeshD3D_DeleteArray((void **)&self->pSkin);
+	CVertList_Free(&self->vert);
 	self->vftable = IOBJETO3D_VFTABLE;
 }
 
-CMallaD3D *__thiscall CMallaD3D_Delete(CMallaD3D *self, byte flags) {
-	CMallaD3D_dtor(self);
+CMeshD3D *__thiscall CMeshD3D_Delete(CMeshD3D *self, byte flags) {
+	CMeshD3D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
 	return self;
 }
 
-int MallaD3D_NewObj(void) {
+int MeshD3D_NewObj(void) {
 	CHECK(g_NumD3DObj < MAX_D3D_OBJ);
 	int i = g_NumD3DObj;
-	memset(&g_D3DObj[i], 0, sizeof(MallaD3DObj));
+	memset(&g_D3DObj[i], 0, sizeof(MeshD3DObj));
 	g_NumD3DObj = i + 1;
 	return i;
 }
 
-void MallaD3DObj_SetTri(MallaD3DObj *obj, int i, const MallaD3DTri *t) {
+void MeshD3DObj_SetTri(MeshD3DObj *obj, int i, const MeshD3DTri *t) {
 	CHECK(obj && i < obj->nTri && obj->pTri && t);
 	CHECK(t->v[0] < obj->nVert && t->v[1] < obj->nVert && t->v[2] < obj->nVert);
 	obj->pTri[i] = *t;
 }
 
-void MallaD3DObj_SetVert(MallaD3DObj *obj, int i, const MallaD3DVert *v) {
+void MeshD3DObj_SetVert(MeshD3DObj *obj, int i, const MeshD3DVert *v) {
 	CHECK(obj && i < obj->nVert && obj->pVert && v);
 	obj->pVert[i] = *v;
 }
 
-void MallaD3DObj_SetMat(MallaD3DObj *obj, CMaterial *mat) {
+void MeshD3DObj_SetMat(MeshD3DObj *obj, CMaterial *mat) {
 	CHECK(obj);
 	obj->mat = mat;
 }
 
-void MallaD3DObj_AllocTri(MallaD3DObj *obj, int n) {
+void MeshD3DObj_AllocTri(MeshD3DObj *obj, int n) {
 	CHECK(obj && !obj->nTri && !obj->pTri);
 	obj->nTri = n;
-	obj->pTri = Mem_Alloc(n * sizeof(MallaD3DTri));
+	obj->pTri = Mem_Alloc(n * sizeof(MeshD3DTri));
 }
 
-void MallaD3DObj_AllocVert(MallaD3DObj *obj, int n) {
+void MeshD3DObj_AllocVert(MeshD3DObj *obj, int n) {
 	CHECK(obj && !obj->nVert && !obj->pVert);
 	obj->nVert = n;
-	obj->pVert = Mem_Alloc(n * sizeof(MallaD3DVert));
+	obj->pVert = Mem_Alloc(n * sizeof(MeshD3DVert));
 }
 
-void MallaD3DObj_Free(MallaD3DObj *obj) {
+void MeshD3DObj_Free(MeshD3DObj *obj) {
 	CHECK(obj);
 	if (obj->nVert) {
 		obj->pVert = Mem_Free(obj->pVert);
@@ -218,59 +218,59 @@ void MallaD3DObj_Free(MallaD3DObj *obj) {
 	}
 }
 
-void __thiscall CMallaD3D_Invalidate(CMallaD3D *self, void *dev) {
+void __thiscall CMeshD3D_Invalidate(CMeshD3D *self, void *dev) {
 	if (self->next) {
-		((mallaD3DInvalidate_t)self->next->vftable[MALLAD3D_VF_INVALIDATE])(self->next, dev);
+		((meshD3DInvalidate_t)self->next->vftable[MESHD3D_VF_INVALIDATE])(self->next, dev);
 	}
-	MallaD3D_Release(&self->pVertVB);
-	MallaD3D_Release(&self->pVertIB);
-	MallaD3D_Release(&self->pc0);
-	MallaD3D_Release(&self->pc4);
+	MeshD3D_Release(&self->pVertVB);
+	MeshD3D_Release(&self->pVertIB);
+	MeshD3D_Release(&self->pc0);
+	MeshD3D_Release(&self->pc4);
 }
 
-void __thiscall CMallaD3D_GetBox(CMallaD3D *self, box_t *out, byte recalc) {
+void __thiscall CMeshD3D_GetBox(CMeshD3D *self, box_t *out, byte recalc) {
 	if (recalc) {
-		CMallaD3D_CalcBox(self, out, 1);
+		CMeshD3D_CalcBox(self, out, 1);
 		return;
 	}
 	*out = self->box;
 }
 
-int __thiscall CMallaD3D_Restore(CMallaD3D *self, void *dev) {
-	int hr = CMallaD3D_CreateVB(self);
+int __thiscall CMeshD3D_Restore(CMeshD3D *self, void *dev) {
+	int hr = CMeshD3D_CreateVB(self);
 	if (self->next) {
-		return ((mallaD3DRestore_t)self->next->vftable[MALLAD3D_VF_RESTORE])(self->next, dev);
+		return ((meshD3DRestore_t)self->next->vftable[MESHD3D_VF_RESTORE])(self->next, dev);
 	}
 	return hr;
 }
 
-byte __thiscall CMallaD3D_Read(CMallaD3D *self, CArchIO *f, MallaD3D_FileCtx *ctx) {
+byte __thiscall CMeshD3D_Read(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	char tmp[256];
 	uint32_t n;
 
-	CMallaD3D_SetNodo(self, ctx->nodo);
-	CArchIO_BeginBlock(f, "MD3D");
-	CHECK(CArchIO_ReadInt(f) == 1);
-	CArchIO_ReadString(f, tmp, sizeof(tmp));
-	CHECK(!strcmp(tmp, self->nodo->name));
+	CMeshD3D_SetNode(self, ctx->node);
+	CFileIO_BeginBlock(f, "MD3D");
+	CHECK(CFileIO_ReadInt(f) == 1);
+	CFileIO_ReadString(f, tmp, sizeof(tmp));
+	CHECK(!strcmp(tmp, self->node->name));
 	Array_Read6(f, (void **)&self->pTri, &self->nTri);
-	CListaVert_Read(&self->vert, f);
+	CVertList_Read(&self->vert, f);
 	Array_Read2(f, (void **)&self->vertOrig, &n);
 	CHECK(!self->vertOrig || n == (uint32_t)self->vert.nVert);
-	CArchIO_Read4(f, &self->triBase);
+	CFileIO_Read4(f, &self->triBase);
 	/* the copy at rva 0x2af4e0 */
 	Array_Read10(f, &self->pSeg, &self->nSeg);
 	Array_Read8(f, &self->p40, &self->n34);
 	Array_ReadC(f, (void **)&self->pPos, &self->nPos);
 	Array_Read4(f, (void **)&self->triFlags, &n);
 	CHECK(!self->triFlags || n == self->nTri);
-	self->skinRef = CArchIO_ReadBool(f);
+	self->skinRef = CFileIO_ReadBool(f);
 	if (!self->skinRef) {
 		Array_Read10(f, (void **)&self->pSkin, &self->nSkin);
 	} else {
 		/* the skin of the first mesh of the node */
-		CMallaD3D *first = (CMallaD3D *)self->nodo->obj3D;
-		if (first->clase != CLASE_OBJ3D_MALLAD3D) {
+		CMeshD3D *first = (CMeshD3D *)self->node->obj3D;
+		if (first->class != CLASS_OBJ3D_MESHD3D) {
 			CHECK(!"devNULL");
 			first = NULL;
 		}
@@ -278,30 +278,30 @@ byte __thiscall CMallaD3D_Read(CMallaD3D *self, CArchIO *f, MallaD3D_FileCtx *ct
 		self->nSkin = first->nSkin;
 		CHECK(self->skinRef && self->pSkin);
 	}
-	int i = CArchIO_ReadInt(f);
+	int i = CFileIO_ReadInt(f);
 	if (i != -1) {
-		CTabla *mats = ctx->mats;
+		CTable *mats = ctx->mats;
 		CHECK(mats->p && (uint32_t)i < (uint32_t)mats->n);
 		self->mat = ((CMaterial **)mats->p)[i];
 	}
-	self->b50 = CArchIO_ReadBool(f);
-	self->b51 = CArchIO_ReadBool(f);
-	CArchIO_Read(f, &self->box, sizeof(self->box));
-	CArchIO_Read(f, &self->ext, sizeof(self->ext));
-	CArchIO_Read(f, &self->center, sizeof(self->center));
-	if (CArchIO_ReadInt(f)) {
-		CMallaD3D *m = operator_new(sizeof(CMallaD3D));
+	self->b50 = CFileIO_ReadBool(f);
+	self->b51 = CFileIO_ReadBool(f);
+	CFileIO_Read(f, &self->box, sizeof(self->box));
+	CFileIO_Read(f, &self->ext, sizeof(self->ext));
+	CFileIO_Read(f, &self->center, sizeof(self->center));
+	if (CFileIO_ReadInt(f)) {
+		CMeshD3D *m = operator_new(sizeof(CMeshD3D));
 		if (m) {
-			m = CMallaD3D_ctor(m);
+			m = CMeshD3D_ctor(m);
 		}
 		self->next = m;
-		((mallaD3DFile_t)m->vftable[MALLAD3D_VF_READ])(m, f, ctx);
+		((meshD3DFile_t)m->vftable[MESHD3D_VF_READ])(m, f, ctx);
 	}
-	CArchIO_Error(f, "MD3D");
+	CFileIO_Error(f, "MD3D");
 	return 1;
 }
 
-void __fastcall CMallaD3D_CheckList(CMallaD3D *self) {
+void __fastcall CMeshD3D_CheckList(CMeshD3D *self) {
 	do {
 		CHECK(self->vert.nVert > 0);
 		CHECK((int)self->nTri > 0);
@@ -309,31 +309,31 @@ void __fastcall CMallaD3D_CheckList(CMallaD3D *self) {
 	} while (self);
 }
 
-int __thiscall CMallaD3D_Draw(CMallaD3D *self, void *dev, void *ctx) {
+int __thiscall CMeshD3D_Draw(CMeshD3D *self, void *dev, void *ctx) {
 	(void)dev;
-	return MallaD3D_Render(self, ctx);
+	return MeshD3D_Render(self, ctx);
 }
 
-byte __thiscall CMallaD3D_Write(CMallaD3D *self, CArchIO *f, MallaD3D_FileCtx *ctx) {
-	CHECK(self->nodo == ctx->nodo);
-	CArchIO_BeginBlockWrite(f, "MD3D");
-	CArchIO_WriteInt(f, 1);
-	CArchIO_WriteString(f, self->nodo->name);
+byte __thiscall CMeshD3D_Write(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CHECK(self->node == ctx->node);
+	CFileIO_BeginBlockWrite(f, "MD3D");
+	CFileIO_WriteInt(f, 1);
+	CFileIO_WriteString(f, self->node->name);
 	Array_Write6(f, self->pTri, self->nTri);
-	CListaVert_Write(&self->vert, f);
+	CVertList_Write(&self->vert, f);
 	Array_Write2(f, self->vertOrig, self->vert.nVert);
-	CArchIO_WriteInt(f, self->triBase);
+	CFileIO_WriteInt(f, self->triBase);
 	Array_Write10(f, self->pSeg, self->nSeg);
 	Array_Write8(f, self->p40, self->n34);
 	Array_WriteC(f, self->pPos, self->nPos);
 	CHECK(!self->triFlags);
 	Array_Write4(f, self->triFlags, self->nTri);
-	CArchIO_WriteInt(f, self->skinRef);
+	CFileIO_WriteInt(f, self->skinRef);
 	if (!self->skinRef) {
 		Array_Write10(f, self->pSkin, self->nSkin);
 	}
 	/* the index of the material in the table, -1 for none */
-	CTabla *mats = ctx->mats;
+	CTable *mats = ctx->mats;
 	int i;
 	for (i = 0; i < mats->n; i++) {
 		if (((CMaterial **)mats->p)[i] == self->mat) {
@@ -343,33 +343,33 @@ byte __thiscall CMallaD3D_Write(CMallaD3D *self, CArchIO *f, MallaD3D_FileCtx *c
 	if (i >= mats->n) {
 		i = -1;
 	}
-	CArchIO_WriteInt(f, i);
+	CFileIO_WriteInt(f, i);
 	if (i < 0) {
-		E3D_LogInfo(g_FileLog, "WARN: Null material in object: %s", self->nodo->name);
-		CHECK(self->nodo->flags & NODO_NO_RENDER);
+		E3D_LogInfo(g_FileLog, "WARN: Null material in object: %s", self->node->name);
+		CHECK(self->node->flags & NODE_NO_RENDER);
 		self->mat = NULL;
 	}
-	CArchIO_WriteInt(f, self->b50);
-	CArchIO_WriteInt(f, self->b51);
-	CArchIO_Write(f, &self->box, sizeof(self->box));
-	CArchIO_Write(f, &self->ext, sizeof(self->ext));
-	CArchIO_Write(f, &self->center, sizeof(self->center));
-	CArchIO_WriteInt(f, self->next != NULL);
+	CFileIO_WriteInt(f, self->b50);
+	CFileIO_WriteInt(f, self->b51);
+	CFileIO_Write(f, &self->box, sizeof(self->box));
+	CFileIO_Write(f, &self->ext, sizeof(self->ext));
+	CFileIO_Write(f, &self->center, sizeof(self->center));
+	CFileIO_WriteInt(f, self->next != NULL);
 	if (self->next) {
-		((mallaD3DFile_t)self->next->vftable[MALLAD3D_VF_WRITE])(self->next, f, ctx);
+		((meshD3DFile_t)self->next->vftable[MESHD3D_VF_WRITE])(self->next, f, ctx);
 	}
-	CArchIO_EndBlockWrite(f, "MD3D");
+	CFileIO_EndBlockWrite(f, "MD3D");
 	return 1;
 }
 
-void __thiscall CMallaD3D_SetRender(CMallaD3D *self, void *nodoR) {
-	MallaD3D_NodoR *r = nodoR;
-	int canal = 3;
-	void *eva = CNodo3D_TrackData(self->nodo, 3);
+void __thiscall CMeshD3D_SetRender(CMeshD3D *self, void *renderNode) {
+	MeshD3D_RenderNode *r = renderNode;
+	int channel = 3;
+	void *eva = CNode3D_TrackData(self->node, 3);
 
 	if (!eva) {
-		canal = 2;
-		eva = CNodo3D_TrackData(self->nodo, 2);
+		channel = 2;
+		eva = CNode3D_TrackData(self->node, 2);
 	}
 	if (!r) {
 		CHECK(!eva || r);
@@ -379,8 +379,8 @@ void __thiscall CMallaD3D_SetRender(CMallaD3D *self, void *nodoR) {
 	if (!eva) {
 		return;
 	}
-	MallaD3D_Canal *c = (MallaD3D_Canal *)CNodo3D_Channel(self->nodo, canal);
-	r->canal = canal;
+	MeshD3D_Channel *c = (MeshD3D_Channel *)CNode3D_Channel(self->node, channel);
+	r->channel = channel;
 	r->s9a = (int16_t)c->i4;
 	if (!c->anim[0xc] && !c->anim[0xd]) {
 		r->eva = NULL;
@@ -388,8 +388,8 @@ void __thiscall CMallaD3D_SetRender(CMallaD3D *self, void *nodoR) {
 	CHECK(!self->next);
 }
 
-int MallaD3D_CompareVert(const void *a, const void *b) {
-	const MallaD3DVert *va = a, *vb = b;
+int MeshD3D_CompareVert(const void *a, const void *b) {
+	const MeshD3DVert *va = a, *vb = b;
 	if (va->bone != vb->bone) {
 		return (int)va->bone - (int)vb->bone;
 	}
@@ -397,59 +397,59 @@ int MallaD3D_CompareVert(const void *a, const void *b) {
 	return r < 0 ? -1 : r > 0;
 }
 
-vec3_t *__thiscall CMallaD3D_TriNormal(CMallaD3D *self, vec3_t *out, uint32_t i) {
+vec3_t *__thiscall CMeshD3D_TriNormal(CMeshD3D *self, vec3_t *out, uint32_t i) {
 	vec3_t a, b, c, n;
 
 	CHECK(i < self->nTri);
 	CHECK(self->pTri);
 	const uint16_t *t = self->pTri[i];
-	CListaVert_GetPos(&self->vert, &a, t[0]);
-	CListaVert_GetPos(&self->vert, &b, t[1]);
-	CListaVert_GetPos(&self->vert, &c, t[2]);
+	CVertList_GetPos(&self->vert, &a, t[0]);
+	CVertList_GetPos(&self->vert, &b, t[1]);
+	CVertList_GetPos(&self->vert, &c, t[2]);
 	float e1x = b.x - a.x, e1y = b.y - a.y, e1z = b.z - a.z;
 	float e2x = c.x - a.x, e2y = c.y - a.y, e2z = c.z - a.z;
 	n.x = e1y * e2z - e1z * e2y;
 	n.y = e1z * e2x - e1x * e2z;
 	n.z = e1x * e2y - e1y * e2x;
-	Malla_Normalize(&n);
+	Mesh_Normalize(&n);
 	*out = n;
 	return out;
 }
 
-void __thiscall CMallaD3D_CalcBox(CMallaD3D *self, box_t *out, byte first) {
-	CMallaD3D_CalcCenter(self);
+void __thiscall CMeshD3D_CalcBox(CMeshD3D *self, box_t *out, byte first) {
+	CMeshD3D_CalcCenter(self);
 	self->box = self->ext;
 	if (self->next) {
-		CMallaD3D_CalcBox(self->next, &self->box, 0);
+		CMeshD3D_CalcBox(self->next, &self->box, 0);
 	}
 	/* an identical copy of Box_Merge, rva 0x2b8870 */
 	Box_Merge(out, &self->box, first);
 }
 
-void __fastcall CMallaD3D_CalcCenter(CMallaD3D *self) {
-	CListaVert_GetExtents(&self->vert, &self->ext, 1);
+void __fastcall CMeshD3D_CalcCenter(CMeshD3D *self) {
+	CVertList_GetExtents(&self->vert, &self->ext, 1);
 	self->center.x = (self->ext.min.x + self->ext.max.x) * 0.5f;
 	self->center.y = (self->ext.max.y + self->ext.min.y) * 0.5f;
 	self->center.z = (self->ext.max.z + self->ext.min.z) * 0.5f;
 	if (self->pSkin) {
-		Vec3_TransformH(&self->center, &self->center, &self->nodo->mObj);
+		Vec3_TransformH(&self->center, &self->center, &self->node->mObj);
 	}
 }
 
 /* -1, 0 or 1 like the inline strcmp of the original */
-static int MallaD3D_StrCmp(const char *a, const char *b) {
+static int MeshD3D_StrCmp(const char *a, const char *b) {
 	int r = strcmp(a, b);
 	return r < 0 ? -1 : r > 0;
 }
 
-int MallaD3D_CompareGrupo(const void *a, const void *b) {
-	const MallaD3DGrupo *ga = a, *gb = b;
+int MeshD3D_CompareGroup(const void *a, const void *b) {
+	const MeshD3DGroup *ga = a, *gb = b;
 	CHECK(ga != gb);
 	const char *na = ga->mat ? CMaterial_GetMapName(ga->mat, 0) : NULL;
 	const char *nb = gb->mat ? CMaterial_GetMapName(gb->mat, 0) : NULL;
 	int r;
 	if (na && nb) {
-		r = MallaD3D_StrCmp(na, nb);
+		r = MeshD3D_StrCmp(na, nb);
 	} else {
 		r = (nb == NULL) - (na == NULL);
 	}
@@ -464,37 +464,37 @@ int MallaD3D_CompareGrupo(const void *a, const void *b) {
 }
 
 /* n.p + d of the origin, by the zero vector as the original */
-static float MallaD3D_PlaneSide(const plane_t *p) {
+static float MeshD3D_PlaneSide(const plane_t *p) {
 	return p->n.y * 0.0f + p->n.x * 0.0f + p->n.z * 0.0f + p->d;
 }
 
-static float MallaD3D_Len2(const vec3_t *v) {
+static float MeshD3D_Len2(const vec3_t *v) {
 	return v->x * v->x + v->y * v->y + v->z * v->z;
 }
 
-int MallaD3D_CompareTri(const void *a, const void *b) {
+int MeshD3D_CompareTri(const void *a, const void *b) {
 	vec3_t ca, cb;
 	plane_t pa, pb;
 
-	MallaD3D_TriPlane(a, &ca, &pa);
-	MallaD3D_TriPlane(b, &cb, &pb);
-	float sa = MallaD3D_PlaneSide(&pa);
-	float sb = MallaD3D_PlaneSide(&pb);
+	MeshD3D_TriPlane(a, &ca, &pa);
+	MeshD3D_TriPlane(b, &cb, &pb);
+	float sa = MeshD3D_PlaneSide(&pa);
+	float sb = MeshD3D_PlaneSide(&pb);
 	if ((0.0f > sa) != (0.0f > sb)) {
 		return (int)(sb - sa);
 	}
-	return (int)(MallaD3D_Len2(&cb) - MallaD3D_Len2(&ca));
+	return (int)(MeshD3D_Len2(&cb) - MeshD3D_Len2(&ca));
 }
 
-int MallaD3D_CompareVertIdx(const void *a, const void *b) {
-	return MallaD3D_CompareVert(&g_WeldVert[*(const int *)a], &g_WeldVert[*(const int *)b]);
+int MeshD3D_CompareVertIdx(const void *a, const void *b) {
+	return MeshD3D_CompareVert(&g_WeldVert[*(const int *)a], &g_WeldVert[*(const int *)b]);
 }
 
-void __thiscall CMallaD3D_Build(CMallaD3D *self, CMallaTri *malla, uint32_t flags) {
-	CHECK(malla);
+void __thiscall CMeshD3D_Build(CMeshD3D *self, CTriMesh *mesh, uint32_t flags) {
+	CHECK(mesh);
 	CHECK(self->vert.nVert == 0 && !self->pTri);
 	/* a mesh at 0x30 is used in its place */
-	CMallaTri *src = malla->d3d ? (CMallaTri *)malla->d3d : malla;
+	CTriMesh *src = mesh->d3d ? (CTriMesh *)mesh->d3d : mesh;
 	int first = g_NumD3DObj;
 	CHECK(!first);
 	int nTri = src->nTri;
@@ -506,98 +506,98 @@ void __thiscall CMallaD3D_Build(CMallaD3D *self, CMallaTri *malla, uint32_t flag
 	int nBack = 0;
 	for (int i = 0; i < nTri; i++) {
 		CMaterial *mat = src->pTri[i].mat;
-		if (mat && !(mat->params.atrib & MAT_ONESIDED) && !(flags & MALLAD3D_ONESIDED) && mat->params.b38) {
+		if (mat && !(mat->params.attrib & MAT_ONESIDED) && !(flags & MESHD3D_ONESIDED) && mat->params.b38) {
 			nBack++;
 		}
 	}
 	int nTmp = nTri + nBack;
-	MallaD3DTriTmp *tmp = Mem_Calloc((nTmp + nBack) * sizeof(MallaD3DTriTmp));
+	MeshD3DTriTmp *tmp = Mem_Calloc((nTmp + nBack) * sizeof(MeshD3DTriTmp));
 	int n = 0;
 	for (int i = src->nTri - 1; i >= 0 && nBack; i--) {
 		CMaterial *mat = src->pTri[i].mat;
 		if (mat && mat->params.b38) {
-			MallaD3D_FillTri(&tmp[n], src, i, 0);
+			MeshD3D_FillTri(&tmp[n], src, i, 0);
 			n++;
 		}
 	}
 	for (int i = 0; i < src->nTri; i++) {
-		MallaD3D_FillTri(&tmp[n], src, i, 1);
+		MeshD3D_FillTri(&tmp[n], src, i, 1);
 		n++;
 	}
 	CHECK(n == nTmp);
 
 	/* the groups: the last one while it fits, else the first that fits, else a new one */
-	cListaDin *din = LDin_NewBlock(sizeof(MallaD3DGrupo), 0x10);
-	MallaD3DGrupo *g = NULL;
+	cDynList *dyn = DynList_NewBlock(sizeof(MeshD3DGroup), 0x10);
+	MeshD3DGroup *g = NULL;
 	int gi = 0;
 	for (int k = 0; k < nTmp; k++) {
-		MallaD3DTriTmp *t = &tmp[k];
-		if (!MallaD3D_GrupoFits(g, t)) {
+		MeshD3DTriTmp *t = &tmp[k];
+		if (!MeshD3D_GroupFits(g, t)) {
 			g = NULL;
-			for (gi = 0; gi < (int)din->used; gi++) {
-				MallaD3DGrupo *c = (MallaD3DGrupo *)(din->mem + gi * din->elemSize);
-				if (MallaD3D_GrupoFits(c, t)) {
+			for (gi = 0; gi < (int)dyn->used; gi++) {
+				MeshD3DGroup *c = (MeshD3DGroup *)(dyn->mem + gi * dyn->elemSize);
+				if (MeshD3D_GroupFits(c, t)) {
 					g = c;
 					break;
 				}
 			}
 			if (!g) {
-				g = LDin_AddOne(din);
+				g = DynList_AddOne(dyn);
 				memset(g, 0, sizeof(*g));
 				g->mat = t->mat;
-				gi = din->used - 1;
+				gi = dyn->used - 1;
 			}
 		}
 		g->nTri++;
-		t->grupo = gi;
+		t->group = gi;
 	}
-	MallaD3DGrupo *grp = (MallaD3DGrupo *)din->mem;
-	for (int k = 0; k < (int)din->used; k++) {
+	MeshD3DGroup *grp = (MeshD3DGroup *)dyn->mem;
+	for (int k = 0; k < (int)dyn->used; k++) {
 		grp[k].idx = k;
 	}
-	crt_qsort(din->mem, din->used, din->elemSize, MallaD3D_CompareGrupo);
-	int *remap = New_Array(din->used, sizeof(int));
-	for (int k = 0; k < (int)din->used; k++) {
+	crt_qsort(dyn->mem, dyn->used, dyn->elemSize, MeshD3D_CompareGroup);
+	int *remap = New_Array(dyn->used, sizeof(int));
+	for (int k = 0; k < (int)dyn->used; k++) {
 		remap[grp[k].idx] = k;
 	}
 	for (int k = 0; k < nTmp; k++) {
-		tmp[k].grupo = remap[tmp[k].grupo];
+		tmp[k].group = remap[tmp[k].group];
 	}
 	operator_delete_sized(remap, sizeof(int));
 
 	/* one object a group, the corners of each triangle as new vertices */
-	for (int k = 0; k < (int)din->used; k++) {
-		grp[k].idx = MallaD3D_NewObj();
-		MallaD3DObj_AllocVert(&g_D3DObj[grp[k].idx], grp[k].nTri * 3);
-		MallaD3DObj_AllocTri(&g_D3DObj[grp[k].idx], grp[k].nTri);
-		MallaD3DObj_SetMat(&g_D3DObj[grp[k].idx], grp[k].mat);
+	for (int k = 0; k < (int)dyn->used; k++) {
+		grp[k].idx = MeshD3D_NewObj();
+		MeshD3DObj_AllocVert(&g_D3DObj[grp[k].idx], grp[k].nTri * 3);
+		MeshD3DObj_AllocTri(&g_D3DObj[grp[k].idx], grp[k].nTri);
+		MeshD3DObj_SetMat(&g_D3DObj[grp[k].idx], grp[k].mat);
 	}
 	for (int k = 0; k < nTmp; k++) {
-		MallaD3DTriTmp *t = &tmp[k];
-		MallaD3DGrupo *gk = &grp[t->grupo];
+		MeshD3DTriTmp *t = &tmp[k];
+		MeshD3DGroup *gk = &grp[t->group];
 		int j = gk->used++;
-		MallaD3DObj *o = &g_D3DObj[gk->idx];
-		MallaD3DObj_SetVert(o, j * 3, &t->v[0]);
-		MallaD3DObj_SetVert(o, j * 3 + 1, &t->v[1]);
-		MallaD3DObj_SetVert(o, j * 3 + 2, &t->v[2]);
-		MallaD3DTri tri = { t->flags, { (uint16_t)(j * 3), (uint16_t)(j * 3 + 1), (uint16_t)(j * 3 + 2) } };
-		MallaD3DObj_SetTri(o, j, &tri);
+		MeshD3DObj *o = &g_D3DObj[gk->idx];
+		MeshD3DObj_SetVert(o, j * 3, &t->v[0]);
+		MeshD3DObj_SetVert(o, j * 3 + 1, &t->v[1]);
+		MeshD3DObj_SetVert(o, j * 3 + 2, &t->v[2]);
+		MeshD3DTri tri = { t->flags, { (uint16_t)(j * 3), (uint16_t)(j * 3 + 1), (uint16_t)(j * 3 + 2) } };
+		MeshD3DObj_SetTri(o, j, &tri);
 	}
-	LDin_Free(din);
+	DynList_Free(dyn);
 	for (int k = first; k < g_NumD3DObj; k++) {
-		MallaD3DObj_Weld(&g_D3DObj[k]);
+		MeshD3DObj_Weld(&g_D3DObj[k]);
 	}
 	Mem_Free(tmp);
 
 	/* one mesh of the list an object */
 	CHECK(!self->next);
-	CMallaD3D *cur = self;
+	CMeshD3D *cur = self;
 	for (int k = 0; k < g_NumD3DObj; k++) {
-		MallaD3DObj *o = &g_D3DObj[k];
+		MeshD3DObj *o = &g_D3DObj[k];
 		if (k) {
-			CMallaD3D *m = operator_new(sizeof(CMallaD3D));
+			CMeshD3D *m = operator_new(sizeof(CMeshD3D));
 			if (m) {
-				m = CMallaD3D_ctor(m);
+				m = CMeshD3D_ctor(m);
 			}
 			cur->next = m;
 			m->b50 = cur->b50;
@@ -605,32 +605,32 @@ void __thiscall CMallaD3D_Build(CMallaD3D *self, CMallaTri *malla, uint32_t flag
 			cur = cur->next;
 		}
 		cur->mat = o->mat;
-		CMallaD3D_AllocTri(cur, o->nTri);
+		CMeshD3D_AllocTri(cur, o->nTri);
 		if (!cur->mat || !cur->mat->params.b3b) {
-			CListaVert_SetFormat(&cur->vert, (self->b50 || self->b51) ? VERT_TEX1_B1 : VERT_TEX1);
+			CVertList_SetFormat(&cur->vert, (self->b50 || self->b51) ? VERT_TEX1_B1 : VERT_TEX1);
 		} else {
-			CListaVert_SetFormat(&cur->vert, g_UsarHWEnvMap ? VERT_TEX1 : VERT_TEX2);
+			CVertList_SetFormat(&cur->vert, g_UseHWEnvMap ? VERT_TEX1 : VERT_TEX2);
 			self->b50 = 0;
 			self->b51 = 0;
 		}
-		CListaVert_Alloc(&cur->vert, o->nVert, 0);
+		CVertList_Alloc(&cur->vert, o->nVert, 0);
 		CHECK(!cur->vertOrig);
-		if (flags & MALLAD3D_VERTORIG) {
+		if (flags & MESHD3D_VERTORIG) {
 			cur->vertOrig = New_Array(cur->vert.nVert, sizeof(uint16_t));
 		}
 		for (int v = 0; v < cur->vert.nVert; v++) {
-			const MallaD3DVert *s = &o->pVert[v];
+			const MeshD3DVert *s = &o->pVert[v];
 			if (cur->vertOrig) {
 				cur->vertOrig[v] = s->index;
 			}
 			switch (cur->vert.frmt) {
 			case VERT_TEX1:
-				CListaVert_SetTex1(&cur->vert, v, &s->v);
+				CVertList_SetTex1(&cur->vert, v, &s->v);
 				break;
 			case VERT_TEX2: {
 				float x[10] = { s->v.pos.x, s->v.pos.y, s->v.pos.z, s->v.n.x, s->v.n.y, s->v.n.z, s->v.uv.u,
 					s->v.uv.v, 0.0f, 0.0f };
-				CListaVert_SetTex2(&cur->vert, v, x);
+				CVertList_SetTex2(&cur->vert, v, x);
 				break;
 			}
 			case VERT_TEX1_B1: {
@@ -638,7 +638,7 @@ void __thiscall CMallaD3D_Build(CMallaD3D *self, CMallaTri *malla, uint32_t flag
 				int r = crt_rand();
 				float x[9] = { s->v.pos.x, s->v.pos.y, s->v.pos.z, (float)(r & 1), s->v.n.x, s->v.n.y, s->v.n.z,
 					s->v.uv.u, s->v.uv.v };
-				CListaVert_SetTex1B1(&cur->vert, v, x);
+				CVertList_SetTex1B1(&cur->vert, v, x);
 				break;
 			}
 			default:
@@ -647,28 +647,28 @@ void __thiscall CMallaD3D_Build(CMallaD3D *self, CMallaTri *malla, uint32_t flag
 			}
 		}
 		CHECK(!cur->triFlags);
-		if (flags & MALLAD3D_TRIFLAGS) {
+		if (flags & MESHD3D_TRIFLAGS) {
 			cur->triFlags = New_Array(cur->nTri, sizeof(uint32_t));
 		}
 		for (uint32_t j = 0; (int)j < (int)cur->nTri; j++) {
-			const MallaD3DTri *s = &o->pTri[j];
-			CMallaD3D_SetTri(cur, j, s->v[0], s->v[1], s->v[2]);
+			const MeshD3DTri *s = &o->pTri[j];
+			CMeshD3D_SetTri(cur, j, s->v[0], s->v[1], s->v[2]);
 			if (cur->triFlags) {
 				cur->triFlags[j] = s->flags;
 			}
 		}
-		MallaD3DObj_Free(o);
+		MeshD3DObj_Free(o);
 	}
 	g_NumD3DObj = 0;
 
-	if (flags & MALLAD3D_POS) {
+	if (flags & MESHD3D_POS) {
 		self->pPos = New_Array(src->nVert, sizeof(vec3_t));
 		self->nPos = src->nVert;
 		for (int v = 0; v < src->nVert; v++) {
 			vec3_t p;
-			self->pPos[v] = *CMallaTri_GetVert(src, &p, v);
+			self->pPos[v] = *CTriMesh_GetVert(src, &p, v);
 		}
-		CMallaD3D_CalcSegmentos(self, 1);
+		CMeshD3D_CalcSegments(self, 1);
 	}
 	if (src->pSkin) {
 		CHECK(self->pSkin == NULL);
@@ -678,7 +678,7 @@ void __thiscall CMallaD3D_Build(CMallaD3D *self, CMallaTri *malla, uint32_t flag
 		for (int v = 0; v < src->nVert; v++) {
 			memcpy(self->pSkin + v * 16, src->pSkin + v * 16, 16);
 		}
-		for (CMallaD3D *m = self->next; m; m = m->next) {
+		for (CMeshD3D *m = self->next; m; m = m->next) {
 			CHECK(m->pSkin == NULL);
 			m->pSkin = self->pSkin;
 			m->nSkin = self->nSkin;
@@ -687,7 +687,7 @@ void __thiscall CMallaD3D_Build(CMallaD3D *self, CMallaTri *malla, uint32_t flag
 	}
 }
 
-int __fastcall CMallaD3D_CreateVB(CMallaD3D *self) {
+int __fastcall CMeshD3D_CreateVB(CMeshD3D *self) {
 	CHECK(self->vert.nVert > 0);
 	CHECK((int)self->nTri > 0);
 	if (!self->vert.nVert || !self->pTri) {
@@ -695,7 +695,7 @@ int __fastcall CMallaD3D_CreateVB(CMallaD3D *self) {
 	}
 	CHECK(self->vert.nVert > 0);
 	CHECK((int)self->nTri > 0);
-	CHECK(g_Motor);
+	CHECK(g_Engine);
 	CHECK(!self->pVertVB);
 	CHECK(!self->pVertIB);
 	self->vbFrmt = self->vert.frmt;
@@ -705,30 +705,30 @@ int __fastcall CMallaD3D_CreateVB(CMallaD3D *self) {
 	CHECK(Render_CreateVB(&self->pVertVB, &self->vert, 0) == 0);
 	CHECK(Render_CreateIB(&self->pVertIB, self->pTri, self->nTri, 0) == 0);
 	if (self->pSkin) {
-		MallaD3D_Release(&self->pc0);
-		MallaD3D_Release(&self->pc4);
+		MeshD3D_Release(&self->pc0);
+		MeshD3D_Release(&self->pc4);
 	}
 	return 0;
 }
 
-void __thiscall CMallaD3D_SetNodo(CMallaD3D *self, CNodo3D *nodo) {
-	for (CMallaD3D *m = self; m; m = m->next) {
-		if (nodo) {
-			nodo->Refs++;
+void __thiscall CMeshD3D_SetNode(CMeshD3D *self, CNode3D *node) {
+	for (CMeshD3D *m = self; m; m = m->next) {
+		if (node) {
+			node->Refs++;
 		}
-		if (m->nodo) {
-			m->nodo->Refs--;
-			CNodo3D *old = m->nodo;
+		if (m->node) {
+			m->node->Refs--;
+			CNode3D *old = m->node;
 			if (old->Refs == 0 && old) {
-				((nodoDelete_t)old->vftable[0])(old, 1);
+				((nodeDelete_t)old->vftable[0])(old, 1);
 			}
-			m->nodo = NULL;
+			m->node = NULL;
 		}
-		m->nodo = nodo;
+		m->node = node;
 	}
 }
 
-void MallaD3D_TriPlane(const MallaD3DTriTmp *t, vec3_t *center, plane_t *plane) {
+void MeshD3D_TriPlane(const MeshD3DTriTmp *t, vec3_t *center, plane_t *plane) {
 	vec3_t v0 = t->v[0].v.pos, v1 = t->v[1].v.pos, v2 = t->v[2].v.pos;
 
 	CHECK(Plane_Calc(plane, &v0, &v1, &v2));
@@ -737,23 +737,23 @@ void MallaD3D_TriPlane(const MallaD3DTriTmp *t, vec3_t *center, plane_t *plane) 
 	center->z = (v0.z + v1.z + v2.z) / 3.0f;
 }
 
-void __thiscall CMallaD3D_AllocTri(CMallaD3D *self, int n) {
+void __thiscall CMeshD3D_AllocTri(CMeshD3D *self, int n) {
 	CHECK(n > 0);
 	CHECK(!self->pTri);
 	self->nTri = n;
 	self->pTri = New_Array(n, 6);
 }
 
-void MallaD3D_FillTri(MallaD3DTriTmp *t, CMallaTri *m, uint32_t i, byte keep) {
+void MeshD3D_FillTri(MeshD3DTriTmp *t, CTriMesh *m, uint32_t i, byte keep) {
 	for (int k = 0; k < 3; k++) {
-		int v = CMallaTri_GetTri(m, i)->v[k];
-		CMallaTri_GetTriVert(m, &t->v[k].v, i, k);
+		int v = CTriMesh_GetTri(m, i)->v[k];
+		CTriMesh_GetTriVert(m, &t->v[k].v, i, k);
 		t->v[k].index = (uint16_t)v;
-		t->v[k].bone = m->pSkin ? ((const byte *)CMallaTri_GetSkin(m, v))[1] : 0;
+		t->v[k].bone = m->pSkin ? ((const byte *)CTriMesh_GetSkin(m, v))[1] : 0;
 		t->v[k].pad = 0;
 	}
 	if (!keep) {
-		MallaD3DVert x = t->v[1];
+		MeshD3DVert x = t->v[1];
 		t->v[1] = t->v[2];
 		t->v[2] = x;
 		for (int k = 0; k < 3; k++) {
@@ -766,7 +766,7 @@ void MallaD3D_FillTri(MallaD3DTriTmp *t, CMallaTri *m, uint32_t i, byte keep) {
 	t->flags = m->pTri[i].flags;
 }
 
-void __thiscall CMallaD3D_SetTri(CMallaD3D *self, uint32_t i, uint16_t a, uint16_t b, uint16_t c) {
+void __thiscall CMeshD3D_SetTri(CMeshD3D *self, uint32_t i, uint16_t a, uint16_t b, uint16_t c) {
 	CHECK(i < self->nTri);
 	CHECK(self->pTri);
 	self->pTri[i][0] = a;
@@ -774,34 +774,34 @@ void __thiscall CMallaD3D_SetTri(CMallaD3D *self, uint32_t i, uint16_t a, uint16
 	self->pTri[i][2] = c;
 }
 
-int MallaD3D_GrupoFits(const MallaD3DGrupo *g, const MallaD3DTriTmp *t) {
+int MeshD3D_GroupFits(const MeshD3DGroup *g, const MeshD3DTriTmp *t) {
 	if (g && t && g->mat == t->mat) {
-		return g->nTri < g_MaxTriGrupo;
+		return g->nTri < g_MaxTriGroup;
 	}
 	return 0;
 }
 
-int __fastcall CMallaD3D_Check(CMallaD3D *self) {
+int __fastcall CMeshD3D_Check(CMeshD3D *self) {
 	CHECK(self->vert.nVert > 0);
 	CHECK((int)self->nTri > 0);
 	return 0;
 }
 
-int MallaD3DObj_Weld(MallaD3DObj *obj) {
+int MeshD3DObj_Weld(MeshD3DObj *obj) {
 	CHECK(obj && obj->pVert && obj->nVert);
 	g_WeldVert = obj->pVert;
 	int *order = Mem_Alloc(obj->nVert * sizeof(int));
 	for (int i = 0; i < obj->nVert; i++) {
 		order[i] = i;
 	}
-	crt_qsort(order, obj->nVert, sizeof(int), MallaD3D_CompareVertIdx);
-	MallaD3DVert *out = Mem_Alloc(obj->nVert * sizeof(MallaD3DVert));
+	crt_qsort(order, obj->nVert, sizeof(int), MeshD3D_CompareVertIdx);
+	MeshD3DVert *out = Mem_Alloc(obj->nVert * sizeof(MeshD3DVert));
 	int *remap = Mem_Alloc(obj->nVert * sizeof(int));
-	const MallaD3DVert *prev = NULL;
+	const MeshD3DVert *prev = NULL;
 	int n = 0;
 	for (int k = 0; k < obj->nVert; k++) {
-		const MallaD3DVert *v = &obj->pVert[order[k]];
-		if (!prev || MallaD3D_CompareVert(v, prev)) {
+		const MeshD3DVert *v = &obj->pVert[order[k]];
+		if (!prev || MeshD3D_CompareVert(v, prev)) {
 			out[n++] = *v;
 			prev = v;
 		}
@@ -810,7 +810,7 @@ int MallaD3DObj_Weld(MallaD3DObj *obj) {
 	int removed = obj->nVert - n;
 	Mem_Free(obj->pVert);
 	if (obj->nVert != n) {
-		out = Mem_Realloc(out, n * sizeof(MallaD3DVert));
+		out = Mem_Realloc(out, n * sizeof(MeshD3DVert));
 	}
 	obj->nVert = n;
 	obj->pVert = out;

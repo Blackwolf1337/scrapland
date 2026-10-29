@@ -19,13 +19,13 @@
 #include "scrap/suelo.h"
 #include "scrap/varios.h"
 
-#define CNODO3D_VFTABLE GAME_VFTABLE(CNodo3D_vftable, 0x3d7e78)
-#define MALLAD3D_SIZE 200
-#define MALLAD3D_SKIN 0x94		/* the CMallaD3D member that puts the object into mObj */
+#define CNODO3D_VFTABLE GAME_VFTABLE(CNode3D_vftable, 0x3d7e78)
+#define MESHD3D_SIZE 200
+#define MESHD3D_SKIN 0x94		/* the CMeshD3D member that puts the object into mObj */
 #define A6000080_ALPHA 0x28
-#define SISTPART_VISIBLE 0x140
+#define PARTICLESYSTEM_VISIBLE 0x140
 
-#define g_Nodo3DCount GAME_GLOBAL_IN(int, GVar_R_Nodo3D_Count, 16, 0x4ad548)	/* R_Nodo3D_Count */
+#define g_Node3DCount GAME_GLOBAL_IN(int, GVar_R_Node3D_Count, 16, 0x4ad548)	/* R_Nodo3D_Count */
 #define g_RenderOff GAME_GLOBAL_IN(byte, group_4a8ef8, 0, 0x4a8ef8)
 #define g_NodesRendered GAME_GLOBAL_IN(int, g_RenderCounts, 16, 0x4a8f10)
 #define g_NodesUpdated GAME_GLOBAL_IN(int, g_RenderCounts, 20, 0x4a8f14)
@@ -34,7 +34,7 @@
 /* the engine variables of the nodes (Gvars) */
 #define g_NodeSlerp2 GAME_GLOBAL_IN(int, GVar_R_NodeSlerp2, 16, 0x4ad560)	/* R_NodeSlerp2 0/1/2 */
 #define g_ShowLocalBox GAME_GLOBAL_IN(int, GVar_R_ShowLocalBox, 16, 0x4ad530)
-#define g_ShowLBoxMin GAME_GLOBAL_IN(int, GVar_R_ShowLBoxMin, 16, 0x4ad610)	/* the nodes with an indice from .. to (0: no limit) */
+#define g_ShowLBoxMin GAME_GLOBAL_IN(int, GVar_R_ShowLBoxMin, 16, 0x4ad610)	/* the nodes with an index from .. to (0: no limit) */
 #define g_ShowLBoxMax GAME_GLOBAL_IN(int, GVar_R_ShowLBoxMax, 16, 0x4ad518)
 #define g_ShowLBoxName GAME_GLOBAL_IN(const char *, GVar_R_ShowLBoxName, 16, 0x4ad5dc)	/* a wildcard of the names, "" for all */
 #define g_SkipAnim GAME_GLOBAL_IN(int, GVar_R_SkipAnim, 16, 0x4ad500)
@@ -45,12 +45,12 @@
 #define g_SkipTrans GAME_GLOBAL_IN(int, GVar_R_SkipTrans, 16, 0x4ad5ac)
 
 /* the check of Nodo3D.cpp that ends the game, with the name of the node */
-#define NODO_FATAL(self, expr) \
+#define NODE_FATAL(self, expr) \
 	Con_FatalErrorf("\nFATAL ERROR: Check failed!\n\nError: %s\n\nExpression: %s\n\nFile: '%s'\nDate: %s\nLine: %d", \
 		(self)->name, expr, __FILE__, __TIMESTAMP__, __LINE__)
 
-typedef void(__thiscall *objUpdate_t)(IObjeto3D *self, CNodoR *r);
-typedef void(__thiscall *objRender_t)(IObjeto3D *self, void *arg, CNodoR *r);
+typedef void(__thiscall *objUpdate_t)(IObject3D *self, CRenderNode *r);
+typedef void(__thiscall *objRender_t)(IObject3D *self, void *arg, CRenderNode *r);
 
 /* the casts of objeto3d.h: NULL after the failed check */
 /* the track set of an animation of a channel */
@@ -59,33 +59,33 @@ static void *Anim_Set(void *anim) {
 }
 
 /* channel 0 of the scene if it has an animation */
-static NodoAnimChannel *CNodo3D_Channel0(CNodo3D *self) {
-	NodoAnimCtx *a;
+static NodeAnimChannel *CNode3D_Channel0(CNode3D *self) {
+	NodeAnimCtx *a;
 
-	if (!self->escena || !(a = self->escena->anim) || !a->chan[0].anim || !a->chan[0].anim->anim[0]) {
+	if (!self->scene || !(a = self->scene->anim) || !a->chan[0].anim || !a->chan[0].anim->anim[0]) {
 		return NULL;
 	}
 	return &a->chan[0];
 }
 
-static NodoAnimChannel *CNodo3D_ChannelAt(CNodo3D *self, uint32_t ch) {
-	NodoAnimCtx *a;
+static NodeAnimChannel *CNode3D_ChannelAt(CNode3D *self, uint32_t ch) {
+	NodeAnimCtx *a;
 
-	if (!self->escena || !(a = self->escena->anim)) {
+	if (!self->scene || !(a = self->scene->anim)) {
 		return NULL;
 	}
 	CHECK(ch < MAX_ANIM_CHANNEL);
 	return &a->chan[ch];
 }
 
-static void Nodo_Unref(CNodo3D **slot) {
+static void Node_Unref(CNode3D **slot) {
 	if (*slot) {
 		(*slot)->Refs--;
 		*slot = NULL;
 	}
 }
 
-static void Obj3D_Delete(IObjeto3D **slot) {
+static void Obj3D_Delete(IObject3D **slot) {
 	if (*slot) {
 		((objDelete_t)(*slot)->vftable[0])(*slot, 1);
 		*slot = NULL;
@@ -96,85 +96,85 @@ static quat_t Quat_Conj(const quat_t *q) {
 	return (quat_t){ -q->x, -q->y, -q->z, q->w };
 }
 
-CNodo3D *__fastcall CNodo3D_ctor(CNodo3D *self) {
+CNode3D *__fastcall CNode3D_ctor(CNode3D *self) {
 	self->name = NULL;
 	self->Refs = 0;
 	self->vftable = CNODO3D_VFTABLE;
 	self->flags = 0;
-	g_Nodo3DCount++;
+	g_Node3DCount++;
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
-	self->sig = NULL;
-	self->ant = NULL;
-	self->padre = NULL;
+	self->next = NULL;
+	self->prev = NULL;
+	self->parent = NULL;
 	self->rot = (quat_t){ 0.0f, 0.0f, 0.0f, 1.0f };
 	self->obj3D = NULL;
-	self->escena = NULL;
-	self->indice = -1;
+	self->scene = NULL;
+	self->index = -1;
 	self->i48 = -1;
-	self->nodoR = -1;
+	self->renderNode = -1;
 	self->i50 = 0;
 	self->obj58 = NULL;
 	Matrix_LoadIdentity(&self->m);
 	Matrix_LoadIdentity(&self->mObj);
 	self->qLook = (quat_t){ 0.0f, 0.0f, 0.0f, 1.0f };
-	self->escala = (vec3_t){ 1.0f, 1.0f, 1.0f };
+	self->scale = (vec3_t){ 1.0f, 1.0f, 1.0f };
 	self->ini = NULL;
 	return self;
 }
 
-void __fastcall CNodo3D_dtor(CNodo3D *self) {
+void __fastcall CNode3D_dtor(CNode3D *self) {
 	self->vftable = CNODO3D_VFTABLE;
-	g_Nodo3DCount--;
-	CHECK(!self->ant && !self->sig);
-	CNodo3D_Free(self);
+	g_Node3DCount--;
+	CHECK(!self->prev && !self->next);
+	CNode3D_Free(self);
 	CHECK(!self->Refs);
 	if (self->name) {
-		Cad_Set(&self->name, NULL);
+		String_Set(&self->name, NULL);
 	}
 }
 
-CNodo3D *__thiscall CNodo3D_Delete(CNodo3D *self, byte flags) {
-	CNodo3D_dtor(self);
+CNode3D *__thiscall CNode3D_Delete(CNode3D *self, byte flags) {
+	CNode3D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
 	return self;
 }
 
-IObjeto3D *__thiscall CNodo3D_GetObj3D(CNodo3D *self, CNodoR *r) {
+IObject3D *__thiscall CNode3D_GetObj3D(CNode3D *self, CRenderNode *r) {
 	if (r && r->obj3D) {
-		CHECK(r->obj3D->clase == self->obj3D->clase);
+		CHECK(r->obj3D->class == self->obj3D->class);
 		return r->obj3D;
 	}
 	return self->obj3D;
 }
 
-byte __thiscall CNodo3D_GetBBox(CNodo3D *self, matrix_t *m, box_t *bbox, byte recalc) {
-	IObjeto3D *o;
+byte __thiscall CNode3D_GetBBox(CNode3D *self, matrix_t *m, box_t *bbox, byte recalc) {
+	IObject3D *o;
 	byte skin = 0;
 	box_t b;
 	matrix_t t;
 
 	CHECK(bbox);
 	o = self->obj3D;
-	switch (o ? o->clase : 0) {
-	case CLASE_OBJ3D_MALLAD3D:
-		o = Obj3D_Cast(o, CLASE_OBJ3D_MALLAD3D);
-		skin = *(int *)((byte *)o + MALLAD3D_SKIN) != 0;
-		CMallaD3D_GetBox(Obj3D_Cast(self->obj3D, CLASE_OBJ3D_MALLAD3D), bbox, recalc);
+	switch (o ? o->class : 0) {
+	case CLASS_OBJ3D_MESHD3D:
+		o = Obj3D_Cast(o, CLASS_OBJ3D_MESHD3D);
+		skin = *(int *)((byte *)o + MESHD3D_SKIN) != 0;
+		CMeshD3D_GetBox(Obj3D_Cast(self->obj3D, CLASS_OBJ3D_MESHD3D), bbox, recalc);
 		break;
-	case CLASE_OBJ3D_MALLATRI:
-		o = Obj3D_Cast(o, CLASE_OBJ3D_MALLATRI);
-		skin = ((CMallaTri *)o)->pSkin != NULL;
-		CMallaTri_GetBox(Obj3D_Cast(self->obj3D, CLASE_OBJ3D_MALLATRI), bbox, recalc);
+	case CLASS_OBJ3D_TRIMESH:
+		o = Obj3D_Cast(o, CLASS_OBJ3D_TRIMESH);
+		skin = ((CTriMesh *)o)->pSkin != NULL;
+		CTriMesh_GetBox(Obj3D_Cast(self->obj3D, CLASS_OBJ3D_TRIMESH), bbox, recalc);
 		break;
-	case CLASE_OBJ3D_SUELO:
+	case CLASS_OBJ3D_GROUND:
 		CHECK(!recalc);
-		*bbox = *CSuelo_GetBox(Obj3D_Cast(self->obj3D, CLASE_OBJ3D_SUELO), &b);
+		*bbox = *CGround_GetBox(Obj3D_Cast(self->obj3D, CLASS_OBJ3D_GROUND), &b);
 		break;
-	case CLASE_OBJ3D_SISTPART:
-		CHECK(o->clase == CLASE_OBJ3D_SISTPART);
-		if (!CSistPart_GetBox((CSistPart *)o, bbox)) {
+	case CLASS_OBJ3D_PARTICLESYSTEM:
+		CHECK(o->class == CLASS_OBJ3D_PARTICLESYSTEM);
+		if (!CParticleSystem_GetBox((CParticleSystem *)o, bbox)) {
 			return 0;
 		}
 		break;
@@ -185,30 +185,30 @@ byte __thiscall CNodo3D_GetBBox(CNodo3D *self, matrix_t *m, box_t *bbox, byte re
 		*m = skin ? *Matrix_MulD3D(&t, &self->mObj, &self->m) : self->m;
 	}
 	if (!(bbox->max.x >= bbox->min.x) || !(bbox->max.y >= bbox->min.y) || !(bbox->max.z >= bbox->min.z)) {
-		NODO_FATAL(self, "(bbox->Min <= bbox->Max)");
+		NODE_FATAL(self, "(bbox->Min <= bbox->Max)");
 	}
 	if (bbox->min.x == bbox->max.x && bbox->min.y == bbox->max.y && bbox->min.z == bbox->max.z) {
-		NODO_FATAL(self, "(bbox->Min != bbox->Max)");
+		NODE_FATAL(self, "(bbox->Min != bbox->Max)");
 	}
 	return 1;
 }
 
-byte __thiscall CNodo3D_AnimChannel(CNodo3D *self, NodoAnimChannel *c, vec3_t *pos, quat_t *rot) {
+byte __thiscall CNode3D_AnimChannel(CNode3D *self, NodeAnimChannel *c, vec3_t *pos, quat_t *rot) {
 	void *track;
 	vec3_t p2;
 	quat_t q2, a, b, t, conj;
 	float w, iw;
 
-	track = CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[0]), self->indice);
-	if (!track || !CAnimNodo_GetPosRot(track, pos, rot, c->frame, c->t)) {
+	track = CAnimation_GetNodeTable(Anim_Set(c->anim->anim[0]), self->index);
+	if (!track || !CAnimNode_GetPosRot(track, pos, rot, c->frame, c->t)) {
 		return 0;
 	}
 	w = c->blend;
 	if (!c->anim->anim[1] || !(w > 0.0f)) {
 		return 1;
 	}
-	track = CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[1]), self->indice);
-	if (!track || !CAnimNodo_GetPosRot(track, &p2, &q2, c->frame2, c->t2)) {
+	track = CAnimation_GetNodeTable(Anim_Set(c->anim->anim[1]), self->index);
+	if (!track || !CAnimNode_GetPosRot(track, &p2, &q2, c->frame2, c->t2)) {
 		return 1;
 	}
 	iw = 1.0f - w;
@@ -226,7 +226,7 @@ byte __thiscall CNodo3D_AnimChannel(CNodo3D *self, NodoAnimChannel *c, vec3_t *p
 		*rot = *Quat_Mul(&t, rot, &self->rot);
 		return 1;
 	}
-	if ((self->flags & NODO_SLERP2) && g_NodeSlerp2 == 1) {
+	if ((self->flags & NODE_SLERP2) && g_NodeSlerp2 == 1) {
 		conj = Quat_Conj(&self->rot);
 		Quat_Mul(&a, rot, &conj);
 		conj = Quat_Conj(&self->rot);
@@ -242,28 +242,28 @@ byte __thiscall CNodo3D_AnimChannel(CNodo3D *self, NodoAnimChannel *c, vec3_t *p
 /* R_ShowLocalBox: the line to the parent and the axes; from 2 the box (blue with a skin, other colors for a render
  * node with its own object), 3 the name and class, 4 the name in the middle of the box, from 5 the kinds of the
  * position and rotation tracks (and the camera track) of the animation, from 6 the name too */
-byte __thiscall CNodo3D_DebugDraw(CNodo3D *self, CNodoR *r) {
+byte __thiscall CNode3D_DebugDraw(CNode3D *self, CRenderNode *r) {
 	static const uint32_t kindColors[5] = { 0xff0000, 0xff, 0xffff00, 0x808080, 0x8000 };
-	NodoAnimChannel *c;
+	NodeAnimChannel *c;
 	vec3_t a, b;
 	matrix_t m;
 	box_t box;
 	void *track;
-	uint32_t clase;
+	uint32_t class;
 	int kPos, kRot, kCam, k;
 	float t;
 	byte skin;
 
-	if ((g_ShowLBoxMin && self->indice < g_ShowLBoxMin) || (g_ShowLBoxMax && self->indice > g_ShowLBoxMax)) {
+	if ((g_ShowLBoxMin && self->index < g_ShowLBoxMin) || (g_ShowLBoxMax && self->index > g_ShowLBoxMax)) {
 		return 0;
 	}
 	if (*g_ShowLBoxName && !Wild_MatchLower(g_ShowLBoxName, self->name)) {
 		return 0;
 	}
-	if (self->padre) {
-		b = *(vec3_t *)&self->padre->m.m[12];
+	if (self->parent) {
+		b = *(vec3_t *)&self->parent->m.m[12];
 		a = *(vec3_t *)&self->m.m[12];
-		Debug_DrawLine(&a, &b, self->padre->padre ? 0xffff00 : 0x808080);
+		Debug_DrawLine(&a, &b, self->parent->parent ? 0xffff00 : 0x808080);
 	}
 	if (r && r->look && *(int *)r->look) {
 		Box_Zero(&box);
@@ -275,7 +275,7 @@ byte __thiscall CNodo3D_DebugDraw(CNodo3D *self, CNodoR *r) {
 		a.y = 0.0f;
 		a.z = 0.0f;
 		Debug_DrawPointM(&self->m, &a, 8.0f, 0xff00ff);
-		if (CNodo3D_GetBBox(self, &m, &box, 0)) {
+		if (CNode3D_GetBBox(self, &m, &box, 0)) {
 			Debug_DrawBoxM(&m, &box.min, &box.max, 0xff00);
 		}
 	}
@@ -284,23 +284,23 @@ byte __thiscall CNodo3D_DebugDraw(CNodo3D *self, CNodoR *r) {
 	a.z = 0.0f;
 	Debug_DrawAxes(&self->m, &a, 5.0f);
 	if (g_ShowLocalBox == 3) {
-		clase = self->obj3D ? self->obj3D->clase : 0;
+		class = self->obj3D ? self->obj3D->class : 0;
 		a = *(vec3_t *)&self->m.m[12];
-		Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &a, 0xffffff, "%s [%04X]", self->name, clase & 0xffffff);
+		Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &a, 0xffffff, "%s [%04X]", self->name, class & 0xffffff);
 	}
 	if (g_ShowLocalBox > 1) {
 		memset(&box, 0, sizeof(box));
-		if (CNodo3D_GetBBox(self, &m, &box, 0)) {
-			skin = self->obj3D && self->obj3D->clase == CLASE_OBJ3D_MALLAD3D &&
-				((CMallaD3D *)self->obj3D)->pSkin != NULL;
+		if (CNode3D_GetBBox(self, &m, &box, 0)) {
+			skin = self->obj3D && self->obj3D->class == CLASS_OBJ3D_MESHD3D &&
+				((CMeshD3D *)self->obj3D)->pSkin != NULL;
 			Debug_DrawBoxM(&m, &box.min, &box.max, g_DebugColors[(r && r->obj3D2 ? 8 : 0) + 2 + skin]);
 			if (g_ShowLocalBox == 4) {
-				clase = self->obj3D ? self->obj3D->clase : 0;
+				class = self->obj3D ? self->obj3D->class : 0;
 				a.x = (box.min.x + box.max.x) * 0.5f;
 				a.y = (box.max.y + box.min.y) * 0.5f;
 				a.z = (box.max.z + box.min.z) * 0.5f;
 				Vec3_TransformH(&b, &a, &m);
-				Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &b, clase == CLASE_OBJ3D_MALLAD3D ? 0xff0000 : 0xff00ff, "%s",
+				Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &b, class == CLASS_OBJ3D_MESHD3D ? 0xff0000 : 0xff00ff, "%s",
 					self->name);
 			}
 		}
@@ -311,20 +311,20 @@ byte __thiscall CNodo3D_DebugDraw(CNodo3D *self, CNodoR *r) {
 	kPos = 0;
 	kRot = 0;
 	kCam = 0;
-	if ((c = CNodo3D_Channel0(self)) &&
-		(track = CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[0]), (uint32_t)self->indice))) {
+	if ((c = CNode3D_Channel0(self)) &&
+		(track = CAnimation_GetNodeTable(Anim_Set(c->anim->anim[0]), (uint32_t)self->index))) {
 		/* the float t goes as the unused int */
 		t = c->t;
 		memcpy(&k, &t, sizeof(k));
-		kPos = CAnimNodo_TrackKind(track, c->frame, k, 1);
-		kRot = CAnimNodo_TrackKind(track, c->frame, k, 2);
-		kCam = CAnimNodo_TrackKind(track, c->frame, k, 4);
+		kPos = CAnimNode_TrackKind(track, c->frame, k, 1);
+		kRot = CAnimNode_TrackKind(track, c->frame, k, 2);
+		kCam = CAnimNode_TrackKind(track, c->frame, k, 4);
 	}
 	a = *(vec3_t *)&self->m.m[12];
 	Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &a, kindColors[kPos % 5], "%d", kPos);
 	a = *(vec3_t *)&self->m.m[12];
 	Debug_Text3D(g_FntTerm8, 10.0f, 0.0f, &a, kindColors[kRot % 5], "%d", kRot);
-	if (self->obj3D && self->obj3D->clase == CLASE_OBJ3D_CAMARA) {
+	if (self->obj3D && self->obj3D->class == CLASS_OBJ3D_CAMERA) {
 		a = *(vec3_t *)&self->m.m[12];
 		Debug_Text3D(g_FntTerm8, 20.0f, 0.0f, &a, kindColors[kCam % 5], "%d", kCam);
 	}
@@ -338,8 +338,8 @@ byte __thiscall CNodo3D_DebugDraw(CNodo3D *self, CNodoR *r) {
 	return 1;
 }
 
-void __thiscall CNodo3D_Render(CNodo3D *self, void *arg, CNodoR *r) {
-	IObjeto3D *o;
+void __thiscall CNode3D_Render(CNode3D *self, void *arg, CRenderNode *r) {
+	IObject3D *o;
 	uint32_t flags;
 	int pass;
 	byte alpha;
@@ -347,10 +347,10 @@ void __thiscall CNodo3D_Render(CNodo3D *self, void *arg, CNodoR *r) {
 	if (g_RenderOff) {
 		return;
 	}
-	if (g_ShowLocalBox && !CNodo3D_DebugDraw(self, r)) {
+	if (g_ShowLocalBox && !CNode3D_DebugDraw(self, r)) {
 		return;
 	}
-	if (g_SkipNodes || (self->flags & NODO_HIDE)) {
+	if (g_SkipNodes || (self->flags & NODE_HIDE)) {
 		return;
 	}
 	g_NodesRendered++;
@@ -360,54 +360,54 @@ void __thiscall CNodo3D_Render(CNodo3D *self, void *arg, CNodoR *r) {
 		return;
 	}
 	if (pass == 3 || pass == 13) {
-		if (!(flags & NODO_PASS3) && !(CNodo3D_Clase(self) & 0xe0)) {
+		if (!(flags & NODE_PASS3) && !(CNode3D_Class(self) & 0xe0)) {
 			return;
 		}
 	} else {
-		if (CNodo3D_Clase(self) & g_RenderClaseMask & 0xffffff) {
+		if (CNode3D_Class(self) & g_RenderClassMask & 0xffffff) {
 			return;
 		}
 		if ((int)((flags & g_RenderFlagMask) == 0) == (int)g_RenderFlagNeg) {
 			return;
 		}
 	}
-	if (CNodo3D_AnimAlpha(self, &alpha) && !g_SkipAnimVis) {
+	if (CNode3D_AnimAlpha(self, &alpha) && !g_SkipAnimVis) {
 		o = self->obj3D;
-		if (o && o->clase == CLASE_OBJ3D_FLARE) {
+		if (o && o->class == CLASS_OBJ3D_FLARE) {
 			if (alpha <= 2) {
 				return;
 			}
-			o = Obj3D_Cast(o, CLASE_OBJ3D_FLARE);
+			o = Obj3D_Cast(o, CLASS_OBJ3D_FLARE);
 			*(float *)((byte *)o + A6000080_ALPHA) = (float)((double)alpha * (1.0 / 255.0));
-		} else if (o && o->clase == CLASE_OBJ3D_SISTPART) {
+		} else if (o && o->class == CLASS_OBJ3D_PARTICLESYSTEM) {
 			if (alpha <= 2) {
 				return;
 			}
-			*((byte *)CSistPart_Cast(CNodo3D_GetObj3D(self, r)) + SISTPART_VISIBLE) = alpha >= 0x80;
+			*((byte *)CParticleSystem_Cast(CNode3D_GetObj3D(self, r)) + PARTICLESYSTEM_VISIBLE) = alpha >= 0x80;
 		} else if (alpha < 0x80) {
 			return;
 		}
 	}
 	Render_SetWorldMatrix(&self->m, 1);
-	o = CNodo3D_GetObj3D(self, r);
+	o = CNode3D_GetObj3D(self, r);
 	if (o) {
 		((objRender_t)o->vftable[2])(o, arg, r);
 	}
 }
 
 /* the look of the render node on the world matrix m */
-static void CNodo3D_Look(CNodo3D *self, CNodoR *r, NodoLook *l, matrix_t *m) {
+static void CNode3D_Look(CNode3D *self, CRenderNode *r, NodeLook *l, matrix_t *m) {
 	matrix_t mt, mr;
 	quat_t q1, q2, q3, conj;
 	vec3_t v, e, *pe;
 	float nx;
 
-	switch (l->tipo) {
+	switch (l->type) {
 	case 2:
 		v = (vec3_t){ -((vec3_t *)(r->owner + 0x14))->x, -((vec3_t *)(r->owner + 0x14))->y,
 			-((vec3_t *)(r->owner + 0x14))->z };
-		CRotacion_SetEuler(&l->r1, &v);
-		conj = Quat_Conj(CRotacion_GetQuat(&l->r1, &q1));
+		CRotation_SetEuler(&l->r1, &v);
+		conj = Quat_Conj(CRotation_GetQuat(&l->r1, &q1));
 		Quat_ToMatrixD3D(&mt, Quat_Mul(&q3, Rot_Combine2(&q2, &l->r1, &l->r2), &conj));
 		v = (vec3_t){ m->m[12], m->m[13], m->m[14] };
 		Matrix_AddPos(&mt, &v);
@@ -417,14 +417,14 @@ static void CNodo3D_Look(CNodo3D *self, CNodoR *r, NodoLook *l, matrix_t *m) {
 		*m = *Matrix_MulD3D(&mr, m, &mt);
 		break;
 	case 3:
-		Quat_ToMatrixD3D(&mt, Quat_Mul(&q2, &self->qLook, CRotacion_GetQuat(&l->r2, &q1)));
+		Quat_ToMatrixD3D(&mt, Quat_Mul(&q2, &self->qLook, CRotation_GetQuat(&l->r2, &q1)));
 		v = (vec3_t){ m->m[12], m->m[13], m->m[14] };
 		Matrix_AddPos(&mt, &v);
 		*m = mt;
 		break;
 	case 4:
 		conj = Quat_Conj(&self->qLook);
-		Quat_Mul(&q3, &self->qLook, CRotacion_GetQuat(&l->r1, &q2));
+		Quat_Mul(&q3, &self->qLook, CRotation_GetQuat(&l->r1, &q2));
 		Quat_ToMatrixD3D(&mt, Quat_Mul(&q1, &q3, &conj));
 		*m = *Matrix_MulD3D(&mr, &mt, m);
 		break;
@@ -441,17 +441,17 @@ static void CNodo3D_Look(CNodo3D *self, CNodoR *r, NodoLook *l, matrix_t *m) {
 	}
 }
 
-void __thiscall CNodo3D_Update(CNodo3D *self, CNodoR *r) {
+void __thiscall CNode3D_Update(CNode3D *self, CRenderNode *r) {
 	matrix_t *m = &self->m;
 	const matrix_t *pm = NULL;
 	matrix_t t;
 	vec3_t pos;
 	quat_t rot, q;
-	IObjeto3D *o;
+	IObject3D *o;
 	int pass;
 	byte ok;
 
-	if (self->flags & NODO_NOUPDATE) {
+	if (self->flags & NODE_NOUPDATE) {
 		return;
 	}
 	pass = g_RenderPass;
@@ -461,16 +461,16 @@ void __thiscall CNodo3D_Update(CNodo3D *self, CNodoR *r) {
 		}
 		return;
 	}
-	if (r && self->nodoR >= 0) {
-		CNodoR_UpdateNodo(r);
+	if (r && self->renderNode >= 0) {
+		CRenderNode_UpdateNode(r);
 		return;
 	}
 	g_NodesUpdated++;
-	ok = CNodo3D_SampleAnim(self, &pos, &rot);
+	ok = CNode3D_SampleAnim(self, &pos, &rot);
 	if (!r) {
 		if (ok) {
 			Quat_ToMatrixD3D(m, &rot);
-			if (self->flags & NODO_POSFIJA) {
+			if (self->flags & NODE_POSTFIX) {
 				pos = self->pos;
 			}
 			Matrix_AddPos(m, &pos);
@@ -482,34 +482,34 @@ void __thiscall CNodo3D_Update(CNodo3D *self, CNodoR *r) {
 		if (!ok) {
 			rot = self->rot;
 			pos = self->pos;
-		} else if (self->flags & NODO_POSFIJA) {
+		} else if (self->flags & NODE_POSTFIX) {
 			pos = self->pos;
 		}
-		if (r->look && r->look->tipo == 1) {
+		if (r->look && r->look->type == 1) {
 			rot = *Rot_Combine(&q, &r->look->r1, &rot, &r->look->r2);
 		}
 		Quat_ToMatrixD3D(m, &rot);
 		Matrix_AddPos(m, &pos);
 	}
-	if (self->padre) {
-		pm = &self->padre->m;
-	} else if (self->escena && self->escena->anim) {
-		pm = &self->escena->anim->m;
+	if (self->parent) {
+		pm = &self->parent->m;
+	} else if (self->scene && self->scene->anim) {
+		pm = &self->scene->anim->m;
 	}
 	if (pm) {
 		*m = *Matrix_MulD3D(&t, m, pm);
 	}
 	if (r) {
-		if (r->look && r->look->tipo) {
-			CNodo3D_Look(self, r, r->look, m);
+		if (r->look && r->look->type) {
+			CNode3D_Look(self, r, r->look, m);
 		}
-		if ((self->flags & NODO_FX) && !g_SkipNodeFX) {
-			CNodoR_ApplyFX(r, m);
+		if ((self->flags & NODE_FX) && !g_SkipNodeFX) {
+			CRenderNode_ApplyFX(r, m);
 		}
 		r->m = *m;
 		r->mObj = *Matrix_MulD3D(&t, &self->mObj, m);
 	}
-	o = CNodo3D_GetObj3D(self, r);
+	o = CNode3D_GetObj3D(self, r);
 	if (o) {
 		((objUpdate_t)o->vftable[1])(o, r);
 	}
@@ -518,31 +518,31 @@ void __thiscall CNodo3D_Update(CNodo3D *self, CNodoR *r) {
 	}
 }
 
-/* the first node from n on with an object of class clase named name (NULL: any) */
-static IObjeto3D *Nodo_FindObj(CNodo3D *n, const char *name, uint32_t clase) {
-	for (; n; n = n->sig) {
-		if (n->obj3D && n->obj3D->clase == clase && (!name || !strcmp(name, n->name))) {
-			return Obj3D_Cast(n->obj3D, clase);
+/* the first node from n on with an object of class class named name (NULL: any) */
+static IObject3D *Node_FindObj(CNode3D *n, const char *name, uint32_t class) {
+	for (; n; n = n->next) {
+		if (n->obj3D && n->obj3D->class == class && (!name || !strcmp(name, n->name))) {
+			return Obj3D_Cast(n->obj3D, class);
 		}
 	}
 	return NULL;
 }
 
-IObjeto3D *__thiscall CNodo3D_FindCamara(CNodo3D *self, const char *name) {
-	return Nodo_FindObj(self, name, CLASE_OBJ3D_CAMARA);
+IObject3D *__thiscall CNode3D_FindCamera(CNode3D *self, const char *name) {
+	return Node_FindObj(self, name, CLASS_OBJ3D_CAMERA);
 }
 
-IObjeto3D *__thiscall CNodo3D_FindLuz(CNodo3D *self, const char *name) {
-	return Nodo_FindObj(self, name, CLASE_OBJ3D_LUZ);
+IObject3D *__thiscall CNode3D_FindLight(CNode3D *self, const char *name) {
+	return Node_FindObj(self, name, CLASS_OBJ3D_LIGHT);
 }
 
-CNodo3D *__thiscall CNodo3D_Find(CNodo3D *self, const char *name, byte incl) {
-	CNodo3D *n;
+CNode3D *__thiscall CNode3D_Find(CNode3D *self, const char *name, byte incl) {
+	CNode3D *n;
 
 	if (!name) {
 		return NULL;
 	}
-	for (n = incl ? self : self->sig; n; n = n->sig) {
+	for (n = incl ? self : self->next; n; n = n->next) {
 		if (!strcmp(name, n->name)) {
 			return n;
 		}
@@ -550,13 +550,13 @@ CNodo3D *__thiscall CNodo3D_Find(CNodo3D *self, const char *name, byte incl) {
 	return NULL;
 }
 
-CNodo3D *__thiscall CNodo3D_FindPrev(CNodo3D *self, const char *name) {
-	CNodo3D *n;
+CNode3D *__thiscall CNode3D_FindPrev(CNode3D *self, const char *name) {
+	CNode3D *n;
 
 	if (!name) {
 		return NULL;
 	}
-	for (n = self->ant; n; n = n->ant) {
+	for (n = self->prev; n; n = n->prev) {
 		if (!strcmp(name, n->name)) {
 			return n;
 		}
@@ -564,13 +564,13 @@ CNodo3D *__thiscall CNodo3D_FindPrev(CNodo3D *self, const char *name) {
 	return NULL;
 }
 
-CNodo3D *__thiscall CNodo3D_FindWild(CNodo3D *self, const char *pattern, byte incl) {
-	CNodo3D *n;
+CNode3D *__thiscall CNode3D_FindWild(CNode3D *self, const char *pattern, byte incl) {
+	CNode3D *n;
 
 	if (!pattern) {
 		return NULL;
 	}
-	for (n = incl ? self : self->sig; n; n = n->sig) {
+	for (n = incl ? self : self->next; n; n = n->next) {
 		if (Wild_Match(pattern, n->name)) {
 			return n;
 		}
@@ -578,223 +578,223 @@ CNodo3D *__thiscall CNodo3D_FindWild(CNodo3D *self, const char *pattern, byte in
 	return NULL;
 }
 
-uint32_t __fastcall CNodo3D_Clase(CNodo3D *self) {
-	return self->obj3D ? self->obj3D->clase : 0;
+uint32_t __fastcall CNode3D_Class(CNode3D *self) {
+	return self->obj3D ? self->obj3D->class : 0;
 }
 
-byte __thiscall CNodo3D_BuildD3D(CNodo3D *self, uint32_t flags) {
+byte __thiscall CNode3D_BuildD3D(CNode3D *self, uint32_t flags) {
 	void *p, *obj;
-	uint32_t clase = CNodo3D_Clase(self);
+	uint32_t class = CNode3D_Class(self);
 
-	if (clase == CLASE_OBJ3D_MALLATRI) {
-		p = operator_new(MALLAD3D_SIZE);
-		obj = p ? CMallaD3D_ctorMalla(p, (CMallaTri *)self->obj3D, flags, self) : NULL;
+	if (class == CLASS_OBJ3D_TRIMESH) {
+		p = operator_new(MESHD3D_SIZE);
+		obj = p ? CMeshD3D_ctorMesh(p, (CTriMesh *)self->obj3D, flags, self) : NULL;
 		CHECK((void *)self->obj3D == obj);
 		return 1;
 	}
-	if (clase != CLASE_OBJ3D_SUELO) {
+	if (class != CLASS_OBJ3D_GROUND) {
 		return 0;
 	}
-	CSuelo_NodosToD3D(Obj3D_Cast(self->obj3D, CLASE_OBJ3D_SUELO), flags);
+	CGround_NodesToD3D(Obj3D_Cast(self->obj3D, CLASS_OBJ3D_GROUND), flags);
 	return 1;
 }
 
 /* the link in *slot set to n (counted), the old one released */
-static void Nodo_Link(CNodo3D **slot, CNodo3D *n) {
-	Nodo_Unref(slot);
+static void Node_Link(CNode3D **slot, CNode3D *n) {
+	Node_Unref(slot);
 	if (n) {
 		n->Refs++;
 	}
 	*slot = n;
 }
 
-void __fastcall CNodo3D_Unlink(CNodo3D *self) {
-	CHECK(!self->escena);
-	CHECK(!self->ant || self->ant->sig == self);
-	CHECK(!self->sig || self->sig->ant == self);
-	if (self->ant) {
-		Nodo_Link(&self->ant->sig, self->sig);
+void __fastcall CNode3D_Unlink(CNode3D *self) {
+	CHECK(!self->scene);
+	CHECK(!self->prev || self->prev->next == self);
+	CHECK(!self->next || self->next->prev == self);
+	if (self->prev) {
+		Node_Link(&self->prev->next, self->next);
 	}
-	if (self->sig) {
-		Nodo_Link(&self->sig->ant, self->ant);
+	if (self->next) {
+		Node_Link(&self->next->prev, self->prev);
 	}
-	Nodo_Unref(&self->ant);
-	Nodo_Unref(&self->sig);
+	Node_Unref(&self->prev);
+	Node_Unref(&self->next);
 }
 
-void __fastcall CNodo3D_FreeObj3D(CNodo3D *self) {
+void __fastcall CNode3D_FreeObj3D(CNode3D *self) {
 	self->Refs++;
 	Obj3D_Delete(&self->obj3D);
 	self->Refs--;
 }
 
-void __thiscall CNodo3D_SetAnt(CNodo3D *self, CNodo3D *n) {
-	Nodo_Link(&self->ant, n);
+void __thiscall CNode3D_SetPrev(CNode3D *self, CNode3D *n) {
+	Node_Link(&self->prev, n);
 }
 
-void __thiscall CNodo3D_SetObj3D(CNodo3D *self, IObjeto3D *obj) {
+void __thiscall CNode3D_SetObj3D(CNode3D *self, IObject3D *obj) {
 	CHECK(!self->obj3D);
 	if (obj) {
-		CHECK(obj->clase != 0);
+		CHECK(obj->class != 0);
 		self->obj3D = obj;
 	}
 }
 
-void __thiscall CNodo3D_SetPadre(CNodo3D *self, CNodo3D *n) {
+void __thiscall CNode3D_SetParent(CNode3D *self, CNode3D *n) {
 	if (n) {
-		CHECK(self->escena && n->escena == self->escena);
+		CHECK(self->scene && n->scene == self->scene);
 		n->Refs++;
 	}
-	Nodo_Unref(&self->padre);
-	self->padre = n;
+	Node_Unref(&self->parent);
+	self->parent = n;
 }
 
-void __thiscall CNodo3D_SetPadreName(CNodo3D *self, const char *name) {
-	CNodo3D_SetPadre(self, CNodo3D_FindPrev(self, name));
+void __thiscall CNode3D_SetParentName(CNode3D *self, const char *name) {
+	CNode3D_SetParent(self, CNode3D_FindPrev(self, name));
 }
 
-void __thiscall CNodo3D_SetSig(CNodo3D *self, CNodo3D *n) {
-	Nodo_Link(&self->sig, n);
+void __thiscall CNode3D_SetNext(CNode3D *self, CNode3D *n) {
+	Node_Link(&self->next, n);
 }
 
-void __fastcall CNodo3D_Free(CNodo3D *self) {
-	CArchINI *ini;
+void __fastcall CNode3D_Free(CNode3D *self) {
+	CIniFile *ini;
 
 	self->Refs++;
 	Obj3D_Delete(&self->obj58);
 	Obj3D_Delete(&self->obj3D);
-	Nodo_Unref(&self->padre);
+	Node_Unref(&self->parent);
 	ini = self->ini;
 	if (ini) {
-		CArchINI_dtor(ini);
+		CIniFile_dtor(ini);
 		operator_delete_sized(ini, sizeof(*ini));
 		self->ini = NULL;
 	}
 	self->Refs--;
 }
 
-quat_t *Rot_Combine(quat_t *out, CRotacion *a, const quat_t *q, CRotacion *b) {
+quat_t *Rot_Combine(quat_t *out, CRotation *a, const quat_t *q, CRotation *b) {
 	quat_t t, t2, *bq, *aq;
 
 	if (a->flags & ROT_ZERO) {
 		if (b->flags & ROT_ZERO) {
 			*out = *q;
 		} else {
-			Quat_Mul(out, q, CRotacion_GetQuat(b, &t));
+			Quat_Mul(out, q, CRotation_GetQuat(b, &t));
 		}
 		return out;
 	}
 	if (b->flags & ROT_ZERO) {
-		Quat_Mul(out, CRotacion_GetQuat(a, &t), q);
+		Quat_Mul(out, CRotation_GetQuat(a, &t), q);
 		return out;
 	}
-	bq = CRotacion_GetQuat(b, &t);
-	aq = CRotacion_GetQuat(a, &t);
+	bq = CRotation_GetQuat(b, &t);
+	aq = CRotation_GetQuat(a, &t);
 	Quat_Mul(out, Quat_Mul(&t2, aq, q), bq);
 	return out;
 }
 
-quat_t *Rot_Combine2(quat_t *out, CRotacion *a, CRotacion *b) {
+quat_t *Rot_Combine2(quat_t *out, CRotation *a, CRotation *b) {
 	quat_t t, *bq, *aq;
 
 	if (a->flags & ROT_ZERO) {
 		if (b->flags & ROT_ZERO) {
 			*out = (quat_t){ 0.0f, 0.0f, 0.0f, 1.0f };
 		} else {
-			CRotacion_GetQuat(b, out);
+			CRotation_GetQuat(b, out);
 		}
 		return out;
 	}
 	if (b->flags & ROT_ZERO) {
-		CRotacion_GetQuat(a, out);
+		CRotation_GetQuat(a, out);
 		return out;
 	}
-	bq = CRotacion_GetQuat(b, &t);
-	aq = CRotacion_GetQuat(a, &t);
+	bq = CRotation_GetQuat(b, &t);
+	aq = CRotation_GetQuat(a, &t);
 	Quat_Mul(out, aq, bq);
 	return out;
 }
 
-void *__thiscall CNodo3D_Track(CNodo3D *self, uint32_t ch) {
-	NodoAnimChannel *c = CNodo3D_ChannelAt(self, ch);
+void *__thiscall CNode3D_Track(CNode3D *self, uint32_t ch) {
+	NodeAnimChannel *c = CNode3D_ChannelAt(self, ch);
 
 	if (!c || !c->anim || !c->anim->anim[0]) {
 		return NULL;
 	}
-	return CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[0]), self->indice);
+	return CAnimation_GetNodeTable(Anim_Set(c->anim->anim[0]), self->index);
 }
 
-void *__thiscall CNodo3D_Track2(CNodo3D *self, uint32_t ch) {
-	NodoAnimChannel *c = CNodo3D_ChannelAt(self, ch);
+void *__thiscall CNode3D_Track2(CNode3D *self, uint32_t ch) {
+	NodeAnimChannel *c = CNode3D_ChannelAt(self, ch);
 
 	if (!c || !c->anim || !c->anim->anim[1]) {
 		return NULL;
 	}
-	return CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[1]), self->indice);
+	return CAnimation_GetNodeTable(Anim_Set(c->anim->anim[1]), self->index);
 }
 
-byte __thiscall CNodo_LightColor(CNodo3D *self, vec3_t *color, float *mult) {
-	NodoAnimChannel *c = CNodo3D_Channel0(self);
+byte __thiscall CNode_LightColor(CNode3D *self, vec3_t *color, float *mult) {
+	NodeAnimChannel *c = CNode3D_Channel0(self);
 	void *track;
 
-	if (!c || !(track = CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[0]), self->indice))) {
+	if (!c || !(track = CAnimation_GetNodeTable(Anim_Set(c->anim->anim[0]), self->index))) {
 		return 0;
 	}
-	return CAnimNodo_GetColor(track, color, mult, c->frame, c->t) ? 1 : 0;
+	return CAnimNode_GetColor(track, color, mult, c->frame, c->t) ? 1 : 0;
 }
 
-CEVA *__thiscall CNodo3D_TrackData(CNodo3D *self, uint32_t ch) {
-	byte *track = CNodo3D_Track(self, ch);
+CEVA *__thiscall CNode3D_TrackData(CNode3D *self, uint32_t ch) {
+	byte *track = CNode3D_Track(self, ch);
 
-	return track ? ((CAnimNodo *)track)->EVA : NULL;
+	return track ? ((CAnimNode *)track)->EVA : NULL;
 }
 
-byte __thiscall CNodo3D_AnimFloat(CNodo3D *self, float *out) {
-	NodoAnimChannel *c = CNodo3D_Channel0(self);
+byte __thiscall CNode3D_AnimFloat(CNode3D *self, float *out) {
+	NodeAnimChannel *c = CNode3D_Channel0(self);
 	void *track;
 
-	if (!c || !(track = CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[0]), self->indice))) {
+	if (!c || !(track = CAnimation_GetNodeTable(Anim_Set(c->anim->anim[0]), self->index))) {
 		return 0;
 	}
-	return CAnimNodo_GetFOV(track, out, c->frame, c->t) ? 1 : 0;
+	return CAnimNode_GetFOV(track, out, c->frame, c->t) ? 1 : 0;
 }
 
-byte __thiscall CNodo3D_SampleAnim(CNodo3D *self, vec3_t *pos, quat_t *rot) {
-	NodoAnimChannel *c;
+byte __thiscall CNode3D_SampleAnim(CNode3D *self, vec3_t *pos, quat_t *rot) {
+	NodeAnimChannel *c;
 
 	if (g_SkipAnim) {
 		return 0;
 	}
-	CHECK(self->escena);
-	if (self->indice < 0 || !self->escena || !self->escena->anim) {
+	CHECK(self->scene);
+	if (self->index < 0 || !self->scene || !self->scene->anim) {
 		return 0;
 	}
 	for (int ch = MAX_ANIM_CHANNEL - 1; ch >= 0; ch--) {
-		c = CNodo3D_ChannelAt(self, ch);
-		if (c && c->anim && c->anim->anim[0] && CNodo3D_AnimChannel(self, c, pos, rot)) {
+		c = CNode3D_ChannelAt(self, ch);
+		if (c && c->anim && c->anim->anim[0] && CNode3D_AnimChannel(self, c, pos, rot)) {
 			return 1;
 		}
 	}
 	return 0;
 }
 
-byte __thiscall CNodo3D_AnimAlpha(CNodo3D *self, byte *out) {
-	NodoAnimChannel *c = CNodo3D_Channel0(self);
+byte __thiscall CNode3D_AnimAlpha(CNode3D *self, byte *out) {
+	NodeAnimChannel *c = CNode3D_Channel0(self);
 	void *track;
 
-	if (!c || !(track = CAnimacion_GetNodoTabla(Anim_Set(c->anim->anim[0]), self->indice))) {
+	if (!c || !(track = CAnimation_GetNodeTable(Anim_Set(c->anim->anim[0]), self->index))) {
 		return 0;
 	}
-	return CAnimNodo_GetVisible(track, out, c->frame, c->t) ? 1 : 0;
+	return CAnimNode_GetVisible(track, out, c->frame, c->t) ? 1 : 0;
 }
 
-box_t *__thiscall CSuelo_GetBox(void *self, box_t *out) {
+box_t *__thiscall CGround_GetBox(void *self, box_t *out) {
 	*out = *(box_t *)((byte *)self + 0x30);
 	return out;
 }
 
-NodoAnimChannel *__thiscall CNodo3D_Channel(CNodo3D *self, uint32_t ch) {
-	NodoAnimChannel *c = CNodo3D_ChannelAt(self, ch);
+NodeAnimChannel *__thiscall CNode3D_Channel(CNode3D *self, uint32_t ch) {
+	NodeAnimChannel *c = CNode3D_ChannelAt(self, ch);
 
 	if (!c || !c->anim || !c->anim->anim[0]) {
 		return NULL;
@@ -802,7 +802,7 @@ NodoAnimChannel *__thiscall CNodo3D_Channel(CNodo3D *self, uint32_t ch) {
 	return c;
 }
 
-quat_t *__thiscall CRotacion_GetQuat(CRotacion *self, quat_t *out) {
+quat_t *__thiscall CRotation_GetQuat(CRotation *self, quat_t *out) {
 	quat_t qx, qy, qz, t, t2;
 	float s, c;
 
@@ -810,7 +810,7 @@ quat_t *__thiscall CRotacion_GetQuat(CRotacion *self, quat_t *out) {
 		self->flags &= ~ROT_DIRTY;
 		if (self->flags & ROT_ZERO) {
 			self->q = (quat_t){ 0.0f, 0.0f, 0.0f, 1.0f };
-		} else if (!self->modo) {
+		} else if (!self->mode) {
 			Quat_FromEuler(&self->q, -self->ang.x, -self->ang.y, -self->ang.z);
 		} else {
 			X87_SinCos(-self->ang.y * 0.5f, &s, &c);

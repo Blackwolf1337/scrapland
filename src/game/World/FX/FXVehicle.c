@@ -21,7 +21,7 @@
 
 /* the node of name in model, CHECKed */
 static int FXV_Node(CGameModel *model, const char *name) {
-	int node = CGameModel_FindNodoR(model, name);
+	int node = CGameModel_FindRenderNode(model, name);
 	CHECK(node > -1);
 	return node;
 }
@@ -30,7 +30,7 @@ static int FXV_Node(CGameModel *model, const char *name) {
 static int FXV_NodeOrDebris(cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	if (CGameModel_IsLoaded(model)) {
-		return CGameModel_FindNodoR(model, "Dummy01");
+		return CGameModel_FindRenderNode(model, "Dummy01");
 	}
 	return (int)(intptr_t)debris;
 }
@@ -2239,7 +2239,7 @@ static void FXV_ShipSphere(CGameParticles *p, const vec3_t *pos, const vec3_t *v
 
 void FX_ShipExplosion(vec3_t pos, vec3_t vel, float scale, float time, int numFlames, int collision) {
 	vec3_t from, to, hit, tmp;
-	CColisTri tri;
+	CCollisionTri tri;
 
 	CHECK(scale >= 0.01f);
 	CHECK(time >= 0.01f);
@@ -2298,7 +2298,7 @@ void FX_ShipExplosion(vec3_t pos, vec3_t vel, float scale, float time, int numFl
 	CGameModel_SetPos(Debris_Model(d), &at);
 	d->speed = time * 1.5f;
 	cDebrisSys_Drop(sys, d);
-	cObjElementFXSistPart *el = (cObjElementFXSistPart *)d->fx;
+	cObjElementFXParticleSystem *el = (cObjElementFXParticleSystem *)d->fx;
 	if (!el) {
 		return;
 	}
@@ -2485,7 +2485,7 @@ void __thiscall cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *
 	CGameModel *spm = FX_Vtbl(sp)->GetModel(sp);
 	matrix_t mat;
 	CHECK(CGameModel_IsLoaded(spm));
-	const matrix_t *m = CGameModel_NodoMatrix(spm, &mat, (uint32_t)self->sputnikNode, 1, NULL, 0);
+	const matrix_t *m = CGameModel_NodeMatrix(spm, &mat, (uint32_t)self->sputnikNode, 1, NULL, 0);
 	vec3_t spos;
 	spos.x = m->m[12];
 	spos.y = m->m[13];
@@ -2903,11 +2903,11 @@ byte __thiscall cObjElementFXVehicleSputnik_IsAlive(cObjElementFXVehicleSputnik 
 
 void __thiscall cObjElementFXFiredDebris_Start(cObjElementFXFiredDebris *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
-	int node = CGameModel_FindNodoR(model, "Dummy01");
+	int node = CGameModel_FindRenderNode(model, "Dummy01");
 	if (node != -1) {
 		CGameParticles_Attach(&self->particles, model, node);
 	}
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	self->first = 1;
 	self->interval = 0.1f;
 	self->time = 0.0f;
@@ -2926,11 +2926,11 @@ void __thiscall cObjElementFXFiredEntity_Start(cObjElementFXFiredEntity *self, c
 
 void __thiscall cObjElementFXSmokeDebris_Start(cObjElementFXSmokeDebris *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
-	int node = CGameModel_FindNodoR(model, "Dummy01");
+	int node = CGameModel_FindRenderNode(model, "Dummy01");
 	if (node != -1) {
 		CGameParticles_Attach(&self->particles, model, node);
 	}
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	self->first = 1;
 	self->interval = 0.03f;
 	self->minDist = 50.0f;
@@ -2944,7 +2944,7 @@ void __thiscall cObjElementFXVehicleAccelerator_Start(cObjElementFXVehicleAccele
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
 	CGameParticles_Attach(&self->particles, model, FXV_Node(model, "Dummy01"));
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	for (int i = 0; i < FXVACCEL_TRAILS; i++) {
 		CGameTrail *t = &self->trails[i];
 		self->fade[i] = 0.0f;
@@ -2998,16 +2998,16 @@ void __thiscall cObjElementFXVehicleEMI_Start(cObjElementFXVehicleEMI *self, cDe
 
 void __thiscall cObjElementFXVehicleFire_Start(cObjElementFXVehicleFire *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
-	int node = CGameModel_FindNodoR(model, "Dummy01");
+	int node = CGameModel_FindRenderNode(model, "Dummy01");
 	if (node != -1) {
 		CGameParticles_Attach(&self->particles, model, node);
 	}
-	CHECK(self->particles.SistPart);
-	node = CGameModel_FindNodoR(model, "Dummy02");
+	CHECK(self->particles.ParticleSystem);
+	node = CGameModel_FindRenderNode(model, "Dummy02");
 	if (node != -1) {
 		CGameParticles_Attach(&self->particlesOut, model, node);
 	}
-	CHECK(self->particlesOut.SistPart);
+	CHECK(self->particlesOut.ParticleSystem);
 	self->emitTime = 0.0f;
 	self->numExhausts = 0;
 }
@@ -3030,7 +3030,7 @@ void __thiscall cObjElementFXVehicleSputnik_Start(cObjElementFXVehicleSputnik *s
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
 	CGameParticles_Attach(&self->particles, model, FXV_Node(model, "Dummy01"));
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	for (int i = 0; i < FXVSPUTNIK_TRAILS; i++) {
 		CGameTrail *t = &self->trails[i];
 		CGameTrail_SetTexture(t, i < 2 ? 0 : 0xb);
@@ -3181,7 +3181,7 @@ void __thiscall cObjElementFXVehicleSputnik_SetEntity(cObjElementFXVehicleSputni
 	HashNode *node = HashTable_Find(t, "Sputnik", HashTable_Hash(t, "Sputnik"));
 	if (node && node->value) {
 		cEntity *sp = node->value;
-		self->sputnikNode = CGameModel_FindNodoR(FXV_Model(sp), "Bip Spootnick MASTER");
+		self->sputnikNode = CGameModel_FindRenderNode(FXV_Model(sp), "Bip Spootnick MASTER");
 	}
 }
 
@@ -3214,8 +3214,8 @@ void __fastcall FXVehicle_RenderAttached(void *element) {
 		return;
 	}
 	cObjElementFXVehicleDamage *self = element;
-	if (!self->entity || !self->model || !self->parts3.SistPart || !self->parts2.SistPart
-		|| !self->parts1.SistPart) {
+	if (!self->entity || !self->model || !self->parts3.ParticleSystem || !self->parts2.ParticleSystem
+		|| !self->parts1.ParticleSystem) {
 		return;
 	}
 	CGameParticles_SetVisible(&self->parts3, 1);

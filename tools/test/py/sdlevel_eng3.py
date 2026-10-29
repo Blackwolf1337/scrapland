@@ -16,7 +16,7 @@ def en3llog(fn):
 	r = fn()
 	SDTest.D3DLog(0)
 	return (r, SDTest.Out())
-en3lmundo = SDTest.Peek('g_Mundo', 'i')
+en3lmundo = SDTest.Peek('g_World', 'i')
 en3lcam = en3lri(en3lmundo + 0xa4)
 en3lmat = SDTest.Peek('g_LensFlareMat', 'i')
 check('lens flare level', lambda: (en3lcam != 0, en3lmat != 0, SDTest.Peek('g_LensFlares', 'i'), SDTest.Peek('g_nLensFlareRender', 'i')))
@@ -39,7 +39,7 @@ if en3lcam and en3lmat:
 	def en3lrender(pos, tipo, rel, f=en3lf):
 		en3lwf(f + 8, pos)
 		en3lwi(f + 0x1c, tipo)
-		SDTest.Call('CLensFlare_SetRelativo', 'tvii', f, rel)
+		SDTest.Call('CLensFlare_SetRelative', 'tvii', f, rel)
 		return (en3llog(lambda: SDTest.Call('LensFlare_RenderAll', 'v')), en3lstate())
 	for en3lpos in ((0.0, -30.0, 10.0), (0.5, -29.7, 10.0), (1.1, -30.0, 10.0), (-1.15, -30.9, 10.0),
 			(1.3, -30.0, 10.0), (0.0, -31.25, 10.0), (0.0, -30.0, -5.0), (0.25, -29.9, 0.001)):
@@ -47,8 +47,8 @@ if en3lcam and en3lmat:
 			check('LensFlare_RenderAll' + fmt((en3lpos, en3ltipo)), lambda p=en3lpos, t=en3ltipo:
 				en3lrender(p, t, 0))
 	check('LensFlare_RenderAll relativo', lambda: en3lrender((0.5, 0.25, 10.0), 1, 1))
-	SDTest.Call('CLensFlare_SetEscala', 'tvif', en3lf, 1.75)
-	SDTest.Call('CLensFlare_SetMargen', 'tvif', en3lf, 0.5)
+	SDTest.Call('CLensFlare_SetScale', 'tvif', en3lf, 1.75)
+	SDTest.Call('CLensFlare_SetMargin', 'tvif', en3lf, 0.5)
 	SDTest.Call('CLensFlare_SetIntens', 'tvif', en3lf, 0.6)
 	check('LensFlare_RenderAll escala', lambda: en3lrender((1.2, -30.4, 10.0), 0, 0))
 	# the traces against the floor of FZ, from the eye of the view at (0, -30, 0), over time

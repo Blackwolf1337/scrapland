@@ -23,7 +23,7 @@ CTrail *__fastcall CTrail_ctor(CTrail *self) {
 	self->f50 = 1.0f;
 	self->orientVec = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->render = 0;
-	self->IndiceRender = -1;
+	self->RenderIndex = -1;
 	self->texture = 0;
 	self->fade = 0;
 	self->smooth = 0;
@@ -57,36 +57,36 @@ void Trails_UpdateRender(CTrail *t) {
 		return;
 	}
 	byte on = t->render;
-	int indice = t->IndiceRender;
+	int index = t->RenderIndex;
 	int texture = t->texture;
 	CHECK(texture >= 0 && texture < MAX_TRAILS_TEXTURES);
 	if (on) {
-		if (indice != -1) {
+		if (index != -1) {
 			return;
 		}
 		int n = g_nTrailsRender[texture];
 		if (n >= MAX_TRAILS_RENDER) {
 			return;
 		}
-		t->IndiceRender = n;
+		t->RenderIndex = n;
 		g_nTrails++;
 		g_nTrailsRender[texture] = n + 1;
 		g_TrailsRender[texture][n] = t;
 		return;
 	}
-	if (indice == -1) {
+	if (index == -1) {
 		return;
 	}
-	CHECK(indice < MAX_TRAILS_RENDER);
+	CHECK(index < MAX_TRAILS_RENDER);
 	CHECK(g_nTrailsRender[texture] <= MAX_TRAILS_RENDER);
-	CHECK(g_TrailsRender[texture][indice] == t);
+	CHECK(g_TrailsRender[texture][index] == t);
 	g_nTrails--;
 	int n = g_nTrailsRender[texture];
 	CTrail *moved = g_TrailsRender[texture][n - 1];
-	g_TrailsRender[texture][indice] = moved;
-	moved->IndiceRender = indice;
+	g_TrailsRender[texture][index] = moved;
+	moved->RenderIndex = index;
 	g_nTrailsRender[texture] = n - 1;
-	t->IndiceRender = -1;
+	t->RenderIndex = -1;
 }
 
 void __fastcall CTrail_Reset(CTrail *self) {
@@ -710,12 +710,12 @@ static const struct {
 };
 
 int Trails_Init(void) {
-	void *dev = g_MotorDev;
+	void *dev = g_EngineDev;
 	if (D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, MAX_TRAILS_VB * sizeof(TrailVertex),
 		D3DUSAGE_WRITEONLY_DYNAMIC, TRAILS_FVF, 0, &g_TrailsVB) < 0) {
 		return E_FAIL;
 	}
-	dev = g_MotorDev;
+	dev = g_EngineDev;
 	if (D3D_METHOD(dev, d3dCreateIB_t, D3DDEV_CREATEIB)(dev, MAX_TRAILS_IB * sizeof(uint16_t),
 		D3DUSAGE_WRITEONLY_DYNAMIC, D3DFMT_INDEX16, 0, &g_TrailsIB) < 0) {
 		return E_FAIL;
@@ -730,8 +730,8 @@ int Trails_Init(void) {
 		mat.params.dstBlend = trailsMats[i].dstBlend;
 		((byte *)&mat.params.w3e)[1] = 0;
 		mat.params.i40 = 2;
-		mat.mapa[0]->b8 = trailsMats[i].dudv;
-		CMaterial_Prepare(&mat, g_MotorDev);
+		mat.map[0]->b8 = trailsMats[i].dudv;
+		CMaterial_Prepare(&mat, g_EngineDev);
 		g_TrailsMat[i] = Mat_New(&mat, 0);
 	}
 	CMaterial_dtor(&mat);
@@ -769,7 +769,7 @@ void Trails_Render(int texture) {
 	if (!g_TrailsOn || g_nTrails <= 0) {
 		return;
 	}
-	void *dev = g_MotorDev;
+	void *dev = g_EngineDev;
 	Render_SetWorldMatrix(g_MatIdentity, 0);
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_CULLMODE, D3DCULL_NONE);
 	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, TRAILS_FVF);
@@ -820,7 +820,7 @@ void Trails_Render(int texture) {
 				}
 			}
 			CTrail *t = g_TrailsRender[tex][i];
-			CHECK(t->IndiceRender == i);
+			CHECK(t->RenderIndex == i);
 			if (t->render) {
 				CTrail_Build(t, &pV, &pI);
 				g_TrailsDrawn++;

@@ -1,7 +1,7 @@
 # The D3DX texture functions (src/lib/d3dx8/D3dxTex.c, execfile'd by sdcall.py, Python 1.5.2), tested by what they
 # must do, not bit for bit: their own C is written from the documented behavior. CheckTextureRequirements and the
 # conversions of D3DXLoadSurfaceFromSurface between the uncompressed formats are exact. The DDS files go through
-# CTextura_CreateD3D (the call of the game, so the format, levels and filters are the game's) and print the format,
+# CTexture_CreateD3D (the call of the game, so the format, levels and filters are the game's) and print the format,
 # size and levels exactly, and as a checksum the levels the file has in an uncompressed format or in DXT blocks of
 # 4x4 and more. Every other level (DXT converted or encoded, made by the box filter) prints only whether its average
 # color is within a tolerance of the average of the file level (of the top level for made levels); made levels of the
@@ -309,16 +309,16 @@ dxtfiles = ('levels/fake/map/dds/down.000.dds', 'models/weapons/sonic/dds/minaso
 	'bmp/dds/noise_static.alpha.dds', '2d/textures/temple/dds/templo-transicion00-d.alpha.dds',
 	'2d/gfx/dds/circletrail.dds', '2d/textures/menu/dds/escudo-r.dds', '2d/menu/dds/circuitflare.dds',
 	'2d/dds/arrow.alpha.dds', '2d/dds/marker.alpha.dds', 'bmp/dds/partic1.dds')
-# CTextura_CreateD3D with the file in memory: bpp, alpha, bump, compressed, mipmap
+# CTexture_CreateD3D with the file in memory: bpp, alpha, bump, compressed, mipmap
 dxtreqs = ((32, 0, 0, 1, 1), (32, 0, 0, 1, 0), (32, 1, 0, 0, 1), (32, 0, 0, 0, 1), (24, 0, 0, 0, 0), (16, 0, 0, 0, 1),
 	(16, 1, 0, 0, 1), (8, 0, 0, 0, 0), (32, 0, 1, 0, 1), (32, 1, 1, 0, 0), (16, 0, 1, 0, 1), (16, 1, 1, 0, 1),
 	(16, 0, 1, 1, 1))
 def dxtentry(name):
 	t = SDTest.Call('operator_new', 'ii', 0x258)[0]
-	SDTest.Call('CTextura_ctor', 'tiizzii', t, name, None, 0, 0)
+	SDTest.Call('CTexture_ctor', 'tiizzii', t, name, None, 0, 0)
 	return t
 def dxtfreeentry(t):
-	SDTest.Call('CTextura_dtor', 'tvi', t)
+	SDTest.Call('CTexture_dtor', 'tvi', t)
 	SDTest.Call('operator_delete', 'vi', t)
 def dxtmake(t, req, buf, size, dev=None):
 	if dev is None:
@@ -330,11 +330,11 @@ def dxtmake(t, req, buf, size, dev=None):
 	dxtpo(t + 0x240, comp)
 	dxtpo(t + 0x230, buf)
 	dxtpo(t + 0x234, size)
-	hr = SDTest.Call('CTextura_CreateD3D', 'tiii', t, dev)[0]
+	hr = SDTest.Call('CTexture_CreateD3D', 'tiii', t, dev)[0]
 	dxtpo(t + 0x230, 0)
 	return hr
 for dxtname in dxtfiles:
-	r = SDTest.Call('ArchIO_ReadAll', 'ispp', dxtname, 0, 0)
+	r = SDTest.Call('FileIO_ReadAll', 'ispp', dxtname, 0, 0)
 	dxtbuf, dxtsize = r[1], r[2]
 	if not dxtbuf:
 		check('dxt file ' + dxtname, lambda: 'missing')
@@ -346,16 +346,16 @@ for dxtname in dxtfiles:
 		hr = dxtmake(t, dxtreq, dxtbuf, dxtsize)
 		tex = dxtpk(t + 0x228)
 		if tex:
-			check('dxt CTextura_CreateD3D ' + dxtname + fmt(dxtreq), lambda hr=hr, tex=tex, dxtlv=dxtlv: (hr,
+			check('dxt CTexture_CreateD3D ' + dxtname + fmt(dxtreq), lambda hr=hr, tex=tex, dxtlv=dxtlv: (hr,
 				dxtcompare(dxttex(tex), dxtlv)))
 		else:
-			check('dxt CTextura_CreateD3D ' + dxtname + fmt(dxtreq), lambda hr=hr: (hr, 'none'))
+			check('dxt CTexture_CreateD3D ' + dxtname + fmt(dxtreq), lambda hr=hr: (hr, 'none'))
 		dxtfreeentry(t)
 	if dxtname == 'bmp/dds/partic1.dds':
 		# the header alone and a cut level
 		for n in (128, 128 + 1000):
 			t = dxtentry('sdxtex.dds')
-			check('dxt CTextura_CreateD3D cut' + fmt((n,)), lambda t=t, n=n: (dxtmake(t, (32, 1, 0, 0, 1), dxtbuf, n) < 0,
+			check('dxt CTexture_CreateD3D cut' + fmt((n,)), lambda t=t, n=n: (dxtmake(t, (32, 1, 0, 0, 1), dxtbuf, n) < 0,
 				dxtpk(t + 0x228) != 0))
 			dxtfreeentry(t)
 	SDTest.Call('Ptr_Delete', 'vp', dxtbuf)
@@ -374,7 +374,7 @@ def dxttga(levels):
 		else:
 			r.append((f, w, h, dxtdiff(dxtavg(b, f, w, h), ref) <= 12))
 	return r
-r = SDTest.Call('ArchIO_ReadAll', 'ispp', 'bmp/norm1.alpha.psa', 0, 0)
+r = SDTest.Call('FileIO_ReadAll', 'ispp', 'bmp/norm1.alpha.psa', 0, 0)
 dxtbuf, dxtsize = r[1], r[2]
 check('dxt file bmp/norm1.alpha.psa', lambda: (dxtbuf != 0, dxtsize))
 if dxtbuf:
@@ -383,9 +383,9 @@ if dxtbuf:
 		hr = dxtmake(t, dxtreq, dxtbuf, dxtsize)
 		tex = dxtpk(t + 0x228)
 		if tex:
-			check('dxt CTextura_CreateD3D tga' + fmt(dxtreq), lambda hr=hr, tex=tex: (hr, dxttga(dxttex(tex))))
+			check('dxt CTexture_CreateD3D tga' + fmt(dxtreq), lambda hr=hr, tex=tex: (hr, dxttga(dxttex(tex))))
 		else:
-			check('dxt CTextura_CreateD3D tga' + fmt(dxtreq), lambda hr=hr: (hr, 'none'))
+			check('dxt CTexture_CreateD3D tga' + fmt(dxtreq), lambda hr=hr: (hr, 'none'))
 		dxtfreeentry(t)
 	SDTest.Call('Ptr_Delete', 'vp', dxtbuf)
 
@@ -512,7 +512,7 @@ for dxtreq in dxtbmpreqs:
 	dxtpo(t + 0x21c, bpp)
 	dxtpo(t + 0x224, alpha)
 	dxtpo(t + 0x23c, mip | bump << 8)
-	hr = SDTest.Call('CTextura_CreateD3D', 'tiii', t, dxtdev)[0]
+	hr = SDTest.Call('CTexture_CreateD3D', 'tiii', t, dxtdev)[0]
 	tex = dxtpk(t + 0x228)
 	def dxtbmplevels(tex):
 		r = []
@@ -523,9 +523,9 @@ for dxtreq in dxtbmpreqs:
 				r.append((f, w, h, dxtsum(b)))
 		return r
 	if tex:
-		check('dxt CTextura_CreateD3D CBmp' + fmt(dxtreq), lambda hr=hr, tex=tex: (hr, dxtbmplevels(tex)))
+		check('dxt CTexture_CreateD3D CBmp' + fmt(dxtreq), lambda hr=hr, tex=tex: (hr, dxtbmplevels(tex)))
 	else:
-		check('dxt CTextura_CreateD3D CBmp' + fmt(dxtreq), lambda hr=hr: (hr, 'none'))
+		check('dxt CTexture_CreateD3D CBmp' + fmt(dxtreq), lambda hr=hr: (hr, 'none'))
 	dxtfreeentry(t)
 
 # the device calls, through the D3D log
@@ -537,11 +537,11 @@ def dxtlog(fn):
 	return r, SDTest.Out()
 check('dxt CheckTextureRequirements log', lambda: dxtlog(lambda: SDTest.Call('D3DX_CheckTextureRequirements', 'tiiipppipi', 0,
 	SDTest.Peek('g_pd3dDevice', 'i'), 30, 20, 0, 0, 0x14, 1)))
-r = SDTest.Call('ArchIO_ReadAll', 'ispp', 'bmp/dds/partic1.dds', 0, 0)
+r = SDTest.Call('FileIO_ReadAll', 'ispp', 'bmp/dds/partic1.dds', 0, 0)
 dxtbuf, dxtsize = r[1], r[2]
 if dxtbuf:
 	t = dxtentry('sdxtex.dds')
-	check('dxt CTextura_CreateD3D log', lambda t=t: dxtlog(lambda t=t: (dxtmake(t, (16, 0, 0, 0, 1), dxtbuf, dxtsize, SDTest.Peek('g_pd3dDevice', 'i')),)))
+	check('dxt CTexture_CreateD3D log', lambda t=t: dxtlog(lambda t=t: (dxtmake(t, (16, 0, 0, 0, 1), dxtbuf, dxtsize, SDTest.Peek('g_pd3dDevice', 'i')),)))
 	dxtfreeentry(t)
 	SDTest.Call('Ptr_Delete', 'vp', dxtbuf)
 

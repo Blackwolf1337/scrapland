@@ -26,10 +26,10 @@ char str_PyDoc_SAI_IniAI[] SD_AT(0x429328) = "IniAI(levelPath) : Inicializa AI p
 char str_PyDoc_SAI_BuildGraph[] SD_AT(0x429358) =
 	"BuildGraph(int numNodesRadius, float sizeNodeX, float sizeNodeY, float sizeNodeZ) : Crea el Grafo as"
 	"ociado al Pathfinding";
-char str_PyDoc_SAI_AnalizeMap[] SD_AT(0x4293d4) = "AnalizeMap(float sizeNode) : Analiza características mapa.";
-char str_PyDoc_SAI_AnalizeGraph[] SD_AT(0x429410) = "AnalizeGraph() : Analiza características grafo.";
-char str_PyDoc_SAI_AnalizeGraph2D[] SD_AT(0x429440) = "AnalizeGraph2D() : Analiza características grafo 2D.";
-char str_PyDoc_SAI_AnalizeTraffic[56] SD_AT(0x429478) = "AnalizeTraffic() : Analiza características tráfico.";
+char str_PyDoc_SAI_AnalyzeMap[] SD_AT(0x4293d4) = "AnalizeMap(float sizeNode) : Analiza características mapa.";
+char str_PyDoc_SAI_AnalyzeGraph[] SD_AT(0x429410) = "AnalizeGraph() : Analiza características grafo.";
+char str_PyDoc_SAI_AnalyzeGraph2D[] SD_AT(0x429440) = "AnalizeGraph2D() : Analiza características grafo 2D.";
+char str_PyDoc_SAI_AnalyzeTraffic[56] SD_AT(0x429478) = "AnalizeTraffic() : Analiza características tráfico.";
 char str_PyDoc_SAI_BuildGraph2D[] SD_AT(0x4294b0) =
 	"BuildGraph2D(int numNodesRadius, float sizeNodeX, float sizeNodeY, float sizeNodeZ) : Crea el Grafo "
 	"asociado al Pathfinding 2D";
@@ -447,7 +447,7 @@ char str_PyDoc_SScorer_SetDefault[88] SD_AT(0x42f0f8) =
 	"SetDefault(playernumber,DefaultItemName) : pone un item del scorer 'por defecto'";
 char str_PyDoc_SScorer_GetDefault[] SD_AT(0x42f150) =
 	"DefaultItemName GetDefault(playernumber) Obtiene el nombre del item por defecto";
-char str_PyDoc_SScorer_GetActual[64] SD_AT(0x42f1a0) = "ActualItem GetActual(playernumber) Obtiene el item actual";
+char str_PyDoc_SScorer_GetCurrent[64] SD_AT(0x42f1a0) = "ActualItem GetActual(playernumber) Obtiene el item actual";
 char str_PyDoc_SScorer_SetOnCancel[104] SD_AT(0x42f1e0) =
 	"SetOnCancel(playernumber,CancelEvent) : Define la funcion que se ejecutara en el caso del escape.";
 char str_PyDoc_SScorer_SetOnNext[] SD_AT(0x42f248) =

@@ -53,13 +53,13 @@ void CApp_Update(void);
 void CCallbackImpl_GetSize(void);
 void CCallbackImpl_RunCall(void);
 void CCallback_Run(void);
-void CCamara_Delete(void);
-void CCamara_InitD3D(void);
-void CCamara_Read(void);
-void CCamara_ReleaseD3D(void);
-void CCamara_Render(void);
-void CCamara_Update(void);
-void CCamara_Write(void);
+void CCamera_Delete(void);
+void CCamera_InitD3D(void);
+void CCamera_Read(void);
+void CCamera_ReleaseD3D(void);
+void CCamera_Render(void);
+void CCamera_Update(void);
+void CCamera_Write(void);
 void CD3DApp_AdjustWindowForChange(void);
 void CD3DApp_ConfirmDevice(void);
 void CD3DApp_Create(void);
@@ -68,28 +68,15 @@ void CD3DApp_Nop(void);
 void CD3DApp_Pause(void);
 void CD3DApp_Run(void);
 void CD3DApplication_Nothing(void);
-void CEntradaDInput_AcquireKeys(void);
-void CEntradaDInput_AcquireMouse(void);
-void CEntradaDInput_Delete(void);
-void CEntradaDInput_Init(void);
-void CEntradaDInput_ReadKeys(void);
-void CEntradaDInput_ReadMouse(void);
-void CEntradaDInput_Release(void);
-void CEntradaDInput_WndProc(void);
-void CEntradaNula_Delete(void);
-void CEntradaNula_Nothing(void);
-void CEntradaNula_Nothing1(void);
-void CEntradaNula_Nothing3(void);
-void CEntradaNula_Nothing4(void);
-void CEntradaWindows_AcquireKeys(void);
-void CEntradaWindows_AcquireMouse(void);
-void CEntradaWindows_Delete(void);
-void CEntradaWindows_Init(void);
-void CEntradaWindows_ReadKeys(void);
-void CEntradaWindows_ReadMouse(void);
-void CEntradaWindows_Release(void);
-void CEntradaWindows_WndProc(void);
-void CEscena_Delete(void);
+void CEngineApp_ConfirmDevice(void);
+void CEngineApp_DeleteDeviceObjects(void);
+void CEngineApp_FinalCleanup(void);
+void CEngineApp_FrameMove(void);
+void CEngineApp_InitDeviceObjects(void);
+void CEngineApp_MsgProc(void);
+void CEngineApp_OneTimeSceneInit(void);
+void CEngineApp_Render(void);
+void CEngineApp_RestoreDeviceObjects(void);
 void CFXNewsPanel_Delete(void);
 void CFXNewsPanel_GetTexture(void);
 void CFXNewsPanel_Update(void);
@@ -99,39 +86,51 @@ void CFXTexScroll_Delete(void);
 void CFXTexScroll_Update(void);
 void CFlare_Delete(void);
 void CFlare_Render(void);
-void CGrafico3D_Delete(void);
-void CGrafico3D_Read(void);
-void CGrafico3D_Render(void);
-void CGrafico3D_Write(void);
-void CListaMat_DeleteObj(void);
-void CLuz_Delete(void);
-void CLuz_Hide(void);
-void CLuz_Read(void);
-void CLuz_Render(void);
-void CLuz_Reset(void);
-void CLuz_Update(void);
-void CLuz_Write(void);
-void CMallaD3D_Delete(void);
-void CMallaD3D_Draw(void);
-void CMallaD3D_Invalidate(void);
-void CMallaD3D_Read(void);
-void CMallaD3D_Restore(void);
-void CMallaD3D_SetRender(void);
-void CMallaD3D_Write(void);
-void CMallaTri_Delete(void);
-void CMallaTri_Draw(void);
-void CMallaTri_NoFile(void);
+void CGraphic3D_Delete(void);
+void CGraphic3D_Read(void);
+void CGraphic3D_Render(void);
+void CGraphic3D_Write(void);
+void CGround_Delete(void);
+void CGround_Draw(void);
+void CGround_NodesVf3(void);
+void CGround_NodesVf4(void);
+void CGround_Nop(void);
+void CGround_Read(void);
+void CGround_Write(void);
+void CInputDInput_AcquireKeys(void);
+void CInputDInput_AcquireMouse(void);
+void CInputDInput_Delete(void);
+void CInputDInput_Init(void);
+void CInputDInput_ReadKeys(void);
+void CInputDInput_ReadMouse(void);
+void CInputDInput_Release(void);
+void CInputDInput_WndProc(void);
+void CInputWindows_AcquireKeys(void);
+void CInputWindows_AcquireMouse(void);
+void CInputWindows_Delete(void);
+void CInputWindows_Init(void);
+void CInputWindows_ReadKeys(void);
+void CInputWindows_ReadMouse(void);
+void CInputWindows_Release(void);
+void CInputWindows_WndProc(void);
+void CLight_Delete(void);
+void CLight_Hide(void);
+void CLight_Read(void);
+void CLight_Render(void);
+void CLight_Reset(void);
+void CLight_Update(void);
+void CLight_Write(void);
+void CMatList_DeleteObj(void);
 void CMaterial_Delete(void);
-void CModelo_Delete(void);
-void CMotorApp_ConfirmDevice(void);
-void CMotorApp_DeleteDeviceObjects(void);
-void CMotorApp_FinalCleanup(void);
-void CMotorApp_FrameMove(void);
-void CMotorApp_InitDeviceObjects(void);
-void CMotorApp_MsgProc(void);
-void CMotorApp_OneTimeSceneInit(void);
-void CMotorApp_Render(void);
-void CMotorApp_RestoreDeviceObjects(void);
+void CMeshD3D_Delete(void);
+void CMeshD3D_Draw(void);
+void CMeshD3D_Invalidate(void);
+void CMeshD3D_Read(void);
+void CMeshD3D_Restore(void);
+void CMeshD3D_SetRender(void);
+void CMeshD3D_Write(void);
+void CModel_Delete(void);
+void CNode3D_VecDelete(void);
 void CNodeFX_Spring_Apply(void);
 void CNodeFX_Spring_Delete(void);
 void CNodeFX_Spring_Type(void);
@@ -142,7 +141,7 @@ void CNodesTrafficInDoor_BuildGrid(void);
 void CNodesTrafficInDoor_Delete(void);
 void CNodesTrafficInDoor_Init(void);
 void CNodesTraffic_AddVehicle(void);
-void CNodesTraffic_Analize(void);
+void CNodesTraffic_Analyze(void);
 void CNodesTraffic_BuildGrid(void);
 void CNodesTraffic_CollectCell(void);
 void CNodesTraffic_Delete(void);
@@ -210,22 +209,27 @@ void CNodesWorld_ClearLists(void);
 void CNodesWorld_Delete(void);
 void CNodesWorld_LoadGraph(void);
 void CNodesWorld_SavePath(void);
-void CNodo3D_VecDelete(void);
+void CNullInput_Delete(void);
+void CNullInput_Nothing(void);
+void CNullInput_Nothing1(void);
+void CNullInput_Nothing3(void);
+void CNullInput_Nothing4(void);
 void CObjBase3D_Delete(void);
-void CParticulaActive_Init(void);
-void CParticulaActive_Type(void);
-void CParticulaActive_Update(void);
-void CParticulaStatic_Init(void);
-void CParticulaStatic_Type(void);
+void CParticleActive_Init(void);
+void CParticleActive_Type(void);
+void CParticleActive_Update(void);
+void CParticleStatic_Init(void);
+void CParticleStatic_Type(void);
+void CParticleSystem_Delete(void);
+void CParticleSystem_Read(void);
+void CParticleSystem_Render(void);
+void CParticleSystem_Update(void);
+void CParticleSystem_Write(void);
 void CPortal_Delete(void);
 void CPortal_Read(void);
 void CPortal_Render(void);
 void CPortal_Write(void);
-void CSistPart_Delete(void);
-void CSistPart_Read(void);
-void CSistPart_Render(void);
-void CSistPart_Update(void);
-void CSistPart_Write(void);
+void CScene_Delete(void);
 void CSoundSys_Close(void);
 void CSoundSys_Compute3D(void);
 void CSoundSys_Destroy(void);
@@ -270,13 +274,9 @@ void CSoundXBox_StopAllSounds(void);
 void CSoundXBox_StopSound(void);
 void CSoundXBox_Update(void);
 void CSoundXBox_UpdateSound(void);
-void CSuelo_Delete(void);
-void CSuelo_Draw(void);
-void CSuelo_NodosVf3(void);
-void CSuelo_NodosVf4(void);
-void CSuelo_Nop(void);
-void CSuelo_Read(void);
-void CSuelo_Write(void);
+void CTriMesh_Delete(void);
+void CTriMesh_Draw(void);
+void CTriMesh_NoFile(void);
 void CWinApp_ConsoleAdd(void);
 void CWinApp_DebugInput(void);
 void CWinApp_Delete(void);
@@ -302,16 +302,16 @@ void GogAuthListener_Delete(void);
 void GogAuthListener_OnAuthLost(void);
 void GogAuthListener_OnAuthSuccess(void);
 void GogSelfRegListener_Delete(void);
-void IEntrada_Delete(void);
-void IEntrada_WndProc(void);
-void IFXTextura_Delete(void);
-void IFXTextura_GetTexture(void);
+void IFXTexture_Delete(void);
+void IFXTexture_GetTexture(void);
 void IGalaxyListener_Delete(void);
+void IInput_Delete(void);
+void IInput_WndProc(void);
 void INodeFX_Delete(void);
 void INodeFX_Type(void);
-void IObjeto3D_Delete(void);
-void IObjeto3D_Read(void);
-void IObjeto3D_Write(void);
+void IObject3D_Delete(void);
+void IObject3D_Read(void);
+void IObject3D_Write(void);
 void Logic_Delete(void);
 void Logic_False(void);
 void Logic_False1(void);
@@ -807,6 +807,10 @@ void cEmbeddedFXBattery_Release(void);
 void cEmbeddedFXBattery_Reset(void);
 void cEmbeddedFXBattery_Stop(void);
 void cEmbeddedFXBattery_Update(void);
+void cEmbeddedFXBike_Delete(void);
+void cEmbeddedFXBike_Release(void);
+void cEmbeddedFXBike_Reset(void);
+void cEmbeddedFXBike_Update(void);
 void cEmbeddedFXBossShield_Delete(void);
 void cEmbeddedFXBossShield_Release(void);
 void cEmbeddedFXBossShield_Reset(void);
@@ -871,10 +875,6 @@ void cEmbeddedFXMessenger_Release(void);
 void cEmbeddedFXMessenger_Reset(void);
 void cEmbeddedFXMessenger_Stop(void);
 void cEmbeddedFXMessenger_Update(void);
-void cEmbeddedFXMoto_Delete(void);
-void cEmbeddedFXMoto_Release(void);
-void cEmbeddedFXMoto_Reset(void);
-void cEmbeddedFXMoto_Update(void);
 void cEmbeddedFXPolice_Delete(void);
 void cEmbeddedFXPolice_Release(void);
 void cEmbeddedFXPolice_Reset(void);
@@ -962,12 +962,12 @@ void cFXElementsMentalControllerMainFX_Update(void);
 void cFXElementsMentalController_Delete(void);
 void cFXElementsMentalController_Init(void);
 void cFXElementsMentalController_Update(void);
-void cFXElementsOrbitBoyaController_Delete(void);
-void cFXElementsOrbitBoyaController_Init(void);
-void cFXElementsOrbitBoyaController_Update(void);
-void cFXElementsOrbitBoya_Delete(void);
-void cFXElementsOrbitBoya_Init(void);
-void cFXElementsOrbitBoya_Update(void);
+void cFXElementsOrbitBuoyController_Delete(void);
+void cFXElementsOrbitBuoyController_Init(void);
+void cFXElementsOrbitBuoyController_Update(void);
+void cFXElementsOrbitBuoy_Delete(void);
+void cFXElementsOrbitBuoy_Init(void);
+void cFXElementsOrbitBuoy_Update(void);
 void cFile2_Destroy(void);
 void cFile2_Open(void);
 void cFile2_Read(void);
@@ -1383,6 +1383,11 @@ void cObjElementFXMoneyTransfer_Attach(void);
 void cObjElementFXMoneyTransfer_Delete(void);
 void cObjElementFXMoneyTransfer_Reset(void);
 void cObjElementFXMoneyTransfer_Update(void);
+void cObjElementFXParticleSystemDuDv_Attach(void);
+void cObjElementFXParticleSystemDuDv_Delete(void);
+void cObjElementFXParticleSystem_Attach(void);
+void cObjElementFXParticleSystem_Delete(void);
+void cObjElementFXParticleSystem_Update(void);
 void cObjElementFXPoliceGearConversion_Alive(void);
 void cObjElementFXPoliceGearConversion_Attach(void);
 void cObjElementFXPoliceGearConversion_Delete(void);
@@ -1427,11 +1432,6 @@ void cObjElementFXSebastianFlash_Attach(void);
 void cObjElementFXSebastianFlash_Delete(void);
 void cObjElementFXSebastianFlash_Reset(void);
 void cObjElementFXSebastianFlash_Update(void);
-void cObjElementFXSistPartDuDv_Attach(void);
-void cObjElementFXSistPartDuDv_Delete(void);
-void cObjElementFXSistPart_Attach(void);
-void cObjElementFXSistPart_Delete(void);
-void cObjElementFXSistPart_Update(void);
 void cObjElementFXSmokeDebris_Delete(void);
 void cObjElementFXSmokeDebris_Reset(void);
 void cObjElementFXSmokeDebris_Start(void);
@@ -4304,7 +4304,7 @@ void (*const CNodesTraffic_vftable[24])(void) SD_AT(0x3a9c40) = {
 	CNodesTraffic_GetNode,	/* 0x34 0x09ecf0 */
 	CNodesTraffic_GetInfo,	/* 0x38 0x09d740 */
 	CNodesTraffic_Draw,	/* 0x3c 0x09cfa0 */
-	CNodesTraffic_Analize,	/* 0x40 0x09bc90 */
+	CNodesTraffic_Analyze,	/* 0x40 0x09bc90 */
 	CNodesTraffic_DrawTrack,	/* 0x44 0x09d040 */
 	CNodesTraffic_BuildGrid,	/* 0x48 0x0a0690 */
 	CNodesTraffic_FindNodes,	/* 0x4c 0x09dc40 */
@@ -4347,7 +4347,7 @@ void (*const CNodesTrafficInDoor_vftable[24])(void) SD_AT(0x3aa784) = {
 	CNodesTraffic_GetNode,	/* 0x34 0x09ecf0 */
 	CNodesTraffic_GetInfo,	/* 0x38 0x09d740 */
 	CNodesTraffic_Draw,	/* 0x3c 0x0a10a0 */
-	CNodesTraffic_Analize,	/* 0x40 0x09bc90 */
+	CNodesTraffic_Analyze,	/* 0x40 0x09bc90 */
 	CNodesTraffic_DrawTrack,	/* 0x44 0x09d040 */
 	CNodesTrafficInDoor_BuildGrid,	/* 0x48 0x0a1dc0 */
 	CNodesTraffic_FindNodes,	/* 0x4c 0x09dc40 */
@@ -4909,11 +4909,11 @@ void (*const cEmbeddedFXDTritusDesktop_vftable[6])(void) SD_AT(0x3b15d0) = {
 };
 
 /* .?AVcEmbeddedFXMoto@@ */
-void (*const cEmbeddedFXMoto_vftable[6])(void) SD_AT(0x3b15ec) = {
-	cEmbeddedFXMoto_Delete,	/* 0x00 0x0e0d80 */
-	cEmbeddedFXMoto_Reset,	/* 0x04 0x0e2720 */
-	cEmbeddedFXMoto_Release,	/* 0x08 0x0e1150 */
-	cEmbeddedFXMoto_Update,	/* 0x0c 0x0e90f0 */
+void (*const cEmbeddedFXBike_vftable[6])(void) SD_AT(0x3b15ec) = {
+	cEmbeddedFXBike_Delete,	/* 0x00 0x0e0d80 */
+	cEmbeddedFXBike_Reset,	/* 0x04 0x0e2720 */
+	cEmbeddedFXBike_Release,	/* 0x08 0x0e1150 */
+	cEmbeddedFXBike_Update,	/* 0x0c 0x0e90f0 */
 	Stub_Nop,	/* 0x10 0x0e0f60 */
 	Stub_Nop1,	/* 0x14 0x0e2900 */
 };
@@ -7325,17 +7325,17 @@ void (*const cFXElementsABFakeLimit_vftable[3])(void) SD_AT(0x3cc3cc) = {
 };
 
 /* .?AVcFXElementsOrbitBoya@@ */
-void (*const cFXElementsOrbitBoya_vftable[3])(void) SD_AT(0x3cc574) = {
-	cFXElementsOrbitBoya_Delete,	/* 0x00 0x1d5910 */
-	cFXElementsOrbitBoya_Init,	/* 0x04 0x1d59e0 */
-	cFXElementsOrbitBoya_Update,	/* 0x08 0x1d5ee0 */
+void (*const cFXElementsOrbitBuoy_vftable[3])(void) SD_AT(0x3cc574) = {
+	cFXElementsOrbitBuoy_Delete,	/* 0x00 0x1d5910 */
+	cFXElementsOrbitBuoy_Init,	/* 0x04 0x1d59e0 */
+	cFXElementsOrbitBuoy_Update,	/* 0x08 0x1d5ee0 */
 };
 
 /* .?AVcFXElementsOrbitBoyaController@@ */
-void (*const cFXElementsOrbitBoyaController_vftable[3])(void) SD_AT(0x3cc584) = {
-	cFXElementsOrbitBoyaController_Delete,	/* 0x00 0x1d5990 */
-	cFXElementsOrbitBoyaController_Init,	/* 0x04 0x1d5aa0 */
-	cFXElementsOrbitBoyaController_Update,	/* 0x08 0x1d5f00 */
+void (*const cFXElementsOrbitBuoyController_vftable[3])(void) SD_AT(0x3cc584) = {
+	cFXElementsOrbitBuoyController_Delete,	/* 0x00 0x1d5990 */
+	cFXElementsOrbitBuoyController_Init,	/* 0x04 0x1d5aa0 */
+	cFXElementsOrbitBuoyController_Update,	/* 0x08 0x1d5f00 */
 };
 
 /* .?AVcFXElementsMentalController@@ */
@@ -7360,11 +7360,11 @@ void (*const cFXElementsMentalControllerMainFX_vftable[3])(void) SD_AT(0x3cc814)
 };
 
 /* .?AVcObjElementFXSistPart@@ */
-void (*const cObjElementFXSistPart_vftable[5])(void) SD_AT(0x3cccb4) = {
-	cObjElementFXSistPart_Delete,	/* 0x00 0x1da800 */
-	cObjElementFXSistPart_Update,	/* 0x04 0x1db9c0 */
+void (*const cObjElementFXParticleSystem_vftable[5])(void) SD_AT(0x3cccb4) = {
+	cObjElementFXParticleSystem_Delete,	/* 0x00 0x1da800 */
+	cObjElementFXParticleSystem_Update,	/* 0x04 0x1db9c0 */
 	FXMisc_Alive,	/* 0x08 0x1dcfe0 */
-	cObjElementFXSistPart_Attach,	/* 0x0c 0x1dccd0 */
+	cObjElementFXParticleSystem_Attach,	/* 0x0c 0x1dccd0 */
 	FXMisc_Nop,	/* 0x10 0x1dd1f0 */
 };
 
@@ -7432,11 +7432,11 @@ void (*const cObjElementFXModelNoise_vftable[5])(void) SD_AT(0x3ccd5c) = {
 };
 
 /* .?AVcObjElementFXSistPartDuDv@@ */
-void (*const cObjElementFXSistPartDuDv_vftable[5])(void) SD_AT(0x3ccd74) = {
-	cObjElementFXSistPartDuDv_Delete,	/* 0x00 0x1da840 */
-	cObjElementFXSistPart_Update,	/* 0x04 0x1db9f0 */
+void (*const cObjElementFXParticleSystemDuDv_vftable[5])(void) SD_AT(0x3ccd74) = {
+	cObjElementFXParticleSystemDuDv_Delete,	/* 0x00 0x1da840 */
+	cObjElementFXParticleSystem_Update,	/* 0x04 0x1db9f0 */
 	FXMisc_Alive,	/* 0x08 0x1dd000 */
-	cObjElementFXSistPartDuDv_Attach,	/* 0x0c 0x1dcd70 */
+	cObjElementFXParticleSystemDuDv_Attach,	/* 0x0c 0x1dcd70 */
 	FXMisc_Nop,	/* 0x10 0x1dd200 */
 };
 
@@ -7733,38 +7733,38 @@ void (*const CWinApp_vftable[21])(void) SD_AT(0x3cf7d4) = {
 };
 
 /* .?AVCEntradaNula@@ */
-void (*const CEntradaNula_vftable[8])(void) SD_AT(0x3d5934) = {
-	CEntradaNula_Delete,	/* 0x00 0x22d9e0 */
-	CEntradaNula_Nothing3,	/* 0x04 0x230430 */
-	CEntradaNula_Nothing,	/* 0x08 0x231170 */
-	CEntradaNula_Nothing1,	/* 0x0c 0x230870 */
-	CEntradaNula_Nothing,	/* 0x10 0x230880 */
-	CEntradaNula_Nothing1,	/* 0x14 0x22fe40 */
-	CEntradaNula_Nothing1,	/* 0x18 0x22fe50 */
-	CEntradaNula_Nothing4,	/* 0x1c 0x22f430 */
+void (*const CNullInput_vftable[8])(void) SD_AT(0x3d5934) = {
+	CNullInput_Delete,	/* 0x00 0x22d9e0 */
+	CNullInput_Nothing3,	/* 0x04 0x230430 */
+	CNullInput_Nothing,	/* 0x08 0x231170 */
+	CNullInput_Nothing1,	/* 0x0c 0x230870 */
+	CNullInput_Nothing,	/* 0x10 0x230880 */
+	CNullInput_Nothing1,	/* 0x14 0x22fe40 */
+	CNullInput_Nothing1,	/* 0x18 0x22fe50 */
+	CNullInput_Nothing4,	/* 0x1c 0x22f430 */
 };
 
 /* .?AVCMotorApp@@ */
-void (*const CMotorApp_vftable[14])(void) SD_AT(0x3d59e0) = {
+void (*const CEngineApp_vftable[14])(void) SD_AT(0x3d59e0) = {
 	CD3DApp_AdjustWindowForChange,	/* 0x00 0x2733e0 */
-	CMotorApp_ConfirmDevice,	/* 0x04 0x22da10 */
-	CMotorApp_OneTimeSceneInit,	/* 0x08 0x22f7f0 */
-	CMotorApp_InitDeviceObjects,	/* 0x0c 0x22f070 */
-	CMotorApp_RestoreDeviceObjects,	/* 0x10 0x22fd50 */
-	CMotorApp_FrameMove,	/* 0x14 0x22ef30 */
-	CMotorApp_Render,	/* 0x18 0x22f940 */
+	CEngineApp_ConfirmDevice,	/* 0x04 0x22da10 */
+	CEngineApp_OneTimeSceneInit,	/* 0x08 0x22f7f0 */
+	CEngineApp_InitDeviceObjects,	/* 0x0c 0x22f070 */
+	CEngineApp_RestoreDeviceObjects,	/* 0x10 0x22fd50 */
+	CEngineApp_FrameMove,	/* 0x14 0x22ef30 */
+	CEngineApp_Render,	/* 0x18 0x22f940 */
 	CD3DApplication_Nothing,	/* 0x1c 0x22f420 */
-	CMotorApp_DeleteDeviceObjects,	/* 0x20 0x22db70 */
-	CMotorApp_FinalCleanup,	/* 0x24 0x22ec80 */
+	CEngineApp_DeleteDeviceObjects,	/* 0x20 0x22db70 */
+	CEngineApp_FinalCleanup,	/* 0x24 0x22ec80 */
 	CD3DApp_Create,	/* 0x28 0x273e20 */
 	CD3DApp_Run,	/* 0x2c 0x275570 */
-	CMotorApp_MsgProc,	/* 0x30 0x22f440 */
+	CEngineApp_MsgProc,	/* 0x30 0x22f440 */
 	CD3DApp_Pause,	/* 0x34 0x2750b0 */
 };
 
 /* .?AVCListaMat@@ */
-void (*const CListaMat_vftable[1])(void) SD_AT(0x3d6d48) = {
-	CListaMat_DeleteObj,	/* 0x00 0x2336f0 */
+void (*const CMatList_vftable[1])(void) SD_AT(0x3d6d48) = {
+	CMatList_DeleteObj,	/* 0x00 0x2336f0 */
 };
 
 /* .?AVCMaterial@@ */
@@ -7773,62 +7773,62 @@ void (*const CMaterial_vftable[1])(void) SD_AT(0x3d6dbc) = {
 };
 
 /* .?AVIObjeto3D@@ */
-void (*const IObjeto3D_vftable[7])(void) SD_AT(0x3d79dc) = {
-	IObjeto3D_Delete,	/* 0x00 0x23aed0 */
+void (*const IObject3D_vftable[7])(void) SD_AT(0x3d79dc) = {
+	IObject3D_Delete,	/* 0x00 0x23aed0 */
 	crt_purecall,	/* 0x04 0x31951a */
 	crt_purecall,	/* 0x08 0x31951a */
 	crt_purecall,	/* 0x0c 0x31951a */
 	crt_purecall,	/* 0x10 0x31951a */
-	IObjeto3D_Write,	/* 0x14 0x23c360 */
-	IObjeto3D_Read,	/* 0x18 0x23ba30 */
+	IObject3D_Write,	/* 0x14 0x23c360 */
+	IObject3D_Read,	/* 0x18 0x23ba30 */
 };
 
 /* .?AVCLuz@@ */
-void (*const CLuz_vftable[7])(void) SD_AT(0x3d79fc) = {
-	CLuz_Delete,	/* 0x00 0x23aea0 */
-	CLuz_Update,	/* 0x04 0x23c370 */
-	CLuz_Render,	/* 0x08 0x23bb70 */
-	CLuz_Reset,	/* 0x0c 0x23b750 */
-	CLuz_Hide,	/* 0x10 0x23b740 */
-	CLuz_Write,	/* 0x14 0x23c1f0 */
-	CLuz_Read,	/* 0x18 0x23b8a0 */
+void (*const CLight_vftable[7])(void) SD_AT(0x3d79fc) = {
+	CLight_Delete,	/* 0x00 0x23aea0 */
+	CLight_Update,	/* 0x04 0x23c370 */
+	CLight_Render,	/* 0x08 0x23bb70 */
+	CLight_Reset,	/* 0x0c 0x23b750 */
+	CLight_Hide,	/* 0x10 0x23b740 */
+	CLight_Write,	/* 0x14 0x23c1f0 */
+	CLight_Read,	/* 0x18 0x23b8a0 */
 };
 
 /* .?AVCNodo3D@@ */
-void (*const CNodo3D_vftable[1])(void) SD_AT(0x3d7e78) = {
-	CNodo3D_VecDelete,	/* 0x00 0x258e30 */
+void (*const CNode3D_vftable[1])(void) SD_AT(0x3d7e78) = {
+	CNode3D_VecDelete,	/* 0x00 0x258e30 */
 };
 
 /* .?AVCEscena@@ */
-void (*const CEscena_vftable[1])(void) SD_AT(0x3d9b24) = {
-	CEscena_Delete,	/* 0x00 0x24ead0 */
+void (*const CScene_vftable[1])(void) SD_AT(0x3d9b24) = {
+	CScene_Delete,	/* 0x00 0x24ead0 */
 };
 
 /* .?AVCModelo@@ */
-void (*const CModelo_vftable[1])(void) SD_AT(0x3da6a0) = {
-	CModelo_Delete,	/* 0x00 0x253070 */
+void (*const CModel_vftable[1])(void) SD_AT(0x3da6a0) = {
+	CModel_Delete,	/* 0x00 0x253070 */
 };
 
 /* .?AVCSuelo@@ */
-void (*const CSuelo_vftable[7])(void) SD_AT(0x3db13c) = {
-	CSuelo_Delete,	/* 0x00 0x258ee0 */
-	CSuelo_Nop,	/* 0x04 0x25d380 */
-	CSuelo_Draw,	/* 0x08 0x25c800 */
-	CSuelo_NodosVf3,	/* 0x0c 0x25af90 */
-	CSuelo_NodosVf4,	/* 0x10 0x25ac30 */
-	CSuelo_Write,	/* 0x14 0x25cd20 */
-	CSuelo_Read,	/* 0x18 0x25b9a0 */
+void (*const CGround_vftable[7])(void) SD_AT(0x3db13c) = {
+	CGround_Delete,	/* 0x00 0x258ee0 */
+	CGround_Nop,	/* 0x04 0x25d380 */
+	CGround_Draw,	/* 0x08 0x25c800 */
+	CGround_NodesVf3,	/* 0x0c 0x25af90 */
+	CGround_NodesVf4,	/* 0x10 0x25ac30 */
+	CGround_Write,	/* 0x14 0x25cd20 */
+	CGround_Read,	/* 0x18 0x25b9a0 */
 };
 
 /* .?AVCMallaTri@@ */
-void (*const CMallaTri_vftable[7])(void) SD_AT(0x3dbcf0) = {
-	CMallaTri_Delete,	/* 0x00 0x2627b0 */
+void (*const CTriMesh_vftable[7])(void) SD_AT(0x3dbcf0) = {
+	CTriMesh_Delete,	/* 0x00 0x2627b0 */
 	Stub_Nop1,	/* 0x04 0x262bf0 */
-	CMallaTri_Draw,	/* 0x08 0x262840 */
+	CTriMesh_Draw,	/* 0x08 0x262840 */
 	Stub_Nop1,	/* 0x0c 0x262820 */
 	Stub_Nop1,	/* 0x10 0x2627e0 */
-	CMallaTri_NoFile,	/* 0x14 0x262be0 */
-	CMallaTri_NoFile,	/* 0x18 0x262830 */
+	CTriMesh_NoFile,	/* 0x14 0x262be0 */
+	CTriMesh_NoFile,	/* 0x18 0x262830 */
 };
 
 /* .?AVCD3DApplication@@ */
@@ -7856,40 +7856,40 @@ void (*const CObjBase3D_vftable[7])(void) SD_AT(0x3ddc1c) = {
 	Stub_Nop2,	/* 0x08 0x27bff0 */
 	Stub_Nop1,	/* 0x0c 0x27a9a0 */
 	Stub_Nop1,	/* 0x10 0x27a6d0 */
-	IObjeto3D_Write,	/* 0x14 0x23c360 */
-	IObjeto3D_Read,	/* 0x18 0x23ba30 */
+	IObject3D_Write,	/* 0x14 0x23c360 */
+	IObject3D_Read,	/* 0x18 0x23ba30 */
 };
 
 /* .?AVCParticulaBase@@ */
-void (*const CParticulaBase_vftable[3])(void) SD_AT(0x3ddc3c) = {
+void (*const CParticleBase_vftable[3])(void) SD_AT(0x3ddc3c) = {
 	crt_purecall,	/* 0x00 0x31951a */
 	crt_purecall,	/* 0x04 0x31951a */
 	crt_purecall,	/* 0x08 0x31951a */
 };
 
 /* .?AVCParticulaStatic@@ */
-void (*const CParticulaStatic_vftable[3])(void) SD_AT(0x3ddc4c) = {
-	CParticulaStatic_Type,	/* 0x00 0x27a990 */
-	CParticulaStatic_Init,	/* 0x04 0x27aaf0 */
+void (*const CParticleStatic_vftable[3])(void) SD_AT(0x3ddc4c) = {
+	CParticleStatic_Type,	/* 0x00 0x27a990 */
+	CParticleStatic_Init,	/* 0x04 0x27aaf0 */
 	Stub_Nop3,	/* 0x08 0x27c8a0 */
 };
 
 /* .?AVCParticulaActive@@ */
-void (*const CParticulaActive_vftable[3])(void) SD_AT(0x3ddc5c) = {
-	CParticulaActive_Type,	/* 0x00 0x27a980 */
-	CParticulaActive_Init,	/* 0x04 0x27a9c0 */
-	CParticulaActive_Update,	/* 0x08 0x27c2e0 */
+void (*const CParticleActive_vftable[3])(void) SD_AT(0x3ddc5c) = {
+	CParticleActive_Type,	/* 0x00 0x27a980 */
+	CParticleActive_Init,	/* 0x04 0x27a9c0 */
+	CParticleActive_Update,	/* 0x08 0x27c2e0 */
 };
 
 /* .?AVCSistPart@@ */
-void (*const CSistPart_vftable[7])(void) SD_AT(0x3ddc6c) = {
-	CSistPart_Delete,	/* 0x00 0x27a190 */
-	CSistPart_Update,	/* 0x04 0x27c8c0 */
-	CSistPart_Render,	/* 0x08 0x27c000 */
+void (*const CParticleSystem_vftable[7])(void) SD_AT(0x3ddc6c) = {
+	CParticleSystem_Delete,	/* 0x00 0x27a190 */
+	CParticleSystem_Update,	/* 0x04 0x27c8c0 */
+	CParticleSystem_Render,	/* 0x08 0x27c000 */
 	Stub_Nop1,	/* 0x0c 0x27a9b0 */
 	Stub_Nop1,	/* 0x10 0x27a6e0 */
-	CSistPart_Write,	/* 0x14 0x27c250 */
-	CSistPart_Read,	/* 0x18 0x27b9c0 */
+	CParticleSystem_Write,	/* 0x14 0x27c250 */
+	CParticleSystem_Read,	/* 0x18 0x27b9c0 */
 };
 
 /* .?AVCFlare@@ */
@@ -7899,76 +7899,76 @@ void (*const CFlare_vftable[7])(void) SD_AT(0x3e1958) = {
 	CFlare_Render,	/* 0x08 0x297e50 */
 	Stub_Nop1,	/* 0x0c 0x27a9a0 */
 	Stub_Nop1,	/* 0x10 0x27a6d0 */
-	IObjeto3D_Write,	/* 0x14 0x23c360 */
-	IObjeto3D_Read,	/* 0x18 0x23ba30 */
+	IObject3D_Write,	/* 0x14 0x23c360 */
+	IObject3D_Read,	/* 0x18 0x23ba30 */
 };
 
 /* .?AVCCamara@@ */
-void (*const CCamara_vftable[7])(void) SD_AT(0x3e1c98) = {
-	CCamara_Delete,	/* 0x00 0x29c300 */
-	CCamara_Update,	/* 0x04 0x29cba0 */
-	CCamara_Render,	/* 0x08 0x29c960 */
-	CCamara_InitD3D,	/* 0x0c 0x29c690 */
-	CCamara_ReleaseD3D,	/* 0x10 0x29c680 */
-	CCamara_Write,	/* 0x14 0x29c970 */
-	CCamara_Read,	/* 0x18 0x29c6a0 */
+void (*const CCamera_vftable[7])(void) SD_AT(0x3e1c98) = {
+	CCamera_Delete,	/* 0x00 0x29c300 */
+	CCamera_Update,	/* 0x04 0x29cba0 */
+	CCamera_Render,	/* 0x08 0x29c960 */
+	CCamera_InitD3D,	/* 0x0c 0x29c690 */
+	CCamera_ReleaseD3D,	/* 0x10 0x29c680 */
+	CCamera_Write,	/* 0x14 0x29c970 */
+	CCamera_Read,	/* 0x18 0x29c6a0 */
 };
 
 /* .?AVIEntrada@@ */
-void (*const IEntrada_vftable[8])(void) SD_AT(0x3e25ec) = {
-	IEntrada_Delete,	/* 0x00 0x2a3ab0 */
+void (*const IInput_vftable[8])(void) SD_AT(0x3e25ec) = {
+	IInput_Delete,	/* 0x00 0x2a3ab0 */
 	crt_purecall,	/* 0x04 0x31951a */
 	crt_purecall,	/* 0x08 0x31951a */
 	crt_purecall,	/* 0x0c 0x31951a */
 	crt_purecall,	/* 0x10 0x31951a */
 	crt_purecall,	/* 0x14 0x31951a */
 	crt_purecall,	/* 0x18 0x31951a */
-	IEntrada_WndProc,	/* 0x1c 0x2a3b90 */
+	IInput_WndProc,	/* 0x1c 0x2a3b90 */
 };
 
 /* .?AVCEntradaDInput@@ */
-void (*const CEntradaDInput_vftable[8])(void) SD_AT(0x3e2610) = {
-	CEntradaDInput_Delete,	/* 0x00 0x2a3a50 */
-	CEntradaDInput_Init,	/* 0x04 0x2a3cf0 */
-	CEntradaDInput_Release,	/* 0x08 0x2a3fc0 */
-	CEntradaDInput_ReadMouse,	/* 0x0c 0x2a3dc0 */
-	CEntradaDInput_ReadKeys,	/* 0x10 0x2a3f30 */
-	CEntradaDInput_AcquireMouse,	/* 0x14 0x2a3c30 */
-	CEntradaDInput_AcquireKeys,	/* 0x18 0x2a3cb0 */
-	CEntradaDInput_WndProc,	/* 0x1c 0x2a3ae0 */
+void (*const CInputDInput_vftable[8])(void) SD_AT(0x3e2610) = {
+	CInputDInput_Delete,	/* 0x00 0x2a3a50 */
+	CInputDInput_Init,	/* 0x04 0x2a3cf0 */
+	CInputDInput_Release,	/* 0x08 0x2a3fc0 */
+	CInputDInput_ReadMouse,	/* 0x0c 0x2a3dc0 */
+	CInputDInput_ReadKeys,	/* 0x10 0x2a3f30 */
+	CInputDInput_AcquireMouse,	/* 0x14 0x2a3c30 */
+	CInputDInput_AcquireKeys,	/* 0x18 0x2a3cb0 */
+	CInputDInput_WndProc,	/* 0x1c 0x2a3ae0 */
 };
 
 /* .?AVCEntradaWindows@@ */
-void (*const CEntradaWindows_vftable[8])(void) SD_AT(0x3e2634) = {
-	CEntradaWindows_Delete,	/* 0x00 0x2a3a80 */
-	CEntradaWindows_Init,	/* 0x04 0x2a3db0 */
-	CEntradaWindows_Release,	/* 0x08 0x2a4030 */
-	CEntradaWindows_ReadMouse,	/* 0x0c 0x2a3e90 */
-	CEntradaWindows_ReadKeys,	/* 0x10 0x2a3f90 */
-	CEntradaWindows_AcquireMouse,	/* 0x14 0x2a3c60 */
-	CEntradaWindows_AcquireKeys,	/* 0x18 0x2a3ce0 */
-	CEntradaWindows_WndProc,	/* 0x1c 0x2a3af0 */
+void (*const CInputWindows_vftable[8])(void) SD_AT(0x3e2634) = {
+	CInputWindows_Delete,	/* 0x00 0x2a3a80 */
+	CInputWindows_Init,	/* 0x04 0x2a3db0 */
+	CInputWindows_Release,	/* 0x08 0x2a4030 */
+	CInputWindows_ReadMouse,	/* 0x0c 0x2a3e90 */
+	CInputWindows_ReadKeys,	/* 0x10 0x2a3f90 */
+	CInputWindows_AcquireMouse,	/* 0x14 0x2a3c60 */
+	CInputWindows_AcquireKeys,	/* 0x18 0x2a3ce0 */
+	CInputWindows_WndProc,	/* 0x1c 0x2a3af0 */
 };
 
 /* .?AVIFXTextura@@ */
-void (*const IFXTextura_vftable[3])(void) SD_AT(0x3e2c44) = {
-	IFXTextura_Delete,	/* 0x00 0x2a81a0 */
+void (*const IFXTexture_vftable[3])(void) SD_AT(0x3e2c44) = {
+	IFXTexture_Delete,	/* 0x00 0x2a81a0 */
 	crt_purecall,	/* 0x04 0x31951a */
-	IFXTextura_GetTexture,	/* 0x08 0x2a82e0 */
+	IFXTexture_GetTexture,	/* 0x08 0x2a82e0 */
 };
 
 /* .?AVCFXTexLava@@ */
 void (*const CFXTexLava_vftable[3])(void) SD_AT(0x3e2c54) = {
 	CFXTexLava_Delete,	/* 0x00 0x2a8140 */
 	CFXTexLava_Update,	/* 0x04 0x2a8380 */
-	IFXTextura_GetTexture,	/* 0x08 0x2a82e0 */
+	IFXTexture_GetTexture,	/* 0x08 0x2a82e0 */
 };
 
 /* .?AVCFXTexScroll@@ */
 void (*const CFXTexScroll_vftable[3])(void) SD_AT(0x3e2c64) = {
 	CFXTexScroll_Delete,	/* 0x00 0x2a8170 */
 	CFXTexScroll_Update,	/* 0x04 0x2a8640 */
-	IFXTextura_GetTexture,	/* 0x08 0x2a82e0 */
+	IFXTexture_GetTexture,	/* 0x08 0x2a82e0 */
 };
 
 /* .?AVCFXNewsPanel@@ */
@@ -7979,14 +7979,14 @@ void (*const CFXNewsPanel_vftable[3])(void) SD_AT(0x3e2c74) = {
 };
 
 /* .?AVCMallaD3D@@ */
-void (*const CMallaD3D_vftable[7])(void) SD_AT(0x3e3584) = {
-	CMallaD3D_Delete,	/* 0x00 0x2afbe0 */
-	CMallaD3D_SetRender,	/* 0x04 0x2b0650 */
-	CMallaD3D_Draw,	/* 0x08 0x2b0330 */
-	CMallaD3D_Restore,	/* 0x0c 0x2aff60 */
-	CMallaD3D_Invalidate,	/* 0x10 0x2afea0 */
-	CMallaD3D_Write,	/* 0x14 0x2b0350 */
-	CMallaD3D_Read,	/* 0x18 0x2aff80 */
+void (*const CMeshD3D_vftable[7])(void) SD_AT(0x3e3584) = {
+	CMeshD3D_Delete,	/* 0x00 0x2afbe0 */
+	CMeshD3D_SetRender,	/* 0x04 0x2b0650 */
+	CMeshD3D_Draw,	/* 0x08 0x2b0330 */
+	CMeshD3D_Restore,	/* 0x0c 0x2aff60 */
+	CMeshD3D_Invalidate,	/* 0x10 0x2afea0 */
+	CMeshD3D_Write,	/* 0x14 0x2b0350 */
+	CMeshD3D_Read,	/* 0x18 0x2aff80 */
 };
 
 /* .?AVINodeFX@@ */
@@ -8011,14 +8011,14 @@ void (*const CNodeFX_Spring_vftable[3])(void) SD_AT(0x3e3bbc) = {
 };
 
 /* .?AVCGrafico3D@@ */
-void (*const CGrafico3D_vftable[7])(void) SD_AT(0x3e45b8) = {
-	CGrafico3D_Delete,	/* 0x00 0x2b96a0 */
+void (*const CGraphic3D_vftable[7])(void) SD_AT(0x3e45b8) = {
+	CGraphic3D_Delete,	/* 0x00 0x2b96a0 */
 	FXMisc_Nop,	/* 0x04 0x2b9e40 */
-	CGrafico3D_Render,	/* 0x08 0x2b9c20 */
+	CGraphic3D_Render,	/* 0x08 0x2b9c20 */
 	FXMisc_Nop,	/* 0x0c 0x2b96e0 */
 	FXMisc_Nop,	/* 0x10 0x2b96d0 */
-	CGrafico3D_Write,	/* 0x14 0x2b9d10 */
-	CGrafico3D_Read,	/* 0x18 0x2b96f0 */
+	CGraphic3D_Write,	/* 0x14 0x2b9d10 */
+	CGraphic3D_Read,	/* 0x18 0x2b96f0 */
 };
 
 /* .?AVCPortal@@ */

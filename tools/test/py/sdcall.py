@@ -25,7 +25,7 @@ call('StrList_Match', sym('StrList_Match'), 'bsss', 'a,b c', 'c', ', ')
 for s in ('', 'abc', 'x' * 20):
 	for n in (1, 2, 5, 30):
 		call('Str_Copy', sym('Str_Copy'), 'sbsi', '', s, n)
-		call('Cad_Copy', sym('Cad_Copy'), 'sbsi', '', s, n)
+		call('String_Copy', sym('String_Copy'), 'sbsi', '', s, n)
 for s in ('', ' a ', '\t a\tb \t', 'abc'):
 	call('Str_TrimBlanks', sym('Str_TrimBlanks'), 'vb', s)
 
@@ -34,63 +34,63 @@ paths = ('', 'a', 'a.b', '.a', 'a.', '.', '..', 'dir\\', 'dir/', 'C:', 'C:a', 'C
 	'\\\\srv\\share\\f.x', 'a b .c  ', '   ', 'x\\.', 'x\\..', 'C:.', 'C:..', '..\\a', 'd:x\\', 'a:b:c', '1:2',
 	'Bin\\Scrap.exe', 'x' * 300, 'd/' + 'y' * 300 + '.e', 'a.' + 'e' * 300)
 for r in paths:
-	call('Ruta_Split', sym('Ruta_Split'), 'vsbbbb', r, '', '', '', '')
-	call('Ruta_Split NULL', sym('Ruta_Split'), 'vszbzb', r, None, '', None, '')
+	call('Path_SplitDrive', sym('Path_SplitDrive'), 'vsbbbb', r, '', '', '', '')
+	call('Path_SplitDrive NULL', sym('Path_SplitDrive'), 'vszbzb', r, None, '', None, '')
 	for m in (0, 1, 2, 4, 8, 3, 12, 15):
-		call('Ruta_Part', sym('Ruta_Part'), 'vbsi', '', r, m)
-	call('Ruta_PartN', sym('Ruta_PartN'), 'vbisi', '', 5, r, 15)
-	call('Ruta_FileName', sym('Ruta_FileName'), 'ss', r)
-	call('Ruta_FirstDir', sym('Ruta_FirstDir'), 'vbs', '', r)
-	call('Ruta_LastDir', sym('Ruta_LastDir'), 'vbs', '', r)
-	call('Ruta_DriveNum', sym('Ruta_DriveNum'), 'is', r)
-	call('Ruta_Format', sym('Ruta_Format'), 'vbss', '', r, '[&u|&d|&n|&e|&&|&U&D&N&E]')
+		call('Path_Part', sym('Path_Part'), 'vbsi', '', r, m)
+	call('Path_PartN', sym('Path_PartN'), 'vbisi', '', 5, r, 15)
+	call('Path_FileName', sym('Path_FileName'), 'ss', r)
+	call('Path_FirstDir', sym('Path_FirstDir'), 'vbs', '', r)
+	call('Path_LastDir', sym('Path_LastDir'), 'vbs', '', r)
+	call('Path_DriveNum', sym('Path_DriveNum'), 'is', r)
+	call('Path_Format', sym('Path_Format'), 'vbss', '', r, '[&u|&d|&n|&e|&&|&U&D&N&E]')
 	for r2 in ('', 'C:\\base\\def.ext', 'name', '.ext', 'sub\\'):
-		# the original copies a single path unbounded, the C version up to MAX_RUTA
+		# the original copies a single path unbounded, the C version up to MAX_FILEPATH
 		if r2 or len(r) < 260:
-			call('Ruta_Merge', sym('Ruta_Merge'), 'vbss', '', r, r2)
-		call('Ruta_Merge NULL', sym('Ruta_Merge'), 'vbzs', '', None, r2 or 'x')
+			call('Path_Merge', sym('Path_Merge'), 'vbss', '', r, r2)
+		call('Path_Merge NULL', sym('Path_Merge'), 'vbzs', '', None, r2 or 'x')
 for r in ('', 'a', 'a.b', 'dir\\', 'C:', 'C:a', '..', '.\\x\\..\\y', 'a\\b\\..\\..\\c', '\\a\\.\\b',
 	'C:\\a\\..\\..\\b', 'C:\\', 'D:x\\y', 'x/./y/../z.', 'Bin'):
 	for b in (None, 'C:\\base\\dir', 'D:\\', 'base\\', 'C:', '\\root'):
-		call('Ruta_Full', sym('Ruta_Full'), 'sbsiz', '', r, 260, b)
-	call('Ruta_Full short', sym('Ruta_Full'), 'sbsiz', '', r, 4, 'C:\\base')
+		call('Path_Full', sym('Path_Full'), 'sbsiz', '', r, 260, b)
+	call('Path_Full short', sym('Path_Full'), 'sbsiz', '', r, 4, 'C:\\base')
 for p in ('*', '*.*', 'a*', '*.PY', '?b.*', 'x', '.e', 'a.', '[ab]*.[!c]', 'dir\\*.py', 'C:\\d\\*'):
 	for r in ('a.py', 'AB.c', 'x', 'x.', 'dir\\b.py', 'C:\\d\\e\\f.g', 'C:\\D\\f', '.e'):
-		call('Ruta_Match', sym('Ruta_Match'), 'iss', p, r)
-		call('Ruta_MatchPath', sym('Ruta_MatchPath'), 'issi', p, r, 0)
-		call('Ruta_MatchPath subdirs', sym('Ruta_MatchPath'), 'issi', p, r, 1)
+		call('Path_Match', sym('Path_Match'), 'iss', p, r)
+		call('Path_MatchPath', sym('Path_MatchPath'), 'issi', p, r, 0)
+		call('Path_MatchPath subdirs', sym('Path_MatchPath'), 'issi', p, r, 1)
 for src in ('name.ext', 'n', 'longname.x', '.e', 'a.b.c'):
 	for pat in ('*', '*.*', '?.?', 'x*.bak', '??z*.*', '(1 2)x.(-1)', '((a).*', 'd\\*.n', '*.', '.', 'a(3 1).(-2 -1 9)'):
-		call('Ruta_Rename', sym('Ruta_Rename'), 'vbss', '', src, pat)
+		call('Path_Rename', sym('Path_Rename'), 'vbss', '', src, pat)
 for p in ('[abc]', '[a-c]x', '[!a]', '[]', '[!]', '[a-]', '[?]', '[a', '[', 'x', '[z-a]', '[--/]'):
 	for c in ('a', 'b', 'x', '-', ']', '\377', ''):
 		call('Wild_MatchSet', sym('Wild_MatchSet'), 'sss', p, c)
 for c in ('a', '\\', '/', ':', '\000'):
-	call('Ruta_IsSep', sym('Ruta_IsSep'), 'ii', ord(c))
-call('Ruta_GetDrive', sym('Ruta_GetDrive'), 'vp', 0)
-call('Ruta_GetCwd', sym('Ruta_GetCwd'), 'iibi', 0, '', 260)
-call('Ruta_GetCwd short', sym('Ruta_GetCwd'), 'iibi', 0, '', 3)
-call('Ruta_GetCwd C', sym('Ruta_GetCwd'), 'iibi', 3, '', 260)
-# not 'C:': Ruta_IsDir changes to the directory it remembered for that drive, the tests would go on in C:\
+	call('Path_IsSep', sym('Path_IsSep'), 'ii', ord(c))
+call('Path_GetDrive', sym('Path_GetDrive'), 'vp', 0)
+call('Path_GetCwd', sym('Path_GetCwd'), 'iibi', 0, '', 260)
+call('Path_GetCwd short', sym('Path_GetCwd'), 'iibi', 0, '', 3)
+call('Path_GetCwd C', sym('Path_GetCwd'), 'iibi', 3, '', 260)
+# not 'C:': Path_IsDir changes to the directory it remembered for that drive, the tests would go on in C:\
 for r in ('Bin', 'Bin\\', 'Bin/', 'SDNoDir', 'SDNoDir\\', '.'):
-	call('Ruta_IsDir', sym('Ruta_IsDir'), 'sb', r)
-	call('Ruta_IsDir after', sym('Ruta_GetCwd'), 'iibi', 0, '', 260)
-call('Ruta_MakePath', sym('Ruta_MakePath'), 'is', 'Bin\\Scrap.exe')
-call('Ruta_MakePath after', sym('Ruta_GetCwd'), 'iibi', 0, '', 260)
+	call('Path_IsDir', sym('Path_IsDir'), 'sb', r)
+	call('Path_IsDir after', sym('Path_GetCwd'), 'iibi', 0, '', 260)
+call('Path_MakePath', sym('Path_MakePath'), 'is', 'Bin\\Scrap.exe')
+call('Path_MakePath after', sym('Path_GetCwd'), 'iibi', 0, '', 260)
 for d in ('', 'C', 'C:', 'x', 'dir'):
 	for n in ('', 'n'):
-		call('Ruta_Make', sym('Ruta_Make'), 'vbzzzz', '', d, d + 'x\\', n, '.e')
-		call('Ruta_Make NULL', sym('Ruta_Make'), 'vbzzzz', '', None, None, None, None)
+		call('Path_Make', sym('Path_Make'), 'vbzzzz', '', d, d + 'x\\', n, '.e')
+		call('Path_Make NULL', sym('Path_Make'), 'vbzzzz', '', None, None, None, None)
 
 # engine3d Util/Cadenas.c and Bprintf.c
 for s, pos in (('abc', 0), ('abc', 1), ('abc', 3), ('', 0)):
-	call('Cad_InsertChar', sym('Cad_InsertChar'), 'vbiii', s, ord('X'), pos, len(s))
+	call('String_InsertChar', sym('String_InsertChar'), 'vbiii', s, ord('X'), pos, len(s))
 for s in ('', '1', '123', '1234', '1234567', '-1234567', 'x123456', '12x3456789', '0000000000'):
-	call('Cad_Thousands', sym('Cad_Thousands'), 'ib', s)
+	call('String_Thousands', sym('String_Thousands'), 'ib', s)
 for n in (0, 1, -1, 999, 1000, -1000, 123456789, -2147483647 - 1):
-	call('Cad_FromInt', sym('Cad_FromInt'), 'szi', None, n)
-	call('Cad_FromInt buf', sym('Cad_FromInt'), 'sbi', '', n)
-call('Cad_Dup', sym('Cad_Dup'), 'ss', 'dup')
+	call('String_FromInt', sym('String_FromInt'), 'szi', None, n)
+	call('String_FromInt buf', sym('String_FromInt'), 'sbi', '', n)
+call('String_Dup', sym('String_Dup'), 'ss', 'dup')
 for n in (1, 2, 4, 20):
 	call('Bprintf', sym('Bprintf'), 'ibiss', '', n, '%s-%s', 'ab')
 
@@ -198,114 +198,114 @@ call('Err_Unregister 200', sym('Err_Unregister'), 'si', 200)
 call('Dbg_FrameRect', sym('Dbg_FrameRect'), 'viiiii', 1, 2, 30, 40, 0x123456)
 call('Dbg_FillRect', sym('Dbg_FillRect'), 'viiiii', 1, 2, 30, 40, 0x654321)
 
-# engine3d Util/Listadin.c: elements of 8 bytes written with Cad_Copy; addresses differ between the runs, so only
+# engine3d Util/Listadin.c: elements of 8 bytes written with String_Copy; addresses differ between the runs, so only
 # offsets and contents are compared
 def ldin(d, contents=1):
 	n = SDTest.Peek(d + 12, '@i')
 	r = [SDTest.Peek(d + 8, '@i'), n, SDTest.Peek(d + 16, '@i'), SDTest.Peek(d + 20, '@i') & 0xffff,
 		SDTest.Peek(d + 22, '@b'), SDTest.Peek(d + 4, '@i') != 0]
 	for i in range(n * contents):
-		r.append(SDTest.Peek(SDTest.Call('LDin_Get', 'iii', d, i)[0], '@s'))
+		r.append(SDTest.Peek(SDTest.Call('DynList_Get', 'iii', d, i)[0], '@s'))
 	return tuple(r)
 # new elements are not initialized: their contents are written before the next look
 def lstep(name, rva, sig, d, *args):
 	def f(rva=rva, sig=sig, d=d, args=args):
 		r = apply(SDTest.Call, (rva, sig, d) + args)[0]
-		if sig[0] == 'i' and r and rva in (sym('LDin_Last'), sym('LDin_AddOne'), sym('LDin_Add'), sym('LDin_Insert')):
+		if sig[0] == 'i' and r and rva in (sym('DynList_Last'), sym('DynList_AddOne'), sym('DynList_Add'), sym('DynList_Insert')):
 			r = r - SDTest.Peek(d + 4, '@i')
-		return (r, ldin(d, rva not in (sym('LDin_AddOne'), sym('LDin_Add'), sym('LDin_Insert'))))
+		return (r, ldin(d, rva not in (sym('DynList_AddOne'), sym('DynList_Add'), sym('DynList_Insert'))))
 	check(name + fmt(args), f)
 def put(d, i, text):
-	SDTest.Call('Cad_Copy', 'sisi', SDTest.Call('LDin_Get', 'iii', d, i)[0], text, 8)
+	SDTest.Call('String_Copy', 'sisi', SDTest.Call('DynList_Get', 'iii', d, i)[0], text, 8)
 
-d = SDTest.Call('LDin_NewBlock', 'iii', 8, 2)[0]
-check('LDin_NewBlock', lambda: ldin(d))
-lstep('LDin_Count', sym('LDin_Count'), 'ii', d)
-lstep('LDin_Add', sym('LDin_Add'), 'iii', d, 3)
+d = SDTest.Call('DynList_NewBlock', 'iii', 8, 2)[0]
+check('DynList_NewBlock', lambda: ldin(d))
+lstep('DynList_Count', sym('DynList_Count'), 'ii', d)
+lstep('DynList_Add', sym('DynList_Add'), 'iii', d, 3)
 for i in range(3):
 	put(d, i, 'e%d' % i)
-lstep('LDin_AddOne', sym('LDin_AddOne'), 'ii', d)
+lstep('DynList_AddOne', sym('DynList_AddOne'), 'ii', d)
 put(d, 3, 'e3')
-lstep('LDin_Last', sym('LDin_Last'), 'ii', d)
-lstep('LDin_Insert', sym('LDin_Insert'), 'iii', d, 1)
+lstep('DynList_Last', sym('DynList_Last'), 'ii', d)
+lstep('DynList_Insert', sym('DynList_Insert'), 'iii', d, 1)
 put(d, 1, 'ins')
-lstep('LDin_Insert', sym('LDin_Insert'), 'iii', d, 0)
+lstep('DynList_Insert', sym('DynList_Insert'), 'iii', d, 0)
 put(d, 0, 'first')
 check('LDin', lambda: ldin(d))
-lstep('LDin_Move', sym('LDin_Move'), 'viii', d, 0, 3)
-lstep('LDin_Move', sym('LDin_Move'), 'viii', d, 4, 1)
-lstep('LDin_Move', sym('LDin_Move'), 'viii', d, -1, 0)
-lstep('LDin_Move', sym('LDin_Move'), 'viii', d, 2, -1)
-lstep('LDin_Move', sym('LDin_Move'), 'viii', d, 2, 2)
-lstep('LDin_Copy', sym('LDin_Copy'), 'viiii', d, 0, 3, 2)
-lstep('LDin_Copy', sym('LDin_Copy'), 'viiii', d, 3, 1, 2)
-lstep('LDin_Copy', sym('LDin_Copy'), 'viiii', d, 2, 2, 1)
-lstep('LDin_Delete', sym('LDin_Delete'), 'vii', d, 1)
-lstep('LDin_Delete', sym('LDin_Delete'), 'vii', d, 3)
-lstep('LDin_RemoveLast', sym('LDin_RemoveLast'), 'vi', d)
-lstep('LDin_RemoveLast', sym('LDin_RemoveLast'), 'vi', d)
-lstep('LDin_RemoveLast', sym('LDin_RemoveLast'), 'vi', d)
-lstep('LDin_RemoveLast', sym('LDin_RemoveLast'), 'vi', d)
-lstep('LDin_Add', sym('LDin_Add'), 'iii', d, 5)
-lstep('LDin_Clear', sym('LDin_Clear'), 'vi', d)
-lstep('LDin_Add', sym('LDin_Add'), 'iii', d, 1)
-check('LDin_Free', lambda: SDTest.Call('LDin_Free', 'vi', d))
-d = SDTest.Call('LDin_New', 'ii', 4)[0]
-check('LDin_New', lambda: ldin(d))
-lstep('LDin_Add', sym('LDin_Add'), 'iii', d, 300)
-check('LDin_Count', lambda: SDTest.Call('LDin_Count', 'ii', d))
-lstep('LDin_Clear', sym('LDin_Clear'), 'vi', d)
-check('LDin_Free', lambda: SDTest.Call('LDin_Free', 'vi', d))
+lstep('DynList_Move', sym('DynList_Move'), 'viii', d, 0, 3)
+lstep('DynList_Move', sym('DynList_Move'), 'viii', d, 4, 1)
+lstep('DynList_Move', sym('DynList_Move'), 'viii', d, -1, 0)
+lstep('DynList_Move', sym('DynList_Move'), 'viii', d, 2, -1)
+lstep('DynList_Move', sym('DynList_Move'), 'viii', d, 2, 2)
+lstep('DynList_Copy', sym('DynList_Copy'), 'viiii', d, 0, 3, 2)
+lstep('DynList_Copy', sym('DynList_Copy'), 'viiii', d, 3, 1, 2)
+lstep('DynList_Copy', sym('DynList_Copy'), 'viiii', d, 2, 2, 1)
+lstep('DynList_Delete', sym('DynList_Delete'), 'vii', d, 1)
+lstep('DynList_Delete', sym('DynList_Delete'), 'vii', d, 3)
+lstep('DynList_RemoveLast', sym('DynList_RemoveLast'), 'vi', d)
+lstep('DynList_RemoveLast', sym('DynList_RemoveLast'), 'vi', d)
+lstep('DynList_RemoveLast', sym('DynList_RemoveLast'), 'vi', d)
+lstep('DynList_RemoveLast', sym('DynList_RemoveLast'), 'vi', d)
+lstep('DynList_Add', sym('DynList_Add'), 'iii', d, 5)
+lstep('DynList_Clear', sym('DynList_Clear'), 'vi', d)
+lstep('DynList_Add', sym('DynList_Add'), 'iii', d, 1)
+check('DynList_Free', lambda: SDTest.Call('DynList_Free', 'vi', d))
+d = SDTest.Call('DynList_New', 'ii', 4)[0]
+check('DynList_New', lambda: ldin(d))
+lstep('DynList_Add', sym('DynList_Add'), 'iii', d, 300)
+check('DynList_Count', lambda: SDTest.Call('DynList_Count', 'ii', d))
+lstep('DynList_Clear', sym('DynList_Clear'), 'vi', d)
+check('DynList_Free', lambda: SDTest.Call('DynList_Free', 'vi', d))
 
-# engine3d Util/Arch_dat.c and Dat_simp.c: lines added one by one (Arch_Load only reads files in the packs)
+# engine3d Util/Arch_dat.c and Dat_simp.c: lines added one by one (DataFile_Load only reads files in the packs)
 inilines = ('; head comment', '[Main]', 'Name = Scrap  ; the name', '  Count=12', 'flag = SI', 'Float = 1.5', 'Big = 1e3',
 	'Word = 65000', 'Item = one', 'Item = two words  ', 'Empty =', 'Semi = ;only comment', 'NoEq', '', '[ Other ]  ',
 	'name = other\t;tab', '[]', 'Item = three')
 def arch(dat):
 	r = []
-	for i in range(SDTest.Call('Arch_Count', 'ii', dat)[0] + 1):
-		lin = SDTest.Call('Arch_Line', 'iii', dat, i)[0]
-		r.append((SDTest.Call('Arch_LineType', 'iii', dat, i)[0], SDTest.Peek(lin + 12, '@p')))
+	for i in range(SDTest.Call('DataFile_Count', 'ii', dat)[0] + 1):
+		lin = SDTest.Call('DataFile_Line', 'iii', dat, i)[0]
+		r.append((SDTest.Call('DataFile_LineType', 'iii', dat, i)[0], SDTest.Peek(lin + 12, '@p')))
 	return tuple(r)
-# the first argument (the cArchDatos address) is not part of the name
+# the first argument (the cDataFile address) is not part of the name
 def dcall(name, rva, sig, *args):
 	check(name + fmt(args[1:]), lambda rva=rva, sig=sig, args=args: apply(SDTest.Call, (rva, sig) + args))
 def astep(name, rva, sig, *args):
 	check(name + fmt(args[1:]), lambda rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig) + args), arch(args[0])))
 
-dat = SDTest.Call('Arch_New', 'i')[0]
-check('Arch_New', lambda: arch(dat))
+dat = SDTest.Call('DataFile_New', 'i')[0]
+check('DataFile_New', lambda: arch(dat))
 for i in range(len(inilines)):
-	SDTest.Call('Arch_AddLine', 'visi', dat, inilines[i], i)
-check('Arch_AddLine', lambda: arch(dat))
+	SDTest.Call('DataFile_AddLine', 'visi', dat, inilines[i], i)
+check('DataFile_AddLine', lambda: arch(dat))
 for n in ('Main', 'main', 'Other', 'other', ' Other', 'Oth', '', 'None'):
 	for f in (0, 1, 3, 16):
-		dcall('Arch_FindSection', sym('Arch_FindSection'), 'iisi', dat, n, f)
+		dcall('DataFile_FindSection', sym('DataFile_FindSection'), 'iisi', dat, n, f)
 for k in ('Name', 'name', 'Count', 'Item', 'Empty', 'Semi', 'NoEq', 'Nam', 'Missing'):
 	for f in (0, 2, 9, 10):
-		dcall('Arch_FindKey', sym('Arch_FindKey'), 'iisibi', dat, k, f, '', 260)
-		dcall('Arch_FindKey NULL', sym('Arch_FindKey'), 'iisizi', dat, k, f, None, 0)
-	dcall('Arch_FindKey short', sym('Arch_FindKey'), 'iisibi', dat, k, 2, '', 4)
+		dcall('DataFile_FindKey', sym('DataFile_FindKey'), 'iisibi', dat, k, f, '', 260)
+		dcall('DataFile_FindKey NULL', sym('DataFile_FindKey'), 'iisizi', dat, k, f, None, 0)
+	dcall('DataFile_FindKey short', sym('DataFile_FindKey'), 'iisibi', dat, k, 2, '', 4)
 for i in range(-1, 21):
-	dcall('Arch_SectionEnd', sym('Arch_SectionEnd'), 'iii', dat, i)
+	dcall('DataFile_SectionEnd', sym('DataFile_SectionEnd'), 'iii', dat, i)
 	def val(i=i):
-		r = SDTest.Call('Arch_Value', 'iiip', dat, i, -5)
+		r = SDTest.Call('DataFile_Value', 'iiip', dat, i, -5)
 		return r[0] and (SDTest.Peek(r[0], '@s'), r[1]) or r
-	check('Arch_Value(%d)' % i, val)
-	check('Arch_Value NULL(%d)' % i, lambda i=i: SDTest.Call('Arch_Value', 'iiiz', dat, i, None)[0] != 0)
+	check('DataFile_Value(%d)' % i, val)
+	check('DataFile_Value NULL(%d)' % i, lambda i=i: SDTest.Call('DataFile_Value', 'iiiz', dat, i, None)[0] != 0)
 for h in ('[abc]', '  [ a b ]  x', '[x]', '[\tlong name\t]'):
-	call('Arch_SectionName', sym('Arch_SectionName'), 'vbsi', '', h, 260)
-	call('Arch_SectionName short', sym('Arch_SectionName'), 'vbsi', '', h, 3)
-dcall('Arch_StrnCmp', sym('Arch_StrnCmp'), 'iissi', dat, 'ABc', 'abd', 2)
-astep('Arch_SetValue', sym('Arch_SetValue'), 'visi', dat, 'Scrapland', 3)
-astep('Arch_SetValue long', sym('Arch_SetValue'), 'visi', dat, 'a much longer value than before', 3)
-astep('Arch_SetValue', sym('Arch_SetValue'), 'visi', dat, 'x', 4)
-astep('Arch_SetValue none', sym('Arch_SetValue'), 'visi', dat, 'x', 2)
-astep('Arch_AddSection', sym('Arch_AddSection'), 'visi', dat, 'New', 99)
-astep('Arch_AddLine', sym('Arch_AddLine'), 'visi', dat, 'k = v', -3)
-astep('Arch_Delete', sym('Arch_Delete'), 'vii', dat, 1)
-astep('Arch_Delete 0', sym('Arch_Delete'), 'vii', dat, 0)
-astep('Arch_Delete big', sym('Arch_Delete'), 'vii', dat, 999)
+	call('DataFile_SectionName', sym('DataFile_SectionName'), 'vbsi', '', h, 260)
+	call('DataFile_SectionName short', sym('DataFile_SectionName'), 'vbsi', '', h, 3)
+dcall('DataFile_StrnCmp', sym('DataFile_StrnCmp'), 'iissi', dat, 'ABc', 'abd', 2)
+astep('DataFile_SetValue', sym('DataFile_SetValue'), 'visi', dat, 'Scrapland', 3)
+astep('DataFile_SetValue long', sym('DataFile_SetValue'), 'visi', dat, 'a much longer value than before', 3)
+astep('DataFile_SetValue', sym('DataFile_SetValue'), 'visi', dat, 'x', 4)
+astep('DataFile_SetValue none', sym('DataFile_SetValue'), 'visi', dat, 'x', 2)
+astep('DataFile_AddSection', sym('DataFile_AddSection'), 'visi', dat, 'New', 99)
+astep('DataFile_AddLine', sym('DataFile_AddLine'), 'visi', dat, 'k = v', -3)
+astep('DataFile_Delete', sym('DataFile_Delete'), 'vii', dat, 1)
+astep('DataFile_Delete 0', sym('DataFile_Delete'), 'vii', dat, 0)
+astep('DataFile_Delete big', sym('DataFile_Delete'), 'vii', dat, 999)
 astep('Dat_SetStr', sym('Dat_SetStr'), 'visss', dat, 'Main', 'Name', 'Changed')
 astep('Dat_SetStr same', sym('Dat_SetStr'), 'visss', dat, 'Main', 'Name', 'Changed')
 astep('Dat_SetStr new key', sym('Dat_SetStr'), 'visss', dat, 'Other', 'Added', 'yes')
@@ -317,7 +317,7 @@ astep('Dat_SetInt', sym('Dat_SetInt'), 'vissi', dat, 'Fresh', 'n', -1234567)
 miss = (('None', 'x'), ('Main', 'x'))
 for sect, key in (('Main', 'flag'), ('Fresh', 'b')) + miss:
 	dcall('Dat_GetBool', sym('Dat_GetBool'), 'iissp', dat, sect, key, 7)
-# Count is 'x' since the Arch_SetValue checks
+# Count is 'x' since the DataFile_SetValue checks
 for sect, key in (('Main', 'Word'), ('Fresh', 'n')) + miss:
 	dcall('Dat_GetLong', sym('Dat_GetLong'), 'iissp', dat, sect, key, 7)
 	dcall('Dat_GetInt', sym('Dat_GetLong@2a3300'), 'iissp', dat, sect, key, 7)
@@ -330,22 +330,22 @@ for sect, key in (('Main', 'flag'), ('Main', 'Count'), ('Main', 'Name'), ('Main'
 		('Other', 'name'), ('Fresh', 'n')) + miss:
 	dcall('Dat_GetText', sym('Dat_GetText'), 'iissbi', dat, sect, key, '', 8)
 	dcall('Dat_GetStr', sym('Dat_GetStr'), 'iissbi', dat, sect, key, '', 260)
-lst = SDTest.Call('Arch_New', 'i')[0]
+lst = SDTest.Call('DataFile_New', 'i')[0]
 SDTest.Call('Dat_GetList', 'vissi', dat, 'Main', 'Item', lst)
 check('Dat_GetList', lambda: arch(lst))
-SDTest.Call('Arch_Free', 'vi', lst)
-SDTest.Call('Arch_Dump', 'viii', dat, 0, 5)
+SDTest.Call('DataFile_Free', 'vi', lst)
+SDTest.Call('DataFile_Dump', 'viii', dat, 0, 5)
 f = SDTest.Call('crt_fopen', 'iss', 'sdini.out.txt', 'w')[0]
-check('Arch_Write', lambda: SDTest.Call('Arch_Write', 'iii', dat, f))
+check('DataFile_Write', lambda: SDTest.Call('DataFile_Write', 'iii', dat, f))
 SDTest.Call('crt_fclose', 'ii', f)
-check('Arch_Write file', lambda: open('sdini.out.txt').read())
-SDTest.Call('Arch_Free', 'vi', dat)
-dat = SDTest.Call('Arch_New', 'i')[0]
-astep('Arch_Load', sym('Arch_Load'), 'iisi', dat, 'm3d.ini', 0)
-dcall('Arch_Load missing', sym('Arch_Load'), 'iisi', dat, 'sdnofile.txt', 0)
+check('DataFile_Write file', lambda: open('sdini.out.txt').read())
+SDTest.Call('DataFile_Free', 'vi', dat)
+dat = SDTest.Call('DataFile_New', 'i')[0]
+astep('DataFile_Load', sym('DataFile_Load'), 'iisi', dat, 'm3d.ini', 0)
+dcall('DataFile_Load missing', sym('DataFile_Load'), 'iisi', dat, 'sdnofile.txt', 0)
 dcall('Dat_GetBool', sym('Dat_GetBool'), 'iissp', dat, 'video', 'Sharpen', 7)
-dcall('Dat_GetLong', sym('Dat_GetLong'), 'iissp', dat, 'suelo', 'suelo_caras_cuadr', 7)
-SDTest.Call('Arch_Free', 'vi', dat)
+dcall('Dat_GetLong', sym('Dat_GetLong'), 'iissp', dat, 'ground', 'suelo_caras_cuadr', 7)
+SDTest.Call('DataFile_Free', 'vi', dat)
 
 # engine3d Util/Proc_dat.c: no bad numbers or identifiers, those open a message box in both (a note like "A#4"
 # is one: the identifier ends at the '#')
@@ -384,7 +384,7 @@ for i in range(16):
 check('Proc types', lambda: map(lambda i: SDTest.Peek(sym('g_ProcTypes') + 12 * i, 'p'), range(16)))
 
 # engine3d Engine/ArchIO.c: reads only (writing blocks and seeking need the pack building mode, else a CHECK
-# fails), CArchIO on a block file of the packs
+# fails), CFileIO on a block file of the packs
 for t in ('ABCD', 'AB', '', 'ABCDEF', 'DUM'):
 	call('IdToDword', sym('IdToDword'), 'is', t)
 for n in ('Bin/Scrap.exe', 'Bin', 'sdnofile.txt', 'm3d.ini'):
@@ -395,45 +395,45 @@ for n in ('Bin/Scrap.exe', 'Bin', 'sdnofile.txt', 'm3d.ini'):
 	call('File_StatPack', sym('File_StatPack'), 'isb', n, '')
 call('File_RelPath', sym('File_RelPath'), 'vbs', '', 'a/b/c.txt')
 def readall(n):
-	r = SDTest.Call('ArchIO_ReadAll', 'iszp', n, None, 0)
-	text = SDTest.Call('Cad_Copy', 'sbii', '', r[0], 40)[1]
+	r = SDTest.Call('FileIO_ReadAll', 'iszp', n, None, 0)
+	text = SDTest.Call('String_Copy', 'sbii', '', r[0], 40)[1]
 	return (r[1], text)
-check('ArchIO_ReadAll', lambda: readall('m3d.ini'))
-f = SDTest.Call('ArchIO_Open', 'iss', 'm3d.ini', 'rb')[0]
-check('ArchIO_Open', lambda: f != 0)
-call('ArchIO_Open missing', sym('ArchIO_Open'), 'iss', 'sdnofile.txt', 'rb')
-check('ArchIO_Size', lambda: SDTest.Call('ArchIO_Size', 'ii', f))
+check('FileIO_ReadAll', lambda: readall('m3d.ini'))
+f = SDTest.Call('FileIO_Open', 'iss', 'm3d.ini', 'rb')[0]
+check('FileIO_Open', lambda: f != 0)
+call('FileIO_Open missing', sym('FileIO_Open'), 'iss', 'sdnofile.txt', 'rb')
+check('FileIO_Size', lambda: SDTest.Call('FileIO_Size', 'ii', f))
 for i in range(4):
-	check('ArchIO_Gets', lambda: (SDTest.Call('ArchIO_Gets', 'sbii', '', 260, f), SDTest.Call('ArchIO_Tell', 'ii', f)))
-check('ArchIO_Gets short', lambda: SDTest.Call('ArchIO_Gets', 'sbii', '', 4, f))
-check('ArchIO_Getc', lambda: SDTest.Call('ArchIO_Getc', 'ii', f))
-check('ArchIO_Read', lambda: SDTest.Call('ArchIO_Read', 'ibiii', '', 3, 4, f))
-check('ArchIO_Tell', lambda: SDTest.Call('ArchIO_Tell', 'ii', f))
-check('ArchIO_Close', lambda: SDTest.Call('ArchIO_Close', 'ii', f))
+	check('FileIO_Gets', lambda: (SDTest.Call('FileIO_Gets', 'sbii', '', 260, f), SDTest.Call('FileIO_Tell', 'ii', f)))
+check('FileIO_Gets short', lambda: SDTest.Call('FileIO_Gets', 'sbii', '', 4, f))
+check('FileIO_Getc', lambda: SDTest.Call('FileIO_Getc', 'ii', f))
+check('FileIO_Read', lambda: SDTest.Call('FileIO_Read', 'ibiii', '', 3, 4, f))
+check('FileIO_Tell', lambda: SDTest.Call('FileIO_Tell', 'ii', f))
+check('FileIO_Close', lambda: SDTest.Call('FileIO_Close', 'ii', f))
 io = SDTest.Call('Mem_Alloc', 'ii', 16)[0]
 def cio():
 	return (SDTest.Peek(io, '@b'), SDTest.Peek(io + 4, '@i'), SDTest.Peek(io + 8, '@i') != 0, SDTest.Peek(io + 12, '@i'))
 def iostep(name, rva, sig, *args):
 	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig, io) + args), cio()))
-check('CArchIO_ctor missing', lambda: (SDTest.Call('CArchIO_ctor', 'tiiss', io, 'sdnofile.dum', 'rb')[0] == io, cio()))
-iostep('CArchIO_Error', sym('CArchIO_Error'), 'tiiz', None)
-iostep('CArchIO_Read error', sym('CArchIO_Read'), 'tiibi', '', 4)
-iostep('CArchIO_ReadString error', sym('CArchIO_ReadString'), 'tiibi', '', 4)
-iostep('CArchIO_Unsupported', sym('CArchIO_Unsupported'), 'tii')
-iostep('CArchIO_dtor', sym('CArchIO_dtor'), 'tvi')
-check('CArchIO_ctor', lambda: (SDTest.Call('CArchIO_ctor', 'tiiss', io, 'levels/fake/map/map3d.dum', 'rb')[0] == io, cio()))
-iostep('CArchIO_BeginBlockSize', sym('CArchIO_BeginBlockSize'), 'tiisp', 'DUM', 0)
-iostep('CArchIO_ReadInt', sym('CArchIO_ReadInt'), 'tii')
-iostep('CArchIO_ReadBool', sym('CArchIO_ReadBool'), 'tbi')
-iostep('CArchIO_Read4', sym('CArchIO_Read4@21c350'), 'tiip', 0)
-iostep('CArchIO_ReadStringNull', sym('CArchIO_ReadStringNull'), 'tiibip', '', 260, 7)
-iostep('CArchIO_Read', sym('CArchIO_Read'), 'tiibi', '', 12)
-iostep('CArchIO_Read 0', sym('CArchIO_Read'), 'tiibi', '', 0)
-iostep('CArchIO_SetError', sym('CArchIO_SetError'), 'tiis', 'test')
-iostep('CArchIO_Read after', sym('CArchIO_Read'), 'tiibi', '', 4)
-iostep('CArchIO_ReadStringNull after', sym('CArchIO_ReadStringNull'), 'tiibip', '', 260, 7)
-iostep('CArchIO_Finish', sym('CArchIO_Finish'), 'tii')
-iostep('CArchIO_Close', sym('CArchIO_Close'), 'tii')
+check('CFileIO_ctor missing', lambda: (SDTest.Call('CFileIO_ctor', 'tiiss', io, 'sdnofile.dum', 'rb')[0] == io, cio()))
+iostep('CFileIO_Error', sym('CFileIO_Error'), 'tiiz', None)
+iostep('CFileIO_Read error', sym('CFileIO_Read'), 'tiibi', '', 4)
+iostep('CFileIO_ReadString error', sym('CFileIO_ReadString'), 'tiibi', '', 4)
+iostep('CFileIO_Unsupported', sym('CFileIO_Unsupported'), 'tii')
+iostep('CFileIO_dtor', sym('CFileIO_dtor'), 'tvi')
+check('CFileIO_ctor', lambda: (SDTest.Call('CFileIO_ctor', 'tiiss', io, 'levels/fake/map/map3d.dum', 'rb')[0] == io, cio()))
+iostep('CFileIO_BeginBlockSize', sym('CFileIO_BeginBlockSize'), 'tiisp', 'DUM', 0)
+iostep('CFileIO_ReadInt', sym('CFileIO_ReadInt'), 'tii')
+iostep('CFileIO_ReadBool', sym('CFileIO_ReadBool'), 'tbi')
+iostep('CFileIO_Read4', sym('CFileIO_Read4@21c350'), 'tiip', 0)
+iostep('CFileIO_ReadStringNull', sym('CFileIO_ReadStringNull'), 'tiibip', '', 260, 7)
+iostep('CFileIO_Read', sym('CFileIO_Read'), 'tiibi', '', 12)
+iostep('CFileIO_Read 0', sym('CFileIO_Read'), 'tiibi', '', 0)
+iostep('CFileIO_SetError', sym('CFileIO_SetError'), 'tiis', 'test')
+iostep('CFileIO_Read after', sym('CFileIO_Read'), 'tiibi', '', 4)
+iostep('CFileIO_ReadStringNull after', sym('CFileIO_ReadStringNull'), 'tiibip', '', 260, 7)
+iostep('CFileIO_Finish', sym('CFileIO_Finish'), 'tii')
+iostep('CFileIO_Close', sym('CFileIO_Close'), 'tii')
 SDTest.Call('Mem_Free', 'vi', io)
 
 # Math/MathUtils.c
@@ -589,56 +589,56 @@ for q1, q2 in (((0.0, 0.0, 0.9, 0.1), (0.0, 0.0, -0.9, 0.1)), ((0.7, 0.0, 0.0, -
 ini = SDTest.Call('Mem_Alloc', 'ii', 4)[0]
 def istep(name, rva, sig, *args):
 	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: apply(SDTest.Call, (rva, sig, ini) + args))
-check('CArchINI_ctorLoad', lambda: SDTest.Call('CArchINI_ctorLoad', 'tiisz', ini, 'm3d.ini', None)[0] == ini)
-istep('CArchINI_Load', sym('CArchINI_Load'), 'tiiszi', 'map3d.ini', 'levels/menu/map/', 1)
-istep('CArchINI_Load missing', sym('CArchINI_Load'), 'tiiszi', 'sdnofile.ini', None, 0)
-istep('CArchINI_Count', sym('CArchINI_Count'), 'tii')
-for sect, key in (('video', 'VSync'), ('video', 'Sharpen'), ('video', 'TextBPP'), ('suelo', 'suelo_caras_cuadr'),
-		('mapa_sombras', 'escala'), ('mapa_sombras', 'sombras_suaves'), ('suelo', 'model_ambient'), ('Model', 'TexturePath'),
-		('cielo', 'path'), ('none', 'x'), ('video', 'none')):
+check('CIniFile_ctorLoad', lambda: SDTest.Call('CIniFile_ctorLoad', 'tiisz', ini, 'm3d.ini', None)[0] == ini)
+istep('CIniFile_Load', sym('CIniFile_Load'), 'tiiszi', 'map3d.ini', 'levels/menu/map/', 1)
+istep('CIniFile_Load missing', sym('CIniFile_Load'), 'tiiszi', 'sdnofile.ini', None, 0)
+istep('CIniFile_Count', sym('CIniFile_Count'), 'tii')
+for sect, key in (('video', 'VSync'), ('video', 'Sharpen'), ('video', 'TextBPP'), ('ground', 'suelo_caras_cuadr'),
+		('mapa_sombras', 'scale'), ('mapa_sombras', 'sombras_suaves'), ('ground', 'model_ambient'), ('Model', 'TexturePath'),
+		('sky', 'path'), ('none', 'x'), ('video', 'none')):
 	if key in ('VSync', 'Sharpen', 'sombras_suaves', 'none', 'x'):
-		istep('CArchINI_GetBool', sym('CArchINI_GetBool'), 'tbissi', sect, key, 7)
-		istep('CArchINI_ReadBool', sym('CArchINI_ReadBool'), 'tiissp', sect, key, 7)
+		istep('CIniFile_GetBool', sym('CIniFile_GetBool'), 'tbissi', sect, key, 7)
+		istep('CIniFile_ReadBool', sym('CIniFile_ReadBool'), 'tiissp', sect, key, 7)
 	if key in ('TextBPP', 'suelo_caras_cuadr', 'none', 'x'):
-		istep('CArchINI_GetInt', sym('CArchINI_GetInt'), 'tiissi', sect, key, -5)
-		istep('CArchINI_ReadInt', sym('CArchINI_ReadInt'), 'tiissp', sect, key, 7)
-	if key in ('escala', 'TextBPP', 'none', 'x'):
-		istep('CArchINI_GetFloat', sym('CArchINI_GetFloat'), 'tfissf', sect, key, 2.5)
-		istep('CArchINI_ReadFloat', sym('CArchINI_ReadFloat'), 'tiissp', sect, key, 7)
+		istep('CIniFile_GetInt', sym('CIniFile_GetInt'), 'tiissi', sect, key, -5)
+		istep('CIniFile_ReadInt', sym('CIniFile_ReadInt'), 'tiissp', sect, key, 7)
+	if key in ('scale', 'TextBPP', 'none', 'x'):
+		istep('CIniFile_GetFloat', sym('CIniFile_GetFloat'), 'tfissf', sect, key, 2.5)
+		istep('CIniFile_ReadFloat', sym('CIniFile_ReadFloat'), 'tiissp', sect, key, 7)
 	if key in ('model_ambient', 'none', 'x'):
-		istep('CArchINI_GetColor', sym('CArchINI_GetColor'), 'tiissi', sect, key, 0x11223344)
-	istep('CArchINI_GetText', sym('CArchINI_GetText'), 'tsissbiz', sect, key, '', 40, None)
-	istep('CArchINI_GetText def', sym('CArchINI_GetText'), 'tsissbis', sect, key, '', 40, 'default')
-	istep('CArchINI_ReadText', sym('CArchINI_ReadText'), 'tiissbi', sect, key, '', 6)
+		istep('CIniFile_GetColor', sym('CIniFile_GetColor'), 'tiissi', sect, key, 0x11223344)
+	istep('CIniFile_GetText', sym('CIniFile_GetText'), 'tsissbiz', sect, key, '', 40, None)
+	istep('CIniFile_GetText def', sym('CIniFile_GetText'), 'tsissbis', sect, key, '', 40, 'default')
+	istep('CIniFile_ReadText', sym('CIniFile_ReadText'), 'tiissbi', sect, key, '', 6)
 	if key in ('none', 'x'):
-		istep('CArchINI_GetVec2', sym('CArchINI_GetVec2'), 'tviFssF', (0.0, 0.0), sect, key, (1.0, 2.0))
-		istep('CArchINI_GetVec3', sym('CArchINI_GetVec3'), 'tviFssF', (0.0, 0.0, 0.0), sect, key, (1.0, 2.0, 3.0))
-for n in ('video', 'suelo', 'cielo', 'none'):
-	istep('CArchINI_FindSection', sym('CArchINI_FindSection'), 'tiisi', n, 0)
-istep('CArchINI_FindKey', sym('CArchINI_FindKey'), 'tiisbii', 'Depth', '', 40, 1)
+		istep('CIniFile_GetVec2', sym('CIniFile_GetVec2'), 'tviFssF', (0.0, 0.0), sect, key, (1.0, 2.0))
+		istep('CIniFile_GetVec3', sym('CIniFile_GetVec3'), 'tviFssF', (0.0, 0.0, 0.0), sect, key, (1.0, 2.0, 3.0))
+for n in ('video', 'ground', 'sky', 'none'):
+	istep('CIniFile_FindSection', sym('CIniFile_FindSection'), 'tiisi', n, 0)
+istep('CIniFile_FindKey', sym('CIniFile_FindKey'), 'tiisbii', 'Depth', '', 40, 1)
 for i in range(0, 12):
-	istep('CArchINI_LineText', sym('CArchINI_LineText'), 'tsii', i)
-	istep('CArchINI_LineType', sym('CArchINI_LineType'), 'tiii', i)
-	istep('CArchINI_GetSectionName', sym('CArchINI_GetSectionName'), 'tbiibi', i, '', 40)
-istep('CArchINI_SetStr', sym('CArchINI_SetStr'), 'tiisss', 'video', 'VSync', 'SI')
-istep('CArchINI_SetStr same', sym('CArchINI_SetStr@262390'), 'tiisss', 'video', 'VSync', 'SI')
-istep('CArchINI_SetInt', sym('CArchINI_SetInt'), 'tiissi', 'video', 'Depth', 32)
-istep('CArchINI_SetInt 2', sym('CArchINI_SetInt@262370'), 'tiissi', 'sd', 'n', -7)
-istep('CArchINI_SetFloat', sym('CArchINI_SetFloat'), 'tiissfi', 'sd', 'f', 1.0 / 3, 3)
-istep('CArchINI_SetFloat 2', sym('CArchINI_SetFloat@262300'), 'tiissfi', 'sd', 'g', -2.5, 0)
-istep('CArchINI_SetYesNo', sym('CArchINI_SetYesNo'), 'tiissi', 'sd', 'y', 1)
-istep('CArchINI_SetBool', sym('CArchINI_SetBool'), 'tiissi', 'sd', 'b', 0)
-istep('CArchINI_AddLine', sym('CArchINI_AddLine'), 'tvisi', '; sd line', -1)
-istep('CArchINI_AddLine 2', sym('CArchINI_AddLine'), 'tvisi', '; sd first', 0)
-istep('CArchINI_DeleteLine', sym('CArchINI_DeleteLine'), 'tvii', 3)
-istep('CArchINI_Save', sym('CArchINI_Save'), 'tiiszi', 'sdini2.txt', None, 0)
-check('CArchINI_Save file', lambda: open('sdini2.txt').read())
-istep('CArchINI_Clear', sym('CArchINI_Clear'), 'tvi')
-istep('CArchINI_Count', sym('CArchINI_Count'), 'tii')
-istep('CArchINI_dtor', sym('CArchINI_dtor'), 'tvi')
-check('CArchINI_ctor', lambda: SDTest.Call('CArchINI_ctor', 'tii', ini)[0] == ini)
-istep('CArchINI_Count', sym('CArchINI_Count'), 'tii')
-SDTest.Call('CArchINI_dtor', 'tvi', ini)
+	istep('CIniFile_LineText', sym('CIniFile_LineText'), 'tsii', i)
+	istep('CIniFile_LineType', sym('CIniFile_LineType'), 'tiii', i)
+	istep('CIniFile_GetSectionName', sym('CIniFile_GetSectionName'), 'tbiibi', i, '', 40)
+istep('CIniFile_SetStr', sym('CIniFile_SetStr'), 'tiisss', 'video', 'VSync', 'SI')
+istep('CIniFile_SetStr same', sym('CIniFile_SetStr@262390'), 'tiisss', 'video', 'VSync', 'SI')
+istep('CIniFile_SetInt', sym('CIniFile_SetInt'), 'tiissi', 'video', 'Depth', 32)
+istep('CIniFile_SetInt 2', sym('CIniFile_SetInt@262370'), 'tiissi', 'sd', 'n', -7)
+istep('CIniFile_SetFloat', sym('CIniFile_SetFloat'), 'tiissfi', 'sd', 'f', 1.0 / 3, 3)
+istep('CIniFile_SetFloat 2', sym('CIniFile_SetFloat@262300'), 'tiissfi', 'sd', 'g', -2.5, 0)
+istep('CIniFile_SetYesNo', sym('CIniFile_SetYesNo'), 'tiissi', 'sd', 'y', 1)
+istep('CIniFile_SetBool', sym('CIniFile_SetBool'), 'tiissi', 'sd', 'b', 0)
+istep('CIniFile_AddLine', sym('CIniFile_AddLine'), 'tvisi', '; sd line', -1)
+istep('CIniFile_AddLine 2', sym('CIniFile_AddLine'), 'tvisi', '; sd first', 0)
+istep('CIniFile_DeleteLine', sym('CIniFile_DeleteLine'), 'tvii', 3)
+istep('CIniFile_Save', sym('CIniFile_Save'), 'tiiszi', 'sdini2.txt', None, 0)
+check('CIniFile_Save file', lambda: open('sdini2.txt').read())
+istep('CIniFile_Clear', sym('CIniFile_Clear'), 'tvi')
+istep('CIniFile_Count', sym('CIniFile_Count'), 'tii')
+istep('CIniFile_dtor', sym('CIniFile_dtor'), 'tvi')
+check('CIniFile_ctor', lambda: SDTest.Call('CIniFile_ctor', 'tii', ini)[0] == ini)
+istep('CIniFile_Count', sym('CIniFile_Count'), 'tii')
+SDTest.Call('CIniFile_dtor', 'tvi', ini)
 SDTest.Call('Mem_Free', 'vi', ini)
 
 # engine3d Engine/TablaHash.c
@@ -649,76 +649,76 @@ def tnode(n):
 	if not n:
 		return None
 	return SDTest.Peek(n + 4, '@p'), SDTest.Peek(n + 8, '@i')
-check('CTablaHash_ctor', lambda: SDTest.Call('CTablaHash_ctor', 'tiii', th, 7)[0] == th)
+check('CHashTable_ctor', lambda: SDTest.Call('CHashTable_ctor', 'tiii', th, 7)[0] == th)
 keys = ('a', 'b', 'abc', 'ABC', '', 'Init.py', 'x' * 40, 'a\xedb', 'h', 'o', 'v')
 for i in range(len(keys)):
-	tstep('CTablaHash_Slot', sym('CTablaHash_Slot'), 'tiis', keys[i])
-	tstep('CTablaHash_Add', sym('CTablaHash_Add'), 'tiisii', keys[i], 100 + i, 0)
-tstep('CTablaHash_Add again', sym('CTablaHash_Add'), 'tiisii', 'abc', 5, 0)
+	tstep('CHashTable_Slot', sym('CHashTable_Slot'), 'tiis', keys[i])
+	tstep('CHashTable_Add', sym('CHashTable_Add'), 'tiisii', keys[i], 100 + i, 0)
+tstep('CHashTable_Add again', sym('CHashTable_Add'), 'tiisii', 'abc', 5, 0)
 for k in (0, -1, 0x1234, 7):
-	tstep('CTablaHash_AddInt', sym('CTablaHash_AddInt'), 'tiiiii', k, k * 3, 0)
-tstep('CTablaHash_AddInt again', sym('CTablaHash_AddInt'), 'tiiiii', 0x1234, 1, 0)
+	tstep('CHashTable_AddInt', sym('CHashTable_AddInt'), 'tiiiii', k, k * 3, 0)
+tstep('CHashTable_AddInt again', sym('CHashTable_AddInt'), 'tiiiii', 0x1234, 1, 0)
 for k in keys + ('c', 'Abc', '00001234', 'x' * 39):
-	tstep('CTablaHash_Get', sym('CTablaHash_Get'), 'tiisp', k, -9)
-	tstep('CTablaHash_Get NULL', sym('CTablaHash_Get'), 'tiisi', k, 0)
-	check('CTablaHash_Find' + fmt((k,)), lambda k=k: tnode(SDTest.Call('CTablaHash_Find', 'tiisi', th, k, SDTest.Call('CTablaHash_Slot', 'tiis', th, k)[0])[0]))
+	tstep('CHashTable_Get', sym('CHashTable_Get'), 'tiisp', k, -9)
+	tstep('CHashTable_Get NULL', sym('CHashTable_Get'), 'tiisi', k, 0)
+	check('CHashTable_Find' + fmt((k,)), lambda k=k: tnode(SDTest.Call('CHashTable_Find', 'tiisi', th, k, SDTest.Call('CHashTable_Slot', 'tiis', th, k)[0])[0]))
 for k in (0, -1, 0x1234, 7, 8):
-	tstep('CTablaHash_GetInt', sym('CTablaHash_GetInt'), 'tiiip', k, -9)
-check('CTablaHash_Insert', lambda: tnode(SDTest.Call('CTablaHash_Insert', 'tiisii', th, 'abc', 2, 55)[0]))
-tstep('CTablaHash_List count', sym('CTablaHash_List'), 'tiiii', 0, 0)
+	tstep('CHashTable_GetInt', sym('CHashTable_GetInt'), 'tiiip', k, -9)
+check('CHashTable_Insert', lambda: tnode(SDTest.Call('CHashTable_Insert', 'tiisii', th, 'abc', 2, 55)[0]))
+tstep('CHashTable_List count', sym('CHashTable_List'), 'tiiii', 0, 0)
 def tlist():
-	r = SDTest.Call('CTablaHash_GetList', 'tiipp', th, 0, -1)
+	r = SDTest.Call('CHashTable_GetList', 'tiipp', th, 0, -1)
 	arr, n = r[1], r[2]
 	nodes = []
 	for i in range(n):
 		nodes.append(tnode(SDTest.Peek(arr + 4 * i, '@i')))
-	small = SDTest.Call('CTablaHash_List', 'tiiii', th, arr, 3)[0]
-	full = SDTest.Call('CTablaHash_List', 'tiiii', th, arr, n)[0]
+	small = SDTest.Call('CHashTable_List', 'tiiii', th, arr, 3)[0]
+	full = SDTest.Call('CHashTable_List', 'tiiii', th, arr, n)[0]
 	lock = SDTest.Peek(th + 8, '@i')
-	freed = SDTest.Call('CTablaHash_FreeList', 'tiip', th, arr)
+	freed = SDTest.Call('CHashTable_FreeList', 'tiip', th, arr)
 	return r[0], n, nodes, small, full, lock, freed, SDTest.Peek(th + 8, '@i')
-check('CTablaHash_GetList', tlist)
-SDTest.Call('CTablaHash_dtor', 'tvi', th)
+check('CHashTable_GetList', tlist)
+SDTest.Call('CHashTable_dtor', 'tvi', th)
 SDTest.Call('Mem_Free', 'vi', th)
 
-# engine3d Engine/LeeDatos.c on an ini of the packs (only pack files open, one at a time), Lee_String on a buffer
-# put in g_LeeCad
+# engine3d Engine/LeeDatos.c on an ini of the packs (only pack files open, one at a time), Read_String on a buffer
+# put in g_ReadString
 def lee():
-	return SDTest.Peek('g_LeeCad', 'p'), SDTest.Peek('g_LeePila', 'i') != 0
+	return SDTest.Peek('g_ReadString', 'p'), SDTest.Peek('g_ReadStack', 'i') != 0
 def leestep(name, rva, sig, *args):
 	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig) + args), lee()))
-call('Lee_Error NULL', sym('Lee_Error'), 'vz', None)
-leestep('Lee_Open', sym('Lee_Open'), 'vzsi', 'levels/menu/', 'map/map3d.ini', 1)
-leestep('Lee_Expect', sym('Lee_Expect'), 'vs', '[suelo]')
-leestep('Lee_Text', sym('Lee_Text'), 'vzbi', 'model_ambient', '', 40)
-leestep('Lee_Text short', sym('Lee_Text'), 'vzbi', None, '', 5)
-leestep('Lee_NextLine', sym('Lee_NextLine'), 'i')
-leestep('Lee_Text', sym('Lee_Text'), 'vzbi', 'TexturePath =', '', 40)
-leestep('Lee_Expect', sym('Lee_Expect'), 'vs', '[mapa_sombras]')
+call('Read_Error NULL', sym('Read_Error'), 'vz', None)
+leestep('Read_Open', sym('Read_Open'), 'vzsi', 'levels/menu/', 'map/map3d.ini', 1)
+leestep('Read_Expect', sym('Read_Expect'), 'vs', '[suelo]')
+leestep('Read_Text', sym('Read_Text'), 'vzbi', 'model_ambient', '', 40)
+leestep('Read_Text short', sym('Read_Text'), 'vzbi', None, '', 5)
+leestep('Read_NextLine', sym('Read_NextLine'), 'i')
+leestep('Read_Text', sym('Read_Text'), 'vzbi', 'TexturePath =', '', 40)
+leestep('Read_Expect', sym('Read_Expect'), 'vs', '[mapa_sombras]')
 for t in ('escala =', 'resolucion =', 'gamma ='):
-	leestep('Lee_Float', sym('Lee_Float'), 'vsF', t, (0.0,))
-leestep('Lee_Text', sym('Lee_Text'), 'vzbi', 'sombras_suaves =', '', 40)
-leestep('Lee_Int', sym('Lee_Int'), 'vsp', 'text_tam_x =', -1)
-leestep('Lee_Int', sym('Lee_Int'), 'vsp', 'text_tam_y =', -1)
-leestep('Lee_Bytes', sym('Lee_Bytes'), 'vbi', '', 7)
-leestep('Lee_Bytes 0', sym('Lee_Bytes'), 'vbi', '', 0)
+	leestep('Read_Float', sym('Read_Float'), 'vsF', t, (0.0,))
+leestep('Read_Text', sym('Read_Text'), 'vzbi', 'sombras_suaves =', '', 40)
+leestep('Read_Int', sym('Read_Int'), 'vsp', 'text_tam_x =', -1)
+leestep('Read_Int', sym('Read_Int'), 'vsp', 'text_tam_y =', -1)
+leestep('Read_Bytes', sym('Read_Bytes'), 'vbi', '', 7)
+leestep('Read_Bytes 0', sym('Read_Bytes'), 'vbi', '', 0)
 for i in range(3):
-	leestep('Lee_Byte', sym('Lee_Byte'), 'i')
+	leestep('Read_Byte', sym('Read_Byte'), 'i')
 for i in range(16):
-	leestep('Lee_NextLine', sym('Lee_NextLine'), 'i')
+	leestep('Read_NextLine', sym('Read_NextLine'), 'i')
 lbuf = SDTest.Call('Mem_Alloc', 'ii', 64)[0]
-saved = SDTest.Peek('g_LeeCad', 'i')
+saved = SDTest.Peek('g_ReadString', 'i')
 for t in ('"abc" x', ' \t"" y', '"a b c d e f"', '\t"tab\there"'):
 	for n in (1, 4, 40):
 		SDTest.Call('Str_Copy', 'sisi', lbuf, t, 64)
-		SDTest.Poke('g_LeeCad', lbuf)
-		check('Lee_String' + fmt((t, n)), lambda n=n, lbuf=lbuf: (SDTest.Call('Lee_String', 'vbi', '', n), SDTest.Peek('g_LeeCad', 'i') - lbuf))
+		SDTest.Poke('g_ReadString', lbuf)
+		check('Read_String' + fmt((t, n)), lambda n=n, lbuf=lbuf: (SDTest.Call('Read_String', 'vbi', '', n), SDTest.Peek('g_ReadString', 'i') - lbuf))
 SDTest.Call('Str_Copy', 'sisi', lbuf, ' "q" rest', 64)
-SDTest.Poke('g_LeeCad', lbuf)
-check('Lee_QText', lambda lbuf=lbuf: (SDTest.Call('Lee_QText', 'vzbi', None, '', 40), SDTest.Peek('g_LeeCad', 'i') - lbuf))
-SDTest.Poke('g_LeeCad', saved)
+SDTest.Poke('g_ReadString', lbuf)
+check('Read_QText', lambda lbuf=lbuf: (SDTest.Call('Read_QText', 'vzbi', None, '', 40), SDTest.Peek('g_ReadString', 'i') - lbuf))
+SDTest.Poke('g_ReadString', saved)
 SDTest.Call('Mem_Free', 'vi', lbuf)
-leestep('Lee_Close', sym('Lee_Close'), 'i')
+leestep('Read_Close', sym('Read_Close'), 'i')
 
 # engine3d Engine/BmpFlt.c on images in heap memory (pixels set with the exe's memcpy), TXF files written here
 def bnew(w, h, create=sym('CBmpFlt_Create')):
@@ -952,10 +952,10 @@ def m3dmode(binary, labels):
 	v = SDTest.Peek('g_M3DBinary', 'i')
 	SDTest.Poke('g_M3DBinary', (v & -0x10000) + binary + (labels << 8))
 def mstep(name, rva, sig, *args):
-	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig) + args), SDTest.Peek('g_LeeCad', 'p')))
+	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig) + args), SDTest.Peek('g_ReadString', 'p')))
 m3dsaved = SDTest.Peek('g_M3DBinary', 'i')
 m3dmode(0, 1)
-SDTest.Call('Lee_Open', 'vzsi', None, 'levels/menu/map/map3d.ini', 1)
+SDTest.Call('Read_Open', 'vzsi', None, 'levels/menu/map/map3d.ini', 1)
 mstep('M3D_Label', sym('M3D_Label'), 'vs', '[suelo]')
 mstep('M3D_ReadQuat', sym('M3D_ReadQuat'), 'vsFi', 'model_ambient =', (0.0, 0.0, 0.0, 0.0), 1)
 mstep('M3D_Label', sym('M3D_Label'), 'vs', '[Model]')
@@ -968,31 +968,31 @@ mstep('M3D_ReadInt', sym('M3D_ReadInt'), 'is', 'text_tam_x =')
 mstep('M3D_ReadInt', sym('M3D_ReadInt'), 'is', 'text_tam_y =')
 for t in ('radiosidad =', 'ilum_global =', 'no_luz_amb =', 'modulate4x ='):
 	mstep('M3D_ReadBool', sym('M3D_ReadBool'), 'bs', t)
-SDTest.Call('Lee_Close', 'i')
-SDTest.Call('Lee_Open', 'vzsi', None, 'levels/menu/map/map3d.ini', 1)
+SDTest.Call('Read_Close', 'i')
+SDTest.Call('Read_Open', 'vzsi', None, 'levels/menu/map/map3d.ini', 1)
 mstep('M3D_Label', sym('M3D_Label'), 'vs', '[suelo]')
 mstep('M3D_ReadVec3', sym('M3D_ReadVec3'), 'vsFi', 'model_ambient =', (0.0, 0.0, 0.0), 0)
 mstep('M3D_ReadFloat', sym('M3D_ReadFloat'), 'fz', None)
-SDTest.Call('Lee_Close', 'i')
-SDTest.Call('Lee_Open', 'vzsi', None, 'levels/menu/map/map3d.ini', 1)
+SDTest.Call('Read_Close', 'i')
+SDTest.Call('Read_Open', 'vzsi', None, 'levels/menu/map/map3d.ini', 1)
 mstep('M3D_Label', sym('M3D_Label'), 'vs', '[suelo]')
 mstep('M3D_ReadVec2', sym('M3D_ReadVec2'), 'vsF', 'model_ambient =', (0.0, 0.0))
 mstep('M3D_ReadVec2 next', sym('M3D_ReadVec2'), 'vzF', None, (0.0, 0.0))
-SDTest.Call('Lee_Close', 'i')
+SDTest.Call('Read_Close', 'i')
 lbuf = SDTest.Call('Mem_Alloc', 'ii', 64)[0]
-saved = SDTest.Peek('g_LeeCad', 'i')
+saved = SDTest.Peek('g_ReadString', 'i')
 for t in ('"abc" x', ' "" y', '"long text here"'):
 	for n in (2, 40):
 		SDTest.Call('Str_Copy', 'sisi', lbuf, t, 64)
-		SDTest.Poke('g_LeeCad', lbuf)
+		SDTest.Poke('g_ReadString', lbuf)
 		check('M3D_ReadString quoted' + fmt((t, n)), lambda n=n: SDTest.Call('M3D_ReadString', 'szbii', None, '', n, 1))
 	SDTest.Call('Str_Copy', 'sisi', lbuf, t, 64)
-	SDTest.Poke('g_LeeCad', lbuf)
-	check('M3D_ReadString quoted cad' + fmt((t,)), lambda: (SDTest.Call('M3D_ReadString', 'szzii', None, None, 0, 1), SDTest.Peek('g_M3DCad', 's')))
-SDTest.Poke('g_LeeCad', saved)
+	SDTest.Poke('g_ReadString', lbuf)
+	check('M3D_ReadString quoted cad' + fmt((t,)), lambda: (SDTest.Call('M3D_ReadString', 'szzii', None, None, 0, 1), SDTest.Peek('g_M3DString', 's')))
+SDTest.Poke('g_ReadString', saved)
 SDTest.Call('Mem_Free', 'vi', lbuf)
 m3dmode(1, 0)
-SDTest.Call('Lee_Open', 'vzsi', None, 'models/elements/templeyakuzzi/aceite-r.bmp', 1)
+SDTest.Call('Read_Open', 'vzsi', None, 'models/elements/templeyakuzzi/aceite-r.bmp', 1)
 for i in range(4):
 	mstep('M3D_ReadInt bin', sym('M3D_ReadInt'), 'iz', None)
 mstep('M3D_ReadBool bin', sym('M3D_ReadBool'), 'bz', None)
@@ -1008,29 +1008,29 @@ mstep('M3D_ReadTransform bin', sym('M3D_ReadTransform'), 'vsF', 'x', (0.0,) * 15
 for i in range(20):
 	mstep('M3D_ReadInt bin', sym('M3D_ReadInt'), 'iz', None)
 mstep('M3D_ReadQuat bin', sym('M3D_ReadQuat'), 'vzFi', None, (0.0, 0.0, 0.0, 0.0), 1)
-SDTest.Call('Lee_Close', 'i')
-SDTest.Call('Lee_Open', 'vzsi', None, '2d/white.tga', 1)
-SDTest.Call('Lee_Bytes', 'vbi', '', 18)
+SDTest.Call('Read_Close', 'i')
+SDTest.Call('Read_Open', 'vzsi', None, '2d/white.tga', 1)
+SDTest.Call('Read_Bytes', 'vbi', '', 18)
 for i in range(4):
 	mstep('M3D_ReadInt white', sym('M3D_ReadInt'), 'iz', None)
-SDTest.Call('Lee_Close', 'i')
-SDTest.Call('Lee_Open', 'vzsi', None, 'levels/menu/map/map3d.0001.lmap1.tga', 1)
-SDTest.Call('Lee_Bytes', 'vbi', '', 18)
+SDTest.Call('Read_Close', 'i')
+SDTest.Call('Read_Open', 'vzsi', None, 'levels/menu/map/map3d.0001.lmap1.tga', 1)
+SDTest.Call('Read_Bytes', 'vbi', '', 18)
 for i in range(60):
 	mstep('M3D_ReadInt lmap', sym('M3D_ReadInt'), 'iz', None)
-SDTest.Call('Lee_Close', 'i')
-SDTest.Call('Lee_Open', 'vzsi', None, '2d/loading/00icon.alpha.tga', 1)
-SDTest.Call('Lee_Bytes', 'vbi', '', 900)
+SDTest.Call('Read_Close', 'i')
+SDTest.Call('Read_Open', 'vzsi', None, '2d/loading/00icon.alpha.tga', 1)
+SDTest.Call('Read_Bytes', 'vbi', '', 900)
 for i in range(60):
 	mstep('M3D_ReadInt icon', sym('M3D_ReadInt'), 'iz', None)
-SDTest.Call('Lee_Close', 'i')
+SDTest.Call('Read_Close', 'i')
 m3dmode(1, 1)
-SDTest.Call('Lee_Open', 'vzsi', None, 'levels/menu/map/map3d.ini', 1)
-SDTest.Call('Lee_Bytes', 'vbi', '', 37)
+SDTest.Call('Read_Open', 'vzsi', None, 'levels/menu/map/map3d.ini', 1)
+SDTest.Call('Read_Bytes', 'vbi', '', 37)
 mstep('M3D_Label bin', sym('M3D_Label'), 'vs', '\n\r\n[Model]\r\nT')
-check('M3D_Label bin cad', lambda: SDTest.Peek('g_M3DCad', 's'))
+check('M3D_Label bin cad', lambda: SDTest.Peek('g_M3DString', 's'))
 mstep('M3D_ReadIndex bin', sym('M3D_ReadIndex'), 'vi', -38)
-SDTest.Call('Lee_Close', 'i')
+SDTest.Call('Read_Close', 'i')
 SDTest.Poke('g_M3DBinary', m3dsaved)
 
 # engine3d Engine/Tabla.c: the array template instances; the readers on .sm3 files of the packs at offsets where a
@@ -1049,20 +1049,20 @@ def tnew(rva, num, words):
 		r = r + (tpeek(p, words),)
 	SDTest.Call('Mem_Free', 'vi', t)
 	return r
-for rva, sz in (('Tabla_Alloc4', 4), ('Tabla_Alloc2', 2), ('Tabla_Alloc1C', 0x1c), ('Tabla_AllocC', 0xc), ('Tabla_Alloc1', 1), ('Tabla_Alloc14', 0x14),
-		('Tabla_Alloc14@28fcc0', 0x14), ('Tabla_Alloc18', 0x18), ('Tabla_Alloc2C', 0x2c), ('Tabla_Alloc10', 0x10), ('Tabla_Alloc4@2c2b10', 4), ('Tabla_Alloc4@2c2b80', 4),
-		('Tabla_Alloc8', 8), ('Tabla_Alloc38', 0x38)):
+for rva, sz in (('Table_Alloc4', 4), ('Table_Alloc2', 2), ('Table_Alloc1C', 0x1c), ('Table_AllocC', 0xc), ('Table_Alloc1', 1), ('Table_Alloc14', 0x14),
+		('Table_Alloc14@28fcc0', 0x14), ('Table_Alloc18', 0x18), ('Table_Alloc2C', 0x2c), ('Table_Alloc10', 0x10), ('Table_Alloc4@2c2b10', 4), ('Table_Alloc4@2c2b80', 4),
+		('Table_Alloc8', 8), ('Table_Alloc38', 0x38)):
 	for num in (1, 7):
-		check('Tabla_Alloc' + fmt((rva, sz, num)), lambda rva=rva, num=num: tnew(rva, num, 0))
+		check('Table_Alloc' + fmt((rva, sz, num)), lambda rva=rva, num=num: tnew(rva, num, 0))
 # the last 2 bytes of each element stay as new[] left them
 def tzero(num):
-	r = tnew(sym('Tabla_Alloc10Z'), num, num * 4)
+	r = tnew(sym('Table_Alloc10Z'), num, num * 4)
 	v = r[2]
 	for i in range(3, len(v), 4):
 		v[i] = v[i] & 0xffff
 	return r
 for num in (1, 5):
-	check('Tabla_Alloc10Z' + fmt((num,)), lambda num=num: tzero(num))
+	check('Table_Alloc10Z' + fmt((num,)), lambda num=num: tzero(num))
 # objects: the count before them and the first word of each (the constructors leave other fields as they are; the
 # one of 0x2c2c60 sets no first word, there only the count)
 def tobjs(rva, num, sz, first):
@@ -1074,19 +1074,19 @@ def tobjs(rva, num, sz, first):
 		words.append(SDTest.Peek(p + i * sz, '@i'))
 	SDTest.Call('Mem_Free', 'vi', t)
 	return n, SDTest.Peek(p - 4, '@i'), words
-for rva, sz, tfirst in (('Tabla_New8', 8, 1), ('Tabla_NewA8', 0xa8, 1), ('Tabla_New24', 0x24, 1), ('Tabla_NewFC', 0xfc, 1),
-		('Tabla_NewB4', 0xb4, 1), ('Tabla_New1C', 0x1c, 0)):
-	check('Tabla_New' + fmt((rva, sz)), lambda rva=rva, sz=sz, tfirst=tfirst: tobjs(rva, 3, sz, tfirst))
+for rva, sz, tfirst in (('Table_New8', 8, 1), ('Table_NewA8', 0xa8, 1), ('Table_New24', 0x24, 1), ('Table_NewFC', 0xfc, 1),
+		('Table_NewB4', 0xb4, 1), ('Table_New1C', 0x1c, 0)):
+	check('Table_New' + fmt((rva, sz)), lambda rva=rva, sz=sz, tfirst=tfirst: tobjs(rva, 3, sz, tfirst))
 tio = SDTest.Call('Mem_Alloc', 'ii', 16)[0]
 def topen(name, skip):
-	SDTest.Call('CArchIO_ctor', 'tiiss', tio, name, 'rb')
+	SDTest.Call('CFileIO_ctor', 'tiiss', tio, name, 'rb')
 	while skip > 0:
 		k = min(skip, 1000)
-		SDTest.Call('CArchIO_Read', 'tiibi', tio, '', k)
+		SDTest.Call('CFileIO_Read', 'tiibi', tio, '', k)
 		skip = skip - k
 def tclose():
-	SDTest.Call('CArchIO_Close', 'tii', tio)
-	SDTest.Call('CArchIO_dtor', 'tvi', tio)
+	SDTest.Call('CFileIO_Close', 'tii', tio)
+	SDTest.Call('CFileIO_dtor', 'tvi', tio)
 sm3 = 'levels/bank/map/directordiscovered/directordiscovered.sm3'
 def aread(rva, name, off, sz):
 	topen(name, off)
@@ -1111,9 +1111,9 @@ def tread(rva, name, off, sz):
 	SDTest.Call('Mem_Free', 'vi', t)
 	tclose()
 	return n, p != 0, data
-check('Tabla_Read2', lambda: tread(sym('Tabla_Read2'), sm3, 3564, 2))
-check('Tabla_ReadC', lambda: tread(sym('Tabla_ReadC'), sm3, 7209, 0xc))
-check('Tabla_Read1C', lambda: tread(sym('Tabla_Read1C'), 'levels/fake/map/fake1/fake1.sm3', 3616, 0x1c))
+check('Table_Read2', lambda: tread(sym('Table_Read2'), sm3, 3564, 2))
+check('Table_ReadC', lambda: tread(sym('Table_ReadC'), sm3, 7209, 0xc))
+check('Table_Read1C', lambda: tread(sym('Table_Read1C'), 'levels/fake/map/fake1/fake1.sm3', 3616, 0x1c))
 SDTest.Call('Mem_Free', 'vi', tio)
 
 # engine3d Engine/AnimVert.c on vertices and sets in heap memory
@@ -1205,11 +1205,11 @@ SDTest.Call('Mem_Free', 'vi', eva)
 for p in ('a.txt', 'dir/x/../y.txt', './a/./b', 'a/../../b', '../x', 'a\\b\\..\\c', 'C:\\abs\\p', '\\root', '/root', 'a..b/c', 'x/.../y',
 		'..', '.', 'a/.', 'a/..', 'a//b', 'levels/menu/./map/../map/map3d.ini', 'a/b/c/../../d', 'x:', 'x:y/../z', '.hidden', 'a/.b'):
 	for n in (-1, 8, 300):
-		call('Ruta_Normalize', sym('Ruta_Normalize'), 'vbsi', '', p, n)
-	call('Ruta_Copy', sym('Ruta_Copy'), 'sbsi', '', p, -1)
+		call('Path_Normalize', sym('Path_Normalize'), 'vbsi', '', p, n)
+	call('Path_Copy', sym('Path_Copy'), 'sbsi', '', p, -1)
 for t in ('', '  ', 'word', '  two words', '"quoted text" rest', ' "unclosed', '\t""', '"a"'):
-	call('Cad_Unquote', sym('Cad_Unquote'), 'sbs', '', t)
-call('Cad_Unquote NULL', sym('Cad_Unquote'), 'sbz', '', None)
+	call('String_Unquote', sym('String_Unquote'), 'sbs', '', t)
+call('String_Unquote NULL', sym('String_Unquote'), 'sbz', '', None)
 for x in (1.0, 2.0, 0.25, 3.0, 100.0, 1e-6, 12345.678, 0.5, 7.0):
 	fcall('RSqrt_Estimate', sym('RSqrt_Estimate'), 'ff', x)
 	fcall('RSqrt', sym('RSqrt'), 'ff', x)
@@ -1247,7 +1247,7 @@ nod = SDTest.Call('Mem_Calloc', 'ii', 16)[0]
 nod2 = SDTest.Call('Mem_Calloc', 'ii', 16)[0]
 SDTest.Poke(nod + 8 - 0x400000, 5)
 SDTest.Poke(nod2 + 8 - 0x400000, 7)
-check('CCamara_ctor', lambda: (SDTest.Call('CCamara_ctor', 'tii', cam)[0] == cam, camget(cam)))
+check('CCamera_ctor', lambda: (SDTest.Call('CCamera_ctor', 'tii', cam)[0] == cam, camget(cam)))
 for i in range(12):
 	SDTest.Call('crt_memcpy', 'iiFi', cam + 8, vec() + vec() + vec(), 36)
 	SDTest.Call('crt_memcpy', 'iiFi', cam + 0x2c, (rnd(0.1, 2.0), rnd(5.0, 500.0), 0.0, 1000.0, rnd(0.1, 2.5), rnd(0.5, 2.0), rnd(0.5, 2.0)), 28)
@@ -1255,31 +1255,31 @@ for i in range(12):
 		SDTest.Poke(cam + 0x48 - 0x400000, 0)
 	else:
 		SDTest.Poke(cam + 0x48 - 0x400000, 0x463)
-	camstep('CCamara_ViewMatrix', cam, sym('CCamara_ViewMatrix'), 'tviF', (0.0,) * 16)
-	camget16('CCamara_GetView', cam, sym('CCamara_GetView'))
-	camstep('CCamara_ProjMatrix', cam, sym('CCamara_ProjMatrix'), 'tbiF', (0.0,) * 16)
-	camget16('CCamara_GetProj', cam, sym('CCamara_GetProj'))
-	camstep('CCamara_Move', cam, sym('CCamara_Move'), 'tvif', rnd())
-	camstep('CCamara_Strafe', cam, sym('CCamara_Strafe'), 'tviff', rnd(), rnd())
-	camstep('CCamara_UpdateVectors', cam, sym('CCamara_UpdateVectors'), 'tvi')
-	camstep('CCamara_LookAt', cam, sym('CCamara_LookAt'), 'tviFFF', (0.0,) * 16, vec(), vec())
-camstep('CCamara_LookAt zero', cam, sym('CCamara_LookAt'), 'tviFFF', (0.0,) * 16, (0.0, 0.0, 0.0), (0.0, 1.0, 0.0))
-camstep('CCamara_LookAt parallel', cam, sym('CCamara_LookAt'), 'tviFFF', (0.0,) * 16, (0.0, 2.0, 0.0), (0.0, 1.0, 0.0))
+	camstep('CCamera_ViewMatrix', cam, sym('CCamera_ViewMatrix'), 'tviF', (0.0,) * 16)
+	camget16('CCamera_GetView', cam, sym('CCamera_GetView'))
+	camstep('CCamera_ProjMatrix', cam, sym('CCamera_ProjMatrix'), 'tbiF', (0.0,) * 16)
+	camget16('CCamera_GetProj', cam, sym('CCamera_GetProj'))
+	camstep('CCamera_Move', cam, sym('CCamera_Move'), 'tvif', rnd())
+	camstep('CCamera_Strafe', cam, sym('CCamera_Strafe'), 'tviff', rnd(), rnd())
+	camstep('CCamera_UpdateVectors', cam, sym('CCamera_UpdateVectors'), 'tvi')
+	camstep('CCamera_LookAt', cam, sym('CCamera_LookAt'), 'tviFFF', (0.0,) * 16, vec(), vec())
+camstep('CCamera_LookAt zero', cam, sym('CCamera_LookAt'), 'tviFFF', (0.0,) * 16, (0.0, 0.0, 0.0), (0.0, 1.0, 0.0))
+camstep('CCamera_LookAt parallel', cam, sym('CCamera_LookAt'), 'tviFFF', (0.0,) * 16, (0.0, 2.0, 0.0), (0.0, 1.0, 0.0))
 SDTest.Call('crt_memcpy', 'iiFi', cam + 0x2c, (5.0, 5.001, 0.0, 1000.0, 1.0, 1.0, 1.0), 28)
-camstep('CCamara_ProjMatrix flat', cam, sym('CCamara_ProjMatrix'), 'tbiF', (0.0,) * 16)
+camstep('CCamera_ProjMatrix flat', cam, sym('CCamera_ProjMatrix'), 'tbiF', (0.0,) * 16)
 SDTest.Call('crt_memcpy', 'iiFi', cam + 0x2c, (1.0, 100.0, 0.0, 1000.0, 0.001, 1.0, 1.0), 28)
-camstep('CCamara_ProjMatrix narrow', cam, sym('CCamara_ProjMatrix'), 'tbiF', (0.0,) * 16)
+camstep('CCamera_ProjMatrix narrow', cam, sym('CCamera_ProjMatrix'), 'tbiF', (0.0,) * 16)
 def refs():
 	return SDTest.Peek(nod + 8, '@i'), SDTest.Peek(nod2 + 8, '@i')
-check('CCamara_SetNodo', lambda: (SDTest.Call('CCamara_SetNodo', 'tvii', cam, nod), refs(), SDTest.Peek(cam + 0x70, '@i') == nod))
-check('CCamara_SetNodo 2', lambda: (SDTest.Call('CCamara_SetNodo', 'tvii', cam, nod2), refs(), SDTest.Peek(cam + 0x70, '@i') == nod2))
-check('CCamara_SetNodoObjetivo', lambda: (SDTest.Call('CCamara_SetNodoObjetivo', 'tvii', cam, nod), refs()))
-check('CCamara_ctorCopy', lambda: (SDTest.Call('CCamara_ctorCopy', 'tiii', cam2, cam)[0] == cam2, refs(), camget(cam2)[2:19] == camget(cam)[2:19]))
-check('CCamara_dtor', lambda: (SDTest.Call('CCamara_dtor', 'tvi', cam2), refs(), camget(cam2)))
-check('CCamara_Clear', lambda: (SDTest.Call('CCamara_Clear', 'tvi', cam), refs(), camget(cam)))
-SDTest.Call('CCamara_SetNodo', 'tvii', cam, nod)
-check('CCamara_Delete', lambda: (SDTest.Call('CCamara_Delete', 'tiii', cam, 0)[0] == cam, refs(), camget(cam)))
-check('CCamara_SetNodo NULL', lambda: (SDTest.Call('CCamara_SetNodo', 'tvii', cam, 0), refs()))
+check('CCamera_SetNode', lambda: (SDTest.Call('CCamera_SetNode', 'tvii', cam, nod), refs(), SDTest.Peek(cam + 0x70, '@i') == nod))
+check('CCamera_SetNode 2', lambda: (SDTest.Call('CCamera_SetNode', 'tvii', cam, nod2), refs(), SDTest.Peek(cam + 0x70, '@i') == nod2))
+check('CCamera_SetNodeTarget', lambda: (SDTest.Call('CCamera_SetNodeTarget', 'tvii', cam, nod), refs()))
+check('CCamera_ctorCopy', lambda: (SDTest.Call('CCamera_ctorCopy', 'tiii', cam2, cam)[0] == cam2, refs(), camget(cam2)[2:19] == camget(cam)[2:19]))
+check('CCamera_dtor', lambda: (SDTest.Call('CCamera_dtor', 'tvi', cam2), refs(), camget(cam2)))
+check('CCamera_Clear', lambda: (SDTest.Call('CCamera_Clear', 'tvi', cam), refs(), camget(cam)))
+SDTest.Call('CCamera_SetNode', 'tvii', cam, nod)
+check('CCamera_Delete', lambda: (SDTest.Call('CCamera_Delete', 'tiii', cam, 0)[0] == cam, refs(), camget(cam)))
+check('CCamera_SetNode NULL', lambda: (SDTest.Call('CCamera_SetNode', 'tvii', cam, 0), refs()))
 SDTest.Call('Mem_Free', 'vi', cam)
 SDTest.Call('Mem_Free', 'vi', cam2)
 SDTest.Call('Mem_Free', 'vi', nod)

@@ -1,8 +1,8 @@
 # engine3d Engine/Material.c (execfile'd by sdcall.py after its other checks, Python 1.5.2): materials, maps and
 # material lists in heap memory, built by the constructors of the exe. Nothing is added to the material list of the
 # engine and no material gets a renderer id (CMatId); textures are only looked up by name, never loaded. The MAT and
-# MAP blocks are not tested: CArchIO_EndBlockWrite needs the pack file list being recorded, and only pack files can
-# be read through CArchIO.
+# MAP blocks are not tested: CFileIO_EndBlockWrite needs the pack file list being recorded, and only pack files can
+# be read through CFileIO.
 def mz(n):
 	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def mfree(p):
@@ -14,7 +14,7 @@ def mstr(addr):
 def mfloats(addr, fl):
 	SDTest.Call('crt_memcpy', 'iiFi', addr, fl, 4 * len(fl))
 def setname(addr, s):
-	SDTest.Call('Cad_Set', 'tviz', addr, s)
+	SDTest.Call('String_Set', 'tviz', addr, s)
 # a call on a heap object: its address stays out of the name
 def ocall(name, rva, sig, obj, *args):
 	check(name + fmt(args), lambda rva=rva, sig=sig, obj=obj, args=args: apply(SDTest.Call, (rva, sig, obj) + args))
@@ -26,7 +26,7 @@ def matnew(name):
 	return m
 def mapnew(name):
 	p = mz(0x60)
-	SDTest.Call('CMapa_ctor', 'tii', p)
+	SDTest.Call('CMap_ctor', 'tii', p)
 	setname(p, name)
 	return p
 def who(p, objs):
@@ -142,17 +142,17 @@ mfloats(map0 + 0x10, (0.5, -1.0, 2.0, 3.0, 0.25, 0.0, -0.0, 7.0))
 m2 = matnew('sdmat2')
 check('CMaterial_SetMapCopy', lambda: (SDTest.Call('CMaterial_SetMapCopy', 'tiiii', m2, 2, map0)[0] != 0, mmaps(m2)))
 mapc = SDTest.Peek(m2 + 0xa4, '@i')
-check('CMapa_Equal same', lambda: SDTest.Call('CMapa_Equal', 'bii', map0, map0)[0])
-check('CMapa_Equal NULL', lambda: (SDTest.Call('CMapa_Equal', 'bii', map0, 0)[0], SDTest.Call('CMapa_Equal', 'bii', 0, map0)[0],
-	SDTest.Call('CMapa_Equal', 'bii', 0, 0)[0]))
-check('CMapa_Equal copy', lambda: SDTest.Call('CMapa_Equal', 'bii', map0, mapc)[0])
+check('CMap_Equal same', lambda: SDTest.Call('CMap_Equal', 'bii', map0, map0)[0])
+check('CMap_Equal NULL', lambda: (SDTest.Call('CMap_Equal', 'bii', map0, 0)[0], SDTest.Call('CMap_Equal', 'bii', 0, map0)[0],
+	SDTest.Call('CMap_Equal', 'bii', 0, 0)[0]))
+check('CMap_Equal copy', lambda: SDTest.Call('CMap_Equal', 'bii', map0, mapc)[0])
 def mapdiff(name, off, data):
 	saved = SDTest.Peek(mapc + off, '@i')
 	if type(data) == type(''):
 		SDTest.Call('crt_memcpy', 'iisi', mapc + off, data, 1)
 	else:
 		mfloats(mapc + off, data)
-	check('CMapa_Equal ' + name, lambda: SDTest.Call('CMapa_Equal', 'bii', map0, mapc)[0])
+	check('CMap_Equal ' + name, lambda: SDTest.Call('CMap_Equal', 'bii', map0, mapc)[0])
 	mpoke(mapc + off, saved)
 for i in range(8, 15):
 	mapdiff('byte %d' % i, i, '\377')
@@ -161,8 +161,8 @@ for i in range(8):
 mapdiff('-0', 0x28, (0.0,))
 mapdiff('nan', 0x2c, (nan,))
 setname(mapc, 'sdnone/other.bmp')
-check('CMapa_Equal name', lambda: SDTest.Call('CMapa_Equal', 'bii', map0, mapc)[0])
-check('CMapa_Assign', lambda: (SDTest.Call('CMapa_Assign', 'tvii', mapc, map0), mapget(mapc)))
+check('CMap_Equal name', lambda: SDTest.Call('CMap_Equal', 'bii', map0, mapc)[0])
+check('CMap_Assign', lambda: (SDTest.Call('CMap_Assign', 'tvii', mapc, map0), mapget(mapc)))
 for off in (0x14, 0x18, 0x20, 0x24, 0x28, 0x2c, 0x30, 0x34, 0x38, 0x40):
 	mpoke(m1 + off, icolor())
 mfloats(m1 + 0x20, (1.5, 0.75))
@@ -172,46 +172,46 @@ check('CMaterial_SetMapCopy NULL', lambda: (SDTest.Call('CMaterial_SetMapCopy', 
 check('CMaterial_Assign again', lambda: (SDTest.Call('CMaterial_Assign', 'tvii', m2, m1), matget(m2)))
 
 # the map getters on maps without textures, then with fake values
-ocall('CMapa_GetSize', sym('CMapa_GetSize'), 'tbipp', map0, 0, 0)
+ocall('CMap_GetSize', sym('CMap_GetSize'), 'tbipp', map0, 0, 0)
 ocall('CMaterial_GetMapSize', sym('CMaterial_GetMapSize'), 'tbiipp', m1, 0, 0, 0)
 ocall('CMaterial_GetMapSize none', sym('CMaterial_GetMapSize'), 'tbiipp', m1, 1, 0, 0)
-ocall('CMapa_GetTexture', sym('CMapa_GetTexture'), 'tiii', map0, 0)
+ocall('CMap_GetTexture', sym('CMap_GetTexture'), 'tiii', map0, 0)
 mpoke(map0 + 0x30, map0 + 0x34)
 mpoke(map0 + 0x34, 1234)
-ocall('CMapa_GetTexture tex', sym('CMapa_GetTexture'), 'tiii', map0, 0)
+ocall('CMap_GetTexture tex', sym('CMap_GetTexture'), 'tiii', map0, 0)
 mpoke(map0 + 0x34, 0)
 mpoke(map0 + 0x38, 77)
-ocall('CMapa_GetTexture hint', sym('CMapa_GetTexture'), 'tiii', map0, 0)
+ocall('CMap_GetTexture hint', sym('CMap_GetTexture'), 'tiii', map0, 0)
 mpoke(map0 + 0x38, 0)
-ocall('CMapa_GetTexture empty', sym('CMapa_GetTexture'), 'tiii', map0, 1)
+ocall('CMap_GetTexture empty', sym('CMap_GetTexture'), 'tiii', map0, 1)
 mpoke(map0 + 0x30, 0)
 ocall('CMaterial_GetMultiSprite none', sym('CMaterial_GetMultiSprite'), 'tiii', m1, 1)
 mpoke(map0 + 0x5c, 4321)
 ocall('CMaterial_GetMultiSprite', sym('CMaterial_GetMultiSprite'), 'tiii', m1, 0)
-ocall('CMapa_BuildMultiSprite', sym('CMapa_BuildMultiSprite'), 'tbi', map0)
+ocall('CMap_BuildMultiSprite', sym('CMap_BuildMultiSprite'), 'tbi', map0)
 mpoke(map0 + 0x5c, 0)
 mpoke(m1 + 0x90, 17)
 ocall('CMaterial_Id', sym('CMaterial_Id'), 'tii', m1)
 mpoke(m1 + 0x90, -1)
 
-# CTextEst and CObjRef on heap memory; the hints are NULL, so Textura_Release does nothing
+# CTextStatic and CObjRef on heap memory; the hints are NULL, so Texture_Release does nothing
 est = mz(12)
 mpoke(est, 55)
-check('CTextEst_dtor', lambda: (SDTest.Call('CTextEst_dtor', 'tvi', est), tpeek(est, 3)))
+check('CTextStatic_dtor', lambda: (SDTest.Call('CTextStatic_dtor', 'tvi', est), tpeek(est, 3)))
 mpoke(est, 56)
-check('CTextEst_dtor 2', lambda: (SDTest.Call('CTextEst_dtor@234c20', 'tvi', est), tpeek(est, 3)))
+check('CTextStatic_dtor 2', lambda: (SDTest.Call('CTextStatic_dtor@234c20', 'tvi', est), tpeek(est, 3)))
 mpoke(est, 57)
-check('CTextEst_Delete', lambda: (SDTest.Call('CTextEst_Delete', 'tiii', est, 0)[0] == est, tpeek(est, 3)))
+check('CTextStatic_Delete', lambda: (SDTest.Call('CTextStatic_Delete', 'tiii', est, 0)[0] == est, tpeek(est, 3)))
 ocall('CObjRef_dtor', sym('CObjRef_dtor'), 'tvi', est)
 mfree(est)
 arr = mz(4 + 8 * 3)
 mpoke(arr, 3)
 for i in range(3):
 	mpoke(arr + 4 + 8 * i, 100 + i)
-check('CTextEst_Delete array', lambda: (SDTest.Call('CTextEst_Delete', 'tiii', arr + 4, 2)[0] == arr, tpeek(arr, 7)))
-check('CTextEst_Delete array free', lambda: SDTest.Call('CTextEst_Delete', 'tiii', arr + 4, 3)[0] == arr)
+check('CTextStatic_Delete array', lambda: (SDTest.Call('CTextStatic_Delete', 'tiii', arr + 4, 2)[0] == arr, tpeek(arr, 7)))
+check('CTextStatic_Delete array free', lambda: SDTest.Call('CTextStatic_Delete', 'tiii', arr + 4, 3)[0] == arr)
 
-# CMapa_Release with frames and an AnimMat (empty destructor)
+# CMap_Release with frames and an AnimMat (empty destructor)
 map2 = mapnew('sdmap2')
 arr = mz(4 + 8 * 2)
 mpoke(arr, 2)
@@ -221,7 +221,7 @@ mpoke(map2 + 0x30, map2 + 0x34)
 mpoke(map2 + 0x3c, 1)
 mpoke(map2 + 0x40, 2)
 mpoke(map2 + 0x58, 2)
-check('CMapa_Release', lambda: (SDTest.Call('CMapa_Release', 'tvi', map2), mapget(map2)))
+check('CMap_Release', lambda: (SDTest.Call('CMap_Release', 'tvi', map2), mapget(map2)))
 mpoke(map0 + 0x30, map0 + 0x34)
 mpoke(map0 + 0x58, 2)
 check('CMaterial_Release', lambda: (SDTest.Call('CMaterial_Release', 'tvi', m1), mmaps(m1)))
@@ -293,53 +293,53 @@ def lget(l):
 		p = SDTest.Peek(p + 0x44, '@i')
 	return r, who(SDTest.Peek(l + 0xc, '@i'), objs)
 def lstep(name, m, sub):
-	check(name, lambda m=m, sub=sub: (who(SDTest.Call('CListaMat_Extract', 'tiiii', l1, m, sub)[0], objs), lget(l1), lget(l2)))
+	check(name, lambda m=m, sub=sub: (who(SDTest.Call('CMatList_Extract', 'tiiii', l1, m, sub)[0], objs), lget(l1), lget(l2)))
 def lfind(name, m):
-	check(name, lambda m=m: who(SDTest.Call('CListaMat_Find', 'tiii', l1, m)[0], objs))
+	check(name, lambda m=m: who(SDTest.Call('CMatList_Find', 'tiii', l1, m)[0], objs))
 for m in (m1, m2, m3):
-	check('CListaMat_Add', lambda m=m: (SDTest.Call('CListaMat_Add', 'tvii', l1, m), lget(l1), matget(m, objs)[0:6]))
-check('CListaMat_Add sub', lambda: (SDTest.Call('CListaMat_Add', 'tvii', l2, m4), lget(l2)))
+	check('CMatList_Add', lambda m=m: (SDTest.Call('CMatList_Add', 'tvii', l1, m), lget(l1), matget(m, objs)[0:6]))
+check('CMatList_Add sub', lambda: (SDTest.Call('CMatList_Add', 'tvii', l2, m4), lget(l2)))
 mpoke(m3 + 0xc, l2)
 for s in (0, 1):
-	check('CListaMat_Count' + fmt((s,)), lambda s=s: SDTest.Call('CListaMat_Count', 'tiii', l1, s)[0])
+	check('CMatList_Count' + fmt((s,)), lambda s=s: SDTest.Call('CMatList_Count', 'tiii', l1, s)[0])
 probe = matnew('sdprobe')
-lfind('CListaMat_Find', probe)
+lfind('CMatList_Find', probe)
 SDTest.Call('CMaterial_Assign', 'tvii', probe, m1)
-lfind('CListaMat_Find m1', probe)
+lfind('CMatList_Find m1', probe)
 mfloats(probe + 0x24, (nan,))
-lfind('CListaMat_Find nan', probe)
+lfind('CMatList_Find nan', probe)
 mfloats(m1 + 0x24, (nan,))
-lfind('CListaMat_Find nan both', probe)
+lfind('CMatList_Find nan both', probe)
 mfloats(m1 + 0x24, (0.75,))
 mfloats(probe + 0x24, (0.75,))
 setatrib(m1, 0x100)
 setatrib(probe, 0x100)
 setname(probe + 4, 'sdprobe')
-lfind('CListaMat_Find named', probe)
+lfind('CMatList_Find named', probe)
 setname(probe + 4, 'sdmat1')
-lfind('CListaMat_Find named same', probe)
+lfind('CMatList_Find named same', probe)
 setatrib(m1, 0)
 setatrib(probe, 0)
 mpoke(probe + 0x10, 0x01020304)
-lfind('CListaMat_Find none', probe)
+lfind('CMatList_Find none', probe)
 SDTest.Call('CMaterial_SetMap', 'tiiiz', probe, 0, None)
 SDTest.Call('CMaterial_SetMap', 'tiiiz', probe, 3, None)
 matdel(probe)
-check('CListaMat_Release', lambda: (SDTest.Call('CListaMat_Release', 'tvi', l1), mmaps(m1), mmaps(m2)))
-lstep('CListaMat_Extract none', m4, 0)
-lstep('CListaMat_Extract sub', m4, 1)
-check('CListaMat_Count after', lambda: SDTest.Call('CListaMat_Count', 'tiii', l1, 1)[0])
-lstep('CListaMat_Extract middle', m2, 0)
-check('CListaMat_Add back', lambda: (SDTest.Call('CListaMat_Add', 'tvii', l1, m2), lget(l1)))
-lstep('CListaMat_Extract first', m1, 0)
-lstep('CListaMat_Extract last', m2, 0)
-check('CListaMat_Add m4', lambda: (SDTest.Call('CListaMat_Add', 'tvii', l1, m4), lget(l1)))
+check('CMatList_Release', lambda: (SDTest.Call('CMatList_Release', 'tvi', l1), mmaps(m1), mmaps(m2)))
+lstep('CMatList_Extract none', m4, 0)
+lstep('CMatList_Extract sub', m4, 1)
+check('CMatList_Count after', lambda: SDTest.Call('CMatList_Count', 'tiii', l1, 1)[0])
+lstep('CMatList_Extract middle', m2, 0)
+check('CMatList_Add back', lambda: (SDTest.Call('CMatList_Add', 'tvii', l1, m2), lget(l1)))
+lstep('CMatList_Extract first', m1, 0)
+lstep('CMatList_Extract last', m2, 0)
+check('CMatList_Add m4', lambda: (SDTest.Call('CMatList_Add', 'tvii', l1, m4), lget(l1)))
 mpoke(m3 + 0xc, 0)
 setatrib(m4, 0x8)
-check('CListaMat_Delete', lambda: (SDTest.Call('CListaMat_Delete', 'tvii', l1, m4), lget(l1), SDTest.Peek('g_TexDeleteUnused', 'i')))
-check('CListaMat_Add m7', lambda: (SDTest.Call('CListaMat_Add', 'tvii', l1, m7), lget(l1)))
-check('CListaMat_DeleteAll', lambda: (SDTest.Call('CListaMat_DeleteAll', 'tvi', l1), lget(l1)))
-check('CListaMat_Count empty', lambda: SDTest.Call('CListaMat_Count', 'tiii', l1, 1)[0])
+check('CMatList_Delete', lambda: (SDTest.Call('CMatList_Delete', 'tvii', l1, m4), lget(l1), SDTest.Peek('g_TexDeleteUnused', 'i')))
+check('CMatList_Add m7', lambda: (SDTest.Call('CMatList_Add', 'tvii', l1, m7), lget(l1)))
+check('CMatList_DeleteAll', lambda: (SDTest.Call('CMatList_DeleteAll', 'tvi', l1), lget(l1)))
+check('CMatList_Count empty', lambda: SDTest.Call('CMatList_Count', 'tiii', l1, 1)[0])
 
 # Prepare on maps whose files are missing (no texture is loaded), the id set so that none is registered
 m5 = matnew('sdmat5')
@@ -355,7 +355,7 @@ mpoke(m2 + 0x90, 4)
 mpoke(m5 + 0xc, l2)
 mpoke(l2 + 8, m2)
 mpoke(l2 + 0xc, m2)
-check('CListaMat_Prepare', lambda: (SDTest.Call('CListaMat_Prepare', 'tvii', l1, 0), mmaps(m5), matget(m2)))
+check('CMatList_Prepare', lambda: (SDTest.Call('CMatList_Prepare', 'tvii', l1, 0), mmaps(m5), matget(m2)))
 mpoke(m5 + 0xc, 0)
 mpoke(l1 + 8, 0)
 mpoke(l1 + 0xc, 0)
@@ -372,15 +372,15 @@ def slots(rva):
 def restore(rva, saved):
 	for i in range(10):
 		SDTest.Call('Str_Copy', 'sisi', rva + 0x400000 + i * 0x104, saved[i], 0x104)
-paths = slots(sym('g_RutasTexturas'))
-extens = slots(sym('g_ExtensTexturas'))
+paths = slots(sym('g_TexturePaths'))
+extens = slots(sym('g_TextureExts'))
 call('Tex_ClearPaths', sym('Tex_ClearPaths'), 'v')
 call('Tex_ClearExtensions', sym('Tex_ClearExtensions'), 'v')
-check('Tex cleared', lambda: (slots(sym('g_RutasTexturas')), slots(sym('g_ExtensTexturas'))))
+check('Tex cleared', lambda: (slots(sym('g_TexturePaths')), slots(sym('g_TextureExts'))))
 for p in (None, '', 'sdnone/', 'models/elements/templeyakuzzi/'):
-	check('Tex_AddPath' + fmt((p,)), lambda p=p: (SDTest.Call('Tex_AddPath', 'vz', p), slots(sym('g_RutasTexturas'))))
+	check('Tex_AddPath' + fmt((p,)), lambda p=p: (SDTest.Call('Tex_AddPath', 'vz', p), slots(sym('g_TexturePaths'))))
 for e in (None, '', 'tga', 'a&b', '<U><D>sdx/<N>.dds', '<D>&<N>'):
-	check('Tex_AddExtension' + fmt((e,)), lambda e=e: (SDTest.Call('Tex_AddExtension', 'vz', e), slots(sym('g_ExtensTexturas'))))
+	check('Tex_AddExtension' + fmt((e,)), lambda e=e: (SDTest.Call('Tex_AddExtension', 'vz', e), slots(sym('g_TextureExts'))))
 for n in (img, 'aceite-r.bmp', 'templeyakuzzi/aceite-r.bmp', 'sdnone.bmp', 'x/2d/white.tga'):
 	call('Tex_FindInPaths', sym('Tex_FindInPaths'), 'isb', n, '')
 	for a in (0, 1):
@@ -395,15 +395,15 @@ for n in (img, '2d/white.tga', 'aceite-r.bmp', 'sdnone.bmp', 'sdnone/q.tga', 'le
 		if load and not mkok:
 			continue
 		setname(rp, n)
-		check('CMapa_ResolvePath' + fmt((n, load)), lambda load=load: (SDTest.Call('CMapa_ResolvePath', 'tsiii', rp, load, 0)[0], mapget(rp)))
-		check('CMapa_ResolvePath alpha' + fmt((n, load)), lambda load=load: (SDTest.Call('CMapa_ResolvePath', 'tsiii', rp, load, map0)[0], mapget(rp)))
+		check('CMap_ResolvePath' + fmt((n, load)), lambda load=load: (SDTest.Call('CMap_ResolvePath', 'tsiii', rp, load, 0)[0], mapget(rp)))
+		check('CMap_ResolvePath alpha' + fmt((n, load)), lambda load=load: (SDTest.Call('CMap_ResolvePath', 'tsiii', rp, load, map0)[0], mapget(rp)))
 		if SDTest.Peek(rp + 4, '@i'):
-			check('CMapa_FramePath' + fmt((n, load)), lambda: SDTest.Call('CMapa_FramePath', 'tsiibi', rp, 3, '', 20)[0:2])
+			check('CMap_FramePath' + fmt((n, load)), lambda: SDTest.Call('CMap_FramePath', 'tsiibi', rp, 3, '', 20)[0:2])
 setname(rp + 0x44, 'sdani%04d.tga')
 mpoke(rp + 0x3c, 1)
 for fr in (0, 7, 12345):
-	ocall('CMapa_FramePath frame', sym('CMapa_FramePath'), 'tsiibi', rp, fr, '', 260)
-ocall('CMapa_FramePath short', sym('CMapa_FramePath'), 'tsiibi', rp, 1, '', 5)
+	ocall('CMap_FramePath frame', sym('CMap_FramePath'), 'tsiibi', rp, fr, '', 260)
+ocall('CMap_FramePath short', sym('CMap_FramePath'), 'tsiibi', rp, 1, '', 5)
 mpoke(rp + 0x3c, 0)
 # LoadTexture stops after the file with a lightmap and no device, or skips a lightmap level above the limit
 if mkok:
@@ -411,19 +411,19 @@ if mkok:
 	for n in (img, 'sdnone.bmp'):
 		setname(rp, n)
 		mpoke(rp + 0x58, 0)
-		check('CMapa_LoadTexture lightmap' + fmt((n,)), lambda: (SDTest.Call('CMapa_LoadTexture', 'tviiii', rp, 0, 0, 0), mapget(rp)))
+		check('CMap_LoadTexture lightmap' + fmt((n,)), lambda: (SDTest.Call('CMap_LoadTexture', 'tviiii', rp, 0, 0, 0), mapget(rp)))
 	if SDTest.Peek('g_MaxLightmap', 'i') < 255:
 		mpoke(rp + 8, 0xff00)
 		setname(rp, img)
 		mpoke(rp + 0x58, 0)
-		check('CMapa_LoadTexture skip', lambda: (SDTest.Call('CMapa_LoadTexture', 'tviiii', rp, 1, 0, 0), mapget(rp)))
-	check('CMapa_LoadTexture missing', lambda: (SDTest.Call('CMapa_LoadTexture', 'tviiii', rp, 1, 0, 0), mapget(rp)))
+		check('CMap_LoadTexture skip', lambda: (SDTest.Call('CMap_LoadTexture', 'tviiii', rp, 1, 0, 0), mapget(rp)))
+	check('CMap_LoadTexture missing', lambda: (SDTest.Call('CMap_LoadTexture', 'tviiii', rp, 1, 0, 0), mapget(rp)))
 	mpoke(rp + 8, 0)
-SDTest.Call('CMapa_dtor', 'tvi', rp)
+SDTest.Call('CMap_dtor', 'tvi', rp)
 mfree(rp)
-restore(sym('g_RutasTexturas'), paths)
-restore(sym('g_ExtensTexturas'), extens)
-check('Tex restored', lambda: (slots(sym('g_RutasTexturas')) == paths, slots(sym('g_ExtensTexturas')) == extens))
+restore(sym('g_TexturePaths'), paths)
+restore(sym('g_TextureExts'), extens)
+check('Tex restored', lambda: (slots(sym('g_TexturePaths')) == paths, slots(sym('g_TextureExts')) == extens))
 
 # the average color of map 0 as the diffuse color
 m6 = matnew('sdmat6')
@@ -445,7 +445,7 @@ for m in (m1, m2, m5, m6):
 	mpoke(m + 0x48, 0)
 	matdel(m)
 for p in (fake, map2):
-	SDTest.Call('CMapa_dtor', 'tvi', p)
+	SDTest.Call('CMap_dtor', 'tvi', p)
 	mfree(p)
 mfree(l1)
 mfree(l2)

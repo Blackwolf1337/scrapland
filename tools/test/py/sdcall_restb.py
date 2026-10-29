@@ -1,5 +1,5 @@
 # Rest B (game leftovers from 0x240000, execfile'd by sdcall.py, Python 1.5.2): the texture animation counter
-# (ControlAnimMat.c) on calloc memory, the CTabla resizes, Vec3_Normalize, the stub CListaVert_Optimize, the
+# (ControlAnimMat.c) on calloc memory, the CTable resizes, Vec3_Normalize, the stub CVertList_Optimize, the
 # parsers of the command file (Cmd.c) on a file written here and Cmd_ReadFile on an empty one (an error in
 # Cmd_ReadFile is fatal through Err_Printf, a model load reads files: not called).
 def rsbz(n):
@@ -13,7 +13,7 @@ def rsbset(a, v):
 def rsbfree(a):
 	SDTest.Call('Mem_Free', 'vi', a)
 
-# CAnimMat: fps, frames, ciclo, dt, frame, framef, modo, fundRate, fundK (lastTime and lastFrame are the clock)
+# CAnimMat: fps, frames, ciclo, dt, frame, framef, modo, fadeRate, fadeK (lastTime and lastFrame are the clock)
 def rsbam(a):
 	f = rsbfl(a, 9)
 	return (f[0], rsbi(a + 4), rsbi(a + 8), f[3], rsbi(a + 0x10), f[5], rsbi(a + 0x18), f[7], f[8])
@@ -28,17 +28,17 @@ check('CAnimMat_ctorCopy', lambda: (SDTest.Call('CAnimMat_ctorCopy', 'tiii', rsb
 check('CAnimMat_Init', lambda: (SDTest.Call('CAnimMat_Init', 'tvi', rsbb), rsbam(rsbb)))
 check('CAnimMat_dtor', lambda: (SDTest.Call('CAnimMat_dtor', 'tvi', rsbb), rsbam(rsbb)))
 for rsbk in (0, 1, 2, 3):
-	check('AnimMat_ModoName' + fmt((rsbk,)), lambda: SDTest.Call('AnimMat_ModoName', 'si', rsbk))
+	check('AnimMat_ModeName' + fmt((rsbk,)), lambda: SDTest.Call('AnimMat_ModeName', 'si', rsbk))
 for rsbv in (0.0, 2.75, -1.5, 5.999):
 	check('CAnimMat_SetFrameF' + fmt((rsbv,)), lambda: (SDTest.Call('CAnimMat_SetFrameF', 'tvif', rsba, rsbv), rsbam(rsba)))
 check('CAnimMat_SetFrame', lambda: (SDTest.Call('CAnimMat_SetFrame', 'tvii', rsba, 3), rsbam(rsba)))
 check('CAnimMat_Start', lambda: (SDTest.Call('CAnimMat_Start', 'tvi', rsba), rsbam(rsba), rsbi(rsba + 0x24) == rsbnow))
 check('CAnimMat_Stop', lambda: (SDTest.Call('CAnimMat_Stop', 'tvi', rsba), rsbam(rsba)))
 check('CAnimMat_Pause', lambda: (SDTest.Call('CAnimMat_Pause', 'tvi', rsba), rsbam(rsba)))
-check('CAnimMat_FundPausa not 2', lambda: (SDTest.Call('CAnimMat_FundPausa', 'tvif', rsba, 500.0), rsbam(rsba)))
+check('CAnimMat_FadePause not 2', lambda: (SDTest.Call('CAnimMat_FadePause', 'tvif', rsba, 500.0), rsbam(rsba)))
 SDTest.Poke(rsba + 0x18 - 0x400000, 2)
-check('CAnimMat_FundPausa', lambda: (SDTest.Call('CAnimMat_FundPausa', 'tvif', rsba, 500.0), rsbam(rsba)))
-check('CAnimMat_FundPausa 0', lambda: (SDTest.Call('CAnimMat_FundPausa', 'tvif', rsba, 0.0), rsbam(rsba)))
+check('CAnimMat_FadePause', lambda: (SDTest.Call('CAnimMat_FadePause', 'tvif', rsba, 500.0), rsbam(rsba)))
+check('CAnimMat_FadePause 0', lambda: (SDTest.Call('CAnimMat_FadePause', 'tvif', rsba, 0.0), rsbam(rsba)))
 check('CAnimMat_Play', lambda: (SDTest.Call('CAnimMat_Play', 'tvi', rsba), rsbam(rsba)))
 # steps of ms milliseconds: lastTime set back from the clock (constant while the script runs)
 def rsbstep(a, modo, ms, fps, frames, ciclo, framef, fund):
@@ -68,7 +68,7 @@ check('CAnimMat_GetFrame', lambda: (SDTest.Call('CAnimMat_GetFrame', 'tii', rsba
 rsbfree(rsba)
 rsbfree(rsbb)
 
-# the CTabla resizes of tabla.h: n elements, the old ones kept
+# the CTable resizes of tabla.h: n elements, the old ones kept
 def rsbtab(t, size):
 	n = rsbi(t)
 	p = rsbi(t + 4)
@@ -78,7 +78,7 @@ def rsbtab(t, size):
 	for rsbj in range(min(n, rsbtabset[0]) * size / 4):
 		r.append(rsbi(p + rsbj * 4))
 	return n, r
-for rsbr in ((sym('Tabla_Resize2'), 'Tabla_Resize2', 2), (sym('Tabla_ResizeC'), 'Tabla_ResizeC', 0xc), (sym('Tabla_Resize1C'), 'Tabla_Resize1C', 0x1c)):
+for rsbr in ((sym('Table_Resize2'), 'Table_Resize2', 2), (sym('Table_ResizeC'), 'Table_ResizeC', 0xc), (sym('Table_Resize1C'), 'Table_Resize1C', 0x1c)):
 	rsbt = rsbz(8)
 	rsbtabset = [0]
 	for rsbn in (4, 4, 6, 2, 0, 0, 3, -1):
@@ -97,7 +97,7 @@ for rsbr in ((sym('Tabla_Resize2'), 'Tabla_Resize2', 2), (sym('Tabla_ResizeC'), 
 for rsbv in ((3.0, 4.0, 0.0), (0.0, 0.0, 0.0), (1.0, 1.0, 1.0), (-2.0, 1e-20, 5.0), (1e20, 1e20, 1e20),
 		(-0.0, 0.0, -0.0), (1e-30, 0.0, 0.0)):
 	check('Vec3_Normalize' + fmt(rsbv), lambda: SDTest.Call('Vec3_Normalize', 'iFF', (9.0, 9.0, 9.0), rsbv)[1:])
-check('CListaVert_Optimize', lambda: SDTest.Call('CListaVert_Optimize', 'tbiii', 0, 0, 0)[0])
+check('CVertList_Optimize', lambda: SDTest.Call('CVertList_Optimize', 'tbiii', 0, 0, 0)[0])
 check('BspQ3_Render', lambda: (SDTest.Peek('g_BspQ3', 'i'), SDTest.Call('BspQ3_Render', 'v')))
 
 # Cmd.c on the lexer of cmd_lex
@@ -128,17 +128,17 @@ check('Cmd_GetFloat ;', lambda: (SDTest.Call('Cmd_GetFloat', 'iiii', 0, rsbv, or
 check('Cmd_GetFloat ,', lambda: (SDTest.Call('Cmd_GetFloat', 'iiii', 0, rsbv + 4, ord(','))[0], rsbvec(), rsbcl()))
 check('Cmd_GetFloat 0', lambda: (SDTest.Call('Cmd_GetFloat', 'iiii', 0, rsbv + 8, 0)[0], rsbvec(), rsbcl()))
 check('Cmd_GetFloat next', lambda: (SDTest.Call('Cmd_GetFloat', 'iiii', 1, rsbv, 0)[0], rsbvec(), rsbcl()))
-check('Cmd_GetModelo', lambda: (SDTest.Call('Cmd_GetModelo', 'i')[0], rsbcl()))
-check('Cmd_GetModelo string', lambda: (SDTest.Call('Cmd_GetModelo', 'i')[0], rsbcl()))
+check('Cmd_GetModel', lambda: (SDTest.Call('Cmd_GetModel', 'i')[0], rsbcl()))
+check('Cmd_GetModel string', lambda: (SDTest.Call('Cmd_GetModel', 'i')[0], rsbcl()))
 rsbst('Cmd_NextInt', sym('Cmd_NextInt'), 'i')
 rsbst('CmdLex_Next', sym('CmdLex_Next'), 'v')
 rsbst('Cmd_AddAnim', sym('Cmd_AddAnim'), 'v')
 rsbst('Cmd_PlayAnim', sym('Cmd_PlayAnim'), 'v')
 rsbst('CmdLex_Next', sym('CmdLex_Next'), 'v')
 rsbst('Cmd_PivotPos', sym('Cmd_PivotPos'), 'v')
-rsbst('Cmd_EfecMalla', sym('Cmd_EfecMalla'), 'v')
-rsbst('Cmd_EfecMalla', sym('Cmd_EfecMalla'), 'v')
-rsbst('Cmd_FundirNodos', sym('Cmd_FundirNodos'), 'v')
+rsbst('Cmd_MeshEffect', sym('Cmd_MeshEffect'), 'v')
+rsbst('Cmd_MeshEffect', sym('Cmd_MeshEffect'), 'v')
+rsbst('Cmd_MergeNodes', sym('Cmd_MergeNodes'), 'v')
 rsbst('Cmd_SkipToIdent ident', sym('Cmd_SkipToIdent'), 'v')
 rsbst('CmdLex_Next end', sym('CmdLex_Next'), 'v')
 rsbst('Cmd_SkipToIdent end', sym('Cmd_SkipToIdent'), 'v')

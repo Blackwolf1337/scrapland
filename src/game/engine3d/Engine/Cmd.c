@@ -13,99 +13,99 @@
 
 void Cmd_AddAnim(void) {
 	CmdLex_Next();
-	CModelo *m = Cmd_GetModelo();
+	CModel *m = Cmd_GetModel();
 	if (m) {
-		Crear_Animacion(m, g_Cl.text, 3);
-		int i = CAnimGrupos_Count(&m->anims) - 1;
-		CHECK(CModelo_GetAnimName(m, i));
-		CModelo_AddAnimEvents(m, CModelo_GetAnimName(m, i), -1.0f, -1.0f);
-		CModelo_SetAnim(m, i, 0);
+		Create_Animation(m, g_Cl.text, 3);
+		int i = CAnimGroups_Count(&m->anims) - 1;
+		CHECK(CModel_GetAnimName(m, i));
+		CModel_AddAnimEvents(m, CModel_GetAnimName(m, i), -1.0f, -1.0f);
+		CModel_SetAnim(m, i, 0);
 	}
 	CmdLex_Next();
 }
 
 void Cmd_Load(void) {
 	char name[0x40];
-	char file[MAX_RUTA];
+	char file[MAX_FILEPATH];
 	vec3_t pos = { 0.0f, 0.0f, 0.0f };
 	vec3_t scale;
 	double d;
 
 	CmdLex_Next();
-	Cad_Copy(name, g_Cl.text, sizeof(name));
+	String_Copy(name, g_Cl.text, sizeof(name));
 	CmdLex_Next();
-	Ruta_Copy(file, g_Cl.text, -1);
+	Path_Copy(file, g_Cl.text, -1);
 	CmdLex_Next();
 	Cmd_GetVec(0, &pos, 0);
 	float s = CmdLex_GetDouble(&d) ? 1.0f : (float)d;
 	scale.x = s;
 	scale.y = s;
 	scale.z = s;
-	CModelo *m = Crear_Modelo3(file, NULL, &scale, 7);
-	Cad_Set(&m->name, name);
+	CModel *m = Create_Model3(file, NULL, &scale, 7);
+	String_Set(&m->name, name);
 	m->pos = pos;
 	if (Cmd_GetBool(1)) {
-		CModelo_BuildNodosR(m, 0);
+		CModel_BuildRenderNodes(m, 0);
 	}
-	CModelo_AddAnimEvents(m, CModelo_GetAnimName(m, 0), -1.0f, -1.0f);
-	CModelo_SetAnim(m, 0, 0);
+	CModel_AddAnimEvents(m, CModel_GetAnimName(m, 0), -1.0f, -1.0f);
+	CModel_SetAnim(m, 0, 0);
 }
 
 void Cmd_PivotPos(void) {
 	CmdLex_Next();
-	CModelo *m = Cmd_GetModelo();
+	CModel *m = Cmd_GetModel();
 	if (m) {
-		CModelo_SetPivotNodo(m, g_Cl.text);
+		CModel_SetPivotNode(m, g_Cl.text);
 	}
 	CmdLex_Next();
 }
 
 void Cmd_PlayAnim(void) {
 	CmdLex_Next();
-	CModelo *m = Cmd_GetModelo();
+	CModel *m = Cmd_GetModel();
 	if (m) {
-		int i = CModelo_FindAnim(m, g_Cl.text);
+		int i = CModel_FindAnim(m, g_Cl.text);
 		CmdLex_Next();
 		CHECK(g_Cl.type == CLEX_INT);
-		CModelo_SetAnim(m, i, (uint32_t)g_Cl.value.i);
+		CModel_SetAnim(m, i, (uint32_t)g_Cl.value.i);
 	}
 	CmdLex_Next();
 }
 
-void Cmd_EfecMalla(void) {
+void Cmd_MeshEffect(void) {
 	char kind[0x40];
 
 	CmdLex_Next();
-	Cad_Copy(kind, g_Cl.text, sizeof(kind));
+	String_Copy(kind, g_Cl.text, sizeof(kind));
 	CmdLex_Next();
-	CModelo *m = Cmd_GetModelo();
+	CModel *m = Cmd_GetModel();
 	if (!m) {
 		return;
 	}
 	if (!crt_stricmp(kind, "pantalla")) {
-		EfecMalla_AddPantalla(m);
-		CModelo_Disable(m);
+		MeshEffect_AddScreen(m);
+		CModel_Disable(m);
 		return;
 	}
 	if (!crt_stricmp(kind, "modelo")) {
-		EfecMalla_AddModelo(m);
-		CModelo_Disable(m);
+		MeshEffect_AddModel(m);
+		CModel_Disable(m);
 		return;
 	}
 	Lex_Error(0, "comando no v\xe1lido: %s", kind);
 }
 
-void Cmd_FundirNodos(void) {
+void Cmd_MergeNodes(void) {
 	CmdLex_Next();
-	CModelo *m = Cmd_GetModelo();
+	CModel *m = Cmd_GetModel();
 	if (m) {
-		CEscena_Join(m->escena, 1, NULL);
+		CScene_Join(m->scene, 1, NULL);
 	}
 }
 
-CModelo *Cmd_GetModelo(void) {
+CModel *Cmd_GetModel(void) {
 	CHECK((g_Cl.type == CLEX_IDENT) || (g_Cl.type == CLEX_STRING));
-	CModelo *m = Modelo_FindName(g_Cl.text);
+	CModel *m = Model_FindName(g_Cl.text);
 	if (!m) {
 		Lex_Error(0, "Model not found: %s", g_Cl.text);
 	}
@@ -118,7 +118,7 @@ int Cmd_GetVec(byte next, vec3_t *out, int unused) {
 	if (CmdLex_IsChar('$')) {
 		CmdLex_Next();
 		CHECK(g_Cl.type == CLEX_IDENT);
-		CNodo3D *n = CMundo_FindNodoWild(Mundo_Get(), g_Cl.text);
+		CNode3D *n = CWorld_FindNodeWild(World_Get(), g_Cl.text);
 		if (!n) {
 			Lex_Error(0, "nodo no encontrado: %s", g_Cl.text);
 			CmdLex_Next();
@@ -187,9 +187,9 @@ void Cmd_Out(const char *text) {
 }
 
 void Cmd_ReadFile(const char *name) {
-	char path[MAX_RUTA];
+	char path[MAX_FILEPATH];
 
-	Ruta_Normalize(path, name, -1);
+	Path_Normalize(path, name, -1);
 	/* the exe's address of Cmd_Out, as the original stores it */
 	Lex_SetOut((lexout_t)GAME_FUNC(Cmd_Out, 0x280af0));
 	Lex_SetDir(path);
@@ -212,9 +212,9 @@ void Cmd_ReadFile(const char *name) {
 		} else if (!crt_stricmp(g_Cl.text, "PivotPos")) {
 			Cmd_PivotPos();
 		} else if (!crt_stricmp(g_Cl.text, "FUNDIR_NODOS")) {
-			Cmd_FundirNodos();
+			Cmd_MergeNodes();
 		} else if (!crt_stricmp(g_Cl.text, "EFEC_MALLA")) {
-			Cmd_EfecMalla();
+			Cmd_MeshEffect();
 		} else {
 			Lex_Error(0, "comando desconocido: '%s'", g_Cl.text);
 			CmdLex_Next();

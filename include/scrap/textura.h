@@ -1,16 +1,16 @@
 /*
- * The texture cache of the engine3d (original source Engine/Textura.cpp): CTextura, one entry per file name and
+ * The texture cache of the engine3d (original source Engine/Textura.cpp): CTexture, one entry per file name and
  * opacity map, kept in a single linked list with reference counts. An entry holds the file (a CBmp for BMP, TGA
  * and TEX, the raw file for PNG and DDS, loaded by D3DX) and its Direct3D 8 texture, which is created when it is
  * first used and released again when the device is lost or too many file textures are cached. The functions
  * return HRESULTs.
  */
-#ifndef SCRAP_TEXTURA_H
-#define SCRAP_TEXTURA_H
+#ifndef SCRAP_TEXTURE_H
+#define SCRAP_TEXTURE_H
 
 #include "scrap/bmp.h"
 
-#define TEX_MAX_NOMBRE 0x104
+#define TEX_MAX_NAME 0x104
 
 #define TEX_E_INVALIDARG 0x80070057
 #define TEX_E_OUTOFMEMORY 0x8007000e
@@ -19,7 +19,7 @@
 #define TEX_E_NOTAVAILABLE 0x8876086a	/* D3DERR_NOTAVAILABLE */
 #define TEX_E_INVALIDCALL 0x8876086c	/* D3DERR_INVALIDCALL */
 
-/* CTextura.flags (the flags of Textura_Add) */
+/* CTexture.flags (the flags of Texture_Add) */
 #define TEXF_NOMIPMAP 0x20
 #define TEXF_FIXEDBPP 0x40		/* g_TexFixedBPP, no mipmaps, no DDS */
 #define TEXF_NODDS 0x80
@@ -34,9 +34,9 @@ typedef struct MSprite {
 SD_SIZE(MSprite, 0x8);
 
 typedef struct CMultiSprite {
-	int ancho;			/* 0x0 of the texture */
-	int alto;			/* 0x4 */
-	int n;				/* 0x8 the sprites (CTabla) */
+	int width;			/* 0x0 of the texture */
+	int height;			/* 0x4 */
+	int n;				/* 0x8 the sprites (CTable) */
 	MSprite *p;			/* 0xc */
 } CMultiSprite;
 SD_SIZE(CMultiSprite, 0x10);
@@ -44,13 +44,13 @@ SD_SIZE(CMultiSprite, 0x10);
 #define MST_VER 100
 #define g_BuildMST GAME_GLOBAL_IN(int, GVar_BuildMST, 16, 0x4d6e00)	/* BuildMST: load the .mst files */
 
-typedef struct CTextura {
+typedef struct CTexture {
 	int Refs;			/* 0x000 */
-	struct CTextura *sig;		/* 0x004 g_TexList */
-	char Nombre[TEX_MAX_NOMBRE];	/* 0x008 */
-	char Opac[TEX_MAX_NOMBRE];	/* 0x10c the opacity map, "" for none */
-	int ancho;			/* 0x210 */
-	int alto;			/* 0x214 */
+	struct CTexture *next;		/* 0x004 g_TexList */
+	char Name[TEX_MAX_NAME];	/* 0x008 */
+	char Opac[TEX_MAX_NAME];	/* 0x10c the opacity map, "" for none */
+	int width;			/* 0x210 */
+	int height;			/* 0x214 */
 	int kind;			/* 0x218 */
 	int bpp;			/* 0x21c */
 	uint32_t flags;			/* 0x220 TEXF_* */
@@ -72,14 +72,14 @@ typedef struct CTextura {
 	byte b245;			/* 0x245 */
 	byte pad_246[2];
 	CMultiSprite multi;		/* 0x248 */
-} CTextura;
-SD_SIZE(CTextura, 0x258);
-SD_OFFSET(CTextura, ancho, 0x210);
-SD_OFFSET(CTextura, tex, 0x228);
-SD_OFFSET(CTextura, mipmap, 0x23c);
-SD_OFFSET(CTextura, multi, 0x248);
+} CTexture;
+SD_SIZE(CTexture, 0x258);
+SD_OFFSET(CTexture, width, 0x210);
+SD_OFFSET(CTexture, tex, 0x228);
+SD_OFFSET(CTexture, mipmap, 0x23c);
+SD_OFFSET(CTexture, multi, 0x248);
 
-#define g_TexList GAME_GLOBAL(CTextura *, g_TexList, 0x4b2610)
+#define g_TexList GAME_GLOBAL(CTexture *, g_TexList, 0x4b2610)
 
 CMultiSprite *__fastcall CMultiSprite_ctor(CMultiSprite *self);
 void __fastcall CMultiSprite_dtor(CMultiSprite *self);
@@ -94,51 +94,51 @@ byte __thiscall CMultiSprite_GetUV(const CMultiSprite *self, uint32_t i, float *
 byte __thiscall CMultiSprite_Load(CMultiSprite *self, const char *name);
 byte __thiscall CMultiSprite_Save(const CMultiSprite *self, const char *name);
 
-CTextura *__thiscall CTextura_ctor(CTextura *self, const char *name, const char *opac, int kind, uint32_t flags);
-void __fastcall CTextura_dtor(CTextura *self);
+CTexture *__thiscall CTexture_ctor(CTexture *self, const char *name, const char *opac, int kind, uint32_t flags);
+void __fastcall CTexture_dtor(CTexture *self);
 /* the file: its kind from the name, a CBmp (pixels only with load) or the raw file */
-int __thiscall CTextura_LoadFile(CTextura *self, byte load);
+int __thiscall CTexture_LoadFile(CTexture *self, byte load);
 /* the device texture, its old one released */
-int __thiscall CTextura_CreateD3D(CTextura *self, void *dev);
+int __thiscall CTexture_CreateD3D(CTexture *self, void *dev);
 /* src scaled into mipmap level and the levels below */
-int __thiscall CTextura_UploadLevel(CTextura *self, CBmp *src, int level);
+int __thiscall CTexture_UploadLevel(CTexture *self, CBmp *src, int level);
 /* the developer tool: orig as a DDS file next to the texture, through bmp/nvdxt.exe and bmp/stitch.exe */
-int __thiscall CTextura_SaveDDS(CTextura *self, CBmp *orig, int level, byte keepExt);
+int __thiscall CTexture_SaveDDS(CTexture *self, CBmp *orig, int level, byte keepExt);
 
 /* the entry of name with opacity map opac (NULL or "" for none) */
-CTextura *Textura_Lookup(const char *name, const char *opac);
+CTexture *Texture_Lookup(const char *name, const char *opac);
 /* a new entry unless there is one; the file is checked, not loaded */
-int Textura_Add(const char *name, const char *opac, int kind, uint32_t flags);
+int Texture_Add(const char *name, const char *opac, int kind, uint32_t flags);
 /* Lookup with a reference */
-CTextura *Textura_Find(const char *name, const char *opac);
+CTexture *Texture_Find(const char *name, const char *opac);
 /* the references now, -1 for NULL */
-int Textura_AddRef(CTextura *t);
-int Textura_Release(CTextura *t);
-void Textura_Delete(CTextura *t);
-int Textura_Remove(const char *name, const char *opac);
-int Textura_DeleteAll(void);
+int Texture_AddRef(CTexture *t);
+int Texture_Release(CTexture *t);
+void Texture_Delete(CTexture *t);
+int Texture_Remove(const char *name, const char *opac);
+int Texture_DeleteAll(void);
 /* the device texture, created when missing (not for the raw files) */
-void *Textura_GetD3D(CTextura *t, void *dev);
-void *Textura_GetD3DByName(const char *name, const char *opac);
+void *Texture_GetD3D(CTexture *t, void *dev);
+void *Texture_GetD3DByName(const char *name, const char *opac);
 /* GetD3D for every entry, also the raw files; frees one of the device textures of those when too many are cached */
-void *Textura_Load(CTextura *t, void *dev);
+void *Texture_Load(CTexture *t, void *dev);
 /* the least recently used raw file texture when more than g_CachedTex have a device texture */
-CTextura *Textura_FindPurge(void);
-CMultiSprite *Textura_GetMultiSprite(CTextura *t, const char *name);
-/* info[0] ancho, [1] alto, [2] flags, [3] alpha, [4] compressed */
-int Textura_GetInfo(CTextura *t, int *info);
-int Textura_ReleaseD3D(const char *name, const char *opac);
-int Textura_ReleaseAllD3D(void);
-int Textura_Recreate(const char *name, const char *opac, void *dev);
-int Textura_RecreateAll(void *dev);
+CTexture *Texture_FindPurge(void);
+CMultiSprite *Texture_GetMultiSprite(CTexture *t, const char *name);
+/* info[0] width, [1] alto, [2] flags, [3] alpha, [4] compressed */
+int Texture_GetInfo(CTexture *t, int *info);
+int Texture_ReleaseD3D(const char *name, const char *opac);
+int Texture_ReleaseAllD3D(void);
+int Texture_Recreate(const char *name, const char *opac, void *dev);
+int Texture_RecreateAll(void *dev);
 
 /* the D3DFORMAT for a texture file */
 int Tex_Format(int bpp, byte alpha, byte palette, byte bump, byte compressed, byte unused);
 const char *D3DFmt_Name(int fmt);
 byte Tex_IsPower2(int n);
 /* name ends in ext before its last extension ("a.alpha.tga") */
-byte Ruta_HasSubExt(const char *name, const char *ext);
-void Ruta_ToBackslash(char *ruta);
+byte Path_HasSubExt(const char *name, const char *ext);
+void Path_ToBackslash(char *path);
 /* R and G to signed offsets around 0 (V8U8 style) */
 void Bmp_ToBump(CBmp *bmp);
 /* R and G to the DUDV pair, the smaller part in A */

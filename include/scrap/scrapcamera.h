@@ -1,6 +1,6 @@
 /*
- * ScrapEngCamera.cpp of the game: CGameCamera, the camera of the game over a CCamara of the engine3d. It keeps its own
- * copy of the camera values and writes them to the CCamara on each update; with a render node of a model it follows
+ * ScrapEngCamera.cpp of the game: CGameCamera, the camera of the game over a CCamera of the engine3d. It keeps its own
+ * copy of the camera values and writes them to the CCamera on each update; with a render node of a model it follows
  * the camera node of the model (or the camera of the [Cam-Composite] section of the node: the camera whose
  * NN_StartFrame range holds the frame of the first animation slot).
  */
@@ -11,7 +11,7 @@
 #include "scrap/modelo.h"
 #include "scrap/scrapmodel.h"
 
-#define CAMARA_FREE (CAMARA_LOOKAT + 1)	/* mode: the angles are set directly */
+#define CAMERA_FREE (CAMERA_LOOKAT + 1)	/* mode: the angles are set directly */
 
 typedef struct CGameCamera {
 	vec3_t pos;			/* 0x00 */
@@ -21,8 +21,8 @@ typedef struct CGameCamera {
 	float zFar;			/* 0x28 */
 	float fov;			/* 0x2c radians */
 	float aspectScreen;		/* 0x30 */
-	CCamara *Camera;		/* 0x34 owned */
-	CNodoR *Node;			/* 0x38 a reference (CGameModel_NodoRRef) */
+	CCamera *Camera;		/* 0x34 owned */
+	CRenderNode *Node;			/* 0x38 a reference (CGameModel_RenderNodeRef) */
 } CGameCamera;
 SD_OFFSET(CGameCamera, Camera, 0x34);
 SD_SIZE(CGameCamera, 0x3c);
@@ -32,8 +32,8 @@ SD_SIZE(CGameCamera, 0x3c);
 #define g_PhysicalAspectRatio GAME_GLOBAL_IN(float, GVar_PhysicalAspectRatio, 16, 0x4a8968)	/* PhysicalAspectRatio */
 #define g_ShowSceneCamera GAME_GLOBAL_IN(int, GVar_ShowSceneCamera, 16, 0x4a8950)		/* ShowSceneCamera */
 #define g_CameraScene GAME_GLOBAL_IN(int, GVar_CameraScene, 16, 0x4600a0)		/* CameraScene */
-/* 1: the cameras follow their scene nodes (also CCamara at rva 0x29cba0) */
-#define g_CamaraNodos GAME_GLOBAL(int, g_CamaraNodos, 0x431bc4)
+/* 1: the cameras follow their scene nodes (also CCamera at rva 0x29cba0) */
+#define g_CameraNodes GAME_GLOBAL(int, g_CameraNodes, 0x431bc4)
 /* what CamComposite_Find found last, for ShowSceneCamera */
 #define g_CamCompositeIdx GAME_GLOBAL(int, g_CamCompositeIdx, 0x4a8970)
 #define g_CamCompositeFrame GAME_GLOBAL(float, g_CamCompositeFrame, 0x4a8974)
@@ -45,20 +45,20 @@ void __fastcall CGameCamera_dtor(CGameCamera *self);
 void __thiscall CGameCamera_Move(CGameCamera *self, float d);
 /* the values, not the node; the mode of the camera too */
 void __thiscall CGameCamera_Copy(CGameCamera *self, const CGameCamera *other);
-void __thiscall CGameCamera_FromCamara(CGameCamera *self, const CCamara *c);
+void __thiscall CGameCamera_FromCamera(CGameCamera *self, const CCamera *c);
 byte __fastcall CGameCamera_IsLookAt(const CGameCamera *self);
 void __thiscall CGameCamera_SetLookAt(CGameCamera *self, byte on);
 /* the node i of model (-1: D_Cam-Composite, else Camera_01), none without model; 1 */
 byte __thiscall CGameCamera_SetNodeModel(CGameCamera *self, CGameModel *model, int i);
 /* takes over the reference of node */
-void __thiscall CGameCamera_SetNode(CGameCamera *self, CNodoR *node);
+void __thiscall CGameCamera_SetNode(CGameCamera *self, CRenderNode *node);
 /* the camera node of the [Cam-Composite] section ini of a node of model, NULL with a log line for none */
-CNodo3D *CamComposite_Find(CModelo *model, CArchINI *ini);
+CNode3D *CamComposite_Find(CModel *model, CIniFile *ini);
 /* ShowSceneCamera: the camera and frame of the last CamComposite_Find */
 void CamComposite_DrawDebug(void);
 void __thiscall CGameCamera_Strafe(CGameCamera *self, float side, float rise);
-/* from the node, then the values into the CCamara; the CCamara */
-CCamara *__fastcall CGameCamera_Update(CGameCamera *self);
+/* from the node, then the values into the CCamera; the CCamera */
+CCamera *__fastcall CGameCamera_Update(CGameCamera *self);
 /* in turned into the camera space (no projection) */
 vec3_t *__thiscall CGameCamera_ToLocal(const CGameCamera *self, vec3_t *out, const vec3_t *in);
 

@@ -52,11 +52,11 @@ for i in (0, 3, 7):
 	check('Voice_Remain' + fmt((i,)), lambda i=i: SDTest.Call('Voice_Remain', 'bip', i, 12345))
 	check('Voice_Play' + fmt((i,)), lambda i=i, v=v: (SDTest.Call('Voice_Play', 'bi', i), mui(v + 0x108)))
 	mupoke(v + 0x18c, 1)
-	SDTest.Call('Cad_Copy', 'iisi', v + 0x10c, 'text', 0x80)
+	SDTest.Call('String_Copy', 'iisi', v + 0x10c, 'text', 0x80)
 	check('Voice_Stop' + fmt((i,)), lambda i=i, v=v: (SDTest.Call('Voice_Stop', 'bi', i), mui(v + 0x18c),
 		SDTest.Peek(v + 0x10c - 0x400000, 's')))
 	mupoke(v + 0x18c, 1)
-	SDTest.Call('Cad_Copy', 'iisi', v + 0x10c, 'text', 0x80)
+	SDTest.Call('String_Copy', 'iisi', v + 0x10c, 'text', 0x80)
 	check('Voice_Close' + fmt((i,)), lambda v=v: (SDTest.Call('Voice_Close', 'vi', v), mui(v + 0x18c),
 		SDTest.Peek(v + 0x10c - 0x400000, 's')))
 	check('Voice_ApplyVolume' + fmt((i,)), lambda v=v: SDTest.Call('Voice_ApplyVolume', 'vif', v, 0.25))
@@ -123,7 +123,7 @@ check('Music_Wait none', lambda: SDTest.Call('Music_Wait', 'b')[0])
 check('Music_Stop none', lambda: (SDTest.Call('Music_Stop', 'b')[0], mui(symva('g_MusicStream')), mui(symva('g_MusicChannel'))))
 # the fake stream with the same name: "already started", unpaused
 muinit(0x12345, 1000)
-SDTest.Call('Cad_Copy', 'iisi', symva('g_MusicName'), 'music/Test.ogg', 0x104)
+SDTest.Call('String_Copy', 'iisi', symva('g_MusicName'), 'music/Test.ogg', 0x104)
 mupoke(symva('g_MusicPaused'), 1)
 check('Music_PlayFile same', lambda: (SDTest.Call('Music_PlayFile', 'bss', 'test.OGG', 'MUSIC/')[0], mui(symva('g_MusicPaused')),
 	SDTest.Peek('g_MusicName', 's')))
@@ -146,10 +146,10 @@ check('Music_Nop', lambda: SDTest.Call('Music_Nop', 'v')[0])
 # back
 for a, v in mustate:
 	mupoke(a, v)
-SDTest.Call('Cad_Copy', 'iisi', symva('g_MusicName'), muname, 0x104)
+SDTest.Call('String_Copy', 'iisi', symva('g_MusicName'), muname, 0x104)
 for i in range(8):
 	v = MUVOICES + i * muvsize
 	mupoke(v + 0x104, muvoice[i][0])
 	mupoke(v + 0x108, muvoice[i][1])
 	mupoke(v + 0x18c, muvoice[i][2])
-	SDTest.Call('Cad_Copy', 'iisi', v + 0x10c, muvoice[i][3], 0x80)
+	SDTest.Call('String_Copy', 'iisi', v + 0x10c, muvoice[i][3], 0x80)

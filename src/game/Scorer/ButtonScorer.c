@@ -570,7 +570,7 @@ static void Button_DrawText(cButtonScorer *self) {
 					if (!(tx >= 0.0f)) {
 						tx = (float)(self->boxH - self->textH) + it->x;
 					}
-					CFont_PrintfAlignColorSombra(self->font, tx, (self->lineHeight + 2.0f) * (float)row + ty, 0,
+					CFont_PrintfAlignColorShadow(self->font, tx, (self->lineHeight + 2.0f) * (float)row + ty, 0,
 						self->textColor, *TABLE_AT(self->lines, k));
 					if (!self->isNameValuePair) {
 						row++;
@@ -582,20 +582,20 @@ static void Button_DrawText(cButtonScorer *self) {
 				if (!(tx >= 0.0f)) {
 					tx = ((boxW - self->textWidth) * 0.5f + it->x) + self->textWidth;
 				}
-				CFont_PrintfAlignColorSombra(self->font, tx, (self->lineHeight + 2.0f) * (float)row + ty, 1,
+				CFont_PrintfAlignColorShadow(self->font, tx, (self->lineHeight + 2.0f) * (float)row + ty, 1,
 					self->textColor, *TABLE_AT(self->lines, k));
 				row++;
 				continue;
 			}
 			tx = (boxW - self->textWidth) * 0.5f + it->x;
-			CFont_PrintfAlignColorSombra(self->font, tx, (self->lineHeight + 2.0f) * (float)row + ty, 0,
+			CFont_PrintfAlignColorShadow(self->font, tx, (self->lineHeight + 2.0f) * (float)row + ty, 0,
 				self->textColor, *TABLE_AT(self->lines, k));
 			row++;
 			continue;
 		default:
 			continue;
 		}
-		CFont_PrintfAlignColorSombra(self->font, tx, (self->lineHeight + 2.0f) * (float)mul + ty, align,
+		CFont_PrintfAlignColorShadow(self->font, tx, (self->lineHeight + 2.0f) * (float)mul + ty, align,
 			self->textColor, *TABLE_AT(self->lines, k));
 	}
 }
@@ -641,7 +641,7 @@ static void Button_DrawSprite(cButtonScorer *self, int player) {
 		tx = sp->img->pivotX * sp->base.w + tx;
 	}
 	cScorer *sc = Scorer_Get(player);
-	Button_SmoothScale(self, !cString_ICmp(&sp->base.name, &sc->actual));
+	Button_SmoothScale(self, !cString_ICmp(&sp->base.name, &sc->current));
 	if (self->renderAlphaChannel == 1) {
 		self->alphaImg->pivotX = sp->img->pivotX;
 		self->alphaImg->pivotY = sp->img->pivotY;
@@ -721,7 +721,7 @@ void __thiscall cButtonScorer_Draw(cButtonScorer *self, int player) {
 		return;
 	}
 	cScorer *sc = Scorer_Get(player);
-	if (!cString_ICmp(&sp->base.name, &sc->actual)) {
+	if (!cString_ICmp(&sp->base.name, &sc->current)) {
 		if (!self->highlight) {
 			return;
 		}

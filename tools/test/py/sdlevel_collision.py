@@ -1,6 +1,6 @@
 # game ScrapEng/ScrapEngCollision.c (execfile'd by sdlevel.py, Python 1.5.2): the queries against the floor of the
 # level around the player (pp), with the c_* switches that change their paths, the box cache of a moving sphere,
-# the segment-sphere math and CListaVert_GetPos on fake lists. Vectors go in and out as 'F' arguments.
+# the segment-sphere math and CVertList_GetPos on fake lists. Vectors go in and out as 'F' arguments.
 def cvi(a):
 	return SDTest.Peek(a, '@i')
 def cvz(n):
@@ -87,7 +87,7 @@ for a, b in (((0.0, 0.0, 0.0), (10.0, 0.0, 0.0)), ((0.0, 0.0, 0.0), (0.0, 0.0, 0
 			a, b, c[0], c[1], c[2], r, (8.0, 8.0, 8.0)), SDTest.Call('Collision_SegSphere', 'bFFffffi', a, b, c[0], c[1],
 			c[2], r, 0)[0]))
 
-# CListaVert_GetPos on fake lists of 4 vertices of each format (the XBOX position packed with ListaVert_PackNormal)
+# CVertList_GetPos on fake lists of 4 vertices of each format (the XBOX position packed with VertList_PackNormal)
 cvl = cvz(0x14)
 cvv = cvz(0x100)
 for i in range(0x40):
@@ -99,5 +99,5 @@ cvset(cvl + 0x10, (2.5,))
 for frmt in (1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13):
 	SDTest.Poke(cvl + 0xc - 0x400000, frmt)
 	for i in (0, 3):
-		check('CListaVert_GetPos' + fmt((frmt, i)), lambda i=i: SDTest.Call('CListaVert_GetPos', 'tiiFi', cvl, (0.0,) * 3, i)[1])
+		check('CVertList_GetPos' + fmt((frmt, i)), lambda i=i: SDTest.Call('CVertList_GetPos', 'tiiFi', cvl, (0.0,) * 3, i)[1])
 SDTest.Poke(cvl - 0x400000, 0)

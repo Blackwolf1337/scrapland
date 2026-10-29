@@ -7,14 +7,14 @@
 
 #define SP_CHECK(self) \
 	do { \
-		if (!(self)->SistPart) { \
+		if (!(self)->ParticleSystem) { \
 			CheckFailed("SistPart", __FILE__, __TIMESTAMP__, __LINE__); \
 		} \
 	} while (0)
 
 #define SP_CHECK_INDEX(self, i) \
 	do { \
-		if ((i) >= (self)->SistPart->params.nParticulas) { \
+		if ((i) >= (self)->ParticleSystem->params.nParticles) { \
 			CheckFailed("index<SistPart->GetNParticles()", __FILE__, __TIMESTAMP__, __LINE__); \
 		} \
 	} while (0)
@@ -35,7 +35,7 @@ CGameParticles *__fastcall CGameParticles_ctor(CGameParticles *self) {
 
 void __fastcall CGameParticles_Init(CGameParticles *self) {
 	self->Node = NULL;
-	self->SistPart = NULL;
+	self->ParticleSystem = NULL;
 	self->colorIni = 0xffffff;
 	self->colorEnd = 0xffffff;
 	self->sizeIni = 1.0f;
@@ -64,31 +64,31 @@ void __fastcall CGameParticles_Init(CGameParticles *self) {
 }
 
 void __fastcall CGameParticles_Release(CGameParticles *self) {
-	NodoR_Unref(&self->Node);
-	self->SistPart = NULL;
+	RenderNode_Unref(&self->Node);
+	self->ParticleSystem = NULL;
 }
 
 void __thiscall CGameParticles_Attach(CGameParticles *self, CGameModel *model, uint32_t i) {
 	if (!model) {
 		CheckFailed("Model", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	if (self->Node || self->SistPart) {
+	if (self->Node || self->ParticleSystem) {
 		CheckFailed("!Node && !SistPart", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	self->Node = CGameModel_NodoRRef(model, i);
+	self->Node = CGameModel_RenderNodeRef(model, i);
 	if (!self->Node || !self->Node->obj3D) {
 		CheckFailed("Node && Node->obj3D", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	IObjeto3D *obj = self->Node->obj3D;
-	if (obj->clase != CLASE_OBJ3D_SISTPART) {
+	IObject3D *obj = self->Node->obj3D;
+	if (obj->class != CLASS_OBJ3D_PARTICLESYSTEM) {
 		CheckFailed("Obj3D->obtClase() == CLASE_OBJ3D_SISTPART", "objeto3d.h", __TIMESTAMP__, __LINE__);
 	}
-	self->SistPart = (CSistPart *)obj;
+	self->ParticleSystem = (CParticleSystem *)obj;
 }
 
 void __fastcall CGameParticles_Apply(CGameParticles *self) {
 	SP_CHECK(self);
-	SistPartParams *p = &self->SistPart->params;
+	ParticleSystemParams *p = &self->ParticleSystem->params;
 	p->colorIni = self->colorIni;
 	p->colorEnd = self->colorEnd;
 	p->sizeIni = self->sizeIni;
@@ -117,10 +117,10 @@ void __fastcall CGameParticles_Apply(CGameParticles *self) {
 }
 
 /* p made inactive, an active one at the end of its life */
-static void CGameParticles_KillParticle(CGameParticles *self, CParticula *p) {
-	CSistPart_SetActive(self->SistPart, p, 0);
-	if (PARTICULA_TYPE(p) == PARTICULA_ACTIVE) {
-		CParticulaActive *a = (CParticulaActive *)p;
+static void CGameParticles_KillParticle(CGameParticles *self, CParticle *p) {
+	CParticleSystem_SetActive(self->ParticleSystem, p, 0);
+	if (PARTICLE_TYPE(p) == PARTICLE_ACTIVE) {
+		CParticleActive *a = (CParticleActive *)p;
 		a->b34 = 0;
 		a->t = 1.0f;
 		a->life = 0.0f;
@@ -129,30 +129,30 @@ static void CGameParticles_KillParticle(CGameParticles *self, CParticula *p) {
 
 void __fastcall CGameParticles_KillAll(CGameParticles *self) {
 	SP_CHECK(self);
-	for (int i = 0; i < self->SistPart->params.nParticulas; i++) {
-		CParticula *p = self->SistPart->Particles[i];
+	for (int i = 0; i < self->ParticleSystem->params.nParticles; i++) {
+		CParticle *p = self->ParticleSystem->Particles[i];
 		SP_CHECK_PARTICLE(p);
 		CGameParticles_KillParticle(self, p);
 	}
-	self->SistPart->numActive = 0;
+	self->ParticleSystem->numActive = 0;
 }
 
 void __thiscall CGameParticles_Kill(CGameParticles *self, int i) {
 	SP_CHECK(self);
 	SP_CHECK_INDEX(self, i);
-	CParticula *p = self->SistPart->Particles[i];
+	CParticle *p = self->ParticleSystem->Particles[i];
 	SP_CHECK_PARTICLE(p);
 	CGameParticles_KillParticle(self, p);
 }
 
 void __thiscall CGameParticles_KillRange(CGameParticles *self, int from, int to) {
 	SP_CHECK(self);
-	if (from < 0 || to < from || to > self->SistPart->params.nParticulas) {
+	if (from < 0 || to < from || to > self->ParticleSystem->params.nParticles) {
 		CheckFailed("index_from>=0 && index_to>=index_from && index_to<=SistPart->GetNParticles()", __FILE__,
 			__TIMESTAMP__, __LINE__);
 	}
 	for (; from < to; from++) {
-		CParticula *p = self->SistPart->Particles[from];
+		CParticle *p = self->ParticleSystem->Particles[from];
 		SP_CHECK_PARTICLE(p);
 		CGameParticles_KillParticle(self, p);
 	}
@@ -162,21 +162,21 @@ void __thiscall CGameParticles_SetParticle(CGameParticles *self, int i, float x,
 	uint32_t color, int sprite, float rot) {
 	SP_CHECK(self);
 	SP_CHECK_INDEX(self, i);
-	CParticula *p = self->SistPart->Particles[i];
+	CParticle *p = self->ParticleSystem->Particles[i];
 	SP_CHECK_PARTICLE(p);
-	CSistPart_SetActive(self->SistPart, p, 1);
+	CParticleSystem_SetActive(self->ParticleSystem, p, 1);
 	p->pos.x = x;
 	p->pos.y = y;
 	p->pos.z = z;
 	p->color = color;
 	p->size = size;
 	p->rot = rot;
-	if (PARTICULA_TYPE(p) == PARTICULA_ACTIVE) {
-		CParticulaActive *a = (CParticulaActive *)p;
+	if (PARTICLE_TYPE(p) == PARTICLE_ACTIVE) {
+		CParticleActive *a = (CParticleActive *)p;
 		a->b34 = 1;
 		a->t = 0.0f;
 	}
-	CMultiSprite *ms = self->SistPart->MultiSpr;
+	CMultiSprite *ms = self->ParticleSystem->MultiSpr;
 	if (ms) {
 		if (sprite < 0 || sprite >= ms->n) {
 			CheckFailed("spriteIndex>=0 && spriteIndex<MultiSpr->GetSpriteCount()", __FILE__, __TIMESTAMP__,
@@ -190,7 +190,7 @@ byte __thiscall CGameParticles_GetParticle(CGameParticles *self, int i, vec3_t *
 	uint32_t *color, float *size) {
 	SP_CHECK(self);
 	SP_CHECK_INDEX(self, i);
-	CParticula *p = self->SistPart->Particles[i];
+	CParticle *p = self->ParticleSystem->Particles[i];
 	if (pos) {
 		*pos = p->pos;
 	}
@@ -200,8 +200,8 @@ byte __thiscall CGameParticles_GetParticle(CGameParticles *self, int i, vec3_t *
 	if (size) {
 		*size = p->size;
 	}
-	if (PARTICULA_TYPE(p) == PARTICULA_ACTIVE) {
-		CParticulaActive *a = (CParticulaActive *)p;
+	if (PARTICLE_TYPE(p) == PARTICLE_ACTIVE) {
+		CParticleActive *a = (CParticleActive *)p;
 		if (t) {
 			*t = a->t;
 		}
@@ -213,41 +213,41 @@ byte __thiscall CGameParticles_GetParticle(CGameParticles *self, int i, vec3_t *
 }
 
 int __fastcall CGameParticles_NumActive(const CGameParticles *self) {
-	return self->SistPart->numActive;
+	return self->ParticleSystem->numActive;
 }
 
 int __fastcall CGameParticles_NumParticles(const CGameParticles *self) {
-	return self->SistPart->params.nParticulas;
+	return self->ParticleSystem->params.nParticles;
 }
 
 float __fastcall CGameParticles_GetAlpha(const CGameParticles *self) {
 	SP_CHECK(self);
-	return self->SistPart->alpha;
+	return self->ParticleSystem->alpha;
 }
 
 void __thiscall CGameParticles_SetAlpha(CGameParticles *self, float alpha) {
 	SP_CHECK(self);
-	CSistPart_SetAlpha(self->SistPart, alpha);
+	CParticleSystem_SetAlpha(self->ParticleSystem, alpha);
 }
 
 byte __fastcall CGameParticles_IsEnabled(const CGameParticles *self) {
-	return self->SistPart->enabled;
+	return self->ParticleSystem->enabled;
 }
 
 void __thiscall CGameParticles_SetEnabled(CGameParticles *self, byte on) {
-	self->SistPart->enabled = on;
+	self->ParticleSystem->enabled = on;
 }
 
 byte __fastcall CGameParticles_IsVisible(const CGameParticles *self) {
-	return self->SistPart->visible;
+	return self->ParticleSystem->visible;
 }
 
 void __thiscall CGameParticles_SetVisible(CGameParticles *self, byte on) {
-	self->SistPart->visible = on;
+	self->ParticleSystem->visible = on;
 }
 
 /* flag of params.flags set to on (the flag is toggled when the bit differs from the byte) */
-static void CGameParticles_SetFlag(CSistPart *sp, int shift, byte on) {
+static void CGameParticles_SetFlag(CParticleSystem *sp, int shift, byte on) {
 	uint32_t flags = sp->params.flags;
 	if ((byte)((flags >> shift) & 1) != on) {
 		sp->params.flags = flags ^ (1u << shift);
@@ -256,38 +256,38 @@ static void CGameParticles_SetFlag(CSistPart *sp, int shift, byte on) {
 
 void __thiscall CGameParticles_SetColorRampOn(CGameParticles *self, byte on) {
 	SP_CHECK(self);
-	CGameParticles_SetFlag(self->SistPart, 5, on);
+	CGameParticles_SetFlag(self->ParticleSystem, 5, on);
 }
 
 void __thiscall CGameParticles_SetSparksOn(CGameParticles *self, byte on) {
 	SP_CHECK(self);
-	CGameParticles_SetFlag(self->SistPart, 3, on);
+	CGameParticles_SetFlag(self->ParticleSystem, 3, on);
 }
 
 void __thiscall CGameParticles_SetColorRamp(CGameParticles *self, uint32_t *ramp) {
 	SP_CHECK(self);
-	CSistPart_SetColorRamp(self->SistPart, ramp);
+	CParticleSystem_SetColorRamp(self->ParticleSystem, ramp);
 }
 
 void __thiscall CGameParticles_SetEmitPos(CGameParticles *self, vec3_t *pos, byte n) {
 	SP_CHECK(self);
-	CSistPart_SetEmitPos(self->SistPart, pos, n);
+	CParticleSystem_SetEmitPos(self->ParticleSystem, pos, n);
 }
 
 void __thiscall CGameParticles_EmitN(CGameParticles *self, int n, byte force) {
-	CSistPart_EmitN(self->SistPart, n, force);
+	CParticleSystem_EmitN(self->ParticleSystem, n, force);
 }
 
 void __thiscall CGameParticles_EmitM(CGameParticles *self, int n, byte force, const matrix_t *m) {
 	const matrix_t *d3d = Eng_Identity(m);
-	CSistPart_EmitM(self->SistPart, n, force, d3d);
+	CParticleSystem_EmitM(self->ParticleSystem, n, force, d3d);
 }
 
 void __thiscall CGameParticles_EmitDt(CGameParticles *self, int n, byte force, float dt) {
-	CSistPart_EmitDt(self->SistPart, n, force, dt);
+	CParticleSystem_EmitDt(self->ParticleSystem, n, force, dt);
 }
 
 void __thiscall CGameParticles_Emit(CGameParticles *self, int n, byte force, float dt, const matrix_t *m) {
 	const matrix_t *d3d = Eng_Identity(m);
-	CSistPart_Emit(self->SistPart, n, force, dt, d3d);
+	CParticleSystem_Emit(self->ParticleSystem, n, force, dt, d3d);
 }

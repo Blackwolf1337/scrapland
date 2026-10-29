@@ -138,7 +138,7 @@ static inline const cChTypeLogicVtbl *ChLogic_Vtbl(cLocalLogic *l) {
 
 /* engine variables (Gvars) */
 #define g_FXBankerStealFile GAME_GLOBAL_IN(char *, GVar_FXBankerStealFile, 16, 0x446018)
-#define g_BankerStealQuanto GAME_GLOBAL_IN(int, GVar_BankerStealQuanto, 16, 0x446048)
+#define g_BankerStealAmount GAME_GLOBAL_IN(int, GVar_BankerStealAmount, 16, 0x446048)
 #define g_FXBankMasterAttackFile GAME_GLOBAL_IN(char *, GVar_FXBankMasterAttackFile, 16, 0x4460b4)
 #define g_BankMasterVacumDist GAME_GLOBAL_IN(float, GVar_BankMasterVacumDist, 16, 0x4460dc)
 #define g_BankMasterAmmoCost GAME_GLOBAL_IN(float, GVar_BankMasterAmmoCost, 16, 0x44617c)
@@ -382,7 +382,7 @@ static inline const char *ChType_ClassName(cEntity *e) {
 #define g_FXPoliceGearConversionFile GAME_GLOBAL_IN(char *, GVar_FXPoliceGearConversionFile, 16, 0x446fa0)
 #define g_FXPoliceStealFile GAME_GLOBAL_IN(char *, GVar_FXPoliceStealFile, 16, 0x446f88)
 #define g_PoliceAlarmStepSTM GAME_GLOBAL_IN(float, GVar_PoliceAlarmStepSTM, 16, 0x446fc8)
-#define g_PoliceStealQuanto GAME_GLOBAL_IN(int, GVar_PoliceStealQuanto, 16, 0x446ff0)
+#define g_PoliceStealAmount GAME_GLOBAL_IN(int, GVar_PoliceStealAmount, 16, 0x446ff0)
 #define g_PoliceBossActionRadius GAME_GLOBAL_IN(float, GVar_PoliceBossActionRadius, 16, 0x44708c)
 #define g_PoliceBossBrupBaseFile GAME_GLOBAL_IN(char *, GVar_PoliceBossBrupBaseFile, 16, 0x44700c)
 #define g_PoliceBossBrupBounce1Sound GAME_GLOBAL_IN(char *, GVar_PoliceBossBrupBounce1Sound, 16, 0x44705c)

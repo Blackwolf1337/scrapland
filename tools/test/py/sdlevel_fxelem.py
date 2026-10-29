@@ -181,20 +181,20 @@ check('FXElementsAB_Create', lambda fehead=fehead: (SDTest.Call('FXElementsAB_Cr
 
 # ---- the orbit buoys: constructors and destructors ----
 fb = fez(0xf0)
-check('cFXElementsOrbitBoya_ctor', lambda fb=fb: (SDTest.Call('cFXElementsOrbitBoya_ctor', 'tiisii', fb, 'OrbitBoya0', fepos,
-	ferot)[0] == fb, fei(fb) == 0x400000 + sym('cFXElementsOrbitBoya_vftable'), fei(fb + 4) != 0, fepart(fb + 0x40)))
-check('cFXElementsOrbitBoya_Init', lambda fb=fb: (SDTest.Call('cFXElementsOrbitBoya_Init', 'tbi', fb)[0], fei(fb + 0xec) != 0))
-check('cFXElementsOrbitBoya_ReleaseLight', lambda fb=fb: (SDTest.Call('cFXElementsOrbitBoya_ReleaseLight', 'tvi', fb), fei(fb + 0xe8),
+check('cFXElementsOrbitBuoy_ctor', lambda fb=fb: (SDTest.Call('cFXElementsOrbitBuoy_ctor', 'tiisii', fb, 'OrbitBoya0', fepos,
+	ferot)[0] == fb, fei(fb) == 0x400000 + sym('cFXElementsOrbitBuoy_vftable'), fei(fb + 4) != 0, fepart(fb + 0x40)))
+check('cFXElementsOrbitBuoy_Init', lambda fb=fb: (SDTest.Call('cFXElementsOrbitBuoy_Init', 'tbi', fb)[0], fei(fb + 0xec) != 0))
+check('cFXElementsOrbitBuoy_ReleaseLight', lambda fb=fb: (SDTest.Call('cFXElementsOrbitBuoy_ReleaseLight', 'tvi', fb), fei(fb + 0xe8),
 	fei(fb + 0xec)))
-check('cFXElementsOrbitBoya_Delete', lambda fb=fb: SDTest.Call('cFXElementsOrbitBoya_Delete', 'tiii', fb, 0)[0] == fb)
+check('cFXElementsOrbitBuoy_Delete', lambda fb=fb: SDTest.Call('cFXElementsOrbitBuoy_Delete', 'tiii', fb, 0)[0] == fb)
 fb = fez(0xf0)
-SDTest.Call('cFXElementsOrbitBoya_ctor', 'tiisii', fb, 'OrbitBoya0', fepos, ferot)
-check('cFXElementsOrbitBoya_dtor', lambda fb=fb: (SDTest.Call('cFXElementsOrbitBoya_dtor', 'tvi', fb), fei(fb + 0xec)))
+SDTest.Call('cFXElementsOrbitBuoy_ctor', 'tiisii', fb, 'OrbitBoya0', fepos, ferot)
+check('cFXElementsOrbitBuoy_dtor', lambda fb=fb: (SDTest.Call('cFXElementsOrbitBuoy_dtor', 'tvi', fb), fei(fb + 0xec)))
 fc = fez(0x1ac)
-check('cFXElementsOrbitBoyaController_ctor', lambda fc=fc: (SDTest.Call('cFXElementsOrbitBoyaController_ctor', 'tiisii', fc,
-	'OrbitBoyaController', fepos, ferot)[0] == fc, fei(fc) == 0x400000 + sym('cFXElementsOrbitBoyaController_vftable'), feints(fc + 0x2c, 0x60)))
-check('cFXElementsOrbitBoyaController_Release', lambda fc=fc: (SDTest.Call('cFXElementsOrbitBoyaController_Release', 'tvi', fc), fei(fc + 0x12c)))
-check('cFXElementsOrbitBoyaController_Delete', lambda fc=fc: SDTest.Call('cFXElementsOrbitBoyaController_Delete', 'tiii', fc, 0)[0] == fc)
+check('cFXElementsOrbitBuoyController_ctor', lambda fc=fc: (SDTest.Call('cFXElementsOrbitBuoyController_ctor', 'tiisii', fc,
+	'OrbitBoyaController', fepos, ferot)[0] == fc, fei(fc) == 0x400000 + sym('cFXElementsOrbitBuoyController_vftable'), feints(fc + 0x2c, 0x60)))
+check('cFXElementsOrbitBuoyController_Release', lambda fc=fc: (SDTest.Call('cFXElementsOrbitBuoyController_Release', 'tvi', fc), fei(fc + 0x12c)))
+check('cFXElementsOrbitBuoyController_Delete', lambda fc=fc: SDTest.Call('cFXElementsOrbitBuoyController_Delete', 'tiii', fc, 0)[0] == fc)
 fc = fez(0x1ac)
-SDTest.Call('cFXElementsOrbitBoyaController_ctor', 'tiisii', fc, 'OrbitBoyaController', fepos, ferot)
-check('cFXElementsOrbitBoyaController_dtor', lambda fc=fc: SDTest.Call('cFXElementsOrbitBoyaController_dtor', 'tvi', fc))
+SDTest.Call('cFXElementsOrbitBuoyController_ctor', 'tiisii', fc, 'OrbitBoyaController', fepos, ferot)
+check('cFXElementsOrbitBuoyController_dtor', lambda fc=fc: SDTest.Call('cFXElementsOrbitBuoyController_dtor', 'tvi', fc))

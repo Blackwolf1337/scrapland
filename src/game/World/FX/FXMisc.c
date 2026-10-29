@@ -58,7 +58,7 @@ static void FX_EndFade(CGameModel *m, int mode) {
 }
 
 void FX_AttachDummy(CGameParticles *sp, CGameModel *m) {
-	uint32_t i = CGameModel_IsLoaded(m) ? (uint32_t)CGameModel_FindNodoR(m, "Dummy01") : (uint32_t)(uintptr_t)m;
+	uint32_t i = CGameModel_IsLoaded(m) ? (uint32_t)CGameModel_FindRenderNode(m, "Dummy01") : (uint32_t)(uintptr_t)m;
 
 	if (i != 0xffffffffu) {
 		CGameParticles_Attach(sp, m, i);
@@ -94,7 +94,7 @@ byte FX_IsVisible(float x, float y, float z, float radius, float maxDist, const 
 	cWorld *w = g_pWorld;
 	vec3_t cp = w->camPos[w->curCam];
 	if (!cam) {
-		cam = Camera_GetActual();
+		cam = Camera_GetCurrent();
 	}
 	if (!cam) {
 		px = cp.x;
@@ -150,7 +150,7 @@ void FX_ItemBlink(cEntity *e) {
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	}
-	cObjElementFXSistPart *el = Debris_Element(d);
+	cObjElementFXParticleSystem *el = Debris_Element(d);
 	if (!el) {
 		return;
 	}
@@ -412,8 +412,8 @@ void __thiscall cObjElementFXModelNoise_Update(cObjElementFXModelNoise *self, cD
 	FX_Vtbl(self->ent)->SetFXParam(self->ent, 0, 0.45f - f * 0.45f);
 }
 
-/* SistPart and SistPartDuDv */
-void __thiscall cObjElementFXSistPart_Update(cObjElementFXSistPart *self, cDebris *d, float dt) {
+/* ParticleSystem and SistPartDuDv */
+void __thiscall cObjElementFXParticleSystem_Update(cObjElementFXParticleSystem *self, cDebris *d, float dt) {
 	if (self->move) {
 		cDebris_Move(d, dt);
 	}
@@ -512,22 +512,22 @@ void __thiscall FXMisc_Clear8(void *self, int arg) {
 	*(float *)((byte *)self + 8) = 0.0f;
 }
 
-static void FX_SistPartAttach(cObjElementFXSistPart *self, cDebris *d, const char *node) {
+static void FX_ParticleSystemAttach(cObjElementFXParticleSystem *self, cDebris *d, const char *node) {
 	CGameModel *m = Debris_Model(d);
 
 	CHECK(CGameModel_IsLoaded(m));
-	int i = CGameModel_FindNodoR(m, node);
+	int i = CGameModel_FindRenderNode(m, node);
 	CHECK(i > -1);
 	CGameParticles_Attach(&self->particles, m, i);
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 }
 
-void __thiscall cObjElementFXSistPart_Attach(cObjElementFXSistPart *self, cDebris *d) {
-	FX_SistPartAttach(self, d, "Dummy01");
+void __thiscall cObjElementFXParticleSystem_Attach(cObjElementFXParticleSystem *self, cDebris *d) {
+	FX_ParticleSystemAttach(self, d, "Dummy01");
 }
 
-void __thiscall cObjElementFXSistPartDuDv_Attach(cObjElementFXSistPart *self, cDebris *d) {
-	FX_SistPartAttach(self, d, "Dummy01 (+dudv_pass)");
+void __thiscall cObjElementFXParticleSystemDuDv_Attach(cObjElementFXParticleSystem *self, cDebris *d) {
+	FX_ParticleSystemAttach(self, d, "Dummy01 (+dudv_pass)");
 }
 
 /* the spark slots all free */
@@ -570,7 +570,7 @@ void __thiscall cObjElementFXItemFade_Reset(cObjElementFXItemFade *self, int arg
 	self->t = 0.0f;
 	self->mode = 0;
 	self->ent = NULL;
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	self->done = 0;
 }
 
@@ -580,7 +580,7 @@ void __thiscall cObjElementFXItemTake_Reset(cObjElementFXItemTake *self, int arg
 	self->emitT = 0.0f;
 	self->mode = 0;
 	self->ent = NULL;
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 	self->done = 0;
 }
 
@@ -1480,8 +1480,8 @@ void *__thiscall cObjElementFXSceneYakuzzi_Delete(void *self, uint32_t flags) {
 #define VT_FXITEMTAKE GAME_VFTABLE(cObjElementFXItemTake_vftable, 0x3cccfc)
 #define VT_FXMODELFADE GAME_VFTABLE(cObjElementFXModelFade_vftable, 0x3ccd44)
 #define VT_FXMODELNOISE GAME_VFTABLE(cObjElementFXModelNoise_vftable, 0x3ccd5c)
-#define VT_FXSISTPART GAME_VFTABLE(cObjElementFXSistPart_vftable, 0x3cccb4)
-#define VT_FXSISTPARTDUDV GAME_VFTABLE(cObjElementFXSistPartDuDv_vftable, 0x3ccd74)
+#define VT_FXPARTICLESYSTEM GAME_VFTABLE(cObjElementFXParticleSystem_vftable, 0x3cccb4)
+#define VT_FXPARTICLESYSTEMDUDV GAME_VFTABLE(cObjElementFXParticleSystemDuDv_vftable, 0x3ccd74)
 #define VT_FXSPARKS GAME_VFTABLE(cObjElementFXSparks_vftable, 0x3ccd2c)
 #define VT_FXTRAIL GAME_VFTABLE(cObjElementFXTrail_vftable, 0x3ccccc)
 
@@ -1545,15 +1545,15 @@ void *__fastcall cObjElementFXModelNoise_ctor(void *self) {
 	return self;
 }
 
-void *__fastcall cObjElementFXSistPart_ctor(void *self) {
-	FX_SetVtbl(self, VT_FXSISTPART);
+void *__fastcall cObjElementFXParticleSystem_ctor(void *self) {
+	FX_SetVtbl(self, VT_FXPARTICLESYSTEM);
 	FX_PartsCtor(self, 0x4);
 	FX_U16(self, 0xb4) = 1;		/* move 1, on 0 */
 	return self;
 }
 
-void *__fastcall cObjElementFXSistPartDuDv_ctor(void *self) {
-	FX_SetVtbl(self, VT_FXSISTPARTDUDV);
+void *__fastcall cObjElementFXParticleSystemDuDv_ctor(void *self) {
+	FX_SetVtbl(self, VT_FXPARTICLESYSTEMDUDV);
 	FX_PartsCtor(self, 0x4);
 	FX_U16(self, 0xb4) = 1;
 	return self;
@@ -1598,14 +1598,14 @@ void __fastcall cObjElementFXItemTake_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __fastcall cObjElementFXSistPart_dtor(void *self) {
-	*(void **)self = VT_FXSISTPART;
+void __fastcall cObjElementFXParticleSystem_dtor(void *self) {
+	*(void **)self = VT_FXPARTICLESYSTEM;
 	FX_PartsRelease(self, 0x4);
 	cObjElement_dtor(self);
 }
 
-void __fastcall cObjElementFXSistPartDuDv_dtor(void *self) {
-	*(void **)self = VT_FXSISTPARTDUDV;
+void __fastcall cObjElementFXParticleSystemDuDv_dtor(void *self) {
+	*(void **)self = VT_FXPARTICLESYSTEMDUDV;
 	FX_PartsRelease(self, 0x4);
 	cObjElement_dtor(self);
 }
@@ -1658,13 +1658,13 @@ void *__thiscall cObjElementFXModelNoise_Delete(void *self, uint32_t flags) {
 	return FX_Delete(self, flags, 0x14);
 }
 
-void *__thiscall cObjElementFXSistPart_Delete(void *self, uint32_t flags) {
-	cObjElementFXSistPart_dtor(self);
+void *__thiscall cObjElementFXParticleSystem_Delete(void *self, uint32_t flags) {
+	cObjElementFXParticleSystem_dtor(self);
 	return FX_Delete(self, flags, 0xb8);
 }
 
-void *__thiscall cObjElementFXSistPartDuDv_Delete(void *self, uint32_t flags) {
-	cObjElementFXSistPartDuDv_dtor(self);
+void *__thiscall cObjElementFXParticleSystemDuDv_Delete(void *self, uint32_t flags) {
+	cObjElementFXParticleSystemDuDv_dtor(self);
 	return FX_Delete(self, flags, 0xb8);
 }
 

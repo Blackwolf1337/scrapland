@@ -40,11 +40,11 @@ float __thiscall CGameLensFlare_GetF30(const void *self) {
 }
 
 float __thiscall CGameLensFlare_GetF18(const void *self) {
-	return LF(self)->escala;
+	return LF(self)->scale;
 }
 
 int __thiscall CGameLensFlare_GetI1c(const void *self) {
-	return LF(self)->tipo;
+	return LF(self)->type;
 }
 
 void __thiscall CGameLensFlare_SetIntensity(void *self, float v) {
@@ -60,13 +60,13 @@ void __thiscall CGameLensFlare_SetPos(void *self, vec3_t pos) {
 }
 
 void __thiscall CGameLensFlare_SetF18(void *self, float v) {
-	CLensFlare_SetEscala(LF(self), v);
+	CLensFlare_SetScale(LF(self), v);
 }
 
 void __thiscall CGameLensFlare_SetI1c(void *self, int v) {
-	CLensFlare_SetTipo(LF(self), v);
+	CLensFlare_SetType(LF(self), v);
 }
 
 void __thiscall CGameLensFlare_SetB2c(void *self, byte v) {
-	CLensFlare_SetRelativo(LF(self), v);
+	CLensFlare_SetRelative(LF(self), v);
 }

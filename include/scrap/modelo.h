@@ -1,11 +1,11 @@
 /*
- * CModelo of the engine3d (original sources Engine/Modelo.cpp and Engine/util_escena.cpp): a model, an instance of a
- * scene (CEscena, the loaded M3D or SM3 file) with its own position, animations and render state. The scenes are
+ * CModel of the engine3d (original sources Engine/Modelo.cpp and Engine/util_escena.cpp): a model, an instance of a
+ * scene (CScene, the loaded M3D or SM3 file) with its own position, animations and render state. The scenes are
  * reference counted (Refs at 0x8) and shared between the models made from the same file; util_escena.cpp keeps the
  * lists of the scenes and models it created and the array of the models to render (gModelosRender).
  */
-#ifndef SCRAP_MODELO_H
-#define SCRAP_MODELO_H
+#ifndef SCRAP_MODEL_H
+#define SCRAP_MODEL_H
 
 #include "scrap/animgrupo.h"
 #include "scrap/archio.h"
@@ -16,24 +16,24 @@
 #include "scrap/sueloportal.h"
 #include "scrap/tabla.h"
 
-#define CMODELO_VFTABLE GAME_VFTABLE(CModelo_vftable, 0x3da6a0)
-#define MAX_MODELOS_RENDER 1024
-#define g_ModelosOn GAME_GLOBAL(byte, g_ModelosOn, 0x432418)	/* RenderModels: the models are drawn */
+#define CMODELO_VFTABLE GAME_VFTABLE(CModel_vftable, 0x3da6a0)
+#define MAX_MODELS_RENDER 1024
+#define g_ModelsOn GAME_GLOBAL(byte, g_ModelsOn, 0x432418)	/* RenderModels: the models are drawn */
 
 /* creation flags of the scenes and models (crear_modelo, crear_escena) */
 enum {
-	ESCENA_COMPARTIR = 0x01,	/* share an equal scene that was loaded before */
-	ESCENA_AUTOINIC = 0x02,		/* in the model list, device objects made at once */
-	ESCENA_USARANIM = 0x04,		/* the animation of the scene file as the first one of the model */
-	ESCENA_IGN_ESCALA = 0x08,	/* shared regardless of the scale */
-	ESCENA_SM3 = 0x10,		/* from the .sm3 file when there is one */
-	ESCENA_F20 = 0x20,
+	SCENE_SHARED = 0x01,	/* share an equal scene that was loaded before */
+	SCENE_AUTOINIT = 0x02,		/* in the model list, device objects made at once */
+	SCENE_USEANIM = 0x04,		/* the animation of the scene file as the first one of the model */
+	SCENE_IGNORE_SCALE = 0x08,	/* shared regardless of the scale */
+	SCENE_SM3 = 0x10,		/* from the .sm3 file when there is one */
+	SCENE_F20 = 0x20,
 };
 
-/* an animation slot: the animation and the one it blends out of (a NodoAnimPair for the render context) */
+/* an animation slot: the animation and the one it blends out of (a NodeAnimPair for the render context) */
 typedef struct CAnimSlot {
-	CAnimGrupo *anim;		/* 0x0 */
-	CAnimGrupo *prev;		/* 0x4 */
+	CAnimGroup *anim;		/* 0x0 */
+	CAnimGroup *prev;		/* 0x4 */
 	float blend;			/* 0x8 the weight of prev, from 1 down to 0 */
 	byte subset;			/* 0xc morph target */
 	byte prevSubset;		/* 0xd */
@@ -41,19 +41,19 @@ typedef struct CAnimSlot {
 } CAnimSlot;
 SD_SIZE(CAnimSlot, 0x10);
 
-struct CModelo;
+struct CModel;
 
 /* a level of detail: the model of the level (Modelo.h) */
 typedef struct CLod {
-	struct CModelo *model;		/* 0x0 */
+	struct CModel *model;		/* 0x0 */
 	int f4;				/* 0x4 */
 } CLod;
 SD_SIZE(CLod, 8);
 
 /* called before (after 0) and after (1) the model is drawn */
-typedef void (*modeloCallback_t)(struct CModelo *m, int after, void *arg, void *arg2);
+typedef void (*modelCallback_t)(struct CModel *m, int after, void *arg, void *arg2);
 
-typedef struct CModelo {
+typedef struct CModel {
 	void *vftable;			/* 0x000 [0] the deleting destructor */
 	char *name;			/* 0x004 Cad */
 	vec3_t pos;			/* 0x008 */
@@ -62,7 +62,7 @@ typedef struct CModelo {
 	vec3_t animOfs;			/* 0x02c root offset of the animations, set for each draw */
 	vec3_t pivot;			/* 0x038 */
 	vec3_t rot2;			/* 0x044 */
-	vec3_t escala;			/* 0x050 the scale the scene was made with */
+	vec3_t scaleBase;		/* 0x050 the scale the scene was made with */
 	matrix_t local;			/* 0x05c applied after the transform */
 	byte showBox;			/* 0x09c */
 	byte animate;			/* 0x09d the animations play (and move the model) */
@@ -71,14 +71,14 @@ typedef struct CModelo {
 	byte hasMesh;			/* 0x0a0 */
 	byte hasShadow;			/* 0x0a1 */
 	byte pad_a2[2];
-	CTabla slots;			/* 0x0a4 CAnimSlot[MAX_ANIM_CHANNEL] */
-	CTabla *nodosR;			/* 0x0ac TabNodoR: CNodoR[] */
+	CTable slots;			/* 0x0a4 CAnimSlot[MAX_ANIM_CHANNEL] */
+	CTable *renderNodes;			/* 0x0ac TabNodoR: CRenderNode[] */
 	matrix_t mRender;		/* 0x0b0 the world matrix of the last draw */
-	modeloCallback_t callback;	/* 0x0f0 */
+	modelCallback_t callback;	/* 0x0f0 */
 	void *cbArg;			/* 0x0f4 */
 	void *cbArg2;			/* 0x0f8 */
-	struct CListaModelo *lista;	/* 0x0fc its entry in the model list */
-	CTabla lods;			/* 0x100 CLod[] */
+	struct CModelList *list;	/* 0x0fc its entry in the model list */
+	CTable lods;			/* 0x100 CLod[] */
 	float lodDist;			/* 0x108 */
 	int f10c;			/* 0x10c */
 	int f110;			/* 0x110 */
@@ -88,225 +88,225 @@ typedef struct CModelo {
 	byte enable;			/* 0x120 in gModelosRender */
 	byte visible;			/* 0x121 seen in the last frame */
 	byte pad_122[2];
-	CEscena *escena;		/* 0x124 */
-	struct CModelo *mainLOD;	/* 0x128 the model this one is a LOD of */
-	CAnimGrupos anims;		/* 0x12c */
+	CScene *scene;		/* 0x124 */
+	struct CModel *mainLOD;	/* 0x128 the model this one is a LOD of */
+	CAnimGroups anims;		/* 0x12c */
 	SectorVis sector;		/* 0x1dc the sector lookup of the position */
-} CModelo;
-SD_OFFSET(CModelo, local, 0x5c);
-SD_OFFSET(CModelo, showBox, 0x9c);
-SD_OFFSET(CModelo, slots, 0xa4);
-SD_OFFSET(CModelo, mRender, 0xb0);
-SD_OFFSET(CModelo, lods, 0x100);
-SD_OFFSET(CModelo, enable, 0x120);
-SD_OFFSET(CModelo, escena, 0x124);
-SD_OFFSET(CModelo, anims, 0x12c);
-SD_OFFSET(CModelo, sector, 0x1dc);
-SD_SIZE(CModelo, 0x1f0);
+} CModel;
+SD_OFFSET(CModel, local, 0x5c);
+SD_OFFSET(CModel, showBox, 0x9c);
+SD_OFFSET(CModel, slots, 0xa4);
+SD_OFFSET(CModel, mRender, 0xb0);
+SD_OFFSET(CModel, lods, 0x100);
+SD_OFFSET(CModel, enable, 0x120);
+SD_OFFSET(CModel, scene, 0x124);
+SD_OFFSET(CModel, anims, 0x12c);
+SD_OFFSET(CModel, sector, 0x1dc);
+SD_SIZE(CModel, 0x1f0);
 
 /* util_escena.cpp: an entry of the scene list */
-typedef struct CListaEscena {
-	CEscena *escena;		/* 0x00 a reference */
+typedef struct CSceneList {
+	CScene *scene;		/* 0x00 a reference */
 	char *name;			/* 0x04 Cad */
 	char *name2;			/* 0x08 Cad */
-	vec3_t escala;			/* 0x0c */
+	vec3_t scale;			/* 0x0c */
 	uint32_t flags;			/* 0x18 ESCENA_* */
-	struct CListaEscena *next;	/* 0x1c */
-} CListaEscena;
-SD_SIZE(CListaEscena, 0x20);
+	struct CSceneList *next;	/* 0x1c */
+} CSceneList;
+SD_SIZE(CSceneList, 0x20);
 
 /* an entry of the model list; the models to render point to their entry from gModelosRender */
-typedef struct CListaModelo {
-	CModelo *modelo;		/* 0x00 owned */
+typedef struct CModelList {
+	CModel *model;		/* 0x00 owned */
 	char *name;			/* 0x04 Cad */
 	char *name2;			/* 0x08 Cad */
 	uint32_t flags;			/* 0x0c ESCENA_* */
-	struct CListaModelo *next;	/* 0x10 */
-	int indiceRender;		/* 0x14 in gModelosRender, -1 none */
+	struct CModelList *next;	/* 0x10 */
+	int renderIndex;		/* 0x14 in gModelosRender, -1 none */
 	float sortKey;			/* 0x18 */
-} CListaModelo;
-SD_SIZE(CListaModelo, 0x1c);
+} CModelList;
+SD_SIZE(CModelList, 0x1c);
 
 
-typedef void(__thiscall *escenaDelete_t)(CEscena *self, int flags);
-typedef void(__thiscall *modeloDelete_t)(CModelo *self, int flags);
+typedef void(__thiscall *sceneDelete_t)(CScene *self, int flags);
+typedef void(__thiscall *modelDelete_t)(CModel *self, int flags);
 
 /* a reference to a scene dropped, the scene deleted with the last one */
-static inline void Escena_Unref(CEscena **slot) {
+static inline void Scene_Unref(CScene **slot) {
 	(*slot)->Refs--;
-	CEscena *e = *slot;
+	CScene *e = *slot;
 	if (!e->Refs && e) {
-		((escenaDelete_t)e->vftable[0])(e, 1);
+		((sceneDelete_t)e->vftable[0])(e, 1);
 	}
 	*slot = NULL;
 }
 
-#define g_ListaModelos GAME_GLOBAL(CListaModelo *, g_ListaModelos, 0x4ae778)
-#define g_ListaEscenas GAME_GLOBAL(CListaEscena *, g_ListaEscenas, 0x4ae77c)
-#define g_ModelosRender (GAME_ARRAY(CListaModelo *, g_ModelosRender, 0x4ae7c8))
-#define g_NumModelosRender GAME_GLOBAL_IN(int, g_ModelosRender, 4096, 0x4af7c8)
-#define g_MaxModelosRender GAME_GLOBAL_IN(int, g_ModelosRender, 4100, 0x4af7cc)	/* the most there were */
+#define g_ModelList GAME_GLOBAL(CModelList *, g_ModelList, 0x4ae778)
+#define g_SceneList GAME_GLOBAL(CSceneList *, g_SceneList, 0x4ae77c)
+#define g_ModelsRender (GAME_ARRAY(CModelList *, g_ModelsRender, 0x4ae7c8))
+#define g_NumModelsRender GAME_GLOBAL_IN(int, g_ModelsRender, 4096, 0x4af7c8)
+#define g_MaxModelsRender GAME_GLOBAL_IN(int, g_ModelsRender, 4100, 0x4af7cc)	/* the most there were */
 
 /* Engine/Modelo.cpp (src/game/engine3d/Engine/Modelo.c) */
-CModelo *__fastcall CModelo_ctor(CModelo *self);
-void __fastcall CModelo_dtor(CModelo *self);
-CModelo *__thiscall CModelo_Delete(CModelo *self, byte flags);
-/* tabla.h instances: free of an array of plain elements, delete[] of the LODs */
-void __fastcall Tabla_DeleteLods(CTabla *t);
+CModel *__fastcall CModel_ctor(CModel *self);
+void __fastcall CModel_dtor(CModel *self);
+CModel *__thiscall CModel_Delete(CModel *self, byte flags);
+/* table.h instances: free of an array of plain elements, delete[] of the LODs */
+void __fastcall Table_DeleteLods(CTable *t);
 CLod *__fastcall CLod_ctor(CLod *self);
 void __fastcall CLod_dtor(CLod *self);	/* CHECK(!Model) */
 /* the vector deleting destructors (flags 2: an array with the count before it, 1: free) */
 void *__thiscall CLod_DeleteVec(CLod *self, uint32_t flags);
-void *__thiscall CNodoR_DeleteVec(CNodoR *self, uint32_t flags);
-void __fastcall CModelo_Disable(CModelo *self);
-void __fastcall CModelo_Enable(CModelo *self);
-/* the device objects of the scene (with escena) */
-void __thiscall CModelo_ReleaseD3D(CModelo *self, void *dev, byte escena);
-void __thiscall CModelo_InitD3D(CModelo *self, void *dev, byte escena);
-CAnimSlot *__thiscall CModelo_GetSlot(CModelo *self, uint32_t i);
+void *__thiscall CRenderNode_DeleteVec(CRenderNode *self, uint32_t flags);
+void __fastcall CModel_Disable(CModel *self);
+void __fastcall CModel_Enable(CModel *self);
+/* the device objects of the scene (with scene) */
+void __thiscall CModel_ReleaseD3D(CModel *self, void *dev, byte scene);
+void __thiscall CModel_InitD3D(CModel *self, void *dev, byte scene);
+CAnimSlot *__thiscall CModel_GetSlot(CModel *self, uint32_t i);
 /* the speed of an animation with the global speed, 0 while the animations are frozen (the x87 product) */
-double CAnim_GetSpeed(CAnimGrupo *a);
+double CAnim_GetSpeed(CAnimGroup *a);
 /* the channels of the context from the slots, the world matrix into ctx->m; animOfs cleared */
-void __thiscall CModelo_SetupRender(CModelo *self, NodoAnimCtx *ctx);
-CNodoR *__thiscall CModelo_GetNodoR(CModelo *self, CNodo3D *nodo);	/* CHECK(0): not used */
+void __thiscall CModel_SetupRender(CModel *self, NodeAnimCtx *ctx);
+CRenderNode *__thiscall CModel_GetRenderNode(CModel *self, CNode3D *node);	/* CHECK(0): not used */
 /* the world matrix of render node inodo into m, with the animation of the slot when anim (and its visibility and
  * fov when asked for) */
-matrix_t *__thiscall CModelo_GetNodeMatrix(CModelo *self, matrix_t *m, uint32_t inodo, byte anim, uint32_t slot,
+matrix_t *__thiscall CModel_GetNodeMatrix(CModel *self, matrix_t *m, uint32_t inodo, byte anim, uint32_t slot,
 	byte *visible, float *fov);
-void __thiscall CModelo_SetNumLods(CModelo *self, int n);
-void __thiscall CModelo_SetLod(CModelo *self, uint32_t i, CModelo *model);
+void __thiscall CModel_SetNumLods(CModel *self, int n);
+void __thiscall CModel_SetLod(CModel *self, uint32_t i, CModel *model);
 /* the morph entry with the tag for the animation of the slot; 0 if there is none */
-byte __thiscall CModelo_SetMorphSubset(CModelo *self, uint32_t slot, const char *tag);
-int __fastcall CModelo_GetSector(CModelo *self);
+byte __thiscall CModel_SetMorphSubset(CModel *self, uint32_t slot, const char *tag);
+int __fastcall CModel_GetSector(CModel *self);
 /* the model drawn with its scene: the visibility (sector, box, portals), the LOD, the lights of the level */
-void __fastcall CModelo_Render(CModelo *self);
+void __fastcall CModel_Render(CModel *self);
 /* a LOD drawn instead (then 1); 0 without LODs or the main model near enough */
-byte __fastcall CModelo_UpdateLOD(CModelo *self);
+byte __fastcall CModel_UpdateLOD(CModel *self);
 /* 0 not seen, 2 only the stencil shadow, 3 seen; the value of the last frame in the passes that keep it */
-byte __thiscall CModelo_Visibility(CModelo *self, const matrix_t *m);
+byte __thiscall CModel_Visibility(CModel *self, const matrix_t *m);
 /* a new animation of the model from the animation scene, warns about a second one with the same name */
-CAnimGrupo *__thiscall CModelo_AddAnim(CModelo *self, CEscena *anim, const char *nombre);
+CAnimGroup *__thiscall CModel_AddAnim(CModel *self, CScene *anim, const char *name);
 /* events at the frames start and end (negative: the first and the last frame) of the named animation */
-byte __thiscall CModelo_AddAnimEvents(CModelo *self, const char *name, float start, float end);
-void __thiscall CModelo_AnimPlay(CModelo *self, uint32_t slot);
-int __thiscall CModelo_AnimState(CModelo *self, uint32_t slot);	/* ANIM_FIN without animation */
-void __thiscall CModelo_AnimStop(CModelo *self, uint32_t slot);
-void __thiscall CModelo_AnimPause(CModelo *self, uint32_t slot);
-void __thiscall CModelo_AnimFade(CModelo *self, float t, uint32_t slot);
-void __thiscall CModelo_MoveForward(CModelo *self, float d);
+byte __thiscall CModel_AddAnimEvents(CModel *self, const char *name, float start, float end);
+void __thiscall CModel_AnimPlay(CModel *self, uint32_t slot);
+int __thiscall CModel_AnimState(CModel *self, uint32_t slot);	/* ANIM_END without animation */
+void __thiscall CModel_AnimStop(CModel *self, uint32_t slot);
+void __thiscall CModel_AnimPause(CModel *self, uint32_t slot);
+void __thiscall CModel_AnimFade(CModel *self, float t, uint32_t slot);
+void __thiscall CModel_MoveForward(CModel *self, float d);
 /* the slots: players updated, root motion, blending and the morph subsets; iAnim must be -1 */
-void __thiscall CModelo_UpdateAnims(CModelo *self, float dt, int iAnim);
-CNodo3D *__thiscall CModelo_FindClase(CModelo *self, CNodo3D *from, uint32_t clase);
-CNodo3D *__thiscall CModelo_FindNodo(CModelo *self, const char *name);
-CNodo3D *__thiscall CModelo_FindNodoWild(CModelo *self, const char *pat);
+void __thiscall CModel_UpdateAnims(CModel *self, float dt, int iAnim);
+CNode3D *__thiscall CModel_FindClass(CModel *self, CNode3D *from, uint32_t class);
+CNode3D *__thiscall CModel_FindNode(CModel *self, const char *name);
+CNode3D *__thiscall CModel_FindNodeWild(CModel *self, const char *pat);
 /* the render node by the name of its node (wildcards with wild, case-insensitive with nocase), its index in *idx */
-CNodoR *__thiscall CModelo_FindNodoR(CModelo *self, const char *name, uint32_t *idx, byte wild, byte nocase);
+CRenderNode *__thiscall CModel_FindRenderNode(CModel *self, const char *name, uint32_t *idx, byte wild, byte nocase);
 /* animOfs from the animation of slot 0 of the context, blended with the previous one */
-void __thiscall CModelo_AnimOffset(CModelo *self, NodoAnimCtx *ctx);
-void __thiscall CModelo_GetMatrix(CModelo *self, matrix_t *m);
+void __thiscall CModel_AnimOffset(CModel *self, NodeAnimCtx *ctx);
+void __thiscall CModel_GetMatrix(CModel *self, matrix_t *m);
 /* animation idx of the group into the slot, blended from the old one */
-void __thiscall CModelo_SetAnim(CModelo *self, int idx, uint32_t slot);
-void __thiscall CModelo_SetAnimName(CModelo *self, const char *name, uint32_t slot);	/* CHECK(0): not used */
+void __thiscall CModel_SetAnim(CModel *self, int idx, uint32_t slot);
+void __thiscall CModel_SetAnimName(CModel *self, const char *name, uint32_t slot);	/* CHECK(0): not used */
 /* the scene of the model (a reference), the settings of its [Model] section */
-void __thiscall CModelo_SetEscena(CModelo *self, CEscena *esc);
-void __thiscall CModelo_SetCallback(CModelo *self, modeloCallback_t fn, void *arg, void *arg2);
+void __thiscall CModel_SetScene(CModel *self, CScene *scn);
+void __thiscall CModel_SetCallback(CModel *self, modelCallback_t fn, void *arg, void *arg2);
 /* pivot = -v, or with rel the point at v (0..1) of the scene box */
-void __thiscall CModelo_SetPivot(CModelo *self, const vec3_t *v, byte rel, byte update);
-byte __thiscall CModelo_SetPivotNodo(CModelo *self, const char *name);
-void __thiscall CModelo_SetSlotAnim(CModelo *self, uint32_t slot, CAnimGrupo *a);
-/* TabNodoR: a render node for each node of the scene, the ones with NODO_NO_TABNODOR last */
-void __thiscall CModelo_BuildNodosR(CModelo *self, int unused);
-void Modelo_Check(CModelo *m);	/* CHECK(modelo) */
-CAnimacion *__thiscall CModelo_GetSlotAnimM3D(CModelo *self, uint32_t slot);
-CAnimGrupo *__thiscall CModelo_GetAnim(CModelo *self, int i);
-int __thiscall CModelo_FindAnim(CModelo *self, const char *name);	/* -1 */
-const char *__thiscall CModelo_GetAnimName(CModelo *self, int i);
-CAnimGrupo *__thiscall CModelo_GetSlotAnim(CModelo *self, uint32_t slot);
-float __thiscall CModelo_GetSlotFrame(CModelo *self, uint32_t slot);
-/* luz.h: "omni", "foco", "direc" */
-const char *__fastcall CLuz_TipoNombre(const CLuz *l);
+void __thiscall CModel_SetPivot(CModel *self, const vec3_t *v, byte rel, byte update);
+byte __thiscall CModel_SetPivotNode(CModel *self, const char *name);
+void __thiscall CModel_SetSlotAnim(CModel *self, uint32_t slot, CAnimGroup *a);
+/* TabNodoR: a render node for each node of the scene, the ones with NODE_NO_RENDERNODE last */
+void __thiscall CModel_BuildRenderNodes(CModel *self, int unused);
+void Model_Check(CModel *m);	/* CHECK(model) */
+CAnimation *__thiscall CModel_GetSlotAnimM3D(CModel *self, uint32_t slot);
+CAnimGroup *__thiscall CModel_GetAnim(CModel *self, int i);
+int __thiscall CModel_FindAnim(CModel *self, const char *name);	/* -1 */
+const char *__thiscall CModel_GetAnimName(CModel *self, int i);
+CAnimGroup *__thiscall CModel_GetSlotAnim(CModel *self, uint32_t slot);
+float __thiscall CModel_GetSlotFrame(CModel *self, uint32_t slot);
+/* light.h: "omni", "foco", "direc" */
+const char *__fastcall CLight_TypeName(const CLight *l);
 
 /* Engine/util_escena.cpp (src/game/engine3d/Engine/UtilEscena.c) */
-CListaEscena *__thiscall CListaEscena_ctor(CListaEscena *self, CEscena *esc, const char *name, const char *name2,
-	const vec3_t *escala, uint32_t flags, CListaEscena **lista);
-CListaModelo *__thiscall CListaModelo_ctor(CListaModelo *self, CModelo *m, const char *name, const char *name2,
-	uint32_t flags, CListaModelo **lista);
-void __fastcall CListaModelo_dtor(CListaModelo *self);	/* deletes the model */
+CSceneList *__thiscall CSceneList_ctor(CSceneList *self, CScene *scn, const char *name, const char *name2,
+	const vec3_t *scale, uint32_t flags, CSceneList **list);
+CModelList *__thiscall CModelList_ctor(CModelList *self, CModel *m, const char *name, const char *name2,
+	uint32_t flags, CModelList **list);
+void __fastcall CModelList_dtor(CModelList *self);	/* deletes the model */
 /* into gModelosRender while enabled, out of it while not */
-void Modelo_UpdateRender(CModelo *m);
+void Model_UpdateRender(CModel *m);
 /* the list entry of the scene freed when only it and the caller hold the scene (force: also shared ones) */
-byte Escena_Release(CEscena *esc, byte force);
+byte SceneList_Release(CScene *scn, byte force);
 /* the model deleted, with its list entry and its scene entry; *pm = NULL */
-void Modelo_Destroy(CModelo **pm, byte force);
-void Modelo_SetEnable(CModelo *m, byte on);
-void Modelos_UpdateAnims(float dt);
-void UtilEscena_FreeAll(void);
-void UtilEscena_ReleaseD3D(void);
-void UtilEscena_InitD3D(void);
+void Model_Destroy(CModel **pm, byte force);
+void Model_SetEnable(CModel *m, byte on);
+void Models_UpdateAnims(float dt);
+void UtilScene_FreeAll(void);
+void UtilScene_ReleaseD3D(void);
+void UtilScene_InitD3D(void);
 typedef void (*utilPrintf_t)(const char *fmt, ...);
-void UtilEscena_Dump(utilPrintf_t fn);	/* E3D_DebugPrintf for NULL */
-void Escenas_Msg(int msg, int a, int b, int c, int d);	/* to the scenes with ESCENA_AUTOINIC */
-CEscena *Escena_Next(CEscena *esc);	/* the first one for NULL */
+void UtilScene_Dump(utilPrintf_t fn);	/* E3D_DebugPrintf for NULL */
+void Scenes_Msg(int msg, int a, int b, int c, int d);	/* to the scenes with SCENE_AUTOINIT */
+CScene *Scene_Next(CScene *scn);	/* the first one for NULL */
 /* the models of gModelosRender sorted by distance and drawn */
-void Modelos_Render(void);
-CListaEscena *__thiscall CListaEscena_Find(CListaEscena *self, const char *name, const char *name2,
-	const vec3_t *escala, uint32_t flags, uint32_t mask);
-CListaModelo *__thiscall CListaModelo_Find(CListaModelo *self, const char *name, const char *name2, uint32_t flags,
+void Models_Render(void);
+CSceneList *__thiscall CSceneList_Find(CSceneList *self, const char *name, const char *name2,
+	const vec3_t *scale, uint32_t flags, uint32_t mask);
+CModelList *__thiscall CModelList_Find(CModelList *self, const char *name, const char *name2, uint32_t flags,
 	uint32_t mask);
-CModelo *Modelo_FindName(const char *name);
-int Cad_EqualNoCase(const char *a, const char *b);	/* NULL equals "" */
-void Crear_Animacion(CModelo *m, const char *name, uint32_t flags);
-CEscena *Crear_Escena(byte *shared, const char *name, const char *name2, const vec3_t *escala, float umbral,
+CModel *Model_FindName(const char *name);
+int String_EqualNoCase(const char *a, const char *b);	/* NULL equals "" */
+void Create_Animation(CModel *m, const char *name, uint32_t flags);
+CScene *Create_Scene(byte *shared, const char *name, const char *name2, const vec3_t *scale, float threshold,
 	uint32_t flags);
-CModelo *Crear_Modelo(const char *name, const char *name2, const vec3_t *escala, float umbral, uint32_t flags);
-CModelo *Crear_Modelo3(const char *name, const char *name2, const vec3_t *escala, uint32_t flags);
+CModel *Create_Model(const char *name, const char *name2, const vec3_t *scale, float threshold, uint32_t flags);
+CModel *Create_Model3(const char *name, const char *name2, const vec3_t *scale, uint32_t flags);
 /* EfecMalla.c (efec_malla.cpp): a model registered as a screen or as a model of the mesh view */
-void EfecMalla_AddPantalla(CModelo *m);
-void EfecMalla_AddModelo(CModelo *m);
-/* the mesh view drawn (once per frame by CMotorApp_Render) */
-void EfecMalla_Render(void);
-CModelo *Crear_ModeloLOD(const char *name, const char *name2, const vec3_t *escala, CModelo *main, uint32_t flags);
-CModelo *Crear_Modelo2(const char *name, const char *name2, uint32_t flags);
-CModelo *Crear_Modelo4(const char *name, const char *name2, float umbral, uint32_t flags);
-int ListaModelo_CompareKey(const void *a, const void *b);	/* qsort, larger sortKey first */
+void MeshEffect_AddScreen(CModel *m);
+void MeshEffect_AddModel(CModel *m);
+/* the mesh view drawn (once per frame by CEngineApp_Render) */
+void MeshEffect_Render(void);
+CModel *Create_ModelLOD(const char *name, const char *name2, const vec3_t *scale, CModel *main, uint32_t flags);
+CModel *Create_Model2(const char *name, const char *name2, uint32_t flags);
+CModel *Create_Model4(const char *name, const char *name2, float threshold, uint32_t flags);
+int ModelList_CompareKey(const void *a, const void *b);	/* qsort, larger sortKey first */
 
 /* Engine/ModelFX.cpp (src/game/engine3d/Engine/ModelFX.c): the render effects of a model, f10c the effect (1..8,
  * MODEL_EFFECT_LAST), the float in f110 its parameter. Drawn in the passes 0, 3 and 13 as several draws of the scene
- * with g_MatFX1 or g_MatForzado; 6..8 need the pixel shaders. */
-struct CGrafico2D;
+ * with g_MatFX1 or g_MatForced; 6..8 need the pixel shaders. */
+struct CGraphic2D;
 #define g_FXMat (GAME_GLOBAL(CMaterial, g_FXMat, 0x4e1c68))	/* the colors and blends of the effects */
-#define g_FXGrfNoise1 (GAME_GLOBAL(struct CGrafico2D, g_FXGrfNoise1, 0x4e1c20))	/* bmp/noise.tga */
-#define g_FXGrfStatic (GAME_GLOBAL(struct CGrafico2D, g_FXGrfStatic, 0x4e1d18))	/* bmp/noise_static.alpha.tga, the scan lines */
-#define g_FXGrfNoise2 (GAME_GLOBAL(struct CGrafico2D, g_FXGrfNoise2, 0x4e1d60))	/* bmp/noise2.tga */
+#define g_FXGraphicNoise1 (GAME_GLOBAL(struct CGraphic2D, g_FXGraphicNoise1, 0x4e1c20))	/* bmp/noise.tga */
+#define g_FXGraphicStatic (GAME_GLOBAL(struct CGraphic2D, g_FXGraphicStatic, 0x4e1d18))	/* bmp/noise_static.alpha.tga, the scan lines */
+#define g_FXGraphicNoise2 (GAME_GLOBAL(struct CGraphic2D, g_FXGraphicNoise2, 0x4e1d60))	/* bmp/noise2.tga */
 #define g_MatElectric GAME_GLOBAL(CMaterial *, g_MatElectric, 0x4e1c64)	/* fx_Electric (+shader:Electric) */
 #define g_MatFire GAME_GLOBAL(CMaterial *, g_MatFire, 0x4e1d5c)		/* fx_Fire (+shader:Fire) */
 #define g_MatNoise GAME_GLOBAL(CMaterial *, g_MatNoise, 0x4e1da4)		/* fx_Noise (+shader:Noise) */
-void __thiscall ModelFX_Render(CModelo *self, NodoAnimCtx *ctx);
+void __thiscall ModelFX_Render(CModel *self, NodeAnimCtx *ctx);
 /* 1: a TV picture with static, 2 and 3: faded out (2 over a gray pass), 4: 1 in wire frame, 5: green glow, 6:
  * electric, 7: fire, 8: noise */
-void ModelFX_Static(CModelo *m, NodoAnimCtx *ctx);
-void ModelFX_FadeLit(CModelo *m, NodoAnimCtx *ctx);
-void ModelFX_Fade(CModelo *m, NodoAnimCtx *ctx);
-void ModelFX_Wire(CModelo *m, NodoAnimCtx *ctx);
-void ModelFX_Glow(CModelo *m, NodoAnimCtx *ctx);
-void ModelFX_Electric(CModelo *m, NodoAnimCtx *ctx);
-void ModelFX_Fire(CModelo *m, NodoAnimCtx *ctx);
-void ModelFX_Noise(CModelo *m, NodoAnimCtx *ctx);
+void ModelFX_Static(CModel *m, NodeAnimCtx *ctx);
+void ModelFX_FadeLit(CModel *m, NodeAnimCtx *ctx);
+void ModelFX_Fade(CModel *m, NodeAnimCtx *ctx);
+void ModelFX_Wire(CModel *m, NodeAnimCtx *ctx);
+void ModelFX_Glow(CModel *m, NodeAnimCtx *ctx);
+void ModelFX_Electric(CModel *m, NodeAnimCtx *ctx);
+void ModelFX_Fire(CModel *m, NodeAnimCtx *ctx);
+void ModelFX_Noise(CModel *m, NodeAnimCtx *ctx);
 /* the gray pass of 2 and 8, and a variant of 1 no effect uses */
-void ModelFX_Base(CModelo *m, NodoAnimCtx *ctx);
-void ModelFX_Static2(CModelo *m, NodoAnimCtx *ctx);
+void ModelFX_Base(CModel *m, NodeAnimCtx *ctx);
+void ModelFX_Static2(CModel *m, NodeAnimCtx *ctx);
 /* the overlays and the shader materials */
 void ModelFX_InitD3D(void);
 
 /* other modules (src/imports.inc) */
 float World_TimeScale(void);						/* rva 0x20aea0 */
-void __fastcall CNodoR_dtor(CNodoR *self);				/* rva 0x23f450 */
+void __fastcall CRenderNode_dtor(CRenderNode *self);				/* rva 0x23f450 */
 #define CNODOR_DTOR 0x23f450
-void __thiscall CNodoR_SetNodo(CNodoR *self, CNodo3D *nodo);		/* rva 0x23f890 */
+void __thiscall CRenderNode_SetNode(CRenderNode *self, CNode3D *node);		/* rva 0x23f890 */
 /* rva 0x23fac0, the matrix identity, the channels cleared; the model and its render nodes at 0xa0 and 0xa4 */
-void __thiscall RenderCtx_Init(NodoAnimCtx *self, CModelo *m, const vec3_t *scale);
-void __thiscall RenderCtx_SetCanal(NodoAnimChannel *self, CAnimSlot *slot);	/* rva 0x23fb10 */
+void __thiscall RenderCtx_Init(NodeAnimCtx *self, CModel *m, const vec3_t *scale);
+void __thiscall RenderCtx_SetChannel(NodeAnimChannel *self, CAnimSlot *slot);	/* rva 0x23fb10 */
 /* the play state of an animation group */
-CEscena *Escena_Load(const char *name, int arg, const char *name2);	/* rva 0x2c2d60 */
+CScene *Scene_Load(const char *name, int arg, const char *name2);	/* rva 0x2c2d60 */
 
 #endif

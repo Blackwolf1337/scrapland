@@ -180,11 +180,11 @@ cEmbeddedFXMeetingPoint *__fastcall cEmbeddedFXMeetingPoint_ctor(cEmbeddedFXMeet
 	return self;
 }
 
-cEmbeddedFXMoto *__fastcall cEmbeddedFXMoto_ctor(cEmbeddedFXMoto *self) {
-	EFXM_SetVtbl(self, VT_EFX_MOTO);
-	EFXM_ParticlesCtor(self->engine, FXMOTO_ENGINES);
-	EFXM_ParticlesCtor(self->down, FXMOTO_DOWN);
-	EFXM_ParticlesCtor(self->tube, FXMOTO_TUBES);
+cEmbeddedFXBike *__fastcall cEmbeddedFXBike_ctor(cEmbeddedFXBike *self) {
+	EFXM_SetVtbl(self, VT_EFX_BIKE);
+	EFXM_ParticlesCtor(self->engine, FXBIKE_ENGINES);
+	EFXM_ParticlesCtor(self->down, FXBIKE_DOWN);
+	EFXM_ParticlesCtor(self->tube, FXBIKE_TUBES);
 	self->base.ent = NULL;
 	return self;
 }
@@ -297,11 +297,11 @@ void __fastcall cEmbeddedFXMeetingPoint_dtor(cEmbeddedFXMeetingPoint *self) {
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void __fastcall cEmbeddedFXMoto_dtor(cEmbeddedFXMoto *self) {
-	self->base.vftable = VT_EFX_MOTO;
-	EFXM_ParticlesDtor(self->tube, FXMOTO_TUBES);
-	EFXM_ParticlesDtor(self->down, FXMOTO_DOWN);
-	EFXM_ParticlesDtor(self->engine, FXMOTO_ENGINES);
+void __fastcall cEmbeddedFXBike_dtor(cEmbeddedFXBike *self) {
+	self->base.vftable = VT_EFX_BIKE;
+	EFXM_ParticlesDtor(self->tube, FXBIKE_TUBES);
+	EFXM_ParticlesDtor(self->down, FXBIKE_DOWN);
+	EFXM_ParticlesDtor(self->engine, FXBIKE_ENGINES);
 	cEmbeddedFX_dtor(&self->base);
 }
 
@@ -384,8 +384,8 @@ cEmbeddedFX *__thiscall cEmbeddedFXMeetingPoint_Delete(cEmbeddedFXMeetingPoint *
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *__thiscall cEmbeddedFXMoto_Delete(cEmbeddedFXMoto *self, byte flags) {
-	cEmbeddedFXMoto_dtor(self);
+cEmbeddedFX *__thiscall cEmbeddedFXBike_Delete(cEmbeddedFXBike *self, byte flags) {
+	cEmbeddedFXBike_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
@@ -486,7 +486,7 @@ byte __fastcall cEmbeddedFXMatrix_Reset(cEmbeddedFXMatrix *self) {
 	return 1;
 }
 
-byte __fastcall cEmbeddedFXMoto_Reset(cEmbeddedFXMoto *self) {
+byte __fastcall cEmbeddedFXBike_Reset(cEmbeddedFXBike *self) {
 	self->t[0] = 0.0f;
 	self->t[1] = 0.0f;
 	self->t[2] = 0.0f;
@@ -557,7 +557,7 @@ void __fastcall cEmbeddedFXDataPack_Release(cEmbeddedFXDataPack *self) {
 
 void __fastcall cEmbeddedFXExtraLife_Release(cEmbeddedFXExtraLife *self) {
 	self->dummyGlow = -1;
-	self->dummyBarra = -1;
+	self->dummyBar = -1;
 	CGameParticles_Release(&self->glow);
 }
 
@@ -568,14 +568,14 @@ void __fastcall cEmbeddedFXMatrix_Release(cEmbeddedFXMatrix *self) {
 	CGameParticles_Release(&self->flares);
 }
 
-void __fastcall cEmbeddedFXMoto_Release(cEmbeddedFXMoto *self) {
-	for (int i = 0; i < FXMOTO_ENGINES; i++) {
+void __fastcall cEmbeddedFXBike_Release(cEmbeddedFXBike *self) {
+	for (int i = 0; i < FXBIKE_ENGINES; i++) {
 		CGameParticles_Release(&self->engine[i]);
 	}
-	for (int i = 0; i < FXMOTO_DOWN; i++) {
+	for (int i = 0; i < FXBIKE_DOWN; i++) {
 		CGameParticles_Release(&self->down[i]);
 	}
-	for (int i = 0; i < FXMOTO_TUBES; i++) {
+	for (int i = 0; i < FXBIKE_TUBES; i++) {
 		CGameParticles_Release(&self->tube[i]);
 	}
 	self->on = 0;
@@ -710,7 +710,7 @@ void __fastcall cEmbeddedFXDataPack_On(cEmbeddedFXDataPack *self) {
 	self->on = 1;
 }
 
-void __thiscall cEmbeddedFXMoto_SetF7d4(cEmbeddedFXMoto *self, float a, float b) {
+void __thiscall cEmbeddedFXBike_SetF7d4(cEmbeddedFXBike *self, float a, float b) {
 	self->throttle = a;
 	self->on = 1;
 	self->boost = b;
@@ -749,13 +749,13 @@ void __thiscall cEmbeddedFXMeetingPoint_SetCountDown(cEmbeddedFXMeetingPoint *se
 }
 
 /* the position of the first engine node, animated */
-vec3_t *__thiscall cEmbeddedFXMoto_EnginePos(cEmbeddedFXMoto *self, vec3_t *out) {
+vec3_t *__thiscall cEmbeddedFXBike_EnginePos(cEmbeddedFXBike *self, vec3_t *out) {
 	matrix_t m;
 
 	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
 	CHECK(CGameModel_IsLoaded(model));
 	CHECK(self->nodeEngine[0] > -1);
-	CGameModel_NodoMatrix(model, &m, self->nodeEngine[0], 0, NULL, 0);
+	CGameModel_NodeMatrix(model, &m, self->nodeEngine[0], 0, NULL, 0);
 	out->x = m.m[12];
 	out->y = m.m[13];
 	out->z = m.m[14];
@@ -776,7 +776,7 @@ static CGameModel *EFXM_Owner(cEmbeddedFX *self, cEntity *e) {
 
 /* the node index into *dummy and CHECKed */
 static int EFXM_Node(int *dummy, CGameModel *model, const char *name) {
-	*dummy = CGameModel_FindNodoR(model, name);
+	*dummy = CGameModel_FindRenderNode(model, name);
 	CHECK(*dummy > -1);
 	return *dummy;
 }
@@ -788,11 +788,11 @@ static void EFXM_Attach(CGameParticles *p, int *dummy, CGameModel *model, const 
 	if (dummy) {
 		i = EFXM_Node(dummy, model, name);
 	} else {
-		i = CGameModel_FindNodoR(model, name);
+		i = CGameModel_FindRenderNode(model, name);
 		CHECK(i > -1);
 	}
 	CGameParticles_Attach(p, model, i);
-	CHECK(p->SistPart);
+	CHECK(p->ParticleSystem);
 }
 
 void __thiscall cEmbeddedFXAmplifier_Init(cEmbeddedFXAmplifier *self, cEntity *e) {
@@ -882,7 +882,7 @@ void __thiscall cEmbeddedFXDataPack_Init(cEmbeddedFXDataPack *self, cEntity *e) 
 	vec3_t pos;
 
 	EFXM_Node(&self->dummyRoot, model, "DC_Root");
-	self->rootPos = *CGameModel_NodoPos(model, &pos, self->dummyRoot, 0);
+	self->rootPos = *CGameModel_NodePos(model, &pos, self->dummyRoot, 0);
 	EFXM_Attach(&self->glow, &self->dummyGlow, model, "DOB_DataPack_Glow");
 	EFXM_Attach(&self->codec, &self->dummyCodec, model, "DOB_DataPack_Letras");
 	EFXM_Attach(&self->laser, &self->dummyLaser, model, "DF_Laser");
@@ -893,7 +893,7 @@ void __thiscall cEmbeddedFXExtraLife_Init(cEmbeddedFXExtraLife *self, cEntity *e
 	CGameModel *model = EFXM_Owner(&self->base, e);
 
 	EFXM_Attach(&self->glow, &self->dummyGlow, model, "DOB_ExtraLife_Glow");
-	EFXM_Node(&self->dummyBarra, model, "OB_ExtraLife_Barra_01");
+	EFXM_Node(&self->dummyBar, model, "OB_ExtraLife_Barra_01");
 	EFXM_Node(&self->dummyRoot, model, "DC_Root");
 }
 
@@ -937,22 +937,22 @@ void __thiscall cEmbeddedFXMeetingPoint_Init(cEmbeddedFXMeetingPoint *self, cEnt
 	EFXM_Attach(&self->countDown, NULL, model, "DF_Light_02");
 }
 
-void __thiscall cEmbeddedFXMoto_Init(cEmbeddedFXMoto *self, cEntity *e) {
+void __thiscall cEmbeddedFXBike_Init(cEmbeddedFXBike *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 	char name[128];
 
-	for (int i = 0; i < FXMOTO_ENGINES; i++) {
+	for (int i = 0; i < FXBIKE_ENGINES; i++) {
 		Str_PrintfQuiet(name, 0xff, "DF_MotorTrust_%02d", i + 1);
-		self->nodeEngine[i] = CGameModel_FindNodoR(model, name);
+		self->nodeEngine[i] = CGameModel_FindRenderNode(model, name);
 		CHECK(self->nodeEngine[0] > -1);
 		CGameParticles_Attach(&self->engine[i], model, self->nodeEngine[i]);
-		CHECK(self->engine[i].SistPart);
+		CHECK(self->engine[i].ParticleSystem);
 	}
-	for (int i = 0; i < FXMOTO_DOWN; i++) {
+	for (int i = 0; i < FXBIKE_DOWN; i++) {
 		Str_PrintfQuiet(name, 0xff, "DF_MotorTrust_%02d", i + 4);
 		EFXM_Attach(&self->down[i], NULL, model, name);
 	}
-	for (int i = 0; i < FXMOTO_TUBES; i++) {
+	for (int i = 0; i < FXBIKE_TUBES; i++) {
 		Str_PrintfQuiet(name, 0xff, "DF_EscapeTube_%02d", i + 1);
 		EFXM_Attach(&self->tube[i], NULL, model, name);
 	}
@@ -1030,7 +1030,7 @@ void EmbeddedFXMisc_Create(cEntity *obj, const char *model, cEmbeddedFX **fx) {
 			cEmbeddedFXFlag_SetColor(f, "YellowS");
 		}
 	} else if (EFXM_Is(model, "Moto.M3D")) {
-		cEmbeddedFXMoto_Init(EFXM_NEW(cEmbeddedFXMoto), obj);
+		cEmbeddedFXBike_Init(EFXM_NEW(cEmbeddedFXBike), obj);
 	} else if (EFXM_Is(model, "BossShield.M3D")) {
 		cEmbeddedFXBossShield_Init(EFXM_NEW(cEmbeddedFXBossShield), obj);
 	} else if (EFXM_Is(model, "Conversor.m3d")) {
@@ -1391,7 +1391,7 @@ void __thiscall cEmbeddedFXAmplifier_Update(cEmbeddedFXAmplifier *self, float dt
 	if (!model) {
 		return;
 	}
-	CGameModel_NodoMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
+	CGameModel_NodeMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
 	pos.x = m.m[12];
 	pos.y = m.m[13];
 	pos.z = m.m[14];
@@ -1430,7 +1430,7 @@ void __thiscall cEmbeddedFXDTritusDesktop_Update(cEmbeddedFXDTritusDesktop *self
 	anim = -1;
 	CGameModel_ChanInfo(model, 0, NULL, &anim);
 	if (anim > -1 && !strcmp(CGameModel_AnimName(model, anim), "DTritusDesktop_Calling")) {
-		CGameModel_NodoMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
+		CGameModel_NodeMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
 		vec3_t off = { -60.0f, 35.0f, -35.0f };
 		vec3_t tmp;
 		Vec3_Rotate(&tmp, &off, CGameModel_GetRot(model, &rot));
@@ -1651,7 +1651,7 @@ void __thiscall cEmbeddedFXExtraLife_Update(cEmbeddedFXExtraLife *self, float dt
 	}
 	CGameModel_GetPos(model, &pos);
 	CGameModel_GetRot(model, &rot);
-	CGameModel_NodoMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
+	CGameModel_NodeMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
 	float rx = m.m[12];
 	float ry = m.m[13];
 	float rz = m.m[14];
@@ -1659,7 +1659,7 @@ void __thiscall cEmbeddedFXExtraLife_Update(cEmbeddedFXExtraLife *self, float dt
 	vec3_t down = { 0.0f, -1.0f, 0.0f };
 	Vec3_Rotate(&tmp, &down, &ang);
 	CGameParticles_NumParticles(p);
-	matrix_t *bar = CGameModel_NodoMatrix(model, &mb, self->dummyBarra, 1, NULL, 0);
+	matrix_t *bar = CGameModel_NodeMatrix(model, &mb, self->dummyBar, 1, NULL, 0);
 	float dy = pos.y - bar->m[13];
 	float dx = pos.x - bar->m[12];
 	float dz = pos.z - bar->m[14];
@@ -1746,7 +1746,7 @@ void __thiscall cEmbeddedFXMatrix_Update(cEmbeddedFXMatrix *self, float dt) {
 	self->visible = vis;
 	vec3_t down = { 0.0f, -1.0f, 0.0f };
 	Vec3_Rotate(&d, &down, CGameModel_GetRot(model, &rot));
-	CGameModel_NodoMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
+	CGameModel_NodeMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
 	Matrix_GetEuler(&m, &ang);
 	if (self->isMatrix) {
 		ang.z = ang.z + 1.5707964f;
@@ -1907,7 +1907,7 @@ void __thiscall cEmbeddedFXTreasure_Update(cEmbeddedFXTreasure *self, float dt) 
 		}
 	}
 	CGameTrail_Reset(&self->trail);
-	CGameModel_NodoMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
+	CGameModel_NodeMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
 	float rx = m.m[12];
 	float ry = m.m[13];
 	float rz = m.m[14];
@@ -2166,7 +2166,7 @@ void __thiscall cEmbeddedFXBattery_Update(cEmbeddedFXBattery *self, float dt) {
 	self->visible = vis;
 	vec3_t down = { 0.0f, -1.0f, 0.0f };
 	Vec3_Rotate(&d, &down, CGameModel_GetRot(model, &rot));
-	CGameModel_NodoMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
+	CGameModel_NodeMatrix(model, &m, self->dummyRoot, 1, NULL, 0);
 	float rx = m.m[12];
 	float ry = m.m[13];
 	float rz = m.m[14];
@@ -2317,7 +2317,7 @@ void __thiscall cEmbeddedFXBattery_Update(cEmbeddedFXBattery *self, float dt) {
 /* ---- vf03: the Update of the Moto ---- */
 
 /* the color ramps of the flames and the smoke of the engines (9 colors each) */
-#define g_RampMoto (GAME_ARRAY(uint32_t, g_RampMoto, 0x4284c0))
+#define g_RampBike (GAME_ARRAY(uint32_t, g_RampBike, 0x4284c0))
 
 /* the 6 flames along the way of an engine: the distance, the add of the size, the alpha (rand % mod - sub) and the
  * color of the main engine and of the two others */
@@ -2326,7 +2326,7 @@ static const struct {
 	double add;
 	int mod, sub;
 	uint32_t color[2];
-} efxm_motoFlames[6] = {
+} efxm_bikeFlames[6] = {
 	{ 50.0f, 350.0, 16, 0x22, { 0x2020ff, 0xff20ff } },
 	{ 60.0f, 210.0, 0x30, 0x48, { 0xdeffff, 0xffdeff } },
 	{ 70.0f, 180.0, 0x2a, 0x52, { 0xd4ffff, 0xffd4ff } },
@@ -2336,7 +2336,7 @@ static const struct {
 };
 
 /* the velocities of a puff: between v1 and v2 turned by the angles of the engine */
-static void EFXM_MotoVel(CGameParticles *p, float spread, float z1, float z2, const vec3_t *ang, float scale) {
+static void EFXM_BikeVel(CGameParticles *p, float spread, float z1, float z2, const vec3_t *ang, float scale) {
 	vec3_t a = { -spread, -spread, z1 }, b = { spread, spread, z2 }, buf;
 
 	const vec3_t *v = Vec3_Rotate(&buf, &a, ang);
@@ -2354,7 +2354,7 @@ static void EFXM_MotoVel(CGameParticles *p, float spread, float z1, float z2, co
  * the three engines (the main one at DF_MotorTrust_01, the others beside it) and every 0.02 s a puff of smoke at each,
  * with more puffs filling the way from where the engine was at the last one.
  */
-void __thiscall cEmbeddedFXMoto_Update(cEmbeddedFXMoto *self, float dt) {
+void __thiscall cEmbeddedFXBike_Update(cEmbeddedFXBike *self, float dt) {
 	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
 	matrix_t m;
 	vec3_t ang, dir, buf;
@@ -2365,7 +2365,7 @@ void __thiscall cEmbeddedFXMoto_Update(cEmbeddedFXMoto *self, float dt) {
 	}
 	float a = self->throttle;
 	float b = self->boost;
-	for (int k = 0; k < FXMOTO_DOWN; k++) {
+	for (int k = 0; k < FXBIKE_DOWN; k++) {
 		int n = 0;
 		for (int gx = 0; gx < 4; gx++) {
 			float x = (float)(gx - 2) * 10.0f + 8.0f;
@@ -2378,12 +2378,12 @@ void __thiscall cEmbeddedFXMoto_Update(cEmbeddedFXMoto *self, float dt) {
 			}
 		}
 	}
-	CGameModel_NodoMatrix(model, &m, self->nodeEngine[0], 0, NULL, 0);
+	CGameModel_NodeMatrix(model, &m, self->nodeEngine[0], 0, NULL, 0);
 	vec3_t org = { m.m[12], m.m[13], m.m[14] };
 	Matrix_GetEuler(&m, &ang);
 	const vec3_t fwd = { 0.0f, 0.0f, 1.0f };
 	Vec3_Rotate(&dir, &fwd, &ang);
-	for (int i = 0; i < FXMOTO_ENGINES; i++) {
+	for (int i = 0; i < FXBIKE_ENGINES; i++) {
 		vec3_t pos;
 		float scale;
 		if (i == 0) {
@@ -2401,13 +2401,13 @@ void __thiscall cEmbeddedFXMoto_Update(cEmbeddedFXMoto *self, float dt) {
 		p->birthRate = 0;
 		float k = (self->throttle * 0.5f + 0.5f) * scale;
 		for (int j = 0; j < 6; j++) {
-			float size = FX_Rand(20.0, efxm_motoFlames[j].add);
-			float d = efxm_motoFlames[j].dist;
+			float size = FX_Rand(20.0, efxm_bikeFlames[j].add);
+			float d = efxm_bikeFlames[j].dist;
 			float x = dir.x * d + pos.x;
 			float y = dir.y * d + pos.y;
 			float z = dir.z * d + pos.z;
-			uint32_t c = ((uint32_t)(crt_rand() % efxm_motoFlames[j].mod - efxm_motoFlames[j].sub) << 24)
-				| efxm_motoFlames[j].color[i != 0];
+			uint32_t c = ((uint32_t)(crt_rand() % efxm_bikeFlames[j].mod - efxm_bikeFlames[j].sub) << 24)
+				| efxm_bikeFlames[j].color[i != 0];
 			CGameParticles_SetParticle(p, j, x, y, z, size * k, c, 1, 0.0f);
 		}
 		float t = self->t[i] + dt;
@@ -2435,7 +2435,7 @@ void __thiscall cEmbeddedFXMoto_Update(cEmbeddedFXMoto *self, float dt) {
 		p->sizeEnd = (FX_Rand(10.0, 22.0) + w) * scale;
 		float z1 = sb * 600.0f + 300.0f;
 		float z2 = sb * 900.0f + 600.0f;
-		EFXM_MotoVel(p, 10.0f, z1, z2, &ang, scale);
+		EFXM_BikeVel(p, 10.0f, z1, z2, &ang, scale);
 		p->spriteEnd = 0xc;
 		p->spriteIni = (crt_rand() & 1) + 9;
 		p->rotIni = FX_Rand(6.2831854820251465, 0.0);
@@ -2443,14 +2443,14 @@ void __thiscall cEmbeddedFXMoto_Update(cEmbeddedFXMoto *self, float dt) {
 		float spin = a + 0.2f;
 		p->rotVar = FX_Rand(1.5707963705062866, -0.7853981852531433) * spin;
 		CGameParticles_SetColorRampOn(p, 1);
-		CGameParticles_SetColorRamp(p, g_RampMoto + (i == 0 ? 9 : 27));
+		CGameParticles_SetColorRamp(p, g_RampBike + (i == 0 ? 9 : 27));
 		p->lifeTime = (FX_Rand(0.009999999776482582, 0.009999999776482582) * a + 0.16f) * scale;
 		CGameParticles_Apply(p);
 		float h = self->t[i] * 0.5f;
 		CGameParticles_EmitDt(p, 1, 1, FX_Rand((double)h, 0.0));
 		float acc = 0.0f;
 		if (self->t[i] > 0.0f) {
-			uint32_t *ramp = g_RampMoto + (i != 0 ? 18 : 0);
+			uint32_t *ramp = g_RampBike + (i != 0 ? 18 : 0);
 			do {
 				float f = FX_Rand(1.0, 0.0);
 				float ox = px * f;
@@ -2464,7 +2464,7 @@ void __thiscall cEmbeddedFXMoto_Update(cEmbeddedFXMoto *self, float dt) {
 				p->initPosMax = p->initPosMin;
 				p->sizeIni = (FX_Rand(10.0, 45.0) + q) * scale;
 				p->sizeEnd = (FX_Rand(10.0, 12.0) + w) * scale;
-				EFXM_MotoVel(p, 30.0f, z1, z2, &ang, scale);
+				EFXM_BikeVel(p, 30.0f, z1, z2, &ang, scale);
 				p->spriteEnd = 0xc;
 				p->spriteIni = (crt_rand() & 1) + 9;
 				p->rotIni = FX_Rand(6.2831854820251465, 0.0);

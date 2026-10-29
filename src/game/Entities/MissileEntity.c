@@ -778,13 +778,13 @@ void __thiscall cMissileEntity_SetModel(cMissileEntity *self, const char *file, 
 	scale.z = sz;
 	CGameModel_LoadScaled(&self->model, file, &scale);
 	Str_Copy(self->swarmSys, file, 0x80);
-	CGameModel_SetPivotNodo(&self->model, "DC_Root");
-	int il = CGameModel_FindNodoR(&self->model, "DC_Ship_Link");
-	int ir = CGameModel_FindNodoR(&self->model, "DC_Root");
+	CGameModel_SetPivotNode(&self->model, "DC_Root");
+	int il = CGameModel_FindRenderNode(&self->model, "DC_Ship_Link");
+	int ir = CGameModel_FindRenderNode(&self->model, "DC_Root");
 	if (il != -1 && ir != -1) {
 		/* the link node goes to the position */
-		const vec3_t *r = CGameModel_NodoPos(&self->model, &root, (uint32_t)ir, 0);
-		const vec3_t *l = CGameModel_NodoPos(&self->model, &link, (uint32_t)il, 0);
+		const vec3_t *r = CGameModel_NodePos(&self->model, &root, (uint32_t)ir, 0);
+		const vec3_t *l = CGameModel_NodePos(&self->model, &link, (uint32_t)il, 0);
 		scale.y = l->y - r->y;
 		scale.z = l->z - r->z;
 		scale.x = l->x - r->x;
@@ -796,9 +796,9 @@ void __thiscall cMissileEntity_SetModel(cMissileEntity *self, const char *file, 
 	}
 	CGameModel_SetPos(&self->model, &self->base.pos);
 	CGameModel_SetRot(&self->model, &self->ang);
-	int ic = CGameModel_FindNodoR(&self->model, "DC_Camera");
+	int ic = CGameModel_FindRenderNode(&self->model, "DC_Camera");
 	if (ic != -1) {
-		WLife(self)->obj.camOff = *CGameModel_NodoPos(&self->model, &cam, (uint32_t)ic, 0);
+		WLife(self)->obj.camOff = *CGameModel_NodePos(&self->model, &cam, (uint32_t)ic, 0);
 	}
 	cMissileEntity_SetHideMain(self, self->hideMain);
 }

@@ -23,7 +23,7 @@ def vheset(a, v):
 def vhepoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 def vhestr(a, s):
-	SDTest.Call('Cad_Copy', 'iisi', a, s, len(s) + 1)
+	SDTest.Call('String_Copy', 'iisi', a, s, len(s) + 1)
 def vhesetbyte(a, v):
 	w = vhei(a & ~3)
 	sh = 8 * (a & 3)

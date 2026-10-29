@@ -46,9 +46,9 @@
 3a31ec	4	.rdata	-	library d3dx8
 3a31f0	34	.rdata	-	library crt
 3a3224	4	.rdata	cActClass_vftable	C object
-3a3228	4	.rdata	CNodesWorld2D_AnalizeGraph, CNodesWorld2D_Load, CNodesWorld_Analize +61	zero
-3a322c	1c	.rdata	CNodesWorld2D_AnalizeGraph, CNodesWorld2D_Load, CNodesWorld_Analize +61	string
-3a3248	2	.rdata	CNodesWorld2D_AnalizeGraph, CNodesWorld2D_Load, CNodesWorld_Analize +61	int table
+3a3228	4	.rdata	CNodesWorld2D_AnalyzeGraph, CNodesWorld2D_Load, CNodesWorld_Analyze +61	zero
+3a322c	1c	.rdata	CNodesWorld2D_AnalyzeGraph, CNodesWorld2D_Load, CNodesWorld_Analyze +61	string
+3a3248	2	.rdata	CNodesWorld2D_AnalyzeGraph, CNodesWorld2D_Load, CNodesWorld_Analyze +61	int table
 3a324a	a	.rdata	cWalkCharEntity_Idle, cWalkCharEntity_RelaxName	string
 3a3254	c	.rdata	probe hot page 3a3000	string
 3a3260	2	.rdata	probe hot page 3a3000	int table
@@ -437,10 +437,10 @@
 3a65a4	4	.rdata	-	rtti
 3a65a8	19c	.rdata	cAIControlGear_vftable	C object
 3a6744	c	.rdata	-	string
-3a6750	20	.rdata	Init_GVar_VelRotDinamicMessengerAI	string
-3a6770	1c	.rdata	Init_GVar_VelRotDinamicMessengerAI, probe HashTable_Slot	string
-3a678c	24	.rdata	Init_GVar_LimVelRotDinamicMessengerAI	string
-3a67b0	1c	.rdata	Init_GVar_LimVelRotDinamicMessengerAI, probe HashTable_Slot	string
+3a6750	20	.rdata	Init_GVar_VelRotDynamicMessengerAI	string
+3a6770	1c	.rdata	Init_GVar_VelRotDynamicMessengerAI, probe HashTable_Slot	string
+3a678c	24	.rdata	Init_GVar_LimVelRotDynamicMessengerAI	string
+3a67b0	1c	.rdata	Init_GVar_LimVelRotDynamicMessengerAI, probe HashTable_Slot	string
 3a67cc	4	.rdata	-	rtti
 3a67d0	194	.rdata	cAIControlMessenger_vftable	C object
 3a6964	4	.rdata	-	rtti
@@ -1005,8 +1005,8 @@
 3ad094	c	.rdata	-	float
 3ad0a0	4	.rdata	-	zero
 3ad0a4	18	.rdata	-	float
-3ad0bc	30	.rdata	Init_GVar_BankerStealQuanto, Init_GVar_PoliceStealQuanto	string
-3ad0ec	14	.rdata	Init_GVar_BankerStealQuanto, probe HashTable_Slot	string
+3ad0bc	30	.rdata	Init_GVar_BankerStealAmount, Init_GVar_PoliceStealAmount	string
+3ad0ec	14	.rdata	Init_GVar_BankerStealAmount, probe HashTable_Slot	string
 3ad100	28	.rdata	Init_GVar_BankerStealPosX, Init_GVar_BankerStealPosY, Init_GVar_BankerStealPosZ	string
 3ad128	10	.rdata	Init_GVar_BankerStealPosX, probe HashTable_Slot	string
 3ad138	10	.rdata	Init_GVar_BankerStealPosY, probe HashTable_Slot	string
@@ -1378,7 +1378,7 @@
 3af71c	14	.rdata	Init_NativeFunc_NurseActionPress, probe cPy_Function_SetFunc via ucrtbase.dll, probe cPy_NativeFunc_Insert via ucrtbase.dll	string
 3af730	8	.rdata	-	string
 3af738	50	.rdata	-	float
-3af788	14	.rdata	Init_GVar_PoliceStealQuanto, probe HashTable_Slot	string
+3af788	14	.rdata	Init_GVar_PoliceStealAmount, probe HashTable_Slot	string
 3af79c	34	.rdata	Init_GVar_PoliceAlarmStepSTM	string
 3af7d0	14	.rdata	Init_GVar_PoliceAlarmStepSTM, probe HashTable_Slot	string
 3af7e4	28	.rdata	Init_GVar_FXPoliceStealFile	string
@@ -1567,10 +1567,10 @@
 3b0898	4	.rdata	-	pointer table
 3b089c	4	.rdata	-	rtti
 3b08a0	18	.rdata	cEmbeddedFX_vftable	C object
-3b08b8	24	.rdata	Init_GVar_FXRustyChispasSound	string
-3b08dc	14	.rdata	Init_GVar_FXRustyChispasSound, probe cString_Set via ucrtbase.dll	string
-3b08f0	28	.rdata	Init_GVar_FXRustyChispasSoundVol	string
-3b0918	18	.rdata	Init_GVar_FXRustyChispasSoundVol, probe HashTable_Slot	string
+3b08b8	24	.rdata	Init_GVar_FXRustySparksSound	string
+3b08dc	14	.rdata	Init_GVar_FXRustySparksSound, probe cString_Set via ucrtbase.dll	string
+3b08f0	28	.rdata	Init_GVar_FXRustySparksSoundVol	string
+3b0918	18	.rdata	Init_GVar_FXRustySparksSoundVol, probe HashTable_Slot	string
 3b0930	30	.rdata	Init_GVar_MessengerLightingDist	string
 3b0960	18	.rdata	Init_GVar_MessengerLightingDist, probe HashTable_Slot	string
 3b0978	2c	.rdata	Init_GVar_SentinelLaserScanerDist	string
@@ -1660,7 +1660,7 @@
 3b15cc	4	.rdata	-	rtti
 3b15d0	18	.rdata	cEmbeddedFXDTritusDesktop_vftable	C object
 3b15e8	4	.rdata	-	rtti
-3b15ec	18	.rdata	cEmbeddedFXMoto_vftable	C object
+3b15ec	18	.rdata	cEmbeddedFXBike_vftable	C object
 3b1604	4	.rdata	-	rtti
 3b1608	18	.rdata	cEmbeddedFXBossShield_vftable	C object
 3b1620	4	.rdata	-	rtti
@@ -2314,7 +2314,7 @@
 3b5708	8	.rdata	-	int table
 3b5710	4	.rdata	-	float
 3b5714	c4	.rdata	-	string
-3b57d8	24	.rdata	VMEffects_SetupCalima	int table
+3b57d8	24	.rdata	VMEffects_SetupHaze	int table
 3b57fc	4	.rdata	VME_Exhaust10	float
 3b5800	24	.rdata	VME_Exhaust10, probe VME_Exhaust10	int table
 3b5824	4	.rdata	VME_Exhaust10, VME_Exhaust11	float
@@ -2385,13 +2385,13 @@
 3b5e80	28	.rdata	Init_GVar_FXMotorSmokeFile	string
 3b5ea8	1c	.rdata	Init_GVar_FXMotorSmokeFile, probe cString_Set via ucrtbase.dll	string
 3b5ec4	14	.rdata	Init_GVar_FXMotorSmokeFile, probe HashTable_Slot	string
-3b5ed8	28	.rdata	Init_GVar_FXMotorCalima	string
-3b5f00	10	.rdata	Init_GVar_FXMotorCalima, probe HashTable_Slot	string
-3b5f10	28	.rdata	Init_GVar_FXMotorCalimaFile	string
-3b5f38	1c	.rdata	Init_GVar_FXMotorCalimaFile, probe cString_Set via ucrtbase.dll	string
-3b5f54	14	.rdata	Init_GVar_FXMotorCalimaFile, probe HashTable_Slot	string
-3b5f68	18	.rdata	Init_GVar_FXMotorCalimaOffset	string
-3b5f80	14	.rdata	Init_GVar_FXMotorCalimaOffset, probe HashTable_Slot	string
+3b5ed8	28	.rdata	Init_GVar_FXMotorHaze	string
+3b5f00	10	.rdata	Init_GVar_FXMotorHaze, probe HashTable_Slot	string
+3b5f10	28	.rdata	Init_GVar_FXMotorHazeFile	string
+3b5f38	1c	.rdata	Init_GVar_FXMotorHazeFile, probe cString_Set via ucrtbase.dll	string
+3b5f54	14	.rdata	Init_GVar_FXMotorHazeFile, probe HashTable_Slot	string
+3b5f68	18	.rdata	Init_GVar_FXMotorHazeOffset	string
+3b5f80	14	.rdata	Init_GVar_FXMotorHazeOffset, probe HashTable_Slot	string
 3b5f94	24	.rdata	Init_GVar_FXDumbMotorFile	string
 3b5fb8	1c	.rdata	Init_GVar_FXDumbMotorFile, probe cString_Set via ucrtbase.dll	string
 3b5fd4	10	.rdata	Init_GVar_FXDumbMotorFile, probe HashTable_Slot	string
@@ -3114,9 +3114,9 @@
 3babcc	150	.rdata	probe hot page 3ba000	string
 3bad1c	4	.rdata	probe hot page 3ba000	zero
 3bad20	168	.rdata	probe hot page 3ba000	string
-3bae88	4	.rdata	CGrafico3D_Render, CMundo_DrawDummies, CSistPart_Render +2	string
+3bae88	4	.rdata	CGraphic3D_Render, CWorld_DrawDummies, CParticleSystem_Render +2	string
 3bae8c	38	.rdata	probe hot page 3ba000	string
-3baec4	4	.rdata	Varios_InitE3DDir, probe Bprintf via ucrtbase.dll	string
+3baec4	4	.rdata	Misc_InitE3DDir, probe Bprintf via ucrtbase.dll	string
 3baec8	3c	.rdata	probe hot page 3ba000	string
 3baf04	4	.rdata	probe hot page 3ba000	zero
 3baf08	44	.rdata	probe hot page 3ba000	string
@@ -3663,8 +3663,8 @@
 3c01d4	20	.rdata	Init_GVar_MessengerDataPackMissionArrow, probe HashTable_Slot	string
 3c01f4	28	.rdata	Init_GVar_MessengerTubeState	string
 3c021c	14	.rdata	Init_GVar_MessengerTubeState, probe HashTable_Slot	string
-3c0230	24	.rdata	Init_GVar_MessengerObjetiveDistance	string
-3c0254	1c	.rdata	Init_GVar_MessengerObjetiveDistance, probe HashTable_Slot	string
+3c0230	24	.rdata	Init_GVar_MessengerObjectiveDistance	string
+3c0254	1c	.rdata	Init_GVar_MessengerObjectiveDistance, probe HashTable_Slot	string
 3c0270	2c	.rdata	Init_GVar_MessengerPrepareDistance	string
 3c029c	1c	.rdata	Init_GVar_MessengerPrepareDistance, probe HashTable_Slot	string
 3c02b8	28	.rdata	Init_GVar_MessengerDropCallback	string
@@ -3717,9 +3717,9 @@
 3c083c	30	.rdata	-	string
 3c086c	4	.rdata	-	zero
 3c0870	8	.rdata	-	double
-3c0878	30	.rdata	Init_GVar_ParkingCharCheckDistance, Init_GVar_ParkingVehiCheckDistance	string
+3c0878	30	.rdata	Init_GVar_ParkingCharCheckDistance, Init_GVar_ParkingVehicleCheckDistance	string
 3c08a8	1c	.rdata	Init_GVar_ParkingCharCheckDistance, probe HashTable_Slot	string
-3c08c4	1c	.rdata	Init_GVar_ParkingVehiCheckDistance, probe HashTable_Slot	string
+3c08c4	1c	.rdata	Init_GVar_ParkingVehicleCheckDistance, probe HashTable_Slot	string
 3c08e0	34	.rdata	Init_GVar_ParkingCheckRadius	string
 3c0914	14	.rdata	Init_GVar_ParkingCheckRadius, probe HashTable_Slot	string
 3c0928	2c	.rdata	Init_GVar_OnParkingOccupied	string
@@ -5072,9 +5072,9 @@
 3cc4f0	70	.rdata	-	float
 3cc560	10	.rdata	-	unknown
 3cc570	4	.rdata	-	rtti
-3cc574	c	.rdata	cFXElementsOrbitBoya_vftable	C object
+3cc574	c	.rdata	cFXElementsOrbitBuoy_vftable	C object
 3cc580	4	.rdata	-	rtti
-3cc584	c	.rdata	cFXElementsOrbitBoyaController_vftable	C object
+3cc584	c	.rdata	cFXElementsOrbitBuoyController_vftable	C object
 3cc590	5c	.rdata	-	string
 3cc5ec	2	.rdata	-	int table
 3cc5ee	66	.rdata	-	string
@@ -5122,7 +5122,7 @@
 3ccc74	28	.rdata	Init_GVar_FXShipEditBuildFile, probe cString_Set via ucrtbase.dll	string
 3ccc9c	14	.rdata	Init_GVar_FXShipEditBuildFile, probe HashTable_Slot	string
 3cccb0	4	.rdata	-	rtti
-3cccb4	14	.rdata	cObjElementFXSistPart_vftable	C object
+3cccb4	14	.rdata	cObjElementFXParticleSystem_vftable	C object
 3cccc8	4	.rdata	-	rtti
 3ccccc	14	.rdata	cObjElementFXTrail_vftable	C object
 3ccce0	4	.rdata	-	rtti
@@ -5138,7 +5138,7 @@
 3ccd58	4	.rdata	-	rtti
 3ccd5c	14	.rdata	cObjElementFXModelNoise_vftable	C object
 3ccd70	4	.rdata	-	rtti
-3ccd74	14	.rdata	cObjElementFXSistPartDuDv_vftable	C object
+3ccd74	14	.rdata	cObjElementFXParticleSystemDuDv_vftable	C object
 3ccd88	28	.rdata	-	string
 3ccdb0	2	.rdata	-	int table
 3ccdb2	ba	.rdata	-	string
@@ -5462,14 +5462,14 @@
 3cfc04	1f0	.rdata	-	unknown
 3cfdf4	18	.rdata	-	library dinput8
 3cfe0c	11f0	.rdata	-	guid
-3d0ffc	10	.rdata	CEntradaDInput_Init, Keyboard_Create, probe cPcPad_SetCharDefaults via dinput8.dll	guid
-3d100c	10	.rdata	CEntradaDInput_Init, Mouse_Create, probe Mouse_Create via dinput8.dll	guid
+3d0ffc	10	.rdata	CInputDInput_Init, Keyboard_Create, probe cPcPad_SetCharDefaults via dinput8.dll	guid
+3d100c	10	.rdata	CInputDInput_Init, Mouse_Create, probe Mouse_Create via dinput8.dll	guid
 3d101c	20	.rdata	-	guid
 3d103c	10	.rdata	probe Keyboard_Create via dinput8.dll +61	guid
 3d104c	50	.rdata	-	guid
 3d109c	30	.rdata	probe Mouse_Create via dinput8.dll	guid
 3d10cc	a0	.rdata	-	guid
-3d116c	10	.rdata	CEntradaDInput_Init, DInput_Create, Input_OpenDevices +1	guid
+3d116c	10	.rdata	CInputDInput_Init, DInput_Create, Input_OpenDevices +1	guid
 3d117c	f50	.rdata	-	guid
 3d20cc	40	.rdata	-	string
 3d210c	4	.rdata	-	int table
@@ -5695,7 +5695,7 @@
 3d55ac	1a8	.rdata	-	string
 3d5754	4	.rdata	-	zero
 3d5758	e0	.rdata	-	string
-3d5838	4	.rdata	CBsp_Calcular, Engine_Init, probe Engine_Init	int table
+3d5838	4	.rdata	CBsp_Calculate, Engine_Init, probe Engine_Init	int table
 3d583c	1c	.rdata	Init_GVar_R_ShowInfo	string
 3d5858	c	.rdata	Init_GVar_R_ShowInfo, probe HashTable_Slot	string
 3d5864	18	.rdata	Init_GVar_R_LimitFPS	string
@@ -5709,14 +5709,14 @@
 3d5908	20	.rdata	Init_GVar_VSync	string
 3d5928	8	.rdata	Init_GVar_VSync, probe HashTable_Slot	string
 3d5930	4	.rdata	-	rtti
-3d5934	20	.rdata	CEntradaNula_vftable	C object
+3d5934	20	.rdata	CNullInput_vftable	C object
 3d5954	38	.rdata	-	string
-3d598c	18	.rdata	CLuz_TipoNombre, probe PyString_FromString via ucrtbase.dll	string
+3d598c	18	.rdata	CLight_TypeName, probe PyString_FromString via ucrtbase.dll	string
 3d59a4	38	.rdata	-	string
 3d59dc	4	.rdata	-	rtti
-3d59e0	38	.rdata	CMotorApp_vftable	C object
+3d59e0	38	.rdata	CEngineApp_vftable	C object
 3d5a18	38c	.rdata	-	string
-3d5da4	8	.rdata	Sectores_Crear	string
+3d5da4	8	.rdata	Sectors_Create	string
 3d5dac	10	.rdata	-	string
 3d5dbc	4	.rdata	-	zero
 3d5dc0	3dc	.rdata	-	string
@@ -5748,7 +5748,7 @@
 3d6d08	2c	.rdata	Init_GVar_LoadTextures	string
 3d6d34	10	.rdata	Init_GVar_LoadTextures, probe HashTable_Slot	string
 3d6d44	4	.rdata	-	rtti
-3d6d48	4	.rdata	CListaMat_vftable	C object
+3d6d48	4	.rdata	CMatList_vftable	C object
 3d6d4c	6c	.rdata	-	string
 3d6db8	4	.rdata	-	rtti
 3d6dbc	4	.rdata	CMaterial_vftable	C object
@@ -5806,14 +5806,14 @@
 3d79b4	14	.rdata	Init_GVar_R_SpotlightClamp, probe HashTable_Slot	string
 3d79c8	10	.rdata	Init_GVar_R_SpotlightMult, probe HashTable_Slot	string
 3d79d8	4	.rdata	-	rtti
-3d79dc	1c	.rdata	IObjeto3D_vftable	C object
+3d79dc	1c	.rdata	IObject3D_vftable	C object
 3d79f8	4	.rdata	-	rtti
-3d79fc	1c	.rdata	CLuz_vftable	C object
+3d79fc	1c	.rdata	CLight_vftable	C object
 3d7a18	1c4	.rdata	-	string
 3d7bdc	4	.rdata	-	float
-3d7be0	4	.rdata	CLuz_FillD3D, CLuz_Update, Luz_Select +1	int table
+3d7be0	4	.rdata	CLight_FillD3D, CLight_Update, Light_Select +1	int table
 3d7be4	c	.rdata	-	zero
-3d7bf0	30	.rdata	colorRva.1, probe Luz_SetDefault	float
+3d7bf0	30	.rdata	colorRva.1, probe Light_SetDefault	float
 3d7c20	28	.rdata	Init_GVar_R_ShowLocalBox	string
 3d7c48	10	.rdata	Init_GVar_R_ShowLocalBox, probe HashTable_Slot	string
 3d7c58	2c	.rdata	Init_GVar_R_ShowLBoxMin	string
@@ -5836,15 +5836,15 @@
 3d7e14	10	.rdata	Init_GVar_R_SkipNodeFX, probe HashTable_Slot	string
 3d7e24	20	.rdata	Init_GVar_R_NodeSlerp2	string
 3d7e44	10	.rdata	Init_GVar_R_NodeSlerp2, probe HashTable_Slot	string
-3d7e54	10	.rdata	Init_GVar_R_Nodo3D_Count	string
-3d7e64	10	.rdata	Init_GVar_R_Nodo3D_Count, probe HashTable_Slot	string
+3d7e54	10	.rdata	Init_GVar_R_Node3D_Count	string
+3d7e64	10	.rdata	Init_GVar_R_Node3D_Count, probe HashTable_Slot	string
 3d7e74	4	.rdata	-	rtti
-3d7e78	4	.rdata	CNodo3D_vftable	C object
+3d7e78	4	.rdata	CNode3D_vftable	C object
 3d7e7c	210	.rdata	-	string
 3d808c	4	.rdata	-	zero
 3d8090	8	.rdata	-	double
-3d8098	10	.rdata	Init_GVar_R_NodoR_Count	string
-3d80a8	10	.rdata	Init_GVar_R_NodoR_Count, probe HashTable_Slot	string
+3d8098	10	.rdata	Init_GVar_R_RenderNode_Count	string
+3d80a8	10	.rdata	Init_GVar_R_RenderNode_Count, probe HashTable_Slot	string
 3d80b8	6d4	.rdata	-	string
 3d878c	4	.rdata	-	zero
 3d8790	2c	.rdata	-	float
@@ -5930,36 +5930,36 @@
 3d8e38	10	.rdata	Init_GVar_R_GlowFlickBRot, probe HashTable_Slot	string
 3d8e48	18	.rdata	Init_GVar_R_LastDevice	string
 3d8e60	10	.rdata	Init_GVar_R_LastDevice, probe HashTable_Slot	string
-3d8e70	14	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431d88	string
-3d8e84	14	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431d8c	string
-3d8e98	1c	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431d90 +1	string
-3d8eb4	14	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431d94 +1	string
-3d8ec8	14	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431d98 +1	string
-3d8edc	1c	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431d9c +1	string
-3d8ef8	24	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431da0 +2	string
-3d8f1c	1c	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431da4 +1	string
-3d8f38	1c	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431da8 +1	string
-3d8f54	14	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431dac +1	string
-3d8f68	10	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431db0 +1	string
-3d8f78	18	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431db4 +1	string
-3d8f90	10	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431db8 +1	string
-3d8fa0	18	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431dbc +1	string
-3d8fb8	14	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431dc0 +2	string
-3d8fcc	1c	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431dc4 +1	string
-3d8fe8	14	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431dc8 +2	string
-3d8ffc	10	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431dcc +2	string
-3d900c	10	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431dd0 +2	string
-3d901c	10	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431dd4 +2	string
-3d902c	10	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431dd8 +2	string
-3d903c	14	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431ddc +1	string
-3d9050	14	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431de0 +1	string
-3d9064	14	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431de4 +1	string
-3d9078	18	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431de8 +1	string
-3d9090	1c	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431dec +1	string
-3d90ac	14	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431df0 +1	string
-3d90c0	14	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431df4 +1	string
-3d90d4	14	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431df8 +1	string
-3d90e8	1c	.rdata	probe Cad_Copy via ucrtbase.dll, probe File_Check, ptr 431dfc +1	string
+3d8e70	14	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431d88	string
+3d8e84	14	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431d8c	string
+3d8e98	1c	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431d90 +1	string
+3d8eb4	14	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431d94 +1	string
+3d8ec8	14	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431d98 +1	string
+3d8edc	1c	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431d9c +1	string
+3d8ef8	24	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431da0 +2	string
+3d8f1c	1c	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431da4 +1	string
+3d8f38	1c	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431da8 +1	string
+3d8f54	14	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431dac +1	string
+3d8f68	10	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431db0 +1	string
+3d8f78	18	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431db4 +1	string
+3d8f90	10	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431db8 +1	string
+3d8fa0	18	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431dbc +1	string
+3d8fb8	14	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431dc0 +2	string
+3d8fcc	1c	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431dc4 +1	string
+3d8fe8	14	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431dc8 +2	string
+3d8ffc	10	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431dcc +2	string
+3d900c	10	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431dd0 +2	string
+3d901c	10	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431dd4 +2	string
+3d902c	10	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431dd8 +2	string
+3d903c	14	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431ddc +1	string
+3d9050	14	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431de0 +1	string
+3d9064	14	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431de4 +1	string
+3d9078	18	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431de8 +1	string
+3d9090	1c	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431dec +1	string
+3d90ac	14	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431df0 +1	string
+3d90c0	14	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431df4 +1	string
+3d90d4	14	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431df8 +1	string
+3d90e8	1c	.rdata	probe String_Copy via ucrtbase.dll, probe File_Check, ptr 431dfc +1	string
 3d9104	8	.rdata	probe Shader_Find via ucrtbase.dll, ptr 431e0c, ptr 43210c	string
 3d910c	8	.rdata	probe Shader_Find via ucrtbase.dll, ptr 431e24, ptr 432124	string
 3d9114	c	.rdata	probe Shader_Find via ucrtbase.dll, ptr 431e3c, ptr 43213c	string
@@ -6002,7 +6002,7 @@
 3d9b00	10	.rdata	-	float
 3d9b10	10	.rdata	-	unknown
 3d9b20	4	.rdata	-	rtti
-3d9b24	4	.rdata	CEscena_vftable	C object
+3d9b24	4	.rdata	CScene_vftable	C object
 3d9b28	3f8	.rdata	-	string
 3d9f20	8	.rdata	-	float
 3d9f28	10	.rdata	AnimCtrl_StateName, probe PyString_FromString via ucrtbase.dll	string
@@ -6045,7 +6045,7 @@
 3da63c	1c	.rdata	Init_GVar_R_ShowModelLights	string
 3da658	44	.rdata	-	string
 3da69c	4	.rdata	-	rtti
-3da6a0	4	.rdata	CModelo_vftable	C object
+3da6a0	4	.rdata	CModel_vftable	C object
 3da6a4	468	.rdata	-	string
 3dab0c	18	.rdata	Init_GVar_R_SortModels	string
 3dab24	10	.rdata	Init_GVar_R_SortModels, probe HashTable_Slot	string
@@ -6054,7 +6054,7 @@
 3dab5c	1c	.rdata	Init_GVar_R_SortInvert	string
 3dab78	10	.rdata	Init_GVar_R_SortInvert, probe HashTable_Slot	string
 3dab88	3d0	.rdata	-	string
-3daf58	20	.rdata	AnimMat_ModoName, probe PyString_FromString via ucrtbase.dll	string
+3daf58	20	.rdata	AnimMat_ModeName, probe PyString_FromString via ucrtbase.dll	string
 3daf78	1c	.rdata	-	string
 3daf94	18	.rdata	Init_GVar_MapCollisionBalance	string
 3dafac	14	.rdata	Init_GVar_MapCollisionBalance, probe HashTable_Slot	string
@@ -6066,11 +6066,11 @@
 3db044	10	.rdata	Init_GVar_ShowMapQuads, probe HashTable_Slot	string
 3db054	24	.rdata	Init_GVar_ShowMapQDist	string
 3db078	10	.rdata	Init_GVar_ShowMapQDist, probe HashTable_Slot	string
-3db088	1c	.rdata	Init_GVar_AnalizeQuads	string
-3db0a4	10	.rdata	Init_GVar_AnalizeQuads, probe HashTable_Slot	string
+3db088	1c	.rdata	Init_GVar_AnalyzeQuads	string
+3db0a4	10	.rdata	Init_GVar_AnalyzeQuads, probe HashTable_Slot	string
 3db0b4	84	.rdata	probe hot page 3db000	string
 3db138	4	.rdata	-	rtti
-3db13c	1c	.rdata	CSuelo_vftable	C object
+3db13c	1c	.rdata	CGround_vftable	C object
 3db158	8b4	.rdata	probe hot page 3db000	string
 3dba0c	4	.rdata	probe hot page 3db000	zero
 3dba10	1cc	.rdata	probe hot page 3db000	string
@@ -6080,7 +6080,7 @@
 3dbbf0	10	.rdata	probe hot page 3db000	float
 3dbc00	ec	.rdata	probe hot page 3db000	string
 3dbcec	4	.rdata	-	rtti
-3dbcf0	1c	.rdata	CMallaTri_vftable	C object
+3dbcf0	1c	.rdata	CTriMesh_vftable	C object
 3dbd0c	188	.rdata	probe hot page 3db000	string
 3dbe94	8	.rdata	probe Proc_TypeLookup via ucrtbase.dll, probe ucrtbase.dll, ptr 432450 +1	string
 3dbe9c	8	.rdata	probe Proc_TypeLookup via ucrtbase.dll, probe ucrtbase.dll, ptr 432454	string
@@ -6134,7 +6134,7 @@
 3dc2d4	260	.rdata	-	string
 3dc534	4	.rdata	-	zero
 3dc538	14c	.rdata	-	string
-3dc684	30	.rdata	SombrasStencil_Set, Stencil_Init	string
+3dc684	30	.rdata	ShadowsStencil_Set, Stencil_Init	string
 3dc6b4	38	.rdata	-	string
 3dc6ec	4	.rdata	-	float
 3dc6f0	24	.rdata	Init_GVar_RenderWorld	string
@@ -6175,12 +6175,12 @@
 3dcd54	20	.rdata	Init_GVar_R_PortalBand	string
 3dcd74	10	.rdata	Init_GVar_R_PortalBand, probe HashTable_Slot	string
 3dcd84	198	.rdata	-	string
-3dcf1c	3c	.rdata	Portales_DebugDraw, probe Str_VPrintf via ucrtbase.dll	string
+3dcf1c	3c	.rdata	Portals_DebugDraw, probe Str_VPrintf via ucrtbase.dll	string
 3dcf58	a8	.rdata	-	string
 3dd000	8	.rdata	probe hot page 3dd000	string
-3dd008	2c	.rdata	Portales_SetView	string
+3dd008	2c	.rdata	Portals_SetView	string
 3dd034	70	.rdata	probe hot page 3dd000	string
-3dd0a4	c	.rdata	BspTri_ZonaName, Sector_GetName, probe PyString_FromString via ucrtbase.dll	string
+3dd0a4	c	.rdata	BspTri_ZoneName, Sector_GetName, probe PyString_FromString via ucrtbase.dll	string
 3dd0b0	3c	.rdata	probe hot page 3dd000	string
 3dd0ec	c	.rdata	SectorVis_Draw	string
 3dd0f8	4	.rdata	probe hot page 3dd000	float
@@ -6256,17 +6256,17 @@
 3ddc18	4	.rdata	-	rtti
 3ddc1c	1c	.rdata	CObjBase3D_vftable	C object
 3ddc38	4	.rdata	-	rtti
-3ddc3c	c	.rdata	CParticulaBase_vftable	C object
+3ddc3c	c	.rdata	CParticleBase_vftable	C object
 3ddc48	4	.rdata	-	rtti
-3ddc4c	c	.rdata	CParticulaStatic_vftable	C object
+3ddc4c	c	.rdata	CParticleStatic_vftable	C object
 3ddc58	4	.rdata	-	rtti
-3ddc5c	c	.rdata	CParticulaActive_vftable	C object
+3ddc5c	c	.rdata	CParticleActive_vftable	C object
 3ddc68	4	.rdata	-	rtti
-3ddc6c	1c	.rdata	CSistPart_vftable	C object
+3ddc6c	1c	.rdata	CParticleSystem_vftable	C object
 3ddc88	380	.rdata	probe hot page 3dd000	string
 3de008	70	.rdata	-	string
 3de078	4	.rdata	-	float
-3de07c	4	.rdata	BMP_Load, Escena_Load, Pcx_CheckHeader +6	string
+3de07c	4	.rdata	BMP_Load, Scene_Load, Pcx_CheckHeader +6	string
 3de080	8	.rdata	ptr 4325f0	string
 3de088	1c	.rdata	ptr 4325f4	string
 3de0a4	c	.rdata	ptr 4325fc	string
@@ -6455,8 +6455,8 @@
 3df8d4	30	.rdata	Init_GVar_MapRenderMap, Init_GVar_MapRenderMat	string
 3df904	10	.rdata	Init_GVar_MapRenderMat, probe HashTable_Slot	string
 3df914	10	.rdata	Init_GVar_MapRenderMap, probe HashTable_Slot	string
-3df924	34	.rdata	Init_GVar_LightmapLinealAtten	string
-3df958	14	.rdata	Init_GVar_LightmapLinealAtten, probe HashTable_Slot	string
+3df924	34	.rdata	Init_GVar_LightmapLinearAtten	string
+3df958	14	.rdata	Init_GVar_LightmapLinearAtten, probe HashTable_Slot	string
 3df96c	20	.rdata	Init_GVar_RadSkipBySectors	string
 3df98c	14	.rdata	Init_GVar_RadSkipBySectors, probe HashTable_Slot	string
 3df9a0	20	.rdata	Init_GVar_RadiosityPortals	string
@@ -6510,7 +6510,7 @@
 3e1c80	10	.rdata	-	int table
 3e1c90	4	.rdata	-	string
 3e1c94	4	.rdata	-	rtti
-3e1c98	1c	.rdata	CCamara_vftable	C object
+3e1c98	1c	.rdata	CCamera_vftable	C object
 3e1cb4	6c	.rdata	-	string
 3e1d20	2c	.rdata	Init_GVar_BuildMST	string
 3e1d4c	c	.rdata	Init_GVar_BuildMST, probe HashTable_Slot	string
@@ -6519,11 +6519,11 @@
 3e1fbc	c	.rdata	Init_GVar_R_Trails, probe HashTable_Slot	string
 3e1fc8	620	.rdata	-	string
 3e25e8	4	.rdata	-	rtti
-3e25ec	20	.rdata	IEntrada_vftable	C object
+3e25ec	20	.rdata	IInput_vftable	C object
 3e260c	4	.rdata	-	rtti
-3e2610	20	.rdata	CEntradaDInput_vftable	C object
+3e2610	20	.rdata	CInputDInput_vftable	C object
 3e2630	4	.rdata	-	rtti
-3e2634	20	.rdata	CEntradaWindows_vftable	C object
+3e2634	20	.rdata	CInputWindows_vftable	C object
 3e2654	48	.rdata	-	string
 3e269c	4	.rdata	-	zero
 3e26a0	6	.rdata	-	string
@@ -6558,7 +6558,7 @@
 3e2b50	10	.rdata	-	int table
 3e2b60	e0	.rdata	-	string
 3e2c40	4	.rdata	-	rtti
-3e2c44	c	.rdata	IFXTextura_vftable	C object
+3e2c44	c	.rdata	IFXTexture_vftable	C object
 3e2c50	4	.rdata	-	rtti
 3e2c54	c	.rdata	CFXTexLava_vftable	C object
 3e2c60	4	.rdata	-	rtti
@@ -6582,13 +6582,13 @@
 3e3020	10	.rdata	Init_GVar_OptAnimFovErr, probe HashTable_Slot	string
 3e3030	20	.rdata	Init_GVar_OptAnimPosMax	string
 3e3050	10	.rdata	Init_GVar_OptAnimPosMax, probe HashTable_Slot	string
-3e3060	14	.rdata	Init_GVar_R_AnimNodo_Count	string
-3e3074	14	.rdata	Init_GVar_R_AnimNodo_Count, probe HashTable_Slot	string
+3e3060	14	.rdata	Init_GVar_R_AnimNode_Count	string
+3e3074	14	.rdata	Init_GVar_R_AnimNode_Count, probe HashTable_Slot	string
 3e3088	4e8	.rdata	-	string
 3e3570	8	.rdata	-	float
 3e3578	8	.rdata	-	unknown
 3e3580	4	.rdata	-	rtti
-3e3584	1c	.rdata	CMallaD3D_vftable	C object
+3e3584	1c	.rdata	CMeshD3D_vftable	C object
 3e35a0	f4	.rdata	-	string
 3e3694	4	.rdata	-	zero
 3e3698	2a0	.rdata	-	string
@@ -6622,7 +6622,7 @@
 3e3bac	c	.rdata	CNodeFX_Wheel_vftable	C object
 3e3bb8	4	.rdata	-	rtti
 3e3bbc	c	.rdata	CNodeFX_Spring_vftable	C object
-3e3bc8	c	.rdata	probe Arch_FindSection via ucrtbase.dll, ptr 432a74	string
+3e3bc8	c	.rdata	probe DataFile_FindSection via ucrtbase.dll, ptr 432a74	string
 3e3bd4	1f0	.rdata	-	string
 3e3dc4	4	.rdata	-	zero
 3e3dc8	5c	.rdata	-	string
@@ -6671,7 +6671,7 @@
 3e4580	24	.rdata	Init_GVar_R_SpriteSector	string
 3e45a4	10	.rdata	Init_GVar_R_SpriteSector, probe HashTable_Slot	string
 3e45b4	4	.rdata	-	rtti
-3e45b8	1c	.rdata	CGrafico3D_vftable	C object
+3e45b8	1c	.rdata	CGraphic3D_vftable	C object
 3e45d4	9c	.rdata	-	string
 3e4670	18	.rdata	Init_GVar_R_ShowPortals	string
 3e4688	10	.rdata	Init_GVar_R_ShowPortals, probe HashTable_Slot	string
@@ -6684,13 +6684,13 @@
 3e4720	74	.rdata	-	string
 3e4794	8	.rdata	-	float
 3e479c	28	.rdata	-	string
-3e47c4	18	.rdata	LeeM3D_InitUseWSM, probe PyString_FromString via ucrtbase.dll	string
-3e47dc	8	.rdata	LeeM3D_InitUseWSM, probe HashTable_Slot	string
+3e47c4	18	.rdata	ReadM3D_InitUseWSM, probe PyString_FromString via ucrtbase.dll	string
+3e47dc	8	.rdata	ReadM3D_InitUseWSM, probe HashTable_Slot	string
 3e47e4	4	.rdata	-	zero
 3e47e8	48	.rdata	Init_GVar_OptimizeNodes	string
 3e4830	10	.rdata	Init_GVar_OptimizeNodes, probe HashTable_Slot	string
-3e4840	30	.rdata	LeeM3D_InitShowNodesTree, probe PyString_FromString via ucrtbase.dll	string
-3e4870	10	.rdata	LeeM3D_InitShowNodesTree, probe HashTable_Slot	string
+3e4840	30	.rdata	ReadM3D_InitShowNodesTree, probe PyString_FromString via ucrtbase.dll	string
+3e4870	10	.rdata	ReadM3D_InitShowNodesTree, probe HashTable_Slot	string
 3e4880	20	.rdata	Init_GVar_CM3_UseScenes	string
 3e48a0	10	.rdata	Init_GVar_CM3_UseScenes, probe HashTable_Slot	string
 3e48b0	24	.rdata	Init_GVar_CM3_CheckTime	string
@@ -6824,7 +6824,7 @@
 428408	48	.data	cEmbeddedFXMaintenance_Update	int table
 428450	24	.data	EFXM_SparkFlash	int table
 428474	4c	.data	EFXM_SparkFlash, cEmbeddedFXBattery_Update	int table
-4284c0	90	.data	cEmbeddedFXMoto_Update	int table
+4284c0	90	.data	cEmbeddedFXBike_Update	int table
 428550	90	.data	probe hot page 428000	int table
 4285e0	48	.data	cEmbeddedFXVehicleProbe_Update	int table
 428628	48	.data	cArrowGlow_Update	int table
@@ -7288,7 +7288,7 @@
 43023c	4	.data	CSoundXBox_Update, Fmod_SetChannel, probe CSoundXBox_Update +3	float
 430240	24	.data	cObjElementFXMoneyTransfer_Update	int table
 430264	24	.data	FX_CharacterDazed	int table
-430288	90	.data	FXDeath_Glow, cObjElementFXCharacterDeath_Update, probe CParticulaActive_Update	int table
+430288	90	.data	FXDeath_Glow, cObjElementFXCharacterDeath_Update, probe CParticleActive_Update	int table
 430318	28	.data	FX_CharacterBlaBliBla	int table
 430340	70	.data	FXTeleport_Glow, FXTeleport_Smoke, FXTeleport_Spark +2	int table
 4303b0	48	.data	cObjElementFXSputnik_Update	int table
@@ -7297,17 +7297,17 @@
 430520	b8	.data	cObjElementFXMaintenanceWork_Update	int table
 4305d8	90	.data	cObjElementFXPoliceGearConversion_Start, cObjElementFXPoliceGearConversion_Update	int table
 430668	48	.data	FXMercenary_Drop	int table
-4306b0	24	.data	cObjElementFXGearMissile_Update, probe CParticulaActive_Update	int table
-4306d4	d8	.data	GM_Puff.constprop.0, cObjElementFXGearMissile_Update, probe CParticulaActive_Update	int table
+4306b0	24	.data	cObjElementFXGearMissile_Update, probe CParticleActive_Update	int table
+4306d4	d8	.data	GM_Puff.constprop.0, cObjElementFXGearMissile_Update, probe CParticleActive_Update	int table
 4307ac	24	.data	cObjElementFXBankerSteal_Update, cObjElementFXPoliceSteal_Update	int table
-4307d0	48	.data	cObjElementFXBettyAttack_Emit, cObjElementFXBettyAttack_Update, probe CParticulaActive_Update	int table
+4307d0	48	.data	cObjElementFXBettyAttack_Emit, cObjElementFXBettyAttack_Update, probe CParticleActive_Update	int table
 430818	70	.data	FXSellLife_Code, FXSellLife_Glow, cObjElementFXBishopSellLife_Update	int table
-430888	70	.data	EMI_Emit, probe CParticulaActive_Update	int table
-4308f8	70	.data	FXDebrisCloud_Puff, probe CParticulaActive_Update	int table
-430968	48	.data	FireDrop_Emit, probe CParticulaActive_Update	int table
-4309b0	48	.data	FireDrop_Emit, cFXElementsFireDrop_Update, probe CParticulaActive_Update	int table
-4309f8	70	.data	cFXElementsMentalControllerDamageFX_Update, probe CParticulaActive_Update	int table
-430a68	70	.data	DamageFX_Glow.constprop.0, cFXElementsMentalControllerDamageFX_Update, probe CParticulaActive_Update	int table
+430888	70	.data	EMI_Emit, probe CParticleActive_Update	int table
+4308f8	70	.data	FXDebrisCloud_Puff, probe CParticleActive_Update	int table
+430968	48	.data	FireDrop_Emit, probe CParticleActive_Update	int table
+4309b0	48	.data	FireDrop_Emit, cFXElementsFireDrop_Update, probe CParticleActive_Update	int table
+4309f8	70	.data	cFXElementsMentalControllerDamageFX_Update, probe CParticleActive_Update	int table
+430a68	70	.data	DamageFX_Glow.constprop.0, cFXElementsMentalControllerDamageFX_Update, probe CParticleActive_Update	int table
 430ad8	6c	.data	FX_EmitFade	int table
 430b44	24	.data	FX_ItemBlink	int table
 430b68	e0	.data	cObjElementFXItemTake_Update	int table
@@ -7317,15 +7317,15 @@
 430dd8	48	.data	cObjElementFXSceneYakuzzi_Update	int table
 430e20	148	.data	cObjElementFXSceneBeatPickus_Update	int table
 430f68	180	.data	cObjElementFXSceneEnterMatrix_Update	float
-4310e8	90	.data	cObjElementFXFiredDebris_Update, probe CParticulaActive_Update	int table
-431178	70	.data	cObjElementFXSmokeDebris_Update, probe CParticulaActive_Update	int table
+4310e8	90	.data	cObjElementFXFiredDebris_Update, probe CParticleActive_Update	int table
+431178	70	.data	cObjElementFXSmokeDebris_Update, probe CParticleActive_Update	int table
 4311e8	6c	.data	cObjElementFXVehicleDamage_Update	int table
 431254	94	.data	FXV_DamageDebris.constprop.0, cObjElementFXVehicleDamage_Update	int table
 4312e8	b8	.data	FXV_DamageDebris.constprop.0, FXV_DamageSmoke, cObjElementFXVehicleDamage_Update	int table
-4313a0	190	.data	FX_ShipExplosion, probe CParticulaActive_Update	int table
-431530	b8	.data	cObjElementFXVehicleFire_Update, probe CParticulaActive_Update	int table
-4315e8	170	.data	cObjElementFXFiredEntity_Update, probe CParticulaActive_Update	int table
-431758	48	.data	cObjElementFXATPC_Shoot, probe CParticulaActive_Update	int table
+4313a0	190	.data	FX_ShipExplosion, probe CParticleActive_Update	int table
+431530	b8	.data	cObjElementFXVehicleFire_Update, probe CParticleActive_Update	int table
+4315e8	170	.data	cObjElementFXFiredEntity_Update, probe CParticleActive_Update	int table
+431758	48	.data	cObjElementFXATPC_Shoot, probe CParticleActive_Update	int table
 4317a0	48	.data	cObjElementFXATPC_Update, probe cObjElementFXATPC_Update	int table
 4317e8	28	.data	cObjElementFXInfernoExplosion_Explode	int table
 431810	48	.data	FXSwarm_Hit	int table
@@ -7344,8 +7344,8 @@
 431ae5	3	.data	probe SDTest_Peek, probe SDTest_Poke, test sdcall_scrapmain +1	zero
 431ae8	4	.data	Engine_LoadIni, Engine_OneTimeInit, probe Engine_OneTimeInit +1	int table
 431aec	c	.data	Engine_LoadIni, Engine_OneTimeInit, probe Engine_OneTimeInit +1	float
-431af8	4	.data	Engine_LoadIni, Engine_OneTimeInit, Engine_SetSuelo +3	float
-431afc	8	.data	Engine_OneTimeInit, Engine_SetSuelo, probe CListaEscena_ctor +1	float
+431af8	4	.data	Engine_LoadIni, Engine_OneTimeInit, Engine_SetGround +3	float
+431afc	8	.data	Engine_OneTimeInit, Engine_SetGround, probe CSceneList_ctor +1	float
 431b04	4	.data	ViewerCamera_Move, probe SDTest_Call via ucrtbase.dll, probe SDTest_Peek +1	float
 431b08	4	.data	Loading_RandomName, ViewerCamera_Move, probe Loading_RandomName +2	int table
 431b0c	4	.data	probe hot page 431000	zero
@@ -7356,59 +7356,59 @@
 431b6c	14	.data	Scene_End, probe Scene_End	pointer table
 431b80	4	.data	Scene_Init, probe Scene_Init	int table
 431b84	4	.data	DuDv_Init, probe DuDv_Init	int table
-431b88	1	.data	Cad_Thousands, probe Cad_Thousands	int table
-431b89	3	.data	probe Cad_Thousands	zero
+431b88	1	.data	String_Thousands, probe String_Thousands	int table
+431b89	3	.data	probe String_Thousands	zero
 431b8c	8	.data	CPsaImage_Init, CPsaImage_ctor, CPsaImage_ctorEmpty +3	float
 431b94	10	.data	CPsaImage_Load, probe CPsaImage_Load	float
 431ba4	4	.data	probe hot page 431000	zero
-431ba8	4	.data	CMotorApp_FrameMove, Motor_DrawFpsGraph, Motor_DrawStats +4	float
-431bac	1	.data	BspTri_Draw, CBspQ3_Render, CMotorApp_MsgProc +9	int table
-431bad	1	.data	CMallaTri_Draw, Motor_DrawStats, probe Engine_FrameSetup +3	int table
-431bae	1	.data	CMotorApp_MsgProc, CMotorApp_Render, CMotorApp_UpdateMenu +5	int table
-431baf	1	.data	CMotorApp_ResetDevice@4.part.0, Motor_DrawStats, probe Engine_FrameSetup +3	int table
-431bb0	4	.data	motorIni	float
-431bb4	c	.data	motorIni	int table
-431bc0	4	.data	CSuelo_Build, Engine_OneTimeInit, motorIni +1	string
-431bc4	4	.data	CCamara_Update, CGameCamera_Update, probe CCamara_Update +4	int table
-431bc8	4	.data	motorIni	int table
-431bcc	4	.data	M3D_LeeMaterial, motorIni, probe M3D_LeeMaterial	int table
-431bd0	4	.data	motorIni	int table
-431bd4	4	.data	CMotorApp_Render, motorIni	int table
-431bd8	4	.data	M3D_LeeMapa, M3D_MapaActivo, motorIni +1	int table
-431bdc	4	.data	CMallaD3D_Build, Mat_StageEnvMap, Render_InitMatrices +5	int table
-431be0	8	.data	M3D_LeeMapa, M3D_MapaActivo, motorIni +1	int table
-431be8	4	.data	CBsp_AjustarGamma, CBsp_Calcular, CBsp_ColorSinLmap +18	int table
-431bec	4	.data	CMotorApp_Render, motorIni	int table
-431bf0	4	.data	CMotorApp_ctor, Engine_OneTimeInit, Engine_SetIniName +4	int table
-431bf4	4	.data	CMotorApp_ctor, Engine_OneTimeInit, Engine_SetIniName +3	string
-431bf8	78	.data	probe PyString_FromString via ucrtbase.dll, probe Ruta_Split via ucrtbase.dll, probe ucrtbase.dll	zero
+431ba8	4	.data	CEngineApp_FrameMove, Engine_DrawFpsGraph, Engine_DrawStats +4	float
+431bac	1	.data	BspTri_Draw, CBspQ3_Render, CEngineApp_MsgProc +9	int table
+431bad	1	.data	CTriMesh_Draw, Engine_DrawStats, probe Engine_FrameSetup +3	int table
+431bae	1	.data	CEngineApp_MsgProc, CEngineApp_Render, CEngineApp_UpdateMenu +5	int table
+431baf	1	.data	CEngineApp_ResetDevice@4.part.0, Engine_DrawStats, probe Engine_FrameSetup +3	int table
+431bb0	4	.data	engineIni	float
+431bb4	c	.data	engineIni	int table
+431bc0	4	.data	CGround_Build, Engine_OneTimeInit, engineIni +1	string
+431bc4	4	.data	CCamera_Update, CGameCamera_Update, probe CCamera_Update +4	int table
+431bc8	4	.data	engineIni	int table
+431bcc	4	.data	M3D_ReadMaterial, engineIni, probe M3D_ReadMaterial	int table
+431bd0	4	.data	engineIni	int table
+431bd4	4	.data	CEngineApp_Render, engineIni	int table
+431bd8	4	.data	M3D_ReadMap, M3D_ActiveMap, engineIni +1	int table
+431bdc	4	.data	CMeshD3D_Build, Mat_StageEnvMap, Render_InitMatrices +5	int table
+431be0	8	.data	M3D_ReadMap, M3D_ActiveMap, engineIni +1	int table
+431be8	4	.data	CBsp_AdjustGamma, CBsp_Calculate, CBsp_ColorSinLmap +18	int table
+431bec	4	.data	CEngineApp_Render, engineIni	int table
+431bf0	4	.data	CEngineApp_ctor, Engine_OneTimeInit, Engine_SetIniName +4	int table
+431bf4	4	.data	CEngineApp_ctor, Engine_OneTimeInit, Engine_SetIniName +3	string
+431bf8	78	.data	probe PyString_FromString via ucrtbase.dll, probe Path_SplitDrive via ucrtbase.dll, probe ucrtbase.dll	zero
 431c70	84	.data	DbgStd_Printf	zero
-431cf4	4	.data	CMotorApp_ctor, motorIni, probe CMotorApp_ctor +1	int table
-431cf8	4	.data	motorIni	int table
-431cfc	4	.data	CMotorApp_InitDeviceObjects, motorIni, probe CMotorApp_InitDeviceObjects	int table
-431d00	4	.data	Motor_DrawFpsGraph, probe Motor_DrawFpsGraph, test sdcall_engmisc	float
-431d04	4	.data	Motor_DrawFpsGraph, Music_ApplyVolume.part.0, Music_DrawDebug +6	float
+431cf4	4	.data	CEngineApp_ctor, engineIni, probe CEngineApp_ctor +1	int table
+431cf8	4	.data	engineIni	int table
+431cfc	4	.data	CEngineApp_InitDeviceObjects, engineIni, probe CEngineApp_InitDeviceObjects	int table
+431d00	4	.data	Engine_DrawFpsGraph, probe Engine_DrawFpsGraph, test sdcall_engmisc	float
+431d04	4	.data	Engine_DrawFpsGraph, Music_ApplyVolume.part.0, Music_DrawDebug +6	float
 431d08	4	.data	Music_ApplyVolume.part.0, Music_DrawDebug, Music_UpdateVolumes +3	float
 431d0c	4	.data	Music_ApplyVolume.part.0, Music_DrawDebug, Music_Open +9	int table
 431d10	4	.data	Music_UpdateVolumes, Music_Voiceover, probe SDTest_Call via ucrtbase.dll +1	float
 431d14	4	.data	Music_UpdateVolumes, Music_Voiceover, probe Music_Voiceover +1	float
 431d18	4	.data	Music_FadeOut, Music_SetVolume, Music_UpdateVolumes +3	float
 431d1c	4	.data	Music_FadeOut, Music_UpdateVolumes, probe Music_FadeOut +1	float
-431d20	4	.data	CMapa_LoadTexture, probe CMapa_LoadTexture	float
-431d24	4	.data	CBspQ3_ReadFaces, CBspQ3_ReadLMaps, CBsp_LeerEMI +19	pointer table
-431d28	4	.data	Material_FiniListaMat	zero
-431d2c	4	.data	Material_FiniListaMat, probe CListaMat_Add	zero
-431d30	4	.data	Mat_ConvertBlend, probe CListaMat_Add	zero
+431d20	4	.data	CMap_LoadTexture, probe CMap_LoadTexture	float
+431d24	4	.data	CBspQ3_ReadFaces, CBspQ3_ReadLMaps, CBsp_ReadEMI +19	pointer table
+431d28	4	.data	Material_FiniMatList	zero
+431d2c	4	.data	Material_FiniMatList, probe CMatList_Add	zero
+431d30	4	.data	Mat_ConvertBlend, probe CMatList_Add	zero
 431d34	18	.data	Mat_ConvertBlend, probe Mat_ConvertBlend	int table
 431d4c	1	.data	E3D_Log, E3D_LogBlue, E3D_LogDebug +7	int table
 431d4d	3	.data	E3D_LogBlue, E3D_LogDebug, E3D_LogDebug2 +6	string
 431d50	20	.data	probe hot page 431000	int table
-431d70	4	.data	CMotorApp_MsgProc, CMotorApp_UpdateMenu, CMotorApp_ctor +5	int table
-431d74	4	.data	motorIni	int table
-431d78	4	.data	Render_ResetState, Render_SetMapa, probe Render_ResetState +1	int table
+431d70	4	.data	CEngineApp_MsgProc, CEngineApp_UpdateMenu, CEngineApp_ctor +5	int table
+431d74	4	.data	engineIni	int table
+431d78	4	.data	Render_ResetState, Render_SetMap, probe Render_ResetState +1	int table
 431d7c	8	.data	Render_ResetState, probe Render_ResetState	int table
 431d84	4	.data	probe hot page 431000	zero
-431d88	80	.data	Render_FinD3D, Render_IniD3D, probe Render_IniD3D	pointer table
+431d88	80	.data	Render_EndD3D, Render_IniD3D, probe Render_IniD3D	pointer table
 431e08	4	.data	CMatId_Register, Render_Shader, probe Render_Shader +1	zero
 431e0c	4	.data	Shader_Find, probe Shader_Find, test sdcall_eng3	pointer table
 431e10	8	.data	probe hot page 431000	zero
@@ -7418,15 +7418,15 @@
 43210c	2fc	.data	Render_Shader, probe SDTest_Peek	unknown
 432408	4	.data	Render_SetLightmapMat, Shader_DiffuseLightmap, Shader_Env +5	int table
 43240c	1	.data	Render_IniD3D, probe Render_InitMatrices, probe Render_SetMaterial +1	zero
-43240d	1	.data	Render_IniD3D, Render_InitMatrices, Render_MallaD3D +4	int table
+43240d	1	.data	Render_IniD3D, Render_InitMatrices, Render_MeshD3D +4	int table
 43240e	2	.data	probe Render_InitMatrices, probe Render_SetMaterial, test sdcall_render	zero
 432410	1	.data	Render_SetWorld, Render_SetWorldD3D, Render_SetWorldMatrix +6	int table
 432411	3	.data	Render_SetWorld, Render_SetWorldD3D, Render_SetWorldMatrix +6	zero
 432414	4	.data	Render_ProjTile, probe SDTest_Peek, probe SDTest_Poke +1	int table
-432418	1	.data	CMundo_Render, Engine_FrameSetup, Modelos_Render +3	int table
-432419	3	.data	probe Engine_FrameSetup, probe Modelos_Render, test sdcall_scrapmain	zero
-43241c	4	.data	BoxTri, CAlturas_QuadAddMesh, CCollideQuad_CalcExtens +14	float
-432420	4	.data	CCollideMesh_DrawDebug, CSuelo_ctor, Collide_TriVerts +3	zero
+432418	1	.data	CWorld_Render, Engine_FrameSetup, Models_Render +3	int table
+432419	3	.data	probe Engine_FrameSetup, probe Models_Render, test sdcall_scrapmain	zero
+43241c	4	.data	BoxTri, CHeights_QuadAddMesh, CCollideQuad_CalcExt +14	float
+432420	4	.data	CCollideMesh_DrawDebug, CGround_ctor, Collide_TriVerts +3	zero
 432424	8	.data	CCollideMesh_DrawDebug, Collide_TriVerts, probe CCollideMesh_DrawDebug +1	zero
 43242c	4	.data	CCollideMesh_DrawDebug, Collide_TriVerts, probe CCollideMesh_DrawDebug +1	float
 432430	8	.data	Proc_ReadField, probe Proc_ReadField	int table
@@ -7441,41 +7441,41 @@
 43249c	1c	.data	probe Proc_TypeLookup, ptr 4324ec	pointer table
 4324b8	4	.data	Proc_DefineType, Proc_ReadField, probe Proc_ReadField +1	pointer table
 4324bc	bc	.data	Proc_DefineType, Proc_ReadField, probe Proc_DefineType +1	unknown
-432578	4	.data	CModelo_Render, Proc_DefineType, Proc_ReadField +4	float
+432578	4	.data	CModel_Render, Proc_DefineType, Proc_ReadField +4	float
 43257c	4	.data	E3D_SetShadowLight, Proc_DefineType, Proc_ReadField +2	int table
 432580	4	.data	E3D_SetShadowLight, Proc_DefineType, Proc_ReadField +2	float
-432584	4	.data	Debug_Punto, probe Debug_Punto, probe SDTest_Peek +2	int table
+432584	4	.data	Debug_Point, probe Debug_Point, probe SDTest_Peek +2	int table
 432588	4	.data	Engine_Init, Timer_GetQPFreq, Timer_GetQPFreq64 +3	int table
 43258c	4	.data	DXUtil_Timer, probe DXUtil_Timer	int table
 432590	8	.data	Timer_GetQPFreq, probe Timer_GetQPFreq, test sdcall_nosleep	int table
-432598	8	.data	Grafico2D_GetPantalla, Grafico2D_SetPantalla, probe Grafico2D_GetPantalla +3	int table
-4325a0	4	.data	CGrafico2D_Draw, Grafico2D_SetPantalla, probe Grafico2D_SetPantalla +3	float
-4325a4	4	.data	CGrafico2D_Draw, Grafico2D_SetPantalla	float
-4325a8	4	.data	CGrafico2D_Draw, Grafico2D_SetPantalla, probe SDTest_Peek +1	float
-4325ac	4	.data	CGrafico2D_Draw, Grafico2D_SetPantalla	float
-4325b0	4	.data	CGrafico2D_Draw, probe CGrafico2D_Draw	zero
-4325b4	8	.data	CGrafico2D_Draw, probe CGrafico2D_Draw	int table
-4325bc	4c	.data	CGrafico2D_Draw, probe CGrafico2D_Draw	unknown
+432598	8	.data	Graphic2D_GetScreen, Graphic2D_SetScreen, probe Graphic2D_GetScreen +3	int table
+4325a0	4	.data	CGraphic2D_Draw, Graphic2D_SetScreen, probe Graphic2D_SetScreen +3	float
+4325a4	4	.data	CGraphic2D_Draw, Graphic2D_SetScreen	float
+4325a8	4	.data	CGraphic2D_Draw, Graphic2D_SetScreen, probe SDTest_Peek +1	float
+4325ac	4	.data	CGraphic2D_Draw, Graphic2D_SetScreen	float
+4325b0	4	.data	CGraphic2D_Draw, probe CGraphic2D_Draw	zero
+4325b4	8	.data	CGraphic2D_Draw, probe CGraphic2D_Draw	int table
+4325bc	4c	.data	CGraphic2D_Draw, probe CGraphic2D_Draw	unknown
 432608	10	.data	Err_Str, Err_VReport, probe PyString_FromString via ucrtbase.dll	string
 432618	c8	.data	Err_Str, Err_Unregister, Err_VReport +1	pointer table
 4326e0	258	.data	Err_Register, Err_Str, Err_Unregister +3	unknown
-432938	4	.data	CTextura_LoadFile, motorIni, probe CTextura_LoadFile +1	int table
-43293c	4	.data	CTextura_LoadFile, motorIni, probe CTextura_LoadFile +1	string
-432940	4	.data	CTextura_UploadLevel, probe CTextura_UploadLevel	int table
-432944	4	.data	CTextura_CreateD3D, probe CTextura_CreateD3D	int table
+432938	4	.data	CTexture_LoadFile, engineIni, probe CTexture_LoadFile +1	int table
+43293c	4	.data	CTexture_LoadFile, engineIni, probe CTexture_LoadFile +1	string
+432940	4	.data	CTexture_UploadLevel, probe CTexture_UploadLevel	int table
+432944	4	.data	CTexture_CreateD3D, probe CTexture_CreateD3D	int table
 432948	4	.data	Surface_SaveShot.part.0	int table
-43294c	4	.data	Bsp_Crear, CBsp_Calcular, CMundo_LoadSueloEscala +3	int table
-432950	4	.data	BspRad_Rayo, BspRad_Segmento, BspRegion_Debug +20	float
-432954	4	.data	BspRegion_Debug, BspTri_CalcGlow, BspTri_Mascara +16	float
-432958	8	.data	BspLMap_Insertar.part.0, BspTri_CalcGlow, BspTri_EsTexel +20	int table
-432960	8	.data	BspLMap_Insertar.part.0, BspTri_Rotar, Bsp_DlgProc +7	float
-432968	4	.data	BspLMap_Insertar.part.0, BspTri_Rotar, Bsp_DlgProc +6	int table
-43296c	4	.data	BspLMap_Insertar.part.0, BspTri_Rotar, Bsp_DlgProc +6	float
-432970	4	.data	Bsp_DlgProc, CBsp_DrawTri, CBsp_LeerEMI +6	int table
+43294c	4	.data	Bsp_Create, CBsp_Calculate, CWorld_LoadGroundScale +3	int table
+432950	4	.data	BspRad_Ray, BspRad_Segment, BspRegion_Debug +20	float
+432954	4	.data	BspRegion_Debug, BspTri_CalcGlow, BspTri_Mask +16	float
+432958	8	.data	BspLMap_Insert.part.0, BspTri_CalcGlow, BspTri_IsTexel +20	int table
+432960	8	.data	BspLMap_Insert.part.0, BspTri_Rotate, Bsp_DlgProc +7	float
+432968	4	.data	BspLMap_Insert.part.0, BspTri_Rotate, Bsp_DlgProc +6	int table
+43296c	4	.data	BspLMap_Insert.part.0, BspTri_Rotate, Bsp_DlgProc +6	float
+432970	4	.data	Bsp_DlgProc, CBsp_DrawTri, CBsp_ReadEMI +6	int table
 432974	4	.data	BspTri_GetAreas, CBsp_RadGlobal, probe SDTest_Call via ucrtbase.dll	float
 432978	c	.data	BspTri_GetAreas, CBsp_RadGlobal, probe BspTri_GetAreas	float
 432984	8	.data	BspTri_GetAreas, CBsp_RadGlobal, probe SDTest_Call via ucrtbase.dll	float
-43298c	4	.data	CBsp_GuardarIni, CBsp_RadGlobal, g_BspDlgChecks	int table
+43298c	4	.data	CBsp_SaveIni, CBsp_RadGlobal, g_BspDlgChecks	int table
 432990	4	.data	BspLMap_Init, probe BspLMap_Init, test sdlevel_bspcalc	int table
 432994	4	.data	BspRegion_Debug	int table
 432998	4	.data	CFlare_ctor, Engine_LoadIni, probe CFlare_ctor +1	float
@@ -7485,25 +7485,25 @@
 4329b0	4	.data	BlendMode_GetDst, BlendMode_GetSrc, probe BlendMode_GetDst	zero
 4329b4	4	.data	BlendMode_GetDst, BlendMode_GetSrc, probe BlendMode_GetSrc	int table
 4329b8	4c	.data	BlendMode_GetDst, BlendMode_GetSrc, probe BlendMode_GetDst +1	int table
-432a04	4	.data	Arch_New, probe Arch_New	int table
-432a08	4	.data	CEntradaWindows_AcquireMouse	string
+432a04	4	.data	DataFile_New, probe DataFile_New	int table
+432a08	4	.data	CInputWindows_AcquireMouse	string
 432a0c	4	.data	probe hot page 432000	string
-432a10	4	.data	Fondo2D_Render, probe Fondo2D_Render, probe SDTest_Peek +1	string
-432a14	4	.data	Fondo2D_Render, Fondo2D_Set, probe Fondo2D_Set +2	string
+432a10	4	.data	Background2D_Render, probe Background2D_Render, probe SDTest_Peek +1	string
+432a14	4	.data	Background2D_Render, Background2D_Set, probe Background2D_Set +2	string
 432a18	14	.data	RenderGamma_Begin, RenderGamma_ReleaseD3D, probe RenderGamma_Begin +1	float
 432a2c	4	.data	probe hot page 432000	zero
-432a30	4	.data	Bsp2_Render, BspLMap_Insertar.part.0, BspRegion_Debug +2	zero
-432a34	1c	.data	CBsp_AgruparMapas, CCollideMesh_DrawDebug, CSuelo_DrawDebug +2	int table
+432a30	4	.data	Bsp2_Render, BspLMap_Insert.part.0, BspRegion_Debug +2	zero
+432a34	1c	.data	CBsp_GroupMaps, CCollideMesh_DrawDebug, CGround_DrawDebug +2	int table
 432a50	20	.data	probe hot page 432000	int table
-432a70	4	.data	CMallaD3D_Build, MallaD3D_GrupoFits, probe MallaD3D_GrupoFits	int table
+432a70	4	.data	CMeshD3D_Build, MeshD3D_GroupFits, probe MeshD3D_GroupFits	int table
 432a74	4	.data	CNodeFX_Spring_ctor, CNodeFX_Wheel_ctor, probe CNodeFX_Spring_ctor +1	pointer table
-432a78	4	.data	RenderMallaD3D_AddTransp, RenderMallaD3D_Flush2, probe RenderMallaD3D_Flush2 +2	int table
-432a7c	1	.data	Escena_Load, M3D_LeeMalla, M3D_LeePortal.part.0 +5	int table
-432a7d	1	.data	CBspQ3_ReadLMaps, probe Escena_Load, probe M3D_SetOk +2	int table
-432a7e	2	.data	probe Escena_Load, probe M3D_SetOk, test sdcall_leem3d +1	zero
+432a78	4	.data	RenderMeshD3D_AddTransp, RenderMeshD3D_Flush2, probe RenderMeshD3D_Flush2 +2	int table
+432a7c	1	.data	Scene_Load, M3D_ReadMesh, M3D_ReadPortal.part.0 +5	int table
+432a7d	1	.data	CBspQ3_ReadLMaps, probe Scene_Load, probe M3D_SetOk +2	int table
+432a7e	2	.data	probe Scene_Load, probe M3D_SetOk, test sdcall_leem3d +1	zero
 432a80	4	.data	Lex_AddDigits, Lex_Comment, Lex_Directive +16	int table
-432a84	4	.data	Ilum_Light, Ilum_Smooth, probe SDTest_Peek +2	float
-432a88	c	.data	CRadiosidad_ctor, probe Cad_Copy via ucrtbase.dll	string
+432a84	4	.data	Illum_Light, Illum_Smooth, probe SDTest_Peek +2	float
+432a88	c	.data	CRadiosity_ctor, probe String_Copy via ucrtbase.dll	string
 432a94	8	.data	probe hot page 432000	float
 432a9c	8	.data	probe hot page 432000	zero
 432aa4	34	.data	probe hot page 432000	float
@@ -7549,7 +7549,7 @@
 44416c	10	.data	Init_NativeFunc_StopStreamingVoice, probe cPy_Function_SetFunc, probe cPy_NativeFunc_Insert +1	zero
 44417c	d	.data	Init_GVar_ShowAI, probe GVar_InitInt, probe GVars_Init	zero
 444189	3	.data	Init_GVar_ShowAI, probe GVar_InitInt	zero
-44418c	4	.data	CNodesWorld2D_AnalizeGraph, CNodesWorld_Analize, CNodesWorld_AnalizeGraph +7	zero
+44418c	4	.data	CNodesWorld2D_AnalyzeGraph, CNodesWorld_Analyze, CNodesWorld_AnalyzeGraph +7	zero
 444190	4	.data	Init_GVar_ShowAI, probe GVar_InitInt	zero
 444194	d	.data	Init_GVar_NotShootAI, probe GVar_InitInt, probe GVars_Init	zero
 4441a1	3	.data	Init_GVar_NotShootAI, probe GVar_InitInt	zero
@@ -7568,8 +7568,8 @@
 444200	4	.data	probe GVar_InitFloat	bss
 444204	8	.data	cAIBishop_SetShoot, probe GVar_InitFloat	bss
 44420c	4	.data	-	bss
-444210	4	.data	Arch_Printf, Str_Printf, Str_PrintfQuiet +9	bss
-444214	4	.data	Arch_Printf, Str_Printf, Str_PrintfQuiet +8	bss
+444210	4	.data	DataFile_Printf, Str_Printf, Str_PrintfQuiet +9	bss
+444214	4	.data	DataFile_Printf, Str_Printf, Str_PrintfQuiet +8	bss
 444218	d	.data	Init_GVar_DistMinCheckPauseAI, probe GVar_InitFloat, probe GVars_Init	bss
 444225	3	.data	Init_GVar_DistMinCheckPauseAI, probe GVar_InitFloat	bss
 444228	4	.data	Init_GVar_DistMinCheckPauseAI, cAIChar_CheckPause, probe GVar_InitFloat	bss
@@ -7714,14 +7714,14 @@
 444610	d	.data	Init_GVar_AngleStrafeUnderAttackGearAI, probe GVar_InitFloat, probe GVars_Init	bss
 44461d	3	.data	Init_GVar_AngleStrafeUnderAttackGearAI, probe GVar_InitFloat	bss
 444620	8	.data	Init_GVar_AngleStrafeUnderAttackGearAI, cAIControlGear_SetParams, probe GVar_InitFloat	bss
-444628	d	.data	Init_GVar_LimVelRotDinamicMessengerAI, probe GVar_InitFloat, probe GVars_Init	bss
-444635	3	.data	Init_GVar_LimVelRotDinamicMessengerAI, probe GVar_InitFloat	bss
-444638	4	.data	Init_GVar_LimVelRotDinamicMessengerAI, cAIControlMessenger_SetTurnSpeed, probe GVar_InitFloat	bss
-44463c	4	.data	Init_GVar_LimVelRotDinamicMessengerAI, probe GVar_InitFloat	bss
-444640	d	.data	Init_GVar_VelRotDinamicMessengerAI, probe GVar_InitFloat, probe GVars_Init	bss
-44464d	3	.data	Init_GVar_VelRotDinamicMessengerAI, probe GVar_InitFloat	bss
-444650	4	.data	Init_GVar_VelRotDinamicMessengerAI, cAIControlMessenger_SetTurnSpeed, probe GVar_InitFloat	bss
-444654	4	.data	Init_GVar_VelRotDinamicMessengerAI, probe GVar_InitFloat	bss
+444628	d	.data	Init_GVar_LimVelRotDynamicMessengerAI, probe GVar_InitFloat, probe GVars_Init	bss
+444635	3	.data	Init_GVar_LimVelRotDynamicMessengerAI, probe GVar_InitFloat	bss
+444638	4	.data	Init_GVar_LimVelRotDynamicMessengerAI, cAIControlMessenger_SetTurnSpeed, probe GVar_InitFloat	bss
+44463c	4	.data	Init_GVar_LimVelRotDynamicMessengerAI, probe GVar_InitFloat	bss
+444640	d	.data	Init_GVar_VelRotDynamicMessengerAI, probe GVar_InitFloat, probe GVars_Init	bss
+44464d	3	.data	Init_GVar_VelRotDynamicMessengerAI, probe GVar_InitFloat	bss
+444650	4	.data	Init_GVar_VelRotDynamicMessengerAI, cAIControlMessenger_SetTurnSpeed, probe GVar_InitFloat	bss
+444654	4	.data	Init_GVar_VelRotDynamicMessengerAI, probe GVar_InitFloat	bss
 444658	d	.data	Init_GVar_TimeStrafeUnderAttackSentinelAI, probe GVar_InitFloat, probe GVars_Init	bss
 444665	3	.data	Init_GVar_TimeStrafeUnderAttackSentinelAI, probe GVar_InitFloat	bss
 444668	4	.data	Init_GVar_TimeStrafeUnderAttackSentinelAI, cAIControlSentinel_Strafe, probe GVar_InitFloat	bss
@@ -7959,7 +7959,7 @@
 444c8d	3	.data	Init_GVar_ShowAStarAI, probe GVar_InitInt	bss
 444c90	4	.data	CAStar2D_DrawDebug, CAStarSup_Draw, CAStar_DrawDebug +3	bss
 444c94	4	.data	Init_GVar_ShowAStarAI, probe GVar_InitInt	bss
-444c98	4	.data	AIV_StartTrack, CApp_DoneGame, SAI_AnalizeTraffic +13	bss
+444c98	4	.data	AIV_StartTrack, CApp_DoneGame, SAI_AnalyzeTraffic +13	bss
 444c9c	d	.data	Init_GVar_MinDistNodeTrafficAI, probe GVar_InitFloat, probe GVars_Init	bss
 444ca9	3	.data	Init_GVar_MinDistNodeTrafficAI, probe GVar_InitFloat	bss
 444cac	4	.data	CNodesTraffic_Load, Init_GVar_MinDistNodeTrafficAI, probe GVar_InitFloat	bss
@@ -7984,12 +7984,12 @@
 444d21	3	.data	Init_GVar_MaxNumTrackNormalDensityAI, probe GVar_InitInt	bss
 444d24	4	.data	CNodesTrafficInDoor_PickPoint, CNodesTrafficInDoor_Respawn, CNodesTraffic_CollectCell +2	bss
 444d28	4	.data	CNodesTrafficInDoor_PickPoint, CNodesTrafficInDoor_Respawn, Init_GVar_MaxNumTrackNormalDensityAI +1	bss
-444d2c	4	.data	AIV_StartTrack, CApp_DoneGame, SAI_AnalizeTraffic +12	bss
-444d30	4	.data	CNodesWorld_AddExtraPoints, CNodesWorld_AnalizeGraph, CNodesWorld_Draw +10	bss
+444d2c	4	.data	AIV_StartTrack, CApp_DoneGame, SAI_AnalyzeTraffic +12	bss
+444d30	4	.data	CNodesWorld_AddExtraPoints, CNodesWorld_AnalyzeGraph, CNodesWorld_Draw +10	bss
 444d34	4	.data	AICC3D_ArcCorner, AICC3D_ArcPath, CAStarSup_ctor +36	bss
 444d38	d	.data	Init_GVar_ShowNodesAI, probe GVar_InitInt, probe GVars_Init	bss
 444d45	3	.data	Init_GVar_ShowNodesAI, probe GVar_InitInt	bss
-444d48	4	.data	CNodesWorld_Analize, CNodesWorld_AnalizeGraph, CNodesWorld_Draw +8	bss
+444d48	4	.data	CNodesWorld_Analyze, CNodesWorld_AnalyzeGraph, CNodesWorld_Draw +8	bss
 444d4c	4	.data	Init_GVar_ShowNodesAI, probe GVar_InitInt	bss
 444d50	d	.data	Init_GVar_RADIUS_OBJECTIVE_IN_ROUTE, probe GVar_InitFloat, probe GVars_Init	bss
 444d5d	3	.data	Init_GVar_RADIUS_OBJECTIVE_IN_ROUTE, probe GVar_InitFloat	bss
@@ -8003,7 +8003,7 @@
 444dc8	4	.data	AICC2D_ArcStep, CApp_DoneGame, CApp_ctor +14	bss
 444dcc	d	.data	Init_GVar_ShowNodes2DAI, probe GVar_InitInt, probe GVars_Init	bss
 444dd9	3	.data	Init_GVar_ShowNodes2DAI, probe GVar_InitInt	bss
-444ddc	4	.data	CNodesWorld2D_AnalizeGraph, CNodesWorld2D_ClearLists, CNodesWorld2D_Draw +9	bss
+444ddc	4	.data	CNodesWorld2D_AnalyzeGraph, CNodesWorld2D_ClearLists, CNodesWorld2D_Draw +9	bss
 444de0	4	.data	Init_GVar_ShowNodes2DAI, probe GVar_InitInt	bss
 444de4	d	.data	DebugLog_Init, Init_GVar_AltPerpFloorAI, probe GVar_InitFloat +1	bss
 444df1	3	.data	DebugLog_Init, Init_GVar_AltPerpFloorAI, probe GVar_InitFloat	bss
@@ -8013,7 +8013,7 @@
 444e09	b	.data	Init_GVar_BatchBuildGraph2DAI, probe GVar_InitInt	bss
 444e14	d	.data	Init_GVar_AltMinTestWalkAI, probe GVar_InitFloat, probe GVars_Init	bss
 444e21	3	.data	Init_GVar_AltMinTestWalkAI, probe GVar_InitFloat	bss
-444e24	4	.data	AICC2D_Corridor, CNodesWorld2D_AnalizeGraph, CNodesWorld2D_GroundLine +8	bss
+444e24	4	.data	AICC2D_Corridor, CNodesWorld2D_AnalyzeGraph, CNodesWorld2D_GroundLine +8	bss
 444e28	4	.data	Init_GVar_AltMinTestWalkAI, probe GVar_InitFloat	bss
 444e2c	d	.data	Init_GVar_ShowTestCanGoAI, probe GVar_InitInt, probe GVars_Init	bss
 444e39	3	.data	Init_GVar_ShowTestCanGoAI, probe GVar_InitInt	bss
@@ -8036,7 +8036,7 @@
 445a5c	4	.data	CWinApp_ctor, DebugLog_Init, Fini_GVar_LogFile +1	bss
 445a60	4	.data	CWinApp_ctor, Fini_GVar_LogFile, Init_GVar_LogFile	bss
 445a64	10	.data	Init_GVar_debug	bss
-445a74	4	.data	CBsp_Preparar, CheckFailed, Con_Bluef +12	bss
+445a74	4	.data	CBsp_Prepare, CheckFailed, Con_Bluef +12	bss
 445a78	4	.data	Init_GVar_debug	bss
 445a7c	4	.data	CheckFailed, Con_FatalErrorf	bss
 445a80	400	.data	Con_Bluef, Con_ColorPrintf, Con_Debugf +6	bss
@@ -8093,9 +8093,9 @@
 446020	10	.data	Fini_GVar_BankerSteal3Sound, Init_GVar_BankerSteal3Sound	bss
 446030	4	.data	FXA_StealSound, Fini_GVar_BankerSteal3Sound, Init_GVar_BankerSteal3Sound	bss
 446034	4	.data	Fini_GVar_BankerSteal3Sound, Init_GVar_BankerSteal3Sound	bss
-446038	10	.data	Init_GVar_BankerStealQuanto	bss
-446048	4	.data	ChType_BankMasterSuction, ChType_BankerAttack, Init_GVar_BankerStealQuanto	bss
-44604c	4	.data	Init_GVar_BankerStealQuanto	bss
+446038	10	.data	Init_GVar_BankerStealAmount	bss
+446048	4	.data	ChType_BankMasterSuction, ChType_BankerAttack, Init_GVar_BankerStealAmount	bss
+44604c	4	.data	Init_GVar_BankerStealAmount	bss
 446050	10	.data	Init_NativeFunc_BankerAttack	bss
 446060	10	.data	Init_NativeFunc_BankDirectorEndActionInit	bss
 446070	10	.data	Init_GVar_BankerStealPosY	bss
@@ -8477,9 +8477,9 @@
 446fc8	4	.data	ChType_PoliceEndActionMoney, Init_GVar_PoliceAlarmStepSTM	bss
 446fcc	4	.data	Init_GVar_PoliceAlarmStepSTM	bss
 446fd0	10	.data	Init_NativeFunc_PoliceActionPress	bss
-446fe0	10	.data	Init_GVar_PoliceStealQuanto	bss
-446ff0	4	.data	ChType_PoliceEndActionMoney, Init_GVar_PoliceStealQuanto, cLittlePoliceLocalLogic_UpdateBribe	bss
-446ff4	4	.data	Init_GVar_PoliceStealQuanto	bss
+446fe0	10	.data	Init_GVar_PoliceStealAmount	bss
+446ff0	4	.data	ChType_PoliceEndActionMoney, Init_GVar_PoliceStealAmount, cLittlePoliceLocalLogic_UpdateBribe	bss
+446ff4	4	.data	Init_GVar_PoliceStealAmount	bss
 446ff8	4	.data	ChType_PoliceBossAction, ChType_PoliceBossBrup, ChType_PoliceBossSphereHit +1	bss
 446ffc	10	.data	Fini_GVar_PoliceBossBrupBaseFile, Init_GVar_PoliceBossBrupBaseFile	bss
 44700c	4	.data	ChType_FXPoliceBossBrup, Fini_GVar_PoliceBossBrupBaseFile, Init_GVar_PoliceBossBrupBaseFile	bss
@@ -8573,16 +8573,16 @@
 447304	10	.data	Init_GVar_PadTurnSpeed	bss
 447314	4	.data	Init_GVar_PadTurnSpeed, cWalkCharControl_Update	bss
 447318	4	.data	Init_GVar_PadTurnSpeed	bss
-44731c	10	.data	Init_GVar_FXRustyChispasSoundVol	bss
-44732c	4	.data	Init_GVar_FXRustyChispasSoundVol, cEmbeddedFXRusty_Update	bss
-447330	4	.data	Init_GVar_FXRustyChispasSoundVol	bss
+44731c	10	.data	Init_GVar_FXRustySparksSoundVol	bss
+44732c	4	.data	Init_GVar_FXRustySparksSoundVol, cEmbeddedFXRusty_Update	bss
+447330	4	.data	Init_GVar_FXRustySparksSoundVol	bss
 447334	10	.data	Init_GVar_SentinelLaserScanerDist	bss
 447344	4	.data	Init_GVar_SentinelLaserScanerDist, cEmbeddedFXSentinel_Update	bss
 447348	4	.data	Init_GVar_SentinelLaserScanerDist	bss
 44734c	10	.data	Init_NativeFunc_FXPoliceAlarmEnd	bss
-44735c	10	.data	Fini_GVar_FXRustyChispasSound, Init_GVar_FXRustyChispasSound	bss
-44736c	4	.data	Fini_GVar_FXRustyChispasSound, Init_GVar_FXRustyChispasSound, cEmbeddedFXRusty_Update	bss
-447370	4	.data	Fini_GVar_FXRustyChispasSound, Init_GVar_FXRustyChispasSound	bss
+44735c	10	.data	Fini_GVar_FXRustySparksSound, Init_GVar_FXRustySparksSound	bss
+44736c	4	.data	Fini_GVar_FXRustySparksSound, Init_GVar_FXRustySparksSound, cEmbeddedFXRusty_Update	bss
+447370	4	.data	Fini_GVar_FXRustySparksSound, Init_GVar_FXRustySparksSound	bss
 447374	10	.data	Init_NativeFunc_FXPoliceAlarmInit	bss
 447384	10	.data	Init_GVar_MessengerLightingDist	bss
 447394	4	.data	Init_GVar_MessengerLightingDist, cEmbeddedFXMessenger_Update	bss
@@ -8955,9 +8955,9 @@
 448348	10	.data	Fini_GVar_FXMotorSmokeFile, Init_GVar_FXMotorSmokeFile	bss
 448358	4	.data	Fini_GVar_FXMotorSmokeFile, Init_GVar_FXMotorSmokeFile, cVehicleMotors_Update	bss
 44835c	4	.data	Fini_GVar_FXMotorSmokeFile, Init_GVar_FXMotorSmokeFile	bss
-448360	10	.data	Init_GVar_FXMotorCalimaOffset	bss
-448370	4	.data	Init_GVar_FXMotorCalimaOffset, cVehicleMotors_Update	bss
-448374	4	.data	Init_GVar_FXMotorCalimaOffset	bss
+448360	10	.data	Init_GVar_FXMotorHazeOffset	bss
+448370	4	.data	Init_GVar_FXMotorHazeOffset, cVehicleMotors_Update	bss
+448374	4	.data	Init_GVar_FXMotorHazeOffset	bss
 448378	10	.data	Init_GVar_FXEngineTrailHideTime	bss
 448388	4	.data	Init_GVar_FXEngineTrailHideTime, VM_UpdateEffects	bss
 44838c	4	.data	Init_GVar_FXEngineTrailHideTime	bss
@@ -8973,12 +8973,12 @@
 4483d8	10	.data	Init_GVar_FXEngineGlowSizeAtt	bss
 4483e8	4	.data	Init_GVar_FXEngineGlowSizeAtt, cVehicleMotorsEffects_Glow	bss
 4483ec	4	.data	Init_GVar_FXEngineGlowSizeAtt	bss
-4483f0	10	.data	Init_GVar_FXMotorCalima	bss
-448400	4	.data	Init_GVar_FXMotorCalima, cVehicleMotors_Update	bss
-448404	4	.data	Init_GVar_FXMotorCalima	bss
-448408	10	.data	Fini_GVar_FXMotorCalimaFile, Init_GVar_FXMotorCalimaFile	bss
-448418	4	.data	Fini_GVar_FXMotorCalimaFile, Init_GVar_FXMotorCalimaFile, cVehicleMotors_Update	bss
-44841c	4	.data	Fini_GVar_FXMotorCalimaFile, Init_GVar_FXMotorCalimaFile	bss
+4483f0	10	.data	Init_GVar_FXMotorHaze	bss
+448400	4	.data	Init_GVar_FXMotorHaze, cVehicleMotors_Update	bss
+448404	4	.data	Init_GVar_FXMotorHaze	bss
+448408	10	.data	Fini_GVar_FXMotorHazeFile, Init_GVar_FXMotorHazeFile	bss
+448418	4	.data	Fini_GVar_FXMotorHazeFile, Init_GVar_FXMotorHazeFile, cVehicleMotors_Update	bss
+44841c	4	.data	Fini_GVar_FXMotorHazeFile, Init_GVar_FXMotorHazeFile	bss
 448420	10	.data	Init_GVar_FXEngineGlowDistFadeMult	bss
 448430	4	.data	Init_GVar_FXEngineGlowDistFadeMult, VM_UpdateEffects, cVehicleMotorsEffects_Glow +1	bss
 448434	4	.data	Init_GVar_FXEngineGlowDistFadeMult	bss
@@ -9802,7 +9802,7 @@
 44ab40	4	.data	Pack_AddFileName, Pack_CheckDuplicates	bss
 44ab44	18	.data	Fini_cStringList_PackNames, PackNames_Find, Pack_Open	bss
 44ab5c	10	.data	Fini_GVar_PathInPackFile, Init_GVar_PathInPackFile	bss
-44ab6c	4	.data	ArchIO_Open, Fini_GVar_PathInPackFile, Init_GVar_PathInPackFile +6	bss
+44ab6c	4	.data	FileIO_Open, Fini_GVar_PathInPackFile, Init_GVar_PathInPackFile +6	bss
 44ab70	4	.data	Fini_GVar_PathInPackFile, Init_GVar_PathInPackFile, Scrap_ClosePack +1	bss
 44ab74	10	.data	Init_GVar_BuildPackPrompt	bss
 44ab84	4	.data	Init_GVar_BuildPackPrompt, Pack_Build	bss
@@ -9835,12 +9835,12 @@
 44b61c	4	.data	CApp_Init, CWinApp_Init, Fini_GVar_SelectedLanguage +2	bss
 44b620	4	.data	Lang_FindId, Lang_Free, Lang_Load	bss
 44b624	4	.data	Lang_Free, Lang_GetLanguage, Lang_Load +1	bss
-44b628	4	.data	CBsp_AgruparMapas, CBsp_IniciarAreas, CBsp_IniciarRegiones +18	bss
-44b62c	4	.data	CBsp_LuzDirecta, Mem_Count	bss
+44b628	4	.data	CBsp_GroupMaps, CBsp_InitAreas, CBsp_InitRegions +18	bss
+44b62c	4	.data	CBsp_DirectLight, Mem_Count	bss
 44b630	8	.data	Mem_Count	bss
-44b638	4	.data	Mem_Count, Motor_DrawStats	bss
+44b638	4	.data	Mem_Count, Engine_DrawStats	bss
 44b63c	4	.data	Mem_Count	bss
-44b640	4	.data	CAnimacion_Read, Mem_Count, PyPool_Free +2	bss
+44b640	4	.data	CAnimation_Read, Mem_Count, PyPool_Free +2	bss
 44b644	4	.data	Mem_Count	bss
 44b648	fe	.data	cString_Append	bss
 44b746	2	.data	Steam_GetTicket, cString_Append	bss
@@ -10224,9 +10224,9 @@
 44d47c	10	.data	Init_GVar_MessengerTubeState	bss
 44d48c	4	.data	Init_GVar_MessengerTubeState, Messenger_Deliver.part.0, cEmbeddedFXDataPack_Init +4	bss
 44d490	4	.data	Init_GVar_MessengerTubeState, cMessengers_Init	bss
-44d494	10	.data	Init_GVar_MessengerObjetiveDistance	bss
-44d4a4	4	.data	Init_GVar_MessengerObjetiveDistance, Messenger_Deliver.part.0	bss
-44d4a8	4	.data	Init_GVar_MessengerObjetiveDistance	bss
+44d494	10	.data	Init_GVar_MessengerObjectiveDistance	bss
+44d4a4	4	.data	Init_GVar_MessengerObjectiveDistance, Messenger_Deliver.part.0	bss
+44d4a8	4	.data	Init_GVar_MessengerObjectiveDistance	bss
 44d4ac	10	.data	Init_GVar_MessengerTakenCallback	bss
 44d4bc	14	.data	ChType_MessengerTakeDataPack, Fini_GVar_MessengerTakenCallback, Init_GVar_MessengerTakenCallback	bss
 44d4d0	10	.data	Init_GVar_MessengerDropPrice	bss
@@ -10292,9 +10292,9 @@
 44d728	10	.data	Init_GVar_ParkingCharCheckDistance	bss
 44d738	4	.data	Init_GVar_ParkingCharCheckDistance, Parking_Think	bss
 44d73c	4	.data	Init_GVar_ParkingCharCheckDistance	bss
-44d740	10	.data	Init_GVar_ParkingVehiCheckDistance	bss
-44d750	4	.data	Init_GVar_ParkingVehiCheckDistance, Parking_Think	bss
-44d754	4	.data	Init_GVar_ParkingVehiCheckDistance	bss
+44d740	10	.data	Init_GVar_ParkingVehicleCheckDistance	bss
+44d750	4	.data	Init_GVar_ParkingVehicleCheckDistance, Parking_Think	bss
+44d754	4	.data	Init_GVar_ParkingVehicleCheckDistance	bss
 44d758	8	.data	Parking_Find, Parking_Look, Parking_Native +1	bss
 44d760	10	.data	Init_GVar_PoliceBossMinSpecialActionTime	bss
 44d770	4	.data	Init_GVar_PoliceBossMinSpecialActionTime, cPoliceBossLocalLogic_FindTarget	bss
@@ -11647,22 +11647,22 @@
 4a8034	4	.data	CGameModel_UpdateTransforms, Init_GVar_R_ForcePreRenderTransform	bss
 4a8038	4	.data	Init_GVar_R_ForcePreRenderTransform	bss
 4a803c	10	.data	Init_GVar_R_CoefMLODTraffic	bss
-4a804c	8	.data	Init_GVar_R_CoefMLODTraffic, grupos.1	bss
+4a804c	8	.data	Init_GVar_R_CoefMLODTraffic, groups.1	bss
 4a8054	10	.data	Init_GVar_R_CoefMLODEngines	bss
-4a8064	8	.data	Init_GVar_R_CoefMLODEngines, grupos.1	bss
+4a8064	8	.data	Init_GVar_R_CoefMLODEngines, groups.1	bss
 4a806c	10	.data	Init_GVar_R_CoefMLODOutElement	bss
-4a807c	8	.data	Init_GVar_R_CoefMLODOutElement, grupos.1	bss
+4a807c	8	.data	Init_GVar_R_CoefMLODOutElement, groups.1	bss
 4a8084	10	.data	Init_GVar_R_CoefMLODMenuElement	bss
-4a8094	8	.data	Init_GVar_R_CoefMLODMenuElement, grupos.1	bss
+4a8094	8	.data	Init_GVar_R_CoefMLODMenuElement, groups.1	bss
 4a809c	10	.data	Init_GVar_R_CoefMLODCharacters	bss
-4a80ac	8	.data	Init_GVar_R_CoefMLODCharacters, grupos.1	bss
+4a80ac	8	.data	Init_GVar_R_CoefMLODCharacters, groups.1	bss
 4a80b4	10	.data	Init_GVar_R_GetModelVertex	bss
 4a80c4	4	.data	CGameModel_ClosestVertex, CGameModel_RandomVertices, CGameModel_Vertices +3	bss
 4a80c8	4	.data	Init_GVar_R_GetModelVertex	bss
 4a80cc	10	.data	Init_GVar_R_CoefMLODPilots	bss
-4a80dc	8	.data	Init_GVar_R_CoefMLODPilots, grupos.1	bss
+4a80dc	8	.data	Init_GVar_R_CoefMLODPilots, groups.1	bss
 4a80e4	10	.data	Init_GVar_R_CoefMLODShips	bss
-4a80f4	8	.data	Init_GVar_R_CoefMLODShips, grupos.1	bss
+4a80f4	8	.data	Init_GVar_R_CoefMLODShips, groups.1	bss
 4a80fc	10	.data	Init_GVar_c_schk	bss
 4a810c	4	.data	Collision_Slide, Engine_TestSphere, Init_GVar_c_schk +1	bss
 4a8110	4	.data	Init_GVar_c_schk	bss
@@ -11701,7 +11701,7 @@
 4a81fd	3	.data	CPsaImage_dtor, WorldInfo_NextDummy, test sdcall_scrapworld +1	bss
 4a8200	4	.data	CPsaImage_dtor, WorldInfo_Begin, WorldInfo_Match.part.0 +5	bss
 4a8204	104	.data	CPsaImage_dtor, WorldInfo_Begin, WorldInfo_Match.part.0 +3	bss
-4a8308	4	.data	Camera_GetActual, Camera_SetActual, Engine_Render +1	bss
+4a8308	4	.data	Camera_GetCurrent, Camera_SetCurrent, Engine_Render +1	bss
 4a830c	4	.data	Engine_DebugKeys, Engine_FinalCleanup, Engine_OneTimeInit +1	bss
 4a8310	4	.data	Engine_FinalCleanup, Engine_FrameMove, Engine_OneTimeInit +1	bss
 4a8314	4	.data	Engine_FrameMove, Engine_SetCallback, test sdcall_scrapmain	bss
@@ -11987,82 +11987,82 @@
 4a8ea4	8	.data	Credits_Begin, Credits_End, Credits_Init	bss
 4a8eac	4	.data	MotionBlur_Add	bss
 4a8eb0	4	.data	Credits_Blur	bss
-4a8eb4	14	.data	Cad_FromInt	bss
+4a8eb4	14	.data	String_FromInt	bss
 4a8ec8	4	.data	CAnimCtrl_Events, CAnimMat_GetFrame, CGameModel_UpdateTransforms +30	bss
-4a8ecc	4	.data	CMotorApp_Render	bss
+4a8ecc	4	.data	CEngineApp_Render	bss
 4a8ed0	4	.data	CFXTexLava_Update, CFXTexScroll_Update, CFlare_Render +10	bss
-4a8ed4	4	.data	CModelo_UpdateAnims, CMotorApp_FrameMove, Motor_DrawFpsGraph +4	bss
-4a8ed8	4	.data	CMotorApp_FrameMove, SombrasStencil_Render	bss
-4a8edc	4	.data	CMotorApp_FrameMove	bss
-4a8ee0	4	.data	CFXNewsPanel_Update, CMotorApp_FrameMove, test sdcall_eng3	bss
-4a8ee4	4	.data	CMotorApp_FrameMove, Music_UpdateVolumes	bss
-4a8ee8	8	.data	CMotorApp_FrameMove	bss
+4a8ed4	4	.data	CModel_UpdateAnims, CEngineApp_FrameMove, Engine_DrawFpsGraph +4	bss
+4a8ed8	4	.data	CEngineApp_FrameMove, ShadowsStencil_Render	bss
+4a8edc	4	.data	CEngineApp_FrameMove	bss
+4a8ee0	4	.data	CFXNewsPanel_Update, CEngineApp_FrameMove, test sdcall_eng3	bss
+4a8ee4	4	.data	CEngineApp_FrameMove, Music_UpdateVolumes	bss
+4a8ee8	8	.data	CEngineApp_FrameMove	bss
 4a8ef0	4	.data	CAnimCtrl_Start, CAnimCtrl_Update, CAnimMat_Start +17	bss
-4a8ef4	4	.data	CMotorApp_FrameMove, CNodeFX_Spring_Apply, CNodeFX_Wheel_Apply +1	bss
+4a8ef4	4	.data	CEngineApp_FrameMove, CNodeFX_Spring_Apply, CNodeFX_Wheel_Apply +1	bss
 4a8ef8	1	.data	Bsp_RenderTransp, CBsp_DrawFX, CBsp_Render +13	bss
-4a8ef9	1	.data	CMotorApp_MsgProc, CMotorApp_UpdateMenu, Render_MallaD3D +1	bss
-4a8efa	1	.data	Debug_Punto, Debug_PuntosDraw, test sdlevel +1	bss
-4a8efb	1	.data	CMotorApp_MsgProc, CMotorApp_Render, DVF_Process +8	bss
-4a8efc	1	.data	CMotorApp_MsgProc, CMotorApp_Render, CMotorApp_UpdateMenu +8	bss
-4a8efd	1	.data	CMotorApp_MsgProc, CMotorApp_Render, CMotorApp_UpdateMenu +6	bss
-4a8efe	1	.data	CMotorApp_Render, CMotorApp_ResetDevice, test sdcall_eng4 +4	bss
+4a8ef9	1	.data	CEngineApp_MsgProc, CEngineApp_UpdateMenu, Render_MeshD3D +1	bss
+4a8efa	1	.data	Debug_Point, Debug_PointsDraw, test sdlevel +1	bss
+4a8efb	1	.data	CEngineApp_MsgProc, CEngineApp_Render, DVF_Process +8	bss
+4a8efc	1	.data	CEngineApp_MsgProc, CEngineApp_Render, CEngineApp_UpdateMenu +8	bss
+4a8efd	1	.data	CEngineApp_MsgProc, CEngineApp_Render, CEngineApp_UpdateMenu +6	bss
+4a8efe	1	.data	CEngineApp_Render, CEngineApp_ResetDevice, test sdcall_eng4 +4	bss
 4a8eff	1	.data	test sdcall_nosleep, test sdcall_scrapmain	bss
-4a8f00	2	.data	BspTri_Draw, CBspQ3_Render, CGrafico3D_Draw +8	bss
-4a8f02	2	.data	BspTri_Draw, CBspQ3_Render, CGrafico3D_Draw +7	bss
-4a8f04	4	.data	BspTri_Draw, CBspQ3_Render, CGrafico3D_Draw +6	bss
-4a8f08	4	.data	Motor_DrawStats, Render_SetMapa	bss
-4a8f0c	4	.data	DuDv_RenderBump, Motor_DrawStats, Render_SetMaterial	bss
-4a8f10	4	.data	CNodo3D_Render, Motor_DrawStats, test sdcall_nodo3d	bss
-4a8f14	4	.data	CNodo3D_Update, Motor_DrawStats	bss
-4a8f18	4	.data	Motor_DrawStats, SistPart_Draw2	bss
-4a8f1c	4	.data	Motor_DrawStats, Trails_Render	bss
+4a8f00	2	.data	BspTri_Draw, CBspQ3_Render, CGraphic3D_Draw +8	bss
+4a8f02	2	.data	BspTri_Draw, CBspQ3_Render, CGraphic3D_Draw +7	bss
+4a8f04	4	.data	BspTri_Draw, CBspQ3_Render, CGraphic3D_Draw +6	bss
+4a8f08	4	.data	Engine_DrawStats, Render_SetMap	bss
+4a8f0c	4	.data	DuDv_RenderBump, Engine_DrawStats, Render_SetMaterial	bss
+4a8f10	4	.data	CNode3D_Render, Engine_DrawStats, test sdcall_nodo3d	bss
+4a8f14	4	.data	CNode3D_Update, Engine_DrawStats	bss
+4a8f18	4	.data	Engine_DrawStats, ParticleSystem_Draw2	bss
+4a8f1c	4	.data	Engine_DrawStats, Trails_Render	bss
 4a8f20	8	.data	-	bss
-4a8f28	4	.data	motorIni	bss
-4a8f2c	4	.data	CFlare_Render, M3D_LeeMaterial, motorIni +1	bss
-4a8f30	40	.data	motorIni	bss
-4a8f70	4	.data	CCollideMesh_DrawDebug, CSuelo_DrawDebug, Engine_FrameSetup +4	bss
-4a8f74	4	.data	CMotorApp_InitDeviceObjects, Fnt_MatContorno, Motor_DrawStats +3	bss
-4a8f78	4	.data	CMotorApp_RestoreDeviceObjects, Motor_DrawStats, test sdcall_eng4	bss
-4a8f7c	10	.data	CMotorApp_ctor, motorIni	bss
-4a8f8c	4	.data	CMotorApp_Render, Motor_FrameDue, motorIni +1	bss
-4a8f90	4	.data	CMotorApp_OneTimeSceneInit, CMotorApp_ResetDevice@4.part.0, Engine3D_Create	bss
-4a8f94	4	.data	CMotorApp_Render, CMotorApp_ResetDevice@4.part.0, Engine3D_Create	bss
-4a8f98	4	.data	CMotorApp_FinalCleanup, CMotorApp_ResetDevice@4.part.0, Engine3D_Create	bss
-4a8f9c	c	.data	CMotorApp_ResetDevice@4.part.0	bss
+4a8f28	4	.data	engineIni	bss
+4a8f2c	4	.data	CFlare_Render, M3D_ReadMaterial, engineIni +1	bss
+4a8f30	40	.data	engineIni	bss
+4a8f70	4	.data	CCollideMesh_DrawDebug, CGround_DrawDebug, Engine_FrameSetup +4	bss
+4a8f74	4	.data	CEngineApp_InitDeviceObjects, Fnt_MatOutline, Engine_DrawStats +3	bss
+4a8f78	4	.data	CEngineApp_RestoreDeviceObjects, Engine_DrawStats, test sdcall_eng4	bss
+4a8f7c	10	.data	CEngineApp_ctor, engineIni	bss
+4a8f8c	4	.data	CEngineApp_Render, Engine_FrameDue, engineIni +1	bss
+4a8f90	4	.data	CEngineApp_OneTimeSceneInit, CEngineApp_ResetDevice@4.part.0, Engine3D_Create	bss
+4a8f94	4	.data	CEngineApp_Render, CEngineApp_ResetDevice@4.part.0, Engine3D_Create	bss
+4a8f98	4	.data	CEngineApp_FinalCleanup, CEngineApp_ResetDevice@4.part.0, Engine3D_Create	bss
+4a8f9c	c	.data	CEngineApp_ResetDevice@4.part.0	bss
 4a8fa8	10	.data	Init_GVar_ShowTSCMode	bss
-4a8fb8	4	.data	Init_GVar_ShowTSCMode, Motor_DrawStats, test sdcall_engmisc	bss
+4a8fb8	4	.data	Init_GVar_ShowTSCMode, Engine_DrawStats, test sdcall_engmisc	bss
 4a8fbc	4	.data	Init_GVar_ShowTSCMode	bss
 4a8fc0	10	.data	Init_GVar_R_ForceFPS	bss
-4a8fd0	4	.data	CMotorApp_Render, Init_GVar_R_ForceFPS	bss
+4a8fd0	4	.data	CEngineApp_Render, Init_GVar_R_ForceFPS	bss
 4a8fd4	4	.data	Init_GVar_R_ForceFPS	bss
 4a8fd8	10	.data	Init_GVar_R_LimitFPS	bss
-4a8fe8	4	.data	CMotorApp_Render, Init_GVar_R_LimitFPS, Motor_FrameDue	bss
+4a8fe8	4	.data	CEngineApp_Render, Init_GVar_R_LimitFPS, Engine_FrameDue	bss
 4a8fec	4	.data	Init_GVar_R_LimitFPS	bss
 4a8ff0	10	.data	Init_GVar_VSync	bss
-4a9000	4	.data	CMotorApp_ctor, Engine_ResetAll, Init_GVar_VSync	bss
+4a9000	4	.data	CEngineApp_ctor, Engine_ResetAll, Init_GVar_VSync	bss
 4a9004	4	.data	Init_GVar_VSync	bss
 4a9008	10	.data	Init_GVar_R_ShowInfo	bss
 4a9018	4	.data	Bsp_PortalInfo, Bsp_RenderTransp, CBsp_DrawFX +20	bss
 4a901c	4	.data	Init_GVar_R_ShowInfo	bss
 4a9020	10	.data	Init_GVar_AutoScreenShot	bss
-4a9030	4	.data	CMotorApp_Render, Init_GVar_AutoScreenShot	bss
+4a9030	4	.data	CEngineApp_Render, Init_GVar_AutoScreenShot	bss
 4a9034	4	.data	Init_GVar_AutoScreenShot	bss
 4a9038	4	.data	Engine3D_Create, Engine3D_Shutdown	bss
-4a903c	c	.data	CMotorApp_FrameMove	bss
-4a9048	4	.data	CMotorApp_Render, Motor_FrameDue, test sdcall_nosleep	bss
-4a904c	4	.data	CMotorApp_Render	bss
-4a9050	4	.data	Motor_ColorStr, Motor_SceneDlgProc, test sdlevel_engmisc	bss
-4a9054	3c	.data	Motor_ColorStr, Motor_SceneDlgProc	bss
-4a9090	4	.data	Motor_DrawFpsGraph, test sdcall_engmisc	bss
-4a9094	3c	.data	Motor_DrawFpsGraph	bss
-4a90d0	4	.data	Motor_DrawFpsGraph, test sdcall_engmisc	bss
-4a90d4	4	.data	Motor_DrawFpsGraph	bss
-4a90d8	4	.data	Motor_DrawFpsGraph, test sdcall_engmisc	bss
-4a90dc	1dc	.data	Motor_DrawFpsGraph	bss
-4a92b8	4	.data	Motor_DrawFpsGraph, test sdcall_engmisc	bss
-4a92bc	1dc	.data	Motor_DrawFpsGraph	bss
-4a9498	8	.data	Motor_DrawFpsGraph, test sdcall_engmisc	bss
-4a94a0	4	.data	Motor_DrawStats, test sdcall_engmisc	bss
+4a903c	c	.data	CEngineApp_FrameMove	bss
+4a9048	4	.data	CEngineApp_Render, Engine_FrameDue, test sdcall_nosleep	bss
+4a904c	4	.data	CEngineApp_Render	bss
+4a9050	4	.data	Engine_ColorStr, Engine_SceneDlgProc, test sdlevel_engmisc	bss
+4a9054	3c	.data	Engine_ColorStr, Engine_SceneDlgProc	bss
+4a9090	4	.data	Engine_DrawFpsGraph, test sdcall_engmisc	bss
+4a9094	3c	.data	Engine_DrawFpsGraph	bss
+4a90d0	4	.data	Engine_DrawFpsGraph, test sdcall_engmisc	bss
+4a90d4	4	.data	Engine_DrawFpsGraph	bss
+4a90d8	4	.data	Engine_DrawFpsGraph, test sdcall_engmisc	bss
+4a90dc	1dc	.data	Engine_DrawFpsGraph	bss
+4a92b8	4	.data	Engine_DrawFpsGraph, test sdcall_engmisc	bss
+4a92bc	1dc	.data	Engine_DrawFpsGraph	bss
+4a9498	8	.data	Engine_DrawFpsGraph, test sdcall_engmisc	bss
+4a94a0	4	.data	Engine_DrawStats, test sdcall_engmisc	bss
 4a94a4	4	.data	-	bss
 4a94a8	4	.data	Music_ApplyVolume.part.0, Music_DrawDebug, Music_UpdateVolumes	bss
 4a94ac	4	.data	Init_GVar_S_VoiceoverFadein, Music_DrawDebug	bss
@@ -12094,17 +12094,17 @@
 4aa30c	1	.data	Voices_UpdatePause	bss
 4aa30d	3	.data	-	bss
 4aa310	8	.data	App_SetExceptionFilter	bss
-4aa318	4	.data	CListaMat_Delete, CMapa_Release, CMapa_dtor +3	bss
-4aa31c	4	.data	CMapa_LoadTexture	bss
+4aa318	4	.data	CMatList_Delete, CMap_Release, CMap_dtor +3	bss
+4aa31c	4	.data	CMap_LoadTexture	bss
 4aa320	10	.data	Init_GVar_DDS_MarkSource	bss
-4aa330	4	.data	CMapa_ResolvePath, Init_GVar_DDS_MarkSource, test sdcall_material	bss
+4aa330	4	.data	CMap_ResolvePath, Init_GVar_DDS_MarkSource, test sdcall_material	bss
 4aa334	4	.data	Init_GVar_DDS_MarkSource	bss
 4aa338	10	.data	Init_GVar_LoadTextures	bss
-4aa348	4	.data	CMaterial_Prepare, CTextura_CreateD3D, CWinApp_InitDedicated +1	bss
+4aa348	4	.data	CMaterial_Prepare, CTexture_CreateD3D, CWinApp_InitDedicated +1	bss
 4aa34c	4	.data	Init_GVar_LoadTextures	bss
 4aa350	4	.data	Init_GVar_DDS_CheckMark	bss
 4aa354	c	.data	-	bss
-4aa360	4	.data	CMapa_ResolvePath, test sdcall_material	bss
+4aa360	4	.data	CMap_ResolvePath, test sdcall_material	bss
 4aa364	4	.data	-	bss
 4aa368	10	.data	Init_GVar_MatEmissive	bss
 4aa378	4	.data	CMaterial_CalcColors, Init_GVar_MatEmissive, test sdcall_material	bss
@@ -12121,12 +12121,12 @@
 4ab7e8	100	.data	Mat_Str, Tex_AddExtension, Tex_FindDDS	bss
 4ab8e8	4	.data	E3D_Log, E3D_LogBlue, E3D_LogDebug +6	bss
 4ab8ec	4	.data	DbgStd_Open, DbgStd_Printf, DbgWin_Init +4	bss
-4ab8f0	8	.data	DbgWin_Init, E3D_DebugPrintf, motorIni	bss
-4ab8f8	4	.data	CMotorApp_OneTimeSceneInit, DbgWin_DlgProc, test sdcall_engmisc	bss
+4ab8f0	8	.data	DbgWin_Init, E3D_DebugPrintf, engineIni	bss
+4ab8f8	4	.data	CEngineApp_OneTimeSceneInit, DbgWin_DlgProc, test sdcall_engmisc	bss
 4ab8fc	10	.data	Init_GVar_EngineDebugLevel	bss
 4ab90c	4	.data	E3D_Log, E3D_LogInfo, E3D_LogWhite +2	bss
 4ab910	4	.data	Init_GVar_EngineDebugLevel	bss
-4ab914	8	.data	AnimGrupo_New, ArchIO_Open, Avi_Save +61	bss
+4ab914	8	.data	AnimGroup_New, FileIO_Open, Avi_Save +61	bss
 4ab91c	1	.data	DbgStd_Open, DbgStd_Printf, test sdcall_eng4	bss
 4ab91d	1	.data	DbgWin_Init, DbgWin_Open, DbgWin_Printf +1	bss
 4ab91e	2	.data	test sdcall_eng4	bss
@@ -12135,128 +12135,128 @@
 4ab928	48	.data	DbgWin_DlgProc	bss
 4ab970	4	.data	DbgWin_Printf, test sdcall_engmisc	bss
 4ab974	404	.data	DbgWin_Printf	bss
-4abd78	108	.data	DbgWin_DlgProc, E3D_GetExePath, Varios_InitE3DDir	bss
-4abe80	108	.data	DbgWin_DlgProc, E3D_GetExePath, Ruta_Normalize +1	bss
+4abd78	108	.data	DbgWin_DlgProc, E3D_GetExePath, Misc_InitE3DDir	bss
+4abe80	108	.data	DbgWin_DlgProc, E3D_GetExePath, Path_Normalize +1	bss
 4abf88	90	.data	RSqrt, RSqrt_Estimate, RSqrt_InitTable	bss
 4ac018	100	.data	Vec3_StrDeg	bss
 4ac118	100	.data	Vec3_Str	bss
 4ac218	10	.data	Init_GVar_R_LightEnaD3D	bss
-4ac228	4	.data	CLuz_EnableD3D, Init_GVar_R_LightEnaD3D, Luz_EnableD3D +1	bss
+4ac228	4	.data	CLight_EnableD3D, Init_GVar_R_LightEnaD3D, Light_EnableD3D +1	bss
 4ac22c	4	.data	Init_GVar_R_LightEnaD3D	bss
 4ac230	10	.data	Init_GVar_R_LightAmbient	bss
-4ac240	4	.data	CLuz_AdjustD3D, Init_GVar_R_LightAmbient, test sdcall_luz	bss
+4ac240	4	.data	CLight_AdjustD3D, Init_GVar_R_LightAmbient, test sdcall_luz	bss
 4ac244	4	.data	Init_GVar_R_LightAmbient	bss
 4ac248	10	.data	Init_GVar_R_LightMult	bss
-4ac258	4	.data	CLuz_AdjustD3D, Init_GVar_R_LightMult, test sdcall_luz	bss
+4ac258	4	.data	CLight_AdjustD3D, Init_GVar_R_LightMult, test sdcall_luz	bss
 4ac25c	4	.data	Init_GVar_R_LightMult	bss
 4ac260	10	.data	Init_GVar_R_SpotlightClamp	bss
-4ac270	4	.data	CLuz_AdjustD3D, Init_GVar_R_SpotlightClamp, test sdcall_luz	bss
+4ac270	4	.data	CLight_AdjustD3D, Init_GVar_R_SpotlightClamp, test sdcall_luz	bss
 4ac274	4	.data	Init_GVar_R_SpotlightClamp	bss
 4ac278	10	.data	Init_GVar_R_ShowLights	bss
-4ac288	4	.data	CLuz_Render, Init_GVar_R_ShowLights, test sdlevel_engmisc	bss
+4ac288	4	.data	CLight_Render, Init_GVar_R_ShowLights, test sdlevel_engmisc	bss
 4ac28c	4	.data	Init_GVar_R_ShowLights	bss
 4ac290	10	.data	Init_GVar_R_LightDesat	bss
-4ac2a0	4	.data	CLuz_AdjustD3D, Init_GVar_R_LightDesat, test sdcall_luz	bss
+4ac2a0	4	.data	CLight_AdjustD3D, Init_GVar_R_LightDesat, test sdcall_luz	bss
 4ac2a4	4	.data	Init_GVar_R_LightDesat	bss
 4ac2a8	10	.data	Init_GVar_MonitorAmbient	bss
-4ac2b8	4	.data	Init_GVar_MonitorAmbient, Luz_SetDefault	bss
+4ac2b8	4	.data	Init_GVar_MonitorAmbient, Light_SetDefault	bss
 4ac2bc	4	.data	Init_GVar_MonitorAmbient	bss
 4ac2c0	10	.data	Init_GVar_R_LightTrace	bss
-4ac2d0	4	.data	Init_GVar_R_LightTrace, Luz_Select	bss
+4ac2d0	4	.data	Init_GVar_R_LightTrace, Light_Select	bss
 4ac2d4	4	.data	Init_GVar_R_LightTrace	bss
 4ac2d8	10	.data	Init_GVar_R_SpotlightAdjust	bss
-4ac2e8	4	.data	CLuz_AdjustD3D, Init_GVar_R_SpotlightAdjust, test sdcall_luz	bss
+4ac2e8	4	.data	CLight_AdjustD3D, Init_GVar_R_SpotlightAdjust, test sdcall_luz	bss
 4ac2ec	4	.data	Init_GVar_R_SpotlightAdjust	bss
 4ac2f0	10	.data	Init_GVar_R_LightAtten	bss
-4ac300	4	.data	CLuz_AdjustD3D, CLuz_FillD3D, Init_GVar_R_LightAtten +1	bss
-4ac304	4	.data	CLuz_AdjustD3D, Init_GVar_R_LightAtten	bss
+4ac300	4	.data	CLight_AdjustD3D, CLight_FillD3D, Init_GVar_R_LightAtten +1	bss
+4ac304	4	.data	CLight_AdjustD3D, Init_GVar_R_LightAtten	bss
 4ac308	10	.data	Init_GVar_R_LightGamma	bss
-4ac318	4	.data	CLuz_AdjustD3D, Init_GVar_R_LightGamma, test sdcall_luz	bss
+4ac318	4	.data	CLight_AdjustD3D, Init_GVar_R_LightGamma, test sdcall_luz	bss
 4ac31c	4	.data	Init_GVar_R_LightGamma	bss
 4ac320	10	.data	Init_GVar_R_SpotlightMult	bss
-4ac330	4	.data	CLuz_AdjustD3D, Init_GVar_R_SpotlightMult, test sdcall_luz	bss
+4ac330	4	.data	CLight_AdjustD3D, Init_GVar_R_SpotlightMult, test sdcall_luz	bss
 4ac334	4	.data	Init_GVar_R_SpotlightMult	bss
 4ac338	10	.data	Init_GVar_R_LightSortI	bss
-4ac348	4	.data	Init_GVar_R_LightSortI, Luz_Select, test sdcall_luz	bss
+4ac348	4	.data	Init_GVar_R_LightSortI, Light_Select, test sdcall_luz	bss
 4ac34c	4	.data	Init_GVar_R_LightSortI	bss
 4ac350	10	.data	Init_GVar_R_LightAtten2	bss
-4ac360	4	.data	CLuz_AdjustD3D, Init_GVar_R_LightAtten2, test sdcall_luz	bss
+4ac360	4	.data	CLight_AdjustD3D, Init_GVar_R_LightAtten2, test sdcall_luz	bss
 4ac364	4	.data	Init_GVar_R_LightAtten2	bss
 4ac368	10	.data	Init_GVar_R_SpotlightAng	bss
-4ac378	4	.data	Init_GVar_R_SpotlightAng, Luz_Select, test sdcall_luz	bss
+4ac378	4	.data	Init_GVar_R_SpotlightAng, Light_Select, test sdcall_luz	bss
 4ac37c	4	.data	Init_GVar_R_SpotlightAng	bss
 4ac380	10	.data	Init_GVar_R_SpotlightAtten	bss
-4ac390	4	.data	CLuz_AdjustD3D, Init_GVar_R_SpotlightAtten, test sdcall_luz	bss
-4ac394	4	.data	CLuz_AdjustD3D, Init_GVar_R_SpotlightAtten	bss
+4ac390	4	.data	CLight_AdjustD3D, Init_GVar_R_SpotlightAtten, test sdcall_luz	bss
+4ac394	4	.data	CLight_AdjustD3D, Init_GVar_R_SpotlightAtten	bss
 4ac398	10	.data	Init_GVar_R_LightMult2	bss
-4ac3a8	4	.data	CLuz_AdjustD3D, Init_GVar_R_LightMult2, test sdcall_luz	bss
+4ac3a8	4	.data	CLight_AdjustD3D, Init_GVar_R_LightMult2, test sdcall_luz	bss
 4ac3ac	4	.data	Init_GVar_R_LightMult2	bss
 4ac3b0	10	.data	Init_GVar_R_LightTarget	bss
-4ac3c0	4	.data	CLuz_Update, Init_GVar_R_LightTarget, test sdcall_luz	bss
+4ac3c0	4	.data	CLight_Update, Init_GVar_R_LightTarget, test sdcall_luz	bss
 4ac3c4	4	.data	Init_GVar_R_LightTarget	bss
 4ac3c8	10	.data	Init_GVar_R_LightDefer	bss
-4ac3d8	4	.data	CLuz_UpdateD3D, Init_GVar_R_LightDefer, Luz_EnableAll +1	bss
+4ac3d8	4	.data	CLight_UpdateD3D, Init_GVar_R_LightDefer, Light_EnableAll +1	bss
 4ac3dc	4	.data	Init_GVar_R_LightDefer	bss
 4ac3e0	10	.data	Init_GVar_R_LightSector	bss
-4ac3f0	4	.data	CLuz_Update, Init_GVar_R_LightSector, Luz_Select +1	bss
+4ac3f0	4	.data	CLight_Update, Init_GVar_R_LightSector, Light_Select +1	bss
 4ac3f4	4	.data	Init_GVar_R_LightSector	bss
 4ac3f8	10	.data	Init_GVar_R_LightSort	bss
-4ac408	4	.data	Init_GVar_R_LightSort, Luz_Select, test sdcall_luz	bss
+4ac408	4	.data	Init_GVar_R_LightSort, Light_Select, test sdcall_luz	bss
 4ac40c	4	.data	Init_GVar_R_LightSort	bss
 4ac410	10	.data	Fini_GVar_R_LightMultName, Init_GVar_R_LightMultName	bss
-4ac420	4	.data	CLuz_AdjustD3D, Fini_GVar_R_LightMultName, Init_GVar_R_LightMultName +1	bss
+4ac420	4	.data	CLight_AdjustD3D, Fini_GVar_R_LightMultName, Init_GVar_R_LightMultName +1	bss
 4ac424	4	.data	Fini_GVar_R_LightMultName, Init_GVar_R_LightMultName	bss
-4ac428	4	.data	CLuz_ctor, CLuz_dtor	bss
-4ac42c	4	.data	CLuz_ctor, CLuz_dtor, Luz_List +1	bss
-4ac430	4	.data	CLuz_UpdateD3D, CLuz_dtor, Luz_List +1	bss
-4ac434	4	.data	CLuz_UpdateD3D, CLuz_dtor, Luz_Add +6	bss
-4ac438	1000	.data	CLuz_UpdateD3D, CLuz_dtor, Luz_Add +4	bss
-4ad438	b4	.data	CLuz_Render, Luz_FiniMat	bss
-4ad4ec	1	.data	CGameModel_RenderNow, CNodo3D_Render, ModelFX_Render +4	bss
+4ac428	4	.data	CLight_ctor, CLight_dtor	bss
+4ac42c	4	.data	CLight_ctor, CLight_dtor, Light_List +1	bss
+4ac430	4	.data	CLight_UpdateD3D, CLight_dtor, Light_List +1	bss
+4ac434	4	.data	CLight_UpdateD3D, CLight_dtor, Light_Add +6	bss
+4ac438	1000	.data	CLight_UpdateD3D, CLight_dtor, Light_Add +4	bss
+4ad438	b4	.data	CLight_Render, Light_FiniMat	bss
+4ad4ec	1	.data	CGameModel_RenderNow, CNode3D_Render, ModelFX_Render +4	bss
 4ad4ed	3	.data	test sdcall_nodo3d, test sdlevel_eng1	bss
 4ad4f0	10	.data	Init_GVar_R_SkipAnim	bss
-4ad500	4	.data	CNodo3D_SampleAnim, Init_GVar_R_SkipAnim, test sdcall_nodo3d	bss
+4ad500	4	.data	CNode3D_SampleAnim, Init_GVar_R_SkipAnim, test sdcall_nodo3d	bss
 4ad504	4	.data	Init_GVar_R_SkipAnim	bss
 4ad508	10	.data	Init_GVar_R_ShowLBoxMax	bss
-4ad518	4	.data	CNodo3D_DebugDraw, Init_GVar_R_ShowLBoxMax, test sdlevel_engmisc	bss
+4ad518	4	.data	CNode3D_DebugDraw, Init_GVar_R_ShowLBoxMax, test sdlevel_engmisc	bss
 4ad51c	4	.data	Init_GVar_R_ShowLBoxMax	bss
 4ad520	10	.data	Init_GVar_R_ShowLocalBox	bss
-4ad530	4	.data	CNodo3D_DebugDraw, CNodo3D_Render, Init_GVar_R_ShowLocalBox +2	bss
+4ad530	4	.data	CNode3D_DebugDraw, CNode3D_Render, Init_GVar_R_ShowLocalBox +2	bss
 4ad534	4	.data	Init_GVar_R_ShowLocalBox	bss
-4ad538	10	.data	Init_GVar_R_Nodo3D_Count	bss
-4ad548	4	.data	CNodo3D_ctor, CNodo3D_dtor, Init_GVar_R_Nodo3D_Count +1	bss
-4ad54c	4	.data	Init_GVar_R_Nodo3D_Count	bss
+4ad538	10	.data	Init_GVar_R_Node3D_Count	bss
+4ad548	4	.data	CNode3D_ctor, CNode3D_dtor, Init_GVar_R_Node3D_Count +1	bss
+4ad54c	4	.data	Init_GVar_R_Node3D_Count	bss
 4ad550	10	.data	Init_GVar_R_NodeSlerp2	bss
-4ad560	4	.data	CNodo3D_AnimChannel, Init_GVar_R_NodeSlerp2	bss
+4ad560	4	.data	CNode3D_AnimChannel, Init_GVar_R_NodeSlerp2	bss
 4ad564	4	.data	Init_GVar_R_NodeSlerp2	bss
-4ad568	4	.data	CGameModel_RenderNow, CNodo3D_Render, DuDv_RenderBump +8	bss
+4ad568	4	.data	CGameModel_RenderNow, CNode3D_Render, DuDv_RenderBump +8	bss
 4ad56c	10	.data	Init_GVar_R_SkipNodeFX	bss
-4ad57c	4	.data	CNodo3D_Update, Init_GVar_R_SkipNodeFX	bss
+4ad57c	4	.data	CNode3D_Update, Init_GVar_R_SkipNodeFX	bss
 4ad580	4	.data	Init_GVar_R_SkipNodeFX	bss
 4ad584	10	.data	Init_GVar_R_SkipNodes	bss
-4ad594	4	.data	CNodo3D_Render, Init_GVar_R_SkipNodes, test sdcall_nodo3d	bss
+4ad594	4	.data	CNode3D_Render, Init_GVar_R_SkipNodes, test sdcall_nodo3d	bss
 4ad598	4	.data	Init_GVar_R_SkipNodes	bss
 4ad59c	10	.data	Init_GVar_R_SkipTrans	bss
-4ad5ac	4	.data	CNodo3D_Update, Init_GVar_R_SkipTrans, test sdcall_nodo3d	bss
+4ad5ac	4	.data	CNode3D_Update, Init_GVar_R_SkipTrans, test sdcall_nodo3d	bss
 4ad5b0	4	.data	Init_GVar_R_SkipTrans	bss
 4ad5b4	10	.data	Init_GVar_R_SkipAnimVis	bss
-4ad5c4	4	.data	CNodo3D_Render, Init_GVar_R_SkipAnimVis	bss
+4ad5c4	4	.data	CNode3D_Render, Init_GVar_R_SkipAnimVis	bss
 4ad5c8	4	.data	Init_GVar_R_SkipAnimVis	bss
 4ad5cc	10	.data	Fini_GVar_R_ShowLBoxName, Init_GVar_R_ShowLBoxName	bss
-4ad5dc	4	.data	CNodo3D_DebugDraw, Fini_GVar_R_ShowLBoxName, Init_GVar_R_ShowLBoxName +1	bss
+4ad5dc	4	.data	CNode3D_DebugDraw, Fini_GVar_R_ShowLBoxName, Init_GVar_R_ShowLBoxName +1	bss
 4ad5e0	4	.data	Fini_GVar_R_ShowLBoxName, Init_GVar_R_ShowLBoxName	bss
 4ad5e4	10	.data	Init_GVar_R_SkipTrans2	bss
-4ad5f4	4	.data	CNodo3D_Update, Init_GVar_R_SkipTrans2, test sdcall_nodo3d	bss
+4ad5f4	4	.data	CNode3D_Update, Init_GVar_R_SkipTrans2, test sdcall_nodo3d	bss
 4ad5f8	4	.data	Init_GVar_R_SkipTrans2	bss
-4ad5fc	4	.data	CGameModel_RenderNow, CNodo3D_Render, ModelFX_Render +3	bss
+4ad5fc	4	.data	CGameModel_RenderNow, CNode3D_Render, ModelFX_Render +3	bss
 4ad600	10	.data	Init_GVar_R_ShowLBoxMin	bss
-4ad610	4	.data	CNodo3D_DebugDraw, Init_GVar_R_ShowLBoxMin, test sdlevel_engmisc	bss
+4ad610	4	.data	CNode3D_DebugDraw, Init_GVar_R_ShowLBoxMin, test sdlevel_engmisc	bss
 4ad614	4	.data	Init_GVar_R_ShowLBoxMin	bss
-4ad618	10	.data	Init_GVar_R_NodoR_Count	bss
-4ad628	4	.data	CNodoR_ctor, CNodoR_dtor, Init_GVar_R_NodoR_Count +1	bss
-4ad62c	4	.data	Init_GVar_R_NodoR_Count	bss
-4ad630	4	.data	ListaVert_FormatFVF, test sdcall_listavert	bss
-4ad634	14	.data	ListaVert_FormatFVF	bss
+4ad618	10	.data	Init_GVar_R_RenderNode_Count	bss
+4ad628	4	.data	CRenderNode_ctor, CRenderNode_dtor, Init_GVar_R_RenderNode_Count +1	bss
+4ad62c	4	.data	Init_GVar_R_RenderNode_Count	bss
+4ad630	4	.data	VertList_FormatFVF, test sdcall_listavert	bss
+4ad634	14	.data	VertList_FormatFVF	bss
 4ad648	4	.data	VertCache_Add, VertCache_Compare, VertCache_Find +3	bss
 4ad64c	7c	.data	VertCache_Add, VertCache_Compare, VertCache_Find +2	bss
 4ad6c8	4	.data	VertCache_Add, VertCache_Compare, VertCache_Find +3	bss
@@ -12267,29 +12267,29 @@
 4ad6e0	4	.data	Render_IniD3D, Render_SetMaterial, test sdcall_render	bss
 4ad6e4	4	.data	Render_IniD3D, Render_SetMaterial	bss
 4ad6e8	4	.data	Render_IniD3D, Shader_GlowFlickLightmap	bss
-4ad6ec	4	.data	CSuelo_DrawDebug, Render_IniD3D	bss
+4ad6ec	4	.data	CGround_DrawDebug, Render_IniD3D	bss
 4ad6f0	1	.data	E3D_Command, test sdcall_scrapworld, test sdlevel_eng4	bss
-4ad6f1	1	.data	Loading_Step, Render_FinD3D, Render_IniD3D +3	bss
-4ad6f2	1	.data	CMotorApp_UpdateMenu, Render_IniD3D, Render_ResetState +4	bss
+4ad6f1	1	.data	Loading_Step, Render_EndD3D, Render_IniD3D +3	bss
+4ad6f2	1	.data	CEngineApp_UpdateMenu, Render_IniD3D, Render_ResetState +4	bss
 4ad6f3	1	.data	DuDv_Draw, Render_IniD3D, test sdcall_render +2	bss
 4ad6f4	4	.data	BspQ3_SetStage1, CBspQ3_InitD3D, CBspQ3_ReleaseD3D +61	bss
-4ad6f8	4	.data	Batch_AddMalla, Batch_Flush, CBspQ3_Render +22	bss
-4ad6fc	3c	.data	Batch_AddMalla, Batch_Flush, CBspQ3_Render +21	bss
-4ad738	1	.data	Batch_AddMalla, Batch_Flush, CBspQ3_Render +23	bss
-4ad739	1	.data	Batch_AddMalla, Batch_Flush, CBspQ3_Render +22	bss
-4ad73a	2	.data	Batch_AddMalla, Batch_Flush, CBspQ3_Render +21	bss
-4ad73c	1	.data	Render_ResetState, motorIni, test sdcall_render	bss
-4ad73d	3	.data	Render_ResetState, motorIni	bss
-4ad740	4	.data	CMotorApp_Render, CMundo_Render	bss
-4ad744	4	.data	CGameModel_RenderNow, CMundo_Render, CNiebla_Apply +2	bss
-4ad748	4	.data	CMotorApp_Render, CMundo_Render, Engine_FrameSetup +3	bss
-4ad74c	4	.data	CBsp_DrawWire, CFuente3_PrintContorno, CPortal_DrawDebug +12	bss
+4ad6f8	4	.data	Batch_AddMesh, Batch_Flush, CBspQ3_Render +22	bss
+4ad6fc	3c	.data	Batch_AddMesh, Batch_Flush, CBspQ3_Render +21	bss
+4ad738	1	.data	Batch_AddMesh, Batch_Flush, CBspQ3_Render +23	bss
+4ad739	1	.data	Batch_AddMesh, Batch_Flush, CBspQ3_Render +22	bss
+4ad73a	2	.data	Batch_AddMesh, Batch_Flush, CBspQ3_Render +21	bss
+4ad73c	1	.data	Render_ResetState, engineIni, test sdcall_render	bss
+4ad73d	3	.data	Render_ResetState, engineIni	bss
+4ad740	4	.data	CEngineApp_Render, CWorld_Render	bss
+4ad744	4	.data	CGameModel_RenderNow, CWorld_Render, CFog_Apply +2	bss
+4ad748	4	.data	CEngineApp_Render, CWorld_Render, Engine_FrameSetup +3	bss
+4ad74c	4	.data	CBsp_DrawWire, CFont3_PrintOutline, CPortal_DrawDebug +12	bss
 4ad750	4	.data	CBsp_DrawWire, Render_ClearForced, Render_SetLightmapMat	bss
 4ad754	4	.data	ModelFX_FadeOut, ModelFX_Noise, Render_ClearForced +4	bss
 4ad758	4	.data	Render_ClearForced, Render_SetMaterial	bss
 4ad75c	4	.data	-	bss
-4ad760	4	.data	Render_FinD3D, Render_IniD3D, Shader_Env +2	bss
-4ad764	4	.data	Render_FinD3D, Render_IniD3D, Shader_Env +1	bss
+4ad760	4	.data	Render_EndD3D, Render_IniD3D, Shader_Env +2	bss
+4ad764	4	.data	Render_EndD3D, Render_IniD3D, Shader_Env +1	bss
 4ad768	4	.data	Shader_GlowmapMaskEnvBump	bss
 4ad76c	8	.data	-	bss
 4ad774	4	.data	Shader_GlowmapMaskEnvmap	bss
@@ -12326,7 +12326,7 @@
 4ad804	4	.data	Credits_End, NewsPanel_End, RT_BeginTarget +4	bss
 4ad808	8	.data	Credits_End, NewsPanel_End, RT_BeginTarget +3	bss
 4ad810	10	.data	Init_GVar_R_VBIBTriLimit	bss
-4ad820	4	.data	Init_GVar_R_VBIBTriLimit, Render_DrawMallaD3D, test sdcall_render	bss
+4ad820	4	.data	Init_GVar_R_VBIBTriLimit, Render_DrawMeshD3D, test sdcall_render	bss
 4ad824	4	.data	Init_GVar_R_VBIBTriLimit	bss
 4ad828	4	.data	Init_GVar_R_EnvBump	bss
 4ad82c	4	.data	Engine_DebugKeys	bss
@@ -12360,7 +12360,7 @@
 4ad900	10	.data	Init_GVar_R_CullMode	bss
 4ad910	4	.data	Init_GVar_R_CullMode, Render_BeginFrame, Render_SetCull +1	bss
 4ad914	4	.data	Init_GVar_R_CullMode	bss
-4ad918	39	.data	Fini_CMaterial_MatLinea, Init_CMaterial_MatLinea, Render_Line	bss
+4ad918	39	.data	Fini_CMaterial_MatLine, Init_CMaterial_MatLine, Render_Line	bss
 4ad951	77	.data	-	bss
 4ad9c8	10	.data	Init_GVar_R_EnvBlend	bss
 4ad9d8	4	.data	Init_GVar_R_EnvBlend, Stage_EnvBlend, test sdcall_render	bss
@@ -12378,7 +12378,7 @@
 4ada38	4	.data	Init_GVar_R_CloudVel2x, Shader_Clouds	bss
 4ada3c	4	.data	Init_GVar_R_CloudVel2x	bss
 4ada40	10	.data	Init_GVar_R_PShaders	bss
-4ada50	4	.data	CTextura_LoadFile, Credits_Begin, Credits_End +36	bss
+4ada50	4	.data	CTexture_LoadFile, Credits_Begin, Credits_End +36	bss
 4ada54	4	.data	Init_GVar_R_PShaders	bss
 4ada58	10	.data	Init_GVar_R_MipmapBias	bss
 4ada68	4	.data	Init_GVar_R_MipmapBias, Render_ResetState	bss
@@ -12467,9 +12467,9 @@
 4adda8	4	.data	Render_GetEyePos, Render_SetView, test sdcall_render +1	bss
 4addac	7	.data	Render_GetEyePos, Render_SetView	bss
 4addb3	1	.data	Render_GetEyePos, Render_ResetState, Render_SetView	bss
-4addb4	7	.data	Render_SetMapa	bss
-4addbb	1	.data	Render_ResetState, Render_SetMapa	bss
-4addbc	8	.data	Render_SetMapa	bss
+4addb4	7	.data	Render_SetMap	bss
+4addbb	1	.data	Render_ResetState, Render_SetMap	bss
+4addbc	8	.data	Render_SetMap	bss
 4addc4	4	.data	Render_SetLightmapMat, Render_SetMaterial, Shader_DiffuseLightmap +6	bss
 4addc8	42c	.data	Render_IniD3D	bss
 4ae1f4	4	.data	Render_BeginFrame	bss
@@ -12477,14 +12477,14 @@
 4ae1fc	fc	.data	Render_GetDriver, Render_IniD3D	bss
 4ae2f8	4	.data	Render_GetDriver, Render_IniD3D, test sdcall_render	bss
 4ae2fc	fc	.data	Render_GetDriver, Render_IniD3D	bss
-4ae3f8	4	.data	Render_GetProj, Render_ProjTile, Render_SetCamara +7	bss
-4ae3fc	3c	.data	Render_GetProj, Render_ProjTile, Render_SetCamara +3	bss
+4ae3f8	4	.data	Render_GetProj, Render_ProjTile, Render_SetCamera +7	bss
+4ae3fc	3c	.data	Render_GetProj, Render_ProjTile, Render_SetCamera +3	bss
 4ae438	4	.data	Render_IniD3D, Render_InitMatrices, test sdcall_render	bss
 4ae43c	3c	.data	Render_IniD3D, Render_InitMatrices	bss
 4ae478	4	.data	Render_GetWorld, Render_SetWorld, Render_SetWorldMatrix +3	bss
 4ae47c	3c	.data	Render_GetWorld, Render_SetWorld, Render_SetWorldMatrix	bss
-4ae4b8	4	.data	Render_GetView, Render_SetCamara, Render_SetView +5	bss
-4ae4bc	3c	.data	Render_GetView, Render_SetCamara, Render_SetView +1	bss
+4ae4b8	4	.data	Render_GetView, Render_SetCamera, Render_SetView +5	bss
+4ae4bc	3c	.data	Render_GetView, Render_SetCamera, Render_SetView +1	bss
 4ae4f8	4	.data	Mat_StageEnvMap, Render_GetBillboard, Render_GetView +4	bss
 4ae4fc	3c	.data	Mat_StageEnvMap, Render_GetBillboard, Render_GetView +3	bss
 4ae538	4	.data	Render_IniD3D, test sdcall_render	bss
@@ -12494,189 +12494,189 @@
 4ae580	4	.data	Render_ClearForced, Render_SetMaterial, test sdcall_render	bss
 4ae584	c	.data	Render_SetMaterial	bss
 4ae590	4	.data	Render_SetMaterial, test sdcall_render	bss
-4ae594	4	.data	Render_SetMapa	bss
+4ae594	4	.data	Render_SetMap	bss
 4ae598	1c	.data	-	bss
-4ae5b4	4	.data	Render_SetMapa	bss
+4ae5b4	4	.data	Render_SetMap	bss
 4ae5b8	1c	.data	-	bss
 4ae5d4	c	.data	Render_ProjTile, test sdcall_render	bss
 4ae5e0	10	.data	Init_GVar_R_DrawMLODPart	bss
-4ae5f0	4	.data	CModelo_UpdateLOD@4.part.0, Init_GVar_R_DrawMLODPart	bss
+4ae5f0	4	.data	CModel_UpdateLOD@4.part.0, Init_GVar_R_DrawMLODPart	bss
 4ae5f4	4	.data	Init_GVar_R_DrawMLODPart	bss
 4ae5f8	10	.data	Init_GVar_R_DistMLOD1	bss
-4ae608	4	.data	CModelo_UpdateLOD@4.part.0, Init_GVar_R_DistMLOD1	bss
+4ae608	4	.data	CModel_UpdateLOD@4.part.0, Init_GVar_R_DistMLOD1	bss
 4ae60c	4	.data	Init_GVar_R_DistMLOD1	bss
 4ae610	10	.data	Init_GVar_R_ModelFastIsVis	bss
-4ae620	4	.data	CModelo_Render, CModelo_Visibility, Init_GVar_R_ModelFastIsVis	bss
+4ae620	4	.data	CModel_Render, CModel_Visibility, Init_GVar_R_ModelFastIsVis	bss
 4ae624	4	.data	Init_GVar_R_ModelFastIsVis	bss
 4ae628	10	.data	Init_GVar_R_SkipAnimInterp	bss
-4ae638	4	.data	CAnim_GetSpeed, CModelo_SetAnim, CModelo_UpdateAnims +2	bss
+4ae638	4	.data	CAnim_GetSpeed, CModel_SetAnim, CModel_UpdateAnims +2	bss
 4ae63c	4	.data	Init_GVar_R_SkipAnimInterp	bss
 4ae640	10	.data	Init_GVar_R_ShowModelPos	bss
-4ae650	8	.data	CModelo_Render, Init_GVar_R_ShowModelPos	bss
+4ae650	8	.data	CModel_Render, Init_GVar_R_ShowModelPos	bss
 4ae658	10	.data	Init_GVar_R_ShowModelBox	bss
-4ae668	4	.data	CModelo_Render, Init_GVar_R_ShowModelBox	bss
+4ae668	4	.data	CModel_Render, Init_GVar_R_ShowModelBox	bss
 4ae66c	4	.data	Init_GVar_R_ShowModelBox	bss
 4ae670	10	.data	Init_GVar_R_DrawMLODMask	bss
-4ae680	4	.data	CModelo_UpdateLOD@4.part.0, Init_GVar_R_DrawMLODMask	bss
+4ae680	4	.data	CModel_UpdateLOD@4.part.0, Init_GVar_R_DrawMLODMask	bss
 4ae684	4	.data	Init_GVar_R_DrawMLODMask	bss
 4ae688	10	.data	Init_GVar_R_SphereVisMult	bss
-4ae698	4	.data	CModelo_Visibility, Init_GVar_R_SphereVisMult	bss
+4ae698	4	.data	CModel_Visibility, Init_GVar_R_SphereVisMult	bss
 4ae69c	4	.data	Init_GVar_R_SphereVisMult	bss
 4ae6a0	10	.data	Init_GVar_R_ModelPortalVis	bss
-4ae6b0	4	.data	CModelo_Visibility, Init_GVar_R_ModelPortalVis	bss
+4ae6b0	4	.data	CModel_Visibility, Init_GVar_R_ModelPortalVis	bss
 4ae6b4	4	.data	Init_GVar_R_ModelPortalVis	bss
 4ae6b8	10	.data	Init_GVar_R_DrawMLODMin	bss
-4ae6c8	4	.data	CModelo_UpdateLOD@4.part.0, Init_GVar_R_DrawMLODMin	bss
+4ae6c8	4	.data	CModel_UpdateLOD@4.part.0, Init_GVar_R_DrawMLODMin	bss
 4ae6cc	4	.data	Init_GVar_R_DrawMLODMin	bss
 4ae6d0	10	.data	Init_GVar_R_UseMLOD	bss
-4ae6e0	4	.data	CModelo_Render, CModelo_UpdateLOD, Engine_OneTimeInit +1	bss
+4ae6e0	4	.data	CModel_Render, CModel_UpdateLOD, Engine_OneTimeInit +1	bss
 4ae6e4	4	.data	Engine_OneTimeInit, Init_GVar_R_UseMLOD	bss
 4ae6e8	10	.data	Init_GVar_R_ShowModelLights	bss
-4ae6f8	4	.data	CModelo_Render, Init_GVar_R_ShowModelLights	bss
+4ae6f8	4	.data	CModel_Render, Init_GVar_R_ShowModelLights	bss
 4ae6fc	4	.data	Init_GVar_R_ShowModelLights	bss
 4ae700	10	.data	Init_GVar_R_LightLimit	bss
-4ae710	4	.data	CModelo_Render, Init_GVar_R_LightLimit	bss
+4ae710	4	.data	CModel_Render, Init_GVar_R_LightLimit	bss
 4ae714	4	.data	Init_GVar_R_LightLimit	bss
 4ae718	10	.data	Init_GVar_R_ShowModelSector	bss
-4ae728	4	.data	CModelo_Render, Init_GVar_R_ShowModelSector	bss
+4ae728	4	.data	CModel_Render, Init_GVar_R_ShowModelSector	bss
 4ae72c	4	.data	Init_GVar_R_ShowModelSector	bss
 4ae730	10	.data	Init_GVar_R_SkipUpdateVis	bss
-4ae740	4	.data	CModelo_Render, Init_GVar_R_SkipUpdateVis	bss
+4ae740	4	.data	CModel_Render, Init_GVar_R_SkipUpdateVis	bss
 4ae744	4	.data	Init_GVar_R_SkipUpdateVis	bss
 4ae748	10	.data	Init_GVar_R_DistMStencil	bss
-4ae758	4	.data	CModelo_Visibility, Init_GVar_R_DistMStencil	bss
+4ae758	4	.data	CModel_Visibility, Init_GVar_R_DistMStencil	bss
 4ae75c	4	.data	Init_GVar_R_DistMStencil	bss
 4ae760	10	.data	Init_GVar_R_AnimInterpMult	bss
-4ae770	4	.data	CAnim_GetSpeed, CModelo_SetAnim, CModelo_UpdateAnims +2	bss
+4ae770	4	.data	CAnim_GetSpeed, CModel_SetAnim, CModel_UpdateAnims +2	bss
 4ae774	4	.data	CAnim_GetSpeed, Init_GVar_R_AnimInterpMult	bss
-4ae778	4	.data	Crear_Modelo, Modelo_Destroy, Modelo_FindName +5	bss
-4ae77c	4	.data	Crear_Escena, Crear_Modelo, Escena_Next +8	bss
+4ae778	4	.data	Create_Model, Model_Destroy, Model_FindName +5	bss
+4ae77c	4	.data	Create_Scene, Create_Model, Scene_Next +8	bss
 4ae780	10	.data	Init_GVar_R_SortModels	bss
-4ae790	4	.data	Init_GVar_R_SortModels, Modelos_Render	bss
+4ae790	4	.data	Init_GVar_R_SortModels, Models_Render	bss
 4ae794	4	.data	Init_GVar_R_SortModels	bss
 4ae798	10	.data	Init_GVar_R_SortShow	bss
-4ae7a8	4	.data	Init_GVar_R_SortShow, Modelos_Render	bss
+4ae7a8	4	.data	Init_GVar_R_SortShow, Models_Render	bss
 4ae7ac	4	.data	Init_GVar_R_SortShow	bss
 4ae7b0	10	.data	Init_GVar_R_SortInvert	bss
-4ae7c0	4	.data	Init_GVar_R_SortInvert, Modelos_Render	bss
-4ae7c4	4	.data	Init_GVar_R_SortInvert, Modelo_UpdateRender, Modelos_Render	bss
-4ae7c8	4	.data	Modelo_UpdateRender, Modelos_Render, Modelos_Render_Get +4	bss
-4ae7cc	ffc	.data	Modelo_UpdateRender, Modelos_Render, Modelos_Render_Get +1	bss
-4af7c8	4	.data	Modelo_UpdateRender, Modelos_Render, Modelos_Render_Get +5	bss
-4af7cc	4	.data	Modelo_UpdateRender, Modelos_Render, Modelos_Render_Get +2	bss
-4af7d0	4	.data	CSuelo_ctor, test sdcall_suelo	bss
-4af7d4	1	.data	CMotorApp_MsgProc, CMotorApp_UpdateMenu, test sdcall_eng4	bss
+4ae7c0	4	.data	Init_GVar_R_SortInvert, Models_Render	bss
+4ae7c4	4	.data	Init_GVar_R_SortInvert, Model_UpdateRender, Models_Render	bss
+4ae7c8	4	.data	Model_UpdateRender, Models_Render, Models_Render_Get +4	bss
+4ae7cc	ffc	.data	Model_UpdateRender, Models_Render, Models_Render_Get +1	bss
+4af7c8	4	.data	Model_UpdateRender, Models_Render, Models_Render_Get +5	bss
+4af7cc	4	.data	Model_UpdateRender, Models_Render, Models_Render_Get +2	bss
+4af7d0	4	.data	CGround_ctor, test sdcall_suelo	bss
+4af7d4	1	.data	CEngineApp_MsgProc, CEngineApp_UpdateMenu, test sdcall_eng4	bss
 4af7d5	3	.data	test sdcall_eng4	bss
-4af7d8	4	.data	CSuelo_Trace, CSuelo_ctor, Collision_SphereBox +4	bss
-4af7dc	4	.data	CBsp_Calcular, CSuelo_CheckBBox, CSuelo_CollideOBB +10	bss
-4af7e0	8	.data	Bsp_FinMensaje, CSuelo_ctor, Motor_DrawStats +2	bss
-4af7e8	4	.data	Bsp_FinMensaje, CSuelo_NewQuery, CSuelo_ctor +3	bss
-4af7ec	4	.data	CSuelo_CheckBBox, CSuelo_CollideOBB, CSuelo_CollideSphere +9	bss
-4af7f0	4	.data	CSuelo_NewQuery, CSuelo_ctor, Motor_DrawStats +2	bss
-4af7f4	4	.data	CAlturas_QuadAddMesh, CAlturas_dtor, CCollideQuad_Find +8	bss
-4af7f8	10	.data	Init_GVar_AnalizeQuads	bss
-4af808	4	.data	CSuelo_DrawDebug, Init_GVar_AnalizeQuads, test sdlevel_restb	bss
-4af80c	4	.data	Init_GVar_AnalizeQuads	bss
+4af7d8	4	.data	CGround_Trace, CGround_ctor, Collision_SphereBox +4	bss
+4af7dc	4	.data	CBsp_Calculate, CGround_CheckBBox, CGround_CollideOBB +10	bss
+4af7e0	8	.data	Bsp_EndMessage, CGround_ctor, Engine_DrawStats +2	bss
+4af7e8	4	.data	Bsp_EndMessage, CGround_NewQuery, CGround_ctor +3	bss
+4af7ec	4	.data	CGround_CheckBBox, CGround_CollideOBB, CGround_CollideSphere +9	bss
+4af7f0	4	.data	CGround_NewQuery, CGround_ctor, Engine_DrawStats +2	bss
+4af7f4	4	.data	CHeights_QuadAddMesh, CHeights_dtor, CCollideQuad_Find +8	bss
+4af7f8	10	.data	Init_GVar_AnalyzeQuads	bss
+4af808	4	.data	CGround_DrawDebug, Init_GVar_AnalyzeQuads, test sdlevel_restb	bss
+4af80c	4	.data	Init_GVar_AnalyzeQuads	bss
 4af810	10	.data	Init_GVar_ShowMapQDist	bss
-4af820	4	.data	CSuelo_DrawDebug, Init_GVar_ShowMapQDist, test sdlevel_restb	bss
+4af820	4	.data	CGround_DrawDebug, Init_GVar_ShowMapQDist, test sdlevel_restb	bss
 4af824	4	.data	Init_GVar_ShowMapQDist	bss
 4af828	18	.data	Init_GVar_MapTriCacheRecalc	bss
 4af840	10	.data	Init_GVar_ShowMapSolid	bss
-4af850	4	.data	CCollideMesh_DrawDebug, CSuelo_DrawDebug, Collide_TriVerts +3	bss
-4af854	4	.data	CSuelo_DrawDebug, Init_GVar_ShowMapSolid	bss
+4af850	4	.data	CCollideMesh_DrawDebug, CGround_DrawDebug, Collide_TriVerts +3	bss
+4af854	4	.data	CGround_DrawDebug, Init_GVar_ShowMapSolid	bss
 4af858	10	.data	Init_GVar_MapCollisionBalance	bss
-4af868	4	.data	CAlturas_QuadInit, CSuelo_ctor, Init_GVar_MapCollisionBalance +1	bss
-4af86c	4	.data	CSuelo_ctor, Init_GVar_MapCollisionBalance	bss
+4af868	4	.data	CHeights_QuadInit, CGround_ctor, Init_GVar_MapCollisionBalance +1	bss
+4af86c	4	.data	CGround_ctor, Init_GVar_MapCollisionBalance	bss
 4af870	10	.data	Init_GVar_ShowMapQuads	bss
-4af880	4	.data	CSuelo_DrawDebug, Init_GVar_ShowMapQuads, test sdlevel_restb	bss
+4af880	4	.data	CGround_DrawDebug, Init_GVar_ShowMapQuads, test sdlevel_restb	bss
 4af884	4	.data	Init_GVar_ShowMapQuads	bss
-4af888	1c	.data	CSuelo_NewQuery, CSuelo_ctor, Init_CollisionStats +1	bss
-4af8a4	4	.data	CCollideMesh_Write, CSuelo_SaveCollision	bss
-4af8a8	4	.data	CCollideMesh_Read, CCollideQuad_Read, CSuelo_LoadCollision	bss
+4af888	1c	.data	CGround_NewQuery, CGround_ctor, Init_CollisionStats +1	bss
+4af8a4	4	.data	CCollideMesh_Write, CGround_SaveCollision	bss
+4af8a8	4	.data	CCollideMesh_Read, CCollideQuad_Read, CGround_LoadCollision	bss
 4af8ac	4	.data	-	bss
 4af8b0	4	.data	CCollideMesh_DrawDebug, test sdcall_restb	bss
 4af8b4	44	.data	CCollideMesh_DrawDebug	bss
-4af8f8	b8	.data	CSuelo_DrawDebug, Suelo_FiniCollideMat	bss
+4af8f8	b8	.data	CGround_DrawDebug, Ground_FiniCollideMat	bss
 4af9b0	400	.data	Proc_ReadField	bss
-4afdb0	4	.data	Bsp_Render, Bsp_RenderStencil, CMapa_LoadTexture +11	bss
+4afdb0	4	.data	Bsp_Render, Bsp_RenderStencil, CMap_LoadTexture +11	bss
 4afdb4	4	.data	Engine_LoadIni	bss
 4afdb8	4	.data	Bsp_RenderStencil, CBsp_DrawTri, CBsp_Render +17	bss
-4afdbc	4	.data	Bsp_Render, Engine_LoadIni, SombrasStencil_Render +1	bss
-4afdc0	4	.data	E3D_SetShadowLight, Engine_LoadIni, SombrasStencil_Capturar +4	bss
-4afdc4	4	.data	E3D_SetShadowLight, Engine_LoadIni, SombrasStencil_Render +3	bss
-4afdc8	4	.data	E3D_SetShadowLight, Engine_LoadIni, Stencil_Malla +1	bss
+4afdbc	4	.data	Bsp_Render, Engine_LoadIni, ShadowsStencil_Render +1	bss
+4afdc0	4	.data	E3D_SetShadowLight, Engine_LoadIni, ShadowsStencil_Capture +4	bss
+4afdc4	4	.data	E3D_SetShadowLight, Engine_LoadIni, ShadowsStencil_Render +3	bss
+4afdc8	4	.data	E3D_SetShadowLight, Engine_LoadIni, Stencil_Mesh +1	bss
 4afdcc	4	.data	Engine_LoadIni, Stencil_DrawSegs, Stencil_Free +4	bss
-4afdd0	4	.data	Engine_LoadIni, SombrasStencil_Render, SombrasStencil_Set +5	bss
+4afdd0	4	.data	Engine_LoadIni, ShadowsStencil_Render, ShadowsStencil_Set +5	bss
 4afdd4	4	.data	Engine_LoadIni, Stencil_DrawTris, Stencil_Free +4	bss
-4afdd8	4	.data	Engine_LoadIni, SombrasStencil_Render, SombrasStencil_Set +5	bss
-4afddc	4	.data	Engine_LoadIni, StencilBlock_SetLuces, Stencil_DrawSegs +6	bss
-4afde0	4	.data	Engine_LoadIni, SombrasStencil_Render, SombrasStencil_Set +7	bss
-4afde4	4	.data	Engine_LoadIni, Stencil_Init, Stencil_Malla +1	bss
-4afde8	4	.data	BspRegion_Enlazar.part.0, Bsp_Crear, Bsp_PortalInfo +54	bss
+4afdd8	4	.data	Engine_LoadIni, ShadowsStencil_Render, ShadowsStencil_Set +5	bss
+4afddc	4	.data	Engine_LoadIni, StencilBlock_SetLights, Stencil_DrawSegs +6	bss
+4afde0	4	.data	Engine_LoadIni, ShadowsStencil_Render, ShadowsStencil_Set +7	bss
+4afde4	4	.data	Engine_LoadIni, Stencil_Init, Stencil_Mesh +1	bss
+4afde8	4	.data	BspRegion_Link.part.0, Bsp_Create, Bsp_PortalInfo +54	bss
 4afdec	10	.data	Init_GVar_RenderWorld	bss
-4afdfc	4	.data	CMundo_Render, Init_GVar_RenderWorld	bss
+4afdfc	4	.data	CWorld_Render, Init_GVar_RenderWorld	bss
 4afe00	4	.data	Init_GVar_RenderWorld	bss
 4afe04	10	.data	Init_GVar_RenderSky	bss
-4afe14	4	.data	CMundo_Render, Init_GVar_RenderSky	bss
+4afe14	4	.data	CWorld_Render, Init_GVar_RenderSky	bss
 4afe18	4	.data	Init_GVar_RenderSky	bss
 4afe1c	10	.data	Init_GVar_WorldPreIllum	bss
-4afe2c	4	.data	CMundo_LoadSueloEscala, Init_GVar_WorldPreIllum	bss
+4afe2c	4	.data	CWorld_LoadGroundScale, Init_GVar_WorldPreIllum	bss
 4afe30	4	.data	Init_GVar_WorldPreIllum	bss
 4afe34	10	.data	Init_GVar_SkyRotation	bss
-4afe44	8	.data	CMundo_Render, Init_GVar_SkyRotation	bss
+4afe44	8	.data	CWorld_Render, Init_GVar_SkyRotation	bss
 4afe4c	10	.data	Init_GVar_SkyZBuffer	bss
-4afe5c	4	.data	CMundo_Render, Init_GVar_SkyZBuffer	bss
+4afe5c	4	.data	CWorld_Render, Init_GVar_SkyZBuffer	bss
 4afe60	4	.data	Init_GVar_SkyZBuffer	bss
 4afe64	10	.data	Init_GVar_SkyPosScale	bss
-4afe74	4	.data	CMundo_Render, Init_GVar_SkyPosScale	bss
+4afe74	4	.data	CWorld_Render, Init_GVar_SkyPosScale	bss
 4afe78	4	.data	Init_GVar_SkyPosScale	bss
 4afe7c	10	.data	Init_GVar_SkyTubeTest	bss
-4afe8c	4	.data	CMundo_Render, Init_GVar_SkyTubeTest	bss
+4afe8c	4	.data	CWorld_Render, Init_GVar_SkyTubeTest	bss
 4afe90	4	.data	Init_GVar_SkyTubeTest	bss
 4afe94	10	.data	Fini_GVar_ShowWorldDummies, Init_GVar_ShowWorldDummies	bss
-4afea4	4	.data	CMundo_DrawDummies, Fini_GVar_ShowWorldDummies, Init_GVar_ShowWorldDummies	bss
+4afea4	4	.data	CWorld_DrawDummies, Fini_GVar_ShowWorldDummies, Init_GVar_ShowWorldDummies	bss
 4afea8	4	.data	Fini_GVar_ShowWorldDummies, Init_GVar_ShowWorldDummies	bss
 4afeac	10	.data	Init_GVar_SkyInit	bss
-4afebc	4	.data	CMundo_LoadCieloEscala, Init_GVar_SkyInit	bss
+4afebc	4	.data	CWorld_LoadSkyScale, Init_GVar_SkyInit	bss
 4afec0	4	.data	Init_GVar_SkyInit	bss
-4afec4	8	.data	Debug_Punto, Debug_PuntosClear, Fini_Puntos +2	bss
-4afecc	4	.data	Debug_Punto, Debug_PuntosClear, Debug_PuntosDraw +2	bss
+4afec4	8	.data	Debug_Point, Debug_PointsClear, Fini_Points +2	bss
+4afecc	4	.data	Debug_Point, Debug_PointsClear, Debug_PointsDraw +2	bss
 4afed0	4	.data	Bsp_PortalInfo, CBsp_DrawPass, CBsp_DrawWire +7	bss
 4afed4	4	.data	-	bss
-4afed8	4	.data	Portales_Cull, SectorVis_Sphere, Sector_Find +13	bss
-4afedc	1fc	.data	Portales_Cull, SectorVis_Sphere, Sector_Find +12	bss
-4b00d8	4	.data	Portales_Cull, SectorVis_Sphere, Sector_Find +14	bss
-4b00dc	c	.data	Portales_Cull, SectorVis_Sphere, Sector_Find +12	bss
+4afed8	4	.data	Portals_Cull, SectorVis_Sphere, Sector_Find +13	bss
+4afedc	1fc	.data	Portals_Cull, SectorVis_Sphere, Sector_Find +12	bss
+4b00d8	4	.data	Portals_Cull, SectorVis_Sphere, Sector_Find +14	bss
+4b00dc	c	.data	Portals_Cull, SectorVis_Sphere, Sector_Find +12	bss
 4b00e8	10	.data	Init_GVar_R_PortalClip	bss
-4b00f8	4	.data	Init_GVar_R_PortalClip, Portales_SetView, test sdlevel_eng1	bss
+4b00f8	4	.data	Init_GVar_R_PortalClip, Portals_SetView, test sdlevel_eng1	bss
 4b00fc	4	.data	Init_GVar_R_PortalClip	bss
 4b0100	10	.data	Init_GVar_R_PortalNorm	bss
-4b0110	4	.data	Init_GVar_R_PortalNorm, Zona_Pintar	bss
+4b0110	4	.data	Init_GVar_R_PortalNorm, Zone_Paint	bss
 4b0114	4	.data	Init_GVar_R_PortalNorm	bss
 4b0118	10	.data	Init_GVar_R_PortalPos	bss
 4b0128	4	.data	Init_GVar_R_PortalPos, SectorVis_Check, SectorVis_Update	bss
 4b012c	4	.data	Init_GVar_R_PortalPos	bss
 4b0130	10	.data	Init_GVar_R_PortalDist	bss
-4b0140	8	.data	Init_GVar_R_PortalDist, Zona_Pintar	bss
-4b0148	4	.data	CMundo_Render, Portales_Cull, Sectores_Crear	bss
-4b014c	18	.data	CMundo_Render, Portales_Cull, Sectores_Crear +1	bss
-4b0164	4	.data	Bsp_PortalInfo, CMundo_Render, Portales_Cull +1	bss
-4b0168	4	.data	CBsp_DrawPass, CBsp_DrawWire, Fini_ZonaPintar_ZonasPintar +5	bss
-4b016c	ffc	.data	CBsp_DrawPass, CBsp_DrawWire, Fini_ZonaPintar_ZonasPintar +4	bss
+4b0140	8	.data	Init_GVar_R_PortalDist, Zone_Paint	bss
+4b0148	4	.data	CWorld_Render, Portals_Cull, Sectors_Create	bss
+4b014c	18	.data	CWorld_Render, Portals_Cull, Sectors_Create +1	bss
+4b0164	4	.data	Bsp_PortalInfo, CWorld_Render, Portals_Cull +1	bss
+4b0168	4	.data	CBsp_DrawPass, CBsp_DrawWire, Fini_PaintZones +5	bss
+4b016c	ffc	.data	CBsp_DrawPass, CBsp_DrawWire, Fini_PaintZones +4	bss
 4b1168	10	.data	Init_GVar_R_PortalExt	bss
 4b1178	4	.data	Init_GVar_R_PortalExt, SectorVis_Sphere	bss
 4b117c	4	.data	Init_GVar_R_PortalExt	bss
 4b1180	10	.data	Init_GVar_R_PortalEnd	bss
-4b1190	4	.data	Init_GVar_R_PortalEnd, Zona_Pintar	bss
+4b1190	4	.data	Init_GVar_R_PortalEnd, Zone_Paint	bss
 4b1194	4	.data	Init_GVar_R_PortalEnd	bss
 4b1198	10	.data	Init_GVar_R_PortalBand	bss
-4b11a8	4	.data	Init_GVar_R_PortalBand, Portales_SetView, test sdlevel_eng1	bss
+4b11a8	4	.data	Init_GVar_R_PortalBand, Portals_SetView, test sdlevel_eng1	bss
 4b11ac	4	.data	Init_GVar_R_PortalBand	bss
-4b11b0	28	.data	Alturas_TraceStep, CSuelo_Trace	bss
-4b11d8	8	.data	CSuelo_CheckBBox, CheckBBox_InitCarasTortas, test sdlevel_eng1	bss
-4b11e0	600	.data	CheckBBox_InitCarasTortas	bss
+4b11b0	28	.data	Heights_TraceStep, CGround_Trace	bss
+4b11d8	8	.data	CGround_CheckBBox, CheckBBox_InitResponseFaces, test sdlevel_eng1	bss
+4b11e0	600	.data	CheckBBox_InitResponseFaces	bss
 4b17e0	28	.data	Collision_SlideSteps, ProfScope_End, Prof_Avg +2	bss
-4b1808	10	.data	Stencil_Malla	bss
+4b1808	10	.data	Stencil_Mesh	bss
 4b1818	18	.data	-	bss
 4b1830	8	.data	CBsp_RadAreas, CBsp_RadGlobal	bss
 4b1838	8	.data	CBsp_RadGlobal	bss
@@ -12690,114 +12690,114 @@
 4b1890	8	.data	Collision_Check	bss
 4b1898	8	.data	Collision_Sector	bss
 4b18a0	28	.data	-	bss
-4b18c8	8	.data	Luz_Select	bss
-4b18d0	8	.data	CModelo_Visibility	bss
-4b18d8	8	.data	Motor_DrawStats	bss
+4b18c8	8	.data	Light_Select	bss
+4b18d0	8	.data	CModel_Visibility	bss
+4b18d8	8	.data	Engine_DrawStats	bss
 4b18e0	100	.data	Prof_Avg, Prof_Avg32, Prof_Reset	bss
 4b19e0	100	.data	Prof_Avg, Prof_Avg32, Prof_GetMaxTime +1	bss
 4b1ae0	4	.data	Prof_Avg, Prof_Avg32, Prof_GetMaxTime +2	bss
 4b1ae4	1c	.data	Prof_Avg, Prof_Avg32, Prof_GetMaxTime +1	bss
 4b1b00	100	.data	Prof_Count, Prof_GetCount	bss
 4b1c00	4	.data	Tsc_CpuFreq, test sdcall_nosleep	bss
-4b1c04	4	.data	App_WinMain, Bsp_Crear, Bsp_InitD3D +61	bss
+4b1c04	4	.data	App_WinMain, Bsp_Create, Bsp_InitD3D +61	bss
 4b1c08	2c	.data	D3DApp_SelectDeviceProc	bss
 4b1c34	8	.data	D3DApp_FrameStats	bss
 4b1c3c	4	.data	CD3DApp_Pause, test sdlevel_eng1	bss
 4b1c40	40	.data	DXUtil_Timer	bss
 4b1c80	10	.data	DXUtil_Timer, Timer_FixedStep, Timer_GetFreq	bss
 4b1c90	10	.data	Init_GVar_R_FogDensity	bss
-4b1ca0	4	.data	CNiebla_Apply, Init_GVar_R_FogDensity, test sdlevel	bss
+4b1ca0	4	.data	CFog_Apply, Init_GVar_R_FogDensity, test sdlevel	bss
 4b1ca4	4	.data	Init_GVar_R_FogDensity	bss
 4b1ca8	10	.data	Init_GVar_R_FogEnable	bss
-4b1cb8	4	.data	CNiebla_Apply, Init_GVar_R_FogEnable, Render_IniD3D +2	bss
+4b1cb8	4	.data	CFog_Apply, Init_GVar_R_FogEnable, Render_IniD3D +2	bss
 4b1cbc	4	.data	Init_GVar_R_FogEnable	bss
 4b1cc0	10	.data	Init_GVar_R_FogAbsDist	bss
-4b1cd0	4	.data	CNiebla_Apply, Init_GVar_R_FogAbsDist, test sdlevel	bss
+4b1cd0	4	.data	CFog_Apply, Init_GVar_R_FogAbsDist, test sdlevel	bss
 4b1cd4	4	.data	Init_GVar_R_FogAbsDist	bss
 4b1cd8	10	.data	Init_GVar_R_FogColor	bss
-4b1ce8	4	.data	CNiebla_Apply, Init_GVar_R_FogColor, test sdlevel	bss
+4b1ce8	4	.data	CFog_Apply, Init_GVar_R_FogColor, test sdlevel	bss
 4b1cec	4	.data	Init_GVar_R_FogColor	bss
-4b1cf0	8	.data	Texto_Printf, Texto_Printf3D, Texto_PrintfRel +3	bss
-4b1cf8	4	.data	Texto_DrawPila, Texto_Mensaje, Texto_Pop +2	bss
+4b1cf0	8	.data	Text_Printf, Text_Printf3D, Text_PrintfRel +3	bss
+4b1cf8	4	.data	Text_DrawStack, Text_Message, Text_Pop +2	bss
 4b1cfc	10	.data	Init_GVar_SpriteScaleWidth	bss
-4b1d0c	4	.data	CGrafico2D_Draw, Init_GVar_SpriteScaleWidth, test sdcall_grafico2d	bss
+4b1d0c	4	.data	CGraphic2D_Draw, Init_GVar_SpriteScaleWidth, test sdcall_grafico2d	bss
 4b1d10	8	.data	Init_GVar_SpriteScaleWidth	bss
-4b1d18	800	.data	CGrafico2D_Draw	bss
+4b1d18	800	.data	CGraphic2D_Draw	bss
 4b2518	10	.data	Init_GVar_R_Particles	bss
-4b2528	4	.data	CSistPart_Render, CSistPart_Render2, CSistPart_Update +1	bss
+4b2528	4	.data	CParticleSystem_Render, CParticleSystem_Render2, CParticleSystem_Update +1	bss
 4b252c	4	.data	Init_GVar_R_Particles	bss
 4b2530	10	.data	Init_GVar_R_ParticleScale	bss
-4b2540	4	.data	CSistPart_GenParticle, Init_GVar_R_ParticleScale	bss
+4b2540	4	.data	CParticleSystem_GenParticle, Init_GVar_R_ParticleScale	bss
 4b2544	4	.data	Init_GVar_R_ParticleScale	bss
 4b2548	10	.data	Init_GVar_R_ParticleVelScale	bss
-4b2558	4	.data	CSistPart_GenParticle, Init_GVar_R_ParticleVelScale	bss
+4b2558	4	.data	CParticleSystem_GenParticle, Init_GVar_R_ParticleVelScale	bss
 4b255c	4	.data	Init_GVar_R_ParticleVelScale	bss
 4b2560	10	.data	Init_GVar_R_ParticleFlags	bss
-4b2570	4	.data	CSistPart_Update, Init_GVar_R_ParticleFlags	bss
+4b2570	4	.data	CParticleSystem_Update, Init_GVar_R_ParticleFlags	bss
 4b2574	4	.data	Init_GVar_R_ParticleFlags	bss
 4b2578	10	.data	Init_GVar_R_ParticlesCount	bss
-4b2588	4	.data	CSistPart_CreateParticles, CSistPart_dtor, Init_GVar_R_ParticlesCount +1	bss
+4b2588	4	.data	CParticleSystem_CreateParticles, CParticleSystem_dtor, Init_GVar_R_ParticlesCount +1	bss
 4b258c	4	.data	Init_GVar_R_ParticlesCount	bss
 4b2590	10	.data	Init_GVar_R_ParticleSector	bss
-4b25a0	4	.data	CSistPart_Render, Init_GVar_R_ParticleSector	bss
+4b25a0	4	.data	CParticleSystem_Render, Init_GVar_R_ParticleSector	bss
 4b25a4	4	.data	Init_GVar_R_ParticleSector	bss
 4b25a8	10	.data	Init_GVar_R_ParticleRate	bss
-4b25b8	4	.data	CSistPart_Update, Init_GVar_R_ParticleRate	bss
+4b25b8	4	.data	CParticleSystem_Update, Init_GVar_R_ParticleRate	bss
 4b25bc	4	.data	Init_GVar_R_ParticleRate	bss
 4b25c0	10	.data	Init_GVar_R_ParticleLife	bss
-4b25d0	4	.data	CSistPart_GenParticle, Init_GVar_R_ParticleLife	bss
+4b25d0	4	.data	CParticleSystem_GenParticle, Init_GVar_R_ParticleLife	bss
 4b25d4	4	.data	Init_GVar_R_ParticleLife	bss
-4b25d8	4	.data	CSistPart_Init, Fini_CArchINI_SistPartIni, Init_CArchINI_SistPartIni +1	bss
+4b25d8	4	.data	CParticleSystem_Init, Fini_CIniFile_ParticleSystemIni, Init_CIniFile_ParticleSystemIni +1	bss
 4b25dc	8	.data	Err_VReport	bss
 4b25e4	4	.data	Err_Str, Err_VReport	bss
-4b25e8	4	.data	CMotorApp_MsgProc, CMotorApp_UpdateMenu, CTextura_SaveDDS +2	bss
-4b25ec	4	.data	CTextura_CreateD3D, CTextura_UploadLevel, motorIni +1	bss
-4b25f0	4	.data	Motor_DrawStats, Textura_Load, test sdcall_engmisc +1	bss
-4b25f4	4	.data	Motor_DrawStats, Textura_FindPurge, test sdcall_engmisc +1	bss
-4b25f8	8	.data	Motor_DrawStats, Textura_Load, test sdcall_engmisc +1	bss
-4b2600	4	.data	Engine_LevelInit, Engine_LevelLoaded, Motor_DrawStats	bss
+4b25e8	4	.data	CEngineApp_MsgProc, CEngineApp_UpdateMenu, CTexture_SaveDDS +2	bss
+4b25ec	4	.data	CTexture_CreateD3D, CTexture_UploadLevel, engineIni +1	bss
+4b25f0	4	.data	Engine_DrawStats, Texture_Load, test sdcall_engmisc +1	bss
+4b25f4	4	.data	Engine_DrawStats, Texture_FindPurge, test sdcall_engmisc +1	bss
+4b25f8	8	.data	Engine_DrawStats, Texture_Load, test sdcall_engmisc +1	bss
+4b2600	4	.data	Engine_LevelInit, Engine_LevelLoaded, Engine_DrawStats	bss
 4b2604	4	.data	Engine_LevelInit, Engine_LevelLoaded	bss
 4b2608	1	.data	Engine_Init	bss
 4b2609	3	.data	-	bss
-4b260c	4	.data	CTextura_CreateD3D	bss
-4b2610	4	.data	CTextura_ctor, CTextura_dtor, Textura_DeleteAll +6	bss
+4b260c	4	.data	CTexture_CreateD3D	bss
+4b2610	4	.data	CTexture_ctor, CTexture_dtor, Texture_DeleteAll +6	bss
 4b2614	10	.data	Init_GVar_DUDVMipmap	bss
-4b2624	4	.data	CTextura_LoadFile, Init_GVar_DUDVMipmap	bss
+4b2624	4	.data	CTexture_LoadFile, Init_GVar_DUDVMipmap	bss
 4b2628	8	.data	Init_GVar_DUDVMipmap	bss
 4b2630	10	.data	Init_GVar_SaveDXT5	bss
-4b2640	4	.data	CTextura_SaveDDS, Init_GVar_SaveDXT5	bss
+4b2640	4	.data	CTexture_SaveDDS, Init_GVar_SaveDXT5	bss
 4b2644	4	.data	Init_GVar_SaveDXT5	bss
 4b2648	10	.data	Init_GVar_TextureLOD	bss
-4b2658	4	.data	CTextura_CreateD3D, Init_GVar_TextureLOD	bss
+4b2658	4	.data	CTexture_CreateD3D, Init_GVar_TextureLOD	bss
 4b265c	4	.data	Init_GVar_TextureLOD	bss
 4b2660	10	.data	Init_GVar_TexturePool	bss
-4b2670	4	.data	CTextura_CreateD3D, Init_GVar_TexturePool, Motor_DrawStats	bss
+4b2670	4	.data	CTexture_CreateD3D, Init_GVar_TexturePool, Engine_DrawStats	bss
 4b2674	4	.data	Init_GVar_TexturePool	bss
 4b2678	10	.data	Init_GVar_BuildDDS	bss
-4b2688	4	.data	CTextura_CreateD3D, Init_GVar_BuildDDS, test sdcall_d3dxtex	bss
+4b2688	4	.data	CTexture_CreateD3D, Init_GVar_BuildDDS, test sdcall_d3dxtex	bss
 4b268c	4	.data	Init_GVar_BuildDDS	bss
 4b2690	10	.data	Init_GVar_BumpDDS	bss
-4b26a0	4	.data	CTextura_SaveDDS, Init_GVar_BumpDDS	bss
+4b26a0	4	.data	CTexture_SaveDDS, Init_GVar_BumpDDS	bss
 4b26a4	4	.data	Init_GVar_BumpDDS	bss
 4b26a8	10	.data	Init_GVar_BumpMipmap	bss
-4b26b8	4	.data	CTextura_LoadFile, Init_GVar_BumpMipmap	bss
+4b26b8	4	.data	CTexture_LoadFile, Init_GVar_BumpMipmap	bss
 4b26bc	4	.data	Init_GVar_BumpMipmap	bss
 4b26c0	10	.data	Init_GVar_MipmapColor	bss
-4b26d0	4	.data	CTextura_UploadLevel, Init_GVar_MipmapColor	bss
+4b26d0	4	.data	CTexture_UploadLevel, Init_GVar_MipmapColor	bss
 4b26d4	4	.data	Init_GVar_MipmapColor	bss
 4b26d8	10	.data	Init_GVar_MipmapFade	bss
-4b26e8	4	.data	CTextura_UploadLevel, Init_GVar_MipmapFade	bss
+4b26e8	4	.data	CTexture_UploadLevel, Init_GVar_MipmapFade	bss
 4b26ec	4	.data	Init_GVar_MipmapFade	bss
 4b26f0	10	.data	Init_GVar_R_Tex_Count	bss
-4b2700	4	.data	CTextura_ctor, CTextura_dtor, Init_GVar_R_Tex_Count +1	bss
+4b2700	4	.data	CTexture_ctor, CTexture_dtor, Init_GVar_R_Tex_Count +1	bss
 4b2704	4	.data	Init_GVar_R_Tex_Count	bss
 4b2708	10	.data	Init_GVar_SharpenMore	bss
-4b2718	4	.data	CTextura_UploadLevel, Init_GVar_SharpenMore	bss
+4b2718	4	.data	CTexture_UploadLevel, Init_GVar_SharpenMore	bss
 4b271c	4	.data	Init_GVar_SharpenMore	bss
 4b2720	10	.data	Init_GVar_CachedTex	bss
-4b2730	4	.data	Init_GVar_CachedTex, Textura_FindPurge, test sdcall_textura	bss
+4b2730	4	.data	Init_GVar_CachedTex, Texture_FindPurge, test sdcall_textura	bss
 4b2734	4	.data	Init_GVar_CachedTex	bss
-4b2738	4	.data	Textura_Load, test sdcall_textura	bss
+4b2738	4	.data	Texture_Load, test sdcall_textura	bss
 4b273c	4	.data	-	bss
 4b2740	100	.data	Screenshot_Take, Surface_SaveShot.part.0	bss
 4b2840	1	.data	Avi_Write, DVF_Process, Screenshot_Take +2	bss
@@ -12816,65 +12816,65 @@
 4b2aec	4	.data	Init_GVar_PlayVideoFX, Video_RenderStream	bss
 4b2af0	4	.data	Init_GVar_PlayVideoFX	bss
 4b2af4	4	.data	Video_PadPressed	bss
-4b2af8	4	.data	Bsp_Crear, Bsp_Free, Bsp_InitD3D +9	bss
-4b2afc	4	.data	CBsp_Calcular, CBsp_ctor, CMundo_LoadSueloEscala +2	bss
-4b2b00	4	.data	BspLMap_CrearMat, Bsp_InitD3D, CBsp_DrawTri +4	bss
-4b2b04	4	.data	CBsp_GuardarIni, CBsp_LuzDirecta, Engine_LoadIni +2	bss
+4b2af8	4	.data	Bsp_Create, Bsp_Free, Bsp_InitD3D +9	bss
+4b2afc	4	.data	CBsp_Calculate, CBsp_ctor, CWorld_LoadGroundScale +2	bss
+4b2b00	4	.data	BspLMap_CreateMat, Bsp_InitD3D, CBsp_DrawTri +4	bss
+4b2b04	4	.data	CBsp_SaveIni, CBsp_DirectLight, Engine_LoadIni +2	bss
 4b2b08	4	.data	Engine_LoadIni, g_BspDlgChecks	bss
-4b2b0c	4	.data	CBsp_LuzDirecta, Engine_LoadIni, g_BspDlgChecks +1	bss
-4b2b10	4	.data	CBsp_Calcular, CBsp_GuardarIni, CBsp_QuitarLuces +2	bss
-4b2b14	4	.data	CBsp_GuardarIni, CBsp_LuzDirecta, CBsp_RadGlobal +4	bss
-4b2b18	4	.data	CBsp_Calcular, CBsp_GuardarIni, CBsp_LuzDirecta +3	bss
-4b2b1c	4	.data	BspLMap_Copiar, CBsp_DrawTri, CBsp_GuardarIni +3	bss
-4b2b20	4	.data	Bsp_RenderStencil, CBsp_GuardarIni, CBsp_LeerEMI +5	bss
-4b2b24	4	.data	BspTxf_ctor, CBsp_Calcular, CBsp_GuardarIni +4	bss
+4b2b0c	4	.data	CBsp_DirectLight, Engine_LoadIni, g_BspDlgChecks +1	bss
+4b2b10	4	.data	CBsp_Calculate, CBsp_SaveIni, CBsp_RemoveLights +2	bss
+4b2b14	4	.data	CBsp_SaveIni, CBsp_DirectLight, CBsp_RadGlobal +4	bss
+4b2b18	4	.data	CBsp_Calculate, CBsp_SaveIni, CBsp_DirectLight +3	bss
+4b2b1c	4	.data	BspLMap_Copy, CBsp_DrawTri, CBsp_SaveIni +3	bss
+4b2b20	4	.data	Bsp_RenderStencil, CBsp_SaveIni, CBsp_ReadEMI +5	bss
+4b2b24	4	.data	BspTxf_ctor, CBsp_Calculate, CBsp_SaveIni +4	bss
 4b2b28	4	.data	CBsp_DrawTri, CBsp_DrawWire, Engine_FrameSetup +4	bss
 4b2b2c	4	.data	CBsp_DrawTri, Engine_FrameSetup, Engine_LoadIni +3	bss
 4b2b30	4	.data	CBsp_DrawWire, Engine_FrameSetup, Engine_LoadIni +2	bss
 4b2b34	4	.data	Bsp_PortalInfo, CBsp_ctor, Video_GetStatus	bss
-4b2b38	4	.data	Bsp_Crear, Bsp_Free, Bsp_InitD3D +8	bss
-4b2b3c	4	.data	CBsp_AgruparMapas, CBsp_GuardarEMI, CBsp_LeerEMI +3	bss
-4b2b40	4	.data	CBsp_AgruparMapas, CBsp_Calcular, CBsp_LeerEMI +2	bss
-4b2b44	4	.data	Bsp_TomarLuces, CBsp_Calcular, CBsp_LuzDirecta +1	bss
+4b2b38	4	.data	Bsp_Create, Bsp_Free, Bsp_InitD3D +8	bss
+4b2b3c	4	.data	CBsp_GroupMaps, CBsp_SaveEMI, CBsp_ReadEMI +3	bss
+4b2b40	4	.data	CBsp_GroupMaps, CBsp_Calculate, CBsp_ReadEMI +2	bss
+4b2b44	4	.data	Bsp_TakeLights, CBsp_Calculate, CBsp_DirectLight +1	bss
 4b2b48	10	.data	BspTri_GetAreas, CBsp_RadGlobal, test sdlevel_finalu	bss
-4b2b58	4	.data	CBsp_Calcular, g_BspDlgChecks	bss
-4b2b5c	4	.data	BspLMap_Init, CBsp_LeerEMI, CBsp_ctor +2	bss
-4b2b60	4	.data	BspRad_Rayo, CBsp_Calcular, g_BspDlgChecks +1	bss
-4b2b64	4	.data	BspTri_GetAreas, CBsp_Calcular, CBsp_RadAreas +3	bss
+4b2b58	4	.data	CBsp_Calculate, g_BspDlgChecks	bss
+4b2b5c	4	.data	BspLMap_Init, CBsp_ReadEMI, CBsp_ctor +2	bss
+4b2b60	4	.data	BspRad_Ray, CBsp_Calculate, g_BspDlgChecks +1	bss
+4b2b64	4	.data	BspTri_GetAreas, CBsp_Calculate, CBsp_RadAreas +3	bss
 4b2b68	c	.data	g_BspDlgChecks	bss
-4b2b74	4	.data	BspTxf_Cargar, BspTxf_ctor, Bsp_FinMensaje +7	bss
+4b2b74	4	.data	BspTxf_Load, BspTxf_ctor, Bsp_EndMessage +7	bss
 4b2b78	8	.data	BspTri_Draw, CBsp_DrawFX	bss
 4b2b80	4	.data	BspLMap_GetMat, Bsp_RenderStencil, CBsp_DrawTri +1	bss
 4b2b84	10	.data	Init_GVar_TXF_Helper	bss
-4b2b94	4	.data	BspTri_SetExt, CBsp_Calcular, Init_GVar_TXF_Helper	bss
+4b2b94	4	.data	BspTri_SetExt, CBsp_Calculate, Init_GVar_TXF_Helper	bss
 4b2b98	4	.data	Init_GVar_TXF_Helper	bss
 4b2b9c	10	.data	Init_GVar_TXF_CheckFiles	bss
-4b2bac	4	.data	CBsp_Calcular, Init_GVar_TXF_CheckFiles	bss
+4b2bac	4	.data	CBsp_Calculate, Init_GVar_TXF_CheckFiles	bss
 4b2bb0	4	.data	Init_GVar_TXF_CheckFiles	bss
 4b2bb4	10	.data	Init_GVar_RenderSectors	bss
 4b2bc4	4	.data	CBsp_DrawPass, Init_GVar_RenderSectors	bss
 4b2bc8	4	.data	Init_GVar_RenderSectors	bss
 4b2bcc	10	.data	Init_GVar_MapDrawSector	bss
-4b2bdc	4	.data	CBsp_DrawZona, Init_GVar_MapDrawSector	bss
+4b2bdc	4	.data	CBsp_DrawZone, Init_GVar_MapDrawSector	bss
 4b2be0	4	.data	Init_GVar_MapDrawSector	bss
 4b2be4	10	.data	Init_GVar_LightmapPackMode	bss
-4b2bf4	4	.data	BspLMap_Buscar, BspTri_Rotar, Init_GVar_LightmapPackMode +1	bss
+4b2bf4	4	.data	BspLMap_Find, BspTri_Rotate, Init_GVar_LightmapPackMode +1	bss
 4b2bf8	4	.data	Init_GVar_LightmapPackMode	bss
 4b2bfc	10	.data	Fini_GVar_MapRenderMap, Init_GVar_MapRenderMap	bss
 4b2c0c	4	.data	CBsp_DrawTri, Fini_GVar_MapRenderMap, Init_GVar_MapRenderMap	bss
 4b2c10	4	.data	Fini_GVar_MapRenderMap, Init_GVar_MapRenderMap	bss
 4b2c14	c	.data	Bsp_PortalInfo, CBsp_ctor	bss
-4b2c20	4	.data	Bsp_TomarLuces, CBsp_Calcular, CBsp_LuzDirecta +1	bss
-4b2c24	1c	.data	Bsp_TomarLuces, CBsp_Calcular, CBsp_LuzDirecta	bss
+4b2c20	4	.data	Bsp_TakeLights, CBsp_Calculate, CBsp_DirectLight +1	bss
+4b2c24	1c	.data	Bsp_TakeLights, CBsp_Calculate, CBsp_DirectLight	bss
 4b2c40	6c	.data	-	bss
-4b2cac	8	.data	Bsp_InitLuces	bss
+4b2cac	8	.data	Bsp_InitLights	bss
 4b2cb4	a75c	.data	-	bss
 4bd410	4	.data	test sdlevel_aicharctl	bss
 4bd414	21c	.data	-	bss
 4bd630	4	.data	test sdcall_textura	bss
 4bd634	185ec	.data	-	bss
 4d5c20	10	.data	Init_GVar_LightmapDxtPadding	bss
-4d5c30	4	.data	BspLMap_Buscar, Init_GVar_LightmapDxtPadding, test sdcall_bsp	bss
+4d5c30	4	.data	BspLMap_Find, Init_GVar_LightmapDxtPadding, test sdcall_bsp	bss
 4d5c34	4	.data	Init_GVar_LightmapDxtPadding	bss
 4d5c38	10	.data	Init_GVar_ShowInfoOnSectorError	bss
 4d5c48	4	.data	Bsp_PortalInfo, Init_GVar_ShowInfoOnSectorError	bss
@@ -12887,8 +12887,8 @@
 4d5c90	4	.data	CBsp_DrawTri, Fini_GVar_MapRenderMat, Init_GVar_MapRenderMat	bss
 4d5c94	4	.data	Fini_GVar_MapRenderMat, Init_GVar_MapRenderMat	bss
 4d5c98	10	.data	Init_GVar_RenderMap	bss
-4d5ca8	4	.data	Bsp_Render, Bsp_RenderPortales, Bsp_RenderTransp +1	bss
-4d5cac	4	.data	Bsp_InitLuces, Init_GVar_RenderMap	bss
+4d5ca8	4	.data	Bsp_Render, Bsp_RenderPortals, Bsp_RenderTransp +1	bss
+4d5cac	4	.data	Bsp_InitLights, Init_GVar_RenderMap	bss
 4d5cb0	10	.data	Init_GVar_LightmapGlowMult	bss
 4d5cc0	4	.data	BspTri_CalcGlow, Init_GVar_LightmapGlowMult	bss
 4d5cc4	4	.data	Init_GVar_LightmapGlowMult	bss
@@ -12901,26 +12901,26 @@
 4d5cf8	10	.data	Init_GVar_RadiosityPortals	bss
 4d5d08	4	.data	CBsp_RadGlobal, Init_GVar_RadiosityPortals, test sdlevel_finalu	bss
 4d5d0c	4	.data	Init_GVar_RadiosityPortals	bss
-4d5d10	10	.data	Init_GVar_LightmapLinealAtten	bss
-4d5d20	4	.data	CBsp_Calcular, CBsp_LuzDirecta, Init_GVar_LightmapLinealAtten +1	bss
-4d5d24	4	.data	Init_GVar_LightmapLinealAtten	bss
+4d5d10	10	.data	Init_GVar_LightmapLinearAtten	bss
+4d5d20	4	.data	CBsp_Calculate, CBsp_DirectLight, Init_GVar_LightmapLinearAtten +1	bss
+4d5d24	4	.data	Init_GVar_LightmapLinearAtten	bss
 4d5d28	10	.data	Init_GVar_LightmapDebugTex	bss
-4d5d38	4	.data	CBsp_AjustarGamma, Init_GVar_LightmapDebugTex	bss
+4d5d38	4	.data	CBsp_AdjustGamma, Init_GVar_LightmapDebugTex	bss
 4d5d3c	4	.data	Init_GVar_LightmapDebugTex	bss
 4d5d40	10	.data	Init_GVar_RadiosityMinDist	bss
-4d5d50	4	.data	CBsp_Calcular, Init_GVar_RadiosityMinDist	bss
+4d5d50	4	.data	CBsp_Calculate, Init_GVar_RadiosityMinDist	bss
 4d5d54	4	.data	Init_GVar_RadiosityMinDist	bss
 4d5d58	10	.data	Init_GVar_LightmapLimitUV	bss
-4d5d68	4	.data	Bsp_MismoTam, Init_GVar_LightmapLimitUV, test sdcall_bsp	bss
+4d5d68	4	.data	Bsp_SameSize, Init_GVar_LightmapLimitUV, test sdcall_bsp	bss
 4d5d6c	4	.data	Init_GVar_LightmapLimitUV	bss
 4d5d70	4	.data	Bsp_InitD3D, Bsp_ReleaseD3D	bss
-4d5d74	4	.data	BspRegion_Debug, CBsp_IniciarAreas	bss
-4d5d78	8	.data	CBsp_IniciarAreas, CBsp_RadAreas, CBsp_RadGlobal +1	bss
-4d5d80	8	.data	CBsp_IniciarAreas, CBsp_RadGlobal, test sdlevel_finalu	bss
+4d5d74	4	.data	BspRegion_Debug, CBsp_InitAreas	bss
+4d5d78	8	.data	CBsp_InitAreas, CBsp_RadAreas, CBsp_RadGlobal +1	bss
+4d5d80	8	.data	CBsp_InitAreas, CBsp_RadGlobal, test sdlevel_finalu	bss
 4d5d88	1	.data	Bsp_PortalInfo	bss
 4d5d89	3	.data	-	bss
 4d5d8c	4	.data	Bsp_PortalInfo	bss
-4d5d90	1000	.data	CBsp_DrawPass, CBsp_ListZona	bss
+4d5d90	1000	.data	CBsp_DrawPass, CBsp_ListZone	bss
 4d6d90	8	.data	CFlare_Render, Engine_LoadIni, test sdcall_flare	bss
 4d6d98	10	.data	Init_GVar_R_ShowFlaresInfo	bss
 4d6da8	4	.data	CFlare_Render, Init_GVar_R_ShowFlaresInfo, test sdcall_flare	bss
@@ -12928,12 +12928,12 @@
 4d6db0	10	.data	Init_GVar_R_SkipFlares	bss
 4d6dc0	4	.data	CFlare_Render, Init_GVar_R_SkipFlares, test sdcall_flare	bss
 4d6dc4	4	.data	Init_GVar_R_SkipFlares	bss
-4d6dc8	4	.data	Bsp_PortalInfo, CBsp_DrawFX, CModelo_Render +10	bss
-4d6dcc	4	.data	CGrafico3D_Render, CLuz_Render, CModelo_Render +10	bss
-4d6dd0	10	.data	CFuente3_PrintContorno	bss
-4d6de0	8	.data	CFuente3_Medir, CFuente3_Print, CFuente3_PrintContorno +5	bss
-4d6de8	4	.data	CFuente3_Medir, CFuente3_Print, CFuente3_PrintContorno +7	bss
-4d6dec	4	.data	CFuente3_Medir, CFuente3_Print, CFuente3_PrintContorno +6	bss
+4d6dc8	4	.data	Bsp_PortalInfo, CBsp_DrawFX, CModel_Render +10	bss
+4d6dcc	4	.data	CGraphic3D_Render, CLight_Render, CModel_Render +10	bss
+4d6dd0	10	.data	CFont3_PrintOutline	bss
+4d6de0	8	.data	CFont3_Measure, CFont3_Print, CFont3_PrintOutline +5	bss
+4d6de8	4	.data	CFont3_Measure, CFont3_Print, CFont3_PrintOutline +7	bss
+4d6dec	4	.data	CFont3_Measure, CFont3_Print, CFont3_PrintOutline +6	bss
 4d6df0	10	.data	Init_GVar_BuildMST	bss
 4d6e00	4	.data	CMultiSprite_Load, Init_GVar_BuildMST	bss
 4d6e04	4	.data	Init_GVar_BuildMST	bss
@@ -12952,26 +12952,26 @@
 4db280	4	.data	Trails_Init, Trails_InitLists, Trails_Render +4	bss
 4db284	c	.data	Trails_Init, Trails_InitLists, Trails_Render +2	bss
 4db290	34	.data	Trails_InitLists, Trails_Render, Trails_ResetAll +1	bss
-4db2c4	4	.data	Tiempo_Get, Tiempo_Pausa, test sdcall_eng3	bss
-4db2c8	8	.data	Tiempo_Pausa, test sdcall_eng3	bss
-4db2d0	4	.data	CEntradaWindows_ReadKeys, Teclado_Clear, Teclado_KeyDown +2	bss
-4db2d4	12	.data	CEntradaWindows_ReadKeys, Teclado_Clear, Teclado_KeyDown +1	bss
+4db2c4	4	.data	Time_Get, Time_Pause, test sdcall_eng3	bss
+4db2c8	8	.data	Time_Pause, test sdcall_eng3	bss
+4db2d0	4	.data	CInputWindows_ReadKeys, Keyboard_Clear, Keyboard_KeyDown +2	bss
+4db2d4	12	.data	CInputWindows_ReadKeys, Keyboard_Clear, Keyboard_KeyDown +1	bss
 4db2e6	1	.data	CBspQ3_Render	bss
 4db2e7	6	.data	-	bss
-4db2ed	1	.data	CBsp_DrawWire, EfecMalla_Render, SombrasStencil_Render	bss
+4db2ed	1	.data	CBsp_DrawWire, MeshEffect_Render, ShadowsStencil_Render	bss
 4db2ee	1	.data	-	bss
-4db2ef	1	.data	SombrasStencil_Render	bss
+4db2ef	1	.data	ShadowsStencil_Render	bss
 4db2f0	12	.data	-	bss
-4db302	1	.data	CBsp_DrawWire, EfecMalla_Render	bss
+4db302	1	.data	CBsp_DrawWire, MeshEffect_Render	bss
 4db303	cd	.data	-	bss
-4db3d0	4	.data	CEntradaWindows_ReadKeys, Teclado_GetChars, Teclado_KeyDown +1	bss
-4db3d4	3c	.data	CEntradaWindows_ReadKeys, Teclado_GetChars, Teclado_KeyDown	bss
-4db410	8	.data	CEntradaWindows_ReadKeys, Teclado_GetChars, Teclado_KeyDown +1	bss
-4db418	4	.data	CMotorApp_DeleteDeviceObjects, CMotorApp_FinalCleanup, CMotorApp_InitDeviceObjects +2	bss
-4db41c	8	.data	CEntradaDInput_ReadMouse, CEntradaWindows_ReadMouse, motorIni	bss
-4db424	4	.data	CEntradaDInput_ReadMouse, motorIni	bss
-4db428	1	.data	CEntradaDInput_Delete, CEntradaDInput_ctor, CEntradaWindows_Delete +6	bss
-4db429	3	.data	CEntradaDInput_ctor, CEntradaWindows_ctor, IEntrada_ctor +2	bss
+4db3d0	4	.data	CInputWindows_ReadKeys, Keyboard_GetChars, Keyboard_KeyDown +1	bss
+4db3d4	3c	.data	CInputWindows_ReadKeys, Keyboard_GetChars, Keyboard_KeyDown	bss
+4db410	8	.data	CInputWindows_ReadKeys, Keyboard_GetChars, Keyboard_KeyDown +1	bss
+4db418	4	.data	CEngineApp_DeleteDeviceObjects, CEngineApp_FinalCleanup, CEngineApp_InitDeviceObjects +2	bss
+4db41c	8	.data	CInputDInput_ReadMouse, CInputWindows_ReadMouse, engineIni	bss
+4db424	4	.data	CInputDInput_ReadMouse, engineIni	bss
+4db428	1	.data	CInputDInput_Delete, CInputDInput_ctor, CInputWindows_Delete +6	bss
+4db429	3	.data	CInputDInput_ctor, CInputWindows_ctor, IInput_ctor +2	bss
 4db42c	10	.data	Init_GVar_R_VideoLockMode	bss
 4db43c	4	.data	Init_GVar_R_VideoLockMode, RenderLock_Frame, test sdcall_eng3	bss
 4db440	4	.data	Init_GVar_R_VideoLockMode	bss
@@ -12986,24 +12986,24 @@
 4db484	4	.data	RenderLock_Clear, RenderLock_CopyBack, RenderLock_DrawMem.part.0 +2	bss
 4db488	4	.data	RenderLock_Clear, RenderLock_DrawMem.part.0, RenderLock_InitD3D +2	bss
 4db48c	4	.data	RenderLock_Clear, RenderLock_DrawMem.part.0, RenderLock_InitD3D +1	bss
-4db490	1	.data	Fondo2D_Render, Fondo2D_Set, test sdcall_eng3	bss
+4db490	1	.data	Background2D_Render, Background2D_Set, test sdcall_eng3	bss
 4db491	3	.data	test sdcall_eng3	bss
-4db494	4	.data	Fondo2D_Render, test sdcall_eng3	bss
-4db498	4	.data	Fondo2D_Release, Fondo2D_Render, test sdcall_eng3	bss
-4db49c	4	.data	Fondo2D_Render	bss
-4db4a0	1	.data	Fondo2D_Render, Fondo2D_Reset, test sdcall_eng3	bss
-4db4a1	3	.data	Fondo2D_Render, test sdcall_eng3	bss
-4db4a4	104	.data	Fondo2D_Render	bss
-4db5a8	4	.data	Fondo2D_Render, Fondo2D_Set, test sdcall_eng3	bss
-4db5ac	104	.data	Fondo2D_Render, Fondo2D_Set	bss
-4db6b0	8	.data	EfecMalla_Render, test sdcall_eng3	bss
-4db6b8	4	.data	EfecMalla_AddPantalla, EfecMalla_Render, EfecMalla_RenderPantallas +1	bss
-4db6bc	4	.data	EfecMalla_AddModelo, EfecMalla_Render, EfecMalla_RenderModelos +1	bss
-4db6c0	b0	.data	EfecMalla_Render, Fini_CMaterial_EfecMallaMat, Init_CMaterial_EfecMallaMat	bss
-4db770	4	.data	EfecMalla_AddPantalla, EfecMalla_Render, EfecMalla_RenderPantallas +1	bss
-4db774	24	.data	EfecMalla_AddPantalla, EfecMalla_Render, EfecMalla_RenderPantallas	bss
-4db798	28	.data	EfecMalla_AddModelo, EfecMalla_Render, EfecMalla_RenderModelos	bss
-4db7c0	1	.data	EfecMalla_Render	bss
+4db494	4	.data	Background2D_Render, test sdcall_eng3	bss
+4db498	4	.data	Background2D_Release, Background2D_Render, test sdcall_eng3	bss
+4db49c	4	.data	Background2D_Render	bss
+4db4a0	1	.data	Background2D_Render, Background2D_Reset, test sdcall_eng3	bss
+4db4a1	3	.data	Background2D_Render, test sdcall_eng3	bss
+4db4a4	104	.data	Background2D_Render	bss
+4db5a8	4	.data	Background2D_Render, Background2D_Set, test sdcall_eng3	bss
+4db5ac	104	.data	Background2D_Render, Background2D_Set	bss
+4db6b0	8	.data	MeshEffect_Render, test sdcall_eng3	bss
+4db6b8	4	.data	MeshEffect_AddScreen, MeshEffect_Render, MeshEffect_RenderScreens +1	bss
+4db6bc	4	.data	MeshEffect_AddModel, MeshEffect_Render, MeshEffect_RenderModels +1	bss
+4db6c0	b0	.data	MeshEffect_Render, Fini_CMaterial_MeshEffectMat, Init_CMaterial_MeshEffectMat	bss
+4db770	4	.data	MeshEffect_AddScreen, MeshEffect_Render, MeshEffect_RenderScreens +1	bss
+4db774	24	.data	MeshEffect_AddScreen, MeshEffect_Render, MeshEffect_RenderScreens	bss
+4db798	28	.data	MeshEffect_AddModel, MeshEffect_Render, MeshEffect_RenderModels	bss
+4db7c0	1	.data	MeshEffect_Render	bss
 4db7c1	3	.data	-	bss
 4db7c4	4	.data	CLensFlare_DrawSprite, LensFlare_Init, LensFlare_RenderAll +2	bss
 4db7c8	10	.data	Init_GVar_R_LensFlare	bss
@@ -13015,7 +13015,7 @@
 4db800	4	.data	LensFlare_ClearAll, LensFlare_InitList, LensFlare_RenderAll +3	bss
 4db804	4	.data	LensFlare_ClearAll, LensFlare_RenderAll, LensFlare_Update	bss
 4db808	70	.data	CLensFlare_DrawSprite	bss
-4db878	4	.data	BspLMap_CrearMat, CBsp_DrawTri, RenderGamma_Begin +3	bss
+4db878	4	.data	BspLMap_CreateMat, CBsp_DrawTri, RenderGamma_Begin +3	bss
 4db87c	10	.data	Init_GVar_VideoGammaRGB	bss
 4db88c	4	.data	Init_GVar_VideoGammaRGB, RenderGamma_Begin, test sdcall_eng3	bss
 4db890	4	.data	Init_GVar_VideoGammaRGB	bss
@@ -13040,30 +13040,30 @@
 4dbf08	38	.data	BMP_Load, BMP_Save	bss
 4dbf40	20	.data	TEX_Load, TEX_Save	bss
 4dbf60	18	.data	TGA_Load, TGA_Save	bss
-4dbf78	100	.data	CAnimNodo_Optimize, Escena_Load	bss
-4dc078	4	.data	CAnimacion_Read, test sdcall_animacion	bss
-4dc07c	14	.data	CAnimacion_Read	bss
-4dc090	4	.data	AnimBlock_Free, CAnimNodo_ReadTrack.part.0, CAnimacion_Init +3	bss
+4dbf78	100	.data	CAnimNode_Optimize, Scene_Load	bss
+4dc078	4	.data	CAnimation_Read, test sdcall_animacion	bss
+4dc07c	14	.data	CAnimation_Read	bss
+4dc090	4	.data	AnimBlock_Free, CAnimNode_ReadTrack.part.0, CAnimation_Init +3	bss
 4dc094	18	.data	Init_GVar_OptAnimPosMax	bss
 4dc0ac	10	.data	Init_GVar_OptAnimPosErr	bss
-4dc0bc	4	.data	CAnimNodo_Optimize, Init_GVar_OptAnimPosErr	bss
+4dc0bc	4	.data	CAnimNode_Optimize, Init_GVar_OptAnimPosErr	bss
 4dc0c0	4	.data	Init_GVar_OptAnimPosErr	bss
 4dc0c4	10	.data	Init_GVar_OptimizeAnims	bss
-4dc0d4	4	.data	CAnimNodo_Optimize, Init_GVar_OptimizeAnims, test sdcall_animacion	bss
+4dc0d4	4	.data	CAnimNode_Optimize, Init_GVar_OptimizeAnims, test sdcall_animacion	bss
 4dc0d8	4	.data	Init_GVar_OptimizeAnims	bss
 4dc0dc	10	.data	Init_GVar_OptAnimFovErr	bss
-4dc0ec	4	.data	CAnimNodo_Optimize, Init_GVar_OptAnimFovErr	bss
+4dc0ec	4	.data	CAnimNode_Optimize, Init_GVar_OptAnimFovErr	bss
 4dc0f0	4	.data	Init_GVar_OptAnimFovErr	bss
-4dc0f4	10	.data	Init_GVar_R_AnimNodo_Count	bss
-4dc104	4	.data	CAnimNodo_Delete, CAnimNodo_ctor, CAnimNodo_ctorFrames +6	bss
-4dc108	4	.data	Init_GVar_R_AnimNodo_Count	bss
+4dc0f4	10	.data	Init_GVar_R_AnimNode_Count	bss
+4dc104	4	.data	CAnimNode_Delete, CAnimNode_ctor, CAnimNode_ctorFrames +6	bss
+4dc108	4	.data	Init_GVar_R_AnimNode_Count	bss
 4dc10c	10	.data	Init_GVar_OptAnimRotErr	bss
-4dc11c	8	.data	CAnimNodo_Optimize, Init_GVar_OptAnimRotErr	bss
+4dc11c	8	.data	CAnimNode_Optimize, Init_GVar_OptAnimRotErr	bss
 4dc124	4	.data	Init_GVar_OptAnimRotErr	bss
-4dc128	4	.data	CMallaD3D_Build, MallaD3D_NewObj, test sdcall_mallad3d	bss
-4dc12c	27fc	.data	CMallaD3D_Build, MallaD3D_NewObj	bss
-4de928	4	.data	CMallaD3D_Build, MallaD3D_NewObj, test sdcall_mallad3d	bss
-4de92c	4	.data	MallaD3DObj_Weld, MallaD3D_CompareVertIdx, test sdcall_mallad3d	bss
+4dc128	4	.data	CMeshD3D_Build, MeshD3D_NewObj, test sdcall_mallad3d	bss
+4dc12c	27fc	.data	CMeshD3D_Build, MeshD3D_NewObj	bss
+4de928	4	.data	CMeshD3D_Build, MeshD3D_NewObj, test sdcall_mallad3d	bss
+4de92c	4	.data	MeshD3DObj_Weld, MeshD3D_CompareVertIdx, test sdcall_mallad3d	bss
 4de930	10	.data	Init_GVar_NodeFXSpringMidP	bss
 4de940	4	.data	CNodeFX_Spring_Apply, Init_GVar_NodeFXSpringMidP	bss
 4de944	4	.data	Init_GVar_NodeFXSpringMidP	bss
@@ -13100,35 +13100,35 @@
 4dea38	10	.data	Init_GVar_NodeFXSpringSprng	bss
 4dea48	4	.data	CNodeFX_Spring_Apply, Init_GVar_NodeFXSpringSprng	bss
 4dea4c	4	.data	Init_GVar_NodeFXSpringSprng	bss
-4dea50	4	.data	Malla_DrawVB, RenderEVA_DrawSkin, RenderEVA_DrawSkinNodo +3	bss
+4dea50	4	.data	Mesh_DrawVB, RenderEVA_DrawSkin, RenderEVA_DrawSkinNode +3	bss
 4dea54	10	.data	Init_GVar_R_ParticlesOne	bss
-4dea64	4	.data	Init_GVar_R_ParticlesOne, SistPart_Draw2	bss
+4dea64	4	.data	Init_GVar_R_ParticlesOne, ParticleSystem_Draw2	bss
 4dea68	4	.data	Init_GVar_R_ParticlesOne	bss
 4dea6c	10	.data	Init_GVar_R_UseSkin	bss
 4dea7c	4	.data	Init_GVar_R_UseSkin, RenderEVA_DrawSkin	bss
 4dea80	4	.data	Init_GVar_R_UseSkin	bss
 4dea84	10	.data	Init_GVar_R_MaxSparkSize	bss
-4dea94	4	.data	Init_GVar_R_MaxSparkSize, Particula_Quad	bss
+4dea94	4	.data	Init_GVar_R_MaxSparkSize, Particle_Quad	bss
 4dea98	4	.data	Init_GVar_R_MaxSparkSize	bss
 4dea9c	10	.data	Init_GVar_R_ShowSkin	bss
 4deaac	8	.data	Init_GVar_R_ShowSkin, RenderEVA_DrawSkin	bss
 4deab4	10	.data	Init_GVar_R_ShowEVA	bss
-4deac4	4	.data	Init_GVar_R_ShowEVA, RenderEVA_DrawSkinNodo	bss
+4deac4	4	.data	Init_GVar_R_ShowEVA, RenderEVA_DrawSkinNode	bss
 4deac8	4	.data	Init_GVar_R_ShowEVA	bss
 4deacc	10	.data	Init_GVar_R_MinSparkDist	bss
-4deadc	4	.data	Init_GVar_R_MinSparkDist, Particula_Quad	bss
+4deadc	4	.data	Init_GVar_R_MinSparkDist, Particle_Quad	bss
 4deae0	4	.data	Init_GVar_R_MinSparkDist	bss
 4deae4	10	.data	Init_GVar_R_ParticlesDraw	bss
-4deaf4	4	.data	Init_GVar_R_ParticlesDraw, SistPart_Draw2	bss
+4deaf4	4	.data	Init_GVar_R_ParticlesDraw, ParticleSystem_Draw2	bss
 4deaf8	4	.data	Init_GVar_R_ParticlesDraw	bss
 4deafc	10	.data	Init_GVar_R_ParticlesZBias	bss
-4deb0c	4	.data	Init_GVar_R_ParticlesZBias, Particula_Quad	bss
+4deb0c	4	.data	Init_GVar_R_ParticlesZBias, Particle_Quad	bss
 4deb10	4	.data	Init_GVar_R_ParticlesZBias	bss
 4deb14	10	.data	Init_GVar_R_ParticlesAlphaDist	bss
-4deb24	4	.data	Init_GVar_R_ParticlesAlphaDist, SistPart_Draw2	bss
+4deb24	4	.data	Init_GVar_R_ParticlesAlphaDist, ParticleSystem_Draw2	bss
 4deb28	4	.data	Init_GVar_R_ParticlesAlphaDist	bss
 4deb2c	10	.data	Init_GVar_R_UseEVA	bss
-4deb3c	4	.data	Init_GVar_R_UseEVA, RenderEVA_DrawSkinNodo	bss
+4deb3c	4	.data	Init_GVar_R_UseEVA, RenderEVA_DrawSkinNode	bss
 4deb40	4	.data	Init_GVar_R_UseEVA	bss
 4deb44	10	.data	Init_GVar_R_ParticlesLock	bss
 4deb54	4	.data	Init_GVar_R_ParticlesLock, RenderEVA_LockParticles	bss
@@ -13136,55 +13136,55 @@
 4deb5c	10	.data	Init_GVar_R_SkinNodeSpace	bss
 4deb6c	4	.data	Init_GVar_R_SkinNodeSpace, RenderEVA_DrawSkin	bss
 4deb70	4	.data	Init_GVar_R_SkinNodeSpace	bss
-4deb74	4	.data	Malla_DrawVB, RenderEVA_DrawSkin, RenderEVA_DrawSkinNodo +2	bss
+4deb74	4	.data	Mesh_DrawVB, RenderEVA_DrawSkin, RenderEVA_DrawSkinNode +2	bss
 4deb78	4	.data	RenderEVA_CreateParticles, RenderEVA_FreeParticles, RenderEVA_LockParticles +1	bss
-4deb7c	4	.data	RenderEVA_CreateParticles, RenderEVA_FreeParticles, SistPart_Draw2	bss
-4deb80	4	.data	RenderEVA_CreateParticles, RenderEVA_LockParticles, SistPart_Draw2	bss
+4deb7c	4	.data	RenderEVA_CreateParticles, RenderEVA_FreeParticles, ParticleSystem_Draw2	bss
+4deb80	4	.data	RenderEVA_CreateParticles, RenderEVA_LockParticles, ParticleSystem_Draw2	bss
 4deb84	4	.data	RenderEVA_CreateParticles, RenderEVA_FreeParticles	bss
 4deb88	8	.data	RenderEVA_CreateParticles	bss
-4deb90	8	.data	Fini_TabMalla, MallaD3D_Render, RenderMallaD3D_Flush	bss
+4deb90	8	.data	Fini_TabMesh, MeshD3D_Render, RenderMeshD3D_Flush	bss
 4deb98	10	.data	Init_GVar_R_MeshCache	bss
-4deba8	4	.data	Init_GVar_R_MeshCache, MallaD3D_Render, RenderMallaD3D_Flush	bss
+4deba8	4	.data	Init_GVar_R_MeshCache, MeshD3D_Render, RenderMeshD3D_Flush	bss
 4debac	4	.data	Init_GVar_R_MeshCache	bss
-4debb0	1000	.data	MallaD3D_Render, RenderMallaD3D_Flush	bss
-4dfbb0	4	.data	MallaD3D_Render, RenderMallaD3D_Flush, test sdcall_render2	bss
-4dfbb4	4	.data	MallaD3D_Render, RenderMallaD3D_Flush	bss
-4dfbb8	8	.data	Fini_TabTransp, RenderMallaD3D_AddTransp, RenderMallaD3D_Flush2	bss
+4debb0	1000	.data	MeshD3D_Render, RenderMeshD3D_Flush	bss
+4dfbb0	4	.data	MeshD3D_Render, RenderMeshD3D_Flush, test sdcall_render2	bss
+4dfbb4	4	.data	MeshD3D_Render, RenderMeshD3D_Flush	bss
+4dfbb8	8	.data	Fini_TabTransp, RenderMeshD3D_AddTransp, RenderMeshD3D_Flush2	bss
 4dfbc0	10	.data	Init_GVar_R_TranspZBias	bss
-4dfbd0	4	.data	Init_GVar_R_TranspZBias, RenderMallaD3D_Flush2	bss
+4dfbd0	4	.data	Init_GVar_R_TranspZBias, RenderMeshD3D_Flush2	bss
 4dfbd4	4	.data	Init_GVar_R_TranspZBias	bss
 4dfbd8	10	.data	Init_GVar_R_ShowTranspBox	bss
-4dfbe8	4	.data	Init_GVar_R_ShowTranspBox, RenderMallaD3D_Flush2	bss
+4dfbe8	4	.data	Init_GVar_R_ShowTranspBox, RenderMeshD3D_Flush2	bss
 4dfbec	4	.data	Init_GVar_R_ShowTranspBox	bss
-4dfbf0	1000	.data	RenderMallaD3D_AddTransp, RenderMallaD3D_Flush2	bss
-4e0bf0	4	.data	RenderMallaD3D_AddTransp, RenderMallaD3D_Flush2, test sdcall_render2	bss
-4e0bf4	4	.data	RenderMallaD3D_AddTransp, RenderMallaD3D_Flush2	bss
-4e0bf8	1008	.data	Fini_TabObj, RenderObjBase3D_Flush, SistPart_Draw	bss
-4e1c00	4	.data	Fini_TabObj, RenderObjBase3D_Flush, SistPart_Draw +1	bss
-4e1c04	4	.data	Fini_TabObj, RenderObjBase3D_Flush, SistPart_Draw	bss
+4dfbf0	1000	.data	RenderMeshD3D_AddTransp, RenderMeshD3D_Flush2	bss
+4e0bf0	4	.data	RenderMeshD3D_AddTransp, RenderMeshD3D_Flush2, test sdcall_render2	bss
+4e0bf4	4	.data	RenderMeshD3D_AddTransp, RenderMeshD3D_Flush2	bss
+4e0bf8	1008	.data	Fini_TabObj, RenderObjBase3D_Flush, ParticleSystem_Draw	bss
+4e1c00	4	.data	Fini_TabObj, RenderObjBase3D_Flush, ParticleSystem_Draw +1	bss
+4e1c04	4	.data	Fini_TabObj, RenderObjBase3D_Flush, ParticleSystem_Draw	bss
 4e1c08	18	.data	Init_GVar_R_SkipModelFX	bss
-4e1c20	20	.data	Fini_CGrafico2D_FXGrfNoise1, Init_CGrafico2D_FXGrfNoise1, ModelFX_InitD3D +1	bss
-4e1c40	4	.data	Fini_CGrafico2D_FXGrfNoise1, Init_CGrafico2D_FXGrfNoise1, ModelFX_InitD3D +2	bss
-4e1c44	20	.data	Fini_CGrafico2D_FXGrfNoise1, Init_CGrafico2D_FXGrfNoise1, ModelFX_InitD3D +1	bss
-4e1c64	4	.data	Fini_CGrafico2D_FXGrfNoise1, Init_CGrafico2D_FXGrfNoise1, ModelFX_Electric +4	bss
-4e1c68	b0	.data	Fini_CGrafico2D_FXGrfNoise1, Fini_CMaterial_FXMat, Init_CGrafico2D_FXGrfNoise1 +8	bss
-4e1d18	20	.data	Fini_CGrafico2D_FXGrfNoise1, Fini_CGrafico2D_FXGrfStatic, Fini_CMaterial_FXMat +11	bss
-4e1d38	4	.data	Fini_CGrafico2D_FXGrfNoise1, Fini_CGrafico2D_FXGrfStatic, Init_CGrafico2D_FXGrfNoise1 +5	bss
-4e1d3c	20	.data	Fini_CGrafico2D_FXGrfNoise1, Fini_CGrafico2D_FXGrfStatic, Init_CGrafico2D_FXGrfNoise1 +4	bss
-4e1d5c	4	.data	Fini_CGrafico2D_FXGrfNoise1, Fini_CGrafico2D_FXGrfStatic, Init_CGrafico2D_FXGrfNoise1 +7	bss
-4e1d60	4	.data	Fini_CGrafico2D_FXGrfNoise1, Fini_CGrafico2D_FXGrfNoise2, Fini_CGrafico2D_FXGrfStatic +7	bss
-4e1d64	1c	.data	Fini_CGrafico2D_FXGrfNoise2, Fini_CGrafico2D_FXGrfStatic, Init_CGrafico2D_FXGrfNoise2 +4	bss
-4e1d80	4	.data	Fini_CGrafico2D_FXGrfNoise2, Fini_CGrafico2D_FXGrfStatic, Init_CGrafico2D_FXGrfNoise2 +5	bss
-4e1d84	20	.data	Fini_CGrafico2D_FXGrfNoise2, Fini_CGrafico2D_FXGrfStatic, Init_CGrafico2D_FXGrfNoise2 +4	bss
-4e1da4	4	.data	Fini_CGrafico2D_FXGrfNoise2, Fini_CGrafico2D_FXGrfStatic, Init_CGrafico2D_FXGrfNoise2 +6	bss
+4e1c20	20	.data	Fini_CGraphic2D_FXGraphicNoise1, Init_CGraphic2D_FXGraphicNoise1, ModelFX_InitD3D +1	bss
+4e1c40	4	.data	Fini_CGraphic2D_FXGraphicNoise1, Init_CGraphic2D_FXGraphicNoise1, ModelFX_InitD3D +2	bss
+4e1c44	20	.data	Fini_CGraphic2D_FXGraphicNoise1, Init_CGraphic2D_FXGraphicNoise1, ModelFX_InitD3D +1	bss
+4e1c64	4	.data	Fini_CGraphic2D_FXGraphicNoise1, Init_CGraphic2D_FXGraphicNoise1, ModelFX_Electric +4	bss
+4e1c68	b0	.data	Fini_CGraphic2D_FXGraphicNoise1, Fini_CMaterial_FXMat, Init_CGraphic2D_FXGraphicNoise1 +8	bss
+4e1d18	20	.data	Fini_CGraphic2D_FXGraphicNoise1, Fini_CGraphic2D_FXGraphicStatic, Fini_CMaterial_FXMat +11	bss
+4e1d38	4	.data	Fini_CGraphic2D_FXGraphicNoise1, Fini_CGraphic2D_FXGraphicStatic, Init_CGraphic2D_FXGraphicNoise1 +5	bss
+4e1d3c	20	.data	Fini_CGraphic2D_FXGraphicNoise1, Fini_CGraphic2D_FXGraphicStatic, Init_CGraphic2D_FXGraphicNoise1 +4	bss
+4e1d5c	4	.data	Fini_CGraphic2D_FXGraphicNoise1, Fini_CGraphic2D_FXGraphicStatic, Init_CGraphic2D_FXGraphicNoise1 +7	bss
+4e1d60	4	.data	Fini_CGraphic2D_FXGraphicNoise1, Fini_CGraphic2D_FXGraphicNoise2, Fini_CGraphic2D_FXGraphicStatic +7	bss
+4e1d64	1c	.data	Fini_CGraphic2D_FXGraphicNoise2, Fini_CGraphic2D_FXGraphicStatic, Init_CGraphic2D_FXGraphicNoise2 +4	bss
+4e1d80	4	.data	Fini_CGraphic2D_FXGraphicNoise2, Fini_CGraphic2D_FXGraphicStatic, Init_CGraphic2D_FXGraphicNoise2 +5	bss
+4e1d84	20	.data	Fini_CGraphic2D_FXGraphicNoise2, Fini_CGraphic2D_FXGraphicStatic, Init_CGraphic2D_FXGraphicNoise2 +4	bss
+4e1da4	4	.data	Fini_CGraphic2D_FXGraphicNoise2, Fini_CGraphic2D_FXGraphicStatic, Init_CGraphic2D_FXGraphicNoise2 +6	bss
 4e1da8	10	.data	Init_GVar_R_ShowPreIllumVtx	bss
-4e1db8	1	.data	CMallaD3D_CalcIlum, Init_GVar_R_ShowPreIllumVtx	bss
+4e1db8	1	.data	CMeshD3D_CalcIllum, Init_GVar_R_ShowPreIllumVtx	bss
 4e1db9	7	.data	Init_GVar_R_ShowPreIllumVtx	bss
 4e1dc0	10	.data	Init_GVar_R_SpriteSector	bss
-4e1dd0	4	.data	CGrafico3D_Render, Init_GVar_R_SpriteSector	bss
+4e1dd0	4	.data	CGraphic3D_Render, Init_GVar_R_SpriteSector	bss
 4e1dd4	4	.data	Init_GVar_R_SpriteSector	bss
 4e1dd8	10	.data	Init_GVar_R_ShowPortals	bss
-4e1de8	4	.data	Bsp_RenderPortales, Bsp_RenderTransp, CBsp_Render +9	bss
+4e1de8	4	.data	Bsp_RenderPortals, Bsp_RenderTransp, CBsp_Render +9	bss
 4e1dec	4	.data	Init_GVar_R_ShowPortals	bss
 4e1df0	10	.data	Init_GVar_R_UsePortals	bss
 4e1e00	4	.data	Bsp_PortalInfo, CBsp_DrawPass, CBsp_DrawWire +5	bss
@@ -13194,72 +13194,72 @@
 4e1e44	4	.data	CPortal_DrawDebug, Portal_FiniMat	bss
 4e1e48	4	.data	CPortal_DrawDebug, Portal_FiniMat, test sdcall_render2	bss
 4e1e4c	74	.data	CPortal_DrawDebug, Portal_FiniMat	bss
-4e1ec0	4	.data	CM3_Load, CM3_Save, Crear_Animacion +7	bss
-4e1ec4	4	.data	Crear_ModeloLOD, Escena_BuscarColapsable, Escena_FlagsIni +7	bss
+4e1ec0	4	.data	CM3_Load, CM3_Save, Create_Animation +7	bss
+4e1ec4	4	.data	Create_ModelLOD, Scene_FindCollapsible, Scene_FlagsIni +7	bss
 4e1ec8	10	.data	Init_GVar_CM3_DeleteM3D	bss
 4e1ed8	4	.data	Init_GVar_CM3_DeleteM3D, M3D_CacheWrite	bss
 4e1edc	4	.data	Init_GVar_CM3_DeleteM3D	bss
-4e1ee0	4	.data	LeeM3D_InitShowNodesTree, test sdcall_sa1b	bss
-4e1ee4	c	.data	LeeM3D_InitShowNodesTree	bss
-4e1ef0	4	.data	Escena_Limpiar, Escena_Load, LeeM3D_InitShowNodesTree	bss
-4e1ef4	4	.data	LeeM3D_InitShowNodesTree	bss
+4e1ee0	4	.data	ReadM3D_InitShowNodesTree, test sdcall_sa1b	bss
+4e1ee4	c	.data	ReadM3D_InitShowNodesTree	bss
+4e1ef0	4	.data	Scene_Clear, Scene_Load, ReadM3D_InitShowNodesTree	bss
+4e1ef4	4	.data	ReadM3D_InitShowNodesTree	bss
 4e1ef8	10	.data	Init_GVar_OptimizeNodes	bss
-4e1f08	1	.data	Escena_Jerarquia, Escena_Load, Escena_TablaNodos +1	bss
-4e1f09	3	.data	Escena_Jerarquia, Escena_Load, Init_GVar_OptimizeNodes	bss
+4e1f08	1	.data	Scene_Hierarchy, Scene_Load, Scene_NodeTable +1	bss
+4e1f09	3	.data	Scene_Hierarchy, Scene_Load, Init_GVar_OptimizeNodes	bss
 4e1f0c	4	.data	Init_GVar_OptimizeNodes	bss
 4e1f10	10	.data	Init_GVar_CM3_UseScenes	bss
-4e1f20	4	.data	Escena_Load, Init_GVar_CM3_UseScenes	bss
+4e1f20	4	.data	Scene_Load, Init_GVar_CM3_UseScenes	bss
 4e1f24	4	.data	Init_GVar_CM3_UseScenes	bss
 4e1f28	10	.data	Init_GVar_SM3_CheckTime	bss
 4e1f38	4	.data	Init_GVar_SM3_CheckTime, SM3_Load	bss
 4e1f3c	4	.data	Init_GVar_SM3_CheckTime	bss
 4e1f40	10	.data	Fini_GVar_SharedTexuresPath, Init_GVar_SharedTexuresPath	bss
-4e1f50	4	.data	Fini_GVar_SharedTexuresPath, Init_GVar_SharedTexuresPath, M3D_LeeMapa	bss
+4e1f50	4	.data	Fini_GVar_SharedTexuresPath, Init_GVar_SharedTexuresPath, M3D_ReadMap	bss
 4e1f54	4	.data	Fini_GVar_SharedTexuresPath, Init_GVar_SharedTexuresPath	bss
 4e1f58	10	.data	Init_GVar_CM3_CheckTime	bss
 4e1f68	4	.data	CM3_Load, Init_GVar_CM3_CheckTime	bss
 4e1f6c	4	.data	Init_GVar_CM3_CheckTime	bss
-4e1f70	4	.data	LeeM3D_InitUseWSM, test sdcall_sa1b	bss
-4e1f74	c	.data	LeeM3D_InitUseWSM	bss
-4e1f80	4	.data	Escena_Load, LeeM3D_InitUseWSM, M3D_LeeMalla	bss
-4e1f84	4	.data	LeeM3D_InitUseWSM	bss
+4e1f70	4	.data	ReadM3D_InitUseWSM, test sdcall_sa1b	bss
+4e1f74	c	.data	ReadM3D_InitUseWSM	bss
+4e1f80	4	.data	Scene_Load, ReadM3D_InitUseWSM, M3D_ReadMesh	bss
+4e1f84	4	.data	ReadM3D_InitUseWSM	bss
 4e1f88	10	.data	Init_GVar_SM3_UseScenes	bss
 4e1f98	4	.data	Init_GVar_SM3_UseScenes, SM3_Load, SM3_Save +1	bss
 4e1f9c	4	.data	Init_GVar_SM3_UseScenes	bss
-4e1fa0	4	.data	Escena_FlagsIni, Escena_Load, Escena_PhysiqueSkin +3	bss
-4e1fa4	1	.data	Escena_Load, M3DTabla_Read, M3D_Label +9	bss
-4e1fa5	1	.data	Escena_Load, M3D_Label, M3D_ReadTransform +2	bss
-4e1fa6	2	.data	Escena_Load, M3D_LeeMapa, M3D_MapaActivo +3	bss
-4e1fa8	2	.data	Escena_AnimLocal, Escena_Load, test sdcall_leem3d +1	bss
-4e1faa	6	.data	Escena_AnimLocal, Escena_Load, test sdcall_m3d	bss
-4e1fb0	4	.data	Escena_Load, M3DPista_Read, M3DTabla_Read +1	bss
-4e1fb4	2	.data	Escena_Load, M3D_LeeMapa, M3D_MapaActivo +1	bss
-4e1fb6	2	.data	Escena_Load, test sdcall_leem3d	bss
-4e1fb8	8	.data	Escena_Load, M3D_LeeMalla	bss
-4e1fc0	4	.data	Escena_Load, M3DTabla_Read, M3D_Label +8	bss
-4e1fc4	3fc	.data	Escena_Load, M3DTabla_Read, M3D_Label +7	bss
-4e23c0	4	.data	CM3_Load, Escena_Load, Escena_Load.cold +12	bss
-4e23c4	100	.data	CM3_Load, Escena_Load, Escena_Load.cold +11	bss
-4e24c4	4	.data	CM3_Load, Escena_Load, Escena_Load.cold +13	bss
-4e24c8	104	.data	CM3_Load, Escena_Load, Escena_Load.cold +11	bss
-4e25cc	4	.data	CM3_Load, Escena_Load, Escena_Load.cold +16	bss
-4e25d0	20c	.data	CM3_Load, Escena_Load, Escena_Load.cold +11	bss
-4e27dc	4	.data	CM3_Load, Escena_Load, Escena_Load.cold +13	bss
-4e27e0	108	.data	CM3_Load, Escena_Load, Escena_Load.cold +12	bss
-4e28e8	c	.data	CM3_Load, Escena_Load, Escena_Load.cold +16	bss
-4e28f4	7f4	.data	CM3_Load, Escena_Load, Escena_Load.cold +15	bss
-4e30e8	4	.data	CM3_Load, Escena_Load, Escena_Load.cold +16	bss
-4e30ec	1fc	.data	CM3_Load, Escena_Load, Escena_Load.cold +15	bss
-4e32e8	4	.data	Escena_Load, Escena_MatsUsados, M3DTabla_Read +11	bss
-4e32ec	8	.data	Escena_Load, Escena_MatsUsados, M3DTabla_Read +12	bss
-4e32f4	7f8	.data	Escena_Load, Escena_MatsUsados, M3DTabla_Read +11	bss
-4e3aec	8	.data	Escena_Load, Escena_MatsUsados, M3DTabla_Read +12	bss
-4e3af4	7f4	.data	Escena_Load, Escena_MatsUsados, M3DTabla_Read +11	bss
-4e42e8	8	.data	Batch_AddMalla, Batch_Entry, Batch_Flush +2	bss
-4e42f0	4	.data	Batch_AddMalla, Batch_Flush, RenderSuelo_FiniBatchTab +1	bss
-4e42f4	7fc	.data	Batch_AddMalla, Batch_Flush, RenderSuelo_FiniBatchTab	bss
-4e4af0	4	.data	Batch_AddMalla, Batch_Flush, RenderSuelo_FiniBatchTab +1	bss
-4e4af4	4	.data	Batch_AddMalla, Batch_Flush, RenderSuelo_FiniBatchTab	bss
+4e1fa0	4	.data	Scene_FlagsIni, Scene_Load, Scene_PhysiqueSkin +3	bss
+4e1fa4	1	.data	Scene_Load, M3DTable_Read, M3D_Label +9	bss
+4e1fa5	1	.data	Scene_Load, M3D_Label, M3D_ReadTransform +2	bss
+4e1fa6	2	.data	Scene_Load, M3D_ReadMap, M3D_ActiveMap +3	bss
+4e1fa8	2	.data	Scene_AnimLocal, Scene_Load, test sdcall_leem3d +1	bss
+4e1faa	6	.data	Scene_AnimLocal, Scene_Load, test sdcall_m3d	bss
+4e1fb0	4	.data	Scene_Load, M3DTrack_Read, M3DTable_Read +1	bss
+4e1fb4	2	.data	Scene_Load, M3D_ReadMap, M3D_ActiveMap +1	bss
+4e1fb6	2	.data	Scene_Load, test sdcall_leem3d	bss
+4e1fb8	8	.data	Scene_Load, M3D_ReadMesh	bss
+4e1fc0	4	.data	Scene_Load, M3DTable_Read, M3D_Label +8	bss
+4e1fc4	3fc	.data	Scene_Load, M3DTable_Read, M3D_Label +7	bss
+4e23c0	4	.data	CM3_Load, Scene_Load, Scene_Load.cold +12	bss
+4e23c4	100	.data	CM3_Load, Scene_Load, Scene_Load.cold +11	bss
+4e24c4	4	.data	CM3_Load, Scene_Load, Scene_Load.cold +13	bss
+4e24c8	104	.data	CM3_Load, Scene_Load, Scene_Load.cold +11	bss
+4e25cc	4	.data	CM3_Load, Scene_Load, Scene_Load.cold +16	bss
+4e25d0	20c	.data	CM3_Load, Scene_Load, Scene_Load.cold +11	bss
+4e27dc	4	.data	CM3_Load, Scene_Load, Scene_Load.cold +13	bss
+4e27e0	108	.data	CM3_Load, Scene_Load, Scene_Load.cold +12	bss
+4e28e8	c	.data	CM3_Load, Scene_Load, Scene_Load.cold +16	bss
+4e28f4	7f4	.data	CM3_Load, Scene_Load, Scene_Load.cold +15	bss
+4e30e8	4	.data	CM3_Load, Scene_Load, Scene_Load.cold +16	bss
+4e30ec	1fc	.data	CM3_Load, Scene_Load, Scene_Load.cold +15	bss
+4e32e8	4	.data	Scene_Load, Scene_UsedMats, M3DTable_Read +11	bss
+4e32ec	8	.data	Scene_Load, Scene_UsedMats, M3DTable_Read +12	bss
+4e32f4	7f8	.data	Scene_Load, Scene_UsedMats, M3DTable_Read +11	bss
+4e3aec	8	.data	Scene_Load, Scene_UsedMats, M3DTable_Read +12	bss
+4e3af4	7f4	.data	Scene_Load, Scene_UsedMats, M3DTable_Read +11	bss
+4e42e8	8	.data	Batch_AddMesh, Batch_Entry, Batch_Flush +2	bss
+4e42f0	4	.data	Batch_AddMesh, Batch_Flush, RenderGround_FiniBatchTab +1	bss
+4e42f4	7fc	.data	Batch_AddMesh, Batch_Flush, RenderGround_FiniBatchTab	bss
+4e4af0	4	.data	Batch_AddMesh, Batch_Flush, RenderGround_FiniBatchTab +1	bss
+4e4af4	4	.data	Batch_AddMesh, Batch_Flush, RenderGround_FiniBatchTab	bss
 4e4af8	a00	.data	CBspQ3_Build	bss
 4e54f8	700	.data	BspQ3_InitVertG	bss
 4e5bf8	4	.data	BspQ3_Free, BspQ3_InitD3D, BspQ3_ReleaseD3D +3	bss
@@ -13268,7 +13268,7 @@
 4e6600	800	.data	CBspQ3_Build	bss
 4e6e00	4	.data	Gety_InitFastGetYSector, test sdcall_sa1b	bss
 4e6e04	c	.data	Gety_InitFastGetYSector	bss
-4e6e10	4	.data	CSuelo_RayoVert, Gety_InitFastGetYSector, test sdlevel_eng2	bss
+4e6e10	4	.data	CGround_RayVert, Gety_InitFastGetYSector, test sdlevel_eng2	bss
 4e6e14	4	.data	Gety_InitFastGetYSector	bss
 4e6e18	6	.data	Pal16_FromRGB, Pal16_SetMasks, Pal16_ToRGB +2	bss
 4e6e1e	2	.data	Pal16_SetMasks, Pal16_ToRGB, Surface_SaveShot.part.0 +1	bss
@@ -13286,13 +13286,13 @@
 4e734c	20	.data	txfRgba	bss
 4e736c	20	.data	txfRgb	bss
 4e738c	4	.data	Bsp2_CheckLine, Bsp2_Stats, test sdcall_eng2	bss
-4e7390	4	.data	Bsp2_Stats, BspLuces_CheckLine, test sdcall_eng2	bss
+4e7390	4	.data	Bsp2_Stats, BspLights_CheckLine, test sdcall_eng2	bss
 4e7394	8	.data	Bsp2_Stats	bss
-4e739c	10	.data	Bsp2_Render, BspLuces_Render	bss
-4e73ac	4	.data	BspEnlace_Delete, BspEnlace_ctor, BspEnlace_dtor +3	bss
-4e73b0	8	.data	Rad_Normales, Radiosidad_FiniNormales, test sdcall_eng2	bss
-4e73b8	4	.data	Lee_Expect, Lee_Float, Lee_Int +13	bss
-4e73bc	4	.data	Lee_Byte, Lee_Bytes, Lee_Close +8	bss
+4e739c	10	.data	Bsp2_Render, BspLights_Render	bss
+4e73ac	4	.data	BspLink_Delete, BspLink_ctor, BspLink_dtor +3	bss
+4e73b0	8	.data	Rad_Normals, Radiosity_FiniNormals, test sdcall_eng2	bss
+4e73b8	4	.data	Read_Expect, Read_Float, Read_Int +13	bss
+4e73bc	4	.data	Read_Byte, Read_Bytes, Read_Close +8	bss
 4e73c0	42c0	.data	-	bss
 4eb680	4	.data	ptr 43d030	bss
 4eb684	1ee0	.data	-	bss

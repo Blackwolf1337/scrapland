@@ -1,5 +1,5 @@
 /*
- * Engine/mundo.cpp of the engine3d: CMundo, see include/scrap/mundo.h.
+ * Engine/mundo.cpp of the engine3d: CWorld, see include/scrap/world.h.
  */
 #include <string.h>
 
@@ -16,43 +16,43 @@
 #define DEG2RAD_F 0.0174532924f		/* rva 0x3dcc2c */
 
 /* the start of the own camera: 240 behind the origin, 50 up, looking at it */
-static void Mundo_CamaraInicio(CMundo *self) {
-	self->camara.pos = (vec3_t){ 0.0f, 50.0f, -240.0f };
+static void World_CameraStart(CWorld *self) {
+	self->camera.pos = (vec3_t){ 0.0f, 50.0f, -240.0f };
 	self->cam->target = (vec3_t){ 0.0f, 0.0f, 0.0f };
 }
 
-CMundo *__fastcall CMundo_ctor(CMundo *self) {
-	CNiebla_ctor(&self->niebla);
-	CCamara_ctor(&self->camara);
-	self->cam = &self->camara;
-	self->cieloPos = 1.0f;
-	self->cieloRot = 0.0f;
-	self->Suelo = NULL;
-	self->EscSuelo = NULL;
-	self->ObjSuelo = NULL;
-	self->Cielo = NULL;
-	self->EscCielo = NULL;
-	self->tubo = NULL;
+CWorld *__fastcall CWorld_ctor(CWorld *self) {
+	CFog_ctor(&self->fog);
+	CCamera_ctor(&self->camera);
+	self->cam = &self->camera;
+	self->skyPos = 1.0f;
+	self->skyRot = 0.0f;
+	self->Ground = NULL;
+	self->GroundScale = NULL;
+	self->ObjGround = NULL;
+	self->Sky = NULL;
+	self->SkyScale = NULL;
+	self->tube = NULL;
 	self->ini_D3D = 0;
 	self->dummies = NULL;
-	Mundo_CamaraInicio(self);
-	CCamara_LookAtRot(self->cam);
-	CCamara_UpdateVectors(self->cam);
+	World_CameraStart(self);
+	CCamera_LookAtRot(self->cam);
+	CCamera_UpdateVectors(self->cam);
 	return self;
 }
 
-void __fastcall CMundo_dtor(CMundo *self) {
+void __fastcall CWorld_dtor(CWorld *self) {
 	BspQ3_Free();
 	Bsp_Free();
-	Sectores_Free();
-	Modelo_Destroy(&self->Suelo, 0);
-	Modelo_Destroy(&self->Cielo, 0);
-	MundoDummy_FreeList(&self->dummies);
-	CCamara_dtor(&self->camara);
-	CNiebla_dtor(&self->niebla);
+	Sectors_FreeAll();
+	Model_Destroy(&self->Ground, 0);
+	Model_Destroy(&self->Sky, 0);
+	WorldDummy_FreeList(&self->dummies);
+	CCamera_dtor(&self->camera);
+	CFog_dtor(&self->fog);
 }
 
-static void Dummy_Zero(MundoDummy *d) {
+static void Dummy_Zero(WorldDummy *d) {
 	d->name = NULL;
 	d->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	d->rot = (vec3_t){ 0.0f, 0.0f, 0.0f };
@@ -61,65 +61,65 @@ static void Dummy_Zero(MundoDummy *d) {
 }
 
 /* the members the dummy owns */
-static void Dummy_Free(MundoDummy *d) {
+static void Dummy_Free(WorldDummy *d) {
 	if (d->ini) {
-		CArchINI *ini = d->ini;
-		CArchINI_dtor(ini);
-		operator_delete_sized(ini, sizeof(CArchINI));
+		CIniFile *ini = d->ini;
+		CIniFile_dtor(ini);
+		operator_delete_sized(ini, sizeof(CIniFile));
 		d->ini = NULL;
 	}
 	if (d->name) {
-		Cad_Set(&d->name, NULL);
+		String_Set(&d->name, NULL);
 	}
 }
 
-static void Dummy_CheckName(const MundoDummy *d, const char *warn) {
+static void Dummy_CheckName(const WorldDummy *d, const char *warn) {
 	if (crt_strnicmp(d->name, "DM_", 3)) {
 		Con_Warnf(warn, d->name);
 	}
 }
 
-MundoDummy *__thiscall MundoDummy_ctorNodo(MundoDummy *self, CNodo3D *nodo) {
+WorldDummy *__thiscall WorldDummy_ctorNode(WorldDummy *self, CNode3D *node) {
 	vec3_t rot;
 
 	Dummy_Zero(self);
-	Cad_Set(&self->name, nodo->name);
-	self->pos = (vec3_t){ nodo->m.m[12], nodo->m.m[13], nodo->m.m[14] };
-	self->rot = *Matrix_ToEuler(&rot, &nodo->m);
+	String_Set(&self->name, node->name);
+	self->pos = (vec3_t){ node->m.m[12], node->m.m[13], node->m.m[14] };
+	self->rot = *Matrix_ToEuler(&rot, &node->m);
 	Dummy_CheckName(self, "WARN: Node set as World Dummy: %s\n");
-	if (nodo->ini) {
+	if (node->ini) {
 		E3D_LogWhite(g_FileLog, "INFO: World Dummy has UserProp: %s", self->name);
 	}
-	self->ini = nodo->ini;
-	nodo->ini = NULL;
-	CHECK(!nodo->obj58);
+	self->ini = node->ini;
+	node->ini = NULL;
+	CHECK(!node->obj58);
 	return self;
 }
 
-MundoDummy *__thiscall MundoDummy_ctor(MundoDummy *self, const char *name, const vec3_t *pos, const vec3_t *rot) {
+WorldDummy *__thiscall WorldDummy_ctor(WorldDummy *self, const char *name, const vec3_t *pos, const vec3_t *rot) {
 	Dummy_Zero(self);
-	Cad_Set(&self->name, name);
+	String_Set(&self->name, name);
 	self->pos = *pos;
 	self->rot = *rot;
 	Dummy_CheckName(self, "WARN: Additional World Dummy: %s\n");
 	return self;
 }
 
-MundoDummy *__fastcall MundoDummy_ctorEmpty(MundoDummy *self) {
+WorldDummy *__fastcall WorldDummy_ctorEmpty(WorldDummy *self) {
 	Dummy_Zero(self);
 	return self;
 }
 
-void __fastcall MundoDummy_dtor(MundoDummy *self) {
+void __fastcall WorldDummy_dtor(WorldDummy *self) {
 	CHECK(self->next == NULL);
 	Dummy_Free(self);
 }
 
-void __fastcall MundoDummy_Clear(MundoDummy *self) {
+void __fastcall WorldDummy_Clear(WorldDummy *self) {
 	Dummy_Zero(self);
 }
 
-int __fastcall MundoDummy_Count(const MundoDummy *list) {
+int __fastcall WorldDummy_Count(const WorldDummy *list) {
 	int n = 0;
 	for (; list; list = list->next) {
 		n++;
@@ -127,21 +127,21 @@ int __fastcall MundoDummy_Count(const MundoDummy *list) {
 	return n;
 }
 
-void MundoDummy_FreeList(MundoDummy **list) {
+void WorldDummy_FreeList(WorldDummy **list) {
 	while (*list) {
-		MundoDummy *d = *list;
+		WorldDummy *d = *list;
 		*list = d->next;
 		d->next = NULL;
 		Dummy_Free(d);
-		operator_delete_sized(d, sizeof(MundoDummy));
+		operator_delete_sized(d, sizeof(WorldDummy));
 	}
 }
 
-MundoDummy *__thiscall MundoDummy_Find(MundoDummy *self, const char *name, byte self_too, byte case_sens) {
+WorldDummy *__thiscall WorldDummy_Find(WorldDummy *self, const char *name, byte self_too, byte case_sens) {
 	if (!name) {
 		return NULL;
 	}
-	for (MundoDummy *d = self_too ? self : self->next; d; d = d->next) {
+	for (WorldDummy *d = self_too ? self : self->next; d; d = d->next) {
 		if (!(case_sens ? strcmp(name, d->name) : crt_stricmp(name, d->name))) {
 			return d;
 		}
@@ -149,171 +149,171 @@ MundoDummy *__thiscall MundoDummy_Find(MundoDummy *self, const char *name, byte 
 	return NULL;
 }
 
-void __thiscall CMundo_AddDummy(CMundo *self, MundoDummy *d) {
+void __thiscall CWorld_AddDummy(CWorld *self, WorldDummy *d) {
 	CHECK(!d->next);
 	if (self->dummies && d->name) {
-		for (MundoDummy *e = self->dummies; e; e = e->next) {
+		for (WorldDummy *e = self->dummies; e; e = e->next) {
 			if (!crt_stricmp(d->name, e->name)) {
 				Con_Warnf("WARN: duplicated World Dummy: %s\n", d->name);
 				break;
 			}
 		}
 	}
-	MundoDummy **slot = &self->dummies;
+	WorldDummy **slot = &self->dummies;
 	while (*slot) {
 		slot = &(*slot)->next;
 	}
 	*slot = d;
 }
 
-void __fastcall CMundo_ReleaseD3D(CMundo *self) {
+void __fastcall CWorld_ReleaseD3D(CWorld *self) {
 	if (!(g_pApp->flags >> 2 & 1)) {
 		CHECK(self->ini_D3D);
-		CHECK(g_MotorDev);
+		CHECK(g_EngineDev);
 	}
 	self->ini_D3D = 0;
-	void *dev = g_MotorDev;
-	OBJ3D_CALL((IObjeto3D *)self->cam, OBJ3D_VF_RELEASED3D, objDev_t, dev);
-	if (self->Cielo) {
-		CModelo_ReleaseD3D(self->Cielo, dev, 1);
+	void *dev = g_EngineDev;
+	OBJ3D_CALL((IObject3D *)self->cam, OBJ3D_VF_RELEASED3D, objDev_t, dev);
+	if (self->Sky) {
+		CModel_ReleaseD3D(self->Sky, dev, 1);
 	}
-	if (self->Suelo) {
-		CModelo_ReleaseD3D(self->Suelo, dev, 1);
+	if (self->Ground) {
+		CModel_ReleaseD3D(self->Ground, dev, 1);
 	}
 	BspQ3_ReleaseD3D();
 	Bsp_ReleaseD3D();
 }
 
-void __fastcall CMundo_InitD3D(CMundo *self) {
+void __fastcall CWorld_InitD3D(CWorld *self) {
 	CHECK(!self->ini_D3D);
 	self->ini_D3D = 1;
-	void *dev = g_MotorDev;
+	void *dev = g_EngineDev;
 	CHECK(dev);
-	OBJ3D_CALL((IObjeto3D *)self->cam, OBJ3D_VF_INITD3D, objDev_t, dev);
-	if (self->Cielo) {
-		CModelo_InitD3D(self->Cielo, dev, 1);
+	OBJ3D_CALL((IObject3D *)self->cam, OBJ3D_VF_INITD3D, objDev_t, dev);
+	if (self->Sky) {
+		CModel_InitD3D(self->Sky, dev, 1);
 	}
-	if (self->Suelo) {
-		CModelo_InitD3D(self->Suelo, dev, 1);
+	if (self->Ground) {
+		CModel_InitD3D(self->Ground, dev, 1);
 	}
-	CNiebla_InitD3D(&self->niebla);
+	CFog_InitD3D(&self->fog);
 	Bsp_InitD3D();
 	BspQ3_InitD3D();
 }
 
-int Mundo_LoadDUM(const char *path, MundoDummy **list) {
-	char name[MAX_RUTA];
+int World_LoadDUM(const char *path, WorldDummy **list) {
+	char name[MAX_FILEPATH];
 
-	Ruta_Format(name, path, "&U&D&N.dum");
+	Path_Format(name, path, "&U&D&N.dum");
 	if (!File_Exists(name)) {
 		Con_FatalErrorf("File not found: %s", name);
 		return -1;
 	}
-	void *mem = operator_new(sizeof(CArchIO));
-	CArchIO *f = mem ? CArchIO_ctor(mem, name, "rb") : NULL;
+	void *mem = operator_new(sizeof(CFileIO));
+	CFileIO *f = mem ? CFileIO_ctor(mem, name, "rb") : NULL;
 	CHECK(!f->error);
 	E3D_LogDebug2(g_FileLog, "Load_DUM: %s", name);
-	CArchIO_BeginBlock(f, "DUM");
-	CHECK(CArchIO_ReadInt(f) == 1);
-	int count = CArchIO_ReadInt(f);
+	CFileIO_BeginBlock(f, "DUM");
+	CHECK(CFileIO_ReadInt(f) == 1);
+	int count = CFileIO_ReadInt(f);
 	*list = NULL;
-	MundoDummy *last = NULL;
-	while (CArchIO_ReadInt(f)) {
-		void *p = operator_new(sizeof(MundoDummy));
-		MundoDummy *d = p ? MundoDummy_ctorEmpty(p) : NULL;
-		Cad_Read(&d->name, f);
-		CArchIO_Read(f, &d->pos, sizeof(d->pos));
-		CArchIO_Read(f, &d->rot, sizeof(d->rot));
-		ArchINI_Read(f, &d->ini);
+	WorldDummy *last = NULL;
+	while (CFileIO_ReadInt(f)) {
+		void *p = operator_new(sizeof(WorldDummy));
+		WorldDummy *d = p ? WorldDummy_ctorEmpty(p) : NULL;
+		String_Read(&d->name, f);
+		CFileIO_Read(f, &d->pos, sizeof(d->pos));
+		CFileIO_Read(f, &d->rot, sizeof(d->rot));
+		IniFile_Read(f, &d->ini);
 		*(*list ? &last->next : list) = d;
 		last = d;
 		count--;
 	}
 	CHECK(!count);
-	CArchIO_Error(f, "DUM");
+	CFileIO_Error(f, "DUM");
 	CHECK(!f->error);
-	CArchIO_dtor(f);
-	operator_delete_sized(f, sizeof(CArchIO));
+	CFileIO_dtor(f);
+	operator_delete_sized(f, sizeof(CFileIO));
 	return 0;
 }
 
-int Mundo_SaveDUM(const char *path, const MundoDummy *list) {
-	char name[MAX_RUTA];
+int World_SaveDUM(const char *path, const WorldDummy *list) {
+	char name[MAX_FILEPATH];
 
-	Ruta_Format(name, path, "&U&D&N.dum");
+	Path_Format(name, path, "&U&D&N.dum");
 	E3D_LogDebug2(g_FileLog, "Save_DUM: %s", name);
-	void *mem = operator_new(sizeof(CArchIO));
-	CArchIO *f = mem ? CArchIO_ctor(mem, name, "wb") : NULL;
+	void *mem = operator_new(sizeof(CFileIO));
+	CFileIO *f = mem ? CFileIO_ctor(mem, name, "wb") : NULL;
 	CHECK(!f->error);
-	CArchIO_BeginBlockWrite(f, "DUM");
-	CArchIO_WriteInt(f, 1);
-	CArchIO_WriteInt(f, MundoDummy_Count(list));
-	for (const MundoDummy *d = list; d; d = d->next) {
-		CArchIO_WriteInt(f, 1);
-		Cad_Write((char **)&d->name, f);
-		CArchIO_Write(f, &d->pos, sizeof(d->pos));
-		CArchIO_Write(f, &d->rot, sizeof(d->rot));
-		ArchINI_Write(f, d->ini);
+	CFileIO_BeginBlockWrite(f, "DUM");
+	CFileIO_WriteInt(f, 1);
+	CFileIO_WriteInt(f, WorldDummy_Count(list));
+	for (const WorldDummy *d = list; d; d = d->next) {
+		CFileIO_WriteInt(f, 1);
+		String_Write((char **)&d->name, f);
+		CFileIO_Write(f, &d->pos, sizeof(d->pos));
+		CFileIO_Write(f, &d->rot, sizeof(d->rot));
+		IniFile_Write(f, d->ini);
 	}
-	CArchIO_WriteInt(f, 0);
-	CArchIO_EndBlockWrite(f, "DUM");
+	CFileIO_WriteInt(f, 0);
+	CFileIO_EndBlockWrite(f, "DUM");
 	CHECK(!f->error);
-	CArchIO_dtor(f);
-	operator_delete_sized(f, sizeof(CArchIO));
+	CFileIO_dtor(f);
+	operator_delete_sized(f, sizeof(CFileIO));
 	return 0;
 }
 
-byte __thiscall CMundo_LoadMoreDummies(CMundo *self, const char *ini) {
-	char name[MAX_RUTA];
+byte __thiscall CWorld_LoadMoreDummies(CWorld *self, const char *ini) {
+	char name[MAX_FILEPATH];
 	char sect[0x80];
-	CArchINI f;
+	CIniFile f;
 
-	Ruta_Merge(name, ini, self->EscSuelo->name);
-	CArchINI_ctorLoad(&f, name, NULL);
-	int n = CArchINI_Count(&f);
+	Path_Merge(name, ini, self->GroundScale->name);
+	CIniFile_ctorLoad(&f, name, NULL);
+	int n = CIniFile_Count(&f);
 	int added = 0;
 	for (int i = 1; i <= n; i++) {
-		if (!CArchINI_GetSectionName(&f, i, sect, sizeof(sect))) {
+		if (!CIniFile_GetSectionName(&f, i, sect, sizeof(sect))) {
 			continue;
 		}
 		vec3_t tmp, def = { 0.0f, 0.0f, 0.0f };
-		vec3_t pos = *CArchINI_GetVec3(&f, &tmp, sect, "Pos", &def);
+		vec3_t pos = *CIniFile_GetVec3(&f, &tmp, sect, "Pos", &def);
 		vec3_t def2 = { 0.0f, 0.0f, 0.0f };
-		vec3_t rot = *CArchINI_GetVec3(&f, &tmp, sect, "Rot", &def2);
+		vec3_t rot = *CIniFile_GetVec3(&f, &tmp, sect, "Rot", &def2);
 		/* in the coordinates of 3ds max, for a script that makes them there */
 		Con_Debugf("Dummy boxsize:[100,100,100] pos:[%f,%f,%f] isSelected:on name:\"%s\" rotation:(eulerAngles 0 0 %f) \n",
 			(double)pos.x, (double)pos.z, (double)pos.y, sect, (double)-rot.y);
-		void *p = operator_new(sizeof(MundoDummy));
-		MundoDummy *d = NULL;
+		void *p = operator_new(sizeof(WorldDummy));
+		WorldDummy *d = NULL;
 		if (p) {
 			vec3_t r = { rot.x * DEG2RAD_F, rot.y * DEG2RAD_F, rot.z * DEG2RAD_F };
-			d = MundoDummy_ctor(p, sect, &pos, &r);
+			d = WorldDummy_ctor(p, sect, &pos, &r);
 		}
-		CMundo_AddDummy(self, d);
+		CWorld_AddDummy(self, d);
 		added++;
 	}
 	Con_Verbosef("Additional World Dummies: %d\n", added);
-	CArchINI_dtor(&f);
+	CIniFile_dtor(&f);
 	return 1;
 }
 
-byte __thiscall CMundo_SaveMoreDummies(CMundo *self, const char *ini) {
-	char name[MAX_RUTA];
-	CArchINI f;
+byte __thiscall CWorld_SaveMoreDummies(CWorld *self, const char *ini) {
+	char name[MAX_FILEPATH];
+	CIniFile f;
 
-	Ruta_Merge(name, ini, self->EscSuelo->name);
-	CArchINI_ctorLoad(&f, name, NULL);
+	Path_Merge(name, ini, self->GroundScale->name);
+	CIniFile_ctorLoad(&f, name, NULL);
 	int changed = 0;
 	if (self->dummies) {
-		for (MundoDummy *d = self->dummies; d; d = d->next) {
-			changed += CArchINI_SetStr(&f, d->name, "Pos", Vec3_Str(&d->pos, 0, 6));
-			changed += CArchINI_SetStr(&f, d->name, "Rot", Vec3_StrDeg(&d->rot, 0, 2));
+		for (WorldDummy *d = self->dummies; d; d = d->next) {
+			changed += CIniFile_SetStr(&f, d->name, "Pos", Vec3_Str(&d->pos, 0, 6));
+			changed += CIniFile_SetStr(&f, d->name, "Rot", Vec3_StrDeg(&d->rot, 0, 2));
 		}
-		if (changed && CArchINI_Save(&f, name, NULL, 0)) {
+		if (changed && CIniFile_Save(&f, name, NULL, 0)) {
 			Err_Report(*crt_errno(), 0, "\n'%s'", name);
 		}
 	}
-	CArchINI_dtor(&f);
+	CIniFile_dtor(&f);
 	return changed != 0;
 }
 
@@ -326,12 +326,12 @@ static void D3D_SetProj(const matrix_t *m) {
 }
 
 /* sky and floor: not lit by the lights of the level, never culled */
-static void Mundo_ModeloFijo(CModelo *m) {
+static void World_ModelFixed(CModel *m) {
 	m->dynLight = 0;
 	m->alwaysVisible = 1;
 }
 
-static void Mundo_RenderCielo(CMundo *self, void *dev) {
+static void World_RenderSky(CWorld *self, void *dev) {
 	int pass = g_RenderPass;
 	if (pass == 11) {
 		g_RenderPass = 1;
@@ -340,40 +340,40 @@ static void Mundo_RenderCielo(CMundo *self, void *dev) {
 	if (!g_SkyZBuffer) {
 		D3D_SetRenderState(dev, D3DRS_ZENABLE, 0);
 	}
-	D3D_SetRenderState(dev, D3DRS_AMBIENT, Color_ToD3D(&self->EscCielo->ambiente));
+	D3D_SetRenderState(dev, D3DRS_AMBIENT, Color_ToD3D(&self->SkyScale->ambient));
 	int fog = g_FogActive;
 	g_FogActive = 0;
-	CModelo *cielo = self->Cielo;
-	Mundo_ModeloFijo(cielo);
-	const CCamara *cam = self->cam;
-	float k = self->cieloPos;
-	cielo->pos = (vec3_t){ cam->pos.x * k * g_SkyPosScale, cam->pos.y * k * g_SkyPosScale,
+	CModel *sky = self->Sky;
+	World_ModelFixed(sky);
+	const CCamera *cam = self->cam;
+	float k = self->skyPos;
+	sky->pos = (vec3_t){ cam->pos.x * k * g_SkyPosScale, cam->pos.y * k * g_SkyPosScale,
 		cam->pos.z * k * g_SkyPosScale };
-	cielo->rot.y = (float)((double)g_SkyRotation * M_PI_D / DEG_PER_PI) + self->cieloRot;
-	CModelo_UpdateAnims(cielo, 0.0f, -1);
-	if (Portales_SetView(g_PintarTodas)) {
-		CModelo_Render(self->Cielo);
+	sky->rot.y = (float)((double)g_SkyRotation * M_PI_D / DEG_PER_PI) + self->skyRot;
+	CModel_UpdateAnims(sky, 0.0f, -1);
+	if (Portals_SetView(g_PaintAll)) {
+		CModel_Render(self->Sky);
 	}
 	E3D_FlushBatch();
 	if (g_SkyZBuffer) {
 		Render_Clear(NULL, D3DCLEAR_ZBUFFER, 0, 1.0f, 0);
 	}
-	Portales_SetView(NULL);
+	Portals_SetView(NULL);
 	g_FogActive = fog;
 	D3D_SetRenderState(dev, D3DRS_AMBIENT, g_AmbientD3D);
 	if (!g_SkyZBuffer) {
 		D3D_SetRenderState(dev, D3DRS_ZENABLE, g_ZEnable);
 	}
-	if (self->tubo) {
+	if (self->tube) {
 		matrix_t m = *Render_GetProj();
 		float f = g_SkyTubeTest;
 		m.m[11] = 1.0f;
 		m.m[10] = f / (f - 1.0f);
 		m.m[14] = -m.m[10];
 		D3D_SetProj(&m);
-		CModelo_Enable(self->tubo);
-		CModelo_Render(self->tubo);
-		CModelo_Disable(self->tubo);
+		CModel_Enable(self->tube);
+		CModel_Render(self->tube);
+		CModel_Disable(self->tube);
 		m = *Render_GetProj();
 		D3D_SetProj(&m);
 		Render_Clear(NULL, D3DCLEAR_ZBUFFER, 0, 1.0f, 0);
@@ -381,33 +381,33 @@ static void Mundo_RenderCielo(CMundo *self, void *dev) {
 	g_RenderPass = pass;
 }
 
-void __fastcall CMundo_Render(CMundo *self) {
+void __fastcall CWorld_Render(CWorld *self) {
 	CHECK(self->ini_D3D);
-	void *dev = g_MotorDev;
+	void *dev = g_EngineDev;
 	CHECK(dev);
 	g_FogActive = 0;
-	if (g_ModelosOn) {
-		CNiebla_Apply(&self->niebla);
+	if (g_ModelsOn) {
+		CFog_Apply(&self->fog);
 	}
-	if (self->Cielo && g_RenderSky && g_PintarNum) {
-		Mundo_RenderCielo(self, dev);
+	if (self->Sky && g_RenderSky && g_PaintNum) {
+		World_RenderSky(self, dev);
 	}
-	if (self->Suelo && g_RenderWorld) {
-		Mundo_ModeloFijo(self->Suelo);
-		CModelo_UpdateAnims(self->Suelo, 0.0f, -1);
-		CModelo_Render(self->Suelo);
+	if (self->Ground && g_RenderWorld) {
+		World_ModelFixed(self->Ground);
+		CModel_UpdateAnims(self->Ground, 0.0f, -1);
+		CModel_Render(self->Ground);
 	}
 	Bsp_Render();
 	BspQ3_Render();
-	CMundo_DrawDummies(self);
+	CWorld_DrawDummies(self);
 }
 
-void __fastcall CMundo_DrawDummies(CMundo *self) {
+void __fastcall CWorld_DrawDummies(CWorld *self) {
 	if (!*g_ShowWorldDummies) {
 		return;
 	}
 	int shown = 0, total = 0;
-	for (MundoDummy *d = self->dummies; d; d = d->next, total++) {
+	for (WorldDummy *d = self->dummies; d; d = d->next, total++) {
 		if (!Wild_MatchLower(g_ShowWorldDummies, d->name)) {
 			continue;
 		}
@@ -426,318 +426,318 @@ void __fastcall CMundo_DrawDummies(CMundo *self) {
 	Font_PrintfXY(g_FntComic14, 10.0f, 260.0f, "world dummies: %d / %d", shown, total);
 }
 
-void __thiscall CMundo_SetCieloPos(CMundo *self, float pct) {
-	self->cieloPos = 1.0f - pct / 100.0f;
+void __thiscall CWorld_SetSkyPos(CWorld *self, float pct) {
+	self->skyPos = 1.0f - pct / 100.0f;
 }
 
-void __thiscall CMundo_SetCieloRot(CMundo *self, float deg) {
-	self->cieloRot = (float)((double)deg * M_PI_D / DEG_PER_PI);
+void __thiscall CWorld_SetSkyRot(CWorld *self, float deg) {
+	self->skyRot = (float)((double)deg * M_PI_D / DEG_PER_PI);
 }
 
 /* the lights of esc but the ones of the nodes with a flag of skip */
-static void Mundo_SetLuces(CEscena *esc, uint32_t skip, byte activa) {
-	if (!esc) {
+static void World_SetLights(CScene *scn, uint32_t skip, byte active) {
+	if (!scn) {
 		return;
 	}
-	for (CNodo3D *n = CEscena_FindClase(esc, NULL, CLASE_OBJ3D_LUZ); n; n = CEscena_FindClase(esc, n, CLASE_OBJ3D_LUZ)) {
+	for (CNode3D *n = CScene_FindClass(scn, NULL, CLASS_OBJ3D_LIGHT); n; n = CScene_FindClass(scn, n, CLASS_OBJ3D_LIGHT)) {
 		if (!(n->flags & skip)) {
-			CLuz_SetActiva(Obj3D_Cast(n->obj3D, CLASE_OBJ3D_LUZ), activa);
+			CLight_SetActive(Obj3D_Cast(n->obj3D, CLASS_OBJ3D_LIGHT), active);
 		}
 	}
 }
 
-void __thiscall CMundo_SetLucesCielo(CMundo *self, byte activa) {
-	Mundo_SetLuces(self->EscCielo, 0, activa);
+void __thiscall CWorld_SetSkyLights(CWorld *self, byte active) {
+	World_SetLights(self->SkyScale, 0, active);
 }
 
-void __thiscall CMundo_SetLucesSuelo(CMundo *self, byte activa) {
-	Mundo_SetLuces(self->EscSuelo, 0x6000000, activa);
+void __thiscall CWorld_SetGroundLights(CWorld *self, byte active) {
+	World_SetLights(self->GroundScale, 0x6000000, active);
 }
 
-void __thiscall CMundo_SetClip(CMundo *self, float zNear, float zFar) {
-	if (self->EscSuelo) {
+void __thiscall CWorld_SetClip(CWorld *self, float zNear, float zFar) {
+	if (self->GroundScale) {
 		int a, b;
 		memcpy(&a, &zNear, sizeof(a));
 		memcpy(&b, &zFar, sizeof(b));
-		CEscena_Msg(self->EscSuelo, ESCENA_MSG_CAMARAS, a, b, 0, 0);
+		CScene_Msg(self->GroundScale, SCENE_MSG_CAMERAS, a, b, 0, 0);
 	}
 	if (zNear != 0.0f) {
-		self->camara.zNear = zNear;
+		self->camera.zNear = zNear;
 	}
 	if (zFar != 0.0f) {
-		self->camara.zFar = zFar;
+		self->camera.zFar = zFar;
 	}
 }
 
-void __thiscall CMundo_SetCamara(CMundo *self, CCamara *cam) {
+void __thiscall CWorld_SetCamera(CWorld *self, CCamera *cam) {
 	self->cam = cam;
 	if (!cam) {
-		self->cam = &self->camara;
-		Mundo_CamaraInicio(self);
-		CCamara_LookAtRot(self->cam);
-	} else if (cam->mode == CAMARA_LOOKAT) {
-		CCamara_LookAtRot(cam);
+		self->cam = &self->camera;
+		World_CameraStart(self);
+		CCamera_LookAtRot(self->cam);
+	} else if (cam->mode == CAMERA_LOOKAT) {
+		CCamera_LookAtRot(cam);
 	}
-	CCamara_UpdateVectors(self->cam);
+	CCamera_UpdateVectors(self->cam);
 }
 
-void __thiscall CMundo_LoadCielo(CMundo *self, const char *name) {
-	vec3_t escala = { 1.0f, 1.0f, 1.0f };
-	CMundo_LoadCieloEscala(self, name, &escala);
+void __thiscall CWorld_LoadSky(CWorld *self, const char *name) {
+	vec3_t scale = { 1.0f, 1.0f, 1.0f };
+	CWorld_LoadSkyScale(self, name, &scale);
 }
 
-static void Mundo_AnimEvents(CModelo *m) {
-	CModelo_AddAnimEvents(m, CModelo_GetAnimName(m, 0), -1.0f, -1.0f);
+static void World_AnimEvents(CModel *m) {
+	CModel_AddAnimEvents(m, CModel_GetAnimName(m, 0), -1.0f, -1.0f);
 }
 
-void __thiscall CMundo_LoadCieloEscala(CMundo *self, const char *name, const vec3_t *escala) {
+void __thiscall CWorld_LoadSkyScale(CWorld *self, const char *name, const vec3_t *scale) {
 	CHECK(!self->ini_D3D);
-	CHECK(!self->Cielo);
+	CHECK(!self->Sky);
 	if (!g_SkyInit || !name || !*name) {
 		return;
 	}
-	self->Cielo = Crear_Modelo3(name, NULL, escala, ESCENA_SM3 | ESCENA_USARANIM);
-	self->EscCielo = self->Cielo->escena;
-	CHECK(self->EscCielo);
-	if (CAnimGrupos_Count(&self->Cielo->anims)) {
-		CHECK(self->EscCielo->AnimM3D);
-		Mundo_AnimEvents(self->Cielo);
+	self->Sky = Create_Model3(name, NULL, scale, SCENE_SM3 | SCENE_USEANIM);
+	self->SkyScale = self->Sky->scene;
+	CHECK(self->SkyScale);
+	if (CAnimGroups_Count(&self->Sky->anims)) {
+		CHECK(self->SkyScale->AnimM3D);
+		World_AnimEvents(self->Sky);
 	} else {
-		char anim[MAX_RUTA];
-		Ruta_Format(anim, self->EscCielo->name, "&U&D&N.Anim00.CM3");
+		char anim[MAX_FILEPATH];
+		Path_Format(anim, self->SkyScale->name, "&U&D&N.Anim00.CM3");
 		byte cm3 = File_Exists(anim);
-		Ruta_Format(anim, self->EscCielo->name, "&U&D&N.Anim00&E");
+		Path_Format(anim, self->SkyScale->name, "&U&D&N.Anim00&E");
 		if (File_Exists(anim) || cm3) {
-			Crear_Animacion(self->Cielo, anim, 2);
-			Mundo_AnimEvents(self->Cielo);
+			Create_Animation(self->Sky, anim, 2);
+			World_AnimEvents(self->Sky);
 		}
 	}
-	if (!CAnimGrupos_Count(&self->Cielo->anims)) {
-		CEscena_Join(self->EscCielo, 1, NULL);
+	if (!CAnimGroups_Count(&self->Sky->anims)) {
+		CScene_Join(self->SkyScale, 1, NULL);
 	}
-	CEscena_ConvertD3D(self->EscCielo, 0);
-	CEscena_PrecalcIlum(self->EscCielo, 1, 0);
-	CMundo_SetLucesCielo(self, 0);
-	if (CAnimGrupos_Count(&self->Cielo->anims)) {
-		CModelo_SetAnim(self->Cielo, 0, 0);
+	CScene_ConvertD3D(self->SkyScale, 0);
+	CScene_PrecalcIllum(self->SkyScale, 1, 0);
+	CWorld_SetSkyLights(self, 0);
+	if (CAnimGroups_Count(&self->Sky->anims)) {
+		CModel_SetAnim(self->Sky, 0, 0);
 	}
-	if (!self->EscCielo->fromAmc) {
-		SM3_Save(name, self->EscCielo);
+	if (!self->SkyScale->fromAmc) {
+		SM3_Save(name, self->SkyScale);
 	}
 }
 
-void __thiscall CMundo_LoadSuelo(CMundo *self, const char *name) {
-	vec3_t escala = { 1.0f, 1.0f, 1.0f };
-	CMundo_LoadSueloEscala(self, name, &escala);
+void __thiscall CWorld_LoadGround(CWorld *self, const char *name) {
+	vec3_t scale = { 1.0f, 1.0f, 1.0f };
+	CWorld_LoadGroundScale(self, name, &scale);
 }
 
 /* the references to a node beyond the ones of its neighbours in the list */
-static int Nodo_RefsFuera(const CNodo3D *n) {
-	return n->Refs - (n->ant != NULL) - (n->sig != NULL);
+static int Node_RefsOutside(const CNode3D *n) {
+	return n->Refs - (n->prev != NULL) - (n->next != NULL);
 }
 
 /* the DM_ nodes of the floor scene made dummies, out of the scene */
-static void Mundo_TakeDummies(CMundo *self) {
-	CNodo3D *next;
-	for (CNodo3D *n = self->EscSuelo->Nodo3D; n; n = next) {
-		next = n->sig;
-		int refs = Nodo_RefsFuera(n);
+static void World_TakeDummies(CWorld *self) {
+	CNode3D *next;
+	for (CNode3D *n = self->GroundScale->Node3D; n; n = next) {
+		next = n->next;
+		int refs = Node_RefsOutside(n);
 		if (!crt_strnicmp(n->name, "DM_", 3)) {
-			if (!refs && !CNodo3D_Clase(n)) {
-				void *p = operator_new(sizeof(MundoDummy));
-				CMundo_AddDummy(self, p ? MundoDummy_ctorNodo(p, n) : NULL);
-				CEscena_RemoveNodo(self->EscSuelo, n);
+			if (!refs && !CNode3D_Class(n)) {
+				void *p = operator_new(sizeof(WorldDummy));
+				CWorld_AddDummy(self, p ? WorldDummy_ctorNode(p, n) : NULL);
+				CScene_RemoveNode(self->GroundScale, n);
 				((objDelete_t)n->vftable[0])(n, 1);
 			} else {
 				Con_FatalErrorf("Only non-ref dummies can be named DM_*\n\nNode: %s\n", n->name);
 			}
-		} else if (!CNodo3D_Clase(n) && !refs) {
+		} else if (!CNode3D_Class(n) && !refs) {
 			E3D_LogInfo(g_FileLog, "WARN: Node NOT set as World Dummy: %s", n->name);
 		}
 	}
 }
 
 /* the lights of the floor scene get their sector (the .sm3 has it already) */
-static void Mundo_LucesSector(CMundo *self) {
-	int luces = 0, asignadas = 0;
-	for (CNodo3D *n = self->EscSuelo->Nodo3D; n; n = n->sig) {
-		if (CNodo3D_Clase(n) != CLASE_OBJ3D_LUZ) {
+static void World_LightsSector(CWorld *self) {
+	int lights = 0, assigned = 0;
+	for (CNode3D *n = self->GroundScale->Node3D; n; n = n->next) {
+		if (CNode3D_Class(n) != CLASS_OBJ3D_LIGHT) {
 			continue;
 		}
-		luces++;
-		CLuz *luz = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_LUZ);
+		lights++;
+		CLight *light = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_LIGHT);
 		int sector = Sector_OfNode(n);
-		if (!self->EscSuelo->fromAmc) {
-			CHECK(luz->sector < 0);
-			luz->sector = sector;
+		if (!self->GroundScale->fromAmc) {
+			CHECK(light->sector < 0);
+			light->sector = sector;
 		} else {
-			CHECK(luz->sector == sector);
+			CHECK(light->sector == sector);
 		}
 		if (sector >= 0) {
-			asignadas++;
-			E3D_LogWhite(g_FileLog, "Light sector %d: %s", sector, luz->nodo->name);
+			assigned++;
+			E3D_LogWhite(g_FileLog, "Light sector %d: %s", sector, light->node->name);
 		}
 	}
-	Con_Verbosef("World lights: %d (asigned: %d, unasigned: %d)\n", luces, asignadas, luces - asignadas);
+	Con_Verbosef("World lights: %d (asigned: %d, unasigned: %d)\n", lights, assigned, lights - assigned);
 }
 
 /* light_vertex_mult of the FileINI of the floor scene, the multiplier of each light by its name */
-static void Mundo_LucesMult(CMundo *self) {
-	CEscena *esc = self->EscSuelo;
-	if (!esc->ini) {
+static void World_LightsMult(CWorld *self) {
+	CScene *scn = self->GroundScale;
+	if (!scn->ini) {
 		return;
 	}
-	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
-		if (CNodo3D_Clase(n) != CLASE_OBJ3D_LUZ) {
+	for (CNode3D *n = scn->Node3D; n; n = n->next) {
+		if (CNode3D_Class(n) != CLASS_OBJ3D_LIGHT) {
 			continue;
 		}
-		CLuz *luz = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_LUZ);
-		Con_Verbosef("light: '%s' (vertex_mult: %f)\n", n->name, (double)luz->mult);
-		float k = CArchINI_GetFloat(self->EscSuelo->ini, "light_vertex_mult", n->name, 1.0f);
+		CLight *light = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_LIGHT);
+		Con_Verbosef("light: '%s' (vertex_mult: %f)\n", n->name, (double)light->mult);
+		float k = CIniFile_GetFloat(self->GroundScale->ini, "light_vertex_mult", n->name, 1.0f);
 		if (k != 1.0f) {
-			Con_Warnf(" light_vertex_mult: %f -> %f [%s]\n", (double)luz->mult, (double)(luz->mult * k), n->name);
-			luz->mult *= k;
+			Con_Warnf(" light_vertex_mult: %f -> %f [%s]\n", (double)light->mult, (double)(light->mult * k), n->name);
+			light->mult *= k;
 		}
 	}
 }
 
-void __thiscall CMundo_LoadSueloEscala(CMundo *self, const char *name, const vec3_t *escala) {
+void __thiscall CWorld_LoadGroundScale(CWorld *self, const char *name, const vec3_t *scale) {
 	CHECK(!self->ini_D3D);
-	CHECK(!self->Suelo);
+	CHECK(!self->Ground);
 	if (!name || !*name) {
 		return;
 	}
-	byte sombras = g_MapaSombrasUsar && !g_MapaSombrasCalcular && !g_MapaSombrasDlg;
-	self->Suelo = Crear_Modelo3(name, NULL, escala, sombras ? ESCENA_SM3 | ESCENA_USARANIM : ESCENA_USARANIM);
-	Mundo_AnimEvents(self->Suelo);
-	CModelo_SetAnim(self->Suelo, 0, 0);
-	self->EscSuelo = self->Suelo->escena;
-	CHECK(!self->EscSuelo->nodo);
-	CMundo_SetCamara(self, (CCamara *)CNodo3D_FindCamara(self->EscSuelo->Nodo3D, NULL));
-	Sectores_Crear(self->EscSuelo);
-	CEscena_ToSuelo(self->EscSuelo);
-	self->ObjSuelo = Obj3D_Cast(CEscena_FindClase(self->EscSuelo, NULL, CLASE_OBJ3D_SUELO)->obj3D, CLASE_OBJ3D_SUELO);
-	CHECK(self->ObjSuelo);
-	for (CNodo3D *n = self->EscSuelo->Nodo3D; n; n = n->sig) {
-		if (!CNodo3D_Clase(n) && !Nodo_RefsFuera(n)) {
-			n->flags |= NODO_NOUPDATE | NODO_BORRAR;
+	byte shadows = g_ShadowMapUse && !g_ShadowMapCalculate && !g_ShadowMapDlg;
+	self->Ground = Create_Model3(name, NULL, scale, shadows ? SCENE_SM3 | SCENE_USEANIM : SCENE_USEANIM);
+	World_AnimEvents(self->Ground);
+	CModel_SetAnim(self->Ground, 0, 0);
+	self->GroundScale = self->Ground->scene;
+	CHECK(!self->GroundScale->node);
+	CWorld_SetCamera(self, (CCamera *)CNode3D_FindCamera(self->GroundScale->Node3D, NULL));
+	Sectors_Create(self->GroundScale);
+	CScene_ToGround(self->GroundScale);
+	self->ObjGround = Obj3D_Cast(CScene_FindClass(self->GroundScale, NULL, CLASS_OBJ3D_GROUND)->obj3D, CLASS_OBJ3D_GROUND);
+	CHECK(self->ObjGround);
+	for (CNode3D *n = self->GroundScale->Node3D; n; n = n->next) {
+		if (!CNode3D_Class(n) && !Node_RefsOutside(n)) {
+			n->flags |= NODE_NOUPDATE | NODE_DELETE;
 		}
 	}
-	Mundo_TakeDummies(self);
-	if (self->EscSuelo->fromAmc) {
-		Mundo_LoadDUM(name, &self->dummies);
+	World_TakeDummies(self);
+	if (self->GroundScale->fromAmc) {
+		World_LoadDUM(name, &self->dummies);
 	} else {
-		Mundo_SaveDUM(name, self->dummies);
+		World_SaveDUM(name, self->dummies);
 	}
-	Con_Verbosef("World Dummies: %d\n", MundoDummy_Count(self->dummies));
-	CMundo_LoadMoreDummies(self, "MoreDummies.ini");
-	Mundo_LucesSector(self);
-	if (sombras) {
-		CSuelo_FreeNodos(self->ObjSuelo);
+	Con_Verbosef("World Dummies: %d\n", WorldDummy_Count(self->dummies));
+	CWorld_LoadMoreDummies(self, "MoreDummies.ini");
+	World_LightsSector(self);
+	if (shadows) {
+		CGround_FreeNodes(self->ObjGround);
 	}
-	CEscena_ConvertD3D(self->EscSuelo, 0);
+	CScene_ConvertD3D(self->GroundScale, 0);
 	if (g_WorldPreIllum) {
-		CEscena_PrecalcIlum(self->EscSuelo, g_WorldPreIllum == 2, 0);
+		CScene_PrecalcIllum(self->GroundScale, g_WorldPreIllum == 2, 0);
 	}
-	CMundo_SetLucesSuelo(self, 0);
-	Bsp_Crear();
-	BspQ3_Crear();
-	if (!self->EscSuelo->fromAmc) {
-		SM3_Save(name, self->EscSuelo);
+	CWorld_SetGroundLights(self, 0);
+	Bsp_Create();
+	BspQ3_Create();
+	if (!self->GroundScale->fromAmc) {
+		SM3_Save(name, self->GroundScale);
 	}
-	Mundo_LucesMult(self);
+	World_LightsMult(self);
 }
 
-CCamara *__thiscall CMundo_GetCamaraSuelo(CMundo *self, byte update) {
-	CCamara *cam = (CCamara *)CNodo3D_FindCamara(self->EscSuelo->Nodo3D, NULL);
+CCamera *__thiscall CWorld_GetCameraGround(CWorld *self, byte update) {
+	CCamera *cam = (CCamera *)CNode3D_FindCamera(self->GroundScale->Node3D, NULL);
 	if (cam && update) {
-		if (cam->mode == CAMARA_LOOKAT) {
-			CCamara_LookAtRot(cam);
+		if (cam->mode == CAMERA_LOOKAT) {
+			CCamera_LookAtRot(cam);
 		}
-		CCamara_UpdateVectors(cam);
+		CCamera_UpdateVectors(cam);
 	}
 	return cam;
 }
 
-CNodo3D *__thiscall CMundo_FindClase(CMundo *self, CNodo3D *from, uint32_t clase) {
-	return self->EscSuelo ? CEscena_FindClase(self->EscSuelo, from, clase) : NULL;
+CNode3D *__thiscall CWorld_FindClass(CWorld *self, CNode3D *from, uint32_t class) {
+	return self->GroundScale ? CScene_FindClass(self->GroundScale, from, class) : NULL;
 }
 
-CNodo3D *__thiscall CMundo_FindNodo(CMundo *self, const char *name) {
-	return self->Suelo ? CModelo_FindNodo(self->Suelo, name) : NULL;
+CNode3D *__thiscall CWorld_FindNode(CWorld *self, const char *name) {
+	return self->Ground ? CModel_FindNode(self->Ground, name) : NULL;
 }
 
-CNodo3D *__thiscall CMundo_FindNodoWild(CMundo *self, const char *pat) {
-	return self->Suelo ? CModelo_FindNodoWild(self->Suelo, pat) : NULL;
+CNode3D *__thiscall CWorld_FindNodeWild(CWorld *self, const char *pat) {
+	return self->Ground ? CModel_FindNodeWild(self->Ground, pat) : NULL;
 }
 
 /* the debug points */
-typedef struct DebugPunto {
+typedef struct DebugPoint {
 	vec3_t pos;			/* 0x00 */
 	uint32_t color;			/* 0x0c */
-	float tipo;			/* 0x10 see Debug_Punto */
-} DebugPunto;
-SD_SIZE(DebugPunto, 0x14);
+	float type;			/* 0x10 see Debug_Point */
+} DebugPoint;
+SD_SIZE(DebugPoint, 0x14);
 
-#define g_Puntos (GAME_GLOBAL(CTabla, g_Puntos, 0x4afec4))	/* DebugPunto[], grown by a quarter */
-#define g_NumPuntos GAME_GLOBAL(int, g_NumPuntos, 0x4afecc)
-#define g_PuntosOn GAME_GLOBAL_IN(byte, group_4a8ef8, 2, 0x4a8efa)	/* set by the first point */
-#define g_MaxPuntos GAME_GLOBAL(int, g_MaxPuntos, 0x432584)	/* 4000: all cleared at that count, 0 no limit */
+#define g_Points (GAME_GLOBAL(CTable, g_Points, 0x4afec4))	/* DebugPoint[], grown by a quarter */
+#define g_NumPoints GAME_GLOBAL(int, g_NumPoints, 0x4afecc)
+#define g_PointsOn GAME_GLOBAL_IN(byte, group_4a8ef8, 2, 0x4a8efa)	/* set by the first point */
+#define g_MaxPoints GAME_GLOBAL(int, g_MaxPoints, 0x432584)	/* 4000: all cleared at that count, 0 no limit */
 
-static DebugPunto *Punto(int i) {
-	TABLA_CHECK(g_Puntos.p, i, g_Puntos.n);
-	return (DebugPunto *)g_Puntos.p + i;
+static DebugPoint *Point(int i) {
+	TABLE_CHECK(g_Points.p, i, g_Points.n);
+	return (DebugPoint *)g_Points.p + i;
 }
 
-int Debug_PuntoLinea(const vec3_t *a, const vec3_t *b, uint32_t ca, uint32_t cb) {
-	Debug_Punto(a, ca, -1.0f);
-	Debug_Punto(b, cb, 1.0f);
+int Debug_PointLine(const vec3_t *a, const vec3_t *b, uint32_t ca, uint32_t cb) {
+	Debug_Point(a, ca, -1.0f);
+	Debug_Point(b, cb, 1.0f);
 	return 0;
 }
 
-int Debug_Punto(const vec3_t *pos, uint32_t color, float tipo) {
-	g_PuntosOn = 1;
-	if (g_MaxPuntos && g_NumPuntos >= g_MaxPuntos) {
-		Debug_PuntosClear();
+int Debug_Point(const vec3_t *pos, uint32_t color, float type) {
+	g_PointsOn = 1;
+	if (g_MaxPoints && g_NumPoints >= g_MaxPoints) {
+		Debug_PointsClear();
 	}
-	int n = ++g_NumPuntos;
-	if (n > g_Puntos.n) {
-		Tabla_Resize14(&g_Puntos, n + (n >> 2));
+	int n = ++g_NumPoints;
+	if (n > g_Points.n) {
+		Table_Resize14(&g_Points, n + (n >> 2));
 	}
-	Punto(g_NumPuntos - 1)->pos = *pos;
-	Punto(g_NumPuntos - 1)->color = color;
-	Punto(g_NumPuntos - 1)->tipo = tipo;
+	Point(g_NumPoints - 1)->pos = *pos;
+	Point(g_NumPoints - 1)->color = color;
+	Point(g_NumPoints - 1)->type = type;
 	return 0;
 }
 
-void Debug_PuntosClear(void) {
-	Tabla_Free(&g_Puntos);
-	g_NumPuntos = 0;
+void Debug_PointsClear(void) {
+	Table_Free(&g_Points);
+	g_NumPoints = 0;
 }
 
-int Debug_PuntosDraw(void) {
-	if (!g_PuntosOn) {
+int Debug_PointsDraw(void) {
+	if (!g_PointsOn) {
 		return 0;
 	}
 	Font_SetColor(g_FntComic14, 0xff);
-	Font_Printf(g_FntComic14, 10.0f, 100.0f, 2, "puntos: %d", g_NumPuntos);
-	for (int i = 0; i < g_NumPuntos; i++) {
-		const DebugPunto *p = Punto(i);
-		if (-1.0f > p->tipo) {
-			if (++i >= g_NumPuntos) {
+	Font_Printf(g_FntComic14, 10.0f, 100.0f, 2, "puntos: %d", g_NumPoints);
+	for (int i = 0; i < g_NumPoints; i++) {
+		const DebugPoint *p = Point(i);
+		if (-1.0f > p->type) {
+			if (++i >= g_NumPoints) {
 				break;
 			}
-			Debug_DrawBox(&Punto(i - 1)->pos, &Punto(i)->pos, Punto(i - 1)->color);
-		} else if (0.0f > p->tipo) {
-			if (++i >= g_NumPuntos) {
+			Debug_DrawBox(&Point(i - 1)->pos, &Point(i)->pos, Point(i - 1)->color);
+		} else if (0.0f > p->type) {
+			if (++i >= g_NumPoints) {
 				break;
 			}
-			const DebugPunto *a = Punto(i - 1), *b = Punto(i);
+			const DebugPoint *a = Point(i - 1), *b = Point(i);
 			vec3_t mid = { (b->pos.x + a->pos.x) * 0.5f, (a->pos.y + b->pos.y) * 0.5f, (a->pos.z + b->pos.z) * 0.5f };
 			Debug_DrawLine(&a->pos, &mid, a->color);
 			Debug_DrawLine(&mid, &b->pos, b->color);
 		} else {
-			Debug_DrawPoint(&p->pos, p->tipo, p->color);
+			Debug_DrawPoint(&p->pos, p->type, p->color);
 		}
 	}
 	return 0;

@@ -1,5 +1,5 @@
 /*
- * ScrapEng/ScrapEngCollision.cpp: the collision queries of the game against the floor of the world (gMundo's CSuelo):
+ * ScrapEng/ScrapEngCollision.cpp: the collision queries of the game against the floor of the world (gMundo's CGround):
  * segments, a sphere moved in steps of half its radius (slide, slide 2D, test), the box cache of a moving sphere and
  * the sector walk. Each query has a profiler section (prof.h).
  */
@@ -31,13 +31,13 @@ typedef struct CSphereBox {
 SD_SIZE(CSphereBox, 0x20);
 
 /* the triangle a segment hit, for Engine_TestLine */
-typedef struct CColisTri {
+typedef struct CCollisionTri {
 	vec3_t v[3];			/* 0x00 */
 	plane_t plane;			/* 0x24 */
 	vec3_t hit;			/* 0x34 */
-	int noColisiones;		/* 0x40 bit 4 of the triangle flags */
-} CColisTri;
-SD_SIZE(CColisTri, 0x44);
+	int noCollisions;		/* 0x40 bit 4 of the triangle flags */
+} CCollisionTri;
+SD_SIZE(CCollisionTri, 0x44);
 
 /* the engine variables of the collisions (Gvars) */
 #define g_CollisionSchk GAME_GLOBAL_IN(int, GVar_c_schk, 16, 0x4a810c)	/* c_schk: a sphere that does not move is a check */
@@ -61,7 +61,7 @@ byte Collision_SphereBox(const vec3_t *a, const vec3_t *b, float r, CSphereBox *
 /* 1 if a triangle is in the box from min to max moved by pos */
 byte Collision_Box(const vec3_t *pos, const vec3_t *min, const vec3_t *max);
 /* the segment from-to: hit the first hit point (to without one), tri the hit triangle; each may be NULL */
-byte Engine_TestLine(const vec3_t *from, const vec3_t *to, vec3_t *hit, CColisTri *tri);
+byte Engine_TestLine(const vec3_t *from, const vec3_t *to, vec3_t *hit, CCollisionTri *tri);
 int Collision_Sector(int sector, const vec3_t *a, const vec3_t *b, byte front);
 /* 1 if a sphere of radius r at pos touches the floor */
 byte Collision_Check(const vec3_t *pos, float r);

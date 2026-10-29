@@ -22,12 +22,12 @@ for bpp in (0, 4, 8, 9, 16, 24, 32, -1):
 for n in (-4, -1, 0, 1, 2, 3, 4, 6, 8, 1024, 1023, 0x40000000, 0x7fffffff, -2147483647 - 1):
 	call('Tex_IsPower2', sym('Tex_IsPower2'), 'bi', n)
 for s in ('', 'a', 'a/b/c', '//x\\y/', 'no'):
-	call('Ruta_ToBackslash', sym('Ruta_ToBackslash'), 'vb', s)
+	call('Path_ToBackslash', sym('Path_ToBackslash'), 'vb', s)
 # names without a '.' are left out: CHECK(ext)
 for n in ('a.alpha.tga', 'A.ALPHA.TGA', '.alpha.tga', 'alpha.tga', 'x.alpha', 'd.x/a.bump.png', 'a.bump.x.tga', 'a.tga',
 		'abc.cube.dds', 'q.dudv.bmp', 'q.dudvx.bmp'):
 	for e in ('.alpha', '.bump', '.cube', '.dudv', '', 'a'):
-		call('Ruta_HasSubExt', sym('Ruta_HasSubExt'), 'bss', n, e)
+		call('Path_HasSubExt', sym('Path_HasSubExt'), 'bss', n, e)
 
 # bmp.h: the constructor with a size and the deleting destructor
 cb = tz(12)
@@ -72,7 +72,7 @@ def twho(p):
 	return 'new'
 def tnewe(name, opac, kind, flags):
 	t = SDTest.Call('operator_new', 'ii', 0x258)[0]
-	SDTest.Call('CTextura_ctor', 'tiizzii', t, name, opac, kind, flags)
+	SDTest.Call('CTexture_ctor', 'tiizzii', t, name, opac, kind, flags)
 	tents.append(t)
 	return t
 def tget(t):
@@ -105,29 +105,29 @@ t1 = tnewe('SDTEX_A.BMP', 'sdopac.bmp', 2, 0x20)
 t2 = tnewe('sdtex_b.tga', '', 0, 0x40)
 t3 = tnewe('sdtex_a.bmp', 'Other.bmp', 1, 0x1a0)
 for t in tents:
-	check('CTextura_ctor', lambda t=t: tget(t))
+	check('CTexture_ctor', lambda t=t: tget(t))
 check('Textura list', tlist)
 for n in ('sdtex_a.bmp', 'Sdtex_A.Bmp', 'sdtex_b.tga', 'sdtex_b.TGA', 'none.bmp', ''):
 	for o in (None, '', 'sdopac.bmp', 'SDOPAC.BMP', 'other.bmp', 'x.bmp'):
-		tcall('Textura_Lookup', sym('Textura_Lookup'), 'izz', n, o)
-tcall('Textura_Find', sym('Textura_Find'), 'izz', 'sdtex_b.tga', None)
-tcall('Textura_Find', sym('Textura_Find'), 'izz', 'sdtex_a.bmp', 'sdopac.bmp')
-tcall('Textura_Find', sym('Textura_Find'), 'izz', 'nothing.bmp', None)
-call('Textura_AddRef NULL', sym('Textura_AddRef'), 'ii', 0)
-call('Textura_Release NULL', sym('Textura_Release'), 'ii', 0)
-tecall('Textura_AddRef', sym('Textura_AddRef'), 'ii', t0)
-tecall('Textura_AddRef', sym('Textura_AddRef'), 'ii', t0)
-tecall('Textura_Release', sym('Textura_Release'), 'ii', t0)
-tecall('Textura_Release', sym('Textura_Release'), 'ii', t0)
-tecall('Textura_Release', sym('Textura_Release'), 'ii', t1)
-tecall('Textura_Release', sym('Textura_Release'), 'ii', t2)
+		tcall('Texture_Lookup', sym('Texture_Lookup'), 'izz', n, o)
+tcall('Texture_Find', sym('Texture_Find'), 'izz', 'sdtex_b.tga', None)
+tcall('Texture_Find', sym('Texture_Find'), 'izz', 'sdtex_a.bmp', 'sdopac.bmp')
+tcall('Texture_Find', sym('Texture_Find'), 'izz', 'nothing.bmp', None)
+call('Texture_AddRef NULL', sym('Texture_AddRef'), 'ii', 0)
+call('Texture_Release NULL', sym('Texture_Release'), 'ii', 0)
+tecall('Texture_AddRef', sym('Texture_AddRef'), 'ii', t0)
+tecall('Texture_AddRef', sym('Texture_AddRef'), 'ii', t0)
+tecall('Texture_Release', sym('Texture_Release'), 'ii', t0)
+tecall('Texture_Release', sym('Texture_Release'), 'ii', t0)
+tecall('Texture_Release', sym('Texture_Release'), 'ii', t1)
+tecall('Texture_Release', sym('Texture_Release'), 'ii', t2)
 for t in tents:
 	check('Textura refs', lambda t=t: SDTest.Peek(t, '@i'))
 tinfo = tz(20)
 for t in tents:
-	check('Textura_GetInfo', lambda t=t: (SDTest.Call('Textura_GetInfo', 'iii', t, tinfo)[0], tpeek(tinfo, 5)))
-check('Textura_GetInfo NULL', lambda: SDTest.Call('Textura_GetInfo', 'iii', 0, tinfo)[0])
-check('Textura_GetInfo no info', lambda: SDTest.Call('Textura_GetInfo', 'iii', t0, 0)[0])
+	check('Texture_GetInfo', lambda t=t: (SDTest.Call('Texture_GetInfo', 'iii', t, tinfo)[0], tpeek(tinfo, 5)))
+check('Texture_GetInfo NULL', lambda: SDTest.Call('Texture_GetInfo', 'iii', 0, tinfo)[0])
+check('Texture_GetInfo no info', lambda: SDTest.Call('Texture_GetInfo', 'iii', t0, 0)[0])
 
 # fake device textures
 tvt = tz(64)
@@ -154,27 +154,27 @@ def ttex():
 	return r
 for i in range(4):
 	tpoke(tents[i] + 0x228, tfakes[i])
-check('Textura_GetD3DByName', lambda: tfwho(SDTest.Call('Textura_GetD3DByName', 'izz', 'sdtex_a.bmp', 'other.bmp')[0]))
-check('Textura_GetD3DByName none', lambda: SDTest.Call('Textura_GetD3DByName', 'izz', 'sdx.bmp', None)[0])
-check('Textura_GetD3D', lambda: tfwho(SDTest.Call('Textura_GetD3D', 'iii', t2, 0)[0]))
-check('Textura_GetD3D NULL', lambda: SDTest.Call('Textura_GetD3D', 'iii', 0, 0)[0])
-check('Textura_Load', lambda: tfwho(SDTest.Call('Textura_Load', 'iii', t1, 0)[0]))
-check('Textura_ReleaseD3D', lambda: (SDTest.Call('Textura_ReleaseD3D', 'izz', 'sdtex_a.bmp', None)[0], ttex()))
-check('Textura_ReleaseD3D none', lambda: (SDTest.Call('Textura_ReleaseD3D', 'izz', 'sdtex_a.bmp', 'x.bmp')[0], ttex()))
-check('Textura_ReleaseAllD3D', lambda: (SDTest.Call('Textura_ReleaseAllD3D', 'i')[0], ttex()))
-# no texture, no file: CTextura_CreateD3D refuses the NULL device
-check('Textura_GetD3D create', lambda: (SDTest.Call('Textura_GetD3D', 'iii', t0, 0)[0], tget(t0)))
+check('Texture_GetD3DByName', lambda: tfwho(SDTest.Call('Texture_GetD3DByName', 'izz', 'sdtex_a.bmp', 'other.bmp')[0]))
+check('Texture_GetD3DByName none', lambda: SDTest.Call('Texture_GetD3DByName', 'izz', 'sdx.bmp', None)[0])
+check('Texture_GetD3D', lambda: tfwho(SDTest.Call('Texture_GetD3D', 'iii', t2, 0)[0]))
+check('Texture_GetD3D NULL', lambda: SDTest.Call('Texture_GetD3D', 'iii', 0, 0)[0])
+check('Texture_Load', lambda: tfwho(SDTest.Call('Texture_Load', 'iii', t1, 0)[0]))
+check('Texture_ReleaseD3D', lambda: (SDTest.Call('Texture_ReleaseD3D', 'izz', 'sdtex_a.bmp', None)[0], ttex()))
+check('Texture_ReleaseD3D none', lambda: (SDTest.Call('Texture_ReleaseD3D', 'izz', 'sdtex_a.bmp', 'x.bmp')[0], ttex()))
+check('Texture_ReleaseAllD3D', lambda: (SDTest.Call('Texture_ReleaseAllD3D', 'i')[0], ttex()))
+# no texture, no file: CTexture_CreateD3D refuses the NULL device
+check('Texture_GetD3D create', lambda: (SDTest.Call('Texture_GetD3D', 'iii', t0, 0)[0], tget(t0)))
 tpoke(t3 + 0x228, tfakes[3])
-check('Textura_Recreate', lambda: (SDTest.Call('Textura_Recreate', 'izzi', 'sdtex_a.bmp', 'other.bmp', 0)[0], ttex()))
-check('Textura_Recreate none', lambda: SDTest.Call('Textura_Recreate', 'izzi', 'sdnone.bmp', None, 0)[0])
+check('Texture_Recreate', lambda: (SDTest.Call('Texture_Recreate', 'izzi', 'sdtex_a.bmp', 'other.bmp', 0)[0], ttex()))
+check('Texture_Recreate none', lambda: SDTest.Call('Texture_Recreate', 'izzi', 'sdnone.bmp', None, 0)[0])
 tpoke(t0 + 0x228, tfakes[0])
-check('Textura_RecreateAll', lambda: (SDTest.Call('Textura_RecreateAll', 'ii', 0)[0], ttex()))
-check('CTextura_CreateD3D', lambda: (SDTest.Call('CTextura_CreateD3D', 'tiii', t1, 0)[0], tget(t1)))
+check('Texture_RecreateAll', lambda: (SDTest.Call('Texture_RecreateAll', 'ii', 0)[0], ttex()))
+check('CTexture_CreateD3D', lambda: (SDTest.Call('CTexture_CreateD3D', 'tiii', t1, 0)[0], tget(t1)))
 # with failed set a device is never used (with LoadTextures 1 or 2 the call ends there, else at the device check)
-check('CTextura_CreateD3D failed', lambda: (tpoke(t1 + 0x240, 0x100), SDTest.Call('CTextura_CreateD3D', 'tiii', t1, tfakes[5])[0], tget(t1)))
+check('CTexture_CreateD3D failed', lambda: (tpoke(t1 + 0x240, 0x100), SDTest.Call('CTexture_CreateD3D', 'tiii', t1, tfakes[5])[0], tget(t1)))
 tpoke(t1 + 0x240, 0)
 
-# raw file entries (PngData of new[], fake textures) for the purge of Textura_Load
+# raw file entries (PngData of new[], fake textures) for the purge of Texture_Load
 frame = SDTest.Peek('g_FrameCount', 'i')
 for i in range(4):
 	t = tents[i]
@@ -192,25 +192,25 @@ def tstats():
 	for t in tents:
 		frames.append(SDTest.Peek(t + 0x238, '@i') - frame)
 	return r, frames, ttex()
-check('Textura_Recreate raw', lambda: SDTest.Call('Textura_Recreate', 'izzi', 'sdtex_b.tga', '', 0)[0])
+check('Texture_Recreate raw', lambda: SDTest.Call('Texture_Recreate', 'izzi', 'sdtex_b.tga', '', 0)[0])
 for limit in (20, 4, 3, 1, 0):
 	SDTest.Poke('g_CachedTex', limit)
-	check('Textura_FindPurge' + fmt((limit,)), lambda: (twho(SDTest.Call('Textura_FindPurge', 'i')[0]), tstats()))
+	check('Texture_FindPurge' + fmt((limit,)), lambda: (twho(SDTest.Call('Texture_FindPurge', 'i')[0]), tstats()))
 SDTest.Poke('g_CachedTex', 1)
 SDTest.Poke('g_TexPurgeFrame', frame - 1)
-check('Textura_Load purge', lambda: (tfwho(SDTest.Call('Textura_Load', 'iii', t0, 0)[0]), tstats()))
-check('Textura_Load again', lambda: (tfwho(SDTest.Call('Textura_Load', 'iii', t0, 0)[0]), tstats()))
+check('Texture_Load purge', lambda: (tfwho(SDTest.Call('Texture_Load', 'iii', t0, 0)[0]), tstats()))
+check('Texture_Load again', lambda: (tfwho(SDTest.Call('Texture_Load', 'iii', t0, 0)[0]), tstats()))
 SDTest.Poke('g_TexPurgeFrame', frame - 1)
-check('Textura_Load lost', lambda: (tfwho(SDTest.Call('Textura_Load', 'iii', t1, 0)[0]), tstats()))
-check('Textura_GetD3D raw', lambda: (tfwho(SDTest.Call('Textura_GetD3D', 'iii', t1, 0)[0]), tstats()))
-check('Textura_ReleaseAllD3D raw', lambda: (SDTest.Call('Textura_ReleaseAllD3D', 'i')[0], ttex()))
+check('Texture_Load lost', lambda: (tfwho(SDTest.Call('Texture_Load', 'iii', t1, 0)[0]), tstats()))
+check('Texture_GetD3D raw', lambda: (tfwho(SDTest.Call('Texture_GetD3D', 'iii', t1, 0)[0]), tstats()))
+check('Texture_ReleaseAllD3D raw', lambda: (SDTest.Call('Texture_ReleaseAllD3D', 'i')[0], ttex()))
 SDTest.Poke('g_CachedTex', tsaved[5])
 
 # the sprite table: only a table already built (CMultiSprite_Build reads files)
-check('Textura_GetMultiSprite NULL', lambda: SDTest.Call('Textura_GetMultiSprite', 'iiz', 0, 'x')[0])
-check('Textura_GetMultiSprite no name', lambda: SDTest.Call('Textura_GetMultiSprite', 'iiz', t2, None)[0])
+check('Texture_GetMultiSprite NULL', lambda: SDTest.Call('Texture_GetMultiSprite', 'iiz', 0, 'x')[0])
+check('Texture_GetMultiSprite no name', lambda: SDTest.Call('Texture_GetMultiSprite', 'iiz', t2, None)[0])
 tpoke(t2 + 0x250, 1)
-check('Textura_GetMultiSprite built', lambda: SDTest.Call('Textura_GetMultiSprite', 'iiz', t2, 'sdx')[0] - t2)
+check('Texture_GetMultiSprite built', lambda: SDTest.Call('Texture_GetMultiSprite', 'iiz', t2, 'sdx')[0] - t2)
 tpoke(t2 + 0x250, 0)
 
 # the DDS export: only the paths that end before writing anything (the entry is in a directory that does not exist,
@@ -220,12 +220,12 @@ cset(tdb, texpix(16))
 tdds = tnewe('sdnodir/sdx.bmp', None, 0, 0)
 for fl in (0, 0x100, 0x140, 0x180, 0x1100):
 	tpoke(tdds + 0x220, fl)
-	check('CTextura_SaveDDS' + fmt((twho(tdds), 0, 0)), lambda tdds=tdds, tdb=tdb: SDTest.Call('CTextura_SaveDDS', 'tiiiii', tdds, tdb, 0, 0)[0])
-	check('CTextura_SaveDDS keep' + fmt((twho(tdds), 1, 1)), lambda tdds=tdds, tdb=tdb: SDTest.Call('CTextura_SaveDDS', 'tiiiii', tdds, tdb, 1, 1)[0])
+	check('CTexture_SaveDDS' + fmt((twho(tdds), 0, 0)), lambda tdds=tdds, tdb=tdb: SDTest.Call('CTexture_SaveDDS', 'tiiiii', tdds, tdb, 0, 0)[0])
+	check('CTexture_SaveDDS keep' + fmt((twho(tdds), 1, 1)), lambda tdds=tdds, tdb=tdb: SDTest.Call('CTexture_SaveDDS', 'tiiiii', tdds, tdb, 1, 1)[0])
 tpoke(tdds + 0x23d, 1)
-check('CTextura_SaveDDS bump' + fmt((twho(tdds), 0, 0)), lambda tdds=tdds, tdb=tdb: SDTest.Call('CTextura_SaveDDS', 'tiiiii', tdds, tdb, 0, 0)[0])
+check('CTexture_SaveDDS bump' + fmt((twho(tdds), 0, 0)), lambda tdds=tdds, tdb=tdb: SDTest.Call('CTexture_SaveDDS', 'tiiiii', tdds, tdb, 0, 0)[0])
 
-# Textura_Add and the file kinds of CTextura_LoadFile (without load nothing is read); BMP files written by CBmp_Save
+# Texture_Add and the file kinds of CTexture_LoadFile (without load nothing is read); BMP files written by CBmp_Save
 tsrc = bnew(4, 2, sym('CBmp_Create'))
 cset(tsrc, texpix(8))
 tfiles = ('sdtexv.bmp', 'sdtexv.dudv.bmp', 'sdtexo.bmp', 'sdtexv.alpha.tga', 'sdtexv.bump.tga', 'sdtexv.cube.bmp',
@@ -234,35 +234,35 @@ for n in tfiles[:6]:
 	SDTest.Call('CBmp_Save', 'tiisi', tsrc, n, 1)
 for n in tfiles[6:]:
 	writefile(n, 'x')
-call('Textura_Add NULL', sym('Textura_Add'), 'izzii', None, None, 0, 0)
-call('Textura_Add known', sym('Textura_Add'), 'izzii', 'sdtex_a.bmp', None, 0, 0)
-call('Textura_Add missing', sym('Textura_Add'), 'izzii', 'sdnotex.bmp', None, 0, 0)
+call('Texture_Add NULL', sym('Texture_Add'), 'izzii', None, None, 0, 0)
+call('Texture_Add known', sym('Texture_Add'), 'izzii', 'sdtex_a.bmp', None, 0, 0)
+call('Texture_Add missing', sym('Texture_Add'), 'izzii', 'sdnotex.bmp', None, 0, 0)
 check('Textura list', tlist)
 for n, o, fl in (('sdtexv.bmp', None, 0), ('sdtexv.alpha.tga', '', 0x20), ('sdtexv.bump.tga', None, 0),
 		('sdtexv.cube.bmp', None, 0x40), ('sdtexv.tex', 'sdtexo.bmp', 0), ('sdtexv.dds', 'sdtexo.bmp', 0x100),
 		('sdtexv.ddx', None, 0), ('sdtexv.ddv', None, 0), ('sdtexnodot', None, 0), ('sdtexv.dudv.bmp', None, 0)):
-	call('Textura_Add', sym('Textura_Add'), 'izzii', n, o, 3, fl)
-	check('Textura_Add entry', lambda n=n, o=o: tget(SDTest.Call('Textura_Lookup', 'izz', n, o)[0]))
+	call('Texture_Add', sym('Texture_Add'), 'izzii', n, o, 3, fl)
+	check('Texture_Add entry', lambda n=n, o=o: tget(SDTest.Call('Texture_Lookup', 'izz', n, o)[0]))
 check('Textura list', tlist)
 
 # loading with pixels into entries of the test list
 for n, o in (('sdtexv.bmp', None), ('sdtexv.bmp', 'sdtexo.bmp'), ('sdtexv.bmp', 'sdnoopac.bmp'), ('sdtexv.dudv.bmp', None),
 		('sdnotex.bmp', None)):
 	t = tnewe(n, o, 0, 0)
-	check('CTextura_LoadFile' + fmt((n, o)), lambda t=t: (SDTest.Call('CTextura_LoadFile', 'tiii', t, 1)[0], tget(t)))
+	check('CTexture_LoadFile' + fmt((n, o)), lambda t=t: (SDTest.Call('CTexture_LoadFile', 'tiii', t, 1)[0], tget(t)))
 	bm = SDTest.Peek(t + 0x22c, '@i')
 	if bm:
-		check('CTextura_LoadFile pixels', lambda bm=bm: bget(bm, 1))
+		check('CTexture_LoadFile pixels', lambda bm=bm: bget(bm, 1))
 
 # deleting: one by entry, one by name, then the rest
 for t in tents:
 	tpoke(t + 0x228, 0)
 	tpoke(t + 0x0, 0)
-check('Textura_Delete', lambda: (SDTest.Call('Textura_Delete', 'vi', t2), tlist()))
-check('Textura_Delete NULL', lambda: (SDTest.Call('Textura_Delete', 'vi', 0), tlist()))
-check('Textura_Remove', lambda: (SDTest.Call('Textura_Remove', 'izz', 'sdtex_a.bmp', 'sdopac.bmp')[0], tlist()))
-check('Textura_Remove none', lambda: (SDTest.Call('Textura_Remove', 'izz', 'sdtex_a.bmp', 'sdopac.bmp')[0], tlist()))
-check('Textura_DeleteAll', lambda: (SDTest.Call('Textura_DeleteAll', 'i')[0], tlist()))
+check('Texture_Delete', lambda: (SDTest.Call('Texture_Delete', 'vi', t2), tlist()))
+check('Texture_Delete NULL', lambda: (SDTest.Call('Texture_Delete', 'vi', 0), tlist()))
+check('Texture_Remove', lambda: (SDTest.Call('Texture_Remove', 'izz', 'sdtex_a.bmp', 'sdopac.bmp')[0], tlist()))
+check('Texture_Remove none', lambda: (SDTest.Call('Texture_Remove', 'izz', 'sdtex_a.bmp', 'sdopac.bmp')[0], tlist()))
+check('Texture_DeleteAll', lambda: (SDTest.Call('Texture_DeleteAll', 'i')[0], tlist()))
 SDTest.Poke('g_TexList', thead)
 for i in range(len(tglob)):
 	SDTest.Poke(tglob[i], tsaved[i])

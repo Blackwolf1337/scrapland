@@ -1,63 +1,63 @@
 /*
- * Engine/mundo.cpp of the engine3d: CMundo, the world (gMundo). It holds the floor model of the level (its scene with
- * the sectors, the lights and the CSuelo object), the sky model drawn behind it, the camera, the fog (CNiebla of
- * niebla.cpp, the base of CMundo) and the world dummies: the DM_* nodes of the floor scene, taken out of it into a
+ * Engine/mundo.cpp of the engine3d: CWorld, the world (gMundo). It holds the floor model of the level (its scene with
+ * the sectors, the lights and the CGround object), the sky model drawn behind it, the camera, the fog (CFog of
+ * niebla.cpp, the base of CWorld) and the world dummies: the DM_* nodes of the floor scene, taken out of it into a
  * list and kept in a .dum file next to the scene (read from it when the scene comes from the .sm3), and the
  * additional ones of MoreDummies.ini. Also here: the debug points of the engine, lines, boxes and points drawn every
  * frame until they are cleared.
  */
-#ifndef SCRAP_MUNDO_H
-#define SCRAP_MUNDO_H
+#ifndef SCRAP_E3DWORLD_H
+#define SCRAP_E3DWORLD_H
 
 #include "scrap/camara.h"
 #include "scrap/modelo.h"
 #include "scrap/niebla.h"
 #include "scrap/suelo.h"
 
-typedef struct MundoDummy {
-	struct MundoDummy *next;	/* 0x00 */
+typedef struct WorldDummy {
+	struct WorldDummy *next;	/* 0x00 */
 	char *name;			/* 0x04 Cad, DM_* */
 	vec3_t pos;			/* 0x08 */
 	vec3_t rot;			/* 0x14 radians */
-	CArchINI *ini;			/* 0x20 the user properties of the node, owned */
-} MundoDummy;
-SD_SIZE(MundoDummy, 0x24);
+	CIniFile *ini;			/* 0x20 the user properties of the node, owned */
+} WorldDummy;
+SD_SIZE(WorldDummy, 0x24);
 
-typedef struct CMundo {
-	CNiebla niebla;			/* 0x00 */
-	float cieloPos;			/* 0x24 how much the sky follows the camera (times SkyPosScale), 1 */
-	float cieloRot;			/* 0x28 radians, added to SkyRotation */
-	CCamara camara;			/* 0x2c the camera of the world without another one */
-	CCamara *cam;			/* 0xa4 */
-	CModelo *Suelo;			/* 0xa8 the floor model */
-	CEscena *EscSuelo;		/* 0xac its scene */
-	CSuelo *ObjSuelo;		/* 0xb0 the floor object of the scene */
-	CModelo *Cielo;			/* 0xb4 the sky model */
-	CEscena *EscCielo;		/* 0xb8 its scene */
-	CModelo *tubo;			/* 0xbc drawn after the sky with the far plane SkyTubeTest */
+typedef struct CWorld {
+	CFog fog;			/* 0x00 */
+	float skyPos;			/* 0x24 how much the sky follows the camera (times SkyPosScale), 1 */
+	float skyRot;			/* 0x28 radians, added to SkyRotation */
+	CCamera camera;			/* 0x2c the camera of the world without another one */
+	CCamera *cam;			/* 0xa4 */
+	CModel *Ground;			/* 0xa8 the floor model */
+	CScene *GroundScale;		/* 0xac its scene */
+	CGround *ObjGround;		/* 0xb0 the floor object of the scene */
+	CModel *Sky;			/* 0xb4 the sky model */
+	CScene *SkyScale;		/* 0xb8 its scene */
+	CModel *tube;			/* 0xbc drawn after the sky with the far plane SkyTubeTest */
 	byte ini_D3D;			/* 0xc0 */
 	byte pad_c1[3];
-	MundoDummy *dummies;		/* 0xc4 */
-} CMundo;
-SD_OFFSET(CMundo, camara, 0x2c);
-SD_OFFSET(CMundo, dummies, 0xc4);
-SD_SIZE(CMundo, 0xc8);
+	WorldDummy *dummies;		/* 0xc4 */
+} CWorld;
+SD_OFFSET(CWorld, camera, 0x2c);
+SD_OFFSET(CWorld, dummies, 0xc4);
+SD_SIZE(CWorld, 0xc8);
 
-#define g_Mundo GAME_GLOBAL(CMundo *, g_Mundo, 0x4afde8)
+#define g_World GAME_GLOBAL(CWorld *, g_World, 0x4afde8)
 
-/* the inline accessors of mundo.h */
-static inline CMundo *Mundo_Get(void) {
-	if (!g_Mundo) {
+/* the inline accessors of world.h */
+static inline CWorld *World_Get(void) {
+	if (!g_World) {
 		CheckFailed("gMundo", "Engine/Mundo.h", __TIMESTAMP__, __LINE__);
 	}
-	return g_Mundo;
+	return g_World;
 }
 
-static inline CSuelo *Mundo_Suelo(void) {
-	if (!g_Mundo || !g_Mundo->ObjSuelo) {
+static inline CGround *World_Ground(void) {
+	if (!g_World || !g_World->ObjGround) {
 		CheckFailed("gMundo && gMundo->obtSuelo()", "Engine/Mundo.h", __TIMESTAMP__, __LINE__);
 	}
-	return g_Mundo->ObjSuelo;
+	return g_World->ObjGround;
 }
 
 /* the engine variables of the world (Gvars) */
@@ -71,76 +71,76 @@ static inline CSuelo *Mundo_Suelo(void) {
 #define g_ShowWorldDummies GAME_GLOBAL_IN(const char *, GVar_ShowWorldDummies, 16, 0x4afea4)	/* a pattern of the names */
 #define g_SkyInit GAME_GLOBAL_IN(int, GVar_SkyInit, 16, 0x4afebc)
 /* [mapa_sombras] of the ini: the shadow maps of bsp.cpp */
-#define g_MapaSombrasUsar GAME_GLOBAL(int, g_MapaSombrasUsar, 0x4b2af8)
-#define g_MapaSombrasCalcular GAME_GLOBAL(int, g_MapaSombrasCalcular, 0x4b2afc)
-#define g_MapaSombrasDlg GAME_GLOBAL(int, g_MapaSombrasDlg, 0x43294c)
+#define g_ShadowMapUse GAME_GLOBAL(int, g_ShadowMapUse, 0x4b2af8)
+#define g_ShadowMapCalculate GAME_GLOBAL(int, g_ShadowMapCalculate, 0x4b2afc)
+#define g_ShadowMapDlg GAME_GLOBAL(int, g_ShadowMapDlg, 0x43294c)
 
-CMundo *__fastcall CMundo_ctor(CMundo *self);
-void __fastcall CMundo_dtor(CMundo *self);
-void __fastcall CMundo_ReleaseD3D(CMundo *self);
-void __fastcall CMundo_InitD3D(CMundo *self);
+CWorld *__fastcall CWorld_ctor(CWorld *self);
+void __fastcall CWorld_dtor(CWorld *self);
+void __fastcall CWorld_ReleaseD3D(CWorld *self);
+void __fastcall CWorld_InitD3D(CWorld *self);
 /* the sky, the floor, the shadow maps and the world dummies of ShowWorldDummies */
-void __fastcall CMundo_Render(CMundo *self);
-void __fastcall CMundo_DrawDummies(CMundo *self);
+void __fastcall CWorld_Render(CWorld *self);
+void __fastcall CWorld_DrawDummies(CWorld *self);
 /* appended; a name that is in the list already is warned about */
-void __thiscall CMundo_AddDummy(CMundo *self, MundoDummy *d);
+void __thiscall CWorld_AddDummy(CWorld *self, WorldDummy *d);
 /* the sections of the ini next to the floor scene (Pos, Rot in degrees) as dummies; 1 */
-byte __thiscall CMundo_LoadMoreDummies(CMundo *self, const char *ini);
+byte __thiscall CWorld_LoadMoreDummies(CWorld *self, const char *ini);
 /* Pos and Rot of the dummies into the ini next to the floor scene, saved if one changed; whether one did */
-byte __thiscall CMundo_SaveMoreDummies(CMundo *self, const char *ini);
+byte __thiscall CWorld_SaveMoreDummies(CWorld *self, const char *ini);
 /* 100 follows the camera, 0 does not */
-void __thiscall CMundo_SetCieloPos(CMundo *self, float pct);
-void __thiscall CMundo_SetCieloRot(CMundo *self, float deg);
-void __thiscall CMundo_SetLucesCielo(CMundo *self, byte activa);
+void __thiscall CWorld_SetSkyPos(CWorld *self, float pct);
+void __thiscall CWorld_SetSkyRot(CWorld *self, float deg);
+void __thiscall CWorld_SetSkyLights(CWorld *self, byte active);
 /* the lights of the floor scene but the ones of the nodes with 0x6000000 */
-void __thiscall CMundo_SetLucesSuelo(CMundo *self, byte activa);
+void __thiscall CWorld_SetGroundLights(CWorld *self, byte active);
 /* zNear and zFar of the cameras of the floor scene and of the own camera, 0 keeps one */
-void __thiscall CMundo_SetClip(CMundo *self, float zNear, float zFar);
+void __thiscall CWorld_SetClip(CWorld *self, float zNear, float zFar);
 /* NULL: the own camera, put back to its start */
-void __thiscall CMundo_SetCamara(CMundo *self, CCamara *cam);
-void __thiscall CMundo_LoadCielo(CMundo *self, const char *name);
-void __thiscall CMundo_LoadCieloEscala(CMundo *self, const char *name, const vec3_t *escala);
-void __thiscall CMundo_LoadSuelo(CMundo *self, const char *name);
-void __thiscall CMundo_LoadSueloEscala(CMundo *self, const char *name, const vec3_t *escala);
+void __thiscall CWorld_SetCamera(CWorld *self, CCamera *cam);
+void __thiscall CWorld_LoadSky(CWorld *self, const char *name);
+void __thiscall CWorld_LoadSkyScale(CWorld *self, const char *name, const vec3_t *scale);
+void __thiscall CWorld_LoadGround(CWorld *self, const char *name);
+void __thiscall CWorld_LoadGroundScale(CWorld *self, const char *name, const vec3_t *scale);
 /* the first camera of the floor scene, its vectors updated with update */
-CCamara *__thiscall CMundo_GetCamaraSuelo(CMundo *self, byte update);
-CNodo3D *__thiscall CMundo_FindClase(CMundo *self, CNodo3D *from, uint32_t clase);
-CNodo3D *__thiscall CMundo_FindNodo(CMundo *self, const char *name);
-CNodo3D *__thiscall CMundo_FindNodoWild(CMundo *self, const char *pat);
+CCamera *__thiscall CWorld_GetCameraGround(CWorld *self, byte update);
+CNode3D *__thiscall CWorld_FindClass(CWorld *self, CNode3D *from, uint32_t class);
+CNode3D *__thiscall CWorld_FindNode(CWorld *self, const char *name);
+CNode3D *__thiscall CWorld_FindNodeWild(CWorld *self, const char *pat);
 
 /* a DM_ node: its name, position, rotation and user properties (taken from the node) */
-MundoDummy *__thiscall MundoDummy_ctorNodo(MundoDummy *self, CNodo3D *nodo);
-MundoDummy *__thiscall MundoDummy_ctor(MundoDummy *self, const char *name, const vec3_t *pos, const vec3_t *rot);
-MundoDummy *__fastcall MundoDummy_ctorEmpty(MundoDummy *self);
-void __fastcall MundoDummy_dtor(MundoDummy *self);
-void __fastcall MundoDummy_Clear(MundoDummy *self);
-int __fastcall MundoDummy_Count(const MundoDummy *list);
-void MundoDummy_FreeList(MundoDummy **list);
+WorldDummy *__thiscall WorldDummy_ctorNode(WorldDummy *self, CNode3D *node);
+WorldDummy *__thiscall WorldDummy_ctor(WorldDummy *self, const char *name, const vec3_t *pos, const vec3_t *rot);
+WorldDummy *__fastcall WorldDummy_ctorEmpty(WorldDummy *self);
+void __fastcall WorldDummy_dtor(WorldDummy *self);
+void __fastcall WorldDummy_Clear(WorldDummy *self);
+int __fastcall WorldDummy_Count(const WorldDummy *list);
+void WorldDummy_FreeList(WorldDummy **list);
 /* the dummy named name from self on (from the next one without self) */
-MundoDummy *__thiscall MundoDummy_Find(MundoDummy *self, const char *name, byte self_too, byte case_sens);
+WorldDummy *__thiscall WorldDummy_Find(WorldDummy *self, const char *name, byte self_too, byte case_sens);
 /* the .dum file of the scene path; 0, -1 when there is none */
-int Mundo_LoadDUM(const char *path, MundoDummy **list);
-int Mundo_SaveDUM(const char *path, const MundoDummy *list);
+int World_LoadDUM(const char *path, WorldDummy **list);
+int World_SaveDUM(const char *path, const WorldDummy *list);
 
 /* the debug points: a line from a to b in two colors */
-int Debug_PuntoLinea(const vec3_t *a, const vec3_t *b, uint32_t ca, uint32_t cb);
-/* tipo >= 0: a point of that size; -1..0: the start of a line to the next point; < -1: a box to the next point */
-int Debug_Punto(const vec3_t *pos, uint32_t color, float tipo);
-void Debug_PuntosClear(void);
-int Debug_PuntosDraw(void);
+int Debug_PointLine(const vec3_t *a, const vec3_t *b, uint32_t ca, uint32_t cb);
+/* type >= 0: a point of that size; -1..0: the start of a line to the next point; < -1: a box to the next point */
+int Debug_Point(const vec3_t *pos, uint32_t color, float type);
+void Debug_PointsClear(void);
+int Debug_PointsDraw(void);
 
 /* other modules (src/imports.inc) */
 /* bsp.cpp, the shadow maps (rva 0x290520, 0x286c80, 0x286cb0, 0x291000, 0x296cd0) */
 void Bsp_Free(void);
 void Bsp_ReleaseD3D(void);
 void Bsp_InitD3D(void);
-void Bsp_Crear(void);
+void Bsp_Create(void);
 void Bsp_Render(void);
 /* bsp_q3.cpp (rva 0x2c9d50, 0x2c98a0, 0x2c98b0, 0x2c9d80, 0x2c9d90) */
 void BspQ3_Free(void);
 void BspQ3_ReleaseD3D(void);
 void BspQ3_InitD3D(void);
-void BspQ3_Crear(void);
+void BspQ3_Create(void);
 void BspQ3_Render(void);
 
 #endif

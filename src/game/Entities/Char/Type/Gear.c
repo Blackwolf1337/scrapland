@@ -367,7 +367,7 @@ void ChType_GearShootLoad(cAbstractFile *params) {
 		return;
 	}
 	CGameParticles *p = &fx->shoot;
-	CHECK(p->SistPart);
+	CHECK(p->ParticleSystem);
 	for (int i = 0; i < 32; i++) {
 		float dt = FX_Rand(0.0010000001639127731, 0.008999999612569809) * (float)i;
 		double r = Gear_Rnd();

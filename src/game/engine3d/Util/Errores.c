@@ -18,10 +18,10 @@
 
 /* color 0xRRGGBB, the GDI wants 0xBBGGRR */
 static void Dbg_Rect(int x, int y, int w, int h, uint32_t color, rectbrush_t draw) {
-	if (!g_Motor) {
+	if (!g_Engine) {
 		return;
 	}
-	void *dc = exe_GetDC(MOTOR_HWND(g_Motor));
+	void *dc = exe_GetDC(ENGINE_HWND(g_Engine));
 	if (!dc) {
 		return;
 	}
@@ -31,7 +31,7 @@ static void Dbg_Rect(int x, int y, int w, int h, uint32_t color, rectbrush_t dra
 		draw(dc, &r, brush);
 		exe_DeleteObject(brush);
 	}
-	exe_ReleaseDC(MOTOR_HWND(g_Motor), dc);
+	exe_ReleaseDC(ENGINE_HWND(g_Engine), dc);
 }
 
 void Dbg_FrameRect(int x, int y, int w, int h, uint32_t color) {
@@ -43,10 +43,10 @@ void Dbg_FillRect(int x, int y, int w, int h, uint32_t color) {
 }
 
 void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width) {
-	if (!g_Motor) {
+	if (!g_Engine) {
 		return;
 	}
-	void *dc = exe_GetDC(MOTOR_HWND(g_Motor));
+	void *dc = exe_GetDC(ENGINE_HWND(g_Engine));
 	if (!dc) {
 		return;
 	}
@@ -58,7 +58,7 @@ void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width) {
 		exe_SelectObject(dc, old);
 		exe_DeleteObject(pen);
 	}
-	exe_ReleaseDC(MOTOR_HWND(g_Motor), dc);
+	exe_ReleaseDC(ENGINE_HWND(g_Engine), dc);
 }
 
 const char *Err_Unregister(int code) {

@@ -1337,9 +1337,9 @@ void __thiscall cWalkCharEntity_SetModel(cEntity *self, const char *file, float 
 	w->yModelDisp = 0.0f;
 	cObjEntity_SetModel(self, file, sx, sy, sz, flag);
 	CGameModel *m = &w->obj.model;
-	CGameModel_NodoPos(m, &root, CGameModel_FindNodoR(m, "DC_Root"), 0);
-	CGameModel_NodoPos(m, &floor, CGameModel_FindNodoR(m, "DC_Floor"), 0);
-	w->camNode = CGameModel_FindNodoR(m, "DC_Camera");
+	CGameModel_NodePos(m, &root, CGameModel_FindRenderNode(m, "DC_Root"), 0);
+	CGameModel_NodePos(m, &floor, CGameModel_FindRenderNode(m, "DC_Floor"), 0);
+	w->camNode = CGameModel_FindRenderNode(m, "DC_Camera");
 	w->floorDist = root.y - floor.y;
 	WChar_Vtbl(self)->SetYModelDisp(self, w->yModelDisp);
 }
@@ -1500,7 +1500,7 @@ void __thiscall cWalkCharEntity_Update(cEntity *self) {
 	}
 	if (WCE_Action0(w)->headNode) {
 		CGameModel *model = Obj_Vtbl(self)->GetModel(self);
-		const matrix_t *mat = CGameModel_NodoMatrix(model, &m, w->camNode, 1, NULL, 0);
+		const matrix_t *mat = CGameModel_NodeMatrix(model, &m, w->camNode, 1, NULL, 0);
 		w->headPitch = Matrix_GetRotAng(mat, &t)->y + M_PI_F;
 	} else {
 		w->headPitch = Obj_Vtbl(self)->GetRenderAng(self, &t)->y;

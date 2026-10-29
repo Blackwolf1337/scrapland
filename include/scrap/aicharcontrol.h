@@ -735,8 +735,8 @@ SD_SIZE(cAIControlShoot, CAICONTROLSHOOT_SIZE);
 #define g_AngleStrafeUnderAttackGearAIDef GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackGearAI, 20, 0x444624)
 #define g_TimeStrafeUnderAttackSentinelAI GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackSentinelAI, 16, 0x444668)
 #define g_AngleStrafeUnderAttackSentinelAI GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackSentinelAI, 16, 0x444680)
-#define g_VelRotDinamicMessengerAI GAME_GLOBAL_IN(float, GVar_VelRotDinamicMessengerAI, 16, 0x444650)
-#define g_LimVelRotDinamicMessengerAI GAME_GLOBAL_IN(float, GVar_LimVelRotDinamicMessengerAI, 16, 0x444638)
+#define g_VelRotDynamicMessengerAI GAME_GLOBAL_IN(float, GVar_VelRotDynamicMessengerAI, 16, 0x444650)
+#define g_LimVelRotDynamicMessengerAI GAME_GLOBAL_IN(float, GVar_LimVelRotDynamicMessengerAI, 16, 0x444638)
 
 cAICharControl *__thiscall cAIControlBankDirector_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
 void __fastcall cAIControlBankDirector_dtor(cAICharControl *self);
@@ -801,9 +801,9 @@ static inline void cAIChar_NewControl(cAIChar *self, uint32_t size, cAICharContr
 		AICC_Vtbl(self->control)->Delete(self->control, 1);
 	}
 	void *mem = operator_new(size);
-	cAICharControl *ControlMov = mem ? ctor(mem, e, self, arg) : NULL;
-	self->control = ControlMov;
-	CHECK(ControlMov);
+	cAICharControl *ControlMove = mem ? ctor(mem, e, self, arg) : NULL;
+	self->control = ControlMove;
+	CHECK(ControlMove);
 }
 
 #endif

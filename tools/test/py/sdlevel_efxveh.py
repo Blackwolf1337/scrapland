@@ -22,7 +22,7 @@ def eset(a, v):
 def epoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 def estr(a, s):
-	SDTest.Call('Cad_Copy', 'iisi', a, s, len(s) + 1)
+	SDTest.Call('String_Copy', 'iisi', a, s, len(s) + 1)
 def ebytes(a, offs):
 	return map(lambda o, a=a: SDTest.Peek(a + o, '@b'), offs)
 def esetbyte(a, v):
@@ -75,7 +75,7 @@ ecpol = ecar('Models/Vehicles/Ships/SPoli1/SPoli1.M3D', 'SPoli1')
 ecprobe = ecar('Models/Vehicles/OutTraffic/TProbe.M3D', 'TProbe')
 ecvote = ecar('Models/Vehicles/OutTraffic/TVoteMayor.M3D', 'TVoteMayor')
 for c in (ecpol, ecprobe, ecvote):
-	check('fake car model', lambda c=c: (SDTest.Call('CGameModel_IsLoaded', 'tbi', c + 0xb8)[0], SDTest.Call('CGameModel_FindNodoR', 'tiis',
+	check('fake car model', lambda c=c: (SDTest.Call('CGameModel_IsLoaded', 'tbi', c + 0xb8)[0], SDTest.Call('CGameModel_FindRenderNode', 'tiis',
 		c + 0xb8, 'DC_Root')[0] != -1))
 
 # the effect: constructor, flags, init (vehicle and traffic model), done

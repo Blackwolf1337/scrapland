@@ -96,8 +96,8 @@ void __fastcall cLittlePoliceLocalLogic_UpdateBribe(cLittlePoliceLocalLogic *sel
 		Str_PrintfQuiet(buf, sizeof(buf), "GiveWhy:%s", Lang_GetStr("Generics_PoliceBribeGiveWhyOpt"));
 		cArrowIndicator_AddOpt(arrow, buf);
 		memcpy(buf, "GiveYes:", 9);
-		int quanto = g_PoliceStealQuanto;
-		Str_PrintfQuiet(buf + 8, sizeof(buf) - 8, Lang_GetStr("Generics_PoliceBribeGiveYesOpt"), quanto);
+		int amount = g_PoliceStealAmount;
+		Str_PrintfQuiet(buf + 8, sizeof(buf) - 8, Lang_GetStr("Generics_PoliceBribeGiveYesOpt"), amount);
 		cArrowIndicator_AddOpt(arrow, buf);
 		Str_PrintfQuiet(buf, sizeof(buf), "GiveNo:%s", Lang_GetStr("Generics_PoliceBribeGiveNoOpt"));
 	} else {

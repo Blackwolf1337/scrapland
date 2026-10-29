@@ -574,10 +574,10 @@ static void Func_GoToWork(cFunctionaryLocalLogic *self, cAIChar *ai) {
 	if (self->working) {
 		cEntity *d = cFunctionaryLocalLogic_GetDesktop(self);
 		if (d) {
-			int i = CGameModel_FindNodoR(Obj_Vtbl(d)->GetModel(d), "DC_Sit");
+			int i = CGameModel_FindRenderNode(Obj_Vtbl(d)->GetModel(d), "DC_Sit");
 			CHECK(i != -1);
 			d = cFunctionaryLocalLogic_GetDesktop(self);
-			const matrix_t *mm = CGameModel_NodoMatrix(Obj_Vtbl(d)->GetModel(d), &m, i, 0, NULL, 0);
+			const matrix_t *mm = CGameModel_NodeMatrix(Obj_Vtbl(d)->GetModel(d), &m, i, 0, NULL, 0);
 			pos.x = mm->m[12];
 			pos.y = mm->m[13];
 			pos.z = mm->m[14];

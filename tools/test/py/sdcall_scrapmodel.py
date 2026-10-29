@@ -3,7 +3,7 @@
 # .cm3 caches, the getters, the anim channels and the render nodes. The models stay loaded (Reset only drops the
 # reference). Not called: the collision functions (they need the floor of a world), RenderNow (the render lists),
 # the vertex functions (R_GetModelVertex is off in the test setup, they return the position), SetAnimName
-# (CModelo_SetAnimName is a CHECK(0)).
+# (CModel_SetAnimName is a CHECK(0)).
 def gmz(n):
 	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def gmi(a):
@@ -100,33 +100,33 @@ for k in range(len(gms)):
 
 # render nodes
 	for nm in ('Bip01', 'Bip01 Head', 'Pivot', 'none', '*Bip*', 'Bip01*', '*'):
-		check('CGameModel_FindNodoR' + fmt((nm,)), lambda gm=gm, nm=nm: (SDTest.Call('CGameModel_FindNodoR', 'tiis', gm, nm)[0],
-			SDTest.Call('CGameModel_FindNodoRWild', 'tiis', gm, nm)[0]))
+		check('CGameModel_FindRenderNode' + fmt((nm,)), lambda gm=gm, nm=nm: (SDTest.Call('CGameModel_FindRenderNode', 'tiis', gm, nm)[0],
+			SDTest.Call('CGameModel_FindRenderNodeWild', 'tiis', gm, nm)[0]))
 	for i in (0, 1, 5):
-		# the reference is dropped again (CNodoR.Refs 0), a reload CHECKs it
-		gmr = SDTest.Call('CGameModel_NodoRRef', 'tiii', gm, i)[0]
-		check('CGameModel_NodoRRef' + fmt((i,)), lambda gmr=gmr: (gmi(gmr), SDTest.Peek(gmi(gmr + 0xa4) + 4, '@p')))
+		# the reference is dropped again (CRenderNode.Refs 0), a reload CHECKs it
+		gmr = SDTest.Call('CGameModel_RenderNodeRef', 'tiii', gm, i)[0]
+		check('CGameModel_RenderNodeRef' + fmt((i,)), lambda gmr=gmr: (gmi(gmr), SDTest.Peek(gmi(gmr + 0xa4) + 4, '@p')))
 		SDTest.Poke(gmr - 0x400000, gmi(gmr) - 1)
 		# animated 1 is a CHECK
-		check('CGameModel_NodoPos' + fmt((i,)), lambda gm=gm, i=i: (SDTest.Call('CGameModel_NodoPos', 'tiiiii', gm, gmvec, i,
+		check('CGameModel_NodePos' + fmt((i,)), lambda gm=gm, i=i: (SDTest.Call('CGameModel_NodePos', 'tiiiii', gm, gmvec, i,
 			0)[0] == gmvec, gmv(gmvec)))
 		for an in (0, 1):
-			check('CGameModel_NodoMatrix' + fmt((i, an)), lambda gm=gm, i=i, an=an: (SDTest.Call('CGameModel_NodoMatrix',
+			check('CGameModel_NodeMatrix' + fmt((i, an)), lambda gm=gm, i=i, an=an: (SDTest.Call('CGameModel_NodeMatrix',
 				'tiiiiiii', gm, gmbuf, i, an, gmvec, 0)[0] == gmbuf, SDTest.Call('crt_memcpy', 'iFii', (0.0,) * 16,
 				gmbuf, 64)[1], gmi(gmvec) & 0xff))
-		# mode 0 is a CHECK in CNodoR_SetLook
+		# mode 0 is a CHECK in CRenderNode_SetLook
 		for mode in (1, 2, 3, 4, 5, 6):
 			gmset(gmvec, (0.5, -0.25, 1.0))
-			check('CGameModel_NodoLook' + fmt((i, mode)), lambda gm=gm, i=i, mode=mode: SDTest.Call('CGameModel_NodoLook',
+			check('CGameModel_NodeLook' + fmt((i, mode)), lambda gm=gm, i=i, mode=mode: SDTest.Call('CGameModel_NodeLook',
 				'tbiiii', gm, i, mode, gmvec)[0])
-		# CNodoR.nodo 0xa4, CNodo3D.ini 0xf8: a node without an ini is a NULL read
+		# CRenderNode.nodo 0xa4, CNode3D.ini 0xf8: a node without an ini is a NULL read
 		gmini = gmi(gmi(gmr + 0xa4) + 0xf8)
-		check('CGameModel_NodoIni' + fmt((i, gmini != 0)), lambda gm=gm, i=i, gmini=gmini: gmini and (
-			SDTest.Call('CGameModel_NodoIniFloat', 'tfiissf', gm, i, 'General', 'Scale', 2.5)[0],
-			SDTest.Call('CGameModel_NodoIniInt', 'tiiissi', gm, i, 'General', 'Num', -3)[0],
-			SDTest.Call('CGameModel_NodoIniColor', 'tiiissi', gm, i, 'General', 'Color', 0x11223344)[0]) or None)
+		check('CGameModel_NodeIni' + fmt((i, gmini != 0)), lambda gm=gm, i=i, gmini=gmini: gmini and (
+			SDTest.Call('CGameModel_NodeIniFloat', 'tfiissf', gm, i, 'General', 'Scale', 2.5)[0],
+			SDTest.Call('CGameModel_NodeIniInt', 'tiiissi', gm, i, 'General', 'Num', -3)[0],
+			SDTest.Call('CGameModel_NodeIniColor', 'tiiissi', gm, i, 'General', 'Color', 0x11223344)[0]) or None)
 	for nm in ('Bip01', 'none'):
-		check('CGameModel_SetPivotNodo' + fmt((nm,)), lambda gm=gm, nm=nm: (SDTest.Call('CGameModel_SetPivotNodo', 'tvis', gm, nm),
+		check('CGameModel_SetPivotNode' + fmt((nm,)), lambda gm=gm, nm=nm: (SDTest.Call('CGameModel_SetPivotNode', 'tvis', gm, nm),
 			SDTest.Call('CGameModel_GetPos', 'tiii', gm, gmvec)[0] == gmvec, gmv(gmvec)))
 	for rel in (0, 1):
 		gmset(gmvec + 0x20, (0.0, 1.0, -2.0))

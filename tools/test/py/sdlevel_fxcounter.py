@@ -170,20 +170,20 @@ check('cFXElementsMentalController_Delete', lambda mc=mc: SDTest.Call('cFXElemen
 # the orbit buoys: a buoy made like the loader does (element, vtable, particles), the controller by its constructor
 boya = fxz(0xf0)
 SDTest.Call('cMapElement_ctor', 'tiisii', boya, 'OrbitBoya0', fxbuf, fxrot)
-fxpoke(boya, 0x400000 + sym('cFXElementsOrbitBoya_vftable'))
+fxpoke(boya, 0x400000 + sym('cFXElementsOrbitBuoy_vftable'))
 SDTest.Call('CGameParticles_ctor', 'tii', boya + 0x40)
-check('cFXElementsOrbitBoya_Init', lambda boya=boya: (SDTest.Call('cFXElementsOrbitBoya_Init', 'tbi', boya)[0], fxi(boya + 0x2c),
+check('cFXElementsOrbitBuoy_Init', lambda boya=boya: (SDTest.Call('cFXElementsOrbitBuoy_Init', 'tbi', boya)[0], fxi(boya + 0x2c),
 	fxints(boya + 0x30, 3), fxi(boya + 0xec) != 0))
-check('cFXElementsOrbitBoya_Update', lambda boya=boya: SDTest.Call('cFXElementsOrbitBoya_Update', 'tvif', boya, 0.0))
+check('cFXElementsOrbitBuoy_Update', lambda boya=boya: SDTest.Call('cFXElementsOrbitBuoy_Update', 'tvif', boya, 0.0))
 oc = fxz(0x1ac)
-SDTest.Call('cFXElementsOrbitBoyaController_ctor', 'tiisii', oc, 'OrbitBoyaController', fxbuf, fxrot)
-check('cFXElementsOrbitBoyaController_Init', lambda oc=oc: SDTest.Call('cFXElementsOrbitBoyaController_Init', 'tbi', oc)[0])
+SDTest.Call('cFXElementsOrbitBuoyController_ctor', 'tiisii', oc, 'OrbitBoyaController', fxbuf, fxrot)
+check('cFXElementsOrbitBuoyController_Init', lambda oc=oc: SDTest.Call('cFXElementsOrbitBuoyController_Init', 'tbi', oc)[0])
 for t, c, n, b in ((0, 0, 0, boya), (1, 3, 7, boya), (1, 1, 2, 0), (0, 2, 5, boya)):
-	check('cFXElementsOrbitBoyaController_SetBoya' + fmt((t, c, n, b != 0)), lambda oc=oc, t=t, c=c, n=n, b=b:
-		(SDTest.Call('cFXElementsOrbitBoyaController_SetBoya', 'tviiiii', oc, t, c, n, b), fxi(oc + 0x2c + 4 * (c * 8 + n)) == b,
+	check('cFXElementsOrbitBuoyController_SetBuoy' + fmt((t, c, n, b != 0)), lambda oc=oc, t=t, c=c, n=n, b=b:
+		(SDTest.Call('cFXElementsOrbitBuoyController_SetBuoy', 'tviiiii', oc, t, c, n, b), fxi(oc + 0x2c + 4 * (c * 8 + n)) == b,
 		fxi(oc + 0xac + 4 * (c * 8 + n))))
 for dt in (0.0, 0.1, 0.7, 1.3):
-	check('cFXElementsOrbitBoyaController_Update' + fmt((dt,)), lambda oc=oc, dt=dt: (SDTest.Call('cFXElementsOrbitBoyaController_Update', 'tvif', oc,
+	check('cFXElementsOrbitBuoyController_Update' + fmt((dt,)), lambda oc=oc, dt=dt: (SDTest.Call('cFXElementsOrbitBuoyController_Update', 'tvif', oc,
 		dt), fxints(oc + 0x12c, 32)))
 elhead = fxi(fxworld + 0x1bb4)
 check('FXElementsOrbit_Create', lambda elhead=elhead: (SDTest.Call('FXElementsOrbit_Create', 'v'), fxi(fxworld + 0x1bb4) == elhead))

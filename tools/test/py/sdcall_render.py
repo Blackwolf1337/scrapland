@@ -98,9 +98,9 @@ for i in (2, 3):
 	rdpokef(mp + 0x10, (0.25, -0.5, 1.5, 0.75, 0.0, 0.0, 0.3, 2.0))
 	SDTest.Poke(mp + 0x54 - 0x400000, 0x100)
 rdtime = SDTest.Peek('g_TimeMs', 'i')
-rdhw = SDTest.Peek('g_UsarHWEnvMap', 'i')
+rdhw = SDTest.Peek('g_UseHWEnvMap', 'i')
 rdview = SDTest.Peek('g_EnvMapViewDep', 'i')
-SDTest.Poke('g_UsarHWEnvMap', 1)
+SDTest.Poke('g_UseHWEnvMap', 1)
 def rdtimed(t, fn):
 	SDTest.Poke('g_TimeMs', t)
 	return rdlog(fn)
@@ -118,7 +118,7 @@ for t in (0, 12345, 987654321):
 		check('Mat_StageBumpMat' + fmt((t, flags)), lambda t=t, flags=flags: rdtimed(t, lambda flags=flags:
 			SDTest.Call('Mat_StageBumpMat', 'viiifff', rmat, flags, 0, 2.0, 0.5, 0.75)))
 SDTest.Poke('g_EnvMapViewDep', rdview)
-SDTest.Poke('g_UsarHWEnvMap', rdhw)
+SDTest.Poke('g_UseHWEnvMap', rdhw)
 SDTest.Poke('g_TimeMs', rdtime)
 check('Mat_StageScroll still', lambda: rdlog(lambda: SDTest.Call('Mat_StageScroll', 'viiiif', rmat, 0, 5, 0, 1.0)))
 SDTest.Call('crt_srand', 'vi', 77)
@@ -132,14 +132,14 @@ for transp, atrib in ((0, 0), (1, 0), (1, 0x1000)):
 	SDTest.Poke(rmat + 0x38 - 0x400000, transp << 16)
 	SDTest.Poke(rmat + 0x3c - 0x400000, atrib)
 	for forced in (0, rmat):
-		SDTest.Poke('g_MatForzado', forced)
+		SDTest.Poke('g_MatForced', forced)
 		check('Render_PSConstAlpha' + fmt((transp, atrib, forced != 0)), lambda: rdlog(lambda: SDTest.Call('Render_PSConstAlpha', 'vii',
 			rmat, 2)))
 		for mod in (0, 1):
 			SDTest.Poke('g_DiffuseMod4x', mod)
 			check('Render_D3DMaterial' + fmt((transp, forced != 0, mod)), lambda: rdlog(lambda: SDTest.Call('Render_D3DMaterial', 'viF',
 				rmat, cols)))
-SDTest.Poke('g_MatForzado', 0)
+SDTest.Poke('g_MatForced', 0)
 SDTest.Poke('g_DiffuseMod4x', rdmod)
 check('Render_Get', lambda: (SDTest.Call('Render_GetProj', 'i')[0], SDTest.Call('Render_GetView', 'i')[0], SDTest.Call('Render_GetBillboard', 'i')[0],
 	SDTest.Call('Render_GetEyePos', 'i')[0]))
@@ -171,14 +171,14 @@ def rdinistate():
 	r = []
 	for i in range(16):
 		r.append(SDTest.Peek(sym('g_MatBias') + 4 * i, 'i'))
-	for a in (sym('g_MipmapsOn'), sym('g_TexRepeat'), sym('g_TexNoPow2'), sym('g_TexPow2'), sym('g_UsarShaders2'), sym('g_UsarShaders'), sym('g_D3DOn')):
+	for a in (sym('g_MipmapsOn'), sym('g_TexRepeat'), sym('g_TexNoPow2'), sym('g_TexPow2'), sym('g_UseShaders2'), sym('g_UseShaders'), sym('g_D3DOn')):
 		r.append(SDTest.Peek(a, 'b'))
 	for a in (sym('g_PSOn'), sym('g_EnvBump'), sym('g_EnvMap'), sym('g_FogEnable')):
 		r.append(SDTest.Peek(a, 'i'))
 	for i in range(30):
 		r.append(SDTest.Peek(sym('g_PSHandles') + 4 * i, 'i') != 0)
-	for a in (sym('g_MatBlanco'), sym('g_MatAjedrez'), sym('g_MatGris'), sym('g_MatInvis'), sym('g_MatBump'),
-			sym('g_MatSuelo')):
+	for a in (sym('g_MatWhite'), sym('g_MatCheckerboard'), sym('g_MatGray'), sym('g_MatInvis'), sym('g_MatBump'),
+			sym('g_MatGround')):
 		m = SDTest.Peek(a, 'i')
 		r.append(m and (SDTest.Peek(m + 4, '@p'), SDTest.Peek(m + 0x39, '@b'), SDTest.Peek(m + 0x40, '@i')))
 	return r
@@ -189,7 +189,7 @@ for i, v in ((0, -5), (1, 300), (2, 50), (3, 700)):
 for r, c1, c2 in ((rect, 0xff0000, 0xff), (rect2, 0x808080, 0x10203040)):
 	check('Render_DrawTexRect' + fmt((r != 0, c1, c2)), lambda r=r, c1=c1, c2=c2: rdlog(lambda r=r, c1=c1, c2=c2:
 		SDTest.Call('Render_DrawTexRect', 'viiii', r, c1, c2, 0)))
-check('Render_ClearForced', lambda: (SDTest.Call('Render_ClearForced', 'v'), SDTest.Peek('g_MatForzado', 'i'), SDTest.Peek('g_MatActual', 'i')))
+check('Render_ClearForced', lambda: (SDTest.Call('Render_ClearForced', 'v'), SDTest.Peek('g_MatForced', 'i'), SDTest.Peek('g_MatCurrent', 'i')))
 # a frame begun and its view ended again (the viewport is 0 between frames)
 check('Render_BeginFrame', lambda: (rdlog(lambda: SDTest.Call('Render_BeginFrame', 'v')), SDTest.Peek('g_ViewportW', 'i') != 0,
 	SDTest.Peek('g_PShaderCount', 'i')))
@@ -199,14 +199,14 @@ check('Render_EndView', lambda: (rdlog(lambda: SDTest.Call('Render_EndView', 'v'
 # a forced material and the default material and texture modes (the last material forgotten before each)
 check('Render_ResetState', lambda: rdlog(lambda: SDTest.Call('Render_ResetState', 'v')))
 rdsm = []
-for a in ('g_UsarShaders', 'g_UseDefMaterial', 'g_UseDefTexture', 'g_MatForzado', 'g_MatFX1', 'g_AlphaFog'):
+for a in ('g_UseShaders', 'g_UseDefMaterial', 'g_UseDefTexture', 'g_MatForced', 'g_MatFX1', 'g_AlphaFog'):
 	rdsm.append((a, SDTest.PeekSpan(a, 0, 4)))
 def rdset(pass_):
 	SDTest.Call('Render_SetMaterial', 'iii', 0, -1)
 	return rdlog(lambda pass_=pass_: SDTest.Call('Render_SetMaterial', 'iii', rmat, pass_))
 rdsaved38 = (rdi(rmat + 0x30), rdi(rmat + 0x34), rdi(rmat + 0x38), rdi(rmat + 0x3c), rdi(rmat + 0x40))
 # without the pixel shader modes (the mode of this material fails a CHECK with a texture)
-SDTest.PokeSpan('g_UsarShaders', 0, SDTest.PeekSpan('g_UsarShaders', 0, 4) & ~0xff, 4)
+SDTest.PokeSpan('g_UseShaders', 0, SDTest.PeekSpan('g_UseShaders', 0, 4) & ~0xff, 4)
 for src, dst in ((5, 6), (2, 2), (2, 1)):
 	for b38 in (0, 0x0100, 0x010000, 0x01000000, 0x01010100):
 		for atrib in (0, 0x20, 0x400, 0x800, 0x40, 0x1000020):
@@ -219,9 +219,9 @@ for src, dst in ((5, 6), (2, 2), (2, 1)):
 for fog in (0, 1, 2):
 	SDTest.Poke('g_AlphaFog', fog)
 	check('Render_SetMaterial fog' + fmt((fog,)), lambda: (rdset(0), rdset(1)))
-SDTest.Poke('g_MatForzado', rmat)
+SDTest.Poke('g_MatForced', rmat)
 check('Render_SetMaterial forced', lambda: rdset(0))
-SDTest.Poke('g_MatForzado', 0)
+SDTest.Poke('g_MatForced', 0)
 for usedef in (1, 2):
 	SDTest.Poke('g_UseDefMaterial', usedef)
 	check('Render_SetMaterial default material' + fmt((usedef,)), lambda: rdset(0))
@@ -230,17 +230,17 @@ for tex in (1, 2, 3, 4):
 	SDTest.Poke('g_UseDefTexture', tex)
 	check('Render_SetMaterial default texture' + fmt((tex,)), lambda: rdset(0))
 check('Render_SetMaterial same', lambda: (rdset(0), rdlog(lambda: SDTest.Call('Render_SetMaterial', 'iii', rmat, 0))))
-check('Render_SetMaterial none', lambda: (SDTest.Call('Render_SetMaterial', 'iii', 0, -1), SDTest.Peek('g_MatActual', 'i')))
+check('Render_SetMaterial none', lambda: (SDTest.Call('Render_SetMaterial', 'iii', 0, -1), SDTest.Peek('g_MatCurrent', 'i')))
 for a, v in rdsm:
 	SDTest.PokeSpan(a, 0, v, 4)
 # the pixel shader modes with a material without textures (the shader of its mode is switched as it changes)
 rmat2 = SDTest.Call('CMaterial_ctor', 'tii', SDTest.Call('operator_new', 'ii', 0xb0)[0])[0]
-SDTest.PokeSpan('g_UsarShaders', 0, SDTest.PeekSpan('g_UsarShaders', 0, 4) | 1, 4)
+SDTest.PokeSpan('g_UseShaders', 0, SDTest.PeekSpan('g_UseShaders', 0, 4) | 1, 4)
 for transp in (0, 1):
 	SDTest.Poke(rmat2 + 0x38 - 0x400000, transp << 16)
 	check('Render_SetMaterial shaders' + fmt((transp,)), lambda: (rdlog(lambda: SDTest.Call('Render_SetMaterial', 'iii', 0, -1)),
 		rdlog(lambda: SDTest.Call('Render_SetMaterial', 'iii', rmat2, 0)), rdlog(lambda: SDTest.Call('Render_SetMaterial', 'iii', rmat2, 0)),
-		SDTest.Peek('g_ShaderActual', 'i')))
+		SDTest.Peek('g_ShaderCurrent', 'i')))
 for a, v in rdsm:
 	SDTest.PokeSpan(a, 0, v, 4)
 for i in range(5):
@@ -288,11 +288,11 @@ for b8, bc, lm in ((0, 0, 0), (1, 3, 0), (1, 1, 1), (0, 2, 0), (1, 0, 2)):
 	SDTest.Poke(mp + 8 - 0x400000, (rdmp[0] & ~0xff00ff) | b8 | lm << 8)
 	SDTest.Poke(mp + 0xc - 0x400000, (rdmp[1] & ~0xff) | bc)
 	for stage in (0, 3):
-		check('Render_SetMapa' + fmt((b8, bc, lm, stage)), lambda stage=stage: rdlog(lambda stage=stage:
-			SDTest.Call('Render_SetMapa', 'iii', stage, mp)))
+		check('Render_SetMap' + fmt((b8, bc, lm, stage)), lambda stage=stage: rdlog(lambda stage=stage:
+			SDTest.Call('Render_SetMap', 'iii', stage, mp)))
 SDTest.Poke(mp + 8 - 0x400000, rdmp[0])
 SDTest.Poke(mp + 0xc - 0x400000, rdmp[1])
-check('Render_SetMapa none', lambda: (rdlog(lambda: SDTest.Call('Render_SetMapa', 'iii', 1, 0)), rdlog(lambda: SDTest.Call('Render_SetMapa',
+check('Render_SetMap none', lambda: (rdlog(lambda: SDTest.Call('Render_SetMap', 'iii', 1, 0)), rdlog(lambda: SDTest.Call('Render_SetMap',
 	'iii', 1, 0))))
 check('Render_DrawVBIBFmt', lambda: rdlog(lambda: SDTest.Call('Render_DrawVBIBFmt', 'iiiiiiii', rdi(vb), rdi(ib), 2, 50, 10, 3, 4)))
 lv = SDTest.Call('operator_new', 'ii', 0x14)[0]
@@ -313,7 +313,7 @@ for ntri, strip, base, start, lim in ((20, 0, 2, 5, -1), (20, 0, 0, 0, 7), (0, 1
 	SDTest.Poke(md + 0xb0 - 0x400000, (strip == 0) * rdi(ib))
 	rdlim = SDTest.Peek('g_VBIBTriLimit', 'i')
 	SDTest.Poke('g_VBIBTriLimit', lim)
-	check('Render_DrawMallaD3D' + fmt((ntri, strip, base, start, lim)), lambda: rdlog(lambda: SDTest.Call('Render_DrawMallaD3D', 'ii', md)))
+	check('Render_DrawMeshD3D' + fmt((ntri, strip, base, start, lim)), lambda: rdlog(lambda: SDTest.Call('Render_DrawMeshD3D', 'ii', md)))
 	SDTest.Poke('g_VBIBTriLimit', rdlim)
 vm = (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 5.0, -3.0, 2.0, 1.0)
 check('Render_SetView', lambda: (rdlog(lambda: SDTest.Call('Render_SetView', 'iF', vm)), rdints(sym('g_MatBillboard'), 16), rdints(sym('g_EyePos'), 3)))
@@ -377,8 +377,8 @@ for dyn in (0, 1):
 	SDTest.Poke(lv + 4 - 0x400000, 6)
 	check('Render_CreateVB' + fmt((dyn,)), lambda dyn=dyn: (rdlog(lambda dyn=dyn: SDTest.Call('Render_CreateVB', 'iiii', cell, lv, dyn)),
 		rdi(cell) != 0))
-cam = SDTest.Call('CCamara_ctor', 'tii', SDTest.Call('operator_new', 'ii', 0x78)[0])[0]
-check('Render_SetCamara', lambda: (rdlog(lambda: SDTest.Call('Render_SetCamara', 'vi', cam)), rdints(sym('g_MatProj'), 16), rdints(sym('g_MatView'), 16),
+cam = SDTest.Call('CCamera_ctor', 'tii', SDTest.Call('operator_new', 'ii', 0x78)[0])[0]
+check('Render_SetCamera', lambda: (rdlog(lambda: SDTest.Call('Render_SetCamera', 'vi', cam)), rdints(sym('g_MatProj'), 16), rdints(sym('g_MatView'), 16),
 	rdints(sym('g_Frustum'), 24)))
 for i in range(24):
 	SDTest.Poke(sym('g_Frustum') + 4 * i, rdplanes[i])
@@ -405,7 +405,7 @@ for v, p in ((idm, pm), (vm, pm), ((0.8, 0.0, -0.6, 0.0, 0.0, 1.0, 0.0, 0.0, 0.6
 for i in range(24):
 	SDTest.Poke(sym('g_Frustum') + 4 * i, rdplanes[i])
 
-# Render_MallaD3D with the mesh of the buffer draws and the material without textures, no render node
+# Render_MeshD3D with the mesh of the buffer draws and the material without textures, no render node
 SDTest.Poke(md + 0xc - 0x400000, 20)
 SDTest.Poke(md + 0x18 - 0x400000, 33)
 SDTest.Poke(md + 0x9c - 0x400000, 0)
@@ -413,17 +413,17 @@ SDTest.Poke(md + 0xa0 - 0x400000, 0)
 SDTest.Poke(md + 0xa4 - 0x400000, 0)
 SDTest.Poke(md + 0xb0 - 0x400000, rdi(ib))
 SDTest.Poke(md + 0x4c - 0x400000, rmat2)
-rdvb = SDTest.Peek('g_UsarVB', 'i')
-rdhw = SDTest.Peek('g_UsarHWEnvMap', 'i')
-SDTest.Poke('g_UsarHWEnvMap', 1)
+rdvb = SDTest.Peek('g_UseVB', 'i')
+rdhw = SDTest.Peek('g_UseHWEnvMap', 'i')
+SDTest.Poke('g_UseHWEnvMap', 1)
 rdtris = SDTest.Peek('g_RenderTris', 'i')
 for b3b in (0, 0x01000000):
 	SDTest.Poke(rmat2 + 0x38 - 0x400000, b3b)
-	check('Render_MallaD3D' + fmt((b3b != 0,)), lambda: (SDTest.Call('Render_SetMaterial', 'iii', 0, -1), rdlog(lambda: SDTest.Call('Render_MallaD3D',
+	check('Render_MeshD3D' + fmt((b3b != 0,)), lambda: (SDTest.Call('Render_SetMaterial', 'iii', 0, -1), rdlog(lambda: SDTest.Call('Render_MeshD3D',
 		'iii', md, 0)), SDTest.Peek('g_RenderTris', 'i') - rdtris))
 	rdtris = SDTest.Peek('g_RenderTris', 'i')
 SDTest.Poke(rmat2 + 0x38 - 0x400000, 0)
-SDTest.Poke('g_UsarHWEnvMap', rdhw)
+SDTest.Poke('g_UseHWEnvMap', rdhw)
 
 # the render functions of the shader modes of both tables through the D3D log: with and without the pixel shaders,
 # both R_EnvBlend and DiffuseMod4x, a material with all maps, one with maps 0 and 4 for Scroll (it must have no reflection),
@@ -435,7 +435,7 @@ rmat3 = SDTest.Call('CMaterial_ctor', 'tii', SDTest.Call('operator_new', 'ii', 0
 for i in (0, 4):
 	SDTest.Call('CMaterial_SetMap', 'tviis', rmat3, i, 'bmp/partic1.bmp')
 SDTest.Poke(rmat + 0x38 - 0x400000, 1 << 16)
-SDTest.Poke('g_LightmapMat', SDTest.Peek('g_MatGris', 'i'))
+SDTest.Poke('g_LightmapMat', SDTest.Peek('g_MatGray', 'i'))
 SDTest.Poke('g_TimeMs', 54321)
 def rdshader(fn, mat, flags):
 	SDTest.Call('crt_srand', 'vi', 77)

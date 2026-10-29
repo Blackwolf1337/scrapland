@@ -19,50 +19,50 @@
 
 #define PORTAL_ASPECT 1.33f			/* the screen height of a sphere */
 #define PORTAL_EPS 8.0e-6f			/* the step out of a portal, times the distance to the origin */
-#define MAX_ZONAS 0x80
+#define MAX_ZONES 0x80
 
 /* the sector counts by their name tags (the sky ones are g_PortalUnion) */
-#define g_NumEndSectors GAME_GLOBAL_IN(int, g_Zonas, 520, 0x4b00e0)
-#define g_NumOutSectors GAME_GLOBAL_IN(int, g_Zonas, 524, 0x4b00e4)
+#define g_NumEndSectors GAME_GLOBAL_IN(int, g_Zones, 520, 0x4b00e0)
+#define g_NumOutSectors GAME_GLOBAL_IN(int, g_Zones, 524, 0x4b00e4)
 /* the projection and the viewport narrowed to the rectangle of each seen sector */
 #define g_PortalClip GAME_GLOBAL_IN(int, GVar_R_PortalClip, 16, 0x4b00f8)
 #define g_PortalBand GAME_GLOBAL_IN(int, GVar_R_PortalBand, 16, 0x4b11a8)	/* pixels added around it */
 
 
-CZona *__fastcall CZona_ctor(CZona *self) {
+CZone *__fastcall CZone_ctor(CZone *self) {
 	self->rect = (box_t){ { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
 	self->id = -1;
-	self->bloq = 0;
+	self->locked = 0;
 	self->Frame3D = 0;
-	self->nodo = NULL;
-	self->numNodos = 0;
-	self->numPortales = 0;
+	self->node = NULL;
+	self->numNodes = 0;
+	self->numPortals = 0;
 	self->exterior = 0;
 	self->b139 = 0;
 	self->b13a = 0;
-	self->nodos[0] = NULL;
-	self->nodos[1] = NULL;
-	memset(self->portales, 0, sizeof(self->portales));
-	memset(self->zonas, 0, sizeof(self->zonas));
+	self->nodes[0] = NULL;
+	self->nodes[1] = NULL;
+	memset(self->portals, 0, sizeof(self->portals));
+	memset(self->zones, 0, sizeof(self->zones));
 	return self;
 }
 
-void __fastcall CZona_dtor(CZona *self) {
-	if (self->nodo) {
-		ObjRef_Release(&self->nodo);
+void __fastcall CZone_dtor(CZone *self) {
+	if (self->node) {
+		ObjRef_Release(&self->node);
 	}
-	self->nodo = NULL;
-	for (int i = 0; i < self->numNodos; i++) {
-		if (self->nodos[i]) {
-			ObjRef_Release(&self->nodos[i]);
+	self->node = NULL;
+	for (int i = 0; i < self->numNodes; i++) {
+		if (self->nodes[i]) {
+			ObjRef_Release(&self->nodes[i]);
 		}
-		self->nodos[i] = NULL;
+		self->nodes[i] = NULL;
 	}
-	for (int i = 0; i < self->numPortales; i++) {
-		if (self->portales[i]) {
-			ObjRef_Release(&self->portales[i]);
+	for (int i = 0; i < self->numPortals; i++) {
+		if (self->portals[i]) {
+			ObjRef_Release(&self->portals[i]);
 		}
-		self->portales[i] = NULL;
+		self->portals[i] = NULL;
 	}
 }
 
@@ -128,25 +128,25 @@ byte __thiscall SectorVis_Update(SectorVis *self, const vec3_t *pos, const char 
 }
 
 byte Sector_FindPos(const vec3_t *pos, int *sector, const char *name) {
-	SueloRayo res;
+	GroundRay res;
 
 	(void)name;
-	if (!g_PortalesOn) {
+	if (!g_PortalsOn) {
 		return 1;
 	}
-	CHECK(g_Mundo);
-	void *suelo = g_Mundo->ObjSuelo;
-	CHECK(suelo);
+	CHECK(g_World);
+	void *ground = g_World->ObjGround;
+	CHECK(ground);
 	res.flags = 0x202;
 	res.y = pos->y;
-	if (!CSuelo_RayoVert(suelo, pos->x, pos->z, &res)) {
+	if (!CGround_RayVert(ground, pos->x, pos->z, &res)) {
 		return 1;
 	}
 	int s = res.sector;
 	byte seen = 1;
 	if (s != -1) {
 		vec3_t a = { pos->x, res.hitY, pos->z };
-		s = Sector_Recorrer(s, &a, pos, 0);
+		s = Sector_Traverse(s, &a, pos, 0);
 		seen = Sector_Get((uint32_t)s)->Frame3D == g_FrameCount;
 	}
 	if (sector) {
@@ -159,7 +159,7 @@ const char *Sector_GetName(int sector) {
 	if (sector == -1) {
 		return GAME_STR(str_3dd0a4, 0x3dd0a4);	/* "_unasigned_" */
 	}
-	return Sector_Get((uint32_t)sector)->nodo->name;
+	return Sector_Get((uint32_t)sector)->node->name;
 }
 
 byte Sector_IsExterior(int sector) {
@@ -181,25 +181,25 @@ byte Sector_IsVisible(int sector) {
 	return Sector_Get((uint32_t)sector)->Frame3D == g_FrameCount;
 }
 
-CZona *Zona_FindNodo(CNodo3D *nodo, byte main) {
-	for (int i = 0; i < g_NumZonas; i++) {
-		CZona *z = g_Zonas[i];
+CZone *Zone_FindNode(CNode3D *node, byte main) {
+	for (int i = 0; i < g_NumZones; i++) {
+		CZone *z = g_Zones[i];
 		if (!main) {
-			for (int k = 0; k < z->numNodos; k++) {
-				if (z->nodos[k] == nodo) {
+			for (int k = 0; k < z->numNodes; k++) {
+				if (z->nodes[k] == node) {
 					return z;
 				}
 			}
-		} else if (nodo == z->nodo) {
+		} else if (node == z->node) {
 			return z;
 		}
 	}
 	return NULL;
 }
 
-int Sector_OfNode(CNodo3D *nodo) {
-	for (; nodo; nodo = nodo->padre) {
-		int s = Sector_Find(nodo->name);
+int Sector_OfNode(CNode3D *node) {
+	for (; node; node = node->parent) {
+		int s = Sector_Find(node->name);
 		if (s != -1) {
 			return s;
 		}
@@ -208,40 +208,40 @@ int Sector_OfNode(CNodo3D *nodo) {
 }
 
 int Sector_Find(const char *name) {
-	for (int i = 0; i < g_NumZonas; i++) {
-		if (!strcmp(name, g_Zonas[i]->nodo->name)) {
-			return g_Zonas[i]->id;
+	for (int i = 0; i < g_NumZones; i++) {
+		if (!strcmp(name, g_Zones[i]->node->name)) {
+			return g_Zones[i]->id;
 		}
 	}
 	return -1;
 }
 
-CZona *Sector_Get(uint32_t sector) {
-	CHECK(sector < (uint32_t)g_NumZonas);
-	CHECK(g_Zonas[sector]);
-	return g_Zonas[sector];
+CZone *Sector_Get(uint32_t sector) {
+	CHECK(sector < (uint32_t)g_NumZones);
+	CHECK(g_Zones[sector]);
+	return g_Zones[sector];
 }
 
 int Sector_Num(void) {
-	return g_NumZonas;
+	return g_NumZones;
 }
 
-int Sector_OfZonaNodo(CNodo3D *nodo) {
-	CZona *z = Zona_FindNodo(nodo, 0);
+int Sector_OfZoneNode(CNode3D *node) {
+	CZone *z = Zone_FindNode(node, 0);
 	return z ? z->id : -1;
 }
 
-void Sectores_Free(void) {
-	for (int i = 0; i < g_NumZonas; i++) {
-		CHECK(g_Zonas[i]);
-		CZona *z = g_Zonas[i];
+void Sectors_FreeAll(void) {
+	for (int i = 0; i < g_NumZones; i++) {
+		CHECK(g_Zones[i]);
+		CZone *z = g_Zones[i];
 		if (z) {
-			CZona_dtor(z);
-			operator_delete_sized(z, sizeof(CZona));
-			g_Zonas[i] = NULL;
+			CZone_dtor(z);
+			operator_delete_sized(z, sizeof(CZone));
+			g_Zones[i] = NULL;
 		}
 	}
-	g_NumZonas = 0;
+	g_NumZones = 0;
 }
 
 byte Portal_Project(const vec3_t *p, float *out, float *w) {
@@ -294,13 +294,13 @@ byte __thiscall SectorVis_Sphere(SectorVis *self, const vec3_t *pos, const vec3_
 	}
 	Portal_Project(center, scr, &w);
 	byte seen = 1;
-	box_t r = g_Zonas[self->sector]->rect;
+	box_t r = g_Zones[self->sector]->rect;
 	if (w > radius) {
 		float k = radius / w;
 		float x0 = scr[0] - k, x1 = scr[0] + k;
 		float ky = k * PORTAL_ASPECT;
 		float y1 = ky + scr[1], y0 = scr[1] - ky;
-		box_t esfera = { { x0, y0, 0.0f }, { x1, y1, 1.0f } };
+		box_t sphere = { { x0, y0, 0.0f }, { x1, y1, 1.0f } };
 		r.min.x = r.min.x > x0 ? r.min.x : x0;
 		r.max.x = r.max.x < x1 ? r.max.x : x1;
 		r.max.y = r.max.y < y1 ? r.max.y : y1;
@@ -309,7 +309,7 @@ byte __thiscall SectorVis_Sphere(SectorVis *self, const vec3_t *pos, const vec3_
 			seen = 1;
 		} else {
 			seen = 0;
-			r = esfera;
+			r = sphere;
 		}
 	}
 	if (g_PortalTest > 1) {
@@ -329,26 +329,26 @@ byte __thiscall SectorVis_Sphere(SectorVis *self, const vec3_t *pos, const vec3_
 	return seen;
 }
 
-int Sector_Recorrer(int sector, const vec3_t *a, const vec3_t *b, byte front) {
-	CHECK((uint32_t)sector < (uint32_t)g_NumZonas);
-	CHECK(g_Zonas[sector]);
+int Sector_Traverse(int sector, const vec3_t *a, const vec3_t *b, byte front) {
+	CHECK((uint32_t)sector < (uint32_t)g_NumZones);
+	CHECK(g_Zones[sector]);
 	if (a->x == b->x && a->y == b->y && a->z == b->z) {
 		return sector;
 	}
-	for (int i = 0; i < g_Zonas[sector]->numPortales; i++) {
-		CZona *z = g_Zonas[sector];
-		CPortal *po = Obj3D_Cast(z->portales[i]->obj3D, CLASE_OBJ3D_PORTAL);
+	for (int i = 0; i < g_Zones[sector]->numPortals; i++) {
+		CZone *z = g_Zones[sector];
+		CPortal *po = Obj3D_Cast(z->portals[i]->obj3D, CLASS_OBJ3D_PORTAL);
 		vec3_t h;
 		if (!CPortal_SegCross(po, a, b, &h)) {
 			continue;
 		}
 		if (front) {
-			float sign = po->zonas[0] == g_Zonas[sector]->nodo ? -1.0f : 1.0f;
+			float sign = po->zones[0] == g_Zones[sector]->node ? -1.0f : 1.0f;
 			if (CPortal_PlaneDist(po, a) * sign > 0.0f) {
 				continue;
 			}
 		}
-		CZona *dest = g_Zonas[sector]->zonas[i];
+		CZone *dest = g_Zones[sector]->zones[i];
 		if (!dest) {
 			continue;
 		}
@@ -372,7 +372,7 @@ int Sector_Recorrer(int sector, const vec3_t *a, const vec3_t *b, byte front) {
 			const char *sh = Vec3_Str(&h, 3, 6), *sd = Vec3_Str(&dir, 2, 6), *sb = Vec3_Str(b, 1, 6);
 			const char *sa = Vec3_Str(a, 0, 6);
 			Con_Warnf("WARN: Portal_calc_corte: c=%f v1=%s v2=%s d=%s p=%s n=%s\n", (double)eps, sa, sb, sd, sh,
-				po->nodo->name);
+				po->node->name);
 		}
 		if (n >= 10) {
 			return dest->id;
@@ -382,72 +382,72 @@ int Sector_Recorrer(int sector, const vec3_t *a, const vec3_t *b, byte front) {
 		if ((double)(eps * eps) * 4.0 > (double)dist) {
 			return dest->id;
 		}
-		return Sector_Recorrer(dest->id, &h, b, front);
+		return Sector_Traverse(dest->id, &h, b, front);
 	}
 	return sector;
 }
 
-void Zona_Pintar(uint32_t zona, const box_t *rect) {
-	CHECK(zona < (uint32_t)g_NumZonas);
-	CHECK(g_Zonas[zona]);
-	CHECK(g_Zonas[zona]->bloq == 0);
-	g_Zonas[zona]->bloq = 1;
+void Zone_Paint(uint32_t zone, const box_t *rect) {
+	CHECK(zone < (uint32_t)g_NumZones);
+	CHECK(g_Zones[zone]);
+	CHECK(g_Zones[zone]->locked == 0);
+	g_Zones[zone]->locked = 1;
 	int i;
-	for (i = 0; i < g_NumZonasPintar; i++) {
-		if ((uint32_t)g_ZonasPintar[i].zona == zona) {
+	for (i = 0; i < g_NumPaintZones; i++) {
+		if ((uint32_t)g_PaintZones[i].zone == zone) {
 			break;
 		}
 	}
-	if (i < g_NumZonasPintar) {
-		ZonaPintar *e = &g_ZonasPintar[i];
-		CHECK(g_Zonas[zona]->Frame3D == g_FrameCount);
+	if (i < g_NumPaintZones) {
+		PaintZone *e = &g_PaintZones[i];
+		CHECK(g_Zones[zone]->Frame3D == g_FrameCount);
 		e->rect.min.x = Float_MinSS(e->rect.min.x, rect->min.x);
 		e->rect.min.z = Float_MinSS(e->rect.min.z, rect->min.z);
 		e->rect.min.y = Float_MinSS(e->rect.min.y, rect->min.y);
 		e->rect.max.z = Float_MaxSS(e->rect.max.z, rect->max.z);
 		e->rect.max.x = Float_MaxSS(e->rect.max.x, rect->max.x);
 		e->rect.max.y = Float_MaxSS(e->rect.max.y, rect->max.y);
-		e->veces++;
-		g_Zonas[zona]->rect = e->rect;
+		e->times++;
+		g_Zones[zone]->rect = e->rect;
 	} else {
-		CHECK(g_NumZonasPintar < MAX_ZONAS_PINTAR);
-		CHECK(g_Zonas[zona]->Frame3D != g_FrameCount);
-		g_Zonas[zona]->Frame3D = g_FrameCount;
-		g_Zonas[zona]->rect = *rect;
-		ZonaPintar *e = &g_ZonasPintar[g_NumZonasPintar++];
-		e->zona = (int)zona;
+		CHECK(g_NumPaintZones < MAX_PAINT_ZONES);
+		CHECK(g_Zones[zone]->Frame3D != g_FrameCount);
+		g_Zones[zone]->Frame3D = g_FrameCount;
+		g_Zones[zone]->rect = *rect;
+		PaintZone *e = &g_PaintZones[g_NumPaintZones++];
+		e->zone = (int)zone;
 		e->rect = *rect;
-		e->veces = 1;
+		e->times = 1;
 		if (g_ShowPortals) {
-			CZona *z = g_Zonas[zona];
+			CZone *z = g_Zones[zone];
 			uint32_t color = z->exterior ? 0x80 : 0x800000;
-			for (int k = 0; k < g_Zonas[zona]->numPortales; k++) {
-				CPortal_DrawDebug(Obj3D_Cast(g_Zonas[zona]->portales[k]->obj3D, CLASE_OBJ3D_PORTAL), color);
+			for (int k = 0; k < g_Zones[zone]->numPortals; k++) {
+				CPortal_DrawDebug(Obj3D_Cast(g_Zones[zone]->portals[k]->obj3D, CLASS_OBJ3D_PORTAL), color);
 			}
 		}
 	}
-	for (int k = 0; k < g_Zonas[zona]->numPortales; k++) {
-		CPortal *po = Obj3D_Cast(g_Zonas[zona]->portales[k]->obj3D, CLASE_OBJ3D_PORTAL);
-		CZona *dest = g_Zonas[zona]->zonas[k];
+	for (int k = 0; k < g_Zones[zone]->numPortals; k++) {
+		CPortal *po = Obj3D_Cast(g_Zones[zone]->portals[k]->obj3D, CLASS_OBJ3D_PORTAL);
+		CZone *dest = g_Zones[zone]->zones[k];
 		CHECK(dest);
-		if (g_Zonas[zona]->exterior && !dest->exterior && g_PortalExterior) {
+		if (g_Zones[zone]->exterior && !dest->exterior && g_PortalExterior) {
 			continue;
 		}
-		if (dest->bloq) {
+		if (dest->locked) {
 			continue;
 		}
 		box_t r = { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
-		CHECK(g_Mundo);
-		CCamara *cam = g_Mundo->cam;
-		float cerca = (float)((double)(cam->zNear * (1.0f / 256.0f)) * 128.0 * (double)g_PortalNear);
+		CHECK(g_World);
+		CCamera *cam = g_World->cam;
+		float nearDist = (float)((double)(cam->zNear * (1.0f / 256.0f)) * 128.0 * (double)g_PortalNear);
 		if (g_PortalFront) {
-			float sign = po->zonas[0] == g_Zonas[zona]->nodo ? -1.0f : 1.0f;
-			if (CPortal_PlaneDist(po, Render_GetEyePos()) * sign > cerca) {
+			float sign = po->zones[0] == g_Zones[zone]->node ? -1.0f : 1.0f;
+			if (CPortal_PlaneDist(po, Render_GetEyePos()) * sign > nearDist) {
 				continue;
 			}
 		}
 		float dist = CPortal_Dist(po, Render_GetEyePos());
-		if (cerca > dist) {
+		if (nearDist > dist) {
 			r = *rect;
 		} else {
 			if (!CPortal_ClipRect(po, &r)) {
@@ -461,35 +461,35 @@ void Zona_Pintar(uint32_t zona, const box_t *rect) {
 			r.max.x = Float_MinSS(r.max.x, rect->max.x);
 		}
 		if (!(0.0f >= r.max.x - r.min.x) && !(0.0f >= r.max.y - r.min.y)) {
-			Zona_Pintar((uint32_t)dest->id, &r);
+			Zone_Paint((uint32_t)dest->id, &r);
 			if (g_ShowPortals) {
 				CPortal_DrawDebug(po, 0x8000);
 			}
 		}
 	}
-	g_Zonas[zona]->bloq = 0;
+	g_Zones[zone]->locked = 0;
 }
 
-void Portales_Cull(uint32_t sector) {
-	if (!g_NumZonas) {
+void Portals_Cull(uint32_t sector) {
+	if (!g_NumZones) {
 		return;
 	}
-	CHECK(sector < (uint32_t)g_NumZonas);
+	CHECK(sector < (uint32_t)g_NumZones);
 	box_t all = { { -1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f } };
-	g_NumZonasPintar = 0;
-	Zona_Pintar(sector, &all);
+	g_NumPaintZones = 0;
+	Zone_Paint(sector, &all);
 	if (g_PortalUnion) {
-		g_PintarNum = 0;
-		g_PintarI148 = -1;
-		g_PintarRect = (box_t){ { 1.0f, 1.0f, 1.0f }, { -1.0f, -1.0f, 0.0f } };
+		g_PaintNum = 0;
+		g_PaintI148 = -1;
+		g_PaintRect = (box_t){ { 1.0f, 1.0f, 1.0f }, { -1.0f, -1.0f, 0.0f } };
 		int n = 0;
-		for (int i = 0; i < g_NumZonasPintar; i++) {
-			ZonaPintar *e = &g_ZonasPintar[i];
-			if (!g_Zonas[e->zona]->b139) {
+		for (int i = 0; i < g_NumPaintZones; i++) {
+			PaintZone *e = &g_PaintZones[i];
+			if (!g_Zones[e->zone]->b139) {
 				continue;
 			}
-			box_t *u = &g_PintarRect;
-			g_PintarNum = ++n;
+			box_t *u = &g_PaintRect;
+			g_PaintNum = ++n;
 			u->min.x = Float_MinSS(u->min.x, e->rect.min.x);
 			u->min.y = Float_MinSS(u->min.y, e->rect.min.y);
 			u->min.z = Float_MinSS(u->min.z, e->rect.min.z);
@@ -498,30 +498,30 @@ void Portales_Cull(uint32_t sector) {
 			u->max.x = Float_MaxSS(u->max.x, e->rect.max.x);
 		}
 	}
-	Portales_DebugDraw();
+	Portals_DebugDraw();
 }
 
-ZonaPintar *__fastcall ZonaPintar_ctor(ZonaPintar *self) {
+PaintZone *__fastcall PaintZone_ctor(PaintZone *self) {
 	self->rect = (box_t){ { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
 	return self;
 }
 
-void __fastcall ZonaPintar_dtor(ZonaPintar *self) {
+void __fastcall PaintZone_dtor(PaintZone *self) {
 	(void)self;
 }
 
 /* the static initializer (rva 0x05d6f0, the constructor inlined) and the atexit destructor (rva 0x38ee30) of
- * g_PintarTodas */
-void SueloPortal_FiniPintarTodas(void) {
-	ZonaPintar_dtor(g_PintarTodas);
+ * g_PaintAll */
+void GroundPortal_FiniPaintAll(void) {
+	PaintZone_dtor(g_PaintAll);
 }
 
-void SueloPortal_InitPintarTodas(void) {
-	ZonaPintar_ctor(g_PintarTodas);
-	crt_atexit(SueloPortal_FiniPintarTodas);
+void GroundPortal_InitPaintAll(void) {
+	PaintZone_ctor(g_PaintAll);
+	crt_atexit(GroundPortal_FiniPaintAll);
 }
 
-void Portales_DebugDraw(void) {
+void Portals_DebugDraw(void) {
 	uint32_t vp[6];
 	void *dev;
 
@@ -530,12 +530,12 @@ void Portales_DebugDraw(void) {
 	}
 	dev = g_pd3dDevice;
 	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, vp);
-	Texto_Printf(300, 0x14, GAME_STR(str_3dcf1c, 0x3dcf1c), g_NumZonasPintar);	/* "zonas: %d" */
-	for (int i = 0; i < g_NumZonasPintar; i++) {
-		const ZonaPintar *zp = &g_ZonasPintar[i];
+	Text_Printf(300, 0x14, GAME_STR(str_3dcf1c, 0x3dcf1c), g_NumPaintZones);	/* "zonas: %d" */
+	for (int i = 0; i < g_NumPaintZones; i++) {
+		const PaintZone *zp = &g_PaintZones[i];
 		const box_t *r = &zp->rect;
 		if (g_ShowPortals > 2) {
-			Texto_Printf(300, 0x22 + i * 0xe, GAME_STR(str_3dcf28, 0x3dcf28), i, zp->zona, zp->veces, (double)r->min.x,
+			Text_Printf(300, 0x22 + i * 0xe, GAME_STR(str_3dcf28, 0x3dcf28), i, zp->zone, zp->times, (double)r->min.x,
 				(double)r->min.y, (double)r->min.z, (double)r->max.x, (double)r->max.y, (double)r->max.z);
 		}
 		int x0 = Portal_Pixel(r->min.x + 1.0f, vp[2], vp[0]) + 1;
@@ -552,50 +552,50 @@ void Portales_DebugDraw(void) {
 }
 
 /* the sector of the node, NULL */
-static CZona *Zona_OfNodo(const CNodo3D *nodo) {
-	for (int i = 0; i < g_NumZonas; i++) {
-		if (g_Zonas[i]->nodo == nodo) {
-			return g_Zonas[i];
+static CZone *Zone_OfNode(const CNode3D *node) {
+	for (int i = 0; i < g_NumZones; i++) {
+		if (g_Zones[i]->node == node) {
+			return g_Zones[i];
 		}
 	}
 	return NULL;
 }
 
-static const char *Nodo_NameOrNull(const CNodo3D *n) {
+static const char *Node_NameOrNull(const CNode3D *n) {
 	return n ? n->name : GAME_STR(str_3d5da4, 0x3d5da4);	/* "(null)" */
 }
 
-void Sectores_Crear(CEscena *esc) {
-	CNodo3D *n;
+void Sectors_Create(CScene *scn) {
+	CNode3D *n;
 
-	g_PintarRect = (box_t){ { -1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f } };
-	g_NumZonas = 0;
-	g_NumZonasPintar = 0;
+	g_PaintRect = (box_t){ { -1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f } };
+	g_NumZones = 0;
+	g_NumPaintZones = 0;
 	g_PortalUnion = 0;
 	g_NumEndSectors = 0;
 	g_NumOutSectors = 0;
-	g_PintarNum = 1;
-	g_PintarI148 = -1;
+	g_PaintNum = 1;
+	g_PaintI148 = -1;
 	/* a sector for each node a portal joins */
-	for (n = esc->Nodo3D; n; n = n->sig) {
-		if (CNodo3D_Clase(n) != CLASE_OBJ3D_PORTAL) {
+	for (n = scn->Node3D; n; n = n->next) {
+		if (CNode3D_Class(n) != CLASS_OBJ3D_PORTAL) {
 			continue;
 		}
-		CPortal *po = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_PORTAL);
-		CPortal_LinkZonas(po);
+		CPortal *po = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_PORTAL);
+		CPortal_LinkZones(po);
 		for (int side = 0; side < 2; side++) {
-			CNodo3D *zn = po->zonas[side & 1];
-			if (!zn || Zona_OfNodo(zn)) {
+			CNode3D *zn = po->zones[side & 1];
+			if (!zn || Zone_OfNode(zn)) {
 				continue;
 			}
-			CZona *z = operator_new(sizeof(CZona));
-			z = z ? CZona_ctor(z) : NULL;
-			z->id = g_NumZonas;
+			CZone *z = operator_new(sizeof(CZone));
+			z = z ? CZone_ctor(z) : NULL;
+			z->id = g_NumZones;
 			zn->Refs++;
-			ObjRef_Release(&z->nodo);
-			z->nodo = zn;
-			CHECK(g_NumZonas < MAX_ZONAS);
-			g_Zonas[g_NumZonas++] = z;
+			ObjRef_Release(&z->node);
+			z->node = zn;
+			CHECK(g_NumZones < MAX_ZONES);
+			g_Zones[g_NumZones++] = z;
 			if (strstr(zn->name, "(+end_sector)")) {
 				g_NumEndSectors++;
 				z->exterior = 1;
@@ -617,48 +617,48 @@ void Sectores_Crear(CEscena *esc) {
 		}
 	}
 	/* the portals into the sectors on both sides */
-	for (n = esc->Nodo3D; n; n = n->sig) {
-		if (CNodo3D_Clase(n) != CLASE_OBJ3D_PORTAL) {
+	for (n = scn->Node3D; n; n = n->next) {
+		if (CNode3D_Class(n) != CLASS_OBJ3D_PORTAL) {
 			continue;
 		}
-		CPortal *po = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_PORTAL);
-		if (po->zonas[0] == po->zonas[1]) {
+		CPortal *po = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_PORTAL);
+		if (po->zones[0] == po->zones[1]) {
 			continue;
 		}
 		for (uint32_t side = 0; side < 2; side++) {
-			CNodo3D *zn = po->zonas[side & 1];
+			CNode3D *zn = po->zones[side & 1];
 			if (!zn) {
 				continue;
 			}
-			CZona *z = Zona_OfNodo(zn);
-			if (!z || z->numPortales >= MAX_PORTALES) {
+			CZone *z = Zone_OfNode(zn);
+			if (!z || z->numPortals >= MAX_PORTALS) {
 				CheckFailed("zona && zona->num_portales < MAX_PORTALES_ZONA", __FILE__, __TIMESTAMP__, __LINE__);
 			}
-			int k = z->numPortales;
+			int k = z->numPortals;
 			n->Refs++;
-			ObjRef_Release(&z->portales[k]);
-			z->portales[k] = n;
-			z->zonas[z->numPortales] = Zona_OfNodo(po->zonas[~side & 1]);
-			z->numPortales++;
+			ObjRef_Release(&z->portals[k]);
+			z->portals[k] = n;
+			z->zones[z->numPortals] = Zone_OfNode(po->zones[~side & 1]);
+			z->numPortals++;
 		}
 	}
-	Con_Verbosef("Sectors: %d\n", g_NumZonas);
+	Con_Verbosef("Sectors: %d\n", g_NumZones);
 	Con_Verbosef("SkySectors: %d, EndSectors: %d, OutSectors: %d\n", g_PortalUnion, g_NumEndSectors, g_NumOutSectors);
-	for (int i = 0; i < g_NumZonas; i++) {
-		CZona *z = g_Zonas[i];
+	for (int i = 0; i < g_NumZones; i++) {
+		CZone *z = g_Zones[i];
 		CHECK(i == z->id);
-		E3D_LogDebug2(g_FileLog, "Sector: %s  Ident: %d", z->nodo->name, z->id);
-		for (int k = 0; k < z->numNodos; k++) {
-			E3D_LogDebug2(g_FileLog, "  Node: %d  (%s)", k, z->nodos[k]->name);
+		E3D_LogDebug2(g_FileLog, "Sector: %s  Ident: %d", z->node->name, z->id);
+		for (int k = 0; k < z->numNodes; k++) {
+			E3D_LogDebug2(g_FileLog, "  Node: %d  (%s)", k, z->nodes[k]->name);
 		}
-		for (int k = 0; k < z->numPortales; k++) {
-			CNodo3D *s1 = ((CPortal *)Obj3D_Cast(z->portales[k]->obj3D, CLASE_OBJ3D_PORTAL))->zonas[0];
-			CNodo3D *s2 = ((CPortal *)Obj3D_Cast(z->portales[k]->obj3D, CLASE_OBJ3D_PORTAL))->zonas[1];
-			E3D_LogDebug2(g_FileLog, "  Portal: %d  (%s)  Side1: '%s'  Side2: '%s'", k, z->portales[k]->name,
-				Nodo_NameOrNull(s1), Nodo_NameOrNull(s2));
+		for (int k = 0; k < z->numPortals; k++) {
+			CNode3D *s1 = ((CPortal *)Obj3D_Cast(z->portals[k]->obj3D, CLASS_OBJ3D_PORTAL))->zones[0];
+			CNode3D *s2 = ((CPortal *)Obj3D_Cast(z->portals[k]->obj3D, CLASS_OBJ3D_PORTAL))->zones[1];
+			E3D_LogDebug2(g_FileLog, "  Portal: %d  (%s)  Side1: '%s'  Side2: '%s'", k, z->portals[k]->name,
+				Node_NameOrNull(s1), Node_NameOrNull(s2));
 			if (!s1 || !s2) {
 				E3D_LogBlue(g_FileLog, "  WARN: Portal: %d  (%s)  Side1: '%s'  Side2: '%s'", k,
-					z->portales[k]->name, Nodo_NameOrNull(s1), Nodo_NameOrNull(s2));
+					z->portals[k]->name, Node_NameOrNull(s1), Node_NameOrNull(s2));
 			}
 		}
 	}
@@ -676,7 +676,7 @@ static int Int_Clamp0(int v, int n) {
 	return v >= n ? n : v;
 }
 
-byte Portales_SetView(const ZonaPintar *zp) {
+byte Portals_SetView(const PaintZone *zp) {
 	void *dev;
 	matrix_t m;
 
@@ -718,8 +718,8 @@ byte Portales_SetView(const ZonaPintar *zp) {
 		return 0;
 	}
 	if (g_ShowPortals > 2) {
-		Texto_PrintfRel(0, 0xe, GAME_STR(str_3dd008, 0x3dd008), zp->zona, lx, ly);	/* "zona: %d  LX: %d  LY: %d" */
-		Texto_PrintfRel(0, 0xe, GAME_STR(str_3dd024, 0x3dd024), x0, y0, x1, y1);	/* "  %d %d  %d %d" */
+		Text_PrintfRel(0, 0xe, GAME_STR(str_3dd008, 0x3dd008), zp->zone, lx, ly);	/* "zona: %d  LX: %d  LY: %d" */
+		Text_PrintfRel(0, 0xe, GAME_STR(str_3dd024, 0x3dd024), x0, y0, x1, y1);	/* "  %d %d  %d %d" */
 	}
 	uint32_t vp[6] = { (uint32_t)x0, (uint32_t)y0, (uint32_t)lx, (uint32_t)ly, 0, 0x3f800000 };
 	dev = g_pd3dDevice;

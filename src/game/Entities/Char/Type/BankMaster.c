@@ -108,7 +108,7 @@ void ChType_BankMasterSuction(cAbstractFile *params) {
 	if (!(BANKMASTER_SUCTION_ANG > (double)nx) || !(BANKMASTER_SUCTION_ANG > (double)ny)) {
 		return;
 	}
-	if (ChType_Steal(&g_BankMasterEnt, &victim, g_BankerStealQuanto, "Stats.BankMaster", 0.25f)) {
+	if (ChType_Steal(&g_BankMasterEnt, &victim, g_BankerStealAmount, "Stats.BankMaster", 0.25f)) {
 		cObjElementFXBankMasterSuction *el = FX_DropNew(g_FXBankMasterSuctionFile, 0.8f);
 		if (el) {
 			if (!el->started) {

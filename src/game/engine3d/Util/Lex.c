@@ -116,7 +116,7 @@ void Lex_Hex(void) {
 
 	g_LexCh = Lex_Getc();
 	if (!crt_isxdigit(g_LexCh)) {
-		CHECK(g_LexTokenLen < MAX_ULT_CLEX - 1);
+		CHECK(g_LexTokenLen < MAX_LAST_CLEX - 1);
 		*(uint16_t *)(g_LexToken + g_LexTokenLen++) = 'x';
 		return;
 	}
@@ -312,7 +312,7 @@ void Lex_NextCh(void) {
 /* the character and a terminator after it */
 void Lex_Add(int ch) {
 	CHECK(ch >= 0 && ch <= 255);
-	CHECK(g_LexTokenLen < MAX_ULT_CLEX - 1);
+	CHECK(g_LexTokenLen < MAX_LAST_CLEX - 1);
 	*(uint16_t *)(g_LexToken + g_LexTokenLen++) = (uint16_t)ch;
 }
 
@@ -327,16 +327,16 @@ int Lex_Peek(void) {
 
 /* relative to the current file first, then to g_LexDir */
 int Lex_Open(const char *name, int escapes) {
-	char path[MAX_RUTA];
+	char path[MAX_FILEPATH];
 	void *f = NULL;
 
 	if (g_Lex) {
-		Ruta_Part(path, g_Lex->path, RUTA_DRIVE | RUTA_DIR);
-		if (Ruta_Full(path, name, MAX_RUTA, path)) {
+		Path_Part(path, g_Lex->path, PATH_DRIVE | PATH_DIR);
+		if (Path_Full(path, name, MAX_FILEPATH, path)) {
 			f = crt_fopen(path, "rt");
 		}
 	}
-	if (!f && Ruta_Full(path, name, MAX_RUTA, g_LexDir)) {
+	if (!f && Path_Full(path, name, MAX_FILEPATH, g_LexDir)) {
 		f = crt_fopen(path, "rt");
 	}
 	if (!f) {
@@ -350,8 +350,8 @@ int Lex_Open(const char *name, int escapes) {
 		g_Lex->savedCh = g_LexCh;
 	}
 	cLexFile *lex = Mem_Alloc(sizeof(*lex));
-	lex->name = Cad_Dup(name);
-	lex->path = Cad_Dup(path);
+	lex->name = String_Dup(name);
+	lex->path = String_Dup(path);
 	lex->f = f;
 	lex->line = 1;
 	lex->tokens = 0;
@@ -432,8 +432,8 @@ void Lex_SetOut(lexout_t out) {
 
 /* the directory of name, made absolute */
 void Lex_SetDir(const char *name) {
-	Ruta_Part(g_LexDir, name, RUTA_DRIVE | RUTA_DIR);
-	Ruta_Full(g_LexDir, g_LexDir, MAX_RUTA, NULL);
+	Path_Part(g_LexDir, name, PATH_DRIVE | PATH_DIR);
+	Path_Full(g_LexDir, g_LexDir, MAX_FILEPATH, NULL);
 }
 
 int Lex_Next(void) {

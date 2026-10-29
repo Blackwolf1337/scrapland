@@ -14,7 +14,7 @@
 
 struct CMaterial;
 typedef struct CMaterial CMaterial;
-struct CListaVert;
+struct CVertList;
 
 /* the D3D device of the engine3d, NULL without one */
 #define g_pd3dDevice GAME_GLOBAL(void *, g_pd3dDevice, 0x4ad6f4)
@@ -28,7 +28,7 @@ struct CListaVert;
 /* only the meshes whose material has b38 are drawn */
 #define g_RenderSoloB38 GAME_GLOBAL_IN(byte, group_4a8ef8, 1, 0x4a8ef9)
 /* the meshes are drawn from their vertex buffers */
-#define g_UsarVB GAME_GLOBAL_IN(byte, group_431bac, 0, 0x431bac)
+#define g_UseVB GAME_GLOBAL_IN(byte, group_431bac, 0, 0x431bac)
 #define g_RenderPass GAME_GLOBAL(int, g_RenderPass, 0x4afdb8)
 /* the D3DRS_ZENABLE value of the frame and whether the fog is on */
 #define g_ZEnable GAME_GLOBAL(uint32_t, g_ZEnable, 0x4ad740)
@@ -40,21 +40,21 @@ struct CListaVert;
 #define g_ViewportH GAME_GLOBAL_IN(int, g_Viewport, 12, 0x4ad7ec)
 #define g_Viewport (GAME_ARRAY(uint32_t, g_Viewport, 0x4ad7e0))
 /* the planes of the view frustum (normal, d; outside where the distance is positive) */
-#define MAX_PLANOS_FRUSTUM 6
+#define MAX_PLANES_FRUSTUM 6
 #define g_Frustum (GAME_ARRAY(const plane_t, g_Frustum, 0x4adbf0))
 /* the texture filters of the stages (Render_ResetState from the variables below): min, mag, mip, anisotropy */
-#define g_FiltroMin GAME_GLOBAL(uint32_t, g_FiltroMin, 0x431d7c)
-#define g_FiltroMag GAME_GLOBAL(uint32_t, g_FiltroMag, 0x431d80)
-#define g_FiltroMip GAME_GLOBAL(uint32_t, g_FiltroMip, 0x431d70)
-#define g_Anisotropia GAME_GLOBAL(uint32_t, g_Anisotropia, 0x431d78)
+#define g_FilterMin GAME_GLOBAL(uint32_t, g_FilterMin, 0x431d7c)
+#define g_FilterMag GAME_GLOBAL(uint32_t, g_FilterMag, 0x431d80)
+#define g_FilterMip GAME_GLOBAL(uint32_t, g_FilterMip, 0x431d70)
+#define g_AnisotropyCur GAME_GLOBAL(uint32_t, g_AnisotropyCur, 0x431d78)
 #define g_TexFilter GAME_GLOBAL_IN(int, GVar_R_TexFilter, 16, 0x4add58)		/* R_TexFilter 0 point, 1 linear, 2 anisotropic */
 #define g_MipFilter GAME_GLOBAL_IN(int, GVar_R_MipFilter, 16, 0x4ad8f8)		/* R_MipFilter 0 point, 1 linear */
 #define g_Anisotropy GAME_GLOBAL_IN(uint32_t, GVar_R_Anisotropy, 16, 0x4adba0)	/* R_Anisotropy */
 #define g_MipmapBias GAME_GLOBAL_IN(float, GVar_R_MipmapBias, 16, 0x4ada68)		/* R_MipmapBias */
 #define g_MipmapBias2 GAME_GLOBAL(float, g_MipmapBias2, 0x4ad73c)
 #define g_MipmapsOn GAME_GLOBAL_IN(byte, group_4ad6f0, 2, 0x4ad6f2)
-#define MOTOR_MAXANISOTROPY(m) (*(uint32_t *)((m) + 0x2a448))
-/* the address modes of the stages as Render_SetMapa last set them */
+#define ENGINE_MAXANISOTROPY(m) (*(uint32_t *)((m) + 0x2a448))
+/* the address modes of the stages as Render_SetMap last set them */
 #define g_StageMip (GAME_ARRAY(byte, g_StageMip, 0x4addb4))	/* the b8 (mipmaps) of the map */
 #define g_StageTile (GAME_ARRAY(byte, g_StageTile, 0x4addbc))	/* the bc of the map: bit 0 wraps u, bit 1 v */
 /* the texture of each stage and the frame it was set in */
@@ -74,23 +74,23 @@ struct CListaVert;
 #define g_MatPass GAME_GLOBAL(int, g_MatPass, 0x4ae588)
 #define g_MatFrame GAME_GLOBAL(int, g_MatFrame, 0x4ae58c)
 #define g_MatCtx GAME_GLOBAL(CMaterial *, g_MatCtx, 0x4ae584)
-#define g_ShaderActual GAME_GLOBAL(uint32_t, g_ShaderActual, 0x4ae590)
+#define g_ShaderCurrent GAME_GLOBAL(uint32_t, g_ShaderCurrent, 0x4ae590)
 #define g_MatChanges GAME_GLOBAL_IN(int, g_RenderCounts, 12, 0x4a8f0c)
 /* RenderLightmapMat, the lightmap material of the draw (counted); with one the shader modes have 0x100 */
 #define g_LightmapMat GAME_GLOBAL(CMaterial *, g_LightmapMat, 0x4addc4)
-#define g_UsarShaders GAME_GLOBAL_IN(byte, group_43240c, 1, 0x43240d)
+#define g_UseShaders GAME_GLOBAL_IN(byte, group_43240c, 1, 0x43240d)
 #define g_MaterialLog GAME_GLOBAL_IN(int, GVar_R_MaterialLog, 16, 0x4adbe8)		/* R_MaterialLog */
 #define g_DecalZBias GAME_GLOBAL_IN(uint32_t, GVar_R_DecalZBias, 16, 0x4add88)	/* R_DecalZBias */
 #define g_AlphaFog GAME_GLOBAL_IN(int, GVar_R_AlphaFog, 16, 0x4ada80)		/* R_AlphaFog 0, 1 (only add blending), 2 */
 #define g_UseDefMaterial GAME_GLOBAL_IN(int, GVar_R_UseDefMaterial, 16, 0x4ad8e0)	/* R_UseDefMaterial 0, 1, 2 */
 #define g_UseDefTexture GAME_GLOBAL_IN(int, GVar_R_UseDefTexture, 16, 0x4ad868)	/* R_UseDefTexture 0..4 */
 /* the default materials RenderIniD3D makes, in this order: white, checkerboard, grey, invisible, bump noise, ground */
-#define g_MatBlanco GAME_GLOBAL(CMaterial *, g_MatBlanco, 0x4ad6d8)
-#define g_MatAjedrez GAME_GLOBAL(CMaterial *, g_MatAjedrez, 0x4ad6dc)
-#define g_MatGris GAME_GLOBAL(CMaterial *, g_MatGris, 0x4ad6e0)
+#define g_MatWhite GAME_GLOBAL(CMaterial *, g_MatWhite, 0x4ad6d8)
+#define g_MatCheckerboard GAME_GLOBAL(CMaterial *, g_MatCheckerboard, 0x4ad6dc)
+#define g_MatGray GAME_GLOBAL(CMaterial *, g_MatGray, 0x4ad6e0)
 #define g_MatInvis GAME_GLOBAL(CMaterial *, g_MatInvis, 0x4ad6e4)
 #define g_MatBump GAME_GLOBAL(CMaterial *, g_MatBump, 0x4ad6e8)
-#define g_MatSuelo GAME_GLOBAL(CMaterial *, g_MatSuelo, 0x4ad6ec)
+#define g_MatGround GAME_GLOBAL(CMaterial *, g_MatGround, 0x4ad6ec)
 /* the matrices of the frame: projection, view, the camera turn of the sprites, the world of the last draw; the eye */
 #define g_MatProj (GAME_GLOBAL(matrix_t, g_MatProj, 0x4ae3f8))
 #define g_MatView (GAME_GLOBAL(matrix_t, g_MatView, 0x4ae4b8))
@@ -98,17 +98,17 @@ struct CListaVert;
 #define g_MatWorld (GAME_GLOBAL(matrix_t, g_MatWorld, 0x4ae478))
 #define g_EyePos (GAME_GLOBAL(vec3_t, g_EyePos, 0x4adda8))
 /* the material of a ModelFX in place of the ones of the meshes, NULL */
-#define g_MatForzado GAME_GLOBAL(const CMaterial *, g_MatForzado, 0x4ad754)
+#define g_MatForced GAME_GLOBAL(const CMaterial *, g_MatForced, 0x4ad754)
 /* the other overrides of ModelFX.cpp, cleared with it */
 #define g_MatFX1 GAME_GLOBAL(CMaterial *, g_MatFX1, 0x4ad74c)	/* in place of every material */
 #define g_MatFX2 GAME_GLOBAL(CMaterial *, g_MatFX2, 0x4ad750)	/* in place of the lightmap material */
 #define g_MatFX3 GAME_GLOBAL(const CMaterial *, g_MatFX3, 0x4ad758)	/* its colors for the D3D material */
 /* bUsarHWEnvMap: the environment maps through the texture transform of the device (materials with two texture sets
  * get VERT_TEX1 instead of VERT_TEX2) */
-#define g_UsarEnvMap GAME_GLOBAL(int, g_UsarEnvMap, 0x431bd8)		/* video UsarEnvMap */
-#define g_UsarHWEnvMap GAME_GLOBAL(int, g_UsarHWEnvMap, 0x431bdc)
-#define g_UsarBumpMap GAME_GLOBAL(int, g_UsarBumpMap, 0x431be0)		/* video UsarBumpMap */
-#define g_UsarGlowMap GAME_GLOBAL(int, g_UsarGlowMap, 0x431be4)		/* video UsarGlowMap */
+#define g_UseEnvMap GAME_GLOBAL(int, g_UseEnvMap, 0x431bd8)		/* video UsarEnvMap */
+#define g_UseHWEnvMap GAME_GLOBAL(int, g_UseHWEnvMap, 0x431bdc)
+#define g_UseBumpMap GAME_GLOBAL(int, g_UseBumpMap, 0x431be0)		/* video UsarBumpMap */
+#define g_UseGlowMap GAME_GLOBAL(int, g_UseGlowMap, 0x431be4)		/* video UsarGlowMap */
 /* the engine variables of the environment and bump maps (Gvars) */
 #define g_EnvBumpBias GAME_GLOBAL_IN(int, GVar_R_EnvBumpBias, 16, 0x4adbb8)		/* R_EnvBumpBias, DXT1 bump textures */
 #define g_EnvBumpScale GAME_GLOBAL_IN(float, GVar_R_EnvBumpScale, 16, 0x4ada08)	/* R_EnvBumpScale */
@@ -140,8 +140,8 @@ struct CListaVert;
 typedef void (*shaderRender_t)(void *a, void *b);
 typedef struct ShaderTab {
 	uint32_t Index;			/* 0x00 its own index */
-	const char *Nombre;		/* 0x04 */
-	const char *Archivo;		/* 0x08 the .psh, NULL without a pixel shader */
+	const char *Name;		/* 0x04 */
+	const char *File;		/* 0x08 the .psh, NULL without a pixel shader */
 	int i0c;			/* 0x0c */
 	uint32_t flags;			/* 0x10 0x100, 0x101 */
 	shaderRender_t fnRender;	/* 0x14 */
@@ -188,14 +188,14 @@ enum {
 #define g_ViewportFull (GAME_ARRAY(uint32_t, g_ViewportFull, 0x4ad7f8))
 #define g_D3DOn GAME_GLOBAL_IN(byte, group_4ad6f0, 1, 0x4ad6f1)
 #define g_MatDefault ((void *)GAME_PTR(CMaterial_MatDefault, 0, 0x4adc98))
-#define g_MatLinea ((void *)GAME_PTR(CMaterial_MatLinea, 0, 0x4ad918))	/* the material of the debug lines */
+#define g_MatLine ((void *)GAME_PTR(CMaterial_MatLine, 0, 0x4ad918))	/* the material of the debug lines */
 #define g_ShowSphereVis GAME_GLOBAL_IN(int, GVar_R_ShowSphereVis, 16, 0x4adbd0)	/* R_ShowSphereVis 0, 1, 2 */
 #define g_VersionStr (GAME_ARRAY(char, g_VersionStr, 0x4ae540))	/* 0x40 */
-#define MOTOR_ZFORMAT(m) (*(uint32_t *)((m) + 0x2a4d0))
-#define g_MatActual GAME_GLOBAL(const CMaterial *, g_MatActual, 0x4ae580)
-/* what CNodo3D_Render draws: the object classes (low 24 bits of the mask), the nodes whose flags & g_RenderFlagMask
+#define ENGINE_ZFORMAT(m) (*(uint32_t *)((m) + 0x2a4d0))
+#define g_MatCurrent GAME_GLOBAL(const CMaterial *, g_MatCurrent, 0x4ae580)
+/* what CNode3D_Render draws: the object classes (low 24 bits of the mask), the nodes whose flags & g_RenderFlagMask
  * is not 0 when g_RenderFlagNeg */
-#define g_RenderClaseMask GAME_GLOBAL(uint32_t, g_RenderClaseMask, 0x4ad568)
+#define g_RenderClassMask GAME_GLOBAL(uint32_t, g_RenderClassMask, 0x4ad568)
 #define g_RenderFlagMask GAME_GLOBAL(uint32_t, g_RenderFlagMask, 0x4ad5fc)
 #define g_RenderFlagNeg GAME_GLOBAL(byte, g_RenderFlagNeg, 0x4ad4ec)	/* the last one Render_SetMaterial set */
 /* the D3DADAPTER_IDENTIFIER8 of the device, its texts "driver [description]  version" and the ids, and the device
@@ -210,7 +210,7 @@ enum {
 #define g_TexNoPow2 GAME_GLOBAL_IN(byte, group_4ad738, 0, 0x4ad738)	/* D3DPTEXTURECAPS_NONPOW2CONDITIONAL */
 #define g_TexPow2 GAME_GLOBAL_IN(byte, group_4ad738, 1, 0x4ad739)	/* D3DPTEXTURECAPS_POW2 */
 #define g_TexRepeat GAME_GLOBAL_IN(byte, group_4ad6f0, 3, 0x4ad6f3)	/* D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE */
-#define g_UsarShaders2 GAME_GLOBAL_IN(byte, group_43240c, 0, 0x43240c)
+#define g_UseShaders2 GAME_GLOBAL_IN(byte, group_43240c, 0, 0x43240c)
 #define g_RenderI1F4 GAME_GLOBAL(int, g_RenderI1F4, 0x4ae1f4)
 
 /* a dynamic index buffer of triangles (16 bit indices) */
@@ -287,12 +287,12 @@ void __thiscall CRenderVB_Create(CRenderVB *self, uint32_t numvert, int size, ui
 /* the batches drawn first; rect (x0, y0, x1, y1 in the viewport) NULL for all; D3DCLEAR_ZBUFFER also clears the
  * stencil of a device that has one; whether the device cleared */
 byte Render_Clear(const box_t *rect, uint32_t flags, uint32_t color, float z, uint32_t stencil);
-void Render_GetViewportSize(int *ancho, int *alto);
+void Render_GetViewportSize(int *width, int *height);
 /* a textured rectangle of the viewport, its left side in cLeft, its right side in cRight */
 void Render_DrawTexRect(const box_t *rect, uint32_t cLeft, uint32_t cRight, void *tex);
 /* the end of the D3D device: textures and pixel shaders off, the shaders deleted, the device objects of the modules
  * released */
-void Render_FinD3D(void);
+void Render_EndD3D(void);
 /* the end of a view: the batches drawn, the default material, the whole viewport */
 void Render_EndView(void);
 /* the batches drawn, the materials of ModelFX cleared */
@@ -304,7 +304,7 @@ void Render_IniD3D(void);
 /* the start of a frame: the device of the application, the whole viewport, the base states */
 void Render_BeginFrame(void);
 /* the triangles of idx over the vertices of v (counted with stats) */
-int Render_DrawListaIdx(const struct CListaVert *v, const uint16_t *idx, int ntri, byte stats);
+int Render_DrawListIdx(const struct CVertList *v, const uint16_t *idx, int ntri, byte stats);
 int Render_SetWorldD3D(const matrix_t *m);
 void Render_WorldDirty(void);
 /* the world transform of the device (with defer only remembered); 0 */
@@ -323,38 +323,38 @@ int Render_SetProj(const matrix_t *m);
 void Render_SetCull(uint32_t mode);
 /* the lightmap material (counted) and its modulation (2 2x, 4 4x) */
 void Render_SetLightmapMat(CMaterial *mat, int mode);
-/* the texture of mapa (NULL none) on stage: its frame, mipmaps, wrap and anisotropy */
-struct CMapa;
-int Render_SetMapa(uint32_t stage, struct CMapa *mapa);
+/* the texture of map (NULL none) on stage: its frame, mipmaps, wrap and anisotropy */
+struct CMap;
+int Render_SetMap(uint32_t stage, struct CMap *map);
 /* ntri triangles from startTri of ib over numVerts vertices of vb in format frmt from baseVert */
 int Render_DrawVBIBFmt(void *vb, void *ib, int frmt, uint32_t numVerts, uint32_t ntri, uint32_t baseVert,
 	uint32_t startTri);
-struct CMallaD3D;
-int Render_DrawMallaD3D(const struct CMallaD3D *m);
-int Render_DrawVBIB(void *vb, void *ib, const struct CListaVert *v, uint32_t ntri);
+struct CMeshD3D;
+int Render_DrawMeshD3D(const struct CMeshD3D *m);
+int Render_DrawVBIB(void *vb, void *ib, const struct CVertList *v, uint32_t ntri);
 /* the view matrix, its inverse as the billboard matrix and the eye */
 int Render_SetView(const matrix_t *m);
 /* a mesh with its material (and the second pass of its second texture set), the skinned and stencil shadow ones
  * through their modules; r is the render node, NULL */
-struct CNodoR;
-int Render_MallaD3D(struct CMallaD3D *m, struct CNodoR *r);
+struct CRenderNode;
+int Render_MeshD3D(struct CMeshD3D *m, struct CRenderNode *r);
 int Render_GetWorld(matrix_t *out);
 /* the alpha constant of the pixel shaders in reg: 1 1 1 0, 0 for transparent materials (not MAT_1000) and with a
  * forced material */
 void Render_PSConstAlpha(const CMaterial *mat, uint32_t reg);
-/* the texture stages of the reflection map (mapa 2) and the bump map before it (mapa 3, its scale and turn) */
+/* the texture stages of the reflection map (map 2) and the bump map before it (map 3, its scale and turn) */
 void Mat_StageEnvBump(CMaterial *mat, uint32_t flags, uint32_t stageEnv, uint32_t stageBump);
-/* the camera space reflection coordinates of mapa 2 scaled by R_EnvMapScale (R_EnvMapViewDep) */
+/* the camera space reflection coordinates of map 2 scaled by R_EnvMapScale (R_EnvMapViewDep) */
 void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias);
-/* the render function of shader mode modo */
-void Render_Shader(uint32_t modo, void *a, void *b);
+/* the render function of shader mode mode */
+void Render_Shader(uint32_t mode, void *a, void *b);
 /* texture coordinates of stage moved by a random part of +-ju, +-jv and scaled */
 void Tex_StageJitter(void *unused, uint32_t flags, uint32_t stage, float ju, float jv, float scale);
-/* the scroll (f10) and turn (v20[2] * k) of map idmapa */
-void Mat_StageScroll(CMaterial *mat, uint32_t idmapa, uint32_t flags, uint32_t stage, float k);
+/* the scroll (f10) and turn (v20[2] * k) of map mapid */
+void Mat_StageScroll(CMaterial *mat, uint32_t mapid, uint32_t flags, uint32_t stage, float k);
 /* texture coordinates of stage scrolled by su, sv per second, scaled and turned by rot per second */
 void Tex_StageTransform(void *unused, uint32_t flags, uint32_t stage, float su, float sv, float scale, float rot);
-/* the bump env matrix of stage: scale s (plus the f2c of mapa 3 times k) turned by rot */
+/* the bump env matrix of stage: scale s (plus the f2c of map 3 times k) turned by rot */
 void Mat_StageBumpMat(CMaterial *mat, uint32_t flags, uint32_t stage, float k, float s, float rot);
 /* the D3DMATERIAL8 of colors (diffuse, ambient, specular, emissive, power): with DiffuseMod4x the colors but the
  * specular a fourth, with a forced material its alpha */
@@ -375,7 +375,7 @@ byte Render_ClipRect(int *out, const uint32_t *vp, const box_t *rect);
 /* the stencil bits of the depth buffer */
 int Render_StencilBits(void);
 /* the vertex buffer of a vertex list and the index buffer of triangles, in system memory with dynamic (HRESULT) */
-int Render_CreateVB(void **vb, struct CListaVert *vert, byte dynamic);
+int Render_CreateVB(void **vb, struct CVertList *vert, byte dynamic);
 int Render_CreateIB(void **ib, const void *tris, int nTri, byte dynamic);
 /* the batches waiting for the view drawn */
 void E3D_FlushBatch(void);
@@ -388,8 +388,8 @@ byte Sph_IsVisible(const vec3_t *center, float radius, int arg);
 /* "major.minor" of a version word, a static buffer */
 const char *Render_VersionStr(uint32_t v);
 /* the view and projection of the camera, the frustum of them */
-struct CCamara;
-void Render_SetCamara(struct CCamara *cam);
+struct CCamera;
+void Render_SetCamera(struct CCamera *cam);
 void Render_NoIndexedBlend(void *dev);
 /* the viewport narrowed to rect and the projection to it (with proj); NULL the whole view again; 1 */
 byte Render_SetViewRect(const box_t *rect, byte proj);
@@ -406,7 +406,7 @@ void Frustum_Calc(const matrix_t *view, const matrix_t *proj);
 #define VB_PARTICLES 0x200
 #define g_EVAVB GAME_GLOBAL(void *, g_EVAVB, 0x4dea50)		/* IDirect3DVertexBuffer8, D3DFVF 0x112 */
 #define g_EVAVBUsed GAME_GLOBAL(int, g_EVAVBUsed, 0x4deb74)
-#define g_PartVB GAME_GLOBAL(void *, g_PartVB, 0x4deb78)		/* D3DFVF 0x1c2 (Grafico3DVert) */
+#define g_PartVB GAME_GLOBAL(void *, g_PartVB, 0x4deb78)		/* D3DFVF 0x1c2 (Graphic3DVert) */
 #define g_PartIB GAME_GLOBAL(void *, g_PartIB, 0x4deb7c)
 #define g_PartVBUsed GAME_GLOBAL(int, g_PartVBUsed, 0x4deb80)
 #define g_PartTri GAME_GLOBAL(uint16_t *, g_PartTri, 0x4deb84)	/* pTriParticles, new[] */
@@ -427,8 +427,8 @@ void Frustum_Calc(const matrix_t *view, const matrix_t *proj);
 #define g_UseEVA GAME_GLOBAL_IN(int, GVar_R_UseEVA, 16, 0x4deb3c)		/* R_UseEVA */
 #define g_UseSkin GAME_GLOBAL_IN(int, GVar_R_UseSkin, 16, 0x4dea7c)		/* R_UseSkin */
 
-struct CParticula;
-struct Grafico3DVert;
+struct CParticle;
+struct Graphic3DVert;
 /* both vertex buffers and the index buffer of the particles made (EVA_crear_VB); HRESULT */
 int RenderEVA_InitD3D(void);
 int RenderEVA_CreateParticles(void);
@@ -440,13 +440,13 @@ int RenderEVA_ReleaseD3D(void);
 int RenderEVA_LockParticles(int nvert, void **data);
 int RenderEVA_LockSkin(int nvert, void **data);
 /* the mesh with the vertex animation skin (a CEVA) at the blend of the animation slot of r; HRESULT */
-int RenderEVA_DrawSkinNodo(struct CMallaD3D *m, struct CNodoR *r, void *skin);
+int RenderEVA_DrawSkinNode(struct CMeshD3D *m, struct CRenderNode *r, void *skin);
 /* the mesh with its skin over the render nodes of the model; HRESULT */
-int RenderEVA_DrawSkin(struct CMallaD3D *m, struct CNodoR *r);
+int RenderEVA_DrawSkin(struct CMeshD3D *m, struct CRenderNode *r);
 /* the four corners of a particle: a square of its size turned by rot facing the camera (bill: the billboard
  * matrix in the space of the particles, view: the view matrix of it), sparks stretched along their screen motion;
  * alpha (below 1) scales the inverted alpha of the color, zbias moves it to the camera */
-void Particula_Quad(struct CParticula *p, const matrix_t *bill, const matrix_t *view, struct Grafico3DVert *out,
+void Particle_Quad(struct CParticle *p, const matrix_t *bill, const matrix_t *view, struct Graphic3DVert *out,
 	float alpha, float zbias);
 
 /* Engine/RenderMallaD3D.cpp, RenderMallaD3D_transp.cpp and RenderObjBase3D.cpp
@@ -454,51 +454,51 @@ void Particula_Quad(struct CParticula *p, const matrix_t *bill, const matrix_t *
  * texture, material and skin, transparent ones and the particle systems and flares far to near, each drawn with the
  * world matrix it was queued with. Up to 0x400 of each, a full batch is drawn at once. */
 #define MAX_RENDER_BATCH 0x400
-typedef struct RenderMallaEntry {
-	struct CMallaD3D *malla;	/* 0x00 */
+typedef struct RenderMeshEntry {
+	struct CMeshD3D *mesh;	/* 0x00 */
 	matrix_t world;			/* 0x04 */
 	uint32_t tex;			/* 0x44 the diffuse texture >> 1, 0 without */
 	int list;			/* 0x48 the batch count when the list of the mesh was queued */
-	struct CNodoR *r;		/* 0x4c */
-} RenderMallaEntry;
-SD_SIZE(RenderMallaEntry, 0x50);
+	struct CRenderNode *r;		/* 0x4c */
+} RenderMeshEntry;
+SD_SIZE(RenderMeshEntry, 0x50);
 typedef struct RenderTranspEntry {
-	struct CMallaD3D *malla;	/* 0x00 */
+	struct CMeshD3D *mesh;	/* 0x00 */
 	matrix_t world;			/* 0x04 */
 	int group;			/* 0x44 g_TranspGroup, 0 for the identity */
-	struct CNodoR *r;		/* 0x48 */
+	struct CRenderNode *r;		/* 0x48 */
 	float dist2;			/* 0x4c to the eye, squared */
 } RenderTranspEntry;
 SD_SIZE(RenderTranspEntry, 0x50);
 typedef struct RenderObjEntry {
-	struct IObjeto3D *obj;		/* 0x00 a CSistPart or a CFlare */
+	struct IObject3D *obj;		/* 0x00 a CParticleSystem or a CFlare */
 	matrix_t world;			/* 0x04 */
-	struct CNodoR *r;		/* 0x44 */
+	struct CRenderNode *r;		/* 0x44 */
 	float dist2;			/* 0x48 */
 } RenderObjEntry;
 SD_SIZE(RenderObjEntry, 0x4c);
-#define g_TabMalla (GAME_GLOBAL(CTabla, g_TabMalla, 0x4deb90))		/* TabMallaD3D: RenderMallaEntry */
-#define g_ListaMalla (GAME_ARRAY(RenderMallaEntry *, g_ListaMalla, 0x4debb0))
-#define g_UsadosMalla GAME_GLOBAL_IN(int, g_ListaMalla, 4096, 0x4dfbb0)
-#define g_TabTransp (GAME_GLOBAL(CTabla, g_TabTransp, 0x4dfbb8))		/* RenderTranspEntry */
-#define g_ListaTransp (GAME_ARRAY(RenderTranspEntry *, g_ListaTransp, 0x4dfbf0))
-#define g_UsadosTransp GAME_GLOBAL_IN(int, g_ListaTransp, 4096, 0x4e0bf0)
+#define g_TabMesh (GAME_GLOBAL(CTable, g_TabMesh, 0x4deb90))		/* TabMallaD3D: RenderMeshEntry */
+#define g_MeshList (GAME_ARRAY(RenderMeshEntry *, g_MeshList, 0x4debb0))
+#define g_UsedMesh GAME_GLOBAL_IN(int, g_MeshList, 4096, 0x4dfbb0)
+#define g_TabTransp (GAME_GLOBAL(CTable, g_TabTransp, 0x4dfbb8))		/* RenderTranspEntry */
+#define g_TranspList (GAME_ARRAY(RenderTranspEntry *, g_TranspList, 0x4dfbf0))
+#define g_UsedTransp GAME_GLOBAL_IN(int, g_TranspList, 4096, 0x4e0bf0)
 #define g_TranspGroup GAME_GLOBAL(int, g_TranspGroup, 0x432a78)		/* counted up for each mesh list, 1 after a flush */
-#define g_TabObj (GAME_GLOBAL(CTabla, g_TabObj, 0x4e0bf8))		/* TabObjBase3D: RenderObjEntry */
-#define g_ListaObj (GAME_ARRAY(RenderObjEntry *, g_ListaObj, 0x4e0c00))
-#define g_UsadosObj GAME_GLOBAL_IN(int, g_ListaObj, 4096, 0x4e1c00)
+#define g_TabObj (GAME_GLOBAL(CTable, g_TabObj, 0x4e0bf8))		/* TabObjBase3D: RenderObjEntry */
+#define g_ObjList (GAME_ARRAY(RenderObjEntry *, g_ObjList, 0x4e0c00))
+#define g_UsedObj GAME_GLOBAL_IN(int, g_ObjList, 4096, 0x4e1c00)
 #define g_MeshCache GAME_GLOBAL_IN(int, GVar_R_MeshCache, 16, 0x4deba8)		/* R_MeshCache, 10 logs the batches */
 #define g_ShowTranspBox GAME_GLOBAL_IN(int, GVar_R_ShowTranspBox, 16, 0x4dfbe8)	/* R_ShowTranspBox */
 #define g_TranspZBias GAME_GLOBAL_IN(float, GVar_R_TranspZBias, 16, 0x4dfbd0)	/* R_TranspZBias */
 
 /* the batches drawn; E_FAIL without a device, else 0 */
-int RenderMallaD3D_Flush(void);
-int RenderMallaD3D_Flush2(void);
+int RenderMeshD3D_Flush(void);
+int RenderMeshD3D_Flush2(void);
 int RenderObjBase3D_Flush(void);
 /* a transparent mesh queued (cont: the same list as the one before, else a new group); HRESULT */
-int RenderMallaD3D_AddTransp(struct CMallaD3D *m, const matrix_t *world, byte cont, struct CNodoR *r);
+int RenderMeshD3D_AddTransp(struct CMeshD3D *m, const matrix_t *world, byte cont, struct CRenderNode *r);
 /* the qsort orders: texture, material, then the skinned ones last; the transparent ones and the objects far first */
-int RenderMalla_Compare(const void *a, const void *b);
+int RenderMesh_Compare(const void *a, const void *b);
 int RenderTransp_Compare(const void *a, const void *b);
 int RenderObj_Compare(const void *a, const void *b);
 
@@ -524,12 +524,12 @@ int Shader_Find(const char *name);		/* the index in g_ShaderTab, 0 and an error 
 
 /* other modules (src/imports.inc) */
 /* rva 0x267530 (stencil.cpp): the shadow volume of the triangles of a mesh */
-void Stencil_Malla(struct CListaVert *v, const void *tris, uint32_t nTri, struct CMallaD3D *m, struct CNodoR *r);
-/* CListaVert_EnvMapUV: listavert.h */
-void ListaVert_InitD3D(void);			/* rva 0x2404f0, empty */
+void Stencil_Mesh(struct CVertList *v, const void *tris, uint32_t nTri, struct CMeshD3D *m, struct CRenderNode *r);
+/* CVertList_EnvMapUV: listavert.h */
+void VertList_InitD3D(void);			/* rva 0x2404f0, empty */
 void RenderTarget_InitD3D(void);		/* rva 0x220d20 */
-void ModelFX_InitD3D(void);			/* ModelFX.c, modelo.h */
-void ListaVert_ReleaseD3D(void);		/* rva 0x2404e0 (ListaVert.cpp), empty */
+void ModelFX_InitD3D(void);			/* ModelFX.c, model.h */
+void VertList_ReleaseD3D(void);		/* rva 0x2404e0 (ListaVert.cpp), empty */
 void RenderTarget_ReleaseD3D(void);		/* rva 0x220c60 (RenderTarget.cpp) */
 
 #endif

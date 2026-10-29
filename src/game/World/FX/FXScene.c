@@ -55,7 +55,7 @@ static inline double FXS_Rnd(void) {
 /* the particles to the node of the debris model */
 static void FXS_AttachNode(CGameParticles *sp, cDebris *d, const char *node) {
 	CGameModel *m = Debris_Model(d);
-	int i = CGameModel_FindNodoR(m, node);
+	int i = CGameModel_FindRenderNode(m, node);
 
 	CHECK(i > -1);
 	CGameParticles_Attach(sp, m, (uint32_t)i);
@@ -267,10 +267,10 @@ void __thiscall cObjElementFXSceneBillArrives_A_Attach(cObjElementFXSceneBillArr
 void __thiscall cObjElementFXSceneBishops_Attach(cObjElementFXSceneBishops *self, cDebris *d) {
 	CHECK(CGameModel_IsLoaded(Debris_Model(d)));
 	FXS_AttachNode(&self->dataCodec, d, "Dummy01");
-	CHECK(self->dataCodec.SistPart);
+	CHECK(self->dataCodec.ParticleSystem);
 	CHECK(CGameModel_IsLoaded(Debris_Model(d)));
 	FXS_AttachNode(&self->glow, d, "Dummy02");
-	CHECK(self->glow.SistPart);
+	CHECK(self->glow.ParticleSystem);
 	for (int i = 0; i < FXBISHOPS_TRAILS; i++) {
 		CGameTrail_SetMaxTrails(&self->trails[i], 0x1f);
 		CGameTrail_SetTexture(&self->trails[i], 0xb);
@@ -411,7 +411,7 @@ void __thiscall cObjElementFXSceneHumanCD_Reset(cObjElementFXSceneHumanCD *self,
 void __thiscall cObjElementFXSceneTheEndB_Reset(cObjElementFXSceneTheEndB *self, int arg) {
 	(void)arg;
 	self->ent = NULL;
-	self->moto = NULL;
+	self->bike = NULL;
 	self->t = 0.0f;
 	self->tPrev = 0.0f;
 }
@@ -525,36 +525,36 @@ void __thiscall cObjElementFXSceneTheEndB_Update(cObjElementFXSceneTheEndB *self
 		Debris_Life(d) = 0.0f;
 		return;
 	}
-	if (!self->moto) {
+	if (!self->bike) {
 		cEntity *m = World_FindEntity("TheEndBMoto");
-		self->moto = m;
+		self->bike = m;
 		if (m) {
 			CHECK(Entity_IsType(m, TYEN_WITH_LIFE));
 		}
 	}
 	self->t = self->t + FXS_Delta();
 	FXS_Follow(self->ent, d, -107.0f, &pos, &rot);
-	if (!self->moto) {
+	if (!self->bike) {
 		self->tPrev = self->t;
 		return;
 	}
-	cEmbeddedFXMoto *efx = (cEmbeddedFXMoto *)Entity_EmbeddedFX(self->moto);
+	cEmbeddedFXBike *efx = (cEmbeddedFXBike *)Entity_EmbeddedFX(self->bike);
 	CHECK(efx);
-	/* the engine of the moto by the time of the scene */
+	/* the engine of the bike by the time of the scene */
 	if (FX_InRange(self->t, 0.0f, 8.0f, &f)) {
-		cEmbeddedFXMoto_SetF7d4(efx, f * 0.5f, 0.0f);
+		cEmbeddedFXBike_SetF7d4(efx, f * 0.5f, 0.0f);
 	} else if (FX_InRange(self->t, 8.0f, 11.0f, &f)) {
-		cEmbeddedFXMoto_SetF7d4(efx, f * 0.5f + 0.5f, 0.0f);
+		cEmbeddedFXBike_SetF7d4(efx, f * 0.5f + 0.5f, 0.0f);
 	} else if (FX_InRange(self->t, 15.0f, 16.0f, &f)) {
-		cEmbeddedFXMoto_SetF7d4(efx, 1.0f - f * 0.8f, 0.0f);
+		cEmbeddedFXBike_SetF7d4(efx, 1.0f - f * 0.8f, 0.0f);
 	} else if (FX_InRange(self->t, 18.0f, 22.0f, &f)) {
-		cEmbeddedFXMoto_SetF7d4(efx, f * 0.5f, 0.0f);
+		cEmbeddedFXBike_SetF7d4(efx, f * 0.5f, 0.0f);
 	} else if (FX_InRange(self->t, 22.0f, 23.0f, &f)) {
-		cEmbeddedFXMoto_SetF7d4(efx, f * 0.5f + 0.5f, 0.0f);
+		cEmbeddedFXBike_SetF7d4(efx, f * 0.5f + 0.5f, 0.0f);
 	} else if (FX_InRange(self->t, 23.0f, 25.0f, &f)) {
-		cEmbeddedFXMoto_SetF7d4(efx, 1.0f, 0.2f - f * 0.2f);
+		cEmbeddedFXBike_SetF7d4(efx, 1.0f, 0.2f - f * 0.2f);
 	} else if (FX_InRange(self->t, 25.0f, 26.0f, &f)) {
-		cEmbeddedFXMoto_SetF7d4(efx, 1.0f, 0.0f);
+		cEmbeddedFXBike_SetF7d4(efx, 1.0f, 0.0f);
 	}
 	if (!FX_InRange(self->t, 23.0f, 25.0f, &f)) {
 		CGameLensFlare_SetOn(&self->flare, 0);
@@ -562,7 +562,7 @@ void __thiscall cObjElementFXSceneTheEndB_Update(cObjElementFXSceneTheEndB *self
 		return;
 	}
 	vec3_t tmp;
-	CGameLensFlare_SetPos(&self->flare, *cEmbeddedFXMoto_EnginePos(efx, &tmp));
+	CGameLensFlare_SetPos(&self->flare, *cEmbeddedFXBike_EnginePos(efx, &tmp));
 	CGameLensFlare_SetOn(&self->flare, 1);
 	float v;
 	if (0.1f > f) {
@@ -725,7 +725,7 @@ void __thiscall cObjElementFXSceneBishops_Update(cObjElementFXSceneBishops *self
 		if (e) {
 			CGameModel *dm = FX_Vtbl(e)->GetModel(e);
 			CHECK(CGameModel_IsLoaded(dm));
-			self->node = CGameModel_FindNodoR(dm, "R_Detritus_Tronco");
+			self->node = CGameModel_FindRenderNode(dm, "R_Detritus_Tronco");
 			CHECK(self->node > -1);
 		}
 	}

@@ -17,7 +17,7 @@
 
 #define g_ParkingCheckRadius GAME_GLOBAL_IN(float, GVar_ParkingCheckRadius, 16, 0x44d6d8)
 #define g_ParkingCharCheckDistance GAME_GLOBAL_IN(float, GVar_ParkingCharCheckDistance, 16, 0x44d738)
-#define g_ParkingVehiCheckDistance GAME_GLOBAL_IN(float, GVar_ParkingVehiCheckDistance, 16, 0x44d750)
+#define g_ParkingVehicleCheckDistance GAME_GLOBAL_IN(float, GVar_ParkingVehicleCheckDistance, 16, 0x44d750)
 #define g_OnParkedOut (GAME_ARRAY_IN(cPy_Function, GVar_OnParkedOut, 16, 0x44d6f0))
 #define g_OnParkingOccupied (GAME_ARRAY_IN(cPy_Function, GVar_OnParkingOccupied, 16, 0x44d714))
 /* what the sphere native found: a ship, else the last other entity */
@@ -178,7 +178,7 @@ int __fastcall Parking_Think(cParking *self) {
 		return 1;
 	}
 	if (usr->vftable->IsType(usr, TYEN_CAR)) {
-		d = g_ParkingVehiCheckDistance;
+		d = g_ParkingVehicleCheckDistance;
 		inShip = 1;
 	} else {
 		if (!usr->vftable->IsType(usr, TYEN_WALKCHAR)) {

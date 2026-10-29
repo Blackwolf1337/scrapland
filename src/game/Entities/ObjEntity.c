@@ -565,14 +565,14 @@ void __thiscall cObjEntity_SetModel(cEntity *self, const char *file, float sx, f
 	scale.y = sy;
 	scale.z = sz;
 	CGameModel_LoadScaled(&o->model, file, &scale);
-	CGameModel_SetPivotNodo(&o->model, "DC_Root");
+	CGameModel_SetPivotNode(&o->model, "DC_Root");
 	CGameModel_SetPos(&o->model, &self->pos);
 	CGameModel_SetRot(&o->model, &o->ang);
-	int ic = CGameModel_FindNodoR(&o->model, "DC_Camera");
-	int ir = CGameModel_FindNodoR(&o->model, "DC_Root");
+	int ic = CGameModel_FindRenderNode(&o->model, "DC_Camera");
+	int ir = CGameModel_FindRenderNode(&o->model, "DC_Root");
 	if (ic != -1 && ir != -1) {
-		const vec3_t *root = CGameModel_NodoPos(&o->model, &scale, (uint32_t)ir, 0);
-		const vec3_t *c = CGameModel_NodoPos(&o->model, &cam, (uint32_t)ic, 0);
+		const vec3_t *root = CGameModel_NodePos(&o->model, &scale, (uint32_t)ir, 0);
+		const vec3_t *c = CGameModel_NodePos(&o->model, &cam, (uint32_t)ic, 0);
 		o->camOff.x = c->x - root->x;
 		o->camOff.y = c->y - root->y;
 		o->camOff.z = c->z - root->z;
@@ -797,17 +797,17 @@ byte __thiscall cObjEntity_VarV(cEntity *self, const char *name, double *x, doub
 	}
 	if (!(byte)set) {
 		if (!crt_strncmp("NT_NodePos_", name, 11)) {
-			int i = CGameModel_FindNodoR(&o->model, name + 11);
+			int i = CGameModel_FindRenderNode(&o->model, name + 11);
 			if (i) {
-				Obj_NodePos(CGameModel_NodoMatrix(&o->model, &mat, (uint32_t)i, 0, NULL, 0), x, y, z);
+				Obj_NodePos(CGameModel_NodeMatrix(&o->model, &mat, (uint32_t)i, 0, NULL, 0), x, y, z);
 				return 1;
 			}
 		}
 		if (!crt_strncmp("NodePos_", name, 8)) {
-			int i = CGameModel_FindNodoR(&o->model, name + 8);
+			int i = CGameModel_FindRenderNode(&o->model, name + 8);
 			if (i) {
 				uint32_t slot = (uint32_t)Obj_Vtbl(self)->GetNodeSlot(self);
-				Obj_NodePos(CGameModel_NodoMatrix(&o->model, &mat, (uint32_t)i, 1, NULL, slot), x, y, z);
+				Obj_NodePos(CGameModel_NodeMatrix(&o->model, &mat, (uint32_t)i, 1, NULL, slot), x, y, z);
 				return 1;
 			}
 		}

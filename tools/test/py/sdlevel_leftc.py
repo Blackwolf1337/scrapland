@@ -93,7 +93,7 @@ def lfctrails(a, n):
 	return tuple(map(lambda i, a=a: lfctrail(a + 4 * i), range(n)))
 # render node name of the CGameModel gm with a particle system (flags & 2, obj3D of class 0xa5000020)
 def lfcsist(gm, name):
-	i = SDTest.Call('CGameModel_FindNodoR', 'tiis', gm, name)[0]
+	i = SDTest.Call('CGameModel_FindRenderNode', 'tiis', gm, name)[0]
 	if i < 0:
 		return 0
 	t = lfci(lfci(gm) + 0xac)
@@ -103,7 +103,7 @@ def lfcsist(gm, name):
 	o = lfci(r + 0x9c)
 	return (lfcb(r + 4) & 2) and o != 0 and lfci(o + 4) == -0x5affffe0
 def lfcnode(gm, name):
-	return SDTest.Call('CGameModel_FindNodoR', 'tiis', gm, name)[0] >= 0
+	return SDTest.Call('CGameModel_FindRenderNode', 'tiis', gm, name)[0] >= 0
 def lfcok(gm, sists, nodes):
 	if not SDTest.Call('CGameModel_IsLoaded', 'tbi', gm)[0] or not lfci(gm):
 		return 0
@@ -401,15 +401,15 @@ if lfcfx:
 	def lfcmoto(fx):
 		return (lfcfl(fx + 8, 12), lfcbytes(fx, (0x7dc,)), tuple(map(lambda i, fx=fx: (lfcparts(fx + 0x44 + 0xb0 * i),
 			lfcpartlist(fx + 0x44 + 0xb0 * i, 6)), range(3))), lfcpartlist(fx + 0x254, 16), lfcpartlist(fx + 0x304, 16))
-	check('LFC Moto_Update off', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXMoto_Update', 'tvif', fx, 0.05), lfcfl(fx + 8, 3)))
+	check('LFC Moto_Update off', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXBike_Update', 'tvif', fx, 0.05), lfcfl(fx + 8, 3)))
 	for lfcab, lfcdts in (((0.7, 0.3), (0.01, 0.015, 0.03, 0.05, 0.0, 0.1)), ((1.0, 0.0), (0.03, 0.04)), ((0.0, 1.0),
 			(0.03, 0.025)), ((1.5, 0.5), (0.05,))):
-		SDTest.Call('cEmbeddedFXMoto_SetF7d4', 'tviff', lfcfx, lfcab[0], lfcab[1])
+		SDTest.Call('cEmbeddedFXBike_SetF7d4', 'tviff', lfcfx, lfcab[0], lfcab[1])
 		for lfcdt in lfcdts:
-			check('LFC Moto_Update' + fmt((lfcab, lfcdt)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call('cEmbeddedFXMoto_Update', 'tvif',
+			check('LFC Moto_Update' + fmt((lfcab, lfcdt)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call('cEmbeddedFXBike_Update', 'tvif',
 				fx, dt), lfcmoto(fx)))
-	SDTest.Call('cEmbeddedFXMoto_Release', 'tvi', lfcfx)
-	SDTest.Call('cEmbeddedFXMoto_Delete', 'tiii', lfcfx, 1)
+	SDTest.Call('cEmbeddedFXBike_Release', 'tvi', lfcfx)
+	SDTest.Call('cEmbeddedFXBike_Delete', 'tiii', lfcfx, 1)
 lfcunfake(lfce)
 lfcfree(lfcvec)
 check('LFC rand after effects', lambda: SDTest.Call('crt_rand', 'i')[0])

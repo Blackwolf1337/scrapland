@@ -49,7 +49,7 @@ SD_SIZE(TrailVertex, 0x1c);
 typedef struct CTrail {
 	byte render;			/* 0x00 in gTrailsRender (Trails_UpdateRender) */
 	byte pad_1[3];
-	int IndiceRender;		/* 0x04 the slot in gTrailsRender[texture], -1 */
+	int RenderIndex;		/* 0x04 the slot in gTrailsRender[texture], -1 */
 	int texture;			/* 0x08 the material, < MAX_TRAILS_TEXTURES */
 	byte fade;			/* 0x0c alpha from 0 at the tail to 255 at the head */
 	byte smooth;			/* 0x0d the newest piece of a ribbon in two halves */

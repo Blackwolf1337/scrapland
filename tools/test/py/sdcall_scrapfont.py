@@ -43,10 +43,10 @@ for name in ('Terminal8', 'Terminal8Fixed', 'ScrapBig', 'Horatio'):
 	calls = (('CFont_Printf', sym('CFont_Printf'), 'viss', (c, '%s!', 'hola')),
 		('CFont_PrintfAlign', sym('CFont_PrintfAlign'), 'viffiss', (c, 10.0, 20.0, 4, '%s', 'al'))	,
 		('CFont_PrintfAlignColor', sym('CFont_PrintfAlignColor'), 'viffiiss', (c, 10.0, 20.0, 1, 0xff00ff, '%s', 'ac')),
-		('CFont_PrintfAlignColorSombra', sym('CFont_PrintfAlignColorSombra'), 'viffiiss', (c, 10.0, 20.0, 2, 0xff0000, '%s', 'acs')),
+		('CFont_PrintfAlignColorShadow', sym('CFont_PrintfAlignColorShadow'), 'viffiiss', (c, 10.0, 20.0, 2, 0xff0000, '%s', 'acs')),
 		('CFont_PrintfColor', sym('CFont_PrintfColor'), 'viffiss', (c, 10.0, 20.0, 0xff00, '%s', 'co')),
-		('CFont_PrintfColorSombra', sym('CFont_PrintfColorSombra'), 'viffiss', (c, 10.0, 20.0, 0xff, '%s', 'cs')),
-		('CFont_PrintfSombra', sym('CFont_PrintfSombra'), 'viffss', (c, 10.0, 20.0, '%s', 'so')),
+		('CFont_PrintfColorShadow', sym('CFont_PrintfColorShadow'), 'viffiss', (c, 10.0, 20.0, 0xff, '%s', 'cs')),
+		('CFont_PrintfShadow', sym('CFont_PrintfShadow'), 'viffss', (c, 10.0, 20.0, '%s', 'so')),
 		('CFont_PrintfXY', sym('CFont_PrintfXY'), 'viffss', (c, 5.0, 6.0, '%s', 'xy')),
 		('CFont_PrintXY', sym('CFont_PrintXY'), 'tviffs', (c, 7.0, 8.0, 'pxy')),
 		('CFont_Print', sym('CFont_Print'), 'tvis', (c, 'p')))
@@ -59,19 +59,19 @@ for name in ('Terminal8', 'Terminal8Fixed', 'ScrapBig', 'Horatio'):
 	check('CFont_Printf3D ' + name, lambda c=c, pos=pos: (rdlog(lambda c=c, pos=pos: SDTest.Call('CFont_Printf3D', 'viiiss', c,
 		pos, 3, '%s', '3d')), cfget(c)))
 	cfrestore(c, saved)
-	check('CFont_ResetEfectos/ResetX ' + name, lambda c=c: (SDTest.Call('CFont_ResetEfectos', 'tvi', c), SDTest.Call('CFont_ResetX', 'tvi',
+	check('CFont_ResetEffects/ResetX ' + name, lambda c=c: (SDTest.Call('CFont_ResetEffects', 'tvi', c), SDTest.Call('CFont_ResetX', 'tvi',
 		c), cfget(c)))
 	cfrestore(c, saved)
 
 # a font made again from Fonts.fnt and freed
-ini = SDTest.Call('CArchINI_ctor', 'tii', SDTest.Call('operator_new', 'ii', 4)[0])[0]
-check('CArchINI_Load Fonts.fnt', lambda ini=ini: SDTest.Call('CArchINI_Load', 'tiiszi', ini, '2d/fonts-drm/Fonts.fnt', None, 0)[0])
+ini = SDTest.Call('CIniFile_ctor', 'tii', SDTest.Call('operator_new', 'ii', 4)[0])[0]
+check('CIniFile_Load Fonts.fnt', lambda ini=ini: SDTest.Call('CIniFile_Load', 'tiiszi', ini, '2d/fonts-drm/Fonts.fnt', None, 0)[0])
 for name in ('Horatio', 'BigNumbers', 'Terminal8Fixed'):
 	nc = SDTest.Call('operator_new', 'ii', 0x34)[0]
 	check('CFont_ctor/Load' + fmt((name,)), lambda nc=nc, name=name, ini=ini: (SDTest.Call('CFont_ctor', 'tiizi', nc, None,
 		0)[0] == nc, SDTest.Call('CFont_Load', 'tvisii', nc, name, 0, ini), cfget(nc), fnget(fni(nc + 0x30))))
 	SDTest.Call('CFont_dtor', 'tvi', nc)
 	check('CFont_dtor' + fmt((name,)), lambda nc=nc: fni(nc + 0x30))
-SDTest.Call('CArchINI_dtor', 'tvi', ini)
+SDTest.Call('CIniFile_dtor', 'tvi', ini)
 SDTest.Poke('g_ViewportW', rdvp[0])
 SDTest.Poke('g_ViewportH', rdvp[1])

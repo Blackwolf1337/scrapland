@@ -156,7 +156,7 @@ void __thiscall cSliderScorer_Draw(cSliderScorer *self, int player) {
 		sh = sh * 0.5f;
 	}
 	sc = Scorer_Get(player);
-	focused = !cString_ICmp(&self->base.name, &sc->actual);
+	focused = !cString_ICmp(&self->base.name, &sc->current);
 	self->lastAccept = self->accept;
 	acc = TABLE_AT(TABLE_AT(g_ActionSets, 0)->actions, 10)->value[player] > 0.5f;
 	self->accept = acc;

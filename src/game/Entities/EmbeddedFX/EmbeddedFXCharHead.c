@@ -73,12 +73,12 @@ void __thiscall cEmbeddedFXHeadCrazyGambler_Init(cEmbeddedFXHeadCrazyGambler *se
 	const char *glow) {
 	self->owner = owner;
 	CHECK(CGameModel_IsLoaded(owner));
-	self->nodeHead = CGameModel_FindNodoR(owner, "R_Gambler_Cabeza-Pelos");
+	self->nodeHead = CGameModel_FindRenderNode(owner, "R_Gambler_Cabeza-Pelos");
 	CHECK(self->nodeHead > -1);
-	int nodeindex = CGameModel_FindNodoR(owner, glow);
+	int nodeindex = CGameModel_FindRenderNode(owner, glow);
 	CHECK(nodeindex > -1);
 	CGameParticles_Attach(&self->particles, owner, nodeindex);
-	CHECK(self->particles.SistPart);
+	CHECK(self->particles.ParticleSystem);
 }
 
 static cEmbeddedFX *EFXHead_New(CGameModel *head, const char *glow) {

@@ -12,7 +12,7 @@
 typedef struct CAnimVert {
 	uint32_t nTr;			/* 0x0 frames */
 	vec3_t *Tr;			/* 0x4 positions, until compressed */
-	float esc;			/* 0x8 */
+	float scale;			/* 0x8 */
 	int8_t *Tr2;			/* 0xc compressed */
 } CAnimVert;
 SD_SIZE(CAnimVert, 0x10);
@@ -43,8 +43,8 @@ void __fastcall CAnimVert_Compress(CAnimVert *self);
 /* no animation if all frames are like the first one, else compressed */
 void __fastcall CAnimVert_Optimize(CAnimVert *self);
 /* compressed from the file into *pAV (a flag first) */
-void AnimVert_Read(CArchIO *f, CAnimVert **pAV);
-void AnimVert_Write(CArchIO *f, CAnimVert *av);
+void AnimVert_Read(CFileIO *f, CAnimVert **pAV);
+void AnimVert_Write(CFileIO *f, CAnimVert *av);
 
 void __fastcall CEVA_Free(CEVA *self);
 void __thiscall CEVA_Alloc(CEVA *self, int verts);
@@ -57,7 +57,7 @@ int __fastcall CEVA_NumAnimated(CEVA *self);
 /* each vertex optimized; the set is emptied when none is animated */
 void __fastcall CEVA_Optimize(CEVA *self);
 /* the "EVA" block into a new set if flag */
-void EVA_Read(CArchIO *f, int flag, CEVA **pEVA);
-void EVA_Write(CArchIO *f, int flag, CEVA *eva);
+void EVA_Read(CFileIO *f, int flag, CEVA **pEVA);
+void EVA_Write(CFileIO *f, int flag, CEVA *eva);
 
 #endif

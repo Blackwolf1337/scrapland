@@ -18,9 +18,9 @@
 /* 1 in the exe: the light map materials keep the blend of CMaterial_Prepare */
 #define g_BspQ3LMapNoBlend GAME_GLOBAL_IN(byte, group_432a7c, 1, 0x432a7d)
 
-typedef CMallaD3D *(__thiscall *bspQ3MallaD3DDelete_t)(CMallaD3D *self, byte flags);
-typedef int(__thiscall *bspQ3MallaD3DDev_t)(CMallaD3D *self, void *dev);
-typedef CMallaTri *(__thiscall *bspQ3MallaTriDelete_t)(CMallaTri *self, byte flags);
+typedef CMeshD3D *(__thiscall *bspQ3MeshD3DDelete_t)(CMeshD3D *self, byte flags);
+typedef int(__thiscall *bspQ3MeshD3DDev_t)(CMeshD3D *self, void *dev);
+typedef CTriMesh *(__thiscall *bspQ3TriMeshDelete_t)(CTriMesh *self, byte flags);
 /* ID3DXBaseMesh */
 typedef int(__stdcall *bspQ3DrawSubset_t)(void *mesh, uint32_t attrib);
 typedef uint32_t(__stdcall *bspQ3GetNum_t)(void *mesh);
@@ -48,17 +48,17 @@ static void *BspQ3_LumpCopy(CBspQ3 *self, int id, int len) {
 CBspQ3 *__thiscall CBspQ3_ctor(CBspQ3 *self, const char *name) {
 	self->name = NULL;
 	memset(self, 0, sizeof(*self));
-	self->MallaD3D = NULL;
+	self->MeshD3D = NULL;
 	self->pMesh = NULL;
-	self->ListaMallas = NULL;
-	Cad_Set(&self->name, name);
+	self->MeshList = NULL;
+	String_Set(&self->name, name);
 	void *f = crt_fopen(name, "rb");
 	if (!f) {
 		Err_Report(*crt_errno(), 1, " (%s)", name);
 	}
-	uint32_t tam = (uint32_t)crt_filelength(crt_fileno(f));
-	self->lump = operator_new_array(tam);
-	CHECK(crt_fread(self->lump, tam, 1, f) == 1);
+	uint32_t size = (uint32_t)crt_filelength(crt_fileno(f));
+	self->lump = operator_new_array(size);
+	CHECK(crt_fread(self->lump, size, 1, f) == 1);
 	crt_fclose(f);
 	self->head = (BspQ3Header *)self->lump;
 	CHECK(self->head->id == BSPQ3_ID);
@@ -75,14 +75,14 @@ CBspQ3 *__thiscall CBspQ3_ctor(CBspQ3 *self, const char *name) {
 	return self;
 }
 
-BspQ3Mallas *__fastcall BspQ3Mallas_ctor(BspQ3Mallas *self) {
+BspQ3Meshes *__fastcall BspQ3Meshes_ctor(BspQ3Meshes *self) {
 	memset(self->m, 0, sizeof(self->m));
 	self->n = 0;
 	return self;
 }
 
-BspQ3Malla *__fastcall BspQ3Malla_ctor(BspQ3Malla *self) {
-	CListaVert_ctor(&self->vert);
+BspQ3Mesh *__fastcall BspQ3Mesh_ctor(BspQ3Mesh *self) {
+	CVertList_ctor(&self->vert);
 	self->face = NULL;
 	self->nTri = 0;
 	self->totTri = 0;
@@ -92,7 +92,7 @@ BspQ3Malla *__fastcall BspQ3Malla_ctor(BspQ3Malla *self) {
 	return self;
 }
 
-void *__fastcall BspQ3_Identidad(void *self) {
+void *__fastcall BspQ3_Identity(void *self) {
 	return self;
 }
 
@@ -102,44 +102,44 @@ void __fastcall CBspQ3_dtor(CBspQ3 *self) {
 		operator_delete_sized(self->lump, 0);
 		self->lump = NULL;
 	}
-	BspQ3Mallas *lm = self->ListaMallas;
+	BspQ3Meshes *lm = self->MeshList;
 	if (lm) {
-		BspQ3Mallas_Free(lm);
+		BspQ3Meshes_Free(lm);
 		operator_delete_sized(lm, sizeof(*lm));
-		self->ListaMallas = NULL;
+		self->MeshList = NULL;
 	}
 	if (self->pMesh) {
 		COM_RELEASE(self->pMesh);
 		self->pMesh = NULL;
 	}
-	if (self->MallaD3D) {
-		((bspQ3MallaD3DDelete_t)self->MallaD3D->vftable[MALLAD3D_VF_DELETE])(self->MallaD3D, 1);
-		self->MallaD3D = NULL;
+	if (self->MeshD3D) {
+		((bspQ3MeshD3DDelete_t)self->MeshD3D->vftable[MESHD3D_VF_DELETE])(self->MeshD3D, 1);
+		self->MeshD3D = NULL;
 	}
 	if (self->name) {
-		Cad_Set(&self->name, NULL);
+		String_Set(&self->name, NULL);
 	}
 }
 
-void __fastcall BspQ3Mallas_Free(BspQ3Mallas *self) {
+void __fastcall BspQ3Meshes_Free(BspQ3Meshes *self) {
 	for (int i = 0; i < self->n; i++) {
-		BspQ3Malla *m = self->m[i];
+		BspQ3Mesh *m = self->m[i];
 		if (m) {
-			BspQ3Malla_dtor(m);
+			BspQ3Mesh_dtor(m);
 			operator_delete_sized(m, sizeof(*m));
 			self->m[i] = NULL;
 		}
 	}
 }
 
-void __fastcall BspQ3Malla_dtor(BspQ3Malla *self) {
+void __fastcall BspQ3Mesh_dtor(BspQ3Mesh *self) {
 	CHECK(!self->pVertVB);
 	CHECK(!self->pVertIB);
 	if (self->pTri) {
 		operator_delete_sized(self->pTri, 6);
 		self->pTri = NULL;
 	}
-	CListaVert_Free(&self->vert);
+	CVertList_Free(&self->vert);
 }
 
 long double Vec3_DotX87(const float *a, const float *b) {
@@ -159,13 +159,13 @@ long double Vec3_DotX87(const float *a, const float *b) {
 }
 
 void __fastcall CBspQ3_ReleaseD3D(CBspQ3 *self) {
-	((bspQ3MallaD3DDev_t)self->MallaD3D->vftable[MALLAD3D_VF_INVALIDATE])(self->MallaD3D, g_pd3dDevice);
+	((bspQ3MeshD3DDev_t)self->MeshD3D->vftable[MESHD3D_VF_INVALIDATE])(self->MeshD3D, g_pd3dDevice);
 	if (self->pMesh) {
 		COM_RELEASE(self->pMesh);
 		self->pMesh = NULL;
 	}
-	for (int i = 0; i < self->ListaMallas->n; i++) {
-		BspQ3Malla *m = self->ListaMallas->m[i];
+	for (int i = 0; i < self->MeshList->n; i++) {
+		BspQ3Mesh *m = self->MeshList->m[i];
 		if (m->pVertVB) {
 			COM_RELEASE(m->pVertVB);
 			m->pVertVB = NULL;
@@ -178,16 +178,16 @@ void __fastcall CBspQ3_ReleaseD3D(CBspQ3 *self) {
 }
 
 void __fastcall CBspQ3_InitD3D(CBspQ3 *self) {
-	((bspQ3MallaD3DDev_t)self->MallaD3D->vftable[MALLAD3D_VF_RESTORE])(self->MallaD3D, g_pd3dDevice);
-	for (int i = 0; i < self->ListaMallas->n; i++) {
-		BspQ3Malla *m = self->ListaMallas->m[i];
+	((bspQ3MeshD3DDev_t)self->MeshD3D->vftable[MESHD3D_VF_RESTORE])(self->MeshD3D, g_pd3dDevice);
+	for (int i = 0; i < self->MeshList->n; i++) {
+		BspQ3Mesh *m = self->MeshList->m[i];
 		CHECK(Render_CreateVB(&m->pVertVB, &m->vert, 0) == 0);
 		CHECK(Render_CreateIB(&m->pVertIB, m->pTri, m->nTri, 0) == 0);
 	}
 }
 
 void __fastcall CBspQ3_ReadFaces(CBspQ3 *self) {
-	char dir[MAX_RUTA], buf[MAX_RUTA];
+	char dir[MAX_FILEPATH], buf[MAX_FILEPATH];
 	CMaterial tmp;
 
 	int size = BspQ3_LumpLen(self, BSPQ3_LUMP_FACES, sizeof(BspQ3FileFace));
@@ -243,27 +243,27 @@ void __fastcall CBspQ3_ReadFaces(CBspQ3 *self) {
 			break;
 		}
 	}
-	Ruta_Part(dir, self->name, RUTA_DRIVE | RUTA_DIR);
+	Path_Part(dir, self->name, PATH_DRIVE | PATH_DIR);
 	for (int i = 0; i < self->nFaces; i++) {
 		BspQ3Face *face = &self->faces[i];
 		face->mat = NULL;
 		if (face->type != BSPQ3_POLYGON) {
 			continue;
 		}
-		Ruta_Merge(buf, dir, face->shader->name);
+		Path_Merge(buf, dir, face->shader->name);
 		size_t len = strlen(buf);
 		Str_Copy(buf + len, ".tga", (int)(sizeof(buf) - len));
 		CMaterial_ctor(&tmp);
-		Cad_Set(&tmp.Nombre, self->faces[i].shader->name);
-		CMaterial_SetMap(&tmp, MAPA_DIFFUSE, buf);
+		String_Set(&tmp.Name, self->faces[i].shader->name);
+		CMaterial_SetMap(&tmp, MAP_DIFFUSE, buf);
 		tmp.params.b39 = 0;
-		CMaterial *mat = CListaMat_Find(g_ListaMat, &tmp);
+		CMaterial *mat = CMatList_Find(g_MatList, &tmp);
 		if (!mat) {
 			mat = operator_new(sizeof(CMaterial));
 			mat = mat ? CMaterial_ctor(mat) : NULL;
 			CMaterial_Assign(mat, &tmp);
-			CMaterial_Prepare(mat, g_MotorDev);
-			CListaMat_Add(g_ListaMat, mat);
+			CMaterial_Prepare(mat, g_EngineDev);
+			CMatList_Add(g_MatList, mat);
 		}
 		self->faces[i].mat = mat;
 		if (self->faces[i].shader->flags & 0x20) {
@@ -278,7 +278,7 @@ void __fastcall CBspQ3_ReadFaces(CBspQ3 *self) {
 }
 
 void __fastcall CBspQ3_ReadLMaps(CBspQ3 *self) {
-	char path[MAX_RUTA];
+	char path[MAX_FILEPATH];
 
 	CHECK(self->lump);
 	int size = self->head->lumps[BSPQ3_LUMP_LIGHTMAPS].len;
@@ -290,17 +290,17 @@ void __fastcall CBspQ3_ReadLMaps(CBspQ3 *self) {
 		BspQ3LMap *lm = &self->lmaps[i];
 		lm->data = src;
 		lm->bpp = 3;
-		lm->alto = BSPQ3_LMAP_SIZE;
-		lm->ancho = BSPQ3_LMAP_SIZE;
+		lm->height = BSPQ3_LMAP_SIZE;
+		lm->width = BSPQ3_LMAP_SIZE;
 		lm->i00 = -1;
-		Ruta_Part(path, self->name, RUTA_DRIVE | RUTA_DIR | RUTA_NAME);
+		Path_Part(path, self->name, PATH_DRIVE | PATH_DIR | PATH_NAME);
 		size_t len = strlen(path);
 		Bprintf(path + len, (int)(sizeof(path) - len), "_lmap%04d.bmp", i);
 		if (crt_access(path, 0)) {
 			CBmp bmp;
 			bmp.img = NULL;
-			bmp.ancho = BSPQ3_LMAP_SIZE;
-			bmp.alto = BSPQ3_LMAP_SIZE;
+			bmp.width = BSPQ3_LMAP_SIZE;
+			bmp.height = BSPQ3_LMAP_SIZE;
 			bmp.img = New_Array(BSPQ3_LMAP_SIZE * BSPQ3_LMAP_SIZE, 4);
 			CHECK(bmp.img);
 			byte *d = bmp.img;
@@ -317,13 +317,13 @@ void __fastcall CBspQ3_ReadLMaps(CBspQ3 *self) {
 		}
 		CMaterial *mat = operator_new(sizeof(CMaterial));
 		mat = mat ? CMaterial_ctor(mat) : NULL;
-		Cad_Printf(&mat->Nombre, "Lightmap Mat %04d", i);
-		CMaterial_SetMap(mat, MAPA_DIFFUSE, path);
+		String_Printf(&mat->Name, "Lightmap Mat %04d", i);
+		CMaterial_SetMap(mat, MAP_DIFFUSE, path);
 		mat->params.b39 = 0;
-		mat->mapa[MAPA_DIFFUSE]->lightmap = 1;
+		mat->map[MAP_DIFFUSE]->lightmap = 1;
 		mat->params.w3e &= 0xff;
-		CMaterial_Prepare(mat, g_MotorDev);
-		CListaMat_Add(g_ListaMat, mat);
+		CMaterial_Prepare(mat, g_EngineDev);
+		CMatList_Add(g_MatList, mat);
 		if (!g_BspQ3LMapNoBlend) {
 			mat->params.srcBlend = 9;
 			mat->params.dstBlend = 3;
@@ -368,10 +368,10 @@ int __thiscall CBspQ3_ReadLump(CBspQ3 *self, int id, void **out, int elem) {
 void __fastcall CBspQ3_Render(CBspQ3 *self) {
 	CHECK(g_pd3dDevice);
 	Render_SetWorldMatrix(g_MatIdentity, 0);
-	CHECK(self->MallaD3D);
+	CHECK(self->MeshD3D);
 	if (!g_KeyL) {
-		for (int i = 0; i < self->ListaMallas->n; i++) {
-			BspQ3Malla *m = self->ListaMallas->m[i];
+		for (int i = 0; i < self->MeshList->n; i++) {
+			BspQ3Mesh *m = self->MeshList->m[i];
 			BspQ3Face *face = m->face;
 			CHECK(m->nTri == m->totTri);
 			Render_SetMaterial(face->mat, 0);
@@ -379,14 +379,14 @@ void __fastcall CBspQ3_Render(CBspQ3 *self) {
 			if (lmi < (uint32_t)self->nLMaps) {
 				BspQ3LMap *lm = &self->lmaps[lmi];
 				BspQ3_SetStage1(6, 3);
-				Render_SetMapa(1, lm->mat->mapa[MAPA_DIFFUSE]);
+				Render_SetMap(1, lm->mat->map[MAP_DIFFUSE]);
 			} else {
 				BspQ3_SetStage1(1, 1);
 			}
-			if (m->pVertVB && g_UsarVB) {
+			if (m->pVertVB && g_UseVB) {
 				Render_DrawVBIB(m->pVertVB, m->pVertIB, &m->vert, (uint32_t)m->nTri);
 			} else {
-				Render_DrawListaIdx(&m->vert, &m->pTri[0][0], m->nTri, 0);
+				Render_DrawListIdx(&m->vert, &m->pTri[0][0], m->nTri, 0);
 			}
 			g_RenderTris += m->nTri;
 			g_RenderVerts += m->vert.nVert;
@@ -397,7 +397,7 @@ void __fastcall CBspQ3_Render(CBspQ3 *self) {
 	CHECK(self->pMesh);
 	uint32_t num;
 	D3D_METHOD(self->pMesh, bspQ3GetAttributeTable_t, 0x48)(self->pMesh, NULL, &num);
-	CHECK(num <= BSPQ3_TAM_ATTRIBTABLE);
+	CHECK(num <= BSPQ3_SIZE_ATTRIBTABLE);
 	D3D_METHOD(self->pMesh, bspQ3GetAttributeTable_t, 0x48)(self->pMesh, g_BspQ3Attrib, &num);
 	const uint32_t *at = g_BspQ3Attrib;
 	for (uint32_t i = 0; i < num; i++) {
@@ -410,21 +410,21 @@ void __fastcall CBspQ3_Render(CBspQ3 *self) {
 	g_RenderVerts += D3D_METHOD(self->pMesh, bspQ3GetNum_t, 0x14)(self->pMesh);
 }
 
-void __thiscall BspQ3Mallas_AddTri(BspQ3Mallas *self, const void *a, const void *b, const void *c, BspQ3Face *face) {
-	BspQ3Malla *m = BspQ3Mallas_Find(self, face);
+void __thiscall BspQ3Meshes_AddTri(BspQ3Meshes *self, const void *a, const void *b, const void *c, BspQ3Face *face) {
+	BspQ3Mesh *m = BspQ3Meshes_Find(self, face);
 	CHECK(m);
 	if (!m->totTri) {
 		CHECK(m->nTri);
 		m->pTri = New_Array((uint32_t)m->nTri, 6);
-		CListaVert_SetFormat(&m->vert, VERT_TEX2);
-		CListaVert_Alloc(&m->vert, m->nTri * 3, 0);
+		CVertList_SetFormat(&m->vert, VERT_TEX2);
+		CVertList_Alloc(&m->vert, m->nTri * 3, 0);
 		m->totTri = m->nTri;
 		m->nTri = 0;
 	}
 	CHECK(m->nTri < m->totTri);
-	CListaVert_SetTex2(&m->vert, (uint32_t)(m->nTri * 3), a);
-	CListaVert_SetTex2(&m->vert, (uint32_t)(m->nTri * 3 + 1), b);
-	CListaVert_SetTex2(&m->vert, (uint32_t)(m->nTri * 3 + 2), c);
+	CVertList_SetTex2(&m->vert, (uint32_t)(m->nTri * 3), a);
+	CVertList_SetTex2(&m->vert, (uint32_t)(m->nTri * 3 + 1), b);
+	CVertList_SetTex2(&m->vert, (uint32_t)(m->nTri * 3 + 2), c);
 	uint16_t t = (uint16_t)m->nTri;
 	m->pTri[m->nTri][0] = (uint16_t)(t + t * 2);
 	m->pTri[m->nTri][1] = (uint16_t)(t + 1 + t * 2);
@@ -432,10 +432,10 @@ void __thiscall BspQ3Mallas_AddTri(BspQ3Mallas *self, const void *a, const void 
 	m->nTri++;
 }
 
-BspQ3Malla *__thiscall BspQ3Mallas_Find(BspQ3Mallas *self, BspQ3Face *face) {
+BspQ3Mesh *__thiscall BspQ3Meshes_Find(BspQ3Meshes *self, BspQ3Face *face) {
 	CHECK(face);
 	for (int i = 0; i < self->n; i++) {
-		BspQ3Malla *m = self->m[i];
+		BspQ3Mesh *m = self->m[i];
 		if (face->mat == m->face->mat && face->lmIndex == m->face->lmIndex) {
 			return m;
 		}
@@ -443,12 +443,12 @@ BspQ3Malla *__thiscall BspQ3Mallas_Find(BspQ3Mallas *self, BspQ3Face *face) {
 	return NULL;
 }
 
-void __thiscall BspQ3Mallas_Count(BspQ3Mallas *self, BspQ3Face *face, int ntri) {
-	BspQ3Malla *m = BspQ3Mallas_Find(self, face);
+void __thiscall BspQ3Meshes_Count(BspQ3Meshes *self, BspQ3Face *face, int ntri) {
+	BspQ3Mesh *m = BspQ3Meshes_Find(self, face);
 	if (!m) {
-		CHECK(self->n < BSPQ3_MAX_MALLAS);
-		m = operator_new(sizeof(BspQ3Malla));
-		m = m ? BspQ3Malla_ctor(m) : NULL;
+		CHECK(self->n < BSPQ3_MAX_MESHES);
+		m = operator_new(sizeof(BspQ3Mesh));
+		m = m ? BspQ3Mesh_ctor(m) : NULL;
 		m->face = face;
 		self->m[self->n] = m;
 		self->n++;
@@ -457,18 +457,18 @@ void __thiscall BspQ3Mallas_Count(BspQ3Mallas *self, BspQ3Face *face, int ntri) 
 }
 
 void __fastcall CBspQ3_Build(CBspQ3 *self) {
-	CHECK(!self->MallaD3D);
-	CHECK(!self->ListaMallas);
-	BspQ3Mallas *lm = operator_new(sizeof(BspQ3Mallas));
-	self->ListaMallas = lm ? BspQ3Mallas_ctor(lm) : NULL;
+	CHECK(!self->MeshD3D);
+	CHECK(!self->MeshList);
+	BspQ3Meshes *lm = operator_new(sizeof(BspQ3Meshes));
+	self->MeshList = lm ? BspQ3Meshes_ctor(lm) : NULL;
 	for (int i = 0; i < self->nFaces; i++) {
 		BspQ3Face *f = &self->faces[i];
 		if (f->type == BSPQ3_POLYGON && f->nVerts >= 3) {
-			BspQ3Mallas_Count(self->ListaMallas, f, f->nVerts - 2);
+			BspQ3Meshes_Count(self->MeshList, f, f->nVerts - 2);
 		}
 	}
-	CMallaTri *mt = operator_new(sizeof(CMallaTri));
-	mt = mt ? CMallaTri_ctor(mt) : NULL;
+	CTriMesh *mt = operator_new(sizeof(CTriMesh));
+	mt = mt ? CTriMesh_ctor(mt) : NULL;
 	for (int i = 0; i < self->nFaces; i++) {
 		BspQ3Face *f = &self->faces[i];
 		if (f->type != BSPQ3_POLYGON || f->nVerts < 3) {
@@ -477,7 +477,7 @@ void __fastcall CBspQ3_Build(CBspQ3 *self) {
 		const BspQ3Vert *v = f->verts;
 		CHECK(f->nVerts < BSPQ3_MAX_VERT);
 		for (int k = 0; k < f->nVerts; k++, v++) {
-			CVertMalla *d = &g_BspQ3Vert[k];
+			CMeshVert *d = &g_BspQ3Vert[k];
 			float *l = (float *)(g_BspQ3VertL + k * 0x28);
 			/* z up to y up */
 			d->pos.x = v->pos.x;
@@ -500,19 +500,19 @@ void __fastcall CBspQ3_Build(CBspQ3 *self) {
 			l[9] = v->lm[1];
 		}
 		for (int k = 2; k < f->nVerts; k++) {
-			CMallaTri_AddTriVerts(mt, &g_BspQ3Vert[0], &g_BspQ3Vert[k - 1], &g_BspQ3Vert[k], f->mat, 1, 0);
-			BspQ3Mallas_AddTri(self->ListaMallas, g_BspQ3VertL, g_BspQ3VertL + (k - 1) * 0x28,
+			CTriMesh_AddTriVerts(mt, &g_BspQ3Vert[0], &g_BspQ3Vert[k - 1], &g_BspQ3Vert[k], f->mat, 1, 0);
+			BspQ3Meshes_AddTri(self->MeshList, g_BspQ3VertL, g_BspQ3VertL + (k - 1) * 0x28,
 				g_BspQ3VertL + k * 0x28, f);
 		}
 	}
-	CMallaD3D *md = operator_new(sizeof(CMallaD3D));
-	self->MallaD3D = md ? CMallaD3D_ctorMalla(md, mt, 0, NULL) : NULL;
+	CMeshD3D *md = operator_new(sizeof(CMeshD3D));
+	self->MeshD3D = md ? CMeshD3D_ctorMesh(md, mt, 0, NULL) : NULL;
 	if (mt) {
-		((bspQ3MallaTriDelete_t)((void **)mt->vftable)[0])(mt, 1);
+		((bspQ3TriMeshDelete_t)((void **)mt->vftable)[0])(mt, 1);
 	}
-	for (int i = 0; i < self->ListaMallas->n; i++) {
-		BspQ3Malla *m = self->ListaMallas->m[i];
-		CListaVert_Optimize(&m->vert, m->pTri, m->nTri);
+	for (int i = 0; i < self->MeshList->n; i++) {
+		BspQ3Mesh *m = self->MeshList->m[i];
+		CVertList_Optimize(&m->vert, m->pTri, m->nTri);
 	}
 }
 
@@ -537,7 +537,7 @@ void BspQ3_Free(void) {
 	}
 }
 
-void BspQ3_Crear(void) {
+void BspQ3_Create(void) {
 }
 
 void BspQ3_Render(void) {
@@ -548,10 +548,10 @@ void BspQ3_Render(void) {
 
 /* the static initializer (rva 0x05f770) of a vertex array after g_BspQ3VertL that no code reads */
 #define BSPQ3_VERTG 0x40
-#define g_BspQ3VertG (GAME_ARRAY(Grafico3DVert, g_BspQ3VertG, 0x4e54f8))	/* [BSPQ3_VERTG] */
+#define g_BspQ3VertG (GAME_ARRAY(Graphic3DVert, g_BspQ3VertG, 0x4e54f8))	/* [BSPQ3_VERTG] */
 
 void BspQ3_InitVertG(void) {
 	for (int i = 0; i < BSPQ3_VERTG; i++) {
-		Grafico3DVert_ctor(&g_BspQ3VertG[i]);
+		Graphic3DVert_ctor(&g_BspQ3VertG[i]);
 	}
 }

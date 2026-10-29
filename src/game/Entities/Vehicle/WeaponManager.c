@@ -773,7 +773,7 @@ byte __thiscall cWeaponManager_VarV(cWeaponManager *self, const char *name, doub
 	}
 	matrix_t m;
 	CGameModel *model = WEnt_Vtbl(self->owner)->GetObjData(self->owner);
-	const matrix_t *r = CGameModel_NodoMatrix(model, &m, node, 0, NULL, 0);
+	const matrix_t *r = CGameModel_NodeMatrix(model, &m, node, 0, NULL, 0);
 	float fx = r->m[12];
 	float fy = r->m[13];
 	float fz = r->m[14];

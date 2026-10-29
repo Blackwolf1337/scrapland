@@ -1,6 +1,6 @@
 /*
- * The floor and the collision meshes of the engine3d, original source Engine/suelo.cpp (include/scrap/suelo.h), with
- * the tabla.h instances it makes.
+ * The floor and the collision meshes of the engine3d, original source Engine/suelo.cpp (include/scrap/ground.h), with
+ * the table.h instances it makes.
  */
 #include <string.h>
 
@@ -21,13 +21,13 @@
 #include "scrap/scrapmain.h"
 #include "scrap/win32.h"
 
-#define CSUELO_VFTABLE GAME_VFTABLE(CSuelo_vftable, 0x3db13c)
-#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObjeto3D_vftable, 0x3d79dc)
+#define CSUELO_VFTABLE GAME_VFTABLE(CGround_vftable, 0x3db13c)
+#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
 #define CCOLLIDEMESH_CTOR 0x2586b0
 #define CCOLLIDEMESH_DTOR 0x20eb70
 #define CCOLLIDEQUAD_DTOR 0x258ce0
 #define CNODO3D_DTOR 0x23d070
-#define SUELO_FLT_MAX 3.4028234663852886e+38f
+#define GROUND_FLT_MAX 3.4028234663852886e+38f
 
 /* the statistics of the queries, cleared with the query number */
 #define g_CollisionStats (GAME_ARRAY(uint32_t, g_CollisionStats, 0x4af888))	/* 6 */
@@ -38,24 +38,24 @@
 #define g_LoadMeshList GAME_GLOBAL(CCollideMesh **, g_LoadMeshList, 0x4af8a8)
 #define g_SaveCollideMeshParam GAME_GLOBAL(int, g_SaveCollideMeshParam, 0x4af8a4)
 
-/* the accessor of tabla.h */
+/* the accessor of table.h */
 
 typedef void(__thiscall *objCall_t)(void *self, void *arg);
 
 double crt_ceil(double x);
 
-static void *Suelo_Obj(const CSuelo *self, uint32_t i) {
-	TABLA_CHECK(self->nodos, i, self->nNodos);
-	return self->nodos[i].obj3D;
+static void *Ground_Obj(const CGround *self, uint32_t i) {
+	TABLE_CHECK(self->nodes, i, self->nNodes);
+	return self->nodes[i].obj3D;
 }
 
-static CCollideQuad *Alturas_Cuad(CAlturas *alt, uint32_t i) {
-	TABLA_CHECK(alt->cuads, i, alt->nCuads);
-	return &alt->cuads[i];
+static CCollideQuad *Heights_Quad(CHeights *alt, uint32_t i) {
+	TABLE_CHECK(alt->quads, i, alt->nQuads);
+	return &alt->quads[i];
 }
 
-CCollideQuad *__thiscall CAlturas_GetCell(CAlturas *self, uint32_t x, uint32_t z) {
-	return Alturas_Cell(self, x, z);
+CCollideQuad *__thiscall CHeights_GetCell(CHeights *self, uint32_t x, uint32_t z) {
+	return Heights_Cell(self, x, z);
 }
 
 static float Vec3_Dist2(const vec3_t *a, const vec3_t *b) {
@@ -84,27 +84,27 @@ static vec3_t Vec3_Dir(const vec3_t *a, const vec3_t *b) {
 	return Vec3_Scaled(d, Vec3_Len(d.x, d.y, d.z));
 }
 
-/* tabla.h */
+/* table.h */
 
-static void Tabla_Write(CArchIO *f, CTabla *t, int size) {
-	CArchIO_WriteInt(f, t->n);
-	CArchIO_WriteInt(f, size);
-	CArchIO_Write(f, t->p, t->n * size);
+static void Table_Write(CFileIO *f, CTable *t, int size) {
+	CFileIO_WriteInt(f, t->n);
+	CFileIO_WriteInt(f, size);
+	CFileIO_Write(f, t->p, t->n * size);
 }
 
-void Tabla_Write2(CArchIO *f, CTabla *t) {
-	Tabla_Write(f, t, 2);
+void Table_Write2(CFileIO *f, CTable *t) {
+	Table_Write(f, t, 2);
 }
 
-void Tabla_Write1C(CArchIO *f, CTabla *t) {
-	Tabla_Write(f, t, 0x1c);
+void Table_Write1C(CFileIO *f, CTable *t) {
+	Table_Write(f, t, 0x1c);
 }
 
-void Tabla_WriteC(CArchIO *f, CTabla *t) {
-	Tabla_Write(f, t, 0xc);
+void Table_WriteC(CFileIO *f, CTable *t) {
+	Table_Write(f, t, 0xc);
 }
 
-static void Tabla_DeleteObjs(void **p) {
+static void Table_DeleteObjs(void **p) {
 	if (((int *)p)[-1]) {
 		((objDelete_t)(*(void ***)p)[0])(p, 3);
 	} else {
@@ -112,20 +112,20 @@ static void Tabla_DeleteObjs(void **p) {
 	}
 }
 
-void __fastcall Tabla_FreeObjs(CTabla *t) {
+void __fastcall Table_FreeObjs(CTable *t) {
 	if (t->p) {
-		Tabla_DeleteObjs(t->p);
+		Table_DeleteObjs(t->p);
 		t->p = NULL;
 		t->n = 0;
 	}
 }
 
 
-/* engine3d/engine/suelo.h */
+/* engine3d/engine/ground.h */
 
 CCollideMesh *__fastcall CCollideMesh_ctor(CCollideMesh *self) {
 	self->Refs = 0;
-	memset(&self->Extens, 0, sizeof(self->Extens));
+	memset(&self->Ext, 0, sizeof(self->Ext));
 	self->nVert = 0;
 	self->pVert = NULL;
 	self->nTri = 0;
@@ -143,8 +143,8 @@ CCollideQuad *__fastcall CCollideQuad_ctor(CCollideQuad *self) {
 	self->next = NULL;
 	self->Mesh = NULL;
 	g_CollisionQuadCount++;
-	self->gapBottom = -SUELO_FLT_MAX;
-	self->gapTop = -SUELO_FLT_MAX;
+	self->gapBottom = -GROUND_FLT_MAX;
+	self->gapTop = -GROUND_FLT_MAX;
 	return self;
 }
 
@@ -165,7 +165,7 @@ void __fastcall CCollideQuad_dtor(CCollideQuad *self) {
 		self->Mesh = NULL;
 	}
 	g_CollisionQuadCount--;
-	Tabla_Free((CTabla *)&self->nTri);
+	Table_Free((CTable *)&self->nTri);
 }
 
 CCollideQuad *__thiscall CCollideQuad_Delete(CCollideQuad *self, uint32_t flags) {
@@ -184,24 +184,24 @@ CCollideQuad *__thiscall CCollideQuad_Delete(CCollideQuad *self, uint32_t flags)
 	return self;
 }
 
-/* the vector deleting destructor of the floor nodes (CNodo3D, 0xfc bytes) */
-void *__thiscall CNodo3D_VecDelete(void *self, uint32_t flags) {
+/* the vector deleting destructor of the floor nodes (CNode3D, 0xfc bytes) */
+void *__thiscall CNode3D_VecDelete(void *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(CNodo3D), *mem, GAME_FUNC(CNodo3D_dtor, CNODO3D_DTOR));
+		crt_eh_vector_dtor(self, sizeof(CNode3D), *mem, GAME_FUNC(CNode3D_dtor, CNODO3D_DTOR));
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
 		return mem;
 	}
-	CNodo3D_dtor(self);
+	CNode3D_dtor(self);
 	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CNodo3D));
+		operator_delete_sized(self, sizeof(CNode3D));
 	}
 	return self;
 }
 
-CAlturas *__fastcall CAlturas_ctor(CAlturas *self) {
+CHeights *__fastcall CHeights_ctor(CHeights *self) {
 	crt_eh_vector_ctor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_ctor, CCOLLIDEMESH_CTOR),
 		GAME_FUNC(CCollideMesh_dtor, CCOLLIDEMESH_DTOR));
 	crt_eh_vector_ctor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_ctor, CCOLLIDEMESH_CTOR),
@@ -209,8 +209,8 @@ CAlturas *__fastcall CAlturas_ctor(CAlturas *self) {
 	CCollideMesh_ctor(&self->CollideMesh1);
 	CCollideMesh_ctor(&self->CollideMesh2);
 	memset(&self->ext, 0, sizeof(self->ext) + sizeof(self->dim));
-	self->cuads = NULL;
-	self->nCuads = 0;
+	self->quads = NULL;
+	self->nQuads = 0;
 	self->MeshID = 0;
 	self->nx = 0;
 	self->nz = 0;
@@ -222,16 +222,16 @@ CAlturas *__fastcall CAlturas_ctor(CAlturas *self) {
 	return self;
 }
 
-static void Alturas_FreeCuads(CAlturas *self) {
-	if (self->cuads) {
-		Delete_Objects(self->cuads, sizeof(CCollideQuad), GAME_FUNC(CCollideQuad_dtor, CCOLLIDEQUAD_DTOR));
-		self->cuads = NULL;
-		self->nCuads = 0;
+static void Heights_FreeQuads(CHeights *self) {
+	if (self->quads) {
+		Delete_Objects(self->quads, sizeof(CCollideQuad), GAME_FUNC(CCollideQuad_dtor, CCOLLIDEQUAD_DTOR));
+		self->quads = NULL;
+		self->nQuads = 0;
 	}
 }
 
-void __fastcall CAlturas_dtor(CAlturas *self) {
-	Alturas_FreeCuads(self);
+void __fastcall CHeights_dtor(CHeights *self) {
+	Heights_FreeQuads(self);
 	if (self->outSector) {
 		CCollideQuad *q = self->outSector;
 		CCollideQuad_dtor(q);
@@ -245,25 +245,25 @@ void __fastcall CAlturas_dtor(CAlturas *self) {
 		CHECK(self->_CollideMesh2[i].Refs == 0);
 	}
 	CHECK(g_CollisionQuadCount == 0);
-	Alturas_FreeCuads(self);
+	Heights_FreeQuads(self);
 	CCollideMesh_dtor(&self->CollideMesh2);
 	CCollideMesh_dtor(&self->CollideMesh1);
 	crt_eh_vector_dtor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_dtor, CCOLLIDEMESH_DTOR));
 	crt_eh_vector_dtor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_dtor, CCOLLIDEMESH_DTOR));
 }
 
-/* CSuelo */
+/* CGround */
 
-CSuelo *__fastcall CSuelo_ctor(CSuelo *self) {
-	self->clase = 0;
+CGround *__fastcall CGround_ctor(CGround *self) {
+	self->class = 0;
 	self->vftable = CSUELO_VFTABLE;
 	memset(self->cache, 0, sizeof(self->cache));
-	self->nodos = NULL;
-	self->nNodos = 0;
-	memset(&self->Extens, 0, sizeof(self->Extens));
+	self->nodes = NULL;
+	self->nNodes = 0;
+	memset(&self->Ext, 0, sizeof(self->Ext));
 	memset(&self->CollideExt, 0, sizeof(self->CollideExt));
-	CAlturas_ctor(&self->alturas);
-	self->clase = CLASE_OBJ3D_SUELO;
+	CHeights_ctor(&self->heights);
+	self->class = CLASS_OBJ3D_GROUND;
 	memset(self->traceStats, 0, sizeof(self->traceStats));
 	g_QuadTriCacheID = 1;
 	memset(self->cache, 0, sizeof(self->cache));
@@ -281,39 +281,39 @@ CSuelo *__fastcall CSuelo_ctor(CSuelo *self) {
 	return self;
 }
 
-void __fastcall CSuelo_dtor(CSuelo *self) {
+void __fastcall CGround_dtor(CGround *self) {
 	self->vftable = CSUELO_VFTABLE;
-	CAlturas_dtor(&self->alturas);
-	Tabla_FreeObjs((CTabla *)&self->nNodos);
+	CHeights_dtor(&self->heights);
+	Table_FreeObjs((CTable *)&self->nNodes);
 	self->vftable = IOBJETO3D_VFTABLE;
 }
 
-CSuelo *__thiscall CSuelo_Delete(CSuelo *self, byte flags) {
-	CSuelo_dtor(self);
+CGround *__thiscall CGround_Delete(CGround *self, byte flags) {
+	CGround_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
 	return self;
 }
 
-void __thiscall CSuelo_Nop(CSuelo *self, void *arg) {
+void __thiscall CGround_Nop(CGround *self, void *arg) {
 	(void)self;
 	(void)arg;
 }
 
-static void Suelo_NodosCall(CSuelo *self, void *arg, int slot) {
-	for (int i = 0; i < self->nNodos; i++) {
-		void *obj = Suelo_Obj(self, i);
+static void Ground_NodesCall(CGround *self, void *arg, int slot) {
+	for (int i = 0; i < self->nNodes; i++) {
+		void *obj = Ground_Obj(self, i);
 		((objCall_t)(*(void ***)obj)[slot])(obj, arg);
 	}
 }
 
-void __thiscall CSuelo_NodosVf3(CSuelo *self, void *arg) {
-	Suelo_NodosCall(self, arg, 3);
+void __thiscall CGround_NodesVf3(CGround *self, void *arg) {
+	Ground_NodesCall(self, arg, 3);
 }
 
-void __thiscall CSuelo_NodosVf4(CSuelo *self, void *arg) {
-	Suelo_NodosCall(self, arg, 4);
+void __thiscall CGround_NodesVf4(CGround *self, void *arg) {
+	Ground_NodesCall(self, arg, 4);
 }
 
 /* the triangles of the collision meshes */
@@ -362,48 +362,48 @@ void __thiscall CCollideMesh_GetTri(CCollideMesh *self, int i, CCollideTri *tri,
 
 /* the files */
 
-void __thiscall CCollideMesh_Read(CCollideMesh *self, CArchIO *f) {
+void __thiscall CCollideMesh_Read(CCollideMesh *self, CFileIO *f) {
 	char name[128];
 
-	CArchIO_BeginBlock(f, "CMSH");
-	CHECK(CArchIO_ReadInt(f) == 2);
-	CHECK(CArchIO_ReadInt(f) == sizeof(CCollideMesh));
-	CArchIO_ReadString(f, name, sizeof(name));
-	int zona = Sector_Find(name);
-	CArchIO_Read(f, &self->flags, 2);
-	CArchIO_Read(f, &self->sector, 2);
-	CArchIO_Read(f, &self->MeshID, 2);
-	CArchIO_Read(f, &self->Param, 1);
-	CArchIO_Read(f, &self->outSector, 1);
-	CArchIO_Read(f, &self->Extens, sizeof(self->Extens));
-	CHECK((uint32_t)(zona + 1) == self->sector);
+	CFileIO_BeginBlock(f, "CMSH");
+	CHECK(CFileIO_ReadInt(f) == 2);
+	CHECK(CFileIO_ReadInt(f) == sizeof(CCollideMesh));
+	CFileIO_ReadString(f, name, sizeof(name));
+	int zone = Sector_Find(name);
+	CFileIO_Read(f, &self->flags, 2);
+	CFileIO_Read(f, &self->sector, 2);
+	CFileIO_Read(f, &self->MeshID, 2);
+	CFileIO_Read(f, &self->Param, 1);
+	CFileIO_Read(f, &self->outSector, 1);
+	CFileIO_Read(f, &self->Ext, sizeof(self->Ext));
+	CHECK((uint32_t)(zone + 1) == self->sector);
 	CHECK(self->Param < 256);
 	CHECK(!g_LoadMeshList[self->Param]);
 	g_LoadMeshList[self->Param] = self;
-	Tabla_ReadC(f, (CTabla *)&self->nVert);
-	Tabla_Read1C(f, (CTabla *)&self->nTri);
-	CArchIO_Error(f, "CMSH");
+	Table_ReadC(f, (CTable *)&self->nVert);
+	Table_Read1C(f, (CTable *)&self->nTri);
+	CFileIO_Error(f, "CMSH");
 }
 
-void __thiscall CCollideMesh_Write(CCollideMesh *self, CArchIO *f) {
+void __thiscall CCollideMesh_Write(CCollideMesh *self, CFileIO *f) {
 	CHECK(g_SaveCollideMeshParam < 256);
 	self->Param = (byte)g_SaveCollideMeshParam++;
-	CArchIO_BeginBlockWrite(f, "CMSH");
-	CArchIO_WriteInt(f, 2);
-	CArchIO_WriteInt(f, sizeof(CCollideMesh));
-	CArchIO_WriteString(f, Sector_GetName(self->sector - 1));
-	CArchIO_Write(f, &self->flags, 2);
-	CArchIO_Write(f, &self->sector, 2);
-	CArchIO_Write(f, &self->MeshID, 2);
-	CArchIO_Write(f, &self->Param, 1);
-	CArchIO_Write(f, &self->outSector, 1);
-	CArchIO_Write(f, &self->Extens, sizeof(self->Extens));
-	Tabla_WriteC(f, (CTabla *)&self->nVert);
-	Tabla_Write1C(f, (CTabla *)&self->nTri);
-	CArchIO_EndBlockWrite(f, "CMSH");
+	CFileIO_BeginBlockWrite(f, "CMSH");
+	CFileIO_WriteInt(f, 2);
+	CFileIO_WriteInt(f, sizeof(CCollideMesh));
+	CFileIO_WriteString(f, Sector_GetName(self->sector - 1));
+	CFileIO_Write(f, &self->flags, 2);
+	CFileIO_Write(f, &self->sector, 2);
+	CFileIO_Write(f, &self->MeshID, 2);
+	CFileIO_Write(f, &self->Param, 1);
+	CFileIO_Write(f, &self->outSector, 1);
+	CFileIO_Write(f, &self->Ext, sizeof(self->Ext));
+	Table_WriteC(f, (CTable *)&self->nVert);
+	Table_Write1C(f, (CTable *)&self->nTri);
+	CFileIO_EndBlockWrite(f, "CMSH");
 }
 
-/* the "!Mesh && mesh" link of suelo.h */
+/* the "!Mesh && mesh" link of ground.h */
 static void CCollideQuad_SetMesh(CCollideQuad *self, CCollideMesh *mesh) {
 	if (self->Mesh || !mesh) {
 		CHECK(!self->Mesh && mesh);
@@ -416,206 +416,206 @@ static void CCollideQuad_SetMesh(CCollideQuad *self, CCollideMesh *mesh) {
 	self->Mesh = mesh;
 }
 
-void __thiscall CCollideQuad_Read(CCollideQuad *self, CArchIO *f) {
-	CArchIO_BeginBlock(f, "QUAD");
-	CHECK(CArchIO_ReadInt(f) == 1);
-	int mesh = CArchIO_ReadInt(f);
+void __thiscall CCollideQuad_Read(CCollideQuad *self, CFileIO *f) {
+	CFileIO_BeginBlock(f, "QUAD");
+	CHECK(CFileIO_ReadInt(f) == 1);
+	int mesh = CFileIO_ReadInt(f);
 	CHECK(mesh < 256);
 	CCollideQuad_SetMesh(self, g_LoadMeshList[mesh]);
 	self->dwParam = 0;
-	Tabla_Read2(f, (CTabla *)&self->nTri);
+	Table_Read2(f, (CTable *)&self->nTri);
 	if (self->nTri > 0x400) {
 		Con_Warnf("WARN: Quad with %d triangles\n", self->nTri);
 	}
-	CArchIO_Read4(f, &self->maxY);
-	CArchIO_Read4(f, &self->minY);
-	CArchIO_Read4(f, &self->gapTop);
-	CArchIO_Read4(f, &self->gapBottom);
-	if (CArchIO_ReadInt(f)) {
+	CFileIO_Read4(f, &self->maxY);
+	CFileIO_Read4(f, &self->minY);
+	CFileIO_Read4(f, &self->gapTop);
+	CFileIO_Read4(f, &self->gapBottom);
+	if (CFileIO_ReadInt(f)) {
 		self->next = CCollideQuad_New();
 		CCollideQuad_Read(self->next, f);
 	}
-	CArchIO_Error(f, "QUAD");
+	CFileIO_Error(f, "QUAD");
 }
 
-/* a float as the bits CArchIO_WriteInt writes */
-static int32_t Suelo_FloatBits(float f) {
+/* a float as the bits CFileIO_WriteInt writes */
+static int32_t Ground_FloatBits(float f) {
 	int32_t i;
 	memcpy(&i, &f, sizeof(i));
 	return i;
 }
 
-void __thiscall CCollideQuad_Write(CCollideQuad *self, CArchIO *f) {
-	CArchIO_BeginBlockWrite(f, "QUAD");
-	CArchIO_WriteInt(f, 1);
-	CArchIO_WriteInt(f, self->Mesh->Param);
-	Tabla_Write2(f, (CTabla *)&self->nTri);
-	CArchIO_WriteInt(f, Suelo_FloatBits(self->maxY));
-	CArchIO_WriteInt(f, Suelo_FloatBits(self->minY));
-	CArchIO_WriteInt(f, Suelo_FloatBits(self->gapTop));
-	CArchIO_WriteInt(f, Suelo_FloatBits(self->gapBottom));
-	CArchIO_WriteInt(f, self->next != NULL);
+void __thiscall CCollideQuad_Write(CCollideQuad *self, CFileIO *f) {
+	CFileIO_BeginBlockWrite(f, "QUAD");
+	CFileIO_WriteInt(f, 1);
+	CFileIO_WriteInt(f, self->Mesh->Param);
+	Table_Write2(f, (CTable *)&self->nTri);
+	CFileIO_WriteInt(f, Ground_FloatBits(self->maxY));
+	CFileIO_WriteInt(f, Ground_FloatBits(self->minY));
+	CFileIO_WriteInt(f, Ground_FloatBits(self->gapTop));
+	CFileIO_WriteInt(f, Ground_FloatBits(self->gapBottom));
+	CFileIO_WriteInt(f, self->next != NULL);
 	if (self->next) {
 		CCollideQuad_Write(self->next, f);
 	}
-	CArchIO_EndBlockWrite(f, "QUAD");
+	CFileIO_EndBlockWrite(f, "QUAD");
 }
 
-byte __thiscall CSuelo_Read(CSuelo *self, CArchIO *f, void *ctx) {
+byte __thiscall CGround_Read(CGround *self, CFileIO *f, void *ctx) {
 	(void)ctx;
-	CArchIO_BeginBlock(f, "SUEL");
-	CHECK(CArchIO_ReadInt(f) == 1);
-	CArchIO_Read(f, &self->Extens, sizeof(self->Extens));
-	CArchIO_Read(f, &self->Dim, sizeof(self->Dim));
-	CArchIO_Read(f, &self->nx, 4);
-	CArchIO_Read(f, &self->nz, 4);
-	CHECK(!self->nNodos);
-	CArchIO_Read(f, &self->CollideTri, 4);
-	CArchIO_Read(f, &self->CollideExt, sizeof(self->CollideExt));
-	CArchIO_Error(f, "SUEL");
+	CFileIO_BeginBlock(f, "SUEL");
+	CHECK(CFileIO_ReadInt(f) == 1);
+	CFileIO_Read(f, &self->Ext, sizeof(self->Ext));
+	CFileIO_Read(f, &self->Dim, sizeof(self->Dim));
+	CFileIO_Read(f, &self->nx, 4);
+	CFileIO_Read(f, &self->nz, 4);
+	CHECK(!self->nNodes);
+	CFileIO_Read(f, &self->CollideTri, 4);
+	CFileIO_Read(f, &self->CollideExt, sizeof(self->CollideExt));
+	CFileIO_Error(f, "SUEL");
 	return 1;
 }
 
-byte __thiscall CSuelo_Write(CSuelo *self, CArchIO *f, void *ctx) {
+byte __thiscall CGround_Write(CGround *self, CFileIO *f, void *ctx) {
 	(void)ctx;
-	CArchIO_BeginBlockWrite(f, "SUEL");
-	CArchIO_WriteInt(f, 1);
-	CArchIO_Write(f, &self->Extens, sizeof(self->Extens));
-	CArchIO_Write(f, &self->Dim, sizeof(self->Dim));
-	CArchIO_Write(f, &self->nx, 4);
-	CArchIO_Write(f, &self->nz, 4);
-	CHECK(!self->nNodos);
-	CArchIO_Write(f, &self->CollideTri, 4);
-	CArchIO_Write(f, &self->CollideExt, sizeof(self->CollideExt));
-	CArchIO_EndBlockWrite(f, "SUEL");
+	CFileIO_BeginBlockWrite(f, "SUEL");
+	CFileIO_WriteInt(f, 1);
+	CFileIO_Write(f, &self->Ext, sizeof(self->Ext));
+	CFileIO_Write(f, &self->Dim, sizeof(self->Dim));
+	CFileIO_Write(f, &self->nx, 4);
+	CFileIO_Write(f, &self->nz, 4);
+	CHECK(!self->nNodes);
+	CFileIO_Write(f, &self->CollideTri, 4);
+	CFileIO_Write(f, &self->CollideExt, sizeof(self->CollideExt));
+	CFileIO_EndBlockWrite(f, "SUEL");
 	return 1;
 }
 
-static CArchIO *Suelo_Open(const char *name, const char *mode) {
-	CArchIO *f = operator_new(sizeof(CArchIO));
-	return f ? CArchIO_ctor(f, name, mode) : NULL;
+static CFileIO *Ground_Open(const char *name, const char *mode) {
+	CFileIO *f = operator_new(sizeof(CFileIO));
+	return f ? CFileIO_ctor(f, name, mode) : NULL;
 }
 
-static void Suelo_Close(CArchIO *f) {
-	CArchIO_dtor(f);
+static void Ground_Close(CFileIO *f) {
+	CFileIO_dtor(f);
 	operator_delete_sized(f, sizeof(*f));
 }
 
-int __thiscall CSuelo_LoadCollision(CSuelo *self, const char *name) {
-	char amc[MAX_RUTA];
+int __thiscall CGround_LoadCollision(CGround *self, const char *name) {
+	char amc[MAX_FILEPATH];
 	CCollideMesh *list[256];
-	CAlturas *alt = &self->alturas;
+	CHeights *alt = &self->heights;
 
-	Ruta_Merge(amc, ".amc", name);
+	Path_Merge(amc, ".amc", name);
 	if (File_TimeDiff(amc, name, 0) < 0) {
 		E3D_LogBlue(g_FileLog, "WARN: [%s] is older than [%s]", amc, name);
 		return 1;
 	}
 	memset(list, 0, sizeof(list));
 	g_LoadMeshList = list;
-	CArchIO *f = Suelo_Open(amc, "rb");
+	CFileIO *f = Ground_Open(amc, "rb");
 	if (!f->error) {
-		CArchIO_BeginBlock(f, "AMC");
-		CHECK(CArchIO_ReadInt(f) == AMC_VER);
-		CHECK(CArchIO_ReadInt(f) == 0);
-		CArchIO_Read(f, &self->CollideExt, sizeof(self->CollideExt));
-		CArchIO_Read(f, &self->CollideTri, 4);
-		CArchIO_Read(f, &alt->ext, sizeof(alt->ext));
-		CArchIO_Read(f, &alt->dim, sizeof(alt->dim));
+		CFileIO_BeginBlock(f, "AMC");
+		CHECK(CFileIO_ReadInt(f) == AMC_VER);
+		CHECK(CFileIO_ReadInt(f) == 0);
+		CFileIO_Read(f, &self->CollideExt, sizeof(self->CollideExt));
+		CFileIO_Read(f, &self->CollideTri, 4);
+		CFileIO_Read(f, &alt->ext, sizeof(alt->ext));
+		CFileIO_Read(f, &alt->dim, sizeof(alt->dim));
 		CCollideMesh_Read(&alt->CollideMesh1, f);
 		CCollideMesh_Read(&alt->CollideMesh2, f);
 		int sectors = Sector_Num() + 1;
-		CHECK(CArchIO_ReadInt(f) == sectors);
+		CHECK(CFileIO_ReadInt(f) == sectors);
 		for (int i = 0; i < sectors; i++) {
 			CHECK(i < MAX_COLLIDE_SECTORS);
 			CCollideMesh_Read(&alt->_CollideMesh1[i], f);
 			CCollideMesh_Read(&alt->_CollideMesh2[i], f);
 		}
-		CArchIO_Read4(f, &alt->nx);
-		CArchIO_Read4(f, &alt->nz);
-		CArchIO_Read4(f, &alt->sizeX);
-		CArchIO_Read4(f, &alt->sizeZ);
-		CArchIO_Read4(f, &alt->invX);
-		CArchIO_Read4(f, &alt->invZ);
-		Tabla_New24((CTabla *)&alt->nCuads, CArchIO_ReadInt(f));
-		for (int i = 0; i < alt->nCuads; i++) {
-			CCollideQuad_Read(Alturas_Cuad(alt, i), f);
+		CFileIO_Read4(f, &alt->nx);
+		CFileIO_Read4(f, &alt->nz);
+		CFileIO_Read4(f, &alt->sizeX);
+		CFileIO_Read4(f, &alt->sizeZ);
+		CFileIO_Read4(f, &alt->invX);
+		CFileIO_Read4(f, &alt->invZ);
+		Table_New24((CTable *)&alt->nQuads, CFileIO_ReadInt(f));
+		for (int i = 0; i < alt->nQuads; i++) {
+			CCollideQuad_Read(Heights_Quad(alt, i), f);
 		}
-		if (CArchIO_ReadInt(f)) {
+		if (CFileIO_ReadInt(f)) {
 			alt->outSector = CCollideQuad_New();
 			CCollideQuad_Read(alt->outSector, f);
 		}
-		CArchIO_Error(f, "AMC");
-		CArchIO_BeginBlock(f, "AMC");
-		CArchIO_Error(f, "AMC");
+		CFileIO_Error(f, "AMC");
+		CFileIO_BeginBlock(f, "AMC");
+		CFileIO_Error(f, "AMC");
 		if (!f->error) {
 			Con_Verbosef("Collision data loaded: %s\n", amc);
 			Con_Verbosef("QuadGrid: %d x %d  (NumTri: %d)  (size: %.2f %.2f)\n", alt->nx, alt->nz,
 				self->CollideTri, (double)alt->sizeX, (double)alt->sizeZ);
-			Suelo_Close(f);
+			Ground_Close(f);
 			return 0;
 		}
 	}
-	Suelo_Close(f);
+	Ground_Close(f);
 	return -1;
 }
 
-int __thiscall CSuelo_SaveCollision(CSuelo *self, const char *name) {
-	char amc[MAX_RUTA];
-	CAlturas *alt = &self->alturas;
+int __thiscall CGround_SaveCollision(CGround *self, const char *name) {
+	char amc[MAX_FILEPATH];
+	CHeights *alt = &self->heights;
 
 	g_SaveCollideMeshParam = 0;
-	Ruta_Merge(amc, ".amc", name);
-	CArchIO *f = Suelo_Open(amc, "wb");
+	Path_Merge(amc, ".amc", name);
+	CFileIO *f = Ground_Open(amc, "wb");
 	if (!f->error) {
-		CArchIO_BeginBlockWrite(f, "AMC");
-		CArchIO_WriteInt(f, AMC_VER);
-		CArchIO_WriteInt(f, 0);
-		CArchIO_Write(f, &self->CollideExt, sizeof(self->CollideExt));
-		CArchIO_Write(f, &self->CollideTri, 4);
-		CArchIO_Write(f, &alt->ext, sizeof(alt->ext));
-		CArchIO_Write(f, &alt->dim, sizeof(alt->dim));
+		CFileIO_BeginBlockWrite(f, "AMC");
+		CFileIO_WriteInt(f, AMC_VER);
+		CFileIO_WriteInt(f, 0);
+		CFileIO_Write(f, &self->CollideExt, sizeof(self->CollideExt));
+		CFileIO_Write(f, &self->CollideTri, 4);
+		CFileIO_Write(f, &alt->ext, sizeof(alt->ext));
+		CFileIO_Write(f, &alt->dim, sizeof(alt->dim));
 		CCollideMesh_Write(&alt->CollideMesh1, f);
 		CCollideMesh_Write(&alt->CollideMesh2, f);
 		int sectors = Sector_Num() + 1;
-		CArchIO_WriteInt(f, sectors);
+		CFileIO_WriteInt(f, sectors);
 		for (int i = 0; i < sectors; i++) {
 			CHECK(i < MAX_COLLIDE_SECTORS);
 			CCollideMesh_Write(&alt->_CollideMesh1[i], f);
 			CCollideMesh_Write(&alt->_CollideMesh2[i], f);
 		}
-		CArchIO_WriteInt(f, alt->nx);
-		CArchIO_WriteInt(f, alt->nz);
-		CArchIO_WriteInt(f, Suelo_FloatBits(alt->sizeX));
-		CArchIO_WriteInt(f, Suelo_FloatBits(alt->sizeZ));
-		CArchIO_WriteInt(f, Suelo_FloatBits(alt->invX));
-		CArchIO_WriteInt(f, Suelo_FloatBits(alt->invZ));
-		CArchIO_WriteInt(f, alt->nCuads);
-		for (int i = 0; i < alt->nCuads; i++) {
-			CCollideQuad_Write(Alturas_Cuad(alt, i), f);
+		CFileIO_WriteInt(f, alt->nx);
+		CFileIO_WriteInt(f, alt->nz);
+		CFileIO_WriteInt(f, Ground_FloatBits(alt->sizeX));
+		CFileIO_WriteInt(f, Ground_FloatBits(alt->sizeZ));
+		CFileIO_WriteInt(f, Ground_FloatBits(alt->invX));
+		CFileIO_WriteInt(f, Ground_FloatBits(alt->invZ));
+		CFileIO_WriteInt(f, alt->nQuads);
+		for (int i = 0; i < alt->nQuads; i++) {
+			CCollideQuad_Write(Heights_Quad(alt, i), f);
 		}
-		CArchIO_WriteInt(f, alt->outSector != NULL);
+		CFileIO_WriteInt(f, alt->outSector != NULL);
 		if (alt->outSector) {
 			CCollideQuad_Write(alt->outSector, f);
 		}
-		CArchIO_EndBlockWrite(f, "AMC");
-		CArchIO_BeginBlockWrite(f, "AMC");
-		CArchIO_EndBlockWrite(f, "AMC");
+		CFileIO_EndBlockWrite(f, "AMC");
+		CFileIO_BeginBlockWrite(f, "AMC");
+		CFileIO_EndBlockWrite(f, "AMC");
 		if (!f->error) {
-			Suelo_Close(f);
+			Ground_Close(f);
 			return 0;
 		}
 	}
 	Con_Bluef("SaveCollision: Could not write to file: '%s'\n", amc);
-	Suelo_Close(f);
+	Ground_Close(f);
 	return -1;
 }
 
 /* the queries */
 
-void __thiscall CAlturas_SetParam(CAlturas *self, byte param) {
-	for (int i = 0; i < self->nCuads; i++) {
-		for (CCollideQuad *q = Alturas_Cuad(self, i); q; q = q->next) {
+void __thiscall CHeights_SetParam(CHeights *self, byte param) {
+	for (int i = 0; i < self->nQuads; i++) {
+		for (CCollideQuad *q = Heights_Quad(self, i); q; q = q->next) {
 			q->Mesh->Param = param;
 		}
 	}
@@ -624,14 +624,14 @@ void __thiscall CAlturas_SetParam(CAlturas *self, byte param) {
 	}
 }
 
-static void Suelo_ClearNComp(CCollideMesh *mesh) {
+static void Ground_ClearNComp(CCollideMesh *mesh) {
 	for (int i = 0; i < mesh->nTri; i++) {
 		mesh->pTri[i].ncomp = 0;
 	}
 }
 
-void __fastcall CSuelo_NewQuery(CSuelo *self) {
-	CAlturas *alt = &self->alturas;
+void __fastcall CGround_NewQuery(CGround *self) {
+	CHeights *alt = &self->heights;
 	uint32_t tests = g_CollisionTests;
 
 	g_CollisionTestsTotal += tests;
@@ -649,14 +649,14 @@ void __fastcall CSuelo_NewQuery(CSuelo *self) {
 	memset(&g_CollisionStats[4], 0, 2 * sizeof(uint32_t));
 	g_CollisionStats2 = 0;
 	memset(g_CollisionStats, 0, 4 * sizeof(uint32_t));
-	CAlturas_SetParam(alt, 0);
-	for (int i = 0; i < alt->nCuads; i++) {
-		for (CCollideQuad *q = Alturas_Cuad(alt, i); q; q = q->next) {
+	CHeights_SetParam(alt, 0);
+	for (int i = 0; i < alt->nQuads; i++) {
+		for (CCollideQuad *q = Heights_Quad(alt, i); q; q = q->next) {
 			quads++;
 			if (!q->Mesh->Param) {
 				q->Mesh->Param = 1;
 				meshes++;
-				Suelo_ClearNComp(q->Mesh);
+				Ground_ClearNComp(q->Mesh);
 			}
 		}
 	}
@@ -665,7 +665,7 @@ void __fastcall CSuelo_NewQuery(CSuelo *self) {
 		CHECK(!q->Mesh->Param);
 		meshes++;
 		q->Mesh->Param = 1;
-		Suelo_ClearNComp(q->Mesh);
+		Ground_ClearNComp(q->Mesh);
 	}
 	CHECK(quads == g_CollisionQuadCount);
 	E3D_LogDebug(g_FileLog, "Reset NCOMP of collision triangles [%d Quads, %d Meshes]", quads, meshes);
@@ -673,15 +673,15 @@ void __fastcall CSuelo_NewQuery(CSuelo *self) {
 
 /* the geometry */
 
-byte Suelo_PointInTri(const vec3_t *p, const vec3_t *a, const vec3_t *b, const vec3_t *c) {
-	vec3_t n = Suelo_EdgeCross(p, a, b);
-	vec3_t m = Suelo_EdgeCross(p, b, c);
+byte Ground_PointInTri(const vec3_t *p, const vec3_t *a, const vec3_t *b, const vec3_t *c) {
+	vec3_t n = Ground_EdgeCross(p, a, b);
+	vec3_t m = Ground_EdgeCross(p, b, c);
 
 	float d1 = n.x * m.x + n.y * m.y + n.z * m.z;
 	if (0.0f > d1) {
 		return 0;
 	}
-	vec3_t k = Suelo_EdgeCross(p, c, a);
+	vec3_t k = Ground_EdgeCross(p, c, a);
 	if (0.0f > k.x * n.x + k.y * n.y + k.z * n.z) {
 		return 0;
 	}
@@ -692,7 +692,7 @@ byte Suelo_PointInTri(const vec3_t *p, const vec3_t *a, const vec3_t *b, const v
 	return 1;
 }
 
-float Suelo_DistPointSeg(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3_t *out) {
+float Ground_DistPointSeg(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3_t *out) {
 	float ax = a->x, ay = a->y, az = a->z;
 	float dx = b->x - ax, dy = b->y - ay, dz = b->z - az;
 	vec3_t u = Vec3_Scaled((vec3_t){ dx, dy, dz }, Vec3_Len(dx, dy, dz));
@@ -718,7 +718,7 @@ float Suelo_DistPointSeg(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3
 	return (float)__builtin_sqrt((double)Vec3_Dist2(p, &c));
 }
 
-float Suelo_Dist2PointSeg(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3_t *out) {
+float Ground_Dist2PointSeg(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3_t *out) {
 	float dx = b->x - a->x, dy = b->y - a->y, dz = b->z - a->z;
 	float len2 = dy * dy + dx * dx + dz * dz;
 
@@ -753,7 +753,7 @@ static float Plane_Dist(const plane_t *pl, const vec3_t *v) {
 	return pl->n.y * v->y + v->x * pl->n.x + pl->n.z * v->z + pl->d;
 }
 
-byte Suelo_SegPlane(const vec3_t *a, const vec3_t *b, float r, const plane_t *pl, float *t) {
+byte Ground_SegPlane(const vec3_t *a, const vec3_t *b, float r, const plane_t *pl, float *t) {
 	CHECK(t);
 	float da = Plane_Dist(pl, a);
 	float db = Plane_Dist(pl, b);
@@ -774,7 +774,7 @@ byte Suelo_SegPlane(const vec3_t *a, const vec3_t *b, float r, const plane_t *pl
 }
 
 /* the smaller root of a t^2 + b t + c (b already doubled), when it is in [0, 1] */
-static byte Suelo_Root01(float a, float b, float c, float *t) {
+static byte Ground_Root01(float a, float b, float c, float *t) {
 	float disc = b * b - c * (a * 4.0f);
 	if (0.0f > disc) {
 		return 2;
@@ -790,7 +790,7 @@ static byte Suelo_Root01(float a, float b, float c, float *t) {
 	return 1;
 }
 
-byte Suelo_SegEdge(const vec3_t *a, const vec3_t *b, const vec3_t *p, const vec3_t *q, float r, float *t) {
+byte Ground_SegEdge(const vec3_t *a, const vec3_t *b, const vec3_t *p, const vec3_t *q, float r, float *t) {
 	CHECK(t);
 	float ex = b->x - a->x, ey = b->y - a->y, ez = b->z - a->z;
 	float mx = q->x - p->x, my = q->y - p->y, mz = q->z - p->z;
@@ -808,7 +808,7 @@ byte Suelo_SegEdge(const vec3_t *a, const vec3_t *b, const vec3_t *p, const vec3
 	/* the sphere path against the line of the edge, the touch point inside the edge */
 	if (!(9.999999747378752e-05 > __builtin_fabs((double)d))) {
 		float tm;
-		byte r1 = Suelo_Root01(d, b2, (ww - r * r) * ee - we * we, &tm);
+		byte r1 = Ground_Root01(d, b2, (ww - r * r) * ee - we * we, &tm);
 		if (r1 == 2) {
 			return 0;
 		}
@@ -825,10 +825,10 @@ byte Suelo_SegEdge(const vec3_t *a, const vec3_t *b, const vec3_t *p, const vec3
 	if (9.999999747378752e-05 > __builtin_fabs((double)mm)) {
 		return 0;
 	}
-	return Suelo_Root01(mm, wm, ww - r * r, t) == 1;
+	return Ground_Root01(mm, wm, ww - r * r, t) == 1;
 }
 
-byte Suelo_SphereTri(const vec3_t *c, float r, const CCollideTri *tri, const CCollideMesh *mesh, vec3_t *res) {
+byte Ground_SphereTri(const vec3_t *c, float r, const CCollideTri *tri, const CCollideMesh *mesh, vec3_t *res) {
 	CHECK(tri && mesh && res);
 	float r2 = r * r;
 	const plane_t *pl = &tri->plane;
@@ -838,15 +838,15 @@ byte Suelo_SphereTri(const vec3_t *c, float r, const CCollideTri *tri, const CCo
 	}
 	vec3_t q = { c->x - pl->n.x * d, c->y - pl->n.y * d, c->z - pl->n.z * d };
 	vec3_t v0 = mesh->pVert[tri->v[0]], v1 = mesh->pVert[tri->v[1]], v2 = mesh->pVert[tri->v[2]];
-	if (Suelo_PointInTri(&q, &v0, &v1, &v2)) {
+	if (Ground_PointInTri(&q, &v0, &v1, &v2)) {
 		*res = q;
 		return 1;
 	}
 	float dd[3];
 	vec3_t cp[3];
-	dd[0] = Suelo_Dist2PointSeg(&v0, &v1, c, &cp[0]);
-	dd[1] = Suelo_Dist2PointSeg(&v1, &v2, c, &cp[1]);
-	dd[2] = Suelo_Dist2PointSeg(&v2, &v0, c, &cp[2]);
+	dd[0] = Ground_Dist2PointSeg(&v0, &v1, c, &cp[0]);
+	dd[1] = Ground_Dist2PointSeg(&v1, &v2, c, &cp[1]);
+	dd[2] = Ground_Dist2PointSeg(&v2, &v0, c, &cp[2]);
 	int i = dd[1] > dd[0] ? 0 : 1;
 	int best = dd[2] > dd[i] ? i : 2;
 	if (r2 > dd[best]) {
@@ -857,22 +857,22 @@ byte Suelo_SphereTri(const vec3_t *c, float r, const CCollideTri *tri, const CCo
 }
 
 /* a sphere of radius r around p within the edges of the triangle */
-static byte Suelo_NearEdges(const vec3_t *p, float r2, const vec3_t *v0, const vec3_t *v1, const vec3_t *v2) {
-	return r2 > Suelo_Dist2PointSeg(v0, v1, p, NULL) || r2 > Suelo_Dist2PointSeg(v1, v2, p, NULL) ||
-		r2 > Suelo_Dist2PointSeg(v2, v0, p, NULL);
+static byte Ground_NearEdges(const vec3_t *p, float r2, const vec3_t *v0, const vec3_t *v1, const vec3_t *v2) {
+	return r2 > Ground_Dist2PointSeg(v0, v1, p, NULL) || r2 > Ground_Dist2PointSeg(v1, v2, p, NULL) ||
+		r2 > Ground_Dist2PointSeg(v2, v0, p, NULL);
 }
 
 static vec3_t Vec3_Lerp(const vec3_t *a, const vec3_t *b, float t) {
 	return (vec3_t){ a->x + (b->x - a->x) * t, a->y + (b->y - a->y) * t, a->z + (b->z - a->z) * t };
 }
 
-byte Suelo_SweepTri(const vec3_t *a, const vec3_t *b, float r, const CCollideTri *tri, const CCollideMesh *mesh,
+byte Ground_SweepTri(const vec3_t *a, const vec3_t *b, float r, const CCollideTri *tri, const CCollideMesh *mesh,
 	vec3_t *res) {
 	const plane_t *pl = &tri->plane;
 	float t;
 
 	CHECK(res);
-	if (!Suelo_SegPlane(a, b, r, pl, &t)) {
+	if (!Ground_SegPlane(a, b, r, pl, &t)) {
 		return 0;
 	}
 	float da = Plane_Dist(pl, a);
@@ -881,11 +881,11 @@ byte Suelo_SweepTri(const vec3_t *a, const vec3_t *b, float r, const CCollideTri
 	if ((double)r > __builtin_fabs((double)da)) {
 		/* the sphere touches the plane at the start */
 		vec3_t q = { a->x - pl->n.x * da, a->y - pl->n.y * da, a->z - pl->n.z * da };
-		if (Suelo_PointInTri(&q, &v0, &v1, &v2)) {
+		if (Ground_PointInTri(&q, &v0, &v1, &v2)) {
 			*res = (0.0f > da ? da > db : db > da) ? *b : *a;
 			return 1;
 		}
-		if (Suelo_NearEdges(a, r * r, &v0, &v1, &v2)) {
+		if (Ground_NearEdges(a, r * r, &v0, &v1, &v2)) {
 			*res = *a;
 			return 1;
 		}
@@ -894,8 +894,8 @@ byte Suelo_SweepTri(const vec3_t *a, const vec3_t *b, float r, const CCollideTri
 		vec3_t p = Vec3_Lerp(a, b, t);
 		float dp = Plane_Dist(pl, &p);
 		vec3_t q = { p.x - pl->n.x * dp, p.y - pl->n.y * dp, p.z - pl->n.z * dp };
-		if (Suelo_PointInTri(&q, &v0, &v1, &v2)) {
-			Suelo_SegPlane(a, b, g_CollisionEpsilon + r, pl, &t);
+		if (Ground_PointInTri(&q, &v0, &v1, &v2)) {
+			Ground_SegPlane(a, b, g_CollisionEpsilon + r, pl, &t);
 			if (0.0f > t) {
 				t = 0.0f;
 			} else if (t > 1.0f) {
@@ -906,7 +906,7 @@ byte Suelo_SweepTri(const vec3_t *a, const vec3_t *b, float r, const CCollideTri
 		}
 	}
 	if (g_CollisionEpsilon * g_CollisionEpsilon > Vec3_Dist2(a, b)) {
-		if (Suelo_NearEdges(b, r * r, &v0, &v1, &v2)) {
+		if (Ground_NearEdges(b, r * r, &v0, &v1, &v2)) {
 			*res = *a;
 			return 1;
 		}
@@ -914,9 +914,9 @@ byte Suelo_SweepTri(const vec3_t *a, const vec3_t *b, float r, const CCollideTri
 	}
 	/* the first touch of an edge */
 	float ta = 100.0f, tb = 100.0f, tc = 100.0f;
-	Suelo_SegEdge(&v0, &v1, a, b, r, &ta);
-	Suelo_SegEdge(&v1, &v2, a, b, r, &tb);
-	Suelo_SegEdge(&v2, &v0, a, b, r, &tc);
+	Ground_SegEdge(&v0, &v1, a, b, r, &ta);
+	Ground_SegEdge(&v1, &v2, a, b, r, &tb);
+	Ground_SegEdge(&v2, &v0, a, b, r, &tc);
 	float tm = ta < tb ? ta : tb;
 	if (!(tc > tm)) {
 		tm = tc;
@@ -939,11 +939,11 @@ byte Suelo_SweepTri(const vec3_t *a, const vec3_t *b, float r, const CCollideTri
 typedef struct {
 	int x0, x1, z0, z1;
 	float top, bottom;	/* of the sphere along the path */
-} sueloArea_t;
+} groundArea_t;
 
-static void Suelo_Area(CSuelo *self, sueloArea_t *ar, float lox, float hix, float loz, float hiz, float r,
+static void Ground_Area(CGround *self, groundArea_t *ar, float lox, float hix, float loz, float hiz, float r,
 	const vec3_t *a, const vec3_t *b) {
-	const CAlturas *alt = &self->alturas;
+	const CHeights *alt = &self->heights;
 	int i;
 
 	i = (int)(((lox - r) - alt->ext.min.x) * alt->invX);
@@ -963,14 +963,14 @@ static void Suelo_Area(CSuelo *self, sueloArea_t *ar, float lox, float hix, floa
 	}
 }
 
-static int Suelo_SkipQuad(const CCollideQuad *q, const sueloArea_t *ar) {
-	return (q->Mesh->flags & TRI_ALT_NO_COLISIONES) || q->minY > ar->top || ar->bottom > q->maxY ||
+static int Ground_SkipQuad(const CCollideQuad *q, const groundArea_t *ar) {
+	return (q->Mesh->flags & TRI_ALT_NO_COLLISIONS) || q->minY > ar->top || ar->bottom > q->maxY ||
 		(q->gapTop > ar->top && ar->bottom > q->gapBottom);
 }
 
 /* the triangle not tested yet in this query: marked */
-static int Suelo_MarkTri(CCollideTri *tri) {
-	if ((tri->flags & TRI_ALT_NO_COLISIONES) || tri->ncomp == g_CollisionNComp) {
+static int Ground_MarkTri(CCollideTri *tri) {
+	if ((tri->flags & TRI_ALT_NO_COLLISIONS) || tri->ncomp == g_CollisionNComp) {
 		return 0;
 	}
 	tri->ncomp = g_CollisionNComp;
@@ -979,27 +979,27 @@ static int Suelo_MarkTri(CCollideTri *tri) {
 	return 1;
 }
 
-byte __thiscall CSuelo_CollideSphere(CSuelo *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out, vec3_t *hit,
+byte __thiscall CGround_CollideSphere(CGround *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out, vec3_t *hit,
 	vec3_t *n) {
 	vec3_t A = *a, C = *b, P, best;
-	sueloArea_t ar;
+	groundArea_t ar;
 	CCollideTri *bestTri = NULL;
-	float bestDist = SUELO_FLT_MAX, bestCos = -1.0f;
+	float bestDist = GROUND_FLT_MAX, bestCos = -1.0f;
 
-	CSuelo_NewQuery(self);
-	Suelo_Area(self, &ar, C.x, C.x, C.z, C.z, r, a, b);
+	CGround_NewQuery(self);
+	Ground_Area(self, &ar, C.x, C.x, C.z, C.z, r, a, b);
 	best = a->y > b->y ? *b : *a;
 	for (int z = ar.z0; z <= ar.z1; z++) {
 		for (int x = ar.x0; x <= ar.x1; x++) {
-			CCollideQuad *cuad = Alturas_Cell(&self->alturas, x, z);
-			CHECK(cuad);
-			for (; cuad; cuad = cuad->next) {
-				if (Suelo_SkipQuad(cuad, &ar)) {
+			CCollideQuad *quad = Heights_Cell(&self->heights, x, z);
+			CHECK(quad);
+			for (; quad; quad = quad->next) {
+				if (Ground_SkipQuad(quad, &ar)) {
 					continue;
 				}
-				for (int k = 0; k < cuad->nTri; k++) {
-					CCollideTri *tri = &cuad->Mesh->pTri[cuad->pTri[k]];
-					if (!Suelo_MarkTri(tri) || !Suelo_SphereTri(&C, r, tri, cuad->Mesh, &P)) {
+				for (int k = 0; k < quad->nTri; k++) {
+					CCollideTri *tri = &quad->Mesh->pTri[quad->pTri[k]];
+					if (!Ground_MarkTri(tri) || !Ground_SphereTri(&C, r, tri, quad->Mesh, &P)) {
 						continue;
 					}
 					float d = (float)__builtin_sqrt((double)Vec3_Dist2(&P, &C));
@@ -1044,27 +1044,27 @@ byte __thiscall CSuelo_CollideSphere(CSuelo *self, const vec3_t *a, const vec3_t
 	return 1;
 }
 
-byte __thiscall CSuelo_SphereContact(CSuelo *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out,
+byte __thiscall CGround_SphereContact(CGround *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out,
 	vec3_t *hit, vec3_t *n) {
 	vec3_t C = *b, P, best;
-	sueloArea_t ar;
+	groundArea_t ar;
 	CCollideTri *bestTri = NULL;
-	float bestDist = SUELO_FLT_MAX;
+	float bestDist = GROUND_FLT_MAX;
 
-	CSuelo_NewQuery(self);
-	Suelo_Area(self, &ar, C.x, C.x, C.z, C.z, r, a, b);
+	CGround_NewQuery(self);
+	Ground_Area(self, &ar, C.x, C.x, C.z, C.z, r, a, b);
 	best = a->y > b->y ? *b : *a;
 	for (int z = ar.z0; z <= ar.z1; z++) {
 		for (int x = ar.x0; x <= ar.x1; x++) {
-			CCollideQuad *cuad = Alturas_Cell(&self->alturas, x, z);
-			CHECK(cuad);
-			for (; cuad; cuad = cuad->next) {
-				if (Suelo_SkipQuad(cuad, &ar)) {
+			CCollideQuad *quad = Heights_Cell(&self->heights, x, z);
+			CHECK(quad);
+			for (; quad; quad = quad->next) {
+				if (Ground_SkipQuad(quad, &ar)) {
 					continue;
 				}
-				for (int k = 0; k < cuad->nTri; k++) {
-					CCollideTri *tri = &cuad->Mesh->pTri[cuad->pTri[k]];
-					if (!Suelo_MarkTri(tri) || !Suelo_SphereTri(&C, r, tri, cuad->Mesh, &P)) {
+				for (int k = 0; k < quad->nTri; k++) {
+					CCollideTri *tri = &quad->Mesh->pTri[quad->pTri[k]];
+					if (!Ground_MarkTri(tri) || !Ground_SphereTri(&C, r, tri, quad->Mesh, &P)) {
 						continue;
 					}
 					float d = (float)__builtin_sqrt((double)Vec3_Dist2(&P, &C));
@@ -1103,28 +1103,28 @@ byte __thiscall CSuelo_SphereContact(CSuelo *self, const vec3_t *a, const vec3_t
 	return 1;
 }
 
-byte __thiscall CSuelo_SweepSphere(CSuelo *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out, vec3_t *hit,
+byte __thiscall CGround_SweepSphere(CGround *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out, vec3_t *hit,
 	vec3_t *n) {
 	vec3_t A = *a, B = *b, P, best;
-	sueloArea_t ar;
+	groundArea_t ar;
 	CCollideTri *bestTri = NULL;
-	float bestDist = SUELO_FLT_MAX;
+	float bestDist = GROUND_FLT_MAX;
 
-	CSuelo_NewQuery(self);
-	Suelo_Area(self, &ar, A.x < B.x ? A.x : B.x, A.x > B.x ? A.x : B.x, A.z < B.z ? A.z : B.z,
+	CGround_NewQuery(self);
+	Ground_Area(self, &ar, A.x < B.x ? A.x : B.x, A.x > B.x ? A.x : B.x, A.z < B.z ? A.z : B.z,
 		A.z > B.z ? A.z : B.z, r, a, b);
 	best = a->y > b->y ? *b : *a;
 	for (int z = ar.z0; z <= ar.z1; z++) {
 		for (int x = ar.x0; x <= ar.x1; x++) {
-			CCollideQuad *cuad = Alturas_Cell(&self->alturas, x, z);
-			CHECK(cuad);
-			for (; cuad; cuad = cuad->next) {
-				if (Suelo_SkipQuad(cuad, &ar)) {
+			CCollideQuad *quad = Heights_Cell(&self->heights, x, z);
+			CHECK(quad);
+			for (; quad; quad = quad->next) {
+				if (Ground_SkipQuad(quad, &ar)) {
 					continue;
 				}
-				for (int k = 0; k < cuad->nTri; k++) {
-					CCollideTri *tri = &cuad->Mesh->pTri[cuad->pTri[k]];
-					if (!Suelo_MarkTri(tri) || !Suelo_SweepTri(&A, &B, r, tri, cuad->Mesh, &P)) {
+				for (int k = 0; k < quad->nTri; k++) {
+					CCollideTri *tri = &quad->Mesh->pTri[quad->pTri[k]];
+					if (!Ground_MarkTri(tri) || !Ground_SweepTri(&A, &B, r, tri, quad->Mesh, &P)) {
 						continue;
 					}
 					float d = (float)__builtin_sqrt((double)Vec3_Dist2(&P, &A));
@@ -1183,7 +1183,7 @@ int __fastcall CCollideQuad_LowestTri(CCollideQuad *self) {
 
 	for (int i = 0; i < self->nTri; i++) {
 		const CCollideTri *tri = Quad_Tri(self, i);
-		if (tri->flags & TRI_ALT_NO_COLISIONES) {
+		if (tri->flags & TRI_ALT_NO_COLLISIONS) {
 			continue;
 		}
 		float m = CCollideQuad_TriMinY(self, tri);
@@ -1205,14 +1205,14 @@ void __fastcall CCollideQuad_CalcGap(CCollideQuad *self) {
 	self->gapTop = CCollideQuad_TriMinY(self, Quad_Tri(self, cur));
 	/* from the lowest triangle up: the triangles that overlap in height are joined, the gap above them is the
 	 * distance to the lowest triangle that starts higher */
-	CTabla used = { 0, NULL };
+	CTable used = { 0, NULL };
 	int count = 0;
-	Tabla_Alloc1(&used, self->nTri);
+	Table_Alloc1(&used, self->nTri);
 	byte *p = used.p;
 	CHECK(p);
 	memset(p, 0, used.n);
 	for (;;) {
-		TABLA_CHECK(p, cur, used.n);
+		TABLE_CHECK(p, cur, used.n);
 		p[cur] = 1;
 		count++;
 		float top = CCollideQuad_TriMaxY(self, Quad_Tri(self, cur));
@@ -1227,13 +1227,13 @@ void __fastcall CCollideQuad_CalcGap(CCollideQuad *self) {
 	restart:
 		best = self->maxY;
 		for (int i = 0; i < self->nTri; i++) {
-			TABLA_CHECK(p, i, used.n);
+			TABLE_CHECK(p, i, used.n);
 			if (p[i]) {
 				continue;
 			}
 			const CCollideTri *tri = Quad_Tri(self, i);
-			if (tri->flags & TRI_ALT_NO_COLISIONES) {
-				TABLA_CHECK(p, i, used.n);
+			if (tri->flags & TRI_ALT_NO_COLLISIONS) {
+				TABLE_CHECK(p, i, used.n);
 				count++;
 				p[i] = 1;
 				continue;
@@ -1241,14 +1241,14 @@ void __fastcall CCollideQuad_CalcGap(CCollideQuad *self) {
 			float mn = CCollideQuad_TriMinY(self, tri);
 			float mx = CCollideQuad_TriMaxY(self, tri);
 			if (top >= mx) {
-				TABLA_CHECK(p, i, used.n);
+				TABLE_CHECK(p, i, used.n);
 				count++;
 				p[i] = 1;
 				continue;
 			}
 			if (top >= mn) {
 				top = mx;
-				TABLA_CHECK(p, i, used.n);
+				TABLE_CHECK(p, i, used.n);
 				count++;
 				p[i] = 1;
 				goto restart;
@@ -1271,9 +1271,9 @@ void __fastcall CCollideQuad_CalcGap(CCollideQuad *self) {
 	}
 }
 
-void __thiscall CCollideQuad_CalcExtens(CAlturas *self, CCollideQuad *q) {
+void __thiscall CCollideQuad_CalcExt(CHeights *self, CCollideQuad *q) {
 	(void)self;
-	box_t b = { { SUELO_FLT_MAX, SUELO_FLT_MAX, SUELO_FLT_MAX }, { -SUELO_FLT_MAX, -SUELO_FLT_MAX, -SUELO_FLT_MAX } };
+	box_t b = { { GROUND_FLT_MAX, GROUND_FLT_MAX, GROUND_FLT_MAX }, { -GROUND_FLT_MAX, -GROUND_FLT_MAX, -GROUND_FLT_MAX } };
 
 	for (int i = 0; i < q->nTri; i++) {
 		const CCollideTri *tri = Quad_Tri(q, i);
@@ -1294,40 +1294,40 @@ void __thiscall CCollideQuad_CalcExtens(CAlturas *self, CCollideQuad *q) {
 	CCollideQuad_CalcGap(q);
 }
 
-void __thiscall CCollideQuad_AddAllTris(CAlturas *self, CCollideQuad *q) {
+void __thiscall CCollideQuad_AddAllTris(CHeights *self, CCollideQuad *q) {
 	(void)self;
-	Tabla_Alloc2((CTabla *)&q->nTri, q->Mesh->nTri);
+	Table_Alloc2((CTable *)&q->nTri, q->Mesh->nTri);
 	for (int i = 0; i < q->nTri; i++) {
 		CHECK(i <= CNDX_MAX);
-		TABLA_CHECK(q->pTri, i, q->nTri);
+		TABLE_CHECK(q->pTri, i, q->nTri);
 		q->pTri[i] = (uint16_t)i;
 	}
 }
 
-CCollideQuad *__thiscall CCollideQuad_Find(CAlturas *self, CCollideQuad *cuad, uint32_t id, CCollideMesh *mesh) {
+CCollideQuad *__thiscall CCollideQuad_Find(CHeights *self, CCollideQuad *quad, uint32_t id, CCollideMesh *mesh) {
 	(void)self;
-	CHECK(cuad && mesh);
-	if (cuad->Mesh == mesh && cuad->Mesh->MeshID == id) {
-		return cuad;
+	CHECK(quad && mesh);
+	if (quad->Mesh == mesh && quad->Mesh->MeshID == id) {
+		return quad;
 	}
-	if (!cuad->Mesh) {
+	if (!quad->Mesh) {
 		CHECK(id == 0);
-		CCollideQuad_SetMesh(cuad, mesh);
-		cuad->dwParam = 0;
-		return cuad;
+		CCollideQuad_SetMesh(quad, mesh);
+		quad->dwParam = 0;
+		return quad;
 	}
-	for (; cuad->next; cuad = cuad->next) {
-		if (cuad->next->Mesh == mesh && mesh->MeshID == id) {
-			return cuad->next;
+	for (; quad->next; quad = quad->next) {
+		if (quad->next->Mesh == mesh && mesh->MeshID == id) {
+			return quad->next;
 		}
 	}
-	cuad->next = CCollideQuad_New();
-	CCollideQuad_SetMesh(cuad->next, mesh);
-	cuad->next->dwParam = 0;
-	return cuad->next;
+	quad->next = CCollideQuad_New();
+	CCollideQuad_SetMesh(quad->next, mesh);
+	quad->next->dwParam = 0;
+	return quad->next;
 }
 
-void __thiscall CAlturas_QuadInit(CAlturas *self, int unused, const box_t *box, int numTri) {
+void __thiscall CHeights_QuadInit(CHeights *self, int unused, const box_t *box, int numTri) {
 	(void)unused;
 	CHECK(!self->CollideMesh1.pTri && !self->CollideMesh1.pVert);
 	CHECK(!self->CollideMesh2.pTri && !self->CollideMesh2.pVert);
@@ -1347,11 +1347,11 @@ void __thiscall CAlturas_QuadInit(CAlturas *self, int unused, const box_t *box, 
 	self->sizeZ = self->dim.z / (float)nz;
 	self->invX = (float)nx / self->dim.x;
 	self->invZ = (float)nz / self->dim.z;
-	Tabla_New24((CTabla *)&self->nCuads, nz * nx);
+	Table_New24((CTable *)&self->nQuads, nz * nx);
 	Con_Verbosef("QuadInit: %d x %d  (NumTri: %d)  (size: %.2f)\n", self->nx, self->nz, numTri, size);
 }
 
-void __thiscall CAlturas_QuadAddMesh(CAlturas *self, CCollideMesh *mesh, int initTri) {
+void __thiscall CHeights_QuadAddMesh(CHeights *self, CCollideMesh *mesh, int initTri) {
 	int included = 0, discarded = 0, maxTri = 0;
 
 	CHECK(!initTri);
@@ -1361,12 +1361,12 @@ void __thiscall CAlturas_QuadAddMesh(CAlturas *self, CCollideMesh *mesh, int ini
 		}
 		CCollideQuad *q = CCollideQuad_Find(self, self->outSector, self->MeshID, mesh);
 		CCollideQuad_AddAllTris(self, q);
-		CCollideQuad_CalcExtens(self, q);
+		CCollideQuad_CalcExt(self, q);
 		E3D_LogWhite(g_FileLog, "QuadAddMesh: OutSector: %d included", q->nTri);
 		return;
 	}
-	for (int i = 0; i < self->nCuads; i++) {
-		for (CCollideQuad *q = Alturas_Cuad(self, i); q; q = q->next) {
+	for (int i = 0; i < self->nQuads; i++) {
+		for (CCollideQuad *q = Heights_Quad(self, i); q; q = q->next) {
 			q->dwParam = q->nTri;
 		}
 	}
@@ -1395,8 +1395,8 @@ void __thiscall CAlturas_QuadAddMesh(CAlturas *self, CCollideMesh *mesh, int ini
 		int z0 = (int)((minz - self->ext.min.z) * self->invZ);
 		for (int z = z0; z <= z1; z++) {
 			for (int x = x0; x <= x1; x++) {
-				CCollideQuad *cuad = Alturas_Cell(self, x, z);
-				if (!cuad) {
+				CCollideQuad *quad = Heights_Cell(self, x, z);
+				if (!quad) {
 					CHECK(self->MeshID);
 					discarded++;
 					continue;
@@ -1410,7 +1410,7 @@ void __thiscall CAlturas_QuadAddMesh(CAlturas *self, CCollideMesh *mesh, int ini
 					discarded++;
 					continue;
 				}
-				CCollideQuad *q = CCollideQuad_Find(self, cuad, self->MeshID, mesh);
+				CCollideQuad *q = CCollideQuad_Find(self, quad, self->MeshID, mesh);
 				if (!q) {
 					continue;
 				}
@@ -1419,23 +1419,23 @@ void __thiscall CAlturas_QuadAddMesh(CAlturas *self, CCollideMesh *mesh, int ini
 				CHECK(q->Mesh->MeshID == self->MeshID);
 				q->dwParam++;
 				if (q->dwParam > (uint32_t)q->nTri) {
-					Tabla_Resize2((CTabla *)&q->nTri, q->dwParam * 2);
+					Table_Resize2((CTable *)&q->nTri, q->dwParam * 2);
 				}
 				CHECK(t <= CNDX_MAX);
 				uint32_t k = q->dwParam - 1;
-				TABLA_CHECK(q->pTri, k, q->nTri);
+				TABLE_CHECK(q->pTri, k, q->nTri);
 				q->pTri[k] = (uint16_t)t;
 			}
 		}
 	}
-	for (int i = 0; i < self->nCuads; i++) {
-		for (CCollideQuad *q = Alturas_Cuad(self, i); q; q = q->next) {
+	for (int i = 0; i < self->nQuads; i++) {
+		for (CCollideQuad *q = Heights_Quad(self, i); q; q = q->next) {
 			if (q->Mesh != mesh) {
 				continue;
 			}
 			CHECK(q->dwParam < 65536);
-			Tabla_Resize2((CTabla *)&q->nTri, q->dwParam);
-			CCollideQuad_CalcExtens(self, q);
+			Table_Resize2((CTable *)&q->nTri, q->dwParam);
+			CCollideQuad_CalcExt(self, q);
 			maxTri = maxTri > q->nTri ? maxTri : q->nTri;
 		}
 	}
@@ -1447,7 +1447,7 @@ void __thiscall CAlturas_QuadAddMesh(CAlturas *self, CCollideMesh *mesh, int ini
 
 /* the meshes */
 
-static void Suelo_NewCacheID(CSuelo *self) {
+static void Ground_NewCacheID(CGround *self) {
 	g_QuadTriCacheID++;
 	CHECK(g_QuadTriCacheID != 0);
 	memset(self->cache, 0, sizeof(self->cache));
@@ -1455,39 +1455,39 @@ static void Suelo_NewCacheID(CSuelo *self) {
 
 /* through the import table of the exe (winmm) */
 
-static const char *const sueloVertExpr[3] = { "(tri->v[0] + NumVert <= CNDX_MAX)", "(tri->v[1] + NumVert <= CNDX_MAX)",
+static const char *const groundVertExpr[3] = { "(tri->v[0] + NumVert <= CNDX_MAX)", "(tri->v[1] + NumVert <= CNDX_MAX)",
 	"(tri->v[2] + NumVert <= CNDX_MAX)" };
 
-void __thiscall CSuelo_AddMesh(CSuelo *self, CCollideMesh *mesh, CMallaTri *tm, uint32_t *outID, int *outIni) {
+void __thiscall CGround_AddMesh(CGround *self, CCollideMesh *mesh, CTriMesh *tm, uint32_t *outID, int *outIni) {
 	int degenerate = 0, invalid = 0;
 
-	CHECK(self->alturas.nCuads);
+	CHECK(self->heights.nQuads);
 	CHECK(tm && (tm->nTri > 0) && (tm->nVert > 0));
-	Suelo_NewCacheID(self);
+	Ground_NewCacheID(self);
 	if (outID) {
-		self->alturas.MeshID++;
-		CHECK((uint16_t)self->alturas.MeshID != 0);
-		*outID = self->alturas.MeshID;
+		self->heights.MeshID++;
+		CHECK((uint16_t)self->heights.MeshID != 0);
+		*outID = self->heights.MeshID;
 		*outIni = mesh->nTri;
 		mesh->flags |= TRI_ALT_MESH;
-		mesh->MeshID = (uint16_t)self->alturas.MeshID;
+		mesh->MeshID = (uint16_t)self->heights.MeshID;
 	}
 	int nv = mesh->nVert, nt = mesh->nTri;
 	CHECK(mesh->pTri == NULL);
-	Tabla_ResizeC((CTabla *)&mesh->nVert, tm->nVert + nv);
-	Tabla_Resize1C((CTabla *)&mesh->nTri, tm->nTri + nt);
+	Table_ResizeC((CTable *)&mesh->nVert, tm->nVert + nv);
+	Table_Resize1C((CTable *)&mesh->nTri, tm->nTri + nt);
 	for (int i = 0; i < tm->nVert; i++) {
 		vec3_t v;
-		mesh->pVert[nv + i] = *CMallaTri_GetVert(tm, &v, i);
+		mesh->pVert[nv + i] = *CTriMesh_GetVert(tm, &v, i);
 	}
 	for (int i = 0; i < tm->nTri; i++) {
-		const CTriMalla *t = CMallaTri_GetTri(tm, i);
+		const CMeshTri *t = CTriMesh_GetTri(tm, i);
 		CCollideTri *ct = &mesh->pTri[nt + i];
 		ct->ncomp = 0;
 		for (int k = 0; k < 3; k++) {
 			if ((uint32_t)(t->v[k] + nv) > CNDX_MAX) {
 				Con_FatalErrorf("\nFATAL ERROR: Check failed!\n\nError: %s\n\nExpression: %s\n\nFile: '%s'\n"
-					"Date: %s\nLine: %d", "Too many vertexes in a sector", sueloVertExpr[k], __FILE__,
+					"Date: %s\nLine: %d", "Too many vertexes in a sector", groundVertExpr[k], __FILE__,
 					__TIMESTAMP__, __LINE__);
 			}
 		}
@@ -1499,7 +1499,7 @@ void __thiscall CSuelo_AddMesh(CSuelo *self, CCollideMesh *mesh, CMallaTri *tm, 
 		}
 		ct->flags = (uint16_t)t->flags;
 		/* a material without collisions (byte 0x3c bit 0) needs the flag on the triangle */
-		CHECK(!(t->mat && (*((byte *)t->mat + 0x3c) & 1)) || (ct->flags & TRI_ALT_NO_COLISIONES));
+		CHECK(!(t->mat && (*((byte *)t->mat + 0x3c) & 1)) || (ct->flags & TRI_ALT_NO_COLLISIONS));
 		if ((ct->flags & TRI_ALT_INVALID) == TRI_ALT_INVALID) {
 			invalid++;
 		}
@@ -1512,16 +1512,16 @@ void __thiscall CSuelo_AddMesh(CSuelo *self, CCollideMesh *mesh, CMallaTri *tm, 
 		}
 		if (outID) {
 			ct->flags |= TRI_ALT_MESH;
-			CHECK((ct->flags & TRI_ALT_NO_COLISIONES) == 0);
+			CHECK((ct->flags & TRI_ALT_NO_COLLISIONS) == 0);
 		}
 	}
 	if (tm->nTri > 0 && (degenerate || invalid)) {
 		E3D_LogVerbose(g_FileLog, "ERROR: CollisionMeshAdd: %d caras degeneradas, %d caras no validas  [sector: %d]",
 			degenerate, invalid, mesh->sector - 1);
 	}
-	box_t *b = &mesh->Extens;
-	b->min.x = b->min.y = b->min.z = SUELO_FLT_MAX;
-	b->max.x = b->max.y = b->max.z = -SUELO_FLT_MAX;
+	box_t *b = &mesh->Ext;
+	b->min.x = b->min.y = b->min.z = GROUND_FLT_MAX;
+	b->max.x = b->max.y = b->max.z = -GROUND_FLT_MAX;
 	for (int i = 0; i < mesh->nVert; i++) {
 		const vec3_t *v = &mesh->pVert[i];
 		b->min.x = b->min.x < v->x ? b->min.x : v->x;
@@ -1534,18 +1534,18 @@ void __thiscall CSuelo_AddMesh(CSuelo *self, CCollideMesh *mesh, CMallaTri *tm, 
 	CHECK(b->max.x >= b->min.x && b->max.y >= b->min.y && b->max.z >= b->min.z);
 	int mem = g_MemStats->bytes;
 	uint32_t t0 = exe_timeGetTime();
-	CAlturas_QuadAddMesh(&self->alturas, mesh, nt);
+	CHeights_QuadAddMesh(&self->heights, mesh, nt);
 	uint32_t t1 = exe_timeGetTime();
 	E3D_LogWhite(g_FileLog, "QuadAddMesh: %d Kb  [%d tri, %d vtx]  [sector: %d]  [%.2f sec.]",
 		(g_MemStats->bytes - mem) / 1024, tm->nTri, tm->nVert, mesh->sector - 1, (double)(t1 - t0) / 1000.0);
 }
 
-void __thiscall CSuelo_RemoveMesh(CSuelo *self, CCollideMesh *mesh, int a2, int a3) {
+void __thiscall CGround_RemoveMesh(CGround *self, CCollideMesh *mesh, int a2, int a3) {
 	(void)a2;
 	(void)a3;
-	Suelo_NewCacheID(self);
-	for (int i = 0; i < self->alturas.nCuads; i++) {
-		CCollideQuad *q = Alturas_Cuad(&self->alturas, i);
+	Ground_NewCacheID(self);
+	for (int i = 0; i < self->heights.nQuads; i++) {
+		CCollideQuad *q = Heights_Quad(&self->heights, i);
 		while (q) {
 			CHECK(q->Mesh != mesh);
 			CCollideQuad *next = q->next;
@@ -1560,55 +1560,55 @@ void __thiscall CSuelo_RemoveMesh(CSuelo *self, CCollideMesh *mesh, int a2, int 
 	}
 }
 
-void __thiscall CSuelo_SetMeshCollide(CSuelo *self, CCollideMesh *mesh, byte on, int MeshID, int IniTri) {
+void __thiscall CGround_SetMeshCollide(CGround *self, CCollideMesh *mesh, byte on, int MeshID, int IniTri) {
 	CHECK(!IniTri);
 	CHECK(MeshID);
-	Suelo_NewCacheID(self);
+	Ground_NewCacheID(self);
 	if (on) {
-		CHECK(mesh->flags & TRI_ALT_NO_COLISIONES);
-		mesh->flags &= ~TRI_ALT_NO_COLISIONES;
+		CHECK(mesh->flags & TRI_ALT_NO_COLLISIONS);
+		mesh->flags &= ~TRI_ALT_NO_COLLISIONS;
 		return;
 	}
-	CHECK(!(mesh->flags & TRI_ALT_NO_COLISIONES));
-	mesh->flags |= TRI_ALT_NO_COLISIONES;
+	CHECK(!(mesh->flags & TRI_ALT_NO_COLLISIONS));
+	mesh->flags |= TRI_ALT_NO_COLLISIONS;
 }
 
-void __fastcall CSuelo_CalcGaps(CSuelo *self) {
-	for (int i = 0; i < self->alturas.nCuads; i++) {
-		for (CCollideQuad *q = Alturas_Cuad(&self->alturas, i); q; q = q->next) {
+void __fastcall CGround_CalcGaps(CGround *self) {
+	for (int i = 0; i < self->heights.nQuads; i++) {
+		for (CCollideQuad *q = Heights_Quad(&self->heights, i); q; q = q->next) {
 			CCollideQuad_CalcGap(q);
 		}
 	}
 }
 
 /* objeto3D.h: the object of a node as the class wanted, NULL (a failed CHECK) for another */
-static CMallaTri *Suelo_ObjMalla(void *obj) {
-	if (((CMallaTri *)obj)->clase != CLASE_OBJ3D_MALLATRI) {
+static CTriMesh *Ground_ObjMesh(void *obj) {
+	if (((CTriMesh *)obj)->class != CLASS_OBJ3D_TRIMESH) {
 		CheckFailed("devNULL", "objeto3D.h", __TIMESTAMP__, __LINE__);
 		return NULL;
 	}
 	return obj;
 }
 
-void __thiscall CSuelo_BuildSectorMesh(CSuelo *self, CCollideMesh *mesh, int mode, uint32_t sector) {
-	CMallaTri *m = operator_new(sizeof(CMallaTri));
-	m = m ? CMallaTri_ctor(m) : NULL;
+void __thiscall CGround_BuildSectorMesh(CGround *self, CCollideMesh *mesh, int mode, uint32_t sector) {
+	CTriMesh *m = operator_new(sizeof(CTriMesh));
+	m = m ? CTriMesh_ctor(m) : NULL;
 	if (mode == 2) {
-		mesh->flags |= TRI_ALT_NO_COLISIONES;
+		mesh->flags |= TRI_ALT_NO_COLLISIONS;
 	}
 	mesh->sector = (uint16_t)sector;
 	mesh->outSector = Sector_IsOutside(sector - 1);
-	for (int i = 0; i < self->nNodos; i++) {
-		CMallaTri *obj = Suelo_ObjMalla(Suelo_Obj(self, i));
+	for (int i = 0; i < self->nNodes; i++) {
+		CTriMesh *obj = Ground_ObjMesh(Ground_Obj(self, i));
 		for (int t = 0; t < obj->nTri; t++) {
-			CTriMalla *tri = CMallaTri_GetTri(obj, t);
+			CMeshTri *tri = CTriMesh_GetTri(obj, t);
 			uint32_t flags = tri->flags & 0xffff;
 			byte skip;
 			if ((tri->flags >> 16) != sector && sector != 0xffffffffu) {
 				skip = 1;
-			} else if (mode == 1 && (flags & TRI_ALT_NO_COLISIONES)) {
+			} else if (mode == 1 && (flags & TRI_ALT_NO_COLLISIONS)) {
 				skip = 1;
-			} else if (mode == 2 && !(flags & TRI_ALT_NO_COLISIONES)) {
+			} else if (mode == 2 && !(flags & TRI_ALT_NO_COLLISIONS)) {
 				skip = 1;
 			} else {
 				skip = (flags & TRI_ALT_INVALID) == TRI_ALT_INVALID;
@@ -1616,12 +1616,12 @@ void __thiscall CSuelo_BuildSectorMesh(CSuelo *self, CCollideMesh *mesh, int mod
 			if (skip) {
 				continue;
 			}
-			CVertMalla v[3];
+			CMeshVert v[3];
 			memset(v, 0, sizeof(v));
-			CMallaTri_GetTriVert(obj, &v[0], t, 0);
-			CMallaTri_GetTriVert(obj, &v[1], t, 1);
-			CMallaTri_GetTriVert(obj, &v[2], t, 2);
-			CMallaTri_AddTriVerts(m, &v[0], &v[1], &v[2], tri->mat, 0, tri->flags);
+			CTriMesh_GetTriVert(obj, &v[0], t, 0);
+			CTriMesh_GetTriVert(obj, &v[1], t, 1);
+			CTriMesh_GetTriVert(obj, &v[2], t, 2);
+			CTriMesh_AddTriVerts(m, &v[0], &v[1], &v[2], tri->mat, 0, tri->flags);
 		}
 	}
 	if (m->nTri) {
@@ -1630,16 +1630,16 @@ void __thiscall CSuelo_BuildSectorMesh(CSuelo *self, CCollideMesh *mesh, int mod
 			m->pTVert[0].v = 0.0f;
 		}
 		for (int t = 0; t < m->nTri; t++) {
-			CTriMalla *tri = CMallaTri_GetTri(m, t);
+			CMeshTri *tri = CTriMesh_GetTri(m, t);
 			tri->mat = NULL;
 			memset(tri->n, 0, sizeof(tri->n));
 			memset(tri->tv, 0, sizeof(tri->tv));
 		}
-		CMallaD3D *d3d = operator_new(200);
-		d3d = d3d ? CMallaD3D_ctorMalla(d3d, m, 0x21, 0) : NULL;
-		CMallaTri_Clear(m);
-		CMallaTri_AddD3D(m, d3d, 1);
-		CSuelo_AddMesh(self, mesh, m, NULL, NULL);
+		CMeshD3D *d3d = operator_new(200);
+		d3d = d3d ? CMeshD3D_ctorMesh(d3d, m, 0x21, 0) : NULL;
+		CTriMesh_Clear(m);
+		CTriMesh_AddD3D(m, d3d, 1);
+		CGround_AddMesh(self, mesh, m, NULL, NULL);
 		if (d3d) {
 			((objDelete_t)d3d->vftable[0])(d3d, 1);
 		}
@@ -1647,86 +1647,86 @@ void __thiscall CSuelo_BuildSectorMesh(CSuelo *self, CCollideMesh *mesh, int mod
 	((objDelete_t)(*(void ***)m)[0])(m, 1);
 }
 
-void __fastcall CSuelo_CreateQuadCollision(CSuelo *self) {
-	CAlturas *alt = &self->alturas;
+void __fastcall CGround_CreateQuadCollision(CGround *self) {
+	CHeights *alt = &self->heights;
 	int empty = 0;
 
 	Con_Verbosef("CreateQuadCollision: Building AMC\n");
-	CAlturas_QuadInit(alt, 0, &self->CollideExt, self->CollideTri);
+	CHeights_QuadInit(alt, 0, &self->CollideExt, self->CollideTri);
 	int sectors = Sector_Num() + 1;
 	for (int i = 0; i < sectors; i++) {
 		CHECK(i < MAX_COLLIDE_SECTORS);
-		CSuelo_BuildSectorMesh(self, &alt->_CollideMesh1[i], 1, i);
+		CGround_BuildSectorMesh(self, &alt->_CollideMesh1[i], 1, i);
 	}
 	for (int z = 0; z < alt->nz; z++) {
 		for (int x = 0; x < alt->nx; x++) {
-			CCollideQuad *q = Alturas_Cell(alt, x, z);
+			CCollideQuad *q = Heights_Cell(alt, x, z);
 			if (q->Mesh) {
 				continue;
 			}
 			empty++;
 			CCollideQuad_SetMesh(q, &alt->CollideMesh1);
 			q->dwParam = 0;
-			q->minY = self->Extens.max.y;
-			q->maxY = self->Extens.max.y;
+			q->minY = self->Ext.max.y;
+			q->maxY = self->Ext.max.y;
 			q->gapBottom = q->minY;
 			q->gapTop = q->minY;
 		}
 	}
-	for (int j = 0; j < alt->nCuads; j++) {
-		CHECK(Alturas_Cuad(alt, j)->Mesh);
+	for (int j = 0; j < alt->nQuads; j++) {
+		CHECK(Heights_Quad(alt, j)->Mesh);
 	}
 	E3D_LogWhite(g_FileLog, "Empty collision quads: %d", empty);
 }
 
 /* the floor nodes and the debug drawing */
 
-void __thiscall CSuelo_NodosToD3D(CSuelo *self, int fvf) {
-	for (int i = 0; i < self->nNodos; i++) {
-		TABLA_CHECK(self->nodos, i, self->nNodos);
-		CNodo3D_BuildD3D(&self->nodos[i], fvf);
+void __thiscall CGround_NodesToD3D(CGround *self, int fvf) {
+	for (int i = 0; i < self->nNodes; i++) {
+		TABLE_CHECK(self->nodes, i, self->nNodes);
+		CNode3D_BuildD3D(&self->nodes[i], fvf);
 	}
 }
 
-void __thiscall CSuelo_Draw(CSuelo *self, void *dev, int unused) {
+void __thiscall CGround_Draw(CGround *self, void *dev, int unused) {
 	(void)unused;
 	Render_SetWorldMatrix(g_MatIdentity, 0);
-	for (int i = 0; i < self->nNodos; i++) {
-		if (!Suelo_Obj(self, i)) {
+	for (int i = 0; i < self->nNodes; i++) {
+		if (!Ground_Obj(self, i)) {
 			continue;
 		}
-		void *obj = Suelo_Obj(self, i);
-		if (((CMallaTri *)obj)->clase != CLASE_OBJ3D_MALLAD3D) {
+		void *obj = Ground_Obj(self, i);
+		if (((CTriMesh *)obj)->class != CLASS_OBJ3D_MESHD3D) {
 			CheckFailed("devNULL", "objeto3D.h", __TIMESTAMP__, __LINE__);
 			obj = NULL;
 		}
-		Batch_AddMalla(obj, dev);
+		Batch_AddMesh(obj, dev);
 	}
 	Batch_Flush(dev);
 }
 
-void Suelo_DrawBox(const vec3_t *c, float r, uint32_t color) {
+void Ground_DrawBox(const vec3_t *c, float r, uint32_t color) {
 	vec3_t mn = { c->x - r, c->y - r, c->z - r };
 	vec3_t mx = { c->x + r, c->y + r, c->z + r };
 	Debug_DrawBox(&mn, &mx, color);
 }
 
-void Suelo_DrawDebug(void) {
-	CHECK(g_Mundo);
-	CSuelo *suelo = g_Mundo->ObjSuelo;
-	if (suelo) {
-		CSuelo_DrawDebug(suelo);
+void Ground_DrawDebug(void) {
+	CHECK(g_World);
+	CGround *ground = g_World->ObjGround;
+	if (ground) {
+		CGround_DrawDebug(ground);
 	}
 }
 
 /* building the floor of a scene */
 
 /* the node flags read here */
-#define NODO_FLAG_NOCOLLIDE (1u << 7)	/* its triangles collide only without colision_opt */
-#define NODO_FLAG_NOCOLLIDE2 (1u << 13)
-#define NODO_FLAG_HIDDEN (1u << 25)
-#define NODO_FLAG_EMPTY (1u << 1)
-#define NODO_FLAG_SUELO (1u << 3)	/* taken into the floor */
+#define NODE_FLAG_NOCOLLIDE (1u << 7)	/* its triangles collide only without colision_opt */
+#define NODE_FLAG_NOCOLLIDE2 (1u << 13)
+#define NODE_FLAG_HIDDEN (1u << 25)
+#define NODE_FLAG_EMPTY (1u << 1)
+#define NODE_FLAG_GROUND (1u << 3)	/* taken into the floor */
 /* the material bits that make a triangle not collide or mark it (material.h) */
 #define MAT_FLAGS 0x3c
 #define MAT_B38 0x38
@@ -1734,20 +1734,20 @@ void Suelo_DrawDebug(void) {
 #define MAT_B3B 0x3b
 #define MAT_A0 0xa0
 /* the triangles per floor node */
-#define g_SueloTrisPerNode GAME_GLOBAL(int, g_SueloTrisPerNode, 0x431bc0)
+#define g_GroundTrisPerNode GAME_GLOBAL(int, g_GroundTrisPerNode, 0x431bc0)
 
-#define Suelo_Field(p, off, type) (*(type *)((byte *)(p) + (off)))
+#define Ground_Field(p, off, type) (*(type *)((byte *)(p) + (off)))
 
 /* the mesh of a scene node: its own collision mesh at 0x30 when it has one */
-static CMallaTri *Suelo_NodoMalla(CNodo3D *node) {
-	CMallaTri *m = Suelo_ObjMalla(node->obj3D);
+static CTriMesh *Ground_NodeMesh(CNode3D *node) {
+	CTriMesh *m = Ground_ObjMesh(node->obj3D);
 	if (m->d3d) {
-		m = (CMallaTri *)m->d3d;
+		m = (CTriMesh *)m->d3d;
 	}
 	return m;
 }
 
-static void Suelo_LogMemory(int mem, uint32_t t0) {
+static void Ground_LogMemory(int mem, uint32_t t0) {
 	uint32_t t1 = exe_timeGetTime();
 	Con_Verbosef("Map collision memory: %d Kb  [Quads: %d]  [%.2f sec.]\n", (g_MemStats->bytes - mem) / 1024,
 		g_CollisionQuadCount, (double)(t1 - t0) / 1000.0);
@@ -1763,8 +1763,8 @@ static void Box_Add(box_t *b, const vec3_t *v) {
 }
 
 static void Box_Empty(box_t *b) {
-	b->min.x = b->min.y = b->min.z = SUELO_FLT_MAX;
-	b->max.x = b->max.y = b->max.z = -SUELO_FLT_MAX;
+	b->min.x = b->min.y = b->min.z = GROUND_FLT_MAX;
+	b->max.x = b->max.y = b->max.z = -GROUND_FLT_MAX;
 }
 
 static void Box_Widen(box_t *b, float e) {
@@ -1777,25 +1777,25 @@ static void Box_Widen(box_t *b, float e) {
 }
 
 /* the collision flags of a triangle of node with the material mat */
-static uint32_t Suelo_TriFlags(uint32_t nodeFlags, const void *mat, byte opt) {
+static uint32_t Ground_TriFlags(uint32_t nodeFlags, const void *mat, byte opt) {
 	uint32_t fl = 0;
-	if (opt && !(nodeFlags & NODO_FLAG_NOCOLLIDE)) {
+	if (opt && !(nodeFlags & NODE_FLAG_NOCOLLIDE)) {
 		fl = 1;
 	}
-	if (nodeFlags & NODO_FLAG_NOCOLLIDE) {
+	if (nodeFlags & NODE_FLAG_NOCOLLIDE) {
 		fl |= 2;
 	}
-	if (nodeFlags & NODO_FLAG_NOCOLLIDE2) {
+	if (nodeFlags & NODE_FLAG_NOCOLLIDE2) {
 		fl |= 1;
 	}
-	uint16_t mf = Suelo_Field(mat, MAT_FLAGS, uint16_t);
+	uint16_t mf = Ground_Field(mat, MAT_FLAGS, uint16_t);
 	if (mf & 1) {
 		fl |= 1;
 	}
-	if (Suelo_Field(mat, MAT_B38, byte)) {
+	if (Ground_Field(mat, MAT_B38, byte)) {
 		fl |= 0x10;
 	}
-	if (Suelo_Field(mat, MAT_B3A, byte) || (Suelo_Field(mat, MAT_A0, void *) && !Suelo_Field(mat, MAT_B3B, byte))) {
+	if (Ground_Field(mat, MAT_B3A, byte) || (Ground_Field(mat, MAT_A0, void *) && !Ground_Field(mat, MAT_B3B, byte))) {
 		fl |= 0x20;
 	}
 	if (mf & 2) {
@@ -1804,35 +1804,35 @@ static uint32_t Suelo_TriFlags(uint32_t nodeFlags, const void *mat, byte opt) {
 	return fl;
 }
 
-void __thiscall CSuelo_Build(CSuelo *self, CEscena *esc) {
-	const char *name = esc->name;
+void __thiscall CGround_Build(CGround *self, CScene *scn) {
+	const char *name = scn->name;
 	char nodeName[128];
 
-	if (esc->fromAmc) {
+	if (scn->fromAmc) {
 		int mem = g_MemStats->bytes;
 		uint32_t t0 = exe_timeGetTime();
-		if (CSuelo_LoadCollision(self, name)) {
+		if (CGround_LoadCollision(self, name)) {
 			CheckFailed("!LoadCollision( Escena->Nombre )", __FILE__, __TIMESTAMP__, __LINE__);
 		}
-		Suelo_LogMemory(mem, t0);
+		Ground_LogMemory(mem, t0);
 		Con_Verbosef("Level loaded from SM3+AMC\n");
 		return;
 	}
-	CHECK(esc->Nodo3D);
-	CEscena_UpdateNodes(esc);
+	CHECK(scn->Node3D);
+	CScene_UpdateNodes(scn);
 	/* the box of all meshes and the grid of floor nodes over it */
-	Box_Empty(&self->Extens);
+	Box_Empty(&self->Ext);
 	int nTri = 0;
-	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
-		if (CNodo3D_Clase(n) != CLASE_OBJ3D_MALLATRI || (n->flags & NODO_FLAG_HIDDEN)) {
+	for (CNode3D *n = scn->Node3D; n; n = n->next) {
+		if (CNode3D_Class(n) != CLASS_OBJ3D_TRIMESH || (n->flags & NODE_FLAG_HIDDEN)) {
 			continue;
 		}
-		CMallaTri *m = Suelo_NodoMalla(n);
-		CMallaTri_Transform(m, &n->m);
-		CMallaTri_CalcBox(m, &self->Extens, 0);
+		CTriMesh *m = Ground_NodeMesh(n);
+		CTriMesh_Transform(m, &n->m);
+		CTriMesh_CalcBox(m, &self->Ext, 0);
 		nTri += m->nTri;
 	}
-	box_t *ext = &self->Extens;
+	box_t *ext = &self->Ext;
 	CHECK(ext->max.x >= ext->min.x && ext->max.y >= ext->min.y && ext->max.z >= ext->min.z);
 	Box_Widen(ext, g_CollisionEpsilon * 10.0f);
 	self->Dim.x = ext->max.x - ext->min.x;
@@ -1841,47 +1841,47 @@ void __thiscall CSuelo_Build(CSuelo *self, CEscena *esc) {
 	CHECK(2000000.0 > __builtin_fabs((double)self->Dim.x));
 	CHECK(2000000.0 > __builtin_fabs((double)self->Dim.y));
 	CHECK(2000000.0 > __builtin_fabs((double)self->Dim.z));
-	double k = 1.0 / __builtin_sqrt((double)(((self->Dim.z * self->Dim.x) / (float)nTri) * (float)g_SueloTrisPerNode));
+	double k = 1.0 / __builtin_sqrt((double)(((self->Dim.z * self->Dim.x) / (float)nTri) * (float)g_GroundTrisPerNode));
 	int nx = (int)crt_ceil((double)self->Dim.x * k);
 	self->nx = nx;
 	int nz = (int)crt_ceil((double)self->Dim.z * k);
 	self->nz = nz;
-	Tabla_NewFC((CTabla *)&self->nNodos, nz * nx);
-	for (int i = 0; i < self->nNodos; i++) {
+	Table_NewFC((CTable *)&self->nNodes, nz * nx);
+	for (int i = 0; i < self->nNodes; i++) {
 		Bprintf(nodeName, sizeof(nodeName), "suelo_%d", i);
-		TABLA_CHECK(self->nodos, i, self->nNodos);
-		Cad_Set(&self->nodos[i].name, nodeName);
-		CMallaTri *m = operator_new(sizeof(CMallaTri));
-		m = m ? CMallaTri_ctor(m) : NULL;
-		TABLA_CHECK(self->nodos, i, self->nNodos);
-		CNodo3D_SetObj3D(&self->nodos[i], (IObjeto3D *)m);
+		TABLE_CHECK(self->nodes, i, self->nNodes);
+		String_Set(&self->nodes[i].name, nodeName);
+		CTriMesh *m = operator_new(sizeof(CTriMesh));
+		m = m ? CTriMesh_ctor(m) : NULL;
+		TABLE_CHECK(self->nodes, i, self->nNodes);
+		CNode3D_SetObj3D(&self->nodes[i], (IObject3D *)m);
 	}
 	/* the triangles into the floor node of the cell of their center */
 	self->CollideTri = 0;
 	Box_Empty(&self->CollideExt);
-	CArchINI *ini = esc->ini;
-	byte opt = ini && CArchINI_GetBool(ini, "suelo", "colision_opt", 0) ? 1 : 0;
-	for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
+	CIniFile *ini = scn->ini;
+	byte opt = ini && CIniFile_GetBool(ini, "suelo", "colision_opt", 0) ? 1 : 0;
+	for (CNode3D *n = scn->Node3D; n; n = n->next) {
 		int sector = Sector_OfNode(n);
 		byte outside = Sector_IsOutside(sector);
 		uint32_t *nodeFlags = &n->flags;
-		if (CNodo3D_Clase(n) != CLASE_OBJ3D_MALLATRI) {
-			if (*nodeFlags & NODO_FLAG_EMPTY) {
-				CHECK(CNodo3D_Clase(n) == 0);
-				*nodeFlags |= NODO_FLAG_SUELO;
+		if (CNode3D_Class(n) != CLASS_OBJ3D_TRIMESH) {
+			if (*nodeFlags & NODE_FLAG_EMPTY) {
+				CHECK(CNode3D_Class(n) == 0);
+				*nodeFlags |= NODE_FLAG_GROUND;
 			}
 			continue;
 		}
-		if (*nodeFlags & NODO_FLAG_HIDDEN) {
+		if (*nodeFlags & NODE_FLAG_HIDDEN) {
 			continue;
 		}
-		CMallaTri *m = Suelo_NodoMalla(n);
+		CTriMesh *m = Ground_NodeMesh(n);
 		for (int t = 0; t < m->nTri; t++) {
-			CVertMalla v[3];
+			CMeshVert v[3];
 			memset(v, 0, sizeof(v));
-			CMallaTri_GetTriVert(m, &v[0], t, 0);
-			CMallaTri_GetTriVert(m, &v[1], t, 1);
-			CMallaTri_GetTriVert(m, &v[2], t, 2);
+			CTriMesh_GetTriVert(m, &v[0], t, 0);
+			CTriMesh_GetTriVert(m, &v[1], t, 1);
+			CTriMesh_GetTriVert(m, &v[2], t, 2);
 			void *mat = m->pTri[t].mat;
 			uint32_t cx = (uint32_t)(int)((((v[0].pos.x + v[1].pos.x + v[2].pos.x) / 3.0f - ext->min.x) /
 				self->Dim.x) * (float)self->nx);
@@ -1890,21 +1890,21 @@ void __thiscall CSuelo_Build(CSuelo *self, CEscena *esc) {
 			if (cx >= (uint32_t)self->nx || cz >= (uint32_t)self->nz) {
 				continue;
 			}
-			CMallaTri *dst = Suelo_ObjMalla(Suelo_Obj(self, self->nx * cz + cx));
+			CTriMesh *dst = Ground_ObjMesh(Ground_Obj(self, self->nx * cz + cx));
 			uint32_t sec = sector + 1;
-			uint32_t flags = Suelo_TriFlags(*nodeFlags, mat, opt);
+			uint32_t flags = Ground_TriFlags(*nodeFlags, mat, opt);
 			CHECK(flags <= 0xffff);
 			CHECK(sec <= 0xffff);
-			if (!(flags & TRI_ALT_NO_COLISIONES) && !outside) {
+			if (!(flags & TRI_ALT_NO_COLLISIONS) && !outside) {
 				self->CollideTri++;
 				Box_Add(&self->CollideExt, &v[0].pos);
 				Box_Add(&self->CollideExt, &v[1].pos);
 				Box_Add(&self->CollideExt, &v[2].pos);
 			}
-			CMallaTri_AddTriVerts(dst, &v[0], &v[1], &v[2], mat, 1, sec << 16 | flags);
+			CTriMesh_AddTriVerts(dst, &v[0], &v[1], &v[2], mat, 1, sec << 16 | flags);
 		}
-		CNodo3D_FreeObj3D(n);
-		*nodeFlags |= NODO_FLAG_SUELO;
+		CNode3D_FreeObj3D(n);
+		*nodeFlags |= NODE_FLAG_GROUND;
 	}
 	CHECK(self->CollideTri);
 	box_t *ce = &self->CollideExt;
@@ -1912,15 +1912,15 @@ void __thiscall CSuelo_Build(CSuelo *self, CEscena *esc) {
 	Box_Widen(ce, g_CollisionEpsilon * 10.0f);
 	int mem = g_MemStats->bytes;
 	uint32_t t0 = exe_timeGetTime();
-	if (CSuelo_LoadCollision(self, name)) {
-		CSuelo_CreateQuadCollision(self);
-		CSuelo_SaveCollision(self, name);
+	if (CGround_LoadCollision(self, name)) {
+		CGround_CreateQuadCollision(self);
+		CGround_SaveCollision(self, name);
 	}
-	Suelo_LogMemory(mem, t0);
+	Ground_LogMemory(mem, t0);
 }
 
-void __fastcall CSuelo_FreeNodos(CSuelo *self) {
-	Tabla_FreeObjs((CTabla *)&self->nNodos);
+void __fastcall CGround_FreeNodes(CGround *self) {
+	Table_FreeObjs((CTable *)&self->nNodes);
 }
 
 vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in) {
@@ -1937,15 +1937,15 @@ vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in) {
 	return out;
 }
 
-/* the lighting of the device meshes of the nodes; nodo and esc go through unchanged */
-void __thiscall CSuelo_CalcIlum(void *suelo, CNodo3D *nodo, CEscena *esc) {
-	CSuelo *self = suelo;
+/* the lighting of the device meshes of the nodes; node and esc go through unchanged */
+void __thiscall CGround_CalcIllum(void *ground, CNode3D *node, CScene *scn) {
+	CGround *self = ground;
 
-	for (int i = 0; i < self->nNodos; i++) {
-		TABLA_CHECK(self->nodos, i, self->nNodos);
-		if (CNodo3D_Clase(&self->nodos[i]) == CLASE_OBJ3D_MALLAD3D) {
-			TABLA_CHECK(self->nodos, i, self->nNodos);
-			CMallaD3D_CalcIlum(Obj3D_Cast(self->nodos[i].obj3D, CLASE_OBJ3D_MALLAD3D), nodo, esc);
+	for (int i = 0; i < self->nNodes; i++) {
+		TABLE_CHECK(self->nodes, i, self->nNodes);
+		if (CNode3D_Class(&self->nodes[i]) == CLASS_OBJ3D_MESHD3D) {
+			TABLE_CHECK(self->nodes, i, self->nNodes);
+			CMeshD3D_CalcIllum(Obj3D_Cast(self->nodes[i].obj3D, CLASS_OBJ3D_MESHD3D), node, scn);
 		}
 	}
 }
@@ -1954,7 +1954,7 @@ void __thiscall CSuelo_CalcIlum(void *suelo, CNodo3D *nodo, CEscena *esc) {
 #define g_ShowMapSolid GAME_GLOBAL_IN(int, GVar_ShowMapSolid, 16, 0x4af850)		/* 0 wireframe, 1 solid, 2 solid with fog */
 #define g_CollideAddColor (GAME_ARRAY(float, g_CollideAddColor, 0x432420))	/* added to the shaded colors, rgba */
 #define g_CollideVerts (GAME_ARRAY(CollideVert, g_CollideVerts, 0x4af8b0))	/* the triangle drawn */
-#define g_SectorColors (GAME_ARRAY_IN(const uint32_t, g_BspColores, 4, 0x432a34))
+#define g_SectorColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 4, 0x432a34))
 
 /* the shading of the solid view: (0 < s) ? min(1, s) : 0 the way the original branches (NaN to the minss) */
 static float Collide_Clamp01(float s) {
@@ -2004,7 +2004,7 @@ void Collide_TriVerts(CollideVert *out, const vec3_t *a, const vec3_t *b, const 
 		rgba[2] = l3 + bl + 0.01f + g_CollideAddColor[2];
 		rgba[3] = l3 + (l2 + (l1 + k255)) + 1.0f + g_CollideAddColor[3];
 		color = Color_FromFloat(rgba);
-		float s = g_MapaSombrasEscala * g_MapaSombrasResol / 10.0f;
+		float s = g_ShadowMapScale * g_ShadowMapRes / 10.0f;
 		const vec3_t *v[3] = { a, b, c };
 		for (int i = 0; i < 3; i++) {
 			float u, t;
@@ -2109,20 +2109,20 @@ void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 
 #define g_ShowMapQuads GAME_GLOBAL_IN(int, GVar_ShowMapQuads, 16, 0x4af880)		/* ShowMapQuads: the boxes of the quads, 2..6 by kind */
 #define g_ShowMapQDist GAME_GLOBAL_IN(float, GVar_ShowMapQDist, 16, 0x4af820)	/* ShowMapQDist: only the quads this near the camera, 0 all */
-#define g_AnalizeQuads GAME_GLOBAL_IN(int, GVar_AnalizeQuads, 16, 0x4af808)		/* AnalizeQuads: 1 the quads checked once */
-/* the material of the debug view, a static of CSuelo_DrawDebug */
+#define g_AnalyzeQuads GAME_GLOBAL_IN(int, GVar_AnalyzeQuads, 16, 0x4af808)		/* AnalizeQuads: 1 the quads checked once */
+/* the material of the debug view, a static of CGround_DrawDebug */
 #define g_CollideMat (GAME_GLOBAL(CMaterial, g_CollideMat, 0x4af8f8))
 #define g_CollideMatGuard (GAME_ARRAY(int, g_CollideMatGuard, 0x4af9a8))
 
 /* the atexit destructor of it (rva 0x38edb0) */
-void Suelo_FiniCollideMat(void) {
+void Ground_FiniCollideMat(void) {
 	CMaterial_dtor(&g_CollideMat);
 }
 
-#define g_QuadColors (GAME_ARRAY_IN(const uint32_t, g_BspColores, 4, 0x432a34))
+#define g_QuadColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 4, 0x432a34))
 
 /* the box of a quad with its cell from x z of the grid */
-static void Suelo_QuadBox(const CAlturas *alt, const CCollideQuad *q, float x0, float x1, float z0, float z1,
+static void Ground_QuadBox(const CHeights *alt, const CCollideQuad *q, float x0, float x1, float z0, float z1,
 	vec3_t *mn, vec3_t *mx) {
 	mn->x = x0 * alt->sizeX + alt->ext.min.x;
 	mx->x = x1 * alt->sizeX + alt->ext.min.x;
@@ -2133,19 +2133,19 @@ static void Suelo_QuadBox(const CAlturas *alt, const CCollideQuad *q, float x0, 
 }
 
 /* ShowMapQuads: the boxes of the quads of the cells */
-static void Suelo_ShowQuads(CSuelo *self) {
-	CAlturas *alt = &self->alturas;
-	vec3_t eye = Mundo_Get()->cam->pos;
+static void Ground_ShowQuads(CGround *self) {
+	CHeights *alt = &self->heights;
+	vec3_t eye = World_Get()->cam->pos;
 	float maxDist = g_ShowMapQDist;
 
 	for (int z = 0; z < alt->nz; z++) {
 		for (int x = 0; x < alt->nx; x++) {
-			CCollideQuad *q = Alturas_Cell(alt, (uint32_t)x, (uint32_t)z);
+			CCollideQuad *q = Heights_Cell(alt, (uint32_t)x, (uint32_t)z);
 			int idx = 8;
 			for (; q; q = q->next) {
 				int mode = g_ShowMapQuads;
 				vec3_t mn, mx;
-				Suelo_QuadBox(alt, q, (float)x, (float)(x + 1), (float)z, (float)(z + 1), &mn, &mx);
+				Ground_QuadBox(alt, q, (float)x, (float)(x + 1), (float)z, (float)(z + 1), &mn, &mx);
 				if (maxDist != 0.0f) {
 					float mxm = (mx.x + mn.x) * 0.5f;
 					float mym = (mx.y + mn.y) * 0.5f;
@@ -2205,13 +2205,13 @@ static void Suelo_ShowQuads(CSuelo *self) {
 }
 
 /* AnalizeQuads: the triangles of a quad crossing its free gap reported */
-static void Suelo_AnalizeQuads(CSuelo *self) {
-	CAlturas *alt = &self->alturas;
+static void Ground_AnalyzeQuads(CGround *self) {
+	CHeights *alt = &self->heights;
 	int bad = 0;
 
 	for (int z = 0; z < alt->nz; z++) {
 		for (int x = 0; x < alt->nx; x++) {
-			for (CCollideQuad *q = Alturas_Cell(alt, (uint32_t)x, (uint32_t)z); q; q = q->next) {
+			for (CCollideQuad *q = Heights_Cell(alt, (uint32_t)x, (uint32_t)z); q; q = q->next) {
 				for (int i = 0; i < q->nTri; i++) {
 					CCollideMesh *mesh = q->Mesh;
 					const CCollideTri *t = &mesh->pTri[q->pTri[i]];
@@ -2241,12 +2241,12 @@ static void Suelo_AnalizeQuads(CSuelo *self) {
 	} else {
 		Con_Printf("SECTORES CORRECTOS\n");
 	}
-	g_AnalizeQuads = 0;
+	g_AnalyzeQuads = 0;
 }
 
 /* the debug view of the collision: the mode of c_show (6, 7 the solid views, 7 with a blinking background), the
  * quads, the analysis, then the meshes of the sectors seen and the meshes added at run time once each */
-void __fastcall CSuelo_DrawDebug(CSuelo *self) {
+void __fastcall CGround_DrawDebug(CGround *self) {
 	int show = g_ShowCollision;
 
 	if (show == 0) {
@@ -2258,10 +2258,10 @@ void __fastcall CSuelo_DrawDebug(CSuelo *self) {
 		Render_Clear(NULL, 1, ((exe_timeGetTime() & 0x3fc) | 0x20000) >> 2, 1.0f, 0);
 	}
 	if (g_ShowMapQuads) {
-		Suelo_ShowQuads(self);
+		Ground_ShowQuads(self);
 	}
-	if (g_AnalizeQuads && g_AnalizeQuads == 1) {
-		Suelo_AnalizeQuads(self);
+	if (g_AnalyzeQuads && g_AnalyzeQuads == 1) {
+		Ground_AnalyzeQuads(self);
 	}
 	if (!g_ShowCollision) {
 		return;
@@ -2271,7 +2271,7 @@ void __fastcall CSuelo_DrawDebug(CSuelo *self) {
 		crt_Init_thread_header(g_CollideMatGuard);
 		if (*g_CollideMatGuard == -1) {
 			CMaterial_ctor(&g_CollideMat);
-			crt_atexit(Suelo_FiniCollideMat);
+			crt_atexit(Ground_FiniCollideMat);
 			crt_Init_thread_footer(g_CollideMatGuard);
 		}
 	}
@@ -2281,12 +2281,12 @@ void __fastcall CSuelo_DrawDebug(CSuelo *self) {
 	p->b39 = 0;
 	p->transp = 1;
 	((byte *)&p->w3e)[1] = 0;
-	p->atrib = 0x800;
+	p->attrib = 0x800;
 	Render_SetMaterial(&g_CollideMat, 0);
 	if (g_ShowMapSolid) {
-		Render_SetMaterial(g_MatSuelo, 0);
+		Render_SetMaterial(g_MatGround, 0);
 	}
-	CAlturas *alt = &self->alturas;
+	CHeights *alt = &self->heights;
 	CCollideMesh_DrawDebug(&alt->CollideMesh1, 0);
 	CCollideMesh_DrawDebug(&alt->CollideMesh2, 0);
 	for (int s = 0; s < MAX_COLLIDE_SECTORS; s++) {
@@ -2295,10 +2295,10 @@ void __fastcall CSuelo_DrawDebug(CSuelo *self) {
 			CCollideMesh_DrawDebug(&alt->_CollideMesh2[s], 0);
 		}
 	}
-	CAlturas_SetParam(alt, 0);
-	for (int i = 0; i < alt->nCuads; i++) {
-		TABLA_CHECK(alt->cuads, i, alt->nCuads);
-		for (CCollideQuad *q = &alt->cuads[i]; q; q = q->next) {
+	CHeights_SetParam(alt, 0);
+	for (int i = 0; i < alt->nQuads; i++) {
+		TABLE_CHECK(alt->quads, i, alt->nQuads);
+		for (CCollideQuad *q = &alt->quads[i]; q; q = q->next) {
 			CCollideMesh *mesh = q->Mesh;
 			if (mesh->MeshID && !mesh->Param) {
 				mesh->Param = 1;

@@ -1,5 +1,5 @@
 /*
- * Engine/SistPart.cpp of the engine3d: CSistPart and its particles, see include/scrap/sistpart.h. Also the small
+ * Engine/SistPart.cpp of the engine3d: CParticleSystem and its particles, see include/scrap/sistpart.h. Also the small
  * functions of Engine/grafico2d.cpp in front of it.
  */
 #include <stddef.h>
@@ -14,62 +14,62 @@
 #include "scrap/sistpart.h"
 #include "scrap/varios.h"
 
-#define SISTPART_DEFAULT_COLOR 0xffffff
+#define PARTICLESYSTEM_DEFAULT_COLOR 0xffffff
 
-typedef void(__thiscall *partUpdate_t)(CParticula *self, CSistPart *sp, float dt, void *multiSpr);
-#define PARTICULA_UPDATE(p, sp, dt, ms) (((partUpdate_t)(p)->vftable[PARTICULA_VF_UPDATE])((p), (sp), (dt), (ms)))
+typedef void(__thiscall *partUpdate_t)(CParticle *self, CParticleSystem *sp, float dt, void *multiSpr);
+#define PARTICLE_UPDATE(p, sp, dt, ms) (((partUpdate_t)(p)->vftable[PARTICLE_VF_UPDATE])((p), (sp), (dt), (ms)))
 
 /* a random value between a and b, the way the exe computes it */
-static float SistPart_RandLerp(float a, float b) {
+static float ParticleSystem_RandLerp(float a, float b) {
 	int r = crt_rand();
 	return (float)((double)(r & 0x7fff) * (1.0 / 32767.0) * (double)(b - a) + (double)a);
 }
 
 /* the time of ms milliseconds in seconds */
-static float SistPart_Seconds(uint32_t ms) {
+static float ParticleSystem_Seconds(uint32_t ms) {
 	return (float)(double)ms * 0.001f;
 }
 
-CParticula *__fastcall CParticulaActive_ctor(CParticula *self) {
+CParticle *__fastcall CParticleActive_ctor(CParticle *self) {
 	self->vftable = CPARTICULAACTIVE_VFTABLE;
-	CParticulaActive_Init(self);
+	CParticleActive_Init(self);
 	return self;
 }
 
-CParticula *__fastcall CParticulaStatic_ctor(CParticula *self) {
+CParticle *__fastcall CParticleStatic_ctor(CParticle *self) {
 	self->vftable = CPARTICULASTATIC_VFTABLE;
-	CParticulaStatic_Init(self);
+	CParticleStatic_Init(self);
 	return self;
 }
 
-void __fastcall CParticulaActive_dtor(CParticula *self) {
+void __fastcall CParticleActive_dtor(CParticle *self) {
 	self->vftable = CPARTICULAACTIVE_VFTABLE;
 }
 
-int __fastcall CParticulaActive_Type(CParticula *self) {
+int __fastcall CParticleActive_Type(CParticle *self) {
 	(void)self;
-	return PARTICULA_ACTIVE;
+	return PARTICLE_ACTIVE;
 }
 
-int __fastcall CParticulaStatic_Type(CParticula *self) {
+int __fastcall CParticleStatic_Type(CParticle *self) {
 	(void)self;
-	return PARTICULA_STATIC;
+	return PARTICLE_STATIC;
 }
 
 /* the members of both kinds */
-static void Particula_InitCommon(CParticula *p) {
+static void Particle_InitCommon(CParticle *p) {
 	p->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	p->uv0[0] = 0.0f;
 	p->uv0[1] = 0.0f;
 	p->uv1[0] = 1.0f;
 	p->active = 0;
-	p->escala = 1.0f;
+	p->scale = 1.0f;
 }
 
-void __fastcall CParticulaActive_Init(CParticula *self) {
-	CParticulaActive *a = (CParticulaActive *)self;
+void __fastcall CParticleActive_Init(CParticle *self) {
+	CParticleActive *a = (CParticleActive *)self;
 
-	Particula_InitCommon(self);
+	Particle_InitCommon(self);
 	a->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	a->acc = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	a->sparks = 0;
@@ -81,9 +81,9 @@ void __fastcall CParticulaActive_Init(CParticula *self) {
 	a->sizeEnd = 1.0f;
 	a->sizeLife = 1.0f;
 	self->size = 1.0f;
-	a->colorIni = SISTPART_DEFAULT_COLOR;
-	a->colorEnd = SISTPART_DEFAULT_COLOR;
-	self->color = SISTPART_DEFAULT_COLOR;
+	a->colorIni = PARTICLESYSTEM_DEFAULT_COLOR;
+	a->colorEnd = PARTICLESYSTEM_DEFAULT_COLOR;
+	self->color = PARTICLESYSTEM_DEFAULT_COLOR;
 	a->rotIni = 0.0f;
 	a->rotEnd = 0.0f;
 	self->rot = 0.0f;
@@ -97,78 +97,78 @@ void __fastcall CParticulaActive_Init(CParticula *self) {
 	a->bounce = 0;
 }
 
-void __fastcall CParticulaStatic_Init(CParticula *self) {
-	Particula_InitCommon(self);
+void __fastcall CParticleStatic_Init(CParticle *self) {
+	Particle_InitCommon(self);
 	self->size = 1.0f;
-	self->color = SISTPART_DEFAULT_COLOR;
+	self->color = PARTICLESYSTEM_DEFAULT_COLOR;
 	self->rot = 0.0f;
 	self->uv1[1] = 1.0f;
 }
 
-/* the members both constructors clear before CSistPart_Init */
-static void SistPart_Clear(CSistPart *self) {
-	self->clase = 0;
-	self->nodo = NULL;
+/* the members both constructors clear before CParticleSystem_Init */
+static void ParticleSystem_Clear(CParticleSystem *self) {
+	self->class = 0;
+	self->node = NULL;
 	self->vftable = CSISTPART_VFTABLE;
 	cString_ctor(&self->params.texture);
 	memset(&self->vis, 0, sizeof(self->vis));
 }
 
-CSistPart *__thiscall CSistPart_ctorCopy(CSistPart *self, const CSistPart *orig) {
-	SistPart_Clear(self);
-	CSistPart_Init(self, orig->nodo, orig->type, &orig->params, NULL);
+CParticleSystem *__thiscall CParticleSystem_ctorCopy(CParticleSystem *self, const CParticleSystem *orig) {
+	ParticleSystem_Clear(self);
+	CParticleSystem_Init(self, orig->node, orig->type, &orig->params, NULL);
 	self->enabled = orig->enabled;
 	self->visible = orig->visible;
-	self->escala = orig->escala;
+	self->scale = orig->scale;
 	self->alpha = orig->alpha;
 	self->mat = orig->mat;
 	if (orig->posList) {
-		self->posList = New_Array((uint32_t)self->params.nParticulas, sizeof(vec3_t));
-		memcpy(self->posList, orig->posList, (uint32_t)self->params.nParticulas * sizeof(vec3_t));
+		self->posList = New_Array((uint32_t)self->params.nParticles, sizeof(vec3_t));
+		memcpy(self->posList, orig->posList, (uint32_t)self->params.nParticles * sizeof(vec3_t));
 	}
-	CSistPart_CreateMat(self);
-	CSistPart_CreateParticles(self);
+	CParticleSystem_CreateMat(self);
+	CParticleSystem_CreateParticles(self);
 	return self;
 }
 
-CSistPart *__thiscall CSistPart_ctorParams(CSistPart *self, CNodo3D *nodo, const char *type, float escala, float alpha,
-	const vec3_t *posList, CArchINI *ini) {
-	SistPart_Clear(self);
-	CSistPart_Init(self, nodo, type, NULL, ini);
-	self->escala = escala;
+CParticleSystem *__thiscall CParticleSystem_ctorParams(CParticleSystem *self, CNode3D *node, const char *type, float scale, float alpha,
+	const vec3_t *posList, CIniFile *ini) {
+	ParticleSystem_Clear(self);
+	CParticleSystem_Init(self, node, type, NULL, ini);
+	self->scale = scale;
 	self->alpha = alpha;
 	if (posList) {
-		self->posList = New_Array((uint32_t)self->params.nParticulas, sizeof(vec3_t));
-		memcpy(self->posList, posList, (uint32_t)self->params.nParticulas * sizeof(vec3_t));
+		self->posList = New_Array((uint32_t)self->params.nParticles, sizeof(vec3_t));
+		memcpy(self->posList, posList, (uint32_t)self->params.nParticles * sizeof(vec3_t));
 	}
-	CSistPart_CreateMat(self);
-	CSistPart_CreateParticles(self);
+	CParticleSystem_CreateMat(self);
+	CParticleSystem_CreateParticles(self);
 	return self;
 }
 
-CSistPart *__fastcall CSistPart_ctor(CSistPart *self) {
-	SistPart_Clear(self);
-	CSistPart_Init(self, NULL, NULL, NULL, NULL);
-	CSistPart_CreateMat(self);
-	CSistPart_CreateParticles(self);
+CParticleSystem *__fastcall CParticleSystem_ctor(CParticleSystem *self) {
+	ParticleSystem_Clear(self);
+	CParticleSystem_Init(self, NULL, NULL, NULL, NULL);
+	CParticleSystem_CreateMat(self);
+	CParticleSystem_CreateParticles(self);
 	return self;
 }
 
-void __fastcall CObjBase3D_dtor(IObjeto3D *self) {
+void __fastcall CObjBase3D_dtor(IObject3D *self) {
 	self->vftable = COBJBASE3D_VFTABLE;
-	CObjBase3D_SetNodo(self, NULL);
+	CObjBase3D_SetNode(self, NULL);
 	self->vftable = IOBJETO3D_VFTABLE;
 }
 
-void __fastcall SistPartParams_dtor(SistPartParams *self) {
+void __fastcall ParticleSystemParams_dtor(ParticleSystemParams *self) {
 	cString_dtor(&self->texture);
 }
 
-void __fastcall CSistPart_dtor(CSistPart *self) {
+void __fastcall CParticleSystem_dtor(CParticleSystem *self) {
 	self->vftable = CSISTPART_VFTABLE;
-	for (int i = 0; i < self->params.nParticulas; i++) {
+	for (int i = 0; i < self->params.nParticles; i++) {
 		if (self->Particles[i]) {
-			operator_delete_sized(self->Particles[i], sizeof(CParticula));
+			operator_delete_sized(self->Particles[i], sizeof(CParticle));
 		}
 	}
 	if (self->Particles) {
@@ -180,18 +180,18 @@ void __fastcall CSistPart_dtor(CSistPart *self) {
 		operator_delete_sized(self->type, 1);
 		self->type = NULL;
 	}
-	g_SistPartCount -= self->params.nParticulas;
+	g_ParticleSystemCount -= self->params.nParticles;
 	if (self->posList) {
 		operator_delete_sized(self->posList, sizeof(vec3_t));
 		self->posList = NULL;
 	}
-	SistPartParams_dtor(&self->params);
-	CObjBase3D_dtor((IObjeto3D *)self);
+	ParticleSystemParams_dtor(&self->params);
+	CObjBase3D_dtor((IObject3D *)self);
 }
 
-SistPartParams *__thiscall SistPartParams_Assign(SistPartParams *self, const SistPartParams *src) {
+ParticleSystemParams *__thiscall ParticleSystemParams_Assign(ParticleSystemParams *self, const ParticleSystemParams *src) {
 	/* the members one by one: the padding bytes stay */
-	memcpy(self, src, offsetof(SistPartParams, spriteRand) + 1);
+	memcpy(self, src, offsetof(ParticleSystemParams, spriteRand) + 1);
 	cString_Assign(&self->texture, &src->texture);
 	self->additiveAlpha = src->additiveAlpha;
 	self->alphaMod = src->alphaMod;
@@ -203,7 +203,7 @@ SistPartParams *__thiscall SistPartParams_Assign(SistPartParams *self, const Sis
 	return self;
 }
 
-IObjeto3D *__thiscall CObjBase3D_Delete(IObjeto3D *self, byte flags) {
+IObject3D *__thiscall CObjBase3D_Delete(IObject3D *self, byte flags) {
 	CObjBase3D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, 0xc);
@@ -211,22 +211,22 @@ IObjeto3D *__thiscall CObjBase3D_Delete(IObjeto3D *self, byte flags) {
 	return self;
 }
 
-CSistPart *__thiscall CSistPart_Delete(CSistPart *self, byte flags) {
-	CSistPart_dtor(self);
+CParticleSystem *__thiscall CParticleSystem_Delete(CParticleSystem *self, byte flags) {
+	CParticleSystem_dtor(self);
 	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CSistPart));
+		operator_delete_sized(self, sizeof(CParticleSystem));
 	}
 	return self;
 }
 
-void __thiscall CSistPart_Init(CSistPart *self, CNodo3D *nodo, const char *type, const SistPartParams *params,
-	CArchINI *ini) {
-	CHECK(nodo);
-	CObjBase3D_SetNodo((IObjeto3D *)self, nodo);
+void __thiscall CParticleSystem_Init(CParticleSystem *self, CNode3D *node, const char *type, const ParticleSystemParams *params,
+	CIniFile *ini) {
+	CHECK(node);
+	CObjBase3D_SetNode((IObject3D *)self, node);
 	self->lastPos = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->Particles = NULL;
 	self->type = NULL;
-	self->clase = CLASE_OBJ3D_SISTPART;
+	self->class = CLASS_OBJ3D_PARTICLESYSTEM;
 	self->lastTime = 0;
 	self->birthTime = 0;
 	self->lastFrame = 0;
@@ -235,7 +235,7 @@ void __thiscall CSistPart_Init(CSistPart *self, CNodo3D *nodo, const char *type,
 	self->inView = 0;
 	self->mat = NULL;
 	self->MultiSpr = NULL;
-	self->escala = 1.0f;
+	self->scale = 1.0f;
 	self->alpha = 1.0f;
 	self->posList = NULL;
 	self->colorRamp = NULL;
@@ -247,93 +247,93 @@ void __thiscall CSistPart_Init(CSistPart *self, CNodo3D *nodo, const char *type,
 	uint32_t len = (uint32_t)strlen(type) + 1;
 	self->type = operator_new_array(len);
 	CHECK(self->type);
-	Cad_Copy(self->type, type ? type : "Default", (int)len);
+	String_Copy(self->type, type ? type : "Default", (int)len);
 	if (params) {
-		SistPartParams_Assign(&self->params, params);
+		ParticleSystemParams_Assign(&self->params, params);
 	} else if (ini) {
-		CSistPart_ReadParams(self, ini);
+		CParticleSystem_ReadParams(self, ini);
 	} else {
-		CSistPart_ReadParams(self, g_SistPartIni);
+		CParticleSystem_ReadParams(self, g_ParticleSystemIni);
 	}
 }
 
 /* p made active (counted) */
-static void SistPart_Activate(CSistPart *self, CParticula *p) {
+static void ParticleSystem_Activate(CParticleSystem *self, CParticle *p) {
 	if (p->active != 1) {
 		p->active = 1;
 		self->numActive++;
 	}
 }
 
-CParticula *__thiscall CSistPart_GetFree(CSistPart *self, byte force) {
+CParticle *__thiscall CParticleSystem_GetFree(CParticleSystem *self, byte force) {
 	float best = -3.4028234663852886e+38f;
-	CParticula *oldest = NULL;
+	CParticle *oldest = NULL;
 
 	if (!self->enabled) {
 		return NULL;
 	}
-	int n = self->params.nParticulas;
+	int n = self->params.nParticles;
 	int i = self->nextFree;
 	if (n <= i) {
 		i = 0;
 	}
 	for (int k = 0; k < n; k++) {
-		CParticula *p = self->Particles[i];
+		CParticle *p = self->Particles[i];
 		if (!p->active) {
-			SistPart_Activate(self, p);
+			ParticleSystem_Activate(self, p);
 			self->nextFree = (byte)k;
 			return p;
 		}
 		/* a static particle has no t: the float after it is read, as in the exe */
 		float t = *(float *)((byte *)p + 0x38);
-		if (force && (PARTICULA_TYPE(p) == PARTICULA_STATIC || best <= t)) {
+		if (force && (PARTICLE_TYPE(p) == PARTICLE_STATIC || best <= t)) {
 			best = t;
 			oldest = p;
 		}
 		i = i + 1 < n ? i + 1 : i + 1 - n;
 	}
 	if (force && oldest) {
-		SistPart_Activate(self, oldest);
+		ParticleSystem_Activate(self, oldest);
 		self->nextFree = 0;
 		return oldest;
 	}
 	return NULL;
 }
 
-CSistPart *SistPart_FromNode(CNodo3D *nodo, CArchINI *ini) {
+CParticleSystem *ParticleSystem_FromNode(CNode3D *node, CIniFile *ini) {
 	vec3_t pos[0x100];
 	char key[0x20], type[0x20];
 
-	CArchINI *prop = nodo->ini;
+	CIniFile *prop = node->ini;
 	CHECK(prop);
-	float escala = CArchINI_GetFloat(prop, "Particles", "Scale", 1.0f);
-	float alpha = CArchINI_GetFloat(prop, "Particles", "Alpha", 1.0f);
-	byte posList = CArchINI_GetBool(prop, "Particles", "PosList", 0);
+	float scale = CIniFile_GetFloat(prop, "Particles", "Scale", 1.0f);
+	float alpha = CIniFile_GetFloat(prop, "Particles", "Alpha", 1.0f);
+	byte posList = CIniFile_GetBool(prop, "Particles", "PosList", 0);
 	if (posList) {
 		for (int i = 1; i <= 0x100; i++) {
 			vec3_t def = { 0.0f, 0.0f, 0.0f }, v;
 			Bprintf(key, sizeof(key), "Pos_%d", i);
-			pos[i - 1] = *CArchINI_GetVec3(prop, &v, "Particles", key, &def);
+			pos[i - 1] = *CIniFile_GetVec3(prop, &v, "Particles", key, &def);
 		}
 	}
-	if (!CArchINI_GetText(prop, "Particles", "Type", type, sizeof(type), NULL)) {
+	if (!CIniFile_GetText(prop, "Particles", "Type", type, sizeof(type), NULL)) {
 		return NULL;
 	}
-	void *p = operator_new(sizeof(CSistPart));
+	void *p = operator_new(sizeof(CParticleSystem));
 	if (!p) {
 		return NULL;
 	}
-	if (!ini || CArchINI_Count(ini) < 1) {
+	if (!ini || CIniFile_Count(ini) < 1) {
 		ini = NULL;
 	}
-	return CSistPart_ctorParams(p, nodo, type, escala, alpha, posList ? pos : NULL, ini);
+	return CParticleSystem_ctorParams(p, node, type, scale, alpha, posList ? pos : NULL, ini);
 }
 
-void __thiscall CSistPart_SetColorRamp(CSistPart *self, uint32_t *ramp) {
+void __thiscall CParticleSystem_SetColorRamp(CParticleSystem *self, uint32_t *ramp) {
 	self->colorRamp = ramp;
 }
 
-void __thiscall CSistPart_SetEmitPos(CSistPart *self, vec3_t *pos, byte n) {
+void __thiscall CParticleSystem_SetEmitPos(CParticleSystem *self, vec3_t *pos, byte n) {
 	self->emitPos = pos;
 	if (!pos) {
 		self->nEmitPos = 0;
@@ -349,26 +349,26 @@ void __thiscall CSistPart_SetEmitPos(CSistPart *self, vec3_t *pos, byte n) {
 	}
 }
 
-void __thiscall CSistPart_GetEscala2(CSistPart *self, float *out) {
-	if (self->nodo) {
-		out[0] = self->nodo->escala.x;
-		out[1] = self->nodo->escala.y;
+void __thiscall CParticleSystem_GetScale2(CParticleSystem *self, float *out) {
+	if (self->node) {
+		out[0] = self->node->scale.x;
+		out[1] = self->node->scale.y;
 		return;
 	}
 	out[0] = 1.0f;
 	out[1] = 1.0f;
 }
 
-void __thiscall CSistPart_GetEscala(CSistPart *self, vec3_t *out) {
-	if (self->nodo) {
-		*out = self->nodo->escala;
+void __thiscall CParticleSystem_GetScale(CParticleSystem *self, vec3_t *out) {
+	if (self->node) {
+		*out = self->node->scale;
 		return;
 	}
 	*out = (vec3_t){ 1.0f, 1.0f, 1.0f };
 }
 
 /* the corner c into box, as the exe compares */
-static void SistPart_BoxAdd(box_t *box, float x, float y, float z) {
+static void ParticleSystem_BoxAdd(box_t *box, float x, float y, float z) {
 	box->min.x = x <= box->min.x ? x : box->min.x;
 	box->min.y = y <= box->min.y ? y : box->min.y;
 	box->min.z = z <= box->min.z ? z : box->min.z;
@@ -377,135 +377,135 @@ static void SistPart_BoxAdd(box_t *box, float x, float y, float z) {
 	box->max.z = box->max.z <= z ? z : box->max.z;
 }
 
-byte __thiscall CSistPart_GetBox(CSistPart *self, box_t *box) {
-	if (!(self->params.flags & SISTPART_STATIC) || !self->params.birthRate) {
+byte __thiscall CParticleSystem_GetBox(CParticleSystem *self, box_t *box) {
+	if (!(self->params.flags & PARTICLESYSTEM_STATIC) || !self->params.birthRate) {
 		return 0;
 	}
 	box->min = (vec3_t){ 3.4028234663852886e+38f, 3.4028234663852886e+38f, 3.4028234663852886e+38f };
 	box->max = (vec3_t){ -3.4028234663852886e+38f, -3.4028234663852886e+38f, -3.4028234663852886e+38f };
-	if (!(self->params.flags & SISTPART_LOCAL)) {
+	if (!(self->params.flags & PARTICLESYSTEM_LOCAL)) {
 		E3D_LogInfo(g_FileLog, "INFO: Non-local static particle system: BBox not calculated: %s", self->type);
 		return 0;
 	}
-	for (int i = 0; i < self->params.nParticulas; i++) {
-		CParticula *p = self->Particles[i];
+	for (int i = 0; i < self->params.nParticles; i++) {
+		CParticle *p = self->Particles[i];
 		if (!p->active) {
 			continue;
 		}
-		float r = p->size * p->escala * 0.5f;
-		SistPart_BoxAdd(box, p->pos.x - r, p->pos.y - r, p->pos.z - r);
-		SistPart_BoxAdd(box, p->pos.x + r, p->pos.y + r, p->pos.z + r);
+		float r = p->size * p->scale * 0.5f;
+		ParticleSystem_BoxAdd(box, p->pos.x - r, p->pos.y - r, p->pos.z - r);
+		ParticleSystem_BoxAdd(box, p->pos.x + r, p->pos.y + r, p->pos.z + r);
 	}
 	CHECK(!(box->max.x <= box->min.x) && !(box->max.y <= box->min.y) && !(box->max.z <= box->min.z));
 	return 1;
 }
 
-void __thiscall CSistPart_ReadParams(CSistPart *self, CArchINI *ini) {
-	SistPartParams *pa = &self->params;
+void __thiscall CParticleSystem_ReadParams(CParticleSystem *self, CIniFile *ini) {
+	ParticleSystemParams *pa = &self->params;
 	const char *sect;
 	char texture[0x100], key[0x20];
 	vec3_t zero, v;
 
-	E3D_LogWhite(g_FileLog, "Particle system: %s [%s]", self->type, self->nodo->name);
-	if (!CArchINI_FindSection(ini, self->type, 1)) {
+	E3D_LogWhite(g_FileLog, "Particle system: %s [%s]", self->type, self->node->name);
+	if (!CIniFile_FindSection(ini, self->type, 1)) {
 		Con_Warnf("ERROR: Particle system data not found: %s\n", self->type);
 		self->enabled = 0;
 	}
 	sect = self->type;
 	pa->flags = 0;
-	if (CArchINI_GetBool(ini, sect, "Local", 0)) {
-		pa->flags |= SISTPART_LOCAL;
+	if (CIniFile_GetBool(ini, sect, "Local", 0)) {
+		pa->flags |= PARTICLESYSTEM_LOCAL;
 	}
-	if (CArchINI_GetBool(ini, sect, "LocalPos", 0)) {
-		pa->flags |= SISTPART_LOCALPOS;
+	if (CIniFile_GetBool(ini, sect, "LocalPos", 0)) {
+		pa->flags |= PARTICLESYSTEM_LOCALPOS;
 	}
-	if (CArchINI_GetBool(ini, sect, "Static", 0)) {
-		pa->flags |= SISTPART_STATIC;
+	if (CIniFile_GetBool(ini, sect, "Static", 0)) {
+		pa->flags |= PARTICLESYSTEM_STATIC;
 	}
-	if (CArchINI_GetBool(ini, sect, "Sparks", 0)) {
-		pa->flags |= SISTPART_SPARKS;
+	if (CIniFile_GetBool(ini, sect, "Sparks", 0)) {
+		pa->flags |= PARTICLESYSTEM_SPARKS;
 	}
-	if (CArchINI_GetBool(ini, sect, "MultiSprite", 0)) {
-		pa->flags |= SISTPART_MULTISPRITE;
+	if (CIniFile_GetBool(ini, sect, "MultiSprite", 0)) {
+		pa->flags |= PARTICLESYSTEM_MULTISPRITE;
 	}
-	if (CArchINI_GetBool(ini, sect, "ColorRamp", 0)) {
-		pa->flags |= SISTPART_COLORRAMP;
+	if (CIniFile_GetBool(ini, sect, "ColorRamp", 0)) {
+		pa->flags |= PARTICLESYSTEM_COLORRAMP;
 	}
-	if (CArchINI_GetBool(ini, sect, "Mipmap", 1)) {
-		pa->flags |= SISTPART_MIPMAP;
+	if (CIniFile_GetBool(ini, sect, "Mipmap", 1)) {
+		pa->flags |= PARTICLESYSTEM_MIPMAP;
 	}
-	pa->nParticulas = CArchINI_GetInt(ini, sect, "Particles", 0x20);
-	pa->birthRate = CArchINI_GetInt(ini, sect, "BirthRate", 10);
-	pa->lifeTime = CArchINI_GetFloat(ini, sect, "LifeTime", 1.0f);
-	pa->scale = CArchINI_GetFloat(ini, sect, "Scale", 1.0f);
-	pa->sizeIni = CArchINI_GetFloat(ini, sect, "SizeIni", 1.0f);
-	pa->sizeEnd = CArchINI_GetFloat(ini, sect, "SizeEnd", 1.0f);
-	pa->sizeVar = CArchINI_GetFloat(ini, sect, "SizeVar", 0.0f);
-	pa->sizeLife = CArchINI_GetFloat(ini, sect, "SizeLife", 1.0f);
-	pa->colorIni = CArchINI_GetColor(ini, sect, "ColorIni", SISTPART_DEFAULT_COLOR);
-	pa->colorEnd = CArchINI_GetColor(ini, sect, "ColorEnd", SISTPART_DEFAULT_COLOR);
+	pa->nParticles = CIniFile_GetInt(ini, sect, "Particles", 0x20);
+	pa->birthRate = CIniFile_GetInt(ini, sect, "BirthRate", 10);
+	pa->lifeTime = CIniFile_GetFloat(ini, sect, "LifeTime", 1.0f);
+	pa->scale = CIniFile_GetFloat(ini, sect, "Scale", 1.0f);
+	pa->sizeIni = CIniFile_GetFloat(ini, sect, "SizeIni", 1.0f);
+	pa->sizeEnd = CIniFile_GetFloat(ini, sect, "SizeEnd", 1.0f);
+	pa->sizeVar = CIniFile_GetFloat(ini, sect, "SizeVar", 0.0f);
+	pa->sizeLife = CIniFile_GetFloat(ini, sect, "SizeLife", 1.0f);
+	pa->colorIni = CIniFile_GetColor(ini, sect, "ColorIni", PARTICLESYSTEM_DEFAULT_COLOR);
+	pa->colorEnd = CIniFile_GetColor(ini, sect, "ColorEnd", PARTICLESYSTEM_DEFAULT_COLOR);
 	zero = (vec3_t){ 0.0f, 0.0f, 0.0f };
-	pa->initPos = *CArchINI_GetVec3(ini, &v, sect, "InitPos", &zero);
-	pa->initPosMin = *CArchINI_GetVec3(ini, &v, sect, "InitPosMin", &pa->initPos);
-	pa->initPosMax = *CArchINI_GetVec3(ini, &v, sect, "InitPosMax", &pa->initPos);
+	pa->initPos = *CIniFile_GetVec3(ini, &v, sect, "InitPos", &zero);
+	pa->initPosMin = *CIniFile_GetVec3(ini, &v, sect, "InitPosMin", &pa->initPos);
+	pa->initPosMax = *CIniFile_GetVec3(ini, &v, sect, "InitPosMax", &pa->initPos);
 	zero = (vec3_t){ 0.0f, 0.0f, 0.0f };
-	pa->initVel = *CArchINI_GetVec3(ini, &v, sect, "InitVel", &zero);
-	pa->initVelMin = *CArchINI_GetVec3(ini, &v, sect, "InitVelMin", &pa->initVel);
-	pa->initVelMax = *CArchINI_GetVec3(ini, &v, sect, "InitVelMax", &pa->initVel);
+	pa->initVel = *CIniFile_GetVec3(ini, &v, sect, "InitVel", &zero);
+	pa->initVelMin = *CIniFile_GetVec3(ini, &v, sect, "InitVelMin", &pa->initVel);
+	pa->initVelMax = *CIniFile_GetVec3(ini, &v, sect, "InitVelMax", &pa->initVel);
 	zero = (vec3_t){ 0.0f, 0.0f, 0.0f };
-	pa->initAcc = *CArchINI_GetVec3(ini, &v, sect, "InitAcc", &zero);
-	pa->initAccMin = *CArchINI_GetVec3(ini, &v, sect, "InitAccMin", &pa->initAcc);
-	pa->initAccMax = *CArchINI_GetVec3(ini, &v, sect, "InitAccMax", &pa->initAcc);
-	pa->rotIni = (float)((double)CArchINI_GetFloat(ini, sect, "RotIni", 0.0f) * 3.141592653589793 / 180.0);
-	pa->rotEnd = (float)((double)CArchINI_GetFloat(ini, sect, "RotEnd", 0.0f) * 3.141592653589793 / 180.0);
-	pa->rotVar = (float)((double)CArchINI_GetFloat(ini, sect, "RotVar", 0.0f) * 3.141592653589793 / 180.0);
-	CArchINI_GetText(ini, sect, "Texture", texture, sizeof(texture), "bmp/partic1.bmp");
+	pa->initAcc = *CIniFile_GetVec3(ini, &v, sect, "InitAcc", &zero);
+	pa->initAccMin = *CIniFile_GetVec3(ini, &v, sect, "InitAccMin", &pa->initAcc);
+	pa->initAccMax = *CIniFile_GetVec3(ini, &v, sect, "InitAccMax", &pa->initAcc);
+	pa->rotIni = (float)((double)CIniFile_GetFloat(ini, sect, "RotIni", 0.0f) * 3.141592653589793 / 180.0);
+	pa->rotEnd = (float)((double)CIniFile_GetFloat(ini, sect, "RotEnd", 0.0f) * 3.141592653589793 / 180.0);
+	pa->rotVar = (float)((double)CIniFile_GetFloat(ini, sect, "RotVar", 0.0f) * 3.141592653589793 / 180.0);
+	CIniFile_GetText(ini, sect, "Texture", texture, sizeof(texture), "bmp/partic1.bmp");
 	cString_Set(&pa->texture, texture);
-	pa->spriteIni = (byte)CArchINI_GetInt(ini, sect, "SpriteIni", 0xff);
-	pa->spriteEnd = (byte)CArchINI_GetInt(ini, sect, "SpriteEnd", 0xff);
-	pa->spriteRand = CArchINI_GetBool(ini, sect, "SpriteRand", 0);
+	pa->spriteIni = (byte)CIniFile_GetInt(ini, sect, "SpriteIni", 0xff);
+	pa->spriteEnd = (byte)CIniFile_GetInt(ini, sect, "SpriteEnd", 0xff);
+	pa->spriteRand = CIniFile_GetBool(ini, sect, "SpriteRand", 0);
 	for (int i = 0; i < 9; i++) {
 		Bprintf(key, sizeof(key), "ColorRamp_%02d", i + 1);
-		pa->colorRamp[i] = CArchINI_GetColor(ini, sect, key, i < 1 ? SISTPART_DEFAULT_COLOR : pa->colorRamp[i - 1]);
+		pa->colorRamp[i] = CIniFile_GetColor(ini, sect, key, i < 1 ? PARTICLESYSTEM_DEFAULT_COLOR : pa->colorRamp[i - 1]);
 	}
-	pa->additiveAlpha = CArchINI_GetBool(ini, sect, "AdditiveAlpha", 1);
-	pa->alphaMod = CArchINI_GetBool(ini, sect, "AlphaMod", 1);
-	pa->sparkVelScale = CArchINI_GetFloat(ini, sect, "SparkVelScale", 1.0f);
-	pa->sparkMaxSize = CArchINI_GetFloat(ini, sect, "SparkMaxSize", 3.4028234663852886e+38f);
-	pa->alphaDist = CArchINI_GetFloat(ini, sect, "AlphaDist", 0.0f);
+	pa->additiveAlpha = CIniFile_GetBool(ini, sect, "AdditiveAlpha", 1);
+	pa->alphaMod = CIniFile_GetBool(ini, sect, "AlphaMod", 1);
+	pa->sparkVelScale = CIniFile_GetFloat(ini, sect, "SparkVelScale", 1.0f);
+	pa->sparkMaxSize = CIniFile_GetFloat(ini, sect, "SparkMaxSize", 3.4028234663852886e+38f);
+	pa->alphaDist = CIniFile_GetFloat(ini, sect, "AlphaDist", 0.0f);
 	if (pa->alphaDist > 0.0f && !pa->additiveAlpha) {
 		pa->alphaDist = 0.0f;
 		Con_Warnf("WARN: Only Additive Alpha Particle Systems can use Alpha Distance parameter\n");
 	}
-	pa->bounce = CArchINI_GetBool(ini, sect, "Bounce", 0);
+	pa->bounce = CIniFile_GetBool(ini, sect, "Bounce", 0);
 	if (pa->bounce) {
 		pa->bounce = 0;
 		Con_Warnf("WARN: Only World Particle Systems can use Bounce parameter\n");
 	}
-	pa->zBias = CArchINI_GetFloat(ini, sect, "ZBias", 0.0f);
+	pa->zBias = CIniFile_GetFloat(ini, sect, "ZBias", 0.0f);
 }
 
 /* v times k */
-static vec3_t SistPart_Scaled(const vec3_t *v, float k) {
+static vec3_t ParticleSystem_Scaled(const vec3_t *v, float k) {
 	return (vec3_t){ v->x * k, v->y * k, v->z * k };
 }
 
-void __thiscall CSistPart_GenParticle(CSistPart *self, CParticula *p) {
-	SistPartParams *pa = &self->params;
+void __thiscall CParticleSystem_GenParticle(CParticleSystem *self, CParticle *p) {
+	ParticleSystemParams *pa = &self->params;
 	vec3_t v;
 
 	CHECK(p);
-	SistPart_Activate(self, p);
-	float k = self->escala * pa->scale * g_SistPartPosScale;
+	ParticleSystem_Activate(self, p);
+	float k = self->scale * pa->scale * g_ParticleSystemPosScale;
 	if (!self->emitPos) {
-		p->pos = SistPart_Scaled(SistPart_RandVec(&v, &pa->initPosMin, &pa->initPosMax), k);
+		p->pos = ParticleSystem_Scaled(ParticleSystem_RandVec(&v, &pa->initPosMin, &pa->initPosMax), k);
 	} else {
 		byte i = self->emitIdx;
 		p->pos = self->emitPos[i];
 		uint32_t next = (uint32_t)self->emitIdx + 1;
 		self->emitIdx = next < self->nEmitPos ? (byte)next : 0;
 	}
-	p->escala = self->escala * pa->scale * g_SistPartSizeScale;
+	p->scale = self->scale * pa->scale * g_ParticleSystemSizeScale;
 	p->size = pa->sizeIni;
 	p->color = pa->colorIni;
 	p->rot = pa->rotIni;
@@ -523,29 +523,29 @@ void __thiscall CSistPart_GenParticle(CSistPart *self, CParticula *p) {
 			sprite = (byte)(crt_rand() % (int)((uint32_t)pa->spriteIni - lo + 1)) + lo;
 		}
 	}
-	if (PARTICULA_TYPE(p) == PARTICULA_STATIC && self->MultiSpr) {
+	if (PARTICLE_TYPE(p) == PARTICLE_STATIC && self->MultiSpr) {
 		CHECK((int)sprite < *(int *)((byte *)self->MultiSpr + 8));
 		CMultiSprite_GetUV(self->MultiSpr, sprite, p->uv0, p->uv1);
 	}
-	if (PARTICULA_TYPE(p) != PARTICULA_ACTIVE) {
+	if (PARTICLE_TYPE(p) != PARTICLE_ACTIVE) {
 		return;
 	}
-	CParticulaActive *a = (CParticulaActive *)p;
+	CParticleActive *a = (CParticleActive *)p;
 	a->b34 = 0;
 	a->t = 0.0f;
-	a->life = pa->lifeTime * g_SistPartLifeScale;
+	a->life = pa->lifeTime * g_ParticleSystemLifeScale;
 	a->delay = 0.0f;
-	a->sparks = (pa->flags & SISTPART_SPARKS) != 0;
-	a->vel = SistPart_Scaled(SistPart_RandVec(&v, &pa->initVelMin, &pa->initVelMax), k);
-	a->acc = SistPart_Scaled(SistPart_RandVec(&v, &pa->initAccMin, &pa->initAccMax), k);
+	a->sparks = (pa->flags & PARTICLESYSTEM_SPARKS) != 0;
+	a->vel = ParticleSystem_Scaled(ParticleSystem_RandVec(&v, &pa->initVelMin, &pa->initVelMax), k);
+	a->acc = ParticleSystem_Scaled(ParticleSystem_RandVec(&v, &pa->initAccMin, &pa->initAccMax), k);
 	float f = 1.0f;
 	if (pa->sizeVar != 0.0f) {
-		f = SistPart_RandLerp(0.0f, pa->sizeVar) + 1.0f;
+		f = ParticleSystem_RandLerp(0.0f, pa->sizeVar) + 1.0f;
 	}
 	a->sizeIni = f * pa->sizeIni;
 	f = 1.0f;
 	if (pa->sizeVar != 0.0f) {
-		f = SistPart_RandLerp(0.0f, pa->sizeVar) + 1.0f;
+		f = ParticleSystem_RandLerp(0.0f, pa->sizeVar) + 1.0f;
 	}
 	a->sizeEnd = pa->sizeEnd * f;
 	a->sizeLife = 1.0f / pa->sizeLife;
@@ -553,12 +553,12 @@ void __thiscall CSistPart_GenParticle(CSistPart *self, CParticula *p) {
 	a->colorEnd = pa->colorEnd;
 	f = 0.0f;
 	if (pa->rotVar != 0.0f) {
-		f = SistPart_RandLerp(-pa->rotVar, pa->rotVar);
+		f = ParticleSystem_RandLerp(-pa->rotVar, pa->rotVar);
 	}
 	a->rotIni = pa->rotIni + f;
 	f = 0.0f;
 	if (pa->rotVar != 0.0f) {
-		f = SistPart_RandLerp(-pa->rotVar, pa->rotVar);
+		f = ParticleSystem_RandLerp(-pa->rotVar, pa->rotVar);
 	}
 	a->spriteCur = 0xff;
 	a->rotEnd = pa->rotEnd + f;
@@ -569,7 +569,7 @@ void __thiscall CSistPart_GenParticle(CSistPart *self, CParticula *p) {
 		a->spriteIni = sprite;
 		a->spriteEnd = sprite;
 	}
-	if (pa->flags & SISTPART_COLORRAMP) {
+	if (pa->flags & PARTICLESYSTEM_COLORRAMP) {
 		a->colorRamp = self->colorRamp ? self->colorRamp : pa->colorRamp;
 	} else {
 		a->colorRamp = NULL;
@@ -579,72 +579,72 @@ void __thiscall CSistPart_GenParticle(CSistPart *self, CParticula *p) {
 	a->bounce = pa->bounce;
 }
 
-void __thiscall CSistPart_PlaceParticle(CSistPart *self, CParticula *p, const matrix_t *m) {
-	if (PARTICULA_TYPE(p) == PARTICULA_ACTIVE && !(self->params.flags & SISTPART_LOCAL)) {
-		CParticulaActive *a = (CParticulaActive *)p;
+void __thiscall CParticleSystem_PlaceParticle(CParticleSystem *self, CParticle *p, const matrix_t *m) {
+	if (PARTICLE_TYPE(p) == PARTICLE_ACTIVE && !(self->params.flags & PARTICLESYSTEM_LOCAL)) {
+		CParticleActive *a = (CParticleActive *)p;
 		Vec3_TransformDir0(&p->pos, &p->pos, m);
 		Vec3_TransformDir0(&a->vel, &a->vel, m);
 		Vec3_TransformDir0(&a->acc, &a->acc, m);
 	}
-	if (!(self->params.flags & (SISTPART_LOCAL | SISTPART_LOCALPOS))) {
+	if (!(self->params.flags & (PARTICLESYSTEM_LOCAL | PARTICLESYSTEM_LOCALPOS))) {
 		p->pos.x = p->pos.x + m->m[12];
 		p->pos.y = m->m[13] + p->pos.y;
 		p->pos.z = m->m[14] + p->pos.z;
 	}
 }
 
-void __thiscall CSistPart_Emit(CSistPart *self, int n, byte force, float dt, const matrix_t *m) {
+void __thiscall CParticleSystem_Emit(CParticleSystem *self, int n, byte force, float dt, const matrix_t *m) {
 	for (int i = 0; i < n;) {
-		CParticula *p = CSistPart_GetFree(self, force);
+		CParticle *p = CParticleSystem_GetFree(self, force);
 		if (!p) {
 			return;
 		}
-		CSistPart_GenParticle(self, p);
-		CSistPart_PlaceParticle(self, p, m);
-		PARTICULA_UPDATE(p, self, 0.0f, self->MultiSpr);
+		CParticleSystem_GenParticle(self, p);
+		CParticleSystem_PlaceParticle(self, p, m);
+		PARTICLE_UPDATE(p, self, 0.0f, self->MultiSpr);
 		i++;
-		((CParticulaActive *)p)->delay = (float)i * dt;
+		((CParticleActive *)p)->delay = (float)i * dt;
 	}
 }
 
-void __thiscall CSistPart_EmitN(CSistPart *self, int n, byte force) {
-	CSistPart_Emit(self, n, force, 0.0f, g_MatIdentity);
+void __thiscall CParticleSystem_EmitN(CParticleSystem *self, int n, byte force) {
+	CParticleSystem_Emit(self, n, force, 0.0f, g_MatIdentity);
 }
 
-void __thiscall CSistPart_EmitM(CSistPart *self, int n, byte force, const matrix_t *m) {
-	CSistPart_Emit(self, n, force, 0.0f, m);
+void __thiscall CParticleSystem_EmitM(CParticleSystem *self, int n, byte force, const matrix_t *m) {
+	CParticleSystem_Emit(self, n, force, 0.0f, m);
 }
 
-void __thiscall CSistPart_EmitDt(CSistPart *self, int n, byte force, float dt) {
-	CSistPart_Emit(self, n, force, dt, g_MatIdentity);
+void __thiscall CParticleSystem_EmitDt(CParticleSystem *self, int n, byte force, float dt) {
+	CParticleSystem_Emit(self, n, force, dt, g_MatIdentity);
 }
 
-byte __thiscall CSistPart_Read(CSistPart *self, CArchIO *f, MallaD3D_FileCtx *ctx) {
+byte __thiscall CParticleSystem_Read(CParticleSystem *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	(void)self;
 	(void)f;
-	CHECK(CArchINI_FindSection(ctx->nodo->ini, "Particles", 1));
+	CHECK(CIniFile_FindSection(ctx->node->ini, "Particles", 1));
 	return 1;
 }
 
-byte __thiscall CSistPart_Write(CSistPart *self, CArchIO *f, MallaD3D_FileCtx *ctx) {
+byte __thiscall CParticleSystem_Write(CParticleSystem *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	(void)self;
 	(void)f;
-	CHECK(CArchINI_FindSection(ctx->nodo->ini, "Particles", 1));
-	CHECK(!ctx->nodo->escena->mainLOD);
+	CHECK(CIniFile_FindSection(ctx->node->ini, "Particles", 1));
+	CHECK(!ctx->node->scene->mainLOD);
 	return 1;
 }
 
-void __fastcall CSistPart_CreateMat(CSistPart *self) {
-	SistPartParams *pa = &self->params;
+void __fastcall CParticleSystem_CreateMat(CParticleSystem *self) {
+	ParticleSystemParams *pa = &self->params;
 
 	if (!self->mat) {
 		CMaterial m;
 		CMaterial_ctor(&m);
-		Cad_Set(&m.Nombre, "MatSistPart");
+		String_Set(&m.Name, "MatSistPart");
 		CMaterial_SetMap(&m, 0, pa->texture);
-		if (m.mapa[0]) {
-			m.mapa[0]->b8 = (pa->flags & SISTPART_MIPMAP) != 0;
-			m.mapa[0]->bc = 0;
+		if (m.map[0]) {
+			m.map[0]->b8 = (pa->flags & PARTICLESYSTEM_MIPMAP) != 0;
+			m.map[0]->bc = 0;
 		}
 		if (!pa->additiveAlpha) {
 			m.params.srcBlend = 2;
@@ -654,7 +654,7 @@ void __fastcall CSistPart_CreateMat(CSistPart *self) {
 			m.params.dstBlend = 2;
 		}
 		if (!pa->alphaMod) {
-			m.params.atrib |= 0x400;
+			m.params.attrib |= 0x400;
 		}
 		m.params.transp = 1;
 		((byte *)&m.params.w3e)[1] = 0;
@@ -668,7 +668,7 @@ void __fastcall CSistPart_CreateMat(CSistPart *self) {
 		self->mat = Mat_New(&m, 1);
 		CMaterial_dtor(&m);
 	}
-	if (pa->flags & SISTPART_MULTISPRITE) {
+	if (pa->flags & PARTICLESYSTEM_MULTISPRITE) {
 		self->MultiSpr = CMaterial_GetMultiSprite(self->mat, 0);
 		CHECK(!self->MultiSpr || *(int *)((byte *)self->MultiSpr + 8) > 1);
 		if (pa->spriteIni == 0xff) {
@@ -680,7 +680,7 @@ void __fastcall CSistPart_CreateMat(CSistPart *self) {
 	}
 }
 
-void __thiscall CSistPart_SetActive(CSistPart *self, CParticula *p, byte active) {
+void __thiscall CParticleSystem_SetActive(CParticleSystem *self, CParticle *p, byte active) {
 	CHECK(p);
 	if (p->active != active) {
 		p->active = active;
@@ -692,42 +692,42 @@ void __thiscall CSistPart_SetActive(CSistPart *self, CParticula *p, byte active)
 	}
 }
 
-void __fastcall CSistPart_CreateParticles(CSistPart *self) {
-	SistPartParams *pa = &self->params;
+void __fastcall CParticleSystem_CreateParticles(CParticleSystem *self) {
+	ParticleSystemParams *pa = &self->params;
 
 	CHECK(!self->Particles);
-	self->Particles = operator_new_array((uint32_t)pa->nParticulas << 2);
-	for (int i = 0; i < pa->nParticulas; i++) {
-		CParticula *p;
-		if (!(pa->flags & SISTPART_STATIC)) {
-			p = operator_new(sizeof(CParticulaActive));
+	self->Particles = operator_new_array((uint32_t)pa->nParticles << 2);
+	for (int i = 0; i < pa->nParticles; i++) {
+		CParticle *p;
+		if (!(pa->flags & PARTICLESYSTEM_STATIC)) {
+			p = operator_new(sizeof(CParticleActive));
 			if (p) {
-				p = CParticulaActive_ctor(p);
+				p = CParticleActive_ctor(p);
 			}
 		} else {
-			p = operator_new(sizeof(CParticula));
+			p = operator_new(sizeof(CParticle));
 			if (p) {
-				p = CParticulaStatic_ctor(p);
+				p = CParticleStatic_ctor(p);
 			}
 		}
 		self->Particles[i] = p;
 	}
-	g_SistPartCount += pa->nParticulas;
-	if (!(pa->flags & SISTPART_STATIC) || !pa->birthRate) {
+	g_ParticleSystemCount += pa->nParticles;
+	if (!(pa->flags & PARTICLESYSTEM_STATIC) || !pa->birthRate) {
 		return;
 	}
 	/* a static system: each particle where a moving one would be at its part of the life time */
-	CParticulaActive tmp;
+	CParticleActive tmp;
 	tmp.p.vftable = CPARTICULAACTIVE_VFTABLE;
-	CParticulaActive_Init(&tmp.p);
-	for (int i = 0; i < pa->nParticulas; i++) {
-		CSistPart_GenParticle(self, &tmp.p);
-		CParticulaActive_Update(&tmp, self, ((float)i / (float)(double)(uint32_t)pa->nParticulas) * pa->lifeTime,
+	CParticleActive_Init(&tmp.p);
+	for (int i = 0; i < pa->nParticles; i++) {
+		CParticleSystem_GenParticle(self, &tmp.p);
+		CParticleActive_Update(&tmp, self, ((float)i / (float)(double)(uint32_t)pa->nParticles) * pa->lifeTime,
 			self->MultiSpr);
-		CParticula *p = self->Particles[i];
-		CSistPart_GenParticle(self, p);
+		CParticle *p = self->Particles[i];
+		CParticleSystem_GenParticle(self, p);
 		p->active = tmp.p.active;
-		memcpy(&p->pos, &tmp.p.pos, sizeof(CParticula) - offsetof(CParticula, pos));
+		memcpy(&p->pos, &tmp.p.pos, sizeof(CParticle) - offsetof(CParticle, pos));
 		if (self->posList) {
 			p->pos = self->posList[i];
 		}
@@ -735,18 +735,18 @@ void __fastcall CSistPart_CreateParticles(CSistPart *self) {
 	}
 }
 
-vec3_t *SistPart_RandVec(vec3_t *out, const vec3_t *a, const vec3_t *b) {
+vec3_t *ParticleSystem_RandVec(vec3_t *out, const vec3_t *a, const vec3_t *b) {
 	float x = a->x, y, z;
 	if (x != b->x) {
-		x = SistPart_RandLerp(x, b->x);
+		x = ParticleSystem_RandLerp(x, b->x);
 	}
 	y = a->y;
 	if (y != b->y) {
-		y = SistPart_RandLerp(y, b->y);
+		y = ParticleSystem_RandLerp(y, b->y);
 	}
 	z = a->z;
 	if (z != b->z) {
-		z = SistPart_RandLerp(z, b->z);
+		z = ParticleSystem_RandLerp(z, b->z);
 	}
 	out->x = x;
 	out->y = y;
@@ -754,63 +754,63 @@ vec3_t *SistPart_RandVec(vec3_t *out, const vec3_t *a, const vec3_t *b) {
 	return out;
 }
 
-void SistPart_LoadIni(const char *name, const char *dir) {
+void ParticleSystem_LoadIni(const char *name, const char *dir) {
 	if (!name) {
-		CArchINI_Clear(g_SistPartIni);
+		CIniFile_Clear(g_ParticleSystemIni);
 		return;
 	}
-	CArchINI_Load(g_SistPartIni, name, dir, 1);
+	CIniFile_Load(g_ParticleSystemIni, name, dir, 1);
 }
 
-void __thiscall CSistPart_Render(CSistPart *self, void *dev, CNodoR *r) {
+void __thiscall CParticleSystem_Render(CParticleSystem *self, void *dev, CRenderNode *r) {
 	(void)dev;
-	if (!g_SistPartOn) {
+	if (!g_ParticleSystemOn) {
 		return;
 	}
 	self->inView = 1;
 	if (!self->visible || !self->numActive) {
 		return;
 	}
-	if (!r && g_SistPartDebug) {
-		const matrix_t *m = &self->nodo->m;
+	if (!r && g_ParticleSystemDebug) {
+		const matrix_t *m = &self->node->m;
 		vec3_t pos = { m->m[12], m->m[13], m->m[14] };
 		box_t local = { { -100.0f, -100.0f, -100.0f }, { 100.0f, 100.0f, 100.0f } }, w;
 		Box_Transform(&w, &local, m);
 		float dx = w.max.x - w.min.x, dy = w.max.y - w.min.y, dz = w.max.z - w.min.z;
 		vec3_t center = { (w.max.x + w.min.x) * 0.5f, (w.min.y + w.max.y) * 0.5f, (w.min.z + w.max.z) * 0.5f };
 		float radius = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) * 0.5f;
-		byte vis = SectorVis_Sphere(&self->vis, &pos, &center, radius, self->nodo->name);
+		byte vis = SectorVis_Sphere(&self->vis, &pos, &center, radius, self->node->name);
 		self->inView = vis;
-		if (g_SistPartDebug > 1) {
-			SectorVis_Draw(&self->vis, &pos, vis, 0, self->nodo->name);
+		if (g_ParticleSystemDebug > 1) {
+			SectorVis_Draw(&self->vis, &pos, vis, 0, self->node->name);
 		}
-		if (g_SistPartDebug > 2) {
+		if (g_ParticleSystemDebug > 2) {
 			Debug_Text3D(g_FntTerm8, 4.0f, -12.0f, &pos, 0x8000, GAME_STR(str_3bae88, 0x3bae88), self->type);
 		}
 	}
 	if (self->inView) {
-		SistPart_Draw(self, r);
+		ParticleSystem_Draw(self, r);
 	}
 }
 
-void __thiscall CSistPart_Render2(CSistPart *self, void *dev) {
-	if (g_SistPartOn && self->visible && self->numActive) {
-		SistPart_Draw2(self, dev);
+void __thiscall CParticleSystem_Render2(CParticleSystem *self, void *dev) {
+	if (g_ParticleSystemOn && self->visible && self->numActive) {
+		ParticleSystem_Draw2(self, dev);
 	}
 }
 
-void __thiscall CSistPart_SetAlpha(CSistPart *self, float alpha) {
+void __thiscall CParticleSystem_SetAlpha(CParticleSystem *self, float alpha) {
 	self->alpha = alpha;
 }
 
 /* a bounce on the floor of the world: the velocity mirrored at the hit triangle, halved */
-static void Particula_Bounce(CParticulaActive *a, const vec3_t *prev, float dt) {
+static void Particle_Bounce(CParticleActive *a, const vec3_t *prev, float dt) {
 	vec3_t hit;
-	CSueloHit info = { 0, 0, NULL };
+	CGroundHit info = { 0, 0, NULL };
 
-	CHECK(g_Mundo);
-	CSuelo *suelo = g_Mundo->ObjSuelo;
-	if (!suelo || !CSuelo_TraceSeg(suelo, prev, &a->p.pos, &hit, &info, 0)) {
+	CHECK(g_World);
+	CGround *ground = g_World->ObjGround;
+	if (!ground || !CGround_TraceSeg(ground, prev, &a->p.pos, &hit, &info, 0)) {
 		return;
 	}
 	a->vel.x = -a->vel.x * 0.5f;
@@ -832,7 +832,7 @@ static byte Color_Mix(uint32_t c0, uint32_t c1, int k, uint32_t w) {
 	return (byte)((((c1 >> (8 * k)) & 0xff) * w + ((c0 >> (8 * k)) & 0xff) * (0x100 - w)) >> 8);
 }
 
-void __thiscall CParticulaActive_Update(CParticulaActive *self, CSistPart *sp, float dt, void *multiSpr) {
+void __thiscall CParticleActive_Update(CParticleActive *self, CParticleSystem *sp, float dt, void *multiSpr) {
 	if (self->delay > 0.0f) {
 		float d = self->delay - dt;
 		self->delay = d;
@@ -863,7 +863,7 @@ void __thiscall CParticulaActive_Update(CParticulaActive *self, CSistPart *sp, f
 	self->vel.y = self->acc.y * dt + self->vel.y;
 	self->vel.z = self->acc.z * dt + self->vel.z;
 	if (self->bounce) {
-		Particula_Bounce(self, &prev, dt);
+		Particle_Bounce(self, &prev, dt);
 	}
 	t = self->t;
 	if (self->sizeLife > 1.0f) {
@@ -914,27 +914,27 @@ void __thiscall CParticulaActive_Update(CParticulaActive *self, CSistPart *sp, f
 	}
 }
 
-void __thiscall CSistPart_Update(CSistPart *self, CNodoR *r) {
-	if (!g_SistPartOn) {
+void __thiscall CParticleSystem_Update(CParticleSystem *self, CRenderNode *r) {
+	if (!g_ParticleSystemOn) {
 		return;
 	}
-	if (g_SistPartFlags != -1) {
-		self->params.flags = (uint32_t)g_SistPartFlags;
+	if (g_ParticleSystemFlags != -1) {
+		self->params.flags = (uint32_t)g_ParticleSystemFlags;
 	}
 	if (self->lastFrame == g_FrameCount) {
 		return;
 	}
 	const matrix_t *m;
-	if (!self->nodo && !r) {
-		CHECK(self->nodo || r);
+	if (!self->node && !r) {
+		CHECK(self->node || r);
 	}
-	m = r ? &r->m : &self->nodo->m;
+	m = r ? &r->m : &self->node->m;
 	uint32_t now = g_TimeMs;
-	if ((self->params.flags & SISTPART_STATIC) || !self->inView) {
+	if ((self->params.flags & PARTICLESYSTEM_STATIC) || !self->inView) {
 		return;
 	}
 	uint32_t last = self->lastTime;
-	float dt = last ? SistPart_Seconds(now - last) : 0.0f;
+	float dt = last ? ParticleSystem_Seconds(now - last) : 0.0f;
 	if (last + 100u < now) {
 		dt = 0.1f;
 		self->birthTime = now - 100;
@@ -942,10 +942,10 @@ void __thiscall CSistPart_Update(CSistPart *self, CNodoR *r) {
 	self->lastTime = now;
 	self->lastFrame = g_FrameCount;
 	if (self->numActive) {
-		for (int i = 0; i < self->params.nParticulas; i++) {
-			CParticula *p = self->Particles[i];
-			if (p->active && PARTICULA_TYPE(p) == PARTICULA_ACTIVE && !((CParticulaActive *)p)->b34) {
-				PARTICULA_UPDATE(p, self, dt, self->MultiSpr);
+		for (int i = 0; i < self->params.nParticles; i++) {
+			CParticle *p = self->Particles[i];
+			if (p->active && PARTICLE_TYPE(p) == PARTICLE_ACTIVE && !((CParticleActive *)p)->b34) {
+				PARTICLE_UPDATE(p, self, dt, self->MultiSpr);
 			}
 		}
 	}
@@ -953,17 +953,17 @@ void __thiscall CSistPart_Update(CSistPart *self, CNodoR *r) {
 		self->birthTime = self->lastTime;
 		return;
 	}
-	uint32_t step = 1000u / (uint32_t)(self->params.birthRate + g_SistPartBirthAdd);
+	uint32_t step = 1000u / (uint32_t)(self->params.birthRate + g_ParticleSystemBirthAdd);
 	while (self->birthTime + step < self->lastTime) {
 		self->birthTime += step;
-		CParticula *p = CSistPart_GetFree(self, 0);
+		CParticle *p = CParticleSystem_GetFree(self, 0);
 		if (!p) {
 			self->birthTime = self->lastTime;
 			break;
 		}
-		CSistPart_GenParticle(self, p);
-		CSistPart_PlaceParticle(self, p, m);
-		PARTICULA_UPDATE(p, self, SistPart_Seconds(self->lastTime - self->birthTime), self->MultiSpr);
+		CParticleSystem_GenParticle(self, p);
+		CParticleSystem_PlaceParticle(self, p, m);
+		PARTICLE_UPDATE(p, self, ParticleSystem_Seconds(self->lastTime - self->birthTime), self->MultiSpr);
 	}
 	self->lastPos = (vec3_t){ m->m[12], m->m[13], m->m[14] };
 }

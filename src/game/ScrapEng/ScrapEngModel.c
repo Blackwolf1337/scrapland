@@ -71,42 +71,42 @@ void __thiscall CGameModel_LoadScaled(CGameModel *self, const char *name, const 
 }
 
 /* the LOD distance of the model times the coefficient of its LOD group */
-static void CGameModel_LodGroup(CGameModel *self, CArchINI *ini) {
+static void CGameModel_LodGroup(CGameModel *self, CIniFile *ini) {
 	const struct {
 		const char *name;
 		const float *coef;
-	} grupos[7] = { { "Ships", GAME_ARRAY_IN(float, GVar_R_CoefMLODShips, 16, 0x4a80f4) }, { "Pilots", GAME_ARRAY_IN(float, GVar_R_CoefMLODPilots, 16, 0x4a80dc) },
+	} groups[7] = { { "Ships", GAME_ARRAY_IN(float, GVar_R_CoefMLODShips, 16, 0x4a80f4) }, { "Pilots", GAME_ARRAY_IN(float, GVar_R_CoefMLODPilots, 16, 0x4a80dc) },
 		{ "Engines", GAME_ARRAY_IN(float, GVar_R_CoefMLODEngines, 16, 0x4a8064) }, { "Traffic", GAME_ARRAY_IN(float, GVar_R_CoefMLODTraffic, 16, 0x4a804c) },
 		{ "Characters", GAME_ARRAY_IN(float, GVar_R_CoefMLODCharacters, 16, 0x4a80ac) }, { "OutElement", GAME_ARRAY_IN(float, GVar_R_CoefMLODOutElement, 16, 0x4a807c) },
 		{ "MenuElement", GAME_ARRAY_IN(float, GVar_R_CoefMLODMenuElement, 16, 0x4a8094) } };
-	char grupo[260];
+	char group[260];
 
-	if (!ini || !CArchINI_GetText(ini, "Model", "LOD_Group", grupo, sizeof(grupo), NULL)) {
+	if (!ini || !CIniFile_GetText(ini, "Model", "LOD_Group", group, sizeof(group), NULL)) {
 		if (self->Model->lods.n) {
 			Con_Warnf("Model without LOD group: %s\n", self->Model->name);
 		}
 		return;
 	}
-	E3D_LogWhite(g_FileLog, "LOD_%s: %s", grupo, self->Model->name);
+	E3D_LogWhite(g_FileLog, "LOD_%s: %s", group, self->Model->name);
 	for (int i = 0; i < 7; i++) {
-		if (!crt_stricmp(grupo, grupos[i].name)) {
-			self->Model->lodDist *= *grupos[i].coef;
+		if (!crt_stricmp(group, groups[i].name)) {
+			self->Model->lodDist *= *groups[i].coef;
 			return;
 		}
 	}
-	E3D_LogBlue(g_FileLog, "LOD group not found: %s [Model: %s]", grupo, self->Model->name);
+	E3D_LogBlue(g_FileLog, "LOD group not found: %s [Model: %s]", group, self->Model->name);
 }
 
 void __thiscall CGameModel_Load(CGameModel *self, const char *name, const char *name2, const vec3_t *scale) {
 	char alt[262], fmt[260], path[260];
-	CModelo *lods[10];
+	CModel *lods[10];
 
 	CGameModel_Release(self, 0);
 	if (!name) {
 		return;
 	}
-	vec3_t esc = *scale;
-	const char *usar = name;
+	vec3_t scaleCopy = *scale;
+	const char *use = name;
 	if (g_pApp->flags & 4) {
 		size_t len = strlen(name);
 		Str_Copy(alt, name, 0x104);
@@ -122,66 +122,66 @@ void __thiscall CGameModel_Load(CGameModel *self, const char *name, const char *
 		}
 		/* the exe keeps name when only the other extension exists */
 		if (!File_Exists(name)) {
-			usar = File_Exists(alt) ? name : "Models/Vehicles/Characters/P_CrazyGambler/P_CrazyGambler.m3d";
+			use = File_Exists(alt) ? name : "Models/Vehicles/Characters/P_CrazyGambler/P_CrazyGambler.m3d";
 		}
 	}
-	const char *base = usar;
-	self->Model = Crear_Modelo3(usar, name2, &esc, 0x37);
-	CModelo_BuildNodosR(self->Model, 0);
-	if (CAnimGrupos_Count(&self->Model->anims)) {
-		CEscena *e = self->Model->escena;
+	const char *base = use;
+	self->Model = Create_Model3(use, name2, &scaleCopy, 0x37);
+	CModel_BuildRenderNodes(self->Model, 0);
+	if (CAnimGroups_Count(&self->Model->anims)) {
+		CScene *e = self->Model->scene;
 		CHECK(e->AnimM3D);
-		CModelo_AddAnimEvents(self->Model, *(const char **)e->AnimM3D, -1.0f, -1.0f);
-		CModelo_SetAnim(self->Model, 0, 0);
+		CModel_AddAnimEvents(self->Model, *(const char **)e->AnimM3D, -1.0f, -1.0f);
+		CModel_SetAnim(self->Model, 0, 0);
 	}
 	int n = 0;
 	for (int i = 1; i < 11; i++) {
 		Bprintf(fmt, sizeof(fmt), "&U&D&N.LOD%d.SM3", i);
-		Ruta_Format(path, base, fmt);
+		Path_Format(path, base, fmt);
 		byte sm3 = File_Exists(path);
 		Bprintf(fmt, sizeof(fmt), "&U&D&N.LOD%d&E", i);
-		Ruta_Format(path, base, fmt);
+		Path_Format(path, base, fmt);
 		if (!File_Exists(path) && !sm3) {
 			break;
 		}
-		lods[n++] = Crear_ModeloLOD(path, name2, &esc, self->Model, 0x37);
+		lods[n++] = Create_ModelLOD(path, name2, &scaleCopy, self->Model, 0x37);
 	}
 	if (n) {
-		CModelo_SetNumLods(self->Model, n);
+		CModel_SetNumLods(self->Model, n);
 		for (int i = 0; i < self->Model->lods.n; i++) {
-			CModelo_SetLod(self->Model, (uint32_t)i, lods[i]);
-			CModelo_BuildNodosR(lods[i], 0);
-			CModelo_Disable(lods[i]);
+			CModel_SetLod(self->Model, (uint32_t)i, lods[i]);
+			CModel_BuildRenderNodes(lods[i], 0);
+			CModel_Disable(lods[i]);
 		}
 	}
-	CArchINI *ini = self->Model->escena->ini;
+	CIniFile *ini = self->Model->scene->ini;
 	CGameModel_LodGroup(self, ini);
 	if (ini) {
-		self->Model->lodDist = CArchINI_GetFloat(ini, "Model", "LOD_Mult", 1.0f) * self->Model->lodDist;
-		self->animBaseFPS = CArchINI_GetFloat(ini, "Model", "AnimBaseFPS", 0.0f);
+		self->Model->lodDist = CIniFile_GetFloat(ini, "Model", "LOD_Mult", 1.0f) * self->Model->lodDist;
+		self->animBaseFPS = CIniFile_GetFloat(ini, "Model", "AnimBaseFPS", 0.0f);
 	}
 }
 
 void __thiscall CGameModel_Release(CGameModel *self, byte free) {
 	CGameModel_FreeCollision(self);
 	if (free) {
-		Mundo_Get();
+		World_Get();
 		Con_Verbosef("Release model: %s\n", self->Model->name);
-		for (int i = 0; i < MAX_ANIMGRUPOS; i++) {
-			CAnimGrupo *g = CModelo_GetAnim(self->Model, i);
-			if (g && !Escena_Release(g->Anim, 1)) {
+		for (int i = 0; i < MAX_ANIMGROUPS; i++) {
+			CAnimGroup *g = CModel_GetAnim(self->Model, i);
+			if (g && !SceneList_Release(g->Anim, 1)) {
 				CheckFailed("!link || EscenaElim(link->obtEscena(), true)", __FILE__, __TIMESTAMP__, __LINE__);
 			}
 		}
 		for (uint32_t i = 0; (int)i < self->Model->lods.n; i++) {
-			TABLA_CHECK(self->Model->lods.p, i, self->Model->lods.n);
-			Modelo_Destroy(&((CLod *)self->Model->lods.p)[i].model, 1);
+			TABLE_CHECK(self->Model->lods.p, i, self->Model->lods.n);
+			Model_Destroy(&((CLod *)self->Model->lods.p)[i].model, 1);
 		}
-		Modelo_Destroy(&self->Model, 1);
+		Model_Destroy(&self->Model, 1);
 	}
 	if (self->Model) {
-		Mundo_Get();
-		Modelo_Destroy(&self->Model, 0);
+		World_Get();
+		Model_Destroy(&self->Model, 0);
 	}
 }
 
@@ -196,17 +196,17 @@ const char *__fastcall CGameModel_Name(const CGameModel *self) {
 
 const char *__fastcall CGameModel_SceneName(const CGameModel *self) {
 	GM_CHECK(self);
-	return self->Model->escena->name;
+	return self->Model->scene->name;
 }
 
 void __fastcall CGameModel_Enable(CGameModel *self) {
 	GM_CHECK(self);
-	CModelo_Enable(self->Model);
+	CModel_Enable(self->Model);
 }
 
 void __fastcall CGameModel_Disable(CGameModel *self) {
 	GM_CHECK(self);
-	CModelo_Disable(self->Model);
+	CModel_Disable(self->Model);
 }
 
 byte __fastcall CGameModel_IsEnabled(const CGameModel *self) {
@@ -224,14 +224,14 @@ byte __fastcall CGameModel_IsVisible(const CGameModel *self) {
 
 int __fastcall CGameModel_GetSector(CGameModel *self) {
 	GM_CHECK(self);
-	return CModelo_GetSector(self->Model);
+	return CModel_GetSector(self->Model);
 }
 
 float __fastcall CGameModel_Radius(const CGameModel *self) {
-	if (!self->Model || !self->Model->escena) {
+	if (!self->Model || !self->Model->scene) {
 		CheckFailed("Model && Model->obtEscena()", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	const box_t *b = &self->Model->escena->box;
+	const box_t *b = &self->Model->scene->box;
 	float dx = b->max.x - b->min.x, dy = b->max.y - b->min.y, dz = b->max.z - b->min.z;
 	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) * 0.5f;
 }
@@ -270,7 +270,7 @@ void __thiscall CGameModel_MoveForward(CGameModel *self, float d) {
 	b = (vec3_t){ 0.0f, 0.0f, d };
 	Vec3_Rotate(&a, &b, &self->Model->rot2);
 	const vec3_t *r = Vec3_Rotate(&b, &a, &self->Model->rot);
-	CModelo *m = self->Model;
+	CModel *m = self->Model;
 	m->pos.x = m->pos.x + r->x;
 	m->pos.y = r->y + m->pos.y;
 	m->pos.z = r->z + m->pos.z;
@@ -281,12 +281,12 @@ void __thiscall CGameModel_SetPivot(CGameModel *self, const vec3_t *v, byte rel,
 	if (recalcBB) {
 		CheckFailed("!RecalcBB", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	CModelo_SetPivot(self->Model, v, rel, recalcBB);
+	CModel_SetPivot(self->Model, v, rel, recalcBB);
 }
 
-void __thiscall CGameModel_SetPivotNodo(CGameModel *self, const char *name) {
+void __thiscall CGameModel_SetPivotNode(CGameModel *self, const char *name) {
 	GM_CHECK(self);
-	CModelo_SetPivotNodo(self->Model, name);
+	CModel_SetPivotNode(self->Model, name);
 }
 
 void __thiscall CGameModel_SetSortZ(CGameModel *self, float bias, float mult) {
@@ -342,67 +342,67 @@ void __thiscall CGameModel_RenderNow(CGameModel *self, byte flags) {
 	if (!Render_GetViewportW()) {
 		CheckFailed("obt_ancho_render()", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	int pass = g_RenderPass, fog = g_FogActive, r5fc = g_RenderFlagMask, r568 = g_RenderClaseMask;
+	int pass = g_RenderPass, fog = g_FogActive, r5fc = g_RenderFlagMask, r568 = g_RenderClassMask;
 	byte r4ec = g_RenderFlagNeg;
 	g_RenderFlagMask = 0;
 	g_RenderFlagNeg = 0;
-	g_RenderClaseMask = 0;
+	g_RenderClassMask = 0;
 	g_RenderPass = 0;
 	g_FogActive = 0;
-	CModelo *m = self->Model;
+	CModel *m = self->Model;
 	byte always = m->alwaysVisible;
 	m->alwaysVisible = 1;
 	byte en = m->enable;
 	if (!en) {
-		CModelo_Enable(m);
+		CModel_Enable(m);
 	}
 	byte dyn = self->Model->dynLight;
 	if ((flags & 3) == 2) {
 		self->Model->dynLight = 0;
 	}
 	if (flags & 2) {
-		Luz_SetDefault(1);
+		Light_SetDefault(1);
 	}
-	CModelo_Render(self->Model);
+	CModel_Render(self->Model);
 	self->Model->dynLight = dyn;
 	if (flags & 2) {
-		Luz_SetDefault(0);
+		Light_SetDefault(0);
 	}
 	if (!en) {
-		CModelo_Disable(self->Model);
+		CModel_Disable(self->Model);
 	}
 	self->Model->alwaysVisible = always;
 	g_FogActive = fog;
 	g_RenderFlagMask = r5fc;
 	g_RenderFlagNeg = r4ec;
-	g_RenderClaseMask = r568;
+	g_RenderClassMask = r568;
 	g_RenderPass = pass;
 }
 
 int __thiscall CGameModel_AddAnim(CGameModel *self, const char *name) {
 	GM_CHECK(self);
-	Crear_Animacion(self->Model, name, 3);
-	int i = CAnimGrupos_Count(&self->Model->anims) - 1;
-	if (!CModelo_GetAnimName(self->Model, i)) {
+	Create_Animation(self->Model, name, 3);
+	int i = CAnimGroups_Count(&self->Model->anims) - 1;
+	if (!CModel_GetAnimName(self->Model, i)) {
 		CheckFailed("Model->obtNombreAnim(index)", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	CModelo_AddAnimEvents(self->Model, CModelo_GetAnimName(self->Model, i), -1.0f, -1.0f);
+	CModel_AddAnimEvents(self->Model, CModel_GetAnimName(self->Model, i), -1.0f, -1.0f);
 	return i;
 }
 
 int __thiscall CGameModel_FindAnim(CGameModel *self, const char *name) {
 	GM_CHECK(self);
-	return CModelo_FindAnim(self->Model, name);
+	return CModel_FindAnim(self->Model, name);
 }
 
 const char *__thiscall CGameModel_AnimName(CGameModel *self, int i) {
 	GM_CHECK(self);
-	return CModelo_GetAnimName(self->Model, i);
+	return CModel_GetAnimName(self->Model, i);
 }
 
 /* animation i, CHECK("link") without one */
-static CAnimGrupo *CGameModel_Link(CGameModel *self, int i) {
-	CAnimGrupo *g = CModelo_GetAnim(self->Model, i);
+static CAnimGroup *CGameModel_Link(CGameModel *self, int i) {
+	CAnimGroup *g = CModel_GetAnim(self->Model, i);
 	if (!g) {
 		CheckFailed("link", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -411,7 +411,7 @@ static CAnimGrupo *CGameModel_Link(CGameModel *self, int i) {
 
 byte __thiscall CGameModel_AnimInfo(CGameModel *self, int i, float *dur, float *fps) {
 	GM_CHECK(self);
-	CAnimGrupo *g = CModelo_GetAnim(self->Model, i);
+	CAnimGroup *g = CModel_GetAnim(self->Model, i);
 	if (!g) {
 		CheckFailed("link", __FILE__, __TIMESTAMP__, __LINE__);
 		return 0;
@@ -439,7 +439,7 @@ byte __thiscall CGameModel_SetAnimFactor(CGameModel *self, int i, float factor) 
 
 byte __thiscall CGameModel_SetAnimSpeed(CGameModel *self, int i, float speed) {
 	GM_CHECK(self);
-	CAnimGrupo *g = CGameModel_Link(self, i);
+	CAnimGroup *g = CGameModel_Link(self, i);
 	if (0.01f > speed) {
 		speed = 0.0f;
 	}
@@ -449,7 +449,7 @@ byte __thiscall CGameModel_SetAnimSpeed(CGameModel *self, int i, float speed) {
 
 byte __thiscall CGameModel_SetAnimLoop(CGameModel *self, int i, byte loop) {
 	GM_CHECK(self);
-	CGameModel_Link(self, i)->ctrl.bucle = !loop;
+	CGameModel_Link(self, i)->ctrl.loop = !loop;
 	return 1;
 }
 
@@ -462,7 +462,7 @@ void __thiscall CGameModel_AnimCmd(CGameModel *self, const char *cmd) {
 		CheckFailed("AnimCmd", __FILE__, __TIMESTAMP__, __LINE__);
 	}
 	if (Proc_Scan(cmd, "Morph,&d,&.*t", &slot, 0x1f, tag) == 2) {
-		CModelo_SetMorphSubset(self->Model, (uint32_t)slot, tag);
+		CModel_SetMorphSubset(self->Model, (uint32_t)slot, tag);
 		return;
 	}
 	E3D_LogBlue(g_FileLog, "Invalid anim command: %s", cmd);
@@ -472,14 +472,14 @@ byte __thiscall CGameModel_AnimTime(CGameModel *self, int i, float frame, float 
 	if (!self->Model || !time) {
 		CheckFailed("Model && Time", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	CAnimGrupo *g = CGameModel_Link(self, i);
+	CAnimGroup *g = CGameModel_Link(self, i);
 	float base = self->animBaseFPS, vel = g->ctrl.vel;
 	int frames = g->ctrl.frames;
 	if (base != 0.0f && base != vel) {
-		float f = vel * frame / base - (float)g->ctrl.primero;
+		float f = vel * frame / base - (float)g->ctrl.firstFrame;
 		if (!(f >= -0.5f) || !((float)frames >= f)) {
 			Con_FatalErrorf("Frame out of range:  orig.Frame: %f  frame: %f  nframes: %d  priframe: %d",
-				(double)frame, (double)f, frames, g->ctrl.primero);
+				(double)frame, (double)f, frames, g->ctrl.firstFrame);
 		}
 		float v = 0.0f;
 		if (!(0.0f >= f)) {
@@ -489,7 +489,7 @@ byte __thiscall CGameModel_AnimTime(CGameModel *self, int i, float frame, float 
 		*time = v / vel;
 		return 1;
 	}
-	float f = frame - (float)g->ctrl.primero;
+	float f = frame - (float)g->ctrl.firstFrame;
 	*time = f / vel;
 	if (0.0f > f || f > (float)(frames - 1)) {
 		return 0;
@@ -500,37 +500,37 @@ byte __thiscall CGameModel_AnimTime(CGameModel *self, int i, float frame, float 
 void __thiscall CGameModel_SetAnim(CGameModel *self, int i, uint32_t chan, int unused) {
 	GM_CHECK(self);
 	(void)unused;
-	CModelo_SetAnim(self->Model, i, chan);
+	CModel_SetAnim(self->Model, i, chan);
 	self->Model->animate = 0;
 }
 
 void __thiscall CGameModel_SetAnimName(CGameModel *self, const char *name, uint32_t chan, int unused) {
 	GM_CHECK(self);
 	(void)unused;
-	CModelo_SetAnimName(self->Model, name, chan);
+	CModel_SetAnimName(self->Model, name, chan);
 	self->Model->animate = 0;
 }
 
 void __fastcall CGameModel_StopAnims(CGameModel *self) {
 	GM_CHECK(self);
 	for (uint32_t i = 0; i < 4; i++) {
-		CModelo_SetAnim(self->Model, 0, i);
+		CModel_SetAnim(self->Model, 0, i);
 	}
 }
 
 void __thiscall CGameModel_StopAnim(CGameModel *self, uint32_t chan) {
 	GM_CHECK(self);
-	CModelo_SetAnim(self->Model, -1, chan);
+	CModel_SetAnim(self->Model, -1, chan);
 }
 
-CAnimGrupo *__thiscall CGameModel_ChanAnim(CGameModel *self, uint32_t chan) {
+CAnimGroup *__thiscall CGameModel_ChanAnim(CGameModel *self, uint32_t chan) {
 	GM_CHECK(self);
-	TABLA_CHECK(self->Model->slots.p, chan, self->Model->slots.n);
+	TABLE_CHECK(self->Model->slots.p, chan, self->Model->slots.n);
 	return ((CAnimSlot *)self->Model->slots.p)[chan].anim;
 }
 
 byte __thiscall CGameModel_ChanEnd(CGameModel *self, uint32_t chan) {
-	CAnimGrupo *g = CGameModel_ChanAnim(self, chan);
+	CAnimGroup *g = CGameModel_ChanAnim(self, chan);
 	if (!g) {
 		CheckFailed("link", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -538,7 +538,7 @@ byte __thiscall CGameModel_ChanEnd(CGameModel *self, uint32_t chan) {
 }
 
 byte __thiscall CGameModel_ChanInfo(CGameModel *self, uint32_t chan, int *mode, int *anim) {
-	CAnimGrupo *g = CGameModel_ChanAnim(self, chan);
+	CAnimGroup *g = CGameModel_ChanAnim(self, chan);
 	if (!g) {
 		CheckFailed("link", __FILE__, __TIMESTAMP__, __LINE__);
 		return 0;
@@ -547,32 +547,32 @@ byte __thiscall CGameModel_ChanInfo(CGameModel *self, uint32_t chan, int *mode, 
 		*mode = g->ctrl.state == 3 ? 4 : 1;
 	}
 	if (anim) {
-		*anim = CModelo_FindAnim(self->Model, g->name);
+		*anim = CModel_FindAnim(self->Model, g->name);
 	}
 	return 1;
 }
 
 byte __thiscall CGameModel_ChanTime(CGameModel *self, uint32_t chan, float *t) {
-	CAnimGrupo *g = CGameModel_ChanAnim(self, chan);
+	CAnimGroup *g = CGameModel_ChanAnim(self, chan);
 	if (!g) {
 		CheckFailed("link", __FILE__, __TIMESTAMP__, __LINE__);
 		return 0;
 	}
 	if (t) {
-		float f = g->ctrl.frame - (float)g->ctrl.primero;
+		float f = g->ctrl.frame - (float)g->ctrl.firstFrame;
 		f = f > 0.0f ? f : 0.0f;
 		*t = f / g->ctrl.vel;
 	}
 	return 1;
 }
 
-void __thiscall CGameModel_RootMotion(CGameModel *self, float t, vec3_t *move, int *saltos) {
+void __thiscall CGameModel_RootMotion(CGameModel *self, float t, vec3_t *move, int *jumps) {
 	byte first = 0;
 
 	GM_CHECK(self);
 	for (uint32_t i = 0; i < 4; i++) {
 		CAnimSlot *s = &((CAnimSlot *)self->Model->slots.p)[i];
-		TABLA_CHECK(self->Model->slots.p, i, self->Model->slots.n);
+		TABLE_CHECK(self->Model->slots.p, i, self->Model->slots.n);
 		if (!s->anim) {
 			continue;
 		}
@@ -581,12 +581,12 @@ void __thiscall CGameModel_RootMotion(CGameModel *self, float t, vec3_t *move, i
 			if (move) {
 				*move = s->anim->ctrl.move;
 			}
-			if (saltos) {
-				*saltos = s->anim->ctrl.saltos;
+			if (jumps) {
+				*jumps = s->anim->ctrl.jumps;
 			}
 			first = 1;
 		}
-		TABLA_CHECK(self->Model->slots.p, i, self->Model->slots.n);
+		TABLE_CHECK(self->Model->slots.p, i, self->Model->slots.n);
 		if (s->prev) {
 			CAnimCtrl_Update(&s->prev->ctrl, &self->Model->rot2, t);
 		}
@@ -595,8 +595,8 @@ void __thiscall CGameModel_RootMotion(CGameModel *self, float t, vec3_t *move, i
 		if (move) {
 			*move = (vec3_t){ 0.0f, 0.0f, 0.0f };
 		}
-		if (saltos) {
-			*saltos = 0;
+		if (jumps) {
+			*jumps = 0;
 		}
 	}
 }
@@ -606,18 +606,18 @@ byte __thiscall CGameModel_AnimDelta(CGameModel *self, uint32_t chan, float t, v
 	quat_t q0, q1;
 
 	GM_CHECK(self);
-	CAnimGrupo *g = CGameModel_ChanAnim(self, chan);
+	CAnimGroup *g = CGameModel_ChanAnim(self, chan);
 	if (!g) {
 		if (move) {
 			*move = (vec3_t){ 0.0f, 0.0f, 0.0f };
 		}
 		return 0;
 	}
-	float pri = (float)g->ctrl.primero;
-	float f = t * g->ctrl.vel + pri;
-	float fr = pri;
-	if (pri < f) {
-		float last = (float)(g->ctrl.primero - 1 + g->ctrl.frames);
+	float first = (float)g->ctrl.firstFrame;
+	float f = t * g->ctrl.vel + first;
+	float fr = first;
+	if (first < f) {
+		float last = (float)(g->ctrl.firstFrame - 1 + g->ctrl.frames);
 		fr = last < f ? last : f;
 	}
 	CAnimCtrl_GetPosRot(&g->ctrl, g->ctrl.frame, &p0, &q0);
@@ -632,37 +632,37 @@ byte __thiscall CGameModel_AnimDelta(CGameModel *self, uint32_t chan, float t, v
 	CAnimCtrl_Reset(&g->ctrl, fr);
 	g->ctrl.ofs = ofs;
 	g->ctrl.move = mv;
-	g->ctrl.saltos = 0;
+	g->ctrl.jumps = 0;
 	if (move) {
 		*move = mv;
 	}
 	return 1;
 }
 
-int __thiscall CGameModel_FindNodoR(CGameModel *self, const char *name) {
+int __thiscall CGameModel_FindRenderNode(CGameModel *self, const char *name) {
 	uint32_t i;
 
 	GM_CHECK(self);
-	return CModelo_FindNodoR(self->Model, name, &i, 0, 1) ? (int)i : -1;
+	return CModel_FindRenderNode(self->Model, name, &i, 0, 1) ? (int)i : -1;
 }
 
-int __thiscall CGameModel_FindNodoRWild(CGameModel *self, const char *name) {
+int __thiscall CGameModel_FindRenderNodeWild(CGameModel *self, const char *name) {
 	uint32_t i;
 
 	GM_CHECK(self);
-	return CModelo_FindNodoR(self->Model, name, &i, 1, 1) ? (int)i : -1;
+	return CModel_FindRenderNode(self->Model, name, &i, 1, 1) ? (int)i : -1;
 }
 
 /* render node i of the model */
-static CNodoR *CGameModel_NodoR(const CGameModel *self, uint32_t i) {
-	CTabla *t = self->Model->nodosR;
-	TABLA_CHECK(t->p, i, t->n);
-	return (CNodoR *)t->p + i;
+static CRenderNode *CGameModel_RenderNode(const CGameModel *self, uint32_t i) {
+	CTable *t = self->Model->renderNodes;
+	TABLE_CHECK(t->p, i, t->n);
+	return (CRenderNode *)t->p + i;
 }
 
-CNodoR *__thiscall CGameModel_NodoRRef(CGameModel *self, uint32_t i) {
+CRenderNode *__thiscall CGameModel_RenderNodeRef(CGameModel *self, uint32_t i) {
 	GM_CHECK(self);
-	CNodoR *r = CGameModel_NodoR(self, i);
+	CRenderNode *r = CGameModel_RenderNode(self, i);
 	if (!r) {
 		CheckFailed("RNode", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -673,52 +673,52 @@ CNodoR *__thiscall CGameModel_NodoRRef(CGameModel *self, uint32_t i) {
 	return r;
 }
 
-vec3_t *__thiscall CGameModel_NodoPos(CGameModel *self, vec3_t *out, uint32_t i, byte animated) {
+vec3_t *__thiscall CGameModel_NodePos(CGameModel *self, vec3_t *out, uint32_t i, byte animated) {
 	GM_CHECK(self);
 	if (animated) {
 		CheckFailed("bAnimated == false", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	*out = CGameModel_NodoR(self, i)->nodo->pos;
+	*out = CGameModel_RenderNode(self, i)->node->pos;
 	return out;
 }
 
-matrix_t *__thiscall CGameModel_NodoMatrix(CGameModel *self, matrix_t *out, uint32_t i, byte anim, byte *visible,
+matrix_t *__thiscall CGameModel_NodeMatrix(CGameModel *self, matrix_t *out, uint32_t i, byte anim, byte *visible,
 	uint32_t slot) {
 	matrix_t m;
 
 	GM_CHECK(self);
-	Matrix_Copy(out, Matrix_Self(CModelo_GetNodeMatrix(self->Model, &m, i, anim, slot, visible, NULL)));
+	Matrix_Copy(out, Matrix_Self(CModel_GetNodeMatrix(self->Model, &m, i, anim, slot, visible, NULL)));
 	return out;
 }
 
-byte __thiscall CGameModel_NodoLook(CGameModel *self, uint32_t i, int mode, const vec3_t *v) {
+byte __thiscall CGameModel_NodeLook(CGameModel *self, uint32_t i, int mode, const vec3_t *v) {
 	GM_CHECK(self);
-	CNodoR *r = CGameModel_NodoR(self, i);
+	CRenderNode *r = CGameModel_RenderNode(self, i);
 	switch (mode) {
 	case 0:
-		CNodoR_SetLook(r, 0);
+		CRenderNode_SetLook(r, 0);
 		break;
 	case 1:
-		CNodoR_SetLook(r, 1);
-		CRotacion_SetEuler(&r->look->r1, v);
+		CRenderNode_SetLook(r, 1);
+		CRotation_SetEuler(&r->look->r1, v);
 		r->look->r2.ang = (vec3_t){ 0.0f, 0.0f, 0.0f };
 		r->look->r2.flags |= ROT_DIRTY | ROT_ZERO;
 		break;
 	case 2:
-		CNodoR_SetLook(r, 1);
+		CRenderNode_SetLook(r, 1);
 		r->look->r1.ang = (vec3_t){ 0.0f, 0.0f, 0.0f };
 		r->look->r1.flags |= ROT_DIRTY | ROT_ZERO;
-		CRotacion_SetEuler(&r->look->r2, v);
+		CRotation_SetEuler(&r->look->r2, v);
 		break;
 	case 3:
 	case 5:
-		CNodoR_SetLook(r, mode == 3 ? 4 : 5);
-		CRotacion_SetEuler(&r->look->r1, v);
+		CRenderNode_SetLook(r, mode == 3 ? 4 : 5);
+		CRotation_SetEuler(&r->look->r1, v);
 		break;
 	case 4:
 	case 6:
-		CNodoR_SetLook(r, mode == 4 ? 2 : 3);
-		CRotacion_SetEuler(&r->look->r2, v);
+		CRenderNode_SetLook(r, mode == 4 ? 2 : 3);
+		CRotation_SetEuler(&r->look->r2, v);
 		break;
 	default:
 		CheckFailed("0", __FILE__, __TIMESTAMP__, __LINE__);
@@ -727,48 +727,48 @@ byte __thiscall CGameModel_NodoLook(CGameModel *self, uint32_t i, int mode, cons
 }
 
 /* the ini of the node of render node i */
-static CArchINI *CGameModel_NodoIni(const CGameModel *self, uint32_t i) {
-	return CGameModel_NodoR(self, i)->nodo->ini;
+static CIniFile *CGameModel_NodeIni(const CGameModel *self, uint32_t i) {
+	return CGameModel_RenderNode(self, i)->node->ini;
 }
 
-float __thiscall CGameModel_NodoIniFloat(CGameModel *self, uint32_t i, const char *sect, const char *key, float def) {
-	return CArchINI_GetFloat(CGameModel_NodoIni(self, i), sect, key, def);
+float __thiscall CGameModel_NodeIniFloat(CGameModel *self, uint32_t i, const char *sect, const char *key, float def) {
+	return CIniFile_GetFloat(CGameModel_NodeIni(self, i), sect, key, def);
 }
 
-int __thiscall CGameModel_NodoIniInt(CGameModel *self, uint32_t i, const char *sect, const char *key, int def) {
-	return CArchINI_GetInt(CGameModel_NodoIni(self, i), sect, key, def);
+int __thiscall CGameModel_NodeIniInt(CGameModel *self, uint32_t i, const char *sect, const char *key, int def) {
+	return CIniFile_GetInt(CGameModel_NodeIni(self, i), sect, key, def);
 }
 
-uint32_t __thiscall CGameModel_NodoIniColor(CGameModel *self, uint32_t i, const char *sect, const char *key,
+uint32_t __thiscall CGameModel_NodeIniColor(CGameModel *self, uint32_t i, const char *sect, const char *key,
 	uint32_t def) {
-	return CArchINI_GetColor(CGameModel_NodoIni(self, i), sect, key, def);
+	return CIniFile_GetColor(CGameModel_NodeIni(self, i), sect, key, def);
 }
 
-vec3_t *__thiscall CGameModel_NodoIniVec3(CGameModel *self, vec3_t *out, uint32_t i, const char *sect, const char *key,
+vec3_t *__thiscall CGameModel_NodeIniVec3(CGameModel *self, vec3_t *out, uint32_t i, const char *sect, const char *key,
 	const vec3_t *def) {
-	CArchINI_GetVec3(CGameModel_NodoIni(self, i), out, sect, key, def);
+	CIniFile_GetVec3(CGameModel_NodeIni(self, i), out, sect, key, def);
 	return out;
 }
 
 /* the mesh of a node, NULL with the objeto3d.h CHECK for another class */
-static CMallaD3D *Nodo_MallaD3D(CNodo3D *n) {
-	IObjeto3D *o = n->obj3D;
-	if (o->clase != CLASE_OBJ3D_MALLAD3D) {
+static CMeshD3D *Node_MeshD3D(CNode3D *n) {
+	IObject3D *o = n->obj3D;
+	if (o->class != CLASS_OBJ3D_MESHD3D) {
 		CheckFailed("devNULL", "objeto3d.h", __TIMESTAMP__, __LINE__);
 		return NULL;
 	}
-	return (CMallaD3D *)o;
+	return (CMeshD3D *)o;
 }
 
 byte __thiscall CGameModel_SetTexFrame(CGameModel *self, const char *name, int frame) {
-	for (CNodo3D *n = self->Model->escena->Nodo3D; n; n = n->sig) {
-		if (CNodo3D_Clase(n) != CLASE_OBJ3D_MALLAD3D) {
+	for (CNode3D *n = self->Model->scene->Node3D; n; n = n->next) {
+		if (CNode3D_Class(n) != CLASS_OBJ3D_MESHD3D) {
 			continue;
 		}
-		CMallaD3D *m = Nodo_MallaD3D(n);
-		CMapa *mapa = m->mat->mapa[0];
-		if (mapa && !crt_stricmp(m->mat->Nombre, name)) {
-			CAnimMat_SetFrame(mapa->AnimMat, frame);
+		CMeshD3D *m = Node_MeshD3D(n);
+		CMap *map = m->mat->map[0];
+		if (map && !crt_stricmp(m->mat->Name, name)) {
+			CAnimMat_SetFrame(map->AnimMat, frame);
 			return 1;
 		}
 	}
@@ -778,53 +778,53 @@ byte __thiscall CGameModel_SetTexFrame(CGameModel *self, const char *name, int f
 /* the render node transforms of this frame (or always with R_ForcePreRenderTransform) */
 static void CGameModel_UpdateTransforms(CGameModel *self) {
 	static const vec3_t one = { 1.0f, 1.0f, 1.0f };
-	NodoAnimCtx ctx;
+	NodeAnimCtx ctx;
 
 	if (!g_ForcePreRenderTransform && self->frame == g_FrameCount) {
 		return;
 	}
 	self->frame = g_FrameCount;
 	for (int i = 0; i < 4; i++) {
-		RenderCtx_SetCanal(&ctx.chan[i], NULL);
+		RenderCtx_SetChannel(&ctx.chan[i], NULL);
 	}
 	RenderCtx_Init(&ctx, NULL, &one);
-	CModelo_SetupRender(self->Model, &ctx);
-	CEscena_Update(self->Model->escena, &ctx);
+	CModel_SetupRender(self->Model, &ctx);
+	CScene_Update(self->Model->scene, &ctx);
 }
 
 /* the meshes of the material give vertices */
-static byte Malla_ConVertices(const CMallaD3D *m) {
-	return !m->mat || !(m->mat->params.atrib & MAT_SINVERTICES);
+static byte Mesh_ConVertices(const CMeshD3D *m) {
+	return !m->mat || !(m->mat->params.attrib & MAT_SINVERTICES);
 }
 
 /* the nodes of render node r that are meshes (not hidden unless any) */
-static CMallaD3D *NodoR_Malla(CNodoR *r, byte hidden) {
-	CNodo3D *n = r->nodo;
-	if ((!hidden && n->flags & NODO_HIDE) || CNodo3D_Clase(n) != CLASE_OBJ3D_MALLAD3D) {
+static CMeshD3D *RenderNode_Mesh(CRenderNode *r, byte hidden) {
+	CNode3D *n = r->node;
+	if ((!hidden && n->flags & NODE_HIDE) || CNode3D_Class(n) != CLASS_OBJ3D_MESHD3D) {
 		return NULL;
 	}
-	return Nodo_MallaD3D(n);
+	return Node_MeshD3D(n);
 }
 
 /* the world matrix of a mesh of render node r: the skinned one with a skin */
-static const matrix_t *NodoR_MatrizMalla(const CNodoR *r, const CMallaD3D *m) {
+static const matrix_t *RenderNode_MatrixMesh(const CRenderNode *r, const CMeshD3D *m) {
 	return m->pSkin ? &r->mObj : &r->m;
 }
 
 int __thiscall CGameModel_VertexCounts(CGameModel *self, int *out, int max) {
-	int n = self->Model->nodosR->n;
+	int n = self->Model->renderNodes->n;
 	if (!out) {
 		return n;
 	}
 	for (int i = 0; i < n; i++, out++) {
-		CNodoR *r = CGameModel_NodoR(self, (uint32_t)i);
+		CRenderNode *r = CGameModel_RenderNode(self, (uint32_t)i);
 		if (i >= max) {
 			CheckFailed("n < MaxNodes", __FILE__, __TIMESTAMP__, __LINE__);
 		}
 		*out = 0;
-		CNodo3D *nd = r->nodo;
-		if (!(nd->flags & NODO_HIDE) && CNodo3D_Clase(nd) == CLASE_OBJ3D_MALLAD3D) {
-			for (CMallaD3D *m = Nodo_MallaD3D(nd); m; m = m->next) {
+		CNode3D *nd = r->node;
+		if (!(nd->flags & NODE_HIDE) && CNode3D_Class(nd) == CLASS_OBJ3D_MESHD3D) {
+			for (CMeshD3D *m = Node_MeshD3D(nd); m; m = m->next) {
 				*out += (int)m->vert.nVert;
 			}
 		}
@@ -832,7 +832,7 @@ int __thiscall CGameModel_VertexCounts(CGameModel *self, int *out, int max) {
 	return n;
 }
 
-static void Pos_Repetir(vec3_t *pos, int count, const vec3_t *p, int *index) {
+static void Pos_Repeat(vec3_t *pos, int count, const vec3_t *p, int *index) {
 	for (int i = 0; i < count; i++) {
 		pos[i] = *p;
 		if (index) {
@@ -860,50 +860,50 @@ static void CGameModel_CheckVertArgs(const CGameModel *self, const void *pos, co
 }
 
 void __thiscall CGameModel_RandomVertices(CGameModel *self, vec3_t *pos, void *normal, void *area, int count,
-	uint32_t nodo) {
-	byte validos[MAX_VALIDOS];
-	int nValidos = 0;
+	uint32_t node) {
+	byte valid[MAX_VALID];
+	int nValid = 0;
 
 	CGameModel_CheckVertArgs(self, pos, normal, area, count);
 	if (!g_GetModelVertex) {
-		Pos_Repetir(pos, count, &self->Model->pos, NULL);
+		Pos_Repeat(pos, count, &self->Model->pos, NULL);
 		return;
 	}
 	CGameModel_UpdateTransforms(self);
-	if (nodo == 0xffffffff) {
-		for (uint32_t i = 0; (int)i < self->Model->nodosR->n; i++) {
-			CMallaD3D *m = NodoR_Malla(CGameModel_NodoR(self, i), 0);
+	if (node == 0xffffffff) {
+		for (uint32_t i = 0; (int)i < self->Model->renderNodes->n; i++) {
+			CMeshD3D *m = RenderNode_Mesh(CGameModel_RenderNode(self, i), 0);
 			for (; m; m = m->next) {
-				if (Malla_ConVertices(m)) {
-					if (nValidos >= MAX_VALIDOS) {
+				if (Mesh_ConVertices(m)) {
+					if (nValid >= MAX_VALID) {
 						CheckFailed("nValidos < MAX_VALIDOS", __FILE__, __TIMESTAMP__, __LINE__);
 					}
 					if (i >= 256) {
 						CheckFailed("n < 256", __FILE__, __TIMESTAMP__, __LINE__);
 					}
-					validos[nValidos++] = (byte)i;
+					valid[nValid++] = (byte)i;
 					break;
 				}
 			}
 		}
-		if (nValidos <= 0) {
+		if (nValid <= 0) {
 			CheckFailed("nValidos > 0", __FILE__, __TIMESTAMP__, __LINE__);
 		}
 	}
 	for (int k = 0; k < count; k++) {
-		uint32_t idx = nodo;
-		if (nodo == 0xffffffff) {
-			idx = validos[crt_rand() % nValidos];
+		uint32_t idx = node;
+		if (node == 0xffffffff) {
+			idx = valid[crt_rand() % nValid];
 		}
-		CNodoR *r = CGameModel_NodoR(self, idx);
-		if (CNodo3D_Clase(r->nodo) != CLASE_OBJ3D_MALLAD3D) {
+		CRenderNode *r = CGameModel_RenderNode(self, idx);
+		if (CNode3D_Class(r->node) != CLASS_OBJ3D_MESHD3D) {
 			CheckFailed("0", __FILE__, __TIMESTAMP__, __LINE__);
 			continue;
 		}
-		CMallaD3D *best = NULL;
+		CMeshD3D *best = NULL;
 		int bestR = 0;
-		for (CMallaD3D *m = Nodo_MallaD3D(r->nodo); m; m = m->next) {
-			if (Malla_ConVertices(m)) {
+		for (CMeshD3D *m = Node_MeshD3D(r->node); m; m = m->next) {
+			if (Mesh_ConVertices(m)) {
 				int rr = crt_rand();
 				if (bestR <= rr) {
 					best = m;
@@ -913,43 +913,43 @@ void __thiscall CGameModel_RandomVertices(CGameModel *self, vec3_t *pos, void *n
 		}
 		int nv = (int)best->vert.nVert;
 		vec3_t p;
-		CListaVert_GetPos(&best->vert, &p, (uint32_t)(crt_rand() % nv));
-		Vec3_TransformH(&p, &p, NodoR_MatrizMalla(r, best));
+		CVertList_GetPos(&best->vert, &p, (uint32_t)(crt_rand() % nv));
+		Vec3_TransformH(&p, &p, RenderNode_MatrixMesh(r, best));
 		pos[k] = p;
 	}
 }
 
 void __thiscall CGameModel_Vertices(CGameModel *self, vec3_t *pos, void *normal, void *area, int count, int first,
-	int *index, uint32_t nodo, int *indices) {
-	byte validos[MAX_VALIDOS];
-	int base[MAX_VALIDOS + 1];
-	int nValidos = 0, total = 0, total2 = 0;
+	int *index, uint32_t node, int *indices) {
+	byte valid[MAX_VALID];
+	int base[MAX_VALID + 1];
+	int nValid = 0, total = 0, total2 = 0;
 
 	CGameModel_CheckVertArgs(self, pos, normal, area, count);
 	if (!g_GetModelVertex) {
-		Pos_Repetir(pos, count, &self->Model->pos, index);
+		Pos_Repeat(pos, count, &self->Model->pos, index);
 		return;
 	}
 	CGameModel_UpdateTransforms(self);
-	for (uint32_t i = 0; (int)i < self->Model->nodosR->n; i++) {
-		CNodoR *r = CGameModel_NodoR(self, i);
-		CMallaD3D *m0 = NodoR_Malla(r, nodo != 0xffffffff);
-		for (CMallaD3D *m = m0; m; m = m->next) {
-			if (!Malla_ConVertices(m)) {
+	for (uint32_t i = 0; (int)i < self->Model->renderNodes->n; i++) {
+		CRenderNode *r = CGameModel_RenderNode(self, i);
+		CMeshD3D *m0 = RenderNode_Mesh(r, node != 0xffffffff);
+		for (CMeshD3D *m = m0; m; m = m->next) {
+			if (!Mesh_ConVertices(m)) {
 				continue;
 			}
-			if (nValidos >= MAX_VALIDOS) {
+			if (nValid >= MAX_VALID) {
 				CheckFailed("nValidos < MAX_VALIDOS", __FILE__, __TIMESTAMP__, __LINE__);
 			}
-			if (i >= MAX_VALIDOS) {
+			if (i >= MAX_VALID) {
 				CheckFailed("n < MAX_VALIDOS", __FILE__, __TIMESTAMP__, __LINE__);
 			}
-			if (nodo == 0xffffffff || nodo == i) {
-				validos[nValidos] = (byte)i;
-				base[nValidos] = total;
-				nValidos++;
-				for (CMallaD3D *m2 = Nodo_MallaD3D(r->nodo); m2; m2 = m2->next) {
-					if (Malla_ConVertices(m2)) {
+			if (node == 0xffffffff || node == i) {
+				valid[nValid] = (byte)i;
+				base[nValid] = total;
+				nValid++;
+				for (CMeshD3D *m2 = Node_MeshD3D(r->node); m2; m2 = m2->next) {
+					if (Mesh_ConVertices(m2)) {
 						total += (int)m2->vert.nVert;
 					}
 				}
@@ -958,8 +958,8 @@ void __thiscall CGameModel_Vertices(CGameModel *self, vec3_t *pos, void *normal,
 			break;
 		}
 	}
-	base[nValidos] = total;
-	if (nValidos < 1) {
+	base[nValid] = total;
+	if (nValid < 1) {
 		CheckFailed("nValidos > 0", __FILE__, __TIMESTAMP__, __LINE__);
 	}
 	if (total < 1) {
@@ -978,22 +978,22 @@ void __thiscall CGameModel_Vertices(CGameModel *self, vec3_t *pos, void *normal,
 			v = first >= total ? total - 1 : first;
 			first++;
 		}
-		int lo = 0, hi = nValidos;
+		int lo = 0, hi = nValid;
 		while (lo != hi) {
 			int mid = (hi - lo) / 2 + lo;
 			if (base[mid] <= v) {
 				if (v < base[mid + 1]) {
-					uint32_t idx = validos[mid];
+					uint32_t idx = valid[mid];
 					int iv = v - base[mid];
-					CNodoR *r = CGameModel_NodoR(self, idx);
-					if (CNodo3D_Clase(r->nodo) != CLASE_OBJ3D_MALLAD3D) {
+					CRenderNode *r = CGameModel_RenderNode(self, idx);
+					if (CNode3D_Class(r->node) != CLASS_OBJ3D_MESHD3D) {
 						CheckFailed("0", __FILE__, __TIMESTAMP__, __LINE__);
 						break;
 					}
-					CMallaD3D *m = Nodo_MallaD3D(r->nodo);
+					CMeshD3D *m = Node_MeshD3D(r->node);
 					int acc = 0;
 					for (; m; m = m->next) {
-						if (Malla_ConVertices(m)) {
+						if (Mesh_ConVertices(m)) {
 							if (acc <= iv && iv < (int)m->vert.nVert + acc) {
 								iv -= acc;
 								break;
@@ -1002,8 +1002,8 @@ void __thiscall CGameModel_Vertices(CGameModel *self, vec3_t *pos, void *normal,
 						}
 					}
 					vec3_t p;
-					CListaVert_GetPos(&m->vert, &p, (uint32_t)iv);
-					Vec3_TransformH(&p, &p, NodoR_MatrizMalla(r, m));
+					CVertList_GetPos(&m->vert, &p, (uint32_t)iv);
+					Vec3_TransformH(&p, &p, RenderNode_MatrixMesh(r, m));
 					pos[k] = p;
 					if (index) {
 						index[k] = v;
@@ -1019,7 +1019,7 @@ void __thiscall CGameModel_Vertices(CGameModel *self, vec3_t *pos, void *normal,
 }
 
 void __thiscall CGameModel_ClosestVertex(CGameModel *self, float x, float y, float z, vec3_t *pos, int *index,
-	uint32_t nodo) {
+	uint32_t node) {
 	GM_CHECK(self);
 	if (!pos) {
 		CheckFailed("Pos", __FILE__, __TIMESTAMP__, __LINE__);
@@ -1039,26 +1039,26 @@ void __thiscall CGameModel_ClosestVertex(CGameModel *self, float x, float y, flo
 	const vec3_t q = { x, y, z };
 	float best = 3.4028234663852886e+38f;
 	int total = 0;
-	for (uint32_t i = 0; (int)i < self->Model->nodosR->n; i++) {
-		CNodoR *r = CGameModel_NodoR(self, i);
-		CMallaD3D *m0 = NodoR_Malla(r, nodo != 0xffffffff);
-		for (CMallaD3D *m = m0; m; m = m->next) {
-			if (!Malla_ConVertices(m)) {
+	for (uint32_t i = 0; (int)i < self->Model->renderNodes->n; i++) {
+		CRenderNode *r = CGameModel_RenderNode(self, i);
+		CMeshD3D *m0 = RenderNode_Mesh(r, node != 0xffffffff);
+		for (CMeshD3D *m = m0; m; m = m->next) {
+			if (!Mesh_ConVertices(m)) {
 				continue;
 			}
-			if (nodo == 0xffffffff || nodo == i) {
-				for (CMallaD3D *m2 = Nodo_MallaD3D(r->nodo); m2; m2 = m2->next) {
-					if (!Malla_ConVertices(m2)) {
+			if (node == 0xffffffff || node == i) {
+				for (CMeshD3D *m2 = Node_MeshD3D(r->node); m2; m2 = m2->next) {
+					if (!Mesh_ConVertices(m2)) {
 						continue;
 					}
-					const matrix_t *mt = NodoR_MatrizMalla(r, m2);
+					const matrix_t *mt = RenderNode_MatrixMesh(r, m2);
 					matrix_t inv;
 					vec3_t lp;
 					Matrix_Invert(&inv, mt);
 					Vec3_TransformH(&lp, &q, &inv);
 					for (int v = 0; v < (int)m2->vert.nVert; v++) {
 						vec3_t vp;
-						CListaVert_GetPos(&m2->vert, &vp, (uint32_t)v);
+						CVertList_GetPos(&m2->vert, &vp, (uint32_t)v);
 						float dy = lp.y - vp.y, dx = lp.x - vp.x, dz = lp.z - vp.z;
 						float d = dy * dy + dx * dx + dz * dz;
 						if (best > d) {
@@ -1086,7 +1086,7 @@ void __fastcall CGameModel_FreeCollision(CGameModel *self) {
 	if (self->CollideMesh) {
 		GM_CHECK(self);
 		E3D_LogWhite(g_FileLog, "~CollisionMesh: %s (ID: %d)", self->Model->name, self->CollisionMeshID);
-		CSuelo_RemoveMesh(Mundo_Suelo(), self->CollideMesh, self->CollisionMeshID, self->CollisionIni);
+		CGround_RemoveMesh(World_Ground(), self->CollideMesh, self->CollisionMeshID, self->CollisionIni);
 		if (self->CollideMesh) {
 			CCollideMesh_dtor(self->CollideMesh);
 			operator_delete_sized(self->CollideMesh, sizeof(CCollideMesh));
@@ -1116,7 +1116,7 @@ void __thiscall CGameModel_EnableCollision(CGameModel *self, byte on, byte creat
 	E3D_LogWhite(g_FileLog, "Collision Mesh: %s [%s]", self->Model->name, on ? "ENABLE" : "DISABLE");
 	if (self->collide != on) {
 		self->collide = on;
-		CSuelo_SetMeshCollide(Mundo_Suelo(), self->CollideMesh, self->collide, self->CollisionMeshID,
+		CGround_SetMeshCollide(World_Ground(), self->CollideMesh, self->collide, self->CollisionMeshID,
 			self->CollisionIni);
 	}
 }
@@ -1139,17 +1139,17 @@ byte __thiscall CGameModel_CreateCollision(CGameModel *self, byte all) {
 		Con_Warnf("WARN: Possible wrong sector for Model: [%s]  Pos: %s\n", self->Model->name,
 			Vec3_Str(&self->Model->pos, 0, 1));
 	}
-	CModelo_GetMatrix(self->Model, &mw);
-	CEscena *esc = self->Model->escena;
-	if (!esc->CollideMesh) {
-		CMallaTri *t = operator_new(sizeof(CMallaTri));
-		esc->CollideMesh = t ? (IObjeto3D *)CMallaTri_ctor(t) : NULL;
-		CEscena_UpdateNodes(esc);
-		for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
-			if (CNodo3D_Clase(n) != CLASE_OBJ3D_MALLAD3D || (!(n->flags & NODO_COLISION) && !all)) {
+	CModel_GetMatrix(self->Model, &mw);
+	CScene *scn = self->Model->scene;
+	if (!scn->CollideMesh) {
+		CTriMesh *t = operator_new(sizeof(CTriMesh));
+		scn->CollideMesh = t ? (IObject3D *)CTriMesh_ctor(t) : NULL;
+		CScene_UpdateNodes(scn);
+		for (CNode3D *n = scn->Node3D; n; n = n->next) {
+			if (CNode3D_Class(n) != CLASS_OBJ3D_MESHD3D || (!(n->flags & NODE_COLLISION) && !all)) {
 				continue;
 			}
-			CMallaD3D *m = Nodo_MallaD3D(n);
+			CMeshD3D *m = Node_MeshD3D(n);
 			if (m->pSkin) {
 				CheckFailed("!Mesh2->pSkin", __FILE__, __TIMESTAMP__, __LINE__);
 			}
@@ -1159,17 +1159,17 @@ byte __thiscall CGameModel_CreateCollision(CGameModel *self, byte all) {
 					continue;
 				}
 			}
-			CMallaTri tm;
-			CMallaTri_ctor(&tm);
-			CMallaTri_AddD3D(&tm, m, 1);
-			CMallaTri_Transform(&tm, &n->m);
-			CMallaTri_Add((CMallaTri *)esc->CollideMesh, &tm, 0, 0);
-			CMallaTri_dtor(&tm);
+			CTriMesh tm;
+			CTriMesh_ctor(&tm);
+			CTriMesh_AddD3D(&tm, m, 1);
+			CTriMesh_Transform(&tm, &n->m);
+			CTriMesh_Add((CTriMesh *)scn->CollideMesh, &tm, 0, 0);
+			CTriMesh_dtor(&tm);
 		}
 	}
-	CMallaTri tw;
-	CMallaTri_ctorCopy(&tw, (CMallaTri *)esc->CollideMesh);
-	CMallaTri_Transform(&tw, &mw);
+	CTriMesh tw;
+	CTriMesh_ctorCopy(&tw, (CTriMesh *)scn->CollideMesh);
+	CTriMesh_Transform(&tw, &mw);
 	E3D_LogDebug(g_FileLog, "StaticCollisionInit: %s, %d tri, %d vert", self->Model->name, tw.nTri, tw.nVert);
 	if (!tw.nTri || !tw.nVert) {
 		E3D_LogWhite(g_FileLog, "Model has no collision mesh: %s", self->Model->name);
@@ -1184,14 +1184,14 @@ byte __thiscall CGameModel_CreateCollision(CGameModel *self, byte all) {
 		}
 		self->CollideMesh = cm;
 		cm->flags |= 2;
-		CSuelo_AddMesh(Mundo_Suelo(), cm, &tw, (uint32_t *)&self->CollisionMeshID, &self->CollisionIni);
+		CGround_AddMesh(World_Ground(), cm, &tw, (uint32_t *)&self->CollisionMeshID, &self->CollisionIni);
 		if (!self->CollisionMeshID) {
 			CheckFailed("CollisionMeshID", __FILE__, __TIMESTAMP__, __LINE__);
 		}
 		self->collide = 1;
 		ok = 1;
 	}
-	CMallaTri_dtor(&tw);
+	CTriMesh_dtor(&tw);
 	return ok;
 }
 
@@ -1199,7 +1199,7 @@ byte __fastcall CGameModel_CollideOn(const CGameModel *self) {
 	return self->CollideMesh && self->collide;
 }
 
-void __thiscall CRotacion_SetEuler(CRotacion *self, const vec3_t *ang) {
+void __thiscall CRotation_SetEuler(CRotation *self, const vec3_t *ang) {
 	self->ang = *ang;
 	self->flags |= ROT_DIRTY;
 	if (ang->x == 0.0f && ang->y == 0.0f && ang->z == 0.0f) {

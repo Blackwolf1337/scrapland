@@ -42,7 +42,7 @@ void __thiscall cNetStatsScorer_Draw(cNetStatsScorer *self, int player) {
 	cScorerItem *it = &self->base;
 
 	if ((g_pApp->flags & APPF_CLIENT) && g_ShowClientPing && Net_GetClient()) {
-		CFont_PrintfSombra(g_FontTerminal8, g_ClientPingX, g_ClientPingY, "Ping : %04d", Net_GetClient()->ping);
+		CFont_PrintfShadow(g_FontTerminal8, g_ClientPingX, g_ClientPingY, "Ping : %04d", Net_GetClient()->ping);
 	}
 	if (!g_ShowNetStatus) {
 		return;
@@ -90,8 +90,8 @@ void __thiscall cNetStatsScorer_Draw(cNetStatsScorer *self, int player) {
 		}
 		if (self->recv[k] > 0.0f && self->sent[k] > 0.0f) {
 			float yo = (float)(k + 1) * 10.0f;
-			CFont_PrintfSombra(g_FontTerminal8, (it->x + kx) + 4.0f, it->y + yo, "-%04d", self->recvBytes[k]);
-			CFont_PrintfSombra(g_FontTerminal8, (it->x + kx) + 4.0f, it->y - yo, "-%04d", self->sentBytes[k]);
+			CFont_PrintfShadow(g_FontTerminal8, (it->x + kx) + 4.0f, it->y + yo, "-%04d", self->recvBytes[k]);
+			CFont_PrintfShadow(g_FontTerminal8, (it->x + kx) + 4.0f, it->y - yo, "-%04d", self->sentBytes[k]);
 		}
 	}
 	if (g_NetStatSent > 0) {

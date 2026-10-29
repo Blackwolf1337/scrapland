@@ -30,7 +30,7 @@ def smlog(fn):
 for f in (0, 20, 21, 22, 23, 24, 25, 26, 101, -1):
 	check('Format_Bpp' + fmt((f,)), lambda f=f: SDTest.Call('Format_Bpp', 'ii', f)[0])
 check('Eng_Identity', lambda: (SDTest.Call('Eng_Identity', 'ii', 5)[0], SDTest.Call('Eng_Identity', 'ii', -7)[0]))
-check('Camera_GetActual', lambda: SDTest.Call('Camera_GetActual', 'i')[0] == SDTest.Peek('g_CamActual', 'i'))
+check('Camera_GetCurrent', lambda: SDTest.Call('Camera_GetCurrent', 'i')[0] == SDTest.Peek('g_CamCurrent', 'i'))
 check('Video_GetStatus', lambda: SDTest.Call('Video_GetStatus', 'i')[0])
 check('Engine_IsFullScreen', lambda: SDTest.Call('Engine_IsFullScreen', 'b')[0])
 check('Keys_SkipPressed', lambda: SDTest.Call('Keys_SkipPressed', 'b')[0])
@@ -80,27 +80,27 @@ SDTest.Poke('g_EnvMap', smenv)
 
 smini = SDTest.Peek('str_431bf0', 's')
 for n in ('sdtest', 'levels/sd/sd2.txt', 'C:\\sd\\x', ''):
-	# with one empty path Ruta_Merge of the exe returns garbage (al 0), the C returns dest: no return then
+	# with one empty path Path_Merge of the exe returns garbage (al 0), the C returns dest: no return then
 	check('Engine_SetIniName' + fmt((n,)), lambda n=n: ((SDTest.Call('Engine_SetIniName', 'is', n)[0] == symva('str_431bf0')) or n == '',
 		SDTest.Peek('str_431bf0', 's')))
 	smstr(sym('str_431bf0'), smini)
 check('Engine_SetIniName back', lambda: SDTest.Peek('str_431bf0', 's'))
-smsuelo = (SDTest.Peek('g_SueloPath', 's'), smints(sym('g_SueloEscala'), 3))
+smsuelo = (SDTest.Peek('g_GroundPath', 's'), smints(sym('g_GroundScale'), 3))
 for d, n, e in (('levels/sd', 'map', (1.0, 2.0, 3.0)), ('', '', (-0.5, 1e10, 0.0))):
-	check('Engine_SetSuelo' + fmt((d, n, e)), lambda d=d, n=n, e=e: (SDTest.Call('Engine_SetSuelo', 'vssF', d, n, e),
-		SDTest.Peek('g_SueloPath', 's'), smfl(symva('g_SueloEscala'), 3)))
-smstr(sym('g_SueloPath'), smsuelo[0])
-smpoke(sym('g_SueloEscala'), smsuelo[1])
-check('Engine_SetSuelo back', lambda: (SDTest.Peek('g_SueloPath', 's'), smints(sym('g_SueloEscala'), 3) == smsuelo[1]))
+	check('Engine_SetGround' + fmt((d, n, e)), lambda d=d, n=n, e=e: (SDTest.Call('Engine_SetGround', 'vssF', d, n, e),
+		SDTest.Peek('g_GroundPath', 's'), smfl(symva('g_GroundScale'), 3)))
+smstr(sym('g_GroundPath'), smsuelo[0])
+smpoke(sym('g_GroundScale'), smsuelo[1])
+check('Engine_SetGround back', lambda: (SDTest.Peek('g_GroundPath', 's'), smints(sym('g_GroundScale'), 3) == smsuelo[1]))
 
 for p, n in (('*.ini', 'm3d.ini'), ('M3D*', 'm3d.ini'), ('[a-c]?x', 'bzx'), ('', ''), ('a*b', 'axxb'), ('a*b', 'axxc')):
 	check('Wild_MatchCase' + fmt((p, n)), lambda p=p, n=n: SDTest.Call('Wild_MatchCase', 'bssi', p, n, 0)[0])
 
 # the m3d.ini helpers on m3d.ini of the packs with some keys of their own
-smi = SDTest.Call('CArchINI_ctor', 'tii', smz(4))[0]
-check('CArchINI_Load m3d.ini', lambda: SDTest.Call('CArchINI_Load', 'tiiszi', smi, 'm3d.ini', None, 0)[0])
+smi = SDTest.Call('CIniFile_ctor', 'tii', smz(4))[0]
+check('CIniFile_Load m3d.ini', lambda: SDTest.Call('CIniFile_Load', 'tiiszi', smi, 'm3d.ini', None, 0)[0])
 for k, v in (('c1', '10 20 30 0.5'), ('c2', '255,128,0,2'), ('c3', 'abc'), ('c4', '300 -1 7 1e3')):
-	SDTest.Call('CArchINI_SetStr', 'tiisss', smi, 'sd', k, v)
+	SDTest.Call('CIniFile_SetStr', 'tiisss', smi, 'sd', k, v)
 smcol = smz(8)
 # Proc_Scan crashes on texts that are not number lists ('abc'), in both runs
 def smnums(t):
@@ -108,9 +108,9 @@ def smnums(t):
 		if not c in '0123456789.,- ':
 			return 0
 	return 1
-for s, k in (('sd', 'c1'), ('sd', 'c2'), ('sd', 'c3'), ('sd', 'c4'), ('suelo', 'model_ambient'), ('niebla', 'color'),
+for s, k in (('sd', 'c1'), ('sd', 'c2'), ('sd', 'c3'), ('sd', 'c4'), ('ground', 'model_ambient'), ('fog', 'color'),
 		('none', 'x')):
-	txt = SDTest.Call('CArchINI_ReadText', 'tiissbi', smi, s, k, '', 0x40)
+	txt = SDTest.Call('CIniFile_ReadText', 'tiissbi', smi, s, k, '', 0x40)
 	check('Ini text' + fmt((s, k)), lambda txt=txt: txt)
 	# only the texts with four values: another count is a CHECK
 	n = 0
@@ -124,7 +124,7 @@ for s, k in (('sd', 'c1'), ('sd', 'c2'), ('sd', 'c3'), ('sd', 'c4'), ('suelo', '
 		for size in (0x104, 8):
 			check('Ini_GetPath' + fmt((s, k, base, size)), lambda s=s, k=k, base=base, size=size:
 				SDTest.Call('Ini_GetPath', 'issbisi', s, k, '', size, base, smi))
-SDTest.Call('CArchINI_dtor', 'tvi', smi)
+SDTest.Call('CIniFile_dtor', 'tvi', smi)
 
 check('DVF_Process name', lambda: (SDTest.Call('DVF_Process', 'vsi', 'sddvf', 0), SDTest.Peek('g_DVFName', 's'),
 	SDTest.Call('DVF_Process', 'vzi', None, 7), SDTest.Peek('g_DVFName', 's')))
@@ -149,7 +149,7 @@ smpoke(sym('g_MatProj'), smmats[1])
 
 # the text functions: the cursor of Texto.c and the state of the two fonts of Eng_Printf
 def smcur():
-	return (SDTest.Peek('g_TextoX', 'i'), SDTest.Peek('g_TextoY', 'i'))
+	return (SDTest.Peek('g_TextX', 'i'), SDTest.Peek('g_TextY', 'i'))
 smcur0 = smcur()
 check('Eng_PrintfXY', lambda: (SDTest.Call('Eng_PrintfXY', 'viisi', 100, 50, 'sd %d', 7), smcur()))
 check('Eng_PrintfXY none', lambda: (SDTest.Call('Eng_PrintfXY', 'viiz', 7, 9, None), smcur()))
@@ -157,8 +157,8 @@ check('Eng_PrintfRel', lambda: (SDTest.Call('Eng_PrintfRel', 'viiss', 10, -20, '
 for p in ((0.0, 0.0, 0.0), (10.0, 50.0, 300.0)):
 	check('Eng_Printf3D' + fmt(p), lambda p=p: (SDTest.Call('Eng_Printf3D', 'vFsi', p, '3d %d', 3), smcur()))
 check('Eng_Printf3D none', lambda: (SDTest.Call('Eng_Printf3D', 'vFz', (1.0, 2.0, 3.0), None), smcur()))
-SDTest.Poke('g_TextoX', smcur0[0])
-SDTest.Poke('g_TextoY', smcur0[1])
+SDTest.Poke('g_TextX', smcur0[0])
+SDTest.Poke('g_TextY', smcur0[1])
 smfonts = (SDTest.Peek('g_FontBigNumbers', 'i'), SDTest.Peek('g_FontHoratio', 'i'))
 if smfonts[0] and smfonts[1]:
 	# the font prints CHECK the viewport size
@@ -189,7 +189,7 @@ smpoke(sym('g_ViewportFull'), smvp[3])
 # the frame setup (as the engine does it every frame) when no callback would run
 def smsetup():
 	return (SDTest.Peek('g_ShowCollision', 'i'), SDTest.Peek('g_WireFrame', 'i'), SDTest.Peek('g_LightmapMode2', 'i'), SDTest.Peek('g_LightmapOff', 'i'),
-		SDTest.Peek('g_ModelosOn', 'b'), SDTest.Peek('g_UsarVB', 'b'), SDTest.Peek('g_AmbientD3D', 'i'), smfl(symva('g_CollisionEpsilon'), 1))
+		SDTest.Peek('g_ModelsOn', 'b'), SDTest.Peek('g_UseVB', 'b'), SDTest.Peek('g_AmbientD3D', 'i'), smfl(symva('g_CollisionEpsilon'), 1))
 if SDTest.Peek(sym('g_EngCallbacks') + 0x4, 'i') == 0 or SDTest.Peek('g_CallbacksOn', 'b') == 0:
 	check('Engine_FrameSetup', lambda: (smlog(lambda: SDTest.Call('Engine_FrameSetup', 'b')[0]), smsetup()))
 

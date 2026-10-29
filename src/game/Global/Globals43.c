@@ -22,7 +22,7 @@ SD_SYM(Bloom_IsOn);
 SD_SYM(Bloom_Render);
 SD_SYM(Blur_IsOn);
 SD_SYM(Blur_Render);
-SD_SYM(CListaMat_vftable);
+SD_SYM(CMatList_vftable);
 SD_SYM(DuDv_IsOn);
 SD_SYM(DuDv_Render);
 SD_SYM(MotionBlur_IsOn);
@@ -258,18 +258,19 @@ SD_SYM(str_PyMethod_SWeap_SetSWeap);
 #undef FXV_XFIRE_RAMPS
 #undef crt_security_cookie
 #undef g_AnimFpsDefault
-#undef g_Anisotropia
-#undef g_ArchErr
+#undef g_AnisotropyCur
 #undef g_AseError
+#undef g_BackgroundColor
+#undef g_BackgroundColorNew
 #undef g_BlendModeTable
 #undef g_BlendTable
-#undef g_BspColores
+#undef g_BspColors
 #undef g_BspDebugSel
 #undef g_BspLodDist
 #undef g_BspQ3LMapNoBlend
 #undef g_CallbacksOn
 #undef g_CamCompositeFPS
-#undef g_CamaraNodos
+#undef g_CameraNodes
 #undef g_CollideAddColor
 #undef g_CollisionEpsilon
 #undef g_ConDlgPrompt
@@ -278,20 +279,25 @@ SD_SYM(str_PyMethod_SWeap_SetSWeap);
 #undef g_DbgCharMap
 #undef g_DebugIdentity
 #undef g_DiffuseMod4x
-#undef g_EntradaCursor
+#undef g_Dither
+#undef g_Engine431bae
+#undef g_EngineDef1cf4
 #undef g_ErrTable
 #undef g_FXInfernoRamp
-#undef g_FiltroMag
-#undef g_FiltroMin
-#undef g_FiltroMip
+#undef g_FileErr
+#undef g_FilterMag
+#undef g_FilterMin
+#undef g_FilterMip
 #undef g_FireDropRamps
-#undef g_FlareAtenDistFin
-#undef g_FlareAtenDistIni
-#undef g_FlareFundidoEnt
-#undef g_FlareFundidoSal
-#undef g_FlareTam
-#undef g_FondoColor
-#undef g_FondoColorNuevo
+#undef g_FlareAttenDistEnd
+#undef g_FlareAttenDistIni
+#undef g_FlareFadeIn
+#undef g_FlareFadeOut
+#undef g_FlareSize
+#undef g_FogDensityIni
+#undef g_FogLinear
+#undef g_FogRangeEnd
+#undef g_FogRangeIni
 #undef g_FontsDir
 #undef g_Fps
 #undef g_FpsScale
@@ -300,31 +306,24 @@ SD_SYM(str_PyMethod_SWeap_SetSWeap);
 #undef g_GammaLastRGB
 #undef g_GammaLastRed
 #undef g_GammaLastScale
-#undef g_Grafico2DRot
-#undef g_IlumSmooth
+#undef g_Graphic2DRot
+#undef g_GroundScale
+#undef g_GroundTrisPerNode
+#undef g_IllumSmooth
+#undef g_InputCursor
 #undef g_LexCh
 #undef g_LightmapOp
-#undef g_ListaMat
 #undef g_LmapInfo2
 #undef g_LoadingScreen
 #undef g_LogConMask
 #undef g_M3DOk
-#undef g_MallaD3DOn
-#undef g_MapaSombrasBrillo
-#undef g_MapaSombrasCoefRad
-#undef g_MapaSombrasDlg
-#undef g_MapaSombrasEscala
-#undef g_MapaSombrasGamma
-#undef g_MapaSombrasRebotes
-#undef g_MapaSombrasResol
-#undef g_MapaSombrasTexX
-#undef g_MapaSombrasTexY
+#undef g_MatList
 #undef g_MaxLightmap
-#undef g_MaxPuntos
-#undef g_MaxTriGrupo
-#undef g_ModelosOn
-#undef g_Motor431bae
-#undef g_MotorDef1cf4
+#undef g_MaxPoints
+#undef g_MaxTriGroup
+#undef g_MeshD3DOn
+#undef g_ModelsOn
+#undef g_MouseExcl
 #undef g_MusicChannel
 #undef g_MusicFade
 #undef g_MusicFadeSpeed
@@ -333,16 +332,8 @@ SD_SYM(str_PyMethod_SWeap_SetSWeap);
 #undef g_MusicVoiceoverSpeed
 #undef g_MusicVoiceoverTarget
 #undef g_MusicVolume
-#undef g_NieblaDensidad
-#undef g_NieblaLineal
-#undef g_NieblaRangoFin
-#undef g_NieblaRangoIni
 #undef g_NodeEffectSect
 #undef g_PSNames
-#undef g_Pantalla2DH
-#undef g_Pantalla2DInvH
-#undef g_Pantalla2DInvW
-#undef g_Pantalla2DW
 #undef g_ProcRangeByte
 #undef g_ProcRangeChar
 #undef g_ProcRangeShort
@@ -350,13 +341,25 @@ SD_SYM(str_PyMethod_SWeap_SetSWeap);
 #undef g_ProcTypes
 #undef g_RTFxOn
 #undef g_RTFxRender
-#undef g_RatonExcl
 #undef g_ResetDevOnly
 #undef g_SceneCheckedMode
 #undef g_SceneDuDvCheckedMode
+#undef g_Screen2DH
+#undef g_Screen2DInvH
+#undef g_Screen2DInvW
+#undef g_Screen2DW
 #undef g_ShaderTab
 #undef g_ShaderTab2
-#undef g_ShadowLightTipo
+#undef g_ShadowLightType
+#undef g_ShadowMapBounces
+#undef g_ShadowMapBrightness
+#undef g_ShadowMapCoefRad
+#undef g_ShadowMapDlg
+#undef g_ShadowMapGamma
+#undef g_ShadowMapRes
+#undef g_ShadowMapScale
+#undef g_ShadowMapTexX
+#undef g_ShadowMapTexY
 #undef g_ShadowRange
 #undef g_ShotNum
 #undef g_SndFreqScale
@@ -366,27 +369,24 @@ SD_SYM(str_PyMethod_SWeap_SetSWeap);
 #undef g_Sprite2DScaleA
 #undef g_Sprite2DScaleB
 #undef g_StencilMultFrame
-#undef g_SueloEscala
-#undef g_SueloTrisPerNode
 #undef g_TexFixedBPP
 #undef g_TexMipFadeOn
 #undef g_TextBPP
 #undef g_TextOpBPP
 #undef g_ThousandsSep
-#undef g_TiempoMult
 #undef g_Tiles
+#undef g_TimeMult
 #undef g_TimerQPFreq
 #undef g_TimerQPMult
-#undef g_Tramas
 #undef g_TranspGroup
-#undef g_UsarBumpMap
-#undef g_UsarEnvMap
-#undef g_UsarGlowMap
-#undef g_UsarHWEnvMap
-#undef g_UsarShaders
-#undef g_UsarShaders2
-#undef g_UsarTexturas
-#undef g_UsarVB
+#undef g_UseBumpMap
+#undef g_UseEnvMap
+#undef g_UseGlowMap
+#undef g_UseHWEnvMap
+#undef g_UseShaders
+#undef g_UseShaders2
+#undef g_UseTextures
+#undef g_UseVB
 #undef g_ViewerSpeed
 #undef g_WideWinHeight
 #undef g_WideWinWidth
@@ -797,11 +797,11 @@ int g_WideWinHeight SD_AT(0x431abc) = 360;
 const char *g_ConDlgPrompt SD_AT(0x431ac0) = (void *)sd_str_Empty;
 int g_ConInputH SD_AT(0x431ae0) = 20;
 byte g_CallbacksOn SD_AT(0x431ae4) = 1;
-int g_NieblaLineal SD_AT(0x431ae8) = 1;
-float g_NieblaRangoIni SD_AT(0x431aec) = 0.5f;
-float g_NieblaRangoFin SD_AT(0x431af0) = 1.0f;
-float g_NieblaDensidad SD_AT(0x431af4) = 0.5f;
-vec3_t g_SueloEscala SD_AT(0x431af8) = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
+int g_FogLinear SD_AT(0x431ae8) = 1;
+float g_FogRangeIni SD_AT(0x431aec) = 0.5f;
+float g_FogRangeEnd SD_AT(0x431af0) = 1.0f;
+float g_FogDensityIni SD_AT(0x431af4) = 0.5f;
+vec3_t g_GroundScale SD_AT(0x431af8) = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
 float g_ViewerSpeed SD_AT(0x431b04) = 1.0f;
 int g_LoadingScreen SD_AT(0x431b08) = -1;
 uint32_t data_431b0c SD_AT(0x431b0c);
@@ -825,31 +825,31 @@ float g_Sprite2DScaleB[2] SD_AT(0x431b9c) = { 1.0f, 1.0f };
 uint32_t data_431ba4 SD_AT(0x431ba4);
 float g_Fps SD_AT(0x431ba8) = 30.0f;
 struct {
-	byte g_UsarVB;	/* 0x0 */
-	byte g_MallaD3DOn;	/* 0x1 */
-	byte g_Motor431bae;	/* 0x2 */
+	byte g_UseVB;	/* 0x0 */
+	byte g_MeshD3DOn;	/* 0x1 */
+	byte g_Engine431bae;	/* 0x2 */
 	byte g_ResetDevOnly;	/* 0x3 */
-} group_431bac SD_AT(0x431bac) = { .g_UsarVB = 1, .g_MallaD3DOn = 1, .g_Motor431bae = 1, .g_ResetDevOnly = 1 };
-float motorIni_431bb0 SD_AT(0x431bb0) = 0.35f;
-uint32_t motorIni_431bb4 SD_AT(0x431bb4) = 0x7fffffff;
-uint32_t motorIni_431bb8 SD_AT(0x431bb8) = 1;
-uint32_t motorIni_431bbc SD_AT(0x431bbc) = 1;
-int g_SueloTrisPerNode SD_AT(0x431bc0) = 80;
-int g_CamaraNodos SD_AT(0x431bc4) = 1;
-uint32_t motorIni_431bc8 SD_AT(0x431bc8) = 1;
-int g_UsarTexturas SD_AT(0x431bcc) = 1;
-uint32_t motorIni_431bd0 SD_AT(0x431bd0) = 1;
-int g_Tramas SD_AT(0x431bd4) = 1;
-int g_UsarEnvMap SD_AT(0x431bd8) = 1;
-int g_UsarHWEnvMap SD_AT(0x431bdc) = 1;
-int g_UsarBumpMap SD_AT(0x431be0) = 1;
-int g_UsarGlowMap SD_AT(0x431be4) = 1;
+} group_431bac SD_AT(0x431bac) = { .g_UseVB = 1, .g_MeshD3DOn = 1, .g_Engine431bae = 1, .g_ResetDevOnly = 1 };
+float engineIni_431bb0 SD_AT(0x431bb0) = 0.35f;
+uint32_t engineIni_431bb4 SD_AT(0x431bb4) = 0x7fffffff;
+uint32_t engineIni_431bb8 SD_AT(0x431bb8) = 1;
+uint32_t engineIni_431bbc SD_AT(0x431bbc) = 1;
+int g_GroundTrisPerNode SD_AT(0x431bc0) = 80;
+int g_CameraNodes SD_AT(0x431bc4) = 1;
+uint32_t engineIni_431bc8 SD_AT(0x431bc8) = 1;
+int g_UseTextures SD_AT(0x431bcc) = 1;
+uint32_t engineIni_431bd0 SD_AT(0x431bd0) = 1;
+int g_Dither SD_AT(0x431bd4) = 1;
+int g_UseEnvMap SD_AT(0x431bd8) = 1;
+int g_UseHWEnvMap SD_AT(0x431bdc) = 1;
+int g_UseBumpMap SD_AT(0x431be0) = 1;
+int g_UseGlowMap SD_AT(0x431be4) = 1;
 int g_DiffuseMod4x SD_AT(0x431be8) = 1;
-int g_TiempoMult SD_AT(0x431bec) = 25;
+int g_TimeMult SD_AT(0x431bec) = 25;
 char g_DbgCharMap[132] SD_AT(0x431c70);
-int g_MotorDef1cf4 SD_AT(0x431cf4) = 16;
-uint32_t motorIni_431cf8 SD_AT(0x431cf8) = 1;
-int g_RatonExcl SD_AT(0x431cfc) = 1;
+int g_EngineDef1cf4 SD_AT(0x431cf4) = 16;
+uint32_t engineIni_431cf8 SD_AT(0x431cf8) = 1;
+int g_MouseExcl SD_AT(0x431cfc) = 1;
 float g_FpsScale SD_AT(0x431d00) = 100.0f;
 float g_MusicVolume SD_AT(0x431d04) = 1.0f;
 float g_MusicVoiceover SD_AT(0x431d08) = 1.0f;
@@ -859,15 +859,15 @@ float g_MusicVoiceoverSpeed SD_AT(0x431d14) = 1.0f;
 float g_MusicFadeTarget SD_AT(0x431d18) = 1.0f;
 float g_MusicFadeSpeed SD_AT(0x431d1c) = 1.0f;
 float g_AnimFpsDefault SD_AT(0x431d20) = 25.0f;
-CListaMat g_ListaMat SD_AT(0x431d24) = { .vftable = (void *)sd_CListaMat_vftable };
+CMatList g_MatList SD_AT(0x431d24) = { .vftable = (void *)sd_CMatList_vftable };
 uint32_t g_BlendTable[6] SD_AT(0x431d34) = { 1, 2, 3, 4, 5, 6 };
 uint32_t g_LogConMask SD_AT(0x431d4c) = 65535;
 uint32_t data_431d50[8] SD_AT(0x431d50) = { 0xe3e2a0e0, 0xe7e6e5e4, 0xebea82e8, 0xefeea1ec, 0xa2f2f1f0, 0xf7f6f5f4, 0xfba3f9f8, 0xfffefdfc };
-uint32_t g_FiltroMip SD_AT(0x431d70) = 1;
-uint32_t motorIni_431d74 SD_AT(0x431d74) = 2;
-uint32_t g_Anisotropia SD_AT(0x431d78) = 2;
-uint32_t g_FiltroMin SD_AT(0x431d7c) = 2;
-uint32_t g_FiltroMag SD_AT(0x431d80) = 2;
+uint32_t g_FilterMip SD_AT(0x431d70) = 1;
+uint32_t engineIni_431d74 SD_AT(0x431d74) = 2;
+uint32_t g_AnisotropyCur SD_AT(0x431d78) = 2;
+uint32_t g_FilterMin SD_AT(0x431d7c) = 2;
+uint32_t g_FilterMag SD_AT(0x431d80) = 2;
 uint32_t data_431d84 SD_AT(0x431d84);
 const char *g_PSNames[32] SD_AT(0x431d88) = {
 	(void *)sd_str_3d8e70, (void *)sd_str_3d8e84, (void *)sd_str_3d8e98, (void *)sd_str_3d8eb4,
@@ -880,280 +880,280 @@ const char *g_PSNames[32] SD_AT(0x431d88) = {
 	(void *)sd_str_3d90d4, (void *)sd_str_3d90e8,
 };
 ShaderTab g_ShaderTab[32] SD_AT(0x431e08) = {
-	{ .Nombre = (void *)sd_str_3d9104, .flags = 257, .fnRender = (void *)sd_Render_PSFixed },
+	{ .Name = (void *)sd_str_3d9104, .flags = 257, .fnRender = (void *)sd_Render_PSFixed },
 	{
 		.Index = 1,
-		.Nombre = (void *)sd_str_3d910c,
-		.Archivo = (void *)sd_str_3d8f68,
+		.Name = (void *)sd_str_3d910c,
+		.File = (void *)sd_str_3d8f68,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Envmap,
 	},
 	{
 		.Index = 2,
-		.Nombre = (void *)sd_str_3d9114,
-		.Archivo = (void *)sd_str_3d8ec8,
+		.Name = (void *)sd_str_3d9114,
+		.File = (void *)sd_str_3d8ec8,
 		.flags = 256,
 		.fnRender = (void *)sd_Shader_MaskEnvmap,
 	},
 	{
 		.Index = 3,
-		.Nombre = (void *)sd_str_3d9120,
-		.Archivo = (void *)sd_str_3d8eb4,
+		.Name = (void *)sd_str_3d9120,
+		.File = (void *)sd_str_3d8eb4,
 		.flags = 256,
 		.fnRender = (void *)sd_Shader_MaskEnvBump,
 	},
 	{
 		.Index = 4,
-		.Nombre = (void *)sd_str_3d912c,
-		.Archivo = (void *)sd_str_3d8f90,
+		.Name = (void *)sd_str_3d912c,
+		.File = (void *)sd_str_3d8f90,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Glowmap,
 	},
 	{
 		.Index = 5,
-		.Nombre = (void *)sd_str_3d9134,
-		.Archivo = (void *)sd_str_3d8edc,
+		.Name = (void *)sd_str_3d9134,
+		.File = (void *)sd_str_3d8edc,
 		.flags = 256,
 		.fnRender = (void *)sd_Shader_GlowmapMaskEnvmap,
 	},
 	{
 		.Index = 6,
-		.Nombre = (void *)sd_str_3d9148,
-		.Archivo = (void *)sd_str_3d8e98,
+		.Name = (void *)sd_str_3d9148,
+		.File = (void *)sd_str_3d8e98,
 		.flags = 256,
 		.fnRender = (void *)sd_Shader_GlowmapMaskEnvBump,
 	},
 	{
 		.Index = 7,
-		.Nombre = (void *)sd_str_3d915c,
-		.Archivo = (void *)sd_str_3d8f54,
+		.Name = (void *)sd_str_3d915c,
+		.File = (void *)sd_str_3d8f54,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Clouds,
 	},
 	{
 		.Index = 8,
-		.Nombre = (void *)sd_str_3d9164,
-		.Archivo = (void *)sd_str_3d8fb8,
+		.Name = (void *)sd_str_3d9164,
+		.File = (void *)sd_str_3d8fb8,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Hologram,
 	},
-	{ .Index = 9, .Nombre = (void *)sd_str_3d9170, .flags = 257, .fnRender = (void *)sd_Shader_Glowmap },
+	{ .Index = 9, .Name = (void *)sd_str_3d9170, .flags = 257, .fnRender = (void *)sd_Shader_Glowmap },
 	{
 		.Index = 10,
-		.Nombre = (void *)sd_str_3d917c,
-		.Archivo = (void *)sd_str_3d8fe8,
+		.Name = (void *)sd_str_3d917c,
+		.File = (void *)sd_str_3d8fe8,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Electric,
 	},
 	{
 		.Index = 11,
-		.Nombre = (void *)sd_str_3bbe9c,
-		.Archivo = (void *)sd_str_3d8ffc,
+		.Name = (void *)sd_str_3bbe9c,
+		.File = (void *)sd_str_3d8ffc,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Fire,
 	},
 	{
 		.Index = 12,
-		.Nombre = (void *)sd_str_3d9188,
-		.Archivo = (void *)sd_str_3d900c,
+		.Name = (void *)sd_str_3d9188,
+		.File = (void *)sd_str_3d900c,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Glass,
 	},
 	{
 		.Index = 13,
-		.Nombre = (void *)sd_str_3d9190,
-		.Archivo = (void *)sd_str_3d901c,
+		.Name = (void *)sd_str_3d9190,
+		.File = (void *)sd_str_3d901c,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Waves,
 	},
-	{ .Index = 14, .Nombre = (void *)sd_str_3d9198, .flags = 257, .fnRender = (void *)sd_Shader_Scroll },
+	{ .Index = 14, .Name = (void *)sd_str_3d9198, .flags = 257, .fnRender = (void *)sd_Shader_Scroll },
 	{
 		.Index = 15,
-		.Nombre = (void *)sd_str_3c2ddc,
-		.Archivo = (void *)sd_str_3d902c,
+		.Name = (void *)sd_str_3c2ddc,
+		.File = (void *)sd_str_3d902c,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Noise,
 	},
 	{
 		.Index = 16,
-		.Nombre = (void *)sd_str_3d91a0,
-		.Archivo = (void *)sd_str_3d903c,
+		.Name = (void *)sd_str_3d91a0,
+		.File = (void *)sd_str_3d903c,
 		.flags = 257,
 		.fnRender = (void *)sd_Render_PS0,
 	},
 	{
 		.Index = 17,
-		.Nombre = (void *)sd_str_3d91ac,
-		.Archivo = (void *)sd_str_3d9050,
+		.Name = (void *)sd_str_3d91ac,
+		.File = (void *)sd_str_3d9050,
 		.flags = 257,
 		.fnRender = (void *)sd_Render_PS1,
 	},
 	{
 		.Index = 18,
-		.Nombre = (void *)sd_str_3d91b8,
-		.Archivo = (void *)sd_str_3d9064,
+		.Name = (void *)sd_str_3d91b8,
+		.File = (void *)sd_str_3d9064,
 		.flags = 257,
 		.fnRender = (void *)sd_Render_PS2,
 	},
 	{
 		.Index = 19,
-		.Nombre = (void *)sd_str_3d91c4,
-		.Archivo = (void *)sd_str_3d9078,
+		.Name = (void *)sd_str_3d91c4,
+		.File = (void *)sd_str_3d9078,
 		.flags = 257,
 		.fnRender = (void *)sd_Render_PS3,
 	},
 	{
 		.Index = 20,
-		.Nombre = (void *)sd_str_3d91d4,
-		.Archivo = (void *)sd_str_3d9090,
+		.Name = (void *)sd_str_3d91d4,
+		.File = (void *)sd_str_3d9090,
 		.flags = 257,
 		.fnRender = (void *)sd_Render_PS4,
 	},
 	{
 		.Index = 21,
-		.Nombre = (void *)sd_str_3d91e8,
-		.Archivo = (void *)sd_str_3d90ac,
+		.Name = (void *)sd_str_3d91e8,
+		.File = (void *)sd_str_3d90ac,
 		.flags = 257,
 		.fnRender = (void *)sd_Render_PS5,
 	},
 	{
 		.Index = 22,
-		.Nombre = (void *)sd_str_3d91f4,
-		.Archivo = (void *)sd_str_3d90c0,
+		.Name = (void *)sd_str_3d91f4,
+		.File = (void *)sd_str_3d90c0,
 		.flags = 257,
 		.fnRender = (void *)sd_Render_PS6,
 	},
 	{
 		.Index = 23,
-		.Nombre = (void *)sd_str_3d9200,
-		.Archivo = (void *)sd_str_3d90d4,
+		.Name = (void *)sd_str_3d9200,
+		.File = (void *)sd_str_3d90d4,
 		.flags = 257,
 		.fnRender = (void *)sd_Render_PS7,
 	},
 	{
 		.Index = 24,
-		.Nombre = (void *)sd_str_3d920c,
-		.Archivo = (void *)sd_str_3d90e8,
+		.Name = (void *)sd_str_3d920c,
+		.File = (void *)sd_str_3d90e8,
 		.flags = 257,
 		.fnRender = (void *)sd_Render_PS8,
 	},
-	{ .Index = 25, .Nombre = (void *)sd_str_3d9220, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseNoLit },
+	{ .Index = 25, .Name = (void *)sd_str_3d9220, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseNoLit },
 };
 ShaderTab g_ShaderTab2[32] SD_AT(0x432108) = {
-	{ .Nombre = (void *)sd_str_3d9104, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseLightmap },
+	{ .Name = (void *)sd_str_3d9104, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseLightmap },
 	{
 		.Index = 1,
-		.Nombre = (void *)sd_str_3d910c,
-		.Archivo = (void *)sd_str_3d8f78,
+		.Name = (void *)sd_str_3d910c,
+		.File = (void *)sd_str_3d8f78,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_EnvmapLightmap,
 	},
 	{
 		.Index = 2,
-		.Nombre = (void *)sd_str_3d9114,
-		.Archivo = (void *)sd_str_3d8f38,
+		.Name = (void *)sd_str_3d9114,
+		.File = (void *)sd_str_3d8f38,
 		.flags = 256,
 		.fnRender = (void *)sd_Shader_MaskEnvmapLightmap,
 	},
 	{
 		.Index = 3,
-		.Nombre = (void *)sd_str_3d9120,
-		.Archivo = (void *)sd_str_3d8f1c,
+		.Name = (void *)sd_str_3d9120,
+		.File = (void *)sd_str_3d8f1c,
 		.flags = 256,
 		.fnRender = (void *)sd_Shader_MaskEnvBumpLightmap,
 	},
 	{
 		.Index = 4,
-		.Nombre = (void *)sd_str_3d912c,
-		.Archivo = (void *)sd_str_3d8fa0,
+		.Name = (void *)sd_str_3d912c,
+		.File = (void *)sd_str_3d8fa0,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_GlowmapLightmap,
 	},
 	{
 		.Index = 5,
-		.Nombre = (void *)sd_str_3d9134,
-		.Archivo = (void *)sd_str_3d8ef8,
+		.Name = (void *)sd_str_3d9134,
+		.File = (void *)sd_str_3d8ef8,
 		.flags = 256,
 		.fnRender = (void *)sd_Shader_GlowmapMaskEnvmapLightmap,
 	},
 	{
 		.Index = 6,
-		.Nombre = (void *)sd_str_3d9148,
-		.Archivo = (void *)sd_str_3d8ef8,
+		.Name = (void *)sd_str_3d9148,
+		.File = (void *)sd_str_3d8ef8,
 		.flags = 256,
 		.fnRender = (void *)sd_Shader_GlowmapMaskEnvBump,
 	},
-	{ .Index = 7, .Nombre = (void *)sd_str_3d915c, .flags = 257, .fnRender = (void *)sd_Shader_Clouds },
+	{ .Index = 7, .Name = (void *)sd_str_3d915c, .flags = 257, .fnRender = (void *)sd_Shader_Clouds },
 	{
 		.Index = 8,
-		.Nombre = (void *)sd_str_3d9164,
-		.Archivo = (void *)sd_str_3d8fb8,
+		.Name = (void *)sd_str_3d9164,
+		.File = (void *)sd_str_3d8fb8,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Hologram,
 	},
 	{
 		.Index = 9,
-		.Nombre = (void *)sd_str_3d9170,
-		.Archivo = (void *)sd_str_3d8fcc,
+		.Name = (void *)sd_str_3d9170,
+		.File = (void *)sd_str_3d8fcc,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_GlowFlickLightmap,
 	},
 	{
 		.Index = 10,
-		.Nombre = (void *)sd_str_3d917c,
-		.Archivo = (void *)sd_str_3d8fe8,
+		.Name = (void *)sd_str_3d917c,
+		.File = (void *)sd_str_3d8fe8,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Electric,
 	},
 	{
 		.Index = 11,
-		.Nombre = (void *)sd_str_3bbe9c,
-		.Archivo = (void *)sd_str_3d8ffc,
+		.Name = (void *)sd_str_3bbe9c,
+		.File = (void *)sd_str_3d8ffc,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Fire,
 	},
 	{
 		.Index = 12,
-		.Nombre = (void *)sd_str_3d9188,
-		.Archivo = (void *)sd_str_3d900c,
+		.Name = (void *)sd_str_3d9188,
+		.File = (void *)sd_str_3d900c,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Glass,
 	},
 	{
 		.Index = 13,
-		.Nombre = (void *)sd_str_3d9190,
-		.Archivo = (void *)sd_str_3d901c,
+		.Name = (void *)sd_str_3d9190,
+		.File = (void *)sd_str_3d901c,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Waves,
 	},
-	{ .Index = 14, .Nombre = (void *)sd_str_3d9198, .flags = 257, .fnRender = (void *)sd_Shader_ScrollLightmap },
+	{ .Index = 14, .Name = (void *)sd_str_3d9198, .flags = 257, .fnRender = (void *)sd_Shader_ScrollLightmap },
 	{
 		.Index = 15,
-		.Nombre = (void *)sd_str_3c2ddc,
-		.Archivo = (void *)sd_str_3d902c,
+		.Name = (void *)sd_str_3c2ddc,
+		.File = (void *)sd_str_3d902c,
 		.flags = 257,
 		.fnRender = (void *)sd_Shader_Noise,
 	},
-	{ .Index = 16, .Nombre = (void *)sd_str_3d91a0, .flags = 257 },
-	{ .Index = 17, .Nombre = (void *)sd_str_3d91ac, .flags = 257 },
-	{ .Index = 18, .Nombre = (void *)sd_str_3d91b8, .flags = 257 },
-	{ .Index = 19, .Nombre = (void *)sd_str_3d91c4, .flags = 257 },
-	{ .Index = 20, .Nombre = (void *)sd_str_3d91d4, .flags = 257 },
-	{ .Index = 21, .Nombre = (void *)sd_str_3d91e8, .flags = 257 },
-	{ .Index = 22, .Nombre = (void *)sd_str_3d91f4, .flags = 257 },
-	{ .Index = 23, .Nombre = (void *)sd_str_3d9200, .flags = 257 },
-	{ .Index = 24, .Nombre = (void *)sd_str_3d920c, .flags = 257 },
-	{ .Index = 25, .Nombre = (void *)sd_str_3d9220, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseNoLit },
+	{ .Index = 16, .Name = (void *)sd_str_3d91a0, .flags = 257 },
+	{ .Index = 17, .Name = (void *)sd_str_3d91ac, .flags = 257 },
+	{ .Index = 18, .Name = (void *)sd_str_3d91b8, .flags = 257 },
+	{ .Index = 19, .Name = (void *)sd_str_3d91c4, .flags = 257 },
+	{ .Index = 20, .Name = (void *)sd_str_3d91d4, .flags = 257 },
+	{ .Index = 21, .Name = (void *)sd_str_3d91e8, .flags = 257 },
+	{ .Index = 22, .Name = (void *)sd_str_3d91f4, .flags = 257 },
+	{ .Index = 23, .Name = (void *)sd_str_3d9200, .flags = 257 },
+	{ .Index = 24, .Name = (void *)sd_str_3d920c, .flags = 257 },
+	{ .Index = 25, .Name = (void *)sd_str_3d9220, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseNoLit },
 };
 uint32_t g_LightmapOp SD_AT(0x432408) = 4;
 struct {
-	byte g_UsarShaders2;	/* 0x0 */
-	byte g_UsarShaders;	/* 0x1 */
+	byte g_UseShaders2;	/* 0x0 */
+	byte g_UseShaders;	/* 0x1 */
 	byte pad_2[2];
-} group_43240c SD_AT(0x43240c) = { .g_UsarShaders = 1 };
+} group_43240c SD_AT(0x43240c) = { .g_UseShaders = 1 };
 int g_WorldSet SD_AT(0x432410) = 1;
 int g_Tiles SD_AT(0x432414) = 4;
-byte g_ModelosOn SD_AT(0x432418) = 1;
+byte g_ModelsOn SD_AT(0x432418) = 1;
 float g_CollisionEpsilon SD_AT(0x43241c) = 0.0001f;
 float g_CollideAddColor[4] SD_AT(0x432420) = { 0, 0, 0, 1.0f };
 procrange_t g_ProcRangeChar SD_AT(0x432430) = { .lo = -128, .hi = 127 };
@@ -1178,24 +1178,24 @@ cProcType g_ProcTypes[16] SD_AT(0x4324b8) = {
 	{ .name = (void *)sd_str_3dbf80, .data = (void *)sd_data_43249c },
 };
 float g_StencilMultFrame SD_AT(0x432578) = 1.0f;
-int g_ShadowLightTipo SD_AT(0x43257c) = 5002;
+int g_ShadowLightType SD_AT(0x43257c) = 5002;
 float g_ShadowRange SD_AT(0x432580) = 1000.0f;
-int g_MaxPuntos SD_AT(0x432584) = 4000;
+int g_MaxPoints SD_AT(0x432584) = 4000;
 int g_TimerQPMult SD_AT(0x432588) = 1;
 int g_DXTimerStopped SD_AT(0x43258c) = 1;
 int64_t g_TimerQPFreq SD_AT(0x432590) = -1LL;
-int g_Pantalla2DW SD_AT(0x432598) = 800;
-int g_Pantalla2DH SD_AT(0x43259c) = 600;
-double g_Pantalla2DInvW SD_AT(0x4325a0) = 0.00125;
-double g_Pantalla2DInvH SD_AT(0x4325a8) = 0.0016666666666666668;
-int g_Grafico2DRot[5][4] SD_AT(0x4325b0) = {
+int g_Screen2DW SD_AT(0x432598) = 800;
+int g_Screen2DH SD_AT(0x43259c) = 600;
+double g_Screen2DInvW SD_AT(0x4325a0) = 0.00125;
+double g_Screen2DInvH SD_AT(0x4325a8) = 0.0016666666666666668;
+int g_Graphic2DRot[5][4] SD_AT(0x4325b0) = {
 	{ 0, 1, 2, 3 },
 	{ 2, 0, 3, 1 },
 	{ 3, 2, 1 },
 	{ 1, 3, 0, 2 },
 	{ (uintptr_t)(void *)sd_str_3de080, (uintptr_t)(void *)sd_str_3de088, 131, (uintptr_t)(void *)sd_str_3de0a4 },
 };
-void *CGrafico2D_Draw_432600[2] SD_AT(0x432600) = { (void *)sd_str_3aca10, (void *)sd_str_3de0b0 };
+void *CGraphic2D_Draw_432600[2] SD_AT(0x432600) = { (void *)sd_str_3aca10, (void *)sd_str_3de0b0 };
 const char *g_ErrTable[200] SD_AT(0x432618) = {
 	(void *)sd_str_3de0c4, (void *)sd_str_3de0cc, (void *)sd_str_3ca58c, (void *)sd_str_3de0e4,
 	(void *)sd_str_3de0f4, (void *)sd_str_3de110, (void *)sd_str_3de124, (void *)sd_str_3de140,
@@ -1215,24 +1215,24 @@ int g_TextOpBPP SD_AT(0x43293c) = 32;
 int g_TexMipFadeOn SD_AT(0x432940) = 1;
 int g_TexFixedBPP SD_AT(0x432944) = 24;
 int g_ShotNum SD_AT(0x432948) = -1;
-int g_MapaSombrasDlg SD_AT(0x43294c) = 1;
-float g_MapaSombrasEscala SD_AT(0x432950) = 1.0f;
-float g_MapaSombrasResol SD_AT(0x432954) = 0.5f;
-int g_MapaSombrasTexX SD_AT(0x432958) = 256;
-int g_MapaSombrasTexY SD_AT(0x43295c) = 256;
-float g_MapaSombrasGamma SD_AT(0x432960) = 1.0f;
-float g_MapaSombrasBrillo SD_AT(0x432964) = 1.0f;
-int g_MapaSombrasRebotes SD_AT(0x432968) = 1;
-float g_MapaSombrasCoefRad SD_AT(0x43296c) = 0.1f;
+int g_ShadowMapDlg SD_AT(0x43294c) = 1;
+float g_ShadowMapScale SD_AT(0x432950) = 1.0f;
+float g_ShadowMapRes SD_AT(0x432954) = 0.5f;
+int g_ShadowMapTexX SD_AT(0x432958) = 256;
+int g_ShadowMapTexY SD_AT(0x43295c) = 256;
+float g_ShadowMapGamma SD_AT(0x432960) = 1.0f;
+float g_ShadowMapBrightness SD_AT(0x432964) = 1.0f;
+int g_ShadowMapBounces SD_AT(0x432968) = 1;
+float g_ShadowMapCoefRad SD_AT(0x43296c) = 0.1f;
 int g_MaxLightmap SD_AT(0x432970) = 2;
 float g_BspLodDist[7] SD_AT(0x432974) = { 20.0f, 5.0f, 40.0f, 10.0f, 80.0f, 20.0f, 1e-45f };
 int g_LmapInfo2 SD_AT(0x432990) = 1;
 int g_BspDebugSel SD_AT(0x432994) = -1;
-float g_FlareTam SD_AT(0x432998) = 200.0f;
-float g_FlareAtenDistIni SD_AT(0x43299c) = 200.0f;
-float g_FlareAtenDistFin SD_AT(0x4329a0) = 3000.0f;
-float g_FlareFundidoEnt SD_AT(0x4329a4) = 8.0f;
-float g_FlareFundidoSal SD_AT(0x4329a8) = 8.0f;
+float g_FlareSize SD_AT(0x432998) = 200.0f;
+float g_FlareAttenDistIni SD_AT(0x43299c) = 200.0f;
+float g_FlareAttenDistEnd SD_AT(0x4329a0) = 3000.0f;
+float g_FlareFadeIn SD_AT(0x4329a4) = 8.0f;
+float g_FlareFadeOut SD_AT(0x4329a8) = 8.0f;
 uint32_t Engine_LoadIni_4329ac SD_AT(0x4329ac);
 BlendModeEntry g_BlendModeTable[7] SD_AT(0x4329b0) = {
 	{ .src = 2, .dst = 1 },
@@ -1243,21 +1243,21 @@ BlendModeEntry g_BlendModeTable[7] SD_AT(0x4329b0) = {
 	{ .mode = 5, .src = 1, .dst = 3 },
 	{ .mode = 6, .src = 2, .dst = 6 },
 };
-int g_ArchErr SD_AT(0x432a04) = -1;
-int32_t g_EntradaCursor[2] SD_AT(0x432a08) = { 100, 100 };
-uint32_t g_FondoColor SD_AT(0x432a10) = 0xffffff;
-uint32_t g_FondoColorNuevo SD_AT(0x432a14) = 0xffffff;
+int g_FileErr SD_AT(0x432a04) = -1;
+int32_t g_InputCursor[2] SD_AT(0x432a08) = { 100, 100 };
+uint32_t g_BackgroundColor SD_AT(0x432a10) = 0xffffff;
+uint32_t g_BackgroundColorNew SD_AT(0x432a14) = 0xffffff;
 float g_GammaLastRGB SD_AT(0x432a18) = 1.0f;
 float g_GammaLastScale SD_AT(0x432a1c) = 1.0f;
 float g_GammaLastRed SD_AT(0x432a20) = 1.0f;
 float g_GammaLastGreen SD_AT(0x432a24) = 1.0f;
 float g_GammaLastBlue SD_AT(0x432a28) = 1.0f;
 uint32_t data_432a2c SD_AT(0x432a2c);
-uint32_t g_BspColores[16] SD_AT(0x432a30) = {
+uint32_t g_BspColors[16] SD_AT(0x432a30) = {
 	0, 128, 32768, 32896, 0x800000, 0x800080, 0x808000, 0xc0c0c0, 0x808080, 255, 65280, 65535, 0xff0000, 0xff00ff,
 	0xffff00, 0xffffff,
 };
-int g_MaxTriGrupo SD_AT(0x432a70) = 2048;
+int g_MaxTriGroup SD_AT(0x432a70) = 2048;
 const char *g_NodeEffectSect SD_AT(0x432a74) = (void *)sd_str_3e3bc8;
 int g_TranspGroup SD_AT(0x432a78) = 1;
 struct {
@@ -1266,7 +1266,7 @@ struct {
 	byte pad_2[2];
 } group_432a7c SD_AT(0x432a7c) = { .g_M3DOk = 1, .g_BspQ3LMapNoBlend = 1 };
 int g_LexCh SD_AT(0x432a80) = -1;
-float g_IlumSmooth SD_AT(0x432a84) = 0.5f;
+float g_IllumSmooth SD_AT(0x432a84) = 0.5f;
 float data_432a98 SD_AT(0x432a98) = 1.0f;
 uint32_t data_432a9c[2] SD_AT(0x432a9c);
 float data_432aa4[13] SD_AT(0x432aa4) = { 0, 0, 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f };

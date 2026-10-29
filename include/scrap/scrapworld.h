@@ -25,8 +25,8 @@ SD_OFFSET(WorldNodeInfo, dummy, 0x8c);
 
 /* the state of the walk */
 #define g_CountSprite2D GAME_GLOBAL(int, g_CountSprite2D, 0x4a81f0)
-#define g_WorldInfoNode GAME_GLOBAL(CNodo3D *, g_WorldInfoNode, 0x4a81f4)
-#define g_WorldInfoDummy GAME_GLOBAL(MundoDummy *, g_WorldInfoDummy, 0x4a81f8)	/* DummyInfo */
+#define g_WorldInfoNode GAME_GLOBAL(CNode3D *, g_WorldInfoNode, 0x4a81f4)
+#define g_WorldInfoDummy GAME_GLOBAL(WorldDummy *, g_WorldInfoDummy, 0x4a81f8)	/* DummyInfo */
 #define g_WorldInfoWild GAME_GLOBAL(byte, g_WorldInfoWild, 0x4a81fc)
 #define g_WorldInfoPattern (GAME_ARRAY(char, g_WorldInfoPattern, 0x4a8200))	/* 0x104, "" for all */
 
@@ -39,7 +39,7 @@ SD_OFFSET(WorldNodeInfo, dummy, 0x8c);
 #define RENDERMODE_SHADOWS 0x103	/* toggles the stencil shadows */
 #define g_RenderMode100 GAME_GLOBAL_IN(byte, group_4a8efc, 1, 0x4a8efd)
 #define g_VertexSpecular GAME_GLOBAL_IN(byte, group_4a8efc, 0, 0x4a8efc)
-#define g_SombrasStencil GAME_GLOBAL(int, g_SombrasStencil, 0x4afdb0)	/* [sombras_stencil] usar */
+#define g_ShadowsStencil GAME_GLOBAL(int, g_ShadowsStencil, 0x4afdb0)	/* [sombras_stencil] use */
 
 /* the splash screens and the loading bar */
 #define g_SplashOn GAME_GLOBAL_IN(int, GVar_ShowSplashScreen, 16, 0x4a85c8)
@@ -56,8 +56,8 @@ typedef void (*loadingDraw_t)(void);
 #define g_LoadingDraw2 GAME_GLOBAL_IN(loadingDraw_t, g_EngCallbacks, 8, 0x4a831c)
 
 /* the world node info */
-void WorldInfo_FromDummy(WorldNodeInfo *info, const MundoDummy *dummy);
-void WorldInfo_FromNode(WorldNodeInfo *info, CNodo3D *node);
+void WorldInfo_FromDummy(WorldNodeInfo *info, const WorldDummy *dummy);
+void WorldInfo_FromNode(WorldNodeInfo *info, CNode3D *node);
 /* the walk from the start: the names that match pattern (NULL for all), lowercase wildcards with wild */
 void WorldInfo_Begin(const char *pattern, byte wild);
 void WorldInfo_Reset(void);
@@ -76,8 +76,8 @@ vec3_t *WorldInfo_GetVec3(vec3_t *out, const char *sect, const char *key, const 
 /* the box of the floor scene, of the collision of the floor */
 box_t *World_GetBox(box_t *out);
 box_t *World_GetCollideBox(box_t *out);
-/* the inline of suelo.h */
-box_t *__thiscall CSuelo_GetCollideExt(const CSuelo *self, box_t *out);
+/* the inline of ground.h */
+box_t *__thiscall CGround_GetCollideExt(const CGround *self, box_t *out);
 byte Sector_Visible(int sector);
 /* returns m (an inline of the matrix header, not optimized away) */
 matrix_t *Matrix_Self(matrix_t *m);

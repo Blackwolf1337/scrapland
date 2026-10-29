@@ -97,7 +97,7 @@ void __thiscall cModMove_Link(cModMove *self, const char *name, const char *node
 	CGameModel *mod = Obj_Vtbl(link)->GetModel(link);
 	CHECK(mod);
 	CHECK(CGameModel_IsLoaded(mod));
-	self->nodeIndex = CGameModel_FindNodoR(mod, node);
+	self->nodeIndex = CGameModel_FindRenderNode(mod, node);
 	CHECK(self->nodeIndex != -1);
 	Nto1Node_LinkTo(&ModMove_Obj(link)->mod.head, &self->link);
 }
@@ -124,7 +124,7 @@ void __thiscall cModMove_Update(cModMove *self, float dt) {
 	}
 	if (CGameModel_IsLoaded(Obj_Vtbl(link)->GetModel(link))) {
 		uint32_t slot = (uint32_t)Obj_Vtbl(link)->GetNodeSlot(link);
-		CGameModel_NodoMatrix(Obj_Vtbl(link)->GetModel(link), &mat, (uint32_t)self->nodeIndex, 1, NULL, slot);
+		CGameModel_NodeMatrix(Obj_Vtbl(link)->GetModel(link), &mat, (uint32_t)self->nodeIndex, 1, NULL, slot);
 		to.z = self->offPos.z + mat.m[14];
 		to.x = self->offPos.x + mat.m[12];
 		to.y = self->offPos.y + mat.m[13];

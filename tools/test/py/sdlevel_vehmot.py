@@ -27,7 +27,7 @@ def vmosetbyte(a, v):
 	vmopoke(a & ~3, (w & ~(0xff << sh)) | (v << sh))
 def vmostr(s):
 	a = vmoz(len(s) + 4)
-	SDTest.Call('Cad_Copy', 'iisi', a, s, len(s) + 1)
+	SDTest.Call('String_Copy', 'iisi', a, s, len(s) + 1)
 	return a
 def vmosrand(s):
 	SDTest.Call('crt_srand', 'vi', s)
@@ -439,8 +439,8 @@ if vmocar:
 					vmofl(e + 0xa4, 1), vmopart(vmops)))
 		for vmothr, vmosp, vmon in ((0.1, 0.0, 1), (0.9, 0.5, 2), (-1.0, 2.0, 3)):
 			vmosrand(97)
-			check('VMEffects_SetupCalima' + fmt((vmothr, vmosp, vmon)), lambda t=vmothr, s=vmosp, n=vmon:
-				(SDTest.Call('VMEffects_SetupCalima', 'tviffFii', 0, t, s, (10.0, 20.0, 30.0, -5.0, 0.0, 5.0, 1.0, 2.0, 3.0)[:3 * n],
+			check('VMEffects_SetupHaze' + fmt((vmothr, vmosp, vmon)), lambda t=vmothr, s=vmosp, n=vmon:
+				(SDTest.Call('VMEffects_SetupHaze', 'tviffFii', 0, t, s, (10.0, 20.0, 30.0, -5.0, 0.0, 5.0, 1.0, 2.0, 3.0)[:3 * n],
 				n, vmops), vmopart(vmops)))
 	# the update: a fixed frame time and the values of the embedded effects set by hand
 	if vmofx and vmops:

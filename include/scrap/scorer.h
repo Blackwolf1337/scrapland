@@ -104,7 +104,7 @@ typedef struct cScorer {
 	cScorerItem *items;		/* 0x40 linked by next, drawn in this order */
 	byte visible;			/* 0x44 SScorer.Show/Hide */
 	byte pad_45[3];
-	char *actual;			/* 0x48 cString, the name of the cursor item (SScorer.GetActual) */
+	char *current;			/* 0x48 cString, the name of the cursor item (SScorer.GetActual) */
 	char *defaultItem;		/* 0x4c SScorer.GetDefault */
 	cScorerItem *cursor;		/* 0x50 SScorer.SetCursor */
 	cPy_Function onCancel;		/* 0x54 */

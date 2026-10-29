@@ -633,7 +633,7 @@ void __thiscall cScraplandMainMenuScorer_Draw(cScraplandMainMenuScorer *self, in
 	for (int i = 0; i < 10; i++) {
 		float r = ScraplandScorer_Rand(GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3ae270, 0x3ae270), 0.0);
 		double s = Game_Sin((double)(self->now * 8.0f - (float)i)) + 1.0;
-		font->efectos = 0x40000;
+		font->effects = 0x40000;
 		font->align = 0;
 		font->color = (uint32_t)(int)(s * 90.0 + (double)r) << 24 | 0xb1eaff;
 		Font_TextSize(font, pos, dim, 0.0f, 0.0f, "%c", remastered[i]);

@@ -588,8 +588,8 @@ void __thiscall cAIControlMessenger_SetTurnSpeed(cAICharControl *self, float spe
 		self->turnGain = 30.0f;
 		self->turnStep = 20.0f;
 	}
-	self->f204 = g_VelRotDinamicMessengerAI;
-	self->f208 = g_LimVelRotDinamicMessengerAI;
+	self->f204 = g_VelRotDynamicMessengerAI;
+	self->f208 = g_LimVelRotDynamicMessengerAI;
 }
 
 /* ---- the nurse ---- */

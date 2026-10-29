@@ -98,22 +98,22 @@ static void Debug_SphereCenter(const matrix_t *m, const vec3_t *c, float r) {
 	Debug_DrawPointM(m, c, r, 0x640000);
 }
 
-void Debug_SphereLines(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int nEcu,
+void Debug_SphereLines(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int nEquator,
 	void (*center)(const matrix_t *m, const vec3_t *c, float r)) {
-	vec3_t pts[MAX_DIVY_ESFERA];
+	vec3_t pts[MAX_DIVY_SPHERE];
 
 	CHECK(divV > 1);
-	CHECK(nEcu > 1);
-	CHECK(nEcu < MAX_DIVY_ESFERA);
+	CHECK(nEquator > 1);
+	CHECK(nEquator < MAX_DIVY_SPHERE);
 	center(m, c, r);
 	Render_SetWorldMatrix(m, 0);
 	/* the half circle of the first meridian; two points at a time through the packed sin and cos like the
 	 * vectorised loop of the original, the last odd one through the scalar ones */
-	if (nEcu >= 0) {
-		float k = (float)(M_PI_D / (double)nEcu);
+	if (nEquator >= 0) {
+		float k = (float)(M_PI_D / (double)nEquator);
 		int i = 0;
-		if ((uint32_t)nEcu + 1 >= 2) {
-			int last = nEcu - (((uint32_t)nEcu + 1) & 1);
+		if ((uint32_t)nEquator + 1 >= 2) {
+			int last = nEquator - (((uint32_t)nEquator + 1) & 1);
 			do {
 				double a[2] = { (double)((float)i * k), (double)((float)(i + 1) * k) };
 				double s[2], co[2];
@@ -125,7 +125,7 @@ void Debug_SphereLines(const matrix_t *m, const vec3_t *c, float r, uint32_t col
 				i += 2;
 			} while (i <= last);
 		}
-		for (; i <= nEcu; i++) {
+		for (; i <= nEquator; i++) {
 			double a = (double)((float)i * k);
 			pts[i].x = (float)Game_Sin(a) * r + c->x;
 			pts[i].y = (float)Game_Cos(a) * r + c->y;
@@ -138,9 +138,9 @@ void Debug_SphereLines(const matrix_t *m, const vec3_t *c, float r, uint32_t col
 		float sv, cv;
 		X87_SinCos((float)j * kv, &sv, &cv);
 		int i = 1;
-		if (nEcu > 1) {
-			float kh = (float)(M_PI_D / (double)nEcu);
-			for (; i < nEcu; i++) {
+		if (nEquator > 1) {
+			float kh = (float)(M_PI_D / (double)nEquator);
+			for (; i < nEquator; i++) {
 				float s, co;
 				X87_SinCos((float)i * kh, &s, &co);
 				float sr = s * r;
@@ -186,27 +186,27 @@ void Debug_DrawTri(const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t c
 	Debug_DrawTriM(g_MatIdentity, a, b, c, color);
 }
 
-const char *Obj3D_ClaseName(uint32_t clase) {
-	switch (clase) {
+const char *Obj3D_ClassName(uint32_t class) {
+	switch (class) {
 	case 0:
 		return "(null)";
-	case CLASE_OBJ3D_MALLATRI:
+	case CLASS_OBJ3D_TRIMESH:
 		return "MallaTri";
-	case CLASE_OBJ3D_MALLAD3D:
+	case CLASS_OBJ3D_MESHD3D:
 		return "MallaD3D";
-	case CLASE_OBJ3D_CAMARA:
+	case CLASS_OBJ3D_CAMERA:
 		return "Camara";
-	case CLASE_OBJ3D_LUZ:
+	case CLASS_OBJ3D_LIGHT:
 		return "Luz";
-	case CLASE_OBJ3D_SUELO:
+	case CLASS_OBJ3D_GROUND:
 		return "Suelo";
-	case CLASE_OBJ3D_SISTPART:
+	case CLASS_OBJ3D_PARTICLESYSTEM:
 		return "SistPart";
-	case CLASE_OBJ3D_GRAFICO3D:
+	case CLASS_OBJ3D_GRAPHIC3D:
 		return "Grafico3D";
-	case CLASE_OBJ3D_FLARE:
+	case CLASS_OBJ3D_FLARE:
 		return "Flare";
-	case CLASE_OBJ3D_PORTAL:
+	case CLASS_OBJ3D_PORTAL:
 		return "Portal";
 	default:
 		return "otro";

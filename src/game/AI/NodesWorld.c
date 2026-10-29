@@ -181,7 +181,7 @@ CNodesWorld *__thiscall CNodesWorld_ctor(void *mem) {
 	self->vftable = CNODESWORLD_VFTABLE;
 	memset(&self->tris, 0, sizeof(self->tris));
 	self->file = NULL;
-	self->analizing = 0;
+	self->analyzing = 0;
 	if (g_IsMapOutDoor) {
 		g_NWNodeRadius = 751.0f;
 		g_NWF60 = 4000.0f;
@@ -524,7 +524,7 @@ byte __thiscall CNodesWorld_BufferPosSeen(CNodesWorld *self, const vec3_t *from,
 }
 
 byte __thiscall CNodesWorld_TestSurface(CNodesWorld *self, const vec3_t *a, const vec3_t *b, vec3_t *hit,
-	CColisTri *tri) {
+	CCollisionTri *tri) {
 	vec3_t n, v;
 
 	if (!Engine_TestLine(a, b, hit, tri)) {
@@ -536,7 +536,7 @@ byte __thiscall CNodesWorld_TestSurface(CNodesWorld *self, const vec3_t *a, cons
 		tri->hit.x = 3.4028234663852886e+38f;
 		return 1;
 	}
-	if (tri->noColisiones & 1) {
+	if (tri->noCollisions & 1) {
 		return 0;
 	}
 	float ax = a->x;
@@ -555,7 +555,7 @@ byte __thiscall CNodesWorld_TestSurface(CNodesWorld *self, const vec3_t *a, cons
 	return 1;
 }
 
-byte __thiscall CNodesWorld_TestSurfaceAround(CNodesWorld *self, const vec3_t *pos, vec3_t *hit, CColisTri *tri) {
+byte __thiscall CNodesWorld_TestSurfaceAround(CNodesWorld *self, const vec3_t *pos, vec3_t *hit, CCollisionTri *tri) {
 	float fx = (float)__builtin_fabs((double)(self->max.x - self->min.x));
 	float fy = (float)__builtin_fabs((double)(self->max.y - self->min.y));
 	float fz = (float)__builtin_fabs((double)(self->max.z - self->min.z));
@@ -1226,7 +1226,7 @@ void __thiscall CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, c
 			self->max.y = top.y;
 		}
 	}
-	if (!self->analizing) {
+	if (!self->analyzing) {
 		Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
 		if (arg == 0) {
 			CNodesWorld_AddExtraPoints(self);
@@ -1252,7 +1252,7 @@ void __thiscall CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, c
 			goto end;
 		}
 	} else {
-		CNodesWorld_AnalizeMap(self, &self->nodeInit, &self->min, &self->max);
+		CNodesWorld_AnalyzeMap(self, &self->nodeInit, &self->min, &self->max);
 		self->vftable->FreeTemp(self);
 		if (self->vftable->Create(self)) {
 			self->vftable->BuildGrid(self);
@@ -1265,13 +1265,13 @@ end:
 	Con_Bluef("%s", NW_EMPTY);
 }
 
-void __thiscall CNodesWorld_Analize(CNodesWorld *self, const vec3_t *size) {
-	g_NWAnalizeOn = 1;
+void __thiscall CNodesWorld_Analyze(CNodesWorld *self, const vec3_t *size) {
+	g_NWAnalyzeOn = 1;
 	g_NWDrawMode = 7;
-	self->analizing = 1;
-	self->analizeSize = *size;
+	self->analyzing = 1;
+	self->analyzeSize = *size;
 	CNodesWorld_Load(self, 0, NW_EMPTY, size);
-	self->analizing = 0;
+	self->analyzing = 0;
 	if (!self->open) {
 		Con_Printf("\nESCENARIO CERRADO\n");
 	} else {
@@ -1290,11 +1290,11 @@ void __thiscall CNodesWorld_Analize(CNodesWorld *self, const vec3_t *size) {
 	Con_Bluef("%s", NW_EMPTY);
 }
 
-void __thiscall CNodesWorld_AnalizeGraph(CNodesWorld *self) {
+void __thiscall CNodesWorld_AnalyzeGraph(CNodesWorld *self) {
 	vec3_t hit;
 	byte bad;
 
-	g_NWAnalizeOn = 1;
+	g_NWAnalyzeOn = 1;
 	g_NWDrawMode = 9;
 	DListVec3_Clear(&self->errCollide);
 	bad = 0;
@@ -1522,7 +1522,7 @@ byte __thiscall CNodesWorld_NextInit(CNodesWorld *self, vec3_t *out) {
 	return NWSup_NextInit(self, out, NW_InitFree, NW_InitDist);
 }
 
-void __thiscall CNodesWorld_LogTri(CNodesWorld *self, const vec3_t *p, vec3_t *hit, const CColisTri *tri) {
+void __thiscall CNodesWorld_LogTri(CNodesWorld *self, const vec3_t *p, vec3_t *hit, const CCollisionTri *tri) {
 	char buf[200];
 	float data[15];
 
@@ -1705,12 +1705,12 @@ void __fastcall CNodesWorld_Draw(CNodesWorld *self) {
 			const float *d = t->data;
 			const vec3_t *p = (const vec3_t *)&d[9];
 			vec3_t mn, mx;
-			mx.x = p->x + self->analizeSize.x * 0.5f;
-			mx.y = p->y + self->analizeSize.y * 0.5f;
-			mx.z = p->z + self->analizeSize.z * 0.5f;
-			mn.x = p->x - self->analizeSize.x * 0.5f;
-			mn.y = p->y - self->analizeSize.y * 0.5f;
-			mn.z = p->z - self->analizeSize.z * 0.5f;
+			mx.x = p->x + self->analyzeSize.x * 0.5f;
+			mx.y = p->y + self->analyzeSize.y * 0.5f;
+			mx.z = p->z + self->analyzeSize.z * 0.5f;
+			mn.x = p->x - self->analyzeSize.x * 0.5f;
+			mn.y = p->y - self->analyzeSize.y * 0.5f;
+			mn.z = p->z - self->analyzeSize.z * 0.5f;
 			DebugUtils_DrawBox(&mn, &mx, 0xff00);
 			DebugUtils_DrawLine(p, (const vec3_t *)&d[12], 0xff0000);
 			if (d[0] != 3.40282347e+38f) {
@@ -1755,7 +1755,7 @@ void __fastcall CNodesWorld_Draw(CNodesWorld *self) {
 	}
 }
 
-byte __thiscall CNodesWorld_AnalizeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
+byte __thiscall CNodesWorld_AnalyzeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
 	static const char head[] = "PUNTOS TRIANGULOS NORMAL INVERTIDA\n\n";
 	char path[0x100];
 	vec3_t p, snap;
@@ -1768,7 +1768,7 @@ byte __thiscall CNodesWorld_AnalizeMap(CNodesWorld *self, const vec3_t *init, co
 		CHECK(!"CNodesWorld_AnalizeMap_File_AnalisisMap_Not_Open");
 	}
 	crt_fwrite(head, 1, sizeof(head) - 1, self->file);
-	self->analizing = 1;
+	self->analyzing = 1;
 	vec3_t neg = { -self->halfNode.x, -self->halfNode.y, -self->halfNode.z };
 	if (init->x + self->halfNode.x > max->x || min->x > init->x - self->halfNode.x ||
 		self->halfNode.y + init->y > max->y || min->y > init->y - self->halfNode.y ||
@@ -1789,7 +1789,7 @@ byte __thiscall CNodesWorld_AnalizeMap(CNodesWorld *self, const vec3_t *init, co
 	byte ok = CNodesWorld_IniBuffer(self, &p, min, max);
 	const char *res = self->open ? "\n\nESCENARIO ABIERTO!\n" : "\n\nESCENARIO CERRADO\n";
 	crt_fwrite(res, 1, strlen(res), self->file);
-	self->analizing = 0;
+	self->analyzing = 0;
 	if (crt_fclose(self->file)) {
 		Con_Bluef("ERROR: Fichero AnalisisMap no cerrado.\n");
 		CHECK(!"CNodesWorld_AnalizeMap_File_AnalisisMap_Not_Closed");

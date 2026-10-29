@@ -29,14 +29,14 @@ byte cDebris_SetFX(int type, cDebris *d) {
 		uint32_t size;
 		void *ctor;
 	} debrisFX[] = {
-		{1, 0xb8, GAME_FUNC(cObjElementFXSistPart_ctor, 0x1da3a0)},
+		{1, 0xb8, GAME_FUNC(cObjElementFXParticleSystem_ctor, 0x1da3a0)},
 		{2, 0x1c, GAME_FUNC(cObjElementFXTrail_ctor, 0x1da500)},
 		{3, 0x14, GAME_FUNC(cObjElementFXFadeOutTrail_ctor, 0x1da190)},
 		{4, 0xc70, GAME_FUNC(cObjElementFXSparks_ctor, 0x1da460)},
 		{5, 0x14, GAME_FUNC(cObjElementFXModelFade_ctor, 0x1da330)},
 		{6, 0xcc, GAME_FUNC(cObjElementFXItemFade_ctor, 0x1da200)},
 		{7, 0x648, GAME_FUNC(cObjElementFXItemTake_ctor, 0x1da290)},
-		{8, 0xb8, GAME_FUNC(cObjElementFXSistPartDuDv_ctor, 0x1da400)},
+		{8, 0xb8, GAME_FUNC(cObjElementFXParticleSystemDuDv_ctor, 0x1da400)},
 		{30, 0xd4, GAME_FUNC(cObjElementFXFiredEntity_ctor, 0x1ea0d0)},
 		{31, 0x15c, GAME_FUNC(cObjElementFXHook_ctor, 0x1c97b0)},
 		{32, 0xe0, GAME_FUNC(cObjElementFXSwarmMissile_ctor, 0x1f9970)},
@@ -243,7 +243,7 @@ cDebris *__thiscall cDebrisSys_NewElement(cDebrisSys *sys) {
 	}
 	scale.x = scale.y = scale.z = sys->c;
 	CGameModel_LoadScaled(Debris_Mod(d), sys->name, &scale);
-	CGameModel_SetPivotNodo(Debris_Mod(d), "DC_Root");
+	CGameModel_SetPivotNode(Debris_Mod(d), "DC_Root");
 	d->drop[0].x = 0.0f;
 	d->drop[0].y = 0.0f;
 	d->drop[0].z = 0.0f;
@@ -318,7 +318,7 @@ void __thiscall cDebris_Move(cDebris *d, float dt) {
 byte __thiscall cDebris_Update(cDebris *d, cDebrisSys *sys) {
 	vec3_t from, to;
 	vec3_t *pos = &d->drop[0], *vel = &d->drop[2];
-	CColisTri tri;
+	CCollisionTri tri;
 	float k;
 
 	if (sys->radiusSq != 0.0f && cWorld_GetMinCamDistSq(g_pWorld, pos) >= sys->radiusSq) {

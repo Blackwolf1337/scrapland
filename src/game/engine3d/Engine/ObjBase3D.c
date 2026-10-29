@@ -3,13 +3,13 @@
  */
 #include "scrap/sistpart.h"
 
-void __thiscall CObjBase3D_SetNodo(IObjeto3D *self, CNodo3D *nodo) {
+void __thiscall CObjBase3D_SetNode(IObject3D *self, CNode3D *node) {
 	ObjRef **slot = (ObjRef **)((byte *)self + 8);
 
-	if (nodo) {
-		nodo->Refs++;
+	if (node) {
+		node->Refs++;
 	}
 	CHECK(!*slot || (*slot)->Refs > 1);
 	ObjRef_Drop(slot);
-	*slot = (ObjRef *)nodo;
+	*slot = (ObjRef *)node;
 }

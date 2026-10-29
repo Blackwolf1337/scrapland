@@ -1327,9 +1327,9 @@ byte NWSup_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, c
 
 		queue.iter = queue.head;
 		const vec3_t *p = &queue.head->v;
-		if (is3D && self->analizing) {
+		if (is3D && self->analyzing) {
 			vec3_t hit;
-			CColisTri tri;
+			CCollisionTri tri;
 			if (Sector_At(p) < 0 && self->errUnlinked.count < 100) {
 				DListVec3_Add(&self->errUnlinked, p);
 			}

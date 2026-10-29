@@ -152,7 +152,7 @@ typedef struct cObjElementFXSceneTheEndB {
 	float t;			/* 0x04 */
 	float tPrev;			/* 0x08 */
 	cEntity *ent;			/* 0x0c */
-	cEntity *moto;			/* 0x10 TheEndBMoto */
+	cEntity *bike;			/* 0x10 TheEndBMoto */
 	CGameParticles particles;	/* 0x14 Dummy01 */
 	void *flare;			/* 0xc4 CGameLensFlare */
 	byte started;			/* 0xc8 */

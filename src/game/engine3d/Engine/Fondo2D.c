@@ -9,46 +9,46 @@
 #include "scrap/render.h"
 #include "scrap/varios.h"
 
-CFondo2D *__thiscall CFondo2D_ctorFile(CFondo2D *self, const char *name) {
+CBackground2D *__thiscall CBackground2D_ctorFile(CBackground2D *self, const char *name) {
 	self->bmp.img = NULL;
-	CFondo2D_Init(self);
+	CBackground2D_Init(self);
 	CBmp_Load(&self->bmp, name, 0);
 	return self;
 }
 
-CFondo2D *__fastcall CFondo2D_ctor(CFondo2D *self) {
+CBackground2D *__fastcall CBackground2D_ctor(CBackground2D *self) {
 	self->bmp.img = NULL;
-	CFondo2D_Init(self);
+	CBackground2D_Init(self);
 	return self;
 }
 
-void __fastcall CFondo2D_Init(CFondo2D *self) {
+void __fastcall CBackground2D_Init(CBackground2D *self) {
 	CMaterial m;
 
 	self->color.rgba = 0xffffff;
 	self->color.intens = 1.0f;
 	CMaterial_ctor(&m);
-	Cad_Set(&m.Nombre, "CFondo2D");
-	CMaterial_SetMap(&m, MAPA_DIFFUSE, "bmp/fondo_256x256.bmp");
+	String_Set(&m.Name, "CFondo2D");
+	CMaterial_SetMap(&m, MAP_DIFFUSE, "bmp/fondo_256x256.bmp");
 	m.params.b39 = 0;
 	m.params.w3e = 0;
 	m.params.i40 = 8;
-	m.mapa[MAPA_DIFFUSE]->b8 = 0;
-	m.mapa[MAPA_DIFFUSE]->bc = 0;
-	m.mapa[MAPA_DIFFUSE]->ba = 1;
-	self->Mat = CListaMat_Find(g_ListaMat, &m);
+	m.map[MAP_DIFFUSE]->b8 = 0;
+	m.map[MAP_DIFFUSE]->bc = 0;
+	m.map[MAP_DIFFUSE]->ba = 1;
+	self->Mat = CMatList_Find(g_MatList, &m);
 	if (!self->Mat) {
 		CMaterial *p = operator_new(sizeof(CMaterial));
 		self->Mat = p ? CMaterial_ctor(p) : NULL;
 		CMaterial_Assign(self->Mat, &m);
-		CMaterial_Prepare(self->Mat, MOTOR_DEV(g_Motor));
-		CListaMat_Add(g_ListaMat, self->Mat);
+		CMaterial_Prepare(self->Mat, ENGINE_DEV(g_Engine));
+		CMatList_Add(g_MatList, self->Mat);
 	}
 	CMaterial_dtor(&m);
 }
 
-void __fastcall CFondo2D_Render(CFondo2D *self) {
-	void *dev = MOTOR_DEV(g_Motor);
+void __fastcall CBackground2D_Render(CBackground2D *self) {
+	void *dev = ENGINE_DEV(g_Engine);
 	float p[4][2];
 	Vert2D v[4];
 
@@ -76,63 +76,63 @@ void __fastcall CFondo2D_Render(CFondo2D *self) {
 		v[1] = (Vert2D){ x2, y, 0.5f, 0.5f, color, 0, 1.0f, 0.0f };
 		v[2] = (Vert2D){ x, y2, 0.5f, 0.5f, color, 0, 0.0f, 1.0f };
 		v[3] = (Vert2D){ x2, y2, 0.5f, 0.5f, color, 0, 1.0f, 1.0f };
-		CMapa_CopyBmp(self->Mat->mapa[MAPA_DIFFUSE], 0, 0, &self->bmp, (i & 1) << 8, (i >> 1) << 8, FONDO2D_PIECE,
-			FONDO2D_PIECE);
+		CMap_CopyBmp(self->Mat->map[MAP_DIFFUSE], 0, 0, &self->bmp, (i & 1) << 8, (i >> 1) << 8, BACKGROUND2D_PIECE,
+			BACKGROUND2D_PIECE);
 		D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_2D);
 		D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(Vert2D));
 	}
 }
 
-void Fondo2D_Reset(void) {
-	g_FondoActual[0] = 0;
+void Background2D_Reset(void) {
+	g_BackgroundCurrent[0] = 0;
 }
 
-void Fondo2D_Render(void) {
-	if (!g_FondoPendiente) {
+void Background2D_Render(void) {
+	if (!g_BackgroundPending) {
 		return;
 	}
-	CHECK(g_FondoFrame != g_FrameCount);
-	g_FondoFrame = g_FrameCount;
-	g_FondoPendiente = 0;
-	g_FondoColor = g_FondoColorNuevo;
-	if (crt_stricmp(g_FondoNuevo, g_FondoActual)) {
-		/* both FONDO2D_NAME: the unbounded copy of the original */
-		Str_Copy(g_FondoActual, g_FondoNuevo, FONDO2D_NAME);
-		if (!g_FondoActual[0]) {
+	CHECK(g_BackgroundFrame != g_FrameCount);
+	g_BackgroundFrame = g_FrameCount;
+	g_BackgroundPending = 0;
+	g_BackgroundColor = g_BackgroundColorNew;
+	if (crt_stricmp(g_BackgroundNew, g_BackgroundCurrent)) {
+		/* both BACKGROUND2D_NAME: the unbounded copy of the original */
+		Str_Copy(g_BackgroundCurrent, g_BackgroundNew, BACKGROUND2D_NAME);
+		if (!g_BackgroundCurrent[0]) {
 			return;
 		}
-		E3D_LogDebug(g_FileLog, "fondo2d_Render(): nuevo fondo: '%s' (frame: %d)", g_FondoActual, g_FrameCount);
-		if (!g_FondoGrf) {
+		E3D_LogDebug(g_FileLog, "fondo2d_Render(): nuevo fondo: '%s' (frame: %d)", g_BackgroundCurrent, g_FrameCount);
+		if (!g_BackgroundGraphic) {
 			int w, h;
-			Grafico2D_GetPantalla(&w, &h);
-			CGrafico2D *p = operator_new(sizeof(CGrafico2D));
-			g_FondoGrf = p ? CGrafico2D_ctorTex(p, g_FondoActual, NULL, GRAF2D_PANTALLA | GRAF2D_TAM_PANTALLA) : NULL;
-			g_FondoGrf->sinTextura = 1;
-			g_FondoGrf->x = 0.0f;
-			g_FondoGrf->y = 0.0f;
-			g_FondoGrf->escala[0] = (float)w;
-			g_FondoGrf->escala[1] = (float)h;
+			Graphic2D_GetScreen(&w, &h);
+			CGraphic2D *p = operator_new(sizeof(CGraphic2D));
+			g_BackgroundGraphic = p ? CGraphic2D_ctorTex(p, g_BackgroundCurrent, NULL, GRAPHIC2D_SCREEN | GRAPHIC2D_SCREEN_SIZE) : NULL;
+			g_BackgroundGraphic->noTexture = 1;
+			g_BackgroundGraphic->x = 0.0f;
+			g_BackgroundGraphic->y = 0.0f;
+			g_BackgroundGraphic->scale[0] = (float)w;
+			g_BackgroundGraphic->scale[1] = (float)h;
 		}
 	}
-	if (g_FondoActual[0] && g_FondoGrf) {
-		g_FondoGrf->color = g_FondoColor;
-		CGrafico2D_Render(g_FondoGrf);
+	if (g_BackgroundCurrent[0] && g_BackgroundGraphic) {
+		g_BackgroundGraphic->color = g_BackgroundColor;
+		CGraphic2D_Render(g_BackgroundGraphic);
 	}
 }
 
-void Fondo2D_Release(void) {
-	if (g_FondoGrf) {
-		CGrafico2D_dtor(g_FondoGrf);
-		operator_delete_sized(g_FondoGrf, sizeof(CGrafico2D));
-		g_FondoGrf = NULL;
+void Background2D_Release(void) {
+	if (g_BackgroundGraphic) {
+		CGraphic2D_dtor(g_BackgroundGraphic);
+		operator_delete_sized(g_BackgroundGraphic, sizeof(CGraphic2D));
+		g_BackgroundGraphic = NULL;
 	}
 }
 
-void Fondo2D_Set(const char *name, uint32_t color, byte deferred) {
-	g_FondoPendiente = 1;
-	Str_Copy(g_FondoNuevo, name ? name : "", FONDO2D_NAME);
-	g_FondoColorNuevo = color;
+void Background2D_Set(const char *name, uint32_t color, byte deferred) {
+	g_BackgroundPending = 1;
+	Str_Copy(g_BackgroundNew, name ? name : "", BACKGROUND2D_NAME);
+	g_BackgroundColorNew = color;
 	if (!deferred) {
-		Fondo2D_Render();
+		Background2D_Render();
 	}
 }

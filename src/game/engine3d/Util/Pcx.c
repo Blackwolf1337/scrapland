@@ -210,11 +210,11 @@ static void Pcx_InitHeader(PcxHeader *hdr, int lx, int ly, byte planes) {
 
 int Pcx_Write24(void *f, const byte *mem, int lx, int ly) {
 	PcxHeader hdr;
-	int tam = lx * 3;
+	int size = lx * 3;
 
 	CHECK(f && mem);
 	CHECK(lx > 0 && ly > 0);
-	byte *buf = Mem_Alloc(tam * 2);
+	byte *buf = Mem_Alloc(size * 2);
 	Pcx_InitHeader(&hdr, lx, ly, 3);
 	hdr.palInfo = 1;
 	if (crt_fwrite(&hdr, sizeof(hdr), 1, f) != 1) {
@@ -224,24 +224,24 @@ int Pcx_Write24(void *f, const byte *mem, int lx, int ly) {
 #define PCX_AT24(i) mem[(uint32_t)(i) / (uint32_t)lx + (uint32_t)(i) % (uint32_t)lx * 3]
 	for (int y = 0; y < ly; y++) {
 		int pos = 0, pos2 = 0;
-		if (tam > 0) {
+		if (size > 0) {
 			do {
 				int rep = 1;
 				byte v = PCX_AT24(pos);
-				for (int i = pos + 1; i < tam && PCX_AT24(i) == v; i++) {
+				for (int i = pos + 1; i < size && PCX_AT24(i) == v; i++) {
 					rep++;
 				}
 				PCX_PUT_RUNS(buf, pos2, pos, rep, v, PCX_AT24(pos));
 				CHECK(!rep);
-				CHECK(pos <= tam);
-				CHECK(pos2 <= tam * 2);
-			} while (pos < tam);
+				CHECK(pos <= size);
+				CHECK(pos2 <= size * 2);
+			} while (pos < size);
 		}
-		CHECK(pos == tam);
+		CHECK(pos == size);
 		if (crt_fwrite(buf, pos2, 1, f) != 1) {
 			return -1;
 		}
-		mem += tam;
+		mem += size;
 	}
 #undef PCX_AT24
 	Mem_Free(buf);

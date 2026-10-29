@@ -53,4 +53,4 @@ for ns2a, ns2x in ns2state:
 if ns2music and ns2state[7][1] != 0:
 	check('ns2 Music_PlayFile menu', lambda: (SDTest.Call('Music_PlayFile', 'bss', ns2name, '')[0], ns2i(symva('g_MusicStream')) != 0))
 else:
-	SDTest.Call('Cad_Copy', 'iisi', symva('g_MusicName'), ns2name, 0x104)
+	SDTest.Call('String_Copy', 'iisi', symva('g_MusicName'), ns2name, 0x104)

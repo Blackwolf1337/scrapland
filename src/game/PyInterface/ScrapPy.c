@@ -12,7 +12,7 @@
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
 
-/* levelpath GetLevelPath() : Obtiene el path del nivel actual */
+/* levelpath GetLevelPath() : Obtiene el path del level actual */
 PyObject *Scrap_GetLevelPath(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
@@ -358,7 +358,7 @@ PyObject *Scrap_GetCam(PyObject *self, PyObject *args) {
 	return Py_BuildValue("s", cWorld_GetCamName(g_pWorld, i));
 }
 
-/* GetFirst() : Retorna la primera entidad de la lista o none */
+/* GetFirst() : Retorna la primera entidad de la list o none */
 PyObject *Scrap_GetFirst(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
@@ -525,7 +525,7 @@ PyObject *Scrap_GetSteamTicket(PyObject *self, PyObject *args) {
 	return Py_BuildValue("s", Steam_GetTicket());
 }
 
-/* GetTime() : Obtiene el tiempo del mundo en segundos */
+/* GetTime() : Obtiene el tiempo del world en segundos */
 PyObject *Scrap_GetTime(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {

@@ -22,11 +22,11 @@
 #define CAM_ASPECT_WIDE 0x1.c71c71c71c71cp+0	/* 16 / 9 */
 #define CAM_ASPECT_4_3 0x1.5555555555555p+0
 
-typedef void(__thiscall *camaraDelete_t)(CCamara *self, int flags);
+typedef void(__thiscall *cameraDelete_t)(CCamera *self, int flags);
 
 CGameCamera *__fastcall CGameCamera_ctor(CGameCamera *self) {
-	CCamara *c = operator_new(sizeof(CCamara));
-	c = c ? CCamara_ctor(c) : NULL;
+	CCamera *c = operator_new(sizeof(CCamera));
+	c = c ? CCamera_ctor(c) : NULL;
 	self->Camera = c;
 	self->Node = NULL;
 	memset(self, 0, offsetof(CGameCamera, zNear));
@@ -35,25 +35,25 @@ CGameCamera *__fastcall CGameCamera_ctor(CGameCamera *self) {
 	self->fov = CAM_FOV;
 	self->aspectScreen = g_CameraDefViewAspect;
 	CAM_CHECK(self);
-	self->Camera->mode = CAMARA_FREE;
+	self->Camera->mode = CAMERA_FREE;
 	return self;
 }
 
 void __fastcall CGameCamera_dtor(CGameCamera *self) {
-	NodoR_Unref(&self->Node);
-	if (Camera_GetActual() == self) {
+	RenderNode_Unref(&self->Node);
+	if (Camera_GetCurrent() == self) {
 		CheckFailed("GetActiveCamera() != this", __FILE__, __TIMESTAMP__, __LINE__);
 	}
 	CAM_CHECK(self);
 	if (self->Camera) {
-		((camaraDelete_t)((void **)self->Camera->vftable)[0])(self->Camera, 1);
+		((cameraDelete_t)((void **)self->Camera->vftable)[0])(self->Camera, 1);
 		self->Camera = NULL;
 	}
 }
 
 void __thiscall CGameCamera_Move(CGameCamera *self, float d) {
 	CGameCamera_Update(self);
-	CCamara_Move(self->Camera, d);
+	CCamera_Move(self->Camera, d);
 	self->pos = self->Camera->pos;
 }
 
@@ -65,55 +65,55 @@ void __thiscall CGameCamera_Copy(CGameCamera *self, const CGameCamera *other) {
 	CGameCamera_SetLookAt(self, CGameCamera_IsLookAt(other));
 }
 
-void __thiscall CGameCamera_FromCamara(CGameCamera *self, const CCamara *c) {
+void __thiscall CGameCamera_FromCamera(CGameCamera *self, const CCamera *c) {
 	self->pos = c->pos;
 	self->rot = c->rot;
 	self->target = c->target;
 	self->fov = c->fov;
-	CGameCamera_SetLookAt(self, c->mode == CAMARA_LOOKAT);
+	CGameCamera_SetLookAt(self, c->mode == CAMERA_LOOKAT);
 }
 
 byte __fastcall CGameCamera_IsLookAt(const CGameCamera *self) {
 	CAM_CHECK(self);
-	return self->Camera->mode == CAMARA_LOOKAT;
+	return self->Camera->mode == CAMERA_LOOKAT;
 }
 
 void __thiscall CGameCamera_SetLookAt(CGameCamera *self, byte on) {
 	CAM_CHECK(self);
-	self->Camera->mode = (on == 0) + CAMARA_LOOKAT;
+	self->Camera->mode = (on == 0) + CAMERA_LOOKAT;
 }
 
 byte __thiscall CGameCamera_SetNodeModel(CGameCamera *self, CGameModel *model, int i) {
-	NodoR_Unref(&self->Node);
+	RenderNode_Unref(&self->Node);
 	if (model) {
 		if (i == -1) {
-			i = CGameModel_FindNodoR(model, "D_Cam-Composite");
+			i = CGameModel_FindRenderNode(model, "D_Cam-Composite");
 			if (i == -1) {
-				i = CGameModel_FindNodoR(model, "Camera_01");
+				i = CGameModel_FindRenderNode(model, "Camera_01");
 			}
 		}
-		CNodoR *node = CGameModel_NodoRRef(model, (uint32_t)i);
-		NodoR_Unref(&self->Node);
+		CRenderNode *node = CGameModel_RenderNodeRef(model, (uint32_t)i);
+		RenderNode_Unref(&self->Node);
 		self->Node = node;
 	}
 	return 1;
 }
 
-void __thiscall CGameCamera_SetNode(CGameCamera *self, CNodoR *node) {
-	NodoR_Unref(&self->Node);
+void __thiscall CGameCamera_SetNode(CGameCamera *self, CRenderNode *node) {
+	RenderNode_Unref(&self->Node);
 	self->Node = node;
 }
 
-CNodo3D *CamComposite_Find(CModelo *model, CArchINI *ini) {
+CNode3D *CamComposite_Find(CModel *model, CIniFile *ini) {
 	char key[32], name[128];
 	int idx = -1;
 
-	TABLA_CHECK(model->slots.p, 0, model->slots.n);
-	CAnimGrupo *anim = ((CAnimSlot *)model->slots.p)[0].anim;
+	TABLE_CHECK(model->slots.p, 0, model->slots.n);
+	CAnimGroup *anim = ((CAnimSlot *)model->slots.p)[0].anim;
 	float frame = anim ? anim->ctrl.frame : 0.0f;
 	for (int i = 1; i < 100; i++) {
 		Str_PrintfQuiet(key, sizeof(key), "%02d_StartFrame", i);
-		float start = CArchINI_GetFloat(ini, "Cam-Composite", key, -1.0f);
+		float start = CIniFile_GetFloat(ini, "Cam-Composite", key, -1.0f);
 		if (start > frame || 0.0f > start) {
 			idx = i - 1;
 			break;
@@ -124,10 +124,10 @@ CNodo3D *CamComposite_Find(CModelo *model, CArchINI *ini) {
 	g_CamCompositeFPS = anim ? anim->ctrl.vel : 1.0f;
 	if (idx > 0) {
 		Str_PrintfQuiet(key, sizeof(key), "%02d_Camera", idx);
-		if (CArchINI_GetText(ini, "Cam-Composite", key, name, sizeof(name), NULL)) {
-			CNodoR *r = CModelo_FindNodoR(model, name, NULL, 1, 0);
+		if (CIniFile_GetText(ini, "Cam-Composite", key, name, sizeof(name), NULL)) {
+			CRenderNode *r = CModel_FindRenderNode(model, name, NULL, 1, 0);
 			if (r) {
-				return r->nodo;
+				return r->node;
 			}
 			E3D_LogBlue(g_FileLog, "CAM-COMPOSITE camera not found: %s", name);
 		}
@@ -142,36 +142,36 @@ void CamComposite_DrawDebug(void) {
 	if (!g_ShowSceneCamera) {
 		return;
 	}
-	CFont_PrintfColorSombra(g_FontHoratioSmall, 10.0f, 400.0f, 0xff00, "%02d", g_CamCompositeIdx);
-	CFont_PrintfColorSombra(g_FontHoratioSmall, g_FontHoratioSmall->x, 400.0f, 0xffffff, " %s", g_CamCompositeName);
-	CFont_PrintfColorSombra(g_FontHoratioSmall, g_FontHoratioSmall->x, 400.0f, 0xff00, " %d",
+	CFont_PrintfColorShadow(g_FontHoratioSmall, 10.0f, 400.0f, 0xff00, "%02d", g_CamCompositeIdx);
+	CFont_PrintfColorShadow(g_FontHoratioSmall, g_FontHoratioSmall->x, 400.0f, 0xffffff, " %s", g_CamCompositeName);
+	CFont_PrintfColorShadow(g_FontHoratioSmall, g_FontHoratioSmall->x, 400.0f, 0xff00, " %d",
 		(int)g_CamCompositeFrame);
-	CFont_PrintfColorSombra(g_FontScrapBig, 10.0f, 420.0f, 0xff00, "%d", (int)g_CamCompositeFrame);
+	CFont_PrintfColorShadow(g_FontScrapBig, 10.0f, 420.0f, 0xff00, "%d", (int)g_CamCompositeFrame);
 	int frame = (int)g_CamCompositeFrame;
 	int fps = (int)g_CamCompositeFPS;
-	CFont_PrintfColorSombra(g_FontScrapBig, 120.0f, 420.0f, 0xff00, "%d:%02d", frame / fps, frame % fps);
+	CFont_PrintfColorShadow(g_FontScrapBig, 120.0f, 420.0f, 0xff00, "%d:%02d", frame / fps, frame % fps);
 }
 
 void __thiscall CGameCamera_Strafe(CGameCamera *self, float side, float rise) {
 	CGameCamera_Update(self);
-	CCamara_Strafe(self->Camera, side, rise);
-	if (self->Camera->mode == CAMARA_LOOKAT) {
-		CCamara_LookAtRot(self->Camera);
+	CCamera_Strafe(self->Camera, side, rise);
+	if (self->Camera->mode == CAMERA_LOOKAT) {
+		CCamera_LookAtRot(self->Camera);
 	}
 	self->pos = self->Camera->pos;
 	self->rot = self->Camera->rot;
 }
 
-/* the position and angles of the camera node nodo of model, the fov of its animation */
-static void CGameCamera_FromNode(CGameCamera *self, CModelo *model, CNodo3D *nodo) {
+/* the position and angles of the camera node node of model, the fov of its animation */
+static void CGameCamera_FromNode(CGameCamera *self, CModel *model, CNode3D *node) {
 	matrix_t m, rx, mr;
 	vec3_t ang;
 	float fov = CAM_FOV;
 
-	CModelo_GetNodeMatrix(model, &m, (uint32_t)nodo->i48, 1, 0, NULL, &fov);
+	CModel_GetNodeMatrix(model, &m, (uint32_t)node->i48, 1, 0, NULL, &fov);
 	Matrix_RotationX(&rx, CAM_FOV);
 	CAM_CHECK(self);
-	self->Camera->mode = CAMARA_FREE;
+	self->Camera->mode = CAMERA_FREE;
 	self->pos.x = m.m[12];
 	self->pos.y = m.m[13];
 	self->pos.z = m.m[14];
@@ -181,24 +181,24 @@ static void CGameCamera_FromNode(CGameCamera *self, CModelo *model, CNodo3D *nod
 		self->rot.z = 0.0f;
 	}
 	if (g_ShowSceneCamera) {
-		Str_Copy(g_CamCompositeName, nodo->name, 0x80);
+		Str_Copy(g_CamCompositeName, node->name, 0x80);
 	}
 }
 
-CCamara *__fastcall CGameCamera_Update(CGameCamera *self) {
+CCamera *__fastcall CGameCamera_Update(CGameCamera *self) {
 	CAM_CHECK(self);
-	CNodoR *node = self->Node;
+	CRenderNode *node = self->Node;
 	if (node) {
-		CModelo *model = (CModelo *)node->owner;
-		CNodo3D *nodo = node->nodo;
-		if (CNodo3D_Clase(nodo) != CLASE_OBJ3D_CAMARA && nodo->ini) {
-			nodo = CamComposite_Find(model, nodo->ini);
+		CModel *model = (CModel *)node->owner;
+		CNode3D *node3d = node->node;
+		if (CNode3D_Class(node3d) != CLASS_OBJ3D_CAMERA && node3d->ini) {
+			node3d = CamComposite_Find(model, node3d->ini);
 		}
-		if (g_CamaraNodos && nodo && CNodo3D_Clase(nodo) == CLASE_OBJ3D_CAMARA) {
-			CGameCamera_FromNode(self, model, nodo);
+		if (g_CameraNodes && node3d && CNode3D_Class(node3d) == CLASS_OBJ3D_CAMERA) {
+			CGameCamera_FromNode(self, model, node3d);
 		}
 	}
-	CCamara *c = self->Camera;
+	CCamera *c = self->Camera;
 	c->pos = self->pos;
 	c->rot = self->rot;
 	c->target = self->target;

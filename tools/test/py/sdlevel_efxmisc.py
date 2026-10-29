@@ -77,9 +77,9 @@ efmmin = {'DOB_DataCube_Glow': 8, 'DOB_Interfono_Calling': 3, 'DF_Light': 2, 'DO
 	'DOB_Coin1_Glow': 2, 'DOB_Coin2_Glow': 2, 'DOB_Coin3_Glow': 2, 'DOB_Coin4_Glow': 2, 'DOB_Dollar_Glow': 2,
 	'DOB_Coin1B_Glow': 2, 'DOB_Coin2B_Glow': 2, 'DOB_Coin3B_Glow': 2}
 # render node name of the CGameModel gm with a particle system (flags & 2, obj3D of class 0xa5000020) of enough
-# particles (nParticulas at 0xc)
+# particles (nParticles at 0xc)
 def efmsist(gm, name):
-	i = SDTest.Call('CGameModel_FindNodoR', 'tiis', gm, name)[0]
+	i = SDTest.Call('CGameModel_FindRenderNode', 'tiis', gm, name)[0]
 	if i < 0:
 		return 0
 	t = efmi(efmi(gm) + 0xac)
@@ -89,7 +89,7 @@ def efmsist(gm, name):
 	o = efmi(r + 0x9c)
 	return (efmb(r + 4) & 2) and o != 0 and efmi(o + 4) == -0x5affffe0 and efmi(o + 0xc) >= efmmin.get(name, 0)
 def efmnode(gm, name):
-	return SDTest.Call('CGameModel_FindNodoR', 'tiis', gm, name)[0] >= 0
+	return SDTest.Call('CGameModel_FindRenderNode', 'tiis', gm, name)[0] >= 0
 
 efmworld = SDTest.Peek('g_pWorld', 'i')
 efmdelta = efmi(efmworld + 0x2d4)
@@ -121,8 +121,8 @@ efmclasses = (
 	('Matrix', sym('cEmbeddedFXMatrix_ctor'), sym('cEmbeddedFXMatrix_dtor'), sym('cEmbeddedFXMatrix_Delete'), 0x1bc, (0x10, 0xc4), ((0x1b4, 1),), (4,), (9,), sym('cEmbeddedFXMatrix_Reset'), sym('cEmbeddedFXMatrix_Release'), sym('cEmbeddedFXMatrix_Stop')),
 	('MeetingPoint', sym('cEmbeddedFXMeetingPoint_ctor'), sym('cEmbeddedFXMeetingPoint_dtor'), sym('cEmbeddedFXMeetingPoint_Delete'), 0x230, (0x10, 0xc4, 0x178), (), (4, 0xc0, 0x174, 0x228, 0x22c), (),
 		0, sym('cEmbeddedFXCoin_Release@e1140'), 0),
-	('Moto', sym('cEmbeddedFXMoto_ctor'), sym('cEmbeddedFXMoto_dtor'), sym('cEmbeddedFXMoto_Delete'), 0x7e0, (0x44, 0xf4, 0x1a4, 0x254, 0x304, 0x3b4, 0x464, 0x514, 0x5c4, 0x674,
-		0x724), (), (4,), (), sym('cEmbeddedFXMoto_Reset'), sym('cEmbeddedFXMoto_Release'), 0),
+	('Moto', sym('cEmbeddedFXBike_ctor'), sym('cEmbeddedFXBike_dtor'), sym('cEmbeddedFXBike_Delete'), 0x7e0, (0x44, 0xf4, 0x1a4, 0x254, 0x304, 0x3b4, 0x464, 0x514, 0x5c4, 0x674,
+		0x724), (), (4,), (), sym('cEmbeddedFXBike_Reset'), sym('cEmbeddedFXBike_Release'), 0),
 	('Treasure', sym('cEmbeddedFXTreasure_ctor'), sym('cEmbeddedFXTreasure_dtor'), sym('cEmbeddedFXTreasure_Delete'), 0xf0, (0x10,), ((0xe4, 1),), (4, 0xe8, 0xec), (), sym('cEmbeddedFXTreasure_Reset'), sym('cEmbeddedFXTreasure_Release'),
 		sym('cEmbeddedFXTreasure_Stop')))
 efmbyname = {}
@@ -181,7 +181,7 @@ for rva, sig, offs, args in (('cEmbeddedFXBossShield_SetMode', 'tvii', (0x1c9c,)
 		('cEmbeddedFXExtraLife_SetScale', 'tvif', (0xcc,), (-1.5,)), ('cEmbeddedFXCoin_SetScale@e45b0', 'tvif', (0xc0,), (0.75,)), ('cEmbeddedFXMatrix_SetScale', 'tvif', (0x1b8,), (6.0,)),
 		('cEmbeddedFXTreasure_SetScale', 'tvif', (0xec,), (8.0,)), ('cEmbeddedFXBossShield_SetHit', 'tvif', (0x1ca4,), (1.0,)), ('cEmbeddedFXTreasure_SetType', 'tvii', (0xe8,), (3,)),
 		('cEmbeddedFXCoin_SetColor', 'tvii', (0xc4,), (0x123456,)), ('cEmbeddedFXCoin_SetColor@e2a20', 'tvii', (0xc4,), (-2,)),
-		('cEmbeddedFXMoto_SetF7d4', 'tviff', (0x7d4, 0x7d8, 0x7dc), (0.5, 3.0))):
+		('cEmbeddedFXBike_SetF7d4', 'tviff', (0x7d4, 0x7d8, 0x7dc), (0.5, 3.0))):
 	check('setter %s' % rva + fmt(args), lambda rva=rva, sig=sig, offs=offs, args=args: (apply(SDTest.Call,
 		(rva, sig, efms) + args), efmints(efms, offs)))
 check('cEmbeddedFXDataPack_SetOn(1)', lambda: (SDTest.Call('cEmbeddedFXDataPack_SetOn', 'tvii', efms, 0x101), efmbytes(efms, (9, 10))))
@@ -427,8 +427,8 @@ for c in efmmodels:
 		check('%s Stop(1)' % c[2], lambda k=k, fx=fx: (SDTest.Call(k[11], 'tvii', fx, 1), efmreset(fx, k)))
 		check('%s Stop(0)' % c[2], lambda k=k, fx=fx: (SDTest.Call(k[11], 'tvii', fx, 0), efmreset(fx, k)))
 	if name == 'Moto':
-		check('cEmbeddedFXMoto_EnginePos', lambda fx=fx: SDTest.Call('cEmbeddedFXMoto_EnginePos', 'tiiF', fx, (0.0, 0.0, 0.0))[1])
-	# after Release the particle systems may be gone: reading them is a CHECK (SistPart)
+		check('cEmbeddedFXBike_EnginePos', lambda fx=fx: SDTest.Call('cEmbeddedFXBike_EnginePos', 'tiiF', fx, (0.0, 0.0, 0.0))[1])
+	# after Release the particle systems may be gone: reading them is a CHECK (ParticleSystem)
 	check('%s Release' % c[2], lambda k=k, fx=fx: (SDTest.Call(k[10], 'tvi', fx), efmstate(fx, k)))
 	check('%s Delete(1)' % c[2], lambda k=k, fx=fx: SDTest.Call(k[3], 'tiii', fx, 1)[0] == fx)
 	efmfree(slot)

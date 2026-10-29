@@ -150,7 +150,7 @@ cActClass *__thiscall cActClass_ctor(cActClass *self, const char *name) {
 	self->initEndWalkInterpFactor = 2.0f;
 	self->fireAsSelect = 0;
 	self->skipInitOnChange = 1;
-	self->dinaShip = 0;
+	self->dynShip = 0;
 	self->fallSoundVol = 0.0f;
 	self->users = 0;
 	self->soundDisp.x = 0.0f;
@@ -301,7 +301,7 @@ void __thiscall cActNodeMod_SetNode(int *node, CGameModel *model, const char *na
 		*node = ACT_NODE_MODEL;
 		return;
 	}
-	*node = CGameModel_FindNodoR(model, name);
+	*node = CGameModel_FindRenderNode(model, name);
 	if (*node < 0) {
 		Con_Bluef("CNodeAngleModifier::SetNode : %s do not exist!!!\n", name);
 	}

@@ -19,32 +19,32 @@ typedef struct VertTex1B1 {
 } VertTex1B1;
 SD_SIZE(VertTex1B1, 0x24);
 
-#define PESOS_FLT_MAX 3.40282347e+38f
+#define WEIGHTS_FLT_MAX 3.40282347e+38f
 
-byte __thiscall CMallaD3D_CalcPesos(CMallaD3D *self, CNodo3D *nodo) {
+byte __thiscall CMeshD3D_CalcWeights(CMeshD3D *self, CNode3D *node) {
 	if (!self->b50 && !self->b51) {
 		return 0;
 	}
-	CHECK(nodo && nodo->escena);
-	CEscena *esc = nodo->escena;
-	float maxd2 = esc->umbralUnirVert * esc->umbralUnirVert;
+	CHECK(node && node->scene);
+	CScene *scn = node->scene;
+	float maxd2 = scn->vertWeldThreshold * scn->vertWeldThreshold;
 	for (int i = 0; i < self->vert.nVert; i++) {
-		VertTex1B1 *v = (VertTex1B1 *)CListaVert_Tex1B1(&self->vert, (uint32_t)i);
+		VertTex1B1 *v = (VertTex1B1 *)CVertList_Tex1B1(&self->vert, (uint32_t)i);
 		vec3_t p = v->pos;
-		Vec3_TransformH(&p, &p, &nodo->m);
+		Vec3_TransformH(&p, &p, &node->m);
 		matrix_t inv;
-		CHECK(Matrix_Invert(&inv, &nodo->m) == 0);
+		CHECK(Matrix_Invert(&inv, &node->m) == 0);
 		v->weight = 1.0f;
-		float best = PESOS_FLT_MAX, bestDot = -2.0f;
+		float best = WEIGHTS_FLT_MAX, bestDot = -2.0f;
 		VertTex1B1 found = *v;
-		for (CNodo3D *n = esc->Nodo3D; n; n = n->sig) {
-			if (n == nodo || CNodo3D_Clase(n) != CLASE_OBJ3D_MALLAD3D || nodo->padre != n) {
+		for (CNode3D *n = scn->Node3D; n; n = n->next) {
+			if (n == node || CNode3D_Class(n) != CLASS_OBJ3D_MESHD3D || node->parent != n) {
 				continue;
 			}
-			for (CMallaD3D *m = Obj3D_Cast(n->obj3D, CLASE_OBJ3D_MALLAD3D); m; m = m->next) {
+			for (CMeshD3D *m = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_MESHD3D); m; m = m->next) {
 				for (int j = 0; j < m->vert.nVert; j++) {
 					vec3_t q;
-					CListaVert_GetPos(&m->vert, &q, (uint32_t)j);
+					CVertList_GetPos(&m->vert, &q, (uint32_t)j);
 					Vec3_TransformH(&q, &q, &n->m);
 					float dx = p.x - q.x, dy = p.y - q.y, dz = p.z - q.z;
 					float d2 = dy * dy + dx * dx + dz * dz;
@@ -52,7 +52,7 @@ byte __thiscall CMallaD3D_CalcPesos(CMallaD3D *self, CNodo3D *nodo) {
 						continue;
 					}
 					vec3_t u;
-					CListaVert_GetNormal(&m->vert, &u, (uint32_t)j);
+					CVertList_GetNormal(&m->vert, &u, (uint32_t)j);
 					Vec3_TransformDir0(&u, &u, &n->m);
 					Vec3_TransformDir0(&u, &u, &inv);
 					Vec3_Unit(&u);
@@ -67,12 +67,12 @@ byte __thiscall CMallaD3D_CalcPesos(CMallaD3D *self, CNodo3D *nodo) {
 				}
 			}
 		}
-		if (best != PESOS_FLT_MAX) {
+		if (best != WEIGHTS_FLT_MAX) {
 			*v = found;
 		}
 	}
 	if (self->next) {
-		CMallaD3D_CalcPesos(self->next, nodo);
+		CMeshD3D_CalcWeights(self->next, node);
 	}
 	return 1;
 }

@@ -24,7 +24,7 @@ def vwpset(a, v):
 def vwppoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 def vwpstr(a, s):
-	SDTest.Call('Cad_Copy', 'iisi', a, s, len(s) + 1)
+	SDTest.Call('String_Copy', 'iisi', a, s, len(s) + 1)
 def vwpsetbyte(a, v):
 	w = vwpi(a & ~3)
 	sh = 8 * (a & 3)

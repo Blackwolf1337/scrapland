@@ -1,5 +1,5 @@
 /*
- * ScrapEngParticles.cpp of the game: CGameParticles, the access of the entities to the particle system (CSistPart) of
+ * ScrapEngParticles.cpp of the game: CGameParticles, the access of the entities to the particle system (CParticleSystem) of
  * a render node of their model: emitting, single particles placed by hand and a copy of the parameters of the type
  * that CGameParticles_Apply writes into the system.
  */
@@ -37,8 +37,8 @@ typedef struct CGameParticles {
 	float sparkMaxSize;		/* 0xa0 */
 	byte bounce;			/* 0xa4 */
 	byte pad_a5[3];
-	CNodoR *Node;			/* 0xa8 a reference (CGameModel_NodoRRef) */
-	CSistPart *SistPart;		/* 0xac the object of Node */
+	CRenderNode *Node;			/* 0xa8 a reference (CGameModel_RenderNodeRef) */
+	CParticleSystem *ParticleSystem;		/* 0xac the object of Node */
 } CGameParticles;
 SD_OFFSET(CGameParticles, rotIni, 0x8c);
 SD_OFFSET(CGameParticles, sparkVelScale, 0x9c);

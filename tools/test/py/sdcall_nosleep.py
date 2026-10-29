@@ -3,7 +3,7 @@
 # of the frame function is the jmp of the hook) and print the constant they expect in the original run. No timing
 # values are printed. Not called: the frame with the limiter off (a render from inside the frame callback), the reset
 # with g_ResetDev on, the end of the hold of Video_WaitKeysUp (no keys held in the test setup).
-nslHooked = SDTest.Peek('CMotorApp_Render', 'b') == 0xe9
+nslHooked = SDTest.Peek('CEngineApp_Render', 'b') == 0xe9
 def nsli(a):
 	return SDTest.Peek(a, '@i')
 
@@ -53,12 +53,12 @@ SDTest.Poke('g_CpuFreq', nslcpu)
 # Video_WaitKeysUp: no key is held, the original returns at once and the hold of the C ends at once
 check('nsl Video_WaitKeysUp', lambda: (SDTest.Call('Video_WaitKeysUp', 'vi', 1000)[0], SDTest.Call('Video_WaitKeysUp', 'vi', 0)[0]))
 
-# CMotorApp_ResetDevice without a pending reset (g_ResetDev 0x4a8efe)
-nslmotor = SDTest.Peek('g_Motor', 'i')
+# CEngineApp_ResetDevice without a pending reset (g_ResetDev 0x4a8efe)
+nslmotor = SDTest.Peek('g_Engine', 'i')
 if SDTest.Peek('g_ResetDev', 'b') == 0:
-	check('nsl CMotorApp_ResetDevice off', lambda: SDTest.Call('CMotorApp_ResetDevice', 'tii', nslmotor)[0])
+	check('nsl CEngineApp_ResetDevice off', lambda: SDTest.Call('CEngineApp_ResetDevice', 'tii', nslmotor)[0])
 
-# CMotorApp_Render while the limiter holds the frame back (limitaFPS 30, the next frame at timeGetTime * 3 =
+# CEngineApp_Render while the limiter holds the frame back (limitaFPS 30, the next frame at timeGetTime * 3 =
 # 0xfffffff0): at once 0, no frame counted. Only without vsync (D3DPRESENT_PARAMETERS at 0x2a398 of the motor: 5
 # SwapEffect, 7 Windowed, 12 FullScreen_PresentationInterval), else Render would draw a frame.
 nslpp = nslmotor + 0x2a398
@@ -66,13 +66,13 @@ if nsli(nslpp + 28):
 	nslNoVsync = nsli(nslpp + 20) != 4
 else:
 	nslNoVsync = nsli(nslpp + 48) == -0x7fffffff - 1
-nslsave = (SDTest.Peek('g_LimitaFps', 'i'), SDTest.Peek('g_LimitNext', 'i'), SDTest.Peek('g_FrameCount', 'i'))
+nslsave = (SDTest.Peek('g_LimitFps', 'i'), SDTest.Peek('g_LimitNext', 'i'), SDTest.Peek('g_FrameCount', 'i'))
 if nslHooked and nslNoVsync:
-	SDTest.Poke('g_LimitaFps', 0x41f00000)
+	SDTest.Poke('g_LimitFps', 0x41f00000)
 	SDTest.Poke('g_LimitNext', -16)
-	check('nsl CMotorApp_Render held back', lambda: (SDTest.Call('CMotorApp_Render', 'tii', nslmotor)[0],
+	check('nsl CEngineApp_Render held back', lambda: (SDTest.Call('CEngineApp_Render', 'tii', nslmotor)[0],
 		SDTest.Peek('g_FrameCount', 'i') == nslsave[2], SDTest.Peek('g_LimitNext', 'i')))
-	SDTest.Poke('g_LimitaFps', nslsave[0])
+	SDTest.Poke('g_LimitFps', nslsave[0])
 	SDTest.Poke('g_LimitNext', nslsave[1])
 else:
-	check('nsl CMotorApp_Render held back', lambda: (0, 1, -16))
+	check('nsl CEngineApp_Render held back', lambda: (0, 1, -16))

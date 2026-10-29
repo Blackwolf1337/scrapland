@@ -50,8 +50,8 @@ cMapElement *__thiscall cMapElement_Delete(cMapElement *self, byte flags);
 byte __thiscall cMapElement_Init(cMapElement *self);
 void __thiscall cMapElement_Update(cMapElement *self, float dt);
 
-#define CFXELEMENTSORBITBOYA_VFTABLE GAME_VFTABLE(cFXElementsOrbitBoya_vftable, 0x3cc574)
-#define CFXELEMENTSORBITBOYACONTROLLER_VFTABLE GAME_VFTABLE(cFXElementsOrbitBoyaController_vftable, 0x3cc584)
+#define CFXELEMENTSORBITBUOY_VFTABLE GAME_VFTABLE(cFXElementsOrbitBuoy_vftable, 0x3cc574)
+#define CFXELEMENTSORBITBUOYCONTROLLER_VFTABLE GAME_VFTABLE(cFXElementsOrbitBuoyController_vftable, 0x3cc584)
 #define CFXELEMENTSMENTALCONTROLLER_VFTABLE GAME_VFTABLE(cFXElementsMentalController_vftable, 0x3cc7f4)
 #define CFXELEMENTSMENTALCONTROLLERDAMAGEFX_VFTABLE GAME_VFTABLE(cFXElementsMentalControllerDamageFX_vftable, 0x3cc804)
 #define CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE GAME_VFTABLE(cFXElementsMentalControllerMainFX_vftable, 0x3cc814)
@@ -62,48 +62,48 @@ void __thiscall cMapElement_Update(cMapElement *self, float dt);
 #define FXORBITBOYACOLUMNCOUNT 8
 
 /* a buoy: a light particle over its model (0xf0 bytes) */
-typedef struct cFXElementsOrbitBoya {
+typedef struct cFXElementsOrbitBuoy {
 	cMapElement base;
 	int dcRoot;			/* 0x2c the node DC_Root */
 	vec3_t pos;			/* 0x30 */
 	byte pad_3c[4];
 	CGameParticles light;		/* 0x40 DF_Light */
-} cFXElementsOrbitBoya;
-SD_OFFSET(cFXElementsOrbitBoya, light, 0x40);
-SD_SIZE(cFXElementsOrbitBoya, 0xf0);
+} cFXElementsOrbitBuoy;
+SD_OFFSET(cFXElementsOrbitBuoy, light, 0x40);
+SD_SIZE(cFXElementsOrbitBuoy, 0xf0);
 
 /* the buoys by column and number, their lights blink in turns (0x1ac bytes, constructor rva 0x1d5820) */
-typedef struct cFXElementsOrbitBoyaController {
+typedef struct cFXElementsOrbitBuoyController {
 	cMapElement base;
-	cFXElementsOrbitBoya *boya[FXORBITBOYACOLUMNS][FXORBITBOYACOLUMNCOUNT];	/* 0x02c */
+	cFXElementsOrbitBuoy *buoy[FXORBITBOYACOLUMNS][FXORBITBOYACOLUMNCOUNT];	/* 0x02c */
 	int type[FXORBITBOYACOLUMNS][FXORBITBOYACOLUMNCOUNT];			/* 0x0ac the look of the light, 0 or 1 */
 	float fade[FXORBITBOYACOLUMNS][FXORBITBOYACOLUMNCOUNT];			/* 0x12c 1 down to 0, again */
-} cFXElementsOrbitBoyaController;
-SD_OFFSET(cFXElementsOrbitBoyaController, type, 0xac);
-SD_OFFSET(cFXElementsOrbitBoyaController, fade, 0x12c);
-SD_SIZE(cFXElementsOrbitBoyaController, 0x1ac);
+} cFXElementsOrbitBuoyController;
+SD_OFFSET(cFXElementsOrbitBuoyController, type, 0xac);
+SD_OFFSET(cFXElementsOrbitBuoyController, fade, 0x12c);
+SD_SIZE(cFXElementsOrbitBuoyController, 0x1ac);
 
-cFXElementsOrbitBoyaController *__thiscall cFXElementsOrbitBoyaController_ctor(cFXElementsOrbitBoyaController *self,
+cFXElementsOrbitBuoyController *__thiscall cFXElementsOrbitBuoyController_ctor(cFXElementsOrbitBuoyController *self,
 	const char *name, const vec3_t *pos, const vec3_t *rot);
 
-byte __fastcall cFXElementsOrbitBoya_Init(cFXElementsOrbitBoya *self);
-void __thiscall cFXElementsOrbitBoya_Update(cFXElementsOrbitBoya *self, float dt);
-byte __fastcall cFXElementsOrbitBoyaController_Init(cFXElementsOrbitBoyaController *self);
-void __thiscall cFXElementsOrbitBoyaController_Update(cFXElementsOrbitBoyaController *self, float dt);
-void __thiscall cFXElementsOrbitBoyaController_SetBoya(cFXElementsOrbitBoyaController *self, int type, int column,
-	int number, cFXElementsOrbitBoya *boya);
+byte __fastcall cFXElementsOrbitBuoy_Init(cFXElementsOrbitBuoy *self);
+void __thiscall cFXElementsOrbitBuoy_Update(cFXElementsOrbitBuoy *self, float dt);
+byte __fastcall cFXElementsOrbitBuoyController_Init(cFXElementsOrbitBuoyController *self);
+void __thiscall cFXElementsOrbitBuoyController_Update(cFXElementsOrbitBuoyController *self, float dt);
+void __thiscall cFXElementsOrbitBuoyController_SetBuoy(cFXElementsOrbitBuoyController *self, int type, int column,
+	int number, cFXElementsOrbitBuoy *buoy);
 /* the controller and the buoys of the dummies DM_Element_OrbitBoya* of the level */
 void FXElementsOrbit_Create(void);
-cFXElementsOrbitBoya *__thiscall cFXElementsOrbitBoya_ctor(cFXElementsOrbitBoya *self, const char *name,
+cFXElementsOrbitBuoy *__thiscall cFXElementsOrbitBuoy_ctor(cFXElementsOrbitBuoy *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
-void __fastcall cFXElementsOrbitBoya_dtor(cFXElementsOrbitBoya *self);
-void __fastcall cFXElementsOrbitBoyaController_dtor(cFXElementsOrbitBoyaController *self);
-cFXElementsOrbitBoya *__thiscall cFXElementsOrbitBoya_Delete(cFXElementsOrbitBoya *self, byte flags);
-cFXElementsOrbitBoyaController *__thiscall cFXElementsOrbitBoyaController_Delete(cFXElementsOrbitBoyaController *self,
+void __fastcall cFXElementsOrbitBuoy_dtor(cFXElementsOrbitBuoy *self);
+void __fastcall cFXElementsOrbitBuoyController_dtor(cFXElementsOrbitBuoyController *self);
+cFXElementsOrbitBuoy *__thiscall cFXElementsOrbitBuoy_Delete(cFXElementsOrbitBuoy *self, byte flags);
+cFXElementsOrbitBuoyController *__thiscall cFXElementsOrbitBuoyController_Delete(cFXElementsOrbitBuoyController *self,
 	byte flags);
 /* the light released; the controller has nothing to release */
-void __fastcall cFXElementsOrbitBoya_ReleaseLight(cFXElementsOrbitBoya *self);
-void __fastcall cFXElementsOrbitBoyaController_Release(cFXElementsOrbitBoyaController *self);
+void __fastcall cFXElementsOrbitBuoy_ReleaseLight(cFXElementsOrbitBuoy *self);
+void __fastcall cFXElementsOrbitBuoyController_Release(cFXElementsOrbitBuoyController *self);
 
 /* ---- FXElementsPress.cpp ---- */
 

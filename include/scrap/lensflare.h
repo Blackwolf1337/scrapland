@@ -1,7 +1,7 @@
 /*
  * Engine/LensFlare.cpp of the engine3d: CLensFlare, the lens flare of a point (the sun, lights of the game effects):
  * a row of sprites of BMP/LensFlare.bmp along the line from the screen position of the point through the center of
- * the screen, in four patterns (tipo). It fades towards the edges of the screen and, with a trace interval, in and
+ * the screen, in four patterns (type). It fades towards the edges of the screen and, with a trace interval, in and
  * out by whether the floor hides the point. Up to MAX_LENSFLARE_RENDER flares that are on are in the render list.
  */
 #ifndef SCRAP_LENSFLARE_H
@@ -15,14 +15,14 @@
 typedef struct CLensFlare {
 	byte on;			/* 0x00 */
 	byte pad_1[3];
-	int IndiceRender;		/* 0x04 in gLensFlareRender, -1 */
+	int RenderIndex;		/* 0x04 in gLensFlareRender, -1 */
 	vec3_t pos;			/* 0x08 */
 	float intens;			/* 0x14 1, the alpha of the sprites */
-	float escala;			/* 0x18 1, the size of the sprites */
-	int tipo;			/* 0x1c the pattern 0..3 */
-	float margen;			/* 0x20 0.2, the part beyond the screen edges in which it fades out */
+	float scale;			/* 0x18 1, the size of the sprites */
+	int type;			/* 0x1c the pattern 0..3 */
+	float margin;			/* 0x20 0.2, the part beyond the screen edges in which it fades out */
 	float sx, sy;			/* 0x24 the screen position of the last render (-1..1) */
-	byte relativo;			/* 0x2c pos relative to the eye */
+	byte relative;			/* 0x2c pos relative to the eye */
 	byte pad_2d[3];
 	float traceInterval;		/* 0x30 seconds between the traces against the floor, 0: none */
 	float traceTimer;		/* 0x34 */
@@ -70,10 +70,10 @@ void __thiscall CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t spr
 	float b, float a);
 void __thiscall CLensFlare_SetIntens(CLensFlare *self, float v);
 void __thiscall CLensFlare_SetTraceInterval(CLensFlare *self, float v);
-void __thiscall CLensFlare_SetMargen(CLensFlare *self, float v);
+void __thiscall CLensFlare_SetMargin(CLensFlare *self, float v);
 void __thiscall CLensFlare_SetPos(CLensFlare *self, vec3_t pos);
-void __thiscall CLensFlare_SetEscala(CLensFlare *self, float v);
-void __thiscall CLensFlare_SetTipo(CLensFlare *self, int tipo);
-void __thiscall CLensFlare_SetRelativo(CLensFlare *self, byte relativo);
+void __thiscall CLensFlare_SetScale(CLensFlare *self, float v);
+void __thiscall CLensFlare_SetType(CLensFlare *self, int type);
+void __thiscall CLensFlare_SetRelative(CLensFlare *self, byte relative);
 
 #endif

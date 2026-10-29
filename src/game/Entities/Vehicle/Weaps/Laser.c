@@ -345,7 +345,7 @@ void Laser_CreateNative(cAbstractFile *f) {
 		if (!cTargetLock_HasSlot(Veh_Weapons(v), g_LaserIDWeap, i)) {
 			continue;
 		}
-		const matrix_t *m = CGameModel_NodoMatrix(Weap_Vtbl(v)->GetModel(v), &mtx,
+		const matrix_t *m = CGameModel_NodeMatrix(Weap_Vtbl(v)->GetModel(v), &mtx,
 			Veh_WeapNodes(v)[i + g_LaserIDAmmo * 4], 0, NULL, 0);
 		s.x = m->m[12];
 		s.y = m->m[13];

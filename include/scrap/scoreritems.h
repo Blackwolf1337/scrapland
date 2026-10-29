@@ -117,7 +117,7 @@ int __thiscall cSpriteScorer_Var(cSpriteScorer *self, const char *name, byte set
 #define TEXTSCORER_LEFT 0
 #define TEXTSCORER_RIGHT 1
 #define TEXTSCORER_CENTER 4
-/* cAbstractTextScorer.effect (the CFont efectos) */
+/* cAbstractTextScorer.effect (the CFont effects) */
 #define TEXTSCORER_OSCILE 0x10000
 #define TEXTSCORER_SHADOW 0x20000
 #define TEXTSCORER_OUTLINE 0x40000
@@ -670,11 +670,11 @@ typedef struct cMonitorScorer {
 	int frameIndex;			/* 0x324 */
 	CPsaImage *staticImg;		/* 0x328 */
 	int staticIndex;		/* 0x32c */
-	CPsaImage *objetive;		/* 0x330 */
-	int objetiveIndex;		/* 0x334 */
-	int objetiveChargeIndex;	/* 0x338 */
-	int objetiveBlackIndex;		/* 0x33c */
-	int objetiveWhiteIndex;		/* 0x340 */
+	CPsaImage *objective;		/* 0x330 */
+	int objectiveIndex;		/* 0x334 */
+	int objectiveChargeIndex;	/* 0x338 */
+	int objectiveBlackIndex;		/* 0x33c */
+	int objectiveWhiteIndex;		/* 0x340 */
 	int canPossessIndex;		/* 0x344 */
 	int canPossessGlowIndex;	/* 0x348 */
 	CPsaImage *noiseImg;		/* 0x34c */
@@ -747,7 +747,7 @@ void __thiscall cNetStatsScorer_Draw(cNetStatsScorer *self, int player);
 /* the news panel rendered into the texture "NewsPanel": the news head between the background and the logo, or
  * the watched entities while the alarm is on */
 typedef struct cNewsPanel {
-	int motorInits;			/* 0x00 g_MotorInits of the last frame: the texture is drawn again after a reset */
+	int engineInits;			/* 0x00 g_EngineInits of the last frame: the texture is drawn again after a reset */
 	vec3_t camPos;			/* 0x04 of the entity view */
 	CGameCamera *cam;		/* 0x10 */
 	char *head;			/* 0x14 cString, NewsHead in use */

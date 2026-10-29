@@ -24,7 +24,7 @@ def fnuset(a, v):
 def fnupoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 def fnustr(a, s):
-	SDTest.Call('Cad_Copy', 'iisi', a, s, len(s) + 1)
+	SDTest.Call('String_Copy', 'iisi', a, s, len(s) + 1)
 def fnusrand(s):
 	SDTest.Call('crt_srand', 'vi', s)
 def fnurand():
@@ -172,7 +172,7 @@ if fnucar2:
 
 # ---- the radiosity of the map compiler (engine3d Engine/BspCalc.c) on a fake map of two lists 200 above the player:
 # a floor square F (normal up) and 6 above it a ceiling square C (normal down) whose material is an area light by the
-# mats_luces_rad section of the ini of the scene, with a glow map (luzA) and a falloff of 2. CBsp_RadAreas (the areas
+# mats_luces_rad section of the ini of the scene, with a glow map (lightA) and a falloff of 2. CBsp_RadAreas (the areas
 # of the lists, the area light and lglow settings, the local pass into rad), then CBsp_RadGlobal with one bounce of
 # the light maps rad2 (C counted as a plain list again). The TXF cache is off (no files), the TXF folder is the one of
 # sdlevel_bspcalc.py.
@@ -192,25 +192,25 @@ def fnupokeb(a, v):
 	w = fnui(a & ~3)
 	sh = 8 * (a & 3)
 	fnupoke(a & ~3, (w & ~(0xff << sh)) | (v << sh))
-fnurg = (sym('g_MapaSombrasEscala'), sym('g_MapaSombrasResol'), sym('g_MapaSombrasTexX'), sym('g_MapaSombrasTexY'), sym('g_MapaSombrasIlumGlobal'), sym('g_MapaSombrasRebotes'), sym('g_MapaSombrasCoefRad'), sym('g_BspRadMinD2'), sym('g_BspLodLevel'), sym('g_RadSkipBySectors'), sym('g_RadiosityPortals'),
-	sym('g_TxfMode'), sym('g_MapaSombrasUsarTxf'),
+fnurg = (sym('g_ShadowMapScale'), sym('g_ShadowMapRes'), sym('g_ShadowMapTexX'), sym('g_ShadowMapTexY'), sym('g_ShadowMapIllumGlobal'), sym('g_ShadowMapBounces'), sym('g_ShadowMapCoefRad'), sym('g_BspRadMinD2'), sym('g_BspLodLevel'), sym('g_RadSkipBySectors'), sym('g_RadiosityPortals'),
+	sym('g_TxfMode'), sym('g_ShadowMapUseTxf'),
 	sym('g_BspLodCount'), sym('g_BspLodCount') + 0x4, sym('g_BspLodCount') + 0x8, sym('g_BspLodCount') + 0xc, sym('g_BspAreasTotal'), sym('g_BspAreasTotal') + 0x4, sym('g_BspAreasTotal') + 0x8, sym('g_BspAreasTotal') + 0xc)
 fnursaved = []
 for fnu_a in fnurg:
 	fnursaved.append(SDTest.Peek(fnu_a, 'i'))
-check('fnu radiosity globals', lambda: (SDTest.Peek('g_MapaSombrasTexX', 'i'), SDTest.Peek('g_MapaSombrasTexY', 'i'), SDTest.Peek('g_TxfMode', 'i'),
-	SDTest.Peek('g_MapaSombrasRebotes', 'i')))
-for fnu_a, fnu_v in ((sym('g_MapaSombrasEscala'), 1.0), (sym('g_MapaSombrasResol'), 1.0), (sym('g_MapaSombrasCoefRad'), 1.0), (sym('g_BspRadMinD2'), 1.0), (sym('g_BspLodLevel'), 1.0)):
+check('fnu radiosity globals', lambda: (SDTest.Peek('g_ShadowMapTexX', 'i'), SDTest.Peek('g_ShadowMapTexY', 'i'), SDTest.Peek('g_TxfMode', 'i'),
+	SDTest.Peek('g_ShadowMapBounces', 'i')))
+for fnu_a, fnu_v in ((sym('g_ShadowMapScale'), 1.0), (sym('g_ShadowMapRes'), 1.0), (sym('g_ShadowMapCoefRad'), 1.0), (sym('g_BspRadMinD2'), 1.0), (sym('g_BspLodLevel'), 1.0)):
 	fnuset(fnu_a + 0x400000, (fnu_v,))
-# small light map pages (the areas of CBsp_IniciarAreas take a buffer of the size of a page)
-for fnu_a, fnu_v in ((sym('g_MapaSombrasTexX'), 32), (sym('g_MapaSombrasTexY'), 32), (sym('g_MapaSombrasIlumGlobal'), 1), (sym('g_MapaSombrasRebotes'), 1), (sym('g_RadSkipBySectors'), 0), (sym('g_RadiosityPortals'), 0),
-		(sym('g_TxfMode'), 0), (sym('g_MapaSombrasUsarTxf'), 0)):
+# small light map pages (the areas of CBsp_InitAreas take a buffer of the size of a page)
+for fnu_a, fnu_v in ((sym('g_ShadowMapTexX'), 32), (sym('g_ShadowMapTexY'), 32), (sym('g_ShadowMapIllumGlobal'), 1), (sym('g_ShadowMapBounces'), 1), (sym('g_RadSkipBySectors'), 0), (sym('g_RadiosityPortals'), 0),
+		(sym('g_TxfMode'), 0), (sym('g_ShadowMapUseTxf'), 0)):
 	SDTest.Poke(fnu_a, fnu_v)
 fnumat = []
 for fnu_n in ('sdfnumatF', 'sdfnumatC'):
 	fnu_m = fnuz(0xb0)
 	SDTest.Call('CMaterial_ctor', 'tii', fnu_m)
-	SDTest.Call('Cad_Set', 'tvis', fnu_m + 4, fnu_n)
+	SDTest.Call('String_Set', 'tvis', fnu_m + 4, fnu_n)
 	fnumat.append(fnu_m)
 fnuo = (pp[0] + 20.0, pp[1] + 200.0, pp[2] + 20.0)
 def fnutri(a, b, c, y, ny):
@@ -225,7 +225,7 @@ def fnulist(ts, mat):
 	for i in range(len(ts) - 1):
 		fnupoke(ts[i], ts[i + 1])
 	l = ts[0]
-	SDTest.Call('BspTri_CalcPlanos', 'vi', l)
+	SDTest.Call('BspTri_CalcPlanes', 'vi', l)
 	fnupoke(l + 0xac, mat)
 	b = SDTest.Call('BspTri_ListBox', 'iFi', (0.0,) * 6, l)[1]
 	e = SDTest.Call('Bsp_TexelBox', 'vFifpppp', b, 1, 1.0, 0, 0, 0, 0)
@@ -234,7 +234,7 @@ def fnulist(ts, mat):
 	SDTest.Call('CBmp_CreateFill', 'tviiii', l + 0x114, lx, ly, 0)
 	cob = fnuz(12)
 	SDTest.Call('CBmp_CreateFill', 'tviiii', cob, lx, ly, 0xffff0000)
-	SDTest.Call('BspTri_Mascara', 'vii', l, cob)
+	SDTest.Call('BspTri_Mask', 'vii', l, cob)
 	SDTest.Call('CBmpFlt2_CreateFill', 'tviiiF', l + 0xb0, lx, ly, (0.1, 0.2, 0.3))
 	SDTest.Call('CBmpFlt2_CreateFill', 'tviiiF', l + 0x108, lx, ly, (0.5, 0.6, 0.7))
 	return l
@@ -244,9 +244,9 @@ fnuC = fnulist([fnutri((0.0, 0.0), (6.0, 0.0), (0.0, 6.0), 6.0, -1.0), fnutri((6
 	fnumat[1])
 SDTest.Call('CBmpFlt_CreateFill', 'tviiiF', fnuC + 0xc8, fnui(fnuC + 0xd4), fnui(fnuC + 0xd8), (2.0, 1.0, 0.5, 1.0))
 fnuset(fnuC + 0x150, (2.0,))
-fnuini = SDTest.Call('CArchINI_ctor', 'tii', fnuz(4))[0]
-SDTest.Call('CArchINI_SetStr', 'tiisss', fnuini, 'mats_luces_rad', 'sdfnumatC', '200 100 50 1.5')
-SDTest.Call('CArchINI_SetStr', 'tiisss', fnuini, 'lglow_mult', '_default_', '255 128 64 2.0')
+fnuini = SDTest.Call('CIniFile_ctor', 'tii', fnuz(4))[0]
+SDTest.Call('CIniFile_SetStr', 'tiisss', fnuini, 'mats_luces_rad', 'sdfnumatC', '200 100 50 1.5')
+SDTest.Call('CIniFile_SetStr', 'tiisss', fnuini, 'lglow_mult', '_default_', '255 128 64 2.0')
 fnuesc = fnuz(0x64)
 fnupoke(fnuesc + 0x4c, fnuini)
 fnumod = fnuz(0x128)
@@ -274,11 +274,11 @@ def fnuints(a, n):
 	return tuple(map(lambda i, a=a: fnui(a + 4 * i), range(n)))
 check('fnu lists', lambda: (fnuradlist(fnuF), fnuradlist(fnuC)))
 # the sample normals of bmp\normales.rad are not in the game data: a table of one normal stands in for them
-fnunorm = (fnui(symva('g_RadNormales')), fnui(symva('g_RadNormales') + 0x4))
+fnunorm = (fnui(symva('g_RadNormals')), fnui(symva('g_RadNormals') + 0x4))
 fnunv = fnuz(12)
 fnuset(fnunv, (0.0, 1.0, 0.0))
-fnupoke(symva('g_RadNormales'), 1)
-fnupoke(symva('g_RadNormales') + 0x4, fnunv)
+fnupoke(symva('g_RadNormals'), 1)
+fnupoke(symva('g_RadNormals') + 0x4, fnunv)
 check('CBsp_RadAreas', lambda: (SDTest.Call('CBsp_RadAreas', 'tvi', fnumap), fnuradlist(fnuF), fnuradlist(fnuC),
 	fnuflt(fnuF + 0xfc, 3), fnuflt(fnuC + 0xfc, 3), fnuflt(fnuC + 0xc8, 4), fnuints(symva('g_BspAreasTotal'), 4)))
 fnupokeb(fnuC + 0x154, 0)
@@ -287,8 +287,8 @@ check('CBsp_RadGlobal', lambda: (SDTest.Call('CBsp_RadGlobal', 'tvi', fnumap), f
 	fnuints(symva('g_BspLodCount'), 4)))
 for fnu_i in range(len(fnurg)):
 	SDTest.Poke(fnurg[fnu_i], fnursaved[fnu_i])
-fnupoke(symva('g_RadNormales'), fnunorm[0])
-fnupoke(symva('g_RadNormales') + 0x4, fnunorm[1])
+fnupoke(symva('g_RadNormals'), fnunorm[0])
+fnupoke(symva('g_RadNormals') + 0x4, fnunorm[1])
 fnufree(fnunv)
 # the triangles one by one (they are calloc memory, the destructor deletes the next one)
 for fnu_l in (fnuF, fnuC):

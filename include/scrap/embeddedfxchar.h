@@ -73,10 +73,10 @@ typedef struct cEmbeddedFXBankMaster {
 	byte pad_09[3];
 	int dummyGlow;			/* 0x0c */
 	CGameParticles glow;		/* 0x10 */
-	int dummyBaston;		/* 0xc0 */
-	CGameParticles baston;		/* 0xc4 the stick */
+	int dummyBaton;		/* 0xc0 */
+	CGameParticles baton;		/* 0xc4 the stick */
 } cEmbeddedFXBankMaster;
-SD_OFFSET(cEmbeddedFXBankMaster, baston, 0xc4);
+SD_OFFSET(cEmbeddedFXBankMaster, baton, 0xc4);
 SD_SIZE(cEmbeddedFXBankMaster, 0x174);
 
 #define FXGAMBLER_ARCS 8

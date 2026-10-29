@@ -28,7 +28,7 @@
 #define VT_EFX_TREASURE GAME_VFTABLE(cEmbeddedFXTreasure_vftable, 0x3b1598)
 #define VT_EFX_FLAG GAME_VFTABLE(cEmbeddedFXFlag_vftable, 0x3b15b4)
 #define VT_EFX_DTRITUSDESKTOP GAME_VFTABLE(cEmbeddedFXDTritusDesktop_vftable, 0x3b15d0)
-#define VT_EFX_MOTO GAME_VFTABLE(cEmbeddedFXMoto_vftable, 0x3b15ec)
+#define VT_EFX_BIKE GAME_VFTABLE(cEmbeddedFXBike_vftable, 0x3b15ec)
 #define VT_EFX_BOSSSHIELD GAME_VFTABLE(cEmbeddedFXBossShield_vftable, 0x3b1608)
 #define VT_EFX_CONVERSOR GAME_VFTABLE(cEmbeddedFXConversor_vftable, 0x3b1624)
 #define VT_EFX_COIN GAME_VFTABLE(cEmbeddedFXCoin_vftable, 0x3b1640)
@@ -184,7 +184,7 @@ typedef struct cEmbeddedFXExtraLife {
 	int dummyGlow;			/* 0x0c DOB_ExtraLife_Glow */
 	CGameParticles glow;		/* 0x10 */
 	int dummyRoot;			/* 0xc0 DC_Root */
-	int dummyBarra;			/* 0xc4 OB_ExtraLife_Barra_01 */
+	int dummyBar;			/* 0xc4 OB_ExtraLife_Barra_01 */
 	CGameTrail trail;		/* 0xc8 the rays */
 	float scale;			/* 0xcc */
 	float t;			/* 0xd0 the pulse of the bar glows */
@@ -243,29 +243,29 @@ SD_OFFSET(cEmbeddedFXMeetingPoint, flares, 0xc4);
 SD_OFFSET(cEmbeddedFXMeetingPoint, countDown, 0x178);
 SD_SIZE(cEmbeddedFXMeetingPoint, 0x230);
 
-#define FXMOTO_ENGINES 3
-#define FXMOTO_DOWN 2
-#define FXMOTO_TUBES 6
+#define FXBIKE_ENGINES 3
+#define FXBIKE_DOWN 2
+#define FXBIKE_TUBES 6
 
-typedef struct cEmbeddedFXMoto {
+typedef struct cEmbeddedFXBike {
 	cEmbeddedFX base;
-	float t[FXMOTO_ENGINES];	/* 0x008 the time since the last smoke of each engine */
-	vec3_t pos[FXMOTO_ENGINES];	/* 0x014 the engine at the last smoke (the smoke fills the way from there) */
-	int nodeEngine[FXMOTO_ENGINES];	/* 0x038 DF_MotorTrust_01..03 */
-	CGameParticles engine[FXMOTO_ENGINES];	/* 0x044 */
-	CGameParticles down[FXMOTO_DOWN];	/* 0x254 DF_MotorTrust_04, 05 */
-	CGameParticles tube[FXMOTO_TUBES];	/* 0x3b4 DF_EscapeTube_01..06 */
+	float t[FXBIKE_ENGINES];	/* 0x008 the time since the last smoke of each engine */
+	vec3_t pos[FXBIKE_ENGINES];	/* 0x014 the engine at the last smoke (the smoke fills the way from there) */
+	int nodeEngine[FXBIKE_ENGINES];	/* 0x038 DF_MotorTrust_01..03 */
+	CGameParticles engine[FXBIKE_ENGINES];	/* 0x044 */
+	CGameParticles down[FXBIKE_DOWN];	/* 0x254 DF_MotorTrust_04, 05 */
+	CGameParticles tube[FXBIKE_TUBES];	/* 0x3b4 DF_EscapeTube_01..06 */
 	float throttle;			/* 0x7d4 0..1, the size of the flames and the smoke */
 	float boost;			/* 0x7d8 */
 	byte on;			/* 0x7dc the engines run (SetF7d4) */
 	byte pad_7dd[3];
-} cEmbeddedFXMoto;
-SD_OFFSET(cEmbeddedFXMoto, nodeEngine, 0x38);
-SD_OFFSET(cEmbeddedFXMoto, engine, 0x44);
-SD_OFFSET(cEmbeddedFXMoto, down, 0x254);
-SD_OFFSET(cEmbeddedFXMoto, tube, 0x3b4);
-SD_OFFSET(cEmbeddedFXMoto, throttle, 0x7d4);
-SD_SIZE(cEmbeddedFXMoto, 0x7e0);
+} cEmbeddedFXBike;
+SD_OFFSET(cEmbeddedFXBike, nodeEngine, 0x38);
+SD_OFFSET(cEmbeddedFXBike, engine, 0x44);
+SD_OFFSET(cEmbeddedFXBike, down, 0x254);
+SD_OFFSET(cEmbeddedFXBike, tube, 0x3b4);
+SD_OFFSET(cEmbeddedFXBike, throttle, 0x7d4);
+SD_SIZE(cEmbeddedFXBike, 0x7e0);
 
 typedef struct cEmbeddedFXTreasure {
 	cEmbeddedFX base;
@@ -296,8 +296,8 @@ void EmbeddedFXMisc_BossShieldHit(void);
 void EmbeddedFXMisc_BossShieldMsg(cAbstractFile *f);
 void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f);
 void __thiscall cEmbeddedFXMeetingPoint_SetCountDown(cEmbeddedFXMeetingPoint *self, float a, float b);
-vec3_t *__thiscall cEmbeddedFXMoto_EnginePos(cEmbeddedFXMoto *self, vec3_t *out);
-void __thiscall cEmbeddedFXMoto_SetF7d4(cEmbeddedFXMoto *self, float a, float b);
+vec3_t *__thiscall cEmbeddedFXBike_EnginePos(cEmbeddedFXBike *self, vec3_t *out);
+void __thiscall cEmbeddedFXBike_SetF7d4(cEmbeddedFXBike *self, float a, float b);
 void __thiscall cEmbeddedFXDataPack_SetOn(cEmbeddedFXDataPack *self, byte on);
 
 #endif

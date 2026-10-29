@@ -15,7 +15,7 @@
 #undef GUID_SYSKEYBOARD
 #undef GUID_SYSMOUSE
 #undef IID_IDIRECTINPUT8A
-#undef LUZ_RANGO_INF
+#undef LIGHT_RANGE_INF
 #undef g_EngineVersion
 #undef g_ErrPcxFormat
 
@@ -318,7 +318,7 @@ const uint32_t data_3d6fe8 SD_AT(0x3d6fe8);
 const double data_3d7438[3] SD_AT(0x3d7438) = { 1e-06, 0.999999, -0.999999 };
 const float data_3d7450 SD_AT(0x3d7450) = -6.2831855f;
 const float data_3d7bdc SD_AT(0x3d7bdc) = 0.59f;
-const float LUZ_RANGO_INF SD_AT(0x3d7be0) = 1.8446e+19f;
+const float LIGHT_RANGE_INF SD_AT(0x3d7be0) = 1.8446e+19f;
 const uint32_t data_3d7be4[3] SD_AT(0x3d7be4);
 const color4_t colorRva_3d7bf0 SD_AT(0x3d7bf0) = { .r = 0.383529f, .g = 0.430588f, .b = 0.517647f, .a = 1.0f };
 const color4_t colorRva_3d7c00 SD_AT(0x3d7c00) = { .r = 0.740392f, .g = 0.661961f, .b = 0.536471f, .a = 1.0f };

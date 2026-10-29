@@ -1,5 +1,5 @@
 /*
- * Lights of the engine3d, original source Engine/luz.cpp (include/scrap/luz.h).
+ * Lights of the engine3d, original source Engine/luz.cpp (include/scrap/light.h).
  */
 #include <string.h>
 
@@ -14,18 +14,18 @@
 #include "scrap/sueloportal.h"
 #include "scrap/utild3d.h"
 
-#define CLUZ_VFTABLE GAME_VFTABLE(CLuz_vftable, 0x3d79fc)
-#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObjeto3D_vftable, 0x3d79dc)
-#define LUZ_INV255 (1.0f / 255.0f)
+#define CLUZ_VFTABLE GAME_VFTABLE(CLight_vftable, 0x3d79fc)
+#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
+#define LIGHT_INV255 (1.0f / 255.0f)
 /* "no limit" for the range of the device light and the start of the nearest search, a float constant of the exe */
-#define LUZ_RANGO_INF GAME_GLOBAL(const float, LUZ_RANGO_INF, 0x3d7be0)
-#define PROF_LUCES 0x1d		/* the profiler section of Luz_Select */
+#define LIGHT_RANGE_INF GAME_GLOBAL(const float, LIGHT_RANGE_INF, 0x3d7be0)
+#define PROF_LIGHTS 0x1d		/* the profiler section of Light_Select */
 
-#define g_Luces (GAME_ARRAY(CLuz *, g_Luces, 0x4ac438))	/* MAX_LUCES, the active lights */
-#define g_nLuces GAME_GLOBAL(int, g_nLuces, 0x4ac434)
-#define g_LucesD3D GAME_GLOBAL(int, g_LucesD3D, 0x4ac430)	/* with act_D3D */
-#define g_LucesTotal GAME_GLOBAL(int, g_LucesTotal, 0x4ac42c)
-#define g_LuzIndD3D GAME_GLOBAL(uint32_t, g_LuzIndD3D, 0x4ac428)	/* the next light gets index 4 + this */
+#define g_Lights (GAME_ARRAY(CLight *, g_Lights, 0x4ac438))	/* MAX_LIGHTS, the active lights */
+#define g_nLights GAME_GLOBAL(int, g_nLights, 0x4ac434)
+#define g_LightsD3D GAME_GLOBAL(int, g_LightsD3D, 0x4ac430)	/* with act_D3D */
+#define g_LightsTotal GAME_GLOBAL(int, g_LightsTotal, 0x4ac42c)
+#define g_LightIndexD3D GAME_GLOBAL(uint32_t, g_LightIndexD3D, 0x4ac428)	/* the next light gets index 4 + this */
 
 /* the engine variables of the lights (Gvars) */
 #define g_LightEnaD3D GAME_GLOBAL_IN(int, GVar_R_LightEnaD3D, 16, 0x4ac228)	/* R_LightEnaD3D: 0 always, 1 on changes, from 2 never */
@@ -68,143 +68,143 @@ static void D3D_SetRenderState(uint32_t state, uint32_t value) {
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
 }
 
-typedef void(__thiscall *nodoDelete_t)(CNodo3D *self, int flags);
-typedef void(__thiscall *luzUpdate_t)(CLuz *self, int arg);
+typedef void(__thiscall *nodeDelete_t)(CNode3D *self, int flags);
+typedef void(__thiscall *lightUpdate_t)(CLight *self, int arg);
 
-static void Luz_Release(CNodo3D **slot) {
+static void Light_Release(CNode3D **slot) {
 	if (*slot) {
-		CNodo3D *old = *slot;
+		CNode3D *old = *slot;
 		old->Refs--;
 		if (!old->Refs && old) {
-			((nodoDelete_t)old->vftable[0])(old, 1);
+			((nodeDelete_t)old->vftable[0])(old, 1);
 		}
 		*slot = NULL;
 	}
 }
 
-static void Luz_Link(CNodo3D **slot, CNodo3D *n) {
+static void Light_Link(CNode3D **slot, CNode3D *n) {
 	if (n) {
 		n->Refs++;
 	}
-	Luz_Release(slot);
+	Light_Release(slot);
 	*slot = n;
 }
 
 /* the enable of the device light through the cache (inlined in several places of the original) */
-static void Luz_EnableD3D(CLuz *l, byte enable) {
+static void Light_EnableD3D(CLight *l, byte enable) {
 	if (g_LightEnaD3D <= 1 && (enable != l->ena_D3D || g_LightEnaD3D == 0)) {
 		CHECK(l->act_D3D || !enable);
 		l->ena_D3D = enable;
-		D3D_LightEnable(l->indD3D, enable);
+		D3D_LightEnable(l->indexD3D, enable);
 	}
 }
 
-static void Luz_Add(CLuz *self) {
-	self->activa = 1;
-	self->ind_lista = g_nLuces;
-	CHECK(g_nLuces < MAX_LUCES);
-	int n = g_nLuces;
-	g_Luces[n] = self;
-	g_nLuces = n + 1;
-	CLuz_UpdateD3D(self, 0);
+static void Light_Add(CLight *self) {
+	self->active = 1;
+	self->index_list = g_nLights;
+	CHECK(g_nLights < MAX_LIGHTS);
+	int n = g_nLights;
+	g_Lights[n] = self;
+	g_nLights = n + 1;
+	CLight_UpdateD3D(self, 0);
 }
 
-static void Luz_Remove(CLuz *self) {
-	CHECK(self->ind_lista < MAX_LUCES);
-	int i = self->ind_lista;
-	CLuz *last = g_Luces[g_nLuces - 1];
-	g_nLuces--;
-	g_Luces[i] = last;
-	last->ind_lista = i;
-	self->activa = 0;
-	self->ind_lista = -1;
-	CLuz_UpdateD3D(self, 0);
+static void Light_Remove(CLight *self) {
+	CHECK(self->index_list < MAX_LIGHTS);
+	int i = self->index_list;
+	CLight *last = g_Lights[g_nLights - 1];
+	g_nLights--;
+	g_Lights[i] = last;
+	last->index_list = i;
+	self->active = 0;
+	self->index_list = -1;
+	CLight_UpdateD3D(self, 0);
 }
 
 /* the color bytes times the intensity */
-static color4_t Luz_Color(const CLuz *self) {
-	float k = self->intensidad * LUZ_INV255;
+static color4_t Light_Color(const CLight *self) {
+	float k = self->intensity * LIGHT_INV255;
 	color4_t c = { (float)self->color[0] * k, (float)self->color[1] * k, (float)self->color[2] * k,
 		(float)self->color[3] * k };
 	return c;
 }
 
-static float Luz_Dist2(const CLuz *l, const vec3_t *p) {
+static float Light_Dist2(const CLight *l, const vec3_t *p) {
 	float dx = l->d3d.Position.x - p->x;
 	float dy = l->d3d.Position.y - p->y;
 	float dz = l->d3d.Position.z - p->z;
 	return dx * dx + dy * dy + dz * dz;
 }
 
-static float Luz_DegToRad(float deg) {
+static float Light_DegToRad(float deg) {
 	return (float)((double)deg * M_PI_D / DEG_PER_PI);
 }
 
-CLuz *__fastcall CLuz_ctor(CLuz *self) {
+CLight *__fastcall CLight_ctor(CLight *self) {
 	static const byte white[4] = { 0xff, 0xff, 0xff, 0 };
 
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->dir = (vec3_t){ 0.0f, -1.0f, 0.0f };
 	memcpy(self->color, white, sizeof(white));
-	self->intensidad = 1.0f;
-	self->indD3D = g_LuzIndD3D + 4;
-	g_LuzIndD3D++;
+	self->intensity = 1.0f;
+	self->indexD3D = g_LightIndexD3D + 4;
+	g_LightIndexD3D++;
 	self->vftable = CLUZ_VFTABLE;
-	self->clase = CLASE_OBJ3D_LUZ;
-	self->tipo = LUZ_DIREC;
-	self->mostrar = 0;
-	self->sombra = 0;
+	self->class = CLASS_OBJ3D_LIGHT;
+	self->type = LIGHT_DIR;
+	self->show = 0;
+	self->shadow = 0;
 	self->ena_D3D = 0;
-	self->activa = 0;
+	self->active = 0;
 	self->f30 = 0.0f;
-	self->rango = 0.0f;
+	self->range = 0.0f;
 	self->theta = 43.0f;
 	self->phi = 45.0f;
 	self->mult = 1.0f;
 	self->f44 = 1.0f;
-	self->peso = 0.0f;
-	self->nodo = NULL;
-	self->nodoObjetivo = NULL;
+	self->weight = 0.0f;
+	self->node = NULL;
+	self->nodeTarget = NULL;
 	self->act_D3D = 0;
 	self->sector = -1;
-	CLuz_FillD3D(self, &self->d3d);
-	if (!self->activa) {
-		Luz_Add(self);
+	CLight_FillD3D(self, &self->d3d);
+	if (!self->active) {
+		Light_Add(self);
 	}
-	g_LucesTotal++;
+	g_LightsTotal++;
 	return self;
 }
 
-void __fastcall CLuz_dtor(CLuz *self) {
+void __fastcall CLight_dtor(CLight *self) {
 	self->vftable = CLUZ_VFTABLE;
-	Luz_Release(&self->nodo);
-	self->nodo = NULL;
-	Luz_Release(&self->nodoObjetivo);
-	self->nodoObjetivo = NULL;
-	if (self->activa) {
-		Luz_Remove(self);
+	Light_Release(&self->node);
+	self->node = NULL;
+	Light_Release(&self->nodeTarget);
+	self->nodeTarget = NULL;
+	if (self->active) {
+		Light_Remove(self);
 	}
-	CHECK(g_LucesTotal > 0);
-	if (--g_LucesTotal == 0) {
-		g_LuzIndD3D = 0;
+	CHECK(g_LightsTotal > 0);
+	if (--g_LightsTotal == 0) {
+		g_LightIndexD3D = 0;
 		E3D_LogDebug(g_FileLog, "Global light index reset");
 	}
 	self->vftable = IOBJETO3D_VFTABLE;
 }
 
-CLuz *__thiscall CLuz_Delete(CLuz *self, byte flags) {
-	CLuz_dtor(self);
+CLight *__thiscall CLight_Delete(CLight *self, byte flags) {
+	CLight_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
 	return self;
 }
 
-void __fastcall IObjeto3D_dtor(IObjeto3D *self) {
+void __fastcall IObject3D_dtor(IObject3D *self) {
 	self->vftable = IOBJETO3D_VFTABLE;
 }
 
-IObjeto3D *__thiscall IObjeto3D_Delete(IObjeto3D *self, byte flags) {
+IObject3D *__thiscall IObject3D_Delete(IObject3D *self, byte flags) {
 	self->vftable = IOBJETO3D_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -212,69 +212,69 @@ IObjeto3D *__thiscall IObjeto3D_Delete(IObjeto3D *self, byte flags) {
 	return self;
 }
 
-byte __thiscall IObjeto3D_Read(IObjeto3D *self, CArchIO *f, void *ctx) {
+byte __thiscall IObject3D_Read(IObject3D *self, CFileIO *f, void *ctx) {
 	(void)self;
 	(void)f;
 	(void)ctx;
 	return 0;
 }
 
-byte __thiscall IObjeto3D_Write(IObjeto3D *self, CArchIO *f, void *ctx) {
+byte __thiscall IObject3D_Write(IObject3D *self, CFileIO *f, void *ctx) {
 	(void)self;
 	(void)f;
 	(void)ctx;
 	return 0;
 }
 
-int Luz_Select(const vec3_t *pos, int sector, const vec3_t *center, float radius, CLuz **out, int maxOn) {
+int Light_Select(const vec3_t *pos, int sector, const vec3_t *center, float radius, CLight **out, int maxOn) {
 	CHECK(g_pd3dDevice);
-	Prof_Begin(PROF_LUCES);
+	Prof_Begin(PROF_LIGHTS);
 	CHECK(radius > 0.0f);
 	int n = 0;
-	CLuz *dirSombra = NULL, *sombra = NULL;
-	float best = LUZ_RANGO_INF;
-	for (int i = 0; i < g_nLuces; i++) {
-		CLuz *l = g_Luces[i];
+	CLight *dirShadow = NULL, *shadow = NULL;
+	float best = LIGHT_RANGE_INF;
+	for (int i = 0; i < g_nLights; i++) {
+		CLight *l = g_Lights[i];
 		if (!l->act_D3D) {
 			continue;
 		}
-		CHECK(l->activa);
-		CHECK(l->ind_lista == i);
+		CHECK(l->active);
+		CHECK(l->index_list == i);
 		if (l->sector == sector || l->sector < 0 || sector < 0 || !g_LightSector) {
 			byte ok = 1;
-			if (l->tipo != LUZ_DIREC && l->rango != 0.0f) {
-				ok = l->rango * l->rango > Luz_Dist2(l, pos);
+			if (l->type != LIGHT_DIR && l->range != 0.0f) {
+				ok = l->range * l->range > Light_Dist2(l, pos);
 			}
-			if (ok && l->tipo == LUZ_FOCO && g_SpotlightAng) {
+			if (ok && l->type == LIGHT_SPOT && g_SpotlightAng) {
 				vec3_t p = l->d3d.Position, d = l->d3d.Direction;
-				ok = Sph_InCone(center, radius, &p, &d, Luz_DegToRad(l->phi));
+				ok = Sph_InCone(center, radius, &p, &d, Light_DegToRad(l->phi));
 			}
 			if (ok && n < g_LightSort) {
-				if (g_LightTrace && l->tipo != LUZ_DIREC) {
+				if (g_LightTrace && l->type != LIGHT_DIR) {
 					vec3_t p = l->d3d.Position;
-					CHECK(g_Mundo && g_Mundo->ObjSuelo);
-					ok = !CSuelo_Trace(g_Mundo->ObjSuelo, pos, &p, NULL, 0.0f, NULL);
+					CHECK(g_World && g_World->ObjGround);
+					ok = !CGround_Trace(g_World->ObjGround, pos, &p, NULL, 0.0f, NULL);
 				}
 				if (ok) {
-					CHECK(out && n < MAX_LUCES_OBJ);
+					CHECK(out && n < MAX_LIGHTS_OBJ);
 					out[n++] = l;
-					l->peso = 0.0f;
-					if (l->tipo != LUZ_DIREC) {
+					l->weight = 0.0f;
+					if (l->type != LIGHT_DIR) {
 						if (0.0f > g_LightSortI) {
-							l->peso = -(l->intensidad / (l->d3d.Attenuation2 * Luz_Dist2(l, pos) + 1.0f));
+							l->weight = -(l->intensity / (l->d3d.Attenuation2 * Light_Dist2(l, pos) + 1.0f));
 						} else {
-							float d = (float)__builtin_sqrt((double)Luz_Dist2(l, pos));
-							l->peso = d;
-							l->peso = (1.0f / (l->intensidad * g_LightSortI + 1.0f)) * d;
+							float d = (float)__builtin_sqrt((double)Light_Dist2(l, pos));
+							l->weight = d;
+							l->weight = (1.0f / (l->intensity * g_LightSortI + 1.0f)) * d;
 						}
 					}
-					if (l->sombra && (l->nodo->flags & NODO_SOMBRA)) {
-						if (l->tipo == LUZ_DIREC) {
-							dirSombra = l;
+					if (l->shadow && (l->node->flags & NODE_SHADOW)) {
+						if (l->type == LIGHT_DIR) {
+							dirShadow = l;
 						} else {
-							float d2 = Luz_Dist2(l, pos);
+							float d2 = Light_Dist2(l, pos);
 							if (best >= d2) {
-								sombra = l;
+								shadow = l;
 								best = d2;
 							}
 						}
@@ -283,21 +283,21 @@ int Luz_Select(const vec3_t *pos, int sector, const vec3_t *center, float radius
 				}
 			}
 		}
-		Luz_EnableD3D(l, 0);
+		Light_EnableD3D(l, 0);
 	}
-	E3D_SetShadowLight(sombra ? sombra : dirSombra, 0);
-	crt_qsort(out, n, sizeof(*out), Luz_Compare);
+	E3D_SetShadowLight(shadow ? shadow : dirShadow, 0);
+	crt_qsort(out, n, sizeof(*out), Light_Compare);
 	for (int i = 0; i < n; i++) {
-		CLuz *l = out[i];
+		CLight *l = out[i];
 		CHECK(l->act_D3D);
-		CHECK(l->activa);
-		Luz_EnableD3D(l, i < maxOn);
+		CHECK(l->active);
+		Light_EnableD3D(l, i < maxOn);
 	}
-	Prof_End(PROF_LUCES);
+	Prof_End(PROF_LIGHTS);
 	return n;
 }
 
-int Luz_SetDefault(byte on) {
+int Light_SetDefault(byte on) {
 	/* the directions of the three lights of EnableMonitorLights */
 	static const uint32_t dirBits[3][3] = {
 		{ 0xbf15e68a, 0xbe42517e, 0x3f49c1c6 },
@@ -312,13 +312,13 @@ int Luz_SetDefault(byte on) {
 	E3D_SetShadowLight(NULL, 0);
 	if (on) {
 		D3D_SetRenderState(D3DRS_AMBIENT, g_MonitorAmbient);
-		Luz_EnableAll(0);
+		Light_EnableAll(0);
 		for (uint32_t i = 0; i < 3; i++) {
 			color4_t c;
 			vec3_t d;
 			memcpy(&c, colors[i], sizeof(c));
 			memcpy(&d, dirBits[i], sizeof(d));
-			Luz_SetDirLight(i, &c, &d);
+			Light_SetDirLight(i, &c, &d);
 		}
 		for (uint32_t i = 0; i < 3; i++) {
 			D3D_LightEnable(i, 1);
@@ -329,66 +329,66 @@ int Luz_SetDefault(byte on) {
 	for (uint32_t i = 0; i < 3; i++) {
 		D3D_LightEnable(i, 0);
 	}
-	Luz_EnableAll(1);
+	Light_EnableAll(1);
 	return 0;
 }
 
-void __thiscall CLuz_Hide(CLuz *self, int arg) {
+void __thiscall CLight_Hide(CLight *self, int arg) {
 	(void)arg;
-	CLuz_UpdateD3D(self, 1);
+	CLight_UpdateD3D(self, 1);
 }
 
-void __thiscall CLuz_Reset(CLuz *self, int arg) {
+void __thiscall CLight_Reset(CLight *self, int arg) {
 	(void)arg;
-	CLuz_FillD3D(self, &self->d3d);
-	CLuz_UpdateD3D(self, 0);
-	((luzUpdate_t)((void **)self->vftable)[1])(self, 0);
+	CLight_FillD3D(self, &self->d3d);
+	CLight_UpdateD3D(self, 0);
+	((lightUpdate_t)((void **)self->vftable)[1])(self, 0);
 }
 
-/* R_ShowLights and the material of the debug drawing, a static of CLuz_Render */
+/* R_ShowLights and the material of the debug drawing, a static of CLight_Render */
 #define g_ShowLights GAME_GLOBAL_IN(int, GVar_R_ShowLights, 16, 0x4ac288)
-#define g_LuzMat (GAME_GLOBAL(CMaterial, g_LuzMat, 0x4ad438))
-#define g_LuzMatGuard (GAME_ARRAY(int, g_LuzMatGuard, 0x4ad4e8))
+#define g_LightMat (GAME_GLOBAL(CMaterial, g_LightMat, 0x4ad438))
+#define g_LightMatGuard (GAME_ARRAY(int, g_LightMatGuard, 0x4ad4e8))
 
 /* the atexit destructor of it (rva 0x38ed20) */
-void Luz_FiniMat(void) {
-	CMaterial_dtor(&g_LuzMat);
+void Light_FiniMat(void) {
+	CMaterial_dtor(&g_LightMat);
 }
 
 #define D3DFVF_XYZ_DIFFUSE 0x42
 
-typedef struct LuzVert {
+typedef struct LightVert {
 	vec3_t pos;
 	uint32_t color;
-} LuzVert;
+} LightVert;
 
-/* the virtual Render (dev, r not used): a light drawn only with mostrar or R_ShowLights: a corner of the diffuse
+/* the virtual Render (dev, r not used): a light drawn only with show or R_ShowLights: a corner of the diffuse
  * color sized by the distance to the eye; from 2 the texts, from 3 the range sphere, the axes and the cone of a
  * spot light */
-void __thiscall CLuz_Render(CLuz *self, void *dev, CNodoR *r) {
-	LuzVert v[5];
+void __thiscall CLight_Render(CLight *self, void *dev, CRenderNode *r) {
+	LightVert v[5];
 	matrix_t m;
 	vec3_t p, a, b;
 	const vec3_t *eye;
-	const char *tipo;
+	const char *type;
 	uint32_t color;
 	float s, len, k, rad;
 
 	(void)r;
-	if (!self->mostrar && !g_ShowLights) {
+	if (!self->show && !g_ShowLights) {
 		return;
 	}
-	if (*g_LuzMatGuard > crt_InitEpoch()) {
-		crt_Init_thread_header(g_LuzMatGuard);
-		if (*g_LuzMatGuard == -1) {
-			CMaterial_ctor(&g_LuzMat);
-			crt_atexit(Luz_FiniMat);
-			crt_Init_thread_footer(g_LuzMatGuard);
+	if (*g_LightMatGuard > crt_InitEpoch()) {
+		crt_Init_thread_header(g_LightMatGuard);
+		if (*g_LightMatGuard == -1) {
+			CMaterial_ctor(&g_LightMat);
+			crt_atexit(Light_FiniMat);
+			crt_Init_thread_footer(g_LightMatGuard);
 		}
 	}
 	Render_SetWorld();
-	g_LuzMat.params.b39 = 0;
-	Render_SetMaterial(&g_LuzMat, 0);
+	g_LightMat.params.b39 = 0;
+	Render_SetMaterial(&g_LightMat, 0);
 	color = Color_FromFloat(&self->d3d.Diffuse.r);
 	Render_GetWorld(&m);
 	p.x = m.m[12];
@@ -412,10 +412,10 @@ void __thiscall CLuz_Render(CLuz *self, void *dev, CNodoR *r) {
 	g_RenderTris += 3;
 	g_RenderVerts += 5;
 	if (g_ShowLights > 1) {
-		tipo = Luz_TipoStr(self->tipo);
+		type = Light_TypeStr(self->type);
 		a = self->d3d.Position;
-		Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &a, 0xffffff, "%s [%s,%d] [%f]", self->nodo->name, tipo, self->sector,
-			(double)self->rango);
+		Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &a, 0xffffff, "%s [%s,%d] [%f]", self->node->name, type, self->sector,
+			(double)self->range);
 		a = self->d3d.Position;
 		Debug_Text3D(g_FntTerm8, 0.0f, 12.0f, &a, color, "%.1f %.1f %.1f", (double)self->d3d.Diffuse.r,
 			(double)self->d3d.Diffuse.g, (double)self->d3d.Diffuse.b);
@@ -424,11 +424,11 @@ void __thiscall CLuz_Render(CLuz *self, void *dev, CNodoR *r) {
 		a.x = 0.0f;
 		a.y = 0.0f;
 		a.z = 0.0f;
-		Debug_DrawSphereM(&m, &a, self->rango, g_DebugColors[self->ind_lista & 0xf], 10, 10);
+		Debug_DrawSphereM(&m, &a, self->range, g_DebugColors[self->index_list & 0xf], 10, 10);
 	}
-	if (self->rango != 0.0f) {
-		rad = self->rango;
-		if (self->tipo == LUZ_FOCO) {
+	if (self->range != 0.0f) {
+		rad = self->range;
+		if (self->type == LIGHT_SPOT) {
 			rad = rad * 0.1f;
 		}
 		a.x = 0.0f;
@@ -436,7 +436,7 @@ void __thiscall CLuz_Render(CLuz *self, void *dev, CNodoR *r) {
 		a.z = 0.0f;
 		Debug_DrawAxes(&m, &a, rad);
 	}
-	if (self->tipo == LUZ_FOCO) {
+	if (self->type == LIGHT_SPOT) {
 		b = self->d3d.Direction;
 		len = (float)__builtin_sqrt((double)(b.y * b.y + b.x * b.x + b.z * b.z));
 		if ((double)len != 0.0) {
@@ -445,16 +445,16 @@ void __thiscall CLuz_Render(CLuz *self, void *dev, CNodoR *r) {
 			b.y = self->d3d.Direction.y * k;
 			b.z = self->d3d.Direction.z * k;
 		}
-		b.x = self->d3d.Position.x + b.x * self->rango;
-		b.y = self->d3d.Position.y + b.y * self->rango;
-		b.z = self->d3d.Position.z + b.z * self->rango;
+		b.x = self->d3d.Position.x + b.x * self->range;
+		b.y = self->d3d.Position.y + b.y * self->range;
+		b.z = self->d3d.Position.z + b.z * self->range;
 		a = self->d3d.Position;
 		Debug_DrawLine(&a, &b, 0xffff00);
-		Debug_DrawConeM(&m, self->rango, Luz_DegToRad(self->phi));
+		Debug_DrawConeM(&m, self->range, Light_DegToRad(self->phi));
 	}
 }
 
-void Luz_SetDirLight(uint32_t idx, const color4_t *color, const vec3_t *dir) {
+void Light_SetDirLight(uint32_t idx, const color4_t *color, const vec3_t *dir) {
 	D3DLight l;
 
 	memset(&l, 0, sizeof(l));
@@ -466,74 +466,74 @@ void Luz_SetDirLight(uint32_t idx, const color4_t *color, const vec3_t *dir) {
 	D3D_SetLight(idx, &l);
 }
 
-void __thiscall CLuz_EnableD3D(CLuz *self, byte enable) {
-	Luz_EnableD3D(self, enable);
+void __thiscall CLight_EnableD3D(CLight *self, byte enable) {
+	Light_EnableD3D(self, enable);
 }
 
 /* the members after the version as the file has them */
 static const struct {
 	uint8_t off, size;
-} luzFields[] = {
-	{ offsetof(CLuz, sector), 4 }, { offsetof(CLuz, tipo), 4 }, { offsetof(CLuz, sombra), 1 },
-	{ offsetof(CLuz, pos), 12 }, { offsetof(CLuz, dir), 12 }, { offsetof(CLuz, color), 8 },
-	{ offsetof(CLuz, f30), 4 }, { offsetof(CLuz, rango), 4 }, { offsetof(CLuz, theta), 4 },
-	{ offsetof(CLuz, phi), 4 }, { offsetof(CLuz, mult), 4 }, { offsetof(CLuz, f44), 4 },
+} lightFields[] = {
+	{ offsetof(CLight, sector), 4 }, { offsetof(CLight, type), 4 }, { offsetof(CLight, shadow), 1 },
+	{ offsetof(CLight, pos), 12 }, { offsetof(CLight, dir), 12 }, { offsetof(CLight, color), 8 },
+	{ offsetof(CLight, f30), 4 }, { offsetof(CLight, range), 4 }, { offsetof(CLight, theta), 4 },
+	{ offsetof(CLight, phi), 4 }, { offsetof(CLight, mult), 4 }, { offsetof(CLight, f44), 4 },
 };
 
-byte __thiscall CLuz_Read(CLuz *self, CArchIO *f, void *ctx) {
-	Luz_Link(&self->nodo, *(CNodo3D **)((byte *)ctx + 4));
-	CArchIO_BeginBlock(f, "LUZ");
-	CHECK(CArchIO_ReadInt(f) == 1);
+byte __thiscall CLight_Read(CLight *self, CFileIO *f, void *ctx) {
+	Light_Link(&self->node, *(CNode3D **)((byte *)ctx + 4));
+	CFileIO_BeginBlock(f, "LUZ");
+	CHECK(CFileIO_ReadInt(f) == 1);
 	CHECK(self->sector == -1);
 	CHECK(!self->ena_D3D);
-	for (size_t i = 0; i < sizeof(luzFields) / sizeof(luzFields[0]); i++) {
-		CArchIO_Read(f, (byte *)self + luzFields[i].off, luzFields[i].size);
+	for (size_t i = 0; i < sizeof(lightFields) / sizeof(lightFields[0]); i++) {
+		CFileIO_Read(f, (byte *)self + lightFields[i].off, lightFields[i].size);
 	}
-	CLuz_SetActiva(self, CArchIO_ReadBool(f));
-	CArchIO_Error(f, "LUZ");
+	CLight_SetActive(self, CFileIO_ReadBool(f));
+	CFileIO_Error(f, "LUZ");
 	return 1;
 }
 
-void Luz_List(void) {
+void Light_List(void) {
 	E3D_DebugPrintf("\nLuces:");
-	for (int i = 0; i < g_nLuces; i++) {
-		CLuz *l = g_Luces[i];
-		const char *name = l->nodo ? l->nodo->name : "(null)";
-		E3D_DebugPrintf("\n  '%s'  tipo: %s  activa: %s  act_d3d: %s", name, Luz_TipoStr(l->tipo),
-			l->activa ? "SI" : "NO", l->act_D3D ? "SI" : "NO");
-		CHECK(!l->activa || l->ind_lista == i);
+	for (int i = 0; i < g_nLights; i++) {
+		CLight *l = g_Lights[i];
+		const char *name = l->node ? l->node->name : "(null)";
+		E3D_DebugPrintf("\n  '%s'  tipo: %s  activa: %s  act_d3d: %s", name, Light_TypeStr(l->type),
+			l->active ? "SI" : "NO", l->act_D3D ? "SI" : "NO");
+		CHECK(!l->active || l->index_list == i);
 	}
-	E3D_DebugPrintf("\n  %d luces (%d activas, %d act_d3d)", g_LucesTotal, g_nLuces, g_LucesD3D);
+	E3D_DebugPrintf("\n  %d luces (%d activas, %d act_d3d)", g_LightsTotal, g_nLights, g_LightsD3D);
 }
 
-byte __thiscall CLuz_Write(CLuz *self, CArchIO *f, void *ctx) {
-	CHECK(self->nodo == *(CNodo3D **)((byte *)ctx + 4));
-	CArchIO_BeginBlockWrite(f, "LUZ");
-	CArchIO_WriteInt(f, 1);
+byte __thiscall CLight_Write(CLight *self, CFileIO *f, void *ctx) {
+	CHECK(self->node == *(CNode3D **)((byte *)ctx + 4));
+	CFileIO_BeginBlockWrite(f, "LUZ");
+	CFileIO_WriteInt(f, 1);
 	CHECK(!self->ena_D3D);
-	Luz_Release(&self->nodoObjetivo);
-	self->nodoObjetivo = NULL;
-	for (size_t i = 0; i < sizeof(luzFields) / sizeof(luzFields[0]); i++) {
-		CArchIO_Write(f, (byte *)self + luzFields[i].off, luzFields[i].size);
+	Light_Release(&self->nodeTarget);
+	self->nodeTarget = NULL;
+	for (size_t i = 0; i < sizeof(lightFields) / sizeof(lightFields[0]); i++) {
+		CFileIO_Write(f, (byte *)self + lightFields[i].off, lightFields[i].size);
 	}
-	CArchIO_WriteInt(f, self->activa);
-	CArchIO_EndBlockWrite(f, "LUZ");
+	CFileIO_WriteInt(f, self->active);
+	CFileIO_EndBlockWrite(f, "LUZ");
 	return 1;
 }
 
-void __thiscall CLuz_Update(CLuz *self, int arg) {
+void __thiscall CLight_Update(CLight *self, int arg) {
 	(void)arg;
-	if (!self->activa) {
+	if (!self->active) {
 		return;
 	}
 	D3DLight *l = &self->d3d;
-	CLuz_FillD3D(self, l);
-	CNodo3D *n = self->nodo;
+	CLight_FillD3D(self, l);
+	CNode3D *n = self->node;
 	if (n) {
 		float x = n->m.m[12], y = n->m.m[13], z = n->m.m[14];
 		l->Position = (vec3_t){ x, y, z };
 		if (l->Type != D3DLIGHT_POINT) {
-			CNodo3D *t = self->nodoObjetivo;
+			CNode3D *t = self->nodeTarget;
 			if (t && g_LightTarget) {
 				l->Direction.x = t->m.m[12] - x;
 				l->Direction.y = t->m.m[13] - y;
@@ -547,55 +547,55 @@ void __thiscall CLuz_Update(CLuz *self, int arg) {
 		vec3_t c;
 		float k;
 		color4_t col;
-		if (CNodo_LightColor(self->nodo, &c, &k)) {
+		if (CNode_LightColor(self->node, &c, &k)) {
 			col = (color4_t){ c.x * k, c.y * k, c.z * k, 1.0f };
 		} else {
-			col = Luz_Color(self);
+			col = Light_Color(self);
 		}
 		l->Specular = col;
 		l->Diffuse = col;
 	}
-	CLuz_AdjustD3D(self, l);
-	if (!self->activa) {
+	CLight_AdjustD3D(self, l);
+	if (!self->active) {
 		return;
 	}
 	byte vis = 1;
 	if (self->sector >= 0 && g_LightSector) {
 		vis = Sector_IsVisible(self->sector);
 	}
-	if (vis && g_pd3dDevice && l->Type != D3DLIGHT_DIRECTIONAL && LUZ_RANGO_INF > l->Range) {
+	if (vis && g_pd3dDevice && l->Type != D3DLIGHT_DIRECTIONAL && LIGHT_RANGE_INF > l->Range) {
 		vec3_t p = l->Position;
 		vis = Sph_IsVisible(&p, l->Range, 0);
 	}
-	CLuz_UpdateD3D(self, !vis);
+	CLight_UpdateD3D(self, !vis);
 }
 
-void Luz_EnableAll(byte enable) {
+void Light_EnableAll(byte enable) {
 	CHECK(g_pd3dDevice);
 	if (g_LightDefer) {
 		enable = 0;
 	}
-	for (int i = 0; i < g_nLuces; i++) {
-		CLuz *l = g_Luces[i];
-		CHECK(l->activa);
-		CHECK(l->ind_lista == i);
-		Luz_EnableD3D(l, enable ? l->act_D3D : 0);
+	for (int i = 0; i < g_nLights; i++) {
+		CLight *l = g_Lights[i];
+		CHECK(l->active);
+		CHECK(l->index_list == i);
+		Light_EnableD3D(l, enable ? l->act_D3D : 0);
 	}
 }
 
-void __thiscall CLuz_AdjustD3D(CLuz *self, D3DLight *l) {
+void __thiscall CLight_AdjustD3D(CLight *self, D3DLight *l) {
 	byte spot = l->Type == D3DLIGHT_SPOT && g_SpotlightAdjust;
 
-	if (g_LightAtten2 && self->rango != 0.0f) {
-		float k = 1.0f / self->intensidad;
+	if (g_LightAtten2 && self->range != 0.0f) {
+		float k = 1.0f / self->intensity;
 		l->Diffuse.r = l->Diffuse.r * k;
 		l->Diffuse.g = l->Diffuse.g * k;
 		l->Diffuse.b = l->Diffuse.b * k;
 		l->Diffuse.a = l->Diffuse.a * k;
-		l->Attenuation0 = l->Attenuation0 / (self->mult * g_LightMult2 * self->intensidad);
+		l->Attenuation0 = l->Attenuation0 / (self->mult * g_LightMult2 * self->intensity);
 	} else {
 		float m = spot ? g_SpotlightMult : g_LightMult;
-		if (*g_LightMultName && !Wild_MatchLower(g_LightMultName, self->nodo->name)) {
+		if (*g_LightMultName && !Wild_MatchLower(g_LightMultName, self->node->name)) {
 			m = 1.0f;
 		}
 		l->Diffuse.r = l->Diffuse.r * m * self->mult;
@@ -603,7 +603,7 @@ void __thiscall CLuz_AdjustD3D(CLuz *self, D3DLight *l) {
 		l->Diffuse.b = l->Diffuse.b * m * self->mult;
 		l->Diffuse.a = l->Diffuse.a * m * self->mult;
 		float a = spot ? g_SpotlightAtten : g_LightAtten;
-		l->Attenuation2 = self->rango != 0.0f ? a / (self->rango * self->rango) : 0.0f;
+		l->Attenuation2 = self->range != 0.0f ? a / (self->range * self->range) : 0.0f;
 	}
 	if (g_LightGamma != 1.0f) {
 		double e = (double)(1.0f / g_LightGamma);
@@ -640,86 +640,86 @@ void __thiscall CLuz_AdjustD3D(CLuz *self, D3DLight *l) {
 	l->Ambient = (color4_t){ amb, amb, amb, 1.0f };
 }
 
-void __thiscall CLuz_SetNodo(CLuz *self, CNodo3D *nodo) {
-	Luz_Link(&self->nodo, nodo);
+void __thiscall CLight_SetNode(CLight *self, CNode3D *node) {
+	Light_Link(&self->node, node);
 }
 
-void __thiscall CLuz_SetNodoObjetivo(CLuz *self, CNodo3D *nodo) {
-	Luz_Link(&self->nodoObjetivo, nodo);
+void __thiscall CLight_SetNodeTarget(CLight *self, CNode3D *node) {
+	Light_Link(&self->nodeTarget, node);
 }
 
-void __thiscall CLuz_SetActiva(CLuz *self, byte activa) {
-	if (activa) {
-		if (!self->activa) {
-			Luz_Add(self);
+void __thiscall CLight_SetActive(CLight *self, byte active) {
+	if (active) {
+		if (!self->active) {
+			Light_Add(self);
 		}
-	} else if (self->activa) {
-		Luz_Remove(self);
+	} else if (self->active) {
+		Light_Remove(self);
 	}
 }
 
-int Luz_Compare(const void *a, const void *b) {
-	const CLuz *la = *(CLuz *const *)a, *lb = *(CLuz *const *)b;
-	return lb->peso > la->peso ? -1 : 1;
+int Light_Compare(const void *a, const void *b) {
+	const CLight *la = *(CLight *const *)a, *lb = *(CLight *const *)b;
+	return lb->weight > la->weight ? -1 : 1;
 }
 
-void __thiscall CLuz_FillD3D(CLuz *self, D3DLight *l) {
-	switch (self->tipo) {
-	case LUZ_OMNI:
+void __thiscall CLight_FillD3D(CLight *self, D3DLight *l) {
+	switch (self->type) {
+	case LIGHT_OMNI:
 		l->Type = D3DLIGHT_POINT;
 		break;
-	case LUZ_FOCO:
+	case LIGHT_SPOT:
 		l->Type = D3DLIGHT_SPOT;
 		break;
-	case LUZ_DIREC:
+	case LIGHT_DIR:
 		l->Type = D3DLIGHT_DIRECTIONAL;
 		break;
 	default:
 		CHECK(0);
 	}
-	color4_t c = Luz_Color(self);
+	color4_t c = Light_Color(self);
 	l->Diffuse = c;
 	l->Specular = c;
 	l->Ambient = (color4_t){ 0.0f, 0.0f, 0.0f, 1.0f };
 	l->Position = self->pos;
 	l->Direction = self->dir;
-	l->Range = self->rango == 0.0f ? LUZ_RANGO_INF : self->rango;
+	l->Range = self->range == 0.0f ? LIGHT_RANGE_INF : self->range;
 	l->Falloff = 1.0f;
 	l->Attenuation0 = 1.0f;
 	l->Attenuation1 = 0.0f;
-	l->Attenuation2 = self->rango == 0.0f ? 0.0f : g_LightAtten / (self->rango * self->rango);
-	l->Theta = Luz_DegToRad(self->theta);
-	l->Phi = Luz_DegToRad(self->phi);
+	l->Attenuation2 = self->range == 0.0f ? 0.0f : g_LightAtten / (self->range * self->range);
+	l->Theta = Light_DegToRad(self->theta);
+	l->Phi = Light_DegToRad(self->phi);
 }
 
-int Luz_NumD3D(void) {
-	return g_LucesD3D;
+int Light_NumD3D(void) {
+	return g_LightsD3D;
 }
 
-int Luz_NumActivas(void) {
-	return g_nLuces;
+int Light_NumActive(void) {
+	return g_nLights;
 }
 
-int Luz_NumTotal(void) {
-	return g_LucesTotal;
+int Light_NumTotal(void) {
+	return g_LightsTotal;
 }
 
-void __thiscall CLuz_UpdateD3D(CLuz *self, byte hide) {
+void __thiscall CLight_UpdateD3D(CLight *self, byte hide) {
 	if (!g_pd3dDevice) {
 		return;
 	}
-	byte act = hide ? 0 : self->activa;
+	byte act = hide ? 0 : self->active;
 	if (act != self->act_D3D) {
 		self->act_D3D = act;
-		g_LucesD3D += act ? 1 : -1;
+		g_LightsD3D += act ? 1 : -1;
 		if (!g_LightDefer) {
-			CLuz_EnableD3D(self, act);
+			CLight_EnableD3D(self, act);
 		} else {
-			Luz_EnableD3D(self, 0);
+			Light_EnableD3D(self, 0);
 		}
 	}
 	if (self->act_D3D) {
-		D3D_SetLight(self->indD3D, &self->d3d);
+		D3D_SetLight(self->indexD3D, &self->d3d);
 	}
 }
 

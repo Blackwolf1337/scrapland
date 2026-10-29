@@ -393,7 +393,7 @@ void __thiscall CSoundXBox_DebugDraw(CSoundXBox *self, int xi, int yi) {
 	float x = (float)xi + 20.0f;
 	if (g_S_Show == 3) {
 		FSOUND_GetMemoryStats(&cur, &max);
-		CFont_PrintfColorSombra(g_FontHoratioSmall, x, (float)yi + 20.0f, 0xffff00, "memory: %d %d", cur >> 10,
+		CFont_PrintfColorShadow(g_FontHoratioSmall, x, (float)yi + 20.0f, 0xffff00, "memory: %d %d", cur >> 10,
 			max >> 10);
 		return;
 	}
@@ -405,11 +405,11 @@ void __thiscall CSoundXBox_DebugDraw(CSoundXBox *self, int xi, int yi) {
 	int maxc = FSOUND_GetMaxChannels();
 	int playing = FSOUND_GetChannelsPlaying();
 	int sw = maxc - hwTotal;
-	CFont_PrintfColorSombra(g_FontTerminal8, x, (float)yi, 0xffff00, "SoundXBox:");
-	CFont_PrintfColorSombra(g_FontTerminal8, x, (float)yi + 10.0f, 0xff00, "NumSWChannels: %d", sw);
-	CFont_PrintfColorSombra(g_FontTerminal8, x, (float)yi + 20.0f, 0xff00, "NumHWChannels: %d %d %d", hw2D, hw3D,
+	CFont_PrintfColorShadow(g_FontTerminal8, x, (float)yi, 0xffff00, "SoundXBox:");
+	CFont_PrintfColorShadow(g_FontTerminal8, x, (float)yi + 10.0f, 0xff00, "NumSWChannels: %d", sw);
+	CFont_PrintfColorShadow(g_FontTerminal8, x, (float)yi + 20.0f, 0xff00, "NumHWChannels: %d %d %d", hw2D, hw3D,
 		hwTotal);
-	CFont_PrintfColorSombra(g_FontTerminal8, x, (float)yi + 30.0f, 0xff00, "SFXMasterVolume: %d",
+	CFont_PrintfColorShadow(g_FontTerminal8, x, (float)yi + 30.0f, 0xff00, "SFXMasterVolume: %d",
 		FSOUND_GetSFXMasterVolume());
 	float y = (float)yi + 40.0f;
 	int n = 0;
@@ -418,7 +418,7 @@ void __thiscall CSoundXBox_DebugDraw(CSoundXBox *self, int xi, int yi) {
 			n++;
 		}
 	}
-	CFont_PrintfColorSombra(g_FontTerminal8, x, y, n ? 0xff0000 : 0xff00, "Channels playing (SW): %d", n);
+	CFont_PrintfColorShadow(g_FontTerminal8, x, y, n ? 0xff0000 : 0xff00, "Channels playing (SW): %d", n);
 	int i = hwTotal ? sw : 0;
 	if (i < maxc) {
 		int k = 0;
@@ -428,8 +428,8 @@ void __thiscall CSoundXBox_DebugDraw(CSoundXBox *self, int xi, int yi) {
 			float cx = (float)k + x + 30.0f;
 			signed char on = (signed char)FSOUND_IsPlaying(i);
 			signed char res = (signed char)FSOUND_GetReserved(i);
-			CFont_PrintfColorSombra(g_FontTerminal8, cx, y1, 0xff00, "%s", on ? "*" : ".");
-			CFont_PrintfColorSombra(g_FontTerminal8, cx, y2, 0xff00, "%s", res ? "R" : "");
+			CFont_PrintfColorShadow(g_FontTerminal8, cx, y1, 0xff00, "%s", on ? "*" : ".");
+			CFont_PrintfColorShadow(g_FontTerminal8, cx, y2, 0xff00, "%s", res ? "R" : "");
 			i++;
 			k += 5;
 		} while (i < maxc);
@@ -447,13 +447,13 @@ void __thiscall CSoundXBox_DebugDraw(CSoundXBox *self, int xi, int yi) {
 				y = top;
 			}
 			y = y + 10.0f;
-			CFont_PrintfColorSombra(g_FontTerminal8, cx, y, 0xff00, "%2d", i);
+			CFont_PrintfColorShadow(g_FontTerminal8, cx, y, 0xff00, "%2d", i);
 			if (FSOUND_Sample_GetName(smp)) {
 				uint32_t col = FSOUND_GetPriority(i) == 0x100 ? 0xff : 0xffff00;
-				CFont_PrintfColorSombra(f, f->x, y, col, "  [%s]", FSOUND_Sample_GetName(smp));
+				CFont_PrintfColorShadow(f, f->x, y, col, "  [%s]", FSOUND_Sample_GetName(smp));
 			}
 			if (smp) {
-				int pri = FSOUND_GetPriority(i);
+				int first = FSOUND_GetPriority(i);
 				int vol = FSOUND_GetVolume(i);
 				int pan = FSOUND_GetPan(i);
 				int freq = FSOUND_GetFrequency(i);
@@ -461,17 +461,17 @@ void __thiscall CSoundXBox_DebugDraw(CSoundXBox *self, int xi, int yi) {
 				uint32_t loop = FSOUND_GetLoopMode(i);
 				FSOUND_GetReserved(i);
 				uint32_t col = on ? 0xff00 : 0x8000;
-				CFont_PrintfColorSombra(f, f->x, y, col, "  %s", loop == FSOUND_LOOP_OFF ? " " : "L");
-				CFont_PrintfColorSombra(f, f->x, y, col, "  vpf: %3d %3d %5d %3d", vol, pan, freq, pri);
+				CFont_PrintfColorShadow(f, f->x, y, col, "  %s", loop == FSOUND_LOOP_OFF ? " " : "L");
+				CFont_PrintfColorShadow(f, f->x, y, col, "  vpf: %3d %3d %5d %3d", vol, pan, freq, first);
 			} else {
-				CFont_PrintfColorSombra(f, f->x, y, 0x8000, "  ---");
+				CFont_PrintfColorShadow(f, f->x, y, 0x8000, "  ---");
 			}
 			i++;
 		} while (i < maxc);
 	}
 	double cpu = FSOUND_GetCPUUsage();
-	CFont_PrintfColorSombra(g_FontTerminal8, x, y + 10.0f, 0xffff00, "channels: %d/%d  cpu %5.02f%%", playing, maxc,
+	CFont_PrintfColorShadow(g_FontTerminal8, x, y + 10.0f, 0xffff00, "channels: %d/%d  cpu %5.02f%%", playing, maxc,
 		cpu);
 	FSOUND_GetMemoryStats(&cur, &max);
-	CFont_PrintfColorSombra(g_FontTerminal8, x, y + 20.0f, 0xffff00, "memory: %d %d", cur >> 10, max >> 10);
+	CFont_PrintfColorShadow(g_FontTerminal8, x, y + 20.0f, 0xffff00, "memory: %d %d", cur >> 10, max >> 10);
 }

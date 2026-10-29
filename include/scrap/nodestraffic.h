@@ -159,7 +159,7 @@ typedef struct CNodesTrafficVtbl {
 	byte(__thiscall *GetNode)(CNodesTraffic *self, vec3_t *out, int track, int node);	/* 0x34 */
 	cTrafficTrackInfo *(__thiscall *GetInfo)(CNodesTraffic *self, cTrafficTrackInfo *out, int track);	/* 0x38 */
 	void(__thiscall *Draw)(CNodesTraffic *self);					/* 0x3c */
-	void(__thiscall *Analize)(CNodesTraffic *self);					/* 0x40 */
+	void(__thiscall *Analyze)(CNodesTraffic *self);					/* 0x40 */
 	void(__thiscall *DrawTrack)(CNodesTraffic *self, int track);			/* 0x44 */
 	void(__thiscall *BuildGrid)(CNodesTraffic *self);				/* 0x48 */
 	void(__thiscall *FindNodes)(CNodesTraffic *self, const vec3_t *pos, int type, InfoTrafficNode *list, int max,
@@ -176,7 +176,7 @@ typedef struct CNodesTrafficVtbl {
 		int *outNode);								/* 0x5c */
 } CNodesTrafficVtbl;
 SD_OFFSET(CNodesTrafficVtbl, Init, 0x1c);
-SD_OFFSET(CNodesTrafficVtbl, Analize, 0x40);
+SD_OFFSET(CNodesTrafficVtbl, Analyze, 0x40);
 SD_OFFSET(CNodesTrafficVtbl, RandomPointAhead, 0x5c);
 
 typedef DLIST(cTrafficErrorNode) cTrafficErrorList;
@@ -254,7 +254,7 @@ void __thiscall CNodesTraffic_Draw(CNodesTraffic *self);
 /* vtable slot 0x40: the tracks loaded without nodes between the dummies, their points above the graph (outdoors) or
  * in the level into errors and <level>/AI/AnalisisTraffic.txt (writes a file), with the folded tracks; then loaded
  * again with the nodes */
-void __thiscall CNodesTraffic_Analize(CNodesTraffic *self);
+void __thiscall CNodesTraffic_Analyze(CNodesTraffic *self);
 void __thiscall CNodesTraffic_DrawTrack(CNodesTraffic *self, int track);
 void __thiscall CNodesTraffic_BuildGrid(CNodesTraffic *self);
 /* the nodes of the type between distMin and distMax from pos: the cell of pos, then the rings around it; soft goes

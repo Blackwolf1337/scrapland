@@ -243,7 +243,7 @@ void __thiscall cTextScorer_DrawKeyboard(cTextScorer *self, int player) {
 	Menu_DrawFrame(g_ScorerTabs, 1, it->x - 3.0f, it->y - 1.0f, it->w + 6.0f, it->h + 2.0f);
 	Str_Copy(buf, in->text, sizeof(buf));
 	CFont *font = t->font;
-	font->efectos = 0x20000;
+	font->effects = 0x20000;
 	font->color = KEYS_COLOR;
 	if (self->centerEdit) {
 		font->align = KEYS_CENTER;
@@ -278,7 +278,7 @@ void __thiscall cTextScorer_DrawKeyboard(cTextScorer *self, int player) {
 					font->align = KEYS_CENTER;
 					font->color = (((uint32_t)blink | 0xffffff00) << 8 | (uint32_t)blink) << 8
 						| (uint32_t)(int)((float)blink * 0.8f);
-					font->efectos = 0x40000;
+					font->effects = 0x40000;
 					cell = self->cellSize;
 					CFont_PrintfFlags(font, cell * (float)col + it->x + cell * 0.5f + ox,
 						cell * (float)row + (oy + it->y) + cell * 0.5f, 0xb, "%s", key);
@@ -300,7 +300,7 @@ void __thiscall cTextScorer_DrawKeyboard(cTextScorer *self, int player) {
 			hint[n] = ' ';
 		}
 		Str_PrintfQuiet(hint + 1 + n, KEYS_HINT_SIZE, Lang_GetStr("XBox_Text_Input_Hint_1"), "\x16", "\x17");
-		CFont_PrintfAlignColorSombra(font, 320.0f, 430.0f, KEYS_CENTER, KEYS_COLOR, "%s", hint);
+		CFont_PrintfAlignColorShadow(font, 320.0f, 430.0f, KEYS_CENTER, KEYS_COLOR, "%s", hint);
 		cScorerItem *c = g_TextEditCursor[player];
 		c->x = in->cursorX * self->cellSize + it->x;
 		c->y = it->y + (in->cursorY + 1.0f) * self->cellSize;
@@ -322,7 +322,7 @@ void __thiscall cTextScorer_Draw(cTextScorer *self, int player) {
 	}
 	Text_Get(self, player, buf, sizeof(buf));
 	sc = Scorer_Get(player);
-	if (!cString_ICmp(&t->base.name, &sc->actual)) {
+	if (!cString_ICmp(&t->base.name, &sc->current)) {
 		/* the cursor item blinks */
 		int v = Scorer_Abs((int)((double)sc->time * 680.0) % 0xff - 0x7f);
 		if (!Text_IsEdit(self)) {
@@ -333,7 +333,7 @@ void __thiscall cTextScorer_Draw(cTextScorer *self, int player) {
 			col = col << 8 | (uint32_t)((int)(c & 0xff) * a / 0xff);
 			t->font->align = (uint32_t)t->align;
 			t->font->color = col;
-			t->font->efectos = TEXTSCORER_OUTLINE;
+			t->font->effects = TEXTSCORER_OUTLINE;
 			CFont_PrintfFlags(t->font, t->base.x, t->base.y, 0xb, "%s", buf);
 			return;
 		}
@@ -342,7 +342,7 @@ void __thiscall cTextScorer_Draw(cTextScorer *self, int player) {
 	} else {
 		t->font->align = (uint32_t)t->align;
 		t->font->color = t->color;
-		t->font->efectos = (uint32_t)t->effect;
+		t->font->effects = (uint32_t)t->effect;
 		if (!Text_IsEdit(self)) {
 			CFont_PrintfFlags(t->font, t->base.x, t->base.y, 0xb, "%s", buf);
 			return;
@@ -416,6 +416,6 @@ void __thiscall cTextTypingScorer_Draw(cTextTypingScorer *self, int player) {
 	buf[n] = 0;
 	t->font->align = (uint32_t)t->align;
 	t->font->color = t->color;
-	t->font->efectos = (uint32_t)t->effect;
+	t->font->effects = (uint32_t)t->effect;
 	CFont_PrintfFlags(t->font, t->base.x, t->base.y, 0xb, "%s", buf);
 }

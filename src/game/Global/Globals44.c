@@ -43,7 +43,6 @@
 #undef g_BettyEnt
 #undef g_BossWasIdle
 #undef g_CTFFlagName
-#undef g_CalimaPos
 #undef g_CharGroup
 #undef g_ConBuf
 #undef g_ConCol
@@ -79,6 +78,7 @@
 #undef g_GogReady
 #undef g_HashItemPool
 #undef g_HashItemRefs
+#undef g_HazePos
 #undef g_HumanEnt
 #undef g_IdLang
 #undef g_InactivityTimer
@@ -246,8 +246,8 @@ cGVar GVar_TimeStrafeUnderAttackBishopAI SD_BSS(0x4445c8);
 cGVar GVar_AngleStrafeUnderAttackBishopAI SD_BSS(0x4445e0);
 cGVar GVar_TimeStrafeUnderAttackGearAI SD_BSS(0x4445f8);
 cGVar GVar_AngleStrafeUnderAttackGearAI SD_BSS(0x444610);
-cGVar GVar_LimVelRotDinamicMessengerAI SD_BSS(0x444628);
-cGVar GVar_VelRotDinamicMessengerAI SD_BSS(0x444640);
+cGVar GVar_LimVelRotDynamicMessengerAI SD_BSS(0x444628);
+cGVar GVar_VelRotDynamicMessengerAI SD_BSS(0x444640);
 cGVar GVar_TimeStrafeUnderAttackSentinelAI SD_BSS(0x444658);
 cGVar GVar_AngleStrafeUnderAttackSentinelAI SD_BSS(0x444670);
 cGVar GVar_TimeBetwChangeStateAI SD_BSS(0x444688);
@@ -368,7 +368,7 @@ cPy_NativeFunc NativeFunc_BankDirectorActionRelease SD_BSS(0x445fe0);
 cGVar GVar_BankerSteal2Sound SD_BSS(0x445ff0);
 cGVar GVar_FXBankerStealFile SD_BSS(0x446008);
 cGVar GVar_BankerSteal3Sound SD_BSS(0x446020);
-cGVar GVar_BankerStealQuanto SD_BSS(0x446038);
+cGVar GVar_BankerStealAmount SD_BSS(0x446038);
 cPy_NativeFunc NativeFunc_BankerAttack SD_BSS(0x446050);
 cPy_NativeFunc NativeFunc_BankDirectorEndActionInit SD_BSS(0x446060);
 cGVar GVar_BankerStealPosY SD_BSS(0x446070);
@@ -550,7 +550,7 @@ cGVar GVar_FXPoliceGearConversionFile SD_BSS(0x446f90);
 cPy_NativeFunc NativeFunc_PoliceRestoreFreeTurn SD_BSS(0x446fa8);
 cGVar GVar_PoliceAlarmStepSTM SD_BSS(0x446fb8);
 cPy_NativeFunc NativeFunc_PoliceActionPress SD_BSS(0x446fd0);
-cGVar GVar_PoliceStealQuanto SD_BSS(0x446fe0);
+cGVar GVar_PoliceStealAmount SD_BSS(0x446fe0);
 cEntity *g_PoliceBossEnt SD_BSS(0x446ff8);
 cGVar GVar_PoliceBossBrupBaseFile SD_BSS(0x446ffc);
 cGVar GVar_PoliceBossBrupDebrisMax SD_BSS(0x447014);
@@ -588,10 +588,10 @@ cGVar GVar_CharGrav SD_BSS(0x4472bc);
 cGVar GVar_FallSoundVel SD_BSS(0x4472d4);
 cGVar GVar_TimeToAbortSelectChar SD_BSS(0x4472ec);
 cGVar GVar_PadTurnSpeed SD_BSS(0x447304);
-cGVar GVar_FXRustyChispasSoundVol SD_BSS(0x44731c);
+cGVar GVar_FXRustySparksSoundVol SD_BSS(0x44731c);
 cGVar GVar_SentinelLaserScanerDist SD_BSS(0x447334);
 cPy_NativeFunc NativeFunc_FXPoliceAlarmEnd SD_BSS(0x44734c);
-cGVar GVar_FXRustyChispasSound SD_BSS(0x44735c);
+cGVar GVar_FXRustySparksSound SD_BSS(0x44735c);
 cPy_NativeFunc NativeFunc_FXPoliceAlarmInit SD_BSS(0x447374);
 cGVar GVar_MessengerLightingDist SD_BSS(0x447384);
 cGVar GVar_DataPackInterTime SD_BSS(0x44739c);
@@ -745,18 +745,18 @@ cGVar GVar_NPCSndMotorVolFactor SD_BSS(0x448258);
 cGVar GVar_HangarShip1 SD_BSS(0x448270);
 cGVar GVar_HangarShip6 SD_BSS(0x448288);
 cGVar GVar_EnginePathFmt SD_BSS(0x4482a0);
-vec3_t g_CalimaPos[8] SD_BSS(0x4482b8);
+vec3_t g_HazePos[8] SD_BSS(0x4482b8);
 cGVar GVar_FXEngineTrailOffset SD_BSS(0x448318);
 cGVar GVar_FXVehicleDeathTrailFile SD_BSS(0x448330);
 cGVar GVar_FXMotorSmokeFile SD_BSS(0x448348);
-cGVar GVar_FXMotorCalimaOffset SD_BSS(0x448360);
+cGVar GVar_FXMotorHazeOffset SD_BSS(0x448360);
 cGVar GVar_FXEngineTrailHideTime SD_BSS(0x448378);
 cGVar GVar_FXEngineTrailSize SD_BSS(0x448390);
 cGVar GVar_FXEngineGlowDistFadeMid SD_BSS(0x4483a8);
 cGVar GVar_FXEngineTrailDist SD_BSS(0x4483c0);
 cGVar GVar_FXEngineGlowSizeAtt SD_BSS(0x4483d8);
-cGVar GVar_FXMotorCalima SD_BSS(0x4483f0);
-cGVar GVar_FXMotorCalimaFile SD_BSS(0x448408);
+cGVar GVar_FXMotorHaze SD_BSS(0x4483f0);
+cGVar GVar_FXMotorHazeFile SD_BSS(0x448408);
 cGVar GVar_FXEngineGlowDistFadeMult SD_BSS(0x448420);
 cGVar GVar_FXEngineGlowDistFadeFrom SD_BSS(0x448438);
 cGVar GVar_FXEngineGlowDistFadeTo SD_BSS(0x448450);
@@ -1292,7 +1292,7 @@ cGVar GVar_MaintenanceSphereRadiusFactor SD_BSS(0x44d45c);
 cEntity *g_MayorTarget SD_BSS(0x44d474);
 cEntity *g_MayorSearchEnt SD_BSS(0x44d478);
 cGVar GVar_MessengerTubeState SD_BSS(0x44d47c);
-cGVar GVar_MessengerObjetiveDistance SD_BSS(0x44d494);
+cGVar GVar_MessengerObjectiveDistance SD_BSS(0x44d494);
 cGVarFunction GVar_MessengerTakenCallback SD_BSS(0x44d4ac);
 cGVar GVar_MessengerDropPrice SD_BSS(0x44d4d0);
 cGVarFunction GVar_MessengerDropCallback SD_BSS(0x44d4e8);
@@ -1320,7 +1320,7 @@ cGVar GVar_ParkingCheckRadius SD_BSS(0x44d6c8);
 cGVarFunction GVar_OnParkedOut SD_BSS(0x44d6e0);
 cGVarFunction GVar_OnParkingOccupied SD_BSS(0x44d704);
 cGVar GVar_ParkingCharCheckDistance SD_BSS(0x44d728);
-cGVar GVar_ParkingVehiCheckDistance SD_BSS(0x44d740);
+cGVar GVar_ParkingVehicleCheckDistance SD_BSS(0x44d740);
 cEntity *g_ParkingShip SD_BSS(0x44d758);
 cEntity *g_ParkingOther SD_BSS(0x44d75c);
 cGVar GVar_PoliceBossMinSpecialActionTime SD_BSS(0x44d760);

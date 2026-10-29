@@ -939,7 +939,7 @@ SD_SIZE(cLittlePoliceLocalLogic, 0x78);
 #define g_LittlePoliceChasingTime GAME_GLOBAL_IN(float, GVar_LittlePoliceChasingTime, 16, 0x44d3e8)
 #define g_MainMissionStopDist GAME_GLOBAL_IN(float, GVar_MainMissionStopDist, 16, 0x44d400)
 #define g_LittlePoliceArrived GAME_GLOBAL(byte, g_LittlePoliceArrived, 0x44d408)	/* GoTo left the AI in state 4 */
-#define g_PoliceStealQuanto GAME_GLOBAL_IN(int, GVar_PoliceStealQuanto, 16, 0x446ff0)
+#define g_PoliceStealAmount GAME_GLOBAL_IN(int, GVar_PoliceStealAmount, 16, 0x446ff0)
 
 /* Parking.cpp: the parking zones of Scrap.AddParkingZone (flag 0: of the ships, 1: of the items), a ring each */
 typedef struct cParkingZone {

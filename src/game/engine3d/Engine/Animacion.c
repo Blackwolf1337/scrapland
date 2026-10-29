@@ -7,8 +7,8 @@
 #include "scrap/animacion.h"
 #include "scrap/material.h"
 
-#define ANIMNODO_CTOR 0x2ab6a0
-#define ANIMNODO_DTOR 0x2ab8f0
+#define ANIMNODE_CTOR 0x2ab6a0
+#define ANIMNODE_DTOR 0x2ab8f0
 /* the flags a file may have */
 #define CM3_SUPPORTED (ANIM_POS | ANIM_ROT | ANIM_FOV | ANIM_COLOR | ANIM_INTENS | ANIM_VISIBLE | ANIM_EVA)
 #define OPT_SUPPORTED 0x7
@@ -27,15 +27,15 @@ static const struct {
 	uint16_t off;
 	int size;
 } animTracks[ANIM_TRACKS] = {
-	{ ANIM_POS, offsetof(CAnimNodo, Pos), sizeof(vec3_t) },
-	{ ANIM_ROT, offsetof(CAnimNodo, Rot), sizeof(quat_t) },
-	{ ANIM_FOV, offsetof(CAnimNodo, FOV), sizeof(float) },
-	{ ANIM_COLOR, offsetof(CAnimNodo, Color), 4 },
-	{ ANIM_INTENS, offsetof(CAnimNodo, Intens), sizeof(float) },
-	{ ANIM_VISIBLE, offsetof(CAnimNodo, Visible), 1 },
+	{ ANIM_POS, offsetof(CAnimNode, Pos), sizeof(vec3_t) },
+	{ ANIM_ROT, offsetof(CAnimNode, Rot), sizeof(quat_t) },
+	{ ANIM_FOV, offsetof(CAnimNode, FOV), sizeof(float) },
+	{ ANIM_COLOR, offsetof(CAnimNode, Color), 4 },
+	{ ANIM_INTENS, offsetof(CAnimNode, Intens), sizeof(float) },
+	{ ANIM_VISIBLE, offsetof(CAnimNode, Visible), 1 },
 };
 
-static void **AnimNodo_Track(CAnimNodo *n, int i) {
+static void **AnimNode_Track(CAnimNode *n, int i) {
 	return (void **)((byte *)n + animTracks[i].off);
 }
 
@@ -75,11 +75,11 @@ void AnimBlock_Free(void *ptr, uint32_t flags) {
 	}
 }
 
-uint32_t __fastcall CAnimNodo_GetFlags(CAnimNodo *self) {
+uint32_t __fastcall CAnimNode_GetFlags(CAnimNode *self) {
 	uint32_t flags = 0;
 
 	for (int i = 0; i < ANIM_TRACKS; i++) {
-		if (*AnimNodo_Track(self, i)) {
+		if (*AnimNode_Track(self, i)) {
 			flags |= animTracks[i].flag;
 		}
 	}
@@ -89,9 +89,9 @@ uint32_t __fastcall CAnimNodo_GetFlags(CAnimNodo *self) {
 	return flags;
 }
 
-int __thiscall CAnimNodo_TrackKind(CAnimNodo *self, int frame, int unused, uint32_t flag) {
+int __thiscall CAnimNode_TrackKind(CAnimNode *self, int frame, int unused, uint32_t flag) {
 	const void *t;
-	uint32_t rel = frame - self->primer_frame;
+	uint32_t rel = frame - self->first_frame;
 
 	(void)unused;
 	if (flag == ANIM_POS) {
@@ -126,7 +126,7 @@ int __thiscall CAnimNodo_TrackKind(CAnimNodo *self, int frame, int unused, uint3
 	return k >= keys ? 3 : 2;
 }
 
-static void AnimNodo_DeleteEVA(CAnimNodo *self) {
+static void AnimNode_DeleteEVA(CAnimNode *self) {
 	CEVA *eva = self->EVA;
 
 	if (eva) {
@@ -136,25 +136,25 @@ static void AnimNodo_DeleteEVA(CAnimNodo *self) {
 	}
 }
 
-static CEVA *AnimNodo_NewEVA(void) {
+static CEVA *AnimNode_NewEVA(void) {
 	CEVA *eva = operator_new(sizeof(*eva));
 
 	return eva ? CEVA_ctor(eva) : NULL;
 }
 
-void __thiscall CAnimNodo_Init(CAnimNodo *self, uint32_t nframes, uint32_t first, uint32_t flags) {
+void __thiscall CAnimNode_Init(CAnimNode *self, uint32_t nframes, uint32_t first, uint32_t flags) {
 	CHECK(nframes <= 0xffff);
 	CHECK(first <= 0xffff);
 	CHECK(flags <= 0xffff);
 	for (int i = 0; i < ANIM_TRACKS; i++) {
-		void **t = AnimNodo_Track(self, i);
+		void **t = AnimNode_Track(self, i);
 		if (*t) {
 			AnimBlock_Free(*t, self->OptFlags);
 			*t = NULL;
 		}
 	}
-	AnimNodo_DeleteEVA(self);
-	self->primer_frame = first;
+	AnimNode_DeleteEVA(self);
+	self->first_frame = first;
 	self->num_frames = nframes;
 	self->OptFlags = 0;
 	self->StmFlags = 0;
@@ -180,44 +180,44 @@ void __thiscall CAnimNodo_Init(CAnimNodo *self, uint32_t nframes, uint32_t first
 		self->Visible = operator_new_array(self->num_frames);
 	}
 	if (flags & ANIM_EVA) {
-		self->EVA = AnimNodo_NewEVA();
+		self->EVA = AnimNode_NewEVA();
 	}
 }
 
-CAnimNodo *__thiscall CAnimacion_GetNodo(CAnimacion *self, uint32_t i) {
-	CHECK(self->AnimNodo);
-	if (i < (uint32_t)self->num_objetos) {
-		return &self->AnimNodo[i];
+CAnimNode *__thiscall CAnimation_GetNode(CAnimation *self, uint32_t i) {
+	CHECK(self->AnimNode);
+	if (i < (uint32_t)self->num_objects) {
+		return &self->AnimNode[i];
 	}
 	return NULL;
 }
 
-CAnimNodo *__thiscall CAnimacion_GetNodoTabla(CAnimacion *self, uint32_t i) {
+CAnimNode *__thiscall CAnimation_GetNodeTable(CAnimation *self, uint32_t i) {
 	uint32_t n = 0xffffffffu;
 
-	if (i < (uint32_t)self->tabla.n) {
-		n = ((byte *)self->tabla.p)[i] - 1;
+	if (i < (uint32_t)self->table.n) {
+		n = ((byte *)self->table.p)[i] - 1;
 	}
-	if (n < (uint32_t)self->num_objetos) {
-		return &self->AnimNodo[n];
+	if (n < (uint32_t)self->num_objects) {
+		return &self->AnimNode[n];
 	}
 	return NULL;
 }
 
-void __thiscall CAnimacion_Init(CAnimacion *self, int nobjetos, int nframes, int first) {
-	CHECK(nobjetos >= 0);
-	self->primer_frame = first;
+void __thiscall CAnimation_Init(CAnimation *self, int numObjects, int nframes, int first) {
+	CHECK(numObjects >= 0);
+	self->first_frame = first;
 	self->num_frames = nframes;
 	self->flag = 0;
 	/* the destructors of the nodes free their tracks unless they are in the block */
 	g_ActAnimBlock = &self->AnimBlock;
-	if (self->AnimNodo) {
-		Delete_Objects(self->AnimNodo, sizeof(CAnimNodo), GAME_FUNC(CAnimNodo_dtor, ANIMNODO_DTOR));
-		self->AnimNodo = NULL;
+	if (self->AnimNode) {
+		Delete_Objects(self->AnimNode, sizeof(CAnimNode), GAME_FUNC(CAnimNode_dtor, ANIMNODE_DTOR));
+		self->AnimNode = NULL;
 	}
-	self->num_objetos = nobjetos;
-	if (nobjetos) {
-		self->AnimNodo = New_Objects(nobjetos, sizeof(CAnimNodo), GAME_FUNC(CAnimNodo_ctor, ANIMNODO_CTOR), GAME_FUNC(CAnimNodo_dtor, ANIMNODO_DTOR));
+	self->num_objects = numObjects;
+	if (numObjects) {
+		self->AnimNode = New_Objects(numObjects, sizeof(CAnimNode), GAME_FUNC(CAnimNode_ctor, ANIMNODE_CTOR), GAME_FUNC(CAnimNode_dtor, ANIMNODE_DTOR));
 	}
 	g_ActAnimBlock = NULL;
 	if (self->AnimBlock.MemBlock) {
@@ -229,48 +229,48 @@ void __thiscall CAnimacion_Init(CAnimacion *self, int nobjetos, int nframes, int
 }
 
 /* the parts of the constructors of the node: the count of the live nodes, no tracks, pos and rot tracks of nframes */
-CAnimNodo *__thiscall CAnimNodo_ctorFrames(CAnimNodo *self, uint32_t nframes, uint32_t first) {
-	g_AnimNodoCount++;
-	memset(&self->Pos, 0, sizeof(*self) - offsetof(CAnimNodo, Pos));
-	CAnimNodo_Init(self, nframes, first, ANIM_POS | ANIM_ROT);
+CAnimNode *__thiscall CAnimNode_ctorFrames(CAnimNode *self, uint32_t nframes, uint32_t first) {
+	g_AnimNodeCount++;
+	memset(&self->Pos, 0, sizeof(*self) - offsetof(CAnimNode, Pos));
+	CAnimNode_Init(self, nframes, first, ANIM_POS | ANIM_ROT);
 	return self;
 }
 
-CAnimNodo *__fastcall CAnimNodo_ctor(CAnimNodo *self) {
-	return CAnimNodo_ctorFrames(self, 0, 0);
+CAnimNode *__fastcall CAnimNode_ctor(CAnimNode *self) {
+	return CAnimNode_ctorFrames(self, 0, 0);
 }
 
-void __fastcall CAnimNodo_dtor(CAnimNodo *self) {
-	g_AnimNodoCount--;
-	CAnimNodo_Init(self, 0, 0, ANIM_POS | ANIM_ROT);
+void __fastcall CAnimNode_dtor(CAnimNode *self) {
+	g_AnimNodeCount--;
+	CAnimNode_Init(self, 0, 0, ANIM_POS | ANIM_ROT);
 }
 
-CAnimNodo *__thiscall CAnimNodo_Delete(CAnimNodo *self, uint32_t flags) {
+CAnimNode *__thiscall CAnimNode_Delete(CAnimNode *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
 		if (flags & 1) {
-			Delete_Objects(self, sizeof(CAnimNodo), GAME_FUNC(CAnimNodo_dtor, ANIMNODO_DTOR));
+			Delete_Objects(self, sizeof(CAnimNode), GAME_FUNC(CAnimNode_dtor, ANIMNODE_DTOR));
 		} else {
-			crt_eh_vector_dtor(self, sizeof(CAnimNodo), *mem, GAME_FUNC(CAnimNodo_dtor, ANIMNODO_DTOR));
+			crt_eh_vector_dtor(self, sizeof(CAnimNode), *mem, GAME_FUNC(CAnimNode_dtor, ANIMNODE_DTOR));
 		}
-		return (CAnimNodo *)mem;
+		return (CAnimNode *)mem;
 	}
-	CAnimNodo_dtor(self);
+	CAnimNode_dtor(self);
 	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CAnimNodo));
+		operator_delete_sized(self, sizeof(CAnimNode));
 	}
 	return self;
 }
 
-CAnimacion *__fastcall CAnimacion_ctor(CAnimacion *self) {
+CAnimation *__fastcall CAnimation_ctor(CAnimation *self) {
 	self->name = NULL;
 	self->Refs = 0;
-	self->tabla.p = NULL;
-	self->tabla.n = 0;
+	self->table.p = NULL;
+	self->table.n = 0;
 	memset(&self->AnimBlock, 0, sizeof(self->AnimBlock));
-	self->AnimNodo = NULL;
+	self->AnimNode = NULL;
 	self->fps = 25.0f;
-	CAnimacion_Init(self, 0, 0, 0);
+	CAnimation_Init(self, 0, 0, 0);
 	return self;
 }
 
@@ -282,17 +282,17 @@ void __fastcall AnimStream_dtor(CAnimStream *self) {
 	Mem_Free(self->p);
 }
 
-void __fastcall CAnimacion_dtor(CAnimacion *self) {
-	CAnimacion_Init(self, 0, 0, 0);
+void __fastcall CAnimation_dtor(CAnimation *self) {
+	CAnimation_Init(self, 0, 0, 0);
 	AnimBlock_dtor(&self->AnimBlock);
-	Tabla_Free(&self->tabla);
+	Table_Free(&self->table);
 	CHECK(!self->Refs);
 	if (self->name) {
-		Cad_Set(&self->name, NULL);
+		String_Set(&self->name, NULL);
 	}
 }
 
-void __thiscall CAnimNodo_ReadTrack(CAnimNodo *self, CArchIO *f, uint32_t flag, void **ptr, int size) {
+void __thiscall CAnimNode_ReadTrack(CAnimNode *self, CFileIO *f, uint32_t flag, void **ptr, int size) {
 	if (!flag) {
 		return;
 	}
@@ -300,7 +300,7 @@ void __thiscall CAnimNodo_ReadTrack(CAnimNodo *self, CArchIO *f, uint32_t flag, 
 	CHECK(*ptr == NULL);
 	int n = (flag & self->OptFlags) ? 1 : self->num_frames;
 	if (flag & (self->StmFlags & self->OptFlags)) {
-		size = CArchIO_ReadInt(f);
+		size = CFileIO_ReadInt(f);
 	}
 	CHECK(g_ActAnimBlock);
 	CAnimBlock *b = g_ActAnimBlock;
@@ -309,15 +309,15 @@ void __thiscall CAnimNodo_ReadTrack(CAnimNodo *self, CArchIO *f, uint32_t flag, 
 	*ptr = b->MemBlock - n * size + b->UsedBlock;
 }
 
-void __thiscall CAnimNodo_Read(CAnimNodo *self, CArchIO *f) {
-	CArchIO_BeginBlock(f, "NAM");
-	CHECK(CArchIO_ReadInt(f) == 1);
-	int first = CArchIO_ReadInt(f);
-	int frames = CArchIO_ReadInt(f);
-	uint32_t flags = CArchIO_ReadInt(f);
-	int opt = CArchIO_ReadInt(f);
-	int stm = CArchIO_ReadInt(f);
-	CAnimNodo_Init(self, frames, first, 0);
+void __thiscall CAnimNode_Read(CAnimNode *self, CFileIO *f) {
+	CFileIO_BeginBlock(f, "NAM");
+	CHECK(CFileIO_ReadInt(f) == 1);
+	int first = CFileIO_ReadInt(f);
+	int frames = CFileIO_ReadInt(f);
+	uint32_t flags = CFileIO_ReadInt(f);
+	int opt = CFileIO_ReadInt(f);
+	int stm = CFileIO_ReadInt(f);
+	CAnimNode_Init(self, frames, first, 0);
 	self->OptFlags = opt;
 	self->StmFlags = stm;
 	CHECK((flags & ~CM3_SUPPORTED) == 0);
@@ -325,52 +325,52 @@ void __thiscall CAnimNodo_Read(CAnimNodo *self, CArchIO *f) {
 	CHECK((self->StmFlags & ~STM_SUPPORTED) == 0);
 	self->OptFlags |= OPT_INBLOCK;
 	for (int i = 0; i < ANIM_TRACKS; i++) {
-		CAnimNodo_ReadTrack(self, f, flags & animTracks[i].flag, AnimNodo_Track(self, i), animTracks[i].size);
+		CAnimNode_ReadTrack(self, f, flags & animTracks[i].flag, AnimNode_Track(self, i), animTracks[i].size);
 	}
 	EVA_Read(f, flags & ANIM_EVA, &self->EVA);
-	CHECK(flags == CAnimNodo_GetFlags(self));
-	CArchIO_Error(f, "NAM");
+	CHECK(flags == CAnimNode_GetFlags(self));
+	CFileIO_Error(f, "NAM");
 }
 
-void __thiscall CAnimacion_Read(CAnimacion *self, CArchIO *f) {
+void __thiscall CAnimation_Read(CAnimation *self, CFileIO *f) {
 	g_MemStatsContext = g_AnimMemStats;
-	CArchIO_BeginBlock(f, "ANI");
-	CHECK(CArchIO_ReadInt(f) == 2);
-	CArchIO_Read4(f, &self->fps);
-	int first = CArchIO_ReadInt(f);
-	int frames = CArchIO_ReadInt(f);
-	int nobjetos = CArchIO_ReadInt(f);
-	CAnimacion_Init(self, nobjetos, frames, first);
-	self->flag = CArchIO_ReadInt(f) != 0;
-	int n = CArchIO_ReadInt(f);
-	/* the CTabla<byte> allocation of tabla.h, inline in the original */
-	CHECK(!self->tabla.p && n > 0);
-	self->tabla.n = n;
-	self->tabla.p = operator_new_array(n);
-	CHECK(self->tabla.p);
-	CArchIO_Read(f, self->tabla.p, self->tabla.n);
+	CFileIO_BeginBlock(f, "ANI");
+	CHECK(CFileIO_ReadInt(f) == 2);
+	CFileIO_Read4(f, &self->fps);
+	int first = CFileIO_ReadInt(f);
+	int frames = CFileIO_ReadInt(f);
+	int numObjects = CFileIO_ReadInt(f);
+	CAnimation_Init(self, numObjects, frames, first);
+	self->flag = CFileIO_ReadInt(f) != 0;
+	int n = CFileIO_ReadInt(f);
+	/* the CTable<byte> allocation of table.h, inline in the original */
+	CHECK(!self->table.p && n > 0);
+	self->table.n = n;
+	self->table.p = operator_new_array(n);
+	CHECK(self->table.p);
+	CFileIO_Read(f, self->table.p, self->table.n);
 	int size = 0;
-	CArchIO_BeginBlockSize(f, "NABK", &size);
+	CFileIO_BeginBlockSize(f, "NABK", &size);
 	CAnimBlock *b = &self->AnimBlock;
 	CHECK(!b->MemBlock && size >= 0);
 	b->SizeBlock = size;
 	b->UsedBlock = 0;
 	b->MemBlock = operator_new_array(size);
-	CArchIO_Read(f, b->MemBlock, self->AnimBlock.SizeBlock);
-	CArchIO_Error(f, "NABK");
+	CFileIO_Read(f, b->MemBlock, self->AnimBlock.SizeBlock);
+	CFileIO_Error(f, "NABK");
 	g_ActAnimBlock = b;
-	for (int i = 0; i < self->num_objetos; i++) {
-		CAnimNodo_Read(CAnimacion_GetNodo(self, i), f);
+	for (int i = 0; i < self->num_objects; i++) {
+		CAnimNode_Read(CAnimation_GetNode(self, i), f);
 	}
 	g_ActAnimBlock = NULL;
 	CHECK(self->AnimBlock.SizeBlock == self->AnimBlock.UsedBlock);
-	CArchIO_Error(f, "ANI");
+	CFileIO_Error(f, "ANI");
 	g_MemStatsContext = NULL;
 }
 
 /* track t (pos, rot or fov) becomes the single value v0 */
-static void AnimNodo_ToConst(CAnimNodo *self, int t, const void *v0) {
-	void **track = AnimNodo_Track(self, t);
+static void AnimNode_ToConst(CAnimNode *self, int t, const void *v0) {
+	void **track = AnimNode_Track(self, t);
 
 	self->OptFlags |= animTracks[t].flag;
 	if (*track) {
@@ -383,8 +383,8 @@ static void AnimNodo_ToConst(CAnimNodo *self, int t, const void *v0) {
 
 /* track t of n values becomes a stream without the first lead - 1 and the last trail - 1 values, which equal their
  * ends; with ends the first and the last value are put at the ends of the kept range first */
-static void AnimNodo_ToStream(CAnimNodo *self, int t, int n, int lead, int trail, int ends) {
-	void **track = AnimNodo_Track(self, t);
+static void AnimNode_ToStream(CAnimNode *self, int t, int n, int lead, int trail, int ends) {
+	void **track = AnimNode_Track(self, t);
 	int size = animTracks[t].size;
 	int len = n - (lead - 1) - (trail - 1);
 	int keys = len < 2 ? 1 : len;
@@ -431,7 +431,7 @@ static int Anim_FovNear(float a, float b, float eps) {
 	return !(__builtin_fabs((double)(a - b)) > (double)eps);
 }
 
-static void AnimNodo_OptimizePos(CAnimNodo *self) {
+static void AnimNode_OptimizePos(CAnimNode *self) {
 	const vec3_t *p = self->Pos;
 	int n = self->num_frames;
 	vec3_t range = { 0.0f, 0.0f, 0.0f };
@@ -451,22 +451,22 @@ static void AnimNodo_OptimizePos(CAnimNodo *self) {
 		lead++;
 	}
 	if (lead == n) {
-		AnimNodo_ToConst(self, 0, &p0);
+		AnimNode_ToConst(self, 0, &p0);
 	} else {
 		int trail = 0;
 		while (trail < n && Anim_PosNear(&p[n - 1 - trail], &p[n - 1], eps)) {
 			trail++;
 		}
 		if (lead > 5 || trail > 5) {
-			AnimNodo_ToStream(self, 0, n, lead, trail, 1);
+			AnimNode_ToStream(self, 0, n, lead, trail, 1);
 		}
 	}
 	if (!(self->OptFlags & ANIM_POS)) {
-		E3D_LogInfo(g_FileLog, "OptimizeAnim: ANIM_POS: [%s] %s", Vec3_Str(&range, 0, 6), g_AnimNodoName);
+		E3D_LogInfo(g_FileLog, "OptimizeAnim: ANIM_POS: [%s] %s", Vec3_Str(&range, 0, 6), g_AnimNodeName);
 	}
 }
 
-static void AnimNodo_OptimizeRot(CAnimNodo *self) {
+static void AnimNode_OptimizeRot(CAnimNode *self) {
 	float minDot = 1.0f;
 
 	for (int i = 0; i < self->num_frames; i++) {
@@ -481,7 +481,7 @@ static void AnimNodo_OptimizeRot(CAnimNodo *self) {
 		lead++;
 	}
 	if (lead == self->num_frames) {
-		AnimNodo_ToConst(self, 1, &q0);
+		AnimNode_ToConst(self, 1, &q0);
 	} else {
 		int trail = 0;
 		while (trail < self->num_frames &&
@@ -489,17 +489,17 @@ static void AnimNodo_OptimizeRot(CAnimNodo *self) {
 			trail++;
 		}
 		if (lead > 5 || trail > 5) {
-			AnimNodo_ToStream(self, 1, self->num_frames, lead, trail, 1);
+			AnimNode_ToStream(self, 1, self->num_frames, lead, trail, 1);
 		}
 	}
 	if (!(self->OptFlags & ANIM_ROT)) {
 		double d = (double)minDot;
 		E3D_LogInfo(g_FileLog, "OptimizeAnim: ANIM_ROT: [%f deg.] [%f cos] %s", Game_Acos(d) * 2.0 * DEG_PER_PI / M_PI_D, d,
-			g_AnimNodoName);
+			g_AnimNodeName);
 	}
 }
 
-static void AnimNodo_OptimizeFov(CAnimNodo *self) {
+static void AnimNode_OptimizeFov(CAnimNode *self) {
 	const float *v = self->FOV;
 	int n = self->num_frames;
 	float eps = (float)((double)g_OptAnimFovErr * M_PI_D / DEG_PER_PI);
@@ -510,7 +510,7 @@ static void AnimNodo_OptimizeFov(CAnimNodo *self) {
 		lead++;
 	}
 	if (lead == n) {
-		AnimNodo_ToConst(self, 2, &f0);
+		AnimNode_ToConst(self, 2, &f0);
 		return;
 	}
 	int trail = 0;
@@ -518,11 +518,11 @@ static void AnimNodo_OptimizeFov(CAnimNodo *self) {
 		trail++;
 	}
 	if (lead > 5 || trail > 5) {
-		AnimNodo_ToStream(self, 2, n, lead, trail, 0);
+		AnimNode_ToStream(self, 2, n, lead, trail, 0);
 	}
 }
 
-void __fastcall CAnimNodo_Optimize(CAnimNodo *self) {
+void __fastcall CAnimNode_Optimize(CAnimNode *self) {
 	CHECK(self->num_frames > 0);
 	CHECK(!self->OptFlags);
 	CHECK(!self->StmFlags);
@@ -530,13 +530,13 @@ void __fastcall CAnimNodo_Optimize(CAnimNodo *self) {
 		return;
 	}
 	if (self->Pos) {
-		AnimNodo_OptimizePos(self);
+		AnimNode_OptimizePos(self);
 	}
 	if (self->Rot) {
-		AnimNodo_OptimizeRot(self);
+		AnimNode_OptimizeRot(self);
 	}
 	if (self->FOV) {
-		AnimNodo_OptimizeFov(self);
+		AnimNode_OptimizeFov(self);
 	}
 }
 
@@ -601,7 +601,7 @@ vec3_t *Quat_ToEulerNeg(vec3_t *out, const quat_t *q) {
 	return out;
 }
 
-void __thiscall CAnimNodo_WriteTrack(CAnimNodo *self, CArchIO *f, uint32_t flag, const void *ptr, int size, byte header) {
+void __thiscall CAnimNode_WriteTrack(CAnimNode *self, CFileIO *f, uint32_t flag, const void *ptr, int size, byte header) {
 	if (!flag) {
 		return;
 	}
@@ -610,67 +610,67 @@ void __thiscall CAnimNodo_WriteTrack(CAnimNodo *self, CArchIO *f, uint32_t flag,
 	if (flag & (self->StmFlags & self->OptFlags)) {
 		size = Stream_Word(ptr, 0);
 		if (header) {
-			CArchIO_WriteInt(f, size);
+			CFileIO_WriteInt(f, size);
 		}
 	}
 	if (!header) {
-		CArchIO_Write(f, ptr, n * size);
+		CFileIO_Write(f, ptr, n * size);
 	}
 }
 
-static void AnimNodo_WriteTracks(CAnimNodo *self, CArchIO *f, uint32_t flags, byte header) {
+static void AnimNode_WriteTracks(CAnimNode *self, CFileIO *f, uint32_t flags, byte header) {
 	CHECK((self->OptFlags & ~OPT_SUPPORTED) == 0);
 	CHECK((self->StmFlags & ~STM_SUPPORTED) == 0);
 	if (header) {
-		CArchIO_WriteInt(f, self->primer_frame);
-		CArchIO_WriteInt(f, self->num_frames);
-		CArchIO_WriteInt(f, flags);
-		CArchIO_WriteInt(f, self->OptFlags);
-		CArchIO_WriteInt(f, self->StmFlags);
+		CFileIO_WriteInt(f, self->first_frame);
+		CFileIO_WriteInt(f, self->num_frames);
+		CFileIO_WriteInt(f, flags);
+		CFileIO_WriteInt(f, self->OptFlags);
+		CFileIO_WriteInt(f, self->StmFlags);
 	}
 	for (int i = 0; i < ANIM_TRACKS; i++) {
-		CAnimNodo_WriteTrack(self, f, flags & animTracks[i].flag, *AnimNodo_Track(self, i), animTracks[i].size, header);
+		CAnimNode_WriteTrack(self, f, flags & animTracks[i].flag, *AnimNode_Track(self, i), animTracks[i].size, header);
 	}
 }
 
-void __thiscall CAnimNodo_WriteData(CAnimNodo *self, CArchIO *f) {
-	AnimNodo_WriteTracks(self, f, CAnimNodo_GetFlags(self), 0);
+void __thiscall CAnimNode_WriteData(CAnimNode *self, CFileIO *f) {
+	AnimNode_WriteTracks(self, f, CAnimNode_GetFlags(self), 0);
 }
 
-void __thiscall CAnimNodo_WriteHeader(CAnimNodo *self, CArchIO *f) {
-	CArchIO_BeginBlockWrite(f, "NAM");
-	CArchIO_WriteInt(f, 1);
-	uint32_t flags = CAnimNodo_GetFlags(self);
-	AnimNodo_WriteTracks(self, f, flags, 1);
+void __thiscall CAnimNode_WriteHeader(CAnimNode *self, CFileIO *f) {
+	CFileIO_BeginBlockWrite(f, "NAM");
+	CFileIO_WriteInt(f, 1);
+	uint32_t flags = CAnimNode_GetFlags(self);
+	AnimNode_WriteTracks(self, f, flags, 1);
 	EVA_Write(f, flags & ANIM_EVA, self->EVA);
-	CArchIO_EndBlockWrite(f, "NAM");
+	CFileIO_EndBlockWrite(f, "NAM");
 }
 
-void __thiscall CAnimacion_Write(CAnimacion *self, CArchIO *f) {
+void __thiscall CAnimation_Write(CAnimation *self, CFileIO *f) {
 	int32_t fps;
 
-	CArchIO_BeginBlockWrite(f, "ANI");
-	CArchIO_WriteInt(f, 2);
+	CFileIO_BeginBlockWrite(f, "ANI");
+	CFileIO_WriteInt(f, 2);
 	memcpy(&fps, &self->fps, sizeof(fps));
-	CArchIO_WriteInt(f, fps);
-	CArchIO_WriteInt(f, self->primer_frame);
-	CArchIO_WriteInt(f, self->num_frames);
-	CArchIO_WriteInt(f, self->num_objetos);
-	CArchIO_WriteInt(f, self->flag != 0);
-	CArchIO_WriteInt(f, self->tabla.n);
-	CArchIO_Write(f, self->tabla.p, self->tabla.n);
-	CArchIO_BeginBlockWrite(f, "NABK");
+	CFileIO_WriteInt(f, fps);
+	CFileIO_WriteInt(f, self->first_frame);
+	CFileIO_WriteInt(f, self->num_frames);
+	CFileIO_WriteInt(f, self->num_objects);
+	CFileIO_WriteInt(f, self->flag != 0);
+	CFileIO_WriteInt(f, self->table.n);
+	CFileIO_Write(f, self->table.p, self->table.n);
+	CFileIO_BeginBlockWrite(f, "NABK");
 	CHECK(!self->AnimBlock.MemBlock);
-	for (int i = 0; i < self->num_objetos; i++) {
-		CAnimNodo *n = CAnimacion_GetNodo(self, i);
-		CAnimNodo_Optimize(n);
-		CAnimNodo_WriteData(n, f);
+	for (int i = 0; i < self->num_objects; i++) {
+		CAnimNode *n = CAnimation_GetNode(self, i);
+		CAnimNode_Optimize(n);
+		CAnimNode_WriteData(n, f);
 	}
-	CArchIO_EndBlockWrite(f, "NABK");
-	for (int i = 0; i < self->num_objetos; i++) {
-		CAnimNodo_WriteHeader(CAnimacion_GetNodo(self, i), f);
+	CFileIO_EndBlockWrite(f, "NABK");
+	for (int i = 0; i < self->num_objects; i++) {
+		CAnimNode_WriteHeader(CAnimation_GetNode(self, i), f);
 	}
-	CArchIO_EndBlockWrite(f, "ANI");
+	CFileIO_EndBlockWrite(f, "ANI");
 }
 
 /* d folded once into -pi..pi */
@@ -698,8 +698,8 @@ vec3_t *Vec3_AngDiff(vec3_t *out, const vec3_t *a, const vec3_t *b) {
 	return out;
 }
 
-int __thiscall CAnimNodo_FrameIndex(CAnimNodo *self, int frame, const void *ptr, uint32_t flag) {
-	int rel = frame - self->primer_frame;
+int __thiscall CAnimNode_FrameIndex(CAnimNode *self, int frame, const void *ptr, uint32_t flag) {
+	int rel = frame - self->first_frame;
 
 	CHECK((uint32_t)rel < self->num_frames);
 	CHECK(ptr);
@@ -708,43 +708,43 @@ int __thiscall CAnimNodo_FrameIndex(CAnimNodo *self, int frame, const void *ptr,
 	return rel;
 }
 
-void __fastcall CAnimacion_Trim(CAnimacion *self) {
+void __fastcall CAnimation_Trim(CAnimation *self) {
 	CHECK(!self->AnimBlock.MemBlock);
-	int n = self->num_objetos;
-	while (n > 0 && !CAnimNodo_GetFlags(CAnimacion_GetNodo(self, n - 1))) {
+	int n = self->num_objects;
+	while (n > 0 && !CAnimNode_GetFlags(CAnimation_GetNode(self, n - 1))) {
 		n--;
 	}
-	if (self->num_objetos == n) {
+	if (self->num_objects == n) {
 		return;
 	}
-	self->num_objetos = n;
-	CHECK(self->num_objetos);
-	CAnimNodo *nodos = New_Objects(self->num_objetos, sizeof(CAnimNodo), GAME_FUNC(CAnimNodo_ctor, ANIMNODO_CTOR), GAME_FUNC(CAnimNodo_dtor, ANIMNODO_DTOR));
+	self->num_objects = n;
+	CHECK(self->num_objects);
+	CAnimNode *nodes = New_Objects(self->num_objects, sizeof(CAnimNode), GAME_FUNC(CAnimNode_ctor, ANIMNODE_CTOR), GAME_FUNC(CAnimNode_dtor, ANIMNODE_DTOR));
 	/* an empty temporary node, its destructor inline */
-	g_AnimNodoCount++;
-	for (int i = 0; i < self->num_objetos; i++) {
-		nodos[i] = self->AnimNodo[i];
-		memset(&self->AnimNodo[i], 0, sizeof(CAnimNodo));
+	g_AnimNodeCount++;
+	for (int i = 0; i < self->num_objects; i++) {
+		nodes[i] = self->AnimNode[i];
+		memset(&self->AnimNode[i], 0, sizeof(CAnimNode));
 	}
-	if (self->AnimNodo) {
-		Delete_Objects(self->AnimNodo, sizeof(CAnimNodo), GAME_FUNC(CAnimNodo_dtor, ANIMNODO_DTOR));
-		self->AnimNodo = NULL;
+	if (self->AnimNode) {
+		Delete_Objects(self->AnimNode, sizeof(CAnimNode), GAME_FUNC(CAnimNode_dtor, ANIMNODE_DTOR));
+		self->AnimNode = NULL;
 	}
-	self->AnimNodo = nodos;
-	g_AnimNodoCount--;
+	self->AnimNode = nodes;
+	g_AnimNodeCount--;
 }
 
 /* the values of a position track, one or num_frames */
-static int AnimNodo_PosCount(CAnimNodo *self) {
+static int AnimNode_PosCount(CAnimNode *self) {
 	CHECK(!(self->StmFlags & ANIM_POS));
 	return (self->OptFlags & ANIM_POS) ? 1 : self->num_frames;
 }
 
-byte __thiscall CAnimNodo_Translate(CAnimNodo *self, const vec3_t *d) {
+byte __thiscall CAnimNode_Translate(CAnimNode *self, const vec3_t *d) {
 	if (!self->Pos) {
 		return 0;
 	}
-	int n = AnimNodo_PosCount(self);
+	int n = AnimNode_PosCount(self);
 	for (int i = 0; i < n; i++) {
 		vec3_t *p = &self->Pos[i];
 		p->x = p->x + d->x;
@@ -754,7 +754,7 @@ byte __thiscall CAnimNodo_Translate(CAnimNodo *self, const vec3_t *d) {
 	return 1;
 }
 
-void __thiscall CAnimNodo_FreeTracks(CAnimNodo *self, uint32_t flags) {
+void __thiscall CAnimNode_FreeTracks(CAnimNode *self, uint32_t flags) {
 	CHECK(0);
 	CHECK((flags & ~(ANIM_POS | ANIM_ROT)) == 0);
 	self->OptFlags &= ~flags;
@@ -791,14 +791,14 @@ byte Quat_Similar(const quat_t *a, const quat_t *b) {
 		Anim_SimilarFloat(a->w, b->w);
 }
 
-void __thiscall CAnimNodo_Scale(CAnimNodo *self, const vec3_t *s) {
+void __thiscall CAnimNode_Scale(CAnimNode *self, const vec3_t *s) {
 	if (self->EVA) {
 		CEVA_Scale(self->EVA, s->x, s->y, s->z);
 	}
 	if (!self->Pos) {
 		return;
 	}
-	int n = AnimNodo_PosCount(self);
+	int n = AnimNode_PosCount(self);
 	for (int i = 0; i < n; i++) {
 		vec3_t *p = &self->Pos[i];
 		p->x = p->x * s->x;
@@ -807,19 +807,19 @@ void __thiscall CAnimNodo_Scale(CAnimNodo *self, const vec3_t *s) {
 	}
 }
 
-void __thiscall CAnimacion_Scale(CAnimacion *self, const vec3_t *s) {
-	for (int i = 0; i < self->num_objetos; i++) {
-		CAnimNodo_Scale(CAnimacion_GetNodo(self, i), s);
+void __thiscall CAnimation_Scale(CAnimation *self, const vec3_t *s) {
+	for (int i = 0; i < self->num_objects; i++) {
+		CAnimNode_Scale(CAnimation_GetNode(self, i), s);
 	}
 }
 
-void __thiscall CAnimNodo_SetEVA(CAnimNodo *self, int verts) {
-	AnimNodo_DeleteEVA(self);
-	self->EVA = AnimNodo_NewEVA();
+void __thiscall CAnimNode_SetEVA(CAnimNode *self, int verts) {
+	AnimNode_DeleteEVA(self);
+	self->EVA = AnimNode_NewEVA();
 	CEVA_Alloc(self->EVA, verts);
 }
 
-CAnimVert *__thiscall CAnimNodo_GetVert(CAnimNodo *self, uint32_t i) {
+CAnimVert *__thiscall CAnimNode_GetVert(CAnimNode *self, uint32_t i) {
 	if (self->EVA) {
 		return CEVA_Get(self->EVA, i);
 	}
@@ -830,8 +830,8 @@ static void Anim_CheckSubframe(float subframe) {
 	CHECK(subframe >= 0.0f && subframe < 1.0f);
 }
 
-byte __thiscall CAnimNodo_GetColor(CAnimNodo *self, vec3_t *color, float *intens, int frame, float subframe) {
-	uint32_t rel = frame - self->primer_frame;
+byte __thiscall CAnimNode_GetColor(CAnimNode *self, vec3_t *color, float *intens, int frame, float subframe) {
+	uint32_t rel = frame - self->first_frame;
 
 	CHECK(color && intens);
 	Anim_CheckSubframe(subframe);
@@ -857,8 +857,8 @@ byte __thiscall CAnimNodo_GetColor(CAnimNodo *self, vec3_t *color, float *intens
 	return 1;
 }
 
-byte __thiscall CAnimNodo_GetFOV(CAnimNodo *self, float *fov, int frame, float subframe) {
-	uint32_t rel = frame - self->primer_frame;
+byte __thiscall CAnimNode_GetFOV(CAnimNode *self, float *fov, int frame, float subframe) {
+	uint32_t rel = frame - self->first_frame;
 
 	CHECK(fov);
 	Anim_CheckSubframe(subframe);
@@ -891,8 +891,8 @@ byte __thiscall CAnimNodo_GetFOV(CAnimNodo *self, float *fov, int frame, float s
 	return 1;
 }
 
-byte __thiscall CAnimNodo_GetPosRotFrame(CAnimNodo *self, vec3_t *pos, quat_t *rot, int frame) {
-	uint32_t rel = frame - self->primer_frame;
+byte __thiscall CAnimNode_GetPosRotFrame(CAnimNode *self, vec3_t *pos, quat_t *rot, int frame) {
+	uint32_t rel = frame - self->first_frame;
 
 	CHECK(pos && rot);
 	CHECK(!(self->OptFlags & (ANIM_POS | ANIM_ROT)));
@@ -905,7 +905,7 @@ byte __thiscall CAnimNodo_GetPosRotFrame(CAnimNodo *self, vec3_t *pos, quat_t *r
 	return 1;
 }
 
-static void AnimNodo_GetPos(CAnimNodo *self, vec3_t *pos, uint32_t rel, float subframe) {
+static void AnimNode_GetPos(CAnimNode *self, vec3_t *pos, uint32_t rel, float subframe) {
 	if (!(self->OptFlags & ANIM_POS)) {
 		vec3_t p = self->Pos[rel];
 		if (rel + 1 < self->num_frames) {
@@ -938,7 +938,7 @@ static void AnimNodo_GetPos(CAnimNodo *self, vec3_t *pos, uint32_t rel, float su
 	memcpy(pos, Stream_Key(s, keys - 1, sizeof(vec3_t)), sizeof(vec3_t));
 }
 
-static void AnimNodo_GetRot(CAnimNodo *self, quat_t *rot, uint32_t rel, float subframe) {
+static void AnimNode_GetRot(CAnimNode *self, quat_t *rot, uint32_t rel, float subframe) {
 	if (!(self->OptFlags & ANIM_ROT)) {
 		quat_t q = self->Rot[rel];
 		if (rel + 1 < self->num_frames) {
@@ -964,8 +964,8 @@ static void AnimNodo_GetRot(CAnimNodo *self, quat_t *rot, uint32_t rel, float su
 	}
 }
 
-byte __thiscall CAnimNodo_GetPosRot(CAnimNodo *self, vec3_t *pos, quat_t *rot, int frame, float subframe) {
-	uint32_t rel = frame - self->primer_frame;
+byte __thiscall CAnimNode_GetPosRot(CAnimNode *self, vec3_t *pos, quat_t *rot, int frame, float subframe) {
+	uint32_t rel = frame - self->first_frame;
 
 	CHECK(pos && rot);
 	Anim_CheckSubframe(subframe);
@@ -973,13 +973,13 @@ byte __thiscall CAnimNodo_GetPosRot(CAnimNodo *self, vec3_t *pos, quat_t *rot, i
 		return 0;
 	}
 	CHECK(self->Pos && self->Rot);
-	AnimNodo_GetPos(self, pos, rel, subframe);
-	AnimNodo_GetRot(self, rot, rel, subframe);
+	AnimNode_GetPos(self, pos, rel, subframe);
+	AnimNode_GetRot(self, rot, rel, subframe);
 	return 1;
 }
 
-byte __thiscall CAnimNodo_GetVisible(CAnimNodo *self, byte *visible, int frame, float subframe) {
-	uint32_t rel = frame - self->primer_frame;
+byte __thiscall CAnimNode_GetVisible(CAnimNode *self, byte *visible, int frame, float subframe) {
+	uint32_t rel = frame - self->first_frame;
 
 	CHECK(visible);
 	Anim_CheckSubframe(subframe);
@@ -997,28 +997,28 @@ byte __thiscall CAnimNodo_GetVisible(CAnimNodo *self, byte *visible, int frame, 
 	return 1;
 }
 
-void __fastcall CAnimNodo_OptimizeEVA(CAnimNodo *self) {
+void __fastcall CAnimNode_OptimizeEVA(CAnimNode *self) {
 	CHECK(self->EVA);
 	CEVA_Optimize(self->EVA);
 	if (!CEVA_NumAnimated(self->EVA)) {
-		AnimNodo_DeleteEVA(self);
+		AnimNode_DeleteEVA(self);
 	}
 }
 
-void __thiscall CAnimacion_SwapNodos(CAnimacion *self, uint32_t i, uint32_t j) {
-	CAnimNodo *a = CAnimacion_GetNodo(self, i);
-	CAnimNodo *b = CAnimacion_GetNodo(self, j);
-	CAnimNodo tmp;
+void __thiscall CAnimation_SwapNodes(CAnimation *self, uint32_t i, uint32_t j) {
+	CAnimNode *a = CAnimation_GetNode(self, i);
+	CAnimNode *b = CAnimation_GetNode(self, j);
+	CAnimNode tmp;
 
 	/* a temporary node, constructor and destructor inline */
-	g_AnimNodoCount++;
-	memset(&tmp.Pos, 0, sizeof(tmp) - offsetof(CAnimNodo, Pos));
-	CAnimNodo_Init(&tmp, 0, 0, ANIM_POS | ANIM_ROT);
-	CHECK(!CAnimNodo_GetFlags(&tmp));
-	CHECK(!CAnimNodo_GetFlags(a));
+	g_AnimNodeCount++;
+	memset(&tmp.Pos, 0, sizeof(tmp) - offsetof(CAnimNode, Pos));
+	CAnimNode_Init(&tmp, 0, 0, ANIM_POS | ANIM_ROT);
+	CHECK(!CAnimNode_GetFlags(&tmp));
+	CHECK(!CAnimNode_GetFlags(a));
 	tmp = *a;
 	*a = *b;
 	*b = tmp;
-	g_AnimNodoCount--;
-	CAnimNodo_Init(&tmp, 0, 0, ANIM_POS | ANIM_ROT);
+	g_AnimNodeCount--;
+	CAnimNode_Init(&tmp, 0, 0, ANIM_POS | ANIM_ROT);
 }

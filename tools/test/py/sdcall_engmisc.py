@@ -1,6 +1,6 @@
 # engine3d leftovers (execfile'd at the end of sdcall.py, Python 1.5.2): Matrix3_RotFromTo on fixed vectors, the
 # window procedure of the debug dialog with messages that need no dialog (no WM_INITDIALOG: it moves the focus),
-# CMapa_CopyBmp into textures made here with the pixels read back, the frame time graph through the D3D
+# CMap_CopyBmp into textures made here with the pixels read back, the frame time graph through the D3D
 # log, the statistics pages (their state only, the texts hold memory and timer values), and ViewerCamera_Move with
 # the debug actions set here. Every engine variable that is changed is put back; pointers only as == or != 0.
 def emcnew(n):
@@ -73,7 +73,7 @@ if emcdbgs[0] == 0 and emcdbgs[1] == 0 and emcdbgs[2] == 0 and emcdbgs[3] == 0:
 	check('emc DbgWin_DlgProc close', lambda: (emcproc(0x10, 0, 0), emcgi(sym('g_DbgWnd'))))
 emcrestore(emcdbg, emcdbgs)
 
-# ---- CMapa_CopyBmp (rva 0x2370a0) into textures made here through the device, read back through LockRect ----
+# ---- CMap_CopyBmp (rva 0x2370a0) into textures made here through the device, read back through LockRect ----
 emcvp = emcsave((sym('g_ViewportW'), sym('g_ViewportH')))
 SDTest.Poke('g_ViewportW', 640)
 SDTest.Poke('g_ViewportH', 480)
@@ -117,25 +117,25 @@ for emct in ((21, 1, 4), (22, 1, 4), (23, 1, 2), (25, 1, 2), (21, 2, 4)):
 		emctex = emcr[1]
 		if emcr[0] < 0:
 			emctex = 0
-	check('emc CMapa_CopyBmp texture' + fmt(emct), lambda: emctex != 0)
+	check('emc CMap_CopyBmp texture' + fmt(emct), lambda: emctex != 0)
 	if emctex:
 		emctexclear(emctex, 16)
 		emcwi(emcmapa + 0x34, emctex)
 		for emcc in ((0, 0, 0, 0, 5, 3), (10, 4, 1, 1, 3, 2), (28, 14, 0, 0, 10, 10), (3, 1, 4, 2, 9, 9), (-1, 0, 0, 0, 2, 2),
 				(0, 0, -1, 0, 2, 2), (0, 0, 0, 0, 0, 2), (0, 0, 5, 0, 2, 2), (40, 0, 0, 0, 2, 2), (0, 16, 0, 0, 2, 2)):
-			check('emc CMapa_CopyBmp' + fmt((emct, emcc)), lambda c=emcc, t=emctex, b=emct[2]: (SDTest.Call('CMapa_CopyBmp',
+			check('emc CMap_CopyBmp' + fmt((emct, emcc)), lambda c=emcc, t=emctex, b=emct[2]: (SDTest.Call('CMap_CopyBmp',
 				'tbiiiiiiii', emcmapa, c[0], c[1], emcbmp, c[2], c[3], c[4], c[5])[0],
 				emctexread(t, b, min(max(c[0], 0), 28), min(max(c[1], 0), 14), 4),
 				emctexread(t, b, min(max(c[0], 0), 28), min(max(c[1], 0), 14) + 1, 3)))
-		check('emc CMapa_CopyBmp no image', lambda: SDTest.Call('CMapa_CopyBmp', 'tbiiiiiiii', emcmapa, 0, 0, 0, 0, 0, 2, 2)[0])
+		check('emc CMap_CopyBmp no image', lambda: SDTest.Call('CMap_CopyBmp', 'tbiiiiiiii', emcmapa, 0, 0, 0, 0, 0, 2, 2)[0])
 		SDTest.Call(emccom(emctex, 8), 'tiii', 0, emctex)
 emcwi(emcmapa + 0x34, 0)
-check('emc CMapa_CopyBmp no texture', lambda: SDTest.Call('CMapa_CopyBmp', 'tbiiiiiiii', emcmapa, 0, 0, emcbmp, 0, 0, 2, 2)[0])
+check('emc CMap_CopyBmp no texture', lambda: SDTest.Call('CMap_CopyBmp', 'tbiiiiiiii', emcmapa, 0, 0, emcbmp, 0, 0, 2, 2)[0])
 SDTest.Call('Mem_Free', 'vi', emcmapa)
 SDTest.Call('CBmp_Delete', 'tiii', emcbmp, 1)
 emcdel(emclr)
 
-# ---- Motor_DrawFpsGraph (rva 0x22e9b0) through the D3D log, the clock set here ----
+# ---- Engine_DrawFpsGraph (rva 0x22e9b0) through the D3D log, the clock set here ----
 emcclock = (sym('g_FrameMs'), sym('g_Fps'), sym('g_TimeMsF'))
 emcclocks = emcsave(emcclock)
 def emcgraph():
@@ -150,17 +150,17 @@ for emcg in ((0.02, 50.0, 3000.0), (0.0333, 30.0, 3100.0), (0.016, 60.0, 5200.0)
 	emcsf(sym('g_Fps'), emcg[1])
 	emcsf(sym('g_TimeMsF'), emcg[2])
 	if emcgk < 3:
-		check('emc Motor_DrawFpsGraph' + fmt(emcg), lambda: (emclog(lambda: SDTest.Call('Motor_DrawFpsGraph', 'vf', 160.0)),
+		check('emc Engine_DrawFpsGraph' + fmt(emcg), lambda: (emclog(lambda: SDTest.Call('Engine_DrawFpsGraph', 'vf', 160.0)),
 			emcgraph()))
 	else:
-		check('emc Motor_DrawFpsGraph' + fmt(emcg), lambda: (SDTest.Call('Motor_DrawFpsGraph', 'vf', 100.0), emcgraph()))
+		check('emc Engine_DrawFpsGraph' + fmt(emcg), lambda: (SDTest.Call('Engine_DrawFpsGraph', 'vf', 100.0), emcgraph()))
 	emcgk = emcgk + 1
 for emcgk in range(28):
 	emcsf(sym('g_FrameMs'), 0.001 * emcgk)
-	SDTest.Call('Motor_DrawFpsGraph', 'vf', 160.0)
-check('emc Motor_DrawFpsGraph ring', lambda: (emcgraph(), emcrf(sym('g_FpsGraph') + 0x400000, 8), emcrf(sym('g_FpsGraphPeak') + 0x400000, 8)))
+	SDTest.Call('Engine_DrawFpsGraph', 'vf', 160.0)
+check('emc Engine_DrawFpsGraph ring', lambda: (emcgraph(), emcrf(sym('g_FpsGraph') + 0x400000, 8), emcrf(sym('g_FpsGraphPeak') + 0x400000, 8)))
 
-# ---- Motor_DrawStats (rva 0x2308c0): the counters it clears, the clock set here ----
+# ---- Engine_DrawStats (rva 0x2308c0): the counters it clears, the clock set here ----
 emcst = (sym('g_ProfMode'), sym('g_ProfResetTime'), sym('g_ProfNoReset'), sym('g_BspCacheStats'), sym('g_CollisionCacheMiss'), sym('g_CollisionTestsMax'), sym('g_CollisionTestsTotal'), sym('g_TexCached'), sym('g_TexUsed'), sym('g_TexUsedPixels'))
 emcsts = emcsave(emcst)
 def emcstats():
@@ -181,7 +181,7 @@ for emcm in ((1, 0, 1), (3, 0, 1), (4, 0, 1), (4, 0, 0), (5, 0, 1), (5, 1, 1), (
 	SDTest.Poke('g_TexCached', 3 * emcm[2])
 	SDTest.Poke('g_TexUsed', 2)
 	SDTest.Poke('g_TexUsedPixels', 4096)
-	check('emc Motor_DrawStats' + fmt(emcm), lambda: (SDTest.Call('Motor_DrawStats', 'v'), emcstats()))
+	check('emc Engine_DrawStats' + fmt(emcm), lambda: (SDTest.Call('Engine_DrawStats', 'v'), emcstats()))
 emcrestore(emcst, emcsts)
 emcrestore(emcclock, emcclocks)
 emcrestore((sym('g_ViewportW'), sym('g_ViewportH')), emcvp)

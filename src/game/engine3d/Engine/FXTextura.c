@@ -28,19 +28,19 @@ static float Float_FromBits(uint32_t bits) {
 #define LAVA_SCROLL 7.0f
 #define LAVA_COS_STEP Float_FromBits(0x3cc90fdb)	/* 2 pi / 256 */
 
-void __fastcall IFXTextura_dtor(IFXTextura *self) {
-	self->vftable = IFXTEXTURA_VFTABLE;
+void __fastcall IFXTexture_dtor(IFXTexture *self) {
+	self->vftable = IFXTEXTURE_VFTABLE;
 }
 
-IFXTextura *__thiscall IFXTextura_Delete(IFXTextura *self, byte flags) {
-	self->vftable = IFXTEXTURA_VFTABLE;
+IFXTexture *__thiscall IFXTexture_Delete(IFXTexture *self, byte flags) {
+	self->vftable = IFXTEXTURE_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
 	return self;
 }
 
-void *__fastcall IFXTextura_GetTexture(IFXTextura *self) {
+void *__fastcall IFXTexture_GetTexture(IFXTexture *self) {
 	(void)self;
 	return NULL;
 }
@@ -73,9 +73,9 @@ CFXTexLava *__thiscall CFXTexLava_ctor(CFXTexLava *self, const char *file) {
 	self->base.vftable = CFXTEXLAVA_VFTABLE;
 	self->lastTime = 0;
 	FXTex_LoadBmps(&self->bmp, &self->orig, file);
-	CHECK(self->bmp->ancho == FXTEX_SIZE && self->bmp->alto == FXTEX_SIZE);
-	if (!g_LavaCosInic) {
-		g_LavaCosInic = 1;
+	CHECK(self->bmp->width == FXTEX_SIZE && self->bmp->height == FXTEX_SIZE);
+	if (!g_LavaCosInit) {
+		g_LavaCosInit = 1;
 		for (int i = 0; i < 256; i += 2) {
 			double in[2] = { (double)((float)i * LAVA_COS_STEP), (double)((float)(i + 1) * LAVA_COS_STEP) };
 			double out[2];
@@ -91,7 +91,7 @@ void __fastcall CFXTexLava_dtor(CFXTexLava *self) {
 	self->base.vftable = CFXTEXLAVA_VFTABLE;
 	FXTex_FreeBmp(&self->bmp);
 	FXTex_FreeBmp(&self->orig);
-	IFXTextura_dtor(&self->base);
+	IFXTexture_dtor(&self->base);
 }
 
 CFXTexLava *__thiscall CFXTexLava_Delete(CFXTexLava *self, byte flags) {
@@ -121,15 +121,15 @@ static int Lava_Fistp(float f) {
 	return (int)X87_Fistp((double)f);
 }
 
-int __thiscall CFXTexLava_Update(CFXTexLava *self, CMapa *mapa) {
+int __thiscall CFXTexLava_Update(CFXTexLava *self, CMap *map) {
 	if (!FXTex_Due(&self->lastTime)) {
 		return 0;
 	}
 	float t = g_TimeMsF * 0.001f;
 	float ty = t * LAVA_SPEEDY;
 	float tx = -t;
-	int lx = self->bmp->ancho;
-	int ly = self->bmp->alto;
+	int lx = self->bmp->width;
+	int ly = self->bmp->height;
 	CHECK(lx == FXTEX_SIZE);
 	for (int x = 0; x < lx; x++) {
 		int a = Lava_Fistp(((float)x * LAVA_STEP + tx) * LAVA_ANGLE) & 0xff;
@@ -145,7 +145,7 @@ int __thiscall CFXTexLava_Update(CFXTexLava *self, CMapa *mapa) {
 			row[x] = FXTex_Mix(row[x], src[((g_LavaOffset[x] + y) & FXTEX_MASK) * FXTEX_SIZE + ((dx + x) & FXTEX_MASK)]);
 		}
 	}
-	CMapa_CopyBmp(mapa, 0, 0, self->bmp, 0, 0, self->bmp->ancho, self->bmp->alto);
+	CMap_CopyBmp(map, 0, 0, self->bmp, 0, 0, self->bmp->width, self->bmp->height);
 	return 0;
 }
 
@@ -155,7 +155,7 @@ CFXTexScroll *__thiscall CFXTexScroll_ctor(CFXTexScroll *self, const char *file)
 	self->offset = 0;
 	self->i14 = 0;
 	FXTex_LoadBmps(&self->bmp, &self->orig, file);
-	CHECK(self->bmp->ancho == FXTEX_SIZE && self->bmp->alto == FXTEX_SIZE);
+	CHECK(self->bmp->width == FXTEX_SIZE && self->bmp->height == FXTEX_SIZE);
 	return self;
 }
 
@@ -163,7 +163,7 @@ void __fastcall CFXTexScroll_dtor(CFXTexScroll *self) {
 	self->base.vftable = CFXTEXSCROLL_VFTABLE;
 	FXTex_FreeBmp(&self->bmp);
 	FXTex_FreeBmp(&self->orig);
-	IFXTextura_dtor(&self->base);
+	IFXTexture_dtor(&self->base);
 }
 
 CFXTexScroll *__thiscall CFXTexScroll_Delete(CFXTexScroll *self, byte flags) {
@@ -174,12 +174,12 @@ CFXTexScroll *__thiscall CFXTexScroll_Delete(CFXTexScroll *self, byte flags) {
 	return self;
 }
 
-int __thiscall CFXTexScroll_Update(CFXTexScroll *self, CMapa *mapa) {
+int __thiscall CFXTexScroll_Update(CFXTexScroll *self, CMap *map) {
 	if (!FXTex_Due(&self->lastTime)) {
 		return 0;
 	}
-	int lx = self->bmp->ancho;
-	int ly = self->bmp->alto;
+	int lx = self->bmp->width;
+	int ly = self->bmp->height;
 	int off = self->offset++;
 	for (int y = 0; y < ly; y++) {
 		uint32_t *row = CBmp_Pixel(self->bmp, 0, (uint32_t)y);
@@ -188,7 +188,7 @@ int __thiscall CFXTexScroll_Update(CFXTexScroll *self, CMapa *mapa) {
 			row[x] = FXTex_Mix(row[x], src[((x - off) & FXTEX_MASK) + (y & FXTEX_MASK) * FXTEX_SIZE]);
 		}
 	}
-	CMapa_CopyBmp(mapa, 0, 0, self->bmp, 0, 0, self->bmp->ancho, self->bmp->alto);
+	CMap_CopyBmp(map, 0, 0, self->bmp, 0, 0, self->bmp->width, self->bmp->height);
 	return 0;
 }
 
@@ -199,15 +199,15 @@ CFXNewsPanel *__fastcall CFXNewsPanel_ctor(CFXNewsPanel *self) {
 }
 
 CFXNewsPanel *__thiscall CFXNewsPanel_Delete(CFXNewsPanel *self, byte flags) {
-	IFXTextura_dtor(&self->base);
+	IFXTexture_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
 	return self;
 }
 
-int __thiscall CFXNewsPanel_Update(CFXNewsPanel *self, CMapa *mapa) {
-	(void)mapa;
+int __thiscall CFXNewsPanel_Update(CFXNewsPanel *self, CMap *map) {
+	(void)map;
 	self->time = g_TimeMsInt;
 	return 0;
 }
@@ -217,26 +217,26 @@ void *__fastcall CFXNewsPanel_GetTexture(CFXNewsPanel *self) {
 	return NewsPanel_GetTarget();
 }
 
-void *FXTextura_Create(byte kind, CMapa *mapa) {
+void *FXTexture_Create(byte kind, CMap *map) {
 	switch (kind) {
 	case FXTEX_LAVA: {
 		CFXTexLava *p = operator_new(sizeof(*p));
-		return p ? CFXTexLava_ctor(p, mapa->ruta) : NULL;
+		return p ? CFXTexLava_ctor(p, map->path) : NULL;
 	}
 	case FXTEX_SCROLL: {
 		CFXTexScroll *p = operator_new(sizeof(*p));
-		return p ? CFXTexScroll_ctor(p, mapa->ruta) : NULL;
+		return p ? CFXTexScroll_ctor(p, map->path) : NULL;
 	}
 	case FXTEX_NEWSPANEL: {
 		CFXNewsPanel *p = operator_new(sizeof(*p));
 		return p ? CFXNewsPanel_ctor(p) : NULL;
 	}
 	}
-	E3D_LogBlue(g_FileLog, "Texture FX not found: %s", mapa->Nombre);
+	E3D_LogBlue(g_FileLog, "Texture FX not found: %s", map->Name);
 	return NULL;
 }
 
-byte FXTextura_Kind(const char *name) {
+byte FXTexture_Kind(const char *name) {
 	for (const char *s = strchr(name, '('); s; s = strchr(s + 1, '(')) {
 		if (!crt_strnicmp(s, "(fxlava)", 8)) {
 			return FXTEX_LAVA;

@@ -11,26 +11,26 @@
 #include "scrap/varios.h"
 
 CPortal *__fastcall CPortal_ctor(CPortal *self) {
-	self->nodo = NULL;
+	self->node = NULL;
 	self->vftable = CPORTAL_VFTABLE;
-	self->clase = CLASE_OBJ3D_PORTAL;
-	self->ancho = 1.0f;
-	self->alto = 1.0f;
-	self->zonas[0] = NULL;
-	self->zonas[1] = NULL;
-	self->idZona[0] = -1;
-	self->idZona[1] = -1;
-	self->calculado = 0;
+	self->class = CLASS_OBJ3D_PORTAL;
+	self->width = 1.0f;
+	self->height = 1.0f;
+	self->zones[0] = NULL;
+	self->zones[1] = NULL;
+	self->idZone[0] = -1;
+	self->idZone[1] = -1;
+	self->calculated = 0;
 	return self;
 }
 
 void __fastcall CPortal_dtor(CPortal *self) {
 	self->vftable = CPORTAL_VFTABLE;
 	for (int i = 0; i < 2; i++) {
-		ObjRef_Drop(&self->zonas[i]);
-		self->zonas[i] = NULL;
+		ObjRef_Drop(&self->zones[i]);
+		self->zones[i] = NULL;
 	}
-	CObjBase3D_dtor((IObjeto3D *)self);
+	CObjBase3D_dtor((IObject3D *)self);
 }
 
 CPortal *__thiscall CPortal_Delete(CPortal *self, byte flags) {
@@ -41,53 +41,53 @@ CPortal *__thiscall CPortal_Delete(CPortal *self, byte flags) {
 	return self;
 }
 
-void __fastcall CPortal_LinkZonas(CPortal *self) {
-	if (self->zonas[0] || self->zonas[1]) {
+void __fastcall CPortal_LinkZones(CPortal *self) {
+	if (self->zones[0] || self->zones[1]) {
 		return;
 	}
-	for (CNodo3D *n = self->nodo->escena->Nodo3D; n; n = n->sig) {
+	for (CNode3D *n = self->node->scene->Node3D; n; n = n->next) {
 		if (n->i48 < 0) {
 			continue;
 		}
 		for (int i = 0; i < 2; i++) {
-			if (n->i48 == self->idZona[i]) {
+			if (n->i48 == self->idZone[i]) {
 				n->Refs++;
-				ObjRef_Drop(&self->zonas[i]);
-				self->zonas[i] = n;
+				ObjRef_Drop(&self->zones[i]);
+				self->zones[i] = n;
 			}
 		}
 	}
 }
 
-byte __thiscall CPortal_Read(CPortal *self, CArchIO *f, MallaD3D_FileCtx *ctx) {
-	CObjBase3D_SetNodo((IObjeto3D *)self, ctx->nodo);
-	CArchIO_BeginBlock(f, "PORT");
-	CHECK(CArchIO_ReadInt(f) == 1);
-	self->idZona[0] = CArchIO_ReadInt(f);
-	self->idZona[1] = CArchIO_ReadInt(f);
-	CArchIO_Read(f, &self->ancho, 4);
-	CArchIO_Read(f, &self->alto, 4);
-	self->calculado = 0;
-	CArchIO_Error(f, "PORT");
+byte __thiscall CPortal_Read(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CObjBase3D_SetNode((IObject3D *)self, ctx->node);
+	CFileIO_BeginBlock(f, "PORT");
+	CHECK(CFileIO_ReadInt(f) == 1);
+	self->idZone[0] = CFileIO_ReadInt(f);
+	self->idZone[1] = CFileIO_ReadInt(f);
+	CFileIO_Read(f, &self->width, 4);
+	CFileIO_Read(f, &self->height, 4);
+	self->calculated = 0;
+	CFileIO_Error(f, "PORT");
 	return 1;
 }
 
-byte __thiscall CPortal_Write(CPortal *self, CArchIO *f, MallaD3D_FileCtx *ctx) {
-	CHECK(self->nodo == ctx->nodo);
-	CArchIO_BeginBlockWrite(f, "PORT");
-	CArchIO_WriteInt(f, 1);
-	CArchIO_WriteInt(f, self->zonas[0] ? self->zonas[0]->i48 : -1);
-	CArchIO_WriteInt(f, self->zonas[1] ? self->zonas[1]->i48 : -1);
-	CArchIO_Write(f, &self->ancho, 4);
-	CArchIO_Write(f, &self->alto, 4);
-	CArchIO_EndBlockWrite(f, "PORT");
+byte __thiscall CPortal_Write(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+	CHECK(self->node == ctx->node);
+	CFileIO_BeginBlockWrite(f, "PORT");
+	CFileIO_WriteInt(f, 1);
+	CFileIO_WriteInt(f, self->zones[0] ? self->zones[0]->i48 : -1);
+	CFileIO_WriteInt(f, self->zones[1] ? self->zones[1]->i48 : -1);
+	CFileIO_Write(f, &self->width, 4);
+	CFileIO_Write(f, &self->height, 4);
+	CFileIO_EndBlockWrite(f, "PORT");
 	return 1;
 }
 
-void __thiscall CPortal_Render(CPortal *self, void *dev, CNodoR *r) {
+void __thiscall CPortal_Render(CPortal *self, void *dev, CRenderNode *r) {
 	(void)dev;
 	CHECK(!r);
-	CHECK(self->nodo);
+	CHECK(self->node);
 	if (g_ShowPortals) {
 		CPortal_DrawDebug(self, 0x808080);
 	}
@@ -104,7 +104,7 @@ void Portal_FiniMat(void) {
 
 void __thiscall CPortal_DrawDebug(CPortal *self, uint32_t color) {
 	CHECK(g_ShowPortals);
-	float hw = self->ancho * 0.5f, hh = self->alto * 0.5f;
+	float hw = self->width * 0.5f, hh = self->height * 0.5f;
 	if (*g_PortalMatGuard > crt_InitEpoch()) {
 		crt_Init_thread_header(g_PortalMatGuard);
 		if (*g_PortalMatGuard == -1) {
@@ -117,50 +117,50 @@ void __thiscall CPortal_DrawDebug(CPortal *self, uint32_t color) {
 	g_PortalMat.params.i40 = 8;
 	g_MatFX1 = &g_PortalMat;
 	vec3_t mn = { -hw, 0.0f, -hh }, mx = { hw, 0.0f, hh };
-	Debug_DrawBoxM(&self->nodo->m, &mn, &mx, color);
+	Debug_DrawBoxM(&self->node->m, &mn, &mx, color);
 	g_MatFX1 = NULL;
 }
 
 /* the signed distance of p to the cached plane */
-static float Portal_Plano(const CPortal *self, const vec3_t *p) {
-	const plane_t *pl = &self->cache_plano;
+static float Portal_Plane(const CPortal *self, const vec3_t *p) {
+	const plane_t *pl = &self->cache_plane;
 	return pl->n.y * p->y + p->x * pl->n.x + pl->n.z * p->z + pl->d;
 }
 
 /* p is in the rectangle (its two triangles) */
-static byte Portal_Dentro(const CPortal *self, const vec3_t *p) {
+static byte Portal_Inside(const CPortal *self, const vec3_t *p) {
 	const vec3_t *c = self->cache_vert;
-	return Suelo_PointInTri(p, &c[0], &c[1], &c[2]) || Suelo_PointInTri(p, &c[0], &c[2], &c[3]);
+	return Ground_PointInTri(p, &c[0], &c[1], &c[2]) || Ground_PointInTri(p, &c[0], &c[2], &c[3]);
 }
 
 float __thiscall CPortal_PlaneDist(CPortal *self, const vec3_t *p) {
-	CPortal_UpdateCache(self, &self->nodo->m);
-	const plane_t *pl = &self->cache_plano;
+	CPortal_UpdateCache(self, &self->node->m);
+	const plane_t *pl = &self->cache_plane;
 	return pl->n.y * p->y + pl->n.x * p->x + pl->n.z * p->z + pl->d;
 }
 
 float __thiscall CPortal_Dist(CPortal *self, const vec3_t *p) {
-	CHECK(self->nodo);
-	CPortal_UpdateCache(self, &self->nodo->m);
-	const plane_t *pl = &self->cache_plano;
-	float d = Portal_Plano(self, p);
+	CHECK(self->node);
+	CPortal_UpdateCache(self, &self->node->m);
+	const plane_t *pl = &self->cache_plane;
+	float d = Portal_Plane(self, p);
 	vec3_t q = { p->x - pl->n.x * d, p->y - pl->n.y * d, p->z - pl->n.z * d };
-	if (Portal_Dentro(self, &q)) {
+	if (Portal_Inside(self, &q)) {
 		return (float)__builtin_fabs((double)d);
 	}
 	const vec3_t *c = self->cache_vert;
-	float m = Suelo_Dist2PointSeg(&c[3], &c[0], p, NULL);
+	float m = Ground_Dist2PointSeg(&c[3], &c[0], p, NULL);
 	for (int i = 0; i < 3; i++) {
-		float e = Suelo_Dist2PointSeg(&c[i], &c[i + 1], p, NULL);
+		float e = Ground_Dist2PointSeg(&c[i], &c[i + 1], p, NULL);
 		m = e <= m ? e : m;
 	}
 	return (float)__builtin_sqrt((double)m);
 }
 
 byte __thiscall CPortal_SegCross(CPortal *self, const vec3_t *a, const vec3_t *b, vec3_t *out) {
-	CHECK(self->nodo);
-	CPortal_UpdateCache(self, &self->nodo->m);
-	const plane_t *pl = &self->cache_plano;
+	CHECK(self->node);
+	CPortal_UpdateCache(self, &self->node->m);
+	const plane_t *pl = &self->cache_plane;
 	float da = pl->n.x * a->x + a->y * pl->n.y + a->z * pl->n.z + pl->d;
 	float db = b->x * pl->n.x + b->y * pl->n.y + b->z * pl->n.z + pl->d;
 	if ((db < 0.0f) == (da < 0.0f)) {
@@ -168,7 +168,7 @@ byte __thiscall CPortal_SegCross(CPortal *self, const vec3_t *a, const vec3_t *b
 	}
 	float t = da / (da - db);
 	vec3_t q = { t * (b->x - a->x) + a->x, t * (b->y - a->y) + a->y, (b->z - a->z) * t + a->z };
-	if (!Portal_Dentro(self, &q)) {
+	if (!Portal_Inside(self, &q)) {
 		return 0;
 	}
 	if (out) {
@@ -177,24 +177,24 @@ byte __thiscall CPortal_SegCross(CPortal *self, const vec3_t *a, const vec3_t *b
 	return 1;
 }
 
-void __thiscall CPortal_SetZona(CPortal *self, uint32_t i, CNodo3D *zona) {
-	CNodo3D **slot = &self->zonas[i & 1];
-	if (zona) {
-		zona->Refs++;
+void __thiscall CPortal_SetZone(CPortal *self, uint32_t i, CNode3D *zone) {
+	CNode3D **slot = &self->zones[i & 1];
+	if (zone) {
+		zone->Refs++;
 	}
 	ObjRef_Drop(slot);
-	*slot = zona;
+	*slot = zone;
 }
 
 void __thiscall CPortal_UpdateCache(CPortal *self, const matrix_t *unused) {
 	(void)unused;
-	if (self->calculado) {
+	if (self->calculated) {
 		return;
 	}
-	float hx = self->ancho * 0.5f;
-	float hz = self->alto * 0.5f;
-	self->calculado = 1;
-	const matrix_t *m = &self->nodo->m;
+	float hx = self->width * 0.5f;
+	float hz = self->height * 0.5f;
+	self->calculated = 1;
+	const matrix_t *m = &self->node->m;
 	vec3_t v = { -hx, 0.0f, hz };
 	Vec3_TransformH(&self->cache_vert[0], &v, m);
 	v = (vec3_t){ hx, 0.0f, hz };
@@ -203,10 +203,10 @@ void __thiscall CPortal_UpdateCache(CPortal *self, const matrix_t *unused) {
 	Vec3_TransformH(&self->cache_vert[2], &v, m);
 	v = (vec3_t){ -hx, 0.0f, -hz };
 	Vec3_TransformH(&self->cache_vert[3], &v, m);
-	CHECK(Plane_Calc(&self->cache_plano, &self->cache_vert[0], &self->cache_vert[1], &self->cache_vert[2]));
-	float a = (float)(Game_Acos(__builtin_fabs((double)self->cache_plano.n.y)) * 180.0 / 3.141592653589793);
+	CHECK(Plane_Calc(&self->cache_plane, &self->cache_vert[0], &self->cache_vert[1], &self->cache_vert[2]));
+	float a = (float)(Game_Acos(__builtin_fabs((double)self->cache_plane.n.y)) * 180.0 / 3.141592653589793);
 	if (a > 89.9f && 91.1f > a && a != 90.0f) {
-		E3D_LogInfo(g_FileLog, "WARN: unaligned vertical portal: %s", self->nodo->name);
+		E3D_LogInfo(g_FileLog, "WARN: unaligned vertical portal: %s", self->node->name);
 	}
 }
 
@@ -251,14 +251,14 @@ byte __thiscall CPortal_ClipRect(CPortal *self, box_t *rect) {
 	float w[4];
 	byte back[4];
 
-	CHECK(self->nodo);
-	CPortal_UpdateCache(self, &self->nodo->m);
+	CHECK(self->node);
+	CPortal_UpdateCache(self, &self->node->m);
 	for (int i = 0; i < 4; i++) {
 		c[i] = self->cache_vert[i];
 	}
 	/* the projection to the near plane of the world camera, scaled down, and to its far plane */
 	matrix_t proj = *Render_GetProj();
-	CCamara *cam = Mundo_Get()->cam;
+	CCamera *cam = World_Get()->cam;
 	float zfar = cam->zFar;
 	float znear = cam->zNear * 0.00390625f;
 	proj.m[10] = zfar / (zfar - znear);

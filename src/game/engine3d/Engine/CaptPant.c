@@ -74,7 +74,7 @@ SD_SIZE(AviStreamInfo, 0x8c);
 #define g_AviCompressed GAME_GLOBAL(void *, g_AviCompressed, 0x4b29ac)
 #define g_AviBih GAME_GLOBAL(AviBih, g_AviBih, 0x4b29b0)
 #define g_AviRate GAME_GLOBAL_IN(uint32_t, GVar_MovieFramerate, 16, 0x4b2950)		/* the frames per second */
-#define g_ShotPath (GAME_ARRAY(char, g_ShotPath, 0x4b29d8))	/* MAX_RUTA */
+#define g_ShotPath (GAME_ARRAY(char, g_ShotPath, 0x4b29d8))	/* MAX_FILEPATH */
 #define g_ShotNum GAME_GLOBAL(int, g_ShotNum, 0x432948)
 
 /* IDirect3DSurface8 and IDirect3DDevice8 */
@@ -199,22 +199,22 @@ static byte Shot_Double(byte c) {
 
 /* the name of the next shot: "Shot*" (or the name set) with the first free number 1..9999 for the '*' */
 static void Shot_NextName(void) {
-	char buf[MAX_RUTA];
+	char buf[MAX_FILEPATH];
 
-	Cad_Copy(g_ShotPath, g_ScreenshotName, MAX_RUTA);
+	String_Copy(g_ShotPath, g_ScreenshotName, MAX_FILEPATH);
 	if (!g_ShotPath[0]) {
-		Cad_Copy(g_ShotPath, "Shot*", MAX_RUTA);
+		String_Copy(g_ShotPath, "Shot*", MAX_FILEPATH);
 	}
 	char *star = strchr(g_ShotPath, '*');
 	if (!star) {
-		Ruta_Format(g_ShotPath, g_ShotPath, "&U&D&N.pcx");
+		Path_Format(g_ShotPath, g_ShotPath, "&U&D&N.pcx");
 	} else {
 		*star = 0;
 		int n = ++g_ShotNum;
 		while (n < 10000) {
 			Bprintf(buf, sizeof(buf), "%s%04d.pcx", g_ShotPath, n);
 			if (crt_access(buf, 0)) {
-				Cad_Copy(g_ShotPath, buf, MAX_RUTA);
+				String_Copy(g_ShotPath, buf, MAX_FILEPATH);
 				n = g_ShotNum;
 				break;
 			}
@@ -225,7 +225,7 @@ static void Shot_NextName(void) {
 		}
 	}
 	if (!g_ShotPath[0]) {
-		Cad_Copy(g_ShotPath, "ScreenShot.pcx", MAX_RUTA);
+		String_Copy(g_ShotPath, "ScreenShot.pcx", MAX_FILEPATH);
 	}
 }
 

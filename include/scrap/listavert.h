@@ -1,19 +1,19 @@
 /*
  * Engine/ListaVert.cpp of the engine3d: the vertex list of a mesh, an array of vertices in one of the D3D
- * formats (VERT_*). The fields of a vertex (LVERT_*) are found through CListaVert_GetField. The XBOX formats keep
+ * formats (VERT_*). The fields of a vertex (LVERT_*) are found through CVertList_GetField. The XBOX formats keep
  * the positions as shorts, the normals packed into 11:11:10 bits and the texture coordinates as shorts. The file
  * also builds triangle strips (a triangle is 3 ushorts, bit 15 marks the ones in use) and measures the hits of a
  * 16 entry vertex cache.
  */
-#ifndef SCRAP_LISTAVERT_H
-#define SCRAP_LISTAVERT_H
+#ifndef SCRAP_VERTLIST_H
+#define SCRAP_VERTLIST_H
 
 #include "scrap/archio.h"
 #include "scrap/mathlib.h"
 
-/* the formats; the size and the D3D FVF of each are ListaVert_FormatSize and ListaVert_FormatFVF */
+/* the formats; the size and the D3D FVF of each are VertList_FormatSize and VertList_FormatFVF */
 enum {
-	VERT_NULO = 0,
+	VERT_NULL = 0,
 	VERT_TEX1 = 1,			/* 0x20: pos, normal, tex */
 	VERT_TEX2 = 2,			/* 0x28: pos, normal, 2 tex */
 	VERT_LTEX1 = 3,			/* 0x1c: pos, diffuse, specular, tex */
@@ -41,19 +41,19 @@ enum {
 	LVERT_SPECULAR = 4,
 	LVERT_TEX2D_SET1 = 5,		/* up to LVERT_TEX2D_SET8 = 12 */
 	LVERT_POS_SHORT = 13,		/* 3 shorts: pos / scale */
-	LVERT_NORMAL_PACKED = 14,	/* ListaVert_PackNormal */
+	LVERT_NORMAL_PACKED = 14,	/* VertList_PackNormal */
 	LVERT_TEX_SHORT = 15,		/* 2 shorts: tex * scale */
 	LVERT_TEX_SHORT2 = 16		/* 2 shorts: tex * 32767 */
 };
 
-typedef struct CListaVert {
+typedef struct CVertList {
 	byte *pVert;			/* 0x0 Mem_Realloc */
 	int nVert;			/* 0x4 */
 	int totVert;			/* 0x8 allocated */
 	int frmt;			/* 0xc VERT_* */
-	float esc;			/* 0x10 divides the positions of VERT_POS_XBOX */
-} CListaVert;
-SD_SIZE(CListaVert, 0x14);
+	float scale;			/* 0x10 divides the positions of VERT_POS_XBOX */
+} CVertList;
+SD_SIZE(CVertList, 0x14);
 
 /* the vertex shader handles of the XBOX formats */
 #define g_hVShader_Tex1_XBox GAME_GLOBAL(uint32_t, g_hVShader_Tex1_XBox, 0x4ad630)
@@ -71,41 +71,41 @@ SD_SIZE(CListaVert, 0x14);
 #define g_VCacheMisses GAME_GLOBAL_IN(int, g_VCacheAge, 72, 0x4ad6d0)
 #define VCACHE_SIZE 16
 
-CListaVert *__fastcall CListaVert_ctor(CListaVert *self);
+CVertList *__fastcall CVertList_ctor(CVertList *self);
 /* also the destructor (two copies in the exe) */
-void __fastcall CListaVert_Free(CListaVert *self);
+void __fastcall CVertList_Free(CVertList *self);
 /* empty, in the format */
-void __thiscall CListaVert_SetFormat(CListaVert *self, int frmt);
+void __thiscall CVertList_SetFormat(CVertList *self, int frmt);
 /* n vertices; with pVert set (realloc) 25% more room */
-void __thiscall CListaVert_Alloc(CListaVert *self, int n, byte realloc);
+void __thiscall CVertList_Alloc(CVertList *self, int n, byte realloc);
 /* an empty stub, returns 0 */
-byte __thiscall CListaVert_Optimize(CListaVert *self, void *tris, int nTri);
-/* the coordinates itex of the reflection map in software: with mapa->bb 1 the reflected view direction (sphere
+byte __thiscall CVertList_Optimize(CVertList *self, void *tris, int nTri);
+/* the coordinates itex of the reflection map in software: with map->bb 1 the reflected view direction (sphere
  * map), else the normal through world * view; then offset f10 and scale f18 of the map */
-struct CMapa;
-void __thiscall CListaVert_EnvMapUV(CListaVert *self, const matrix_t *world, const matrix_t *view,
-	const struct CMapa *mapa, int itex);
+struct CMap;
+void __thiscall CVertList_EnvMapUV(CVertList *self, const matrix_t *world, const matrix_t *view,
+	const struct CMap *map, int itex);
 /* VERT_TEX1 and VERT_TEX2 (second set): u from the angle between the normal through world and light 0 of the
  * device, v 0.5 (a ramp texture); nothing while light 0 is off */
-void __thiscall CListaVert_LightRampUV(CListaVert *self, const matrix_t *world);
+void __thiscall CVertList_LightRampUV(CVertList *self, const matrix_t *world);
 /* the first 4 fields */
-void __thiscall CListaVert_Swap(CListaVert *self, CListaVert *other);
+void __thiscall CVertList_Swap(CVertList *self, CVertList *other);
 /* the "LFVF" block */
-void __thiscall CListaVert_Read(CListaVert *self, CArchIO *f);
-void __thiscall CListaVert_Write(CListaVert *self, CArchIO *f);
+void __thiscall CVertList_Read(CVertList *self, CFileIO *f);
+void __thiscall CVertList_Write(CVertList *self, CFileIO *f);
 
-uint32_t ListaVert_FormatFVF(int frmt);
-int ListaVert_FormatSize(int frmt);
-const char *ListaVert_FormatName(int frmt);
-uint32_t __fastcall CListaVert_FVF(CListaVert *self);
-int __fastcall CListaVert_Size(CListaVert *self);
-const char *__fastcall CListaVert_FormatName(CListaVert *self);
+uint32_t VertList_FormatFVF(int frmt);
+int VertList_FormatSize(int frmt);
+const char *VertList_FormatName(int frmt);
+uint32_t __fastcall CVertList_FVF(CVertList *self);
+int __fastcall CVertList_Size(CVertList *self);
+const char *__fastcall CVertList_FormatName(CVertList *self);
 /* a unit vector into 11:11:10 bits (x low) and back */
-uint32_t ListaVert_PackNormal(const vec3_t *n);
-vec3_t *ListaVert_UnpackNormal(vec3_t *out, uint32_t packed);
+uint32_t VertList_PackNormal(const vec3_t *n);
+vec3_t *VertList_UnpackNormal(vec3_t *out, uint32_t packed);
 
 /* field f of vertex i, NULL if the format has none */
-void *__thiscall CListaVert_GetField(CListaVert *self, int f, uint32_t i);
+void *__thiscall CVertList_GetField(CVertList *self, int f, uint32_t i);
 /* the field of one vertex of each format */
 void *__thiscall VertTex1_Field(byte *v, int f);
 void *__thiscall VertTex2_Field(byte *v, int f);
@@ -123,42 +123,42 @@ void *__thiscall VertLTex2XBox_Field(byte *v, int f);
 void *__thiscall VertLTex2NXBox_Field(byte *v, int f);
 
 /* vertex i of the format, with checks */
-byte *__thiscall CListaVert_Tex1(CListaVert *self, uint32_t i);
-byte *__thiscall CListaVert_Tex2(CListaVert *self, uint32_t i);
-byte *__thiscall CListaVert_LTex1(CListaVert *self, uint32_t i);
-byte *__thiscall CListaVert_Tex1B1(CListaVert *self, uint32_t i);
-byte *__thiscall CListaVert_LTex2N(CListaVert *self, uint32_t i);
-byte *__thiscall CListaVert_LTex3(CListaVert *self, uint32_t i);
-byte *__thiscall CListaVert_LTex1N(CListaVert *self, uint32_t i);
-byte *__thiscall CListaVert_TLTex1(CListaVert *self, uint32_t i);
-byte *__thiscall CListaVert_LTex2(CListaVert *self, uint32_t i);
-void __thiscall CListaVert_SetTex1(CListaVert *self, uint32_t i, const void *v);
-void __thiscall CListaVert_SetTex2(CListaVert *self, uint32_t i, const void *v);
-void __thiscall CListaVert_SetLTex1(CListaVert *self, uint32_t i, const void *v);
-void __thiscall CListaVert_SetTex1B1(CListaVert *self, uint32_t i, const void *v);
+byte *__thiscall CVertList_Tex1(CVertList *self, uint32_t i);
+byte *__thiscall CVertList_Tex2(CVertList *self, uint32_t i);
+byte *__thiscall CVertList_LTex1(CVertList *self, uint32_t i);
+byte *__thiscall CVertList_Tex1B1(CVertList *self, uint32_t i);
+byte *__thiscall CVertList_LTex2N(CVertList *self, uint32_t i);
+byte *__thiscall CVertList_LTex3(CVertList *self, uint32_t i);
+byte *__thiscall CVertList_LTex1N(CVertList *self, uint32_t i);
+byte *__thiscall CVertList_TLTex1(CVertList *self, uint32_t i);
+byte *__thiscall CVertList_LTex2(CVertList *self, uint32_t i);
+void __thiscall CVertList_SetTex1(CVertList *self, uint32_t i, const void *v);
+void __thiscall CVertList_SetTex2(CVertList *self, uint32_t i, const void *v);
+void __thiscall CVertList_SetLTex1(CVertList *self, uint32_t i, const void *v);
+void __thiscall CVertList_SetTex1B1(CVertList *self, uint32_t i, const void *v);
 /* vertex i of a TEX1, TEX2 or TEX1_B1 list as a TEX1 vertex (0x20 bytes) */
-void *__thiscall CListaVert_GetTex1(CListaVert *self, void *out, uint32_t i);
+void *__thiscall CVertList_GetTex1(CVertList *self, void *out, uint32_t i);
 /* the position of vertex i (rva 0x212570, in MallaTri.c) */
-vec3_t *__thiscall CListaVert_GetPos(CListaVert *self, vec3_t *out, uint32_t i);
+vec3_t *__thiscall CVertList_GetPos(CVertList *self, vec3_t *out, uint32_t i);
 
 /* the diffuse colors: c & and | or */
-void __thiscall CListaVert_SetColor(CListaVert *self, uint32_t and, uint32_t or);
+void __thiscall CVertList_SetColor(CVertList *self, uint32_t and, uint32_t or);
 /* the box of the positions, from the empty box if reset */
-void __thiscall CListaVert_GetExtents(CListaVert *self, box_t *ext, byte reset);
+void __thiscall CVertList_GetExtents(CVertList *self, box_t *ext, byte reset);
 /* positions and normals (TEX1, TEX2, TEX1_B1) by m, the normals made unit length if normalize */
-void __thiscall CListaVert_Transform(CListaVert *self, const matrix_t *m, byte normalize);
+void __thiscall CVertList_Transform(CVertList *self, const matrix_t *m, byte normalize);
 /* into frmt (TEX1_XBOX, TEX1C_XBOX or POS_XBOX) with the texture coordinates times texScale; warns about
  * positions outside +-32768 * posScale and texture coordinates outside +-32768 / texScale */
-void __thiscall CListaVert_Pack(CListaVert *self, int frmt, float posScale, float texScale);
-/* TEX1 to TEX1_XBOX, LTEX1N to TEX1C_XBOX, others to VERT_NULO (fails) */
-void __thiscall CListaVert_PackTex1(CListaVert *self, float posScale, float texScale);
+void __thiscall CVertList_Pack(CVertList *self, int frmt, float posScale, float texScale);
+/* TEX1 to TEX1_XBOX, LTEX1N to TEX1C_XBOX, others to VERT_NULL (fails) */
+void __thiscall CVertList_PackTex1(CVertList *self, float posScale, float texScale);
 /* into LTEX1_XBOX or LTEX1N_XBOX (with normals), LTEX2(N)_XBOX with a second set of texture coordinates and tex2 */
-void __thiscall CListaVert_ToXBox(CListaVert *self, float posScale, float texScale, byte tex2);
+void __thiscall CVertList_ToXBox(CVertList *self, float posScale, float texScale, byte tex2);
 /* LTEX1N_XBOX back to LTEX1N */
-void __thiscall CListaVert_FromXBox(CListaVert *self, float posScale, float texScale);
+void __thiscall CVertList_FromXBox(CVertList *self, float posScale, float texScale);
 
 /* out: the vertices of in along triangle strips of the triangles, the strips colored; 1 */
-byte ListaVert_Strip(CListaVert *out, const CListaVert *in, const uint16_t *tris, int nTri);
+byte VertList_Strip(CVertList *out, const CVertList *in, const uint16_t *tris, int nTri);
 /* the triangle that starts the longest strip, rotated so the strip starts with its first edge; -1 if none is left */
 int Strip_FindFirst(uint16_t *tris, int nTri, int depth);
 /* the length of the strip from triangle t over the edge a b */

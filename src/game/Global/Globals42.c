@@ -29,10 +29,10 @@ SD_SYM(PyMenuEntity_Print);
 SD_SYM(PyMenuEntity_SetAttr);
 SD_SYM(PyType_Type);
 SD_SYM(SAI_AddVehicleRace);
-SD_SYM(SAI_AnalizeGraph);
-SD_SYM(SAI_AnalizeGraph2D);
-SD_SYM(SAI_AnalizeMap);
-SD_SYM(SAI_AnalizeTraffic);
+SD_SYM(SAI_AnalyzeGraph);
+SD_SYM(SAI_AnalyzeGraph2D);
+SD_SYM(SAI_AnalyzeMap);
+SD_SYM(SAI_AnalyzeTraffic);
 SD_SYM(SAI_BuildGraph);
 SD_SYM(SAI_BuildGraph2D);
 SD_SYM(SAI_EnableAIChar);
@@ -130,7 +130,7 @@ SD_SYM(SScorer_Clear);
 SD_SYM(SScorer_Fade);
 SD_SYM(SScorer_Get);
 SD_SYM(SScorer_Get2DPos);
-SD_SYM(SScorer_GetActual);
+SD_SYM(SScorer_GetCurrent);
 SD_SYM(SScorer_GetDefault);
 SD_SYM(SScorer_GetItem);
 SD_SYM(SScorer_GetMenuAccept);
@@ -366,10 +366,10 @@ SD_SYM(str_3c7284);
 SD_SYM(str_3c75a8);
 SD_SYM(str_Empty);
 SD_SYM(str_PyDoc_SAI_AddVehicleRace);
-SD_SYM(str_PyDoc_SAI_AnalizeGraph);
-SD_SYM(str_PyDoc_SAI_AnalizeGraph2D);
-SD_SYM(str_PyDoc_SAI_AnalizeMap);
-SD_SYM(str_PyDoc_SAI_AnalizeTraffic);
+SD_SYM(str_PyDoc_SAI_AnalyzeGraph);
+SD_SYM(str_PyDoc_SAI_AnalyzeGraph2D);
+SD_SYM(str_PyDoc_SAI_AnalyzeMap);
+SD_SYM(str_PyDoc_SAI_AnalyzeTraffic);
 SD_SYM(str_PyDoc_SAI_BuildGraph);
 SD_SYM(str_PyDoc_SAI_BuildGraph2D);
 SD_SYM(str_PyDoc_SAI_EnableAIChar);
@@ -466,7 +466,7 @@ SD_SYM(str_PyDoc_SScorer_Clear);
 SD_SYM(str_PyDoc_SScorer_Fade);
 SD_SYM(str_PyDoc_SScorer_Get);
 SD_SYM(str_PyDoc_SScorer_Get2DPos);
-SD_SYM(str_PyDoc_SScorer_GetActual);
+SD_SYM(str_PyDoc_SScorer_GetCurrent);
 SD_SYM(str_PyDoc_SScorer_GetDefault);
 SD_SYM(str_PyDoc_SScorer_GetItem);
 SD_SYM(str_PyDoc_SScorer_GetMenuAccept);
@@ -634,10 +634,10 @@ SD_SYM(str_PyDoc_Scrap_Ver);
 SD_SYM(str_PyDoc_Scrap_Verbose);
 SD_SYM(str_PyDoc_Scrap_VideoPlayer);
 SD_SYM(str_PyMethod_SAI_AddVehicleRace);
-SD_SYM(str_PyMethod_SAI_AnalizeGraph);
-SD_SYM(str_PyMethod_SAI_AnalizeGraph2D);
-SD_SYM(str_PyMethod_SAI_AnalizeMap);
-SD_SYM(str_PyMethod_SAI_AnalizeTraffic);
+SD_SYM(str_PyMethod_SAI_AnalyzeGraph);
+SD_SYM(str_PyMethod_SAI_AnalyzeGraph2D);
+SD_SYM(str_PyMethod_SAI_AnalyzeMap);
+SD_SYM(str_PyMethod_SAI_AnalyzeTraffic);
 SD_SYM(str_PyMethod_SAI_BuildGraph);
 SD_SYM(str_PyMethod_SAI_BuildGraph2D);
 SD_SYM(str_PyMethod_SAI_EnableAIChar);
@@ -735,7 +735,7 @@ SD_SYM(str_PyMethod_SScorer_Clear);
 SD_SYM(str_PyMethod_SScorer_Fade);
 SD_SYM(str_PyMethod_SScorer_Get);
 SD_SYM(str_PyMethod_SScorer_Get2DPos);
-SD_SYM(str_PyMethod_SScorer_GetActual);
+SD_SYM(str_PyMethod_SScorer_GetCurrent);
 SD_SYM(str_PyMethod_SScorer_GetDefault);
 SD_SYM(str_PyMethod_SScorer_GetItem);
 SD_SYM(str_PyMethod_SScorer_GetMenuAccept);
@@ -953,12 +953,12 @@ SD_SYM(str_PyMethod_cPyEntity_SetModel);
 #undef g_RampAlarmB
 #undef g_RampAlarmC
 #undef g_RampAlarmD
+#undef g_RampBike
 #undef g_RampGearShoot
 #undef g_RampMaintenance
 #undef g_RampMaintenanceEnd
 #undef g_RampMercenaryBubbles
 #undef g_RampMercenarySmoke
-#undef g_RampMoto
 #undef g_RampRustySparks
 #undef g_SaveVarTable
 #undef g_SpecialActionDraw
@@ -1039,7 +1039,7 @@ uint32_t EFXM_SparkFlash_428474[19] SD_AT(0x428474) = {
 	0x10d2d2ff, 0x209696ff, 0x306464e1, 0x403232b4, 0x601e1e55, 0x800a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
 	0x10d2d2ff, 0x20b4b4ff, 0x309393e6, 0x405353ab, 0x602d2d4c, 0x80141438, 0xc005051e, 0xff00000a, 0xff000000,
 };
-uint32_t g_RampMoto[36] SD_AT(0x4284c0) = {
+uint32_t g_RampBike[36] SD_AT(0x4284c0) = {
 	0x8054b9eb, 0x2050b9eb, 0x304ab4eb, 0x5240afeb, 0xa42eaaeb, 0xc026a5eb, 0xe120a0eb, 0xff189beb, 0xff1096eb,
 	0xff54cdff, 0x4050cdff, 0x304acdff, 0x4046cdff, 0x8040cdff, 0xc03ccdff, 0xe136cdff, 0xff2ccdff, 0xff22cdff,
 	0x80b954eb, 0x20b950eb, 0x30b44aeb, 0x52af40eb, 0xa4aa2eeb, 0xc0a526eb, 0xe1a020eb, 0xff9b18eb, 0xff9610eb,
@@ -1285,28 +1285,28 @@ PyMethodDef SAct_methods[10] SD_AT(0x429288) = {
 };
 PyMethodDef SAI_methods[23] SD_AT(0x42a488) = {
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_AnalizeMap,
-		.ml_meth = (void *)sd_SAI_AnalizeMap,
+		.ml_name = (void *)sd_str_PyMethod_SAI_AnalyzeMap,
+		.ml_meth = (void *)sd_SAI_AnalyzeMap,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_AnalizeMap,
+		.ml_doc = (void *)sd_str_PyDoc_SAI_AnalyzeMap,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_AnalizeGraph,
-		.ml_meth = (void *)sd_SAI_AnalizeGraph,
+		.ml_name = (void *)sd_str_PyMethod_SAI_AnalyzeGraph,
+		.ml_meth = (void *)sd_SAI_AnalyzeGraph,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_AnalizeGraph,
+		.ml_doc = (void *)sd_str_PyDoc_SAI_AnalyzeGraph,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_AnalizeGraph2D,
-		.ml_meth = (void *)sd_SAI_AnalizeGraph2D,
+		.ml_name = (void *)sd_str_PyMethod_SAI_AnalyzeGraph2D,
+		.ml_meth = (void *)sd_SAI_AnalyzeGraph2D,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_AnalizeGraph2D,
+		.ml_doc = (void *)sd_str_PyDoc_SAI_AnalyzeGraph2D,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SAI_AnalizeTraffic,
-		.ml_meth = (void *)sd_SAI_AnalizeTraffic,
+		.ml_name = (void *)sd_str_PyMethod_SAI_AnalyzeTraffic,
+		.ml_meth = (void *)sd_SAI_AnalyzeTraffic,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SAI_AnalizeTraffic,
+		.ml_doc = (void *)sd_str_PyDoc_SAI_AnalyzeTraffic,
 	},
 	{
 		.ml_name = (void *)sd_str_PyMethod_SAI_BuildGraph,
@@ -2546,10 +2546,10 @@ PyMethodDef SScorer_methods[34] SD_AT(0x42ec68) = {
 		.ml_doc = (void *)sd_str_PyDoc_SScorer_GetDefault,
 	},
 	{
-		.ml_name = (void *)sd_str_PyMethod_SScorer_GetActual,
-		.ml_meth = (void *)sd_SScorer_GetActual,
+		.ml_name = (void *)sd_str_PyMethod_SScorer_GetCurrent,
+		.ml_meth = (void *)sd_SScorer_GetCurrent,
 		.ml_flags = 1,
-		.ml_doc = (void *)sd_str_PyDoc_SScorer_GetActual,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_GetCurrent,
 	},
 	{
 		.ml_name = (void *)sd_str_PyMethod_SScorer_SetOnCancel,

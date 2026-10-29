@@ -280,7 +280,7 @@ ct2k = 0
 while ct2k < len(ct2meents):
 	SDTest.Poke(ct2meents[ct2k], ct2savedme[ct2k])
 	ct2k = ct2k + 1
-SDTest.Call('Cad_Copy', 'iisi', 0x400000 + sym('g_NurseName'), ct2savednurse, len(ct2savednurse) + 1)
+SDTest.Call('String_Copy', 'iisi', 0x400000 + sym('g_NurseName'), ct2savednurse, len(ct2savednurse) + 1)
 ct2poke(ct2player + 0x48c, ct2savedb[0])
 ct2poke(ct2player + 0x530, ct2savedb[1])
 ct2k = 0

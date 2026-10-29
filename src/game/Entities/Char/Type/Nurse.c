@@ -110,7 +110,7 @@ void Nurse_HammerFX(cEntity *v) {
 	CGameModel_SetPos(Debris_Model(d), &cam);
 	Debris_Life(d) = 1.5f;
 	cDebrisSys_Drop(sys, d);
-	cObjElementFXSistPart *el = Debris_Element(d);
+	cObjElementFXParticleSystem *el = Debris_Element(d);
 	if (!el) {
 		return;
 	}

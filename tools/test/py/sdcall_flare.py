@@ -47,16 +47,16 @@ SDTest.Call('crt_memcpy', 'iiFi', sym('g_MatProj') + 0x400000, (1.0, 0.0, 0.0, 0
 	0.0, -0.1, 0.0), 64)
 SDTest.Call('crt_memcpy', 'iiFi', sym('g_MatView') + 0x400000, (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
 	0.0, 0.0, 1.0), 64)
-rdfl = (SDTest.Peek('g_TimeMsF', 'i'), SDTest.Peek('g_pd3dDevice', 'i'), SDTest.Peek('g_FlareAtenDist', 'i'), SDTest.Peek('g_FlareAtenDistFin', 'i'),
-	SDTest.Peek('g_FlareFundidoEnt', 'i'), SDTest.Peek('g_FlareFundidoSal', 'i'), SDTest.Peek('g_FlareVerInfo', 'i'), SDTest.Peek('g_ShowFlaresInfo', 'i'))
-rdfl2 = (SDTest.Peek('g_SkipFlares', 'i'), SDTest.Peek('g_Sobredib', 'i'), SDTest.Peek('g_ViewportW', 'i'), SDTest.Peek('g_ViewportH', 'i'))
+rdfl = (SDTest.Peek('g_TimeMsF', 'i'), SDTest.Peek('g_pd3dDevice', 'i'), SDTest.Peek('g_FlareAttenDist', 'i'), SDTest.Peek('g_FlareAttenDistEnd', 'i'),
+	SDTest.Peek('g_FlareFadeIn', 'i'), SDTest.Peek('g_FlareFadeOut', 'i'), SDTest.Peek('g_FlareShowInfo', 'i'), SDTest.Peek('g_ShowFlaresInfo', 'i'))
+rdfl2 = (SDTest.Peek('g_SkipFlares', 'i'), SDTest.Peek('g_Overdraw', 'i'), SDTest.Peek('g_ViewportW', 'i'), SDTest.Peek('g_ViewportH', 'i'))
 dev = rdfl[1]
 SDTest.Poke('g_SkipFlares', 0)
-SDTest.Poke('g_Sobredib', 0)
-SDTest.Poke('g_FlareVerInfo', 0)
+SDTest.Poke('g_Overdraw', 0)
+SDTest.Poke('g_FlareShowInfo', 0)
 SDTest.Poke('g_ShowFlaresInfo', 0)
-flpokef(sym('g_FlareFundidoEnt') + 0x400000, (2.0,))
-flpokef(sym('g_FlareFundidoSal') + 0x400000, (0.5,))
+flpokef(sym('g_FlareFadeIn') + 0x400000, (2.0,))
+flpokef(sym('g_FlareFadeOut') + 0x400000, (0.5,))
 def flrender(f, t, intens):
 	flpokef(sym('g_TimeMsF') + 0x400000, (t,))
 	flpokef(f + 0x28, (intens,))
@@ -64,10 +64,10 @@ def flrender(f, t, intens):
 	SDTest.Call('CFlare_Render', 'tviii', f, dev, 0)
 	SDTest.Poke('g_pd3dDevice', dev)
 	return flget(f)
-SDTest.Poke('g_FlareAtenDist', 1)
-flpokef(sym('g_FlareAtenDistFin') + 0x400000, (50.0,))
+SDTest.Poke('g_FlareAttenDist', 1)
+flpokef(sym('g_FlareAttenDistEnd') + 0x400000, (50.0,))
 for aten in (0, 1):
-	SDTest.Poke('g_FlareAtenDist', aten)
+	SDTest.Poke('g_FlareAttenDist', aten)
 	for pos in ((0.0, 0.0, 10.0), (3.0, -2.0, 5.0), (0.0, 0.0, -5.0), (30.0, 0.0, 10.0), (0.0, 0.0, 0.01),
 		(0.0, 0.0, 200.0)):
 		flpokef(nodo + 0x5c + 48, pos)
@@ -84,8 +84,8 @@ SDTest.Call('crt_memcpy', 'iiFi', sym('g_MatProj') + 0x400000, (0.0,) * 16, 64)
 for i in range(16):
 	SDTest.Poke(sym('g_MatProj') + 4 * i, rdproj[i])
 	SDTest.Poke(sym('g_MatView') + 4 * i, rdviewm[i])
-for addr, v in ((sym('g_TimeMsF'), rdfl[0]), (sym('g_FlareAtenDist'), rdfl[2]), (sym('g_FlareAtenDistFin'), rdfl[3]), (sym('g_FlareFundidoEnt'), rdfl[4]),
-	(sym('g_FlareFundidoSal'), rdfl[5]), (sym('g_FlareVerInfo'), rdfl[6]), (sym('g_ShowFlaresInfo'), rdfl[7]), (sym('g_SkipFlares'), rdfl2[0]), (sym('g_Sobredib'), rdfl2[1]),
+for addr, v in ((sym('g_TimeMsF'), rdfl[0]), (sym('g_FlareAttenDist'), rdfl[2]), (sym('g_FlareAttenDistEnd'), rdfl[3]), (sym('g_FlareFadeIn'), rdfl[4]),
+	(sym('g_FlareFadeOut'), rdfl[5]), (sym('g_FlareShowInfo'), rdfl[6]), (sym('g_ShowFlaresInfo'), rdfl[7]), (sym('g_SkipFlares'), rdfl2[0]), (sym('g_Overdraw'), rdfl2[1]),
 	(sym('g_ViewportW'), rdfl2[2]), (sym('g_ViewportH'), rdfl2[3])):
 	SDTest.Poke(addr, v)
 SDTest.Poke(f + 8 - 0x400000, 0)

@@ -11,25 +11,25 @@
 #include "scrap/material.h"
 #include "scrap/render.h"
 
-#define LISTAVERT_ID "LFVF"
-#define LISTAVERT_VER 1
+#define VERTLIST_ID "LFVF"
+#define VERTLIST_VER 1
 #define FLT_MAX_F 3.4028234663852886e+38f	/* rva 0x3a3a38 */
 /* the 15 colors of the strips (rva 0x432a34) */
-#define g_StripColors (GAME_ARRAY_IN(const uint32_t, g_BspColores, 4, 0x432a34))
+#define g_StripColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 4, 0x432a34))
 #define STRIP_COLORS 15
 #define TRI_USED 0x8000
 #define TRI_FREE 0xffff
 
-CListaVert *__fastcall CListaVert_ctor(CListaVert *self) {
+CVertList *__fastcall CVertList_ctor(CVertList *self) {
 	self->pVert = NULL;
 	self->totVert = 0;
 	self->frmt = 0;
 	self->nVert = 0;
-	self->esc = 0.0f;
+	self->scale = 0.0f;
 	return self;
 }
 
-void __fastcall CListaVert_Free(CListaVert *self) {
+void __fastcall CVertList_Free(CVertList *self) {
 	if (self->pVert) {
 		Mem_Free(self->pVert);
 		self->pVert = NULL;
@@ -39,8 +39,8 @@ void __fastcall CListaVert_Free(CListaVert *self) {
 	self->nVert = 0;
 }
 
-void __thiscall CListaVert_SetFormat(CListaVert *self, int frmt) {
-	CHECK(frmt >= VERT_NULO && frmt < VERT_TOTAL);
+void __thiscall CVertList_SetFormat(CVertList *self, int frmt) {
+	CHECK(frmt >= VERT_NULL && frmt < VERT_TOTAL);
 	if (self->pVert) {
 		Mem_Free(self->pVert);
 		self->pVert = NULL;
@@ -50,7 +50,7 @@ void __thiscall CListaVert_SetFormat(CListaVert *self, int frmt) {
 	self->nVert = 0;
 }
 
-void __thiscall CListaVert_Alloc(CListaVert *self, int n, byte realloc) {
+void __thiscall CVertList_Alloc(CVertList *self, int n, byte realloc) {
 	CHECK(n > 0);
 	CHECK(realloc || !self->pVert);
 	self->nVert = n;
@@ -58,11 +58,11 @@ void __thiscall CListaVert_Alloc(CListaVert *self, int n, byte realloc) {
 		n = (n >> 2) + n;
 	}
 	self->totVert = n;
-	self->pVert = Mem_Realloc(self->pVert, self->totVert * ListaVert_FormatSize(self->frmt));
+	self->pVert = Mem_Realloc(self->pVert, self->totVert * VertList_FormatSize(self->frmt));
 }
 
-void __thiscall CListaVert_Swap(CListaVert *self, CListaVert *other) {
-	CListaVert t = *other;
+void __thiscall CVertList_Swap(CVertList *self, CVertList *other) {
+	CVertList t = *other;
 
 	other->pVert = self->pVert;
 	other->nVert = self->nVert;
@@ -74,41 +74,41 @@ void __thiscall CListaVert_Swap(CListaVert *self, CListaVert *other) {
 	self->frmt = t.frmt;
 }
 
-void __thiscall CListaVert_Read(CListaVert *self, CArchIO *f) {
-	CHECK(CArchIO_BeginBlock(f, LISTAVERT_ID) == 0);
-	CHECK(CArchIO_ReadInt(f) == LISTAVERT_VER);
-	CListaVert_SetFormat(self, CArchIO_ReadInt(f));
+void __thiscall CVertList_Read(CVertList *self, CFileIO *f) {
+	CHECK(CFileIO_BeginBlock(f, VERTLIST_ID) == 0);
+	CHECK(CFileIO_ReadInt(f) == VERTLIST_VER);
+	CVertList_SetFormat(self, CFileIO_ReadInt(f));
 	if (self->frmt) {
-		uint32_t fvf = ListaVert_FormatFVF(self->frmt);
-		CHECK((uint32_t)CArchIO_ReadInt(f) == fvf);
-		int size = ListaVert_FormatSize(self->frmt);
-		CHECK(CArchIO_ReadInt(f) == size);
-		CListaVert_Alloc(self, CArchIO_ReadInt(f), 0);
-		CArchIO_Read(f, self->pVert, self->nVert * ListaVert_FormatSize(self->frmt));
+		uint32_t fvf = VertList_FormatFVF(self->frmt);
+		CHECK((uint32_t)CFileIO_ReadInt(f) == fvf);
+		int size = VertList_FormatSize(self->frmt);
+		CHECK(CFileIO_ReadInt(f) == size);
+		CVertList_Alloc(self, CFileIO_ReadInt(f), 0);
+		CFileIO_Read(f, self->pVert, self->nVert * VertList_FormatSize(self->frmt));
 	}
-	CArchIO_Error(f, LISTAVERT_ID);
+	CFileIO_Error(f, VERTLIST_ID);
 	CHECK(!f->error);
 }
 
-void __thiscall CListaVert_Write(CListaVert *self, CArchIO *f) {
-	CArchIO_BeginBlockWrite(f, LISTAVERT_ID);
-	CArchIO_WriteInt(f, LISTAVERT_VER);
+void __thiscall CVertList_Write(CVertList *self, CFileIO *f) {
+	CFileIO_BeginBlockWrite(f, VERTLIST_ID);
+	CFileIO_WriteInt(f, VERTLIST_VER);
 	if (self->nVert) {
 		CHECK(self->pVert);
-		CHECK(self->frmt != VERT_NULO);
-		CArchIO_WriteInt(f, self->frmt);
-		CArchIO_WriteInt(f, ListaVert_FormatFVF(self->frmt));
-		CArchIO_WriteInt(f, ListaVert_FormatSize(self->frmt));
-		CArchIO_WriteInt(f, self->nVert);
-		CArchIO_Write(f, self->pVert, self->nVert * ListaVert_FormatSize(self->frmt));
+		CHECK(self->frmt != VERT_NULL);
+		CFileIO_WriteInt(f, self->frmt);
+		CFileIO_WriteInt(f, VertList_FormatFVF(self->frmt));
+		CFileIO_WriteInt(f, VertList_FormatSize(self->frmt));
+		CFileIO_WriteInt(f, self->nVert);
+		CFileIO_Write(f, self->pVert, self->nVert * VertList_FormatSize(self->frmt));
 	} else {
-		CArchIO_WriteInt(f, 0);
+		CFileIO_WriteInt(f, 0);
 	}
-	CArchIO_EndBlockWrite(f, LISTAVERT_ID);
+	CFileIO_EndBlockWrite(f, VERTLIST_ID);
 	CHECK(!f->error);
 }
 
-uint32_t ListaVert_FormatFVF(int frmt) {
+uint32_t VertList_FormatFVF(int frmt) {
 	switch (frmt) {
 	case VERT_TEX1:
 		return 0x112;
@@ -152,7 +152,7 @@ uint32_t ListaVert_FormatFVF(int frmt) {
 	return 0;
 }
 
-int ListaVert_FormatSize(int frmt) {
+int VertList_FormatSize(int frmt) {
 	switch (frmt) {
 	case VERT_TEX1:
 	case VERT_TLTEX1:
@@ -186,7 +186,7 @@ int ListaVert_FormatSize(int frmt) {
 	return 0;
 }
 
-const char *ListaVert_FormatName(int frmt) {
+const char *VertList_FormatName(int frmt) {
 	switch (frmt) {
 	case VERT_TEX1:
 		return "TEX1";
@@ -211,36 +211,36 @@ const char *ListaVert_FormatName(int frmt) {
 	return NULL;
 }
 
-uint32_t __fastcall CListaVert_FVF(CListaVert *self) {
-	return ListaVert_FormatFVF(self->frmt);
+uint32_t __fastcall CVertList_FVF(CVertList *self) {
+	return VertList_FormatFVF(self->frmt);
 }
 
-int __fastcall CListaVert_Size(CListaVert *self) {
-	return ListaVert_FormatSize(self->frmt);
+int __fastcall CVertList_Size(CVertList *self) {
+	return VertList_FormatSize(self->frmt);
 }
 
-const char *__fastcall CListaVert_FormatName(CListaVert *self) {
-	return ListaVert_FormatName(self->frmt);
+const char *__fastcall CVertList_FormatName(CVertList *self) {
+	return VertList_FormatName(self->frmt);
 }
 
 /* cdq, xor, sub: INT_MIN stays negative */
-static int ListaVert_Abs(int v) {
+static int VertList_Abs(int v) {
 	uint32_t s = (uint32_t)(v >> 31);
 	return (int)(((uint32_t)v ^ s) - s);
 }
 
-uint32_t ListaVert_PackNormal(const vec3_t *n) {
+uint32_t VertList_PackNormal(const vec3_t *n) {
 	int sx = (int)((double)n->x * 1023.0);
 	int sy = (int)((double)n->y * 1023.0);
 	int sz = (int)((double)n->z * 511.0);
 
-	CHECK(ListaVert_Abs(sx) < 1024);
-	CHECK(ListaVert_Abs(sy) < 1024);
-	CHECK(ListaVert_Abs(sz) < 512);
+	CHECK(VertList_Abs(sx) < 1024);
+	CHECK(VertList_Abs(sy) < 1024);
+	CHECK(VertList_Abs(sz) < 512);
 	return ((((uint32_t)sy & 0x7ff) | (uint32_t)sz << 11) << 11) | ((uint32_t)sx & 0x7ff);
 }
 
-vec3_t *ListaVert_UnpackNormal(vec3_t *out, uint32_t packed) {
+vec3_t *VertList_UnpackNormal(vec3_t *out, uint32_t packed) {
 	out->x = (float)((int32_t)(packed << 21) >> 21) / 1023.0f;
 	out->y = (float)((int32_t)(packed << 10) >> 21) / 1023.0f;
 	out->z = (float)((int32_t)packed >> 22) / 511.0f;
@@ -446,82 +446,82 @@ void *__thiscall VertLTex2NXBox_Field(byte *v, int f) {
 }
 
 /* vertex i of a list that must be in frmt */
-static byte *ListaVert_Vert(CListaVert *self, uint32_t i, int frmt, int size) {
+static byte *VertList_Vert(CVertList *self, uint32_t i, int frmt, int size) {
 	CHECK(self->pVert && i < (uint32_t)self->totVert);
 	CHECK(self->frmt == frmt);
 	return self->pVert + i * size;
 }
 
-byte __thiscall CListaVert_Optimize(CListaVert *self, void *tris, int nTri) {
+byte __thiscall CVertList_Optimize(CVertList *self, void *tris, int nTri) {
 	(void)self;
 	(void)tris;
 	(void)nTri;
 	return 0;
 }
 
-byte *__thiscall CListaVert_Tex1(CListaVert *self, uint32_t i) {
-	return ListaVert_Vert(self, i, VERT_TEX1, 0x20);
+byte *__thiscall CVertList_Tex1(CVertList *self, uint32_t i) {
+	return VertList_Vert(self, i, VERT_TEX1, 0x20);
 }
 
-byte *__thiscall CListaVert_Tex2(CListaVert *self, uint32_t i) {
-	return ListaVert_Vert(self, i, VERT_TEX2, 0x28);
+byte *__thiscall CVertList_Tex2(CVertList *self, uint32_t i) {
+	return VertList_Vert(self, i, VERT_TEX2, 0x28);
 }
 
-byte *__thiscall CListaVert_LTex1(CListaVert *self, uint32_t i) {
-	return ListaVert_Vert(self, i, VERT_LTEX1, 0x1c);
+byte *__thiscall CVertList_LTex1(CVertList *self, uint32_t i) {
+	return VertList_Vert(self, i, VERT_LTEX1, 0x1c);
 }
 
-byte *__thiscall CListaVert_Tex1B1(CListaVert *self, uint32_t i) {
-	return ListaVert_Vert(self, i, VERT_TEX1_B1, 0x24);
+byte *__thiscall CVertList_Tex1B1(CVertList *self, uint32_t i) {
+	return VertList_Vert(self, i, VERT_TEX1_B1, 0x24);
 }
 
-byte *__thiscall CListaVert_LTex2N(CListaVert *self, uint32_t i) {
-	return ListaVert_Vert(self, i, VERT_LTEX2N, 0x2c);
+byte *__thiscall CVertList_LTex2N(CVertList *self, uint32_t i) {
+	return VertList_Vert(self, i, VERT_LTEX2N, 0x2c);
 }
 
-byte *__thiscall CListaVert_LTex3(CListaVert *self, uint32_t i) {
-	return ListaVert_Vert(self, i, VERT_LTEX3, 0x34);
+byte *__thiscall CVertList_LTex3(CVertList *self, uint32_t i) {
+	return VertList_Vert(self, i, VERT_LTEX3, 0x34);
 }
 
-byte *__thiscall CListaVert_LTex1N(CListaVert *self, uint32_t i) {
-	return ListaVert_Vert(self, i, VERT_LTEX1N, 0x24);
+byte *__thiscall CVertList_LTex1N(CVertList *self, uint32_t i) {
+	return VertList_Vert(self, i, VERT_LTEX1N, 0x24);
 }
 
-byte *__thiscall CListaVert_TLTex1(CListaVert *self, uint32_t i) {
-	return ListaVert_Vert(self, i, VERT_TLTEX1, 0x20);
+byte *__thiscall CVertList_TLTex1(CVertList *self, uint32_t i) {
+	return VertList_Vert(self, i, VERT_TLTEX1, 0x20);
 }
 
-byte *__thiscall CListaVert_LTex2(CListaVert *self, uint32_t i) {
-	return ListaVert_Vert(self, i, VERT_LTEX2, 0x20);
+byte *__thiscall CVertList_LTex2(CVertList *self, uint32_t i) {
+	return VertList_Vert(self, i, VERT_LTEX2, 0x20);
 }
 
-void __thiscall CListaVert_SetTex1(CListaVert *self, uint32_t i, const void *v) {
-	memcpy(ListaVert_Vert(self, i, VERT_TEX1, 0x20), v, 0x20);
+void __thiscall CVertList_SetTex1(CVertList *self, uint32_t i, const void *v) {
+	memcpy(VertList_Vert(self, i, VERT_TEX1, 0x20), v, 0x20);
 }
 
-void __thiscall CListaVert_SetTex2(CListaVert *self, uint32_t i, const void *v) {
-	memcpy(ListaVert_Vert(self, i, VERT_TEX2, 0x28), v, 0x28);
+void __thiscall CVertList_SetTex2(CVertList *self, uint32_t i, const void *v) {
+	memcpy(VertList_Vert(self, i, VERT_TEX2, 0x28), v, 0x28);
 }
 
-void __thiscall CListaVert_SetLTex1(CListaVert *self, uint32_t i, const void *v) {
-	memcpy(ListaVert_Vert(self, i, VERT_LTEX1, 0x1c), v, 0x1c);
+void __thiscall CVertList_SetLTex1(CVertList *self, uint32_t i, const void *v) {
+	memcpy(VertList_Vert(self, i, VERT_LTEX1, 0x1c), v, 0x1c);
 }
 
-void __thiscall CListaVert_SetTex1B1(CListaVert *self, uint32_t i, const void *v) {
-	memcpy(ListaVert_Vert(self, i, VERT_TEX1_B1, 0x24), v, 0x24);
+void __thiscall CVertList_SetTex1B1(CVertList *self, uint32_t i, const void *v) {
+	memcpy(VertList_Vert(self, i, VERT_TEX1_B1, 0x24), v, 0x24);
 }
 
-void *__thiscall CListaVert_GetTex1(CListaVert *self, void *out, uint32_t i) {
+void *__thiscall CVertList_GetTex1(CVertList *self, void *out, uint32_t i) {
 	switch (self->frmt) {
 	case VERT_TEX1:
-		memcpy(out, CListaVert_Tex1(self, i), 0x20);
+		memcpy(out, CVertList_Tex1(self, i), 0x20);
 		return out;
 	case VERT_TEX2:
-		memcpy(out, CListaVert_Tex2(self, i), 0x20);
+		memcpy(out, CVertList_Tex2(self, i), 0x20);
 		return out;
 	case VERT_TEX1_B1: {
 		/* without the weight at 0xc */
-		const byte *v = CListaVert_Tex1B1(self, i);
+		const byte *v = CVertList_Tex1B1(self, i);
 		memcpy(out, v, 0xc);
 		memcpy((byte *)out + 0xc, v + 0x10, 0x14);
 		return out;
@@ -532,24 +532,24 @@ void *__thiscall CListaVert_GetTex1(CListaVert *self, void *out, uint32_t i) {
 	return out;
 }
 
-void *__thiscall CListaVert_GetField(CListaVert *self, int f, uint32_t i) {
+void *__thiscall CVertList_GetField(CVertList *self, int f, uint32_t i) {
 	switch (self->frmt) {
 	case VERT_TEX1:
-		return VertTex1_Field(CListaVert_Tex1(self, i), f);
+		return VertTex1_Field(CVertList_Tex1(self, i), f);
 	case VERT_TEX2:
-		return VertTex2_Field(CListaVert_Tex2(self, i), f);
+		return VertTex2_Field(CVertList_Tex2(self, i), f);
 	case VERT_LTEX1:
-		return VertLTex1_Field(CListaVert_LTex1(self, i), f);
+		return VertLTex1_Field(CVertList_LTex1(self, i), f);
 	case VERT_LTEX2N:
-		return VertLTex2N_Field(CListaVert_LTex2N(self, i), f);
+		return VertLTex2N_Field(CVertList_LTex2N(self, i), f);
 	case VERT_LTEX3:
-		return VertLTex3_Field(CListaVert_LTex3(self, i), f);
+		return VertLTex3_Field(CVertList_LTex3(self, i), f);
 	case VERT_LTEX1N:
-		return VertLTex1N_Field(CListaVert_LTex1N(self, i), f);
+		return VertLTex1N_Field(CVertList_LTex1N(self, i), f);
 	case VERT_TLTEX1:
-		return VertTLTex1_Field(CListaVert_TLTex1(self, i), f);
+		return VertTLTex1_Field(CVertList_TLTex1(self, i), f);
 	case VERT_LTEX2:
-		return VertLTex2_Field(CListaVert_LTex2(self, i), f);
+		return VertLTex2_Field(CVertList_LTex2(self, i), f);
 	}
 	CHECK(self->pVert && i < (uint32_t)self->totVert);
 	switch (self->frmt) {
@@ -572,9 +572,9 @@ void *__thiscall CListaVert_GetField(CListaVert *self, int f, uint32_t i) {
 	return NULL;
 }
 
-void __thiscall CListaVert_SetColor(CListaVert *self, uint32_t and, uint32_t or) {
-	uint32_t *c = CListaVert_GetField(self, LVERT_DIFFUSE, 0);
-	int size = ListaVert_FormatSize(self->frmt);
+void __thiscall CVertList_SetColor(CVertList *self, uint32_t and, uint32_t or) {
+	uint32_t *c = CVertList_GetField(self, LVERT_DIFFUSE, 0);
+	int size = VertList_FormatSize(self->frmt);
 
 	CHECK(c);
 	for (int i = 0; i < self->nVert; i++) {
@@ -583,7 +583,7 @@ void __thiscall CListaVert_SetColor(CListaVert *self, uint32_t and, uint32_t or)
 	}
 }
 
-static void ListaVert_BoxInit(box_t *b) {
+static void VertList_BoxInit(box_t *b) {
 	b->min.x = FLT_MAX_F;
 	b->min.y = FLT_MAX_F;
 	b->min.z = FLT_MAX_F;
@@ -592,7 +592,7 @@ static void ListaVert_BoxInit(box_t *b) {
 	b->max.z = -FLT_MAX_F;
 }
 
-static void ListaVert_BoxAdd(box_t *b, float x, float y, float z) {
+static void VertList_BoxAdd(box_t *b, float x, float y, float z) {
 	b->min.x = Float_MinSS(b->min.x, x);
 	b->min.y = Float_MinSS(b->min.y, y);
 	b->min.z = Float_MinSS(b->min.z, z);
@@ -601,28 +601,28 @@ static void ListaVert_BoxAdd(box_t *b, float x, float y, float z) {
 	b->max.z = Float_MaxSS(b->max.z, z);
 }
 
-static float ListaVert_BoxLow(const box_t *b) {
+static float VertList_BoxLow(const box_t *b) {
 	return Float_MinSS(b->min.z, Float_MinSS(b->min.y, b->min.x));
 }
 
-static float ListaVert_BoxHigh(const box_t *b) {
+static float VertList_BoxHigh(const box_t *b) {
 	return Float_MaxSS(b->max.z, Float_MaxSS(b->max.y, b->max.x));
 }
 
-void __thiscall CListaVert_GetExtents(CListaVert *self, box_t *ext, byte reset) {
+void __thiscall CVertList_GetExtents(CVertList *self, box_t *ext, byte reset) {
 	CHECK(self->pVert);
 	CHECK(ext);
 	if (reset) {
-		ListaVert_BoxInit(ext);
+		VertList_BoxInit(ext);
 	}
 	for (int i = 0; i < self->nVert; i++) {
 		vec3_t p;
-		CListaVert_GetPos(self, &p, i);
-		ListaVert_BoxAdd(ext, p.x, p.y, p.z);
+		CVertList_GetPos(self, &p, i);
+		VertList_BoxAdd(ext, p.x, p.y, p.z);
 	}
 }
 
-void __thiscall CListaVert_Transform(CListaVert *self, const matrix_t *m, byte normalize) {
+void __thiscall CVertList_Transform(CVertList *self, const matrix_t *m, byte normalize) {
 	byte *v = NULL;
 	int nOff = 0;
 
@@ -641,7 +641,7 @@ void __thiscall CListaVert_Transform(CListaVert *self, const matrix_t *m, byte n
 		CHECK(0);
 		break;
 	}
-	int size = ListaVert_FormatSize(self->frmt);
+	int size = VertList_FormatSize(self->frmt);
 	for (int i = 0; i < self->nVert; i++, v += size) {
 		vec3_t *p = (vec3_t *)v;
 		vec3_t *n = (vec3_t *)(v + nOff);
@@ -665,7 +665,7 @@ void __thiscall CListaVert_Transform(CListaVert *self, const matrix_t *m, byte n
 }
 
 /* cvttss2si to a short, saturated */
-static int16_t ListaVert_Short(float f) {
+static int16_t VertList_Short(float f) {
 	int i = (int)f;
 
 	if (i <= -0x8000) {
@@ -678,20 +678,20 @@ static int16_t ListaVert_Short(float f) {
 }
 
 /* a list of n vertices in frmt to fill, kept apart from self until the end */
-static void ListaVert_NewTmp(CListaVert *tmp, int frmt, int n) {
+static void VertList_NewTmp(CVertList *tmp, int frmt, int n) {
 	tmp->pVert = NULL;
-	tmp->esc = 0.0f;
+	tmp->scale = 0.0f;
 	tmp->nVert = 0;
 	tmp->totVert = 0;
 	tmp->frmt = frmt;
 	CHECK(n > 0);
 	tmp->nVert = n;
 	tmp->totVert = n;
-	tmp->pVert = Mem_Realloc(NULL, ListaVert_FormatSize(frmt) * n);
+	tmp->pVert = Mem_Realloc(NULL, VertList_FormatSize(frmt) * n);
 }
 
 /* the vertices of tmp into self, the old ones freed */
-static void ListaVert_TakeTmp(CListaVert *self, CListaVert *tmp, int n, int frmt) {
+static void VertList_TakeTmp(CVertList *self, CVertList *tmp, int n, int frmt) {
 	byte *old = self->pVert;
 
 	self->pVert = tmp->pVert;
@@ -703,174 +703,174 @@ static void ListaVert_TakeTmp(CListaVert *self, CListaVert *tmp, int n, int frmt
 	}
 }
 
-static void ListaVert_WarnPos(const box_t *pos, float posScale) {
-	if ((double)posScale * -32768.0 > (double)ListaVert_BoxLow(pos) ||
-		ListaVert_BoxHigh(pos) > posScale * 32768.0f) {
+static void VertList_WarnPos(const box_t *pos, float posScale) {
+	if ((double)posScale * -32768.0 > (double)VertList_BoxLow(pos) ||
+		VertList_BoxHigh(pos) > posScale * 32768.0f) {
 		Con_Warnf("Vertex out of range x%.1f\n", (double)posScale);
 	}
 }
 
-static void ListaVert_WarnTex(const box_t *tex, float texScale, const char *fmt) {
-	if (-32768.0f / texScale > ListaVert_BoxLow(tex) || ListaVert_BoxHigh(tex) > 32768.0f / texScale) {
+static void VertList_WarnTex(const box_t *tex, float texScale, const char *fmt) {
+	if (-32768.0f / texScale > VertList_BoxLow(tex) || VertList_BoxHigh(tex) > 32768.0f / texScale) {
 		Con_Warnf(fmt, (double)(32768.0f / texScale));
 	}
 }
 
-void __thiscall CListaVert_Pack(CListaVert *self, int frmt, float posScale, float texScale) {
-	CListaVert tmp;
+void __thiscall CVertList_Pack(CVertList *self, int frmt, float posScale, float texScale) {
+	CVertList tmp;
 	box_t pos, tex;
 
-	CHECK(frmt >= VERT_NULO && frmt < VERT_TOTAL);
+	CHECK(frmt >= VERT_NULL && frmt < VERT_TOTAL);
 	int n = self->nVert;
-	ListaVert_NewTmp(&tmp, frmt, n);
-	ListaVert_BoxInit(&pos);
-	ListaVert_BoxInit(&tex);
+	VertList_NewTmp(&tmp, frmt, n);
+	VertList_BoxInit(&pos);
+	VertList_BoxInit(&tex);
 	for (int i = 0; i < self->nVert; i++) {
 		vec3_t nrm = { 0.0f, 0.0f, 0.0f };
 		float uv[2] = { 0.0f, 0.0f };
 		uint32_t color = 0;
 
-		vec3_t p = *(const vec3_t *)CListaVert_GetField(self, LVERT_POS, i);
-		const vec3_t *pn = CListaVert_GetField(self, LVERT_NORMAL, i);
+		vec3_t p = *(const vec3_t *)CVertList_GetField(self, LVERT_POS, i);
+		const vec3_t *pn = CVertList_GetField(self, LVERT_NORMAL, i);
 		if (pn) {
 			nrm = *pn;
 		}
-		const uint32_t *pc = CListaVert_GetField(self, LVERT_DIFFUSE, i);
+		const uint32_t *pc = CVertList_GetField(self, LVERT_DIFFUSE, i);
 		if (pc) {
 			color = *pc;
 		}
-		const float *pt = CListaVert_GetField(self, LVERT_TEX2D_SET1, i);
+		const float *pt = CVertList_GetField(self, LVERT_TEX2D_SET1, i);
 		if (pt) {
 			memcpy(uv, pt, sizeof(uv));
 		}
-		ListaVert_BoxAdd(&pos, p.x, p.y, p.z);
-		ListaVert_BoxAdd(&tex, uv[0], uv[1], 0.0f);
+		VertList_BoxAdd(&pos, p.x, p.y, p.z);
+		VertList_BoxAdd(&tex, uv[0], uv[1], 0.0f);
 
 		if (frmt == VERT_POS_XBOX) {
 			vec3_t s;
-			s.x = p.x / self->esc;
-			s.y = p.y / self->esc;
-			s.z = p.z / self->esc;
-			((uint32_t *)tmp.pVert)[i] = ListaVert_PackNormal(&s);
+			s.x = p.x / self->scale;
+			s.y = p.y / self->scale;
+			s.z = p.z / self->scale;
+			((uint32_t *)tmp.pVert)[i] = VertList_PackNormal(&s);
 		} else {
-			*(vec3_t *)CListaVert_GetField(&tmp, LVERT_POS, i) = p;
+			*(vec3_t *)CVertList_GetField(&tmp, LVERT_POS, i) = p;
 		}
-		uint32_t *dn = CListaVert_GetField(&tmp, LVERT_NORMAL_PACKED, i);
+		uint32_t *dn = CVertList_GetField(&tmp, LVERT_NORMAL_PACKED, i);
 		if (dn) {
-			*dn = ListaVert_PackNormal(&nrm);
+			*dn = VertList_PackNormal(&nrm);
 		}
-		uint32_t *dc = CListaVert_GetField(&tmp, LVERT_DIFFUSE, i);
+		uint32_t *dc = CVertList_GetField(&tmp, LVERT_DIFFUSE, i);
 		if (dc) {
 			*dc = color;
 		}
-		int16_t *ds = CListaVert_GetField(&tmp, LVERT_TEX_SHORT, i);
+		int16_t *ds = CVertList_GetField(&tmp, LVERT_TEX_SHORT, i);
 		if (ds) {
-			ds[0] = ListaVert_Short(uv[0] * texScale);
-			ds[1] = ListaVert_Short(uv[1] * texScale);
+			ds[0] = VertList_Short(uv[0] * texScale);
+			ds[1] = VertList_Short(uv[1] * texScale);
 		}
-		float *dt = CListaVert_GetField(&tmp, LVERT_TEX2D_SET1, i);
+		float *dt = CVertList_GetField(&tmp, LVERT_TEX2D_SET1, i);
 		if (dt) {
 			memcpy(dt, uv, sizeof(uv));
 		}
 	}
-	ListaVert_WarnPos(&pos, posScale);
-	ListaVert_WarnTex(&tex, texScale, "Texcoord out of range %.1f\n");
-	ListaVert_TakeTmp(self, &tmp, n, frmt);
+	VertList_WarnPos(&pos, posScale);
+	VertList_WarnTex(&tex, texScale, "Texcoord out of range %.1f\n");
+	VertList_TakeTmp(self, &tmp, n, frmt);
 }
 
-void __thiscall CListaVert_PackTex1(CListaVert *self, float posScale, float texScale) {
-	int frmt = VERT_NULO;
+void __thiscall CVertList_PackTex1(CVertList *self, float posScale, float texScale) {
+	int frmt = VERT_NULL;
 
 	if (self->frmt == VERT_TEX1) {
 		frmt = VERT_TEX1_XBOX;
 	} else if (self->frmt == VERT_LTEX1N) {
 		frmt = VERT_TEX1C_XBOX;
 	}
-	CListaVert_Pack(self, frmt, posScale, texScale);
+	CVertList_Pack(self, frmt, posScale, texScale);
 }
 
-void __thiscall CListaVert_ToXBox(CListaVert *self, float posScale, float texScale, byte tex2) {
-	CListaVert tmp;
+void __thiscall CVertList_ToXBox(CVertList *self, float posScale, float texScale, byte tex2) {
+	CVertList tmp;
 	box_t pos, tex, tex1;
 
-	byte hasNormal = CListaVert_GetField(self, LVERT_NORMAL, 0) != NULL;
-	byte hasTex1 = CListaVert_GetField(self, LVERT_TEX2D_SET1 + 1, 0) != NULL;
+	byte hasNormal = CVertList_GetField(self, LVERT_NORMAL, 0) != NULL;
+	byte hasTex1 = CVertList_GetField(self, LVERT_TEX2D_SET1 + 1, 0) != NULL;
 	int frmt = hasNormal + VERT_LTEX1_XBOX;
 	if (hasTex1 && tex2) {
 		frmt = hasNormal + VERT_LTEX2_XBOX;
 	}
 	int n = self->nVert;
-	ListaVert_NewTmp(&tmp, frmt, n);
-	ListaVert_BoxInit(&pos);
-	ListaVert_BoxInit(&tex);
-	ListaVert_BoxInit(&tex1);
+	VertList_NewTmp(&tmp, frmt, n);
+	VertList_BoxInit(&pos);
+	VertList_BoxInit(&tex);
+	VertList_BoxInit(&tex1);
 	for (int i = 0; i < self->nVert; i++) {
 		vec3_t nrm = { 0.0f, 0.0f, 0.0f };
 		float uv[2] = { 0.0f, 0.0f };
 		float uv1[2] = { 0.0f, 0.0f };
 		uint32_t color = 0;
 
-		vec3_t p = *(const vec3_t *)CListaVert_GetField(self, LVERT_POS, i);
-		const vec3_t *pn = CListaVert_GetField(self, LVERT_NORMAL, i);
+		vec3_t p = *(const vec3_t *)CVertList_GetField(self, LVERT_POS, i);
+		const vec3_t *pn = CVertList_GetField(self, LVERT_NORMAL, i);
 		if (pn) {
 			nrm = *pn;
 		}
-		const uint32_t *pc = CListaVert_GetField(self, LVERT_DIFFUSE, i);
+		const uint32_t *pc = CVertList_GetField(self, LVERT_DIFFUSE, i);
 		if (pc) {
 			color = *pc;
 		}
-		const float *pt = CListaVert_GetField(self, LVERT_TEX2D_SET1, i);
+		const float *pt = CVertList_GetField(self, LVERT_TEX2D_SET1, i);
 		if (pt) {
 			memcpy(uv, pt, sizeof(uv));
 		}
-		const float *pt1 = CListaVert_GetField(self, LVERT_TEX2D_SET1 + 1, i);
+		const float *pt1 = CVertList_GetField(self, LVERT_TEX2D_SET1 + 1, i);
 		if (pt1) {
 			memcpy(uv1, pt1, sizeof(uv1));
 		}
-		ListaVert_BoxAdd(&pos, p.x, p.y, p.z);
-		ListaVert_BoxAdd(&tex, uv[0], uv[1], 0.0f);
-		ListaVert_BoxAdd(&tex1, uv1[0], uv1[1], 0.0f);
+		VertList_BoxAdd(&pos, p.x, p.y, p.z);
+		VertList_BoxAdd(&tex, uv[0], uv[1], 0.0f);
+		VertList_BoxAdd(&tex1, uv1[0], uv1[1], 0.0f);
 
-		int16_t *dp = CListaVert_GetField(&tmp, LVERT_POS_SHORT, i);
-		dp[0] = ListaVert_Short(p.x / posScale);
-		dp[1] = ListaVert_Short(p.y / posScale);
-		dp[2] = ListaVert_Short(p.z / posScale);
-		uint32_t *dn = CListaVert_GetField(&tmp, LVERT_NORMAL_PACKED, i);
+		int16_t *dp = CVertList_GetField(&tmp, LVERT_POS_SHORT, i);
+		dp[0] = VertList_Short(p.x / posScale);
+		dp[1] = VertList_Short(p.y / posScale);
+		dp[2] = VertList_Short(p.z / posScale);
+		uint32_t *dn = CVertList_GetField(&tmp, LVERT_NORMAL_PACKED, i);
 		if (dn) {
-			*dn = ListaVert_PackNormal(&nrm);
+			*dn = VertList_PackNormal(&nrm);
 		}
-		uint32_t *dc = CListaVert_GetField(&tmp, LVERT_DIFFUSE, i);
+		uint32_t *dc = CVertList_GetField(&tmp, LVERT_DIFFUSE, i);
 		if (dc) {
 			*dc = color;
 		}
-		int16_t *ds = CListaVert_GetField(&tmp, LVERT_TEX_SHORT, i);
+		int16_t *ds = CVertList_GetField(&tmp, LVERT_TEX_SHORT, i);
 		if (ds) {
-			ds[0] = ListaVert_Short(uv[0] * texScale);
-			ds[1] = ListaVert_Short(uv[1] * texScale);
+			ds[0] = VertList_Short(uv[0] * texScale);
+			ds[1] = VertList_Short(uv[1] * texScale);
 		}
-		float *dt = CListaVert_GetField(&tmp, LVERT_TEX2D_SET1, i);
+		float *dt = CVertList_GetField(&tmp, LVERT_TEX2D_SET1, i);
 		if (dt) {
 			memcpy(dt, uv, sizeof(uv));
 		}
-		int16_t *ds1 = CListaVert_GetField(&tmp, LVERT_TEX_SHORT2, i);
+		int16_t *ds1 = CVertList_GetField(&tmp, LVERT_TEX_SHORT2, i);
 		if (ds1) {
-			ds1[0] = ListaVert_Short(uv1[0] * 32767.0f);
-			ds1[1] = ListaVert_Short(uv1[1] * 32767.0f);
+			ds1[0] = VertList_Short(uv1[0] * 32767.0f);
+			ds1[1] = VertList_Short(uv1[1] * 32767.0f);
 		}
-		float *dt1 = CListaVert_GetField(&tmp, LVERT_TEX2D_SET1 + 1, i);
+		float *dt1 = CVertList_GetField(&tmp, LVERT_TEX2D_SET1 + 1, i);
 		if (dt1) {
 			memcpy(dt1, uv1, sizeof(uv1));
 		}
 	}
-	ListaVert_WarnPos(&pos, posScale);
-	ListaVert_WarnTex(&tex, texScale, "Texcoord_1 out of range %.1f\n");
-	if (-1.0f > ListaVert_BoxLow(&tex1) || ListaVert_BoxHigh(&tex1) > 1.0f) {
+	VertList_WarnPos(&pos, posScale);
+	VertList_WarnTex(&tex, texScale, "Texcoord_1 out of range %.1f\n");
+	if (-1.0f > VertList_BoxLow(&tex1) || VertList_BoxHigh(&tex1) > 1.0f) {
 		Con_Warnf("Texcoord_2 out of range -1..1\n");
 	}
-	ListaVert_TakeTmp(self, &tmp, n, frmt);
+	VertList_TakeTmp(self, &tmp, n, frmt);
 }
 
-void __thiscall CListaVert_FromXBox(CListaVert *self, float posScale, float texScale) {
+void __thiscall CVertList_FromXBox(CVertList *self, float posScale, float texScale) {
 	byte *out = Mem_Alloc(self->nVert * 0x24);
 	const byte *src = self->pVert;
 
@@ -890,7 +890,7 @@ void __thiscall CListaVert_FromXBox(CListaVert *self, float posScale, float texS
 		memcpy(&d[6], src + 10, 4);
 		d[7] = uv[0] / texScale;
 		d[8] = uv[1] / texScale;
-		ListaVert_UnpackNormal((vec3_t *)&d[3], nrm);
+		VertList_UnpackNormal((vec3_t *)&d[3], nrm);
 	}
 	Mem_Free(self->pVert);
 	self->pVert = out;
@@ -1055,7 +1055,7 @@ int Strip_FindNew(uint16_t *tris, int nTri, int depth) {
 	return -1;
 }
 
-byte ListaVert_Strip(CListaVert *out, const CListaVert *in, const uint16_t *tris, int nTri) {
+byte VertList_Strip(CVertList *out, const CVertList *in, const uint16_t *tris, int nTri) {
 	CHECK(nTri > 0);
 	CHECK(in->nVert >= 3);
 	CHECK(in->nVert <= 0x7fff);
@@ -1098,9 +1098,9 @@ byte ListaVert_Strip(CListaVert *out, const CListaVert *in, const uint16_t *tris
 	CHECK(n < nTri * 8);
 	CHECK(Strip_FindNew(sTri, nTri, 0) < 0);
 
-	CListaVert_SetFormat(out, in->frmt);
-	CListaVert_Alloc(out, n, 0);
-	int size = ListaVert_FormatSize(out->frmt);
+	CVertList_SetFormat(out, in->frmt);
+	CVertList_Alloc(out, n, 0);
+	int size = VertList_FormatSize(out->frmt);
 	byte *dst = out->pVert;
 	for (int i = 0; i < n; i++, dst += size) {
 		CHECK(strip[i] < in->nVert);
@@ -1115,7 +1115,7 @@ byte ListaVert_Strip(CListaVert *out, const CListaVert *in, const uint16_t *tris
 		if (i > 0 && strip[i] == strip[i - 1]) {
 			color++;
 		}
-		uint32_t *c = CListaVert_GetField(out, LVERT_DIFFUSE, i);
+		uint32_t *c = CVertList_GetField(out, LVERT_DIFFUSE, i);
 		if (c) {
 			*c = g_StripColors[color % STRIP_COLORS];
 		}
@@ -1216,26 +1216,26 @@ byte VertCache_Optimize(uint16_t *tris, int nTri) {
 	return 1;
 }
 
-void __thiscall CListaVert_EnvMapUV(CListaVert *self, const matrix_t *world, const matrix_t *view,
-	const CMapa *mapa, int itex) {
+void __thiscall CVertList_EnvMapUV(CVertList *self, const matrix_t *world, const matrix_t *view,
+	const CMap *map, int itex) {
 	matrix_t wv, inv;
 
 	CHECK(self->pVert);
-	CHECK(mapa);
+	CHECK(map);
 	Matrix_MulTo(&wv, world, view);
 	CHECK(Matrix_Invert(&inv, view) == 0);
 	float u0 = wv.m[0], u1 = wv.m[4], u2 = wv.m[8];
 	float v0 = wv.m[1], v1 = wv.m[5], v2 = wv.m[9];
-	float offU = mapa->f10[0], offV = mapa->f10[1];
-	float scaleU = mapa->f18[0], scaleV = mapa->f18[1];
+	float offU = map->f10[0], offV = map->f10[1];
+	float scaleU = map->f18[0], scaleV = map->f18[1];
 	CHECK(itex >= 0);
 	CHECK(LVERT_TEX2D_SET1 + itex <= LVERT_TEX2D_SET1 + 7);
-	byte *pv = CListaVert_GetField(self, LVERT_POS, 0);
-	byte *pn = CListaVert_GetField(self, LVERT_NORMAL, 0);
-	byte *pt = CListaVert_GetField(self, LVERT_TEX2D_SET1 + itex, 0);
-	int stride = ListaVert_FormatSize(self->frmt);
+	byte *pv = CVertList_GetField(self, LVERT_POS, 0);
+	byte *pn = CVertList_GetField(self, LVERT_NORMAL, 0);
+	byte *pt = CVertList_GetField(self, LVERT_TEX2D_SET1 + itex, 0);
+	int stride = VertList_FormatSize(self->frmt);
 	CHECK(pv && pn && pt);
-	if (mapa->bb == 1) {
+	if (map->bb == 1) {
 		for (int i = 0; i < self->nVert; i++) {
 			vec3_t p, n, r;
 			Vec3_TransformH(&p, (const vec3_t *)pv, world);
@@ -1275,7 +1275,7 @@ void __thiscall CListaVert_EnvMapUV(CListaVert *self, const matrix_t *world, con
 	}
 }
 
-static void ListaVert_RampUV(CListaVert *self, int stride, int off, const matrix_t *r) {
+static void VertList_RampUV(CVertList *self, int stride, int off, const matrix_t *r) {
 	float a = r->m[2], b = r->m[6], c = r->m[10];
 
 	for (int i = 0; i < self->nVert; i++) {
@@ -1285,18 +1285,18 @@ static void ListaVert_RampUV(CListaVert *self, int stride, int off, const matrix
 	}
 }
 
-void __thiscall CListaVert_LightRampUV(CListaVert *self, const matrix_t *world) {
+void __thiscall CVertList_LightRampUV(CVertList *self, const matrix_t *world) {
 	matrix_t rx, ry, rot, r;
 	D3DLight light;
 	int on;
 
 	CHECK(self->pVert);
 	on = 0;
-	void *dev = g_MotorDev;
+	void *dev = g_EngineDev;
 	if (D3D_METHOD(dev, d3dGetLightEnable_t, D3DDEV_GETLIGHTENABLE)(dev, 0, &on) || !on) {
 		return;
 	}
-	dev = g_MotorDev;
+	dev = g_EngineDev;
 	D3D_METHOD(dev, d3dGetLight_t, D3DDEV_GETLIGHT)(dev, 0, &light);
 	const vec3_t *d = &light.Direction;
 	double len = __builtin_sqrt((double)(d->z * d->z + d->x * d->x));
@@ -1305,15 +1305,15 @@ void __thiscall CListaVert_LightRampUV(CListaVert *self, const matrix_t *world) 
 	rot = *Matrix_MulD3D(&r, &ry, &rx);
 	Matrix_MulTo(&r, world, &rot);
 	if (self->frmt == VERT_TEX1) {
-		ListaVert_RampUV(self, 0x20, 0x18, &r);
+		VertList_RampUV(self, 0x20, 0x18, &r);
 	} else if (self->frmt == VERT_TEX2) {
-		ListaVert_RampUV(self, 0x28, 0x20, &r);
+		VertList_RampUV(self, 0x28, 0x20, &r);
 	}
 }
 
 /* the D3D resources of the vertex lists: nothing to make or free (the buffers belong to the meshes) */
-void ListaVert_ReleaseD3D(void) {
+void VertList_ReleaseD3D(void) {
 }
 
-void ListaVert_InitD3D(void) {
+void VertList_InitD3D(void) {
 }

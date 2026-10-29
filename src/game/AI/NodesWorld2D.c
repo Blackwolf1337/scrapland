@@ -603,11 +603,11 @@ byte __thiscall CNodesWorld2D_TestWalk(CNodesWorld2D *self, const vec3_t *a, con
 	return 1;
 }
 
-void __thiscall CNodesWorld2D_AnalizeGraph(CNodesWorld2D *self) {
+void __thiscall CNodesWorld2D_AnalyzeGraph(CNodesWorld2D *self) {
 	CNodesWorld *w = NW2D_SUP(self);
 	byte bad;
 
-	g_NWAnalizeOn = 1;
+	g_NWAnalyzeOn = 1;
 	g_NW2DDrawMode = 9;
 	DListVec3_Clear(&w->errCollide);
 	bad = 0;

@@ -1,10 +1,10 @@
 # engine3d Engine/Suelo.c (run by sdcall.py after its own checks, its helpers in scope, Python 1.5.2): the geometry
-# helpers on random input, collision meshes, quads and whole floors (CSuelo) in heap memory with meshes of known
+# helpers on random input, collision meshes, quads and whole floors (CGround) in heap memory with meshes of known
 # triangles, then many random spheres and sweeps against them. The engine variables the floor code uses are saved
 # and put back at the end. The floors with meshes are leaked (their destructor CHECKs that no quad uses a mesh), the
 # destructors run on empty ones. Heap addresses are never printed:
 # meshes are printed by index. Not called: the .amc and SUEL files (need files to write or a world to read them),
-# CSuelo_Draw, the debug drawing and Suelo_DrawBox (render state), the floor nodes (none exist).
+# CGround_Draw, the debug drawing and Ground_DrawBox (render state), the floor nodes (none exist).
 def sunew(n):
 	return SDTest.Call('Mem_Calloc', 'ii', n)[0]
 def sunewop(n):
@@ -82,47 +82,47 @@ for i in range(60):
 	a, b, c = sutri()
 	p = suvec()
 	m = sumid(a, b, c)
-	fcall('Suelo_PointInTri', sym('Suelo_PointInTri'), 'bFFFF', p, a, b, c)
-	fcall('Suelo_PointInTri mid', sym('Suelo_PointInTri'), 'bFFFF', m, a, b, c)
-	fcall('Suelo_PointInTri near', sym('Suelo_PointInTri'), 'bFFFF', sunear(m, 1.0), a, b, c)
-	fcall('Suelo_PointInTri rev', sym('Suelo_PointInTri'), 'bFFFF', m, a, c, b)
-	fcall('Suelo_DistPointSeg', sym('Suelo_DistPointSeg'), 'fFFFF', a, b, p, z3)
-	fcall('Suelo_DistPointSeg NULL', sym('Suelo_DistPointSeg'), 'fFFFi', a, b, p, 0)
-	fcall('Suelo_Dist2PointSeg', sym('Suelo_Dist2PointSeg'), 'fFFFF', a, b, p, z3)
-	fcall('Suelo_Dist2PointSeg NULL', sym('Suelo_Dist2PointSeg'), 'fFFFi', a, b, p, 0)
+	fcall('Ground_PointInTri', sym('Ground_PointInTri'), 'bFFFF', p, a, b, c)
+	fcall('Ground_PointInTri mid', sym('Ground_PointInTri'), 'bFFFF', m, a, b, c)
+	fcall('Ground_PointInTri near', sym('Ground_PointInTri'), 'bFFFF', sunear(m, 1.0), a, b, c)
+	fcall('Ground_PointInTri rev', sym('Ground_PointInTri'), 'bFFFF', m, a, c, b)
+	fcall('Ground_DistPointSeg', sym('Ground_DistPointSeg'), 'fFFFF', a, b, p, z3)
+	fcall('Ground_DistPointSeg NULL', sym('Ground_DistPointSeg'), 'fFFFi', a, b, p, 0)
+	fcall('Ground_Dist2PointSeg', sym('Ground_Dist2PointSeg'), 'fFFFF', a, b, p, z3)
+	fcall('Ground_Dist2PointSeg NULL', sym('Ground_Dist2PointSeg'), 'fFFFi', a, b, p, 0)
 	pl = SDTest.Call('Plane_SafeSet', 'tbFFFF', (0.0, 0.0, 0.0, 0.0), a, b, c)[1]
 	r = rnd(0.0, 3.0)
-	fcall('Suelo_SegPlane', sym('Suelo_SegPlane'), 'bFFfFF', p, sunear(p, 6.0), r, pl, (0.0,))
-	fcall('Suelo_SegPlane near', sym('Suelo_SegPlane'), 'bFFfFF', sunear(m, 0.5), sunear(m, 0.5), r, pl, (0.0,))
-	fcall('Suelo_SegPlane neg r', sym('Suelo_SegPlane'), 'bFFfFF', p, sunear(m, 1.0), -r, pl, (0.0,))
-	fcall('Suelo_SegEdge', sym('Suelo_SegEdge'), 'bFFFFfF', a, b, p, sunear(p, 8.0), r, (100.0,))
-	fcall('Suelo_SegEdge near', sym('Suelo_SegEdge'), 'bFFFFfF', a, b, sunear(a, 2.0), sunear(b, 2.0), r + 1.0, (100.0,))
-	fcall('Suelo_SegEdge cross', sym('Suelo_SegEdge'), 'bFFFFfF', a, b, sunear(m, 3.0), sunear(m, 3.0), r, (100.0,))
-	fcall('Suelo_SegEdge point', sym('Suelo_SegEdge'), 'bFFFFfF', a, a, p, sunear(a, 1.0), r, (100.0,))
-	fcall('Suelo_SegEdge still', sym('Suelo_SegEdge'), 'bFFFFfF', a, b, p, p, r + 2.0, (100.0,))
+	fcall('Ground_SegPlane', sym('Ground_SegPlane'), 'bFFfFF', p, sunear(p, 6.0), r, pl, (0.0,))
+	fcall('Ground_SegPlane near', sym('Ground_SegPlane'), 'bFFfFF', sunear(m, 0.5), sunear(m, 0.5), r, pl, (0.0,))
+	fcall('Ground_SegPlane neg r', sym('Ground_SegPlane'), 'bFFfFF', p, sunear(m, 1.0), -r, pl, (0.0,))
+	fcall('Ground_SegEdge', sym('Ground_SegEdge'), 'bFFFFfF', a, b, p, sunear(p, 8.0), r, (100.0,))
+	fcall('Ground_SegEdge near', sym('Ground_SegEdge'), 'bFFFFfF', a, b, sunear(a, 2.0), sunear(b, 2.0), r + 1.0, (100.0,))
+	fcall('Ground_SegEdge cross', sym('Ground_SegEdge'), 'bFFFFfF', a, b, sunear(m, 3.0), sunear(m, 3.0), r, (100.0,))
+	fcall('Ground_SegEdge point', sym('Ground_SegEdge'), 'bFFFFfF', a, a, p, sunear(a, 1.0), r, (100.0,))
+	fcall('Ground_SegEdge still', sym('Ground_SegEdge'), 'bFFFFfF', a, b, p, p, r + 2.0, (100.0,))
 for x in specials:
 	v = (x, 1.0, x)
-	fcall('Suelo_PointInTri s', sym('Suelo_PointInTri'), 'bFFFF', v, (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
-	fcall('Suelo_PointInTri s2', sym('Suelo_PointInTri'), 'bFFFF', (0.2, 0.2, 0.0), v, (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
-	fcall('Suelo_DistPointSeg s', sym('Suelo_DistPointSeg'), 'fFFFF', v, (1.0, 2.0, 3.0), (0.0, 0.0, 0.0), z3)
-	fcall('Suelo_DistPointSeg s2', sym('Suelo_DistPointSeg'), 'fFFFF', (0.0, 0.0, 0.0), (1.0, 2.0, 3.0), v, z3)
-	fcall('Suelo_Dist2PointSeg s', sym('Suelo_Dist2PointSeg'), 'fFFFF', (0.0, 0.0, 0.0), v, (1.0, 2.0, 3.0), z3)
-	fcall('Suelo_Dist2PointSeg s2', sym('Suelo_Dist2PointSeg'), 'fFFFF', (0.0, 0.0, 0.0), (1.0, 2.0, 3.0), v, z3)
-	fcall('Suelo_SegPlane s', sym('Suelo_SegPlane'), 'bFFfFF', v, (1.0, -2.0, 3.0), 0.5, (0.0, 1.0, 0.0, 0.0), (0.0,))
-	fcall('Suelo_SegPlane s2', sym('Suelo_SegPlane'), 'bFFfFF', (0.0, 1.0, 0.0), (1.0, -2.0, 3.0), x, (0.0, 1.0, 0.0, 0.0), (0.0,))
-	fcall('Suelo_SegEdge s', sym('Suelo_SegEdge'), 'bFFFFfF', (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), v, (0.5, -1.0, 0.0), 0.5, (100.0,))
-	fcall('Suelo_SegEdge s2', sym('Suelo_SegEdge'), 'bFFFFfF', (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.5, 1.0, 0.0), (0.5, -1.0, 0.0), x, (100.0,))
+	fcall('Ground_PointInTri s', sym('Ground_PointInTri'), 'bFFFF', v, (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
+	fcall('Ground_PointInTri s2', sym('Ground_PointInTri'), 'bFFFF', (0.2, 0.2, 0.0), v, (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
+	fcall('Ground_DistPointSeg s', sym('Ground_DistPointSeg'), 'fFFFF', v, (1.0, 2.0, 3.0), (0.0, 0.0, 0.0), z3)
+	fcall('Ground_DistPointSeg s2', sym('Ground_DistPointSeg'), 'fFFFF', (0.0, 0.0, 0.0), (1.0, 2.0, 3.0), v, z3)
+	fcall('Ground_Dist2PointSeg s', sym('Ground_Dist2PointSeg'), 'fFFFF', (0.0, 0.0, 0.0), v, (1.0, 2.0, 3.0), z3)
+	fcall('Ground_Dist2PointSeg s2', sym('Ground_Dist2PointSeg'), 'fFFFF', (0.0, 0.0, 0.0), (1.0, 2.0, 3.0), v, z3)
+	fcall('Ground_SegPlane s', sym('Ground_SegPlane'), 'bFFfFF', v, (1.0, -2.0, 3.0), 0.5, (0.0, 1.0, 0.0, 0.0), (0.0,))
+	fcall('Ground_SegPlane s2', sym('Ground_SegPlane'), 'bFFfFF', (0.0, 1.0, 0.0), (1.0, -2.0, 3.0), x, (0.0, 1.0, 0.0, 0.0), (0.0,))
+	fcall('Ground_SegEdge s', sym('Ground_SegEdge'), 'bFFFFfF', (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), v, (0.5, -1.0, 0.0), 0.5, (100.0,))
+	fcall('Ground_SegEdge s2', sym('Ground_SegEdge'), 'bFFFFfF', (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.5, 1.0, 0.0), (0.5, -1.0, 0.0), x, (100.0,))
 # exact cases: collinear points, a point on an edge, a segment parallel to the plane, an edge of length 0
-fcall('Suelo_PointInTri line', sym('Suelo_PointInTri'), 'bFFFF', (0.5, 0.0, 0.0), (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
-fcall('Suelo_PointInTri line out', sym('Suelo_PointInTri'), 'bFFFF', (2.0, 0.0, 0.0), (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
-fcall('Suelo_PointInTri flat', sym('Suelo_PointInTri'), 'bFFFF', (0.5, 0.0, 0.0), (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (2.0, 0.0, 0.0))
-fcall('Suelo_PointInTri vertex', sym('Suelo_PointInTri'), 'bFFFF', (1.0, 0.0, 0.0), (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
-fcall('Suelo_SegPlane parallel', sym('Suelo_SegPlane'), 'bFFfFF', (0.0, 0.2, 0.0), (5.0, 0.2, 1.0), 0.5, (0.0, 1.0, 0.0, 0.0), (0.0,))
-fcall('Suelo_SegPlane far', sym('Suelo_SegPlane'), 'bFFfFF', (0.0, 2.0, 0.0), (5.0, 3.0, 1.0), 0.5, (0.0, 1.0, 0.0, 0.0), (0.0,))
-fcall('Suelo_SegEdge zero', sym('Suelo_SegEdge'), 'bFFFFfF', (1.0, 1.0, 1.0), (1.0, 1.0, 1.0), (0.0, 0.0, 0.0), (2.0, 2.0, 2.0), 0.5, (100.0,))
-fcall('Suelo_SegEdge parallel', sym('Suelo_SegEdge'), 'bFFFFfF', (0.0, 0.0, 0.0), (4.0, 0.0, 0.0), (-1.0, 0.3, 0.0), (5.0, 0.3, 0.0), 0.5, (100.0,))
-fcall('Suelo_Dist2PointSeg point', sym('Suelo_Dist2PointSeg'), 'fFFFF', (1.0, 1.0, 1.0), (1.0, 1.0, 1.0), (3.0, 1.0, 2.0), z3)
-fcall('Suelo_DistPointSeg point', sym('Suelo_DistPointSeg'), 'fFFFF', (1.0, 1.0, 1.0), (1.0, 1.0, 1.0), (3.0, 1.0, 2.0), z3)
+fcall('Ground_PointInTri line', sym('Ground_PointInTri'), 'bFFFF', (0.5, 0.0, 0.0), (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
+fcall('Ground_PointInTri line out', sym('Ground_PointInTri'), 'bFFFF', (2.0, 0.0, 0.0), (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
+fcall('Ground_PointInTri flat', sym('Ground_PointInTri'), 'bFFFF', (0.5, 0.0, 0.0), (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (2.0, 0.0, 0.0))
+fcall('Ground_PointInTri vertex', sym('Ground_PointInTri'), 'bFFFF', (1.0, 0.0, 0.0), (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
+fcall('Ground_SegPlane parallel', sym('Ground_SegPlane'), 'bFFfFF', (0.0, 0.2, 0.0), (5.0, 0.2, 1.0), 0.5, (0.0, 1.0, 0.0, 0.0), (0.0,))
+fcall('Ground_SegPlane far', sym('Ground_SegPlane'), 'bFFfFF', (0.0, 2.0, 0.0), (5.0, 3.0, 1.0), 0.5, (0.0, 1.0, 0.0, 0.0), (0.0,))
+fcall('Ground_SegEdge zero', sym('Ground_SegEdge'), 'bFFFFfF', (1.0, 1.0, 1.0), (1.0, 1.0, 1.0), (0.0, 0.0, 0.0), (2.0, 2.0, 2.0), 0.5, (100.0,))
+fcall('Ground_SegEdge parallel', sym('Ground_SegEdge'), 'bFFFFfF', (0.0, 0.0, 0.0), (4.0, 0.0, 0.0), (-1.0, 0.3, 0.0), (5.0, 0.3, 0.0), 0.5, (100.0,))
+fcall('Ground_Dist2PointSeg point', sym('Ground_Dist2PointSeg'), 'fFFFF', (1.0, 1.0, 1.0), (1.0, 1.0, 1.0), (3.0, 1.0, 2.0), z3)
+fcall('Ground_DistPointSeg point', sym('Ground_DistPointSeg'), 'fFFFF', (1.0, 1.0, 1.0), (1.0, 1.0, 1.0), (3.0, 1.0, 2.0), z3)
 
 # collision meshes: CCollideMesh with its own vertex and triangle arrays (the triangles of tris: corners, flags)
 def sumesh(verts, tris):
@@ -194,15 +194,15 @@ for k in range(25):
 		p = sunear(m, 2.5)
 		q = sunear(m, 2.5)
 		e = sunear(a, 1.0)
-		fcall('Suelo_SphereTri', sym('Suelo_SphereTri'), 'bFfiiF', p, r, t, sum1, z3)
-		fcall('Suelo_SphereTri edge', sym('Suelo_SphereTri'), 'bFfiiF', e, r, t, sum1, z3)
-		fcall('Suelo_SweepTri', sym('Suelo_SweepTri'), 'bFFfiiF', p, q, r, t, sum1, z3)
-		fcall('Suelo_SweepTri edge', sym('Suelo_SweepTri'), 'bFFfiiF', e, sunear(b, 1.0), r, t, sum1, z3)
-		fcall('Suelo_SweepTri far', sym('Suelo_SweepTri'), 'bFFfiiF', sunear(m, 8.0), sunear(m, 8.0), r, t, sum1, z3)
-		fcall('Suelo_SweepTri short', sym('Suelo_SweepTri'), 'bFFfiiF', p, sunear(p, 0.00002), r, t, sum1, z3)
-		fcall('Suelo_SweepTri start', sym('Suelo_SweepTri'), 'bFFfiiF', sunear(m, 0.1), sunear(m, 3.0), r + 0.2, t, sum1, z3)
+		fcall('Ground_SphereTri', sym('Ground_SphereTri'), 'bFfiiF', p, r, t, sum1, z3)
+		fcall('Ground_SphereTri edge', sym('Ground_SphereTri'), 'bFfiiF', e, r, t, sum1, z3)
+		fcall('Ground_SweepTri', sym('Ground_SweepTri'), 'bFFfiiF', p, q, r, t, sum1, z3)
+		fcall('Ground_SweepTri edge', sym('Ground_SweepTri'), 'bFFfiiF', e, sunear(b, 1.0), r, t, sum1, z3)
+		fcall('Ground_SweepTri far', sym('Ground_SweepTri'), 'bFFfiiF', sunear(m, 8.0), sunear(m, 8.0), r, t, sum1, z3)
+		fcall('Ground_SweepTri short', sym('Ground_SweepTri'), 'bFFfiiF', p, sunear(p, 0.00002), r, t, sum1, z3)
+		fcall('Ground_SweepTri start', sym('Ground_SweepTri'), 'bFFfiiF', sunear(m, 0.1), sunear(m, 3.0), r + 0.2, t, sum1, z3)
 
-# floors: CSuelo with a grid over a box and meshes in _CollideMesh1[0] and [1]
+# floors: CGround with a grid over a box and meshes in _CollideMesh1[0] and [1]
 def sumi(meshes, m):
 	for i in range(len(meshes)):
 		if meshes[i] == m:
@@ -233,39 +233,39 @@ def sualt(alt):
 		suri(alt + 0x34b0) != 0)
 def sucmesh(alt, i):
 	return alt + 4 + 0x34 * i
-# a CMallaTri of the exe with the triangles (corners, flags)
+# a CTriMesh of the exe with the triangles (corners, flags)
 def sumalla(verts, tris):
 	m = sunewop(0x4c)
-	SDTest.Call('CMallaTri_ctor', 'tii', m)
-	SDTest.Call('CMallaTri_SetNumVert', 'tviii', m, len(verts), 0)
+	SDTest.Call('CTriMesh_ctor', 'tii', m)
+	SDTest.Call('CTriMesh_SetNumVert', 'tviii', m, len(verts), 0)
 	for i in range(len(verts)):
-		SDTest.Call('CMallaTri_SetVert', 'tviiF', m, i, verts[i])
-	SDTest.Call('CMallaTri_SetNumTri', 'tviii', m, len(tris), 0)
+		SDTest.Call('CTriMesh_SetVert', 'tviiF', m, i, verts[i])
+	SDTest.Call('CTriMesh_SetNumTri', 'tviii', m, len(tris), 0)
 	for i in range(len(tris)):
 		t = tris[i]
-		SDTest.Call('CMallaTri_SetTriVerts', 'tviiiii', m, i, t[0], t[1], t[2])
-		SDTest.Call('CMallaTri_SetTriFlags', 'tviii', m, i, t[3])
+		SDTest.Call('CTriMesh_SetTriVerts', 'tviiiii', m, i, t[0], t[1], t[2])
+		SDTest.Call('CTriMesh_SetTriFlags', 'tviii', m, i, t[3])
 	return m
 def suvecbox(lo, hi, ylo, yhi):
 	return (rnd(lo, hi), rnd(ylo, yhi), rnd(lo, hi))
 
 a = sunew(0x34b4)
-check('CAlturas_ctor', lambda a=a: (SDTest.Call('CAlturas_ctor', 'tii', a)[0] == a, sualt(a), suwords(a + 4, 13), suwords(a + 0x3404, 13), suwords(a + 0x3438, 13), suwords(a + 0x1a04 + 0x34 * 127, 13)))
-check('CAlturas_dtor', lambda a=a: (SDTest.Call('CAlturas_dtor', 'tvi', a), sualt(a), suglobals()))
+check('CHeights_ctor', lambda a=a: (SDTest.Call('CHeights_ctor', 'tii', a)[0] == a, sualt(a), suwords(a + 4, 13), suwords(a + 0x3404, 13), suwords(a + 0x3438, 13), suwords(a + 0x1a04 + 0x34 * 127, 13)))
+check('CHeights_dtor', lambda a=a: (SDTest.Call('CHeights_dtor', 'tvi', a), sualt(a), suglobals()))
 s = sunewop(0x3524)
 suzero(s, 0x3524)
-check('CSuelo_ctor del', lambda s=s: (SDTest.Call('CSuelo_ctor', 'tii', s)[0] == s, suwords(s + 4, 0x1b), suglobals()))
-check('CSuelo_Delete', lambda s=s: (SDTest.Call('CSuelo_Delete', 'tiii', s, 1)[0] == s, suglobals()))
+check('CGround_ctor del', lambda s=s: (SDTest.Call('CGround_ctor', 'tii', s)[0] == s, suwords(s + 4, 0x1b), suglobals()))
+check('CGround_Delete', lambda s=s: (SDTest.Call('CGround_Delete', 'tiii', s, 1)[0] == s, suglobals()))
 
 su = sunew(0x3524)
-check('CSuelo_ctor', lambda: (SDTest.Call('CSuelo_ctor', 'tii', su)[0] == su, suwords(su + 4, 0x1b), suglobals(), sualt(su + 0x70)))
+check('CGround_ctor', lambda: (SDTest.Call('CGround_ctor', 'tii', su)[0] == su, suwords(su + 4, 0x1b), suglobals(), sualt(su + 0x70)))
 sualt0 = su + 0x70
-for f in ('CSuelo_NodosVf4', 'CSuelo_NodosVf3', 'CSuelo_NodosToD3D'):
-	check('CSuelo nodes' + fmt((f,)), lambda f=f: SDTest.Call(f, 'tvii', su, 0))
-check('CSuelo_Nop', lambda: SDTest.Call('CSuelo_Nop', 'tvii', su, 5))
+for f in ('CGround_NodesVf4', 'CGround_NodesVf3', 'CGround_NodesToD3D'):
+	check('CGround nodes' + fmt((f,)), lambda f=f: SDTest.Call(f, 'tvii', su, 0))
+check('CGround_Nop', lambda: SDTest.Call('CGround_Nop', 'tvii', su, 5))
 box = sunew(24)
 suwf(box, (-20.0, -5.0, -20.0, 20.0, 15.0, 20.0))
-check('CAlturas_QuadInit', lambda: (SDTest.Call('CAlturas_QuadInit', 'tviiii', sualt0, 0, box, 40), sualt(sualt0), suglobals()))
+check('CHeights_QuadInit', lambda: (SDTest.Call('CHeights_QuadInit', 'tviiii', sualt0, 0, box, 40), sualt(sualt0), suglobals()))
 # the floor (two triangles over the box), random triangles inside, one degenerate, one without collisions, one
 # invalid
 fv = [(-19.5, 0.0, -19.5), (19.5, 0.0, -19.5), (19.5, 0.0, 19.5), (-19.5, 0.0, 19.5)]
@@ -293,8 +293,8 @@ mesh1 = sucmesh(sualt0, 0)
 mesh2 = sucmesh(sualt0, 1)
 mesh3 = sucmesh(sualt0, 2)
 mlist = (mesh1, mesh2, mesh3)
-check('CSuelo_AddMesh', lambda: (SDTest.Call('CSuelo_AddMesh', 'tviiiii', su, mesh1, tm1, 0, 0), sumget(mesh1), suglobals()))
-check('CSuelo quads', lambda: suquads(sualt0, mlist))
+check('CGround_AddMesh', lambda: (SDTest.Call('CGround_AddMesh', 'tviiiii', su, mesh1, tm1, 0, 0), sumget(mesh1), suglobals()))
+check('CGround quads', lambda: suquads(sualt0, mlist))
 # a mesh added at run time: MeshID 1
 mv = []
 mt = []
@@ -306,14 +306,14 @@ for i in range(8):
 	mv.append(sunear(a, 3.0))
 	mt.append((n, n + 1, n + 2, 0x40 * i))
 tm2 = sumalla(mv, mt)
-check('CSuelo_AddMesh id', lambda: (SDTest.Call('CSuelo_AddMesh', 'tviiipp', su, mesh2, tm2, 0, 0), sumget(mesh2), suri(sualt0), suglobals()))
-check('CSuelo quads 2', lambda: suquads(sualt0, mlist))
-check('CSuelo_SetMeshCollide off', lambda: (SDTest.Call('CSuelo_SetMeshCollide', 'tviiiii', su, mesh2, 0, 1, 0), suwords(mesh2, 2), suglobals()))
-check('CSuelo_SetMeshCollide on', lambda: (SDTest.Call('CSuelo_SetMeshCollide', 'tviiiii', su, mesh2, 1, 1, 0), suwords(mesh2, 2), suglobals()))
-check('CSuelo_BuildSectorMesh 1', lambda: (SDTest.Call('CSuelo_BuildSectorMesh', 'tviiii', su, mesh3, 1, 0), sumget(mesh3)))
-check('CSuelo_BuildSectorMesh 2', lambda: (SDTest.Call('CSuelo_BuildSectorMesh', 'tviiii', su, mesh3, 2, 0), sumget(mesh3)))
-check('CSuelo_CalcGaps', lambda: (SDTest.Call('CSuelo_CalcGaps', 'tvi', su), suquads(sualt0, mlist)))
-check('CAlturas_SetParam', lambda: (SDTest.Call('CAlturas_SetParam', 'tvii', sualt0, 7), suwords(mesh1, 3), suwords(mesh2, 3)))
+check('CGround_AddMesh id', lambda: (SDTest.Call('CGround_AddMesh', 'tviiipp', su, mesh2, tm2, 0, 0), sumget(mesh2), suri(sualt0), suglobals()))
+check('CGround quads 2', lambda: suquads(sualt0, mlist))
+check('CGround_SetMeshCollide off', lambda: (SDTest.Call('CGround_SetMeshCollide', 'tviiiii', su, mesh2, 0, 1, 0), suwords(mesh2, 2), suglobals()))
+check('CGround_SetMeshCollide on', lambda: (SDTest.Call('CGround_SetMeshCollide', 'tviiiii', su, mesh2, 1, 1, 0), suwords(mesh2, 2), suglobals()))
+check('CGround_BuildSectorMesh 1', lambda: (SDTest.Call('CGround_BuildSectorMesh', 'tviiii', su, mesh3, 1, 0), sumget(mesh3)))
+check('CGround_BuildSectorMesh 2', lambda: (SDTest.Call('CGround_BuildSectorMesh', 'tviiii', su, mesh3, 2, 0), sumget(mesh3)))
+check('CGround_CalcGaps', lambda: (SDTest.Call('CGround_CalcGaps', 'tvi', su), suquads(sualt0, mlist)))
+check('CHeights_SetParam', lambda: (SDTest.Call('CHeights_SetParam', 'tvii', sualt0, 7), suwords(mesh1, 3), suwords(mesh2, 3)))
 # the queries; the point lists are the floor triangles, random points near the triangles and anywhere
 def supath():
 	j = int(rnd(0.0, len(ft) - 0.001))
@@ -328,19 +328,19 @@ suout = (9.0, 9.0, 9.0)
 for k in range(150):
 	a, b = supath()
 	r = rnd(0.1, 2.5)
-	check('CSuelo_CollideSphere' + fmt((k,)), lambda a=a, b=b, r=r: (SDTest.Call('CSuelo_CollideSphere', 'tbiFFfFFF', su, a, b, r, suout, suout, suout), suglobals()))
-	check('CSuelo_CollideSphere NULL' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call('CSuelo_CollideSphere', 'tbiFFfiii', su, a, b, r, 0, 0, 0))
-	check('CSuelo_SphereContact' + fmt((k,)), lambda a=a, b=b, r=r: (SDTest.Call('CSuelo_SphereContact', 'tbiFFfFFF', su, a, b, r, suout, suout, suout), suglobals()))
-	check('CSuelo_SphereContact NULL' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call('CSuelo_SphereContact', 'tbiFFfiii', su, a, b, r, 0, 0, 0))
-	check('CSuelo_SphereContact n' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call('CSuelo_SphereContact', 'tbiFFfiiF', su, a, b, r, 0, 0, suout))
-	check('CSuelo_SweepSphere' + fmt((k,)), lambda a=a, b=b, r=r: (SDTest.Call('CSuelo_SweepSphere', 'tbiFFfFFF', su, a, b, r, suout, suout, suout), suglobals()))
-	check('CSuelo_SweepSphere NULL' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call('CSuelo_SweepSphere', 'tbiFFfiii', su, a, b, r, 0, 0, 0))
+	check('CGround_CollideSphere' + fmt((k,)), lambda a=a, b=b, r=r: (SDTest.Call('CGround_CollideSphere', 'tbiFFfFFF', su, a, b, r, suout, suout, suout), suglobals()))
+	check('CGround_CollideSphere NULL' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call('CGround_CollideSphere', 'tbiFFfiii', su, a, b, r, 0, 0, 0))
+	check('CGround_SphereContact' + fmt((k,)), lambda a=a, b=b, r=r: (SDTest.Call('CGround_SphereContact', 'tbiFFfFFF', su, a, b, r, suout, suout, suout), suglobals()))
+	check('CGround_SphereContact NULL' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call('CGround_SphereContact', 'tbiFFfiii', su, a, b, r, 0, 0, 0))
+	check('CGround_SphereContact n' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call('CGround_SphereContact', 'tbiFFfiiF', su, a, b, r, 0, 0, suout))
+	check('CGround_SweepSphere' + fmt((k,)), lambda a=a, b=b, r=r: (SDTest.Call('CGround_SweepSphere', 'tbiFFfFFF', su, a, b, r, suout, suout, suout), suglobals()))
+	check('CGround_SweepSphere NULL' + fmt((k,)), lambda a=a, b=b, r=r: SDTest.Call('CGround_SweepSphere', 'tbiFFfiii', su, a, b, r, 0, 0, 0))
 	b2 = sunear(a, 12.0)
-	check('CSuelo_SweepSphere long' + fmt((k,)), lambda a=a, b=b2, r=r: SDTest.Call('CSuelo_SweepSphere', 'tbiFFfFiF', su, a, b, r, suout, 0, suout))
+	check('CGround_SweepSphere long' + fmt((k,)), lambda a=a, b=b2, r=r: SDTest.Call('CGround_SweepSphere', 'tbiFFfFiF', su, a, b, r, suout, 0, suout))
 # the tested and hit marks and query numbers
-check('CSuelo after queries 1', lambda: sumget(mesh1))
-check('CSuelo after queries 2', lambda: sumget(mesh2))
-check('CSuelo_RemoveMesh', lambda: (SDTest.Call('CSuelo_RemoveMesh', 'tviiii', su, mesh2, 0, 0), suquads(sualt0, mlist), suwords(mesh2, 1), suglobals()))
+check('CGround after queries 1', lambda: sumget(mesh1))
+check('CGround after queries 2', lambda: sumget(mesh2))
+check('CGround_RemoveMesh', lambda: (SDTest.Call('CGround_RemoveMesh', 'tviiii', su, mesh2, 0, 0), suquads(sualt0, mlist), suwords(mesh2, 1), suglobals()))
 # the quad functions on the quads of the grid and on a quad of their own
 q0 = suri(sualt0 + 0x3494)
 for i in range(suri(sualt0 + 0x3490)):
@@ -350,7 +350,7 @@ for i in range(suri(sualt0 + 0x3490)):
 		t = suri(suri(q + 8) + 0x30) + 0x1c * (sushorts(suri(q + 0x10), j + 1)[j])
 		fcall('CCollideQuad_TriMaxY' + fmt((i, j)), sym('CCollideQuad_TriMaxY'), 'tfii', q, t)
 		fcall('CCollideQuad_TriMinY' + fmt((i, j)), sym('CCollideQuad_TriMinY'), 'tfii', q, t)
-	check('CCollideQuad_CalcExtens' + fmt((i,)), lambda q=q: (SDTest.Call('CCollideQuad_CalcExtens', 'tvii', sualt0, q), suquad(q, mlist)))
+	check('CCollideQuad_CalcExt' + fmt((i,)), lambda q=q: (SDTest.Call('CCollideQuad_CalcExt', 'tvii', sualt0, q), suquad(q, mlist)))
 	check('CCollideQuad_CalcGap' + fmt((i,)), lambda q=q: (SDTest.Call('CCollideQuad_CalcGap', 'tvi', q), suquad(q, mlist)))
 qq = sunewop(0x24)
 suzero(qq, 0x24)
@@ -360,16 +360,16 @@ check('CCollideQuad_Find same', lambda: (SDTest.Call('CCollideQuad_Find', 'tiiii
 check('CCollideQuad_Find next', lambda: (SDTest.Call('CCollideQuad_Find', 'tiiiii', sualt0, qq, 1, mesh2)[0] == suri(qq + 0x20), suquad(suri(qq + 0x20), mlist), suwords(mesh2, 1), suglobals()))
 check('CCollideQuad_Find next again', lambda: (SDTest.Call('CCollideQuad_Find', 'tiiiii', sualt0, qq, 1, mesh2)[0] == suri(qq + 0x20), suwords(mesh2, 1)))
 check('CCollideQuad_AddAllTris', lambda: (SDTest.Call('CCollideQuad_AddAllTris', 'tvii', sualt0, qq), suquad(qq, mlist)))
-check('CCollideQuad_CalcExtens own', lambda: (SDTest.Call('CCollideQuad_CalcExtens', 'tvii', sualt0, qq), suquad(qq, mlist)))
+check('CCollideQuad_CalcExt own', lambda: (SDTest.Call('CCollideQuad_CalcExt', 'tvii', sualt0, qq), suquad(qq, mlist)))
 check('CCollideQuad_Delete', lambda: (SDTest.Call('CCollideQuad_Delete', 'tiii', qq, 1)[0] == qq, suwords(mesh1, 1), suwords(mesh2, 1), suglobals()))
 # the wrap of the query number clears the tested marks
 SDTest.Poke('g_CollisionNComp', -1)
-check('CSuelo_NewQuery wrap', lambda: (SDTest.Call('CSuelo_NewQuery', 'tvi', su), suglobals(), suwords(mesh1, 3), sumtri(mesh1, 0), sumtri(mesh1, 5)))
-check('CSuelo_NewQuery', lambda: (SDTest.Call('CSuelo_NewQuery', 'tvi', su), suglobals()))
+check('CGround_NewQuery wrap', lambda: (SDTest.Call('CGround_NewQuery', 'tvi', su), suglobals(), suwords(mesh1, 3), sumtri(mesh1, 0), sumtri(mesh1, 5)))
+check('CGround_NewQuery', lambda: (SDTest.Call('CGround_NewQuery', 'tvi', su), suglobals()))
 # the tables of tabla.h
 tb = sunew(8)
-check('Tabla_Free', lambda: (SDTest.Call('Tabla_Alloc2', 'tvii', tb, 5), SDTest.Call('Tabla_Free@2589c0', 'tvi', tb), suwords(tb, 2)))
-check('Tabla_Free empty', lambda: (SDTest.Call('Tabla_Free@2589c0', 'tvi', tb), suwords(tb, 2)))
-check('Tabla_FreeObjs', lambda: (SDTest.Call('Tabla_NewFC', 'tvii', tb, 3), SDTest.Call('Tabla_FreeObjs', 'tvi', tb), suwords(tb, 2)))
-check('Tabla_FreeObjs empty', lambda: (SDTest.Call('Tabla_FreeObjs', 'tvi', tb), suwords(tb, 2)))
+check('Table_Free', lambda: (SDTest.Call('Table_Alloc2', 'tvii', tb, 5), SDTest.Call('Table_Free@2589c0', 'tvi', tb), suwords(tb, 2)))
+check('Table_Free empty', lambda: (SDTest.Call('Table_Free@2589c0', 'tvi', tb), suwords(tb, 2)))
+check('Table_FreeObjs', lambda: (SDTest.Call('Table_NewFC', 'tvii', tb, 3), SDTest.Call('Table_FreeObjs', 'tvi', tb), suwords(tb, 2)))
+check('Table_FreeObjs empty', lambda: (SDTest.Call('Table_FreeObjs', 'tvi', tb), suwords(tb, 2)))
 surestore()

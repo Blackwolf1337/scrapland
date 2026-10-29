@@ -125,15 +125,15 @@ byte __fastcall cFXElementsFireDrop_Init(cFXElementsFireDrop *self) {
 	cMapElement_Init(&self->base);
 	CHECK(CGameModel_IsLoaded(model));
 	self->pos = *CGameModel_GetPos(model, &tmp);
-	self->dcRoot = CGameModel_FindNodoR(model, "DC_Root");
+	self->dcRoot = CGameModel_FindRenderNode(model, "DC_Root");
 	CHECK(self->dcRoot != -1);
 	CGameParticles_Attach(&self->drops, model, self->dcRoot);
-	CHECK(self->drops.SistPart);
-	self->scale = CGameModel_NodoIniFloat(model, self->dcRoot, "FXFireDrop", "Scale", 6.0f);
-	self->size = CGameModel_NodoIniFloat(model, self->dcRoot, "FXFireDrop", "Size", 9.5f);
-	self->speed = CGameModel_NodoIniFloat(model, self->dcRoot, "FXFireDrop", "Speed", 1150.0f);
-	self->area = CGameModel_NodoIniFloat(model, self->dcRoot, "FXFireDrop", "Area", 120.0f);
-	self->life = CGameModel_NodoIniFloat(model, self->dcRoot, "FXFireDrop", "Life", 1.9f);
+	CHECK(self->drops.ParticleSystem);
+	self->scale = CGameModel_NodeIniFloat(model, self->dcRoot, "FXFireDrop", "Scale", 6.0f);
+	self->size = CGameModel_NodeIniFloat(model, self->dcRoot, "FXFireDrop", "Size", 9.5f);
+	self->speed = CGameModel_NodeIniFloat(model, self->dcRoot, "FXFireDrop", "Speed", 1150.0f);
+	self->area = CGameModel_NodeIniFloat(model, self->dcRoot, "FXFireDrop", "Area", 120.0f);
+	self->life = CGameModel_NodeIniFloat(model, self->dcRoot, "FXFireDrop", "Life", 1.9f);
 	self->burstTime = 0.0f;
 	self->sleepTime = 0.0f;
 	self->emitTime[0] = 0.0f;
@@ -452,48 +452,48 @@ byte __fastcall cFXElementsLighting_Init(cFXElementsLighting *self) {
 	CHECK(CGameModel_IsLoaded(model));
 	self->pos = *CGameModel_GetPos(model, &tmp);
 	CGameModel_AnimInfo(model, 0, &self->animDur, &self->animFps);
-	self->dcRoot = CGameModel_FindNodoR(model, "DC_Root");
+	self->dcRoot = CGameModel_FindRenderNode(model, "DC_Root");
 	CHECK(self->dcRoot != -1);
 	CGameParticles_Attach(&self->glows, model, self->dcRoot);
-	CHECK(self->glows.SistPart);
+	CHECK(self->glows.ParticleSystem);
 	for (int i = 0; i < FXLIGHTINGBOLTS; i++) {
 		int j;
 		for (j = 0; j < FXLIGHTINGLINKS; j++) {
 			Str_PrintfQuiet(buf, 0xff, "DF_Link_%d%c", i + 1, j + 'A');
-			int node = CGameModel_FindNodoR(model, buf);
+			int node = CGameModel_FindRenderNode(model, buf);
 			self->link[i][j] = node;
 			if (node == -1) {
 				break;
 			}
-			self->glow[i][j] = CGameModel_NodoIniInt(model, node, "Lighting", "Glow", 1) != 0;
-			self->glowColor[i][j] = CGameModel_NodoIniColor(model, node, "Lighting", "GlowColor", 0x20c0c0ff);
-			self->glowSizeMin[i][j] = CGameModel_NodoIniFloat(model, node, "Lighting", "GlowSizeMin", 1150.0f);
-			self->glowSizeMax[i][j] = CGameModel_NodoIniFloat(model, node, "Lighting", "GlowSizeMax", 1250.0f);
-			self->pointColor[i][j] = CGameModel_NodoIniColor(model, node, "Lighting", "PointColor", 0x20c0c0ff);
-			self->pointSizeMin[i][j] = CGameModel_NodoIniFloat(model, node, "Lighting", "PointSizeMin", 200.0f);
-			self->pointSizeMax[i][j] = CGameModel_NodoIniFloat(model, node, "Lighting", "PointSizeMax", 220.0f);
+			self->glow[i][j] = CGameModel_NodeIniInt(model, node, "Lighting", "Glow", 1) != 0;
+			self->glowColor[i][j] = CGameModel_NodeIniColor(model, node, "Lighting", "GlowColor", 0x20c0c0ff);
+			self->glowSizeMin[i][j] = CGameModel_NodeIniFloat(model, node, "Lighting", "GlowSizeMin", 1150.0f);
+			self->glowSizeMax[i][j] = CGameModel_NodeIniFloat(model, node, "Lighting", "GlowSizeMax", 1250.0f);
+			self->pointColor[i][j] = CGameModel_NodeIniColor(model, node, "Lighting", "PointColor", 0x20c0c0ff);
+			self->pointSizeMin[i][j] = CGameModel_NodeIniFloat(model, node, "Lighting", "PointSizeMin", 200.0f);
+			self->pointSizeMax[i][j] = CGameModel_NodeIniFloat(model, node, "Lighting", "PointSizeMax", 220.0f);
 		}
 		self->linkCount[i] = j;
 		int node = self->link[i][0];
 		if (node == -1) {
 			continue;
 		}
-		self->sizeMin[i] = CGameModel_NodoIniFloat(model, node, "Lighting", "SizeMin", 165.0f);
-		self->sizeMax[i] = CGameModel_NodoIniFloat(model, node, "Lighting", "SizeMax", 195.0f);
-		self->sizeVar[i] = CGameModel_NodoIniFloat(model, node, "Lighting", "SizeVar", 80.0f);
-		self->lifeTimeMin[i] = CGameModel_NodoIniFloat(model, node, "Lighting", "LifeTimeMin", 0.08f);
-		self->lifeTimeMax[i] = CGameModel_NodoIniFloat(model, node, "Lighting", "LifeTimeMax", 0.55f);
-		self->sleepTimeMin[i] = CGameModel_NodoIniFloat(model, node, "Lighting", "SleepTimeMin", 0.02f);
-		self->sleepTimeMax[i] = CGameModel_NodoIniFloat(model, node, "Lighting", "SleepTimeMax", 0.4f);
-		self->tensorMin[i] = CGameModel_NodoIniFloat(model, node, "Lighting", "TensorMin", 1800.0f);
-		self->tensorMax[i] = CGameModel_NodoIniFloat(model, node, "Lighting", "TensorMax", 3500.0f);
-		self->randVarMin[i] = CGameModel_NodoIniFloat(model, node, "Lighting", "RandVarMin", 0.12f);
-		self->randVarMax[i] = CGameModel_NodoIniFloat(model, node, "Lighting", "RandVarMax", 0.25f);
-		self->anmFollowMin[i] = CGameModel_NodoIniFloat(model, node, "Lighting", "AnmFollowMin", 0.06f);
-		self->anmFollowMax[i] = CGameModel_NodoIniFloat(model, node, "Lighting", "AnmFollowMax", 0.09f);
-		self->anmLoopReset[i] = CGameModel_NodoIniInt(model, node, "Lighting", "AnmLoopReset", 0) != 0;
-		self->saturate[i] = CGameModel_NodoIniInt(model, node, "Lighting", "Saturate4X", 0) != 0;
-		self->offsetSpeed[i] = CGameModel_NodoIniFloat(model, node, "Lighting", "OffsetSpeed", 1.0f);
+		self->sizeMin[i] = CGameModel_NodeIniFloat(model, node, "Lighting", "SizeMin", 165.0f);
+		self->sizeMax[i] = CGameModel_NodeIniFloat(model, node, "Lighting", "SizeMax", 195.0f);
+		self->sizeVar[i] = CGameModel_NodeIniFloat(model, node, "Lighting", "SizeVar", 80.0f);
+		self->lifeTimeMin[i] = CGameModel_NodeIniFloat(model, node, "Lighting", "LifeTimeMin", 0.08f);
+		self->lifeTimeMax[i] = CGameModel_NodeIniFloat(model, node, "Lighting", "LifeTimeMax", 0.55f);
+		self->sleepTimeMin[i] = CGameModel_NodeIniFloat(model, node, "Lighting", "SleepTimeMin", 0.02f);
+		self->sleepTimeMax[i] = CGameModel_NodeIniFloat(model, node, "Lighting", "SleepTimeMax", 0.4f);
+		self->tensorMin[i] = CGameModel_NodeIniFloat(model, node, "Lighting", "TensorMin", 1800.0f);
+		self->tensorMax[i] = CGameModel_NodeIniFloat(model, node, "Lighting", "TensorMax", 3500.0f);
+		self->randVarMin[i] = CGameModel_NodeIniFloat(model, node, "Lighting", "RandVarMin", 0.12f);
+		self->randVarMax[i] = CGameModel_NodeIniFloat(model, node, "Lighting", "RandVarMax", 0.25f);
+		self->anmFollowMin[i] = CGameModel_NodeIniFloat(model, node, "Lighting", "AnmFollowMin", 0.06f);
+		self->anmFollowMax[i] = CGameModel_NodeIniFloat(model, node, "Lighting", "AnmFollowMax", 0.09f);
+		self->anmLoopReset[i] = CGameModel_NodeIniInt(model, node, "Lighting", "AnmLoopReset", 0) != 0;
+		self->saturate[i] = CGameModel_NodeIniInt(model, node, "Lighting", "Saturate4X", 0) != 0;
+		self->offsetSpeed[i] = CGameModel_NodeIniFloat(model, node, "Lighting", "OffsetSpeed", 1.0f);
 		CGameTrail_SetTexture(&self->trails[i], self->sizeMax[i] > 150.0f ? 8 : 9);
 		CGameTrail_SetPremul(&self->trails[i], self->saturate[i]);
 	}
@@ -573,9 +573,9 @@ static void Lighting_Start(cFXElementsLighting *self, int i) {
 	self->offset[i] = FxElem_Rand(8.0, -4.0);
 
 	vec3_t p0, p1;
-	m = CGameModel_NodoMatrix(model, &mat, self->link[i][from], 1, NULL, 0);
+	m = CGameModel_NodeMatrix(model, &mat, self->link[i][from], 1, NULL, 0);
 	Lighting_NodePos(m, &p0);
-	m = CGameModel_NodoMatrix(model, &mat, self->link[i][to], 1, NULL, 0);
+	m = CGameModel_NodeMatrix(model, &mat, self->link[i][to], 1, NULL, 0);
 	Lighting_NodePos(m, &p1);
 	pts[0] = p0;
 	pts[self->numPts - 1] = p1;
@@ -601,8 +601,8 @@ static void Lighting_Draw(cFXElementsLighting *self, int i, float dt, int from, 
 	vec3_t p0, p1, tmp;
 	byte vis0 = 0, vis1 = 0;
 
-	Lighting_NodePos(CGameModel_NodoMatrix(model, &mat0, self->link[i][from], 1, &vis0, 0), &p0);
-	Lighting_NodePos(CGameModel_NodoMatrix(model, &mat1, self->link[i][to], 1, &vis1, 0), &p1);
+	Lighting_NodePos(CGameModel_NodeMatrix(model, &mat0, self->link[i][from], 1, &vis0, 0), &p0);
+	Lighting_NodePos(CGameModel_NodeMatrix(model, &mat1, self->link[i][to], 1, &vis1, 0), &p1);
 	float fade = 0.0f;
 	if (0.05f > self->life[i]) {
 		float f = 1.0f - (self->life[i] - dt) / 0.05f;

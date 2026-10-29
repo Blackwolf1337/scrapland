@@ -1,6 +1,6 @@
 /*
  * The box queries against the collision triangles of the floor, original source Engine/checkbbox.cpp
- * (include/scrap/suelo.h): axis aligned boxes against triangles, and the oriented boxes (a matrix and half sizes)
+ * (include/scrap/ground.h): axis aligned boxes against triangles, and the oriented boxes (a matrix and half sizes)
  * whose triangles are clipped by the six planes of the box.
  */
 #include <string.h>
@@ -12,11 +12,11 @@
 /* the original keeps 8 points on the stack; a triangle clipped by six planes can have 9 */
 #define CLIP_MAX 16
 
-/* the contact points and faces of the response of CSuelo_CheckBBox (colis->calc_respuesta), counted from 0 */
+/* the contact points and faces of the response of CGround_CheckBBox (colis->calc_respuesta), counted from 0 */
 #define g_NTortas GAME_GLOBAL(int, g_NTortas, 0x4b11d8)
-#define g_NCarasTortas GAME_GLOBAL(int, g_NCarasTortas, 0x4b11dc)
-#define CARAS_TORTAS 64
-#define g_CarasTortas (GAME_ARRAY(int[3], g_CarasTortas, 0x4b11e0))	/* [CARAS_TORTAS] */
+#define g_NResponseFaces GAME_GLOBAL(int, g_NResponseFaces, 0x4b11dc)
+#define FACES_TORTAS 64
+#define g_ResponseFaces (GAME_ARRAY(int[3], g_ResponseFaces, 0x4b11e0))	/* [FACES_TORTAS] */
 
 /* the box sides a point is outside of: 1 x > max, 2 x < min, 4 and 8 for y, 0x10 and 0x20 for z */
 static byte Box_OutCode(const vec3_t *mn, const vec3_t *mx, const vec3_t *p) {
@@ -51,7 +51,7 @@ static int BoxTri_Diagonal(float ds, float de, const vec3_t *s, const vec3_t *e,
 	}
 	float t = ds / (ds - de);
 	vec3_t p = { (e->x - s->x) * t + s->x, (e->y - s->y) * t + s->y, (e->z - s->z) * t + s->z };
-	return Suelo_PointInTri(&p, &v[0], &v[1], &v[2]);
+	return Ground_PointInTri(&p, &v[0], &v[1], &v[2]);
 }
 
 byte BoxTri(const vec3_t *bmin, const vec3_t *bmax, const CCollideTri *tri, const vec3_t *verts) {
@@ -285,8 +285,8 @@ static int BBox_SkipQuad(const CCollideQuad *q, float loY, float hiY) {
 	return q->minY > hiY || loY > q->maxY || (q->gapTop > hiY && loY > q->gapBottom);
 }
 
-byte __thiscall CSuelo_CollideOBB(CSuelo *self, const matrix_t *m, const vec3_t *half, vec3_t *outPos, vec3_t *outN) {
-	CAlturas *alt = &self->alturas;
+byte __thiscall CGround_CollideOBB(CGround *self, const matrix_t *m, const vec3_t *half, vec3_t *outPos, vec3_t *outN) {
+	CHeights *alt = &self->heights;
 	vec3_t pos = { m->m[12], m->m[13], m->m[14] };
 	float r = (float)__builtin_sqrt((double)(half->x * half->x + half->y * half->y + half->z * half->z));
 	vec3_t neg = { -half->x, -half->y, -half->z };
@@ -307,14 +307,14 @@ byte __thiscall CSuelo_CollideOBB(CSuelo *self, const matrix_t *m, const vec3_t 
 	if (x1 < x0) {
 		return 0;
 	}
-	CSuelo_NewQuery(self);
+	CGround_NewQuery(self);
 	bestDist = BBOX_FLT_MAX;
 	for (int z = z0; z <= z1; z++) {
 		for (int x = x0; x <= x1; x++) {
-			CCollideQuad *q = Alturas_Cell(alt, x, z);
+			CCollideQuad *q = Heights_Cell(alt, x, z);
 			CHECK(q);
 			for (; q; q = q->next) {
-				if (q->Mesh->flags & TRI_ALT_NO_COLISIONES) {
+				if (q->Mesh->flags & TRI_ALT_NO_COLLISIONS) {
 					continue;
 				}
 				CHECK(loY <= hiY);
@@ -324,7 +324,7 @@ byte __thiscall CSuelo_CollideOBB(CSuelo *self, const matrix_t *m, const vec3_t 
 				for (int k = 0; k < q->nTri; k++) {
 					CCollideMesh *mesh = q->Mesh;
 					CCollideTri *tri = &mesh->pTri[q->pTri[k]];
-					if ((tri->flags & TRI_ALT_NO_COLISIONES) || !CCollideTri_Mark(tri)) {
+					if ((tri->flags & TRI_ALT_NO_COLLISIONS) || !CCollideTri_Mark(tri)) {
 						continue;
 					}
 					vec3_t v[3] = { mesh->pVert[tri->v[0]], mesh->pVert[tri->v[1]], mesh->pVert[tri->v[2]] };
@@ -362,17 +362,17 @@ byte __thiscall CSuelo_CollideOBB(CSuelo *self, const matrix_t *m, const vec3_t 
 
 /* with colis->calc_respuesta (a fatal CHECK) the original also collects the contact points and faces of the box
  * into a response; that code can not run and is left out */
-byte __thiscall CSuelo_CheckBBox(CSuelo *self, CColisBBox *colis) {
-	CAlturas *alt = &self->alturas;
+byte __thiscall CGround_CheckBBox(CGround *self, CCollisionBBox *collision) {
+	CHeights *alt = &self->heights;
 
-	CHECK(colis);
+	CHECK(collision);
 	g_NTortas = 0;
-	g_NCarasTortas = 0;
-	CHECK((uint32_t)(colis->usar_minmax - 1) < 2);
-	const vec3_t *bmn = colis->usar_minmax == 1 ? &colis->min : &colis->min2;
-	const vec3_t *bmx = colis->usar_minmax == 1 ? &colis->max : &colis->max2;
-	vec3_t lo = { bmn->x + colis->pos.x, colis->pos.y + bmn->y, colis->pos.z + bmn->z };
-	vec3_t hi = { bmx->x + colis->pos.x, colis->pos.y + bmx->y, colis->pos.z + bmx->z };
+	g_NResponseFaces = 0;
+	CHECK((uint32_t)(collision->use_minmax - 1) < 2);
+	const vec3_t *bmn = collision->use_minmax == 1 ? &collision->min : &collision->min2;
+	const vec3_t *bmx = collision->use_minmax == 1 ? &collision->max : &collision->max2;
+	vec3_t lo = { bmn->x + collision->pos.x, collision->pos.y + bmn->y, collision->pos.z + bmn->z };
+	vec3_t hi = { bmx->x + collision->pos.x, collision->pos.y + bmx->y, collision->pos.z + bmx->z };
 	int x0 = Int_Max0((int)((lo.x - alt->ext.min.x) * alt->invX));
 	int z0 = Int_Max0((int)((lo.z - alt->ext.min.z) * alt->invZ));
 	int x1 = Int_MinLast((int)((hi.x - alt->ext.min.x) * alt->invX), alt->nx);
@@ -380,14 +380,14 @@ byte __thiscall CSuelo_CheckBBox(CSuelo *self, CColisBBox *colis) {
 	if (x1 < x0) {
 		return 0;
 	}
-	CSuelo_NewQuery(self);
-	CHECK(!colis->calc_respuesta);
+	CGround_NewQuery(self);
+	CHECK(!collision->calc_response);
 	for (int z = z0; z <= z1; z++) {
 		for (int x = x0; x <= x1; x++) {
-			CCollideQuad *q = Alturas_Cell(alt, x, z);
+			CCollideQuad *q = Heights_Cell(alt, x, z);
 			CHECK(q);
 			for (; q; q = q->next) {
-				if (q->Mesh->flags & TRI_ALT_NO_COLISIONES) {
+				if (q->Mesh->flags & TRI_ALT_NO_COLLISIONS) {
 					continue;
 				}
 				CHECK(lo.y <= hi.y);
@@ -396,7 +396,7 @@ byte __thiscall CSuelo_CheckBBox(CSuelo *self, CColisBBox *colis) {
 				}
 				for (int k = 0; k < q->nTri; k++) {
 					CCollideTri *tri = &q->Mesh->pTri[q->pTri[k]];
-					if (!CCollideTri_Mark(tri) || (tri->flags & TRI_ALT_NO_COLISIONES)) {
+					if (!CCollideTri_Mark(tri) || (tri->flags & TRI_ALT_NO_COLLISIONS)) {
 						continue;
 					}
 					if (BoxTri(&lo, &hi, tri, q->Mesh->pVert)) {
@@ -410,10 +410,10 @@ byte __thiscall CSuelo_CheckBBox(CSuelo *self, CColisBBox *colis) {
 }
 
 /* the static initializer (rva 0x05d940): the faces of the response cleared */
-void CheckBBox_InitCarasTortas(void) {
-	for (int i = 0; i < CARAS_TORTAS; i++) {
-		g_CarasTortas[i][0] = 0;
-		g_CarasTortas[i][1] = 0;
-		g_CarasTortas[i][2] = 0;
+void CheckBBox_InitResponseFaces(void) {
+	for (int i = 0; i < FACES_TORTAS; i++) {
+		g_ResponseFaces[i][0] = 0;
+		g_ResponseFaces[i][1] = 0;
+		g_ResponseFaces[i][2] = 0;
 	}
 }

@@ -52,7 +52,7 @@ typedef void *(__stdcall *direct3dcreate8_t)(uint32_t sdk);
 
 /* the world node info */
 
-void WorldInfo_FromDummy(WorldNodeInfo *info, const MundoDummy *dummy) {
+void WorldInfo_FromDummy(WorldNodeInfo *info, const WorldDummy *dummy) {
 	matrix_t m;
 
 	if (!info || !dummy) {
@@ -70,7 +70,7 @@ void WorldInfo_FromDummy(WorldNodeInfo *info, const MundoDummy *dummy) {
 	info->dummy = 1;
 }
 
-void WorldInfo_FromNode(WorldNodeInfo *info, CNodo3D *node) {
+void WorldInfo_FromNode(WorldNodeInfo *info, CNode3D *node) {
 	if (!info || !node) {
 		return;
 	}
@@ -82,18 +82,18 @@ void WorldInfo_FromNode(WorldNodeInfo *info, CNodo3D *node) {
 	info->pos.x = info->m.m[12];
 	info->pos.y = info->m.m[13];
 	info->pos.z = info->m.m[14];
-	info->dummy = CNodo3D_Clase(node) == 0;
+	info->dummy = CNode3D_Class(node) == 0;
 }
 
 box_t *World_GetBox(box_t *out) {
-	*out = Mundo_Get()->EscSuelo->box;
+	*out = World_Get()->GroundScale->box;
 	return out;
 }
 
 box_t *World_GetCollideBox(box_t *out) {
 	box_t box;
 
-	CSuelo_GetCollideExt(Mundo_Suelo(), &box);
+	CGround_GetCollideExt(World_Ground(), &box);
 	*out = box;
 	return out;
 }
@@ -105,7 +105,7 @@ byte Sector_Visible(int sector) {
 void WorldInfo_Begin(const char *pattern, byte wild) {
 	g_WorldInfoNode = NULL;
 	g_WorldInfoDummy = NULL;
-	Str_Copy(g_WorldInfoPattern, pattern ? pattern : "", MAX_RUTA);
+	Str_Copy(g_WorldInfoPattern, pattern ? pattern : "", MAX_FILEPATH);
 	if (wild) {
 		crt_strlwr(g_WorldInfoPattern);
 	}
@@ -127,7 +127,7 @@ byte WorldInfo_HasUserProp(void) {
 	return g_WorldInfoDummy->ini != NULL;
 }
 
-static CArchINI *WorldInfo_UserProp(void) {
+static CIniFile *WorldInfo_UserProp(void) {
 	if (!g_WorldInfoDummy || !g_WorldInfoDummy->ini) {
 		CheckFailed("DummyInfo && DummyInfo->UserProp", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -135,23 +135,23 @@ static CArchINI *WorldInfo_UserProp(void) {
 }
 
 byte WorldInfo_GetBool(const char *sect, const char *key, byte def) {
-	return CArchINI_GetBool(WorldInfo_UserProp(), sect, key, def);
+	return CIniFile_GetBool(WorldInfo_UserProp(), sect, key, def);
 }
 
 float WorldInfo_GetFloat(const char *sect, const char *key, float def) {
-	return CArchINI_GetFloat(WorldInfo_UserProp(), sect, key, def);
+	return CIniFile_GetFloat(WorldInfo_UserProp(), sect, key, def);
 }
 
 int WorldInfo_GetInt(const char *sect, const char *key, int def) {
-	return CArchINI_GetInt(WorldInfo_UserProp(), sect, key, def);
+	return CIniFile_GetInt(WorldInfo_UserProp(), sect, key, def);
 }
 
 char *WorldInfo_GetText(const char *sect, const char *key, char *dest, int size, const char *def) {
-	return CArchINI_GetText(WorldInfo_UserProp(), sect, key, dest, size, def);
+	return CIniFile_GetText(WorldInfo_UserProp(), sect, key, dest, size, def);
 }
 
 vec3_t *WorldInfo_GetVec3(vec3_t *out, const char *sect, const char *key, const vec3_t *def) {
-	CArchINI_GetVec3(WorldInfo_UserProp(), out, sect, key, def);
+	CIniFile_GetVec3(WorldInfo_UserProp(), out, sect, key, def);
 	return out;
 }
 
@@ -175,14 +175,14 @@ matrix_t *Matrix_LoadIdentity(matrix_t *m) {
 void WorldInfo_Reset(void) {
 	g_WorldInfoNode = NULL;
 	g_WorldInfoDummy = NULL;
-	Str_Copy(g_WorldInfoPattern, "", MAX_RUTA);
+	Str_Copy(g_WorldInfoPattern, "", MAX_FILEPATH);
 	g_WorldInfoWild = 0;
 	CHECK(g_CountSprite2D == 0);
 }
 
 /* whether name passes the pattern of the walk */
 static byte WorldInfo_Match(const char *name) {
-	char low[MAX_RUTA];
+	char low[MAX_FILEPATH];
 
 	if (!g_WorldInfoPattern[0]) {
 		return 1;
@@ -197,7 +197,7 @@ static byte WorldInfo_Match(const char *name) {
 
 byte WorldInfo_NextDummy(WorldNodeInfo *info) {
 	do {
-		g_WorldInfoDummy = g_WorldInfoDummy ? g_WorldInfoDummy->next : Mundo_Get()->dummies;
+		g_WorldInfoDummy = g_WorldInfoDummy ? g_WorldInfoDummy->next : World_Get()->dummies;
 		if (!g_WorldInfoDummy) {
 			return 0;
 		}
@@ -208,8 +208,8 @@ byte WorldInfo_NextDummy(WorldNodeInfo *info) {
 
 byte WorldInfo_NextNode(WorldNodeInfo *info) {
 	do {
-		CMundo *mundo = Mundo_Get();
-		g_WorldInfoNode = CMundo_FindClase(mundo, g_WorldInfoNode, 0);
+		CWorld *world = World_Get();
+		g_WorldInfoNode = CWorld_FindClass(world, g_WorldInfoNode, 0);
 		if (!g_WorldInfoNode) {
 			return 0;
 		}
@@ -218,7 +218,7 @@ byte WorldInfo_NextNode(WorldNodeInfo *info) {
 	return 1;
 }
 
-box_t *__thiscall CSuelo_GetCollideExt(const CSuelo *self, box_t *out) {
+box_t *__thiscall CGround_GetCollideExt(const CGround *self, box_t *out) {
 	*out = self->CollideExt;
 	return out;
 }
@@ -266,9 +266,9 @@ int RenderMode(int mode, int value, byte set) {
 		return g_TexFilter;
 	case RENDERMODE_SHADOWS:
 		if (set) {
-			SombrasStencil_Set(g_SombrasStencil == 0);
+			ShadowsStencil_Set(g_ShadowsStencil == 0);
 		}
-		return g_SombrasStencil;
+		return g_ShadowsStencil;
 	default:
 		Con_Warnf("%sRenderMode(): Invalid RenderMode\n", set ? "Set" : "Get");
 		return 0;
@@ -276,7 +276,7 @@ int RenderMode(int mode, int value, byte set) {
 }
 
 void File_FreeIndex(const char *fmt, int *n) {
-	char name[MAX_RUTA];
+	char name[MAX_FILEPATH];
 
 	for (int i = 0; i < 100; i++) {
 		*n = i;
@@ -420,7 +420,7 @@ static uint32_t Splash_Color(int c) {
 }
 
 void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
-	char path[MAX_RUTA];
+	char path[MAX_FILEPATH];
 	void *tex, *data;
 	uint32_t size;
 
@@ -440,8 +440,8 @@ void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 	}
 	E3D_LogPrint(g_FileLog, "SplashScreen: %s", path);
 	tex = NULL;
-	ArchIO_ReadAll(path, &data, &size);
-	D3DX_CreateTextureFromFileInMemoryEx(g_MotorDev, data, size, 0, 0, 1, 0, 0, D3DPOOL_MANAGED, 1, 1, 0, NULL, NULL,
+	FileIO_ReadAll(path, &data, &size);
+	D3DX_CreateTextureFromFileInMemoryEx(g_EngineDev, data, size, 0, 0, 1, 0, 0, D3DPOOL_MANAGED, 1, 1, 0, NULL, NULL,
 		&tex);
 	Ptr_Delete(&data);
 	const box_t rect = { { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 0.0f } };
@@ -501,10 +501,10 @@ void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 }
 
 void Splash_Draw(const box_t *rect, uint32_t color, void *tex) {
-	D3D_METHOD(g_MotorDev, d3dScene_t, D3DDEV_BEGINSCENE)(g_MotorDev);
+	D3D_METHOD(g_EngineDev, d3dScene_t, D3DDEV_BEGINSCENE)(g_EngineDev);
 	Render_DrawTexRect(rect, color, color, tex);
-	D3D_METHOD(g_MotorDev, d3dScene_t, D3DDEV_ENDSCENE)(g_MotorDev);
-	D3D_METHOD(g_MotorDev, d3dPresent_t, D3DDEV_PRESENT)(g_MotorDev, NULL, NULL, NULL, NULL);
+	D3D_METHOD(g_EngineDev, d3dScene_t, D3DDEV_ENDSCENE)(g_EngineDev);
+	D3D_METHOD(g_EngineDev, d3dPresent_t, D3DDEV_PRESENT)(g_EngineDev, NULL, NULL, NULL, NULL);
 }
 
 void Splash_Reset(void) {
@@ -553,28 +553,28 @@ void Loading_Step(int percent) {
 			return;
 		}
 	}
-	byte *motor = g_Motor;
-	int x0 = (int)MOTOR_MODE(motor)[6] * 0x74 / 0x500;
-	if (!MOTOR_DEV(motor) || !g_D3DOn) {
+	byte *engine = g_Engine;
+	int x0 = (int)ENGINE_MODE(engine)[6] * 0x74 / 0x500;
+	if (!ENGINE_DEV(engine) || !g_D3DOn) {
 		return;
 	}
 	float p = (float)percent / 100.0f;
-	int w = (int)MOTOR_MODE(motor)[6];
+	int w = (int)ENGINE_MODE(engine)[6];
 	float fw = (float)w;
 	r.min.x = (float)x0 / fw;
 	r.max.x = (float)(((w * 0x48c + 0x280) / 0x500 - x0) * percent / 100 + x0) / fw;
-	int h = (int)MOTOR_MODE(motor)[7];
+	int h = (int)ENGINE_MODE(engine)[7];
 	r.min.y = (float)(h * 0x398 / 1024) / (float)h;
 	r.min.z = 0.0f;
 	r.max.y = 0.90478515625f;	/* 0x3f67a000 */
 	r.max.z = 0.0f;
-	D3D_METHOD(MOTOR_DEV(motor), d3dScene_t, D3DDEV_BEGINSCENE)(MOTOR_DEV(motor));
+	D3D_METHOD(ENGINE_DEV(engine), d3dScene_t, D3DDEV_BEGINSCENE)(ENGINE_DEV(engine));
 	float q = 1.0f - p;
 	int green = (int)(q * 200.0f + p * 255.0f);
 	int red = (int)(q * 255.0f + p * 200.0f);
 	Render_DrawTexRect(&r, 0xffc800, ((uint32_t)red << 8 | (uint32_t)green) << 8, NULL);
-	D3D_METHOD(g_MotorDev, d3dScene_t, D3DDEV_ENDSCENE)(g_MotorDev);
-	D3D_METHOD(g_MotorDev, d3dPresent_t, D3DDEV_PRESENT)(g_MotorDev, NULL, NULL, NULL, NULL);
+	D3D_METHOD(g_EngineDev, d3dScene_t, D3DDEV_ENDSCENE)(g_EngineDev);
+	D3D_METHOD(g_EngineDev, d3dPresent_t, D3DDEV_PRESENT)(g_EngineDev, NULL, NULL, NULL, NULL);
 }
 
 void Loading_DrawBack(void) {

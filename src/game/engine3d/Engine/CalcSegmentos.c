@@ -10,27 +10,27 @@
 #include "scrap/varios.h"
 
 /* an edge: the triangles on both sides (0xffff for none) and its original vertices */
-typedef struct MallaSeg {
+typedef struct MeshSeg {
 	uint16_t tri[2];		/* 0x0 */
 	uint16_t v[2];			/* 0x4 */
-} MallaSeg;
-SD_SIZE(MallaSeg, 0x8);
+} MeshSeg;
+SD_SIZE(MeshSeg, 0x8);
 
 /* the plane of a triangle */
-typedef struct MallaTriSeg {
+typedef struct TriMeshSeg {
 	float d;			/* 0x0 */
 	vec3_t n;			/* 0x4 */
-} MallaTriSeg;
-SD_SIZE(MallaTriSeg, 0x10);
+} TriMeshSeg;
+SD_SIZE(TriMeshSeg, 0x10);
 
-/* the triangle accessor of MallaD3D.h */
-static uint16_t *MallaD3D_Tri(CMallaD3D *m, uint32_t i) {
+/* the triangle accessor of MeshD3D.h */
+static uint16_t *MeshD3D_Tri(CMeshD3D *m, uint32_t i) {
 	CHECK((uint32_t)i < (uint32_t)m->nTri);
 	CHECK(m->pTri);
 	return m->pTri[i];
 }
 
-void __thiscall CMallaD3D_CalcSegmentos(CMallaD3D *self, byte all) {
+void __thiscall CMeshD3D_CalcSegments(CMeshD3D *self, byte all) {
 	CHECK(self->vertOrig);
 	CHECK(!self->p40);
 	CHECK(!self->pSeg);
@@ -38,32 +38,32 @@ void __thiscall CMallaD3D_CalcSegmentos(CMallaD3D *self, byte all) {
 	int numTri = (int)self->nTri;
 	if (all) {
 		self->triBase = 0;
-		for (CMallaD3D *m = self->next; m; m = m->next) {
+		for (CMeshD3D *m = self->next; m; m = m->next) {
 			m->triBase = numTri;
 			numTri += (int)m->nTri;
 		}
 	}
-	MallaSeg *segs = New_Array((uint32_t)numTri * 3, sizeof(MallaSeg));
+	MeshSeg *segs = New_Array((uint32_t)numTri * 3, sizeof(MeshSeg));
 	uint16_t *segv3 = New_Array((uint32_t)numTri * 3, sizeof(uint16_t));
-	MallaTriSeg *triSeg = New_Array((uint32_t)numTri, sizeof(MallaTriSeg));
+	TriMeshSeg *triSeg = New_Array((uint32_t)numTri, sizeof(TriMeshSeg));
 	self->pSeg = triSeg;
 	self->nSeg = (uint32_t)numTri;
-	int numSeg = 0, grupo = 0;
-	CMallaD3D *m = self;
+	int numSeg = 0, group = 0;
+	CMeshD3D *m = self;
 	for (;;) {
 		int nVert = m->vert.nVert;
 		int n = (int)m->nTri;
-		CHECK(grupo == m->triBase);
+		CHECK(group == m->triBase);
 		for (int i = 0; i < n; i++) {
-			uint16_t *tri = MallaD3D_Tri(m, i);
+			uint16_t *tri = MeshD3D_Tri(m, i);
 			if (self->pSeg) {
 				vec3_t nrm, p;
-				CMallaD3D_TriNormal(m, &nrm, i);
-				CHECK(i + grupo < numTri);
-				MallaTriSeg *ts = &((MallaTriSeg *)self->pSeg)[grupo + i];
+				CMeshD3D_TriNormal(m, &nrm, i);
+				CHECK(i + group < numTri);
+				TriMeshSeg *ts = &((TriMeshSeg *)self->pSeg)[group + i];
 				ts->n = nrm;
-				const vec3_t *v = CListaVert_GetPos(&m->vert, &p, tri[0]);
-				((MallaTriSeg *)self->pSeg)[grupo + i].d = -(v->x * nrm.x + v->y * nrm.y + v->z * nrm.z);
+				const vec3_t *v = CVertList_GetPos(&m->vert, &p, tri[0]);
+				((TriMeshSeg *)self->pSeg)[group + i].d = -(v->x * nrm.x + v->y * nrm.y + v->z * nrm.z);
 			}
 			if (tri[0] == tri[1] || tri[1] == tri[2] || tri[2] == tri[0]) {
 				continue;
@@ -82,21 +82,21 @@ void __thiscall CMallaD3D_CalcSegmentos(CMallaD3D *self, byte all) {
 				}
 				if (s == numSeg) {
 					CHECK(numSeg < numTri * 3);
-					segs[numSeg].tri[0] = (uint16_t)(i + grupo);
+					segs[numSeg].tri[0] = (uint16_t)(i + group);
 					segs[numSeg].tri[1] = 0xffff;
 					segs[numSeg].v[0] = a1;
 					segs[numSeg].v[1] = a2;
 					segv3[numSeg] = a3;
 					numSeg++;
 				} else if (segs[s].tri[1] == 0xffff) {
-					segs[s].tri[1] = (uint16_t)(i + grupo);
+					segs[s].tri[1] = (uint16_t)(i + group);
 				} else {
 					E3D_LogBlue(g_FileLog, "WARN: calcular_segmentos(): lado con > 2 tris [Mat: %s]",
-						m->mat->Nombre);
+						m->mat->Name);
 				}
 			}
 		}
-		grupo += n;
+		group += n;
 		if (!all) {
 			break;
 		}
@@ -109,14 +109,14 @@ void __thiscall CMallaD3D_CalcSegmentos(CMallaD3D *self, byte all) {
 	if (segv3) {
 		operator_delete_sized(segv3, sizeof(uint16_t));
 	}
-	MallaSeg *out = New_Array((uint32_t)numSeg + 1, sizeof(MallaSeg));
-	memcpy(out, segs, (uint32_t)numSeg * sizeof(MallaSeg));
+	MeshSeg *out = New_Array((uint32_t)numSeg + 1, sizeof(MeshSeg));
+	memcpy(out, segs, (uint32_t)numSeg * sizeof(MeshSeg));
 	out[numSeg].tri[0] = out[numSeg].tri[1] = 0xffff;
 	out[numSeg].v[0] = out[numSeg].v[1] = 0;
 	if (segs) {
-		operator_delete_sized(segs, sizeof(MallaSeg));
+		operator_delete_sized(segs, sizeof(MeshSeg));
 	}
 	self->p40 = out;
 	self->n34 = (uint32_t)numSeg + 1;
-	E3D_LogWhite(g_FileLog, "INFO: Segmentos: %d [Mat: %s]", numSeg, self->mat->Nombre);
+	E3D_LogWhite(g_FileLog, "INFO: Segmentos: %d [Mat: %s]", numSeg, self->mat->Name);
 }

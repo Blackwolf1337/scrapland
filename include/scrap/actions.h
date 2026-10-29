@@ -109,7 +109,7 @@ struct cActClass {
 	cPy_Function possessionPress;	/* 0x1cc */
 	cPy_Function onCreate;		/* 0x1e0 */
 	cPy_Function onFreeResources;	/* 0x1f4 */
-	byte dinaShip;			/* 0x208 "DinaShip": the controller moves the parts of a ship */
+	byte dynShip;			/* 0x208 "DinaShip": the controller moves the parts of a ship */
 	byte pad_209[3];
 };
 SD_OFFSET(cActClass, defAction, 0x20);

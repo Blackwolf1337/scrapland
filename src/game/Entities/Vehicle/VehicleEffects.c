@@ -112,7 +112,7 @@ void __fastcall cVehicleTubes_Init(cVehicleTubes *self) {
 	}
 	for (int i = 0; i < VEFF_TUBES; i++) {
 		Str_PrintfQuiet(name, 0xff, "DF_EscapeTube_%02d", i + 1);
-		self->nodes[i] = CGameModel_FindNodoRWild(model, name);
+		self->nodes[i] = CGameModel_FindRenderNodeWild(model, name);
 		if (self->nodes[i] != -1) {
 			self->count++;
 			CGameParticles_Release(&self->particles[i]);
@@ -133,9 +133,9 @@ void __fastcall cVehicleTrails_Init(cVehicleTrails *self) {
 		return;
 	}
 	CHECK(CGameModel_IsLoaded(model));
-	int root = CGameModel_FindNodoR(model, "DC_Root");
+	int root = CGameModel_FindRenderNode(model, "DC_Root");
 	CHECK(root > -1);
-	self->root = *CGameModel_NodoPos(model, &pos, (uint32_t)root, 0);
+	self->root = *CGameModel_NodePos(model, &pos, (uint32_t)root, 0);
 	for (int i = 0; i < VEFF_TRAILS; i++) {
 		CGameTrail *t = &self->trails[i];
 		CGameTrail_SetMaxTrails(t, 0x14);
@@ -146,7 +146,7 @@ void __fastcall cVehicleTrails_Init(cVehicleTrails *self) {
 		CGameTrail_SetScale(t, 1.0f, 2.0f);
 		CGameTrail_Clear(t);
 		Str_PrintfQuiet(name, 0xff, "DF_SpeedTrail_%02d", i + 1);
-		self->nodes[i] = CGameModel_FindNodoRWild(model, name);
+		self->nodes[i] = CGameModel_FindRenderNodeWild(model, name);
 		if (self->nodes[i] != -1) {
 			self->count++;
 		}
@@ -162,7 +162,7 @@ void __fastcall cVehicleTrails_Init(cVehicleTrails *self) {
 static vec3_t *VE_TrailPoint(cVehicleTrails *self, CGameModel *model, int node, vec3_t *out) {
 	vec3_t tmp, n, rot, mp;
 
-	vec3_t *np = CGameModel_NodoPos(model, &tmp, (uint32_t)node, 0);
+	vec3_t *np = CGameModel_NodePos(model, &tmp, (uint32_t)node, 0);
 	n.x = (np->x - self->root.x) + 0.0f;
 	n.y = (np->y - self->root.y) + 0.0f;
 	n.z = (np->z - self->root.z) + 20.0f;
@@ -731,7 +731,7 @@ void __thiscall cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float 
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	}
-	cObjElementFXSistPart *el = Debris_Element(d);
+	cObjElementFXParticleSystem *el = Debris_Element(d);
 	if (!el->on) {
 		el->move = 0;
 		el->on = 1;
@@ -848,7 +848,7 @@ static void VS_NodePos(cVehicleEffects *self, CGameModel *model, int ammo, int s
 	int node = self->owner->weapons.nodes[ammo][slot];
 
 	CHECK(node > -1);
-	CGameModel_NodoPos(model, &np, (uint32_t)node, 0);
+	CGameModel_NodePos(model, &np, (uint32_t)node, 0);
 	vec3_t root = self->owner->embeddedFX->rootPos;
 	d->x = np.x - root.x;
 	d->y = np.y - root.y;
@@ -1256,9 +1256,9 @@ void __thiscall cVehicleEffects_Shoot(void *effects, int weap, int slot) {
 	}
 	CHECK(CGameModel_IsLoaded(model));
 	cEmbeddedFXVehicle *fx = self->owner->embeddedFX;
-	CHECK(fx->follow2.SistPart);
+	CHECK(fx->follow2.ParticleSystem);
 	CGameParticles *p = &fx->follow2;
-	if (!p->SistPart || weap == g_LaserIDWeap) {
+	if (!p->ParticleSystem || weap == g_LaserIDWeap) {
 		return;
 	}
 	if (weap == g_VulcanIDWeap) {

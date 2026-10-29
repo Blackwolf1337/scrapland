@@ -19,7 +19,7 @@ CEVA *__thiscall CEVA_ctor(CEVA *self) {
 CAnimVert *__fastcall CAnimVert_ctor(CAnimVert *self) {
 	self->nTr = 0;
 	self->Tr = NULL;
-	self->esc = 0.0f;
+	self->scale = 0.0f;
 	self->Tr2 = NULL;
 	return self;
 }
@@ -90,8 +90,8 @@ vec3_t *__thiscall CAnimVert_Frame(CAnimVert *self, uint32_t frame) {
 }
 
 /* a + (b - a) * t of compressed steps, times esc */
-static float AnimVert_Step(int a, int b, float t, float esc) {
-	return ((float)(b - a) * t + (float)a) * esc;
+static float AnimVert_Step(int a, int b, float t, float scale) {
+	return ((float)(b - a) * t + (float)a) * scale;
 }
 
 void __thiscall CAnimVert_GetPos(CAnimVert *self, uint32_t frame, float subframe, vec3_t *pos) {
@@ -105,7 +105,7 @@ void __thiscall CAnimVert_GetPos(CAnimVert *self, uint32_t frame, float subframe
 	}
 	if (!self->Tr) {
 		const int8_t *c = self->Tr2 + frame * 3;
-		float e = self->esc;
+		float e = self->scale;
 		if (frame < self->nTr - 1) {
 			pos->x = AnimVert_Step(c[0], c[3], subframe, e) + pos->x;
 			pos->y = AnimVert_Step(c[1], c[4], subframe, e) + pos->y;
@@ -135,14 +135,14 @@ void __thiscall CAnimVert_AddPos(CAnimVert *self, uint32_t frame1, uint32_t fram
 		const int8_t *a = self->Tr2 + frame1 * 3;
 		const int8_t *b = self->Tr2 + frame2 * 3;
 		for (int i = 0; i < 3; i++) {
-			pos[i] = AnimVert_Step(a[i], b[i], t, self->esc) + pos[i];
+			pos[i] = AnimVert_Step(a[i], b[i], t, self->scale) + pos[i];
 		}
 		return;
 	}
 	CHECK(frame1 < self->nTr);
 	const int8_t *a = self->Tr2 + frame1 * 3;
 	for (int i = 0; i < 3; i++) {
-		pos[i] = (float)a[i] * self->esc + pos[i];
+		pos[i] = (float)a[i] * self->scale + pos[i];
 	}
 }
 
@@ -157,7 +157,7 @@ void __thiscall CAnimVert_Scale(CAnimVert *self, float x, float y, float z) {
 	}
 	if (self->Tr2) {
 		CHECK(x == y && x == z);
-		self->esc = self->esc * x;
+		self->scale = self->scale * x;
 	}
 }
 
@@ -181,7 +181,7 @@ void __fastcall CAnimVert_Compress(CAnimVert *self) {
 			m = d;
 		}
 	}
-	self->esc = m / ANIMVERT_STEPS;
+	self->scale = m / ANIMVERT_STEPS;
 	CAnimVert_AllocTr2(self);
 	float k = ANIMVERT_STEPS / m;
 	for (uint32_t f = 0; f < self->nTr; f++) {
@@ -213,32 +213,32 @@ void __fastcall CAnimVert_Optimize(CAnimVert *self) {
 	}
 }
 
-void AnimVert_Read(CArchIO *f, CAnimVert **pAV) {
+void AnimVert_Read(CFileIO *f, CAnimVert **pAV) {
 	CHECK(*pAV);
 	CHECK(!(*pAV)->Tr && !(*pAV)->Tr2);
-	if (!CArchIO_ReadInt(f)) {
+	if (!CFileIO_ReadInt(f)) {
 		return;
 	}
 	CAnimVert *av = *pAV;
 	CHECK(!av->Tr);
 	CHECK(!av->Tr2);
-	av->nTr = CArchIO_ReadInt(f);
+	av->nTr = CFileIO_ReadInt(f);
 	CAnimVert_AllocTr2(av);
-	CArchIO_Read(f, &av->esc, sizeof(av->esc));
-	CArchIO_Read(f, av->Tr2, av->nTr * 3);
+	CFileIO_Read(f, &av->scale, sizeof(av->scale));
+	CFileIO_Read(f, av->Tr2, av->nTr * 3);
 }
 
-void AnimVert_Write(CArchIO *f, CAnimVert *av) {
+void AnimVert_Write(CFileIO *f, CAnimVert *av) {
 	if (!av->Tr && !av->Tr2) {
-		CArchIO_WriteInt(f, 0);
+		CFileIO_WriteInt(f, 0);
 		return;
 	}
-	CArchIO_WriteInt(f, 1);
+	CFileIO_WriteInt(f, 1);
 	CHECK(!av->Tr);
 	CHECK(av->Tr2);
-	CArchIO_Write(f, &av->nTr, sizeof(av->nTr));
-	CArchIO_Write(f, &av->esc, sizeof(av->esc));
-	CArchIO_Write(f, av->Tr2, av->nTr * 3);
+	CFileIO_Write(f, &av->nTr, sizeof(av->nTr));
+	CFileIO_Write(f, &av->scale, sizeof(av->scale));
+	CFileIO_Write(f, av->Tr2, av->nTr * 3);
 }
 
 void __fastcall CEVA_Free(CEVA *self) {
@@ -323,20 +323,20 @@ void __fastcall CEVA_Optimize(CEVA *self) {
 	}
 }
 
-void EVA_Read(CArchIO *f, int flag, CEVA **pEVA) {
+void EVA_Read(CFileIO *f, int flag, CEVA **pEVA) {
 	CHECK(pEVA);
 	CHECK(*pEVA == NULL);
 	if (!flag) {
 		return;
 	}
-	CArchIO_BeginBlock(f, "EVA");
-	CHECK(CArchIO_ReadInt(f) == 1);
+	CFileIO_BeginBlock(f, "EVA");
+	CHECK(CFileIO_ReadInt(f) == 1);
 	CEVA *eva = operator_new(sizeof(*eva));
 	if (eva) {
 		eva->nV = 0;
 		eva->AnimV = NULL;
 	}
-	CEVA_Alloc(eva, CArchIO_ReadInt(f));
+	CEVA_Alloc(eva, CFileIO_ReadInt(f));
 	for (uint32_t i = 0; i < eva->nV; i++) {
 		CAnimVert *av = CEVA_Get(eva, i);
 		AnimVert_Read(f, &av);
@@ -344,21 +344,21 @@ void EVA_Read(CArchIO *f, int flag, CEVA **pEVA) {
 	CHECK(eva->nV);
 	CHECK(CEVA_NumAnimated(eva));
 	*pEVA = eva;
-	CArchIO_Error(f, "EVA");
+	CFileIO_Error(f, "EVA");
 }
 
-void EVA_Write(CArchIO *f, int flag, CEVA *eva) {
+void EVA_Write(CFileIO *f, int flag, CEVA *eva) {
 	CHECK(!flag == !eva);
 	if (!flag) {
 		return;
 	}
-	CArchIO_BeginBlockWrite(f, "EVA");
-	CArchIO_WriteInt(f, 1);
-	CArchIO_WriteInt(f, eva->nV);
+	CFileIO_BeginBlockWrite(f, "EVA");
+	CFileIO_WriteInt(f, 1);
+	CFileIO_WriteInt(f, eva->nV);
 	for (uint32_t i = 0; i < eva->nV; i++) {
 		AnimVert_Write(f, CEVA_Get(eva, i));
 	}
 	CHECK(eva->nV);
 	CHECK(CEVA_NumAnimated(eva));
-	CArchIO_EndBlockWrite(f, "EVA");
+	CFileIO_EndBlockWrite(f, "EVA");
 }

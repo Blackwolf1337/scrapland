@@ -185,9 +185,9 @@
 		clear(SI_OBJ(obj)); \
 		DList_FreePool(SI_OBJ(obj), size); \
 	}
-#define FINI_TABLA(rva, fn, obj) \
+#define FINI_TABLE(rva, fn, obj) \
 	void fn(void) { \
-		Tabla_Free(SI_OBJ(obj)); \
+		Table_Free(SI_OBJ(obj)); \
 	}
 
 #include "StaticInit.inc"

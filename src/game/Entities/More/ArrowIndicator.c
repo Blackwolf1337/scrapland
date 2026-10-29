@@ -385,7 +385,7 @@ void __fastcall cArrowIndicator_PrevOpt(cArrowIndicator *self) {
 
 void __fastcall cArrowIndicator_ReleaseMission(cArrowIndicator *self) {
 	if (self->glow) {
-		if (self->glow->base.SistPart) {
+		if (self->glow->base.ParticleSystem) {
 			CGameParticles_Release(&self->glow->base);
 		}
 		cArrowGlow *g = self->glow;
@@ -442,7 +442,7 @@ void __thiscall cArrowIndicator_SetShown(cArrowIndicator *self, byte on) {
 }
 
 void __thiscall cArrowIndicator_LoadMission(cArrowIndicator *self, const char *name) {
-	if (self->glow && self->glow->base.SistPart) {
+	if (self->glow && self->glow->base.ParticleSystem) {
 		CGameParticles_Release(&self->glow->base);
 	}
 	self->missionOn = !cString_ICmpStr(g_MissionArrowOn, name);
@@ -483,7 +483,7 @@ void __thiscall cArrowIndicator_LoadModel(cArrowIndicator *self, CGameModel *mod
 	(void)self;
 	Str_PrintfQuiet(buf, sizeof(buf), "%s.M3D", name);
 	CGameModel_LoadName(model, buf);
-	CGameModel_SetPivotNodo(model, "DC_Root");
+	CGameModel_SetPivotNode(model, "DC_Root");
 	Str_PrintfQuiet(buf, sizeof(buf), "%s.anim.M3D", name);
 	int a = CGameModel_AddAnim(model, buf);
 	CGameModel_SetAnim(model, a, 0, 0);
@@ -516,7 +516,7 @@ void __thiscall cArrowIndicator_SetParent(cArrowIndicator *self, cEntity *parent
 }
 
 void __thiscall cArrowGlow_SetVisible(cArrowGlow *self, byte on) {
-	if (self->base.SistPart) {
+	if (self->base.ParticleSystem) {
 		CGameParticles_SetVisible(&self->base, on);
 	}
 }
@@ -547,7 +547,7 @@ void __thiscall cArrowGlow_Attach(cArrowGlow *self, CGameModel *model, const cha
 	crt_strncat(node, big, sizeof(node) - strlen(node) - 1);
 	crt_strncat(node, kind, sizeof(node) - strlen(node) - 1);
 	crt_strncat(node, "Mission_Glow", sizeof(node) - strlen(node) - 1);
-	int i = CGameModel_FindNodoR(model, node);
+	int i = CGameModel_FindRenderNode(model, node);
 	CHECK(i > -1);
 	CGameParticles_Attach(&self->base, model, (uint32_t)i);
 }

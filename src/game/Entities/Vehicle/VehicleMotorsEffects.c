@@ -24,7 +24,7 @@ static CGameParticles *VME_NewParticles(void) {
 /* the particle system of node of model with no emission */
 static void VME_StartParticles(CGameParticles *p, CGameModel *model, int node) {
 	CGameParticles_Attach(p, model, node);
-	CHECK(p->SistPart);
+	CHECK(p->ParticleSystem);
 	p->lifeTime = 0.0f;
 	p->birthRate = 0;
 	CGameParticles_Apply(p);
@@ -34,8 +34,8 @@ static void VME_StartParticles(CGameParticles *p, CGameModel *model, int node) {
 static vec3_t VME_NodeOffset(CGameModel *model, int ref, int node) {
 	vec3_t a, b, r;
 
-	vec3_t *pr = CGameModel_NodoPos(model, &a, ref, 0);
-	vec3_t *pn = CGameModel_NodoPos(model, &b, node, 0);
+	vec3_t *pr = CGameModel_NodePos(model, &a, ref, 0);
+	vec3_t *pn = CGameModel_NodePos(model, &b, node, 0);
 	r.x = pn->x - pr->x;
 	r.y = pn->y - pr->y;
 	r.z = pn->z - pr->z;
@@ -77,15 +77,15 @@ void __fastcall cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self) {
 		} else if (self->motor) {
 			Str_PrintfQuiet(buf, 0xff, "DF_MotorTrust");
 		}
-		n = CGameModel_FindNodoR(model, buf);
+		n = CGameModel_FindRenderNode(model, buf);
 		if (n == -1) {
 			if (self->motors && i == 0) {
 				Str_PrintfQuiet(buf, 0xff, "DF_MotorTrust");
-				n = CGameModel_FindNodoR(model, buf);
+				n = CGameModel_FindRenderNode(model, buf);
 			}
 			if (n == -1 && self->motor) {
 				Str_PrintfQuiet(buf, 0xff, "DF_MotorTrust_01");
-				n = CGameModel_FindNodoR(model, buf);
+				n = CGameModel_FindRenderNode(model, buf);
 			}
 		}
 		self->node[i][0] = n;
@@ -94,20 +94,20 @@ void __fastcall cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self) {
 		}
 		self->on = 1;
 		if (self->node[i][0] != -1) {
-			CHECK(!self->sistPart[i][0]);
-			self->sistPart[i][0] = VME_NewParticles();
-			VME_StartParticles(self->sistPart[i][0], model, self->node[i][0]);
+			CHECK(!self->particleSystem[i][0]);
+			self->particleSystem[i][0] = VME_NewParticles();
+			VME_StartParticles(self->particleSystem[i][0], model, self->node[i][0]);
 		}
 		n = -1;
 		if (self->motor) {
 			Str_PrintfQuiet(buf, 0xff, "DF_MotorTrust_02");
-			n = CGameModel_FindNodoR(model, buf);
+			n = CGameModel_FindRenderNode(model, buf);
 		}
 		self->node[i][1] = n;
 		if (n != -1) {
-			CHECK(!self->sistPart[i][1]);
-			self->sistPart[i][1] = VME_NewParticles();
-			VME_StartParticles(self->sistPart[i][1], model, self->node[i][1]);
+			CHECK(!self->particleSystem[i][1]);
+			self->particleSystem[i][1] = VME_NewParticles();
+			VME_StartParticles(self->particleSystem[i][1], model, self->node[i][1]);
 		}
 		CHECK(!self->trail[i]);
 		if (!noTrails) {
@@ -125,7 +125,7 @@ void __fastcall cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self) {
 		}
 		vec3_t pos;
 		if (self->motors) {
-			pos = VME_NodeOffset(model, CGameModel_FindNodoR(model, "DC_Root"), self->node[i][0]);
+			pos = VME_NodeOffset(model, CGameModel_FindRenderNode(model, "DC_Root"), self->node[i][0]);
 		} else {
 			if (!self->motor) {
 				continue;
@@ -135,15 +135,15 @@ void __fastcall cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self) {
 			if (mn == -1) {
 				continue;
 			}
-			vec3_t d1 = VME_NodeOffset(vm, CGameModel_FindNodoR(vm, "DC_Root"), mn);
+			vec3_t d1 = VME_NodeOffset(vm, CGameModel_FindRenderNode(vm, "DC_Root"), mn);
 			vec3_t rot, e, ang, r;
 			matrix_t m;
 			vec3_t *pr = CGameModel_GetRot(vm, &rot);
-			vec3_t *pe = Matrix_GetEuler(CGameModel_NodoMatrix(vm, &m, mn, 0, NULL, 0), &e);
+			vec3_t *pe = Matrix_GetEuler(CGameModel_NodeMatrix(vm, &m, mn, 0, NULL, 0), &e);
 			ang.y = pe->y - pr->y;
 			ang.z = pe->z - pr->z;
 			ang.x = pe->x - pr->x;
-			vec3_t d2 = VME_NodeOffset(model, CGameModel_FindNodoR(model, "DC_Ship_Link"), self->node[i][0]);
+			vec3_t d2 = VME_NodeOffset(model, CGameModel_FindRenderNode(model, "DC_Ship_Link"), self->node[i][0]);
 			vec3_t *pv = Vec3_Rotate(&r, &d2, &ang);
 			pos.x = pv->x + d1.x;
 			pos.y = pv->y + d1.y;
@@ -167,7 +167,7 @@ float Rand_FloatRange(float lo, float hi) {
 	return (float)((double)(crt_rand() & 0x7fff) * g_RandScale * (double)d + (double)lo);
 }
 
-void __stdcall VMEffects_SetupCalima(float thrust, float speed, vec3_t *pos, int n, CGameParticles *ps) {
+void __stdcall VMEffects_SetupHaze(float thrust, float speed, vec3_t *pos, int n, CGameParticles *ps) {
 	float t = Float_MaxSS(0.3f, thrust);
 
 	ps->birthRate = (int)(t * 26.0f) * n;
@@ -191,7 +191,7 @@ void __stdcall VMEffects_SetupCalima(float thrust, float speed, vec3_t *pos, int
 	ps->colorEnd = 0xffffff;
 	ps->sizeEnd = (speed * 1.5f + t) * 140.0f + 210.0f;
 	CGameParticles_SetColorRampOn(ps, 0);
-	CGameParticles_SetColorRamp(ps, GAME_PTR(VMEffects_SetupCalima_3b57d8, 0, 0x3b57d8));
+	CGameParticles_SetColorRamp(ps, GAME_PTR(VMEffects_SetupHaze_3b57d8, 0, 0x3b57d8));
 	ps->spriteIni = 1;
 	ps->spriteEnd = 1;
 	float rot = (float)VME_Rand(0x1.921fb6p+2, 0.0);
@@ -377,10 +377,10 @@ void __thiscall cVehicleMotorsEffects_SetVisible(cVehicleMotorsEffects *self, by
 			continue;
 		}
 		for (j = 0; j < 2; j++) {
-			CGameParticles *p = self->sistPart[i][j];
-			if (p && p->SistPart) {
+			CGameParticles *p = self->particleSystem[i][j];
+			if (p && p->ParticleSystem) {
 				CGameParticles_SetEnabled(p, on);
-				CGameParticles_SetVisible(self->sistPart[i][j], on);
+				CGameParticles_SetVisible(self->particleSystem[i][j], on);
 			}
 		}
 	}
@@ -392,7 +392,7 @@ void __thiscall cVehicleMotorsEffects_Smoke(cVehicleMotorsEffects *self, float d
 	int j;
 
 	CHECK(self->owner);
-	CHECK(ps && ps->SistPart);
+	CHECK(ps && ps->ParticleSystem);
 	float t = dt + self->smokeTime;
 	self->smokeTime = t;
 	if (0.015f > t) {
@@ -1728,8 +1728,8 @@ void __thiscall cVehicleMotorsEffects_Exhaust(cVehicleMotorsEffects *self, float
 		if (x.model && !CGameModel_IsEnabled(x.model)) {
 			continue;
 		}
-		x.ps = self->sistPart[i][0];
-		x.ps2 = self->sistPart[i][1];
+		x.ps = self->particleSystem[i][0];
+		x.ps2 = self->particleSystem[i][1];
 		if (!x.ps) {
 			continue;
 		}

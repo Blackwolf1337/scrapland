@@ -102,7 +102,7 @@ void __fastcall cActCtrl_InitModel(cActCtrl *self) {
 void __thiscall cActCtrl_Update(cActCtrl *self, float dt) {
 	CGameModel *m = Ctrl_Model(self);
 	vec3_t move;
-	int saltos;
+	int jumps;
 
 	for (int k = 0; k < ACT_LAYERS; k++) {
 		cActLayer *l = &self->layers[k];
@@ -114,7 +114,7 @@ void __thiscall cActCtrl_Update(cActCtrl *self, float dt) {
 			(1.0f - self->walkSpeed) * a->minSpeed + a->maxSpeed * self->walkSpeed);
 		CGameModel_SetAnimLoop(m, Action_Anim(l->action), a->isLoop);
 	}
-	CGameModel_RootMotion(m, dt, &move, &saltos);
+	CGameModel_RootMotion(m, dt, &move, &jumps);
 	for (int k = 0; k < ACT_LAYERS; k++) {
 		cActLayer *l = &self->layers[k];
 		if (!l->on) {
@@ -122,7 +122,7 @@ void __thiscall cActCtrl_Update(cActCtrl *self, float dt) {
 		}
 		cAction *a = l->action;
 		CGameModel_ChanTime(m, k, &l->time);
-		if (a->isLoop && saltos > 0) {
+		if (a->isLoop && jumps > 0) {
 			/* the loop went round: the rest of its events, then from the first one again */
 			cActCtrl_FireEvents(self, k, Layer_End(l), 0);
 			a = l->action;
@@ -325,7 +325,7 @@ void __thiscall cActCtrl_TurnHead(void *ctrl, const float *ang, float dt) {
 			v.x = r0->x + turn.x;
 			CGameModel_SetRot(Ctrl_Model(self), &v);
 		} else {
-			CGameModel_NodoLook(Ctrl_Model(self), node, 5, &turn);
+			CGameModel_NodeLook(Ctrl_Model(self), node, 5, &turn);
 		}
 	}
 }
@@ -479,7 +479,7 @@ void __thiscall cActCtrl_UpdateShip(cActCtrl *self, float dt) {
 }
 
 void __thiscall cActCtrl_Tick(cActCtrl *self, float dt) {
-	if (self->cls->dinaShip) {
+	if (self->cls->dynShip) {
 		cActCtrl_UpdateShip(self, dt);
 	} else {
 		cActCtrl_Update(self, dt);

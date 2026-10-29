@@ -16,16 +16,16 @@ CLensFlare *__fastcall CLensFlare_ctor(CLensFlare *self) {
 	self->hit = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->on = 0;
-	self->IndiceRender = -1;
+	self->RenderIndex = -1;
 	self->intens = 1.0f;
-	self->escala = 1.0f;
-	self->margen = 0.2f;
-	self->tipo = 0;
+	self->scale = 1.0f;
+	self->margin = 0.2f;
+	self->type = 0;
 	self->traceInterval = 0.0f;
 	self->traceTimer = 0.0f;
 	self->transp = 1.0f;
 	self->visible = 0;
-	self->relativo = 0;
+	self->relative = 0;
 	self->lastTime = 0;
 	return self;
 }
@@ -41,27 +41,27 @@ void LensFlare_Update(CLensFlare *lf) {
 	if (!lf) {
 		return;
 	}
-	int indice = lf->IndiceRender;
+	int index = lf->RenderIndex;
 	if (lf->on) {
-		if (indice == -1 && g_nLensFlareRender < MAX_LENSFLARE_RENDER) {
+		if (index == -1 && g_nLensFlareRender < MAX_LENSFLARE_RENDER) {
 			g_LensFlareRender[g_nLensFlareRender] = lf;
-			lf->IndiceRender = g_nLensFlareRender;
+			lf->RenderIndex = g_nLensFlareRender;
 			g_nLensFlareRender++;
 		}
 		return;
 	}
-	if (indice == -1) {
+	if (index == -1) {
 		return;
 	}
-	CHECK(indice < MAX_LENSFLARE_RENDER);
+	CHECK(index < MAX_LENSFLARE_RENDER);
 	CHECK(g_nLensFlareRender <= MAX_LENSFLARE_RENDER);
-	CHECK(g_LensFlareRender[indice] == lf);
+	CHECK(g_LensFlareRender[index] == lf);
 	/* the last one of the list takes its place */
 	CLensFlare *last = g_LensFlareRender[g_nLensFlareRender - 1];
 	g_nLensFlareRender--;
-	g_LensFlareRender[indice] = last;
-	last->IndiceRender = indice;
-	lf->IndiceRender = -1;
+	g_LensFlareRender[index] = last;
+	last->RenderIndex = index;
+	lf->RenderIndex = -1;
 }
 
 void __thiscall CLensFlare_SetOn(CLensFlare *self, byte on) {
@@ -100,15 +100,15 @@ int LensFlare_Init(void) {
 	CMaterial m;
 
 	CMaterial_ctor(&m);
-	CMaterial_SetMap(&m, MAPA_DIFFUSE, "BMP/LensFlare.bmp");
+	CMaterial_SetMap(&m, MAP_DIFFUSE, "BMP/LensFlare.bmp");
 	m.params.b39 = 0;
 	m.params.transp = 1;
 	m.params.srcBlend = 5;
 	m.params.dstBlend = 2;
 	((byte *)&m.params.w3e)[1] = 0;
 	m.params.i40 = 2;
-	m.mapa[MAPA_DIFFUSE]->b8 = 0;
-	CMaterial_Prepare(&m, MOTOR_DEV(g_Motor));
+	m.map[MAP_DIFFUSE]->b8 = 0;
+	CMaterial_Prepare(&m, ENGINE_DEV(g_Engine));
 	g_LensFlareMat = Mat_New(&m, 1);
 	CMaterial_GetMultiSprite(g_LensFlareMat, 0);
 	CMaterial_dtor(&m);
@@ -122,7 +122,7 @@ int LensFlare_InitList(void) {
 }
 
 void LensFlare_RenderAll(void) {
-	void *dev = MOTOR_DEV(g_Motor);
+	void *dev = ENGINE_DEV(g_Engine);
 	matrix_t view, proj;
 
 	if (!g_LensFlares || g_nLensFlareRender <= 0) {
@@ -137,7 +137,7 @@ void LensFlare_RenderAll(void) {
 	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_LENSFLARE);
 	for (int i = 0; i < g_nLensFlareRender; i++) {
 		CLensFlare *lf = g_LensFlareRender[i];
-		CHECK(lf->IndiceRender == i);
+		CHECK(lf->RenderIndex == i);
 		if (lf->on) {
 			CLensFlare_Render(lf, view, proj);
 		}
@@ -229,14 +229,14 @@ static float LF_Float(uint32_t bits) {
 }
 
 void __thiscall CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj) {
-	CCamara *cam = Mundo_Get()->cam;
+	CCamera *cam = World_Get()->cam;
 	matrix_t rel;
 	const matrix_t *m = &view;
 	float v[4], s[4];
 
 	CHECK(cam);
 	vec3_t pos = self->pos;
-	if (self->relativo) {
+	if (self->relative) {
 		rel = view;
 		rel.m[12] = 0.0f;
 		rel.m[13] = 0.0f;
@@ -248,8 +248,8 @@ void __thiscall CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj
 		return;
 	}
 	D3DX_Vec3Transform((vec3_t *)s, (const vec3_t *)v, &proj);
-	float margen = self->margen;
-	float lo = -1.0f - margen;
+	float margin = self->margin;
+	float lo = -1.0f - margin;
 	float sx = s[0];
 	float sy = s[1];
 	float f = 1.0f;
@@ -258,12 +258,12 @@ void __thiscall CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj
 	if (lo > sx) {
 		return;
 	}
-	float hi = margen + 1.0f;
+	float hi = margin + 1.0f;
 	if (sx > hi || lo > sy || sy > hi) {
 		return;
 	}
 	/* faded out beyond the edges of the screen */
-	float k = 1.0f / margen;
+	float k = 1.0f / margin;
 	if (-1.0f > sx) {
 		f = (sx + 1.0f) * k + 1.0f;
 	}
@@ -284,17 +284,17 @@ void __thiscall CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj
 		self->traceTimer = t;
 		if (t <= 0.0f) {
 			self->traceTimer = self->traceInterval;
-			CSuelo *suelo = Mundo_Get()->ObjSuelo;
+			CGround *ground = World_Get()->ObjGround;
 			vec3_t from = *Render_GetEyePos();
 			vec3_t to;
-			if (self->relativo) {
+			if (self->relative) {
 				to.x = from.x + self->pos.x;
 				to.y = self->pos.y + from.y;
 				to.z = self->pos.z + from.z;
 			} else {
 				to = self->pos;
 			}
-			self->visible = !suelo || !CSuelo_Trace(suelo, &from, &to, NULL, 0.0f, &self->hit);
+			self->visible = !ground || !CGround_Trace(ground, &from, &to, NULL, 0.0f, &self->hit);
 		}
 		float d = dt / self->traceInterval;
 		if (self->visible) {
@@ -310,11 +310,11 @@ void __thiscall CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj
 	if (0.0f >= f || 0.0f >= self->intens) {
 		return;
 	}
-	if ((uint32_t)self->tipo > 3) {
+	if ((uint32_t)self->type > 3) {
 		return;
 	}
-	const LensFlareSprite *sp = lfPatterns[self->tipo].s;
-	for (int i = 0; i < lfPatterns[self->tipo].n; i++) {
+	const LensFlareSprite *sp = lfPatterns[self->type].s;
+	for (int i = 0; i < lfPatterns[self->type].n; i++) {
 		float a = sp[i].k ? f * LF_Float(sp[i].k) : f;
 		CLensFlare_DrawSprite(self, LF_Float(sp[i].dist), sp[i].sprite, LF_Float(sp[i].size), LF_Float(sp[i].r),
 			LF_Float(sp[i].g), LF_Float(sp[i].b), a);
@@ -323,16 +323,16 @@ void __thiscall CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj
 
 void __thiscall CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t sprite, float size, float r, float g,
 	float b, float a) {
-	void *dev = MOTOR_DEV(g_Motor);
-	CCamara *cam = Mundo_Get()->cam;
+	void *dev = ENGINE_DEV(g_Engine);
+	CCamera *cam = World_Get()->cam;
 	float texMin[2], texMax[2];
 
 	CHECK(cam);
 	float cx = -self->sx * dist + self->sx;
 	float cy = self->sy + -self->sy * dist;
-	const CMultiSprite *ms = g_LensFlareMat->mapa[MAPA_DIFFUSE]->MultiSprite;
-	float hx = self->escala * size;
-	float hy = cam->aspectScreen * size * self->escala;
+	const CMultiSprite *ms = g_LensFlareMat->map[MAP_DIFFUSE]->MultiSprite;
+	float hx = self->scale * size;
+	float hy = cam->aspectScreen * size * self->scale;
 	byte ok = CMultiSprite_GetUV(ms, sprite, texMin, texMax);
 	CHECK(ok);
 	uint32_t color = Game_FtoUI(self->intens * a * 255.0f);
@@ -355,22 +355,22 @@ void __thiscall CLensFlare_SetTraceInterval(CLensFlare *self, float v) {
 	self->traceInterval = v;
 }
 
-void __thiscall CLensFlare_SetMargen(CLensFlare *self, float v) {
-	self->margen = v;
+void __thiscall CLensFlare_SetMargin(CLensFlare *self, float v) {
+	self->margin = v;
 }
 
 void __thiscall CLensFlare_SetPos(CLensFlare *self, vec3_t pos) {
 	self->pos = pos;
 }
 
-void __thiscall CLensFlare_SetEscala(CLensFlare *self, float v) {
-	self->escala = v;
+void __thiscall CLensFlare_SetScale(CLensFlare *self, float v) {
+	self->scale = v;
 }
 
-void __thiscall CLensFlare_SetTipo(CLensFlare *self, int tipo) {
-	self->tipo = tipo;
+void __thiscall CLensFlare_SetType(CLensFlare *self, int type) {
+	self->type = type;
 }
 
-void __thiscall CLensFlare_SetRelativo(CLensFlare *self, byte relativo) {
-	self->relativo = relativo;
+void __thiscall CLensFlare_SetRelative(CLensFlare *self, byte relative) {
+	self->relative = relative;
 }

@@ -23,11 +23,11 @@
 #define IS_BLANK(c) ((c) == '\t' || (c) == ' ')
 
 /* tipo_nota: "C4", "A#3", "Eb-1": the MIDI number of the note */
-int Proc_Note(char *dest, const char *src, const void *tipo, int size) {
+int Proc_Note(char *dest, const char *src, const void *type, int size) {
 	static const int notes[] = { 9, 11, 0, 2, 4, 5, 7 };	/* A..G */
 	int octave;
 
-	CHECK(tipo == NULL);
+	CHECK(type == NULL);
 	CHECK(size > 5);
 	int letter = crt_toupper(*src);
 	if (letter < 'A' || letter > 'G') {

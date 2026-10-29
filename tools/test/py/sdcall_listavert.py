@@ -16,10 +16,10 @@ def lvsum(addr, n):
 	return s
 def lvnew(frmt, n):
 	lv = SDTest.Call('Mem_Calloc', 'ii', 0x14)[0]
-	SDTest.Call('CListaVert_ctor', 'tii', lv)
-	SDTest.Call('CListaVert_SetFormat', 'tvii', lv, frmt)
+	SDTest.Call('CVertList_ctor', 'tii', lv)
+	SDTest.Call('CVertList_SetFormat', 'tvii', lv, frmt)
 	if n:
-		SDTest.Call('CListaVert_Alloc', 'tviii', lv, n, 0)
+		SDTest.Call('CVertList_Alloc', 'tviii', lv, n, 0)
 	return lv
 def lvcolor():
 	return int(rnd(0.0, 32767.0)) * 65536 + int(rnd(0.0, 65535.0))
@@ -52,7 +52,7 @@ def lvget(lv):
 		r.append(tpeek(p, n * LV_SIZE[frmt] / 4))
 	return r
 def lvfree(lv):
-	SDTest.Call('CListaVert_Free@242540', 'tvi', lv)
+	SDTest.Call('CVertList_Free@242540', 'tvi', lv)
 	SDTest.Call('Mem_Free', 'vi', lv)
 # a pointer into the vertices as its offset (a NULL is not printed as a heap address)
 def lvoff(r, p):
@@ -67,22 +67,22 @@ lvvshaders = (sym('g_hVShader_Tex1_XBox'), sym('g_hVShader_Tex1C_XBox'), sym('g_
 	sym('g_hVShader_LTex1N_XBox'), sym('g_hVShader_LTex2_XBox'), sym('g_hVShader_LTex2N_XBox'))
 for f in range(1, 18):
 	if f != 9:
-		call('ListaVert_FormatSize', sym('ListaVert_FormatSize'), 'ii', f)
+		call('VertList_FormatSize', sym('VertList_FormatSize'), 'ii', f)
 	if f < 11 and f != 9:
-		call('ListaVert_FormatName', sym('ListaVert_FormatName'), 'si', f)
-		call('ListaVert_FormatFVF', sym('ListaVert_FormatFVF'), 'ii', f)
+		call('VertList_FormatName', sym('VertList_FormatName'), 'si', f)
+		call('VertList_FormatFVF', sym('VertList_FormatFVF'), 'ii', f)
 	# the XBOX formats name a vertex shader that the PC version may not have: only checked when it is there
 	if f >= 12 and SDTest.Peek(lvvshaders[f - 12], 'i'):
-		check('ListaVert_FormatFVF shader' + fmt((f,)), lambda f=f: SDTest.Call('ListaVert_FormatFVF', 'ii', f)[0] == SDTest.Peek(lvvshaders[f - 12], 'i'))
+		check('VertList_FormatFVF shader' + fmt((f,)), lambda f=f: SDTest.Call('VertList_FormatFVF', 'ii', f)[0] == SDTest.Peek(lvvshaders[f - 12], 'i'))
 for i in range(30):
 	n = (rnd(-1.0, 1.0), rnd(-1.0, 1.0), rnd(-1.0, 1.0))
-	call('ListaVert_PackNormal', sym('ListaVert_PackNormal'), 'iF', n)
-	packed = SDTest.Call('ListaVert_PackNormal', 'iF', n)[0]
-	call('ListaVert_UnpackNormal', sym('ListaVert_UnpackNormal'), 'vFi', (9.0, 9.0, 9.0), packed)
+	call('VertList_PackNormal', sym('VertList_PackNormal'), 'iF', n)
+	packed = SDTest.Call('VertList_PackNormal', 'iF', n)[0]
+	call('VertList_UnpackNormal', sym('VertList_UnpackNormal'), 'vFi', (9.0, 9.0, 9.0), packed)
 for n in ((1.0, -1.0, 1.0), (-1.0, 1.0, -1.0), (0.0, -0.0, 0.0), (0.0009, -0.0009, 0.001)):
-	call('ListaVert_PackNormal', sym('ListaVert_PackNormal'), 'iF', n)
+	call('VertList_PackNormal', sym('VertList_PackNormal'), 'iF', n)
 for packed in (0, -1, 0x7fffffff, -0x7fffffff - 1, 0x3ff, 0x400, 0x1ff800, 0x200000, 0x12345678):
-	call('ListaVert_UnpackNormal', sym('ListaVert_UnpackNormal'), 'vFi', (9.0, 9.0, 9.0), packed)
+	call('VertList_UnpackNormal', sym('VertList_UnpackNormal'), 'vFi', (9.0, 9.0, 9.0), packed)
 # the field getters of one vertex, on a fake address (they only add)
 for rva in ('VertLTex1_Field', 'VertLTex1N_Field', 'VertLTex1NXBox_Field', 'VertLTex1XBox_Field', 'VertLTex2_Field', 'VertLTex2N_Field', 'VertLTex2NXBox_Field', 'VertLTex2XBox_Field', 'VertLTex3_Field', 'VertTLTex1_Field',
 		'VertTex1_Field', 'VertTex1CXBox_Field', 'VertTex1XBox_Field', 'VertTex2_Field'):
@@ -95,48 +95,48 @@ for frmt in (1, 2, 3, 4, 5, 7, 10):
 	lv = lvnew(frmt, 4)
 	lvfill(lv, frmt, 4)
 	lvs[frmt] = lv
-	check('CListaVert_Alloc' + fmt((frmt,)), lambda lv=lv: lvget(lv)[0:5])
-	check('CListaVert_FVF' + fmt((frmt,)), lambda lv=lv: SDTest.Call('CListaVert_FVF', 'tii', lv)[0])
-	check('CListaVert_Size' + fmt((frmt,)), lambda lv=lv: SDTest.Call('CListaVert_Size', 'tii', lv)[0])
-	check('CListaVert_FormatName' + fmt((frmt,)), lambda lv=lv: SDTest.Call('CListaVert_FormatName', 'tsi', lv)[0])
+	check('CVertList_Alloc' + fmt((frmt,)), lambda lv=lv: lvget(lv)[0:5])
+	check('CVertList_FVF' + fmt((frmt,)), lambda lv=lv: SDTest.Call('CVertList_FVF', 'tii', lv)[0])
+	check('CVertList_Size' + fmt((frmt,)), lambda lv=lv: SDTest.Call('CVertList_Size', 'tii', lv)[0])
+	check('CVertList_FormatName' + fmt((frmt,)), lambda lv=lv: SDTest.Call('CVertList_FormatName', 'tsi', lv)[0])
 	p = SDTest.Peek(lv, '@i')
 	for f in range(0, 13):
 		for i in (0, 3):
 			# TEX1_B1 has no fields (the getter fails)
 			if frmt != 4:
-				check('CListaVert_GetField' + fmt((frmt, f, i)), lambda lv=lv, f=f, i=i, p=p: lvoff(SDTest.Call('CListaVert_GetField', 'tiiii', lv, f, i)[0], p))
-for frmt, rva in ((1, sym('CListaVert_Tex1')), (2, sym('CListaVert_Tex2')), (3, sym('CListaVert_LTex1')), (4, sym('CListaVert_Tex1B1')), (5, sym('CListaVert_LTex2N')), (7, sym('CListaVert_LTex1N')), (10, sym('CListaVert_LTex2'))):
+				check('CVertList_GetField' + fmt((frmt, f, i)), lambda lv=lv, f=f, i=i, p=p: lvoff(SDTest.Call('CVertList_GetField', 'tiiii', lv, f, i)[0], p))
+for frmt, rva in ((1, sym('CVertList_Tex1')), (2, sym('CVertList_Tex2')), (3, sym('CVertList_LTex1')), (4, sym('CVertList_Tex1B1')), (5, sym('CVertList_LTex2N')), (7, sym('CVertList_LTex1N')), (10, sym('CVertList_LTex2'))):
 	lv = lvs[frmt]
 	p = SDTest.Peek(lv, '@i')
 	for i in (0, 1, 3):
 		check('CListaVert_Vert' + fmt((frmt, i)), lambda lv=lv, rva=rva, i=i, p=p: lvoff(SDTest.Call(rva, 'tiii', lv, i)[0], p))
 for frmt in (1, 2, 4):
 	for i in (0, 2):
-		check('CListaVert_GetTex1' + fmt((frmt, i)), lambda frmt=frmt, i=i: SDTest.Call('CListaVert_GetTex1', 'tviFi', lvs[frmt], (0.0,) * 8, i)[1])
-for frmt, rva in ((1, sym('CListaVert_SetTex1')), (2, sym('CListaVert_SetTex2')), (3, sym('CListaVert_SetLTex1')), (4, sym('CListaVert_SetTex1B1'))):
+		check('CVertList_GetTex1' + fmt((frmt, i)), lambda frmt=frmt, i=i: SDTest.Call('CVertList_GetTex1', 'tviFi', lvs[frmt], (0.0,) * 8, i)[1])
+for frmt, rva in ((1, sym('CVertList_SetTex1')), (2, sym('CVertList_SetTex2')), (3, sym('CVertList_SetLTex1')), (4, sym('CVertList_SetTex1B1'))):
 	v = []
 	for k in range(LV_SIZE[frmt] / 4):
 		v.append(rnd())
 	lvstep('CListaVert_Set' + fmt((frmt,)), lvs[frmt], rva, 'tviiF', 2, tuple(v))
 	lvfill(lvs[frmt], frmt, 4)
-lvstep('CListaVert_SetColor', lvs[3], sym('CListaVert_SetColor'), 'tviii', 0x00ff00ff, 0x12003400)
-lvstep('CListaVert_SetColor', lvs[7], sym('CListaVert_SetColor'), 'tviii', -1, 0)
-lvstep('CListaVert_SetColor', lvs[10], sym('CListaVert_SetColor'), 'tviii', 0, -0x7f000000)
+lvstep('CVertList_SetColor', lvs[3], sym('CVertList_SetColor'), 'tviii', 0x00ff00ff, 0x12003400)
+lvstep('CVertList_SetColor', lvs[7], sym('CVertList_SetColor'), 'tviii', -1, 0)
+lvstep('CVertList_SetColor', lvs[10], sym('CVertList_SetColor'), 'tviii', 0, -0x7f000000)
 for frmt in (1, 3, 10):
 	box = (1.0, 2.0, 3.0, 4.0, 5.0, 6.0)
-	check('CListaVert_GetExtents' + fmt((frmt,)), lambda frmt=frmt, box=box: SDTest.Call('CListaVert_GetExtents', 'tviFi', lvs[frmt], box, 1)[1])
-	check('CListaVert_GetExtents add' + fmt((frmt,)), lambda frmt=frmt, box=box: SDTest.Call('CListaVert_GetExtents', 'tviFi', lvs[frmt], box, 0)[1])
+	check('CVertList_GetExtents' + fmt((frmt,)), lambda frmt=frmt, box=box: SDTest.Call('CVertList_GetExtents', 'tviFi', lvs[frmt], box, 1)[1])
+	check('CVertList_GetExtents add' + fmt((frmt,)), lambda frmt=frmt, box=box: SDTest.Call('CVertList_GetExtents', 'tviFi', lvs[frmt], box, 0)[1])
 a, b = lvs[1], lvs[3]
-check('CListaVert_Swap', lambda: (SDTest.Call('CListaVert_Swap', 'tvii', a, b), lvget(a), lvget(b)))
-SDTest.Call('CListaVert_Swap', 'tvii', a, b)
+check('CVertList_Swap', lambda: (SDTest.Call('CVertList_Swap', 'tvii', a, b), lvget(a), lvget(b)))
+SDTest.Call('CVertList_Swap', 'tvii', a, b)
 for frmt in (1, 2, 4):
 	for norm in (0, 1):
-		lvstep('CListaVert_Transform' + fmt((frmt,)), lvs[frmt], sym('CListaVert_Transform'), 'tviFi', affine(), norm)
-	lvstep('CListaVert_Transform ident' + fmt((frmt,)), lvs[frmt], sym('CListaVert_Transform'), 'tviFi', ident, 1)
+		lvstep('CVertList_Transform' + fmt((frmt,)), lvs[frmt], sym('CVertList_Transform'), 'tviFi', affine(), norm)
+	lvstep('CVertList_Transform ident' + fmt((frmt,)), lvs[frmt], sym('CVertList_Transform'), 'tviFi', ident, 1)
 	lvfill(lvs[frmt], frmt, 4)
 # a zero normal stays zero
 SDTest.Call('crt_memcpy', 'iiFi', SDTest.Peek(lvs[1], '@i') + 12, (0.0, 0.0, 0.0), 12)
-lvstep('CListaVert_Transform zero', lvs[1], sym('CListaVert_Transform'), 'tviFi', ident, 1)
+lvstep('CVertList_Transform zero', lvs[1], sym('CVertList_Transform'), 'tviFi', ident, 1)
 lvfill(lvs[1], 1, 4)
 
 # the XBOX formats: packed and back
@@ -144,26 +144,26 @@ for frmt in (1, 7):
 	for ps, ts in ((0.01, 4096.0), (0.001, 32768.0), (1.0, 1.0)):
 		lv = lvnew(frmt, 4)
 		lvfill(lv, frmt, 4)
-		lvstep('CListaVert_PackTex1' + fmt((frmt,)), lv, sym('CListaVert_PackTex1'), 'tviff', ps, ts)
+		lvstep('CVertList_PackTex1' + fmt((frmt,)), lv, sym('CVertList_PackTex1'), 'tviff', ps, ts)
 		lvfree(lv)
 	lv = lvnew(frmt, 4)
 	lvfill(lv, frmt, 4)
-	lvstep('CListaVert_Pack 12' + fmt((frmt,)), lv, sym('CListaVert_Pack'), 'tviiff', 12, 0.01, 1024.0)
+	lvstep('CVertList_Pack 12' + fmt((frmt,)), lv, sym('CVertList_Pack'), 'tviiff', 12, 0.01, 1024.0)
 	lvfree(lv)
 	# VERT_POS_XBOX: the positions divided by esc must stay inside -1..1
 	lv = lvnew(frmt, 4)
 	lvfill(lv, frmt, 4)
 	SDTest.Call('crt_memcpy', 'iiFi', lv + 0x10, (64.0,), 4)
-	lvstep('CListaVert_Pack 11' + fmt((frmt,)), lv, sym('CListaVert_Pack'), 'tviiff', 11, 0.5, 2.0)
+	lvstep('CVertList_Pack 11' + fmt((frmt,)), lv, sym('CVertList_Pack'), 'tviiff', 11, 0.5, 2.0)
 	lvfree(lv)
 for frmt in (3, 5, 7, 10):
 	for tex2 in (0, 1):
 		for ps, ts in ((0.01, 4096.0), (0.0005, 30000.0)):
 			lv = lvnew(frmt, 4)
 			lvfill(lv, frmt, 4)
-			lvstep('CListaVert_ToXBox' + fmt((frmt, tex2)), lv, sym('CListaVert_ToXBox'), 'tviffi', ps, ts, tex2)
+			lvstep('CVertList_ToXBox' + fmt((frmt, tex2)), lv, sym('CVertList_ToXBox'), 'tviffi', ps, ts, tex2)
 			if frmt == 7:
-				lvstep('CListaVert_FromXBox' + fmt((tex2,)), lv, sym('CListaVert_FromXBox'), 'tviff', ps, ts)
+				lvstep('CVertList_FromXBox' + fmt((tex2,)), lv, sym('CVertList_FromXBox'), 'tviff', ps, ts)
 			lvfree(lv)
 for frmt in lvs.keys():
 	lvfree(lvs[frmt])
@@ -171,20 +171,20 @@ for frmt in lvs.keys():
 # the LFVF blocks of two models of the packs, at the offset of the block
 lvio = SDTest.Call('Mem_Alloc', 'ii', 16)[0]
 for name, off in (('levels/fz/map/map3d_2.sm3', 2270), ('levels/menu/map/asteroids/tasteroid5.sm3', 2348)):
-	SDTest.Call('CArchIO_ctor', 'tiiss', lvio, name, 'rb')
+	SDTest.Call('CFileIO_ctor', 'tiiss', lvio, name, 'rb')
 	while off > 0:
 		k = min(off, 1000)
-		SDTest.Call('CArchIO_Read', 'tiibi', lvio, '', k)
+		SDTest.Call('CFileIO_Read', 'tiibi', lvio, '', k)
 		off = off - k
 	lv = lvnew(0, 0)
 	def lvread(lv=lv):
-		SDTest.Call('CListaVert_Read', 'tvii', lv, lvio)
+		SDTest.Call('CVertList_Read', 'tvii', lv, lvio)
 		r = lvget(lv)
 		return r[0:5], lvsum(SDTest.Peek(lv, '@i'), r[0] * LV_SIZE[r[2]] / 4), SDTest.Peek(lvio, '@b')
-	check('CListaVert_Read' + fmt((name,)), lvread)
+	check('CVertList_Read' + fmt((name,)), lvread)
 	lvfree(lv)
-	SDTest.Call('CArchIO_Close', 'tii', lvio)
-	SDTest.Call('CArchIO_dtor', 'tvi', lvio)
+	SDTest.Call('CFileIO_Close', 'tii', lvio)
+	SDTest.Call('CFileIO_dtor', 'tvi', lvio)
 SDTest.Call('Mem_Free', 'vi', lvio)
 
 # triangles: 3 ushorts each, poked as words
@@ -222,7 +222,7 @@ for tris in (grid, apart, fan):
 	in_ = lvnew(3, 9)
 	lvfill(in_, 3, 9)
 	lvout = lvnew(0, 0)
-	check('ListaVert_Strip' + fmt((tris,)), lambda lvout=lvout, in_=in_, t=t, n=n: (SDTest.Call('ListaVert_Strip', 'biiii', lvout, in_, t, n)[0], lvget(lvout), triget(t, n)))
+	check('VertList_Strip' + fmt((tris,)), lambda lvout=lvout, in_=in_, t=t, n=n: (SDTest.Call('VertList_Strip', 'biiii', lvout, in_, t, n)[0], lvget(lvout), triget(t, n)))
 	lvfree(lvout)
 	lvfree(in_)
 	SDTest.Call('Mem_Free', 'vi', t)

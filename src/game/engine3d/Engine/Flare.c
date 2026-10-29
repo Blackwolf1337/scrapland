@@ -22,34 +22,34 @@ byte Floats11_Equal(const float *a, const float *b) {
 
 CFlare *__fastcall CFlare_ctor(CFlare *self) {
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
-	self->nodo = NULL;
+	self->node = NULL;
 	self->vftable = CFLARE_VFTABLE;
-	self->clase = CLASE_OBJ3D_FLARE;
-	self->escala[0] = g_FlareTam;
-	self->escala[1] = g_FlareTam;
+	self->class = CLASS_OBJ3D_FLARE;
+	self->scale[0] = g_FlareSize;
+	self->scale[1] = g_FlareSize;
 	self->color = 0xffffff;
 	self->visible = 1;
 	self->visTrace = 0;
 	self->intens = 1.0f;
 	self->lastTime = 0;
 	self->nextTrace = 0;
-	self->grf = NULL;
+	self->graphic = NULL;
 	self->transp = 1.0f;
 	return self;
 }
 
-static void CFlare_FreeGrf(CFlare *self) {
-	if (self->grf) {
-		CGrafico2D_dtor(self->grf);
-		operator_delete_sized(self->grf, sizeof(CGrafico2D));
-		self->grf = NULL;
+static void CFlare_FreeGraphic(CFlare *self) {
+	if (self->graphic) {
+		CGraphic2D_dtor(self->graphic);
+		operator_delete_sized(self->graphic, sizeof(CGraphic2D));
+		self->graphic = NULL;
 	}
 }
 
 void __fastcall CFlare_dtor(CFlare *self) {
 	self->vftable = CFLARE_VFTABLE;
-	CFlare_FreeGrf(self);
-	CObjBase3D_dtor((IObjeto3D *)self);
+	CFlare_FreeGraphic(self);
+	CObjBase3D_dtor((IObject3D *)self);
 }
 
 CFlare *__thiscall CFlare_Delete(CFlare *self, byte flags) {
@@ -61,39 +61,39 @@ CFlare *__thiscall CFlare_Delete(CFlare *self, byte flags) {
 }
 
 void __fastcall CFlare_Draw(CFlare *self) {
-	self->grf->color = self->color;
-	self->grf->escala[0] = self->escala[0];
-	self->grf->escala[1] = self->escala[1];
-	CGrafico2D_Render(self->grf);
+	self->graphic->color = self->color;
+	self->graphic->scale[0] = self->scale[0];
+	self->graphic->scale[1] = self->scale[1];
+	CGraphic2D_Render(self->graphic);
 }
 
 /* the fade step for the time step dt: in when shown, out (slower below 0.2) when not */
 static float CFlare_Fade(const CFlare *self, float dt) {
 	float t = self->transp;
 	if (self->visible) {
-		return (self->visTrace ? 1.0f : g_FlareFundidoEnt) * dt + t;
+		return (self->visTrace ? 1.0f : g_FlareFadeIn) * dt + t;
 	}
-	float k = self->visTrace ? 1.0f : g_FlareFundidoSal;
+	float k = self->visTrace ? 1.0f : g_FlareFadeOut;
 	if ((double)t >= 0.2) {
 		return (1.0f - k * dt) * t;
 	}
 	return t - k * dt * 0.2f;
 }
 
-void __thiscall CFlare_Render(CFlare *self, void *dev, CNodoR *r) {
-	CHECK(self->grf);
-	CHECK(self->nodo);
-	if (g_Sobredib || g_SkipFlares) {
+void __thiscall CFlare_Render(CFlare *self, void *dev, CRenderNode *r) {
+	CHECK(self->graphic);
+	CHECK(self->node);
+	if (g_Overdraw || g_SkipFlares) {
 		return;
 	}
 	float now = g_TimeMsF;
 	float dt = (now - (float)(double)self->lastTime) * 0.001f;
 	self->lastTime = (uint32_t)now;
-	const float *m = self->nodo->m.m;
+	const float *m = self->node->m.m;
 	vec3_t p = { m[12], m[13], m[14] };
 	if ((float)(double)(self->nextTrace + 50) < g_TimeMsF) {
-		CSuelo *suelo = Mundo_Get()->ObjSuelo;
-		self->visTrace = !suelo || !CSuelo_Trace(suelo, &p, Render_GetEyePos(), NULL, 0.0f, NULL);
+		CGround *ground = World_Get()->ObjGround;
+		self->visTrace = !ground || !CGround_Trace(ground, &p, Render_GetEyePos(), NULL, 0.0f, NULL);
 		uint32_t rnd = (uint32_t)crt_rand() & 7;
 		self->nextTrace = (uint32_t)g_TimeMsF + rnd;
 	}
@@ -116,14 +116,14 @@ void __thiscall CFlare_Render(CFlare *self, void *dev, CNodoR *r) {
 	}
 	float w = (float)(double)view[2], x = (float)(double)view[0];
 	float h = (float)(double)view[3], y = (float)(double)view[1];
-	self->grf->x = (w * s.x + x) * 0.5f + w * 0.5f;
-	self->grf->y = h * 0.5f - (h * s.y + y) * 0.5f;
-	byte alpha = self->grf->Mat->params.diffuse[3];
-	if (g_FlareAtenDist) {
+	self->graphic->x = (w * s.x + x) * 0.5f + w * 0.5f;
+	self->graphic->y = h * 0.5f - (h * s.y + y) * 0.5f;
+	byte alpha = self->graphic->Mat->params.diffuse[3];
+	if (g_FlareAttenDist) {
 		const vec3_t *eye = Render_GetEyePos();
 		float dx = self->pos.x - eye->x, dy = self->pos.y - eye->y, dz = self->pos.z - eye->z;
 		float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-		if (d > g_FlareAtenDistFin) {
+		if (d > g_FlareAttenDistEnd) {
 			self->visible = 0;
 		}
 	}
@@ -139,27 +139,27 @@ void __thiscall CFlare_Render(CFlare *self, void *dev, CNodoR *r) {
 	if (0.01 >= (double)t) {
 		return;
 	}
-	if (g_FlareVerInfo || g_ShowFlaresInfo) {
-		Texto_PrintfRel(0, 0x10, "transp: %f  '%s'", (double)t, self->nodo->name);
+	if (g_FlareShowInfo || g_ShowFlaresInfo) {
+		Text_PrintfRel(0, 0x10, "transp: %f  '%s'", (double)t, self->node->name);
 	}
 	int a = (int)(self->transp * (float)alpha);
 	a = a <= 0 ? 0 : a < 0xff ? a : 0xff;
-	if (self->grf->Mat->params.srcBlend == 2) {
+	if (self->graphic->Mat->params.srcBlend == 2) {
 		self->color = (uint32_t)a * 0x01010101u;
 	} else {
 		self->color = (uint32_t)a << 24 | 0xffffff;
 	}
-	SistPart_Draw((CSistPart *)self, r);
+	ParticleSystem_Draw((CParticleSystem *)self, r);
 }
 
 void __thiscall CFlare_SetTexture(CFlare *self, const char *tex, const char *opac, int src, int dst, byte alpha) {
-	CFlare_FreeGrf(self);
-	CGrafico2D *g = operator_new(sizeof(CGrafico2D));
-	self->grf = g ? CGrafico2D_ctor(g) : NULL;
-	CGrafico2D_CreateMat(self->grf, tex, opac, src, dst, alpha, 0);
-	self->grf->centrado = 1;
-	self->grf->sinTextura = 1;
-	self->grf->tamPantalla = 1;
+	CFlare_FreeGraphic(self);
+	CGraphic2D *g = operator_new(sizeof(CGraphic2D));
+	self->graphic = g ? CGraphic2D_ctor(g) : NULL;
+	CGraphic2D_CreateMat(self->graphic, tex, opac, src, dst, alpha, 0);
+	self->graphic->centered = 1;
+	self->graphic->noTexture = 1;
+	self->graphic->screenSize = 1;
 }
 
 void __thiscall CFlare_SetTextureAdd(CFlare *self, const char *tex, const char *opac) {

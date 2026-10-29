@@ -90,8 +90,8 @@ fb1classes = (
 		0xec, 0xc),
 	('ModelFade', sym('cObjElementFXModelFade_ctor'), sym('cObjElementFXModelFade_dtor'), sym('cObjElementFXModelFade_Delete'), 0x14, sym('cObjElementFXModelFade_vftable'), (4, 8, 0xc), (0x10,), -1, -1),
 	('ModelNoise', sym('cObjElementFXModelNoise_ctor'), sym('cObjElementFXModelNoise_dtor'), sym('cObjElementFXModelNoise_Delete'), 0x14, sym('cObjElementFXModelNoise_vftable'), (8, 0xc), (0x10,), -1, -1),
-	('SistPart', sym('cObjElementFXSistPart_ctor'), sym('cObjElementFXSistPart_dtor'), sym('cObjElementFXSistPart_Delete'), 0xb8, sym('cObjElementFXSistPart_vftable'), (), (0xb4, 0xb5), -1, 4),
-	('SistPartDuDv', sym('cObjElementFXSistPartDuDv_ctor'), sym('cObjElementFXSistPartDuDv_dtor'), sym('cObjElementFXSistPartDuDv_Delete'), 0xb8, sym('cObjElementFXSistPartDuDv_vftable'), (), (0xb4, 0xb5), -1, 4),
+	('ParticleSystem', sym('cObjElementFXParticleSystem_ctor'), sym('cObjElementFXParticleSystem_dtor'), sym('cObjElementFXParticleSystem_Delete'), 0xb8, sym('cObjElementFXParticleSystem_vftable'), (), (0xb4, 0xb5), -1, 4),
+	('SistPartDuDv', sym('cObjElementFXParticleSystemDuDv_ctor'), sym('cObjElementFXParticleSystemDuDv_dtor'), sym('cObjElementFXParticleSystemDuDv_Delete'), 0xb8, sym('cObjElementFXParticleSystemDuDv_vftable'), (), (0xb4, 0xb5), -1, 4),
 	('Sparks', sym('cObjElementFXSparks_ctor'), sym('cObjElementFXSparks_dtor'), sym('cObjElementFXSparks_Delete'), 0xc70, sym('cObjElementFXSparks_vftable'), (4, 8, 0x9b0), (0xc6c,), 0xb3c, 0xbbc),
 	('Trail', sym('cObjElementFXTrail_ctor'), sym('cObjElementFXTrail_dtor'), sym('cObjElementFXTrail_Delete'), 0x1c, sym('cObjElementFXTrail_vftable'), (0x14,), (0x18, 0x19, 0x1a), 4, -1),
 )

@@ -6,52 +6,52 @@
 #include "scrap/render.h"
 #include "scrap/rendersuelo.h"
 
-static BatchMalla *Batch_Entry(uint32_t i) {
-	TABLA_CHECK(g_BatchTab->p, i, g_BatchTab->n);
-	return &((BatchMalla *)g_BatchTab->p)[i];
+static BatchMesh *Batch_Entry(uint32_t i) {
+	TABLE_CHECK(g_BatchTab->p, i, g_BatchTab->n);
+	return &((BatchMesh *)g_BatchTab->p)[i];
 }
 
-void Batch_AddMalla(void *malla, void *dev) {
+void Batch_AddMesh(void *mesh, void *dev) {
 	if (!g_BatchTab->n) {
 		CHECK(!g_BatchTab->p);
 		g_BatchTab->n = BATCH_MAX;
-		g_BatchTab->p = New_Array(BATCH_MAX, sizeof(BatchMalla));
+		g_BatchTab->p = New_Array(BATCH_MAX, sizeof(BatchMesh));
 		CHECK(g_BatchTab->p);
 	}
-	for (CMallaD3D *m = malla; m && m->vert.nVert; m = m->next) {
-		if (g_BatchUsados == (uint32_t)g_BatchTab->n) {
+	for (CMeshD3D *m = mesh; m && m->vert.nVert; m = m->next) {
+		if (g_BatchUsed == (uint32_t)g_BatchTab->n) {
 			Batch_Flush(dev);
 		}
 		CMaterial *mat = m->mat;
 		if (mat && Mat_IsTransp(mat)) {
-			RenderMallaD3D_AddTransp(m, g_MatIdentity, 0, NULL);
+			RenderMeshD3D_AddTransp(m, g_MatIdentity, 0, NULL);
 			continue;
 		}
-		uint32_t i = g_BatchUsados;
-		Batch_Entry(i)->malla = m;
+		uint32_t i = g_BatchUsed;
+		Batch_Entry(i)->mesh = m;
 		uint32_t tex = 0;
-		if (mat && mat->mapa[MAPA_DIFFUSE]) {
-			tex = (uint32_t)CMapa_GetTexture(mat->mapa[MAPA_DIFFUSE], 0) >> 1;
+		if (mat && mat->map[MAP_DIFFUSE]) {
+			tex = (uint32_t)CMap_GetTexture(mat->map[MAP_DIFFUSE], 0) >> 1;
 		}
-		Batch_Entry(g_BatchUsados)->tex = tex;
-		uint32_t u = g_BatchUsados;
-		g_BatchOrden[u] = Batch_Entry(u);
-		g_BatchUsados = u + 1;
+		Batch_Entry(g_BatchUsed)->tex = tex;
+		uint32_t u = g_BatchUsed;
+		g_BatchOrder[u] = Batch_Entry(u);
+		g_BatchUsed = u + 1;
 	}
 }
 
 void Batch_Flush(void *dev) {
 	(void)dev;
-	if (!g_BatchUsados) {
-		g_BatchUsados = 0;
+	if (!g_BatchUsed) {
+		g_BatchUsed = 0;
 		return;
 	}
 	Render_SetWorldD3D(g_MatIdentity);
-	CHECK(g_BatchTab->p && (int)g_BatchUsados <= g_BatchTab->n);
+	CHECK(g_BatchTab->p && (int)g_BatchUsed <= g_BatchTab->n);
 	const matrix_t *view = Render_GetView();
-	for (int i = 0; i < (int)g_BatchUsados; i++) {
-		BatchMalla *e = &((BatchMalla *)g_BatchTab->p)[i];
-		const CMallaD3D *m = e->malla;
+	for (int i = 0; i < (int)g_BatchUsed; i++) {
+		BatchMesh *e = &((BatchMesh *)g_BatchTab->p)[i];
+		const CMeshD3D *m = e->mesh;
 		vec3_t c;
 		c.x = (m->box.max.x + m->box.min.x) * 0.5f;
 		c.y = (m->box.max.y + m->box.min.y) * 0.5f;
@@ -59,22 +59,22 @@ void Batch_Flush(void *dev) {
 		Vec3_TransformH(&c, &c, view);
 		e->z = c.z;
 	}
-	crt_qsort(g_BatchOrden, g_BatchUsados, sizeof(BatchMalla *), Batch_Compare);
-	for (int i = 0; i < (int)g_BatchUsados; i++) {
-		Render_MallaD3D(g_BatchOrden[i]->malla, NULL);
+	crt_qsort(g_BatchOrder, g_BatchUsed, sizeof(BatchMesh *), Batch_Compare);
+	for (int i = 0; i < (int)g_BatchUsed; i++) {
+		Render_MeshD3D(g_BatchOrder[i]->mesh, NULL);
 	}
-	g_BatchUsados = 0;
+	g_BatchUsed = 0;
 }
 
 int Batch_Compare(const void *a, const void *b) {
-	const BatchMalla *ea = *(BatchMalla *const *)a;
-	const BatchMalla *eb = *(BatchMalla *const *)b;
+	const BatchMesh *ea = *(BatchMesh *const *)a;
+	const BatchMesh *eb = *(BatchMesh *const *)b;
 	int d = (int)(ea->tex - eb->tex);
 
 	if (d) {
 		return d;
 	}
-	d = (int)((uintptr_t)ea->malla->mat - (uintptr_t)eb->malla->mat);
+	d = (int)((uintptr_t)ea->mesh->mat - (uintptr_t)eb->mesh->mat);
 	if (d) {
 		return d;
 	}
@@ -82,10 +82,10 @@ int Batch_Compare(const void *a, const void *b) {
 }
 
 /* the atexit destructor of g_BatchTab (rva 0x38f040) and the static initializer that registers it (rva 0x05f760) */
-void RenderSuelo_FiniBatchTab(void) {
-	Tabla_Free(g_BatchTab);
+void RenderGround_FiniBatchTab(void) {
+	Table_Free(g_BatchTab);
 }
 
-void RenderSuelo_InitBatchTab(void) {
-	crt_atexit(RenderSuelo_FiniBatchTab);
+void RenderGround_InitBatchTab(void) {
+	crt_atexit(RenderGround_FiniBatchTab);
 }

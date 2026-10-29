@@ -1,11 +1,11 @@
 /*
- * Engine/SistPart.cpp of the engine3d: CSistPart, the particle system of a node (class CLASE_OBJ3D_SISTPART), read
+ * Engine/SistPart.cpp of the engine3d: CParticleSystem, the particle system of a node (class CLASS_OBJ3D_PARTICLESYSTEM), read
  * from the [Particles] section of the user properties of the node and the section of its type in the particle ini.
- * The particles are CParticulaActive (moving, with a life) or, for static systems, CParticulaStatic. Also a few
+ * The particles are CParticleActive (moving, with a life) or, for static systems, CParticleStatic. Also a few
  * functions of Engine/grafico2d.cpp next to it.
  */
-#ifndef SCRAP_SISTPART_H
-#define SCRAP_SISTPART_H
+#ifndef SCRAP_PARTICLESYSTEM_H
+#define SCRAP_PARTICLESYSTEM_H
 
 #include "scrap/cstring.h"
 #include "scrap/escena.h"
@@ -13,44 +13,44 @@
 #include "scrap/sueloportal.h"
 #include "scrap/material.h"
 
-#define CSISTPART_VFTABLE GAME_VFTABLE(CSistPart_vftable, 0x3ddc6c)
-#define CPARTICULAACTIVE_VFTABLE GAME_VFTABLE(CParticulaActive_vftable, 0x3ddc5c)
-#define CPARTICULASTATIC_VFTABLE GAME_VFTABLE(CParticulaStatic_vftable, 0x3ddc4c)
+#define CSISTPART_VFTABLE GAME_VFTABLE(CParticleSystem_vftable, 0x3ddc6c)
+#define CPARTICULAACTIVE_VFTABLE GAME_VFTABLE(CParticleActive_vftable, 0x3ddc5c)
+#define CPARTICULASTATIC_VFTABLE GAME_VFTABLE(CParticleStatic_vftable, 0x3ddc4c)
 #define COBJBASE3D_VFTABLE GAME_VFTABLE(CObjBase3D_vftable, 0x3ddc1c)
-#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObjeto3D_vftable, 0x3d79dc)
+#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
 
-/* CSistPart.params.flags */
-#define SISTPART_LOCALPOS 0x01		/* the positions follow the node */
-#define SISTPART_LOCAL 0x02		/* the vectors are not turned by the node */
-#define SISTPART_STATIC 0x04
-#define SISTPART_SPARKS 0x08
-#define SISTPART_MULTISPRITE 0x10
-#define SISTPART_COLORRAMP 0x20
-#define SISTPART_MIPMAP 0x40
+/* CParticleSystem.params.flags */
+#define PARTICLESYSTEM_LOCALPOS 0x01		/* the positions follow the node */
+#define PARTICLESYSTEM_LOCAL 0x02		/* the vectors are not turned by the node */
+#define PARTICLESYSTEM_STATIC 0x04
+#define PARTICLESYSTEM_SPARKS 0x08
+#define PARTICLESYSTEM_MULTISPRITE 0x10
+#define PARTICLESYSTEM_COLORRAMP 0x20
+#define PARTICLESYSTEM_MIPMAP 0x40
 
 /* the slots of the vftable of the particles */
-enum { PARTICULA_VF_TYPE = 0, PARTICULA_VF_INIT = 1, PARTICULA_VF_UPDATE = 2 };
-enum { PARTICULA_STATIC = 1, PARTICULA_ACTIVE = 2 };
+enum { PARTICLE_VF_TYPE = 0, PARTICLE_VF_INIT = 1, PARTICLE_VF_UPDATE = 2 };
+enum { PARTICLE_STATIC = 1, PARTICLE_ACTIVE = 2 };
 
-typedef struct CParticula {
+typedef struct CParticle {
 	void **vftable;			/* 0x00 PARTICULA_VF_* */
 	byte active;			/* 0x04 */
 	byte pad_5[3];
 	vec3_t pos;			/* 0x08 */
-	float escala;			/* 0x14 */
+	float scale;			/* 0x14 */
 	float size;			/* 0x18 */
 	uint32_t color;			/* 0x1c */
 	float rot;			/* 0x20 */
 	float uv0[2];			/* 0x24 the sprite rectangle */
 	float uv1[2];			/* 0x2c */
-} CParticula;
-SD_SIZE(CParticula, 0x34);
-typedef int(__thiscall *partType_t)(CParticula *self);
-#define PARTICULA_TYPE(p) (((partType_t)(p)->vftable[PARTICULA_VF_TYPE])(p))
-typedef CParticula CParticulaStatic;
+} CParticle;
+SD_SIZE(CParticle, 0x34);
+typedef int(__thiscall *partType_t)(CParticle *self);
+#define PARTICLE_TYPE(p) (((partType_t)(p)->vftable[PARTICLE_VF_TYPE])(p))
+typedef CParticle CParticleStatic;
 
-typedef struct CParticulaActive {
-	CParticula p;			/* 0x00 */
+typedef struct CParticleActive {
+	CParticle p;			/* 0x00 */
 	byte b34;			/* 0x34 */
 	byte pad_35[3];
 	float t;			/* 0x38 the life, 0 to 1 */
@@ -76,12 +76,12 @@ typedef struct CParticulaActive {
 	uint32_t *colorRamp;		/* 0x88 9 colors, NULL without */
 	byte bounce;			/* 0x8c on the floor */
 	byte pad_8d[3];
-} CParticulaActive;
-SD_SIZE(CParticulaActive, 0x90);
+} CParticleActive;
+SD_SIZE(CParticleActive, 0x90);
 
 /* the parameters of a type of particle system (the section of the type in the particle ini) */
-typedef struct SistPartParams {
-	int nParticulas;		/* 0x00 Particles */
+typedef struct ParticleSystemParams {
+	int nParticles;		/* 0x00 Particles */
 	uint32_t flags;			/* 0x04 SISTPART_* */
 	int birthRate;			/* 0x08 per second, 0 for none after the first ones */
 	float lifeTime;			/* 0x0c */
@@ -119,25 +119,25 @@ typedef struct SistPartParams {
 	byte bounce;			/* 0xe0 */
 	byte pad_e1[3];
 	float zBias;			/* 0xe4 */
-} SistPartParams;
-SD_SIZE(SistPartParams, 0xe8);
+} ParticleSystemParams;
+SD_SIZE(ParticleSystemParams, 0xe8);
 
-typedef struct CSistPart {
+typedef struct CParticleSystem {
 	void **vftable;			/* 0x000 OBJ3D_VF_* */
-	uint32_t clase;			/* 0x004 CLASE_OBJ3D_SISTPART */
-	CNodo3D *nodo;			/* 0x008 CObjBase3D_SetNodo */
-	SistPartParams params;		/* 0x00c */
-	float escala;			/* 0x0f4 Particles Scale of the node */
+	uint32_t class;			/* 0x004 CLASS_OBJ3D_PARTICLESYSTEM */
+	CNode3D *node;			/* 0x008 CObjBase3D_SetNode */
+	ParticleSystemParams params;		/* 0x00c */
+	float scale;			/* 0x0f4 Particles Scale of the node */
 	float alpha;			/* 0x0f8 */
-	vec3_t *posList;		/* 0x0fc new[] of params.nParticulas, the positions of a static system */
+	vec3_t *posList;		/* 0x0fc new[] of params.nParticles, the positions of a static system */
 	vec3_t lastPos;			/* 0x100 the position of the node at the last update */
 	byte numActive;			/* 0x10c */
 	byte nextFree;			/* 0x10d where the next free particle is looked for */
 	byte pad_10e[2];
 	char *type;			/* 0x110 new[] */
 	CMaterial *mat;			/* 0x114 */
-	void *MultiSpr;			/* 0x118 CMultiSprite of the texture with SISTPART_MULTISPRITE */
-	CParticula **Particles;		/* 0x11c new[] of params.nParticulas */
+	void *MultiSpr;			/* 0x118 CMultiSprite of the texture with PARTICLESYSTEM_MULTISPRITE */
+	CParticle **Particles;		/* 0x11c new[] of params.nParticles */
 	SectorVis vis;			/* 0x120 the sector visibility of the debug output */
 	uint32_t lastTime;		/* 0x134 g_TimeMs of the last update */
 	uint32_t birthTime;		/* 0x138 of the last particle born */
@@ -151,89 +151,89 @@ typedef struct CSistPart {
 	byte nEmitPos;			/* 0x14c */
 	byte emitIdx;			/* 0x14d */
 	byte pad_14e[2];
-} CSistPart;
-SD_SIZE(CSistPart, 0x150);
-SD_OFFSET(CSistPart, params, 0x0c);
-SD_OFFSET(CSistPart, Particles, 0x11c);
+} CParticleSystem;
+SD_SIZE(CParticleSystem, 0x150);
+SD_OFFSET(CParticleSystem, params, 0x0c);
+SD_OFFSET(CParticleSystem, Particles, 0x11c);
 
 /* the switches of the particle systems */
-#define g_SistPartOn GAME_GLOBAL_IN(int, GVar_R_Particles, 16, 0x4b2528)
-#define g_SistPartFlags GAME_GLOBAL_IN(int, GVar_R_ParticleFlags, 16, 0x4b2570)	/* -1, else the flags of all systems */
-#define g_SistPartDebug GAME_GLOBAL_IN(int, GVar_R_ParticleSector, 16, 0x4b25a0)	/* 1: visibility, 2: drawn, 3: with the name */
-#define g_SistPartCount GAME_GLOBAL_IN(int, GVar_R_ParticlesCount, 16, 0x4b2588)	/* the particles of all systems */
-#define g_SistPartIni (GAME_ARRAY(CArchINI, g_SistPartIni, 0x4b25d8))	/* the particle ini */
-#define g_SistPartPosScale GAME_GLOBAL_IN(float, GVar_R_ParticleVelScale, 16, 0x4b2558)
-#define g_SistPartSizeScale GAME_GLOBAL_IN(float, GVar_R_ParticleScale, 16, 0x4b2540)
-#define g_SistPartLifeScale GAME_GLOBAL_IN(float, GVar_R_ParticleLife, 16, 0x4b25d0)
-#define g_SistPartBirthAdd GAME_GLOBAL_IN(int, GVar_R_ParticleRate, 16, 0x4b25b8)
+#define g_ParticleSystemOn GAME_GLOBAL_IN(int, GVar_R_Particles, 16, 0x4b2528)
+#define g_ParticleSystemFlags GAME_GLOBAL_IN(int, GVar_R_ParticleFlags, 16, 0x4b2570)	/* -1, else the flags of all systems */
+#define g_ParticleSystemDebug GAME_GLOBAL_IN(int, GVar_R_ParticleSector, 16, 0x4b25a0)	/* 1: visibility, 2: drawn, 3: with the name */
+#define g_ParticleSystemCount GAME_GLOBAL_IN(int, GVar_R_ParticlesCount, 16, 0x4b2588)	/* the particles of all systems */
+#define g_ParticleSystemIni (GAME_ARRAY(CIniFile, g_ParticleSystemIni, 0x4b25d8))	/* the particle ini */
+#define g_ParticleSystemPosScale GAME_GLOBAL_IN(float, GVar_R_ParticleVelScale, 16, 0x4b2558)
+#define g_ParticleSystemSizeScale GAME_GLOBAL_IN(float, GVar_R_ParticleScale, 16, 0x4b2540)
+#define g_ParticleSystemLifeScale GAME_GLOBAL_IN(float, GVar_R_ParticleLife, 16, 0x4b25d0)
+#define g_ParticleSystemBirthAdd GAME_GLOBAL_IN(int, GVar_R_ParticleRate, 16, 0x4b25b8)
 
-CParticula *__fastcall CParticulaActive_ctor(CParticula *self);
-CParticula *__fastcall CParticulaStatic_ctor(CParticula *self);
-void __fastcall CParticulaActive_dtor(CParticula *self);
-int __fastcall CParticulaActive_Type(CParticula *self);
-int __fastcall CParticulaStatic_Type(CParticula *self);
-void __fastcall CParticulaActive_Init(CParticula *self);
-void __fastcall CParticulaStatic_Init(CParticula *self);
+CParticle *__fastcall CParticleActive_ctor(CParticle *self);
+CParticle *__fastcall CParticleStatic_ctor(CParticle *self);
+void __fastcall CParticleActive_dtor(CParticle *self);
+int __fastcall CParticleActive_Type(CParticle *self);
+int __fastcall CParticleStatic_Type(CParticle *self);
+void __fastcall CParticleActive_Init(CParticle *self);
+void __fastcall CParticleStatic_Init(CParticle *self);
 /* dt seconds on; at the end of its life the particle goes out */
-void __thiscall CParticulaActive_Update(CParticulaActive *self, CSistPart *sp, float dt, void *multiSpr);
+void __thiscall CParticleActive_Update(CParticleActive *self, CParticleSystem *sp, float dt, void *multiSpr);
 
-CSistPart *__thiscall CSistPart_ctorCopy(CSistPart *self, const CSistPart *orig);
-CSistPart *__thiscall CSistPart_ctorParams(CSistPart *self, CNodo3D *nodo, const char *type, float escala, float alpha,
-	const vec3_t *posList, CArchINI *ini);
-CSistPart *__fastcall CSistPart_ctor(CSistPart *self);
-void __fastcall CObjBase3D_dtor(IObjeto3D *self);
-void __fastcall SistPartParams_dtor(SistPartParams *self);
-void __fastcall CSistPart_dtor(CSistPart *self);
-SistPartParams *__thiscall SistPartParams_Assign(SistPartParams *self, const SistPartParams *src);
-IObjeto3D *__thiscall CObjBase3D_Delete(IObjeto3D *self, byte flags);
-CSistPart *__thiscall CSistPart_Delete(CSistPart *self, byte flags);
+CParticleSystem *__thiscall CParticleSystem_ctorCopy(CParticleSystem *self, const CParticleSystem *orig);
+CParticleSystem *__thiscall CParticleSystem_ctorParams(CParticleSystem *self, CNode3D *node, const char *type, float scale, float alpha,
+	const vec3_t *posList, CIniFile *ini);
+CParticleSystem *__fastcall CParticleSystem_ctor(CParticleSystem *self);
+void __fastcall CObjBase3D_dtor(IObject3D *self);
+void __fastcall ParticleSystemParams_dtor(ParticleSystemParams *self);
+void __fastcall CParticleSystem_dtor(CParticleSystem *self);
+ParticleSystemParams *__thiscall ParticleSystemParams_Assign(ParticleSystemParams *self, const ParticleSystemParams *src);
+IObject3D *__thiscall CObjBase3D_Delete(IObject3D *self, byte flags);
+CParticleSystem *__thiscall CParticleSystem_Delete(CParticleSystem *self, byte flags);
 /* the node, the type and its parameters (copied, or from ini, or from the particle ini) */
-void __thiscall CSistPart_Init(CSistPart *self, CNodo3D *nodo, const char *type, const SistPartParams *params,
-	CArchINI *ini);
+void __thiscall CParticleSystem_Init(CParticleSystem *self, CNode3D *node, const char *type, const ParticleSystemParams *params,
+	CIniFile *ini);
 /* a free particle, made active; with force the oldest one if none is free */
-CParticula *__thiscall CSistPart_GetFree(CSistPart *self, byte force);
-/* the system of the [Particles] section of the user properties of nodo, with the ini of the scene; NULL without a
+CParticle *__thiscall CParticleSystem_GetFree(CParticleSystem *self, byte force);
+/* the system of the [Particles] section of the user properties of node, with the ini of the scene; NULL without a
  * type */
-CSistPart *SistPart_FromNode(CNodo3D *nodo, CArchINI *ini);
-void __thiscall CSistPart_SetColorRamp(CSistPart *self, uint32_t *ramp);
-void __thiscall CSistPart_SetEmitPos(CSistPart *self, vec3_t *pos, byte n);
-void __thiscall CSistPart_GetEscala2(CSistPart *self, float *out);
-void __thiscall CSistPart_GetEscala(CSistPart *self, vec3_t *out);
+CParticleSystem *ParticleSystem_FromNode(CNode3D *node, CIniFile *ini);
+void __thiscall CParticleSystem_SetColorRamp(CParticleSystem *self, uint32_t *ramp);
+void __thiscall CParticleSystem_SetEmitPos(CParticleSystem *self, vec3_t *pos, byte n);
+void __thiscall CParticleSystem_GetScale2(CParticleSystem *self, float *out);
+void __thiscall CParticleSystem_GetScale(CParticleSystem *self, vec3_t *out);
 /* the box of the particles of a static system; 0 for the others */
-byte __thiscall CSistPart_GetBox(CSistPart *self, box_t *box);
+byte __thiscall CParticleSystem_GetBox(CParticleSystem *self, box_t *box);
 /* the parameters from the section of the type in ini */
-void __thiscall CSistPart_ReadParams(CSistPart *self, CArchINI *ini);
+void __thiscall CParticleSystem_ReadParams(CParticleSystem *self, CIniFile *ini);
 /* p born with the parameters */
-void __thiscall CSistPart_GenParticle(CSistPart *self, CParticula *p);
+void __thiscall CParticleSystem_GenParticle(CParticleSystem *self, CParticle *p);
 /* the vectors of p turned by m and its position moved by m, as the flags say */
-void __thiscall CSistPart_PlaceParticle(CSistPart *self, CParticula *p, const matrix_t *m);
-/* n particles born at the node matrix m, delay i * dt each; force: see CSistPart_GetFree */
-void __thiscall CSistPart_Emit(CSistPart *self, int n, byte force, float dt, const matrix_t *m);
-void __thiscall CSistPart_EmitN(CSistPart *self, int n, byte force);
-void __thiscall CSistPart_EmitM(CSistPart *self, int n, byte force, const matrix_t *m);
-void __thiscall CSistPart_EmitDt(CSistPart *self, int n, byte force, float dt);
-byte __thiscall CSistPart_Read(CSistPart *self, CArchIO *f, MallaD3D_FileCtx *ctx);
-byte __thiscall CSistPart_Write(CSistPart *self, CArchIO *f, MallaD3D_FileCtx *ctx);
-void __fastcall CSistPart_CreateMat(CSistPart *self);
-void __thiscall CSistPart_SetActive(CSistPart *self, CParticula *p, byte active);
-void __fastcall CSistPart_CreateParticles(CSistPart *self);
+void __thiscall CParticleSystem_PlaceParticle(CParticleSystem *self, CParticle *p, const matrix_t *m);
+/* n particles born at the node matrix m, delay i * dt each; force: see CParticleSystem_GetFree */
+void __thiscall CParticleSystem_Emit(CParticleSystem *self, int n, byte force, float dt, const matrix_t *m);
+void __thiscall CParticleSystem_EmitN(CParticleSystem *self, int n, byte force);
+void __thiscall CParticleSystem_EmitM(CParticleSystem *self, int n, byte force, const matrix_t *m);
+void __thiscall CParticleSystem_EmitDt(CParticleSystem *self, int n, byte force, float dt);
+byte __thiscall CParticleSystem_Read(CParticleSystem *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+byte __thiscall CParticleSystem_Write(CParticleSystem *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+void __fastcall CParticleSystem_CreateMat(CParticleSystem *self);
+void __thiscall CParticleSystem_SetActive(CParticleSystem *self, CParticle *p, byte active);
+void __fastcall CParticleSystem_CreateParticles(CParticleSystem *self);
 /* each coordinate a random value between a and b */
-vec3_t *SistPart_RandVec(vec3_t *out, const vec3_t *a, const vec3_t *b);
+vec3_t *ParticleSystem_RandVec(vec3_t *out, const vec3_t *a, const vec3_t *b);
 /* the particle ini loaded (cleared with no name) */
-void SistPart_LoadIni(const char *name, const char *dir);
-void __thiscall CSistPart_Render(CSistPart *self, void *dev, CNodoR *r);
-void __thiscall CSistPart_Render2(CSistPart *self, void *dev);
-void __thiscall CSistPart_SetAlpha(CSistPart *self, float alpha);
-void __thiscall CSistPart_Update(CSistPart *self, CNodoR *r);
+void ParticleSystem_LoadIni(const char *name, const char *dir);
+void __thiscall CParticleSystem_Render(CParticleSystem *self, void *dev, CRenderNode *r);
+void __thiscall CParticleSystem_Render2(CParticleSystem *self, void *dev);
+void __thiscall CParticleSystem_SetAlpha(CParticleSystem *self, float alpha);
+void __thiscall CParticleSystem_Update(CParticleSystem *self, CRenderNode *r);
 
 /* other modules (src/imports.inc) */
 /* rva 0x2cad70: the node of a 3D object, counted */
-void __thiscall CObjBase3D_SetNodo(IObjeto3D *self, CNodo3D *nodo);
+void __thiscall CObjBase3D_SetNode(IObject3D *self, CNode3D *node);
 /* rva 0x26bff0 and 0x26bc30 (SueloPortal.cpp): the visibility of a sphere for the debug output */
 /* src/game/engine3d/Engine/RenderMallaD3D.c (RenderObjBase3D.cpp): the system (or flare) queued with the render node
  * r for the draw sorted by distance after the meshes; HRESULT */
-int SistPart_Draw(CSistPart *sp, CNodoR *r);
+int ParticleSystem_Draw(CParticleSystem *sp, CRenderNode *r);
 /* src/game/engine3d/Engine/RenderEVA.c: the active particles drawn, in the space of r or of the node; 0 */
-int SistPart_Draw2(CSistPart *sp, CNodoR *r);
+int ParticleSystem_Draw2(CParticleSystem *sp, CRenderNode *r);
 
 #endif

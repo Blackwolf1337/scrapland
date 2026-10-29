@@ -23,7 +23,7 @@ typedef struct {
 	int ch;
 } txfKind_t;
 
-static TXF_cab *TXF_Cab(const txfKind_t *k) {
+static TXF_header *TXF_Header(const txfKind_t *k) {
 	return k->version == 1 ? g_TXFCab : g_TXFCab2;
 }
 
@@ -35,12 +35,12 @@ static void BmpFlt_Free(CBmpFlt *b, int ch) {
 	Img_Free(b, ch * sizeof(float));
 }
 
-static void BmpFlt_Create(CBmpFlt *b, int ancho, int alto, int ch) {
-	Img_Create(b, ancho, alto, ch * sizeof(float));
+static void BmpFlt_Create(CBmpFlt *b, int width, int height, int ch) {
+	Img_Create(b, width, height, ch * sizeof(float));
 }
 
 static int TXF_LoadKind(const txfKind_t *k, const char *name, CBmpFlt *dest, void *extra, int nbytes) {
-	TXF_cab *cab = TXF_Cab(k);
+	TXF_header *cab = TXF_Header(k);
 
 	CHECK(name && dest);
 	void *f = crt_fsopen(name, "rb", CRT_SH_DENYWR);
@@ -50,12 +50,12 @@ static int TXF_LoadKind(const txfKind_t *k, const char *name, CBmpFlt *dest, voi
 	if (crt_fread(cab, sizeof(*cab), 1, f) != 1) {
 		goto fail;
 	}
-	if (cab->magic != TXF_MAGIC || cab->version != k->version || cab->ancho <= 0 || cab->alto <= 0) {
+	if (cab->magic != TXF_MAGIC || cab->version != k->version || cab->width <= 0 || cab->height <= 0) {
 		*crt_errno() = g_TXFBadFormat;
 		goto fail;
 	}
-	BmpFlt_Create(dest, cab->ancho, cab->alto, k->ch);
-	if (crt_fread(dest->img, cab->alto * cab->ancho * k->ch * sizeof(float), 1, f) != 1) {
+	BmpFlt_Create(dest, cab->width, cab->height, k->ch);
+	if (crt_fread(dest->img, cab->height * cab->width * k->ch * sizeof(float), 1, f) != 1) {
 		goto fail;
 	}
 	if (extra && cab->extra && nbytes) {
@@ -75,7 +75,7 @@ fail:
 
 static int TXF_SaveKind(const txfKind_t *k, const char *name, const CBmpFlt *orig, byte flags, const void *extra,
 	int nbytes) {
-	TXF_cab *cab = TXF_Cab(k);
+	TXF_header *cab = TXF_Header(k);
 
 	CHECK(name && orig && orig->img);
 	if (!(flags & TXF_OVERWRITE)) {
@@ -93,11 +93,11 @@ static int TXF_SaveKind(const txfKind_t *k, const char *name, const CBmpFlt *ori
 	cab->magic = TXF_MAGIC;
 	memset(cab->pad, 0, sizeof(cab->pad));
 	cab->version = k->version;
-	cab->ancho = orig->ancho;
-	cab->alto = orig->alto;
+	cab->width = orig->width;
+	cab->height = orig->height;
 	cab->extra = extra ? nbytes : 0;
 	if (crt_fwrite(cab, sizeof(*cab), 1, f) != 1 ||
-		crt_fwrite(orig->img, cab->alto * cab->ancho * k->ch * sizeof(float), 1, f) != 1) {
+		crt_fwrite(orig->img, cab->height * cab->width * k->ch * sizeof(float), 1, f) != 1) {
 		goto fail;
 	}
 	if (cab->extra && crt_fwrite(extra, cab->extra, 1, f) != 1) {
@@ -133,7 +133,7 @@ static int BmpFlt_Save(const txfKind_t *k, CBmpFlt *b, const char *name, byte fl
 static void BmpFlt_Fill(CBmpFlt *b, const float *color, int ch) {
 	CHECK(b->img);
 	float *p = b->img;
-	for (int n = b->alto * b->ancho; n > 0; n--) {
+	for (int n = b->height * b->width; n > 0; n--) {
 		memcpy(p, color, ch * sizeof(float));
 		p += ch;
 	}
@@ -185,7 +185,7 @@ int __thiscall CBmpFlt_Save(CBmpFlt *self, const char *name, byte flags, const v
 void __thiscall CBmpFlt_Exposure(CBmpFlt *self, float a, float b) {
 	CHECK(self->img);
 	float *p = self->img;
-	for (int n = self->alto * self->ancho; n > 0; n--) {
+	for (int n = self->height * self->width; n > 0; n--) {
 		for (int i = 0; i < RGBA; i += 2) {
 			double in[2] = { -(a * p[i] / b), -(a * p[i + 1] / b) };
 			double out[2];
@@ -197,8 +197,8 @@ void __thiscall CBmpFlt_Exposure(CBmpFlt *self, float a, float b) {
 	}
 }
 
-void __thiscall CBmpFlt_Create(CBmpFlt *self, int ancho, int alto) {
-	BmpFlt_Create(self, ancho, alto, RGBA);
+void __thiscall CBmpFlt_Create(CBmpFlt *self, int width, int height) {
+	BmpFlt_Create(self, width, height, RGBA);
 }
 
 int __thiscall CBmpFlt_Load(CBmpFlt *self, const char *name, int flags, void *extra, int nbytes) {
@@ -215,15 +215,15 @@ void __thiscall CBmpFlt_Resample(CBmpFlt *self, const CBmpFlt *orig, uint32_t ma
 	if (Img_ResampleCopy(self, orig, mask, RGBA * sizeof(float))) {
 		return;
 	}
-	float sx = (float)orig->ancho / (float)self->ancho;
-	float sy = (float)orig->alto / (float)self->alto;
-	for (int y = 0; y < self->alto; y++) {
+	float sx = (float)orig->width / (float)self->width;
+	float sy = (float)orig->height / (float)self->height;
+	for (int y = 0; y < self->height; y++) {
 		int y0 = Img_BoxStart(y, sy);
 		int y1 = Img_BoxStart(y + 1, sy);
 		if (y1 == y0) {
 			y1++;
 		}
-		for (int x = 0; x < self->ancho; x++) {
+		for (int x = 0; x < self->width; x++) {
 			int x0 = Img_BoxStart(x, sx);
 			int x1 = Img_BoxStart(x + 1, sx);
 			if (x1 == x0) {
@@ -279,7 +279,7 @@ void __thiscall CBmpFlt2_Scale(CBmpFlt2 *self, float k) {
 		return;
 	}
 	float *p = self->img;
-	for (int n = self->alto * self->ancho; n > 0; n--) {
+	for (int n = self->height * self->width; n > 0; n--) {
 		for (int i = 0; i < RGB; i++) {
 			p[i] = p[i] * k;
 		}
@@ -294,7 +294,7 @@ int __thiscall CBmpFlt2_Save(CBmpFlt2 *self, const char *name, byte flags, const
 void __thiscall CBmpFlt2_Exposure(CBmpFlt2 *self, float a, float b) {
 	CHECK(self->img);
 	float *p = self->img;
-	for (int n = self->alto * self->ancho; n > 0; n--) {
+	for (int n = self->height * self->width; n > 0; n--) {
 		for (int i = 0; i < RGB; i++) {
 			p[i] = (1.0f - (float)Game_Exp((double)-(p[i] * a / b))) * b;
 		}
@@ -309,7 +309,7 @@ void __thiscall CBmpFlt2_Gamma(CBmpFlt2 *self, float g, float b) {
 	}
 	float inv = 1.0f / g;
 	float *p = self->img;
-	for (int n = self->alto * self->ancho; n > 0; n--) {
+	for (int n = self->height * self->width; n > 0; n--) {
 		for (int i = 0; i < RGB; i++) {
 			if (0.0f > p[i]) {
 				p[i] = 0.0f;
@@ -322,8 +322,8 @@ void __thiscall CBmpFlt2_Gamma(CBmpFlt2 *self, float g, float b) {
 	}
 }
 
-void __thiscall CBmpFlt2_Create(CBmpFlt2 *self, int ancho, int alto) {
-	BmpFlt_Create(self, ancho, alto, RGB);
+void __thiscall CBmpFlt2_Create(CBmpFlt2 *self, int width, int height) {
+	BmpFlt_Create(self, width, height, RGB);
 }
 
 int __thiscall CBmpFlt2_Load(CBmpFlt2 *self, const char *name, int flags, void *extra, int nbytes) {

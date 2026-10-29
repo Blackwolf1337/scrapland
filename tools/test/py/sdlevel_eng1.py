@@ -19,7 +19,7 @@ def en1r04(r):
 	return (r[0], r[4])
 
 import math
-en1mundo = SDTest.Peek('g_Mundo', 'i')
+en1mundo = SDTest.Peek('g_World', 'i')
 en1suelo = 0
 if en1mundo:
 	en1suelo = en1i(en1mundo + 0xb0)
@@ -53,39 +53,39 @@ if en1suelo:
 	for en1a, en1b in en1segs:
 		en1n = fmt((en1k,))
 		for en1f in (0, 1):
-			check('en1 CSuelo_TestSeg' + en1n + fmt((en1f,)), lambda a=en1a, b=en1b, f=en1f: (SDTest.Call('CSuelo_TestSeg',
+			check('en1 CGround_TestSeg' + en1n + fmt((en1f,)), lambda a=en1a, b=en1b, f=en1f: (SDTest.Call('CGround_TestSeg',
 				'tbiFFi', en1suelo, a, b, f)[0], SDTest.Peek('g_CollisionTests', 'i')))
-			check('en1 CSuelo_TraceSegPos' + en1n + fmt((en1f,)), lambda a=en1a, b=en1b, f=en1f:
-				(en1r03(SDTest.Call('CSuelo_TraceSegPos', 'tbiFFFi', en1suelo, a, b, (9.0, 9.0, 9.0), f)), SDTest.Peek('g_CollisionTests', 'i')))
+			check('en1 CGround_TraceSegPos' + en1n + fmt((en1f,)), lambda a=en1a, b=en1b, f=en1f:
+				(en1r03(SDTest.Call('CGround_TraceSegPos', 'tbiFFFi', en1suelo, a, b, (9.0, 9.0, 9.0), f)), SDTest.Peek('g_CollisionTests', 'i')))
 		for en1f in (0, 1, 2):
 			def en1ts(a=en1a, b=en1b, f=en1f):
 				SDTest.Poke(en1info - 0x400000, 0)
 				en1poke(en1info + 4, -1)
 				en1poke(en1info + 8, 0)
-				r = SDTest.Call('CSuelo_TraceSeg', 'tbiFFFii', en1suelo, a, b, (9.0, 9.0, 9.0), en1info, f)
+				r = SDTest.Call('CGround_TraceSeg', 'tbiFFFii', en1suelo, a, b, (9.0, 9.0, 9.0), en1info, f)
 				return (r[0], r[3], en1hit(en1info), SDTest.Peek('g_CollisionTests', 'i'))
-			check('en1 CSuelo_TraceSeg' + en1n + fmt((en1f,)), en1ts)
+			check('en1 CGround_TraceSeg' + en1n + fmt((en1f,)), en1ts)
 		for en1u in (0.0, 5.0, 1000.0):
 			def en1tr(a=en1a, b=en1b, u=en1u):
 				en1poke(en1cache, 0)
 				en1poke(en1cache + 4, 0)
 				en1poke(en1cache + 8, 0)
-				r1 = en1delta(lambda a=a, b=b, u=u: SDTest.Call('CSuelo_Trace', 'tbiFFifi', en1suelo, a, b, 0, u,
+				r1 = en1delta(lambda a=a, b=b, u=u: SDTest.Call('CGround_Trace', 'tbiFFifi', en1suelo, a, b, 0, u,
 					en1cache)[0])
 				h1 = en1hit(en1cache)
-				r2 = en1delta(lambda a=a, b=b, u=u: SDTest.Call('CSuelo_Trace', 'tbiFFifi', en1suelo, a, b, 0, u,
+				r2 = en1delta(lambda a=a, b=b, u=u: SDTest.Call('CGround_Trace', 'tbiFFifi', en1suelo, a, b, 0, u,
 					en1cache)[0])
-				r3 = en1delta(lambda a=a, u=u: SDTest.Call('CSuelo_Trace', 'tbiFFifi', en1suelo, a, en1add(a, (0, 1.0, 0)),
+				r3 = en1delta(lambda a=a, u=u: SDTest.Call('CGround_Trace', 'tbiFFifi', en1suelo, a, en1add(a, (0, 1.0, 0)),
 					0, u, en1cache)[0])
 				return (r1, h1, r2, r3, en1hit(en1cache))
-			check('en1 CSuelo_Trace' + en1n + fmt((en1u,)), en1tr)
+			check('en1 CGround_Trace' + en1n + fmt((en1u,)), en1tr)
 		en1k = en1k + 1
 	# the own cache of the floor (cleared first; the game uses it between frames)
 	en1sc = (en1i(en1suelo + 0x14), en1i(en1suelo + 0x18), en1i(en1suelo + 0x1c))
 	en1poke(en1suelo + 0x1c, 0)
 	for en1a, en1b in en1segs[:5]:
-		check('en1 CSuelo_Trace own' + fmt((en1a, en1b)), lambda a=en1a, b=en1b: (en1delta(lambda a=a, b=b:
-			SDTest.Call('CSuelo_Trace', 'tbiFFifi', en1suelo, a, b, 0, 0.0, 0)[0]), en1hit(en1suelo + 0x14)))
+		check('en1 CGround_Trace own' + fmt((en1a, en1b)), lambda a=en1a, b=en1b: (en1delta(lambda a=a, b=b:
+			SDTest.Call('CGround_Trace', 'tbiFFifi', en1suelo, a, b, 0, 0.0, 0)[0]), en1hit(en1suelo + 0x14)))
 	en1poke(en1suelo + 0x14, en1sc[0])
 	en1poke(en1suelo + 0x18, en1sc[1])
 	en1poke(en1suelo + 0x1c, en1sc[2])
@@ -97,11 +97,11 @@ if en1suelo:
 	en1cx = int((en1p[0] - en1g[0]) * en1inv[0])
 	en1cz = int((en1p[2] - en1g[2]) * en1inv[1])
 	for en1a, en1b in en1segs:
-		check('en1 Alturas_CellStep' + fmt((en1a, en1b)), lambda a=en1a, b=en1b: SDTest.Call('Alturas_CellStep', 'bippFFF',
+		check('en1 Heights_CellStep' + fmt((en1a, en1b)), lambda a=en1a, b=en1b: SDTest.Call('Heights_CellStep', 'bippFFF',
 			en1alt, en1cx, en1cz, a, b, (5.0,)))
-		check('en1 Alturas_CellStep NULL' + fmt((en1a, en1b)), lambda a=en1a, b=en1b: SDTest.Call('Alturas_CellStep',
+		check('en1 Heights_CellStep NULL' + fmt((en1a, en1b)), lambda a=en1a, b=en1b: SDTest.Call('Heights_CellStep',
 			'bippFFi', en1alt, en1cx + 1, en1cz - 1, a, b, 0)[:3])
-	en1ts0 = en1fl(symva('g_TraceCell'), 10) + en1fl(symva('g_NTortas'), 1) + en1fl(symva('g_NCarasTortas'), 1)
+	en1ts0 = en1fl(symva('g_TraceCell'), 10) + en1fl(symva('g_NTortas'), 1) + en1fl(symva('g_NResponseFaces'), 1)
 	en1ts1 = (en1i(symva('g_TraceCell') + 0x8), en1i(symva('g_TraceCell') + 0xc))
 	for en1a, en1b in en1segs:
 		def en1step(a=en1a, b=en1b):
@@ -118,16 +118,16 @@ if en1suelo:
 			en1poke(symva('g_TraceCell') + 0x8, int((a[0] - en1g[0]) * en1inv[0]))
 			en1poke(symva('g_TraceCell') + 0xc, int((a[2] - en1g[2]) * en1inv[1]))
 			for i in range(6):
-				r.append((SDTest.Call('Alturas_TraceStep', 'bi', en1alt)[0], en1i(symva('g_TraceCell') + 0x8), en1i(symva('g_TraceCell') + 0xc)))
+				r.append((SDTest.Call('Heights_TraceStep', 'bi', en1alt)[0], en1i(symva('g_TraceCell') + 0x8), en1i(symva('g_TraceCell') + 0xc)))
 			return r
-		check('en1 Alturas_TraceStep' + fmt((en1a, en1b)), en1step)
+		check('en1 Heights_TraceStep' + fmt((en1a, en1b)), en1step)
 	en1set(symva('g_TraceCell'), en1ts0[:10])
 	en1set(symva('g_NTortas'), en1ts0[10:11])
-	en1set(symva('g_NCarasTortas'), en1ts0[11:])
+	en1set(symva('g_NResponseFaces'), en1ts0[11:])
 	en1poke(symva('g_TraceCell') + 0x8, en1ts1[0])
 	en1poke(symva('g_TraceCell') + 0xc, en1ts1[1])
 
-	# boxes against the floor: the query of checkbbox.cpp (usar_minmax 1 and 2)
+	# boxes against the floor: the query of checkbbox.cpp (use_minmax 1 and 2)
 	en1col = en1z(0x80)
 	for en1c in (en1p, en1add(en1p, (0, -150.0, 0)), en1add(en1p, (0, 400.0, 0)), en1add(en1p, (25000.0, 0, 0)),
 		en1add(en1p, (-1500.0, -100.0, 900.0))):
@@ -141,9 +141,9 @@ if en1suelo:
 					else:
 						en1set(en1col + 0x3c, lo + hi)
 					en1poke(en1col + 0x54, u)
-					r = SDTest.Call('CSuelo_CheckBBox', 'tbii', en1suelo, en1col)[0]
-					return (r, SDTest.Peek('g_NTortas', 'i'), SDTest.Peek('g_NCarasTortas', 'i'), SDTest.Peek('g_CollisionTests', 'i'))
-				check('en1 CSuelo_CheckBBox' + fmt((en1c, en1lo, en1hi, en1u)), en1bb)
+					r = SDTest.Call('CGround_CheckBBox', 'tbii', en1suelo, en1col)[0]
+					return (r, SDTest.Peek('g_NTortas', 'i'), SDTest.Peek('g_NResponseFaces', 'i'), SDTest.Peek('g_CollisionTests', 'i'))
+				check('en1 CGround_CheckBBox' + fmt((en1c, en1lo, en1hi, en1u)), en1bb)
 	# oriented boxes against the floor, the debug box through the D3D log
 	def en1log(fn):
 		SDTest.Out()
@@ -155,9 +155,9 @@ if en1suelo:
 		for en1rot in ((1.0, 0.0), (0.70710677, 0.70710677), (0.0, 1.0)):
 			en1m = (en1rot[0], 0.0, -en1rot[1], 0.0, 0.0, 1.0, 0.0, 0.0, en1rot[1], 0.0, en1rot[0], 0.0) + en1c + (1.0,)
 			for en1h in ((20.0, 20.0, 20.0), (200.0, 50.0, 120.0), (5.0, 300.0, 5.0)):
-				check('en1 CSuelo_CollideOBB' + fmt((en1c, en1rot, en1h)), lambda m=en1m, h=en1h: (en1log(lambda m=m,
-					h=h: SDTest.Call('CSuelo_CollideOBB', 'tbiFFFF', en1suelo, m, h, (7.0, 7.0, 7.0), (8.0, 8.0, 8.0))),
-					SDTest.Call('CSuelo_CollideOBB', 'tbiFFii', en1suelo, m, h, 0, 0)[0], SDTest.Peek('g_CollisionTests', 'i')))
+				check('en1 CGround_CollideOBB' + fmt((en1c, en1rot, en1h)), lambda m=en1m, h=en1h: (en1log(lambda m=m,
+					h=h: SDTest.Call('CGround_CollideOBB', 'tbiFFFF', en1suelo, m, h, (7.0, 7.0, 7.0), (8.0, 8.0, 8.0))),
+					SDTest.Call('CGround_CollideOBB', 'tbiFFii', en1suelo, m, h, 0, 0)[0], SDTest.Peek('g_CollisionTests', 'i')))
 
 # the pure parts
 en1tris = (((0.0, 0.0, 0.0), (10.0, 0.0, 0.0), (0.0, 0.0, 10.0)), ((0.0, 0.0, 0.0), (10.0, 5.0, 0.0), (0.0, 5.0, 10.0)),
@@ -166,8 +166,8 @@ en1pts = ((1.0, 0.0, 1.0), (5.0, 0.0, 5.0), (0.0, 0.0, 0.0), (10.0, 0.0, 0.0), (
 	(2.5, 2.5, 2.5), (1.0, 2.0, 3.0), (2.0, 3.0, 4.0), (0.0, 0.5, 0.0))
 for en1t in en1tris:
 	for en1q in en1pts:
-		check('en1 Suelo_PointInTriIn' + fmt((en1t, en1q)), lambda t=en1t, q=en1q: (SDTest.Call('Suelo_PointInTriIn', 'bFFFF', q,
-			t[0], t[1], t[2])[0], SDTest.Call('Suelo_PointInTriIn', 'bFFFF', q, t[0], t[2], t[1])[0]))
+		check('en1 Ground_PointInTriIn' + fmt((en1t, en1q)), lambda t=en1t, q=en1q: (SDTest.Call('Ground_PointInTriIn', 'bFFFF', q,
+			t[0], t[1], t[2])[0], SDTest.Call('Ground_PointInTriIn', 'bFFFF', q, t[0], t[2], t[1])[0]))
 
 # BoxTri on a fake triangle (verts 0 1 2) with both plane sides
 en1v = en1z(36)
@@ -263,11 +263,11 @@ en1poke(symva('g_ProfFrames') + 28, en1fr)
 en1poke(symva('g_CpuFreq'), en1freq)
 
 # Engine/SueloPortal.cpp: the rectangle constructor, the viewport of a seen sector and the debug drawing, through the
-# D3D log (the projection and the viewport set back by Portales_SetView(NULL))
+# D3D log (the projection and the viewport set back by Portals_SetView(NULL))
 en1zp = en1z(0x20)
 for en1k in range(8):
 	en1poke(en1zp + 4 * en1k, 0x11111111)
-check('en1 ZonaPintar_ctor', lambda: (SDTest.Call('ZonaPintar_ctor', 'tii', en1zp)[0] == en1zp, map(en1i, (en1zp, en1zp + 4,
+check('en1 PaintZone_ctor', lambda: (SDTest.Call('PaintZone_ctor', 'tii', en1zp)[0] == en1zp, map(en1i, (en1zp, en1zp + 4,
 	en1zp + 8, en1zp + 0xc, en1zp + 0x10, en1zp + 0x14, en1zp + 0x18, en1zp + 0x1c))))
 en1pv = SDTest.Peek('g_PortalClip', 'i')
 en1sp = SDTest.Peek('g_ShowPortals', 'i')
@@ -290,48 +290,48 @@ for en1v in (0, 1):
 			(-2.0, -3.0, 0.0, 3.0, 2.0, 1.0), (0.9, -0.95, 0.0, 1.5, -0.9, 1.0)):
 			en1poke(en1zp, 7)
 			en1set(en1zp + 4, en1r)
-			check('en1 Portales_SetView' + fmt((en1v, en1pd, en1r)), lambda: en1lg(lambda: (SDTest.Call('Portales_SetView',
-				'bi', en1zp)[0], SDTest.Call('Portales_SetView', 'bi', 0)[0])))
+			check('en1 Portals_SetView' + fmt((en1v, en1pd, en1r)), lambda: en1lg(lambda: (SDTest.Call('Portals_SetView',
+				'bi', en1zp)[0], SDTest.Call('Portals_SetView', 'bi', 0)[0])))
 SDTest.Poke('g_PortalBand', en1pad)
 SDTest.Poke('g_PortalClip', en1pv)
-en1nzp = SDTest.Peek('g_NumZonasPintar', 'i')
-en1zps = en1fl(symva('g_ZonasPintar'), 24)
-en1set(symva('g_ZonasPintar'), (0.0, -1.0, -1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, -0.5, -0.5, 0.0, 0.25, 0.5, 1.0, 0.0, 0.0, 0.1, 0.2,
+en1nzp = SDTest.Peek('g_NumPaintZones', 'i')
+en1zps = en1fl(symva('g_PaintZones'), 24)
+en1set(symva('g_PaintZones'), (0.0, -1.0, -1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, -0.5, -0.5, 0.0, 0.25, 0.5, 1.0, 0.0, 0.0, 0.1, 0.2,
 	0.0, 0.3, 0.4, 0.5, 0.0))
-en1poke(symva('g_ZonasPintar'), 0)
-en1poke(symva('g_ZonasPintar') + 0x1c, 1)
-en1poke(symva('g_ZonasPintar') + 0x20, 3)
-en1poke(symva('g_ZonasPintar') + 0x3c, 2)
-en1poke(symva('g_ZonasPintar') + 0x40, 5)
-en1poke(symva('g_ZonasPintar') + 0x5c, 1)
-SDTest.Poke('g_NumZonasPintar', 3)
+en1poke(symva('g_PaintZones'), 0)
+en1poke(symva('g_PaintZones') + 0x1c, 1)
+en1poke(symva('g_PaintZones') + 0x20, 3)
+en1poke(symva('g_PaintZones') + 0x3c, 2)
+en1poke(symva('g_PaintZones') + 0x40, 5)
+en1poke(symva('g_PaintZones') + 0x5c, 1)
+SDTest.Poke('g_NumPaintZones', 3)
 for en1v in (0, 1, 2, 3):
 	SDTest.Poke('g_ShowPortals', en1v)
-	check('en1 Portales_DebugDraw' + fmt((en1v,)), lambda: en1lg(lambda: (SDTest.Call('Portales_DebugDraw', 'v'),)))
+	check('en1 Portals_DebugDraw' + fmt((en1v,)), lambda: en1lg(lambda: (SDTest.Call('Portals_DebugDraw', 'v'),)))
 SDTest.Poke('g_ShowPortals', en1sp)
-SDTest.Poke('g_NumZonasPintar', en1nzp)
-en1set(symva('g_ZonasPintar'), en1zps)
+SDTest.Poke('g_NumPaintZones', en1nzp)
+en1set(symva('g_PaintZones'), en1zps)
 SDTest.Poke('g_ViewportW', en1vw[0])
 SDTest.Poke('g_ViewportH', en1vw[1])
 
 # Engine/stencil.cpp: the capture switch, the shadow light of a fake light, the debug line, the switch with the frame
 # state it clears, and the buffers made again (through the D3D log)
-en1sg = (symva('g_SombrasStencil'), symva('g_StencilCapturar'), symva('g_StencilMultFrame'), symva('g_ShadowLight'), symva('g_ShadowLightTipo'), symva('g_ShadowLightPos'), symva('g_ShadowLightPos') + 0x4, symva('g_ShadowLightPos') + 0x8, symva('g_ShadowLightDir'), symva('g_ShadowLightDir') + 0x4,
-	symva('g_ShadowLightDir') + 0x8, symva('g_ShadowRange'), symva('g_ShadowCos'), symva('g_StencilRender'), symva('g_RenderClaseMask'), symva('g_RenderFlagMask'), symva('g_RenderPass'), symva('g_StencilSegs'), symva('g_StencilInv'), symva('g_StencilGrupos'))
+en1sg = (symva('g_ShadowsStencil'), symva('g_StencilCapture'), symva('g_StencilMultFrame'), symva('g_ShadowLight'), symva('g_ShadowLightType'), symva('g_ShadowLightPos'), symva('g_ShadowLightPos') + 0x4, symva('g_ShadowLightPos') + 0x8, symva('g_ShadowLightDir'), symva('g_ShadowLightDir') + 0x4,
+	symva('g_ShadowLightDir') + 0x8, symva('g_ShadowRange'), symva('g_ShadowCos'), symva('g_StencilRender'), symva('g_RenderClassMask'), symva('g_RenderFlagMask'), symva('g_RenderPass'), symva('g_StencilSegs'), symva('g_StencilInv'), symva('g_StencilGroups'))
 en1ss = map(en1i, en1sg)
 en1s4ec = SDTest.Peek('g_RenderFlagNeg', 'b')
 def en1st():
-	return (en1i(symva('g_SombrasStencil')), en1i(symva('g_StencilCapturar')), en1fl(symva('g_StencilMultFrame'), 1), en1i(symva('g_ShadowLight')) != 0, en1i(symva('g_ShadowLightTipo')),
+	return (en1i(symva('g_ShadowsStencil')), en1i(symva('g_StencilCapture')), en1fl(symva('g_StencilMultFrame'), 1), en1i(symva('g_ShadowLight')) != 0, en1i(symva('g_ShadowLightType')),
 		en1fl(symva('g_ShadowLightPos'), 3), en1fl(symva('g_ShadowLightDir'), 3), en1fl(symva('g_ShadowRange'), 1), en1fl(symva('g_ShadowCos'), 1), en1i(symva('g_StencilRender')),
-		en1i(symva('g_RenderClaseMask')), en1i(symva('g_RenderFlagMask')), SDTest.Peek('g_RenderFlagNeg', 'b'), en1i(symva('g_RenderPass')), en1i(symva('g_StencilSegs')), en1i(symva('g_StencilInv')),
-		en1i(symva('g_StencilGrupos')))
+		en1i(symva('g_RenderClassMask')), en1i(symva('g_RenderFlagMask')), SDTest.Peek('g_RenderFlagNeg', 'b'), en1i(symva('g_RenderPass')), en1i(symva('g_StencilSegs')), en1i(symva('g_StencilInv')),
+		en1i(symva('g_StencilGroups')))
 en1roff = SDTest.Peek('g_RenderOff', 'i')
 for en1v in ((0, 0), (1, 0), (1, 1), (0, 1)):
 	en1poke(symva('g_RenderOff'), (en1roff & ~0xff) | en1v[0])
-	en1poke(symva('g_SombrasStencil'), en1v[1])
+	en1poke(symva('g_ShadowsStencil'), en1v[1])
 	for en1on in (0, 1, 7):
-		check('en1 SombrasStencil_Capturar' + fmt((en1v, en1on)), lambda on=en1on: (SDTest.Call('SombrasStencil_Capturar', 'vi', on),
-			en1i(symva('g_StencilCapturar')), en1fl(symva('g_StencilMultFrame'), 1)))
+		check('en1 ShadowsStencil_Capture' + fmt((en1v, en1on)), lambda on=en1on: (SDTest.Call('ShadowsStencil_Capture', 'vi', on),
+			en1i(symva('g_StencilCapture')), en1fl(symva('g_StencilMultFrame'), 1)))
 en1poke(symva('g_RenderOff'), en1roff)
 en1luz = en1z(0xcc)
 for en1t in (0x138a, 2, 3):
@@ -342,27 +342,27 @@ for en1t in (0x138a, 2, 3):
 					en1poke(en1luz + 8, t)
 					en1set(en1luz + 0x80, (10.0, 20.0, -30.0) + d)
 					en1set(en1luz + 0x34, (rg, 0.0, 45.0))
-					en1poke(symva('g_SombrasStencil'), cap[0])
-					en1poke(symva('g_StencilCapturar'), cap[1])
+					en1poke(symva('g_ShadowsStencil'), cap[0])
+					en1poke(symva('g_StencilCapture'), cap[1])
 					SDTest.Call('E3D_SetShadowLight', 'vii', en1luz, 0)
 					r1 = en1st()
 					SDTest.Call('E3D_SetShadowLight', 'vii', 0, 0)
 					return (r1, en1i(symva('g_ShadowLight')))
 				check('en1 E3D_SetShadowLight' + fmt((en1t, en1dir, en1rg, en1cap)), en1sl)
-en1poke(symva('g_SombrasStencil'), en1ss[0])
+en1poke(symva('g_ShadowsStencil'), en1ss[0])
 check('en1 Stencil_DebugLine', lambda: en1lg(lambda: (SDTest.Call('Stencil_DebugLine', 'vFFi', (1.0, 2.0, 3.0), (-4.0, 5.0, 6.5),
 	0xff00ff),)))
 for en1on in (0, 1, 0, 1):
-	check('en1 SombrasStencil_Set' + fmt((en1on,)), lambda on=en1on: (SDTest.Call('SombrasStencil_Set', 'vi', on), en1st()))
+	check('en1 ShadowsStencil_Set' + fmt((en1on,)), lambda on=en1on: (SDTest.Call('ShadowsStencil_Set', 'vi', on), en1st()))
 check('en1 Stencil_Free Init', lambda: en1lg(lambda: (SDTest.Call('Stencil_Free', 'v'), SDTest.Call('Stencil_Init', 'v'), en1st(),
-	en1i(symva('g_StencilBlock')) != 0, en1i(symva('g_StencilSegmentos')) != 0, en1i(symva('g_StencilTriangInv')) != 0, en1i(symva('g_StencilVB')) != 0, en1i(symva('g_StencilIB')) != 0,
+	en1i(symva('g_StencilBlock')) != 0, en1i(symva('g_StencilSegments')) != 0, en1i(symva('g_StencilTriInv')) != 0, en1i(symva('g_StencilVB')) != 0, en1i(symva('g_StencilIB')) != 0,
 	en1i(symva('g_StencilVB2')) != 0, en1i(symva('g_StencilVB3')) != 0, SDTest.Peek('g_StencilShadows', 'i'))))
 for en1k in range(len(en1sg)):
 	en1poke(en1sg[en1k], en1ss[en1k])
 en1poke(symva('g_RenderFlagNeg'), (SDTest.Peek('g_RenderFlagNeg', 'i') & 0xffffff00) | en1s4ec)
 
 # the DX8 SDK helpers: the order of display modes, the string conversions, the GUID strings and the depth format
-# check of the adapter of g_Motor
+# check of the adapter of g_Engine
 en1dm = en1z(0x20)
 for en1a, en1b in (((640, 480, 60, 22), (800, 600, 60, 22)), ((800, 600, 60, 22), (640, 480, 60, 22)),
 	((800, 480, 60, 22), (800, 600, 60, 22)), ((800, 600, 60, 22), (800, 480, 60, 22)), ((800, 600, 75, 22),
@@ -412,7 +412,7 @@ for en1s in ('{12345678-9ABC-DEF0-1234-56789ABCDEF0}', '{12345678-9abc-def0-1234
 		en1wfill(en1guid, 4, 0x11111111)
 		return (SDTest.Call('DXUtil_StringToGUID', 'isi', s, en1guid)[0], en1ints(en1guid, 4))
 	check('en1 DXUtil_StringToGUID' + fmt((en1s,)), en1sg)
-en1motor = SDTest.Peek('g_Motor', 'i')
+en1motor = SDTest.Peek('g_Engine', 'i')
 en1d3d = 0
 if en1motor:
 	en1d3d = en1i(en1motor + 0x2a3d4)
@@ -433,7 +433,7 @@ if en1d3d:
 	en1poke(en1motor + 0x2a5b4, en1mb[0])
 	en1poke(en1motor + 0x2a5b8, en1mb[1])
 
-# CD3DApplication: the constructor and destructor on a buffer (g_Motor set back), the window style, the back buffer
+# CD3DApplication: the constructor and destructor on a buffer (g_Engine set back), the window style, the back buffer
 # description (a new device id) and pause; these change the state of the device, so they come last
 if en1motor:
 	en1app = en1z(0x2a600)
@@ -446,12 +446,12 @@ if en1motor:
 			en1poke(en1app + en1k, 0x5a5a5a5a)
 	def en1ctor():
 		r = SDTest.Call('CD3DApp_ctor', 'tii', en1app)[0] == en1app
-		m = SDTest.Peek('g_Motor', 'i') == en1app
+		m = SDTest.Peek('g_Engine', 'i') == en1app
 		f = en1appf(en1app)
 		title = SDTest.Peek(en1i(en1app + 0x2a5ac), '@s')
 		SDTest.Call('CD3DApp_dtor', 'tvi', en1app)
-		m2 = SDTest.Peek('g_Motor', 'i')
-		SDTest.Poke('g_Motor', en1motor)
+		m2 = SDTest.Peek('g_Engine', 'i')
+		SDTest.Poke('g_Engine', en1motor)
 		return (r, m, f, title, m2)
 	check('en1 CD3DApp_ctor dtor', en1ctor)
 	check('en1 CD3DApp_AdjustWindowForChange', lambda: SDTest.Call('CD3DApp_AdjustWindowForChange', 'tii', en1motor)[0])

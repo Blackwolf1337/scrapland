@@ -153,6 +153,6 @@ void __thiscall CNodesWorld2D_NearestPointVis(CNodesWorld2D *self, const vec3_t 
 /* the path of CNodesWorld_BuildPath, the angles on the floor (without y) */
 byte __thiscall CNodesWorld2D_BuildPath(CNodesWorld2D *self, cNWVecList *path, int depth, const vec3_t *dir,
 	const vec3_t *start, byte direct, cNWNode **node, float r, float h1, float h2, byte flat);
-/* CNodesWorld2D_Load and CNodesWorld2D_AnalizeGraph: ai.h */
+/* CNodesWorld2D_Load and CNodesWorld2D_AnalyzeGraph: ai.h */
 
 #endif

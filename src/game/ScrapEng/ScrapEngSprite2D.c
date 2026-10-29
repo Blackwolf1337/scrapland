@@ -1,6 +1,6 @@
 /*
- * ScrapEngSprite2D.cpp of the game: CSprite2D (CPsaImage here), the state of a screen image over a CGrafico2D of the
- * engine3d: position, pivot, scale, mirror and frame of a .psa sprite sheet, copied to the CGrafico2D at each draw.
+ * ScrapEngSprite2D.cpp of the game: CSprite2D (CPsaImage here), the state of a screen image over a CGraphic2D of the
+ * engine3d: position, pivot, scale, mirror and frame of a .psa sprite sheet, copied to the CGraphic2D at each draw.
  * The count of the images is g_CountSprite2D.
  */
 #include "scrap/app.h"
@@ -16,10 +16,10 @@
 #define g_Sprite2DScaleA (GAME_ARRAY(float, g_Sprite2DScaleA, 0x431b94))
 #define g_Sprite2DScaleB (GAME_ARRAY(float, g_Sprite2DScaleB, 0x431b9c))
 
-#define Sprite_Graf(p) ((CGrafico2D *)(p)->sprite)
+#define Sprite_Graphic(p) ((CGraphic2D *)(p)->sprite)
 
 static CMultiSprite *Sprite_MultiSprite(const CPsaImage *self) {
-	return Sprite_Graf(self)->Mat->mapa[0]->MultiSprite;
+	return Sprite_Graphic(self)->Mat->map[0]->MultiSprite;
 }
 
 void __fastcall CPsaImage_Init(CPsaImage *self) {
@@ -32,8 +32,8 @@ void __fastcall CPsaImage_Init(CPsaImage *self) {
 	self->scaleY = 1.0f;
 	self->f18 = g_Sprite2DScale[0];
 	self->f1c = g_Sprite2DScale[1];
-	self->pantalla = 0;
-	self->tamPantalla = 0;
+	self->screen = 0;
+	self->screenSize = 0;
 	self->unit = 0;
 	self->uv0[0] = 0.0f;
 	self->uv0[1] = 0.0f;
@@ -69,23 +69,23 @@ CPsaImage *__fastcall CPsaImage_ctorEmpty(CPsaImage *self) {
 }
 
 void __fastcall CPsaImage_dtor(CPsaImage *self) {
-	CGrafico2D *g;
+	CGraphic2D *g;
 
 	CHECK(g_CountSprite2D > 0);
 	g_CountSprite2D--;
 	g = self->sprite;
 	if (g) {
-		CGrafico2D_dtor(g);
+		CGraphic2D_dtor(g);
 		operator_delete_sized(g, sizeof(*g));
 		self->sprite = NULL;
 	}
 }
 
 int __thiscall CPsaImage_GetNumFrames(CPsaImage *self) {
-	CMapa *map;
+	CMap *map;
 
 	CHECK(self->sprite);
-	map = Sprite_Graf(self)->Mat->mapa[0];
+	map = Sprite_Graphic(self)->Mat->map[0];
 	CHECK(map->MultiSprite);
 	return ((CMultiSprite *)map->MultiSprite)->n;
 }
@@ -136,7 +136,7 @@ void __thiscall CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, flo
 	CHECK(mode >= 0 && mode <= 3);
 	CHECK(flip >= 0 && flip <= 3);
 	self->flip = flip;
-	Sprite_Graf(self)->rot = (byte)mode;
+	Sprite_Graphic(self)->rot = (byte)mode;
 	self->x = x;
 	self->y = y;
 	self->frame = frame;
@@ -147,7 +147,7 @@ void __thiscall CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, flo
 void __thiscall CPsaImage_DrawPoly(void *img, const float *pos, const float *uv, const uint32_t *colors, int n,
 	int mode) {
 	CPsaImage *self = img;
-	CGrafico2D *g;
+	CGraphic2D *g;
 	float scale[2];
 
 	CHECK(self->sprite);
@@ -158,8 +158,8 @@ void __thiscall CPsaImage_DrawPoly(void *img, const float *pos, const float *uv,
 	g->alignX = self->pivotX;
 	g->alignY = self->pivotY;
 	g = self->sprite;
-	g->escala[0] = self->scaleX;
-	g->escala[1] = self->scaleY;
+	g->scale[0] = self->scaleX;
+	g->scale[1] = self->scaleY;
 	if (self->unit) {
 		scale[1] = 1.0f;
 		scale[0] = 1.0f;
@@ -168,42 +168,42 @@ void __thiscall CPsaImage_DrawPoly(void *img, const float *pos, const float *uv,
 		scale[1] = self->f1c;
 	}
 	g = self->sprite;
-	g->escala2[0] = scale[0];
-	g->escala2[1] = scale[1];
-	Sprite_Graf(self)->pantalla = self->pantalla == 0;
-	Sprite_Graf(self)->tamPantalla = self->tamPantalla == 0;
-	Sprite_Graf(self)->sinTextura = self->unit;
-	Sprite_Graf(self)->color = self->color;
+	g->scale2[0] = scale[0];
+	g->scale2[1] = scale[1];
+	Sprite_Graphic(self)->screen = self->screen == 0;
+	Sprite_Graphic(self)->screenSize = self->screenSize == 0;
+	Sprite_Graphic(self)->noTexture = self->unit;
+	Sprite_Graphic(self)->color = self->color;
 	g = self->sprite;
 	CPsaImage_GetFrameUV(self, self->frame, &g->u0, &g->u1);
 	if (self->flip > 0) {
 		if (self->flip & 1) {
-			float t = Sprite_Graf(self)->u0;
+			float t = Sprite_Graphic(self)->u0;
 
 			g = self->sprite;
 			g->u0 = g->u1;
-			Sprite_Graf(self)->u1 = t;
+			Sprite_Graphic(self)->u1 = t;
 		}
 		if (self->flip & 2) {
-			float t = Sprite_Graf(self)->v0;
+			float t = Sprite_Graphic(self)->v0;
 
 			g = self->sprite;
 			g->v0 = g->v1;
-			Sprite_Graf(self)->v1 = t;
+			Sprite_Graphic(self)->v1 = t;
 		}
 	}
 	if (mode == 0) {
-		CGrafico2D_Render(self->sprite);
+		CGraphic2D_Render(self->sprite);
 		return;
 	}
 	if (mode != 4 && mode != 5 && mode != 6) {
 		Con_Bluef("ERROR: CSprite2D: Unsupported primitive type: %d\n", mode);
 		CHECK(0);
 	}
-	CGrafico2D_Draw(self->sprite, pos, uv, colors, (uint32_t)n, mode);
+	CGraphic2D_Draw(self->sprite, pos, uv, colors, (uint32_t)n, mode);
 }
 
-/* the CGrafico2D of the sheet name (opac: the opacity map) with the blend mode and the SPR2D flags */
+/* the CGraphic2D of the sheet name (opac: the opacity map) with the blend mode and the SPR2D flags */
 void __thiscall CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int blend, uint32_t flags) {
 	void *mem;
 	uint32_t gflags, alpha;
@@ -211,10 +211,10 @@ void __thiscall CPsaImage_Load(CPsaImage *self, const char *name, const char *op
 
 	CHECK(!self->sprite);
 	if (flags & 1) {
-		self->pantalla = 1;
+		self->screen = 1;
 	}
 	if (flags & 2) {
-		self->tamPantalla = 1;
+		self->screenSize = 1;
 	}
 	if (flags & 4) {
 		self->unit = 1;
@@ -231,14 +231,14 @@ void __thiscall CPsaImage_Load(CPsaImage *self, const char *name, const char *op
 		self->f18 = g_Sprite2DScaleB[0];
 		self->f1c = g_Sprite2DScaleB[1];
 	}
-	mem = operator_new(sizeof(CGrafico2D));
-	self->sprite = mem ? CGrafico2D_ctor(mem) : NULL;
+	mem = operator_new(sizeof(CGraphic2D));
+	self->sprite = mem ? CGraphic2D_ctor(mem) : NULL;
 	gflags = ((((flags >> 1 & 0x20000) | (flags & 0x3000)) >> 3 | (flags & 0x100)) >> 6) | (flags & 0x10) * 2 |
 		(flags & 0x40);
 	alpha = (byte)((flags & 0xe0) << 2);
 	dst = BlendMode_GetDst(blend);
 	src = BlendMode_GetSrc(blend);
-	CGrafico2D_CreateMat(self->sprite, name, opac, src, dst, (byte)alpha, gflags);
+	CGraphic2D_CreateMat(self->sprite, name, opac, src, dst, (byte)alpha, gflags);
 	if (blend == 1 && (flags & 0x1000)) {
 		Con_Warnf("CSprite2D: SPR2D_ZMASK: BLENDMODE_ADD_ONE does not use alpha test\n");
 	}

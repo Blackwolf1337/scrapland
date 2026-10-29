@@ -452,8 +452,8 @@ const char str_GVarDesc_OptAnimFovErr[] SD_AT(0x3e2ffc) = "AnimFOV optimization 
 const char str_GVar_OptAnimFovErr[] SD_AT(0x3e3020) = "OptAnimFovErr";
 const char str_GVarDesc_OptAnimPosMax[] SD_AT(0x3e3030) = "AnimPos compression max dist";
 const char str_GVar_OptAnimPosMax[] SD_AT(0x3e3050) = "OptAnimPosMax";
-const char str_GVarDesc_R_AnimNodo_Count[] SD_AT(0x3e3060) = "AnimNodo counter";
-const char str_GVar_R_AnimNodo_Count[] SD_AT(0x3e3074) = "R_AnimNodo_Count";
+const char str_GVarDesc_R_AnimNode_Count[] SD_AT(0x3e3060) = "AnimNodo counter";
+const char str_GVar_R_AnimNode_Count[] SD_AT(0x3e3074) = "R_AnimNodo_Count";
 const char str_3e3088[] SD_AT(0x3e3088) = "c:\\proyect6\\scrapland\\code\\game\\engine3d\\engine\\animacion.h";
 const char str_3e30c4[] SD_AT(0x3e30c4) = "!MemBlock";
 const char str_3e30d0[] SD_AT(0x3e30d0) = "!MemBlock && size>=0";

@@ -301,31 +301,31 @@ static void RT_RestoreViewports(void) {
 
 /*
  * The materials of the effects: map 0 (and 3 for the DuDv target) without mipmaps and wrap, the blend and the
- * atrib of each one (MAT_SHADER with a shader in the name), z test 8 (D3DCMP_ALWAYS), z write off.
+ * attrib of each one (MAT_SHADER with a shader in the name), z test 8 (D3DCMP_ALWAYS), z write off.
  */
-static CMaterial *RT_MakeMat(const CMaterial *cur, const char *name, const char *map, uint16_t atrib, byte transp,
+static CMaterial *RT_MakeMat(const CMaterial *cur, const char *name, const char *map, uint16_t attrib, byte transp,
 	int srcBlend, int dstBlend, byte bump, byte share) {
 	CMaterial m;
 	CMaterial *r;
 
 	CMaterial_ctor(&m);
-	Cad_Set(&m.Nombre, name);
-	CMaterial_SetMap(&m, MAPA_DIFFUSE, map);
+	String_Set(&m.Name, name);
+	CMaterial_SetMap(&m, MAP_DIFFUSE, map);
 	if (bump) {
-		CMaterial_SetMap(&m, MAPA_BUMP, map);
+		CMaterial_SetMap(&m, MAP_BUMP, map);
 	}
-	m.params.atrib = atrib;
+	m.params.attrib = attrib;
 	m.params.b39 = 0;
 	m.params.transp = transp;
 	((byte *)&m.params.w3e)[1] = 0;
 	m.params.i40 = 8;
 	m.params.srcBlend = srcBlend;
 	m.params.dstBlend = dstBlend;
-	m.mapa[MAPA_DIFFUSE]->bc = 0;
-	m.mapa[MAPA_DIFFUSE]->b8 = 0;
+	m.map[MAP_DIFFUSE]->bc = 0;
+	m.map[MAP_DIFFUSE]->b8 = 0;
 	if (bump) {
-		m.mapa[MAPA_BUMP]->bc = 0;
-		m.mapa[MAPA_BUMP]->b8 = 0;
+		m.map[MAP_BUMP]->bc = 0;
+		m.map[MAP_BUMP]->b8 = 0;
 	}
 	CHECK(!cur);
 	r = Mat_New(&m, share);
@@ -335,11 +335,11 @@ static CMaterial *RT_MakeMat(const CMaterial *cur, const char *name, const char 
 
 #define RT_WHITE "bmp/rgb_white.tga"
 #define RT_BLACK "bmp/rgb_black.tga"
-#define RT_ATRIB (MAT_SHADER | MAT_LOADTEX)
+#define RT_ATTRIB (MAT_SHADER | MAT_LOADTEX)
 
 void RenderTarget_MakeCreditsMatBlur(void) {
 	g_CreditsMatBlur = RT_MakeMat(g_CreditsMatBlur, "Material_CreditsTargetBlur (+shader:MotionBlurAdd)", RT_WHITE,
-		RT_ATRIB, 0, 2, 1, 0, 0);
+		RT_ATTRIB, 0, 2, 1, 0, 0);
 }
 
 void RenderTarget_MakeCreditsMat(void) {
@@ -347,12 +347,12 @@ void RenderTarget_MakeCreditsMat(void) {
 }
 
 void RenderTarget_MakeBloomMatBlur(void) {
-	g_BloomMatBlur = RT_MakeMat(g_BloomMatBlur, "Material_BloomBlur (+shader:BloomBlur)", RT_WHITE, RT_ATRIB, 0, 2, 1,
+	g_BloomMatBlur = RT_MakeMat(g_BloomMatBlur, "Material_BloomBlur (+shader:BloomBlur)", RT_WHITE, RT_ATTRIB, 0, 2, 1,
 		0, 0);
 }
 
 void RenderTarget_MakeBloomMatFilter(void) {
-	g_BloomMatFilter = RT_MakeMat(g_BloomMatFilter, "Material_BloomFilter (+shader:BloomFilter)", RT_WHITE, RT_ATRIB,
+	g_BloomMatFilter = RT_MakeMat(g_BloomMatFilter, "Material_BloomFilter (+shader:BloomFilter)", RT_WHITE, RT_ATTRIB,
 		0, 2, 1, 0, 0);
 }
 
@@ -361,7 +361,7 @@ void RenderTarget_MakeBloomMatShow(void) {
 }
 
 void RenderTarget_MakeBloomMatTarget(void) {
-	g_BloomMatTarget = RT_MakeMat(g_BloomMatTarget, "Material_BloomTarget (+shader:BloomTarget)", RT_BLACK, RT_ATRIB,
+	g_BloomMatTarget = RT_MakeMat(g_BloomMatTarget, "Material_BloomTarget (+shader:BloomTarget)", RT_BLACK, RT_ATTRIB,
 		0, 2, 1, 0, 0);
 }
 
@@ -370,7 +370,7 @@ void RenderTarget_MakeBlurMatCopy(void) {
 }
 
 void RenderTarget_MakeBlurMatTarget(void) {
-	g_BlurMatTarget = RT_MakeMat(g_BlurMatTarget, "Material_BlurTarget (+shader:BlurTarget)", RT_WHITE, RT_ATRIB, 0,
+	g_BlurMatTarget = RT_MakeMat(g_BlurMatTarget, "Material_BlurTarget (+shader:BlurTarget)", RT_WHITE, RT_ATTRIB, 0,
 		2, 1, 0, 0);
 }
 
@@ -384,27 +384,27 @@ void RenderTarget_MakeDuDvMatDebug(void) {
 
 void RenderTarget_MakeDuDvMatFilter(void) {
 	g_SceneDuDvMatFilter = RT_MakeMat(g_SceneDuDvMatFilter, "Material_DuDvFilter (+shader:DUDVFilter)", RT_WHITE,
-		RT_ATRIB, 0, 2, 1, 0, 0);
+		RT_ATTRIB, 0, 2, 1, 0, 0);
 }
 
 void RenderTarget_MakeDuDvMatRTarget(void) {
 	g_SceneDuDvMatRTarget = RT_MakeMat(g_SceneDuDvMatRTarget, "Material_DuDvTarget (+shader:DUDVTarget)", RT_WHITE,
-		RT_ATRIB, 0, 2, 1, 1, 0);
+		RT_ATTRIB, 0, 2, 1, 1, 0);
 }
 
 void RenderTarget_MakeMotionBlurMatAdd(void) {
 	g_MotionBlurMatAdd = RT_MakeMat(g_MotionBlurMatAdd, "Material_BlurAdd (+shader:MotionBlurAdd)", RT_WHITE,
-		RT_ATRIB, 1, 5, 6, 0, 0);
+		RT_ATTRIB, 1, 5, 6, 0, 0);
 }
 
 void RenderTarget_MakeMotionBlurMatTarget(void) {
 	g_MotionBlurMatTarget = RT_MakeMat(g_MotionBlurMatTarget, "Material_BlurTarget (+shader:MotionBlurTarget)",
-		RT_WHITE, RT_ATRIB, 0, 2, 1, 0, 0);
+		RT_WHITE, RT_ATTRIB, 0, 2, 1, 0, 0);
 }
 
 void RenderTarget_MakeRadialBlurMat(void) {
 	g_RadialBlurMat = RT_MakeMat(g_RadialBlurMat, "Material_RadialBlurTarget (+shader:RadialBlurTarget)",
-		"bmp/radialmask.bmp", RT_ATRIB, 0, 2, 1, 0, 0);
+		"bmp/radialmask.bmp", RT_ATTRIB, 0, 2, 1, 0, 0);
 }
 
 void RenderTarget_MakeSceneMatCopy(void) {
@@ -422,8 +422,8 @@ byte Credits_Begin(void) {
 		return 0;
 	}
 	RT_BeginTarget(g_CreditsTarget, NULL);
-	Grafico2D_GetPantalla(&g_CreditsSavedW, &g_CreditsSavedH);
-	Grafico2D_SetPantalla(g_CreditsSizeX, g_CreditsSizeY);
+	Graphic2D_GetScreen(&g_CreditsSavedW, &g_CreditsSavedH);
+	Graphic2D_SetScreen(g_CreditsSizeX, g_CreditsSizeY);
 	if (g_CreditsClear) {
 		Render_Clear(NULL, 1, 0, 1.0f, 0);
 	}
@@ -438,7 +438,7 @@ void Credits_End(void) {
 	Render_ClearForced();
 	RT_RestoreBackBuffer();
 	RT_RestoreViewports();
-	Grafico2D_SetPantalla(g_CreditsSavedW, g_CreditsSavedH);
+	Graphic2D_SetScreen(g_CreditsSavedW, g_CreditsSavedH);
 	Credits_Draw();
 }
 
@@ -630,10 +630,10 @@ void NewsPanel_Init(void) {
 	}
 	/* the formats of the display mode and of the depth buffer of the application */
 	uint32_t size = (uint32_t)g_NewsPanelSize;
-	uint32_t zfmt = MOTOR_ZFORMAT(g_Motor);
+	uint32_t zfmt = ENGINE_ZFORMAT(g_Engine);
 	void *dev = RT_Dev();
 	D3D_METHOD(dev, rtCreateTexture_t, D3DDEV_CREATETEXTURE)(dev, size, size, 1, D3DUSAGE_RENDERTARGET,
-		(int)MOTOR_MODE(g_Motor)[0], D3DPOOL_DEFAULT, &g_NewsPanelTarget);
+		(int)ENGINE_MODE(g_Engine)[0], D3DPOOL_DEFAULT, &g_NewsPanelTarget);
 	dev = RT_Dev();
 	D3D_METHOD(dev, rtCreateDepthStencil_t, D3DDEV_CREATEDEPTHSTENCILSURFACE)(dev, size, size, (int)zfmt, 0,
 		&g_NewsPanelZ);
@@ -1057,15 +1057,15 @@ void DuDv_RenderBump(void) {
 		Render_Clear(NULL, 1, 0xff8080, 1.0f, 0);
 	}
 	int changes = g_MatChanges;
-	uint32_t mask = g_RenderClaseMask;
+	uint32_t mask = g_RenderClassMask;
 	int pass = g_RenderPass;
-	g_RenderClaseMask = 0;
+	g_RenderClassMask = 0;
 	g_RenderPass = 100;
-	Modelos_Render();
+	Models_Render();
 	E3D_FlushBatch();
 	Trails_Render(0x10);
 	int frame = g_SceneDuDvFrame;
-	g_RenderClaseMask = mask;
+	g_RenderClassMask = mask;
 	if (g_MatChanges != changes) {
 		frame = g_FrameCount;
 	}
@@ -1405,8 +1405,8 @@ void RadialBlur_Draw(void) {
 		RT_TSS(i, D3DTSS_MAGFILTER, filter);
 		RT_SetTexture(i, g_SceneSourceTexture);
 	}
-	CMapa *mask = g_RadialBlurMat->mapa[MAPA_DIFFUSE];
-	RT_SetTexture(0, mask ? CMapa_GetTexture(mask, 0) : NULL);
+	CMap *mask = g_RadialBlurMat->map[MAP_DIFFUSE];
+	RT_SetTexture(0, mask ? CMap_GetTexture(mask, 0) : NULL);
 	RT_TSS(0, D3DTSS_MINFILTER, 2);
 	RT_TSS(0, D3DTSS_MAGFILTER, 2);
 	float du = 0.5f / g_SceneW;
@@ -1724,8 +1724,8 @@ static byte RT_CapsLoad(const char *name, void **tex) {
 	void *data;
 	uint32_t size;
 
-	ArchIO_ReadAll(name, &data, &size);
-	byte ok = D3DX_CreateTextureFromFileInMemoryEx(MOTOR_DEV(g_Motor), data, size, 0, 0, 1, 0, D3DFMT_A8R8G8B8,
+	FileIO_ReadAll(name, &data, &size);
+	byte ok = D3DX_CreateTextureFromFileInMemoryEx(ENGINE_DEV(g_Engine), data, size, 0, 0, 1, 0, D3DFMT_A8R8G8B8,
 		D3DPOOL_MANAGED, 1, 1, 0, NULL, NULL, tex) >= 0;
 	Ptr_Delete(&data);
 	return ok;

@@ -123,7 +123,7 @@ void __thiscall cHangarShipScorer_Draw(cHangarShipScorer *self, int player) {
 	if (ship && !ship->vftable->IsType(ship, TYEN_CAR)) {
 		ship = NULL;
 	}
-	CGameCamera *cur = Camera_GetActual();
+	CGameCamera *cur = Camera_GetCurrent();
 	if (ship && cur) {
 		CGameCamera_Copy(self->cam, cur);
 		CGameCamera_SetLookAt(self->cam, 1);
@@ -139,7 +139,7 @@ void __thiscall cHangarShipScorer_Draw(cHangarShipScorer *self, int player) {
 		self->cam->fov = (float)((double)self->camFov * 3.141592653589793 / 180.0);
 		c = Hangar_GetCenter(ship, &tmp);
 		self->cam->target = *c;
-		Camera_SetActual(self->cam);
+		Camera_SetCurrent(self->cam);
 		Entity_GetAng(ship, &ang);
 		uint32_t fx = CGameModel_GetEffect(&Veh(ship)->model, NULL);
 		byte reset = self->reset;
@@ -166,7 +166,7 @@ void __thiscall cHangarShipScorer_Draw(cHangarShipScorer *self, int player) {
 		Hangar_Render(ship);
 		Hangar_SetAng(ship, &ang);
 		Hangar_SetFX(ship, fx);
-		Camera_SetActual(cur);
+		Camera_SetCurrent(cur);
 	}
 	Eng_ResetViewRect();
 }

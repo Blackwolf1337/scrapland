@@ -93,7 +93,7 @@ void __thiscall cTimerScorer_Draw(cTimerScorer *self, int player) {
 	if (self->type != 2) {
 		uint32_t min = Game_FtoUI(left / 60.0f);
 		uint32_t sec = Game_FtoUI(left - (float)(double)min * 60.0f);
-		CFont_PrintfAlignColorSombra(t->font, t->base.x, t->base.y, 4, t->color, "%.2d:%.2d", min, sec);
+		CFont_PrintfAlignColorShadow(t->font, t->base.x, t->base.y, 4, t->color, "%.2d:%.2d", min, sec);
 	}
 	if (!(GVAR_FLAGS(*var) & 1)) {
 		*var = left;

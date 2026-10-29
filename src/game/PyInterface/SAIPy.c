@@ -85,7 +85,7 @@ PyObject *SAI_BuildGraph(PyObject *self, PyObject *args) {
 }
 
 /* AnalizeMap(size) : analyses the level with a cube of that size; makes the graph if there is none */
-PyObject *SAI_AnalizeMap(PyObject *self, PyObject *args) {
+PyObject *SAI_AnalyzeMap(PyObject *self, PyObject *args) {
 	float size;
 
 	(void)self;
@@ -97,34 +97,34 @@ PyObject *SAI_AnalizeMap(PyObject *self, PyObject *args) {
 		g_NodesWorld = NEW_OBJ(0x3f0, CNodesWorld_ctor);
 		CHECK(g_NodesWorld);
 	}
-	CNodesWorld_Analize(g_NodesWorld, &cube);
+	CNodesWorld_Analyze(g_NodesWorld, &cube);
 	return ReturnNone();
 }
 
 /* AnalizeGraph() : Analiza características grafo. No argument check. */
-PyObject *SAI_AnalizeGraph(PyObject *self, PyObject *args) {
+PyObject *SAI_AnalyzeGraph(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	CNodesWorld_AnalizeGraph(g_NodesWorld);
+	CNodesWorld_AnalyzeGraph(g_NodesWorld);
 	return ReturnNone();
 }
 
 /* AnalizeGraph2D() : No argument check. */
-PyObject *SAI_AnalizeGraph2D(PyObject *self, PyObject *args) {
+PyObject *SAI_AnalyzeGraph2D(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	CNodesWorld2D_AnalizeGraph(g_NodesWorld2D);
+	CNodesWorld2D_AnalyzeGraph(g_NodesWorld2D);
 	return ReturnNone();
 }
 
 /* AnalizeTraffic() : traffic graph of the level (indoor or outdoor) */
-PyObject *SAI_AnalizeTraffic(PyObject *self, PyObject *args) {
+PyObject *SAI_AnalyzeTraffic(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
 	cNodesTraffic *traffic = g_IsMapOutDoor ? g_NodesTraffic : g_NodesTrafficInDoor;
-	traffic->vftable->Analize(traffic);
+	traffic->vftable->Analyze(traffic);
 	g_TrafficState = 3;
 	return ReturnNone();
 }

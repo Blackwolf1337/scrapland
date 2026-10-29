@@ -68,7 +68,7 @@ PyObject *SLogic_GearAttack(PyObject *self, PyObject *args) {
 	return ReturnNone();
 }
 
-/* int IsEnemyActive() : Indica si hay un enemigo activo, mirando la lista de enemigos y el tráfico. */
+/* int IsEnemyActive() : Indica si hay un enemigo activo, mirando la list de enemigos y el tráfico. */
 PyObject *SLogic_IsEnemyActive(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
@@ -82,7 +82,7 @@ PyObject *SLogic_IsEnemyActive(PyObject *self, PyObject *args) {
 }
 
 /*
- * Name GetNearestShip(pos[,exclude]) : Cicla por varias listas y devuelve la nave más cercana a la posición.
+ * Name GetNearestShip(pos[,exclude]) : Cicla por varias lists y devuelve la nave más cercana a la posición.
  * As compiled: the first car of a list counts as result before any distance check, and a list entry that is
  * not a Car is used through a NULL pointer (crash in the original as here).
  */
@@ -164,7 +164,7 @@ PyObject *SLogic_SetShipToRegenerate(PyObject *self, PyObject *args) {
 	return ReturnNone();
 }
 
-/* void SetDominationZones(zonesList): Establece la lista de las zonas de dominación (WithLife entities by name) */
+/* void SetDominationZones(zonesList): Establece la list de las zones de dominación (WithLife entities by name) */
 PyObject *SLogic_SetDominationZones(PyObject *self, PyObject *args) {
 	PyObject *zonesList;
 

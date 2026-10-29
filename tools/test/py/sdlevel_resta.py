@@ -422,14 +422,14 @@ SDTest.Poke('g_ConsoleOn', SDTest.Peek('g_ConsoleOn', 'i') & ~0xff0000)
 
 # ---- the debug drawings of CShow (not the AI views 4 and 6, they change the AI) and of NWAnalizeOn ----
 rsaCShow = SDTest.Peek('g_CShow', 'i')
-rsaAnalize = SDTest.Peek('g_NWAnalizeOn', 'i')
+rsaAnalize = SDTest.Peek('g_NWAnalyzeOn', 'i')
 for rsav in (1, 2, 3, 5, 7, 0, 9):
 	SDTest.Poke('g_CShow', rsav)
 	check('Scorer_DrawDebug' + fmt((rsav,)), lambda: (rsaloglen(lambda: SDTest.Call('Scorer_DrawDebug', 'v')), SDTest.Peek('g_ConLine', 'i')))
 SDTest.Poke('g_CShow', 0)
-SDTest.Poke('g_NWAnalizeOn', 1)
+SDTest.Poke('g_NWAnalyzeOn', 1)
 check('Scorer_DrawDebug NWAnalizeOn', lambda: (rsaloglen(lambda: SDTest.Call('Scorer_DrawDebug', 'v')), SDTest.Peek('g_ConLine', 'i')))
-SDTest.Poke('g_NWAnalizeOn', rsaAnalize)
+SDTest.Poke('g_NWAnalyzeOn', rsaAnalize)
 SDTest.Poke('g_CShow', rsaCShow)
 
 # ---- the sub menu logo on a cScraplandSubMenuScorer of our own: its time far back (frame time 0.2), the ring
