@@ -51,7 +51,7 @@ typedef int(__thiscall *inputAcquire_t)(IInput *self, byte on);
 
 /* the part of the constructors of IInput: one at a time, the state cleared */
 static void IInput_Init(IInput *self) {
-	self->vftable = IENTRADA_VFTABLE;
+	self->vftable = IINPUT_VFTABLE;
 	CHECK(!g_InputInit);
 	g_InputInit = 1;
 	memset(self->mouse, 0, sizeof(*self) - offsetof(IInput, mouse));
@@ -63,7 +63,7 @@ IInput *__fastcall IInput_ctor(IInput *self) {
 }
 
 void __fastcall IInput_dtor(IInput *self) {
-	self->vftable = IENTRADA_VFTABLE;
+	self->vftable = IINPUT_VFTABLE;
 	g_InputInit = 0;
 }
 
@@ -109,7 +109,7 @@ void __thiscall IInput_WndProc(IInput *self, void *hwnd, uint32_t msg, uint32_t 
 
 CInputDInput *__fastcall CInputDInput_ctor(CInputDInput *self) {
 	IInput_Init(&self->base);
-	self->base.vftable = CENTRADADINPUT_VFTABLE;
+	self->base.vftable = CINPUTDINPUT_VFTABLE;
 	self->di = NULL;
 	self->mouse = NULL;
 	self->keyboard = NULL;
@@ -257,7 +257,7 @@ void __thiscall CInputDInput_WndProc(CInputDInput *self, void *hwnd, uint32_t ms
 
 CInputWindows *__fastcall CInputWindows_ctor(CInputWindows *self) {
 	IInput_Init(&self->base);
-	self->base.vftable = CENTRADAWINDOWS_VFTABLE;
+	self->base.vftable = CINPUTWINDOWS_VFTABLE;
 	self->acquired = 0;
 	self->buttons = 0;
 	return self;

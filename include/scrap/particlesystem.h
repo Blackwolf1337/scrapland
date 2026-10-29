@@ -14,10 +14,10 @@
 #include "scrap/material.h"
 
 #define CSISTPART_VFTABLE GAME_VFTABLE(CParticleSystem_vftable, 0x3ddc6c)
-#define CPARTICULAACTIVE_VFTABLE GAME_VFTABLE(CParticleActive_vftable, 0x3ddc5c)
-#define CPARTICULASTATIC_VFTABLE GAME_VFTABLE(CParticleStatic_vftable, 0x3ddc4c)
+#define CPARTICLEACTIVE_VFTABLE GAME_VFTABLE(CParticleActive_vftable, 0x3ddc5c)
+#define CPARTICLESTATIC_VFTABLE GAME_VFTABLE(CParticleStatic_vftable, 0x3ddc4c)
 #define COBJBASE3D_VFTABLE GAME_VFTABLE(CObjBase3D_vftable, 0x3ddc1c)
-#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
+#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
 
 /* CParticleSystem.params.flags */
 #define PARTICLESYSTEM_LOCALPOS 0x01		/* the positions follow the node */

@@ -26,7 +26,7 @@ struct CVertList;
 /* nothing is drawn */
 #define g_RenderOff GAME_GLOBAL_IN(byte, group_4a8ef8, 0, 0x4a8ef8)
 /* only the meshes whose material has b38 are drawn */
-#define g_RenderSoloB38 GAME_GLOBAL_IN(byte, group_4a8ef8, 1, 0x4a8ef9)
+#define g_RenderOnlyB38 GAME_GLOBAL_IN(byte, group_4a8ef8, 1, 0x4a8ef9)
 /* the meshes are drawn from their vertex buffers */
 #define g_UseVB GAME_GLOBAL_IN(byte, group_431bac, 0, 0x431bac)
 #define g_RenderPass GAME_GLOBAL(int, g_RenderPass, 0x4afdb8)

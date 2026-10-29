@@ -6,8 +6,8 @@
 #include "scrap/camera.h"
 #include "scrap/scrapcamera.h"
 
-#define CCAMARA_VFTABLE GAME_VFTABLE(CCamera_vftable, 0x3e1c98)
-#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
+#define CCAMERA_VFTABLE GAME_VFTABLE(CCamera_vftable, 0x3e1c98)
+#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
 /* the limit of the projection, a float constant widened */
 #define CAMERA_EPS ((double)0.01f)
 
@@ -37,7 +37,7 @@ static void CCamera_ClearVectors(CCamera *self) {
 CCamera *__fastcall CCamera_ctor(CCamera *self) {
 	CCamera_ClearVectors(self);
 	memset(&self->rot, 0, sizeof(self->rot) + sizeof(self->pos) + sizeof(self->target));
-	self->vftable = CCAMARA_VFTABLE;
+	self->vftable = CCAMERA_VFTABLE;
 	self->class = CLASS_OBJ3D_CAMERA;
 	self->node = NULL;
 	self->nodeTarget = NULL;
@@ -54,7 +54,7 @@ CCamera *__fastcall CCamera_ctor(CCamera *self) {
 
 CCamera *__thiscall CCamera_ctorCopy(CCamera *self, const CCamera *other) {
 	CCamera_ClearVectors(self);
-	self->vftable = CCAMARA_VFTABLE;
+	self->vftable = CCAMERA_VFTABLE;
 	self->class = CLASS_OBJ3D_CAMERA;
 	self->node = NULL;
 	self->nodeTarget = NULL;
@@ -65,10 +65,10 @@ CCamera *__thiscall CCamera_ctorCopy(CCamera *self, const CCamera *other) {
 }
 
 void __fastcall CCamera_dtor(CCamera *self) {
-	self->vftable = CCAMARA_VFTABLE;
+	self->vftable = CCAMERA_VFTABLE;
 	Camera_Link(&self->node, NULL);
 	Camera_Link(&self->nodeTarget, NULL);
-	self->vftable = IOBJETO3D_VFTABLE;
+	self->vftable = IOBJECT3D_VFTABLE;
 }
 
 CCamera *__thiscall CCamera_Delete(CCamera *self, byte flags) {

@@ -11,7 +11,7 @@
 #include "scrap/filesys.h"
 #include "scrap/graphic2d.h"
 #include "scrap/input.h"
-#include "scrap/leem3d.h"
+#include "scrap/readm3d.h"
 #include "scrap/meshd3d.h"
 #include "scrap/trimesh.h"
 #include "scrap/material.h"

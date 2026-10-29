@@ -395,7 +395,7 @@ float Bsp_FormFactor(const vec3_t *pa, const vec3_t *na, const vec3_t *pb, const
 float BspRegion_FormFactor(const BspRegion *a, const BspRegion *b);
 void BspRegion_Accumulate(BspRegion *r, const float *add);
 void BspTri_SumTexel(const BspTri *tri, uint32_t x, uint32_t y, float *acc, int *n);
-float *BspTri_Media(float *out, const BspTri *tri, int x, int y);
+float *BspTri_Average(float *out, const BspTri *tri, int x, int y);
 void BspTri_AreasLod(CTable *dst, const CTable *src, int w, int h, int dim);
 BspRegion *BspRegion_New(int x, int y, int lx, int ly, BspRegion *parent, const CTable *areas);
 void BspRegion_Split(BspRegion *r, const CTable *areas);

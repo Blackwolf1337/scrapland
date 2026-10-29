@@ -2198,7 +2198,7 @@ int Render_MeshD3D(CMeshD3D *m, CRenderNode *r) {
 		}
 		return 0;
 	}
-	if (g_RenderSoloB38 && m->mat && !m->mat->params.b38) {
+	if (g_RenderOnlyB38 && m->mat && !m->mat->params.b38) {
 		return 0;
 	}
 	void *dev = g_EngineDev;

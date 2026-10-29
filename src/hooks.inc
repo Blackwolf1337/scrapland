@@ -4023,7 +4023,7 @@ SD_HOOK(Bsp_Render, 0x296cd0, 98)
 SD_HOOK(Bsp_RenderStencil, 0x296d40, 116)
 SD_HOOK(BspTri_Rotate, 0x296dc0, 541)
 SD_HOOK(BspTri_SumTexel, 0x296fe0, 199)
-SD_HOOK(BspTri_Media, 0x2970b0, 485)
+SD_HOOK(BspTri_Average, 0x2970b0, 485)
 SD_HOOK(BspTri_Interp, 0x297710, 1201)
 
 /* module agent: World/FX/FXCharActions.cpp (hooks below this line) */

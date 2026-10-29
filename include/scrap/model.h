@@ -16,7 +16,7 @@
 #include "scrap/groundportal.h"
 #include "scrap/table.h"
 
-#define CMODELO_VFTABLE GAME_VFTABLE(CModel_vftable, 0x3da6a0)
+#define CMODEL_VFTABLE GAME_VFTABLE(CModel_vftable, 0x3da6a0)
 #define MAX_MODELS_RENDER 1024
 #define g_ModelsOn GAME_GLOBAL(byte, g_ModelsOn, 0x432418)	/* RenderModels: the models are drawn */
 

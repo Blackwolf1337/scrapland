@@ -1,6 +1,6 @@
 /*
  * The decomposition of an affine matrix into translation, rotation, scale with the axes of the scale and the sign of
- * the determinant, original source Engine/descomp_afin.cpp (rva 0x2d6010..0x2da770, include/scrap/leem3d.h). The
+ * the determinant, original source Engine/descomp_afin.cpp (rva 0x2d6010..0x2da770, include/scrap/readm3d.h). The
  * decomposition is Ken Shoemake's decomp.c of Graphics Gems IV ("Polar Matrix Decomposition"), compiled with its
  * mix of float and double (fabs, sqrt and the 0.5 and 2.0 constants are double), in its order of operations. Its
  * matrices are 4x4 arrays for column vectors: a matrix of the engine (row vectors) goes in transposed.
@@ -9,7 +9,7 @@
  * copies there are never called.
  */
 #include "scrap/game.h"
-#include "scrap/leem3d.h"
+#include "scrap/readm3d.h"
 
 typedef float HMatrix[4][4];
 

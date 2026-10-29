@@ -7,7 +7,7 @@
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/fonts.h"
-#include "scrap/leem3d.h"
+#include "scrap/readm3d.h"
 #include "scrap/e3dworld.h"
 #include "scrap/particlesystem.h"
 #include "scrap/utild3d.h"

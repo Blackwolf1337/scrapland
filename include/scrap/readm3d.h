@@ -7,8 +7,8 @@
  * The game data has no M3D files, only their binary caches (.CM3, .SM3, read through CScene_Read), so the reader of
  * the M3D files themselves (Scene_Load, model.h) only gets past the .CM3 of an animation in the tools.
  */
-#ifndef SCRAP_LEEM3D_H
-#define SCRAP_LEEM3D_H
+#ifndef SCRAP_READM3D_H
+#define SCRAP_READM3D_H
 
 #include "scrap/game.h"
 #include "scrap/material.h"

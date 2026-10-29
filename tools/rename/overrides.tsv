@@ -315,3 +315,20 @@ local	motor	engine	src/game/ScrapEng/ScrapEngWorld.c	Loading_Step	the engine obj
 prose	motor		the motors of the vehicles
 name	Init_ZonaPintar_ZonasPintar	Init_PaintZones	initpat.py names the object alone when it starts with the class (PaintZones of PaintZone)
 name	Fini_ZonaPintar_ZonasPintar	Fini_PaintZones	the same
+compound	cescena	c escena	the class prefix glued to the name (CESCENA_VFTABLE)
+compound	ccamara	c camara	the class prefix glued to the name (CESCENA_VFTABLE)
+compound	centradadinput	c entrada dinput	the class prefix glued to the name (CESCENA_VFTABLE)
+compound	centradawindows	c entrada windows	the class prefix glued to the name (CESCENA_VFTABLE)
+compound	ientrada	i entrada	the class prefix glued to the name (CESCENA_VFTABLE)
+compound	cgrafico	c grafico	the class prefix glued to the name (CESCENA_VFTABLE)
+compound	clistamat	c lista mat	the class prefix glued to the name (CESCENA_VFTABLE)
+compound	cmallatri	c malla tri	the class prefix glued to the name (CESCENA_VFTABLE)
+compound	cmallad	c mallad	the class prefix glued to the name (CESCENA_VFTABLE)
+compound	cmodelo	c modelo	the class prefix glued to the name (CESCENA_VFTABLE)
+compound	iobjeto	i objeto	the class prefix glued to the name (CESCENA_VFTABLE)
+compound	cparticulaactive	c particula active	the class prefix glued to the name (CESCENA_VFTABLE)
+compound	cparticulastatic	c particula static	the class prefix glued to the name (CESCENA_VFTABLE)
+compound	csuelo	c suelo	the class prefix glued to the name (CESCENA_VFTABLE)
+compound	leem	lee m	the class prefix glued to the name (CESCENA_VFTABLE)
+name	g_RenderSoloB38	g_RenderOnlyB38	solo is only here
+name	BspTri_Media	BspTri_Average	media is the average here

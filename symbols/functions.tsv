@@ -9663,7 +9663,7 @@ rva	size	source	callconv	name	signature
 00296d40	116	USER_DEFINED	__cdecl	Bsp_RenderStencil	void __cdecl(void)
 00296dc0	541	USER_DEFINED	__cdecl	BspTri_Rotate	void __cdecl(void * list)
 00296fe0	199	USER_DEFINED	__cdecl	BspTri_SumTexel	void __cdecl(void * tri, uint x, uint y, float * acc, int * n)
-002970b0	485	USER_DEFINED	__cdecl	BspTri_Media	float * __cdecl(float * out, void * tri, int x, int y)
+002970b0	485	USER_DEFINED	__cdecl	BspTri_Average	float * __cdecl(float * out, void * tri, int x, int y)
 00297710	1201	USER_DEFINED	__cdecl	BspTri_Interp	void __cdecl(void * tri, void * p, void * n, float * uv, byte lmap)
 00297bd0	180	USER_DEFINED	__cdecl	Floats11_Equal	byte __cdecl(float * a, float * b)
 00297c90	137	USER_DEFINED	__fastcall	CFlare_ctor	void * __fastcall(void * self)

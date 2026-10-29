@@ -31,19 +31,19 @@ static float ParticleSystem_Seconds(uint32_t ms) {
 }
 
 CParticle *__fastcall CParticleActive_ctor(CParticle *self) {
-	self->vftable = CPARTICULAACTIVE_VFTABLE;
+	self->vftable = CPARTICLEACTIVE_VFTABLE;
 	CParticleActive_Init(self);
 	return self;
 }
 
 CParticle *__fastcall CParticleStatic_ctor(CParticle *self) {
-	self->vftable = CPARTICULASTATIC_VFTABLE;
+	self->vftable = CPARTICLESTATIC_VFTABLE;
 	CParticleStatic_Init(self);
 	return self;
 }
 
 void __fastcall CParticleActive_dtor(CParticle *self) {
-	self->vftable = CPARTICULAACTIVE_VFTABLE;
+	self->vftable = CPARTICLEACTIVE_VFTABLE;
 }
 
 int __fastcall CParticleActive_Type(CParticle *self) {
@@ -157,7 +157,7 @@ CParticleSystem *__fastcall CParticleSystem_ctor(CParticleSystem *self) {
 void __fastcall CObjBase3D_dtor(IObject3D *self) {
 	self->vftable = COBJBASE3D_VFTABLE;
 	CObjBase3D_SetNode(self, NULL);
-	self->vftable = IOBJETO3D_VFTABLE;
+	self->vftable = IOBJECT3D_VFTABLE;
 }
 
 void __fastcall ParticleSystemParams_dtor(ParticleSystemParams *self) {
@@ -718,7 +718,7 @@ void __fastcall CParticleSystem_CreateParticles(CParticleSystem *self) {
 	}
 	/* a static system: each particle where a moving one would be at its part of the life time */
 	CParticleActive tmp;
-	tmp.p.vftable = CPARTICULAACTIVE_VFTABLE;
+	tmp.p.vftable = CPARTICLEACTIVE_VFTABLE;
 	CParticleActive_Init(&tmp.p);
 	for (int i = 0; i < pa->nParticles; i++) {
 		CParticleSystem_GenParticle(self, &tmp.p);

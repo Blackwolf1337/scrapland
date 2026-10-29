@@ -21,8 +21,8 @@
 #include "scrap/scrapmain.h"
 #include "scrap/win32.h"
 
-#define CSUELO_VFTABLE GAME_VFTABLE(CGround_vftable, 0x3db13c)
-#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
+#define CGROUND_VFTABLE GAME_VFTABLE(CGround_vftable, 0x3db13c)
+#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
 #define CCOLLIDEMESH_CTOR 0x2586b0
 #define CCOLLIDEMESH_DTOR 0x20eb70
 #define CCOLLIDEQUAD_DTOR 0x258ce0
@@ -256,7 +256,7 @@ void __fastcall CHeights_dtor(CHeights *self) {
 
 CGround *__fastcall CGround_ctor(CGround *self) {
 	self->class = 0;
-	self->vftable = CSUELO_VFTABLE;
+	self->vftable = CGROUND_VFTABLE;
 	memset(self->cache, 0, sizeof(self->cache));
 	self->nodes = NULL;
 	self->nNodes = 0;
@@ -282,10 +282,10 @@ CGround *__fastcall CGround_ctor(CGround *self) {
 }
 
 void __fastcall CGround_dtor(CGround *self) {
-	self->vftable = CSUELO_VFTABLE;
+	self->vftable = CGROUND_VFTABLE;
 	CHeights_dtor(&self->heights);
 	Table_FreeObjs((CTable *)&self->nNodes);
-	self->vftable = IOBJETO3D_VFTABLE;
+	self->vftable = IOBJECT3D_VFTABLE;
 }
 
 CGround *__thiscall CGround_Delete(CGround *self, byte flags) {

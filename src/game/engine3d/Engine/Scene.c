@@ -28,7 +28,7 @@ static double Scene_Seconds(uint32_t t0) {
 CScene *__fastcall CScene_ctor(CScene *self) {
 	self->name = NULL;
 	self->Refs = 0;
-	self->vftable = CESCENA_VFTABLE;
+	self->vftable = CSCENE_VFTABLE;
 	self->box = (box_t){ { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
 	self->node = NULL;
 	self->mainLOD = NULL;
@@ -58,7 +58,7 @@ static void Scene_DeleteIni(CIniFile **ini) {
 }
 
 void __fastcall CScene_dtor(CScene *self) {
-	self->vftable = CESCENA_VFTABLE;
+	self->vftable = CSCENE_VFTABLE;
 	E3D_DebugPrintf("\n> Escena::~Escena(): '%s' (%08Xh)", self->name, self);
 	self->anim = NULL;
 	E3D_LogDebug2(g_FileLog, " Scene deleted: %s", self->name);

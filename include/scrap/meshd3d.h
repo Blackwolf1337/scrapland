@@ -14,7 +14,7 @@
 #include "scrap/material.h"
 #include "scrap/table.h"
 
-#define CMALLAD3D_VFTABLE GAME_VFTABLE(CMeshD3D_vftable, 0x3e3584)
+#define CMESHD3D_VFTABLE GAME_VFTABLE(CMeshD3D_vftable, 0x3e3584)
 
 /* Build flags */
 #define MESHD3D_ONESIDED 0x01		/* no back faces for two sided materials */

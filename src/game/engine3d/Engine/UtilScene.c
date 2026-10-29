@@ -6,7 +6,7 @@
 
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
-#include "scrap/leem3d.h"
+#include "scrap/readm3d.h"
 #include "scrap/fonts.h"
 #include "scrap/material.h"
 #include "scrap/model.h"

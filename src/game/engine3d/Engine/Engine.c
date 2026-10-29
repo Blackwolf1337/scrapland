@@ -1201,7 +1201,7 @@ void __fastcall CEngineApp_UpdateMenu(byte *self) {
 	exe_CheckMenuItem(ENGINE_MENU(self), IDM_9C57, Menu_Check(g_Engine431bae != 0));
 	exe_CheckMenuItem(ENGINE_MENU(self), IDM_USARVB, Menu_Check(g_UseVB != 0));
 	exe_CheckMenuItem(ENGINE_MENU(self), IDM_WORLD0, Menu_Check(*(byte *)World_Get() != 0));
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_SOLOB38, Menu_Check(g_RenderSoloB38 != 0));
+	exe_CheckMenuItem(ENGINE_MENU(self), IDM_SOLOB38, Menu_Check(g_RenderOnlyB38 != 0));
 	exe_CheckMenuItem(ENGINE_MENU(self), IDM_9C64, Menu_Check(g_Engine4af7d4 != 0));
 	exe_CheckMenuItem(ENGINE_MENU(self), IDM_SHARPEN, Menu_Check(g_Sharpen != 0));
 }
@@ -1333,7 +1333,7 @@ intptr_t __thiscall CEngineApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uin
 			CEngineApp_LightsDialog(self, hwnd, (void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE));
 			break;
 		case IDM_SOLOB38:
-			g_RenderSoloB38 = g_RenderSoloB38 == 0;
+			g_RenderOnlyB38 = g_RenderOnlyB38 == 0;
 			break;
 		case IDM_WORLD0: {
 			byte off = *(byte *)World_GetChecked() == 0;

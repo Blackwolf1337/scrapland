@@ -10,6 +10,7 @@ include/scrap/fxtextura.h	include/scrap/fxtexture.h
 include/scrap/grafico2d.h	include/scrap/graphic2d.h
 include/scrap/grafico3d.h	include/scrap/graphic3d.h
 include/scrap/leedatos.h	include/scrap/readdata.h
+include/scrap/leem3d.h	include/scrap/readm3d.h
 include/scrap/listavert.h	include/scrap/vertlist.h
 include/scrap/luz.h	include/scrap/light.h
 include/scrap/mallad3d.h	include/scrap/meshd3d.h

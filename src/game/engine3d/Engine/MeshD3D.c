@@ -9,7 +9,7 @@
 #include "scrap/trimesh.h"
 #include "scrap/misc.h"
 
-#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
+#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
 
 /* the engine (g_pD3DApp) and its device */
 
@@ -97,7 +97,7 @@ void __fastcall CMeshD3D_Init(CMeshD3D *self) {
 /* the part of both constructors before Init */
 static void MeshD3D_Construct(CMeshD3D *self) {
 	self->class = 0;
-	self->vftable = CMALLAD3D_VFTABLE;
+	self->vftable = CMESHD3D_VFTABLE;
 	CVertList_ctor(&self->vert);
 	memset(&self->box, 0, sizeof(self->box));
 	memset(&self->ext, 0, sizeof(self->ext));
@@ -138,7 +138,7 @@ CMeshD3D *__fastcall CMeshD3D_ctor(CMeshD3D *self) {
 }
 
 void __fastcall CMeshD3D_dtor(CMeshD3D *self) {
-	self->vftable = CMALLAD3D_VFTABLE;
+	self->vftable = CMESHD3D_VFTABLE;
 	if (self->pVertVB || self->pVertIB) {
 		CHECK(g_Engine && ENGINE_DEV(g_Engine));
 		CMeshD3D_Invalidate(self, ENGINE_DEV(g_Engine));
@@ -159,7 +159,7 @@ void __fastcall CMeshD3D_dtor(CMeshD3D *self) {
 	MeshD3D_DeleteArray((void **)&self->triFlags);
 	MeshD3D_DeleteArray((void **)&self->pSkin);
 	CVertList_Free(&self->vert);
-	self->vftable = IOBJETO3D_VFTABLE;
+	self->vftable = IOBJECT3D_VFTABLE;
 }
 
 CMeshD3D *__thiscall CMeshD3D_Delete(CMeshD3D *self, byte flags) {

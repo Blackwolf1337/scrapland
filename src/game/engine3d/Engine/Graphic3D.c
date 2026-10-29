@@ -14,7 +14,7 @@
 
 /* the members both constructors clear */
 static void Graphic3D_Clear(CGraphic3D *self) {
-	self->vftable = CGRAFICO3D_VFTABLE;
+	self->vftable = CGRAPHIC3D_VFTABLE;
 	memset(&self->vis, 0, sizeof(self->vis));
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->width = 1.0f;
@@ -51,11 +51,11 @@ CGraphic3D *__fastcall CGraphic3D_ctor(CGraphic3D *self) {
 }
 
 void __fastcall CGraphic3D_dtor(CGraphic3D *self) {
-	self->vftable = CGRAFICO3D_VFTABLE;
+	self->vftable = CGRAPHIC3D_VFTABLE;
 	ObjRef_Drop(&self->node);
 	self->node = NULL;
 	AnimMat_Free(&self->AnimMat);
-	self->vftable = IOBJETO3D_VFTABLE;
+	self->vftable = IOBJECT3D_VFTABLE;
 }
 
 CGraphic3D *__thiscall CGraphic3D_Delete(CGraphic3D *self, byte flags) {

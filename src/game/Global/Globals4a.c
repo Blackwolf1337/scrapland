@@ -223,8 +223,8 @@
 #undef g_RenderI1F4
 #undef g_RenderMode100
 #undef g_RenderOff
+#undef g_RenderOnlyB38
 #undef g_RenderPass
-#undef g_RenderSoloB38
 #undef g_ResetDev
 #undef g_ResetPending
 #undef g_SaveCollideMeshParam
@@ -528,7 +528,7 @@ uint32_t g_TimeMs SD_BSS(0x4a8ef0);
 float g_FrameSec SD_BSS(0x4a8ef4);
 struct {
 	byte g_RenderOff;	/* 0x0 */
-	byte g_RenderSoloB38;	/* 0x1 */
+	byte g_RenderOnlyB38;	/* 0x1 */
 	byte g_PointsOn;	/* 0x2 */
 	byte g_TileOn;	/* 0x3 */
 } group_4a8ef8 SD_BSS(0x4a8ef8);

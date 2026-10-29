@@ -15,7 +15,7 @@
 #include "scrap/utild3d.h"
 
 #define CLUZ_VFTABLE GAME_VFTABLE(CLight_vftable, 0x3d79fc)
-#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
+#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
 #define LIGHT_INV255 (1.0f / 255.0f)
 /* "no limit" for the range of the device light and the start of the nearest search, a float constant of the exe */
 #define LIGHT_RANGE_INF GAME_GLOBAL(const float, LIGHT_RANGE_INF, 0x3d7be0)
@@ -189,7 +189,7 @@ void __fastcall CLight_dtor(CLight *self) {
 		g_LightIndexD3D = 0;
 		E3D_LogDebug(g_FileLog, "Global light index reset");
 	}
-	self->vftable = IOBJETO3D_VFTABLE;
+	self->vftable = IOBJECT3D_VFTABLE;
 }
 
 CLight *__thiscall CLight_Delete(CLight *self, byte flags) {
@@ -201,11 +201,11 @@ CLight *__thiscall CLight_Delete(CLight *self, byte flags) {
 }
 
 void __fastcall IObject3D_dtor(IObject3D *self) {
-	self->vftable = IOBJETO3D_VFTABLE;
+	self->vftable = IOBJECT3D_VFTABLE;
 }
 
 IObject3D *__thiscall IObject3D_Delete(IObject3D *self, byte flags) {
-	self->vftable = IOBJETO3D_VFTABLE;
+	self->vftable = IOBJECT3D_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}

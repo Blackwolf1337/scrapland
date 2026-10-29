@@ -150,6 +150,7 @@ BspTri_Juntar	BspTri_Join
 BspTri_Lado	BspTri_Side
 BspTri_LuzDirecta	BspTri_DirectLight
 BspTri_Mascara	BspTri_Mask
+BspTri_Media	BspTri_Average
 BspTri_Muestra	BspTri_Sample
 BspTri_OtroTiene	BspTri_OtherHas
 BspTri_RadDelante	BspTri_RadFront
@@ -323,6 +324,7 @@ CBsp_LuzDirecta	CBsp_DirectLight
 CBsp_Preparar	CBsp_Prepare
 CBsp_QuitarLuces	CBsp_RemoveLights
 CBsp_Zona	CBsp_Zone
+CCAMARA_VFTABLE	CCAMERA_VFTABLE
 CCamara	CCamera
 CCamara_Clear	CCamera_Clear
 CCamara_ClearVectors	CCamera_ClearVectors
@@ -354,8 +356,11 @@ CCollideQuad_CalcExtens	CCollideQuad_CalcExt
 CDigitos	CDigits
 CDigitos_ctor	CDigits_ctor
 CDigitos_dtor	CDigits_dtor
+CENTRADADINPUT_VFTABLE	CINPUTDINPUT_VFTABLE
 CENTRADANULA_SIZE	CNULLINPUT_SIZE
 CENTRADANULA_VFTABLE	CNULLINPUT_VFTABLE
+CENTRADAWINDOWS_VFTABLE	CINPUTWINDOWS_VFTABLE
+CESCENA_VFTABLE	CSCENE_VFTABLE
 CEntradaDInput	CInputDInput
 CEntradaDInput_AcquireKeys	CInputDInput_AcquireKeys
 CEntradaDInput_AcquireMouse	CInputDInput_AcquireMouse
@@ -460,6 +465,7 @@ CFuente3_dtor	CFont3_dtor
 CFuenteGrid	CFontGrid
 CFuenteGrid_Print	CFontGrid_Print
 CFuenteGrid_ctor	CFontGrid_ctor
+CGRAFICO3D_VFTABLE	CGRAPHIC3D_VFTABLE
 CGameCamera_FromCamara	CGameCamera_FromCamera
 CGameModel_FindNodoR	CGameModel_FindRenderNode
 CGameModel_FindNodoRWild	CGameModel_FindRenderNodeWild
@@ -509,6 +515,7 @@ CLASE_OBJ3D_MALLATRI	CLASS_OBJ3D_TRIMESH
 CLASE_OBJ3D_PORTAL	CLASS_OBJ3D_PORTAL
 CLASE_OBJ3D_SISTPART	CLASS_OBJ3D_PARTICLESYSTEM
 CLASE_OBJ3D_SUELO	CLASS_OBJ3D_GROUND
+CLISTAMAT_VFTABLE	CMATLIST_VFTABLE
 CLensFlare_SetEscala	CLensFlare_SetScale
 CLensFlare_SetMargen	CLensFlare_SetMargin
 CLensFlare_SetRelativo	CLensFlare_SetRelative
@@ -597,6 +604,9 @@ CLuz_Write	CLight_Write
 CLuz_ctor	CLight_ctor
 CLuz_dtor	CLight_dtor
 CLuz_vftable	CLight_vftable
+CMALLAD3D_VFTABLE	CMESHD3D_VFTABLE
+CMALLATRI_VFTABLE	CTRIMESH_VFTABLE
+CMODELO_VFTABLE	CMODEL_VFTABLE
 CMallaD3D	CMeshD3D
 CMallaD3D_AllocTri	CMeshD3D_AllocTri
 CMallaD3D_Build	CMeshD3D_Build
@@ -829,6 +839,8 @@ CNodoR_dtor	CRenderNode_dtor
 CNodoRef	CNodeRef
 CNodo_LightColor	CNode_LightColor
 CObjBase3D_SetNodo	CObjBase3D_SetNode
+CPARTICULAACTIVE_VFTABLE	CPARTICLEACTIVE_VFTABLE
+CPARTICULASTATIC_VFTABLE	CPARTICLESTATIC_VFTABLE
 CParticula	CParticle
 CParticulaActive	CParticleActive
 CParticulaActive_Init	CParticleActive_Init
@@ -857,6 +869,7 @@ CRadiosidad_dtor	CRadiosity_dtor
 CRotacion	CRotation
 CRotacion_GetQuat	CRotation_GetQuat
 CRotacion_SetEuler	CRotation_SetEuler
+CSUELO_VFTABLE	CGROUND_VFTABLE
 CSistPart	CParticleSystem
 CSistPart_Cast	CParticleSystem_Cast
 CSistPart_CreateMat	CParticleSystem_CreateMat
@@ -1154,6 +1167,7 @@ Grafico3D_Clear	Graphic3D_Clear
 IDC_ESCENA_INFO	IDC_SCENE_INFO
 IDC_ESCENA_TREE	IDC_SCENE_TREE
 IDM_MUNDO0	IDM_WORLD0
+IENTRADA_VFTABLE	IINPUT_VFTABLE
 IEntrada	IInput
 IEntrada_AcquireMouse	IInput_AcquireMouse
 IEntrada_Delete	IInput_Delete
@@ -1169,6 +1183,7 @@ IFXTextura_GetTexture	IFXTexture_GetTexture
 IFXTextura_dtor	IFXTexture_dtor
 IFXTextura_vftable	IFXTexture_vftable
 ILUM_SUAVE	ILLUM_SOFT
+IOBJETO3D_VFTABLE	IOBJECT3D_VFTABLE
 IObjeto3D	IObject3D
 IObjeto3D_Delete	IObject3D_Delete
 IObjeto3D_Read	IObject3D_Read
@@ -1755,6 +1770,7 @@ SCRAP_FXTEXTURA_H	SCRAP_FXTEXTURE_H
 SCRAP_GRAFICO2D_H	SCRAP_GRAPHIC2D_H
 SCRAP_GRAFICO3D_H	SCRAP_GRAPHIC3D_H
 SCRAP_LEEDATOS_H	SCRAP_READDATA_H
+SCRAP_LEEM3D_H	SCRAP_READM3D_H
 SCRAP_LISTAVERT_H	SCRAP_VERTLIST_H
 SCRAP_LUZ_H	SCRAP_LIGHT_H
 SCRAP_MALLAD3D_H	SCRAP_MESHD3D_H
@@ -2330,6 +2346,7 @@ g_RampMoto	g_RampBike
 g_RatonExcl	g_MouseExcl
 g_RayoVertSectors	g_RayVertSectors
 g_RenderClaseMask	g_RenderClassMask
+g_RenderSoloB38	g_RenderOnlyB38
 g_RutaErrBase	g_PathErrBase
 g_RutasTexturas	g_TexturePaths
 g_ShaderActual	g_ShaderCurrent

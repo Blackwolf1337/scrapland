@@ -8,7 +8,7 @@
 
 #include "scrap/node3d.h"
 
-#define CESCENA_VFTABLE GAME_VFTABLE(CScene_vftable, 0x3d9b24)
+#define CSCENE_VFTABLE GAME_VFTABLE(CScene_vftable, 0x3d9b24)
 
 /* node flags read here */
 #define NODE_JOIN1 (1u << 0)		/* CScene_Join with sel */

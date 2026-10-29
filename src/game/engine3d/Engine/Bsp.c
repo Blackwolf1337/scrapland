@@ -10,7 +10,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/scene.h"
 #include "scrap/fonts.h"
-#include "scrap/leem3d.h"
+#include "scrap/readm3d.h"
 #include "scrap/light.h"
 #include "scrap/meshd3d.h"
 #include "scrap/portal.h"
@@ -1324,7 +1324,7 @@ void BspTri_SumTexel(const BspTri *tri, uint32_t x, uint32_t y, float *acc, int 
 }
 
 /* the average light of the texels of the list around x, y (5 x 5) */
-float *BspTri_Media(float *out, const BspTri *tri, int x, int y) {
+float *BspTri_Average(float *out, const BspTri *tri, int x, int y) {
 	int n = 0;
 	float one = 1.0f;
 
@@ -2651,7 +2651,7 @@ void __fastcall CBsp_AdjustGamma(CBsp *self) {
 			for (int v = 0; v < 3; v++) {
 				float c[4];
 				int y = (int)((float)g_ShadowMapTexY * t->uvl[v][1]);
-				BspTri_Media(c, list, (int)((float)g_ShadowMapTexX * t->uvl[v][0]), y);
+				BspTri_Average(c, list, (int)((float)g_ShadowMapTexX * t->uvl[v][0]), y);
 				float k = g_DiffuseMod4x ? 0.25f : 1.0f;
 				c[2] = c[2] * k;
 				c[0] = k * c[0];

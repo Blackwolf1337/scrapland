@@ -21,7 +21,7 @@ enum {
 #define MAX_TEXTURE_PATHS 10
 #define MAX_TEXTURE_EXTS 10
 
-#define CLISTAMAT_VFTABLE GAME_VFTABLE(CMatList_vftable, 0x3d6d48)
+#define CMATLIST_VFTABLE GAME_VFTABLE(CMatList_vftable, 0x3d6d48)
 #define CMATERIAL_VFTABLE GAME_VFTABLE(CMaterial_vftable, 0x3d6dbc)
 
 /* params.attrib */

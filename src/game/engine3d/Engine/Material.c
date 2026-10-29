@@ -1259,7 +1259,7 @@ CMaterial *__thiscall CMaterial_ctor(CMaterial *self) {
 
 /* a CBmp of the stack freed (the pixels with the sized delete of one pixel) */
 void __fastcall CMatList_dtor(CMatList *self) {
-	self->vftable = CLISTAMAT_VFTABLE;
+	self->vftable = CMATLIST_VFTABLE;
 	CMatList_DeleteAll(self);
 	if (self->Name) {
 		String_Set(&self->Name, NULL);

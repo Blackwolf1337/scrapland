@@ -32,9 +32,9 @@ void Keyboard_KeyDown(uint16_t ch, uint32_t lparam);
 void Keyboard_KeyUp(uint32_t wparam, uint32_t lparam);
 
 /* entrada.cpp */
-#define IENTRADA_VFTABLE GAME_VFTABLE(IInput_vftable, 0x3e25ec)
-#define CENTRADADINPUT_VFTABLE GAME_VFTABLE(CInputDInput_vftable, 0x3e2610)
-#define CENTRADAWINDOWS_VFTABLE GAME_VFTABLE(CInputWindows_vftable, 0x3e2634)
+#define IINPUT_VFTABLE GAME_VFTABLE(IInput_vftable, 0x3e25ec)
+#define CINPUTDINPUT_VFTABLE GAME_VFTABLE(CInputDInput_vftable, 0x3e2610)
+#define CINPUTWINDOWS_VFTABLE GAME_VFTABLE(CInputWindows_vftable, 0x3e2634)
 #define g_InputInit GAME_GLOBAL(byte, g_InputInit, 0x4db428)
 /* the mouse axes inverted */
 #define g_InputInvX GAME_GLOBAL(int, g_InputInvX, 0x4db41c)

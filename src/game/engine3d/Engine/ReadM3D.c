@@ -1,5 +1,5 @@
 /*
- * The reader of the M3D files and its value readers, original source Engine/lee_M3D.cpp (include/scrap/leem3d.h).
+ * The reader of the M3D files and its value readers, original source Engine/lee_M3D.cpp (include/scrap/readm3d.h).
  */
 #include <string.h>
 
@@ -14,7 +14,7 @@
 #include "scrap/fxtexture.h"
 #include "scrap/graphic3d.h"
 #include "scrap/readdata.h"
-#include "scrap/leem3d.h"
+#include "scrap/readm3d.h"
 #include "scrap/light.h"
 #include "scrap/trimesh.h"
 #include "scrap/material.h"
@@ -2457,7 +2457,7 @@ void M3D_ReadMaterial(CMatList *list, int iMat, int iSubmat) {
 		CMatList *sub = operator_new(sizeof(CMatList));
 		if (sub) {
 			sub->Name = NULL;
-			sub->vftable = CLISTAMAT_VFTABLE;
+			sub->vftable = CMATLIST_VFTABLE;
 			sub->last = NULL;
 			sub->first = NULL;
 		}
@@ -3213,7 +3213,7 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 	lm = operator_new(sizeof(CMatList));
 	if (lm) {
 		lm->Name = NULL;
-		lm->vftable = CLISTAMAT_VFTABLE;
+		lm->vftable = CMATLIST_VFTABLE;
 		lm->last = NULL;
 		lm->first = NULL;
 	}

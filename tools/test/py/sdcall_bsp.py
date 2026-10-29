@@ -210,8 +210,8 @@ for bsp_i in range(12):
 for bsp_x, bsp_y in ((0, 0), (1, 0), (3, 2), (2, 1), (4, 0), (0, 3), (-1, 1)):
 	check('BspTri_SumTexel' + fmt((bsp_x, bsp_y)), lambda bsp_x=bsp_x, bsp_y=bsp_y: SDTest.Call('BspTri_SumTexel', 'viiiFp', bspst, bsp_x, bsp_y,
 		(0.5, 0.25, 0.125, 1.0), 2)[1:])
-	check('BspTri_Media' + fmt((bsp_x, bsp_y)), lambda bsp_x=bsp_x, bsp_y=bsp_y: SDTest.Call('BspTri_Media', 'iFiii', (9.0,) * 4, bspst, bsp_x, bsp_y)[1])
-check('BspTri_Media far', lambda: SDTest.Call('BspTri_Media', 'iFiii', (9.0,) * 4, bspst, 50, 50)[1])
+	check('BspTri_Average' + fmt((bsp_x, bsp_y)), lambda bsp_x=bsp_x, bsp_y=bsp_y: SDTest.Call('BspTri_Average', 'iFiii', (9.0,) * 4, bspst, bsp_x, bsp_y)[1])
+check('BspTri_Average far', lambda: SDTest.Call('BspTri_Average', 'iFiii', (9.0,) * 4, bspst, 50, 50)[1])
 for bsp_x0, bsp_y0, bsp_x, bsp_y, bsp_c in ((0, 0, 0, 0, 0), (0, 0, 2, 0, 0), (1, 1, 2, 2, 0), (0, 0, 1, 0, 0), (0, 0, 100000, 0, 0),
 		(5, 0, 4, 0, 0)):
 	if bsp_x - bsp_x0 >= 0 and bsp_x - bsp_x0 < 4 and bsp_y - bsp_y0 >= 0 and bsp_y - bsp_y0 < 3:

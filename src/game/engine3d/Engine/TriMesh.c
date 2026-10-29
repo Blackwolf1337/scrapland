@@ -8,8 +8,8 @@
 #include "scrap/e3dutil.h"
 #include "scrap/trimesh.h"
 
-#define CMALLATRI_VFTABLE GAME_VFTABLE(CTriMesh_vftable, 0x3dbcf0)
-#define IOBJETO3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
+#define CTRIMESH_VFTABLE GAME_VFTABLE(CTriMesh_vftable, 0x3dbcf0)
+#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
 #define TRIMESH_SKIN 16
 /* the box before the first vertex, rva 0x3a3a38 and 0x3a512c */
 #define TRIMESH_FLT_MAX 3.4028234663852886e+38f
@@ -90,7 +90,7 @@ void __fastcall CTriMesh_Init(CTriMesh *self) {
 }
 
 CTriMesh *__fastcall CTriMesh_ctor(CTriMesh *self) {
-	self->vftable = CMALLATRI_VFTABLE;
+	self->vftable = CTRIMESH_VFTABLE;
 	memset(&self->box, 0, sizeof(self->box));
 	CTriMesh_Init(self);
 	return self;
@@ -127,9 +127,9 @@ void __fastcall CTriMesh_Clear(CTriMesh *self) {
 }
 
 void __fastcall CTriMesh_dtor(CTriMesh *self) {
-	self->vftable = CMALLATRI_VFTABLE;
+	self->vftable = CTRIMESH_VFTABLE;
 	CTriMesh_Clear(self);
-	self->vftable = IOBJETO3D_VFTABLE;
+	self->vftable = IOBJECT3D_VFTABLE;
 }
 
 CTriMesh *__thiscall CTriMesh_Delete(CTriMesh *self, byte flags) {
