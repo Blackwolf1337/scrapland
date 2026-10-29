@@ -857,6 +857,11 @@ def decl(o):
 	t = o.etype
 	arr = '[%d]' % o.count if o.count is not None else ''
 	const = o.sec == '.rdata'
+	if not const:
+		# the const of a claim (GAME_ARRAY(const byte, ...)) is the view of that C; the object outside .rdata is written
+		# by the original (stage 3c2: ScrapC.exe has a read-only .rdata, the room was writable)
+		t = re.sub(r'\*\s*const\s*$', '*', t) if t.rstrip().endswith('const') and '*' in t else re.sub(r'^const\s+', '', t) \
+			if '*' not in t else t
 	m = re.match(r'^([\w\s\*]+?)\s*(\[\w+\])$', t)
 	if m and arr:
 		t, arr = m.group(1), arr + m.group(2)	# an array of arrays: T name[n][m]

@@ -34,7 +34,6 @@ typedef void *(__thiscall *deleteObj_t)(void *self, int flags);
 #define g_MatStr (GAME_ARRAY(char, g_MatStr, 0x4ab7e8))
 #define g_LightmapsHigh GAME_GLOBAL(int, g_SombrasStencil, 0x4afdb0)
 #define g_AnimFpsDefault GAME_GLOBAL(float, g_AnimFpsDefault, 0x431d20)
-#define g_BlendLegacy (GAME_ARRAY_IN(const uint32_t, g_ListaMat, 12, 0x431d30))
 #define g_BlendTable (GAME_ARRAY(const uint32_t, g_BlendTable, 0x431d34))
 #define g_MaxLightmap GAME_GLOBAL(int, g_MaxLightmap, 0x432970)
 
@@ -169,7 +168,9 @@ CMaterial *__thiscall CMaterial_Delete(CMaterial *self, byte flags) {
 void Mat_ConvertBlend(uint32_t *mode, byte toFile, byte legacy) {
 	if (legacy) {
 		CHECK(*mode - 1 < BLEND_MODES);
-		*mode = g_BlendLegacy[*mode];
+		/* the original reads the word at 0x431d30 + 4 * mode: g_BlendTable[mode - 1], for 0 (after the CHECK) the last
+		 * word of g_ListaMat before it, a separate C object since stage 3c2 */
+		*mode = *mode ? g_BlendTable[*mode - 1] : GAME_GLOBAL_IN(uint32_t, g_ListaMat, 12, 0x431d30);
 		return;
 	}
 	if (toFile) {

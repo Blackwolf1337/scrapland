@@ -644,7 +644,7 @@ uint32_t cObjElementFXSceneBeatPickus_Update_430f1c[19] SD_AT(0x430f1c) = {
 	0x10d2d2ff, 0x209696ff, 0x306464e1, 0x403232b4, 0x601e1e55, 0x800a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
 	0x10d2d2ff, 0x20b4b4ff, 0x309393e6, 0x405353ab, 0x602d2d4c, 0x80141438, 0xc005051e, 0xff00000a, 0xff000000,
 };
-const vec3_t cObjElementFXSceneEnterMatrix_Update_430f68[32] SD_AT(0x430f68) = {
+vec3_t cObjElementFXSceneEnterMatrix_Update_430f68[32] SD_AT(0x430f68) = {
 	{ .x = 65697.5f, .y = 22634.8f, .z = -3495.2f },
 	{ .x = 65689.1f, .y = 22790.0f, .z = -17752.5f },
 	{ .x = 68660.5f, .y = 67162.7f, .z = -6468.6f },
@@ -756,7 +756,7 @@ uint32_t FXATPC_GLOW_RAMPS[18] SD_AT(0x431758) = {
 	0x80ffdca0, 0xf1be82, 0xdca573, 0xc8965a, 0x20b48748, 0x40c37d32, 0xa4d76428, 0xffe14b23, 0xffff3214,
 	0x20ffc300, 0x10ffa500, 0xff5f00, 0xff4100, 0x20e14b00, 0x40af5a00, 0xa4802800, 0xff400a00, 0xff200300,
 };
-const uint32_t cObjElementFXATPC_Update_4317a0[18] SD_AT(0x4317a0) = {
+uint32_t cObjElementFXATPC_Update_4317a0[18] SD_AT(0x4317a0) = {
 	0x18c4c4ff, 0x10e1b980, 0x8ffaf40, 0x4ff7d00, 0xff5f00, 0xff4b00, 0xff4100, 0x4eb3c00, 0x8e13700, 0x10c32800,
 	0x20af2300, 0x40911e00, 0x60801900, 0x80801900, 0xa4801900, 0xe0801900, 0xff801900,
 };
@@ -805,7 +805,7 @@ vec3_t g_SueloEscala SD_AT(0x431af8) = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
 float g_ViewerSpeed SD_AT(0x431b04) = 1.0f;
 int g_LoadingScreen SD_AT(0x431b08) = -1;
 uint32_t data_431b0c SD_AT(0x431b0c);
-const matrix_t g_DebugIdentity SD_AT(0x431b10) = { .m = { 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f } };
+matrix_t g_DebugIdentity SD_AT(0x431b10) = { .m = { 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f } };
 const char *g_FontsDir SD_AT(0x431b50) = (void *)sd_str_3d3e38;
 float g_CamCompositeFPS SD_AT(0x431b54) = 1.0f;
 rtFxOn_t g_RTFxOn[5] SD_AT(0x431b58) = {
@@ -846,7 +846,7 @@ int g_UsarBumpMap SD_AT(0x431be0) = 1;
 int g_UsarGlowMap SD_AT(0x431be4) = 1;
 int g_DiffuseMod4x SD_AT(0x431be8) = 1;
 int g_TiempoMult SD_AT(0x431bec) = 25;
-const char g_DbgCharMap[132] SD_AT(0x431c70);
+char g_DbgCharMap[132] SD_AT(0x431c70);
 int g_MotorDef1cf4 SD_AT(0x431cf4) = 16;
 uint32_t motorIni_431cf8 SD_AT(0x431cf8) = 1;
 int g_RatonExcl SD_AT(0x431cfc) = 1;
@@ -860,7 +860,7 @@ float g_MusicFadeTarget SD_AT(0x431d18) = 1.0f;
 float g_MusicFadeSpeed SD_AT(0x431d1c) = 1.0f;
 float g_AnimFpsDefault SD_AT(0x431d20) = 25.0f;
 CListaMat g_ListaMat SD_AT(0x431d24) = { .vftable = (void *)sd_CListaMat_vftable };
-const uint32_t g_BlendTable[6] SD_AT(0x431d34) = { 1, 2, 3, 4, 5, 6 };
+uint32_t g_BlendTable[6] SD_AT(0x431d34) = { 1, 2, 3, 4, 5, 6 };
 uint32_t g_LogConMask SD_AT(0x431d4c) = 65535;
 uint32_t data_431d50[8] SD_AT(0x431d50) = { 0xe3e2a0e0, 0xe7e6e5e4, 0xebea82e8, 0xefeea1ec, 0xa2f2f1f0, 0xf7f6f5f4, 0xfba3f9f8, 0xfffefdfc };
 uint32_t g_FiltroMip SD_AT(0x431d70) = 1;
@@ -869,7 +869,7 @@ uint32_t g_Anisotropia SD_AT(0x431d78) = 2;
 uint32_t g_FiltroMin SD_AT(0x431d7c) = 2;
 uint32_t g_FiltroMag SD_AT(0x431d80) = 2;
 uint32_t data_431d84 SD_AT(0x431d84);
-const char *const g_PSNames[32] SD_AT(0x431d88) = {
+const char *g_PSNames[32] SD_AT(0x431d88) = {
 	(void *)sd_str_3d8e70, (void *)sd_str_3d8e84, (void *)sd_str_3d8e98, (void *)sd_str_3d8eb4,
 	(void *)sd_str_3d8ec8, (void *)sd_str_3d8edc, (void *)sd_str_3d8ef8, (void *)sd_str_3d8f1c,
 	(void *)sd_str_3d8f38, (void *)sd_str_3d8f54, (void *)sd_str_3d8f68, (void *)sd_str_3d8f78,
@@ -879,41 +879,167 @@ const char *const g_PSNames[32] SD_AT(0x431d88) = {
 	(void *)sd_str_3d9078, (void *)sd_str_3d9090, (void *)sd_str_3d90ac, (void *)sd_str_3d90c0,
 	(void *)sd_str_3d90d4, (void *)sd_str_3d90e8,
 };
-const ShaderTab g_ShaderTab SD_AT(0x431e08) = { .Nombre = (void *)sd_str_3d9104, .flags = 257, .fnRender = (void *)sd_Render_PSFixed };
-uint32_t data_431e20[186] SD_AT(0x431e20) = {
-	1, (uintptr_t)(void *)sd_str_3d910c, (uintptr_t)(void *)sd_str_3d8f68, 0, 257,
-	(uintptr_t)(void *)sd_Shader_Envmap, 2, (uintptr_t)(void *)sd_str_3d9114, (uintptr_t)(void *)sd_str_3d8ec8, 0,
-	256, (uintptr_t)(void *)sd_Shader_MaskEnvmap, 3, (uintptr_t)(void *)sd_str_3d9120,
-	(uintptr_t)(void *)sd_str_3d8eb4, 0, 256, (uintptr_t)(void *)sd_Shader_MaskEnvBump, 4,
-	(uintptr_t)(void *)sd_str_3d912c, (uintptr_t)(void *)sd_str_3d8f90, 0, 257,
-	(uintptr_t)(void *)sd_Shader_Glowmap, 5, (uintptr_t)(void *)sd_str_3d9134, (uintptr_t)(void *)sd_str_3d8edc, 0,
-	256, (uintptr_t)(void *)sd_Shader_GlowmapMaskEnvmap, 6, (uintptr_t)(void *)sd_str_3d9148,
-	(uintptr_t)(void *)sd_str_3d8e98, 0, 256, (uintptr_t)(void *)sd_Shader_GlowmapMaskEnvBump, 7,
-	(uintptr_t)(void *)sd_str_3d915c, (uintptr_t)(void *)sd_str_3d8f54, 0, 257, (uintptr_t)(void *)sd_Shader_Clouds,
-	8, (uintptr_t)(void *)sd_str_3d9164, (uintptr_t)(void *)sd_str_3d8fb8, 0, 257,
-	(uintptr_t)(void *)sd_Shader_Hologram, 9, (uintptr_t)(void *)sd_str_3d9170, 0, 0, 257,
-	(uintptr_t)(void *)sd_Shader_Glowmap, 10, (uintptr_t)(void *)sd_str_3d917c, (uintptr_t)(void *)sd_str_3d8fe8, 0,
-	257, (uintptr_t)(void *)sd_Shader_Electric, 11, (uintptr_t)(void *)sd_str_3bbe9c,
-	(uintptr_t)(void *)sd_str_3d8ffc, 0, 257, (uintptr_t)(void *)sd_Shader_Fire, 12,
-	(uintptr_t)(void *)sd_str_3d9188, (uintptr_t)(void *)sd_str_3d900c, 0, 257, (uintptr_t)(void *)sd_Shader_Glass,
-	13, (uintptr_t)(void *)sd_str_3d9190, (uintptr_t)(void *)sd_str_3d901c, 0, 257,
-	(uintptr_t)(void *)sd_Shader_Waves, 14, (uintptr_t)(void *)sd_str_3d9198, 0, 0, 257,
-	(uintptr_t)(void *)sd_Shader_Scroll, 15, (uintptr_t)(void *)sd_str_3c2ddc, (uintptr_t)(void *)sd_str_3d902c, 0,
-	257, (uintptr_t)(void *)sd_Shader_Noise, 16, (uintptr_t)(void *)sd_str_3d91a0, (uintptr_t)(void *)sd_str_3d903c,
-	0, 257, (uintptr_t)(void *)sd_Render_PS0, 17, (uintptr_t)(void *)sd_str_3d91ac,
-	(uintptr_t)(void *)sd_str_3d9050, 0, 257, (uintptr_t)(void *)sd_Render_PS1, 18,
-	(uintptr_t)(void *)sd_str_3d91b8, (uintptr_t)(void *)sd_str_3d9064, 0, 257, (uintptr_t)(void *)sd_Render_PS2,
-	19, (uintptr_t)(void *)sd_str_3d91c4, (uintptr_t)(void *)sd_str_3d9078, 0, 257,
-	(uintptr_t)(void *)sd_Render_PS3, 20, (uintptr_t)(void *)sd_str_3d91d4, (uintptr_t)(void *)sd_str_3d9090, 0,
-	257, (uintptr_t)(void *)sd_Render_PS4, 21, (uintptr_t)(void *)sd_str_3d91e8, (uintptr_t)(void *)sd_str_3d90ac,
-	0, 257, (uintptr_t)(void *)sd_Render_PS5, 22, (uintptr_t)(void *)sd_str_3d91f4,
-	(uintptr_t)(void *)sd_str_3d90c0, 0, 257, (uintptr_t)(void *)sd_Render_PS6, 23,
-	(uintptr_t)(void *)sd_str_3d9200, (uintptr_t)(void *)sd_str_3d90d4, 0, 257, (uintptr_t)(void *)sd_Render_PS7,
-	24, (uintptr_t)(void *)sd_str_3d920c, (uintptr_t)(void *)sd_str_3d90e8, 0, 257,
-	(uintptr_t)(void *)sd_Render_PS8, 25, (uintptr_t)(void *)sd_str_3d9220, 0, 0, 257,
-	(uintptr_t)(void *)sd_Shader_DiffuseNoLit,
+ShaderTab g_ShaderTab[32] SD_AT(0x431e08) = {
+	{ .Nombre = (void *)sd_str_3d9104, .flags = 257, .fnRender = (void *)sd_Render_PSFixed },
+	{
+		.Index = 1,
+		.Nombre = (void *)sd_str_3d910c,
+		.Archivo = (void *)sd_str_3d8f68,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Envmap,
+	},
+	{
+		.Index = 2,
+		.Nombre = (void *)sd_str_3d9114,
+		.Archivo = (void *)sd_str_3d8ec8,
+		.flags = 256,
+		.fnRender = (void *)sd_Shader_MaskEnvmap,
+	},
+	{
+		.Index = 3,
+		.Nombre = (void *)sd_str_3d9120,
+		.Archivo = (void *)sd_str_3d8eb4,
+		.flags = 256,
+		.fnRender = (void *)sd_Shader_MaskEnvBump,
+	},
+	{
+		.Index = 4,
+		.Nombre = (void *)sd_str_3d912c,
+		.Archivo = (void *)sd_str_3d8f90,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Glowmap,
+	},
+	{
+		.Index = 5,
+		.Nombre = (void *)sd_str_3d9134,
+		.Archivo = (void *)sd_str_3d8edc,
+		.flags = 256,
+		.fnRender = (void *)sd_Shader_GlowmapMaskEnvmap,
+	},
+	{
+		.Index = 6,
+		.Nombre = (void *)sd_str_3d9148,
+		.Archivo = (void *)sd_str_3d8e98,
+		.flags = 256,
+		.fnRender = (void *)sd_Shader_GlowmapMaskEnvBump,
+	},
+	{
+		.Index = 7,
+		.Nombre = (void *)sd_str_3d915c,
+		.Archivo = (void *)sd_str_3d8f54,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Clouds,
+	},
+	{
+		.Index = 8,
+		.Nombre = (void *)sd_str_3d9164,
+		.Archivo = (void *)sd_str_3d8fb8,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Hologram,
+	},
+	{ .Index = 9, .Nombre = (void *)sd_str_3d9170, .flags = 257, .fnRender = (void *)sd_Shader_Glowmap },
+	{
+		.Index = 10,
+		.Nombre = (void *)sd_str_3d917c,
+		.Archivo = (void *)sd_str_3d8fe8,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Electric,
+	},
+	{
+		.Index = 11,
+		.Nombre = (void *)sd_str_3bbe9c,
+		.Archivo = (void *)sd_str_3d8ffc,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Fire,
+	},
+	{
+		.Index = 12,
+		.Nombre = (void *)sd_str_3d9188,
+		.Archivo = (void *)sd_str_3d900c,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Glass,
+	},
+	{
+		.Index = 13,
+		.Nombre = (void *)sd_str_3d9190,
+		.Archivo = (void *)sd_str_3d901c,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Waves,
+	},
+	{ .Index = 14, .Nombre = (void *)sd_str_3d9198, .flags = 257, .fnRender = (void *)sd_Shader_Scroll },
+	{
+		.Index = 15,
+		.Nombre = (void *)sd_str_3c2ddc,
+		.Archivo = (void *)sd_str_3d902c,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Noise,
+	},
+	{
+		.Index = 16,
+		.Nombre = (void *)sd_str_3d91a0,
+		.Archivo = (void *)sd_str_3d903c,
+		.flags = 257,
+		.fnRender = (void *)sd_Render_PS0,
+	},
+	{
+		.Index = 17,
+		.Nombre = (void *)sd_str_3d91ac,
+		.Archivo = (void *)sd_str_3d9050,
+		.flags = 257,
+		.fnRender = (void *)sd_Render_PS1,
+	},
+	{
+		.Index = 18,
+		.Nombre = (void *)sd_str_3d91b8,
+		.Archivo = (void *)sd_str_3d9064,
+		.flags = 257,
+		.fnRender = (void *)sd_Render_PS2,
+	},
+	{
+		.Index = 19,
+		.Nombre = (void *)sd_str_3d91c4,
+		.Archivo = (void *)sd_str_3d9078,
+		.flags = 257,
+		.fnRender = (void *)sd_Render_PS3,
+	},
+	{
+		.Index = 20,
+		.Nombre = (void *)sd_str_3d91d4,
+		.Archivo = (void *)sd_str_3d9090,
+		.flags = 257,
+		.fnRender = (void *)sd_Render_PS4,
+	},
+	{
+		.Index = 21,
+		.Nombre = (void *)sd_str_3d91e8,
+		.Archivo = (void *)sd_str_3d90ac,
+		.flags = 257,
+		.fnRender = (void *)sd_Render_PS5,
+	},
+	{
+		.Index = 22,
+		.Nombre = (void *)sd_str_3d91f4,
+		.Archivo = (void *)sd_str_3d90c0,
+		.flags = 257,
+		.fnRender = (void *)sd_Render_PS6,
+	},
+	{
+		.Index = 23,
+		.Nombre = (void *)sd_str_3d9200,
+		.Archivo = (void *)sd_str_3d90d4,
+		.flags = 257,
+		.fnRender = (void *)sd_Render_PS7,
+	},
+	{
+		.Index = 24,
+		.Nombre = (void *)sd_str_3d920c,
+		.Archivo = (void *)sd_str_3d90e8,
+		.flags = 257,
+		.fnRender = (void *)sd_Render_PS8,
+	},
+	{ .Index = 25, .Nombre = (void *)sd_str_3d9220, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseNoLit },
 };
-const ShaderTab g_ShaderTab2[32] SD_AT(0x432108) = {
+ShaderTab g_ShaderTab2[32] SD_AT(0x432108) = {
 	{ .Nombre = (void *)sd_str_3d9104, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseLightmap },
 	{
 		.Index = 1,
@@ -1062,7 +1188,7 @@ int g_Pantalla2DW SD_AT(0x432598) = 800;
 int g_Pantalla2DH SD_AT(0x43259c) = 600;
 double g_Pantalla2DInvW SD_AT(0x4325a0) = 0.00125;
 double g_Pantalla2DInvH SD_AT(0x4325a8) = 0.0016666666666666668;
-const int g_Grafico2DRot[5][4] SD_AT(0x4325b0) = {
+int g_Grafico2DRot[5][4] SD_AT(0x4325b0) = {
 	{ 0, 1, 2, 3 },
 	{ 2, 0, 3, 1 },
 	{ 3, 2, 1 },
@@ -1099,7 +1225,7 @@ float g_MapaSombrasBrillo SD_AT(0x432964) = 1.0f;
 int g_MapaSombrasRebotes SD_AT(0x432968) = 1;
 float g_MapaSombrasCoefRad SD_AT(0x43296c) = 0.1f;
 int g_MaxLightmap SD_AT(0x432970) = 2;
-const float g_BspLodDist[7] SD_AT(0x432974) = { 20.0f, 5.0f, 40.0f, 10.0f, 80.0f, 20.0f, 1e-45f };
+float g_BspLodDist[7] SD_AT(0x432974) = { 20.0f, 5.0f, 40.0f, 10.0f, 80.0f, 20.0f, 1e-45f };
 int g_LmapInfo2 SD_AT(0x432990) = 1;
 int g_BspDebugSel SD_AT(0x432994) = -1;
 float g_FlareTam SD_AT(0x432998) = 200.0f;
@@ -1108,7 +1234,7 @@ float g_FlareAtenDistFin SD_AT(0x4329a0) = 3000.0f;
 float g_FlareFundidoEnt SD_AT(0x4329a4) = 8.0f;
 float g_FlareFundidoSal SD_AT(0x4329a8) = 8.0f;
 uint32_t Engine_LoadIni_4329ac SD_AT(0x4329ac);
-const BlendModeEntry g_BlendModeTable[7] SD_AT(0x4329b0) = {
+BlendModeEntry g_BlendModeTable[7] SD_AT(0x4329b0) = {
 	{ .src = 2, .dst = 1 },
 	{ .mode = 1, .src = 2, .dst = 2 },
 	{ .mode = 2, .src = 5, .dst = 2 },
@@ -1127,7 +1253,7 @@ float g_GammaLastRed SD_AT(0x432a20) = 1.0f;
 float g_GammaLastGreen SD_AT(0x432a24) = 1.0f;
 float g_GammaLastBlue SD_AT(0x432a28) = 1.0f;
 uint32_t data_432a2c SD_AT(0x432a2c);
-const uint32_t g_BspColores[16] SD_AT(0x432a30) = {
+uint32_t g_BspColores[16] SD_AT(0x432a30) = {
 	0, 128, 32768, 32896, 0x800000, 0x800080, 0x808000, 0xc0c0c0, 0x808080, 255, 65280, 65535, 0xff0000, 0xff00ff,
 	0xffff00, 0xffffff,
 };

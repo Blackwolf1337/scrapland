@@ -188,7 +188,7 @@ cGVar GVar_R_ParticleLife SD_BSS(0x4b25c0);
 CArchINI g_SistPartIni SD_BSS(0x4b25d8);
 int g_ErrLastCode SD_BSS(0x4b25dc);
 int g_ErrLastFatal SD_BSS(0x4b25e0);
-const char g_ErrCustom[4] SD_BSS(0x4b25e4);
+char g_ErrCustom[4] SD_BSS(0x4b25e4);
 int g_Sharpen SD_BSS(0x4b25e8);
 int g_TexErrDif SD_BSS(0x4b25ec);
 int g_TexCreated SD_BSS(0x4b25f0);

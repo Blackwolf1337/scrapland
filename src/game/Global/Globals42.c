@@ -1080,7 +1080,7 @@ uint32_t cVehicleMotorsEffects_Smoke_4287f8[18] SD_AT(0x4287f8) = {
 	0xff000000, 0x60191919, 0x60232323, 0x602d2d2d, 0x60282828, 0xa41e1e1e, 0xd40f0f0f, 0xff000000, 0xff000000,
 	0xff000000, 0x80232323, 0x60323232, 0x60414141, 0x60373737, 0xa4282828, 0xd4141414, 0xff000000, 0xff000000,
 };
-const int g_WeaponNeedOrder[3][6] SD_AT(0x428840) = { { 0, 3, 1, 5, 2, 4 }, { 1, 5, 2, 4, 0, 3 }, { 2, 4, 0, 3, 1, 5 } };
+int g_WeaponNeedOrder[3][6] SD_AT(0x428840) = { { 0, 3, 1, 5, 2, 4 }, { 1, 5, 2, 4, 0, 3 }, { 2, 4, 0, 3, 1, 5 } };
 uint32_t g_DevColorRamps[36] SD_AT(0x428888) = {
 	0x60ffffff, 0x60ffffff, 0x60ffffff, 0x60ffffff, 0x80ffffff, 0x80ffffff, 0xc0808080, 0xff000000, 0xff000000,
 	0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0xc080805c, 0xff000000, 0xff000000,
@@ -1114,7 +1114,7 @@ uint32_t g_CurActionSet SD_AT(0x428ac0) = 0xffffffff;
 int g_ToDefinePlayer SD_AT(0x428ac4) = -1;
 int g_ToDefineAction SD_AT(0x428ac8) = -1;
 uint32_t g_ToDefineSet SD_AT(0x428acc) = 0xffffffff;
-const int g_PadCodes[24] SD_AT(0x428ad0) = { 35, 34, 33, 32, 8, 41, 40, 39, 38, 9, 0, 1, 2, 3, 4, 10, 5, 11, 7, 6, 50, 51, 49, 48 };
+int g_PadCodes[24] SD_AT(0x428ad0) = { 35, 34, 33, 32, 8, 41, 40, 39, 38, 9, 0, 1, 2, 3, 4, 10, 5, 11, 7, 6, 50, 51, 49, 48 };
 void *cPcPad_SetDefaults_428b30[2] SD_AT(0x428b30) = { (void *)sd_str_3bd050, (void *)sd_str_3bd064 };
 const char *LOGIC_GEARSTATES[5] SD_AT(0x428b38) = { (void *)sd_str_3bd078, (void *)sd_str_3bd084, (void *)sd_str_3bd090, (void *)sd_str_3bd09c, (void *)sd_str_3bd0b0 };
 const char *LOGIC_SENTINELSTATES[7] SD_AT(0x428b4c) = {
@@ -1132,11 +1132,11 @@ HashTable s_TauntRaceCounts SD_AT(0x428ba8) = { .numSlots = 457 };
 char *s_TauntRaces[5] SD_AT(0x428bb4) = { (void *)sd_str_3c082c, (void *)sd_str_3c0830, (void *)sd_str_3c0834, (void *)sd_str_3c0838, (void *)sd_str_Empty };
 int s_TauntPoliceCount SD_AT(0x428bc8) = -1;
 int s_RustyLastJunkPoint SD_AT(0x428bcc) = -1;
-const uint32_t g_MissionStatusColors[3] SD_AT(0x428bd0) = { 0xffff20, 0xff4020, 0x2577ff };
-const float g_MissionStatusOfs[3][2] SD_AT(0x428bdc) = { { 23.5f, 40.0f }, { 17.0f, 32.5f }, { 31.0f, 32.5f } };
+uint32_t g_MissionStatusColors[3] SD_AT(0x428bd0) = { 0xffff20, 0xff4020, 0x2577ff };
+float g_MissionStatusOfs[3][2] SD_AT(0x428bdc) = { { 23.5f, 40.0f }, { 17.0f, 32.5f }, { 31.0f, 32.5f } };
 int g_HeadMonitorAnim SD_AT(0x428bf4) = 1;
-const float g_MainMenuLightPos[5][2] SD_AT(0x428bf8) = { { 472.0f, 88.0f }, { 193.0f, 156.0f }, { 290.0f, 94.0f }, { 158.0f, 93.0f }, { 360.0f, 156.0f } };
-const float g_MainMenuSparkPos[19][2] SD_AT(0x428c20) = {
+float g_MainMenuLightPos[5][2] SD_AT(0x428bf8) = { { 472.0f, 88.0f }, { 193.0f, 156.0f }, { 290.0f, 94.0f }, { 158.0f, 93.0f }, { 360.0f, 156.0f } };
+float g_MainMenuSparkPos[19][2] SD_AT(0x428c20) = {
 	{ 116.0f, 104.0f },
 	{ 104.0f, 169.0f },
 	{ 169.0f, 106.0f },
@@ -1178,9 +1178,9 @@ uint32_t g_NetWaitTime SD_AT(0x428d28) = 5000;
 uint32_t g_NetCloseTime SD_AT(0x428d2c) = 2000;
 uint32_t g_NetSendDelay SD_AT(0x428d30) = 100;
 uint32_t data_428d34 SD_AT(0x428d34);
-const uint64_t g_NetRandMag01[2] SD_AT(0x428d38) = { 0, 0xb5026f5aa96619e9ULL };
-const byte g_NetServerFullPkt[5] SD_AT(0x428d48) = { 0, 0, 0, 0, 8 };
-const byte g_NetNeedPasswordPkt[5] SD_AT(0x428d50) = { 0, 0, 0, 0, 9 };
+uint64_t g_NetRandMag01[2] SD_AT(0x428d38) = { 0, 0xb5026f5aa96619e9ULL };
+byte g_NetServerFullPkt[5] SD_AT(0x428d48) = { 0, 0, 0, 0, 8 };
+byte g_NetNeedPasswordPkt[5] SD_AT(0x428d50) = { 0, 0, 0, 0, 9 };
 PyTypeObject cPyEntity_Type SD_AT(0x428e18) = {
 	.ob_refcnt = 1,
 	.ob_type = (void *)sd_PyType_Type,

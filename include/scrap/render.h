@@ -147,7 +147,7 @@ typedef struct ShaderTab {
 	shaderRender_t fnRender;	/* 0x14 */
 } ShaderTab;
 SD_SIZE(ShaderTab, 0x18);
-#define g_ShaderTab (GAME_ARRAY(const ShaderTab, g_ShaderTab, 0x431e08))
+#define g_ShaderTab (GAME_ARRAY(const ShaderTab, g_ShaderTab, 0x431e08))	/* [32], ends with a NULL name */
 #define g_ShaderTab2 (GAME_ARRAY(const ShaderTab, g_ShaderTab2, 0x432108))
 /* the pixel shaders: on (the device has them), their handles, the ones switched off (a bit each from 0x200000) */
 #define MAX_PS 9

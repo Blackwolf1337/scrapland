@@ -627,7 +627,7 @@ int g_DbgLinePos SD_BSS(0x4abd70);
 int g_DbgLineLen SD_BSS(0x4abd74);
 char g_ExePath[264] SD_BSS(0x4abd78);
 char g_E3DDir[264] SD_BSS(0x4abe80);
-const byte g_RSqrtTable[144] SD_BSS(0x4abf88);
+byte g_RSqrtTable[144] SD_BSS(0x4abf88);
 char g_Vec3StrDeg[256] SD_BSS(0x4ac018);
 char g_Vec3Str[256] SD_BSS(0x4ac118);
 cGVar GVar_R_LightEnaD3D SD_BSS(0x4ac218);
@@ -696,7 +696,7 @@ struct {
 	byte g_TexRepeat;	/* 0x3 */
 } group_4ad6f0 SD_BSS(0x4ad6f0);
 void *g_pd3dDevice SD_BSS(0x4ad6f4);
-const matrix_t g_MatIdentity SD_BSS(0x4ad6f8);
+matrix_t g_MatIdentity SD_BSS(0x4ad6f8);
 struct {
 	byte g_TexNoPow2;	/* 0x0 */
 	byte g_TexPow2;	/* 0x1 */
@@ -748,7 +748,7 @@ cGVar GVar_R_Anisotropy SD_BSS(0x4adb90);
 cGVar GVar_R_EnvBumpBias SD_BSS(0x4adba8);
 cGVar GVar_R_ShowSphereVis SD_BSS(0x4adbc0);
 cGVar GVar_R_MaterialLog SD_BSS(0x4adbd8);
-const plane_t g_Frustum[6] SD_BSS(0x4adbf0);
+plane_t g_Frustum[6] SD_BSS(0x4adbf0);
 cGVar GVar_R_GlowFlickBRot SD_BSS(0x4adc50);
 cGVar GVar_R_CloudScale2 SD_BSS(0x4adc68);
 cGVar GVar_R_GlowFlickRot SD_BSS(0x4adc80);
@@ -809,7 +809,7 @@ uint32_t g_CollisionCache SD_BSS(0x4af7d0);
 byte g_Motor4af7d4 SD_BSS(0x4af7d4);
 int g_QuadTriCacheID SD_BSS(0x4af7d8);
 uint32_t g_CollisionNComp SD_BSS(0x4af7dc);
-const int g_BspCacheStats[3] SD_BSS(0x4af7e0);
+int g_BspCacheStats[3] SD_BSS(0x4af7e0);
 uint32_t g_CollisionTests SD_BSS(0x4af7ec);
 uint32_t g_CollisionTestsTotal SD_BSS(0x4af7f0);
 int g_CollisionQuadCount SD_BSS(0x4af7f4);
