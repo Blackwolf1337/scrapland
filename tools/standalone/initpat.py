@@ -16,6 +16,9 @@ from capstone import CS_ARCH_X86, CS_MODE_32, Cs
 from capstone.x86 import X86_GRP_JUMP, X86_OP_IMM
 
 root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# the names of the engine variables and natives of the exe in English, like the C (stage 4)
+sys.path.insert(0, os.path.join(root, 'tools', 'rename'))
+from english import english
 args = [a for a in sys.argv[1:] if not a.startswith('-')]
 WRITE = '-w' in sys.argv
 VERBOSE = '-v' in sys.argv
@@ -107,11 +110,13 @@ def hook_names():
 	return names
 
 def global_names():
-	"""#define g_Name ... Game_Ptr(0x...) or GAME_DATA(type, 0x...) of the C, by rva"""
+	"""#define g_Name ... Game_Ptr(0x...), GAME_DATA(type, 0x...) or the forms of stage 3b5 (GAME_GLOBAL(type, name,
+	0x...), GAME_ARRAY, the _IN views, GAME_PTR) of the C, by rva"""
 	names = {}
 	files = glob.glob(os.path.join(root, 'include/scrap/*.h')) + glob.glob(os.path.join(root, 'src/**/*.c'),
 		recursive=True)
-	pat = re.compile(r'^#define\s+(g_\w+)\s+.*?(?:Game_Ptr\(|GAME_DATA\([^,]+,\s*)0x([0-9a-f]+)\)+\s*(?:/\*.*)?$', re.M)
+	pat = re.compile(r'^#define\s+(g_\w+)\s+.*?(?:Game_Ptr\(|GAME_DATA\([^,]+,\s*|'
+		r'GAME_(?:GLOBAL|ARRAY|GLOBAL_IN|ARRAY_IN|PTR)\((?:[^,()]+,\s*){1,3})0x([0-9a-f]+)\)+\s*(?:/\*.*)?$', re.M)
 	for f in sorted(files):
 		if f.endswith('StaticInit.c'):
 			continue
@@ -355,9 +360,9 @@ def class_name(func, obj):
 
 def init_name(kind, c):
 	if kind.startswith('gvar'):
-		return 'GVar_' + ident(cstr(c['name']))
+		return english('GVar_' + ident(cstr(c['name'])))
 	if kind == 'native function':
-		return 'NativeFunc_' + ident(cstr(c['name']))
+		return english('NativeFunc_' + ident(cstr(c['name'])))
 	if 'ctor' in c and 'obj' in c:
 		return class_name(HOOKS[c['ctor']], c['obj'])
 	if kind == 'hash table':

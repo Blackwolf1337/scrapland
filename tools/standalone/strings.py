@@ -27,12 +27,13 @@
 import bisect, collections, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from sdexe import BASE, ROOT, Exe, ExeError
+from sdexe import BASE, ROOT, Exe, ExeError, english
 from datamap import MAP, read_map
 
 OUT_DIR = 'src/game/Global'
 AT_H = 'src/game/Global/StringsAt.h'
 GLOBALS_AT_H = 'src/game/Global/GlobalsAt.h'
+TEST_ADDRS = 'src/core/testaddrs.inc'
 STATIC_INIT = 'src/game/Global/StaticInit.inc'
 
 # the kinds of the map a string may lie in
@@ -216,8 +217,9 @@ def c_literal(b):
 
 
 def c_sources():
-	"""the C of src/ and include/ but the vendored Python, what this tool writes and the globals of globals.py (stage
-	3b5, made after the strings)"""
+	"""the C of src/ and include/ but the vendored Python, what this tool writes, the globals of globals.py (stage
+	3b5, made after the strings) and the address table of the tests (stage 3c2, written from the C objects: its rvas
+	are no uses, with them the tool cut the strings anew at the objects of globals.py)"""
 	for top in ('src', 'include'):
 		for d, _, fs in os.walk(os.path.join(ROOT, top)):
 			if os.path.relpath(d, ROOT).startswith('src/python'):
@@ -225,7 +227,7 @@ def c_sources():
 			for f in sorted(fs):
 				path = os.path.join(d, f)
 				if f.endswith(('.c', '.h', '.inc')) and not re.match(r'^(Strings|Globals)[0-9a-f]{2}\.c$', f) \
-						and os.path.relpath(path, ROOT) not in (AT_H, GLOBALS_AT_H):
+						and os.path.relpath(path, ROOT) not in (AT_H, GLOBALS_AT_H, TEST_ADDRS):
 					yield path
 
 
@@ -308,6 +310,7 @@ def name_all(x, objs):
 	taken = set()
 
 	def give(rva, name):
+		name = english(name)	# the names of the methods and engine variables of the exe (stage 4)
 		i = bisect.bisect_right(starts, rva) - 1
 		if i < 0 or rva >= objs[i].hi or objs[i].name:
 			return

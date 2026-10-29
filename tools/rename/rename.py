@@ -592,7 +592,7 @@ def main():
 	plan = Plan()
 	for p in plan.problems:
 		print('problem:', p)
-	print('rename.py: %d identifiers to rename, %d paths to move, %d problems' % (len(plan.names), len(plan.paths),
+	print('rename.py: %d identifiers in the plan, %d paths to move, %d problems' % (len(plan.names), len(plan.paths),
 		len(plan.problems)))
 	if '-v' in args:
 		for old in sorted(plan.names):

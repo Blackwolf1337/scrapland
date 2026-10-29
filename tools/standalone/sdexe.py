@@ -1,9 +1,14 @@
 # sdexe.py: what datagen.py, datamap.py and vtables.py read of Scrap.exe 1.6.1 and of the hook lists
 # (docs/standalone.md, stage 3).
-import os, re, struct
+import os, re, struct, sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
 BASE = 0x400000
+
+# english(name): the English name of a name taken from the exe (an RTTI class, a method of the script API, an engine
+# variable), as tools/rename/rename.py translated the C (stage 4, docs/rename.md)
+sys.path.insert(0, os.path.join(ROOT, 'tools', 'rename'))
+from english import english
 
 
 class ExeError(Exception):

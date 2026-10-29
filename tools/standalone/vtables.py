@@ -7,7 +7,7 @@
 import os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from sdexe import ROOT, Exe, ExeError, c_names
+from sdexe import ROOT, Exe, ExeError, c_names, english
 
 OUT = 'src/game/Global/Vtables.c'
 
@@ -34,13 +34,14 @@ def fail(msg):
 
 
 def class_name(td):
-	"""the C name of the class of a type descriptor name: namespaces first, joined by _"""
+	"""the C name of the class of a type descriptor name: namespaces first, joined by _, in English (the RTTI names
+	are the Spanish ones of the original: CEscena is CScene)"""
 	if td in TEMPLATES:
 		return TEMPLATES[td]
 	m = re.match(r'^\.\?A[UV]([A-Za-z_]\w*(?:@[A-Za-z_]\w*)*)@@$', td)
 	if not m:
 		fail('no C name for the class %s: add it to TEMPLATES' % td)
-	return '_'.join(reversed(m.group(1).split('@')))
+	return english('_'.join(reversed(m.group(1).split('@'))))
 
 
 def find(x):
