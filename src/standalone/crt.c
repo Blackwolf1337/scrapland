@@ -3,8 +3,8 @@
  * of src/imports.inc. The original links the static MSVC 14 CRT, which is UCRT based; this exe links the UCRT DLL
  * through mingw, so most functions are the same code there and only pass through. One allocator (the UCRT heap,
  * which the original's static CRT also took from GetProcessHeap) and one set of FILE objects, errno and locale serve
- * the C, the Python library and the code of the original that still runs from the copy: src/core/hook.c points the
- * entries of the original's CRT here (their rvas are the ones of imports.inc and src/standalone/crthooks.inc).
+ * the C and the Python library. The entries of the original's CRT that only the code of the original reached
+ * (_alloca_probe, _EH_prolog, _setjmp3 ...) went with the room in stage 3c2.
  *
  * Only the exact math functions come from this UCRT; the others are Microsoft's ucrtbase (src/standalone/crtmath.c),
  * Wine's libm differs in the last bits. So are the printf and scanf cores, strtod, atof and strerror (Wine's format
@@ -562,7 +562,7 @@ int crt_fpclass(double x) {
 	return _fpclass(x);
 }
 
-/* ---- entries only the code of the copy and the tests reach (src/standalone/crthooks.inc) ---- */
+/* ---- entries the tests and the vtables reach (the memcpy and memset of the original, its _purecall) ---- */
 
 /* memcpy of the MSVC runtime also copies overlapping blocks like memmove */
 void *crt_memcpy(void *dst, const void *src, size_t n) {
@@ -573,178 +573,8 @@ void *crt_memset(void *dst, int c, size_t n) {
 	return memset(dst, c, n);
 }
 
-char *crt_strncpy(char *dst, const char *src, size_t n) {
-	return strncpy(dst, src, n);
-}
-
-int crt_finite(double x) {
-	return _finite(x);
-}
-
-void *crt_calloc(size_t count, size_t size) {
-	return calloc(count, size);
-}
-
-/* operator delete[](void *, size_t): the engine's delete[] */
-void crt_operator_delete_array_sized(void *p, uint32_t size) {
-	(void)size;
-	operator_delete_array(p);
-}
-
 /* _purecall: a pure virtual method was called, the runtime ends the program */
 [[noreturn]] void crt_purecall(void) {
 	Com_Printf("crt: pure virtual function call\n");
 	abort();
 }
-
-/* _vsnprintf and _snprintf of the headers: the inline printf options with _CRT_INTERNAL_PRINTF_LEGACY_VSPRINTF_NULL_
- * TERMINATION (no terminator when the text fills the buffer), -1 for an error or a cut */
-int crt_vsnprintf(char *buf, size_t count, const char *fmt, va_list ap) {
-	int r = __stdio_common_vsprintf(*crt_local_printf_options() | 1, buf, count, fmt, NULL, ap);
-	return r < 0 ? -1 : r;
-}
-
-int crt_snprintf(char *buf, size_t count, const char *fmt, ...) {
-	va_list ap;
-
-	va_start(ap, fmt);
-	int r = crt_vsnprintf(buf, count, fmt, ap);
-	va_end(ap);
-	return r;
-}
-
-/*
- * The helpers the compiler calls with their own conventions, as the runtime has them:
- * - __security_check_cookie: the cookie in ecx against __security_cookie (crt_security_cookie), eax is kept (the
- *   return value of the caller); a mismatch fails fast like __report_gsfailure (FAST_FAIL_STACK_COOKIE_CHECK_FAILURE)
- * - _alloca_probe (_chkstk): eax bytes more stack, touched page by page
- * - _aullshr: edx:eax >> cl
- * - _EH_prolog: the C++ exception frame of the caller with the handler in eax
- * - _ftol: st(0) to edx:eax, truncated
- * - _setjmp3 and longjmp: the jmp_buf of the runtime (ebp, ebx, edi, esi, esp, eip, fs:0 registration, try level,
- *   'VC20', unwind function and data); longjmp puts the registration of setjmp back on fs:0 without running the
- *   handlers of the frames in between (only libpng uses it, its frames have none)
- */
-__asm__(
-	".text\n\t"
-	".globl _crt_security_check_cookie\n"
-	"_crt_security_check_cookie:\n\t"
-	"cmpl _crt_security_cookie, %ecx\n\t"
-	"jne 1f\n\t"
-	"ret\n"
-	"1:\n\t"
-	"movl $2, %ecx\n\t"
-	"int $0x29\n\t"
-	"pushl $0xc0000409\n\t"
-	"pushl $-1\n\t"
-	"call _TerminateProcess@8\n"
-
-	".globl _crt_alloca_probe\n"
-	"_crt_alloca_probe:\n\t"
-	"pushl %ecx\n\t"
-	"leal 4(%esp), %ecx\n\t"
-	"subl %eax, %ecx\n\t"
-	"sbbl %eax, %eax\n\t"
-	"notl %eax\n\t"
-	"andl %eax, %ecx\n\t"
-	"movl %esp, %eax\n\t"
-	"andl $0xfffff000, %eax\n"
-	"1:\n\t"
-	"cmpl %eax, %ecx\n\t"
-	"jb 2f\n\t"
-	"movl %ecx, %eax\n\t"
-	"popl %ecx\n\t"
-	"xchgl %eax, %esp\n\t"
-	"movl (%eax), %eax\n\t"
-	"movl %eax, (%esp)\n\t"
-	"ret\n"
-	"2:\n\t"
-	"subl $0x1000, %eax\n\t"
-	"testl %eax, (%eax)\n\t"
-	"jmp 1b\n"
-
-	".globl _crt_aullshr\n"
-	"_crt_aullshr:\n\t"
-	"cmpb $64, %cl\n\t"
-	"jae 2f\n\t"
-	"cmpb $32, %cl\n\t"
-	"jae 1f\n\t"
-	"shrdl %cl, %edx, %eax\n\t"
-	"shrl %cl, %edx\n\t"
-	"ret\n"
-	"1:\n\t"
-	"movl %edx, %eax\n\t"
-	"xorl %edx, %edx\n\t"
-	"andb $31, %cl\n\t"
-	"shrl %cl, %eax\n\t"
-	"ret\n"
-	"2:\n\t"
-	"xorl %eax, %eax\n\t"
-	"xorl %edx, %edx\n\t"
-	"ret\n"
-
-	".globl _crt_EH_prolog\n"
-	"_crt_EH_prolog:\n\t"
-	"pushl $-1\n\t"
-	"pushl %eax\n\t"
-	"movl %fs:0, %eax\n\t"
-	"pushl %eax\n\t"
-	"movl 12(%esp), %eax\n\t"
-	"movl %esp, %fs:0\n\t"
-	"movl %ebp, 12(%esp)\n\t"
-	"leal 12(%esp), %ebp\n\t"
-	"pushl %eax\n\t"
-	"ret\n"
-
-	".globl _crt_ftol\n"
-	"_crt_ftol:\n\t"
-	"pushl %ebp\n\t"
-	"movl %esp, %ebp\n\t"
-	"addl $-12, %esp\n\t"
-	"fnstcw -2(%ebp)\n\t"
-	"movw -2(%ebp), %ax\n\t"
-	"orb $0xc, %ah\n\t"
-	"movw %ax, -4(%ebp)\n\t"
-	"fldcw -4(%ebp)\n\t"
-	"fistpll -12(%ebp)\n\t"
-	"fldcw -2(%ebp)\n\t"
-	"movl -12(%ebp), %eax\n\t"
-	"movl -8(%ebp), %edx\n\t"
-	"leave\n\t"
-	"ret\n"
-
-	".globl _crt_setjmp3\n"
-	"_crt_setjmp3:\n\t"
-	"movl 4(%esp), %edx\n\t"
-	"movl %ebp, (%edx)\n\t"
-	"movl %ebx, 4(%edx)\n\t"
-	"movl %edi, 8(%edx)\n\t"
-	"movl %esi, 12(%edx)\n\t"
-	"movl %esp, 16(%edx)\n\t"
-	"movl (%esp), %eax\n\t"
-	"movl %eax, 20(%edx)\n\t"
-	"movl $0x56433230, 32(%edx)\n\t"
-	"movl $0, 36(%edx)\n\t"
-	"movl %fs:0, %eax\n\t"
-	"movl %eax, 24(%edx)\n\t"
-	"movl $-1, 28(%edx)\n\t"
-	"xorl %eax, %eax\n\t"
-	"ret\n"
-
-	".globl _crt_longjmp\n"
-	"_crt_longjmp:\n\t"
-	"movl 4(%esp), %edx\n\t"
-	"movl 8(%esp), %eax\n\t"
-	"testl %eax, %eax\n\t"
-	"jne 1f\n\t"
-	"incl %eax\n"
-	"1:\n\t"
-	"movl 24(%edx), %ecx\n\t"
-	"movl %ecx, %fs:0\n\t"
-	"movl (%edx), %ebp\n\t"
-	"movl 4(%edx), %ebx\n\t"
-	"movl 8(%edx), %edi\n\t"
-	"movl 12(%edx), %esi\n\t"
-	"movl 16(%edx), %esp\n\t"
-	"addl $4, %esp\n\t"
-	"jmp *20(%edx)\n");

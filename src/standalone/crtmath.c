@@ -5,8 +5,7 @@
  * there (tools/test/getucrt.sh puts it there for the Wine tests: Wine's own ucrtbase differs in the last bits),
  * otherwise the system ucrtbase.dll, which on Windows is Microsoft's and the one this exe links. Each entry is a jmp
  * through a slot holding the export, so the registers of the SSE2 and _CI conventions pass through unchanged. The C
- * calls them by these labels (src/core/libm.c, the crt_* math of src/imports.inc) and the entries of the copy jump
- * to them (src/standalone/crthooks.inc).
+ * calls them by these labels (src/core/libm.c, the crt_* math of src/imports.inc).
  *
  * Domain and range errors: the runtime calls the user matherr (_umatherr, rva 0x35657e in the original) and sets
  * errno when it returns 0 (_set_errno_from_matherr, rva 0x35654f: _DOMAIN EDOM, _SING and _OVERFLOW ERANGE). The
@@ -61,11 +60,8 @@
 	X(crt_libm_sse2_log_precise, "_libm_sse2_log_precise") \
 	X(crt_libm_sse2_pow_precise, "_libm_sse2_pow_precise") \
 	X(crt_libm_sse2_sin_precise, "_libm_sse2_sin_precise") \
-	X(crt_libm_sse2_sqrt_precise, "_libm_sse2_sqrt_precise") \
-	X(crt_CIacos, "_CIacos") \
 	X(crt_CIatan2, "_CIatan2") \
-	X(crt_CIfmod, "_CIfmod") \
-	X(crt_CIpow, "_CIpow")
+	X(crt_CIfmod, "_CIfmod")
 
 #define CRT_SLOT(label, name) void *label##_ms;
 #define CRT_THUNK(label, name) \

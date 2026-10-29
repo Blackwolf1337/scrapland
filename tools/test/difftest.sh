@@ -8,19 +8,11 @@
 #
 # usage: tools/test/difftest.sh [scenario ...]   (sdtest, sdcall, sdlevel; default all; builds nothing: run cmake first)
 #        DIFFTEST_TIMEOUT  seconds per run, default 240
-#        DIFFTEST_WIPE=1   the hooked run also fills the rest of every hooked original with int3 ([general] wipe),
-#                          2 the whole game code but for the hooks, 3 that with a probe that logs each trap and
-#                          goes on with the original code (src/core/hook.c)
-#        DIFFTEST_STANDALONE=1  the hooked run starts ScrapC.exe, the standalone loader (docs/standalone.md)
-#        DIFFTEST_WIPEPY=1  with DIFFTEST_STANDALONE=1: the code of the original's Python is int3 too ([general] wipepy)
-#        DIFFTEST_WIPECRT=1  with DIFFTEST_STANDALONE=1: the code of the original's CRT is int3 too ([general] wipecrt)
-#        DIFFTEST_WIPELOW=1  with DIFFTEST_STANDALONE=1: the libraries below the game code (ASE, D3DX8) and the M3D math
-#                          are int3 too ([general] wipelow)
-#        DIFFTEST_WIPEINIT=1  with DIFFTEST_STANDALONE=1: the dynamic initializers of the game and their atexit
-#                          destructors are int3 too ([general] wipeinit)
-#        DIFFTEST_DATAPROBE=1|2  with DIFFTEST_STANDALONE=1: the data probe of src/standalone/dataprobe.c, per page or
-#                          per unit ([general] dataprobe; DIFFTEST_DATAPROBEBUDGET for dataprobebudget), its log goes
-#                          to build/difftest/dataprobe-<scenario>-c.log
+#        DIFFTEST_WIPE=1   the hooked run of the hook DLL also fills the rest of every hooked original with int3
+#                          ([general] wipe), 2 the whole game code but for the hooks, 3 that with a probe that logs each
+#                          trap and goes on with the original code (src/core/hook.c)
+#        DIFFTEST_STANDALONE=1  the hooked run starts ScrapC.exe, the standalone exe (docs/standalone.md), which has no
+#                          original code and ignores wipe
 root=$(cd "$(dirname "$0")/../.." && pwd)
 game=$root/game
 ini=$game/Bin/scrapdecomp.ini
@@ -51,12 +43,7 @@ run() {
 	local arg
 	[ "$2" = 1 ] && [ "${DIFFTEST_STANDALONE:-0}" = 1 ] && exe=ScrapC.exe
 	arg="-PythonExecute:execfile($(python3 -I -c "print('+'.join('chr(%d)' % ord(c) for c in '$name.py'))"))"
-	printf '[general]\nhooks=%s\ntestmod=1\nwipe=%s\nwipepy=%s\nwipecrt=%s\nwipelow=%s\nwipeinit=%s\ndataprobe=%s\n' "$2" \
-		"$(($2 ? ${DIFFTEST_WIPE:-0} : 0))" "$(($2 ? ${DIFFTEST_WIPEPY:-0} : 0))" "$(($2 ? ${DIFFTEST_WIPECRT:-0} : 0))" \
-		"$(($2 ? ${DIFFTEST_WIPELOW:-0} : 0))" "$(($2 ? ${DIFFTEST_WIPEINIT:-0} : 0))" \
-		"$(($2 ? ${DIFFTEST_DATAPROBE:-0} : 0))" > "$ini"
-	[ -n "$DIFFTEST_DATAPROBEBUDGET" ] && printf 'dataprobebudget=%s\n' "$DIFFTEST_DATAPROBEBUDGET" >> "$ini"
-	rm -f "$game/Bin/dataprobe.log" "$out/dataprobe-$tag.log"
+	printf '[general]\nhooks=%s\ntestmod=1\nwipe=%s\n' "$2" "$(($2 ? ${DIFFTEST_WIPE:-0} : 0))" > "$ini"
 	# so the second run does not find the files of the first
 	rm -f "$result"
 	rm_written
@@ -81,7 +68,6 @@ run() {
 		echo "$tag: unhandled exception in the game log, see $out/log-$tag.html" >&2
 	fi
 	cp "$result" "$out/$tag.out" 2> /dev/null
-	[ -f "$game/Bin/dataprobe.log" ] && cp "$game/Bin/dataprobe.log" "$out/dataprobe-$tag.log"
 	if ! tail -n 1 "$result" 2> /dev/null | tr -d '\r' | grep -qx 'done'; then
 		echo "$tag: output incomplete, last lines in $out/$tag.out" >&2
 		return 1

@@ -161,7 +161,7 @@ double crt_tan(double x);
 double crt_tanh(double x);
 /*
  * ScrapC.exe: the math entries of the runtime with conventions of their own, labels for the inline asm of
- * src/core/libm.c and for the jumps of the copy (src/standalone/crtmath.c, crtvec.c, crthooks.inc): the SSE2 entries
+ * src/core/libm.c (src/standalone/crtmath.c, crtvec.c): the SSE2 entries
  * (argument and result in xmm0, the exponent of pow in xmm1), the _CI intrinsics (x87 stack), the conversions of a
  * float or double in xmm0 to edx:eax and the vector functions of two doubles in xmm0
  */
@@ -173,11 +173,8 @@ void crt_libm_sse2_exp_precise(void);
 void crt_libm_sse2_log_precise(void);
 void crt_libm_sse2_pow_precise(void);
 void crt_libm_sse2_sin_precise(void);
-void crt_libm_sse2_sqrt_precise(void);
-void crt_CIacos(void);
 void crt_CIatan2(void);
 void crt_CIfmod(void);
-void crt_CIpow(void);
 void crt_ftoui3(void);
 void crt_dtoui3(void);
 void crt_vdecl_cos2(void);
@@ -202,7 +199,7 @@ static inline int crt_InitEpochAt(uint32_t index) {
 }
 #define crt_InitEpoch() crt_InitEpochAt(g_TlsIndex)
 #endif
-/* __security_cookie of the exe, which __security_check_cookie (src/standalone/crt.c) compares with */
+/* __security_cookie of the exe (the C of ScrapC.exe has no stack cookies, nothing reads it since stage 3c2) */
 #define crt_security_cookie GAME_GLOBAL(uint32_t, crt_security_cookie, 0x43cfdc)
 
 #endif
