@@ -1,0 +1,317 @@
+kind	old	new	note
+# ---- the words of unsure.tsv, decided from the code (empty new: the word stays) ----
+word	desc		description or descriptor, English abbreviation
+word	r		a letter; NodoR is a phrase below
+word	part		English part; SistPart is a phrase below
+word	repos		reposition, English abbreviation
+word	sup		CAStarSup, CNodesWorldSup: the base class of the search and the graphs, unclear, stays
+word	txf		the TXF file format of the light maps
+word	ric		ricochet, English abbreviation
+word	ent		entity (Item_Ent, WEnt, VE_Ent); the fade in is a phrase below
+word	est	static	CTextEst: the static texture of a material, next to TextAni (animated)
+word	cab		cabecera (header) in the TXF and BMP headers, names below; a taxi cab elsewhere
+word	ver		version (MST_VER); the show switches ver_info, ver uniones are names below
+word	mst		the .MST glyph table of the fonts
+word	tabnodor		only NODO_NO_TABNODOR, a name below
+word	pri	first	primero: the first glyph of a font (pri..ult), g_M3DPriFrame
+word	tramas		only g_Tramas, a name below
+word	amor		AmorPieceWeight: a typo of armor in the name of the engine variable, stays like the variable
+word	sec		sector in g_BspSecOk and g_BspSecVisto (names below), seconds in g_FrameSec
+word	od		SAI_GetOD: a method name of the script API
+word	reparto	share	LeeM3D: the share of the weight of a bone
+word	finp	endp	ControlAnim: the end pointer next to f1p, f2p
+word	expo		exponent, English abbreviation
+word	ecu		only nEcu, a name below
+word	escr	write	escribir: g_MapaSombrasEscrTemp (ini key escr_mapas_temp, write the temporary maps)
+word	lum		luminance, English abbreviation
+word	cm		countermeasure (CTL_CM, Controls_CM)
+word	ab		AB effects of the FX elements, a prefix of the original
+word	nw		NodesWorld, English
+word	rad		radiosity (Rad_Normales, coef_rad) and radians (Rad2Deg), English abbreviation either way
+word	fisq		R_StencilFisq: fast inverse square root (RSqrt_Estimate), an engine variable
+word	uni		unifont (g_Unifont)
+word	mesc		only the local mesc, a name below
+word	hn		HNTrafficCapsule, an engine variable
+word	xtr		XtrTimeWSwitchNo, an engine variable
+word	inf		cInfItem, InfItemList: unclear, stays
+word	mi		mode info (D3DModeInfo), English
+word	tg		target
+word	bip		biped (3ds Max)
+word	ase		All-Seeing Eye
+word	puntual	point	point light
+word	cuad	quad	cuadrado
+word	lm		light map
+word	sai		the script AI module
+word	vm		vehicle motor effects prefix
+word	mm		unclear, stays
+word	ve		vehicle effects prefix
+word	wsm		3ds Max world space modifier
+word	dev		device
+# ---- glossary words with a shorter English: abbreviations stay abbreviations ----
+word	din	dyn	dinamico
+word	dina	dyn	dinamico (dinaShip)
+word	dinamic	dynamic	Spanglish
+word	tam	size	tamano
+word	ant	prev	anterior
+word	sig	next	siguiente
+word	ult	last	ultimo
+word	efec	effect	efecto
+word	grf	graphic	grafico
+word	ilum	illum	iluminacion
+word	colis	collision	colision
+word	atrib	attrib	atributo
+word	aten	atten	atenuacion
+word	inic	init	inicializar
+word	extens	ext	extensiones
+word	resol	res	resolucion
+word	acum	accum	acumulado
+word	blq	block	bloque
+word	bloq	block	bloque
+word	cuads	quads	cuadrados
+word	direc	dir	direccional (LUZ_DIREC = LIGHT_DIR)
+word	ign	ignore	ignorar
+word	selec	select	seleccion
+word	esq	corner	esquina
+word	etiq	label	etiqueta
+word	triang	tri	triangulos
+word	vehi	vehicle	vehiculo
+word	fund	fade	fundido
+word	ind	index	indice
+word	mov	move	movimiento
+word	sal	out	salida
+word	der	right	derecha
+word	esc	scale	escala
+word	sist	system	sistema
+word	cad	str	cadena
+word	arch	file	archivo
+word	lee	read	leer
+word	analize	analyze	Spanglish
+word	analizing	analyzing	Spanglish
+word	objetive	objective	Spanglish
+word	quanto	amount	Spanglish
+word	mallad	meshd	MALLAD3D is malla + D3D: MESHD3D
+word	idmapa	mapid	id + mapa
+word	nobjetos	numObjects	n + objetos
+word	es	is	Spanish is (Nodo_EsAntecesor, BspTri_EsTexel)
+word	por	per	porFila
+word	uno	one	uno
+# ---- words that are English too: only translated next to a Spanish word ----
+weak	de	of	DeActivate is English
+weak	media	average	BspTri_Media; MediaStream is English
+weak	radio	radius	radio is English too
+weak	solo	only	solo is English too
+weak	la	the	la
+weak	en	in	en
+weak	ir	go	ir
+weak	no		no is English
+weak	mayor		the Mayor of the game
+word	fin	end	fin (ANIMMAT_FIN, Render_FinD3D)
+# ---- the two old words that became one English word, separated ----
+word	quanto	amount	Spanglish (g_BankerStealQuanto, the bribe amount)
+word	cantidad	quantity	cantidad (M3D "Cantidad:" of a map)
+word	bloq	locked	SueloPortal: a zone locked while it is drawn through a portal
+word	primero	firstFrame	the first frame of an animation control (pri is the first glyph)
+name	ind	idx	Bsp.c: the index of the vertex (indice is index)
+name	esc	scn	esc is an escena (CEscena *esc) in nearly all uses; the scales are locals below
+word	compartir	shared	ESCENA_COMPARTIR, a shared scene
+name	est	staticTex	the static texture of a material (CTextEst est)
+name	estatica	staticScn	the static scene of Escena_PadresAnim
+name	compartir	isShared	UtilEscena: flags & ESCENA_COMPARTIR, next to the parameter shared
+# ---- names that would meet an existing name ----
+word	suelo	ground	suelo is the level geometry of the collision; floor is the math function (crt.h) and the floors of the buildings
+name	MAX_RUTA	MAX_FILEPATH	MAX_PATH is the one of windows.h
+name	cerca	nearDist	near is a macro of windef.h
+name	etiq	labels	LeeM3D: the ETIQ flag of the M3D header
+name	liberar	release	free is a macro of the C runtime
+name	g_Anisotropia	g_AnisotropyCur	the anisotropy set on the device; g_Anisotropy is the engine variable R_Anisotropy
+name	g_CieloPosScale	g_SkyPosScaleIni	m3d.ini of the level; g_SkyPosScale is the engine variable
+name	g_CieloRotation	g_SkyRotationIni	m3d.ini of the level; g_SkyRotation is the engine variable
+name	g_NieblaActiva	g_FogActiveIni	m3d.ini of the level; g_FogActive is the fog on the device
+name	g_NieblaColor	g_FogColorIni	m3d.ini of the level; g_FogColor is the engine variable
+name	g_NieblaDensidad	g_FogDensityIni	m3d.ini of the level; g_FogDensity is the engine variable
+name	Ruta_Split	Path_SplitDrive	Path_Split (StrUtils.c) splits without the drive
+prefix	Arch_	DataFile_	the functions of cArchDatos (Engine/Arch_dat.cpp), the data files
+name	CBmpFlt_Rellenar	CBmpFlt_FillGaps	CBmpFlt_Fill fills with a color
+word	cad	string	cadena; Str_ is the string module of the game (StrUtils.c), Cad_ the one of the engine (Cadenas.c)
+name	Escena_Release	SceneList_Release	releases a scene of the scene list; Scene_Release frees the render targets of the scene effect
+name	Motor_LoadIni	Engine_LoadVarsIni	m3d.ini into the variables of the engine; Engine_LoadIni reads the m3d.ini of a level
+name	Sectores_Free	Sectors_FreeAll	Sectors_Free is a static of NodesTrafficInDoor.c
+local	ind	ind	src/game/App/App.c	App_PickLoadingTip	LoadingTips_Ind, not Spanish
+local	nodo	node3d	src/game/ScrapEng/ScrapEngCamera.c	CGameCamera_Update	next to the render node node
+local	tam	len	src/game/engine3d/Engine/ArchIO.c	ArchIO_ReadAll	next to the parameter size
+local	nombre	nodeName	src/game/engine3d/Engine/Modelo.c	CModelo_FindNodoR	next to the parameter name
+local	ruta	fullPath	src/game/engine3d/Util/Comodin.c	Ruta_MakePath	next to the local path
+path	include/scrap/entrada.h	include/scrap/e3dinput.h	input.h is the input of the game (actions); e3d like e3dutil.h
+path	include/scrap/mundo.h	include/scrap/e3dworld.h	world.h is the world of the game (cWorld)
+name	SCRAP_ENTRADA_H	SCRAP_E3DINPUT_H	the guard of e3dinput.h
+name	SCRAP_MUNDO_H	SCRAP_E3DWORLD_H	the guard of e3dworld.h
+path	src/game/engine3d/Util/Arch_dat.c	src/game/engine3d/Util/DataFile.c	cArchDatos
+# ---- word order: the English words in English order ----
+phrase	lista escena	scene list	CListaEscena
+phrase	lista escenas	scene list	g_ListaEscenas
+phrase	lista grf 2 d	graphic 2 d list	CListaGrf2D
+phrase	lista mat	mat list	CListaMat
+phrase	lista modelo	model list	CListaModelo
+phrase	lista vert	vert list	CListaVert
+phrase	lista din	dyn list	cListaDin
+phrase	l din	dyn list	LDin_ (the functions of cListaDin)
+phrase	malla tri	tri mesh	CMallaTri, a mesh of triangles
+phrase	tri malla	mesh tri	CTriMalla, a triangle of a mesh
+phrase	vert malla	mesh vert	CVertMalla, a vertex of a mesh
+phrase	sist part	particle system	CSistPart
+phrase	nodo r	render node	CNodoR, the render instance of a node
+phrase	arch datos	data file	cArchDatos
+phrase	arch blq	block file	cArchBlq
+phrase	linea dat	dat line	cLineaDat, a line of a data file
+phrase	tabla hash	hash table	CTablaHash
+phrase	mapa sombras	shadow map	g_MapaSombras*
+phrase	esc suelo	ground scale	EscSuelo
+phrase	esc cielo	sky scale	EscCielo
+phrase	fundido ent	fade in	g_FlareFundidoEnt
+phrase	fundido sal	fade out	g_FlareFundidoSal
+phrase	tam pantalla	screen size	tamPantalla
+phrase	modo tabla	table mode	g_NieblaModoTabla
+# ---- the names of unsure.tsv ----
+name	g_TexCab	g_TexHeader	cabecera
+name	g_BmpFileCab	g_BmpFileHeader	cabecera
+name	TXF_cab	TXF_header	cabecera
+name	TXF_Cab	TXF_Header	cabecera
+name	g_FlareVerInfo	g_FlareShowInfo	ver_info of m3d.ini
+name	g_FlaresVerInfo	g_FlaresShowInfo	ver_info of m3d.ini
+name	g_VerUniones	g_ShowJoins	"ver uniones": the joints of the meshes drawn
+name	NODO_NO_TABNODOR	NODE_NO_RENDERNODE	no render node of its own
+name	g_Tramas	g_Dither	[video] Tramas: dithering
+name	g_BspSecOk	g_BspSectorOk	sector
+name	g_BspSecVisto	g_BspSectorSeen	sector
+name	nEcu	nEquator	Debug_SphereLines: the lines along the equator
+name	mesc	mscn	the scene of the model of the BSP
+member	esc	scale	the scale fields (CListaVert, CAnimVert, the M3D tracks)
+local	esc	scale	src/game/ScrapEng/ScrapEngFont.c	CFont_Load	a scale
+local	esc	scaleCopy	src/game/ScrapEng/ScrapEngModel.c	CGameModel_Load	the copy of the parameter scale
+local	esc	scale	src/game/engine3d/Engine/AnimVert.c	AnimVert_Step	a scale
+local	esc	scale	src/game/engine3d/Engine/LeeM3D.c	M3D_LeeLuz	a scale
+local	esc	scale	src/game/engine3d/Engine/MallaTri.c	CListaVert_GetPos	a scale
+local	esc	esc	src/game/ScrapEng/ScrapEngWorld.c	Splash_Show	the Escape key
+phrase	nodos r	render nodes	CModelo_BuildNodosR
+word	efecto	effect	NODO_EFECTO
+compound	animgrupo	anim grupo
+compound	animgrupos	anim grupos
+compound	animnodo	anim nodo
+compound	archdatos	arch datos
+compound	bspzona	bsp zona
+compound	calcpesos	calc pesos
+compound	centradanula	c entrada nula
+compound	cfxelementsorbitboya	c fx elements orbit boya
+compound	cfxelementsorbitboyacontroller	c fx elements orbit boya controller
+compound	dnodo	d nodo
+compound	dtabla	d tabla
+compound	fxmoto	fx moto
+compound	fxsistpart	fx sist part
+compound	fxsistpartdudv	fx sist part du dv
+compound	fxtextura	fx textura
+compound	ifxtextura	i fx textura
+compound	leedatos	lee datos
+compound	listadin	lista din
+compound	listatri	lista tri
+compound	listavert	lista vert
+compound	mallatri	malla tri
+compound	nodor	nodo r
+compound	radluz	rad luz
+compound	rendersuelo	render suelo
+compound	sistpart	sist part
+compound	sueloportal	suelo portal
+compound	tablahash	tabla hash
+compound	textest	text est
+compound	usaranim	usar anim
+phrase	entrada nula	null input	CEntradaNula, the input device that reads nothing
+path	include/scrap/tablahash.h	include/scrap/e3dhashtable.h	hashtable.h is the hash table of the game
+name	SCRAP_TABLAHASH_H	SCRAP_E3DHASHTABLE_H	the guard of e3dhashtable.h
+piece	CArchINI	CIniFile	a piece of a name (CArchINI_Load, Fini_CArchINI_X): INI keeps its capitals as Ini
+piece	ArchINI	IniFile	CArchINI
+keep	GalaxyListenerRegistrar		the Galaxy API (ListenerRegistrar)
+keep	g_GalaxyListenerRegistrar		the Galaxy API (ListenerRegistrar)
+phrase	caras tortas	response faces	CheckBBox: the faces of the response
+phrase	indice render	render index	IndiceRender
+phrase	lista mallas	mesh list	ListaMallas
+phrase	tabla nodos	node table	Escena_TablaNodos
+phrase	luz directa	direct light	BspTri_LuzDirecta
+phrase	efec malla	mesh effect	EfecMalla, the effects drawn on meshes
+word	graf	graphic	grafico (GRAF2D_*)
+name	M3D_CheckSinEscala	M3D_CheckNoScale	sin = without
+name	M3D_CompartirMats	M3D_ShareMats	compartir is a verb here
+name	M3D_LeeColorEscena	M3D_ReadSceneColor	word order
+name	Escena_PadresAnim	Scene_AnimParents	word order
+name	Escena_MatsUsados	Scene_UsedMats	word order
+name	Escena_FlagsNombres	Scene_FlagNames	word order
+name	CMundo_SetLucesCielo	CWorld_SetSkyLights	word order
+name	CMundo_SetLucesSuelo	CWorld_SetGroundLights	word order
+name	Bsp_NodoMarcar	Bsp_MarkNode	word order
+name	GRAF2D_TAM_PANTALLA	GRAPHIC2D_SCREEN_SIZE	word order
+name	M3D_RaizModelo	M3D_ModelRoot	word order
+name	M3D_MapaActivo	M3D_ActiveMap	word order
+# ---- motor: the 3D engine (Engine/Motor.cpp) is the engine, a vehicle has motors (cVehicleMotors, the engine variables Motor0Model ...) ----
+word	motor		English motor of the vehicles; the engine of engine3d by the prefixes below
+prefix	Motor_	Engine_	the functions of Engine/Motor.cpp
+prefix	MOTOR_	ENGINE_	the fields of the engine object
+piece	CMotorApp	CEngineApp	the D3D application of the engine
+prefix	motorIni	engineIni	the m3d.ini table of Motor_LoadIni
+name	d3dlog_motor	d3dlog_engine	the device of the engine
+path	src/game/engine3d/Engine/Motor.c	src/game/engine3d/Engine/Engine.c	Engine/Motor.cpp
+name	g_Motor	g_Engine	the engine
+name	g_Motor3D	g_Engine3D	the engine
+name	g_Motor431bae	g_Engine431bae	the engine
+name	g_Motor4af7d4	g_Engine4af7d4	the engine
+name	g_MotorDef1cf4	g_EngineDef1cf4	the engine
+name	g_MotorDev	g_EngineDev	the engine
+name	g_MotorFrame	g_EngineFrame	the engine
+name	g_MotorFrameCount	g_EngineFrameCount	the engine
+name	g_MotorFrameNext	g_EngineFrameNext	the engine
+name	g_MotorIni7c	g_EngineIni7c	the engine
+name	g_MotorIni80	g_EngineIni80	the engine
+name	g_MotorIni84	g_EngineIni84	the engine
+name	g_MotorIni88	g_EngineIni88	the engine
+name	g_MotorInit	g_EngineInit	the engine
+name	g_MotorInitNext	g_EngineInitNext	the engine
+name	g_MotorInits	g_EngineInits	the engine
+name	g_MotorMode	g_EngineMode	the engine
+name	g_MotorRelease	g_EngineRelease	the engine
+name	g_MotorReleaseNext	g_EngineReleaseNext	the engine
+name	motorInits	engineInits	the engine
+word	actual	current	a false friend: actual is current (g_CamActual, Camera_SetActual)
+word	cadenas	strings	Util/Cadenas.cpp
+word	comodin	wildcard	Util/Comodin.cpp
+word	paletas	palettes	Util/Paletas.cpp
+word	calculo	calc	Engine/Calculo3d.cpp
+path	src/game/engine3d/Engine/CaptPant.c	src/game/engine3d/Engine/ScreenCapture.c	Engine/CaptPant.cpp, captura de pantalla
+path	src/game/engine3d/Engine/EventoAnim.c	src/game/engine3d/Engine/AnimEvent.c	Engine/EventoAnim.cpp, the events of the animations (CAnimEvent)
+name	escName	sceneName	the name of the scene
+name	sinTextura	noTexture	sin = without
+name	nodeSalida	nodeExit	the exit node
+phrase	lista malla	mesh list	g_ListaMalla
+phrase	lista modelos	model list	g_ListaModelos
+phrase	lista obj	obj list	g_ListaObj
+phrase	lista transp	transp list	g_ListaTransp
+phrase	lista tri	tri list	g_ListaTri
+phrase	tablas escena	scene tables	g_M3DTablasEscena
+phrase	extens texturas	texture exts	g_ExtensTexturas
+phrase	rutas texturas	texture paths	g_RutasTexturas
+phrase	zonas pintar	paint zones	g_ZonasPintar
+phrase	zona pintar	paint zone	ZonaPintar
+name	MAX_EXTENS_TEXTURAS	MAX_TEXTURE_EXTS	word order
+name	MAX_RUTAS_TEXTURAS	MAX_TEXTURE_PATHS	word order
+name	MAX_ZONAS_PINTAR	MAX_PAINT_ZONES	word order
+name	umbralUnirVert	vertWeldThreshold	the weld threshold of the vertices
+name	g_BspSecErrores	g_BspSectorErrors	sector
+# ---- English words that stay in comments and docs ----
+prose	actual		the actual size
+prose	fin		a fin
+prose	ant		an ant
+prose	esc		the Escape key
+prose	todo		TODO
+prose	alto		alto
+prose	est		est
+prose	grande		grande
+local	motor	engine	src/game/ScrapEng/ScrapEngWorld.c	Loading_Step	the engine object (g_Motor)
+prose	motor		the motors of the vehicles
+name	Init_ZonaPintar_ZonasPintar	Init_PaintZones	initpat.py names the object alone when it starts with the class (PaintZones of PaintZone)
+name	Fini_ZonaPintar_ZonasPintar	Fini_PaintZones	the same
