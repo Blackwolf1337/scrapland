@@ -4,16 +4,15 @@
 # exists in ScrapC.exe only for the test module (SD_GAME_RVA), GAME_DATA not at all. This tool checks the rest in the
 # sources:
 #   - every GAME_FUNC(name, rva) names the C function that the hook at rva jumps to (src/hooks.inc, the CRT entries)
-#   - game_base, the load address, appears only in the allowed places: the hook installer, the test module's rva
-#     lookup, the room code of main.c and dataprobe.c (stage 3c removes it), Game_Init and game.h
+#   - game_base, the load address, appears only in the allowed places: the hook installer of the hook DLL, the test
+#     module's rva lookup (the C address minus game_base in ScrapC.exe, stage 3c2), Game_Start and game.h
 #   - SD_ORIG, the fixed address of the room, is gone
 import os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from sdexe import ROOT, c_names
 
-ALLOWED_BASE = {'include/scrap/game.h', 'src/core/game.c', 'src/core/hook.c', 'src/core/testmod.c',
-	'src/standalone/main.c', 'src/standalone/dataprobe.c'}
+ALLOWED_BASE = {'include/scrap/game.h', 'src/core/game.c', 'src/core/hook.c', 'src/core/testmod.c'}
 NUMDEF = re.compile(r'^[ \t]*#[ \t]*define[ \t]+(\w+)[ \t]+(0x[0-9a-fA-F]+)\b', re.M)
 FUNC = re.compile(r'\bGAME_FUNC\(\s*(\w+)\s*,\s*(\w+)\s*\)')
 

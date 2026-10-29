@@ -448,7 +448,7 @@ def aclose():
 	SDTest.Call('CArchIO_Close', 'tii', ario)
 	SDTest.Call('CArchIO_dtor', 'tvi', ario)
 def amstats():
-	return SDTest.Peek(sym('g_AnimNodoName') + 0x100 + 8, 'i')
+	return SDTest.Peek(sym('g_AnimMemStats') + 8, 'i')
 def nread(name, n, mem):
 	h = nhead(n)
 	r = [h, nflags(n)]

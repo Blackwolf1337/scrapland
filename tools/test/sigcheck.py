@@ -55,7 +55,7 @@ def read_table():
 	"""{key: (kind, C name, rva)} of src/core/testsyms.inc"""
 	out = {}
 	text = open(os.path.join(ROOT, 'src', 'core', 'testsyms.inc')).read()
-	for kind, key, name, rva in re.findall(r'^SD_TEST_(\w+)\("([^"]+)", (\w+), (0x[0-9a-f]+)\)', text, re.M):
+	for kind, key, name, rva in re.findall(r'^SD_TEST_(\w+)\("([^"]+)", (\w+), (?:\d+, )?(0x[0-9a-f]+)\)', text, re.M):
 		out[key] = (kind, name, int(rva, 16))
 	return out
 

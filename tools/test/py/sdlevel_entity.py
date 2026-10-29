@@ -384,12 +384,12 @@ for n, s in (('HitType', 'inout'), ('HitType', 'Inside'), ('HitType', 'None'), (
 		('Target', 'SDEnt'), ('OnHit', '__main__.ntontake'), ('OnBeeDeath', '__main__.ntontake'), ('Bogus', 'x')):
 	check('cMissileEntity_VarS set(%s, %s)' % (n, s), lambda n=n, s=s: (ntmvars(n, s), ntmfields(ntm),
 		(lambda r: (r[0], r[0] and ntstr(r[1])))(SDTest.Call('cMissileEntity_VarS', 'tbispi', ntm, n, 0, 0))))
-for f, sig, a in ((sym('cMissileEntity_SetLifeTime'), 'tvif', 2.0), (sym('cMissileEntity_SetType'), 'tvii', 3), (sym('cMissileEntity_SetCount'), 'tvii', 0), (sym('cMissileEntity_SetNoWorldHit'), 'tvii', 1),
-		(sym('cMissileEntity_SetParent'), 'tvis', 'SDParent'), (sym('cMissileEntity_SetRadius'), 'tvif', 60.0), (sym('cMissileEntity_SetRadiusGrow'), 'tvif', 8.0), (sym('cMissileEntity_SetSpeed'), 'tvif', 500.0),
-		(sym('cMissileEntity_SetSwDthTime'), 'tvif', 1.25), (sym('cMissileEntity_SetFlag584'), 'tvii', 0), (sym('cMissileEntity_SetFlag585'), 'tvii', 1), (sym('cMissileEntity_SetSwarmSpeed'), 'tvif', 1234.5),
-		(sym('cMissileEntity_SetTarget'), 'tvis', 'SDTarget'), (sym('cMissileEntity_SetTarget'), 'tvii', 0), (sym('cMissileEntity_SetTopRadius'), 'tvif', 900.0), (sym('cMissileEntity_SetTurnSpeed'), 'tvif', 0.75),
-		(sym('cMissileEntity_SetType'), 'tvii', 0), (sym('cMissileEntity_SetHiddenSwarm'), 'tvii', 1), (sym('cMissileEntity_SetHiddenSwarm'), 'tvii', 0), (sym('cMissileEntity_SetHideMain'), 'tvii', 1), (sym('cMissileEntity_SetHideMain'), 'tvii', 0)):
-	check('cMissileEntity setter %x' % f + fmt(a), lambda f=f, sig=sig, a=a: (SDTest.Call(f, sig, ntm, a), ntmfields(ntm)))
+for f, sig, a in (('cMissileEntity_SetLifeTime', 'tvif', 2.0), ('cMissileEntity_SetType', 'tvii', 3), ('cMissileEntity_SetCount', 'tvii', 0), ('cMissileEntity_SetNoWorldHit', 'tvii', 1),
+		('cMissileEntity_SetParent', 'tvis', 'SDParent'), ('cMissileEntity_SetRadius', 'tvif', 60.0), ('cMissileEntity_SetRadiusGrow', 'tvif', 8.0), ('cMissileEntity_SetSpeed', 'tvif', 500.0),
+		('cMissileEntity_SetSwDthTime', 'tvif', 1.25), ('cMissileEntity_SetFlag584', 'tvii', 0), ('cMissileEntity_SetFlag585', 'tvii', 1), ('cMissileEntity_SetSwarmSpeed', 'tvif', 1234.5),
+		('cMissileEntity_SetTarget', 'tvis', 'SDTarget'), ('cMissileEntity_SetTarget', 'tvii', 0), ('cMissileEntity_SetTopRadius', 'tvif', 900.0), ('cMissileEntity_SetTurnSpeed', 'tvif', 0.75),
+		('cMissileEntity_SetType', 'tvii', 0), ('cMissileEntity_SetHiddenSwarm', 'tvii', 1), ('cMissileEntity_SetHiddenSwarm', 'tvii', 0), ('cMissileEntity_SetHideMain', 'tvii', 1), ('cMissileEntity_SetHideMain', 'tvii', 0)):
+	check('cMissileEntity setter %s' % f + fmt(a), lambda f=f, sig=sig, a=a: (SDTest.Call(f, sig, ntm, a), ntmfields(ntm)))
 # the flight math
 for a in ((0.0, 0.0, 0.0), (0.5, 1.0, 0.0), (-1.2, 3.0, 2.0), (7.0, -7.0, 12.0)):
 	check('cMissileEntity_SetAng' + fmt(a), lambda a=a: (SDTest.Call('cMissileEntity_SetAng', 'tviF', ntm, a), ntfl(ntm + 0xac, 3)))

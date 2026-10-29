@@ -86,10 +86,10 @@ lg4gc2empty = lg4gc2 != 0 and lg4i(lg4i(lg4gc2 + 0x30) + 0xc) == 0
 check('LG4 start', lambda: (lg4player != 0, lg4parked != 0, lg4alarm, lg4gc2empty))
 
 # ---- the slots without code ----
-for lg4r in (sym('Logic_True@156080'), sym('Logic_True@156820'), sym('Logic_True@159320')):
-	check('LG4 Logic_True %x' % lg4r, lambda r=lg4r: SDTest.Call(r, 'tbi', 0)[0])
-for lg4r in (sym('Logic_NoTarget@156830'), sym('Logic_NoTarget@159330')):
-	check('LG4 Logic_NoTarget %x' % lg4r, lambda r=lg4r: SDTest.Call(r, 'tii', 0)[0])
+for lg4r in ('Logic_True@156080', 'Logic_True@156820', 'Logic_True@159320'):
+	check('LG4 Logic_True %s' % lg4r, lambda r=lg4r: SDTest.Call(r, 'tbi', 0)[0])
+for lg4r in ('Logic_NoTarget@156830', 'Logic_NoTarget@159330'):
+	check('LG4 Logic_NoTarget %s' % lg4r, lambda r=lg4r: SDTest.Call(r, 'tii', 0)[0])
 check('LG4 Logic_True1', lambda: SDTest.Call('Logic_True1@158520', 'tbii', 0, 5)[0])
 check('LG4 Logic_Nop1', lambda: SDTest.Call('Logic_Nop1@158a80', 'tvii', 0, 5)[0])
 
@@ -303,7 +303,7 @@ lg4poke(lg4ru + 0x18, 5)
 check('LG4 cRustyLocalLogic_VarI', lambda: (SDTest.Call('cRustyLocalLogic_VarI', 'tbispi', lg4ru, 'State', 0, 0),
 	SDTest.Call('cRustyLocalLogic_VarI', 'tbispi', lg4ru, 'Idle', 3, 0), SDTest.Call('cRustyLocalLogic_VarI', 'tbispi', lg4ru, 'Bogus', 0, 0)[0]))
 check('LG4 cRustyLocalLogic_VarS', lambda: SDTest.Call('cRustyLocalLogic_VarS', 'tbispi', lg4ru, 'Bogus', 0, 0)[0])
-lg4savedjunk = lg4ints(symva('g_JunkPointsList'), (0, 4))
+lg4savedjunk = lg4ints(symva('g_JunkPointsList'), (0,)) + lg4ints(symva('g_RustyLoops'), (0,))
 lg4savedlast = lg4i(symva('s_RustyLastJunkPoint'))
 lg4l = lg4list((lg4player, lg4parked, lg4player), 3)
 lg4poke(symva('g_JunkPointsList'), lg4l[0])
@@ -352,7 +352,7 @@ lg4free(lg4se)
 # Sputnik: the update of state 7 without the camera of the editor
 lg4sp = lg4mk(0x68, sym('cSputnikJunkyardLocalLogic_vftable'))
 lg4poke(lg4sp + 0x18, 7)
-lg4savedsp = lg4ints(symva('g_SputnikPisser'), (0, 4))
+lg4savedsp = lg4ints(symva('g_SputnikPisser'), (0,)) + lg4ints(symva('g_SputnikTime'), (0,))
 if lg4ent('EditCamera') == 0:
 	lg4fset(symva('g_SputnikTime'), 3.0)
 	check('LG4 cSputnikJunkyardLocalLogic_Update no camera', lambda: (SDTest.Call('cSputnikJunkyardLocalLogic_Update', 'tvif', lg4sp, 0.5)[0],
@@ -409,8 +409,8 @@ if lg4pa:
 
 # ---- the Delete of the logics on zeroed memory ----
 lg4savedglob = lg4ints(symva('g_JunkPointsList'), (0,)) + lg4ints(symva('g_SputnikPisser'), (0,))
-for lg4v in ((sym('cPoliceBossLocalLogic_Delete'), 0x68, sym('cPoliceBossLocalLogic_vftable')), (sym('cRustyLocalLogic_Delete'), 0x84, sym('cRustyLocalLogic_vftable')), (sym('cSentinelLocalLogic_Delete'), 0x50, sym('cSentinelLocalLogic_vftable')),
-		(sym('cSputnikJunkyardLocalLogic_Delete'), 0x68, sym('cSputnikJunkyardLocalLogic_vftable'))):
+for lg4v in (('cPoliceBossLocalLogic_Delete', 0x68, sym('cPoliceBossLocalLogic_vftable')), ('cRustyLocalLogic_Delete', 0x84, sym('cRustyLocalLogic_vftable')), ('cSentinelLocalLogic_Delete', 0x50, sym('cSentinelLocalLogic_vftable')),
+		('cSputnikJunkyardLocalLogic_Delete', 0x68, sym('cSputnikJunkyardLocalLogic_vftable'))):
 	lg4d = lg4new(lg4v[1])
 	lg4k = 0
 	while lg4k < lg4v[1] / 4:
@@ -419,7 +419,7 @@ for lg4v in ((sym('cPoliceBossLocalLogic_Delete'), 0x68, sym('cPoliceBossLocalLo
 	lg4poke(lg4d, 0x400000 + lg4v[2])
 	lg4poke(lg4d + 4, lg4player)
 	lg4node(lg4d, 8)
-	check('LG4 Delete %x' % lg4v[0], lambda v=lg4v, d=lg4d: (SDTest.Call(v[0], 'tiii', d, 1)[0] == d,
+	check('LG4 Delete %s' % lg4v[0], lambda v=lg4v, d=lg4d: (SDTest.Call(v[0], 'tiii', d, 1)[0] == d,
 		lg4i(symva('g_JunkPointsList')) == 0, lg4i(symva('g_SputnikPisser')) == 0))
 lg4poke(symva('g_JunkPointsList'), lg4savedglob[0])
 lg4poke(symva('g_SputnikPisser'), lg4savedglob[1])

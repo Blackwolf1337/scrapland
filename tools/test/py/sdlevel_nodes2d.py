@@ -154,9 +154,9 @@ def n2dGround(w, n, nodes):
 				q, 30.0)[0])
 			check('n2d GroundLine%s%s' % (fmt(p), fmt(d)), lambda w=w, p=p, q=q: SDTest.Call('CNodesWorld2D_GroundLine', 'tbiFFiii', w,
 				p, q, 0, 0, 0)[0])
-		for f in (sym('CNodesWorld2D_FitAt@b43d0'), sym('CNodesWorld2D_FitAt')):
+		for f in ('CNodesWorld2D_FitAt@b43d0', 'CNodesWorld2D_FitAt'):
 			for down, foot, r in ((500.0, 40.0, 155.0), (5000.0, 12.0, 35.0)):
-				check('n2d FitAt(%x)%s %s %s' % (f, fmt(p), fmt(down), fmt(r)), lambda w=w, f=f, p=p, down=down,
+				check('n2d FitAt(%s)%s %s %s' % (f, fmt(p), fmt(down), fmt(r)), lambda w=w, f=f, p=p, down=down,
 					foot=foot, r=r: SDTest.Call(f, 'tbifffFfffff', w, p[0], p[1], p[2], (0.0,) * 3, down, foot, r,
 					189.22, 221.446)[0:2])
 		for d in ((200.0, 0.0, 150.0), (-90.0, 30.0, 0.0), (0.0, 0.0, 0.0), (500.0, -100.0, -400.0)):

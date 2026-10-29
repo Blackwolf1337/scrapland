@@ -52,8 +52,8 @@ SD_OFFSET(WorldNodeInfo, dummy, 0x8c);
 #define g_LoadingTotal GAME_GLOBAL_IN(int, GVar_ProgressBar, 16, 0x4a86d8)
 #define g_LoadingDrawOn GAME_GLOBAL(byte, g_CallbacksOn, 0x431ae4)
 typedef void (*loadingDraw_t)(void);
-#define g_LoadingDraw GAME_GLOBAL(loadingDraw_t, g_LoadingDraw, 0x4a8320)	/* draws the loading screen without the bar */
-#define g_LoadingDraw2 GAME_GLOBAL(loadingDraw_t, g_LoadingDraw2, 0x4a831c)
+#define g_LoadingDraw GAME_GLOBAL_IN(loadingDraw_t, g_EngCallbacks, 12, 0x4a8320)	/* draws the loading screen without the bar */
+#define g_LoadingDraw2 GAME_GLOBAL_IN(loadingDraw_t, g_EngCallbacks, 8, 0x4a831c)
 
 /* the world node info */
 void WorldInfo_FromDummy(WorldNodeInfo *info, const MundoDummy *dummy);

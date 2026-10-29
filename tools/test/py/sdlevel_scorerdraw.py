@@ -214,7 +214,7 @@ if scdA and scdOk:
 			if ammo >= 0.0:
 				scdSet(scdI(scdWm + 0x20) + 4 * scdKinds[w], (ammo,))
 			d = scdLog(lambda a=a: scdWith(scdCar, lambda a=a: SDTest.Call('cWeaponScorer_Draw', 'tvii', a, 0)))
-			return (d, scdF(a + 0x1a0, 1), scdInts(a + 0x1a4, 2), scdF(a + 0x1ac, 1), scdInts(symva('g_WeaponSlotState'), 15))
+			return (d, scdF(a + 0x1a0, 1), scdInts(a + 0x1a4, 2), scdF(a + 0x1ac, 1), scdInts(symva('g_WeaponSlotState'), 7) + scdInts(symva('g_WeaponSlotPlace'), 7) + scdInts(symva('g_WeaponSlotCount'), 1))
 		scdCases = [(0, 0, 100, (-100, -100), 0.0, 0.0, 0, 12.5, -1.0), (1, 1, 100, (1, 2), 0.0, 0.0, 0, 12.5, -1.0),
 			(3, 3, 100, (1, 2), 0.0, 0.5, 0, 12.5, -1.0), (3, 3, 0, (1, 2), 0.12, 0.05, 0, 12.5, -1.0),
 			(6, 6, 100, (3, 7), 0.12, 2.0, 0, 12.5, 0.0), (6, 6, 100, (6, 0), 0.0, 2.0, 0, 12.55, 0.0),
@@ -530,7 +530,7 @@ if scdA and scdOk and scdRadOk:
 		scdSet(scdSc + 0x20, (time,))
 		scdSrand(23)
 		d = scdLog(lambda a=a, t=target: SDTest.Call('cRadarScorer_DrawRadar', 'tviii', a, t, scdRCam))
-		return (d, SDTest.Peek('g_NumEnemiesInRadar', 'i'), scdInts(a + 0x8cc, 2), scdF(a + 0x8d4, 1), scdF(symva('g_RadarScale'), 4))
+		return (d, SDTest.Peek('g_NumEnemiesInRadar', 'i'), scdInts(a + 0x8cc, 2), scdF(a + 0x8d4, 1), scdF(symva('g_RadarScale'), 1) + scdF(symva('g_RadarAngle'), 1) + scdF(symva('g_RadarCenterX'), 1) + scdF(symva('g_RadarCenterZ'), 1))
 	scdLevel(scdL0, None, (((54000.0, 19000.0, 61000.0), 0.5), ((54600.0, 19000.0, 61400.0), -1.2)),
 		(((53000.0, 9000.0, 60000.0), 2.0),))
 	scdLevel(scdL1, 20000.0, (((54100.0, 39000.0, 61050.0), 1.1), ((54300.0, 41000.0, 61000.0), 0.2),

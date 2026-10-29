@@ -1,33 +1,26 @@
 #!/usr/bin/env python3
-# datagen.py <Scrap.exe> <outdir> [objects.txt]: the data of Scrap.exe 1.6.1 for ScrapC.exe (docs/standalone.md, stage
-# 3). Run by the build (CMake cache path SCRAP_EXE) after the objects of scrapcode_sa, before the link of ScrapC.exe.
-# Checks the build like Game_IsBuild and writes into outdir:
-#   room.bin  the bytes of the original that are built in, one piece after the other
-#   room.c    their input sections .room.<rva> (initialized where the exe has data and for the pieces of .text that
-#             are still read or run, uninitialized in between)
-#   room.ld   the sections .orig0, .orig1 ... of the room at rva 0x1000..SizeOfImage, included by cmake/ScrapC.ld:
-#             the pieces of room.c and the C objects at their rvas
-#   room.h    the code ranges main.c fills with int3 and the data the probe of dataprobe.c watches
-# objects.txt lists the object files of scrapcode_sa (one per line). Their sections .sd.<rva> are the C objects of
-# SD_AT (include/scrap/shared.h, stage 3b): each one is placed at its rva and the bytes of the original there are left
-# out. They must lie in the data, must not overlap each other, and must hold what the original
-# holds there: the same bytes, a pointer where the original has one, to the C function its hook jumps to (src/hooks.inc,
-# the CRT entries), to the real symbol of the Python or to another C object at the original target.
-# A pointer of the copy into the original's Python (from .reloc) becomes the real symbol of src/python, resolved by
-# the linker; a target without a real symbol stops the build. .reloc itself is not built in (fixed base).
-# Of the data only the rows of tools/standalone/datamap.txt with a user are built in (stage 3b2), the rest of the room
-# stays zero. Since stages 3c1a and 3c1b nothing of it is: every byte of the original the map keeps must be a C
-# object, else the build stops, and the room holds only the C objects and uninitialized space.
-import bisect, hashlib, os, re, sys
+# datagen.py --check <Scrap.exe> <objects.txt>: checks the C objects of ScrapC.exe against the data of Scrap.exe 1.6.1
+# (docs/standalone.md, stages 3 and 3c2). Optional: the build of ScrapC.exe does not run it and does not need the
+# original exe; the CMake target datacheck runs it with SCRAP_EXE (and rsrccheck.py on the resources).
+#
+# objects.txt lists the object files of the check build (the library scrapdata_check, SD_DATACHECK of
+# include/scrap/shared.h), where each C object of SD_AT and SD_BSS has a section .sd.<rva> of its own. Until stage 3c2
+# this tool built the room of ScrapC.exe from them (the objects at their rvas, the rest of the original's image as
+# uninitialized space); ScrapC.exe links them as plain globals now, and only the check is left. It stops when a C object
+#   - lies outside the data of the original (in .text, .rsrc or .reloc), overlaps another one or is not at a multiple
+#     of its alignment
+#   - does not hold what the original holds there: every byte must be the same, but for pointers. Where the original
+#     has a pointer (.reloc), the C object must have one too, to the C function the hook of the original target jumps
+#     to (src/hooks.inc, the CRT entries of imports.inc and crthooks.inc), to the real Python symbol, or to another C
+#     object at the original target. A bss object needs zeros in the original
+#   - leaves out a byte that the map of stage 3b2 (tools/standalone/datamap.txt) keeps: every used byte of the original's
+#     data must be a C object (stage 3c1b)
+# Then it prints what the C objects cover per section.
+import bisect, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from sdexe import (BASE, PY_SYMBOLS, SIZEOFIMAGE, TIMESTAMP, Exe, ExeError, c_names, coff_sd, in_python,
-	room_pieces)
+from sdexe import BASE, PY_SYMBOLS, SIZEOFIMAGE, TIMESTAMP, Exe, ExeError, c_names, coff_sd, in_python, room_pieces
 from datamap import MAP, kept, read_map
-
-ROOM = 0x1000
-MERGE = 0x10000	# zero gaps up to this size stay inside an initialized section (fewer sections)
-
 
 # the sections of the original a C object may not lie in: the code, the resources and the relocations
 NO_C_SECTIONS = ('.text', '.rsrc', '.reloc')
@@ -37,13 +30,9 @@ def fail(msg):
 	sys.exit('datagen.py: %s' % msg)
 
 
-def align(x):
-	return (x + 0xfff) & ~0xfff
-
-
-if len(sys.argv) not in (3, 4):
-	fail('usage: datagen.py <Scrap.exe> <outdir> [objects.txt]')
-exe, outdir = sys.argv[1], sys.argv[2]
+if len(sys.argv) != 4 or sys.argv[1] != '--check':
+	fail('usage: datagen.py --check <Scrap.exe> <objects.txt>')
+exe, objlist = sys.argv[2], sys.argv[3]
 try:
 	x = Exe(exe)
 except ExeError as e:
@@ -54,10 +43,7 @@ if x.base != BASE:
 	fail('%s: image base not 0x%x' % (exe, BASE))
 secs = x.secs
 
-# the pieces: of the parts of .text and the sections with bytes (room_pieces) only what the map of stage 3b2
-# (tools/standalone/datamap.txt) keeps. The import directory, its names and the import address table are not among
-# them (stage 3c1a: ScrapC.exe has its own imports)
-text_va, text_n, _, _ = secs['.text']
+# the data of the original that the map of stage 3b2 keeps: it must all be C objects
 whole = room_pieces(x)
 try:
 	keep = kept(read_map(MAP))
@@ -69,39 +55,20 @@ for lo, hi in whole:
 		if a < hi and z > lo:
 			pieces.append((max(a, lo), min(z, hi)))
 pieces.sort()
-piece_starts = [lo for lo, hi in pieces]
-
-
-def emitted(rva, n=1):
-	"""rva..rva+n lies in one piece"""
-	i = bisect.bisect_right(piece_starts, rva) - 1
-	return i >= 0 and rva + n <= pieces[i][1]
-
-
-# pointers into the original's Python, from .reloc
-fix = {}
-for at in x.relocs():
-	if not emitted(at) or in_python(at):
-		continue
-	t = x.u32(at) - BASE
-	if not in_python(t):
-		continue
-	if t not in PY_SYMBOLS:
-		fail('the pointer at rva %06x leads to rva %06x of the original\'s Python, which has no real symbol' % (at, t))
-	if not emitted(at, 4):
-		fail('the pointer at rva %06x crosses the end of a piece' % at)
-	fix[at] = PY_SYMBOLS[t]
 
 # the C objects
 cobjs = []
 sd_symbols = {}	# the global symbols defined in the .sd sections of all objects, with their rvas
-if len(sys.argv) == 4:
-	try:
-		for line in open(sys.argv[3]):
-			if line.strip():
-				cobjs += coff_sd(line.strip(), sd_symbols)
-	except ExeError as e:
-		fail(str(e))
+try:
+	for line in open(objlist):
+		if line.strip():
+			cobjs += coff_sd(line.strip(), sd_symbols)
+except OSError as e:
+	fail('cannot read %s (%s): build the target scrapdata_check' % (objlist, e.strerror))
+except ExeError as e:
+	fail('%s: build the target scrapdata_check' % e)
+if not cobjs:
+	fail('%s: no C object with a section .sd.<rva> (the objects of the check build, SD_DATACHECK)' % objlist)
 cobjs.sort(key=lambda o: o.lo)
 hooks = c_names()
 for o in cobjs:
@@ -155,156 +122,45 @@ def check(o):
 for o in cobjs:
 	check(o)
 
-# the units of the room: the pieces without the C objects, and the C objects
-units = []	# (lo, hi, CObj or None)
+# every byte the map keeps lies in a C object; the pointers of the original into its Python there are C objects too
+starts = [o.lo for o in cobjs]
+
+
+def covered_to(rva):
+	"""the end of the run of C objects from rva (rva itself when no object holds it)"""
+	i = bisect.bisect_right(starts, rva) - 1
+	while i >= 0 and i < len(cobjs) and cobjs[i].lo <= rva < cobjs[i].hi:
+		rva = cobjs[i].hi
+		i += 1
+	return rva
+
+
+missing = []
 for lo, hi in pieces:
 	at = lo
-	for o in cobjs:
-		if o.hi <= at or o.lo >= hi:
+	while at < hi:
+		end = covered_to(at)
+		if end > at:
+			at = end
 			continue
-		if o.lo > at:
-			units.append((at, o.lo, None))
-		at = o.hi
-	if at < hi:
-		units.append((at, hi, None))
-units += [(o.lo, o.hi, o) for o in cobjs]
-units.sort(key=lambda u: u[0])
+		nxt = starts[bisect.bisect_right(starts, at)] if bisect.bisect_right(starts, at) < len(starts) else hi
+		missing.append((at, min(hi, nxt)))
+		at = min(hi, nxt)
+for lo, hi in missing[:20]:
+	print('datagen.py: rva %06x..%06x of the original is used but no C object' % (lo, hi), file=sys.stderr)
+if missing:
+	fail('%d pieces of the original that the map keeps are no C object: make them C or drop their users from %s '
+		'(docs/standalone.md, stage 3c1b)' % (len(missing), os.path.relpath(MAP)))
+py = sum(1 for o in cobjs for at in o.relocs if in_python(x.u32(o.lo + at) - BASE))
 
-# since stages 3c1a and 3c1b no byte of the original is built in: every byte the map keeps must be a C object
-for lo, hi, o in units:
-	if o is None:
-		fail('rva %06x..%06x of the original would be built in, which is no C object: make it C or drop its users from '
-			'%s (docs/standalone.md, stage 3c1b)' % (lo, hi, os.path.relpath(MAP)))
-for at in fix:
-	if not any(lo <= at and at + 4 <= hi for lo, hi, o in units):
-		fail('the pointer at rva %06x crosses the edge of a C object' % at)
-
-# groups of units become sections: initialized ones for the bytes of the original and the C objects with data,
-# uninitialized ones for the C objects of SD_BSS (bss) and the space between the groups. A unit joins the group
-# before it when it starts in the group's last page, else when both hold data and the gap is below MERGE or both
-# are bss
-
-
-def bss_unit(u):
-	return u[2] is not None and u[2].bss
-
-
-groups = []
-for u in units:
-	if groups:
-		g = groups[-1]
-		gbss = all(bss_unit(v) for v in g)
-		if u[0] < align(g[-1][1]) or (bss_unit(u) == gbss and (gbss or u[0] - g[-1][1] < MERGE)):
-			g.append(u)
-			continue
-	groups.append([u])
-sections = []	# (start, end, units or None)
-if groups[0][0][0] & ~0xfff > ROOM:
-	# the space before the first C object (since stage 3c1b nothing of the original's .text is built in)
-	sections.append((ROOM, groups[0][0][0] & ~0xfff, None))
-for i, g in enumerate(groups):
-	start = g[0][0] & ~0xfff
-	sections.append((start, g[-1][1], g))
-	nxt = groups[i + 1][0][0] & ~0xfff if i + 1 < len(groups) else SIZEOFIMAGE
-	if align(g[-1][1]) < nxt:
-		sections.append((align(g[-1][1]), nxt, None))
-	elif align(g[-1][1]) > nxt:
-		fail('the section of rva %06x runs into the next one' % start)
-
-# the input sections: a run of pieces (with zeros between them) up to the next C object, or a C object
-os.makedirs(outdir, exist_ok=True)
-binpath = os.path.abspath(os.path.join(outdir, 'room.bin'))
-blob = bytearray()
-asm = []
-ld = []
-for k, (start, stop, g) in enumerate(sections):
-	entries = []	# (offset in the section, input section, the size of a C object)
-	if g is None:
-		name = '.room.%06x' % start
-		asm.append('.section %s,"bw"' % name)
-		if k == 0:
-			asm += ['.globl _orig_room', '_orig_room:']
-		asm.append('.space 0x%x' % (stop - start))
-		entries.append((0, name, None))
-	at = start
-	run = None
-	for lo, hi, o in g or ():
-		if o is not None:
-			entries.append((lo - start, o.name, o.size))
-			at, run = hi, None
-			continue
-		if run is None:
-			run = '.room.%06x' % at
-			asm.append('.section %s,"dw"' % run)
-			if not entries and k == 0:
-				asm += ['.globl _orig_room', '_orig_room:']
-			entries.append((at - start, run, None))
-		if lo > at:
-			asm.append('.zero 0x%x' % (lo - at))
-		at = lo
-		for p in sorted(f for f in fix if lo <= f < hi) + [hi]:
-			if p > at:
-				asm.append('.incbin "%s", 0x%x, 0x%x' % (binpath, len(blob) + at - lo, p - at))
-			if p < hi:
-				asm.append('.long _%s' % fix[p])
-			at = p + 4
-		blob += x.bytes(lo, hi)
-		at = hi
-	body = ''
-	for at, name, size in entries:
-		body += '    . = 0x%x;\n    KEEP (*(%s))\n' % (at, name)
-		if size is not None:
-			body += '    ASSERT (. == 0x%x, "%s: not the size datagen.py read");\n' % (at + size, name)
-	ld.append('  .orig%d __image_base__ + 0x%06x :\n  {\n%s  }\n' % (k, start, body))
-asm.append('.text')
-digest = hashlib.sha1(blob).hexdigest()
-
-int3 = []
-at = text_va
-for lo, hi in whole:
-	if lo >= text_va + text_n:
-		break
-	if lo > at:
-		int3.append((at, lo))
-	at = hi
-if at < text_va + text_n:
-	int3.append((at, text_va + text_n))
-
-# the data of the probe (dataprobe.c): the pieces but for the resources, which other DLLs read (Wine reads some of
-# them outside the reach of a vectored handler)
-rsrc = secs['.rsrc']
-probe = [(lo, hi) for lo, hi in whole if lo != rsrc[0]]
-
-gen = 'generated by tools/standalone/datagen.py from Scrap.exe 1.6.1, do not edit'
-files = {
-	'room.bin': bytes(blob),
-	# the digest makes room.c change with room.bin, which ccache does not hash (.incbin)
-	'room.c': ('/* %s */\n__asm__(\n\t"# room.bin sha1 %s\\n"\n%s);\n' % (gen, digest,
-		''.join('\t"%s\\n"\n' % l.replace('"', '\\"') for l in asm))).encode(),
-	'room.ld': ('/* %s: the room of Scrap.exe at its rvas, with the C objects of SD_AT */\n%s' % (gen, ''.join(ld)))
-		.encode(),
-	'room.h': ('/* %s */\n/* the code of the original that is not built in, '
-		'int3 at start */\n#define ROOM_INT3 \\\n\t{ %s }\n/* the data of the original that dataprobe.c watches */\n'
-		'#define ROOM_PROBE \\\n\t{ %s }\n'
-		% (gen, ', '.join('{ 0x%06x, 0x%06x }' % r for r in int3), ', '.join('{ 0x%06x, 0x%06x }' % r for r in probe))).encode(),
-}
-# always written: outputs older than the objects would make every build run this again (room.c of the same text is a
-# ccache hit)
-for name, data in files.items():
-	open(os.path.join(outdir, name), 'wb').write(data)
-
-# what is left of the original per section: its bytes built in (non-zero ones) and what C objects cover
-print('datagen.py: %d sections, %d bytes of data, %d pointers into the Python lead to the real one, %d C objects'
-	% (len(sections), len(blob), len(fix), len(cobjs)))
+# what the C objects cover per section
+print('datagen.py: %d C objects match Scrap.exe 1.6.1, %d pointers into the Python lead to the real one'
+	% (len(cobjs), py))
 for name, (va, n, ptr, vsize) in sorted(secs.items(), key=lambda s: s[1][0]):
 	end = va + max(n, vsize)
-	kept = [(max(lo, va), min(hi, end)) for lo, hi, o in units if o is None and lo < end and hi > va]
-	if not kept and not any(va <= o.lo < end for o in cobjs):
-		continue
-	orig = sum(hi - lo for lo, hi in kept)
-	nonzero = sum(len(x.bytes(lo, hi).replace(b'\0', b'')) for lo, hi in kept)
 	inc = [o for o in cobjs if va <= o.lo < end]
+	if not inc:
+		continue
 	bss = [o for o in inc if o.bss]
-	print('datagen.py:   %-8s %7d bytes of the original (%d non-zero), %d in %d C objects%s'
-		% (name, orig, nonzero, sum(o.size for o in inc), len(inc),
+	print('datagen.py:   %-8s %7d bytes in %d C objects%s' % (name, sum(o.size for o in inc), len(inc),
 		' (%d of them bss in %d)' % (sum(o.size for o in bss), len(bss)) if bss else ''))

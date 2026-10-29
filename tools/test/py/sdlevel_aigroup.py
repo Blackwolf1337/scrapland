@@ -506,9 +506,9 @@ if agrOk:
 	check('AGR Messenger UpdateFollowMode', lambda c=agrC: (agrI(c + 0x120), SDTest.Call('cAIControlMessenger_UpdateFollowMode', 'tbif', c, 0.5)[0]))
 	agrC = agrI(agrAIs['Gear'] + 0x19c)
 	agrAction(agrW, 'PostFusion')
-	for agrF0 in (sym('cAIControlGear_TurnFollow'), sym('cAIControlGear_Turn'), sym('cAIControlGear_DirTurn')):
+	for agrF0 in ('cAIControlGear_TurnFollow', 'cAIControlGear_Turn', 'cAIControlGear_DirTurn'):
 		agrSet(agrCtrl, (1.0, 2.0))
-		check('AGR Gear turn %x' % agrF0, lambda c=agrC, f=agrF0: (SDTest.Call(f, 'tvi', c), agrF(agrCtrl, 2)))
+		check('AGR Gear turn %s' % agrF0, lambda c=agrC, f=agrF0: (SDTest.Call(f, 'tvi', c), agrF(agrCtrl, 2)))
 	agrAction(agrW, '')
 	# the walk of the bank director and of the nurse: (walkDir, far, near, orbitSide)
 	agrPokeB(agrCtrl + 0x18, 0)

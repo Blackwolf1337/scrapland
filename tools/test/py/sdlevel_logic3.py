@@ -73,18 +73,18 @@ lg3gc3 = lg3empty(0x224c)
 check('LG3 start', lambda: (lg3player != 0, lg3alarm, lg3locked, lg3notguar, lg3gc1, lg3gc2, lg3gc3))
 
 # ---- the slots without code ----
-for lg3r in (sym('Logic_Nop1@14ceb0'), sym('Logic_Nop1@14d920'), sym('Logic_Nop1@14d930'), sym('Logic_Nop1@14db50'), sym('Logic_Nop1@14db60'), sym('Logic_Nop1@14db70'), sym('Logic_Nop1@14dd80'), sym('Logic_Nop1@154800')):
-	check('LG3 Logic_Nop1 %x' % lg3r, lambda r=lg3r: SDTest.Call(r, 'tvii', 0, 5)[0])
+for lg3r in ('Logic_Nop1@14ceb0', 'Logic_Nop1@14d920', 'Logic_Nop1@14d930', 'Logic_Nop1@14db50', 'Logic_Nop1@14db60', 'Logic_Nop1@14db70', 'Logic_Nop1@14dd80', 'Logic_Nop1@154800'):
+	check('LG3 Logic_Nop1 %s' % lg3r, lambda r=lg3r: SDTest.Call(r, 'tvii', 0, 5)[0])
 check('LG3 Logic_Nop2', lambda: SDTest.Call('Logic_Nop2', 'tviii', 0, 5, 6)[0])
 check('LG3 Logic_False1', lambda: SDTest.Call('Logic_False1@14d910', 'tbii', 0, 5)[0])
 check('LG3 Logic_True1', lambda: SDTest.Call('Logic_True1@1545a0', 'tbii', 0, 5)[0])
 check('LG3 Logic_True2', lambda: SDTest.Call('Logic_True2', 'tbiii', 0, 5, 6)[0])
-for lg3r in (sym('Logic_True@14dca0'), sym('Logic_True@14dd90'), sym('Logic_True@152350'), sym('Logic_True@1530b0')):
-	check('LG3 Logic_True %x' % lg3r, lambda r=lg3r: SDTest.Call(r, 'tbi', 0)[0])
-for lg3r in (sym('Logic_False@14dd20'), sym('Logic_False@153dc0')):
-	check('LG3 Logic_False %x' % lg3r, lambda r=lg3r: SDTest.Call(r, 'tbi', 0)[0])
-for lg3r in (sym('Logic_NoTarget@14dd10'), sym('Logic_NoTarget@152530'), sym('Logic_NoTarget@1530c0'), sym('Logic_NoTarget@153dd0')):
-	check('LG3 Logic_NoTarget %x' % lg3r, lambda r=lg3r: SDTest.Call(r, 'tii', 0)[0])
+for lg3r in ('Logic_True@14dca0', 'Logic_True@14dd90', 'Logic_True@152350', 'Logic_True@1530b0'):
+	check('LG3 Logic_True %s' % lg3r, lambda r=lg3r: SDTest.Call(r, 'tbi', 0)[0])
+for lg3r in ('Logic_False@14dd20', 'Logic_False@153dc0'):
+	check('LG3 Logic_False %s' % lg3r, lambda r=lg3r: SDTest.Call(r, 'tbi', 0)[0])
+for lg3r in ('Logic_NoTarget@14dd10', 'Logic_NoTarget@152530', 'Logic_NoTarget@1530c0', 'Logic_NoTarget@153dd0'):
+	check('LG3 Logic_NoTarget %s' % lg3r, lambda r=lg3r: SDTest.Call(r, 'tii', 0)[0])
 lg3m = lg3z(0x14)
 check('LG3 cMessengers ctor dtor', lambda: (SDTest.Call('cMessengers_ctor', 'tii', lg3m)[0] == lg3m, SDTest.Call('cMessengers_dtor', 'tvi',
 	lg3m)[0], SDTest.Call('Logic_NopDtor@154280', 'tvi', lg3m)[0]))
@@ -224,7 +224,7 @@ check('LG3 cMayorLocalLogic_SetListener', lambda: (SDTest.Call('cMayorLocalLogic
 	SDTest.Peek(lg3my + 0x68, '@s'), SDTest.Call('cMayorLocalLogic_SetListener', 'tvii', lg3my, 0)[0], SDTest.Peek(lg3my + 0x68, '@s')))
 lg3fset(lg3my + 0x60, 1.0)
 check('LG3 cMayorLocalLogic_FindTarget later', lambda: SDTest.Call('cMayorLocalLogic_FindTarget', 'tii', lg3my)[0])
-lg3savedmayor = lg3ints(symva('g_MayorTarget'), (0, 4)) + lg3ints(symva('g_MayorTargetDist'), (0,))
+lg3savedmayor = lg3ints(symva('g_MayorTarget'), (0,)) + lg3ints(symva('g_MayorSearchEnt'), (0,)) + lg3ints(symva('g_MayorTargetDist'), (0,))
 lg3fset(lg3my + 0x60, -1.0)
 check('LG3 cMayorLocalLogic_FindTarget', lambda: (SDTest.Call('cMayorLocalLogic_FindTarget', 'tii', lg3my)[0] != 0, lg3i(symva('g_MayorSearchEnt')) ==
 	lg3player))
@@ -477,8 +477,8 @@ check('LG3 Logic_UpdateTaunts', lambda: (SDTest.Call('Logic_UpdateTaunts', 'tvif
 lg3free(lg3lc)
 
 # ---- the Delete of the logics on zeroed memory ----
-for lg3v in ((sym('cLittlePoliceLocalLogic_Delete'), 0x78, sym('cLittlePoliceLocalLogic_vftable')), (sym('cMaintenanceLocalLogic_Delete'), 0xdc, sym('cMaintenanceLocalLogic_vftable')), (sym('cMayorLocalLogic_Delete'), 0xe8, sym('cMayorLocalLogic_vftable')),
-		(sym('cMercenaryLocalLogic_Delete'), 0x68, sym('cMercenaryLocalLogic_vftable')), (sym('cMessengerLocalLogic_Delete'), 0x68, sym('cMessengerLocalLogic_vftable')), (sym('cNurseLocalLogic_Delete'), 0x4c, sym('cNurseLocalLogic_vftable'))):
+for lg3v in (('cLittlePoliceLocalLogic_Delete', 0x78, sym('cLittlePoliceLocalLogic_vftable')), ('cMaintenanceLocalLogic_Delete', 0xdc, sym('cMaintenanceLocalLogic_vftable')), ('cMayorLocalLogic_Delete', 0xe8, sym('cMayorLocalLogic_vftable')),
+		('cMercenaryLocalLogic_Delete', 0x68, sym('cMercenaryLocalLogic_vftable')), ('cMessengerLocalLogic_Delete', 0x68, sym('cMessengerLocalLogic_vftable')), ('cNurseLocalLogic_Delete', 0x4c, sym('cNurseLocalLogic_vftable'))):
 	lg3d = lg3new(lg3v[1])
 	lg3k = 0
 	while lg3k < lg3v[1] / 4:
@@ -487,9 +487,9 @@ for lg3v in ((sym('cLittlePoliceLocalLogic_Delete'), 0x78, sym('cLittlePoliceLoc
 	lg3poke(lg3d, 0x400000 + lg3v[2])
 	lg3poke(lg3d + 4, lg3player)
 	lg3node(lg3d, 8)
-	lg3savedmt = lg3ints(symva('g_MaintenanceShip'), (0, 4))
-	check('LG3 Delete %x' % lg3v[0], lambda v=lg3v, d=lg3d: (SDTest.Call(v[0], 'tiii', d, 1)[0] == d,
-		lg3ints(symva('g_MaintenanceShip'), (0, 4))))
+	lg3savedmt = lg3ints(symva('g_MaintenanceShip'), (0,)) + lg3ints(symva('g_MaintenanceFirstShip'), (0,))
+	check('LG3 Delete %s' % lg3v[0], lambda v=lg3v, d=lg3d: (SDTest.Call(v[0], 'tiii', d, 1)[0] == d,
+		lg3ints(symva('g_MaintenanceShip'), (0,)) + lg3ints(symva('g_MaintenanceFirstShip'), (0,))))
 	lg3poke(symva('g_MaintenanceShip'), lg3savedmt[0])
 	lg3poke(symva('g_MaintenanceFirstShip'), lg3savedmt[1])
 lg3d = lg3new(0xbc)

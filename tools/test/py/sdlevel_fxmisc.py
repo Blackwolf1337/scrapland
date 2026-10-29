@@ -58,14 +58,14 @@ fxfree(fxcam)
 fxe = fxz(0x1000)
 def fxreset(e):
 	SDTest.Call('crt_memcpy', 'iiFi', e, (0.0,) * 64, 0x100)
-for rva, v in ((sym('FXMisc_SetF8'), 2.5), (sym('FXMisc_SetFC'), -3.25), (sym('FXMisc_SetFC@1ddcc0'), 1e9)):
+for rva, v in (('FXMisc_SetF8', 2.5), ('FXMisc_SetFC', -3.25), ('FXMisc_SetFC@1ddcc0', 1e9)):
 	fxreset(fxe)
-	check('FXElem_SetF %x' % rva, lambda rva=rva, v=v: (SDTest.Call(rva, 'tvif', fxe, v), fxfl(fxe, 4)))
+	check('FXElem_SetF %s' % rva, lambda rva=rva, v=v: (SDTest.Call(rva, 'tvif', fxe, v), fxfl(fxe, 4)))
 fxreset(fxe)
 check('FXElem_SetI8', lambda: (SDTest.Call('FXMisc_SetI8', 'tvii', fxe, -77), fxints(fxe, (0, 4, 8, 0xc))))
-for rva in (sym('FXMisc_Clear4'), sym('FXMisc_Clear8'), sym('FXMisc_Clear4@1dd1d0'), sym('FXMisc_Clear8@1dd1e0'), sym('FXMisc_Nop'), sym('FXMisc_Nop@1dcef0'), sym('FXMisc_Nop@1dd1f0'), sym('FXMisc_Nop@1dd200')):
+for rva in ('FXMisc_Clear4', 'FXMisc_Clear8', 'FXMisc_Clear4@1dd1d0', 'FXMisc_Clear8@1dd1e0', 'FXMisc_Nop', 'FXMisc_Nop@1dcef0', 'FXMisc_Nop@1dd1f0', 'FXMisc_Nop@1dd200'):
 	fxset(fxe, (1.0, 2.0, 3.0, 4.0))
-	check('FXElem_Clear/Nop %x' % rva, lambda rva=rva: (SDTest.Call(rva, 'tvii', fxe, 0), fxfl(fxe, 4)))
+	check('FXElem_Clear/Nop %s' % rva, lambda rva=rva: (SDTest.Call(rva, 'tvii', fxe, 0), fxfl(fxe, 4)))
 # FadeOutTrail without its trail (on 0): duration 0x8, t 0xc, running 0x10
 for run, t, dur in ((1, 5.0, 1.0), (0, 0.5, 1.0), (0, 1.0, 1.0), (0, 2.0, 1.0)):
 	fxreset(fxe)
@@ -105,8 +105,8 @@ fxset(fxe + 8, (1.0, 2.0))
 check('cObjElementFXModelNoise_Update no entity', lambda: (SDTest.Call('cObjElementFXModelNoise_Update', 'tviif', fxe, 0, 0.1),
 	fxfl(fxe + 8, 2)))
 fxreset(fxe)
-for rva in (sym('cObjElementFXSistPart_Update'), sym('cObjElementFXSistPart_Update@1db9f0')):
-	check('cObjElementFXSistPart_Update off %x' % rva, lambda rva=rva: (SDTest.Call(rva, 'tviif', fxe, 0, 0.1),
+for rva in ('cObjElementFXSistPart_Update', 'cObjElementFXSistPart_Update@1db9f0'):
+	check('cObjElementFXSistPart_Update off %s' % rva, lambda rva=rva: (SDTest.Call(rva, 'tviif', fxe, 0, 0.1),
 		fxb(fxe + 0xb4)))
 fxfree(fxe)
 

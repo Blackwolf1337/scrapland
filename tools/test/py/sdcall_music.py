@@ -69,11 +69,17 @@ for p in (0, 1):
 	check('D3DApp_OnActivate' + fmt((p,)), lambda: (SDTest.Call('D3DApp_OnActivate', 'v'), mui(symva('g_VoicesPaused')) & 0xff))
 
 def mumusic():
-	return (muf(symva('g_MusicVolume'), 2), mui(symva('g_MusicChannel')), muf(symva('g_MusicVoiceoverTarget'), 4), muf(symva('g_MusicCurMainVolume'), 1), muf(symva('g_MusicMainVolume'), 1), mui(symva('g_MusicPaused')))
+	return (muf(symva('g_MusicVolume'), 1) + muf(symva('g_MusicVoiceover'), 1), mui(symva('g_MusicChannel')), muf(symva('g_MusicVoiceoverTarget'), 1) + muf(symva('g_MusicVoiceoverSpeed'), 1) + muf(symva('g_MusicFadeTarget'), 1) + muf(symva('g_MusicFadeSpeed'), 1), muf(symva('g_MusicCurMainVolume'), 1), muf(symva('g_MusicMainVolume'), 1), mui(symva('g_MusicPaused')))
 def muinit(stream, channel):
 	mupoke(symva('g_MusicStream'), stream)
 	mupoke(symva('g_MusicChannel'), channel)
-	muset(symva('g_MusicVolume'), (0.8, 0.5, 0.0, 0.3, 2.0, 0.1, 0.5))
+	muset(symva('g_MusicVolume'), (0.8,))
+	muset(symva('g_MusicVoiceover'), (0.5,))
+	muset(symva('g_MusicChannel'), (0.0,))
+	muset(symva('g_MusicVoiceoverTarget'), (0.3,))
+	muset(symva('g_MusicVoiceoverSpeed'), (2.0,))
+	muset(symva('g_MusicFadeTarget'), (0.1,))
+	muset(symva('g_MusicFadeSpeed'), (0.5,))
 	mupoke(symva('g_MusicChannel'), channel)
 	muset(symva('g_MusicCurMainVolume'), (0.7,))
 	muset(symva('g_MusicMainVolume'), (0.9,))

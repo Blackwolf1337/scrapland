@@ -21,8 +21,8 @@ en3lcam = en3lri(en3lmundo + 0xa4)
 en3lmat = SDTest.Peek('g_LensFlareMat', 'i')
 check('lens flare level', lambda: (en3lcam != 0, en3lmat != 0, SDTest.Peek('g_LensFlares', 'i'), SDTest.Peek('g_nLensFlareRender', 'i')))
 if en3lcam and en3lmat:
-	en3lview = en3lrf(symva('g_DeviceStr') + 0x1c0, 16)
-	en3lproj = en3lrf(symva('g_DeviceStr') + 0x100, 16)
+	en3lview = en3lrf(0x400000 + sym('g_MatView'), 16)
+	en3lproj = en3lrf(0x400000 + sym('g_MatProj'), 16)
 	en3lsave = (SDTest.Peek('g_TimeMsF', 'i'), SDTest.Peek('g_LensFlares', 'i'), SDTest.Peek('g_nLensFlareRender', 'i'))
 	en3llist = []
 	for en3li in range(8):
@@ -70,4 +70,4 @@ if en3lcam and en3lmat:
 	SDTest.Poke('g_nLensFlareRender', en3lsave[2])
 	for en3li in range(8):
 		SDTest.Poke(sym('g_LensFlareRender') + 4 * en3li, en3llist[en3li])
-	check('lens flare restored', lambda: (en3lrf(symva('g_DeviceStr') + 0x1c0, 16) == en3lview, en3lrf(symva('g_DeviceStr') + 0x100, 16) == en3lproj))
+	check('lens flare restored', lambda: (en3lrf(0x400000 + sym('g_MatView'), 16) == en3lview, en3lrf(0x400000 + sym('g_MatProj'), 16) == en3lproj))

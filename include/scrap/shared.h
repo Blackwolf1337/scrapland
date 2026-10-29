@@ -21,24 +21,30 @@ typedef uint8_t byte;
 #define SD_SIZE(type, size) static_assert(sizeof(type) == (size), "sizeof(" #type ") is not " #size)
 
 /*
- * ScrapC.exe only (docs/standalone.md, stage 3b): a C object defined at an rva of the original's data, in a section
- * .sd.<rva> of its own, which tools/standalone/datagen.py places there; the original's bytes there are left out.
- * The object must hold what the original holds (datagen.py checks it). It is aligned to 4 only (GCC would align
- * larger arrays to 32), so it starts at a multiple of 4, and covers its size rounded up to 4 (the assembler pads PE
- * sections): small neighbours go into one struct. Only in the sources of
- * scrapcode_sa (src/core, src/game, src/lib), whose objects datagen.py reads. The hook DLL has the exe's own data.
+ * ScrapC.exe only (docs/standalone.md, stages 3b and 3c2): a C object of the original's data, with the rva where the
+ * original has it. In ScrapC.exe it is a plain definition, the linker places it like any other global (stage 3c2);
+ * SD_BSS is one without an initializer (the original's bss: the zero tail of .data, .bss_ste). The object must hold
+ * what the original holds, which datagen.py --check compares byte for byte. Only in the sources of scrapcode_sa
+ * (src/core, src/game, src/lib). The hook DLL has the exe's own data.
  *	const int g_Foo[4] SD_AT(0x2a1230) = { ... };
+ *
+ * The check build (SD_DATACHECK, the object library scrapdata_check of CMakeLists.txt, which only the check and the
+ * generators read) puts each object into a section .sd.<rva> of its own, so the rva and the bytes and relocations of
+ * every object can be read from the object files. There it is aligned to 4 only (GCC would align larger arrays to
+ * 32), as the room of the stages before 3c2 needed. GCC gives a named section the flags of initialized data ("w");
+ * the section name of SD_BSS ends the directive with the flags of gas ("bw") and comments out the ones GCC writes
+ * after it.
  */
 #ifdef SD_STANDALONE
+#ifdef SD_DATACHECK
 #define SD_AT(rva) SD_AT_(rva)
 #define SD_AT_(rva) __attribute__((section(".sd." #rva), used, aligned(4)))
-/*
- * SD_AT of an object in the original's bss (the zero tail of .data, .bss_ste): its section is uninitialized, so it
- * takes no room in the file. GCC gives a named section the flags of initialized data ("w"); the name ends the
- * directive with the flags of gas ("bw") and comments out the ones GCC writes after it.
- */
 #define SD_BSS(rva) SD_BSS_(rva)
 #define SD_BSS_(rva) __attribute__((section(".sd." #rva ",\"bw\"\n#"), used, aligned(4)))
+#else
+#define SD_AT(rva) __attribute__((used))
+#define SD_BSS(rva) __attribute__((used))
+#endif
 /* the address of a C symbol as the array sd_<name>, whatever its type (the pointers of the generated data);
  * SD_SYM_AS with the assembler name of a stdcall or fastcall function */
 #define SD_SYM(name) extern char sd_##name[] __asm__("_" #name)

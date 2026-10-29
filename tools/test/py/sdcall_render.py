@@ -41,12 +41,15 @@ for i in range(24):
 
 # the pixel shaders as the device has them, then all off by the mask
 rdps = SDTest.Peek('g_PSOff', 'i')
+# the nine shader functions, one after the other in the original (0x60 apart)
+rdpsfn = ('Render_PS0', 'Render_PS1', 'Render_PS2', 'Render_PS3', 'Render_PS4', 'Render_PS5', 'Render_PS6',
+	'Render_PS7', 'Render_PS8')
 for off in (rdps, -1):
 	SDTest.Poke('g_PSOff', off)
 	for i in range(9):
 		for flags in (1, 2, 3, 0):
 			check('Render_PS' + fmt((i, off, flags)), lambda i=i, flags=flags: rdlog(lambda i=i, flags=flags:
-				SDTest.Call(sym('Render_PS0') + 0x60 * i, 'vii', 0, flags)))
+				SDTest.Call(rdpsfn[i], 'vii', 0, flags)))
 SDTest.Poke('g_PSOff', rdps)
 for flags in (1, 2, 3):
 	check('Render_PSFixed' + fmt((flags,)), lambda flags=flags: rdlog(lambda flags=flags: SDTest.Call('Render_PSFixed', 'vii', 0, flags)))
@@ -145,11 +148,11 @@ check('Render_Get', lambda: (SDTest.Call('Render_GetProj', 'i')[0], SDTest.Call(
 wm = (1.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 4.0, 5.0, 6.0, 1.0)
 rdworld = []
 for i in range(16):
-	rdworld.append(SDTest.Peek(sym('g_DeviceStr') + 0x180 + 4 * i, 'i'))
+	rdworld.append(SDTest.Peek(sym('g_MatWorld') + 4 * i, 'i'))
 def rdw():
 	r = [SDTest.Peek('g_WorldSet', 'i')]
 	for i in range(16):
-		r.append(SDTest.Peek(sym('g_DeviceStr') + 0x180 + 4 * i, 'i'))
+		r.append(SDTest.Peek(sym('g_MatWorld') + 4 * i, 'i'))
 	return r
 check('Render_SetWorldMatrix defer', lambda: (rdlog(lambda: SDTest.Call('Render_SetWorldMatrix', 'iFi', wm, 1)), rdw()))
 check('Render_SetWorld', lambda: (rdlog(lambda: SDTest.Call('Render_SetWorld', 'i')), rdw(), rdlog(lambda: SDTest.Call('Render_SetWorld', 'i'))))
@@ -158,7 +161,7 @@ check('Render_SetWorldMatrix', lambda: (rdlog(lambda: SDTest.Call('Render_SetWor
 check('Render_SetWorldD3D', lambda: (rdlog(lambda: SDTest.Call('Render_SetWorldD3D', 'iF', wm)), rdw()))
 check('Render_GetWorld', lambda: (SDTest.Call('Render_GetWorld', 'iF', (0.0,) * 16), SDTest.Call('Render_GetWorld', 'ii', 0)))
 for i in range(16):
-	SDTest.Poke(sym('g_DeviceStr') + 0x180 + 4 * i, rdworld[i])
+	SDTest.Poke(sym('g_MatWorld') + 4 * i, rdworld[i])
 check('Render_GetDriver', lambda: SDTest.Call('Render_GetDriver', 'i')[0] == sym('g_DriverStr') + 0x400000)
 # the state RenderIniD3D left: the device texts and the logged device, the 1/2048 matrix, the texture caps, the
 # shaders made, the default materials
@@ -167,15 +170,16 @@ check('RenderIniD3D texts', lambda: (SDTest.Peek('g_DriverStr', 's'), SDTest.Pee
 def rdinistate():
 	r = []
 	for i in range(16):
-		r.append(SDTest.Peek(sym('g_DeviceStr') + 0x140 + 4 * i, 'i'))
+		r.append(SDTest.Peek(sym('g_MatBias') + 4 * i, 'i'))
 	for a in (sym('g_MipmapsOn'), sym('g_TexRepeat'), sym('g_TexNoPow2'), sym('g_TexPow2'), sym('g_UsarShaders2'), sym('g_UsarShaders'), sym('g_D3DOn')):
 		r.append(SDTest.Peek(a, 'b'))
 	for a in (sym('g_PSOn'), sym('g_EnvBump'), sym('g_EnvMap'), sym('g_FogEnable')):
 		r.append(SDTest.Peek(a, 'i'))
 	for i in range(30):
 		r.append(SDTest.Peek(sym('g_PSHandles') + 4 * i, 'i') != 0)
-	for i in range(6):
-		m = SDTest.Peek(sym('g_MatBlanco') + 4 * i, 'i')
+	for a in (sym('g_MatBlanco'), sym('g_MatAjedrez'), sym('g_MatGris'), sym('g_MatInvis'), sym('g_MatBump'),
+			sym('g_MatSuelo')):
+		m = SDTest.Peek(a, 'i')
 		r.append(m and (SDTest.Peek(m + 4, '@p'), SDTest.Peek(m + 0x39, '@b'), SDTest.Peek(m + 0x40, '@i')))
 	return r
 check('RenderIniD3D state', rdinistate)
@@ -254,8 +258,8 @@ def rdheap(a, n):
 	for i in range(n):
 		r.append(rdi(a + 4 * i))
 	return r
-rdproj = rdints(sym('g_DeviceStr') + 0x100, 16)
-rdview = rdints(sym('g_DeviceStr') + 0x1c0, 16)
+rdproj = rdints(sym('g_MatProj'), 16)
+rdview = rdints(sym('g_MatView'), 16)
 rdtiles = (SDTest.Peek('g_Tiles', 'i'), SDTest.Peek('g_TileState', 'i'), SDTest.Peek('g_TileX', 'i'), SDTest.Peek('g_TileY', 'i'),
 	SDTest.Peek('g_TileOn', 'i'))
 pm = (1.5, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.001, 1.0, 0.0, 0.0, -0.1, 0.0)
@@ -264,11 +268,11 @@ for step in range(7):
 	on = (0, 1, 0, 0, 1, 0, 0)[step]
 	SDTest.Poke('g_TileOn', (rdtiles[4] & ~0xff) | on)
 	check('Render_ProjTile' + fmt((step,)), lambda: (rdlog(lambda: SDTest.Call('Render_ProjTile', 'bF', pm)), SDTest.Peek('g_TileState', 'i'),
-		SDTest.Peek('g_TileX', 'i'), SDTest.Peek('g_TileY', 'i'), SDTest.Peek('g_TileOn', 'i') & 0xff, rdints(sym('g_DeviceStr') + 0x100, 16)))
+		SDTest.Peek('g_TileX', 'i'), SDTest.Peek('g_TileY', 'i'), SDTest.Peek('g_TileOn', 'i') & 0xff, rdints(sym('g_MatProj'), 16)))
 for a, v in ((sym('g_Tiles'), rdtiles[0]), (sym('g_TileState'), rdtiles[1]), (sym('g_TileX'), rdtiles[2]), (sym('g_TileY'), rdtiles[3]),
 	(sym('g_TileOn'), rdtiles[4])):
 	SDTest.Poke(a, v)
-check('Render_SetProj', lambda: (rdlog(lambda: SDTest.Call('Render_SetProj', 'iF', pm)), rdints(sym('g_DeviceStr') + 0x100, 16)))
+check('Render_SetProj', lambda: (rdlog(lambda: SDTest.Call('Render_SetProj', 'iF', pm)), rdints(sym('g_MatProj'), 16)))
 rdcull = SDTest.Peek('g_CullMode', 'i')
 for cm in (0, 1):
 	SDTest.Poke('g_CullMode', cm)
@@ -312,7 +316,7 @@ for ntri, strip, base, start, lim in ((20, 0, 2, 5, -1), (20, 0, 0, 0, 7), (0, 1
 	check('Render_DrawMallaD3D' + fmt((ntri, strip, base, start, lim)), lambda: rdlog(lambda: SDTest.Call('Render_DrawMallaD3D', 'ii', md)))
 	SDTest.Poke('g_VBIBTriLimit', rdlim)
 vm = (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 5.0, -3.0, 2.0, 1.0)
-check('Render_SetView', lambda: (rdlog(lambda: SDTest.Call('Render_SetView', 'iF', vm)), rdints(sym('g_DeviceStr') + 0x200, 16), rdints(sym('g_EyePos'), 3)))
+check('Render_SetView', lambda: (rdlog(lambda: SDTest.Call('Render_SetView', 'iF', vm)), rdints(sym('g_MatBillboard'), 16), rdints(sym('g_EyePos'), 3)))
 def rdfl(v):
 	r = SDTest.Call('operator_new', 'ii', 64)[0]
 	for i in range(16):
@@ -374,7 +378,7 @@ for dyn in (0, 1):
 	check('Render_CreateVB' + fmt((dyn,)), lambda dyn=dyn: (rdlog(lambda dyn=dyn: SDTest.Call('Render_CreateVB', 'iiii', cell, lv, dyn)),
 		rdi(cell) != 0))
 cam = SDTest.Call('CCamara_ctor', 'tii', SDTest.Call('operator_new', 'ii', 0x78)[0])[0]
-check('Render_SetCamara', lambda: (rdlog(lambda: SDTest.Call('Render_SetCamara', 'vi', cam)), rdints(sym('g_DeviceStr') + 0x100, 16), rdints(sym('g_DeviceStr') + 0x1c0, 16),
+check('Render_SetCamara', lambda: (rdlog(lambda: SDTest.Call('Render_SetCamara', 'vi', cam)), rdints(sym('g_MatProj'), 16), rdints(sym('g_MatView'), 16),
 	rdints(sym('g_Frustum'), 24)))
 for i in range(24):
 	SDTest.Poke(sym('g_Frustum') + 4 * i, rdplanes[i])

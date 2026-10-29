@@ -113,7 +113,7 @@ void __thiscall CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, flo
 #define g_ViewerCamera GAME_GLOBAL(CGameCamera *, g_ViewerCamera, 0x4a830c)	/* gViewerCamera, made with the engine */
 #define g_Watermark GAME_GLOBAL(CPsaImage *, g_Watermark, 0x4a8310)
 /* the callbacks of Engine_SetCallback (1..4): before each frame, after the frame setup, two more */
-#define g_EngCallbacks (GAME_ARRAY(void (*)(void), g_EngCallbacks, 0x4a8314))	/* [2] */
+#define g_EngCallbacks (GAME_ARRAY(void (*)(void), g_EngCallbacks, 0x4a8314))	/* [4], 2 and 3 are g_LoadingDraw2 and g_LoadingDraw */
 #define g_DrawProgressBar GAME_GLOBAL_IN(byte, group_4a8324, 0, 0x4a8324)
 #define g_ResetPending GAME_GLOBAL_IN(byte, group_4a8324, 1, 0x4a8325)	/* Video_SetCurrentMode: reset the device at the next frame */
 #define g_ProgressBarCount GAME_GLOBAL(int, g_LoadingCount, 0x4a8328)

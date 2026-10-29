@@ -12,9 +12,9 @@ def rl2ints(a, n):
 	return r
 def rl2pf(a, t):
 	SDTest.Call('crt_memcpy', 'iiFi', a, t, 4 * len(t))
-rl2saved = rl2ints(sym('g_DeviceStr') + 0x100 + 0x400000, 16) + rl2ints(sym('g_DeviceStr') + 0x1c0 + 0x400000, 16)
-rl2pf(sym('g_DeviceStr') + 0x100 + 0x400000, (1.2, 0.0, 0.0, 0.0, 0.0, 1.6, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, -1.0, 0.0))
-rl2pf(sym('g_DeviceStr') + 0x1c0 + 0x400000, (0.8, 0.0, 0.6, 0.0, 0.0, 1.0, 0.0, 0.0, -0.6, 0.0, 0.8, 0.0, 2.0, -1.0, 3.0, 1.0))
+rl2saved = rl2ints(sym('g_MatProj') + 0x400000, 16) + rl2ints(sym('g_MatView') + 0x400000, 16)
+rl2pf(sym('g_MatProj') + 0x400000, (1.2, 0.0, 0.0, 0.0, 0.0, 1.6, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, -1.0, 0.0))
+rl2pf(sym('g_MatView') + 0x400000, (0.8, 0.0, 0.6, 0.0, 0.0, 1.0, 0.0, 0.0, -0.6, 0.0, 0.8, 0.0, 2.0, -1.0, 3.0, 1.0))
 rl2rect = rl2new(24)
 rl2mundo = SDTest.Peek('g_Mundo', 'i')
 check('mundo cam', lambda: (rl2mundo != 0, rl2mundo and rl2i(rl2mundo + 0xa4) != 0))
@@ -35,5 +35,5 @@ for rl2pos, rl2size in rl2cases:
 		rl2ints(rl2rect, 6)))
 	check('CPortal_ClipRect NULL' + fmt((rl2pos, rl2size)), lambda: SDTest.Call('CPortal_ClipRect', 'tbii', rl2po, 0)[0])
 for rl2k in range(16):
-	SDTest.Poke(sym('g_DeviceStr') + 0x100 + 4 * rl2k, rl2saved[rl2k])
-	SDTest.Poke(sym('g_DeviceStr') + 0x1c0 + 4 * rl2k, rl2saved[16 + rl2k])
+	SDTest.Poke(sym('g_MatProj') + 4 * rl2k, rl2saved[rl2k])
+	SDTest.Poke(sym('g_MatView') + 4 * rl2k, rl2saved[16 + rl2k])

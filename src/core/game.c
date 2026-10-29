@@ -1,7 +1,7 @@
 /*
  * Startup: checks that the image is the exe this code was made for, resolves the imports and installs the hooks.
- * Game_Init runs inside Scrap.exe from DllMain (so only kernel32 work, no LoadLibrary, no threads), Game_Start
- * also from the standalone loader (src/standalone/main.c) on the image it mapped.
+ * Game_Init runs inside Scrap.exe from DllMain (so only kernel32 work, no LoadLibrary, no threads). ScrapC.exe calls
+ * Game_Start from its WinMain (src/standalone/main.c) for the settings and the test module, it hooks nothing.
  */
 #include <stdio.h>
 #include <string.h>
@@ -14,7 +14,7 @@ uintptr_t game_base;
 static char ini_path[MAX_PATH];
 
 int Imports_Resolve(uintptr_t base);
-void Hook_InstallAll(int wipe, int wipepy, int wipelow);
+void Hook_InstallAll(int wipe);
 void Log_Open(const char *dir);
 int Hook_Enabled(const char *name);
 int Game_Option(const char *key);
@@ -57,6 +57,27 @@ int Game_IsBuild(const IMAGE_NT_HEADERS32 *nt) {
 	return 1;
 }
 
+#ifdef SD_STANDALONE
+/*
+ * ScrapC.exe (src/standalone/main.c): base is its own module. There is no exe to hook (stage 3c2), so hooks and wipe of
+ * scrapdecomp.ini do nothing here; testmod=1 still adds SDTest, whose names are the C functions and objects
+ * (src/core/testmod.c).
+ */
+int Game_Start(uintptr_t base, const char *dir) {
+	if (snprintf(ini_path, sizeof(ini_path), "%sscrapdecomp.ini", dir) >= (int)sizeof(ini_path)) {
+		return 0;
+	}
+	game_base = base;
+	Com_Printf("ScrapC.exe at %08x\n", (unsigned)game_base);
+	if (Game_Option("wipe")) {
+		Com_Printf("wipe: only in the hook DLL, ScrapC.exe has no code of the original\n");
+	}
+	if (Game_Option("testmod")) {
+		TestMod_Register();
+	}
+	return 1;
+}
+#else
 int Game_Start(uintptr_t base, const char *dir) {
 	if (snprintf(ini_path, sizeof(ini_path), "%sscrapdecomp.ini", dir) >= (int)sizeof(ini_path)) {
 		return 0;
@@ -75,17 +96,11 @@ int Game_Start(uintptr_t base, const char *dir) {
 		TestMod_Register();
 	}
 	if (hooks) {
-		Hook_InstallAll(GetPrivateProfileIntA("general", "wipe", 0, ini_path),
-			GetPrivateProfileIntA("general", "wipepy", 0, ini_path),
-			GetPrivateProfileIntA("general", "wipelow", 0, ini_path));
+		Hook_InstallAll(GetPrivateProfileIntA("general", "wipe", 0, ini_path));
 	}
-#ifndef SD_STANDALONE
-	if (Game_Option("dataprobe")) {
-		Com_Printf("dataprobe: only in ScrapC.exe, the data of the exe is not watched\n");
-	}
-#endif
 	return hooks;
 }
+#endif
 
 int Game_Init(void) {
 	char dir[MAX_PATH];

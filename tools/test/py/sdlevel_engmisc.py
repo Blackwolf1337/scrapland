@@ -46,7 +46,7 @@ def emcstr(s):
 emcvp = emcsave((sym('g_ViewportW'), sym('g_ViewportH')))
 SDTest.Poke('g_ViewportW', 640)
 SDTest.Poke('g_ViewportH', 480)
-emcworld = emcrf(sym('g_DeviceStr') + 0x180 + 0x400000, 16)
+emcworld = emcrf(sym('g_MatWorld') + 0x400000, 16)
 emcworldset = emcgi(sym('g_WorldSet'))
 emceye = emcrf(sym('g_EyePos') + 0x400000, 3)
 emcident = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0)

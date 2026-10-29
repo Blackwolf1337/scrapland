@@ -124,9 +124,9 @@ for fxar in (('BankMasterAttack', sym('cObjElementFXBankMasterAttack_Reset'), (0
 fxap = fxanew('PoliceSteal')
 check('FXMisc_SetEntity PoliceSteal', lambda: (SDTest.Call('FXMisc_SetEntity@1c6db0', 'tvii', fxap, fxaplayer), fxai(fxap + 4) ==
 	fxaplayer))
-for fxaf in (sym('FXCharActions_SetEntity8'), sym('FXCharActions_SetEntity8@1c84d0'), sym('FXCharActions_SetEntity8@1c8510')):
+for fxaf in ('FXCharActions_SetEntity8', 'FXCharActions_SetEntity8@1c84d0', 'FXCharActions_SetEntity8@1c8510'):
 	fxapoke(fxap + 8, 0)
-	check('FXCharActions_SetEntity8 %x' % fxaf, lambda f=fxaf: (SDTest.Call(f, 'tvii', fxap, fxaplayer),
+	check('FXCharActions_SetEntity8 %s' % fxaf, lambda f=fxaf: (SDTest.Call(f, 'tvii', fxap, fxaplayer),
 		fxai(fxap + 8) == fxaplayer))
 fxadel(fxap, 'PoliceSteal')
 fxap = fxanew('BankerSteal')
@@ -164,9 +164,9 @@ for fxas in (('BankMasterAttack', sym('cObjElementFXBankMasterAttack_Start'), 'D
 fxap = fxanew('BettyKill')
 check('cObjElementFXKill_SetAngles', lambda: (SDTest.Call('cObjElementFXKill_SetAngles', 'tvifff', fxap, 0.5, 1.0, -1.5),
 	SDTest.Call('cObjElementFXKill_SetAngles@1c8580', 'tvifff', fxap, 0.25, 2.0, 3.0), fxafl(fxap + 0x908, 3)))
-for fxaf in (sym('cObjElementFXKill_Start'), sym('cObjElementFXKill_Start@1c7810')):
+for fxaf in ('cObjElementFXKill_Start', 'cObjElementFXKill_Start@1c7810'):
 	fxasrand(321)
-	check('cObjElementFXKill_Start %x' % fxaf, lambda f=fxaf: (SDTest.Call(f, 'tvii', fxap, fxaplayer),
+	check('cObjElementFXKill_Start %s' % fxaf, lambda f=fxaf: (SDTest.Call(f, 'tvii', fxap, fxaplayer),
 		fxai(fxap + 4) == fxaplayer, fxaints(fxap + 0xc0, range(0, 40, 4)), fxavecs(fxap + 0x1ec, 20),
 		fxafl(fxap + 0x570, 30), fxafl(fxap + 0x69c, 30), fxafl(fxap + 0x7c8, 30), SDTest.Call('crt_rand', 'i')[0]))
 fxadel(fxap, 'BettyKill')

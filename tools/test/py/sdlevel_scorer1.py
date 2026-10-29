@@ -47,7 +47,17 @@ sc1gvars = (sym('g_CreditsAlpha'), sym('g_CreditsClear'), sym('g_CreditsPhase'),
 	sym('g_RadarCenterZ'), sym('g_NewsPanelActive'), sym('g_NewsPanelShowHead'), sym('g_ViewportW'), sym('g_ViewportH'))
 sc1gsaved = map(lambda a: SDTest.Peek(a, 'i'), sc1gvars)
 # the mission globals 0x45fa80..0x45faa8, the chat lines, the circuit flares
-sc1msaved = sc1run(sym('g_MissionBlinkOn') + 0x400000, 11)
+# the words of the mission scorer, separate C objects in ScrapC.exe (stage 3c2): the blink, the solid time, Status0..2
+# and the four status times
+sc1mwords = [sym('g_MissionBlinkOn'), sym('g_MissionBlinkTime'), sym('g_MissionBlinkLast'), sym('g_MissionSolidTime'),
+	sym('g_MissionStatus'), sym('g_MissionStatus') + 4, sym('g_MissionStatus') + 8, sym('g_MissionStatusTime'),
+	sym('g_MissionStatusTime') + 4, sym('g_MissionStatusTime') + 8, sym('g_MissionStatusTime') + 12]
+def sc1mission(lo, n):
+	r = ()
+	for k in range(lo, lo + n):
+		r = r + (sc1i(sc1mwords[k] + 0x400000),)
+	return r
+sc1msaved = sc1mission(0, 11)
 sc1csaved = sc1run(sym('g_ChatMsgs') + 0x400000, 16 * 0x54 / 4)
 sc1fsaved = sc1run(sym('g_CircuitFlares') + 0x400000, 24)
 sc1label = SDTest.Peek('g_LabelText', 's')
@@ -224,11 +234,9 @@ if sc1a:
 			sc1get('sc1Mission', 'Status0')))
 	check('SC1 Mission Status0 0', lambda: (sc1set('sc1Mission', 'Status0', 0), SDTest.Peek('g_MissionMapName', 'i'),
 		sc1get('sc1Mission', 'LastStatus')))
-	check('SC1 Mission globals', lambda: sc1run(sym('g_MissionBlinkOn') + 0x400000, 10))
-	check('SC1 Mission StatusClear', lambda: (sc1set('sc1Mission', 'StatusClear', 1), sc1run(sym('g_MissionStatus') + 0x400000,
-		6), sc1get('sc1Mission', 'LastStatus')))
-	check('SC1 Mission BlinkTime', lambda: (sc1set('sc1Mission', 'BlinkTime', 1.0), sc1run(sym('g_MissionBlinkOn') + 0x400000,
-		3)))
+	check('SC1 Mission globals', lambda: sc1mission(0, 10))
+	check('SC1 Mission StatusClear', lambda: (sc1set('sc1Mission', 'StatusClear', 1), sc1mission(4, 6), sc1get('sc1Mission', 'LastStatus')))
+	check('SC1 Mission BlinkTime', lambda: (sc1set('sc1Mission', 'BlinkTime', 1.0), sc1mission(0, 3)))
 	sc1setf(sc1sc + 0x20, (12.5,))
 sc1a = sc1item['Monitor']
 if sc1a:
@@ -336,7 +344,10 @@ if sc1a and sc1world:
 				y)[0], SDTest.Call('cRadarScorer_FloorSide', 'tiif', a, -y)[0], SDTest.Call('cRadarScorer_OnPrevFloor', 'tbif', a, -y)[0]))
 		sc1pos = SDTest.Call('operator_new', 'ii', 12)[0]
 		sc1setf(sc1a + 0xac, (55.0, 55.0, 56.25, 56.25))
-		sc1setf(sym('g_RadarScale') + 0x400000, (2.0, 0.5, 30.0, -20.0))
+		sc1setf(sym('g_RadarScale') + 0x400000, (2.0,))
+		sc1setf(sym('g_RadarAngle') + 0x400000, (0.5,))
+		sc1setf(sym('g_RadarCenterX') + 0x400000, (30.0,))
+		sc1setf(sym('g_RadarCenterZ') + 0x400000, (-20.0,))
 		for sc1fade in (0.25, 1.0):
 			sc1setf(sc1a + 0x8d4, (sc1fade,))
 			for sc1y in (-10000.0, 0.0, 50.0, 10000.0):
@@ -415,7 +426,7 @@ sc1a = sc1item['Mission']
 if sc1a:
 	# blinking: the icons are off in this frame, nothing drawn
 	check('SC1 Mission Draw blink', lambda a=sc1a: (sc1set('sc1Mission', 'BlinkTime', 1.0), sc1set('sc1Mission',
-		'SolidTime', 2.0), sc1log(lambda a=a: SDTest.Call('cMissionScorer_Draw', 'tvii', a, 0)), sc1run(sym('g_MissionBlinkOn') + 0x400000, 4),
+		'SolidTime', 2.0), sc1log(lambda a=a: SDTest.Call('cMissionScorer_Draw', 'tvii', a, 0)), sc1mission(0, 4),
 		sc1i(sc1i(a + 0xbc) + 0x34)))
 sc1a = sc1item['Circuit']
 if sc1a:
@@ -490,7 +501,7 @@ SScorer.SetHeadMonitor(sc1hmname, sc1hmtext, 0)
 for sc1k in range(len(sc1gvars)):
 	SDTest.Poke(sc1gvars[sc1k], sc1gsaved[sc1k])
 for sc1k in range(11):
-	sc1poke(sym('g_MissionBlinkOn') + 0x400000 + 4 * sc1k, sc1msaved[sc1k])
+	sc1poke(sc1mwords[sc1k] + 0x400000, sc1msaved[sc1k])
 for sc1k in range(len(sc1csaved)):
 	sc1poke(sym('g_ChatMsgs') + 0x400000 + 4 * sc1k, sc1csaved[sc1k])
 for sc1k in range(24):

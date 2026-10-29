@@ -357,12 +357,12 @@ rvars = (sym('g_RenderPass'), sym('g_RenderClaseMask'), sym('g_RenderFlagMask'),
 rsaved = map(ngi, rvars)
 wsaved = []
 for i in range(16):
-	wsaved.append(ngi(sym('g_DeviceStr') + 0x180 + 4 * i))
+	wsaved.append(ngi(sym('g_MatWorld') + 4 * i))
 def rrestore():
 	for i in range(len(rvars)):
 		SDTest.Poke(rvars[i], rsaved[i])
 	for i in range(16):
-		SDTest.Poke(sym('g_DeviceStr') + 0x180 + 4 * i, wsaved[i])
+		SDTest.Poke(sym('g_MatWorld') + 4 * i, wsaved[i])
 SDTest.Poke('g_ShowLocalBox', 0)
 def rset(pass_, cmask, fmask, neg):
 	SDTest.Poke('g_RenderPass', pass_)
@@ -372,12 +372,12 @@ def rset(pass_, cmask, fmask, neg):
 def nworld():
 	r = []
 	for i in range(16):
-		r.append(ngi(sym('g_DeviceStr') + 0x180 + 4 * i))
+		r.append(ngi(sym('g_MatWorld') + 4 * i))
 	return r
 def nrender(name, n):
 	c0 = ngi(sym('g_NodesRendered'))
 	for i in range(16):
-		SDTest.Poke(sym('g_DeviceStr') + 0x180 + 4 * i, 0)
+		SDTest.Poke(sym('g_MatWorld') + 4 * i, 0)
 	SDTest.Call('CNodo3D_Render', 'tviii', n, 5, 0)
 	check(name, lambda c0=c0, n=n: (ngi(sym('g_NodesRendered')) - c0, nworld(), nri(n + 0x5c)))
 nwf(u0 + 0x5c, affine())

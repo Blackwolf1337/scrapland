@@ -101,7 +101,7 @@ if en1suelo:
 			en1alt, en1cx, en1cz, a, b, (5.0,)))
 		check('en1 Alturas_CellStep NULL' + fmt((en1a, en1b)), lambda a=en1a, b=en1b: SDTest.Call('Alturas_CellStep',
 			'bippFFi', en1alt, en1cx + 1, en1cz - 1, a, b, 0)[:3])
-	en1ts0 = en1fl(symva('g_TraceCell'), 12)
+	en1ts0 = en1fl(symva('g_TraceCell'), 10) + en1fl(symva('g_NTortas'), 1) + en1fl(symva('g_NCarasTortas'), 1)
 	en1ts1 = (en1i(symva('g_TraceCell') + 0x8), en1i(symva('g_TraceCell') + 0xc))
 	for en1a, en1b in en1segs:
 		def en1step(a=en1a, b=en1b):
@@ -121,7 +121,9 @@ if en1suelo:
 				r.append((SDTest.Call('Alturas_TraceStep', 'bi', en1alt)[0], en1i(symva('g_TraceCell') + 0x8), en1i(symva('g_TraceCell') + 0xc)))
 			return r
 		check('en1 Alturas_TraceStep' + fmt((en1a, en1b)), en1step)
-	en1set(symva('g_TraceCell'), en1ts0)
+	en1set(symva('g_TraceCell'), en1ts0[:10])
+	en1set(symva('g_NTortas'), en1ts0[10:11])
+	en1set(symva('g_NCarasTortas'), en1ts0[11:])
 	en1poke(symva('g_TraceCell') + 0x8, en1ts1[0])
 	en1poke(symva('g_TraceCell') + 0xc, en1ts1[1])
 
@@ -473,5 +475,6 @@ for en1v in ((12345, 0), (0x7fff0000, 3), (5, 0)):
 			en1i(symva('g_TimerFixed')), en1i(symva('g_TimerFixed') + 0x4)))
 	check('en1 Timer_FixedStep 0' + fmt(en1v), lambda: (SDTest.Call('Timer_FixedStep', 'if', 0.0)[0], en1i(symva('g_TimerFixed')),
 		en1i(symva('g_TimerFixed') + 0x4)))
-for en1k in range(4):
+for en1k in range(2):
 	en1poke(symva('g_TimerFixed') + 4 * en1k, en1tf[en1k])
+	en1poke(symva('g_TimerBase') + 4 * en1k, en1tf[2 + en1k])

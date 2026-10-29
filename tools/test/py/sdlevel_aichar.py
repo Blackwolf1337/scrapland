@@ -288,9 +288,9 @@ if aicW and aicW2 and aicI(aicW2 + 0x254 + 8) == aicW2 and aicI(aicW + 0x254 + 8
 			aicState(), aicF(aicA + 0x374, 3), aicF(aicC + 0x68, 3)))
 		SDTest.Call('cAICharControl_ClearAvoid', 'tvi', aicC)
 	# the changes of state from outside and from inside
-	for aicF2, aicArgs in ((sym('cAIChar_SetState'), (12,)), (sym('cAIChar_SetState'), (0,)), (sym('cAIChar_SetStateIntern'), (13,)), (sym('cAIChar_SetStateIntern'), (11,)),
-			(sym('cAIChar_SetStateIntern'), (14,)), (sym('cAIChar_SetState'), (10,)), (sym('cAIChar_SetStateIntern'), (0,))):
-		check('AIC change %x %s' % (aicF2, fmt(aicArgs)), lambda f=aicF2, a=aicArgs: (apply(SDTest.Call, (f,
+	for aicF2, aicArgs in (('cAIChar_SetState', (12,)), ('cAIChar_SetState', (0,)), ('cAIChar_SetStateIntern', (13,)), ('cAIChar_SetStateIntern', (11,)),
+			('cAIChar_SetStateIntern', (14,)), ('cAIChar_SetState', (10,)), ('cAIChar_SetStateIntern', (0,))):
+		check('AIC change %s %s' % (aicF2, fmt(aicArgs)), lambda f=aicF2, a=aicArgs: (apply(SDTest.Call, (f,
 			'bi' + 'i' * len(a), aicA) + a)[0], aicState(), aicB(aicA + 0x1c2)))
 	if aicGroup:
 		# ORIENT_DINAMIC_OBJECTIVE from inside (the group lets it), then the pending change from outside

@@ -226,8 +226,10 @@ for tris in (grid, apart, fan):
 	t = trinew(tris)
 	def vcache():
 		r = []
-		for i in range(32):
+		for i in range(16):
 			r.append(SDTest.Peek(sym('g_VCacheVert') + 4 * i, 'i'))
+		for i in range(16):
+			r.append(SDTest.Peek(sym('g_VCacheAge') + 4 * i, 'i'))
 		return r, SDTest.Peek('g_VCacheCount', 'i'), SDTest.Peek('g_VCacheHits', 'i'), SDTest.Peek('g_VCacheMisses', 'i')
 	check('VertCache_Optimize' + fmt((tris,)), lambda t=t, n=n: (SDTest.Call('VertCache_Optimize', 'bii', t, n)[0], triget(t, n), vcache()))
 	SDTest.Call('Mem_Free', 'vi', t)

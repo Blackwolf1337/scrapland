@@ -6,9 +6,11 @@
 #   - a function rva of src/hooks.inc (or an entry of the original's CRT that ScrapC.exe points to its C) becomes the
 #     name of its C function: 'Str_Trim' as the first argument of SDTest.Call, sym('Str_Trim') anywhere else. A C
 #     function that backs several copies of the original names the first by its name and the others name@rva
-#   - a data rva becomes the C object of SD_AT there (the objects of build/standalone/objects.txt, so build ScrapC
-#     first), else the name of a GAME_DATA or Game_Ptr define, else the name of symbols/globals.tsv: 'g_Name' as the
-#     first argument of SDTest.Peek and Poke, sym('g_Name') + offset inside an object
+#   - a data rva becomes the C object of SD_AT there (the objects of build/standalone/objects.txt, so build the target
+#     scrapdata_check first), else the name of a GAME_DATA or Game_Ptr define, else the name of symbols/globals.tsv:
+#     'g_Name' as the first argument of SDTest.Peek and Poke, sym('g_Name') + offset inside an object. In ScrapC.exe
+#     a name resolves to its C object, a name inside one to the object plus the offset (stage 3c2), so a data name of
+#     the table must lie in a C object, and an offset after a name in the scripts must stay inside that object
 #   - an absolute address (rva + 0x400000) becomes symva('name'), symva('name') + offset
 # The numbers that stay are counted by kind (-v lists them). The rewrite is idempotent and the run without -w only
 # reports: exit code 1 when the scripts or the table would change. -l lists the rewrites outside the first argument of
@@ -86,10 +88,11 @@ def functions():
 
 
 def c_objects():
-	"""the C objects of SD_AT by rva, from the object files of scrapcode_sa (objects.txt of the build)"""
+	"""the C objects of SD_AT by rva, from the object files of the check build (objects.txt of the build)"""
 	from sdexe import ExeError, coff_sd
 	if not os.path.exists(OBJECTS):
-		fail('no %s: build ScrapC first (cmake --build build)' % os.path.relpath(OBJECTS))
+		fail('no %s: build the target scrapdata_check first (cmake --build build --target scrapdata_check)'
+			% os.path.relpath(OBJECTS))
 	out = {}
 	try:
 		for path in open(OBJECTS).read().split():
@@ -180,6 +183,9 @@ class Names:
 				data[rva] = obj
 		self.data = data
 		self.starts = sorted(data)
+		# the C objects of ScrapC.exe: a data name lies in one of them (its owner and offset)
+		self.objs = sorted((s.rva, s.size, s.cname) for s in data.values() if s.kind == 'OBJ')
+		self.obj_starts = [o[0] for o in self.objs]
 		self.by_key = {}
 		for s in list(self.funcs.values()) + list(data.values()):
 			if s.key in self.by_key and self.by_key[s.key].rva != s.rva:
@@ -188,6 +194,13 @@ class Names:
 					fail('%s names rva %x and %x' % (s.key, s.rva, self.by_key[s.key].rva))
 				s.key = '%s@%x' % (s.key, s.rva)
 			self.by_key[s.key] = s
+
+	def owner(self, rva):
+		"""(name, offset, size) of the C object of ScrapC.exe that holds rva, None for none"""
+		k = bisect.bisect_right(self.obj_starts, rva) - 1
+		if k >= 0 and rva < self.objs[k][0] + self.objs[k][1]:
+			return self.objs[k][2], rva - self.objs[k][0], self.objs[k][1]
+		return None
 
 	def data_at(self, rva):
 		"""(Sym, offset) of the named data that holds rva, or (None, why)"""
@@ -199,6 +212,11 @@ class Names:
 		s = self.data[self.starts[k]]
 		if s.size is not None:
 			if rva < s.rva + s.size:
+				return s, rva - s.rva
+			# a field after a named view: the C object that holds it
+			o = self.owner(rva)
+			if o is not None:
+				s = self.data[rva - o[1]]
 				return s, rva - s.rva
 			return None, 'data without a name'
 		# up to the next name: an array or a struct whose fields the C does not name one by one
@@ -326,6 +344,10 @@ def used_names(src):
 	return NAME_USE.findall(src)
 
 
+# any string that may be a name of the table ('Logic_True@142750')
+FUNC_STRING = re.compile(r"'([A-Za-z_]\w*(?:@[0-9a-f]+)?)'")
+
+
 def table(names, used):
 	syms = sorted((names.by_key[k] for k in used), key=lambda s: s.key.encode())
 	out = ['/*',
@@ -334,12 +356,41 @@ def table(names, used):
 		' *   SD_TEST_FUNC(key, name, rva)  the C function name of src/hooks.inc (key name@rva for a further copy it backs)',
 		' *   SD_TEST_CRT(key, name, rva)   an entry of the original\'s C runtime, in ScrapC.exe the C function name',
 		' *   SD_TEST_OBJ(key, name, rva)   the C object name of SD_AT (ScrapC.exe)',
-		' *   SD_TEST_DATA(key, name, rva)  data of the original: a GAME_DATA or Game_Ptr define, else a name of',
-		' *                                 symbols/globals.tsv (no C object)',
+		' *   SD_TEST_DATA(key, owner, off, rva)  data of the original inside a C object: a GAME_DATA or Game_Ptr define,',
+		' *                                 else a name of symbols/globals.tsv; in ScrapC.exe the object owner plus off',
 		' */']
 	for s in syms:
-		out.append('SD_TEST_%s("%s", %s, 0x%06x)' % (s.kind, s.key, s.cname, s.rva))
+		if s.kind == 'DATA':
+			o = names.owner(s.rva)
+			if o is None:
+				fail('%s (rva %06x) lies in no C object, ScrapC.exe has no such data' % (s.key, s.rva))
+			out.append('SD_TEST_DATA("%s", %s, %d, 0x%06x)' % (s.key, o[0], o[1], s.rva))
+		else:
+			out.append('SD_TEST_%s("%s", %s, 0x%06x)' % (s.kind, s.key, s.cname, s.rva))
 	return '\n'.join(out) + '\n'
+
+
+# a name with an offset in a script: sym('g_X') + 0x10, symva('g_X') + 16, SDTest.Peek(sym('g_X') + 4, ...)
+NAME_OFF = re.compile(r"\bsym(?:va)?\(\s*'([^']+)'\s*\)\s*\+\s*(0x[0-9a-fA-F]+|\d+)\b(?!\s*[*(])")
+
+
+def offsets(src, names, path, bad):
+	"""the offsets after a data name that leave its C object (ScrapC.exe has another object or nothing there)"""
+	for m in NAME_OFF.finditer(src):
+		s = names.by_key.get(m.group(1))
+		if s is None or s.kind not in ('OBJ', 'DATA'):
+			continue
+		o = names.owner(s.rva)
+		off = int(m.group(2), 0)
+		if off == BASE:
+			# sym('g_X') + 0x400000, the address, and maybe an offset after it
+			n = re.match(r"\s*\+\s*(0x[0-9a-fA-F]+|\d+)\b(?!\s*[*(])", src[m.end():])
+			if not n:
+				continue
+			off = int(n.group(1), 0)
+		if o is None or o[1] + off > o[2]:	# the end of the object is a bound, not an access
+			bad.append('%s:%d: %s + %s leaves the C object %s (%s bytes)' % (path, src.count('\n', 0, m.start()) + 1,
+				m.group(1), m.group(2), o[0] if o else '-', o[2] - o[1] if o else 0))
 
 
 def read_table(path=TABLE):
@@ -377,14 +428,20 @@ def main():
 	changed = []
 	used = set()
 	uses = 0
+	bad = []
 	for path in sorted(glob.glob(os.path.join(TESTS, '*.py'))):
 		src = open(path).read()
 		new = rewrite(src, names, remain, os.path.basename(path))
+		offsets(new, names, os.path.basename(path), bad)
 		for k in used_names(new):
 			uses += 1
 			if k not in names.by_key:
 				fail('%s: no rva has the name %s' % (os.path.basename(path), k))
 			used.add(k)
+		# a function name as a plain string, which a loop passes to SDTest.Call (and prints in its label)
+		for k in FUNC_STRING.findall(new):
+			if k in names.by_key and names.by_key[k].kind in ('FUNC', 'CRT'):
+				used.add(k)
 		if new != src:
 			changed.append(path)
 			if write:
@@ -406,6 +463,10 @@ def main():
 	if listing:
 		for path, line, num, new, text in LISTED:
 			print('  %s:%d: %s -> %s: %s' % (path, line, num, new, text))
+	for b in bad:
+		print('testsyms.py: %s' % b)
+	if bad:
+		fail('%d offsets leave their C object' % len(bad))
 	if not write and (changed or tab != old):
 		print('testsyms.py: the scripts or %s are not up to date, run tools/test/testsyms.py -w'
 			% os.path.relpath(TABLE, ROOT))

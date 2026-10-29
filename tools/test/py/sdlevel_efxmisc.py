@@ -177,12 +177,12 @@ for c in efmclasses:
 
 # the setters and the trail clears on calloc memory: rva, signature, offset written, arguments
 efms = efmz(0x2000)
-for rva, sig, offs, args in ((sym('cEmbeddedFXBossShield_SetMode'), 'tvii', (0x1c9c,), (7,)), (sym('cEmbeddedFXCoin_SetScale'), 'tvif', (0xc0,), (2.5,)),
-		(sym('cEmbeddedFXExtraLife_SetScale'), 'tvif', (0xcc,), (-1.5,)), (sym('cEmbeddedFXCoin_SetScale@e45b0'), 'tvif', (0xc0,), (0.75,)), (sym('cEmbeddedFXMatrix_SetScale'), 'tvif', (0x1b8,), (6.0,)),
-		(sym('cEmbeddedFXTreasure_SetScale'), 'tvif', (0xec,), (8.0,)), (sym('cEmbeddedFXBossShield_SetHit'), 'tvif', (0x1ca4,), (1.0,)), (sym('cEmbeddedFXTreasure_SetType'), 'tvii', (0xe8,), (3,)),
-		(sym('cEmbeddedFXCoin_SetColor'), 'tvii', (0xc4,), (0x123456,)), (sym('cEmbeddedFXCoin_SetColor@e2a20'), 'tvii', (0xc4,), (-2,)),
-		(sym('cEmbeddedFXMoto_SetF7d4'), 'tviff', (0x7d4, 0x7d8, 0x7dc), (0.5, 3.0))):
-	check('setter %x' % rva + fmt(args), lambda rva=rva, sig=sig, offs=offs, args=args: (apply(SDTest.Call,
+for rva, sig, offs, args in (('cEmbeddedFXBossShield_SetMode', 'tvii', (0x1c9c,), (7,)), ('cEmbeddedFXCoin_SetScale', 'tvif', (0xc0,), (2.5,)),
+		('cEmbeddedFXExtraLife_SetScale', 'tvif', (0xcc,), (-1.5,)), ('cEmbeddedFXCoin_SetScale@e45b0', 'tvif', (0xc0,), (0.75,)), ('cEmbeddedFXMatrix_SetScale', 'tvif', (0x1b8,), (6.0,)),
+		('cEmbeddedFXTreasure_SetScale', 'tvif', (0xec,), (8.0,)), ('cEmbeddedFXBossShield_SetHit', 'tvif', (0x1ca4,), (1.0,)), ('cEmbeddedFXTreasure_SetType', 'tvii', (0xe8,), (3,)),
+		('cEmbeddedFXCoin_SetColor', 'tvii', (0xc4,), (0x123456,)), ('cEmbeddedFXCoin_SetColor@e2a20', 'tvii', (0xc4,), (-2,)),
+		('cEmbeddedFXMoto_SetF7d4', 'tviff', (0x7d4, 0x7d8, 0x7dc), (0.5, 3.0))):
+	check('setter %s' % rva + fmt(args), lambda rva=rva, sig=sig, offs=offs, args=args: (apply(SDTest.Call,
 		(rva, sig, efms) + args), efmints(efms, offs)))
 check('cEmbeddedFXDataPack_SetOn(1)', lambda: (SDTest.Call('cEmbeddedFXDataPack_SetOn', 'tvii', efms, 0x101), efmbytes(efms, (9, 10))))
 check('cEmbeddedFXDataPack_On', lambda: (SDTest.Call('cEmbeddedFXDataPack_SetOn', 'tvii', efms, 0), SDTest.Call('cEmbeddedFXDataPack_On', 'tvi', efms),

@@ -134,7 +134,7 @@ check('SC2 cScorer_ctor', lambda a=sc2scb: (SDTest.Call('cScorer_ctor', 'tii', a
 	sc2fl(a + 0x20, 2), sc2fl(a + 0xd4, 3), sc2fl(a + 0xe4, 1), sc2b(a + 0x8), sc2b(a + 0x44), sc2b(a + 0xe0),
 	sc2b(a + 0x100), map(lambda o, a=a: SDTest.Peek(a + o, '@p'), (0x30, 0x34, 0x48, 0x4c)),
 	sc2save((sym('g_RadarMMSelect'), sym('g_BarValue'), sym('g_BarStopValue'), sym('g_BarSpeedFactor'), sym('g_BarAutoUpdate'), sym('g_NumEnemiesInRadar'), sym('g_MissionSolidTime'), sym('g_NoiseFactor'), sym('g_MotionBlurOffVar'))),
-	SDTest.Peek('g_CinemaBlackBandHeight', 'i') == SDTest.Peek(0x45feac, 'i'), SDTest.Peek('g_CameraScene', 'i') == SDTest.Peek(0x4600a4,
+	SDTest.Peek('g_CinemaBlackBandHeight', 'i') == SDTest.Peek(sym('GVar_CinemaBlackBandHeight') + 0x14, 'i'), SDTest.Peek('g_CameraScene', 'i') == SDTest.Peek(sym('GVar_CameraScene') + 0x14,
 	'i')))
 check('SC2 cScorer_Delete', lambda a=sc2scb: SDTest.Call('cScorer_Delete', 'tiii', a, 1)[0] == a)
 sc2restore(sc2gvars, sc2gsaved)
@@ -170,10 +170,10 @@ if sc2sc:
 	check('SC2 item list', sc2names)
 check('SC2 menu anim', lambda: (sc2b(sym('g_MainMenuAnimInit') + 0x400000), sc2b(sym('g_SubMenuAnimInit') + 0x400000), sc2fl(sym('g_MainMenuWait') + 0x400000, 9),
 	sc2fl(sym('g_MainMenuTime') + 0x400000, 9), sc2fl(sym('g_MainMenuLength') + 0x400000, 9), sc2fl(sym('g_MainMenuSparkWait') + 0x400000, 19),
-	sc2fl(sym('g_MainMenuSparkLength') + 0x400000, 19), map(sc2i, range(sym('g_MainMenuSparkFrame') + 0x400000, sym('g_SubMenuWait') + 0x400000, 4)),
-	map(sc2b, range(sym('g_MainMenuSparkDir') + 0x400000, 0x4604f7 + 0x400000)), sc2fl(sym('g_MainMenuNeonWait') + 0x400000, 21),
+	sc2fl(sym('g_MainMenuSparkLength') + 0x400000, 19), map(sc2i, range(sym('g_MainMenuSparkFrame') + 0x400000, sym('g_MainMenuSparkFrame') + 0x400000 + 76, 4)),
+	map(sc2b, range(sym('g_MainMenuSparkDir') + 0x400000, sym('g_MainMenuSparkDir') + 0x400000 + 19)), sc2fl(sym('g_MainMenuNeonWait') + 0x400000, 21),
 	sc2fl(sym('g_MainMenuNeonGroup') + 0x400000, 3), sc2fl(sym('g_MainMenuNeonNext') + 0x400000, 1), sc2fl(sym('g_SubMenuWait') + 0x400000, 1),
-	sc2fl(sym('g_SubMenuRingTime') + 0x400000, 2)))
+	sc2fl(sym('g_SubMenuRingTime') + 0x400000, 1) + sc2fl(sym('g_SubMenuRingWait') + 0x400000, 1)))
 sc2a = sc2items['sc2Slider']
 if sc2a:
 	check('SC2 ctor Slider', lambda a=sc2a: (sc2ints(a, (0xac, 0xb0, 0xbc, 0xc0, 0xc4, 0xc8, 0xcc, 0xd0, 0xd4, 0xd8)),
@@ -275,8 +275,8 @@ if sc2a:
 				SDTest.Call('cSpecialActionScorer_Draw', 'tvii', a, 0)))
 		# the handlers without the banker (its money label needs the frames 0x22, 0x23) and the gear aims
 		SDTest.Poke('g_EnergyBarActive', 0)
-		for sc2h in (sym('SpecialAction_DrawDefault'), sym('SpecialAction_DrawTarget'), sym('SpecialAction_DrawVictim'), sym('SpecialAction_DrawOn'), sym('SpecialAction_DrawLowEnergy'), sym('SpecialAction_DrawFunctionary'), sym('SpecialAction_DrawEnergyOnly'), sym('SpecialAction_DrawOn@178770')):
-			check('SC2 SpecialAction handler %x' % sc2h, lambda a=sc2a, h=sc2h: SDTest.Call(h, 'tvii', a, 0))
+		for sc2h in ('SpecialAction_DrawDefault', 'SpecialAction_DrawTarget', 'SpecialAction_DrawVictim', 'SpecialAction_DrawOn', 'SpecialAction_DrawLowEnergy', 'SpecialAction_DrawFunctionary', 'SpecialAction_DrawEnergyOnly', 'SpecialAction_DrawOn@178770'):
+			check('SC2 SpecialAction handler %s' % sc2h, lambda a=sc2a, h=sc2h: SDTest.Call(h, 'tvii', a, 0))
 		sc2setf(sc2sc + 0x20, (12.5,))
 sc2restore(sc2gvars, sc2gsaved)
 SDTest.Poke('g_ViewportW', 640)

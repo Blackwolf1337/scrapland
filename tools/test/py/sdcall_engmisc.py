@@ -53,7 +53,9 @@ for emcv in emcvecs:
 	check('emc Matrix3_RotFromTo' + fmt(emcv), lambda v=emcv: SDTest.Call('Matrix3_RotFromTo', 'iFFF', v[0], v[1], (9.0,) * 9)[3])
 
 # ---- DbgWin_DlgProc (rva 0x2373d0, stdcall: called as thiscall with a dummy this) ----
-emcdbg = range(sym('g_DbgWnd'), sym('g_DbgLine'), 4)
+emcdbg = [sym('g_DbgWnd'), sym('g_DbgList'), sym('g_DbgEdit'), sym('g_DbgButton')] + range(sym('g_DbgClient'),
+	sym('g_DbgClient') + 16, 4) + range(sym('g_DbgListRect'), sym('g_DbgListRect') + 16, 4) + range(sym('g_DbgEditRect'),
+	sym('g_DbgEditRect') + 16, 4) + range(sym('g_DbgButtonRect'), sym('g_DbgButtonRect') + 16, 4)
 emcdbgs = emcsave(emcdbg) + [emcgi(sym('g_E3DCmdProc'))]
 def emcproc(msg, wp, lp):
 	return SDTest.Call('DbgWin_DlgProc', 'tiiiiii', 0, 0, msg, wp, lp)[0]
@@ -162,7 +164,9 @@ check('emc Motor_DrawFpsGraph ring', lambda: (emcgraph(), emcrf(sym('g_FpsGraph'
 emcst = (sym('g_ProfMode'), sym('g_ProfResetTime'), sym('g_ProfNoReset'), sym('g_BspCacheStats'), sym('g_CollisionCacheMiss'), sym('g_CollisionTestsMax'), sym('g_CollisionTestsTotal'), sym('g_TexCached'), sym('g_TexUsed'), sym('g_TexUsedPixels'))
 emcsts = emcsave(emcst)
 def emcstats():
-	return (emcgf(sym('g_ProfResetTime')), emcints(sym('g_BspCacheStats') + 0x400000, 5), emcints(sym('g_TexCreated') + 0x400000, 4)[1:])
+	return (emcgf(sym('g_ProfResetTime')), emcints(sym('g_BspCacheStats') + 0x400000, 3) + emcints(sym('g_CollisionTests') + 0x400000, 1) +
+		emcints(sym('g_CollisionTestsTotal') + 0x400000, 1), emcints(sym('g_TexCached') + 0x400000, 1) + emcints(sym('g_TexUsed') + 0x400000, 1) +
+		emcints(sym('g_TexUsedPixels') + 0x400000, 1))
 for emcm in ((1, 0, 1), (3, 0, 1), (4, 0, 1), (4, 0, 0), (5, 0, 1), (5, 1, 1), (5, 1, 0), (6, 0, 1), (0, 0, 1)):
 	SDTest.Poke('g_ProfMode', emcm[0])
 	SDTest.Poke('g_ProfNoReset', emcm[1])

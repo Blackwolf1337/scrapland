@@ -63,18 +63,25 @@ lg2actset = SDTest.Peek('g_CurActionSet', 'i')
 check('LG2 start', lambda: (lg2player != 0, lg2alarm, lg2outdoor, lg2actset))
 
 # ---- the small slots ----
-for lg2r in (sym('Logic_NopDtor'), sym('Logic_NopDtor@146e50'), sym('Logic_NopDtor@147810'), sym('Logic_NopDtor@149c40')):
-	check('LG2 Logic_NopDtor %x' % lg2r, lambda r=lg2r: SDTest.Call(r, 'tvi', 0)[0])
-for lg2r in (sym('Logic_NativeNop'), sym('Logic_NativeNop@147b60')):
-	check('LG2 Logic_NativeNop %x' % lg2r, lambda r=lg2r: SDTest.Call(r, 'vi', 0)[0])
-for lg2r in (sym('Logic_True1'), sym('Logic_True1@14c3f0'), sym('Logic_False1@149e40'), sym('Logic_False1@14a4a0')):
-	check('LG2 byte slot1 %x' % lg2r, lambda r=lg2r: SDTest.Call(r, 'tbii', 0, 5)[0])
+for lg2r in ('Logic_NopDtor', 'Logic_NopDtor@146e50', 'Logic_NopDtor@147810', 'Logic_NopDtor@149c40'):
+	check('LG2 Logic_NopDtor %s' % lg2r, lambda r=lg2r: SDTest.Call(r, 'tvi', 0)[0])
+for lg2r in ('Logic_NativeNop', 'Logic_NativeNop@147b60'):
+	check('LG2 Logic_NativeNop %s' % lg2r, lambda r=lg2r: SDTest.Call(r, 'vi', 0)[0])
+for lg2r in ('Logic_True1', 'Logic_True1@14c3f0', 'Logic_False1@149e40', 'Logic_False1@14a4a0'):
+	check('LG2 byte slot1 %s' % lg2r, lambda r=lg2r: SDTest.Call(r, 'tbii', 0, 5)[0])
 check('LG2 Logic_True', lambda: SDTest.Call('Logic_True@1481d0', 'tbi', 0)[0])
 check('LG2 Logic_NoTarget', lambda: SDTest.Call('Logic_NoTarget@1482e0', 'tii', 0)[0])
 check('LG2 GetTeam', lambda: (SDTest.Call('cDominationEnemiesLogic_GetTeam', 'tii', 0)[0], SDTest.Call('cDominationFriendsLogic_GetTeam', 'tii', 0)[0]))
 
 # ---- domination ----
-lg2savedzones = lg2ints(symva('g_DominNumZones'), (0, 4, 8, 0xc, 0x10, 0x14, 0x18, 0x1c, 0x20))
+# g_DominNumZones and the four zones, g_DominBatonPos and g_DominBatonState: separate C objects in ScrapC.exe
+lg2zonewords = [symva('g_DominNumZones')] + map(lambda o: symva('g_DominZones') + o, (0, 4, 8, 0xc, 0x10, 0x14, 0x18,
+	0x1c))
+lg2batonwords = [symva('g_DominBatonPos'), symva('g_DominBatonPos') + 4, symva('g_DominBatonPos') + 8,
+	symva('g_DominBatonState')]
+def lg2zonesget(words):
+	return tuple(map(lambda a: SDTest.Peek(a, '@i'), words))
+lg2savedzones = lg2zonesget(lg2zonewords)
 lg2savedleader = SDTest.Peek('g_DominLeaderName', 'p')
 def lg2zones():
 	return (lg2i(symva('g_DominNumZones')), tuple(map(lambda i: lg2i(symva('g_DominZones') + 8 * i) == lg2player, range(4))),
@@ -145,9 +152,9 @@ for lg2v in ('Player0', 'Player0', ''):
 check('LG2 cDominationEnemiesLogic_Delete', lambda: SDTest.Call('cDominationEnemiesLogic_Delete', 'tiii', lg2de, 1)[0] == lg2de)
 lg2k = 0
 while lg2k < 9:
-	lg2poke(symva('g_DominNumZones') + 4 * lg2k, lg2savedzones[lg2k])
+	lg2poke(lg2zonewords[lg2k], lg2savedzones[lg2k])
 	lg2k = lg2k + 1
-check('LG2 domination restored', lambda: (lg2ints(symva('g_DominNumZones'), (0, 4, 8, 0xc, 0x10, 0x14, 0x18, 0x1c, 0x20)) ==
+check('LG2 domination restored', lambda: (lg2zonesget(lg2zonewords) ==
 	lg2savedzones, SDTest.Peek('g_DominLeaderName', 'p') == lg2savedleader))
 
 # ---- Enemies ----
@@ -462,7 +469,7 @@ while lg2k < 7:
 def lg2ggf(g):
 	return (lg2i(g), lg2i(g + 4), lg2fl(g + 8, 1), lg2i(g + 0x18) != 0)
 check('LG2 cGenCharGroup_ctor', lambda: (SDTest.Call('cGenCharGroup_ctor', 'tii', lg2gg)[0] == lg2gg, lg2ggf(lg2gg),
-	lg2i(symva('g_BishopAttackOnAlarm')) == lg2i(0x84cc04), lg2i(symva('g_BankDirectorAgressive')) == lg2i(0x84cb74), lg2i(symva('g_GenCharAttackActive')) == lg2i(0x84d1e0)))
+	lg2i(symva('g_BishopAttackOnAlarm')) == lg2i(symva('GVar_BishopAttackOnAlarm') + 0x14), lg2i(symva('g_BankDirectorAgressive')) == lg2i(symva('GVar_BankDirectorAgressive') + 0x14), lg2i(symva('g_GenCharAttackActive')) == lg2i(symva('GVar_GenCharAttackActive') + 0x14)))
 lg2poke(symva('g_BishopAttackOnAlarm'), lg2savedgg[0])
 lg2poke(symva('g_BankDirectorAgressive'), lg2savedgg[1])
 lg2poke(symva('g_GenCharAttackActive'), lg2savedgg[2])

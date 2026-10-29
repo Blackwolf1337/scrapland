@@ -22,7 +22,6 @@
 #include "scrap/scrapcamera.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
-#include "scrap/scrapworld.h"
 #include "scrap/stencil.h"
 #include "scrap/suelo.h"
 #include "scrap/sueloportal.h"
@@ -134,8 +133,6 @@
 #undef g_ListaModelos
 #undef g_LoadMeshList
 #undef g_LoadingCount
-#undef g_LoadingDraw
-#undef g_LoadingDraw2
 #undef g_LogFileMask
 #undef g_Luces
 #undef g_LucesD3D
@@ -355,9 +352,7 @@ uint32_t CPsaImage_dtor_4a8304 SD_BSS(0x4a8304);
 CGameCamera *g_CamActual SD_BSS(0x4a8308);
 CGameCamera *g_ViewerCamera SD_BSS(0x4a830c);
 CPsaImage *g_Watermark SD_BSS(0x4a8310);
-typeof(void (*)(void)) g_EngCallbacks[2] SD_BSS(0x4a8314);
-loadingDraw_t g_LoadingDraw2 SD_BSS(0x4a831c);
-loadingDraw_t g_LoadingDraw SD_BSS(0x4a8320);
+typeof(void (*)(void)) g_EngCallbacks[4] SD_BSS(0x4a8314);
 struct {
 	byte g_DrawProgressBar;	/* 0x0 */
 	byte g_ResetPending;	/* 0x1 */

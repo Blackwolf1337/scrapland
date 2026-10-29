@@ -5,7 +5,9 @@
  *
  * The functions and data of the exe go by name (stage 3c0, docs/standalone.md): SDTest.Sym(name) is the rva of a name of
  * src/core/testsyms.inc (tools/test/testsyms.py writes it from the test scripts), and Call, Peek, Poke and ConvU take
- * such a name in place of the rva.
+ * such a name in place of the rva. In ScrapC.exe the rva of a name is the address of its C function or object minus
+ * the load address (stage 3c2). SDTest.Base() is the load address of the exe (Scrap.exe or ScrapC.exe), so
+ * SDTest.Base() + rva is the address the pointers of the game hold.
  *
  * SDTest.Call(rva, sig, args...): sig is the return type and then one character per argument.
  *   return: v nothing, i int, b byte (al), s char * (None for NULL), f float (st0)
@@ -30,7 +32,7 @@
  * SDTest.HeapOk() is -1 when every heap of the process passes HeapValidate, else the index of the first bad one (to
  * find the test call that breaks a heap).
  */
-/* the rva lookup of the tests (TestMod_SymRva) adds the load address, stage 3c switches it in ScrapC.exe */
+/* the rvas of the tests: Game_Ptr adds the load address (in ScrapC.exe to the C address minus it, TestMod_SymRva) */
 #define SD_GAME_RVA
 
 #include <stdio.h>
@@ -123,17 +125,33 @@ static PyObject *SDTest_Result(char kind, uint32_t r) {
 	}
 }
 
+/*
+ * The table of the names, sorted by name (strcmp order). In the hook DLL an entry holds the rva of the original, so the
+ * run with hooks=0 reaches the original and the hooked run the C through the hook at that rva. In ScrapC.exe it holds
+ * the address of the C function or object (plus the offset of a view inside the object), taken from its assembler
+ * label like GAME_FUNC of game.h does, so no prototype is needed (stage 3c2).
+ */
+#ifdef SD_STANDALONE
 typedef struct {
 	const char *name;
-	uint32_t rva;
+	const char *addr;
 } testsym_t;
 
-/* sorted by name (strcmp order) */
+#define SD_TEST_FUNC(key, name, rva) extern char sdt_##name[] __asm__("_" #name);
+#define SD_TEST_CRT(key, name, rva) extern char sdt_##name[] __asm__("_" #name);
+#define SD_TEST_OBJ(key, name, rva) extern char sdt_##name[] __asm__("_" #name);
+#define SD_TEST_DATA(key, owner, off, rva) extern char sdt_##owner[] __asm__("_" #owner);
+#include "testsyms.inc"
+#undef SD_TEST_FUNC
+#undef SD_TEST_CRT
+#undef SD_TEST_OBJ
+#undef SD_TEST_DATA
+
 static const testsym_t testSyms[] = {
-#define SD_TEST_FUNC(key, name, rva) { key, rva },
-#define SD_TEST_CRT(key, name, rva) { key, rva },
-#define SD_TEST_OBJ(key, name, rva) { key, rva },
-#define SD_TEST_DATA(key, name, rva) { key, rva },
+#define SD_TEST_FUNC(key, name, rva) { key, sdt_##name },
+#define SD_TEST_CRT(key, name, rva) { key, sdt_##name },
+#define SD_TEST_OBJ(key, name, rva) { key, sdt_##name },
+#define SD_TEST_DATA(key, owner, off, rva) { key, sdt_##owner + (off) },
 #include "testsyms.inc"
 #undef SD_TEST_FUNC
 #undef SD_TEST_CRT
@@ -141,14 +159,33 @@ static const testsym_t testSyms[] = {
 #undef SD_TEST_DATA
 };
 
-/*
- * The rva a test name stands for, the one place that resolves them: the rva of the original in the hook DLL, so the run
- * with hooks=0 reaches the original, and for now in ScrapC.exe too. Stage 3c, which moves the C off the rvas of the
- * original, switches ScrapC.exe here to the address of the C function or object minus game_base (Game_Ptr adds it).
- */
+/* the address of the C minus the load address of ScrapC.exe, which Game_Ptr adds back */
+static uint32_t TestMod_SymRva(const testsym_t *s) {
+	return (uint32_t)((uintptr_t)s->addr - game_base);
+}
+#else
+typedef struct {
+	const char *name;
+	uint32_t rva;
+} testsym_t;
+
+static const testsym_t testSyms[] = {
+#define SD_TEST_FUNC(key, name, rva) { key, rva },
+#define SD_TEST_CRT(key, name, rva) { key, rva },
+#define SD_TEST_OBJ(key, name, rva) { key, rva },
+#define SD_TEST_DATA(key, owner, off, rva) { key, rva },
+#include "testsyms.inc"
+#undef SD_TEST_FUNC
+#undef SD_TEST_CRT
+#undef SD_TEST_OBJ
+#undef SD_TEST_DATA
+};
+
+/* the rva of the original */
 static uint32_t TestMod_SymRva(const testsym_t *s) {
 	return s->rva;
 }
+#endif
 
 static const testsym_t *TestMod_FindSym(const char *name) {
 	int lo = 0, hi = (int)(sizeof(testSyms) / sizeof(testSyms[0])) - 1;
@@ -420,6 +457,15 @@ static PyObject *SDTest_Sym(PyObject *self, PyObject *args) {
 	return PyInt_FromLong(rva);
 }
 
+static PyObject *SDTest_Base(PyObject *self, PyObject *args) {
+	(void)self;
+
+	if (!PyArg_ParseTuple(args, "")) {
+		return NULL;
+	}
+	return PyInt_FromLong((long)game_base);
+}
+
 static PyObject *SDTest_Proc(PyObject *self, PyObject *args) {
 	(void)self;
 	const char *dll, *name;
@@ -500,6 +546,7 @@ static PyMethodDef sdtest_methods[] = {
 	{ "Poke", SDTest_Poke, 1, NULL },
 	{ "ConvU", SDTest_ConvU, 1, NULL },
 	{ "Sym", SDTest_Sym, 1, NULL },
+	{ "Base", SDTest_Base, 1, NULL },
 	{ "Proc", SDTest_Proc, 1, NULL },
 	{ "OutFunc", SDTest_OutFunc, 1, NULL },
 	{ "Out", SDTest_Out, 1, NULL },

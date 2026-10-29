@@ -172,8 +172,8 @@ def aloQueries(tag, a, w, n, nodes, pairs, flat):
 			SDTest.Call('CAStar_FileOf@9a5d0', 'tiii', a, v)[0]))
 		if aloI(v + 0xc) > 0:
 			pos = aloF(aloI(aloI(v + 0x10)), 3)
-			for f in (sym('CAStar_OtherLinks'), sym('CAStar_OtherLinks@9a9c0')):
-				check('alo %s OtherLinks(%d) %x' % (tag, i, f), lambda a=a, v=v, pos=pos, lst=lst, nodes=nodes, n=n, f=f:
+			for f in ('CAStar_OtherLinks', 'CAStar_OtherLinks@9a9c0'):
+				check('alo %s OtherLinks(%d) %s' % (tag, i, f), lambda a=a, v=v, pos=pos, lst=lst, nodes=nodes, n=n, f=f:
 					(lambda r, lst=lst, nodes=nodes, n=n: (r[2], map(lambda k, lst=lst, nodes=nodes, n=n: aloIdx(aloI(lst +
 					4 * k), nodes, n), range(min(r[2], 20)))))(SDTest.Call(f, 'tviiFiip', a, v, pos, lst, 20, 0)))
 	aloFree(lst)

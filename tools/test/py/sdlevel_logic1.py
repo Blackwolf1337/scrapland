@@ -107,15 +107,15 @@ check('LG1 alarm vars restored', lambda: (SDTest.Peek('g_GuaranteedChars', 'p') 
 	lg1savedrace, SDTest.Peek('g_GenCharAttackActive', 'i') == lg1savedatt))
 
 # ---- the slots without code ----
-for lg1r in (sym('Logic_True'), sym('Logic_True@142750'), sym('Logic_True@142870'), sym('Logic_True@142a10'), sym('Logic_True@142b00'), sym('Logic_True@143040'), sym('Logic_True@143440'), sym('Logic_True@144ac0'), sym('Logic_False'), sym('Logic_False@142a90')):
-	check('LG1 byte slot %x' % lg1r, lambda r=lg1r: SDTest.Call(r, 'tbi', 0)[0])
-for lg1r in (sym('Logic_NoTarget'), sym('Logic_NoTarget@142a80'), sym('Logic_NoTarget@143050'), sym('Logic_NoTarget@143450'), sym('Logic_NoTarget@144ad0')):
-	check('LG1 NoTarget %x' % lg1r, lambda r=lg1r: SDTest.Call(r, 'tii', 0)[0])
-for lg1r in (sym('Logic_Nop1'), sym('Logic_Nop1@1405f0'), sym('Logic_Nop1@142830'), sym('Logic_Nop1@142840'), sym('Logic_Nop1@142850'), sym('Logic_Nop1@142860'), sym('Logic_Nop1@142af0')):
-	check('LG1 Nop1 %x' % lg1r, lambda r=lg1r: SDTest.Call(r, 'tvii', 0, 5)[0])
+for lg1r in ('Logic_True', 'Logic_True@142750', 'Logic_True@142870', 'Logic_True@142a10', 'Logic_True@142b00', 'Logic_True@143040', 'Logic_True@143440', 'Logic_True@144ac0', 'Logic_False', 'Logic_False@142a90'):
+	check('LG1 byte slot %s' % lg1r, lambda r=lg1r: SDTest.Call(r, 'tbi', 0)[0])
+for lg1r in ('Logic_NoTarget', 'Logic_NoTarget@142a80', 'Logic_NoTarget@143050', 'Logic_NoTarget@143450', 'Logic_NoTarget@144ad0'):
+	check('LG1 NoTarget %s' % lg1r, lambda r=lg1r: SDTest.Call(r, 'tii', 0)[0])
+for lg1r in ('Logic_Nop1', 'Logic_Nop1@1405f0', 'Logic_Nop1@142830', 'Logic_Nop1@142840', 'Logic_Nop1@142850', 'Logic_Nop1@142860', 'Logic_Nop1@142af0'):
+	check('LG1 Nop1 %s' % lg1r, lambda r=lg1r: SDTest.Call(r, 'tvii', 0, 5)[0])
 check('LG1 Logic_False1', lambda: SDTest.Call('Logic_False1', 'tbii', 0, 5)[0])
-for lg1r in (sym('cLocalLogic_VarNone'), sym('cLocalLogic_VarNone@141d80'), sym('cLocalLogic_VarNone@142480')):
-	check('LG1 cLocalLogic_VarNone %x' % lg1r, lambda r=lg1r: SDTest.Call(r, 'tbisii', 0, 'State', 0, 1)[0])
+for lg1r in ('cLocalLogic_VarNone', 'cLocalLogic_VarNone@141d80', 'cLocalLogic_VarNone@142480'):
+	check('LG1 cLocalLogic_VarNone %s' % lg1r, lambda r=lg1r: SDTest.Call(r, 'tbisii', 0, 'State', 0, 1)[0])
 check('LG1 cLocalLogic_VarVNone', lambda: SDTest.Call('cLocalLogic_VarVNone', 'tbisiiii', 0, 'Origin', 0, 0, 0, 1)[0])
 check('LG1 GetName', lambda: (SDTest.Call('cBaseLocalLogic_GetName', 'tsi', 0)[0], SDTest.Call('cLocalLogic_GetName', 'tsi', 0)[0]))
 
@@ -123,9 +123,9 @@ check('LG1 GetName', lambda: (SDTest.Call('cBaseLocalLogic_GetName', 'tsi', 0)[0
 lg1l = lg1z(8)
 check('LG1 cLocalLogic_dtor', lambda: (SDTest.Call('cLocalLogic_dtor', 'tvi', lg1l)[0], lg1i(lg1l) - 0x400000))
 lg1free(lg1l)
-for lg1r in (sym('cLocalLogic_Delete'), sym('cCTFEnemiesLocalLogic_Delete')):
+for lg1r in ('cLocalLogic_Delete', 'cCTFEnemiesLocalLogic_Delete'):
 	lg1l = lg1new(8)
-	check('LG1 Delete8 %x' % lg1r, lambda r=lg1r, l=lg1l: SDTest.Call(r, 'tiii', l, 1)[0] == l)
+	check('LG1 Delete8 %s' % lg1r, lambda r=lg1r, l=lg1l: SDTest.Call(r, 'tiii', l, 1)[0] == l)
 lg1l = lg1z(8)
 lg1poke(lg1l + 4, lg1player)
 for lg1v in ('IsLeader', 'Bogus', ''):
@@ -228,9 +228,9 @@ if lg1listsok:
 	lg1savedagr = SDTest.Peek('g_BankDirectorAgressive', 'i')
 	for lg1v in ((0, 1.0), (0, -1.0), (1, -1.0)):
 		lg1poke(symva('g_BankDirectorAgressive'), lg1v[0])
-		for lg1r in (sym('cBankDirectorLocalLogic_FindTarget'), sym('cBankMasterLocalLogic_FindTarget'), sym('cBishopLocalLogic_FindTarget')):
+		for lg1r in ('cBankDirectorLocalLogic_FindTarget', 'cBankMasterLocalLogic_FindTarget', 'cBishopLocalLogic_FindTarget'):
 			lg1set(lg1gc + 0x60, (lg1v[1],))
-			check('LG1 FindTarget %x %s' % (lg1r, fmt(lg1v)), lambda r=lg1r: (SDTest.Call(r, 'tii', lg1gc)[0] ==
+			check('LG1 FindTarget %s %s' % (lg1r, fmt(lg1v)), lambda r=lg1r: (SDTest.Call(r, 'tii', lg1gc)[0] ==
 				lg1player, lg1fl(lg1gc + 0x60, 1)))
 	lg1poke(symva('g_BankDirectorAgressive'), lg1savedagr)
 lg1srand(9)
@@ -247,11 +247,11 @@ lg1fn = lg1z(0xbc)
 lg1poke(lg1fn + 0x68, lg1fn + 0x68)
 lg1poke(lg1fn + 0x6c, lg1fn + 0x68)
 lg1poke(lg1fn + 0x74, lg1fn)
-for lg1r in (sym('cBertoLocalLogic_AssignDesktop'), sym('cBettyLocalLogic_AssignDesktop')):
-	check('LG1 AssignDesktop %x' % lg1r, lambda r=lg1r: (SDTest.Call(r, 'tvii', lg1fn, 0)[0], lg1ints(lg1fn, (0x70,
+for lg1r in ('cBertoLocalLogic_AssignDesktop', 'cBettyLocalLogic_AssignDesktop'):
+	check('LG1 AssignDesktop %s' % lg1r, lambda r=lg1r: (SDTest.Call(r, 'tvii', lg1fn, 0)[0], lg1ints(lg1fn, (0x70,
 		0x78))))
-for lg1r in (sym('cBertoLocalLogic_ReleaseDesktop'), sym('cBertoLocalLogic_ReleaseDesktop@142a20')):
-	check('LG1 ReleaseDesktop %x' % lg1r, lambda r=lg1r: (SDTest.Call(r, 'tvi', lg1fn)[0], lg1ints(lg1fn, (0x70,
+for lg1r in ('cBertoLocalLogic_ReleaseDesktop', 'cBertoLocalLogic_ReleaseDesktop@142a20'):
+	check('LG1 ReleaseDesktop %s' % lg1r, lambda r=lg1r: (SDTest.Call(r, 'tvi', lg1fn)[0], lg1ints(lg1fn, (0x70,
 		0x78))))
 lg1free(lg1fn)
 check('LG1 cBaseLocalLogic_Delete', lambda: (SDTest.Call('cBaseLocalLogic_Delete', 'tiii', lg1l, 0)[0] == lg1l, lg1i(lg1l) - 0x400000,
@@ -295,8 +295,15 @@ check('LG1 cDeathMatch_dtor', lambda: SDTest.Call('cDeathMatch_dtor', 'v')[0])
 lg1free(lg1h)
 
 # ---- domination ----
-lg1savedzones = lg1ints(symva('g_DominNumZones'), (0, 4, 8, 0xc, 0x10, 0x14, 0x18, 0x1c, 0x20))
-lg1savedbaton = lg1ints(symva('g_DominBatonPos'), (0, 4, 8, 0xc))
+# g_DominNumZones and the four zones, g_DominBatonPos and g_DominBatonState: separate C objects in ScrapC.exe
+lg1zonewords = [symva('g_DominNumZones')] + map(lambda o: symva('g_DominZones') + o, (0, 4, 8, 0xc, 0x10, 0x14, 0x18,
+	0x1c))
+lg1batonwords = [symva('g_DominBatonPos'), symva('g_DominBatonPos') + 4, symva('g_DominBatonPos') + 8,
+	symva('g_DominBatonState')]
+def lg1zonesget(words):
+	return tuple(map(lambda a: SDTest.Peek(a, '@i'), words))
+lg1savedzones = lg1zonesget(lg1zonewords)
+lg1savedbaton = lg1zonesget(lg1batonwords)
 def lg1zones():
 	return (lg1i(symva('g_DominNumZones')), tuple(map(lambda i: lg1i(symva('g_DominZones') + 8 * i) == lg1player, range(4))),
 		lg1ints(symva('g_DominZones') + 0x4, (0, 8, 0x10, 0x18)))
@@ -329,11 +336,11 @@ check('LG1 cDominationEnemiesLogic_Delete', lambda: (SDTest.Call('cDominationEne
 	lg1i(symva('g_DominNumZones'))))
 lg1k = 0
 while lg1k < 9:
-	lg1poke(symva('g_DominNumZones') + 4 * lg1k, lg1savedzones[lg1k])
+	lg1poke(lg1zonewords[lg1k], lg1savedzones[lg1k])
 	lg1k = lg1k + 1
 lg1k = 0
 while lg1k < 4:
-	lg1poke(symva('g_DominBatonPos') + 4 * lg1k, lg1savedbaton[lg1k])
+	lg1poke(lg1batonwords[lg1k], lg1savedbaton[lg1k])
 	lg1k = lg1k + 1
-check('LG1 domination restored', lambda: (lg1ints(symva('g_DominNumZones'), (0, 4, 8, 0xc, 0x10, 0x14, 0x18, 0x1c, 0x20)) ==
-	lg1savedzones, lg1ints(symva('g_DominBatonPos'), (0, 4, 8, 0xc)) == lg1savedbaton))
+check('LG1 domination restored', lambda: (lg1zonesget(lg1zonewords) ==
+	lg1savedzones, lg1zonesget(lg1batonwords) == lg1savedbaton))

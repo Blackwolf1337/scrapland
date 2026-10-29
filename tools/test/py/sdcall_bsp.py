@@ -72,7 +72,7 @@ bsptexx = SDTest.Peek('g_MapaSombrasTexX', 'i')
 bsptexy = SDTest.Peek('g_MapaSombrasTexY', 'i')
 check('bsp texture size', lambda: (bsptexx, bsptexy, SDTest.Peek('g_LightmapPackMode', 'i'), SDTest.Peek('g_LightmapDxtPadding', 'i'),
 	SDTest.Peek('g_MapaSombrasModulate4x', 'i'), SDTest.Peek('g_R_ForceLMap', 'i'), SDTest.Peek('g_LmapSecond', 'i'), SDTest.Peek('g_LightmapLimitUV', 'i')))
-check('bsp scale', lambda: bspfl(symva('g_MapaSombrasEscala'), 2) + bspfl(symva('g_BspLodDist'), 6) + bspfl(symva('g_BspLodLevel'), 1))
+check('bsp scale', lambda: bspfl(symva('g_MapaSombrasEscala'), 1) + bspfl(symva('g_MapaSombrasResol'), 1) + bspfl(symva('g_BspLodDist'), 6) + bspfl(symva('g_BspLodLevel'), 1))
 
 # Plane_Calc
 for bspvs in (tuple(vecs(3)), tuple(vecs(3)), tuple(vecs(3)), ((1.0, 2.0, 3.0), (1.0, 2.0, 3.0), (1.0, 2.0, 3.0)),

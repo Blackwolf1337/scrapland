@@ -136,16 +136,16 @@ smcam = smz(0x3c)
 check('Camera_SaveRestore read', lambda: (SDTest.Call('Camera_SaveRestore', 'vii', smcam, 0), smfl(smcam, 9)))
 
 # world to screen with a known view and projection (put back after)
-smmats = (smints(sym('g_DeviceStr') + 0x1c0, 16), smints(sym('g_DeviceStr') + 0x100, 16))
-smset(symva('g_DeviceStr') + 0x1c0, (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0))
-smset(symva('g_DeviceStr') + 0x100, (1.5, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.001, 1.0, 0.0, 0.0, -1.0, 0.0))
+smmats = (smints(sym('g_MatView'), 16), smints(sym('g_MatProj'), 16))
+smset(0x400000 + sym('g_MatView'), (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0))
+smset(0x400000 + sym('g_MatProj'), (1.5, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.001, 1.0, 0.0, 0.0, -1.0, 0.0))
 for p in ((0.0, 0.0, 10.0), (3.0, -2.0, 25.0), (100.0, 0.0, 10.0), (0.0, -50.0, 10.0), (0.0, 0.0, -10.0),
 		(0.0, 0.0, 0.0), (5.0, 5.0, 0.0), (-0.0, 0.0, 1e-30), (1e30, 1.0, 2.0)):
 	check('Engine_WorldToScreen' + fmt(p), lambda p=p: (SDTest.Call('Engine_WorldToScreen', 'bFFF', p, (0.0, 0.0), (0.0,)),
 		SDTest.Call('Engine_WorldToScreen', 'bFii', p, 0, 0)[0], SDTest.Call('Engine_WorldToScreen', 'bFiF', p, 0, (7.0,))[2]))
 	check('Engine_DirToScreen' + fmt(p), lambda p=p: SDTest.Call('Engine_DirToScreen', 'vFF', p, (0.0, 0.0))[2])
-smpoke(sym('g_DeviceStr') + 0x1c0, smmats[0])
-smpoke(sym('g_DeviceStr') + 0x100, smmats[1])
+smpoke(sym('g_MatView'), smmats[0])
+smpoke(sym('g_MatProj'), smmats[1])
 
 # the text functions: the cursor of Texto.c and the state of the two fonts of Eng_Printf
 def smcur():
@@ -176,13 +176,13 @@ if smfonts[0] and smfonts[1]:
 	SDTest.Poke('g_ViewportH', smvpwh[1])
 
 # the view in 640 x 480 coordinates, then the whole view again; the viewport, projection and frustum put back
-smvp = (smints(sym('g_Viewport'), 6), smints(sym('g_DeviceStr') + 0x100, 16), smints(sym('g_Frustum'), 24), smints(sym('g_ViewportFull'), 6))
+smvp = (smints(sym('g_Viewport'), 6), smints(sym('g_MatProj'), 16), smints(sym('g_Frustum'), 24), smints(sym('g_ViewportFull'), 6))
 for r in ((0.0, 0.0, 640.0, 480.0), (64.0, 48.0, 320.0, 240.0), (600.0, 10.0, 100.0, 100.0)):
 	check('Eng_SetViewRect' + fmt(r), lambda r=r: smlog(lambda r=r: SDTest.Call('Eng_SetViewRect', 'bffff', r[0], r[1], r[2],
 		r[3])[0]))
 check('Eng_ResetViewRect', lambda: smlog(lambda: SDTest.Call('Eng_ResetViewRect', 'b')[0]))
 smpoke(sym('g_Viewport'), smvp[0])
-smpoke(sym('g_DeviceStr') + 0x100, smvp[1])
+smpoke(sym('g_MatProj'), smvp[1])
 smpoke(sym('g_Frustum'), smvp[2])
 smpoke(sym('g_ViewportFull'), smvp[3])
 
@@ -190,7 +190,7 @@ smpoke(sym('g_ViewportFull'), smvp[3])
 def smsetup():
 	return (SDTest.Peek('g_ShowCollision', 'i'), SDTest.Peek('g_WireFrame', 'i'), SDTest.Peek('g_LightmapMode2', 'i'), SDTest.Peek('g_LightmapOff', 'i'),
 		SDTest.Peek('g_ModelosOn', 'b'), SDTest.Peek('g_UsarVB', 'b'), SDTest.Peek('g_AmbientD3D', 'i'), smfl(symva('g_CollisionEpsilon'), 1))
-if SDTest.Peek('Engine_FrameSetup_4a8318', 'i') == 0 or SDTest.Peek('g_CallbacksOn', 'b') == 0:
+if SDTest.Peek(sym('g_EngCallbacks') + 0x4, 'i') == 0 or SDTest.Peek('g_CallbacksOn', 'b') == 0:
 	check('Engine_FrameSetup', lambda: (smlog(lambda: SDTest.Call('Engine_FrameSetup', 'b')[0]), smsetup()))
 
 # DebugUtils.cpp: the lines through the D3D log

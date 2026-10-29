@@ -307,7 +307,7 @@ en3restore((sym('g_ViewportW'), sym('g_ViewportH')), en3vp)
 # ---- efec_malla.cpp ----
 en3em = (sym('g_EfecMallaOn'), sym('g_EfecMallaStencil'), sym('g_NumPantallas'), sym('g_NumModelos'))
 en3ems = en3save(en3em)
-en3emp = en3ints(symva('g_Pantallas'), 20)
+en3emp = en3ints(symva('g_Pantallas'), 10) + en3ints(symva('g_Modelos'), 10)
 en3emk = en3ri(symva('g_TecladoKeys') + 0x1c)
 en3emk2 = en3ri(symva('g_TecladoKeys') + 0x30)
 en3gs(sym('g_NumPantallas'), 0)
@@ -334,8 +334,9 @@ en3gs(sym('g_EfecMallaStencil'), 1)
 check('EfecMalla_Render stencil', lambda: (en3log(lambda: SDTest.Call('EfecMalla_Render', 'v')), en3emstate()))
 en3wi(symva('g_TecladoKeys') + 0x1c, en3emk)
 en3wi(symva('g_TecladoKeys') + 0x30, en3emk2)
-for en3i in range(20):
+for en3i in range(10):
 	en3gs(sym('g_Pantallas') + 4 * en3i, en3emp[en3i])
+	en3gs(sym('g_Modelos') + 4 * en3i, en3emp[10 + en3i])
 en3restore(en3em, en3ems)
 
 # ---- the window helpers ----
@@ -420,12 +421,12 @@ def en3gamma(g, b, r, s, gr, x2):
 	en3wf(sym('g_VideoScaleRGB') + 0x400000, (s,))
 	en3wf(sym('g_VideoScaleGreen') + 0x400000, (gr,))
 	en3gs(sym('g_Gamma2x'), x2)
-	return (en3log(lambda: SDTest.Call('RenderGamma_Begin', 'v')), en3gi(sym('g_GammaLast2x')), en3rf(symva('g_GammaLastRGB'), 5))
+	return (en3log(lambda: SDTest.Call('RenderGamma_Begin', 'v')), en3gi(sym('g_GammaLast2x')), en3rf(symva('g_GammaLastRGB'), 1) + en3rf(symva('g_GammaLastScale'), 1) + en3rf(symva('g_GammaLastRed'), 1) + en3rf(symva('g_GammaLastGreen'), 1) + en3rf(symva('g_GammaLastBlue'), 1))
 for en3ga in ((1.0, 1.0, 1.0, 1.0, 1.0, 0), (1.0, 1.0, 1.0, 1.0, 1.0, 0), (0.5, 1.0, 1.0, 1.0, 1.0, 0),
 		(2.2, 1.0, 1.0, 1.0, 1.0, 0), (1.3, 0.9, 1.1, 1.0, 0.8, 0), (1.0, 1.0, 1.0, 1.5, 1.0, 1),
 		(0.7, 0.2, 3.0, 0.8, 1.0, 1), (1.0, 1.0, 1.0, 0.0, 1.0, 0), (5.0, 1.0, 1.0, 1.0, 1.0, 0)):
 	check('RenderGamma_Begin' + fmt(en3ga), lambda a=en3ga: en3gamma(a[0], a[1], a[2], a[3], a[4], a[5]))
-check('RenderGamma_ReleaseD3D', lambda: (SDTest.Call('RenderGamma_ReleaseD3D', 'v'), en3gi(sym('g_GammaLast2x')), en3rf(symva('g_GammaLastRGB'), 5)))
+check('RenderGamma_ReleaseD3D', lambda: (SDTest.Call('RenderGamma_ReleaseD3D', 'v'), en3gi(sym('g_GammaLast2x')), en3rf(symva('g_GammaLastRGB'), 1) + en3rf(symva('g_GammaLastScale'), 1) + en3rf(symva('g_GammaLastRed'), 1) + en3rf(symva('g_GammaLastGreen'), 1) + en3rf(symva('g_GammaLastBlue'), 1)))
 en3restore(en3gm, en3gms)
 en3restore(en3gmc, en3gmcs)
 en3wf(symva('g_GammaLastRGB'), (-1.0,))

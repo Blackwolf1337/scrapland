@@ -130,9 +130,9 @@ if ivhCar and ivhCar2 and ivhGroup:
 	for ivhEv in (0, 2, 11, 12, 13):
 		check('cAIVehicle_GetStateFor(%d)' % ivhEv, lambda e=ivhEv: SDTest.Call('cAIVehicle_GetStateFor', 'tiii', ivhAI, e)[0])
 	check('cAIVehicle_GetFadeDists', lambda: SDTest.Call('cAIVehicle_GetFadeDists', 'tviFF', ivhAI, (0.0,), (0.0,))[1:])
-	for ivhRva, ivhWant in ((sym('cAIVehicle_GetParams1'), ivhAI + 0x1b4), (sym('cAIVehicle_GetParamsInit'), ivhAI + 0x1e0), (sym('cAIVehicle_GetParams2'), ivhCtrl + 0x4c),
-			(sym('cAIVehicle_GetParams2Init'), ivhCtrl + 0x64), (sym('cAIVehicle_GetParams3'), ivhShoot + 0x12c), (sym('cAIVehicle_GetParams3Init'), ivhShoot + 0x148)):
-		check('cAIVehicle_GetParams %x' % ivhRva, lambda r=ivhRva, w=ivhWant: SDTest.Call(r, 'tii', ivhAI)[0] == w)
+	for ivhRva, ivhWant in (('cAIVehicle_GetParams1', ivhAI + 0x1b4), ('cAIVehicle_GetParamsInit', ivhAI + 0x1e0), ('cAIVehicle_GetParams2', ivhCtrl + 0x4c),
+			('cAIVehicle_GetParams2Init', ivhCtrl + 0x64), ('cAIVehicle_GetParams3', ivhShoot + 0x12c), ('cAIVehicle_GetParams3Init', ivhShoot + 0x148)):
+		check('cAIVehicle_GetParams %s' % ivhRva, lambda r=ivhRva, w=ivhWant: SDTest.Call(r, 'tii', ivhAI)[0] == w)
 	check('cAIVehicle_GetStateName', lambda: SDTest.Call('cAIVehicle_GetStateName', 'tvib', ivhAI, 'x')[1])
 	check('cAIVehicle_GetInternStateName', lambda: SDTest.Call('cAIVehicle_GetInternStateName', 'tvib', ivhAI, 'x')[1])
 	check('cAIVehicle_ControlFlag', lambda: (SDTest.Call('cAIVehicle_ControlFlag', 'tbi', ivhAI)[0],
