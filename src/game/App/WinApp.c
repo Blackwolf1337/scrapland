@@ -983,7 +983,7 @@ int ConsoleWin_SaveOutput(void) {
 		void *cookie;
 		uint32_t error;
 		void *callback;
-	} is;
+	} es;
 
 	memset(ofn, 0, sizeof(ofn));
 	memcpy(name, "*.rtf", 6);
@@ -1001,10 +1001,10 @@ int ConsoleWin_SaveOutput(void) {
 	if (f == (void *)-1) {
 		return 0;
 	}
-	is.cookie = f;
-	is.error = 0;
-	is.callback = CONWIN_STREAMOUT;
-	exe_SendMessageA(g_ConRich, EM_STREAMOUT, 2, (intptr_t)&is);
+	es.cookie = f;
+	es.error = 0;
+	es.callback = CONWIN_STREAMOUT;
+	exe_SendMessageA(g_ConRich, EM_STREAMOUT, 2, (intptr_t)&es);
 	exe_CloseHandle(f);
 	return 1;
 }

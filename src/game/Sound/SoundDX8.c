@@ -453,7 +453,7 @@ void __thiscall CSoundXBox_DebugDraw(CSoundXBox *self, int xi, int yi) {
 				CFont_PrintfColorShadow(f, f->x, y, col, "  [%s]", FSOUND_Sample_GetName(smp));
 			}
 			if (smp) {
-				int first = FSOUND_GetPriority(i);
+				int pri = FSOUND_GetPriority(i);
 				int vol = FSOUND_GetVolume(i);
 				int pan = FSOUND_GetPan(i);
 				int freq = FSOUND_GetFrequency(i);
@@ -462,7 +462,7 @@ void __thiscall CSoundXBox_DebugDraw(CSoundXBox *self, int xi, int yi) {
 				FSOUND_GetReserved(i);
 				uint32_t col = on ? 0xff00 : 0x8000;
 				CFont_PrintfColorShadow(f, f->x, y, col, "  %s", loop == FSOUND_LOOP_OFF ? " " : "L");
-				CFont_PrintfColorShadow(f, f->x, y, col, "  vpf: %3d %3d %5d %3d", vol, pan, freq, first);
+				CFont_PrintfColorShadow(f, f->x, y, col, "  vpf: %3d %3d %5d %3d", vol, pan, freq, pri);
 			} else {
 				CFont_PrintfColorShadow(f, f->x, y, 0x8000, "  ---");
 			}

@@ -13,13 +13,13 @@
  * SDTest.PeekSpan(name, off, n) and PokeSpan(name, off, value, n): n bytes after a name in the original's layout
  * (several neighbouring globals at once, separate C objects in ScrapC.exe).
  *
- * SDTest.Call(rva, next, args...): next is the return type and then one character per argument.
+ * SDTest.Call(rva, sig, args...): sig is the return type and then one character per argument.
  *   return: v nothing, i int, b byte (al), s char * (None for NULL), f float (st0)
  *   args:   i int, f float, s string, z string or None, b string copied into a buffer of BUF_SIZE bytes (rest 0)
  *           that comes back, p int and D double that are passed by pointer and come back, F a tuple of numbers
  *           passed as an array of floats (up to MAX_FLOATS) that comes back as a tuple
  * The result is a tuple: the return value, then the b, p, D and F arguments in their order. cdecl functions with up to
- * MAX_ARGS arguments of 4 bytes; "t" before next calls a thiscall method, the first argument is this (up to
+ * MAX_ARGS arguments of 4 bytes; "t" before sig calls a thiscall method, the first argument is this (up to
  * MAX_THIS_ARGS more).
  *
  * SDTest.Peek(rva, kind) reads a global of the exe: i int, b byte, d double, s the characters at rva, p the string a
@@ -116,7 +116,7 @@ static float Call_ThisFloat(void *fn, const uint32_t *a, int n) {
 	CALL_THIS(thisf, fn, a, n)
 }
 
-/* the return value as the first character of next says, NULL for None */
+/* the return value as the first character of sig says, NULL for None */
 static PyObject *SDTest_Result(char kind, uint32_t r) {
 	switch (kind) {
 	case 'i':
@@ -367,17 +367,17 @@ static size_t outLen;
 static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 	(void)self;
 	int rva;
-	const char *next;
+	const char *sig;
 	uint32_t a[MAX_ARGS] = { 0 };
 	char outKind[MAX_OUT];
 	int nOut = 0;
 
-	if (!TestMod_ParseRva(PyTuple_GetItem(args, 0), &rva) || !PyArg_Parse(PyTuple_GetItem(args, 1), "s", &next)) {
+	if (!TestMod_ParseRva(PyTuple_GetItem(args, 0), &rva) || !PyArg_Parse(PyTuple_GetItem(args, 1), "s", &sig)) {
 		return NULL;
 	}
-	int thiscall = next[0] == 't';
-	next += thiscall;
-	int n = (int)strlen(next) - 1;
+	int thiscall = sig[0] == 't';
+	sig += thiscall;
+	int n = (int)strlen(sig) - 1;
 	if (n < 0 || n > MAX_ARGS || (thiscall && (n < 1 || n > MAX_THIS_ARGS + 1))) {
 		return NULL;
 	}
@@ -390,7 +390,7 @@ static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 		if (!o) {
 			return NULL;
 		}
-		switch (next[1 + i]) {
+		switch (sig[1 + i]) {
 		case 'i':
 			if (!PyArg_Parse(o, "i", &v)) {
 				return NULL;
@@ -405,7 +405,7 @@ static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 			break;
 		case 's':
 		case 'z':
-			if (!PyArg_Parse(o, next[1 + i] == 's' ? "s" : "z", &s)) {
+			if (!PyArg_Parse(o, sig[1 + i] == 's' ? "s" : "z", &s)) {
 				return NULL;
 			}
 			a[i] = (uint32_t)(uintptr_t)s;
@@ -456,16 +456,16 @@ static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 
 	void *fn = Game_Ptr((uint32_t)rva);
 	PyObject *ret;
-	if (thiscall && next[0] == 'f') {
+	if (thiscall && sig[0] == 'f') {
 		ret = PyFloat_FromDouble(Call_ThisFloat(fn, a, n));
 	} else if (thiscall) {
-		ret = SDTest_Result(next[0], Call_This(fn, a, n));
-	} else if (next[0] == 'f') {
+		ret = SDTest_Result(sig[0], Call_This(fn, a, n));
+	} else if (sig[0] == 'f') {
 		float f = ((call_float_t)fn)(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11],
 			a[12], a[13], a[14], a[15]);
 		ret = PyFloat_FromDouble(f);
 	} else {
-		ret = SDTest_Result(next[0], ((call_int_t)fn)(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10],
+		ret = SDTest_Result(sig[0], ((call_int_t)fn)(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10],
 			a[11], a[12], a[13], a[14], a[15]));
 	}
 	if (!ret) {

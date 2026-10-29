@@ -62,6 +62,10 @@ def pytokens(text):
 WORD = re.compile(r'[A-Za-z_][A-Za-z0-9_]*')
 
 _RECORD = ('struct', 'union', 'enum')
+# the keywords before a ( in the head of a function, which are not its name (void (*f(int))(int))
+_NOT_NAMES = {'__attribute__', '__declspec', 'typeof', '__typeof__', 'sizeof', 'void', 'int', 'char', 'short', 'long',
+	'float', 'double', 'unsigned', 'signed', 'const', 'static', 'inline', 'extern', 'volatile', 'struct', 'union',
+	'enum', 'return'}
 
 
 class Tok(tuple):
@@ -86,7 +90,7 @@ class Scopes:
 		self.records = []	# sets of the member names of a struct or union
 		self.members = set()	# names used as members anywhere
 		self.params = set()	# parameter names of the prototypes at file scope
-		self.functions = []	# (name, start offset, end offset, names) of each function body
+		self.functions = []	# (name, start offset, end offset, names) of each function and prototype
 		self.member_offs = set()	# the offsets of the tokens that are members
 		toks = []
 		self._offs = []
@@ -132,6 +136,10 @@ class Scopes:
 				continue
 			if kind == 'ws' and s == ';':
 				self._decl(stmt)
+				if stmt and ('ws', '(') in stmt:
+					# a prototype: a span of its own for the local overrides of its parameter names
+					self.functions.append((self._func_ident(stmt), self._offs[stmt_start], self._offs[i],
+						{t[1] for t in stmt if t[0] == 'id'}))
 				stmt = []
 				i += 1
 				continue
@@ -168,14 +176,13 @@ class Scopes:
 
 	@staticmethod
 	def _func_ident(stmt):
-		"""the name of a function from its head: the last name before the first ( at depth 0"""
-		name = None
-		for t in stmt:
-			if t == ('ws', '('):
-				break
-			if t[0] == 'id':
-				name = t[1]
-		return name
+		"""the name of a function from its head: the first name followed by ( (void (*crt_signal(int sig, ...)))"""
+		sig = [t for t in stmt if not (t[0] == 'ws' and t[1].strip() == '')]
+		for k in range(len(sig) - 1):
+			if sig[k][0] == 'id' and sig[k + 1] == ('ws', '(') and \
+					sig[k][1] not in _NOT_NAMES:
+				return sig[k][1]
+		return None
 
 	def _func_name(self, stmt):
 		names = set()

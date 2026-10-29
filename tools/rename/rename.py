@@ -282,7 +282,7 @@ class Plan:
 		# the short forms of the comments and docs (Engine/Escena.c, Escena.c), where no other file has them
 		if not hasattr(self, '_suffixes'):
 			self._suffixes = collections.Counter()
-			for f in self.files:
+			for f in set(self.files) | set(self.paths):
 				parts = f.split('/')
 				for k in (1, 2):
 					if len(parts) > k:
@@ -497,6 +497,23 @@ class Plan:
 			return re.sub(r'[A-Za-z_][A-Za-z0-9_]*', lambda m: self.rename_ident_in_text(m.group(0), True), w)
 		return re.sub(r'[A-Za-z0-9_./\\:-]+', word, body)
 
+	def rename_docs(self, text):
+		"""a doc: the old names and paths of all runs (names.tsv, paths.tsv), the docs may name what an earlier run
+		renamed"""
+		names, paths = self.names, self.paths
+		self.names = dict(load_table(NAMES), **names)
+		self.paths = dict(load_table(PATHS), **paths)
+		for k in ('_pms', '_suffixes'):
+			if hasattr(self, k):
+				delattr(self, k)
+		try:
+			return self.rename_text(text)
+		finally:
+			self.names, self.paths = names, paths
+			for k in ('_pms', '_suffixes'):
+				if hasattr(self, k):
+					delattr(self, k)
+
 	def rename_tsv(self, text, src_col, cols):
 		lines = text.split('\n')
 		for i in range(1, len(lines)):
@@ -557,7 +574,7 @@ class Plan:
 				n = self.rename_datamap(t)
 			elif f.endswith('.md'):
 				t = read(p)
-				n = self.rename_text(t)
+				n = self.rename_docs(t)
 			elif f.endswith('CMakeLists.txt') or f.endswith('.sh'):
 				t = read(p)
 				n = self.rename_cmake(t)

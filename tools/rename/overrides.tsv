@@ -332,3 +332,11 @@ compound	csuelo	c suelo	the class prefix glued to the name (CESCENA_VFTABLE)
 compound	leem	lee m	the class prefix glued to the name (CESCENA_VFTABLE)
 name	g_RenderSoloB38	g_RenderOnlyB38	solo is only here
 name	BspTri_Media	BspTri_Average	media is the average here
+# ---- English abbreviations of the game code (the C written in English) ----
+local	sig	sig	src/core/testmod.c	SDTest_Call	the signature of the call
+local	sig	sig	src/standalone/crt.c	crt_signal	the signal number
+local	sig	sig	include/scrap/crt.h	crt_signal	the signal number
+local	pri	pri	src/game/Sound/SoundDX8.c	CSoundXBox_DebugDraw	the priority of a channel
+local	pri	pri	include/scrap/fmod.h	FSOUND_Sample_GetDefaults	the priority of a sample
+local	es	es	src/game/App/WinApp.c	ConsoleWin_SaveOutput	the EDITSTREAM
+prose	sig		the signature of SDTest.Call
