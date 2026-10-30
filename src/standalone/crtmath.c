@@ -3,9 +3,10 @@
  * Microsoft's ucrtbase.dll, which exports the cdecl functions, the SSE2 entries (_libm_sse2_*_precise, argument and result
  * in xmm0) and the _CI intrinsics (x87 stack). Crt_MathInit loads ucrtbase_ms.dll from the exe folder when it is
  * there (tools/test/getucrt.sh puts it there for the Wine tests: Wine's own ucrtbase differs in the last bits),
- * otherwise the system ucrtbase.dll, which on Windows is Microsoft's and the one this exe links. Each entry is a jmp
- * through a slot holding the export, so the registers of the SSE2 and _CI conventions pass through unchanged. The C
- * calls them by these labels (src/core/libm.c, the crt_* math of src/imports.inc).
+ * otherwise the system ucrtbase.dll, which on Windows is Microsoft's and the one this exe links. Only the math comes
+ * from it; the number formatting and parsing are C of their own (src/standalone/crtfmt.c, crtscan.c). Each entry is
+ * a jmp through a slot holding the export, so the registers of the SSE2 and _CI conventions pass through unchanged.
+ * The C calls them by these labels (src/core/libm.c, the crt_* math of src/imports.inc).
  *
  * Domain and range errors: the runtime calls the user matherr (_umatherr, rva 0x35657e in the original) and sets
  * errno when it returns 0 (_set_errno_from_matherr, rva 0x35654f: _DOMAIN EDOM, _SING and _OVERFLOW ERANGE). The
@@ -18,8 +19,6 @@
  */
 #include <errno.h>
 #include <math.h>
-#include <stdarg.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <windows.h>
 
@@ -78,31 +77,6 @@ static const struct {
 #undef CRT_EXPORT
 };
 
-/*
- * The number formatting and parsing of the same ucrtbase (the printf and scanf cores, strtod, atof) and its
- * strerror texts, which crt.c calls for the pure string functions; the FILE functions and the locale stay with the
- * UCRT this exe links. Under Wine its own printf rounds denormals and its strtod reads them wrong, takes "1d5" and
- * not "nan(ind)", and its strerror has other texts; the Python of the original formatted with its static UCRT.
- * NULL until Crt_MathInit (crt.c then takes the linked UCRT).
- */
-int (*crt_ms_vsprintf)(uint64_t options, char *buf, size_t count, const char *fmt, void *locale, va_list ap);
-int (*crt_ms_vsscanf)(uint64_t options, const char *buf, size_t count, const char *fmt, void *locale, va_list ap);
-double (*crt_ms_strtod)(const char *s, char **end);
-double (*crt_ms_atof)(const char *s);
-char *(*crt_ms_strerror)(int code);
-int *(*crt_ms_errno)(void);
-
-static const struct {
-	const char *name;
-	void **slot;
-} crt_string_exports[] = {
-	{ "__stdio_common_vsprintf", (void **)&crt_ms_vsprintf },
-	{ "__stdio_common_vsscanf", (void **)&crt_ms_vsscanf },
-	{ "strtod", (void **)&crt_ms_strtod },
-	{ "atof", (void **)&crt_ms_atof },
-	{ "strerror", (void **)&crt_ms_strerror },
-};
-
 /* struct _exception of the runtime */
 typedef struct {
 	int type;
@@ -154,19 +128,9 @@ const char *Crt_MathInit(const char *dir) {
 		return "__setusermatherr, _set_SSE2_enable or _errno";
 	}
 	crt_math_apart = err() != crt_errno();
-	if (crt_math_apart) {
-		crt_ms_errno = err;
-	}
-	for (size_t i = 0; i < sizeof(crt_string_exports) / sizeof(crt_string_exports[0]); i++) {
-		void *fn = (void *)GetProcAddress(m, crt_string_exports[i].name);
-		if (!fn) {
-			return crt_string_exports[i].name;
-		}
-		*crt_string_exports[i].slot = fn;
-	}
 	setmatherr(Crt_MathErrMs);
 	/* the CRT initializer at rva 0x35fce1: the SSE2 code of the math functions when the CPU has SSE2 */
 	sse2(IsProcessorFeaturePresent(PF_XMMI64_INSTRUCTIONS_AVAILABLE));
-	Com_Printf("crt: the MSVC math and number formatting from %s%s\n", path, crt_math_apart ? " (its errno is set in this exe too)" : "");
+	Com_Printf("crt: the MSVC math from %s%s\n", path, crt_math_apart ? " (its errno is set in this exe too)" : "");
 	return NULL;
 }

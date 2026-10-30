@@ -7,9 +7,10 @@
  * (_alloca_probe, _EH_prolog, _setjmp3 ...) went with the room in stage 3c2.
  *
  * Only the exact math functions come from this UCRT; the others are Microsoft's ucrtbase (src/standalone/crtmath.c),
- * Wine's libm differs in the last bits. So are the printf and scanf cores, strtod, atof and strerror (Wine's format
- * and read denormals, NaNs and some exponents otherwise, and have other error texts). The compiler support (the vector constructor and
- * destructor iterators, the thread-safe statics, atexit and the startup) is src/standalone/crtinit.c.
+ * Wine's libm differs in the last bits. The printf and scanf cores, strtod, atof and strerror are C of their own
+ * (src/standalone/crtfmt.c and crtscan.c) that gives what the original's static UCRT gives; Wine's format and read
+ * denormals, NaNs and some exponents otherwise and has other error texts. The compiler support (the vector
+ * constructor and destructor iterators, the thread-safe statics, atexit and the startup) is src/standalone/crtinit.c.
  */
 #include <direct.h>
 #include <errno.h>
@@ -30,6 +31,7 @@
 #include <time.h>
 #include <windows.h>
 
+#include "crtnum.h"
 #include "scrap/crt.h"
 #include "scrap/game.h"
 
@@ -134,73 +136,27 @@ int crt_fileno(void *f) {
 }
 
 /*
- * Microsoft's number formatting and parsing (src/standalone/crtmath.c), NULL until Crt_MathInit. A locale object
- * would be one of the linked UCRT, so calls with one stay there. crt_ms_errno is set when that ucrtbase keeps an
- * errno of its own.
+ * The number formatting and parsing are C of their own (src/standalone/crtfmt.c and crtscan.c), the same as the
+ * original's static UCRT. A locale object would be one of the linked UCRT, so calls with one stay there.
  */
-extern int (*crt_ms_vsprintf)(uint64_t options, char *buf, size_t count, const char *fmt, void *locale, va_list ap);
-extern int (*crt_ms_vsscanf)(uint64_t options, const char *buf, size_t count, const char *fmt, void *locale, va_list ap);
-extern double (*crt_ms_strtod)(const char *s, char **end);
-extern double (*crt_ms_atof)(const char *s);
-extern char *(*crt_ms_strerror)(int code);
-extern int *(*crt_ms_errno)(void);
-
-/* the errno that Microsoft's parsing sets (it only sets one on an error), into the errno of this exe */
-static void Crt_MsErrnoClear(void) {
-	if (crt_ms_errno) {
-		*crt_ms_errno() = 0;
-	}
-}
-
-static double Crt_MsErrnoCopy(double r) {
-	if (crt_ms_errno && *crt_ms_errno()) {
-		*crt_errno() = *crt_ms_errno();
-	}
-	return r;
-}
-
 int crt_stdio_common_vsprintf(uint64_t options, char *buf, size_t count, const char *fmt, void *locale, va_list ap) {
-	if (crt_ms_vsprintf && !locale) {
-		return crt_ms_vsprintf(options, buf, count, fmt, NULL, ap);
+	if (!locale) {
+		return Crt_VFormat(options, buf, count, fmt, ap);
 	}
 	return __stdio_common_vsprintf(options, buf, count, fmt, locale, ap);
 }
 
-/* formatted by Microsoft's printf into a buffer, written to the FILE of the linked UCRT */
+/* the text goes to the FILE of the linked UCRT */
 int crt_stdio_common_vfprintf(uint64_t options, void *f, const char *fmt, void *locale, va_list ap) {
-	if (!crt_ms_vsprintf || locale) {
-		return __stdio_common_vfprintf(options, f, fmt, locale, ap);
+	if (!locale) {
+		return Crt_VFormatFile(options, f, fmt, ap);
 	}
-	char small[1024];
-	char *buf = small;
-	va_list aq;
-	/* _CRT_INTERNAL_PRINTF_STANDARD_SNPRINTF_BEHAVIOR (2): the full length when the text does not fit */
-	uint64_t opt = (options & ~(uint64_t)1) | 2;
-
-	va_copy(aq, ap);
-	int n = crt_ms_vsprintf(opt, small, sizeof(small), fmt, NULL, aq);
-	va_end(aq);
-	if (n >= (int)sizeof(small)) {
-		buf = malloc((size_t)n + 1);
-		if (!buf) {
-			return -1;
-		}
-		va_copy(aq, ap);
-		n = crt_ms_vsprintf(opt, buf, (size_t)n + 1, fmt, NULL, aq);
-		va_end(aq);
-	}
-	if (n > 0 && fwrite(buf, 1, (size_t)n, f) != (size_t)n) {
-		n = -1;
-	}
-	if (buf != small) {
-		free(buf);
-	}
-	return n;
+	return __stdio_common_vfprintf(options, f, fmt, locale, ap);
 }
 
 int crt_stdio_common_vsscanf(uint64_t options, const char *buf, size_t count, const char *fmt, void *locale, va_list ap) {
-	if (crt_ms_vsscanf && !locale) {
-		return crt_ms_vsscanf(options, buf, count, fmt, NULL, ap);
+	if (!locale) {
+		return Crt_VScan(options, buf, count, fmt, ap);
 	}
 	return __stdio_common_vsscanf(options, buf, count, fmt, locale, ap);
 }
@@ -393,8 +349,13 @@ size_t crt_strxfrm(char *dst, const char *src, size_t n) {
 	return strxfrm(dst, src, n);
 }
 
+/* the text in a buffer of the thread, which a caller may change, as the runtime keeps it */
 char *crt_strerror(int code) {
-	return crt_ms_strerror ? crt_ms_strerror(code) : strerror(code);
+	static thread_local char buf[134];
+	const char *text = Crt_ErrorText(code);
+
+	memcpy(buf, text, strlen(text) + 1);
+	return buf;
 }
 
 int crt_atoi(const char *s) {
@@ -402,19 +363,11 @@ int crt_atoi(const char *s) {
 }
 
 double crt_atof(const char *s) {
-	if (!crt_ms_atof) {
-		return atof(s);
-	}
-	Crt_MsErrnoClear();
-	return Crt_MsErrnoCopy(crt_ms_atof(s));
+	return Crt_Atof(s);
 }
 
 double crt_strtod(const char *s, char **end) {
-	if (!crt_ms_strtod) {
-		return strtod(s, end);
-	}
-	Crt_MsErrnoClear();
-	return Crt_MsErrnoCopy(crt_ms_strtod(s, end));
+	return Crt_Strtod(s, end);
 }
 
 char *crt_ltoa(long v, char *buf, int radix) {
