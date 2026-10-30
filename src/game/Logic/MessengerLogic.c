@@ -308,9 +308,7 @@ void __thiscall cMessengers_SetStateAll(cMessengers *self, int state, cEntity *e
 	}
 }
 
-void *__thiscall cMessengerLocalLogic_ctor(void *mem, cEntity *parent) {
-	cGenCharLocalLogic *self = mem;
-
+cMessengerLocalLogic *__thiscall cMessengerLocalLogic_ctor(cMessengerLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	MSG_VT(self) = CMESSENGERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_SetState(self, GENCHAR_RELAX, NULL);
@@ -318,7 +316,7 @@ void *__thiscall cMessengerLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cGenCharLocalLogic *__thiscall cMessengerLocalLogic_Delete(cGenCharLocalLogic *self, byte flags) {
+cMessengerLocalLogic *__thiscall cMessengerLocalLogic_Delete(cMessengerLocalLogic *self, byte flags) {
 	MSG_VT(self) = CMESSENGERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -328,13 +326,13 @@ cGenCharLocalLogic *__thiscall cMessengerLocalLogic_Delete(cGenCharLocalLogic *s
 }
 
 /* vf28 and vf27: the same walk in alert and relaxed */
-void __thiscall cMessengerLocalLogic_ToAlert(cGenCharLocalLogic *self, cAIChar *ai) {
+void __thiscall cMessengerLocalLogic_ToAlert(cMessengerLocalLogic *self, cAIChar *ai) {
 	(void)self;
 	ai->vftable->SetState(ai, 1, 1.0, 0);
 }
 
 /* vf17: team 3, 0 while it attacks a player */
-void __thiscall cMessengerLocalLogic_Update(cGenCharLocalLogic *self, float dt) {
+void __thiscall cMessengerLocalLogic_Update(cMessengerLocalLogic *self, float dt) {
 	cGenCharLocalLogic_Update(self, dt);
 	Entity_Team(self->base.parent) = 3;
 	if (self->base.state == GENCHAR_ATTACK) {
@@ -347,7 +345,7 @@ void __thiscall cMessengerLocalLogic_Update(cGenCharLocalLogic *self, float dt) 
 
 /* vf34: to the node DC_DataPack of e when it has one (MessengerGotoSpeed, 0.25 in the easy single game), else the
  * walk of the GenChars */
-void __thiscall cMessengerLocalLogic_GoTo(cGenCharLocalLogic *self, cAIChar *ai, cEntity *e) {
+void __thiscall cMessengerLocalLogic_GoTo(cMessengerLocalLogic *self, cAIChar *ai, cEntity *e) {
 	vec3_t t1, t2, d, dir;
 	matrix_t m;
 

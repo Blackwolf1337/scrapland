@@ -3,8 +3,8 @@
  */
 #include "scrap/particlesystem.h"
 
-void __thiscall CObjBase3D_SetNode(IObject3D *self, CNode3D *node) {
-	ObjRef **slot = (ObjRef **)((byte *)self + 8);
+void __thiscall CObjBase3D_SetNode(CObjBase3D *self, CNode3D *node) {
+	ObjRef **slot = (ObjRef **)&self->node;
 
 	if (node) {
 		node->Refs++;

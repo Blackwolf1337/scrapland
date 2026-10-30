@@ -43,7 +43,7 @@ void __fastcall cCTFEnemies_dtor(cCTFEnemies *self) {
 	}
 }
 
-cLocalLogic *__thiscall cCTFEnemiesLocalLogic_Delete(cLocalLogic *self, byte flags) {
+cCTFEnemiesLocalLogic *__thiscall cCTFEnemiesLocalLogic_Delete(cCTFEnemiesLocalLogic *self, byte flags) {
 	self->vftable = CCTFENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -195,7 +195,7 @@ cEntityListData *__fastcall cCTFEnemies_Init(cCTFEnemies *self) {
 }
 
 /* "IsLeader": 1 if the ship is the leader; set 1 makes it the leader, 0 of the leader none */
-byte __thiscall cCTFEnemiesLocalLogic_VarI(cLocalLogic *self, const char *name, int *i, byte set) {
+byte __thiscall cCTFEnemiesLocalLogic_VarI(cCTFEnemiesLocalLogic *self, const char *name, int *i, byte set) {
 	if (strcmp(name, "IsLeader")) {
 		return 0;
 	}

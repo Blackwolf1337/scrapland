@@ -1163,7 +1163,7 @@ float g_InactivityTimer SD_BSS(0x44c614);
 exe_IDirectInput8 *g_DInput SD_BSS(0x44c618);
 uint32_t DInput_Create_44c61c SD_BSS(0x44c61c);
 exe_IDirectInputDevice8 *g_KeyboardDev SD_BSS(0x44c620);
-cAbstractIDevice g_Keyboard SD_BSS(0x44c624);
+cPcKeyboard g_Keyboard SD_BSS(0x44c624);
 uint32_t Fini_cPcKeyboard_Keyboard_44c634 SD_BSS(0x44c634);
 char g_KeyState[256] SD_BSS(0x44c638);
 byte g_KeyObjInfo[316] SD_BSS(0x44c738);

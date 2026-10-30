@@ -70,7 +70,7 @@ void __fastcall cShipGroup_dtor(cShipGroup *self) {
 	}
 }
 
-cLocalLogic *__thiscall cScrapyardLocalLogic_Delete(cLocalLogic *self, byte flags) {
+cScrapyardLocalLogic *__thiscall cScrapyardLocalLogic_Delete(cScrapyardLocalLogic *self, byte flags) {
 	self->vftable = CSCRAPYARDLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -271,7 +271,7 @@ void __thiscall cShipGroup_Update(cShipGroup *self, float dt) {
 }
 
 /* vf06: "LairPos", the lair of the ship */
-byte __thiscall cScrapyardLocalLogic_VarV(cLocalLogic *self, const char *name, double *x, double *y, double *z,
+byte __thiscall cScrapyardLocalLogic_VarV(cScrapyardLocalLogic *self, const char *name, double *x, double *y, double *z,
 	byte set) {
 	if (strcmp(name, "LairPos")) {
 		return cLocalLogic_VarVNone(self, name, x, y, z, set);

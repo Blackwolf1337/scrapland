@@ -82,6 +82,26 @@ typedef struct cGVarListVtbl {
 #define GVar_ListObj(v) ((void *)((byte *)(v) - 4))
 #define GVar_ListVtbl(v) (*(const cGVarListVtbl **)GVar_ListObj(v))
 
+/* the class cGvar, 0x10 bytes: the part of cGVar before the value (the value and the default are of the typed
+ * variables, classes without RTTI) */
+typedef struct cGvar {
+	struct cGVar *next;		/* 0x00 */
+	char *name;			/* 0x04 */
+	char *description;		/* 0x08 */
+	byte flags;			/* 0x0c */
+	byte type;			/* 0x0d GVAR_FUNCTION */
+	byte pad_e[2];
+} cGvar;
+SD_SIZE(cGvar, 0x10);
+
+/* cFuncGvar, 0x14 bytes: the abstract base of the GVAR_FUNCTION variables (cFuncGvar::vftable rva 0x3bc2c8, Save and
+ * Load pure) */
+typedef struct cFuncGvar {
+	const cGVarListVtbl *vftable;	/* 0x00 */
+	cGvar gvar;			/* 0x04 g_GVars points here */
+} cFuncGvar;
+SD_SIZE(cFuncGvar, 0x14);
+
 /* the object of a GVAR_SCRIPT_FUNCTION variable (INIT_GVAR_FUNCTION of StaticInit.inc): its function in place of value
  * and def */
 typedef struct cGVarFunction {

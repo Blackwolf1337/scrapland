@@ -520,7 +520,7 @@ void Scene_Flares(CScene *scn) {
 		const char *op = CMaterial_GetMapName(mat, opac);
 		CFlare_SetTexture(f, CMaterial_GetMapName(mat, 0), op, src, dst, alpha);
 		f->pos = n->pos;
-		CObjBase3D_SetNode((IObject3D *)f, n);
+		CObjBase3D_SetNode((CObjBase3D *)f, n);
 		CNode3D_FreeObj3D(n);
 		CNode3D_SetObj3D(n, (IObject3D *)f);
 		int size;
@@ -1401,7 +1401,7 @@ void M3D_ReadPortal(CNode3D *node, byte anim) {
 	p = p ? CPortal_ctor(p) : NULL;
 	CNode3D_SetObj3D(node, (IObject3D *)p);
 	M3DNode *dat = M3D_NodeDat(node);
-	CObjBase3D_SetNode((IObject3D *)p, node);
+	CObjBase3D_SetNode((CObjBase3D *)p, node);
 	CHECK(M3D_ReadInt("Version:") == 1);
 	p->width = M3D_ReadFloat("Ancho:");
 	p->height = M3D_ReadFloat("Alto:");

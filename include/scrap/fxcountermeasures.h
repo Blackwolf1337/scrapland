@@ -28,6 +28,8 @@ SD_SIZE(cObjElementFXVtbl, 0x14);
 struct cObjElementFX {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
 };
+/* the base class of the effects, 4 bytes (cObjElement_dtor sets its vtable) */
+typedef cObjElementFX cObjElementAbstract;
 
 #define COBJELEMENTFXHOOK_VFTABLE GAME_VFTABLE(cObjElementFXHook_vftable, 0x3cbe14)
 #define COBJELEMENTFXEMI_VFTABLE GAME_VFTABLE(cObjElementFXEMI_vftable, 0x3cbe2c)

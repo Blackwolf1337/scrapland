@@ -18,10 +18,16 @@ struct cSlotController {
 	float time;				/* 0x04 left until the slot */
 	float interval;				/* 0x08 the interval running */
 	float minDiff;				/* 0x0c the fixed interval, the minimum of cRndSlotController */
-	float maxDiff;				/* 0x10 cRndSlotController only */
 };
+SD_SIZE(cSlotController, 0x10);
 /* new allocates 0x10 bytes for a cSlotController, 0x14 for a cRndSlotController */
 #define CSLOTCONTROLLER_SIZE 0x10
+
+typedef struct cRndSlotController {
+	cSlotController base;			/* 0x00 */
+	float maxDiff;				/* 0x10 */
+} cRndSlotController;
+SD_SIZE(cRndSlotController, 0x14);
 
 cSlotController *__thiscall cSlotController_ctor(cSlotController *self, float interval);
 /* counts dt down; 1 when the slot came */

@@ -19,6 +19,13 @@
 #define COBJBASE3D_VFTABLE GAME_VFTABLE(CObjBase3D_vftable, 0x3ddc1c)
 #define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
 
+/* Engine/objbase3d.cpp, 0xc bytes: a 3D object on a node */
+typedef struct CObjBase3D {
+	IObject3D base;			/* 0x0 */
+	CNode3D *node;			/* 0x8 counted (CObjBase3D_SetNode) */
+} CObjBase3D;
+SD_SIZE(CObjBase3D, 0xc);
+
 /* CParticleSystem.params.flags */
 #define PARTICLESYSTEM_LOCALPOS 0x01		/* the positions follow the node */
 #define PARTICLESYSTEM_LOCAL 0x02		/* the vectors are not turned by the node */
@@ -47,6 +54,8 @@ typedef struct CParticle {
 SD_SIZE(CParticle, 0x34);
 typedef int(__thiscall *partType_t)(CParticle *self);
 #define PARTICLE_TYPE(p) (((partType_t)(p)->vftable[PARTICLE_VF_TYPE])(p))
+/* CParticle is the abstract CParticulaBase (vftable rva 0x3ddc3c, all pure); the static particle adds no members */
+typedef CParticle CParticleBase;
 typedef CParticle CParticleStatic;
 
 typedef struct CParticleActive {
@@ -168,12 +177,12 @@ SD_OFFSET(CParticleSystem, Particles, 0x11c);
 #define g_ParticleSystemBirthAdd GAME_GLOBAL_IN(int, GVar_R_ParticleRate, 16, 0x4b25b8)
 
 CParticle *__fastcall CParticleActive_ctor(CParticle *self);
-CParticle *__fastcall CParticleStatic_ctor(CParticle *self);
+CParticleStatic *__fastcall CParticleStatic_ctor(CParticleStatic *self);
 void __fastcall CParticleActive_dtor(CParticle *self);
 int __fastcall CParticleActive_Type(CParticle *self);
-int __fastcall CParticleStatic_Type(CParticle *self);
+int __fastcall CParticleStatic_Type(CParticleStatic *self);
 void __fastcall CParticleActive_Init(CParticle *self);
-void __fastcall CParticleStatic_Init(CParticle *self);
+void __fastcall CParticleStatic_Init(CParticleStatic *self);
 /* dt seconds on; at the end of its life the particle goes out */
 void __thiscall CParticleActive_Update(CParticleActive *self, CParticleSystem *sp, float dt, void *multiSpr);
 
@@ -181,11 +190,11 @@ CParticleSystem *__thiscall CParticleSystem_ctorCopy(CParticleSystem *self, cons
 CParticleSystem *__thiscall CParticleSystem_ctorParams(CParticleSystem *self, CNode3D *node, const char *type, float scale, float alpha,
 	const vec3_t *posList, CIniFile *ini);
 CParticleSystem *__fastcall CParticleSystem_ctor(CParticleSystem *self);
-void __fastcall CObjBase3D_dtor(IObject3D *self);
+void __fastcall CObjBase3D_dtor(CObjBase3D *self);
 void __fastcall ParticleSystemParams_dtor(ParticleSystemParams *self);
 void __fastcall CParticleSystem_dtor(CParticleSystem *self);
 ParticleSystemParams *__thiscall ParticleSystemParams_Assign(ParticleSystemParams *self, const ParticleSystemParams *src);
-IObject3D *__thiscall CObjBase3D_Delete(IObject3D *self, byte flags);
+CObjBase3D *__thiscall CObjBase3D_Delete(CObjBase3D *self, byte flags);
 CParticleSystem *__thiscall CParticleSystem_Delete(CParticleSystem *self, byte flags);
 /* the node, the type and its parameters (copied, or from ini, or from the particle ini) */
 void __thiscall CParticleSystem_Init(CParticleSystem *self, CNode3D *node, const char *type, const ParticleSystemParams *params,
@@ -228,7 +237,7 @@ void __thiscall CParticleSystem_Update(CParticleSystem *self, CRenderNode *r);
 
 /* other modules (src/imports.inc) */
 /* rva 0x2cad70: the node of a 3D object, counted */
-void __thiscall CObjBase3D_SetNode(IObject3D *self, CNode3D *node);
+void __thiscall CObjBase3D_SetNode(CObjBase3D *self, CNode3D *node);
 /* rva 0x26bff0 and 0x26bc30 (SueloPortal.cpp): the visibility of a sphere for the debug output */
 /* src/game/engine3d/Engine/RenderMeshD3D.c (RenderObjBase3D.cpp): the system (or flare) queued with the render node
  * r for the draw sorted by distance after the meshes; HRESULT */

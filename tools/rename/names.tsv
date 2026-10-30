@@ -372,6 +372,7 @@ CEntradaDInput_Release	CInputDInput_Release
 CEntradaDInput_WndProc	CInputDInput_WndProc
 CEntradaDInput_ctor	CInputDInput_ctor
 CEntradaDInput_vftable	CInputDInput_vftable
+CEntradaNula	CNullInput
 CEntradaNula_Delete	CNullInput_Delete
 CEntradaNula_Nothing	CNullInput_Nothing
 CEntradaNula_Nothing1	CNullInput_Nothing1
@@ -740,6 +741,7 @@ CModelo_Visibility	CModel_Visibility
 CModelo_ctor	CModel_ctor
 CModelo_dtor	CModel_dtor
 CModelo_vftable	CModel_vftable
+CMotorApp	CEngineApp
 CMotorApp_ConfirmDevice	CEngineApp_ConfirmDevice
 CMotorApp_DeleteDeviceObjects	CEngineApp_DeleteDeviceObjects
 CMotorApp_FinalCleanup	CEngineApp_FinalCleanup
@@ -839,6 +841,7 @@ CNodoR_dtor	CRenderNode_dtor
 CNodoRef	CNodeRef
 CNodo_LightColor	CNode_LightColor
 CObjBase3D_SetNodo	CObjBase3D_SetNode
+CObjNombre	CObjName
 CPARTICULAACTIVE_VFTABLE	CPARTICLEACTIVE_VFTABLE
 CPARTICULASTATIC_VFTABLE	CPARTICLESTATIC_VFTABLE
 CParticula	CParticle
@@ -849,6 +852,7 @@ CParticulaActive_Update	CParticleActive_Update
 CParticulaActive_ctor	CParticleActive_ctor
 CParticulaActive_dtor	CParticleActive_dtor
 CParticulaActive_vftable	CParticleActive_vftable
+CParticulaBase	CParticleBase
 CParticulaBase_vftable	CParticleBase_vftable
 CParticulaStatic	CParticleStatic
 CParticulaStatic_Init	CParticleStatic_Init
@@ -2052,6 +2056,7 @@ cLeePila	cReadStack
 cLineaDat	cDatLine
 cListaDin	cDynList
 cObjElementFXSistPart	cObjElementFXParticleSystem
+cObjElementFXSistPartDuDv	cObjElementFXParticleSystemDuDv
 cObjElementFXSistPartDuDv_Alive	cObjElementFXParticleSystemDuDv_Alive
 cObjElementFXSistPartDuDv_Attach	cObjElementFXParticleSystemDuDv_Attach
 cObjElementFXSistPartDuDv_Delete	cObjElementFXParticleSystemDuDv_Delete

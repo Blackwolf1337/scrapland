@@ -81,8 +81,8 @@ static int Mat_StrSign(const char *a, const char *b) {
 	return r < 0 ? -1 : r > 0;
 }
 
-void __fastcall CObjRef_dtor(int *Refs) {
-	CHECK(!*Refs);
+void __fastcall CObjRef_dtor(CObjRef *self) {
+	CHECK(!self->Refs);
 }
 
 CTextStatic *__fastcall CTextStatic_ctor(CTextStatic *self) {
@@ -1303,7 +1303,7 @@ void __thiscall CMaterial_dtor(CMaterial *self) {
 		self->sub = NULL;
 	}
 	CMatId_dtor(&self->id);
-	CObjRef_dtor(&self->Refs);
+	CObjRef_dtor((CObjRef *)&self->Refs);
 	if (self->Name) {
 		String_Set(&self->Name, NULL);
 	}

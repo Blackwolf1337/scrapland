@@ -49,7 +49,7 @@ static void CFlare_FreeGraphic(CFlare *self) {
 void __fastcall CFlare_dtor(CFlare *self) {
 	self->vftable = CFLARE_VFTABLE;
 	CFlare_FreeGraphic(self);
-	CObjBase3D_dtor((IObject3D *)self);
+	CObjBase3D_dtor((CObjBase3D *)self);
 }
 
 CFlare *__thiscall CFlare_Delete(CFlare *self, byte flags) {

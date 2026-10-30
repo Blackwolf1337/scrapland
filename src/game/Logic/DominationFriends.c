@@ -7,33 +7,33 @@
 #include "scrap/filepak.h"
 #include "scrap/hashtable.h"
 
-cDominationLogic *__fastcall cDominationFriendsLogic_ctor(cDominationLogic *self) {
-	cDominationLogic_ctor(self);
-	self->vftable = CDOMINATIONFRIENDSLOGIC_VFTABLE;
+cDominationFriendsLogic *__fastcall cDominationFriendsLogic_ctor(cDominationFriendsLogic *self) {
+	cDominationLogic_ctor(&self->base);
+	self->base.vftable = CDOMINATIONFRIENDSLOGIC_VFTABLE;
 	cDominationFriendsSide *s = operator_new(sizeof(*s));
 	if (s) {
-		s->owner = self;
+		s->owner = &self->base;
 		s->list = NULL;
 		s->timer = 0.0f;
-		self->side = (cDominationSide *)s;
+		self->side = s;
 		return self;
 	}
 	self->side = NULL;
 	return self;
 }
 
-void __fastcall cDominationFriendsLogic_dtor(cDominationLogic *self) {
-	self->vftable = CDOMINATIONFRIENDSLOGIC_VFTABLE;
+void __fastcall cDominationFriendsLogic_dtor(cDominationFriendsLogic *self) {
+	self->base.vftable = CDOMINATIONFRIENDSLOGIC_VFTABLE;
 	if (self->side) {
-		operator_delete_sized(self->side, sizeof(cDominationFriendsSide));
+		operator_delete_sized(self->side, sizeof(*self->side));
 	}
-	cDominationLogic_dtor(self);
+	cDominationLogic_dtor(&self->base);
 }
 
-cDominationLogic *__thiscall cDominationFriendsLogic_Delete(cDominationLogic *self, byte flags) {
+cDominationFriendsLogic *__thiscall cDominationFriendsLogic_Delete(cDominationFriendsLogic *self, byte flags) {
 	cDominationFriendsLogic_dtor(self);
 	if (flags & 1) {
-		operator_delete_sized(self, 0x14);
+		operator_delete_sized(self, sizeof(*self));
 	}
 	return self;
 }
@@ -58,22 +58,22 @@ void __fastcall cDominationFriendsSide_Think(cDominationFriendsSide *self) {
 }
 
 /* vf03 */
-cEntityListData *__thiscall cDominationFriendsLogic_GetList(cDominationLogic *self) {
+cEntityListData *__thiscall cDominationFriendsLogic_GetList(cDominationFriendsLogic *self) {
 	return self->side->list;
 }
 
 /* vf04 */
-int __thiscall cDominationFriendsLogic_GetTeam(cDominationLogic *self) {
+int __thiscall cDominationFriendsLogic_GetTeam(cDominationFriendsLogic *self) {
 	(void)self;
 	return 1;
 }
 
-cEntity *__thiscall cDominationFriendsLogic_FindShipOfZone(cDominationLogic *self, cEntity *zone) {
+cEntity *__thiscall cDominationFriendsLogic_FindShipOfZone(cDominationFriendsLogic *self, cEntity *zone) {
 	for (Nto1Node *n = Logic_ListFirst(self->side->list); n; n = Logic_ListNext(n)) {
 		cEntity *e = n->data;
 		CHECK(e && "e = node->GetNode()");
 		const char *key = e->name;
-		cNameItem *it = NameTable_Find(&self->assigned, key, HashTable_Slot(&self->assigned, key));
+		cNameItem *it = NameTable_Find(&self->base.assigned, key, HashTable_Slot(&self->base.assigned, key));
 		if (it && it->value && (cEntity *)it->value == zone) {
 			return Logic_AsCar(e);
 		}
@@ -82,8 +82,8 @@ cEntity *__thiscall cDominationFriendsLogic_FindShipOfZone(cDominationLogic *sel
 }
 
 /* vf01 */
-void __thiscall cDominationFriendsLogic_Init(cDominationLogic *self) {
-	cDominationFriendsSide *s = (cDominationFriendsSide *)self->side;
+void __thiscall cDominationFriendsLogic_Init(cDominationFriendsLogic *self) {
+	cDominationFriendsSide *s = self->side;
 
 	CHECK(s->owner && "fl");
 	s->list = cWorld_NewEntityList(g_pWorld, "DominationFriends");
@@ -92,7 +92,8 @@ void __thiscall cDominationFriendsLogic_Init(cDominationLogic *self) {
 
 /* the native of the deaths */
 void DominationFriends_OnDeath(cAbstractFile *params) {
-	Domination_OnDeath(params, World_DominFriends(), cDominationFriendsLogic_ReleaseZone, g_OnDominFriendDeath);
+	Domination_OnDeath(params, &World_DominFriends()->base, cDominationFriendsLogic_ReleaseZone,
+		g_OnDominFriendDeath);
 }
 
 cEntity *__thiscall cDominationFriendsLogic_ReleaseZone(cDominationLogic *self, const char *name) {
@@ -100,8 +101,8 @@ cEntity *__thiscall cDominationFriendsLogic_ReleaseZone(cDominationLogic *self, 
 }
 
 /* vf02 */
-void __thiscall cDominationFriendsLogic_Update(cDominationLogic *self, float dt) {
-	cDominationFriendsSide *s = (cDominationFriendsSide *)self->side;
+void __thiscall cDominationFriendsLogic_Update(cDominationFriendsLogic *self, float dt) {
+	cDominationFriendsSide *s = self->side;
 	float t = s->timer + dt;
 
 	s->timer = t;
