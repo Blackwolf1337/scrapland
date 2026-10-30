@@ -86,7 +86,7 @@ The headers are written for both compilers in two points, as Ghidra's parser get
 
 The stand-in headers need no Windows types: the engine headers use their own (`exe_rect`, `void *` for handles, `int` for `HRESULT`).
 
-Result: 11203 data types (with the pointers and arrays Ghidra makes), 148 function bodies cut, 1 enum array size, 3440 function types set to `__thiscall`, no parse errors.
+Result: 11203 data types (with the pointers and arrays Ghidra makes), 148 function bodies cut, 1 enum array size, 3440 function types set to `__thiscall`, no parse errors. The update in place on 2026-10-30 added 164 data types.
 
 ### Layout check
 
@@ -96,19 +96,19 @@ Result: 11203 data types (with the pointers and arrays Ghidra makes), 148 functi
 tools/ghidra/headless.sh CheckLayouts.java include/scrap
 ```
 
-Result: 522 sizes and 1026 offsets checked, 0 wrong. For example `cWorld` is 0x21cc bytes with `money` at 0x2090 and `items` at 0x20e0, `CWinApp` 0x90, `cVehicleEntity` 0x814, `PyTypeObject` still 0x6c. A one-time check against gcc (a C file of `_Static_assert` lines from all imported structs, compiled with i686-w64-mingw32-gcc) agreed on all 710 struct and union sizes and 6894 member offsets.
+Result: 542 sizes and 1054 offsets checked, 0 wrong. For example `cWorld` is 0x21cc bytes with `money` at 0x2090 and `items` at 0x20e0, `CWinApp` 0x90, `cVehicleEntity` 0x814, `PyTypeObject` still 0x6c. A one-time check against gcc (a C file of `_Static_assert` lines from all imported structs, compiled with i686-w64-mingw32-gcc) agreed on all 710 struct and union sizes and 6894 member offsets.
 
 ### Placeholders
 
 The analysis makes a 1 byte structure for each RTTI class at the root (`/CEscena`, `/cEntity`) and the demangler some in `/Demangler` (`/Demangler/PyObject`). The `this` of the `__thiscall` methods of a class gets that placeholder as long as it exists, not the header type.
 
-`ReplacePlaceholders.java` replaces each placeholder that has a header type of the same name, or of its English name from `tools/rename/names.tsv` (`CEscena` -> `CScene`). Ghidra then points every use at the header type. Only structures without components go, and only for a header type that is no placeholder itself. `rebuild.sh` runs it last.
+`ReplacePlaceholders.java` replaces each placeholder that has a header type of the same name, or of its English name from `tools/rename/names.tsv` (`CEscena` -> `CScene`). It also maps template class names: a placeholder like `/cGridElements<InfPointVis*>` goes to the header type `cGridElements_InfPointVisPtr` (`*` becomes `Ptr`, `<` and `,` become `_`, `>` and spaces go). Ghidra then points every use at the header type. Only structures without components go, and only for a header type that is no placeholder itself. `rebuild.sh` runs it last.
 
 ```
 tools/ghidra/headless.sh ReplacePlaceholders.java tools/rename/names.tsv include/scrap third_party/python-1.5.2/Include
 ```
 
-Result: 213 replaced by the type of the same name (`/cEntity` by `/game.h/cEntity`, `/Demangler/PyObject` by `/object.h/PyObject`), 22 by the English one (`/CEscena` by `/node3d.h/CScene`, `/CNodo3D` by `/node3d.h/CNode3D`, `/CMallaD3D` by `/render.h/CMeshD3D`). 253 stay: 75 RTTI classes without a struct in the headers yet (three with a Spanish name: `CEntradaNula`, `CMotorApp`, `cObjElementFXSistPartDuDv`), and in `/Demangler` the CRT, STL, lambda and Galaxy types. These are the numbers of the project updated on 2026-10-30. A project rebuilt with `rebuild.sh` has fewer placeholders (281), because the passes after the import find the header types by name: 6 go by the same name, 22 by the English one, the same 253 stay.
+Result: the new C types for the RTTI classes (commit 13d8691 for the AI and pathfinding classes, bb7b1d1 for the others) replaced 53 more placeholders: 47 by the type of the same name, 6 by the English or template name (`/CEntradaNula` by `/e3dinput.h/CNullInput`, `/CMotorApp` by `/scrapmain.h/CEngineApp`, `/cObjElementFXSistPartDuDv` by `/fxmisc.h/cObjElementFXParticleSystemDuDv`, `/cBinaryHeap<ElemAStar*>` by `/astar.h/cBinaryHeap_ElemAStarPtr`, and the two cGridElements templates). Before that, `/cEntity` was replaced by `/game.h/cEntity`, `/Demangler/PyObject` by `/object.h/PyObject`, `/CEscena` by `/node3d.h/CScene`, `/CNodo3D` by `/node3d.h/CNode3D` and `/CMallaD3D` by `/render.h/CMeshD3D`. 200 stay, all library classes: std exceptions, `type_info`, the CRT demangler nodes (`charNode`, `pcharNode`, `pDNameNode`, `DNameStatusNode`, `pairNode`), the Steam `CCallback` templates, the GOG/Galaxy listeners, and in `/Demangler` the CRT, STL, lambda and Galaxy types. Library code is not decompiled, so they stay.
 
 ## Naming passes
 
@@ -182,5 +182,4 @@ Its notes (`notes/src/Classes.md`, `World.md`, `Variables.md`, `Python_Modules.m
 ## Next steps
 
 - Name engine functions from log and assert strings (e.g. `"cPy_Function::SetFunc: ..."`).
-- Struct layouts for the RTTI classes that have none in the headers yet (75, see Placeholders).
 - Phase 3 continues in docs/hookdll.md.
