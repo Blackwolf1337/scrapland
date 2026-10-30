@@ -6,6 +6,7 @@
 #include "scrap/ai.h"
 #include "scrap/crt.h"
 #include "scrap/fxchar.h"
+#include "scrap/fxcountermeasures.h"
 #include "scrap/fxmisc.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapmain.h"
@@ -526,7 +527,7 @@ void __thiscall cObjElementFXParticleSystem_Attach(cObjElementFXParticleSystem *
 	FX_ParticleSystemAttach(self, d, "Dummy01");
 }
 
-void __thiscall cObjElementFXParticleSystemDuDv_Attach(cObjElementFXParticleSystem *self, cDebris *d) {
+void __thiscall cObjElementFXParticleSystemDuDv_Attach(cObjElementFXParticleSystemDuDv *self, cDebris *d) {
 	FX_ParticleSystemAttach(self, d, "Dummy01 (+dudv_pass)");
 }
 
@@ -1074,9 +1075,9 @@ static inline void *FX_Delete(void *self, uint32_t flags, uint32_t size) {
 	return self;
 }
 
-void *__thiscall cObjElementAbstract_Delete(void *self, uint32_t flags) {
+cObjElementAbstract *__thiscall cObjElementAbstract_Delete(cObjElementAbstract *self, uint32_t flags) {
 	cObjElement_dtor(self);
-	return FX_Delete(self, flags, 4);
+	return FX_Delete(self, flags, sizeof(*self));
 }
 
 /* World/FX character effects */
@@ -1552,7 +1553,8 @@ void *__fastcall cObjElementFXParticleSystem_ctor(void *self) {
 	return self;
 }
 
-void *__fastcall cObjElementFXParticleSystemDuDv_ctor(void *self) {
+cObjElementFXParticleSystemDuDv *__fastcall cObjElementFXParticleSystemDuDv_ctor(
+	cObjElementFXParticleSystemDuDv *self) {
 	FX_SetVtbl(self, VT_FXPARTICLESYSTEMDUDV);
 	FX_PartsCtor(self, 0x4);
 	FX_U16(self, 0xb4) = 1;
@@ -1604,7 +1606,7 @@ void __fastcall cObjElementFXParticleSystem_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __fastcall cObjElementFXParticleSystemDuDv_dtor(void *self) {
+void __fastcall cObjElementFXParticleSystemDuDv_dtor(cObjElementFXParticleSystemDuDv *self) {
 	*(void **)self = VT_FXPARTICLESYSTEMDUDV;
 	FX_PartsRelease(self, 0x4);
 	cObjElement_dtor(self);
@@ -1663,7 +1665,8 @@ void *__thiscall cObjElementFXParticleSystem_Delete(void *self, uint32_t flags) 
 	return FX_Delete(self, flags, 0xb8);
 }
 
-void *__thiscall cObjElementFXParticleSystemDuDv_Delete(void *self, uint32_t flags) {
+cObjElementFXParticleSystemDuDv *__thiscall cObjElementFXParticleSystemDuDv_Delete(
+	cObjElementFXParticleSystemDuDv *self, uint32_t flags) {
 	cObjElementFXParticleSystemDuDv_dtor(self);
 	return FX_Delete(self, flags, 0xb8);
 }

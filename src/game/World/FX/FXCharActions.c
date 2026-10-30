@@ -209,7 +209,7 @@ static void FXKill_Ctor(cObjElementFXKill *s, void *vt) {
 	s->fb8 = 0.0f;
 }
 
-void *__thiscall cObjElementFXBettyKill_ctor(void *self) {
+cObjElementFXBettyKill *__thiscall cObjElementFXBettyKill_ctor(cObjElementFXBettyKill *self) {
 	FXKill_Ctor(self, VT_FXBETTYKILL);
 	return self;
 }
@@ -256,7 +256,7 @@ void *__thiscall cObjElementFXDTritusAttack_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXDTritusKill_ctor(void *self) {
+cObjElementFXDTritusKill *__thiscall cObjElementFXDTritusKill_ctor(cObjElementFXDTritusKill *self) {
 	FXKill_Ctor(self, VT_FXDTRITUSKILL);
 	return self;
 }
@@ -432,7 +432,7 @@ void __thiscall cObjElementFXBettyAttack_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXBettyKill_dtor(void *self) {
+void __thiscall cObjElementFXBettyKill_dtor(cObjElementFXBettyKill *self) {
 	FXA_DtorTrails(self, VT_FXBETTYKILL, 0x8, 0x8f4, FXKILL_TRAILS);
 }
 
@@ -460,7 +460,7 @@ void __thiscall cObjElementFXDTritusAttack_dtor(void *self) {
 	FXA_DtorTrails(self, VT_FXDTRITUSATTACK, 0x8, 0x112c, FXDTRITUSATTACK_TRAILS);
 }
 
-void __thiscall cObjElementFXDTritusKill_dtor(void *self) {
+void __thiscall cObjElementFXDTritusKill_dtor(cObjElementFXDTritusKill *self) {
 	FXA_DtorTrails(self, VT_FXDTRITUSKILL, 0x8, 0x8f4, FXKILL_TRAILS);
 }
 
@@ -542,9 +542,9 @@ void *__thiscall cObjElementFXBettyAttack_Delete(void *self, uint32_t flags) {
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBettyAttack));
 }
 
-void *__thiscall cObjElementFXBettyKill_Delete(void *self, uint32_t flags) {
+cObjElementFXBettyKill *__thiscall cObjElementFXBettyKill_Delete(cObjElementFXBettyKill *self, uint32_t flags) {
 	cObjElementFXBettyKill_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXKill));
+	return FXA_Delete(self, flags, sizeof(*self));
 }
 
 void *__thiscall cObjElementFXBishopAttack_Delete(void *self, uint32_t flags) {
@@ -562,9 +562,9 @@ void *__thiscall cObjElementFXDTritusAttack_Delete(void *self, uint32_t flags) {
 	return FXA_Delete(self, flags, sizeof(cObjElementFXDTritusAttack));
 }
 
-void *__thiscall cObjElementFXDTritusKill_Delete(void *self, uint32_t flags) {
+cObjElementFXDTritusKill *__thiscall cObjElementFXDTritusKill_Delete(cObjElementFXDTritusKill *self, uint32_t flags) {
 	cObjElementFXDTritusKill_dtor(self);
-	return FXA_Delete(self, flags, sizeof(cObjElementFXKill));
+	return FXA_Delete(self, flags, sizeof(*self));
 }
 
 void *__thiscall cObjElementFXFunctionarySpecialAction_Delete(void *self, uint32_t flags) {
@@ -2737,12 +2737,12 @@ static void FXKill_Update(cObjElementFXKill *self, cDebris *d, float sortBias, f
 	FXBeams_Draw(&b, self->fbc, dt, &pos, &rot);
 }
 
-void __thiscall cObjElementFXBettyKill_Update(cObjElementFXKill *self, cDebris *d, float dt) {
+void __thiscall cObjElementFXBettyKill_Update(cObjElementFXBettyKill *self, cDebris *d, float dt) {
 	(void)dt;
 	FXKill_Update(self, d, -88.0f, 0.28f, 0x40f54019, 0xffe1190a, 0xf54019);
 }
 
-void __thiscall cObjElementFXDTritusKill_Update(cObjElementFXKill *self, cDebris *d, float dt) {
+void __thiscall cObjElementFXDTritusKill_Update(cObjElementFXDTritusKill *self, cDebris *d, float dt) {
 	(void)dt;
 	FXKill_Update(self, d, -77.0f, 0.02f, 0x401940f5, 0xff0a19e1, 0x1940f5);
 }

@@ -198,6 +198,8 @@ SD_OFFSET(cObjElementFXKill, point, 0x1ec);
 SD_OFFSET(cObjElementFXKill, f7c8, 0x7c8);
 SD_OFFSET(cObjElementFXKill, trails, 0x8f4);
 SD_SIZE(cObjElementFXKill, 0x918);
+typedef cObjElementFXKill cObjElementFXBettyKill;
+typedef cObjElementFXKill cObjElementFXDTritusKill;
 
 typedef struct cObjElementFXBishopAttack {
 	void *vftable;			/* 0x00 */
@@ -416,11 +418,11 @@ void *__thiscall cObjElementFXBankerSteal_ctor(void *self);
 void *__thiscall cObjElementFXBertoAttack_ctor(void *self);
 void *__thiscall cObjElementFXBertoFlash_ctor(void *self);
 void *__thiscall cObjElementFXBettyAttack_ctor(void *self);
-void *__thiscall cObjElementFXBettyKill_ctor(void *self);
+cObjElementFXBettyKill *__thiscall cObjElementFXBettyKill_ctor(cObjElementFXBettyKill *self);
 void *__thiscall cObjElementFXBishopAttack_ctor(void *self);
 void *__thiscall cObjElementFXBishopSellLife_ctor(void *self);
 void *__thiscall cObjElementFXDTritusAttack_ctor(void *self);
-void *__thiscall cObjElementFXDTritusKill_ctor(void *self);
+cObjElementFXDTritusKill *__thiscall cObjElementFXDTritusKill_ctor(cObjElementFXDTritusKill *self);
 void *__thiscall cObjElementFXFunctionarySpecialAction_ctor(void *self);
 void *__thiscall cObjElementFXGearMissile_ctor(void *self);
 void *__thiscall cObjElementFXMercenaryDrink_ctor(void *self);
@@ -435,11 +437,11 @@ void __thiscall cObjElementFXBankerSteal_dtor(void *self);
 void __thiscall cObjElementFXBertoAttack_dtor(void *self);
 void __thiscall cObjElementFXBertoFlash_dtor(void *self);
 void __thiscall cObjElementFXBettyAttack_dtor(void *self);
-void __thiscall cObjElementFXBettyKill_dtor(void *self);
+void __thiscall cObjElementFXBettyKill_dtor(cObjElementFXBettyKill *self);
 void __thiscall cObjElementFXBishopAttack_dtor(void *self);
 void __thiscall cObjElementFXBishopSellLife_dtor(void *self);
 void __thiscall cObjElementFXDTritusAttack_dtor(void *self);
-void __thiscall cObjElementFXDTritusKill_dtor(void *self);
+void __thiscall cObjElementFXDTritusKill_dtor(cObjElementFXDTritusKill *self);
 void __thiscall cObjElementFXFunctionarySpecialAction_dtor(void *self);
 void __thiscall cObjElementFXGearMissile_dtor(void *self);
 void __thiscall cObjElementFXMercenaryDrink_dtor(void *self);
@@ -454,11 +456,11 @@ void *__thiscall cObjElementFXBankerSteal_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXBertoAttack_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXBertoFlash_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXBettyAttack_Delete(void *self, uint32_t flags);
-void *__thiscall cObjElementFXBettyKill_Delete(void *self, uint32_t flags);
+cObjElementFXBettyKill *__thiscall cObjElementFXBettyKill_Delete(cObjElementFXBettyKill *self, uint32_t flags);
 void *__thiscall cObjElementFXBishopAttack_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXBishopSellLife_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXDTritusAttack_Delete(void *self, uint32_t flags);
-void *__thiscall cObjElementFXDTritusKill_Delete(void *self, uint32_t flags);
+cObjElementFXDTritusKill *__thiscall cObjElementFXDTritusKill_Delete(cObjElementFXDTritusKill *self, uint32_t flags);
 void *__thiscall cObjElementFXFunctionarySpecialAction_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXGearMissile_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXMercenaryDrink_Delete(void *self, uint32_t flags);
@@ -567,8 +569,8 @@ void __thiscall cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self
 /* the life sold by the Bishop: glows and data codes from the hands of the attacker into the attacked and a ring
  * of them at the attacked facing the camera */
 void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *self, cDebris *d, float dt);
-void __thiscall cObjElementFXBettyKill_Update(cObjElementFXKill *self, cDebris *d, float dt);
-void __thiscall cObjElementFXDTritusKill_Update(cObjElementFXKill *self, cDebris *d, float dt);
+void __thiscall cObjElementFXBettyKill_Update(cObjElementFXBettyKill *self, cDebris *d, float dt);
+void __thiscall cObjElementFXDTritusKill_Update(cObjElementFXDTritusKill *self, cDebris *d, float dt);
 void __thiscall cObjElementFXDTritusAttack_Start(cObjElementFXDTritusAttack *self, cEntity *e);
 void __thiscall cObjElementFXBishopAttack_SetLine(cObjElementFXBishopAttack *self, float fx, float fy, float fz,
 	float tx, float ty, float tz);

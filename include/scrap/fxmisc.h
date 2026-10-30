@@ -151,6 +151,8 @@ typedef struct cObjElementFXParticleSystem {
 	byte on;			/* 0xb5 */
 } cObjElementFXParticleSystem;
 SD_OFFSET(cObjElementFXParticleSystem, move, 0xb4);
+/* the same with the particles on "Dummy01 (+dudv_pass)" (0xb8 bytes) */
+typedef cObjElementFXParticleSystem cObjElementFXParticleSystemDuDv;
 
 typedef struct cObjElementFXSparks {
 	void *vftable;			/* 0x000 */
@@ -235,7 +237,7 @@ void __thiscall cObjElementFXModelNoise_Update(cObjElementFXModelNoise *self, cD
 byte __thiscall cObjElementFXModelNoise_Alive(cObjElementFXModelNoise *self, cDebris *d, cDebrisSys *sys);
 void __thiscall cObjElementFXParticleSystem_Update(cObjElementFXParticleSystem *self, cDebris *d, float dt);
 void __thiscall cObjElementFXParticleSystem_Attach(cObjElementFXParticleSystem *self, cDebris *d);
-void __thiscall cObjElementFXParticleSystemDuDv_Attach(cObjElementFXParticleSystem *self, cDebris *d);
+void __thiscall cObjElementFXParticleSystemDuDv_Attach(cObjElementFXParticleSystemDuDv *self, cDebris *d);
 void __thiscall cObjElementFXSparks_Update(cObjElementFXSparks *self, cDebris *d, float dt);
 void __thiscall cObjElementFXSparks_Attach(cObjElementFXSparks *self, cDebris *d);
 void __thiscall cObjElementFXSparks_Reset(cObjElementFXSparks *self, int arg);
@@ -259,7 +261,7 @@ void *__fastcall cObjElementFXItemTake_ctor(void *self);
 void *__fastcall cObjElementFXModelFade_ctor(void *self);
 void *__fastcall cObjElementFXModelNoise_ctor(void *self);
 void *__fastcall cObjElementFXParticleSystem_ctor(void *self);
-void *__fastcall cObjElementFXParticleSystemDuDv_ctor(void *self);
+cObjElementFXParticleSystemDuDv *__fastcall cObjElementFXParticleSystemDuDv_ctor(cObjElementFXParticleSystemDuDv *self);
 void *__fastcall cObjElementFXSparks_ctor(void *self);
 void *__fastcall cObjElementFXTrail_ctor(void *self);
 void __fastcall cObjElementFXFadeOutTrail_dtor(void *self);
@@ -268,7 +270,7 @@ void __fastcall cObjElementFXItemTake_dtor(void *self);
 void __fastcall cObjElementFXModelFade_dtor(void *self);
 void __fastcall cObjElementFXModelNoise_dtor(void *self);
 void __fastcall cObjElementFXParticleSystem_dtor(void *self);
-void __fastcall cObjElementFXParticleSystemDuDv_dtor(void *self);
+void __fastcall cObjElementFXParticleSystemDuDv_dtor(cObjElementFXParticleSystemDuDv *self);
 void __fastcall cObjElementFXSparks_dtor(void *self);
 void __fastcall cObjElementFXTrail_dtor(void *self);
 void *__thiscall cObjElementFXFadeOutTrail_Delete(void *self, uint32_t flags);
@@ -277,7 +279,9 @@ void *__thiscall cObjElementFXItemTake_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXModelFade_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXModelNoise_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXParticleSystem_Delete(void *self, uint32_t flags);
-void *__thiscall cObjElementFXParticleSystemDuDv_Delete(void *self, uint32_t flags);
+cObjElementFXParticleSystemDuDv *__thiscall cObjElementFXParticleSystemDuDv_Delete(
+	cObjElementFXParticleSystemDuDv *self,
+	uint32_t flags);
 void *__thiscall cObjElementFXSparks_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXTrail_Delete(void *self, uint32_t flags);
 /* the elements of the effects started by name: the entity (its model a CHECK), fields at 0x8 and 0xc */

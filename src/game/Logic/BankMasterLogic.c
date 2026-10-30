@@ -4,14 +4,14 @@
  */
 #include "scrap/chartype.h"
 
-cGenCharLocalLogic *__thiscall cBankMasterLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent) {
+cBankMasterLocalLogic *__thiscall cBankMasterLocalLogic_ctor(cBankMasterLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	self->base.vftable = CBANKMASTERLOCALLOGIC_VFTABLE;
 	self->ignoreAlarm = 1;
 	return self;
 }
 
-cGenCharLocalLogic *__thiscall cBankMasterLocalLogic_Delete(cGenCharLocalLogic *self, byte flags) {
+cBankMasterLocalLogic *__thiscall cBankMasterLocalLogic_Delete(cBankMasterLocalLogic *self, byte flags) {
 	self->base.vftable = CBANKMASTERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -32,7 +32,7 @@ byte Logic_Chance(cBaseLocalLogic *l, cEntity *attacker, float chance) {
 }
 
 /* vf30 */
-cEntity *__thiscall cBankMasterLocalLogic_FindTarget(cGenCharLocalLogic *self) {
+cEntity *__thiscall cBankMasterLocalLogic_FindTarget(cBankMasterLocalLogic *self) {
 	if (!(0.0f > self->searchTime)) {
 		return NULL;
 	}
@@ -49,7 +49,7 @@ cEntity *__thiscall cBankMasterLocalLogic_FindTarget(cGenCharLocalLogic *self) {
 }
 
 /* vf12 (0x30), the attack of a character: state 4 against it */
-void __thiscall cBankMasterLocalLogic_OnAttack(cGenCharLocalLogic *self, cEntity *attacker, float value) {
+void __thiscall cBankMasterLocalLogic_OnAttack(cBankMasterLocalLogic *self, cEntity *attacker, float value) {
 	(void)value;
 	if (Logic_Chance(&self->base, attacker, 100.0f)) {
 		self->base.vftable->SetState(self, 4, attacker);

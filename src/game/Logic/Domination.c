@@ -66,7 +66,8 @@ cEntity *__thiscall cDominationLogic_FindEnemy(cDominationLogic *self, const vec
 	float best = 3.4028234663852886e+38f;
 	cEntity *found = NULL;
 
-	cDominationLogic *side = self->vftable->GetTeam(self) == 1 ? World_DominEnemies() : World_DominFriends();
+	cDominationLogic *side = self->vftable->GetTeam(self) == 1 ? &World_DominEnemies()->base
+		: &World_DominFriends()->base;
 	cEntityListData *list = side->vftable->GetList(side);
 	for (Nto1Node *n = Logic_ListFirst(list); n; n = Logic_ListNext(n)) {
 		cEntity *v = n->data;
@@ -214,12 +215,12 @@ void cDominationLogic_ctor(cDominationLogic *self) {
 	g_DominNumZones = 0;
 }
 
-cDominationLogic *__fastcall cDominationEnemiesLogic_ctor(cDominationLogic *self) {
-	cDominationLogic_ctor(self);
-	self->vftable = CDOMINATIONENEMIESLOGIC_VFTABLE;
+cDominationEnemiesLogic *__fastcall cDominationEnemiesLogic_ctor(cDominationEnemiesLogic *self) {
+	cDominationLogic_ctor(&self->base);
+	self->base.vftable = CDOMINATIONENEMIESLOGIC_VFTABLE;
 	cDominationSide *s = operator_new(sizeof(*s));
 	if (s) {
-		s->owner = self;
+		s->owner = &self->base;
 		s->list = NULL;
 		s->timer = 0.0f;
 		s->zone = -1;
@@ -230,12 +231,12 @@ cDominationLogic *__fastcall cDominationEnemiesLogic_ctor(cDominationLogic *self
 	return self;
 }
 
-void __fastcall cDominationEnemiesLogic_dtor(cDominationLogic *self) {
-	self->vftable = CDOMINATIONENEMIESLOGIC_VFTABLE;
+void __fastcall cDominationEnemiesLogic_dtor(cDominationEnemiesLogic *self) {
+	self->base.vftable = CDOMINATIONENEMIESLOGIC_VFTABLE;
 	if (self->side) {
 		operator_delete_sized(self->side, sizeof(*self->side));
 	}
-	cDominationLogic_dtor(self);
+	cDominationLogic_dtor(&self->base);
 }
 
 void __fastcall cDominationLogic_dtor(cDominationLogic *self) {
@@ -244,10 +245,10 @@ void __fastcall cDominationLogic_dtor(cDominationLogic *self) {
 	NameTable_Clear(&self->assigned);
 }
 
-cDominationLogic *__thiscall cDominationEnemiesLogic_Delete(cDominationLogic *self, byte flags) {
+cDominationEnemiesLogic *__thiscall cDominationEnemiesLogic_Delete(cDominationEnemiesLogic *self, byte flags) {
 	cDominationEnemiesLogic_dtor(self);
 	if (flags & 1) {
-		operator_delete_sized(self, 0x14);
+		operator_delete_sized(self, sizeof(*self));
 	}
 	return self;
 }

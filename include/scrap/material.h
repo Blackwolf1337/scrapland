@@ -110,6 +110,18 @@ typedef struct CMatId {
 } CMatId;
 SD_SIZE(CMatId, 0xc);
 
+/* the bases without a vtable of the named and counted objects of objref.h: CScene, CNode3D and CMaterial have the
+ * name at 0x4 and the count at 0x8, CMatList only the name */
+typedef struct CObjName {
+	char *name;			/* 0x0 */
+} CObjName;
+SD_SIZE(CObjName, 4);
+
+typedef struct CObjRef {
+	int Refs;			/* 0x0 */
+} CObjRef;
+SD_SIZE(CObjRef, 4);
+
 typedef struct CMatList CMatList;
 
 typedef struct CMaterial {
@@ -198,7 +210,7 @@ void __thiscall String_Write(char **self, CFileIO *f);
 /* rva 0x2a1970: a VBprintf (1 KB) copy, NULL for a NULL fmt */
 void String_Printf(char **self, const char *fmt, ...);
 
-void __fastcall CObjRef_dtor(int *Refs);
+void __fastcall CObjRef_dtor(CObjRef *self);
 CTextStatic *__fastcall CTextStatic_ctor(CTextStatic *self);
 void __fastcall CTextStatic_dtor(CTextStatic *self);
 CTextStatic *__thiscall CTextStatic_Delete(CTextStatic *self, byte flags);

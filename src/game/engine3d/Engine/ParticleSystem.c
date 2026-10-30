@@ -36,7 +36,7 @@ CParticle *__fastcall CParticleActive_ctor(CParticle *self) {
 	return self;
 }
 
-CParticle *__fastcall CParticleStatic_ctor(CParticle *self) {
+CParticleStatic *__fastcall CParticleStatic_ctor(CParticleStatic *self) {
 	self->vftable = CPARTICLESTATIC_VFTABLE;
 	CParticleStatic_Init(self);
 	return self;
@@ -51,7 +51,7 @@ int __fastcall CParticleActive_Type(CParticle *self) {
 	return PARTICLE_ACTIVE;
 }
 
-int __fastcall CParticleStatic_Type(CParticle *self) {
+int __fastcall CParticleStatic_Type(CParticleStatic *self) {
 	(void)self;
 	return PARTICLE_STATIC;
 }
@@ -97,7 +97,7 @@ void __fastcall CParticleActive_Init(CParticle *self) {
 	a->bounce = 0;
 }
 
-void __fastcall CParticleStatic_Init(CParticle *self) {
+void __fastcall CParticleStatic_Init(CParticleStatic *self) {
 	Particle_InitCommon(self);
 	self->size = 1.0f;
 	self->color = PARTICLESYSTEM_DEFAULT_COLOR;
@@ -154,10 +154,10 @@ CParticleSystem *__fastcall CParticleSystem_ctor(CParticleSystem *self) {
 	return self;
 }
 
-void __fastcall CObjBase3D_dtor(IObject3D *self) {
-	self->vftable = COBJBASE3D_VFTABLE;
+void __fastcall CObjBase3D_dtor(CObjBase3D *self) {
+	self->base.vftable = COBJBASE3D_VFTABLE;
 	CObjBase3D_SetNode(self, NULL);
-	self->vftable = IOBJECT3D_VFTABLE;
+	self->base.vftable = IOBJECT3D_VFTABLE;
 }
 
 void __fastcall ParticleSystemParams_dtor(ParticleSystemParams *self) {
@@ -186,7 +186,7 @@ void __fastcall CParticleSystem_dtor(CParticleSystem *self) {
 		self->posList = NULL;
 	}
 	ParticleSystemParams_dtor(&self->params);
-	CObjBase3D_dtor((IObject3D *)self);
+	CObjBase3D_dtor((CObjBase3D *)self);
 }
 
 ParticleSystemParams *__thiscall ParticleSystemParams_Assign(ParticleSystemParams *self, const ParticleSystemParams *src) {
@@ -203,10 +203,10 @@ ParticleSystemParams *__thiscall ParticleSystemParams_Assign(ParticleSystemParam
 	return self;
 }
 
-IObject3D *__thiscall CObjBase3D_Delete(IObject3D *self, byte flags) {
+CObjBase3D *__thiscall CObjBase3D_Delete(CObjBase3D *self, byte flags) {
 	CObjBase3D_dtor(self);
 	if (flags & 1) {
-		operator_delete_sized(self, 0xc);
+		operator_delete_sized(self, sizeof(*self));
 	}
 	return self;
 }
@@ -222,7 +222,7 @@ CParticleSystem *__thiscall CParticleSystem_Delete(CParticleSystem *self, byte f
 void __thiscall CParticleSystem_Init(CParticleSystem *self, CNode3D *node, const char *type, const ParticleSystemParams *params,
 	CIniFile *ini) {
 	CHECK(node);
-	CObjBase3D_SetNode((IObject3D *)self, node);
+	CObjBase3D_SetNode((CObjBase3D *)self, node);
 	self->lastPos = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->Particles = NULL;
 	self->type = NULL;

@@ -26,9 +26,8 @@ static void Sputnik_Walk(cGenCharLocalLogic *self) {
 	ai->vftable->SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
 }
 
-void *__thiscall cSputnikJunkyardLocalLogic_ctor(void *mem, cEntity *parent) {
-	cGenCharLocalLogic *self = mem;
-
+cSputnikJunkyardLocalLogic *__thiscall cSputnikJunkyardLocalLogic_ctor(cSputnikJunkyardLocalLogic *self,
+	cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 1);
 	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikTime = 0.0f;
@@ -38,13 +37,13 @@ void *__thiscall cSputnikJunkyardLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-void __fastcall cSputnikJunkyardLocalLogic_dtor(cGenCharLocalLogic *self) {
+void __fastcall cSputnikJunkyardLocalLogic_dtor(cSputnikJunkyardLocalLogic *self) {
 	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikPisser = NULL;
 	cGenCharLocalLogic_dtor(self);
 }
 
-cGenCharLocalLogic *__thiscall cSputnikJunkyardLocalLogic_Delete(cGenCharLocalLogic *self, byte flags) {
+cSputnikJunkyardLocalLogic *__thiscall cSputnikJunkyardLocalLogic_Delete(cSputnikJunkyardLocalLogic *self, byte flags) {
 	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikPisser = NULL;
 	cGenCharLocalLogic_dtor(self);
@@ -66,7 +65,7 @@ void Sputnik_LaughDone(cAbstractFile *params) {
 }
 
 /* vf17 */
-void __thiscall cSputnikJunkyardLocalLogic_Update(cGenCharLocalLogic *self, float dt) {
+void __thiscall cSputnikJunkyardLocalLogic_Update(cSputnikJunkyardLocalLogic *self, float dt) {
 	cEntity *p = self->base.parent;
 
 	p->vftable->GetAI(p);
@@ -102,7 +101,7 @@ void __thiscall cSputnikJunkyardLocalLogic_Update(cGenCharLocalLogic *self, floa
 }
 
 /* vf19: 7 the walk, 8 to the point 200 in front of the camera, facing it; always 1 */
-byte __thiscall cSputnikJunkyardLocalLogic_SetState(cGenCharLocalLogic *self, int state, cEntity *target) {
+byte __thiscall cSputnikJunkyardLocalLogic_SetState(cSputnikJunkyardLocalLogic *self, int state, cEntity *target) {
 	if (state == 7) {
 		if ((byte)cBaseLocalLogic_SetState(&self->base, 7, target)) {
 			Sputnik_Walk(self);

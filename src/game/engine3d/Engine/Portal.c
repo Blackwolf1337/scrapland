@@ -30,7 +30,7 @@ void __fastcall CPortal_dtor(CPortal *self) {
 		ObjRef_Drop(&self->zones[i]);
 		self->zones[i] = NULL;
 	}
-	CObjBase3D_dtor((IObject3D *)self);
+	CObjBase3D_dtor((CObjBase3D *)self);
 }
 
 CPortal *__thiscall CPortal_Delete(CPortal *self, byte flags) {
@@ -60,7 +60,7 @@ void __fastcall CPortal_LinkZones(CPortal *self) {
 }
 
 byte __thiscall CPortal_Read(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
-	CObjBase3D_SetNode((IObject3D *)self, ctx->node);
+	CObjBase3D_SetNode((CObjBase3D *)self, ctx->node);
 	CFileIO_BeginBlock(f, "PORT");
 	CHECK(CFileIO_ReadInt(f) == 1);
 	self->idZone[0] = CFileIO_ReadInt(f);

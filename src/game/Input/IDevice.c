@@ -77,12 +77,12 @@ cAbstractIDevice *__thiscall cAbstractIDevice_ctor(cAbstractIDevice *self) {
 }
 
 cFuncGvarDevices *__thiscall cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbstractIDevice *dev) {
-	cGVar *v = (cGVar *)self->gvar;
+	cGVar *v = (cGVar *)&self->base.gvar;
 
 	cGVar_ctor(v, dev->vftable->GetName(dev), 3, GAME_STR(str_3bc4b4, 0x3bc4b4));	/* "User Control definition" */
 	self->device = dev;
 	v->type = GVAR_FUNCTION;
-	self->vftable = CFUNCGVARDEVICES_VFTABLE;
+	self->base.vftable = CFUNCGVARDEVICES_VFTABLE;
 	return self;
 }
 
@@ -379,7 +379,7 @@ void __thiscall cFuncGvarDevices_Load(cFuncGvarDevices *self, void *f) {
 		if (!Cfg_ParseLine(line, &value)) {
 			continue;
 		}
-		if (!crt_stricmp(line, ((cGVar *)self->gvar)->name) && !crt_stricmp(value, "<end>")) {
+		if (!crt_stricmp(line, self->base.gvar.name) && !crt_stricmp(value, "<end>")) {
 			break;
 		}
 		char *dot = strstr(line, ".");
@@ -481,7 +481,7 @@ void __thiscall cFuncGvarDevices_Save(cFuncGvarDevices *self, void *f) {
 			crt_fprintf(f, "\t\t%-40s = %s\n", buf, self->device->vftable->GetEntryName(self->device, i));
 		}
 	}
-	crt_fprintf(f, "%s = <end>\n\n\n", ((cGVar *)self->gvar)->name);
+	crt_fprintf(f, "%s = <end>\n\n\n", self->base.gvar.name);
 }
 
 /* an axis as two entries: entry the positive half, entry + 1 the negative one */

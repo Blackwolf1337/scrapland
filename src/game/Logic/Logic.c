@@ -143,8 +143,8 @@ void __thiscall Logic_Reset(void *logic) {
 	cDeathMatch_Init(&self->deathMatch);
 	cCTFFriends_Init(&self->ctfFriends);
 	cCTFEnemies_Init(&self->ctfEnemies);
-	self->dominEnemies.vftable->Init(&self->dominEnemies);
-	self->dominFriends.vftable->Init(&self->dominFriends);
+	self->dominEnemies.base.vftable->Init(&self->dominEnemies.base);
+	self->dominFriends.base.vftable->Init(&self->dominFriends.base);
 	cNurses_Init(&self->nurses);
 	cGenCharGroup_Init(&self->genChars);
 	cGateKeepers_Init(&self->gateKeepers);
@@ -164,8 +164,8 @@ void __thiscall Logic_Update(void *logic, float dt) {
 	cDeathMatch_Update(&self->deathMatch, dt);
 	cCTFFriends_Update(&self->ctfFriends, dt);
 	cCTFEnemies_Update(&self->ctfEnemies, dt);
-	self->dominEnemies.vftable->Update(&self->dominEnemies, dt);
-	self->dominFriends.vftable->Update(&self->dominFriends, dt);
+	self->dominEnemies.base.vftable->Update(&self->dominEnemies.base, dt);
+	self->dominFriends.base.vftable->Update(&self->dominFriends.base, dt);
 	AICtrl_Update(&self->aiCtrl, dt);
 	cNurses_Update(&self->nurses, dt);
 	cEnemiesTraffic_Update(&self->enemiesTraffic, dt);

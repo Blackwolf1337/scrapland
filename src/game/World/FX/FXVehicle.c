@@ -107,7 +107,7 @@ void *__thiscall cObjElementFXVehicleDamage_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXVehicleDeathTrail_ctor(void *self) {
+cObjElementFXVehicleDeathTrail *__thiscall cObjElementFXVehicleDeathTrail_ctor(cObjElementFXVehicleDeathTrail *self) {
 	cObjElementFXDevastatorShoot *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEDEATHTRAIL_VFTABLE);
 	CGameTrail_ctor(&s->trail);
@@ -210,7 +210,7 @@ void __thiscall cObjElementFXVehicleDamage_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXVehicleDeathTrail_dtor(void *self) {
+void __thiscall cObjElementFXVehicleDeathTrail_dtor(cObjElementFXVehicleDeathTrail *self) {
 	cObjElementFXDevastatorShoot *s = self;
 	*(void **)s = COBJELEMENTFXVEHICLEDEATHTRAIL_VFTABLE;
 	CGameTrail_dtor(&s->trail);
@@ -278,9 +278,10 @@ void *__thiscall cObjElementFXVehicleDamage_Delete(void *self, uint32_t flags) {
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleDamage));
 }
 
-void *__thiscall cObjElementFXVehicleDeathTrail_Delete(void *self, uint32_t flags) {
+cObjElementFXVehicleDeathTrail *__thiscall cObjElementFXVehicleDeathTrail_Delete(cObjElementFXVehicleDeathTrail *self,
+	uint32_t flags) {
 	cObjElementFXVehicleDeathTrail_dtor(self);
-	return FXObj_Delete(self, flags, sizeof(cObjElementFXDevastatorShoot));
+	return FXObj_Delete(self, flags, sizeof(*self));
 }
 
 void *__thiscall cObjElementFXVehicleEMI_Delete(void *self, uint32_t flags) {
@@ -2973,7 +2974,7 @@ void __thiscall cObjElementFXVehicleDamage_Start(cObjElementFXVehicleDamage *sel
 	self->level = 0.0f;
 }
 
-void __thiscall cObjElementFXVehicleDeathTrail_Start(cObjElementFXDevastatorShoot *self, cDebris *debris) {
+void __thiscall cObjElementFXVehicleDeathTrail_Start(cObjElementFXVehicleDeathTrail *self, cDebris *debris) {
 	(void)debris;
 	CGameTrail_SetMaxTrails(&self->trail, 0x1e);
 }

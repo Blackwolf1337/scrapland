@@ -13,6 +13,7 @@
 #include "scrap/dlist.h"
 #include "scrap/game.h"
 #include "scrap/pyfunction.h"
+#include "scrap/scrap.h"
 
 #define MAX_LOCAL_PLAYERS 4
 #define NUM_SETS 4			/* action sets: menu, character, debug, vehicle */
@@ -181,8 +182,7 @@ SD_OFFSET(cAbstractIDeviceVtbl, SetEntry, 0x20);
 
 /* the engine variable of a device: its bindings as lines of Scrap.cfg */
 typedef struct cFuncGvarDevices {
-	const void *vftable;		/* 0x00 Save, Load (cGVarListVtbl) */
-	byte gvar[0x10];		/* 0x04 cGVar up to its value, GVAR_FUNCTION, named after the device */
+	cFuncGvar base;			/* 0x00 the variable is named after the device */
 	cAbstractIDevice *device;	/* 0x14 */
 } cFuncGvarDevices;
 SD_SIZE(cFuncGvarDevices, 0x18);
@@ -194,6 +194,9 @@ struct cAbstractIDevice {
 	cDevEntry *entries;		/* 0x0c Mem_Alloc */
 };
 SD_SIZE(cAbstractIDevice, 0x10);
+
+/* PcKeyboard.cpp: the keyboard adds no members (g_Keyboard, 0x10 bytes) */
+typedef cAbstractIDevice cPcKeyboard;
 
 typedef struct cPcMouse {
 	cAbstractIDevice base;		/* 0x00 */
@@ -328,23 +331,23 @@ struct exe_IDirectInput8 {
 
 /* Input/PcKeyboard.cpp */
 #define g_KeyboardDev GAME_GLOBAL(exe_IDirectInputDevice8 *, g_KeyboardDev, 0x44c620)
-#define g_Keyboard (GAME_ARRAY(cAbstractIDevice, g_Keyboard, 0x44c624))
+#define g_Keyboard (GAME_ARRAY(cPcKeyboard, g_Keyboard, 0x44c624))
 #define g_KeyState (GAME_ARRAY(char, g_KeyState, 0x44c638))		/* [256] DIK_ */
-cAbstractIDevice *__thiscall cPcKeyboard_ctor(cAbstractIDevice *self);
-cAbstractIDevice *__thiscall cPcKeyboard_Delete(cAbstractIDevice *self, byte flags);
+cPcKeyboard *__thiscall cPcKeyboard_ctor(cPcKeyboard *self);
+cPcKeyboard *__thiscall cPcKeyboard_Delete(cPcKeyboard *self, byte flags);
 void Keyboard_Acquire(byte on);
-byte __thiscall cPcKeyboard_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);
+byte __thiscall cPcKeyboard_SetEntry(cPcKeyboard *self, int entry, int set, int player, int action, byte check);
 void Keyboard_Close(void);
-const char *__thiscall cPcKeyboard_GetName(cAbstractIDevice *self);
-const char *__thiscall cPcKeyboard_GetEntryName(cAbstractIDevice *self, int entry);
-const char *__thiscall cPcKeyboard_GetEntryLabel(cAbstractIDevice *self, int entry);
+const char *__thiscall cPcKeyboard_GetName(cPcKeyboard *self);
+const char *__thiscall cPcKeyboard_GetEntryName(cPcKeyboard *self, int entry);
+const char *__thiscall cPcKeyboard_GetEntryLabel(cPcKeyboard *self, int entry);
 int32_t Keyboard_Create(void);
-void __thiscall cPcKeyboard_SetDefaults(cAbstractIDevice *self);
+void __thiscall cPcKeyboard_SetDefaults(cPcKeyboard *self);
 void Keyboard_Init(void);
-void __thiscall cPcKeyboard_Update(cAbstractIDevice *self, float dt);
-void __thiscall cPcKeyboard_SetGameDefaults(cAbstractIDevice *self);
+void __thiscall cPcKeyboard_Update(cPcKeyboard *self, float dt);
+void __thiscall cPcKeyboard_SetGameDefaults(cPcKeyboard *self);
 int32_t Keyboard_Poll(void);
-byte __thiscall cPcKeyboard_IsReserved(cAbstractIDevice *self, int entry);
+byte __thiscall cPcKeyboard_IsReserved(cPcKeyboard *self, int entry);
 
 /* Input/PcMouse.cpp */
 #define g_MouseSensH GAME_GLOBAL_IN(float, GVar_MouseSensitivityH, 16, 0x44c8d0)		/* MouseSensitivityH */

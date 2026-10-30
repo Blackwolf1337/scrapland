@@ -1383,16 +1383,16 @@ intptr_t __thiscall CEngineApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uin
 
 /* ---- CEntradaNula: every method of the input does nothing ---- */
 
-void *__thiscall CNullInput_Delete(void *self, byte flags) {
-	*(void **)self = CNULLINPUT_VFTABLE;
+CNullInput *__thiscall CNullInput_Delete(CNullInput *self, byte flags) {
+	self->vftable = CNULLINPUT_VFTABLE;
 	IInput_dtor(self);
 	if (flags & 1) {
-		operator_delete_sized(self, CNULLINPUT_SIZE);
+		operator_delete_sized(self, sizeof(*self));
 	}
 	return self;
 }
 
-int __thiscall CNullInput_Nothing3(void *self, int a, int b, int c) {
+int __thiscall CNullInput_Nothing3(CNullInput *self, int a, int b, int c) {
 	(void)self;
 	(void)a;
 	(void)b;
@@ -1400,19 +1400,19 @@ int __thiscall CNullInput_Nothing3(void *self, int a, int b, int c) {
 	return 0;
 }
 
-int __thiscall CNullInput_Nothing1(void *self, int a) {
+int __thiscall CNullInput_Nothing1(CNullInput *self, int a) {
 	(void)self;
 	(void)a;
 	return 0;
 }
 
-int __thiscall CNullInput_Nothing(void *self) {
+int __thiscall CNullInput_Nothing(CNullInput *self) {
 	(void)self;
 	return 0;
 }
 
 /* the original leaves eax as it was */
-void __thiscall CNullInput_Nothing4(void *self, int a, int b, int c, int d) {
+void __thiscall CNullInput_Nothing4(CNullInput *self, int a, int b, int c, int d) {
 	(void)self;
 	(void)a;
 	(void)b;

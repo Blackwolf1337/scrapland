@@ -28,12 +28,12 @@ void Logic_NativeNop(cAbstractFile *params) {
 	(void)params;
 }
 
-void __fastcall cEnemiesLocalLogic_dtor(cLocalLogic *self) {
+void __fastcall cEnemiesLocalLogic_dtor(cEnemiesLocalLogic *self) {
 	self->vftable = CENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 }
 
-cLocalLogic *__thiscall cEnemiesLocalLogic_Delete(cLocalLogic *self, byte flags) {
+cEnemiesLocalLogic *__thiscall cEnemiesLocalLogic_Delete(cEnemiesLocalLogic *self, byte flags) {
 	self->vftable = CENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -144,7 +144,7 @@ void __fastcall cEnemies_Init(cEnemies *self) {
 }
 
 /* "IgnoreFriends", a flag of the world (+0x2174, the field of World_Enemies) for every ship */
-byte __thiscall cEnemiesLocalLogic_VarI(cLocalLogic *self, const char *name, int *i, byte set) {
+byte __thiscall cEnemiesLocalLogic_VarI(cEnemiesLocalLogic *self, const char *name, int *i, byte set) {
 	(void)self;
 	if (strcmp(name, "IgnoreFriends")) {
 		return 0;

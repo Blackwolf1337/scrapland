@@ -62,24 +62,24 @@ void __fastcall cDominationSide_Think(cDominationSide *self) {
 }
 
 /* vf03 */
-cEntityListData *__thiscall cDominationEnemiesLogic_GetList(cDominationLogic *self) {
+cEntityListData *__thiscall cDominationEnemiesLogic_GetList(cDominationEnemiesLogic *self) {
 	return self->side->list;
 }
 
 /* the leader ship of the enemies (LeaderName) or NULL */
-cEntity *__thiscall cDominationEnemiesLogic_GetLeader(cDominationLogic *self) {
+cEntity *__thiscall cDominationEnemiesLogic_GetLeader(cDominationEnemiesLogic *self) {
 	(void)self;
 	return Logic_AsCar(World_FindEntity(g_DominLeaderName));
 }
 
 /* vf04 */
-int __thiscall cDominationEnemiesLogic_GetTeam(cDominationLogic *self) {
+int __thiscall cDominationEnemiesLogic_GetTeam(cDominationEnemiesLogic *self) {
 	(void)self;
 	return 0;
 }
 
 /* vf01 */
-void __thiscall cDominationEnemiesLogic_Init(cDominationLogic *self) {
+void __thiscall cDominationEnemiesLogic_Init(cDominationEnemiesLogic *self) {
 	cDominationSide *s = self->side;
 
 	CHECK(s->owner && "el");
@@ -104,7 +104,8 @@ void Domination_OnDeath(cAbstractFile *params, cDominationLogic *side,
 
 /* the native of the deaths (onDeath of the list) */
 void DominationEnemies_OnDeath(cAbstractFile *params) {
-	Domination_OnDeath(params, World_DominEnemies(), cDominationEnemiesLogic_ReleaseZone, g_OnDominEnemyDeath);
+	Domination_OnDeath(params, &World_DominEnemies()->base, cDominationEnemiesLogic_ReleaseZone,
+		g_OnDominEnemyDeath);
 }
 
 /* the zone of the ship taken from the table; a zone of the side on the way (going) is held (held) again */
@@ -132,7 +133,7 @@ cEntity *__thiscall cDominationEnemiesLogic_ReleaseZone(cDominationLogic *self, 
 }
 
 /* vf02 */
-void __thiscall cDominationEnemiesLogic_Update(cDominationLogic *self, float dt) {
+void __thiscall cDominationEnemiesLogic_Update(cDominationEnemiesLogic *self, float dt) {
 	cDominationSide *s = self->side;
 	float t = s->timer + dt;
 

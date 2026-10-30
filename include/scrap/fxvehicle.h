@@ -78,6 +78,9 @@ SD_SIZE(cObjElementFXFiredDebris, 0xdc);
 
 typedef cObjElementFXFiredDebris cObjElementFXSmokeDebris;
 
+/* the trail of a dying vehicle: the Devastator shot with 0x1e trail points (0x14 bytes) */
+typedef cObjElementFXDevastatorShoot cObjElementFXVehicleDeathTrail;
+
 /* the smoke of an entity on fire (0xd4 bytes) */
 typedef struct cObjElementFXFiredEntity {
 	cObjElementFX base;
@@ -288,7 +291,7 @@ void *__thiscall cObjElementFXFiredEntity_ctor(void *self);
 void *__thiscall cObjElementFXSmokeDebris_ctor(void *self);
 void *__thiscall cObjElementFXVehicleAccelerator_ctor(void *self);
 void *__thiscall cObjElementFXVehicleDamage_ctor(void *self);
-void *__thiscall cObjElementFXVehicleDeathTrail_ctor(void *self);
+cObjElementFXVehicleDeathTrail *__thiscall cObjElementFXVehicleDeathTrail_ctor(cObjElementFXVehicleDeathTrail *self);
 void *__thiscall cObjElementFXVehicleEMI_ctor(void *self);
 void *__thiscall cObjElementFXVehicleFire_ctor(void *self);
 void *__thiscall cObjElementFXVehicleSpawn_ctor(void *self);
@@ -298,7 +301,7 @@ void __thiscall cObjElementFXFiredEntity_dtor(void *self);
 void __thiscall cObjElementFXSmokeDebris_dtor(void *self);
 void __thiscall cObjElementFXVehicleAccelerator_dtor(void *self);
 void __thiscall cObjElementFXVehicleDamage_dtor(void *self);
-void __thiscall cObjElementFXVehicleDeathTrail_dtor(void *self);
+void __thiscall cObjElementFXVehicleDeathTrail_dtor(cObjElementFXVehicleDeathTrail *self);
 void __thiscall cObjElementFXVehicleEMI_dtor(void *self);
 void __thiscall cObjElementFXVehicleFire_dtor(void *self);
 void __thiscall cObjElementFXVehicleSpawn_dtor(void *self);
@@ -308,7 +311,8 @@ void *__thiscall cObjElementFXFiredEntity_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXSmokeDebris_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXVehicleAccelerator_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXVehicleDamage_Delete(void *self, uint32_t flags);
-void *__thiscall cObjElementFXVehicleDeathTrail_Delete(void *self, uint32_t flags);
+cObjElementFXVehicleDeathTrail *__thiscall cObjElementFXVehicleDeathTrail_Delete(cObjElementFXVehicleDeathTrail *self,
+	uint32_t flags);
 void *__thiscall cObjElementFXVehicleEMI_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXVehicleFire_Delete(void *self, uint32_t flags);
 void *__thiscall cObjElementFXVehicleSpawn_Delete(void *self, uint32_t flags);
@@ -342,7 +346,7 @@ void __thiscall cObjElementFXFiredEntity_Start(cObjElementFXFiredEntity *self, c
 void __thiscall cObjElementFXSmokeDebris_Start(cObjElementFXSmokeDebris *self, cDebris *debris);
 void __thiscall cObjElementFXVehicleAccelerator_Start(cObjElementFXVehicleAccelerator *self, cDebris *debris);
 void __thiscall cObjElementFXVehicleDamage_Start(cObjElementFXVehicleDamage *self, cDebris *debris);
-void __thiscall cObjElementFXVehicleDeathTrail_Start(cObjElementFXDevastatorShoot *self, cDebris *debris);
+void __thiscall cObjElementFXVehicleDeathTrail_Start(cObjElementFXVehicleDeathTrail *self, cDebris *debris);
 void __thiscall cObjElementFXVehicleEMI_Start(cObjElementFXVehicleEMI *self, cDebris *debris);
 void __thiscall cObjElementFXVehicleFire_Start(cObjElementFXVehicleFire *self, cDebris *debris);
 void __thiscall cObjElementFXVehicleSpawn_Start(cObjElementFXVehicleSpawn *self, cDebris *debris);

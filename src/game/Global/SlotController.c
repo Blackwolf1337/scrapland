@@ -32,11 +32,11 @@ cSlotController *__thiscall cSlotController_ctor(cSlotController *self, float in
 	return self;
 }
 
-cSlotController *__thiscall cRndSlotController_ctor(cSlotController *self, float minDiff, float maxDiff) {
-	cSlotController_ctor(self, minDiff);
-	self->vftable = cRndSlotController_vftable;
+cRndSlotController *__thiscall cRndSlotController_ctor(cRndSlotController *self, float minDiff, float maxDiff) {
+	cSlotController_ctor(&self->base, minDiff);
+	self->base.vftable = cRndSlotController_vftable;
 	self->maxDiff = maxDiff;
-	CHECK(!(maxDiff < self->minDiff));
+	CHECK(!(maxDiff < self->base.minDiff));
 	return self;
 }
 
@@ -46,10 +46,10 @@ void __thiscall cSlotController_Next(cSlotController *self) {
 	self->time += t;
 }
 
-void __thiscall cRndSlotController_Next(cSlotController *self) {
-	self->time += self->interval;
-	float lo = self->minDiff, hi = self->maxDiff;
-	self->interval = (float)(RandRange(hi - lo) + (double)lo);
+void __thiscall cRndSlotController_Next(cRndSlotController *self) {
+	self->base.time += self->base.interval;
+	float lo = self->base.minDiff, hi = self->maxDiff;
+	self->base.interval = (float)(RandRange(hi - lo) + (double)lo);
 }
 
 /* counts dt down; 1 when the slot came */
