@@ -37,12 +37,15 @@ void NWIntList_AddKeepIter(cNWIntList *list, const void *v);
 
 /* ---- Global/GridElements.h with the node pointers of the points (cells of cNWIntList) ---- */
 
-cGridElements *__thiscall NWGrid_ctor(cGridElements *self, const vec3_t *max, const vec3_t *min, int nx, int ny,
-	int nz);
-void __fastcall NWGrid_dtor(cGridElements *self);
-cGridElements *__thiscall NWGrid_Delete(cGridElements *self, byte flags);
-void __thiscall NWGrid_Free(cGridElements *self);
-byte __thiscall NWGrid_Add(cGridElements *self, const vec3_t *p, void *const *data);
+/* the layout of cGridElements, the cells are cNWIntList (0x3c bytes, CNodesWorldSup_BuildGrid) */
+typedef cGridElements cGridElements_InfPointVisPtr;
+
+cGridElements_InfPointVisPtr *__thiscall NWGrid_ctor(cGridElements_InfPointVisPtr *self, const vec3_t *max,
+	const vec3_t *min, int nx, int ny, int nz);
+void __fastcall NWGrid_dtor(cGridElements_InfPointVisPtr *self);
+cGridElements_InfPointVisPtr *__thiscall NWGrid_Delete(cGridElements_InfPointVisPtr *self, byte flags);
+void __thiscall NWGrid_Free(cGridElements_InfPointVisPtr *self);
+byte __thiscall NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, void *const *data);
 
 /* ---- CNodesWorldSup (thiscall on the CNodesWorld layout; vtable slots in CNodesWorldVtbl) ---- */
 

@@ -58,12 +58,12 @@ cAICharControl *__thiscall cAICharControl2D_ctor(void *mem, cEntity *ent, cAICha
 	return self;
 }
 
-void __fastcall cAICharControl2D_dtor(cAICharControl *self) {
+void __fastcall cAICharControl2D_dtor(cAICharControl2D *self) {
 	self->vftable = CAICHARCONTROL2D_VFTABLE;
 	cAICharControl_dtor(self);
 }
 
-cAICharControl *__thiscall cAICharControl2D_Delete(cAICharControl *self, byte flags) {
+cAICharControl2D *__thiscall cAICharControl2D_Delete(cAICharControl2D *self, byte flags) {
 	self->vftable = CAICHARCONTROL2D_VFTABLE;
 	cAICharControl_dtor(self);
 	if (flags & 1) {
@@ -72,13 +72,13 @@ cAICharControl *__thiscall cAICharControl2D_Delete(cAICharControl *self, byte fl
 	return self;
 }
 
-void __thiscall cAICharControl2D_Draw(cAICharControl *self) {
+void __thiscall cAICharControl2D_Draw(cAICharControl2D *self) {
 	cAICharControl_Draw(self);
 }
 
 /* ---- the tests of the way ---- */
 
-byte __thiscall cAICharControl2D_Facing(cAICharControl *self, cEntity *hitEnt, vec3_t *toE, vec3_t *toGoal) {
+byte __thiscall cAICharControl2D_Facing(cAICharControl2D *self, cEntity *hitEnt, vec3_t *toE, vec3_t *toGoal) {
 	vec3_t b1, b2;
 
 	CHECK(hitEnt != NULL);
@@ -105,14 +105,14 @@ byte __thiscall cAICharControl2D_Facing(cAICharControl *self, cEntity *hitEnt, v
 	return Vec3_Angle(toE, toGoal) < 1.5707963267948966;
 }
 
-byte __thiscall cAICharControl2D_TestLine(cAICharControl *self, const vec3_t *a, const vec3_t *b) {
+byte __thiscall cAICharControl2D_TestLine(cAICharControl2D *self, const vec3_t *a, const vec3_t *b) {
 	if (Engine_TestLine(a, b, NULL, NULL)) {
 		return 0;
 	}
 	return AICC_Vtbl2D(self)->FloorAhead(self, b) != 0;
 }
 
-byte __thiscall cAICharControl2D_SideBlocked(cAICharControl *self, int side) {
+byte __thiscall cAICharControl2D_SideBlocked(cAICharControl2D *self, int side) {
 	vec3_t d, p, buf;
 
 	if (side == 3 || side == 4) {
@@ -135,7 +135,7 @@ byte __thiscall cAICharControl2D_SideBlocked(cAICharControl *self, int side) {
 	return AICC_Vtbl(self)->TestPath(self, AICC_Pos(self, &buf), &p, rr) == 0;
 }
 
-byte __thiscall cAICharControl2D_UpdateFollow(cAICharControl *self) {
+byte __thiscall cAICharControl2D_UpdateFollow(cAICharControl2D *self) {
 	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	cEntity *te = AICC_TargetEnt(self);
 	vec3_t T, buf;
@@ -218,7 +218,7 @@ byte __thiscall cAICharControl2D_UpdateFollow(cAICharControl *self) {
 	return 1;
 }
 
-void __thiscall cAICharControl2D_CheckArrived(cAICharControl *self) {
+void __thiscall cAICharControl2D_CheckArrived(cAICharControl2D *self) {
 	cAIChar *ai;
 	int ev;
 
@@ -245,7 +245,7 @@ none:
 	AICC_OwnerVtbl(ai)->Event(ai, 5);
 }
 
-void __thiscall cAICharControl2D_Turn(cAICharControl *self) {
+void __thiscall cAICharControl2D_Turn(cAICharControl2D *self) {
 	vec3_t view, ang, d, rot, buf;
 
 	view = WChar(self->ent)->view;
@@ -282,7 +282,7 @@ void __thiscall cAICharControl2D_Turn(cAICharControl *self) {
 
 /* walkDir from the distance to the target: away when nearer than nearDist and the way back is free, to it when
  * further than farDist, stopped in between */
-void __thiscall cAICharControl2D_Walk(cAICharControl *self) {
+void __thiscall cAICharControl2D_Walk(cAICharControl2D *self) {
 	cEntity *te = AICC_TargetEnt(self);
 	vec3_t b1, b2;
 	float f;
@@ -354,7 +354,7 @@ void __thiscall cAICharControl2D_Walk(cAICharControl *self) {
 }
 
 /* the path of pathfinding to p; the point after the start becomes the goal */
-byte __thiscall cAICharControl2D_FindPath(cAICharControl *self, const vec3_t *p) {
+byte __thiscall cAICharControl2D_FindPath(cAICharControl2D *self, const vec3_t *p) {
 	vec3_t pos;
 	byte noPath, reach;
 
@@ -400,7 +400,7 @@ byte __thiscall cAICharControl2D_FindPath(cAICharControl *self, const vec3_t *p)
 	return 1;
 }
 
-byte __thiscall cAICharControl2D_FindRoute(cAICharControl *self) {
+byte __thiscall cAICharControl2D_FindRoute(cAICharControl2D *self) {
 	vec3_t pos;
 
 	CHECK(g_NodesWorld2D != NULL);
@@ -429,21 +429,21 @@ byte __thiscall cAICharControl2D_FindRoute(cAICharControl *self) {
 	return 1;
 }
 
-float __thiscall cAICharControl2D_Dist(cAICharControl *self, const vec3_t *a, const vec3_t *b) {
+float __thiscall cAICharControl2D_Dist(cAICharControl2D *self, const vec3_t *a, const vec3_t *b) {
 	(void)self;
 	float dz = a->z - b->z;
 	float dx = a->x - b->x;
 	return (float)__builtin_sqrt((double)(dz * dz + dx * dx));
 }
 
-float __thiscall cAICharControl2D_DistSq(cAICharControl *self, const vec3_t *a, const vec3_t *b) {
+float __thiscall cAICharControl2D_DistSq(cAICharControl2D *self, const vec3_t *a, const vec3_t *b) {
 	(void)self;
 	float dz = a->z - b->z;
 	float dx = a->x - b->x;
 	return dz * dz + dx * dx;
 }
 
-float __thiscall cAICharControl2D_KeepDist(cAICharControl *self, cEntity *hitEnt) {
+float __thiscall cAICharControl2D_KeepDist(cAICharControl2D *self, cEntity *hitEnt) {
 	CHECK(hitEnt != NULL);
 	float er = WChar(hitEnt)->prim.radius;
 	float shirk = g_DistShirkCharAI;
@@ -454,7 +454,7 @@ float __thiscall cAICharControl2D_KeepDist(cAICharControl *self, cEntity *hitEnt
 	return Float_MaxSS(c, d);
 }
 
-float __thiscall cAICharControl2D_StrafeDist(cAICharControl *self, cEntity *hitEnt) {
+float __thiscall cAICharControl2D_StrafeDist(cAICharControl2D *self, cEntity *hitEnt) {
 	vec3_t e, s;
 
 	CHECK(hitEnt != NULL);
@@ -485,15 +485,15 @@ static byte AICC2D_InCone(cAICharControl *self, cEntity *e, float ang, float fwd
 	return (double)ang > Vec3_Angle(&o, &dir);
 }
 
-byte __thiscall cAICharControl2D_InFront(cAICharControl *self, cEntity *e, float ang) {
+byte __thiscall cAICharControl2D_InFront(cAICharControl2D *self, cEntity *e, float ang) {
 	return AICC2D_InCone(self, e, ang, 1.0f);
 }
 
-byte __thiscall cAICharControl2D_Behind(cAICharControl *self, cEntity *e, float ang) {
+byte __thiscall cAICharControl2D_Behind(cAICharControl2D *self, cEntity *e, float ang) {
 	return AICC2D_InCone(self, e, ang, -1.0f);
 }
 
-byte __thiscall cAICharControl2D_GoalAhead(cAICharControl *self) {
+byte __thiscall cAICharControl2D_GoalAhead(cAICharControl2D *self) {
 	vec3_t buf, a, b;
 
 	const vec3_t *s = AICC_Pos(self, &buf);
@@ -507,7 +507,7 @@ byte __thiscall cAICharControl2D_GoalAhead(cAICharControl *self) {
 	return 0.39269909262657166 > Vec3_Angle(&a, &b);
 }
 
-byte __thiscall cAICharControl2D_OnFloor(cAICharControl *self, const vec3_t *p) {
+byte __thiscall cAICharControl2D_OnFloor(cAICharControl2D *self, const vec3_t *p) {
 	const vec3_t *list;
 	int count = 0;
 
@@ -518,7 +518,7 @@ byte __thiscall cAICharControl2D_OnFloor(cAICharControl *self, const vec3_t *p) 
 	return count != 0;
 }
 
-byte __thiscall cAICharControl2D_Near(cAICharControl *self, cEntity *e) {
+byte __thiscall cAICharControl2D_Near(cAICharControl2D *self, cEntity *e) {
 	vec3_t b1, b2;
 
 	const vec3_t *p = AICC_EntPos(e, &b1);
@@ -530,7 +530,7 @@ byte __thiscall cAICharControl2D_Near(cAICharControl *self, cEntity *e) {
 	return d > k;
 }
 
-byte __thiscall cAICharControl2D_InWay(cAICharControl *self, vec3_t dest, cEntity *hitEnt) {
+byte __thiscall cAICharControl2D_InWay(cAICharControl2D *self, vec3_t dest, cEntity *hitEnt) {
 	vec3_t buf;
 
 	CHECK(hitEnt != NULL);
@@ -656,18 +656,18 @@ static byte AICC2D_Corridor(cAICharControl *self, const vec3_t *a, const vec3_t 
 	return 1;
 }
 
-byte __thiscall cAICharControl2D_TestPath(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+byte __thiscall cAICharControl2D_TestPath(cAICharControl2D *self, const vec3_t *a, const vec3_t *b, float r) {
 	if (b->x == self->dest.x && b->y == self->dest.y && b->z == self->dest.z) {
 		return AICC_Vtbl(self)->TestPathEnd(self, a, b, r);
 	}
 	return AICC2D_Corridor(self, a, b, r, 0);
 }
 
-byte __thiscall cAICharControl2D_TestPathEnd(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+byte __thiscall cAICharControl2D_TestPathEnd(cAICharControl2D *self, const vec3_t *a, const vec3_t *b, float r) {
 	return AICC2D_Corridor(self, a, b, r, 1);
 }
 
-byte __thiscall cAICharControl2D_TestStep(cAICharControl *self, const vec3_t *a, const vec3_t *b, const vec3_t *c,
+byte __thiscall cAICharControl2D_TestStep(cAICharControl2D *self, const vec3_t *a, const vec3_t *b, const vec3_t *c,
 	float r) {
 	cEntity *me = self->ent;
 	vec3_t D, N, P, s, U, V, nl, in, tmp, p, q;
@@ -735,7 +735,7 @@ byte __thiscall cAICharControl2D_TestStep(cAICharControl *self, const vec3_t *a,
 	return AICC_Seg(&p, &q, a, &V, Obj_Vtbl(me)->GetRadius(me), &nl, NULL, 0.0f) != 0;
 }
 
-byte __thiscall cAICharControl2D_TestSides(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+byte __thiscall cAICharControl2D_TestSides(cAICharControl2D *self, const vec3_t *a, const vec3_t *b, float r) {
 	cEntity *me = self->ent;
 	vec3_t hitA, hitB, A, D, N, M, P, s, U, W, ml, in, tmp;
 	vec3_t p1, q1, p2, q2, p3, q3, p4, q4, p5, q5;
@@ -832,7 +832,7 @@ byte __thiscall cAICharControl2D_TestSides(cAICharControl *self, const vec3_t *a
 
 /* the floor ahead towards p (on the floor) within the reach of a step: free, or what is hit leaves a floor point
  * before it (at most 20 back, half the way) with room for the body */
-byte __thiscall cAICharControl2D_FloorAhead(cAICharControl *self, const vec3_t *p) {
+byte __thiscall cAICharControl2D_FloorAhead(cAICharControl2D *self, const vec3_t *p) {
 	cEntity *me = self->ent;
 	vec3_t S, H, Q, B, out, N;
 
@@ -877,7 +877,7 @@ byte __thiscall cAICharControl2D_FloorAhead(cAICharControl *self, const vec3_t *
 	return Engine_TestSphere(&out, &out, r, NULL, NULL) == 0;
 }
 
-byte __thiscall cAICharControl2D_FloorAt(cAICharControl *self, const vec3_t *p, vec3_t *out) {
+byte __thiscall cAICharControl2D_FloorAt(cAICharControl2D *self, const vec3_t *p, vec3_t *out) {
 	if (!NW2D_Probe(p, out)) {
 		*out = *p;
 		return 0;
@@ -888,7 +888,7 @@ byte __thiscall cAICharControl2D_FloorAt(cAICharControl *self, const vec3_t *p, 
 
 /* p moved by a random step of at most 150 on the floor (3 tries) while the way from the point of the path and to
  * the next one stays free */
-void __thiscall cAICharControl2D_StepGoal(cAICharControl *self, vec3_t *p) {
+void __thiscall cAICharControl2D_StepGoal(cAICharControl2D *self, vec3_t *p) {
 	if (p->x == self->dest.x && p->y == self->dest.y && p->z == self->dest.z) {
 		return;
 	}
@@ -961,7 +961,7 @@ static int AICC2D_ArcStep(cAICharControl *self, const vec3_t *s, const vec3_t *a
 
 /* the walk around pos on the circle of radius dist from the way away to the way dir (the other way round without
  * flag), in steps of the radius of the character: each step and corner free on the floor */
-byte __thiscall cAICharControl2D_StrafeBack(cAICharControl *self, const vec3_t *pos, const vec3_t *away,
+byte __thiscall cAICharControl2D_StrafeBack(cAICharControl2D *self, const vec3_t *pos, const vec3_t *away,
 	const vec3_t *dir, float dist, byte left, byte flag) {
 	cEntity *me = self->ent;
 	vec3_t a, d, prev, cur, S, buf;
@@ -1028,7 +1028,7 @@ static int AICC2D_ArcFloor(cAICharControl *self, const vec3_t *p, vec3_t *out) {
 }
 
 /* StrafeBack on the floor in half steps: each point of the circle on the floor and free of the other characters */
-byte __thiscall cAICharControl2D_StrafeFwd(cAICharControl *self, const vec3_t *pos, const vec3_t *away,
+byte __thiscall cAICharControl2D_StrafeFwd(cAICharControl2D *self, const vec3_t *pos, const vec3_t *away,
 	const vec3_t *dir, float dist, byte left, byte flag) {
 	cEntity *me = self->ent;
 	vec3_t a, d, cur, out;
@@ -1059,7 +1059,7 @@ byte __thiscall cAICharControl2D_StrafeFwd(cAICharControl *self, const vec3_t *p
 	return AICC2D_ArcFloor(self, &cur, &out) > 0;
 }
 
-byte __thiscall cAICharControl2D_TryStrafe(cAICharControl *self, int side, cEntity *hitEnt, byte back, float keep,
+byte __thiscall cAICharControl2D_TryStrafe(cAICharControl2D *self, int side, cEntity *hitEnt, byte back, float keep,
 	byte fwd, float sd, byte e2) {
 	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	vec3_t b1, b2, A, B, C, D, Dc, E;

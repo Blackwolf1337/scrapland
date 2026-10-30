@@ -202,6 +202,8 @@ SD_OFFSET(cAIVehicleShoot, params, 0x12c);
 SD_OFFSET(cAIVehicleShoot, target, 0x174);
 SD_OFFSET(cAIVehicleShoot, damaged, 0x180);
 SD_SIZE(cAIVehicleShoot, 0x184);
+/* the class name in the exe (0x184 bytes, the constructor of cAIVehicle) */
+typedef cAIVehicleShoot cAIVehicleShootControl;
 
 /* ---- AI/AIVehicleControl.cpp (src/game/AI/IVehicleControl.c); the rest in aivehicle.h ---- */
 void __fastcall cAIVehicleControl_dtor(cAIVehicleControl *self);

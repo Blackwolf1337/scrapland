@@ -486,6 +486,37 @@ void __thiscall cAI_OnEvent(cAI *self, int ev);
 #define CAIMOVE_VFTABLE GAME_VFTABLE(cAIMove_vftable, 0x3a7754)
 #define CAIMOVE_SIZE 0x90
 
+/* the members of cAIChar at the same offsets; the functions take the cAIChar or the cAIVehicle as void * */
+typedef struct cAIMove {
+	cAI base;			/* 0x00 */
+	Nto1Node target;		/* 0x38 the target entity at 0x40, data the AI */
+	byte flying;			/* 0x48 the 3D control (CanFly, a Car) */
+	byte pad_49[3];
+	vec3_t dest;			/* 0x4c */
+	float dist;			/* 0x58 the goal is reached that near */
+	int moveMode;			/* 0x5c AICC_ */
+	float speed;			/* 0x60 */
+	vec3_t dir;			/* 0x64 the direction of the orient and path moves */
+	vec3_t center;			/* 0x70 PATROL_ZONE */
+	float radius;			/* 0x7c PATROL_ZONE */
+	byte pathA;			/* 0x80 */
+	byte pathB;			/* 0x81 */
+	byte stopped;			/* 0x82 CheckStopped: no velocity for 10 s */
+	byte inPath;			/* 0x83 */
+	byte paused;			/* 0x84 far from the camera: no update */
+	byte arrived;			/* 0x85 GO_TO reached the end */
+	byte repos;			/* 0x86 "Repos" */
+	byte reposing;			/* 0x87 */
+	byte b88;			/* 0x88 */
+	byte pad_89[3];
+	float stopTime;			/* 0x8c the time without a velocity */
+} cAIMove;
+SD_OFFSET(cAIMove, target, 0x38);
+SD_OFFSET(cAIMove, dest, 0x4c);
+SD_OFFSET(cAIMove, center, 0x70);
+SD_OFFSET(cAIMove, stopTime, 0x8c);
+SD_SIZE(cAIMove, CAIMOVE_SIZE);
+
 /* ---- cAIEntityGroup (AI/AIEntityGroup.cpp, src/game/AI/AIEntityGroup.c): the base of the vehicle and the character
  * groups, up to 20 entities (a race) and the time since an AI of the group took a group state; the next one may take
  * one when the time reached TimeBetwChangeStateAI ---- */
@@ -557,6 +588,15 @@ typedef struct cAIBank {
 	int money;			/* 0x380 the money of the character at the demand of the attack (state 2) */
 } cAIBank;
 SD_SIZE(cAIBank, 0x384);
+typedef cAIBank cAIBankDirector;
+typedef cAIBank cAIBankMaster;
+
+/* the classes that add no members (0x380 bytes) */
+typedef cAIChar cAIDesktop;
+typedef cAIChar cAIHuman;
+typedef cAIChar cAIMayor;
+typedef cAIChar cAIPolice;
+typedef cAIChar cAISentinel;
 
 /* the bishop (0x398 bytes) */
 typedef struct cAIBishop {
@@ -601,15 +641,15 @@ typedef struct cAINurse {
 SD_SIZE(cAINurse, 0x384);
 
 /* AIBankDirector.c, AIBankMaster.c */
-void __fastcall cAIBankDirector_dtor(cAIChar *self);
-cAIChar *__thiscall cAIBankDirector_Delete(cAIChar *self, byte flags);
-void __fastcall cAIBankMaster_dtor(cAIChar *self);
-cAIChar *__thiscall cAIBankMaster_Delete(cAIChar *self, byte flags);
+void __fastcall cAIBankDirector_dtor(cAIBankDirector *self);
+cAIBankDirector *__thiscall cAIBankDirector_Delete(cAIBankDirector *self, byte flags);
+void __fastcall cAIBankMaster_dtor(cAIBankMaster *self);
+cAIBankMaster *__thiscall cAIBankMaster_Delete(cAIBankMaster *self, byte flags);
 /* vf66 of the director and the master: the attack when the character got money or the control is idle */
 void __thiscall cAIBank_CheckAttack(cAIBank *self);
 /* vf56 */
-void __thiscall cAIBankDirector_SetRanges(cAIBank *self);
-void __thiscall cAIBankMaster_SetRanges(cAIBank *self);
+void __thiscall cAIBankDirector_SetRanges(cAIBankDirector *self);
+void __thiscall cAIBankMaster_SetRanges(cAIBankMaster *self);
 /* vf27 and vf50 of both: the state from outside and from inside (ATTACK, 2, becomes 7 with the money noted) */
 byte cAIBank_SetState(cAIBank *self, int state, ...);
 byte cAIBank_SetStateIntern(cAIBank *self, int state, ...);
@@ -623,9 +663,9 @@ void __thiscall cAIBishop_SetRanges(cAIBishop *self);
 void __thiscall cAIBishop_SetShoot(cAIBishop *self);
 /* AIDesktop.c: the action button while it flees or patrols (the alarm on) without a strafe, but not in a fall or
  * the ActMore and ActUp actions */
-void __fastcall cAIDesktop_dtor(cAIChar *self);
-cAIChar *__thiscall cAIDesktop_Delete(cAIChar *self, byte flags);
-void __thiscall cAIDesktop_UpdateAction0(cAIChar *self);
+void __fastcall cAIDesktop_dtor(cAIDesktop *self);
+cAIDesktop *__thiscall cAIDesktop_Delete(cAIDesktop *self, byte flags);
+void __thiscall cAIDesktop_UpdateAction0(cAIDesktop *self);
 /* AIGear.c */
 void __fastcall cAIGear_dtor(cAIChar *self);
 cAIChar *__thiscall cAIGear_Delete(cAIChar *self, byte flags);
@@ -637,14 +677,14 @@ void __thiscall cAIGear_SetShoot(cAIGear *self);
 /* the way to the target was not free (vf89 of the move control asks it) */
 byte __fastcall cAIGear_IsBlocked(cAIGear *self);
 /* AIHuman.c */
-void __fastcall cAIHuman_dtor(cAIChar *self);
-cAIChar *__thiscall cAIHuman_Delete(cAIChar *self, byte flags);
-void __thiscall cAIHuman_SetDists(cAIChar *self);
+void __fastcall cAIHuman_dtor(cAIHuman *self);
+cAIHuman *__thiscall cAIHuman_Delete(cAIHuman *self, byte flags);
+void __thiscall cAIHuman_SetDists(cAIHuman *self);
 /* AIMayor.c */
-void __fastcall cAIMayor_dtor(cAIChar *self);
-cAIChar *__thiscall cAIMayor_Delete(cAIChar *self, byte flags);
-void __thiscall cAIMayor_CheckActDist(cAIChar *self);
-void __thiscall cAIMayor_SetDists(cAIChar *self);
+void __fastcall cAIMayor_dtor(cAIMayor *self);
+cAIMayor *__thiscall cAIMayor_Delete(cAIMayor *self, byte flags);
+void __thiscall cAIMayor_CheckActDist(cAIMayor *self);
+void __thiscall cAIMayor_SetDists(cAIMayor *self);
 /* AIMessenger.c */
 void __fastcall cAIMessenger_dtor(cAIChar *self);
 cAIChar *__thiscall cAIMessenger_Delete(cAIChar *self, byte flags);
@@ -661,15 +701,15 @@ void __thiscall cAINurse_SetDists(cAINurse *self);
 byte cAINurse_SetState(cAINurse *self, int state, ...);
 byte cAINurse_SetStateIntern(cAINurse *self, int state, ...);
 /* AIPolice.c */
-void __fastcall cAIPolice_dtor(cAIChar *self);
-cAIChar *__thiscall cAIPolice_Delete(cAIChar *self, byte flags);
-void __thiscall cAIPolice_CheckActDist(cAIChar *self);
-void __thiscall cAIPolice_SetDists(cAIChar *self);
+void __fastcall cAIPolice_dtor(cAIPolice *self);
+cAIPolice *__thiscall cAIPolice_Delete(cAIPolice *self, byte flags);
+void __thiscall cAIPolice_CheckActDist(cAIPolice *self);
+void __thiscall cAIPolice_SetDists(cAIPolice *self);
 /* AISentinel.c */
-void __fastcall cAISentinel_dtor(cAIChar *self);
-cAIChar *__thiscall cAISentinel_Delete(cAIChar *self, byte flags);
-void __thiscall cAISentinel_CheckActDist(cAIChar *self);
-void __thiscall cAISentinel_SetDists(cAIChar *self);
+void __fastcall cAISentinel_dtor(cAISentinel *self);
+cAISentinel *__thiscall cAISentinel_Delete(cAISentinel *self, byte flags);
+void __thiscall cAISentinel_CheckActDist(cAISentinel *self);
+void __thiscall cAISentinel_SetDists(cAISentinel *self);
 
 /* cAIChar_dtor, cAIChar_SetDists (vf56) and cAIChar_ChangeState (vf26): aichar.h; the move controls:
  * aicharcontrol.h */

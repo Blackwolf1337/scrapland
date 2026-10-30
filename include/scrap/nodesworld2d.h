@@ -26,7 +26,7 @@ SD_SIZE(cNW2DRegionNode, 0x24);
 typedef DLIST(cNW2DRegionNode) cNW2DRegionList;
 
 struct CNodesWorld2D {
-	byte sup[0x360];		/* 0x000 the CNodesWorldSup part, the layout of CNodesWorld */
+	CNodesWorldSup sup;		/* 0x000 the code uses the CNodesWorld layout (NW2D_SUP) */
 	cNW2DRegionList regions;	/* 0x360 */
 };
 SD_SIZE(CNodesWorld2D, 0x378);

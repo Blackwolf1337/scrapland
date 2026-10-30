@@ -57,6 +57,7 @@ struct cGridElements {
 };
 SD_OFFSET(cGridElements, nx, 0x24);
 SD_SIZE(cGridElements, 0x3c);
+typedef cGridElements cGridElements_InfoTrafficNode;
 
 #define CGRIDELEMENTS_VFTABLE GAME_VFTABLE(cGridElements_InfoTrafficNode_vftable, 0x3a9ca4)
 

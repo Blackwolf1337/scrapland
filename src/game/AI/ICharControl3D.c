@@ -31,12 +31,12 @@ cAICharControl *__thiscall cAICharControl3D_ctor(void *mem, cEntity *ent, cAICha
 	return self;
 }
 
-void __fastcall cAICharControl3D_dtor(cAICharControl *self) {
+void __fastcall cAICharControl3D_dtor(cAICharControl3D *self) {
 	self->vftable = CAICHARCONTROL3D_VFTABLE;
 	cAICharControl_dtor(self);
 }
 
-cAICharControl *__thiscall cAICharControl3D_Delete(cAICharControl *self, byte flags) {
+cAICharControl3D *__thiscall cAICharControl3D_Delete(cAICharControl3D *self, byte flags) {
 	self->vftable = CAICHARCONTROL3D_VFTABLE;
 	cAICharControl_dtor(self);
 	if (flags & 1) {
@@ -45,13 +45,13 @@ cAICharControl *__thiscall cAICharControl3D_Delete(cAICharControl *self, byte fl
 	return self;
 }
 
-void __thiscall cAICharControl3D_Draw(cAICharControl *self) {
+void __thiscall cAICharControl3D_Draw(cAICharControl3D *self) {
 	cAICharControl_Draw(self);
 }
 
 /* ---- the tests of the way ---- */
 
-byte __thiscall cAICharControl3D_Facing(cAICharControl *self, cEntity *hitEnt, vec3_t *toE, vec3_t *toGoal) {
+byte __thiscall cAICharControl3D_Facing(cAICharControl3D *self, cEntity *hitEnt, vec3_t *toE, vec3_t *toGoal) {
 	vec3_t b1, b2;
 
 	CHECK(hitEnt != NULL);
@@ -74,7 +74,7 @@ byte __thiscall cAICharControl3D_Facing(cAICharControl *self, cEntity *hitEnt, v
 	return Vec3_Angle(toE, toGoal) < 1.5707963267948966;
 }
 
-byte __thiscall cAICharControl3D_TestLine(cAICharControl *self, const vec3_t *a, const vec3_t *b) {
+byte __thiscall cAICharControl3D_TestLine(cAICharControl3D *self, const vec3_t *a, const vec3_t *b) {
 	(void)self;
 	return Engine_TestLine(a, b, NULL, NULL) == 0;
 }
@@ -191,19 +191,19 @@ static byte AICC3D_Corridor(cAICharControl *self, const vec3_t *a, const vec3_t 
 	return 1;
 }
 
-byte __thiscall cAICharControl3D_TestPath(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+byte __thiscall cAICharControl3D_TestPath(cAICharControl3D *self, const vec3_t *a, const vec3_t *b, float r) {
 	if (b->x == self->dest.x && b->y == self->dest.y && b->z == self->dest.z) {
 		return AICC_Vtbl(self)->TestPathEnd(self, a, b, r);
 	}
 	return AICC3D_Corridor(self, a, b, 0);
 }
 
-byte __thiscall cAICharControl3D_TestPathEnd(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+byte __thiscall cAICharControl3D_TestPathEnd(cAICharControl3D *self, const vec3_t *a, const vec3_t *b, float r) {
 	(void)r;
 	return AICC3D_Corridor(self, a, b, 1);
 }
 
-byte __thiscall cAICharControl3D_TestSides(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+byte __thiscall cAICharControl3D_TestSides(cAICharControl3D *self, const vec3_t *a, const vec3_t *b, float r) {
 	cEntity *me = self->ent;
 	cAICCSeg segs[8];
 	vec3_t A0 = *a, Q0, n, m, ml;
@@ -233,7 +233,7 @@ byte __thiscall cAICharControl3D_TestSides(cAICharControl *self, const vec3_t *a
 	return 1;
 }
 
-byte __thiscall cAICharControl3D_TestStep(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r) {
+byte __thiscall cAICharControl3D_TestStep(cAICharControl3D *self, const vec3_t *a, const vec3_t *b, float r) {
 	cEntity *me = self->ent;
 	cAICCSeg segs[8];
 	vec3_t n;
@@ -245,7 +245,7 @@ byte __thiscall cAICharControl3D_TestStep(cAICharControl *self, const vec3_t *a,
 	return AICC3D_Lines(a, &n, rad, len, NULL, segs) != 0;
 }
 
-byte __thiscall cAICharControl3D_SideBlocked(cAICharControl *self, int side) {
+byte __thiscall cAICharControl3D_SideBlocked(cAICharControl3D *self, int side) {
 	vec3_t d, p, buf;
 
 	if (side == 3) {
@@ -274,7 +274,7 @@ byte __thiscall cAICharControl3D_SideBlocked(cAICharControl *self, int side) {
 	return AICC_Vtbl(self)->TestPath(self, AICC_Pos(self, &buf), &p, rr) == 0;
 }
 
-byte __thiscall cAICharControl3D_UpdateFollow(cAICharControl *self) {
+byte __thiscall cAICharControl3D_UpdateFollow(cAICharControl3D *self) {
 	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	cEntity *te = AICC_TargetEnt(self);
 	vec3_t T, buf;
@@ -361,7 +361,7 @@ byte __thiscall cAICharControl3D_UpdateFollow(cAICharControl *self) {
 	return 1;
 }
 
-void __thiscall cAICharControl3D_CheckArrived(cAICharControl *self) {
+void __thiscall cAICharControl3D_CheckArrived(cAICharControl3D *self) {
 	vec3_t buf;
 	cAIChar *ai;
 	int ev;
@@ -387,7 +387,7 @@ none:
 	AICC_OwnerVtbl(ai)->Event(ai, 5);
 }
 
-void __thiscall cAICharControl3D_Turn(cAICharControl *self) {
+void __thiscall cAICharControl3D_Turn(cAICharControl3D *self) {
 	vec3_t view, ang, d, rot, buf;
 
 	view = WChar(self->ent)->view;
@@ -421,7 +421,7 @@ void __thiscall cAICharControl3D_Turn(cAICharControl *self) {
 	self->ctrl->hRot = -self->turnYNew;
 }
 
-void __thiscall cAICharControl3D_Walk(cAICharControl *self) {
+void __thiscall cAICharControl3D_Walk(cAICharControl3D *self) {
 	cEntity *te = AICC_TargetEnt(self);
 	vec3_t b1, b2;
 
@@ -463,7 +463,7 @@ void __thiscall cAICharControl3D_Walk(cAICharControl *self) {
 	}
 }
 
-byte __thiscall cAICharControl3D_FindPath(cAICharControl *self, const vec3_t *p) {
+byte __thiscall cAICharControl3D_FindPath(cAICharControl3D *self, const vec3_t *p) {
 	vec3_t pos;
 	byte noPath, reach;
 
@@ -507,7 +507,7 @@ byte __thiscall cAICharControl3D_FindPath(cAICharControl *self, const vec3_t *p)
 	return 1;
 }
 
-byte __thiscall cAICharControl3D_FindRoute(cAICharControl *self) {
+byte __thiscall cAICharControl3D_FindRoute(cAICharControl3D *self) {
 	vec3_t pos;
 
 	CHECK(g_NodesWorld != NULL);
@@ -535,12 +535,12 @@ byte __thiscall cAICharControl3D_FindRoute(cAICharControl *self) {
 	return 1;
 }
 
-float __thiscall cAICharControl3D_Dist(cAICharControl *self, const vec3_t *a, const vec3_t *b) {
+float __thiscall cAICharControl3D_Dist(cAICharControl3D *self, const vec3_t *a, const vec3_t *b) {
 	(void)self;
 	return AICC3D_Len(a->x - b->x, a->y - b->y, a->z - b->z);
 }
 
-float __thiscall cAICharControl3D_DistSq(cAICharControl *self, const vec3_t *a, const vec3_t *b) {
+float __thiscall cAICharControl3D_DistSq(cAICharControl3D *self, const vec3_t *a, const vec3_t *b) {
 	(void)self;
 	float x = a->x - b->x;
 	float y = a->y - b->y;
@@ -548,7 +548,7 @@ float __thiscall cAICharControl3D_DistSq(cAICharControl *self, const vec3_t *a, 
 	return y * y + x * x + z * z;
 }
 
-float __thiscall cAICharControl3D_KeepDist(cAICharControl *self, cEntity *hitEnt) {
+float __thiscall cAICharControl3D_KeepDist(cAICharControl3D *self, cEntity *hitEnt) {
 	vec3_t b1, b2;
 
 	CHECK(hitEnt != NULL);
@@ -565,7 +565,7 @@ float __thiscall cAICharControl3D_KeepDist(cAICharControl *self, cEntity *hitEnt
 	return Float_MinSS(dist + 10.0f, k);
 }
 
-float __thiscall cAICharControl3D_StrafeDist(cAICharControl *self, cEntity *hitEnt) {
+float __thiscall cAICharControl3D_StrafeDist(cAICharControl3D *self, cEntity *hitEnt) {
 	CHECK(hitEnt != NULL);
 	return AICC_X87AddAdd(WChar(self->ent)->prim.radius, WChar(hitEnt)->prim.radius, g_MarginCollCharAI);
 }
@@ -587,15 +587,15 @@ static byte AICC3D_InCone(cAICharControl *self, cEntity *e, float ang, float fwd
 	return (double)ang > Vec3_Angle(&o, &dir);
 }
 
-byte __thiscall cAICharControl3D_InFront(cAICharControl *self, cEntity *e, float ang) {
+byte __thiscall cAICharControl3D_InFront(cAICharControl3D *self, cEntity *e, float ang) {
 	return AICC3D_InCone(self, e, ang, 1.0f);
 }
 
-byte __thiscall cAICharControl3D_Behind(cAICharControl *self, cEntity *e, float ang) {
+byte __thiscall cAICharControl3D_Behind(cAICharControl3D *self, cEntity *e, float ang) {
 	return AICC3D_InCone(self, e, ang, -1.0f);
 }
 
-byte __thiscall cAICharControl3D_GoalAhead(cAICharControl *self) {
+byte __thiscall cAICharControl3D_GoalAhead(cAICharControl3D *self) {
 	vec3_t buf, a, b;
 
 	const vec3_t *s = AICC_Pos(self, &buf);
@@ -609,7 +609,7 @@ byte __thiscall cAICharControl3D_GoalAhead(cAICharControl *self) {
 	return 0.39269909262657166 > Vec3_Angle(&a, &b);
 }
 
-byte __thiscall cAICharControl3D_OnFloor(cAICharControl *self, const vec3_t *p) {
+byte __thiscall cAICharControl3D_OnFloor(cAICharControl3D *self, const vec3_t *p) {
 	const vec3_t *list;
 	int count = 0;
 
@@ -619,7 +619,7 @@ byte __thiscall cAICharControl3D_OnFloor(cAICharControl *self, const vec3_t *p) 
 }
 
 /* the original measures from the entity of the link node, not from e */
-byte __thiscall cAICharControl3D_Near(cAICharControl *self, cEntity *e) {
+byte __thiscall cAICharControl3D_Near(cAICharControl3D *self, cEntity *e) {
 	vec3_t b1, b2;
 
 	cEntity *l = (cEntity *)self->link.target;
@@ -630,7 +630,7 @@ byte __thiscall cAICharControl3D_Near(cAICharControl *self, cEntity *e) {
 	return d > k;
 }
 
-byte __thiscall cAICharControl3D_InWay(cAICharControl *self, vec3_t dest, cEntity *hitEnt) {
+byte __thiscall cAICharControl3D_InWay(cAICharControl3D *self, vec3_t dest, cEntity *hitEnt) {
 	vec3_t buf;
 
 	CHECK(hitEnt != NULL);
@@ -640,7 +640,7 @@ byte __thiscall cAICharControl3D_InWay(cAICharControl *self, vec3_t dest, cEntit
 	return k >= d;
 }
 
-void __thiscall cAICharControl3D_StepGoal(cAICharControl *self, vec3_t *p) {
+void __thiscall cAICharControl3D_StepGoal(cAICharControl3D *self, vec3_t *p) {
 	if (p->x == self->dest.x && p->y == self->dest.y && p->z == self->dest.z) {
 		return;
 	}
@@ -677,7 +677,7 @@ void __thiscall cAICharControl3D_StepGoal(cAICharControl *self, vec3_t *p) {
 	self->path.iter = save;
 }
 
-byte __thiscall cAICharControl3D_TryStrafe(cAICharControl *self, int side, cEntity *hitEnt, byte back, float keep,
+byte __thiscall cAICharControl3D_TryStrafe(cAICharControl3D *self, int side, cEntity *hitEnt, byte back, float keep,
 	byte fwd, float sd, byte e2) {
 	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	vec3_t b1, b2, A, B, C, D, E, N, G;
@@ -795,7 +795,7 @@ static byte AICC3D_ArcPath(cAICharControl *self, const vec3_t *a, const vec3_t *
 /* the walk around pos on the circle of radius dist from the way away to the way dir (the other way round without
  * flag), turned around the up of the way to the goal in steps of the radius of the character: each step and corner
  * free in the graph */
-byte __thiscall cAICharControl3D_StrafeBack(cAICharControl *self, const vec3_t *pos, const vec3_t *away,
+byte __thiscall cAICharControl3D_StrafeBack(cAICharControl3D *self, const vec3_t *pos, const vec3_t *away,
 	const vec3_t *dir, float dist, byte left, byte flag) {
 	cEntity *me = self->ent;
 	vec3_t buf, S, prev, cur;
@@ -863,7 +863,7 @@ static byte AICC3D_ArcFree(cAICharControl *self, const vec3_t *p) {
 }
 
 /* StrafeBack in half steps with only the other characters tested at each point of the circle */
-byte __thiscall cAICharControl3D_StrafeFwd(cAICharControl *self, const vec3_t *pos, const vec3_t *away,
+byte __thiscall cAICharControl3D_StrafeFwd(cAICharControl3D *self, const vec3_t *pos, const vec3_t *away,
 	const vec3_t *dir, float dist, byte left, byte flag) {
 	cEntity *me = self->ent;
 	vec3_t cur;

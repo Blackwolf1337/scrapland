@@ -10,22 +10,22 @@
 #define CAIBANK_SIZE 0x384
 
 void *__thiscall cAIBankDirector_ctor(void *mem, cEntity *e, int *arg) {
-	cAIChar *self = mem;
+	cAIBankDirector *self = mem;
 
 	cAIChar_ctor(mem, e, arg);
-	self->vftable = CAIBANKDIRECTOR_VFTABLE;
-	cAIChar_NewControl(self, CAICHARCONTROL_SIZE, cAIControlBankDirector_ctor, e, arg);
+	self->base.vftable = CAIBANKDIRECTOR_VFTABLE;
+	cAIChar_NewControl(&self->base, CAICHARCONTROL_SIZE, cAIControlBankDirector_ctor, e, arg);
 	return self;
 }
 
-void __fastcall cAIBankDirector_dtor(cAIChar *self) {
-	self->vftable = CAIBANKDIRECTOR_VFTABLE;
-	cAIChar_dtor(self);
+void __fastcall cAIBankDirector_dtor(cAIBankDirector *self) {
+	self->base.vftable = CAIBANKDIRECTOR_VFTABLE;
+	cAIChar_dtor(&self->base);
 }
 
-cAIChar *__thiscall cAIBankDirector_Delete(cAIChar *self, byte flags) {
-	self->vftable = CAIBANKDIRECTOR_VFTABLE;
-	cAIChar_dtor(self);
+cAIBankDirector *__thiscall cAIBankDirector_Delete(cAIBankDirector *self, byte flags) {
+	self->base.vftable = CAIBANKDIRECTOR_VFTABLE;
+	cAIChar_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIBANK_SIZE);
 	}
@@ -64,7 +64,7 @@ void __thiscall cAIBank_CheckAttack(cAIBank *self) {
 	c->ctrl->act = 0;
 }
 
-void __thiscall cAIBankDirector_SetRanges(cAIBank *self) {
+void __thiscall cAIBankDirector_SetRanges(cAIBankDirector *self) {
 	cAIChar *c = &self->base;
 
 	if (c->state != 3) {

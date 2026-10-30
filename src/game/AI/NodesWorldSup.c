@@ -135,21 +135,21 @@ void __thiscall NWIntList_Append(cNWIntList *list, void *const *data) {
 
 /* ---- Global/GridElements.h ---- */
 
-cGridElements *__thiscall NWGrid_ctor(cGridElements *self, const vec3_t *max, const vec3_t *min, int nx, int ny,
-	int nz) {
+cGridElements_InfPointVisPtr *__thiscall NWGrid_ctor(cGridElements_InfPointVisPtr *self, const vec3_t *max,
+	const vec3_t *min, int nx, int ny, int nz) {
 	return cGridElements_Init(self, NWGRID_VFTABLE, max, min, nx, ny, nz);
 }
 
-void __thiscall NWGrid_Free(cGridElements *self) {
+void __thiscall NWGrid_Free(cGridElements_InfPointVisPtr *self) {
 	cGridElements_FreeCells(self, (void(__fastcall *)(void *))NWIntList_Clear, sizeof(cNWIntNode));
 }
 
-void __fastcall NWGrid_dtor(cGridElements *self) {
+void __fastcall NWGrid_dtor(cGridElements_InfPointVisPtr *self) {
 	self->vftable = NWGRID_VFTABLE;
 	NWGrid_Free(self);
 }
 
-cGridElements *__thiscall NWGrid_Delete(cGridElements *self, byte flags) {
+cGridElements_InfPointVisPtr *__thiscall NWGrid_Delete(cGridElements_InfPointVisPtr *self, byte flags) {
 	self->vftable = NWGRID_VFTABLE;
 	NWGrid_Free(self);
 	if (flags & 1) {
@@ -158,7 +158,7 @@ cGridElements *__thiscall NWGrid_Delete(cGridElements *self, byte flags) {
 	return self;
 }
 
-byte __thiscall NWGrid_Add(cGridElements *self, const vec3_t *p, void *const *data) {
+byte __thiscall NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, void *const *data) {
 	CHECK(!((p->x > self->max.x) || (p->x < self->min.x) || (p->y > self->max.y) || (p->y < self->min.y) ||
 		(p->z > self->max.z) || (p->z < self->min.z)));
 	int i = self->vftable->CellIndex(self, p);
