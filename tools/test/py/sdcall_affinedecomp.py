@@ -1,4 +1,4 @@
-# Engine/descomp_afin.cpp (src/game/engine3d/Engine/DescompAfin.c, execfile'd by sdcall.py, Python 1.5.2): matrices
+# Engine/descomp_afin.cpp (src/game/engine3d/Engine/AffineDecomp.c, execfile'd by sdcall.py, Python 1.5.2): matrices
 # built from rotations, scales (equal, unequal, mirrored), shears and translations taken apart by Matrix_ToTransform,
 # the transforms turned back by M3DTransform_ToMatrix and _ToMatrixAnim; also matrices of rank 2, 1 and 0.
 def dcz(n):

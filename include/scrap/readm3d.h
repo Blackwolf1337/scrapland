@@ -283,7 +283,7 @@ void Scene_AnimParents(CScene *scn, CScene *staticScn);
 /* with OptimizeNodes: the nodes under deleted (NODE_DELETE) parents moved up, cleaned before and after */
 void Scene_Hierarchy(CScene *scn);
 
-/* other modules: Engine/descomp_afin.cpp (src/game/engine3d/Engine/DescompAfin.c) */
+/* other modules: Engine/descomp_afin.cpp (src/game/engine3d/Engine/AffineDecomp.c) */
 /* rva 0x2d6c50: the transform of a matrix */
 void Matrix_ToTransform(const matrix_t *m, m3dTransform_t *out);
 /* rva 0x2d6750 and 0x2d65d0: a transform as a matrix (the pivots of the meshes, the frames of the animation) */

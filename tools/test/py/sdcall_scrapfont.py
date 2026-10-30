@@ -1,6 +1,6 @@
 # ScrapEng/ScrapEngFont.c and Fonts.c: the fonts of the game by name, their sizes of texts and the printf variants
 # through the D3D log (the viewport set), a font loaded again from Fonts.fnt. Python 1.5.2, runs inside sdcall.py
-# after sdcall_fuentes.py: check, fmt, rdlog, fni and fnget come from there.
+# after sdcall_fonts.py: check, fmt, rdlog, fni and fnget come from there.
 def cfget(c):
 	r = []
 	for o in range(0, 0x30, 4):

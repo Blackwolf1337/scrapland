@@ -333,7 +333,7 @@ Done in C, as hooks in both builds:
   of the exe (`D3dxAsmTables.h`), its lexer and rules, the validation through d3d8.dll. The game assembles the 30
   pixel shaders of `bmp/*.psh` (ps.1.1); `tools/test/py/sdcall_d3dxasm.py` compares their tokens and the errors of
   bad texts.
-- descomp_afin.cpp (`src/game/engine3d/Engine/DescompAfin.c`): Shoemake's polar decomposition of Graphics Gems IV
+- descomp_afin.cpp (`src/game/engine3d/Engine/AffineDecomp.c`): Shoemake's polar decomposition of Graphics Gems IV
   and the two transform matrices.
 
 Stage 2c2 wrote the rest from scratch, from the documented behavior and the observed results, not from the code of

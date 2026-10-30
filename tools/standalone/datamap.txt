@@ -7500,7 +7500,7 @@
 432a78	4	.data	RenderMeshD3D_AddTransp, RenderMeshD3D_Flush2, probe RenderMeshD3D_Flush2 +2	int table
 432a7c	1	.data	Scene_Load, M3D_ReadMesh, M3D_ReadPortal.part.0 +5	int table
 432a7d	1	.data	CBspQ3_ReadLMaps, probe Scene_Load, probe M3D_SetOk +2	int table
-432a7e	2	.data	probe Scene_Load, probe M3D_SetOk, test sdcall_leem3d +1	zero
+432a7e	2	.data	probe Scene_Load, probe M3D_SetOk, test sdcall_readm3d +1	zero
 432a80	4	.data	Lex_AddDigits, Lex_Comment, Lex_Directive +16	int table
 432a84	4	.data	Illum_Light, Illum_Smooth, probe SDTest_Peek +2	float
 432a88	c	.data	CRadiosity_ctor, probe String_Copy via ucrtbase.dll	string
@@ -12012,7 +12012,7 @@
 4a8f04	4	.data	BspTri_Draw, CBspQ3_Render, CGraphic3D_Draw +6	bss
 4a8f08	4	.data	Engine_DrawStats, Render_SetMap	bss
 4a8f0c	4	.data	DuDv_RenderBump, Engine_DrawStats, Render_SetMaterial	bss
-4a8f10	4	.data	CNode3D_Render, Engine_DrawStats, test sdcall_nodo3d	bss
+4a8f10	4	.data	CNode3D_Render, Engine_DrawStats, test sdcall_node3d	bss
 4a8f14	4	.data	CNode3D_Update, Engine_DrawStats	bss
 4a8f18	4	.data	Engine_DrawStats, ParticleSystem_Draw2	bss
 4a8f1c	4	.data	Engine_DrawStats, Trails_Render	bss
@@ -12144,19 +12144,19 @@
 4ac228	4	.data	CLight_EnableD3D, Init_GVar_R_LightEnaD3D, Light_EnableD3D +1	bss
 4ac22c	4	.data	Init_GVar_R_LightEnaD3D	bss
 4ac230	10	.data	Init_GVar_R_LightAmbient	bss
-4ac240	4	.data	CLight_AdjustD3D, Init_GVar_R_LightAmbient, test sdcall_luz	bss
+4ac240	4	.data	CLight_AdjustD3D, Init_GVar_R_LightAmbient, test sdcall_light	bss
 4ac244	4	.data	Init_GVar_R_LightAmbient	bss
 4ac248	10	.data	Init_GVar_R_LightMult	bss
-4ac258	4	.data	CLight_AdjustD3D, Init_GVar_R_LightMult, test sdcall_luz	bss
+4ac258	4	.data	CLight_AdjustD3D, Init_GVar_R_LightMult, test sdcall_light	bss
 4ac25c	4	.data	Init_GVar_R_LightMult	bss
 4ac260	10	.data	Init_GVar_R_SpotlightClamp	bss
-4ac270	4	.data	CLight_AdjustD3D, Init_GVar_R_SpotlightClamp, test sdcall_luz	bss
+4ac270	4	.data	CLight_AdjustD3D, Init_GVar_R_SpotlightClamp, test sdcall_light	bss
 4ac274	4	.data	Init_GVar_R_SpotlightClamp	bss
 4ac278	10	.data	Init_GVar_R_ShowLights	bss
 4ac288	4	.data	CLight_Render, Init_GVar_R_ShowLights, test sdlevel_engmisc	bss
 4ac28c	4	.data	Init_GVar_R_ShowLights	bss
 4ac290	10	.data	Init_GVar_R_LightDesat	bss
-4ac2a0	4	.data	CLight_AdjustD3D, Init_GVar_R_LightDesat, test sdcall_luz	bss
+4ac2a0	4	.data	CLight_AdjustD3D, Init_GVar_R_LightDesat, test sdcall_light	bss
 4ac2a4	4	.data	Init_GVar_R_LightDesat	bss
 4ac2a8	10	.data	Init_GVar_MonitorAmbient	bss
 4ac2b8	4	.data	Init_GVar_MonitorAmbient, Light_SetDefault	bss
@@ -12165,34 +12165,34 @@
 4ac2d0	4	.data	Init_GVar_R_LightTrace, Light_Select	bss
 4ac2d4	4	.data	Init_GVar_R_LightTrace	bss
 4ac2d8	10	.data	Init_GVar_R_SpotlightAdjust	bss
-4ac2e8	4	.data	CLight_AdjustD3D, Init_GVar_R_SpotlightAdjust, test sdcall_luz	bss
+4ac2e8	4	.data	CLight_AdjustD3D, Init_GVar_R_SpotlightAdjust, test sdcall_light	bss
 4ac2ec	4	.data	Init_GVar_R_SpotlightAdjust	bss
 4ac2f0	10	.data	Init_GVar_R_LightAtten	bss
 4ac300	4	.data	CLight_AdjustD3D, CLight_FillD3D, Init_GVar_R_LightAtten +1	bss
 4ac304	4	.data	CLight_AdjustD3D, Init_GVar_R_LightAtten	bss
 4ac308	10	.data	Init_GVar_R_LightGamma	bss
-4ac318	4	.data	CLight_AdjustD3D, Init_GVar_R_LightGamma, test sdcall_luz	bss
+4ac318	4	.data	CLight_AdjustD3D, Init_GVar_R_LightGamma, test sdcall_light	bss
 4ac31c	4	.data	Init_GVar_R_LightGamma	bss
 4ac320	10	.data	Init_GVar_R_SpotlightMult	bss
-4ac330	4	.data	CLight_AdjustD3D, Init_GVar_R_SpotlightMult, test sdcall_luz	bss
+4ac330	4	.data	CLight_AdjustD3D, Init_GVar_R_SpotlightMult, test sdcall_light	bss
 4ac334	4	.data	Init_GVar_R_SpotlightMult	bss
 4ac338	10	.data	Init_GVar_R_LightSortI	bss
-4ac348	4	.data	Init_GVar_R_LightSortI, Light_Select, test sdcall_luz	bss
+4ac348	4	.data	Init_GVar_R_LightSortI, Light_Select, test sdcall_light	bss
 4ac34c	4	.data	Init_GVar_R_LightSortI	bss
 4ac350	10	.data	Init_GVar_R_LightAtten2	bss
-4ac360	4	.data	CLight_AdjustD3D, Init_GVar_R_LightAtten2, test sdcall_luz	bss
+4ac360	4	.data	CLight_AdjustD3D, Init_GVar_R_LightAtten2, test sdcall_light	bss
 4ac364	4	.data	Init_GVar_R_LightAtten2	bss
 4ac368	10	.data	Init_GVar_R_SpotlightAng	bss
-4ac378	4	.data	Init_GVar_R_SpotlightAng, Light_Select, test sdcall_luz	bss
+4ac378	4	.data	Init_GVar_R_SpotlightAng, Light_Select, test sdcall_light	bss
 4ac37c	4	.data	Init_GVar_R_SpotlightAng	bss
 4ac380	10	.data	Init_GVar_R_SpotlightAtten	bss
-4ac390	4	.data	CLight_AdjustD3D, Init_GVar_R_SpotlightAtten, test sdcall_luz	bss
+4ac390	4	.data	CLight_AdjustD3D, Init_GVar_R_SpotlightAtten, test sdcall_light	bss
 4ac394	4	.data	CLight_AdjustD3D, Init_GVar_R_SpotlightAtten	bss
 4ac398	10	.data	Init_GVar_R_LightMult2	bss
-4ac3a8	4	.data	CLight_AdjustD3D, Init_GVar_R_LightMult2, test sdcall_luz	bss
+4ac3a8	4	.data	CLight_AdjustD3D, Init_GVar_R_LightMult2, test sdcall_light	bss
 4ac3ac	4	.data	Init_GVar_R_LightMult2	bss
 4ac3b0	10	.data	Init_GVar_R_LightTarget	bss
-4ac3c0	4	.data	CLight_Update, Init_GVar_R_LightTarget, test sdcall_luz	bss
+4ac3c0	4	.data	CLight_Update, Init_GVar_R_LightTarget, test sdcall_light	bss
 4ac3c4	4	.data	Init_GVar_R_LightTarget	bss
 4ac3c8	10	.data	Init_GVar_R_LightDefer	bss
 4ac3d8	4	.data	CLight_UpdateD3D, Init_GVar_R_LightDefer, Light_EnableAll +1	bss
@@ -12201,7 +12201,7 @@
 4ac3f0	4	.data	CLight_Update, Init_GVar_R_LightSector, Light_Select +1	bss
 4ac3f4	4	.data	Init_GVar_R_LightSector	bss
 4ac3f8	10	.data	Init_GVar_R_LightSort	bss
-4ac408	4	.data	Init_GVar_R_LightSort, Light_Select, test sdcall_luz	bss
+4ac408	4	.data	Init_GVar_R_LightSort, Light_Select, test sdcall_light	bss
 4ac40c	4	.data	Init_GVar_R_LightSort	bss
 4ac410	10	.data	Fini_GVar_R_LightMultName, Init_GVar_R_LightMultName	bss
 4ac420	4	.data	CLight_AdjustD3D, Fini_GVar_R_LightMultName, Init_GVar_R_LightMultName +1	bss
@@ -12213,9 +12213,9 @@
 4ac438	1000	.data	CLight_UpdateD3D, CLight_dtor, Light_Add +4	bss
 4ad438	b4	.data	CLight_Render, Light_FiniMat	bss
 4ad4ec	1	.data	CGameModel_RenderNow, CNode3D_Render, ModelFX_Render +4	bss
-4ad4ed	3	.data	test sdcall_nodo3d, test sdlevel_eng1	bss
+4ad4ed	3	.data	test sdcall_node3d, test sdlevel_eng1	bss
 4ad4f0	10	.data	Init_GVar_R_SkipAnim	bss
-4ad500	4	.data	CNode3D_SampleAnim, Init_GVar_R_SkipAnim, test sdcall_nodo3d	bss
+4ad500	4	.data	CNode3D_SampleAnim, Init_GVar_R_SkipAnim, test sdcall_node3d	bss
 4ad504	4	.data	Init_GVar_R_SkipAnim	bss
 4ad508	10	.data	Init_GVar_R_ShowLBoxMax	bss
 4ad518	4	.data	CNode3D_DebugDraw, Init_GVar_R_ShowLBoxMax, test sdlevel_engmisc	bss
@@ -12234,10 +12234,10 @@
 4ad57c	4	.data	CNode3D_Update, Init_GVar_R_SkipNodeFX	bss
 4ad580	4	.data	Init_GVar_R_SkipNodeFX	bss
 4ad584	10	.data	Init_GVar_R_SkipNodes	bss
-4ad594	4	.data	CNode3D_Render, Init_GVar_R_SkipNodes, test sdcall_nodo3d	bss
+4ad594	4	.data	CNode3D_Render, Init_GVar_R_SkipNodes, test sdcall_node3d	bss
 4ad598	4	.data	Init_GVar_R_SkipNodes	bss
 4ad59c	10	.data	Init_GVar_R_SkipTrans	bss
-4ad5ac	4	.data	CNode3D_Update, Init_GVar_R_SkipTrans, test sdcall_nodo3d	bss
+4ad5ac	4	.data	CNode3D_Update, Init_GVar_R_SkipTrans, test sdcall_node3d	bss
 4ad5b0	4	.data	Init_GVar_R_SkipTrans	bss
 4ad5b4	10	.data	Init_GVar_R_SkipAnimVis	bss
 4ad5c4	4	.data	CNode3D_Render, Init_GVar_R_SkipAnimVis	bss
@@ -12246,7 +12246,7 @@
 4ad5dc	4	.data	CNode3D_DebugDraw, Fini_GVar_R_ShowLBoxName, Init_GVar_R_ShowLBoxName +1	bss
 4ad5e0	4	.data	Fini_GVar_R_ShowLBoxName, Init_GVar_R_ShowLBoxName	bss
 4ad5e4	10	.data	Init_GVar_R_SkipTrans2	bss
-4ad5f4	4	.data	CNode3D_Update, Init_GVar_R_SkipTrans2, test sdcall_nodo3d	bss
+4ad5f4	4	.data	CNode3D_Update, Init_GVar_R_SkipTrans2, test sdcall_node3d	bss
 4ad5f8	4	.data	Init_GVar_R_SkipTrans2	bss
 4ad5fc	4	.data	CGameModel_RenderNow, CNode3D_Render, ModelFX_Render +3	bss
 4ad600	10	.data	Init_GVar_R_ShowLBoxMin	bss
@@ -12255,7 +12255,7 @@
 4ad618	10	.data	Init_GVar_R_RenderNode_Count	bss
 4ad628	4	.data	CRenderNode_ctor, CRenderNode_dtor, Init_GVar_R_RenderNode_Count +1	bss
 4ad62c	4	.data	Init_GVar_R_RenderNode_Count	bss
-4ad630	4	.data	VertList_FormatFVF, test sdcall_listavert	bss
+4ad630	4	.data	VertList_FormatFVF, test sdcall_vertlist	bss
 4ad634	14	.data	VertList_FormatFVF	bss
 4ad648	4	.data	VertCache_Add, VertCache_Compare, VertCache_Find +3	bss
 4ad64c	7c	.data	VertCache_Add, VertCache_Compare, VertCache_Find +2	bss
@@ -12564,7 +12564,7 @@
 4ae7cc	ffc	.data	Model_UpdateRender, Models_Render, Models_Render_Get +1	bss
 4af7c8	4	.data	Model_UpdateRender, Models_Render, Models_Render_Get +5	bss
 4af7cc	4	.data	Model_UpdateRender, Models_Render, Models_Render_Get +2	bss
-4af7d0	4	.data	CGround_ctor, test sdcall_suelo	bss
+4af7d0	4	.data	CGround_ctor, test sdcall_ground	bss
 4af7d4	1	.data	CEngineApp_MsgProc, CEngineApp_UpdateMenu, test sdcall_eng4	bss
 4af7d5	3	.data	test sdcall_eng4	bss
 4af7d8	4	.data	CGround_Trace, CGround_ctor, Collision_SphereBox +4	bss
@@ -12720,7 +12720,7 @@
 4b1cf0	8	.data	Text_Printf, Text_Printf3D, Text_PrintfRel +3	bss
 4b1cf8	4	.data	Text_DrawStack, Text_Message, Text_Pop +2	bss
 4b1cfc	10	.data	Init_GVar_SpriteScaleWidth	bss
-4b1d0c	4	.data	CGraphic2D_Draw, Init_GVar_SpriteScaleWidth, test sdcall_grafico2d	bss
+4b1d0c	4	.data	CGraphic2D_Draw, Init_GVar_SpriteScaleWidth, test sdcall_graphic2d	bss
 4b1d10	8	.data	Init_GVar_SpriteScaleWidth	bss
 4b1d18	800	.data	CGraphic2D_Draw	bss
 4b2518	10	.data	Init_GVar_R_Particles	bss
@@ -12795,9 +12795,9 @@
 4b2718	4	.data	CTexture_UploadLevel, Init_GVar_SharpenMore	bss
 4b271c	4	.data	Init_GVar_SharpenMore	bss
 4b2720	10	.data	Init_GVar_CachedTex	bss
-4b2730	4	.data	Init_GVar_CachedTex, Texture_FindPurge, test sdcall_textura	bss
+4b2730	4	.data	Init_GVar_CachedTex, Texture_FindPurge, test sdcall_texture	bss
 4b2734	4	.data	Init_GVar_CachedTex	bss
-4b2738	4	.data	Texture_Load, test sdcall_textura	bss
+4b2738	4	.data	Texture_Load, test sdcall_texture	bss
 4b273c	4	.data	-	bss
 4b2740	100	.data	Screenshot_Take, Surface_SaveShot.part.0	bss
 4b2840	1	.data	Avi_Write, DVF_Process, Screenshot_Take +2	bss
@@ -12871,7 +12871,7 @@
 4b2cb4	a75c	.data	-	bss
 4bd410	4	.data	test sdlevel_aicharctl	bss
 4bd414	21c	.data	-	bss
-4bd630	4	.data	test sdcall_textura	bss
+4bd630	4	.data	test sdcall_texture	bss
 4bd634	185ec	.data	-	bss
 4d5c20	10	.data	Init_GVar_LightmapDxtPadding	bss
 4d5c30	4	.data	BspLMap_Find, Init_GVar_LightmapDxtPadding, test sdcall_bsp	bss
@@ -13041,7 +13041,7 @@
 4dbf40	20	.data	TEX_Load, TEX_Save	bss
 4dbf60	18	.data	TGA_Load, TGA_Save	bss
 4dbf78	100	.data	CAnimNode_Optimize, Scene_Load	bss
-4dc078	4	.data	CAnimation_Read, test sdcall_animacion	bss
+4dc078	4	.data	CAnimation_Read, test sdcall_animation	bss
 4dc07c	14	.data	CAnimation_Read	bss
 4dc090	4	.data	AnimBlock_Free, CAnimNode_ReadTrack.part.0, CAnimation_Init +3	bss
 4dc094	18	.data	Init_GVar_OptAnimPosMax	bss
@@ -13049,7 +13049,7 @@
 4dc0bc	4	.data	CAnimNode_Optimize, Init_GVar_OptAnimPosErr	bss
 4dc0c0	4	.data	Init_GVar_OptAnimPosErr	bss
 4dc0c4	10	.data	Init_GVar_OptimizeAnims	bss
-4dc0d4	4	.data	CAnimNode_Optimize, Init_GVar_OptimizeAnims, test sdcall_animacion	bss
+4dc0d4	4	.data	CAnimNode_Optimize, Init_GVar_OptimizeAnims, test sdcall_animation	bss
 4dc0d8	4	.data	Init_GVar_OptimizeAnims	bss
 4dc0dc	10	.data	Init_GVar_OptAnimFovErr	bss
 4dc0ec	4	.data	CAnimNode_Optimize, Init_GVar_OptAnimFovErr	bss
@@ -13060,10 +13060,10 @@
 4dc10c	10	.data	Init_GVar_OptAnimRotErr	bss
 4dc11c	8	.data	CAnimNode_Optimize, Init_GVar_OptAnimRotErr	bss
 4dc124	4	.data	Init_GVar_OptAnimRotErr	bss
-4dc128	4	.data	CMeshD3D_Build, MeshD3D_NewObj, test sdcall_mallad3d	bss
+4dc128	4	.data	CMeshD3D_Build, MeshD3D_NewObj, test sdcall_meshd3d	bss
 4dc12c	27fc	.data	CMeshD3D_Build, MeshD3D_NewObj	bss
-4de928	4	.data	CMeshD3D_Build, MeshD3D_NewObj, test sdcall_mallad3d	bss
-4de92c	4	.data	MeshD3DObj_Weld, MeshD3D_CompareVertIdx, test sdcall_mallad3d	bss
+4de928	4	.data	CMeshD3D_Build, MeshD3D_NewObj, test sdcall_meshd3d	bss
+4de92c	4	.data	MeshD3DObj_Weld, MeshD3D_CompareVertIdx, test sdcall_meshd3d	bss
 4de930	10	.data	Init_GVar_NodeFXSpringMidP	bss
 4de940	4	.data	CNodeFX_Spring_Apply, Init_GVar_NodeFXSpringMidP	bss
 4de944	4	.data	Init_GVar_NodeFXSpringMidP	bss
@@ -13230,11 +13230,11 @@
 4e1fa4	1	.data	Scene_Load, M3DTable_Read, M3D_Label +9	bss
 4e1fa5	1	.data	Scene_Load, M3D_Label, M3D_ReadTransform +2	bss
 4e1fa6	2	.data	Scene_Load, M3D_ReadMap, M3D_ActiveMap +3	bss
-4e1fa8	2	.data	Scene_AnimLocal, Scene_Load, test sdcall_leem3d +1	bss
+4e1fa8	2	.data	Scene_AnimLocal, Scene_Load, test sdcall_readm3d +1	bss
 4e1faa	6	.data	Scene_AnimLocal, Scene_Load, test sdcall_m3d	bss
 4e1fb0	4	.data	Scene_Load, M3DTrack_Read, M3DTable_Read +1	bss
 4e1fb4	2	.data	Scene_Load, M3D_ReadMap, M3D_ActiveMap +1	bss
-4e1fb6	2	.data	Scene_Load, test sdcall_leem3d	bss
+4e1fb6	2	.data	Scene_Load, test sdcall_readm3d	bss
 4e1fb8	8	.data	Scene_Load, M3D_ReadMesh	bss
 4e1fc0	4	.data	Scene_Load, M3DTable_Read, M3D_Label +8	bss
 4e1fc4	3fc	.data	Scene_Load, M3DTable_Read, M3D_Label +7	bss
