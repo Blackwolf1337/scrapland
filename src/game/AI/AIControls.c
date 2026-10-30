@@ -110,12 +110,12 @@ cAICharControl *__thiscall cAIControlBankDirector_ctor(void *mem, cEntity *e, cA
 	return self;
 }
 
-void __fastcall cAIControlBankDirector_dtor(cAICharControl *self) {
+void __fastcall cAIControlBankDirector_dtor(cAIControlBankDirector *self) {
 	self->vftable = CAICONTROLBANKDIRECTOR_VFTABLE;
 	cAICharControl2D_dtor(self);
 }
 
-cAICharControl *__thiscall cAIControlBankDirector_Delete(cAICharControl *self, byte flags) {
+cAIControlBankDirector *__thiscall cAIControlBankDirector_Delete(cAIControlBankDirector *self, byte flags) {
 	self->vftable = CAICONTROLBANKDIRECTOR_VFTABLE;
 	cAICharControl2D_dtor(self);
 	if (flags & 1) {
@@ -183,12 +183,12 @@ cAICharControl *__thiscall cAIControlBankMaster_ctor(void *mem, cEntity *e, cAIC
 	return self;
 }
 
-void __fastcall cAIControlBankMaster_dtor(cAICharControl *self) {
+void __fastcall cAIControlBankMaster_dtor(cAIControlBankMaster *self) {
 	self->vftable = CAICONTROLBANKMASTER_VFTABLE;
 	cAICharControl2D_dtor(self);
 }
 
-cAICharControl *__thiscall cAIControlBankMaster_Delete(cAICharControl *self, byte flags) {
+cAIControlBankMaster *__thiscall cAIControlBankMaster_Delete(cAIControlBankMaster *self, byte flags) {
 	self->vftable = CAICONTROLBANKMASTER_VFTABLE;
 	cAICharControl2D_dtor(self);
 	if (flags & 1) {
@@ -197,7 +197,7 @@ cAICharControl *__thiscall cAIControlBankMaster_Delete(cAICharControl *self, byt
 	return self;
 }
 
-void __thiscall cAIControlBankMaster_Orbit(cAICharControl *self) {
+void __thiscall cAIControlBankMaster_Orbit(cAIControlBankMaster *self) {
 	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	vec3_t d, w, out, b1, b2;
 	vec3_t fwd = {0.0f, 0.0f, -1.0f};
@@ -393,17 +393,17 @@ byte __thiscall cAIControlBishop_CheckWait(cAICharControl *self) {
 	return r;
 }
 
-void __thiscall cAIControlBishop_Strafe2(cAIControlShoot *self) {
+void __thiscall cAIControlBishop_Strafe2(cAIControlBishop *self) {
 	if (ACtl_FreeToStrafe(&self->base)) {
 		cAIControlBishop_Strafe(self);
 	}
 }
 
-void __thiscall cAIControlBishop_Strafe(cAIControlShoot *self) {
+void __thiscall cAIControlBishop_Strafe(cAIControlBishop *self) {
 	ACtl_ShootStrafe(self, 0);
 }
 
-void __thiscall cAIControlBishop_SetParams(cAIControlShoot *self) {
+void __thiscall cAIControlBishop_SetParams(cAIControlBishop *self) {
 	if (!self->base.target) {
 		return;
 	}
@@ -479,13 +479,13 @@ void __thiscall cAIControlGear_DirTurn(cAICharControl *self) {
 	}
 }
 
-void __thiscall cAIControlGear_Strafe2(cAIControlShoot *self) {
+void __thiscall cAIControlGear_Strafe2(cAIControlGear *self) {
 	if (ACtl_FreeToStrafe(&self->base)) {
 		cAIControlGear_Strafe(self);
 	}
 }
 
-void __thiscall cAIControlGear_Strafe(cAIControlShoot *self) {
+void __thiscall cAIControlGear_Strafe(cAIControlGear *self) {
 	ACtl_ShootStrafe(self, 1);
 }
 
@@ -493,7 +493,7 @@ byte __thiscall cAIControlGear_Vf89(cAICharControl *self) {
 	return cAIGear_IsBlocked((cAIGear *)self->ai);
 }
 
-void __thiscall cAIControlGear_SetParams(cAIControlShoot *self) {
+void __thiscall cAIControlGear_SetParams(cAIControlGear *self) {
 	if (!self->base.target || !self->base.target->target) {
 		return;
 	}
@@ -532,12 +532,12 @@ cAICharControl *__thiscall cAIControlMessenger_ctor(void *mem, cEntity *e, cAICh
 	return self;
 }
 
-void __fastcall cAIControlMessenger_dtor(cAICharControl *self) {
+void __fastcall cAIControlMessenger_dtor(cAIControlMessenger *self) {
 	self->vftable = CAICONTROLMESSENGER_VFTABLE;
 	cAICharControl3D_dtor(self);
 }
 
-cAICharControl *__thiscall cAIControlMessenger_Delete(cAICharControl *self, byte flags) {
+cAIControlMessenger *__thiscall cAIControlMessenger_Delete(cAIControlMessenger *self, byte flags) {
 	self->vftable = CAICONTROLMESSENGER_VFTABLE;
 	cAICharControl3D_dtor(self);
 	if (flags & 1) {
@@ -546,7 +546,7 @@ cAICharControl *__thiscall cAIControlMessenger_Delete(cAICharControl *self, byte
 	return self;
 }
 
-byte __thiscall cAIControlMessenger_UpdateFollowMode(cAICharControl *self, float dt) {
+byte __thiscall cAIControlMessenger_UpdateFollowMode(cAIControlMessenger *self, float dt) {
 	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 
 	(void)dt;
@@ -580,7 +580,7 @@ byte __thiscall cAIControlMessenger_UpdateFollowMode(cAICharControl *self, float
 	return 1;
 }
 
-void __thiscall cAIControlMessenger_SetTurnSpeed(cAICharControl *self, float speed) {
+void __thiscall cAIControlMessenger_SetTurnSpeed(cAIControlMessenger *self, float speed) {
 	if (0.55f >= speed) {
 		self->turnGain = 5.0f;
 		self->turnStep = 1.0f;
@@ -602,12 +602,12 @@ cAICharControl *__thiscall cAIControlNurse_ctor(void *mem, cEntity *e, cAIChar *
 	return self;
 }
 
-void __fastcall cAIControlNurse_dtor(cAICharControl *self) {
+void __fastcall cAIControlNurse_dtor(cAIControlNurse *self) {
 	self->vftable = CAICONTROLNURSE_VFTABLE;
 	cAICharControl3D_dtor(self);
 }
 
-cAICharControl *__thiscall cAIControlNurse_Delete(cAICharControl *self, byte flags) {
+cAIControlNurse *__thiscall cAIControlNurse_Delete(cAIControlNurse *self, byte flags) {
 	self->vftable = CAICONTROLNURSE_VFTABLE;
 	cAICharControl3D_dtor(self);
 	if (flags & 1) {
@@ -616,7 +616,7 @@ cAICharControl *__thiscall cAIControlNurse_Delete(cAICharControl *self, byte fla
 	return self;
 }
 
-void __thiscall cAIControlNurse_Walk(cAICharControl *self) {
+void __thiscall cAIControlNurse_Walk(cAIControlNurse *self) {
 	cEntity *te = AICC_TargetEnt(self);
 	vec3_t b1, b2;
 

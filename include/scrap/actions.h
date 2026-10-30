@@ -179,6 +179,8 @@ SD_OFFSET(cAction, isLoop, 0x34);
 SD_OFFSET(cAction, slideAsFly, 0x4c);
 SD_OFFSET(cAction, priority, 0x64);
 SD_SIZE(cAction, 0x6c);
+/* the class name in the exe */
+typedef cAction cActionMove;
 
 /* a layer of a controller: the time in its action and its next event */
 typedef struct cActLayer {

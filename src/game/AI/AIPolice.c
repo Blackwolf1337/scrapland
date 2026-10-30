@@ -9,19 +9,19 @@
 #define CAIPOLICE_SIZE 0x380
 
 void *__thiscall cAIPolice_ctor(void *mem, cEntity *e, int *arg) {
-	cAIChar *self = mem;
+	cAIPolice *self = mem;
 
 	cAIChar_ctor(mem, e, arg);
 	self->vftable = CAIPOLICE_VFTABLE;
 	return self;
 }
 
-void __fastcall cAIPolice_dtor(cAIChar *self) {
+void __fastcall cAIPolice_dtor(cAIPolice *self) {
 	self->vftable = CAIPOLICE_VFTABLE;
 	cAIChar_dtor(self);
 }
 
-cAIChar *__thiscall cAIPolice_Delete(cAIChar *self, byte flags) {
+cAIPolice *__thiscall cAIPolice_Delete(cAIPolice *self, byte flags) {
 	self->vftable = CAIPOLICE_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
@@ -30,13 +30,13 @@ cAIChar *__thiscall cAIPolice_Delete(cAIChar *self, byte flags) {
 	return self;
 }
 
-void __thiscall cAIPolice_CheckActDist(cAIChar *self) {
+void __thiscall cAIPolice_CheckActDist(cAIPolice *self) {
 	float dist = AIChar_TargetDistFlat(self);
 
 	self->ctrl->act = AIChar_Action0(self->ent)->priority <= 0x65 && self->actMax > dist && dist > self->actMin;
 }
 
-void __thiscall cAIPolice_SetDists(cAIChar *self) {
+void __thiscall cAIPolice_SetDists(cAIPolice *self) {
 	float d;
 
 	if (self->state == 2) {

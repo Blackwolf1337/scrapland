@@ -9,7 +9,7 @@
 #define CAIHUMAN_SIZE 0x380
 
 void *__thiscall cAIHuman_ctor(void *mem, cEntity *e, int *arg) {
-	cAIChar *self = mem;
+	cAIHuman *self = mem;
 
 	cAIChar_ctor(mem, e, arg);
 	self->vftable = CAIHUMAN_VFTABLE;
@@ -17,12 +17,12 @@ void *__thiscall cAIHuman_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-void __fastcall cAIHuman_dtor(cAIChar *self) {
+void __fastcall cAIHuman_dtor(cAIHuman *self) {
 	self->vftable = CAIHUMAN_VFTABLE;
 	cAIChar_dtor(self);
 }
 
-cAIChar *__thiscall cAIHuman_Delete(cAIChar *self, byte flags) {
+cAIHuman *__thiscall cAIHuman_Delete(cAIHuman *self, byte flags) {
 	self->vftable = CAIHUMAN_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
@@ -31,7 +31,7 @@ cAIChar *__thiscall cAIHuman_Delete(cAIChar *self, byte flags) {
 	return self;
 }
 
-void __thiscall cAIHuman_SetDists(cAIChar *self) {
+void __thiscall cAIHuman_SetDists(cAIHuman *self) {
 	if (self->state != 3) {
 		cAIChar_SetDists(self);
 		return;

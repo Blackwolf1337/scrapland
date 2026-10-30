@@ -205,6 +205,62 @@ SD_OFFSET(CNodesWorldVtbl, InList, 0x94);
 SD_OFFSET(CNodesWorldVtbl, ClearLists, 0x98);
 SD_OFFSET(CNodesWorldVtbl, SaveInfPath, 0x9c);
 
+/* the base class (AI/NodesWorldSup.cpp, abstract): the first 0x360 bytes of CNodesWorld and CNodesWorld2D. The code
+ * of both works on the CNodesWorld layout, which repeats these members */
+typedef struct CNodesWorldSup {
+	const CNodesWorldVtbl *vftable;	/* 0x000 */
+	vec3_t halfNode;		/* 0x004 half of nodeSize */
+	vec3_t axis[3];			/* 0x010 nodeSize along x, y and z */
+	vec3_t nodeSize;		/* 0x034 vectInterNod */
+	float f40;			/* 0x040 25000 outdoors, 1500 indoors */
+	vec3_t f44;			/* 0x044 */
+	float margin;			/* 0x050 the smallest component of nodeSize / 100 */
+	float f54;			/* 0x054 */
+	float linkDist;			/* 0x058 */
+	float f5c;			/* 0x05c */
+	float maxVisDist;		/* 0x060 the searches of points of visibility end at this distance */
+	vec3_t nodeInit;		/* 0x064 PointNodeInit */
+	byte created;			/* 0x070 */
+	byte pad_71[3];
+	vec3_t min;			/* 0x074 the box of the level */
+	vec3_t max;			/* 0x080 */
+	char name[0xff];		/* 0x08c the level, the folder of the graph files */
+	byte nodeInitDummy;		/* 0x18b */
+	cNWGrid *grid;			/* 0x18c the points of visibility by cell */
+	cNWPointList points;		/* 0x190 the points of the generation */
+	cNWNode *nodes;			/* 0x1a8 */
+	int numNodes;			/* 0x1ac */
+	cNWCell *buffer;		/* 0x1b0 the cells of the generation, nx * ny * nz (Mem_Alloc) */
+	int nx, ny, nz;			/* 0x1b4 */
+	int dimBuffer;			/* 0x1c0 */
+	int numPointLinks;		/* 0x1c4 the links of the generated points */
+	void *tmp1c8;			/* 0x1c8 freed with the buffer (Mem_Alloc) */
+	int num1cc;			/* 0x1cc */
+	cNWIntList list1d0;		/* 0x1d0 */
+	cNWVisList *sets;		/* 0x1e8 numSets hash lists of the sets of points (Mem_Alloc) */
+	int numSets;			/* 0x1ec */
+	cNWVecList extraPoints;		/* 0x1f0 */
+	cNWNode *fileStart[20];		/* 0x208 the first node of each graph file */
+	int numFiles;			/* 0x258 */
+	cNWVecList lists25c[2];		/* 0x25c the nodes of the debug view */
+	cNWVecList lists28c[5];		/* 0x28c the buffer cells by state (GetInfoNodes) */
+	vec3_t openPos;			/* 0x304 the cell where the region of the generation left the box */
+	cNWVecList errCollide;		/* 0x310 AnalizeGraph: the links through the level, 3 points each */
+	cNWVecList errUnlinked;		/* 0x328 the nodes without links */
+	cNWVecList errOneWay;		/* 0x340 the links without the link back, 2 points each */
+	int i358;			/* 0x358 */
+	byte b35c;			/* 0x35c */
+	byte pad_35d[3];
+} CNodesWorldSup;
+SD_OFFSET(CNodesWorldSup, maxVisDist, 0x60);
+SD_OFFSET(CNodesWorldSup, name, 0x8c);
+SD_OFFSET(CNodesWorldSup, grid, 0x18c);
+SD_OFFSET(CNodesWorldSup, buffer, 0x1b0);
+SD_OFFSET(CNodesWorldSup, sets, 0x1e8);
+SD_OFFSET(CNodesWorldSup, numFiles, 0x258);
+SD_OFFSET(CNodesWorldSup, errCollide, 0x310);
+SD_SIZE(CNodesWorldSup, 0x360);
+
 struct CNodesWorld {
 	const CNodesWorldVtbl *vftable;	/* 0x000 */
 	vec3_t halfNode;		/* 0x004 half of nodeSize */

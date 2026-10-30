@@ -9,29 +9,29 @@
 #define CAIBANK_SIZE 0x384
 
 void *__thiscall cAIBankMaster_ctor(void *mem, cEntity *e, int *arg) {
-	cAIChar *self = mem;
+	cAIBankMaster *self = mem;
 
 	cAIChar_ctor(mem, e, arg);
-	self->vftable = CAIBANKMASTER_VFTABLE;
-	cAIChar_NewControl(self, CAICHARCONTROL_SIZE, cAIControlBankMaster_ctor, e, arg);
+	self->base.vftable = CAIBANKMASTER_VFTABLE;
+	cAIChar_NewControl(&self->base, CAICHARCONTROL_SIZE, cAIControlBankMaster_ctor, e, arg);
 	return self;
 }
 
-void __fastcall cAIBankMaster_dtor(cAIChar *self) {
-	self->vftable = CAIBANKMASTER_VFTABLE;
-	cAIChar_dtor(self);
+void __fastcall cAIBankMaster_dtor(cAIBankMaster *self) {
+	self->base.vftable = CAIBANKMASTER_VFTABLE;
+	cAIChar_dtor(&self->base);
 }
 
-cAIChar *__thiscall cAIBankMaster_Delete(cAIChar *self, byte flags) {
-	self->vftable = CAIBANKMASTER_VFTABLE;
-	cAIChar_dtor(self);
+cAIBankMaster *__thiscall cAIBankMaster_Delete(cAIBankMaster *self, byte flags) {
+	self->base.vftable = CAIBANKMASTER_VFTABLE;
+	cAIChar_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIBANK_SIZE);
 	}
 	return self;
 }
 
-void __thiscall cAIBankMaster_SetRanges(cAIBank *self) {
+void __thiscall cAIBankMaster_SetRanges(cAIBankMaster *self) {
 	cAIChar *c = &self->base;
 
 	if (c->state == 3) {
