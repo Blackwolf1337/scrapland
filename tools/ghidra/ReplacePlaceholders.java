@@ -1,7 +1,8 @@
 // Replaces the 1 byte placeholder structures of the analysis (the RTTI classes at the root, the demangler's in
 // /Demangler) by the types of the imported headers: a placeholder with the name of a header type, or with the old
 // name of one (the Spanish RTTI names, tools/rename/names.tsv), goes, and its uses (the this of the __thiscall
-// methods, pointers in signatures) get the header type. Only structures without any component are taken, and
+// methods, pointers in signatures) get the header type. A template class has a C name without the brackets
+// (cGridElements<InfPointVis*> is cGridElements_InfPointVisPtr). Only structures without any component are taken, and
 // only header types that are no placeholder themselves.
 //
 // Headless: tools/ghidra/headless.sh ReplacePlaceholders.java <names.tsv> <header dir> ...
@@ -68,6 +69,9 @@ public class ReplacePlaceholders extends GhidraScript {
 			if (t == null && english.containsKey(name)) {
 				t = types.get(english.get(name));
 			}
+			if (t == null && name.indexOf('<') > 0) {
+				t = types.get(name.replace("*", "Ptr").replaceAll("[<,]", "_").replaceAll("[> ]", ""));
+			}
 			if (t == null) {
 				continue;
 			}
@@ -82,7 +86,7 @@ public class ReplacePlaceholders extends GhidraScript {
 			}
 		}
 		println(String.format("ReplacePlaceholders: %d placeholders, %d replaced by a header type of the same name, " +
-			"%d by the English one, %d kept", placeholders.size(), same, renamed,
+			"%d by the English or template one, %d kept", placeholders.size(), same, renamed,
 			placeholders.size() - same - renamed));
 	}
 
