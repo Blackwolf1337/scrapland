@@ -27,7 +27,7 @@ tools/ghidra/rebuild.sh [dir] [name]
 tools/ghidra/headless.sh <Script.java> [args]
 ```
 
-`rebuild.sh` creates a new project (default `ghidra/Scrapland`, must not exist). It imports the exe and runs auto analysis (about 2 minutes). Then it runs ImportHeaders (`Python.h`), the passes NamePyBindings, NameVtables, NameFromStrings, and ImportSymbols last, so names from `symbols/` win. About 5 minutes in total.
+`rebuild.sh` creates a new project (default `ghidra/Scrapland`, must not exist). It imports the exe and runs auto analysis (about 2 minutes). Then it runs ImportHeaders twice (`Python.h`, then the engine headers), CheckLayouts, the passes NamePyBindings, NameVtables, NameFromStrings, then ImportSymbols, so names from `symbols/` win, and ReplacePlaceholders last. About 5 minutes in total.
 
 `headless.sh` runs one script on `ghidra/Scrapland` without new analysis.
 
@@ -44,16 +44,71 @@ and commit `symbols/`.
 `ImportHeaders.java` parses C headers into the program data types with Ghidra's preprocessor and C parser:
 
 ```
-tools/ghidra/headless.sh ImportHeaders.java <header> [-I<dir> ...] [-D<define> ...]
+tools/ghidra/headless.sh ImportHeaders.java <header> [-I<dir> ...] [-D<define> ...] [-C<from>=<to> ...]
 ```
 
-Ghidra files each type under a category named after its header (`/object.h/PyTypeObject`, `/methodobject.h/PyMethodDef`).
+Ghidra files each type under a category named after its header (`/object.h/PyTypeObject`, `/game.h/cWorld`). A type that a header uses before its own header defines it stays in the category of the first header (`cEntity` is in `/game.h`, which points to it first).
+
+ImportHeaders runs the steps of Ghidra's `CParserUtils.parseHeaderFiles`, with two passes on the preprocessed text before the parser. The first cuts the body of every function definition to a `;`, so the `static inline` functions of the engine headers become prototypes. Ghidra's parser is C89 (no declaration in a `for`, no statement expressions) and its preprocessor does not stringify (`#expr` of `CHECK`), and only the types are wanted. The second puts the value of an enum constant into an array size (`weaps[AIVS_NUM]`), which Ghidra's parser takes as 0: a first parse into a scratch manager gives the values. `-C<from>=<to>` sets a calling convention afterwards, see below. The parser input is saved as `ImportHeaders.c` in Ghidra's user temp directory (`/tmp/<user>-ghidra`), the line numbers of parse errors refer to it.
+
+### Python 1.5.2
 
 `third_party/python-1.5.2/` holds the `Include/` directory of Python 1.5.2 (plus `PC/config.h` saved as `Include/config_pc.h`, not used for parsing) and `COPYRIGHT` (Stichting Mathematisch Centrum license, which allows redistribution with the notice). It gives the exact struct layouts, now for Ghidra and later for the hook DLL.
 
-`tools/ghidra/include/` has stand-in headers for the Ghidra parse: `config.h` (prototypes on, int/long/pointer 4 bytes, `DL_IMPORT`/`DL_EXPORT`), `stdio.h` with only `typedef struct _iobuf FILE`, `stdarg.h` with `va_list`, and empty `string.h`, `errno.h`, `stdlib.h`.
+`tools/ghidra/include/` has stand-in headers for the Ghidra parse: `stdio.h` with only `typedef struct _iobuf FILE`, `stdarg.h` with `va_list`, `stdint.h` and `stddef.h` with the i686 MSVC sizes (long 4 bytes), and empty `string.h`, `errno.h`, `stdlib.h`. `third_party/python-1.5.2/config/config.h` sets prototypes on, int/long/pointer 4 bytes, `DL_IMPORT`/`DL_EXPORT`.
 
 Result: 498 types, no parse errors. `PyTypeObject` is 0x6c bytes, which matches the exe (1.5.2 layout without `COUNT_ALLOCS`).
+
+### Engine headers
+
+`tools/ghidra/include/scrap_all.h` includes all 143 headers of `include/scrap`. Most come in alphabetical order (`prof.h` needs `game.h` before it, `readdata.h` needs `e3dutil.h`). As in the sources, `FXMESSENGER_TRAILS` of `fxcharactions.h` is undefined before `embeddedfxchar.h` defines its own; Ghidra's preprocessor would keep the first definition. gcc compiles `scrap_all.h` too, without warnings.
+
+```
+tools/ghidra/headless.sh ImportHeaders.java tools/ghidra/include/scrap_all.h -Itools/ghidra/include -Iinclude \
+	-Ithird_party/python-1.5.2/config -Ithird_party/python-1.5.2/Include -DSD_GHIDRA -C__vectorcall=__thiscall
+```
+
+The GCC and C23 parts the parser does not know are handled for the Ghidra parse only, by `tools/ghidra/include/gccext.h` (included by `scrap_all.h` with `SD_GHIDRA`):
+
+| construct | in the parse |
+|-----------|--------------|
+| `static_assert`, `SD_OFFSET`, `SD_SIZE` | gone (CheckLayouts checks them instead) |
+| `typeof` | its argument, only used in macros of function bodies |
+| `bool`, `true`, `false` | `_Bool`, 1, 0 |
+| `__thiscall` | `__vectorcall`, set back by `-C__vectorcall=__thiscall`: Ghidra's parser has no `__thiscall`, and no header uses `__vectorcall` |
+| `__attribute__((...))`, `[[noreturn]]` | Ghidra's parser takes them (and ignores `packed`) |
+| `__asm__`, `__builtin_*`, statement expressions, `#expr`, C99 statements | only in function bodies, which ImportHeaders cuts |
+
+The headers are written for both compilers in two points, as Ghidra's parser gets these wrong:
+
+- Packed structs use `#pragma pack(push, 1)` and `#pragma pack(pop)` instead of `__attribute__((packed))`, which Ghidra ignores (`bmp.h`, `meshd3d.h`).
+- A member that points to an array uses a typedef of the array (`tri16_t *pTri`, `ammoNodes_t *nodes`). Ghidra drops the pointer of `uint16_t (*pTri)[3]` and makes the member the array itself.
+
+The stand-in headers need no Windows types: the engine headers use their own (`exe_rect`, `void *` for handles, `int` for `HRESULT`).
+
+Result: 11203 data types (with the pointers and arrays Ghidra makes), 148 function bodies cut, 1 enum array size, 3440 function types set to `__thiscall`, no parse errors.
+
+### Layout check
+
+`CheckLayouts.java` reads the `SD_SIZE` and `SD_OFFSET` lines of `include/scrap` and compares them with the imported types (sizes, member offsets, also in anonymous unions). `rebuild.sh` runs it after the import.
+
+```
+tools/ghidra/headless.sh CheckLayouts.java include/scrap
+```
+
+Result: 522 sizes and 1026 offsets checked, 0 wrong. For example `cWorld` is 0x21cc bytes with `money` at 0x2090 and `items` at 0x20e0, `CWinApp` 0x90, `cVehicleEntity` 0x814, `PyTypeObject` still 0x6c. A one-time check against gcc (a C file of `_Static_assert` lines from all imported structs, compiled with i686-w64-mingw32-gcc) agreed on all 710 struct and union sizes and 6894 member offsets.
+
+### Placeholders
+
+The analysis makes a 1 byte structure for each RTTI class at the root (`/CEscena`, `/cEntity`) and the demangler some in `/Demangler` (`/Demangler/PyObject`). The `this` of the `__thiscall` methods of a class gets that placeholder as long as it exists, not the header type.
+
+`ReplacePlaceholders.java` replaces each placeholder that has a header type of the same name, or of its English name from `tools/rename/names.tsv` (`CEscena` -> `CScene`). Ghidra then points every use at the header type. Only structures without components go, and only for a header type that is no placeholder itself. `rebuild.sh` runs it last.
+
+```
+tools/ghidra/headless.sh ReplacePlaceholders.java tools/rename/names.tsv include/scrap third_party/python-1.5.2/Include
+```
+
+Result: 213 replaced by the type of the same name (`/cEntity` by `/game.h/cEntity`, `/Demangler/PyObject` by `/object.h/PyObject`), 22 by the English one (`/CEscena` by `/node3d.h/CScene`, `/CNodo3D` by `/node3d.h/CNode3D`, `/CMallaD3D` by `/render.h/CMeshD3D`). 253 stay: 75 RTTI classes without a struct in the headers yet (three with a Spanish name: `CEntradaNula`, `CMotorApp`, `cObjElementFXSistPartDuDv`), and in `/Demangler` the CRT, STL, lambda and Galaxy types. These are the numbers of the project updated on 2026-10-30. A project rebuilt with `rebuild.sh` has fewer placeholders (281), because the passes after the import find the header types by name: 6 go by the same name, 22 by the English one, the same 253 stay.
 
 ## Naming passes
 
@@ -106,7 +161,7 @@ After the first passes: 15726 functions, 7374 with a name (about 47 percent, mos
 
 ## Data types
 
-Types come from C headers imported with ImportHeaders (Python 1.5.2 so far). The project's own engine headers (`include/scrap/`, Phase 3) will be imported the same way. Types are still not exported from Ghidra.
+Types come from C headers imported with ImportHeaders: Python 1.5.2 and the engine headers of `include/scrap/` (Phase 3, see Headers). The headers are the source of truth, so types are not exported from Ghidra: a change goes into the header, and a rebuilt or updated project imports it.
 
 ## Round trip check
 
@@ -115,6 +170,8 @@ How the pipeline was verified: rebuild into a scratch project, export, diff agai
 Result on 2026-10-25: globals and comments identical. Functions differed by one extra function found in the clean pass order. The project database was then rebuilt with `rebuild.sh`, so both match.
 
 After adding the header import, the project database was rebuilt with `rebuild.sh` (5 minutes) and exported. Compared with the previous `symbols/`, the function list is identical (15726 functions). The differences are only the new signatures (464 binding functions) and the header data types on tables and type objects.
+
+After adding the engine headers on 2026-10-30, the project was updated in place (ImportHeaders, CheckLayouts, ReplacePlaceholders) and exported: the export is the same as before the update. A scratch project from `rebuild.sh` (3.5 minutes) exports the same globals and comments and differs in two functions only (`MemPools_PrintAll` named by ImportSymbols, `PyTuple_SetItem` without its signature), from the order of the passes, not from the types.
 
 ## ScrapHacks
 
@@ -125,5 +182,5 @@ Its notes (`notes/src/Classes.md`, `World.md`, `Variables.md`, `Python_Modules.m
 ## Next steps
 
 - Name engine functions from log and assert strings (e.g. `"cPy_Function::SetFunc: ..."`).
-- Struct layouts for the RTTI classes.
+- Struct layouts for the RTTI classes that have none in the headers yet (75, see Placeholders).
 - Phase 3 continues in docs/hookdll.md.

@@ -1,7 +1,8 @@
 #!/bin/bash
-# Builds a Ghidra project for Scrap.exe from scratch: import, auto analysis, the Python 1.5.2 headers, the naming
-# passes, then the names,
-# signatures and comments from symbols/ (ImportSymbols last, so names given by hand win over the passes).
+# Builds a Ghidra project for Scrap.exe from scratch: import, auto analysis, the Python 1.5.2 headers, the engine
+# headers of include/scrap (checked by CheckLayouts), the naming passes, then the names, signatures and comments from
+# symbols/ (ImportSymbols after the passes, so names given by hand win), and last the header types in place of the
+# placeholders of the analysis (ReplacePlaceholders).
 #
 # usage: tools/ghidra/rebuild.sh [project dir] [project name]   default ghidra Scrapland; the project must not exist
 #        GHIDRA_DIR, GHIDRA_JAVA as in headless.sh
@@ -20,10 +21,14 @@ cd "$root" || exit 1
 	-cspec windows -analysisTimeoutPerFile 7200 -scriptPath tools/ghidra \
 	-postScript ImportHeaders.java third_party/python-1.5.2/Include/Python.h -Itools/ghidra/include -Ithird_party/python-1.5.2/config \
 	-Ithird_party/python-1.5.2/Include \
+	-postScript ImportHeaders.java tools/ghidra/include/scrap_all.h -Itools/ghidra/include -Iinclude \
+	-Ithird_party/python-1.5.2/config -Ithird_party/python-1.5.2/Include -DSD_GHIDRA -C__vectorcall=__thiscall \
+	-postScript CheckLayouts.java include/scrap \
 	-postScript NamePyBindings.java \
 	-postScript NameVtables.java \
 	-postScript NameFromStrings.java symbols/srcstrings.tsv \
-	-postScript ImportSymbols.java symbols 2>&1 |
-	grep -E '(Symbols|Bindings|Vtables|Strings|Headers): |REPORT: (Analysis|Import|Save)|Exception|ERROR' |
+	-postScript ImportSymbols.java symbols \
+	-postScript ReplacePlaceholders.java tools/rename/names.tsv include/scrap third_party/python-1.5.2/Include 2>&1 |
+	grep -E '(Symbols|Bindings|Vtables|Strings|Headers|Layouts|Placeholders): |REPORT: (Analysis|Import|Save)|Exception|ERROR' |
 	grep -v 'Invalid PNG data'
 exit "${PIPESTATUS[0]}"
