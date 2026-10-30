@@ -5,8 +5,9 @@ It is reached in stages, each one runs the difftest.
 
 Since stage 3c2 ScrapC.exe is a normal exe with no byte of the original, and neither ScrapC.exe nor its build needs
 Scrap.exe. ScrapC.exe needs only the game files: the packs and the DLLs of the game in game/Bin (fmod, Galaxy,
-steam_api, and ucrtbase_ms.dll for the Wine tests). The original exe is needed only for the optional check
-(`cmake --build build --target datacheck`, stage 3c2) and for the original run of the difftest.
+steam_api). It runs without ucrtbase_ms.dll, which only gives the exact math under Wine. The original exe is needed
+only for the optional check (`cmake --build build --target datacheck`, stage 3c2) and for the original run of the
+difftest.
 
 ## Stage 0: wipe check (hook DLL)
 
@@ -236,17 +237,61 @@ The math comes from Microsoft's ucrtbase.dll, the same code as the static UCRT o
 (`src/standalone/crtmath.c`). Wine's own ucrtbase differs in the last bits. ScrapC.exe loads `ucrtbase_ms.dll` from
 its folder when it is there, otherwise the system `ucrtbase.dll`, which on Windows is Microsoft's and the one the exe
 links. `tools/test/getucrt.sh` puts `ucrtbase_ms.dll` into game/Bin for the Wine tests (a Microsoft binary, never in
-git). There is no Wine DLL override.
+git). There is no Wine DLL override. Only the math comes from that DLL now. Without `ucrtbase_ms.dll` under Wine the
+math comes from Wine's ucrtbase.
 
-The pure string functions of the number formatting and parsing come from the same loaded DLL as the math
-(`src/standalone/crtmath.c` loads them, `src/standalone/crt.c` calls them): the printf and scanf cores
-`__stdio_common_vsprintf` and `__stdio_common_vsscanf`, `strtod`, `atof` and `strerror`. fprintf formats there into a
-buffer and writes it to the FILE of the linked UCRT. The errno that strtod and atof set is copied into the errno of
-ScrapC.exe, like the one of the math. Calls with a locale object stay with the linked UCRT. Wine's own versions print
-denormals rounded wrong, read them wrong (`float('1e-310')`), take "1d5" as a number but not "nan(ind)", give
-"-nan(ind)" for `float('-nan')` where the original gives "-nan", print `'%#g' % 0.0` as 0.00000 and `'%#.0e'` of inf as
-"inf" (Microsoft's gives 'i.nf'), and have other error texts ("Numerical result out of range" for "Result too
-large"). sdpy.py found these.
+The number formatting and parsing are C of our own, they no longer come from the DLL. `src/standalone/crtfmt.c` is the
+printf core (`__stdio_common_vsprintf`, `__stdio_common_vfprintf`) and holds the strerror texts.
+`src/standalone/crtscan.c` is the scanf core (`__stdio_common_vsscanf`), `strtod` and `atof`. `src/standalone/crtnum.c`
+(with `crtnum.h`) does the exact conversions between decimal and binary with a small fixed size big integer, integer
+arithmetic only, so the x87 precision of the game does not change a result. `src/standalone/crt.c` calls them for calls
+without a locale object. Calls with a locale object stay with the linked UCRT.
+
+They were written from the documented behavior and the observed output of Microsoft's UCRT, not from its code. They
+give what the original's static UCRT gives, on Windows and Wine, with or without `ucrtbase_ms.dll`. The reference is
+UCRT 10.0.10586: the rich header of Scrap.exe names VS 2015 Update 3 (build 24215), and the `ucrtbase_ms.dll` from
+`tools/test/getucrt.sh` is the same version. Later UCRTs changed some of it (printf rounds ties to even, strtod reads
+long digit strings and some ties correctly), so ScrapC.exe follows 10.0.10586. fprintf formats straight into the FILE
+of the linked UCRT, in pieces of 512 bytes. The text before an error stays written, like the runtime's. strtod and
+scanf set the errno of ScrapC.exe directly. atof leaves errno alone, like the runtime's atof. strerror has the UCRT
+texts for 0 to 42 (15, 26, 35, 37 and every other code give "Unknown error") and copies the text into a buffer of the
+thread, like the runtime.
+
+The runtime does some things that the C standard does not tell, and ScrapC.exe does them too:
+
+- printf rounds the exact digits half away from zero (`%.0f` of 0.5 is 1, `%.2f` of 0.125 is 0.13). `%a` rounds up
+  only when the first dropped hex digit is above 8. '#' with precision 0 puts the point after the first character and
+  its digits, also in the inf and nan texts (`'%#.0e'` of inf is "i.nf", `%#.0a` of -inf is "-0x.inf"). The MSVCRT
+  option (8) spells 1.#INF, 1.#QNAN, 1.#IND and 1.#SNAN and rounds them like digits (`%.2f` of inf is "1.#J"). An
+  integer precision stops at 512 digits. A float precision above 163 takes a buffer of 2 * (precision + 349) bytes,
+  and without one the runtime goes on with 163 digits and ENOMEM. The format is a state machine where a character that
+  does not fit the state is written as it is (`%y` gives y). Only `%n`, the size N, a second size and L, w or T with an
+  integer are invalid (EINVAL, -1).
+- strtod and scanf read the first 768 significant digits and drop the rest. A number with more than 1088 digits after
+  the point is zero (ERANGE in strtod). An exact tie that the runtime reaches through its division of a two word
+  number by a one word one rounds up (64976.431640625 read as a float, ties of doubles near 2^44). scanf converts to a
+  float straight from the digits, with no double between. A number that stops in an incomplete state ("1e+", "0x")
+  fails instead of being cut back. sscanf reads signed chars, so the byte 0xff reads as EOF and a byte above 0x7f is a
+  negative wide character. Integers are read into 64 bits and saturate with ERANGE. scanf sets no ERANGE for floats.
+
+Wine's own versions are the reason for the C of our own. They print denormals rounded wrong, read them wrong
+(`float('1e-310')`), take "1d5" as a number but not "nan(ind)", give "-nan(ind)" for `float('-nan')` where the original
+gives "-nan", print `'%#g' % 0.0` as 0.00000 and `'%#.0e'` of inf as "inf" (Microsoft's gives 'i.nf'), and have other
+error texts ("Numerical result out of range" for "Result too large"). sdpy.py found these. A differential fuzz harness
+outside git (a mingw exe that loads `ucrtbase_ms.dll` and compares) found no difference on 2026-10-30 in 2.56 million
+printf cases (all option values 0 to 31, buffer sizes, flags, widths, precisions up to 1200, every size and
+conversion, edge doubles and NaN payloads), 240000 fprintf cases, 2.56 million strtod and atof cases (long mantissas,
+exact and near halfway cases, hex floats, inf and nan forms, junk tails), 1.12 million scanf cases (all options, sets,
+widths, sizes, buffer sizes of the secure variant) and strerror of -5 to 200. Not matched: a precision of about 2^30 or
+more, where the result depends on the free memory.
+
+The difftests on 2026-10-30: with `ucrtbase_ms.dll` sdtest 9965, sdcall 29078 and sdlevel 19095 checks match. Without
+it about 380 sdtest, 1030 sdcall and 115 sdlevel checks differ, all in math results (Wine's pow, atan, sin and the like
+at the x87 precision of 24 bits that Direct3D sets, and the console lines of the math errors that follow). None differs
+in formatting or parsing. `en3hash` of `tools/test/py/sdcall_eng3.py` returns a long now, and `exheff` of
+`sdlevel_exhaust.py` passes the motor colors through `plain`: a texture hash and a color equal to the address of a C
+object of the new ScrapC.exe printed as the original's address, since `sdlib.py` maps every int through
+`SDTest.Orig`.
 
 Each entry is a jmp through a slot that holds the export, so the SSE2 entries (xmm0, xmm1) and the `_CI` intrinsics
 (x87 stack) keep their conventions. The entries:

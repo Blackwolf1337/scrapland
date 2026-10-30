@@ -177,7 +177,8 @@ add_library(scrapres OBJECT src/standalone/scrap.rc)
 target_include_directories(scrapres PRIVATE src/standalone) # windres finds the res/ files from the include path
 set_source_files_properties(src/standalone/scrap.rc PROPERTIES OBJECT_DEPENDS "${RES_FILES}")
 add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtinit.c src/standalone/crtxc.c
-	src/standalone/crtmath.c src/standalone/crtvec.c $<TARGET_OBJECTS:scrapres>)
+	src/standalone/crtmath.c src/standalone/crtvec.c src/standalone/crtnum.c src/standalone/crtfmt.c src/standalone/crtscan.c
+	$<TARGET_OBJECTS:scrapres>)
 # stage 3c1a: the DLLs of the original are imports of ScrapC.exe itself (GAME_IMPORT of include/scrap/game.h). fmod,
 # Galaxy and steam_api (in game/Bin, next to ScrapC.exe) through import libraries made from the .def files of
 # src/standalone, the others through the ones of mingw-w64; dinput8 is no import (main.c loads the system one).

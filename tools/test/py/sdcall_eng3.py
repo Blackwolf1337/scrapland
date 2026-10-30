@@ -46,7 +46,8 @@ def en3hash(a, n, step):
 		h = (h * 31 + (v & 0xffff)) & 0xffffff
 		h = (h * 31 + ((v >> 16) & 0xffff)) & 0xffffff
 		i = i + step
-	return h
+	# no address: a hash equal to the rva of a C object would print as the original's (sdlib.py, plain)
+	return long(h)
 def en3log(fn):
 	SDTest.Out()
 	SDTest.D3DLog(1)

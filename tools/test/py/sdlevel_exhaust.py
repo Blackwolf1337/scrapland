@@ -59,7 +59,7 @@ def exhsides(e):
 # the effects: on, type, nodes, particles as != 0, color, scale, offset, exhausts
 def exheff(e):
 	return (exhb(e + 0xc), exhi(e + 0x10), exhints(e + 0x14, 4), exhps(e, 0, 0) != 0, exhps(e, 0, 1) != 0,
-		exhps(e, 1, 0) != 0, exhps(e, 1, 1) != 0, exhints(e + 0x6c, 2), exhints(e + 0x74, 2), exhi(e + 0x7c))
+		exhps(e, 1, 0) != 0, exhps(e, 1, 1) != 0, plain(exhints(e + 0x6c, 2)), exhints(e + 0x74, 2), exhi(e + 0x7c))
 def exhstate(e):
 	r = []
 	for exhs in (0, 1):
