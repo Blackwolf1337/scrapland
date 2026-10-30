@@ -329,8 +329,9 @@ Done in C, as hooks in both builds:
   0x017f06); the C has the versions of a CPU with SSE2 and without 3DNow!: SSE2 for normalize, transform, multiply,
   inverse and the rotations about x and y (with the same rcpss/rsqrtss estimates and its own sine and cosine), the
   x87 code for transpose, the rotation about z, yaw pitch roll and the quaternion matrix.
-- the shader assembler `D3DXAssembleShader` (`src/lib/d3dx8/D3dxAsm.c`): the Berkeley yacc parser with the tables
-  of the exe (`D3dxAsmTables.h`), its lexer and rules, the validation through d3d8.dll. The game assembles the 30
+- the shader assembler `D3DXAssembleShader` (`src/lib/d3dx8/D3dxAsm.c`): a hand-written parser of the grammar of
+  the Berkeley yacc parser in the exe (no copy of its tables; it runs the rules and reads the tokens in the same
+  order, so errors match), its lexer and rules, the validation through d3d8.dll. The game assembles the 30
   pixel shaders of `bmp/*.psh` (ps.1.1); `tools/test/py/sdcall_d3dxasm.py` compares their tokens and the errors of
   bad texts.
 - descomp_afin.cpp (`src/game/engine3d/Engine/AffineDecomp.c`): Shoemake's polar decomposition of Graphics Gems IV

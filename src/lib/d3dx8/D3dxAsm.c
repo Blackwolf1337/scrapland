@@ -1,7 +1,7 @@
 /*
  * The vertex and pixel shader assembler of D3DX 8.1 ("D3DX8 Shader Assembler Version 0.91", D3DXAssembleShader at rva
- * 0x00b2c2 of Scrap.exe), for the pixel shaders of the game (the .psh files of bmp/, ps.1.1). Its parser is Berkeley yacc with the
- * tables of the exe (D3dxAsmTables.h), so a text with errors stops at the same token with the same message.
+ * 0x00b2c2 of Scrap.exe), for the pixel shaders of the game (the .psh files of bmp/, ps.1.1). Its parser follows the Berkeley yacc
+ * parser of the exe (see Asm_Parse), so a text with errors stops at the same token with the same message.
  *
  * The lexer gives names, numbers and single characters; a name is a keyword (vs, ps, def), an opcode with its
  * modifiers (_x2, _sat ...) or anything else (a register, a mask, a swizzle). The rules work on stacks of their own:
@@ -20,8 +20,6 @@
 
 #include <windows.h>
 
-#include "D3dxAsmTables.h"
-
 #define D3DERR_INVALIDCALL ((int)0x8876086c)
 #define D3DXERR_INVALIDDATA ((int)0x88760b59)
 #define ASM_E_OUTOFMEMORY ((int)0x8007000e)
@@ -33,11 +31,6 @@
 enum {
 	TK_VS = 0x101, TK_PS, TK_DEF, TK_OP0, TK_OP1, TK_OP2, TK_OP3, TK_OP4, TK_NAME, TK_INT, TK_FLOAT, TK_END
 };
-
-#define YYFINAL 3
-#define YYTABLESIZE 0x107
-#define YYERRCODE 256
-#define YYSTACKSIZE 500
 
 /* register token fields (d3d8types.h) */
 #define REG_TYPE 0x70000000
@@ -1093,90 +1086,275 @@ static void Asm_Rule(d3dxAsm_t *a, int rule) {
 	}
 }
 
-/* rva 0x01d047: the Berkeley yacc parser; 0 when the text was read to its end */
-static int Asm_Parse(d3dxAsm_t *a) {
-	short ss[YYSTACKSIZE], *ssp = ss;
-	int state = 0, yychar = -1, errflag = 0, n;
+/*
+ * rva 0x01d047: the parser. The exe has a Berkeley yacc parser; this one walks the same grammar by hand and keeps what
+ * a text with errors can see of it: the rules run in the same order, a token is read only where the yacc tables need
+ * one, a rule that waits for a token runs only on the tokens its LALR state accepts (the union over all places the
+ * rule is used, so a wrong token can still run it before the syntax error), and the depth of the yacc stack is
+ * counted so a long text stops with the same overflow.
+ *
+ *	program : header END | header body END
+ *	header  : VS '.' int '.' int | PS '.' int '.' int
+ *	body    : instrs | defs instrs
+ *	defs    : def | def defs
+ *	def     : defkw reg ',' fv ',' fv ',' fv ',' fv
+ *	instrs  : instr | instr instrs
+ *	instr   : op0 | op1 dst | op2 dst ',' src | op3 dst ',' src ',' src | op4 dst ',' src ',' src ',' src
+ *	dst     : reg | reg '.' name
+ *	src     : sreg | '-' sreg | int '-' sreg
+ *	sreg    : reg | reg '.' name
+ *	reg     : name | name '[' index ']'
+ *	index   : sreg | int | sreg '+' index | int '+' index
+ *	defkw   : DEF
+ *	opN     : OPN | '+' OPN
+ *	fv      : int | '+' int | '-' int | float | '+' float | '-' float
+ *	name    : NAME
+ *	int     : INT
+ *	float   : FLOAT
+ *
+ * Every function returns 0 after an error, which ends the parse.
+ */
+#define ASM_STACKSIZE 500
 
-	*ssp = 0;
-	for (;;) {
-		n = yydefred[state];
-		if (!n) {
-			if (yychar < 0 && (yychar = Asm_Lex(a)) < 0) {
-				yychar = 0;
-			}
-			if ((n = yysindex[state]) && (n += yychar) >= 0 && n <= YYTABLESIZE && yycheck[n] == yychar) {
-				if (ssp >= ss + YYSTACKSIZE - 1) {
-					goto overflow;
-				}
-				*++ssp = (short)(state = yytable[n]);
-				yychar = -1;
-				if (errflag > 0) {
-					errflag--;
-				}
-				continue;
-			}
-			if ((n = yyrindex[state]) && (n += yychar) >= 0 && n <= YYTABLESIZE && yycheck[n] == yychar) {
-				n = yytable[n];
-			} else {
-				if (!errflag) {
-					Asm_Error(a, "syntax error");
-				}
-				if (errflag < 3) {
-					errflag = 3;
-					for (;;) {
-						if ((n = yysindex[*ssp]) && (n += YYERRCODE) >= 0 && n <= YYTABLESIZE
-							&& yycheck[n] == YYERRCODE) {
-							if (ssp >= ss + YYSTACKSIZE - 1) {
-								goto overflow;
-							}
-							*++ssp = (short)(state = yytable[n]);
-							break;
-						}
-						if (ssp <= ss) {
-							return 1;
-						}
-						ssp--;
-					}
-					continue;
-				}
-				if (!yychar) {
-					return 1;
-				}
-				yychar = -1;
-				continue;
-			}
-		}
-		/* reduce by rule n */
-		int len = yylen[n];
-		Asm_Rule(a, n);
-		ssp -= len;
-		state = *ssp;
-		int lhs = yylhs[n];
-		if (!state && !lhs) {
-			state = YYFINAL;
-			*++ssp = YYFINAL;
-			if (yychar < 0 && (yychar = Asm_Lex(a)) < 0) {
-				yychar = 0;
-			}
-			if (!yychar) {
-				return 0;
-			}
-			continue;
-		}
-		if ((n = yygindex[lhs]) && (n += state) >= 0 && n <= YYTABLESIZE && yycheck[n] == state) {
-			state = yytable[n];
-		} else {
-			state = yydgoto[lhs];
-		}
-		if (ssp >= ss + YYSTACKSIZE - 1) {
-			goto overflow;
-		}
-		*++ssp = (short)state;
+typedef struct {
+	d3dxAsm_t *a;
+	int token;	/* the lookahead, -1 when none was read */
+	int depth;	/* of the yacc stack of the exe */
+} asmParser_t;
+
+static int Parse_Peek(asmParser_t *p) {
+	if (p->token < 0 && (p->token = Asm_Lex(p->a)) < 0) {
+		p->token = 0;
 	}
-overflow:
-	Asm_Error(a, "yacc stack overflow");
+	return p->token;
+}
+
+static int Parse_Error(asmParser_t *p) {
+	Asm_Error(p->a, "syntax error");
+	return 0;
+}
+
+static int Parse_Shift(asmParser_t *p) {
+	if (p->depth >= ASM_STACKSIZE - 1) {
+		Asm_Error(p->a, "yacc stack overflow");
+		return 0;
+	}
+	p->depth++;
+	p->token = -1;
 	return 1;
+}
+
+static int Parse_Expect(asmParser_t *p, int token) {
+	return Parse_Peek(p) == token ? Parse_Shift(p) : Parse_Error(p);
+}
+
+static int Parse_Reduce(asmParser_t *p, int rule, int len) {
+	Asm_Rule(p->a, rule);
+	p->depth -= len - 1;
+	return 1;
+}
+
+static int Parse_IsOp(int t) {
+	return t >= TK_OP0 && t <= TK_OP4;
+}
+
+/* the tokens after an instruction */
+static int Parse_InstrEnd(int t) {
+	return t == '+' || t == TK_END || Parse_IsOp(t);
+}
+
+static int Parse_Int(asmParser_t *p) {
+	return Parse_Expect(p, TK_INT) && Parse_Reduce(p, 48, 1);
+}
+
+static int Parse_Name(asmParser_t *p) {
+	return Parse_Expect(p, TK_NAME) && Parse_Reduce(p, 47, 1);
+}
+
+static int Parse_Index(asmParser_t *p);
+
+static int Parse_Reg(asmParser_t *p) {
+	if (!Parse_Name(p)) {
+		return 0;
+	}
+	int t = Parse_Peek(p);
+	if (t == '[') {
+		return Parse_Shift(p) && Parse_Index(p) && Parse_Expect(p, ']') && Parse_Reduce(p, 25, 4);
+	}
+	if (Parse_InstrEnd(t) || t == ',' || t == '.' || t == ']') {
+		return Parse_Reduce(p, 24, 1);
+	}
+	return Parse_Error(p);
+}
+
+/* dst (rules 17, 18) or sreg (22, 23); sreg is also used in an index, so ']' may follow it */
+static int Parse_Masked(asmParser_t *p, int rule) {
+	if (!Parse_Reg(p)) {
+		return 0;
+	}
+	int t = Parse_Peek(p);
+	if (t == '.') {
+		return Parse_Shift(p) && Parse_Name(p) && Parse_Reduce(p, rule + 1, 3);
+	}
+	if (Parse_InstrEnd(t) || t == ',' || (rule == 22 && t == ']')) {
+		return Parse_Reduce(p, rule, 1);
+	}
+	return Parse_Error(p);
+}
+
+static int Parse_Index(asmParser_t *p) {
+	int t = Parse_Peek(p), rule;
+	if (t == TK_INT) {
+		rule = 27;
+		if (!Parse_Int(p)) {
+			return 0;
+		}
+	} else if (t == TK_NAME) {
+		rule = 26;
+		if (!Parse_Masked(p, 22)) {
+			return 0;
+		}
+	} else {
+		return Parse_Error(p);
+	}
+	t = Parse_Peek(p);
+	if (t == '+') {
+		return Parse_Shift(p) && Parse_Index(p) && Parse_Reduce(p, rule + 2, 3);
+	}
+	if (t == ']') {
+		return Parse_Reduce(p, rule, 1);
+	}
+	return Parse_Error(p);
+}
+
+static int Parse_Src(asmParser_t *p) {
+	switch (Parse_Peek(p)) {
+	case '-':
+		return Parse_Shift(p) && Parse_Masked(p, 22) && Parse_Reduce(p, 20, 2);
+	case TK_INT:
+		return Parse_Int(p) && Parse_Expect(p, '-') && Parse_Masked(p, 22) && Parse_Reduce(p, 21, 3);
+	case TK_NAME:
+		return Parse_Masked(p, 22) && Parse_Reduce(p, 19, 1);
+	}
+	return Parse_Error(p);
+}
+
+static int Parse_Fv(asmParser_t *p) {
+	int t = Parse_Peek(p), sign = 0;
+	if (t == '+' || t == '-') {
+		sign = t == '+' ? 1 : 2;
+		if (!Parse_Shift(p)) {
+			return 0;
+		}
+		t = Parse_Peek(p);
+	}
+	if (t == TK_INT) {
+		return Parse_Int(p) && Parse_Reduce(p, 41 + sign, sign ? 2 : 1);
+	}
+	if (t == TK_FLOAT) {
+		return Parse_Shift(p) && Parse_Reduce(p, 49, 1) && Parse_Reduce(p, 44 + sign, sign ? 2 : 1);
+	}
+	return Parse_Error(p);
+}
+
+static int Parse_Def(asmParser_t *p) {
+	if (!Parse_Shift(p) || !Parse_Reduce(p, 30, 1) || !Parse_Reg(p)) {
+		return 0;
+	}
+	for (int i = 0; i < 4; i++) {
+		if (!Parse_Expect(p, ',') || !Parse_Fv(p)) {
+			return 0;
+		}
+	}
+	return Parse_Reduce(p, 9, 10);
+}
+
+static int Parse_Instr(asmParser_t *p) {
+	int t = Parse_Peek(p), coissue = 0;
+	if (t == '+') {
+		coissue = 1;
+		if (!Parse_Shift(p)) {
+			return 0;
+		}
+		t = Parse_Peek(p);
+	}
+	if (!Parse_IsOp(t)) {
+		return Parse_Error(p);
+	}
+	int n = t - TK_OP0;
+	if (!Parse_Shift(p) || !Parse_Reduce(p, 31 + 2 * n + coissue, 1 + coissue)) {
+		return 0;
+	}
+	if (n && !Parse_Masked(p, 17)) {
+		return 0;
+	}
+	for (int i = 1; i < n; i++) {
+		if (!Parse_Expect(p, ',') || !Parse_Src(p)) {
+			return 0;
+		}
+	}
+	return Parse_Reduce(p, 12 + n, n ? 2 * n : 1);
+}
+
+/* defs (rules 7, 8, ended by an instruction) and instrs (10, 11, ended by END) are right recursive, so every item
+   stays on the yacc stack until the list ends */
+static int Parse_List(asmParser_t *p, int (*item)(asmParser_t *), int rule) {
+	int defs = rule == 7, n = 0, t;
+	do {
+		if (!item(p)) {
+			return 0;
+		}
+		n++;
+		t = Parse_Peek(p);
+	} while (defs ? t == TK_DEF : t != TK_END && Parse_InstrEnd(t));
+	if (defs ? t == TK_END || !Parse_InstrEnd(t) : t != TK_END) {
+		return Parse_Error(p);
+	}
+	Parse_Reduce(p, rule, 1);
+	while (--n) {
+		Parse_Reduce(p, rule + 1, 2);
+	}
+	return 1;
+}
+
+static int Parse_Program(asmParser_t *p) {
+	int t = Parse_Peek(p);
+	if (t != TK_VS && t != TK_PS) {
+		return Parse_Error(p);
+	}
+	if (!Parse_Shift(p) || !Parse_Expect(p, '.') || !Parse_Int(p) || !Parse_Expect(p, '.') || !Parse_Int(p)
+		|| !Parse_Reduce(p, t == TK_VS ? 3 : 4, 5)) {
+		return 0;
+	}
+	t = Parse_Peek(p);
+	if (t == TK_END) {
+		return Parse_Shift(p) && Parse_Reduce(p, 1, 2);
+	}
+	if (t == TK_DEF) {
+		if (!Parse_List(p, Parse_Def, 7) || !Parse_List(p, Parse_Instr, 10) || !Parse_Reduce(p, 6, 2)) {
+			return 0;
+		}
+	} else if (Parse_InstrEnd(t)) {
+		if (!Parse_List(p, Parse_Instr, 10) || !Parse_Reduce(p, 5, 1)) {
+			return 0;
+		}
+	} else {
+		return Parse_Error(p);
+	}
+	return Parse_Expect(p, TK_END) && Parse_Reduce(p, 2, 3);
+}
+
+/* 0 when the text was read to its end */
+static int Asm_Parse(d3dxAsm_t *a) {
+	asmParser_t p = { a, -1, 0 };
+	if (!Parse_Program(&p)) {
+		return 1;
+	}
+	if (Parse_Peek(&p)) {
+		Parse_Error(&p);
+		return 1;
+	}
+	return 0;
 }
 
 typedef int(__stdcall *validateVS_t)(const uint32_t *code, const uint32_t *decl, const void *caps, BOOL errors,
