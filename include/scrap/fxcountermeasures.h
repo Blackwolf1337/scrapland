@@ -155,6 +155,9 @@ typedef struct cWeaponSlot {
 } cWeaponSlot;
 SD_SIZE(cWeaponSlot, 0xc);
 
+/* the render nodes of one ammo kind, per slot (a pointer to it, see tri16_t in meshd3d.h) */
+typedef int ammoNodes_t[4];
+
 /* the weapons of a ship and its lock on an entity or a point: the cWeaponManager of the RTTI (0x48 bytes,
  * vftable rva 0x3b664c), src/game/Entities/Vehicle/WeaponManager.c */
 typedef struct cTargetLock {
@@ -165,7 +168,7 @@ typedef struct cTargetLock {
 	float fireStamp;		/* 0x10 the weapon fires again from 0 on */
 	float cmStamp;			/* 0x14 the same for the ammo (countermeasures) */
 	cWeaponSlot *weaps;		/* 0x18 per weapon of the world */
-	int (*nodes)[4];		/* 0x1c render node per ammo kind and slot, -1 none */
+	ammoNodes_t *nodes;		/* 0x1c render node per ammo kind and slot, -1 none */
 	float *ammo;			/* 0x20 per ammo kind */
 	int weapSnd;			/* 0x24 the sound of the owner the weapon plays, -1 none */
 	Nto1Node lock;			/* 0x28 target the locked entity */

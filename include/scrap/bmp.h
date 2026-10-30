@@ -79,12 +79,15 @@ int TGA_Save(const char *name, const CBmp *orig, uint32_t flags);
 int __thiscall CBmp_Load(CBmp *self, const char *name, uint32_t flags);
 int __thiscall CBmp_Save(CBmp *self, const char *name, uint32_t flags);
 
-typedef struct __attribute__((packed)) {
+/* packed by #pragma pack, which Ghidra's C parser knows too (docs/ghidra.md) */
+#pragma pack(push, 1)
+typedef struct {
 	uint16_t type;			/* 0x0 "BM" */
 	uint32_t size;			/* 0x2 */
 	uint32_t reserved;		/* 0x6 */
 	uint32_t offBits;		/* 0xa */
 } bmpFileCab_t;
+#pragma pack(pop)
 SD_SIZE(bmpFileCab_t, 0xe);
 
 typedef struct {
@@ -111,7 +114,8 @@ typedef struct {
 } texCab_t;
 SD_SIZE(texCab_t, 0x20);
 
-typedef struct __attribute__((packed)) {
+#pragma pack(push, 1)
+typedef struct {
 	byte idLength;			/* 0x00 */
 	byte cmapType;			/* 0x01 */
 	byte type;			/* 0x02 2 true color, 10 RLE */
@@ -121,6 +125,7 @@ typedef struct __attribute__((packed)) {
 	byte bits;			/* 0x10 */
 	byte desc;			/* 0x11 0x20 top down */
 } tgaCab_t;
+#pragma pack(pop)
 SD_SIZE(tgaCab_t, 0x12);
 
 #endif

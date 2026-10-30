@@ -50,12 +50,16 @@ enum {
 	MESHD3D_VF_READ = 6		/* (CFileIO *f, MeshD3D_FileCtx *ctx) */
 };
 
+/* the 3 vertex indices of a triangle. A member points to it as tri16_t *, not as uint16_t (*)[3]: Ghidra's C parser
+ * drops the pointer of a pointer to an array (docs/ghidra.md). */
+typedef uint16_t tri16_t[3];
+
 typedef struct CMeshD3D {
 	void **vftable;			/* 0x00 MALLAD3D_VF_* */
 	uint32_t class;			/* 0x04 CLASS_OBJ3D_MESHD3D */
 	struct CMeshD3D *next;		/* 0x08 the next mesh of the list, owned */
 	uint32_t nTri;			/* 0x0c */
-	uint16_t (*pTri)[3];		/* 0x10 new[] */
+	tri16_t *pTri;			/* 0x10 new[] */
 	CVertList vert;		/* 0x14 */
 	uint16_t *vertOrig;		/* 0x28 the CTriMesh vertex of each vertex (MESHD3D_VERTORIG) */
 	int triBase;			/* 0x2c the first triangle of this mesh in the list (CalcSegmentos) */
@@ -120,10 +124,12 @@ typedef struct MeshD3DVert {
 } MeshD3DVert;
 SD_SIZE(MeshD3DVert, 0x24);
 
-typedef struct __attribute__((packed)) MeshD3DTri {
+#pragma pack(push, 1)
+typedef struct MeshD3DTri {
 	uint32_t flags;			/* 0x0 */
 	uint16_t v[3];			/* 0x4 */
 } MeshD3DTri;
+#pragma pack(pop)
 SD_SIZE(MeshD3DTri, 10);
 
 /* a material group of the CTriMesh, the vertices and triangles still separate (Mem_Alloc) */

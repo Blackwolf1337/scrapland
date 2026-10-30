@@ -122,7 +122,7 @@ typedef struct BspQ3Mesh {
 	BspQ3Face *face;		/* 0x00 the first face (material and light map) */
 	int nTri;			/* 0x04 counted first, then filled up to totTri */
 	int totTri;			/* 0x08 */
-	uint16_t (*pTri)[3];		/* 0x0c new[] */
+	tri16_t *pTri;			/* 0x0c new[] */
 	CVertList vert;		/* 0x10 */
 	void *pVertVB;			/* 0x24 */
 	void *pVertIB;			/* 0x28 */
