@@ -127,9 +127,9 @@ typedef struct CEngineApp {
 	void **obj2a5f4;			/* 0x2a5f4 an object deleted by FinalCleanup */
 	byte canWBuffer;			/* 0x2a5f8 D3DPRASTERCAPS_WBUFFER of the device */
 	byte useWBuffer;			/* 0x2a5f9 the W buffer (g_ZEnable 2) when the device can */
-	byte unk_2a5fa;				/* 0x2a5fa */
-	byte unk_2a5fb;				/* 0x2a5fb */
-	int unk_2a5fc;				/* 0x2a5fc */
+	byte unused_2a5fa;				/* 0x2a5fa */
+	byte unused_2a5fb;				/* 0x2a5fb */
+	int unused_2a5fc;				/* 0x2a5fc */
 } CEngineApp;
 SD_OFFSET(CEngineApp, table, 0x2a5e4);
 SD_OFFSET(CEngineApp, overlay, 0x2a5f0);
