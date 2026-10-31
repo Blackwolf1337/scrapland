@@ -6,7 +6,7 @@
 #ifndef SCRAP_DLIST_H
 #define SCRAP_DLIST_H
 
-#include "scrap/game.h"
+#include "scrap/global.h"
 
 #define DLIST(node) \
 	struct { \

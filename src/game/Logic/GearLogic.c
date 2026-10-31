@@ -120,17 +120,17 @@ void __thiscall cGearLocalLogic_UpdateAnim(cGearLocalLogic *self, cEntity *p, fl
 	byte alarm = g_pWorld->alarm.on;
 
 	(void)dt;
-	WChar_ViewFovY(p) = g_GearStdFovY;
-	WChar_ViewFar(p) = g_GearStdFar;
+	WChar_ConeFov(p) = g_GearStdFovY;
+	WChar_ConeDist(p) = g_GearStdFar;
 	if (g_pWorld->alarm.on) {
 		cEntity *t = b->target.target;
 		if (t && b->state == 2 && t == cWorld_GetUsrEntity(g_pWorld, 0)) {
-			WChar_ViewMode(p) = 3;
+			WChar_ConeStatus(p) = 3;
 		} else {
-			WChar_ViewMode(p) = 2;
+			WChar_ConeStatus(p) = 2;
 		}
 	} else {
-		WChar_ViewMode(p) = g_pWorld->alarm.notGuaranteed != 0;
+		WChar_ConeStatus(p) = g_pWorld->alarm.notGuaranteed != 0;
 	}
 	switch (b->state) {
 	case 0:
@@ -191,7 +191,7 @@ void __thiscall cGearLocalLogic_Update(cGearLocalLogic *self, float dt) {
 	WChar_B381(p) = 0;
 	Entity_Team(p) = alarm ? 0 : 2;
 	if (b->busy) {
-		WChar_ViewMode(p) = 0;
+		WChar_ConeStatus(p) = 0;
 		return;
 	}
 	cEntity *usr = ChType_Usr0();
@@ -275,7 +275,7 @@ attack:
 	}
 	case 2: {
 		if (same && seen && b->target.target == cWorld_GetUsrEntity(g_pWorld, 0)) {
-			AICtrl_RaiseLevel(g_pWorld->aiCtrl, 0);
+			AICtrl_RaiseLevel(&g_pWorld->logic.aiCtrl, 0);
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
 		cAIChar *ai = Gear_AI(self);
@@ -292,7 +292,7 @@ attack:
 			goto check;
 		}
 		if (!Gear_AIHasTarget(ai)) {
-			if (World_AICtrlI4() > 2) {
+			if (g_pWorld->logic.aiCtrl.attacking > 2) {
 				self->lostTime = g_GearLostTargetTime;
 			}
 			float lt = self->lostTime + dt;
@@ -378,7 +378,7 @@ void __thiscall cGearLocalLogic_ToPolice(cGearLocalLogic *self, cEntity *e) {
 	if (!g_Gear2PoliceAlways && g_pWorld->alarm.on) {
 		return;
 	}
-	AICtrl_GearToPolice(g_pWorld->aiCtrl, e);
+	AICtrl_GearToPolice(&g_pWorld->logic.aiCtrl, e);
 }
 
 /* the AI control sends the gear after e; 0 if it attacks e already and its AI has it */

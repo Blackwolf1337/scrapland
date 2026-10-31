@@ -115,7 +115,7 @@ static void ExtPolice_Hunt(cAIVehicle *ai, cEntity *usr) {
 }
 
 static void ExtPolice_Relax(cEntity *e, cAIVehicle *ai) {
-	cAIVehicle_SetState(ai, 3, Vehicle_B383(e) == 0, 5.0, 2.0);
+	cAIVehicle_SetState(ai, 3, Entity_ArrowCanMission(e) == 0, 5.0, 2.0);
 }
 
 /* the police taunt when the alarm was on */

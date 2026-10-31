@@ -163,7 +163,7 @@ void Taunts_Play(const char *ship, const char *race, int kind) {
 	cPy_Function_AddParamS(g_OnTaunt, race);
 	cPy_Function_AddParamI(g_OnTaunt, kind);
 	cPy_Function_Execute(g_OnTaunt, 0);
-	Taunts_UpdateEndTime(g_pWorld->taunts);
+	Taunts_UpdateEndTime(&g_pWorld->logic);
 }
 
 /* the ship that attacks usr taunts it by its AI state; the police has its own kinds */
@@ -222,7 +222,7 @@ void Taunts_Think(float dt) {
 		return;
 	}
 	int r = (int)(float)(Weap_Rand01() * (double)2.97f + 0.0);
-	cLogicControl *lc = World_Logic();
+	cLogicControl *lc = (&g_pWorld->logic);
 	cEntityListData *traffic = lc->enemiesTraffic.enemies;
 	cEntityListData *enemies = lc->enemies.list;
 	cEntityListData *list;
@@ -293,7 +293,7 @@ byte Taunts_Warnings(float dt) {
 				cPy_Function_AddParamS(g_OnTaunt, "DeepThroat");
 				cPy_Function_AddParamI(g_OnTaunt, 1);
 				cPy_Function_Execute(g_OnTaunt, 0);
-				Taunts_UpdateEndTime(g_pWorld->taunts);
+				Taunts_UpdateEndTime(&g_pWorld->logic);
 			}
 			return 1;
 		}

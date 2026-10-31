@@ -423,7 +423,7 @@ byte Traffic_OnAIEnd(cAIVehicle *ai) {
 	}
 	Traffic_Patrol(v->vftable->GetAI(v));
 	cEntity_SetList(v, "Traffic");
-	NameTable_Delete(&World_Logic()->enemiesTraffic.idle, v->name);
+	NameTable_Delete(&g_pWorld->logic.enemiesTraffic.idle, v->name);
 	return 1;
 }
 
@@ -452,7 +452,7 @@ void Traffic_DamageNative(cAbstractFile *params) {
 	}
 	byte wasEnemy = cEntity_GetListName(e) && !strcmp(cEntity_GetListName(e), "EnemiesTraffic");
 	cEntity_SetList(e, "EnemiesTraffic");
-	World_Logic()->enemiesTraffic.attackTime = g_MaxTrafficEnemyTime;
+	g_pWorld->logic.enemiesTraffic.attackTime = g_MaxTrafficEnemyTime;
 	if (!wasEnemy && Entity_LifeI(e) > 0) {
 		Taunts_Ship(e, 1);
 	}

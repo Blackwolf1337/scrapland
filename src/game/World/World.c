@@ -465,7 +465,7 @@ cWorld *__thiscall cWorld_ctor(cWorld *self) {
 	Grid_ctor(self->grid);
 	Alarm_ctor(&self->alarm);
 	cStrMoney_ctor(self->strMoney);
-	Logic_ctor(self->taunts);
+	Logic_ctor(&self->logic);
 	self->nameCount = 0;
 	self->testing = 0;
 	self->entityList.target = self;
@@ -531,7 +531,7 @@ void __fastcall WeapTable_Free(void *table) {
 void __fastcall cWorld_dtor(cWorld *self) {
 	self->vftable = CWORLD_VFTABLE;
 	cWorld_Clear(self);
-	Logic_dtor(self->taunts);
+	Logic_dtor(&self->logic);
 	Grid_dtor(self->grid);
 	AmmoTable_Free(&self->ammo);
 	WeapTable_Free(&self->weapons);
@@ -993,7 +993,7 @@ cDebrisSys *__thiscall cWorld_GetDebrisSys(cWorld *world, const char *name) {
 }
 
 void __fastcall cWorld_ResetLogic(cWorld *self) {
-	Logic_Reset(self->taunts);
+	Logic_Reset(&self->logic);
 }
 
 byte World_IsEasySingle(void) {
@@ -1202,7 +1202,7 @@ void __thiscall cWorld_Update(cWorld *self, float dt) {
 		if (g_CharGroup) {
 			AIGroup_Update(g_CharGroup, cTimer_GetDelta(timer));
 		}
-		Logic_Update(self->taunts, cTimer_GetDelta(timer));
+		Logic_Update(&self->logic, cTimer_GetDelta(timer));
 		Elements_Update(self->elements, cTimer_GetDelta(timer));
 	} else {
 		Sound_UpdatePaused();

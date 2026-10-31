@@ -62,7 +62,7 @@ byte __thiscall cBishopLocalLogic_UpdateBusy(cBishopLocalLogic *self) {
 
 /* vf30: with the special action on (energy bar active, SpecialActionActive 2) */
 cEntity *__thiscall cBishopLocalLogic_FindTarget(cBishopLocalLogic *self) {
-	static const int lists[] = { WORLD_NURSES, WORLD_SENTINELS, WORLD_GEARS };
+	cEntityListData **const lists[] = { &g_pWorld->logic.nurses.list, &g_pWorld->logic.aiCtrl.sentinels, &g_pWorld->logic.aiCtrl.gears };
 
 	if (g_EnergyBarActive != 1 || g_SpecialActionActive != 2) {
 		return NULL;
@@ -75,13 +75,13 @@ cEntity *__thiscall cBishopLocalLogic_FindTarget(cBishopLocalLogic *self) {
 		return NULL;
 	}
 	cEntity *p = self->base.parent;
-	cEntity *e = Logic_FindInView(p, World_CharList(WORLD_GENCHARS1), g_GenCharStdFar, g_GenCharStdFovY,
+	cEntity *e = Logic_FindInView(p, g_pWorld->logic.genChars.genChars, g_GenCharStdFar, g_GenCharStdFovY,
 		g_GenCharStdFovX, 1, NULL);
 	if (e && strcmp(*(char **)(ChType_ActClass(ChType_ActCtrl(e)) + 4), "Bishop")) {
 		return e;
 	}
 	for (size_t i = 0; i < sizeof(lists) / sizeof(lists[0]); i++) {
-		e = Logic_FindInView(p, World_CharList(lists[i]), g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1,
+		e = Logic_FindInView(p, *lists[i], g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1,
 			NULL);
 		if (e) {
 			return e;

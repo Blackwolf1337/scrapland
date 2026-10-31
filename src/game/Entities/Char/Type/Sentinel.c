@@ -80,9 +80,9 @@ void ChType_SentinelPoint(cAbstractFile *params) {
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		} else {
 			if (ChType_SentinelCanCall()) {
-				AICtrl_GearsChase(g_pWorld->aiCtrl, t);
+				AICtrl_GearsChase(&g_pWorld->logic.aiCtrl, t);
 			}
-			AICtrl_SendSentinelToWatch(g_pWorld->aiCtrl, v->vftable->GetPos(v, &tmp));
+			AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, v->vftable->GetPos(v, &tmp));
 		}
 		if (!WChar_Control(v)->target.target) {
 			cWalkCharControl_SetTarget(WChar_Control(v), t);

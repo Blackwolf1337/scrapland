@@ -114,9 +114,9 @@ void __thiscall cShipGroup_GetLair(cShipGroup *self, const char *name, vec3_t *o
 /* the group of a ship: the mosquitos for the list "Mosquitos", else the mad hunters */
 static cShipGroup *ShipGroup_Of(cEntity *e) {
 	if (cEntity_GetListName(e) && !strcmp(cEntity_GetListName(e), "Mosquitos")) {
-		return &World_Logic()->mosquitos;
+		return &g_pWorld->logic.mosquitos;
 	}
-	return &World_Logic()->madHunters;
+	return &g_pWorld->logic.madHunters;
 }
 
 void __fastcall cShipGroupData_Think(cShipGroupData *self) {
@@ -247,11 +247,11 @@ void ShipGroup_DeathNative(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, name, sizeof(name));
 	cEntity *e = Logic_AsCar(World_FindEntity(name));
 	if (cEntity_GetListName(e) && !strcmp(cEntity_GetListName(e), "Mosquitos")) {
-		g = &World_Logic()->mosquitos;
+		g = &g_pWorld->logic.mosquitos;
 		SaveVar_Inc("Stats.Mosquito", 1);
 		money = g_OnMosquitoDeathMoney;
 	} else {
-		g = &World_Logic()->madHunters;
+		g = &g_pWorld->logic.madHunters;
 		SaveVar_Inc("Stats.MadHunter", 1);
 		money = g_OnMadHunterDeathMoney;
 	}

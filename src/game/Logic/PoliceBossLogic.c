@@ -45,7 +45,7 @@ cEntity *__thiscall cPoliceBossLocalLogic_FindTarget(cPoliceBossLocalLogic *self
 	if (!CGameModel_IsVisible(Obj_Vtbl(p)->GetModel(p))) {
 		return NULL;
 	}
-	cEntity *e = cEntityList_Nearest(World_CharList(WORLD_GENCHARS2), p->vftable->GetPos(p, &tmp), p, NULL);
+	cEntity *e = cEntityList_Nearest(g_pWorld->logic.genChars.police, p->vftable->GetPos(p, &tmp), p, NULL);
 	if (!e || !e->vftable->IsType(e, TYEN_WALKCHAR)) {
 		return NULL;
 	}

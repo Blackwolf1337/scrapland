@@ -97,11 +97,11 @@ void __thiscall Alarm_SetOn(cAlarm *self, byte on) {
 	if (!usr || !usr->vftable->IsType(usr, TYEN_WITH_LIFE)) {
 		return;
 	}
-	AICtrl_GearAttack(g_pWorld->aiCtrl, usr, 1);
-	if (AICtrl_SendAccuser(g_pWorld->aiCtrl, 1)) {
+	AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, usr, 1);
+	if (AICtrl_SendAccuser(&g_pWorld->logic.aiCtrl, 1)) {
 		return;
 	}
-	AICtrl_SendSentinelToWatch(g_pWorld->aiCtrl, usr->vftable->GetPos(usr, &tmp));
+	AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, usr->vftable->GetPos(usr, &tmp));
 }
 
 void __thiscall Alarm_SetGrowRate(cAlarm *self, float grow) {

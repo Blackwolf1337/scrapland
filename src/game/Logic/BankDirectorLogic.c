@@ -34,10 +34,10 @@ cEntity *Logic_RichUsrInView(cGenCharLocalLogic *self, cEntity *usr) {
 }
 
 cEntity *Logic_FindInCharLists(cEntity *p) {
-	static const int lists[] = { WORLD_GENCHARS1, WORLD_GENCHARS2, WORLD_NURSES, WORLD_SENTINELS, WORLD_GEARS };
+	cEntityListData **const lists[] = { &g_pWorld->logic.genChars.genChars, &g_pWorld->logic.genChars.police, &g_pWorld->logic.nurses.list, &g_pWorld->logic.aiCtrl.sentinels, &g_pWorld->logic.aiCtrl.gears };
 
 	for (size_t i = 0; i < sizeof(lists) / sizeof(lists[0]); i++) {
-		cEntity *e = Logic_FindInView(p, World_CharList(lists[i]), g_GenCharStdFar, g_GenCharStdFovY,
+		cEntity *e = Logic_FindInView(p, *lists[i], g_GenCharStdFar, g_GenCharStdFovY,
 			g_GenCharStdFovX, 1, NULL);
 		if (e) {
 			return e;

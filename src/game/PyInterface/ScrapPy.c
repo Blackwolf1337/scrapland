@@ -1385,7 +1385,7 @@ PyObject *Scrap_AddParkingZone(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	vec3_t pos = { x, y, z };
-	Parking_AddZone(g_pWorld->parking, flag != 0, &pos, name);
+	Parking_AddZone(&g_pWorld->logic.parking, flag != 0, &pos, name);
 	return ReturnNone();
 }
 
@@ -1398,7 +1398,7 @@ static PyObject *FindParked(PyObject *args, int farest) {
 		return NULL;
 	}
 	vec3_t out = pos;
-	const char *name = Parking_Find(g_pWorld->parking, flag != 0, &pos, &out, farest);
+	const char *name = Parking_Find(&g_pWorld->logic.parking, flag != 0, &pos, &out, farest);
 	if (!name) {
 		return Py_BuildValue("s(fff)", "", 0.0, 0.0, 0.0);
 	}
@@ -1596,7 +1596,7 @@ PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
 			return NULL;
 		}
 		cString_Set(&item.name, name);
-		g_pWorld->items.vftable->AddLife(&g_pWorld->items, &item);
+		g_pWorld->logic.items.vftable->AddLife(&g_pWorld->logic.items, &item);
 		cString_dtor(&item.name);
 	}
 	else if (!strcmp(type, "Ammo")) {
@@ -1616,7 +1616,7 @@ PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
 		else if (!strcmp(kindName, "Ener")) {
 			kind = 2;
 		}
-		g_pWorld->items.vftable->AddAmmo(&g_pWorld->items, kind, &item);
+		g_pWorld->logic.items.vftable->AddAmmo(&g_pWorld->logic.items, kind, &item);
 		cString_dtor(&item.name);
 	}
 	return ReturnNone();

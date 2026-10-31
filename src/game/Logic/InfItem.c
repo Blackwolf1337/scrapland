@@ -1,6 +1,6 @@
 /*
  * Logic/InfItem.cpp of the game: cInfItem (include/scrap/logic.h), the item list of the world (Scrap.AddItem, the
- * cItemList of game.h). The items are copies of cItemDesc in DLists (include/scrap/dlist.h) of string nodes: the
+ * cInfItem of game.h). The items are copies of cItemDesc in DLists (include/scrap/dlist.h) of string nodes: the
  * life items and the ammo items of the kinds 0, 1 and 2. The walks keep the iterator of the list. The two
  * template instances of the node functions are the same code.
  */

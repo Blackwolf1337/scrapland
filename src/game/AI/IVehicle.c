@@ -2297,7 +2297,7 @@ static cEntity *AIV_NearestItem(cAIVehicle *self, int kind, float *dist, cItemDe
 	void *iter;
 	cEntity *best = NULL;
 	cItemDesc *it;
-	cItemList *items = &g_pWorld->items;
+	cInfItem *items = &g_pWorld->logic.items;
 
 	*dist = FLT_MAX;
 	it = kind < 0 ? items->vftable->FirstLife(items, &iter) : items->vftable->FirstAmmo(items, kind, &iter);
@@ -2318,7 +2318,7 @@ static cEntity *AIV_NearestItem(cAIVehicle *self, int kind, float *dist, cItemDe
 				best = e;
 			}
 		}
-		items = &g_pWorld->items;
+		items = &g_pWorld->logic.items;
 		it = kind < 0 ? items->vftable->NextLife(items, &iter) : items->vftable->NextAmmo(items, kind, &iter);
 	}
 	return best;

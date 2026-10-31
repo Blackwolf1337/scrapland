@@ -71,7 +71,7 @@ void __thiscall cCTFEnemiesData_GoToFlag(cCTFEnemiesData *self, const char *name
 cEntity *__thiscall cCTFEnemiesData_PickTarget(cCTFEnemiesData *self, cEntity *e, byte attackUsr) {
 	(void)e;
 	cEntity *usr = ChType_Usr0();
-	cEntityListData *friends = cCTFFriends_GetList(World_CTFFriends());
+	cEntityListData *friends = cCTFFriends_GetList((&g_pWorld->logic.ctfFriends));
 	Nto1Node *n = Logic_ListFirst(friends);
 	byte pick = attackUsr && !self->numAttack;
 	int num = Logic_Count(friends->numElems);
@@ -200,7 +200,7 @@ byte __thiscall cCTFEnemiesLocalLogic_VarI(cCTFEnemiesLocalLogic *self, const ch
 		return 0;
 	}
 	cEntity *e = Logic_AsCar(self->parent);
-	cCTFEnemies *ctf = World_CTFEnemies();
+	cCTFEnemies *ctf = (&g_pWorld->logic.ctfEnemies);
 	cEntity *leader = Logic_AsCar(World_FindEntity(ctf->d->leader));
 	if (!set) {
 		*i = e == leader;
@@ -237,7 +237,7 @@ void CTFEnemies_OnDamage(cAbstractFile *params) {
 	CHECK(a->vftable->IsType(a, TYEN_CAR));
 	cAIVehicle *ai = v->vftable->GetAI(v);
 	CHECK(ai);
-	cCTFEnemies *ctf = World_CTFEnemies();
+	cCTFEnemies *ctf = (&g_pWorld->logic.ctfEnemies);
 	cEntity *leader = Logic_AsCar(World_FindEntity(ctf->d->leader));
 	if (leader == v) {
 		cEntity *usr = Logic_AsCar(cWorld_GetUsrEntity(g_pWorld, 0));

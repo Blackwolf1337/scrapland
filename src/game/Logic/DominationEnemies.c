@@ -104,7 +104,7 @@ void Domination_OnDeath(cAbstractFile *params, cDominationLogic *side,
 
 /* the native of the deaths (onDeath of the list) */
 void DominationEnemies_OnDeath(cAbstractFile *params) {
-	Domination_OnDeath(params, &World_DominEnemies()->base, cDominationEnemiesLogic_ReleaseZone,
+	Domination_OnDeath(params, &g_pWorld->logic.dominEnemies.base, cDominationEnemiesLogic_ReleaseZone,
 		g_OnDominEnemyDeath);
 }
 

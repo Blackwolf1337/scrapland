@@ -66,8 +66,8 @@ cEntity *__thiscall cDominationLogic_FindEnemy(cDominationLogic *self, const vec
 	float best = 3.4028234663852886e+38f;
 	cEntity *found = NULL;
 
-	cDominationLogic *side = self->vftable->GetTeam(self) == 1 ? &World_DominEnemies()->base
-		: &World_DominFriends()->base;
+	cDominationLogic *side = self->vftable->GetTeam(self) == 1 ? &g_pWorld->logic.dominEnemies.base
+		: &g_pWorld->logic.dominFriends.base;
 	cEntityListData *list = side->vftable->GetList(side);
 	for (Nto1Node *n = Logic_ListFirst(list); n; n = Logic_ListNext(n)) {
 		cEntity *v = n->data;

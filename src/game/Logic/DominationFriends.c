@@ -45,7 +45,7 @@ void __fastcall cDominationFriendsSide_Think(cDominationFriendsSide *self) {
 		return;
 	}
 	cEntity *usr = Logic_AsCar(ChType_Usr0());
-	cEntity *leader = cDominationEnemiesLogic_GetLeader(World_DominEnemies());
+	cEntity *leader = cDominationEnemiesLogic_GetLeader((&g_pWorld->logic.dominEnemies));
 	do {
 		cEntity *e = n->data;
 		if (!e) {
@@ -92,7 +92,7 @@ void __thiscall cDominationFriendsLogic_Init(cDominationFriendsLogic *self) {
 
 /* the native of the deaths */
 void DominationFriends_OnDeath(cAbstractFile *params) {
-	Domination_OnDeath(params, &World_DominFriends()->base, cDominationFriendsLogic_ReleaseZone,
+	Domination_OnDeath(params, &g_pWorld->logic.dominFriends.base, cDominationFriendsLogic_ReleaseZone,
 		g_OnDominFriendDeath);
 }
 

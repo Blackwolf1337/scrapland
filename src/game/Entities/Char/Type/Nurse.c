@@ -326,7 +326,7 @@ found:
 	const char *cls = *(const char **)(ChType_ActClass(ChType_ActCtrl(g_NurseTarget)) + 4);
 	const char *act = cActCtrl_GetActionName(ChType_ActCtrl(g_NurseTarget), 0);
 	if (usr && crt_strncmp(act, "Dazed", 5)) {
-		AICtrl_SendSentinelToWatch(g_pWorld->aiCtrl, v->vftable->GetPos(v, &t3));
+		AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, v->vftable->GetPos(v, &t3));
 		if (!strcmp(cls, "Gear") || !strcmp(cls, "Sentinel") || !strcmp(cls, "Police") || !strcmp(cls, "Desktop")) {
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		} else {

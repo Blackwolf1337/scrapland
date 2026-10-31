@@ -37,7 +37,7 @@ cEntityListData *__fastcall cCTFFriends_GetList(cCTFFriends *self) {
 /* a random enemy ship, or the enemy leader (once while no ship attacks it) if attackLeader */
 cEntity *__thiscall cCTFFriendsData_PickTarget(cCTFFriendsData *self, cEntity *e, byte attackLeader) {
 	(void)e;
-	cEntityListData *enemies = cCTFEnemies_GetList(World_CTFEnemies());
+	cEntityListData *enemies = cCTFEnemies_GetList((&g_pWorld->logic.ctfEnemies));
 	Nto1Node *n = Logic_ListFirst(enemies);
 	byte pick = attackLeader && !self->numAttack;
 	int num = Logic_Count(enemies->numElems);
@@ -47,7 +47,7 @@ cEntity *__thiscall cCTFFriendsData_PickTarget(cCTFFriendsData *self, cEntity *e
 	int r = crt_rand() % num;
 	if (pick && r == num - 1) {
 		self->numAttack++;
-		return Logic_FindCar(cCTFEnemies_GetLeader(World_CTFEnemies()));
+		return Logic_FindCar(cCTFEnemies_GetLeader((&g_pWorld->logic.ctfEnemies)));
 	}
 	for (int i = 0; n; n = Logic_ListNext(n), i++) {
 		if (i == r) {
@@ -68,7 +68,7 @@ void __fastcall cCTFFriendsData_Think(cCTFFriendsData *self) {
 		/* the result is not used */
 		usr->vftable->IsType(usr, TYEN_CAR);
 	}
-	cEntity *leader = Logic_FindCar(cCTFEnemies_GetLeader(World_CTFEnemies()));
+	cEntity *leader = Logic_FindCar(cCTFEnemies_GetLeader((&g_pWorld->logic.ctfEnemies)));
 	double maxAttack = crt_ceil((double)((float)Logic_Count(self->list->numElems) *
 		g_PercFriendsAttackLeaderWhenWinning));
 	self->numAttack = 0;

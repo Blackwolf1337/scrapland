@@ -1,6 +1,6 @@
 /*
  * Logic/IntPolice.cpp of the game: cAICtrl (include/scrap/logic.h), the AI control of the indoor police at
- * g_pWorld->aiCtrl ("cIntPoliceLogic" in its debug texts). Every 0.5 s it updates the sentinels and the gears: the
+ * &g_pWorld->logic.aiCtrl ("cIntPoliceLogic" in its debug texts). Every 0.5 s it updates the sentinels and the gears: the
  * first sentinel that sees the player accuses it, the others go back; a sentinel watches a place, the nearest
  * free gear attacks a target in view (else the nearer police fuses into a gear: the action Fusion, the script
  * CreateGear makes the gear "Gear" + the number of the police). Without the alarm two visible police fuse and the
@@ -88,7 +88,7 @@ void __fastcall AICtrl_Belligerant(void *ctrl) {
 	cEntity *first = NULL, *second = NULL;
 	Nto1Node *n;
 
-	for (n = Logic_ListFirst(World_CharList(WORLD_GENCHARS2)); n; n = Logic_ListNext(n)) {
+	for (n = Logic_ListFirst(g_pWorld->logic.genChars.police); n; n = Logic_ListNext(n)) {
 		cEntity *e = n->data;
 		if (CGameModel_IsVisible((CGameModel *)AICtrl_Model(e))) {
 			if (first) {
@@ -232,7 +232,7 @@ void __fastcall AICtrl_Think(void *ctrl) {
 	if (self->chased) {
 		cEntity *g = cEntityList_Nearest(self->gears, self->usr->vftable->GetPos(self->usr, &t), NULL, NULL);
 		if (!g) {
-			g = cEntityList_Nearest(World_CharList(WORLD_GENCHARS2), self->usr->vftable->GetPos(self->usr, &t), NULL,
+			g = cEntityList_Nearest(g_pWorld->logic.genChars.police, self->usr->vftable->GetPos(self->usr, &t), NULL,
 				NULL);
 		}
 		if (g && Sound_PlayVoice(g->name, "Abort", 0, 1)) {
@@ -302,7 +302,7 @@ void __thiscall AICtrl_GearAttack(void *ctrl, cEntity *target, int seen) {
 				goto call;
 			}
 		}
-		cEntity *police = cEntityList_Nearest(World_CharList(WORLD_GENCHARS2), target->vftable->GetPos(target, &t3),
+		cEntity *police = cEntityList_Nearest(g_pWorld->logic.genChars.police, target->vftable->GetPos(target, &t3),
 			target, &d2);
 		if (d1 > d2) {
 			if (police) {
@@ -317,7 +317,7 @@ call:
 	}
 bishops:
 	if (g_BishopAttackOnAlarm && target && target == cWorld_GetUsrEntity(g_pWorld, 0)) {
-		cEntity *b = cEntityList_Nearest(World_CharList(WORLD_GENCHARS3), target->vftable->GetPos(target, &t1),
+		cEntity *b = cEntityList_Nearest(g_pWorld->logic.genChars.bishops, target->vftable->GetPos(target, &t1),
 			target, &d);
 		cBaseLocalLogic *l;
 		if (b && (l = (cBaseLocalLogic *)Logic_GetLocalLogic(b)) && l->state != 4 && 3000.0f > d) {
@@ -610,6 +610,6 @@ void AICtrl_SentinelDeath(cAbstractFile *params) {
 	cEntity *v = ChType_CheckChar(name);
 	cEntity_SetList(v, NULL);
 	const vec3_t *p = v->vftable->GetPos(v, &t);
-	World_AICtrl()->watchTime = 0.0f;
-	AICtrl_SendSentinelToWatch(g_pWorld->aiCtrl, p);
+	g_pWorld->logic.aiCtrl.watchTime = 0.0f;
+	AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, p);
 }

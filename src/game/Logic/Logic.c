@@ -1,6 +1,6 @@
 /*
  * Logic/Logic.cpp of the game: cLogicControl (include/scrap/logic.h), the logic control of the world at
- * g_pWorld->taunts. It owns the mode objects (parking zones, items, ship regeneration, the police and enemy ships
+ * &g_pWorld->logic. It owns the mode objects (parking zones, items, ship regeneration, the police and enemy ships
  * of the outdoor maps, the multiplayer modes, the AI control of the indoor police, the nurses, the GenChar group,
  * the gatekeepers), makes their lists at the reset and updates them every frame; the alarm grows by the highest
  * level of the round. Every 0.5 s the taunts (outdoor maps) and the warnings play. The entities of a level are put

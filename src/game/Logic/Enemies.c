@@ -150,10 +150,10 @@ byte __thiscall cEnemiesLocalLogic_VarI(cEnemiesLocalLogic *self, const char *na
 		return 0;
 	}
 	if (set) {
-		World_Enemies()->ignoreFriends = *i > 0;
+		g_pWorld->logic.enemies.ignoreFriends = *i > 0;
 		return 1;
 	}
-	*i = World_Enemies()->ignoreFriends != 0;
+	*i = g_pWorld->logic.enemies.ignoreFriends != 0;
 	return 1;
 }
 

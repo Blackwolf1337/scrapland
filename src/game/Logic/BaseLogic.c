@@ -272,13 +272,13 @@ void Logic_ShowAI(byte visible) {
 		}
 		return;
 	}
-	Logic_ShowChars(Logic_ListFirst(World_CharList(WORLD_GEARS)), LOGIC_GEARSTATES, visible);
-	Logic_ShowChars(Logic_ListFirst(World_CharList(WORLD_SENTINELS)), LOGIC_SENTINELSTATES, visible);
-	Logic_ShowChars(Logic_ListFirst(World_CharList(WORLD_NURSES)), LOGIC_NURSESTATES, visible);
-	Logic_ShowChars(Logic_ListFirst(World_CharList(WORLD_GENCHARS1)), LOGIC_GENCHARSTATES, visible);
-	Logic_ShowChars(Logic_ListFirst(World_CharList(WORLD_GENCHARS2)), LOGIC_GENCHARSTATES, visible);
-	Logic_ShowChars(Logic_ListFirst(World_CharList(WORLD_GENCHARS3)), LOGIC_GENCHARSTATES, visible);
-	Logic_ShowChars(Logic_ListFirst(*(cEntityListData **)((byte *)World_CharList(WORLD_GENCHARS4) + 0x10)),
+	Logic_ShowChars(Logic_ListFirst(g_pWorld->logic.aiCtrl.gears), LOGIC_GEARSTATES, visible);
+	Logic_ShowChars(Logic_ListFirst(g_pWorld->logic.aiCtrl.sentinels), LOGIC_SENTINELSTATES, visible);
+	Logic_ShowChars(Logic_ListFirst(g_pWorld->logic.nurses.list), LOGIC_NURSESTATES, visible);
+	Logic_ShowChars(Logic_ListFirst(g_pWorld->logic.genChars.genChars), LOGIC_GENCHARSTATES, visible);
+	Logic_ShowChars(Logic_ListFirst(g_pWorld->logic.genChars.police), LOGIC_GENCHARSTATES, visible);
+	Logic_ShowChars(Logic_ListFirst(g_pWorld->logic.genChars.bishops), LOGIC_GENCHARSTATES, visible);
+	Logic_ShowChars(Logic_ListFirst(g_pWorld->logic.genChars.messengers->list),
 		LOGIC_GENCHARSTATES, visible);
 }
 
@@ -410,8 +410,8 @@ void __thiscall cBaseLocalLogic_Update(cBaseLocalLogic *self, float dt) {
 					((cObjEntity *)t)->radarShow)) {
 					victim = p;
 				}
-				AICtrl_GearAttack(g_pWorld->aiCtrl, victim, 0);
-				AICtrl_SendSentinelToNPC(g_pWorld->aiCtrl, victim);
+				AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, victim, 0);
+				AICtrl_SendSentinelToNPC(&g_pWorld->logic.aiCtrl, victim);
 				self->rageTime = 0.0f;
 			}
 		}

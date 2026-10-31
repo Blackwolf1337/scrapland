@@ -66,7 +66,7 @@ void __fastcall cLittlePoliceLocalLogic_UpdateBribe(cLittlePoliceLocalLogic *sel
 		cEntity *t = b->target.target;
 		if (t == ChType_Usr0()) {
 			usrAttack = 1;
-			if (!cGenCharGroup_TakeAttack(World_GenCharGroup())) {
+			if (!cGenCharGroup_TakeAttack((&g_pWorld->logic.genChars))) {
 				LP_VT(self)->RestartState(self);
 				return;
 			}
@@ -85,7 +85,7 @@ void __fastcall cLittlePoliceLocalLogic_UpdateBribe(cLittlePoliceLocalLogic *sel
 		cActCtrl_IsActive(ChType_ActCtrl(p), "FaceToTalk") || cActCtrl_IsActive(ChType_ActCtrl(p), "TalkListenNPC");
 	self->bribe = usrAttack && (action || talk);
 	if (usrAttack) {
-		cGenCharGroup_RaiseLevel(World_GenCharGroup(), 0);
+		cGenCharGroup_RaiseLevel((&g_pWorld->logic.genChars), 0);
 	}
 	if (self->bribe == old) {
 		return;
@@ -160,12 +160,12 @@ cEntity *__thiscall cLittlePoliceLocalLogic_FindTarget(cLittlePoliceLocalLogic *
 		return NULL;
 	}
 	cEntity *p = LP_BASE(self)->parent;
-	cEntity *e = Logic_FindInView(p, World_CharList(WORLD_GENCHARS1), g_GenCharStdFar, g_GenCharStdFovY,
+	cEntity *e = Logic_FindInView(p, g_pWorld->logic.genChars.genChars, g_GenCharStdFar, g_GenCharStdFovY,
 		g_GenCharStdFovX, 1, NULL);
 	if (e) {
 		return e;
 	}
-	e = Logic_FindInView(p, World_CharList(WORLD_GENCHARS3), g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1,
+	e = Logic_FindInView(p, g_pWorld->logic.genChars.bishops, g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1,
 		NULL);
 	if (e) {
 		return e;
@@ -297,9 +297,9 @@ void __thiscall cLittlePoliceLocalLogic_Update(cLittlePoliceLocalLogic *self, fl
 					return;
 				}
 				cGenCharLocalLogic_Discover(&self->base);
-				cGenCharGroup_RaiseLevel(World_GenCharGroup(), 0);
+				cGenCharGroup_RaiseLevel((&g_pWorld->logic.genChars), 0);
 				Alarm_Set(&g_pWorld->alarm, 1.0f);
-				AICtrl_GearAttack(g_pWorld->aiCtrl, usr, 0);
+				AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, usr, 0);
 				return;
 			}
 			if (!alarm) {
@@ -432,26 +432,26 @@ void __thiscall cLittlePoliceLocalLogic_UpdateLook(cLittlePoliceLocalLogic *self
 	cEntity *p = b->parent;
 
 	if (b->busy) {
-		WChar_ViewMode(p) = 0;
+		WChar_ConeStatus(p) = 0;
 		return;
 	}
 	cEntity *usr = ChType_Usr0();
-	WChar_ViewFovY(p) = g_GenCharStdFovY;
-	WChar_ViewFar(p) = g_LittlePoliceMaxDistFar;
+	WChar_ConeFov(p) = g_GenCharStdFovY;
+	WChar_ConeDist(p) = g_LittlePoliceMaxDistFar;
 	if (g_pWorld->alarm.on) {
 		cEntity *te = b->target.target;
 		if (te && b->state == 2 && te == cWorld_GetUsrEntity(g_pWorld, 0)) {
-			WChar_ViewMode(p) = 3;
+			WChar_ConeStatus(p) = 3;
 		} else {
-			WChar_ViewMode(p) = 2;
+			WChar_ConeStatus(p) = 2;
 		}
 		return;
 	}
 	if (!g_pWorld->alarm.notGuaranteed) {
-		WChar_ViewMode(p) = 0;
+		WChar_ConeStatus(p) = 0;
 		return;
 	}
-	WChar_ViewMode(p) = 1;
+	WChar_ConeStatus(p) = 1;
 	if (usr && Logic_InView(p, usr->vftable->GetPos(usr, &t), g_LittlePoliceMaxDistFar, g_GenCharStdFovY,
 		g_GenCharStdFovX, 1)) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);

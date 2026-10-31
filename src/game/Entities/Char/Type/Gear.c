@@ -217,7 +217,7 @@ void ChType_GearShoot(cAbstractFile *params) {
 	}
 	if (ChType_Usr0() == v) {
 		usr = 1;
-		AICtrl_SendSentinelToWatch(g_pWorld->aiCtrl, v->vftable->GetPos(v, &t2));
+		AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, v->vftable->GetPos(v, &t2));
 		Alarm_Set(&g_pWorld->alarm, g_pWorld->alarm.value + g_GearShootFailAlarm);
 	} else {
 		usr = 0;

@@ -52,7 +52,7 @@ PyObject *SLogic_SendSentinelToWatch(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "(fff)", &pos.x, &pos.y, &pos.z)) {
 		return NULL;
 	}
-	AICtrl_SendSentinelToWatch(g_pWorld->aiCtrl, &pos);
+	AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, &pos);
 	return ReturnNone();
 }
 
@@ -64,7 +64,7 @@ PyObject *SLogic_GearAttack(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s", &name)) {
 		return NULL;
 	}
-	AICtrl_GearAttack(g_pWorld->aiCtrl, World_FindEntity(name), 0);
+	AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, World_FindEntity(name), 0);
 	return ReturnNone();
 }
 
@@ -159,7 +159,7 @@ PyObject *SLogic_SetShipToRegenerate(PyObject *self, PyObject *args) {
 	}
 	cEntity *e = World_FindEntity(name);
 	if (e) {
-		ShipRegen_Set(g_pWorld->shipRegen, Entity_IsType(e, TYEN_CAR) ? e : NULL, speed, endSpeed);
+		ShipRegen_Set(&g_pWorld->logic.shipRegen, Entity_IsType(e, TYEN_CAR) ? e : NULL, speed, endSpeed);
 	}
 	return ReturnNone();
 }
@@ -219,7 +219,7 @@ PyObject *SLogic_ChangeBatonState(PyObject *self, PyObject *args) {
 PyObject *SLogic_UpdateTauntEndTime(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	Taunts_UpdateEndTime(g_pWorld->taunts);
+	Taunts_UpdateEndTime(&g_pWorld->logic);
 	return ReturnNone();
 }
 

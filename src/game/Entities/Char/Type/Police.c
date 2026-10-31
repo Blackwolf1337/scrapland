@@ -175,7 +175,7 @@ void ChType_PoliceActionPress(cAbstractFile *params) {
 	cActCtrl_SetDefLoop(ChType_ActCtrl(v), usr ? "Action" : "ActionNPC", 0);
 	if (usr) {
 		WChar_ListenOn(v) = 0;
-		AICtrl_SendSentinelToWatch(g_pWorld->aiCtrl, v->vftable->GetPos(v, &t2));
+		AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, v->vftable->GetPos(v, &t2));
 	}
 	cLocalLogic *l = Logic_GetLocalLogic(victim);
 	if (l && WChar_B381(victim) && cActCtrl_PlayAction(ChType_ActCtrl(victim), action, 0, 1, 1.0f)) {
@@ -236,8 +236,8 @@ void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 	} else if (victim && !strcmp(act, "ActionBad")) {
 		act = "Relax";
 		if (!usr) {
-			AICtrl_SendSentinelToNPC(g_pWorld->aiCtrl, victim);
-			AICtrl_GearAttack(g_pWorld->aiCtrl, victim, 0);
+			AICtrl_SendSentinelToNPC(&g_pWorld->logic.aiCtrl, victim);
+			AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, victim, 0);
 			if (!strcmp(cActCtrl_GetActionName(ChType_ActCtrl(me), 0), "Fusion")) {
 				return;
 			}

@@ -2,12 +2,13 @@
  * Game logic (original sources: Logic/): the alarm of the world (AlarmStatus.cpp), the local logics of the
  * characters (BaseLogic.cpp, the character types after it) and of the ships of the multiplayer modes (CTFEnemies,
  * CTFFriends, DeathMatch, Domination). An entity list of the world makes the local logic of an entity that joins
- * it (cEntityListData.func) and keeps it in cEntity.lLogic. The objects at g_pWorld->taunts (cLogicControl, which
- * holds the mode objects), shipRegen and aiCtrl are only known by their methods so far.
+ * it (cEntityListData.func) and keeps it in cEntity.lLogic. The logic control of the world (g_pWorld->logic,
+ * cLogicControl in include/scrap/worldlogic.h) holds the mode objects.
  */
 #ifndef SCRAP_LOGIC_H
 #define SCRAP_LOGIC_H
 
+#include "scrap/actions.h"
 #include "scrap/ai.h"
 #include "scrap/alarm.h"
 #include "scrap/collisiongrid.h"
@@ -245,24 +246,15 @@ typedef cLocalLogic cScrapyardLocalLogic;
 #define CGEARLOCALLOGIC_VFTABLE GAME_VFTABLE(cGearLocalLogic_vftable, 0x3beeec)
 #define CGENCHARLOCALLOGIC_VFTABLE GAME_VFTABLE(cGenCharLocalLogic_vftable, 0x3bf5ec)
 
-/* the character lists of the world the logics search (of cLogicControl at g_pWorld->taunts) */
-#define World_CharList(off) (*(cEntityListData **)((byte *)g_pWorld + (off)))
-#define WORLD_SENTINELS 0x21fc
-#define WORLD_GEARS 0x2200
-#define WORLD_NURSES 0x2234
-#define WORLD_GENCHARS1 0x2244
-#define WORLD_GENCHARS2 0x2248
-#define WORLD_GENCHARS3 0x224c
-#define WORLD_GENCHARS4 0x2250		/* an object with the list at +0x10 */
 
 /* the type name of the action class of a character */
 static inline const char *Logic_TypeName(cEntity *e) {
-	void *ctrl = WithLife_Vtbl(e)->GetActCtrl(e);
-	return *(char **)(*(byte **)((byte *)ctrl + 8) + 4);
+	cActCtrl *ctrl = WithLife_Vtbl(e)->GetActCtrl(e);
+	return ctrl->cls->name;
 }
 
 /* the radar marker of an object (cObjEntity.radarShow, "RadarShow") */
-#define Logic_RadarShow(e) (*(int *)((byte *)(e) + 0x13c))
+#define Logic_RadarShow(e) (((cObjEntity *)(e))->radarShow)
 
 /* the first and the next entity node of a list ring, NULL at the end */
 static inline Nto1Node *Logic_ListFirst(cEntityListData *l) {
@@ -281,9 +273,9 @@ static inline int Logic_Count(const int *numElems) {
 }
 
 /* the fields of the characters the logics use (chartype.h has more) */
-#define WChar_Link(e) ((Nto1Node *)((byte *)(e) + 0x3e8))		/* the first field of cWalkCharEntity */
-#define WChar_Radius(e) (*(float *)((byte *)(e) + 0x3a0))
-#define WChar_ControlTurn(e) (*(float *)((byte *)(e) + 0x4f0))	/* of WalkCharControl */
+#define WChar_Link(e) (&WChar(e)->collide)
+#define WChar_Radius(e) (WLife(e)->prim.radius)
+#define WChar_ControlTurn(e) (WChar(e)->control.vRot)
 
 /* engine variables of the logics */
 #define g_DefActionRadius GAME_GLOBAL_IN(float, GVar_DefActionRadius, 16, 0x44cbb8)
@@ -435,7 +427,7 @@ static inline cEntity *Logic_AttackTarget(cAIVehicle *ai) {
 #define AIV_STATE_FLAG 6
 #define AIV_STATE_CHASE 7
 
-/* CTFEnemies.cpp: g_pWorld + 0x219c holds the pointer */
+/* CTFEnemies.cpp: g_pWorld->logic.ctfEnemies holds the pointer */
 typedef struct cCTFEnemiesData {
 	char *leader;			/* 0x00 cString, the name of the leader ship */
 	cEntityListData *list;		/* 0x04 "CTFEnemies" */
@@ -445,11 +437,7 @@ typedef struct cCTFEnemiesData {
 } cCTFEnemiesData;
 SD_SIZE(cCTFEnemiesData, 0x14);
 
-typedef struct cCTFEnemies {
-	cCTFEnemiesData *d;
-} cCTFEnemies;
-
-/* CTFFriends.cpp: g_pWorld + 0x2198 */
+/* CTFFriends.cpp: g_pWorld->logic.ctfFriends holds the pointer */
 typedef struct cCTFFriendsData {
 	cEntityListData *list;		/* 0x00 "CTFFriends" */
 	float timer;			/* 0x04 */
@@ -457,19 +445,6 @@ typedef struct cCTFFriendsData {
 } cCTFFriendsData;
 SD_SIZE(cCTFFriendsData, 0xc);
 
-typedef struct cCTFFriends {
-	cCTFFriendsData *d;
-} cCTFFriends;
-
-#define World_CTFFriends() ((cCTFFriends *)((byte *)g_pWorld + 0x2198))
-#define World_CTFEnemies() ((cCTFEnemies *)((byte *)g_pWorld + 0x219c))
-
-/* DeathMatch.cpp */
-typedef struct cDeathMatch {
-	float timer;			/* 0x0 */
-	cEntityListData *list;		/* 0x4 "DeathMatch" */
-} cDeathMatch;
-SD_SIZE(cDeathMatch, 8);
 
 #define g_LeaderFlag GAME_GLOBAL_IN(char *, GVar_LeaderFlag, 16, 0x44cc64)
 #define g_PercEnemiesAttackPlayerWhenWinning GAME_GLOBAL_IN(float, GVar_PercEnemiesAttackPlayerWhenWinning, 16, 0x44cc94)
@@ -523,8 +498,6 @@ typedef struct DominZone {
 #define g_MaxDominDistChase GAME_GLOBAL_IN(float, GVar_MaxDominDistChase, 16, 0x44cd6c)
 #define g_MinDominDistChase GAME_GLOBAL_IN(float, GVar_MinDominDistChase, 16, 0x44cd9c)
 
-typedef struct cDominationLogic cDominationLogic;
-
 typedef struct cDominationLogicVtbl {
 	cDominationLogic *(__thiscall *Delete)(cDominationLogic *self, byte flags);	/* 0x00 */
 	void(__thiscall *Init)(cDominationLogic *self);				/* 0x04 makes the list */
@@ -549,29 +522,6 @@ typedef struct cDominationFriendsSide {
 } cDominationFriendsSide;
 SD_SIZE(cDominationFriendsSide, 0xc);
 
-/* Domination.cpp, 0x10 bytes */
-struct cDominationLogic {
-	const cDominationLogicVtbl *vftable;	/* 0x00 */
-	HashTable assigned;		/* 0x04 of cNameItem: the zone (value) of a ship (name) */
-};
-SD_SIZE(cDominationLogic, 0x10);
-
-/* DominationEnemies.cpp, 0x14 bytes */
-typedef struct cDominationEnemiesLogic {
-	cDominationLogic base;		/* 0x00 */
-	cDominationSide *side;		/* 0x10 */
-} cDominationEnemiesLogic;
-SD_OFFSET(cDominationEnemiesLogic, side, 0x10);
-SD_SIZE(cDominationEnemiesLogic, 0x14);
-
-/* DominationFriends.cpp, 0x14 bytes */
-typedef struct cDominationFriendsLogic {
-	cDominationLogic base;		/* 0x00 */
-	cDominationFriendsSide *side;	/* 0x10 */
-} cDominationFriendsLogic;
-SD_OFFSET(cDominationFriendsLogic, side, 0x10);
-SD_SIZE(cDominationFriendsLogic, 0x14);
-
 #define CDOMINATIONLOGIC_VFTABLE GAME_VFTABLE(cDominationLogic_vftable, 0x3be14c)
 #define CDOMINATIONENEMIESLOGIC_VFTABLE GAME_VFTABLE(cDominationEnemiesLogic_vftable, 0x3be164)
 #define CDOMINATIONFRIENDSLOGIC_VFTABLE GAME_VFTABLE(cDominationFriendsLogic_vftable, 0x3be1ec)
@@ -579,8 +529,6 @@ SD_SIZE(cDominationFriendsLogic, 0x14);
 #define g_DominLeaderName GAME_GLOBAL_IN(char *, GVar_LeaderName, 16, 0x44ce48)
 #define g_OnDominEnemyDeath (GAME_ARRAY_IN(cPy_Function, GVar_OnDominEnemyDeath, 16, 0x44ce24))
 #define g_OnDominFriendDeath (GAME_ARRAY_IN(cPy_Function, GVar_OnDominFriendDeath, 16, 0x44ce60))
-#define World_DominFriends() ((cDominationFriendsLogic *)((byte *)g_pWorld + 0x21a0))
-#define World_DominEnemies() ((cDominationEnemiesLogic *)((byte *)g_pWorld + 0x21b4))
 
 void Domination_AddZone(cEntity *zone);
 void Domination_SetZoneState(int zone, int state);
@@ -614,19 +562,6 @@ void Logic_NativeNop(cAbstractFile *params);
 /* a random car of the list (rva 0x154b20), NULL for none */
 cEntity *Logic_RandomCar(cEntityListData *list);
 
-/* Enemies.cpp: g_pWorld + 0x2170, the ships of the list "Enemies" attack the player */
-typedef struct cEnemies {
-	cEntity *usr;			/* 0x0 the car of the player they went for */
-	byte ignoreFriends;		/* 0x4 "IgnoreFriends" of the logic of a ship */
-	byte attacking;			/* 0x5 since the player had a car */
-	byte relax;			/* 0x6 1 */
-	byte pad_7;
-	float timer;			/* 0x8 Think every 0.5 s */
-	cEntityListData *list;		/* 0xc "Enemies" */
-} cEnemies;
-SD_SIZE(cEnemies, 0x10);
-
-#define World_Enemies() ((cEnemies *)((byte *)g_pWorld + 0x2170))
 #define CENEMIESLOCALLOGIC_VFTABLE GAME_VFTABLE(cEnemiesLocalLogic_vftable, 0x3be240)
 
 cEnemies *__fastcall cEnemies_ctor(cEnemies *self);
@@ -634,23 +569,10 @@ void __thiscall cEnemies_Attack(cEnemies *self, cEntity *usr);
 void __fastcall cEnemies_Think(cEnemies *self);
 void __fastcall cEnemies_Relax(cEnemies *self);
 
-/* ExtPolice.cpp: g_pWorld + 0x2158, the police cars of the outdoor maps ("OutCop") */
-typedef struct cExtPolice {
-	float retarget;			/* 0x00 5 s: while the alarm stays on, the cars go for the player again */
-	byte alarm;			/* 0x04 the alarm at the last think */
-	byte pad_5[3];
-	cEntity *usr;			/* 0x08 the player at the last think */
-	float timer;			/* 0x0c Think every 0.5 s */
-	int raised;			/* 0x10 1 when the last think set the alarm, else -1 */
-	cEntityListData *list;		/* 0x14 "OutCop" */
-} cExtPolice;
-SD_SIZE(cExtPolice, 0x18);
-
-#define World_ExtPolice() ((cExtPolice *)((byte *)g_pWorld + 0x2158))
 #define g_ExtPoliceChasing GAME_GLOBAL_IN(int, GVar_DoResetOutPolice, 16, 0x44cea8)		/* the cars were sent after the player */
 #define g_PoliceWaveEliminated (GAME_ARRAY_IN(cPy_Function, GVar_PoliceWaveEliminated, 16, 0x44ce84))	/* no police car left */
 #define g_TrafficFightingMaxDist GAME_GLOBAL_IN(float, GVar_TrafficFightingMaxDist, 16, 0x44dc40)
-#define Vehicle_B383(e) (*(byte *)((byte *)(e) + 0x383))
+#define Entity_ArrowCanMission(e) (WLife(e)->arrow.canMission)
 
 /* the AI parameters of a police car back to the defaults or random (rva 0x15b2f0, 0x15b3c0) */
 void PoliceAI_RestoreParams(cAIVehicle *ai);
@@ -664,25 +586,10 @@ void ExtPolice_CopDamage(const char *name, const char *attacker, byte died);
 void __fastcall cExtPolice_Think(cExtPolice *self);
 byte ExtPolice_IsChased(cEntity *e);
 
-/* Friends.cpp: g_pWorld + 0x2180, the friend ships of the outdoor missions ("Friends") */
-typedef struct cFriends {
-	float timer;			/* 0x0 Think every 1.5 s */
-	cEntityListData *list;		/* 0x4 "Friends" */
-} cFriends;
-SD_SIZE(cFriends, 8);
-
-#define World_Friends() ((cFriends *)((byte *)g_pWorld + 0x2180))
 
 cFriends *__fastcall cFriends_ctor(cFriends *self);
 void __thiscall cFriends_Attack(cFriends *self, cEntity *usr);
 void __fastcall cFriends_Think(cFriends *self);
-
-/* GateKeeperLogic.cpp: the gatekeepers ("GateKeeper", g_pWorld + 0x2254), every sqrt(2) s their logics update */
-typedef struct cGateKeepers {
-	float timer;			/* 0x0 */
-	cEntityListData *list;		/* 0x4 "GateKeeper" */
-} cGateKeepers;
-SD_SIZE(cGateKeepers, 8);
 
 /* the logic of a gatekeeper (0x4c bytes): states 0 relaxed, 1 hidden in its shell */
 typedef struct cGateKeeperLocalLogic {
@@ -718,11 +625,10 @@ typedef struct cGearLocalLogic {
 } cGearLocalLogic;
 SD_SIZE(cGearLocalLogic, 0x5c);
 
-#define World_AICtrlI4() (*(int *)((byte *)g_pWorld + 0x21cc))	/* of g_pWorld->aiCtrl */
-/* the view of the AI of a character */
-#define WChar_ViewMode(e) (*(int *)((byte *)(e) + 0x38c))
-#define WChar_ViewFovY(e) (*(float *)((byte *)(e) + 0x390))
-#define WChar_ViewFar(e) (*(float *)((byte *)(e) + 0x394))
+/* the view cone of the arrow of a character (its AI sees in it) */
+#define WChar_ConeStatus(e) (WLife(e)->arrow.coneStatus)
+#define WChar_ConeFov(e) (WLife(e)->arrow.coneFov)
+#define WChar_ConeDist(e) (WLife(e)->arrow.coneDist)
 
 /* the AI control: level to at least level (rva 0x14fb00), the gear becomes a police (rva 0x14eb50) */
 void __thiscall AICtrl_RaiseLevel(void *aiCtrl, int level);
@@ -730,19 +636,6 @@ byte __thiscall AICtrl_GearToPolice(void *aiCtrl, cEntity *gear);
 
 byte __thiscall cGearLocalLogic_SetState(cGearLocalLogic *self, int state, cEntity *target);
 
-/* GenCharGroup.cpp: g_pWorld + 0x2238, the lists of the generic characters and the maker of their logics */
-typedef struct cGenCharGroup {
-	int attackers;			/* 0x00 counted from 0 every update, two may attack */
-	int level;			/* 0x04 the highest level the logics report in a round, -1 */
-	float timer;			/* 0x08 Think every 0.13 s */
-	cEntityListData *genChars;	/* 0x0c "GenChars" (WORLD_GENCHARS1) */
-	cEntityListData *police;	/* 0x10 "PoliceSmall" */
-	cEntityListData *bishops;	/* 0x14 "Bishop" */
-	void *messengers;		/* 0x18 cMessengers (MessengerLogic.cpp, 0x14 bytes), its list at +0x10 */
-} cGenCharGroup;
-SD_SIZE(cGenCharGroup, 0x1c);
-
-#define World_GenCharGroup() ((cGenCharGroup *)((byte *)g_pWorld + 0x2238))
 
 cGenCharGroup *__fastcall cGenCharGroup_ctor(cGenCharGroup *self);
 void __fastcall cGenCharGroup_dtor(cGenCharGroup *self);
@@ -848,7 +741,7 @@ SD_SIZE(cHumanLocalLogic, 0x5c);
 /* HumphreyLogic.cpp: a cFunctionaryLocalLogic (isDefault: "Humphrey_Default") at the desktop "HumphreyDesktop" */
 #define CHUMPHREYLOCALLOGIC_VFTABLE GAME_VFTABLE(cHumphreyLocalLogic_vftable, 0x3bf7e0)
 
-/* InfItem.cpp: the item list of the world (cItemList of game.h, g_pWorld + 0x20e0, 100 bytes), DLists of
+/* InfItem.cpp: the item list of the world (cInfItem of worldlogic.h, g_pWorld->logic.items, 100 bytes), DLists of
  * cItemDesc nodes: the life items and the ammo items of three kinds */
 typedef struct cInfItemNode {
 	struct cInfItemNode *next;	/* 0x0 */
@@ -857,50 +750,11 @@ typedef struct cInfItemNode {
 } cInfItemNode;
 SD_SIZE(cInfItemNode, 0x10);
 
-typedef DLIST(cInfItemNode) cInfItemList;
-
-typedef struct cInfItem {
-	const cItemListVtbl *vftable;	/* 0x00 */
-	cInfItemList life;		/* 0x04 */
-	cInfItemList ammo0;		/* 0x1c kind 0 */
-	cInfItemList ammo2;		/* 0x34 kind 2 */
-	cInfItemList ammo1;		/* 0x4c kind 1 */
-} cInfItem;
-SD_SIZE(cInfItem, 0x64);
-
 #define CINFITEM_VFTABLE GAME_VFTABLE(cInfItem_vftable, 0x3bf8d0)
 
 cInfItem *__fastcall cInfItem_ctor(cInfItem *self);
 void __fastcall cInfItem_dtor(cInfItem *self);
 
-/* IntPolice.cpp: the AI control of the indoor police (g_pWorld->aiCtrl, cLogicControl + 0x134): the sentinels
- * search and accuse, the gears attack; two police of the second GenChar list fuse into gears that fight */
-typedef struct cAICtrl {
-	int level;			/* 0x00 the highest alarm level of the round (RaiseLevel), -1 */
-	int attacking;			/* 0x04 the gears in state 1 or 2 */
-	byte alarm;			/* 0x08 the alarm at the last think */
-	byte pad_9[3];
-	cEntity *lastUsr;		/* 0x0c the player at the last think */
-	float timer;			/* 0x10 Think every 0.5 s */
-	byte sameChar;			/* 0x14 the alarm is on for the type of now */
-	byte notDefChar;		/* 0x15 */
-	byte alarmOn;			/* 0x16 */
-	byte pad_17;
-	cEntity *usr;			/* 0x18 */
-	Nto1Node watch;			/* 0x1c to the sentinel in state 5, data the control */
-	float watchTime;		/* 0x2c no sentinel is sent to watch before 0 */
-	byte alerted;			/* 0x30 a sentinel is in state 6 */
-	byte accusing;			/* 0x31 a sentinel accuses */
-	byte chased;			/* 0x32 a gear played the voice "Chase", "Abort" follows */
-	byte pad_33;
-	cEntityListData *sentinels;	/* 0x34 "Sentinel" (WORLD_SENTINELS) */
-	cEntityListData *gears;		/* 0x38 "Gear" (WORLD_GEARS) */
-} cAICtrl;
-SD_OFFSET(cAICtrl, watch, 0x1c);
-SD_OFFSET(cAICtrl, gears, 0x38);
-SD_SIZE(cAICtrl, 0x3c);
-
-#define World_AICtrl() ((cAICtrl *)g_pWorld->aiCtrl)
 #define g_CreatePolice (GAME_ARRAY_IN(cPy_Function, GVar_CreatePolice, 16, 0x44d330))	/* (name, x, y, z) */
 #define g_CreateGear (GAME_ARRAY_IN(cPy_Function, GVar_CreateGear, 16, 0x44d37c))	/* (name, x, y, z) */
 #define g_PoliceLogicBelligerant GAME_GLOBAL_IN(int, GVar_PoliceLogicBelligerant, 16, 0x44d354)
@@ -988,16 +842,6 @@ typedef struct cParkingNode {
 } cParkingNode;
 SD_SIZE(cParkingNode, 0x18);
 
-typedef DLIST(cParkingNode) cParkingList;
-
-typedef struct cParking {
-	float timer;			/* 0x00 the next check of one zone of each ring */
-	cParkingList ships;		/* 0x04 flag 0, iter the zone checked last */
-	cParkingList items;		/* 0x1c flag 1, checked only while the player is in a ship */
-} cParking;
-SD_OFFSET(cParking, items, 0x1c);
-SD_SIZE(cParking, 0x34);
-
 /* ShipRegen.cpp: the life regeneration of the player, and the ship of SLogic.SetShipToRegenerate */
 typedef struct cShipRegenShip {
 	char name[0x80];		/* 0x00 */
@@ -1007,17 +851,6 @@ typedef struct cShipRegenShip {
 	int life;			/* 0x8c at the last update */
 } cShipRegenShip;
 SD_SIZE(cShipRegenShip, 0x90);
-
-typedef struct cShipRegen {
-	byte b0;			/* 0x00 0, not used */
-	byte pad_1[3];
-	cShipRegenShip *ship;		/* 0x04 made by the first ShipRegen_Set */
-	float time;			/* 0x08 to the next check of the player */
-	byte noLoss;			/* 0x0c no life lost since the last check */
-	byte pad_d[3];
-	int life;			/* 0x10 of the player at the last check */
-} cShipRegen;
-SD_SIZE(cShipRegen, 0x14);
 
 /* Scrapyard.cpp: a group of ships that guard their lairs ("Mosquitos", "MadHunters"), behind a pointer */
 typedef struct cShipGroupData {
@@ -1029,73 +862,9 @@ typedef struct cShipGroupData {
 } cShipGroupData;
 SD_SIZE(cShipGroupData, 0x2c);
 
-typedef struct cShipGroup {
-	cShipGroupData *d;
-} cShipGroup;
-
 cShipGroupData *__thiscall cShipGroupData_ctor(cShipGroupData *self, const char *list);
 void __thiscall cShipGroupData_SetLair(cShipGroupData *self, const char *name, const vec3_t *pos);
 void __fastcall cShipGroupData_Think(cShipGroupData *self);
-
-/* Traffic.cpp: the ships of the traffic turn against the player when it hits them (cEnemiesTraffic) */
-typedef struct cEnemiesTraffic {
-	HashTable idle;			/* 0x00 of cNameItem: the time (float bits) a traffic ship stood */
-	int bossRobots;			/* 0x0c "RobotsControlledByBoss" is "1", -1 before the first think */
-	cEntity *usr;			/* 0x10 the player at the last think */
-	float timer;			/* 0x14 think every 0.5 s */
-	float attackTime;		/* 0x18 left of the attack of the traffic enemies */
-	cEntityListData *traffic;	/* 0x1c "Traffic" */
-	cEntityListData *fighting;	/* 0x20 "FightingTraffic" */
-	cEntityListData *chasing;	/* 0x24 "ChasingTraffic" */
-	cEntityListData *enemies;	/* 0x28 "EnemiesTraffic" */
-} cEnemiesTraffic;
-SD_OFFSET(cEnemiesTraffic, enemies, 0x28);
-SD_SIZE(cEnemiesTraffic, 0x2c);
-
-/* Logic.cpp: the logic control at g_pWorld->taunts (0x1c8 bytes), the owner of the mode objects */
-typedef struct cNurses {
-	float timer;			/* 0x0 Think every 0.73 s */
-	cEntityListData *list;		/* 0x4 "Nurse" (WORLD_NURSES) */
-} cNurses;
-SD_SIZE(cNurses, 8);
-
-typedef struct cLogicControl {
-	void *vftable;			/* 0x000 */
-	byte warned;			/* 0x004 the last warning think played one */
-	byte pad_5[3];
-	float warnTime;			/* 0x008 */
-	float timer;			/* 0x00c the taunts and warnings every 0.5 s */
-	float tauntTime;		/* 0x010 */
-	float talkEnd;			/* 0x014 the world time the talk of RemainTalkTime ends (Taunts_UpdateEndTime) */
-	cParking parking;		/* 0x018 the parking zones */
-	cInfItem items;			/* 0x04c */
-	cShipRegen shipRegen;		/* 0x0b0 */
-	cExtPolice extPolice;		/* 0x0c4 */
-	cEnemies enemies;		/* 0x0dc */
-	cFriends friends;		/* 0x0ec */
-	cShipGroup mosquitos;		/* 0x0f4 "Mosquitos" */
-	cShipGroup madHunters;		/* 0x0f8 "MadHunters" */
-	cDeathMatch deathMatch;		/* 0x0fc */
-	cCTFFriends ctfFriends;		/* 0x104 */
-	cCTFEnemies ctfEnemies;		/* 0x108 */
-	cDominationFriendsLogic dominFriends;	/* 0x10c */
-	cDominationEnemiesLogic dominEnemies;	/* 0x120 */
-	cAICtrl aiCtrl;			/* 0x134 */
-	cEnemiesTraffic enemiesTraffic;	/* 0x170 */
-	cNurses nurses;			/* 0x19c */
-	cGenCharGroup genChars;		/* 0x1a4 */
-	cGateKeepers gateKeepers;	/* 0x1c0 */
-} cLogicControl;
-SD_OFFSET(cLogicControl, items, 0x4c);
-SD_OFFSET(cLogicControl, extPolice, 0xc4);
-SD_OFFSET(cLogicControl, mosquitos, 0xf4);
-SD_OFFSET(cLogicControl, dominFriends, 0x10c);
-SD_OFFSET(cLogicControl, dominEnemies, 0x120);
-SD_OFFSET(cLogicControl, aiCtrl, 0x134);
-SD_OFFSET(cLogicControl, nurses, 0x19c);
-SD_OFFSET(cLogicControl, genChars, 0x1a4);
-SD_OFFSET(cLogicControl, gateKeepers, 0x1c0);
-SD_SIZE(cLogicControl, 0x1c8);
 
 #define CLOGICCONTROL_VFTABLE GAME_VFTABLE(cLogicControl_vftable, 0x3bfe20)
 #define g_RemainTalkTime GAME_GLOBAL_IN(float, GVar_RemainTalkTime, 16, 0x462148)
@@ -1103,7 +872,6 @@ SD_SIZE(cLogicControl, 0x1c8);
 #define g_TimeBetweeenWarnings GAME_GLOBAL_IN(float, GVar_TimeBetweeenWarnings, 16, 0x44d6b4)
 /* the callback the world puts a new entity at its origin with (set by Logic_ctor) */
 #define g_SetOriginFunc GAME_GLOBAL(void *, g_SetOriginFunc, 0x444730)
-
 
 /* MaintenanceLogic.cpp, 0xdc bytes: the maintenance robot of the ship editor walks around the ship on the
  * platform (states 7: wait for the ship, 8: work) */
@@ -1136,7 +904,6 @@ SD_SIZE(cMayorLocalLogic, 0xe8);
 #define g_MayorSearchEnt GAME_GLOBAL(cEntity *, g_MayorSearchEnt, 0x44d478)
 #define g_MayorTarget GAME_GLOBAL(cEntity *, g_MayorTarget, 0x44d474)
 #define g_MayorTargetDist GAME_GLOBAL(float, g_MayorTargetDist, 0x428ba4)
-
 
 #define CMERCENARYLOCALLOGIC_VFTABLE GAME_VFTABLE(cMercenaryLocalLogic_vftable, 0x3c0108)
 
@@ -1205,7 +972,6 @@ byte __thiscall cNurseLocalLogic_SetState(cNurseLocalLogic *self, int state, cEn
 
 /* ---- part 4: the taunts, parking zones, ship regeneration, Rusty, the scrapyards, sentinels, Sputnik and the
  * traffic ---- */
-#define World_Logic() ((cLogicControl *)g_pWorld->taunts)
 /* the native function of the sphere tests (cWorld_SphereCallF) of the logics */
 #define g_LogicSphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0, 0x46679c))
 

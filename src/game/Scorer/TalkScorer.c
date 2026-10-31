@@ -295,7 +295,7 @@ void Talk_AddCallbackParams(PyObject *list) {
 
 void Scorer_SetSpeechText(const char *text, float time, int r, int g, int b) {
 	g_RemainTalkTime = 0.0f;
-	Taunts_UpdateEndTime(g_pWorld->taunts);
+	Taunts_UpdateEndTime(&g_pWorld->logic);
 	Str_Copy(g_TalkText, text, TALK_TEXT_SIZE);
 	g_TalkNumLines = Talk_Wrap(g_TalkText, g_TalkLines);
 	g_TalkColor[0] = r;

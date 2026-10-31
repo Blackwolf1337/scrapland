@@ -13,6 +13,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/nto1links.h"
 #include "scrap/timer.h"
+#include "scrap/worldlogic.h"
 
 #define GAME_TIMESTAMP 0x61b304cc	/* PE link time of Scrap.exe 1.6.1 (2021-12-10 07:42:04 UTC) */
 #define GAME_SIZEOFIMAGE 0x55e000
@@ -177,30 +178,6 @@ typedef struct cAmmoInfo cAmmoInfo;
 		items_ + i_; \
 	})
 
-/* an item description for the item list (Scrap.AddItem): a string object and a value */
-typedef struct cItemDesc {
-	char *name;			/* 0x0 string object (cString_ctor/dtor, cString_Set) */
-	int value;			/* 0x4 */
-} cItemDesc;
-
-/* the item list embedded in cWorld at 0x20e0, only seen through its vtable */
-typedef struct cItemList cItemList;
-typedef struct cItemListVtbl {
-	void *vf00;
-	void(__thiscall *AddLife)(cItemList *self, cItemDesc *item);			/* 0x04 */
-	/* the walk over the life items: iter is the cursor (one pointer), NULL after the last */
-	cItemDesc *(__thiscall *FirstLife)(cItemList *self, void **iter);		/* 0x08 */
-	cItemDesc *(__thiscall *NextLife)(cItemList *self, void **iter);		/* 0x0c */
-	void(__thiscall *AddAmmo)(cItemList *self, int kind, cItemDesc *item);		/* 0x10 */
-	cItemDesc *(__thiscall *FirstAmmo)(cItemList *self, int kind, void **iter);	/* 0x14 */
-	cItemDesc *(__thiscall *NextAmmo)(cItemList *self, int kind, void **iter);	/* 0x18 */
-} cItemListVtbl;
-SD_OFFSET(cItemListVtbl, AddAmmo, 0x10);
-
-struct cItemList {
-	const cItemListVtbl *vftable;
-};
-
 /* the world: created by cWorld's constructor (rva 0x206db0), owns the game state of the running level */
 typedef struct cWorld {
 	void *vftable;			/* 0x0000 cWorld::vftable */
@@ -231,13 +208,7 @@ typedef struct cWorld {
 	cAlarm alarm;			/* 0x1c68 Scrap.GetAlarm, GetLockAlarm */
 	byte strMoney[0x2090 - 0x2078];	/* 0x2078 the digits of the money (cStrMoney, logic.h), its int is money */
 	int money;			/* 0x2090 Scrap.GetMoney */
-	/* embedded objects of unknown size, only their addresses are used so far */
-	byte taunts[0x20ac - 0x2094];	/* 0x2094 SLogic.UpdateTauntEndTime */
-	byte parking[0x20e0 - 0x20ac];	/* 0x20ac parking zones (Scrap.AddParkingZone, GetNearestParked) */
-	cItemList items;		/* 0x20e0 Scrap.AddItem */
-	byte pad_20e4[0x2144 - 0x20e4];
-	byte shipRegen[0x21c8 - 0x2144]; /* 0x2144 SLogic.SetShipToRegenerate */
-	byte aiCtrl[4];			/* 0x21c8 sentinels and gears (SLogic) */
+	cLogicControl logic;		/* 0x2094 the taunts, parking zones, items and the mode objects (SLogic, Scrap.AddItem) */
 } cWorld;
 SD_OFFSET(cWorld, entities, 0x0004);
 SD_OFFSET(cWorld, scheduler, 0x0034);
@@ -260,12 +231,9 @@ SD_OFFSET(cWorld, weapons, 0x1bb8);
 SD_OFFSET(cWorld, firstWeapon, 0x1bc0);
 SD_OFFSET(cWorld, ammo, 0x1bc4);
 SD_OFFSET(cWorld, money, 0x2090);
-SD_OFFSET(cWorld, taunts, 0x2094);
-SD_OFFSET(cWorld, parking, 0x20ac);
-SD_OFFSET(cWorld, items, 0x20e0);
 SD_OFFSET(cWorld, grid, 0x1bcc);
-SD_OFFSET(cWorld, shipRegen, 0x2144);
-SD_OFFSET(cWorld, aiCtrl, 0x21c8);
+SD_OFFSET(cWorld, logic, 0x2094);
+SD_SIZE(cWorld, 0x225c);
 
 /* World/: thiscall methods; Table<T>::Init per element type */
 void __thiscall WeapTable_Init(void *table, int num);

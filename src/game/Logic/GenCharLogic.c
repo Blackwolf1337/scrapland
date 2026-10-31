@@ -60,7 +60,7 @@ void __thiscall cGenCharLocalLogic_UpdateView(cGenCharLocalLogic *self) {
 		int st = b->state;
 		WChar_B381(p) = !b->busy && !g_pWorld->alarm.on && st != 4 && st != 3 && st != 5 && st != 10;
 	}
-	WChar_ViewMode(p) = 0;
+	WChar_ConeStatus(p) = 0;
 	Entity_Team(p) = 3;
 }
 
@@ -196,9 +196,9 @@ void __thiscall cGenCharLocalLogic_Update(cGenCharLocalLogic *self, float dt) {
 	byte same = !strcmp(type, usrType) && suspect;
 	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 	if (suspect && !Alarm_IsLocked(&g_pWorld->alarm)) {
-		WChar_ViewFovY(p) = g_GenCharStdFovY;
-		WChar_ViewFar(p) = g_GenCharStdFar;
-		WChar_ViewMode(p) = same ? 2 : 0;
+		WChar_ConeFov(p) = g_GenCharStdFovY;
+		WChar_ConeDist(p) = g_GenCharStdFar;
+		WChar_ConeStatus(p) = same ? 2 : 0;
 		Entity_Team(p) = same ? (g_pWorld->alarm.on ? 0 : 2) : 3;
 	}
 	int st = b->state;
@@ -245,12 +245,12 @@ states:
 			return;
 		}
 		cGenCharLocalLogic_Discover(self);
-		cGenCharGroup_RaiseLevel(World_GenCharGroup(), 0);
+		cGenCharGroup_RaiseLevel((&g_pWorld->logic.genChars), 0);
 		if (b->target.target && sameChar) {
 			if (seen) {
 				self->time = g_GenCharAcuseTime;
-				AICtrl_SendSentinelToWatch(g_pWorld->aiCtrl, usr->vftable->GetPos(usr, &t));
-				AICtrl_GearAttack(g_pWorld->aiCtrl, usr, 1);
+				AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, usr->vftable->GetPos(usr, &t));
+				AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, usr, 1);
 				return;
 			}
 			if (self->time >= 0.0f) {
@@ -449,7 +449,7 @@ byte __thiscall cGenCharLocalLogic_SetState(cGenCharLocalLogic *self, int state,
 			ai->vftable->SetState(ai, 8, target, 1);
 			if (ChType_Vtbl(p)->FindAction(p, "Discover")) {
 				cGenCharLocalLogic_Discover(self);
-				cGenCharGroup_RaiseLevel(World_GenCharGroup(), 0);
+				cGenCharGroup_RaiseLevel((&g_pWorld->logic.genChars), 0);
 			}
 		}
 		break;
