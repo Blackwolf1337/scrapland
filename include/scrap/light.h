@@ -89,7 +89,7 @@ typedef struct CLight {
 	float theta;			/* 0x38 degrees */
 	float phi;			/* 0x3c degrees */
 	float mult;			/* 0x40 */
-	float f44;			/* 0x44 */
+	float radCoef;		/* 0x44 "radcoef" of the node name / 100, 1: the radiosity factor (BspLight.rad) */
 	float weight;			/* 0x48 sort key of Light_Select, lower first */
 	D3DLight d3d;			/* 0x4c */
 	uint32_t indexD3D;		/* 0xb4 the index of the device light */

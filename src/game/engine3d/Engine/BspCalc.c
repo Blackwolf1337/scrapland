@@ -45,7 +45,7 @@ void Bsp_TakeLights(CScene *scn) {
 		Bprintf(l->name, sizeof(l->name), "%s", n->name);
 		l->point = light->type != LIGHT_DIR;
 		l->shadow = light->shadow;
-		l->rad = light->f44;
+		l->rad = light->radCoef;
 		l->pos = light->d3d.Position;
 		vec3_t d = light->type == LIGHT_OMNI ? omniDir : light->d3d.Direction;
 		float len = (float)__builtin_sqrt((double)(d.x * d.x + d.y * d.y + d.z * d.z));

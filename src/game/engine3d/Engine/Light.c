@@ -161,7 +161,7 @@ CLight *__fastcall CLight_ctor(CLight *self) {
 	self->theta = 43.0f;
 	self->phi = 45.0f;
 	self->mult = 1.0f;
-	self->f44 = 1.0f;
+	self->radCoef = 1.0f;
 	self->weight = 0.0f;
 	self->node = NULL;
 	self->nodeTarget = NULL;
@@ -477,7 +477,7 @@ static const struct {
 	{ offsetof(CLight, sector), 4 }, { offsetof(CLight, type), 4 }, { offsetof(CLight, shadow), 1 },
 	{ offsetof(CLight, pos), 12 }, { offsetof(CLight, dir), 12 }, { offsetof(CLight, color), 8 },
 	{ offsetof(CLight, rangeStart), 4 }, { offsetof(CLight, range), 4 }, { offsetof(CLight, theta), 4 },
-	{ offsetof(CLight, phi), 4 }, { offsetof(CLight, mult), 4 }, { offsetof(CLight, f44), 4 },
+	{ offsetof(CLight, phi), 4 }, { offsetof(CLight, mult), 4 }, { offsetof(CLight, radCoef), 4 },
 };
 
 byte __thiscall CLight_Read(CLight *self, CFileIO *f, void *ctx) {

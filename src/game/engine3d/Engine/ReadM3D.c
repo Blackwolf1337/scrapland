@@ -1386,7 +1386,7 @@ void M3D_ReadLight(CNode3D *node, byte anim, int frame) {
 		light->mult = (float)v / 100.0f;
 	}
 	if (Node_ParamInt(node->name, "radcoef", &v)) {
-		light->f44 = (float)v / 100.0f;
+		light->radCoef = (float)v / 100.0f;
 	}
 	if (light->type != LIGHT_DIR && 0.0f >= light->range) {
 		Con_Warnf("  WARN: No End value in Far Attenuation [Light: %s]\n", node->name);
