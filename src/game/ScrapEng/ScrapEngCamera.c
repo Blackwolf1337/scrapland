@@ -168,7 +168,7 @@ static void CGameCamera_FromNode(CGameCamera *self, CModel *model, CNode3D *node
 	vec3_t ang;
 	float fov = CAM_FOV;
 
-	CModel_GetNodeMatrix(model, &m, (uint32_t)node->i48, 1, 0, NULL, &fov);
+	CModel_GetNodeMatrix(model, &m, (uint32_t)node->slot, 1, 0, NULL, &fov);
 	Matrix_RotationX(&rx, CAM_FOV);
 	CAM_CHECK(self);
 	self->Camera->mode = CAMERA_FREE;
