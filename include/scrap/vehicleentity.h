@@ -49,11 +49,11 @@ struct cNetVController {
 	byte flags;			/* 0x38 */
 	byte pad_39[0x5c - 0x39];
 	cEntity *vehicle;		/* 0x5c */
-	byte b60;			/* 0x60 */
+	byte seq;			/* 0x60 low nibble: hit counter, high nibble: force counter; a change sets hit/force on the client */
 	byte pad_61[3];
 	int hit;			/* 0x64 2 after a hit */
 	int force;			/* 0x68 2 for "ForceAll" */
-	int i6c;			/* 0x6c */
+	int bumpSends;		/* 0x6c writes left that carry only the position and velocity after a vehicle bump (3) */
 	float height;			/* 0x70 of the camera point */
 	uint16_t keys;			/* 0x74 the controls of the client */
 	byte pad_76[2];

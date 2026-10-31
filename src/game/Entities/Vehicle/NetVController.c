@@ -30,8 +30,8 @@ cNetVController *__thiscall cNetVController_ctor(void *mem, cEntity *v) {
 	self->vftable = CNETVCONTROLLER_VFTABLE;
 	self->hit = 0;
 	self->force = 0;
-	self->b60 = 0;
-	self->i6c = 0;
+	self->seq = 0;
+	self->bumpSends = 0;
 	self->height = 0.0f;
 	return self;
 }
@@ -229,9 +229,9 @@ base:
 	if ((signed char)self->flags < 0) {
 		byte b;
 		NetV_Read(msg, &b, 1);
-		self->force = ((b ^ self->b60) & 0xf0) != 0;
-		byte prev = self->b60;
-		self->b60 = b;
+		self->force = ((b ^ self->seq) & 0xf0) != 0;
+		byte prev = self->seq;
+		self->seq = b;
 		self->hit = ((b ^ prev) & 0x0f) != 0;
 	}
 }
@@ -447,22 +447,22 @@ target:
 		NetV_Write(msg, &u, 2);
 	}
 base:
-	if (self->i6c > 0) {
+	if (self->bumpSends > 0) {
 		flags &= NETC_FULL | NETC_POS | NETC_VEL | 0x80;
-		self->i6c--;
+		self->bumpSends--;
 	}
 	cNetController_Write((cNetController *)self, flags, e, msg, force);
 	if ((signed char)self->flags < 0) {
 		int hit = self->hit;
 		if (hit == 2) {
-			self->b60 = (byte)((self->b60 & 0xf0) | ((self->b60 + 1) & 0x0f));
+			self->seq = (byte)((self->seq & 0xf0) | ((self->seq + 1) & 0x0f));
 		}
 		if (self->force == 2) {
-			self->b60 = (byte)(((self->b60 & 0xf0) + 0x10) & 0xf0) | (self->b60 & 0x0f);
+			self->seq = (byte)(((self->seq & 0xf0) + 0x10) & 0xf0) | (self->seq & 0x0f);
 		}
 		self->hit = hit - 1 < 0 ? 0 : hit - 1;
 		self->force = self->force - 1 < 0 ? 0 : self->force - 1;
-		b = self->b60;
+		b = self->seq;
 		NetV_Write(msg, &b, 1);
 	}
 }

@@ -293,12 +293,12 @@ void __thiscall cVehicleEntity_Touch(cVehicleEntity *self, cEntity *e, const vec
 	Obj_Vtbl(Veh_Ent(o))->SetVel(Veh_Ent(o), &out);
 	if (Net_IsNetEntity(Veh_Ent(self))) {
 		if (o->netCtrl) {
-			o->netCtrl->i6c = 3;
+			o->netCtrl->bumpSends = 3;
 		} else {
 			o->wl.obj.vel = otherVel;
 		}
 		if (self->netCtrl) {
-			self->netCtrl->i6c = 3;
+			self->netCtrl->bumpSends = 3;
 		} else {
 			self->wl.obj.vel = selfVel;
 		}
@@ -605,7 +605,7 @@ void __thiscall cVehicleEntity_NetMove(cVehicleEntity *self, float dt) {
 	if (net->force) {
 		net->force = 0;
 		Veh_Net(self)->hit = 0;
-		self->netCtrl->i6c = 0;
+		self->netCtrl->bumpSends = 0;
 		self->wl.obj.vel = Veh_Net(self)->vel;
 		self->wl.obj.base.pos = Veh_Net(self)->pos;
 		self->wl.obj.ang.x = Veh_Net(self)->ang.x;
@@ -615,7 +615,7 @@ void __thiscall cVehicleEntity_NetMove(cVehicleEntity *self, float dt) {
 		}
 	} else if (net->hit) {
 		net->hit = 0;
-		self->netCtrl->i6c = 0;
+		self->netCtrl->bumpSends = 0;
 		self->wl.obj.vel = Veh_Net(self)->vel;
 	}
 }
