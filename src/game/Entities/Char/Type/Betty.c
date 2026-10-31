@@ -52,7 +52,7 @@ void ChType_BettyActionPress(cAbstractFile *params) {
 		ang.x = 0.0f;
 		ang.y = y;
 		ang.z = 0.0f;
-		ChType_Vtbl(v)->SetViewAng(v, &ang);
+		WChar_Vtbl(v)->SetViewAng(v, &ang);
 		cam->vSpeed = g_BettyVSpeed;
 		cam->hSpeed = g_BettyHSpeed;
 	}
@@ -84,7 +84,7 @@ void ChType_BettyCameraSet(cAbstractFile *params) {
 	ang.x = Cam_Deg2Rad(crt_atof(pitch));
 	ang.y = y;
 	ang.z = 0.0f;
-	ChType_Vtbl(g_BettyEnt)->SetViewAng(g_BettyEnt, &ang);
+	WChar_Vtbl(g_BettyEnt)->SetViewAng(g_BettyEnt, &ang);
 }
 
 void ChType_DirAngles(const vec3_t *dir, vec3_t *out) {
@@ -158,7 +158,7 @@ void ChType_BettyEndEvent(cAbstractFile *params) {
 	v.z = 0.0f;
 	Obj_Vtbl(g_BettyEnt)->SetVel(g_BettyEnt, &v);
 	cWalkCharControl_Reset(WChar_Control(g_BettyEnt), 0);
-	ChType_Vtbl(g_BettyEnt)->SetViewAng(g_BettyEnt, Obj_Vtbl(g_BettyEnt)->GetAng(g_BettyEnt, &v));
+	WChar_Vtbl(g_BettyEnt)->SetViewAng(g_BettyEnt, Obj_Vtbl(g_BettyEnt)->GetAng(g_BettyEnt, &v));
 	cFollowCamEntity *cam = Betty_Cam(g_BettyEnt);
 	WChar_DisplAng(g_BettyEnt) = 0.0f;
 	if (cam) {

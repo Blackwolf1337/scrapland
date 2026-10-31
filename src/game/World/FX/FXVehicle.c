@@ -37,7 +37,7 @@ static int FXV_NodeOrDebris(cDebris *debris) {
 
 /* the model of the entity, CHECKed */
 static CGameModel *FXV_Model(cEntity *e) {
-	CGameModel *model = FX_Vtbl(e)->GetModel(e);
+	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
 	CHECK(CGameModel_IsLoaded(model));
 	return model;
 }
@@ -579,7 +579,7 @@ void __thiscall cObjElementFXVehicleSpawn_Update(cObjElementFXVehicleSpawn *self
 	if (!e || !e->flag_4c) {
 		return;
 	}
-	CGameModel *em = FX_Vtbl(e)->GetModel(e);
+	CGameModel *em = Obj_Vtbl(e)->GetModel(e);
 	CHECK(CGameModel_IsLoaded(em));
 	vec3_t pos, rot;
 	CGameModel_GetPos(em, &pos);
@@ -602,8 +602,8 @@ void __thiscall cObjElementFXVehicleSpawn_Update(cObjElementFXVehicleSpawn *self
 	}
 	float s = (3.0f - (c + c)) * (c * c);
 	int a = (int)((3.0f - (s + s)) * (s * s) * 255.0f);
-	FX_Vtbl(self->entity)->SetFX(self->entity, 2);
-	FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, 1.0f - c);
+	Obj_Vtbl(self->entity)->SetEffect(self->entity, 2);
+	Obj_Vtbl(self->entity)->SetEffectParam(self->entity, 0, 1.0f - c);
 	for (int i = 0; i < FXVSPAWN_TRAILS; i++) {
 		CGameTrail_Reset(&self->trails[i]);
 		CGameTrail_SetTransp(&self->trails[i], (byte)a);
@@ -691,12 +691,12 @@ void __thiscall cObjElementFXFiredEntity_Update(cObjElementFXFiredEntity *self, 
 	FXV_CheckEntity(&self->entity);
 	float d = cTimer_GetDelta(&g_pWorld->timer);
 	cEntity *e = self->entity;
-	if (!e || !e->flag_4c || !CGameModel_IsLoaded(FX_Vtbl(e)->GetModel(e))
-		|| !CGameModel_IsVisible(FX_Vtbl(self->entity)->GetModel(self->entity))) {
+	if (!e || !e->flag_4c || !CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))
+		|| !CGameModel_IsVisible(Obj_Vtbl(self->entity)->GetModel(self->entity))) {
 		self->b08 = 0;
 		return;
 	}
-	CGameModel *em = FX_Vtbl(self->entity)->GetModel(self->entity);
+	CGameModel *em = Obj_Vtbl(self->entity)->GetModel(self->entity);
 	CGameModel *model = Debris_Model(debris);
 	CGameParticles *p = &self->particles;
 	vec3_t pos, rot, dv, n, dir, o;
@@ -921,14 +921,14 @@ static inline uint16_t *FXV_EMIMark(cObjElementFXVehicleEMI *self, int i, int vi
 void __thiscall cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cDebris *debris, float dt) {
 	cEntity *e = self->entity;
 	if (e && (Entity_Removed(e) || !e->flag_4c)) {
-		FX_Vtbl(e)->SetFX(e, 0);
+		Obj_Vtbl(e)->SetEffect(e, 0);
 		self->entity = NULL;
 	}
 	e = self->entity;
 	if (!e || !e->flag_4c) {
 		return;
 	}
-	CGameModel *model = FX_Vtbl(e)->GetModel(e);
+	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
 	CGameModel *dm = Debris_Model(debris);
 	CGameParticles *ps = &self->particles;
 	vec3_t pos, rot, tmp;
@@ -941,7 +941,7 @@ void __thiscall cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cD
 	float d = cTimer_GetDelta(&g_pWorld->timer);
 	self->time = self->time + d;
 	self->stepTime = self->stepTime + d;
-	FX_Vtbl(self->entity)->SetFX(self->entity, 6);
+	Obj_Vtbl(self->entity)->SetEffect(self->entity, 6);
 	float v = self->time;
 	if (v > 0.5f) {
 		v = debris->speed - dt;
@@ -953,7 +953,7 @@ void __thiscall cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cD
 	} else {
 		v = v + v;
 	}
-	FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, v);
+	Obj_Vtbl(self->entity)->SetEffectParam(self->entity, 0, v);
 
 	if (!FXV_Veh(self->entity)->wl.obj.cam) {
 		if (!CGameTrail_IsRender(&self->trails[0]) && !CGameTrail_IsRender(&self->trails[1])) {
@@ -1172,18 +1172,18 @@ static inline float FXV_FireSize(float s, float r) {
 void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, cDebris *debris, float dt) {
 	cEntity *e = self->entity;
 	if (e && (Entity_Removed(e) || !e->flag_4c)) {
-		FX_Vtbl(e)->SetFX(e, 0);
+		Obj_Vtbl(e)->SetEffect(e, 0);
 		self->entity = NULL;
 	}
 	float d = cTimer_GetDelta(&g_pWorld->timer);
 	e = self->entity;
 	self->time = self->time + d;
 	self->emitTime = self->emitTime + d;
-	if (!e || !e->flag_4c || !CGameModel_IsLoaded(FX_Vtbl(e)->GetModel(e))
-		|| !CGameModel_IsVisible(FX_Vtbl(self->entity)->GetModel(self->entity))) {
+	if (!e || !e->flag_4c || !CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))
+		|| !CGameModel_IsVisible(Obj_Vtbl(self->entity)->GetModel(self->entity))) {
 		return;
 	}
-	CGameModel *model = FX_Vtbl(self->entity)->GetModel(self->entity);
+	CGameModel *model = Obj_Vtbl(self->entity)->GetModel(self->entity);
 	CGameModel *dm = Debris_Model(debris);
 	CGameParticles *p = &self->particles;
 	vec3_t pos, rot;
@@ -1193,7 +1193,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 	CGameModel_SetPos(dm, &pos);
 	CGameModel_SetRot(dm, &rot);
 	CGameModel_SetSortZ(dm, -49.0f, 0.0f);
-	FX_Vtbl(self->entity)->SetFX(self->entity, 7);
+	Obj_Vtbl(self->entity)->SetEffect(self->entity, 7);
 	float v = self->time;
 	if (v > 0.2f) {
 		v = debris->speed - dt;
@@ -1205,14 +1205,14 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 	} else {
 		v = v * 5.0f;
 	}
-	FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, v);
+	Obj_Vtbl(self->entity)->SetEffectParam(self->entity, 0, v);
 	if (!(debris->speed > 0.0f) || !(self->emitTime > 0.04f) || !(FXV_Veh(self->entity)->wl.fireRemain > 0.5f)) {
 		return;
 	}
 
 	const cVehicleEntity *veh = FXV_Veh(self->entity);
 	float life = (1.0f - veh->wl.fireAtt * 0.25f) * 0.75f;
-	float rad = FX_Vtbl(self->entity)->GetRadius(self->entity);
+	float rad = Obj_Vtbl(self->entity)->GetRadius(self->entity);
 	float s1 = FXV_Rand(0.20000000298023224, 0.20000000298023224) * rad;
 	float s2 = FXV_Rand(0.25, 0.8500000238418579) * rad;
 	vec3_t lv = FXV_Veh(self->entity)->localVel;
@@ -1870,12 +1870,12 @@ void __thiscall cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *se
 	}
 	float t = cTimer_GetDelta(&g_pWorld->timer);
 	e = self->entity;
-	if (!e || !e->flag_4c || !CGameModel_IsLoaded(FX_Vtbl(e)->GetModel(e))
-		|| !CGameModel_IsVisible(FX_Vtbl(self->entity)->GetModel(self->entity))) {
+	if (!e || !e->flag_4c || !CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))
+		|| !CGameModel_IsVisible(Obj_Vtbl(self->entity)->GetModel(self->entity))) {
 		self->seen = 0;
 		return;
 	}
-	CGameModel *model = FX_Vtbl(self->entity)->GetModel(self->entity);
+	CGameModel *model = Obj_Vtbl(self->entity)->GetModel(self->entity);
 	CHECK(CGameModel_IsLoaded(model));
 	CGameModel_GetPos(model, &pos);
 	CGameModel_GetRot(model, &rot);
@@ -1886,7 +1886,7 @@ void __thiscall cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *se
 		return;
 	}
 	e = self->entity;
-	float rad = FX_Vtbl(e)->GetRadius(e);
+	float rad = Obj_Vtbl(e)->GetRadius(e);
 	const cVehicleEntity *veh = FXV_Veh(self->entity);
 	cEntity *cam = veh->wl.obj.cam;
 	Float_Approach(&self->level, (float)self->lifePct / (float)g_FXSetOnFireLifePercent, t);
@@ -2410,15 +2410,15 @@ void __thiscall cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *
 	(void)dt;
 	cEntity *e = self->entity;
 	if (e && (Entity_Removed(e) || !e->flag_4c)) {
-		FX_Vtbl(e)->SetFX(e, 0);
-		FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, 0.0f);
+		Obj_Vtbl(e)->SetEffect(e, 0);
+		Obj_Vtbl(self->entity)->SetEffectParam(self->entity, 0, 0.0f);
 		self->entity = NULL;
 	}
 	e = self->entity;
 	if (!e || !e->flag_4c) {
 		return;
 	}
-	CGameModel *em = FX_Vtbl(e)->GetModel(e);
+	CGameModel *em = Obj_Vtbl(e)->GetModel(e);
 	CGameModel *model = Debris_Model(debris);
 	vec3_t pos, rot;
 	CHECK(CGameModel_IsLoaded(em));
@@ -2458,11 +2458,11 @@ void __thiscall cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *
 	float c2 = Float_MaxSS(0.0f, x);
 	CHECK(phase > 0);
 	if (c >= 0.0f && 1.0f >= c) {
-		FX_Vtbl(self->entity)->SetFX(self->entity, 8);
+		Obj_Vtbl(self->entity)->SetEffect(self->entity, 8);
 		if (self->phase == 1) {
-			FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, 1.0f - c);
+			Obj_Vtbl(self->entity)->SetEffectParam(self->entity, 0, 1.0f - c);
 		} else {
-			FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, c);
+			Obj_Vtbl(self->entity)->SetEffectParam(self->entity, 0, c);
 		}
 	} else if (self->phase == 1) {
 		float v = c - 1.05f;
@@ -2471,8 +2471,8 @@ void __thiscall cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *
 		} else {
 			v = 1.0f - (v + v);
 		}
-		FX_Vtbl(self->entity)->SetFX(self->entity, 6);
-		FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, v * 0.5f);
+		Obj_Vtbl(self->entity)->SetEffect(self->entity, 6);
+		Obj_Vtbl(self->entity)->SetEffectParam(self->entity, 0, v * 0.5f);
 	} else if (self->phase == 2 && c2 > 1.0f) {
 		self->entity->vftable->SetActive(self->entity, 0);
 	}
@@ -2483,7 +2483,7 @@ void __thiscall cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *
 		return;
 	}
 	cEntity *sp = node->value;
-	CGameModel *spm = FX_Vtbl(sp)->GetModel(sp);
+	CGameModel *spm = Obj_Vtbl(sp)->GetModel(sp);
 	matrix_t mat;
 	CHECK(CGameModel_IsLoaded(spm));
 	const matrix_t *m = CGameModel_NodeMatrix(spm, &mat, (uint32_t)self->sputnikNode, 1, NULL, 0);
@@ -2570,7 +2570,7 @@ void __thiscall cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *
 				if (i & 1) {
 					float ss = FXV_Rand(0.10000002384185791, 1.0);
 					uint32_t color = (uint32_t)(-1 - (int)((c2 - 1.0f) * af * -32.0f)) << 24 | 0x2020ff;
-					float rad = FX_Vtbl(self->entity)->GetRadius(self->entity);
+					float rad = Obj_Vtbl(self->entity)->GetRadius(self->entity);
 					CGameParticles_SetParticle(ps, i, p.x, p.y, p.z, rad * ss, color, 5, 0.0f);
 				}
 			} else {
@@ -2662,7 +2662,7 @@ void __thiscall cObjElementFXVehicleAccelerator_Update(cObjElementFXVehicleAccel
 		}
 		return;
 	}
-	CGameModel *model = FX_Vtbl(e)->GetModel(e);
+	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
 	CHECK(model && CGameModel_IsLoaded(model));
 
 	for (int i = 0; i < FXVACCEL_TRAILS; i++) {
@@ -2759,7 +2759,7 @@ void __thiscall cObjElementFXVehicleAccelerator_Update(cObjElementFXVehicleAccel
 
 void __fastcall cObjElementFXVehicleAccelerator_InitRays(cObjElementFXVehicleAccelerator *self) {
 	CHECK(self->owner);
-	CGameModel *model = FX_Vtbl(self->owner)->GetModel(self->owner);
+	CGameModel *model = Obj_Vtbl(self->owner)->GetModel(self->owner);
 	CHECK(model && CGameModel_IsLoaded(model));
 	for (int i = 0; i < FXVACCEL_TRAILS; i++) {
 		vec3_t v, pos, rot, d, rd, n, r;
@@ -2858,7 +2858,7 @@ byte __thiscall cObjElementFXVehicleEMI_IsAlive(cObjElementFXVehicleEMI *self, c
 	}
 	cEntity *e = self->entity;
 	if (e && e->flag_4c) {
-		FX_Vtbl(e)->SetFX(e, 0);
+		Obj_Vtbl(e)->SetEffect(e, 0);
 	}
 	return 0;
 }
@@ -2880,7 +2880,7 @@ byte __thiscall cObjElementFXVehicleFire_IsAlive(cObjElementFXVehicleFire *self,
 		}
 	}
 	if (e->flag_4c) {
-		FX_Vtbl(e)->SetFX(e, 0);
+		Obj_Vtbl(e)->SetEffect(e, 0);
 	}
 	return 0;
 }
@@ -2894,8 +2894,8 @@ byte __thiscall cObjElementFXVehicleSputnik_IsAlive(cObjElementFXVehicleSputnik 
 	if (cDebris_Update(debris, sys) && !changed) {
 		return 1;
 	}
-	FX_Vtbl(self->entity)->SetFX(self->entity, 0);
-	FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, 0.0f);
+	Obj_Vtbl(self->entity)->SetEffect(self->entity, 0);
+	Obj_Vtbl(self->entity)->SetEffectParam(self->entity, 0, 0.0f);
 	return 0;
 }
 
@@ -3200,7 +3200,7 @@ void __thiscall cObjElementFXVehicleSpawn_SetEntity(cObjElementFXVehicleSpawn *s
 
 void __thiscall cObjElementFXVehicleAccelerator_SetOwner(cObjElementFXVehicleAccelerator *self, cEntity *e) {
 	self->owner = e;
-	CHECK(e && FX_Vtbl(e)->GetModel(e) && CGameModel_IsLoaded(FX_Vtbl(self->owner)->GetModel(self->owner)));
+	CHECK(e && Obj_Vtbl(e)->GetModel(e) && CGameModel_IsLoaded(Obj_Vtbl(self->owner)->GetModel(self->owner)));
 }
 
 void __thiscall cObjElementFXVehicleAccelerator_SetAccelerator(cObjElementFXVehicleAccelerator *self, void *a) {

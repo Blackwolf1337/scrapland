@@ -79,7 +79,7 @@ void ChType_ListeningPolice(cAbstractFile *params) {
 	cEntity *me = World_FindEntity(name);
 	CHECK(me);
 	CHECK(Entity_IsType(me, TYEN_WALKCHAR));
-	void *acm = ChType_Vtbl(me)->FindAction(me, "PoliceListen");
+	void *acm = WithLife_Vtbl(me)->GetAction(me, "PoliceListen");
 	cLocalLogic *ll = Logic_GetLocalLogic(me);
 	CHECK(ll && acm);
 	if (!ChLogic_Idle(ll) && !ChLogic_AlwaysLock(ll)) {

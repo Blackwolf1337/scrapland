@@ -33,7 +33,7 @@ static inline int VM_NumNodes(const cVehicleMotor *m) {
 }
 
 static inline CGameModel *VM_OwnerModel(cVehicleMotors *self) {
-	return Weap_Vtbl(self->owner)->GetModel(self->owner);
+	return Obj_Vtbl(self->owner)->GetModel(self->owner);
 }
 
 /* the position and the angles of render node i of the ship model */
@@ -111,8 +111,8 @@ static void VM_UpdateEffects(cVehicleMotors *self, cVehicleMotorsEffects *eff, V
 		return;
 	}
 	vec3_t vel = VM_LocalVel(self->owner);
-	vec3_t *pa = Weap_Vtbl(self->owner)->GetAngles(self->owner, &a);
-	vec3_t *pc = Weap_Vtbl(self->owner)->GetCenter(self->owner, &c);
+	vec3_t *pa = Obj_Vtbl(self->owner)->GetViewAng(self->owner, &a);
+	vec3_t *pc = Obj_Vtbl(self->owner)->GetViewPos(self->owner, &c);
 	uint32_t color = cArrowIndicator_GetColor((cArrowIndicator *)VM_Team(self->owner));
 	cVehicleMotorsEffects_Trails(eff, u->dt, *pc, *pa, vel, u->thrust * u->alpha, u->k4c8, color);
 }
@@ -515,14 +515,14 @@ int __thiscall cVehicleMotor_Load(cVehicleMotor *self, cEntity *owner, byte moto
 	Str_Printf(path, sizeof(path), g_EnginePathFmt, file, file);
 	for (i = 0; i < VM_SIDES; i++) {
 		VM_SlotName(name, motor, i);
-		self->node[i] = CGameModel_FindRenderNode(Weap_Vtbl(owner)->GetModel(owner), name);
+		self->node[i] = CGameModel_FindRenderNode(Obj_Vtbl(owner)->GetModel(owner), name);
 		if (self->node[i] == -1) {
 			break;
 		}
 		CGameModel_LoadScaled(&self->model[i], path, scale);
 		CGameModel_SetPivotNode(&self->model[i], "DC_Ship_Link");
-		CGameModel_SetPos(&self->model[i], Weap_Vtbl(owner)->GetPos(owner, &v));
-		CGameModel_SetRot(&self->model[i], Weap_Vtbl(owner)->GetOrient(owner, &v));
+		CGameModel_SetPos(&self->model[i], owner->vftable->GetPos(owner, &v));
+		CGameModel_SetRot(&self->model[i], Obj_Vtbl(owner)->GetAng(owner, &v));
 		if (!owner->flag_4c) {
 			CGameModel_Disable(&self->model[i]);
 		}
@@ -856,7 +856,7 @@ void __fastcall cVehicleMotorsEffects_HideTrails(cVehicleMotorsEffects *self) {
 CGameModel *__thiscall cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *self, int side) {
 	if (self->motors) {
 		cEntity *e = cVehicleMotors_GetOwner(self->motors);
-		return Weap_Vtbl(e)->GetModel(e);
+		return Obj_Vtbl(e)->GetModel(e);
 	}
 	if (self->motor && self->motor->node[side] != -1) {
 		return &self->motor->model[side];

@@ -13,10 +13,6 @@
 
 #define TYEN_OBJECT "Obj"
 
-static inline const cDoorEntityVtbl *Door_Vtbl(cEntity *e) {
-	return (const cDoorEntityVtbl *)e->vftable;
-}
-
 /* the radius of the door sphere: a value of the action class */
 static inline float ActCtrl_Radius(void *ctrl) {
 	return ((cActCtrl *)ctrl)->cls->wRadius;
@@ -27,13 +23,13 @@ static inline const char *ActCtrl_ClassName(void *ctrl) {
 }
 
 static inline byte Door_IsActive(cEntity *door, const char *action) {
-	return cActCtrl_IsActive(Door_Vtbl(door)->GetActCtrl(door), action);
+	return cActCtrl_IsActive(WithLife_Vtbl(door)->GetActCtrl(door), action);
 }
 
 /* the action, then its end state as the default loop */
 static void Door_Play(cEntity *door, const char *action, const char *loop) {
-	cActCtrl_Play(Door_Vtbl(door)->GetActCtrl(door), action, 0, 1.0f);
-	cActCtrl_SetDefLoop(Door_Vtbl(door)->GetActCtrl(door), loop, 0);
+	cActCtrl_Play(WithLife_Vtbl(door)->GetActCtrl(door), action, 0, 1.0f);
+	cActCtrl_SetDefLoop(WithLife_Vtbl(door)->GetActCtrl(door), loop, 0);
 }
 
 /* World.h: the entity of local player 0 */
@@ -73,8 +69,8 @@ void Doors_AcceleratorOnEnter(cAbstractFile *params) {
 	push.x = 0.0f;
 	push.y = 0.0f;
 	push.z = speed;
-	Vec3_Rotate(&dir, &push, Door_Vtbl(obj)->GetAng(obj, &tmp));
-	const vec3_t *vel = Door_Vtbl(car)->GetVel(car, &tmp);
+	Vec3_Rotate(&dir, &push, Obj_Vtbl(obj)->GetAng(obj, &tmp));
+	const vec3_t *vel = Obj_Vtbl(car)->GetVel(car, &tmp);
 	/* along the direction of the object, or against it when the car comes from the other side */
 	if (vel->y * dir.y + dir.x * vel->x + vel->z * dir.z > 0.0f) {
 		v = &dir;
@@ -84,7 +80,7 @@ void Doors_AcceleratorOnEnter(cAbstractFile *params) {
 		push.z = -dir.z;
 		v = &push;
 	}
-	Door_Vtbl(car)->SetVel(car, v);
+	Obj_Vtbl(car)->SetVel(car, v);
 	cVehicleEntity_SetNetFlag(car, 1);
 	cVehicleEntity_UpdateSpeed(car);
 	if (cVehicleEntity_GetOwnerSlot(car) != -1) {
@@ -121,8 +117,8 @@ void Doors_Slot(cAbstractFile *params, uint32_t flags) {
 	g_DoorPos.x = p->x;
 	g_DoorPos.y = p->y;
 	g_DoorPos.z = p->z;
-	g_DoorAngY = Door_Vtbl(door)->GetAng(door, &tmp)->y;
-	float radius = ActCtrl_Radius(Door_Vtbl(door)->GetActCtrl(door));
+	g_DoorAngY = Obj_Vtbl(door)->GetAng(door, &tmp)->y;
+	float radius = ActCtrl_Radius(WithLife_Vtbl(door)->GetActCtrl(door));
 	cWorld_SphereCallF(g_pWorld, 0x11, door->vftable->GetPos(door, &tmp), radius, g_DoorSphereFunc, 1);
 	if (((flags & DOOR_FRONT) && g_DoorFront) || ((flags & DOOR_USR) && (g_DoorUsrFront || g_DoorUsrBack)) ||
 		((flags & DOOR_BACK) && g_DoorBack)) {
@@ -191,7 +187,7 @@ void Doors_SphereEntity(cAbstractFile *params) {
 	}
 	cEntity *usr = World_Usr0();
 	if (!e->vftable->IsType(e, TYEN_WALKCHAR) ||
-		!strcmp("GateKeeper", ActCtrl_ClassName(Door_Vtbl(e)->GetActCtrl(e)))) {
+		!strcmp("GateKeeper", ActCtrl_ClassName(WithLife_Vtbl(e)->GetActCtrl(e)))) {
 		if (usr != e && (!e->vftable->IsType(e, TYEN_CAR) || !e->vftable->GetAI(e))) {
 			return;
 		}
@@ -227,7 +223,7 @@ void Doors_Usr0AutoDoorSlot(cAbstractFile *params) {
 		return;
 	}
 	cEntity *door = World_FindEntity(name);
-	float r = ActCtrl_Radius(Door_Vtbl(door)->GetActCtrl(door)) + WLife(usr)->prim.radius;
+	float r = ActCtrl_Radius(WithLife_Vtbl(door)->GetActCtrl(door)) + WLife(usr)->prim.radius;
 	const vec3_t *pu = usr->vftable->GetPos(usr, &t1);
 	const vec3_t *pd = door->vftable->GetPos(door, &t2);
 	float dy = pd->y - pu->y;

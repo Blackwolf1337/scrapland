@@ -138,28 +138,6 @@ SD_SIZE(cNetClient, 0x2c);
 
 typedef cUserNetManager *(*netuserfactory_t)(cNetClient *client, int slot);
 
-/* the slots of the entity vtable the net code calls (objects with a network state, the vehicles) */
-typedef struct cNetEntityVtbl {
-	cEntityVtbl base;
-	void *vf23_40[18];
-	void(__thiscall *NetWrite)(cEntity *self, float dist2, void *msg, int full);			/* 0xa4 vf41 */
-	byte(__thiscall *NetNeedsSend)(cEntity *self, float dist2);					/* 0xa8 vf42 */
-	void(__thiscall *NetRead)(cEntity *self, void *msg, int isNew);				/* 0xac vf43 */
-	void *vf44_52[9];
-	void *(__thiscall *GetActCtrl)(cEntity *self);						/* 0xd4 vf53 */
-	void(__thiscall *SetActClass)(cEntity *self, const char *name);				/* 0xd8 vf54 */
-	void *vf55_59[5];
-	byte(__thiscall *SetPilot)(cEntity *self, int slot, const char *name, float sx, float sy, float sz);	/* 0xf0 */
-	const char *(__thiscall *GetPilot)(cEntity *self, int slot);					/* 0xf4 vf61 */
-} cNetEntityVtbl;
-SD_OFFSET(cNetEntityVtbl, NetWrite, 0xa4);
-SD_OFFSET(cNetEntityVtbl, GetActCtrl, 0xd4);
-SD_OFFSET(cNetEntityVtbl, SetPilot, 0xf0);
-
-static inline const cNetEntityVtbl *Net_Vtbl(cEntity *e) {
-	return (const cNetEntityVtbl *)e->vftable;
-}
-
 /* the fields of a vehicle the player descriptors carry */
 #define NetEnt_UsrName(e) (WLife(e)->usrName)	/* cString, cWithLifeEntity */
 #define NetEnt_Team(e) (WLife(e)->arrow.tgType)

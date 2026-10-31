@@ -31,45 +31,6 @@
 #define MISSILE_NET_NONE 0xffff			/* no parent or target in the network state */
 
 /* the vtable slots used here */
-typedef struct cMissileEntityVtbl {
-	void *vf00_05[6];
-	vec3_t *(__thiscall *GetPos)(cMissileEntity *self, vec3_t *out);		/* 0x18 */
-	void(__thiscall *SetPos)(cMissileEntity *self, const vec3_t *pos);		/* 0x1c */
-	void(__thiscall *SetActive)(cMissileEntity *self, byte on);			/* 0x20 */
-	void *vf09_1c[20];
-	vec3_t *(__thiscall *GetViewPos)(cMissileEntity *self, vec3_t *out);		/* 0x74 */
-	vec3_t *(__thiscall *GetViewAng)(cMissileEntity *self, vec3_t *out);		/* 0x78 */
-	void *vf31_32[2];
-	void(__thiscall *SetAng)(cMissileEntity *self, const vec3_t *ang);		/* 0x84 */
-	void *vf34_55[22];
-	void(__thiscall *Wobble)(cMissileEntity *self, float k);			/* 0xe0 Dumb */
-	void(__thiscall *RotStep)(cMissileEntity *self, float dt);			/* 0xe4 Cloud */
-	void(__thiscall *Fall)(cMissileEntity *self, float dt);			/* 0xe8 */
-	void(__thiscall *Swarm)(cMissileEntity *self, float dt);			/* 0xec vf59 */
-	void(__thiscall *ScaleWeapon)(cMissileEntity *self, float unused);		/* 0xf0 */
-	void(__thiscall *LifeTick)(cMissileEntity *self);				/* 0xf4 */
-	void(__thiscall *UpdateVel)(cMissileEntity *self);				/* 0xf8 */
-	/* the second argument is not used; Tick passes its dt */
-	byte(__thiscall *Hit)(cMissileEntity *self, int n, float unused);		/* 0xfc */
-	void(__thiscall *AddToSwarm)(cMissileEntity *self, int n);			/* 0x100 */
-	void(__thiscall *SetSwarm)(cMissileEntity *self, int n);			/* 0x104 */
-	void(__thiscall *Explode)(cMissileEntity *self, const vec3_t *at);		/* 0x108 */
-} cMissileEntityVtbl;
-SD_OFFSET(cMissileEntityVtbl, GetViewPos, 0x74);
-SD_OFFSET(cMissileEntityVtbl, SetAng, 0x84);
-SD_OFFSET(cMissileEntityVtbl, Wobble, 0xe0);
-SD_OFFSET(cMissileEntityVtbl, Swarm, 0xec);
-SD_OFFSET(cMissileEntityVtbl, Explode, 0x108);
-
-
-static inline const cMissileEntityVtbl *Missile_Vtbl(cMissileEntity *e) {
-	return (const cMissileEntityVtbl *)e->wl.obj.base.vftable;
-}
-
-static inline cEntity *Missile_Ent(cMissileEntity *e) {
-	return &e->wl.obj.base;
-}
-
 /* the x87 a - b of the original (fsubr), in the precision the game set */
 static inline float X87_Sub(float a, float b) {
 	float r;
@@ -420,7 +381,7 @@ byte __thiscall cMissileEntity_Hit(cMissileEntity *self, int n, int unused) {
 			cPy_Function_Execute(&self->onHit, 0);
 		}
 		self->swarmCount = 0;
-		Missile_Vtbl(self)->SetActive(self, 0);
+		Missile_Ent(self)->vftable->SetActive(Missile_Ent(self), 0);
 		return 0;
 	}
 	if (self->swarmCount - n >= (self->hideMain != 0)) {
@@ -457,7 +418,7 @@ byte __thiscall cMissileEntity_Hit(cMissileEntity *self, int n, int unused) {
 		}
 	}
 	Missile_Vtbl(self)->Explode(self, at);
-	Missile_Vtbl(self)->SetActive(self, 0);
+	Missile_Ent(self)->vftable->SetActive(Missile_Ent(self), 0);
 	return 1;
 }
 
@@ -630,7 +591,7 @@ void __thiscall cMissileEntity_SetVel(cMissileEntity *self, const vec3_t *vel) {
 	const vec3_t *r = Vec3_GetRotAng(&rot, &neg);
 	ang = *r;
 	self->speed = (float)__builtin_sqrt((double)(vel->x * vel->x + vel->y * vel->y + vel->z * vel->z));
-	Missile_Vtbl(self)->SetAng(self, &ang);
+	Obj_Vtbl(Missile_Ent(self))->SetAng(Missile_Ent(self), &ang);
 	Missile_Vtbl(self)->UpdateVel(self);
 }
 
@@ -784,7 +745,7 @@ void __thiscall cMissileEntity_SetModel(cMissileEntity *self, const char *file, 
 		pos.y = self->wl.obj.base.pos.y - d->y;
 		pos.z = self->wl.obj.base.pos.z - d->z;
 		pos.x = self->wl.obj.base.pos.x - d->x;
-		Missile_Vtbl(self)->SetPos(self, &pos);
+		Missile_Ent(self)->vftable->SetPos(Missile_Ent(self), &pos);
 	}
 	CGameModel_SetPos(&self->wl.obj.model, &self->wl.obj.base.pos);
 	CGameModel_SetRot(&self->wl.obj.model, &self->wl.obj.ang);
@@ -923,7 +884,7 @@ static void Missile_FollowTarget(cMissileEntity *self, float dt) {
 		return;
 	}
 	const vec3_t *tp = t->vftable->GetPos(t, &tmp);
-	const vec3_t *mp = Missile_Vtbl(self)->GetPos(self, &tmp2);
+	const vec3_t *mp = Missile_Ent(self)->vftable->GetPos(Missile_Ent(self), &tmp2);
 	dir.x = mp->x - tp->x;
 	dir.y = mp->y - tp->y;
 	dir.z = mp->z - tp->z;
@@ -1003,7 +964,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 	if (n > self->lifeTime && self->swarmCount > (self->hideMain != 0)) {
 		Missile_Vtbl(self)->Hit(self, 1, dt);
 	}
-	if (self->fallOut && Missile_Vtbl(self)->GetPos(self, &tmp)->y > g_AtmosphereLimit) {
+	if (self->fallOut && Missile_Ent(self)->vftable->GetPos(Missile_Ent(self), &tmp)->y > g_AtmosphereLimit) {
 		self->fallOut = 0;
 		self->type = 3;
 	}
@@ -1135,8 +1096,8 @@ void __thiscall cMissileEntity_NetRead(cMissileEntity *self, void *msg, int isNe
 
 	WLife(self)->obj.net->vftable->Read(WLife(self)->obj.net, msg);
 	if ((byte)isNew) {
-		Missile_Vtbl(self)->SetAng(self, &WLife(self)->obj.net->ang);
-		Missile_Vtbl(self)->SetPos(self, &WLife(self)->obj.net->pos);
+		Obj_Vtbl(Missile_Ent(self))->SetAng(Missile_Ent(self), &WLife(self)->obj.net->ang);
+		Missile_Ent(self)->vftable->SetPos(Missile_Ent(self), &WLife(self)->obj.net->pos);
 	}
 	if ((int8_t)WLife(self)->obj.net->flags < 0) {
 		/* inactive: only the target */
@@ -1191,10 +1152,10 @@ void __thiscall cMissileEntity_Swarm(cMissileEntity *self, float dt) {
 	cDebris *d = self->swarm;
 
 	if (self->lastPos.x == 0.0f && self->lastPos.y == 0.0f && self->lastPos.z == 0.0f) {
-		self->lastPos = *Missile_Vtbl(self)->GetViewPos(self, &tmp);
+		self->lastPos = *Obj_Vtbl(Missile_Ent(self))->GetViewPos(Missile_Ent(self), &tmp);
 	}
 	/* the bees move with the missile */
-	const vec3_t *p = Missile_Vtbl(self)->GetViewPos(self, &tmp);
+	const vec3_t *p = Obj_Vtbl(Missile_Ent(self))->GetViewPos(Missile_Ent(self), &tmp);
 	float mx = p->x - self->lastPos.x;
 	float my = p->y - self->lastPos.y;
 	float mz = p->z - self->lastPos.z;
@@ -1207,7 +1168,7 @@ void __thiscall cMissileEntity_Swarm(cMissileEntity *self, float dt) {
 		d->drop[1].z = d->drop[3].z * dt + d->drop[1].z;
 		d->drop[1].x = NormAng(d->drop[1].x);
 		d->drop[1].y = NormAng(d->drop[1].y);
-		p = Missile_Vtbl(self)->GetViewPos(self, &view);
+		p = Obj_Vtbl(Missile_Ent(self))->GetViewPos(Missile_Ent(self), &view);
 		float dy = p->y - d->drop[0].y;
 		float dx = p->x - d->drop[0].x;
 		float dz = p->z - d->drop[0].z;
@@ -1224,7 +1185,7 @@ void __thiscall cMissileEntity_Swarm(cMissileEntity *self, float dt) {
 			float ox = nx * rad;
 			float oy = ny * rad;
 			float oz = nz * rad;
-			p = Missile_Vtbl(self)->GetViewPos(self, &view);
+			p = Obj_Vtbl(Missile_Ent(self))->GetViewPos(Missile_Ent(self), &view);
 			d->drop[0].x = p->x - ox;
 			d->drop[0].y = p->y - oy;
 			d->drop[0].z = p->z - oz;
@@ -1234,7 +1195,7 @@ void __thiscall cMissileEntity_Swarm(cMissileEntity *self, float dt) {
 		}
 		if (self->type != 2) {
 			/* turned to the angles of the missile within the step */
-			const vec3_t *va = Missile_Vtbl(self)->GetViewAng(self, &view);
+			const vec3_t *va = Obj_Vtbl(Missile_Ent(self))->GetViewAng(Missile_Ent(self), &view);
 			a.y = va->y - d->drop[1].y;
 			a.x = va->x - d->drop[1].x;
 			a.z = va->z - d->drop[1].z;
@@ -1246,7 +1207,7 @@ void __thiscall cMissileEntity_Swarm(cMissileEntity *self, float dt) {
 			d->drop[3].z = d->drop[3].z * inv;
 		}
 	}
-	self->lastPos = *Missile_Vtbl(self)->GetViewPos(self, &tmp);
+	self->lastPos = *Obj_Vtbl(Missile_Ent(self))->GetViewPos(Missile_Ent(self), &tmp);
 }
 
 void __thiscall cMissileEntity_AddToSwarm(cMissileEntity *self, int n) {

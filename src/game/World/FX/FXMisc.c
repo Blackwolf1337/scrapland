@@ -8,6 +8,7 @@
 #include "scrap/fxchar.h"
 #include "scrap/fxcountermeasures.h"
 #include "scrap/fxmisc.h"
+#include "scrap/objentity.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
@@ -141,7 +142,7 @@ byte FX_IsVisible(float x, float y, float z, float radius, float maxDist, const 
 }
 
 void FX_ItemBlink(cEntity *e) {
-	CGameModel *m = FX_Vtbl(e)->GetModel(e);
+	CGameModel *m = Obj_Vtbl(e)->GetModel(e);
 
 	CHECK(m && CGameModel_IsLoaded(m));
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXItemBlinkFile);
@@ -181,7 +182,7 @@ void FX_ItemBlink(cEntity *e) {
 	for (int k = 0; k < 8; k++) {
 		vec3_t tmp;
 		float ox = fx_corners[k].x * q, oy = fx_corners[k].y * q, oz = q * fx_corners[k].z;
-		const vec3_t *c = FX_Vtbl(e)->GetCenter(e, &tmp);
+		const vec3_t *c = Obj_Vtbl(e)->GetViewPos(e, &tmp);
 		sp->initPosMin.x = c->x + ox;
 		sp->initPosMin.y = c->y + oy;
 		sp->initPosMin.z = c->z + oz;
@@ -241,7 +242,7 @@ void FX_ItemFade(cEntity *e, int mode, float scale, cEntity *target) {
 
 void FX_Sputnik(cEntity *e, const char *name) {
 	if (!crt_strncmp(name, "CharacterSputnik", 16)) {
-		if (!CGameModel_IsLoaded(FX_Vtbl(e)->GetModel(e)) || strcmp(name, "CharacterSputnikSceneMecanicFinal")) {
+		if (!CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e)) || strcmp(name, "CharacterSputnikSceneMecanicFinal")) {
 			return;
 		}
 		cObjElementFXSputnik *el = FX_DropNew(g_FXCharacterSputnikFile, 4.0f);
@@ -257,7 +258,7 @@ void FX_Sputnik(cEntity *e, const char *name) {
 		return;
 	}
 	if (!crt_strncmp(name, "ShipEditBuild", 13)) {
-		if (!CGameModel_IsLoaded(FX_Vtbl(e)->GetModel(e))) {
+		if (!CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))) {
 			return;
 		}
 		byte *el = FX_DropNew(g_FXShipEditBuildFile, 0.45f);
@@ -334,7 +335,7 @@ void __thiscall cObjElementFXItemFade_Update(cObjElementFXItemFade *self, cDebri
 
 	(void)dt;
 	if (e && FX_Gone(e)) {
-		m = FX_Vtbl(e)->GetModel(e);
+		m = Obj_Vtbl(e)->GetModel(e);
 		CHECK(CGameModel_IsLoaded(m));
 		FX_EndFade(m, self->mode);
 		self->ent = NULL;
@@ -352,7 +353,7 @@ void __thiscall cObjElementFXItemFade_Update(cObjElementFXItemFade *self, cDebri
 	if (self->mode == 2) {
 		f = 1.0f - f;
 	}
-	m = FX_Vtbl(self->ent)->GetModel(self->ent);
+	m = Obj_Vtbl(self->ent)->GetModel(self->ent);
 	CHECK(CGameModel_IsLoaded(m));
 	if (!self->done) {
 		if (0.1f > self->t) {
@@ -400,7 +401,7 @@ void __thiscall cObjElementFXModelNoise_Update(cObjElementFXModelNoise *self, cD
 	(void)d;
 	(void)dt;
 	if (e && FX_Gone(e)) {
-		FX_Vtbl(e)->SetFX(e, 0);
+		Obj_Vtbl(e)->SetEffect(e, 0);
 		self->ent = NULL;
 	}
 	if (!self->ent || !self->ent->flag_4c) {
@@ -409,8 +410,8 @@ void __thiscall cObjElementFXModelNoise_Update(cObjElementFXModelNoise *self, cD
 	float t = self->t + cTimer_GetDelta(&g_pWorld->timer);
 	self->t = t;
 	float f = self->duration > t ? t / self->duration : 1.0f;
-	FX_Vtbl(self->ent)->SetFX(self->ent, 8);
-	FX_Vtbl(self->ent)->SetFXParam(self->ent, 0, 0.45f - f * 0.45f);
+	Obj_Vtbl(self->ent)->SetEffect(self->ent, 8);
+	Obj_Vtbl(self->ent)->SetEffectParam(self->ent, 0, 0.45f - f * 0.45f);
 }
 
 /* ParticleSystem and SistPartDuDv */
@@ -470,7 +471,7 @@ byte __thiscall cObjElementFXModelFade_Alive(cObjElementFXModelFade *self, cDebr
 byte __thiscall cObjElementFXModelNoise_Alive(cObjElementFXModelNoise *self, cDebris *d, cDebrisSys *sys) {
 	if (!cDebris_Update(d, sys)) {
 		if (self->ent) {
-			FX_Vtbl(self->ent)->SetFX(self->ent, 0);
+			Obj_Vtbl(self->ent)->SetEffect(self->ent, 0);
 		}
 		return 0;
 	}
@@ -606,7 +607,7 @@ void __thiscall cObjElementFXTrail_Reset(cObjElementFXTrail *self, int arg) {
 /* the setters of the effects started by name (rva 0x1ddc40..0x1ddce0) */
 void __thiscall FXMisc_SetEntity(void *self, cEntity *e) {
 	*(cEntity **)((byte *)self + 4) = e;
-	CHECK(CGameModel_IsLoaded(FX_Vtbl(e)->GetModel(e)));
+	CHECK(CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e)));
 }
 
 void __thiscall FXMisc_SetF8(void *self, float v) {
@@ -649,7 +650,7 @@ void __thiscall cObjElementFXItemFade_Start(cObjElementFXItemFade *self, cEntity
 	if (!e) {
 		return;
 	}
-	CGameModel *m = FX_Vtbl(e)->GetModel(e);
+	CGameModel *m = Obj_Vtbl(e)->GetModel(e);
 	CHECK(CGameModel_IsLoaded(m));
 	if (self->mode == 1) {
 		CGameModel_SetEffect(m, 0);
@@ -659,7 +660,7 @@ void __thiscall cObjElementFXItemFade_Start(cObjElementFXItemFade *self, cEntity
 		CGameModel_SetEffectParam(m, 0, 0);
 		CGameModel_Enable(m);
 	}
-	FX_Vtbl(self->ent)->GetCenter(self->ent, &c);
+	Obj_Vtbl(self->ent)->GetViewPos(self->ent, &c);
 	float r = CGameModel_Radius(m);
 	sp->birthRate = 0;
 	FX_StillAt(sp, &c);
@@ -706,7 +707,7 @@ void __thiscall cObjElementFXItemTake_Start(cObjElementFXItemTake *self, cEntity
 	if (!e) {
 		return;
 	}
-	CGameModel *m = FX_Vtbl(e)->GetModel(e);
+	CGameModel *m = Obj_Vtbl(e)->GetModel(e);
 	CHECK(CGameModel_IsLoaded(m));
 	CGameModel_Radius(m);
 	for (int g = 0; g < FXITEMTAKE_LINES; g++) {
@@ -758,24 +759,24 @@ void __thiscall cObjElementFXItemTake_Update(cObjElementFXItemTake *self, cDebri
 	float delta = cTimer_GetDelta(&g_pWorld->timer);
 	self->t = self->t + delta;
 	self->emitT = self->emitT + delta;
-	CGameModel *m = FX_Vtbl(self->ent)->GetModel(self->ent);
+	CGameModel *m = Obj_Vtbl(self->ent)->GetModel(self->ent);
 	CHECK(m && CGameModel_IsLoaded(m));
 	CGameModel_SetSortZ(Debris_Model(d), -7.0f, 0.0f);
 	CGameModel_SetPos(Debris_Model(d), CGameModel_GetPos(m, &tmp));
 	sp->birthRate = 0;
 	int np = CGameParticles_NumParticles(sp);
 	CGameModel_Radius(m);
-	FX_Vtbl(self->ent)->GetRadius(self->ent);
-	FX_Vtbl(self->target)->GetRadius(self->target);
-	FX_Vtbl(self->ent)->GetCenter(self->ent, &c1);
-	FX_Vtbl(self->target)->GetCenter(self->target, &c2);
+	Obj_Vtbl(self->ent)->GetRadius(self->ent);
+	Obj_Vtbl(self->target)->GetRadius(self->target);
+	Obj_Vtbl(self->ent)->GetViewPos(self->ent, &c1);
+	Obj_Vtbl(self->target)->GetViewPos(self->target, &c2);
 	for (int k = 0; k < FXITEMTAKE_LINES; k++) {
 		static const vec3_t arms[4] = {
 			{ -225.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 225.0f }, { 225.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -225.0f }
 		};
 		vec3_t ang;
 		float a = (float)(k - 2) * 15.0f;
-		FX_Vtbl(self->target)->GetAngles(self->target, &ang);
+		Obj_Vtbl(self->target)->GetViewAng(self->target, &ang);
 		pts[0] = c1;
 		for (int n = 0; n < 4; n++) {
 			vec3_t v = arms[n], o;

@@ -13,28 +13,10 @@
 
 #define ITEM_CLASSNAME GAME_STR(str_3af3f8, 0x3af3f8)	/* "item" */
 
-/* the "Obj" vtable slots used here */
-typedef struct cItemEntityVtbl {
-	void *vf00_05[6];
-	vec3_t *(__thiscall *GetPos)(cItemEntity *self, vec3_t *out);		/* 0x18 */
-	void(__thiscall *SetPos)(cItemEntity *self, const vec3_t *pos);	/* 0x1c */
-	void *vf08_21[26];
-	vec3_t *(__thiscall *GetVel)(cItemEntity *self, vec3_t *out);		/* 0x88 */
-	void(__thiscall *SetVel)(cItemEntity *self, const vec3_t *vel);	/* 0x8c */
-	void *vf24_27[4];
-	float(__thiscall *GetRadius)(cItemEntity *self);			/* 0xa0 */
-} cItemEntityVtbl;
-SD_OFFSET(cItemEntityVtbl, GetVel, 0x88);
-SD_OFFSET(cItemEntityVtbl, GetRadius, 0xa0);
-
 /* the entity callback of the sphere test: other touched self at point */
 typedef void(__thiscall *touchfn_t)(cEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir);
 
 int Vec3_Differ(const float *a, const float *b);
-
-static inline const cItemEntityVtbl *Item_Vtbl(cItemEntity *e) {
-	return (const cItemEntityVtbl *)e->base.vftable;
-}
 
 static inline cEntity *Item_Ent(cItemEntity *e) {
 	return &e->base;
@@ -53,7 +35,7 @@ static cEntity *Item_Usr0(void) {
 
 /* the reset to the origin with OnReset */
 static void Item_Reset(cItemEntity *self) {
-	Item_Vtbl(self)->SetPos(self, &self->origin);
+	self->base.vftable->SetPos(&self->base, &self->origin);
 	cPy_Function_AddParamS(&self->onReset, self->base.name);
 	cPy_Function_Execute(&self->onReset, 0);
 }
@@ -61,8 +43,8 @@ static void Item_Reset(cItemEntity *self) {
 /* the fade effects only when the sphere of the item is in view */
 static byte Item_FxVisible(cItemEntity *self) {
 	vec3_t tmp;
-	const vec3_t *p = Item_Vtbl(self)->GetPos(self, &tmp);
-	float r = Item_Vtbl(self)->GetRadius(self);
+	const vec3_t *p = self->base.vftable->GetPos(&self->base, &tmp);
+	float r = Obj_Vtbl(&self->base)->GetRadius(&self->base);
 
 	return FX_IsVisible(p->x, p->y, p->z, r + r, g_ItemFxDist, NULL, 0);
 }
@@ -423,7 +405,7 @@ void __thiscall cItemEntity_SetRespawn(cItemEntity *self, float t) {
 			if (self->takeSoundVol > 0.0f && self->takeSound[0]) {
 				const CSoundSysVtbl *vt = g_pSound->vftable;
 				int vol = Snd_Volume(self->takeSoundVol);
-				vt->PlayAt(g_pSound, self->takeSound, Item_Vtbl(self)->GetPos(self, &tmp), vol);
+				vt->PlayAt(g_pSound, self->takeSound, self->base.vftable->GetPos(&self->base, &tmp), vol);
 			}
 		}
 		self->respawn = t;
@@ -496,7 +478,7 @@ void __thiscall cItemEntity_Update(cItemEntity *self) {
 	if (self->autoFace) {
 		cWorld *w = g_pWorld;
 		vec3_t cam = w->camPos[w->curCam];
-		const vec3_t *p = Item_Vtbl(self)->GetPos(self, &tmp);
+		const vec3_t *p = self->base.vftable->GetPos(&self->base, &tmp);
 		double dx = (double)(p->x - cam.x);
 		double dz = (double)(p->z - cam.z);
 		ang.x = 0.0f;
@@ -527,7 +509,7 @@ byte __thiscall cItemEntity_TestSphere(cItemEntity *self, cEntity *other, const 
 	vec3_t tmp, dir, point;
 
 	(void)arg;
-	const vec3_t *p = Item_Vtbl(self)->GetPos(self, &tmp);
+	const vec3_t *p = self->base.vftable->GetPos(&self->base, &tmp);
 	float r = radius + self->radius;
 	float dy = center->y - p->y;
 	float dx = center->x - p->x;
@@ -536,7 +518,7 @@ byte __thiscall cItemEntity_TestSphere(cItemEntity *self, cEntity *other, const 
 		return 0;
 	}
 	if (!g_pWorld->testing && other) {
-		p = Item_Vtbl(self)->GetPos(self, &tmp);
+		p = self->base.vftable->GetPos(&self->base, &tmp);
 		dx = center->x - p->x;
 		dy = center->y - p->y;
 		dz = center->z - p->z;
@@ -554,7 +536,7 @@ byte __thiscall cItemEntity_TestSphere(cItemEntity *self, cEntity *other, const 
 		float ox = dir.x * self->radius;
 		float oy = dir.y * self->radius;
 		float oz = dir.z * self->radius;
-		p = Item_Vtbl(self)->GetPos(self, &tmp);
+		p = self->base.vftable->GetPos(&self->base, &tmp);
 		point.x = p->x + ox;
 		point.y = p->y + oy;
 		point.z = p->z + oz;
@@ -641,9 +623,9 @@ byte __thiscall cItemEntity_VarV(cItemEntity *self, const char *name, double *x,
 			v.x = (float)*x;
 			v.y = (float)*y;
 			v.z = (float)*z;
-			Item_Vtbl(self)->SetVel(self, &v);
+			Obj_Vtbl(&self->base)->SetVel(&self->base, &v);
 		} else {
-			Item_Vtbl(self)->GetVel(self, &v);
+			Obj_Vtbl(&self->base)->GetVel(&self->base, &v);
 			*x = v.x;
 			*y = v.y;
 			*z = v.z;

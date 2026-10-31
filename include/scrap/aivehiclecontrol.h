@@ -34,24 +34,6 @@ typedef struct cAIObjVtbl {
 	void *(__thiscall *Delete)(void *self, byte flags);	/* 0x00 */
 } cAIObjVtbl;
 
-/* the entity slots the controllers call (thiscall; GetPos is cEntityVtbl's 0x18) */
-typedef struct cAIVEntVtbl {
-	void *vf00_1f[32];
-	vec3_t *(__thiscall *GetRot)(cEntity *self, vec3_t *out);	/* 0x80 */
-	void(__thiscall *SetRot)(cEntity *self, const vec3_t *rot);	/* 0x84 */
-	vec3_t *(__thiscall *GetVel)(cEntity *self, vec3_t *out);	/* 0x88 */
-	void(__thiscall *SetVel)(cEntity *self, const vec3_t *vel);	/* 0x8c */
-	void *vf24_27[4];
-	float(__thiscall *GetRadius)(cEntity *self);			/* 0xa0 */
-} cAIVEntVtbl;
-SD_OFFSET(cAIVEntVtbl, GetRot, 0x80);
-SD_OFFSET(cAIVEntVtbl, SetVel, 0x8c);
-SD_OFFSET(cAIVEntVtbl, GetRadius, 0xa0);
-
-static inline const cAIVEntVtbl *AIVE_Vtbl(cEntity *e) {
-	return (const cAIVEntVtbl *)e->vftable;
-}
-
 /* the moves of SetMove (cAIVehicleControl.mode) */
 enum {
 	AIVC_STOP = 0, AIVC_POINT = 1, AIVC_DIRECT = 2, AIVC_CHASE = 3, AIVC_ORIENT = 6, AIVC_PATH = 7

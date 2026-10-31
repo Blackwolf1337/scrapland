@@ -43,7 +43,7 @@ cEntity *Inferno_NetCreate(const char *name, vec3_t pos, vec3_t dir) {
 	CHECK(Entity_IsType(m, TYEN_MISSILE));
 	cMissileEntity_SetHiddenSwarm((cMissileEntity *)m, 0);
 	cMissileEntity_SetHideMain((cMissileEntity *)m, 1);
-	Weap_Vtbl(m)->SetOrient(m, &dir);
+	Obj_Vtbl(m)->SetAng(m, &dir);
 	cMissileEntity_SetSwarmSpeed((cMissileEntity *)m, g_InfernoBeesSpeed);
 	cMissileEntity_SetLifeTime((cMissileEntity *)m, g_InfernoLifeTime);
 	cPy_Function_SetNative(Mis_OnHit(m), (nativefunc_t)GAME_FUNC(Inferno_HitNative, 0x121ae0));
@@ -130,9 +130,9 @@ void Inferno_FireNative(cAbstractFile *f) {
 	if (!(ammo >= (float)g_InfernoAmmoCost)) {
 		return;
 	}
-	Weap_Vtbl(v)->GetPos(v, &pos);
-	Weap_Vtbl(v)->GetOrient(v, &ang);
-	Weap_Vtbl(v)->GetVel(v, &vel);
+	v->vftable->GetPos(v, &pos);
+	Obj_Vtbl(v)->GetAng(v, &ang);
+	Obj_Vtbl(v)->GetVel(v, &vel);
 	Net_GetObjName(obj);
 	cEntity *m = Inferno_NetCreate(obj, pos, ang);
 	if (!m) {
@@ -153,7 +153,7 @@ void Inferno_FireNative(cAbstractFile *f) {
 	Inferno_NetSetUp(m->name);
 	int n = (int)ammo / g_InfernoAmmoCost;
 	if (Mis_Bees(m) > n) {
-		Weap_Vtbl(m)->SetBees(m, n);
+		Missile_Vtbl(Missile(m))->SetSwarm(Missile(m), n);
 	}
 	cPrimitive_SetSize(Mis_Size(m), Mis_Radius(m) * 0.6f);
 	if (!Ent_God(m)) {
@@ -179,7 +179,7 @@ cEntity *Inferno_Hit(const char *name) {
 	vec3_t pos, op, tmp, rnd, nrm;
 
 	cEntity *m = Weap_Missile(name);
-	Weap_Vtbl(m)->GetPos(m, &pos);
+	m->vftable->GetPos(m, &pos);
 	float range = (float)Mis_Bees(m) * g_InfernoRangeBay + g_InfernoRangeMin;
 	uint32_t type = (uint32_t)Mis_Type(m);
 	Con_Print(0x606060, type < 3 ? inferno_types[type] : "Misil Inferno Desconocido\n", 0);
@@ -202,9 +202,9 @@ cEntity *Inferno_Hit(const char *name) {
 	do {
 		cEntity *o = Weap_Owner(g_pWorld, i);
 		if (o && Ent_Cam(o)) {
-			byte hit = Engine_TestLine(&pos, Weap_Vtbl(o)->GetPos(o, &tmp), NULL, NULL);
+			byte hit = Engine_TestLine(&pos, o->vftable->GetPos(o, &tmp), NULL, NULL);
 			if (Ent_Cam(o) && !hit) {
-				const vec3_t *p = Weap_Vtbl(o)->GetPos(o, &op);
+				const vec3_t *p = o->vftable->GetPos(o, &op);
 				float dy = p->y - pos.y;
 				float dx = p->x - pos.x;
 				float dz = p->z - pos.z;
@@ -278,7 +278,7 @@ void Inferno_OnDamageNative(cAbstractFile *f) {
 		int armor = g_InfernoArmor;
 		if (damage >= armor) {
 			int n = damage / armor;
-			Weap_Vtbl(m)->KillBees(m, n > bees ? bees : n, 0);
+			Missile_Vtbl(Missile(m))->Hit(Missile(m), n > bees ? bees : n, 0);
 		}
 	}
 }
@@ -290,9 +290,9 @@ void Inferno_OnDeathNative(cAbstractFile *f) {
 	cAbstractFile_ReadString(f, other, 0x80);
 	cEntity *m = Weap_Missile(name);
 	if (Ent_Active(m)) {
-		Weap_Vtbl(m)->SetActive(m, 0);
+		m->vftable->SetActive(m, 0);
 		Inferno_Explode(name);
-		Weap_Vtbl(m)->SetBees(m, 0);
+		Missile_Vtbl(Missile(m))->SetSwarm(Missile(m), 0);
 	}
 }
 
@@ -344,7 +344,7 @@ void Inferno_Explode(const char *name) {
 	if (!m) {
 		return;
 	}
-	const vec3_t *p = Weap_Vtbl(m)->GetPos(m, &tmp);
+	const vec3_t *p = m->vftable->GetPos(m, &tmp);
 	g_InfernoPos.x = p->x;
 	g_InfernoPos.y = p->y;
 	g_InfernoPos.z = p->z;
@@ -381,8 +381,8 @@ void Inferno_NetSetUp(const char *name) {
 	matrix_t mtx;
 
 	cEntity *m = Weap_Missile(name);
-	Weap_Vtbl(m)->GetPos(m, &tmp);
-	Weap_Vtbl(m)->SetModel(m, g_InfernoMissileFile, 1.0f, 1.0f, 1.0f, 0);
+	m->vftable->GetPos(m, &tmp);
+	m->vftable->SetModel(m, g_InfernoMissileFile, 1.0f, 1.0f, 1.0f, 0);
 	cMissileEntity_SetRadius((cMissileEntity *)m, 100.0f);
 	cMissileEntity_SetTopRadius((cMissileEntity *)m, 400.0f);
 	cMissileEntity_SetRadiusGrow((cMissileEntity *)m, 200.0f);
@@ -401,7 +401,7 @@ void Inferno_NetSetUp(const char *name) {
 				continue;
 			}
 			Weap_DropAtNode(v, Veh(v)->weapons.nodes[g_InfernoIDAmmo][i], &mtx, &ang, &vel);
-			Weap_Vtbl(m)->AddBees(m, 1);
+			Missile_Vtbl(Missile(m))->AddToSwarm(Missile(m), 1);
 			if (i == 0 && Mis_Debris(m) && Debris_Element(Mis_Debris(m))) {
 				cObjElementFXInfernoMissile_SetFlare(Debris_Element(Mis_Debris(m)), 1);
 			}
@@ -420,8 +420,8 @@ void Inferno_NetSetUp(const char *name) {
 			}
 		}
 	}
-	Weap_Vtbl(m)->SetBees(m, cMissileEntity_GetSwarmCount((cMissileEntity *)m));
-	Weap_Vtbl(m)->SetMaxSpeed(m, 6000.0f);
+	Missile_Vtbl(Missile(m))->SetSwarm(Missile(m), cMissileEntity_GetSwarmCount((cMissileEntity *)m));
+	WithLife_Vtbl(m)->SetMass(m, 6000.0f);
 	Mis_FallOut(m) = 1;
 	Weap_EngineSound(m, g_InfernoEngineSound, g_InfernoEngineSoundVol, g_InfernoEngineSoundAttIni,
 		g_InfernoEngineSoundAttEnd, g_InfernoEngineSoundDoppler);
@@ -445,7 +445,7 @@ void Inferno_SphereHit(cAbstractFile *f) {
 		return;
 	}
 	int life = Ent_Life(e);
-	const vec3_t *p = Weap_Vtbl(e)->GetPos(e, &tmp);
+	const vec3_t *p = e->vftable->GetPos(e, &tmp);
 	float dy = p->y - g_InfernoPos.y;
 	float dx = p->x - g_InfernoPos.x;
 	float dz = p->z - g_InfernoPos.z;
@@ -498,11 +498,11 @@ void Inferno_SphereHit(cAbstractFile *f) {
 		px *= force;
 		py *= force;
 		pz *= force;
-		const vec3_t *ov = Weap_Vtbl(e)->GetVel(e, &tmp);
+		const vec3_t *ov = Obj_Vtbl(e)->GetVel(e, &tmp);
 		vel.x = px + ov->x;
 		vel.y = ov->y + py;
 		vel.z = ov->z + pz;
-		Weap_Vtbl(e)->SetVel(e, &vel);
+		Obj_Vtbl(e)->SetVel(e, &vel);
 	}
 	if (isCar && Vehicle_NetCtrl(e)) {
 		Vehicle_NetCtrl(e)->hit = 2;

@@ -18,7 +18,7 @@ void ChType_ListeningMayor(cAbstractFile *params) {
 	g_MayorEnt = World_FindEntity(name);
 	CHECK(g_MayorEnt);
 	CHECK(Entity_IsType(g_MayorEnt, TYEN_WALKCHAR));
-	void *acm = ChType_Vtbl(g_MayorEnt)->FindAction(g_MayorEnt, "MayorListen");
+	void *acm = WithLife_Vtbl(g_MayorEnt)->GetAction(g_MayorEnt, "MayorListen");
 	cLocalLogic *ll = Logic_GetLocalLogic(g_MayorEnt);
 	CHECK(ll && acm);
 	if (!ChLogic_Idle(ll) && !ChLogic_AlwaysLock(ll)) {
@@ -82,7 +82,7 @@ void ChType_MayorSphereHit(cAbstractFile *params) {
 	if (!e) {
 		return;
 	}
-	void *acm = ChType_Vtbl(e)->FindAction(e, "MayorListen");
+	void *acm = WithLife_Vtbl(e)->GetAction(e, "MayorListen");
 	cLocalLogic *ll = Logic_GetLocalLogic(e);
 	if (!ll || !acm || !ChLogic_Vtbl(ll)->Listens(ll, g_MayorEnt)) {
 		return;

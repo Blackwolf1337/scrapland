@@ -68,7 +68,7 @@ void __thiscall cGenCharLocalLogic_UpdateView(cGenCharLocalLogic *self) {
  * UsrDefChar */
 byte __thiscall cGenCharLocalLogic_CanDiscover(cGenCharLocalLogic *self, cEntity *e) {
 	(void)self;
-	if (!ChType_Vtbl(e)->FindAction(e, "Discover")) {
+	if (!WithLife_Vtbl(e)->GetAction(e, "Discover")) {
 		return 0;
 	}
 	const char *type = Logic_TypeName(e);
@@ -447,7 +447,7 @@ byte __thiscall cGenCharLocalLogic_SetState(cGenCharLocalLogic *self, int state,
 		if (ok && g_pWorld->alarm.sameChar) {
 			self->time = g_GenCharAcuseTime;
 			ai->vftable->SetState(ai, 8, target, 1);
-			if (ChType_Vtbl(p)->FindAction(p, "Discover")) {
+			if (WithLife_Vtbl(p)->GetAction(p, "Discover")) {
 				cGenCharLocalLogic_Discover(self);
 				cGenCharGroup_RaiseLevel((&g_pWorld->logic.genChars), 0);
 			}

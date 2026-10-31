@@ -171,7 +171,7 @@ void NetData_ReadUsrDescriptors(cAbstractFile *f) {
 		cPy_Function_AddParamS(g_ClientSetConfig, NetEnt_TypeName(e));
 		cPy_Function_AddParamI(g_ClientSetConfig, NetEnt_MaxLife(e));
 		cPy_Function_AddParamS(g_ClientSetConfig, NetEnt_UsrName(e) ? NetEnt_UsrName(e) : "");
-		cPy_Function_AddParamS(g_ClientSetConfig, Net_Vtbl(e)->GetPilot(e, 0));
+		cPy_Function_AddParamS(g_ClientSetConfig, Veh_Vtbl(Veh(e))->GetPilot(Veh(e), 0));
 		for (uint32_t m = 0; m < 4; m++) {
 			cPy_Function_AddParamS(g_ClientSetConfig, cVehicleMotors_GetMotorName(NetEnt_Motors(e), m, NULL));
 		}
@@ -190,11 +190,11 @@ void NetData_ReadUsrDescriptor(cAbstractFile *f, cEntity *e) {
 	cString_Set(&NetEnt_UsrName(e), s);
 	cAbstractFile_ReadString8(f, s, sizeof(s));
 	if (cActClassList_Get(g_pActClassList, s)) {
-		Net_Vtbl(e)->SetActClass(e, s);
-		/* the actions of the class (actctrl + 8, list at + 0x14, next at + 0x18) */
-		byte *ctrl = Net_Vtbl(e)->GetActCtrl(e);
-		for (byte *a = *(byte **)(*(byte **)(ctrl + 8) + 0x14); a; a = *(byte **)(a + 0x18)) {
-			cActCtrl_PlayAction(Net_Vtbl(e)->GetActCtrl(e), a, 0, 1, 1.0f);
+		WithLife_Vtbl(e)->SetActCtrl(e, s);
+		/* every action of the class */
+		cActCtrl *ctrl = WithLife_Vtbl(e)->GetActCtrl(e);
+		for (cAction *a = ctrl->cls->first; a; a = a->next) {
+			cActCtrl_PlayAction(WithLife_Vtbl(e)->GetActCtrl(e), a, 0, 1, 1.0f);
 		}
 	} else {
 		e->vftable->SetModel(e, s, 1.0f, 1.0f, 1.0f, 1);
@@ -206,7 +206,7 @@ void NetData_ReadUsrDescriptor(cAbstractFile *f, cEntity *e) {
 		cVehicleMotors_SetMotor(NetEnt_Motors(e), m, s, 1.0f, 1.0f, 1.0f);
 	}
 	cAbstractFile_ReadString8(f, s, sizeof(s));
-	Net_Vtbl(e)->SetPilot(e, 0, s, 1.0f, 1.0f, 1.0f);
+	Veh_Vtbl(Veh(e))->SetPilot(Veh(e), 0, s, 1.0f, 1.0f, 1.0f);
 	cAbstractFile_ReadString8(f, s, sizeof(s));
 	cWeaponManager_SetWeapList(NetEnt_Weapons(e), s);
 	f->vftable->Read(f, &team, 4);
@@ -323,7 +323,7 @@ void NetData_WriteUsrDescriptor(cAbstractFile *f, cEntity *e) {
 	for (uint32_t m = 0; m < 4; m++) {
 		cAbstractFile_WriteString8(f, cVehicleMotors_GetMotorName(NetEnt_Motors(e), m, NULL));
 	}
-	cAbstractFile_WriteString8(f, Net_Vtbl(e)->GetPilot(e, 0));
+	cAbstractFile_WriteString8(f, Veh_Vtbl(Veh(e))->GetPilot(Veh(e), 0));
 	cAbstractFile_WriteString8(f, cWeaponManager_GetWeapList(NetEnt_Weapons(e)));
 	v = (uint32_t)NetEnt_Team(e);
 	f->vftable->Write(f, &v, 4);

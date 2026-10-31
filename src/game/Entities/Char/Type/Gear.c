@@ -258,7 +258,7 @@ void ChType_GearShoot(cAbstractFile *params) {
 		} else if (target) {
 			cMissileEntity_SetTarget(m, target->name);
 		}
-		Weap_Vtbl(e)->AddBees(e, 0);
+		Missile_Vtbl(Missile(e))->AddToSwarm(Missile(e), 0);
 		e->vftable->SetEmbeddedFX(e, "GearMissile");
 		cSndInterface *snd = WChar_Sounds(e);
 		cSndInterface_Resize(snd, 1);
@@ -508,7 +508,7 @@ int Logic_Flash(const vec3_t *pos, float radius, int max) {
 int ChType_FlashChar(cEntity *e) {
 	int r = 0;
 
-	void *flashed = ChType_Vtbl(e)->FindAction(e, "Flashed");
+	void *flashed = WithLife_Vtbl(e)->GetAction(e, "Flashed");
 	if (!flashed) {
 		return 0;
 	}
@@ -542,7 +542,7 @@ void ChType_FlashHit(cAbstractFile *params) {
 	if (!e || !e->vftable->IsType(e, TYEN_WALKCHAR) || cWalkCharEntity_GetOwnerSlot(e) != -1) {
 		return;
 	}
-	void *flashed = ChType_Vtbl(e)->FindAction(e, "Flashed");
+	void *flashed = WithLife_Vtbl(e)->GetAction(e, "Flashed");
 	if (!flashed) {
 		return;
 	}

@@ -29,8 +29,8 @@ void Hook_Aim(cEntity *v) {
 	ang.z = 0.0f;
 	target = NULL;
 	dist = g_HookRange;
-	Weap_Vtbl(v)->GetTargetAngle(v, &ang.x, g_HookRange, &target);
-	Weap_Vtbl(v)->AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
+	v->vftable->GetTargetAngle(v, &ang.x, g_HookRange, &target);
+	v->vftable->AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
 	if (dist + 100.0f > g_HookRange) {
 		if (!(g_pApp->flags & APPF_CLIENT)) {
 			cWeaponManager_LockPoint(Veh_Weapons(v), NULL);
@@ -84,33 +84,33 @@ void Hook_OffNative(cAbstractFile *f) {
 /* the speed of the entity, at least 16800 */
 static float Hook_MaxSpeed(cEntity *e) {
 	vec3_t tmp;
-	const vec3_t *v = Weap_Vtbl(e)->GetVel(e, &tmp);
+	const vec3_t *v = Obj_Vtbl(e)->GetVel(e, &tmp);
 	return Float_MaxSS(16800.0f, (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z)));
 }
 
 static float Hook_Speed(cEntity *e) {
 	vec3_t tmp;
-	const vec3_t *v = Weap_Vtbl(e)->GetVel(e, &tmp);
+	const vec3_t *v = Obj_Vtbl(e)->GetVel(e, &tmp);
 	return (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
 }
 
 /* the velocity plus (x, y, z) */
 static void Hook_AddVel(cEntity *e, float x, float y, float z) {
 	vec3_t tmp, vel;
-	const vec3_t *v = Weap_Vtbl(e)->GetVel(e, &tmp);
+	const vec3_t *v = Obj_Vtbl(e)->GetVel(e, &tmp);
 	vel.y = v->y + y;
 	vel.z = v->z + z;
 	vel.x = v->x + x;
-	Weap_Vtbl(e)->SetVel(e, &vel);
+	Obj_Vtbl(e)->SetVel(e, &vel);
 }
 
 static void Hook_ScaleVel(cEntity *e, float k) {
 	vec3_t tmp, vel;
-	const vec3_t *v = Weap_Vtbl(e)->GetVel(e, &tmp);
+	const vec3_t *v = Obj_Vtbl(e)->GetVel(e, &tmp);
 	vel.y = v->y * k;
 	vel.z = v->z * k;
 	vel.x = k * v->x;
-	Weap_Vtbl(e)->SetVel(e, &vel);
+	Obj_Vtbl(e)->SetVel(e, &vel);
 }
 
 /*
@@ -208,16 +208,16 @@ void Hook_UpdateNative(cAbstractFile *f) {
 			return;
 		}
 		if (Entity_IsType(target, TYEN_VEHICLE)) {
-			Veh_EMITime(target) = World_IsEasySingle() && !Weap_Vtbl(target)->GetAI(target) ? 0.25f : g_HookEMITime;
+			Veh_EMITime(target) = World_IsEasySingle() && !target->vftable->GetAI(target) ? 0.25f : g_HookEMITime;
 		}
 		if (!Entity_IsType(target, TYEN_WITH_LIFE) || !Ent_Active(target)) {
 			Hook_Unlock(v);
 			return;
 		}
-		p = Weap_Vtbl(target)->GetCenter(target, &tmp);
+		p = Obj_Vtbl(target)->GetViewPos(target, &tmp);
 	}
 	hp = *p;
-	const vec3_t *c = Weap_Vtbl(v)->GetCenter(v, &tmp);
+	const vec3_t *c = Obj_Vtbl(v)->GetViewPos(v, &tmp);
 	float dy = hp.y - c->y;
 	float dx = hp.x - c->x;
 	float dz = hp.z - c->z;
@@ -345,7 +345,7 @@ void Laser_CreateNative(cAbstractFile *f) {
 		if (!cTargetLock_HasSlot(Veh_Weapons(v), g_LaserIDWeap, i)) {
 			continue;
 		}
-		const matrix_t *m = CGameModel_NodeMatrix(Weap_Vtbl(v)->GetModel(v), &mtx,
+		const matrix_t *m = CGameModel_NodeMatrix(Obj_Vtbl(v)->GetModel(v), &mtx,
 			Veh(v)->weapons.nodes[g_LaserIDAmmo][i], 0, NULL, 0);
 		s.x = m->m[12];
 		s.y = m->m[13];
@@ -396,7 +396,7 @@ void Laser_CreateNative(cAbstractFile *f) {
 			CHECK(w);
 			CHECK(Entity_IsType(w, TYEN_WITH_LIFE));
 			float rad = Ent_Radius(w);
-			const vec3_t *c = Weap_Vtbl(v)->GetCenter(v, &tmp);
+			const vec3_t *c = Obj_Vtbl(v)->GetViewPos(v, &tmp);
 			Weap_Norm(&n, c->x - hit.x, c->y - hit.y, c->z - hit.z);
 			float rr = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 0.30000001192092896 +
 				0.10000000149011612);
@@ -434,7 +434,7 @@ void Laser_CreateNative(cAbstractFile *f) {
 					}
 				}
 			}
-			Weap_Vtbl(v)->GetAngles(v, &ang);
+			Obj_Vtbl(v)->GetViewAng(v, &ang);
 			Matrix_Identity(&mtx);
 			Matrix_Rotate(&mtx, &ang);
 			Matrix_Translate(&mtx, &hit);
@@ -591,8 +591,8 @@ void Laser_FireNative(cAbstractFile *f) {
 	ang.z = 0.0f;
 	target = NULL;
 	dist = g_LaserRange;
-	Weap_Vtbl(v)->GetTargetAngle(v, &ang.x, g_LaserRange, &target);
-	Weap_Vtbl(v)->AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
+	v->vftable->GetTargetAngle(v, &ang.x, g_LaserRange, &target);
+	v->vftable->AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
 	byte isCar = target && Entity_IsType(target, TYEN_VEHICLE);
 	byte isLife = target && Entity_IsType(target, TYEN_WITH_LIFE);
 	if (isCar) {
@@ -690,8 +690,8 @@ void Sonic_FireNative(cAbstractFile *f) {
 		return;
 	}
 	Net_GetObjName(obj);
-	Weap_Vtbl(v)->GetPos(v, &pos);
-	Weap_Vtbl(v)->GetOrient(v, &ang);
+	v->vftable->GetPos(v, &pos);
+	Obj_Vtbl(v)->GetAng(v, &ang);
 	cPy_Function_AddParamS(g_CreateSonicFunc, obj);
 	cPy_Function_AddParamF(g_CreateSonicFunc, pos.x);
 	cPy_Function_AddParamF(g_CreateSonicFunc, pos.y);

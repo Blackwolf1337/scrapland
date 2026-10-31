@@ -66,7 +66,7 @@ static inline cEmbeddedFX *EFX_Delete(cEmbeddedFX *self, byte flags, uint32_t si
 /* the model of the entity, CHECKed */
 static CGameModel *EFX_Model(cEmbeddedFX *self, cEntity *e) {
 	self->ent = e;
-	CGameModel *model = FX_Vtbl(e)->GetModel(e);
+	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
 	CHECK(CGameModel_IsLoaded(model));
 	return model;
 }
@@ -837,7 +837,7 @@ void __thiscall cEmbeddedFXSentinel_Init(cEmbeddedFXSentinel *self, cEntity *e) 
 	CGameParticles_Release(&self->status);
 	self->dummyLaser = -1;
 	CGameParticles_Release(&self->laser);
-	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
 	CHECK(CGameModel_IsLoaded(model));
 	self->dummyLaser = CGameModel_FindRenderNode(model, "DF_LaserScaner");
 	CHECK(self->dummyLaser > -1);
@@ -910,9 +910,9 @@ void EmbeddedFXChar_SetAlarm(const char *name, byte on) {
 
 	CHECK(v);
 	CHECK(v->vftable->IsType(v, TYEN_WITH_LIFE));
-	CHECK(CGameModel_IsLoaded(FX_Vtbl(v)->GetModel(v)));
-	if (!strstr(CGameModel_Name(FX_Vtbl(v)->GetModel(v)), "Police")
-		&& !strstr(CGameModel_Name(FX_Vtbl(v)->GetModel(v)), "Gear")) {
+	CHECK(CGameModel_IsLoaded(Obj_Vtbl(v)->GetModel(v)));
+	if (!strstr(CGameModel_Name(Obj_Vtbl(v)->GetModel(v)), "Police")
+		&& !strstr(CGameModel_Name(Obj_Vtbl(v)->GetModel(v)), "Gear")) {
 		return;
 	}
 	cEmbeddedFXAlarm_SetOn(&((cEmbeddedFXPolice *)Entity_EmbeddedFX(v))->alarm, on);
@@ -978,7 +978,7 @@ static float EFX_FaceCamera(CGameModel *model) {
 }
 
 void __thiscall cEmbeddedFXBankDirector_Update(cEmbeddedFXBankDirector *self, float dt) {
-	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
 	CGameParticles *p = &self->glow;
 
 	(void)dt;
@@ -1005,7 +1005,7 @@ void __thiscall cEmbeddedFXBankDirector_Update(cEmbeddedFXBankDirector *self, fl
 }
 
 void __thiscall cEmbeddedFXBankMaster_Update(cEmbeddedFXBankMaster *self, float dt) {
-	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
 	CGameParticles *p = &self->glow;
 
 	(void)dt;
@@ -1553,7 +1553,7 @@ static byte EFX_MessengerShown(cEmbeddedFXMessenger *self, CGameModel *model, by
 	}
 	cWorld *w = g_pWorld;
 	vec3_t cam = w->camPos[w->curCam];
-	const vec3_t *p = FX_Vtbl(e)->GetCenter(e, &buf);
+	const vec3_t *p = Obj_Vtbl(e)->GetViewPos(e, &buf);
 	float dx = p->x - cam.x;
 	float dy = p->y - cam.y;
 	float dz = p->z - cam.z;
@@ -1984,7 +1984,7 @@ static void EFX_RustySparks(cEmbeddedFXRusty *self) {
 	cEntity *e = self->base.ent;
 	const char *name = g_FXRustySparksSound;
 	int volume = Snd_Volume(g_FXRustySparksSoundVol);
-	const vec3_t *pos = FX_Vtbl(e)->GetCenter(e, &buf);
+	const vec3_t *pos = Obj_Vtbl(e)->GetViewPos(e, &buf);
 	g_pSound->vftable->PlayAt(g_pSound, name, pos, volume);
 }
 

@@ -54,20 +54,6 @@
 #define WChar_ListenOn(e) (WChar(e)->listenOn)		/* the player still talks to it */
 #define WChar_Victim(e) ((cEntity *)WChar(e)->victim.target)		/* the character the banker robs */
 
-/* the slots of the character vtables the types call (after the ones of cObjEntityVtbl) */
-typedef struct cChTypeVtbl {
-	void *vf00_33[52];
-	void *(__thiscall *FindAction)(cEntity *self, const char *name);	/* 0xd0 the action of its class or NULL */
-	void *vf35_42[14];
-	void(__thiscall *SetViewAng)(cEntity *self, const vec3_t *ang);	/* 0x10c */
-} cChTypeVtbl;
-SD_OFFSET(cChTypeVtbl, FindAction, 0xd0);
-SD_OFFSET(cChTypeVtbl, SetViewAng, 0x10c);
-
-static inline const cChTypeVtbl *ChType_Vtbl(cEntity *e) {
-	return (const cChTypeVtbl *)e->vftable;
-}
-
 static inline void *ChType_ActCtrl(cEntity *e) {
 	return WithLife_Vtbl(e)->GetActCtrl(e);
 }

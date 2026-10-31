@@ -54,12 +54,8 @@ int Vec3_Differ(const float *a, const float *b);
 
 static const vec3_t aivc_fwd = { 0.0f, 0.0f, -1.0f };
 
-static inline const cAIVEntVtbl *VC_Vt(cAIVehicleControl *self) {
-	return AIVE_Vtbl(self->vehicle);
-}
-
 static inline float VC_Radius(cAIVehicleControl *self) {
-	return VC_Vt(self)->GetRadius(self->vehicle);
+	return Obj_Vtbl(self->vehicle)->GetRadius(self->vehicle);
 }
 
 static inline const vec3_t *VC_Pos(cAIVehicleControl *self, vec3_t *buf) {
@@ -569,7 +565,7 @@ found:
 	}
 rebuild:
 	self->pathDirect = 0;
-	self->dir = *Vec3_Rotate(&out, &aivc_fwd, VC_Vt(self)->GetRot(self->vehicle, &rot));
+	self->dir = *Vec3_Rotate(&out, &aivc_fwd, Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot));
 	return cAIVehicleControl_RebuildPath(self);
 }
 
@@ -760,9 +756,9 @@ void __fastcall cAIVehicleControl_TurnToTarget(cAIVehicleControl *self) {
 	d.y = p->y - tp->y;
 	d.z = p->z - tp->z;
 	Vec3_GetRotAng(&want, &d);
-	Vec3_NormAng(&cur, VC_Vt(self)->GetRot(self->vehicle, &r));
+	Vec3_NormAng(&cur, Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &r));
 	if (self->direct) {
-		VC_Vt(self)->SetRot(self->vehicle, &want);
+		Obj_Vtbl(self->vehicle)->SetAng(self->vehicle, &want);
 		return;
 	}
 	float ax = NormAng(cur.x - want.x);
@@ -783,9 +779,9 @@ void __fastcall cAIVehicleControl_TurnToPoint(cAIVehicleControl *self) {
 	d.y = p->y - self->point.y;
 	d.z = p->z - self->point.z;
 	Vec3_GetRotAng(&want, &d);
-	Vec3_NormAng(&cur, VC_Vt(self)->GetRot(self->vehicle, &r));
+	Vec3_NormAng(&cur, Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &r));
 	if (self->direct) {
-		VC_Vt(self)->SetRot(self->vehicle, &want);
+		Obj_Vtbl(self->vehicle)->SetAng(self->vehicle, &want);
 		return;
 	}
 	float ax = NormAng(cur.x - want.x);
@@ -909,7 +905,7 @@ void __fastcall cAIVehicleControl_StrafeToPoint(cAIVehicleControl *self) {
 	d.x = self->point.x - p->x;
 	d.y = self->point.y - p->y;
 	d.z = self->point.z - p->z;
-	VC_Vt(self)->GetRot(self->vehicle, &rot);
+	Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot);
 	rot.x = -rot.x;
 	rot.y = rot.y + M_PI_F;
 	Vec3_RotateInv(&loc, &d, &rot);
@@ -922,7 +918,7 @@ void __fastcall cAIVehicleControl_StrafeToPoint(cAIVehicleControl *self) {
 static byte VC_AheadBlocked(cAIVehicleControl *self) {
 	vec3_t v, n, end, b, c;
 
-	VC_Vt(self)->GetVel(self->vehicle, &v);
+	Obj_Vtbl(self->vehicle)->GetVel(self->vehicle, &v);
 	NW_Normalize(&n, v.x, v.y, v.z);
 	float ox = n.x * AIVC_STRAFE_AHEAD, oy = n.y * AIVC_STRAFE_AHEAD, oz = n.z * AIVC_STRAFE_AHEAD;
 	float r = VC_Radius(self);
@@ -1097,12 +1093,12 @@ static void VC_VelAlongNose(cAIVehicleControl *self, const vec3_t *fwd, float sp
 	v.x = u->x * speed;
 	v.y = u->y * speed;
 	v.z = u->z * speed;
-	VC_Vt(self)->SetVel(self->vehicle, &v);
+	Obj_Vtbl(self->vehicle)->SetVel(self->vehicle, &v);
 }
 
 static inline float VC_Speed(cAIVehicleControl *self) {
 	vec3_t v;
-	const vec3_t *p = VC_Vt(self)->GetVel(self->vehicle, &v);
+	const vec3_t *p = Obj_Vtbl(self->vehicle)->GetVel(self->vehicle, &v);
 
 	return VC_Len(p->x, p->y, p->z);
 }
@@ -1111,7 +1107,7 @@ static inline float VC_Speed(cAIVehicleControl *self) {
 static float VC_NoseAngle(cAIVehicleControl *self, vec3_t *fwd) {
 	vec3_t rot, b, d;
 
-	Vec3_Rotate(fwd, &aivc_fwd, VC_Vt(self)->GetRot(self->vehicle, &rot));
+	Vec3_Rotate(fwd, &aivc_fwd, Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot));
 	const vec3_t *p = VC_Pos(self, &b);
 	d.x = self->point.x - p->x;
 	d.y = self->point.y - p->y;
@@ -1198,7 +1194,7 @@ void __fastcall cAIVehicleControl_AccelChase(cAIVehicleControl *self) {
 		self->tooFar = 0;
 	}
 	vec3_t rot, d;
-	Vec3_Rotate(&fwd, &aivc_fwd, VC_Vt(self)->GetRot(self->vehicle, &rot));
+	Vec3_Rotate(&fwd, &aivc_fwd, Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot));
 	p = VC_Pos(self, &a);
 	d.x = self->point.x - p->x;
 	d.y = self->point.y - p->y;
@@ -1207,7 +1203,7 @@ void __fastcall cAIVehicleControl_AccelChase(cAIVehicleControl *self) {
 	if (Veh(self->vehicle)->boost == 0.0f && (double)(M_PI_F / 16.0f) > ang && dist > g_DistBoostAI) {
 		vec3_t v;
 		tg = VC_Target(self);
-		const vec3_t *tv = AIVE_Vtbl(tg)->GetVel(tg, &v);
+		const vec3_t *tv = Obj_Vtbl(tg)->GetVel(tg, &v);
 		float ts = VC_Len(tv->x, tv->y, tv->z);
 		float rel = VC_Speed(self) - ts;
 		if (!(rel > AIVC_REL_SPEED) || dist / rel > g_TimeMaxReachBoostAI) {
@@ -1378,7 +1374,7 @@ void __thiscall cAIVehicleControl_Draw(cAIVehicleControl *self) {
 		DebugUtils_DrawLine(&self->endCap[0][0], &self->endCap[0][1], 0xff0000);
 		DebugUtils_DrawLine(&self->endCap[1][0], &self->endCap[1][1], 0xff0000);
 		VC_Pos(self, &pos);
-		VC_Vt(self)->GetRot(self->vehicle, &rot);
+		Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot);
 		Vec3_Rotate(&fwd, &aivc_fwd, &rot);
 		NW_Normalize(&n, fwd.x, fwd.y, fwd.z);
 		tip.x = pos.x + n.x * AIVC_DRAW_LEN;
@@ -1388,7 +1384,7 @@ void __thiscall cAIVehicleControl_Draw(cAIVehicleControl *self) {
 		if (self->point.x != -FLT_MAX || self->point.y != -FLT_MAX || self->point.z != -FLT_MAX) {
 			DebugUtils_DrawLine(&pos, &self->point, 0xffff);
 		}
-		VC_Vt(self)->GetVel(self->vehicle, &v);
+		Obj_Vtbl(self->vehicle)->GetVel(self->vehicle, &v);
 		if (v.y * v.y + v.x * v.x + v.z * v.z > AIVC_DRAW_VEL2) {
 			NW_Normalize(&n, v.x, v.y, v.z);
 			tip.x = n.x * AIVC_DRAW_LEN + pos.x;
@@ -1740,7 +1736,7 @@ byte __thiscall cAIVehicleControl_SetChase(cAIVehicleControl *self, Nto1Node *no
 	}
 	self->target = node;
 	cEntity *t = node->target;
-	float r = AIVE_Vtbl(t)->GetRadius(t);
+	float r = Obj_Vtbl(t)->GetRadius(t);
 	self->dist = r;
 	self->distMin = Float_MinSS(self->radius, r);
 	if (!cAIVehicleControl_SetPath(self, VC_TargetPos(self, &buf))) {

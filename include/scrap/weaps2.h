@@ -25,52 +25,6 @@
 
 #define TYEN_MISSILE "Missile"
 
-/* the vtable slots of the ships and missiles the weapons call */
-typedef struct WeapEntityVtbl {
-	void *vf00_04[5];
-	byte(__thiscall *IsType)(cEntity *self, const char *type);				/* 0x14 */
-	vec3_t *(__thiscall *GetPos)(cEntity *self, vec3_t *out);				/* 0x18 */
-	void *vf07;
-	void(__thiscall *SetActive)(cEntity *self, int on);					/* 0x20 */
-	void *vf09_0b[3];
-	void(__thiscall *SetModel)(cEntity *self, const char *file, float sx, float sy, float sz, int flag); /* 0x30 */
-	void(__thiscall *GetTargetAngle)(cEntity *self, float *ang, float dist, cEntity **target);	/* 0x34 */
-	void(__thiscall *AimWeapon)(cEntity *self, float ax, float ay, float *dist, vec3_t *out, cEntity **target,
-		int flags);									/* 0x38 */
-	void *vf0f_15[7];
-	void *(__thiscall *GetAI)(cEntity *self);						/* 0x58 */
-	void *vf17_1c[6];
-	vec3_t *(__thiscall *GetCenter)(cEntity *self, vec3_t *out);				/* 0x74 */
-	vec3_t *(__thiscall *GetAngles)(cEntity *self, vec3_t *out);				/* 0x78 */
-	void *vf1f;
-	vec3_t *(__thiscall *GetOrient)(cEntity *self, vec3_t *out);				/* 0x80 */
-	void(__thiscall *SetOrient)(cEntity *self, const vec3_t *ang);			/* 0x84 */
-	vec3_t *(__thiscall *GetVel)(cEntity *self, vec3_t *out);				/* 0x88 */
-	void(__thiscall *SetVel)(cEntity *self, const vec3_t *vel);				/* 0x8c */
-	void *vf24_25[2];
-	CGameModel *(__thiscall *GetModel)(cEntity *self);					/* 0x98 */
-	void *vf27_32[12];
-	void(__thiscall *SetMaxSpeed)(cEntity *self, float v);				/* 0xcc */
-	void *vf34_3e[11];
-	void(__thiscall *KillBees)(cEntity *self, int n, int flag);				/* 0xfc missiles */
-	void(__thiscall *AddBees)(cEntity *self, int n);					/* 0x100 */
-	void(__thiscall *SetBees)(cEntity *self, int n);					/* 0x104 */
-} WeapEntityVtbl;
-SD_OFFSET(WeapEntityVtbl, SetActive, 0x20);
-SD_OFFSET(WeapEntityVtbl, SetModel, 0x30);
-SD_OFFSET(WeapEntityVtbl, GetAI, 0x58);
-SD_OFFSET(WeapEntityVtbl, GetCenter, 0x74);
-SD_OFFSET(WeapEntityVtbl, GetOrient, 0x80);
-SD_OFFSET(WeapEntityVtbl, SetVel, 0x8c);
-SD_OFFSET(WeapEntityVtbl, GetModel, 0x98);
-SD_OFFSET(WeapEntityVtbl, SetMaxSpeed, 0xcc);
-SD_OFFSET(WeapEntityVtbl, KillBees, 0xfc);
-SD_OFFSET(WeapEntityVtbl, SetBees, 0x104);
-
-static inline const WeapEntityVtbl *Weap_Vtbl(cEntity *e) {
-	return (const WeapEntityVtbl *)e->vftable;
-}
-
 /* the fields of the entities with life (ships, characters, missiles) */
 #define Ent_Active(e) (((cEntity *)(e))->flag_4c)
 #define Ent_Cam(e) (((cObjEntity *)(e))->cam)		/* the camera entity of a player character */
@@ -346,12 +300,12 @@ static inline cEntity *Weap_SetAimMode(cAbstractFile *f, int mode) {
 
 /* the debris drop (position, angles, velocity) at a weapon node of the ship */
 static inline void Weap_DropAtNode(cEntity *v, uint32_t node, matrix_t *mtx, vec3_t *ang, vec3_t *vel) {
-	const matrix_t *mm = CGameModel_NodeMatrix(Weap_Vtbl(v)->GetModel(v), mtx, node, 0, NULL, 0);
+	const matrix_t *mm = CGameModel_NodeMatrix(Obj_Vtbl(v)->GetModel(v), mtx, node, 0, NULL, 0);
 	float x = mm->m[12];
 	float y = mm->m[13];
 	float z = mm->m[14];
-	Weap_Vtbl(v)->GetAngles(v, ang);
-	Weap_Vtbl(v)->GetVel(v, vel);
+	Obj_Vtbl(v)->GetViewAng(v, ang);
+	Obj_Vtbl(v)->GetVel(v, vel);
 	g_DebrisDrop[0].x = x;
 	g_DebrisDrop[0].y = y;
 	g_DebrisDrop[0].z = z;
@@ -400,8 +354,8 @@ static inline void Weap_PushAway(cEntity *v, cEntity *e, int n, float force) {
 	vec3_t a, b, d, nd, ov, vel;
 
 	float mass = Ent_Mass(e);
-	const vec3_t *pv = Weap_Vtbl(v)->GetPos(v, &a);
-	const vec3_t *pe = Weap_Vtbl(e)->GetPos(e, &b);
+	const vec3_t *pv = v->vftable->GetPos(v, &a);
+	const vec3_t *pe = e->vftable->GetPos(e, &b);
 	d.x = pe->x - pv->x;
 	d.y = pe->y - pv->y;
 	d.z = pe->z - pv->z;
@@ -410,11 +364,11 @@ static inline void Weap_PushAway(cEntity *v, cEntity *e, int n, float force) {
 	float px = dir->x * k;
 	float py = dir->y * k;
 	float pz = dir->z * k;
-	const vec3_t *cur = Weap_Vtbl(e)->GetVel(e, &ov);
+	const vec3_t *cur = Obj_Vtbl(e)->GetVel(e, &ov);
 	vel.y = cur->y + py;
 	vel.z = cur->z + pz;
 	vel.x = cur->x + px;
-	Weap_Vtbl(e)->SetVel(e, &vel);
+	Obj_Vtbl(e)->SetVel(e, &vel);
 }
 
 /* the HUD item of a weapon that does not fire turns back to the angle 0 by d */

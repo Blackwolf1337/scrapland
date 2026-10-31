@@ -31,26 +31,6 @@ void __thiscall cDebris_Move(cDebris *self, float dt);
 cDebris *__thiscall cDebrisSys_GetIdle(cDebrisSys *self);
 byte __thiscall cDebrisSys_IsIdle(cDebrisSys *self, cDebris *d);
 
-/* the slots of the entity vtables the effects call */
-typedef struct FXEntityVtbl {
-	void *vf00_1c[0x74 / 4];
-	vec3_t *(__thiscall *GetCenter)(cEntity *self, vec3_t *out);		/* 0x74 */
-	vec3_t *(__thiscall *GetAngles)(cEntity *self, vec3_t *out);		/* 0x78 */
-	void *vf1f_25[(0x98 - 0x7c) / 4];
-	CGameModel *(__thiscall *GetModel)(cEntity *self);			/* 0x98 */
-	void *vf27;
-	float(__thiscall *GetRadius)(cEntity *self);				/* 0xa0 */
-	void *vf29_2b[3];
-	void(__thiscall *SetFX)(cEntity *self, int fx);			/* 0xb0 */
-	void(__thiscall *SetFXParam)(cEntity *self, int i, float v);		/* 0xb4 */
-} FXEntityVtbl;
-SD_OFFSET(FXEntityVtbl, GetModel, 0x98);
-SD_OFFSET(FXEntityVtbl, SetFXParam, 0xb4);
-
-static inline const FXEntityVtbl *FX_Vtbl(cEntity *e) {
-	return (const FXEntityVtbl *)e->vftable;
-}
-
 /* the inline normalize of the effects: the length of (y y + x x) + z z, 1 / len in float; d as it is for length 0 */
 static inline vec3_t FX_Unit(vec3_t d) {
 	float len = (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z));

@@ -27,7 +27,7 @@ static void Vulcan_Shells(cEntity *v) {
 		if (!cTargetLock_HasSlot(Veh_Weapons(v), g_VulcanIDWeap, i)) {
 			continue;
 		}
-		const matrix_t *m = CGameModel_NodeMatrix(Weap_Vtbl(v)->GetModel(v), &mtx,
+		const matrix_t *m = CGameModel_NodeMatrix(Obj_Vtbl(v)->GetModel(v), &mtx,
 			Veh(v)->weapons.nodes[g_VulcanIDAmmo][i], 0, NULL, 0);
 		float sx = m->m[12];
 		float sy = m->m[13];
@@ -38,15 +38,15 @@ static void Vulcan_Shells(cEntity *v) {
 			d->drop[0].x = sx;
 			d->drop[0].y = sy;
 			d->drop[0].z = sz;
-			d->drop[1] = *Weap_Vtbl(v)->GetAngles(v, &ang);
+			d->drop[1] = *Obj_Vtbl(v)->GetViewAng(v, &ang);
 			float rz = Vul_Rand(14.0, -7.0);
 			float ry = Vul_Rand(2000.0, 0.0);
 			float rx = Vul_Rand(200.0, -100.0);
-			const vec3_t *c = Weap_Vtbl(v)->GetCenter(v, &ctr);
+			const vec3_t *c = Obj_Vtbl(v)->GetViewPos(v, &ctr);
 			float dx = (d->drop[0].x - c->x) * 10.0f;
 			float dy = (d->drop[0].y - c->y) * 10.0f;
 			float dz = (d->drop[0].z - c->z) * 10.0f;
-			const vec3_t *pv = Weap_Vtbl(v)->GetVel(v, &vel);
+			const vec3_t *pv = Obj_Vtbl(v)->GetVel(v, &vel);
 			float vx = dx + pv->x * 0.5f;
 			float vy = dy + pv->y * 0.5f;
 			float vz = dz + pv->z * 0.5f;
@@ -288,7 +288,7 @@ void Vulcan_CreateNative(cAbstractFile *f) {
 		CHECK(w);
 		CHECK(Entity_IsType(w, TYEN_WITH_LIFE));
 		float rad = Ent_Radius(w);
-		const vec3_t *c = Weap_Vtbl(v)->GetCenter(v, &tmp);
+		const vec3_t *c = Obj_Vtbl(v)->GetViewPos(v, &tmp);
 		Weap_Norm(&n, c->x - hit.x, c->y - hit.y, c->z - hit.z);
 		float rr = Vul_Rand(0.30000001192092896, 0.30000001192092896);
 		hit.z = rr * (n.z * rad) + hit.z;
@@ -304,10 +304,10 @@ void Vulcan_CreateNative(cAbstractFile *f) {
 	if (g_SplitScreenGame) {
 		dist = g_FXVulcanHitDistance / 2.5f;
 	}
-	ang = *Weap_Vtbl(v)->GetAngles(v, &tmp);
+	ang = *Obj_Vtbl(v)->GetViewAng(v, &tmp);
 	byte normal = 0;
 	if (g_VulcanHitUseNormal && !*targetName && g_VulcanRange * 0.8f > dist) {
-		const vec3_t *p = Weap_Vtbl(v)->GetPos(v, &tmp);
+		const vec3_t *p = v->vftable->GetPos(v, &tmp);
 		Weap_Norm(&n, hit.x - p->x, hit.y - p->y, hit.z - p->z);
 		float nx = n.x * 10.0f;
 		float ny = n.y * 10.0f;
@@ -480,8 +480,8 @@ void Vulcan_FireNative(cAbstractFile *f) {
 	ang.y = Veh_AimAngY(v);
 	ang.z = 0.0f;
 	dist = g_VulcanRange;
-	Weap_Vtbl(v)->GetTargetAngle(v, &ang.x, dist, &target);
-	Weap_Vtbl(v)->AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
+	v->vftable->GetTargetAngle(v, &ang.x, dist, &target);
+	v->vftable->AimWeapon(v, ang.x, ang.y, &dist, &out, &target, 8);
 	byte isCar = target && Entity_IsType(target, TYEN_VEHICLE);
 	byte isLife = target && Entity_IsType(target, TYEN_WITH_LIFE);
 	if (isCar) {
@@ -490,7 +490,7 @@ void Vulcan_FireNative(cAbstractFile *f) {
 		cVehicleAttack_ShotAtPoint(Veh_HitInfo(v), &out, 1);
 	}
 	if (isLife) {
-		int damage = Weap_Vtbl(v)->GetAI(v) && World_IsEasySingle() ? g_VulcanDamageEasy : g_VulcanDamage;
+		int damage = v->vftable->GetAI(v) && World_IsEasySingle() ? g_VulcanDamageEasy : g_VulcanDamage;
 		if (!Ent_God(target)) {
 			Ent_Life(target) -= damage * n;
 		}

@@ -212,8 +212,8 @@ void __thiscall cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, fl
 			float c = self->centerTime - dt;
 			self->centerTime = c;
 			if (!(0.0f < c)) {
-				byte *relax = ChType_Vtbl(wle)->FindAction(wle, "Relax");
-				if (!relax || *(float *)(relax + 0x38) != 0.0f) {
+				cAction *relax = WithLife_Vtbl(wle)->GetAction(wle, "Relax");
+				if (!relax || relax->rotSpeed != 0.0f) {
 					self->centerTime = g_WalkCameraCenter;
 				} else {
 					a = *WChar_Ang(wle);

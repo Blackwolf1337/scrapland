@@ -104,7 +104,7 @@ void __thiscall cClientNetManager_OnReceive(cClientNetManager *self, void *data,
 		cFileMem_SetBuffer(g_NetMsg, data, size, 0, 0);
 		cFileMem_Open(g_NetMsg, "", FILE_MODE_READ);
 		CHECK(e->vftable->IsType(e, TYEN_CAR));
-		Net_Vtbl(e)->NetRead(e, g_NetMsg, 0);
+		Obj_Vtbl(e)->NetRead(e, g_NetMsg, 0);
 		cFileMem_Close(g_NetMsg);
 	}
 	if (ctlSize < 1) {
@@ -358,9 +358,9 @@ void __thiscall cClientNetManager_Send(cClientNetManager *self, uint32_t time) {
 			if (d2 > g_NetMaxDist2 && near) {
 				d2 = g_NetMaxDist2;
 			}
-			if (Net_Vtbl(e)->NetNeedsSend(e, d2) || old < 5) {
+			if (Obj_Vtbl(e)->NetNeedsSend(e, d2) || old < 5) {
 				cFileMem_Write(g_NetMsg, hdr, 3);
-				Net_Vtbl(e)->NetWrite(e, d2, g_NetMsg, full);
+				Obj_Vtbl(e)->NetWrite(e, d2, g_NetMsg, full);
 				count++;
 			}
 		}
@@ -411,7 +411,7 @@ void __fastcall cClientNetManager_SetLocalData(cClientNetManager *self) {
 	Str_Copy(self->model, NetEnt_TypeName(e), sizeof(self->model));
 	self->maxLife = (uint16_t)NetEnt_MaxLife(e);
 	Str_Copy(self->usrName, NetEnt_UsrName(e) ? NetEnt_UsrName(e) : "", sizeof(self->usrName));
-	Str_Copy(self->pilot, Net_Vtbl(e)->GetPilot(e, 0), sizeof(self->pilot));
+	Str_Copy(self->pilot, Veh_Vtbl(Veh(e))->GetPilot(Veh(e), 0), sizeof(self->pilot));
 	for (uint32_t m = 0; m < 4; m++) {
 		Str_Copy(self->motors[m], cVehicleMotors_GetMotorName(NetEnt_Motors(e), m, NULL), sizeof(self->motors[m]));
 	}

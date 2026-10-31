@@ -37,7 +37,7 @@ static int FXS_Alive(cEntity **ent) {
 
 /* the model of the debris to the position and angles of the model of e (into pos and rot) */
 static void FXS_Follow(cEntity *e, cDebris *d, float sortZ, vec3_t *pos, vec3_t *rot) {
-	CGameModel *m = FX_Vtbl(e)->GetModel(e);
+	CGameModel *m = Obj_Vtbl(e)->GetModel(e);
 
 	CHECK(CGameModel_IsLoaded(m));
 	CGameModel_GetPos(m, pos);
@@ -79,7 +79,7 @@ static void FXS_SetEntity(cEntity **slot, cEntity *e) {
 	CHECK(e);
 	CHECK(Entity_IsType(e, TYEN_WITH_LIFE));
 	*slot = e;
-	CHECK(CGameModel_IsLoaded(FX_Vtbl(e)->GetModel(e)));
+	CHECK(CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e)));
 }
 
 /* a new debris of the system of file with that life, dropped */
@@ -723,7 +723,7 @@ void __thiscall cObjElementFXSceneBishops_Update(cObjElementFXSceneBishops *self
 		cEntity *e = World_FindEntity("BishopsDtritus");
 		self->detritus = e;
 		if (e) {
-			CGameModel *dm = FX_Vtbl(e)->GetModel(e);
+			CGameModel *dm = Obj_Vtbl(e)->GetModel(e);
 			CHECK(CGameModel_IsLoaded(dm));
 			self->node = CGameModel_FindRenderNode(dm, "R_Detritus_Tronco");
 			CHECK(self->node > -1);
@@ -736,9 +736,9 @@ void __thiscall cObjElementFXSceneBishops_Update(cObjElementFXSceneBishops *self
 		return;
 	}
 	cEntity *det = self->detritus;
-	CGameModel *dm = FX_Vtbl(det)->GetModel(det);
+	CGameModel *dm = Obj_Vtbl(det)->GetModel(det);
 	CHECK(CGameModel_IsLoaded(dm));
-	float radius = FX_Vtbl(det)->GetRadius(det);
+	float radius = Obj_Vtbl(det)->GetRadius(det);
 	CGameModel_Vertices(dm, &self->master, NULL, NULL, 1, 0, NULL, (uint32_t)self->node, NULL);
 	vec3_t mp = self->master;
 	float r18 = radius * 0.7f;
@@ -963,14 +963,14 @@ void __thiscall cObjElementFXSceneDecontamination_Update(cObjElementFXSceneDecon
 		if (!e) {
 			return;
 		}
-		CHECK(CGameModel_IsLoaded(FX_Vtbl(e)->GetModel(e)));
+		CHECK(CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e)));
 	}
 	cEntity *te = self->target;
 	CHECK(WithLife_Vtbl(te)->GetActCtrl(te));
 	byte active = cActCtrl_IsActive(WithLife_Vtbl(te)->GetActCtrl(te), self->action);
 	float actT = cActCtrl_GetLayer(WithLife_Vtbl(te)->GetActCtrl(te), 0)->time;
-	CHECK(CGameModel_IsLoaded(FX_Vtbl(self->ent)->GetModel(self->ent)));
-	CGameModel *target = FX_Vtbl(te)->GetModel(te);
+	CHECK(CGameModel_IsLoaded(Obj_Vtbl(self->ent)->GetModel(self->ent)));
+	CGameModel *target = Obj_Vtbl(te)->GetModel(te);
 	CHECK(CGameModel_IsLoaded(target));
 	for (int i = 0; i < FXDECON_RAYS; i++) {
 		if (self->life[i] > 0.0f) {
@@ -1767,7 +1767,7 @@ void __thiscall cObjElementFXSceneBillArrives_A_Update(cObjElementFXSceneBillArr
 		} else if (12.4f > self->tPrev) {
 			FXS_BillJetsOff(efx);
 		}
-		CGameModel *cm = FX_Vtbl(self->capsule)->GetModel(self->capsule);
+		CGameModel *cm = Obj_Vtbl(self->capsule)->GetModel(self->capsule);
 		CGameModel_GetPos(cm, &cp);
 		CHECK(CGameModel_IsLoaded(cm));
 		if (FX_InRange(self->t, 3.0f, 4.0f, &f)) {
@@ -1806,7 +1806,7 @@ void __thiscall cObjElementFXSceneBillArrives_A_Update(cObjElementFXSceneBillArr
 		self->smokeT = 0.0f;
 		self->particles.birthRate = 0;
 		cEntity *c = self->capsule;
-		CGameModel_GetPos(FX_Vtbl(c)->GetModel(c), &cp);
+		CGameModel_GetPos(Obj_Vtbl(c)->GetModel(c), &cp);
 		FXS_BillSteam(self, &cp);
 	}
 	float t = self->t;
@@ -1946,7 +1946,7 @@ static void FXS_MatrixRays1(cObjElementFXSceneEnterMatrix *self, float delta) {
 
 	cEntity *m = World_FindEntity("EnterMatrixMatrix");
 	if (m && m->flag_4c && !Entity_Removed(m)) {
-		self->center = *FX_Vtbl(m)->GetCenter(m, &tmp);
+		self->center = *Obj_Vtbl(m)->GetViewPos(m, &tmp);
 	}
 	int idx = 4;
 	for (int k = 0; k < FXMATRIX_TRAILS; k++, idx += 6) {

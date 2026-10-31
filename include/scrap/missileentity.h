@@ -69,6 +69,34 @@ SD_OFFSET(cMissileEntity, onHit, 0x7d4);
 static inline cMissileEntity *Missile(const void *e) {
 	return (cMissileEntity *)e;
 }
+
+static inline cEntity *Missile_Ent(cMissileEntity *e) {
+	return &e->wl.obj.base;
+}
+
+/* cMissileEntity::vftable: the slots of the missile after the ones of cWithLifeEntity */
+typedef struct cMissileEntityVtbl {
+	cWithLifeEntityVtbl base;
+	void(__thiscall *Wobble)(cMissileEntity *self, float k);			/* 0xe0 Dumb */
+	void(__thiscall *RotStep)(cMissileEntity *self, float dt);			/* 0xe4 Cloud */
+	void(__thiscall *Fall)(cMissileEntity *self, float dt);			/* 0xe8 */
+	void(__thiscall *Swarm)(cMissileEntity *self, float dt);			/* 0xec vf59 */
+	void(__thiscall *ScaleWeapon)(cMissileEntity *self, float unused);		/* 0xf0 */
+	void(__thiscall *LifeTick)(cMissileEntity *self);				/* 0xf4 */
+	void(__thiscall *UpdateVel)(cMissileEntity *self);				/* 0xf8 */
+	/* n bees less; with none left the missile hits. The second argument is not used, Tick passes its dt */
+	byte(__thiscall *Hit)(cMissileEntity *self, int n, float unused);		/* 0xfc */
+	void(__thiscall *AddToSwarm)(cMissileEntity *self, int n);			/* 0x100 */
+	void(__thiscall *SetSwarm)(cMissileEntity *self, int n);			/* 0x104 */
+	void(__thiscall *Explode)(cMissileEntity *self, const vec3_t *at);		/* 0x108 */
+} cMissileEntityVtbl;
+SD_OFFSET(cMissileEntityVtbl, Wobble, 0xe0);
+SD_OFFSET(cMissileEntityVtbl, Swarm, 0xec);
+SD_OFFSET(cMissileEntityVtbl, Explode, 0x108);
+
+static inline const cMissileEntityVtbl *Missile_Vtbl(cMissileEntity *e) {
+	return (const cMissileEntityVtbl *)e->wl.obj.base.vftable;
+}
 SD_SIZE(cMissileEntity, CMISSILEENTITY_SIZE);
 
 /* the WithLife entities the missiles touched, by name (4 of 0x80) */

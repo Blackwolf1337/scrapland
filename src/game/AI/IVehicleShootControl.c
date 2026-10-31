@@ -255,7 +255,7 @@ void __fastcall cAIVehicleShoot_PullFire(cAIVehicleShoot *self) {
 
 		AIVS_TargetDir(self, &d);
 		cEntity *t = AIVS_Target(self);
-		Vec3_Rotate(&fwd, &aivs_fwd, AIVE_Vtbl(t)->GetRot(t, &rot));
+		Vec3_Rotate(&fwd, &aivs_fwd, Obj_Vtbl(t)->GetAng(t, &rot));
 		if (self->params.cadence == 0) {
 			r = 0;
 		} else {
@@ -307,10 +307,10 @@ void __fastcall cAIVehicleShoot_Fire(cAIVehicleShoot *self) {
 			const vec3_t *q = tg->vftable->GetPos(tg, &b);
 			float dx = q->x - p->x, dy = q->y - p->y, dz = q->z - p->z;
 			cEntity *tr = AIVS_Target(self);
-			float r = AIVE_Vtbl(tr)->GetRadius(tr);
+			float r = Obj_Vtbl(tr)->GetRadius(tr);
 			float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 			double cone = Game_Atan2((double)r, (double)dist);
-			Vec3_Rotate(&fwd, &aivs_fwd, AIVE_Vtbl(self->vehicle)->GetRot(self->vehicle, &rot));
+			Vec3_Rotate(&fwd, &aivs_fwd, Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot));
 			AIVS_TargetDir(self, &d);
 			double ang = Vec3_Angle(&fwd, &d);
 			if ((double)g_OffsetAngShootAI + cone > ang) {
@@ -352,9 +352,9 @@ void __fastcall cAIVehicleShoot_FireCM(cAIVehicleShoot *self) {
 			vec3_t d, rot, fwd;
 			AIVS_TargetDir(self, &d);
 			cEntity *tr = AIVS_Target(self);
-			float r = AIVE_Vtbl(tr)->GetRadius(tr);
+			float r = Obj_Vtbl(tr)->GetRadius(tr);
 			double cone = Game_Atan2((double)r, (double)dist);
-			Vec3_Rotate(&fwd, &aivs_back, AIVE_Vtbl(self->vehicle)->GetRot(self->vehicle, &rot));
+			Vec3_Rotate(&fwd, &aivs_back, Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot));
 			double ang = Vec3_Angle(&fwd, &d);
 			if (!((double)g_OffsetAngShootAI + cone > ang)) {
 				goto far;

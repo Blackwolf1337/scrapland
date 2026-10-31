@@ -94,7 +94,7 @@ void Mayor_SphereFunc(cAbstractFile *params) {
 		return;
 	}
 	e->vftable->GetPos(e, &pos);
-	if (!ChType_Vtbl(e)->FindAction(e, "Dazed") ||
+	if (!WithLife_Vtbl(e)->GetAction(e, "Dazed") ||
 		!Logic_InView(g_MayorSearchEnt, &pos, g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1)) {
 		return;
 	}

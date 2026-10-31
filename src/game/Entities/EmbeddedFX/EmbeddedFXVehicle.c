@@ -196,7 +196,7 @@ void __fastcall cEmbeddedFXVehicle_Update(cEmbeddedFXVehicle *self) {
 	float dt;
 
 	CHECK(self->owner);
-	model = FX_Vtbl(self->owner)->GetModel(self->owner);
+	model = Obj_Vtbl(self->owner)->GetModel(self->owner);
 	CHECK(CGameModel_IsLoaded(model));
 	if (CGameModel_IsEnabled(model) && CGameModel_IsVisible(model) && self->owner->flag_4c) {
 		if (!self->visible || !CGameModel_IsEnabled(&self->model)) {
@@ -253,13 +253,13 @@ void __fastcall cEmbeddedFXVehicle_Update(cEmbeddedFXVehicle *self) {
 		uint32_t fx = CGameModel_GetEffect(Vehicle_Model(self->owner), NULL);
 		if (self->alpha >= 1.0f) {
 			if (fx == VEHICLE_FX_FADE) {
-				FX_Vtbl(self->owner)->SetFX(self->owner, 0);
+				Obj_Vtbl(self->owner)->SetEffect(self->owner, 0);
 			}
 		} else if (fx == 0 || fx == VEHICLE_FX_FADE) {
 			if (fx == 0) {
-				FX_Vtbl(self->owner)->SetFX(self->owner, VEHICLE_FX_FADE);
+				Obj_Vtbl(self->owner)->SetEffect(self->owner, VEHICLE_FX_FADE);
 			}
-			FX_Vtbl(self->owner)->SetFXParam(self->owner, 0, 1.0f - self->alpha);
+			Obj_Vtbl(self->owner)->SetEffectParam(self->owner, 0, 1.0f - self->alpha);
 		}
 	}
 	if (self->sirens) {
@@ -285,8 +285,8 @@ void __fastcall cEmbeddedFXVehicle_Hide(cEmbeddedFXVehicle *self) {
 	self->time = 0.0f;
 	self->fading = 0;
 	if (CGameModel_GetEffect(Vehicle_Model(self->owner), NULL) == VEHICLE_FX_FADE) {
-		FX_Vtbl(self->owner)->SetFX(self->owner, 0);
-		FX_Vtbl(self->owner)->SetFXParam(self->owner, 0, 0.0f);
+		Obj_Vtbl(self->owner)->SetEffect(self->owner, 0);
+		Obj_Vtbl(self->owner)->SetEffectParam(self->owner, 0, 0.0f);
 	}
 }
 
@@ -318,9 +318,9 @@ void __thiscall cEmbeddedFXVehicle_SetOwner(cEmbeddedFXVehicle *self, cEntity *o
 
 	self->attached = NULL;
 	self->owner = owner;
-	model = FX_Vtbl(owner)->GetModel(owner);
+	model = Obj_Vtbl(owner)->GetModel(owner);
 	CHECK(CGameModel_IsLoaded(model));
-	CGameModel_SetSortZ(&self->model, -FX_Vtbl(self->owner)->GetRadius(self->owner), 1.0f);
+	CGameModel_SetSortZ(&self->model, -Obj_Vtbl(self->owner)->GetRadius(self->owner), 1.0f);
 	int root = CGameModel_FindRenderNode(model, "DC_Root");
 	CHECK(root != -1);
 	self->rootPos = (vec3_t){0.0f, 0.0f, 0.0f};
@@ -368,8 +368,8 @@ void __fastcall cEmbeddedFXVehicle_StartFade(cEmbeddedFXVehicle *self) {
 	self->fading = 1;
 	self->alpha = 0.0f;
 	self->time = 0.0f;
-	FX_Vtbl(self->owner)->SetFX(self->owner, VEHICLE_FX_FADE);
-	FX_Vtbl(self->owner)->SetFXParam(self->owner, 0, 1.0f);
+	Obj_Vtbl(self->owner)->SetEffect(self->owner, VEHICLE_FX_FADE);
+	Obj_Vtbl(self->owner)->SetEffectParam(self->owner, 0, 1.0f);
 }
 
 void __thiscall cEmbeddedFXVehicle_SetAIRange(cEmbeddedFXVehicle *self, byte on) {
@@ -410,7 +410,7 @@ byte __fastcall cFXVehicleSirens_Init(cFXVehicleSirens *self) {
 		CHECK(g_SirenParticles->ParticleSystem);
 	}
 	CHECK(self->owner->owner);
-	CGameModel *vm = FX_Vtbl(self->owner->owner)->GetModel(self->owner->owner);
+	CGameModel *vm = Obj_Vtbl(self->owner->owner)->GetModel(self->owner->owner);
 	for (int i = 0; i < 2; i++) {
 		Str_PrintfQuiet(name, 0xff, "DF_SpeedTrail_%02d", i + 1);
 		int node = CGameModel_FindRenderNode(vm, name);
@@ -564,7 +564,7 @@ static void Probe_InitLight(CGameParticles *p, int n, int redMod, int redBase, i
 }
 
 byte __fastcall cEmbeddedFXVehicleProbe_Init(cEmbeddedFXVehicleProbe *self) {
-	CGameModel *model = FX_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
+	CGameModel *model = Obj_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
 
 	if (!model || !CGameModel_IsLoaded(model)) {
 		CheckFailed("model && model->HasModel()", __FILE__, __TIMESTAMP__, __LINE__);
@@ -612,7 +612,7 @@ static void Probe_Flash(CGameParticles *p, int src, int i1, int i2, float frac, 
 }
 
 void __fastcall cEmbeddedFXVehicleProbe_Update(cEmbeddedFXVehicleProbe *self) {
-	CGameModel *model = FX_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
+	CGameModel *model = Obj_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
 	vec3_t tmp, mrot, mpos, mrot2;
 	float frac, s, t;
 
@@ -763,7 +763,7 @@ cEmbeddedFXVehicleVote *__thiscall cEmbeddedFXVehicleVote_Delete(cEmbeddedFXVehi
 }
 
 byte __fastcall cEmbeddedFXVehicleVote_Init(cEmbeddedFXVehicleVote *self) {
-	CGameModel *model = FX_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
+	CGameModel *model = Obj_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
 
 	if (!model || !CGameModel_IsLoaded(model)) {
 		CheckFailed("model && model->HasModel()", __FILE__, __TIMESTAMP__, __LINE__);
@@ -799,7 +799,7 @@ void __thiscall cEmbeddedFXVehicleVote_Configure(cEmbeddedFXVehicleVote *self, i
 }
 
 void __fastcall cEmbeddedFXVehicleVote_Update(cEmbeddedFXVehicleVote *self) {
-	CGameModel *model = FX_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
+	CGameModel *model = Obj_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
 	vec3_t pos, rot, tmp, tmp2;
 	uint32_t color;
 

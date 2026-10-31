@@ -752,7 +752,7 @@ void __thiscall cEmbeddedFXMeetingPoint_SetCountDown(cEmbeddedFXMeetingPoint *se
 vec3_t *__thiscall cEmbeddedFXBike_EnginePos(cEmbeddedFXBike *self, vec3_t *out) {
 	matrix_t m;
 
-	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
 	CHECK(CGameModel_IsLoaded(model));
 	CHECK(self->nodeEngine[0] > -1);
 	CGameModel_NodeMatrix(model, &m, self->nodeEngine[0], 0, NULL, 0);
@@ -769,7 +769,7 @@ static CGameModel *EFXM_Owner(cEmbeddedFX *self, cEntity *e) {
 	self->ent = e;
 	CHECK(e);
 	CHECK(self->ent->vftable->IsType(self->ent, TYEN_OBJECT));
-	CGameModel *model = FX_Vtbl(self->ent)->GetModel(self->ent);
+	CGameModel *model = Obj_Vtbl(self->ent)->GetModel(self->ent);
 	CHECK(CGameModel_IsLoaded(model));
 	return model;
 }
@@ -1184,7 +1184,7 @@ void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f) {
  * trail too if given).
  */
 static CGameModel *EFXM_Shown(cEmbeddedFX *self, byte *visible, CGameTrail *trail) {
-	CGameModel *model = FX_Vtbl(self->ent)->GetModel(self->ent);
+	CGameModel *model = Obj_Vtbl(self->ent)->GetModel(self->ent);
 
 	if (!CGameModel_IsLoaded(model)) {
 		return NULL;
@@ -1206,7 +1206,7 @@ static CGameModel *EFXM_Shown(cEmbeddedFX *self, byte *visible, CGameTrail *trai
 
 /* the model if it is loaded and visible (*visible set); else NULL, the trail cleared when it was visible */
 static CGameModel *EFXM_ShownTrail(cEmbeddedFX *self, byte *visible, CGameTrail *trail) {
-	CGameModel *model = FX_Vtbl(self->ent)->GetModel(self->ent);
+	CGameModel *model = Obj_Vtbl(self->ent)->GetModel(self->ent);
 
 	if (!CGameModel_IsLoaded(model)) {
 		return NULL;
@@ -1719,7 +1719,7 @@ void __thiscall cEmbeddedFXMatrix_Update(cEmbeddedFXMatrix *self, float dt) {
 	vec3_t rot, d, ang, t1, t2, pp;
 	int anim;
 
-	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
 	if (!CGameModel_IsLoaded(model)) {
 		return;
 	}
@@ -1991,7 +1991,7 @@ void __thiscall cEmbeddedFXBossShield_Update(cEmbeddedFXBossShield *self, float 
 	vec3_t pos, rot, o, o2, P = { 0.0f, 0.0f, 0.0f };
 	uint32_t c = 0;
 
-	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
 	CHECK(CGameModel_IsLoaded(model));
 	if (self->mode < 1 || self->mode > 2) {
 		if (CGameModel_IsEnabled(model)) {
@@ -2150,7 +2150,7 @@ void __thiscall cEmbeddedFXBattery_Update(cEmbeddedFXBattery *self, float dt) {
 	matrix_t m;
 	vec3_t rot, d, ang, tmp, ta, tb, up;
 
-	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
 	if (!CGameModel_IsLoaded(model)) {
 		return;
 	}
@@ -2355,7 +2355,7 @@ static void EFXM_BikeVel(CGameParticles *p, float spread, float z1, float z2, co
  * with more puffs filling the way from where the engine was at the last one.
  */
 void __thiscall cEmbeddedFXBike_Update(cEmbeddedFXBike *self, float dt) {
-	CGameModel *model = FX_Vtbl(self->base.ent)->GetModel(self->base.ent);
+	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
 	matrix_t m;
 	vec3_t ang, dir, buf;
 

@@ -8,6 +8,7 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/net.h"
+#include "scrap/objentity.h"
 
 cServerNetManager *__thiscall cServerNetManager_ctor(cServerNetManager *self, cNetClient *client, int slot) {
 	cUserNetManager_ctor(&self->base, client, slot);
@@ -86,7 +87,7 @@ static void ServerNet_ReadEntities(cServerNetManager *self, int size) {
 		if (g_LogNetData) {
 			start = cFileMem_Tell(g_NetMsg);
 		}
-		Net_Vtbl(e)->NetRead(e, g_NetMsg, isNew);
+		Obj_Vtbl(e)->NetRead(e, g_NetMsg, isNew);
 		if (g_LogNetData) {
 			int end = cFileMem_Tell(g_NetMsg);
 			cFileMem_Seek(g_NetMsg, start);
@@ -217,7 +218,7 @@ void __thiscall cServerNetManager_Send(cServerNetManager *self, uint32_t time) {
 	CHECK(e->vftable->IsType(e, TYEN_CAR));
 	cFileMem_SetBuffer(g_NetMsg, buf, 8000, 0, 0);
 	cFileMem_Open(g_NetMsg, "", 6);
-	Net_Vtbl(e)->NetWrite(e, 0.0f, g_NetMsg, 0);
+	Obj_Vtbl(e)->NetWrite(e, 0.0f, g_NetMsg, 0);
 	int n = cFileMem_Size(g_NetMsg);
 	cNetClient_Send(Net_GetClient(), time, 0, n, buf);
 	cFileMem_Close(g_NetMsg);

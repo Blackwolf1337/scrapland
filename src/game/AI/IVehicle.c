@@ -31,26 +31,6 @@
 #define AIV_HOOK_ANGLE 0.7853981633974483	/* pi / 4 (rva 0x3a8e30) */
 #define AIV_ARRIVED_DIST2 4000000.0f		/* rva 0x3a8e54 */
 
-/* the vehicle entity slots of the AI (thiscall) */
-typedef struct AIVehEntVtbl {
-	void *vf00_1f[32];
-	vec3_t *(__thiscall *GetRot)(cEntity *self, vec3_t *out);	/* 0x80 */
-	void(__thiscall *SetRot)(cEntity *self, const vec3_t *rot);	/* 0x84 */
-	vec3_t *(__thiscall *GetVel)(cEntity *self, vec3_t *out);	/* 0x88 */
-	void(__thiscall *SetVel)(cEntity *self, const vec3_t *vel);	/* 0x8c */
-	void *vf24_27[4];
-	float(__thiscall *GetRadius)(cEntity *self);			/* 0xa0 */
-	void *vf29_36[14];
-	byte(__thiscall *IsEMI)(cEntity *self);				/* 0xdc EMICounter > 0 */
-} AIVehEntVtbl;
-SD_OFFSET(AIVehEntVtbl, SetVel, 0x8c);
-SD_OFFSET(AIVehEntVtbl, GetRadius, 0xa0);
-SD_OFFSET(AIVehEntVtbl, IsEMI, 0xdc);
-
-static inline const AIVehEntVtbl *AIV_EntVtbl(cEntity *e) {
-	return (const AIVehEntVtbl *)e->vftable;
-}
-
 static inline cVehicleTraffic *AIV_VehTraffic(cEntity *v) {
 	return &Veh(v)->traffic;
 }
@@ -704,7 +684,7 @@ static const vec3_t s_Nose = { 0.0f, 0.0f, -1.0f };
 static void AIV_NoseDir(cAIVehicle *self, vec3_t *dir) {
 	vec3_t rot;
 
-	AIV_EntVtbl(self->vehicle)->GetRot(self->vehicle, &rot);
+	Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot);
 	Vec3_Rotate(dir, &s_Nose, &rot);
 }
 
@@ -1135,12 +1115,12 @@ byte __thiscall cAIVehicle_PlaceOnTrack(cAIVehicle *ai, int type, const vec3_t *
 	d.y = pos->y - np.y;
 	d.z = pos->z - np.z;
 	Vec3_GetRotAng(&ang, &d);
-	AIV_EntVtbl(self->vehicle)->SetRot(self->vehicle, &ang);
+	Obj_Vtbl(self->vehicle)->SetAng(self->vehicle, &ang);
 	cAIVehicleControl_Stop(self->control);
 	tmp.x = 0.0f;
 	tmp.y = 0.0f;
 	tmp.z = 0.0f;
-	AIV_EntVtbl(self->vehicle)->SetVel(self->vehicle, &tmp);
+	Obj_Vtbl(self->vehicle)->SetVel(self->vehicle, &tmp);
 	np = *cAIVehicle_TrackPointRandom(self, &tmp, &np, self->track, self->node);
 	AIV_StartTrack(self, 1, &np);
 	self->i34 = 2;
@@ -1243,7 +1223,7 @@ byte __thiscall cAIVehicle_TestHookPoint(cAIVehicle *self, vec3_t *p) {
 	vec3_t rot, f, d, c, n, e, h, u, o, tmp;
 	static const vec3_t back = { 0.0f, 0.0f, -1.0f };
 
-	AIV_EntVtbl(self->vehicle)->GetRot(self->vehicle, &rot);
+	Obj_Vtbl(self->vehicle)->GetAng(self->vehicle, &rot);
 	vec3_t z = back;
 	Vec3_Rotate(&f, &z, &rot);
 	AIV_Unit(&d, &f);
@@ -1337,7 +1317,7 @@ vec3_t *__thiscall cAIVehicle_TrackPoint(cAIVehicle *self, vec3_t *out, const ve
 
 static float AIV_TrackRoom(cAIVehicle *self, CNodesTraffic *t, int track) {
 	float rt = t->vftable->GetRadius(t, track);
-	return rt - AIV_EntVtbl(self->vehicle)->GetRadius(self->vehicle);
+	return rt - Obj_Vtbl(self->vehicle)->GetRadius(self->vehicle);
 }
 
 /* rand() in -w..w as the original computes it */
@@ -1462,7 +1442,7 @@ static int AIV_ReposSlowShip(cCamControl *cam) {
 	if (!ship) {
 		return 0;
 	}
-	const vec3_t *v = AIV_EntVtbl(ship)->GetVel(ship, &tmp);
+	const vec3_t *v = Obj_Vtbl(ship)->GetVel(ship, &tmp);
 	float speed = (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
 	return g_VelReposBackAI > speed;
 }
@@ -1487,10 +1467,10 @@ static void AIV_ReposStop(cAIVehicle *self, const vec3_t *d) {
 	vec3_t ang;
 
 	Vec3_GetRotAng(&ang, d);
-	AIV_EntVtbl(self->vehicle)->SetRot(self->vehicle, &ang);
+	Obj_Vtbl(self->vehicle)->SetAng(self->vehicle, &ang);
 	cAIVehicleControl_Stop(self->control);
 	vec3_t zero = { 0.0f, 0.0f, 0.0f };
-	AIV_EntVtbl(self->vehicle)->SetVel(self->vehicle, &zero);
+	Obj_Vtbl(self->vehicle)->SetVel(self->vehicle, &zero);
 }
 
 /* a traffic node near the camera of the view: in the cone of view (dir) between minVis and maxVis, else behind it
@@ -2040,12 +2020,12 @@ common: {
 	if (s != AIV_TRAFFIC && s != AIV_TRAFFIC_INDOOR && s != AIV_FREEZE && s != AIV_FREEZE_LOST &&
 			s != AIV_FREEZE_OBJ_NOT_ACCESS && s != AIV_FREEZE_CHANGE_STATE && s != AIV_FIGHTING_FREEZE) {
 		cEntity *v = self->vehicle;
-		if (!(AIV_EntVtbl(v)->GetRadius(v) < g_RadiusShipGraph)) {
+		if (!(Obj_Vtbl(v)->GetRadius(v) < g_RadiusShipGraph)) {
 			const char *vname = self->vehicle->name;
 			Con_Bluef("RADIO VEHICULO INVALIDO: %s %f\n", vname,
-				(double)AIV_EntVtbl(self->vehicle)->GetRadius(self->vehicle));
+				(double)Obj_Vtbl(self->vehicle)->GetRadius(self->vehicle));
 		}
-		CHECK(AIV_EntVtbl(self->vehicle)->GetRadius(self->vehicle) < g_RadiusShipGraph);
+		CHECK(Obj_Vtbl(self->vehicle)->GetRadius(self->vehicle) < g_RadiusShipGraph);
 	}
 	}
 	if (AIV_Target(self)) {
@@ -2448,7 +2428,7 @@ static byte AIV_TargetBlocked(cAIVehicle *self) {
 static byte AIV_PlaceFree(cAIVehicle *self) {
 	vec3_t a, b;
 	cEntity *v = self->vehicle;
-	float r = AIV_EntVtbl(v)->GetRadius(v);
+	float r = Obj_Vtbl(v)->GetRadius(v);
 	const vec3_t *pa = v->vftable->GetPos(v, &a);
 	const vec3_t *pb = v->vftable->GetPos(v, &b);
 
@@ -2564,7 +2544,7 @@ void __thiscall cAIVehicle_ReactFighting(cAIVehicle *self) {
 	}
 	if (cAIVehicleShoot_HasHook(self->shoot) && self->params.percHook > 0) {
 		t = AIV_Target(self);
-		if (!AIV_EntVtbl(t)->IsEMI(t) && cAIVehicleControl_GetFlag(self->control) &&
+		if (!WithLife_Vtbl(t)->IsEMIed(t) && cAIVehicleControl_GetFlag(self->control) &&
 				cAIVehicle_InHookRange(self, AIV_Target(self)) && crt_rand() % 101 <= self->params.percHook) {
 			cAIVehicle_SetStateIntern(self, AIV_FIGHTING_HOOK, AIV_Target(self));
 		}
@@ -2576,7 +2556,7 @@ void __thiscall cAIVehicle_ReactFighting(cAIVehicle *self) {
 void __thiscall cAIVehicle_ReactHook(cAIVehicle *self) {
 	cEntity *t = AIV_Target(self);
 
-	if (!AIV_EntVtbl(t)->IsEMI(t) && cAIVehicleControl_GetFlag(self->control) &&
+	if (!WithLife_Vtbl(t)->IsEMIed(t) && cAIVehicleControl_GetFlag(self->control) &&
 			cAIVehicle_InHookRange(self, AIV_Target(self))) {
 		if (self->params.percHookGetAway > 0 && self->hookMode != 0) {
 			if (!(self->f330 > 1.0f)) {
@@ -2693,7 +2673,7 @@ void __thiscall cAIVehicle_ThinkLostPath(cAIVehicle *self) {
 	do {
 		vec3_t a;
 		cEntity *v = self->vehicle;
-		float r = AIV_EntVtbl(v)->GetRadius(v);
+		float r = Obj_Vtbl(v)->GetRadius(v);
 		const vec3_t *p = v->vftable->GetPos(v, &a);
 		if (CNodesWorld_HasPointVis(g_NodesWorld, p, r) && AIV_PlaceFree(self)) {
 			cVehicleTraffic_SetOff(AIV_VehTraffic(self->vehicle), 0);
@@ -3173,7 +3153,7 @@ void __thiscall cAIVehicle_GraphTraffic(cAIVehicle *self) {
 	if (cam->base.vftable->IsType(&cam->base, FCAM_CLASSNAME)) {
 		cEntity *ship = cCamEntity_GetTarget(&cam->base);
 		if (ship) {
-			const vec3_t *v = AIV_EntVtbl(ship)->GetVel(ship, &tmp);
+			const vec3_t *v = Obj_Vtbl(ship)->GetVel(ship, &tmp);
 			slow = g_VelReposStopAI > (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
 		}
 	}

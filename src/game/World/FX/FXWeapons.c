@@ -538,7 +538,7 @@ void __thiscall cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, con
 	self->to = hit;
 	self->from = origin;
 	CHECK(self->shooter);
-	CGameModel *model = FX_Vtbl(self->shooter)->GetModel(self->shooter);
+	CGameModel *model = Obj_Vtbl(self->shooter)->GetModel(self->shooter);
 	CHECK(CGameModel_IsLoaded(model));
 	self->numSlots = 0;
 	for (int i = 0; i < FXATPC_SLOTS; i++) {
@@ -664,7 +664,7 @@ void __thiscall cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, con
 
 	/* the sparks from the hit towards the shooter */
 	vec3_t ctr, back;
-	const vec3_t *cp = FX_Vtbl(self->shooter)->GetCenter(self->shooter, &ctr);
+	const vec3_t *cp = Obj_Vtbl(self->shooter)->GetViewPos(self->shooter, &ctr);
 	FX_Normalize(&back, cp->x - self->to.x, cp->y - self->to.y, cp->z - self->to.z);
 	CGameParticles_SetSparksOn(p, 1);
 	for (int i = 0; i < 32; i++) {
@@ -1457,7 +1457,7 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 	if (!self->emitter) {
 		return;
 	}
-	CGameModel *em = FX_Vtbl(self->emitter)->GetModel(self->emitter);
+	CGameModel *em = Obj_Vtbl(self->emitter)->GetModel(self->emitter);
 	CGameModel *dm = Debris_Model(debris);
 	vec3_t tmp, tmp2;
 	CHECK(CGameModel_IsLoaded(em));
@@ -1504,9 +1504,9 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 	/* the end of the ray: before the target, else the aim of the emitter */
 	vec3_t *tp = &self->tpos;
 	if (self->target) {
-		*tp = *FX_Vtbl(self->target)->GetCenter(self->target, &tmp);
+		*tp = *Obj_Vtbl(self->target)->GetViewPos(self->target, &tmp);
 		float r = Entity_F3a0(self->target);
-		const vec3_t *ec = FX_Vtbl(self->emitter)->GetCenter(self->emitter, &tmp);
+		const vec3_t *ec = Obj_Vtbl(self->emitter)->GetViewPos(self->emitter, &tmp);
 		vec3_t n;
 		FX_Normalize(&n, ec->x - tp->x, ec->y - tp->y, ec->z - tp->z);
 		FXW_TeslaBack(tp, &n, r);
@@ -1520,9 +1520,9 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 		float range = g_TeslaRange;
 		e->vftable->GetTargetAngle(e, &ang.x, range, &hit);
 		if (hit && hit->vftable->IsType(hit, TYEN_CAR)) {
-			*tp = *FX_Vtbl(hit)->GetCenter(hit, &tmp);
+			*tp = *Obj_Vtbl(hit)->GetViewPos(hit, &tmp);
 			float r = Entity_F3a0(hit);
-			const vec3_t *ec = FX_Vtbl(self->emitter)->GetCenter(self->emitter, &tmp);
+			const vec3_t *ec = Obj_Vtbl(self->emitter)->GetViewPos(self->emitter, &tmp);
 			vec3_t dv, n;
 			dv.x = ec->x - tp->x;
 			dv.y = ec->y - tp->y;
@@ -1565,7 +1565,7 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 		node.y = m->m[13];
 		node.z = m->m[14];
 		P[1] = node;
-		const vec3_t *r = Vec3_Rotate(&o, &v, FX_Vtbl(self->emitter)->GetAngles(self->emitter, &tmp2));
+		const vec3_t *r = Vec3_Rotate(&o, &v, Obj_Vtbl(self->emitter)->GetViewAng(self->emitter, &tmp2));
 		int n = self->numPts;
 		P[2].z = r->z + node.z;
 		P[2].x = node.x + r->x;
@@ -1867,7 +1867,7 @@ void __thiscall cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity 
 	self->shooting = 1;
 	self->first = 1;
 	CHECK(e);
-	CHECK(CGameModel_IsLoaded(FX_Vtbl(self->emitter)->GetModel(self->emitter)));
+	CHECK(CGameModel_IsLoaded(Obj_Vtbl(self->emitter)->GetModel(self->emitter)));
 	self->numSlots = 0;
 	for (int i = 0; i < FXTESLA_SLOTS; i++) {
 		if (cTargetLock_HasSlot(Entity_TargetLock(self->emitter), g_TeslaIDWeap, i)) {

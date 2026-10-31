@@ -185,7 +185,7 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 	self->sparkTime = self->sparkTime + delta;
 	e = self->emitter;
 	if (e && e->flag_4c) {
-		CGameModel_SetPos(Debris_Model(debris), FX_Vtbl(e)->GetCenter(e, &tmp));
+		CGameModel_SetPos(Debris_Model(debris), Obj_Vtbl(e)->GetViewPos(e, &tmp));
 		CGameModel_SetSortZ(Debris_Model(debris), -5.0f, 1.0f);
 	}
 	e = self->emitter;
@@ -202,7 +202,7 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 			return;
 		}
 		if (!CGameModel_IsVisible(model)) {
-			const vec3_t *c = FX_Vtbl(self->emitter)->GetCenter(self->emitter, &rot);
+			const vec3_t *c = Obj_Vtbl(self->emitter)->GetViewPos(self->emitter, &rot);
 			const vec3_t *cam = cWorld_GetCamPos(g_pWorld, &tmp);
 			float dy = cam->y - c->y, dx = cam->x - c->x, dz = cam->z - c->z;
 			if (!(g_HookRange * g_HookRange > dy * dy + dx * dx + dz * dz)) {
@@ -217,7 +217,7 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 		self->points[0].y = m->m[13];
 		self->points[0].z = m->m[14];
 		int n = CGameTrail_GetMaxTrails(&self->trail[0]) - 1;
-		const vec3_t *v = Vec3_Rotate(&r, &off, FX_Vtbl(self->emitter)->GetAngles(self->emitter, &rot));
+		const vec3_t *v = Vec3_Rotate(&r, &off, Obj_Vtbl(self->emitter)->GetViewAng(self->emitter, &rot));
 		float inv = 1.0f / (float)n;
 		float sx = inv * v->x, sy = v->y * inv, sz = v->z * inv;
 		CGameTrail_Reset(&self->trail[0]);
@@ -241,14 +241,14 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 		self->points[0].x = m->m[12];
 		self->points[0].y = m->m[13];
 		self->points[0].z = m->m[14];
-		const vec3_t *v = Vec3_Rotate(&r, &off, FX_Vtbl(self->emitter)->GetAngles(self->emitter, &rot));
+		const vec3_t *v = Vec3_Rotate(&r, &off, Obj_Vtbl(self->emitter)->GetViewAng(self->emitter, &rot));
 		self->points[1].x = v->x + self->points[0].x;
 		self->points[1].y = self->points[0].y + v->y;
 		self->points[1].z = self->points[0].z + v->z;
 		const vec3_t *end = NULL;
 		e = self->target;
 		if (e && e->flag_4c && Entity_IsType(e, TYEN_WITH_LIFE)) {
-			end = FX_Vtbl(self->target)->GetCenter(self->target, &tmp);
+			end = Obj_Vtbl(self->target)->GetViewPos(self->target, &tmp);
 		} else if (self->active && cTargetLock_GetPoint(Entity_TargetLock(self->emitter))) {
 			end = cTargetLock_GetPoint(Entity_TargetLock(self->emitter));
 		}
@@ -284,7 +284,7 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 	}
 	if (!CGameModel_IsVisible(model)) {
 		vec3_t cam = g_pWorld->camPos[g_pWorld->curCam];
-		const vec3_t *c = FX_Vtbl(self->emitter)->GetCenter(self->emitter, &tmp);
+		const vec3_t *c = Obj_Vtbl(self->emitter)->GetViewPos(self->emitter, &tmp);
 		float dy = cam.y - c->y, dx = cam.x - c->x, dz = cam.z - c->z;
 		if (!(g_HookRange * g_HookRange > dy * dy + dx * dx + dz * dz)) {
 			goto off;
@@ -578,11 +578,11 @@ static void EMI_Bolt(cObjElementFXEMI *self, int i, const vec3_t *pos, float dt,
 	cEntity *tgt = self->links[i].target;
 	if (tgt) {
 		const vec3_t *d = FX_RandomDir(&tmp);
-		float r = FX_Vtbl(tgt)->GetRadius(tgt);
+		float r = Obj_Vtbl(tgt)->GetRadius(tgt);
 		float ox = r * d->x * 0.16666667f;
 		float oy = r * d->y * 0.16666667f;
 		float oz = r * d->z * 0.16666667f;
-		const vec3_t *c = FX_Vtbl(tgt)->GetCenter(tgt, &tmp);
+		const vec3_t *c = Obj_Vtbl(tgt)->GetViewPos(tgt, &tmp);
 		vec3_t *e = &self->pts[i][self->numPoints - 1];
 		e->x = ox + c->x;
 		e->y = c->y + oy;
@@ -741,11 +741,11 @@ static void EMI_NewBolt(cObjElementFXEMI *self, int i, const vec3_t *pos, float 
 	if (sphere) {
 		kind = 2;
 		d = FX_RandomDir(&tmp);
-		float r = FX_Vtbl(found)->GetRadius(found);
+		float r = Obj_Vtbl(found)->GetRadius(found);
 		float ox = d->x * r * 0.16666667f;
 		float oy = d->y * r * 0.16666667f;
 		float oz = d->z * r * 0.16666667f;
-		const vec3_t *c = FX_Vtbl(found)->GetCenter(found, &tmp);
+		const vec3_t *c = Obj_Vtbl(found)->GetViewPos(found, &tmp);
 		hit.x = c->x + ox;
 		hit.y = c->y + oy;
 		hit.z = c->z + oz;
@@ -864,7 +864,7 @@ void __thiscall cObjElementFXEMI_Update(cObjElementFXEMI *self, cDebris *debris,
 	CGameModel_GetRot(model, &rot);
 	e = self->entity;
 	if (e && e->flag_4c) {
-		pos = *FX_Vtbl(e)->GetCenter(e, &tmp);
+		pos = *Obj_Vtbl(e)->GetViewPos(e, &tmp);
 		CGameModel_SetPos(model, &pos);
 		CGameModel_SetRot(model, &rot);
 	}
@@ -1210,8 +1210,8 @@ void __thiscall cObjElementFXDebrisCloud_Update(cObjElementFXDebrisCloud *self, 
 	self->emitT = self->emitT + delta;
 	e = self->entity;
 	if (e && e->flag_4c) {
-		FX_Vtbl(e)->GetCenter(e, &pos);
-		FX_Vtbl(self->entity)->GetAngles(self->entity, &rot);
+		Obj_Vtbl(e)->GetViewPos(e, &pos);
+		Obj_Vtbl(self->entity)->GetViewAng(self->entity, &rot);
 		CGameModel_SetPos(model, &pos);
 		CGameModel_SetRot(model, &rot);
 	}

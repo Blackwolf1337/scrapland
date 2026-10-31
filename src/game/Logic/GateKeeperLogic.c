@@ -136,7 +136,7 @@ void __thiscall cGateKeeperLocalLogic_Update(cGateKeeperLocalLogic *self, float 
 			Nto1Node_Unlink(n);
 			cActCtrl_PlayNew(ChType_ActCtrl(p), "Relax0", 1, 1.0f);
 		} else {
-			ChType_Vtbl(p)->SetViewAng(p, Obj_Vtbl(p)->GetAng(p, &tmp));
+			WChar_Vtbl(p)->SetViewAng(p, Obj_Vtbl(p)->GetAng(p, &tmp));
 		}
 	}
 alarm:
@@ -189,7 +189,7 @@ byte __thiscall cGateKeeperLocalLogic_SetState(cGateKeeperLocalLogic *self, int 
 	cEntity *p = self->base.parent;
 
 	if (state == 1) {
-		act = ChType_Vtbl(p)->FindAction(p, "Hide");
+		act = WithLife_Vtbl(p)->GetAction(p, "Hide");
 		if (!act) {
 			return 0;
 		}
