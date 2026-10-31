@@ -84,7 +84,7 @@ typedef struct CLight {
 	vec3_t dir;			/* 0x1c in the node's frame */
 	byte color[4];			/* 0x28 r, g, b, a */
 	float intensity;		/* 0x2c */
-	float f30;			/* 0x30 */
+	float rangeStart;		/* 0x30 "AtenIni": the attenuation starts there */
 	float range;			/* 0x34 0: no limit */
 	float theta;			/* 0x38 degrees */
 	float phi;			/* 0x3c degrees */

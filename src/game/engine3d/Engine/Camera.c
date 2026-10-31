@@ -43,8 +43,8 @@ CCamera *__fastcall CCamera_ctor(CCamera *self) {
 	self->nodeTarget = NULL;
 	self->zNear = 1.0f;
 	self->zFar = 1000.0f;
-	self->f34 = 0.0f;
-	self->f38 = 1000.0f;
+	self->rangeNear = 0.0f;
+	self->rangeFar = 1000.0f;
 	self->fov = 0.78539819f;
 	self->aspect = 1.3333334f;
 	self->aspectScreen = 1.3333334f;
@@ -99,8 +99,8 @@ static const struct {
 	uint8_t off, size;
 } cameraFields[] = {
 	{ offsetof(CCamera, rot), 12 }, { offsetof(CCamera, pos), 12 }, { offsetof(CCamera, target), 12 },
-	{ offsetof(CCamera, zNear), 4 }, { offsetof(CCamera, zFar), 4 }, { offsetof(CCamera, f34), 4 },
-	{ offsetof(CCamera, f38), 4 }, { offsetof(CCamera, fov), 4 }, { offsetof(CCamera, aspect), 4 },
+	{ offsetof(CCamera, zNear), 4 }, { offsetof(CCamera, zFar), 4 }, { offsetof(CCamera, rangeNear), 4 },
+	{ offsetof(CCamera, rangeFar), 4 }, { offsetof(CCamera, fov), 4 }, { offsetof(CCamera, aspect), 4 },
 	{ offsetof(CCamera, aspectScreen), 4 }, { offsetof(CCamera, mode), 4 },
 };
 

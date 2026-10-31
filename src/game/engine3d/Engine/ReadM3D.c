@@ -1311,8 +1311,8 @@ void M3D_ReadCamera(CNode3D *node, byte anim, int frame) {
 		cam->zNear = M3D_ReadFloat("RecorteCercano:");
 		cam->zFar = M3D_ReadFloat("RecorteLejano:");
 	}
-	cam->f34 = M3D_ReadFloat("RangoCerca:");
-	cam->f38 = M3D_ReadFloat("RangoLejos:");
+	cam->rangeNear = M3D_ReadFloat("RangoCerca:");
+	cam->rangeFar = M3D_ReadFloat("RangoLejos:");
 	M3D_ReadFloat("DistObjetivo:");
 	if ((double)(cam->zFar / cam->zNear) > 1000000.0) {
 		E3D_LogDebug(g_FileLog, "WARN: Invalid camera clipping range: %s", node->name);
@@ -1378,7 +1378,7 @@ void M3D_ReadLight(CNode3D *node, byte anim, int frame) {
 	}
 	if (M3D_ReadBool("Atenuacion:")) {
 		float scale = (dat->mt.scale.y + dat->mt.scale.x + dat->mt.scale.z) * 0.33333334f;
-		light->f30 = M3D_ReadFloat("AtenIni:") * scale;
+		light->rangeStart = M3D_ReadFloat("AtenIni:") * scale;
 		light->range = M3D_ReadFloat("AtenFin:") * scale;
 	}
 	int v;

@@ -244,7 +244,7 @@ void __thiscall CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj
 		m = &rel;
 	}
 	D3DX_Vec3Transform((vec3_t *)v, &pos, m);
-	if (cam->f34 > v[2]) {
+	if (cam->rangeNear > v[2]) {
 		return;
 	}
 	D3DX_Vec3Transform((vec3_t *)s, (const vec3_t *)v, &proj);

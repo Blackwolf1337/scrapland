@@ -156,7 +156,7 @@ CLight *__fastcall CLight_ctor(CLight *self) {
 	self->shadow = 0;
 	self->ena_D3D = 0;
 	self->active = 0;
-	self->f30 = 0.0f;
+	self->rangeStart = 0.0f;
 	self->range = 0.0f;
 	self->theta = 43.0f;
 	self->phi = 45.0f;
@@ -476,7 +476,7 @@ static const struct {
 } lightFields[] = {
 	{ offsetof(CLight, sector), 4 }, { offsetof(CLight, type), 4 }, { offsetof(CLight, shadow), 1 },
 	{ offsetof(CLight, pos), 12 }, { offsetof(CLight, dir), 12 }, { offsetof(CLight, color), 8 },
-	{ offsetof(CLight, f30), 4 }, { offsetof(CLight, range), 4 }, { offsetof(CLight, theta), 4 },
+	{ offsetof(CLight, rangeStart), 4 }, { offsetof(CLight, range), 4 }, { offsetof(CLight, theta), 4 },
 	{ offsetof(CLight, phi), 4 }, { offsetof(CLight, mult), 4 }, { offsetof(CLight, f44), 4 },
 };
 

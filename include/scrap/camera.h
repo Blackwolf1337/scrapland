@@ -26,8 +26,8 @@ typedef struct CCamera {
 	vec3_t target;			/* 0x20 */
 	float zNear;			/* 0x2c */
 	float zFar;			/* 0x30 */
-	float f34;			/* 0x34 */
-	float f38;			/* 0x38 */
+	float rangeNear;		/* 0x34 "RangoCerca" */
+	float rangeFar;			/* 0x38 "RangoLejos" */
 	float fov;			/* 0x3c radians */
 	float aspect;			/* 0x40 */
 	float aspectScreen;		/* 0x44 */

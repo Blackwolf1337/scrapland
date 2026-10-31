@@ -864,7 +864,7 @@ static void Engine_SceneTreeNode(void *tree, TvInsert *tv, CNode3D *n) {
 		TreeView_InsertItemf(tree, tv, "Rot: %s", Vec3_StrDeg(&cam->rot, 0, 2));
 		TreeView_InsertItemf(tree, tv, "FOV: %f", (double)cam->fov * 180.0 / 3.141592653589793);
 		TreeView_InsertItemf(tree, tv, "Clip: %f %f", (double)cam->zNear, (double)cam->zFar);
-		TreeView_InsertItemf(tree, tv, "Range: %f %f", (double)cam->f34, (double)cam->f38);
+		TreeView_InsertItemf(tree, tv, "Range: %f %f", (double)cam->rangeNear, (double)cam->rangeFar);
 		TreeView_InsertItemf(tree, tv, "Target: %s", Node_RefName(cam->nodeTarget));
 		TreeView_InsertItemf(tree, tv, "LookAt: %s", Vec3_Str(&cam->target, 0, 6));
 		TreeView_InsertItemf(tree, tv, "PhysAspect: %f", (double)cam->aspect);
@@ -881,7 +881,7 @@ static void Engine_SceneTreeNode(void *tree, TvInsert *tv, CNode3D *n) {
 		v = l->d3d.Direction;
 		TreeView_InsertItemf(tree, tv, "DirRender: %s", Vec3_Str(&v, 0, 6));
 		TreeView_InsertItemf(tree, tv, "Color: %s", Engine_ColorStr(l->color));
-		TreeView_InsertItemf(tree, tv, "Rango: %f %f", (double)l->f30, (double)l->range);
+		TreeView_InsertItemf(tree, tv, "Rango: %f %f", (double)l->rangeStart, (double)l->range);
 		TreeView_InsertItemf(tree, tv, "Objetivo: %s", Node_RefName(l->nodeTarget));
 	}
 	if (CNode3D_Class(n) == CLASS_OBJ3D_MESHD3D) {

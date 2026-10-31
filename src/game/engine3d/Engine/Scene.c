@@ -650,7 +650,7 @@ void __thiscall CScene_SetScale(CScene *self, const vec3_t *s) {
 			l->pos.y = s->y * l->pos.y;
 			l->pos.z = s->z * l->pos.z;
 			Vec3_TransformDir0(&l->dir, &l->dir, &m);
-			l->f30 = l->f30 * k;
+			l->rangeStart = l->rangeStart * k;
 			l->range = l->range * k;
 		}
 		if (CNode3D_Class(n) == CLASS_OBJ3D_GRAPHIC3D) {

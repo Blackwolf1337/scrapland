@@ -60,7 +60,7 @@ void Bsp_TakeLights(CScene *scn) {
 		l->cache[1] = 0;
 		l->cache[2] = 0;
 		CLight_FillD3D(light, &l->illum.d3d);
-		l->illum.rangeIni = light->f30;
+		l->illum.rangeIni = light->rangeStart;
 		l->illum.d3d.Position = l->pos;
 		l->illum.d3d.Direction = l->dir;
 		l->stencil = light->shadow && n->flags & NODE_SHADOW;
@@ -69,7 +69,7 @@ void Bsp_TakeLights(CScene *scn) {
 			"d:(%.2f %.2f %.2f) a:(%.2f %.2f) r:(%.2f %.2f) [%s]\n", g_BspNumLights - 1, l->shadow, l->stencil, l->noLmap,
 			!l->point, (double)l->rad, light->color[0], light->color[1], light->color[2], light->color[3],
 			(double)light->intensity, (double)l->pos.x, (double)l->pos.y, (double)l->pos.z, (double)l->dir.x,
-			(double)l->dir.y, (double)l->dir.z, (double)light->theta, (double)light->phi, (double)light->f30,
+			(double)l->dir.y, (double)l->dir.z, (double)light->theta, (double)light->phi, (double)light->rangeStart,
 			(double)light->range, l->name);
 		if (light->intensity < 0.0f) {
 			Con_Warnf("Light with negative intensity: %s\n", n->name);
