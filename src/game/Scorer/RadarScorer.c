@@ -17,7 +17,7 @@
 #include "scrap/world.h"
 
 /* the turn of the camera of the radar (FCam) */
-#define CamEntity_AngY(e) (*(float *)((byte *)(e) + 0x8c))
+#define CamEntity_AngY(e) (((cCamControl *)(e))->cam.rot.y)
 /* the center of an entity (slot 0x74) */
 #define Entity_GetCenter(e, out) ENT_VF(e, 0x74, vec3_t * (__thiscall *)(cEntity *, vec3_t *))(e, out)
 

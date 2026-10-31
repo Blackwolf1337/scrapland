@@ -41,7 +41,7 @@
 #define g_OnNeedMoreChasingTraffic (GAME_ARRAY_IN(cPy_Function, GVar_OnNeedMoreChasingTraffic, 16, 0x44dce8))
 #define g_iTrafficNumber GAME_GLOBAL_IN(int, GVar_iTrafficNumber, 16, 0x44dd0c)
 /* the callback of the AI when the move ends (rva 0x15c of the AI) */
-#define AIV_OnEnd(ai) (*(void **)((byte *)(ai) + 0x15c))
+#define AIV_OnEnd(ai) (((cAIVehicle *)(ai))->onArrive)
 
 /* the AI back to the traffic: the patrol (state 3) with its defaults */
 static void Traffic_Patrol(cAIVehicle *ai) {

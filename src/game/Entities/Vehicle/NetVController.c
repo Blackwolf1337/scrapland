@@ -359,7 +359,7 @@ void __thiscall cNetVController_Write(cNetVController *self, byte flags, cEntity
 					t = cCamEntity_GetTarget(cam);
 				} else {
 					t = NULL;
-					if (!cWorld_TestSphereEntities(g_pWorld, NULL, (void *)1, (const vec3_t *)((byte *)cam + 0x7c),
+					if (!cWorld_TestSphereEntities(g_pWorld, NULL, (void *)1, &((cCamControl *)cam)->cam.pos,
 						    NETV_CAM_TARGET_RADIUS, &t, 1, 0) || !t) {
 						goto target;
 					}

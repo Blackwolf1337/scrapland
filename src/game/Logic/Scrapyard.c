@@ -9,6 +9,7 @@
  */
 #include <string.h>
 
+#include "scrap/aivehicle.h"
 #include "scrap/chartype.h"
 #include "scrap/hashtable.h"
 #include "scrap/logic.h"
@@ -37,7 +38,7 @@
 #define g_ShipGroupFound GAME_GLOBAL(int, g_ShipGroupFound, 0x44d994)
 #define g_ShipGroupShips (GAME_ARRAY(cEntity *, g_ShipGroupShips, 0x44d998))	/* [SHIPGROUP_MAX_FOUND] */
 /* the callback of the AI when the move ends (rva 0x15c of the AI) */
-#define AIV_OnEnd(ai) (*(void **)((byte *)(ai) + 0x15c))
+#define AIV_OnEnd(ai) (((cAIVehicle *)(ai))->onArrive)
 
 cShipGroupData *__thiscall cShipGroupData_ctor(cShipGroupData *self, const char *list) {
 	cPy_Function_ctor(&self->onSphere);

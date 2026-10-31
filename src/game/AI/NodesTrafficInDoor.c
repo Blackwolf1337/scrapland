@@ -8,6 +8,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
+#include "scrap/vehicleentity.h"
 
 /* the step through the tracks of a sector from a random start, up or down */
 static int Sector_NextTrack(int j, int up, int numT) {

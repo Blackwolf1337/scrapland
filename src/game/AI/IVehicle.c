@@ -52,7 +52,7 @@ static inline const AIVehEntVtbl *AIV_EntVtbl(cEntity *e) {
 }
 
 static inline cVehicleTraffic *AIV_VehTraffic(cEntity *v) {
-	return (cVehicleTraffic *)Veh(v)->traffic;
+	return &Veh(v)->traffic;
 }
 
 static inline CNodesTraffic *AIV_Outdoor(void) {

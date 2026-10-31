@@ -1803,7 +1803,7 @@ byte __thiscall cObjElementFXTesla_IsAlive(cObjElementFXTesla *self, cDebris *de
 		return 0;
 	}
 	/* the fade starts when the emitter stops shooting the Tesla (or has no ammo left) */
-	if (!self->shooting || !Entity_B636(e) || !Entity_B436(e) || Entity_CurWeapon(e) != g_TeslaIDWeap
+	if (!self->shooting || !Entity_B636(e) || !Entity_Fire(e) || Entity_CurWeapon(e) != g_TeslaIDWeap
 		|| 0.0f >= cTargetLock_GetAmmo(Entity_TargetLock(e), g_TeslaIDAmmo)) {
 		self->shooting = 0;
 		if (0.0f > self->fadeStart) {

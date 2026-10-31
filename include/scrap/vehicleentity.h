@@ -15,6 +15,7 @@
 #include "scrap/timer.h"
 #include "scrap/vehicleeffects.h"
 #include "scrap/vehiclemotors.h"
+#include "scrap/vehicletraffic.h"
 #include "scrap/withlifeentity.h"
 
 #define CVEHICLEENTITY_VFTABLE GAME_VFTABLE(cVehicleEntity_vftable, 0x3b52bc)
@@ -122,7 +123,7 @@ struct cVehicleEntity {
 	vec3_t histAcc;			/* 0x5b0 */
 	float histAccLen;		/* 0x5bc */
 	float hitTime;			/* 0x5c0 of the last collision */
-	byte traffic[0x5f0 - 0x5c4];	/* 0x5c4 "Traf_" variables; its byte at 0x1c: is traffic */
+	cVehicleTraffic traffic;	/* 0x5c4 "Traf_" variables */
 	cTargetLock weapons;		/* 0x5f0 cWeaponManager */
 	byte fixedModel;		/* 0x638 "FixedModel" */
 	byte pad_639[3];
@@ -181,7 +182,7 @@ static inline struct cEmbeddedFXVehicle *Veh_FX(const cVehicleEntity *v) {
 #define Vehicle_TypeName(e) (Veh(e)->typeName)
 #define Vehicle_Life(e) (Veh(e)->wl.life)
 #define Vehicle_Model(e) (&Veh(e)->wl.obj.model)
-#define Vehicle_IsTraffic(e) (Veh(e)->traffic[0x1c])
+#define Vehicle_IsTraffic(e) (Veh(e)->traffic.active)
 #define Vehicle_FollowName(e) (Veh(e)->target)	/* the car of a player */
 
 /* the cVehicleEntity vtable slots called here (thiscall) */

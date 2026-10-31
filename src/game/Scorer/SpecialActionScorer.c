@@ -490,7 +490,7 @@ void __thiscall SpecialAction_DrawFunctionary(cSpecialActionScorer *self, int pl
 	if (g_FunctionarySpecialActionLow > 1.0f - WChar_EnergyUsed(e)) {
 		state = 0;
 	} else {
-		state = *(float *)((byte *)e + 0x4b4) == 0.0f ? 1 : 2;
+		state = WChar(e)->energyTime == 0.0f ? 1 : 2;
 	}
 	cSpecialActionScorer_DrawIcon(self, player, state);
 	cSpecialActionScorer_DrawEnergy(self);

@@ -155,7 +155,7 @@ int Input_Bind(int player, const char *a, const char *b, const char *c) {
 		return r == 1 ? 2 : 3;
 	}
 	cInputAction *ia = TABLE_AT(TABLE_AT(g_ActionSets, set)->actions, act);
-	cPy_Function_SetFunc((cPy_Function *)((byte *)ia + 0x28 + player * (int)sizeof(cPy_Function)), c);
+	cPy_Function_SetFunc(&ia->func[player], c);
 	return 0;
 }
 

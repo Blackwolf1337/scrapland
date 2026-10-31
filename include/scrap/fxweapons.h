@@ -43,9 +43,9 @@ int __thiscall CGameLensFlare_GetI1c(const void *self);			/* rva 0x232f70 */
  * slot (0..4) of weapon kind w is mounted (rva 0x11a6c0, 0x11a9f0) */
 float __thiscall cTargetLock_GetAmmo(cTargetLock *self, int ammo);
 byte __thiscall cTargetLock_HasSlot(cTargetLock *self, int weap, int slot);
-#define Entity_B436(e) (*(byte *)((byte *)(e) + 0x436))
-#define Entity_B636(e) (*(byte *)((byte *)(e) + 0x636))
-#define Entity_CurWeapon(e) (*(int *)((byte *)(e) + 0x5fc))	/* the selected weapon kind */
+#define Entity_Fire(e) (Veh(e)->controls.fire)
+#define Entity_B636(e) (Veh(e)->weapons.flag46)
+#define Entity_CurWeapon(e) (Veh(e)->weapons.curWeap)	/* the selected weapon kind */
 
 /* the engine variables */
 #define g_TeslaIDWeap GAME_GLOBAL_IN(int, GVar_TeslaIDWeap, 16, 0x448884)

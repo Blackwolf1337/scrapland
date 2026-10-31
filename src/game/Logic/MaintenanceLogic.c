@@ -12,7 +12,7 @@
 
 #define MAINT_VT(self) ((self)->base.base.vftable)
 #define MAINT_BASE(self) (&(self)->base.base)
-#define Car_Radius(e) (*(float *)((byte *)(e) + 0x3a0))
+#define Car_Radius(e) (WLife(e)->prim.radius)
 
 /* the x87 code of the original: a float plus two floats, rounded by the x87 control word, then to float */
 static inline float Maint_X87Add2(float a, float b, float c) {

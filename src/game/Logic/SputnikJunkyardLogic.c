@@ -15,7 +15,7 @@
 #define g_SputnikPisser GAME_GLOBAL(cEntity *, g_SputnikPisser, 0x44db70)	/* the Sputnik that laughs at the player */
 #define g_SputnikTime GAME_GLOBAL(float, g_SputnikTime, 0x44db74)		/* since the camera exists */
 /* the angles of the camera entity */
-#define Sputnik_CamAng(cam) ((const vec3_t *)((byte *)(cam) + 0x88))
+#define Sputnik_CamAng(cam) ((const vec3_t *)&((cCamControl *)(cam))->cam.rot)
 
 #define SPUTNIK_VT(self) ((self)->base.vftable)
 

@@ -116,7 +116,7 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	*(int *)(self->collision + 4) = 0;
 	Controls_ctor(&self->controls);
 	crt_eh_vector_ctor(&self->pilot, sizeof(CGameModel), 1, GAME_FUNC(CGameModel_ctorDefault, CGAMEMODEL_CTOR), GAME_FUNC(CGameModel_Reset, CGAMEMODEL_DTOR));
-	cVehicleTraffic_ctor((cVehicleTraffic *)self->traffic);
+	cVehicleTraffic_ctor(&self->traffic);
 	cWeaponManager_ctor(&self->weapons);
 	cVehicleO648_ctor(self->o648);
 	cAutoAim_ctor(&self->autoAim);
@@ -201,7 +201,7 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	self->hitTime = 0.0f;
 	self->timeOfs = (float)((double)(crt_rand() & 0x7fff) * VEH_RAND_SCALE * 100.0 + 0.0);
 	cVehicleEffects_SetOwner(&self->effects, Veh_Ent(self));
-	cVehicleTraffic_SetParent((cVehicleTraffic *)self->traffic, Veh_Ent(self));
+	cVehicleTraffic_SetParent(&self->traffic, Veh_Ent(self));
 	self->wl.arrow.alwaysUse = 1;
 	self->fixedModel = 0;
 	self->typeName[0] = 0;
@@ -565,7 +565,7 @@ void __thiscall cVehicleEntity_Collide(cVehicleEntity *self, vec3_t *from, float
 		to.y = g_SpaceLimit;
 	}
 	if (from->x != to.x || from->y != to.y || from->z != to.z) {
-		if (cVehicleTraffic_Move((cVehicleTraffic *)self->traffic, from, &to, self->wRadius, pos, speed, (CSphereBox *)self->collision)) {
+		if (cVehicleTraffic_Move(&self->traffic, from, &to, self->wRadius, pos, speed, (CSphereBox *)self->collision)) {
 			self->hitTime = Timer_GetTime(&self->wl.obj.timer);
 			float inv = 1.0f / dt;
 			vec3_t v;
@@ -579,14 +579,14 @@ void __thiscall cVehicleEntity_Collide(cVehicleEntity *self, vec3_t *from, float
 			}
 		}
 	}
-	if (cVehicleTraffic_CollideEntities((cVehicleTraffic *)self->traffic) &&
+	if (cVehicleTraffic_CollideEntities(&self->traffic) &&
 		cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, from, self->wl.prim.radius, NULL, 0,
 			(int)(intptr_t)pos)) {
 		self->hitTime = Timer_GetTime(&self->wl.obj.timer);
 		to.x = from->x + self->wl.obj.vel.x * dt;
 		to.y = from->y + self->wl.obj.vel.y * dt;
 		to.z = from->z + self->wl.obj.vel.z * dt;
-		cVehicleTraffic_Move((cVehicleTraffic *)self->traffic, from, &to, self->wRadius, pos, self->speed, (CSphereBox *)self->collision);
+		cVehicleTraffic_Move(&self->traffic, from, &to, self->wRadius, pos, self->speed, (CSphereBox *)self->collision);
 		if (cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, pos, self->wl.prim.radius, NULL, 1, 0)) {
 			*pos = *from;
 		}
@@ -1402,7 +1402,7 @@ byte __thiscall cVehicleEntity_VarF(cVehicleEntity *self, const char *name, doub
 		return 1;
 	}
 	if (!strncmp(name, "Traf_", 5)) {
-		return cVehicleTraffic_VarF((cVehicleTraffic *)self->traffic, name + 5, d, set);
+		return cVehicleTraffic_VarF(&self->traffic, name + 5, d, set);
 	}
 	if (cWeaponManager_VarF(&self->weapons, name, d, (byte)set) ||
 		Veh_MotorsVtbl(self)->VarF(&self->motors, name, d, set)) {
@@ -1501,7 +1501,7 @@ byte __thiscall cVehicleEntity_VarI(cVehicleEntity *self, const char *name, int 
 	}
 	size_t len = strlen(name);
 	if (!strncmp(name, "Traf_", 5)) {
-		return cVehicleTraffic_VarI((cVehicleTraffic *)self->traffic, name + 5, i, set);
+		return cVehicleTraffic_VarI(&self->traffic, name + 5, i, set);
 	}
 	if (cWeaponManager_VarI(&self->weapons, name, i, (byte)set) ||
 		Veh_MotorsVtbl(self)->VarI(&self->motors, name, i, set)) {
@@ -1586,7 +1586,7 @@ byte __thiscall cVehicleEntity_VarS(cVehicleEntity *self, const char *name, char
 	}
 	size_t len = strlen(name);
 	if (!strncmp(name, "Traf_", 5)) {
-		return cVehicleTraffic_VarS((cVehicleTraffic *)self->traffic, name + 5, s, set);
+		return cVehicleTraffic_VarS(&self->traffic, name + 5, s, set);
 	}
 	if (cWeaponManager_VarS(&self->weapons, name, s, (byte)set) ||
 		Veh_MotorsVtbl(self)->VarS(&self->motors, name, s, set)) {
@@ -1627,7 +1627,7 @@ byte __thiscall cVehicleEntity_VarV(cVehicleEntity *self, const char *name, doub
 	}
 	size_t len = strlen(name);
 	if (!strncmp(name, "Traf_", 5)) {
-		return cVehicleTraffic_VarV((cVehicleTraffic *)self->traffic, name + 5, x, y, z, set);
+		return cVehicleTraffic_VarV(&self->traffic, name + 5, x, y, z, set);
 	}
 	if (cWeaponManager_VarV(&self->weapons, name, x, y, z, (byte)set) ||
 		Veh_MotorsVtbl(self)->VarV(&self->motors, name, x, y, z, set)) {
@@ -1803,7 +1803,7 @@ void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt) {
 	float ax = self->wl.obj.ang.x - ty * VEH_PI_F * 0.125f;
 	self->turnSpeedY = ty * self->strTrust;
 	/* the boost: forward at the boost speed */
-	if (!self->traffic[0x1c] && !self->cloudOn && self->controls.boostKey && 0.0f >= self->boost &&
+	if (!self->traffic.active && !self->cloudOn && self->controls.boostKey && 0.0f >= self->boost &&
 		self->thrust > self->frwTrust * 0.5f) {
 		float s = self->speed;
 		self->cloud = 0.0f;

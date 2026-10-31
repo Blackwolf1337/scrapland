@@ -12,6 +12,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/sound.h"
 #include "scrap/timer.h"
+#include "scrap/walkcharentity.h"
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 

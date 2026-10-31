@@ -45,7 +45,7 @@
 #define g_MaintenanceWorkSoundAttEnd GAME_GLOBAL_IN(float, GVar_MaintenanceWorkSoundAttEnd, 16, 0x446ba4)
 
 /* a character in the conversion: its byte at 0x48c is set while the effect runs */
-#define Entity_InConversion(e) (*(byte *)((byte *)(e) + 0x48c))
+#define Entity_InConversion(e) (WChar(e)->disableControl)
 
 /* the elements */
 

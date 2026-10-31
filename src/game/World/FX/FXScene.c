@@ -1414,7 +1414,7 @@ void __thiscall cObjElementFXSceneBeatPickus_Update(cObjElementFXSceneBeatPickus
 #define FXS_RAMP_BILL_JETB 0x430db4
 #define FXBILL_JETS 3
 /* the jets of the capsule: the particles of its embedded effect (3 from + 0x8) */
-#define FXS_CapsuleJet(efx, k) ((CGameParticles *)((byte *)(efx) + 0x8) + (k))
+#define FXS_CapsuleJet(efx, k) (&((cEmbeddedFXCapsule *)(efx))->motors[k])
 
 static inline const vec3_t *FXS_Neg(vec3_t *out, const vec3_t *v) {
 	out->x = -v->x;
