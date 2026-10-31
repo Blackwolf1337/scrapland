@@ -12,10 +12,10 @@ root, struct, mapfile = sys.argv[1:4]
 rows = [l.split() for l in open(mapfile) if l.strip() and not l.startswith('#')]
 if struct == '-':
 	m = {(r[0], r[1]): r[2] for r in rows}
-	pat = re.compile(r"^(\S+?):(\d+):(\d+): error: '(?:struct )?(\w+)' has no member named '(\w+)'")
+	pat = re.compile(r"^(\S+?):(\d+):(\d+): error: '(?:struct )?(\w+)'(?: \{aka '(?:struct )?(\w+)'\})? has no member named '(\w+)'")
 else:
 	m = {(struct, r[0]): r[1] for r in rows}
-	pat = re.compile(r"^(\S+?):(\d+):(\d+): error: '(?:struct )?(%s)' has no member named '(\w+)'" % re.escape(struct))
+	pat = re.compile(r"^(\S+?):(\d+):(\d+): error: '(?:struct )?(\w+)'(?: \{aka '(?:struct )?(\w+)'\})? has no member named '(\w+)'")
 # gcc columns count a tab as up to 8 display columns
 def byteidx(s, col):
 	d = 1
@@ -31,8 +31,10 @@ for rnd in range(10):
 	hits = {}
 	for line in (r.stdout + r.stderr).splitlines():
 		g = pat.match(line)
-		if g and (g.group(4), g.group(5)) in m:
-			hits.setdefault(g.group(1), set()).add((int(g.group(2)), int(g.group(3)), g.group(5), g.group(4)))
+		# the typedef name or, with {aka}, the struct tag
+		st = g and next((t for t in (g.group(4), g.group(5)) if t and (t, g.group(6)) in m), None)
+		if st:
+			hits.setdefault(g.group(1), set()).add((int(g.group(2)), int(g.group(3)), g.group(6), st))
 	if not hits:
 		left = [l for l in (r.stdout + r.stderr).splitlines() if ': error:' in l]
 		print('round %d: done, %d other errors' % (rnd, len(set(left))))
@@ -48,6 +50,9 @@ for rnd in range(10):
 			if i is not None and not s[i:].startswith(name):
 				g = re.match(r'(->|\.)\s*', s[i:])
 				i = i + g.end() if g else None
+			# a macro argument (offsetof): gcc points at the macro, the name must be unique in the line
+			if (i is None or not re.match(r'%s\b' % name, s[i:])) and len(re.findall(r'\b%s\b' % name, s)) == 1:
+				i = re.search(r'\b%s\b' % name, s).start()
 			if i is None or not re.match(r'%s\b' % name, s[i:]) or (i and re.match(r'\w', s[i - 1])):
 				print('not found: %s:%d:%d %s' % (f, ln, col, name)); continue
 			lines[ln - 1] = s[:i] + m[(st, name)] + s[i + len(name):]
